@@ -118,6 +118,9 @@
   //                envelope (it rides sg, so it fades through the loss and
   //                scales with the reel's gain like everything else)
   var DROP_FLOOR = 0.35, DROP_HISS = 0.5;
+  // Q0: the static that covers a media element running dry mid-reception, on
+  // the same scale as DROP_HISS (relative to the reception's own envelope)
+  var STALL_HISS = 0.4;
 
   // ==========================================================================
   // 形 THE SHAPES OF A RECEPTION — the owner's constants, in ONE block
@@ -447,7 +450,7 @@
           wi = nj; win = reel.windows[nj];
         }
       }
-      if (!ok || P.segments.length < 2) return planOne(reel, o.inS, onS, exitS);
+      if (!ok || P.segments.length < 2) return planOneFit(reel, o, onS, exitS);
       for (k = 0; k < P.segments.length - 1; k++) P.gaps.push({ durS: sh.gaps[k], sweep: false });
     } else if (body === "sou") {
       // 走 THE SCAN: the first station is lost, the dial sweeps, a second locks.
@@ -467,7 +470,7 @@
         l2b = r2.windows[v2][1] - r2.windows[v2][0];
         if (l2b >= need2 && l2b > w2b) { w2b = l2b; w2 = v2; }
       }
-      if (onS < 2 * SCAN_PIECE_MIN_S || !r2 || w2 < 0) return planOne(reel, o.inS, onS, exitS);
+      if (onS < 2 * SCAN_PIECE_MIN_S || !r2 || w2 < 0) return planOneFit(reel, o, onS, exitS);
       P.segments.push({ inS: o.inS, onS: half, reel: reel, lockS: 0 });
       P.segments.push({ inS: r2.windows[w2][0] + F.next() * Math.max(0, w2b - need2), onS: onS - half, reel: r2, lockS: 0 });
       P.gaps.push({ durS: sh.gaps[0], sweep: true });
@@ -478,7 +481,7 @@
       // picture tears and rolls, and it comes back WHERE IT WOULD BE.
       var hs = sh.holes.slice(), tot = 0, hz;
       for (hz = 0; hz < hs.length; hz++) tot += hs[hz];
-      if (onS < 6 || !hs.length) return planOne(reel, o.inS, onS, exitS);
+      if (onS < 6 || !hs.length) return planOneFit(reel, o, onS, exitS);
       P.segments.push({ inS: o.inS, onS: onS, reel: reel, lockS: 0, holeS: tot });
       // placed inside the piece, in order, never within 1.5 s of an end or of
       // each other — a hole at the very edge reads as the entry or the exit
@@ -506,6 +509,27 @@
       return P;
     }
     return planShaped(sh, F, o);
+  }
+  // Q0 — THE FALLBACK HOLD MUST FIT ITS WINDOW. When a 戻 finds no later
+  // moment, a 走 no second station or a 断 no room, planShaped falls back to a
+  // plain hold — carrying the budget the SHAPE was sized for. choose() sized
+  // that budget with windowServes(), which for 戻 and 走 is two or three
+  // windows' worth, so the one piece that was left ran straight off the end of
+  // its window at full level: into the next window of the file (a jump cut)
+  // and, on a reel's last window, off the end of the file into silence with
+  // the envelope still open. Measured on the probe: a 26 s hold on a 19 s
+  // window — 7.3 s of nothing, env 1.0; a 28 s hold on 18.7 s — three jump
+  // cuts. The degrade ladder's own rule is that a plain hold is what ONE
+  // window serves (§4.1: "a plain hold of 8.8 s fits any 12 s window"), so the
+  // fallback now holds that. This moves the plan — a shorter hold, a shorter
+  // span — on exactly the receptions that took this path, and nowhere else.
+  function planOneFit(reel, o, onS, exitS) {
+    var w = o.win || windowOf(reel, o.inS), rate = o.rate || 1;
+    if (w) {
+      var fit = (w[1] - o.inS) / rate - TUNE_S - Math.min(exitS, EXIT_MAX_COST_S);
+      if (onS > fit) onS = Math.max(3, fit);
+    }
+    return planOne(reel, o.inS, onS, exitS);
   }
   // today's clip, exactly: one piece, a snap in, a cut out
   function planOne(reel, inS, onS, exitS) {
@@ -781,10 +805,45 @@
   // createMediaElementSource is PERMANENT per element (WebKit re-routes it for
   // the life of the page), so each element gets its own node, made once.
   // In ?reels=buffer mode neither element is ever given to the graph at all.
-  var ELEMS = 2;
-  var videos = [null, null], mediaSrcs = [null, null], videoSrcIds = [null, null], primed = false, elemTurn = 0;
+  //
+  // Q0 (2026-09-24) — "n + 2 reuses n's element, which finished long before"
+  // WAS NOT TRUE, and the owner heard what it cost. Two things broke it:
+  //   1. the ARM order is not the air order. A reception armed 55 s out owns
+  //      its element from that moment, and a manual seat (the bench, the dial)
+  //      can arm and air in between; the next arm then took the element of the
+  //      reception still waiting, loaded its own reel into it, and the first
+  //      one went to air playing the second one's file. Measured on the probe:
+  //      two receptions on one element, one of them 20 s of silence under a
+  //      full envelope when the other's teardown paused the element.
+  //   2. the AUDITION borrowed element 0 whatever it was doing. A press of 受信
+  //      while a broadcast is armed (for 55 s before every one of them) is
+  //      answered by an audition — on element 0, which is the armed
+  //      reception's half the time. Its src swap, its seeks and its teardown's
+  //      pause() then landed on a broadcast: the audio of a reception chopping
+  //      in and out, which is the owner's report.
+  // So: an arm takes an element NO queued or live reception holds (freeElem),
+  // and the audition has an element of its own (AUD), primed with the pair.
+  var ELEMS = 2, AUD = 2;
+  var videos = [null, null, null], mediaSrcs = [null, null, null], videoSrcIds = [null, null, null], primed = false, elemTurn = 0;
+  function elemIx(ix) { ix = ix | 0; return ix === AUD ? AUD : ix % ELEMS; }
+  // The element for a new reception: the next in turn that nothing queued or
+  // on the air is holding. With two elements and a queue of two (the live one
+  // stays in the queue until its teardown) there is always one — unless a
+  // third reception is armed, which the placement does not do; then the old
+  // alternation stands and the clash is counted, never silent.
+  function freeElem(peek) {
+    for (var k = 0; k < ELEMS; k++) {
+      var ix = (elemTurn + k) % ELEMS, held = false;
+      for (var q = 0; q < armedQ.length; q++) if (!armedQ[q].dead && armedQ[q].vidx === ix) { held = true; break; }
+      if (!held && live && live.a && live.a.vidx === ix) held = true;
+      if (!held) { if (!peek) elemTurn = ix + 1; return ix; }
+    }
+    if (peek) return elemTurn % ELEMS;
+    stats.elemClash = (stats.elemClash || 0) + 1;
+    return (elemTurn++) % ELEMS;
+  }
   function ensureVideo(ix) {
-    ix = (ix | 0) % ELEMS;
+    ix = elemIx(ix);
     if (videos[ix] || !hasDOM) return videos[ix];
     try {
       var v = document.createElement("video");
@@ -809,7 +868,7 @@
     // 経路: in buffer mode the element is NEVER given to the graph. One call
     // is permanent — WebKit re-routes the element for the life of the page —
     // so this is the single gate that keeps the two worlds apart.
-    ix = (ix | 0) % ELEMS;
+    ix = elemIx(ix);
     if (reelsBuffered()) return null;
     if (mediaSrcs[ix] || !videos[ix] || !ctx || typeof ctx.createMediaElementSource !== "function") return mediaSrcs[ix];
     try { mediaSrcs[ix] = ctx.createMediaElementSource(videos[ix]); } catch (e) { mediaSrcs[ix] = null; }
@@ -819,10 +878,11 @@
     loadPool();
     pinUsed = false;          // one pin per night, re-armed by ▶ play
 
-    // BOTH elements are primed inside the PLAY gesture, or the second one would
-    // be the first to meet iOS's autoplay policy halfway through a night.
+    // ALL THREE elements are primed inside the PLAY gesture, or the second one
+    // (or the audition's) would be the first to meet iOS's autoplay policy
+    // halfway through a night.
     var any = false;
-    for (var ix = 0; ix < ELEMS; ix++) {
+    for (var ix = 0; ix <= AUD; ix++) {
       var v = ensureVideo(ix); if (!v) continue;
       any = true;
       ensureMediaSource(tl().ctx, ix);
@@ -1561,7 +1621,7 @@
       // the global airHoldClear(): a reception clears its OWN claim on a
       // fallback and lets it expire otherwise, so an arm can never drop the
       // hold out from under the broadcast that is on the air.
-      vidx: (elemTurn++) % ELEMS, holdId: "signal:" + info.cycle + ":" + (++rxSeq),
+      vidx: freeElem(), holdId: "signal:" + info.cycle + ":" + (++rxSeq),
       ready: false, t0: null, decided: false, dead: false };   // (`bench: !!rng` lived here, written and never read — the critic's fourth dead field; deleted rather than carried)
     armedQ.push(a); qHead();
     stats.armed++;
@@ -1689,11 +1749,24 @@
       var r2 = a.rx && a.rx.reel2;
       if (r2 && r2.id !== a.reel.id) decodeReel(r2.id, tl().ctx).then(function (b2) { if (!a.dead) a.bufs[r2.id] = b2; }, function () {});
     }
+    // Q0: the element is threaded where the head STARTS (headPlan), which for a
+    // hunt or a drift is before the in-point — so the play at the cue is a
+    // play, not a seek.
+    var startPos = a.inS;
+    try { if (a.rx) startPos = headPlan(a.rx, a.rate || 1)[0].cuePos; } catch (e0) {}
+    // …and a 走's second reel is fetched once now, into the cache, so the swap
+    // inside the sweep is a cache read rather than a cold load mid-signal. (The
+    // reels are served immutable for a year; a failure here costs nothing but
+    // the warm-up.)
+    var r2w = a.rx && a.rx.reel2;
+    if (r2w && r2w.id !== a.reel.id && !reelsBuffered() && hasFetch) {
+      try { fetch(reelUrl(r2w)).then(function (r) { return r.ok ? r.arrayBuffer() : null; }).catch(function () {}); } catch (e1) {}
+    }
     function seekIn() {
       try {
         var once = function () { try { v.removeEventListener("seeked", once); } catch (e) {} if (!a.dead) a.ready = true; warmPicture(v); };
         v.addEventListener("seeked", once, { once: true });
-        v.currentTime = a.inS;
+        v.currentTime = startPos;
       } catch (e) {}
     }
     try {
@@ -1837,8 +1910,9 @@
   // as §7's addendum established, and a reel with a picture as §8.2 asks.
   function dialAudition(now) {
     for (var attempt = 0; attempt < 6; attempt++) {
-      if (!sampleTune(now)) return false;
-      if (!lastSampleAudioOnly) return true;
+      var got = sampleTune(now, attempt < 5);   // the sixth takes what it draws
+      if (!got) return false;
+      if (got !== "retry") return true;
     }
     return true;
   }
@@ -2067,10 +2141,112 @@
     farRoomTap = null; farRoomWet = null; farRoomConv = null;
   }
 
+  // Q0 — OVERLAPPING DROPS ARE ONE DUCK. weather() packs the drops tighter
+  // through the loss — steps fall to 0.24 s while a drop lasts up to 0.37 s —
+  // so on a lingering exit two drops overlap routinely. Scheduled one by one,
+  // the second's setValueAtTime(1) landed INSIDE the first: the gate jumped
+  // from the floor to full for 6 ms (a click), the first's end then lifted it
+  // back to full while the second was still meant to be down, and the second's
+  // end dropped it again with a bare step — a stutter of clicks where the draw
+  // asked for one longer hole, and the hiss did the same thing on its own gain.
+  // The UNION of the drawn spans is ducked instead. The draws, the schedule and
+  // the picture's drops (desc.drops) are untouched; only the audio's automation
+  // stops fighting itself. [start, dur, index of the first drop in the group].
+  function mergeDrops(drops) {
+    var out = [], i, cur = null;
+    var d = drops.map(function (x, k) { return [x[0], x[1], k]; }).sort(function (p, q) { return p[0] - q[0]; });
+    for (i = 0; i < d.length; i++) {
+      // the hiss takes 30 ms to leave, so a drop that starts inside that tail
+      // is part of the same duck
+      if (cur && d[i][0] <= cur[0] + cur[1] + 0.04) { cur[1] = Math.max(cur[1], d[i][0] + d[i][1] - cur[0]); continue; }
+      cur = [d[i][0], d[i][1], d[i][2]]; out.push(cur);
+    }
+    return out;
+  }
+  // Q0 — WHERE THE HEAD STARTS, piece by piece: the reel position each piece
+  // plays from and the moment (seconds after t0) it is there. One answer for
+  // the element, the buffer and the audition, so they cannot drift apart.
+  //
+  //   THE FIRST PIECE reaches its in-point at srcFromS — the lock after a
+  //   hunt, three seconds into a drift, t0 for a snap — which is the moment the
+  //   plan has the station arriving. It used to START at t0 from the in-point
+  //   in element mode, so a hunt of 3–8 s or a drift of 6–10 s ran that much
+  //   of the window before the station even locked, and the hold ran the same
+  //   distance PAST the window's end: into the next window of the file (a jump
+  //   cut, at full level) or off the end of the file (the element ends; the
+  //   rest of the hold is silence). Measured on the probe before this: a 探
+  //   hold 1.6 s past its window, a 残 loss 6.1 s past its, env 0.7. So the
+  //   head now PRE-ROLLS: it starts at t0 far enough before the in-point to
+  //   arrive there on time, which is also what lets the hunt's glimpses carry
+  //   "a syllable flickering out of the snow" (PLAN-SIGNAL-SHAPES §3.2) — they
+  //   are the moments just before the station, as a dial passing over it
+  //   would catch them. Where the window has no room before its in-point the
+  //   pre-roll reaches back into the file before it — the reels are windows
+  //   cut back to back, so that is an earlier moment of the same broadcast, and
+  //   a jump inside a hunt is the dial's own business (the glimpses are
+  //   fragments under an envelope that is shut between them). Only at the
+  //   head of the FILE does it start later instead, still on time for the lock.
+  //   THE LAST PIECE is placed so the whole of its run, through the exit, stays
+  //   inside the window where the window has the room: the in-point was chosen
+  //   against an exit capped at EXIT_MAX_COST_S (3 s), and 残 lingers for 6–12
+  //   at 75 % then 44 % of peak — which is not the "under 20 %" that cap
+  //   assumed. The run is shifted earlier by the overrun, never past the
+  //   window's start; what cannot be absorbed is reported as `overrunS`.
+  //   LATER PIECES are sought PREROLL_S before their relock (seekAt/seekPos),
+  //   inside the carrier-lost gap, so the element is running when the relock
+  //   opens the envelope.
+  // No draw, no plan field and no event changes here: inS, the segments and
+  // the timeline are the plan's. What moves is where the tape is threaded.
+  var PREROLL_S = 1.0;
+  // THE CUE. A play() takes its time to reach the graph — measured 80 ms in
+  // Chrome from the call to the element's clock moving — so the first piece is
+  // started CUE_LEAD_S before its moment, threaded CUE_LEAD_S − CUE_LAT_S
+  // before its point, and is where the plan says at the moment the plan says.
+  // (Unthreaded, a 0.2 s lead ran every reel 0.12 s ahead of its plan, which a
+  // window cut to the frame then paid for at its far end.)
+  var CUE_LEAD_S = 0.2, CUE_LAT_S = 0.08;
+  function windowOf(reel, inS) {
+    var ws = (reel && reel.windows) || [], i;
+    for (i = 0; i < ws.length; i++) if (inS >= ws[i][0] - 1e-3 && inS < ws[i][1]) return ws[i];
+    return null;
+  }
+  function headPlan(P, rate) {
+    rate = rate || 1;
+    var out = [], n = P.segments.length, i;
+    for (i = 0; i < n; i++) {
+      var sg = P.segments[i], reel = sg.reel, w = windowOf(reel, sg.inS);
+      var w0 = w ? w[0] : sg.inS, w1 = w ? Math.min(w[1], reel && reel.durS ? reel.durS : w[1]) : Infinity;
+      var h = { at: 0, pos: sg.inS, seekAt: 0, seekPos: sg.inS, overrunS: 0, edgePos: w1 };
+      if (i === 0) {
+        var pre = (sg.srcFromS || 0) * rate, room = Math.max(0, sg.inS);
+        if (pre <= room) { h.pos = sg.inS - pre; h.at = 0; }
+        else { h.pos = sg.inS - room; h.at = (sg.srcFromS || 0) - room / rate; }
+      } else {
+        h.at = sg.lockAtS; h.pos = sg.inS;
+      }
+      if (i === n - 1) {
+        var over = h.pos + (P.spanS - h.at) * rate - w1;
+        if (over > 0) { var sh = Math.min(over, Math.max(0, h.pos - w0)); h.pos -= sh; h.overrunS = +(over - sh).toFixed(3); }
+      }
+      if (i > 0) {
+        // (the pre-roll runs under a SHUT envelope — the carrier is lost until
+        // the relock — so it may reach back past the window's start; only the
+        // file's head bounds it. Bounded by the window, a piece cut from the
+        // head of its window was sought AT the relock and came in 27 ms late.)
+        var gap = P.gaps[i - 1], lead = Math.min(PREROLL_S, Math.max(0, h.pos / rate), Math.max(0, (gap ? gap.durS : 0) + (sg.lockS || 0) - 0.3));
+        h.seekAt = h.at - lead; h.seekPos = h.pos - lead * rate;
+      } else {
+        h.cueAt = h.at - CUE_LEAD_S; h.cuePos = Math.max(0, h.pos - (CUE_LEAD_S - CUE_LAT_S) * rate);
+      }
+      out.push(h);
+    }
+    return out;
+  }
   // ---- the signal itself ----
   function startSignal(a, t0) {
     var T = tl(), c = T.ctx, vix = a.vidx || 0, v = videos[vix], ms = mediaSrcs[vix];
     var buffered = reelsBuffered(), bufSrc = null, bufSrcs = [];   // 経路: the reel's first node is the only thing this switch moves
+    var own = { timers: [], off: [] };                                // Q0: this reception's pending element moves and listeners, undone by its teardown
     var band = T.getLayerParam("broadcast", "band", 0.5), flutter = T.getLayerParam("broadcast", "flutter", 0.5), grit = T.getLayerParam("broadcast", "grit", 0.5);
     // THE PLAN IS THE TIMELINE. Every time below is derived from it, so a
     // reception with an eight-second hunt in front of it, a hole in the middle
@@ -2129,18 +2305,18 @@
       var hn = N(T.noiseSource()), hb = N(c.createBiquadFilter()), hz = N(c.createGain());
       hb.type = "bandpass"; hb.Q.setValueAtTime(1.6, t0);
       hz.gain.setValueAtTime(0, t0);
-      var absDrops = [];
-      for (i = 0; i < a.drops.length; i++) {
-        var da = t0 + a.drops[i][0], dd = a.drops[i][1];
+      var absDrops = [], duckDrops = mergeDrops(a.drops);
+      for (i = 0; i < a.drops.length; i++) absDrops.push([t0 + a.drops[i][0], a.drops[i][1]]);
+      for (i = 0; i < duckDrops.length; i++) {
+        var da = t0 + duckDrops[i][0], dd = duckDrops[i][1];
         gate.gain.setValueAtTime(1, da); gate.gain.linearRampToValueAtTime(DROP_FLOOR, da + 0.006);
         gate.gain.setValueAtTime(DROP_FLOOR, da + dd); gate.gain.linearRampToValueAtTime(1, da + dd + 0.006);
         // the static swells in over the head of the hole and drops out with
         // it; its band wanders hole to hole on the signal's own seed (no draw)
-        var hf = 700 + 1900 * (((a.seed || 0) * 0.618 * (i + 1)) % 1);
+        var hf = 700 + 1900 * (((a.seed || 0) * 0.618 * (duckDrops[i][2] + 1)) % 1);
         hb.frequency.setValueAtTime(hf, da); hb.frequency.exponentialRampToValueAtTime(hf * 1.4, da + dd);
         hz.gain.setValueAtTime(0, da); hz.gain.linearRampToValueAtTime(DROP_HISS, da + Math.min(0.03, dd * 0.25));
         hz.gain.setValueAtTime(DROP_HISS, da + dd); hz.gain.linearRampToValueAtTime(0, da + dd + 0.03);
-        absDrops.push([da, dd]);
       }
       hn.connect(hb); hb.connect(hz); hn.start(t0, 11); hn.stop(cut + 0.3);
       // 無信号 THE CARRIER LOST — the sound of a gap and of a hole (§3.1). The
@@ -2244,23 +2420,89 @@
       // two places at once) and the pieces are seeks, scheduled below.
       var head = ms;
       if (buffered) {
-        for (i = 0; i < P.segments.length; i++) {
-          var sgi = P.segments[i], bi = bufFor(a, sgi.reel);
-          if (!bi) continue;
+        var HPb = headPlan(P, rate);                        // Q0: the same starts the element takes, so the two modes cannot drift
+        var startPiece = function (k, bk) {
+          var sk = P.segments[k];
           var bs = N(c.createBufferSource());
-          bs.buffer = bi;
-          bs.playbackRate.setValueAtTime(rate * (T.glideMul ? T.glideMul(t0) : 1), t0 + sgi.srcFromS);
-          bs.start(t0 + sgi.srcFromS, sgi.inS);
-          bs.stop(t0 + sgi.srcToS);
+          bs.buffer = bk;
+          bs.playbackRate.setValueAtTime(rate * (T.glideMul ? T.glideMul(t0) : 1), t0 + HPb[k].at);
+          bs.start(t0 + HPb[k].at, HPb[k].pos);
+          bs.stop(t0 + sk.srcToS);
           bufSrcs.push(bs);
           bs.connect(hp);
+          return bs;
+        };
+        for (i = 0; i < P.segments.length; i++) {
+          var sgi = P.segments[i], bi = bufFor(a, sgi.reel);
+          if (bi) { startPiece(i, bi); continue; }
+          // Q0: a 走's second reel whose decode has not landed yet was simply
+          // SKIPPED — its whole piece silent under an open envelope. Its decode
+          // is already under way (prefetch); the piece is started when it lands,
+          // provided that is still before the relock. Too late is the silence it
+          // was, and the harness sees a piece that never sounded.
+          if (i > 0 && sgi.reel) (function (k, sk) {
+            decodeReel(sk.reel.id, c).then(function (bk) {
+              if (a.dead || c.currentTime > t0 + HPb[k].at - 0.05) return;
+              try { if (!a.bufs) a.bufs = {}; a.bufs[sk.reel.id] = bk; startPiece(k, bk); } catch (e) {}
+            }, function () {});
+          })(i, sgi);
         }
         bufSrc = bufSrcs[0] || null;
         head = null;
       }
       if (head) head.connect(hp);
-      hp.connect(lp); lp.connect(pre); pre.connect(sh); sh.connect(mk); mk.connect(fl); fl.connect(gate); gate.connect(cr); cr.connect(sg);
+      hp.connect(lp); lp.connect(pre); pre.connect(sh); sh.connect(mk); mk.connect(fl); fl.connect(gate); gate.connect(cr);
       hz.connect(sg);   // the holes' static joins past the staircase, under the same envelope as the reel
+      // Q0 — A STALL IS A LOST SIGNAL, NEVER A STUTTER. A media element that
+      // runs dry mid-reception (a slow network under the reel, or a starved
+      // decoder on a loaded machine: measured 30–130 ms underruns with the file
+      // wholly buffered, at a load average of 30) hands the graph digital
+      // silence under an open envelope — the voice simply stops and starts,
+      // which is the one thing a receiver losing its station never does. So
+      // the element's own `waiting` brings the band's static up over the hole
+      // until `playing` lets it go, through the envelope like the drops'
+      // static, so it is as loud as the reception is and silent where the
+      // reception is. The event arrives after the underrun has begun — tens of
+      // milliseconds of it are still silence — but what follows is the carrier
+      // failing, not the tape skipping. Its own filter and gain off the SAME
+      // noise source: no new source against the 110 ceiling.
+      var sb = N(c.createBiquadFilter()), sz = N(c.createGain());
+      sb.type = "bandpass"; sb.frequency.setValueAtTime(1300, t0); sb.Q.setValueAtTime(1.2, t0);
+      sz.gain.setValueAtTime(0, t0);
+      hn.connect(sb); sb.connect(sz); sz.connect(sg);
+      if (v && !buffered) {
+        var onDry = function () {
+          if (a.dead) return;
+          var n = c.currentTime; if (n < t0 - 0.3 || n > cut) return;
+          try { sz.gain.cancelScheduledValues(n); sz.gain.setTargetAtTime(STALL_HISS, n, 0.012); } catch (e0) {}
+          stats.stallCovered = (stats.stallCovered || 0) + 1;
+        };
+        var onWet = function () {
+          if (a.dead) return;
+          var n = c.currentTime;
+          try { sz.gain.cancelScheduledValues(n); sz.gain.setTargetAtTime(0, n, 0.02); } catch (e0) {}
+        };
+        v.addEventListener("waiting", onDry); v.addEventListener("playing", onWet);
+        own.off.push(function () { try { v.removeEventListener("waiting", onDry); v.removeEventListener("playing", onWet); } catch (e1) {} });
+      }
+      // Q0 — THE END OF THE MATERIAL IS THE END OF THE STATION. Where the last
+      // piece's run cannot be kept inside its window (headPlan's overrunS: a
+      // whole thought with a lingering exit after it, a window at the file's
+      // head), the reel no longer runs on into the next window at full level —
+      // a jump cut to another moment — or off the end of the file into
+      // silence. It fades out over 0.35 s as it reaches the window's edge and
+      // the band's static takes its place until the cut. The cut, the burst
+      // and the dead tube keep their times.
+      var HPe = headPlan(P, rate), hLast = HPe[HPe.length - 1];
+      if (hLast.overrunS > 0.05 && isFinite(hLast.edgePos)) {
+        var tEdge = t0 + hLast.at + (hLast.edgePos - hLast.pos) / rate;
+        if (tEdge < cut - 0.05) {
+          var eg = N(c.createGain()), eA = Math.max(t0 + hLast.at, tEdge - 0.35);
+          eg.gain.setValueAtTime(1, t0); eg.gain.setValueAtTime(1, eA); eg.gain.linearRampToValueAtTime(0, tEdge);
+          sz.gain.setValueAtTime(0, eA); sz.gain.linearRampToValueAtTime(STALL_HISS, tEdge);
+          cr.connect(eg); eg.connect(sg);
+        } else cr.connect(sg);
+      } else cr.connect(sg);
       // 相 PHASING (W3): two copies of the same window drifting apart. Reich
       // ran two tape loops at almost the same speed; here one copy goes through
       // a delay whose time ramps from nothing to driftMs × passes across the
@@ -2297,6 +2539,7 @@
       for (var gt = t0 + 0.5; gt < cut; gt += 0.5) {
         (function (tt) {
           T.lane("broadcast").at(tt - 0.05, function () {
+            if (a.dead) return;
             try { if (v && !v.paused) v.playbackRate = rate * T.glideMul(tt); } catch (e) {}
             try { for (var bq = 0; bq < bufSrcs.length; bq++) bufSrcs[bq].playbackRate.setValueAtTime(rate * T.glideMul(tt), tt); } catch (e) {}
           });
@@ -2316,7 +2559,8 @@
       try { T.fallback(t0); } catch (e3) {}
       return;
     }
-    live = { a: a, nodes: nodes, hp: hp, end: end, bufSrc: bufSrc, bufSrcs: bufSrcs };
+    var myLive = live = { a: a, nodes: nodes, hp: hp, end: end, bufSrc: bufSrc, bufSrcs: bufSrcs, timers: own.timers, off: own.off };
+    lives.push(myLive);
     stats.signals++;
     if (a.pinned && !pinUsed) {
       pinUsed = true;   // spent ON AIR, not at arm: a fallback must not eat it
@@ -2329,43 +2573,64 @@
     // — under the FIRST piece, at its midpoint, so a reception that breaks and
     // returns does not ring in the silence where the carrier was lost.
     if (a.bell && a.kind === "rite") { try { T.bonsho(t0 + P.segments[0].atS + P.segments[0].onS * 0.45); } catch (e) {} }
-    // the element starts on the audio clock's cue (a setTimeout for the lookahead lead)
-    T.lane("broadcast").at(t0 - 0.12, function (t) {
-      var lead = Math.max(0, (t - c.currentTime) * 1000);
-      setTimeout(function () { try {
-        if (!v) return;                                     // 経路 buffer mode with no DOM: the sound is already away
-        if (buffered) hushElement(v);                       // …and the picture stays voiceless right up to the moment it moves
-        if (Math.abs(v.currentTime - P.segments[0].inS) > 0.5) v.currentTime = P.segments[0].inS;
-        // TAPE-STYLE: the pitch and the speed move together, which is the
-        // whole idiom — a reel bent to the field also runs slow or fast, and
-        // that is the sound of a machine, not a pitch-shifter.
-        try { v.preservesPitch = false; v.mozPreservesPitch = false; v.webkitPreservesPitch = false; } catch (e2) {}
-        v.playbackRate = rate * (T.glideMul ? T.glideMul(t0) : 1);
-        var p = v.play(); if (p && p.catch) p.catch(function () {});
-      } catch (e) {} }, lead);
+    // THE HEAD, ON THE AUDIO CLOCK'S CUE (a setTimeout for the lookahead lead).
+    // Where each piece starts in its reel and when is headPlan()'s (Q0): the
+    // element is PAUSED on the in-point by the prefetch, and every move it makes
+    // on the air is one of the moments below. Each action checks that this
+    // reception is still alive and is recorded on its handle, so a teardown
+    // cancels what has not happened yet instead of letting it land on an
+    // element the next reception now owns.
+    var HP = headPlan(P, rate);
+    function onCue(at, fn) {
+      T.lane("broadcast").at(at, function (t) {
+        var lead = Math.max(0, (t - c.currentTime) * 1000);
+        own.timers.push(setTimeout(function () { if (a.dead || !v) return; try { fn(); } catch (e) {} }, lead));
+      });
+    }
+    onCue(t0 + HP[0].cueAt, function () {                    // CUE_LEAD_S early, threaded to match: on the plan when the snap opens
+      if (buffered) hushElement(v);                         // 経路: the picture stays voiceless right up to the moment it moves
+      if (Math.abs(v.currentTime - HP[0].cuePos) > 0.25) v.currentTime = HP[0].cuePos;
+      // TAPE-STYLE: the pitch and the speed move together, which is the
+      // whole idiom — a reel bent to the field also runs slow or fast, and
+      // that is the sound of a machine, not a pitch-shifter.
+      try { v.preservesPitch = false; v.mozPreservesPitch = false; v.webkitPreservesPitch = false; } catch (e2) {}
+      v.playbackRate = rate * (T.glideMul ? T.glideMul(t0) : 1);
+      var p = v.play(); if (p && p.catch) p.catch(function () {});
     });
     // THE PIECES AFTER THE FIRST, in element mode: the reception returns to the
     // same frequency at a later moment of the source (戻) or crosses to another
     // reel entirely (走), and either way that is a src change and/or a seek on
-    // the one element. Scheduled on the lane at the RELOCK, under an envelope
-    // that is already at the carrier-lost floor, so the seek itself is silent.
+    // the one element.
+    //
+    // Q0: THE MOVE IS MADE INSIDE THE GAP, NOT AT THE RELOCK. It used to be
+    // scheduled 0.12 s before the relock, and a seek or a src swap takes what
+    // it takes — a cold 走 reel is a fetch, a parse and a seek — while the
+    // envelope climbs back to full over 0.2 s (戻) or 0.02 s (走) regardless.
+    // Whatever the element had not finished was heard as the new piece arriving
+    // late and snapping in under a full envelope. Now: a 走 swap loads its reel
+    // as soon as the carrier has gone (0.15 s into the sweep, the reel warmed
+    // into the cache at prefetch), and every piece is sought PREROLL_S before
+    // its relock, to the point that reaches its in-point exactly at the lock —
+    // so the element is already running when the envelope opens.
     for (i = 1; i < P.segments.length; i++) {
-      (function (sgm) {
-        T.lane("broadcast").at(t0 + sgm.lockAtS - 0.12, function (t) {
-          var lead2 = Math.max(0, (t - c.currentTime) * 1000);
-          setTimeout(function () { try {
-            if (!v) return;
-            var rid = (sgm.reel && sgm.reel.id) || (a.reel && a.reel.id);
+      (function (sgm, hp1, gp) {
+        var rid = (sgm.reel && sgm.reel.id) || (a.reel && a.reel.id);
+        if (videoSrcIds[vix] !== rid || (P.segments[0].reel && P.segments[0].reel.id !== rid)) {
+          onCue(t0 + gp.atS + 0.15, function () {
             if (videoSrcIds[vix] !== rid) { videoSrcIds[vix] = rid; v.src = reelUrl(sgm.reel || a.reel); v.preload = "auto"; v.load(); }
-            v.currentTime = sgm.inS;
-            var p2 = v.play(); if (p2 && p2.catch) p2.catch(function () {});
-          } catch (e) {} }, lead2);
+          });
+        }
+        onCue(t0 + hp1.seekAt, function () {
+          if (videoSrcIds[vix] !== rid) { videoSrcIds[vix] = rid; v.src = reelUrl(sgm.reel || a.reel); v.preload = "auto"; v.load(); }
+          v.currentTime = hp1.seekPos;
+          var p2 = v.play(); if (p2 && p2.catch) p2.catch(function () {});
         });
-      })(P.segments[i]);
+      })(P.segments[i], HP[i], P.gaps[i - 1]);
     }
     // the descriptor for the set and the VFD line 「受信 · title · year」
     var wire = planWire(P);
-    var desc = { t0: t0, holdS: holdS, lossD: lossD, drops: absDrops, id: a.reel.id, title: shortTitle(a.reel.title), year: a.reel.year, seed: a.seed, picture: true, video: v, rx: wire };
+    var desc = { t0: t0, holdS: holdS, lossD: lossD, drops: absDrops, id: a.reel.id, title: shortTitle(a.reel.title), year: a.reel.year, seed: a.seed, picture: true, video: v, rx: wire,
+      head: HP.map(function (h) { return { at: +h.at.toFixed(3), pos: +h.pos.toFixed(3), overrunS: h.overrunS, edgePos: isFinite(h.edgePos) ? h.edgePos : null }; }) };   // Q0: where the tape was threaded (read by the probe; nothing reads it back)
     // §4.3 THE VFD SAYS WHAT SHAPE ARRIVED. 「受信 · title · year · 戻 47 s later
     // · 尺 over it」— the kanji is the log line, as it is everywhere else in this
     // station, and the plain words after it say what it means.
@@ -2406,13 +2671,25 @@
       T.emitEvent({ cat: "rx", label: "消失", detail: "signal lost · " + holdS.toFixed(1) + " s on air" +
         (P.spanS - holdS > 4 ? " · " + P.spanS.toFixed(1) + " s from the first static" : "") }, cut);
     });
-    T.lane("broadcast").at(end + 0.5, function () { teardown(); });
+    T.lane("broadcast").at(end + 0.5, function () { teardown(myLive); });   // THIS reception's, never whichever is `live` by then (Q0)
   }
   function warmPicture(v) { try { if (window.ZankyoSet && ZankyoSet.warm) ZankyoSet.warm(v); } catch (e) {} }   // S3: one offscreen drawImage now, so the first frame at t0 does not stall
   function shortTitle(t) { t = String(t || ""); var i = t.indexOf(" ("); if (i > 0) t = t.slice(0, i); i = t.indexOf(","); if (i > 0) t = t.slice(0, i); return t; }
-  function teardown() {
-    var L = live; live = null;
+  // Q0 — A TEARDOWN TEARS DOWN ITS OWN RECEPTION. It used to take whatever
+  // `live` held when its lane fired, so a reception seated before the last one
+  // had finished (the bench's PLAY NOW, whose lead still reads the loss off the
+  // pre-shape hold and so undershoots a shaped one) was killed by its
+  // PREDECESSOR's teardown a few seconds after it came up: element paused,
+  // graph cut, the rest of its hold silent. Each reception now carries its own
+  // handle; `live` is only "the latest", and stop() walks them all.
+  var lives = [];
+  function teardown(L) {
+    if (!L) L = live;
     if (!L) return;
+    var li = lives.indexOf(L); if (li >= 0) lives.splice(li, 1);
+    if (live === L) live = lives.length ? lives[lives.length - 1] : null;
+    for (var ti = 0; ti < (L.timers || []).length; ti++) { try { clearTimeout(L.timers[ti]); } catch (e0) {} }
+    for (var oi = 0; oi < (L.off || []).length; oi++) { try { L.off[oi](); } catch (e1) {} }
     var vix = L.a.vidx || 0;
     if (videos[vix]) { try { videos[vix].pause(); } catch (e) {} }
     if (L.bufSrcs) for (var bs2 = 0; bs2 < L.bufSrcs.length; bs2++) { try { L.bufSrcs[bs2].stop(); } catch (e) {} }
@@ -2421,7 +2698,9 @@
     L.a.dead = true; qDrop(L.a);
   }
   function stop() {
-    teardown();
+    while (lives.length) teardown(lives[lives.length - 1]);
+    live = null;
+    audCancel(true);                              // an audition does not outlive the station either
     farRoomTeardown();                            // 室: the room goes back to being a room
     qClear(); scanWanted = false; scanCycle = -1;
   }
@@ -2505,13 +2784,39 @@
   // loss as a real one (8–12 s and 1.6–2.8 s), and the same dropout plan, so
   // the picture breathes and stutters the way it does in a performance.
   // No lanes — the clock is not running — so Web Audio times and timeouts.
-  function sampleTune(t) {
+  //
+  // Q0: the audition plays on its OWN element (AUD), never on one a broadcast
+  // may hold — a press of 受信 while a broadcast is armed lands here, and it
+  // used to take element 0 out from under it (see the elements' header). One
+  // audition at a time: starting one hands over from the last cleanly (its
+  // envelope closed over 30 ms, its pending seeks and pause cancelled), where
+  // the old one's timers used to keep firing into the new one's element.
+  // `needPicture` is dialAudition's retry: when the reel drawn has no picture
+  // this returns "retry" AFTER every draw and BEFORE building anything, so the
+  // sample stream advances exactly as it did — where the old loop built each
+  // audio-only audition it passed over and left it running under the next.
+  var aud = null, audSeq = 0;
+  function audCancel(pauseToo) {
+    audSeq++;
+    var A = aud; aud = null;
+    if (!A) return;
+    var c = tl().ctx;
+    for (var i = 0; i < A.timers.length; i++) { try { clearTimeout(A.timers[i]); } catch (e) {} }
+    try { var n = c.currentTime; A.sg.gain.cancelScheduledValues(n); A.sg.gain.setValueAtTime(A.sg.gain.value, n); A.sg.gain.linearRampToValueAtTime(0, n + 0.03); } catch (e1) {}
+    setTimeout(function () {
+      try { if (A.bufSrc) A.bufSrc.stop(); } catch (e0) {}
+      try { if (mediaSrcs[AUD] && A.hp) mediaSrcs[AUD].disconnect(A.hp); } catch (e2) {}
+      for (var k = 0; k < A.nodes.length; k++) { try { A.nodes[k].disconnect(); } catch (e3) {} }
+    }, 80);
+    if (pauseToo) { try { if (videos[AUD]) videos[AUD].pause(); } catch (e4) {} }
+  }
+  function sampleTune(t, needPicture) {
     var T = tl(), c = T.ctx; if (!c) return false;
     loadPool();
     // 経路 buffer mode: the element is the picture only, and the audition's
     // audio comes from the same decoded buffer a real signal uses.
     var buffered = reelsBuffered();
-    var v = ensureVideo(0), ms = ensureMediaSource(c, 0);
+    var v = ensureVideo(AUD), ms = ensureMediaSource(c, AUD);
     var R = T.S ? T.S.sample : PJ.Rand.stream((Date.now() % 4294967295) >>> 0);
     var rReel = R.next(), rWin = R.next(), rIn = R.next(), rHold = R.next(), rLoss = R.next();
     var holdS = 8 + rHold * 4, lossD = LOSS_MIN_S + rLoss * LOSS_SPAN_S;
@@ -2572,7 +2877,6 @@
       pickOther: function (u) { if (pool.length < 2) return null; var j = Math.floor(u * pool.length); if (pool[j] === reel) j = (j + 1) % pool.length; return pool[j]; }
     }) : planOne(reel, inS, holdS, lossD);
     holdS = aP.presenceS; lossD = aP.exitS;
-    if (pinA) T.emitEvent({ cat: "rx", label: "受信 pinned", detail: reel.id + (awhole ? " · whole · " : " · ") + holdS.toFixed(1) + "s · audition" }, t);
     // the same dropout plan a real signal gets, so the picture stutters
     var adrops = [], dt = aP.entryS + 0.6;
     while (dt < aP.lossAtS) { dt += 1.2 + R.next() * 3.2; if (dt < aP.lossAtS && !inGap(aP, dt)) adrops.push([dt, 0.12 + R.next() * 0.25]); }
@@ -2580,7 +2884,14 @@
     // it takes no draws of its own — so a deferred audition is the same
     // audition, just further down the clock, and the sample stream is left
     // exactly where an undeferred one would leave it.
-    function build(tt) {
+    if (needPicture && reel.audioOnly) { lastSampleAudioOnly = true; return "retry"; }
+    if (pinA) T.emitEvent({ cat: "rx", label: "受信 pinned", detail: reel.id + (awhole ? " · whole · " : " · ") + holdS.toFixed(1) + "s · audition" }, t);
+    audCancel(false);                     // the last audition hands over; this one owns AUD from here
+    var tok = ++audSeq;
+    var HP = headPlan(aP, 1);
+    function build(tt, staticDone) {
+      if (tok !== audSeq) return false;   // a newer press has the element
+      var me = { timers: [], nodes: null, hp: null, sg: null, bufSrc: null };
       var t0 = tt + 1.0, tuneEnd = t0 + aP.spanS;
       var nodes = [], hp, lp, pre, sh, sg, bufSrc = null;
       try {
@@ -2595,49 +2906,105 @@
         if (buffered) {
           // one source per piece, exactly as the air does it
           for (var aq = 0; aq < aP.segments.length; aq++) {
-            var asg = aP.segments[aq], abuf = bufCache[(asg.reel && asg.reel.id) || reel.id] || bufCache[reel.id];
+            var asg = aP.segments[aq], abuf = bufCache[(asg.reel && asg.reel.id) || reel.id];
             if (!abuf) continue;
             var abs = c.createBufferSource(); abs.buffer = abuf;
-            nodes.push(abs); abs.start(t0 + asg.srcFromS, asg.inS); abs.stop(t0 + asg.srcToS);
+            nodes.push(abs); abs.start(t0 + HP[aq].at, HP[aq].pos); abs.stop(t0 + asg.srcToS);
             abs.connect(hp); if (!bufSrc) bufSrc = abs;
           }
           head = null;
         }
         if (head) head.connect(hp);
-        hp.connect(lp); lp.connect(pre); pre.connect(sh); sh.connect(sg); sg.connect(T.lg("broadcast"));
+        hp.connect(lp); lp.connect(pre); pre.connect(sh);
+        // the window's edge, as on the air (Q0): a run the window cannot hold
+        // fades out as it reaches the edge instead of jumping the cut
+        var hLa = HP[HP.length - 1], tEa = t0 + hLa.at + (hLa.edgePos - hLa.pos);
+        if (hLa.overrunS > 0.05 && isFinite(hLa.edgePos) && tEa < tuneEnd - 0.05) {
+          var ega = c.createGain(); nodes.push(ega);
+          ega.gain.setValueAtTime(1, t0); ega.gain.setValueAtTime(1, Math.max(t0, tEa - 0.35)); ega.gain.linearRampToValueAtTime(0, tEa);
+          sh.connect(ega); ega.connect(sg);
+        } else sh.connect(sg);
+        sg.connect(T.lg("broadcast"));
       } catch (e) { return false; }
-      staticRise(tt, t0);
-      var startMs = Math.max(0, (t0 - c.currentTime) * 1000);
-      var url = reelUrl(reel), srcChanged = videoSrcIds[0] !== reel.id;
-      videoSrcIds[0] = reel.id;
-      try {
-        if (srcChanged) { v.src = url; v.preload = "auto"; v.load(); }
-        var go = function () { try { if (buffered) hushElement(v); v.currentTime = aP.segments[0].inS; warmPicture(v); var p = v.play(); if (p && p.catch) p.catch(function () {}); } catch (e) {} };
-        for (var sq = 1; sq < aP.segments.length; sq++) (function (sgm) {
-          setTimeout(function () { try { v.currentTime = sgm.inS; var p3 = v.play(); if (p3 && p3.catch) p3.catch(function () {}); } catch (e) {} },
-            Math.max(0, (t0 + sgm.lockAtS - c.currentTime) * 1000));
-        })(aP.segments[sq]);
-        if (srcChanged || v.readyState < 3) { var once = function () { try { v.removeEventListener("canplay", once); } catch (e) {} setTimeout(go, Math.max(0, (t0 - c.currentTime) * 1000)); }; v.addEventListener("canplay", once, { once: true }); }
-        else setTimeout(go, startMs);
-      } catch (e) {}
+      me.nodes = nodes; me.hp = hp; me.sg = sg; me.bufSrc = bufSrc; aud = me;
+      auditionEnd = tuneEnd + COLLAPSE_S + BURST_S;         // the real end, if the reel arrived late
+      if (!staticDone) staticRise(tt, t0);
+      var at = function (ts, fn) { me.timers.push(setTimeout(function () { if (aud !== me) return; try { fn(); } catch (e) {} }, Math.max(0, (ts - c.currentTime) * 1000))); };
+      // THE ELEMENT, on the plan's moments (headPlan): the first piece from
+      // where it has to start to reach its in-point at the lock, the later
+      // ones sought inside their gap, and a 走 swapped onto its SECOND REEL —
+      // which it never was: the audition sought reel 1 to reel 2's in-point,
+      // and a reel 2 window past reel 1's end played nothing at all.
+      at(t0 + HP[0].cueAt, function () {
+        if (buffered) hushElement(v);
+        if (videoSrcIds[AUD] !== reel.id) { videoSrcIds[AUD] = reel.id; v.src = reelUrl(reel); v.preload = "auto"; v.load(); }
+        if (Math.abs(v.currentTime - HP[0].cuePos) > 0.25) v.currentTime = HP[0].cuePos;
+        warmPicture(v);
+        var p = v.play(); if (p && p.catch) p.catch(function () {});
+      });
+      for (var sq = 1; sq < aP.segments.length; sq++) (function (sgm, h, gp) {
+        var rid = (sgm.reel && sgm.reel.id) || reel.id;
+        if (rid !== reel.id && gp) at(t0 + gp.atS + 0.15, function () { if (videoSrcIds[AUD] !== rid) { videoSrcIds[AUD] = rid; v.src = reelUrl(sgm.reel); v.preload = "auto"; v.load(); } });
+        at(t0 + h.seekAt, function () {
+          if (videoSrcIds[AUD] !== rid) { videoSrcIds[AUD] = rid; v.src = reelUrl(sgm.reel || reel); v.preload = "auto"; v.load(); }
+          v.currentTime = h.seekPos; var p3 = v.play(); if (p3 && p3.catch) p3.catch(function () {});
+        });
+      })(aP.segments[sq], HP[sq], aP.gaps[sq - 1]);
       lastSampleAudioOnly = !!reel.audioOnly;
-      var desc = { t0: t0, holdS: holdS, lossD: lossD, drops: adrops, id: reel.id, title: shortTitle(reel.title), year: reel.year, seed: rIn * 1000, picture: true, video: v, rx: planWire(aP) };
+      var desc = { t0: t0, holdS: holdS, lossD: lossD, drops: adrops, id: reel.id, title: shortTitle(reel.title), year: reel.year, seed: rIn * 1000, picture: true, video: v, rx: planWire(aP),
+        head: HP.map(function (h) { return { at: +h.at.toFixed(3), pos: +h.pos.toFixed(3), overrunS: h.overrunS, edgePos: isFinite(h.edgePos) ? h.edgePos : null }; }) };
       T.emitEvent({ cat: "rx", label: "♪ 受信", detail: shortTitle(reel.title) + " · " + reel.year +
         (aP.body !== "jou" || aP.entry !== "soku" || aP.exit !== "setsu" ? " · " + KANA[aP.entry] + KANA[aP.body] + KANA[aP.exit] + " · " + aP.presenceS.toFixed(1) + "s on air" : ""),
         signal: desc, link: reel.src || null }, t0);
-      setTimeout(function () { try { if (bufSrc) bufSrc.stop(); } catch (e0) {} try { if (mediaSrcs[0] && hp) mediaSrcs[0].disconnect(hp); } catch (e) {} for (var k = 0; k < nodes.length; k++) { try { nodes[k].disconnect(); } catch (e2) {} } try { v.pause(); } catch (e3) {} }, (tuneEnd - c.currentTime) * 1000 + COLLAPSE_S * 1000 + 400);
+      at(tuneEnd + COLLAPSE_S + 0.4, function () { audCancel(true); });
       return true;
     }
     // In buffer mode an undecoded reel means a fetch of a megabyte or so
     // before there is anything to sound. The dial turns NOW — the press must
     // answer immediately — and the reel arrives behind it.
-    if (buffered && !bufCache[reel.id]) {
+    // (Q0: every reel the audition plays, which for a 走 is two — the second
+    // used to fall back to the FIRST reel's buffer at the second's in-point.)
+    var aReels = planReels(aP), aMissing = aReels.filter(function (r) { return !bufCache[r.id]; });
+    if (buffered && aMissing.length) {
       staticRise(t, t + 1.0);
-      decodeReel(reel.id, c).then(function () { try { build(tl().ctx.currentTime + 0.15); } catch (e) {} }, function () {});
+      Promise.all(aMissing.map(function (r) { return decodeReel(r.id, c); })).then(function () { try { build(tl().ctx.currentTime + 0.15); } catch (e) {} }, function () {});
+      return true;
+    }
+    // Q0 — AND THE SAME IN ELEMENT MODE. The audition used to build its
+    // envelope for one second after the press and ask the element to be there
+    // by then; a reel that took longer (a cold fetch on the host, a slow
+    // connection) came in late under an envelope already at full, snapping in
+    // mid-word. If the element is not already threaded on this reel at the
+    // start point, the dial turns now and the audition is built the moment the
+    // seek lands — or not at all, if that takes longer than AUD_WAIT_S: a
+    // reception that arrives six seconds after the hand has left the button is
+    // not an answer to it.
+    if (!buffered && !(videoSrcIds[AUD] === reel.id && v.readyState >= 3 && Math.abs(v.currentTime - HP[0].cuePos) < 0.25)) {
+      staticRise(t, t + 1.0);
+      auditionEnd = t + 1.0;
+      var asked = c.currentTime;
+      try {
+        if (videoSrcIds[AUD] !== reel.id) { videoSrcIds[AUD] = reel.id; v.src = reelUrl(reel); v.preload = "auto"; v.load(); }
+        var seek = function () {
+          if (tok !== audSeq) return;
+          var landed = function () {
+            try { v.removeEventListener("seeked", landed); } catch (e) {}
+            if (tok !== audSeq || c.currentTime - asked > AUD_WAIT_S) return;
+            // in time for the tune-in the press already started: the audition
+            // it would have been; later, a fresh tune-in from where it landed
+            try { if (c.currentTime < t + 0.85) build(t, true); else build(c.currentTime + 0.15); } catch (e2) {}
+          };
+          v.addEventListener("seeked", landed);
+          v.currentTime = HP[0].cuePos;
+        };
+        if (v.readyState >= 1) seek();
+        else v.addEventListener("loadedmetadata", function once() { try { v.removeEventListener("loadedmetadata", once); } catch (e) {} seek(); });
+      } catch (e3) {}
       return true;
     }
     return build(t);
   }
+  var AUD_WAIT_S = 6;
 
   Z._signal.install({ arm: arm, fire: fire, stop: stop, sample: sampleTune, scan: scan, scene: onScene, dialNoise: dialNoise, dialLock: dialLock, dialReady: dialReady });
 
@@ -2808,11 +3175,15 @@
       },
       // Warm the element for a reel the owner is about to press, so "2 s" is
       // two seconds of tune-in and not two seconds of loading.
+      // Q0: into the element the next seat will TAKE (freeElem, peeked), never
+      // blindly element 0 — which may be holding an armed broadcast's reel.
       prefetchReel: function (reelId, inS) {
-        var v = ensureVideo(0); if (!v) return false;
+        var ix = freeElem(true), v = ensureVideo(ix); if (!v) return false;
         var id = String(reelId);
+        // 経路 buffer mode: the sound is the DECODE, so that is what is warmed
+        if (reelsBuffered()) { try { decodeReel(id, tl().ctx).catch(function () {}); } catch (e0) {} }
         try {
-          if (videoSrcIds[0] !== id) { videoSrcIds[0] = id; v.src = reelUrl(id); v.preload = "auto"; v.load(); }
+          if (videoSrcIds[ix] !== id) { videoSrcIds[ix] = id; v.src = reelUrl(id); v.preload = "auto"; v.load(); }
           var seek = function () { try { v.currentTime = +inS || 0; warmPicture(v); } catch (e) {} };
           if (v.readyState >= 3) seek(); else v.addEventListener("canplay", function once() { try { v.removeEventListener("canplay", once); } catch (e) {} seek(); }, { once: true });
         } catch (e) { return false; }
