@@ -1955,6 +1955,7 @@
     for (var attempt = 0; attempt < 6; attempt++) {
       var got = sampleTune(now, attempt < 5);   // the sixth takes what it draws
       if (!got) return false;
+      if (got === "blocked") return "blocked";
       if (got !== "retry") return true;
     }
     return true;
@@ -1979,7 +1980,29 @@
   var auditionEnd = -1e9;
   function forceFallback(now) {
     if (now < auditionEnd) return "live";
-    return dialAudition(now) ? "audition" : "snow";
+    var got = dialAudition(now);
+    return got === "blocked" ? "live" : got ? "audition" : "snow";
+  }
+  // Q0 — AN AUDITION NEVER SHARES THE AIR WITH A BROADCAST. A press while a
+  // broadcast is armed auditions a window (above), and nothing stopped that
+  // window from running on into the broadcast when it came: measured, press
+  // 3042, three times in 600 s — an audition still sounding 1.4 s into the
+  // Cage reel, one built 0.5 s before a broadcast's t0, and one whose reel
+  // arrived late on slow 4G and was built 1.9 s INTO a broadcast. Two stations
+  // at once, which is not a thing a receiver does. So an audition that would
+  // reach within the static lead of an armed or airing broadcast is not
+  // started — the press is answered by the broadcast about to arrive — and a
+  // late-landing one checks again before it builds.
+  function airClash(fromT, untilT) {
+    if (live) return true;
+    for (var i = 0; i < armedQ.length; i++) {
+      var q = armedQ[i]; if (q.dead) continue;
+      var st = q.t0 != null ? q.t0 : q.wantT0;
+      if (st == null) continue;
+      var sp = q.rx ? q.rx.spanS : TUNE_S + q.holdS + q.lossD;
+      if (st - STATIC_LEAD_S < untilT && st + sp + COLLAPSE_S + BURST_S > fromT) return true;
+    }
+    return false;
   }
   function dialLock(force) {
     var T = tl(), c = T.ctx;
@@ -2935,12 +2958,14 @@
     // audition, just further down the clock, and the sample stream is left
     // exactly where an undeferred one would leave it.
     if (needPicture && reel.audioOnly) { lastSampleAudioOnly = true; return "retry"; }
+    if (T.playing && T.playing() && airClash(t, t + 1.0 + aP.spanS + COLLAPSE_S + BURST_S)) return "blocked";   // after every draw, as the retry is
     if (pinA) T.emitEvent({ cat: "rx", label: "受信 pinned", detail: reel.id + (awhole ? " · whole · " : " · ") + holdS.toFixed(1) + "s · audition" }, t);
     audCancel(false);                     // the last audition hands over; this one owns AUD from here
     var tok = ++audSeq;
     var HP = headPlan(aP, 1);
     function build(tt, staticDone) {
       if (tok !== audSeq) return false;   // a newer press has the element
+      if (T.playing && T.playing() && airClash(tt, tt + 1.0 + aP.spanS + COLLAPSE_S + BURST_S)) return false;   // landed late, into a broadcast's way
       var me = { timers: [], nodes: null, hp: null, sg: null, bufSrc: null };
       var t0 = tt + 1.0, tuneEnd = t0 + aP.spanS;
       var nodes = [], hp, lp, pre, sh, sg, bufSrc = null;
