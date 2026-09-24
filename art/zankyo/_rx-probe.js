@@ -158,7 +158,7 @@ async function run() {
     }
     // pull everything
     const meta = { seed, secs, mode, throttle: thr, url, started: new Date(tStart).toISOString(), forced, presses };
-    const rx = await page.eval("(function(){var R=__rx;return {pulledAt: ZankyoAudio.getAudioContext() ? ZankyoAudio.getAudioContext().currentTime : null, sr:R.sr, block:R.block, ev:R.ev, calls:R.calls, media:R.media, polls:R.polls, clk:R.clk, err:R.err, bus:R.bus, heads:R.heads, spMiss:R.spMiss, spN:R.spN, route:R.route, state: ZankyoBroadcast.getState()}})()", 300000);
+    const rx = await page.eval("(function(){var R=__rx;return {pulledAt: ZankyoAudio.getAudioContext() ? ZankyoAudio.getAudioContext().currentTime : null, glide: R.glide || null, sr:R.sr, block:R.block, ev:R.ev, calls:R.calls, media:R.media, polls:R.polls, clk:R.clk, err:R.err, bus:R.bus, heads:R.heads, spMiss:R.spMiss, spN:R.spN, route:R.route, state: ZankyoBroadcast.getState()}})()", 300000);
     let from = 0, lastPull = null; const parts = [];
     for (;;) {
       const p = await page.eval("__rx.pullRows(" + from + ")", 300000);
@@ -257,7 +257,7 @@ function inHole(rx, rel) { for (const h of rx.holes || []) if (rel >= h.atS - 0.
 // ============================================================================
 function analyze(dirs) {
   const quiet = flag("quiet");
-  const K = ["head gap", "stall", "late start", "splice", "end of file", "wrong reel", "conflict"];
+  const K = ["head gap", "stall", "late start", "splice", "end of file", "wrong reel", "conflict", "overlap"];
   const all = { receptions: 0, auditions: 0, found: {}, unintended: {}, gapMsU: 0, waiting: 0, fallbacks: 0, drops: 0, holes: 0, tapMiss: 0, tapN: 0, consoleErr: 0, shapes: {} };
   for (const k of K) { all.found[k] = 0; all.unintended[k] = 0; }
   const unintended = [];
@@ -320,11 +320,28 @@ function analyze(dirs) {
       // from head[k].pos at t0 + head[k].at. That is used instead of the
       // picture's clock wherever the page recorded it.
       const bufModeP = rx.route && rx.route.reelsMode === "buffer";
+      // a tuned reel runs at its bent rate: the page says so in its 同調 line
+      // (or, from rc.93, in desc.head[].rate)
+      const tun = rx.ev.find((x) => x.label === "同調" && Math.abs(x.t - (t0 + 0.4)) < 0.05 && /rate ([0-9.]+)/.test(x.detail || ""));
+      const rateOf = (k) => (s.head && s.head[k] && s.head[k].rate) || (tun ? parseFloat(/rate ([0-9.]+)/.exec(tun.detail)[1]) : 1);
+      // …and on a gliding night the rate is rate × glideMul(t), integrated
+      const glideAt = (t) => {
+        const G = rx.glide; if (!G || !G.length) return 1;
+        let lo = 0, hi = G.length - 1; if (t <= G[0][0]) return G[0][1]; if (t >= G[hi][0]) return G[hi][1];
+        while (hi - lo > 1) { const m = (lo + hi) >> 1; if (G[m][0] <= t) lo = m; else hi = m; }
+        return G[lo][1] + (G[hi][1] - G[lo][1]) * (t - G[lo][0]) / (G[hi][0] - G[lo][0]);
+      };
+      // ∫ glide, tabulated once per reception at 5 ms
+      const GT0 = t0 - 1, GDT = 0.005, GN = Math.ceil((P.spanS + 3) / GDT);
+      let GC = null;
+      if (bufModeP && rx.glide && rx.glide.length) { GC = new Float64Array(GN + 1); for (let i = 1; i <= GN; i++) GC[i] = GC[i - 1] + GDT * glideAt(GT0 + (i - 0.5) * GDT); }
+      const gInt = (t) => { const x = Math.max(0, Math.min(GN, (t - GT0) / GDT)), i = Math.floor(x); return GC[i] + (i < GN ? (GC[i + 1] - GC[i]) * (x - i) : 0); };
       const posRaw = (t) => {
         if (bufModeP && s.head && s.head.length) {
           const rel = t - t0; let k = 0;
           for (let j = 0; j < s.head.length; j++) if (rel >= s.head[j].at - 0.01) k = j;
-          return s.head[k].pos + Math.max(0, rel - s.head[k].at);
+          const from = t0 + s.head[k].at; if (t <= from) return s.head[k].pos;
+          return s.head[k].pos + rateOf(k) * (GC ? gInt(t) - gInt(from) : (t - from));
         }
         const b = pollAt(t); return b ? b[2] + (t - b[0]) * b[4] : null;
       };
@@ -351,6 +368,7 @@ function analyze(dirs) {
             if (rr > best) { best = rr; lag = L; }
           }
           lagQ = best;
+          if (lagQ < 0.8) lag = 0;        // a weak fit is not evidence of an offset (a flat reel correlates with anything)
         }
       }
       const posAt = (t) => { const p = posRaw(t); return p == null ? null : p + lag; };
@@ -382,7 +400,12 @@ function analyze(dirs) {
           const lockRel0 = Math.max(0, P.entryS - Math.min(P.entryS, P.entry === "fu" ? 3 : 0.4));
           const headStart = Math.max(0, lockRel0 - P.segments[0].inS);
           const early = relB <= headStart + 0.3;
-          let intended = em < 0.05 || hole || early, why = intended ? (hole ? "in a 断 hole" : early ? "before the head starts (a window at the file's head)" : "envelope at the floor") : "reel audible by plan";
+          // after the edge the page declared (headPlan's overrunS), the reel
+          // is faded out on purpose and the band's static carries the rest
+          const hl = s.head && s.head[s.head.length - 1];
+          const edgeRel = hl && hl.overrunS > 0.05 && hl.edgePos != null ? hl.at + (hl.edgePos - hl.pos) / rateOf(s.head.length - 1) - 0.4 : Infinity;
+          const pastEdge = relA >= edgeRel;
+          let intended = em < 0.05 || hole || early || pastEdge, why = intended ? (hole ? "in a 断 hole" : early ? "before the head starts (a window at the file's head)" : pastEdge ? "past the window's edge, faded by the page" : "envelope at the floor") : "reel audible by plan";
           // did the element say it ran dry, with the bytes already there? (an underrun, not the network)
           const wt = vidEvents.find((m) => m.ty === "waiting" && m.t >= ta - 0.25 && m.t <= tb + 0.05);
           if (wt) why += " · element waiting @" + (wt.t - t0).toFixed(2) + " rs " + wt.rs + " buf " + wt.buf;
@@ -415,6 +438,8 @@ function analyze(dirs) {
         if (dt < 0.03 || rel < 0.3 || rel > P.spanS) continue;
         if (dp < -0.05 || dp > dt * pl[i][4] * 3 + 0.3) continue;     // a seek, not a stall
         if (dp < dt * pl[i][4] * 0.33) {
+          const hlS = s.head && s.head[s.head.length - 1];
+          if (hlS && hlS.overrunS > 0.05 && hlS.edgePos != null && pl[i][2] >= hlS.edgePos - 0.1) continue;   // the file's end, past a declared edge: the fade
           const em = envMaxOver(rel, rel + dt);
           if (lastStall && Math.abs(lastStall.at + lastStall.dur - rel) < 0.03 && lastStall.intended === (em < 0.05)) {
             lastStall.dur = +(lastStall.dur + dt - dp / pl[i][4]).toFixed(3); lastStall.env = Math.max(lastStall.env, +em.toFixed(2)); continue;
@@ -455,6 +480,44 @@ function analyze(dirs) {
                 (faded ? " · FADED at the edge (overrun " + hd.overrunS + " s)" : atCut ? " · within 0.1 s of the cut" : "") });
             spliceDone = true;
           }
+        }
+      }
+      // --- 3b. in buffer mode, is each piece the RIGHT reel? The element's src
+      //         cannot say (it is only the picture), so the head's envelope is
+      //         matched against the piece's own file where the plan puts it.
+      //         A piece that does not correlate (r < 0.35 over ≥ 3 s, ±60 ms)
+      //         is playing something else. ---
+      // Two receptions on the air at once share the decoded head's tap and
+      // cannot be told apart by content. In force mode that is the bench
+      // seating over an armed broadcast (an open item, not a gap); anywhere
+      // else it is a finding in its own right.
+      const overl = spans.find((o) => o.e !== ev && o.a < t0 + P.spanS && o.b > t0 - 0.2);
+      if (overl && bufModeP) {
+        push({ kind: "overlap", at: +(Math.max(overl.a, t0) - t0).toFixed(2), dur: 0, env: 1, intended: meta.mode === "force",
+          why: "on the air together with " + overl.e.label + " " + overl.e.signal.id + (meta.mode === "force" ? " (the bench seated over an armed broadcast)" : "") });
+      }
+      if (bufModeP && ch >= 0 && !overl) {
+        for (let si = 0; si < P.segments.length; si++) {
+          const sg = P.segments[si]; if (!man[sg.reel] || !s.head || !s.head[si]) continue;
+          const a0 = t0 + sg.atS + 0.3, a1 = t0 + sg.atS + Math.min(sg.onS, 8) - 0.2;
+          if (a1 - a0 < 3) continue;
+          const env = srcEnv(sg.reel, sr);
+          let best = -1;
+          for (let L = -0.06; L <= 0.06; L += dtB) {
+            let sxy = 0, sx = 0, sy = 0, sxx = 0, syy = 0, n = 0;
+            for (let r = rowAt(a0); r <= rowAt(a1); r++) {
+              const t = rowT(r), p0 = posRaw(t); if (p0 == null) continue;
+              const p = p0 + L, bi = Math.round(p * sr / BLOCK);
+              if (bi < 0 || bi >= env.length) continue;
+              const xv = Math.log(env[bi] + 1e-5), y = Math.log(rows[r * W + ch] + 1e-5);
+              sxy += xv * y; sx += xv; sy += y; sxx += xv * xv; syy += y * y; n++;
+            }
+            if (n < 100) continue;
+            const cov = sxy / n - (sx / n) * (sy / n), vx = sxx / n - (sx / n) ** 2, vy = syy / n - (sy / n) ** 2;
+            const rr = vx > 1e-6 && vy > 1e-6 ? cov / Math.sqrt(vx * vy) : 1;   // a flat file matches anything flat
+            if (rr > best) best = rr;
+          }
+          if (best >= 0 && best < 0.35) push({ kind: "wrong reel", at: +sg.atS.toFixed(2), dur: +sg.onS.toFixed(2), env: 1, intended: false, why: "piece " + si + " does not match " + sg.reel + " where the plan puts it (r " + best.toFixed(2) + ")" });
         }
       }
       // --- 4. late starts: a piece's first audio after its envelope has risen ---

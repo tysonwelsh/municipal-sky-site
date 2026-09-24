@@ -157,6 +157,9 @@
   (function poll() {
     try {
       if (ctxRef) {
+        // the glide: on a 螺/弛 night every reel runs at rate × glideMul(t),
+        // and a decoded reel's position is only knowable with it
+        try { var TT = ZankyoAudio._signal.tools(); if (TT.gliding && TT.gliding()) { var ct = ctxRef.currentTime; (R.glide = R.glide || []).push([+ct.toFixed(3), +TT.glideMul(ct).toFixed(6)]); } } catch (eg) {}
         for (var i = 0; i < ids.length; i++) { var v = ids[i]; if (!v.paused) { var st = tail(v.currentSrc || v.src), si = srcs.indexOf(st); if (si < 0) { srcs.push(st); si = srcs.length - 1; } R.polls.push([+ctxRef.currentTime.toFixed(4), i, +v.currentTime.toFixed(4), v.readyState, v.playbackRate, si]); } }
         attachBus();
       }
