@@ -101,17 +101,43 @@
   // 雪: the carrier strength a reception rests at, from its snow severity:
   // base = top − drop·k. rc.91 rested at 0.82 (k ≈ 0.25 here).
   var CARRIER = { top: 0.9, drop: 0.34 };
-  // the surfacing lull (§11.2): every T s the conditions ease for F s — the
-  // carrier lifts all the way to `lift` (the fading has a good moment) and
-  // every impairment eases by `depth`, so a face comes up out of even the
-  // worst reception and sinks back. Only a HEAVY reception has one (遠, 嵐,
-  // or any kind above heavySev — an uncommon reception's full-strength
-  // secondary snow counts): a light one is legible throughout, and a
-  // lull there would only make every reception pulse alike. T ≤ 4.4
-  // and F ≥ 0.8 put a contiguous ≥ 0.6 s surfacing in ANY 5 s window of hold
-  // (a window that just misses one flat's last 0.6 s meets the next flat's
-  // first 0.6 s within T − F + 1.2 ≤ 5 s).
-  var LULL = { T: [3.2, 4.4], F: [0.8, 1.2], rise: 0.3, fall: 0.4, lift: 0.85, depth: [0.7, 0.88], heavySev: 0.55, dropEase: 0.8 };
+  // the surfacing lull (§11.2): now and then the conditions ease and a face
+  // or a shape rises out of the noise for a moment and sinks back.
+  // REWRITTEN AT r2 (critic P1 r1 item 1): rc.P1's lull was a CLEARING on a
+  // METRONOME — the carrier pinned flat at 0.85, every impairment eased by
+  // 70–88 %, one fixed period per reception, and on 69 % of receptions. Now:
+  //  · a SURFACING TO A LEVEL: the carrier is lifted BY `lift` × the lull's
+  //    height (not TO a level, so the breath keeps moving inside it; capped
+  //    at liftCap), and each impairment eases only as far as its target at
+  //    the lull's top — spark density to pT, the fog's lost contrast (or a
+  //    hot picture's crush) to wT, the echoes' summed amplitude to gT, the
+  //    tear rate to tT (zk-set.js, the hold). Whatever buried a reception, a
+  //    lull brings it up to about the same place: a face through a veil of
+  //    snow, never a clean picture; an impairment already under its target
+  //    is not touched. Dropouts inside a lull are knocked dropEase less deep;
+  //  · IRREGULAR: every lull's rise, flat, fall and the rest after it are
+  //    drawn per lull from a hash of the reception's `key` and the lull's
+  //    index (deterministic, infinite, no fork draws per frame); its height h
+  //    too. The rest after a lull is either short (pairP of the time: a
+  //    quick second rise, ≤ pairRest of the room left) or long (≥ longRest
+  //    of it), so lulls come in pairs and long waits, not on a beat. The
+  //    guarantee: the time from one flat's end to the next flat's start
+  //    (fall + rest + rise) never exceeds `gapMax` 3.6 s and no flat is under
+  //    0.7 s, so any 5 s of hold contains ≥ 0.6 s of flat (a window that just
+  //    misses one flat's last 0.6 s meets the next flat's first 0.6 s within
+  //    0.6 + 3.6 + 0.6 ≤ 5 s); the first flat starts by `off` + rise ≤ 3.3 s;
+  //  · ONLY WHERE NEEDED: needsLull(ch) below — a reception that surfaces on
+  //    its own breath and envelopes gets none (a lull there only makes every
+  //    tube pulse alike).
+  //  Tuned on _picture-probe.js lull (遠/嵐 at sev 1, john-cage; near-clean
+  //  share = the median share of hold at SSIM ≥ 0.7, worst = the worst 5 s
+  //  window's surfaced run): a relative ease (depth 0.36–0.56, lift 0.08)
+  //  could not do both — the snow-bound 遠s cleared (near-clean 0.14–0.19)
+  //  while the worst 嵐s barely surfaced (worst 0.2–0.7 s). Targets: pT 0.05
+  //  → near-clean 0.24, worst 1.0; pT 0.07 wT 0.16 → 0.06, 0.6; pT 0.065
+  //  wT 0.15 gT 0.12 with dropEase 0.9 → 0.07, 1.0 (these).
+  var LULL = { lift: 0.08, pT: 0.065, wT: 0.15, gT: 0.12, tT: 0.4, h: [0.9, 1], rise: [0.25, 0.6], flat: [0.7, 1.5], fall: [0.3, 0.8],
+               gapMax: 3.6, pairP: 0.4, pairRest: 0.12, longRest: 0.6, off: [0.2, 2.7], liftCap: 0.84, dropEase: 0.9 };
   // the tear outside the hold (tuning, loss): today's amounts drive an event
   // rate, with jumps at least this big — the loss must still tear itself apart
   var TEAR_PHASE = { rate: 4.5, jump: 7, rows: 10, rec: 0.14 };
@@ -324,12 +350,10 @@
     var dw = []; for (var dk in arch.drops) if (arch.drops[dk] > 0) dw.push([dk, arch.drops[dk]]);
     var dl = []; for (i = 0; i < 16; i++) dl.push(pickW(R, dw));
     ch.drop = { depth: +rr(R, 0.3, 0.58).toFixed(3), holdP: 0.3, holdMs: [100, 200], kinds: dl };
-    // the surfacing lull (§11.2), on a heavy reception only (drawn either
-    // way, so the fork is consumed alike)
-    var kmax = 0; for (var kk2 in kinds) if (kinds[kk2] > kmax) kmax = kinds[kk2];
-    var heavy = arch.id === "遠" || arch.id === "嵐" || kmax > LULL.heavySev, T = rr(R, LULL.T[0], LULL.T[1]);
-    var lull = { T: +T.toFixed(3), F: +rr(R, LULL.F[0], LULL.F[1]).toFixed(3), off: +(R.next() * T).toFixed(3), depth: +rr(R, LULL.depth[0], LULL.depth[1]).toFixed(3) };
-    ch.lull = heavy ? lull : null;
+    // the surfacing lull (§11.2): drawn either way, so the fork is consumed
+    // alike; kept only where the reception would not surface without it
+    var lull = { key: Math.floor(R.next() * 4294967296) >>> 0, off: +rr(R, LULL.off[0], LULL.off[1]).toFixed(3) };
+    ch.lull = needsLull(ch) ? lull : null;
     return ch;
   }
 
@@ -343,13 +367,74 @@
     if (E.on > 0 && el < E.on) v *= 0.4 + 0.6 * el / E.on;
     return v < 0 ? 0 : v;
   }
-  // the lull's shape: 0 → 1 over `rise`, flat for F, back over `fall`, every T s
-  function lullAt(L, el) {
-    if (!L) return 0;
-    var u = ((el - L.off) % L.T + L.T) % L.T, r = LULL.rise, fl = LULL.fall, k;
-    if (u < r) k = u / r; else if (u < r + L.F) k = 1; else if (u < r + L.F + fl) k = 1 - (u - r - L.F) / fl; else k = 0;
-    return k * k * (3 - 2 * k);
+  // the lull's schedule: lull n is [start, flatStart, flatEnd, end, h], each
+  // drawn from hash(key, n) — built lazily as the hold runs on, cached per
+  // lull object (a WeakMap: the character stays plain JSON)
+  function hashU(key, n, j) {
+    var a = (key ^ Math.imul(n + 1, 0x9E3779B1) ^ Math.imul(j + 1, 0x85EBCA77)) >>> 0;
+    a = Math.imul(a ^ (a >>> 16), 0x7FEB352D); a = Math.imul(a ^ (a >>> 15), 0x846CA68B); a ^= a >>> 16;
+    return (a >>> 0) / 4294967296;
   }
+  var SCHED = typeof WeakMap === "function" ? new WeakMap() : null;
+  function lullSchedule(L, until) {
+    var sc = SCHED && SCHED.get(L);
+    if (!sc) { sc = []; if (SCHED) SCHED.set(L, sc); }
+    while (!sc.length || sc[sc.length - 1][3] <= until) {
+      var n = sc.length, u = function (j) { return hashU(L.key, n, j); };
+      var rise = lerp(LULL.rise[0], LULL.rise[1], u(0)), flat = lerp(LULL.flat[0], LULL.flat[1], u(1)), fall = lerp(LULL.fall[0], LULL.fall[1], u(2)), h = lerp(LULL.h[0], LULL.h[1], u(3));
+      var start;
+      if (!n) start = L.off;
+      else {
+        var prev = sc[n - 1], span = Math.max(0, LULL.gapMax - (prev[3] - prev[2]) - rise);   // fall + rest + rise ≤ gapMax
+        var v = u(4), rest = u(5) < LULL.pairP ? LULL.pairRest * v : LULL.longRest + (1 - LULL.longRest) * v;   // a quick second rise, or a long wait
+        start = prev[3] + span * rest;
+      }
+      sc.push([start, start + rise, start + rise + flat, start + rise + flat + fall, h]);
+      if (sc.length > 4000) break;
+    }
+    return sc;
+  }
+  // the lull's level at `el` s into the piece: 0, or rising to h, h through
+  // the flat, falling back (smoothstep); lulls never overlap
+  function lullAt(L, el) {
+    if (!L || el < L.off) return 0;
+    var sc = lullSchedule(L, el), lo = 0, hi = sc.length - 1;
+    while (lo < hi) { var mid = (lo + hi + 1) >> 1; if (sc[mid][0] <= el) lo = mid; else hi = mid - 1; }
+    var e = sc[lo], k;
+    if (el >= e[3]) return 0;
+    if (el < e[1]) k = (el - e[0]) / (e[1] - e[0]); else if (el < e[2]) k = 1; else k = 1 - (el - e[2]) / (e[3] - e[2]);
+    return e[4] * k * k * (3 - 2 * k);
+  }
+  // WHO GETS A LULL (critic P1 r1 item 1c): a reception whose picture would
+  // stay buried without one. The estimate, from the character alone:
+  //   3·p          the spark density at the carrier's resting level (p is
+  //                sourcePass's before envelopes: (lvl²·sq + lvl·lin)·gain)
+  //   + 0.5·g·lvl  the band-limited grain at that level
+  //   + 1.5·Σ|a|   the echoes (a strong multipath fan buries a face as surely
+  //                as snow does: a 反 with three echoes summing 0.57 failed)
+  //   + 2·(1 − wash gain)   the fog's lost contrast
+  //   + 1·(wash gain − 1)   or the crush of a hot picture's whites
+  //   + rate·min(1.5, jump/10)·lvl   the sync's tears, as far as the carrier
+  //                is weak (an uncommon 同 with a full-strength secondary snow
+  //                failed on snow and tears together; a 同 on a strong
+  //                carrier surfaces between its tears)
+  // Fitted (weights on a grid, for the lowest incidence that still covers
+  // every need) on 226 receptions run with the lull OFF: _picture-probe.js
+  // lullcal (144: three reels + 遠/嵐 at sev 0.7–1), the lull mode's 24, and
+  // the receptions of two legibility runs that drew no lull (58). Every one
+  // that failed to surface, or surfaced with a worst window under 0.8 s (38),
+  // scored ≥ 0.951; BURY_LINE sits 10 % under that. 20,000 drawn receptions:
+  // 32 % get a lull (嵐 80 %, 遠 54 %, 反 39 %, 電 32 %, 混 20 %, 過 11 %,
+  // 同 9 %, 清 none). 嵐 is not given one by name. Checked on fresh seeds
+  // (lullcal --built --seed0 2001) — see the r2 handoff.
+  var BURY_LINE = 0.856;
+  function burial(ch) {
+    var lvl = 1 - (ch.breath ? ch.breath.base : 0.82), sn = ch.snow || {}, wa = ch.wash || { lift: 0, gain: 1 }, te = ch.tear || {}, gs = 0;
+    var p = (lvl * lvl * (sn.sq != null ? sn.sq : 0.85) + lvl * (sn.lin != null ? sn.lin : 0.08)) * (sn.gain || 0);
+    (ch.ghosts || []).forEach(function (g) { gs += Math.abs(g.a); });
+    return 3 * p + 0.5 * (sn.grain || 0) * lvl + 1.5 * gs + 2 * Math.max(0, 1 - wa.gain) + Math.max(0, wa.gain - 1) + (te.rate || 0) * Math.min(1.5, (te.jump || 0) / 10) * lvl;
+  }
+  function needsLull(ch) { return burial(ch) > BURY_LINE; }
   // the hold's breath (§4.2: drawn partials)
   function breath(br, el, seed) {
     var v = br.base;
@@ -558,7 +643,7 @@
     TODAY: TODAY, TUBE: TUBE, ARCHETYPES: ARCHETYPES, IMPAIRMENTS: IMPAIRMENTS, LATER: LATER,
     SEV: SEV, CARRIER: CARRIER, LULL: LULL, TEAR_PHASE: TEAR_PHASE,
     drawCharacter: drawCharacter, checkForce: checkForce,
-    envAt: envAt, lullAt: lullAt, breath: breath,
+    envAt: envAt, lullAt: lullAt, lullSchedule: lullSchedule, burial: burial, needsLull: needsLull, BURY_LINE: BURY_LINE, breath: breath,
     tubeLUT: tubeLUT, lumaPass: lumaPass, ghostPass: ghostPass, sourcePass: sourcePass,
     geometryCopy: geometryCopy, tearStep: tearStep, lineMap: lineMap, ghostList: ghostList, tubePass: tubePass,
     textureRng: textureRng,

@@ -48,9 +48,20 @@ function SCRIPT(glow, pat) {
 }
 async function shoot(page, name) {
   const r = await page.eval("(function(){var e=document.getElementById('zankyo-tube');e.scrollIntoView({block:'center'});var r=e.getBoundingClientRect();return {x:r.left+scrollX,y:r.top+scrollY,w:r.width,h:r.height};})()");
-  const sh = await page.send("Page.captureScreenshot", { format: "png", clip: { x: r.x, y: r.y, width: r.w, height: r.h, scale: 1 }, captureBeyondViewport: true });
-  fs.writeFileSync(path.join(OUT, name), Buffer.from(sh.data, "base64"));
-  return sh.data;
+  // (r2) a STABLE shot: under load (average 30–40) the compositor can hand
+  // back a frame from before the last steps — two runs then differed over the
+  // whole idle tube (175,917 px, the idle raster's breathing a few steps
+  // apart). Shoot until two consecutive shots, 400 ms apart, are identical.
+  let prev = null, data = null, tries = 0;
+  for (; tries < 8; tries++) {
+    await sleep(400);
+    data = (await page.send("Page.captureScreenshot", { format: "png", clip: { x: r.x, y: r.y, width: r.w, height: r.h, scale: 1 }, captureBeyondViewport: true })).data;
+    if (prev !== null && data === prev) break;
+    prev = data;
+  }
+  if (tries >= 8) console.error("  (" + name + ": no two consecutive shots agreed in 8 tries)");
+  fs.writeFileSync(path.join(OUT, name), Buffer.from(data, "base64"));
+  return data;
 }
 async function drive(page, glow, tag) {
   const shots = {};

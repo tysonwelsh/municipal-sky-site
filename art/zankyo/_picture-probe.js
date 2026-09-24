@@ -67,7 +67,10 @@
 //       picture: 遠/嵐 at sev 1 must surface without coming up near clean for
 //       long, the gate must fail with the lull off, and the share of drawn
 //       receptions carrying a lull is held to LULL_SHARE
-//   node _picture-probe.js p1             render, draws, legibility, perfp1, crack, phases
+//   node _picture-probe.js p1             render, draws, legibility, perfp1, crack, lull, phases
+//   node _picture-probe.js lullcal        (dev, r2) drawn receptions with the lull forced off: who fails
+//       to surface without one — the data ZP.burial / BURY_LINE were fitted on
+//   node _picture-probe.js strip          (r2) one reception's hold as a captioned film strip
 //   node _picture-probe.js sheets
 //       contact sheets into --out: 12 drawn receptions on each of 3 reels, the
 //       8 archetypes side by side, and the crack on an idle and a lit tube.
@@ -109,6 +112,7 @@ const BASE = opt("base", "2baf87e");
 const REPS = +opt("reps", "3");
 const OUT = opt("out", "") || fs.mkdtempSync(path.join(os.tmpdir(), "zk-picture-probe-"));
 fs.mkdirSync(OUT, { recursive: true });
+const LULLK = JSON.parse(opt("lullk", "null"));   // dev only: LULL constants tried in-page (never in a gate run)
 const SEED = 3042;                      // the night: fixes the crack pattern and the idle timings
 const FPS = 30;
 
@@ -203,6 +207,7 @@ function PAGE_RUN(fx, reels, o) {
   return (async function () {
     var ZS = window.ZankyoSet, D = ZS._dev;
     if (!D.frozen()) throw new Error("the set is not frozen — ZK_SET_DEV was not honoured");
+    if (o.lullk && window.ZankyoPicture) Object.assign(window.ZankyoPicture.LULL, o.lullk);   // dev: --lullk '{"lift":0.12}' tries LULL constants without an edit
     await document.fonts.ready;
     try { await document.fonts.load('700 7px "Orbitron"'); await document.fonts.load('6px "Shippori Mincho"', "映像管 試験"); } catch (e) {}
     var video = null;
@@ -559,7 +564,21 @@ function PAGE_MULTI(items, reels, o) {
     for (var k = -range; k <= range; k++) { var v = 0, m = 0; for (i = 0; i < n; i++) { var q = i - k; if (cyclic) q = ((q % n) + n) % n; else if (q < 0 || q >= n) continue; v += (px[i] - mx) * (pc[q] - mc); m++; } v /= m; if (v > bestV) { bestV = v; best = k; } }
     return best;
   }
-  function ssimReg(x, c) {
+  // (r2) and for SIZE: 伸 breathes the raster with the beam current (up to
+  // ~4 % larger), and a picture drawn 3 % larger is as legible as one in
+  // place — plain SSIM scored 嵐 at sev 1 (伸 1.0) as buried through every
+  // lull. The clean is first scaled about the centre by the set's OWN scale
+  // that frame (geo.sc × geo.sy from _dev.buffers(), over the clean's own —
+  // read, not searched), then registered for position as above.
+  var scaled = new Float64Array(192 * 144);
+  function scaleBy(c, k) {
+    for (var j = 0; j < 144; j++) { var v = (j + 0.5 - 72) / k + 72 - 0.5, v0 = Math.max(0, Math.min(143, Math.floor(v))), v1 = Math.min(143, v0 + 1), fv = Math.max(0, Math.min(1, v - v0));
+      for (var i = 0; i < 192; i++) { var u = (i + 0.5 - 96) / k + 96 - 0.5, u0 = Math.max(0, Math.min(191, Math.floor(u))), u1 = Math.min(191, u0 + 1), fu = Math.max(0, Math.min(1, u - u0));
+        scaled[j * 192 + i] = (c[v0 * 192 + u0] * (1 - fu) + c[v0 * 192 + u1] * fu) * (1 - fv) + (c[v1 * 192 + u0] * (1 - fu) + c[v1 * 192 + u1] * fu) * fv; } }
+    return scaled;
+  }
+  function ssimReg(x, c, k) {
+    if (k && Math.abs(k - 1) > 0.002) c = scaleBy(c, k);
     var ky = bestShift(prof(x, true), prof(c, true), true, 72), kx = bestShift(prof(x, false), prof(c, false), false, 12);
     for (var j = 0; j < 144; j++) { var sj = (((j - ky) % 144) + 144) % 144; for (var i = 0; i < 192; i++) { var si = i - kx; shifted[j * 192 + i] = si >= 0 && si < 192 ? c[sj * 192 + si] : c[sj * 192 + (si < 0 ? 0 : 191)]; } }
     return ssim(x, shifted);
@@ -568,6 +587,7 @@ function PAGE_MULTI(items, reels, o) {
   return (async function () {
     var ZS = window.ZankyoSet, D = ZS._dev;
     if (!D.frozen()) throw new Error("the set is not frozen — ZK_SET_DEV was not honoured");
+    if (o.lullk && window.ZankyoPicture) Object.assign(window.ZankyoPicture.LULL, o.lullk);   // dev: --lullk '{"lift":0.12}' tries LULL constants without an edit
     await document.fonts.ready;
     try { await document.fonts.load('700 7px "Orbitron"'); await document.fonts.load('6px "Shippori Mincho"', "映像管 試験"); } catch (e) {}
     var vids = {};
@@ -583,7 +603,7 @@ function PAGE_MULTI(items, reels, o) {
     var gcx = g.getContext("2d", { willReadFrequently: true }); gcx.imageSmoothingEnabled = true; gcx.imageSmoothingQuality = "high";
     function gray() { gcx.clearRect(0, 0, 192, 144); gcx.drawImage(D.buffers().frame, 0, 0, 192, 144); var d = gcx.getImageData(0, 0, 192, 144).data, gr = new Float64Array(192 * 144); for (var j = 0, pp = 1; j < gr.length; j++, pp += 4) gr[j] = d[pp]; return gr; }
     function b64(gr) { var bin = ""; for (var i = 0; i < gr.length; i++) bin += String.fromCharCode(gr[i]); return btoa(bin); }
-    var cleans = {}, out = [], dt = 1000 / o.fps, tm = D.clock ? D.clock() : 0;
+    var cleans = {}, cleanK = {}, lastK = 1, out = [], dt = 1000 / o.fps, tm = D.clock ? D.clock() : 0;
     var cv = document.getElementById("zankyo-set");
     for (var ii = 0; ii < items.length; ii++) {
       var it = items[ii], v = await vid(it.reel);
@@ -607,13 +627,15 @@ function PAGE_MULTI(items, reels, o) {
           var e = tm / 1000 - t0, gr = gray(); lastGray = gr;
           var hole = 0; for (var hh = 0; hh < P.holes.length; hh++) if (e >= P.holes[hh].atS - 0.1 && e < P.holes[hh].atS + P.holes[hh].durS + 0.5) hole = 1;
           rec.tHold.push(+e.toFixed(3)); rec.inHole.push(hole);
-          if (clean && !it.clean) { rec.ssimRaw.push(+ssim(gr, clean).toFixed(4)); rec.ssim.push(+Math.max(rec.ssimRaw[rec.ssimRaw.length - 1], ssimReg(gr, clean)).toFixed(4)); }
+          var geo = D.buffers().geo || {}, kk = (geo.sc || 1) * (geo.sy || 1), kc = cleanK[it.reel != null ? it.reel : "card"] || 1;
+          if (it.clean) lastK = kk;
+          if (clean && !it.clean) { rec.ssimRaw.push(+ssim(gr, clean).toFixed(4)); rec.ssim.push(+Math.max(rec.ssimRaw[rec.ssimRaw.length - 1], ssimReg(gr, clean, kk / kc)).toFixed(4)); }
           if (it.grays && rec.grays.length < (it.maxGrays || 40)) rec.grays.push(b64(gr));
         }
         if (it.pngAt != null && !rec.pngs.length && st.phase === "hold" && tm / 1000 - t0 - P.segments[0].atS >= it.pngAt) rec.pngs.push(cv.toDataURL("image/png"));
       }
       var guard = 0; while (ZS.getState().phase !== "idle" && guard++ < 600) { tm += dt; D.step(tm); }
-      if (it.clean) { cleans[it.reel != null ? it.reel : "card"] = lastGray; rec.cleanB64 = lastGray ? b64(lastGray) : null; }
+      if (it.clean) { cleans[it.reel != null ? it.reel : "card"] = lastGray; cleanK[it.reel != null ? it.reel : "card"] = lastK; rec.cleanB64 = lastGray ? b64(lastGray) : null; }
       out.push(rec);
     }
     window.__zkClean = false;
@@ -660,7 +682,7 @@ async function openPage(browser, o) {
 async function runMulti(browser, items, o) {
   const page = await openPage(browser, o);
   try {
-    const res = await page.eval("(" + PAGE_MULTI.toString() + ")(" + JSON.stringify(items) + "," + JSON.stringify(REELS) + "," + JSON.stringify({ fps: FPS }) + ")", 1800000);
+    const res = await page.eval("(" + PAGE_MULTI.toString() + ")(" + JSON.stringify(items) + "," + JSON.stringify(REELS) + "," + JSON.stringify({ fps: FPS, lullk: LULLK }) + ")", 1800000);
     res.errors = page.errors;
     return res;
   } finally { await page.closeTarget(); }
@@ -892,7 +914,7 @@ async function perfp1(browser) {
 }
 
 // ---- 5. 光 THE CRACK'S LIGHT ----
-// Three things, each with a proof that it can fail:
+// Four things, each with a proof that it can fail (d. below, r2):
 //  a. the glow layer (what compose() adds along the crack) against the
 //     picture it is lifted from, every frame of an idle tube (test card and
 //     Paik's line included), a reception and the dead tube after it: where the
@@ -941,11 +963,41 @@ function PAGE_CHROMA(b64) {
     img.src = "data:image/png;base64," + b64;
   });
 }
+// d. (critic P1 r1 item 2) the mask follows the run weights: for every
+//    dead-end hairline (crack i ≥ 4) the mask's mean alpha along its LAST run
+//    is ≤ MASK_TIP × that along its FIRST run — sampled every 0.5 px along the
+//    run's own centreline, nearest mask pixel. rc.P1's one-weight mask, put
+//    back (_dev.maskFlat), must fail it.
+const MASK_TIP = 0.3;
+function PAGE_MASKRUNS() {
+  var D = ZankyoSet._dev, m = D.buffers().mask, md = m.getContext("2d").getImageData(0, 0, m.width, m.height).data, out = [];
+  function along(pts) {
+    var s = 0, n = 0;
+    for (var j = 1; j < pts.length; j++) {
+      var a = pts[j - 1], b = pts[j], L = Math.hypot(b[0] - a[0], b[1] - a[1]), k = Math.max(1, Math.ceil(L / 0.5));
+      for (var q = (j === 1 ? 0 : 1); q <= k; q++) { var x = Math.round(a[0] + (b[0] - a[0]) * q / k - 0.5), y = Math.round(a[1] + (b[1] - a[1]) * q / k - 0.5); if (x >= 0 && y >= 0 && x < m.width && y < m.height) { s += md[(y * m.width + x) * 4 + 3] / 255; n++; } }
+    }
+    return n ? s / n : 0;
+  }
+  D.crackRuns().forEach(function (rs, i) { if (rs[0].deep) return; out.push({ i: i, n: rs.length, first: along(rs[0].pts), last: along(rs[rs.length - 1].pts), wFirst: rs[0].w, wLast: rs[rs.length - 1].w }); });
+  return out;
+}
 async function crack(browser) {
   const page = await openPage(browser, {});
   let ok = true;
   const say = (g, s) => { ok = ok && g; console.log("  " + (g ? "✓" : "✗") + " " + s); };
   try {
+    // d. the mask follows the run weights (every pattern), and the proof it can fail
+    const night = await page.eval("ZankyoSet.getState().pattern");
+    for (const flat of [false, true]) {
+      const rows = [];
+      for (let pi = 0; pi < 4; pi++) { await page.eval("ZankyoSet._dev.maskFlat(" + flat + ");ZankyoSet._dev.setPattern(" + pi + ")"); (await page.eval("(" + PAGE_MASKRUNS.toString() + ")()")).forEach((r) => rows.push(Object.assign({ pat: "ABCD"[pi] }, r))); }
+      const ratio = (r) => r.last / Math.max(1e-9, r.first), worst = Math.max(...rows.map(ratio));
+      const txt = rows.map((r) => r.pat + r.i + " " + r.first.toFixed(3) + "→" + r.last.toFixed(3) + " (" + ratio(r).toFixed(2) + ")").join(" · ");
+      if (!flat) say(worst <= MASK_TIP, "the light follows the run weights: every dead-end hairline's last run carries ≤ " + MASK_TIP + " × its first run's mean mask alpha — worst " + worst.toFixed(3) + " over " + rows.length + " hairlines in 4 patterns: " + txt);
+      else say(worst > MASK_TIP, "sensitivity: rc.P1's one-weight mask put back → worst ratio " + worst.toFixed(3) + " — " + (worst > MASK_TIP ? "caught" : "THE CHECK IS BLIND") + ": " + txt);
+    }
+    await page.eval("ZankyoSet._dev.maskFlat(false);ZankyoSet._dev.setPattern(" + night + ")");   // a. runs on the night's own pattern, as before
     await page.eval("ZankyoSet._dev.seedTexture(3)");
     const r = await page.eval("(" + PAGE_CRACK.toString() + ")(" + JSON.stringify(REELS) + ")", 600000);
     // a. the glow against its source
@@ -1070,11 +1122,17 @@ async function sheets(browser) {
 //    without one only makes every tube pulse alike).
 // rc.P1 (8fcd38a) as the critic measured it: near-clean median 0.38, max
 // 0.90; lull off 10/24 surface (the gate is live); incidence 68.5 %.
-const NEAR_CLEAN = 0.7, NEAR_CLEAN_SHARE = 0.15, LULL_SHARE = 0.35;
+// r2 adds: the CV of successive lull gaps over one 30 s hold (median ≥
+// LULL_CV over every lulled drawn reception; rc.P1's fixed period reads 0),
+// and the schedule's own guarantee (≥ 0.6 s of lull flat in every 5 s),
+// both node-side from ZP.lullSchedule; --axes merges dev axes over both
+// variants. In p1 since r2.
+const NEAR_CLEAN = 0.7, NEAR_CLEAN_SHARE = 0.15, LULL_SHARE = 0.35, LULL_CV = 0.25;
 async function lullShape(browser) {
   let ok = true;
   const say = (g, s) => { ok = ok && g; console.log("  " + (g ? "✓" : "✗") + " " + s); };
-  const variants = [["as built", {}], ["lull off", { lull: null }]], out = {};
+  const extra = JSON.parse(opt("axes", "{}"));                // dev: axes merged over both variants (e.g. '{"swell":{"amt":0}}')
+  const variants = [["as built", Object.assign({}, extra)], ["lull off", Object.assign({}, extra, { lull: null })]], out = {};
   for (const [name, axes] of variants) {
     const items = [cleanItem(0)];
     for (const a of ["遠", "嵐"]) for (let i = 0; i < 12; i++) items.push(plainItem(0, 501 + i + 0.37, { force: { archetype: a, sev: 1, axes: axes }, label: a + "·sev1·" + i }));
@@ -1082,6 +1140,8 @@ async function lullShape(browser) {
     const hi = rows.map((r) => { const v = r.trace.filter((t) => !t[2]).map((t) => t[1]); return v.filter((x) => x >= NEAR_CLEAN).length / Math.max(1, v.length); });
     const fails = rows.filter((r) => !r.surf);
     out[name] = { surfaced: rows.length - fails.length, n: rows.length, worst: Math.min(...rows.map((r) => r.surfWorst)), nearCleanMedian: median(hi), nearCleanMax: Math.max(...hi) };
+    fs.writeFileSync(path.join(OUT, "lull-" + (name === "as built" ? "built" : "off") + ".json"), JSON.stringify(rows, null, 1));
+    if (fails.length) console.log("    not surfacing: " + fails.map((r) => r.label + " worst " + r.surfWorst + " med " + r.med).join(", "));
     console.log("  " + name + ": " + out[name].surfaced + "/" + rows.length + " surface · worst window " + out[name].worst.toFixed(2) + " s · share of hold at SSIM ≥ " + NEAR_CLEAN + ": median " + median(hi).toFixed(2) + ", max " + Math.max(...hi).toFixed(2));
   }
   say(out["as built"].surfaced === out["as built"].n, "遠 and 嵐 at sev 1 all surface (" + out["as built"].surfaced + "/" + out["as built"].n + ")");
@@ -1089,10 +1149,97 @@ async function lullShape(browser) {
   say(out["lull off"].surfaced < out["lull off"].n, "sensitivity: with the lull off the surfacing gate fails (" + out["lull off"].surfaced + "/" + out["lull off"].n + " surface) — " + (out["lull off"].surfaced < out["lull off"].n ? "the gate is live" : "THE GATE IS BLIND"));
   delete require.cache[require.resolve("./zk-picture.js")];
   const ZP = require("./zk-picture.js"), Rand = loadRand();
-  let withL = 0, N = 0;
-  for (const S of SEED_SETS) { const m = Rand.stream(S), dsr = Rand.stream(S).fork("probe:desc"); for (let r = 0; r < 500; r++) { const ch = ZP.drawCharacter(m.fork("set:rx:" + dsr.next() * 1000), {}); if (ch.lull) withL++; N++; } }
-  say(withL / N <= LULL_SHARE, "incidence: " + (withL / N * 100).toFixed(1) + " % of " + N + " drawn receptions carry a lull (≤ " + (LULL_SHARE * 100) + " %)");
-  return Object.assign({ ok, incidence: withL / N }, out);
+  let withL = 0, N = 0; const by = {}, cvRest = [], cvStart = [], perHold = []; let worstFlat = Infinity;
+  const cv = (a) => { const m = a.reduce((x, y) => x + y, 0) / a.length; return Math.sqrt(a.reduce((x, y) => x + (y - m) * (y - m), 0) / a.length) / m; };
+  for (const S of SEED_SETS) { const m = Rand.stream(S), dsr = Rand.stream(S).fork("probe:desc"); for (let r = 0; r < 500; r++) {
+    const ch = ZP.drawCharacter(m.fork("set:rx:" + dsr.next() * 1000), {}); N++;
+    by[ch.archetype] = by[ch.archetype] || [0, 0]; by[ch.archetype][1]++;
+    if (!ch.lull) continue;
+    withL++; by[ch.archetype][0]++;
+    // the timing over one 30 s hold: the gaps (one lull's end to the next's
+    // start), the start-to-start intervals, and the guarantee (≥ 0.6 s of
+    // flat in every 5 s window), from the schedule itself
+    const all = ZP.lullSchedule(ch.lull, 30), sc = all.filter((e) => e[0] < 30), rest = [], iv = [];
+    for (let i = 1; i < sc.length; i++) { rest.push(sc[i][0] - sc[i - 1][3]); iv.push(sc[i][0] - sc[i - 1][0]); }
+    cvRest.push(cv(rest)); cvStart.push(cv(iv)); perHold.push(sc.length);
+    for (let w = 0; w + 5 <= 30; w += 0.05) { let b = 0; for (const e of all) { const a = Math.max(e[1], w), z = Math.min(e[2], w + 5); if (z - a > b) b = z - a; } if (b < worstFlat) worstFlat = b; }
+  } }
+  say(withL / N <= LULL_SHARE, "incidence: " + (withL / N * 100).toFixed(1) + " % of " + N + " drawn receptions carry a lull (≤ " + (LULL_SHARE * 100) + " %) — " + Object.keys(by).map((k) => k + " " + (by[k][0] / by[k][1] * 100).toFixed(0) + " %").join(" · "));
+  const md = median(cvRest), p5 = pct(cvRest, 0.05);
+  say(md >= LULL_CV, "irregular: CV of successive lull gaps over one 30 s hold, " + cvRest.length + " lulled receptions — median " + md.toFixed(3) + ", p5 " + p5.toFixed(3) + ", min " + Math.min(...cvRest).toFixed(3) + " (median ≥ " + LULL_CV + "); start-to-start intervals median " + median(cvStart).toFixed(3) + ", p5 " + pct(cvStart, 0.05).toFixed(3) + "; lulls per 30 s " + Math.min(...perHold) + "–" + Math.max(...perHold) + " (median " + median(perHold) + ")");
+  say(worstFlat >= SURF_RUN - 1e-9, "the schedule's guarantee: every 5 s window of the first 30 s of hold holds ≥ " + SURF_RUN + " s of lull flat — worst " + worstFlat.toFixed(2) + " s over " + cvRest.length + " receptions");
+  // can the CV check fail? rc.P1's metronome (one period, one flat) reads 0
+  { const T = 3.8, F = 1, rest = []; for (let i = 1; i < 8; i++) rest.push(T - F - 0.7); const c0 = rest.length > 1 ? cv(rest) : 0; say(!(c0 >= LULL_CV), "sensitivity: rc.P1's fixed period reads a gap CV of " + c0.toFixed(3) + " — " + (c0 >= LULL_CV ? "THE CHECK IS BLIND" : "caught")); }
+  return Object.assign({ ok, incidence: withL / N, cvRestMedian: md, cvRestP5: p5, worstFlat }, out);
+}
+
+// ---- 6b. A STRIP (r2): one reception's hold as a 6-column film strip, a
+// tile every --every s, each captioned with its time into the hold, the lull
+// level (S.lull) and the carrier strength — so a strip shows WHEN the picture
+// surfaces, and how far. The tube canvas as the page draws it (crack
+// included), texture seeded, frame-stepped at 30 fps.
+//   node _picture-probe.js strip --force '{"archetype":"遠","sev":1}' --reel 0 --seed 505.37 --hold 12 --every 0.5 --name P1-strip-far-遠
+function PAGE_STRIP(reels, o) {
+  return (async function () {
+    var ZS = window.ZankyoSet, D = ZS._dev, tm = D.clock(), dt = 1000 / 30, tiles = [];
+    var v = null;
+    if (o.reel != null) {
+      v = document.createElement("video"); v.muted = true; v.preload = "auto";
+      await new Promise(function (r) { v.addEventListener("loadeddata", r, { once: true }); v.src = "broadcast/reels/" + reels[o.reel].id + ".mp4"; });
+      await new Promise(function (r) { v.addEventListener("seeked", r, { once: true }); v.currentTime = reels[o.reel].at; });
+    }
+    D.seedTexture(o.texture); var fr = D.force(o.force || null); if (!fr.ok) throw new Error("force refused: " + fr.why);
+    tm += dt; D.step(tm);
+    var t0 = tm / 1000 + 0.2, P = { body: "jou", entry: "soku", exit: "setsu", entryS: 0.4, exitS: 1.2, segments: [{ onS: o.hold, lockS: 0, atS: 0.4, lockAtS: 0.4 }], gaps: [], holes: [], glimpses: null, lossAtS: 0.4 + o.hold, spanS: 1.6 + o.hold, presenceS: o.hold };
+    var drops = (o.drops || []).map(function (d) { return [t0 + 0.4 + d[0], d[1]]; });
+    ZS.signal({ t0: t0, holdS: o.hold, lossD: 1.2, drops: drops, seed: o.seed, id: "strip", rx: P, video: v });
+    var cv = document.getElementById("zankyo-set"), next = 0.25;
+    while (tm / 1000 < t0 + 0.4 + o.hold - 0.05) {
+      tm += dt; var st = D.step(tm), e = tm / 1000 - t0 - 0.4;
+      if (st.phase === "hold" && e >= next) { tiles.push({ png: cv.toDataURL("image/png"), cap: e.toFixed(1) + " s · lull " + D.buffers().lull.toFixed(2) + " · carrier " + st.strength.toFixed(2) }); next += o.every; }
+    }
+    var ch = D.character();
+    var guard = 0; while (ZS.getState().phase !== "idle" && guard++ < 600) { tm += dt; D.step(tm); }
+    D.force(null);
+    return { tiles: tiles, ch: ch };
+  })();
+}
+async function strip(browser) {
+  const o = { force: JSON.parse(opt("force", "null")), reel: opt("reel", "0") === "card" ? null : +opt("reel", "0"), seed: +opt("seed", "505.37"), texture: +opt("texture", "11"), hold: +opt("hold", "12"), every: +opt("every", "0.5"), drops: JSON.parse(opt("drops", "[[1.9,0.2],[3.7,0.33],[5.2,0.14],[7.1,0.26]]")) };
+  const name = opt("name", "strip");
+  const page = await openPage(browser, {});
+  try {
+    const r = await page.eval("(" + PAGE_STRIP.toString() + ")(" + JSON.stringify(REELS) + "," + JSON.stringify(o) + ")", 600000);
+    const c = r.ch, label = name + " · " + (o.reel == null ? "card" : REELS[o.reel].id + " @" + REELS[o.reel].at + " s") + " · seed " + o.seed + " · force " + JSON.stringify(o.force) + " · " + c.archetype + " sev " + c.sev + " · lull " + (c.lull ? "on (key " + c.lull.key + ")" : "none") + " · a tile every " + o.every + " s of hold";
+    const j = await page.eval("(" + PAGE_SHEET.toString() + ")(" + JSON.stringify(r.tiles) + ",6," + JSON.stringify(label) + ")", 120000);
+    fs.writeFileSync(path.join(OUT, name + ".jpg"), Buffer.from(j.split(",")[1], "base64"));
+    console.log("  " + r.tiles.length + " tiles → " + path.join(OUT, name + ".jpg") + "\n  " + r.tiles.map((t) => t.cap).join(" | "));
+    return { ok: true };
+  } finally { await page.closeTarget(); }
+}
+
+// ---- 5d. THE LULL'S CALIBRATION (dev; r2): which receptions fail to surface
+// WITHOUT a lull? Drawn receptions (calibration seeds, not the gates' own)
+// on all three reels, and 遠/嵐 at sev 0.7–1, every one with the lull forced
+// off; each row carries its character, so the rule that hands out lulls
+// (ZP.needsLull) can be fitted and then checked against the gates' seeds.
+async function lullcal(browser) {
+  // --built: the lull as the rule hands it out (a VALIDATION run on fresh
+  // seeds, --seed0 2001: every reception must surface); default: lull off
+  const n = +opt("n", "40"), s0 = +opt("seed0", "1001"), built = argv.indexOf("--built") >= 0, items = [];
+  const fz = (f) => built ? (Object.keys(f).length ? f : null) : Object.assign({}, f, { axes: { lull: null } });
+  for (let r = 0; r < REELS.length; r++) { items.push(cleanItem(r)); for (let i = 0; i < n; i++) items.push(plainItem(r, s0 + i + 100 * r + 0.37, { force: fz({}) })); }
+  for (const a of ["遠", "嵐"]) for (let i = 0; i < 12; i++) items.push(plainItem(i % 3, s0 + 600 + i + 0.37, { force: fz({ archetype: a, sev: 0.7 + 0.3 * (i % 4) / 3 }), label: a + "·cal·" + i }));
+  const rows = legRows(await runMulti(browser, items, {}));
+  delete require.cache[require.resolve("./zk-picture.js")];
+  const ZP = require("./zk-picture.js");
+  const out = rows.map((r) => ({ label: r.label, arch: r.arch, sev: r.sev, med: r.med, surf: r.surf, worst: r.surfWorst, need: ZP.needsLull ? ZP.needsLull(r.ch) : null, bury: ZP.burial ? +ZP.burial(r.ch).toFixed(4) : null, ch: r.ch }));
+  fs.writeFileSync(path.join(OUT, "lullcal.json"), JSON.stringify(out, null, 1));
+  const fail = out.filter((r) => !r.surf), missed = built ? fail : fail.filter((r) => r.need === false);
+  if (built) console.log("  VALIDATION (--built, seeds from " + s0 + "): " + (out.length - fail.length) + "/" + out.length + " surface · worst window " + Math.min(...out.map((r) => r.worst)) + " s · lulled " + out.filter((r) => r.ch && r.ch.lull).length + "/" + out.length);
+  console.log("  " + out.length + " receptions, " + (built ? "lull as the rule hands it out" : "lull off") + ": " + fail.length + " fail to surface" + (ZP.needsLull ? " · needsLull covers " + (fail.length - missed.length) + "/" + fail.length + (missed.length ? " — MISSED: " + missed.map((r) => r.label + " " + r.arch + " bury " + r.bury).join(", ") : "") + " · hands a lull to " + out.filter((r) => r.need).length + "/" + out.length : ""));
+  for (const r of out.slice().sort((a, b) => (b.bury || 0) - (a.bury || 0))) console.log("    " + (r.surf ? "  " : "✗ ") + r.label.padEnd(34) + " " + r.arch + " sev " + (r.sev != null ? r.sev.toFixed(2) : "-") + " med " + r.med.toFixed(3) + " worst " + r.worst + " bury " + r.bury + " need " + r.need);
+  return { ok: missed.length === 0, fail: fail.length, missed: missed.length };
 }
 
 (async function main() {
@@ -1109,8 +1256,10 @@ async function lullShape(browser) {
     if (MODE === "legibility" || MODE === "p1") { console.log("P1 · LEGIBILITY AND SURFACING (§6.3.3, §11.2)"); report.legibility = await legibility(browser); ok = ok && report.legibility.ok; }
     if (MODE === "perfp1" || MODE === "p1") { console.log("P1 · PERF (§6.3.4)"); report.perfp1 = await perfp1(browser); ok = ok && report.perfp1.ok; }
     if (MODE === "crack" || MODE === "p1") { console.log("P1 · 光 THE CRACK'S LIGHT"); report.crack = await crack(browser); ok = ok && report.crack.ok; }
-    if (MODE === "lull") { console.log("P1 · THE LULL'S SHAPE (§11.2; critic P1 r1 item 1)"); report.lull = await lullShape(browser); ok = ok && report.lull.ok; }
+    if (MODE === "lullcal") { console.log("P1 · THE LULL'S CALIBRATION (dev)"); report.lullcal = await lullcal(browser); ok = ok && report.lullcal.ok; }
+    if (MODE === "lull" || MODE === "p1") { console.log("P1 · THE LULL'S SHAPE (§11.2; critic P1 r1 item 1)"); report.lull = await lullShape(browser); ok = ok && report.lull.ok; }
     if (MODE === "phases" || MODE === "p1") { console.log("P1 · THE PHASE MACHINE (the 断 tail fix, the relock; every fixture shape, tree vs rc.91)"); report.phases = await phases(browser); ok = ok && report.phases.ok; }
+    if (MODE === "strip") { console.log("P1 · A STRIP"); report.strip = await strip(browser); }
     if (MODE === "sheets") { console.log("P1 · CONTACT SHEETS"); report.sheets = await sheets(browser); }
   } catch (e) { console.error("PROBE FAILED: " + (e && e.stack || e)); ok = false; }
   finally { await browser.close(); }

@@ -235,6 +235,20 @@
   function wandered() {
     if (WP && WP.P === P) return WP;
     WP = { P: P, cracks: P.cracks.map(function (pl, i) { return wander(pl, 101 + i * 17); }) };
+    // each break in runs of three points, each run with its own weight w
+    // (tip × swell) and its own catch of the room's light: the SVG's edges AND
+    // the canvas's light are drawn from this one list (critic P1 r1 item 2 —
+    // the light agrees with the edges in weight, not only in position), so a
+    // dead-end hairline's light dies out toward its tip with its edges
+    WP.runs = P.cracks.map(function (pl, i) {
+      var R = crng(900 + i), deep = i < 4, rs = runs(WP.cracks[i].pts, 3);
+      return rs.map(function (seg, k) {
+        var u = k / Math.max(1, rs.length - 1);
+        var tip = deep ? 1 : Math.max(0.08, 1 - u * 0.95);        // hairlines die out
+        var w = tip * (0.7 + 0.5 * R()), lit = R();               // no two runs the same weight (the mockup's draw order: swell, then lit)
+        return { pts: seg, w: w, lit: lit, deep: deep };
+      });
+    });
     // the shards' edges follow the same wander: every shard edge that is a
     // crack segment (either way round; the pattern's border points sit at
     // −2/402 on the crack and 0/400 on the shard) takes that segment's points
@@ -275,12 +289,9 @@
     // 縁 each break, run by run: its shadowed far edge (soft, offset), the
     // dark gap, and the near edge catching the light — a different amount on
     // every run, and dying out along a dead-end hairline
-    P.cracks.forEach(function (pl, i) {
-      var R = crng(900 + i), deep = i < 4, rs = runs(W.cracks[i].pts, 3);
-      rs.forEach(function (seg, k) {
-        var u = k / Math.max(1, rs.length - 1);
-        var tip = deep ? 1 : Math.max(0.08, 1 - u * 0.95);          // hairlines die out
-        var w = tip * (0.7 + 0.5 * R()), lit = R(), d = ptsToPath(seg);   // no two runs the same weight
+    W.runs.forEach(function (rs) {
+      rs.forEach(function (run) {
+        var w = run.w, lit = run.lit, d = ptsToPath(run.pts);
         html += '<path d="' + d + '" fill="none" stroke="rgba(0,0,0,' + (0.5 * Math.min(1, w + 0.2)).toFixed(2) + ')" stroke-width="' + (1.3 * w + 0.4).toFixed(2) + '"' + NS + ' transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"/>';
         html += '<path d="' + d + '" fill="none" stroke="rgba(0,0,0,' + (0.6 * Math.min(1, w + 0.2)).toFixed(2) + ')" stroke-width="' + (0.7 * w + 0.25).toFixed(2) + '"' + NS + '/>';
         html += '<path d="' + d + '" fill="none" stroke="rgba(' + GLASS_LIT + ',' + ((0.08 + 0.38 * lit * lit) * w).toFixed(2) + ')" stroke-width="0.5"' + NS + ' transform="translate(-0.5 -0.45)"/>';
@@ -348,7 +359,7 @@
   var glowCv = document.createElement("canvas"), gcx = glowCv.getContext("2d");
   var maskCv = document.createElement("canvas"), mcx = maskCv.getContext("2d");
   var glow2Cv = document.createElement("canvas"), g2cx = glow2Cv.getContext("2d");   // the picture once, at CSS size (one read of the full-resolution tube per frame, not three)
-  var GLOW = { k: 0.65, wide: 3.2, wideA: 0.45, core: 1.1, on: true };
+  var GLOW = { k: 0.65, wide: 3.2, wideA: 0.45, core: 1.1, on: true, flat: false };
 
   // ==========================================================================
   // 輝度 BRIGHT — the ledge's left rocker, four steps.
@@ -374,11 +385,31 @@
     shardPaths = W.shards.map(function (pl) { return poly(pl, true); });
     chipPath = poly(P.chip, true);
     crackPath = new Path2D(); W.cracks.forEach(function (c) { c.pts.forEach(function (pt, i) { if (i) crackPath.lineTo(pt[0] * sx, pt[1] * sy); else crackPath.moveTo(pt[0] * sx, pt[1] * sy); }); });
-    // the glow's mask: a soft body and a bright core along every fracture
+    // the glow's mask: a soft body and a bright core along every fracture,
+    // RUN BY RUN at the run's weight w (critic P1 r1 item 2). rc.P1 stroked
+    // the whole crackPath at one width and one alpha, so over a bright picture
+    // every dead-end hairline stayed lit, round-capped, to its very end after
+    // its SVG edges had faded: a drawn neon line. The approved D lit each run
+    // at width 1.2·w + 0.4 and alpha 0.55·w; here the body is GLOW.wide·w at
+    // GLOW.wideA·w and the core GLOW.core·w at w (so a deep run, w ≈ 1, is
+    // rc.P1's 3.2 px at 0.45 and 1.1 px at 1, and a hairline's last run,
+    // w ≈ 0.06–0.1, is a tenth of that in width and alpha both). Butt caps:
+    // round caps overlap at every joint of two runs and bead the light.
     glowCv.width = glow2Cv.width = maskCv.width = Math.max(1, Math.ceil(TW)); glowCv.height = glow2Cv.height = maskCv.height = Math.max(1, Math.ceil(TH));
-    mcx.clearRect(0, 0, maskCv.width, maskCv.height); mcx.lineCap = "round"; mcx.lineJoin = "round";
-    mcx.strokeStyle = "rgba(255,255,255," + GLOW.wideA + ")"; mcx.lineWidth = GLOW.wide; mcx.stroke(crackPath);
-    mcx.strokeStyle = "#fff"; mcx.lineWidth = GLOW.core; mcx.stroke(crackPath);
+    mcx.clearRect(0, 0, maskCv.width, maskCv.height); mcx.lineCap = "butt"; mcx.lineJoin = "round";
+    if (GLOW.flat) {                                          // the bench's proof: rc.P1's one-weight mask, put back
+      mcx.lineCap = "round";
+      mcx.strokeStyle = "rgba(255,255,255," + GLOW.wideA + ")"; mcx.lineWidth = GLOW.wide; mcx.stroke(crackPath);
+      mcx.strokeStyle = "#fff"; mcx.lineWidth = GLOW.core; mcx.stroke(crackPath);
+      return;
+    }
+    W.runs.forEach(function (rs) {
+      rs.forEach(function (run) {
+        var p = poly(run.pts, false), w = run.w;
+        mcx.strokeStyle = "rgba(255,255,255," + Math.min(1, GLOW.wideA * w).toFixed(3) + ")"; mcx.lineWidth = GLOW.wide * w; mcx.stroke(p);
+        mcx.strokeStyle = "rgba(255,255,255," + Math.min(1, w).toFixed(3) + ")"; mcx.lineWidth = GLOW.core * w; mcx.stroke(p);
+      });
+    });
   }
   function resize() {
     dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -570,12 +601,37 @@
       // THE HOLD, per the character (§4.2): each impairment on its own
       // envelope, the conditions easing now and then (the lull: §11.2, the
       // picture always comes up), the drawn breath, and what each dropout DOES.
-      var L = ZP.lullAt(ch.lull, el), ease = 1 - (ch.lull ? ch.lull.depth : 0) * L, E = ch.env || {};
+      // THE LULL (§11.2), REWRITTEN AT r2 (critic P1 r1 item 1). rc.P1's lull
+      // pinned the carrier flat at 0.85 and eased every impairment by 70–88 %:
+      // a clearing. Now it is a SURFACING TO A LEVEL. In a good moment of the
+      // fading the carrier comes up BY LULL.lift (× the lull's height, in L;
+      // capped at liftCap) with its breath still moving under it, and each
+      // impairment eases only as far as its TARGET — the snow's spark density
+      // to pT, the fog's lost contrast (or crush) to wT, the echoes' summed
+      // amplitude to gT, the sync's tear rate to tT — so whatever buried the
+      // reception, a lull brings it up to about the same place: a face
+      // through a veil of snow, not a clean picture. An impairment already
+      // under its target is not touched (a lightly buried reception barely
+      // changes), and the most buried eases the most.
+      var L = ZP.lullAt(ch.lull, el), E = ch.env || {}, LL = ZP.LULL;
+      var eS = ZP.envAt(E["雪"], el), eG = ZP.envAt(E["影"], el), eT = ZP.envAt(E["裂"], el), eW = ZP.envAt(E["霞"], el);
       S.lull = L;
-      S.env = { snow: ZP.envAt(E["雪"], el) * ease, ghost: ZP.envAt(E["影"], el) * ease, tear: ZP.envAt(E["裂"], el) * ease,
-                wash: ZP.envAt(E["霞"], el) * ease, swell: ZP.envAt(E["伸"], el) };
+      // 伸 has no envelope (critic P1 r1 recommendation, taken at r2): its
+      // cause is the beam current, so the picture's own level through the lag
+      // is its only driver — with E["伸"] on top, the raster breathed on a
+      // still picture. E["伸"] is still drawn (the fork is consumed alike).
       var br = ZP.breath(ch.breath, el, S.seed);
-      if (L > 0 && br < ZP.LULL.lift) br += (ZP.LULL.lift - br) * L;
+      if (L > 0) {
+        br = Math.min(br + LL.lift * L, Math.max(br, LL.liftCap));
+        var lv = 1 - clamp01(br), sn0 = ch.snow, wa0 = ch.wash || { lift: 0, gain: 1 }, gsum = 0;
+        for (var gq = 0; gq < ch.ghosts.length; gq++) gsum += Math.abs(ch.ghosts[gq].a);
+        var toT = function (v, T) { return v > T ? 1 - L * (1 - T / v) : 1; };   // the factor that brings v to T at the lull's top
+        eS *= toT((lv * lv * (sn0.sq || 0) + lv * (sn0.lin || 0)) * (sn0.gain || 0) * eS, LL.pT);
+        eW *= toT((Math.abs(1 - wa0.gain) + Math.max(0, wa0.lift) / 100) * eW, LL.wT);
+        eG *= toT(gsum * eG, LL.gT);
+        eT *= toT((ch.tear.rate || 0) * eT, LL.tT);
+      }
+      S.env = { snow: eS, ghost: eG, tear: eT, wash: eW, swell: 1 };
       var dr = ch.drop, di = dropAt(a), dropping = di >= 0, dd = 0;
       if (dropping) {
         var kind = dr.kinds[di % dr.kinds.length];
@@ -1013,10 +1069,22 @@
       // light is lifted from), so a check can hold the glow to its source
       glow: function () {
         var d = gcx.getImageData(0, 0, glowCv.width, glowCv.height).data, q = g2cx.getImageData(0, 0, glowCv.width, glowCv.height).data, m = mcx.getImageData(0, 0, glowCv.width, glowCv.height).data;
+        // PREMULTIPLIED (colour × alpha / 255): that is what 'lighter' adds.
+        // getImageData un-premultiplies, and at the hairlines' faint alphas
+        // (r2: the mask is run-weighted) an 8-bit colour divided by an alpha
+        // of 2/255 reads as up to 255 — light that is not there.
         var mx = [0, 0, 0], lit = 0, pic = 0;
-        for (var i = 0; i < d.length; i += 4) { if (d[i] > mx[0]) mx[0] = d[i]; if (d[i + 1] > mx[1]) mx[1] = d[i + 1]; if (d[i + 2] > mx[2]) mx[2] = d[i + 2]; if (d[i + 1] > 0) lit++; if (m[i + 3] > 0 && q[i + 1] > pic) pic = q[i + 1]; }
+        for (var i = 0; i < d.length; i += 4) { var al = d[i + 3] / 255, r0 = d[i] * al, g0 = d[i + 1] * al, b0 = d[i + 2] * al; if (r0 > mx[0]) mx[0] = r0; if (g0 > mx[1]) mx[1] = g0; if (b0 > mx[2]) mx[2] = b0; if (g0 >= 0.5) lit++; if (m[i + 3] > 0 && q[i + 1] > pic) pic = q[i + 1]; }
+        mx = mx.map(function (v) { return Math.round(v); });
         return { max: mx, lit: lit, pic: pic, k: GLOW.k, on: GLOW.on, size: [glowCv.width, glowCv.height] };
       },
+      // the wandered runs in mask px (CSS px of the tube), each with its crack
+      // index, its weight and whether it is a deep break — the probe measures
+      // the mask along them (critic P1 r1 item 2: a hairline's light dies out)
+      crackRuns: function () { var sx = TW / 400, sy = TH / 300; return wandered().runs.map(function (rs, i) { return rs.map(function (r) { return { i: i, deep: r.deep, w: +r.w.toFixed(4), pts: r.pts.map(function (p) { return [p[0] * sx, p[1] * sy]; }) }; }); }); },
+      // true puts back rc.P1's one-weight mask (the whole crackPath at one
+      // width and alpha) — the proof that the run-weight check can fail
+      maskFlat: function (on) { GLOW.flat = !!on; if (TW > 8) buildPaths(); return GLOW.flat; },
       // the SVG's room-light colours ("r,g,b" strings; null keeps one) — the
       // probe's check that the crack's glass adds no green, and its proof that
       // the check would catch C's original green-white
