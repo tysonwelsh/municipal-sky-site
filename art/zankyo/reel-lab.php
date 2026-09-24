@@ -25,7 +25,7 @@ $page_title = "Reel Lab — ZANKYŌ · Municipal Sky";
 $page_description = "A private bench for the ZANKYŌ receiver's reel windows.";
 function zkv($file) { $path = __DIR__ . '/' . $file; return file_exists($path) ? filemtime($path) : 0; }
 $zk_assets = [
-    'zankyo-audio.js', 'zankyo-viz.js', 'zankyo-ui.js', 'zk-set.js', 'zk-broadcast.js', 'broadcast/manifest.json', 'zankyo.css', 'index.php',
+    'zankyo-audio.js', 'zankyo-viz.js', 'zankyo-ui.js', 'zk-picture.js', 'zk-set.js', 'zk-broadcast.js', 'broadcast/manifest.json', 'zankyo.css', 'index.php',
     '../prosperos-jukebox-v2/pj2-rand.js', '../prosperos-jukebox-v2/pj2-pitch.js',
     '../prosperos-jukebox-v2/pj2-clock.js', '../prosperos-jukebox-v2/pj2-voice.js',
     '../prosperos-jukebox-v2/pj2-fx.js', '../prosperos-jukebox-v2/pj2-air.js',
@@ -144,6 +144,7 @@ if ($zk_a0 === false || $zk_b0 === false) {
 <script src="zk-broadcast.js?v=<?php echo zkv('zk-broadcast.js'); ?>"></script>
 <script src="zk-far.js?v=<?php echo zkv('zk-far.js'); ?>"></script>
 <script src="zankyo-viz.js?v=<?php echo zkv('zankyo-viz.js'); ?>"></script>
+<script src="zk-picture.js?v=<?php echo zkv('zk-picture.js'); ?>"></script>
 <script src="zk-set.js?v=<?php echo zkv('zk-set.js'); ?>"></script>
 <script src="zankyo-ui.js?v=<?php echo zkv('zankyo-ui.js'); ?>"></script>
 <script>

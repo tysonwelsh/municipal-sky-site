@@ -4,7 +4,7 @@
 // The station's second, older, receive-only tube, bolted to the right of the
 // scope (S0 of PLAN-SIGNAL-INTEGRATION.md; the look is mockup 1,
 // mockups/monitor-1-second-set.html, ported faithfully). This module owns
-// ONLY the picture: a 96×72 source → P39 long-persistence phosphor → a
+// ONLY the picture: a 192×144 source → P39 long-persistence phosphor → a
 // full-resolution frame with real persistence, bloom, band tearing, vertical-
 // hold roll, a multipath ghost, snow, Paik's line — composed through a
 // cracked glass (an SVG fracture, seeded per night from four patterns, the
@@ -28,30 +28,58 @@
 // In S0 no descriptor arrives; the set idles. ZankyoSet._dev.tune() runs the
 // gesture on the test card for the bench.
 //
+// 映り THE FRAME IN PASSES (PLAN-SIGNAL-PICTURE §5.1, P0). What a reception
+// looks like — its snow, its tear, its ghosts, its breath — is a CHARACTER
+// drawn per reception by zk-picture.js (loaded first); this file keeps the
+// phase machine, the canvases and the compositing, and runs every frame as
+// five ordered passes: 1 source (luma + drive + noise, 192×144), 2 geometry
+// (the hold's roll, the squash, the per-line offset map), 3 ghosts (the echo
+// list), 4 the tube (the P39 ramp), 5 the full-resolution composite, then the
+// crack. At P0 there is one character, rc.91's look, and the frame is
+// pixel-identical to rc.91's under seeded texture (_picture-probe.js).
+//
+// THE BENCH HOOKS (§6.2): _dev.character(), _dev.force(), _dev.seedTexture(),
+// _dev.freeze()/step()/thaw() — a virtual clock and a frame-step, because a
+// headless tab's rAF runs at ~1 fps and a capture must not depend on it. A
+// page may also set window.ZK_SET_DEV = { manual, clock, texture, noFilter }
+// BEFORE this file loads so the init-time timings are virtual too (the probe
+// does; production never sets it).
+//
 // Headless: the probe loads every zk-*.js from index.php — no DOM, no-op.
 // ============================================================================
 (function () {
   "use strict";
   if (typeof document === "undefined" || typeof window === "undefined") return;
-  var Z = window.ZankyoAudio, PJ = window.PJ2;
+  var Z = window.ZankyoAudio, PJ = window.PJ2, ZP = window.ZankyoPicture;
   var tcv = document.getElementById("zankyo-set");
-  if (!Z || !PJ || !PJ.Rand || !tcv) return;
+  if (!Z || !PJ || !PJ.Rand || !ZP || !tcv) return;
   var crackSvg = document.getElementById("zankyo-crack");
   var rx = document.getElementById("zankyo-rx");
   var tuneBtn = document.getElementById("zankyo-tune");
   var tube = document.getElementById("zankyo-tube") || tcv.parentNode;
 
-  var now = function () { return (window.performance && performance.now) ? performance.now() : Date.now(); };
+  var realNow = function () { return (window.performance && performance.now) ? performance.now() : Date.now(); };
+  // THE BENCH'S VIRTUAL CLOCK (§6.2). null in production: now() is the page's
+  // clock. Frozen (_dev.freeze / ZK_SET_DEV.manual), now() is whatever the last
+  // _dev.step() said, the rAF loop draws nothing, and the SIGNAL clock is the
+  // virtual one too — a frozen tube is driven by bench descriptors in virtual
+  // time; a real reception's t0 is in AudioContext time, so thaw first.
+  var DEV = window.ZK_SET_DEV || null;
+  var vclock = (DEV && DEV.manual) ? (+DEV.clock || 0) : null;
+  var now = function () { return vclock != null ? vclock : realNow(); };
   // the signal clock: the AudioContext's, once it exists (the engine creates it
   // on PLAY or a ♪ press); before that, the wall clock in seconds — the bench
   // gesture can run on a page that has never played
-  var atime = function () { var c = Z.getAudioContext && Z.getAudioContext(); return c ? c.currentTime : now() / 1000; };
+  var atime = function () { if (vclock != null) return vclock / 1000; var c = Z.getAudioContext && Z.getAudioContext(); return c ? c.currentTime : now() / 1000; };
   var wallTime = function () { return now() / 1000; };
   // a signal remembers the clock it started on (critic S0 r1 §2.7a): a bench
   // signal started before PLAY keeps its wall clock even after the context appears
   var sigTime = function () { return (sig && sig.wall) ? wallTime() : atime(); };
   var clamp01 = function (v) { return v < 0 ? 0 : v > 1 ? 1 : v; };
-  var rnd = Math.random;                                   // texture only (snow, sparks, tear jitter)
+  // texture only (snow, sparks, tear jitter, the dial pointer): Math.random,
+  // by the character contract — or, on the bench, a seeded stream
+  // (_dev.seedTexture) so a capture is pixel-reproducible
+  var rnd = (DEV && DEV.texture != null) ? ZP.textureRng(+DEV.texture) : Math.random;
 
   // ---- seeded streams: forks off the engine's master seed, labels of our own ----
   var seed = (Z.getSeed && Z.getSeed()) || 3042;
@@ -207,22 +235,22 @@
   var pimg = pcx.createImageData(SW, SH), pdata = pimg.data;
   var frame = document.createElement("canvas"), fcx = frame.getContext("2d");
   var tcx = tcv.getContext("2d");
-  var hasFilter = (typeof fcx.filter === "string");     // canvas filters (the bloom); older Safari lacks them
+  var hasFilter = (typeof fcx.filter === "string") && !(DEV && DEV.noFilter);   // canvas filters (the bloom); older Safari lacks them (ZK_SET_DEV.noFilter: the bench takes that path in Chrome)
   var blurCv = null, bcx = null;                          // the no-filter bloom: a 24×18 pre-shrunk copy, upscaled smooth
   if (!hasFilter) { blurCv = document.createElement("canvas"); blurCv.width = 24; blurCv.height = 18; bcx = blurCv.getContext("2d"); }
   var TW = 0, TH = 0, dpr = 1;
 
-  // P39 ramp — long-persistence yellow-green; gamma 1.3 keeps the mid-tones dark
-  var LUT_R = new Uint8Array(256), LUT_G = new Uint8Array(256), LUT_B = new Uint8Array(256);
-  (function () {
-    var stops = [[0, 2, 6, 3], [0.2, 4, 20, 9], [0.45, 12, 72, 30], [0.7, 40, 152, 72], [0.88, 120, 226, 146], [1, 222, 255, 226]];
-    for (var i = 0; i < 256; i++) {
-      var t = Math.pow(i / 255, 1.3), a = stops[0], b = stops[1];
-      for (var k = 1; k < stops.length; k++) { if (t <= stops[k][0]) { a = stops[k - 1]; b = stops[k]; break; } }
-      var u = (t - a[0]) / (b[0] - a[0] || 1);
-      LUT_R[i] = a[1] + (b[1] - a[1]) * u; LUT_G[i] = a[2] + (b[2] - a[2]) * u; LUT_B[i] = a[3] + (b[3] - a[3]) * u;
-    }
-  })();
+  // P39 ramp — long-persistence yellow-green; gamma 1.3 keeps the mid-tones
+  // dark. The tube's constants live in zk-picture.js (ZP.TUBE, §3.4: P4 ages
+  // them per night on "set:tube"); the tables are built there.
+  var LUT = ZP.tubeLUT(ZP.TUBE);
+  // the frame's working buffers at source resolution: one luma byte per
+  // pixel (pass 1 → pass 4), and the per-line offset map (pass 2 → 5) — two
+  // of them, because rc.91 tears the roll's wrapped copy with its own draw
+  // (see geometryPass)
+  var luma = new Uint8Array(SW * SH);
+  var mapA = new Float64Array(SH), mapB = new Float64Array(SH);
+  var ghosts = [];
 
   // ==========================================================================
   // 輝度 BRIGHT — the ledge's left rocker, four steps.
@@ -262,7 +290,15 @@
   // ==========================================================================
   var TUNE_S = 0.4, COLLAPSE_S = 0.42, BURST_S = 0.32, DEAD_S = 1.6;
   var sig = null;             // { t0, holdS, lossD, drops: [[t, d], …], id, title, year, video?, lossD }
-  var S = { phase: "idle", phaseAt: 0, strength: 0, seed: 0, drop: 0, holdFrame: 0, roll: 0, rollV: 0 };
+  var S = { phase: "idle", phaseAt: 0, strength: 0, seed: 0, drop: 0, holdFrame: 0, roll: 0, rollV: 0, ch: null };
+  // 映り THE CHARACTER (§4). A reception's look, drawn when it arrives on its
+  // own fork of the master seed ("set:rx:<desc.seed>" — desc.seed is already
+  // the receiver's draw, so the same night gives the same characters and no
+  // engine stream is touched). The idle and dead tube keep the resting one.
+  // At P0 every draw is 今, rc.91's look.
+  var force = null;                                          // the bench's override (_dev.force)
+  var restCh = ZP.drawCharacter(null, {});
+  S.ch = restCh;
   var chDeg = -40;
   // 形 THE SHAPE OF A RECEPTION (PLAN-SIGNAL-SHAPES.md §4.3). The tube used to
   // derive its phase from three numbers — tune, hold, loss — which was the
@@ -333,25 +369,24 @@
   var sweepAmt = 0, sweepAt = 0;
   function sweep(a) {
     a = +a; if (!(a > 0)) return;
-    var now = (typeof performance !== "undefined" && performance.now) ? performance.now() : 0;
-    if (now - sweepAt > 900) sweepAmt = 0;                    // a fresh gesture starts from nothing
-    sweepAt = now;
+    var tn = now();                                          // the set's clock (the bench's, when frozen)
+    if (tn - sweepAt > 900) sweepAmt = 0;                    // a fresh gesture starts from nothing
+    sweepAt = tn;
     sweepAmt = Math.min(1, Math.max(sweepAmt, a));
   }
   // The decayed sweep level. It reads its OWN wall clock rather than taking a
-  // timestamp, because the two callers are in different clocks (renderSource
+  // timestamp, because the two callers are in different clocks (sourcePass
   // gets the frame time, compose gets nothing) and a snow level does not need
   // the audio clock's precision — it needs to follow a hand.
   function sweepNow() {
     if (sweepAmt <= 0) return 0;
-    var now = (typeof performance !== "undefined" && performance.now) ? performance.now() : 0;
-    var dt = (now - sweepAt) / 1000;
+    var dt = (now() - sweepAt) / 1000;
     if (dt > 3) { sweepAmt = 0; return 0; }
     return sweepAmt * Math.exp(-dt / 0.7);
   }
   function endSignal(t) {
     sig = null;                                              // the receiver owns the element; the set never pauses it
-    S.roll = 0; S.rollV = 0; S.drop = 0; S.holdFrame = 0; S.strength = 0;
+    S.roll = 0; S.rollV = 0; S.drop = 0; S.holdFrame = 0; S.strength = 0; S.ch = restCh;
     idle.nextCard = t + 6000 + Ridle.next() * 10000; idle.nextLine = t + 8000 + Ridle.next() * 12000;
     enterPhase("idle", t);
   }
@@ -393,15 +428,16 @@
     } else if (ph === "relock") {
       S.strength = clamp01(el / Math.max(0.05, sig.rx.segments[0].lockS || 0.2)) * 0.85;
     } else if (ph === "hold") {
-      var breath = 0.82 + 0.13 * Math.sin(el * 1.1 + S.seed) + 0.05 * Math.sin(el * 4.3 + S.seed * 2);
+      var ch = S.ch, dr = ch.drop;
+      var breath = ZP.breath(ch.breath, el, S.seed);
       var dropping = inDrop(a);
-      if (dropping && S.drop <= 0 && rnd() < 0.3) S.holdFrame = t + 100 + rnd() * 200;   // a frame-hold rides some dropouts
+      if (dropping && S.drop <= 0 && rnd() < dr.holdP) S.holdFrame = t + dr.holdMs[0] + rnd() * dr.holdMs[1];   // a frame-hold rides some dropouts
       S.drop = dropping ? 1 : 0;
       // 断 A HOLE is not a dropout: the picture tears and rolls through a real
       // loss of one to three seconds and comes back where it would be.
       var hk = inHole(a - sig.t0);
       if (hk > 0) { S.rollV += (rnd() - 0.4) * 2.2; if (rnd() < 0.25) S.holdFrame = t + 90 + rnd() * 180; }
-      S.strength = clamp01(breath - (dropping ? 0.45 : 0) - hk * 0.75);
+      S.strength = clamp01(breath - (dropping ? dr.depth : 0) - hk * 0.75);
     } else if (ph === "loss") {
       var k = clamp01(el / Math.max(0.02, sig.rx.exitS));    // 0..1 through the loss
       S.strength = clamp01(0.85 * (1 - k * k) - (rnd() < k * 0.5 ? 0.4 : 0));
@@ -415,7 +451,7 @@
   }
 
   // ==========================================================================
-  // THE SOURCE PICTURE (96×72 greyscale): the reel, the test card, the idle
+  // THE SOURCE PICTURE (192×144 greyscale): the reel, the test card, the idle
   // ==========================================================================
   var idle = { nextCard: now() + 6000 + Ridle.next() * 8000, cardAt: -1, nextLine: now() + 9000 + Ridle.next() * 10000, lineAt: -1, lineMode: 0, lineHold: 1 };
   function drawTestCard(alpha, drift) {
@@ -440,7 +476,10 @@
     scx.fillStyle = "#0a0a0a"; scx.fillRect(0, 64, CW, 8); scx.fillStyle = "#d0d0d0"; scx.fillRect(4, 66, 30, 4); scx.fillRect(62, 66, 30, 4);
     scx.restore();
   }
-  function renderSource(t) {
+  // PASS 1 — SOURCE (192×144). The picture onto the source canvas — the reel,
+  // the test card, or the idle raster — then luma, the beam's drive and the
+  // noise into `luma` (zk-picture.js sourcePass: the character's snow).
+  function sourcePass(t) {
     var ph = S.phase;
     scx.globalAlpha = 1;
     // The picture is drawn for every phase in which there is a picture to draw
@@ -464,39 +503,56 @@
       if (idle.cardAt < 0 && t > idle.nextCard) { idle.cardAt = t; S.rollV = 2.5 + Ridle.next() * 3; }
     }
     var sdata = scx.getImageData(0, 0, SW, SH).data;
-    // luminance → snow mix → P39
-    var sw = (ph === "idle" || ph === "dead") ? sweepNow() : 0;   // 掃引: the dial's snow
-    var strength = S.strength, snow = ph === "burst" ? 1 : (ph === "idle" || ph === "dead") ? sw : clamp01(1 - strength);
-    // idle: a faint raster glow added under the LUT — the tube is warm, not lit
-    var idleGlow = ph === "idle" ? (9 + 3 * Math.sin(t / 2300)) * B.idle : 0;
-    var crawl = t / 240;
-    for (var i = 0, p = 0, y = 0; y < SH; y++) {
-      var rowGlow = idleGlow > 0 ? idleGlow + 3.5 * B.idle * Math.sin(y * 0.55 - crawl) : 0;
-      var vign = 1 - Math.abs(y - SH / 2) / SH * 0.7;
-      for (var x = 0; x < SW; x++, i += 4, p += 4) {
-        var l = 0.299 * sdata[i] + 0.587 * sdata[i + 1] + 0.114 * sdata[i + 2];
-        if (ph === "idle") {
-          l = l * 0.9 + (rnd() < 0.002 ? 30 + rnd() * 50 : 0);
-          if (snow > 0 && rnd() < snow * snow * 0.85 + snow * 0.08) l = l * 0.35 + rnd() * 255 * (0.45 + 0.55 * rnd());   // 掃引
-        }
-        else if (ph === "dead") { l = snow > 0 && rnd() < snow * snow * 0.85 + snow * 0.08 ? rnd() * 255 * (0.45 + 0.55 * rnd()) : 0; }
-        else {
-          l = (l - B.lift) * B.gain;                      // 輝度: the beam's drive
-          // snow: a pixel is either the picture or a spark — density grows with the square of (1 − strength)
-          if (snow > 0 && rnd() < snow * snow * 0.85 + snow * 0.08) l = l * 0.35 + rnd() * 255 * (0.45 + 0.55 * rnd());
-        }
-        l = l < 0 ? 0 : l > 255 ? 255 : l | 0;
-        if (ph === "idle") {
-          var g = rowGlow * vign * (1 - Math.abs(x - SW / 2) / SW * 0.6);
-          pdata[p] = LUT_R[l] + g * 0.22; pdata[p + 1] = LUT_G[l] + g; pdata[p + 2] = LUT_B[l] + g * 0.42; pdata[p + 3] = 255;
-        } else { pdata[p] = LUT_R[l]; pdata[p + 1] = LUT_G[l]; pdata[p + 2] = LUT_B[l]; pdata[p + 3] = 255; }
-      }
+    // luminance → drive → snow. 掃引: on an idle or dead tube the snow is the dial's.
+    var sw = (ph === "idle" || ph === "dead") ? sweepNow() : 0;
+    var snow = ph === "burst" ? 1 : (ph === "idle" || ph === "dead") ? sw : clamp01(1 - S.strength);
+    ZP.sourcePass(sdata, luma, SW * SH, ph === "idle" ? "idle" : ph === "dead" ? "dead" : "lit", snow, B, S.ch.snow, rnd);
+  }
+
+  // PASS 2 — GEOMETRY. The vertical hold's roll, the collapse's squash, and
+  // the per-line offset map (§3.2) the composite reads. A dead tube draws
+  // nothing but its persistence (rc.91's early return), so it has no geometry.
+  //
+  // TWO MAPS, ON PURPOSE (for now). When the picture rolls, rc.91 draws it
+  // twice — the frame and its wrapped copy above the blanking bar — and each
+  // copy drew its OWN tear. Physically they are the same scan lines and
+  // should share one map; P0 keeps the second draw because the identity gate
+  // is byte equality with rc.91 and that second draw consumes texture. P1,
+  // where the look may move, makes it one map.
+  var G = { roll: 0, sy: 1, dyBase: 0, pel: 0 };
+  function geometryPass(t) {
+    var ph = S.phase;
+    if (ph === "dead") return;
+    // vertical hold
+    if (ph !== "idle" || S.rollV !== 0) {
+      S.roll += S.rollV; S.rollV *= (ph === "loss" ? 0.985 : 0.9);
+      if (Math.abs(S.rollV) < 0.05) S.rollV = 0;
+      S.roll = ((S.roll % TH) + TH) % TH; if (S.rollV === 0 && ph !== "loss") S.roll += (0 - S.roll) * 0.2;
     }
+    var roll = S.roll | 0, sy = 1, ch = S.ch;
+    var pel = (t - S.phaseAt) / 1000;                          // seconds into the phase, for the shapes below
+    if (ph === "collapse") { var ck = clamp01(pel / COLLAPSE_S); sy = Math.max(0.01, 1 - Math.pow(ck, ch.exit.squash)); }
+    var tearAmt = ZP.tearAmount(ch.tear, ph, S.strength, S.drop > 0, pel, sig ? sig.lossD : 1);
+    ZP.tearMap(mapA, SH, ch.tear, tearAmt, t, rnd);
+    if (roll) ZP.tearMap(mapB, SH, ch.tear, tearAmt, t, rnd);
+    G.roll = roll; G.sy = sy; G.pel = pel; G.dyBase = (TH - TH * sy) / 2;
+  }
+
+  // PASS 3 — GHOSTS: this frame's echo list, from the character (§3.3).
+  function ghostPass(t) { ZP.ghostList(S.ch, S.phase, S.strength, t, ghosts); }
+
+  // PASS 4 — THE TUBE: luma → the P39 ramp → the phosphor canvas, with the
+  // idle raster's warm glow added under nothing (after the LUT, as rc.91 did).
+  function tubePass(t) {
+    var idleGlow = S.phase === "idle" ? (9 + 3 * Math.sin(t / 2300)) * B.idle : 0;
+    ZP.tubePass(luma, pdata, SW, SH, LUT, idleGlow, B.idle, t / 240);
     pcx.putImageData(pimg, 0, 0);
   }
 
   // ==========================================================================
-  // THE FRAME: persistence, bloom, tear, roll, ghost, the line
+  // PASS 5 — THE FRAME (full resolution): persistence, bloom, the offset map,
+  // the blanking bar, the ghosts, the line. Then compose() puts it through
+  // the crack.
   // ==========================================================================
   function drawBloom(dy, sy, alpha, blurPx) {
     fcx.globalAlpha = Math.min(0.92, alpha * B.bloom);        // 輝度: how hard the phosphor is driven
@@ -510,54 +566,50 @@
     }
     fcx.globalAlpha = 1;
   }
-  function drawBands(dy, sy, tearAmt, t) {
-    // 9 bands, each row-offset — the picture "tears". The SOURCE slice is a
-    // ninth of the raster, not a hard-coded 8 rows: at 192 × 144 that is 16,
-    // and a literal 8 would have drawn the top half of the picture nine times.
-    var bh = TH / 9, sbh = SH / 9;
-    for (var b = 0; b < 9; b++) {
-      var off = tearAmt * (Math.sin(t / 170 + b * 1.9) * 3 + (rnd() < tearAmt * 0.25 ? (rnd() - 0.5) * 26 : 0));
-      fcx.drawImage(phos, 0, b * sbh, SW, sbh, off, dy + b * bh * sy, TW, bh * sy + 0.5);
-    }
+  // The offset map, drawn: one slice per run of `SH / map.bands` source rows,
+  // each at its row's offset. Today's tear fills nine runs of 16 rows (the
+  // SOURCE slice is a ninth of the raster, not a hard-coded 8 rows: a literal
+  // 8 drew the top half nine times at 192 × 144); a line-accurate map is 144
+  // runs of one. The slice geometry is rc.91's expressions verbatim —
+  // `b * (TH / 9) * sy`, not `r0 * TH / SH` — because the two round
+  // differently in the last bit and the gate is byte equality.
+  function drawMap(map, dy, sy) {
+    var nb = map.bands, bh = TH / nb, sbh = SH / nb, rows = SH / nb;
+    for (var b = 0; b < nb; b++) fcx.drawImage(phos, 0, b * sbh, SW, sbh, map[b * rows], dy + b * bh * sy, TW, bh * sy + 0.5);
   }
-  function drawFrame(t) {
-    var ph = S.phase, strength = S.strength;
+  function composite(t) {
+    var ph = S.phase, strength = S.strength, D = ZP.TUBE.decay, ex = S.ch.exit;
     fcx.globalCompositeOperation = "source-over";
     // persistence: the old frame decays under the new one (P39)
-    var decay = ph === "idle" ? 0.5 : ph === "dead" ? 0.11 : ph === "burst" ? 0.7 : 0.62;
+    var decay = ph === "idle" ? D.idle : ph === "dead" ? D.dead : ph === "burst" ? D.burst : D.lit;
     fcx.fillStyle = "rgba(3,5,3," + decay + ")"; fcx.fillRect(0, 0, TW, TH);
+    // A dead tube shows only its decay. NOTE (§1.10, §5.5): the source pass
+    // does compute the dial's sweep snow while dead, and it is never shown
+    // here. The owner's ruling (§11.5, §9 Q7) is to draw it faintly; that is
+    // a visible change and lands in P1, not in this refactor.
     if (ph === "dead") return;
 
     fcx.imageSmoothingEnabled = false;
-    // vertical hold
-    if (ph !== "idle" || S.rollV !== 0) {
-      S.roll += S.rollV; S.rollV *= (ph === "loss" ? 0.985 : 0.9);
-      if (Math.abs(S.rollV) < 0.05) S.rollV = 0;
-      S.roll = ((S.roll % TH) + TH) % TH; if (S.rollV === 0 && ph !== "loss") S.roll += (0 - S.roll) * 0.2;
-    }
-    var roll = S.roll | 0, sy = 1;
-    var pel = (t - S.phaseAt) / 1000;                          // seconds into the phase, for the shapes below
-    if (ph === "collapse") { var ck = clamp01(pel / COLLAPSE_S); sy = Math.max(0.01, 1 - Math.pow(ck, 1.6)); }
-    var tearAmt = ph === "tuning" ? 0.6 : ph === "hold" ? clamp01(1 - strength) * 0.8 + (S.drop > 0 ? 0.4 : 0.05) : ph === "loss" ? 0.5 + clamp01(pel / sig.lossD) : 0;
-    var dyBase = (TH - TH * sy) / 2;
+    var roll = G.roll, sy = G.sy, pel = G.pel, dyBase = G.dyBase;
 
     // bloom under, sharp over
     fcx.globalCompositeOperation = "lighter";
     drawBloom(dyBase + roll * sy, sy, ph === "idle" ? 0.35 : 0.22 + strength * 0.14, 3 + strength * 2);
     if (roll) drawBloom(dyBase + (roll - TH) * sy, sy, ph === "idle" ? 0.35 : 0.22 + strength * 0.14, 3 + strength * 2);
     fcx.globalCompositeOperation = "source-over";
-    drawBands(dyBase + roll * sy, sy, tearAmt, t);
-    if (roll) { drawBands(dyBase + (roll - TH) * sy, sy, tearAmt, t); fcx.fillStyle = "rgba(0,0,0,0.75)"; fcx.fillRect(0, dyBase + roll * sy - 6, TW, 7); }   // the blanking bar
-    // ghost — multipath
-    if (ph === "hold" || ph === "loss" || ph === "tuning") {
-      fcx.globalCompositeOperation = "lighter"; fcx.globalAlpha = 0.16 + 0.14 * (1 - strength);
-      fcx.drawImage(phos, 0, 0, SW, SH, 5 + 3 * Math.sin(t / 900), dyBase + roll * sy + 1, TW, TH * sy);
+    drawMap(mapA, dyBase + roll * sy, sy);
+    if (roll) { drawMap(mapB, dyBase + (roll - TH) * sy, sy); fcx.fillStyle = "rgba(0,0,0,0.75)"; fcx.fillRect(0, dyBase + roll * sy - 6, TW, 7); }   // the blanking bar
+    // ghosts — multipath (the list is empty outside tuning, hold and loss)
+    for (var gi = 0; gi < ghosts.length; gi++) {
+      var gh = ghosts[gi];
+      fcx.globalCompositeOperation = "lighter"; fcx.globalAlpha = gh.alpha;
+      fcx.drawImage(phos, 0, 0, SW, SH, gh.dx, dyBase + roll * sy + gh.dy, TW, TH * sy);
       fcx.globalAlpha = 1; fcx.globalCompositeOperation = "source-over";
     }
     // Paik's line — the loss collapse, and now and then in the idle
     var lineK = 0, dotK = 0;
-    if (ph === "collapse") lineK = clamp01((pel - 0.22) / 0.2);
-    if (ph === "burst") lineK = 1 - clamp01(pel / 0.12);
+    if (ph === "collapse") lineK = clamp01((pel - ex.lineAt) / ex.lineRise);
+    if (ph === "burst") lineK = 1 - clamp01(pel / ex.lineFall);
     if (ph === "idle") {
       if (idle.lineAt < 0 && t > idle.nextLine) { idle.lineAt = t; idle.lineMode = Ridle.next() < 0.5 ? 1 : 0; idle.lineHold = 0.6 + Ridle.next() * 1.6; }
       if (idle.lineAt >= 0) {
@@ -622,23 +674,29 @@
   // ==========================================================================
   var lowPower = (navigator.hardwareConcurrency || 4) <= 2, frameN = 0, running = false;
   var perf = { n: 0, ms: 0, worst: 0, first: 0, last: 0 };    // frame cost + rate telemetry for the bench
+  // ONE FRAME: the five passes and the crack, timed on the REAL clock (a
+  // frozen bench's virtual clock would time every frame at zero).
+  function render(t) {
+    var t1 = realNow();
+    sourcePass(t); geometryPass(t); ghostPass(t); tubePass(t); composite(t); compose();
+    var c = realNow() - t1; if (!perf.n) perf.first = t; perf.last = t; perf.n++; perf.ms += c; if (c > perf.worst) perf.worst = c;
+  }
+  var loopOn = false;
   function loop() {
+    if (vclock != null) { loopOn = false; return; }          // frozen: the bench steps the frames (_dev.step)
     var t = now();
     frameN++;
     tickSignal(t);
-    if (TW > 8 && (!lowPower || frameN % 2 === 0) && document.visibilityState === "visible") {
-      var t1 = now();
-      renderSource(t); drawFrame(t); compose();
-      var c = now() - t1; if (!perf.n) perf.first = t; perf.last = t; perf.n++; perf.ms += c; if (c > perf.worst) perf.worst = c;
-    }
+    if (TW > 8 && (!lowPower || frameN % 2 === 0) && document.visibilityState === "visible") render(t);
     requestAnimationFrame(loop);
   }
+  function kick() { if (!loopOn && running) { loopOn = true; requestAnimationFrame(loop); } }
   function start() {
     if (running) return; running = true;
     buildCrackSVG(); resize();
     if (window.ResizeObserver) { try { new ResizeObserver(function () { resize(); }).observe(tube); } catch (e) { window.addEventListener("resize", resize); } }
     else window.addEventListener("resize", resize);
-    requestAnimationFrame(loop);
+    kick();
   }
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(start, start); else start();
   // a safety net if the fonts promise never settles (offline font CDN)
@@ -661,6 +719,9 @@
     sig.rx = desc.rx || planOne(sig.holdS, sig.lossD);
     sig.drops.sort(function (p, q) { return p[0] - q[0]; });
     S.seed = (desc.seed != null ? +desc.seed : Ridle.next() * 1000); S.drop = 0; S.holdFrame = 0; S.strength = 0;
+    // 映り: this reception's character, on its own fork (§5.2). A fork is
+    // derived from the master's ORIGINAL seed and consumes nothing from it.
+    S.ch = ZP.drawCharacter(master.fork("set:rx:" + S.seed), { force: force, desc: desc });
     return true;
   }
   if (Z.setEventListener) { try { Z.setEventListener(function (ev) { if (ev && ev.cat === "rx" && ev.signal) signal(ev.signal); }); } catch (e) {} }   // 受信 and ♪ 受信 both carry a descriptor
@@ -705,6 +766,39 @@
       setPattern: function (i) { P = PATTERNS[((i % PATTERNS.length) + PATTERNS.length) % PATTERNS.length]; patternIdx = PATTERNS.indexOf(P); buildCrackSVG(); if (TW > 8) buildPaths(); },
       resetPerf: function () { perf.n = 0; perf.ms = 0; perf.worst = 0; perf.first = perf.last = 0; },
       idle: idle,
+      // ---- 映り the picture bench (PLAN-SIGNAL-PICTURE §6.2) ----
+      // the current reception's character (a copy — editing it changes nothing)
+      character: function () { return JSON.parse(JSON.stringify(S.ch)); },
+      // override the draw for the NEXT reception: { axes } merged over the
+      // draw; { archetype } / { impairment } are refused by name until P1/P2
+      // give the draw something to force. null clears. Returns {ok, why?}.
+      force: function (f) {
+        var r = ZP.checkForce(f);
+        if (r.ok) force = f || null;
+        return r;
+      },
+      // Math.random texture → a seeded stream (n), or back (null). Dev only.
+      seedTexture: function (n) { rnd = (n == null) ? Math.random : ZP.textureRng(+n); return n == null ? null : +n; },
+      // THE FRAME-STEP. freeze(ms) stops the rAF loop from drawing and pins
+      // the clock (the signal clock included); step(ms) advances it to ms and
+      // runs exactly the frame the loop would (tick, five passes, crack —
+      // ignoring the low-power half rate and visibility); thaw() hands the
+      // tube back to the page's clock and rAF.
+      freeze: function (ms) { vclock = ms != null ? +ms : realNow(); return vclock; },
+      step: function (ms) {
+        if (vclock == null) vclock = realNow();
+        if (ms != null) vclock = +ms;
+        var t = now();
+        frameN++; tickSignal(t);
+        if (TW > 8) render(t);
+        return { t: t, phase: S.phase, strength: S.strength };
+      },
+      thaw: function () { vclock = null; kick(); },
+      clock: function () { return now(); },
+      signalClock: function () { return atime(); },          // the clock a descriptor's t0 is in (s)
+      frozen: function () { return vclock != null; },
+      // the buffers, for the probe's metrics (read-only by convention)
+      buffers: function () { return { SW: SW, SH: SH, luma: luma, map: mapA, phos: phos, frame: frame, tube: tcv, ghosts: ghosts.slice(), geo: { roll: G.roll, sy: G.sy } }; },
     },
   };
 })();
