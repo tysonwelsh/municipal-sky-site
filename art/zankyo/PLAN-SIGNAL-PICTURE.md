@@ -1,8 +1,9 @@
 # ZANKYŌ — 映り: how a picture comes in
 
-*Plan written 2026-09-24 at the owner's request, against 2.1.0-rc.91. It is
-for review only: nothing launches until the owner has read it and answered
-§9. The build is intended to run overnight as a critic/coder loop (§8).*
+*Plan written 2026-09-24 at the owner's request, against 2.1.0-rc.91. The
+owner answered §9 the same night (§11) and asked for the overnight
+critic/coder loop (§8) to run, with two bug-hunting passes added (Q0, QF),
+and for the result to be merged and published when it finishes.*
 
 The owner's request: the second set's picture should come in with much more
 variety. There should be more kinds of damage, and each existing kind should
@@ -421,15 +422,17 @@ Any spread is reported alongside every number, as W1 did.
 One commit series per phase, and one VERSION bump where the owner can see
 the difference. The work runs on branch `zankyo-picture` in a worktree at
 `/Users/tysonwelsh/Sites/municipal-sky-site-picture`, served on its own port.
-**Nothing is merged to main, pushed or published without the owner.**
+**Agents never merge, push or publish.** The orchestrator does that once, at the end, on the owner's instruction (§11.6).
 
 | phase | what | gate | bump |
 |---|---|---|---|
+| **Q0** | **Reception reliability, before any picture work** (§11.4). Reproduce the owner's report — a video reception whose *audio chopped in and out*, not by design. Instrument real playback in headless Chrome (real media elements, real network, not the probe's mocks): media events (`waiting`, `stalled`, `seeking`, `ratechange`, `emptied`), `readyState` at decide time, and a ScriptProcessor tap on the broadcast bus that finds gaps. Classify every gap as **intended** (a scheduled drop, hole, 戻 gap, loss) or **not**, by lining it up against the plan the receiver wired. Run many receptions over several seeds and every shape, locally and under `Network.emulateNetworkConditions` (a slow 4G / shared-host profile, since production is a Bluehost host). Find the causes (candidates: a reel that is not buffered when it is seated, a relock seek or 走 `src` swap that stalls, the `playbackRate` glide re-set every 0.5 s, the A/B element hand-over, `preservesPitch`, a drop that is shorter than its ramp), fix them. | Zero unintended gaps in the local run; under throttling, any stall is covered (the audio degrades the way a lost signal does, never a stutter); every fix explained with the event trace that shows it; identity: home and far note signatures unchanged unless a fix needs a declared re-base, stated in its commit | rc.N if audible |
 | **P0** | Split the frame into the §5.1 passes; per-line offset map; `zk-picture.js` with today's look as one hard-coded character; seeded texture; picture-lab (all but contact sheets); `_picture-probe.js` with its repeatability measured | With seeded texture, captures are **pixel-identical to rc.91's pipeline** at 20 fixed timestamps × 3 reels (a tolerance only if the canvas filter forces one, stated). Perf no worse. Identity byte-identical. | none (refactor) |
 | **P1** | The character draw (§4.1–4.2), with the *existing* effects enriched: snow kinds, multi and negative ghosts, the line-accurate tear, drawn breath, dropout variety, 霞, 伸. Relock fix. Contact sheets. | §6.3 items 1–5 pass for the P1 kinds; seen-before ≤ 30 % (proposed; the probe calibrates it at P0 and the critic confirms); the legibility floor holds; perf within budget | rc.N |
 | **P2** | New impairments: 点, 縞, 帯, 横, 旗, 揺, 捩, 滲, 飽 with the negative flash, and 混 crosstalk with the frame memory | Every new kind fails-by-name if it does not render; archetype shares within ±25 %; seen-before ≤ 20 %; perf | rc.N+1 |
 | **P3** | Entries and exits (§3.5); per-glimpse and per-piece characters; 焼 burn-in | Receiver timings unchanged (the probe records phase boundaries and they must match rc.91 to the frame); every entry and exit variant appears in 500 draws; perf | rc.N+2 |
 | **P4** | Coherence (§5.3): descriptor fields, the LFO-locked hum and AGC, flutter → ghost, grit → impulse, band → smear; far-`d` tier shift; the per-night tube (§3.4); rarity tiers (§4.3) | Identity byte-identical (the descriptor gains fields and nothing else); tier shares within tolerance on home and on `?far=0.9`; the hum bars' measured period matches `lfoHz` within 10 % | rc.N+3 |
+| **QF** | **Final bug hunt** (§11.4): the whole app, not only the picture — console errors and unhandled rejections over long runs; the receiver, the set and the new picture across every shape, entry and exit; STOP/PLAY mid-reception; the button spammed; the dial swept during a reception; tab hidden and restored; phone width (the known 390 px overflow is out of scope unless trivial); WebKit where the tools allow; perf on the low-power path; the Q0 gap detector re-run on the final build. Everything found is fixed or written up. | zero console errors; the Q0 gap gate still green; all earlier gates re-run green on the final commit | rc.N if visible |
 | **P5** | The owner's look: a handoff with contact sheets per archetype, per tier and per night; the constants block documented; ROADMAP updated | the owner | — |
 
 ---
@@ -520,7 +523,7 @@ session's size guideline.
 - VERSION is bumped on visible commits, in the same commit;
 - stage files by name, never `git add -A`: the checkout is shared
   (repo memory);
-- no publish, no push, no merge to main.
+- no publish, no push, no merge to main (the orchestrator does that at the end, §11.6).
 
 **Commands:**
 - `php -S 127.0.0.1:<port>` from the worktree root;
@@ -528,4 +531,43 @@ session's size guideline.
 - `node _far-identity.js 1800 20 5de3d45` (pinned to rc.91, not `main`, which may move overnight);
 - `node _picture-probe.js` (built in P0).
 
-**Order:** P0 → P1 → P2 → P3 → P4 → P5, as in §7 and §8.
+**Order:** Q0 → P0 → P1 → P2 → P3 → P4 → QF → P5, as in §7, §8 and §11.
+
+---
+
+## 11. The owner's answers (2026-09-24, the night of writing)
+
+1. **§9.4, the tube's tint drifts per night, but it is always green.** The
+   drift stays inside the green family (yellow-green to blue-green, never
+   amber, white or blue). Gamma, persistence, focus and geometry drift as
+   §3.4 says.
+2. **§9.5, the picture shows through in most receptions.** Heavily buried
+   receptions are welcome as the rare end, but **never completely buried**:
+   even the most buried reception lets the video come to the surface now and
+   then, as a face or a shape rising out of the noise for a moment and
+   sinking back. So the legibility floor has two parts:
+   - the median reception is at least as legible as today;
+   - **every** reception, including 遠 at its worst and 嵐, has moments
+     where SSIM against the clean frame rises well above the buried line.
+     Proposed: at least one surfacing of ≥ 0.6 s in any 5 s of hold. The
+     probe measures it per reception, and a reception with no surfacing
+     fails.
+3. **§9.6, the VFD names nothing. Keep the mystery.**
+4. **Bug-hunting passes are part of the build.** The owner heard one video
+   reception whose audio chopped in and out in a way that was clearly not
+   intended and distracted from the experience. So:
+   - **Q0** runs first and finds and fixes that fault (§7);
+   - **QF** runs last and hunts for anything else that is not working as
+     intended (§7);
+   - every coder also fixes, or writes up, any unintended behaviour it
+     meets along the way.
+5. **The rest of §9 takes its defaults:** monochrome; picture follows
+   sound; far nights stranger; faint sweep snow while dead; the autonomy of
+   §9.8; starting weights.
+6. **When the run finishes: merge and publish.** The owner wants to see the
+   result live in the morning, along with the session's earlier changes
+   (rc.88–91: the title card, the transport in the scope's casing, the lamp
+   off, the speaker). The orchestrator merges the branch's green commits to
+   `main`, pushes (which deploys through Actions), and checks the live site.
+   A phase that did not pass does not ship: the merge takes the last green
+   commit.
