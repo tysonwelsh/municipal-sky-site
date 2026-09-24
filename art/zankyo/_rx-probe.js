@@ -11,7 +11,7 @@
 // Usage:
 //   node _rx-probe.js run [--seed N] [--secs S] [--mode natural|force|press]
 //        [--throttle none|slow4g|host] [--port 8061] [--query "&far=0.9"]
-//        [--out DIR]
+//        [--reject-decode] [--out DIR]
 //   node _rx-probe.js analyze DIR [DIR …] [--quiet]
 //
 //   natural   the station runs as it would for a listener; receptions come
@@ -113,7 +113,11 @@ async function run() {
     });
     page.on("Runtime.exceptionThrown", (p) => log.push({ type: "exception", text: (p.exceptionDetails.exception && p.exceptionDetails.exception.description || p.exceptionDetails.text || "").slice(0, 600) }));
     if (THROTTLE[thr]) await page.send("Network.emulateNetworkConditions", THROTTLE[thr]);
+    // Q0 r2: --reject-decode stands in for a WebKit that refuses a reel — every
+    // decodeAudioData rejects, as a real decoder's refusal does (both forms)
+    if (flag("reject-decode")) await page.send("Page.addScriptToEvaluateOnNewDocument", { source: "(function(){var B=window.BaseAudioContext||window.AudioContext;B.prototype.decodeAudioData=function(ab,ok,err){var e=new DOMException('injected by _rx-probe --reject-decode','EncodingError');if(err)setTimeout(function(){err(e);},5);return Promise.reject(e);};})();" });
     await page.send("Page.addScriptToEvaluateOnNewDocument", { source: rec });
+    await page.send("Page.addScriptToEvaluateOnNewDocument", { source: fs.readFileSync(path.join(DIR, "tools", "presshook.js"), "utf8") });   // the press log (Q0 r2)
     await page.send("Page.navigate", { url });
     await page.send("Emulation.setDeviceMetricsOverride", { width: 1280, height: 900, deviceScaleFactor: 1, mobile: false });
     // wait for the page's scripts and the manifest
@@ -157,7 +161,7 @@ async function run() {
       }
     }
     // pull everything
-    const meta = { seed, secs, mode, throttle: thr, url, started: new Date(tStart).toISOString(), forced, presses };
+    const meta = { seed, secs, mode, throttle: thr, url, started: new Date(tStart).toISOString(), forced, presses, rejectDecode: flag("reject-decode") };
     const rx = await page.eval("(function(){var R=__rx;return {pulledAt: ZankyoAudio.getAudioContext() ? ZankyoAudio.getAudioContext().currentTime : null, glide: R.glide || null, sr:R.sr, block:R.block, ev:R.ev, calls:R.calls, media:R.media, polls:R.polls, clk:R.clk, err:R.err, bus:R.bus, heads:R.heads, spMiss:R.spMiss, spN:R.spN, route:R.route, state: ZankyoBroadcast.getState()}})()", 300000);
     let from = 0, lastPull = null; const parts = [];
     for (;;) {
@@ -173,6 +177,7 @@ async function run() {
     rx.console = log;
     fs.writeFileSync(path.join(out, "rx.json"), JSON.stringify(rx));
     fs.writeFileSync(path.join(out, "meta.json"), JSON.stringify(meta, null, 1));
+    fs.writeFileSync(path.join(out, "crit.json"), JSON.stringify(await page.eval("window.__crit || null").catch(() => null)));
     process.stderr.write("[rx] wrote " + out + " (" + rx.ev.filter((e) => /受信$/.test(e.label)).length + " receptions, " + (rx.spMiss) + " tap misses of " + rx.spN + ")\n");
     console.log(out);
   } finally {
@@ -257,8 +262,9 @@ function inHole(rx, rel) { for (const h of rx.holes || []) if (rel >= h.atS - 0.
 // ============================================================================
 function analyze(dirs) {
   const quiet = flag("quiet");
-  const K = ["head gap", "stall", "late start", "splice", "end of file", "wrong reel", "conflict", "overlap"];
-  const all = { receptions: 0, auditions: 0, found: {}, unintended: {}, gapMsU: 0, waiting: 0, fallbacks: 0, drops: 0, holes: 0, tapMiss: 0, tapN: 0, consoleErr: 0, shapes: {} };
+  const K = ["head gap", "stall", "late start", "splice", "end of file", "wrong reel", "conflict", "overlap", "lip sync", "faded", "dead press", "picture stall"];
+  const all = { receptions: 0, auditions: 0, found: {}, unintended: {}, gapMsU: 0, waiting: 0, fallbacks: 0, drops: 0, holes: 0, tapMiss: 0, tapN: 0, consoleErr: 0, shapes: {},
+    sync: [], faded: [], picStall: [], presses: 0, answers: {}, pressWaits: [], stats: [] };
   for (const k of K) { all.found[k] = 0; all.unintended[k] = 0; }
   const unintended = [];
   const man = manifestById();
@@ -273,7 +279,10 @@ function analyze(dirs) {
     const rowT = (r) => rx.clk[Math.floor(r / bps)] + (r % bps) * dtB;
     // the events, calls and polls were pulled BEFORE the rows, so the capture
     // is complete only up to the earlier of the two
-    const firstT = rx.clk[0], lastT = Math.min(rowT(nRows - 1), rx.pulledAt != null ? rx.pulledAt : Infinity);
+    // (Q0 r2: the rows are pulled AFTER the clock, so the last row can lie past
+    // the last clock entry — rowT() of it was NaN, lastT with it, and every
+    // "not fully captured" test below silently passed everything)
+    const firstT = rx.clk[0], lastT = Math.min(rx.clk[rx.clk.length - 1] + 8192 / sr, rx.pulledAt != null ? rx.pulledAt : Infinity);
     function rowAt(t) {
       let lo = 0, hi = rx.clk.length - 1;
       while (lo < hi) { const m = (lo + hi + 1) >> 1; if (rx.clk[m] <= t) lo = m; else hi = m - 1; }
@@ -290,11 +299,33 @@ function analyze(dirs) {
       for (const e of rx.err || []) console.log("   page error: " + e);
     }
     const recs = rx.ev.filter((e) => /受信$/.test(e.label) && e.signal && e.signal.rx);
+    if (rx.state && rx.state.stats) all.stats.push({ run: path.basename(d), fallbacks: rx.state.stats.fallbacks, demoted: rx.state.stats.demoted || null, picSeeks: rx.state.stats.picSeeks || 0,
+      audBlocked: rx.state.stats.audBlocked || 0, audLate: rx.state.stats.audLate || 0, reelsMode: rx.state.reelsMode });
+    // (Q0 r2) THE PRESS: every 受信 press made while nothing was on the air
+    // must be answered by a reel within 6 s — the owner's rc.77 rule, and the
+    // critic's reading (tools/rx-critic.js), whatever dial() said it did.
+    const critF = path.join(d, "crit.json");
+    const crit = fs.existsSync(critF) ? JSON.parse(fs.readFileSync(critF, "utf8")) : null;
+    if (crit && crit.dial) for (const p of crit.dial) {
+      if (p.t == null || p.t > lastT - 40) continue;
+      all.presses++; all.answers[p.r] = (all.answers[p.r] || 0) + 1;
+      const onAir = recs.some((e) => e.signal.t0 - 4.5 <= p.t && p.t <= e.signal.t0 + e.signal.rx.spanS + 0.8);
+      const next = recs.map((e) => e.signal.t0).filter((x) => x > p.t - 0.01).sort((x, y) => x - y)[0];
+      const wait = next != null ? next - p.t : Infinity;
+      if (!onAir) all.pressWaits.push(wait);
+      if (!onAir && wait > 6) {
+        all.found["dead press"]++; all.unintended["dead press"]++;
+        unintended.push({ run: path.basename(d), kind: "dead press", at: p.t, dur: wait, why: "press answered " + p.r + " with nothing on the air; next reel " + (isFinite(wait) ? wait.toFixed(1) + " s" : "never") });
+        if (!quiet) console.log("   ! UNINTENDED dead press @" + p.t.toFixed(1) + " → " + p.r + " · next reel +" + (isFinite(wait) ? wait.toFixed(1) : "∞") + " s");
+      }
+    }
     // on the air at once, on one element: whatever either does to it, it does to both
     const spans = recs.map((e) => ({ e, a: e.signal.t0 - 0.2, b: e.signal.t0 + e.signal.rx.spanS, ch: e.signal.ch }));
     for (const ev of recs) {
       const s = ev.signal, P = s.rx, t0 = s.t0, vid = s.vid, ch = s.ch != null ? s.ch : -1;
       const aud = ev.label !== "受信";
+      // decoded or element — per reception since Q0 r2 (a page can be demoted mid-session)
+      const bufR = s.reels ? s.reels === "buffer" : !!(rx.route && rx.route.reelsMode === "buffer");
       if (t0 + P.spanS > lastT || t0 < firstT) continue;           // not fully captured
       if (aud) all.auditions++; else all.receptions++;
       const key = (aud ? "♪ " : "") + P.entry + "/" + P.body + "/" + P.exit;
@@ -305,9 +336,9 @@ function analyze(dirs) {
       const found = [];
       const push = (f) => found.push(f);
       // --- 0. conflicts ---
-      const bufModeC = rx.route && rx.route.reelsMode === "buffer";   // buffers cannot share anything; only elements can
+      const bufModeC = bufR;   // buffers cannot share anything; only elements can
       for (const o of spans) {
-        if (bufModeC || o.e === ev || o.ch !== ch || ch < 0) continue;
+        if (bufModeC || o.e === ev || o.ch !== ch || ch < 0 || o.e.signal.reels === "buffer") continue;
         const a = Math.max(o.a, t0 - 0.2), b = Math.min(o.b, t0 + P.spanS);
         if (b > a) { const em = envMaxOver(a - t0, b - t0); push({ kind: "conflict", at: +(a - t0).toFixed(2), dur: +(b - a).toFixed(2), env: +em.toFixed(2), intended: false, why: "shares its element with " + o.e.label + " " + o.e.signal.id + " (t0 " + o.e.signal.t0.toFixed(1) + ")" }); }
       }
@@ -319,7 +350,7 @@ function analyze(dirs) {
       // position is exactly what the page threaded (desc.head): piece k runs
       // from head[k].pos at t0 + head[k].at. That is used instead of the
       // picture's clock wherever the page recorded it.
-      const bufModeP = rx.route && rx.route.reelsMode === "buffer";
+      const bufModeP = bufR;
       // a tuned reel runs at its bent rate: the page says so in its 同調 line
       // (or, from rc.93, in desc.head[].rate)
       const tun = rx.ev.find((x) => x.label === "同調" && Math.abs(x.t - (t0 + 0.4)) < 0.05 && /rate ([0-9.]+)/.test(x.detail || ""));
@@ -373,7 +404,7 @@ function analyze(dirs) {
       }
       const posAt = (t) => { const p = posRaw(t); return p == null ? null : p + lag; };
       const srcAt = (t) => {
-        if (rx.route && rx.route.reelsMode === "buffer") return segAtT(t);          // the buffer plays the piece's own reel, by construction
+        if (bufR) return segAtT(t);          // the buffer plays the piece's own reel, by construction
         const b = pollAt(t); return b && b[5] != null ? (srcs[b[5]] || "").replace(/\.mp4$/, "") : null;
       };
       const segAtT = (t) => { const rel = t - t0; let g = P.segments[0]; for (const sg of P.segments) if (rel >= sg.atS - sg.lockS - 0.05) g = sg; return g.reel; };
@@ -430,7 +461,7 @@ function analyze(dirs) {
       // --- 2. stalls from the poll (element mode only: in buffer mode the
       //        element is the picture and its stalls are not the sound's) ---
       // Consecutive stalled polls are ONE stall.
-      const bufMode = rx.route && rx.route.reelsMode === "buffer";
+      const bufMode = bufR;
       let lastStall = null;
       for (let i = 1; i < pl.length && !bufMode; i++) {
         const dt = pl[i][0] - pl[i - 1][0], dp = pl[i][2] - pl[i - 1][2];
@@ -535,10 +566,61 @@ function analyze(dirs) {
           if (late > 0.03) push({ kind: "late start", at: +rise.toFixed(3), dur: +late.toFixed(3), env: +em.toFixed(2), intended: em < 0.1, why: "piece " + si + " audio arrived " + (late * 1000).toFixed(0) + " ms after its envelope began to rise (env " + em.toFixed(2) + " by then)" });
         }
       }
+      // --- 5. (Q0 r2) LIP SYNC, decoded receptions: the picture (the element's
+      //        position, polled) against the sound (the head the page
+      //        threaded, run at its rate and the glide's), over every settled
+      //        piece — from 0.5 s after it opens to its end. The gate is the
+      //        critic's: |picture − sound| ≤ 120 ms on ≥ 95 % of each piece. ---
+      if (bufModeP && s.head && s.head.length && vid != null) {
+        for (let si = 0; si < P.segments.length; si++) {
+          const sg = P.segments[si], a0 = t0 + sg.atS + 0.5, a1 = t0 + sg.atS + sg.onS + (sg.holeS || 0) - 0.1;
+          // Only where the element HAS a frame (readyState ≥ 2). A player that
+          // cannot produce one is not out of sync, it is stalled: its media
+          // pipeline starved (measured at a load average of ~50 — seeks, a
+          // reload and play() all went unanswered for up to 19 s). That is
+          // reported as its own reading, "picture stall", in seconds; the sound
+          // does not depend on it in decoded mode.
+          const offs = []; let stallN = 0, allN = 0;
+          for (const q of pl) { if (q[0] < a0 || q[0] > a1) continue; allN++; if (q[3] < 2) { stallN++; continue; } const p = posRaw(q[0]); if (p != null) offs.push(q[2] - p); }
+          if (stallN && allN) { const secs = (a1 - a0) * stallN / allN; all.picStall.push({ run: path.basename(d), id: s.id, aud, piece: si, s: +secs.toFixed(1) });
+            if (secs >= 1) push({ kind: "picture stall", at: +sg.atS.toFixed(2), dur: +secs.toFixed(2), env: 1, intended: false, covered: true, why: "piece " + si + ": the element had no frame (readyState < 2) for " + secs.toFixed(1) + " s of " + (a1 - a0).toFixed(1) + " — the sound plays on; the tube holds its last frame" }); }
+          if (offs.length < 10) continue;
+          const okShare = offs.filter((o) => Math.abs(o) <= 0.12).length / offs.length;
+          const so = offs.slice().sort((x, y) => x - y), med = so[so.length >> 1], worst = Math.abs(so[0]) > Math.abs(so[so.length - 1]) ? so[0] : so[so.length - 1];
+          all.sync.push({ run: path.basename(d), id: s.id, aud, piece: si, n: offs.length, okShare, med, worst });
+          if (okShare < 0.95) push({ kind: "lip sync", at: +sg.atS.toFixed(2), dur: +sg.onS.toFixed(2), env: 1, intended: false,
+            why: "piece " + si + ": picture within 120 ms of the sound on " + (okShare * 100).toFixed(0) + " % of " + offs.length + " polls · median " + (med * 1000).toFixed(0) + " ms · worst " + (worst * 1000).toFixed(0) + " ms" });
+        }
+      }
+      // --- 6. (Q0 r2) FADED: seconds where the page has faded the reel out at
+      //        its window's edge (headPlan's overrunS: the gain under half
+      //        from 0.175 s before the edge) while the envelope is still at or
+      //        above half of peak — the station gone and its static carrying
+      //        the reception. Auditions: none (0.2 s of slack for the 10 ms
+      //        grid). Broadcasts: ≤ 1.0 s, except a whole thought (§14 never
+      //        slices one; the exit after it is declared). ---
+      const hlF = s.head && s.head[s.head.length - 1];
+      if (hlF && hlF.overrunS > 0.05 && hlF.edgePos != null) {
+        const tEdgeRel = hlF.at + (hlF.edgePos - hlF.pos) / rateOf(s.head.length - 1);
+        let f = 0; for (let x = tEdgeRel - 0.175; x < P.spanS; x += 0.01) if (envAt(pts, x) >= 0.5) f += 0.01;
+        const r0 = man[P.segments[0].reel], wi0 = r0 ? r0.windows.findIndex((w) => P.segments[0].inS >= w[0] - 1e-3 && P.segments[0].inS < w[1]) : -1;
+        const whole = !!(r0 && wi0 >= 0 && (r0.wholeWindows ? r0.wholeWindows[wi0] : r0.whole));
+        // (a TUNED reel sped up, rate > 1: choose() decides its hold on the
+        // UNBENT window — §11.2, for byte-identity — and documents that the
+        // last of the run passes the edge; declared, as the whole thought is)
+        // (…and a reel the STATION tuned to, §11.3: its in-point was placed for
+        // the bend choose() drew, and at air it runs unbent — pre-existing, QF)
+        const sea = rx.ev.some((x) => x.label === "同調" && Math.abs(x.t - (t0 + 0.4)) < 0.05 && /reel unbent/.test(x.detail || ""));
+        const sped = rateOf(s.head.length - 1) > 1.005 || sea;
+        all.faded.push({ run: path.basename(d), id: s.id, aud, s: +f.toFixed(2), whole, sped });
+        const lim = aud ? 0.2 : 1.0;
+        if (f > lim) push({ kind: "faded", at: +tEdgeRel.toFixed(2), dur: +f.toFixed(2), env: +envAt(pts, tEdgeRel).toFixed(2), intended: (whole || sped) && !aud,
+          why: (aud ? "audition" : "broadcast") + " faded out at its window's edge with the envelope ≥ 0.5 for " + f.toFixed(2) + " s (limit " + lim + ")" + (whole ? " · a whole thought, declared" : sea ? " · the station tuned to this reel (§11.3): placed for its bend, aired unbent — declared, open for QF" : sped ? " · a tuned reel at rate " + rateOf(s.head.length - 1).toFixed(3) + " on its unbent window (§11.2), declared" : "") });
+      }
       for (const f of found) {
         all.found[f.kind]++;
-        if (f.covered) { all.covered = (all.covered || 0) + 1; all.coveredMs = (all.coveredMs || 0) + f.dur * 1000; }
-        if (!f.intended && !(f.covered && THROTTLED(meta))) { all.unintended[f.kind]++; if (f.kind === "head gap" || f.kind === "stall" || f.kind === "late start") all.gapMsU += f.dur * 1000; unintended.push({ run: path.basename(d), reel: s.id, t0, shape: key, ...f }); }
+        if (f.covered && f.kind !== "picture stall") { all.covered = (all.covered || 0) + 1; all.coveredMs = (all.coveredMs || 0) + f.dur * 1000; }
+        if (!f.intended && !(f.covered && (THROTTLED(meta) || f.kind === "picture stall"))) { all.unintended[f.kind]++; if (f.kind === "head gap" || f.kind === "stall" || f.kind === "late start") all.gapMsU += f.dur * 1000; unintended.push({ run: path.basename(d), reel: s.id, t0, shape: key, ...f }); }
       }
       if (!quiet) {
         const bad = found.filter((f) => !f.intended);
@@ -554,6 +636,15 @@ function analyze(dirs) {
   console.log("   waiting events " + all.waiting + " · fallbacks " + all.fallbacks + " · tap misses " + all.tapMiss + "/" + all.tapN + " · console errors " + all.consoleErr);
   console.log("   covered by the stall static: " + (all.covered || 0) + " head gaps, " + (all.coveredMs || 0).toFixed(0) + " ms (counted as unintended on an unthrottled run, as covered on a throttled one)");
   console.log("   intended by design: " + all.drops + " scheduled drops, " + all.holes + " 断 holes");
+  if (all.sync.length) {
+    const okS = all.sync.map((x) => x.okShare).sort((x, y) => x - y), med = all.sync.map((x) => x.med).sort((x, y) => x - y);
+    console.log("   lip sync (decoded): " + all.sync.length + " settled pieces · within 120 ms: min " + (okS[0] * 100).toFixed(0) + " % / median " + (okS[okS.length >> 1] * 100).toFixed(0) + " % · median offset " + (med[med.length >> 1] * 1000).toFixed(0) + " ms (range " + (med[0] * 1000).toFixed(0) + " … " + (med[med.length - 1] * 1000).toFixed(0) + ") · " + all.sync.filter((x) => x.okShare < 0.95).length + " pieces under 95 %");
+  }
+  if (all.picStall.length) console.log("   picture stalls (the element had no frame; reported, not gated — the sound is the buffer's): " + all.picStall.filter((x) => x.s >= 1).length + " pieces ≥ 1 s, " + all.picStall.reduce((a2, x) => a2 + x.s, 0).toFixed(1) + " s in all · " + all.picStall.filter((x) => x.s >= 1).map((x) => x.id + " " + x.s + " s").join(", "));
+  const fb = all.faded.filter((x) => x.aud), fr = all.faded.filter((x) => !x.aud);
+  console.log("   faded at env ≥ 0.5: auditions " + fb.length + " edges, " + fb.reduce((a, x) => a + x.s, 0).toFixed(1) + " s (max " + (fb.length ? Math.max(...fb.map((x) => x.s)).toFixed(2) : "0") + ") · broadcasts " + fr.length + " edges, " + fr.reduce((a, x) => a + x.s, 0).toFixed(1) + " s (max " + (fr.length ? Math.max(...fr.map((x) => x.s)).toFixed(2) : "0") + ")" + (fr.some((x) => x.whole || x.sped) ? " · declared (whole thought / tuned reel sped up): " + fr.filter((x) => x.whole || x.sped).map((x) => x.id + " " + x.s.toFixed(2)).join(", ") : ""));
+  if (all.presses) { const w = all.pressWaits.filter(isFinite).sort((x, y) => x - y); console.log("   presses " + all.presses + " " + JSON.stringify(all.answers) + " · made with nothing on the air: " + all.pressWaits.length + ", wait for a reel median " + (w.length ? w[w.length >> 1].toFixed(1) : "-") + " s, max " + (w.length ? w[w.length - 1].toFixed(1) : "-") + " s · over 6 s: " + all.unintended["dead press"]); }
+  for (const st of all.stats) if (st.demoted || st.picSeeks || st.audBlocked || st.audLate) console.log("   stats " + st.run + ": " + JSON.stringify(st));
   console.log(U ? "   GATE: FAIL — " + U + " unintended" : "   GATE: PASS — zero unintended");
   if (flag("json")) console.log(JSON.stringify({ all, unintended }));
   return U;

@@ -173,7 +173,10 @@
       try {
         var o = { cat: ev.cat, label: ev.label, detail: ev.detail, t: ev.t, at: now() };
         var s = ev.signal;
-        if (s) o.signal = { t0: s.t0, holdS: s.holdS, lossD: s.lossD, drops: s.drops, id: s.id, seed: s.seed, rx: s.rx, head: s.head || null, vid: s.video ? vid(s.video) : null, ch: (R.route && R.route.reelsMode === "buffer") ? 0 : (s.video && R.headOf[vid(s.video)] != null ? R.headOf[vid(s.video)] : -1) };
+        // (s.reels, since Q0 r2: which head THIS reception used — a page can be
+        // demoted from decoded to element mode mid-session; older builds say nothing)
+        var bufRx = (s && s.reels) ? s.reels === "buffer" : !!(R.route && R.route.reelsMode === "buffer");
+        if (s) o.signal = { t0: s.t0, holdS: s.holdS, lossD: s.lossD, drops: s.drops, id: s.id, seed: s.seed, rx: s.rx, head: s.head || null, reels: s.reels || null, vid: s.video ? vid(s.video) : null, ch: bufRx ? 0 : (s.video && R.headOf[vid(s.video)] != null ? R.headOf[vid(s.video)] : -1) };
         R.ev.push(o);
       } catch (e) {}
     });
