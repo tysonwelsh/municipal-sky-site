@@ -62,6 +62,11 @@
 //   node _picture-probe.js phases
 //       the frames each phase gets, every fixture shape, tree vs rc.91: equal,
 //       except the 断 tail (hold now, not loss — the P1 fix).
+//   node _picture-probe.js lull
+//       (critic P1 r1) how far and how often the §11.2 surfacing lifts the
+//       picture: 遠/嵐 at sev 1 must surface without coming up near clean for
+//       long, the gate must fail with the lull off, and the share of drawn
+//       receptions carrying a lull is held to LULL_SHARE
 //   node _picture-probe.js p1             render, draws, legibility, perfp1, crack, phases
 //   node _picture-probe.js sheets
 //       contact sheets into --out: 12 drawn receptions on each of 3 reels, the
@@ -1050,6 +1055,46 @@ async function sheets(browser) {
   return { ok: true };
 }
 
+// ---- 5c. THE LULL'S SHAPE (critic P1 r1, required item 1). §11.2 asks that
+// even the most buried reception lets "a face or a shape" rise "out of the
+// noise for a moment and sink back" — a surfacing, not a clearing. The
+// legibility mode proves the picture comes up; this mode measures HOW FAR and
+// HOW OFTEN, and proves the surfacing gate is live:
+//  · as built — 遠 and 嵐 forced at sev 1 (legibility's 24): every one must
+//    still surface, and the median share of hold frames at SSIM ≥ NEAR_CLEAN
+//    (a picture you would call clean) must be ≤ NEAR_CLEAN_SHARE;
+//  · lull off (force axes { lull: null }) — the sensitivity: surfacing must
+//    FAIL somewhere, or the surfacing gate is not measuring the lull;
+//  · incidence — the share of drawn receptions (20,000, node) that carry a
+//    lull, reported against LULL_SHARE (a lull on a reception that surfaces
+//    without one only makes every tube pulse alike).
+// rc.P1 (8fcd38a) as the critic measured it: near-clean median 0.38, max
+// 0.90; lull off 10/24 surface (the gate is live); incidence 68.5 %.
+const NEAR_CLEAN = 0.7, NEAR_CLEAN_SHARE = 0.15, LULL_SHARE = 0.35;
+async function lullShape(browser) {
+  let ok = true;
+  const say = (g, s) => { ok = ok && g; console.log("  " + (g ? "✓" : "✗") + " " + s); };
+  const variants = [["as built", {}], ["lull off", { lull: null }]], out = {};
+  for (const [name, axes] of variants) {
+    const items = [cleanItem(0)];
+    for (const a of ["遠", "嵐"]) for (let i = 0; i < 12; i++) items.push(plainItem(0, 501 + i + 0.37, { force: { archetype: a, sev: 1, axes: axes }, label: a + "·sev1·" + i }));
+    const rows = legRows(await runMulti(browser, items, {}));
+    const hi = rows.map((r) => { const v = r.trace.filter((t) => !t[2]).map((t) => t[1]); return v.filter((x) => x >= NEAR_CLEAN).length / Math.max(1, v.length); });
+    const fails = rows.filter((r) => !r.surf);
+    out[name] = { surfaced: rows.length - fails.length, n: rows.length, worst: Math.min(...rows.map((r) => r.surfWorst)), nearCleanMedian: median(hi), nearCleanMax: Math.max(...hi) };
+    console.log("  " + name + ": " + out[name].surfaced + "/" + rows.length + " surface · worst window " + out[name].worst.toFixed(2) + " s · share of hold at SSIM ≥ " + NEAR_CLEAN + ": median " + median(hi).toFixed(2) + ", max " + Math.max(...hi).toFixed(2));
+  }
+  say(out["as built"].surfaced === out["as built"].n, "遠 and 嵐 at sev 1 all surface (" + out["as built"].surfaced + "/" + out["as built"].n + ")");
+  say(out["as built"].nearCleanMedian <= NEAR_CLEAN_SHARE, "a surfacing, not a clearing: median share of hold near clean (SSIM ≥ " + NEAR_CLEAN + ") " + out["as built"].nearCleanMedian.toFixed(2) + " (≤ " + NEAR_CLEAN_SHARE + ")");
+  say(out["lull off"].surfaced < out["lull off"].n, "sensitivity: with the lull off the surfacing gate fails (" + out["lull off"].surfaced + "/" + out["lull off"].n + " surface) — " + (out["lull off"].surfaced < out["lull off"].n ? "the gate is live" : "THE GATE IS BLIND"));
+  delete require.cache[require.resolve("./zk-picture.js")];
+  const ZP = require("./zk-picture.js"), Rand = loadRand();
+  let withL = 0, N = 0;
+  for (const S of SEED_SETS) { const m = Rand.stream(S), dsr = Rand.stream(S).fork("probe:desc"); for (let r = 0; r < 500; r++) { const ch = ZP.drawCharacter(m.fork("set:rx:" + dsr.next() * 1000), {}); if (ch.lull) withL++; N++; } }
+  say(withL / N <= LULL_SHARE, "incidence: " + (withL / N * 100).toFixed(1) + " % of " + N + " drawn receptions carry a lull (≤ " + (LULL_SHARE * 100) + " %)");
+  return Object.assign({ ok, incidence: withL / N }, out);
+}
+
 (async function main() {
   console.log("_picture-probe " + MODE + " · " + URL0 + " · base " + BASE + " · out " + OUT);
   const browser = await launch();
@@ -1064,6 +1109,7 @@ async function sheets(browser) {
     if (MODE === "legibility" || MODE === "p1") { console.log("P1 · LEGIBILITY AND SURFACING (§6.3.3, §11.2)"); report.legibility = await legibility(browser); ok = ok && report.legibility.ok; }
     if (MODE === "perfp1" || MODE === "p1") { console.log("P1 · PERF (§6.3.4)"); report.perfp1 = await perfp1(browser); ok = ok && report.perfp1.ok; }
     if (MODE === "crack" || MODE === "p1") { console.log("P1 · 光 THE CRACK'S LIGHT"); report.crack = await crack(browser); ok = ok && report.crack.ok; }
+    if (MODE === "lull") { console.log("P1 · THE LULL'S SHAPE (§11.2; critic P1 r1 item 1)"); report.lull = await lullShape(browser); ok = ok && report.lull.ok; }
     if (MODE === "phases" || MODE === "p1") { console.log("P1 · THE PHASE MACHINE (the 断 tail fix, the relock; every fixture shape, tree vs rc.91)"); report.phases = await phases(browser); ok = ok && report.phases.ok; }
     if (MODE === "sheets") { console.log("P1 · CONTACT SHEETS"); report.sheets = await sheets(browser); }
   } catch (e) { console.error("PROBE FAILED: " + (e && e.stack || e)); ok = false; }
