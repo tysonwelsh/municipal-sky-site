@@ -79,7 +79,7 @@ include '../../includes/header.php';
                  treatment reads as phosphor rather than as a printed sign.
                  The first PLAY removes it for the session. -->
             <div class="zk-boot" id="zankyo-boot" aria-hidden="true">
-              <div class="zankyo-title" data-glitch="ZANKYŌ">ZANKYŌ<span class="zankyo-kanji">残響</span></div>
+              <div class="zankyo-title" data-glitch="ZANKYŌ">ZANKYŌ</div>
               <p class="zk-boot-line">// awaiting signal, press play</p>
             </div>
             <div class="zankyo-scanlines" aria-hidden="true"></div>

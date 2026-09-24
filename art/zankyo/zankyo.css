@@ -229,12 +229,6 @@
   margin: 0; color: #fff; position: relative; display: inline-block;
   text-shadow: 0 0 16px rgba(var(--red-rgb), 0.5), 0 0 40px rgba(var(--red-rgb), 0.25);
 }
-.zankyo-title .zankyo-kanji {
-  font-family: "Shippori Mincho", serif; font-weight: 700;
-  font-size: 0.42em; letter-spacing: 0.1em; color: var(--cyan);
-  margin-left: 0.35em; vertical-align: 0.5em;
-  text-shadow: 0 0 14px rgba(var(--cyan-rgb), 0.6);
-}
 /* glitch echoes */
 .zankyo-title::before, .zankyo-title::after {
   content: attr(data-glitch); position: absolute; left: 0; top: 0;
