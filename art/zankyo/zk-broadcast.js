@@ -357,7 +357,10 @@
     P.spanS = cur + P.exitS;
     P.presenceS = on;
     for (i = 0; i < P.segments.length; i++) {
-      P.segments[i].srcToS = (i === P.segments.length - 1) ? P.spanS + 0.2 : P.segments[i].atS + P.segments[i].onS + 0.05;
+      // (+0.15 past a piece that a gap follows: the carrier takes 0.12 s to
+      // leave, and a decoded piece stopped at +0.05 was cut off at 56 % of
+      // peak halfway down that ramp — Q0, a 走 audition, slow 4G)
+      P.segments[i].srcToS = (i === P.segments.length - 1) ? P.spanS + 0.2 : P.segments[i].atS + P.segments[i].onS + 0.15;
     }
     return P;
   }
@@ -720,6 +723,20 @@
   // It is not free — the whole reel is decoded (a 72-120 s file is 30-45 MB of
   // float) and fetched a second time for the picture. Two buffers are kept.
   // That is the price of an answer.
+  //
+  // Q0 (rc.93): THIS IS NOW THE DEFAULT PATH, for a second reason that has
+  // nothing to do with Bluetooth. The element's own pipeline is what chops
+  // when the machine is busy: measured with _rx-probe.js on the owner's
+  // laptop at a load average of 26–35, element-fed receptions went silent for
+  // 30–280 ms at a time with the reel wholly buffered (`waiting`,
+  // readyState 2), and every element start and seek rides a main-thread timer
+  // that ran up to 0.9 s late in a busy kyū. A BufferSource is started on the
+  // audio clock by the audio thread and has neither problem. The cost, also
+  // measured: the whole reel must be fetched and decoded before decide(), and
+  // a 受信 press that seats a reception 4.9 s out on a slow-4G line (180 KB/s)
+  // cannot do that for a 1 MB reel — it falls back to the gagaku, the
+  // graceful path, where the element would have played. `?reels=element`
+  // brings the old path back.
   // ---- ?reel=<id> — the owner's pin (2026-09-09) ----------------------------
   // The night's FIRST SEATED broadcast is this reel; the lottery resumes after
   // it. "Seated" means ON THE AIR, not merely armed: the pin is spent where
@@ -744,7 +761,7 @@
   // lookahead. 1.5 s lands it near 2.4 s with real margin.
   var BENCH_NOW_LEAD_S = 1.5;   // press → tune-in, the bench default
   function pinnedId() {
-    try { return (window.ZankyoAudio && ZankyoAudio.getRoute && ZankyoAudio.getRoute().pinnedReel) || null; } catch (e) { return null; }
+    try { var ZA = window.ZankyoAudio; return (ZA && ZA.getRoute && ZA.getRoute().pinnedReel) || null; } catch (e) { return null; }
   }
   function pinnedReel() {
     var id = pinnedId(); if (!id || !pool) return null;
@@ -752,7 +769,10 @@
     return null;
   }
   function reelsBuffered() {
-    try { return !!(window.ZankyoAudio && ZankyoAudio.getRoute && ZankyoAudio.getRoute().reelsMode === "buffer"); } catch (e) { return false; }
+    // (window.ZankyoAudio, never the bare name: under _harness.js and _probe.js
+    // the page's window is not Node's global, the bare name threw, and every
+    // run there was element mode whatever the route said — Q0)
+    try { var ZA = window.ZankyoAudio; return !!(ZA && ZA.getRoute && ZA.getRoute().reelsMode === "buffer"); } catch (e) { return false; }
   }
   // Take the element's voice away, as far as each engine allows. muted and
   // volume are the portable half; audioTracks is WebKit's own, and is the
@@ -771,8 +791,17 @@
   }
   // the decoded reels: at most two, the live one and the one before it
   var bufCache = {}, bufOrder = [], bufPending = {};
+  // A value already in hand, as a thenable that answers AT ONCE. In a browser
+  // it behaves as a resolved promise that does not wait for the microtask
+  // queue; under _harness.js and _probe.js, whose virtual clock never lets the
+  // stack empty, it is the difference between a decoded reel and a reel that
+  // is never ready (Q0: the harness could not see ?reels=buffer at all).
+  function nowThen(v) {
+    return { then: function (ok) { try { var r = ok ? ok(v) : v; return (r && typeof r.then === "function") ? r : nowThen(r); } catch (e) { return Promise.reject(e); } },
+             catch: function () { return this; } };
+  }
   function decodeReel(id, ctx) {
-    if (bufCache[id]) return Promise.resolve(bufCache[id]);
+    if (bufCache[id]) return nowThen(bufCache[id]);
     if (bufPending[id]) return bufPending[id];
     if (!hasFetch || !ctx || typeof ctx.decodeAudioData !== "function") return Promise.reject(new Error("no decoder"));
     var pr = fetch(reelUrl(id)).then(function (r) {
@@ -780,8 +809,16 @@
       return r.arrayBuffer();
     }).then(function (ab) {
       // Safari has only recently had the promise form; the callback form is
-      // the one both engines have always had, so ask for it explicitly.
-      return new Promise(function (res, rej) { ctx.decodeAudioData(ab, res, function (e) { rej(e || new Error("decode failed")); }); });
+      // the one both engines have always had, so ask for it explicitly. A
+      // decoder that answers inside the call (the harness's) is taken at its
+      // word; a real one is waited for. The promise the modern form ALSO
+      // returns is caught, or its rejection is reported a second time.
+      var got = null, bad = null, w = null;
+      var rp = ctx.decodeAudioData(ab, function (b) { got = b; if (w) w.res(b); }, function (e) { bad = e || new Error("decode failed"); if (w) w.rej(bad); });
+      if (rp && typeof rp.catch === "function") rp.catch(function () {});
+      if (got) return got;
+      if (bad) throw bad;
+      return new Promise(function (res, rej) { w = { res: res, rej: rej }; });
     }).then(function (buf) {
       bufCache[id] = buf; bufOrder.push(id);
       while (bufOrder.length > 2) { var old = bufOrder.shift(); if (old !== id) delete bufCache[old]; }
@@ -1728,7 +1765,13 @@
   function bufFor(a, reel) {
     var id = (reel && reel.id) || (a.reel && a.reel.id);
     if (a.bufs && a.bufs[id]) return a.bufs[id];
-    return a.buf || null;
+    // Q0: the FIRST reel's buffer only stands in for the first reel. It used
+    // to stand in for any piece whose own buffer had not arrived, so a 走 whose
+    // second reel was still decoding (slow 4G) played the first reel's audio
+    // from the second reel's in-point — the wrong station, and silence where
+    // that in-point ran past the first reel's end. null lets startSignal start
+    // the piece when its own decode lands.
+    return (a.reel && id === a.reel.id) ? (a.buf || null) : null;
   }
   function prefetch(a) {
     if (!a) a = armed;
@@ -2087,7 +2130,7 @@
   // corridor it already has. It says so in the log rather than going quietly
   // missing.
   function captureOff() {
-    try { return !!(window.ZankyoAudio && ZankyoAudio.getRoute && ZankyoAudio.getRoute().capture === "off"); } catch (e) { return false; }
+    try { var ZA = window.ZankyoAudio; return !!(ZA && ZA.getRoute && ZA.getRoute().capture === "off"); } catch (e) { return false; }
   }
   function farRoomCapture(srcNode, startT) {
     var p = farDep("reelrm"); if (!p || farRoomConv) return;
