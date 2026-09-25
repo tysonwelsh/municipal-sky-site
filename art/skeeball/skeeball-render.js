@@ -793,6 +793,7 @@
   //   ballSx      the ball's screen x (machine frame); the possum watches it
   //   wideT0      time of the last 100: the possum's pupils blow wide
   //   muted       the marquee's neon tube is unplugged (the mute indicator)
+  //   attractT0   when ATTRACT began: the chalk note's breath starts full there
   //   marqueeNote {text, t0, until} — lettered on the marquee panel instead
   //               of the title, in the title's hand (WOOD1, 2×; 1× if long)
   //   doorRattle  a time: the coin door shakes ±1 px in its frame for 0.3 s
@@ -825,7 +826,7 @@
       restore(g, m.x0 + 4, m.y1 - 1, m.x1 - m.x0 - 8, 4);
       drawTube(g, t, 'dead');
     } else if (mode === 'attract') drawTube(g, t, true);
-    if (mode === 'attract') drawChalkNote(g, t);
+    if (mode === 'attract') drawChalkNote(g, t, view);
     g.restore();
     drawMoonRoom(ctx, t, view);      // canvas frame: the room goes bruise-purple
   }
@@ -1066,8 +1067,11 @@
   }
 
   /* ── attract: "5¢ - SWIPE" chalked on the lane, fading in and out ── */
-  function drawChalkNote(g, t) {
-    var a = 0.5 - 0.5 * Math.cos(t * Math.PI * 2 / 5); // 5 s breath
+  // The breath starts at full strength when ATTRACT begins (view.attractT0,
+  // set by main on boot and after a payout), fades by 2.5 s, back at 5 s.
+  function drawChalkNote(g, t, view) {
+    var t0 = view && typeof view.attractT0 === 'number' ? view.attractT0 : 0;
+    var a = 0.5 + 0.5 * Math.cos((t - t0) * Math.PI * 2 / 5); // 5 s breath, full at t0
     a = Math.max(0, a * 1.2 - 0.1);
     if (a <= 0.02) return;
     var str = '5¢ - SWIPE', y = GEO.lane.y1 - 38, x = Math.round(108 - textW(str, 1) / 2);
