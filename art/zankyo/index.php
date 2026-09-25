@@ -263,17 +263,17 @@ include '../../includes/header.php';
         <span class="zk-mod-screw" style="--slot:31deg" aria-hidden="true"></span>
         <span class="zk-mod-screw zk-mod-screw-r" style="--slot:-47deg" aria-hidden="true"></span>
         <div class="zk-mod-zone zk-mod-mode">
-          <span class="zk-mod-head">旋法 &middot; MODE</span>
           <div class="zk-mod-lamp">
             <span class="zankyo-scale-name" id="zankyo-mode-name"><b>Hirajoshi</b> &middot; <span class="zk-tonic">D</span></span>
             <span class="zankyo-scale-mood" id="zankyo-mode-mood">haunted &middot; derelict &middot; neon-rust</span>
           </div>
         </div>
         <div class="zk-mod-zone zk-mod-scale">
-          <span class="zk-mod-head">音階 &middot; SCALE</span>
+          <!-- the testpoints are back where the label was (owner, 2026-09-24):
+               no printed words on this panel, just the readout and the lamps -->
+          <span class="zk-testpoints" aria-hidden="true"></span>
           <div class="zk-deg-row" id="zankyo-degrees"></div>
         </div>
-        <span class="zk-mod-stamp" aria-hidden="true">音程管理 &middot; MODULE 04</span>
       </div>
 
       <!-- VFD activity display -->

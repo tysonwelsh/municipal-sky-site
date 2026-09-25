@@ -364,7 +364,7 @@
 .zk-module {
   position: relative; flex: 0 0 272px; min-width: 0;
   display: flex; flex-direction: column; align-items: stretch; gap: 9px;
-  padding: 9px 14px 15px 16px; border-radius: 5px; border: 1px solid #000;
+  padding: 11px 14px 11px 16px; border-radius: 5px; border: 1px solid #000;
   background: linear-gradient(180deg, #202027, #121216 70%, #0d0d11);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 -3px 8px rgba(0, 0, 0, 0.55), 0 4px 10px rgba(0, 0, 0, 0.5);
 }
@@ -386,13 +386,6 @@
   background: #060608; transform: rotate(var(--slot, 20deg));
 }
 .zk-mod-screw-r { top: auto; left: auto; bottom: 7px; right: 6px; filter: sepia(0.4) brightness(0.9); }
-/* stamped module designation */
-.zk-mod-stamp {
-  position: absolute; right: 22px; bottom: 3px; pointer-events: none; white-space: nowrap;
-  font-size: 6.5px; letter-spacing: 0.24em; color: #56525f;
-  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.85), 0 1px 0 rgba(255, 255, 255, 0.05); /* engraved */
-  transform: rotate(-0.4deg);
-}
 
 .zk-mod-zone { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
 /* the narrow module stacks its zones, so the machined seam runs across */
@@ -437,6 +430,14 @@
    its label beside it on one line --- */
 .zk-mod-scale { flex-direction: row; align-items: center; justify-content: space-between; padding-bottom: 2px; }
 .zk-deg-row { display: flex; gap: 4px; }
+/* the testpoints: a row of bare gold pads the tech probes, in the space the
+   SCALE label had (owner, 2026-09-24: no words on the panel, the lights back) */
+.zk-testpoints {
+  width: 58px; height: 5px; margin: 0 0 0 2px; border-radius: 1px;
+  background: repeating-linear-gradient(90deg, #6f5a2e 0 4px, #0c0c0f 4px 9px);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.05);
+  opacity: 0.85;
+}
 .zk-deg {
   width: 23px; height: 27px; display: flex; align-items: center; justify-content: center;
   font-family: "Shippori Mincho", serif; font-size: 15px; line-height: 1;
