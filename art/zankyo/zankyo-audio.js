@@ -1762,7 +1762,9 @@ window.ZankyoAudio = (function () {
   // Consequence, and it is the point: from 50 every knob is worth exactly
   // +6.02 dB up and silence down, the same gesture on every channel.
   var layerVolumes = { subDrone: 0.5, sho: 0.5, shakuhachi: 0.5, hichiriki: 0.5, koto: 0.5, shamisen: 0.5, biwa: 0.5, taiko: 0.5, noise: 0.5, ambient: 0.5, furin: 0.5, pa: 0.5, vox: 0.5, broadcast: 0.5 };
-  var layerMuted   = { subDrone: false, sho: false, shakuhachi: false, hichiriki: false, koto: false, shamisen: false, biwa: false, taiko: false, noise: false, ambient: false, pa: false, broadcast: false };
+  // furin and vox were missing here until 2026-09-25, so toggleLayer() refused
+  // them and their console switches never moved (owner's report)
+  var layerMuted   = { subDrone: false, sho: false, shakuhachi: false, hichiriki: false, koto: false, shamisen: false, biwa: false, taiko: false, noise: false, ambient: false, furin: false, pa: false, vox: false, broadcast: false };
   var layerRate    = { subDrone: 1, sho: 1, shakuhachi: 1, hichiriki: 1, koto: 1, shamisen: 1, biwa: 1, taiko: 1, noise: 1, ambient: 1, furin: 1, pa: 1, vox: 1, broadcast: 1 };
   var DEFAULT_LAYER_VOL = 0.5;   // the fallback for a layer not in the table above — centred like the rest (unreachable for every shipped layer)
 
