@@ -245,9 +245,9 @@ include '../../includes/header.php';
                    ladder in its window. It turns the reels' own sound only —
                    not the static, not the music. Wordless on the plastic; the
                    aria-label says what it factually does. -->
-              <div class="zk-rocker zk-vol" id="zankyo-rock-vol" role="group" aria-label="音量 &middot; the broadcast's volume, 0 to 8">
+              <div class="zk-rocker zk-vol" id="zankyo-rock-vol" role="group" aria-label="音量 &middot; the broadcast's volume">
                 <span class="zk-cap zk-cap-l" aria-hidden="true"><i>&minus;</i></span>
-                <span class="zk-rock-win zk-vol-win" aria-hidden="true"><span class="zk-vol-ladder" id="zankyo-vol-ladder"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></span>
+                <span class="zk-rock-win zk-vol-win" aria-hidden="true"><span class="zk-vol-ladder" id="zankyo-vol-ladder"></span></span>
                 <span class="zk-cap zk-cap-r" aria-hidden="true"><i>+</i></span>
                 <button type="button" class="zk-face zk-hit zk-hit-l" data-d="-1" aria-label="音量を下げる &middot; broadcast volume down"></button>
                 <button type="button" class="zk-face zk-hit zk-hit-r" data-d="1" aria-label="音量を上げる &middot; broadcast volume up"></button>

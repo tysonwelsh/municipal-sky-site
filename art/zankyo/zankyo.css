@@ -1381,17 +1381,17 @@
   color: rgb(var(--lcd-rgb)); text-shadow: 0 0 7px rgba(var(--lcd-rgb), 0.7), 0 0 2px rgba(var(--lcd-rgb), 0.95);
 }
 /* 音量: the ladder in the rocker's window, eight bars rising left to right */
-.zk-vol-win { position: relative; overflow: hidden; flex-direction: row; }
-.zk-vol-ladder { display: flex; align-items: flex-end; justify-content: center; gap: 2px; height: 16px; }
-.zk-vol-ladder i {
-  display: block; flex: none; width: 5px; border-radius: 1px;
-  background: rgba(var(--lcd-rgb), 0.08); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.5);
+/* one pixel column per <i>, packed with no gap and laid on the grid's own
+   2 px pitch (the ladder starts 4 px in and sits 6 px up, both even, so every
+   column and every row lands on a lit cell of the ::after grid); the columns
+   are built by zankyo-ui.js, their heights stepped like a histogram */
+.zk-vol-win { position: relative; overflow: hidden; flex-direction: row; justify-content: flex-start; align-items: stretch; }
+.zk-vol-ladder {
+  position: absolute; left: 4px; bottom: 6px; display: flex; align-items: flex-end; gap: 0;
+  filter: drop-shadow(0 0 2.5px rgba(var(--lcd-rgb), 0.55));
 }
-.zk-vol-ladder i:nth-child(1) { height: 6px; }  .zk-vol-ladder i:nth-child(2) { height: 7px; }
-.zk-vol-ladder i:nth-child(3) { height: 8px; }  .zk-vol-ladder i:nth-child(4) { height: 10px; }
-.zk-vol-ladder i:nth-child(5) { height: 11px; } .zk-vol-ladder i:nth-child(6) { height: 12px; }
-.zk-vol-ladder i:nth-child(7) { height: 14px; } .zk-vol-ladder i:nth-child(8) { height: 16px; }
-.zk-vol-ladder i.on { background: rgb(var(--lcd-rgb)); box-shadow: 0 0 5px rgba(var(--lcd-rgb), 0.7), 0 0 1px rgba(var(--lcd-rgb), 0.95); }
+.zk-vol-ladder i { display: block; flex: none; width: 2px; background: rgba(var(--lcd-rgb), 0.09); }
+.zk-vol-ladder i.on { background: rgb(var(--lcd-rgb)); }
 .zk-vol-win::after {                  /* the same glass and pixel grid as the number's window */
   content: ""; position: absolute; inset: 0; pointer-events: none;
   background:

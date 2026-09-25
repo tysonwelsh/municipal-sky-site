@@ -729,26 +729,89 @@
       locMax);
     paintLoc();
 
-    // THE THIRD STATION: 音量 (owner, 2026-09-25). Eight steps; 6 is the level
-    // the reels already play at, each step either side is 3 dB, and 0 is off.
-    // Remembered per browser, like the console's fold.
-    var VOL_MAX = 8, VOL_UNITY = 6, volN = VOL_UNITY;
-    try { var sv = parseInt(localStorage.getItem("zankyo-rx-vol"), 10); if (sv >= 0 && sv <= VOL_MAX) volN = sv; } catch (e) {}
+    wireVolume();
+  }
+
+  // THE THIRD STATION: 音量, the set's own volume (owner, 2026-09-25). The
+  // window is a grid of LED columns, one pixel wide and packed with no gap,
+  // rising in steps like a histogram (VOL_RUN columns to a step); one press
+  // lights or darkens exactly ONE column. Held, it steps once, waits
+  // VOL_HOLD_MS, then runs at VOL_REPEAT_MS a column until released. The
+  // column count follows the window's width (fewer on a phone), so the level
+  // is kept as a fraction of full scale: 3/4 is the level the reels already
+  // play at, the top quarter climbs to +6 dB, and below 3/4 the level falls
+  // away in dB to −30 at the first column, then off. Remembered per browser.
+  // (rc.116's eight-bar ladder is in git if the owner wants it back.)
+  var VOL_RUN = 4, VOL_HOLD_MS = 450, VOL_REPEAT_MS = 55, VOL_UNITY_F = 0.75;
+  function wireVolume() {
+    var host = document.getElementById("zankyo-rock-vol");
     var ladder = document.getElementById("zankyo-vol-ladder"), vsr = document.getElementById("zankyo-vol-sr");
-    function volGain(n) { return n <= 0 ? 0 : Math.pow(10, (n - VOL_UNITY) * 3 / 20); }
-    function paintVol() {
-      if (ladder) for (var i = 0; i < ladder.children.length; i++) ladder.children[i].classList.toggle("on", i < volN);
-      if (vsr) vsr.textContent = volN + " / " + VOL_MAX;
+    if (!host || !ladder) return;
+    var BC = window.ZankyoBroadcast;
+    var f = VOL_UNITY_F, cols = 0, cells = [];
+    try {
+      var sf = parseFloat(localStorage.getItem("zankyo-rx-vol-f"));
+      if (sf >= 0 && sf <= 1) f = sf;
+      else { var old = parseInt(localStorage.getItem("zankyo-rx-vol"), 10); if (old >= 0 && old <= 8) f = old / 8; }   // rc.116's eight steps
+    } catch (e) {}
+    function gainOf(x) {
+      if (x <= 0.001) return 0;
+      var db = x >= VOL_UNITY_F ? (x - VOL_UNITY_F) / (1 - VOL_UNITY_F) * 6 : -30 + (x / VOL_UNITY_F) * 30;
+      return Math.pow(10, db / 20);
     }
-    function applyVol(v) {
-      volN = v;
-      try { if (BC && BC.setReelVolume) BC.setReelVolume(volGain(v)); } catch (e) {}
-      try { localStorage.setItem("zankyo-rx-vol", String(v)); } catch (e) {}
-      paintVol();
+    function build() {
+      var w = ladder.parentNode.clientWidth || 56;
+      var n = Math.max(12, Math.min(40, Math.floor((w - 6) / 2)));
+      if (n === cols) return;
+      cols = n; ladder.innerHTML = ""; cells = [];
+      var levels = Math.ceil(cols / VOL_RUN);
+      for (var c = 0; c < cols; c++) {
+        var i = document.createElement("i"), L = Math.floor(c / VOL_RUN);
+        i.style.height = (4 + 2 * Math.round(L * 12 / 2 / Math.max(1, levels - 1)) * 1) + "px";   // 4 px to 16 px, in whole 2 px rows
+        ladder.appendChild(i); cells.push(i);
+      }
     }
-    wireRocker("zankyo-rock-vol", applyVol, function () { return volN; }, VOL_MAX);
-    try { if (BC && BC.setReelVolume) BC.setReelVolume(volGain(volN)); } catch (e) {}
-    paintVol();
+    function paint() {
+      var lit = Math.round(f * cols);
+      for (var c = 0; c < cells.length; c++) cells[c].classList.toggle("on", c < lit);
+      if (vsr) vsr.textContent = Math.round(f * 100) + " %";
+    }
+    function set(x, save) {
+      f = Math.max(0, Math.min(1, x));
+      try { if (BC && BC.setReelVolume) BC.setReelVolume(gainOf(f)); } catch (e) {}
+      if (save) try { localStorage.setItem("zankyo-rx-vol-f", f.toFixed(4)); } catch (e) {}
+      paint();
+    }
+    function step(d) {
+      var lit = Math.round(f * cols) + d;
+      if (lit < 0 || lit > cols) return false;                 // the end of travel: the plate moves, nothing else does
+      set(lit / cols, true); return true;
+    }
+    var holdT = 0, runT = 0;
+    function release() {
+      clearTimeout(holdT); clearInterval(runT); holdT = runT = 0;
+      host.classList.remove("tilt-l", "tilt-r");
+    }
+    [].slice.call(host.querySelectorAll(".zk-hit")).forEach(function (b) {
+      var d = parseInt(b.getAttribute("data-d"), 10) < 0 ? -1 : 1;
+      b.addEventListener("pointerdown", function (e) {
+        if (e.button != null && e.button !== 0) return;
+        e.preventDefault(); release();
+        try { b.setPointerCapture(e.pointerId); } catch (e0) {}
+        host.classList.add(d < 0 ? "tilt-l" : "tilt-r");
+        step(d);
+        holdT = setTimeout(function () { runT = setInterval(function () { if (!step(d)) release(); }, VOL_REPEAT_MS); }, VOL_HOLD_MS);
+      });
+      ["pointerup", "pointercancel", "lostpointercapture"].forEach(function (ev) { b.addEventListener(ev, release); });
+      // the keyboard: Enter/Space arrive as a click with no pointer; arrows repeat on their own
+      b.addEventListener("click", function (e) { if (e.detail === 0) step(d); });
+      b.addEventListener("keydown", function (e) {
+        if (e.key === "ArrowLeft" || e.key === "ArrowDown") { step(-1); e.preventDefault(); }
+        else if (e.key === "ArrowRight" || e.key === "ArrowUp") { step(1); e.preventDefault(); }
+      });
+    });
+    build(); set(f, false);
+    if (window.ResizeObserver) { try { new ResizeObserver(function () { build(); paint(); }).observe(ladder.parentNode); } catch (e) {} }
   }
 
   // ---- Transport (arcade buttons + master volume knob) ----
