@@ -19,7 +19,7 @@ function skv($file)
 // stays for git history and the bump rule; the page shows the number.
 $sk_assets = [
     '../arcade/arcade-core.js', '../arcade/arcade-palette.js', '../arcade/arcade-sprites.js',
-    'skeeball-render.js', 'skeeball-physics.js', 'skeeball-audio.js', 'skeeball-main.js', 'skeeball.css', 'index.php',
+    'skeeball-render.js', 'skeeball-physics.js', 'skeeball-mischief.js', 'skeeball-audio.js', 'skeeball-main.js', 'skeeball.css', 'index.php',
 ];
 $sk_version = trim((string) @file_get_contents(__DIR__ . '/VERSION')) ?: 'dev';
 $sk_version = trim(explode('—', $sk_version)[0]);
@@ -52,6 +52,9 @@ include '../../includes/header.php';
 <script src="../arcade/arcade-sprites.js?v=<?php echo skv('../arcade/arcade-sprites.js'); ?>"></script>
 <script src="skeeball-render.js?v=<?php echo skv('skeeball-render.js'); ?>"></script>
 <script src="skeeball-physics.js?v=<?php echo skv('skeeball-physics.js'); ?>"></script>
+<?php if (is_file(__DIR__ . '/skeeball-mischief.js')): ?>
+<script src="skeeball-mischief.js?v=<?php echo skv('skeeball-mischief.js'); ?>"></script>
+<?php endif; ?>
 <?php if (is_file(__DIR__ . '/skeeball-audio.js')): ?>
 <script src="skeeball-audio.js?v=<?php echo skv('skeeball-audio.js'); ?>"></script>
 <?php endif; ?>

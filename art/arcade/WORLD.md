@@ -61,8 +61,8 @@ decides later which ones matter.
 | HOLLER ROLLER (skee ball) | `/art/skeeball/` | possum | tokens¹ | scrip |
 | SCRIP CREEK² (coin pusher) | `/art/coinpusher/` | raccoon (name TBD: Denver, Tarnish, Miss Penny) | tokens | tokens + prizes |
 
-¹ once retrofitted onto arcade-core (coin pusher plan §7, milestone 5);
-today it's free to play.
+¹ on arcade-core since 1.0.0-rc.3: one token buys nine balls, and the
+payout is scrip (score/50, +5 at 300, +13 for every 100).
 ² marquee is a misnomer — the machine pays no scrip. Rename candidates or
 keep-it-as-a-lie decision parked (coin pusher plan §8).
 

@@ -16,7 +16,7 @@
  *
  * opts: { seed, tune (partial physics TUNE per throw), free (no tokens),
  *         onEvent(ev), harness }
- * Handle: { destroy, pause, resume, throwBall(power 0..1, aim rad,
+ * Handle: { destroy, pause, resume, throwBall(power 0..1, aim rad (→ true, false, or 'refused' when the machine sulks),
  *           spin -1..1 [, x0]), getState(), onEvent(fn) → unsubscribe,
  *           harness (only with ?harness=1) }
  * Events (opts.onEvent, handle.onEvent, Arcade.emit('skeeball', ev)):
@@ -143,6 +143,18 @@
   var BALLS = 9, LIFT_T = 0.4, DUST_T = 0.15, NOTE_T = 1.6, RATTLE_T = 0.5, RIM_TICK_T = 2 / 60;
   var MEDIUM = 0.3;              // keyboard / default power: v 3.6, a straight throw into the stack
 
+  // ?force=moon:5,sulk:3,jam,lean:0.1 → opts.mischiefForce (harness/preview)
+  function parseForce(search) {
+    var m = /[?&]force=([^&]*)/.exec(search || '');
+    if (!m) return undefined;
+    var f = {};
+    decodeURIComponent(m[1]).split(',').forEach(function (kv) {
+      var p = kv.split(':'); if (!p[0]) return;
+      f[p[0]] = p.length > 1 ? +p[1] : true;
+    });
+    return f;
+  }
+
   function mount(container, opts) {
     opts = opts || {};
     var R = root.SkeeBallRender;
@@ -227,6 +239,20 @@
       }
       if (A) A.emit('skeeball', ev);
     }
+    function subscribe(fn) {
+      listeners.push(fn);
+      return function () { var i = listeners.indexOf(fn); if (i >= 0) listeners.splice(i, 1); };
+    }
+
+    // the derangement layer (skeeball-mischief.js): lean, moon, sulk, jam, tilt
+    var mis = null;
+    if (root.SkeeBallMischief && opts.mischief !== false) {
+      mis = root.SkeeBallMischief.attach({
+        seed: game.seed, view: view, physics: P, tune: opts.tune,
+        flags: A ? A.flags : null, rng: A ? A.rng : null,
+        now: function () { return tNow; }, emit: emit, on: subscribe
+      }, { rates: opts.mischief || {}, force: opts.mischiefForce || parseForce(search) });
+    }
 
     /* ── the game ──────────────────────────────────────────────────── */
     function setMode(m) {
@@ -261,6 +287,7 @@
     }
     function startGame() {
       setScore(0); game.hundreds = 0; game.ballScores = []; game.games++;
+      if (mis) mis.gameStart((game.seed * 1000003 + game.games * 7919) | 0);
       state.ball = null; state.toast = null;
       view.hundreds = 0; view.jackpot = null; view.ticketsOut = 0; view.cranking = false; view.thirteen = false;
       setMode('play');
@@ -285,9 +312,15 @@
       }
       if (ballActive() || game.n < 1) return false;
       x0 = clamp(+x0 || 0, -0.85, 0.85);
-      state.ball = P.createThrow(x0, v, aim || 0, spin || 0, ballSeed(), opts.tune || null);
+      // the machine may lean, widen the holes (moon) or refuse the ball (sulk)
+      var mv = mis ? mis.beforeThrow(game.n, { x0: x0, v: v, aim: aim || 0, spin: spin || 0 }) : {};
+      state.refused = !!mv.refuse;
+      if (mv.refuseV) v = Math.min(v, mv.refuseV);
+      var tune = mv.tuneOverride ? Object.assign({}, opts.tune, mv.tuneOverride) : (opts.tune || null);
+      state.ball = P.createThrow(x0, v, aim || 0, spin || 0, ballSeed(), tune);
       state.trail = []; state.cap = null; state.rimTick = null; state.pendingJackpot = null;
       view.lift = null;                   // the throw cuts any lift still under way
+      if (state.refused) return 'refused'; // sent back: no `throw` event, the ball is not consumed
       emit({ type: 'throw', x0: +x0.toFixed(4), v: +v.toFixed(4), aim: +(aim || 0).toFixed(4), spin: +(spin || 0).toFixed(4), ball: game.n });
       return true;
     }
@@ -298,6 +331,11 @@
 
     function onPhysicsEvent(ev) {
       ev.ball = game.n;
+      if (state.refused) { // the sulk: the same ball comes back to the rack, nothing scores
+        ev.refused = true;
+        if (ev.type === 'captured') return;
+        if (ev.type === 'done') { emit(ev); state.refused = false; startBall(game.n); return; }
+      }
       // a ball propped on a 100 hole's lip (result 'stuck') is taken back
       // with no score: a gutter for the game, its own event for the sound
       if (ev.type === 'gutter' && state.ball && state.ball.result && state.ball.result.kind === 'stuck')
@@ -363,10 +401,15 @@
 
     // timers that live on the sim clock (deterministic under the harness)
     function tickGame() {
+      if (mis) {
+        mis.tick(tNow);
+        // a jammed dispenser holds the crank and the walk back to ATTRACT
+        if (mis.crankHeld()) { game.payoutT0 += STEP; view.cranking = false; return; }
+      }
       if (game.mode !== 'payout') return;
       var n = game.tickets, e = tNow - game.payoutT0;
       var out = n > 0 ? Math.min(n, e / game.crankPer) : 0;
-      while (game.ticketsCranked < Math.floor(out + 1e-9)) {
+      while (game.ticketsCranked < Math.floor(out + 1e-9) && !(mis && mis.crankHeld())) {
         game.ticketsCranked++;
         emit({ type: 'ticket', n: game.ticketsCranked });
       }
@@ -385,6 +428,18 @@
     function onCoinDoor(m) {
       var x0 = R.GEO.lane.xb0 - 4, fr = R.GEO.front; // front panel's left edge (render: frontX)
       return m.x >= x0 + 6 && m.x <= x0 + 48 && m.y >= fr.y0 && m.y <= fr.y1 + 2;
+    }
+    // the ticket window (render's slotRect, or the same box computed here)
+    function slotRect() {
+      if (R.slotRect) return R.slotRect();
+      var x1 = R.GEO.lane.xb1 + 4, fr = R.GEO.front; // front panel's right edge (render: frontX)
+      return { x: x1 - 42, y: fr.y0 + 9, w: 32, h: 8 };
+    }
+    // a tap on the jammed slot (or the strip under it) is a whack
+    function jammedSlotHit(pt) {
+      if (!mis || !mis.crankHeld()) return false;
+      var m = toMachine(pt.x, pt.y), sr = slotRect();
+      return m.x >= sr.x - 6 && m.x <= sr.x + sr.w + 6 && m.y >= sr.y - 6 && m.y <= sr.y + sr.h + 24;
     }
     function inSwipeZone(cy) { return cy >= canvas.getBoundingClientRect().height / 2; }
     function canStartDrag() { return !(game.mode === 'play' && ballActive()); }
@@ -414,6 +469,7 @@
       emit({ type: 'input', kind: 'down' });
       if (drag) return;                        // one pointer at a time
       var pt = localPt(ev);
+      if (game.mode === 'payout' && jammedSlotHit(pt)) { emit({ type: 'input', kind: 'whack' }); return; }
       if (game.mode === 'payout') { toAttract(); return; }
       if (!inSwipeZone(pt.y) || !canStartDrag()) return;
       drag = { id: ev.pointerId, pts: [pt], live: true };
@@ -452,7 +508,11 @@
         ev.preventDefault();
         if (ev.repeat) return;
         emit({ type: 'input', kind: 'key' });
-        if (game.mode === 'payout') { toAttract(); return; }
+        if (game.mode === 'payout') {
+          if (mis && mis.crankHeld()) emit({ type: 'input', kind: 'whack' });
+          else toAttract();
+          return;
+        }
         throwPower(ev.shiftKey ? 1 : MEDIUM, kbd.aim, 0, 0);
       } else if (ev.key === 'm' || ev.key === 'M') {
         userMuted = !userMuted;
@@ -756,6 +816,7 @@
     // Stopgaps until render.js draws them (view.marqueeNote, view.doorRattle):
     // NO TOKENS in pink over the marquee, and the coin door shaking.
     function drawMachineNotes() {
+      if (R.drawsMachineNotes) return; // render draws view.marqueeNote / view.doorRattle itself
       var note = view.marqueeNote;
       if (note && tNow >= note.t0 && tNow < note.until) {
         var m = R.GEO.marquee;
@@ -893,16 +954,14 @@
         };
       },
       getPose: currentPose,
-      onEvent: function (fn) {
-        listeners.push(fn);
-        return function () { var i = listeners.indexOf(fn); if (i >= 0) listeners.splice(i, 1); };
-      },
+      onEvent: subscribe,
       pause: function () { hostPaused = true; syncMute(); },
       resume: function () { hostPaused = false; lastNow = null; syncMute(); },
       destroy: function () {
         dead = true;
         if (rafId) root.cancelAnimationFrame(rafId);
         if (audio && audio.destroy) { try { audio.destroy(); } catch (e) { } }
+        if (mis) { try { mis.destroy(); } catch (e) { } }
         root.removeEventListener('resize', fit);
         if (ro) ro.disconnect();
         if (dprMq) dprMq.removeEventListener('change', onDpr);
@@ -924,6 +983,9 @@
       var H = handle.harness = {
         canvas: canvas,
         events: ring,
+        mischief: mis,
+        // tap the ticket slot (a whack while it's jammed)
+        whack: function () { if (!mis || !mis.crankHeld()) return false; emit({ type: 'input', kind: 'whack' }); return true; },
         // own the clock: advance the sim and the animation time
         stepTo: function (t) { advance(t); return tNow; },
         render: function () { render(); return tNow; },
@@ -950,7 +1012,7 @@
         play: function (seed, throws) {
           if (seed != null) game.seed = seed | 0;
           throws = throws && throws.length ? throws : [{ power: MEDIUM }];
-          var t = tNow, dt = 1 / 60, perBall = [];
+          var t = tNow, dt = 1 / 60, perBall = [], refused = 0;
           function run(until, limit) { var end = t + limit; while (!until() && t < end) { t += dt; advance(t); } }
           if (game.mode !== 'attract') toAttract();
           var ledger0 = A ? { tokens: A.tokens.get(), scrip: A.scrip.get() } : null;
@@ -961,15 +1023,20 @@
             if (th.points) ok = H.swipe(th.points).thrown;
             else if (th.v != null) ok = requestThrow(th.x0 || 0, th.v, th.aim || 0, th.spin || 0);
             else ok = throwPower(th.power != null ? th.power : MEDIUM, th.aim || 0, th.spin || 0, th.x0 || 0);
+            if (ok === 'refused') { // the sulk: same ball, back in the rack; it doesn't count
+              refused++;
+              run(function () { return !state.refused && (!view.lift || tNow - view.lift.t0 >= LIFT_T); }, 12);
+              i--; continue;
+            }
             if (!ok) return { ok: false, reason: 'throw ' + (i + 1) + ' refused', state: handle.getState() };
             var n0 = game.ballScores.length;
             run(function () { return game.ballScores.length > n0; }, 15);
             perBall.push(game.ballScores[n0]);
           }
           var over = { score: game.score, tickets: game.tickets, hundreds: game.hundreds };
-          run(function () { return game.mode === 'attract'; }, 12);
+          run(function () { return game.mode === 'attract'; }, 20); // a jam frees itself in 6 s
           return {
-            ok: true, balls: perBall, score: over.score, tickets: over.tickets, hundreds: over.hundreds,
+            ok: true, balls: perBall, refused: refused, score: over.score, tickets: over.tickets, hundreds: over.hundreds,
             t: tNow, mode: game.mode, ledgerBefore: ledger0,
             ledgerAfter: A ? { tokens: A.tokens.get(), scrip: A.scrip.get() } : null
           };
