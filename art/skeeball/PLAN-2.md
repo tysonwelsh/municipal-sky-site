@@ -396,3 +396,47 @@ at all sizes, `VERSION` at `1.0.0-rc.N`, one summary for the owner.
     power (8.65) from x0 0.6 with 5° of aim.
   - Known limitation: precise throws land clean (competent rattle ≈ 10 %);
     rattles come mostly from off-target throws.
+- 2026-09-25 — **Physics round 2** (after critic round 1; `sim.js metrics`,
+  noise contract = **Gaussian σ = the ± figure**, the bound reading is
+  reported alongside).
+  - **Real cups, no capture rule.** Each band and the 50 is a depression
+    0.12 deep with the rims as walls; a ball is captured only once it has
+    settled (< 0.25 u/s for 80 ms). The touchdown speed cliff and the cup
+    drag are gone; fast balls bounce off rim walls or skip over.
+    *Geometry reconciliation:* the pinned cups (clear gap 0.14–0.16) are
+    narrower than the ball (0.22), and a ball nested on two rim tops of the
+    41° bed escapes at < 0.1 u/s. So the rims collide as thin blades and the
+    ball meets them with `rimBallR 0.06` (full radius against everything
+    else). On screen the ball overlaps a drawn rim by a few px, only while
+    it is below the bed, where the near hoop is drawn over it. If that
+    doesn't read right, the fix is geometric (wider cups or a smaller ball),
+    not a rule.
+  - Cork cups are dead: rims `e 0.05, mu 0.6`, floor `e 0.05`, cup rolling
+    resistance `crrCup 1.2`. An audible `rim` tok is ≥ 0.95 u/s; softer
+    touches are part of the cup's thunk.
+  - Dent: the 40's rim is 75 % lower over 20°–70°. 16 % of balls that are
+    down in the 40 there climb out into the 30 (5 % without the dent);
+    0.2 % elsewhere. `captured.dent` marks them.
+  - Feel: g 3.2, speeds × 0.8 (vMin 2.08, vMax 7.2); mid-power flight 0.51 s.
+    Lane lean 0.16 (≈ 2.9°, a soft throw loses 10.5 % to it); a dead ball
+    trickles home at ≤ min(1.5, 0.7 × thrown) u/s. Cage roof at 2.4 (0 % of
+    the sweep touches it), event `cage`. Soft aim clamp: linear to ±0.35,
+    compressing (tanh) toward ±0.44. Rails: `e 0.5`, `railScrub 0.35`, so a
+    bank lands 18 % shorter.
+  - Engine: step() integrates exact 1/240 substeps from an accumulator
+    (identical outcome at 60/120/144 Hz); no contact can add energy (0
+    gains > 1e-3 with the motors off); per-throw tuning
+    `createThrow(…, tuneOverride)`; `configure()` only sets defaults.
+  - Events: `stall` (lane), `bounceback` (came back from the bed onto the
+    lane), `rest` (at rest on the open bed), `cage`; landing = `bed` or
+    `backstop` with `landing: true`; `captured {score, cup, band|null,
+    hole|null, rattled, rims, dent?}`. `pose().cup` is null until captured;
+    `pose().hole` is 0|1 for the 100s.
+  - **Still out of band (σ):** competent aiming 50 = 17.5 %, and that's via
+    a bank line; the straight 50 is ≈ 5 %. With physical cups the 50's
+    catch spot is about 0.1 across against a σ ≈ 0.2 landing spread, so
+    ≥ 20 % needs a wider 50, a smaller ball, or the bound reading (24.8 %).
+    Novice EV-best = 272: a side/bank approach where the ring bands run
+    along the throw. The straight-from-centre novice scores 180. Sweep max
+    resolve = 7.4 s: bouncebacks and vMin dead rolls under the ≤ 1.5 u/s
+    return cap.
