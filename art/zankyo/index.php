@@ -252,8 +252,12 @@ include '../../includes/header.php';
       </div>
     </div>
 
-    <!-- control rail: the pitch-management module, full width (the transport
-         and the master volume moved to the plate under the second set, §4.5) -->
+    <!-- control rail: one row above the console — the narrow pitch-management
+         module on the left (mode, tonic, mood, the scale-degree lamps that
+         strike with every melodic note) and the VFD activity log on the right,
+         moved up from under the console (owner, 2026-09-24: "a narrower
+         container … move the activity log up … less explaining"). The gold
+         test-point strip was dead decoration and is gone. -->
     <div class="zk-console-top">
       <div class="zk-module">
         <span class="zk-mod-screw" style="--slot:31deg" aria-hidden="true"></span>
@@ -268,9 +272,16 @@ include '../../includes/header.php';
         <div class="zk-mod-zone zk-mod-scale">
           <span class="zk-mod-head">音階 &middot; SCALE</span>
           <div class="zk-deg-row" id="zankyo-degrees"></div>
-          <span class="zk-testpoints" aria-hidden="true"></span>
         </div>
         <span class="zk-mod-stamp" aria-hidden="true">音程管理 &middot; MODULE 04</span>
+      </div>
+
+      <!-- VFD activity display -->
+      <div class="zankyo-log-block">
+        <div class="zankyo-log-label"><span>活動 &middot; ACTIVITY</span><span class="zk-vfd-tag">VFD-08</span></div>
+        <div id="zankyo-log" class="zankyo-log">
+          <div class="zankyo-log-empty">Press PLAY. Events appear here as they fire.</div>
+        </div>
       </div>
     </div>
 
@@ -287,14 +298,6 @@ include '../../includes/header.php';
       <div id="zankyo-layers"></div>
     </div>
 
-    <!-- VFD activity display -->
-    <div class="zankyo-log-block">
-      <div class="zankyo-log-label"><span>活動 &middot; ACTIVITY</span><span class="zk-vfd-tag">VFD-08</span></div>
-      <div id="zankyo-log" class="zankyo-log">
-        <div class="zankyo-log-empty">Press PLAY. Events appear here as they fire.</div>
-      </div>
-    </div>
-
     <!-- model / serial plate -->
     <div class="zk-plate-row">
       <span class="zk-plate">残響-3042 &middot; MUNICIPAL SKY HEAVY INDUSTRIES &middot; 製造番号 3042-0117</span>
@@ -302,16 +305,6 @@ include '../../includes/header.php';
     <!-- Build stamp: version · content fingerprint · deploy time (Jukebox v2 pattern) -->
     <p class="zk-build" aria-label="build version">
       <?php echo htmlspecialchars($zk_version); ?><span class="zk-build-sep">&middot;</span><?php echo $zk_build; ?><?php if ($zk_deployed): ?><span class="zk-build-sep">&middot;</span><?php echo $zk_deployed; ?><?php endif; ?>
-    </p>
-
-    <p class="zankyo-note">
-      Generative dark pentatonics — <strong>Hirajoshi</strong>, In-sen, Kumoi, Iwato — over a distorted hull-drone, structured by
-      <strong>jo-ha-kyū</strong> (序破急) — a slow spacious opening that accelerates into a noise-wall climax,
-      then dissolves. Each cycle is planned anew (a rite, a drift, a storm, a silence, a broadcast), the voices take turns and rest,
-      the key drifts, themes are born and inherited, and rare guests visit. Now and then the station picks up a
-      <strong>broadcast</strong> from the distant past — for a machine in 3042, our time — on the second set, and loses it again.
-      Nothing repeats; the voices answer one another.
-      Add <code>?seed=</code> to the address to share a night.
     </p>
 
   </div>
