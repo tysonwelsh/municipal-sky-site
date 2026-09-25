@@ -496,6 +496,7 @@
     if (!sig) return ["idle", 0, 0];
     var P = sig.rx, e = a - sig.t0;
     if (e < 0) return ["idle", 0, 0];
+    if (sig.cutE != null && e >= sig.cutE) e = P.spanS + (e - sig.cutE);   // (QF) STOPped: straight to the collapse (cut())
     if (e < P.entryS) return [P.entry === "tan" ? "hunting" : P.entry === "fu" ? "drifting" : "tuning", e, 0];
     var segs = P.segments, gaps = P.gaps;
     for (var i = 0; i < segs.length; i++) {
@@ -572,6 +573,25 @@
     S.burnK = 0; S.blank = false; S.negX = false; S.entGain = 1; S.entA = 0; S.entDirect = 1;
     idle.nextCard = t + 6000 + Ridle.next() * 10000; idle.nextLine = t + 8000 + Ridle.next() * 12000;
     enterPhase("idle", t);
+  }
+  // 切 STOP MID-RECEPTION (QF, 2026-09-25). The receiver's stop() pauses the
+  // reel and cuts its sound, but nothing told the set, so the tube walked the
+  // dead plan to its end on the audio clock — a frozen frame held for up to
+  // ~25 s after STOP — and, still "on air", refused the next reception's
+  // descriptor (never two at once), so the first press after PLAY sounded
+  // with no picture of its own. Measured on rc.F1, seed 3042: STOP at 9.5 s,
+  // the tube in hold to 21.7 s and idle at 35.1 s; the press at 17.1 s
+  // refused. Now STOP is the set losing its signal: the plan jumps to its
+  // collapse, burst and dead (the character's own exit, rc.91's lengths),
+  // and a reception that has not come up yet is simply dropped. The
+  // receiver's timings are untouched; this only runs when the station stops.
+  function cut() {
+    if (!sig) return false;
+    var e = sigTime() - sig.t0;
+    if (e < 0) { endSignal(now()); return true; }
+    if (e >= sig.rx.spanS || sig.cutE != null) return false;   // already in its exit
+    sig.cutE = e;
+    return true;
   }
   // which dropout of the plan is on at audio time a (its index), or −1
   function dropAt(a) {
@@ -1327,7 +1347,10 @@
     if (!desc || !(desc.t0 >= 0)) return false;
     if (desc.picture === false) return false;                   // sound only (a descriptor without a picture)
     var a = sigTime();
-    if (sig && phaseOf(a)[0] !== "idle") return false;        // never two at once
+    // never two at once — but a reception already in its exit (collapse,
+    // burst, dead: its sound is over) gives way to the next, as a new station
+    // on the dial would (QF: a press in those 2.3 s sounded with no picture)
+    if (sig) { var ph0 = phaseOf(a)[0]; if (ph0 === "collapse" || ph0 === "burst" || ph0 === "dead") endSignal(now()); else if (ph0 !== "idle") return false; }
     var c = Z.getAudioContext && Z.getAudioContext();
     sig = { t0: +desc.t0, holdS: Math.max(1, +desc.holdS || 10), lossD: Math.max(0.5, +desc.lossD || 2.2), drops: (desc.drops || []).slice(), id: desc.id || null, title: desc.title || "", year: desc.year || "", video: desc.video || null, wall: !c };
     sig.rx = desc.rx || planOne(sig.holdS, sig.lossD);
@@ -1371,6 +1394,7 @@
   // ---- public surface ----
   window.ZankyoSet = {
     signal: signal,
+    cut: cut,                                                // (QF) the station stopped: lose the signal
     setBright: setBright,
     getBright: function () { return briV; },
     brightSteps: BRI.length,
