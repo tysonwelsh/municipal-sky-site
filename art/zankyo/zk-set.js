@@ -41,7 +41,9 @@
 // and per piece (zk-picture.js), and the crack is lit by the picture itself;
 // P2 adds ten kinds — in the signal (混 the other station, 滲 the IF), at
 // the detector (飽, 縞, 点), on the tube (帯) and in the offset map (横 旗 揺
-// 捩) — and the frame memory 混 draws its other picture from (§5.4).
+// 捩) — and the frame memory 混 draws its other picture from (§5.4); P3
+// draws the lock-in, each glimpse, the loss and what the collapse shows, and
+// 焼 the burn-in, all inside the receiver's windows (phaseOf is untouched).
 //
 // THE BENCH HOOKS (§6.2): _dev.character(), _dev.force(), _dev.seedTexture(),
 // _dev.freeze()/step()/thaw() — a virtual clock and a frame-step, because a
@@ -90,6 +92,10 @@
   var seed = (Z.getSeed && Z.getSeed()) || 3042;
   var master = PJ.Rand.stream(seed);
   var Ridle = master.fork("set:idle"), Rcrack = master.fork("set:crack");
+  // 焼 (P3): does tonight's tube burn? One draw on the set's own fork — like
+  // the crack, a property of the set for the night (§3.4 "on some nights";
+  // P4's "set:tube" ages the rest of the tube)
+  var burnNight = master.fork("set:burn").next() < ZP.BURN.nightP;
 
   // ==========================================================================
   // THE CRACK — point data in a 400×300 space. Four patterns, one per night.
@@ -435,7 +441,11 @@
             // P2: the reception's clock (s since t0: 点's bursts and 横's losses
             // run on it), the source's mean level last frame, 飽's AGC (its
             // lagged level and this frame's gain) and a negative flash's end
-            re: 0, meanL: 0, agcM: 0, agcG: 1, negUntil: 0 };
+            re: 0, meanL: 0, agcM: 0, agcG: 1, negUntil: 0,
+            // P3: this frame's lock-in (the AGC's entry gain, a leading echo
+            // and the direct path's level), the exit's blank and negative
+            // flags, and the reception's burn depth
+            entGain: 1, entA: 0, entD: 0, entDirect: 1, entLevel: 1, entSnow: 0, blank: false, negX: false, burnK: 0 };
   // 映り THE CHARACTER (§4). A reception's look, drawn when it arrives on its
   // own fork of the master seed ("set:rx:<desc.seed>" — desc.seed is already
   // the receiver's draw, so the same night gives the same characters and no
@@ -544,6 +554,7 @@
     sig = null; sigDesc = null;                              // the receiver owns the element; the set never pauses it
     S.roll = 0; S.rollV = 0; S.drop = 0; S.holdFrame = 0; S.strength = 0; S.ch = restCh;
     S.piece = 0; S.dropIdx = -1; S.dropKind = null; S.shear = null; S.tears.length = 0; S.swell = 0;
+    S.burnK = 0; S.blank = false; S.negX = false; S.entGain = 1; S.entA = 0; S.entDirect = 1;
     idle.nextCard = t + 6000 + Ridle.next() * 10000; idle.nextLine = t + 8000 + Ridle.next() * 12000;
     enterPhase("idle", t);
   }
@@ -557,12 +568,14 @@
   // a new piece is a new station (§4.2): its own character, its own tears
   function newPiece(pc) {
     S.piece = pc;
-    if (pc > 0) S.ch = ZP.drawCharacter(master.fork("set:rx:" + S.seed + ":" + pc), { force: force, desc: sigDesc });
+    if (pc > 0) S.ch = ZP.drawCharacter(master.fork("set:rx:" + S.seed + ":" + pc), { force: force, desc: sigDesc, piece: pc, burnNight: burnNight });
     S.tears.length = 0; S.shear = null; S.dropIdx = -1; S.dropKind = null;
     S.agcM = 0; S.negUntil = 0;                              // a new station: the AGC catches it afresh
   }
   var ENV1 = { snow: 1, ghost: 1, tear: 1, wash: 1, swell: 1, imp: 1, herr: 1, hum: 1, xt: 1, skew: 1, flag: 1, jit: 1, wave: 1, agc: 1 };
   S.env = ENV1;
+  var WALK = {};                                             // (P3) 浮's walked-down levels, this frame
+  var LV = {};                                               // (P3) the lock-in's / a glimpse's levels, this frame (ZP.lockLevels)
   // per-frame strength, weather and the character's levels, from the audio clock
   function tickSignal(t) {
     var a = sigTime(), pe = phaseOf(a), ph = pe[0], el = pe[1];
@@ -573,6 +586,8 @@
     if (ph !== S.phase) enterPhase(ph, t);
     var ch = S.ch, TP = ZP.TEAR_PHASE, tearRate = 0, tearMin = 0;
     S.env = ENV1; S.lull = 0; S.shear = null;
+    S.entGain = 1; S.entA = 0; S.entDirect = 1; S.entLevel = 1; S.entSnow = 0; S.blank = false; S.negX = false;
+    var xm = ZP.exitMode(ch);                                  // (P3) the loss this character ends in
     if (ph === "tuning") {
       S.strength = clamp01(el / TUNE_S) * 0.85;
       tearRate = TP.rate * 0.6; tearMin = TP.jump;
@@ -582,19 +597,36 @@
       // vertical hold slipping every time it nearly catches. The glimpses are
       // not on-air time and the audio is only a syllable, so the tube is the
       // instrument that sells this one.
-      var gl = sig.rx.glimpses, str = 0;
+      // (P3, §3.5) EACH GLIMPSE DRAWS ITS OWN: glimpse i takes the
+      // character's slot i — a roll kick of its own size and sense, bars that
+      // nearly straighten, an echo that nearly gives way, or a soft rise with
+      // no kick; 今 (no slots) is rc.91's glimpse exactly
+      var gl = sig.rx.glimpses, str = 0, GLs = ch.glimpses, gtear = 1;
       if (gl) for (var gi = 0; gi < gl.length; gi++) {
         var gk = (el - gl[gi][0]) / gl[gi][1];
-        if (gk >= 0 && gk < 1) { str = Math.max(str, 0.78 * Math.sin(Math.PI * gk)); if (gk < 0.12) S.rollV += 1.4; }
+        if (gk >= 0 && gk < 1) {
+          var GV = ZP.glimpseLevels(GLs ? GLs[gi % GLs.length] : null, gk, el - gl[gi][0], LV);
+          if (GV.str >= str) {
+            str = GV.str; gtear = GV.tear;
+            if (GV.shS || GV.shC) S.shear = { c: GV.shC, s: GV.shS };
+            S.entA = GV.eA; S.entD = GV.eD; S.entDirect = GV.direct;
+          }
+          S.rollV += GV.kick;
+        }
       }
       S.strength = str;
-      tearRate = TP.rate * 0.5 * clamp01(1 - str);
+      tearRate = TP.rate * 0.5 * clamp01(1 - str) * gtear;
     } else if (ph === "drifting") {
       // 浮 THE DRIFT-IN: no snap at all. The signal surfaces from under the
       // static, condensing out of snow over the whole entry.
       var dk = clamp01(el / Math.max(0.01, sig.rx.entryS));
       S.strength = 0.85 * dk * dk;
       tearRate = TP.rate * 0.4 * (1 - dk);
+      // (P3, §3.5) its impairments WALK DOWN as it drifts in: every kind at
+      // × walk at the start of the drift, × 1 at the lock (ZP.walkAt; the
+      // character's own levels, envelopes aside — the hold's take over at the lock)
+      var wkk = ZP.walkAt(ch.entry, dk);
+      if (wkk !== 1) { for (var ek in ENV1) WALK[ek] = ek === "swell" || ek === "agc" ? 1 : wkk; S.env = WALK; }
     } else if (ph === "lost" || ph === "sweeping") {
       // 戻 / 走: the carrier is GONE. Snow, the last frame ghosting away, the
       // hold rolling. A sweep rolls harder — the dial is moving.
@@ -694,15 +726,78 @@
       tearRate = (ch.tear.rate || 0) * S.env.tear + clamp01(1 - S.strength) * 0.8 + hk * TP.rate;
       if (hk > 0) tearMin = TP.jump;
     } else if (ph === "loss") {
-      var k = clamp01(el / Math.max(0.02, sig.rx.exitS));    // 0..1 through the loss
-      S.strength = clamp01(0.85 * (1 - k * k) - (rnd() < k * 0.5 ? 0.4 : 0));
-      if (rnd() < k * 0.25) S.holdFrame = t + 80 + rnd() * 160;
-      S.rollV += (rnd() - 0.4) * k * 3;                      // the hold slips
-      tearRate = TP.rate * (0.5 + k * 1.5); tearMin = TP.jump;
+      // (P3, §3.5) THE LOSS, as the character's exit draws it (ZP.EXIT). The
+      // window is the receiver's; only what happens inside it varies.
+      var k = clamp01(el / Math.max(0.02, sig.rx.exitS)), ex = ch.exit;    // 0..1 through the loss
+      if (xm === "snow") {
+        // 溶: the carrier sinks smoothly into the noise — no stutter, no slip;
+        // the picture's contrast goes with it and the snow comes up to the
+        // tuner's own (full gain), so it dissolves rather than dims
+        S.strength = 0.85 * Math.pow(1 - k, 1.3);
+        S.entLevel = 1 - 0.7 * k; S.entSnow = k;
+        tearRate = TP.rate * 0.3 * k;
+      } else if (xm === "freeze" || xm === "burn") {
+        // 凍: the station's frame store holds its last frame and the snow
+        // eats it; 焼: the picture lingers, dimming, and is not torn apart
+        if (xm === "freeze") S.holdFrame = Infinity;
+        S.strength = xm === "freeze" ? 0.85 * Math.pow(1 - k, 1.1) : 0.85 * (1 - 0.55 * k * k);
+        tearRate = TP.rate * 0.2;
+      } else {
+        // rc.91's loss — the stutter, the frame holds, the hold slipping —
+        // under 縮 (squash) and 反 (neg) and 縦 (vline), which differ only in
+        // how they end; 転 lets the vertical hold go, 裂 the horizontal
+        S.strength = clamp01(0.85 * (1 - k * k) - (rnd() < k * 0.5 ? 0.4 : 0));
+        if (xm !== "roll" && xm !== "bars" && rnd() < k * 0.25) S.holdFrame = t + 80 + rnd() * 160;
+        if (xm === "roll") S.rollV = ex.dir * (0.3 + ex.rollH * Math.pow(k, 1.6)) * TH * dtS;   // rolling away, faster and faster
+        else S.rollV += (rnd() - 0.4) * k * 3;                                               // the hold slips
+        if (xm === "bars") S.shear = { c: ex.slide * el * (0.4 + k), s: ex.dir * ex.bars * (ZP.SW + ZP.HBLANK) / ZP.SH * Math.pow(k, 1.2) };
+        tearRate = TP.rate * (0.5 + k * 1.5); tearMin = TP.jump;
+      }
     } else if (ph === "collapse") {
       S.strength = 0.9;
+      // (P3) what the collapse window shows: rc.91's squash (squash, roll —
+      // still rolling — and freeze), the sideways squash (vline), all snow
+      // (snow), black (bars; burn, with its afterglow in compose), or the
+      // negative flash and then black (neg)
+      if (xm === "snow") { S.strength = 0; S.entSnow = 1; S.entLevel = 0.3 * (1 - clamp01(el / COLLAPSE_S)); }
+      else if (xm === "bars" || xm === "burn") { S.blank = true; S.strength = 1; }
+      else if (xm === "neg") { if (el < ch.exit.negT) S.negX = true; else { S.blank = true; S.strength = 1; } }
+      else if (xm === "roll") S.rollV = ch.exit.dir * (0.3 + ch.exit.rollH) * TH * dtS;
     } else if (ph === "burst" || ph === "dead") {
       S.strength = 0;
+    }
+    // 出入 THE LOCK-IN (P3, §3.5): the character's entry, over the arrival's
+    // window (即's tuning, 浮's drift) or a relock's, and its settle at the
+    // head of the hold — or, with no window of its own (探's catch after the
+    // hunt; a 走 swap), over the head of the hold. Levels: ZP.lockLevels.
+    var en = ch.entry;
+    if (sig && en && en.mode !== "snap") {
+      var winS = -1, lu = 1, lw = -1, lsec = 0, inWin = false;
+      if (ph === "tuning" || ph === "drifting") { winS = sig.rx.entryS; inWin = true; }
+      else if (ph === "relock") { winS = sig.rx.segments[pe[2]].lockS || 0; inWin = true; }
+      else if (ph === "hold") winS = pe[2] > 0 ? (sig.rx.segments[pe[2]].lockS || 0) : sig.rx.entry === "tan" ? 0 : sig.rx.entryS;
+      if (inWin) { lu = clamp01(el / Math.max(0.01, winS)); lsec = el; }
+      else if (ph === "hold") {
+        var lt = ZP.lockTail(en, winS);
+        if (el < lt) { if (winS < 0.05) lu = el / lt; else lw = el / lt; lsec = Math.max(0, winS) + el; }
+        else winS = -1;
+      }
+      if (winS >= 0) {
+        var LK = ZP.lockLevels(en, lu, lw, lsec, winS, LV);
+        if (LK.sSet) { if (inWin) S.strength = 0.85 * LK.sK; else S.strength *= LK.sK; S.entLevel = LK.level; S.entSnow = LK.snowUp; }
+        if (LK.rollH !== 0) {
+          if (LK.rollH === LK.rollH) S.rollV = LK.rollH * TH * dtS;
+          else {                                               // the hold catches: slide into place the way it was rolling
+            var rr0 = ((S.roll % TH) + TH) % TH, dist = en.dir > 0 ? TH - rr0 : rr0;
+            if (rr0 < 1 || rr0 > TH - 1 || dist < 1) { S.roll = 0; S.rollV = 0; } else S.rollV = en.dir * Math.max(0.8, dist * 0.25);
+          }
+        }
+        if (LK.shS || LK.shC) S.shear = S.shear ? { c: S.shear.c + LK.shC, s: S.shear.s + LK.shS } : { c: LK.shC, s: LK.shS };
+        S.entGain = LK.gain;
+        if (LK.eA > 0) { S.entA = LK.eA; S.entD = LK.eD; }
+        S.entDirect = LK.direct;
+        tearRate *= LK.tear;
+      }
     }
     if (tearRate > 0) ZP.tearStep(S.tears, ph === "hold" ? ch.tear : { rows: TP.rows, jump: ch.tear.jump || TP.jump, rec: TP.rec }, tearRate, dtS, t, rnd, tearMin);
     // 飽 THE AGC, while there is a carrier: it follows the picture's level
@@ -765,7 +860,8 @@
     // lost the station). burst and dead are black by design.
     if (ph === "tuning" || ph === "hold" || ph === "loss" || ph === "collapse" ||
         ph === "hunting" || ph === "drifting" || ph === "relock" || ph === "lost" || ph === "sweeping") {
-      if (t < S.holdFrame) { /* frame hold: keep the last picture */ }
+      if (S.blank) { scx.fillStyle = "#000"; scx.fillRect(0, 0, SW, SH); }   // (P3) an exit that goes to black
+      else if (t < S.holdFrame) { /* frame hold: keep the last picture */ }
       else if (sig.video) { try { scx.drawImage(sig.video, 0, 0, SW, SH); } catch (e) { scx.fillStyle = "#000"; scx.fillRect(0, 0, SW, SH); } }
       else drawTestCard(0.9, Math.sin(t / 700) * 3);          // the bench: the test card stands in for a reel
     } else if (ph === "burst" || ph === "dead") {
@@ -792,29 +888,50 @@
     }
     // PASS 3's list, applied in the signal
     ZP.ghostList(ch, ph, S.strength, t, env.ghost, ghosts);
-    ZP.ghostPass(Lsrc, Lgh, SW, SH, ghosts);
+    // (P3) a ghost-first lock-in's (or glimpse's) leading echo, and the
+    // direct path still coming up under it
+    if (S.entA > 0) ghosts.push({ d: S.entD, a: S.entA });
+    ZP.ghostPass(Lsrc, Lgh, SW, SH, ghosts, S.entDirect);
     // P2, while there is a carrier. 混: the other station arrives with ours,
     // at the antenna; 滲: the IF (and a mistuned tuner) shapes both
-    var ck = CARRIER_PH[ph] ? 1 : 0, ts = t / 1000, hold = ph === "hold";
+    // (`hold`: the phases whose levels come from S.env — the hold's
+    // envelopes and lull, and since P3 浮's walk-down; every other phase's
+    // S.env is ENV1)
+    var ck = CARRIER_PH[ph] ? 1 : 0, ts = t / 1000, hold = ph === "hold" || ph === "drifting";
     xtLive = false;
     if (ck && ch.xtalk && env.xt > 0) { ZP.xtalkPass(Lgh, xtImage(ch.xtalk.src), ch.xtalk, ts, hold ? env.xt : 1, XT); xtLive = true; }
     if (ck && ch.smear) ZP.smearPass(Lgh, ch.smear);
     var X = SRCX; X.ag = null; X.hb = null; X.hum = null;
-    if (ck && ch.agc) { AG.g = S.agcG; AG.blk = ch.agc.blk * (hold ? env.agc : 1); AG.neg = t < S.negUntil; X.ag = AG; }
+    if (ck && ch.agc) { AG.g = S.agcG * S.entGain; AG.blk = ch.agc.blk * (hold ? env.agc : 1); AG.neg = t < S.negUntil || S.negX; X.ag = AG; }
+    else if (ck && (S.entGain !== 1 || S.negX)) { AG.g = S.entGain; AG.blk = 0; AG.neg = S.negX; X.ag = AG; }   // (P3) any set's AGC on a bloom lock-in; the neg exit's crushed sync
     if (ck && ch.herring && env.herr > 0) X.hb = ZP.herringRows(ch.herring, ts, hold ? env.herr : 1, HB);
     if (ck && ch.hum && env.hum > 0) { ZP.humRows(ch.hum, ts, hold ? env.hum : 1, HUM.g, HUM.a); X.hum = HUM; }
     // 雪: the snow level is the carrier's weakness; this frame's multiplier is
     // the envelope and the flicker (texture). The burst is all snow.
     var level = ph === "burst" ? 1 : clamp01(1 - S.strength);
-    var sn = ch.snow, fl = (ph === "hold" ? env.snow : 1) * (1 + (sn.flicker || 0) * (rnd() * 2 - 1));
+    var sn = ch.snow, fl = (hold ? env.snow : 1) * (1 + (sn.flicker || 0) * (rnd() * 2 - 1));
+    // (P3) WITH NO CARRIER THE SNOW IS THE TUNER'S, at full gain: the burst,
+    // a 戻 gap's dead carrier, a 走 sweep — and, as far as the carrier is
+    // weak, the arrival (tuning, the hunt between its glimpses, the drift), a
+    // relock, the loss and the collapse. The station's own snow (its gain,
+    // drawn with its character) is the HOLD's. FIXED AT P3: since P1 all of
+    // these drew the station's gain, so on a clean station (清: 0.26–0.4 of
+    // rc.91's density) the burst was a sprinkle and the hunt showed the
+    // picture plainly between its glimpses. Plus a fade-in's or the
+    // dissolve's own (S.entSnow).
+    var snowUp = (ph === "burst" || ph === "lost" || ph === "sweeping") ? 1 : ph === "hold" ? S.entSnow : Math.max(S.entSnow, clamp01(1 - S.strength / 0.85));
+    if (snowUp > 0) fl *= 1 + (Math.max(1, 1 / Math.max(0.3, sn.gain || 1)) - 1) * snowUp;
     // 霞: only while there is a carrier to be veiled (never on the burst's or a lost gap's pure noise)
-    var wk = CARRIER_PH[ph] ? (ph === "hold" ? env.wash : 1) : 0, wa = ch.wash || { lift: 0, gain: 1 };
-    WASH.lift = wa.lift * wk; WASH.gain = 1 + (wa.gain - 1) * wk;
+    var wk = CARRIER_PH[ph] ? (hold ? env.wash : 1) : 0, wa = ch.wash || { lift: 0, gain: 1 };
+    WASH.lift = wa.lift * wk; WASH.gain = (1 + (wa.gain - 1) * wk) * S.entLevel;   // (P3) × a fade-in's weak picture
     ZP.sourcePass(Lgh, luma, n, "lit", level, B, sn, WASH, fl, rnd, X);
     // 点: the sparks, over the snow, on the reception's own burst schedule
     if (ck && ch.impulse) ZP.impulsePass(luma, ch.impulse, S.re, hold ? env.imp : 1, rnd);
   }
   var WASH = { lift: 0, gain: 1 };
+  // 焼 the burn exit's afterglow: the phosphor's last image (192×144), and its level this frame
+  var aftCv = document.createElement("canvas"); aftCv.width = SW; aftCv.height = SH;
+  var acx = aftCv.getContext("2d"), aftOk = false, aftA = 0;
   // P2's per-frame scratch: the source pass's extras, 飽's gain, 縞's row
   // phases, 帯's row gain and offset, 混's other picture as placed
   var SRCX = { ag: null, hb: null, hum: null }, AG = { g: 1, blk: 0, neg: false };
@@ -841,7 +958,7 @@
   // map: rc.91 tore the roll's wrapped copy with a second, independent draw;
   // they are the same scan lines, and now they are drawn from the same raster.
   // A dead tube draws nothing but its persistence, so it has no geometry.
-  var G = { roll: 0, sy: 1, dyBase: 0, pel: 0, sc: 1 };
+  var G = { roll: 0, sy: 1, sx: 1, dyBase: 0, pel: 0, sc: 1 };
   function geometryPass(t) {
     var ph = S.phase;
     mapLive = false;
@@ -852,9 +969,15 @@
       if (Math.abs(S.rollV) < 0.05) S.rollV = 0;
       S.roll = ((S.roll % TH) + TH) % TH; if (S.rollV === 0 && ph !== "loss") S.roll += (0 - S.roll) * 0.2;
     }
-    var roll = S.roll | 0, sy = 1, ch = S.ch;
+    var roll = S.roll | 0, sy = 1, sx = 1, ch = S.ch;
     var pel = (t - S.phaseAt) / 1000;                          // seconds into the phase, for the shapes below
-    if (ph === "collapse") { var ck = clamp01(pel / COLLAPSE_S); sy = Math.max(0.01, 1 - Math.pow(ck, ch.exit.squash)); }
+    // the collapse: rc.91's squash to a line across — or (P3) sideways, to a
+    // line down the middle (vline), or none at all (the exits that end in
+    // snow or black)
+    if (ph === "collapse") {
+      var ck = clamp01(pel / COLLAPSE_S), sq = Math.max(0.01, 1 - Math.pow(ck, ch.exit.squash)), xmg = ZP.exitMode(ch);
+      if (xmg === "vline") sx = sq; else if (ZP.EXIT.line[xmg]) sy = sq;
+    }
     // 伸: the raster swells with the beam current (the frame's mean level),
     // lagged by the supply's regulation
     var sw = ch.swell, target = 0;
@@ -868,16 +991,33 @@
     // P2: 旗 捩 揺 横, while there is a carrier (lineMap has cleared the map)
     if (CARRIER_PH[ph] && ZP.geoMap(map, ch, S.re, t / 1000, ph === "hold" ? S.env : ENV1, rnd)) mapLive = true;
     if (mapLive) ZP.geometryCopy(luma, lumaG, map, SW, SH);
-    G.roll = roll; G.sy = sy; G.pel = pel; G.sc = 1 + S.swell; G.dyBase = (TH - TH * sy * G.sc) / 2;
+    G.roll = roll; G.sy = sy; G.sx = sx; G.pel = pel; G.sc = 1 + S.swell; G.dyBase = (TH - TH * sy * G.sc) / 2;
   }
 
   // PASS 4 — THE TUBE: luma → the P39 ramp → the phosphor canvas, with the
   // idle raster's warm glow added under nothing (after the LUT, as rc.91 did).
   function tubePass(t) {
     var idleGlow = S.phase === "idle" ? (9 + 3 * Math.sin(t / 2300)) * B.idle : 0;
-    ZP.tubePass(mapLive ? lumaG : luma, pdata, SW, SH, LUT, idleGlow, B.idle, t / 240);
+    // 焼 (P3): a burned tube's imprint, on every lit frame of the reception,
+    // at the GLASS position each source row and column lands on this frame
+    // (after the roll — and its wrapped copy — the squash and the swell,
+    // exactly as composite() will draw them), so it holds still while the
+    // picture rolls and squashes over it
+    var burn = null;
+    if (S.burnK > 0 && sig && S.phase !== "idle" && S.phase !== "dead" && TH > 8) {
+      var rs = G.sy * G.sc, hS = TH * rs, w = TW * G.sc * G.sx, x0 = (TW - w) / 2, y;
+      for (y = 0; y < SH; y++) {
+        var ys = G.dyBase + G.roll * rs + (y + 0.5) * hS / SH;
+        if (G.roll && ys >= TH) ys -= TH * rs;                  // the wrapped copy's row
+        var br = Math.floor(ys * SH / TH); burnRow[y] = br >= 0 && br < SH ? br : -1;
+      }
+      for (var x = 0; x < SW; x++) { var bc = Math.floor((x0 + (x + 0.5) * w / SW) * SW / TW); burnCol[x] = bc >= 0 && bc < SW ? bc : -1; }
+      burn = burnImg;
+    }
+    ZP.tubePass(mapLive ? lumaG : luma, pdata, SW, SH, LUT, idleGlow, B.idle, t / 240, burn, burnRow, burnCol);
     pcx.putImageData(pimg, 0, 0);
   }
+  var burnImg = new Uint8Array(SW * SH), burnRow = new Int16Array(SH), burnCol = new Int16Array(SW);
 
   // ==========================================================================
   // PASS 5 — THE FRAME (full resolution): persistence, bloom, the raster (one
@@ -902,11 +1042,22 @@
     // persistence: the old frame decays under the new one (P39)
     var decay = ph === "idle" ? D.idle : ph === "dead" ? D.dead : ph === "burst" ? D.burst : D.lit;
     fcx.fillStyle = "rgba(3,5,3," + decay + ")"; fcx.fillRect(0, 0, TW, TH);
+    // 焼 THE AFTERGLOW (P3, the burn exit — 残 only): while the picture
+    // lingers the phosphor keeps its image (aftCv, the last lit frame of the
+    // hold or the loss's first half); once the carrier goes, that image stays
+    // on the long-persistence screen, decaying from glowA over glowTau s,
+    // through the collapse, under the burst's snow and on the dead tube
+    // (drawn over the raster — drawAfterglow, below — so the burst's snow
+    // lies on it rather than hiding it)
+    var xmc = ZP.exitMode(S.ch);
+    aftA = 0;
+    if (xmc === "burn" && sig && (ph === "hold" || (ph === "loss" && S.strength > 0.6))) { acx.globalCompositeOperation = "copy"; acx.drawImage(phos, 0, 0); aftOk = true; }
     // A dead tube shows its decay — and, FAINTLY, the dial's sweep snow while a
     // hand is on the dial (§11.5 / §9 Q7, the owner's default: "a dead tube
     // that answers the dial hand is more alive"). rc.91 computed it and never
     // drew it. Nothing is added when no hand is moving.
     if (ph === "dead") {
+      drawAfterglow(t, ph, xmc, ex);
       var swd = sweepNow();
       if (swd > 0.02) {
         fcx.imageSmoothingEnabled = false; fcx.globalCompositeOperation = "lighter"; fcx.globalAlpha = Math.min(0.4, swd * 0.5);
@@ -918,7 +1069,7 @@
 
     fcx.imageSmoothingEnabled = false;
     var roll = G.roll, sy = G.sy, pel = G.pel, dyBase = G.dyBase, sc = G.sc;
-    var w = TW * sc, x0 = (TW - w) / 2, h = TH * sy * sc, rs = sy * sc;
+    var w = TW * sc * G.sx, x0 = (TW - w) / 2, h = TH * sy * sc, rs = sy * sc;
 
     // bloom under, sharp over
     fcx.globalCompositeOperation = "lighter";
@@ -928,10 +1079,11 @@
     fcx.globalCompositeOperation = "source-over";
     fcx.drawImage(phos, x0, dyBase + roll * rs, w, h);
     if (roll) { fcx.drawImage(phos, x0, dyBase + (roll - TH) * rs, w, h); fcx.fillStyle = "rgba(0,0,0,0.75)"; fcx.fillRect(0, dyBase + roll * rs - 6, TW, 7); }   // the blanking bar
+    drawAfterglow(t, ph, xmc, ex);
     // Paik's line — the loss collapse, and now and then in the idle
-    var lineK = 0, dotK = 0;
-    if (ph === "collapse") lineK = clamp01((pel - ex.lineAt) / ex.lineRise);
-    if (ph === "burst") lineK = 1 - clamp01(pel / ex.lineFall);
+    var lineK = 0, dotK = 0, hasLine = !!ZP.EXIT.line[xmc], vert = xmc === "vline";   // (P3) not every exit ends in the line; vline's is down the middle
+    if (ph === "collapse" && hasLine) lineK = clamp01((pel - ex.lineAt) / ex.lineRise);
+    if (ph === "burst" && hasLine) lineK = 1 - clamp01(pel / ex.lineFall);
     if (ph === "idle") {
       if (idle.lineAt < 0 && t > idle.nextLine) { idle.lineAt = t; idle.lineMode = Ridle.next() < 0.5 ? 1 : 0; idle.lineHold = 0.6 + Ridle.next() * 1.6; }
       if (idle.lineAt >= 0) {
@@ -944,7 +1096,16 @@
         if (lineK > 0 || dotK > 0) { fcx.fillStyle = "rgba(3,5,3,0.9)"; fcx.fillRect(0, 0, TW, TH); }   // the raster is gone while the line is up
       }
     }
-    if (lineK > 0) {
+    if (lineK > 0 && vert) {
+      // 縦 the horizontal deflection gone: the same line, stood on end
+      var vh = TH * 0.94, vy = (TH - vh) / 2, vx = TW / 2 + Math.sin(t / 60) * 0.4;
+      fcx.globalCompositeOperation = "lighter";
+      if (hasFilter) fcx.filter = "blur(6px)";
+      fcx.fillStyle = "rgba(120,240,150," + (0.55 * lineK * B.idle).toFixed(2) + ")"; fcx.fillRect(vx - (hasFilter ? 5 : 3), vy, hasFilter ? 10 : 6, vh);
+      if (hasFilter) fcx.filter = "none";
+      fcx.fillStyle = "rgba(225,255,230," + (0.95 * lineK).toFixed(2) + ")"; fcx.fillRect(vx - 1, vy, 2, vh);
+      fcx.globalCompositeOperation = "source-over";
+    } else if (lineK > 0) {
       var lw = TW * (dotK > 0 ? lineK : 1) * 0.94, lx = (TW - lw) / 2, ly = TH / 2 + Math.sin(t / 60) * 0.4;
       fcx.globalCompositeOperation = "lighter";
       if (hasFilter) fcx.filter = "blur(6px)";
@@ -965,6 +1126,21 @@
       var swp = (t / 1000 * 22) % (TH + 40) - 20;
       fcx.fillStyle = "rgba(90,220,120," + (0.045 * B.idle).toFixed(3) + ")"; fcx.fillRect(0, swp, TW, 3);
     }
+  }
+
+  function drawAfterglow(t, ph, xmc, ex) {
+    if (xmc !== "burn" || !aftOk || !(ph === "collapse" || ph === "burst" || ph === "dead")) return;
+    var since = (t - S.phaseAt) / 1000 + (ph === "burst" ? COLLAPSE_S : ph === "dead" ? COLLAPSE_S + BURST_S : 0);
+    aftA = ex.glowA * Math.exp(-since / ex.glowTau);
+    // over the collapse and the burst the raster is redrawn each frame and the
+    // glow lies on it at aftA; the dead tube has no raster, only its slow
+    // persistence (D.dead a frame), so the glow is added at that rate — added
+    // at aftA every frame it piled up toward aftA / D.dead, the whole picture
+    // back at full light on a dead tube
+    var dd = ph === "dead" ? ZP.TUBE.decay.dead : 1;
+    fcx.imageSmoothingEnabled = false; fcx.globalCompositeOperation = "lighter"; fcx.globalAlpha = aftA * dd;
+    fcx.drawImage(aftCv, 0, 0, TW, TH);
+    fcx.globalAlpha = 1; fcx.globalCompositeOperation = "source-over";
   }
 
   // ---- compose through the crack ----
@@ -1069,7 +1245,13 @@
     // 映り: this reception's character, on its own fork (§5.2). A fork is
     // derived from the master's ORIGINAL seed and consumes nothing from it.
     sigDesc = desc;
-    S.ch = ZP.drawCharacter(master.fork("set:rx:" + S.seed), { force: force, desc: desc });
+    S.ch = ZP.drawCharacter(master.fork("set:rx:" + S.seed), { force: force, desc: desc, burnNight: burnNight });
+    // 焼 (P3): the imprint this reception shows is the LAST reception's
+    // picture (the memory just swapped in), or on a night's first the test
+    // card; it belongs to the tube, so a relock's new station keeps it
+    S.burnK = ZP.burnDepth(S.ch);
+    if (S.burnK > 0) ZP.burnImage(memOk ? mem : xtImage("card"), S.burnK, burnImg);
+    aftOk = false;
     return true;
   }
   if (Z.setEventListener) { try { Z.setEventListener(function (ev) { if (ev && ev.cat === "rx" && ev.signal) signal(ev.signal); }); } catch (e) {} }   // 受信 and ♪ 受信 both carry a descriptor
@@ -1149,7 +1331,12 @@
       signalClock: function () { return atime(); },          // the clock a descriptor's t0 is in (s)
       frozen: function () { return vclock != null; },
       // the buffers, for the probe's metrics (read-only by convention)
-      buffers: function () { return { SW: SW, SH: SH, luma: mapLive ? lumaG : luma, map: map, mapLive: mapLive, phos: phos, frame: frame, tube: tcv, ghosts: ghosts.slice(), geo: { roll: G.roll, sy: G.sy, sc: G.sc }, env: S.env, lull: S.lull, dropKind: S.dropKind, piece: S.piece, tears: S.tears.length, mask: maskCv, xt: xtLive ? XT : null, agcG: S.agcG, neg: S.negUntil > now() }; },
+      buffers: function () { return { SW: SW, SH: SH, luma: mapLive ? lumaG : luma, map: map, mapLive: mapLive, phos: phos, frame: frame, tube: tcv, ghosts: ghosts.slice(), geo: { roll: G.roll, sy: G.sy, sc: G.sc }, env: S.env, lull: S.lull, dropKind: S.dropKind, piece: S.piece, tears: S.tears.length, mask: maskCv, xt: xtLive ? XT : null, agcG: S.agcG, neg: S.negUntil > now() || S.negX,
+        // (P3) the lock-in and the exit, this frame: the entry's AGC gain, its
+        // leading echo and direct path, the shear, a frozen frame, a blanked
+        // source, the sideways squash, the afterglow's level, the burn
+        entGain: S.entGain, entA: S.entA, entDirect: S.entDirect, shear: S.shear ? { c: S.shear.c, s: S.shear.s } : null, rollPx: S.roll, rollV: S.rollV,
+        frozen: S.holdFrame === Infinity, blank: S.blank, sx: G.sx, aftA: aftA, burnK: S.burnK, burn: S.burnK > 0 ? burnImg : null, burnNight: burnNight }; },
       // 光 the crack's light, last frame: the largest value the glow layer
       // added (0..255 per channel, before GLOW.k) and how many pixels it lit —
       // the probe's check that a dark tube's crack carries no light at all

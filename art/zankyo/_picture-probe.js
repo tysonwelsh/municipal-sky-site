@@ -689,6 +689,22 @@ async function openPage(browser, o) {
         body: Buffer.from(o.baseSrc, "utf8").toString("base64") }).catch((err) => errors.push("the base zk-set.js was not served: " + (err && err.message)));
     });
   }
+  // (P3) o.files: { "zk-set.js": src, "zk-picture.js": src } — several of the
+  // page's files swapped by interception (rc.P4's pair for the bounds gate; a
+  // patched zk-picture.js for the kill run), each of which must be served
+  const servedF = {};
+  if (o.files) {
+    const names = Object.keys(o.files);
+    await page.send("Fetch.enable", { patterns: names.map((n) => ({ urlPattern: "*/" + n + "*", requestStage: "Request" })) });
+    page.on("Fetch.requestPaused", (e) => {
+      const n = names.find((k) => e.request.url.split("?")[0].endsWith("/" + k));
+      if (!n) { page.send("Fetch.continueRequest", { requestId: e.requestId }).catch(() => {}); return; }
+      servedF[n] = (servedF[n] || 0) + 1;
+      page.send("Fetch.fulfillRequest", { requestId: e.requestId, responseCode: 200,
+        responseHeaders: [{ name: "Content-Type", value: "application/javascript; charset=utf-8" }],
+        body: Buffer.from(o.files[n], "utf8").toString("base64") }).catch((err) => errors.push(n + " was not served: " + (err && err.message)));
+    });
+  }
   await page.send("Page.navigate", { url: URL0 + "?seed=" + SEED });
   await page.send("Emulation.setDeviceMetricsOverride", { width: 1280, height: 900, deviceScaleFactor: o.dpr || 1, mobile: false });
   let ready = false;
@@ -701,6 +717,11 @@ async function openPage(browser, o) {
   if (o.baseSrc) {
     const hasCh = await page.eval("!!ZankyoSet._dev.character");
     if (served < 1 || hasCh) { await page.closeTarget(); throw new Error("the base page is not the base (zk-set.js intercepted " + served + "×, character hook " + (hasCh ? "PRESENT" : "absent") + ")"); }
+  }
+  if (o.files) {
+    const miss = Object.keys(o.files).filter((n) => !(servedF[n] >= 1));
+    const vok = o.verify ? await page.eval(o.verify) : true;
+    if (miss.length || !vok) { await page.closeTarget(); throw new Error("the swapped page is not what it claims (" + (miss.length ? "not served: " + miss.join(", ") : "") + (vok ? "" : " verify failed: " + o.verify) + ")"); }
   }
   page.errors = errors;
   return page;
@@ -1447,6 +1468,543 @@ async function lullcal(browser) {
   return { ok: missed.length === 0, fail: fail.length, missed: missed.length };
 }
 
+// ============================================================================
+// P3 — 出入 ENTRIES AND EXITS (§3.5, §7 row P3): the lock-in and the loss
+// drawn per reception, per glimpse and per piece; 焼 burn-in.
+//
+//   node _picture-probe.js bounds [--p2ref e5b49f2]
+//       THE TIMING GATE (§2.3, §7 row P3): the receiver's windows do not move.
+//       48 bench descriptors — every entry × body × exit (36), drawn
+//       characters, plus 12 with a forced lock-in, glimpse and loss so every
+//       variant goes through the machine — each run on THIS tree, on rc.P4
+//       (--p2ref: zk-set.js AND zk-picture.js swapped in by interception) and
+//       on rc.91 (--base, zk-set.js with the dev shim). Every frame's phase
+//       (the set's phaseOf, via _dev.step) is recorded as its transitions.
+//       Gate: every boundary equal to rc.P4's to the frame, and to rc.91's
+//       except the one P1 fixed (a 断 piece's hold now runs to onS + holeS).
+//   node _picture-probe.js p3draws            (node only)
+//       500 receptions per seed set (the §6.3.1 sets), each with a shape drawn
+//       at the receiver's own weights (BODY_W / ENTRY_W / EXIT_W, parsed from
+//       zk-broadcast.js), the night's "set:burn" draw, and a relock piece's
+//       draw where the body has one. Gates: EVERY lock-in, loss and glimpse
+//       variant appears in each set's 500; no variant appears under a shape
+//       whose pool does not hold it; every member of every pool appears
+//       overall; and the P3 draws are LAST — every field rc.P4 drew
+//       (zk-picture.js at --p2ref, loaded in a vm) is identical, seed by seed.
+//   node _picture-probe.js p3render [--kill]
+//       §6.3.2 for P3, fail by name: each variant against its shape's default
+//       (snap, or 浮's fade, or 今's glimpse, or squash) on the same seed and
+//       texture — the frames in its window, as 8×8 block means, must move
+//       beyond 3× the default's own texture spread (the same reception on
+//       another texture seed) — AND its cause must show in the set's state
+//       (FEAT below: the roll, the shear, the AGC's gain, the echo, the frozen
+//       frame, the negative, the sideways squash, the afterglow). 焼: burn on
+//       vs off, the difference must correlate with the imprint in GLASS
+//       coordinates, including on frames the vertical hold has rolled.
+//       --kill swaps in a zk-picture.js whose lockLevels / glimpseLevels /
+//       exitMode / burnDepth / walkAt render everything as the default — every
+//       variant must then fail by name (the gate can fail).
+//   node _picture-probe.js p3sheets [--sheets <dir>]
+//       strips of every lock-in, drift-in, glimpse and loss, and the burn-in
+//   node _picture-probe.js p3        bounds + p3draws + p3render
+// ============================================================================
+const P2REF = opt("p2ref", "e5b49f2");
+function gitShow(ref, file) { return execFileSync("git", ["show", ref + ":art/zankyo/" + file], { cwd: path.join(__dirname, "..", ".."), encoding: "utf8", maxBuffer: 1 << 26 }); }
+// the receiver's shape weights, READ from zk-broadcast.js (parsed, never
+// edited — so the probe cannot drift from the receiver's constants block)
+function receiverWeights() {
+  const src = fs.readFileSync(path.join(__dirname, "zk-broadcast.js"), "utf8");
+  const get = (name) => { const m = src.match(new RegExp("var " + name + "\\s*=\\s*(\\{[^}]*\\})")); if (!m) throw new Error("zk-broadcast.js: " + name + " not found"); return Function("return " + m[1])(); };
+  return { body: get("BODY_W"), entry: get("ENTRY_W"), exit: get("EXIT_W") };
+}
+function mulberry(n) { let a = (n >>> 0) || 1; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+// a bench plan in the receiver's grammar, its lengths inside the receiver's
+// own ranges (zk-broadcast.js: HUNT 3–8, DRIFT 6–10, LOSS 1.6–2.8, ZAN 6–12
+// (6–9 here, for time), ZETSU 0.02, MOD pieces/gaps, SCAN sweeps, HOLE 1–3)
+function shapePlan(entry, body, exit, R) {
+  const r3 = (v) => +v.toFixed(3);
+  const P = { body, entry, exit, entryS: entry === "soku" ? 0.4 : r3(entry === "tan" ? 3 + 5 * R() : 6 + 4 * R()),
+    exitS: exit === "setsu" ? r3(1.6 + 1.2 * R()) : exit === "zan" ? r3(6 + 3 * R()) : 0.02, segments: [], gaps: [], holes: [], glimpses: null };
+  if (entry === "tan") { const n = 2 + Math.floor(R() * 3), g = []; for (let j = 0; j < n; j++) { const gd = 0.35 + R() * 0.45; g.push([r3(0.25 + ((j + R() * 0.7) / n) * Math.max(0.1, P.entryS - gd - 0.4)), r3(gd)]); } P.glimpses = g; }
+  if (body === "jou") P.segments = [{ onS: r3(8 + 6 * R()), lockS: 0 }];
+  else if (body === "modori") { P.segments = [{ onS: r3(3 + 4 * R()), lockS: 0 }, { onS: r3(3 + 4 * R()), lockS: 0.2 }]; P.gaps = [{ durS: r3(6 + 3 * R()), sweep: false }]; }
+  else if (body === "dan") { const on = r3(8 + 4 * R()); P.segments = [{ onS: on, lockS: 0, holeS: r3(1 + 2 * R()) }]; P.holes = [{ relS: r3(1.5 + R()), durS: r3(1 + R()) }, { relS: r3(on * 0.6), durS: r3(1 + R()) }]; }
+  else { P.segments = [{ onS: r3(4 + 2 * R()), lockS: 0 }, { onS: r3(4 + 2 * R()), lockS: 0 }]; P.gaps = [{ durS: r3(2 + R()), sweep: true }]; }
+  return P;
+}
+
+// ---- the P3 page runner: one page, many receptions. Every reception starts
+// on a whole second of the virtual clock and its frames sit at
+// start + k·(1000/30) ms (multiplied, never accumulated), so frame k of a
+// reception is the same instant on every page — tree, rc.P4, rc.91.
+function PAGE_P3(items, reels, o) {
+  function planTimes(P) {
+    var cur = P.entryS, on = 0, i;
+    for (i = 0; i < P.segments.length; i++) {
+      var s = P.segments[i];
+      if (i > 0) { P.gaps[i - 1].atS = cur; cur += P.gaps[i - 1].durS; }
+      s.lockAtS = cur; cur += (s.lockS || 0);
+      s.atS = cur;
+      cur += s.onS + (s.holeS || 0); on += s.onS;
+    }
+    P.lossAtS = cur; P.spanS = cur + P.exitS; P.presenceS = on;
+    return P;
+  }
+  function once(el, ev) { return new Promise(function (res, rej) { el.addEventListener(ev, res, { once: true }); el.addEventListener("error", function () { rej(new Error("video error")); }, { once: true }); }); }
+  return (async function () {
+    var ZS = window.ZankyoSet, D = ZS._dev;
+    if (!D.frozen()) throw new Error("the set is not frozen");
+    await document.fonts.ready;
+    try { await document.fonts.load('700 7px "Orbitron"'); await document.fonts.load('6px "Shippori Mincho"', "映像管 試験"); } catch (e) {}
+    var vids = {};
+    async function vid(ri) {
+      if (ri == null) return null;
+      var R = reels[ri], k = R.id + "@" + R.at; if (vids[k]) return vids[k];
+      var v = document.createElement("video"); v.muted = true; v.preload = "auto"; v.playsInline = true;
+      var p = once(v, "loadeddata"); v.src = "broadcast/reels/" + R.id + ".mp4"; await p;
+      var q = once(v, "seeked"); v.currentTime = R.at; await q;
+      vids[k] = v; return v;
+    }
+    var g = document.createElement("canvas"); g.width = 192; g.height = 144;
+    var gcx = g.getContext("2d", { willReadFrequently: true }); gcx.imageSmoothingEnabled = true; gcx.imageSmoothingQuality = "high";
+    function gray() { gcx.clearRect(0, 0, 192, 144); gcx.drawImage(D.buffers().frame, 0, 0, 192, 144); var d = gcx.getImageData(0, 0, 192, 144).data, gr = new Uint8Array(192 * 144); for (var j = 0, pp = 1; j < gr.length; j++, pp += 4) gr[j] = d[pp]; return gr; }
+    function blk(gr) { var out = new Float32Array(432); for (var y = 0; y < 144; y++) for (var x = 0; x < 192; x++) out[(y >> 3) * 24 + (x >> 3)] += gr[y * 192 + x]; var o2 = []; for (var i = 0; i < 432; i++) o2.push(Math.round(out[i] / 64 * 10) / 10); return o2; }
+    function b64(gr) { var bin = ""; for (var i = 0; i < gr.length; i++) bin += String.fromCharCode(gr[i]); return btoa(bin); }
+    var cv = document.getElementById("zankyo-set"), res = [], dt = 1000 / 30, clk = D.clock ? D.clock() : 0;
+    for (var ii = 0; ii < items.length; ii++) {
+      var it = items[ii], v = await vid(it.reel);
+      var base = (Math.ceil(clk / 1000) + 1) * 1000;
+      if (D.seedTexture) D.seedTexture(it.texture == null ? null : it.texture);
+      if (D.force) { var fr = D.force(it.force || null); if (fr && !fr.ok) throw new Error("force refused: " + fr.why + " at " + it.label); }
+      var P = planTimes(JSON.parse(JSON.stringify(it.rx)));
+      for (var h = 0; h < P.holes.length; h++) P.holes[h].atS = +(P.segments[0].atS + P.holes[h].relS).toFixed(3);
+      D.step(base);
+      var t0 = base / 1000 + 0.2;
+      var drops = (it.drops || []).map(function (d) { return [t0 + P.entryS + d[0], d[1]]; });
+      if (!ZS.signal({ t0: t0, holdS: P.presenceS, lossD: P.exitS, drops: drops, seed: it.seed, id: it.label || "p3", rx: P, video: v })) throw new Error("signal refused at " + it.label);
+      var rec = { label: it.label, trans: [], feat: [], blocks: [], profs: [], gall: [], pngs: [], grays: [], burn: null, ch: D.character ? D.character() : null, times: [], plan: { entryS: P.entryS, lossAtS: P.lossAtS, spanS: P.spanS }, tube: ZS.getState().tube };
+      var endS = t0 + P.spanS + 0.42 + 0.32 + 1.6 + 0.2, k = 0, last = null, pi = 0, tm = base;
+      while (tm / 1000 < endS || (ZS.getState().phase !== "idle" && k < 40000)) {
+        k++; tm = base + k * dt;
+        var a = performance.now(); var st = D.step(tm); rec.times.push(performance.now() - a);
+        if (st.phase !== last) { rec.trans.push([k, st.phase]); last = st.phase; }
+        var e = tm / 1000 - t0;
+        if (it.feat) {
+          var B = D.buffers();
+          rec.feat.push([+e.toFixed(3), st.phase, +st.strength.toFixed(3), +(B.rollPx || 0).toFixed(1), +(B.rollV || 0).toFixed(2), +B.geo.sy.toFixed(3), +(B.sx == null ? 1 : B.sx).toFixed(3),
+            B.shear ? +B.shear.s.toFixed(3) : 0, +(B.entGain == null ? 1 : B.entGain).toFixed(3), +(B.entA || 0).toFixed(3), +(B.entDirect == null ? 1 : B.entDirect).toFixed(3), B.frozen ? 1 : 0, B.blank ? 1 : 0, B.neg ? 1 : 0, +(B.aftA || 0).toFixed(3)]);
+          if (!rec.burn && B.burn) rec.burn = b64(B.burn);
+        }
+        if (it.win && e >= it.win[0] && e < it.win[1]) rec.blocks.push(blk(gray()));
+        if (it.gallWin && e >= it.gallWin[0] && e < it.gallWin[1]) rec.gall.push({ e: +e.toFixed(3), ph: st.phase, g: b64(gray()) });
+        if (it.profWin && e >= it.profWin[0] && e < it.profWin[1]) {   // row and column means: the picture's vertical and horizontal position, snow averaged out
+          var gp = gray(), rp = [], cp = []; for (var yy = 0; yy < 144; yy++) { var sr = 0; for (var xx = 0; xx < 192; xx++) sr += gp[yy * 192 + xx]; rp.push(Math.round(sr / 192 * 10) / 10); }
+          for (var x2 = 0; x2 < 192; x2++) { var sc2 = 0; for (var y2 = 0; y2 < 144; y2++) sc2 += gp[y2 * 192 + x2]; cp.push(Math.round(sc2 / 144 * 10) / 10); }
+          rec.profs.push({ e: +e.toFixed(3), rows: rp, cols: cp });
+        }
+        if (it.grayWin && e >= it.grayWin[0] && e < it.grayWin[1] && k % 3 === 0) { var B2 = D.buffers(); rec.grays.push({ e: +e.toFixed(3), roll: +(B2.rollPx || 0).toFixed(1), g: b64(gray()) }); }
+        if (it.pngAt && pi < it.pngAt.length && e >= it.pngAt[pi]) { rec.pngs.push({ at: +e.toFixed(2), ph: st.phase, s: +st.strength.toFixed(2), png: cv.toDataURL("image/png") }); pi++; }
+      }
+      clk = tm;
+      res.push(rec);
+    }
+    if (D.force) D.force(null);
+    return res;
+  })();
+}
+async function runP3(browser, items, o) {
+  const page = await openPage(browser, o || {});
+  try {
+    const res = await page.eval("(" + PAGE_P3.toString() + ")(" + JSON.stringify(items) + "," + JSON.stringify(REELS) + ",{})", 3600000);
+    res.errors = page.errors.slice();
+    return res;
+  } finally { await page.closeTarget(); }
+}
+
+// ---- THE TIMING GATE ----
+function boundsItems() {
+  const R = mulberry(4242), items = [];
+  const E = ["soku", "tan", "fu"], Bo = ["jou", "modori", "dan", "sou"], X = ["setsu", "zan", "zetsu"];
+  let i = 0;
+  for (const e of E) for (const b of Bo) for (const x of X) { items.push({ reel: i % 3, seed: 1000 + i + 0.37, texture: 7 + i, rx: shapePlan(e, b, x, R), drops: [[1.2, 0.2], [3.4, 0.3]], label: e + "·" + b + "·" + x }); i++; }
+  // every variant through the machine at least once, on shapes whose pool holds it
+  const forced = [
+    ["soku", "jou", "setsu", { entry: "roll", exit: "roll" }], ["soku", "modori", "setsu", { entry: "bars", exit: "snow" }],
+    ["soku", "dan", "setsu", { entry: "fade", exit: "bars" }], ["soku", "sou", "setsu", { entry: "bloom", exit: "freeze" }],
+    ["soku", "jou", "setsu", { entry: "ghost", exit: "neg" }], ["fu", "jou", "zan", { entry: "roll", exit: "snow" }],
+    ["fu", "modori", "zan", { entry: "bars", exit: "freeze" }], ["fu", "dan", "zan", { entry: "ghost", exit: "burn" }],
+    ["fu", "sou", "zan", { entry: "fade", exit: "vline" }], ["tan", "jou", "zetsu", { entry: "bloom", glimpse: "roll", exit: "neg" }],
+    ["tan", "modori", "zetsu", { entry: "ghost", glimpse: "bars", exit: "vline" }], ["tan", "sou", "zetsu", { entry: "roll", glimpse: "ghost", exit: "squash", burn: 0.25 }],
+  ];
+  for (const [e, b, x, f] of forced) { items.push({ reel: i % 3, seed: 1000 + i + 0.37, texture: 7 + i, rx: shapePlan(e, b, x, R), drops: [[1.2, 0.2]], force: f, label: e + "·" + b + "·" + x + " " + JSON.stringify(f) }); i++; }
+  return items;
+}
+async function bounds(browser) {
+  const items = boundsItems();
+  const tree = await runP3(browser, items, {});
+  const p2 = await runP3(browser, items, { files: { "zk-set.js": gitShow(P2REF, "zk-set.js"), "zk-picture.js": gitShow(P2REF, "zk-picture.js") },
+    verify: "!!(ZankyoSet._dev.character && window.ZankyoPicture && !ZankyoPicture.lockLevels && ZankyoPicture.BURY2)" });
+  const base = await runP3(browser, items.map((it) => Object.assign({}, it, { force: null })), { baseSrc: baseSetSource(BASE) });
+  let ok = true, nb = 0, nf = 0, dan = 0;
+  const errs = tree.errors.concat(p2.errors, base.errors);
+  for (let i = 0; i < items.length; i++) {
+    const t = tree[i].trans, a = p2[i].trans, b = base[i].trans, isDan = items[i].rx.body === "dan";
+    nb += t.length; nf += t.length ? t[t.length - 1][0] : 0;
+    const sameP2 = JSON.stringify(t) === JSON.stringify(a);
+    // rc.91: the same phases in the same order, every boundary on the same
+    // frame — except, on a 断 shape, the hold→loss one, which P1 moved from
+    // onS to onS + holeS (the frames between were hold, not loss, all along)
+    let sameB = t.length === b.length && t.every((x, j) => x[1] === b[j][1]), diffAt = [];
+    if (sameB) t.forEach((x, j) => { if (x[0] !== b[j][0]) diffAt.push(j); });
+    const lossIdx = t.findIndex((x) => x[1] === "loss");
+    const holeF = isDan ? Math.round(items[i].rx.segments[items[i].rx.segments.length - 1].holeS * FPS) : 0;
+    const bOk = sameB && (isDan ? diffAt.length === 1 && diffAt[0] === lossIdx && Math.abs((t[lossIdx][0] - b[lossIdx][0]) - holeF) <= 1 : diffAt.length === 0);
+    if (isDan && bOk) dan++;
+    const good = sameP2 && bOk; ok = ok && good;
+    if (!good || i % 12 === 0) console.log("  " + (good ? "✓" : "✗") + " " + items[i].label.padEnd(24).slice(0, 60) + " " + t.map((x) => x[1][0] + x[1][1] + "@" + x[0]).join(" ") + (sameP2 ? "" : "  · rc.P4 " + a.map((x) => x[1].slice(0, 2) + "@" + x[0]).join(" ")) + (bOk ? "" : "  · rc.91 " + b.map((x) => x[1].slice(0, 2) + "@" + x[0]).join(" ")));
+  }
+  console.log("  " + items.length + " receptions · " + nb + " phase boundaries · " + nf + " frames: " + (ok ? "every boundary on rc.P4's frame, and on rc.91's but for the " + dan + " 断 hold→loss boundaries P1 moved by the hole" : "BOUNDARIES MOVED"));
+  if (errs.length) { ok = false; console.log("  ✗ page errors: " + errs.slice(0, 5).join(" | ")); }
+  // the variants really ran (the forced ones must show in the tree's characters)
+  const forcedSeen = items.map((it, i) => it.force ? [it.force, tree[i].ch && tree[i].ch.entry && tree[i].ch.entry.mode, tree[i].ch && tree[i].ch.exit && tree[i].ch.exit.mode] : null).filter(Boolean);
+  const forcedOk = forcedSeen.every(([f, e, x]) => (!f.entry || f.entry === e) && (!f.exit || f.exit === x)); ok = ok && forcedOk;
+  console.log("  " + (forcedOk ? "✓" : "✗") + " the 12 forced receptions ran their lock-in and loss (" + forcedSeen.map(([f, e, x]) => e + "/" + x).join(", ") + ")");
+  const drawnModes = new Set(tree.slice(0, 36).map((r) => r.ch.entry.mode + "/" + r.ch.exit.mode));
+  console.log("    the 36 drawn: " + Array.from(drawnModes).join(" "));
+  fs.writeFileSync(path.join(OUT, "bounds.json"), JSON.stringify(items.map((it, i) => ({ label: it.label, rx: it.rx, tree: tree[i].trans, p2: p2[i].trans, rc91: base[i].trans })), null, 0));
+  return { ok, receptions: items.length, boundaries: nb };
+}
+
+// ---- THE P3 DRAW (node only) ----
+function loadZPsrc(src) { const vm = require("vm"), m = { exports: {} }, ctx = { module: m, Math, JSON, Object, Array, WeakMap, Float32Array, Uint8Array }; vm.createContext(ctx); vm.runInContext(src, ctx); return m.exports; }
+async function p3draws() {
+  delete require.cache[require.resolve("./zk-picture.js")];
+  const ZP = require("./zk-picture.js"), Rand = loadRand(), W = receiverWeights();
+  const ZP2 = loadZPsrc(gitShow(P2REF, "zk-picture.js"));
+  const pick = (R, w) => { let tot = 0; for (const k in w) tot += w[k]; let r = R.next() * tot; for (const k in w) { r -= w[k]; if (r <= 0) return k; } return Object.keys(w).pop(); };
+  const EM = ZP.ENTRY.modes, XM = ZP.EXIT.modes, GM = Object.keys(ZP.ENTRY.glimpse);
+  const tot = { entry: {}, exit: {}, glimpse: {}, relock: {} }, perShape = {}, bad = [], setMiss = []; let N = 0, burn = 0, burnNights = 0, p2diff = 0, p2n = 0;
+  const strip = (ch) => { const c = JSON.parse(JSON.stringify(ch)); delete c.entry; delete c.exit; delete c.glimpses; delete c.burn; return JSON.stringify(c); };
+  for (const S of SEED_SETS) {
+    const m = Rand.stream(S), dsr = Rand.stream(S).fork("probe:desc"), shp = Rand.stream(S).fork("probe:shape");
+    const night = Rand.stream(S).fork("set:burn").next() < ZP.BURN.nightP; if (night) burnNights++;
+    const seen = { entry: {}, exit: {}, glimpse: {} };
+    for (let r = 0; r < 500; r++) {
+      const entry = pick(shp, W.entry), exit = pick(shp, W.exit), body = pick(shp, W.body), seed = dsr.next() * 1000;
+      const desc = { rx: { entry, exit, body } };
+      const ch = ZP.drawCharacter(m.fork("set:rx:" + seed), { desc, burnNight: night });
+      const ch2 = ZP2.drawCharacter(m.fork("set:rx:" + seed), { desc });
+      p2n++; if (strip(ch) !== strip(ch2)) p2diff++;
+      const em = ch.entry.mode, xm = ch.exit.mode;
+      tot.entry[em] = (tot.entry[em] || 0) + 1; tot.exit[xm] = (tot.exit[xm] || 0) + 1; seen.entry[em] = 1; seen.exit[xm] = 1;
+      (perShape["entry:" + entry] = perShape["entry:" + entry] || {})[em] = (perShape["entry:" + entry][em] || 0) + 1;
+      (perShape["exit:" + exit] = perShape["exit:" + exit] || {})[xm] = (perShape["exit:" + exit][xm] || 0) + 1;
+      if (!ZP.ENTRY.pools[entry][em]) bad.push(S + "·" + r + " " + entry + "→" + em);
+      if (!ZP.EXIT.pools[exit][xm]) bad.push(S + "·" + r + " " + exit + "→" + xm);
+      if (entry === "tan") { const n = 2 + Math.floor(shp.next() * 3); for (let j = 0; j < n; j++) { const gm = ch.glimpses[j].mode; tot.glimpse[gm] = (tot.glimpse[gm] || 0) + 1; seen.glimpse[gm] = 1; } }
+      if (body === "modori" || body === "sou") {
+        const c1 = ZP.drawCharacter(m.fork("set:rx:" + seed + ":1"), { desc, piece: 1, burnNight: night }), rm = c1.entry.mode;
+        tot.relock[rm] = (tot.relock[rm] || 0) + 1; if (!ZP.ENTRY.pools.relock[rm]) bad.push(S + "·" + r + " relock→" + rm);
+      }
+      if (ch.burn) burn++;
+      N++;
+    }
+    const miss = EM.filter((x) => !seen.entry[x]).map((x) => "entry " + x).concat(XM.filter((x) => !seen.exit[x]).map((x) => "exit " + x), GM.filter((x) => !seen.glimpse[x]).map((x) => "glimpse " + x));
+    if (miss.length) setMiss.push(S + ": " + miss.join(", "));
+  }
+  let ok = true;
+  const fmt = (o) => Object.keys(o).map((k) => k + " " + (o[k] / Object.values(o).reduce((a, b) => a + b, 0) * 100).toFixed(1) + "%").join(" · ");
+  console.log("  " + N + " receptions over " + SEED_SETS.length + " seed sets × 500, shapes at the receiver's weights " + JSON.stringify(W.entry) + " " + JSON.stringify(W.exit));
+  const everySet = setMiss.length === 0; ok = ok && everySet;
+  console.log("  " + (everySet ? "✓" : "✗") + " every lock-in (" + EM.length + "), loss (" + XM.length + ") and glimpse (" + GM.length + ") variant appears in each set's 500" + (everySet ? "" : " — MISSING: " + setMiss.join(" | ")));
+  const cons = bad.length === 0; ok = ok && cons;
+  console.log("  " + (cons ? "✓" : "✗") + " consistent with the shape: no variant outside its shape's pool" + (cons ? "" : " — " + bad.slice(0, 8).join(", ")));
+  let poolMiss = [];
+  for (const sh in ZP.ENTRY.pools) for (const md in ZP.ENTRY.pools[sh]) if (!((sh === "relock" ? tot.relock : perShape["entry:" + sh] || {})[md])) poolMiss.push("entry " + sh + "/" + md);
+  for (const sh in ZP.EXIT.pools) for (const md in ZP.EXIT.pools[sh]) if (!((perShape["exit:" + sh] || {})[md])) poolMiss.push("exit " + sh + "/" + md);
+  ok = ok && !poolMiss.length;
+  console.log("  " + (poolMiss.length ? "✗" : "✓") + " every member of every pool appears" + (poolMiss.length ? " — MISSING " + poolMiss.join(", ") : ""));
+  for (const k of Object.keys(perShape).sort()) console.log("    " + k.padEnd(12) + " " + fmt(perShape[k]));
+  console.log("    relock      " + fmt(tot.relock));
+  console.log("    glimpses    " + fmt(tot.glimpse));
+  console.log("    all lock-ins " + fmt(tot.entry));
+  console.log("    all losses   " + fmt(tot.exit) + " — vline 1 in " + (N / (tot.exit.vline || 1)).toFixed(0) + " (§4.3 very rare: 1 in 80 or less)");
+  console.log("    焼 burn-in: " + burnNights + "/" + SEED_SETS.length + " nights burn · " + (burn / N * 100).toFixed(1) + " % of receptions (§4.3 uncommon ≈ 16.7 %)");
+  const p2ok = p2diff === 0; ok = ok && p2ok;
+  console.log("  " + (p2ok ? "✓" : "✗") + " the P3 draws come LAST: every other field of all " + p2n + " characters equals rc.P4's (" + P2REF + ") draw, seed by seed" + (p2ok ? "" : " — " + p2diff + " differ"));
+  // can the consistency check fail? a draw that ignores its shape (every exit from 切's pool) must be caught
+  { let caught = 0; for (let r = 0; r < 200; r++) { const ch = ZP.drawCharacter(Rand.stream(99).fork("set:rx:" + r), { desc: { rx: { entry: "soku", exit: "setsu" } } }); if (!ZP.EXIT.pools.zetsu[ch.exit.mode]) caught++; }
+    const live = caught > 0; ok = ok && live;
+    console.log("  " + (live ? "✓" : "✗") + " sensitivity: 200 切 draws judged as if they were 絶 → " + caught + " outside 絶's pool (must be > 0)"); }
+  fs.writeFileSync(path.join(OUT, "p3draws.json"), JSON.stringify({ N, tot, perShape, burn: burn / N, burnNights, setMiss, bad: bad.length, p2diff }, null, 1));
+  return { ok, N };
+}
+
+// ---- DOES EACH VARIANT RENDER, AND AS ITS CAUSE ----
+// FEAT columns: 0 e, 1 phase, 2 strength, 3 roll px, 4 rollV, 5 sy, 6 sx, 7 shear s, 8 entGain, 9 entA, 10 entDirect, 11 frozen, 12 blank, 13 neg, 14 aftA
+const F_ = { e: 0, ph: 1, s: 2, roll: 3, rollV: 4, sy: 5, sx: 6, sh: 7, gain: 8, eA: 9, dir: 10, frz: 11, blank: 12, neg: 13, aft: 14 };
+function killedPicture() {
+  let s = fs.readFileSync(path.join(__dirname, "zk-picture.js"), "utf8");
+  const patch = (a, b) => { if (s.indexOf(a) < 0) throw new Error("kill: marker not found — " + a); s = s.replace(a, b); };
+  patch("function lockLevels(en, u, w, secs, winS, o) {", "function lockLevels(en, u, w, secs, winS, o) { en = { mode: \"snap\" };");
+  patch("function glimpseLevels(g, gk, secs, o) {", "function glimpseLevels(g, gk, secs, o) { g = null;");
+  patch("function exitMode(ch) {", "function exitMode(ch) { return \"squash\";");
+  patch("function burnDepth(ch) {", "function burnDepth(ch) { return 0;");
+  patch("function walkAt(en, dk) {", "function walkAt(en, dk) { return 1;");
+  return s;
+}
+const SOKU6 = { body: "jou", entry: "soku", exit: "setsu", entryS: 0.4, exitS: 2.2, segments: [{ onS: 6, lockS: 0 }], gaps: [], holes: [], glimpses: null };
+const FU8 = { body: "jou", entry: "fu", exit: "setsu", entryS: 8, exitS: 1.6, segments: [{ onS: 3, lockS: 0 }], gaps: [], holes: [], glimpses: null };
+const TAN5 = { body: "jou", entry: "tan", exit: "setsu", entryS: 5, exitS: 1.6, segments: [{ onS: 3, lockS: 0 }], gaps: [], holes: [], glimpses: [[1.1, 0.5], [2.4, 0.7], [3.9, 0.45]] };
+const ZAN8 = { body: "jou", entry: "soku", exit: "zan", entryS: 0.4, exitS: 8, segments: [{ onS: 3, lockS: 0 }], gaps: [], holes: [], glimpses: null };
+function p3renderItems() {
+  const it = [];
+  const add = (grp, name, reel, rx, force, win, tex, extra) => it.push(Object.assign({ grp, name, reel, seed: 77.37, texture: tex || 21, rx, drops: [], force, win, feat: true, label: grp + ":" + name + (tex ? "·t" + tex : "") }, extra || {}));
+  // 即: each lock-in against the snap, on a clean catch (清: the lock-in alone)
+  const wE = [0, 0.4 + 1.8];
+  for (const m of ["snap", "roll", "bars", "fade", "bloom", "ghost"]) add("即", m, 0, SOKU6, { archetype: "清", entry: m }, wE);
+  add("即", "snap", 0, SOKU6, { archetype: "清", entry: "snap" }, wE, 1021);
+  // 浮: each against its native fade, on a fringe station (遠: the walk-down shows), and the walk off
+  const wF = [0, 8 + 1];
+  for (const m of ["fade", "roll", "bars", "ghost"]) add("浮", m, 0, FU8, { archetype: "遠", sev: 0.6, entry: m }, wF);
+  add("浮", "fade", 0, FU8, { archetype: "遠", sev: 0.6, entry: "fade" }, wF, 1021);
+  // the walk-down, on a MULTIPATH drift-in (反: its echoes walk down with it;
+  // on a fringe station the walked kinds sit under the snow, as they should)
+  // — seen by the echo metric (P1's ghostAmp against the clean frame), since
+  // 8×8 block means cannot see a copy of a face a few px over
+  // (one echo pinned at a measurable delay, as §6.3.2 pins every kind's axes)
+  const gW = { grayWin: [3, 7.6] }, G1 = [{ d: 12, a: 0.3, drift: 0, per: 900, flut: 0, flutD: 0, ph: 0 }];
+  add("浮反", "fade", 0, FU8, { archetype: "反", sev: 0.7, entry: "fade", axes: { ghosts: G1 } }, wF, 0, gW);
+  add("浮反", "fade", 0, FU8, { archetype: "反", sev: 0.7, entry: "fade", axes: { ghosts: G1 } }, wF, 1021, gW);
+  add("浮反", "walk off", 0, FU8, { archetype: "反", sev: 0.7, entry: "fade", axes: { ghosts: G1, entry: { walk: 1 } } }, wF, 0, gW);
+  add("clean", "clean", 0, SOKU6, { clean: true }, null, 0, { grayWin: [4, 5], feat: false });
+  // 探: each glimpse's own against 今's glimpse
+  const wT = [0, 5];
+  for (const m of ["今", "roll", "bars", "ghost", "fade"]) add("探", m, 0, TAN5, { archetype: "清", entry: "snap", glimpse: m }, wT);
+  add("探", "今", 0, TAN5, { archetype: "清", entry: "snap", glimpse: "今" }, wT, 1021);
+  // 切: each loss against the squash, on the test card (it drifts: a frozen frame shows)
+  // (the window is the ENDING — collapse, burst, dead — where each loss is
+  // deterministic; rc.91's loss slips its hold at random, so two textures of
+  // the squash already differ by whole rolls there. The loss itself is seen
+  // through image-derived motion: row and column profiles over it.)
+  const wX = [0.4 + 6 + 2.2 - 0.15, 0.4 + 6 + 2.2 + 0.42 + 0.05], pX = [0.4 + 6, 0.4 + 6 + 2.2];
+  for (const m of ["squash", "roll", "snow", "bars", "freeze", "neg", "vline"]) add("切", m, null, SOKU6, { archetype: "清", exit: m }, null, 0, { profWin: pX, gallWin: wX });
+  add("切", "squash", null, SOKU6, { archetype: "清", exit: "squash" }, null, 1021, { profWin: pX, gallWin: wX });
+  // 残: the afterglow against the squash, on a face
+  // (from 0.3 s before the carrier goes: the dead tube is held against the
+  // loss's last picture — does the phosphor still carry it?)
+  const wZ = [0.4 + 3 + 8 - 0.3, 0.4 + 3 + 8 + 0.42 + 0.32 + 1.6];
+  for (const m of ["squash", "burn"]) add("残", m, 0, ZAN8, { archetype: "清", exit: m }, wZ);
+  add("残", "squash", 0, ZAN8, { archetype: "清", exit: "squash" }, wZ, 1021);
+  // 焼: burn on and off, the hold, and again with the vertical hold slipping at every dropout
+  const g0 = [0.9, 6.3], rollDrops = [[1.0, 0.3], [2.6, 0.3], [4.2, 0.3]];
+  for (const b of [0.18, 0]) add("焼", "b" + b, 0, SOKU6, { archetype: "清", burn: b }, null, 0, { grayWin: g0 });
+  for (const b of [0.18, 0]) add("焼", "roll·b" + b, 0, SOKU6, { archetype: "清", burn: b, axes: { drop: { kinds: ["roll"], depth: 0 } } }, null, 0, { grayWin: g0, drops: rollDrops });
+  return it;
+}
+// the image distance of two runs over a window: 8×8 block means, averaged
+// over groups of 6 frames (0.2 s — snow is per frame and averages down by
+// √6; a roll, a shear, a squash or a fade is not), then the mean absolute
+// difference per block, over the groups
+function blockDiff(a, b) {
+  const n = Math.min(a.length, b.length), G = 6; if (!n) return NaN; let s = 0, ng = 0;
+  for (let f0 = 0; f0 + G <= n; f0 += G) { let d = 0; for (let i = 0; i < 432; i++) { let x = 0, y = 0; for (let f = f0; f < f0 + G; f++) { x += a[f][i]; y += b[f][i]; } d += Math.abs(x - y) / G; } s += d / 432; ng++; }
+  return ng ? s / ng : NaN;
+}
+// image-derived motion (the render check's own eyes, not the set's state):
+// the best cyclic shift of one row-mean profile against another (rows), and
+// the best linear shift of column-mean profiles (px)
+function bestShiftP(a, b, cyclic, range) { const n = a.length; let ma = 0, mb = 0; for (let i = 0; i < n; i++) { ma += a[i]; mb += b[i]; } ma /= n; mb /= n; let best = 0, bv = -Infinity;
+  for (let k = -range; k <= range; k++) { let v = 0, m = 0; for (let i = 0; i < n; i++) { let q = i - k; if (cyclic) q = ((q % n) + n) % n; else if (q < 0 || q >= n) continue; v += (a[i] - ma) * (b[q] - mb); m++; } v /= m; if (v > bv) { bv = v; best = k; } } return best; }
+// 切's IMAGE SIGNATURES — what each loss looks like, read off the frames
+// (rc.91's loss slips the hold and tears at random, so two textures of the
+// squash differ by whole rolls at the head of the collapse: a block distance
+// cannot tell a variant from texture there; each loss's own shape can):
+//   R, C    the light's extent, rows / columns (share of the frame), in the
+//           collapse's last two frames, where each loss has reached its end:
+//           squash — a line across (C ≥ 0.8, C ≥ 1.6 R: the persistence of
+//           the band it just was still glows about it); vline — a line down
+//           (R ≥ 0.7, R ≥ 1.6 C); snow — all lit (both ≥ 0.9); bars, neg —
+//           black
+//   neg     r of the collapse's first frame against the loss's last: the
+//           negative flash inverts the picture (r < −0.2)
+//   shear   the median |horizontal shift| of each row against the row above
+//           (±10 px), over the loss's last 0.15 s: a sheared picture steps
+//           the same way every row; a torn one is 0 but at its tears
+function exitSig(rec) {
+  const dec = (x) => Float64Array.from(Buffer.from(x.g, "base64"));
+  const L1 = rec.plan.spanS, fr = rec.gall;
+  const end = fr.filter((x) => x.ph === "collapse").slice(-2), first = fr.find((x) => x.ph === "collapse"), last = fr.filter((x) => x.ph === "loss").pop();
+  const avg = new Float64Array(192 * 144); end.forEach((x) => { const g = dec(x); for (let i = 0; i < g.length; i++) avg[i] += g[i] / end.length; });
+  // the EXTENT of the light: first to last row (column) whose mean is over a
+  // sixth of the brightest row's (column's), and over 15 — the shape of the
+  // light, not its bloom and halo
+  const rm = [], cm = []; for (let y = 0; y < 144; y++) { let t = 0; for (let x = 0; x < 192; x++) t += avg[y * 192 + x]; rm.push(t / 192); }
+  for (let x = 0; x < 192; x++) { let t = 0; for (let y = 0; y < 144; y++) t += avg[y * 192 + x]; cm.push(t / 144); }
+  const ext = (m) => { const T = Math.max(15, Math.max(...m) / 6); let a = -1, b = -1; m.forEach((v, i) => { if (v > T) { if (a < 0) a = i; b = i; } }); return a < 0 ? 0 : b - a + 1; };
+  const R = ext(rm), C = ext(cm);
+  const sh = []; fr.filter((x) => x.ph === "loss" && x.e >= L1 - 0.15).forEach((x) => { const g = dec(x); for (let y = 1; y < 144; y++) sh.push(Math.abs(bestShiftP(g.subarray(y * 192, y * 192 + 192), g.subarray((y - 1) * 192, y * 192), false, 10))); });
+  return { R: end.length ? R / 144 : NaN, C: end.length ? C / 192 : NaN, neg: first && last ? corr(dec(first), dec(last)) : NaN, shear: sh.length ? median(sh) : NaN, n: end.length };
+}
+function vRoll(rec, from) { const P = rec.profs.filter((p) => p.e >= from); let s = 0; for (let i = 1; i < P.length; i++) s += Math.abs(bestShiftP(P[i].rows, P[i - 1].rows, true, 72)); return P.length > 1 ? s / (P.length - 1) : NaN; }
+function xTravel(rec) { const P = rec.profs; if (!P.length) return NaN; let m = 0; for (let i = 1; i < P.length; i++) m = Math.max(m, Math.abs(bestShiftP(P[i].cols, P[0].cols, false, 16))); return m; }
+function featIn(rec, e0, e1, ph) { return rec.feat.filter((r) => r[0] >= e0 && r[0] < e1 && (!ph || r[1] === ph)); }
+const maxAbs = (rows, c) => rows.reduce((m, r) => Math.max(m, Math.abs(r[c])), 0);
+const minOf = (rows, c) => rows.reduce((m, r) => Math.min(m, r[c]), Infinity);
+const meanOf = (rows, c) => rows.reduce((m, r) => m + r[c], 0) / Math.max(1, rows.length);
+// the cause, per variant: [what it checks, pass?]
+function causeOf(grp, name, rec, def) {
+  const TH = rec.tube[1];
+  if (grp === "浮反") { const A = featIn(rec, 0, 8), B = def ? featIn(def, 0, 8) : []; return ["the walk off: the echo level through the drift is the hold's (" + (def && def.ch ? "walk " + def.ch.entry.walk.toFixed(2) + " → 1" : "") + ")", true]; }
+  if (grp === "即" || grp === "浮") {
+    const win = grp === "即" ? 0.4 : 8, L = featIn(rec, 0, win), T = featIn(rec, 0, win + 1.8), late = featIn(rec, win + 1.7, win + 2.2);
+    if (name === "roll") return ["rolls in (max |roll| " + maxAbs(T, F_.roll).toFixed(0) + " px of " + TH.toFixed(0) + ") and is caught (|roll| " + maxAbs(late, F_.roll).toFixed(1) + " px " + (win + 1.7) + "–" + (win + 2.2) + " s)", maxAbs(T, F_.roll) >= 20 && maxAbs(late, F_.roll) < 2];
+    if (name === "bars") return ["arrives sheared (max " + maxAbs(L, F_.sh).toFixed(2) + " px/row) and straightens (" + maxAbs(late, F_.sh).toFixed(3) + ")", maxAbs(L, F_.sh) >= 1 && maxAbs(late, F_.sh) < 0.05];
+    if (name === "fade") { const a = meanOf(featIn(rec, 0, win + 1.2), F_.s), b = def ? meanOf(featIn(def, 0, win + 1.2), F_.s) : NaN; return ["carrier comes up slower (mean strength " + a.toFixed(3) + " vs the snap's " + b.toFixed(3) + ")", grp === "浮" ? true : a <= 0.8 * b]; }
+    if (name === "bloom") return ["the AGC overshoots (max gain " + Math.max(...T.map((r) => r[F_.gain])).toFixed(2) + ") and settles (" + (late.length ? late[late.length - 1][F_.gain] : 1).toFixed(3) + ")", Math.max(...T.map((r) => r[F_.gain])) >= 1.4 && Math.abs((late.length ? late[late.length - 1][F_.gain] : 1) - 1) < 0.1];
+    if (name === "ghost") return ["the echo first (max echo " + maxAbs(L, F_.eA).toFixed(2) + ", direct path min " + minOf(L, F_.dir).toFixed(2) + ")", maxAbs(L, F_.eA) >= 0.3 && minOf(L, F_.dir) <= 0.5];
+    if (name === "walk") return ["(the walk-down's own cause is the image difference)", true];
+    return ["(the reference)", true];
+  }
+  if (grp === "探") {
+    const H = featIn(rec, 0, 5, "hunting");
+    if (name === "roll") return ["the hold slips at each glimpse (max rollV " + maxAbs(H, F_.rollV).toFixed(1) + ")", maxAbs(H, F_.rollV) >= 1.4];
+    if (name === "bars") return ["bars that nearly straighten (max shear " + maxAbs(H, F_.sh).toFixed(2) + ", min in a glimpse " + Math.min(...H.filter((r) => r[F_.s] > 0.3).map((r) => Math.abs(r[F_.sh]))).toFixed(2) + ")", maxAbs(H, F_.sh) >= 1];
+    if (name === "ghost") return ["an echo that nearly gives way (max echo " + maxAbs(H, F_.eA).toFixed(2) + ")", maxAbs(H, F_.eA) >= 0.3];
+    if (name === "fade") return ["a rise with no kick (max rollV " + maxAbs(H, F_.rollV).toFixed(2) + ")", maxAbs(H, F_.rollV) === 0];
+    return ["(the reference: rc.91's glimpse)", true];
+  }
+  if (grp === "切" || grp === "残") {
+    const L0 = rec.plan.lossAtS, Lx = featIn(rec, L0, L0 + 9, "loss"), C = featIn(rec, 0, 99, "collapse"), Dd = featIn(rec, 0, 99, "dead");
+    const late = Lx.slice(Math.floor(Lx.length / 2));
+    if (name === "squash") return ["squashes to the line (min sy " + minOf(C, F_.sy).toFixed(3) + ")", minOf(C, F_.sy) <= 0.1];
+    if (name === "roll") return ["rolls away (mean |rollV| over the loss's second half " + meanOf(late.map((r) => [Math.abs(r[F_.rollV])]), 0).toFixed(1) + " px/frame, rising)", meanOf(late.map((r) => [Math.abs(r[F_.rollV])]), 0) >= 5 && Math.abs(late[late.length - 1][F_.rollV]) > Math.abs(Lx[0][F_.rollV])];
+    if (name === "snow") return ["no squash, all snow (min sy " + minOf(C, F_.sy).toFixed(2) + ", collapse strength max " + maxAbs(C, F_.s).toFixed(2) + ")", minOf(C, F_.sy) === 1 && maxAbs(C, F_.s) === 0];
+    if (name === "bars") return ["shears apart (|shear| at the loss's end " + Math.abs(Lx[Lx.length - 1][F_.sh]).toFixed(2) + " px/row), then black (" + C.filter((r) => r[F_.blank]).length + "/" + C.length + " collapse frames)", Math.abs(Lx[Lx.length - 1][F_.sh]) >= 2 && C.every((r) => r[F_.blank])];
+    if (name === "freeze") return ["frozen through the loss (" + Lx.filter((r) => r[F_.frz]).length + "/" + Lx.length + ")", Lx.length > 0 && Lx.every((r) => r[F_.frz])];
+    if (name === "neg") return ["a negative at the collapse's head (" + C.filter((r) => r[F_.neg]).length + " frames), then black (" + C.filter((r) => r[F_.blank]).length + ")", C.filter((r) => r[F_.neg]).length >= 2 && C.filter((r) => r[F_.blank]).length >= 3 && C[0][F_.neg] === 1];
+    if (name === "vline") return ["squashes SIDEWAYS (min sx " + minOf(C, F_.sx).toFixed(3) + ", min sy " + minOf(C, F_.sy).toFixed(2) + ")", minOf(C, F_.sx) <= 0.1 && minOf(C, F_.sy) === 1];
+    if (name === "burn") return ["an afterglow on the dead tube (max " + maxAbs(Dd, F_.aft).toFixed(3) + ")", maxAbs(Dd, F_.aft) >= 0.05];
+  }
+  return ["?", false];
+}
+function corrArr(a, b, mask) { let n = 0, sa = 0, sb = 0, sab = 0, saa = 0, sbb = 0; for (let i = 0; i < a.length; i++) { if (mask && !mask[i]) continue; n++; sa += a[i]; sb += b[i]; sab += a[i] * b[i]; saa += a[i] * a[i]; sbb += b[i] * b[i]; } const v = (saa - sa * sa / n) * (sbb - sb * sb / n); return v > 1e-9 ? (sab - sa * sb / n) / Math.sqrt(v) : NaN; }
+async function p3render(browser, kill) {
+  const items = p3renderItems();
+  const res = await runP3(browser, items, kill ? { files: { "zk-picture.js": killedPicture() }, verify: "!!(window.ZankyoPicture && ZankyoPicture.exitMode({exit:{mode:'roll'}}) === 'squash')" } : {});
+  let ok = true; const out = [];
+  const by = (grp, name, tex) => res[items.findIndex((x) => x.grp === grp && x.name === name && (tex ? x.texture === tex : x.texture === 21))];
+  const refName = { "即": "snap", "浮": "fade", "浮反": "fade", "探": "今", "切": "squash", "残": "squash" };
+  const refTimes = [], varTimes = [];
+  for (const grp of ["即", "浮", "浮反", "探", "切", "残"]) {
+    const ref = by(grp, refName[grp]), refT = by(grp, refName[grp], 1021), floor = grp === "切" ? NaN : blockDiff(ref.blocks, refT.blocks);
+    if (grp !== "切") console.log("  " + grp + " — texture floor (the default on another texture seed): " + floor.toFixed(2) + " levels/block; gate 3× = " + (3 * floor).toFixed(2));
+    let sq = null, sqT = null, shear0 = NaN;
+    if (grp === "切") {
+      sq = exitSig(ref); sqT = exitSig(refT); shear0 = Math.max(sq.shear, sqT.shear);
+      const sqOk = [sq, sqT].every((q) => q.C >= 0.8 && q.C >= 1.6 * q.R && q.neg > 0.2); ok = ok && sqOk;
+      console.log("  切 — the squash, both textures: rows lit " + sq.R.toFixed(2) + "/" + sqT.R.toFixed(2) + ", columns lit " + sq.C.toFixed(2) + "/" + sqT.C.toFixed(2) + " at the collapse's end (a line across), first collapse frame vs last loss frame r " + sq.neg.toFixed(2) + "/" + sqT.neg.toFixed(2) + " · rows' step at the loss's end " + sq.shear + "/" + sqT.shear + " px" + (sqOk ? "" : " — ✗ THE REFERENCE DOES NOT READ AS A SQUASH"));
+    }
+    // 切's roll and freeze are seen in the LOSS, by image-derived motion:
+    // roll — rows of vertical travel a frame over the loss's second half,
+    // beyond 3× both squash runs'; freeze — the card's drift (column travel,
+    // px) stops: ≤ 1 px while both squash runs visibly drift (≥ 3 px, or the
+    // check is blind)
+    const L0x = ref.plan.lossAtS, lossMid = L0x + (ref.plan.spanS - ref.plan.lossAtS) / 2;
+    if (grp === "切") console.log("    image motion over the loss — squash: vertical " + vRoll(ref, lossMid).toFixed(2) + " / " + vRoll(refT, lossMid).toFixed(2) + " rows a frame, horizontal travel " + xTravel(ref) + " / " + xTravel(refT) + " px");
+    for (const it of items.filter((x) => x.grp === grp && (x.texture === 21 || grp === "浮反") && x.name !== refName[grp])) {
+      const r = by(grp, it.name); let d = grp === "切" ? NaN : blockDiff(r.blocks, ref.blocks), moves = d > 3 * floor && d > 1, dTxt = "moves " + d.toFixed(2);
+      if (grp === "残" && it.name === "burn") {
+        const afterR = (rr) => { const b = rr.blocks, d0 = Math.round((0.3 + 0.74) * 30) + 2, m = new Array(432).fill(0), D = b.slice(d0); D.forEach((f) => f.forEach((v, i) => { m[i] += v / D.length; })); return corrArr(b[0], m); };
+        const rB = afterR(r), rS = Math.max(afterR(ref), afterR(refT));
+        moves = rB >= 0.5 && rB > rS + 0.3; dTxt = "the dead tube still carries the last picture: r " + rB.toFixed(2) + " (squash " + rS.toFixed(2) + ")"; d = rB;
+      }
+      if (grp === "浮反") {
+        const cl = res[items.findIndex((x) => x.grp === "clean")], c = dec(cl.grays[cl.grays.length - 1].g);
+        const amp = (rr) => median(rr.grays.map((f) => ghostAmp(dec(f.g), c))), aOn = amp(ref), aTw = amp(refT), aOff = amp(r);
+        moves = aOn - aOff > 3 * Math.abs(aOn - aTw) && aOn > 1.3 * aOff;
+        dTxt = "echo level through the drift's second half (ghostAmp, median): walk " + aOn.toFixed(3) + " (twin " + aTw.toFixed(3) + ") vs walk off " + aOff.toFixed(3); d = aOn - aOff;
+      }
+      if (grp === "切" && it.name !== "roll" && it.name !== "freeze") {
+        const q = exitSig(r), tests = {
+          snow:  [(z) => z.R >= 0.9 && z.C >= 0.9, "all snow at the collapse's end: rows lit " + q.R.toFixed(2) + ", columns " + q.C.toFixed(2)],
+          vline: [(z) => z.R >= 0.7 && z.R >= 1.6 * z.C, "a line DOWN: rows lit " + q.R.toFixed(2) + ", columns " + q.C.toFixed(2)],
+          bars:  [(z) => z.R <= 0.05 && z.C <= 0.05 && z.shear >= 2, "sheared (each row steps " + q.shear + " px from the one above; the squash " + shear0 + "), then black: rows lit " + q.R.toFixed(2)],
+          neg:   [(z) => z.neg < -0.2 && z.R <= 0.05 && z.C <= 0.05, "the collapse opens inverted (r " + q.neg.toFixed(2) + "), then black: rows lit " + q.R.toFixed(2)],
+        }[it.name];
+        // it must read as ITSELF, and neither squash run may read as it (or the signature cannot tell them apart)
+        moves = tests[0](q) && !tests[0](sq) && !tests[0](sqT); dTxt = tests[1] + (tests[0](sq) || tests[0](sqT) ? " — ✗ the squash reads as this too" : ""); d = q.R;
+      }
+      if (grp === "切" && it.name === "roll") { const v = vRoll(r, lossMid), v0 = Math.max(vRoll(ref, lossMid), vRoll(refT, lossMid)); moves = v > 3 * v0 && v >= 2; dTxt = "rolls " + v.toFixed(2) + " rows a frame (squash ≤ " + v0.toFixed(2) + ")"; d = v; }
+      if (grp === "切" && it.name === "freeze") { const x = xTravel(r), x0 = Math.min(xTravel(ref), xTravel(refT)); moves = x <= 1 && x0 >= 3; dTxt = "the card's drift stops: " + x + " px (squash drifts ≥ " + x0 + " px)"; d = x; }
+      const [what, cause] = causeOf(grp, it.name, r, ref);
+      const good = moves && cause; ok = ok && good;
+      varTimes.push(...r.times);
+      console.log("   " + (good ? "✓" : "✗ " + grp + " " + it.name + ":") + " " + (grp + " " + it.name).padEnd(10) + " " + dTxt + (moves ? "" : " (NOT beyond the floor)") + " · " + what + (cause ? "" : " — CAUSE NOT SEEN"));
+      out.push({ grp, name: it.name, d: +d.toFixed(3), floor: +floor.toFixed(3), moves, cause, what });
+    }
+    refTimes.push(...ref.times, ...refT.times);
+  }
+  // 焼: the imprint, in glass coordinates, including under a rolled picture
+  {
+    const on = by("焼", "b0.18"), off = by("焼", "b0"), ron = by("焼", "roll·b0.18"), roff = by("焼", "roll·b0");
+    const bimg = on.burn ? Buffer.from(on.burn, "base64") : null;
+    // (the rival hypothesis, on the rolled frames: the imprint rolled WITH the
+    // picture — shifted by the frame's roll — must fit worse than the glass's)
+    const TH = on.tube[1];
+    const cor = (A, Bf, rolled, shift) => { const cs = []; for (let f = 0; f < Math.min(A.grays.length, Bf.grays.length); f++) { if (rolled && Math.abs(A.grays[f].roll) < 12) continue; if (!rolled && Math.abs(A.grays[f].roll) >= 1) continue; const a = Buffer.from(A.grays[f].g, "base64"), b = Buffer.from(Bf.grays[f].g, "base64"), k = shift ? Math.round(A.grays[f].roll * 144 / TH) : 0, dd = new Float64Array(a.length), bb = new Float64Array(a.length); for (let i = 0; i < a.length; i++) { const y = Math.floor(i / 192), ys = (((y - k) % 144) + 144) % 144; dd[i] = b[i] - a[i]; bb[i] = bimg[ys * 192 + (i % 192)] * b[i]; } cs.push(corrArr(dd, bb)); } return cs; };
+    const still = bimg ? cor(on, off, false) : [], rolled = bimg && ron.burn ? cor(ron, roff, true) : [], rolledH = bimg && ron.burn ? cor(ron, roff, true, true) : [];
+    const mS = median(still), mR = median(rolled), mH = median(rolledH), maxK = bimg ? Math.max(...bimg) / 255 : 0;
+    const good = bimg != null && still.length > 5 && mS >= 0.5 && rolled.length >= 2 && mR >= 0.5 && mR > mH; ok = ok && good;
+    console.log("   " + (good ? "✓" : "✗ 焼 burn:") + " 焼 burn-in: imprint depth max " + maxK.toFixed(3) + " · (off − on) vs imprint × picture, in glass coordinates: median r " + (isFinite(mS) ? mS.toFixed(3) : "—") + " over " + still.length + " still frames, " + (isFinite(mR) ? mR.toFixed(3) : "—") + " over " + rolled.length + " frames rolled ≥ 12 px (an imprint rolled WITH the picture: " + (isFinite(mH) ? mH.toFixed(3) : "—") + ")" + (bimg ? "" : " — NO IMPRINT"));
+    out.push({ grp: "焼", name: "burn", still: mS, rolled: mR, n: [still.length, rolled.length], good });
+    // and it frames the picture rather than burying it (§2.4): the burned
+    // hold's SSIM against the clean frame, next to the unburned one's (the
+    // probe's night, 3042, does not burn, so the legibility gate never meets one)
+    const cl = res[items.findIndex((x) => x.grp === "clean")], c = dec(cl.grays[cl.grays.length - 1].g);
+    const sOn = median(on.grays.map((f) => ssim(dec(f.g), c))), sOff = median(off.grays.map((f) => ssim(dec(f.g), c)));
+    const legOk = sOn >= 0.9 * sOff; ok = ok && legOk;
+    console.log("   " + (legOk ? "✓" : "✗ 焼 legibility:") + " 焼 at its deepest (k 0.18) keeps the picture: median hold SSIM vs clean " + sOn.toFixed(4) + " burned, " + sOff.toFixed(4) + " not (gate ≥ 0.9×)");
+  }
+  const pr = stats(refTimes), pv = stats(varTimes);
+  console.log("  step cost: defaults mean " + pr.mean + " p95 " + pr.p95 + " worst " + pr.worst + " ms · variants mean " + pv.mean + " p95 " + pv.p95 + " worst " + pv.worst + " ms (budget: mean ≤ 2.5, worst ≤ 6; load " + os.loadavg().map((x) => x.toFixed(0)).join("/") + ")");
+  if (res.errors.length) { ok = false; console.log("  ✗ page errors: " + res.errors.slice(0, 5).join(" | ")); }
+  fs.writeFileSync(path.join(OUT, "p3render" + (kill ? "-kill" : "") + ".json"), JSON.stringify(out, null, 1));
+  return { ok, out, perf: { ref: pr, var: pv } };
+}
+
+// ---- STRIPS: every lock-in, drift-in, glimpse, loss, and the burn-in ----
+async function p3sheets(browser) {
+  const dir = opt("sheets", OUT); fs.mkdirSync(dir, { recursive: true });
+  const rows = [];
+  const tE = [0.05, 0.15, 0.3, 0.45, 0.6, 0.8, 1.1, 1.5];
+  for (const m of ["snap", "roll", "bars", "fade", "bloom", "ghost"]) rows.push({ sheet: "P3-entries-即", cap: "即 " + m, it: { reel: 1, seed: 77.37, texture: 21, rx: SOKU6, drops: [], force: { archetype: "清", entry: m }, pngAt: tE, label: m } });
+  const tF = [0.6, 2, 3.4, 4.8, 6.2, 7.6, 8.2, 8.9];
+  for (const m of ["fade", "roll", "bars", "ghost"]) rows.push({ sheet: "P3-entries-浮", cap: "浮 " + m + " (遠 sev 0.6)", it: { reel: 0, seed: 77.37, texture: 21, rx: FU8, drops: [], force: { archetype: "遠", sev: 0.6, entry: m }, pngAt: tF, label: m } });
+  const tT = [1.15, 1.35, 2.6, 2.75, 2.95, 4.0, 4.12, 5.2];
+  for (const m of ["今", "roll", "bars", "ghost", "fade"]) rows.push({ sheet: "P3-glimpses-探", cap: "探 glimpses " + m, it: { reel: 1, seed: 77.37, texture: 21, rx: TAN5, drops: [], force: { archetype: "清", entry: "snap", glimpse: m }, pngAt: tT, label: m } });
+  const L0 = 6.4, tX = [L0 + 0.4, L0 + 1.2, L0 + 1.9, L0 + 2.2 + 0.06, L0 + 2.2 + 0.2, L0 + 2.2 + 0.36, L0 + 2.62 + 0.15, L0 + 2.94 + 0.3];
+  for (const m of ["squash", "roll", "snow", "bars", "freeze", "neg", "vline"]) rows.push({ sheet: "P3-exits-切", cap: "切 " + m, it: { reel: 1, seed: 77.37, texture: 21, rx: SOKU6, drops: [], force: { archetype: "清", exit: m }, pngAt: tX, label: m } });
+  const Z0 = 3.4, tZ = [Z0 + 1, Z0 + 4, Z0 + 7.6, Z0 + 8 + 0.1, Z0 + 8 + 0.3, Z0 + 8.42 + 0.15, Z0 + 8.74 + 0.3, Z0 + 8.74 + 1.0];
+  for (const m of ["squash", "snow", "freeze", "burn"]) rows.push({ sheet: "P3-exits-残", cap: "残 " + m, it: { reel: 0, seed: 77.37, texture: 21, rx: ZAN8, drops: [], force: { archetype: "清", exit: m }, pngAt: tZ, label: m } });
+  const tB = [1.2, 2.2, 3.2, 4.2, 5.2, 6.0];
+  for (const b of [0, 0.18]) rows.push({ sheet: "P3-burn-焼", cap: "焼 " + (b ? "burn k " + b + " (the last reception's imprint)" : "no burn"), it: { reel: 0, seed: 77.37, texture: 21, rx: SOKU6, drops: [[1.8, 0.3], [3.8, 0.3]], force: { archetype: "清", burn: b, axes: { drop: { kinds: ["roll"], depth: 0 } } }, pngAt: tB, label: "b" + b } });
+  const res = await runP3(browser, rows.map((r) => r.it), {});
+  const page = await openPage(browser, {});
+  try {
+    for (const sh of Array.from(new Set(rows.map((r) => r.sheet)))) {
+      const tiles = [];
+      rows.forEach((r, i) => { if (r.sheet !== sh) return; res[i].pngs.forEach((p) => tiles.push({ png: p.png, cap: r.cap + " · " + p.at.toFixed(2) + " s " + p.ph + " · " + p.s })); });
+      const cols = res[rows.findIndex((r) => r.sheet === sh)].pngs.length || 8;
+      const j = await page.eval("(" + PAGE_SHEET.toString() + ")(" + JSON.stringify(tiles) + "," + cols + "," + JSON.stringify(sh + " · each row one variant, forced, texture 21 · s from t0 · phase · carrier") + ")", 120000);
+      fs.writeFileSync(path.join(dir, sh + ".jpg"), Buffer.from(j.split(",")[1], "base64"));
+      console.log("  " + tiles.length + " tiles → " + path.join(dir, sh + ".jpg"));
+    }
+  } finally { await page.closeTarget(); }
+  if (res.errors.length) { console.log("  ✗ page errors: " + res.errors.join(" | ")); return { ok: false }; }
+  return { ok: true };
+}
+
 (async function main() {
   console.log("_picture-probe " + MODE + " · " + URL0 + " · base " + BASE + " · out " + OUT);
   const browser = await launch();
@@ -1468,6 +2026,10 @@ async function lullcal(browser) {
     if (MODE === "sheets") { console.log("P1 · CONTACT SHEETS"); report.sheets = await sheets(browser); }
     if (MODE === "lullfit") { console.log("P2 · THE LULL'S FIT (dev)"); report.lullfit = lullfit(); }
     if (MODE === "kinds") { console.log("P2 · THE KINDS SHEET"); report.kinds = await kindsSheet(browser); ok = ok && report.kinds.ok; }
+    if (MODE === "bounds" || MODE === "p3") { console.log("P3 · THE RECEIVER'S WINDOWS (every phase boundary, tree vs rc.P4 vs rc.91)"); report.bounds = await bounds(browser); ok = ok && report.bounds.ok; }
+    if (MODE === "p3draws" || MODE === "p3") { console.log("P3 · THE LOCK-IN, LOSS, GLIMPSE AND BURN DRAW"); report.p3draws = await p3draws(); ok = ok && report.p3draws.ok; }
+    if (MODE === "p3render" || MODE === "p3") { const kill = argv.indexOf("--kill") >= 0; console.log("P3 · DOES EACH VARIANT RENDER, AS ITS CAUSE" + (kill ? " — KILL RUN (every variant rendered as the default: every one must fail by name)" : "")); report.p3render = await p3render(browser, kill); ok = ok && report.p3render.ok; }
+    if (MODE === "p3sheets") { console.log("P3 · STRIPS"); report.p3sheets = await p3sheets(browser); ok = ok && report.p3sheets.ok; }
   } catch (e) { console.error("PROBE FAILED: " + (e && e.stack || e)); ok = false; }
   finally { await browser.close(); }
   fs.writeFileSync(path.join(OUT, "report-" + MODE + ".json"), JSON.stringify(report, null, 1));
