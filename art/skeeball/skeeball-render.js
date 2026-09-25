@@ -92,13 +92,13 @@
   // ring radii as fractions of maxRx, outside → in; even indexes are the
   // dark score TROUGHS (10/20/30/40 + the 50 hole), odd are the raised
   // cork RIMS between them. The physics rim radii [0.93, 0.744, 0.535,
-  // 0.326, 0.126] (units) sit on the outer edge (0.93) and on the middle
-  // of each cork band: band centres 41.5/30.0/18.5/7.0 px laterally and
-  // 39.5/28.5/17.5/6.0 px vertically against 41.6/29.9/18.2/7.0 and
-  // 39.2/28.2/17.2/6.6 px targets. The 50's hole (last entry) was 0.10 →
-  // rx 5; physics round 3 moved its rim out to 0.126, so the hole is now
-  // 0.11 → rx 6 (ry stays 5): the 50 hoop sits 0.5 px further out.
-  var RING_FR = [1, 0.825, 0.775, 0.60, 0.55, 0.375, 0.325, 0.15, 0.11];
+  // 0.326, 0.119] (units) sit on the outer edge (0.93) and on the middle
+  // of each cork band: band centres 41.5/30.0/18.5/6.5 px laterally and
+  // 39.5/28.5/17.5/6.0 px vertically against 41.6/29.9/18.2/6.65 and
+  // 39.2/28.2/17.2/6.3 px targets — every hoop within 0.35 px. (Physics
+  // round 3 moved the 50 rim to 0.126 and the hole was drawn at 0.11 for a
+  // while; round 5 brought it back to 0.119, where V0.38's 0.10 fits best.)
+  var RING_FR = [1, 0.825, 0.775, 0.60, 0.55, 0.375, 0.325, 0.15, 0.10];
   var GAP_LABELS = { 0: '10', 2: '20', 4: '30', 6: '40' };
   var CAB_BOT = 372;
   var SHELL = 7; // rail + outer shell thickness beyond the lane edge
@@ -373,6 +373,7 @@
         dither(g, t.cx - r.rx, t.cy + r.ry - 3, r.rx * 2, 3, PAL.CORK2, 0.5);
       }
     }
+    drawFarArcs(g);
     // scuffed cork: ball burns on the rims
     var srx = SPEC.maxRx, sry = Math.round(srx * SPEC.ratio);
     for (var s = 0; s < 26; s++) {
@@ -399,6 +400,41 @@
       px(g, h.x, h.y + 1, PAL.PINK_D);
       textC(g, '100', h.x, h.y + 7, PAL.PINK, 1);        // label below the hole
     }
+  }
+
+  // The hoops rise toward the backstop: physics gives every rim's far
+  // (up-bed) half a height rimH·(1 + sin angle), up to twice as tall at the
+  // top. Each cork hoop gets one more row of lit edge above its highlight
+  // over 20°–160° (from +u toward +v): CORK3 across the crown, fading
+  // through a Bayer mix to CORK1 at the ends — except over the dent on the
+  // 40's rim, which stays flat. The near arcs are untouched: they are what
+  // a sinking ball drops behind.
+  function drawFarArcs(g) {
+    var t = GEO.target;
+    for (var i = 1; i < GEO.rings.length; i += 2) {
+      var r = GEO.rings[i];
+      for (var dy = -r.ry - 2; dy <= 0; dy++)
+        for (var dx = -r.rx; dx <= r.rx; dx++) {
+          var x = t.cx + dx, y = t.cy + dy;
+          // one row above the CORK3 highlight: inside the ellipse lifted by
+          // 2, outside the one lifted by 1 (the ellipse() raster, exactly)
+          if (!inEllipse(x, y + 2, t.cx, t.cy, r.rx, r.ry) || inEllipse(x, y + 1, t.cx, t.cy, r.rx, r.ry)) continue;
+          var ang = Math.atan2(t.cy + 0.5 - (y + 0.5), x + 0.5 - t.cx) * 180 / Math.PI;
+          if (ang < 20 || ang > 160) continue;
+          if (i === 5 && ang > 36 && ang < 72) continue;     // the dent stays pressed flat
+          var edge = Math.min(ang - 20, 160 - ang);             // 0 at the ends → 70 at the crown
+          var c = edge >= 25 ? PAL.CORK3 : (BAYER[(y % 4) * 4 + (x % 4)] / 16 < edge / 25 ? PAL.CORK3 : PAL.CORK1);
+          px(g, x, y, c);
+        }
+    }
+  }
+  // is pixel (x, y) covered by ellipse(g, cx, cy, rx, ry)? (same raster)
+  function inEllipse(x, y, cx, cy, rx, ry) {
+    var dy = y - cy;
+    if (dy < -ry || dy > ry) return false;
+    var tt = dy / (ry + 0.5), hw = rx * Math.sqrt(Math.max(0, 1 - tt * tt));
+    var x0 = Math.round(cx - hw), w = Math.round(hw * 2) || 1;
+    return x >= x0 && x < x0 + w;
   }
 
   // The dent in the 40's rim (R_3, the hoop between the 30 and the 40) on
@@ -1158,7 +1194,7 @@
   var COSB = Math.cos(BETA), SINB = Math.sin(BETA), TANB = Math.tan(BETA);
   var APRON_V = 0.27;       // drawn apron: 14 px below the outer ring ≈ 0.27 units
   var R10 = 0.93;           // outer rim radius, units ↔ rings[0] (52 × 49 px)
-  var RIMS = [0.93, 0.744, 0.535, 0.326, 0.126];
+  var RIMS = [0.93, 0.744, 0.535, 0.326, 0.119];
   var CUPS = [10, 20, 30, 40, 50];
 
   // THE FIT (numbers for the 'grand' art):
