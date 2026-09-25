@@ -2,78 +2,21 @@
   "id": "cn-dongfanghong-1-1970",
   "title": "宇宙高歌東方紅 (The Universe Sings \"The East Is Red\")",
   "year": 1970,
-  "src": "https://www.bilibili.com/video/BV1mRG1zxEVg/",
+  "src": "https://www.youtube.com/watch?v=JU3kg3ZLahA",
   "license": "unknown (uploader-asserted; PRC state documentary)",
   "tier": "B",
   "tone": "tone",
   "weight": 4,
-  "gain": -0.1,
+  "gain": 0.1,
   "durS": 86.0,
-  "bytes": 795103,
+  "bytes": 821433,
   "band": "low",
   "audioOnly": false,
   "picture": null,
-  "windows": [
-    [
-      0.0,
-      26.0
-    ],
-    [
-      26.0,
-      38.0
-    ],
-    [
-      38.0,
-      50.0
-    ],
-    [
-      50.0,
-      62.0
-    ],
-    [
-      62.0,
-      74.0
-    ],
-    [
-      74.0,
-      86.0
-    ]
-  ],
-  "srcWindows": [
-    [
-      1664.0,
-      1690.0
-    ],
-    [
-      1441.0,
-      1453.0
-    ],
-    [
-      1461.0,
-      1473.0
-    ],
-    [
-      1216.0,
-      1228.0
-    ],
-    [
-      1616.0,
-      1628.0
-    ],
-    [
-      596.0,
-      608.0
-    ]
-  ],
-  "pitchHz": [
-    null,
-    718.44,
-    null,
-    null,
-    null,
-    null
-  ],
+  "windows": [[0.0, 26.0], [26.0, 38.0], [38.0, 50.0], [50.0, 62.0], [62.0, 74.0], [74.0, 86.0]],
+  "srcWindows": [[1664.0, 1690.0], [1441.0, 1453.0], [1461.0, 1473.0], [1216.0, 1228.0], [1616.0, 1628.0], [596.0, 608.0]],
+  "pitchHz": [null, 718.44, null, null, null, null],
   "tuned": true,
-  "notes": "1970 PRC documentary, Mandarin: Dongfanghong-1. The long window is the satellite's own 20.009 MHz transmission of 東方紅 played back on air, over the satellite turning and a telemetry trace; also the launch klaxon at Jiuquan, the launch itself, an optical tracking mount, a Yagi array and the control room, and the satellite on the bench. Fetched from bilibili BV1mRG1zxEVg with a full browser header set; cut from a top-cropped copy (uploader corner bug removed).",
+  "notes": "1970 PRC documentary, Mandarin: Dongfanghong-1. The long window is the satellite's own 20.009 MHz transmission of 東方紅 played back on air, over the satellite turning and a telemetry trace; also the launch klaxon at Jiuquan, the launch itself, an optical tracking mount, a Yagi array and the control room, and the satellite on the bench. Re-cut 2026-09-25 from a clean, unmarked copy of the same transfer on YouTube (怀旧影像館, 960×720, frame-identical, so the windows are unchanged); the earlier Bilibili upload (BV1mRG1zxEVg, 记忆走廊, corner logo) is kept as the previous source.",
   "takedown": false
 }
