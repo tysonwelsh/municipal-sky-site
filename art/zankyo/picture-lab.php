@@ -15,8 +15,8 @@
 //   · a reel (or the test card), and the frame it is paused on
 //   · texture: Math.random, or a seeded stream (pixel-reproducible captures)
 //   · the character: drawn, or forced — an archetype (§4.1, and 今 for rc.91's
-//     look restated), one P1 kind alone ({"impairment":"影","sev":0.5}), or
-//     axes as JSON; P2's kinds are refused by name
+//     look restated), any one of the fifteen kinds alone
+//     ({"impairment":"縞","sev":0.5}), or axes as JSON
 //   · the shape: 即/探/浮 × 常/戻/断/走 × 切/残/絶, and the time on air
 //   · LIVE (the page's clock and rAF) or FROZEN (step frame by frame)
 //   · a strip capture of one reception (PNG); a 4×3 contact sheet: the same
@@ -65,7 +65,7 @@ if ($zk_a0 === false || $zk_b0 === false) {
 }
 ?>
 <div class="zpl">
-  <h1>映り · PICTURE LAB <span class="zpl-sub">PLAN-SIGNAL-PICTURE §6.1 · P1: the character drawn per reception</span></h1>
+  <h1>映り · PICTURE LAB <span class="zpl-sub">PLAN-SIGNAL-PICTURE §6.1 · P2: fifteen kinds, the character drawn per reception</span></h1>
   <p>The tube above is driven from here, not by the receiver. <b>Do not press PLAY</b> on this page. Choose a reel and a shape,
      press <b>receive</b>, then step it frozen or let it run live. Captures are exact when the texture is seeded.</p>
   <div class="zpl-row">
@@ -82,7 +82,7 @@ if ($zk_a0 === false || $zk_b0 === false) {
     <label>dropouts <input type="checkbox" id="zpl-drops" checked /></label>
   </div>
   <div class="zpl-row">
-    <label class="zpl-wide">force <input type="text" id="zpl-force" placeholder='{"archetype":"遠","sev":0.8}  ·  {"impairment":"影","sev":0.5}  ·  {"archetype":"今"}  ·  blank = as drawn' /></label>
+    <label class="zpl-wide">force <input type="text" id="zpl-force" placeholder='{"archetype":"遠","sev":0.8}  ·  {"impairment":"縞","sev":0.5}  ·  {"archetype":"今"}  ·  blank = as drawn' /></label>
   </div>
   <div class="zpl-row">
     <button type="button" id="zpl-rx">receive</button>
