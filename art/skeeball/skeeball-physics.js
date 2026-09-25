@@ -69,12 +69,12 @@
     pitFloorY: -0.5,
     bedZ0: 4.75, bedY0: 0.2, // the lip
     bedAngle: 0.72,          // β, rad
-    bedHalfW: 1.2,
-    bedTopV: 2.95,           // backstop
+    bedHalfW: 1.02,          // round 4: matched to the painted bed
+    bedTopV: 2.60,           // backstop (round 4: the visible top of the painted bed)
     ringCV: 1.20,            // ring centre (u = 0)
     rims: [0.93, 0.744, 0.535, 0.326, 0.126], // innermost 0.116 → 0.126 in round 3 (the 50's catch)
     rimH: 0.08, rimW: 0.05,  // drawn rim height above the bed plane, drawn thickness
-    holeU: 0.7512, holeV: 2.57, holeR: 0.14, lipH: 0.04,
+    holeU: 0.7512, holeV: 2.30, holeR: 0.14, lipH: 0.04, // round 4: v from the lip, as painted
 
     // ── cups (round 2) ──
     cupDepth: 0.12,          // cup floor below the bed plane
@@ -82,9 +82,9 @@
     rimBallR: 0.06,          // the ball's collision radius against rim blades (see header)
     // the dented 40: its rim's wall is lower over the upper-right octant
     dentRim: 3,
-    dentA0: 20, dentA1: 70,  // degrees from +u toward +v
-    dentDepth: 0.75,         // rim height × (1 − dentDepth) inside the dent (0.02 above the bed)
-    dentTaper: 6,            // degrees of smooth shoulder each side
+    dentA0: 44, dentA1: 69,  // degrees from +u toward +v (round 4: the drawn 7-px flat)
+    dentDepth: 1.0,          // rim height × (1 − dentDepth) inside the dent: worn flush with the bed
+    dentTaper: 10,           // degrees of smooth shoulder each side
     // the outer rim's top arc is worn nearly flush with the bed (as on a
     // real machine, where the backboard runs down into the 10): a ball that
     // comes back off the backstop rolls straight into the 10 cup
@@ -146,7 +146,7 @@
     preLaunchT: 20.0,        // …or this long after the throw if it never launched (safety)
 
     // ── events ──
-    evRim: 1.05, evBed: 0.28, evWall: 0.24, evBackstop: 0.24, evCooldown: 0.05,
+    evRim: 1.15, evBed: 0.28, evWall: 0.24, evBackstop: 0.24, evCooldown: 0.05,
 
     // ── input range (the swipe maps into this; physics accepts any v ≥ 0) ──
     vMin: 2.08, vMax: 7.2, vAbsMax: 9.6,
@@ -506,7 +506,10 @@
       ax += pn[0] * T.perchNudge * b.perchSide; ay += pn[1] * T.perchNudge * b.perchSide; az += pn[2] * T.perchNudge * b.perchSide;
       b.perchSide = 0;
     }
-    var motorWork = Math.max(0, (ax * b.vx + (ay + g) * b.vy + az * b.vz) * dt);
+    // work the non-gravity forces do this substep (at the midpoint velocity,
+    // so a motor can start a ball from rest)
+    var ayM = ay + g;
+    var motorWork = Math.max(0, (ax * (b.vx + 0.5 * ax * dt) + ayM * (b.vy + 0.5 * ayM * dt) + az * (b.vz + 0.5 * az * dt)) * dt);
 
     b.vx += ax * dt; b.vy += ay * dt; b.vz += az * dt;
     var px = b.x, py = b.y, pz = b.z;
@@ -669,7 +672,7 @@
     /* phase bookkeeping */
     if (!b.launched) {
       if (b.phase === 'return') {
-        if (b.z < T.returnDoneZ && b.vz < 0) {
+        if (b.z < T.returnDoneZ && b.vz <= 0) {
           b.vx = b.vy = b.vz = 0;
           emit(b, { type: 'return' });
           return finish(b, { kind: 'return', score: 0, cup: null, band: null, hole: null });
@@ -742,16 +745,19 @@
       emit(b, { type: 'return' });
       return finish(b, { kind: 'return', score: 0, cup: null, band: null, hole: null });
     }
-    var hole = holeAtD(D, q.u, q.v, D.lipRing + D.r);
+    // only a ball whose centre is over a hole's mouth is in it; one propped
+    // on the lip from outside (the corner pocket above each hole) is not
+    var hole = holeAtD(D, q.u, q.v, T.holeR);
     if (hole >= 0 && q.v >= 0) return capture(b, q, 100, null, hole);
     var d = Math.hypot(q.u, q.v - T.ringCV);
     if (q.v >= 0 && d <= T.rims[0] + D.r + D.rimReach + T.restReach) {
       var band = bandAtD(D, q.u, q.v); if (band < 0) band = 0;
       return capture(b, q, SCORES[band], band, null);
     }
+    // stuck on the open bed (e.g. on a 100 hole's lip): the machine takes it back, no score
     b.phase = 'gutter'; b.endT = b.t; b.vx = b.vy = b.vz = 0;
     emit(b, { type: 'gutter' });
-    b.result = { kind: 'gutter', score: 0, cup: null, band: null, hole: null, t: +b.t.toFixed(4) };
+    b.result = { kind: 'stuck', score: 0, cup: null, band: null, hole: null, t: +b.t.toFixed(4) };
   }
 
   function capture(b, q, score, band, hole) {
@@ -824,7 +830,7 @@
                           c.h0 + (c.h1 - c.h0) * h01 + c.mh * h10);
       x = P.x; y = P.y; z = P.z;
       cup = b.result.score; hole = b.result.hole;
-    } else if (b.result && b.result.kind === 'gutter') {
+    } else if (b.result && (b.result.kind === 'gutter' || b.result.kind === 'stuck')) {
       sinking = Math.min(1, (b.t - b.endT) / T.gutterT);
     }
     var q = toBedD(D, x, y, z);
