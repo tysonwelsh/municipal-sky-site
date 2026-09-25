@@ -25,6 +25,9 @@ details stop contradicting each other.
 - In-universe, tokens come from a **changer by the front door** (nickels
   in). Until it's built, a first visit seeds the save with a starter
   pocket of 20 tokens.
+- **Found a nickel.** If your pocket is empty when a machine settles back
+  into attract, it finds a nickel in its own coin return: the pocket
+  refills to 5 tokens (`skeeball-return`, flag `skeeball.found-a-nickel`).
 
 ## The save document
 

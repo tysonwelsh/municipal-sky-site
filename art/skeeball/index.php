@@ -18,8 +18,8 @@ function skv($file)
 // every asset + the newest asset's mtime. The "— summary" tail of VERSION
 // stays for git history and the bump rule; the page shows the number.
 $sk_assets = [
-    '../arcade/arcade-palette.js', '../arcade/arcade-sprites.js',
-    'skeeball-render.js', 'skeeball-physics.js', 'skeeball-main.js', 'skeeball.css', 'index.php',
+    '../arcade/arcade-core.js', '../arcade/arcade-palette.js', '../arcade/arcade-sprites.js',
+    'skeeball-render.js', 'skeeball-physics.js', 'skeeball-audio.js', 'skeeball-main.js', 'skeeball.css', 'index.php',
 ];
 $sk_version = trim((string) @file_get_contents(__DIR__ . '/VERSION')) ?: 'dev';
 $sk_version = trim(explode('—', $sk_version)[0]);
@@ -37,20 +37,24 @@ include '../../includes/header.php';
 
 <div class="skeeball-page">
     <div class="skeeball-stage" id="skeeball-mount" data-version="<?php echo htmlspecialchars($sk_version); ?>"></div>
-    <p class="skeeball-blurb">
-        <em>HOLLER ROLLER</em> &mdash; a skee ball machine from a nickel arcade somewhere
-        in the Appalachian fog. Swipe up the lane to roll. Prototype:
-        endless balls, no nickels needed yet.
-    </p>
-    <p class="skeeball-build" aria-label="build version">
-        <?php echo htmlspecialchars($sk_version); ?><span class="skeeball-build-sep">&middot;</span><?php echo $sk_build; ?><?php if ($sk_deployed): ?><span class="skeeball-build-sep">&middot;</span><?php echo $sk_deployed; ?><?php endif; ?>
-    </p>
+    <div class="skeeball-placard">
+        <p class="skeeball-blurb">
+            <em>HOLLER ROLLER</em> &mdash; Swipe up the lane. Nine balls a nickel. The possum is watching.
+        </p>
+        <p class="skeeball-build" aria-label="build version">
+            <?php echo htmlspecialchars($sk_version); ?><span class="skeeball-build-sep">&middot;</span><?php echo $sk_build; ?><?php if ($sk_deployed): ?><span class="skeeball-build-sep">&middot;</span><?php echo $sk_deployed; ?><?php endif; ?>
+        </p>
+    </div>
 </div>
 
+<script src="../arcade/arcade-core.js?v=<?php echo skv('../arcade/arcade-core.js'); ?>"></script>
 <script src="../arcade/arcade-palette.js?v=<?php echo skv('../arcade/arcade-palette.js'); ?>"></script>
 <script src="../arcade/arcade-sprites.js?v=<?php echo skv('../arcade/arcade-sprites.js'); ?>"></script>
 <script src="skeeball-render.js?v=<?php echo skv('skeeball-render.js'); ?>"></script>
 <script src="skeeball-physics.js?v=<?php echo skv('skeeball-physics.js'); ?>"></script>
+<?php if (is_file(__DIR__ . '/skeeball-audio.js')): ?>
+<script src="skeeball-audio.js?v=<?php echo skv('skeeball-audio.js'); ?>"></script>
+<?php endif; ?>
 <script src="skeeball-main.js?v=<?php echo skv('skeeball-main.js'); ?>"></script>
 
 <?php include '../../includes/footer.php'; ?>

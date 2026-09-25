@@ -36,15 +36,25 @@ body:has(.skeeball-page) {
 
 .skeeball-canvas {
     display: block;
+    touch-action: none;
+    overscroll-behavior: none;
+    outline: none;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
     background: #07060d;
 }
 
-.skeeball-blurb {
-    max-width: 34rem;
+.skeeball-placard {
+    max-width: min(24rem, calc(100% - 2rem));
     margin: 1.5rem auto 0;
-    padding: 0 1.25rem;
+    padding: 0.6rem 1rem 0.5rem;
+    border: 1px solid #2c2340;
+    border-radius: 2px;
+    box-shadow: inset 0 0 0 3px #07060d, inset 0 0 0 4px #1b1528;
+}
+
+.skeeball-blurb {
+    margin: 0;
     color: #6f5d95;
     font-size: 0.85rem;
     line-height: 1.6;
@@ -57,7 +67,7 @@ body:has(.skeeball-page) {
 }
 
 .skeeball-build {
-    margin: 0.75rem auto 0;
+    margin: 0.4rem 0 0;
     color: #453567;
     font-size: 0.7rem;
     letter-spacing: 0.04em;

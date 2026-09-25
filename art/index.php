@@ -45,6 +45,13 @@ include '../includes/header.php';
                             in the year 3042, eroded by Japanoise grit.</span>
                     </div>
                 </div>
+                <div class="entry">
+                    <div class="entry-content">
+                        <a href="/art/skeeball/" class="entry-title">HOLLER ROLLER</a>
+                        <span class="entry-description">A deranged skee ball machine from a nickel arcade
+                            deep in the Appalachian fog. Nine balls a nickel. The possum is watching.</span>
+                    </div>
+                </div>
                 <!-- HIDDEN (temporarily commented out — un-comment to restore) -->
                 <!--
                 <div class="entry">
