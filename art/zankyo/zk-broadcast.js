@@ -98,6 +98,12 @@
   var TONE_PITCHED = { tone: 1, sung: 1, drone: 1 };     // §11.3: the kinds that may pull the field to themselves
   function toneKnown(t) { return !!(TONE_DARK[t] || TONE_LIGHT[t]); }
   var RECENT_CYCLES = 3;
+  // …and, whatever the cycles, the last RECENT_KEEP reels heard stay out
+  // (owner, 2026-09-25: repeats are "happening more frequently than I would
+  // like"). Three cycles is only the last few receptions; with ~350 reels a
+  // night can afford to remember ~2½ hours of them. 同 is unaffected: it
+  // reaches back into the ring on purpose.
+  var RECENT_KEEP = 60;
   var DITHER_DB = -3;   // the dither into the staircase, relative to one step (S3; 0 = a whole step, −∞ = the bare squelch)
   // ---- the dropout holes: a duck under static, not a mute (the owner's ear, 2026-09-13) ----
   // The seeded holes (weather(): one every 1.2–4.5 s, each 0.12–0.37 s, denser
@@ -154,7 +160,13 @@
   var POROUS_P = 0.30;                       // §3.5: one melodic voice left OUT of the hold, and it may play over the signal
   var POROUS_VOICES = ["shakuhachi", "biwa", "hichiriki", "koto", "shamisen"];   // weighted to the sparse ones; NEVER vox — the intercom is a second speaker and would read as part of the broadcast
   var POROUS_W      = [0.30, 0.25, 0.25, 0.10, 0.10];
-  var CALLBACK_P = 0.25;                     // 同: a later reception in the same cycle is the SAME reel, a later window
+  // 同: a later reception in the same cycle is the SAME reel, a later window.
+  // 0.25 → 0.03 (owner, 2026-09-25: a repeat should happen "on occasion", not
+  // in every playthrough). At 0.25 it fired about 3× an hour on every night
+  // measured (17 of 18 repeats over six simulated hours were this, not a
+  // redraw); at 0.03 it is about one an hour in three. The draw is taken
+  // either way, so nothing else moves.
+  var CALLBACK_P = 0.03;
   // 戻 the return: the piece lengths, the carrier-lost gap, the relock
   var MOD_PIECE_MIN_S = 3, MOD_PIECE_MAX_S = 10;
   var MOD_GAP_MIN_S = 6, MOD_GAP_MAX_S = 15;
@@ -1139,8 +1151,8 @@
 
   // ---- the recent ring: reels heard in the last RECENT_CYCLES cycles ----
   var recent = [];   // [{ id, cycle }]
-  function recentIds(cycle) { var out = {}; for (var i = 0; i < recent.length; i++) if (recent[i].cycle >= cycle - RECENT_CYCLES) out[recent[i].id] = true; return out; }   // heard at cycle c → out for c+1, c+2, c+3 (critic S1 r1: > kept it out two)
-  function remember(id, cycle) { recent.push({ id: id, cycle: cycle }); lastCycleSeen = cycle; while (recent.length > 12) recent.shift(); }
+  function recentIds(cycle) { var out = {}; for (var i = 0; i < recent.length; i++) if (recent[i].cycle >= cycle - RECENT_CYCLES || i >= recent.length - RECENT_KEEP) out[recent[i].id] = true; return out; }   // heard at cycle c → out for c+1, c+2, c+3 (critic S1 r1: > kept it out two)
+  function remember(id, cycle) { recent.push({ id: id, cycle: cycle }); lastCycleSeen = cycle; while (recent.length > RECENT_KEEP) recent.shift(); }
   // 同 the callback: the last station heard in THIS cycle, if there was one
   function recentInCycle(cycle) {
     for (var i = recent.length - 1; i >= 0; i--) if (recent[i].cycle === cycle) {
@@ -3852,7 +3864,7 @@
         // the ring under pressure: at ~1 signal per cycle a four-hour night is
         // about 32 reels from a pool of 32, so "the ring is working" and "the
         // ring is exhausted and repeating" need to be tellable apart
-        ring: { keptForCycles: RECENT_CYCLES, held: recent.length, cap: 12, poolSize: pool ? pool.length : 0,
+        ring: { keptForCycles: RECENT_CYCLES, held: recent.length, cap: RECENT_KEEP, poolSize: pool ? pool.length : 0,
                 excludedNow: Object.keys(recentIds(lastCycleSeen)).length } };
     },
     _dev: {
