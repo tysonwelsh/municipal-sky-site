@@ -72,18 +72,19 @@
     bedHalfW: 1.02,          // round 4: matched to the painted bed
     bedTopV: 2.60,           // backstop (round 4: the visible top of the painted bed)
     ringCV: 1.20,            // ring centre (u = 0)
-    rims: [0.93, 0.744, 0.535, 0.326, 0.126], // innermost 0.116 → 0.126 in round 3 (the 50's catch)
+    rims: [0.93, 0.744, 0.535, 0.326, 0.119], // innermost 0.116 → 0.126 in round 3, 0.119 in round 5 (the 50's catch)
     rimH: 0.08, rimW: 0.05,  // drawn rim height above the bed plane, drawn thickness
+    rimBackRise: 1.0,        // round 5: the up-bed half of each rim is taller by × (1 + rimBackRise·sin angle)
     holeU: 0.7512, holeV: 2.30, holeR: 0.14, lipH: 0.04, // round 4: v from the lip, as painted
 
     // ── cups (round 2) ──
     cupDepth: 0.12,          // cup floor below the bed plane
     rimBlade: 0.005,         // physical rim: a thin blade, tube radius
-    rimBallR: 0.06,          // the ball's collision radius against rim blades (see header)
+    rimBallR: 0.04,          // the ball's collision radius against rim blades (see header)
     // the dented 40: its rim's wall is lower over the upper-right octant
     dentRim: 3,
     dentA0: 44, dentA1: 69,  // degrees from +u toward +v (round 4: the drawn 7-px flat)
-    dentDepth: 1.0,          // rim height × (1 − dentDepth) inside the dent: worn flush with the bed
+    dentDepth: 1.12,         // rim height × (1 − dentDepth) inside the dent: worn a hair below the bed
     dentTaper: 10,           // degrees of smooth shoulder each side
     // the outer rim's top arc is worn nearly flush with the bed (as on a
     // real machine, where the backboard runs down into the 10): a ball that
@@ -136,14 +137,14 @@
     capH: 0.04,              // "in the cup": centre below this height above the bed plane
     capDeepH: -0.066,        // …or sunk deeper than this (−0.6 r) clear of the rims → captured
     holeCapH: 0.06,          // down a 100 hole
-    holeDirectR: 0.085,      // a direct hit drops in if its centre is this close to the hole's
+    holeDirectR: 0.075,      // a direct hit drops in if its centre is this close to the hole's
     restV: 0.05, restT: 0.6, // at rest on the open bed this long → resolved where it sits ('rest')
     restReach: 0.02,         // …into the 10 if within ball + rim reach of the outer rim + this
     sinkT: 0.35, gutterT: 0.35,
     gutterDrop: 0.3,         // a falling ball this far below the lip, inside the pit, is swallowed
     sinkDepth: 1.4,          // the sink ends this many ball radii below the bed plane
     sinkVMax: 2.4,           // capture momentum carried into the sink, units/s (cap)
-    timeoutT: 8.0,           // force-resolve 8 s after launch
+    timeoutT: 8.0,           // no throw lasts longer than this from release (force-resolved in time to sink)
     preLaunchT: 20.0,        // …or this long after the throw if it never launched (safety)
 
     // ── events ──
@@ -262,6 +263,9 @@
   // top height (above the bed plane) of rim k at polar angle ang (rad, 0 = +u, π/2 = up-bed)
   function rimTop(D, k, ang) {
     var T = D.T, hgt = T.rimH;
+    // the up-bed half of each hoop stands a little taller (the cups' back
+    // walls), so a ball arriving from below meets wall, not a ski-jump top
+    if (T.rimBackRise) { var sa = Math.sin(ang); if (sa > 0) hgt *= 1 + T.rimBackRise * sa; }
     if (k === T.dentRim) hgt *= 1 - T.dentDepth * arcWin(ang, D.dent0, D.dent1, D.dentTap);
     if (k === T.flushRim) hgt *= 1 - T.flushDepth * arcWin(ang, D.flush0, D.flush1, D.flushTap);
     return hgt;
@@ -461,6 +465,32 @@
     }
   }
 
+  // side rails (lane/hop) and side walls (pit/bed); over the pit the walls
+  // splay from the lane's half-width to the bed's, so a ball that comes back
+  // toward the lane meets a slanted wall, not a sudden step. A rail bounce
+  // scrubs along-rail speed: bank shots cost distance. Run before and after
+  // the bed contacts, so a rim can never shove the ball through a wall.
+  function sideWalls(b, dt) {
+    var T = b.T, r = b.D.r, s;
+    var hw, sl = 0;
+    if (b.z < T.L) hw = T.laneHalfW;
+    else if (b.z < T.bedZ0) { sl = (T.bedHalfW - T.laneHalfW) / (T.bedZ0 - T.L); hw = T.laneHalfW + sl * (b.z - T.L); }
+    else hw = T.bedHalfW;
+    hw -= r;
+    var wn = 1 / Math.sqrt(1 + sl * sl), ew = b.launched ? T.eWall : T.eRail;
+    var side = b.x > hw ? 1 : b.x < -hw ? -1 : 0;
+    if (side) {
+      var vtB = Math.hypot(b.vy, b.vz);
+      s = contact(b, -side * wn, 0, sl * wn, (side * b.x - hw) * wn, ew, T.muRail);
+      if (s > 0 && vtB > 1e-6) {
+        var scrub = Math.min(1, T.railScrub * (1 + ew) * s / vtB);
+        b.vy *= 1 - scrub; b.vz *= 1 - scrub;
+      }
+      if (s > T.evWall) emitCd(b, 'wall', { type: 'wall', speed: +s.toFixed(3) });
+      if (s > 0) b.english *= T.spinRailKeep;
+    }
+  }
+
   function substep(b, dt) {
     var T = b.T, D = b.D, r = D.r, g = T.g;
     b.n++;
@@ -557,27 +587,7 @@
         }
       }
     }
-    // side rails (lane/hop) and side walls (pit/bed); over the pit the
-    // walls splay from the lane's half-width to the bed's, so a ball that
-    // comes back toward the lane meets a slanted wall, not a sudden step.
-    // A rail bounce scrubs along-rail speed: bank shots cost distance.
-    var hw, sl = 0;
-    if (b.z < T.L) hw = T.laneHalfW;
-    else if (b.z < T.bedZ0) { sl = (T.bedHalfW - T.laneHalfW) / (T.bedZ0 - T.L); hw = T.laneHalfW + sl * (b.z - T.L); }
-    else hw = T.bedHalfW;
-    hw -= r;
-    var wn = 1 / Math.sqrt(1 + sl * sl), ew = b.launched ? T.eWall : T.eRail;
-    var side = b.x > hw ? 1 : b.x < -hw ? -1 : 0;
-    if (side) {
-      var vtB = Math.hypot(b.vy, b.vz);
-      s = contact(b, -side * wn, 0, sl * wn, (side * b.x - hw) * wn, ew, T.muRail);
-      if (s > 0 && vtB > 1e-6) {
-        var scrub = Math.min(1, T.railScrub * (1 + ew) * s / vtB);
-        b.vy *= 1 - scrub; b.vz *= 1 - scrub;
-      }
-      if (s > T.evWall) emitCd(b, 'wall', { type: 'wall', speed: +s.toFixed(3) });
-      if (s > 0) b.english *= T.spinRailKeep;
-    }
+    sideWalls(b, dt);
 
     // pit back wall (the bed's front face)
     if (b.z > T.L && b.y < T.bedY0 && b.z > T.bedZ0 - r) contact(b, 0, 0, -1, b.z - (T.bedZ0 - r), T.ePit, T.muImpact);
@@ -654,6 +664,8 @@
         q = toBedD(D, b.x, b.y, b.z);
       }
     }
+
+    sideWalls(b, dt);
 
     // No contact may add energy: the push-outs raise the ball a little each
     // time it rides a convex edge. Anything above the energy the ball came
@@ -739,7 +751,8 @@
         if (b.restT > T.restT) { emit(b, { type: 'rest', u: +q.u.toFixed(3), v: +q.v.toFixed(3) }); return forceResolve(b); }
       } else b.restT = 0;
     }
-    if ((b.launched && b.t - b.tLaunch > T.timeoutT) || b.t > T.preLaunchT) { emit(b, { type: 'timeout' }); return forceResolve(b); }
+    // no throw may take longer than timeoutT from release, sink included
+    if (b.t > T.timeoutT - T.sinkT || b.t > T.preLaunchT) { emit(b, { type: 'timeout' }); return forceResolve(b); }
   }
 
   function forceResolve(b) {
