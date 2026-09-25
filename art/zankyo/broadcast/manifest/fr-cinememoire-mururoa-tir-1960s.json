@@ -1,0 +1,23 @@
+{
+  "id": "fr-cinememoire-mururoa-tir-1960s",
+  "title": "Mururoa : Tir + Préparatifs / Mururoa: the shot, and the preparations",
+  "year": 1966,
+  "src": "https://cinememoire.net/notice?num_seq=18299",
+  "license": "Cinémémoire.net archive, anonymous amateur film; all rights reserved",
+  "tier": "B",
+  "tone": "noise",
+  "weight": 4,
+  "gain": 0.0,
+  "durS": 86.0,
+  "bytes": 407587,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 86.0]],
+  "srcWindows": [[24.0, 36.0], [62.0, 74.0], [150.0, 162.0], [210.0, 222.0], [238.0, 250.0], [266.0, 292.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "French Polynesia (Mururoa atoll), late 1960s (catalogue: 'années 60'; the atmospheric tests there began in July 1966), SILENT colour amateur film shot by someone serving with the test fleet. Windows: a yellow airship tethered inside a scaffold on its pad; navy ships moored off the atoll, hull number A637; a helicopter crossing a pale sky; a lattice radar antenna, then the atoll's shore with its tower seen from the sea; a sounding balloon drifting up, then the steel shot tower on its platform; LONG — men at the rail of a ship's deck under a heavy sky, the nuclear test as a flash of light low on the horizon, the glow fading into cloud, and grey waves. Fetched as the direct MP4 in cinememoire.net's newvideositemap.xml; pre-cropped to take off the burned-in www.cinememoire.net watermark.",
+  "takedown": false,
+  "silent": true
+}

@@ -1,0 +1,23 @@
+{
+  "id": "ee-ak-aseri-automaatlaadur-1983",
+  "title": "AK filmikroonika: Aseri automaatlaadur / The Automatic Loader at Aseri",
+  "year": 1983,
+  "src": "https://arhiiv.err.ee/video/vaata/ak-filmikroonika-1958-1991-aseri-automaatlaadur",
+  "license": "no licence notice; ETV/ERR archive, all rights reserved implied",
+  "tier": "B",
+  "tone": "noise",
+  "weight": 3,
+  "gain": 0.0,
+  "durS": 25.5,
+  "bytes": 200019,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.5], [12.5, 25.5]],
+  "srcWindows": [[0.5, 13.0], [15.5, 28.5]],
+  "pitchHz": [null, null],
+  "tuned": false,
+  "notes": "Estonian SSR 1983, an AK newsreel item and a SILENT print (16 mm positive catalogued helita, no sound): the new fully automatic loader built by the rationalisers of the Aseri Ceramics Works under Hans Leibur, twice the size of its predecessor. No people anywhere, only the machine: W1 blocks of perforated brick shunted along rollers under a row of clamp heads, the machine pausing and pushing the next block through; W2 past a curved rail into near-darkness, the loader feeding rows of bricks along its bed, then from above a grid dropping row after row onto a stack. Stands in for 'Esimene robot Aseris' (1 Aug 1983): that ERR record describes the MARS-1 robot but the film attached to it is a railway-builders' ceremony; this is the Aseri works' next AK item, broadcast the following day. Fetched by yt-dlp ERRArhiiv HLS; cut from local-dev/broadcast-src/_crop/ (pillarbox and ERR corner bug cropped off, square-pixel 4:3)",
+  "takedown": false,
+  "silent": true
+}

@@ -1,0 +1,61 @@
+{
+  "id": "nl-polygoon-beeldtelefoon-1974",
+  "title": "Eerste proef met beeldtelefoon (Polygoon, Weeknummer 74-12) / First trial of the picture-phone",
+  "year": 1974,
+  "src": "https://openbeelden.nl/media/23173/Eerste_proef_met_beeldtelefoon",
+  "license": "CC-BY-SA 3.0 NL (Open Beelden / Beeld en Geluid; Polygoon-Profilti producent)",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.4,
+  "durS": 73.0,
+  "bytes": 608430,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      37.0
+    ],
+    [
+      37.0,
+      49.0
+    ],
+    [
+      49.0,
+      61.0
+    ],
+    [
+      61.0,
+      73.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      3.0,
+      40.0
+    ],
+    [
+      41.0,
+      53.0
+    ],
+    [
+      54.0,
+      66.0
+    ],
+    [
+      66.0,
+      78.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "Netherlands, Dutch: Polygoon-Profilti newsreel, Philips Telecommunicatie Industrie, Hilversum 1974, commentary Philip Bloemendal — the long window is one complete demonstration call: a man dials, a bespectacled man appears on the picture-phone screen, a drawing is held under the little mirror and arrives down the line; then a map traced with a pen on screen, a young man and a young woman speaking to camera through the set, documents shown via the mirror. Source MP4 (360×288) from openbeelden.nl, uncropped.",
+  "takedown": false
+}

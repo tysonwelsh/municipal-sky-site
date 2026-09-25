@@ -1,0 +1,22 @@
+{
+  "id": "tr-barajlar-1956",
+  "title": "Barajlar / Dams",
+  "year": 1956,
+  "src": "https://filmmirasim.ktb.gov.tr/tr/film/barajlar",
+  "license": "T.C. Kültür ve Turizm Bakanlığı film archive (SGM-4622); all rights reserved on the site footer, use governed by the ministry's Süreli Kullanım Yönergesi (request form)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.2,
+  "durS": 90.0,
+  "bytes": 901051,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 78.0], [78.0, 90.0]],
+  "srcWindows": [[20.0, 32.0], [140.0, 152.0], [185.0, 197.0], [500.0, 512.0], [575.0, 605.0], [638.0, 650.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Türkiye, Turkish, 1956: a Basın-Yayın-Turizm film on the dams the state was building, under a Turkish narrator — a river in spate and people standing at a waterfall; a huge crowd and a speaker at a podium under the banner 'İkinci Sakarya Zaferimiz Kutlu Olsun' (most likely the opening of the Sarıyar dam on the Sakarya); the control desk, the spillway and the turbine shaft; a transformer yard, a generator and a man turning a switch at the panel; the long window runs from the spillway and a penstock pipe through a switchyard, a repair workshop and the big transformers; a town lit up at night, minarets and a Ferris wheel in lights. Fetched from the page's 480p HLS manifest (filmmirasim.ktb.gov.tr:8443/WEBTV/...playlist.m3u8); pre-cropped to remove the baked pillarbox (crop=642:476:114:2). The ministry's rosette watermark is left in.",
+  "takedown": false
+}

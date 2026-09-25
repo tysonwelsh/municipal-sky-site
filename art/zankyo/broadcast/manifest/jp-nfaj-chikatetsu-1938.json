@@ -1,0 +1,23 @@
+{
+  "id": "jp-nfaj-chikatetsu-1938",
+  "title": "地下鉃の出來るまで / How the Subway Was Made",
+  "year": 1938,
+  "src": "https://filmisadocument.jp/films/view/218",
+  "license": "国立映画アーカイブ (NFAJ) portal 「フィルムは記録する」; site policy follows NFAJ's, footage reuse only by application (映像利用申請サイト / fiad@nfaj.go.jp). Copyrighted as found, fair-use posture",
+  "tier": "B",
+  "tone": "noise",
+  "weight": 3,
+  "gain": 0.0,
+  "durS": 90.0,
+  "bytes": 597909,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 66.0], [66.0, 78.0], [78.0, 90.0]],
+  "srcWindows": [[21.0, 33.0], [168.0, 180.0], [328.0, 340.0], [586.0, 616.0], [664.0, 676.0], [800.0, 812.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Japan 1938, Terada Eiga (テラダ映画) for the City of Osaka, silent, 18 fps, no sound track — a SILENT reel: the Midōsuji line built cut-and-cover. Windows: the original title, a subway car coming at us in its own headlight beam; the animated diagram of steel sheet piling (鋼矢板) driven beside the road surface; the pump diagram, water gushing from pipes, and carts under the timbered roof of the cut; the long window is the street opened up — barrows and labourers among the office blocks, the timbering, a section diagram, steam pile drivers watched by a crowd; a welder's torch flaring in the dark tunnel; a finished station, its vaulted hall and escalator under hanging lamps, then the crowds. Fetched from the NFAJ portal's own HLS (h10.cs.nii.ac.jp/stream/nfc/st167ac570bb1d07b546db73212728f6a4, 480×360); pre-cropped to drop the NFAJ corner bug. The first window starts after the portal's modern title card (0–19 s).",
+  "takedown": false,
+  "silent": true
+}

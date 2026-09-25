@@ -1,0 +1,79 @@
+{
+  "id": "jp-kagakueizo-taiheiyo-cable-1964",
+  "title": "太平洋横断ケーブル / The Trans-Pacific Cable",
+  "year": 1964,
+  "src": "https://www.kagakueizo.org/movie/industrial/78/",
+  "license": "no terms stated; NPO 科学映像館 free-distribution rescue print. 製作 東京シネマ / 企画 国際電信電話. Copyrighted, fair-use posture",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.2,
+  "durS": 90.17,
+  "bytes": 852806,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      36.0
+    ],
+    [
+      36.0,
+      48.0
+    ],
+    [
+      48.0,
+      60.08
+    ],
+    [
+      60.08,
+      90.17
+    ]
+  ],
+  "srcWindows": [
+    [
+      18.0,
+      30.0
+    ],
+    [
+      356.0,
+      368.0
+    ],
+    [
+      404.0,
+      416.0
+    ],
+    [
+      770.0,
+      782.0
+    ],
+    [
+      1132.0,
+      1144.0
+    ],
+    [
+      1480.0,
+      1510.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "Japan 1964, ja narration, colour, Tokyo Cinema for KDD (music 松村禎三): the Hawaii–Ninomiya submarine telephone cable. Windows: KDD's international exchange, rows of women operators in headsets under a PARIS position sign; the cable route on the map and the sea-floor depth profile off Hachijō-jima; repeater racks in the KDD station; the animated modulator and filter (変調器 / ろ波器) sending a wave down the line; the cable landing on the beach at Ninomiya and a splice in the hands; the long window is the opening ceremony of 19 June 1964 — the cable plate, the CEREMONY FOR THE TRANSPACIFIC CABLE stage, and Prime Minister Ikeda on the telephone. Fetched from the site's own player host (150.videoplayer.jp/users-file/admin/html5/movie/0687/taiheiyou-cable.mp4); no caption strip, no modern card.",
+  "takedown": false
+}

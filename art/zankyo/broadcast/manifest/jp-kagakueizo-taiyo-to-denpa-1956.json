@@ -1,0 +1,79 @@
+{
+  "id": "jp-kagakueizo-taiyo-to-denpa-1956",
+  "title": "太陽と電波 / The Sun and Radio Waves",
+  "year": 1956,
+  "src": "https://www.kagakueizo.org/movie/industrial/56/",
+  "license": "no terms stated; NPO 科学映像館 free-distribution rescue print. 製作 東京シネマ / 企画 国際電信電話; 協力 郵政省電波研究所・東京大学東京天文台・国立科学博物館. Copyrighted, fair-use posture",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.1,
+  "durS": 88.08,
+  "bytes": 1258123,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      40.08
+    ],
+    [
+      40.08,
+      52.08
+    ],
+    [
+      52.08,
+      64.08
+    ],
+    [
+      64.08,
+      76.08
+    ],
+    [
+      76.08,
+      88.08
+    ]
+  ],
+  "srcWindows": [
+    [
+      182.0,
+      194.0
+    ],
+    [
+      384.0,
+      412.0
+    ],
+    [
+      612.0,
+      624.0
+    ],
+    [
+      650.0,
+      662.0
+    ],
+    [
+      748.0,
+      760.0
+    ],
+    [
+      1156.0,
+      1168.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    438.06
+  ],
+  "tuned": true,
+  "notes": "Japan 1956, ja narration, Eastmancolor, Tokyo Cinema for KDD, made for the International Geophysical Year: the sun, the ionosphere and short-wave radio. Windows: mountain ridges under the layered sky; the long window is ionospheric sounding records — a blip on a display, then ionogram-like traces stepping past under a recording clock; a KDD international telephone operator in headphones, then her face; telegraph operators and a teleprinter keyboard; a radio-station engineer on the telephone at the switch panel; a pen recorder tracing the sun's radio noise. Fetched from the site's own player host (150.videoplayer.jp/users-file/admin/html5/movie/0687/taiyou-to-denpa.mp4); no caption strip. The print opens with a 1958 award card and an explanatory text card — every window is past them.",
+  "takedown": false
+}

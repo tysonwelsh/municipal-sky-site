@@ -1,0 +1,22 @@
+{
+  "id": "ee-ak-spordiloto-1984",
+  "title": "AK filmikroonika: Spordiloto suusatamine / Sportloto Skiing",
+  "year": 1984,
+  "src": "https://arhiiv.err.ee/video/vaata/ak-filmikroonika-1958-1991-spordiloto-suusatamine",
+  "license": "no licence notice; ETV/ERR archive, all rights reserved implied",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 2,
+  "gain": -0.2,
+  "durS": 76.0,
+  "bytes": 903463,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 40.0], [40.0, 52.0], [52.0, 64.0], [64.0, 76.0]],
+  "srcWindows": [[5.0, 17.0], [17.0, 45.0], [54.0, 66.0], [69.0, 81.0], [106.0, 118.0]],
+  "pitchHz": [null, null, null, null, null],
+  "tuned": false,
+  "notes": "Estonian SSR, December 1984, an AK newsreel item in Estonian: reporter Lembitu Kuuse sums up the 'Sportloto' prize races at Otepää — despite the name a sports competition sponsored by the state lottery, not a draw. Colour 16 mm, narration throughout. W1 a skier in a tuck, a biathlete with the rifle on her back, number 44 passing a parked car and a stone monument, officials on the snow; W2 (long) biathlete Kaia Parve (no. 44) at the firing line with her eye to the sight, rising with the rifle, skiing past a hut, a crowd of skiers, a close-up of her, then a young man in a knitted cap talking; W3 the Tehvandi ski jump, a jumper flying past the spruces and landing; W4 spectators on the slope, the in-run with its TEHVANDI sign, a jumper in the air; W5 the judges' tower, a Nordic-combined jumper (the item's second half is Kair Tammel's) crouching down the in-run, flight and landing. Fetched by yt-dlp ERRArhiiv HLS; cut from local-dev/broadcast-src/_crop/ (pillarbox and ERR corner bug cropped off, square-pixel 4:3)",
+  "takedown": false
+}

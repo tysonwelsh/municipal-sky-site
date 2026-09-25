@@ -1,22 +1,22 @@
 {
  "_meta": {
-  "built": "2026-09-16",
-  "reels": 252,
+  "built": "2026-09-25",
+  "reels": 354,
   "byConf": {
-   "city": 116,
-   "region": 9,
-   "country": 126,
+   "region": 24,
+   "city": 189,
+   "country": 140,
    "unknown": 1
   },
-  "countries": 77,
+  "countries": 78,
   "heard": 6,
   "dx": 15,
   "realm": {
-   "deep-space": 1,
    "moon": 2,
-   "orbit": 4
+   "orbit": 4,
+   "deep-space": 1
   },
-  "note": "One entry per reel in manifest.json, keyed by reel id. A reel is placed where its pictures and sound were MADE: the studio or transmitter city for a broadcast, the location shot for a newsreel item filmed abroad (so the Spanish NO-DO item on a Berlin cybernetics show sits on Berlin, with the producer named in `place`). `conf` is how precisely the evidence places it: \"city\" = point-level, a place actually named in the title/notes (also used for a precise named non-urban site, e.g. a test range or a transmitter); \"region\" = a sub-national area or a named region with the city inferred; \"country\" = only the nation is evidenced, coordinates are the broadcaster's or producer's home city as a best guess; \"unknown\" = not placeable, coordinates are a cultural-region anchor only and should not be drawn as a fact. country \"XX\" means genuinely unplaceable. `dx: true` marks a long-distance (TV-DX) catch: the main entry is the TRANSMITTER; where the recordist's location is documented, `heard` carries the receiving point for an arc. `heard` also appears on shortwave reels whose notes name where the listener sat. `realm` (orbit | moon | deep-space) marks reels whose sound did not originate on Earth; their lat/lon is the Earth anchor (ground station, relay or launch site) named after the arrow in `place`. Two reels (tr-sivil-savunma-alarm-1960s, tr-yasayan-sayilar-1970) are flagged takedown in the manifest but are included here for completeness."
+  "note": "One entry per reel in manifest.json, keyed by reel id. A reel is placed where its pictures and sound were MADE: the studio or transmitter city for a broadcast, the location shot for a newsreel item filmed abroad (so the Spanish NO-DO item on a Berlin cybernetics show sits on Berlin, with the producer named in `place`). `conf` is how precisely the evidence places it: \"city\" = point-level, a place actually named in the title/notes (also used for a precise named non-urban site, e.g. a test range or a transmitter); \"region\" = a sub-national area or a named region with the city inferred; \"country\" = only the nation is evidenced, coordinates are the broadcaster's or producer's home city as a best guess; \"unknown\" = not placeable, coordinates are a cultural-region anchor only and should not be drawn as a fact. country \"XX\" means genuinely unplaceable. `dx: true` marks a long-distance (TV-DX) catch: the main entry is the TRANSMITTER; where the recordist's location is documented, `heard` carries the receiving point for an arc. `heard` also appears on shortwave reels whose notes name where the listener sat. `realm` (orbit | moon | deep-space) marks reels whose sound did not originate on Earth; their lat/lon is the Earth anchor (ground station, relay or launch site) named after the arrow in `place`. Reels flagged takedown in the manifest are included here for completeness. Round 5 (2026-09-25) added 102 reels, placed by their cutters under the same rules."
  },
  "aba-amdo-tibetan-news": {
   "country": "CN",
@@ -1839,5 +1839,719 @@
   "lat": -17.83,
   "lon": 31.05,
   "conf": "country"
+ },
+ "ca-ibc-qaujisaut-weather-1992": {
+  "country": "CA",
+  "place": "Iqaluit, Nunavut (IBC Iqaluit production centre and the land around the town)",
+  "lat": 63.75,
+  "lon": -68.52,
+  "conf": "city"
+ },
+ "cn-census-ibm-4331-1988": {
+  "country": "CN",
+  "place": "China (1982 national census computing centre; tape made by Putuo District Education College, Shanghai)",
+  "lat": 39.9,
+  "lon": 116.41,
+  "conf": "country"
+ },
+ "cn-great-wall-203-computer-1975": {
+  "country": "CN",
+  "place": "China (PRC; the 長城 203 desktop computer, studio possibly 新影, Beijing)",
+  "lat": 39.9,
+  "lon": 116.41,
+  "conf": "country"
+ },
+ "cn-microcomputer-principles-1984": {
+  "country": "CN",
+  "place": "Shanghai (Children's Palace, People's Bank of China Shanghai branch, Yangtze Computer Works)",
+  "lat": 31.23,
+  "lon": 121.47,
+  "conf": "city"
+ },
+ "cn-rural-wired-broadcast-1976": {
+  "country": "CN",
+  "place": "China (a rural county broadcasting network, location unstated)",
+  "lat": 39.9,
+  "lon": 116.41,
+  "conf": "country"
+ },
+ "cn-shangke-laser-1978": {
+  "country": "CN",
+  "place": "Shanghai (Shanghai Science & Education Film Studio; labs, railway and hillside locations unstated)",
+  "lat": 31.23,
+  "lon": 121.47,
+  "conf": "region"
+ },
+ "cn-talking-robot-1960": {
+  "country": "CN",
+  "place": "Shanghai (Young Pioneers' children's palace)",
+  "lat": 31.23,
+  "lon": 121.47,
+  "conf": "city"
+ },
+ "cz-oldradio-naddopis-1985": {
+  "country": "CZ",
+  "place": "Prague, Československá televize (Kavčí hory)",
+  "lat": 50.05,
+  "lon": 14.43,
+  "conf": "city"
+ },
+ "cz-oldradio-pan-vajicko-1985": {
+  "country": "CZ",
+  "place": "Prague, Československá televize (Kavčí hory)",
+  "lat": 50.05,
+  "lon": 14.43,
+  "conf": "city"
+ },
+ "cz-oldradio-pocasi-1985": {
+  "country": "CZ",
+  "place": "Prague, Československá televize (Kavčí hory)",
+  "lat": 50.05,
+  "lon": 14.43,
+  "conf": "city"
+ },
+ "cz-oldradio-tvnoviny-1985": {
+  "country": "CZ",
+  "place": "Prague, Československá televize (Kavčí hory)",
+  "lat": 50.05,
+  "lon": 14.43,
+  "conf": "city"
+ },
+ "ee-ak-aseri-automaatlaadur-1983": {
+  "country": "EE",
+  "place": "Aseri, Aseri Ceramics Works",
+  "lat": 59.45,
+  "lon": 26.87,
+  "conf": "city"
+ },
+ "ee-ak-kuberneetika-instituut-1965": {
+  "country": "EE",
+  "place": "Tallinn, Institute of Cybernetics",
+  "lat": 59.44,
+  "lon": 24.75,
+  "conf": "city"
+ },
+ "ee-ak-robotron-1982": {
+  "country": "EE",
+  "place": "Tallinn, ESSR Economic Achievements Exhibition and the Song Festival Grounds hall",
+  "lat": 59.44,
+  "lon": 24.81,
+  "conf": "city"
+ },
+ "ee-ak-spordiloto-1984": {
+  "country": "EE",
+  "place": "Otepää, Tehvandi ski jump",
+  "lat": 58.05,
+  "lon": 26.49,
+  "conf": "city"
+ },
+ "ee-ak-teletorni-signaal-1979": {
+  "country": "EE",
+  "place": "Tallinn, Tallinn TV Tower (Pirita)",
+  "lat": 59.471,
+  "lon": 24.887,
+  "conf": "city"
+ },
+ "ee-inimene-ja-kompuuter-1986": {
+  "country": "EE",
+  "place": "Tallinn (ETV studio and city locations)",
+  "lat": 59.437,
+  "lon": 24.745,
+  "conf": "city"
+ },
+ "ee-kompuutrid-laudas-1985": {
+  "country": "EE",
+  "place": "Eerika experimental farm and Ülenurme, near Tartu",
+  "lat": 58.33,
+  "lon": 26.7,
+  "conf": "region"
+ },
+ "ee-mangi-laser-1987": {
+  "country": "EE",
+  "place": "Tallinn, RET works",
+  "lat": 59.43,
+  "lon": 24.75,
+  "conf": "city"
+ },
+ "ee-midimaastikud-1992": {
+  "country": "EE",
+  "place": "Tallinn, ETV studio and the Estonia concert hall",
+  "lat": 59.434,
+  "lon": 24.749,
+  "conf": "city"
+ },
+ "ee-tee-maailmaruumi-1961": {
+  "country": "EE",
+  "place": "Tartu Observatory and the Tõravere building site",
+  "lat": 58.38,
+  "lon": 26.72,
+  "conf": "region"
+ },
+ "ee-topelttosin-1999": {
+  "country": "EE",
+  "place": "Tallinn, ETV studio",
+  "lat": 59.43,
+  "lon": 24.75,
+  "conf": "city"
+ },
+ "es-nodo-computadora-musical-1976": {
+  "country": "NL",
+  "place": "Amsterdam, Van Gogh Museum",
+  "lat": 52.358,
+  "lon": 4.881,
+  "conf": "city"
+ },
+ "es-nodo-croupiers-1981": {
+  "country": "ES",
+  "place": "Barcelona, INEM vocational training centre",
+  "lat": 41.39,
+  "lon": 2.17,
+  "conf": "city"
+ },
+ "es-nodo-horoscopo-electronico-1969": {
+  "country": "ES",
+  "place": "Spain (computer centre not named; likely Madrid)",
+  "lat": 40.42,
+  "lon": -3.7,
+  "conf": "country"
+ },
+ "es-nodo-nino-computadoras-1981": {
+  "country": "ES",
+  "place": "Spain (exhibition venue not named; likely Madrid)",
+  "lat": 40.42,
+  "lon": -3.7,
+  "conf": "country"
+ },
+ "es-nodo-robots-dodecafonica-1965": {
+  "country": "DE",
+  "place": "West Berlin",
+  "lat": 52.52,
+  "lon": 13.4,
+  "conf": "city"
+ },
+ "es-nodo-sintetizador-1973": {
+  "country": "ES",
+  "place": "Spain (studio location not stated)",
+  "lat": 40.42,
+  "lon": -3.7,
+  "conf": "country"
+ },
+ "es-nodo-zorita-1965": {
+  "country": "ES",
+  "place": "Zorita de los Canes, Guadalajara — José Cabrera nuclear plant site",
+  "lat": 40.35,
+  "lon": -2.88,
+  "conf": "city"
+ },
+ "fr-ciclic-circuit-electronique-1990": {
+  "country": "FR",
+  "place": "Bourges, Maison de la Culture scenery workshop",
+  "lat": 47.08,
+  "lon": 2.4,
+  "conf": "city"
+ },
+ "fr-ciclic-nancay-cigar-antennas-1970": {
+  "country": "FR",
+  "place": "Nançay (Cher), Station de radioastronomie",
+  "lat": 47.38,
+  "lon": 2.19,
+  "conf": "city"
+ },
+ "fr-ciclic-nancay-construction-1952": {
+  "country": "FR",
+  "place": "Nançay (Cher), the future radio astronomy station site in the Sologne — with scenes in Paris and Orléans",
+  "lat": 47.38,
+  "lon": 2.19,
+  "conf": "city"
+ },
+ "fr-ciclic-trajectoire-robots-1988": {
+  "country": "FR",
+  "place": "Région Centre — Châteauroux, Tours, Blois, Chartres, Nogent-sur-Vernisson factories",
+  "lat": 47.2,
+  "lon": 1.3,
+  "conf": "region"
+ },
+ "fr-cinememoire-expo58-bruxelles-1958": {
+  "country": "BE",
+  "place": "Brussels, Heysel — Expo 58",
+  "lat": 50.895,
+  "lon": 4.341,
+  "conf": "city"
+ },
+ "fr-cinememoire-mururoa-tir-1960s": {
+  "country": "PF",
+  "place": "Mururoa atoll, Tuamotu (French nuclear test site)",
+  "lat": -21.83,
+  "lon": -138.88,
+  "conf": "city"
+ },
+ "fr-cinememoire-nancay-jardin-1960s": {
+  "country": "FR",
+  "place": "Nançay (Cher), Station de radioastronomie",
+  "lat": 47.38,
+  "lon": 2.19,
+  "conf": "city"
+ },
+ "fr-cinememoire-post-atomiques-1982": {
+  "country": "FR",
+  "place": "Istres and the Fos–Martigues shore (Bouches-du-Rhône)",
+  "lat": 43.51,
+  "lon": 4.99,
+  "conf": "city"
+ },
+ "gl-crtvg-cabo-vilan-xerador-1989": {
+  "country": "ES",
+  "place": "A Coruña city streets (convoy bound for Cabo Vilán, Camariñas)",
+  "lat": 43.365,
+  "lon": -8.41,
+  "conf": "city"
+ },
+ "gl-crtvg-edicios-do-castro-1986": {
+  "country": "ES",
+  "place": "Sada (A Coruña), Ediciós do Castro printworks",
+  "lat": 43.357,
+  "lon": -8.254,
+  "conf": "city"
+ },
+ "gl-crtvg-lotaria-nadal-coruna-1994": {
+  "country": "ES",
+  "place": "A Coruña, Administración de Loterías Nº 5 'La Favorita'",
+  "lat": 43.371,
+  "lon": -8.396,
+  "conf": "city"
+ },
+ "jp-kagakueizo-denshi-television-1961": {
+  "country": "JP",
+  "place": "Kadoma / Ibaraki, Osaka (Matsushita Electric's television and picture-tube works)",
+  "lat": 34.74,
+  "lon": 135.59,
+  "conf": "region"
+ },
+ "jp-kagakueizo-eisei-tsushin-1964": {
+  "country": "JP",
+  "place": "Ibaraki (KDD 茨城宇宙通信実験所, Jūō-machi) and KDD's Meguro research laboratory, Tokyo",
+  "lat": 36.7,
+  "lon": 140.69,
+  "conf": "region"
+ },
+ "jp-kagakueizo-genshiryoku-1966": {
+  "country": "JP",
+  "place": "Tōkai-mura, Ibaraki (Tōkai nuclear power station, Japan Atomic Power Co.)",
+  "lat": 36.47,
+  "lon": 140.61,
+  "conf": "city"
+ },
+ "jp-kagakueizo-onkyo-sozo-1961": {
+  "country": "JP",
+  "place": "Kadoma, Osaka (Matsushita Electric's speaker works and acoustic labs; concert and jazz scenes shot in Japanese studios/halls)",
+  "lat": 34.74,
+  "lon": 135.59,
+  "conf": "region"
+ },
+ "jp-kagakueizo-taiheiyo-cable-1964": {
+  "country": "JP",
+  "place": "Ninomiya, Kanagawa (cable landing) and KDD Tokyo; opening ceremony in Tokyo",
+  "lat": 35.3,
+  "lon": 139.25,
+  "conf": "city"
+ },
+ "jp-kagakueizo-taiyo-to-denpa-1956": {
+  "country": "JP",
+  "place": "Tokyo (KDD international telephone and telegraph offices, Radio Research Laboratories, Tokyo Astronomical Observatory) and Japanese mountain stations",
+  "lat": 35.68,
+  "lon": 139.69,
+  "conf": "region"
+ },
+ "jp-kagakueizo-television-1952": {
+  "country": "JP",
+  "place": "Tokyo, NHK 東京放送会館 (Uchisaiwaichō) and its TV studio before the first broadcast",
+  "lat": 35.67,
+  "lon": 139.75,
+  "conf": "city"
+ },
+ "jp-nfaj-chikatetsu-1938": {
+  "country": "JP",
+  "place": "Osaka, Midōsuji subway line (cut-and-cover works and stations)",
+  "lat": 34.68,
+  "lon": 135.5,
+  "conf": "city"
+ },
+ "jp-nfaj-kokusan-hakurankai-1928": {
+  "country": "JP",
+  "place": "Tokyo, Ueno Park (Tokyo Exposition for the Promotion of Domestic Industry)",
+  "lat": 35.715,
+  "lon": 139.773,
+  "conf": "city"
+ },
+ "jp-nfaj-kotsu-tsushin-1932": {
+  "country": "JP",
+  "place": "Japan (railways and mountain lines across the country; the communications half in Tokyo: trams, telephone, JOAK radio, phototelegraphy)",
+  "lat": 35.68,
+  "lon": 139.76,
+  "conf": "country"
+ },
+ "jp-nfaj-toki-to-tokei-1934": {
+  "country": "JP",
+  "place": "Tokyo (Seikosha works, Honjo; Oki Electric, Shibaura; Tokyo Astronomical Observatory, Mitaka)",
+  "lat": 35.69,
+  "lon": 139.75,
+  "conf": "city"
+ },
+ "jp-nfaj-world-power-conference-1929": {
+  "country": "JP",
+  "place": "Tokyo, Hibiya Public Hall and the delegates' garden visits (Kōrakuen)",
+  "lat": 35.672,
+  "lon": 139.756,
+  "conf": "city"
+ },
+ "jp-nfaj-yudo-danmaku-1925": {
+  "country": "JP",
+  "place": "Yotsukaidō, Chiba (Army Field Artillery School ranges, Shimoshizu plain)",
+  "lat": 35.67,
+  "lon": 140.17,
+  "conf": "city"
+ },
+ "jp-nhk-denshirikkoku-dentaku-1991": {
+  "country": "JP",
+  "place": "Tokyo, NHK (studio and 1991 location shooting); archive of Sharp, Osaka and Casio, Tokyo",
+  "lat": 35.66,
+  "lon": 139.7,
+  "conf": "country"
+ },
+ "jp-nhk-denshirikkoku-transistor-1991": {
+  "country": "JP",
+  "place": "Tokyo, NHK (studio demonstrations); archive of Bell Labs (US) and Japanese labs in Tokyo and Sendai",
+  "lat": 35.66,
+  "lon": 139.7,
+  "conf": "country"
+ },
+ "kr-daehan-admin-computer-1970": {
+  "country": "KR",
+  "place": "Seoul, 경제기획원 / 문화공보부",
+  "lat": 37.575,
+  "lon": 126.975,
+  "conf": "city"
+ },
+ "kr-daehan-apollo-first-report-1969": {
+  "country": "US",
+  "place": "Kennedy Space Center, Florida, and the Moon (NASA pictures; Korean narration recorded in Seoul)",
+  "lat": 28.57,
+  "lon": -80.65,
+  "conf": "region"
+ },
+ "kr-daehan-ballot-lots-1967": {
+  "country": "KR",
+  "place": "Seoul, 중앙선거관리위원회",
+  "lat": 37.57,
+  "lon": 126.98,
+  "conf": "city"
+ },
+ "kr-daehan-expo-opens-1970": {
+  "country": "JP",
+  "place": "Suita, Osaka — Expo '70 site, Korea pavilion",
+  "lat": 34.81,
+  "lon": 135.53,
+  "conf": "city"
+ },
+ "kr-daehan-kist-robot-1980": {
+  "country": "KR",
+  "place": "Seoul, KIST (Hongneung)",
+  "lat": 37.6,
+  "lon": 127.05,
+  "conf": "city"
+ },
+ "kr-daehan-lottery-draw-1962": {
+  "country": "KR",
+  "place": "Seoul, 서울 사세청 (Seoul regional tax office)",
+  "lat": 37.57,
+  "lon": 126.98,
+  "conf": "city"
+ },
+ "kr-daehan-school-lottery-1969": {
+  "country": "KR",
+  "place": "Seoul, middle-school lottery halls",
+  "lat": 37.57,
+  "lon": 126.98,
+  "conf": "city"
+ },
+ "nl-polygoon-beeldtelefoon-1974": {
+  "country": "NL",
+  "place": "Hilversum, Philips Telecommunicatie Industrie",
+  "lat": 52.22,
+  "lon": 5.18,
+  "conf": "city"
+ },
+ "nl-polygoon-computertapijten-1966": {
+  "country": "NL",
+  "place": "Hilversum, carpet mill",
+  "lat": 52.22,
+  "lon": 5.18,
+  "conf": "city"
+ },
+ "nl-polygoon-computertomograaf-1977": {
+  "country": "NL",
+  "place": "Amsterdam, Sint Lucas hospital",
+  "lat": 52.37,
+  "lon": 4.81,
+  "conf": "city"
+ },
+ "nl-polygoon-esa-estec-1979": {
+  "country": "NL",
+  "place": "Noordwijk, ESA ESTEC (with archive launch footage)",
+  "lat": 52.22,
+  "lon": 4.42,
+  "conf": "city"
+ },
+ "nl-polygoon-evoluon-1968": {
+  "country": "NL",
+  "place": "Eindhoven, Philips Evoluon",
+  "lat": 51.44,
+  "lon": 5.44,
+  "conf": "city"
+ },
+ "nl-polygoon-firato-1965": {
+  "country": "NL",
+  "place": "Amsterdam, RAI (Firato fair)",
+  "lat": 52.34,
+  "lon": 4.89,
+  "conf": "city"
+ },
+ "nl-polygoon-grondstation-burum-1975": {
+  "country": "NL",
+  "place": "Burum (Friesland), satellite ground station; Amsterdam switching centre",
+  "lat": 53.28,
+  "lon": 6.21,
+  "conf": "city"
+ },
+ "nl-polygoon-inlichtingen-008-1979": {
+  "country": "NL",
+  "place": "Leidschendam, PTT directory enquiries centre",
+  "lat": 52.08,
+  "lon": 4.39,
+  "conf": "city"
+ },
+ "nl-polygoon-luchtbescherming-1939": {
+  "country": "NL",
+  "place": "Haarlem, city centre streets",
+  "lat": 52.38,
+  "lon": 4.64,
+  "conf": "city"
+ },
+ "nl-polygoon-mens-en-computer-1979": {
+  "country": "NL",
+  "place": "The Hague, Museum voor het Onderwijs",
+  "lat": 52.08,
+  "lon": 4.3,
+  "conf": "city"
+ },
+ "nl-polygoon-phohi-zender-1933": {
+  "country": "NL",
+  "place": "Huizen / Eindhoven, PHOHI short-wave transmitter (Philips)",
+  "lat": 52.3,
+  "lon": 5.24,
+  "conf": "region"
+ },
+ "nl-polygoon-postraketten-1935": {
+  "country": "NL",
+  "place": "Katwijk aan Zee, beach and dunes",
+  "lat": 52.2,
+  "lon": 4.4,
+  "conf": "city"
+ },
+ "nl-polygoon-raketten-speelgoed-1958": {
+  "country": "NL",
+  "place": "Petten, military range on the beach",
+  "lat": 52.77,
+  "lon": 4.66,
+  "conf": "city"
+ },
+ "tr-barajlar-1956": {
+  "country": "TR",
+  "place": "Sakarya river dams (Sarıyar dam opening most likely), Türkiye",
+  "lat": 40.04,
+  "lon": 31.43,
+  "conf": "region"
+ },
+ "tr-britanya-sehircilik-1947": {
+  "country": "TR",
+  "place": "Ankara (British town-planning exhibition visited by İsmet İnönü)",
+  "lat": 39.93,
+  "lon": 32.86,
+  "conf": "city"
+ },
+ "tr-catalagzi-santrali-1956": {
+  "country": "TR",
+  "place": "Çatalağzı power station, Zonguldak",
+  "lat": 41.5,
+  "lon": 31.92,
+  "conf": "city"
+ },
+ "tr-eregli-demir-celik-1960s": {
+  "country": "TR",
+  "place": "Karadeniz Ereğli (Ereğli Demir Çelik works)",
+  "lat": 41.28,
+  "lon": 31.42,
+  "conf": "city"
+ },
+ "tr-istatistik-50-yil-1973": {
+  "country": "TR",
+  "place": "Ankara (Devlet İstatistik Enstitüsü building and library)",
+  "lat": 39.93,
+  "lon": 32.86,
+  "conf": "city"
+ },
+ "tr-nato-goklerde-1960s": {
+  "country": "FR",
+  "place": "NATO Information Service, Paris (air-traffic footage from several NATO countries)",
+  "lat": 48.86,
+  "lon": 2.35,
+  "conf": "country"
+ },
+ "tr-orta-anadolu-rafinerisi-1976": {
+  "country": "TR",
+  "place": "Hacılar, Kırıkkale (Orta Anadolu Rafinerisi foundation ceremony)",
+  "lat": 39.85,
+  "lon": 33.47,
+  "conf": "city"
+ },
+ "tr-ptt-calismalari-1970s": {
+  "country": "TR",
+  "place": "Türkiye (PTT exchanges and offices; Ankara likely, not stated)",
+  "lat": 39.93,
+  "lon": 32.86,
+  "conf": "country"
+ },
+ "tr-senfoni-orkestrasi-1959": {
+  "country": "TR",
+  "place": "Türkiye (Presidential Symphony Orchestra's 1959 army-garrison tour; towns not named)",
+  "lat": 39.93,
+  "lon": 32.86,
+  "conf": "country"
+ },
+ "tr-sivil-savunma-siginak-1960s": {
+  "country": "TR",
+  "place": "Türkiye (İçişleri Bakanlığı Sivil Savunma film; Ankara likely, not stated)",
+  "lat": 39.93,
+  "lon": 32.86,
+  "conf": "country"
+ },
+ "tr-su-dost-dusman-1970s": {
+  "country": "TR",
+  "place": "Türkiye (a zoo, kitchens and a village well; Ankara likely, not stated)",
+  "lat": 39.93,
+  "lon": 32.86,
+  "conf": "country"
+ },
+ "tw-tfai-apollo12-visit-1970": {
+  "country": "TW",
+  "place": "Taipei, Songshan Airport and the Grand Hotel",
+  "lat": 25.08,
+  "lon": 121.53,
+  "conf": "city"
+ },
+ "tw-tfai-atoms-for-peace-1956": {
+  "country": "TW",
+  "place": "Taipei, Taiwan Provincial Museum",
+  "lat": 25.04,
+  "lon": 121.51,
+  "conf": "city"
+ },
+ "tw-tfai-chinese-computer-1978": {
+  "country": "TW",
+  "place": "Yunlin County, Yunlin Irrigation Association",
+  "lat": 23.71,
+  "lon": 120.54,
+  "conf": "region"
+ },
+ "tw-tfai-computer-conference-1973": {
+  "country": "TW",
+  "place": "Taipei, Academia Sinica, Nankang",
+  "lat": 25.04,
+  "lon": 121.61,
+  "conf": "city"
+ },
+ "tw-tfai-electronics-expo-1967": {
+  "country": "TW",
+  "place": "Taipei, National Science Education Hall, Nanhai Road",
+  "lat": 25.03,
+  "lon": 121.51,
+  "conf": "city"
+ },
+ "tw-tfai-inflatable-building-1968": {
+  "country": "TW",
+  "place": "Taipei, beside the Municipal Stadium (Zhongzheng & Dunhua N. Rd)",
+  "lat": 25.05,
+  "lon": 121.55,
+  "conf": "city"
+ },
+ "tw-tfai-moon-rocket-1964": {
+  "country": "US",
+  "place": "Cape Kennedy, Florida (with the White House, Washington)",
+  "lat": 28.49,
+  "lon": -80.58,
+  "conf": "region"
+ },
+ "tw-tfai-mushroom-cloud-drill-1958": {
+  "country": "TW",
+  "place": "Taipei, Municipal Stadium",
+  "lat": 25.05,
+  "lon": 121.55,
+  "conf": "city"
+ },
+ "tw-tfai-onair-lucky-draw-1960": {
+  "country": "TW",
+  "place": "Taipei, International House (國際學舍)",
+  "lat": 25.03,
+  "lon": 121.53,
+  "conf": "city"
+ },
+ "tw-tfai-satellite-earth-station-1969": {
+  "country": "TW",
+  "place": "Yangmingshan, Taipei Earth Station",
+  "lat": 25.15,
+  "lon": 121.55,
+  "conf": "region"
+ },
+ "tw-tfai-toothpaste-draw-1963": {
+  "country": "TW",
+  "place": "Taipei, Taipei 10th Credit Co-operative",
+  "lat": 25.04,
+  "lon": 121.51,
+  "conf": "city"
+ },
+ "tw-tfai-tsinghua-reactor-1961": {
+  "country": "TW",
+  "place": "Hsinchu, National Tsing Hua University",
+  "lat": 24.79,
+  "lon": 120.99,
+  "conf": "city"
+ },
+ "tw-tfai-ttv-on-air-1962": {
+  "country": "TW",
+  "place": "Taipei, Taiwan Television Enterprise studios",
+  "lat": 25.05,
+  "lon": 121.55,
+  "conf": "city"
+ },
+ "tw-tfai-videophone-1969": {
+  "country": "TW",
+  "place": "Taipei, Ministry of Communications",
+  "lat": 25.04,
+  "lon": 121.52,
+  "conf": "city"
+ },
+ "tw-tfai-zhulin-school-science-1972": {
+  "country": "TW",
+  "place": "Luodong, Yilan, Zhulin Primary School",
+  "lat": 24.68,
+  "lon": 121.77,
+  "conf": "city"
+ },
+ "us-much-afvn-quangtri-1970": {
+  "country": "VN",
+  "place": "Quảng Trị, near the DMZ (AFVN Detachment 5, Channel II / 930 kHz)",
+  "lat": 16.75,
+  "lon": 107.19,
+  "conf": "region"
  }
 }

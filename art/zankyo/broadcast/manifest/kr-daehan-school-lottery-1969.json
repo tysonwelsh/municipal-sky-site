@@ -1,0 +1,61 @@
+{
+  "id": "kr-daehan-school-lottery-1969",
+  "title": "중학교 무시험 추첨 / Middle-school no-exam lottery draw (대한뉴스 제712호)",
+  "year": 1969,
+  "src": "https://www.ehistory.go.kr/view/movie?mediasrcgbn=KV&mediagbn=DH&mediaid=606&mediadtl=4021",
+  "license": "대한뉴스 (KTV 한국정책방송원) — no 공공누리 badge on the item page; use only by prior arrangement via KTV 나누리",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.4,
+  "durS": 62.0,
+  "bytes": 818170,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      52.0
+    ],
+    [
+      52.0,
+      62.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      6.0,
+      18.0
+    ],
+    [
+      20.0,
+      32.0
+    ],
+    [
+      36.0,
+      64.0
+    ],
+    [
+      64.0,
+      74.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "Seoul, February 1969, Korean narration (대한뉴스 712호): the first year the middle-school entrance exam was replaced by a lottery. Children snowballing in a schoolyard under new apartment blocks; a crowd under the banner of the third drawing hall; numbered booths; a boy turns the wooden drum by hand (the 뺑뺑이) and a ball drops; his application form with its photo lies in a box; officials at the observers' table; a girl draws; the forms are stamped. fetched from e영상역사관 (ehistory.go.kr) via its WeNMediaPlayer file-info proxy → hdvod.ktv.go.kr 360P HLS; KTV's 16:9 transfer centre-cropped to 4:3.",
+  "takedown": false
+}

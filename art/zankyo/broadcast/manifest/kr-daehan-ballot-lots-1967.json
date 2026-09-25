@@ -1,0 +1,61 @@
+{
+  "id": "kr-daehan-ballot-lots-1967",
+  "title": "7대 국회의원 선거 기호 추첨 / Drawing lots for ballot numbers, 7th National Assembly election (대한뉴스 제623호)",
+  "year": 1967,
+  "src": "https://www.ehistory.go.kr/view/movie?mediasrcgbn=KV&mediagbn=DH&mediaid=464&mediadtl=4281",
+  "license": "대한뉴스 (KTV 한국정책방송원) — no 공공누리 badge on the item page; use only by prior arrangement via KTV 나누리",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.6,
+  "durS": 64.0,
+  "bytes": 525606,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      36.0
+    ],
+    [
+      36.0,
+      64.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      4.0,
+      16.0
+    ],
+    [
+      16.0,
+      28.0
+    ],
+    [
+      30.0,
+      42.0
+    ],
+    [
+      46.0,
+      74.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "Seoul, May 1967, Korean narration (대한뉴스 623호): at the National Election Commission, party representatives under the newsreel lights take turns drawing slips from a box to fix their ballot numbers; the long window is the result read out — an official with the paper, then party names stacked up one by one on screen as the narrator counts them, 1 to 11, into the finished ballot chart. fetched from e영상역사관 (ehistory.go.kr) via its WeNMediaPlayer file-info proxy → hdvod.ktv.go.kr 360P HLS; KTV's 16:9 transfer centre-cropped to 4:3.",
+  "takedown": false
+}

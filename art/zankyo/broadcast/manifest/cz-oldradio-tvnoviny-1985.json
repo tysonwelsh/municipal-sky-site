@@ -1,0 +1,22 @@
+{
+  "id": "cz-oldradio-tvnoviny-1985",
+  "title": "Televizní noviny / Television News — ČST",
+  "year": 1985,
+  "src": "https://www.oldradio.cz/cst/tvnoviny.mpg",
+  "license": "none stated; off-air recording of Československá televize (ČST) by a private collector, served as a raw .mpg on oldradio.cz (© Martin Hájek covers the site, not the broadcast)",
+  "tier": "B",
+  "tone": "music",
+  "weight": 4,
+  "gain": -0.6,
+  "durS": 17.33,
+  "bytes": 202789,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 8.0], [8.0, 17.33]],
+  "srcWindows": [[1.0, 9.0], [10.0, 19.3]],
+  "pitchHz": [null, null],
+  "tuned": false,
+  "notes": "Czechoslovakia, Czech, 1980s (year estimated). The opening titles of ČST's evening news Televizní noviny: the Earth from space, then a porthole travelling over a world map showing a satellite dish, the Prague television tower block, reel-to-reel tape decks, a woman at a computer terminal, a studio of editors, a board of city times (PRAHA, BRATISLAVA, MOSKVA, PAŘÍŽ, BONN, KOŠICE 19:31–19:44), a control desk, and the title TELEVIZNÍ NOVINY closing over a studio camera, to the news signature. Not the same title as the pool's cst-vysilani-znelky 'Zprávy TN' card. Off-air recording from a private collector's site, https://www.oldradio.cz/cst/tvnoviny.mpg; no crop — the Č2 bug is the broadcaster's own.",
+  "takedown": false
+}

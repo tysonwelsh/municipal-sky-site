@@ -1,0 +1,22 @@
+{
+  "id": "tr-orta-anadolu-rafinerisi-1976",
+  "title": "Orta Anadolu Rafinerisi / The Central Anatolia Refinery",
+  "year": 1976,
+  "src": "https://filmmirasim.ktb.gov.tr/tr/film/orta-anadolu-rafinerisi",
+  "license": "T.C. Kültür ve Turizm Bakanlığı film archive (SGM-3075); all rights reserved on the site footer, use governed by the ministry's Süreli Kullanım Yönergesi (request form)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": 0.1,
+  "durS": 90.0,
+  "bytes": 868451,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 90.0]],
+  "srcWindows": [[255.0, 267.0], [360.0, 372.0], [505.0, 517.0], [675.0, 687.0], [1060.0, 1072.0], [1318.0, 1348.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Türkiye, Turkish, 1976: an AS Ajans colour newsreel (faded to cyan) for Türkiye Petrolleri — the foundation-stone ceremony of the Central Anatolia Refinery at Hacılar, Kırıkkale, with Prime Minister Süleyman Demirel on 6 October 1976, and other oil works — nodding-donkey oil pumps on a hillside; a drilling derrick, a flare stack and a refinery's columns; Demirel at the microphones and the crowd; Demirel again, gesturing, and the villagers listening; rain on a canal, then the officials' table; the long window is a computer centre (apparently Türkiye Petrolleri's) — the office block, a console keyboard, a tape cabinet, rows of reel-to-reel tape drives with an operator, and a man at his desk. Fetched from the page's 480p HLS manifest (filmmirasim.ktb.gov.tr:8443/WEBTV/...playlist.m3u8); pre-cropped to remove the baked pillarbox (crop=688:476:84:2). The ministry's rosette watermark is left in.",
+  "takedown": false
+}

@@ -1,0 +1,97 @@
+{
+  "id": "tw-tfai-chinese-computer-1978",
+  "title": "中文電腦在農業上的應用與發展 (The Chinese-Language Computer in Agriculture)",
+  "year": 1978,
+  "src": "https://vod.tfai.org.tw/Video/7151",
+  "license": "政府資料開放授權條款-第1版 (Open Government Data License v1.0) — 出品者：台灣電影文化公司。中文電腦在農業上的應用與發展。典藏者：國家電影及視聽文化中心。",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.1,
+  "durS": 124.17,
+  "bytes": 1368949,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      52.0
+    ],
+    [
+      52.0,
+      64.08
+    ],
+    [
+      64.08,
+      76.08
+    ],
+    [
+      76.08,
+      88.08
+    ],
+    [
+      88.08,
+      100.17
+    ],
+    [
+      100.17,
+      112.17
+    ],
+    [
+      112.17,
+      124.17
+    ]
+  ],
+  "srcWindows": [
+    [
+      12.0,
+      24.0
+    ],
+    [
+      60.0,
+      100.0
+    ],
+    [
+      100.0,
+      112.0
+    ],
+    [
+      128.0,
+      140.0
+    ],
+    [
+      140.0,
+      152.0
+    ],
+    [
+      164.0,
+      176.0
+    ],
+    [
+      184.0,
+      196.0
+    ],
+    [
+      236.0,
+      248.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "1978 台影新聞 newsreel, Mandarin narration: the Yunlin Irrigation Association's Chinese-character computer (installed 1976), inspected by Control Yuan members 黃尊秋 and 王文光 — the briefing round the tables; then the long hold, the inspectors crowding a clerk at the machine, a woman at a CRT terminal, a fan-fold printout, a hand on the big Chinese keyboard, the line printer running, a disk pack lifted into its drive; the clerks' room that once took 400 people 30 days; irrigation canals and a man at the plotter, water rushing through the sluices; the fee bills printed with their period captions (會費計算), the disk cabinet, and at the end the bills and newspapers fanned out. Fetched from vod.tfai.org.tw/Video/7151 via the page's own 影片下載 link; no crop (the film's own 1978 burned-in captions kept where they fall); the opening title over the building avoided.",
+  "takedown": false
+}

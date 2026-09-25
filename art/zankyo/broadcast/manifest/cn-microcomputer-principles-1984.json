@@ -1,0 +1,79 @@
+{
+  "id": "cn-microcomputer-principles-1984",
+  "title": "微型計算機原理 (Principles of the Microcomputer)",
+  "year": 1984,
+  "src": "https://www.bilibili.com/video/BV1F8411S7tp/",
+  "license": "unknown (uploader-asserted; 16 mm print F0009, 一機部科學技術情報研究所 / First Ministry of Machine Building information institute)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": 0.4,
+  "durS": 88.0,
+  "bytes": 770247,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      28.0
+    ],
+    [
+      28.0,
+      40.0
+    ],
+    [
+      40.0,
+      52.0
+    ],
+    [
+      52.0,
+      64.0
+    ],
+    [
+      64.0,
+      76.0
+    ],
+    [
+      76.0,
+      88.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      1401.0,
+      1429.0
+    ],
+    [
+      1377.0,
+      1389.0
+    ],
+    [
+      62.0,
+      74.0
+    ],
+    [
+      395.0,
+      407.0
+    ],
+    [
+      1262.0,
+      1274.0
+    ],
+    [
+      1520.0,
+      1532.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "1984 PRC science-education film on 16 mm, Mandarin narration (解說 郭征): Young Pioneers at terminals in Shanghai — a child types 39+47 and the screen answers 86 DUI LE (對了, correct), a BASIC listing, a classroom of red scarves at the keyboards; the People's Bank of China Shanghai branch counter and a figure on a screen; the machine room of tape drives; switches and lamps animating binary; assembly code (LDA, GET ADDER) typed line by line; the Shanghai Yangtze Computer Works floor. The print is damp-damaged and flares. Fetched from bilibili BV1F8411S7tp (档案归档计划组, print F0009) with a full browser header set; cut from a 4:3 crop (uploader logo and burnt-in timecode removed; a faint centre transcription watermark remains).",
+  "takedown": false
+}

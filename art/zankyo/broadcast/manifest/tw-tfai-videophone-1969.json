@@ -1,0 +1,61 @@
+{
+  "id": "tw-tfai-videophone-1969",
+  "title": "長途影像電話示範表演 (Long-Distance Videophone Demonstration)",
+  "year": 1969,
+  "src": "https://vod.tfai.org.tw/Video/3603",
+  "license": "政府資料開放授權條款-第1版 (Open Government Data License v1.0) — 出品者：台灣電影文化公司。長途影像電話示範表演。典藏者：國家電影及視聽文化中心。",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.4,
+  "durS": 69.5,
+  "bytes": 667967,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      50.0
+    ],
+    [
+      50.0,
+      62.0
+    ],
+    [
+      62.0,
+      69.5
+    ]
+  ],
+  "srcWindows": [
+    [
+      3.5,
+      15.5
+    ],
+    [
+      17.0,
+      55.0
+    ],
+    [
+      55.5,
+      67.5
+    ],
+    [
+      67.5,
+      75.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "1969 台影新聞 newsreel, Mandarin narration: Taipei, 1 Feb 1969, the Ministry of Communications opens the Taipei–Keelung coaxial cable and long-distance direct dialling — Vice-President 嚴家淦 at the microphone and the room of guests; then the long hold, a man at the desk-top videophone, its little screen lit with a face, Keelung's mayor laughing into the handset from the other city, the face on the tube looking back; guests queuing to try the handsets, press cameras flashing, handshakes and a toast. Fetched from vod.tfai.org.tw/Video/3603 via the page's own 影片下載 link; no crop; the film's own title card (0:00–0:03) avoided.",
+  "takedown": false
+}

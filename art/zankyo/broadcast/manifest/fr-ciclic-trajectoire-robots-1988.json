@@ -1,0 +1,22 @@
+{
+  "id": "fr-ciclic-trajectoire-robots-1988",
+  "title": "Trajectoire : la robotisation des industries / Trajectory: the robotisation of industry",
+  "year": 1988,
+  "src": "https://memoire.ciclic.fr/8512-trajectoire-la-robotisation-des-industries",
+  "license": "Droits réservés — deposit of the Union des entreprises de l'Indre, Ciclic Mémoire; no open licence",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.2,
+  "durS": 88.0,
+  "bytes": 943069,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 64.0], [64.0, 76.0], [76.0, 88.0]],
+  "srcWindows": [[3.0, 15.0], [120.0, 132.0], [244.0, 256.0], [326.0, 354.0], [436.0, 448.0], [604.0, 616.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "France (Centre-Val de Loire), French, 1988: a regional industrial TV magazine on Umatic SP, the print marked 'film très abîmé' by the archive. Windows: the hand-drawn 'Trajectoires' title over a grid horizon and a warped glass building; a green-line CAD plan on a monitor (40-1, 40-2); Bernadette Dominguez, robot operator at Tubauto, on how her job changed; LONG — the Nouvelle République press room in Tours, the claviste Gérard Sarthon at a terminal, green 'ENTREE DE TEXTE' on screen, hands on the keyboard, page proofs; the Flonic Schlumberger foundry robots at Châteauroux handling castings; a Paco Rabanne rotary bottling line. Fetched from Ciclic Mémoire's HLS (memoire.ciclic.fr embed 5310).",
+  "takedown": false
+}

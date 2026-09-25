@@ -1,0 +1,23 @@
+{
+  "id": "jp-nfaj-toki-to-tokei-1934",
+  "title": "時と時計 / Time and Clocks",
+  "year": 1934,
+  "src": "https://filmisadocument.jp/films/view/15",
+  "license": "国立映画アーカイブ (NFAJ) portal 「フィルムは記録する」; site policy follows NFAJ's, footage reuse only by application (映像利用申請サイト / fiad@nfaj.go.jp). Copyrighted as found, fair-use posture",
+  "tier": "B",
+  "tone": "noise",
+  "weight": 4,
+  "gain": 0.0,
+  "durS": 90.0,
+  "bytes": 400308,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 54.0], [54.0, 66.0], [66.0, 78.0], [78.0, 90.0]],
+  "srcWindows": [[1262.0, 1274.0], [1936.0, 1948.0], [2205.0, 2235.0], [2352.0, 2364.0], [2462.0, 2474.0], [2502.0, 2514.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Japan 1934, Ministry of Education (文部省製作) silent education film, 18 fps, no sound track — a SILENT reel. Windows: racks of finished alarm clocks under three-day test at Seikosha, a worker among the crates; the animated 親時計/子時計 master-and-slave electric-clock circuit; the long window is Oki Electric's test room — walls of electric clocks marked 試験中, an intertitle (電氣時計 電燈線へ直接に接続する), then rows and rows of clock faces and their movements; the Tokyo Astronomical Observatory's transit instrument and the astronomer at the eyepiece fixing standard time; the animated diagram of the 時報 going out by wireless to ships, stations and homes; a pocket watch, a factory steam whistle and wristwatches set to the signal, then the announcer at the microphone. Fetched from the NFAJ portal's own HLS (h10.cs.nii.ac.jp/stream/nfc/stca01e7e61441cabfa47499ce97700def, 480×360); pre-cropped to drop the NFAJ corner bug. Every window is past the portal's modern disclaimer card at 0 s.",
+  "takedown": false,
+  "silent": true
+}

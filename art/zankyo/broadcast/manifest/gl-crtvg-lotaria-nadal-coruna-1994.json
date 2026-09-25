@@ -1,0 +1,22 @@
+{
+  "id": "gl-crtvg-lotaria-nadal-coruna-1994",
+  "title": "Venda de lotaría de Nadal na Coruña en 1994 / Selling Christmas lottery tickets in A Coruña, 1994",
+  "year": 1994,
+  "src": "https://pasouoquepasou.crtvg.gal/content/venda-de-lotaria-de-nadal-na-coruna-en-1994",
+  "license": "CRTVG (TVG) archive, Pasou o que pasou; no open licence shown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.5,
+  "durS": 53.0,
+  "bytes": 661125,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 53.0]],
+  "srcWindows": [[1.0, 13.0], [14.0, 26.0], [27.0, 39.0], [42.0, 59.0]],
+  "pitchHz": [null, null, null, null],
+  "tuned": false,
+  "notes": "Spain (Galicia — A Coruña, Administración de Loterías Nº 5 'La Favorita'), 13 December 1994, TVG news item in Galician on buying décimos for the Christmas draw. Windows: the 'Lotería La Favorita Admón Nº 5' signs and the queue under them; the counter clerk counting notes, sheets of green décimos fanned on the counter; tickets passed under the glass, a man's hands checking his number, a drawer of tickets; LONG — the crowd pressing at the booth window and the queue stretching down the street. Fetched from the .m3u8 in the pasouoquepasou.crtvg.gal page (Flumotion HLS, 360p); pre-cropped to 4:3 to take off the TVG corner bug.",
+  "takedown": false
+}

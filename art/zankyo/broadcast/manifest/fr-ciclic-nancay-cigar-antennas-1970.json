@@ -1,0 +1,23 @@
+{
+  "id": "fr-ciclic-nancay-cigar-antennas-1970",
+  "title": "Antennes cigares à la station de radioastronomie de Nançay (1/2) / 'Cigar' antennas at the Nançay radio astronomy station",
+  "year": 1970,
+  "src": "https://memoire.ciclic.fr/12602-antennes-cigares-a-la-station-de-radioastronomie-de-nancay-1-2",
+  "license": "Deposit of Christian Couteret at Ciclic Mémoire; rights held by the depositor, no open licence",
+  "tier": "B",
+  "tone": "noise",
+  "weight": 4,
+  "gain": 0.0,
+  "durS": 88.0,
+  "bytes": 431680,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 88.0]],
+  "srcWindows": [[1.0, 13.0], [72.0, 84.0], [156.0, 168.0], [432.0, 444.0], [622.0, 634.0], [978.0, 1006.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "France (Nançay, Cher), c. 1970, Super 8 colour, SILENT — shot by the station's own engineer Christian Couteret. Windows: a handwritten sheet, 'Réalisation d'une série de 16 antennes cigares à 169 MHz', then a drill press biting into small brass parts; the line of radioheliograph dishes on the site; a man at a drawing board and the wiring plan of the 16 antennas; a cutting torch throwing sparks along a steel bar; a hexagonal mesh frame lifted on trestles; LONG — winter: the cable reels in the snow, an antenna section loaded into a white Peugeot 404 estate, men at a tented mast in the snow. Fetched from Ciclic Mémoire's HLS (embed 22180); pre-cropped to take off the pillarbox bars.",
+  "takedown": false,
+  "silent": true
+}

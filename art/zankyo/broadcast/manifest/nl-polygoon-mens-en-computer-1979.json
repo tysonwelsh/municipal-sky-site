@@ -1,0 +1,88 @@
+{
+  "id": "nl-polygoon-mens-en-computer-1979",
+  "title": "Tentoonstelling 'Mens en computer' (Polygoon, Weeknummer 79-13) / Exhibition: Man and computer",
+  "year": 1979,
+  "src": "https://openbeelden.nl/media/22208/Tentoonstelling_mens_en_computer",
+  "license": "CC-BY-SA 3.0 NL (Open Beelden / Beeld en Geluid; Polygoon-Profilti producent)",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.3,
+  "durS": 107.0,
+  "bytes": 923246,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      36.0
+    ],
+    [
+      36.0,
+      48.0
+    ],
+    [
+      48.0,
+      60.0
+    ],
+    [
+      60.0,
+      95.0
+    ],
+    [
+      95.0,
+      107.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      9.0,
+      21.0
+    ],
+    [
+      24.0,
+      36.0
+    ],
+    [
+      46.0,
+      58.0
+    ],
+    [
+      59.0,
+      71.0
+    ],
+    [
+      72.0,
+      84.0
+    ],
+    [
+      85.0,
+      120.0
+    ],
+    [
+      121.0,
+      133.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "Netherlands, Dutch: Polygoon-Profilti newsreel, Museum voor het Onderwijs, The Hague, 1979 — from abacus to computer: a Commodore PET, a boy playing noughts and crosses against it ('I WILL MOVE TO…'), chips on a display board, children working a giant Little Professor, a man trying a talking spelling computer ('MONEY'), then the long window: children crowding the terminals, a line printer printing a drawing, and a lunar landing simulated on a vector screen, ending on a circuit board. Source MP4 (360×288) from openbeelden.nl, uncropped.",
+  "takedown": false
+}

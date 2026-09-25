@@ -1,0 +1,88 @@
+{
+  "id": "tw-tfai-satellite-earth-station-1969",
+  "title": "我國首座衛星通信地面電台落成 (Taiwan's First Satellite Communications Earth Station Opens)",
+  "year": 1969,
+  "src": "https://vod.tfai.org.tw/Video/4474",
+  "license": "政府資料開放授權條款-第1版 (Open Government Data License v1.0) — 出品者：台灣電影文化公司。我國首座衛星通信地面電台落成。典藏者：國家電影及視聽文化中心。",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.1,
+  "durS": 116.08,
+  "bytes": 935987,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      36.0
+    ],
+    [
+      36.0,
+      48.0
+    ],
+    [
+      48.0,
+      60.0
+    ],
+    [
+      60.0,
+      100.0
+    ],
+    [
+      100.0,
+      116.08
+    ]
+  ],
+  "srcWindows": [
+    [
+      4.0,
+      16.0
+    ],
+    [
+      62.0,
+      74.0
+    ],
+    [
+      86.0,
+      98.0
+    ],
+    [
+      108.0,
+      120.0
+    ],
+    [
+      122.0,
+      134.0
+    ],
+    [
+      156.0,
+      196.0
+    ],
+    [
+      197.0,
+      213.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "1969 台灣省地方新聞 newsreel (no. 49), Mandarin narration: 28 Dec 1969, the Taipei Earth Station in the hills outside the city — mist on the ridge and the dish rising out of it; Minister 張繼正 at the podium under OPENING CEREMONY OF TAIPEI EARTH STATION, reading the NT$340 million cost; the first calls placed to America and to Japan from two desks labelled 與美國通話 / 與日本通話; the guests filing through the control room of racks, meters and scopes; then the long hold, the great dish on its pedestal against the sky, the feed horn and its tripod, operators at the console on the telephone, the machinery of the mount, two dishes in the hills. Fetched from vod.tfai.org.tw/Video/4474 via the page's own 影片下載 link; no crop; the film's own title card and the 再會 end cards (3:35 on) avoided.",
+  "takedown": false
+}

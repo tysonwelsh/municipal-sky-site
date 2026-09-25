@@ -1,0 +1,22 @@
+{
+  "id": "fr-cinememoire-post-atomiques-1982",
+  "title": "Chronique des temps post-atomiques — Acte I : Mort au futur simple / Chronicle of post-atomic times, Act I: Death in the simple future",
+  "year": 1982,
+  "src": "https://cinememoire.net/notice?num_seq=13702",
+  "license": "Cinémémoire.net archive, amateur production (G.E.P.I. cinéma d'Istres, Michel Sciara); all rights reserved",
+  "tier": "B",
+  "tone": "music",
+  "weight": 3,
+  "gain": 0.0,
+  "durS": 60.0,
+  "bytes": 481926,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 10.0], [10.0, 20.0], [20.0, 30.0], [30.0, 40.0], [40.0, 50.0], [50.0, 60.0]],
+  "srcWindows": [[1.0, 11.0], [48.0, 58.0], [140.0, 150.0], [258.0, 268.0], [380.0, 390.0], [546.0, 556.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "France (Istres / the Fos–Martigues shore, Bouches-du-Rhône), 1982, French amateur fiction by a cine-club with a continuous post-synchronised soundtrack (music and effects, so every window is 10 s and pre-distorted). Windows: the typed title card 'Le G.E.P.I. cinéma d'Istres présente'; the warning card — 'each inhabitant of the planet has four tonnes of explosive suspended over their head'; a mushroom cloud rising behind the tower blocks above the bay and a little girl's face frozen in terror; a young man in a white shirt picking through a fog of rubble and rebar; a silhouette against the rebar; the child's face with the cloud superimposed, then 'A suivre…' — a sequel that may never have come. Fetched as the direct MP4 in cinememoire.net's newvideositemap.xml; pre-cropped to take off the burned-in www.cinememoire.net watermark.",
+  "takedown": false
+}

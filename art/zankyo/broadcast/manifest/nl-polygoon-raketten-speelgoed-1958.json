@@ -1,0 +1,61 @@
+{
+  "id": "nl-polygoon-raketten-speelgoed-1958",
+  "title": "Raketten gevaarlijk speelgoed (Polygoon, Weeknummer 58-12) / Rockets: dangerous toys",
+  "year": 1958,
+  "src": "https://openbeelden.nl/media/612014/Raketten_gevaarlijk_speelgoed",
+  "license": "CC-BY-SA 3.0 NL (Open Beelden / Beeld en Geluid; Polygoon-Profilti producent)",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.4,
+  "durS": 68.33,
+  "bytes": 621529,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.25
+    ],
+    [
+      12.25,
+      24.33
+    ],
+    [
+      24.33,
+      36.33
+    ],
+    [
+      36.33,
+      68.33
+    ]
+  ],
+  "srcWindows": [
+    [
+      3.0,
+      15.0
+    ],
+    [
+      15.0,
+      27.0
+    ],
+    [
+      27.0,
+      39.0
+    ],
+    [
+      40.0,
+      72.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "Netherlands, Dutch: Polygoon-Profilti newsreel, Petten military range, 1958, commentary Philip Bloemendal — Haarlem amateurs launch a home-built rocket with the War Ministry's permission: carrying it out, a film camera on the dunes, mixing and pouring the fuel, the launch frame on the beach; the long window is the ignition attempts — electric, magnesium, butane — the smoke, the explosion and the twisted frame left on the sand. Source MPG rendition from openbeelden.nl, uncropped.",
+  "takedown": false
+}

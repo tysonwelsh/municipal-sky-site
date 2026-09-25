@@ -1,0 +1,53 @@
+{
+  "id": "tw-tfai-ttv-on-air-1962",
+  "title": "台灣電視公司開播 (Taiwan Television Enterprise Goes On Air)",
+  "year": 1962,
+  "src": "https://vod.tfai.org.tw/Video/1116",
+  "license": "政府資料開放授權條款-第1版 (Open Government Data License v1.0) — 出品者：台灣電影文化公司。台灣電視公司開播。典藏者：國家電影及視聽文化中心。",
+  "tier": "A",
+  "tone": "noise",
+  "weight": 4,
+  "gain": 0.0,
+  "durS": 41.0,
+  "bytes": 290335,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      23.0
+    ],
+    [
+      23.0,
+      41.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      2.0,
+      14.0
+    ],
+    [
+      14.0,
+      25.0
+    ],
+    [
+      25.0,
+      43.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "SILENT PRINT (mute 台影新聞 newsreel; the file's track is blank hiss). Taipei, 10 Oct 1962, the first day of television in Taiwan: the new TTV building with its mast; Madame Chiang (宋美齡) climbing the steps with the guests; the ribbon cut in front of a wall of press photographers and a TV camera marked BET-21; then her gloved hand on the button box that starts the broadcast, and the tour of the new studios, stairs and lounges. Fetched from vod.tfai.org.tw/Video/1116 via the page's own 影片下載 link; no crop; the film's own title card (0:00–0:02) avoided.",
+  "takedown": false,
+  "silent": true
+}

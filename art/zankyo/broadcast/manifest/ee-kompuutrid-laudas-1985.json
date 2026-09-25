@@ -1,0 +1,22 @@
+{
+  "id": "ee-kompuutrid-laudas-1985",
+  "title": "Kompuutrid laudas / Компьютеры на ферме / Computers in the Cowshed",
+  "year": 1985,
+  "src": "https://arhiiv.err.ee/video/vaata/kompuutrid-laudas",
+  "license": "no licence notice; ETV/ERR archive, all rights reserved implied",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": 0.0,
+  "durS": 90.0,
+  "bytes": 868557,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 78.0], [78.0, 90.0]],
+  "srcWindows": [[36.0, 48.0], [245.0, 257.0], [364.0, 376.0], [604.0, 616.0], [795.0, 825.0], [1078.0, 1090.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Estonian SSR 1985 (broadcast January 1986), Eesti Telefilm documentary with a Russian-language announcer, colour 16 mm: electronics in the dairy herds of the Estonian Agricultural Academy's Eerika experimental farm. W1 a woman at a farm gate calling her cow, the cow looking back, the two walking together through the meadow; W2 a herd moving through dusty haze, then two pairs of scissors on a table and a hand choosing one — the film is about to cut a photograph of a cow and a person in half; W3 cardiac traces crossing an oscilloscope screen, a sensor clipped to a cow's neck on a wire; W4 a woman in a lab coat at an instrument, a chart recorder's paper, hands typing at a terminal; W5 (long) every cow in the shed wearing a numbered responder on a collar, the collar meeting the feeding station, cows at pasture with their transponders, the Russian voice explaining how the sensor works; W6 cows lying in the grass wearing responders, then the doctored photograph with a computer standing in the field where the herdsman was. Fetched by yt-dlp ERRArhiiv HLS; cut from local-dev/broadcast-src/_crop/ (pillarbox and ERR corner bug cropped off, square-pixel 4:3)",
+  "takedown": false
+}

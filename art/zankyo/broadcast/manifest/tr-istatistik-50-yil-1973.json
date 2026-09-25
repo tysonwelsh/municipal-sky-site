@@ -1,0 +1,23 @@
+{
+  "id": "tr-istatistik-50-yil-1973",
+  "title": "Cumhuriyetin 50'nci Yılında İstatistiki Veriler / Statistical Data in the Republic's 50th Year",
+  "year": 1973,
+  "src": "https://filmmirasim.ktb.gov.tr/tr/film/istatistik",
+  "license": "T.C. Kültür ve Turizm Bakanlığı film archive (SGM-2315); all rights reserved on the site footer, use governed by the ministry's Süreli Kullanım Yönergesi (request form)",
+  "tier": "B",
+  "tone": "noise",
+  "weight": 3,
+  "gain": 0.0,
+  "durS": 85.0,
+  "bytes": 359303,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 73.0], [73.0, 85.0]],
+  "srcWindows": [[30.0, 42.0], [50.0, 62.0], [80.0, 92.0], [100.0, 112.0], [160.0, 185.0], [225.0, 237.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Türkiye, 1973, SILENT PRINT (the file has no sound track): a film for the Republic's fiftieth anniversary about looking up the numbers — a schoolgirl at a blackboard reading 'EV ÖDEVİ: Cumhuriyetin 50 yıllık ...' (homework: the Republic's fifty years); the Başbakanlık Devlet İstatistik Enstitüsü signboard and building in Ankara; children in the institute's library; a girl pulling statistical yearbooks off the shelves; the long window is 25 s of a pupil's hands copying tables of figures into an exercise book; a girl at her desk, chin in hand. The picture is dim and flat as transferred. Fetched from the page's 480p HLS manifest (filmmirasim.ktb.gov.tr:8443/WEBTV/...playlist.m3u8); no crop needed (the file is already 4:3). The ministry's rosette watermark is left in.",
+  "takedown": false,
+  "silent": true
+}

@@ -1,0 +1,22 @@
+{
+  "id": "tr-su-dost-dusman-1970s",
+  "title": "Su: Hem Dost Hem Düşman / Water: Both Friend and Enemy",
+  "year": 1974,
+  "src": "https://filmmirasim.ktb.gov.tr/tr/film/su--hem-dost--hem-dusman",
+  "license": "T.C. Kültür ve Turizm Bakanlığı film archive (SGM-2471); all rights reserved on the site footer, use governed by the ministry's Süreli Kullanım Yönergesi (request form)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.2,
+  "durS": 90.0,
+  "bytes": 927151,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 78.0], [78.0, 90.0]],
+  "srcWindows": [[32.0, 44.0], [115.0, 127.0], [155.0, 167.0], [330.0, 342.0], [553.0, 583.0], [725.0, 737.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Türkiye, Turkish, undated (1970s by dress and cars; year is an estimate): a Basın-Yayın Genel Müdürlüğü hygiene film, a calm Turkish narrator over a zoo, a kitchen and a village well — a young woman laughing under the giraffes; a market crowd; a woman in her hallway at the coat rack; a woman in glasses washing greens and cooking at the stove; the long window is an animated cut-away of a well being lined, white on black, then a man cranking a hand-wound well winch and the well-house; a woman walking the zoo's paths. The sound track runs quiet and has long unscored gaps elsewhere. Fetched from the page's 480p HLS manifest (filmmirasim.ktb.gov.tr:8443/WEBTV/...playlist.m3u8); pre-cropped to remove the baked pillarbox (crop=670:476:98:2). The ministry's rosette watermark is left in.",
+  "takedown": false
+}

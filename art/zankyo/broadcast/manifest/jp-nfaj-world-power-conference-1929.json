@@ -1,0 +1,23 @@
+{
+  "id": "jp-nfaj-world-power-conference-1929",
+  "title": "萬國工業會議 世界動力會議 / World Engineering Congress, World Power Conference",
+  "year": 1929,
+  "src": "https://filmisadocument.jp/films/view/7",
+  "license": "国立映画アーカイブ (NFAJ) portal 「フィルムは記録する」; site policy follows NFAJ's, footage reuse only by application (映像利用申請サイト / fiad@nfaj.go.jp). Copyrighted as found, fair-use posture",
+  "tier": "B",
+  "tone": "noise",
+  "weight": 3,
+  "gain": 0.0,
+  "durS": 90.0,
+  "bytes": 485038,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 30.0], [30.0, 42.0], [42.0, 54.0], [54.0, 66.0], [66.0, 78.0], [78.0, 90.0]],
+  "srcWindows": [[115.0, 145.0], [243.0, 255.0], [335.0, 347.0], [359.0, 371.0], [627.0, 639.0], [1096.0, 1108.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Japan 1929, Ministry of Education (文部省製作) silent record film, 18 fps, no sound track — a SILENT reel. The World Engineering Congress / World Power Conference sectional meeting, Tokyo, October–November 1929: 4,495 delegates, 1,285 from 42 countries. The long window: the hall's clock tower, the banner 萬國工業會議開會式場 WORLD ENGINEERING CONGRESS over umbrellas in the rain, an intertitle on delegates gathering from every country despite the autumn rain, handshakes at the car doors. Also: the delegates massed on the Hibiya Public Hall stage; a lecturer at his board and the sign GENERAL MEETING AND CLOSING CEREMONY W.E.C.; the packed hall from the balcony; the card for ギルブレス女史 — Lillian Gilbreth, the time-and-motion engineer — and her, laughing to camera in a garden; a WELCOME / WEC board at the 後楽園 visit. Fetched from the NFAJ portal's own HLS (h10.cs.nii.ac.jp/stream/nfc/st693f94cd4aaf5d93d6db6bf35ad1ccfa, 480×360); pre-cropped to drop the NFAJ corner bug.",
+  "takedown": false,
+  "silent": true
+}

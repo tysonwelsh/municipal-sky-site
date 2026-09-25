@@ -1,0 +1,97 @@
+{
+  "id": "nl-polygoon-esa-estec-1979",
+  "title": "Het technologisch centrum van de ESA (Polygoon, Weeknummer 79-30) / The ESA technology centre",
+  "year": 1979,
+  "src": "https://openbeelden.nl/media/21969/Het_technologisch_centrum_van_de_ESA",
+  "license": "CC-BY-SA 3.0 NL (Open Beelden / Beeld en Geluid; Polygoon-Profilti producent)",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.4,
+  "durS": 139.5,
+  "bytes": 1489089,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.08
+    ],
+    [
+      12.08,
+      24.33
+    ],
+    [
+      24.33,
+      36.5
+    ],
+    [
+      36.5,
+      72.75
+    ],
+    [
+      72.75,
+      84.83
+    ],
+    [
+      84.83,
+      97.08
+    ],
+    [
+      97.08,
+      109.33
+    ],
+    [
+      109.33,
+      139.5
+    ]
+  ],
+  "srcWindows": [
+    [
+      6.0,
+      18.0
+    ],
+    [
+      18.0,
+      30.0
+    ],
+    [
+      30.0,
+      42.0
+    ],
+    [
+      54.0,
+      90.0
+    ],
+    [
+      96.0,
+      108.0
+    ],
+    [
+      108.0,
+      120.0
+    ],
+    [
+      126.0,
+      138.0
+    ],
+    [
+      147.0,
+      177.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "Netherlands, Dutch: Polygoon-Profilti newsreel, ESTEC Noordwijk 1979, colour — satellites in vacuum chambers, solar cells, clean-room workers and cable looms; the first long window is archive launch footage: a coastal launch from the air, a control room in headsets, a satellite in orbit, and a communications satellite exploding after launch; Ariane stages, a launch tower, Meteosat 2 being built; the second long window: German ground-station dishes, an oscilloscope, a tape machine and a machine printing satellite photographs of the Earth. Source MPG rendition from openbeelden.nl, uncropped.",
+  "takedown": false
+}

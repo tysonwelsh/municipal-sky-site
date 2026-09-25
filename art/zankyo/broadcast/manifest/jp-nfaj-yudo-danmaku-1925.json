@@ -1,0 +1,23 @@
+{
+  "id": "jp-nfaj-yudo-danmaku-1925",
+  "title": "計算準備法ニヨル 誘導彈幕射擊 / Guided Barrage Fire by the Calculation-Preparation Method",
+  "year": 1925,
+  "src": "https://filmisadocument.jp/films/view/96",
+  "license": "国立映画アーカイブ (NFAJ) portal 「フィルムは記録する」; site policy follows NFAJ's, footage reuse only by application (映像利用申請サイト / fiad@nfaj.go.jp). Copyrighted as found, fair-use posture",
+  "tier": "B",
+  "tone": "noise",
+  "weight": 3,
+  "gain": 0.0,
+  "durS": 90.0,
+  "bytes": 770456,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 42.0], [42.0, 54.0], [54.0, 66.0], [66.0, 78.0], [78.0, 90.0]],
+  "srcWindows": [[88.0, 100.0], [125.0, 155.0], [368.0, 380.0], [718.0, 730.0], [848.0, 860.0], [1078.0, 1090.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Japan, November 1925, Army Field Artillery School, Yotsukaidō, with the Army Education Inspectorate and the Land Survey Department — a silent training film, 12 fps, no sound track: a SILENT reel. Windows: the animated 陣地占領要圖, white road-and-rail lines drawing themselves across a map beside the flying school; the long window is the aerial reconnaissance itself, the firing ground seen from an aeroplane with its wing strut in frame (the catalogue calls it among the earliest Japanese aerial film); the barrage map, an animated line of fire creeping forward to H+57 minutes; two gunners filling a meteorological pilot balloon on the grass and letting it rise; a ruled firing table (射擊諸元) held on screen; shells bursting on the plain among bare trees. Fetched from the NFAJ portal's own HLS (h10.cs.nii.ac.jp/stream/nfc/st1b012b3bd6351c5a8b79fd7e5cb763c7, 480×360); pre-cropped to drop the NFAJ corner bug.",
+  "takedown": false,
+  "silent": true
+}

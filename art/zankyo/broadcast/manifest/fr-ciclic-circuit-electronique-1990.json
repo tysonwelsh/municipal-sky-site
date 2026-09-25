@@ -1,0 +1,23 @@
+{
+  "id": "fr-ciclic-circuit-electronique-1990",
+  "title": "Circuit électronique / Electronic circuit",
+  "year": 1990,
+  "src": "https://memoire.ciclic.fr/4077-circuit-electronique",
+  "license": "Droits réservés — produced by the video workshop of the Maison de la Culture de Bourges; Ciclic Mémoire",
+  "tier": "B",
+  "tone": "noise",
+  "weight": 3,
+  "gain": 0.0,
+  "durS": 88.0,
+  "bytes": 627570,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 52.0], [52.0, 64.0], [64.0, 76.0], [76.0, 88.0]],
+  "srcWindows": [[684.0, 696.0], [856.0, 868.0], [884.0, 912.0], [1020.0, 1032.0], [1126.0, 1138.0], [1256.0, 1268.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "France, Bourges, c. 1990, Umatic colour; the print is effectively MUTE (the sound track is a blank floor at about -60 LUFS), so the reel is silent. A bearded man at a bench in the Maison de la Culture's scenery workshop wires a board of green and red LEDs by hand: a magnifier lamp over the LED row; the soldering iron at a capacitor; LONG — an analogue multimeter's needle, a meter box, the board, then the issue of 'Électronique pratique' (un télérupteur optique) he is building from; an oscilloscope's knobs and the man bent to his work; his wristwatch and the meter again; last, the finished chassis turned in his hands. Fetched from Ciclic Mémoire's HLS (embed 9410); the circuit film is the second sequence of that deposit, 10:54 onward — the first 11 minutes are a different clown-theatre rehearsal, never used.",
+  "takedown": false,
+  "silent": true
+}

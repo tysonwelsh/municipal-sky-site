@@ -1,0 +1,79 @@
+{
+  "id": "jp-kagakueizo-genshiryoku-1966",
+  "title": "原子力発電の夜明け / The Dawn of Nuclear Power",
+  "year": 1966,
+  "src": "https://www.kagakueizo.org/movie/industrial/87/",
+  "license": "no terms stated; NPO 科学映像館 free-distribution rescue print. 製作 東京シネマ / 企画 第一原子力産業グループ. Copyrighted, fair-use posture",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.4,
+  "durS": 88.0,
+  "bytes": 824767,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      36.0
+    ],
+    [
+      36.0,
+      48.0
+    ],
+    [
+      48.0,
+      60.0
+    ],
+    [
+      60.0,
+      88.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      316.0,
+      328.0
+    ],
+    [
+      670.0,
+      682.0
+    ],
+    [
+      1154.0,
+      1166.0
+    ],
+    [
+      1238.0,
+      1250.0
+    ],
+    [
+      1792.0,
+      1804.0
+    ],
+    [
+      1942.0,
+      1970.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "Japan 1966, ja narration (城達也), Eastmancolor, Tokyo Cinema for the First Atomic Power Industry Group (music 山本直純): five years building Tōkai nuclear power station, Ibaraki. Windows: hard-hatted workers on the construction site; the animated reactor and steam-generator diagram; the reactor pressure vessel under annealing — the sign 原子炉圧力容器 焼鈍中; fuel handling in the reactor hall; bright streaks across a blue field (the physics animation); the long window is the finished station from the air, the crowded control room, engineers at the desk and a man on the telephone. Fetched from the site's own player host (150.videoplayer.jp/users-file/admin/html5/movie/0687/genshiryokuhatsuden-no-yoake.mp4); no caption strip. The print opens with period award/recommendation cards — every window is past them.",
+  "takedown": false
+}

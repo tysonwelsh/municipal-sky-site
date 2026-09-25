@@ -1,0 +1,88 @@
+{
+  "id": "nl-polygoon-phohi-zender-1933",
+  "title": "Bezoek aan de PHOHI kortegolf-zender (Polygoon, Weeknummer 33-39) / Visit to the PHOHI short-wave transmitter",
+  "year": 1933,
+  "src": "https://openbeelden.nl/media/16641/Bezoek_aan_de_PHOHI_kortegolf_zender",
+  "license": "Public Domain Mark (Open Beelden / Beeld en Geluid; Polygoon Hollands Nieuws producent)",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.6,
+  "durS": 112.6,
+  "bytes": 957407,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.17
+    ],
+    [
+      12.17,
+      24.25
+    ],
+    [
+      24.25,
+      36.25
+    ],
+    [
+      36.25,
+      48.5
+    ],
+    [
+      48.5,
+      88.5
+    ],
+    [
+      88.5,
+      100.5
+    ],
+    [
+      100.5,
+      112.5
+    ]
+  ],
+  "srcWindows": [
+    [
+      20.0,
+      32.0
+    ],
+    [
+      33.0,
+      45.0
+    ],
+    [
+      45.0,
+      57.0
+    ],
+    [
+      57.0,
+      69.0
+    ],
+    [
+      72.0,
+      112.0
+    ],
+    [
+      113.0,
+      125.0
+    ],
+    [
+      126.0,
+      138.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "Netherlands, Dutch: Polygoon newsreel, 1933 — the board of PHOHI (Philips Omroep Holland-Indië, short wave to the Indies) tours the transmitter: water-cooled transmitting valves the size of a man explained by Dr A. Philips, the transmitter halls, the intertitle 'Het afstemmen van één der versterkingstrappen' and the tuning, then the long window: Dr C.J.K. van Aalst at his desk, speaking to camera on what PHOHI is for. The silent-hiss walk-in (0:00–0:30) is not used. Source MPG rendition from openbeelden.nl, uncropped.",
+  "takedown": false
+}

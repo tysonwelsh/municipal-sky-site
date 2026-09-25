@@ -1,0 +1,79 @@
+{
+  "id": "es-nodo-nino-computadoras-1981",
+  "title": "El niño, entre el ayer y el mañana: cómo incorporar a la juventud a la civilización de las computadoras / The child between yesterday and tomorrow: bringing the young into the civilisation of computers",
+  "year": 1981,
+  "src": "https://www.rtve.es/play/videos/no-do/not-1959/1465513/",
+  "license": "unknown — NO-DO, Spanish state newsreel; no licence statement on rtve.es",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.2,
+  "durS": 97.17,
+  "bytes": 859269,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.08
+    ],
+    [
+      12.08,
+      24.08
+    ],
+    [
+      24.08,
+      36.17
+    ],
+    [
+      36.17,
+      48.17
+    ],
+    [
+      48.17,
+      86.17
+    ],
+    [
+      86.17,
+      97.17
+    ]
+  ],
+  "srcWindows": [
+    [
+      22.0,
+      34.0
+    ],
+    [
+      56.0,
+      68.0
+    ],
+    [
+      118.0,
+      130.0
+    ],
+    [
+      142.0,
+      154.0
+    ],
+    [
+      154.0,
+      192.0
+    ],
+    [
+      192.0,
+      203.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "NO-DO NOT N 1959 A, 16/02/1981 — one of the last NO-DO issues, in colour — item 1 of 3 (10-203 s of the 9:41 reel): an exhibition for children that runs from the hand to the screen — children kneading clay (w1), clay pots and girls at hand looms (w2), children at school desks and toddlers with toy trucks and a toy telephone (w3), pictograms, a Ptolemy/Cleopatra cartouche, the Roman alphabet and antique telephones (w4); then a videophone, a videotex INDICE menu, an airliner seat map on a teletext screen, a girl with a remote at a terminal and two boys at a computer (long w5); boys typing and a screen of blue text (w6). Spanish narration. Spain/Spanish; location not stated (Madrid likely). Fetched with yt-dlp (rtve.es:alacarta, hls-845); cut from a pre-crop (crop=406:320:130:72) that removes the rtve.es and Filmoteca Española bugs.",
+  "takedown": false
+}

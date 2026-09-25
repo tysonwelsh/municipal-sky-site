@@ -1,0 +1,22 @@
+{
+  "id": "ee-mangi-laser-1987",
+  "title": "Mängi, laser! / Play, Laser!",
+  "year": 1987,
+  "src": "https://arhiiv.err.ee/video/vaata/mangi-laser",
+  "license": "no licence notice; ETV/ERR archive, all rights reserved implied",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.3,
+  "durS": 84.0,
+  "bytes": 717090,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 10.0], [10.0, 20.0], [20.0, 30.0], [30.0, 60.0], [60.0, 72.0], [72.0, 84.0]],
+  "srcWindows": [[2.0, 12.0], [44.0, 54.0], [70.0, 80.0], [130.0, 160.0], [1348.0, 1360.0], [1586.0, 1598.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Estonian SSR 1987 (broadcast March 1988), Eesti Telefilm industrial documentary in Estonian (text read by its author Endel Nõmberg), colour 16 mm: the RET works in Tallinn building the first Soviet-Estonian laser disc player, the 'Estonia'. The opening walks a century of playback machinery in shot order. W1 the lid picture of a Symphonion music box, then its steel comb and pinned drum playing; W2 a gramophone's soundbox and needle riding a turning 78; W3 a hand loading a disc into the Estonia laser player, the MÄNGI, LASER! title card; W4 (long) the compact disc spinning in the open player, a spectrum display on a monitor, a meter panel, a stack of players and a hand at the controls, under the narration; W5 a woman soldering circuit boards on the assembly line; W6 an engineer checking a board, an analyser screen, two players with their discs out. Tier B: the three opening windows carry music (automaton, gramophone, laser player) and are cut to 10 s, and the whole reel is baked with --distort 0.5. Fetched by yt-dlp ERRArhiiv HLS; cut from local-dev/broadcast-src/_crop/ (ERR corner bug cropped off the top, non-square SAR 3:4 normalised to square-pixel 4:3)",
+  "takedown": false
+}

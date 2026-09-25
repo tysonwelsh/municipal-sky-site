@@ -1,0 +1,79 @@
+{
+  "id": "jp-kagakueizo-television-1952",
+  "title": "テレビジョン / Television",
+  "year": 1952,
+  "src": "https://www.kagakueizo.org/movie/industrial/347/",
+  "license": "no terms stated; NPO 科学映像館 free-distribution rescue print. 製作 日映科学映画製作所 / 協力 日本放送協会 (NHK). Copyrighted, fair-use posture",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.2,
+  "durS": 88.08,
+  "bytes": 827172,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      36.0
+    ],
+    [
+      36.0,
+      48.0
+    ],
+    [
+      48.0,
+      76.08
+    ],
+    [
+      76.08,
+      88.08
+    ]
+  ],
+  "srcWindows": [
+    [
+      40.0,
+      52.0
+    ],
+    [
+      196.0,
+      208.0
+    ],
+    [
+      396.0,
+      408.0
+    ],
+    [
+      460.0,
+      472.0
+    ],
+    [
+      622.0,
+      650.0
+    ],
+    [
+      690.0,
+      702.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "Japan 1952, ja narration, B&W, Nichiei Science Film with NHK's cooperation, made in the months before NHK's first TV broadcast (Feb 1953). Windows: a family round a table watching a set; a facsimile drum turning under a photocell, a portrait being scanned; the scanning demo — one line of light on a CRT, then line after line filling the raster; snow, then the iconoscope and its mosaic plate; the long window is the NHK broadcasting house and the studio, cameras rehearsing the NAKAGAWA TROUPERS children's act before there was a service; the control-room desk. Fetched from the site's own player host (150.videoplayer.jp/users-file/admin/html5/movie/0687/television.mp4); pre-cropped to drop the NPO caption strip ((株)日映科学映画製作所 / 科学映像館) burned across the top of every frame.",
+  "takedown": false
+}

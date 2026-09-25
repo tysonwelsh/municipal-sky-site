@@ -1,0 +1,79 @@
+{
+  "id": "nl-polygoon-firato-1965",
+  "title": "De Firato (Polygoon, Weeknummer 65-39) / The Firato electronics fair",
+  "year": 1965,
+  "src": "https://openbeelden.nl/media/155409/De_Firato",
+  "license": "CC-BY-SA 3.0 NL (Open Beelden / Beeld en Geluid; Polygoon-Profilti producent)",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.5,
+  "durS": 88.67,
+  "bytes": 912641,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.25
+    ],
+    [
+      12.25,
+      40.25
+    ],
+    [
+      40.25,
+      52.33
+    ],
+    [
+      52.33,
+      64.33
+    ],
+    [
+      64.33,
+      76.58
+    ],
+    [
+      76.58,
+      88.67
+    ]
+  ],
+  "srcWindows": [
+    [
+      3.0,
+      15.0
+    ],
+    [
+      22.0,
+      50.0
+    ],
+    [
+      51.0,
+      63.0
+    ],
+    [
+      63.0,
+      75.0
+    ],
+    [
+      75.0,
+      87.0
+    ],
+    [
+      87.0,
+      99.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "Netherlands, Dutch: Polygoon-Profilti newsreel, RAI Amsterdam 1965, commentary Philip Bloemendal — the Firato electronics fair: transistor-radio stands, flat televisions, then the long window: children at a record player that drives a slide screen, a video camera, 'weergave via videorecorder', a reel-to-reel VTR playing the picture back on a set; a 'Het Elektron' lecture, an army armoured car full of electronics, a car tape recorder, and a man playing an electric guitar that makes organ sounds. Source MPG rendition from openbeelden.nl, uncropped.",
+  "takedown": false
+}

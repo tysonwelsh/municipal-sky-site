@@ -1,0 +1,22 @@
+{
+  "id": "cz-oldradio-pan-vajicko-1985",
+  "title": "Reklama – pan Vajíčko / Advertising – Mr Egg (ČST ad-break bumpers)",
+  "year": 1985,
+  "src": "https://www.oldradio.cz/seznamtv.htm",
+  "license": "none stated; off-air recording of Československá televize (ČST) by a private collector, served as raw .mpg files on oldradio.cz (© Martin Hájek covers the site, not the broadcast)",
+  "tier": "B",
+  "tone": "music",
+  "weight": 3,
+  "gain": 0.2,
+  "durS": 17.6,
+  "bytes": 142603,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 9.0], [9.0, 17.6]],
+  "srcWindows": [[0.3, 9.3], [10.0, 18.6]],
+  "pitchHz": [null, null],
+  "tuned": false,
+  "notes": "Czechoslovakia, Czech, 1980s (year estimated). Mr Egg, the chalk-line cartoon egg who opened and closed ČST's advertising blocks: he floats down on a bunch of balloons and the letters REKLAMA bob up over him, then the short stings he played between spots — an egg in a bow, an egg with a grin full of teeth, an egg with a butterfly net and a fencing foil, an egg turning in a headscarf — and the close, where he floats back up on his balloons and away, all white line on black to the block's jingle. Six separate stings from a private collector's site joined into one source in the site's own order (vejce1 open, 4, 5, 8, 9, vejce10 close), https://www.oldradio.cz/cst/vejce1.mpg … vejce10.mpg; no crop — the Č2 bug is the broadcaster's own.",
+  "takedown": false
+}

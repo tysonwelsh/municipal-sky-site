@@ -1,0 +1,79 @@
+{
+  "id": "cn-shangke-laser-1978",
+  "title": "激光 (The Laser)",
+  "year": 1978,
+  "src": "https://www.bilibili.com/video/BV1EV411F7LD/",
+  "license": "unknown (uploader-asserted; 16 mm print 0051, 上海科學教育電影製片廠 / Shanghai Science & Education Film Studio)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.4,
+  "durS": 88.0,
+  "bytes": 844164,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      28.0
+    ],
+    [
+      28.0,
+      40.0
+    ],
+    [
+      40.0,
+      52.0
+    ],
+    [
+      52.0,
+      64.0
+    ],
+    [
+      64.0,
+      76.0
+    ],
+    [
+      76.0,
+      88.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      1624.0,
+      1652.0
+    ],
+    [
+      44.0,
+      56.0
+    ],
+    [
+      684.0,
+      696.0
+    ],
+    [
+      944.0,
+      956.0
+    ],
+    [
+      1068.0,
+      1080.0
+    ],
+    [
+      1332.0,
+      1344.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "1978 PRC science-education film on 16 mm (上海科學教育電影製片廠, dir. 牟榮光), Mandarin narration: the laser at work — the long window is laser communication, the beam animated between two dishes across a valley, a man at a tripod transceiver in headphones and a woman crouched on a hillside talking into a laser telephone; also a beam crossing a darkened lab, laser-drilling the jewels of a watch movement, a rangefinder labelled 接受器 / 激光器 on a hilltop, a holography bench of mirrors, an eye and its retina. Fetched from bilibili BV1EV411F7LD (档案归档计划组, print 0051) with a full browser header set; cut from a 4:3 crop (uploader logo and burnt-in timecode removed; a faint centre transcription watermark remains).",
+  "takedown": false
+}

@@ -116,6 +116,15 @@ length, one with no relation to the next — answered in four phases:
    the receiver, which is why it was not fixed here — but it is a failing
    invariant and the harness says so on every run of that seed.
 
+## Shipped since: reels round 5 (2026-09-25, rc.104)
+
+102 reels from the round-4 bench (REELS-R5.md): Taiwan, Korea, the Netherlands,
+Estonia, Japan (science films, NHK, and prewar silent prints), China, NO-DO,
+France and Galicia, Türkiye, Czechoslovakia, Arctic Canada. Silent prints are
+allowed and release the air (默). Every test card in the pool and in the new
+sources is registered in `broadcast/testcards/` for a separate use still to be
+designed. Open: Norway (a fetch the owner has to rule on), Aparat (by hand).
+
 ## Later
 
 - **Audio signals and video signals as two kinds of visitation** (the

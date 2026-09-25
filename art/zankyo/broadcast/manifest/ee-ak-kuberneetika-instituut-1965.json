@@ -1,0 +1,23 @@
+{
+  "id": "ee-ak-kuberneetika-instituut-1965",
+  "title": "AK filmikroonika: Küberneetika Instituut / The Institute of Cybernetics",
+  "year": 1965,
+  "src": "https://arhiiv.err.ee/video/vaata/ak-filmikroonika-1958-1991-kuberneetika-instituut",
+  "license": "no licence notice; ETV/ERR archive, all rights reserved implied",
+  "tier": "B",
+  "tone": "noise",
+  "weight": 3,
+  "gain": 0.0,
+  "durS": 52.0,
+  "bytes": 205086,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 40.0], [40.0, 52.0]],
+  "srcWindows": [[0.5, 12.5], [14.0, 42.0], [44.0, 56.0]],
+  "pitchHz": [null, null, null],
+  "tuned": false,
+  "notes": "Estonian SSR 1965, an AK newsreel item and a SILENT print (the 16 mm negative is catalogued helita, no sound): the Institute of Cybernetics men just given the ESSR state prize, research director Boris Tamm and junior researcher Juhan Pruuden, for a programming system that prepares information for numerically controlled milling machines. W1 a young researcher on a black telephone, then writing at his desk with the receiver to his ear; W2 (long) the two men across a desk of papers seen from above, a long close-up of the moustached man thinking, a hand writing figures on a pad, back to the desk; W3 a pen tracing a drawn curve, a handwritten sheet, a typed program table under the pen. Fetched by yt-dlp ERRArhiiv HLS; cut from local-dev/broadcast-src/_crop/ (pillarbox and ERR corner bug cropped off, square-pixel 4:3)",
+  "takedown": false,
+  "silent": true
+}

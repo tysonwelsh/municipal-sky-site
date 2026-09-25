@@ -1,0 +1,22 @@
+{
+  "id": "cz-oldradio-pocasi-1985",
+  "title": "Předpověď počasí / Weather forecast — ČST",
+  "year": 1985,
+  "src": "https://www.oldradio.cz/cst/pocasi.mpg",
+  "license": "none stated; off-air recording of Československá televize (ČST) by a private collector, served as a raw .mpg on oldradio.cz (© Martin Hájek covers the site, not the broadcast)",
+  "tier": "B",
+  "tone": "music",
+  "weight": 3,
+  "gain": -0.3,
+  "durS": 9.0,
+  "bytes": 68940,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 9.0]],
+  "srcWindows": [[1.0, 10.0]],
+  "pitchHz": [null],
+  "tuned": false,
+  "notes": "Czechoslovakia, Czech, 1980s (year estimated). The ČST second programme's weather-forecast title: a colour satellite globe of Europe and Africa turning under cloud while the words PŘEDPOVĚĎ POČASÍ grow out of it to fill the disc, the Č2 channel bug in the corner, to the forecast's signature music. Off-air recording from a private collector's site, https://www.oldradio.cz/cst/pocasi.mpg (linked from seznamtv.htm, 'Různé znělky z Čs. televize 80. let'); no crop — the bug is the broadcaster's own.",
+  "takedown": false
+}

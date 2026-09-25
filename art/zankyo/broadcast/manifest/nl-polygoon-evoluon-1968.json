@@ -1,0 +1,70 @@
+{
+  "id": "nl-polygoon-evoluon-1968",
+  "title": "Evoluon (Polygoon, Weeknummer 68-34) / The Evoluon, Philips' science pavilion",
+  "year": 1968,
+  "src": "https://openbeelden.nl/media/658948/Evoluon",
+  "license": "CC-BY-SA 3.0 NL (Open Beelden / Beeld en Geluid; Polygoon-Profilti producent)",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.1,
+  "durS": 83.0,
+  "bytes": 831319,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      35.0
+    ],
+    [
+      35.0,
+      47.0
+    ],
+    [
+      47.0,
+      59.0
+    ],
+    [
+      59.0,
+      71.0
+    ],
+    [
+      71.0,
+      83.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      3.0,
+      38.0
+    ],
+    [
+      39.0,
+      51.0
+    ],
+    [
+      52.0,
+      64.0
+    ],
+    [
+      64.0,
+      76.0
+    ],
+    [
+      76.0,
+      88.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "Netherlands, Dutch: Polygoon-Profilti newsreel, Eindhoven 1968 — the Evoluon: the flying-saucer building and its tower, then the long window, a circuit of the interior: the ramps and the dome, visitors at the exhibits, the moving model of a uranium atom as points of light in the dark, a dial, a washing-machine drum; boys wiring electronics kits and a meter, a model boat, a picture-phone with a boy on its screen, a television camera, and the tower on a monitor. Source MP4 (360×288) from openbeelden.nl, uncropped.",
+  "takedown": false
+}

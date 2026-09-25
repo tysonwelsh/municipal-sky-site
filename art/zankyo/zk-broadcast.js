@@ -1720,6 +1720,17 @@
     a.holdS = P.presenceS; a.lossD = P.exitS;
   }
 
+  // 默 A SILENT PRINT (reels round 5, the owner's ruling 2026-09-24). A reel
+  // cut from a picture with no sound track carries `silent: true`. There is
+  // nothing to listen to, so the crew does not stop: the melodic voices are
+  // left out of the hold and the station plays on under the picture. The PA
+  // stays held (a tannoy over a found picture reads as part of it). A 走 scan
+  // is silent only if both of its stations are. No draw is taken or moved:
+  // this only decides which already-drawn holds are written.
+  function silentRx(reel, rx) {
+    if (!reel || !reel.silent) return false;
+    return !(rx && rx.reel2 && !rx.reel2.silent);
+  }
   function arm(info, rng) {
     var T = tl(); if (!T.S) return false;
     var R = rng || T.S.signal; if (!R) return false;
@@ -1833,6 +1844,7 @@
       // the listener hears is the crew occasionally deciding the transmission
       // is worth answering. Most receptions still silence them all.
       if (P0 && P0.porous === pk[pv]) continue;
+      if (silentRx(c.reel, P0)) continue;   // 默: nothing to listen to, the crew plays on
       plan[pk[pv]] = spansFor(wx.rel[pk[pv]]);
     }
     plan.pa = spansFor(0);                 // the PA is held too, and for the same reason fire() holds it
@@ -1936,7 +1948,7 @@
     var cut = t0 + (a.rx ? a.rx.spanS : TUNE_S + a.holdS + a.lossD);
     // the hold is time-based, so it is set now and applies to claims from t0 − 6
     var hold = {}, from = t0 - HOLD_LEAD_S;
-    for (var vname in a.rel) hold[vname] = { from: from, until: cut + 2 + a.rel[vname] };
+    if (!silentRx(a.reel, a.rx)) for (var vname in a.rel) hold[vname] = { from: from, until: cut + 2 + a.rel[vname] };
     // The PA was never held — `rel` covers the five melodic voices and the
     // engine's own gate counts the tannoy too, so a kakegoe could land inside a
     // signal. It comes back with the shakuhachi, first of the crew to speak
@@ -3076,8 +3088,10 @@
     // · 尺 over it」— the kanji is the log line, as it is everywhere else in this
     // station, and the plain words after it say what it means.
     var shapeLine = "";
-    if (P.body !== "jou" || P.entry !== "soku" || P.exit !== "setsu" || P.porous || P.callback) {
+    var mute = silentRx(a.reel, P);
+    if (P.body !== "jou" || P.entry !== "soku" || P.exit !== "setsu" || P.porous || P.callback || mute) {
       var bits = [];
+      if (mute) bits.push("默 a silent print · the crew plays on");
       if (P.callback) bits.push("同 the same station again");
       if (P.entry !== "soku") bits.push(KANA[P.entry] + (P.entry === "tan" ? " hunting " : " drifting in ") + P.entryS.toFixed(1) + "s");
       if (P.body === "modori") { var lt = P.segments[1] && P.segments[1].laterS; bits.push(KANA.modori + " " + P.segments.length + " pieces" + (lt != null ? " · " + lt + " s later" : "")); }

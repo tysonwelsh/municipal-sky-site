@@ -1,0 +1,22 @@
+{
+  "id": "tr-ptt-calismalari-1970s",
+  "title": "PTT'nin Çalışmaları / The Work of the PTT",
+  "year": 1972,
+  "src": "https://filmmirasim.ktb.gov.tr/tr/film/pttnin-almalar",
+  "license": "T.C. Kültür ve Turizm Bakanlığı film archive (SGM-3632); all rights reserved on the site footer, use governed by the ministry's Süreli Kullanım Yönergesi (request form)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.1,
+  "durS": 90.0,
+  "bytes": 900729,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 66.0], [66.0, 78.0], [78.0, 90.0]],
+  "srcWindows": [[150.0, 162.0], [215.0, 227.0], [335.0, 347.0], [375.0, 405.0], [415.0, 427.0], [475.0, 487.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Türkiye, Turkish, undated (1970s by dress and equipment; year is an estimate): the Posta Telgraf Telefon administration films its own network under a Turkish narrator — a man on the telephone at his desk; a long hall of switchboard operators in headsets; the automatic exchange's relay racks and a technician at a test desk; the long window runs from a control console into an animated diagram of a communications satellite orbiting the globe and back to an engineer at the equipment racks; the exchange clock and a rack of selectors; switchboard women and a microwave-link control room with round meters. Basın-Yayın Genel Müdürlüğü production. Fetched from the page's 480p HLS manifest (filmmirasim.ktb.gov.tr:8443/WEBTV/...playlist.m3u8); pre-cropped to remove the baked grey pillarbox (crop=662:476:104:2). The ministry's rosette watermark is left in, faint in the centre.",
+  "takedown": false
+}

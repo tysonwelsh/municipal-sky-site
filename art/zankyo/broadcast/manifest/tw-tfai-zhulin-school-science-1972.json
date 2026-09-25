@@ -1,0 +1,88 @@
+{
+  "id": "tw-tfai-zhulin-school-science-1972",
+  "title": "宜蘭縣竹林國小自然科學教育 (Science Teaching at Zhulin Primary School, Yilan)",
+  "year": 1972,
+  "src": "https://vod.tfai.org.tw/Video/6826",
+  "license": "政府資料開放授權條款-第1版 (Open Government Data License v1.0) — 出品者：台灣電影文化公司。宜蘭縣竹林國小自然科學教育。典藏者：國家電影及視聽文化中心。",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 4,
+  "gain": 0.0,
+  "durS": 130.17,
+  "bytes": 1348145,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      36.0
+    ],
+    [
+      36.0,
+      74.0
+    ],
+    [
+      74.0,
+      106.08
+    ],
+    [
+      106.08,
+      118.17
+    ],
+    [
+      118.17,
+      130.17
+    ]
+  ],
+  "srcWindows": [
+    [
+      5.0,
+      17.0
+    ],
+    [
+      20.0,
+      32.0
+    ],
+    [
+      42.0,
+      54.0
+    ],
+    [
+      80.0,
+      118.0
+    ],
+    [
+      155.0,
+      187.0
+    ],
+    [
+      200.0,
+      212.0
+    ],
+    [
+      228.0,
+      240.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "Early-1970s 台影新聞 colour newsreel (undated), Mandarin narration: Zhulin Primary School, Luodong, Yilan — children in khaki and orange caps filing in past the school gate; morning exercises on the yard; teachers building their own apparatus in a workshop; then the long hold, the pupils' weather station, girls at the Stevenson screen, a teacher with an instrument, a rain gauge read and noted on clipboards; the second hold, the children's observatory, a small boy at the eyepiece of the telescope, the dome, the 科學問答箱 question box; fossil hunting on a scree slope in yellow helmets; a classroom identifying specimens. Fetched from vod.tfai.org.tw/Video/6826 via the page's own 影片下載 link; no crop; the red title card (0:00–0:04) avoided.",
+  "takedown": false
+}

@@ -1,0 +1,61 @@
+{
+  "id": "cn-census-ibm-4331-1988",
+  "title": "第三次人口普查電子計算機的應用 (The Computer in the Third National Census)",
+  "year": 1988,
+  "src": "https://www.bilibili.com/video/BV1hm4y1v7Yn/",
+  "license": "unknown (uploader-asserted; VHS T0022, 上海市普陀区教育学院 teaching tape)",
+  "tier": "B",
+  "tone": "music",
+  "weight": 3,
+  "gain": -0.2,
+  "durS": 40.0,
+  "bytes": 470393,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      10.0
+    ],
+    [
+      10.0,
+      20.0
+    ],
+    [
+      20.0,
+      30.0
+    ],
+    [
+      30.0,
+      40.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      3.0,
+      13.0
+    ],
+    [
+      21.0,
+      31.0
+    ],
+    [
+      35.0,
+      45.0
+    ],
+    [
+      62.0,
+      72.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "1988 PRC school teaching tape (VHS), a music bed and no narration: how the 1982 census was counted — a crowded street, enumerators at desks filling the returns by hand, pens over columns of figures, operators in white coats keying at IBM 4331 terminals, disk packs and tape decks. Fetched from bilibili BV1hm4y1v7Yn (档案归档计划组, tape T0022; the page dates the tape June 1988, the footage is of the 1982 census) with a full browser header set; cut from a copy cropped to 4:3 (uploader logo and burnt-in timecode removed; the tape's own 12 s audio dropout at 0:48–1:00 is avoided).",
+  "takedown": false
+}

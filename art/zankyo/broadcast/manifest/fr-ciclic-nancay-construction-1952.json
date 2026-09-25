@@ -1,0 +1,23 @@
+{
+  "id": "fr-ciclic-nancay-construction-1952",
+  "title": "Construction de la station de Radioastronomie de Nançay / Building the Nançay radio astronomy station",
+  "year": 1952,
+  "src": "https://memoire.ciclic.fr/11735-construction-de-la-station-de-radioastronomie-de-nancay",
+  "license": "Deposit of Jean-Louis Steinberg at Ciclic Mémoire; rights held by the depositor, no open licence",
+  "tier": "B",
+  "tone": "noise",
+  "weight": 4,
+  "gain": 0.0,
+  "durS": 88.0,
+  "bytes": 484830,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 76.0], [76.0, 88.0]],
+  "srcWindows": [[3.0, 15.0], [280.0, 292.0], [322.0, 334.0], [525.0, 537.0], [709.0, 737.0], [768.0, 780.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "France (Sologne / Paris / Orléans), 1952, 16 mm black and white, SILENT rushes shot by Jean-Louis Steinberg, founder of French radio astronomy. Windows: men in overcoats reading a map on the bonnet of a car on a birch-lined road, scouting the land; a car through the centre of Nançay from the Vierzon road; a crawler bulldozer clearing the pine wood for the station; the first masonry, a cement mixer, a woman in a headscarf on the site; LONG — the physics laboratory (Observatoire de Paris / ENS): a researcher pins up a sheet, an oscilloscope holds a pulse-shaped trace, then the sun blazing through bare branches; driving into Orléans past the Place du Martroi and Joan of Arc's statue. Fetched from Ciclic Mémoire's HLS (embed 20377); pre-cropped to take off the pillarbox bars.",
+  "takedown": false,
+  "silent": true
+}

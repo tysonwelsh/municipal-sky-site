@@ -1,0 +1,61 @@
+{
+  "id": "es-nodo-robots-dodecafonica-1965",
+  "title": "Robots y música dodecafónica: los berlineses se divierten / Robots and twelve-tone music: Berliners amuse themselves",
+  "year": 1965,
+  "src": "https://www.rtve.es/play/videos/no-do/not-1176/1476038/",
+  "license": "unknown — NO-DO, Spanish state newsreel; no licence statement on rtve.es",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.3,
+  "durS": 74.08,
+  "bytes": 754546,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.08
+    ],
+    [
+      12.08,
+      24.08
+    ],
+    [
+      24.08,
+      36.08
+    ],
+    [
+      36.08,
+      74.08
+    ]
+  ],
+  "srcWindows": [
+    [
+      242.0,
+      254.0
+    ],
+    [
+      254.0,
+      266.0
+    ],
+    [
+      268.0,
+      280.0
+    ],
+    [
+      284.0,
+      322.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "NO-DO NOT N 1176 B, 19/07/1965, item 4 of 8 (240-324 s of the 9:35 reel): a Berlin street happening — a crowd presses round a foil-headed robot on wheels driven from a suitcase control box (w1-w2), a cellist on the pavement and hands on the paving stones (w3), then indoors a woman bows a cello while another is bowed across a bare-backed man, with electronics and a lamp-headed machine among them and listeners' faces between (long w4) — to all appearances Nam June Paik's Robot K-456 and Charlotte Moorman, though NO-DO names no one. Spanish narration over the performance sound. Spain/Spanish, shot in West Berlin. Fetched with yt-dlp (rtve.es:alacarta, hls-845); cut from a pre-crop (crop=406:320:130:72) that removes the rtve.es and Filmoteca Española bugs.",
+  "takedown": false
+}

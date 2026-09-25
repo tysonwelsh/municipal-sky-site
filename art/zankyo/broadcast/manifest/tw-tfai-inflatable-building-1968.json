@@ -1,0 +1,53 @@
+{
+  "id": "tw-tfai-inflatable-building-1968",
+  "title": "充氣大廈 (The Inflatable Building)",
+  "year": 1968,
+  "src": "https://vod.tfai.org.tw/Video/3404",
+  "license": "政府資料開放授權條款-第1版 (Open Government Data License v1.0) — 出品者：台灣電影文化公司。充氣大廈。典藏者：國家電影及視聽文化中心。",
+  "tier": "A",
+  "tone": "noise",
+  "weight": 4,
+  "gain": 0.0,
+  "durS": 46.0,
+  "bytes": 277162,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      46.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      2.0,
+      14.0
+    ],
+    [
+      14.0,
+      26.0
+    ],
+    [
+      26.0,
+      48.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "SILENT PRINT (mute 台影新聞 newsreel; the file's track is blank hiss). Taipei, 13 Mar 1968, the empty lot beside the Municipal Stadium: the trailers of the US Atomic Energy Commission's ATOMS AT WORK exhibit lined up; Minister 閻振興 and Ambassador McConaughy at a switch-box pressing the button; a white skin lifting off the ground and swelling; then the long hold, the arched entrance, the five-storey dome standing on nothing but air, the two officials photographing it, and the whole pavilion seen from high above the stadium. Fetched from vod.tfai.org.tw/Video/3404 via the page's own 影片下載 link; no crop; the film's own title card (0:00–0:02) avoided.",
+  "takedown": false,
+  "silent": true
+}

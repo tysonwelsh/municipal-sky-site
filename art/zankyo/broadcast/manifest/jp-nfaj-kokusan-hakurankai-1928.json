@@ -1,0 +1,23 @@
+{
+  "id": "jp-nfaj-kokusan-hakurankai-1928",
+  "title": "大禮記念 国産振興東京博覽会 / Tokyo Exposition for the Promotion of Domestic Industry",
+  "year": 1928,
+  "src": "https://filmisadocument.jp/films/view/159",
+  "license": "国立映画アーカイブ (NFAJ) portal 「フィルムは記録する」; site policy follows NFAJ's, footage reuse only by application (映像利用申請サイト / fiad@nfaj.go.jp). Copyrighted as found, fair-use posture",
+  "tier": "B",
+  "tone": "noise",
+  "weight": 4,
+  "gain": 0.0,
+  "durS": 90.0,
+  "bytes": 794549,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 42.0], [42.0, 54.0], [54.0, 66.0], [66.0, 78.0], [78.0, 90.0]],
+  "srcWindows": [[47.0, 59.0], [480.0, 510.0], [560.0, 572.0], [608.0, 620.0], [638.0, 650.0], [736.0, 748.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Japan 1928, silent record film (producer unknown), 16 fps, no sound track — a SILENT reel. The enthronement-commemoration industrial exposition in Ueno Park, March–May 1928. Windows: the exposition tower in an iris, opening onto the gate from above with crowds and trams; the long window is the funfair — crowds in coats and kimono, a swing ride of boats going up and down, a man turning to the camera; workmen on ladders painting a winged relief over a pavilion door and the 新天地 amusement hall; a pavilion mobbed at its doors and the long elevated promenade; the 樺太 (Karafuto) pavilion with its giant figure; a biplane's engine and struts inside the 國防館 defence hall. Fetched from the NFAJ portal's own HLS (h10.cs.nii.ac.jp/stream/nfc/st21191aeda3b5761ee3cb357679503bc8, 480×360); pre-cropped to drop the NFAJ corner bug.",
+  "takedown": false,
+  "silent": true
+}

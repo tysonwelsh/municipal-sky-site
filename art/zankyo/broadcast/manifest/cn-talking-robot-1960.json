@@ -1,0 +1,79 @@
+{
+  "id": "cn-talking-robot-1960",
+  "title": "機器人 (Robots)",
+  "year": 1960,
+  "src": "https://www.bilibili.com/video/BV12dJezrEEZ/",
+  "license": "unknown (uploader-asserted; PRC state science-education film)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.2,
+  "durS": 88.0,
+  "bytes": 701630,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      28.0
+    ],
+    [
+      28.0,
+      40.0
+    ],
+    [
+      40.0,
+      52.0
+    ],
+    [
+      52.0,
+      64.0
+    ],
+    [
+      64.0,
+      76.0
+    ],
+    [
+      76.0,
+      88.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      44.0,
+      72.0
+    ],
+    [
+      13.0,
+      25.0
+    ],
+    [
+      76.0,
+      88.0
+    ],
+    [
+      94.0,
+      106.0
+    ],
+    [
+      128.0,
+      140.0
+    ],
+    [
+      156.0,
+      168.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "1960 PRC black-and-white science-education film, Mandarin narration: a talking robot built by Shanghai Young Pioneers — the box-headed robot on the children's palace steps with the children looking up at it, the robot drawn in chalk on the floor, boys at the bench building its talking head, the motors and chain drives of its body, the 接收部 receiving section, and a boy speaking into the microphone that gives it its voice. Fetched from bilibili BV12dJezrEEZ (记忆走廊) with a full browser header set; cut from a copy cropped to 4:3 off the top (uploader corner bug removed).",
+  "takedown": false
+}

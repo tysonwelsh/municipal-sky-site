@@ -1,0 +1,71 @@
+{
+  "id": "tw-tfai-tsinghua-reactor-1961",
+  "title": "清華大學原子反應器落成 (Tsinghua University's Atomic Reactor Opens)",
+  "year": 1961,
+  "src": "https://vod.tfai.org.tw/Video/962",
+  "license": "政府資料開放授權條款-第1版 (Open Government Data License v1.0) — 出品者：台灣電影文化公司。清華大學原子反應器落成。典藏者：國家電影及視聽文化中心。",
+  "tier": "A",
+  "tone": "noise",
+  "weight": 4,
+  "gain": 0.0,
+  "durS": 82.0,
+  "bytes": 488016,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      36.0
+    ],
+    [
+      36.0,
+      48.0
+    ],
+    [
+      48.0,
+      82.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      4.0,
+      16.0
+    ],
+    [
+      20.0,
+      32.0
+    ],
+    [
+      48.0,
+      60.0
+    ],
+    [
+      72.0,
+      84.0
+    ],
+    [
+      92.0,
+      126.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "SILENT PRINT (mute 台影新聞 newsreel; the file's track is blank hiss). Hsinchu, 13 Apr 1961, the Tsinghua open-pool reactor — men in white coveralls crossing the bare reactor hall under a hanging crane hook; the crane lowering a frame into the pool; hands working the control-rod drives at the bridge; the core seen down through the water, lamps and fuel glowing; then the long hold in the control room, two operators at the desk of meters and screens, the lit core map on the wall, a clock, a hand on the start lever and a finger pointing across the core map. Fetched from vod.tfai.org.tw/Video/962 via the page's own 影片下載 link; no crop.",
+  "takedown": false,
+  "silent": true
+}

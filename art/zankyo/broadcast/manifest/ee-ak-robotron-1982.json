@@ -1,0 +1,22 @@
+{
+  "id": "ee-ak-robotron-1982",
+  "title": "AK filmikroonika: EKP KK liikmed SDV Robotroni näitusel / Party Leaders at the GDR Robotron Exhibition",
+  "year": 1982,
+  "src": "https://arhiiv.err.ee/video/vaata/ak-filmikroonika-1958-1991-ekp-kk-liikmed-sdv-robotroni-naitusel",
+  "license": "no licence notice; ETV/ERR archive, all rights reserved implied",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.2,
+  "durS": 90.0,
+  "bytes": 940388,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 42.0], [42.0, 54.0], [54.0, 66.0], [66.0, 78.0], [78.0, 90.0]],
+  "srcWindows": [[4.0, 16.0], [40.0, 70.0], [70.0, 82.0], [83.0, 95.0], [112.0, 124.0], [142.0, 154.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Estonian SSR, October 1982, an AK newsreel item in Estonian, colour 16 mm with narration and sync: East German Robotron computing and office machines at the ESSR Economic Achievements Exhibition, shown to deputy premiers and Central Committee department heads by the GDR trade mission's Horst Dierenfeld. W1 grey-haired officials in suits bunched at the stand, a guide in a striped tie leading them on; W2 (long) the banner 'Fraternal greetings on the 60th anniversary of the USSR' in Estonian and Russian, a photo wall with the Soviet emblem, a Robotron terminal and its screen, a model floor of computer cabinets and desks, rows of measuring instruments on the stand; W3 more instruments, cases of probes, the Robotron photo wall; W4 the robotron logo in close-up, then the item's second story — a spinning ambulance beacon, black limousines, the Central Committee bureau under Karl Vaino walking in; W5 the MEDTEHNIKA '82 medical-technology exhibition at the Song Festival Grounds hall, a rescue boat outside, the bilingual sign; W6 the Bulgarian stand, a young man demonstrating a console to the party men. Fetched by yt-dlp ERRArhiiv HLS; cut from local-dev/broadcast-src/_crop/ (pillarbox and ERR corner bug cropped off, square-pixel 4:3)",
+  "takedown": false
+}

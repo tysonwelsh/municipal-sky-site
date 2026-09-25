@@ -1,0 +1,61 @@
+{
+  "id": "kr-daehan-admin-computer-1970",
+  "title": "행정부에 전자계산기 등장 / An electronic computer appears in the administration (대한뉴스 제765호)",
+  "year": 1970,
+  "src": "https://www.ehistory.go.kr/view/movie?mediasrcgbn=KV&mediagbn=DH&mediaid=658&mediadtl=5854",
+  "license": "대한뉴스 (KTV 한국정책방송원) — no 공공누리 badge on the item page; use only by prior arrangement via KTV 나누리",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.4,
+  "durS": 62.6,
+  "bytes": 534059,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      40.0
+    ],
+    [
+      40.0,
+      52.0
+    ],
+    [
+      52.0,
+      62.5
+    ]
+  ],
+  "srcWindows": [
+    [
+      4.0,
+      16.0
+    ],
+    [
+      18.0,
+      46.0
+    ],
+    [
+      46.0,
+      58.0
+    ],
+    [
+      58.0,
+      68.5
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "Seoul, February 1970, Korean narration (대한뉴스 765호): the government's new large computer — operators at consoles and a line printer, a woman at the tape units, then the Economic Planning Board's budget director Kim Ju-nam interviewed in his own voice at his desk, the spinning tape reels and the machine's spec card between; then officials in a lecture hall learning to use it, a man at the blackboard, printouts passed along the rows. fetched from e영상역사관 (ehistory.go.kr) via its WeNMediaPlayer file-info proxy → hdvod.ktv.go.kr 360P HLS; KTV's 16:9 transfer centre-cropped to 4:3.",
+  "takedown": false
+}

@@ -1,0 +1,79 @@
+{
+  "id": "jp-nhk-denshirikkoku-dentaku-1991",
+  "title": "NHKスペシャル 電子立国 日本の自叙伝 第4回「電卓戦争」 / The Electronic State: Japan's Autobiography, ep. 4 — The Calculator War",
+  "year": 1991,
+  "src": "https://www.nicovideo.jp/watch/sm17985874",
+  "license": "ユーザー投稿 on niconico of an NHK broadcast (1991); all rights reserved (NHK). Copyrighted, fair-use posture",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.2,
+  "durS": 88.08,
+  "bytes": 948954,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      36.0
+    ],
+    [
+      36.0,
+      48.0
+    ],
+    [
+      48.0,
+      60.0
+    ],
+    [
+      60.0,
+      88.08
+    ]
+  ],
+  "srcWindows": [
+    [
+      18.0,
+      30.0
+    ],
+    [
+      294.0,
+      306.0
+    ],
+    [
+      420.0,
+      432.0
+    ],
+    [
+      662.0,
+      674.0
+    ],
+    [
+      778.0,
+      790.0
+    ],
+    [
+      1196.0,
+      1224.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "Japan 1991, NHK broadcast, ja narration: the 1960s desk-calculator war between Sharp and Casio. Windows taken only from the archival and demonstration passages, never the studio conversation or the interviews: a floor paved with hundreds of calculators; 1960s B&W archive of an office and a hand-cranked mechanical calculator; a hand keying Casio's 14-A relay calculator and its relay bank; a lamp-board adder lighting 0 + 1; 1960s B&W office floors, then Prime Minister Ikeda announcing the Income-Doubling Plan (所得倍増計画) in newsreel; the long window is B&W archive of Sharp's engineers drawing and soldering the first transistor calculator's circuit boards. Fetched with yt-dlp from the niconico watch pages (360p HLS; sm17985874 + sm17986742 joined into one file); every window is in part 1.",
+  "takedown": false
+}

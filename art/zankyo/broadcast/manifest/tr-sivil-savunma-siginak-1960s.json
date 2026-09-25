@@ -1,0 +1,22 @@
+{
+  "id": "tr-sivil-savunma-siginak-1960s",
+  "title": "Sivil Savunma: Ev ve Apartmanlarda Sığınak Yeri Hazırlama / Civil Defence: Preparing a Shelter in Houses and Flats",
+  "year": 1968,
+  "src": "https://filmmirasim.ktb.gov.tr/tr/film/sivil-savunma-ev-ve-apartmanlarda-snak-yeri-hazrlama",
+  "license": "T.C. Kültür ve Turizm Bakanlığı film archive (SGM-3353); all rights reserved on the site footer, use governed by the ministry's Süreli Kullanım Yönergesi (request form)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.5,
+  "durS": 90.0,
+  "bytes": 854799,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 78.0], [78.0, 90.0]],
+  "srcWindows": [[38.0, 50.0], [62.0, 74.0], [100.0, 112.0], [128.0, 140.0], [168.0, 198.0], [232.0, 244.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Türkiye, Turkish, undated (the Sivil Savunma İdaresi series of SGM-3354, the alarm film, dated 1968; year is an estimate): Turkey's own duck-and-cover, room by room, in a calm instructional voice — a man clearing a cellar corner and fixing a shelf; a man marking up the wall of the shelter room; a mother at the sink and a little girl at the water can and the chemical toilet; the family making up the bunk beds and hanging a storm lantern; the long window runs from a girl on the bed through an animated cut-away of a block of flats to the blast flash whitening the street; the rooftop siren horn, then a man digging and roofing a trench shelter in open ground. Credits: İçişleri Bakanlığı Sivil Savunma (Genel) Başkanlığı sunar. Fetched from the page's 480p HLS manifest (filmmirasim.ktb.gov.tr:8443/WEBTV/...playlist.m3u8); pre-cropped to remove the baked pillarbox (crop=648:476:116:2). The ministry's rosette watermark is left in.",
+  "takedown": false
+}

@@ -1,0 +1,88 @@
+{
+  "id": "nl-polygoon-computertomograaf-1977",
+  "title": "Belangrijke ontwikkelingen in röntgenonderzoek dankzij computer tomograaf (Polygoon, Weeknummer 77-12) / CT scanner",
+  "year": 1977,
+  "src": "https://openbeelden.nl/media/667635/Belangrijke_ontwikkelingen_in_r%C3%B6ntgenonderzoek_dankzij_computer_tomograaf",
+  "license": "CC-BY-SA 3.0 NL (Open Beelden / Beeld en Geluid; Polygoon-Profilti producent)",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.3,
+  "durS": 105.0,
+  "bytes": 869556,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      45.0
+    ],
+    [
+      45.0,
+      57.0
+    ],
+    [
+      57.0,
+      69.0
+    ],
+    [
+      69.0,
+      81.0
+    ],
+    [
+      81.0,
+      93.0
+    ],
+    [
+      93.0,
+      105.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      2.0,
+      14.0
+    ],
+    [
+      25.0,
+      58.0
+    ],
+    [
+      58.0,
+      70.0
+    ],
+    [
+      70.0,
+      82.0
+    ],
+    [
+      82.0,
+      94.0
+    ],
+    [
+      95.0,
+      107.0
+    ],
+    [
+      108.0,
+      120.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "Netherlands, Dutch: Polygoon-Profilti newsreel, Sint Lucas hospital Amsterdam 1977, commentary Philip Bloemendal — a head slid into the CT scanner, the control desk; the long window is the instructional film explaining the machine (white tube and detector blocks rotating around a head, the gantry mechanics, a detector array lighting up); then the computer, a doctor pointing at a brain slice, slices captioned ST.LUCAS AMSTERDAM, a Polaroid print, a chest scan and lung slices dated JAN 27 1977. Source MP4 (360×288) from openbeelden.nl, uncropped.",
+  "takedown": false
+}

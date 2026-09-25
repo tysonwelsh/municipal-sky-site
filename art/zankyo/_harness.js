@@ -465,6 +465,10 @@ const visitVocab = (() => {
 })();
 
 // ---- the receiver (S1): signals per cycle, never two, never near a KIRU, the crew silent for the hold, the fallback when the reel is not ready ----
+const SILENT_REELS = (() => {
+  try { return new Set(JSON.parse(require("fs").readFileSync(require("path").join(__dirname, "broadcast/manifest.json"), "utf8")).filter((e) => e.silent).map((e) => e.id)); }
+  catch (e) { return new Set(); }
+})();
 const signalVocab = (() => {
   const cycleStarts = events.filter((e) => e.label.indexOf("❁ cycle plan") >= 0).map((e) => e.t);
   const cycleOf = (t) => { let ci = -1; for (let q = 0; q < cycleStarts.length; q++) if (cycleStarts[q] <= t) ci = q; return ci; };
@@ -483,6 +487,10 @@ const signalVocab = (() => {
     const t0 = s.sig.t0, rx = s.sig.rx || null;
     const tEnd = t0 + (rx ? rx.spanS : 0.4 + s.sig.holdS + s.sig.lossD);
     for (const k of kiruTs) if (k > t0 - 20 && k < tEnd + 15) nearKiru++;
+    // 默 A SILENT PRINT (reels round 5): a reel with no sound track releases the
+    // air by design — the crew plays on under the picture — so its span is not
+    // a hold and notes inside it are not intrusions.
+    if (SILENT_REELS.has(s.sig.id)) continue;
     // §3.5 THE POROUS HOLD: one melodic voice may be left OUT of the hold and
     // play over the signal. Its notes are PERMITTED, not intrusions — but the
     // exemption is for that one named voice and no other, which is what makes

@@ -1,0 +1,22 @@
+{
+  "id": "tr-eregli-demir-celik-1960s",
+  "title": "Bir Görüş Bir Gerçek: Ereğli Demir Çelik Tesisleri / One View, One Reality: the Ereğli Iron and Steel Works",
+  "year": 1968,
+  "src": "https://filmmirasim.ktb.gov.tr/tr/film/bir-gr-bir-gerek-ereli-demir-elik-tesisleri",
+  "license": "T.C. Kültür ve Turizm Bakanlığı film archive (SGM-4165); all rights reserved on the site footer, use governed by the ministry's Süreli Kullanım Yönergesi (request form)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.6,
+  "durS": 90.0,
+  "bytes": 842870,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 78.0], [78.0, 90.0]],
+  "srcWindows": [[76.0, 88.0], [410.0, 422.0], [655.0, 667.0], [1335.0, 1347.0], [1378.0, 1408.0], [1432.0, 1444.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Türkiye (Karadeniz Ereğli), Turkish, undated (the works opened in 1965; late 1960s by content; year is an estimate): the history and working of the Ereğli iron and steel works, under a Turkish narrator — an animated map closing from Europe onto the Black Sea coast and Ereğli; a skyscraper, a shelf of engineering volumes and draughtsmen at their boards; a crane lowering concrete tetrapods into the harbour breakwater; smoke boiling from the coke ovens; the long window goes into the blast furnace and melt shop — a white-hot tap, the furnace mouth glowing, a converter pouring; the rolling mill, slabs running on the rollers. The transfer is pale and washed out. Fetched from the page's 480p HLS manifest (filmmirasim.ktb.gov.tr:8443/WEBTV/...playlist.m3u8); pre-cropped to remove the baked pillarbox (crop=642:476:112:2). The ministry's rosette watermark is left in.",
+  "takedown": false
+}

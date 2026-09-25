@@ -1,0 +1,22 @@
+{
+  "id": "ca-ibc-qaujisaut-weather-1992",
+  "title": "Qaujisaut Show 3 — Weather Show (IBC, Iqaluit)",
+  "year": 1992,
+  "src": "https://www.isuma.tv/ibc/qaujisaut-show-3-weather-show-1992",
+  "license": "no reuse licence; IBC item page carries only the access note: made available on the Internet for your enjoyment through funding provided by the Government of Canada and the Government of Nunavut",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": 0.0,
+  "durS": 90.0,
+  "bytes": 835390,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 54.0], [54.0, 66.0], [66.0, 78.0], [78.0, 90.0]],
+  "srcWindows": [[18.0, 30.0], [116.0, 128.0], [150.0, 180.0], [286.0, 298.0], [336.0, 348.0], [392.0, 404.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Canada (Nunavut), Inuktut, no subtitles. Inuit Broadcasting Corporation's youth magazine Qaujisaut, Iqaluit 1992, host Jane Flaherty: the host at her desk beside a computer terminal and a stack of broadcast decks, a monitor on the console cutting to the elder Akeeshuk Joamie with a child on the snow, then Joamie in his fur-ruffed parka at length on reading the weather before going out on the land (a forecast without instruments), a ground blizzard driving across the town and its power lines, the sea-ice horizon, and open water under a grey sky. Fetched from the page's SD source https://s3.amazonaws.com/isuma.video.mp4_sd/qaujisaut_show_3_weather_show_1992.mp4.mp4 (yt-dlp cannot read isuma.tv item pages).",
+  "takedown": false
+}

@@ -1,0 +1,79 @@
+{
+  "id": "cn-rural-wired-broadcast-1976",
+  "title": "農村有線廣播 (Rural Wired Broadcasting)",
+  "year": 1976,
+  "src": "https://www.bilibili.com/video/BV1NJHUznEmJ/",
+  "license": "unknown (uploader-asserted; PRC state science-education film)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": 0.1,
+  "durS": 86.0,
+  "bytes": 903308,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      26.0
+    ],
+    [
+      26.0,
+      38.0
+    ],
+    [
+      38.0,
+      50.0
+    ],
+    [
+      50.0,
+      62.0
+    ],
+    [
+      62.0,
+      74.0
+    ],
+    [
+      74.0,
+      86.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      898.0,
+      924.0
+    ],
+    [
+      66.0,
+      78.0
+    ],
+    [
+      138.0,
+      150.0
+    ],
+    [
+      176.0,
+      188.0
+    ],
+    [
+      540.0,
+      552.0
+    ],
+    [
+      790.0,
+      802.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "1976 PRC science-education film, Mandarin narration, a colour print faded to magenta: how the county broadcast reaches the village by wire — the line over the fields, a commune meeting, the county station's amplifier racks, the 縣廣播站 diagram of wires fanning out to the communes, a lineman raising poles, a woman fixing the loudspeaker box to a wall, and a crowd gathered under it listening. Fetched from bilibili BV1NJHUznEmJ (记忆走廊) with a full browser header set; cut from a copy cropped to 4:3 off the top (uploader corner bug removed).",
+  "takedown": false
+}

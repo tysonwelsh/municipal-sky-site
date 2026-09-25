@@ -1,0 +1,22 @@
+{
+  "id": "tr-britanya-sehircilik-1947",
+  "title": "Britanya Şehircilik Sergisi / The British Town-Planning Exhibition",
+  "year": 1947,
+  "src": "https://filmmirasim.ktb.gov.tr/tr/film/britanya-sehircilik-sergisi",
+  "license": "T.C. Kültür ve Turizm Bakanlığı film archive (SGM-1194); all rights reserved on the site footer, use governed by the ministry's Süreli Kullanım Yönergesi (request form)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.4,
+  "durS": 90.27,
+  "bytes": 844060,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.08], [24.08, 54.17], [54.17, 66.17], [66.17, 78.17], [78.17, 90.25]],
+  "srcWindows": [[40.0, 52.0], [100.0, 112.0], [165.0, 195.0], [205.0, 217.0], [250.0, 262.0], [400.0, 412.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Türkiye (Ankara), Turkish, 1947: a Basın-Yayın newsreel of the British town-planning exhibition that İsmet İnönü visited, under a Turkish narrator — İnönü and officials arriving among the stands; display screens of British plans and photographs; the long window pans the architect's models, a stadium and a colonnaded civic building under the lights, with visitors bending over them; a regional road-plan model and a crowd round a plan board; a model of the new town's circular neighbourhoods, trees and motorway junctions; a tower-block model under glass. Fetched from the page's 480p HLS manifest (filmmirasim.ktb.gov.tr:8443/WEBTV/...playlist.m3u8); pre-cropped to remove the baked pillarbox (crop=650:476:102:2). The ministry's large rosette watermark is burned in over the whole picture and is left in.",
+  "takedown": false
+}

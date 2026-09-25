@@ -1,0 +1,22 @@
+{
+  "id": "ee-ak-teletorni-signaal-1979",
+  "title": "AK filmikroonika: Teletorni esimene signaal / The TV Tower's First Signal",
+  "year": 1979,
+  "src": "https://arhiiv.err.ee/video/vaata/ak-filmikroonika-1958-1991-teletorni-esimene-signaal",
+  "license": "no licence notice; ETV/ERR archive, all rights reserved implied",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.5,
+  "durS": 88.0,
+  "bytes": 746804,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 52.0], [52.0, 64.0], [64.0, 76.0], [76.0, 88.0]],
+  "srcWindows": [[13.0, 25.0], [32.0, 44.0], [78.0, 106.0], [141.0, 153.0], [168.0, 180.0], [214.0, 226.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Estonian SSR, December 1979, an AK newsreel item in Estonian with sync interviews (reporter Boris Mikk): the new Tallinn TV tower's transmitter hall before its first signal. W1 walls of transmitter racks and meters, a technician at the panel, the reporter stepping in with his microphone; W2 shop foreman Ants Erendi on a field telephone, answering into the microphone; W3 (long) engineer Lembit Pihl in front of the racks, meters and knobs in close-up, a crowd in the hall and a film cameraman at work, hands on the controls; W4 two men at a rack whose monitor carries the Soviet UEIT-style electronic test chart with an EESTI ident box, then Vootele Tõsine, head of the transmitter-station construction directorate, interviewed; W5 a woman patching cables at a jack panel, a bearded engineer inside a rack; W6 Tõsine on what remains to be done, cutting to the tower and its mast from below. The opening tower exteriors (0-12 s) are mute and left out. Fetched by yt-dlp ERRArhiiv HLS; cut from local-dev/broadcast-src/_crop/ (pillarbox and ERR corner bug cropped off, square-pixel 4:3)",
+  "takedown": false
+}

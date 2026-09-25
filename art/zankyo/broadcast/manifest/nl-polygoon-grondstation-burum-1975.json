@@ -1,0 +1,61 @@
+{
+  "id": "nl-polygoon-grondstation-burum-1975",
+  "title": "Satelliet grondstation voor internationaal telefoonverkeer tussen Amerika en Europa (Polygoon, Weeknummer 75-23) / Satellite ground station for transatlantic telephone traffic",
+  "year": 1975,
+  "src": "https://openbeelden.nl/media/673081/Satelliet_grondstation_voor_internationaal_telefoonverkeer_tussen_Amerika_en_Europa",
+  "license": "CC-BY-SA 3.0 NL (Open Beelden / Beeld en Geluid; Polygoon-Profilti producent)",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.3,
+  "durS": 69.0,
+  "bytes": 599123,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      57.0
+    ],
+    [
+      57.0,
+      69.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      2.0,
+      14.0
+    ],
+    [
+      16.0,
+      28.0
+    ],
+    [
+      33.0,
+      66.0
+    ],
+    [
+      67.0,
+      79.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "Netherlands, Dutch: Polygoon-Profilti newsreel, Burum (Friesland) and Amsterdam 1975, commentary Philip Bloemendal — a tractor with a hay tedder in a Frisian meadow and the 28.5-metre dish talking to Intelsat IV, an animated map of satellite traffic; the long window moves to the international switching centre in Amsterdam (operators at their boards, with fragments of their voices), back to the dish, and into the Burum control room of meters and chart recorders. Source MP4 (360×288) from openbeelden.nl, uncropped.",
+  "takedown": false
+}

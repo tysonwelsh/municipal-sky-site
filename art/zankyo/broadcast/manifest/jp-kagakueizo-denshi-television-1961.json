@@ -1,0 +1,79 @@
+{
+  "id": "jp-kagakueizo-denshi-television-1961",
+  "title": "電子の技術－テレビジョン－ / Electronic Technology — Television",
+  "year": 1961,
+  "src": "https://www.kagakueizo.org/movie/industrial/303/",
+  "license": "no terms stated; NPO 科学映像館 free-distribution rescue print. 製作 東京シネマ / 企画 松下電器産業. Copyrighted, fair-use posture",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": 0.0,
+  "durS": 86.08,
+  "bytes": 913794,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      38.08
+    ],
+    [
+      38.08,
+      50.08
+    ],
+    [
+      50.08,
+      62.08
+    ],
+    [
+      62.08,
+      74.08
+    ],
+    [
+      74.08,
+      86.08
+    ]
+  ],
+  "srcWindows": [
+    [
+      116.0,
+      128.0
+    ],
+    [
+      250.0,
+      276.0
+    ],
+    [
+      474.0,
+      486.0
+    ],
+    [
+      1040.0,
+      1052.0
+    ],
+    [
+      1058.0,
+      1070.0
+    ],
+    [
+      1430.0,
+      1442.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "Japan 1961, ja narration, colour, Tokyo Cinema for Matsushita (music 矢代秋雄): the principle of television, its manufacture and the road to colour. Windows: Yagi antennas against the sky, then a sync-pulse waveform; the long window is the RCA Indian-head test card on a CRT, first clean and then drowning in snow as the signal weakens, then valves; an oscilloscope pulse and coil winding at the Matsushita works; full-frame colour bars and a colour-bar monitor at an engineer's console; a colour camera and the three red, green and blue guns; a picture tube glowing on the finishing line. Fetched from the site's own player host (150.videoplayer.jp/users-file/admin/html5/movie/0687/denshi-no-gijutsu.mp4); no caption strip on this print, no modern card.",
+  "takedown": false
+}

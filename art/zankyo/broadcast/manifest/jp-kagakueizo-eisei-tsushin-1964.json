@@ -1,0 +1,79 @@
+{
+  "id": "jp-kagakueizo-eisei-tsushin-1964",
+  "title": "衛星通信 / Satellite Communications",
+  "year": 1964,
+  "src": "https://www.kagakueizo.org/movie/industrial/80/",
+  "license": "no terms stated; NPO 科学映像館 free-distribution rescue print. 製作 東京シネマ / 企画 国際電信電話 (KDD). Copyrighted, fair-use posture",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": 0.0,
+  "durS": 90.17,
+  "bytes": 683718,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      36.0
+    ],
+    [
+      36.0,
+      48.0
+    ],
+    [
+      48.0,
+      60.08
+    ],
+    [
+      60.08,
+      90.17
+    ]
+  ],
+  "srcWindows": [
+    [
+      430.0,
+      442.0
+    ],
+    [
+      578.0,
+      590.0
+    ],
+    [
+      812.0,
+      824.0
+    ],
+    [
+      1216.0,
+      1228.0
+    ],
+    [
+      1398.0,
+      1410.0
+    ],
+    [
+      1426.0,
+      1456.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "Japan 1964, ja narration (城達也), Eastmancolor, Tokyo Cinema for KDD: satellite communication and KDD's space-communications experiment station in Ibaraki. Windows: a rocket climbing into a blue sky; a communications-satellite model turning; an operator at the station's control desk; a technician's face in a headset, then the digital tracking counters; a TV monitor receiving GODDARD SPACE FLIGHT CENTER / NASA and a desert picture across the Pacific; the long window is the transpacific TV relay itself on a monitor — the Tokyo–Goldstone map, a globe ident, a JAPAN at THIS MOMENT slate, then 朝の日本から and a Japanese castle arriving by satellite. Fetched from the site's own player host (150.videoplayer.jp/users-file/admin/html5/movie/0687/eiseitsuushin.mp4); no caption strip on this print, no modern card.",
+  "takedown": false
+}

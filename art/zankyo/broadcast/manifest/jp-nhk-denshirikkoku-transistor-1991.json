@@ -1,0 +1,79 @@
+{
+  "id": "jp-nhk-denshirikkoku-transistor-1991",
+  "title": "NHKスペシャル 電子立国 日本の自叙伝 第2回「トランジスタの誕生」 / The Electronic State: Japan's Autobiography, ep. 2 — The Birth of the Transistor",
+  "year": 1991,
+  "src": "https://www.nicovideo.jp/watch/sm17965313",
+  "license": "ユーザー投稿 on niconico of an NHK broadcast (1991); all rights reserved (NHK). Copyrighted, fair-use posture",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": 0.1,
+  "durS": 88.08,
+  "bytes": 815347,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      36.0
+    ],
+    [
+      36.0,
+      48.08
+    ],
+    [
+      48.08,
+      60.08
+    ],
+    [
+      60.08,
+      88.08
+    ]
+  ],
+  "srcWindows": [
+    [
+      48.0,
+      60.0
+    ],
+    [
+      516.0,
+      528.0
+    ],
+    [
+      1322.0,
+      1334.0
+    ],
+    [
+      1498.0,
+      1510.0
+    ],
+    [
+      2482.0,
+      2494.0
+    ],
+    [
+      2536.0,
+      2564.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "Japan 1991, NHK broadcast, ja narration: how the transistor came from Bell Labs to Japan. Windows taken only from the archival and demonstration passages, never the studio conversation or the interviews: a replica of the 1947 point-contact transistor, the AT&T medallion and old telephone-line archive; the point-contact device rebuilt on the bench, two wires on a germanium crystal; a high-frequency oscillator coil glowing and the zone-refining (ゾーン・リファイニング) of germanium; a B&W photograph of a grown crystal, then a crystal puller loaded by gloved hands; B&W newsreel of the 1956 Nobel physics ceremony and Shockley; the long window is a studio demonstration board — N and P layers, a hand turning the bias and a bulb lighting through the junction transistor. Fetched with yt-dlp from the niconico watch pages (360p HLS; sm17965313 + sm17967188 joined into one file); every window is in part 1.",
+  "takedown": false
+}

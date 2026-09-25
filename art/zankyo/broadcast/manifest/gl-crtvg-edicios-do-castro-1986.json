@@ -1,0 +1,22 @@
+{
+  "id": "gl-crtvg-edicios-do-castro-1986",
+  "title": "Talleres da editorial Ediciós do Castro en 1986 / The workshops of the Ediciós do Castro press, 1986",
+  "year": 1986,
+  "src": "https://pasouoquepasou.crtvg.gal/content/talleres-da-editorial-edicios-do-castro-en-1986",
+  "license": "CRTVG (TVG) archive, Pasou o que pasou; no open licence shown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.1,
+  "durS": 86.0,
+  "bytes": 968335,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 38.0], [38.0, 50.0], [50.0, 62.0], [62.0, 74.0], [74.0, 86.0]],
+  "srcWindows": [[4.0, 16.0], [16.0, 42.0], [46.0, 58.0], [62.0, 74.0], [88.0, 100.0], [120.0, 132.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Spain (Galicia — the Ediciós do Castro works at Sada, A Coruña), 1 November 1986, TVG news item in Galician on a traditional printworks whose trades were 'disappearing with the new technologies'. Windows: a compositor's hands picking type from the case; LONG — a linotypist at the keyboard, the matrices dropping, the hot-metal slug cast, then the make-up room; the process camera's lit copyboard; a press's rollers turning and sheets riding the delivery; hands feeding sheets into a platen press; the finished yellow-covered books stacked. Fetched from the .m3u8 in the pasouoquepasou.crtvg.gal page (Flumotion HLS, 360p); pre-cropped to 4:3 to take off the TVG corner bug.",
+  "takedown": false
+}

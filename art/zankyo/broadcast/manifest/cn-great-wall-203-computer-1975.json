@@ -1,0 +1,70 @@
+{
+  "id": "cn-great-wall-203-computer-1975",
+  "title": "長城 203 電子計算機 (Great Wall 203 Electronic Computer)",
+  "year": 1975,
+  "src": "https://www.bilibili.com/video/BV1Y7G9z9EJq/",
+  "license": "unknown (uploader-asserted; 16 mm print F0090, studio unknown, possibly 新影)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.1,
+  "durS": 76.0,
+  "bytes": 768133,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      28.0
+    ],
+    [
+      28.0,
+      40.0
+    ],
+    [
+      40.0,
+      52.0
+    ],
+    [
+      52.0,
+      64.0
+    ],
+    [
+      64.0,
+      76.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      37.0,
+      65.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      80.0,
+      92.0
+    ],
+    [
+      94.0,
+      106.0
+    ],
+    [
+      116.0,
+      128.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "1975 PRC documentary short on 16 mm, Mandarin narration: the Great Wall 203, a Chinese desktop computer — hands keying its colour-coded keypad, a woman soldering hybrid modules, printed boards held to the light, a lab bench of oscilloscopes with the waveform filling the screen, wire-wrap backplanes, the display reading out and a cassette going in. Fetched from bilibili BV1Y7G9z9EJq (档案归档计划组, print F0090) with a full browser header set; cut from a copy cropped to 4:3 off the bottom (burnt-in timecode and transfer credit removed; a faint centre transcription watermark remains).",
+  "takedown": false
+}

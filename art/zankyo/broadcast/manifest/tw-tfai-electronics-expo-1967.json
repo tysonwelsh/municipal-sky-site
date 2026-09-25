@@ -1,0 +1,62 @@
+{
+  "id": "tw-tfai-electronics-expo-1967",
+  "title": "電子科學展覽 (The Second Electronic Science Exhibition)",
+  "year": 1967,
+  "src": "https://vod.tfai.org.tw/Video/3358",
+  "license": "政府資料開放授權條款-第1版 (Open Government Data License v1.0) — 出品者：台灣電影文化公司。電子科學展覽。典藏者：國家電影及視聽文化中心。",
+  "tier": "A",
+  "tone": "noise",
+  "weight": 4,
+  "gain": 0.0,
+  "durS": 71.0,
+  "bytes": 476705,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      58.0
+    ],
+    [
+      58.0,
+      71.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      9.0,
+      21.0
+    ],
+    [
+      22.0,
+      34.0
+    ],
+    [
+      38.0,
+      72.0
+    ],
+    [
+      72.0,
+      85.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "SILENT PRINT (mute 台影新聞 newsreel; the file's track is blank hiss). Taipei, Dec 1967, the National Science Education Hall on Nanhai Road: the exhibition banner, the crowd at the IBM stand, a woman typing at a printing terminal; an NEC picture-phone with a woman's face on its screen and a woman on the handset watching it; then the long hold, schoolboys crowding the handsets, an AMPEX video recorder and TV monitor, a 3M motion-picture camera, reel-to-reel decks, a man at a bench of scopes before a wall of monitors, the Chiao Tung University stand, girls making trunk calls at the STC booth; last a synchronous-satellite model, a tape deck, and a panel of concentric-ring moiré diagrams of two sound sources. Fetched from vod.tfai.org.tw/Video/3358 via the page's own 影片下載 link; no crop; the film's own title card avoided.",
+  "takedown": false,
+  "silent": true
+}

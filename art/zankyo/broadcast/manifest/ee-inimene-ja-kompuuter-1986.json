@@ -1,0 +1,22 @@
+{
+  "id": "ee-inimene-ja-kompuuter-1986",
+  "title": "Inimene ja kompuuter / Человек и компьютер / Man and Computer",
+  "year": 1986,
+  "src": "https://arhiiv.err.ee/video/vaata/inimene-ja-kompuuter",
+  "license": "no licence notice; ETV/ERR archive, all rights reserved implied",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": 0.4,
+  "durS": 90.0,
+  "bytes": 824563,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 54.0], [54.0, 66.0], [66.0, 78.0], [78.0, 90.0]],
+  "srcWindows": [[106.0, 118.0], [136.0, 148.0], [160.0, 190.0], [204.0, 216.0], [524.0, 536.0], [843.0, 855.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Estonian SSR 1986, Eesti Telefilm documentary (Mart Siimann's directing debut) with Russian-language narration made for the all-Union audience, colour 16 mm: is there any ground for computer fear? W1 bookkeepers' office, a typist at her machine among paper and card files; W2 a young man at a display, a hand flicking the beads of an abacus, two young men staring into a screen; W3 (long) an ETV television gallery, the vision desk and its wall of monitors carrying sport between Coca-Cola and TDK boards, a woman at the vision mixer; W4 the studio discussion, docents Leo Võhandu and Jüri Vilipõld in armchairs behind name cards, talking about computer fear; W5 a child's hand drawing with a joystick on a blue graphics screen; W6 the end credits read aloud by the Institute of Cybernetics' speech synthesiser, onto the Eesti Telefilm (c) NSVL Teleraadiokomitee 1986 card. Fetched by yt-dlp ERRArhiiv HLS; cut from local-dev/broadcast-src/_crop/ (pillarbox and ERR corner bug cropped off, square-pixel 4:3)",
+  "takedown": false
+}

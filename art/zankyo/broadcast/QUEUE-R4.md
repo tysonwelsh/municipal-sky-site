@@ -236,3 +236,18 @@ the Talometer, Pivalliajut, KHET, Inukshuk and Polish tone calls stand as
 cut (the cutters' measurements supported each). The NCAA catalogue title
 "Hindustan 2021" was a mis-transcription of "Front End Loader" — there is no
 "India imagining 2021" on that tape.
+
+## Round 5 — the bench (2026-09-24/25; 2.1.0-rc.104)
+
+The owner took most of the rest of this queue: 102 new reels (36 Tier A, 66 Tier B,
+26 silent prints), cut on worktree branch `zankyo-reels-5` by twelve cutters; the
+pool is now 354. Rulings for this round: **silent reels allowed** (C2 answered —
+the NFAJ prints and every mute print the round-4 cutters had skipped are in, and
+the receiver lets the crew play on under them); **game shows allowed**; **Turkish
+state films cut Tier B**; NO-DO stays Tier A (C3, settled in round 4). Every reel,
+every substitution and skip, and the questions still open are in `REELS-R5.md`.
+Still open: **Norway** (nb.no serves only to a request that imitates its web
+player; the fetch was blocked — the owner decides) and **Aparat** (the owner
+downloads by hand from `queue-r4/aparat-manual-downloads.csv`).
+Test cards found in every source are logged for a later, separate use: see
+`testcards/`.

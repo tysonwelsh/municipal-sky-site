@@ -1,0 +1,52 @@
+{
+  "id": "kr-daehan-expo-opens-1970",
+  "title": "만국 박람회 개막 / The World Exposition opens (대한뉴스 제768호)",
+  "year": 1970,
+  "src": "https://www.ehistory.go.kr/view/movie?mediasrcgbn=KV&mediagbn=DH&mediaid=661&mediadtl=5954",
+  "license": "대한뉴스 (KTV 한국정책방송원) — no 공공누리 badge on the item page; use only by prior arrangement via KTV 나누리",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.5,
+  "durS": 46.0,
+  "bytes": 514404,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      36.0
+    ],
+    [
+      36.0,
+      46.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      4.0,
+      16.0
+    ],
+    [
+      16.0,
+      40.0
+    ],
+    [
+      41.0,
+      51.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "Osaka, March 1970, Korean narration (대한뉴스 768호): Expo '70 opens — the Korea pavilion's forest of black pipes, crowds of Korean residents of Japan outside, the opening-ceremony orchestra and dignitaries, ambassador Lee Hu-rak cutting the tape, celadon and a bronze censer inside, a model of the new Korea; then fan dancers in crowns and farmers' music (nongak) with streaming hat-ribbons. fetched from e영상역사관 (ehistory.go.kr) via its WeNMediaPlayer file-info proxy → hdvod.ktv.go.kr 360P HLS; KTV's 16:9 transfer centre-cropped to 4:3.",
+  "takedown": false
+}

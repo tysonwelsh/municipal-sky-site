@@ -1,0 +1,97 @@
+{
+  "id": "nl-polygoon-inlichtingen-008-1979",
+  "title": "De informatie-centrale 008 is aangesloten op de computer (Polygoon, Weeknummer 79-10) / Directory enquiries 008 is now connected to the computer",
+  "year": 1979,
+  "src": "https://openbeelden.nl/media/668149/De_informatie_centrale_008_is_aangesloten_op_de_computer",
+  "license": "CC-BY-SA 3.0 NL (Open Beelden / Beeld en Geluid; Polygoon-Profilti producent)",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.1,
+  "durS": 116.0,
+  "bytes": 949866,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      36.0
+    ],
+    [
+      36.0,
+      48.0
+    ],
+    [
+      48.0,
+      60.0
+    ],
+    [
+      60.0,
+      72.0
+    ],
+    [
+      72.0,
+      104.0
+    ],
+    [
+      104.0,
+      116.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      1.0,
+      13.0
+    ],
+    [
+      33.0,
+      45.0
+    ],
+    [
+      46.0,
+      58.0
+    ],
+    [
+      59.0,
+      71.0
+    ],
+    [
+      72.0,
+      84.0
+    ],
+    [
+      85.0,
+      97.0
+    ],
+    [
+      99.0,
+      131.0
+    ],
+    [
+      131.5,
+      143.5
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "Netherlands, Dutch: Polygoon-Profilti newsreel, PTT Leidschendam/Rotterdam 1979, commentary Philip Bloemendal — directory enquiries goes onto the central computer: a push-button dial, relay racks, headsets named KITTY and ELS, a moustached operator searching ('GEEN VERMELDINGEN MET DEZE GEGEVENS'), 'Coöperatieve zuivelfabrieken' on screen, the shelves of foreign telephone books, then the long window: a woman operator taking a call start to finish to 'GEHEIM NUMMER'; the last window types POLYGOON into the terminal and the newsreel's own closing card comes up on the monitor. Source MP4 (360×288) from openbeelden.nl, uncropped.",
+  "takedown": false
+}

@@ -1,0 +1,23 @@
+{
+  "id": "fr-cinememoire-expo58-bruxelles-1958",
+  "title": "Vérone — Milan — Exposition universelle de Bruxelles en 1958 — Lyon / Verona, Milan, the 1958 Brussels World's Fair, Lyon",
+  "year": 1958,
+  "src": "https://cinememoire.net/notice?num_seq=3038",
+  "license": "Cinémémoire.net archive, anonymous amateur film; all rights reserved",
+  "tier": "B",
+  "tone": "noise",
+  "weight": 4,
+  "gain": 0.0,
+  "durS": 88.0,
+  "bytes": 613722,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 40.0], [40.0, 52.0], [52.0, 64.0], [64.0, 76.0], [76.0, 88.0]],
+  "srcWindows": [[48.0, 60.0], [84.0, 112.0], [120.0, 132.0], [135.0, 147.0], [153.0, 165.0], [166.0, 178.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Belgium (Brussels, Heysel), August 1958, a French family's SILENT colour amateur film of Expo 58. Windows: their own hand-lettered card 'Exposition de Bruxelles — Août 1958', then the Atomium's spheres; LONG — the France pavilion's sign, the fountains, the pavilions' flags and glass, a dark hall, the Atomium's struts; inside the Atomium, reversed lettering on the window glass and the tubes and spheres outside; the cable car gliding over the pavilions above the crowd; a man dressed as a bear and the giant snoring clown; the Cinérama theatre sign and the Atomium again. Fetched as the direct MP4 in cinememoire.net's newvideositemap.xml; pre-cropped to take off the burned-in www.cinememoire.net watermark. The Verona, Milan and Lyon (May 1958) reels of the same film are not used.",
+  "takedown": false,
+  "silent": true
+}

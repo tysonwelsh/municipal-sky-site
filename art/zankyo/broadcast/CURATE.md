@@ -170,6 +170,18 @@ Hard-won in rounds 2 and 3, by the agents who hit them.
   rendered waveform at boosted gain will tell you whether the source is dead
   or merely recorded 20 dB low; the second kind is worth keeping, because
   `loudnorm` recovers it.
+- **Silent prints are allowed** (the owner's ruling, 2026-09-24). A source
+  with no audio stream is marked `"silent": true` automatically; a mute print
+  whose file still carries hiss or a blank track takes `--silent`. Choose the
+  windows by picture with `--windows` (the loudness gate rejects everything on
+  a silent source) and cut them `--tone noise`. The receiver does NOT hold the
+  crew for a silent reel — the station plays on under the picture, and the
+  log line says 默.
+- **Log every test card** you see in a source — PM5544, FuBK, Indian-head,
+  bars, monoskop, clock cards, stand-by slates, static station cards — with
+  SOURCE timecodes, whether or not it lands in a window. The owner will use
+  test cards differently later; the register is `TESTCARDS.md` /
+  `testcards.json`.
 - **Four agents share this tool.** Do not edit `make-reel.sh` while another
   agent is mid-cut with it. The body is wrapped in one braced block so bash
   parses the whole file before running it — that is why — but the courtesy

@@ -1,0 +1,23 @@
+{
+  "id": "tr-senfoni-orkestrasi-1959",
+  "title": "Cumhurbaşkanlığı Senfoni Orkestrası / The Presidential Symphony Orchestra",
+  "year": 1959,
+  "src": "https://filmmirasim.ktb.gov.tr/tr/film/cumhurbakanl-senfoni-orkestras",
+  "license": "T.C. Kültür ve Turizm Bakanlığı film archive (SGM-3482); all rights reserved on the site footer, use governed by the ministry's Süreli Kullanım Yönergesi (request form)",
+  "tier": "B",
+  "tone": "noise",
+  "weight": 3,
+  "gain": 0.0,
+  "durS": 60.0,
+  "bytes": 378645,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 10.0], [10.0, 20.0], [20.0, 30.0], [30.0, 40.0], [40.0, 50.0], [50.0, 60.0]],
+  "srcWindows": [[22.0, 32.0], [86.0, 96.0], [160.0, 170.0], [224.0, 234.0], [250.0, 260.0], [452.0, 462.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Türkiye, 1959, SILENT PRINT (the archive lists it Sessiz; the file's audio track is blank at -91 dB, so it is cut --silent): the Presidential Symphony Orchestra on its 1959 'Ordu ve Bölge Konserleri' tour under the conductor Hikmet Şimşek, playing in the open air to garrison towns — an orchestra seen from above with a crowd of soldiers and townspeople behind; two cellists; a soloist standing before the audience; violins over the music stands; Şimşek on the podium; the rows of seats and the front table of officers; Şimşek conducting close to camera at dusk. An orchestra with its sound already lost; cut as music (windows of 10 s, --distort 0.5) although nothing is heard. Fetched from the page's 480p HLS manifest (filmmirasim.ktb.gov.tr:8443/WEBTV/...playlist.m3u8); pre-cropped to remove the baked pillarbox (crop=640:476:110:2). The ministry's rosette watermark is left in.",
+  "takedown": false,
+  "silent": true
+}

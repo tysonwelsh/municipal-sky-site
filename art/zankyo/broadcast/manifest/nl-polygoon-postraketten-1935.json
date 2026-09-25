@@ -1,0 +1,52 @@
+{
+  "id": "nl-polygoon-postraketten-1935",
+  "title": "Proeven met postraketten (Polygoon Hollands Nieuws, week 5 1935) / Trials with mail rockets",
+  "year": 1935,
+  "src": "https://openbeelden.nl/media/1247915/Proeven_met_postraketten",
+  "license": "Public Domain Mark (Open Beelden / Beeld en Geluid; Polygoon Hollands Nieuws producent)",
+  "tier": "A",
+  "tone": "noise",
+  "weight": 3,
+  "gain": 0.9,
+  "durS": 56.0,
+  "bytes": 600084,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      56.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      2.0,
+      14.0
+    ],
+    [
+      14.0,
+      26.0
+    ],
+    [
+      27.0,
+      59.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "Netherlands, no commentary (location sound): Polygoon Hollands Nieuws, Katwijk aan Zee, January 1935 — Dutch rocket builders carry a crate onto the beach and assemble a self-designed mail rocket and its launch frame; the long window runs from the launcher and the red flag through the fins and wiring to the firing, a burst of smoke and the rocket gone into a white sky. Source MP4 (360×288) from openbeelden.nl, uncropped.",
+  "takedown": false
+}

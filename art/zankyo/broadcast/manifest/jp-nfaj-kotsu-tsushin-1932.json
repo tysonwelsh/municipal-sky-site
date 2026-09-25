@@ -1,0 +1,23 @@
+{
+  "id": "jp-nfaj-kotsu-tsushin-1932",
+  "title": "交通.通信機関の今昔 / Transport and Communications, Then and Now",
+  "year": 1932,
+  "src": "https://filmisadocument.jp/films/view/248",
+  "license": "国立映画アーカイブ (NFAJ) portal 「フィルムは記録する」; site policy follows NFAJ's, footage reuse only by application (映像利用申請サイト / fiad@nfaj.go.jp). Copyrighted as found, fair-use posture",
+  "tier": "B",
+  "tone": "noise",
+  "weight": 4,
+  "gain": 0.0,
+  "durS": 90.0,
+  "bytes": 716178,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 90.0]],
+  "srcWindows": [[737.0, 749.0], [998.0, 1010.0], [1450.0, 1462.0], [1587.0, 1599.0], [1628.0, 1640.0], [1670.0, 1700.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Japan 1932, Taisho Cinema (大尚シネマ商會) silent education film, 18 fps, no sound track — a SILENT reel. Windows: the animated electrical 'Franklin' diagram, a whole grid of lamps lit in lines and wheels; Tokyo trams in the street and a crowd boarding one; a man walking to an office door, then a wireless operator in headphones at his key; a man at a wall telephone, receiver to his ear; the horn loudspeaker of the radio (その他ラヂオ) turning to face us and dissolving into a family listening with the paper; and the long window is 電送寫眞 — phototelegraphy: a portrait put on the drum 'at noon in Tokyo' by a pocket watch, the drum turning, an intertitle (僅か四分間の後には大阪で受信する事が出来る — four minutes later it is received in Osaka), the receiving machine, a wall clock at 12:04, hands lifting the exposed sheet. Fetched from the NFAJ portal's own HLS (h10.cs.nii.ac.jp/stream/nfc/stcd0b914553331fdcf139b379fb7d2ff7, 480×360); pre-cropped to drop the NFAJ corner bug.",
+  "takedown": false,
+  "silent": true
+}

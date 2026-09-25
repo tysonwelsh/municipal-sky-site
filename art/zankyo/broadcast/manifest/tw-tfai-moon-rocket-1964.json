@@ -1,0 +1,80 @@
+{
+  "id": "tw-tfai-moon-rocket-1964",
+  "title": "月球火箭 (Moon Rocket — Ranger 7)",
+  "year": 1964,
+  "src": "https://vod.tfai.org.tw/Video/1398",
+  "license": "政府資料開放授權條款-第1版 (Open Government Data License v1.0) — 出品者：台灣電影文化公司。月球火箭。典藏者：國家電影及視聽文化中心。",
+  "tier": "A",
+  "tone": "noise",
+  "weight": 4,
+  "gain": 0.0,
+  "durS": 93.0,
+  "bytes": 359833,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      60.0
+    ],
+    [
+      60.0,
+      72.0
+    ],
+    [
+      72.0,
+      84.0
+    ],
+    [
+      84.0,
+      93.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      2.0,
+      14.0
+    ],
+    [
+      14.0,
+      26.0
+    ],
+    [
+      26.0,
+      62.0
+    ],
+    [
+      62.0,
+      74.0
+    ],
+    [
+      74.0,
+      86.0
+    ],
+    [
+      86.0,
+      95.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "SILENT PRINT (mute 台影新聞 newsreel; the file's track is blank hiss). Cape Kennedy, 28–31 Jul 1964, Ranger 7: the Atlas-Agena lit on its pad at night; the blockhouse of consoles and men at their screens; ignition and lift-off into cloud; then the long hold, the climb, President Johnson in the White House hunched before a television set watching the relay, and the rocket's trail curving away downrange; Ranger's own close-in pictures of the Moon getting nearer, the Moon whole in the dark; last a television showing the station's digital clock readout, and the JPL press room. US footage distributed in Taiwan; fetched from vod.tfai.org.tw/Video/1398 via the page's own 影片下載 link; no crop; the film's own title card (0:00–0:02) avoided.",
+  "takedown": false,
+  "silent": true
+}

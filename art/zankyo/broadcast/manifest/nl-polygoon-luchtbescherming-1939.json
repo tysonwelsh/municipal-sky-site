@@ -1,0 +1,43 @@
+{
+  "id": "nl-polygoon-luchtbescherming-1939",
+  "title": "Propaganda voor de luchtbescherming (Polygoon Hollands Nieuws, week 39 1939) / Propaganda for air-raid protection",
+  "year": 1939,
+  "src": "https://openbeelden.nl/media/1192757/PROPAGANDA_VOOR_DE_LUCHTBESCHERMING",
+  "license": "Public Domain Mark (Open Beelden / Beeld en Geluid; Polygoon Hollands Nieuws producent)",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.5,
+  "durS": 41.0,
+  "bytes": 377909,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      24.0
+    ],
+    [
+      24.0,
+      41.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      1.5,
+      25.5
+    ],
+    [
+      33.5,
+      50.5
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "Netherlands, Dutch: Polygoon Hollands Nieuws, Haarlem, September 1939, sixteen days into the war — a car with a Philips loudspeaker and a record player drives under a LUCHTBESCHERMING banner telling the town what to do in an air raid; the long window has the car, the turning record and windows being pushed up to listen; the second has people stopped in the street, a policeman on a motorcycle, and listening faces. The track's own dropout (0:25–0:33) is not used. Source MP4 (360×288) from openbeelden.nl, uncropped.",
+  "takedown": false
+}

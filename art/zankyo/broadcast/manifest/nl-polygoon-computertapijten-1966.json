@@ -1,0 +1,79 @@
+{
+  "id": "nl-polygoon-computertapijten-1966",
+  "title": "Computer-tapijten (Polygoon, Weeknummer 66-18) / Computer carpets",
+  "year": 1966,
+  "src": "https://openbeelden.nl/media/23025/Computer_tapijten",
+  "license": "CC-BY-SA 3.0 NL (Open Beelden / Beeld en Geluid; Polygoon-Profilti producent)",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.3,
+  "durS": 96.08,
+  "bytes": 1213534,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.25
+    ],
+    [
+      12.25,
+      24.42
+    ],
+    [
+      24.42,
+      59.5
+    ],
+    [
+      59.5,
+      71.66
+    ],
+    [
+      71.66,
+      83.91
+    ],
+    [
+      83.91,
+      96.08
+    ]
+  ],
+  "srcWindows": [
+    [
+      3.0,
+      15.0
+    ],
+    [
+      16.0,
+      28.0
+    ],
+    [
+      33.0,
+      68.0
+    ],
+    [
+      70.0,
+      82.0
+    ],
+    [
+      84.0,
+      96.0
+    ],
+    [
+      97.0,
+      109.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "Netherlands, Dutch: Polygoon-Profilti newsreel, Hilversum 1966, colour — a carpet loom once fed by punched cards, now by a computer: punched-card chains and the loom running, then the long window through the control room (a man walks in to the cabinets, a patterned drum read by photo-electric cells, a patch panel of plugs, the bobbin creel, the operator at his console), the TYPE A PATTERN buttons and the hand controller, and the finished carpet taken off and inspected. Commentary throughout, the loom under it. Source MPG rendition from openbeelden.nl, uncropped.",
+  "takedown": false
+}

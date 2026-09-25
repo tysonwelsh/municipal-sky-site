@@ -1,0 +1,61 @@
+{
+  "id": "tw-tfai-onair-lucky-draw-1960",
+  "title": "空中敬軍大摸彩 (The Great On-Air Lucky Draw for the Forces)",
+  "year": 1960,
+  "src": "https://vod.tfai.org.tw/Video/1830",
+  "license": "政府資料開放授權條款-第1版 (Open Government Data License v1.0) — 出品者：中國電影製片廠。空中敬軍大摸彩。典藏者：國家電影及視聽文化中心。",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.5,
+  "durS": 59.0,
+  "bytes": 690793,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      36.0
+    ],
+    [
+      36.0,
+      59.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      0.5,
+      12.5
+    ],
+    [
+      14.0,
+      26.0
+    ],
+    [
+      27.0,
+      39.0
+    ],
+    [
+      40.0,
+      63.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "1960 newsreel by the China Motion Picture Studio, Mandarin narration: Taipei International House, 3 Sep 1960, BCC's 九三俱樂部 radio programme staging an on-air lucky draw for 40,000 servicemen on Armed Forces Day — announcer 白茜如 at the microphone and BCC's general manager 魏景蒙 speaking, the packed hall; the listener-donated prizes heaped up (thermos flasks, books, radios, cartons of goods); then the long hold, General 蔣堅忍 drawing the first special prize from a box beside the announcer, a row of young women at the draw boxes turning out the numbers, a singer at the microphone between draws, and the hall seen from the back. Fetched from vod.tfai.org.tw/Video/1830 via the page's own 影片下載 link; no crop.",
+  "takedown": false
+}

@@ -1,0 +1,23 @@
+{
+  "id": "ee-tee-maailmaruumi-1961",
+  "title": "Siit algab tee maailmaruumi / Here Begins the Road to Outer Space",
+  "year": 1961,
+  "src": "https://arhiiv.err.ee/video/vaata/siit-algab-tee-maailmaruumi",
+  "license": "no licence notice; ETV/ERR archive, all rights reserved implied",
+  "tier": "B",
+  "tone": "noise",
+  "weight": 3,
+  "gain": 0.0,
+  "durS": 90.0,
+  "bytes": 469997,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 42.0], [42.0, 54.0], [54.0, 66.0], [66.0, 78.0], [78.0, 90.0]],
+  "srcWindows": [[2.0, 14.0], [20.0, 50.0], [64.0, 76.0], [160.0, 172.0], [226.0, 238.0], [250.0, 262.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Estonian SSR 1961, ETV short (camera Kaljo Jõekalda) and a SILENT print — the ERR transfer carries no sound at all: the Tartu astronomers on the road to the new Tõravere observatory. W1 Tartu University's main building, the Emajõgi and its arch bridge; W2 (long) inside the old Tartu observatory, the refractor tubes and counterweights, an astronomer in a skullcap climbing to the eyepiece of the great telescope and looking through it; W3 a telescope with a camera on its tail, then a young man in a white coat talking on the telephone; W4 empty sky and open fields at Tõravere, a circular stone foundation pit on the bare plain; W5 two men building apparatus at a workbench, faces bent over it; W6 a machined part in close-up, a man in heavy glasses, an engineer in a work coat wiring valve apparatus — the scientists making their own instruments. Fetched by yt-dlp ERRArhiiv HLS; cut from local-dev/broadcast-src/_crop/ (pillarbox and ERR corner bug cropped off, square-pixel 4:3)",
+  "takedown": false,
+  "silent": true
+}

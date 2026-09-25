@@ -1,0 +1,71 @@
+{
+  "id": "tw-tfai-mushroom-cloud-drill-1958",
+  "title": "蕈雲原子防護演習 (\"Mushroom Cloud\" Atomic Defence Exercise)",
+  "year": 1958,
+  "src": "https://vod.tfai.org.tw/Video/761",
+  "license": "政府資料開放授權條款-第1版 (Open Government Data License v1.0) — 出品者：台灣電影文化公司。蕈雲原子防護演習。典藏者：國家電影及視聽文化中心。",
+  "tier": "A",
+  "tone": "noise",
+  "weight": 4,
+  "gain": 0.0,
+  "durS": 87.0,
+  "bytes": 539093,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      48.0
+    ],
+    [
+      48.0,
+      60.0
+    ],
+    [
+      60.0,
+      72.0
+    ],
+    [
+      72.0,
+      87.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      6.0,
+      18.0
+    ],
+    [
+      18.0,
+      54.0
+    ],
+    [
+      54.0,
+      66.0
+    ],
+    [
+      66.0,
+      78.0
+    ],
+    [
+      86.0,
+      101.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "SILENT PRINT (mute 中華民國新聞 no. 257 newsreel; the file's track is blank hiss). Taipei Municipal Stadium, 30 Nov 1958, the Garrison Command's atomic-defence drill: the stadium gate with its flags, the notice board, rows of officers in the stand; then the long hold, the mushroom cloud rising (stock footage of a real test), officers watching, a target map of Taipei in concentric blast rings, jeeps and fire trucks racing in, men in rubber suits jumping from a jeep; medics bandaging the fallen on stretchers; an ambulance loaded, smoke over the roofs, a hose crew in hoods; last detection teams in gas masks and radiation suits sweeping the wet ground with meters and brooms. Fetched from vod.tfai.org.tw/Video/761 via the page's own 影片下載 link; no crop; the film's own title cards (0:00–0:05) avoided.",
+  "takedown": false,
+  "silent": true
+}

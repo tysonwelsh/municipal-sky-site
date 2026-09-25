@@ -1,0 +1,22 @@
+{
+  "id": "ee-topelttosin-1999",
+  "title": "Topelttosin: 2 / Double Dozen, no. 2",
+  "year": 1999,
+  "src": "https://arhiiv.err.ee/video/vaata/topelttosin-2",
+  "license": "no licence notice; ETV/ERR archive, all rights reserved implied",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": 0.1,
+  "durS": 90.0,
+  "bytes": 930511,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 66.0], [66.0, 78.0], [78.0, 90.0]],
+  "srcWindows": [[15.0, 27.0], [55.0, 67.0], [136.0, 148.0], [212.0, 242.0], [1311.0, 1323.0], [1330.0, 1342.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Estonia, June 1999, ETV's Eesti Loto studio lotto 'Topelttosin' (Double Dozen), episode 2, in Estonian, presented by Urmas Reitelmann (director Sulev Talberg). A real draw, with a ball machine, and the game show built around it. W1 the tail of the Topelt Tosin title sting, the studio floor laid out as a lotto card of numbered squares, the host to camera with his name super; W2 the host and his assistant announcing the prize fund, LOOSIMISE VÕIDUFOND 254 733 KR.; W3 the transparent drawing drum tumbling its balls, then the two contestants at their consoles; W4 (long) the first round, the assistant drawing numbered balls from the chute on screen, 5, 8 and 17 landing in their boxes; W5 next draw's jackpot, 230 000 KR.; W6 the winning ticket in close-up and its number ending ....94. Stands in for 'Meie bingo' (see the report): the arhiiv.err.ee 'meie-bingo-N' items are a 2026 series. Fetched by yt-dlp ERRArhiiv HLS; cut from local-dev/broadcast-src/_crop/ (ERR corner bug and the top black band cropped off, non-square SAR 3:4 normalised to square-pixel 4:3)",
+  "takedown": false
+}

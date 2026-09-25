@@ -1,0 +1,79 @@
+{
+  "id": "jp-kagakueizo-onkyo-sozo-1961",
+  "title": "音響創造 ―電子の技術― / The Creation of Sound — electronic technology",
+  "year": 1961,
+  "src": "https://www.kagakueizo.org/movie/industrial/7628/",
+  "license": "no terms stated; NPO 科学映像館 free-distribution rescue print. 著作権管理者 株式会社東京シネマ新社; 企画 松下電器産業; 35mm print held by 東京国立近代美術館フィルムセンター. Copyrighted, fair-use posture",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.1,
+  "durS": 88.08,
+  "bytes": 790524,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.08
+    ],
+    [
+      24.08,
+      52.08
+    ],
+    [
+      52.08,
+      64.08
+    ],
+    [
+      64.08,
+      76.08
+    ],
+    [
+      76.08,
+      88.08
+    ]
+  ],
+  "srcWindows": [
+    [
+      516.0,
+      528.0
+    ],
+    [
+      600.0,
+      612.0
+    ],
+    [
+      776.0,
+      804.0
+    ],
+    [
+      904.0,
+      916.0
+    ],
+    [
+      1172.0,
+      1184.0
+    ],
+    [
+      1284.0,
+      1296.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "Japan 1961, ja narration (城達也) over 松村禎三's score, Eastmancolor, Tokyo Cinema for Matsushita: the electronics of sound. Windows: a green oscilloscope waveform breathing; hands seating speaker cones on a factory bench; the long window walks from an anechoic chamber (a test speaker on a stand among the wedges) to a paper chart recorder drawing a frequency curve and a meter-faced test set; a dark rack of electronics; a stylus riding a record groove and a stereo cartridge; a SUPER PHONIC STEREO SYSTEM console and its glowing level meter. Fetched from the site's own player host (150.videoplayer.jp/users-file/admin/html5/movie/0687/onkyousouzou.mp4); no caption strip on this print. The file opens with a MODERN NPO 10th-anniversary (2007–2017) restoration card (0–15 s) and ends with a modern text card and the film's separate 5-min trailer from about 28:20 — every window is inside the 1961 film.",
+  "takedown": false
+}

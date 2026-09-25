@@ -1,0 +1,22 @@
+{
+  "id": "gl-crtvg-cabo-vilan-xerador-1989",
+  "title": "Transporte dun xerador para o parque eólico de Cabo Vilán / Hauling a generator to the Cabo Vilán wind farm",
+  "year": 1989,
+  "src": "https://pasouoquepasou.crtvg.gal/content/transporte-dun-xerador-para-o-parque-eolico-de-cabo-vilan",
+  "license": "CRTVG (TVG) archive, Pasou o que pasou; no open licence shown",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.6,
+  "durS": 88.0,
+  "bytes": 939766,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 28.0], [28.0, 40.0], [40.0, 52.0], [52.0, 64.0], [64.0, 76.0], [76.0, 88.0]],
+  "srcWindows": [[1.0, 29.0], [30.0, 42.0], [46.0, 58.0], [76.0, 88.0], [94.0, 106.0], [112.0, 124.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Spain (Galicia — A Coruña's streets, bound for Cabo Vilán, Camariñas), 25 August 1989, TVG news item in Galician: a Unión Fenosa wind-turbine nacelle for the future Cabo Vilán wind farm crosses the city 'before the neighbours' astonishment'. Windows: LONG — the huge cream pod on a yellow Pegaso low-loader creeping through traffic behind a police car, past a Bingo sign; the pod gliding under trees and windows; linemen in a cherry-picker lifting a street lamp out of its way; the crowd around the convoy and a 'Centro de Transformaciones Metálicas' van; workers at the lamp arm with a torch glowing; onlookers packed on a footbridge as it passes under. Fetched from the .m3u8 in the pasouoquepasou.crtvg.gal page (Flumotion HLS, 360p); pre-cropped to take off the TVG corner bug.",
+  "takedown": false
+}

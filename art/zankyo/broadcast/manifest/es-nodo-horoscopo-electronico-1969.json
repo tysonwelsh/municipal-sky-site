@@ -1,0 +1,70 @@
+{
+  "id": "es-nodo-horoscopo-electronico-1969",
+  "title": "Horóscopo electrónico: los computadores al servicio de la astrología / Electronic horoscope: computers in the service of astrology",
+  "year": 1969,
+  "src": "https://www.rtve.es/play/videos/no-do/not-1408/1487066/",
+  "license": "unknown — NO-DO, Spanish state newsreel; no licence statement on rtve.es",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.5,
+  "durS": 84.0,
+  "bytes": 808195,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      36.0
+    ],
+    [
+      36.0,
+      72.0
+    ],
+    [
+      72.0,
+      84.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      382.0,
+      394.0
+    ],
+    [
+      396.0,
+      408.0
+    ],
+    [
+      414.0,
+      426.0
+    ],
+    [
+      434.0,
+      470.0
+    ],
+    [
+      470.0,
+      482.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "NO-DO NOT N 1408 A, 29/12/1969, item 5 of 6 (382-493 s of the 11:05 reel): astrology handed to a computer — Assyrian reliefs (w1), the Sphinx, Egyptian wall paintings and the step pyramid (w2), newspaper horoscope columns and the word HORÓSCOPO, then an office tower's glass grid (w3); disk packs spinning under their lids, a machine room of operators and consoles, tape drives, lamp panels, an IBM keyboard and fanfold printout spilling from the printer (long w4); a radio studio where a woman reads the forecast into the microphone and a man reads his printout and smiles (w5). Spanish narration. Spain/Spanish. Fetched with yt-dlp (rtve.es:alacarta, hls-845); cut from a pre-crop (crop=406:320:130:72) that removes the rtve.es and Filmoteca Española bugs.",
+  "takedown": false
+}

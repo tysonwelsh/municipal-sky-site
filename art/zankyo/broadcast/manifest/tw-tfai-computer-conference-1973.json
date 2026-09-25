@@ -1,0 +1,52 @@
+{
+  "id": "tw-tfai-computer-conference-1973",
+  "title": "第一屆國際計算機科學會議 (First International Conference on Computer Science)",
+  "year": 1973,
+  "src": "https://vod.tfai.org.tw/Video/6657",
+  "license": "政府資料開放授權條款-第1版 (Open Government Data License v1.0) — 出品者：台灣電影文化公司。第一屆國際計算機科學會議。典藏者：國家電影及視聽文化中心。",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.1,
+  "durS": 50.08,
+  "bytes": 519097,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      50.08
+    ]
+  ],
+  "srcWindows": [
+    [
+      3.5,
+      15.5
+    ],
+    [
+      16.0,
+      28.0
+    ],
+    [
+      29.5,
+      55.5
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "1973 台影新聞 newsreel, Mandarin narration: Academia Sinica, Nankang, 14 Aug 1973 — the banner FIRST INT'L SYMPOSIUM ON COMPUTERS & CHINESE I/O SYSTEMS over the stage and President 錢思亮 opening a conference whose theme is a better Chinese-language computer; the packed auditorium; then the long hold, note-takers in the front row, delegates bent over a machine console, a bank of terminals and printing keyboards in close-up, a CRT terminal with its keyboard, the exhibition panels. Fetched from vod.tfai.org.tw/Video/6657 via the page's own 影片下載 link; no crop; the film's own title card (0:00–0:03) avoided.",
+  "takedown": false
+}

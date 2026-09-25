@@ -1,0 +1,22 @@
+{
+  "id": "cz-oldradio-naddopis-1985",
+  "title": "Nad dopisy diváků / Over the viewers' letters — ČST",
+  "year": 1985,
+  "src": "https://www.oldradio.cz/cst/naddopis.mpg",
+  "license": "none stated; off-air recording of Československá televize (ČST) by a private collector, served as a raw .mpg on oldradio.cz (© Martin Hájek covers the site, not the broadcast)",
+  "tier": "B",
+  "tone": "music",
+  "weight": 3,
+  "gain": -0.8,
+  "durS": 10.0,
+  "bytes": 100509,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 10.0]],
+  "srcWindows": [[3.0, 13.0]],
+  "pitchHz": [null],
+  "tuned": false,
+  "notes": "Czechoslovakia, Czech, 1980s (year estimated). The title of ČST's viewers'-letters programme — the signal running the other way: a heap of stamped envelopes, one letter flying out addressed to Československá televize Praha in a looping hand, then the card NAD DOPISY DIVÁKŮ, against a blue ground, after the outline of Czechoslovakia drawn in red, to the programme's signature music. Off-air recording from a private collector's site, https://www.oldradio.cz/cst/naddopis.mpg; no crop — the Č2 bug is the broadcaster's own.",
+  "takedown": false
+}

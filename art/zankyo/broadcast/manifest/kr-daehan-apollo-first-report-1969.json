@@ -1,0 +1,79 @@
+{
+  "id": "kr-daehan-apollo-first-report-1969",
+  "title": "사람이 달에 내리다 — 아폴로 11호 제1신 / Man lands on the Moon — Apollo 11, first report (대한뉴스 제736호)",
+  "year": 1969,
+  "src": "https://www.ehistory.go.kr/view/movie?mediasrcgbn=KV&mediagbn=DH&mediaid=630&mediadtl=4513",
+  "license": "대한뉴스 (KTV 한국정책방송원) — no 공공누리 badge on the item page; use only by prior arrangement via KTV 나누리",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.4,
+  "durS": 88.0,
+  "bytes": 741140,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      52.0
+    ],
+    [
+      52.0,
+      64.0
+    ],
+    [
+      64.0,
+      76.0
+    ],
+    [
+      76.0,
+      88.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      12.0,
+      24.0
+    ],
+    [
+      50.0,
+      62.0
+    ],
+    [
+      173.0,
+      201.0
+    ],
+    [
+      205.0,
+      217.0
+    ],
+    [
+      240.0,
+      252.0
+    ],
+    [
+      284.0,
+      296.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "Apollo 11 as Korea's newsreel told it, July 1969, Korean narration over NASA pictures (대한뉴스 736호): the full moon over water; the Saturn V leaving the pad; the long window runs from the lunar module's descent through the ghostly live television of Armstrong on the ladder to the two astronauts at the LM; rock samples scooped; the ascent stage lifting off; the command module falling home through re-entry. fetched from e영상역사관 (ehistory.go.kr) via its WeNMediaPlayer file-info proxy → hdvod.ktv.go.kr 360P HLS; KTV's 16:9 transfer centre-cropped to 4:3.",
+  "takedown": false
+}

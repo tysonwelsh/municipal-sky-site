@@ -1,0 +1,52 @@
+{
+  "id": "kr-daehan-kist-robot-1980",
+  "title": "한국과학기술연구소, 로보트 개발 / KIST develops a robot (대한뉴스 제1277호)",
+  "year": 1980,
+  "src": "https://www.ehistory.go.kr/view/movie?mediasrcgbn=KV&mediagbn=DH&mediaid=10273&mediadtl=21471",
+  "license": "대한뉴스 (KTV 한국정책방송원) — no 공공누리 badge on the item page; use only by prior arrangement via KTV 나누리",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.4,
+  "durS": 50.5,
+  "bytes": 460441,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      38.0
+    ],
+    [
+      38.0,
+      50.5
+    ]
+  ],
+  "srcWindows": [
+    [
+      1.0,
+      13.0
+    ],
+    [
+      22.0,
+      48.0
+    ],
+    [
+      48.0,
+      60.5
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "Seoul, February 1980, colour, Korean narration (대한뉴스 1277호): the Korea Institute of Science and Technology's industrial robot — a yellow arm with a red gripper lifting steel blanks, loading them into a lathe chuck; the lathe cutting, swarf flying; the control panel with its red digit readouts and X/Z counters; the turret tool; the arm working on alone. fetched from e영상역사관 (ehistory.go.kr) via its WeNMediaPlayer file-info proxy → hdvod.ktv.go.kr 360P HLS; KTV's 16:9 transfer centre-cropped to 4:3.",
+  "takedown": false
+}

@@ -1,0 +1,23 @@
+{
+  "id": "us-much-afvn-quangtri-1970",
+  "title": "미군 방송 AFVN / AFVN Radio-TV, Quang Tri (US Army Signal Corps 111-LC-55583)",
+  "year": 1970,
+  "src": "https://archive.much.go.kr/archive/userrecordimage/recordImageView.do?idnbr=2023006551&jobdirSeq=1952",
+  "license": "PD — US federal work (US Army Signal Corps, NARA 111-LC-55583); site's 저작권처 field names NARA",
+  "tier": "A",
+  "tone": "noise",
+  "weight": 4,
+  "gain": 0.0,
+  "durS": 132.0,
+  "bytes": 648115,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 46.0], [46.0, 84.0], [84.0, 96.0], [96.0, 108.0], [108.0, 120.0], [120.0, 132.0]],
+  "srcWindows": [[18.0, 30.0], [90.0, 124.0], [510.0, 548.0], [650.0, 662.0], [848.0, 860.0], [894.0, 906.0], [1003.0, 1015.0]],
+  "pitchHz": [null, null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Vietnam, 11 April 1970: US Army Signal Corps colour footage of the American Forces Vietnam Network's Detachment 5 at Quảng Trị, near the DMZ; mute camera original (the archive lists 사운드: 없음; its track is only hiss) — a SILENT reel. Windows: the AFVN lettering on the roof and the wall sign MACV AFVN Radio·Television QUANGTRI CHANNEL II 930 KC; the long window is the tape room — a soldier at a reel-to-reel deck, hands threading and running the tape, the big reel turning; the second long window goes from a studio monitor with a face on its screen to the NEWS · AFVN RADIO TV · SPORTS desk and its anchors under the lights; the AFVN VIETNAM RADIO TV shield close; the radio DJ's turntable as he drops a record on it; the console's VU meter and faders under his hand; a soldier in the elephant grass tuning a transistor radio. Fetched from the site's own HLS (vod.much.go.kr, movieinfo.gm.jsp cid=6328, 720×480); pre-cropped to the right of frame to drop the NATIONAL ARCHIVES watermark, square-pixel 4:3. Camera slates (SEAPC 3A …) are avoided.",
+  "takedown": false,
+  "silent": true
+}

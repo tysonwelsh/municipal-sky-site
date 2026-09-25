@@ -1,0 +1,52 @@
+{
+  "id": "tw-tfai-atoms-for-peace-1956",
+  "title": "原子能和平用途展覽 (President Eisenhower's Atoms for Peace Exhibition)",
+  "year": 1956,
+  "src": "https://vod.tfai.org.tw/Video/508",
+  "license": "政府資料開放授權條款-第1版 (Open Government Data License v1.0) — 出品者：台灣電影文化公司。原子能和平用途展覽。典藏者：國家電影及視聽文化中心。",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.1,
+  "durS": 57.08,
+  "bytes": 635037,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      24.0
+    ],
+    [
+      24.0,
+      57.08
+    ]
+  ],
+  "srcWindows": [
+    [
+      2.0,
+      14.0
+    ],
+    [
+      16.0,
+      28.0
+    ],
+    [
+      30.0,
+      63.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "1956 台影新聞 newsreel, Mandarin narration: Taipei, 27 Aug 1956, the Provincial Museum opens the USIS 'Eisenhower Atoms for Peace' exhibition — the seated audience under the portico, US Embassy counsellor Pilcher reading his speech, Tsinghua president 梅貽琦 at the lectern; the banner over the door and the first visitors; then the long hold, guests in white suits and qipao moving past the charts, a reactor-pool model under a photomural, glass-cased apparatus, wall panels of reactor diagrams, a cut-away model atomic power station (原子能發電所模型) and a woman in cat-eye glasses shown round the models. Fetched from vod.tfai.org.tw/Video/508 via the page's own 影片下載 link; no crop; the film's own title card (0:00–0:02) avoided.",
+  "takedown": false
+}

@@ -1,0 +1,43 @@
+{
+  "id": "kr-daehan-lottery-draw-1962",
+  "title": "복권추첨 / Lottery draw (대한뉴스 제356호)",
+  "year": 1962,
+  "src": "https://www.ehistory.go.kr/view/movie?mediasrcgbn=KV&mediagbn=DH&mediaid=239&mediadtl=1799",
+  "license": "대한뉴스 (KTV 한국정책방송원) — no 공공누리 badge on the item page; use only by prior arrangement via KTV 나누리",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": 0.0,
+  "durS": 25.33,
+  "bytes": 261775,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      12.0
+    ],
+    [
+      12.0,
+      25.33
+    ]
+  ],
+  "srcWindows": [
+    [
+      1.5,
+      13.5
+    ],
+    [
+      13.5,
+      26.8
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "Seoul, March 1962, Korean narration (대한뉴스 356호, the whole 25-second item): at the Seoul tax office the film actress Do Kum-bong draws the February theatre-ticket lottery out of a cloth bag while clerks crowd a table of tickets; then the winning-numbers board — 1st prize 200,000 hwan — is written up by hand, number by number. fetched from e영상역사관 (ehistory.go.kr) via its WeNMediaPlayer file-info proxy → hdvod.ktv.go.kr 360P HLS; KTV's 16:9 transfer centre-cropped to 4:3.",
+  "takedown": false
+}

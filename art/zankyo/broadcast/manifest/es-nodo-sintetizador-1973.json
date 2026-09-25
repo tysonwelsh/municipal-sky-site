@@ -1,0 +1,79 @@
+{
+  "id": "es-nodo-sintetizador-1973",
+  "title": "Sintetizador electrónico: máquina con poder de percepción para captar sonidos inaudibles para el oído humano / Electronic synthesizer: a machine that perceives sounds inaudible to the human ear",
+  "year": 1973,
+  "src": "https://www.rtve.es/play/videos/no-do/not-1599/1469523/",
+  "license": "unknown — NO-DO, Spanish state newsreel; no licence statement on rtve.es",
+  "tier": "A",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.2,
+  "durS": 100.1,
+  "bytes": 936923,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [
+    [
+      0.0,
+      38.0
+    ],
+    [
+      38.0,
+      50.0
+    ],
+    [
+      50.0,
+      62.0
+    ],
+    [
+      62.0,
+      74.0
+    ],
+    [
+      74.0,
+      88.0
+    ],
+    [
+      88.0,
+      100.0
+    ]
+  ],
+  "srcWindows": [
+    [
+      370.0,
+      408.0
+    ],
+    [
+      410.0,
+      422.0
+    ],
+    [
+      424.0,
+      436.0
+    ],
+    [
+      446.0,
+      458.0
+    ],
+    [
+      460.0,
+      474.0
+    ],
+    [
+      478.0,
+      490.0
+    ]
+  ],
+  "pitchHz": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "tuned": false,
+  "notes": "NO-DO NOT N 1599 A, 27/08/1973, item 5 of 6 (369-499 s of the 11:19 reel): a studio synthesiser — a hand with a cigarette, a man at a wall of patch-pin panels, a spectrum display whose single line breaks into a row of dots, a close face, fingers on the pins (long w1); tape reels turning, the operator smiling, smoking, a boy watching (w2); knob panels and a hand turning them (w3); fingers on a small keyboard, then a gull in flight (w4); hens pecking and a boy holding one, a tape reel and the display now peaking with the sound (w5); children in a sunlit garden and a balcony (w6). Spanish narration over electronic sound. Spain/Spanish; shooting location not stated. Fetched with yt-dlp (rtve.es:alacarta, hls-845); cut from a pre-crop (crop=406:320:130:72) that removes the rtve.es and Filmoteca Española bugs.",
+  "takedown": false
+}

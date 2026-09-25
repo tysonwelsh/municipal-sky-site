@@ -120,7 +120,7 @@ rests about one cycle in four.
 **About 25 an hour** — never during the cut or the hush, never on top of a
 guest, and the quiet between one dead tube and the next station's static is
 drawn at **15–90 s**, so signals come in quick succession and then leave a long
-silence. The pool is 208 reels from 81 countries; pictures are favored 1.5×
+silence. The pool is 354 reels (rc.104; 26 of them silent prints) from about 80 countries; pictures are favored 1.5×
 over audio-only reels, so a numbers station or the Buzzer surfaces roughly
 every fifty minutes. A reel rests three cycles after it plays — unless the
 station **keeps the frequency** (同, one time in four), and a minute later the
@@ -144,6 +144,10 @@ voice — usually one of the sparse ones — is left out of the hold and may pla
 over the signal. And where a return loses its carrier, the air is **released**:
 the crew may come in for the length of the gap, and is quiet again before the
 station returns.
+
+A **silent print** (默, since rc.104) — a film with no sound track — does not
+silence the crew: there is nothing to listen to, so the station plays on under
+the picture, and the log says 「默 a silent print · the crew plays on」.
 
 The log line reads 「受信 · title · year · 浮 drifting in 7.0s · 絶 cut mid-word
 · 尺 shakuhachi over it」 and 「消失 · signal lost · 9.0 s on air」.
