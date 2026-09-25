@@ -742,7 +742,9 @@
   //   lift        {t0} — the ball in slot `ballsLeft` lifts onto the throw line
   //   ticketsOut  tickets cranked out so far (fractional = mid-ticket)
   //   cranking    the dispenser is running (ratchet jitter)
-  //   hundreds    number of 100s this game (payout hangs a "13"/"26" tag)
+  //   hundreds    number of 100s this game (the tag's "+13"/"+26" line)
+  //   ticketTag   number: the tag on the ticket window counts tickets out
+  //   rackRattle  a time: the racked balls jitter 1 px for 0.2 s
   //   jackpot     {hole: 0|1, t0} — that 100 hole pulses pink (set it when
   //               the swallow is done; during the sink use holeGlow)
   //   holeGlow    [a, b] 0..1 — a 100 hole swallowing a ball glows brighter
@@ -791,7 +793,7 @@
     drawLiftBall(g, t, view);
     drawTicketsLive(g, t, view);
     drawJam(g, t, view);
-    if (mode === 'payout' && view.hundreds > 0) drawPayoutTag(g, view.hundreds);
+    drawTicketTag(g, view, mode);
     drawJackpot(g, t, view);
     g.restore();
     drawJolts(ctx, t, view);         // canvas frame: the coin door rattles, the slot jolts
@@ -861,13 +863,21 @@
   }
 
   /* ── the ball-return rack ── */
-  var LIFT_T = 0.4;
+  var LIFT_T = 0.4, RACK_RATTLE_T = 0.2;
   function drawRackLive(g, t, view) {
     var n = view.ballsLeft == null ? 9 : Math.max(0, Math.min(9, view.ballsLeft | 0));
-    if (n === 9) return; // the static rack is already right
+    var rr = view.rackRattle, rattling = typeof rr === 'number' && t >= rr && t - rr < RACK_RATTLE_T;
+    if (n === 9 && !rattling) return; // the static rack is already right
     var tr = troughRect();
     restore(g, tr.x, tr.y, tr.w, tr.h);
-    for (var i = 0; i < n; i++) { var b = rackBallAt(i); drawRackBall(g, i, b.x, b.y); }
+    for (var i = 0; i < n; i++) {
+      var b = rackBallAt(i), jx = 0, jy = 0;
+      if (rattling) { // each ball knocks on its own beat: "one's still out there"
+        var ph = Math.floor((t - rr) * 30) + i * 2;
+        jx = [1, 0, -1, 0][ph % 4]; jy = (ph + i) % 3 === 0 ? -1 : 0;
+      }
+      drawRackBall(g, i, b.x + jx, b.y + jy);
+    }
   }
   // the next ball rises out of slot `ballsLeft` and arcs up onto the throw line
   function drawLiftBall(g, t, view) {
@@ -910,17 +920,31 @@
       rest -= 16; layer++;
     }
   }
-  // a small painted card hung off the ticket window on a wire: "13" per 100
-  function drawPayoutTag(g, hundreds) {
-    var s = slotRect(), label = String(13 * hundreds);
-    var w = textW(label, 1) + 6, h = 9, x = s.x - w - 3, y = s.y + 3;
-    vline(g, x + w - 2, s.y + 1, y - 1, PAL.STEEL1);          // the wire
-    px(g, x + w - 2, s.y, PAL.STEEL2);                        // its hook on the frame
+  // A small painted card hung off the ticket window on a wire. Line 1:
+  // view.ticketTag, the running ticket count during the crank. Line 2 (or
+  // the only line, in payout): the 100s bonus, "+13" / "+26".
+  function drawTicketTag(g, view, mode) {
+    var count = typeof view.ticketTag === 'number' ? String(Math.max(0, Math.floor(view.ticketTag))) : null;
+    var bonus = view.hundreds > 0 && (mode === 'payout' || count !== null) ? String(13 * view.hundreds) : null;
+    if (count === null && bonus === null) return;
+    var lines = [];
+    if (count !== null) lines.push({ str: count, plus: false });
+    if (bonus !== null) lines.push({ str: bonus, plus: true });
+    var s = slotRect(), tw = 0;
+    lines.forEach(function (l) { tw = Math.max(tw, textW(l.str, 1) + (l.plus ? 4 : 0)); });
+    var w = tw + 6, h = 3 + 6 * lines.length, x = s.x - w - 3, y = s.y + 12 - h;
+    vline(g, x + w - 2, s.y + 1, Math.max(s.y + 1, y - 1), PAL.STEEL1);   // the wire
+    px(g, x + w - 2, s.y, PAL.STEEL2);                                   // its hook on the frame
     rect(g, x, y, w, h, PAL.PINK_DK);
     rect(g, x + 1, y + 1, w - 2, h - 2, PAL.NIGHT1);
-    hline(g, x + 1, x + w - 2, y + h - 1, PAL.NIGHT0);         // the card's shadowed edge
-    text(g, label, x + 3, y + 2, PAL.PINK, 1);
-    px(g, x + 1, y + 1, PAL.PINK_D);                          // a nail hole
+    hline(g, x + 1, x + w - 2, y + h - 1, PAL.NIGHT0);                    // the card's shadowed edge
+    px(g, x + 1, y + 1, PAL.PINK_D);                                     // a nail hole
+    lines.forEach(function (l, i) {
+      var ty = y + 2 + 6 * i, tx = x + w - 3 - textW(l.str, 1);          // right-aligned, like a till
+      if (l.plus) { hline(g, tx - 4, tx - 2, ty + 2, PAL.PINK_D); vline(g, tx - 3, ty + 1, ty + 3, PAL.PINK_D); }
+      text(g, l.str, tx, ty, l.plus ? PAL.PINK_D : PAL.PINK, 1);
+    });
+    if (lines.length > 1) hline(g, x + 2, x + w - 3, y + 7, PAL.PINK_DK); // a pencilled rule between them
   }
 
   /* ── the possum's head, recomposited live: gaze (beads ±1, the pink
