@@ -587,7 +587,14 @@
   }
   function troughRect() { var f = frontX(), rl = GEO.rail; return { x: f.x0 + 6, y: rl.y0 + 4, w: f.x1 - f.x0 - 12, h: 14 }; }
   function slotRect() { var f = frontX(), fr = GEO.front; return { x: f.x1 - 42, y: fr.y0 + 9, w: 32, h: 8 }; }
-  function coinDoorRect() { var f = frontX(), fr = GEO.front; return { x: f.x0 + 10, y: fr.y0 + 3, w: 34, h: 15 }; }
+  function coinDoorRect() { var f = frontX(), fr = GEO.front; return { x: f.x0 + 10, y: fr.y0 + 3, w: 26, h: 15 }; }
+  // the vertical coin slit on the plate's left (2 × 7)
+  function coinSlit() { var cd = coinDoorRect(); return { x: cd.x + 4, y: cd.y + 4, w: 2, h: 7 }; }
+  // the start button: centre 10 px right of the plate's right edge, on its
+  // vertical middle; bezel ring 9 px across (r 4), domed cap r 3
+  function buttonCentre() { var cd = coinDoorRect(); return { x: cd.x + cd.w + 9, y: cd.y + 7 }; }
+  // hit rect for a thumb: the bezel's box padded 3 px each side (machine frame)
+  function buttonRect() { var c = buttonCentre(); return { x: c.x - 4 - 3, y: c.y - 4 - 3, w: 9 + 6, h: 9 + 6 }; }
   // the build stamp's box, canvas frame (main letters it at (3, H − 8))
   function stampRect(str) { return { x: 2, y: H - 9, w: textW(String(str || ''), 1) + 2, h: 7 }; }
 
@@ -601,12 +608,19 @@
     hline(g, x0 + 6, x1 - 6, rl.y0 + 17, PAL.WOOD4); // brass-lit lip
     // nine bone-white balls racked and waiting
     if (!BARE) for (var i = 0; i < 9; i++) { var b = rackBallAt(i); drawRackBall(g, i, b.x, b.y); }
-    // coin door (left)
-    rect(g, x0 + 10, fr.y0 + 3, 34, 15, PAL.BRASS1);
-    rect(g, x0 + 11, fr.y0 + 4, 32, 1, PAL.BRASS2);
-    rect(g, x0 + 22, fr.y0 + 7, 10, 2, PAL.NIGHT0);   // coin slot
-    text(g, '5¢', x0 + 15, fr.y0 + 11, PAL.WOOD1, 1);
-    px(g, x0 + 12, fr.y0 + 5, PAL.WOOD1); px(g, x0 + 42, fr.y0 + 16, PAL.WOOD1); // screws
+    // coin door (left): a narrow brass plate, the slit running vertical on
+    // its left, 5¢ stamped to the right of it
+    var cd = coinDoorRect(), sl = coinSlit();
+    rect(g, cd.x, cd.y, cd.w, cd.h, PAL.BRASS1);
+    rect(g, cd.x + 1, cd.y + 1, cd.w - 2, 1, PAL.BRASS2);
+    vline(g, sl.x - 1, sl.y - 1, sl.y + sl.h, PAL.WOOD1);           // the slit's shadowed lip…
+    hline(g, sl.x - 1, sl.x + sl.w, sl.y - 1, PAL.WOOD1);
+    vline(g, sl.x + sl.w, sl.y, sl.y + sl.h, PAL.BRASS2);           // …and its lit edge
+    hline(g, sl.x, sl.x + sl.w, sl.y + sl.h, PAL.BRASS2);
+    rect(g, sl.x, sl.y, sl.w, sl.h, PAL.NIGHT0);                      // the coin slit
+    text(g, '5¢', sl.x + sl.w + Math.round((cd.x + cd.w - sl.x - sl.w - textW('5¢', 1)) / 2), cd.y + 5, PAL.WOOD1, 1);
+    px(g, cd.x + 2, cd.y + 2, PAL.WOOD1); px(g, cd.x + cd.w - 3, cd.y + cd.h - 2, PAL.WOOD1); // screws
+    drawButton(g, 'dead', 0, false);                                  // the start button, unlit
     // ticket window (right) with one ticket left sticking out
     if (!NOTITLE) text(g, 'TICKETS', x1 - 40, fr.y0 + 2, PAL.BONE_D, 1); // (the blank layer has no lettering)
     rect(g, x1 - 42, fr.y0 + 9, 32, 8, PAL.WOOD1);
@@ -775,6 +789,10 @@
   //   wideT0      time of the last 100: the possum's pupils blow wide
   //   muted       the marquee's neon tube is unplugged (the mute indicator)
   //   attractT0   when ATTRACT began: the chalk note's breath starts full there
+  //   chalkText   string: replaces the attract chalk note ("DROP A NICKEL" …)
+  //   credit      {t0} — a nickel is in: the start button glows, breathing (1.2 s)
+  //   buttonPress a time: the button cap sits 1 px down, glow off, for 0.12 s
+  //   coinDrop    a time: a nickel drops edge-on into the vertical slit (0.25 s)
   //   marqueeNote {text, t0, until} — lettered on the marquee panel instead
   //               of the title, in the title's hand (WOOD1, 2×; 1× if long)
   //   doorRattle  a time: the coin door shakes ±1 px in its frame for 0.3 s
@@ -802,6 +820,7 @@
     drawDrumsLive(g, t, view, mode);
     drawHeadLive(g, t, view);        // possum gaze / lids / tilt, and the marquee note
     drawRackLive(g, t, view);
+    drawButtonLive(g, t, view, mode);
     if (view.muted) {
       var m = GEO.marquee;
       restore(g, m.x0 + 4, m.y1 - 1, m.x1 - m.x0 - 8, 4);
@@ -817,6 +836,7 @@
     var g = ctx, mode = view.mode || 'play';
     g.save(); g.translate(0, TOP);
     drawLiftBall(g, t, view);
+    drawCoinDrop(g, t, view);
     drawTicketsLive(g, t, view);
     drawJam(g, t, view);
     drawTicketTag(g, view, mode);
@@ -887,6 +907,54 @@
     var dr = view.drum;
     if (dr && mode !== 'payout') drawDrumCells(g, drumPositions(dr.from, dr.to, dr.t0, t));
     else drawDrumCells(g, digitsOf(dr && mode === 'payout' ? dr.to : score)); // payout: the drums hold
+  }
+
+  /* ── the start button: STEEL bezel, domed cap. States:
+  //   dead    PINK_DK cap, no glow (no credit)
+  //   credit  PINK cap, MOON glint, breathing glow (period 1.2 s) — press me
+  //   play    PINK_D cap, a faint steady glow
+  //   pressed (view.buttonPress, 0.12 s): the cap sits 1 px down, glow off ── */
+  var BUTTON_BREATH = 1.2, PRESS_T = 0.12, COIN_DROP_T = 0.25;
+  var CAPS = {
+    dead: { base: 'PINK_DK', shade: 'NIGHT0', hi: 'PINK_D' },
+    credit: { base: 'PINK', shade: 'PINK_D', hi: 'MOON' },
+    play: { base: 'PINK_D', shade: 'PINK_DK', hi: 'PINK' }
+  };
+  function drawButton(g, state, glow, pressed) {
+    var c = buttonCentre(), cap = CAPS[state] || CAPS.dead, dy = pressed ? 1 : 0;
+    if (glow > 0 && !pressed)
+      glowRing(g, c.x, c.y, 4, 4, 3, glow > 0.55 ? PAL.PINK_D : PAL.PINK_DK, glow);
+    ellipse(g, c.x, c.y, 4, 4, PAL.STEEL1);                     // bezel ring
+    px(g, c.x - 3, c.y - 3, PAL.STEEL2); hline(g, c.x - 2, c.x, c.y - 4, PAL.STEEL2); vline(g, c.x - 4, c.y - 2, c.y, PAL.STEEL2);
+    ellipse(g, c.x, c.y + dy, 3, 3, PAL[cap.base]);              // the dome
+    hline(g, c.x - 2, c.x + 1, c.y + 3 + dy, PAL[cap.shade]);    // its underside
+    px(g, c.x + 2, c.y + 2 + dy, PAL[cap.shade]);
+    px(g, c.x - 1, c.y - 2 + dy, PAL[cap.hi]);                  // the glint
+    if (state === 'credit') px(g, c.x - 2, c.y - 1 + dy, PAL.PINK);
+  }
+  function drawButtonLive(g, t, view, mode) {
+    var pressed = typeof view.buttonPress === 'number' && t >= view.buttonPress && t - view.buttonPress < PRESS_T;
+    var state = mode === 'play' ? 'play' : (view.credit ? 'credit' : 'dead');
+    if (state === 'dead' && !pressed) return;                    // the static button is already dead
+    var c = buttonCentre();
+    restore(g, c.x - 8, c.y - 8, 17, 17);
+    var glow = 0;
+    if (state === 'credit') {
+      var t0 = view.credit && typeof view.credit.t0 === 'number' ? view.credit.t0 : 0;
+      glow = 0.3 + 0.45 * (0.5 - 0.5 * Math.cos(2 * Math.PI * (t - t0) / BUTTON_BREATH));
+    } else if (state === 'play') glow = 0.18;
+    drawButton(g, state, glow, pressed);
+  }
+  // a nickel dropping edge-on into the vertical slit (view.coinDrop, 0.25 s)
+  function drawCoinDrop(g, t, view) {
+    var cdT = view.coinDrop;
+    if (typeof cdT !== 'number' || t < cdT || t - cdT >= COIN_DROP_T) return;
+    var sl = coinSlit(), k = (t - cdT) / COIN_DROP_T, e = k * k;   // falling, accelerating
+    var y = Math.round(sl.y - 9 + e * 12), x = sl.x;                // 2 wide, 3 tall, edge-on
+    for (var j = 0; j < 3; j++) {
+      var Y = y + j; if (Y >= sl.y + 1) break;                      // swallowed by the slit
+      hline(g, x, x + 1, Y, j === 0 ? PAL.MOON : (j === 1 ? PAL.BONE : PAL.BONE_D));
+    }
   }
 
   /* ── the ball-return rack ── */
@@ -1055,7 +1123,8 @@
     var a = 0.5 + 0.5 * Math.cos((t - t0) * Math.PI * 2 / 5); // 5 s breath, full at t0
     a = Math.max(0, a * 1.2 - 0.1);
     if (a <= 0.02) return;
-    var str = '5¢ - SWIPE', y = GEO.lane.y1 - 38, x = Math.round(108 - textW(str, 1) / 2);
+    var str = String(view && view.chalkText || '5¢ - SWIPE').toUpperCase();
+    var y = GEO.lane.y1 - 38, x = Math.round(108 - textW(str, 1) / 2);
     ditherText(g, str, x, y + 1, PAL.LANE3, 1, a * 0.95);   // worn-in shadow under the chalk
     ditherText(g, str, x, y, PAL.BONE, 1, a * 0.95);
   }
@@ -1640,7 +1709,7 @@
     // machine-frame sprites (the caller translates by TOP)
     drawBall: drawBall, drawSunkBall: drawSunkBall, drawBallShadow: drawBallShadow, drawBedShadow: drawBedShadow,
     drawSinkOccluder: drawSinkOccluder, drawRimTick: drawRimTick, drawToast: drawToast,
-    slotRect: slotRect, coinDoorRect: coinDoorRect, stampRect: stampRect, drawContact: drawContact,
+    slotRect: slotRect, coinDoorRect: coinDoorRect, buttonRect: buttonRect, coinSlitRect: coinSlit, stampRect: stampRect, drawContact: drawContact,
     LIFT_T: LIFT_T, TOAST_T: TOAST_T, drawsMachineNotes: true,   // main's whack hit-test; render draws marqueeNote/doorRattle
     text: text, textC: textC, flickerAt: flickerAt
   };
