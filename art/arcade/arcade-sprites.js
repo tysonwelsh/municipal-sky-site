@@ -9,7 +9,8 @@
  * Every function takes a 2d context `g` first. No state, no palette —
  * callers pass colors.
  */
-window.ArcadeSprites = (function () {
+(function (root) {
+  var api = (function () {
   'use strict';
 
   /* ── pixel helpers ─────────────────────────────────────────────────── */
@@ -110,3 +111,6 @@ window.ArcadeSprites = (function () {
     FONT: FONT, text: text, textW: textW, textC: textC, ditherText: ditherText
   };
 })();
+  root.ArcadeSprites = api;
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+})(typeof window !== 'undefined' ? window : globalThis);

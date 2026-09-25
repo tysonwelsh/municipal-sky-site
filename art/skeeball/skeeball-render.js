@@ -9,7 +9,7 @@
  *
  * Coordinates. The machine is drawn in a fixed 216×384 MACHINE FRAME
  * (every GEO number below is in it). The canvas is 216×H with H chosen at
- * boot in [384, 448] (setHeight) so a tall phone fills at the largest
+ * boot in [H_MIN 384, H_MAX 560] (setHeight) so a tall phone fills at the largest
  * integer scale: the extra rows are room — TOP rows of wall above the
  * marquee and BOT rows of floor below the plinth. The machine never moves
  * inside its frame; callers drawing in machine coordinates translate by
@@ -22,7 +22,8 @@
 (function (root) {
   'use strict';
 
-  var S = root.ArcadeSprites, AP = root.ArcadePalette;
+  var S = root.ArcadeSprites || (typeof require === 'function' && require('../arcade/arcade-sprites.js'));
+  var AP = root.ArcadePalette || (typeof require === 'function' && require('../arcade/arcade-palette.js'));
   var px = S.px, rect = S.rect, hline = S.hline, vline = S.vline,
     ellipse = S.ellipse, dither = S.dither, glowRing = S.glowRing,
     text = S.text, textC = S.textC, textW = S.textW, ditherText = S.ditherText,
@@ -573,7 +574,7 @@
       px(g, laneR(y) + 2, y, PAL.WOOD5);
     }
     // chalk ghost arrow worn into the wax near the throw line
-    var ay = ln.y1 - 24; // 6 px up the lane from V0.38, clear of the ready ball
+    var ay = ln.y1 - 27; // 9 px up the lane from V0.38, clear of the ready ball
     dither(g, 104, ay, 9, 12, PAL.BONE, 0.22);
     dither(g, 100, ay + 4, 4, 4, PAL.BONE, 0.18);
     dither(g, 113, ay + 4, 4, 4, PAL.BONE, 0.18);
@@ -591,6 +592,9 @@
   }
   function troughRect() { var f = frontX(), rl = GEO.rail; return { x: f.x0 + 6, y: rl.y0 + 4, w: f.x1 - f.x0 - 12, h: 14 }; }
   function slotRect() { var f = frontX(), fr = GEO.front; return { x: f.x1 - 42, y: fr.y0 + 9, w: 32, h: 8 }; }
+  function coinDoorRect() { var f = frontX(), fr = GEO.front; return { x: f.x0 + 10, y: fr.y0 + 3, w: 34, h: 15 }; }
+  // the build stamp's box, canvas frame (main letters it at (3, H − 8))
+  function stampRect(str) { return { x: 2, y: H - 9, w: textW(String(str || ''), 1) + 2, h: 7 }; }
 
   function drawFrontPanel(g, R) {
     var rl = GEO.rail, fr = GEO.front, f = frontX(), x0 = f.x0, x1 = f.x1;
@@ -700,7 +704,9 @@
     bareLayer = renderLayer(true);
     plainLayer = renderLayer(true, 'plain');
     blankLayer = renderLayer(true, 'blank');
-    occluders = {}; staticPix = null; possumSprite = null; roomMask = null; moonCache = {};
+    occluders = {}; staticPix = null; possumSprite = null; roomMask = null; moonCache = {}; moonWeight = null; maskCanvas = null;
+    if (typeof root.requestIdleCallback === 'function') root.requestIdleCallback(buildMoon, { timeout: 2000 });
+    else if (typeof setTimeout === 'function') setTimeout(buildMoon, 50);
     return staticLayer;
   }
   // copy a machine-frame rectangle from the bare layer (live elements are
@@ -790,8 +796,10 @@
   //   marqueeNote {text, t0, until} — lettered on the marquee panel instead
   //               of the title, in the title's hand (WOOD1, 2×; 1× if long)
   //   doorRattle  a time: the coin door shakes ±1 px in its frame for 0.3 s
-  //   moon        {t0, phase, k, ball} — k 0..1: the room dithers PUR2/FOG
-  //               at 0.55·k; during 'rising' a fog band crosses at x = W·k;
+  //   moon        {t0, phase, k, ball} — k 0..1: the room dithers PUR2/FOG,
+  //               0.35·k beside the cabinet, fading with distance from it and
+  //               to 0 at the canvas edges; a low moon (7 px) rises from
+  //               behind the topper with k (the telegraph) and sets with it;
   //               the 100 holes breathe a glow ring at 1.5× the mouth
   //               radius, density k·(0.35 + 0.3·sin 2πt/1.6), PINK_D off-beat
   //   narrowT0    a time: eyes narrowed 3 s — FUR2 lids leave a 1-px slit
@@ -856,7 +864,8 @@
     var dur = DRUM_STEP_T * Math.min(3, Math.sqrt(Math.max(1, steps)));
     var k = Math.max(0, Math.min(1, (t - t0 - (m === 2 ? TENS_LAG : 0)) / dur));
     k = k * k * (3 - 2 * k);
-    var w = from / place + steps * k;                 // continuous count in units of `place`
+    var w = Math.floor(from / place) + steps * k;     // whole count in units of `place` (the drums
+                                                      // below `place` never move: a[] = b[] there)
     var out = [a[0], a[1], a[2], a[3]];
     var lower = w % 10;                               // the rolling drum
     out[m] = lower;
@@ -939,8 +948,10 @@
     var yTop = fr.y0 + 10;                     // leaves the slot here
     var floorY = MH + BOT - 2;                 // the strip coils on the floor
     var hang = Math.max(0, Math.min(len, floorY - yTop));
+    var bow0 = view.jam ? Math.floor(hang / 3) : 1e9, bow1 = Math.floor(2 * hang / 3);
     for (var k = 0; k < hang; k++) {
       var y = yTop + k, row = k % TICKET_PX;
+      if (k === bow0) x0 += 1; if (k === bow1 && view.jam) x0 -= 1; // jammed: the strip bows
       var c = row === 1 ? PAL.PINK : (row === 3 ? PAL.PINK_DK : PAL.PINK_D);
       if (row === 3) { for (var q = 0; q < w; q += 2) px(g, x0 + q, y, PAL.PINK_DK); px(g, x0 + 1, y, PAL.PINK_D); }
       else hline(g, x0, x0 + w - 1, y, c);
@@ -986,7 +997,7 @@
   /* ── the possum's head, recomposited live: gaze (beads ±1, the pink
   // pupil ±1 inside them), wide pupils, narrowed lids, the 1-px tilt, and
   // the marquee note under the snout ── */
-  var WIDE_T = 2.5, NARROW_T = 3, HEAD = { x0: 108 - 22, y0: 0, w: 45, h: 44 }; // machine frame
+  var WIDE_T = 2.5, HEAD = { x0: 108 - 22, y0: 0, w: 45, h: 44 }; // machine frame
   function headSprite() { // the possum alone (no eye beads) on transparent pixels
     if (possumSprite) return possumSprite;
     var c = makeCanvas(HEAD.w, HEAD.h), g = c.getContext('2d');
@@ -999,6 +1010,7 @@
     var gz = 0;
     if (typeof view.ballSx === 'number') gz = Math.max(-2, Math.min(2, Math.round((view.ballSx - 108) / 22)));
     var dx = Math.max(-1, Math.min(1, gz)), gx = gz - dx;
+    var MS = root.SkeeBallMischief, NARROW_T = MS && MS.CONST && MS.CONST.NARROW_T || 3; // single owner: mischief
     var narrow = typeof view.narrowT0 === 'number' && t >= view.narrowT0 && t - view.narrowT0 < NARROW_T;
     var wide = !narrow && typeof view.wideT0 === 'number' && t >= view.wideT0 && t - view.wideT0 < WIDE_T;
     var tilt = view.tilt ? 1 : 0;
@@ -1006,9 +1018,14 @@
     if (!gz && !wide && !narrow && !tilt && !note) return; // the static head (and drawFrame's blink) stand
     restore(g, HEAD.x0, HEAD.y0, HEAD.w, HEAD.h, plainLayer);
     if (note) drawMarqueeNote(g, t, note);
-    var hs = headSprite(), cx = GEO.possum.cx, top = GEO.possum.top, half = cx - HEAD.x0;
-    g.drawImage(hs, 0, 0, half, HEAD.h, HEAD.x0, HEAD.y0, half, HEAD.h);               // left half
-    g.drawImage(hs, half, 0, HEAD.w - half, HEAD.h, cx, HEAD.y0 + tilt, HEAD.w - half, HEAD.h); // right half, canted
+    var hs = headSprite(), cx = GEO.possum.cx, top = GEO.possum.top;
+    if (!tilt) g.drawImage(hs, HEAD.x0, HEAD.y0);
+    else { // a 1-px cant: left side (ear) up 1, right side (bead, ear) down 1
+      var a0 = cx - 10 - HEAD.x0, a1 = cx + 3 - HEAD.x0;
+      g.drawImage(hs, 0, 0, a0, HEAD.h, HEAD.x0, HEAD.y0 - 1, a0, HEAD.h);
+      g.drawImage(hs, a0, 0, a1 - a0, HEAD.h, HEAD.x0 + a0, HEAD.y0, a1 - a0, HEAD.h);
+      g.drawImage(hs, a1, 0, HEAD.w - a1, HEAD.h, HEAD.x0 + a1, HEAD.y0 + 1, HEAD.w - a1, HEAD.h);
+    }
     drawEyeBeads(g, dx, wide, gx, tilt);
     var L = EYES.L, Rr = EYES.R;
     if (narrow) { // lids down to a 1-px slit, the glint riding in it
@@ -1031,11 +1048,21 @@
   function drawMarqueeNote(g, t, note) {
     var m = GEO.marquee, p = { x0: m.x0 + 6, x1: m.x1 - 6, y0: m.y0 + 7, y1: m.y1 - 7 };
     restore(g, p.x0, p.y0, p.x1 - p.x0, p.y1 - p.y0, blankLayer);
-    var str = String(note.text).toUpperCase(), sc = textW(str, 2) <= p.x1 - p.x0 - 6 ? 2 : 1;
-    var y = sc === 2 ? m.y0 + 13 : m.y0 + 16;
+    var str = String(note.text).toUpperCase(), sp = str.indexOf(' ');
     // the backlight stutters as the lettering changes over
     if (flickerAt(t, 9, 41) < 0.15 && t - note.t0 < 0.4) return;
-    textC(g, str, 108, y, PAL.WOOD1, sc);
+    // lettered like the title, split around the possum's snout: the first
+    // word ends at x 103, the rest starts at 112 ("HOLLER•ROLLER")
+    if (sp > 0) {
+      var l = str.slice(0, sp), rr = str.slice(sp + 1);
+      if (textW(l, 2) <= 103 - p.x0 - 2 && textW(rr, 2) <= p.x1 - 112 - 2) {
+        text(g, l, 104 - textW(l, 2) - 1, m.y0 + 13, PAL.WOOD1, 2);
+        text(g, rr, 112, m.y0 + 13, PAL.WOOD1, 2);
+        return;
+      }
+    }
+    var sc = textW(str, 2) <= p.x1 - p.x0 - 6 ? 2 : 1;
+    textC(g, str, 108, sc === 2 ? m.y0 + 13 : m.y0 + 16, PAL.WOOD1, sc);
   }
 
   /* ── attract: "5¢ - SWIPE" chalked on the lane, fading in and out ── */
@@ -1085,31 +1112,92 @@
     for (var i = 0; i < W * H; i++) roomMask[i] = (b[i * 4] === 255 && b[i * 4 + 1] === 0 && b[i * 4 + 2] === 255) ? 1 : 0;
     return roomMask;
   }
-  function moonOverlay(level) { // level 1..10 → density 0.055..0.55
+  // Per-pixel moon weight 0..1 over the room: full beside the cabinet,
+  // falling off with distance from it (a chamfer distance field), and 0 in
+  // the outer 12 columns and the top/bottom 16 rows so the canvas edge
+  // still melts into the page black. Peak density MOON_PEAK·k.
+  var MOON_PEAK = 0.35, moonWeight = null;
+  function moonWeights() {
+    if (moonWeight) return moonWeight;
+    var m = roomMaskBits(), n = W * H, d = new Float32Array(n), INF = 1e9, x, y, i;
+    for (i = 0; i < n; i++) d[i] = m[i] ? INF : 0;
+    for (y = 0; y < H; y++) for (x = 0; x < W; x++) { i = y * W + x; if (!d[i]) continue;
+      if (x > 0) d[i] = Math.min(d[i], d[i - 1] + 1); if (y > 0) d[i] = Math.min(d[i], d[i - W] + 1);
+      if (x > 0 && y > 0) d[i] = Math.min(d[i], d[i - W - 1] + 1.414); if (x < W - 1 && y > 0) d[i] = Math.min(d[i], d[i - W + 1] + 1.414); }
+    for (y = H - 1; y >= 0; y--) for (x = W - 1; x >= 0; x--) { i = y * W + x; if (!d[i]) continue;
+      if (x < W - 1) d[i] = Math.min(d[i], d[i + 1] + 1); if (y < H - 1) d[i] = Math.min(d[i], d[i + W] + 1);
+      if (x < W - 1 && y < H - 1) d[i] = Math.min(d[i], d[i + W + 1] + 1.414); if (x > 0 && y < H - 1) d[i] = Math.min(d[i], d[i + W - 1] + 1.414); }
+    moonWeight = new Float32Array(n);
+    function ramp(v, a, b) { return v <= a ? 0 : v >= b ? 1 : (v - a) / (b - a); }
+    for (y = 0; y < H; y++) for (x = 0; x < W; x++) {
+      i = y * W + x; if (!m[i]) continue;
+      var edge = Math.min(ramp(Math.min(x, W - 1 - x), 12, 30), ramp(Math.min(y, H - 1 - y), 16, 40));
+      var near = 1 - 0.75 * ramp(d[i], 4, 60);
+      moonWeight[i] = edge * near;
+    }
+    return moonWeight;
+  }
+  function hexRGB(c) { var v = parseInt(c.slice(1), 16); return [v >> 16, (v >> 8) & 255, v & 255]; }
+  function moonOverlay(level) { // level 1..10 → peak density MOON_PEAK·level/10 (one ImageData)
     if (moonCache[level]) return moonCache[level];
-    var m = roomMaskBits(), c = makeCanvas(W, H), g = c.getContext('2d'), d = 0.55 * level / 10 * 16;
+    var wt = moonWeights(), k = MOON_PEAK * level / 10 * 16, c = makeCanvas(W, H), g = c.getContext('2d');
+    var id = g.createImageData(W, H), dd = id.data, P2 = hexRGB(PAL.PUR2), FG = hexRGB(PAL.FOG);
     for (var y = 0; y < H; y++)
       for (var x = 0; x < W; x++) {
-        if (!m[y * W + x]) continue;
-        var b = BAYER[(y % 4) * 4 + (x % 4)];
-        if (b < d * 0.7) px(g, x, y, PAL.PUR2);
-        else if (b < d) px(g, x, y, PAL.FOG);
+        var d = wt[y * W + x] * k;
+        if (!(d > 0)) continue;
+        var b = BAYER[(y % 4) * 4 + (x % 4)], col = b < d * 0.75 ? P2 : (b < d ? FG : null);
+        if (!col) continue;
+        var o = (y * W + x) * 4; dd[o] = col[0]; dd[o + 1] = col[1]; dd[o + 2] = col[2]; dd[o + 3] = 255;
       }
+    g.putImageData(id, 0, 0);
     moonCache[level] = c;
     return c;
+  }
+  // everything the moon needs, built off the critical path after boot
+  function buildMoon() {
+    if (!staticLayer) return;
+    roomMaskBits(); moonWeights(); roomMaskCanvas();
+    for (var l = 1; l <= 10; l++) moonOverlay(l);
+  }
+  var maskCanvas = null;
+  function roomMaskCanvas() { // opaque exactly on room pixels (canvas frame)
+    if (maskCanvas) return maskCanvas;
+    var m = roomMaskBits(), c = makeCanvas(W, H), g = c.getContext('2d'), id = g.createImageData(W, H);
+    for (var i = 0; i < W * H; i++) if (m[i]) { id.data[i * 4 + 3] = 255; }
+    g.putImageData(id, 0, 0);
+    return (maskCanvas = c);
   }
   function drawMoonRoom(ctx, t, view) {
     var mo = view.moon;
     if (!mo || !(mo.k > 0)) return;
     var level = Math.max(1, Math.min(10, Math.round(mo.k * 10)));
     ctx.drawImage(moonOverlay(level), 0, 0);
-    if (mo.phase === 'rising') { // a band of fog crossing the room: the telegraph
-      var m = roomMaskBits(), bx = Math.round(W * mo.k) - 1;
-      ctx.fillStyle = PAL.FOG;
-      for (var y = 0; y < H; y++)
-        for (var x = bx; x < bx + 3; x++)
-          if (x >= 0 && x < W && m[y * W + x] && BAYER[(y % 4) * 4 + (x % 4)] < 9) ctx.fillRect(x, y, 1, 1);
+    drawLowMoon(ctx, mo.k);
+  }
+  // The telegraph: a low moon rising from behind the marquee's topper as
+  // k climbs (the 1.5 s 'rising'), riding there while it's full, sinking
+  // back as it sets. Drawn on room pixels only, so the machine hides it.
+  var moonSprite = null, scratch = null;
+  function scratchCanvas(w, h) { // one reusable scratch surface
+    if (!scratch || scratch.width < w || scratch.height < h) scratch = makeCanvas(Math.max(W, w), Math.max(32, h));
+    var g = scratch.getContext('2d'); g.globalCompositeOperation = 'source-over'; g.clearRect(0, 0, scratch.width, scratch.height);
+    return scratch;
+  }
+  function drawLowMoon(ctx, k) {
+    if (!moonSprite) { // 19×19: disc r 3 (7 px), maria, a FOG halo
+      moonSprite = makeCanvas(19, 19); var sg = moonSprite.getContext('2d');
+      glowRing(sg, 9, 9, 3, 3, 5, PAL.FOG, 0.55);
+      ellipse(sg, 9, 9, 3, 3, PAL.MOON);
+      px(sg, 8, 8, PAL.BONE_D); px(sg, 10, 10, PAL.BONE_D); px(sg, 11, 8, PAL.BONE_D);
     }
+    var mq = GEO.marquee, cx = mq.x1 - 22, cy = Math.round(mq.y0 + 4 - k * 15) + TOP; // canvas frame
+    var y0 = cy - 9, sc = scratchCanvas(W, 19), g = sc.getContext('2d');
+    g.drawImage(moonSprite, cx - 9, 0);
+    g.globalCompositeOperation = 'destination-in';      // only where the room shows: the topper hides it
+    g.drawImage(roomMaskCanvas(), 0, y0, W, 19, 0, 0, W, 19);
+    g.globalCompositeOperation = 'source-over';
+    ctx.drawImage(sc, 0, 0, W, 19, 0, y0, W, 19);
   }
   function drawMoonHoles(g, t, view) {
     var mo = view.moon;
@@ -1124,13 +1212,21 @@
 
   /* ── the ticket jam ── */
   var JAM_TAP_T = 0.8;
+  // a crumpled ticket, 5×4, with its fold in shadow
+  var WAD = [
+    [null, 'PINK', 'PINK', 'PINK_DK', null],
+    ['PINK', 'PINK_D', 'PINK', 'PINK', 'PINK_DK'],
+    ['PINK_DK', 'PINK', 'WOOD1', 'PINK_D', 'PINK_D'],
+    [null, 'NIGHT0', 'PINK_D', 'PINK_DK', null]
+  ];
   function drawJam(g, t, view) {
     var jm = view.jam;
     if (!jm || typeof jm.t0 !== 'number' || t < jm.t0) return;
     var s = slotRect(), jig = Math.floor((t - jm.t0) / 0.4) % 2;   // the motor straining
-    var x = s.x + 12 + jig, y = s.y + 1;                            // juts 1 px above the mouth
-    px(g, x, y, PAL.PINK); px(g, x + 1, y, PAL.PINK_DK); px(g, x + 2, y, PAL.PINK);
-    px(g, x, y + 1, PAL.PINK_DK); px(g, x + 1, y + 1, PAL.PINK); px(g, x + 2, y + 1, PAL.PINK_D);
+    var x = s.x + 11 + jig, y = s.y;                                // sticks 2 px out of the mouth
+    for (var j = 0; j < 4; j++) for (var i = 0; i < 5; i++) {
+      var c = WAD[j][i]; if (c) px(g, x + i, y + j, PAL[c]);
+    }
     if (t - jm.t0 >= JAM_TAP_T && Math.floor((t - jm.t0 - JAM_TAP_T) * 4) % 2 === 0) {
       // the TICKETS label turns into the instruction: TAP (2 Hz)
       var fr = GEO.front, f = frontX();
@@ -1146,7 +1242,7 @@
     var rt = typeof view.doorRattle === 'number' ? view.doorRattle : (view.doorRattle && view.doorRattle.t0);
     if (typeof rt === 'number' && t >= rt && t - rt < RATTLE_T) {
       var dx = [1, -1, 1, 0, -1, 1][Math.floor((t - rt) * 24) % 6];
-      if (dx) shift(ctx, f.x0 + 10, fr.y0 + 3, 34, 15, dx, 0, PAL.WOOD1);
+      if (dx) { var cd = coinDoorRect(); shift(ctx, cd.x, cd.y, cd.w, cd.h, dx, 0, PAL.WOOD1); }
     }
     var ut = view.unjamT0;
     if (typeof ut === 'number' && t >= ut && t - ut < JOLT_T) {
@@ -1156,11 +1252,11 @@
   }
   function shift(ctx, x, y, w, h, dx, dy, gap) { // machine-frame rect, drawn on the raw canvas
     var Y = y + TOP;
-    var tmp = makeCanvas(w, h); tmp.getContext('2d').drawImage(ctx.canvas, x, Y, w, h, 0, 0, w, h);
+    var tmp = scratchCanvas(w, h); tmp.getContext('2d').drawImage(ctx.canvas, x, Y, w, h, 0, 0, w, h);
     ctx.fillStyle = gap;
     if (dx) ctx.fillRect(dx > 0 ? x : x + w - 1, Y, 1, h);
     if (dy) ctx.fillRect(x, dy > 0 ? Y : Y + h - 1, w, 1);
-    ctx.drawImage(tmp, x + dx, Y + dy);
+    ctx.drawImage(tmp, 0, 0, w, h, x + dx, Y + dy, w, h);
   }
 
   /* ── the score toast: PINK with a NIGHT0 outline, kept off the painted
@@ -1172,9 +1268,12 @@
     if (k == null) k = 0;
     if (k < 0 || k >= 1 || !str) return;
     str = String(str);
-    if (Math.abs(x - 108) < 10) x = x < 108 ? 108 - 14 : 108 + 14;
+    if (Math.abs(x - 108) < 10) x = x < 108 ? 108 - 18 : 108 + 18;
     var c = kind === 'hundred' ? PAL.MOON : (kind === 'zero' ? PAL.BONE_D : PAL.PINK);
     var w = textW(str, 1), tx = Math.round(x - w / 2), ty = Math.round(y - 10 * k);
+    if (Math.abs(x - 108) < 22) // sharing a row with a painted label? float 6 px higher
+      for (var i = 0; i < GEO.rings.length; i++)
+        if (GEO.rings[i].label && Math.abs(ty - GEO.rings[i].ly) <= 4) { ty -= 6; break; }
     for (var oy = -1; oy <= 1; oy++)
       for (var ox = -1; ox <= 1; ox++)
         if (ox || oy) text(ctx, str, tx + ox, ty + oy, PAL.NIGHT0, 1);
@@ -1297,7 +1396,9 @@
   var DRAWN = {
     rims: RIMS.slice(), ringCentreV: R10 + APRON_V, holes: HOLES_U,
     bedTopV: APRON_V + (RING_BOTTOM_ROW - GEO.target.y0) / PX_V,  // visible bed top (under the score bar)
-    bedHalfW: (108 - (cabL(GEO.target.cy) + 5)) / PX_U               // bed inner wall at the ring centre row
+    bedHalfW: (108 - (cabL(GEO.target.cy) + 5)) / PX_U,              // bed inner wall at the ring centre row
+    holeR: (GEO.holeR - 2) / PX_U,                                   // the 100 hole's mouth (8 px)
+    dent: [40, 67]                                                   // the DENT pixels' arc, degrees
   };
   // One-way check at boot: the physics' GEO against the machine as drawn.
   // Returns a list of human-readable mismatches (empty = agreement).
@@ -1325,6 +1426,15 @@
       chk('100 hole ' + i + ' u', h.u, d.u, 0.01);
       chk('100 hole ' + i + ' v', h.v, d.v, 0.01);   // drawn v 2.3008
     });
+    hs.forEach(function (h, i) { if (h.r != null) chk('100 hole ' + i + ' r', h.r, DRAWN.holeR, 0.012); });
+    // the dent: drawn on the 40's rim (index 3) over ≈ 40–67°
+    if (pg.dent) {
+      if (pg.dent.rim !== 3) bad.push('dent on rim ' + pg.dent.rim + ' (drawn on rim 3, the 40)');
+      chk('dent a0', pg.dent.a0, DRAWN.dent[0], 8); chk('dent a1', pg.dent.a1, DRAWN.dent[1], 8);
+    }
+    // a flush (unraised) arc is only drawable on the outer rim, which the
+    // art already draws flush (wood straight to the trough, no cork hoop)
+    if (pg.flush && pg.flush.rim !== 0) bad.push('flush arc on rim ' + pg.flush.rim + ' (only rim 0 is drawn flush)');
     if (bed.halfW != null) chk('bed half-width', bed.halfW, DRAWN.bedHalfW, 0.03);
     if (bed.vTop != null) chk('backstop v', bed.vTop, DRAWN.bedTopV, 0.03);
     if (pg.ringC) chk('ring centre v', pg.ringC.v, DRAWN.ringCentreV, 1e-3);
@@ -1370,7 +1480,10 @@
   }
   function drawBallTint(g, x, y, r, tint) {
     var d = Math.round(2 * r);
-    if (d < D_MIN) { px(g, Math.floor(x), Math.floor(y), PAL[TINTS[tint].base]); return null; }
+    if (!(d >= D_MIN)) { // tiny — or NaN, which would make a 0×0 sprite that drawImage throws on
+      if (d > 0 && isFinite(x) && isFinite(y)) px(g, Math.floor(x), Math.floor(y), PAL[TINTS[tint].base]);
+      return null;
+    }
     d = Math.min(D_MAX, d);
     var sp = ballSprite(d, tint), x0 = Math.round(x - d / 2), y0 = Math.round(y - d / 2);
     g.drawImage(sp.canvas, x0, y0);
@@ -1405,16 +1518,25 @@
   var GAPC = hex(PAL.GAP);
   var CORKC = [hex(PAL.CORK1), hex(PAL.CORK2), hex(PAL.CORK3)];
 
+  // A resting ball's contact: always exactly one LANE3 row under the
+  // sprite (its bottom row + 1), d − 2 px wide. Machine frame.
+  function drawContact(g, x, y, r, c) {
+    var d = Math.round(2 * r); if (!(d >= 3)) return;
+    var x0 = Math.round(x - d / 2), yb = Math.round(y - d / 2) + d;
+    hline(g, x0 + 1, x0 + d - 2, yb, c || PAL.LANE3);
+  }
   // Lane/hop: a flat LANE3 ellipse. Bed (c === 'bed', what shadowAt gives):
   // a 50 % NIGHT0 dither that never falls over the lip into the pit and
   // never lands on the dark troughs; over a trough the contact reads as a
   // 1-px FOG/PUR1 rim-light under the ball instead.
-  function drawBallShadow(g, x, y, r, c, flat) {
-    if (c === 'bed') { drawBedShadow(g, x, y, r / 0.9); return; }
+  function drawBallShadow(g, x, y, r, c, flat, spriteY, spriteR) {
+    if (c === 'bed') { drawBedShadow(g, x, y, r / 0.9, spriteY, spriteR); return; }
     ellipse(g, Math.round(x), Math.round(y), Math.max(1, Math.round(r)),
       Math.max(1, Math.round(r * (flat || 0.4))), c || PAL.LANE3);
   }
-  function drawBedShadow(g, sx, sy, ballR) {
+  // spriteY/spriteR (optional): the ball sprite's centre row and radius —
+  // the trough rim-light goes on the row just under the sprite
+  function drawBedShadow(g, sx, sy, ballR, spriteY, spriteR) {
     var cx = Math.round(sx), cy = Math.round(sy), rx = Math.max(1, Math.round(ballR * 0.9)), ry = Math.max(1, Math.round(ballR * 0.6));
     var lip = Math.floor(LIP_ROW);
     g.fillStyle = PAL.NIGHT0;
@@ -1426,25 +1548,45 @@
         if (BAYER[((Y % 4 + 4) % 4) * 4 + ((X % 4 + 4) % 4)] < 8) g.fillRect(X, Y, 1, 1);
       }
     }
-    var yl = cy + Math.round(ballR) + 1, half = Math.max(1, Math.round(ballR) - 1);
+    var yl, half;
+    if (typeof spriteY === 'number') {
+      var d = Math.round(2 * (spriteR || ballR));
+      yl = Math.round(spriteY - d / 2) + d;                 // the sprite's bottom row + 1
+      half = Math.max(1, Math.round(d / 2) - 2);
+      // at rest the sprite centre sits r·tanβ up-slope of the foot (≈ 5 px);
+      // more than 3 px beyond that the ball is off the bed: no contact light
+      if (sy - spriteY > BALL_R * TANB * PX_V + 3) return;
+    } else { yl = cy + Math.round(ballR) + 1; half = Math.max(1, Math.round(ballR) - 1); }
     if (yl > lip) return;
     for (var x = cx - half; x <= cx + half; x++)
       if (pixAt(x, yl) === GAPC) px(g, x, yl, Math.abs(x - cx) <= half / 2 ? PAL.FOG : PAL.PUR1);
   }
 
-  // A rim struck: the 3–4 cork pixels nearest the contact flash CORK3 → BONE.
+  // A rim struck: 3–4 cork pixels on the struck arc flash CORK3 → BONE.
   // ringIndex 0..4 (physics rim index), angle in bed coords from +u toward
-  // +v (up the bed), k 1 → 0 over the flash (2 frames). Machine frame.
-  function drawRimTick(g, ringIndex, angle, k) {
+  // +v (up the bed), k 1 → 0 over the flash (hold ~3 frames, 50 ms).
+  // With the ball's sprite (bx, by, br) given, the flash takes the arc
+  // pixels just OUTSIDE the sprite (br+1 … br+3 from its centre, either
+  // side of the contact) so the ball, drawn before or after, never hides it.
+  // Machine frame.
+  function drawRimTick(g, ringIndex, angle, k, bx, by, br) {
     if (!(k > 0) || ringIndex < 0 || ringIndex >= RIMS.length) return;
     var r = RIMS[ringIndex], ccx = GEO.target.cx, ccy = GEO.target.cy + 0.5;
     var sx = ccx + Math.cos(angle) * r * PX_U, sy = ccy - Math.sin(angle) * r * PX_V;
+    var ring = typeof br === 'number' && br > 0, R0 = 5;
     var cand = [];
-    for (var y = Math.round(sy) - 3; y <= Math.round(sy) + 3; y++)
-      for (var x = Math.round(sx) - 3; x <= Math.round(sx) + 3; x++) {
+    if (ring) { R0 = Math.ceil(br) + 4; sx = bx; sy = by; }
+    for (var y = Math.round(sy) - R0; y <= Math.round(sy) + R0; y++)
+      for (var x = Math.round(sx) - R0; x <= Math.round(sx) + R0; x++) {
         var c = pixAt(x, y);
         var hit = ringIndex === 0 ? (c !== GAPC && c !== -1) : CORKC.indexOf(c) >= 0;
-        if (hit) cand.push({ x: x, y: y, d: Math.hypot(x + 0.5 - sx, y + 0.5 - sy) });
+        if (!hit) continue;
+        // on this rim's own arc (not a neighbouring hoop)
+        var eu = (x + 0.5 - ccx) / PX_U, ev = (ccy - (y + 0.5)) / PX_V, er = Math.hypot(eu, ev);
+        if (Math.abs(er - r) > 0.06) continue;
+        var d = Math.hypot(x + 0.5 - sx, y + 0.5 - sy);
+        if (ring && (d < br + 1 || d > br + 3)) continue;
+        cand.push({ x: x, y: y, d: d });
       }
     cand.sort(function (a, b) { return a.d - b.d; });
     var col = k > 0.5 ? PAL.BONE : PAL.CORK3;
@@ -1513,7 +1655,8 @@
     // machine-frame sprites (the caller translates by TOP)
     drawBall: drawBall, drawSunkBall: drawSunkBall, drawBallShadow: drawBallShadow, drawBedShadow: drawBedShadow,
     drawSinkOccluder: drawSinkOccluder, drawRimTick: drawRimTick, drawToast: drawToast,
-    slotRect: slotRect, drawsMachineNotes: true,   // main's whack hit-test; render draws marqueeNote/doorRattle
+    slotRect: slotRect, coinDoorRect: coinDoorRect, stampRect: stampRect, drawContact: drawContact,
+    LIFT_T: LIFT_T, TOAST_T: TOAST_T, drawsMachineNotes: true,   // main's whack hit-test; render draws marqueeNote/doorRattle
     text: text, textC: textC, flickerAt: flickerAt
   };
   root.SkeeBallRender = api;

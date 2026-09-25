@@ -8,7 +8,8 @@
  * Extracted from HOLLER ROLLER's palette; skee ball adopts this file at
  * its arcade-core retrofit (coin pusher plan, §7 milestone 5).
  */
-window.ArcadePalette = {
+(function (root) {
+  var api = {
   // the room at night
   NIGHT0: '#07060d', NIGHT1: '#100e1e', NIGHT2: '#1a1730',
   PUR1: '#2c2347', PUR2: '#453567', FOG: '#6f5d95',
@@ -18,3 +19,6 @@ window.ArcadePalette = {
   // electric pink
   PINK: '#ff4fa8', PINK_D: '#a63a70', PINK_DK: '#521f3c'
 };
+  root.ArcadePalette = api;
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+})(typeof window !== 'undefined' ? window : globalThis);
