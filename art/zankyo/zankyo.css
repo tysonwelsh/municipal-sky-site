@@ -246,6 +246,20 @@
   background:
     radial-gradient(80% 30% at 70% 0%, rgba(255, 255, 255, 0.05), transparent 70%),
     linear-gradient(180deg, #232329, #131317 55%, #0d0d11);
+  /* THE PLASTIC'S OWN COLOUR UNDER THE GRADIENT (owner, 2026-09-25). On some
+     refreshes the big casings lost their gradient and nothing else: border,
+     shadows and every control inside still painted, so each casing read as
+     an empty outline over the chassis stripes until a later repaint. The
+     CSS is valid (computed background-image is never `none`, measured
+     through load and play), and it has not reproduced here in Chrome or in
+     the system WebKit; stripping background-image from exactly these
+     elements reproduces the owner's screenshot, keys and key bed included.
+     So the gradient draw is what goes missing, and a solid fill is a
+     separate plain draw: a dropped gradient now shows this dark plastic, not
+     the chassis. The gradients are opaque, so a correct paint is unchanged.
+     Same on .zk-spk, .zk-set2, .zk-module, .zankyo-log-block, .zankyo-mixer,
+     .zk-keybed and .zk-key. */
+  background-color: #131317;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.09),
     inset 0 -5px 12px rgba(0, 0, 0, 0.6),
@@ -366,6 +380,7 @@
   display: flex; flex-direction: column; align-items: stretch; gap: 9px;
   padding: 11px 14px 11px 16px; border-radius: 5px; border: 1px solid #000;
   background: linear-gradient(180deg, #202027, #121216 70%, #0d0d11);
+  background-color: #121216;   /* under the gradient: see .zk-monitor (owner, 2026-09-25) */
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 -3px 8px rgba(0, 0, 0, 0.55), 0 4px 10px rgba(0, 0, 0, 0.5);
 }
 /* asymmetric wear — grime pooled at the lower-left, a scorch kiss upper-right */
@@ -562,12 +577,14 @@
      for the whole run, and without this the bed's floor disappears under it */
   display: flex; gap: 5px; padding: 5px 5px 9px; border-radius: 3px;
   background: linear-gradient(180deg, #0a0a0d, #131318);
+  background-color: #0e0e12;   /* under the gradient: see .zk-monitor (owner, 2026-09-25) */
   box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.9), 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 .zk-key {
   position: relative; width: 44px; height: 50px; padding: 0 0 7px; cursor: pointer;
   border: 1px solid #08080a; border-radius: 2px 2px 3px 3px;
   background: linear-gradient(180deg, #4b4b55 0%, #33333c 12%, #2a2a32 60%, #1b1b21 100%);
+  background-color: #2a2a32;   /* under the gradient: see .zk-monitor (owner, 2026-09-25) */
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), inset 0 -4px 6px rgba(0, 0, 0, 0.6), 0 4px 6px rgba(0, 0, 0, 0.6);
   display: flex; align-items: flex-end; justify-content: center;
   transition: transform 0.08s, box-shadow 0.08s;
@@ -738,6 +755,7 @@
 .zankyo-mixer {
   border: 1px solid #000; border-radius: 5px;
   background: linear-gradient(180deg, #16161b, #0f0f14 80%);
+  background-color: #0f0f14;   /* under the gradient: see .zk-monitor (owner, 2026-09-25) */
   box-shadow: inset 0 0 26px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 .zankyo-mixer-title {
@@ -934,6 +952,7 @@
   position: relative; flex: 1 1 auto; min-width: 0; padding: 9px 10px 10px;
   border-radius: 5px; border: 1px solid #000;
   background: linear-gradient(180deg, #1d1d23, #111116 70%, #0d0d11);
+  background-color: #111116;   /* under the gradient: see .zk-monitor (owner, 2026-09-25) */
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), inset 0 -3px 8px rgba(0, 0, 0, 0.55), 0 4px 10px rgba(0, 0, 0, 0.5);
 }
 .zankyo-log-label {
@@ -1038,6 +1057,7 @@
   background:
     radial-gradient(80% 30% at 70% 0%, rgba(255, 255, 255, 0.05), transparent 70%),
     linear-gradient(180deg, #232329, #131317 55%, #0d0d11);
+  background-color: #131317;   /* under the gradient: see .zk-monitor (owner, 2026-09-25) */
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.09),
     inset 0 -5px 12px rgba(0, 0, 0, 0.6),
@@ -1126,6 +1146,7 @@
     radial-gradient(70% 26% at 62% 0%, rgba(255, 240, 200, 0.06), transparent 70%),
     radial-gradient(30% 40% at 100% 100%, rgba(110, 66, 32, 0.22), transparent 70%),
     linear-gradient(180deg, #2b2826, #1a1817 55%, #100f0e);
+  background-color: #1a1817;   /* under the gradient: see .zk-monitor (owner, 2026-09-25) */
   box-shadow: inset 0 1px 0 rgba(255, 244, 220, 0.1), inset 0 -5px 12px rgba(0, 0, 0, 0.65), 0 4px 10px rgba(0, 0, 0, 0.55);
 }
 /* THE DRAFT AND THE PARTING LINE, full height. Both walls fall away from the
