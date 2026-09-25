@@ -477,8 +477,6 @@
       hline(g, cabL(y) + 5, cabR(y) - 5, y, PAL.WOOD2);        // shelf corners
       hline(g, laneL(y) - 3, laneR(y) + 3, y, PAL.NIGHT0);      // the mouth
     }
-    // faint pink breathing way down inside (same light as the 100 holes)
-    dither(g, 84, p.y0 + Math.round((p.y1 - p.y0) / 2), 48, 2, PAL.PINK_DK, 0.15);
     // dusty reflected light on the cavity's near edge
     dither(g, laneL(p.y1) + 2, p.y1 - 2, laneR(p.y1) - laneL(p.y1) - 4, 2, PAL.WOOD2, 0.35);
   }
@@ -558,8 +556,6 @@
       var lw = Math.round((laneR(y) - laneL(y)) * 0.16);
       hline(g, 108 - lw, 108 + lw, y, PAL.LANE1);
     }
-    dither(g, 84, ln.y0, 12, ln.y1 - ln.y0, PAL.LANE2, 0.5);
-    dither(g, 120, ln.y0, 12, ln.y1 - ln.y0, PAL.LANE2, 0.5);
     for (var s = 0; s < 40; s++) { // scuffs and ball tracks
       var sy = ln.y0 + R() * (ln.y1 - ln.y0);
       var sx = laneL(sy) + R() * (laneR(sy) - laneL(sy));
@@ -740,9 +736,6 @@
     if (flickerAt(t, 6.7, 11) < 0.025)
       rect(g, cx + EYES.R.x, top + EYES.R.y, EYES.R.w, EYES.R.h, PAL.FUR2);
 
-    // ── neon reflection shimmer along the ramp's polished lip
-    if (flickerAt(t, 9, 5) < 0.5)
-      dither(g, 98, GEO.ramp.y0, 20, 1, PAL.PINK_D, 0.12);
     g.restore();
   }
   function drawHoleBreath(g, t, i, breathe) {
