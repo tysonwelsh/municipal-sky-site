@@ -1271,13 +1271,19 @@ async function kindsSheet(browser) {
 function lullfit() {
   const ZP = require("./zk-picture.js");
   const files = opt("from", path.join(OUT, "lullcal.json")).split(",");
-  const rows = files.flatMap((f) => JSON.parse(fs.readFileSync(f, "utf8"))).filter((r) => r.ch && r.ch.archetype && r.ch.archetype !== "今");
+  // --exempt i:label,… (P2 r2): rows of file i (0-based) that fail the SSIM
+  // surfacing test but were judged legible by eye in a strip — stripes that
+  // 8×8 SSIM reads as lost structure (critic P2 r1). They are fitted as
+  // surfacing; every one must be named in the handoff with its strip.
+  const exempt = new Set(opt("exempt", "").split(",").filter(Boolean));
+  const rows = files.flatMap((f, fi) => JSON.parse(fs.readFileSync(f, "utf8")).map((r) => Object.assign(r, { ex: exempt.has(fi + ":" + r.label) }))).filter((r) => r.ch && r.ch.archetype && r.ch.archetype !== "今");
+  if (rows.filter((r) => r.ex).length !== exempt.size) throw new Error("--exempt names a row that is not in the data");
   const keys = Object.keys(ZP.BURY2), save = Object.assign({}, ZP.BURY2);
   const feat = (ch) => keys.map((k) => { keys.forEach((q) => { ZP.BURY2[q] = q === k ? 1 : 0; }); return ZP.burial2(ch); });
   const p1 = (ch) => { keys.forEach((q) => { ZP.BURY2[q] = 0; }); return ZP.burial(ch); };
   const Rand = loadRand(), pool = [];
-  for (const S of SEED_SETS) { const m = Rand.stream(S), dsr = Rand.stream(S).fork("probe:desc"); for (let r = 0; r < 500; r++) { const ch = ZP.drawCharacter(m.fork("set:rx:" + dsr.next() * 1000), {}); pool.push({ b: p1(ch), f: feat(ch) }); } }
-  const data = rows.map((r) => ({ label: r.label, arch: r.arch, need: !r.surf || r.worst < 0.8, fail: !r.surf, b: p1(r.ch), f: feat(r.ch) }));
+  for (const S of SEED_SETS) { const m = Rand.stream(S), dsr = Rand.stream(S).fork("probe:desc"); for (let r = 0; r < 500; r++) { const ch = ZP.drawCharacter(m.fork("set:rx:" + dsr.next() * 1000), {}); pool.push({ arch: ch.archetype, b: p1(ch), f: feat(ch) }); } }
+  const data = rows.map((r) => ({ label: r.label, arch: r.arch, need: !r.ex && (!r.surf || r.worst < 0.8), fail: !r.surf, ex: r.ex, b: p1(r.ch), f: feat(r.ch) }));
   const target = ZP.BURY_LINE / 0.9, w = keys.map(() => 0);
   const score = (d) => d.b + d.f.reduce((a, x, i) => a + x * w[i], 0);
   const inc = () => pool.filter((d) => score(d) > ZP.BURY_LINE).length / pool.length;
@@ -1299,6 +1305,9 @@ function lullfit() {
   if (unc.length) console.log("  ✗ still uncovered (a P1-term reception the P2 weights cannot reach, or none helps): " + unc.map((d) => d.label + " " + d.arch + " score " + score(d).toFixed(3)).join(", "));
   const by = {}; data.forEach((d) => { (by[d.arch] = by[d.arch] || [0, 0, 0])[0]++; if (d.need) by[d.arch][1]++; if (score(d) > ZP.BURY_LINE) by[d.arch][2]++; });
   console.log("  by archetype (n · need · lulled): " + Object.keys(by).map((k) => k + " " + by[k].join("·")).join("  "));
+  if (exempt.size) console.log("  exempt (legible by eye, fitted as surfacing): " + data.filter((d) => d.ex).map((d) => d.label + " " + d.arch + " score " + score(d).toFixed(3)).join(", "));
+  const pb = {}; pool.forEach((d) => { (pb[d.arch] = pb[d.arch] || [0, 0])[0]++; if (score(d) > ZP.BURY_LINE) pb[d.arch][1]++; });
+  console.log("  lulled among " + pool.length + " drawn, by archetype: " + Object.keys(pb).map((k) => k + " " + (pb[k][1] / pb[k][0] * 100).toFixed(0) + " %").join(" · "));
   return { ok: !unc.length, w };
 }
 

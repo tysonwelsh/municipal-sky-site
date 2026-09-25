@@ -623,30 +623,53 @@
   // 11 %, 同 9 %, 清 none). 嵐 is not given one by name. Checked on fresh seeds
   // (lullcal --built --seed0 2001) — see the r2 handoff. P2 adds BURY2 below.
   var BURY_LINE = 0.856;
+  // the spark density at the carrier's resting level (sourcePass's p before
+  // envelopes) — shared by P1's snow term and P2's herringbone term
+  function snowP(ch) {
+    var lvl = 1 - (ch.breath ? ch.breath.base : 0.82), sn = ch.snow || {};
+    return (lvl * lvl * (sn.sq != null ? sn.sq : 0.85) + lvl * (sn.lin != null ? sn.lin : 0.08)) * (sn.gain || 0);
+  }
   function burial(ch) {
     var lvl = 1 - (ch.breath ? ch.breath.base : 0.82), sn = ch.snow || {}, wa = ch.wash || { lift: 0, gain: 1 }, te = ch.tear || {}, gs = 0;
-    var p = (lvl * lvl * (sn.sq != null ? sn.sq : 0.85) + lvl * (sn.lin != null ? sn.lin : 0.08)) * (sn.gain || 0);
+    var p = snowP(ch);
     (ch.ghosts || []).forEach(function (g) { gs += Math.abs(g.a); });
     return 3 * p + 0.5 * (sn.grain || 0) * lvl + 1.5 * gs + 2 * Math.max(0, 1 - wa.gain) + Math.max(0, wa.gain - 1) + (te.rate || 0) * Math.min(1.5, (te.jump || 0) / 10) * lvl +
       burial2(ch);
   }
   // P2's terms: one weight per kind, on the kind's own "how much of the
   // picture it takes". FITTED (_picture-probe.js lullfit, greedy, the P1 terms
-  // and BURY_LINE held) on 192 lull-OFF receptions (lullcal --archs
-  // 遠,嵐,混,電,同,過, seeds 1001…: three reels × 40 drawn, and every
-  // archetype but 反/清 forced at sev 0.7–1, 12 each). Only 5 failed to
-  // surface and 3 more had a worst window under 0.8 s; P1's terms already
-  // cover all but one — 嵐 at sev 1 drawn as 捩 + 飽 (hot 1.57, blacks crushed
-  // 17): an overexposed, rippling picture scores 0.08 on P1's terms and med
-  // SSIM 0.30. So 飽 carries weight 1 (its excess gain plus its crush /40) and
-  // 滲 a trace; every other P2 kind leaves a picture that surfaces on its own
-  // (同 0/32, 混 0/27, 電 0/23 needed one). 20,000 drawn: 19.5 % get a lull.
-  var BURY2 = { imp: 0, herr: 0, hum: 0, xt: 0, skew: 0, flag: 0, jit: 0, wave: 0, smear: 0.05, agc: 1 };
+  // and BURY_LINE held) on 384 lull-OFF receptions: lullcal --archs
+  // 遠,嵐,混,電,同,過 at --seed0 1001 (P2 r1) and 3001 (P2 r2) — three reels ×
+  // 40 drawn, and every archetype but 反/清 forced at sev 0.7–1, 12 each. 20
+  // needed a lull (14 failed to surface, 6 more surfaced with a worst window
+  // under 0.8 s).
+  //   飽 agc 1     an overexposed, rippling 嵐 (捩 + 飽 hot 1.57, crush 17)
+  //                scores 0.08 on P1's terms and med SSIM 0.30 (1001).
+  //   縞 herr 1    ON SNOW (critic P2 r1, required item 1): a 混 with an
+  //                uncommon-tier 雪 0.80 on a carrier resting at 0.63 and 縞
+  //                amp 8.5 (john-cage·3025.37) never surfaced — the snow alone
+  //                scores 0.565 and leaves a face, the stripes alone leave a
+  //                face (every 縞 on a clean carrier in both sets surfaced),
+  //                together they veil it for the whole hold. So the term is
+  //                the stripes' amplitude times the snow's own term (3p): a
+  //                clean-carrier 縞 costs nothing, and 混 stays mostly
+  //                lull-free (5 % of drawn 混, not "every co-channel").
+  //   横 skew 0.2, 揺 jit 0.2   a 遠 whose lines shiver (3013, 揺 0.38) and a
+  //                嵐 of snow + skew + hook (嵐·cal·8) surfaced too thinly
+  //                (worst window 0.4–0.7 s) on P1's terms alone.
+  //   滲 smear 0.05  a trace.
+  // Two 3001 receptions fail the SSIM test and are EXEMPT (--exempt): 嵐s
+  // of fine 縞 over 混 on a strong carrier (ddr1·3230.37, 嵐·cal·5), legible
+  // by eye in every tile (critic P2 r1's strips) — 8×8 SSIM reads stripes of
+  // pitch 2.6–6.5 px as lost structure. 20,000 drawn: 21.0 % get a lull (嵐
+  // 57 %, 遠 43 %, 反 32 %, 過 29 %, 混 5 %, 電/同/清 0). Validated on fresh
+  // seeds 4001 before any look at them — see the P2 r2 handoff.
+  var BURY2 = { imp: 0, herr: 1, hum: 0, xt: 0, skew: 0.2, flag: 0, jit: 0.2, wave: 0, smear: 0.05, agc: 1 };
   function duty(E) { var d = (E.dur[0] + E.dur[1]) / 2, g = (E.gap[0] + E.gap[1]) / 2; return d / (d + g); }
   function burial2(ch) {
     var b = 0, W = BURY2;
     if (ch.impulse) b += W.imp * ch.impulse.len * (ch.impulse.pulsed ? ch.impulse.K : ch.impulse.dens) / 60 * duty(ch.impulse);
-    if (ch.herring) b += W.herr * ch.herring.amp / 10;
+    if (ch.herring) b += W.herr * ch.herring.amp / 10 * 3 * snowP(ch);   // stripes ON snow (P2 r2, above)
     if (ch.hum) b += W.hum * ch.hum.depth;
     if (ch.xtalk) b += W.xt * (ch.xtalk.depth + ch.xtalk.blind / 60);
     if (ch.skew) b += W.skew * ch.skew.bars * duty(ch.skew);
