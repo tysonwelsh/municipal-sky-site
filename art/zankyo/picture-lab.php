@@ -16,7 +16,11 @@
 //   · texture: Math.random, or a seeded stream (pixel-reproducible captures)
 //   · the character: drawn, or forced — an archetype (§4.1, and 今 for rc.91's
 //     look restated), any one of the fifteen kinds alone
-//     ({"impairment":"縞","sev":0.5}), or axes as JSON
+//     ({"impairment":"縞","sev":0.5}), or axes as JSON; and (P3) the lock-in,
+//     the loss, every glimpse and the burn: {"entry":"roll"} (snap roll bars
+//     fade bloom ghost), {"exit":"vline"} (squash roll snow bars freeze neg
+//     vline burn), {"glimpse":"bars"} (roll bars ghost fade, or 今),
+//     {"burn":0.25} (0 = none) — alone or with any of the above
 //   · the shape: 即/探/浮 × 常/戻/断/走 × 切/残/絶, and the time on air
 //   · LIVE (the page's clock and rAF) or FROZEN (step frame by frame)
 //   · a strip capture of one reception (PNG); a 4×3 contact sheet: the same
@@ -82,7 +86,7 @@ if ($zk_a0 === false || $zk_b0 === false) {
     <label>dropouts <input type="checkbox" id="zpl-drops" checked /></label>
   </div>
   <div class="zpl-row">
-    <label class="zpl-wide">force <input type="text" id="zpl-force" placeholder='{"archetype":"遠","sev":0.8}  ·  {"impairment":"縞","sev":0.5}  ·  {"archetype":"今"}  ·  blank = as drawn' /></label>
+    <label class="zpl-wide">force <input type="text" id="zpl-force" placeholder='{"archetype":"遠","sev":0.8}  ·  {"impairment":"縞","sev":0.5}  ·  {"entry":"roll","exit":"vline","glimpse":"bars","burn":0.25}  ·  blank = as drawn' /></label>
   </div>
   <div class="zpl-row">
     <button type="button" id="zpl-rx">receive</button>

@@ -237,7 +237,7 @@ cut (the cutters' measurements supported each). The NCAA catalogue title
 "Hindustan 2021" was a mis-transcription of "Front End Loader" — there is no
 "India imagining 2021" on that tape.
 
-## Round 5 — the bench (2026-09-24/25; 2.1.0-rc.104)
+## Round 5 — the bench (2026-09-24/25; 2.1.0-rc.105)
 
 The owner took most of the rest of this queue: 102 new reels (36 Tier A, 66 Tier B,
 26 silent prints), cut on worktree branch `zankyo-reels-5` by twelve cutters; the

@@ -116,7 +116,7 @@ length, one with no relation to the next — answered in four phases:
    the receiver, which is why it was not fixed here — but it is a failing
    invariant and the harness says so on every run of that seed.
 
-## Shipped since: reels round 5 (2026-09-25, rc.104)
+## Shipped since: reels round 5 (2026-09-25, rc.105)
 
 102 reels from the round-4 bench (REELS-R5.md): Taiwan, Korea, the Netherlands,
 Estonia, Japan (science films, NHK, and prewar silent prints), China, NO-DO,
