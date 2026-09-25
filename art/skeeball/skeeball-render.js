@@ -3,7 +3,7 @@
  * All art is procedural pixel art drawn from PAL with a seeded RNG, so the
  * wood grain, stains, and wear are identical on every load. The machine is
  * rendered once into a static offscreen layer at boot; drawFrame() blits it
- * and paints the ambient life (dying marquee bulb, neon breathing, possum
+ * and paints the ambient life (neon breathing, possum
  * blink); drawLive() paints everything that reacts to the game (drums,
  * racked balls, tickets, jackpot, possum gaze, attract/payout).
  *
@@ -371,7 +371,6 @@
         // top-edge highlight, bottom-edge shade: rims are raised hoops
         ellipse(g, t.cx, t.cy - 1, r.rx, r.ry, PAL.CORK3);
         ellipse(g, t.cx, t.cy, r.rx - 1, r.ry - 1, PAL.CORK1);
-        dither(g, t.cx - r.rx, t.cy + r.ry - 3, r.rx * 2, 3, PAL.CORK2, 0.5);
       }
     }
     drawFarArcs(g);
@@ -729,17 +728,6 @@
     ctx.drawImage(staticLayer, 0, 0);
     var g = ctx;
     g.save(); g.translate(0, TOP);
-
-    // ── the dying marquee bulb behind ROLLER's final R: 'HOLLER ROLLER' is
-    // centred at 108, scale 2 → the last R occupies x 153..159
-    var f = flickerAt(t, 7, 13);
-    var dying = f < 0.25 ? 0.9 : (f < 0.45 ? 0.5 : 0.1); // mostly dark, stutters lit
-    if (dying > 0.05) {
-      g.globalAlpha = dying;
-      rect(g, 151, GEO.marquee.y0 + 8, 12, GEO.marquee.y1 - GEO.marquee.y0 - 16, '#3c2814');
-      g.globalAlpha = 1;
-      if (dying > 0.5) textC(g, 'R', 156, GEO.marquee.y0 + 13, PAL.WOOD2, 2);
-    }
 
     // ── neon breathing on the 100 holes
     var breathe = 0.25 + 0.25 * (0.5 + 0.5 * Math.sin(t * 1.4));
