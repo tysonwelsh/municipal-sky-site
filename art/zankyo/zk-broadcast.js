@@ -161,12 +161,12 @@
   var POROUS_VOICES = ["shakuhachi", "biwa", "hichiriki", "koto", "shamisen"];   // weighted to the sparse ones; NEVER vox — the intercom is a second speaker and would read as part of the broadcast
   var POROUS_W      = [0.30, 0.25, 0.25, 0.10, 0.10];
   // 同: a later reception in the same cycle is the SAME reel, a later window.
-  // 0.25 → 0.03 (owner, 2026-09-25: a repeat should happen "on occasion", not
-  // in every playthrough). At 0.25 it fired about 3× an hour on every night
-  // measured (17 of 18 repeats over six simulated hours were this, not a
-  // redraw); at 0.03 it is about one an hour in three. The draw is taken
-  // either way, so nothing else moves.
-  var CALLBACK_P = 0.03;
+  // 0.25 → 0.10 (owner, 2026-09-25: a repeat should happen "on occasion", not
+  // in every playthrough; 0.03 was "a pretty big cut"). At 0.25 it fired
+  // about 3× an hour on every night measured (17 of 18 repeats over six
+  // simulated hours were this, not a redraw); at 0.10 it is about once an
+  // hour. The draw is taken either way, so nothing else moves.
+  var CALLBACK_P = 0.10;
   // 戻 the return: the piece lengths, the carrier-lost gap, the relock
   var MOD_PIECE_MIN_S = 3, MOD_PIECE_MAX_S = 10;
   var MOD_GAP_MIN_S = 6, MOD_GAP_MAX_S = 15;
