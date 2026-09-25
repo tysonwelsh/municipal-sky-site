@@ -46,9 +46,12 @@
   // throw on a tall phone, a short phone, and with the URL bar in or out.
   //
   // Power: release speed s over the last WIN_MS of the gesture, mapped
-  //   v = vMin + (vMax − vMin) · clamp((s − SPEED_FLOOR) / (SPEED_CEIL − SPEED_FLOOR))^GAMMA
+  //   v = vMin + (V_TOP − vMin) · clamp((s − SPEED_FLOOR) / (SPEED_CEIL − SPEED_FLOOR))^GAMMA
   // SPEED_FLOOR 0.15 MH/s (≈ 90 px/s on a phone): below it, v = vMin.
-  // SPEED_CEIL 3.9 MH/s (≈ 2250 px/s): a hard flick, vMax.
+  // SPEED_CEIL 3.78 MH/s (≈ 2180 px/s): a hard flick saturates at V_TOP.
+  // V_TOP 7.1: the documented 100 line (PLAN-2 §11: the full-power corner
+  //   bank, x0 0.6, v 7.1, aim 0.12), so "as hard as you can, from the
+  //   corner" IS the skill shot rather than a 1 % window under saturation.
   // GAMMA 2.0: convex, so the ordinary thumb range (≈ 500–1400 px/s,
   //   0.87–2.43 MH/s) walks the ordered ring ladder (physics round 5:
   //   v 2.3 → 3.9, 10 → 20 → 30 → 40 → 50) and only a hard flick
@@ -59,7 +62,8 @@
   //   STRAIGHT prior window); when there is one, power and aim come from
   //   the window before the hook, so hooking doesn't also re-aim the throw.
   var GESTURE = {
-    SPEED_FLOOR: 0.15, SPEED_CEIL: 3.9, GAMMA: 2.0,
+    SPEED_FLOOR: 0.15, SPEED_CEIL: 3.78, GAMMA: 2.0, V_TOP: 7.1,
+    MIN_NORM_CSS: 384,           // power's yardstick never drops below this (landscape: 0.5 css px per art px)
     WIN_MS: 90,                  // release window for power + aim
     AIM_MAX: 25 * Math.PI / 180, // aim clamp, on the lane (P.softAim compresses further)
     // The swipe is read on the SCREEN, the aim is on the LANE: at the throw
@@ -69,6 +73,7 @@
     // and the chalk ghost lies under the thumb.
     AIM_PERSPECTIVE: 0.34,
     HOOK_MS: 40, HOOK_PRIOR_MS: 90,
+    HOOK_AIM: 20 * Math.PI / 180,  // a tail turned more than this (after a straight run) doesn't re-aim the throw
     HOOK_MIN: 35 * Math.PI / 180,  // a natural thumb arc turns less than this
     HOOK_FULL: 75 * Math.PI / 180, // a full hook
     HOOK_STRAIGHT: 10 * Math.PI / 180, // the prior window's heading spread must stay under this
@@ -88,7 +93,8 @@
     var G = GESTURE;
     var x = clamp((s - G.SPEED_FLOOR) / (G.SPEED_CEIL - G.SPEED_FLOOR), 0, 1);
     var power = Math.pow(x, G.GAMMA);
-    return { power: power, v: T.vMin + (T.vMax - T.vMin) * power };
+    var top = Math.min(T.vMax, G.V_TOP);
+    return { power: power, v: T.vMin + (top - T.vMin) * power };
   }
 
   // points: [{t (ms), x, y (css px, y down)[, id]}], one pointer (if the
@@ -101,6 +107,7 @@
     var T = tune || (root.SkeeBallPhysics && root.SkeeBallPhysics.TUNE) || FALLBACK_TUNE;
     var out = { v: T.vMin, aim: 0, spin: 0, valid: false, power: 0, speed: 0, x0css: null, travel: 0, tap: true, setDown: false, dragAim: 0 };
     if (!points || !points.length || !(machineCssH > 0)) return out;
+    machineCssH = Math.max(machineCssH, G.MIN_NORM_CSS); // a tiny (landscape) machine is not a hair trigger
     var id = points[0].id, pts = [];
     for (var i = 0; i < points.length; i++) {
       var q = points[i];
@@ -152,8 +159,12 @@
         }
         var spread = hs.length > 1 ? Math.max.apply(null, hs) - Math.min.apply(null, hs) : 0;
         out.priorSpread = spread;
-        var m = spread < G.HOOK_STRAIGHT ? clamp((Math.abs(turn) - G.HOOK_MIN) / (G.HOOK_FULL - G.HOOK_MIN), 0, 1) : 0;
-        if (m) { out.spin = (turn < 0 ? -m : m) * G.SPIN_MAX; tEnd = h1.t; }
+        if (spread < G.HOOK_STRAIGHT && Math.abs(turn) > G.HOOK_AIM) {
+          // a turned-off tail: power and aim come from before it, english only past HOOK_MIN
+          tEnd = h1.t;
+          var m = clamp((Math.abs(turn) - G.HOOK_MIN) / (G.HOOK_FULL - G.HOOK_MIN), 0, 1);
+          if (m) out.spin = (turn < 0 ? -m : m) * G.SPIN_MAX;
+        }
       }
     }
 
@@ -432,7 +443,7 @@
       if (mv.refuseV) v = Math.min(v, mv.refuseV);
       var tune = mv.tuneOverride ? Object.assign({}, opts.tune, mv.tuneOverride) : (opts.tune || null);
       state.ball = P.createThrow(x0, v, aim || 0, spin || 0, ballSeed(), tune);
-      state.trail = []; state.cap = null; state.rimTick = null; state.pendingJackpot = null;
+      state.trail = []; state.cap = null; state.rimTick = null; state.pendingJackpot = null; state.cameHome = false;
       view.lift = null;                   // the throw cuts any lift still under way
       if (state.refused) return 'refused'; // sent back: no `throw` event, the ball is not consumed
       emit({ type: 'throw', x0: +x0.toFixed(4), v: +v.toFixed(4), aim: +(aim || 0).toFixed(4), spin: +(spin || 0).toFixed(4), ball: game.n });
@@ -463,6 +474,12 @@
       if (ev.type === 'gutter' && state.ball && state.ball.result && state.ball.result.kind === 'stuck')
         ev = { type: 'stuck', t: ev.t, ball: game.n };
       var lp = state.ball ? P.pose(state.ball) : null;
+      if ((ev.type === 'return' || ev.type === 'bounceback') && !state.refused) state.cameHome = true;
+      if (ev.type === 'done' && state.cameHome && !(ev.score > 0)) {
+        // it rolled home, but it counted: say so where it stopped
+        var ph = lp ? R.project(lp.x, lp.y, lp.z) : R.project(0, U.BALL_R, 0);
+        state.toast = { x: ph.sx, y: ph.sy - 10, t0: tNow, text: '0', kind: 'zero' };
+      }
       if (ev.type === 'rim' && lp) {
         // the rattle's picture: the struck arc ticks, the ball jumps a pixel
         state.rimTick = { ring: ev.ring, angle: Math.atan2(lp.v - P.GEO.ringC.v, lp.u - P.GEO.ringC.u), t0: tNow };
