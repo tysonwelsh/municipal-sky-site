@@ -194,6 +194,18 @@
     } catch (e) {}
   }, 60);
 
+  // ---- the night's seed, under the mood line (owner, 2026-09-24). It can
+  // change without a reload — 逸脱 re-seeds the station — so the poll below
+  // re-reads it as well as the mode.
+  var lastSeed = null;
+  function renderSeed() {
+    var el = document.getElementById("zankyo-seed");
+    if (!el || !Z.getSeed) return;
+    var sd = Z.getSeed();
+    if (sd === lastSeed) return;
+    lastSeed = sd; el.textContent = "seed " + sd;
+  }
+
   // ---- Mode readout + LED cell kana (re-rendered on live modal modulation) ----
   function renderScale() {
     var s = Z.SCALE_INFO;
@@ -223,6 +235,7 @@
     if (name) name.innerHTML = '<b>' + s.name + '</b> · <span class="zk-tonic">' +
       String(s.tonic).replace(/\u266d/g, "b") + '</span>';
     if (mood) mood.textContent = s.mood;
+    renderSeed();
     var row = document.getElementById("zankyo-degrees");
     if (row) {
       row.innerHTML = s.kana.map(function (k, i) { return '<span class="zk-deg" data-deg="' + i + '">' + k + '</span>'; }).join("");
@@ -482,6 +495,7 @@
     if (barSegs.length) setBar(info.level, Date.now(), info.phase !== "—");
     if (sceneEl) sceneEl.classList.toggle("is-kyu", info.phase === "kyū");   // climax destabilization
     if (Z.getMode) { var m = Z.getMode(); var mk = m.name + "@" + (m.tonic || ""); if (mk !== lastMode) { lastMode = mk; renderScale(); } }   // live modal modulation + sea changes
+    renderSeed();                                                  // 逸脱 re-seeds without a reload
     // transport state can change outside the keys (lock-screen pause via the
     // media session) — keep the PLAY key's latch and the power LED honest
     if (Z.getState) {

@@ -247,7 +247,6 @@ include '../../includes/header.php';
 
             </div>
           </div>
-        <span class="zk-tape zk-tape-2" aria-hidden="true"></span>
       </div>
       </div>
     </div>
@@ -266,6 +265,9 @@ include '../../includes/header.php';
           <div class="zk-mod-lamp">
             <span class="zankyo-scale-name" id="zankyo-mode-name"><b>Hirajoshi</b> &middot; <span class="zk-tonic">D</span></span>
             <span class="zankyo-scale-mood" id="zankyo-mode-mood">haunted &middot; derelict &middot; neon-rust</span>
+            <!-- the night's seed (owner, 2026-09-24): the number that plays this
+                 night again, as ?seed= in the address -->
+            <span class="zankyo-scale-mood zk-seed" id="zankyo-seed"></span>
           </div>
         </div>
         <div class="zk-mod-zone zk-mod-scale">

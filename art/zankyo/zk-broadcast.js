@@ -655,6 +655,10 @@
 
   function tl() { return Z._signal.tools(); }
   function db2lin(db) { return Math.pow(10, (+db || 0) / 20); }
+  // the reels' own sound, a tenth down on every reception and every 受信
+  // press (owner, 2026-09-24: "turn down the volume of the video clips by
+  // 10 %"). The noise around a reception keeps its level.
+  var REEL_VOL = 0.9;
 
   // ---- the pool ----
   var pool = null, poolState = "idle", poolError = null, poolUnknownTones = {};   // idle | loading | ready | failed
@@ -2797,7 +2801,7 @@
       // one-piece reception produces exactly the list this used to hold
       // literally — in over 0.4 + 1.0, hold, the four-step loss, the 0.02 cut.
       var sg = N(c.createGain());
-      var peak = 0.35 * db2lin(a.reel.gain);
+      var peak = 0.35 * db2lin(a.reel.gain) * REEL_VOL;
       var env = planEnv(P, peak);
       PJ.Voice.env(sg.gain, t0, env);
       // 断 THE HOLES, written over the envelope rather than into it: a hole can
@@ -3421,7 +3425,7 @@
         lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.setValueAtTime(1600, t0); lp.frequency.linearRampToValueAtTime(4700, t0 + 0.8);
         pre = c.createGain(); pre.gain.setValueAtTime(0.5, t0);
         sh = c.createWaveShaper(); var cv = new Float32Array(1024); for (var i = 0; i < 1024; i++) { var x = (i / 1023) * 2 - 1; cv[i] = Math.tanh(x * 3.5) / Math.tanh(3.5); } sh.curve = cv;
-        sg = c.createGain(); var peak = 0.35 * db2lin(reel.gain) * 1.6;
+        sg = c.createGain(); var peak = 0.35 * db2lin(reel.gain) * 1.6 * REEL_VOL;
         PJ.Voice.env(sg.gain, t0, planEnv(aP, peak));
         nodes = [hp, lp, pre, sh, sg];
         var head = ms;
