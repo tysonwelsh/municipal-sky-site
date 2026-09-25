@@ -15,7 +15,7 @@ function zkv($file)
 // live build is legible. The footer shows only the version NUMBER; the
 // "— summary" tail in VERSION stays for git history and the bump rule.
 $zk_assets = [
-    'zankyo-audio.js', 'zankyo-viz.js', 'zankyo-ui.js', 'zk-set.js', 'zk-broadcast.js', 'broadcast/manifest.json', 'broadcast/geo.json', 'zankyo.css', 'index.php',
+    'zankyo-audio.js', 'zankyo-viz.js', 'zankyo-ui.js', 'zk-picture.js', 'zk-set.js', 'zk-broadcast.js', 'broadcast/manifest.json', 'broadcast/geo.json', 'zankyo.css', 'index.php',
     '../prosperos-jukebox-v2/pj2-rand.js', '../prosperos-jukebox-v2/pj2-pitch.js',
     '../prosperos-jukebox-v2/pj2-clock.js', '../prosperos-jukebox-v2/pj2-voice.js',
     '../prosperos-jukebox-v2/pj2-fx.js', '../prosperos-jukebox-v2/pj2-air.js',
@@ -343,7 +343,10 @@ include '../../includes/header.php';
 <script src="zk-broadcast.js?v=<?php echo zkv('zk-broadcast.js'); ?>"></script>
 <script src="zankyo-viz.js?v=<?php echo zkv('zankyo-viz.js'); ?>"></script>
 <!-- THE SECOND SET (S0): the CRT-9's own phosphor pipeline and its idle stream;
-     no-ops headless (the probe loads every zk-*.js). -->
+     no-ops headless (the probe loads every zk-*.js). zk-picture.js (映り, the
+     reception characters and the impairment library) must load first: pure
+     functions and constants, harmless headless. -->
+<script src="zk-picture.js?v=<?php echo zkv('zk-picture.js'); ?>"></script>
 <script src="zk-set.js?v=<?php echo zkv('zk-set.js'); ?>"></script>
 <script src="zankyo-ui.js?v=<?php echo zkv('zankyo-ui.js'); ?>"></script>
 
