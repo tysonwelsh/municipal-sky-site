@@ -20,6 +20,8 @@ include '../../includes/header.php';
     </p>
 </div>
 
+<script src="../arcade/arcade-palette.js?v=<?php echo substr(md5_file(__DIR__ . '/../arcade/arcade-palette.js'), 0, 8); ?>"></script>
+<script src="../arcade/arcade-sprites.js?v=<?php echo substr(md5_file(__DIR__ . '/../arcade/arcade-sprites.js'), 0, 8); ?>"></script>
 <script src="skeeball-render.js?v=<?php echo substr(md5_file(__DIR__ . '/skeeball-render.js'), 0, 8); ?>"></script>
 <script src="skeeball-physics.js?v=<?php echo substr(md5_file(__DIR__ . '/skeeball-physics.js'), 0, 8); ?>"></script>
 <script src="skeeball-main.js?v=<?php echo substr(md5_file(__DIR__ . '/skeeball-main.js'), 0, 8); ?>"></script>
