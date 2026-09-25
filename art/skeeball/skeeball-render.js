@@ -173,6 +173,11 @@
   // the parts drawLive animates (racked balls, the stub ticket, the possum's
   // eye beads). drawLive restores small regions from it before redrawing.
   var BARE = false;
+  // NOPOSSUM / NOTITLE build the 'plain' and 'blank' layers: the machine
+  // with no possum (the head is recomposited live for gaze, lids and tilt),
+  // and additionally no lettering (the marquee panel under a marqueeNote,
+  // the TICKETS plate under the jam's TAP)
+  var NOPOSSUM = false, NOTITLE = false;
 
   function drawRoom(g) {
     var y0 = -TOP, y1 = MH + BOT;
@@ -241,7 +246,7 @@
       var sx = p.x0 + 4 + R() * (p.x1 - p.x0 - 8);
       dither(g, sx, p.y0, 2, p.y1 - p.y0, PAL.LIT_D, 0.5);
     }
-    textC(g, 'HOLLER ROLLER', 108, m.y0 + 13, PAL.WOOD1, 2);
+    if (!NOTITLE) textC(g, 'HOLLER ROLLER', 108, m.y0 + 13, PAL.WOOD1, 2);
     drawTube(g, 0, null);                                         // pink neon
   }
   // the marquee's neon tube; `chase` (attract) runs bright segments along it
@@ -314,17 +319,17 @@
   }
   // black beads with pink neon glints; dx shifts the gaze, wide = startled
   // dx shifts the beads (±1), gx the pink glint — the pupil — inside them (±1)
-  function drawEyeBeads(g, dx, wide, gx) {
-    var cx = GEO.possum.cx + dx, top = GEO.possum.top;
+  function drawEyeBeads(g, dx, wide, gx, ty) {
+    var cx = GEO.possum.cx + dx, top = GEO.possum.top, rt = top + (ty || 0);
     var L = EYES.L, Rr = EYES.R, e = wide ? 1 : 0;
     gx = gx || 0;
     rect(g, cx + L.x - e, top + L.y - e, L.w + 2 * e, L.h + 2 * e, PAL.NIGHT0);
-    rect(g, cx + Rr.x - e, top + Rr.y - e, Rr.w + 2 * e, Rr.h + 2 * e, PAL.NIGHT0);
+    rect(g, cx + Rr.x - e, rt + Rr.y - e, Rr.w + 2 * e, Rr.h + 2 * e, PAL.NIGHT0);
     px(g, cx + L.x + 2 + gx, top + L.y + 1, PAL.PINK);
-    px(g, cx + Rr.x + 1 + gx, top + Rr.y + 1, PAL.PINK);
+    px(g, cx + Rr.x + 1 + gx, rt + Rr.y + 1, PAL.PINK);
     if (wide) { // pupils blown wide: the glints swell into 2×2 neon
       rect(g, cx + L.x + 1 + gx, top + L.y + 1, 2, 2, PAL.PINK);
-      rect(g, cx + Rr.x + gx, top + Rr.y + 1, 2, 2, PAL.PINK);
+      rect(g, cx + Rr.x + gx, rt + Rr.y + 1, 2, 2, PAL.PINK);
       px(g, cx + L.x + 1 + gx, top + L.y + 1, PAL.MOON);
     }
   }
@@ -532,7 +537,7 @@
       px(g, laneR(y) + 2, y, PAL.WOOD5);
     }
     // chalk ghost arrow worn into the wax near the throw line
-    var ay = ln.y1 - 18;
+    var ay = ln.y1 - 24; // 6 px up the lane from V0.38, clear of the ready ball
     dither(g, 104, ay, 9, 12, PAL.BONE, 0.22);
     dither(g, 100, ay + 4, 4, 4, PAL.BONE, 0.18);
     dither(g, 113, ay + 4, 4, 4, PAL.BONE, 0.18);
@@ -568,7 +573,7 @@
     text(g, '5¢', x0 + 15, fr.y0 + 11, PAL.WOOD1, 1);
     px(g, x0 + 12, fr.y0 + 5, PAL.WOOD1); px(g, x0 + 42, fr.y0 + 16, PAL.WOOD1); // screws
     // ticket window (right) with one ticket left sticking out
-    text(g, 'TICKETS', x1 - 40, fr.y0 + 2, PAL.BONE_D, 1);
+    if (!NOTITLE) text(g, 'TICKETS', x1 - 40, fr.y0 + 2, PAL.BONE_D, 1); // (the blank layer has no lettering)
     rect(g, x1 - 42, fr.y0 + 9, 32, 8, PAL.WOOD1);
     rect(g, x1 - 40, fr.y0 + 11, 28, 4, PAL.NIGHT0);
     if (!BARE) {
@@ -618,7 +623,8 @@
 
   /* ══ layer assembly ═══════════════════════════════════════════════ */
 
-  var staticLayer = null, bareLayer = null, occluders = {};
+  var staticLayer = null, bareLayer = null, plainLayer = null, blankLayer = null, occluders = {};
+  var possumSprite = null, roomMask = null, moonCache = {};
 
   function setHeight(h) {
     h = Math.max(H_MIN, Math.min(H_MAX, Math.floor(h) || H_MIN));
@@ -631,12 +637,13 @@
     return true;
   }
 
-  function renderLayer(bare) {
+  function renderLayer(bare, variant) {
     var c = makeCanvas(W, H), g = c.getContext('2d');
     g.translate(0, TOP);
-    BARE = bare;
+    BARE = bare; NOPOSSUM = !!variant; NOTITLE = variant === 'blank';
     var R = rng(0xC0FFEE);
-    drawRoom(g);
+    if (variant === 'sil') { NOPOSSUM = NOTITLE = false; rect(g, 0, -TOP, W, H, '#ff00ff'); } // room = sentinel
+    else drawRoom(g);
     drawCabinetBody(g, R);
     drawTarget(g, R);
     drawPit(g, R);
@@ -648,20 +655,22 @@
     drawFrontPanel(g, R);
     drawBaseAndStain(g, R);
     drawCobwebsAndGrime(g, R);
-    drawPossum(g, R);
-    BARE = false;
+    if (!NOPOSSUM) drawPossum(g, R);
+    BARE = NOPOSSUM = NOTITLE = false;
     return c;
   }
   function buildStatic() {
     staticLayer = renderLayer(false);
     bareLayer = renderLayer(true);
-    occluders = {}; staticPix = null;
+    plainLayer = renderLayer(true, 'plain');
+    blankLayer = renderLayer(true, 'blank');
+    occluders = {}; staticPix = null; possumSprite = null; roomMask = null; moonCache = {};
     return staticLayer;
   }
   // copy a machine-frame rectangle from the bare layer (live elements are
   // repainted over their own clean background)
-  function restore(g, x, y, w, h) {
-    g.drawImage(bareLayer, x, y + TOP, w, h, x, y, w, h);
+  function restore(g, x, y, w, h, src) {
+    g.drawImage(src || bareLayer, x, y + TOP, w, h, x, y, w, h);
   }
 
   /* ══ dynamic frame: ambient life ══════════════════════════════════ */
@@ -740,14 +749,30 @@
   //   ballSx      the ball's screen x (machine frame); the possum watches it
   //   wideT0      time of the last 100: the possum's pupils blow wide
   //   muted       the marquee's neon tube is unplugged (the mute indicator)
+  //   marqueeNote {text, t0, until} — lettered on the marquee panel instead
+  //               of the title, in the title's hand (WOOD1, 2×; 1× if long)
+  //   doorRattle  a time: the coin door shakes ±1 px in its frame for 0.3 s
+  //   moon        {t0, phase, k, ball} — k 0..1: the room dithers PUR2/FOG
+  //               at 0.55·k; during 'rising' a fog band crosses at x = W·k;
+  //               the 100 holes breathe a glow ring at 1.5× the mouth
+  //               radius, density k·(0.35 + 0.3·sin 2πt/1.6), PINK_D off-beat
+  //   narrowT0    a time: eyes narrowed 3 s — FUR2 lids leave a 1-px slit
+  //               with the pink glint; still tracks ballSx; wins over wideT0
+  //   jam         {t0, ticketsAt} — a crumpled 3×2 ticket juts from the slot,
+  //               jittering 1 px every 0.4 s; after 0.8 s the TICKETS
+  //               label blinks to TAP (2 Hz). The strip itself is main's
+  //               (it holds ticketsOut and cranking while jammed)
+  //   unjamT0     a time: the ticket window jolts up 1 px for 0.15 s
+  //   tilt        0|1 — the right half of the possum's head sits 1 px lower
   function drawLiveUnder(ctx, t, view) {
     if (!staticLayer) buildStatic();
     view = view || {};
     var g = ctx, mode = view.mode || 'play';
     g.save(); g.translate(0, TOP);
     drawHoleGlow(g, t, view);
+    drawMoonHoles(g, t, view);
     drawDrumsLive(g, t, view, mode);
-    drawEyesLive(g, t, view);
+    drawHeadLive(g, t, view);        // possum gaze / lids / tilt, and the marquee note
     drawRackLive(g, t, view);
     if (view.muted) {
       var m = GEO.marquee;
@@ -756,6 +781,7 @@
     } else if (mode === 'attract') drawTube(g, t, true);
     if (mode === 'attract') drawChalkNote(g, t);
     g.restore();
+    drawMoonRoom(ctx, t, view);      // canvas frame: the room goes bruise-purple
   }
   function drawLiveOver(ctx, t, view) {
     if (!staticLayer) buildStatic();
@@ -764,9 +790,11 @@
     g.save(); g.translate(0, TOP);
     drawLiftBall(g, t, view);
     drawTicketsLive(g, t, view);
+    drawJam(g, t, view);
     if (mode === 'payout' && view.hundreds > 0) drawPayoutTag(g, view.hundreds);
     drawJackpot(g, t, view);
     g.restore();
+    drawJolts(ctx, t, view);         // canvas frame: the coin door rattles, the slot jolts
   }
   function drawLive(ctx, t, view) { drawLiveUnder(ctx, t, view); drawLiveOver(ctx, t, view); }
 
@@ -895,22 +923,59 @@
     px(g, x + 1, y + 1, PAL.PINK_D);                          // a nail hole
   }
 
-  /* ── possum gaze: beads ±1, the pink pupil ±1 inside them ── */
-  var WIDE_T = 2.5;
-  function drawEyesLive(g, t, view) {
+  /* ── the possum's head, recomposited live: gaze (beads ±1, the pink
+  // pupil ±1 inside them), wide pupils, narrowed lids, the 1-px tilt, and
+  // the marquee note under the snout ── */
+  var WIDE_T = 2.5, NARROW_T = 3, HEAD = { x0: 108 - 22, y0: 0, w: 45, h: 44 }; // machine frame
+  function headSprite() { // the possum alone (no eye beads) on transparent pixels
+    if (possumSprite) return possumSprite;
+    var c = makeCanvas(HEAD.w, HEAD.h), g = c.getContext('2d');
+    g.translate(-HEAD.x0, -HEAD.y0);
+    BARE = true; drawPossum(g, rng(0xC0FFEE)); BARE = false;
+    possumSprite = c;
+    return c;
+  }
+  function drawHeadLive(g, t, view) {
     var gz = 0;
     if (typeof view.ballSx === 'number') gz = Math.max(-2, Math.min(2, Math.round((view.ballSx - 108) / 22)));
     var dx = Math.max(-1, Math.min(1, gz)), gx = gz - dx;
-    var wide = typeof view.wideT0 === 'number' && t >= view.wideT0 && t - view.wideT0 < WIDE_T;
-    if (gz === 0 && !wide) return; // the static eyes (and drawFrame's blink) stand
-    var cx = GEO.possum.cx, top = GEO.possum.top;
-    restore(g, cx - 12, top + 11, 24, 11);
-    drawEyeBeads(g, dx, wide, gx);
+    var narrow = typeof view.narrowT0 === 'number' && t >= view.narrowT0 && t - view.narrowT0 < NARROW_T;
+    var wide = !narrow && typeof view.wideT0 === 'number' && t >= view.wideT0 && t - view.wideT0 < WIDE_T;
+    var tilt = view.tilt ? 1 : 0;
+    var note = view.marqueeNote && t >= view.marqueeNote.t0 && t < view.marqueeNote.until ? view.marqueeNote : null;
+    if (!gz && !wide && !narrow && !tilt && !note) return; // the static head (and drawFrame's blink) stand
+    restore(g, HEAD.x0, HEAD.y0, HEAD.w, HEAD.h, plainLayer);
+    if (note) drawMarqueeNote(g, t, note);
+    var hs = headSprite(), cx = GEO.possum.cx, top = GEO.possum.top, half = cx - HEAD.x0;
+    g.drawImage(hs, 0, 0, half, HEAD.h, HEAD.x0, HEAD.y0, half, HEAD.h);               // left half
+    g.drawImage(hs, half, 0, HEAD.w - half, HEAD.h, cx, HEAD.y0 + tilt, HEAD.w - half, HEAD.h); // right half, canted
+    drawEyeBeads(g, dx, wide, gx, tilt);
+    var L = EYES.L, Rr = EYES.R;
+    if (narrow) { // lids down to a 1-px slit, the glint riding in it
+      lid(g, cx + dx + L.x, top + L.y, L.w, L.h, 2, gx + 2);
+      lid(g, cx + dx + Rr.x, top + Rr.y + tilt, Rr.w, Rr.h, 2, gx + 1);
+    }
     var e = wide ? 1 : 0; // a blink covers the whole (possibly blown-wide) bead
     if (flickerAt(t, 6.7, 3) < 0.025)
-      rect(g, cx + dx + EYES.L.x - e, top + EYES.L.y - e, EYES.L.w + 2 * e, EYES.L.h + 2 * e, PAL.FUR2);
+      rect(g, cx + dx + L.x - e, top + L.y - e, L.w + 2 * e, L.h + 2 * e, PAL.FUR2);
     if (flickerAt(t, 6.7, 11) < 0.025)
-      rect(g, cx + dx + EYES.R.x - e, top + EYES.R.y - e, EYES.R.w + 2 * e, EYES.R.h + 2 * e, PAL.FUR2);
+      rect(g, cx + dx + Rr.x - e, top + Rr.y - e + tilt, Rr.w + 2 * e, Rr.h + 2 * e, PAL.FUR2);
+  }
+  function lid(g, x, y, w, h, slitRow, glintX) {
+    for (var r = 0; r < h; r++) if (r !== slitRow) hline(g, x, x + w - 1, y + r, PAL.FUR2);
+    hline(g, x, x + w - 1, y + slitRow, PAL.NIGHT0);
+    px(g, x + Math.max(0, Math.min(w - 1, glintX)), y + slitRow, PAL.PINK);
+    hline(g, x, x + w - 1, y + slitRow - 1, PAL.FUR3); // the lid's dark edge
+  }
+  // the note replaces the title on the lit panel, in the same hand
+  function drawMarqueeNote(g, t, note) {
+    var m = GEO.marquee, p = { x0: m.x0 + 6, x1: m.x1 - 6, y0: m.y0 + 7, y1: m.y1 - 7 };
+    restore(g, p.x0, p.y0, p.x1 - p.x0, p.y1 - p.y0, blankLayer);
+    var str = String(note.text).toUpperCase(), sc = textW(str, 2) <= p.x1 - p.x0 - 6 ? 2 : 1;
+    var y = sc === 2 ? m.y0 + 13 : m.y0 + 16;
+    // the backlight stutters as the lettering changes over
+    if (flickerAt(t, 9, 41) < 0.15 && t - note.t0 < 0.4) return;
+    textC(g, str, 108, y, PAL.WOOD1, sc);
   }
 
   /* ── attract: "5¢ - SWIPE" chalked on the lane, fading in and out ── */
@@ -947,6 +1012,95 @@
       ellipse(g, h.x, h.y, hr - 2, Math.round(hr * 0.7) - 1, PAL.PINK_D);
       glowRing(g, h.x, h.y, hr, Math.round(hr * 0.7), 5, PAL.PINK_D, 0.7);
     }
+  }
+
+  /* ── the moon: the room goes bruise-purple, a fog band telegraphs it,
+  // the 100 holes breathe wider ── */
+  var MOON_PERIOD = 1.6;
+  function roomMaskBits() { // 1 where the static layer shows the room (canvas frame)
+    if (roomMask) return roomMask;
+    // the machine drawn over a sentinel-magenta room: whatever stays magenta is room
+    var b = renderLayer(false, 'sil').getContext('2d').getImageData(0, 0, W, H).data;
+    roomMask = new Uint8Array(W * H);
+    for (var i = 0; i < W * H; i++) roomMask[i] = (b[i * 4] === 255 && b[i * 4 + 1] === 0 && b[i * 4 + 2] === 255) ? 1 : 0;
+    return roomMask;
+  }
+  function moonOverlay(level) { // level 1..10 → density 0.055..0.55
+    if (moonCache[level]) return moonCache[level];
+    var m = roomMaskBits(), c = makeCanvas(W, H), g = c.getContext('2d'), d = 0.55 * level / 10 * 16;
+    for (var y = 0; y < H; y++)
+      for (var x = 0; x < W; x++) {
+        if (!m[y * W + x]) continue;
+        var b = BAYER[(y % 4) * 4 + (x % 4)];
+        if (b < d * 0.7) px(g, x, y, PAL.PUR2);
+        else if (b < d) px(g, x, y, PAL.FOG);
+      }
+    moonCache[level] = c;
+    return c;
+  }
+  function drawMoonRoom(ctx, t, view) {
+    var mo = view.moon;
+    if (!mo || !(mo.k > 0)) return;
+    var level = Math.max(1, Math.min(10, Math.round(mo.k * 10)));
+    ctx.drawImage(moonOverlay(level), 0, 0);
+    if (mo.phase === 'rising') { // a band of fog crossing the room: the telegraph
+      var m = roomMaskBits(), bx = Math.round(W * mo.k) - 1;
+      ctx.fillStyle = PAL.FOG;
+      for (var y = 0; y < H; y++)
+        for (var x = bx; x < bx + 3; x++)
+          if (x >= 0 && x < W && m[y * W + x] && BAYER[(y % 4) * 4 + (x % 4)] < 9) ctx.fillRect(x, y, 1, 1);
+    }
+  }
+  function drawMoonHoles(g, t, view) {
+    var mo = view.moon;
+    if (!mo || !(mo.k > 0)) return;
+    var s = Math.sin(2 * Math.PI * t / MOON_PERIOD), dens = mo.k * (0.35 + 0.3 * s);
+    var rx = Math.round((GEO.holeR - 2) * 1.5), ry = Math.round((Math.round(GEO.holeR * 0.7) - 1) * 1.5);
+    for (var i = 0; i < 2; i++) {
+      var h = GEO.holes100[i];
+      glowRing(g, h.x, h.y, rx, ry, 3, s >= 0 ? PAL.PINK : PAL.PINK_D, Math.max(0.05, dens));
+    }
+  }
+
+  /* ── the ticket jam ── */
+  var JAM_TAP_T = 0.8;
+  function drawJam(g, t, view) {
+    var jm = view.jam;
+    if (!jm || typeof jm.t0 !== 'number' || t < jm.t0) return;
+    var s = slotRect(), jig = Math.floor((t - jm.t0) / 0.4) % 2;   // the motor straining
+    var x = s.x + 12 + jig, y = s.y + 1;                            // juts 1 px above the mouth
+    px(g, x, y, PAL.PINK); px(g, x + 1, y, PAL.PINK_DK); px(g, x + 2, y, PAL.PINK);
+    px(g, x, y + 1, PAL.PINK_DK); px(g, x + 1, y + 1, PAL.PINK); px(g, x + 2, y + 1, PAL.PINK_D);
+    if (t - jm.t0 >= JAM_TAP_T && Math.floor((t - jm.t0 - JAM_TAP_T) * 4) % 2 === 0) {
+      // the TICKETS label turns into the instruction: TAP (2 Hz)
+      var fr = GEO.front, f = frontX();
+      restore(g, f.x1 - 41, fr.y0 + 1, 30, 7, blankLayer);
+      textC(g, 'TAP', s.x + s.w / 2, fr.y0 + 2, PAL.PINK, 1);
+    }
+  }
+  // the coin door rattling in its frame and the ticket window's jolt: the
+  // region moves 1 px, the vacated edge shows the dark gap behind it
+  var RATTLE_T = 0.3, JOLT_T = 0.15;
+  function drawJolts(ctx, t, view) {
+    var fr = GEO.front, f = frontX();
+    var rt = typeof view.doorRattle === 'number' ? view.doorRattle : (view.doorRattle && view.doorRattle.t0);
+    if (typeof rt === 'number' && t >= rt && t - rt < RATTLE_T) {
+      var dx = [1, -1, 1, 0, -1, 1][Math.floor((t - rt) * 24) % 6];
+      if (dx) shift(ctx, f.x0 + 10, fr.y0 + 3, 34, 15, dx, 0, PAL.WOOD1);
+    }
+    var ut = view.unjamT0;
+    if (typeof ut === 'number' && t >= ut && t - ut < JOLT_T) {
+      var s = slotRect();
+      shift(ctx, s.x, s.y - 8, s.w, s.h + 8, 0, -1, PAL.WOOD1);
+    }
+  }
+  function shift(ctx, x, y, w, h, dx, dy, gap) { // machine-frame rect, drawn on the raw canvas
+    var Y = y + TOP;
+    var tmp = makeCanvas(w, h); tmp.getContext('2d').drawImage(ctx.canvas, x, Y, w, h, 0, 0, w, h);
+    ctx.fillStyle = gap;
+    if (dx) ctx.fillRect(dx > 0 ? x : x + w - 1, Y, 1, h);
+    if (dy) ctx.fillRect(x, dy > 0 ? Y : Y + h - 1, w, 1);
+    ctx.drawImage(tmp, x + dx, Y + dy);
   }
 
   /* ── the score toast: PINK with a NIGHT0 outline, kept off the painted
@@ -1299,6 +1453,7 @@
     // machine-frame sprites (the caller translates by TOP)
     drawBall: drawBall, drawSunkBall: drawSunkBall, drawBallShadow: drawBallShadow, drawBedShadow: drawBedShadow,
     drawSinkOccluder: drawSinkOccluder, drawRimTick: drawRimTick, drawToast: drawToast,
+    slotRect: slotRect, drawsMachineNotes: true,   // main's whack hit-test; render draws marqueeNote/doorRattle
     text: text, textC: textC, flickerAt: flickerAt
   };
   root.SkeeBallRender = api;
