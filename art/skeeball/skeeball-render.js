@@ -578,14 +578,26 @@
   // front panel furniture shared by the static draw and drawLive
   function frontX() { var y = GEO.rail.y0; return { x0: cabL(y) + 3, x1: cabR(y) - 3 }; }
   function rackBallAt(i) { var f = frontX(); return { x: f.x0 + 14 + i * 17, y: GEO.rail.y0 + 11 }; }
-  function drawRackBall(g, i, bx, by) {
+  function drawRackBall(g, i, bx, by, squash) {
+    if (squash) { ellipse(g, bx, by + 1, 6, 4, PAL.BONE); px(g, bx - 2, by - 1, PAL.MOON); dither(g, bx - 4, by + 3, 9, 2, PAL.BONE_D, 0.6); return; }
     ellipse(g, bx, by, 5, 5, PAL.BONE);
     px(g, bx - 2, by - 2, PAL.MOON);                    // glint
     dither(g, bx - 3, by + 2, 7, 3, PAL.BONE_D, 0.6);   // shade
     if (i === 2 || i === 6) px(g, bx + 1, by, PAL.BONE_D); // scuffed ones
     if (i === 4) { px(g, bx, by - 1, PAL.CORK2); px(g, bx + 1, by + 1, PAL.CORK2); } // the dirty one
   }
-  function troughRect() { var f = frontX(), rl = GEO.rail; return { x: f.x0 + 6, y: rl.y0 + 4, w: f.x1 - f.x0 - 12, h: 14 }; }
+  // the drawn trough box (with its NIGHT0 top edge and brass-lit lip)…
+  function troughBox() { var f = frontX(), rl = GEO.rail; return { x: f.x0 + 6, y: rl.y0 + 4, w: f.x1 - f.x0 - 12, h: 14 }; }
+  // …and its interior, where the balls roll (machine frame): x 14..201,
+  // rows 337..348. floorY = y + h − 1 (348), ball centres at floorY − 5 (343)
+  var RACK_BALL_R = 5;
+  function troughRect() {
+    var b = troughBox(), r = { x: b.x, y: b.y + 1, w: b.w, h: b.h - 2 };
+    r.floorY = r.y + r.h - 1; r.ballY = r.floorY - RACK_BALL_R;
+    return r;
+  }
+  // the release gate in the trough's left wall
+  function gateRect() { var b = troughBox(); return { x: b.x - 5, y: b.y + 2, w: 7, h: b.h - 3 }; }
   function slotRect() { var f = frontX(), fr = GEO.front; return { x: f.x1 - 42, y: fr.y0 + 9, w: 32, h: 8 }; }
   function coinDoorRect() { var f = frontX(), fr = GEO.front; return { x: f.x0 + 10, y: fr.y0 + 3, w: 26, h: 15 }; }
   // the vertical coin slit on the plate's left (2 × 7)
@@ -606,8 +618,9 @@
     rect(g, x0 + 6, rl.y0 + 4, x1 - x0 - 12, 14, PAL.WOOD1);
     hline(g, x0 + 6, x1 - 6, rl.y0 + 4, PAL.NIGHT0);
     hline(g, x0 + 6, x1 - 6, rl.y0 + 17, PAL.WOOD4); // brass-lit lip
-    // nine bone-white balls racked and waiting
-    if (!BARE) for (var i = 0; i < 9; i++) { var b = rackBallAt(i); drawRackBall(g, i, b.x, b.y); }
+    // the trough stands empty: the balls roll in live (view.rack) through
+    // the gate at its left end
+    drawGate(g, false);
     // coin door (left): a narrow brass plate, the slit running vertical on
     // its left, 5¢ stamped to the right of it
     var cd = coinDoorRect(), sl = coinSlit();
@@ -775,8 +788,12 @@
   //   score       number shown on the drums
   //   drum        {from, to, t0} — roll from→to starting at t0; absent = hold `score`
   //   highScore   attract shows it on the drums every 8 s
-  //   ballsLeft   0..9 balls in the return rack (default 9)
-  //   lift        {t0} — the ball in slot `ballsLeft` lifts onto the throw line
+  //   rack        [x…] ball centres (machine px, left → right) in the return
+  //               trough, drawn at troughRect().ballY; empty = an empty trough
+  //   gateOpen    the trough's left gate is open (a dark mouth; balls roll in)
+  //   rackClack   {t, i} — ball i squashes 1 px for 2 frames (a knock)
+  //   ballsLeft   legacy: without view.rack, this many balls in the old slots
+  //   lift        {t0, fromX} — a ball lifts from (fromX, ballY) onto the throw line
   //   ticketsOut  tickets cranked out so far (fractional = mid-ticket)
   //   cranking    the dispenser is running (ratchet jitter)
   //   hundreds    number of 100s this game (the tag's "+13"/"+26" line)
@@ -959,27 +976,56 @@
 
   /* ── the ball-return rack ── */
   var LIFT_T = 0.4, RACK_RATTLE_T = 0.2;
+  // The gate: a steel flap in the trough's left wall. Closed, it stands
+  // upright (STEEL, a lit edge, a hinge rivet); open, the wall shows a dark
+  // mouth into the machine and the flap is swung up flat under the rail.
+  function drawGate(g, open) {
+    var gr = gateRect(), b = troughBox();
+    if (!open) {
+      rect(g, b.x, gr.y, 2, gr.h, PAL.STEEL1);
+      vline(g, b.x + 1, gr.y, gr.y + gr.h - 1, PAL.STEEL2);        // lit edge toward the player
+      px(g, b.x, gr.y, PAL.STEEL2);                                  // hinge rivet
+      px(g, b.x + 1, gr.y + gr.h - 1, PAL.WOOD1);                    // foot in shadow
+      return;
+    }
+    rect(g, gr.x, gr.y, gr.w - 2, gr.h, PAL.NIGHT0);                 // the mouth
+    vline(g, gr.x - 1, gr.y, gr.y + gr.h - 1, PAL.WOOD1);            // its shadowed jamb
+    hline(g, gr.x, b.x + 4, gr.y - 1, PAL.STEEL1);                   // the flap, swung up flat
+    hline(g, gr.x + 1, b.x + 4, gr.y - 2, PAL.STEEL2);
+  }
+  var CLACK_T = 2 / 60;
   function drawRackLive(g, t, view) {
-    var n = view.ballsLeft == null ? 9 : Math.max(0, Math.min(9, view.ballsLeft | 0));
+    var rack = view.rack;
+    if (!Array.isArray(rack)) { // legacy: ballsLeft balls in the old slots
+      var n = view.ballsLeft == null ? 0 : Math.max(0, Math.min(9, view.ballsLeft | 0)); rack = [];
+      for (var q = 0; q < n; q++) rack.push(rackBallAt(q).x);
+    }
     var rr = view.rackRattle, rattling = typeof rr === 'number' && t >= rr && t - rr < RACK_RATTLE_T;
-    if (n === 9 && !rattling) return; // the static rack is already right
-    var tr = troughRect();
-    restore(g, tr.x, tr.y, tr.w, tr.h);
-    for (var i = 0; i < n; i++) {
-      var b = rackBallAt(i), jx = 0, jy = 0;
+    var ck = view.rackClack, clack = ck && typeof ck.t === 'number' && t >= ck.t && t - ck.t < CLACK_T ? ck.i : -1;
+    if (!rack.length && !view.gateOpen) return;  // the static trough is already empty and shut
+    var tb = troughBox(), tr = troughRect(), gr = gateRect();
+    restore(g, gr.x - 1, tb.y, tb.x + tb.w - gr.x + 1, tb.h);
+    if (view.gateOpen) drawGate(g, true);
+    g.save();                                     // a ball rolling in shows from the mouth on
+    g.beginPath(); g.rect(view.gateOpen ? gr.x : tb.x + 2, tb.y + 1, tb.w, tb.h - 1); g.clip();
+    for (var i = 0; i < rack.length; i++) {
+      var bx = Math.round(rack[i]), jx = 0, jy = 0;
+      if (!isFinite(bx)) continue;
       if (rattling) { // each ball knocks on its own beat: "one's still out there"
         var ph = Math.floor((t - rr) * 30) + i * 2;
         jx = [1, 0, -1, 0][ph % 4]; jy = (ph + i) % 3 === 0 ? -1 : 0;
       }
-      drawRackBall(g, i, b.x + jx, b.y + jy);
+      drawRackBall(g, i, bx + jx, tr.ballY + jy, i === clack);
     }
+    g.restore();
   }
   // the next ball rises out of slot `ballsLeft` and arcs up onto the throw line
   function drawLiftBall(g, t, view) {
     if (!view.lift || t < view.lift.t0 || t - view.lift.t0 >= LIFT_T) return;
     var n = view.ballsLeft == null ? 9 : Math.max(0, Math.min(9, view.ballsLeft | 0));
     var k = (t - view.lift.t0) / LIFT_T, e = k * k * (3 - 2 * k);
-    var from = rackBallAt(Math.min(8, n)), to = project(0, BALL_R, 0);
+    var from = typeof view.lift.fromX === 'number' ? { x: view.lift.fromX, y: troughRect().ballY } : rackBallAt(Math.min(8, n));
+    var to = project(0, BALL_R, 0);
     var x = from.x + (to.sx - from.x) * e;
     var y = from.y + (to.sy - from.y) * e - Math.sin(k * Math.PI) * 10;
     drawBall(g, x, y, 5 + (ballRadius(to.scale) - 5) * e);
@@ -1709,6 +1755,7 @@
     // machine-frame sprites (the caller translates by TOP)
     drawBall: drawBall, drawSunkBall: drawSunkBall, drawBallShadow: drawBallShadow, drawBedShadow: drawBedShadow,
     drawSinkOccluder: drawSinkOccluder, drawRimTick: drawRimTick, drawToast: drawToast,
+    troughRect: troughRect, gateRect: gateRect, RACK_BALL_R: RACK_BALL_R,
     slotRect: slotRect, coinDoorRect: coinDoorRect, buttonRect: buttonRect, coinSlitRect: coinSlit, stampRect: stampRect, drawContact: drawContact,
     LIFT_T: LIFT_T, TOAST_T: TOAST_T, drawsMachineNotes: true,   // main's whack hit-test; render draws marqueeNote/doorRattle
     text: text, textC: textC, flickerAt: flickerAt
