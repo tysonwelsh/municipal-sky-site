@@ -98,6 +98,7 @@
     // stalled balls roll home. An along-lane accel ≈ g·sin 2.9°; a soft
     // throw loses ≤ 12 % of its speed along the lane to it.
     laneLean: 0.16,
+    laneSideA: 0, hopBackA: 0,   // mischief: the lean (lateral u/s²) and the sulk's hop brake (u/s²)
     crrLane: 0.018,          // rolling resistance, waxed maple
     crrBed: 0.06,            // cork bed
     crrCup: 2.0,             // cork cup floor and walls: dead
@@ -484,6 +485,8 @@
         ax -= fr * vtx / vt; ay -= fr * vty / vt; az -= fr * vtz / vt;
       }
       if (b.supKind === 'lane' || b.supKind === 'hop') az -= T.laneLean;
+      if (b.supKind === 'lane' || b.supKind === 'hop') ax += T.laneSideA;
+      if (b.supKind === 'hop' && b.vz > 0 && !b.launched && T.hopBackA && vt > 1e-6) { var hb = Math.min(T.hopBackA, vt / dt); ax -= hb * vtx / vt; ay -= hb * vty / vt; az -= hb * vtz / vt; }
       if (b.supKind === 'bed') ax += T.bedNudge * (hash01(b.seed, b.n) - 0.5) * 2;
     }
     // english: only while the ball is on its way (not on a dead roll home)
