@@ -170,10 +170,11 @@ Hard-won in rounds 2 and 3, by the agents who hit them.
   rendered waveform at boosted gain will tell you whether the source is dead
   or merely recorded 20 dB low; the second kind is worth keeping, because
   `loudnorm` recovers it.
-- **`weight` is no longer read** (the owner's ruling, 2026-09-25, rc.114): the
-  lottery counts every reel as 1 — only the picture ×1.5 and the tide shape the
-  draw. `--weight` still writes the field into the manifest, but it changes
-  nothing; don't spend time choosing it.
+- **`weight` is not read for now** (rc.114: `USE_REEL_WEIGHTS = false` in
+  zk-broadcast.js — every reel counts 1; only the picture ×1.5 and the tide
+  shape the draw). **Still record a sensible `--weight`** (3 default, 4 for the
+  strongest, 2 for filler): the owner will curate the weights and switch them
+  back on.
 - **Silent prints are allowed** (the owner's ruling, 2026-09-24). A source
   with no audio stream is marked `"silent": true` automatically; a mute print
   whose file still carries hiss or a blank track takes `--silent`. Choose the
