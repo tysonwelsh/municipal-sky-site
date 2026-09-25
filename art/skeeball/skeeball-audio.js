@@ -596,6 +596,26 @@
         o.start(t); o.stop(e.end); lfo.start(t); lfo.stop(e.end);
         o.onended = function () { try { bp.disconnect(); am.disconnect(); e.g.disconnect(); ld.disconnect(); } catch (err) {} };
       },
+      unjam: function (t, r, ev) {         // whacked loose (or it gives by itself): the crank resumes
+        var hit = !!ev.whacked;
+        thud(t, db(hit ? -15 : -18), hit ? 95 : 120, hit ? 700 : 450);
+        for (var i = 0; i < (hit ? 6 : 3); i++) {
+          var tk = t + 0.07 + i * 0.016;
+          noise(tk, { f: 3400 + 300 * r(), q: 6, peak: db(-2 - 0.5 * i), a: 0.0003, d: 0.009 });
+          tone(tk, { f: 1400 + 60 * i, peak: db(-26), a: 0.0003, d: 0.01 });
+        }
+      },
+      possum: function (t, r) {            // the animatronic head tilts: a little servo whine
+        var o = ctx.createOscillator(); o.type = 'square';
+        o.frequency.value = 900; o.frequency.setValueAtTime(900, t);
+        o.frequency.exponentialRampToValueAtTime(700, t + 0.12);
+        var lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2500; lp.Q.value = 0.7;
+        var e = envGain(t, db(-19), 0.008, 0.05, 0.1);
+        o.connect(lp); lp.connect(e.g); e.g.connect(G.sfx);
+        o.start(t); o.stop(e.end);
+        o.onended = function () { try { lp.disconnect(); e.g.disconnect(); } catch (err) {} };
+        noise(t + 0.13, { f: 2600 + 300 * r(), q: 4, peak: db(-12), a: 0.0005, d: 0.012 });   // it clicks home
+      },
       moon: function (t) { tone(t, { f: 60, f1: 45, peak: db(-16), a: 0.004, d: 0.6 }); },
       sulk: function (t) {                 // the bell slumps, the machine sighs
         var f = BELL_BASE * semis(7);
