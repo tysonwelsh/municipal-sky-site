@@ -1172,6 +1172,12 @@
   // receiver's core and must keep surfacing. 1.5× lands the same 85 % on the
   // new pool. The synthetic gagaku broadcast stays the fallback only — this
   // weights WHICH real reel is chosen, never whether a real one is.
+  // THE PER-REEL WEIGHT, switched OFF (owner, 2026-09-25): the manifest's
+  // 1–5 `weight` was guessed at curation, "by ear" by agents that cannot
+  // hear, so every reel counts the same for now. The owner wants weighting
+  // back once they have curated the weights themselves, so the field stays
+  // in the manifest and this is the one switch: true reads it again.
+  var USE_REEL_WEIGHTS = false;
   var VIDEO_WEIGHT = 1.5;
 
   // ---- §14 WHOLE-THOUGHT WINDOWS (owner, 2026-09-09) ------------------------
@@ -1415,11 +1421,7 @@
     if (narrowed) cands = narrowed;
     var dark = tidePos, w = [], tot = 0;
     for (i = 0; i < cands.length; i++) {
-      // every reel counts the same (owner, 2026-09-25): the manifest's 1–5
-      // `weight` was guessed at curation, "by ear" by agents that cannot hear,
-      // and is no longer read. It stays in the manifest, unread. What still
-      // tilts the draw is below: a picture, and the tide.
-      var e = cands[i], x = 1, tone = e.tone;
+      var e = cands[i], x = USE_REEL_WEIGHTS && +e.weight > 0 ? +e.weight : 1, tone = e.tone;
       if (!e.audioOnly) x *= VIDEO_WEIGHT;                                                        // §8.1: a reel with a picture is three times as likely to be the one
       if (TONE_DARK[tone]) x *= 0.7 + 0.6 * dark;                                                // the dark tide leans to voices, noise, tones and drones
       else if (TONE_LIGHT[tone]) x *= 0.7 + 0.6 * (1 - dark);                                     // the light tide to music and singing
