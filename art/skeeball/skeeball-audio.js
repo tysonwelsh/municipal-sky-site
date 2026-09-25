@@ -11,8 +11,9 @@
  *   handle.onEvent(fn)   game + physics events (PLAN-2 §8, §11)
  *   handle.getState()    { mode, score, … } (optional)
  *   handle.getPose()     physics pose (optional): drives the roll sound
- *   unlockEl             pointerdown/touchend on it (capture) creates and
- *                        resumes the AudioContext; so does an `input` event
+ *   unlockEl             a gesture on it (capture) creates and resumes the
+ *                        AudioContext; so does an `input` event — but only
+ *                        inside a live user activation (see unlock())
  *   opts.context         an injected (Offline)AudioContext — the graph is
  *                        built at once and nothing is suspended/resumed;
  *                        the caller drives api._pump() for the roll sound
@@ -696,8 +697,19 @@
     }
 
     /* ── unlock, visibility, mute ──────────────────────────────────── */
+    // Only inside a live user activation. A touch pointerdown is NOT one
+    // (the HTML spec counts pointerup/touchend, mousedown/mouse pointerdown,
+    // keydown, click): creating the context there gets it refused, with a
+    // console warning per node started. So the game's `input {kind:'down'}`
+    // creates it on a mouse or key, and a touch waits for its own touchend.
+    // Browsers without navigator.userActivation are trusted to be in one.
+    var GESTURES = ['pointerdown', 'pointerup', 'touchend', 'mousedown', 'click', 'keydown'];
+    function activated() {
+      var ua = typeof navigator !== 'undefined' && navigator.userActivation;
+      return !ua || !!ua.isActive;
+    }
     function unlock() {
-      if (dead || injected) return;
+      if (dead || injected || !activated()) return;
       if (!ctx) {
         var AC = window.AudioContext || window.webkitAudioContext;
         if (!AC) return;
@@ -733,7 +745,7 @@
       if (pumpTimer) clearInterval(pumpTimer);
       if (unsub) try { unsub(); } catch (e) {}
       else if (handle && handle.offEvent) try { handle.offEvent(onEvent); } catch (e) {}
-      if (unlockEl) ['pointerdown', 'touchend', 'keydown'].forEach(function (n) { unlockEl.removeEventListener(n, onGesture, true); });
+      if (unlockEl) GESTURES.forEach(function (n) { unlockEl.removeEventListener(n, onGesture, true); });
       if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVis);
       if (G) {
         var t = ctx.currentTime;
@@ -751,7 +763,7 @@
     /* ── wire up ───────────────────────────────────────────────────── */
     var unsub = null;
     if (handle && handle.onEvent) { var u = handle.onEvent(onEvent); if (typeof u === 'function') unsub = u; }
-    if (unlockEl && unlockEl.addEventListener) ['pointerdown', 'touchend', 'keydown'].forEach(function (n) { unlockEl.addEventListener(n, onGesture, true); });
+    if (unlockEl && unlockEl.addEventListener) GESTURES.forEach(function (n) { unlockEl.addEventListener(n, onGesture, true); });
     if (typeof document !== 'undefined') {
       document.addEventListener('visibilitychange', onVis);
       hidden = document.visibilityState === 'hidden';
