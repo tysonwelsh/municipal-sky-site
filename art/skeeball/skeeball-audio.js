@@ -474,6 +474,33 @@
         thud(t + 0.58, db(-15), 95, 700);
         relay(t + 0.72, db(-20));
       },
+      /* the ball-return rack filling after the button (1-D physics in main) */
+      rackRelease: function (t, r, ev) {  // a ball through the gate at the trough's left end
+        var n = ev.n || 1;
+        relay(t, db(-21));
+        tone(t + 0.01, { type: 'triangle', f: 210 + 6 * n + 10 * r(), f1: 150, peak: db(-18), a: 0.0008, d: 0.07 });
+        thud(t + 0.05, db(-19), 130 + 5 * n, 700);        // the short drop into the trough
+      },
+      rackRoll: function (t, r, ev) { rackRumble(t, ev.energy || 0); },
+      rackWall: function (t, r, ev) {      // the first ball meets the right end wall
+        var pk = db(speedDb(ev.speed || 100, 30, 260) - 2.5);
+        thud(t, pk, 88 + 6 * r(), 450);
+        tone(t, { type: 'triangle', f: 175 + 10 * r(), f1: 140, peak: pk * 0.6, a: 0.0006, d: 0.09 });
+      },
+      rackClack: function (t, r, ev) {     // ball on ball: bright, dry, phenolic
+        var k = clamp(((ev.speed || 60) - 20) / 100, 0, 1);
+        var pk = db(-15.6 + 3.2 * k);                      // → −16 … −12 dBFS
+        var pitch = (0.93 + 0.14 * k) * (1 + (r() - 0.5) * 0.07);
+        // the tick is tonal so its level follows speed; a little noise for the crack
+        noise(t, { f: 3300 * pitch, q: 1.4, peak: pk * 0.9, a: 0.0002, d: 0.008 });
+        tone(t, { f: 2380 * pitch, peak: pk * 0.62, a: 0.0002, d: 0.032 });
+        tone(t, { f: 3870 * pitch * (1 + (r() - 0.5) * 0.02), peak: pk * 0.4, a: 0.0002, d: 0.022 });
+        tone(t, { f: 1150 * pitch, peak: pk * 0.3, a: 0.0003, d: 0.016 });
+      },
+      rackSettled: function (t, r) {       // the last one rocks still
+        tone(t, { type: 'triangle', f: 600 + 30 * r(), f1: 520, peak: db(-17), a: 0.0006, d: 0.035 });
+        tone(t + 0.06, { type: 'triangle', f: 590, f1: 515, peak: db(-25), a: 0.0006, d: 0.03 });
+      },
       button: function (t, r, ev) {
         if (ev.credited) {                 // chunky microswitch, the solenoid, the balls let go
           noise(t, { ft: 'highpass', f: 2600, q: 0.8, peak: db(-21), a: 0.0004, d: 0.012 });
@@ -481,7 +508,7 @@
           tone(t, { type: 'triangle', f: 340, f1: 260, peak: db(-21), a: 0.0006, d: 0.05 });
           noise(t + 0.075, { ft: 'highpass', f: 3000, q: 0.8, peak: db(-22), a: 0.0004, d: 0.01 });  // the key lets go
           relay(t + 0.05, db(-17));
-          thud(t + 0.1, db(-17), 115, 800);
+          thud(t + 0.1, db(-21), 115, 800);           // soft: rackRelease voices each ball
         } else {                           // nothing behind it: a dead plastic click
           tone(t, { type: 'triangle', f: 900 + 60 * r(), f1: 700, peak: db(-19), a: 0.0005, d: 0.025 });
           noise(t, { f: 1200, q: 2, peak: db(-17), a: 0.0004, d: 0.015 });
@@ -645,6 +672,30 @@
       },
       drum: function (t, r, ev) { drumTicks(t, ev.from || 0, ev.to || 0); }
     };
+
+    // the rack's rolling rumble: one long-lived voice, driven every ~100 ms by
+    // rackRoll {energy}; with no fresh event it fades out by itself
+    function rackRumble(t, energy) {
+      if (!G.rack) {
+        var src = keepSrc(ctx.createBufferSource()); src.buffer = G.noise; src.loop = true;
+        var lp = keep(ctx.createBiquadFilter()); lp.type = 'lowpass'; lp.frequency.value = 260; lp.Q.value = 0.9;
+        var bp = keep(ctx.createBiquadFilter()); bp.type = 'peaking'; bp.frequency.value = 210; bp.Q.value = 3; bp.gain.value = 8;
+        var am = keep(ctx.createGain()); am.gain.value = 0.7;
+        var lfo = keepSrc(ctx.createOscillator()); lfo.frequency.value = 11;
+        var ld = keep(ctx.createGain()); ld.gain.value = 0.3;
+        var g = keep(ctx.createGain()); g.gain.value = 0;
+        lfo.connect(ld); ld.connect(am.gain);
+        src.connect(lp); lp.connect(bp); bp.connect(am); am.connect(g); g.connect(G.sfx);
+        src.start(t, 0.77); lfo.start(t);
+        G.rack = { g: g, lp: lp, lfo: lfo };
+      }
+      var e = clamp(energy / 500, 0, 1), R = G.rack;
+      R.g.gain.cancelScheduledValues(t);
+      R.g.gain.setTargetAtTime(db(-14) * Math.sqrt(e), t, 0.03);
+      R.g.gain.setTargetAtTime(0, t + 0.16, 0.08);          // no news: it's stopping
+      R.lp.frequency.setTargetAtTime(200 + 260 * e, t, 0.05);
+      R.lfo.frequency.setTargetAtTime(6 + 12 * e, t, 0.05);
+    }
 
     function neon(t) {                     // the pink tube: mains buzz swelling up
       var g = ctx.createGain(); g.gain.value = 0;
