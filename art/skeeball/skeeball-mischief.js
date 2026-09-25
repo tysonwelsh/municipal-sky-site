@@ -6,8 +6,11 @@
  *
  *   THE LEAN     every nickel the lane warps a little to one side: a
  *                constant lateral pull `laneSideA` of 0.03–0.07 u/s², sign
- *                and size from the game seed. Ball one teaches it. The
- *                chalk ghost stays honest (it shows aim, not the drift).
+ *                and size from the game seed. It lives on the side lines:
+ *                zero for a throw from |x0| ≤ 0.15, full from |x0| ≥ 0.45,
+ *                so it bends side and bank shots, where the ball visibly
+ *                crosses the lane and the drift can be read and corrected.
+ *                The chalk ghost stays honest (it shows aim, not the drift).
  *   MOON         about one game in four, for one ball (never ball 1): the
  *                room goes bruise-purple and the 100 holes breathe. It is
  *                announced as the ball before it is thrown (a throw takes
@@ -54,7 +57,8 @@
   'use strict';
 
   var BALLS = 9;
-  var LEAN_MIN = 0.03, LEAN_MAX = 0.07;   // |laneSideA|, units/s²
+  var LEAN_MIN = 0.03, LEAN_MAX = 0.07;   // |laneSideA|, units/s², at full reach
+  var LEAN_X0 = 0.15, LEAN_X1 = 0.45;     // |x0| where the lean starts / is full
   var MOON_LEAD = 1.5;                    // s of 'rising' before the moon is full
   var MOON_SET = 1.0;                     // s of 'setting' after the moon ball's done
   var MOON_HOLES = 1.5;                   // 100-hole capture radius × this
@@ -79,6 +83,11 @@
     return (h >>> 0) / 4294967296;
   }
   function clamp(x, a, b) { return x < a ? a : (x > b ? b : x); }
+  // the lean lives on the side lines: none for a throw from the middle
+  // (|x0| ≤ LEAN_X0), full from |x0| ≥ LEAN_X1, linear between. Down the
+  // centre the drift is below thumb noise and only flips knife-edge rings;
+  // on a side or bank line the ball crosses the lane and the bend reads.
+  function leanReach(x0) { return clamp((Math.abs(+x0 || 0) - LEAN_X0) / (LEAN_X1 - LEAN_X0), 0, 1); }
   function r4(x) { return Math.round(x * 1e4) / 1e4; }
 
   function mergeRates(r) {
@@ -193,7 +202,7 @@
       if (g.moonPending) flushMoon();
       ball = ball | 0;
       g.ball = ball;
-      var ov = { laneSideA: g.plan.lean };
+      var ov = { laneSideA: r4(g.plan.lean * leanReach(args && args.x0)) };
       out.tuneOverride = ov;
       // THE SULK: the first throw of the ball after a 100 is refused
       if (g.sulkBall === ball && !g.sulked[ball]) {
@@ -357,10 +366,10 @@
   }
 
   var api = {
-    attach: attach, plan: plan, hash01: hash01,
+    attach: attach, plan: plan, hash01: hash01, leanReach: leanReach,
     CONST: {
       LEAN_MIN: LEAN_MIN, LEAN_MAX: LEAN_MAX, MOON_LEAD: MOON_LEAD, MOON_SET: MOON_SET,
-      MOON_HOLES: MOON_HOLES, NARROW_T: NARROW_T, JAM_AUTO: JAM_AUTO, TILT_RUN: TILT_RUN,
+      LEAN_X0: LEAN_X0, LEAN_X1: LEAN_X1, MOON_HOLES: MOON_HOLES, NARROW_T: NARROW_T, JAM_AUTO: JAM_AUTO, TILT_RUN: TILT_RUN,
       TILT_SCORE: TILT_SCORE, REFUSE_STOP: REFUSE_STOP, REFUSE_V: REFUSE_V, DEFAULT_RATES: DEFAULT_RATES
     }
   };
