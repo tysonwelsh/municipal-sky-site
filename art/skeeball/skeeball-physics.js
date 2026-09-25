@@ -87,7 +87,7 @@
     returnAccel: 4.0,        // …reaching it at this rate
 
     // ── contacts ──
-    eLane: 0.25, eRail: 0.5, eWall: 0.45, eBed: 0.25, eRim: 0.25,
+    eRail: 0.5, eWall: 0.45, eBed: 0.25, eRim: 0.25,
     eBackstop: 0.30, ePit: 0.2, eLip: 0.35,
     muImpact: 0.3,           // Coulomb friction at contacts (slip ↔ spin); ≥ (2/7)·tan β to roll on the bed
     muImpactRim: 0.12,       // rim tops are polished: little spin bite

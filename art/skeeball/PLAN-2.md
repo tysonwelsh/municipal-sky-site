@@ -360,3 +360,39 @@ at all sizes, `VERSION` at `1.0.0-rc.N`, one summary for the owner.
 
 - 2026-09-25 — plan written; V0.38 tagged as the "before" reference on
   `main` (port 8031) for A/B.
+- 2026-09-25 — **Physics — final TUNE and rationale** (`skeeball-physics.js`,
+  lab: `node local-dev/skeeball-lab/sim.js metrics`). Every §9 band passes
+  (competent 359 / novice 246 per nine balls; aiming 10 98 %, 30 88 %,
+  40 67 %, 50 27 %, 100 6 %; ring-capture rattle 27 %; 10k sweep: 0 NaN,
+  0 timeouts, max 5.2 s; landing distance monotone in power). Player noise
+  is Gaussian with σ = the ± figure; both players pick their EV-best
+  nominal throw (the novice's is a bank shot off the right rail).
+  - World: `g 5` (flight 0.37 s mid-power), input `v ∈ [2.6, 9]`, aim clamp
+    ±0.44 rad. Dead rolls only below `vMin` (the swipe floor); the lane has
+    an undrawn lean (`laneLean 0.55`) and the stalled ball is walked home
+    at ≥ 2.5 u/s, so every dead roll resolves in < 6 s.
+  - Ball: rigid sphere with spin; Coulomb friction couples slip and spin
+    (`muImpact 0.3`), so rolling (5/7 of a slope's pull) and pivoting over
+    rim edges come out of the contacts. Rims `e 0.25`, `mu 0.12`; bed
+    `e 0.25`; padded backstop `e 0.3, mu 0.04` (a topspun ball must not
+    climb it); varnished rails `mu 0.05`.
+  - Cups: the pinned cups (clear gap 0.14–0.16) are narrower than the ball
+    (0.22), so a ball can only nest on two rim tops. Standing in for the
+    cup depth: capture when the ball comes down into the open part of a
+    cup with its bottom at the rim tops (`capHDrop 0.2`, `capVDrop 4.2`),
+    or sits low and slow (`capH 0.2`, `capV 1.6`), plus `cupDrag 8/s`
+    while it is down between rims. A ball that meets a rim top bounces —
+    the rattle. The landing contact is one `bed` event (`surface: 'rim'`
+    when it came down on a rim); later rim impacts are `rim` events.
+  - Geometry added beyond §2 (in `GEO`, the renderer may want to show it):
+    the outer rim's top arc (35°–145°) is 80 % lower — nearly flush with the
+    bed, so a backstop rebound drops into the 10 instead of ski-jumping
+    the stack (`GEO.flush`, `GEO.rimTop(k, angle)`); pit side walls splay
+    1.0 → 1.2; an invisible cage roof 0.9 above the bed. The dented 40
+    measurably turns 40/10 outcomes into 30s near the dent.
+  - 100 holes: a ball drops in when it sinks into the well, or on a direct
+    hit with its centre within `holeDirectR 0.085` of the hole's centre
+    while coming down through lip height; best competent line is near-full
+    power (8.65) from x0 0.6 with 5° of aim.
+  - Known limitation: precise throws land clean (competent rattle ≈ 10 %);
+    rattles come mostly from off-target throws.
