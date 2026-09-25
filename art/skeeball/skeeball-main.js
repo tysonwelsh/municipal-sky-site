@@ -30,7 +30,10 @@
  *   tickets, hundreds, best}, ticket {n}, found {tokens}, resume {n, score},
  *   and the mischief's moon / sulk / jam / unjam / possum.
  *
- * Keys: space throws (shift: full power), ←/→ aim ±5°, M mutes.
+ * THE START: tap the coin slot (a nickel → a credit), then tap the glowing
+ * button (the credit → nine balls). A swipe in ATTRACT only rattles the rack.
+ * Keys: C drops a nickel, space pushes the button / throws (shift: full
+ * power), ←/→ aim ±5°, M mutes.
  * ?harness=1  no rAF loop: window.__skeeMount.harness owns the clock; with
  *             it, ?mode=attract|play|payout and ?force=moon:3,sulk,jam:2
  *             preview a state (ignored without the harness)
@@ -346,9 +349,9 @@
       view.ticketsOut = 0; view.cranking = false; view.hundreds = 0;
       view.ticketTag = null; view.newBest = false;
       if (view.marqueeNote && view.marqueeNote.text === 'NEW BEST') view.marqueeNote = null;
-      view.attractT0 = tNow;           // the chalk note comes in at full strength
       game.n = 0;
       setMode('attract');
+      hint();                          // the chalk note comes in at full strength
       if (A && !FREE && A.tokens.get() <= 0) noTokens();
     }
     // an empty pocket: the door rattles and the marquee says so, then the
@@ -391,7 +394,49 @@
       startBall(clamp(o.n | 0, 1, BALLS));
       emit({ type: 'resume', n: game.n, score: game.score });
     }
-    // feed the machine a nickel; false (door rattles, NO TOKENS) if the pocket is empty
+    /* ── the start: drop a nickel, then push the button ─────────────── */
+    // The chalk on the lane says what the machine wants next, and a nudge
+    // (a swipe or a bare button press) makes it breathe in again at full strength.
+    function hint() {
+      view.chalkText = state.credited ? 'PUSH THE BUTTON' : 'DROP A NICKEL';
+      view.attractT0 = tNow;
+    }
+    // the coin slot: one nickel buys one credit (a second one isn't eaten)
+    function insertCoin() {
+      if (game.mode !== 'attract') return false;
+      if (state.credited) { emit({ type: 'input', kind: 'coin-ignored' }); return false; }
+      if (!coin()) return false;
+      setCredit(true);
+      view.coinDrop = tNow;
+      hint();
+      return true;
+    }
+    // the glowing button: releases the balls if there's a credit
+    function pressButton() {
+      if (game.mode !== 'attract') return false;
+      view.buttonPress = tNow;
+      var had = !!state.credited;
+      emit({ type: 'button', credited: had });
+      if (!had) { hint(); return false; }
+      setCredit(false);
+      view.chalkText = null;
+      startGame();
+      return true;
+    }
+    // the credit survives a reload (a paid nickel is never lost)
+    function setCredit(on) {
+      state.credited = on;
+      view.credit = on ? { t0: tNow } : null;
+      if (A) { var st = stats(); if (on) st.credit = true; else delete st.credit; A.persist(); }
+    }
+    // a swipe in ATTRACT: no credit, no throw — the rack rattles, the chalk says why
+    function nudge() {
+      view.rackRattle = tNow;
+      emit({ type: 'input', kind: 'nudge' });
+      hint();
+    }
+
+    // take a nickel from the pocket; false (door rattles, NO TOKENS) if it's empty
     function coin() {
       if (!FREE && !A.tokens.spend(1, 'skeeball')) {
         noTokens();
@@ -428,13 +473,11 @@
     // every throw goes through here: from a swipe, the keyboard or the API
     function requestThrow(x0, v, aim, spin) {
       if (game.mode === 'payout') {
-        if (!payoutDone()) { fastForward(); return false; }
-        toAttract();                      // after the crank: a nickel and a throw
+        if (!payoutDone()) fastForward();
+        else toAttract();                 // after the crank: back to the machine, no auto-nickel
+        return false;
       }
-      if (game.mode === 'attract') {
-        if (!coin()) return false;        // any swipe in ATTRACT is "a nickel and a throw"
-        startGame();
-      }
+      if (game.mode === 'attract') { nudge(); return false; } // drop a nickel, push the button first
       if (!ballReady() || game.n < 1) return false;
       x0 = clamp(+x0 || 0, -0.85, 0.85);
       // the machine may lean, widen the holes (moon) or refuse the ball (sulk)
@@ -593,10 +636,24 @@
       return { x: cx * R.W / r.width, y: cy * R.H / r.height - R.TOP };
     }
     function laneX(mx) { return clamp((mx - 108) / (108 - R.GEO.lane.xb0), -0.85, 0.85); }
-    function onCoinDoor(m) {
-      var d = R.coinDoorRect();
-      return m.x >= d.x - 4 && m.x <= d.x + d.w + 4 && m.y >= d.y - 3 && m.y <= d.y + d.h + 4;
+    // Tap targets are the painted rects plus a margin (8 art px = 12 css px
+    // at phone scale) so both are comfortable thumbs; the slot and the
+    // button sit side by side, so where the margins overlap the nearer one wins.
+    var HIT_PAD = 8, BUTTON_PAD_R = 14;   // the button has open panel to its right
+    function buttonRect() {
+      if (R.buttonRect) return R.buttonRect();
+      var fr = R.GEO.front; return { x: 46, y: fr.y0 + 3, w: 15, h: 15 }; // (render's, until it's exported)
     }
+    function padded(d, padR) { return { x0: d.x - HIT_PAD, x1: d.x + d.w + (padR || HIT_PAD), y0: d.y - HIT_PAD, y1: d.y + d.h + HIT_PAD, cx: d.x + d.w / 2 }; }
+    function inBox(m, b) { return m.x >= b.x0 && m.x <= b.x1 && m.y >= b.y0 && m.y <= b.y1; }
+    function startTarget(m) {
+      var d = padded(R.coinDoorRect()), b = padded(buttonRect(), BUTTON_PAD_R);
+      var inD = inBox(m, d), inB = inBox(m, b);
+      if (inD && inB) return Math.abs(m.x - d.cx) <= Math.abs(m.x - b.cx) ? 'coin' : 'button';
+      return inD ? 'coin' : inB ? 'button' : null;
+    }
+    function onCoinDoor(m) { return startTarget(m) === 'coin'; }
+    function onButton(m) { return startTarget(m) === 'button'; }
     function slotRect() { return R.slotRect(); }
     // a tap on the jammed slot (or the strip under it) is a whack
     function jammedSlotHit(pt) {
@@ -619,15 +676,16 @@
       if (game.mode === 'payout') {
         if (g.tap && jammedSlotHit(pts[0])) emit({ type: 'input', kind: 'whack' });
         else if (!payoutDone()) fastForward();
-        else if (g.valid) thrown = requestThrow(laneX(toMachine(g.x0css, 0).x), g.v, g.aim, g.spin);
-        else if (tNow >= game.holdUntil) toAttract();
-      } else if (g.tap) {
+        else if (tNow >= game.holdUntil) toAttract();    // any tap or swipe after the crank
+      } else if (game.mode === 'attract') {
         var m = toMachine(pts[0].x, pts[0].y);
-        if (game.mode === 'attract' && onCoinDoor(m)) { if (coin()) startGame(); }
+        if (g.tap && onCoinDoor(m)) insertCoin();
+        else if (g.tap && onButton(m)) pressButton();
+        else if (g.valid) nudge();
       } else if (g.valid) {
         thrown = requestThrow(laneX(toMachine(g.x0css, 0).x), g.v, g.aim, g.spin);
       }
-      puffGhost(pts, g);
+      if (game.mode === 'play' || thrown) puffGhost(pts, g);
       return { gesture: g, thrown: thrown };
     }
 
@@ -688,7 +746,8 @@
     container.addEventListener('touchmove', onTouchMove, { passive: false });
     container.addEventListener('contextmenu', onContextMenu);
 
-    // keyboard: space = medium straight throw (shift: full power), ←/→ aim ±5°
+    // keyboard: C = drop a nickel, Space = push the button (ATTRACT) or a
+    // medium straight throw (PLAY; shift: full power), ←/→ aim ±5°, M = mute
     // the keys belong to the machine only while it's on screen, the focus isn't
     // on a control, and no modifier is held (Cmd-M minimises, Space presses buttons)
     function keysAreOurs(ev) {
@@ -712,8 +771,12 @@
         ev.preventDefault();
         if (ev.repeat) return;
         emit({ type: 'input', kind: 'key' });
-        if (game.mode === 'payout' && !payoutDone()) { fastForward(); return; }
+        if (game.mode === 'attract') { pressButton(); return; }
+        if (game.mode === 'payout') { if (!payoutDone()) fastForward(); else if (tNow >= game.holdUntil) toAttract(); return; }
         throwPower(ev.shiftKey ? 1 : MEDIUM, kbd.aim, 0, 0);
+      } else if (ev.key === 'c' || ev.key === 'C') {
+        emit({ type: 'input', kind: 'key' });
+        if (game.mode === 'attract') insertCoin();
       } else if (ev.key === 'ArrowLeft' || ev.key === 'ArrowRight') {
         ev.preventDefault();
         kbd.aim = clamp(kbd.aim + (ev.key === 'ArrowLeft' ? -5 : 5) * Math.PI / 180, -GESTURE.AIM_MAX, GESTURE.AIM_MAX);
@@ -799,7 +862,7 @@
           view.holeGlow[h === 0 ? 0 : 1] = clamp(pose.sinking || 0, 0, 1);
         }
       } else {
-        var rd = dragRead();
+        var rd = game.mode === 'play' ? dragRead() : null;
         if (rd) view.ballSx = R.project(rd.x, U.BALL_R, rd.z).sx;
         else if (game.mode === 'play' && game.n >= 1) view.ballSx = 108;
       }
@@ -967,7 +1030,7 @@
 
     // the ball on the throw line: the next ball, or the one under the thumb
     function drawThrowLine() {
-      var rd = dragRead();
+      var rd = game.mode === 'play' ? dragRead() : null; // no ball on the line until the button is pushed
       if (rd) {
         drawGhost(ghostPoints(rd.x, rd.z, rd.power, rd.aim));
         drawLaneBall(rd.x, rd.z);
@@ -1029,7 +1092,7 @@
 
     function render() {
       // nine balls a nickel: the ball on the line during an ATTRACT drag comes out of the rack
-      if (game.mode === 'attract') view.ballsLeft = drag ? BALLS - 1 : BALLS;
+      if (game.mode === 'attract') view.ballsLeft = BALLS;
       prepView();
       R.drawFrame(ctx, tNow);
       R.drawLiveUnder(ctx, tNow, view);               // holes, glow, drums, eyes, rack
@@ -1086,6 +1149,7 @@
     function onDpr() { fit(); watchDpr(); }
     watchDpr();
     var open = A ? stats().open : null;   // a game the last page left running
+    if (A && stats().credit) { state.credited = true; view.credit = { t0: 0 }; } // a paid nickel waiting for its button
     toAttract();
     if (open && open.open && !opts.noResume) resumeGame(open);
     var qm = HARNESS && /[?&]mode=(attract|play|payout)/.exec(search); // preview only under the harness
@@ -1156,7 +1220,10 @@
         setView: function (partial) { for (var k in partial) view[k] = partial[k]; return view; },
         setMode: forceMode,
         // tap the coin door
-        coin: function () { if (game.mode !== 'attract') return false; if (!coin()) return false; startGame(); return true; },
+        // the two-step start, and the old one-call start (a nickel, then the button)
+        insertCoin: function () { return insertCoin(); },
+        pressButton: function () { return pressButton(); },
+        coin: function () { if (game.mode !== 'attract') return false; insertCoin(); return pressButton(); },
         // a whole gesture in canvas css px [{t ms, x, y}] → mapGesture + release
         swipe: function (points) {
           if (!points || !points.length) return null;
