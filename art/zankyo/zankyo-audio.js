@@ -129,6 +129,17 @@ window.ZankyoAudio = (function () {
   //                     the picture and is given no voice at all — muted,
   //                     volume 0, its audio tracks disabled, and NEVER passed
   //                     to createMediaElementSource.
+  //                     THE DEFAULT SINCE rc.93 (Q0, PLAN-SIGNAL-PICTURE
+  //                     §11.4): measured on real playback, the element's
+  //                     pipeline starves under load — 30–280 ms dropouts with
+  //                     the reel wholly buffered, readyState 2, at a load
+  //                     average of 26–35 on the owner's own machine — and its
+  //                     starts and seeks ride main-thread timers that ran up
+  //                     to 0.9 s late in a busy scene. A decoded reel is
+  //                     played by the audio thread on the audio clock and has
+  //                     neither problem; the same A/B, same seed, same load:
+  //                     zero underruns against several. `?reels=element`
+  //                     is the way back.
   //   ?capture=off      室 does not build its ScriptProcessor. On a reelrm
   //                     night that node is, for two seconds in the middle of
   //                     a reel, the ONLY thing connected to ctx.destination —
@@ -142,12 +153,12 @@ window.ZankyoAudio = (function () {
   //
   // Read back at any time with ZankyoAudio.getRoute().
   var ROUTE = (function () {
-    var q = { route: "stream", reels: "element", capture: "on", latency: "default", bt: false, reel: null };
+    var q = { route: "stream", reels: "buffer", capture: "on", latency: "default", bt: false, reel: null };
     try {
       var s = (typeof location !== "undefined" && location.search) || "";
       if (/[?&]bt=1(&|$)/.test(s)) { q.bt = true; q.route = "direct"; q.reels = "buffer"; q.capture = "off"; }
       var m = s.match(/[?&]route=([a-z]+)/);   if (m && m[1] === "direct") q.route = "direct";
-      m = s.match(/[?&]reels=([a-z]+)/);       if (m && m[1] === "buffer") q.reels = "buffer";
+      m = s.match(/[?&]reels=([a-z]+)/);       if (m && (m[1] === "buffer" || m[1] === "element")) q.reels = m[1];
       m = s.match(/[?&]capture=([a-z]+)/);     if (m && (m[1] === "off" || m[1] === "on")) q.capture = m[1];
       m = s.match(/[?&]latency=([a-z]+)/);     if (m && (m[1] === "playback" || m[1] === "balanced" || m[1] === "interactive")) q.latency = m[1];
       // ?reel=<id> — the owner's lever on the receiver. The night's FIRST
@@ -166,7 +177,7 @@ window.ZankyoAudio = (function () {
   function routeLabel() {
     var p = [];
     if (ROUTE.route === "direct") p.push("direct route");
-    if (ROUTE.reels === "buffer") p.push("reels decoded");
+    if (ROUTE.reels === "element") p.push("reels through the element");   // Q0: decoded is the default now; the switch is the way back
     if (ROUTE.capture === "off") p.push("no 室 capture");
     if (ROUTE.latency !== "default") p.push("latency " + ROUTE.latency);
     return p.join(" · ");

@@ -91,8 +91,8 @@ no-op. Every picture decision so far has been judged by eye on
    - All picture choices go on the set's own forks (`set:rx:*`, `set:tube`),
      alongside `set:idle` and `set:crack`.
    - Texture may stay on `Math.random` (the character contract).
-   - The gate is byte-identity of home and far nights against rc.91
-     (`_far-identity.js`, plus `_harness.js` REPRO). Any field added to the
+   - The gate is byte-identity of home and far nights against the Q0 pin,
+     rc.96 `302cb0a` (§10; `_far-identity.js`, plus `_harness.js` REPRO). Any field added to the
      `rx` descriptor is a read of values the receiver has already drawn.
 3. **The timings do not move.** Entry, hold, loss, collapse, burst and dead
    durations belong to the receiver's plan, and the audio is cut to them.
@@ -409,7 +409,7 @@ reports:
 4. **Performance.** `getState().frameMs` mean and worst, per archetype, at
    192×144 on the full-size tube, with the low-power path checked
    separately.
-5. **Identity.** `_far-identity.js` and `_harness.js` REPRO against rc.91:
+5. **Identity.** `_far-identity.js` and `_harness.js` REPRO against the Q0 pin (rc.96, `302cb0a`, §10):
    byte-identical note and event signatures on home and far seeds.
 
 The probe's own repeatability is measured first: three runs × three seeds.
@@ -528,7 +528,13 @@ session's size guideline.
 **Commands:**
 - `php -S 127.0.0.1:<port>` from the worktree root;
 - `node _harness.js 1800 3042` and REPRO;
-- `node _far-identity.js 1800 20 5de3d45` (pinned to rc.91, not `main`, which may move overnight);
+- `node _far-identity.js 1800 20 302cb0a` (pinned to rc.96, Q0's final head,
+  not `main`, which may move overnight). Q0 made two declared re-bases
+  (rc.92: the fallback hold fits its window; rc.96: a 残 costs its window
+  its audible part, and a fallback's exit is the exit it says), so rc.91 is
+  no longer the reference: against `5de3d45` or `842e155` a later phase
+  would read about 14 of 18 home nights as failures that are not its own.
+  Every P-phase must be byte-identical to `302cb0a` (handoff/phase-Q0-coder-r2.md);
 - `node _picture-probe.js` (built in P0).
 
 **Order:** Q0 → P0 → P1 → P2 → P3 → P4 → QF → P5, as in §7, §8 and §11.
