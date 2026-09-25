@@ -468,9 +468,24 @@
           tone(t + b[0], { f: 6590 * j, peak: db(-27) * b[1], a: 0.0005, d: 0.18 * b[1] + 0.03 });
           noise(t + b[0], { ft: 'highpass', f: 5000, peak: db(-24) * b[1], a: 0.0003, d: 0.01 });
         });
-        noise(t + 0.26, { f: 2500, q: 1.5, peak: db(-24), a: 0.02, d: 0.15 });
-        thud(t + 0.42, db(-15), 95, 700);
-        relay(t + 0.56, db(-20));
+        // down the vertical slit: a longer slide, ticking off the walls
+        noise(t + 0.26, { f: 2800, f1: 1700, q: 1.5, peak: db(-24), a: 0.02, hold: 0.12, d: 0.2 });
+        for (var k = 0; k < 3; k++) tone(t + 0.3 + k * 0.07 + 0.02 * r(), { f: 2900 - 300 * k, peak: db(-28), a: 0.0005, d: 0.05 });
+        thud(t + 0.58, db(-15), 95, 700);
+        relay(t + 0.72, db(-20));
+      },
+      button: function (t, r, ev) {
+        if (ev.credited) {                 // chunky microswitch, the solenoid, the balls let go
+          noise(t, { ft: 'highpass', f: 2600, q: 0.8, peak: db(-21), a: 0.0004, d: 0.012 });
+          tone(t, { type: 'square', f: 1650 + 80 * r(), peak: db(-26), a: 0.0004, d: 0.012 });
+          tone(t, { type: 'triangle', f: 340, f1: 260, peak: db(-21), a: 0.0006, d: 0.05 });
+          noise(t + 0.075, { ft: 'highpass', f: 3000, q: 0.8, peak: db(-22), a: 0.0004, d: 0.01 });  // the key lets go
+          relay(t + 0.05, db(-17));
+          thud(t + 0.1, db(-17), 115, 800);
+        } else {                           // nothing behind it: a dead plastic click
+          tone(t, { type: 'triangle', f: 900 + 60 * r(), f1: 700, peak: db(-19), a: 0.0005, d: 0.025 });
+          noise(t, { f: 1200, q: 2, peak: db(-17), a: 0.0004, d: 0.015 });
+        }
       },
       launch: function (t, r, ev) { clack(t, db(speedDb(ev.v || 4, 2, 7)), 500 + 40 * r()); },
       wall: function (t, r, ev) {
