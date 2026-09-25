@@ -38,7 +38,10 @@
 // (the echo list — applied inside pass 1, in the signal), 4 the tube (the P39
 // ramp), 5 the full-resolution composite (one raster draw), then the crack.
 // P0 held rc.91's look, pixel for pixel; P1 draws a character per reception
-// and per piece (zk-picture.js), and the crack is lit by the picture itself.
+// and per piece (zk-picture.js), and the crack is lit by the picture itself;
+// P2 adds ten kinds — in the signal (混 the other station, 滲 the IF), at
+// the detector (飽, 縞, 点), on the tube (帯) and in the offset map (横 旗 揺
+// 捩) — and the frame memory 混 draws its other picture from (§5.4).
 //
 // THE BENCH HOOKS (§6.2): _dev.character(), _dev.force(), _dev.seedTexture(),
 // _dev.freeze()/step()/thaw() — a virtual clock and a frame-step, because a
@@ -329,7 +332,7 @@
   // ==========================================================================
   var SW = 192, SH = 144;
   var src = document.createElement("canvas"); src.width = SW; src.height = SH;
-  var scx = src.getContext("2d", { willReadFrequently: true });
+  var scx = src.getContext("2d", { willReadFrequently: true }), srcCx = scx;
   var phos = document.createElement("canvas"); phos.width = SW; phos.height = SH; var pcx = phos.getContext("2d");
   var pimg = pcx.createImageData(SW, SH), pdata = pimg.data;
   var frame = document.createElement("canvas"), fcx = frame.getContext("2d");
@@ -428,7 +431,11 @@
   var sig = null;             // { t0, holdS, lossD, drops: [[t, d], …], id, title, year, video?, lossD }
   var S = { phase: "idle", phaseAt: 0, strength: 0, seed: 0, drop: 0, holdFrame: 0, roll: 0, rollV: 0, ch: null,
             piece: 0, dropIdx: -1, dropKind: null, shear: null, tears: [], lastT: 0, swell: 0,
-            env: { snow: 1, ghost: 1, tear: 1, wash: 1, swell: 1 }, lull: 0, hlock: null };
+            env: null, lull: 0, hlock: null,
+            // P2: the reception's clock (s since t0: 点's bursts and 横's losses
+            // run on it), the source's mean level last frame, 飽's AGC (its
+            // lagged level and this frame's gain) and a negative flash's end
+            re: 0, meanL: 0, agcM: 0, agcG: 1, negUntil: 0 };
   // 映り THE CHARACTER (§4). A reception's look, drawn when it arrives on its
   // own fork of the master seed ("set:rx:<desc.seed>" — desc.seed is already
   // the receiver's draw, so the same night gives the same characters and no
@@ -552,11 +559,14 @@
     S.piece = pc;
     if (pc > 0) S.ch = ZP.drawCharacter(master.fork("set:rx:" + S.seed + ":" + pc), { force: force, desc: sigDesc });
     S.tears.length = 0; S.shear = null; S.dropIdx = -1; S.dropKind = null;
+    S.agcM = 0; S.negUntil = 0;                              // a new station: the AGC catches it afresh
   }
-  var ENV1 = { snow: 1, ghost: 1, tear: 1, wash: 1, swell: 1 };
+  var ENV1 = { snow: 1, ghost: 1, tear: 1, wash: 1, swell: 1, imp: 1, herr: 1, hum: 1, xt: 1, skew: 1, flag: 1, jit: 1, wave: 1, agc: 1 };
+  S.env = ENV1;
   // per-frame strength, weather and the character's levels, from the audio clock
   function tickSignal(t) {
     var a = sigTime(), pe = phaseOf(a), ph = pe[0], el = pe[1];
+    S.re = sig ? a - sig.t0 : 0;
     var dtS = S.lastT ? Math.max(0, Math.min(0.25, (t - S.lastT) / 1000)) : 1 / 30; S.lastT = t;
     if (ph === "over") { endSignal(t); return; }
     if ((ph === "relock" || ph === "hold") && pe[2] !== S.piece) newPiece(pe[2]);
@@ -631,7 +641,31 @@
         eG *= toT(gsum * eG, LL.gT);
         eT *= toT((ch.tear.rate || 0) * eT, LL.tT);
       }
-      S.env = { snow: eS, ghost: eG, tear: eT, wash: eW, swell: 1 };
+      // P2's kinds on their own envelopes, eased the same way in a lull (each
+      // to its own target, zk-picture.js LULL); 横 is knocked down like a
+      // dropout (sync holds better in a good moment); 飽's excess gain eases
+      // toward agT; 滲 is the tuner's and has no envelope
+      var eI = ZP.envAt(E["点"], el), eH = ZP.envAt(E["縞"], el), eB = ZP.envAt(E["帯"], el), eX = ZP.envAt(E["混"], el);
+      var eF = ZP.envAt(E["旗"], el), eJ = ZP.envAt(E["揺"], el), eV = ZP.envAt(E["捩"], el), eK = 1, eA = 1;
+      if (L > 0) {
+        if (ch.impulse) eI *= toT((ch.impulse.pulsed ? ch.impulse.K : ch.impulse.dens) * eI, LL.iT);
+        if (ch.herring) eH *= toT(ch.herring.amp * eH, LL.hbT);
+        if (ch.hum) eB *= toT(ch.hum.depth * eB, LL.humT);
+        if (ch.xtalk) eX *= toT(ch.xtalk.depth * eX, LL.xtT);
+        if (ch.flag) eF *= toT(ch.flag.depth * eF, LL.flagT);
+        if (ch.jitter) eJ *= toT(ch.jitter.amt * eJ, LL.jitT);
+        if (ch.wave) eV *= toT(ch.wave.amp * eV, LL.waveT);
+        if (ch.agc) eA *= toT(ch.agc.hot - 1, LL.agT);
+        eK = 1 - LL.dropEase * L;
+      }
+      S.env = { snow: eS, ghost: eG, tear: eT, wash: eW, swell: 1, imp: eI, herr: eH, hum: eB, xt: eX, skew: eK, flag: eF, jit: eJ, wave: eV, agc: eA };
+      // 飽: now and then the sync crushes — a brief negative picture, and the
+      // line oscillator takes the knock (one hard impulse). Its rate is the
+      // character's; the moment is texture. Not inside a good moment.
+      if (ch.agc && ch.agc.negRate > 0 && t >= S.negUntil && rnd() < ch.agc.negRate * dtS * (1 - L)) {
+        S.negUntil = t + ch.agc.negMs[0] + rnd() * (ch.agc.negMs[1] - ch.agc.negMs[0]);
+        ZP.tearStep(S.tears, ch.tear.jump ? ch.tear : { rows: 12, jump: 6, rec: 0.12 }, 30, 1 / 30, t, rnd, 6);
+      }
       var dr = ch.drop, di = dropAt(a), dropping = di >= 0, dd = 0;
       if (dropping) {
         var kind = dr.kinds[di % dr.kinds.length];
@@ -671,14 +705,29 @@
       S.strength = 0;
     }
     if (tearRate > 0) ZP.tearStep(S.tears, ph === "hold" ? ch.tear : { rows: TP.rows, jump: ch.tear.jump || TP.jump, rec: TP.rec }, tearRate, dtS, t, rnd, tearMin);
+    // 飽 THE AGC, while there is a carrier: it follows the picture's level
+    // (last frame's source mean) with lag tau, so the gain runs high for a
+    // moment when a station (it starts wide open: agcM from 0.55 × the level)
+    // or a brighter scene arrives, and settles; `hot` is the overload, eased
+    // in a lull; the pump rides on it (P4 locks its rate to the audio's LFO)
+    if (ch.agc && CARRIER_PH[ph]) {
+      var ag = ch.agc, m = Math.max(1, S.meanL);
+      if (!(S.agcM > 0)) { if (!S.meanOk) return; S.agcM = 0.55 * m; }   // seeded from a frame of the station, never the idle tube's
+      S.agcM += (m - S.agcM) * Math.min(1, dtS / ag.tau);
+      var over = Math.pow(m / Math.max(1, S.agcM), 0.7); over = over < 0.7 ? 0.7 : over > 1.8 ? 1.8 : over;
+      var eAg = ph === "hold" ? S.env.agc : 1;
+      S.agcG = (1 + (ag.hot - 1) * eAg) * over * (1 + ag.pumpD * Math.sin(6.2832 * ag.pumpHz * t / 1000 + ag.ph));
+    }
   }
 
   // ==========================================================================
   // THE SOURCE PICTURE (192×144 greyscale): the reel, the test card, the idle
   // ==========================================================================
   var idle = { nextCard: now() + 6000 + Ridle.next() * 8000, cardAt: -1, nextLine: now() + 9000 + Ridle.next() * 10000, lineAt: -1, lineMode: 0, lineHold: 1 };
-  function drawTestCard(alpha, drift) {
+  function drawTestCard(alpha, drift, cx) {
     // an MSHI test card: circle, crosshair, greyscale steps, the yard's mark
+    // (cx: another 192×144 context — 混's card, P2 — or the source's)
+    var scx = cx || srcCx;
     scx.save(); scx.globalAlpha = alpha;
     // The card is laid out in the 96 × 72 coordinates it was drawn for. The
     // raster is 192 × 144 now, so the card is SCALED onto it rather than
@@ -730,7 +779,11 @@
       if (idle.cardAt < 0 && t > idle.nextCard) { idle.cardAt = t; S.rollV = 2.5 + Ridle.next() * 3; }
     }
     var sdata = scx.getImageData(0, 0, SW, SH).data, n = SW * SH, ch = S.ch, env = S.env || ENV1;
-    ZP.lumaPass(sdata, Lsrc, n);
+    S.meanL = ZP.lumaPass(sdata, Lsrc, n); S.meanOk = !!CARRIER_PH[ph];
+    // 憶 THE FRAME MEMORY (§5.4): every tenth hold frame of a reel, the clean
+    // picture is kept; when the next reception arrives it becomes the memory
+    // 混 draws its other station from (and P3's burn-in, later)
+    if (ph === "hold" && sig && sig.video && t >= S.holdFrame && frameN % 10 === 0) { memNext.set(Lsrc); memNextOk = true; }
     if (ph === "idle" || ph === "dead") {
       // 掃引: on an idle or dead tube the snow is the dial's
       ZP.sourcePass(Lsrc, luma, n, ph, sweepNow(), B, restCh.snow, null, 1, rnd);
@@ -740,6 +793,16 @@
     // PASS 3's list, applied in the signal
     ZP.ghostList(ch, ph, S.strength, t, env.ghost, ghosts);
     ZP.ghostPass(Lsrc, Lgh, SW, SH, ghosts);
+    // P2, while there is a carrier. 混: the other station arrives with ours,
+    // at the antenna; 滲: the IF (and a mistuned tuner) shapes both
+    var ck = CARRIER_PH[ph] ? 1 : 0, ts = t / 1000, hold = ph === "hold";
+    xtLive = false;
+    if (ck && ch.xtalk && env.xt > 0) { ZP.xtalkPass(Lgh, xtImage(ch.xtalk.src), ch.xtalk, ts, hold ? env.xt : 1, XT); xtLive = true; }
+    if (ck && ch.smear) ZP.smearPass(Lgh, ch.smear);
+    var X = SRCX; X.ag = null; X.hb = null; X.hum = null;
+    if (ck && ch.agc) { AG.g = S.agcG; AG.blk = ch.agc.blk * (hold ? env.agc : 1); AG.neg = t < S.negUntil; X.ag = AG; }
+    if (ck && ch.herring && env.herr > 0) X.hb = ZP.herringRows(ch.herring, ts, hold ? env.herr : 1, HB);
+    if (ck && ch.hum && env.hum > 0) { ZP.humRows(ch.hum, ts, hold ? env.hum : 1, HUM.g, HUM.a); X.hum = HUM; }
     // 雪: the snow level is the carrier's weakness; this frame's multiplier is
     // the envelope and the flicker (texture). The burst is all snow.
     var level = ph === "burst" ? 1 : clamp01(1 - S.strength);
@@ -747,9 +810,29 @@
     // 霞: only while there is a carrier to be veiled (never on the burst's or a lost gap's pure noise)
     var wk = CARRIER_PH[ph] ? (ph === "hold" ? env.wash : 1) : 0, wa = ch.wash || { lift: 0, gain: 1 };
     WASH.lift = wa.lift * wk; WASH.gain = 1 + (wa.gain - 1) * wk;
-    ZP.sourcePass(Lgh, luma, n, "lit", level, B, sn, WASH, fl, rnd);
+    ZP.sourcePass(Lgh, luma, n, "lit", level, B, sn, WASH, fl, rnd, X);
+    // 点: the sparks, over the snow, on the reception's own burst schedule
+    if (ck && ch.impulse) ZP.impulsePass(luma, ch.impulse, S.re, hold ? env.imp : 1, rnd);
   }
   var WASH = { lift: 0, gain: 1 };
+  // P2's per-frame scratch: the source pass's extras, 飽's gain, 縞's row
+  // phases, 帯's row gain and offset, 混's other picture as placed
+  var SRCX = { ag: null, hb: null, hum: null }, AG = { g: 1, blk: 0, neg: false };
+  var HB = { amp: 0, dp: 0, ph0: new Float32Array(SH) }, HUM = { g: new Float32Array(SH), a: new Float32Array(SH) };
+  var XT = new Float32Array(SW * SH), xtLive = false;
+  // the memory (§5.4): the last reception's picture, or — before there was
+  // one — the test card, a station's slide (drawn once, lazily)
+  var mem = new Float32Array(SW * SH), memOk = false, memNext = new Float32Array(SW * SH), memNextOk = false, cardL = null;
+  function xtImage(which) {
+    if (which === "mem" && memOk) return mem;
+    if (!cardL) {
+      var cc = document.createElement("canvas"); cc.width = SW; cc.height = SH;
+      var cx = cc.getContext("2d", { willReadFrequently: true });
+      cx.fillStyle = "#000"; cx.fillRect(0, 0, SW, SH); drawTestCard(0.9, 0, cx);
+      cardL = new Float32Array(SW * SH); ZP.lumaPass(cx.getImageData(0, 0, SW, SH).data, cardL, SW * SH);
+    }
+    return cardL;
+  }
 
   // PASS 2 — GEOMETRY. The vertical hold's roll, the collapse's squash, 伸
   // the raster's breathing, and the per-line offset map (§3.2): line-accurate
@@ -782,6 +865,8 @@
     var lagK = sw && sw.lag > 0 ? Math.min(1, (1 / 30) / sw.lag) : 1;
     S.swell += (target - S.swell) * lagK;
     mapLive = ph !== "idle" && ZP.lineMap(map, S.tears, t, S.shear);
+    // P2: 旗 捩 揺 横, while there is a carrier (lineMap has cleared the map)
+    if (CARRIER_PH[ph] && ZP.geoMap(map, ch, S.re, t / 1000, ph === "hold" ? S.env : ENV1, rnd)) mapLive = true;
     if (mapLive) ZP.geometryCopy(luma, lumaG, map, SW, SH);
     G.roll = roll; G.sy = sy; G.pel = pel; G.sc = 1 + S.swell; G.dyBase = (TH - TH * sy * G.sc) / 2;
   }
@@ -978,6 +1063,9 @@
     sig.drops.sort(function (p, q) { return p[0] - q[0]; });
     S.seed = (desc.seed != null ? +desc.seed : Ridle.next() * 1000); S.drop = 0; S.holdFrame = 0; S.strength = 0;
     S.piece = 0; S.dropIdx = -1; S.dropKind = null; S.shear = null; S.hlock = null; S.tears.length = 0; S.swell = 0; S.lastT = 0;
+    S.agcM = 0; S.agcG = 1; S.negUntil = 0; S.re = 0;
+    // the last reception's picture becomes the memory (§5.4)
+    if (memNextOk) { var mt = mem; mem = memNext; memNext = mt; memOk = true; memNextOk = false; }
     // 映り: this reception's character, on its own fork (§5.2). A fork is
     // derived from the master's ORIGINAL seed and consumes nothing from it.
     sigDesc = desc;
@@ -1061,7 +1149,7 @@
       signalClock: function () { return atime(); },          // the clock a descriptor's t0 is in (s)
       frozen: function () { return vclock != null; },
       // the buffers, for the probe's metrics (read-only by convention)
-      buffers: function () { return { SW: SW, SH: SH, luma: mapLive ? lumaG : luma, map: map, mapLive: mapLive, phos: phos, frame: frame, tube: tcv, ghosts: ghosts.slice(), geo: { roll: G.roll, sy: G.sy, sc: G.sc }, env: S.env, lull: S.lull, dropKind: S.dropKind, piece: S.piece, tears: S.tears.length, mask: maskCv }; },
+      buffers: function () { return { SW: SW, SH: SH, luma: mapLive ? lumaG : luma, map: map, mapLive: mapLive, phos: phos, frame: frame, tube: tcv, ghosts: ghosts.slice(), geo: { roll: G.roll, sy: G.sy, sc: G.sc }, env: S.env, lull: S.lull, dropKind: S.dropKind, piece: S.piece, tears: S.tears.length, mask: maskCv, xt: xtLive ? XT : null, agcG: S.agcG, neg: S.negUntil > now() }; },
       // 光 the crack's light, last frame: the largest value the glow layer
       // added (0..255 per channel, before GLOW.k) and how many pixels it lit —
       // the probe's check that a dark tube's crack carries no light at all

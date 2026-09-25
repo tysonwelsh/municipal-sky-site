@@ -71,9 +71,20 @@
 //   node _picture-probe.js lullcal        (dev, r2) drawn receptions with the lull forced off: who fails
 //       to surface without one — the data ZP.burial / BURY_LINE were fitted on
 //   node _picture-probe.js strip          (r2) one reception's hold as a captioned film strip
-//   node _picture-probe.js sheets
+//   node _picture-probe.js sheets [--phase P2]
 //       contact sheets into --out: 12 drawn receptions on each of 3 reels, the
 //       8 archetypes side by side, and the crack on an idle and a lit tube.
+//
+// P2 (PLAN-SIGNAL-PICTURE §7 row P2: 点 縞 帯 混 横 旗 揺 捩 滲 飽)
+//   node _picture-probe.js p2             the p1 battery, with P2's gates: every one of
+//       the fifteen kinds must move its own metric (KIND_METRIC; a kind with
+//       no metric fails), 飽's negative flash must invert frames (FEATURES),
+//       and seen-before over all fifteen severities is ≤ 20 %
+//   node _picture-probe.js kinds [--sev 0.8] [--kinds 点,縞]   each P2 kind
+//       alone, three moments of a hold, on one sheet
+//   node _picture-probe.js lullcal --archs 遠,嵐,混,電,同,過   lull-off data
+//   node _picture-probe.js lullfit --from a.json,b.json       (node only) fit
+//       ZP.BURY2 — the P2 kinds' burial weights — on lull-off data
 //
 // OPTIONS  --url http://127.0.0.1:8141/art/zankyo/   --out <dir for PNGs/JSON>
 //
@@ -122,7 +133,11 @@ const SEED = 3042;                      // the night: fixes the crack pattern an
 const FPS = 30;
 
 // the kinds the probe knows how to see, and the metric each must move (§6.3.2)
-const KIND_METRIC = { "雪": "snowTV", "裂": "lineVar", "影": "ghostAmp", "霞": "washDev", "伸": "scaleDev" };
+// — P2 adds a metric for each of its ten (see METRIC_FN), and 飽's negative
+// flash is checked as a FEATURE of its own (FEATURES, below)
+const KIND_METRIC = { "雪": "snowTV", "裂": "lineVar", "影": "ghostAmp", "霞": "washDev", "伸": "scaleDev",
+  "点": "dashes", "縞": "stripe", "帯": "humPeak", "混": "xtalk", "横": "lineVar", "旗": "flagTop", "揺": "jitterHF", "捩": "waveLF", "滲": "smearTail", "飽": "clip" };
+const FEATURES = { "飽·neg": { kind: "飽", axes: { agc: { negRate: 3 } }, kill: { agc: { negRate: 0 } }, metric: "negShare" } };
 
 // ---- THE REELS: real files, paused on a fixed frame ----
 const REELS = [
@@ -517,6 +532,7 @@ async function repeat(browser) {
 // ============================================================================
 const SEED_SETS = [3042, 17, 7, 8891].concat(Array.from({ length: 36 }, (_, i) => 101 + i));
 const P1_KINDS = ["雪", "影", "裂", "霞", "伸"];
+const ALL_KINDS = require("./zk-picture.js").IMPAIRMENTS;          // P2: the fifteen
 // the plain hold every P1 per-reception measure runs on (critic P0 r1 item 2:
 // "does it render" and the legibility floor on a PLAIN hold, never a holed one)
 const PLAIN = FIXTURES[0];
@@ -635,9 +651,14 @@ function PAGE_MULTI(items, reels, o) {
           var geo = D.buffers().geo || {}, kk = (geo.sc || 1) * (geo.sy || 1), kc = cleanK[it.reel != null ? it.reel : "card"] || 1;
           if (it.clean) lastK = kk;
           if (clean && !it.clean) { rec.ssimRaw.push(+ssim(gr, clean).toFixed(4)); rec.ssim.push(+Math.max(rec.ssimRaw[rec.ssimRaw.length - 1], ssimReg(gr, clean, o.noscale ? 1 : kk / kc)).toFixed(4)); }
-          if (it.grays && rec.grays.length < (it.maxGrays || 40)) rec.grays.push(b64(gr));
+          if (it.grays && rec.grays.length < (it.maxGrays || 40)) {
+            rec.grays.push(b64(gr));
+            // (P2) 混's other picture as the set placed it this frame, the xtalk metric's reference
+            if (it.xt) { var xb = D.buffers().xt, xq = new Uint8Array(192 * 144); if (xb) for (var xi = 0; xi < xq.length; xi++) { var xv = xb[xi]; xq[xi] = xv < 0 ? 0 : xv > 255 ? 255 : xv; } (rec.xts = rec.xts || []).push(xb ? b64(xq) : null); }
+          }
         }
         if (it.pngAt != null && !rec.pngs.length && st.phase === "hold" && tm / 1000 - t0 - P.segments[0].atS >= it.pngAt) rec.pngs.push(cv.toDataURL("image/png"));
+        if (it.pngAts && rec.pngs.length < it.pngAts.length && st.phase === "hold" && tm / 1000 - t0 - P.segments[0].atS >= it.pngAts[rec.pngs.length]) rec.pngs.push(cv.toDataURL("image/png"));   // (P2) several moments
       }
       var guard = 0; while (ZS.getState().phase !== "idle" && guard++ < 600) { tm += dt; D.step(tm); }
       if (it.clean) { cleans[it.reel != null ? it.reel : "card"] = lastGray; cleanK[it.reel != null ? it.reel : "card"] = lastK; rec.cleanB64 = lastGray ? b64(lastGray) : null; }
@@ -734,7 +755,7 @@ async function draws() {
   const jf = opt("jnd", path.join(OUT, "render.json"));
   if (fs.existsSync(jf)) { const r = JSON.parse(fs.readFileSync(jf, "utf8")); if (r.jnd) { jnd = r.jnd; jndSrc = jf; } }
   const JFLOOR = 0.1;                                       // a JND is never under a tenth of a kind's range, whatever the instrument can see
-  const J = {}; P1_KINDS.forEach((k) => { J[k] = Math.max(JFLOOR, jnd && jnd[k] != null ? jnd[k] : JFLOOR); });
+  const J = {}; ALL_KINDS.forEach((k) => { J[k] = Math.max(JFLOOR, jnd && jnd[k] != null ? jnd[k] : JFLOOR); });
   const want = {}; ZP.ARCHETYPES.forEach((a) => { want[a.id] = a.w; });
   const tot = {}, tiers = {}, combos = new Set(); let seen = 0, N = 0; const perSet = [];
   for (const S of SEED_SETS) {
@@ -742,9 +763,9 @@ async function draws() {
     for (let r = 0; r < 500; r++) {
       const ch = ZP.drawCharacter(m.fork("set:rx:" + dsr.next() * 1000), {});
       cnt[ch.archetype] = (cnt[ch.archetype] || 0) + 1; tot[ch.archetype] = (tot[ch.archetype] || 0) + 1; tiers[ch.tier] = (tiers[ch.tier] || 0) + 1;
-      const v = P1_KINDS.map((k) => ch.kinds[k] || 0);
-      combos.add(ch.archetype + ":" + P1_KINDS.filter((k, i) => v[i] > 0).join(""));
-      if (hist.some((h) => h.every((x, i) => Math.abs(x - v[i]) < J[P1_KINDS[i]]))) { seen++; sseen++; }
+      const v = ALL_KINDS.map((k) => ch.kinds[k] || 0);
+      combos.add(ch.archetype + ":" + ALL_KINDS.filter((k, i) => v[i] > 0).join(""));
+      if (hist.some((h) => h.every((x, i) => Math.abs(x - v[i]) < J[ALL_KINDS[i]]))) { seen++; sseen++; }
       hist.push(v); if (hist.length > 10) hist.shift();
       N++;
     }
@@ -762,10 +783,14 @@ async function draws() {
   const unc = (tiers.uncommon || 0) / N, uncOk = Math.abs(unc / ZP.SEV.uncommonP - 1) <= 0.25; ok = ok && uncOk;
   console.log("  " + (uncOk ? "✓" : "✗") + " tier uncommon " + unc.toFixed(4) + " (want " + ZP.SEV.uncommonP.toFixed(4) + "; rare and very rare tiers are P4's, §7)");
   console.log("  distinct archetype·kind combinations: " + combos.size);
-  const sb = seen / N, sbMax = Math.max(...perSet.map((p) => p.seen)), sbOk = sb <= 0.30; ok = ok && sbOk;
-  console.log("  " + (sbOk ? "✓" : "✗") + " seen-before (within one JND of any of the previous 10): " + (sb * 100).toFixed(2) + " % (worst set " + (sbMax * 100).toFixed(1) + " %) — gate ≤ 30 %; JND " + JSON.stringify(J) + " from " + jndSrc);
+  // for the record: the same rate on P1's five-kind vector (what rc.P2 read)
+  { let s5 = 0, n5 = 0; for (const S of SEED_SETS) { const m = Rand.stream(S), dsr = Rand.stream(S).fork("probe:desc"), hist = []; for (let r = 0; r < 500; r++) { const ch = ZP.drawCharacter(m.fork("set:rx:" + dsr.next() * 1000), {}); const v = P1_KINDS.map((k) => ch.kinds[k] || 0); if (hist.some((h) => h.every((x, i) => Math.abs(x - v[i]) < J[P1_KINDS[i]]))) s5++; hist.push(v); if (hist.length > 10) hist.shift(); n5++; } }
+    console.log("    (on P1's five-kind vector alone it would read " + (s5 / n5 * 100).toFixed(2) + " % — the P2 kinds are most of the new variety)"); }
+  // P2's gate is ≤ 20 % (§7 row P2), over the fifteen kinds' severities
+  const sb = seen / N, sbMax = Math.max(...perSet.map((p) => p.seen)), sbOk = sb <= 0.20; ok = ok && sbOk;
+  console.log("  " + (sbOk ? "✓" : "✗") + " seen-before (within one JND of any of the previous 10, over all " + ALL_KINDS.length + " kinds' severities): " + (sb * 100).toFixed(2) + " % (worst set " + (sbMax * 100).toFixed(1) + " %) — gate ≤ 20 %; JND " + JSON.stringify(J) + " from " + jndSrc);
   // can it fail? the same measure over a draw that ignores its fork (today's one look) must read 100 %
-  { const hist = []; let s2 = 0; for (let r = 0; r < 200; r++) { const ch = ZP.drawCharacter(null, {}); const v = P1_KINDS.map((k) => ch.kinds[k] || 0); if (hist.some((h) => h.every((x, i) => Math.abs(x - v[i]) < J[P1_KINDS[i]]))) s2++; hist.push(v); if (hist.length > 10) hist.shift(); }
+  { const hist = []; let s2 = 0; for (let r = 0; r < 200; r++) { const ch = ZP.drawCharacter(null, {}); const v = ALL_KINDS.map((k) => ch.kinds[k] || 0); if (hist.some((h) => h.every((x, i) => Math.abs(x - v[i]) < J[ALL_KINDS[i]]))) s2++; hist.push(v); if (hist.length > 10) hist.shift(); }
     const blind = s2 / 199 < 0.99; ok = ok && !blind;
     console.log("  " + (blind ? "✗" : "✓") + " sensitivity: 今 drawn 200× reads seen-before " + (s2 / 199 * 100).toFixed(1) + " % (must be ~100 %)"); }
   fs.writeFileSync(path.join(OUT, "draws.json"), JSON.stringify({ N, rows, tiers, combos: combos.size, seenBefore: sb, J, jndSrc, perSet }, null, 1));
@@ -813,25 +838,117 @@ function ghostAmp(x, c) {
   }
   return best;
 }
-const METRIC_FN = { snowTV: (x, c) => tv(x) - tv(c), lineVar: lineVar, ghostAmp: ghostAmp, washDev: washDev, scaleDev: scaleDev };
+// ---- P2's metrics. Each reads the OUTPUT frame against the clean one; none
+// reads the set's own state, except 混's reference (the other picture as the
+// set placed it — the metric asks whether THAT picture is in the frame).
+// the per-row horizontal shift profile (lineVar's search), cached per frame
+const SHIFTS = new WeakMap();
+function rowShifts(x, c) {
+  let sh = SHIFTS.get(x); if (sh) return sh; sh = new Float64Array(H);
+  for (let y = 0; y < H; y++) {
+    let best = 0, bestE = Infinity;
+    for (let d = -24; d <= 24; d++) { let e = 0; for (let i = 30; i < W - 30; i++) e += Math.abs(x[y * W + i] - c[y * W + i - d]); if (e < bestE) { bestE = e; best = d; } }
+    sh[y] = best;
+  }
+  SHIFTS.set(x, sh); return sh;
+}
+// 旗: the top rows' mean |shift| over the body's (rows 40–139)
+function flagTop(x, c) { const s = rowShifts(x, c); let a = 0, b = 0; for (let y = 0; y < 12; y++) a += Math.abs(s[y]); for (let y = 40; y < 140; y++) b += Math.abs(s[y]); return a / 12 - b / 100; }
+// 揺: the shift profile's line-to-line roughness (RMS second difference)
+function jitterHF(x, c) { const s = rowShifts(x, c); let e = 0; for (let y = 1; y < H - 1; y++) { const d = s[y] - (s[y - 1] + s[y + 1]) / 2; e += d * d; } return Math.sqrt(e / (H - 2)); }
+// 捩: the slow part of the profile (std of its 15-row moving average)
+function waveLF(x, c) { const s = rowShifts(x, c), m = []; for (let y = 7; y < H - 7; y++) { let a = 0; for (let k = -7; k <= 7; k++) a += s[y + k]; m.push(a / 15); } const mu = m.reduce((p, q) => p + q, 0) / m.length; return Math.sqrt(m.reduce((p, q) => p + (q - mu) * (q - mu), 0) / m.length); }
+// 点: thin bright horizontal dashes — runs of ≥ 6 px, 60 levels over the clean,
+// one line tall (the rows two above and below are not also lit there); per frame
+function dashes(x, c) {
+  let n = 0;
+  const lit = (y, i) => y >= 0 && y < H && x[y * W + i] - c[y * W + i] > 60;
+  for (let y = 0; y < H; y++) { let run = 0; for (let i = 0; i <= W; i++) { const on = i < W && lit(y, i) && !lit(y - 2, i) && !lit(y + 2, i); if (on) run++; else { if (run >= 6) n++; run = 0; } } }
+  return n;
+}
+// 縞: the strongest DIAGONAL sinusoid in the residual — the 2-D DFT's largest
+// amplitude (grey levels) over bins with |kx| ≥ 3, |ky| ≥ 3 and a pitch ≤ 10 px
+const COSX = [], SINX = [], COSY = [], SINY = [];
+for (let k = 0; k <= W / 2; k++) { COSX.push(Float64Array.from({ length: W }, (_, i) => Math.cos(2 * Math.PI * k * i / W))); SINX.push(Float64Array.from({ length: W }, (_, i) => Math.sin(2 * Math.PI * k * i / W))); }
+for (let k = 0; k < H; k++) { COSY.push(Float64Array.from({ length: H }, (_, i) => Math.cos(2 * Math.PI * k * i / H))); SINY.push(Float64Array.from({ length: H }, (_, i) => Math.sin(2 * Math.PI * k * i / H))); }
+function stripe(x, c) {
+  const n = W * H; let mu = 0; const r = new Float64Array(n); for (let p = 0; p < n; p++) { r[p] = x[p] - c[p]; mu += r[p]; } mu /= n; for (let p = 0; p < n; p++) r[p] -= mu;
+  let best = 0;
+  for (let kx = 3; kx <= W / 2; kx++) {
+    const re = new Float64Array(H), im = new Float64Array(H), cx = COSX[kx], sx = SINX[kx];
+    for (let y = 0; y < H; y++) { let a = 0, b = 0; const o = y * W; for (let i = 0; i < W; i++) { a += r[o + i] * cx[i]; b -= r[o + i] * sx[i]; } re[y] = a; im[y] = b; }
+    for (let ky = 3; ky <= H - 3; ky++) {
+      const fy = ky <= H / 2 ? ky / H : (H - ky) / H; if (Math.hypot(kx / W, fy) < 0.1) continue;
+      const cy = COSY[ky], sy = SINY[ky]; let a = 0, b = 0;
+      for (let y = 0; y < H; y++) { a += re[y] * cy[y] + im[y] * sy[y]; b += im[y] * cy[y] - re[y] * sy[y]; }
+      const amp = 2 * Math.hypot(a, b) / n; if (amp > best) best = amp;
+    }
+  }
+  return best;
+}
+// 混: the other picture's regression amplitude in the residual (the residual's
+// linear part in the clean removed first, as ghostAmp does)
+function xtalk(x, c, ref) {
+  if (!ref) return 0;
+  const n = W * H; let sc = 0, scc = 0, sr = 0, src = 0; const r = new Float64Array(n);
+  for (let p = 0; p < n; p++) { r[p] = x[p] - c[p]; sc += c[p]; scc += c[p] * c[p]; sr += r[p]; src += r[p] * c[p]; }
+  const beta = (src - sr * sc / n) / Math.max(1e-9, scc - sc * sc / n), alpha = (sr - beta * sc) / n;
+  let sa = 0, sb = 0, sab = 0, sbb = 0;
+  for (let p = 0; p < n; p++) { const a = r[p] - alpha - beta * c[p], b = ref[p]; sa += a; sb += b; sab += a * b; sbb += b * b; }
+  return Math.abs((sab - sa * sb / n) / Math.max(1e-9, sbb - sb * sb / n));
+}
+// 滲: a horizontal FIR (taps −2..10) fitted from the clean to the frame by
+// least squares; the smear is the weight AFTER the direct tap, Σ|h_k|, k ≥ 1
+function smearTail(x, c) {
+  const K0 = -2, K1 = 10, M = K1 - K0 + 2, A = Array.from({ length: M }, () => new Float64Array(M)), bv = new Float64Array(M), v = new Float64Array(M);
+  for (let y = 0; y < H; y += 2) for (let i = 14; i < W - 4; i++) {
+    for (let k = K0; k <= K1; k++) v[k - K0] = c[y * W + i - k]; v[M - 1] = 1;
+    const t = x[y * W + i];
+    for (let a = 0; a < M; a++) { bv[a] += v[a] * t; const va = v[a], Aa = A[a]; for (let b2 = 0; b2 < M; b2++) Aa[b2] += va * v[b2]; }
+  }
+  for (let a = 0; a < M; a++) A[a][a] += 1e-3 * (A[a][a] + 1);
+  // solve (Gaussian elimination)
+  for (let col = 0; col < M; col++) { let piv = col; for (let r2 = col + 1; r2 < M; r2++) if (Math.abs(A[r2][col]) > Math.abs(A[piv][col])) piv = r2; [A[col], A[piv]] = [A[piv], A[col]]; [bv[col], bv[piv]] = [bv[piv], bv[col]];
+    for (let r2 = col + 1; r2 < M; r2++) { const f = A[r2][col] / A[col][col]; for (let k = col; k < M; k++) A[r2][k] -= f * A[col][k]; bv[r2] -= f * bv[col]; } }
+  const h = new Float64Array(M); for (let r2 = M - 1; r2 >= 0; r2--) { let s2 = bv[r2]; for (let k = r2 + 1; k < M; k++) s2 -= A[r2][k] * h[k]; h[r2] = s2 / A[r2][r2]; }
+  let tail = 0; for (let k = 1; k <= K1; k++) tail += Math.abs(h[k - K0]); return tail;
+}
+const METRIC_FN = { snowTV: (x, c) => tv(x) - tv(c), lineVar: lineVar, ghostAmp: ghostAmp, washDev: washDev, scaleDev: scaleDev,
+  dashes: dashes, stripe: stripe, humPeak: humPeak, xtalk: xtalk, flagTop: flagTop, jitterHF: jitterHF, waveLF: waveLF, smearTail: smearTail,
+  clip: (x, c) => clip(x) - clip(c), negShare: (x, c) => (corr(x, c) < 0 ? 1 : 0) };
+// (P2) --kinds 点,縞 restricts the kinds run; --kill 点,縞 forces each named
+// kind with its axes NULLED (the kind "on" but drawing nothing) — the
+// sensitivity: every killed kind must then fail by name. Never in a gate run.
 async function render(browser) {
   const TEX = [3, 17, 101], SEVS = [0.5, 1.0];
+  const ZPk = require("./zk-picture.js"), ONLY = opt("kinds", "") ? opt("kinds", "").split(",") : null, KILL = opt("kill", "") ? opt("kill", "").split(",") : [];
+  const RUN = ALL_KINDS.filter((k) => !ONLY || ONLY.indexOf(k) >= 0);
+  const killAxes = (k) => { if (KILL.indexOf(k) < 0) return undefined; const a = {}; if (ZPk.FIELD[k]) a[ZPk.FIELD[k]] = null; return a; };
   const items = [cleanItem(0)];
   const hold6 = { body: "jou", entry: "soku", exit: "setsu", entryS: 0.4, exitS: 1, segments: [{ onS: 6, lockS: 0 }], gaps: [], holes: [], glimpses: null };
   for (const tex of TEX) items.push({ reel: 0, seed: 5, texture: tex, force: { clean: true }, rx: hold6, drops: [], grays: true, every: 3, maxGrays: 60, label: "clean·" + tex });
-  for (const k of P1_KINDS) for (const sv of SEVS) for (const tex of TEX) items.push({ reel: 0, seed: 5, texture: tex, force: { impairment: k, sev: sv }, rx: hold6, drops: [], grays: true, every: 3, maxGrays: 60, label: k + "·" + sv + "·" + tex });
+  for (const k of RUN) for (const sv of SEVS) for (const tex of TEX) items.push({ reel: 0, seed: 5, texture: tex, force: { impairment: k, sev: sv, axes: killAxes(k) }, rx: hold6, drops: [], grays: true, every: 3, maxGrays: 60, xt: k === "混", label: k + "·" + sv + "·" + tex });
+  for (const f in FEATURES) if (RUN.indexOf(FEATURES[f].kind) >= 0) for (const tex of TEX) items.push({ reel: 0, seed: 5, texture: tex, force: { impairment: FEATURES[f].kind, sev: 0.5, axes: KILL.indexOf(FEATURES[f].kind) >= 0 ? FEATURES[f].kill : FEATURES[f].axes }, rx: hold6, drops: [], grays: true, every: 3, maxGrays: 60, label: f + "·" + tex });
   const res = await runMulti(browser, items, {});
   const clean = dec(res[0].cleanB64);
   const mean = (a) => a.reduce((p, q) => p + q, 0) / (a.length || 1);
+  // 混's reference for every frame: the other picture as placed in the 混
+  // run of the same texture (a clean frame has none of its own: it is held
+  // against the same picture, which it must NOT contain)
+  const xtRef = {}; for (const r of res) if (r.xts) xtRef[r.label] = r.xts.map((b) => (b ? dec(b) : null));
   const val = {};                                           // label → { metric → mean over frames }
-  for (const r of res.slice(1)) { val[r.label] = {}; for (const m in METRIC_FN) val[r.label][m] = mean(r.grays.map((b) => METRIC_FN[m](dec(b), clean))); }
+  for (const r of res.slice(1)) {
+    val[r.label] = {};
+    const tex = r.label.split("·").pop(), refs = xtRef[r.label] || xtRef["混·0.5·" + tex] || [];
+    for (const m in METRIC_FN) val[r.label][m] = mean(r.grays.map((b, i) => METRIC_FN[m](dec(b), clean, refs[i] || refs[refs.length - 1] || null)));
+  }
   let ok = true; const out = {}, jnd = {};
   // every kind the library names must have a metric (the _cover.js rule)
   const ZP = require("./zk-picture.js");
-  const missing = ZP.IMPAIRMENTS.filter((k) => !KIND_METRIC[k]);
+  const missing = ZP.IMPAIRMENTS.filter((k) => !KIND_METRIC[k] || !METRIC_FN[KIND_METRIC[k]]);
   if (missing.length) { ok = false; console.log("  ✗ kinds with no metric: " + missing.join(" ")); }
-  for (const k of P1_KINDS) {
-    const m = KIND_METRIC[k];
+  for (const k of RUN) {
+    const m = KIND_METRIC[k]; if (!m) continue;
     const cl = TEX.map((t) => val["clean·" + t][m]), clSpread = Math.max(...cl) - Math.min(...cl), clMean = mean(cl);
     const floor = 3 * Math.max(clSpread, P0_SPREAD[m] || 0, 1e-4);
     const at = {}; for (const sv of SEVS) { const v = TEX.map((t) => val[k + "·" + sv + "·" + t][m]); at[sv] = { mean: mean(v), min: Math.min(...v), spread: Math.max(...v) - Math.min(...v) }; }
@@ -844,13 +961,21 @@ async function render(browser) {
     out[k] = { metric: m, clean: +clMean.toFixed(4), cleanSpread: +clSpread.toFixed(4), floor: +floor.toFixed(4), at05: +at[0.5].mean.toFixed(4), min05: +at[0.5].min.toFixed(4), at10: +at[1.0].mean.toFixed(4), spread05: +at[0.5].spread.toFixed(4), moved: +moved.toFixed(4), pass, jnd: jnd[k] };
     console.log("  " + (pass ? "✓" : "✗ DOES NOT RENDER:") + " " + k + " alone → " + m + ": clean " + clMean.toFixed(4) + " (spread " + clSpread.toFixed(4) + ") · sev 0.5 " + at[0.5].mean.toFixed(4) + " (min " + at[0.5].min.toFixed(4) + ", spread " + at[0.5].spread.toFixed(4) + ") · sev 1 " + at[1.0].mean.toFixed(4) + " · moved " + moved.toFixed(4) + " vs floor " + floor.toFixed(4) + " · JND " + jnd[k]);
   }
+  for (const f in FEATURES) {
+    if (RUN.indexOf(FEATURES[f].kind) < 0) continue;
+    const m = FEATURES[f].metric, cl = TEX.map((t) => val["clean·" + t][m]), clSpread = Math.max(...cl) - Math.min(...cl), clMean = mean(cl);
+    const v = TEX.map((t) => val[f + "·" + t][m]), floor = 3 * Math.max(clSpread, 1e-4), moved = Math.min(...v) - clMean, pass = moved > floor;
+    ok = ok && pass; out[f] = { metric: m, clean: +clMean.toFixed(4), min: +Math.min(...v).toFixed(4), moved: +moved.toFixed(4), floor: +floor.toFixed(4), pass };
+    console.log("  " + (pass ? "✓" : "✗ DOES NOT RENDER:") + " " + f + " (" + JSON.stringify(FEATURES[f].axes) + ") → " + m + ": clean " + clMean.toFixed(4) + " · forced " + v.map((q) => q.toFixed(4)).join(" / ") + " · moved " + moved.toFixed(4) + " vs floor " + floor.toFixed(4));
+  }
   // cross-talk table: every kind's every metric (so a kind that moves the wrong metric shows)
+  const MS = Object.keys(METRIC_FN).filter((m) => m !== "negShare");
   console.log("  every metric under every kind at sev 0.5 (mean of 3 textures):");
-  console.log("    " + "".padEnd(8) + Object.keys(METRIC_FN).map((m) => m.padStart(11)).join(""));
-  console.log("    " + "clean".padEnd(8) + Object.keys(METRIC_FN).map((m) => mean(TEX.map((t) => val["clean·" + t][m])).toFixed(4).padStart(11)).join(""));
-  for (const k of P1_KINDS) console.log("    " + k.padEnd(7) + Object.keys(METRIC_FN).map((m) => mean(TEX.map((t) => val[k + "·0.5·" + t][m])).toFixed(4).padStart(11)).join(""));
+  console.log("    " + "".padEnd(8) + MS.map((m) => m.padStart(10)).join(""));
+  console.log("    " + "clean".padEnd(8) + MS.map((m) => mean(TEX.map((t) => val["clean·" + t][m])).toFixed(3).padStart(10)).join(""));
+  for (const k of RUN) console.log("    " + k.padEnd(7) + MS.map((m) => mean(TEX.map((t) => val[k + "·0.5·" + t][m])).toFixed(3).padStart(10)).join(""));
   if (res.errors.length) { ok = false; console.log("  ✗ page errors: " + res.errors.join(" | ")); }
-  fs.writeFileSync(path.join(OUT, "render.json"), JSON.stringify({ kinds: out, jnd }, null, 1));
+  if (!ONLY && !KILL.length) fs.writeFileSync(path.join(OUT, "render.json"), JSON.stringify({ kinds: out, jnd }, null, 1));   // (a partial or killed run never writes the JND the draw gate reads)
   return { ok, kinds: out, jnd };
 }
 
@@ -1083,7 +1208,7 @@ function PAGE_SHEET(tiles, cols, label) {
   })();
 }
 async function sheets(browser) {
-  const ZP = require("./zk-picture.js");
+  const ZP = require("./zk-picture.js"), PH = opt("phase", "P2");          // (P2) the sheets carry the phase they show
   const items = [];
   for (let r = 0; r < REELS.length; r++) for (let s = 0; s < 12; s++) items.push(plainItem(r, 211 + s + 0.37, { pngAt: 3 }));
   ZP.ARCHETYPES.forEach((a, k) => items.push(plainItem(0, 311.37 + k, { force: { archetype: a.id, sev: 0.65 }, pngAt: 3.6, label: a.id })));
@@ -1092,12 +1217,12 @@ async function sheets(browser) {
   try {
     for (let r = 0; r < REELS.length; r++) {
       const tiles = res.filter((x) => x.reel === r && !ZP.ARCHETYPES.some((a) => a.id === x.label)).map((x) => ({ png: x.pngs[0], cap: "seed " + x.seed + " · " + x.character.archetype + (x.character.tier === "uncommon" ? " +" : "") }));
-      const j = await page.eval("(" + PAGE_SHEET.toString() + ")(" + JSON.stringify(tiles) + ",4," + JSON.stringify("P1 · " + REELS[r].id + " @" + REELS[r].at + " s · 12 drawn receptions, 3 s into the hold · texture seeded") + ")", 120000);
-      fs.writeFileSync(path.join(OUT, "P1-drawn-" + REELS[r].id + ".jpg"), Buffer.from(j.split(",")[1], "base64"));
+      const j = await page.eval("(" + PAGE_SHEET.toString() + ")(" + JSON.stringify(tiles) + ",4," + JSON.stringify(PH + " · " + REELS[r].id + " @" + REELS[r].at + " s · 12 drawn receptions, 3 s into the hold · texture seeded") + ")", 120000);
+      fs.writeFileSync(path.join(OUT, PH + "-drawn-" + REELS[r].id + ".jpg"), Buffer.from(j.split(",")[1], "base64"));
     }
     const at = res.filter((x) => ZP.ARCHETYPES.some((a) => a.id === x.label)).map((x) => ({ png: x.pngs[0], cap: x.label + " · sev " + x.character.sev.toFixed(2) }));
-    const j = await page.eval("(" + PAGE_SHEET.toString() + ")(" + JSON.stringify(at) + ",4," + JSON.stringify("P1 · the 8 archetypes, forced at sev 0.65, john-cage-interview, seeds 311.37 + k, 3.6 s into the hold") + ")", 120000);
-    fs.writeFileSync(path.join(OUT, "P1-archetypes.jpg"), Buffer.from(j.split(",")[1], "base64"));
+    const j = await page.eval("(" + PAGE_SHEET.toString() + ")(" + JSON.stringify(at) + ",4," + JSON.stringify(PH + " · the 8 archetypes, forced at sev 0.65, john-cage-interview, seeds 311.37 + k, 3.6 s into the hold") + ")", 120000);
+    fs.writeFileSync(path.join(OUT, PH + "-archetypes.jpg"), Buffer.from(j.split(",")[1], "base64"));
     // the crack, the whole DOM stack, on a lit picture (bbc1 @12 s and john-cage @20 s), patterns A and D
     for (const [ri, pi] of [[1, 0], [1, 3], [0, 0], [0, 3]]) {
       await page.eval("(async function(){var D=ZankyoSet._dev,ZS=ZankyoSet;D.setPattern(" + pi + ");D.seedTexture(4);D.force({archetype:'清'});var v=document.createElement('video');v.muted=true;v.preload='auto';await new Promise(function(r){v.addEventListener('loadeddata',r,{once:true});v.src='broadcast/reels/" + REELS[ri].id + ".mp4';});await new Promise(function(r){v.addEventListener('seeked',r,{once:true});v.currentTime=" + REELS[ri].at + ";});var tm=D.clock()+33.3;D.step(tm);var t0=tm/1000+0.2;var P={body:'jou',entry:'soku',exit:'setsu',entryS:0.4,exitS:1,segments:[{onS:4,lockS:0,atS:0.4,lockAtS:0.4}],gaps:[],holes:[],glimpses:null,lossAtS:4.4,spanS:5.4,presenceS:4};ZS.signal({t0:t0,holdS:4,lossD:1,drops:[],seed:7,id:'lit',rx:P,video:v});while(tm/1000<t0+2.4){tm+=33.3;D.step(tm);}})()", 120000);
@@ -1110,6 +1235,71 @@ async function sheets(browser) {
   } finally { await page.closeTarget(); }
   console.log("  sheets written to " + OUT);
   return { ok: true };
+}
+
+// ---- 6c. THE KINDS SHEET (P2): every P2 kind forced ALONE (--sev, default
+// 0.8; median axes) on john-cage, three moments of its hold each (1.2, 2.6 and
+// 4.4 s — an episode kind shows in some and not others), texture seeded, and
+// the clean reference first. Two kinds to a row.
+async function kindsSheet(browser) {
+  const ZP = require("./zk-picture.js"), sev = +opt("sev", "0.8"), reel = opt("reel", "0") === "card" ? null : +opt("reel", "0"), ats = opt("ats", "1.2,2.6,4.4").split(",").map(Number);
+  const kinds = (opt("kinds", "") || ZP.P2_KINDS.join(",")).split(",");
+  const hold6 = { body: "jou", entry: "soku", exit: "setsu", entryS: 0.4, exitS: 1, segments: [{ onS: 6, lockS: 0 }], gaps: [], holes: [], glimpses: null };
+  const items = [Object.assign(cleanItem(reel), { pngAts: ats, rx: hold6 })];
+  for (const k of kinds) items.push({ reel, seed: 5, texture: 3, force: { impairment: k, sev, axes: JSON.parse(opt("axes", "{}"))[k] || undefined }, rx: hold6, drops: [], pngAts: ats, label: k });
+  const res = await runMulti(browser, items, {});
+  const tiles = []; res.forEach((r) => r.pngs.forEach((png, i) => tiles.push({ png, cap: (r.label === "clean" ? "clean" : r.label + " alone · sev " + sev) + " · " + ats[i] + " s" })));
+  const page = await openPage(browser, {});
+  try {
+    const name = opt("name", "P2-kinds");
+    const j = await page.eval("(" + PAGE_SHEET.toString() + ")(" + JSON.stringify(tiles) + ",6," + JSON.stringify(name + " · each P2 kind alone at sev " + sev + ", median axes · " + (reel == null ? "card" : REELS[reel].id) + " · three moments of a 6 s hold · texture 3") + ")", 120000);
+    fs.writeFileSync(path.join(OUT, name + ".jpg"), Buffer.from(j.split(",")[1], "base64"));
+    console.log("  " + tiles.length + " tiles → " + path.join(OUT, name + ".jpg"));
+  } finally { await page.closeTarget(); }
+  if (res.errors.length) { console.log("  ✗ page errors: " + res.errors.join(" | ")); return { ok: false }; }
+  return { ok: true };
+}
+
+// ---- 5e. THE LULL'S FIT (dev; P2): which P2 kinds bury, and how much.
+// ZP.burial's P1 terms and BURY_LINE are kept as P1 fitted them; the ten P2
+// weights (ZP.BURY2, each on its kind's own "how much of the picture it
+// takes") are fitted here, greedily, on lull-OFF data (lullcal.json files,
+// --from a,b,…): every reception that failed to surface, or surfaced with a
+// worst window under 0.8 s, must score ≥ BURY_LINE / 0.9 (P1's 10 % margin);
+// each step adds the weight that covers the most such receptions per unit of
+// incidence over the 20,000 drawn receptions. Prints the weights to paste.
+function lullfit() {
+  const ZP = require("./zk-picture.js");
+  const files = opt("from", path.join(OUT, "lullcal.json")).split(",");
+  const rows = files.flatMap((f) => JSON.parse(fs.readFileSync(f, "utf8"))).filter((r) => r.ch && r.ch.archetype && r.ch.archetype !== "今");
+  const keys = Object.keys(ZP.BURY2), save = Object.assign({}, ZP.BURY2);
+  const feat = (ch) => keys.map((k) => { keys.forEach((q) => { ZP.BURY2[q] = q === k ? 1 : 0; }); return ZP.burial2(ch); });
+  const p1 = (ch) => { keys.forEach((q) => { ZP.BURY2[q] = 0; }); return ZP.burial(ch); };
+  const Rand = loadRand(), pool = [];
+  for (const S of SEED_SETS) { const m = Rand.stream(S), dsr = Rand.stream(S).fork("probe:desc"); for (let r = 0; r < 500; r++) { const ch = ZP.drawCharacter(m.fork("set:rx:" + dsr.next() * 1000), {}); pool.push({ b: p1(ch), f: feat(ch) }); } }
+  const data = rows.map((r) => ({ label: r.label, arch: r.arch, need: !r.surf || r.worst < 0.8, fail: !r.surf, b: p1(r.ch), f: feat(r.ch) }));
+  const target = ZP.BURY_LINE / 0.9, w = keys.map(() => 0);
+  const score = (d) => d.b + d.f.reduce((a, x, i) => a + x * w[i], 0);
+  const inc = () => pool.filter((d) => score(d) > ZP.BURY_LINE).length / pool.length;
+  const need = data.filter((d) => d.need);
+  for (let it = 0; it < 200; it++) {
+    const unc = need.filter((d) => score(d) < target); if (!unc.length) break;
+    let best = null; const base = inc();
+    for (let i = 0; i < keys.length; i++) for (const st of [0.05, 0.1, 0.2, 0.5, 1, 2]) {
+      w[i] += st; const gain = unc.length - need.filter((d) => score(d) < target).length, cost = Math.max(1e-4, inc() - base); w[i] -= st;
+      if (gain > 0 && (!best || gain / cost > best.r)) best = { i, st, r: gain / cost, gain };
+    }
+    if (!best) break;
+    w[best.i] += best.st;
+  }
+  keys.forEach((q) => { ZP.BURY2[q] = save[q]; });
+  const unc = need.filter((d) => score(d) < target);
+  console.log("  " + data.length + " lull-off receptions from " + files.join(", ") + " · " + need.length + " need a lull (" + data.filter((d) => d.fail).length + " fail to surface)");
+  console.log("  fitted BURY2 = " + JSON.stringify(Object.fromEntries(keys.map((k, i) => [k, +w[i].toFixed(3)]))) + " · incidence " + (inc() * 100).toFixed(1) + " %");
+  if (unc.length) console.log("  ✗ still uncovered (a P1-term reception the P2 weights cannot reach, or none helps): " + unc.map((d) => d.label + " " + d.arch + " score " + score(d).toFixed(3)).join(", "));
+  const by = {}; data.forEach((d) => { (by[d.arch] = by[d.arch] || [0, 0, 0])[0]++; if (d.need) by[d.arch][1]++; if (score(d) > ZP.BURY_LINE) by[d.arch][2]++; });
+  console.log("  by archetype (n · need · lulled): " + Object.keys(by).map((k) => k + " " + by[k].join("·")).join("  "));
+  return { ok: !unc.length, w };
 }
 
 // ---- 5c. THE LULL'S SHAPE (critic P1 r1, required item 1). §11.2 asks that
@@ -1234,7 +1424,8 @@ async function lullcal(browser) {
   const n = +opt("n", "40"), s0 = +opt("seed0", "1001"), built = argv.indexOf("--built") >= 0, items = [];
   const fz = (f) => built ? (Object.keys(f).length ? f : null) : Object.assign({}, f, { axes: { lull: null } });
   for (let r = 0; r < REELS.length; r++) { items.push(cleanItem(r)); for (let i = 0; i < n; i++) items.push(plainItem(r, s0 + i + 100 * r + 0.37, { force: fz({}) })); }
-  for (const a of ["遠", "嵐"]) for (let i = 0; i < 12; i++) items.push(plainItem(i % 3, s0 + 600 + i + 0.37, { force: fz({ archetype: a, sev: 0.7 + 0.3 * (i % 4) / 3 }), label: a + "·cal·" + i }));
+  // (P2: --archs 遠,嵐,混,電,同,過 adds the archetypes whose primaries are P2's)
+  for (const a of opt("archs", "遠,嵐").split(",")) for (let i = 0; i < 12; i++) items.push(plainItem(i % 3, s0 + 600 + i + 0.37, { force: fz({ archetype: a, sev: 0.7 + 0.3 * (i % 4) / 3 }), label: a + "·cal·" + i }));
   const rows = legRows(await runMulti(browser, items, {}));
   delete require.cache[require.resolve("./zk-picture.js")];
   const ZP = require("./zk-picture.js");
@@ -1256,16 +1447,18 @@ async function lullcal(browser) {
     if (MODE === "identity" || MODE === "all") { console.log("IDENTITY (pixel hashes of every frame, tree vs base, seeded texture)"); report.identity = await identity(browser); ok = ok && report.identity.ok; }
     if (MODE === "perf" || MODE === "all") { console.log("PERF"); report.perf = await perf(browser); ok = ok && report.perf.ok; }
     if (MODE === "repeat" || MODE === "all") { console.log("REPEATABILITY + LEGIBILITY FLOOR"); report.repeat = await repeat(browser); ok = ok && report.repeat.ok; }
-    if (MODE === "render" || MODE === "p1") { console.log("P1 · DOES EACH KIND RENDER (§6.3.2) + the JND"); report.render = await render(browser); ok = ok && report.render.ok; }
-    if (MODE === "draws" || MODE === "p1") { console.log("P1 · THE CHARACTER DRAW (§6.3.1)"); report.draws = await draws(); ok = ok && report.draws.ok; }
-    if (MODE === "legibility" || MODE === "p1") { console.log("P1 · LEGIBILITY AND SURFACING (§6.3.3, §11.2)"); report.legibility = await legibility(browser); ok = ok && report.legibility.ok; }
-    if (MODE === "perfp1" || MODE === "p1") { console.log("P1 · PERF (§6.3.4)"); report.perfp1 = await perfp1(browser); ok = ok && report.perfp1.ok; }
-    if (MODE === "crack" || MODE === "p1") { console.log("P1 · 光 THE CRACK'S LIGHT"); report.crack = await crack(browser); ok = ok && report.crack.ok; }
+    if (MODE === "render" || MODE === "p1" || MODE === "p2") { console.log("P1 · DOES EACH KIND RENDER (§6.3.2) + the JND"); report.render = await render(browser); ok = ok && report.render.ok; }
+    if (MODE === "draws" || MODE === "p1" || MODE === "p2") { console.log("P1 · THE CHARACTER DRAW (§6.3.1)"); report.draws = await draws(); ok = ok && report.draws.ok; }
+    if (MODE === "legibility" || MODE === "p1" || MODE === "p2") { console.log("P1 · LEGIBILITY AND SURFACING (§6.3.3, §11.2)"); report.legibility = await legibility(browser); ok = ok && report.legibility.ok; }
+    if (MODE === "perfp1" || MODE === "p1" || MODE === "p2") { console.log("P1 · PERF (§6.3.4)"); report.perfp1 = await perfp1(browser); ok = ok && report.perfp1.ok; }
+    if (MODE === "crack" || MODE === "p1" || MODE === "p2") { console.log("P1 · 光 THE CRACK'S LIGHT"); report.crack = await crack(browser); ok = ok && report.crack.ok; }
     if (MODE === "lullcal") { console.log("P1 · THE LULL'S CALIBRATION (dev)"); report.lullcal = await lullcal(browser); ok = ok && report.lullcal.ok; }
-    if (MODE === "lull" || MODE === "p1") { console.log("P1 · THE LULL'S SHAPE (§11.2; critic P1 r1 item 1)"); report.lull = await lullShape(browser); ok = ok && report.lull.ok; }
-    if (MODE === "phases" || MODE === "p1") { console.log("P1 · THE PHASE MACHINE (the 断 tail fix, the relock; every fixture shape, tree vs rc.91)"); report.phases = await phases(browser); ok = ok && report.phases.ok; }
+    if (MODE === "lull" || MODE === "p1" || MODE === "p2") { console.log("P1 · THE LULL'S SHAPE (§11.2; critic P1 r1 item 1)"); report.lull = await lullShape(browser); ok = ok && report.lull.ok; }
+    if (MODE === "phases" || MODE === "p1" || MODE === "p2") { console.log("P1 · THE PHASE MACHINE (the 断 tail fix, the relock; every fixture shape, tree vs rc.91)"); report.phases = await phases(browser); ok = ok && report.phases.ok; }
     if (MODE === "strip") { console.log("P1 · A STRIP"); report.strip = await strip(browser); }
     if (MODE === "sheets") { console.log("P1 · CONTACT SHEETS"); report.sheets = await sheets(browser); }
+    if (MODE === "lullfit") { console.log("P2 · THE LULL'S FIT (dev)"); report.lullfit = lullfit(); }
+    if (MODE === "kinds") { console.log("P2 · THE KINDS SHEET"); report.kinds = await kindsSheet(browser); ok = ok && report.kinds.ok; }
   } catch (e) { console.error("PROBE FAILED: " + (e && e.stack || e)); ok = false; }
   finally { await browser.close(); }
   fs.writeFileSync(path.join(OUT, "report-" + MODE + ".json"), JSON.stringify(report, null, 1));
