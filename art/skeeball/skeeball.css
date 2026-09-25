@@ -1,37 +1,68 @@
 /* HOLLER ROLLER — page framing.
  * The room around the machine: near-black blue, no distractions.
- * The canvas letterboxes inside .skeeball-stage at a crisp integer scale.
+ * The stage fills the viewport under the fixed site banner; the canvas
+ * sits in it at a crisp integer scale (main.js grows the canvas's
+ * internal height to fill the stage at that scale). The blurb lives
+ * below the fold.
  */
+
+html:has(.skeeball-page),
+body:has(.skeeball-page) {
+    overscroll-behavior: none;   /* no rubber-band or pull-to-refresh mid-throw */
+    background: #07060d;
+}
+
+/* while a game is running the page does not scroll at all (main.js sets the class) */
+html.skeeball-playing,
+html.skeeball-playing body {
+    overflow: hidden;
+}
 
 .skeeball-page {
     background: #07060d;
-    margin: 0 calc(50% - 50vw);
-    /* full-bleed out of any content frame */
+    width: 100%;
+    margin: 0;
     padding: 0 0 2rem;
 }
 
 .skeeball-stage {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    display: block;              /* main.js places the canvas on whole device pixels */
     width: 100%;
-    height: calc(100dvh - 64px);
-    /* room for the site banner */
-    min-height: 420px;
+    height: calc(100vh - var(--banner-h, 56px));
+    height: calc(100dvh - var(--banner-h, 56px));
     overflow: hidden;
     touch-action: none;
+    overscroll-behavior: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
 }
 
 .skeeball-canvas {
-    image-rendering: pixelated;
+    display: block;
+    touch-action: none;
+    overscroll-behavior: none;
     image-rendering: crisp-edges;
+    image-rendering: pixelated;
     background: #07060d;
 }
 
-.skeeball-blurb {
-    max-width: 34rem;
+.skeeball-canvas:focus-visible {
+    outline: 1px dashed #6f5d95;
+    outline-offset: -1px;
+}
+
+.skeeball-placard {
+    max-width: min(24rem, calc(100% - 2rem));
     margin: 1.5rem auto 0;
-    padding: 0 1.25rem;
+    padding: 0.6rem 1rem 0.5rem;
+    border: 1px solid #2c2340;
+    border-radius: 2px;
+    box-shadow: inset 0 0 0 3px #07060d, inset 0 0 0 4px #1b1528;
+}
+
+.skeeball-blurb {
+    margin: 0;
     color: #6f5d95;
     font-size: 0.85rem;
     line-height: 1.6;
@@ -41,4 +72,17 @@
 .skeeball-blurb em {
     color: #a63a70;
     font-style: normal;
+}
+
+.skeeball-build {
+    margin: 0.4rem 0 0;
+    color: #453567;
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.skeeball-build-sep {
+    margin: 0 0.4em;
 }

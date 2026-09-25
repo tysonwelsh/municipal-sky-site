@@ -9,7 +9,8 @@
  * Every function takes a 2d context `g` first. No state, no palette —
  * callers pass colors.
  */
-window.ArcadeSprites = (function () {
+(function (root) {
+  var api = (function () {
   'use strict';
 
   /* ── pixel helpers ─────────────────────────────────────────────────── */
@@ -80,6 +81,25 @@ window.ArcadeSprites = (function () {
       cx += 4 * scale;
     }
   }
+  // text whose pixels drop out on the Bayer grid (chalk, worn paint): a
+  // pixel is drawn when BAYER at its absolute canvas position < density
+  function ditherText(g, str, x, y, c, scale, density) {
+    scale = scale || 1;
+    g.fillStyle = c;
+    var cx = x;
+    for (var k = 0; k < str.length; k++) {
+      var gl = FONT[str[k]] || FONT[' '];
+      for (var row = 0; row < 5; row++)
+        for (var col = 0; col < 3; col++)
+          if (gl[row] & (4 >> col))
+            for (var j = 0; j < scale; j++)
+              for (var i = 0; i < scale; i++) {
+                var X = cx + col * scale + i, Y = y + row * scale + j;
+                if (BAYER[((Y % 4 + 4) % 4) * 4 + ((X % 4 + 4) % 4)] / 16 < density) g.fillRect(X, Y, 1, 1);
+              }
+      cx += 4 * scale;
+    }
+  }
   function textW(str, scale) { return (str.length * 4 - 1) * (scale || 1); }
   function textC(g, str, cx, y, c, scale) { // centered
     text(g, str, Math.round(cx - textW(str, scale) / 2), y, c, scale);
@@ -87,7 +107,10 @@ window.ArcadeSprites = (function () {
 
   return {
     px: px, rect: rect, hline: hline, vline: vline,
-    ellipse: ellipse, dither: dither, glowRing: glowRing,
-    FONT: FONT, text: text, textW: textW, textC: textC
+    ellipse: ellipse, dither: dither, glowRing: glowRing, BAYER: BAYER,
+    FONT: FONT, text: text, textW: textW, textC: textC, ditherText: ditherText
   };
 })();
+  root.ArcadeSprites = api;
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+})(typeof window !== 'undefined' ? window : globalThis);

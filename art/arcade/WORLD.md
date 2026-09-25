@@ -25,6 +25,9 @@ details stop contradicting each other.
 - In-universe, tokens come from a **changer by the front door** (nickels
   in). Until it's built, a first visit seeds the save with a starter
   pocket of 20 tokens.
+- **Found a nickel.** If your pocket is empty when a machine settles back
+  into attract, it finds a nickel in its own coin return: the pocket
+  refills to 5 tokens (`skeeball-return`, flag `skeeball.found-a-nickel`).
 
 ## The save document
 
@@ -58,8 +61,8 @@ decides later which ones matter.
 | HOLLER ROLLER (skee ball) | `/art/skeeball/` | possum | tokens¹ | scrip |
 | SCRIP CREEK² (coin pusher) | `/art/coinpusher/` | raccoon (name TBD: Denver, Tarnish, Miss Penny) | tokens | tokens + prizes |
 
-¹ once retrofitted onto arcade-core (coin pusher plan §7, milestone 5);
-today it's free to play.
+¹ on arcade-core since 1.0.0-rc.3: one token buys nine balls, and the
+payout is scrip (score/50, +5 at 300, +13 for every 100).
 ² marquee is a misnomer — the machine pays no scrip. Rename candidates or
 keep-it-as-a-lie decision parked (coin pusher plan §8).
 
