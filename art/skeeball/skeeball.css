@@ -20,18 +20,16 @@ html.skeeball-playing body {
 
 .skeeball-page {
     background: #07060d;
-    margin: 0 calc(50% - 50vw);  /* full-bleed out of any content frame */
+    width: 100%;
+    margin: 0;
     padding: 0 0 2rem;
 }
 
 .skeeball-stage {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    display: block;              /* main.js places the canvas on whole device pixels */
     width: 100%;
     height: calc(100vh - var(--banner-h, 56px));
     height: calc(100dvh - var(--banner-h, 56px));
-    min-height: 384px;
     overflow: hidden;
     touch-action: none;
     overscroll-behavior: none;
@@ -44,10 +42,14 @@ html.skeeball-playing body {
     display: block;
     touch-action: none;
     overscroll-behavior: none;
-    outline: none;
-    image-rendering: pixelated;
     image-rendering: crisp-edges;
+    image-rendering: pixelated;
     background: #07060d;
+}
+
+.skeeball-canvas:focus-visible {
+    outline: 1px dashed #6f5d95;
+    outline-offset: -1px;
 }
 
 .skeeball-placard {

@@ -4,10 +4,11 @@
  * height and the crisp integer scale, reads the thumb, runs the fixed-step
  * loop over the physics (skeeball-physics.js), keeps the game
  * (ATTRACT → PLAY → PAYOUT → ATTRACT, tokens in, scrip out through Arcade
- * core) and draws the ball layer. The machine's reactions are drawn by
- * R.drawLive(ctx, t, view); this file only fills `view`.
+ * core) and draws the ball layer (ball, trail, chalk ghost, sink). The
+ * machine's reactions are drawn by render's drawLiveUnder/drawLiveOver
+ * from the `view` this file fills.
  *
- * THE THROW (PLAN-2 §4). A pointerdown in the lower half of the canvas
+ * THE THROW (PLAN-2 §4). A pointerdown anywhere on the stage below the canvas midline
  * rests the ball on the throw line under a chalk aim-ghost; the ball only
  * winds up a little under the thumb. On release, mapGesture() reads the
  * last ~90 ms of the gesture: speed → power, direction → aim, and a
@@ -16,9 +17,9 @@
  *
  * opts: { seed, tune (partial physics TUNE per throw), free (no tokens),
  *         onEvent(ev), harness }
- * Handle: { destroy, pause, resume, throwBall(power 0..1, aim rad (→ true, false, or 'refused' when the machine sulks),
- *           spin -1..1 [, x0]), getState(), onEvent(fn) → unsubscribe,
- *           harness (only with ?harness=1) }
+ * Handle: { destroy, pause, resume,
+ *           throwBall(power 0..1, aim rad, spin -1..1 [, x0]) → true | false | 'refused',
+ *           getState(), onEvent(fn) → unsubscribe, harness (only with ?harness=1) }
  * Events (opts.onEvent, handle.onEvent, Arcade.emit('skeeball', ev)):
  *   every physics event (launch, wall, rim, bed, backstop, captured,
  *   gutter, stall, bounceback, rest, cage, return, timeout, done) with
@@ -26,11 +27,13 @@
  *   `stuck` instead of `gutter`: no score, ball consumed), plus
  *   input {kind}, mute {muted}, mode {mode}, coin, nocoin, ballstart
  *   {n, ballsLeft}, throw {x0, v, aim, spin}, jackpot, gameover {score,
- *   tickets, hundreds}, ticket {n}.
+ *   tickets, hundreds, best}, ticket {n}, found {tokens}, resume {n, score},
+ *   and the mischief's moon / sulk / jam / unjam / possum.
  *
  * Keys: space throws (shift: full power), ←/→ aim ±5°, M mutes.
- * ?harness=1  no rAF loop: window.__skeeMount.harness owns the clock
- * ?mode=attract|play|payout  start in that mode (preview)
+ * ?harness=1  no rAF loop: window.__skeeMount.harness owns the clock; with
+ *             it, ?mode=attract|play|payout and ?force=moon:3,sulk,jam:2
+ *             preview a state (ignored without the harness)
  */
 (function (root) {
   'use strict';
@@ -71,6 +74,8 @@
     HOOK_STRAIGHT: 10 * Math.PI / 180, // the prior window's heading spread must stay under this
     SPIN_MAX: 0.4,               // english of a full hook: moves the landing ≈ 0.16 u in the ladder
     HOOK_LATE_PX: 6, HOOK_PRIOR_PX: 8,
+    TAP_PX: 8,                   // a gesture that never strays this far is a tap
+    MAX_PTS: 96,                 // samples kept per drag
     SETDOWN_SPEED: 0.5, SETDOWN_MS: 150, // slower than this after this long: the ball is set down, not thrown
     MIN_TRAVEL: 12               // css px of upward travel to count as a throw
   };
@@ -111,7 +116,7 @@
       maxD = Math.max(maxD, Math.hypot(pts[k].x - a.x, pts[k].y - a.y));
     }
     out.travel = a.y - minY;
-    out.tap = maxD < 8;
+    out.tap = maxD < G.TAP_PX;
     function lane(sx, sy) { return sy > 0 ? clamp(Math.atan(G.AIM_PERSPECTIVE * Math.tan(Math.atan2(sx, sy))), -G.AIM_MAX, G.AIM_MAX) : 0; }
     out.dragAim = lane(z.x - a.x, a.y - z.y);   // the whole drag's direction (the ghost while the thumb is down)
     if (n < 2) return out;
@@ -153,7 +158,7 @@
     }
 
     var e = at(tEnd), tA = Math.max(a.t, tEnd - G.WIN_MS), w = at(tA), dt = (tEnd - tA) / 1000;
-    if (dt < 0.008) { out.spin = 0; return out; }
+    if (!(dt >= 0.008)) { out.spin = 0; return out; }
     var dx = e.x - w.x, up = w.y - e.y;
     var s = Math.hypot(dx, up) / dt / machineCssH;
     out.speed = s;
@@ -173,7 +178,12 @@
 
   /* ══ the cabinet ═════════════════════════════════════════════════════ */
   var MODES = { attract: 1, play: 1, payout: 1 };
-  var BALLS = 9, LIFT_T = 0.4, DUST_T = 0.15, NOTE_T = 1.6, RIM_TICK_T = 2 / 60;
+  var BALLS = 9, DUST_T = 0.15, NOTE_T = 1.6, RIM_TICK_T = 3 / 60, GLIDE_T = 0.25;
+  // the economy (WORLD.md): tickets = floor(score / 50) + 5 at 300 + 13 per 100
+  var TICKET_PER = 50, BONUS_AT = 300, BONUS = 5, PER_HUNDRED = 13;
+  var CRANK_PER = 0.12, CRANK_MAX = 4, PAYOUT_HOLD = 2, FF_HOLD = 0.5; // s per ticket, cap, linger, fast-forward hold
+  var REFILL = 5;                // the nickel found in the coin return
+  var SEED0 = 1913;
   var MEDIUM = 0.3;              // keyboard / default power: v 3.6, a straight throw into the stack
 
   // ?force=moon:5,sulk:3,jam,lean:0.1 → opts.mischiefForce (harness/preview)
@@ -212,19 +222,25 @@
 
     // Integer scaling in *device* pixels. The scale is the largest integer
     // at which the 216×384 machine fits; the internal height then grows (up
-    // to 448) to fill the stage at that scale — the extra rows are room.
+    // to R.H_MAX) to fill the stage at that scale — the extra rows are room.
     function fit() {
       var dpr = root.devicePixelRatio || 1;
       var availW = container.clientWidth * dpr;
       var availH = container.clientHeight * dpr;
       var scale = Math.max(1, Math.floor(Math.min(availW / R.W, availH / R.H_MIN)));
-      if (R.setHeight(availH / scale) || canvas.height !== R.H || !R.staticLayer) {
+      // H in steps of 8 rows, so the iOS URL bar's dvh wobble doesn't rebuild the layers
+      var rows = Math.max(R.H_MIN, Math.floor(availH / scale / 8) * 8);
+      if (R.setHeight(rows) || canvas.height !== R.H || !R.staticLayer) {
         canvas.height = R.H;
         R.buildStatic();
       }
       ctx.imageSmoothingEnabled = false;
       canvas.style.width = (R.W * scale / dpr) + 'px';
       canvas.style.height = (R.H * scale / dpr) + 'px';
+      // placed on whole device pixels (flex centring can land on a half pixel)
+      canvas.style.marginLeft = (Math.max(0, Math.floor((availW - R.W * scale) / 2)) / dpr) + 'px';
+      canvas.style.marginTop = (Math.max(0, Math.floor((availH - R.H * scale) / 2)) / dpr) + 'px';
+      rectCache = null;
       if (HARNESS) render();
     }
 
@@ -235,21 +251,23 @@
     /* ── state ─────────────────────────────────────────────────────── */
     var game = {
       mode: 'attract', score: 0, n: 0, hundreds: 0, tickets: 0, ballScores: [],
-      seed: (opts.seed | 0) || 1913, games: 0,
+      // the game seed: fixed for the harness (opts.seed / H.play(seed)); otherwise
+      // derived from the save at each startGame, so visitors get different machines
+      seed: (opts.seed | 0) || SEED0, fixedSeed: opts.seed != null, games: 0,
       payoutT0: 0, ticketsCranked: 0, crankPer: 0.12
     };
     var state = {
       ball: null,          // the physics throw in play
       toast: null,         // {x, y, text, t0, pink} floating score
       trail: [],           // recent airborne screen points {x, y, t}
-      lastPose: null
+      rerack: null         // {x, z, t0}: a refused ball gliding home to the throw line
     };
     // what the machine shows; drawLive reads it (see render.js for fields)
     var view = {
       mode: 'attract', score: 0, highScore: 0, ballsLeft: BALLS,
       ticketsOut: 0, cranking: false, hundreds: 0, holeGlow: [0, 0],
-      lift: null, liftT: null, jackpot: null, wideT0: null,
-      doorRattle: null, marqueeNote: null, thirteen: false
+      lift: null, jackpot: null, wideT0: null,
+      doorRattle: null, marqueeNote: null
     };
     var drag = null;       // {id, pts: [{t, x, y}], live}
     var dust = null;       // {pts: [[sx, sy]], t0} — the ghost puffing to chalk dust
@@ -265,12 +283,23 @@
     /* ── events ────────────────────────────────────────────────────── */
     var listeners = opts.onEvent ? [opts.onEvent] : [];
     var ring = [];         // the last 64 events, for the harness only
+    // Events a listener raises while one is being delivered (the mischief's
+    // `jam` from a `ticket`) queue behind it, so the stream stays in order.
+    var emitQ = [], emitting = false;
     function emit(ev) {
-      if (HARNESS) { ring.push(ev); if (ring.length > 64) ring.shift(); }
-      for (var i = 0; i < listeners.length; i++) {
-        try { listeners[i](ev); } catch (e) { console.error(e); } // a bad listener never stops the machine
-      }
-      if (A) A.emit('skeeball', ev);
+      emitQ.push(ev);
+      if (emitting) return;
+      emitting = true;
+      try {
+        while (emitQ.length) {
+          var e = emitQ.shift();
+          if (HARNESS) { ring.push(e); if (ring.length > 64) ring.shift(); }
+          for (var i = 0; i < listeners.length; i++) {
+            try { listeners[i](e); } catch (x) { console.error(x); } // a bad listener never stops the machine
+          }
+          if (A) A.emit('skeeball', e);
+        }
+      } finally { emitting = false; }
     }
     function subscribe(fn) {
       listeners.push(fn);
@@ -282,9 +311,9 @@
     if (root.SkeeBallMischief && opts.mischief !== false) {
       mis = root.SkeeBallMischief.attach({
         seed: game.seed, view: view, physics: P, tune: opts.tune,
-        flags: A ? A.flags : null, rng: A ? A.rng : null,
+        flags: A ? A.flags : null,
         now: function () { return tNow; }, emit: emit, on: subscribe
-      }, { rates: opts.mischief || {}, force: opts.mischiefForce || parseForce(search) });
+      }, { rates: opts.mischief || {}, force: opts.mischiefForce || (HARNESS ? parseForce(search) : undefined) });
     }
 
     /* ── the game ──────────────────────────────────────────────────── */
@@ -292,14 +321,18 @@
       game.mode = m; view.mode = m;
       // a hard scroll lock while a game is running (the stage already refuses touch scrolling)
       document.documentElement.classList.toggle('skeeball-playing', m === 'play');
+      if (m === 'play' && !HARNESS) { // don't lock the page with the machine half off-screen
+        var r = container.getBoundingClientRect(), vh = root.innerHeight || 0;
+        if (r.top < -1 || r.bottom > vh + 1) try { container.scrollIntoView({ block: 'end' }); } catch (e) { }
+      }
       emit({ type: 'mode', mode: m });
     }
     function toAttract() {
       drag = null;
       clearOpen();
       view.highScore = stats().best || 0;
-      view.ballsLeft = BALLS; view.lift = null; view.liftT = null;
-      view.ticketsOut = 0; view.cranking = false; view.thirteen = false; view.hundreds = 0;
+      view.ballsLeft = BALLS; view.lift = null;
+      view.ticketsOut = 0; view.cranking = false; view.hundreds = 0;
       view.ticketTag = null; view.newBest = false;
       if (view.marqueeNote && view.marqueeNote.text === 'NEW BEST') view.marqueeNote = null;
       view.attractT0 = tNow;           // the chalk note comes in at full strength
@@ -318,7 +351,7 @@
     function findNickel() {
       state.findAt = null;
       if (!A || FREE || A.tokens.get() > 0) return;
-      A.tokens.add(5, 'skeeball-return');
+      A.tokens.add(REFILL, 'skeeball-return');
       A.flags.set('skeeball.found-a-nickel');
       emit({ type: 'found', tokens: A.tokens.get() });
     }
@@ -358,22 +391,27 @@
       return true;
     }
     function startGame() {
+      if (!game.fixedSeed) {
+        var sd = stats();
+        game.seed = (SEED0 * 1000003 + (sd.games | 0) * 7919 + (sd.lifetimeScore | 0)) | 0;
+      }
       setScore(0); game.hundreds = 0; game.ballScores = []; game.games++;
       if (mis) mis.gameStart((game.seed * 1000003 + game.games * 7919) | 0);
       state.ball = null; state.toast = null;
-      view.hundreds = 0; view.jackpot = null; view.ticketsOut = 0; view.cranking = false; view.thirteen = false;
+      view.hundreds = 0; view.jackpot = null; view.ticketsOut = 0; view.cranking = false;
       setMode('play');
       startBall(1);
     }
     function startBall(n) {
       game.n = n;
       view.ballsLeft = BALLS - n;
-      view.lift = { t0: tNow }; view.liftT = tNow;
+      view.lift = { t0: tNow };
       emit({ type: 'ballstart', n: n, ballsLeft: view.ballsLeft });
       saveOpen();
     }
-    // busy while the pose says the ball is anything but done (the pose is the contract)
-    function ballActive() { return !!(state.ball && P.pose(state.ball).phase !== 'done'); }
+    // busy while a ball is out, or a refused one is still gliding home
+    function ballActive() { return !!(state.ball && state.ball.phase !== 'done'); }
+    function ballReady() { return !ballActive() && !state.rerack; }
     function ballSeed() { return (game.seed * 1000003 + game.games * 131 + game.n * 17) | 0; }
 
     // every throw goes through here: from a swipe, the keyboard or the API
@@ -386,7 +424,7 @@
         if (!coin()) return false;        // any swipe in ATTRACT is "a nickel and a throw"
         startGame();
       }
-      if (ballActive() || game.n < 1) return false;
+      if (!ballReady() || game.n < 1) return false;
       x0 = clamp(+x0 || 0, -0.85, 0.85);
       // the machine may lean, widen the holes (moon) or refuse the ball (sulk)
       var mv = mis ? mis.beforeThrow(game.n, { x0: x0, v: v, aim: aim || 0, spin: spin || 0 }) : {};
@@ -410,7 +448,15 @@
       if (state.refused) { // the sulk: the same ball comes back to the rack, nothing scores
         ev.refused = true;
         if (ev.type === 'captured') return;
-        if (ev.type === 'done') { emit(ev); state.refused = false; startBall(game.n); return; }
+        if (ev.type === 'done') {
+          emit(ev);
+          state.refused = false;
+          // the ball rolls home: glide it from where it is to the throw line
+          // (no rack lift); it is ready again when it gets there
+          var lp0 = state.ball ? P.pose(state.ball) : { x: 0, z: 0 };
+          state.rerack = { x: lp0.x, z: Math.max(0, lp0.z), t0: tNow };
+          return;
+        }
       }
       // a ball propped on a 100 hole's lip (result 'stuck') is taken back
       // with no score: a gutter for the game, its own event for the sound
@@ -456,7 +502,7 @@
 
     function gameOver() {
       var s = game.score, prevBest = stats().best || 0;
-      var n = Math.floor(s / 50) + (s >= 300 ? 5 : 0) + 13 * game.hundreds;
+      var n = Math.floor(s / TICKET_PER) + (s >= BONUS_AT ? BONUS : 0) + PER_HUNDRED * game.hundreds;
       game.tickets = n;
       if (A && n > 0) A.scrip.add(n, 'skeeball');
       if (A) {
@@ -470,9 +516,9 @@
       view.ticketTag = n;
       view.newBest = s > prevBest && s > 0;
       if (view.newBest) view.marqueeNote = { text: 'NEW BEST', t0: tNow, until: Infinity }; // lettered until ATTRACT
-      game.crankPer = n > 0 ? Math.min(0.12, 4 / n) : 0;
+      game.crankPer = n > 0 ? Math.min(CRANK_PER, CRANK_MAX / n) : 0;
       view.ticketsOut = 0; view.cranking = n > 0;
-      view.hundreds = game.hundreds; view.thirteen = game.hundreds > 0;
+      view.hundreds = game.hundreds;
       view.ballsLeft = 0; view.lift = null;
       view.highScore = Math.max(view.highScore || 0, s);
       setMode('payout');
@@ -484,15 +530,28 @@
     function fastForward() {
       if (mis && mis.crankHeld()) { emit({ type: 'input', kind: 'whack' }); return; }
       if (crankDone()) return;
-      game.payoutT0 = tNow - game.tickets * game.crankPer;
-      while (game.ticketsCranked < game.tickets) { game.ticketsCranked++; emit({ type: 'ticket', n: game.ticketsCranked, fast: true }); }
-      view.ticketsOut = game.tickets; view.cranking = false;
-      game.holdUntil = tNow + 0.5;
+      // run the strip out at once — unless the dispenser jams on the way
+      while (game.ticketsCranked < game.tickets && !(mis && mis.crankHeld())) {
+        game.ticketsCranked++;
+        emit({ type: 'ticket', n: game.ticketsCranked, fast: true });
+      }
+      game.payoutT0 = tNow - game.ticketsCranked * game.crankPer;
+      view.ticketsOut = game.ticketsCranked; view.cranking = false;
+      game.holdUntil = tNow + FF_HOLD;
     }
 
     // timers that live on the sim clock (deterministic under the harness)
     function tickGame() {
       if (state.findAt != null && tNow >= state.findAt) findNickel();
+      // the sulk: the possum's eyes stay narrowed until the refused ball is home
+      if (state.refused || state.rerack) view.narrowT0 = tNow;
+      if (state.rerack && tNow - state.rerack.t0 >= GLIDE_T) {
+        state.rerack = null;
+        var NT = root.SkeeBallMischief && root.SkeeBallMischief.CONST ? root.SkeeBallMischief.CONST.NARROW_T : 3;
+        view.narrowT0 = tNow - NT + 0.4;        // reopen a beat after it's back
+        emit({ type: 'ballstart', n: game.n, ballsLeft: view.ballsLeft, rerack: true });
+        saveOpen();
+      }
       if (mis) {
         mis.tick(tNow);
         // a jammed dispenser holds the crank and the walk back to ATTRACT
@@ -507,7 +566,7 @@
       }
       view.ticketsOut = out;
       view.cranking = out < n;
-      if (e >= n * game.crankPer + 2) toAttract();
+      if (e >= n * game.crankPer + PAYOUT_HOLD) toAttract();
     }
 
     /* ── input ─────────────────────────────────────────────────────── */
@@ -518,15 +577,10 @@
     }
     function laneX(mx) { return clamp((mx - 108) / (108 - R.GEO.lane.xb0), -0.85, 0.85); }
     function onCoinDoor(m) {
-      var x0 = R.GEO.lane.xb0 - 4, fr = R.GEO.front; // front panel's left edge (render: frontX)
-      return m.x >= x0 + 6 && m.x <= x0 + 48 && m.y >= fr.y0 && m.y <= fr.y1 + 2;
+      var d = R.coinDoorRect();
+      return m.x >= d.x - 4 && m.x <= d.x + d.w + 4 && m.y >= d.y - 3 && m.y <= d.y + d.h + 4;
     }
-    // the ticket window (render's slotRect, or the same box computed here)
-    function slotRect() {
-      if (R.slotRect) return R.slotRect();
-      var x1 = R.GEO.lane.xb1 + 4, fr = R.GEO.front; // front panel's right edge (render: frontX)
-      return { x: x1 - 42, y: fr.y0 + 9, w: 32, h: 8 };
-    }
+    function slotRect() { return R.slotRect(); }
     // a tap on the jammed slot (or the strip under it) is a whack
     function jammedSlotHit(pt) {
       if (!mis || !mis.crankHeld()) return false;
@@ -537,10 +591,12 @@
     function inSwipeZone(cy) { return cy >= canvas.getBoundingClientRect().height / 2; }
     // css height of the 384-row machine frame at this integer scale (power's yardstick)
     function machineCssH() { var r = canvas.getBoundingClientRect(); return R.MH * r.height / R.H; }
-    function canStartDrag() { return !(game.mode === 'play' && ballActive()); }
+    function canStartDrag() { return !(game.mode === 'play' && !ballReady()); }
+    function inactive() { return dead || hostPaused || hiddenPaused; } // paused cabinets take no input
 
     // a finished gesture (pointer or harness): tap, throw, or nothing
     function release(pts) {
+      if (inactive()) return { gesture: null, thrown: false, refused: true };
       var g = mapGesture(pts, machineCssH());
       var thrown = false;
       if (game.mode === 'payout') {
@@ -558,13 +614,21 @@
       return { gesture: g, thrown: thrown };
     }
 
+    // the canvas rect, cached per gesture (not per coalesced sample)
+    var rectCache = null;
+    function crect() { return rectCache || canvas.getBoundingClientRect(); }
     function localPt(ev) {
-      var r = canvas.getBoundingClientRect();
+      var r = crect();
       return { t: ev.timeStamp, x: ev.clientX - r.left, y: ev.clientY - r.top };
     }
     function onDown(ev) {
+      if (inactive()) return;
+      if (ev.pointerType === 'mouse' && ev.button !== 0) return; // right/middle click: not a throw
       emit({ type: 'input', kind: 'down' });
+      // a drag whose pointerup was lost (context menu, OS gesture) expires
+      if (drag && (ev.pointerId === drag.id || ev.timeStamp - drag.pts[drag.pts.length - 1].t > 1000)) drag = null;
       if (drag) return;                        // one pointer at a time
+      rectCache = canvas.getBoundingClientRect();
       var pt = localPt(ev);
       if (!canStartDrag()) {                    // a ball is out: the rack rattles, nothing else
         view.rackRattle = tNow;
@@ -582,18 +646,20 @@
       var list = ev.getCoalescedEvents ? ev.getCoalescedEvents() : null;
       if (!list || !list.length) list = [ev];
       for (var i = 0; i < list.length; i++) drag.pts.push(localPt(list[i]));
-      while (drag.pts.length > 96) drag.pts.shift();
+      while (drag.pts.length > GESTURE.MAX_PTS) drag.pts.shift();
       ev.preventDefault();
     }
     function onUp(ev) {
       if (!drag || ev.pointerId !== drag.id) return;
       var pts = drag.pts; drag = null;
       pts.push(localPt(ev));
+      rectCache = null;
       release(pts);
     }
     function onCancel(ev) {
-      if (drag && ev.pointerId === drag.id) drag = null;
+      if (drag && ev.pointerId === drag.id) { drag = null; rectCache = null; }
     }
+    function onContextMenu(ev) { ev.preventDefault(); } // a long-press / right-click menu would swallow the pointerup
     function onTouchMove(ev) { if (ev.cancelable) ev.preventDefault(); } // belt and braces for iOS
     // the whole stage takes input (the thumb rests on the band under the
     // machine); points are mapped through the canvas rect
@@ -603,20 +669,34 @@
     container.addEventListener('pointercancel', onCancel);
     container.addEventListener('lostpointercapture', onCancel);
     container.addEventListener('touchmove', onTouchMove, { passive: false });
+    container.addEventListener('contextmenu', onContextMenu);
 
     // keyboard: space = medium straight throw (shift: full power), ←/→ aim ±5°
+    // the keys belong to the machine only while it's on screen, the focus isn't
+    // on a control, and no modifier is held (Cmd-M minimises, Space presses buttons)
+    function keysAreOurs(ev) {
+      if (ev.ctrlKey || ev.metaKey || ev.altKey) return false;
+      var t = ev.target;
+      if (t && (/^(INPUT|TEXTAREA|SELECT|BUTTON|A)$/.test(t.tagName) || t.isContentEditable)) return false;
+      var r = container.getBoundingClientRect(), vh = root.innerHeight || 0;
+      var seen = Math.max(0, Math.min(r.bottom, vh) - Math.max(r.top, 0));
+      return r.height > 0 && seen >= r.height * 0.5;
+    }
     function onKey(ev) {
-      if (ev.target && /^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName)) return;
+      if (!keysAreOurs(ev)) return;
+      if (ev.key === 'm' || ev.key === 'M') {
+        userMuted = !userMuted;
+        syncMute();
+        emit({ type: 'mute', muted: userMuted });
+        return;
+      }
+      if (inactive()) return;
       if (ev.code === 'Space' || ev.key === ' ') {
         ev.preventDefault();
         if (ev.repeat) return;
         emit({ type: 'input', kind: 'key' });
         if (game.mode === 'payout' && !payoutDone()) { fastForward(); return; }
         throwPower(ev.shiftKey ? 1 : MEDIUM, kbd.aim, 0, 0);
-      } else if (ev.key === 'm' || ev.key === 'M') {
-        userMuted = !userMuted;
-        syncMute();
-        emit({ type: 'mute', muted: userMuted });
       } else if (ev.key === 'ArrowLeft' || ev.key === 'ArrowRight') {
         ev.preventDefault();
         kbd.aim = clamp(kbd.aim + (ev.key === 'ArrowLeft' ? -5 : 5) * Math.PI / 180, -GESTURE.AIM_MAX, GESTURE.AIM_MAX);
@@ -628,7 +708,7 @@
     /* ── ball drawing ─────────────────────────────────────────────── */
     var SCUFF = R.PAL.CORK2;
     // the one ball-radius law lives in render (R.ballRadius) once it lands
-    function ballPx(scale) { return R.ballRadius ? R.ballRadius(scale) : Math.max(1, 6.8 * scale); }
+    function ballPx(scale) { return R.ballRadius(scale); }
     function hash(a, b) { var h = Math.imul(a ^ 0x9e3779b9, 0x85ebca6b) ^ Math.imul(b + 0x632be5ab, 0xc2b2ae35); h ^= h >>> 15; h = Math.imul(h, 0x2c1b3c6d); h ^= h >>> 12; return (h >>> 0) / 4294967296; }
 
     // the airborne trail: 1-px dots at recent projected centres
@@ -710,7 +790,6 @@
 
     function drawBallLayer() {
       var pose = currentPose();
-      state.lastPose = pose;
       if (!pose || pose.phase === 'done') return false;
       var br = pose.r || U.BALL_R;
       var p = R.project(pose.x, pose.y, pose.z);
@@ -734,7 +813,7 @@
         var s = clamp(pose.sinking || 0, 0, 1);
         if (s >= 1) return true;
         var by = c.sy + s * (2 * rc + 1);
-        if (hole100 && R.drawSunkBall) R.drawSunkBall(ctx, c.sx, by, rc, s);
+        if (hole100) R.drawSunkBall(ctx, c.sx, by, rc, s);
         else {
           R.drawBall(ctx, c.sx, by, rc);
           if (s > 0.25) R.drawBallShadow(ctx, c.sx, by + 1, rc, R.PAL.GAP, 0.9 * s); // the cup's own shade
@@ -759,48 +838,31 @@
       var sh = R.shadowAt(pose.x, pose.z);
       if (sh) {
         var k = Math.max(0.35, 1 - Math.max(0, h) * 1.6);
-        R.drawBallShadow(ctx, sh.sx, sh.sy, r * 0.9 * k, sh.c, sh.surface === 'bed' ? 0.6 : 0.4);
+        if (sh.surface === 'bed') R.drawBedShadow(ctx, sh.sx, sh.sy, r * k, p.sy, r); // rim-light under the sprite's bottom row
+        else R.drawBallShadow(ctx, sh.sx, sh.sy, r * 0.9 * k, sh.c, 0.4);
       }
       if (pose.phase === 'flight') drawTrail();
-      var rt = state.rimTick;
-      if (rt && tNow - rt.t0 < RIM_TICK_T) {
-        if (rt.ring != null && R.drawRimTick) R.drawRimTick(ctx, rt.ring, rt.angle, 1 - (tNow - rt.t0) / RIM_TICK_T);
-        p = { sx: p.sx + (Math.cos(rt.angle) < 0 ? 1 : -1), sy: p.sy - 1, scale: p.scale }; // knocked a pixel off the rim
-      }
+      var rt = state.rimTick, ticking = rt && tNow - rt.t0 < RIM_TICK_T;
+      if (ticking) p = { sx: p.sx + (Math.cos(rt.angle) < 0 ? 1 : -1), sy: p.sy - 1, scale: p.scale }; // knocked a pixel off the rim
       // below the pit's mouth: the hop's crest hides it, the dark eats it
       var inPit = pose.z > U.Z_CREST && pose.z < U.Z_LIP && pose.y < R.surfY(pose.z) + br;
       if (inPit || pose.phase === 'gutter') {
         ctx.save();
         ctx.beginPath(); ctx.rect(0, 0, R.W, R.GEO.ramp.y0); ctx.clip();
         var depth = Math.min(1, Math.max(0, R.surfY(pose.z) + br - pose.y) * 3);
-        if (R.drawSunkBall) R.drawSunkBall(ctx, p.sx, p.sy, r, depth);
-        else {
-          drawBallSprite(p.sx, p.sy, r, pose);
-          if (depth > 0.06) darkenBall(p.sx, p.sy, r, depth);
-        }
+        R.drawSunkBall(ctx, p.sx, p.sy, r, depth);
         ctx.restore();
         return;
       }
       drawBallSprite(p.sx, p.sy, r, pose);
-    }
-
-    // stopgap until R.drawSunkBall: the dark eats the ball on a Bayer grid
-    // (never a same-size ellipse, which reads as a hollow ring)
-    var BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
-    function darkenBall(x, y, r, depth) {
-      var cx = Math.round(x), cy = Math.round(y), rr = Math.ceil(r);
-      ctx.fillStyle = R.PAL.NIGHT0;
-      for (var j = -rr; j <= rr; j++) for (var i = -rr; i <= rr; i++) {
-        if (i * i + j * j > r * r + 0.5) continue;
-        var X = cx + i, Y = cy + j;
-        if (BAYER4[((Y & 3) << 2) | (X & 3)] / 16 < depth) ctx.fillRect(X, Y, 1, 1);
-      }
+      // the rattle's picture: the struck rim ticks, over the ball
+      if (ticking && rt.ring != null) R.drawRimTick(ctx, rt.ring, rt.angle, 1 - (tNow - rt.t0) / RIM_TICK_T, p.sx, p.sy, r);
     }
 
     // a ball resting on the lane at (x, z)
     function drawLaneBall(x, z) {
-      var p = R.project(x, U.BALL_R, z), r = ballPx(p.scale), sh = R.shadowAt(x, z);
-      if (sh) R.drawBallShadow(ctx, sh.sx, sh.sy, r * 0.9, sh.c, 0.4);
+      var p = R.project(x, U.BALL_R, z), r = ballPx(p.scale);
+      R.drawContact(ctx, p.sx, p.sy, r);          // one LANE3 row under the resting sprite
       R.drawBall(ctx, p.sx, p.sy, r);
       view.ballSx = p.sx;
     }
@@ -895,25 +957,23 @@
         return;
       }
       if (game.mode !== 'play' || fake || ballActive() || game.n < 1) return;
-      if (view.lift && tNow - view.lift.t0 < LIFT_T) return;
+      if (state.rerack) { // the refused ball rolling the last of the way home
+        var k = clamp((tNow - state.rerack.t0) / GLIDE_T, 0, 1), e = k * k * (3 - 2 * k);
+        drawLaneBall(state.rerack.x * (1 - e), state.rerack.z * (1 - e));
+        return;
+      }
+      if (view.lift && tNow - view.lift.t0 < R.LIFT_T) return;
       if (tNow < kbd.until) drawGhost(ghostPoints(0, 0, MEDIUM, kbd.aim));
       drawLaneBall(0, 0);
     }
 
-    // the floating score: pink with a dark outline, kept off the painted
-    // label column (R.drawToast once it lands; this is its stopgap)
-    var TOAST_T = 0.7, TOAST_RISE = 14;
+    // the floating score (render draws it and owns its rise and life);
+    // view.toast is the harness's way in (film.js)
     function drawToast() {
       var ts = view.toast && (!state.toast || view.toast.t0 > state.toast.t0) ? view.toast : state.toast;
-      if (!ts || tNow < ts.t0 || tNow - ts.t0 >= TOAST_T || !ts.text) return;
+      if (!ts || !ts.text || tNow < ts.t0) return;
       var kind = ts.kind || (ts.text === '100' ? 'hundred' : ts.text === '0' ? 'zero' : 'score');
-      var y = Math.round(ts.y - (tNow - ts.t0) * TOAST_RISE);
-      if (R.drawToast) { R.drawToast(ctx, ts.text, ts.x, y, kind); return; }
-      var x = ts.x;
-      if (Math.abs(x - 108) < 10) x = x < 108 ? 108 - 14 : 108 + 14;
-      for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++)
-        if (dx || dy) R.textC(ctx, ts.text, x + dx, y + dy, R.PAL.NIGHT0, 1);
-      R.textC(ctx, ts.text, x, y, kind === 'hundred' ? R.PAL.MOON : R.PAL.PINK, 1);
+      R.drawToast(ctx, ts.text, ts.x, ts.y, kind, ts.t0, tNow);
     }
 
     /* ── clock, render, loop ──────────────────────────────────────── */
@@ -953,20 +1013,20 @@
     function render() {
       // nine balls a nickel: the ball on the line during an ATTRACT drag comes out of the rack
       if (game.mode === 'attract') view.ballsLeft = drag ? BALLS - 1 : BALLS;
-      var split = !!(R.drawLiveUnder && R.drawLiveOver);
       prepView();
       R.drawFrame(ctx, tNow);
-      if (split) R.drawLiveUnder(ctx, tNow, view);   // holes, glow, drums, eyes, rack
+      R.drawLiveUnder(ctx, tNow, view);               // holes, glow, drums, eyes, rack
       ctx.save();
       ctx.translate(0, R.TOP);
       drawBallLayer();
       drawThrowLine();
       drawDust();
       ctx.restore();
-      if (split) R.drawLiveOver(ctx, tNow, view);    // the lift ball, tickets, payout card
-      else R.drawLive(ctx, tNow, view);
+      R.drawLiveOver(ctx, tNow, view);                // the lift ball, tickets, payout card
       ctx.save(); ctx.translate(0, R.TOP); drawToast(); ctx.restore();
-      R.text(ctx, STAMP, 3, R.H - 8, R.PAL.FOG, 1); // build stamp, bottom-left
+      // build stamp, bottom-left, on its own dark plate (legible under the moon)
+      if (R.stampRect) { var sr = R.stampRect(STAMP); ctx.fillStyle = R.PAL.NIGHT0; ctx.fillRect(sr.x, sr.y, sr.w, sr.h); }
+      R.text(ctx, STAMP, 3, R.H - 8, R.PAL.FOG, 1);
     }
 
     var dead = false, hostPaused = false, hiddenPaused = false, lastNow = null, clock = 0, rafId = 0;
@@ -982,7 +1042,8 @@
     }
     function onVisibility() {
       hiddenPaused = document.hidden;
-      if (!hiddenPaused) lastNow = null;
+      if (hiddenPaused) drag = null;
+      else lastNow = null;
       syncMute();
     }
     // sound is off while paused or hidden, and whenever the player muted it (M)
@@ -1010,7 +1071,7 @@
     var open = A ? stats().open : null;   // a game the last page left running
     toAttract();
     if (open && open.open && !opts.noResume) resumeGame(open);
-    var qm = /[?&]mode=(attract|play|payout)/.exec(search);
+    var qm = HARNESS && /[?&]mode=(attract|play|payout)/.exec(search); // preview only under the harness
     if (qm && qm[1] !== 'attract') forceMode(qm[1]);
     if (!HARNESS) rafId = root.requestAnimationFrame(frame);
 
@@ -1026,7 +1087,7 @@
     var handle = {
       VERSION: VERSION,
       view: view,
-      throwBall: function (power, aim, spin, x0) { return throwPower(power, aim, spin, x0); },
+      throwBall: function (power, aim, spin, x0) { return inactive() ? false : throwPower(power, aim, spin, x0); },
       getState: function () {
         return {
           mode: game.mode, score: game.score, ball: game.n, ballsLeft: view.ballsLeft,
@@ -1037,7 +1098,7 @@
       },
       getPose: currentPose,
       onEvent: subscribe,
-      pause: function () { hostPaused = true; syncMute(); },
+      pause: function () { hostPaused = true; drag = null; syncMute(); },
       resume: function () { hostPaused = false; lastNow = null; syncMute(); },
       destroy: function () {
         dead = true;
@@ -1055,6 +1116,7 @@
         container.removeEventListener('pointercancel', onCancel);
         container.removeEventListener('lostpointercapture', onCancel);
         container.removeEventListener('touchmove', onTouchMove);
+        container.removeEventListener('contextmenu', onContextMenu);
         canvas.remove();
         document.documentElement.classList.remove('skeeball-playing');
         listeners = [];
@@ -1092,7 +1154,7 @@
         // a whole deterministic game: coin, nine throws, payout, back to attract.
         // throws[i]: {power, aim, spin, x0} | {v, aim, spin, x0} | {points}
         play: function (seed, throws) {
-          if (seed != null) game.seed = seed | 0;
+          if (seed != null) { game.seed = seed | 0; game.fixedSeed = true; }
           throws = throws && throws.length ? throws : [{ power: MEDIUM }];
           var t = tNow, dt = 1 / 60, perBall = [], refused = 0;
           function run(until, limit) { var end = t + limit; while (!until() && t < end) { t += dt; advance(t); } }
@@ -1100,14 +1162,14 @@
           var ledger0 = A ? { tokens: A.tokens.get(), scrip: A.scrip.get() } : null;
           if (!H.coin()) return { ok: false, reason: 'no tokens', state: handle.getState() };
           for (var i = 0; i < BALLS; i++) {
-            run(function () { return !view.lift || tNow - view.lift.t0 >= LIFT_T; }, 2);
+            run(function () { return !view.lift || tNow - view.lift.t0 >= R.LIFT_T; }, 2);
             var th = throws[i % throws.length], ok;
             if (th.points) ok = H.swipe(th.points).thrown;
             else if (th.v != null) ok = requestThrow(th.x0 || 0, th.v, th.aim || 0, th.spin || 0);
             else ok = throwPower(th.power != null ? th.power : MEDIUM, th.aim || 0, th.spin || 0, th.x0 || 0);
             if (ok === 'refused') { // the sulk: same ball, back in the rack; it doesn't count
               refused++;
-              run(function () { return !state.refused && (!view.lift || tNow - view.lift.t0 >= LIFT_T); }, 12);
+              run(function () { return !state.refused && !state.rerack && (!view.lift || tNow - view.lift.t0 >= R.LIFT_T); }, 12);
               i--; continue;
             }
             if (!ok) return { ok: false, reason: 'throw ' + (i + 1) + ' refused', state: handle.getState() };

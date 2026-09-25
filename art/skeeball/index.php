@@ -52,12 +52,8 @@ include '../../includes/header.php';
 <script src="../arcade/arcade-sprites.js?v=<?php echo skv('../arcade/arcade-sprites.js'); ?>"></script>
 <script src="skeeball-render.js?v=<?php echo skv('skeeball-render.js'); ?>"></script>
 <script src="skeeball-physics.js?v=<?php echo skv('skeeball-physics.js'); ?>"></script>
-<?php if (is_file(__DIR__ . '/skeeball-mischief.js')): ?>
 <script src="skeeball-mischief.js?v=<?php echo skv('skeeball-mischief.js'); ?>"></script>
-<?php endif; ?>
-<?php if (is_file(__DIR__ . '/skeeball-audio.js')): ?>
 <script src="skeeball-audio.js?v=<?php echo skv('skeeball-audio.js'); ?>"></script>
-<?php endif; ?>
 <script src="skeeball-main.js?v=<?php echo skv('skeeball-main.js'); ?>"></script>
 
 <?php include '../../includes/footer.php'; ?>
