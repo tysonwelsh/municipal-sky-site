@@ -1415,7 +1415,11 @@
     if (narrowed) cands = narrowed;
     var dark = tidePos, w = [], tot = 0;
     for (i = 0; i < cands.length; i++) {
-      var e = cands[i], x = +e.weight > 0 ? +e.weight : 1, tone = e.tone;
+      // every reel counts the same (owner, 2026-09-25): the manifest's 1–5
+      // `weight` was guessed at curation, "by ear" by agents that cannot hear,
+      // and is no longer read. It stays in the manifest, unread. What still
+      // tilts the draw is below: a picture, and the tide.
+      var e = cands[i], x = 1, tone = e.tone;
       if (!e.audioOnly) x *= VIDEO_WEIGHT;                                                        // §8.1: a reel with a picture is three times as likely to be the one
       if (TONE_DARK[tone]) x *= 0.7 + 0.6 * dark;                                                // the dark tide leans to voices, noise, tones and drones
       else if (TONE_LIGHT[tone]) x *= 0.7 + 0.6 * (1 - dark);                                     // the light tide to music and singing

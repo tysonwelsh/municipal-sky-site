@@ -1,1 +1,1 @@
-2.1.0-rc.113 — the Fūrin and Intercom switches on the console work: they turn those voices off and on
+2.1.0-rc.114 — every clip is equally likely to be picked (the old per-clip weights are gone); clips with pictures and the tide that follows the music still tilt the draw
