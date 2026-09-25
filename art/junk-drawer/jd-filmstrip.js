@@ -60,7 +60,19 @@
 
   /* the marks: the engine's element walk (same selector, same skips, same
      visibility test) so the list is exactly what JD_drawOn schedules, with
-     each mark's measured length for its bar */
+     each mark's measured length for its bar. It has to walk the PLAIN
+     drawing — arm() calls it before the engine runs, never after: once
+     JD_drawOn has dressed the elements, every stroked one carries an inline
+     stroke-dasharray (so it reads as pre-dashed, not stroked) and every
+     fill/fade animation, filled `both`, is already holding fill-opacity or
+     opacity at 0 through its delay — and the walk, made on that state,
+     dropped most of the elements the engine had just scheduled (13 of 91 on
+     the smashed alarm clock). The marks that survived ended early, so the
+     run's `total` fell short of the true end and everything the engine had
+     scheduled after it — the last strokes in document order — was held
+     mid-animation forever: the drawing stopped short of its last component
+     on the plate, in the bench and in every cell, while the enlargement,
+     which has no filmstrip, drew whole. */
   function marksOf(svg) {
     var els = svg.querySelectorAll(SEL), out = [], i, el, cs, L, stroked, filled;
     for (i = 0; i < els.length; i++) {
@@ -184,12 +196,14 @@
        T[i] the mark axis maps through */
     function arm() {
       clean(svg);   /* an identical animation string would not restart a cancelled one */
+      /* measure BEFORE the engine runs: the walk must see the plain drawing
+         (see marksOf) */
+      marks = marksOf(svg);
       secs = window.JD_drawOn(svg, { force: true });
       if (!secs) { armed = false; return false; }
       svg.__jdDrawSeq = -1;
       anims = svg.getAnimations({ subtree: true });
       if (!anims.length) { armed = false; return false; }
-      marks = marksOf(svg);
       var byEl = new Map();
       marks.forEach(function (m) { byEl.set(m.el, m); m.start = Infinity; m.end = 0; });
       clock = null; var cEnd = -1;
@@ -204,6 +218,12 @@
       M = marks.length;
       T = [0];
       for (var i = 0; i < M; i++) T[i + 1] = Math.max(T[i], marks[i].end);
+      /* the run ends when the LAST animation does, whichever element it
+         belongs to: the last mark's stretch is stretched to the clock's end
+         so that mark M — seekU(M), finish(), the last cell — is always the
+         finished drawing, even if the walk above and the engine's ever
+         disagree again about an element */
+      if (M && cEnd > T[M]) T[M] = cEnd;
       total = T[M];
       /* each cell shows the END of its own stretch: cell and stretch are
          then the same span of the run, and the last cell is the finished
