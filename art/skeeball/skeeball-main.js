@@ -25,6 +25,9 @@
  *   gutter, stall, bounceback, rest, cage, return, timeout, done) with
  *   `ball: n` (a ball left propped on a 100 hole's lip comes out as
  *   `stuck` instead of `gutter`: no score, ball consumed), plus
+ *   the rack filling after the button: rackRelease {n}, rackClack {speed, i},
+ *   rackWall {speed}, rackRoll {energy} (every 100 ms while it moves),
+ *   rackSettled {t}; then ballstart {n: 1}.
  *   input {kind}, mute {muted}, mode {mode}, coin, nocoin, ballstart
  *   {n, ballsLeft}, throw {x0, v, aim, spin}, jackpot, gameover {score,
  *   tickets, hundreds, best}, ticket {n}, found {tokens}, resume {n, score},
@@ -346,6 +349,7 @@
       clearOpen();
       view.highScore = stats().best || 0;
       view.ballsLeft = BALLS; view.lift = null;
+      view.rack = []; view.gateOpen = false; state.fill = null; state.rackX = []; // an empty trough until the button
       view.ticketsOut = 0; view.cranking = false; view.hundreds = 0;
       view.ticketTag = null; view.newBest = false;
       if (view.marqueeNote && view.marqueeNote.text === 'NEW BEST') view.marqueeNote = null;
@@ -391,7 +395,9 @@
       view.hundreds = game.hundreds; view.jackpot = null;
       setMode('play');
       setScore(o.score | 0);
-      startBall(clamp(o.n | 0, 1, BALLS));
+      var rn = clamp(o.n | 0, 1, BALLS);
+      state.rackX = packedRack(BALLS - rn + 1);          // the balls still to come, packed at once
+      startBall(rn);
       emit({ type: 'resume', n: game.n, score: game.score });
     }
     /* ── the start: drop a nickel, then push the button ─────────────── */
@@ -456,12 +462,70 @@
       state.ball = null; state.toast = null;
       view.hundreds = 0; view.jackpot = null; view.ticketsOut = 0; view.cranking = false;
       setMode('play');
-      startBall(1);
+      startFill();                     // the nine balls roll into the trough; ball 1 lifts when they settle
+    }
+
+    /* ── the rack: nine balls roll in from the left when the button is pushed ── */
+    // Trough geometry from render (troughRect; until it's exported, the
+    // front panel's trough: x 14 … 202 in the machine frame), ball radius 5.
+    var RACK_R = 5, RELEASE_EVERY = 0.16, RACK_V0 = 75, ROLL_EVERY = 0.1;
+    function trough() {
+      if (R.troughRect) { var t = R.troughRect(); return { x0: t.x, x1: t.x + t.w }; }
+      return { x0: 14, x1: 202 };
+    }
+    function startFill() {
+      var K = root.SkeeBallRack, tr = trough();
+      state.rackX = [];
+      view.rack = [];
+      view.ballsLeft = BALLS;
+      if (!K) { state.rackX = packedRack(BALLS); view.rack = state.rackX.slice(); startBall(1); return; }
+      var seed = (game.seed * 1000003 + game.games * 6007) | 0;
+      state.fill = {
+        rack: K.createRack({ x0: tr.x0, x1: tr.x1, r: RACK_R, seed: seed, count: BALLS }),
+        n: 0, tNext: tNow, tRoll: tNow,
+        v0: RACK_V0 * (1 + 0.15 * (2 * K.hash01(seed, 99) - 1))   // this game's gate push, ±15 %
+      };
+      view.gateOpen = true;
+    }
+    function packedRack(n) {
+      var tr = trough(), K = root.SkeeBallRack, P = 2 * RACK_R + 1, out = [];
+      if (K) return K.packed(tr.x1, RACK_R, n);
+      for (var i = 0; i < n; i++) out.push(tr.x1 - RACK_R - (n - 1 - i) * P);
+      return out;
+    }
+    // on the sim clock, every step while the rack fills
+    function tickFill() {
+      var f = state.fill, K = root.SkeeBallRack;
+      if (f.n < BALLS && tNow >= f.tNext - 1e-9) {
+        K.release(f.rack, tNow, f.v0);
+        f.n++; f.tNext += RELEASE_EVERY;
+        emit({ type: 'rackRelease', n: f.n });
+        if (f.n === BALLS) view.gateOpen = false;      // the gate shuts behind the ninth
+      }
+      K.step(f.rack, STEP);
+      var ev;
+      while ((ev = f.rack.events.shift())) emit(ev);
+      view.rack = f.rack.balls.map(function (b) { return b.x; });
+      if (tNow - f.tRoll >= ROLL_EVERY - 1e-9) {        // the rumble, while anything moves
+        f.tRoll = tNow;
+        var en = K.energy(f.rack);
+        if (en >= 2) emit({ type: 'rackRoll', energy: +en.toFixed(1) });
+      }
+      if (f.rack.settled) {
+        state.fill = null;
+        view.gateOpen = false;
+        state.rackX = view.rack.slice();
+        emit({ type: 'rackSettled', t: +(f.rack.tSettled - f.rack.t0).toFixed(3) });
+        startBall(1);
+      }
     }
     function startBall(n) {
       game.n = n;
       view.ballsLeft = BALLS - n;
-      view.lift = { t0: tNow };
+      // the lift takes the leftmost ball of the pack; the rest stay put
+      var fromX = state.rackX && state.rackX.length ? state.rackX.shift() : null;
+      view.rack = state.rackX ? state.rackX.slice() : [];
+      view.lift = { t0: tNow, fromX: fromX };
       emit({ type: 'ballstart', n: n, ballsLeft: view.ballsLeft });
       saveOpen();
     }
@@ -603,6 +667,7 @@
     // timers that live on the sim clock (deterministic under the harness)
     function tickGame() {
       if (state.findAt != null && tNow >= state.findAt) findNickel();
+      if (state.fill) tickFill();
       // the sulk: the possum's eyes stay narrowed until the refused ball is home
       if (state.refused || state.rerack) view.narrowT0 = tNow;
       if (state.rerack && tNow - state.rerack.t0 >= GLIDE_T) {
@@ -705,6 +770,7 @@
       if (drag) return;                        // one pointer at a time
       rectCache = canvas.getBoundingClientRect();
       var pt = localPt(ev);
+      if (state.fill) return;                   // the rack is filling: the machine is busy, quietly
       if (!canStartDrag()) {                    // a ball is out: the rack rattles, nothing else
         view.rackRattle = tNow;
         emit({ type: 'input', kind: 'busy' });
@@ -1092,7 +1158,7 @@
 
     function render() {
       // nine balls a nickel: the ball on the line during an ATTRACT drag comes out of the rack
-      if (game.mode === 'attract') view.ballsLeft = BALLS;
+      if (game.mode === 'attract') view.ballsLeft = BALLS; // (the trough itself is view.rack: empty)
       prepView();
       R.drawFrame(ctx, tNow);
       R.drawLiveUnder(ctx, tNow, view);               // holes, glow, drums, eyes, rack
@@ -1183,7 +1249,7 @@
       getState: function () {
         return {
           mode: game.mode, score: game.score, ball: game.n, ballsLeft: view.ballsLeft,
-          phase: state.ball ? state.ball.phase : 'idle',
+          phase: state.ball ? state.ball.phase : 'idle', filling: !!state.fill,
           tokens: A ? A.tokens.get() : null, scrip: A ? A.scrip.get() : null,
           highScore: view.highScore
         };
@@ -1217,6 +1283,7 @@
 
     if (HARNESS) {
       var H = handle.harness = {
+        get rack() { return state.fill ? state.fill.rack : null; },   // the filling rack (null once settled)
         canvas: canvas,
         events: ring,
         mischief: mis,
@@ -1238,7 +1305,7 @@
         // a whole gesture in canvas css px [{t ms, x, y}] → mapGesture + release
         swipe: function (points) {
           if (!points || !points.length) return null;
-          if (!canStartDrag() || (game.mode !== 'payout' && !inSwipeZone(points[0].y))) return { gesture: null, thrown: false, refused: true };
+          if (state.fill || !canStartDrag() || (game.mode !== 'payout' && !inSwipeZone(points[0].y))) return { gesture: null, thrown: false, refused: true };
           emit({ type: 'input', kind: 'down' });
           drag = null;
           return release(points);
@@ -1257,7 +1324,7 @@
           var ledger0 = A ? { tokens: A.tokens.get(), scrip: A.scrip.get() } : null;
           if (!H.coin()) return { ok: false, reason: 'no tokens', state: handle.getState() };
           for (var i = 0; i < BALLS; i++) {
-            run(function () { return !view.lift || tNow - view.lift.t0 >= R.LIFT_T; }, 2);
+            run(function () { return !state.fill && (!view.lift || tNow - view.lift.t0 >= R.LIFT_T); }, 8); // the fill, then the lift
             var th = throws[i % throws.length], ok;
             if (th.points) ok = H.swipe(th.points).thrown;
             else if (th.v != null) ok = requestThrow(th.x0 || 0, th.v, th.aim || 0, th.spin || 0);
