@@ -859,10 +859,11 @@
     var cx = GEO.possum.cx, top = GEO.possum.top;
     restore(g, cx - 12, top + 11, 24, 11);
     drawEyeBeads(g, dx, wide);
+    var e = wide ? 1 : 0; // a blink covers the whole (possibly blown-wide) bead
     if (flickerAt(t, 6.7, 3) < 0.025)
-      rect(g, cx + dx + EYES.L.x, top + EYES.L.y, EYES.L.w, EYES.L.h, PAL.FUR2);
+      rect(g, cx + dx + EYES.L.x - e, top + EYES.L.y - e, EYES.L.w + 2 * e, EYES.L.h + 2 * e, PAL.FUR2);
     if (flickerAt(t, 6.7, 11) < 0.025)
-      rect(g, cx + dx + EYES.R.x, top + EYES.R.y, EYES.R.w, EYES.R.h, PAL.FUR2);
+      rect(g, cx + dx + EYES.R.x - e, top + EYES.R.y - e, EYES.R.w + 2 * e, EYES.R.h + 2 * e, PAL.FUR2);
   }
 
   /* ── attract: "5¢ - SWIPE" chalked on the lane, fading in and out ── */

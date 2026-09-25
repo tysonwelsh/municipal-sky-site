@@ -462,8 +462,9 @@ window.SkeeBall = (function () {
     }
 
     function drawToast() {
-      if (state.toast && tNow - state.toast.t0 < 0.7 && state.toast.text) {
-        var ts = state.toast, rise = (tNow - ts.t0) * 14;
+      var ts = view.toast && (!state.toast || view.toast.t0 > state.toast.t0) ? view.toast : state.toast;
+      if (ts && tNow >= ts.t0 && tNow - ts.t0 < 0.7 && ts.text) {
+        var rise = (tNow - ts.t0) * 14;
         R.textC(ctx, ts.text, ts.x, Math.round(ts.y - rise), ts.pink ? R.PAL.PINK : R.PAL.BONE, 1);
       }
     }
