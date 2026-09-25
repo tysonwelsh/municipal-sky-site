@@ -390,19 +390,26 @@
   // physics lowers rimH 40 % over the same arc; balls skip out into the 30.
   // Hand-placed pixels, relative to the ring centre (108, 158).
   var DENT = [
-    // cut the outer stair back to a straight 45° edge (trough shows through)
-    [11, -17, 'GAP'], [12, -16, 'GAP'], [13, -15, 'GAP'], [14, -14, 'GAP'], [15, -13, 'GAP'],
-    // the pressed-flat face: a straight diagonal in shadow
-    [9, -17, 'CORK2'], [10, -16, 'CORK2'], [11, -15, 'CORK2'], [12, -14, 'CORK2'],
-    [13, -13, 'CORK2'], [14, -12, 'CORK2'], [15, -11, 'CORK2'],
-    // crushed cork just inside the flat
-    [10, -15, 'WOOD2'], [12, -13, 'WOOD2'],
-    // chipped raw cork catching the light at the upper end of the flat
-    [9, -18, 'BONE_D'], [10, -18, 'CORK3'], [8, -18, 'CORK3'], [10, -17, 'CORK3']
+    // cut the round outer stair back to a straight 45° edge, 2 px inward:
+    // beyond it the dark trough shows through (the rim is lower there)
+    [8, -18, 'GAP'], [9, -18, 'GAP'],
+    [9, -17, 'GAP'], [10, -17, 'GAP'], [11, -17, 'GAP'],
+    [10, -16, 'GAP'], [11, -16, 'GAP'], [12, -16, 'GAP'],
+    [11, -15, 'GAP'], [12, -15, 'GAP'], [13, -15, 'GAP'],
+    [12, -14, 'GAP'], [13, -14, 'GAP'], [14, -14, 'GAP'],
+    [13, -13, 'GAP'], [14, -13, 'GAP'], [15, -13, 'GAP'],
+    [14, -12, 'GAP'], [15, -12, 'GAP'],
+    // the pressed-flat face: one straight diagonal in shadow
+    [8, -17, 'CORK2'], [9, -16, 'CORK2'], [10, -15, 'CORK2'],
+    [11, -14, 'CORK2'], [12, -13, 'CORK2'], [13, -12, 'CORK2'],
+    // crushed cork just inside it
+    [8, -16, 'WOOD2'], [10, -14, 'WOOD2'],
+    // the chip at the flat's upper end: raw cork catching the light
+    [6, -19, 'BONE_D'], [7, -18, 'CORK3']
   ];
   function drawDent(g) {
     var cx = GEO.target.cx, cy = GEO.target.cy;
-    var dentY = cy - GEO.rings[7].ry - 6; rect(g, cx + 6, dentY, 5, 2, PAL.CORK2); px(g, cx + 7, dentY - 1, PAL.WOOD1); px(g, cx + 9, dentY, PAL.GAP); return;
+    for (var i = 0; i < DENT.length; i++) px(g, cx + DENT[i][0], cy + DENT[i][1], PAL[DENT[i][2]]);
   }
 
   // the machine's open mouth: the shadowed cavity between the bed's bottom
@@ -1045,7 +1052,10 @@
       if (!near(Math.abs(h.x != null ? h.x : h.u), Math.abs(d.u), 0.02) || !near(hv, d.v, 0.03))
         bad.push('100 hole ' + i + ' at v ' + hv + ' vs drawn v ' + d.v.toFixed(3));
     });
-    if (pg.bedHalfW && !near(pg.bedHalfW, DRAWN.bedHalfW, 0.06)) bad.push('bedHalfW ' + pg.bedHalfW + ' vs drawn ' + DRAWN.bedHalfW.toFixed(2));
+    var hw = pg.bedHalfW || (pg.bed && pg.bed.halfW), top = pg.bed && pg.bed.vTop;
+    if (hw && !near(hw, DRAWN.bedHalfW, 0.06)) bad.push('bed half-width ' + hw + ' vs drawn ' + DRAWN.bedHalfW.toFixed(2));
+    if (top && top > DRAWN.bedTopV + 0.05) bad.push('backstop v ' + top + ' is under the score bar (visible bed top v ' + DRAWN.bedTopV.toFixed(2) + ')');
+    if (pg.ringC && !near(pg.ringC.v, DRAWN.ringCentreV, 0.01)) bad.push('ring centre v ' + pg.ringC.v + ' vs drawn ' + DRAWN.ringCentreV);
     return bad;
   }
 

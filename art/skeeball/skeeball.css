@@ -1,12 +1,20 @@
 /* HOLLER ROLLER — page framing.
  * The room around the machine: near-black blue, no distractions.
- * The canvas letterboxes inside .skeeball-stage at a crisp integer scale.
+ * The stage fills the viewport under the fixed site banner; the canvas
+ * sits in it at a crisp integer scale (main.js grows the canvas's
+ * internal height to fill the stage at that scale). The blurb lives
+ * below the fold.
  */
+
+html:has(.skeeball-page),
+body:has(.skeeball-page) {
+    overscroll-behavior: none;   /* no rubber-band or pull-to-refresh mid-throw */
+    background: #07060d;
+}
 
 .skeeball-page {
     background: #07060d;
-    margin: 0 calc(50% - 50vw);
-    /* full-bleed out of any content frame */
+    margin: 0 calc(50% - 50vw);  /* full-bleed out of any content frame */
     padding: 0 0 2rem;
 }
 
@@ -15,14 +23,19 @@
     justify-content: center;
     align-items: center;
     width: 100%;
-    height: calc(100dvh - 64px);
-    /* room for the site banner */
-    min-height: 420px;
+    height: calc(100vh - var(--banner-h, 56px));
+    height: calc(100dvh - var(--banner-h, 56px));
+    min-height: 384px;
     overflow: hidden;
     touch-action: none;
+    overscroll-behavior: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
 }
 
 .skeeball-canvas {
+    display: block;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
     background: #07060d;
@@ -41,4 +54,17 @@
 .skeeball-blurb em {
     color: #a63a70;
     font-style: normal;
+}
+
+.skeeball-build {
+    margin: 0.75rem auto 0;
+    color: #453567;
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.skeeball-build-sep {
+    margin: 0 0.4em;
 }
