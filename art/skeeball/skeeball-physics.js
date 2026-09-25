@@ -121,6 +121,9 @@
     bedNudge: 0.038,         // seeded bed-texture lateral accel, units/s²
     perchV: 0.3,             // a ball this slow on a rim top…
     perchNudge: 0.6,         // …is tipped off toward the side its centre leans, units/s²
+    lipNudge: 1.2,           // a slow ball propped on a 100-hole lip is tipped (u/s²)…
+    lipTipIn: 0.3,           // …into the hole if its centre is within lipRing + lipTipIn·r, else away down the bed…
+    lipTipT: 0.25,           // …or into the hole anyway once 'away' has been blocked this long (s)
     supportNy: 0.3,          // a contact whose normal has this much +y supports the ball (rolling)
 
     // ── english (a lateral-acceleration coefficient, not the ball's spin ω) ──
@@ -316,7 +319,7 @@
       launched: false, tLaunch: -1, touchedBed: false,
       vThrow: v, vPeak: v,                 // for the return speed cap
       sup: 0, supNx: 0, supNy: 1, supNz: 0, supKind: 'lane', _supBest: 0,
-      rimTouch: false, perchSide: 0, perchU: 0, perchV: 0,
+      rimTouch: false, perchSide: 0, perchU: 0, perchV: 0, tipOn: false, tipU: 0, tipV: 0, lipT: 0,
       settleT: 0, restT: 0, rimHits: 0, cd: {},
       band: -1, dentEscape: false, in40Dent: false, in40Other: false, cageTouch: false,
       land: null,                          // first bed-side contact {u, v, t, kind, band}
@@ -534,6 +537,11 @@
       if (b.sup && b.z < T.L && b.vz > -vRet) az -= T.returnAccel;
     }
     // a ball balanced on a rim top is tipped off toward the side it leans
+    if (b.tipOn) {
+      var tn3 = bedN(D, b.tipU, b.tipV, 0);
+      ax += tn3[0] * T.lipNudge; ay += tn3[1] * T.lipNudge; az += tn3[2] * T.lipNudge;
+      b.tipOn = false;
+    }
     if (b.perchSide) {
       var pn = bedN(D, b.perchU, b.perchV, 0);
       ax += pn[0] * T.perchNudge * b.perchSide; ay += pn[1] * T.perchNudge * b.perchSide; az += pn[2] * T.perchNudge * b.perchSide;
@@ -645,7 +653,26 @@
       if (q.h < T.lipH + r + 0.05) {
         for (var hI = 0; hI < 2; hI++) {
           var hl = hoopContact(b, q, (hI ? 1 : -1) * T.holeU, T.holeV, D.lipRing, T.lipH, D.lipRho, r, -1, T.eRim, T.muImpactRim);
-          if (hl) { bedHit(b, 'hole', hl.s, hI); q = toBedD(D, b.x, b.y, b.z); }
+          if (hl) {
+            bedHit(b, 'hole', hl.s, hI);
+            // a slow ball propped on the lip must tip, never rest: into the
+            // hole if its centre is over the lip (within lipRing + lipTipIn·r),
+            // otherwise away, down the bed; if away is blocked (the corner
+            // pocket between lip, wall and backstop) for lipTipT, into the hole
+            if (Math.hypot(b.vx, b.vy, b.vz) < T.perchV) {
+              b.lipT += dt;
+              var dh = D.lipRing + hl.dr, inward = dh < D.lipRing + T.lipTipIn * r || b.lipT > T.lipTipT;
+              if (inward) { b.tipU = -hl.du; b.tipV = -hl.dv; }
+              else {
+                // away: outward and downhill; an exact tie (straight down) leans by the seeded roughness
+                var tu = hl.du, tv = hl.dv - 1, tn = Math.hypot(tu, tv);
+                if (tn < 1e-6) { tu = hash01(b.seed ^ SALT_PERCH, b.n) < 0.5 ? -1 : 1; tv = 0; tn = 1; }
+                b.tipU = tu / tn; b.tipV = tv / tn;
+              }
+              b.tipOn = true;
+            }
+            q = toBedD(D, b.x, b.y, b.z);
+          }
         }
       }
       // safety cage roof
@@ -714,6 +741,7 @@
     var pitFloorHit = b.y - r <= T.pitFloorY;
     if (pitFloorHit || (b.z > T.L + r && b.z < T.bedZ0 && b.vy < 0 && b.y < T.bedY0 - T.gutterDrop)) {
       if (pitFloorHit) b.y = T.pitFloorY + r;
+      clampToWalls(b);
       b.vx = b.vy = b.vz = 0;
       b.phase = 'gutter'; b.endT = b.t;
       emit(b, { type: 'gutter' });
@@ -755,7 +783,14 @@
     if (b.t > T.timeoutT - T.sinkT || b.t > T.preLaunchT) { emit(b, { type: 'timeout' }); return forceResolve(b); }
   }
 
+  // the ball's final resting x never sits outside the walls (a hair of push-out can)
+  function clampToWalls(b) {
+    var T = b.T, lim = (b.z < T.L ? T.laneHalfW : b.z < T.bedZ0 ? T.laneHalfW + (T.bedHalfW - T.laneHalfW) * (b.z - T.L) / (T.bedZ0 - T.L) : T.bedHalfW) - b.D.r;
+    if (b.x > lim) b.x = lim; else if (b.x < -lim) b.x = -lim;
+  }
+
   function forceResolve(b) {
+    clampToWalls(b);
     var T = b.T, D = b.D, q = toBedD(D, b.x, b.y, b.z);
     if (!b.launched) {
       emit(b, { type: 'return' });
@@ -777,6 +812,7 @@
   }
 
   function capture(b, q, score, band, hole) {
+    clampToWalls(b); q = toBedD(b.D, b.x, b.y, b.z);
     var T = b.T, D = b.D, tu, tv;
     if (hole !== null) { tu = (hole ? 1 : -1) * T.holeU; tv = T.holeV; }
     else {
