@@ -65,6 +65,9 @@ usage: make-reel.sh <url-or-file> --id <slug> [options]
                          Exits 2 (not 0) when no window passed the loudness/black
                          gates — what it printed is then an even spread, a guess.
   --force-analyze        ignore the cached analysis in local-dev/broadcast-src
+  --silent               a MUTE PRINT: ignore the source's audio stream even if it has
+                         one; the reel gets a silent track and "silent": true (a source
+                         with no audio stream at all gets the same automatically)
   -h, --help
 
 Every finished reel is measured for a stable dominant pitch per window
@@ -121,6 +124,7 @@ while [ $# -gt 0 ]; do
     --whole-windows) WHOLE_WINDOWS="${2:?}"; WHOLE=1; shift 2 ;;
     --distort) DISTORT="${2:?}"; shift 2 ;;
     --propose) PROPOSE=1; shift ;;
+    --silent) FORCE_SILENT=1; shift ;;
     --force-analyze) FORCE_AN=1; shift ;;
     -*) die "unknown option $1 (see --help)" ;;
     *) [ -z "$INPUT" ] || die "only one input allowed (got '$INPUT' and '$1')"; INPUT="$1"; shift ;;
@@ -240,6 +244,9 @@ if [ "$HAS_V" = 1 ]; then
 fi
 if [ "$HAS_V" = 0 ] && [ "$AUDIO_ONLY" = 0 ]; then log "no video stream — switching to --audio-only"; AUDIO_ONLY=1; fi
 [ "$HAS_A" = 1 ] || [ "$AUDIO_ONLY" = 0 ] || die "source has neither usable video nor audio"
+# --silent: a mute print whose file still carries an audio stream (hiss, a
+# blank track). Treat it as having none, so loudnorm does not pump its hiss up.
+if [ "${FORCE_SILENT:-0}" = 1 ]; then HAS_A=0; log "--silent: ignoring the source's audio stream"; fi
 [ "$HAS_A" = 1 ] || log "WARNING: source has no audio track; the reel will be silent"
 printf '▸ source duration %.1f s  video=%s audio=%s\n' "$DUR" "$HAS_V" "$HAS_A" >&2
 
@@ -446,9 +453,9 @@ d=json.loads(sys.argv[1]); n=sum(1 for p in d["pitchHz"] if p)
 print("▸ pitch  %d/%d windows carry a stable pitch%s" % (n, len(d["pitchHz"]), "  (tuned)" if d["tuned"] else ""))' "$PITCH" >&2
 
 python3 - "$MANI/$ID.json" "$ID" "$TITLE" "$YEAR" "$SRC_REF" "$LICENSE" "$TIER" "$TONE" "$WEIGHT" "$GAIN" \
-  "$RDUR" "$BYTES" "$AUDIO_ONLY" "$PICTURE" "$REELWIN" "$WINJSON" "$NOTES" "$BAND" "$PITCH" "$WHOLE" "$WHOLE_WINDOWS" <<'PY'
+  "$RDUR" "$BYTES" "$AUDIO_ONLY" "$PICTURE" "$REELWIN" "$WINJSON" "$NOTES" "$BAND" "$PITCH" "$WHOLE" "$WHOLE_WINDOWS" "$HAS_A" <<'PY'
 import json,sys
-(_, out, id_, title, year, src, lic, tier, tone, weight, gain, rdur, nbytes, ao, pic, reelwin, srcwin, notes, band, pitch, whole, wholewins) = sys.argv
+(_, out, id_, title, year, src, lic, tier, tone, weight, gain, rdur, nbytes, ao, pic, reelwin, srcwin, notes, band, pitch, whole, wholewins, has_a) = sys.argv
 P = json.loads(pitch)
 e = {
   "id": id_,
@@ -472,6 +479,12 @@ e = {
   "notes": notes,
   "takedown": False,
 }
+# A SILENT PRINT (reels round 5, the owner's ruling 2026-09-24): a picture with
+# no sound track at all. The reel carries a silent audio track so the receiver
+# graph is unchanged; the flag tells the receiver there is nothing to listen to.
+if has_a == "0" and ao != "1":
+    e["silent"] = True
+    e["gain"] = 0.0   # loudnorm has nothing to measure; do not report a boost
 # §14. "whole" is per REEL; wholeWindows is a PARALLEL ARRAY, index for index
 # with windows, exactly as pitchHz is — never a third element in a window and
 # never an object, because five call sites in zk-broadcast.js index a window
