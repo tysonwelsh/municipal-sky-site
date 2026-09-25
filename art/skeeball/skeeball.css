@@ -12,6 +12,12 @@ body:has(.skeeball-page) {
     background: #07060d;
 }
 
+/* while a game is running the page does not scroll at all (main.js sets the class) */
+html.skeeball-playing,
+html.skeeball-playing body {
+    overflow: hidden;
+}
+
 .skeeball-page {
     background: #07060d;
     margin: 0 calc(50% - 50vw);  /* full-bleed out of any content frame */
