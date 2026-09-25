@@ -1148,10 +1148,21 @@
     }
     function onDpr() { fit(); watchDpr(); }
     watchDpr();
+    // A reload starts the flow from the top (owner's call, 2026-09-25): the
+    // open game and any waiting credit are dropped, not resumed. Pass
+    // opts.resume = true to restore them instead (the code is kept for later).
     var open = A ? stats().open : null;   // a game the last page left running
-    if (A && stats().credit) { state.credited = true; view.credit = { t0: 0 }; } // a paid nickel waiting for its button
+    if (opts.resume) {
+      if (A && stats().credit) { state.credited = true; view.credit = { t0: 0 }; } // a paid nickel waiting for its button
+    } else if (A) {
+      var st0 = stats(); var dirty = false;
+      if (st0.open) { delete st0.open; dirty = true; }
+      if (st0.credit) { delete st0.credit; dirty = true; }
+      if (dirty) A.persist();
+      open = null;
+    }
     toAttract();
-    if (open && open.open && !opts.noResume) resumeGame(open);
+    if (open && open.open && opts.resume) resumeGame(open);
     var qm = HARNESS && /[?&]mode=(attract|play|payout)/.exec(search); // preview only under the harness
     if (qm && qm[1] !== 'attract') forceMode(qm[1]);
     if (!HARNESS) rafId = root.requestAnimationFrame(frame);
