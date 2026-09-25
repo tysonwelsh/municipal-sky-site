@@ -9,7 +9,7 @@
   "weight": 2,
   "gain": -0.1,
   "durS": 78.92,
-  "bytes": 808044,
+  "bytes": 780036,
   "band": "normal",
   "audioOnly": false,
   "picture": null,
@@ -17,6 +17,6 @@
   "srcWindows": [[5.0, 17.0], [55.0, 67.0], [69.2, 81.2], [104.93, 116.93], [127.0, 139.0], [141.0, 159.9]],
   "pitchHz": [null, null, null, null, null, null],
   "tuned": false,
-  "notes": "taped off CCTV-1 with the channel bug and the wall clock in frame, 19:43 to 20:58; 南宝电视机 NANBAO of the Hebei electronics corporation, and 美乐电视 中国·新乡 国营760廠 — a state factory number as a brand",
+  "notes": "taped off CCTV-1 with the channel bug and the wall clock in frame, 19:43 to 20:58; 南宝电视机 NANBAO of the Hebei electronics corporation, and 美乐电视 中国·新乡 国营760廠 — a state factory number as a brand Re-cut 2026-09-25 from a pre-crop (crop=320:240:0:44 of the 400×300 source) that removes the Youku (优酷) corner logo; windows unchanged.",
   "takedown": false
 }
