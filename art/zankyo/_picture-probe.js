@@ -1571,6 +1571,29 @@ function PAGE_P3(items, reels, o) {
     function blk(gr) { var out = new Float32Array(432); for (var y = 0; y < 144; y++) for (var x = 0; x < 192; x++) out[(y >> 3) * 24 + (x >> 3)] += gr[y * 192 + x]; var o2 = []; for (var i = 0; i < 432; i++) o2.push(Math.round(out[i] / 64 * 10) / 10); return o2; }
     function b64(gr) { var bin = ""; for (var i = 0; i < gr.length; i++) bin += String.fromCharCode(gr[i]); return btoa(bin); }
     var cv = document.getElementById("zankyo-set"), res = [], dt = 1000 / 30, clk = D.clock ? D.clock() : 0;
+    // (r2, critic P3 r1 item 1b) §11.1 — ALWAYS GREEN — on the FULL-RESOLUTION
+    // frame, after compositing (the grays above are the green channel only
+    // and cannot see colour): DESAT, the critic's metric (tools/
+    // picture-p3-critic.js) — of the middle 80 % each way, the pixels with
+    // green 30–215, the share whose saturation (G − max(R,B)) / G falls more
+    // than 0.2 below the P39 ramp's own at that green. A near-white ramp
+    // colour scaled toward black (RGB × α) keeps R ≈ G ≈ B and lands here.
+    var ZPp = window.ZankyoPicture, LUTc = ZPp.tubeLUT(ZPp.TUBE), satOfG = new Float32Array(256).fill(-1);
+    for (var lq = 0; lq < 256; lq++) if (satOfG[LUTc.G[lq]] < 0 && LUTc.G[lq] > 0) satOfG[LUTc.G[lq]] = (LUTc.G[lq] - Math.max(LUTc.R[lq], LUTc.B[lq])) / LUTc.G[lq];
+    for (var gq = 1; gq < 256; gq++) if (satOfG[gq] < 0) satOfG[gq] = satOfG[gq - 1];
+    var ccv = document.createElement("canvas"), ccx = ccv.getContext("2d", { willReadFrequently: true });
+    function desat() {
+      var w = cv.width, h = cv.height; if (ccv.width !== w || ccv.height !== h) { ccv.width = w; ccv.height = h; }
+      ccx.clearRect(0, 0, w, h); ccx.drawImage(cv, 0, 0); var d = ccx.getImageData(0, 0, w, h).data, n = 0, bad = 0;
+      for (var y = Math.floor(h * 0.1); y < Math.floor(h * 0.9); y++) for (var x = Math.floor(w * 0.1); x < Math.floor(w * 0.9); x++) {
+        var i = (y * w + x) * 4, gg = d[i + 1]; if (gg < 30 || gg > 215) continue;
+        n++; if ((gg - Math.max(d[i], d[i + 2])) / gg < satOfG[gg] - 0.2) bad++;
+      }
+      return n ? bad / n : 0;
+    }
+    // (r2, critic P3 r1 item 2b) the per-line offset map's variance (px²) —
+    // the geometry kinds' own size (旗 捩 揺 横 and the tear), 0 when no map is live
+    function mapVar() { var B = D.buffers(), m = B.map; if (!B.mapLive) return 0; var mu = 0, v = 0, y; for (y = 0; y < m.length; y++) mu += m[y]; mu /= m.length; for (y = 0; y < m.length; y++) v += (m[y] - mu) * (m[y] - mu); return v / m.length; }
     for (var ii = 0; ii < items.length; ii++) {
       var it = items[ii], v = await vid(it.reel);
       var base = (Math.ceil(clk / 1000) + 1) * 1000;
@@ -1582,7 +1605,7 @@ function PAGE_P3(items, reels, o) {
       var t0 = base / 1000 + 0.2;
       var drops = (it.drops || []).map(function (d) { return [t0 + P.entryS + d[0], d[1]]; });
       if (!ZS.signal({ t0: t0, holdS: P.presenceS, lossD: P.exitS, drops: drops, seed: it.seed, id: it.label || "p3", rx: P, video: v })) throw new Error("signal refused at " + it.label);
-      var rec = { label: it.label, trans: [], feat: [], blocks: [], profs: [], gall: [], pngs: [], grays: [], burn: null, ch: D.character ? D.character() : null, times: [], plan: { entryS: P.entryS, lossAtS: P.lossAtS, spanS: P.spanS }, tube: ZS.getState().tube };
+      var rec = { label: it.label, trans: [], feat: [], blocks: [], profs: [], gall: [], pngs: [], grays: [], col: [], mapv: [], burn: null, ch: D.character ? D.character() : null, times: [], plan: { entryS: P.entryS, lossAtS: P.lossAtS, spanS: P.spanS }, tube: ZS.getState().tube };
       var endS = t0 + P.spanS + 0.42 + 0.32 + 1.6 + 0.2, k = 0, last = null, pi = 0, tm = base;
       while (tm / 1000 < endS || (ZS.getState().phase !== "idle" && k < 40000)) {
         k++; tm = base + k * dt;
@@ -1603,6 +1626,8 @@ function PAGE_P3(items, reels, o) {
           rec.profs.push({ e: +e.toFixed(3), rows: rp, cols: cp });
         }
         if (it.grayWin && e >= it.grayWin[0] && e < it.grayWin[1] && k % 3 === 0) { var B2 = D.buffers(); rec.grays.push({ e: +e.toFixed(3), roll: +(B2.rollPx || 0).toFixed(1), g: b64(gray()) }); }
+        if (it.colWin && e >= it.colWin[0] && e < it.colWin[1] && k % 3 === 0) rec.col.push([+e.toFixed(3), st.phase, +desat().toFixed(4)]);
+        if (it.mapWin && e >= it.mapWin[0] && e < it.mapWin[1]) rec.mapv.push([+e.toFixed(3), st.phase, +mapVar().toFixed(3)]);
         if (it.pngAt && pi < it.pngAt.length && e >= it.pngAt[pi]) { rec.pngs.push({ at: +e.toFixed(2), ph: st.phase, s: +st.strength.toFixed(2), png: cv.toDataURL("image/png") }); pi++; }
       }
       clk = tm;
@@ -1759,7 +1784,9 @@ const TAN5 = { body: "jou", entry: "tan", exit: "setsu", entryS: 5, exitS: 1.6, 
 const ZAN8 = { body: "jou", entry: "soku", exit: "zan", entryS: 0.4, exitS: 8, segments: [{ onS: 3, lockS: 0 }], gaps: [], holes: [], glimpses: null };
 function p3renderItems() {
   const it = [];
-  const add = (grp, name, reel, rx, force, win, tex, extra) => it.push(Object.assign({ grp, name, reel, seed: 77.37, texture: tex || 21, rx, drops: [], force, win, feat: true, label: grp + ":" + name + (tex ? "·t" + tex : "") }, extra || {}));
+  // (r2) colWin: the window the colour check (§11.1) reads — the variant's
+  // own window unless the item names one
+  const add = (grp, name, reel, rx, force, win, tex, extra) => it.push(Object.assign({ grp, name, reel, seed: 77.37, texture: tex || 21, rx, drops: [], force, win, colWin: win, feat: true, label: grp + ":" + name + (tex ? "·t" + tex : "") }, extra || {}));
   // 即: each lock-in against the snap, on a clean catch (清: the lock-in alone)
   const wE = [0, 0.4 + 1.8];
   for (const m of ["snap", "roll", "bars", "fade", "bloom", "ghost"]) add("即", m, 0, SOKU6, { archetype: "清", entry: m }, wE);
@@ -1777,7 +1804,7 @@ function p3renderItems() {
   add("浮反", "fade", 0, FU8, { archetype: "反", sev: 0.7, entry: "fade", axes: { ghosts: G1 } }, wF, 0, gW);
   add("浮反", "fade", 0, FU8, { archetype: "反", sev: 0.7, entry: "fade", axes: { ghosts: G1 } }, wF, 1021, gW);
   add("浮反", "walk off", 0, FU8, { archetype: "反", sev: 0.7, entry: "fade", axes: { ghosts: G1, entry: { walk: 1 } } }, wF, 0, gW);
-  add("clean", "clean", 0, SOKU6, { clean: true }, null, 0, { grayWin: [4, 5], feat: false });
+  add("clean", "clean", 0, SOKU6, { clean: true }, null, 0, { grayWin: [4, 5], feat: false, colWin: null });
   // 探: each glimpse's own against 今's glimpse
   const wT = [0, 5];
   for (const m of ["今", "roll", "bars", "ghost", "fade"]) add("探", m, 0, TAN5, { archetype: "清", entry: "snap", glimpse: m }, wT);
@@ -1788,8 +1815,9 @@ function p3renderItems() {
   // the squash already differ by whole rolls there. The loss itself is seen
   // through image-derived motion: row and column profiles over it.)
   const wX = [0.4 + 6 + 2.2 - 0.15, 0.4 + 6 + 2.2 + 0.42 + 0.05], pX = [0.4 + 6, 0.4 + 6 + 2.2];
-  for (const m of ["squash", "roll", "snow", "bars", "freeze", "neg", "vline"]) add("切", m, null, SOKU6, { archetype: "清", exit: m }, null, 0, { profWin: pX, gallWin: wX });
-  add("切", "squash", null, SOKU6, { archetype: "清", exit: "squash" }, null, 1021, { profWin: pX, gallWin: wX });
+  const cX = [pX[0], wX[1] + 1.6];                          // colour: the loss, the collapse, the burst and the dead tube
+  for (const m of ["squash", "roll", "snow", "bars", "freeze", "neg", "vline"]) add("切", m, null, SOKU6, { archetype: "清", exit: m }, null, 0, { profWin: pX, gallWin: wX, colWin: cX });
+  add("切", "squash", null, SOKU6, { archetype: "清", exit: "squash" }, null, 1021, { profWin: pX, gallWin: wX, colWin: cX });
   // 残: the afterglow against the squash, on a face
   // (from 0.3 s before the carrier goes: the dead tube is held against the
   // loss's last picture — does the phosphor still carry it?)
@@ -1798,8 +1826,20 @@ function p3renderItems() {
   add("残", "squash", 0, ZAN8, { archetype: "清", exit: "squash" }, wZ, 1021);
   // 焼: burn on and off, the hold, and again with the vertical hold slipping at every dropout
   const g0 = [0.9, 6.3], rollDrops = [[1.0, 0.3], [2.6, 0.3], [4.2, 0.3]];
-  for (const b of [0.18, 0]) add("焼", "b" + b, 0, SOKU6, { archetype: "清", burn: b }, null, 0, { grayWin: g0 });
+  for (const b of [0.18, 0]) add("焼", "b" + b, 0, SOKU6, { archetype: "清", burn: b }, null, 0, { grayWin: g0, colWin: g0 });
   for (const b of [0.18, 0]) add("焼", "roll·b" + b, 0, SOKU6, { archetype: "清", burn: b, axes: { drop: { kinds: ["roll"], depth: 0 } } }, null, 0, { grayWin: g0, drops: rollDrops });
+  // (r2, critic P3 r1 item 2b) the walk-down on a BAD-SYNC drift-in: 同, whose
+  // primaries are all offset-map kinds, on the test card — the map's variance
+  // over the drift's first quarter must stand well over its last with walk 3,
+  // and stay flat with walk 1 (r1 handed the map ENV1 while drifting: both
+  // read ~6 px² all the way, the critic's tools/picture-p3-walkgeo.js). The
+  // kill run's walkAt → 1 must fail it. THE CRITIC'S RECEPTION (seed 5,
+  // texture 5: 旗 0.87 · 捩 0.77 · 裂 0.40), pinned as §6.3.2 pins every
+  // kind: a 同 that draws 横 has its bars in EPISODES keyed on reception time
+  // (on 77.37 one opens the drift at ~2600 px² and is gone by 6 s), and an
+  // episode says nothing about the walk. LAST in the list, so every earlier
+  // item runs at the virtual instants it always did (items share one clock).
+  for (const w of [3, 1]) add("浮同", "walk " + w, null, FU8, { archetype: "同", sev: 0.9, entry: "fade", axes: { entry: { walk: w } } }, wF, 0, { mapWin: [0, 8], seed: 5, texture: 5 });
   return it;
 }
 // the image distance of two runs over a window: 8×8 block means, averaged
@@ -1891,7 +1931,15 @@ function causeOf(grp, name, rec, def) {
 function corrArr(a, b, mask) { let n = 0, sa = 0, sb = 0, sab = 0, saa = 0, sbb = 0; for (let i = 0; i < a.length; i++) { if (mask && !mask[i]) continue; n++; sa += a[i]; sb += b[i]; sab += a[i] * b[i]; saa += a[i] * a[i]; sbb += b[i] * b[i]; } const v = (saa - sa * sa / n) * (sbb - sb * sb / n); return v > 1e-9 ? (sab - sa * sb / n) / Math.sqrt(v) : NaN; }
 async function p3render(browser, kill) {
   const items = p3renderItems();
-  const res = await runP3(browser, items, kill ? { files: { "zk-picture.js": killedPicture() }, verify: "!!(window.ZankyoPicture && ZankyoPicture.exitMode({exit:{mode:'roll'}}) === 'squash')" } : {});
+  // (r2) --set <rev>: zk-set.js from git at <rev>, swapped in by interception —
+  // the colour and walk checks' own proof that they fail (the kill run cannot
+  // prove the colour check: killing the exit removes the afterglow). Run
+  // against 90526da (rc.P5, r1's grey afterglow and ENV1 map) both must fail
+  // by name.
+  const setRev = opt("set", ""), files = {};
+  if (kill) files["zk-picture.js"] = killedPicture();
+  if (setRev) { files["zk-set.js"] = gitShow(setRev, "zk-set.js"); console.log("  zk-set.js swapped in from " + setRev + " (" + files["zk-set.js"].length + " bytes)"); }
+  const res = await runP3(browser, items, Object.keys(files).length ? { files, verify: kill ? "!!(window.ZankyoPicture && ZankyoPicture.exitMode({exit:{mode:'roll'}}) === 'squash')" : "!!(window.ZankyoSet && ZankyoSet._dev && ZankyoSet._dev.step)" } : {});
   let ok = true; const out = [];
   const by = (grp, name, tex) => res[items.findIndex((x) => x.grp === grp && x.name === name && (tex ? x.texture === tex : x.texture === 21))];
   const refName = { "即": "snap", "浮": "fade", "浮反": "fade", "探": "今", "切": "squash", "残": "squash" };
@@ -1966,6 +2014,46 @@ async function p3render(browser, kill) {
     const legOk = sOn >= 0.9 * sOff; ok = ok && legOk;
     console.log("   " + (legOk ? "✓" : "✗ 焼 legibility:") + " 焼 at its deepest (k 0.18) keeps the picture: median hold SSIM vs clean " + sOn.toFixed(4) + " burned, " + sOff.toFixed(4) + " not (gate ≥ 0.9×)");
   }
+  // (r2, critic P3 r1 item 2b) 浮同 — THE WALK-DOWN REACHES THE GEOMETRY: the
+  // offset map's mean variance over the drift's first quarter (0–2 s) and its
+  // last (6–8 s). Walk 3 must fall by ≥ 2× over the drift and open ≥ 2× over
+  // walk 1's first quarter; walk 1 must stay flat (last/first within ×1.5 —
+  // the ratio is texture-noisy by ±10 % on r1's reading, 6.09 → 5.75).
+  {
+    const q = (rr, a, b) => { const v = rr.mapv.filter((x) => x[0] >= a && x[0] < b && x[1] === "drifting").map((x) => x[2]); return v.length ? v.reduce((m, x) => m + x, 0) / v.length : NaN; };
+    const w3 = res[items.findIndex((x) => x.grp === "浮同" && x.name === "walk 3")], w1 = res[items.findIndex((x) => x.grp === "浮同" && x.name === "walk 1")];
+    const a3 = q(w3, 0, 2), z3 = q(w3, 6, 8), a1 = q(w1, 0, 2), z1 = q(w1, 6, 8);
+    const walks = a3 >= 2 * z3 && a3 >= 2 * a1, flat = a1 <= 1.5 * z1 && z1 <= 1.5 * a1, good = walks && flat; ok = ok && good;
+    console.log("   " + (walks ? "✓" : "✗ 浮同 walk:") + " 浮同 walk   the offset map walks down on a 同 drift-in (" + (w3.ch && w3.ch.entry ? "walk " + w3.ch.entry.walk : "") + "): map variance " + a3.toFixed(2) + " px² over 0–2 s → " + z3.toFixed(2) + " over 6–8 s (×" + (a3 / z3).toFixed(2) + ", gate ≥ 2), against walk 1's " + a1.toFixed(2) + " at the start (×" + (a3 / a1).toFixed(2) + ", gate ≥ 2)");
+    console.log("   " + (flat ? "✓" : "✗ 浮同 walk 1:") + " 浮同 walk 1 flat without the walk: " + a1.toFixed(2) + " → " + z1.toFixed(2) + " px² (gate within ×1.5)");
+    out.push({ grp: "浮同", name: "walk", first3: a3, last3: z3, first1: a1, last1: z1, good });
+  }
+  // (r2, critic P3 r1 item 1b) §11.1 — ALWAYS GREEN, EVERY VARIANT: DESAT on
+  // the full-resolution frame, every 3rd frame (0.1 s) over the variant's
+  // window (colWin), against its default's AT THE SAME INSTANT, the worse of
+  // the default's two textures. EXCESS = variant − default, per instant.
+  // Gate: the excess over 5 points on at most 2 samples (0.2 s in all) — a
+  // blown-out moment of the ramp's own mint top seen through a dimmer shard
+  // of the crack reads as DESAT too (critic r1: bloom on 過, 14.4 % for
+  // 0.1 s), a held grey does not stop. r1's 残 afterglow read 7–86 % against
+  // the squash's 0–6.7 % from the collapse to the dead tube's end.
+  {
+    const refName = { "即": "snap", "浮": "fade", "探": "今", "切": "squash", "残": "squash", "焼": "b0", "浮同": "walk 1" };
+    let nV = 0, nBad = 0;
+    for (const grp of Object.keys(refName)) {
+      const R = items.map((x, i) => [x, res[i]]).filter(([x]) => x.grp === grp && x.colWin);
+      const refAt = {}; R.filter(([x]) => x.name === refName[grp]).forEach(([, r]) => r.col.forEach((c) => { refAt[c[0]] = Math.max(refAt[c[0]] == null ? 0 : refAt[c[0]], c[2]); }));
+      for (const [x, r] of R.filter(([x]) => x.name !== refName[grp])) {
+        const ex = r.col.filter((c) => refAt[c[0]] != null).map((c) => [c[0], c[1], c[2], c[2] - refAt[c[0]]]);
+        const over = ex.filter((c) => c[3] > 0.05), w = ex.reduce((m, c) => c[3] > m[3] ? c : m, [NaN, "", 0, -1]);
+        const worstV = Math.max(...r.col.map((c) => c[2]));
+        const good = ex.length > 5 && over.length <= 2; ok = ok && good; nV++; if (!good) nBad++;
+        console.log("   " + (good ? "✓" : "✗ " + grp + " " + x.name + " colour:") + " " + (grp + " " + x.name).padEnd(10) + " on the ramp: " + over.length + "/" + ex.length + " instants over the " + refName[grp] + "'s DESAT by > 5 points (gate ≤ 2) · largest excess " + (w[3] * 100).toFixed(1) + " pts @" + w[0] + " s " + w[1] + " · worst DESAT " + (worstV * 100).toFixed(1) + " %");
+        out.push({ grp, name: x.name, check: "colour", over: over.length, n: ex.length, maxExcess: w[3], at: w[0], worst: worstV, good, col: r.col });
+      }
+    }
+    console.log("   " + (nBad ? "✗" : "✓") + " colour: " + (nV - nBad) + "/" + nV + " variants stay on the ramp as their default does");
+  }
   const pr = stats(refTimes), pv = stats(varTimes);
   console.log("  step cost: defaults mean " + pr.mean + " p95 " + pr.p95 + " worst " + pr.worst + " ms · variants mean " + pv.mean + " p95 " + pv.p95 + " worst " + pv.worst + " ms (budget: mean ≤ 2.5, worst ≤ 6; load " + os.loadavg().map((x) => x.toFixed(0)).join("/") + ")");
   if (res.errors.length) { ok = false; console.log("  ✗ page errors: " + res.errors.slice(0, 5).join(" | ")); }
@@ -1989,6 +2077,12 @@ async function p3sheets(browser) {
   for (const m of ["squash", "snow", "freeze", "burn"]) rows.push({ sheet: "P3-exits-残", cap: "残 " + m, it: { reel: 0, seed: 77.37, texture: 21, rx: ZAN8, drops: [], force: { archetype: "清", exit: m }, pngAt: tZ, label: m } });
   const tB = [1.2, 2.2, 3.2, 4.2, 5.2, 6.0];
   for (const b of [0, 0.18]) rows.push({ sheet: "P3-burn-焼", cap: "焼 " + (b ? "burn k " + b + " (the last reception's imprint)" : "no burn"), it: { reel: 0, seed: 77.37, texture: 21, rx: SOKU6, drops: [[1.8, 0.3], [3.8, 0.3]], force: { archetype: "清", burn: b, axes: { drop: { kinds: ["roll"], depth: 0 } } }, pngAt: tB, label: "b" + b } });
+  // (r2) 浮同: the bad-sync drift-in walking down (critic P3 r1 item 2) — the
+  // p3render fixture (seed 5, texture 5), walk 3 against walk 1, on the card and on a face
+  for (const [reel, where] of [[null, "card"], [2, "ddr1"]]) for (const w of [3, 1]) rows.push({ sheet: "P3-entries-浮同", cap: "浮同 walk " + w + " (" + where + ")", it: { reel, seed: 5, texture: 5, rx: FU8, drops: [], force: { archetype: "同", sev: 0.9, entry: "fade", axes: { entry: { walk: w } } }, pngAt: tF, label: "w" + w + where } });
+  // --only <sheet,sheet>: re-shoot just those
+  const only = opt("only", "") ? opt("only", "").split(",") : null;
+  if (only) { for (let i = rows.length - 1; i >= 0; i--) if (only.indexOf(rows[i].sheet) < 0) rows.splice(i, 1); if (!rows.length) throw new Error("--only matches no sheet"); }
   const res = await runP3(browser, rows.map((r) => r.it), {});
   const page = await openPage(browser, {});
   try {
@@ -1996,7 +2090,7 @@ async function p3sheets(browser) {
       const tiles = [];
       rows.forEach((r, i) => { if (r.sheet !== sh) return; res[i].pngs.forEach((p) => tiles.push({ png: p.png, cap: r.cap + " · " + p.at.toFixed(2) + " s " + p.ph + " · " + p.s })); });
       const cols = res[rows.findIndex((r) => r.sheet === sh)].pngs.length || 8;
-      const j = await page.eval("(" + PAGE_SHEET.toString() + ")(" + JSON.stringify(tiles) + "," + cols + "," + JSON.stringify(sh + " · each row one variant, forced, texture 21 · s from t0 · phase · carrier") + ")", 120000);
+      const j = await page.eval("(" + PAGE_SHEET.toString() + ")(" + JSON.stringify(tiles) + "," + cols + "," + JSON.stringify(sh + " · each row one variant, forced, texture " + rows.find((r) => r.sheet === sh).it.texture + " · s from t0 · phase · carrier") + ")", 120000);
       fs.writeFileSync(path.join(dir, sh + ".jpg"), Buffer.from(j.split(",")[1], "base64"));
       console.log("  " + tiles.length + " tiles → " + path.join(dir, sh + ".jpg"));
     }

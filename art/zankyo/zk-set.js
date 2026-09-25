@@ -627,6 +627,18 @@
       // character's own levels, envelopes aside — the hold's take over at the lock)
       var wkk = ZP.walkAt(ch.entry, dk);
       if (wkk !== 1) { for (var ek in ENV1) WALK[ek] = ek === "swell" || ek === "agc" ? 1 : wkk; S.env = WALK; }
+      // THE DRIFT'S TEAR (r2, critic P3 r1 item 2a — decided): rc.91's term
+      // above is the weak carrier's (the sync pulses sinking into the noise,
+      // gone by the lock). The walk now adds the character's own 裂 — its
+      // sync's impulses — by the walk's EXCESS: own rate × (walk − 1), the
+      // drawn (walk − 1) at the drift's start and 0 at the lock. So a tired
+      // set's drift-in tears up to (walk − 1)× its own rate over the search
+      // term, and the tear walks down with the other geometry. Not own × walk outright (which would hand
+      // the hold its rate continuously at the lock): that adds own × 1 to
+      // EVERY drift, 今's and a walk-1 drift's included, and those are rc.91's
+      // drift exactly and must stay so — the walk-off control is what proves
+      // the walk (item 2b). The step to the hold's rate at the lock is rc.91's.
+      tearRate += (ch.tear.rate || 0) * (S.env.tear - 1);
     } else if (ph === "lost" || ph === "sweeping") {
       // 戻 / 走: the carrier is GONE. Snow, the last frame ghosting away, the
       // hold rolling. A sweep rolls harder — the dial is moving.
@@ -929,9 +941,30 @@
     if (ck && ch.impulse) ZP.impulsePass(luma, ch.impulse, S.re, hold ? env.imp : 1, rnd);
   }
   var WASH = { lift: 0, gain: 1 };
-  // 焼 the burn exit's afterglow: the phosphor's last image (192×144), and its level this frame
+  // 焼 the burn exit's afterglow: the phosphor's last image (192×144), and its level this frame.
+  // ON THE RAMP (r2, critic P3 r1 item 1; §11.1 "always green, never white"):
+  // r1 kept the last lit frame as the P39 RGBA and added it at alpha aftA, and
+  // the ramp's near-white top (222,255,226) scaled by α is R ≈ G ≈ B — a grey
+  // (DESAT 7–86 % over the collapse, burst and dead against the squash's
+  // ≤ 6.7 %). A phosphor giving less light sits further DOWN THE SAME CURVE:
+  // the image is kept as the phosphor's GREEN (aftG — exactly what the tube
+  // showed, the burn-in's wear and all), and each frame green × aftA is
+  // taken back through the ramp (G2L: a green → the least luma the LUT lights
+  // it at) to the ramp's own colour at that green, into aftCv. The glow keeps
+  // r1's light (its green, frame by frame, is r1's) and loses r1's grey.
+  // DECIDED against the critic's literal "luma × aftA through the LUT": the
+  // ramp is steep (gamma 1.3 over stops that sit dark until 0.45), so luma ×
+  // 0.125 lands at ~1/4 of r1's green — the dead tube's afterglow, the whole
+  // point of 残's burn, went under the burst's persistence (meanG on the dead
+  // tube read the squash's to ±1). The ramp's black floor LUT(0) = (2,6,3) is
+  // taken off what is added (added every frame on a dead tube it would lift
+  // the whole black glass to the floor's colour); the lookup is offset by it,
+  // so the green ADDED is green × aftA.
   var aftCv = document.createElement("canvas"); aftCv.width = SW; aftCv.height = SH;
   var acx = aftCv.getContext("2d"), aftOk = false, aftA = 0;
+  var aftG = new Uint8Array(SW * SH), aftImg = acx.createImageData(SW, SH), aftData = aftImg.data;
+  var G2L = new Uint8Array(256);                             // green → the least luma the LUT lights that green at
+  (function () { var l = 0; for (var g = 0; g < 256; g++) { while (l < 255 && LUT.G[l] < g) l++; G2L[g] = l; } })();
   // P2's per-frame scratch: the source pass's extras, 飽's gain, 縞's row
   // phases, 帯's row gain and offset, 混's other picture as placed
   var SRCX = { ag: null, hb: null, hum: null }, AG = { g: 1, blk: 0, neg: false };
@@ -988,8 +1021,13 @@
     var lagK = sw && sw.lag > 0 ? Math.min(1, (1 / 30) / sw.lag) : 1;
     S.swell += (target - S.swell) * lagK;
     mapLive = ph !== "idle" && ZP.lineMap(map, S.tears, t, S.shear);
-    // P2: 旗 捩 揺 横, while there is a carrier (lineMap has cleared the map)
-    if (CARRIER_PH[ph] && ZP.geoMap(map, ch, S.re, t / 1000, ph === "hold" ? S.env : ENV1, rnd)) mapLive = true;
+    // P2: 旗 捩 揺 横, while there is a carrier (lineMap has cleared the map).
+    // (r2, critic P3 r1 item 2) the drift's walked levels too: r1 handed the
+    // map ENV1 outside the hold, so 浮's walk-down never reached the offset-map
+    // kinds and a 同 drift-in (all its primaries are geometry) did not walk
+    // down at all. S.env is ENV1 in every other carrier phase, so only the
+    // drift moves — and a walk-1 drift (S.env stays ENV1) not at all.
+    if (CARRIER_PH[ph] && ZP.geoMap(map, ch, S.re, t / 1000, ph === "hold" || ph === "drifting" ? S.env : ENV1, rnd)) mapLive = true;
     if (mapLive) ZP.geometryCopy(luma, lumaG, map, SW, SH);
     G.roll = roll; G.sy = sy; G.sx = sx; G.pel = pel; G.sc = 1 + S.swell; G.dyBase = (TH - TH * sy * G.sc) / 2;
   }
@@ -1051,7 +1089,7 @@
     // lies on it rather than hiding it)
     var xmc = ZP.exitMode(S.ch);
     aftA = 0;
-    if (xmc === "burn" && sig && (ph === "hold" || (ph === "loss" && S.strength > 0.6))) { acx.globalCompositeOperation = "copy"; acx.drawImage(phos, 0, 0); aftOk = true; }
+    if (xmc === "burn" && sig && (ph === "hold" || (ph === "loss" && S.strength > 0.6))) { for (var ap = 0, an = SW * SH; ap < an; ap++) aftG[ap] = pdata[(ap << 2) + 1]; aftOk = true; }
     // A dead tube shows its decay — and, FAINTLY, the dial's sweep snow while a
     // hand is on the dial (§11.5 / §9 Q7, the owner's default: "a dead tube
     // that answers the dial hand is more alive"). rc.91 computed it and never
@@ -1138,7 +1176,16 @@
     // at aftA every frame it piled up toward aftA / D.dead, the whole picture
     // back at full light on a dead tube
     var dd = ph === "dead" ? ZP.TUBE.decay.dead : 1;
-    fcx.imageSmoothingEnabled = false; fcx.globalCompositeOperation = "lighter"; fcx.globalAlpha = aftA * dd;
+    if (aftA * 255 < 1) return;                                // every pixel is below the ramp's first step: nothing is lit
+    // the glow's level moves it DOWN THE RAMP (green × aftA → the ramp's
+    // colour there), not toward grey (RGB × aftA)
+    var R = LUT.R, Gn = LUT.G, Bl = LUT.B, r0 = R[0], g0 = Gn[0], b0 = Bl[0];
+    for (var p = 0, n = SW * SH; p < n; p++) {
+      var gg = ((aftG[p] * aftA) | 0) + g0, l = G2L[gg > 255 ? 255 : gg], q = p << 2;
+      aftData[q] = R[l] - r0; aftData[q + 1] = Gn[l] - g0; aftData[q + 2] = Bl[l] - b0; aftData[q + 3] = 255;
+    }
+    acx.putImageData(aftImg, 0, 0);
+    fcx.imageSmoothingEnabled = false; fcx.globalCompositeOperation = "lighter"; fcx.globalAlpha = dd;
     fcx.drawImage(aftCv, 0, 0, TW, TH);
     fcx.globalAlpha = 1; fcx.globalCompositeOperation = "source-over";
   }
