@@ -278,14 +278,12 @@
   function buildCrackSVG() {
     if (!crackSvg) return;
     var W = wandered(), NS = ' vector-effect="non-scaling-stroke"';
-    var chip = ptsToPath(P.chip) + " Z";
+    // no chip (owner, 2026-09-24): the glass is cracked but all four corners
+    // are there — a missing corner "ruins the effect", a tube does not break
+    // like that. P.chip stays in the pattern data, drawn nowhere.
     var html =
       '<defs><radialGradient id="zk-ck-frost"><stop offset="0" stop-color="rgba(' + GLASS_FROST + ',0.55)"/><stop offset="0.6" stop-color="rgba(' + GLASS_FROST + ',0.18)"/><stop offset="1" stop-color="rgba(' + GLASS_FROST + ',0)"/></radialGradient>' +
-      '<filter id="zk-ck-soft" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="0.7"/></filter></defs>' +
-      // the chip: dark tube behind the glass, a rim of glass thickness
-      '<path d="' + chip + '" fill="#040605"/>' +
-      '<path d="' + chip + '" fill="none" stroke="rgba(' + GLASS_RIM + ',0.32)" stroke-width="2.4"' + NS + '/>' +
-      '<path d="' + chip + '" fill="none" stroke="rgba(' + GLASS_LIT + ',0.5)" stroke-width="0.8"' + NS + ' stroke-dasharray="9 4 14 3"/>';
+      '<filter id="zk-ck-soft" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="0.7"/></filter></defs>';
     // 縁 each break, run by run: its shadowed far edge (soft, offset), the
     // dark gap, and the near edge catching the light — a different amount on
     // every run, and dying out along a dead-end hairline
@@ -922,8 +920,6 @@
       tcx.drawImage(glowCv, 0, 0, TW, TH);
       tcx.globalAlpha = 1; tcx.globalCompositeOperation = "source-over";
     }
-    // the chip: no phosphor there at all
-    tcx.fillStyle = "#040605"; tcx.fill(chipPath);
   }
 
   // ==========================================================================
