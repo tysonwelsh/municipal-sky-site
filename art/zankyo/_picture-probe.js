@@ -129,6 +129,16 @@ const LULLK = JSON.parse(opt("lullk", "null"));   // dev only: LULL constants tr
 // --lullreel <i>: the lull mode on reel i instead of 0 (john-cage), so its
 // near-clean share can be read on a higher-contrast picture. Never in a gate run.
 const NOSCALE = argv.indexOf("--noscale") >= 0, LULL_REEL = +opt("lullreel", "0");
+// (P4) THE TUBE: every page runs on rc.104's tube (ZK_SET_DEV.tube "base"),
+// not the night's (set:tube off SEED). The gates here measure receptions and
+// were calibrated on that tube; the night's persistence, gamma and focus are
+// a confound to them (P4 r1: on SEED's night, persistence ×1.14, the 切
+// squash reference's lit rows read 0.58 against its 0.55 edge and the gate
+// went red for a reason that is not the exit). On the base tube every P4
+// path that draws the tube is off (no keystone, tilt, focus or dim band), so
+// the pixels are rc.104's. --tube-night runs the night's tube instead;
+// tools/picture-p4.js is the tube's own instrument.
+const TUBE_BASE = argv.indexOf("--tube-night") < 0;
 const SEED = 3042;                      // the night: fixes the crack pattern and the idle timings
 const FPS = 30;
 
@@ -282,6 +292,7 @@ async function runPage(browser, fx, o) {
     await page.send("Page.enable"); await page.send("Runtime.enable"); await page.send("Network.enable");
     await page.send("Network.setCacheDisabled", { cacheDisabled: true });
     const cfg = { manual: true, clock: 0 };
+    if (TUBE_BASE) cfg.tube = "base";
     if (o.texture != null) cfg.texture = o.texture;
     if (o.noFilter) cfg.noFilter = true;
     await page.send("Page.addScriptToEvaluateOnNewDocument", { source: "window.ZK_SET_DEV = " + JSON.stringify(cfg) + ";" });
@@ -675,6 +686,7 @@ async function openPage(browser, o) {
   await page.send("Page.enable"); await page.send("Runtime.enable"); await page.send("Network.enable");
   await page.send("Network.setCacheDisabled", { cacheDisabled: true });
   const cfg = { manual: true, clock: 0 };
+  if (TUBE_BASE) cfg.tube = "base";                         // (P4) rc.104's tube unless --tube-night
   if (o.noFilter) cfg.noFilter = true;
   await page.send("Page.addScriptToEvaluateOnNewDocument", { source: "window.ZK_SET_DEV = " + JSON.stringify(cfg) + ";" });
   const errors = [];
@@ -1578,7 +1590,8 @@ function PAGE_P3(items, reels, o) {
     // green 30–215, the share whose saturation (G − max(R,B)) / G falls more
     // than 0.2 below the P39 ramp's own at that green. A near-white ramp
     // colour scaled toward black (RGB × α) keeps R ≈ G ≈ B and lands here.
-    var ZPp = window.ZankyoPicture, LUTc = ZPp.tubeLUT(ZPp.TUBE), satOfG = new Float32Array(256).fill(-1);
+    var ZPp = window.ZankyoPicture, LUTc = ZPp.tubeLUT(window.ZankyoSet._dev.tube ? ZankyoSet._dev.tube() : ZPp.TUBE),   // (P4) the night's ramp, the one on the glass
+        satOfG = new Float32Array(256).fill(-1);
     for (var lq = 0; lq < 256; lq++) if (satOfG[LUTc.G[lq]] < 0 && LUTc.G[lq] > 0) satOfG[LUTc.G[lq]] = (LUTc.G[lq] - Math.max(LUTc.R[lq], LUTc.B[lq])) / LUTc.G[lq];
     for (var gq = 1; gq < 256; gq++) if (satOfG[gq] < 0) satOfG[gq] = satOfG[gq - 1];
     var ccv = document.createElement("canvas"), ccx = ccv.getContext("2d", { willReadFrequently: true });

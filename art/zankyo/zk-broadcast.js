@@ -3071,6 +3071,13 @@
     // the descriptor for the set and the VFD line 「受信 · title · year」
     var wire = planWire(P);
     var desc = { t0: t0, holdS: holdS, lossD: lossD, drops: absDrops, id: a.reel.id, title: shortTitle(a.reel.title), year: a.reel.year, seed: a.seed, picture: true, video: v, rx: wire, reels: buffered ? "buffer" : "element",   // (reels: which head this one used — the page can be demoted mid-session, Q0 r2)
+      // 和 (PLAN-SIGNAL-PICTURE §5.3, P4): what this reception's SOUND already
+      // drew, for the picture to follow — the band, flutter and grit knobs read
+      // above, the AM LFO's rate, the night's far distance, and an audio-only
+      // reel's generated picture. Reads only: nothing here draws or writes.
+      band: band, flutter: flutter, grit: grit, lfoHz: a.lfoHz,
+      d: (function () { try { var fr = Z.getFar && Z.getFar(); return fr && !fr.home && fr.d > 0 ? +fr.d : 0; } catch (e) { return 0; } })(),
+      genPic: a.reel.audioOnly ? a.reel.picture || null : null,
       head: HP.map(function (h) { return { at: +h.at.toFixed(3), pos: +h.pos.toFixed(3), overrunS: h.overrunS, edgePos: isFinite(h.edgePos) ? h.edgePos : null }; }) };   // Q0: where the tape was threaded (read by the probe; nothing reads it back)
     // §4.3 THE VFD SAYS WHAT SHAPE ARRIVED. 「受信 · title · year · 戻 47 s later
     // · 尺 over it」— the kanji is the log line, as it is everywhere else in this
