@@ -83,7 +83,7 @@
     // the dented 40: its rim's wall is lower over the upper-right octant
     dentRim: 3,
     dentA0: 20, dentA1: 70,  // degrees from +u toward +v
-    dentDepth: 0.55,         // rim height × (1 − dentDepth) inside the dent
+    dentDepth: 0.75,         // rim height × (1 − dentDepth) inside the dent (0.02 above the bed)
     dentTaper: 6,            // degrees of smooth shoulder each side
     // the outer rim's top arc is worn nearly flush with the bed (as on a
     // real machine, where the backboard runs down into the 10): a ball that
@@ -144,7 +144,7 @@
     preLaunchT: 20.0,        // …or this long after the throw if it never launched (safety)
 
     // ── events ──
-    evRim: 0.85, evBed: 0.28, evWall: 0.24, evBackstop: 0.24, evCooldown: 0.05,
+    evRim: 0.95, evBed: 0.28, evWall: 0.24, evBackstop: 0.24, evCooldown: 0.05,
 
     // ── input range (the swipe maps into this; physics accepts any v ≥ 0) ──
     vMin: 2.08, vMax: 7.2, vAbsMax: 9.6,
@@ -311,7 +311,7 @@
       sup: 0, supNx: 0, supNy: 1, supNz: 0, supKind: 'lane', _supBest: 0,
       rimTouch: false, perchSide: 0, perchU: 0, perchV: 0,
       settleT: 0, restT: 0, rimHits: 0, cd: {},
-      band: -1, dentEscape: false, firstIn40: null, cageTouch: false,
+      band: -1, dentEscape: false, in40Dent: false, in40Other: false, cageTouch: false,
       land: null,                          // first bed-side contact {u, v, t, kind, band}
       landF: null,                         // lab: where the flight first came down to rim-top level
       cap: null,                           // capture record while sinking
@@ -492,11 +492,11 @@
       } else if (!b.touchedBed) ax += T.spinAir * b.english;
       else if (b.sup) ax += T.spinBed * b.english;
     }
-    // a stalled ball is walked home, capped (see returnMaxV / returnFrac)
-    if (b.phase === 'return' && b.sup && b.z < T.L) {
+    // a stalled ball is walked home at a trickle: pushed up to vRet while it
+    // rolls, and braked back to vRet if the hop or the lean ever make it faster
+    if (b.phase === 'return') {
       var vRet = Math.min(b.vThrow, Math.max(T.returnMinV, Math.min(T.returnMaxV, T.returnFrac * b.vPeak)));
-      if (b.vz > -vRet) az -= T.returnAccel;
-      else if (b.vz < -vRet) b.vz = -vRet;
+      if (b.sup && b.z < T.L && b.vz > -vRet) az -= T.returnAccel;
     }
     // a ball balanced on a rim top is tipped off toward the side it leans
     if (b.perchSide) {
@@ -657,6 +657,11 @@
       b.vx *= kf; b.vy *= kf; b.vz *= kf; b.wx *= kf; b.wy *= kf; b.wz *= kf;
     }
 
+    if (b.phase === 'return') {
+      var vCap = Math.min(b.vThrow, Math.max(T.returnMinV, Math.min(T.returnMaxV, T.returnFrac * b.vPeak)));
+      if (b.vz < -vCap) { var kr = vCap / -b.vz; b.vz *= kr; b.vx *= kr; }
+    }
+
     b.t += dt;
 
     /* phase bookkeeping */
@@ -696,11 +701,11 @@
       q = toBedD(D, b.x, b.y, b.z);
       var spd = Math.hypot(b.vx, b.vy, b.vz);
       var band = bandAtD(D, q.u, q.v);
-      // the dented 40: which octant did the ball first drop into the 40 by,
-      // and did it later climb out over the dent into the 30?
+      // the dented 40: was the ball down in the 40 in the dent octant (or
+      // elsewhere), and did it climb out over the dent into the 30?
       var angB = Math.atan2(q.v - T.ringCV, q.u);
-      if (band === 3 && q.h < 0 && !b.firstIn40) b.firstIn40 = { dent: inDent(D, angB), t: b.t };
-      if (b.band === 3 && band === 2 && inDent(D, angB)) b.dentEscape = true;
+      if (band === T.dentRim && q.h < T.rimH) { if (inDent(D, angB)) b.in40Dent = true; else b.in40Other = true; }
+      if (b.band === T.dentRim && band === T.dentRim - 1 && inDent(D, angB)) b.dentEscape = true;
       b.band = band;
       // down a 100 hole: sunk into the well, or a direct hit — the centre
       // over the mouth while the ball comes down through lip height
