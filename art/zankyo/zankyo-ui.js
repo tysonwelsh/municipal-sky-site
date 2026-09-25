@@ -728,6 +728,27 @@
       function () { return locN; },
       locMax);
     paintLoc();
+
+    // THE THIRD STATION: 音量 (owner, 2026-09-25). Eight steps; 6 is the level
+    // the reels already play at, each step either side is 3 dB, and 0 is off.
+    // Remembered per browser, like the console's fold.
+    var VOL_MAX = 8, VOL_UNITY = 6, volN = VOL_UNITY;
+    try { var sv = parseInt(localStorage.getItem("zankyo-rx-vol"), 10); if (sv >= 0 && sv <= VOL_MAX) volN = sv; } catch (e) {}
+    var ladder = document.getElementById("zankyo-vol-ladder"), vsr = document.getElementById("zankyo-vol-sr");
+    function volGain(n) { return n <= 0 ? 0 : Math.pow(10, (n - VOL_UNITY) * 3 / 20); }
+    function paintVol() {
+      if (ladder) for (var i = 0; i < ladder.children.length; i++) ladder.children[i].classList.toggle("on", i < volN);
+      if (vsr) vsr.textContent = volN + " / " + VOL_MAX;
+    }
+    function applyVol(v) {
+      volN = v;
+      try { if (BC && BC.setReelVolume) BC.setReelVolume(volGain(v)); } catch (e) {}
+      try { localStorage.setItem("zankyo-rx-vol", String(v)); } catch (e) {}
+      paintVol();
+    }
+    wireRocker("zankyo-rock-vol", applyVol, function () { return volN; }, VOL_MAX);
+    try { if (BC && BC.setReelVolume) BC.setReelVolume(volGain(volN)); } catch (e) {}
+    paintVol();
   }
 
   // ---- Transport (arcade buttons + master volume knob) ----

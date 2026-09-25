@@ -1359,18 +1359,45 @@
   font-family: "Orbitron", sans-serif; font-weight: 700; font-size: 13px; line-height: 1; letter-spacing: 0.1em;
   font-variant-numeric: tabular-nums;
 }
-.zk-num::after {                      /* the window glass over the segments */
+.zk-num::after {                      /* the window glass over the segments, and its pixel grid */
   content: ""; position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(106deg, rgba(255, 240, 210, 0.05), transparent 30%);
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.34) 0 1px, transparent 1px 2px),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.34) 0 1px, transparent 1px 2px),
+    linear-gradient(106deg, rgba(255, 240, 210, 0.05), transparent 30%);
 }
 .zk-num i, .zk-num b { font-style: normal; font-weight: inherit; }
 /* the segments that are not lit — amber's own dim register, NOT a grey: an
    unlit filament in an amber display is a dark amber, and a grey ghost behind
    amber digits reads as two different displays sharing a window */
-.zk-num-ghost { color: rgba(var(--amber-rgb), 0.075); }
+/* THE SET'S AMBER (owner, 2026-09-25): the ledge's two displays — the
+   channel number and the 音量 ladder — share a deeper, oranger amber than the
+   machine's --amber, and a pixel grid over them, so they read as one kind of
+   lit dot display behind glass rather than as flat print. */
+.zankyo-scene { --lcd-rgb: 255, 138, 22; }
+.zk-num-ghost { color: rgba(var(--lcd-rgb), 0.075); }
 .zk-num-v {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  color: var(--amber); text-shadow: 0 0 7px rgba(var(--amber-rgb), 0.65), 0 0 2px rgba(var(--amber-rgb), 0.9);
+  color: rgb(var(--lcd-rgb)); text-shadow: 0 0 7px rgba(var(--lcd-rgb), 0.7), 0 0 2px rgba(var(--lcd-rgb), 0.95);
+}
+/* 音量: the ladder in the rocker's window, eight bars rising left to right */
+.zk-vol-win { position: relative; overflow: hidden; flex-direction: row; }
+.zk-vol-ladder { display: flex; align-items: flex-end; justify-content: center; gap: 2px; height: 16px; }
+.zk-vol-ladder i {
+  display: block; flex: none; width: 5px; border-radius: 1px;
+  background: rgba(var(--lcd-rgb), 0.08); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.5);
+}
+.zk-vol-ladder i:nth-child(1) { height: 6px; }  .zk-vol-ladder i:nth-child(2) { height: 7px; }
+.zk-vol-ladder i:nth-child(3) { height: 8px; }  .zk-vol-ladder i:nth-child(4) { height: 10px; }
+.zk-vol-ladder i:nth-child(5) { height: 11px; } .zk-vol-ladder i:nth-child(6) { height: 12px; }
+.zk-vol-ladder i:nth-child(7) { height: 14px; } .zk-vol-ladder i:nth-child(8) { height: 16px; }
+.zk-vol-ladder i.on { background: rgb(var(--lcd-rgb)); box-shadow: 0 0 5px rgba(var(--lcd-rgb), 0.7), 0 0 1px rgba(var(--lcd-rgb), 0.95); }
+.zk-vol-win::after {                  /* the same glass and pixel grid as the number's window */
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.34) 0 1px, transparent 1px 2px),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.34) 0 1px, transparent 1px 2px),
+    linear-gradient(106deg, rgba(255, 240, 210, 0.05), transparent 30%);
 }
 
 /* ---------------------------------------------------------------------------

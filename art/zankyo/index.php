@@ -239,11 +239,20 @@ include '../../includes/header.php';
                 </span>
               </button>
 
-              <!-- THE THIRD STATION: reserved blank plastic. A blanking plate
-                   with the mounting boss the yard never used — moulded as if the
-                   tool always had this station, not a gap where something was
-                   ripped out. Something goes here later. -->
-              <div class="zk-blank" aria-hidden="true"></div>
+              <!-- THE THIRD STATION: 音量, the set's own volume (owner's pick,
+                   2026-09-25: mockups/tv-volume-1-options.php option C). The
+                   left station's see-saw, − and +, with an eight-step amber
+                   ladder in its window. It turns the reels' own sound only —
+                   not the static, not the music. Wordless on the plastic; the
+                   aria-label says what it factually does. -->
+              <div class="zk-rocker zk-vol" id="zankyo-rock-vol" role="group" aria-label="音量 &middot; the broadcast's volume, 0 to 8">
+                <span class="zk-cap zk-cap-l" aria-hidden="true"><i>&minus;</i></span>
+                <span class="zk-rock-win zk-vol-win" aria-hidden="true"><span class="zk-vol-ladder" id="zankyo-vol-ladder"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></span>
+                <span class="zk-cap zk-cap-r" aria-hidden="true"><i>+</i></span>
+                <button type="button" class="zk-face zk-hit zk-hit-l" data-d="-1" aria-label="音量を下げる &middot; broadcast volume down"></button>
+                <button type="button" class="zk-face zk-hit zk-hit-r" data-d="1" aria-label="音量を上げる &middot; broadcast volume up"></button>
+                <span class="zk-sr" id="zankyo-vol-sr" role="status"></span>
+              </div>
 
             </div>
           </div>

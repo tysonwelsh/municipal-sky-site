@@ -680,6 +680,23 @@
   // carry REEL_VOL, so they take STATIC_VOL / REEL_VOL to land at the same
   // 60 % of where they were.
   var STATIC_VOL = 0.6;
+  // THE SET'S OWN VOLUME (owner, 2026-09-25): the ledge's third station turns
+  // the reels' sound up and down — the reels only, not the static and not the
+  // music. A live gain between each reel's envelope and the bus, so a press
+  // lands on the reception already on the air.
+  var reelUser = 1;
+  function reelBus(T) {
+    var b = T.lg("broadcast");
+    if (!b.__zkReel || b.__zkReel.context !== T.ctx) {
+      var rb = T.ctx.createGain(); rb.gain.value = reelUser; rb.connect(b); b.__zkReel = rb;
+    }
+    return b.__zkReel;
+  }
+  function setReelVolume(g) {
+    reelUser = Math.max(0, +g || 0);
+    try { var T = tl(); if (T && T.ctx) { var rb = reelBus(T); rb.gain.setTargetAtTime(reelUser, T.ctx.currentTime, 0.03); } } catch (e) {}
+    return reelUser;
+  }
   function staticBus(T) {
     var b = T.lg("broadcast");
     if (!b.__zkStatic || b.__zkStatic.context !== T.ctx) {
@@ -2975,7 +2992,7 @@
       // and it is the comb, not the delay, that is the sound. It costs one
       // delay and one gain, and only while a signal is up.
       var phased = farPhaseTap(sg, t0, cut, N);
-      (phased || sg).connect(T.lg("broadcast"));
+      (phased || sg).connect(reelBus(T));
       farRoomCapture(sg, t0 + TUNE_S + 1.0);      // 室: two seconds of the reel, once it is properly tuned in
       // 螺 / 弛 — THE REEL RIDES THE GLIDE. The station's whole field slides
     // under a spiral or a varispeed: 螺 reaches 200–700 cents, 弛 100–400, and
@@ -3510,7 +3527,7 @@
           ega.gain.setValueAtTime(1, t0); ega.gain.setValueAtTime(1, Math.max(t0, tEa - 0.35)); ega.gain.linearRampToValueAtTime(0, tEa);
           sh.connect(ega); ega.connect(sg);
         } else sh.connect(sg);
-        sg.connect(T.lg("broadcast"));
+        sg.connect(reelBus(T));
       } catch (e) { return false; }
       me.nodes = nodes; me.hp = hp; me.sg = sg; me.bufSrc = bufSrc; aud = me;
       auditionEnd = tuneEnd + COLLAPSE_S + BURST_S;         // the real end, if the reel arrived late
@@ -3825,6 +3842,7 @@
 
   // ---- public / bench ----
   window.ZankyoBroadcast = {
+    setReelVolume: setReelVolume, getReelVolume: function () { return reelUser; },
     // The spacing contract, computed rather than written down twice. See
     // BC_GAP_S in zankyo-audio.js, which asserts against this at play.
     // §4.1 — THE PLACEMENT'S HALF OF THE DRAW. zankyo-audio.js hands over
