@@ -54,7 +54,8 @@ function PAGE(reels, jobs) {
   }
   return (async function () {
     var ZS = window.ZankyoSet, D = ZS._dev, ZP = window.ZankyoPicture, dt = 1000 / 30, tm = D.clock(), out = [];
-    var LUT = ZP.tubeLUT(ZP.TUBE), rOfG = new Int16Array(256).fill(-1);
+    var LUT = ZP.tubeLUT(D.tube ? D.tube() : ZP.TUBE),   // (P4) the night's ramp
+        rOfG = new Int16Array(256).fill(-1);
     for (var l = 0; l < 256; l++) if (rOfG[LUT.G[l]] < 0) rOfG[LUT.G[l]] = LUT.R[l];
     for (var gq = 1; gq < 256; gq++) if (rOfG[gq] < 0) rOfG[gq] = rOfG[gq - 1];
     // the ramp's saturation at each green, (G − max(R,B)) / G

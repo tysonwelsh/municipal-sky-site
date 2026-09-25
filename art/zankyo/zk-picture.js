@@ -63,6 +63,22 @@
 // pool; 絶 keeps its hard cut), and 焼 burn-in (the last reception's picture
 // worn into the phosphor, on some nights). The windows themselves are the
 // receiver's and do not move (_picture-probe.js bounds).
+// P4 (§5.3, §3.4, §4.3) ties the picture to the sound and ages the set:
+//   和 coherence  the receiver's own draws, read off the descriptor — the AM
+//                 LFO's rate locks 帯's roll, 飽's pump, a fluttering echo and
+//                 the carrier's breathing (in phase with what the ear hears);
+//                 the flutter knob deepens the echoes' flutter, the grit knob
+//                 quickens 点's bursts, a narrow band smears and softens; an
+//                 audio-only reel's generated picture picks its archetype
+//   稀 tiers      rare (1 in 25: a storm, a negative-flash overload, another
+//                 reel under ours, a perfect slow roll showing the sync bar)
+//                 and very rare (1 in 80: the other station taking over
+//                 through the stripes, a freeze over the last reel's burn, the
+//                 sideways collapse); a far night leans toward both
+//   管 the tube   one per night on "set:tube": gamma, a tint that drifts only
+//                 inside the green family (owner, 2026-09-24, §11.1), the
+//                 phosphor's persistence ±20 %, focus, a touch of keystone,
+//                 pincushion and tilt, and on some nights a tired dim band
 //
 // THE CONTRACT WITH THE MUSIC (§2.2). Nothing here reads or writes an engine
 // stream. The character draw takes a PJ2.Rand FORK the set hands it (the
@@ -275,6 +291,52 @@
   // at 0.18 the probe holds it within 0.9× (p3render, 焼 legibility)
   var BURN = { nightP: 0.5, p: 1 / 3, k: [0.06, 0.18], gamma: 1.3 };
 
+  // 和 COHERENCE WITH THE SOUND (§5.3, P4). startSignal hands the set what the
+  // receiver has ALREADY drawn for this reception's sound (reads only, §2.2):
+  // the broadcast layer's band, flutter and grit knobs (0..1, ½ at rest), the
+  // AM LFO's rate lfoHz (0.4–3.0 Hz — the fading the listener hears), the
+  // night's far distance d, and an audio-only reel's generated picture
+  // (genPic: line, static, wave — the manifest's `picture`). A descriptor
+  // without them (the bench, the ♪ audition, an old caller) draws exactly as
+  // rc.104 did. At the knobs' rest only lfoHz and d move anything.
+  //   fade      the carrier breathes at lfoHz, in phase with the audio's gain:
+  //             strength ± this, by flutter 0..1 (the snow swells in the
+  //             trough of every wobble the ear hears)
+  //   humSplit  above this lfoHz a hum draws two bars a field, so the roll is
+  //             halved; a row still darkens once per LFO period
+  //   flutD     a fluttering echo's depth × this, by flutter 0..1; flutNew:
+  //             flutter above ½ sets a still echo fluttering, (flutter − ½) ×
+  //             this of the time (hashed on the reception's key: no draw)
+  //   grit      点's burst rate × this, by grit 0..1 (its gaps ÷, density × √)
+  //   band      a narrow band (band > ½; bw = 2·band − 1): 滲's ringing period
+  //             × (1 + per·bw) and pole + pole·bw; above bwOn a reception with
+  //             no 滲 gets a light one; the beam's focus softens by soft·bw px
+  var COHERE = { fade: [0.02, 0.05], humSplit: 1.2, flutD: [0.6, 1.4], flutNew: 0.8, grit: [0.4, 1.6],
+                 band: { per: 0.35, pole: 0.12, bwOn: 0.3, soft: 0.9 } };
+  // 稀 THE RARITY TIERS (§4.3, P4). One draw decides the tier — the draw rc.104
+  // made for uncommon (u < 1/6), unchanged, so an uncommon reception is still
+  // uncommon; rare and very rare are taken from the TOP of the same draw (a
+  // few of rc.104's commons), and where in its band the draw lands picks the
+  // variant, so no draw is added. A far night (d, §5.3) widens each band by
+  // far × d, and lifts 嵐 同 混 in the archetype draw by farArch × d.
+  //   rare       storm: 嵐 · negflash: 過 with the sync crushing often, and
+  //              the negative flash on the way out · otherreel: 混 with the
+  //              last reel (the frame memory, §5.4) plainly under ours ·
+  //              syncbar: a clean catch rolling slowly and steadily, the
+  //              blanking bar crossing the picture
+  //   very rare  takeover: a clean catch held perfectly, then the other
+  //              station comes up through the stripes and takes the picture
+  //              · freezeburn: the loss freezes over the last reel's burn-in
+  //              (every night's tube, this once) · vline: the sideways collapse
+  var TIERS = { unc: 1 / 6, rare: 1 / 25, vrare: 1 / 80, far: { unc: 0.5, rare: 2, vrare: 3 },
+                rareKinds: ["storm", "negflash", "otherreel", "syncbar"], vrareKinds: ["takeover", "freezeburn", "vline"],
+                arch: { storm: "嵐", negflash: "過", otherreel: "混", syncbar: "清", takeover: "清" },
+                farArch: { "嵐": 1, "同": 1, "混": 1 } };
+  // an audio-only reel's generated picture draws a matching condition (§5.3):
+  // static is a fringe or a storm, line and wave a tired set (wave with its
+  // verticals rippling, 捩)
+  var GENPIC = { static: [["遠", 3], ["嵐", 1]], line: [["同", 1]], wave: [["同", 1]] };
+
   // 今 TODAY — rc.91's look, restated in P1's axes (the nine bands are gone:
   // its tear is the event tear at rc.91's density). Never drawn; reachable on
   // the bench as force { archetype: "今" }, and the resting character of the
@@ -311,14 +373,76 @@
     drop: { depth: 0, holdP: 0, kinds: ["snow"] } };
   for (pk in P2_OFF) CLEAN_AXES[pk] = null;
 
-  // 管 THE TUBE (§3.4) — the same set every night until P4 ages it per night
-  // on "set:tube". Persistence is the alpha of the black laid over the last
-  // frame each frame, per phase; the P39 ramp is the stops below at gamma 1.3.
+  // 管 THE TUBE (§3.4) — the set as rc.104 had it every night. Persistence is
+  // the alpha of the black laid over the last frame each frame, per phase; the
+  // P39 ramp is the stops below at gamma 1.3. P4 ages it per night (drawTube,
+  // below); this one is the base the drift is drawn around, and the bench's
+  // `_dev.tube("base")`.
   var TUBE = {
     gamma: 1.3,
     stops: [[0, 2, 6, 3], [0.2, 4, 20, 9], [0.45, 12, 72, 30], [0.7, 40, 152, 72], [0.88, 120, 226, 146], [1, 222, 255, 226]],
     decay: { idle: 0.5, dead: 0.11, burst: 0.7, lit: 0.62 },
   };
+  // THE NIGHT'S TUBE (§3.4, P4; owner §11.1, 2026-09-24: "the tint drifts per
+  // night, but it is always green"). Drawn once a night on "set:tube":
+  //   gamma     the P39 curve, 1.2–1.45
+  //   tint      −1 blue-green … +1 yellow-green: every stop's red × (1 +
+  //             tintK·tint) and blue × (1 − tintK·tint), each held under cap
+  //             × its green — so no stop of the ramp can leave the green
+  //             family: never amber (red never reaches green), never white or
+  //             blue (blue never reaches green); then each stop's hue is held
+  //             inside `hue` (degrees: 100 a yellow-green, 158 a blue-green —
+  //             the near-white top would otherwise lean to 69°, a yellow)
+  //   persist   the phosphor's time constant × (1 ± this): every phase's decay
+  //             alpha re-derived from it (1 − (1 − a)^(1/p))
+  //   focus     CSS px of beam spread on the sharp raster (≤ 0.15: none; a
+  //             negative draw is a sharp tube, which tightens the bloom instead)
+  //   tilt      degrees the yoke sits off true; trap and pin: the raster's
+  //             keystone (width × 1 + trap·(y − ½)) and pincushion (the sides
+  //             bowing in at mid-height), at source resolution, on the glass
+  //   dim       dimP of nights a tired capacitor leaves a dim band across the
+  //             glass at a fixed height, breathing slowly
+  var TUBE_NIGHT = { gamma: [1.2, 1.45], tint: 0.8, tintK: 0.45, capR: 0.92, capB: 0.9, hue: [100, 158], persist: 0.2, focus: [-0.35, 0.7],
+                     tilt: 0.45, trap: 0.025, pin: 0.02, dimP: 0.3, dim: { depth: [0.1, 0.26], h: [0.012, 0.035], hz: [0.02, 0.09] } };
+  // a fixed count of draws, whatever comes out, so the fork is spent alike
+  function drawTube(R) {
+    var T = JSON.parse(JSON.stringify(TUBE)), N = TUBE_NIGHT;
+    T.tint = 0; T.persist = 1; T.focus = 0; T.tilt = 0; T.trap = 0; T.pin = 0; T.dim = null; T.night = !!R;
+    if (!R) return T;
+    var u = function (a, b) { return a + (b - a) * R.next(); };
+    var g = u(N.gamma[0], N.gamma[1]), tint = u(-N.tint, N.tint), pers = u(1 - N.persist, 1 + N.persist), foc = u(N.focus[0], N.focus[1]);
+    var tilt = u(-N.tilt, N.tilt), trap = u(-N.trap, N.trap), pin = u(0, N.pin);
+    var dOn = R.next() < N.dimP, dy = u(0.12, 0.88), dd = u(N.dim.depth[0], N.dim.depth[1]), dh = u(N.dim.h[0], N.dim.h[1]), dhz = u(N.dim.hz[0], N.dim.hz[1]), dph = u(0, 6.2832);
+    T.gamma = +g.toFixed(4); T.tint = +tint.toFixed(4); T.persist = +pers.toFixed(4); T.focus = +foc.toFixed(3);
+    T.tilt = +tilt.toFixed(3); T.trap = +trap.toFixed(4); T.pin = +pin.toFixed(4);
+    T.stops = TUBE.stops.map(function (s) {
+      var G = s[2], r = Math.min(s[1] * (1 + N.tintK * tint), N.capR * G), b = Math.min(s[3] * (1 - N.tintK * tint), N.capB * G);
+      // hue = 120° + 60°·(b − r)/(G − min(r, b)) with G the largest: held in N.hue
+      var kLo = (N.hue[0] - 120) / 60, kHi = (N.hue[1] - 120) / 60;
+      if (r > b && (b - r) / (G - b) < kLo) r = b - kLo * (G - b);
+      else if (b > r && (b - r) / (G - r) > kHi) b = r + kHi * (G - r);
+      return [s[0], +r.toFixed(2), G, +b.toFixed(2)];
+    });
+    for (var k in T.decay) T.decay[k] = +(1 - Math.pow(1 - TUBE.decay[k], 1 / pers)).toFixed(4);
+    T.dim = dOn ? { y: +dy.toFixed(4), depth: +dd.toFixed(4), h: +dh.toFixed(4), hz: +dhz.toFixed(4), ph: +dph.toFixed(3) } : null;
+    return T;
+  }
+  // PASS 4a — the raster's shape on the glass (§3.4): each source row
+  // resampled about the centre by its keystone and pincushion scale. `roll`
+  // is the source rows the picture is rolled by, so the shape belongs to the
+  // GLASS row a line lands on (the deflection's), not to the picture's line.
+  // Past the raster's edge is black.
+  function keystone(src, dst, tb, roll) {
+    var cx = (SW - 1) / 2;
+    for (var y = 0; y < SH; y++) {
+      var yg = y + roll; yg -= Math.floor(yg / SH) * SH;
+      var v = yg / SH - 0.5, s = 1 + tb.trap * v + tb.pin * (4 * v * v - 1 / 3), inv = 1 / s, base = y * SW;
+      for (var x = 0; x < SW; x++) {
+        var xs = cx + (x - cx) * inv, i0 = Math.floor(xs), f = xs - i0;
+        dst[base + x] = i0 < 0 || i0 > SW - 2 ? 0 : (src[base + i0] + (src[base + i0 + 1] - src[base + i0]) * f) | 0;
+      }
+    }
+  }
 
   // ==========================================================================
   // THE CHARACTER DRAW. drawCharacter(forkRng, ctx) → a character object.
@@ -336,6 +460,10 @@
   //                                       "does it render" check, §6.3.2) —
   //                                       any of the fifteen
   //   { clean: true }                     the probe's clean reference
+  //   { rarity: "takeover" }              (P4) that rare or very rare variant
+  //                                       (with an archetype, the archetype wins)
+  // ctx.desc (P4): the receiver's descriptor — its plan (rx) and the reads
+  // coherence takes (band, flutter, grit, lfoHz, d, genPic; §5.3)
   // ==========================================================================
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
   function merge(dst, src) {
@@ -355,6 +483,7 @@
     if (f.entry != null && ENTRY.modes.indexOf(f.entry) < 0) return { ok: false, why: "no lock-in '" + f.entry + "' (there are " + ENTRY.modes.join(" ") + ")" };
     if (f.exit != null && EXIT.modes.indexOf(f.exit) < 0) return { ok: false, why: "no loss '" + f.exit + "' (there are " + EXIT.modes.join(" ") + ")" };
     if (f.glimpse != null && f.glimpse !== "今" && !ENTRY.glimpse[f.glimpse]) return { ok: false, why: "no glimpse '" + f.glimpse + "' (there are " + Object.keys(ENTRY.glimpse).join(" ") + ", and 今)" };
+    if (f.rarity != null && TIERS.rareKinds.indexOf(f.rarity) < 0 && TIERS.vrareKinds.indexOf(f.rarity) < 0) return { ok: false, why: "no rarity '" + f.rarity + "' (there are " + TIERS.rareKinds.concat(TIERS.vrareKinds).join(" ") + ")" };
     return { ok: true };
   }
   // a fixed "draw" for median axes: every u is ½
@@ -451,7 +580,8 @@
   // 帯 HUM BARS — mains ripple on the signal or the set's supply: one bar a
   // field (50 Hz half-wave) or two (full-wave), broad and soft, darkening (or,
   // less often, lightening), rolling at a slow constant beat — the mains
-  // against the field rate. P4 will lock `speed` to the audio's AM LFO.
+  // against the field rate. P4 locks `speed` to the audio's AM LFO (cohere, below)
+  // when the descriptor carries it; the set then runs it on the reception's clock.
   function drawHum(R, k, style) {
     return { n: R.next() < 0.6 ? 1 : 2, depth: rr(R, 0.14, 0.32) * (0.6 + 0.6 * k), sign: R.next() < 0.72 ? -1 : 1,
       sharp: rr(R, 1, 3), speed: (R.next() < 0.5 ? -1 : 1) * rr(R, 0.04, 0.35), ph: R.next() };
@@ -578,7 +708,7 @@
     var ch;
     if (!forkRng || (f && f.archetype === "今")) ch = clone(TODAY);
     else if (f && f.clean) ch = merge(clone(TODAY), CLEAN_AXES);
-    else if (f && f.impairment) ch = single(f.impairment, f.sev != null ? +f.sev : 0.5, f.style || null);
+    else if (f && f.impairment) { ch = single(f.impairment, f.sev != null ? +f.sev : 0.5, f.style || null); cohere(ch, coherence(ctx), 0); }   // (P4) a kind alone still follows the sound the bench hands it
     else ch = drawn(forkRng, f && f.archetype, f && f.sev != null ? +f.sev : null, ctx);
     // (P3) the bench may pin the lock-in, the loss, every glimpse ("今":
     // rc.91's) and the burn (a depth k, or 0/null for none) — the mode only:
@@ -621,12 +751,25 @@
   }
   function drawn(R, forcedArch, forcedSev, ctx) {
     var ch = clone(TODAY);
-    var arch = forcedArch ? ARCH_BY_ID[forcedArch] : ARCH_BY_ID[pickW(R, ARCHETYPES.map(function (a) { return [a.id, a.w]; }))];
+    // (P4) what the sound already drew (§5.3): a far night lifts 嵐 同 混 (at
+    // d = 0 the weights are §4.1's exactly)
+    var co = coherence(ctx), fd = co.d;
+    var arch = forcedArch ? ARCH_BY_ID[forcedArch] : ARCH_BY_ID[pickW(R, ARCHETYPES.map(function (a) { return [a.id, a.w * (1 + (TIERS.farArch[a.id] || 0) * fd)]; }))];
     if (forcedArch) R.next();                                 // the same draw count either way: forcing never shifts what follows
-    ch.archetype = arch.id; ch.name = arch.id;
     var sev = SEV.lo + SEV.span * Math.pow(R.next(), SEV.pow);
     if (forcedSev != null) sev = forcedSev;                   // the bench's "at its worst" (force { archetype, sev })
-    ch.tier = R.next() < SEV.uncommonP ? "uncommon" : "common";
+    // (P4, §4.3) the tier: rc.104's uncommon draw, unchanged, with rare and
+    // very rare off its top (tierOf); a rarity or a generated picture may call
+    // for its own archetype — never over the bench's
+    var fr = ctx && ctx.force && ctx.force.rarity, uT = R.next(), tr = tierOf(uT, fd, fr);
+    if (forcedArch && !fr && tr.rarity) tr = { tier: "common", rarity: null };   // the bench's archetype is drawn as rc.104 drew it, unless it asks for a rarity too
+    ch.tier = tr.tier; ch.rarity = tr.rarity;
+    var hk = Math.floor(uT * 4294967296) >>> 0;               // the variants' own uniforms: hashed off the tier draw, never drawn
+    if (!forcedArch) {
+      if (TIERS.arch[tr.rarity]) arch = ARCH_BY_ID[TIERS.arch[tr.rarity]];
+      else if (co.genPic) { var gp = GENPIC[co.genPic], gt = 0, gi2; for (gi2 = 0; gi2 < gp.length; gi2++) gt += gp[gi2][1]; var gr = hashU(hk, 11, 0) * gt; for (gi2 = 0; gi2 < gp.length; gi2++) { gr -= gp[gi2][1]; if (gr <= 0) break; } arch = ARCH_BY_ID[gp[Math.min(gi2, gp.length - 1)][0]]; }
+    }
+    ch.archetype = arch.id; ch.name = arch.id;
     // the kinds and their severities: primaries at the reception's severity,
     // one light secondary (sometimes), and an uncommon reception's secondary
     // arrives at full strength
@@ -640,6 +783,8 @@
       prim = [];
       [a1, a2].forEach(function (a) { pickPrims(R, a).forEach(function (kk) { if (prim.indexOf(kk) < 0) { prim.push(kk); styles[kk] = a.style; } }); });
     } else prim = pickPrims(R, arch);
+    // (P4) a generated wave picture's tired set ripples: 捩 among its faults
+    if (co.genPic === "wave" && arch.id === "同" && prim.indexOf("捩") < 0) prim[prim.length - 1] = "捩";
     for (i = 0; i < prim.length; i++) { kinds[prim[i]] = Math.min(1, sev * (0.85 + 0.3 * R.next())); if (!styles[prim[i]]) styles[prim[i]] = arch.style; }
     // (清 stays clean: its one secondary is always light, whatever the tier)
     var secK = ch.tier === "uncommon" && arch.id !== "清" ? 0.75 + 0.25 * R.next() : arch.id === "清" ? 0.1 + 0.15 * R.next() : 0.15 + 0.3 * R.next();
@@ -701,7 +846,115 @@
     // draw), one reception in three shows the last one's imprint
     var bu = R.next(), bk = rr(R, BURN.k[0], BURN.k[1]);
     ch.burn = ctx && ctx.burnNight && bu < BURN.p ? { k: +bk.toFixed(4) } : null;
+    // (P4) the rarity's own touches, then the sound's (both draw nothing: every
+    // axis above is what rc.104 drew for the same seed), then the lull decided
+    // again on what they made
+    rarify(ch, tr.rarity, hk, p2);
+    cohere(ch, co, hk);
+    ch.lull = needsLull(ch) && !ch.perfect ? lull : null;
     return ch;
+  }
+
+  // ---- (P4) 稀 and 和 ----
+  function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+  // the tier from rc.104's tier draw u, on a night at far distance d; a forced
+  // rarity (the bench) takes its own tier
+  function tierOf(u, d, forced) {
+    var T = TIERS, unc = T.unc * (1 + T.far.unc * d), rare = T.rare * (1 + T.far.rare * d), vr = T.vrare * (1 + T.far.vrare * d);
+    if (forced) return { tier: T.vrareKinds.indexOf(forced) >= 0 ? "very rare" : "rare", rarity: forced };
+    var lo = 1 - vr, n;
+    if (u >= lo) { n = T.vrareKinds.length; return { tier: "very rare", rarity: T.vrareKinds[Math.min(n - 1, Math.floor((u - lo) / vr * n))] }; }
+    lo -= rare;
+    if (u >= lo) { n = T.rareKinds.length; return { tier: "rare", rarity: T.rareKinds[Math.min(n - 1, Math.floor((u - lo) / rare * n))] }; }
+    return { tier: u < unc ? "uncommon" : "common", rarity: null };
+  }
+  // the descriptor's reads (§5.3), or nulls: a field that is absent moves nothing
+  function coherence(ctx) {
+    var d = ctx && ctx.desc, o = { band: null, flutter: null, grit: null, lfoHz: null, d: 0, genPic: null };
+    if (!d) return o;
+    var num = function (v) { return typeof v === "number" && isFinite(v) ? v : null; };
+    if (num(d.band) != null) o.band = clamp01(d.band);
+    if (num(d.flutter) != null) o.flutter = clamp01(d.flutter);
+    if (num(d.grit) != null) o.grit = clamp01(d.grit);
+    if (num(d.lfoHz) > 0) o.lfoHz = d.lfoHz;
+    if (num(d.d) > 0) o.d = Math.min(1, d.d);
+    if (d.genPic && GENPIC[d.genPic]) o.genPic = d.genPic;
+    return o;
+  }
+  // a rare reception's touches (§4.3). `hk` gives the variant's uniforms; p2
+  // holds every P2 kind's drawn axes, on or off (混's, for the other station)
+  function rarify(ch, rar, hk, p2) {
+    if (!rar) return;
+    var u = function (j) { return hashU(hk, 23, j); }, ex = ch.exit, pool = EXIT.pools[ex.shape] || {};
+    // a clean catch that stays one: no echoes, no smear, no swell, the sync
+    // steady, no lull (it needs none)
+    function perfect() { ch.perfect = true; ch.ghosts = []; ch.smear = null; ch.swell = { amt: 0, lag: 0.5 }; ch.tear.rate = 0.05; ch.kinds["影"] = ch.kinds["滲"] = ch.kinds["伸"] = 0; }
+    if (rar === "negflash" && ch.agc) {
+      ch.agc.negRate = +(0.35 + 0.3 * u(0)).toFixed(4);
+      if (pool.neg) ex.mode = "neg";
+    } else if (rar === "otherreel") {
+      // the last reel (the frame memory) plainly under ours, sliding slowly
+      // enough to be read — not the faint wash of an ordinary 混
+      var xo = ch.xtalk || clone(p2["混"]);
+      xo.src = "mem"; xo.depth = +(0.3 + 0.1 * u(0)).toFixed(4);
+      xo.vx = +((u(1) < 0.5 ? -1 : 1) * (0.3 + 0.9 * u(2))).toFixed(3); xo.vy = +((u(3) < 0.5 ? -1 : 1) * 0.4 * u(4)).toFixed(3);
+      ch.xtalk = xo; ch.kinds["混"] = Math.max(ch.kinds["混"], 0.8);
+    } else if (rar === "syncbar") {
+      perfect();
+      ch.roll = { hz: +(0.12 + 0.2 * u(0)).toFixed(4), dir: u(1) < 0.5 ? -1 : 1 };
+    } else if (rar === "takeover") {
+      // held perfectly until `at` of the piece, then over `dur` s the other
+      // station comes up through the carriers' beat and takes the picture
+      perfect();
+      var xt = clone(p2["混"]);
+      xt.src = "mem"; xt.depth = 0.3; xt.blind = +(11 + 5 * u(0)).toFixed(3); xt.bPitch = +(3.5 + 4 * u(1)).toFixed(3);
+      ch.xtalk = xt; ch.kinds["混"] = 1;
+      ch.take = { at: +(0.4 + 0.2 * u(2)).toFixed(4), dur: +(3 + 2.5 * u(3)).toFixed(3) };
+    } else if (rar === "freezeburn") {
+      if (pool.freeze) ex.mode = "freeze";
+      ch.burn = { k: 0.16 };
+    } else if (rar === "vline") ex.mode = "vline";
+  }
+  // the sound's reads, applied (§5.3)
+  function cohere(ch, co, hk) {
+    var f = co.lfoHz, fl = co.flutter, i, g;
+    if (f) {
+      // 帯 rolls at the LFO: a row darkens once per period, and the dark bar
+      // (a light one: its crest) crosses mid-frame in the audio gain's trough
+      // (the LFO is a sine from t0: gain = 1 − d/2 + d/2·sin 2πf·re), so the
+      // set runs it on the reception's clock (`lock`)
+      if (ch.hum) {
+        var hu = ch.hum, dir = hu.speed < 0 ? -1 : 1;
+        if (f > COHERE.humSplit) hu.n = 2;
+        hu.speed = +(dir * f).toFixed(4); hu.ph = dir * (hu.sign < 0 ? 0.75 : 0.25) - hu.n / 2; hu.ph -= Math.floor(hu.ph); hu.lock = 1;
+      }
+      // 飽 pumps with the sound's swell, in phase
+      if (ch.agc) { ch.agc.pumpHz = f; ch.agc.ph = 0; ch.agc.lock = 1; }
+      // a fluttering echo swings at the fading's rate (the reflector moving
+      // the carrier the ear hears wobble); a co-channel echo at a third of it
+      for (i = 0; i < ch.ghosts.length; i++) { g = ch.ghosts[i]; if (g.flut > 0) { g.flut = +(g.flut < 1 ? f / 3 : f).toFixed(4); g.ph = 0; g.lock = 1; } }
+      // and the carrier itself breathes with it
+      ch.fade = { hz: f, a: +lerp(COHERE.fade[0], COHERE.fade[1], fl != null ? fl : 0.5).toFixed(4) };
+    }
+    if (fl != null) {
+      var kD = lerp(COHERE.flutD[0], COHERE.flutD[1], fl);
+      for (i = 0; i < ch.ghosts.length; i++) {
+        g = ch.ghosts[i];
+        if (g.flut > 0) g.flutD = +Math.min(0.95, g.flutD * kD).toFixed(4);
+        else if (g.d > 0 && hashU(hk, 31, i) < (fl - 0.5) * COHERE.flutNew) { g.flut = f || 2; g.flutD = +(0.35 + 0.35 * hashU(hk, 37, i)).toFixed(4); g.ph = 0; g.lock = f ? 1 : 0; }
+      }
+    }
+    if (co.grit != null && ch.impulse) {
+      var gk = lerp(COHERE.grit[0], COHERE.grit[1], co.grit), im = ch.impulse;
+      im.gap = [+(im.gap[0] / gk).toFixed(4), +(im.gap[1] / gk).toFixed(4)]; im.first = [im.first[0] / gk, im.first[1] / gk];
+      im.dens = +(im.dens * Math.sqrt(gk)).toFixed(4);
+    }
+    if (co.band != null) {
+      var bw = co.band * 2 - 1, B = COHERE.band;
+      if (ch.smear) { ch.smear.per = +(ch.smear.per * (1 + B.per * bw)).toFixed(4); ch.smear.r = +Math.max(0.3, Math.min(0.88, ch.smear.r + B.pole * bw)).toFixed(4); }
+      else if (bw > B.bwOn && !ch.perfect) { ch.smear = { per: +(3.2 + 1.6 * bw).toFixed(4), r: +(0.35 + 0.2 * bw).toFixed(4) }; ch.kinds["滲"] = +(0.25 * bw).toFixed(4); }
+      if (bw > 0) ch.soft = +(B.soft * bw).toFixed(3);
+    }
   }
 
   // ==========================================================================
@@ -1031,11 +1284,26 @@
   // carriers' beat as horizontal venetian-blind stripes. `out` (optional)
   // receives the other picture as placed this frame — the probe's reference.
   var VBLANK = 8;                    // rows of the other station's field blanking
-  function xtalkPass(L, X, xt, t, env, out) {
-    var d = xt.depth * env, bA = xt.blind * env;
+  // (P4) `take` (optional, 0..1: the very rare takeover, §4.3): how far the
+  // other station has come. It rises under ours at its depth through the
+  // first ~45 %, the beat's stripes swelling; then it takes the picture —
+  // ours sinks to nothing, its sliding sync slows into lock (its blanking
+  // leaves the frame), and the stripes die with the beat
+  function sstep(v) { v = v < 0 ? 0 : v > 1 ? 1 : v; return v * v * (3 - 2 * v); }
+  function xtalkPass(L, X, xt, t, env, out, take) {
+    var d = xt.depth * env, bA = xt.blind * env, own = 1 - 0.5 * d, oth = d, lk = 1;
     var P = SW + HBLANK, PV = SH + VBLANK;
+    if (take != null) {
+      var s1 = sstep(take * 2.2), s2 = sstep((take - 0.35) / 0.65);
+      d = xt.depth * s1; own = (1 - 0.5 * d) * (1 - s2); oth = d + (1 - d) * s2; bA = xt.blind * Math.sin(Math.PI * Math.min(1, take)) * (1 - 0.5 * s2); lk = 1 - s2;
+    }
     var ox = Math.floor(xt.ox + xt.vx * t), oy = Math.floor(xt.oy + xt.vy * t);
     ox = ((ox % P) + P) % P; oy = ((oy % PV) + PV) % PV;
+    if (lk < 1) {                    // locking: the nearest way round to its own frame, shrinking
+      if (ox > P / 2) ox -= P; if (oy > PV / 2) oy -= PV;
+      ox = Math.round(ox * lk); oy = Math.round(oy * lk);
+      ox = ((ox % P) + P) % P; oy = ((oy % PV) + PV) % PV;
+    }
     for (var y = 0; y < SH; y++) {
       var ys = y - oy; if (ys < 0) ys += PV;
       var bl = bA * Math.sin(6.2832 * (y / xt.bPitch - xt.bHz * t)), row = ys < SH ? ys * SW : -1, base = y * SW;
@@ -1043,7 +1311,7 @@
       for (var x = 0; x < SW; x++) {
         var v = row >= 0 && xs < SW ? X[row + xs] : -25;
         if (out) out[base + x] = v;
-        L[base + x] = L[base + x] * (1 - 0.5 * d) + d * v + bl;
+        L[base + x] = L[base + x] * own + oth * v + bl;
         if (++xs >= P) xs = 0;
       }
     }
@@ -1177,13 +1445,15 @@
   // 影 this frame's echo list, from the character: delay (with a slow drift —
   // a moving reflector), amplitude through its envelope, the flutter, and the
   // direct signal's weakness (a weak direct path lets the echo read louder)
-  function ghostList(ch, ph, strength, t, envG, out) {
+  // (P4) `re` (s into the reception): the clock a LOCKED flutter runs on — in
+  // phase with the audio LFO, which starts at the reception's t0
+  function ghostList(ch, ph, strength, t, envG, out, re) {
     out.length = 0;
     // (P3) and while 浮 drifts in: its echoes arrive with it, walked down
     if (ph !== "hold" && ph !== "loss" && ph !== "tuning" && ph !== "relock" && ph !== "drifting") return out;
     for (var i = 0; i < ch.ghosts.length; i++) {
       var g = ch.ghosts[i];
-      var fl = g.flut > 0 ? 1 + g.flutD * Math.sin(6.2832 * g.flut * t / 1000 + g.ph) : 1;
+      var fl = g.flut > 0 ? 1 + g.flutD * Math.sin(6.2832 * g.flut * (g.lock && re != null ? re : t / 1000) + g.ph) : 1;
       out.push({ d: g.d + g.drift * Math.sin(t / g.per + g.ph), a: g.a * envG * fl * (0.85 + 0.8 * (1 - strength)) });
     }
     return out;
@@ -1341,7 +1611,8 @@
 
   var API = {
     SW: SW, SH: SH, HBLANK: HBLANK,
-    TODAY: TODAY, TUBE: TUBE, ARCHETYPES: ARCHETYPES, IMPAIRMENTS: IMPAIRMENTS, LATER: LATER,
+    TODAY: TODAY, TUBE: TUBE, TUBE_NIGHT: TUBE_NIGHT, drawTube: drawTube, keystone: keystone,
+    COHERE: COHERE, TIERS: TIERS, GENPIC: GENPIC, tierOf: tierOf, ARCHETYPES: ARCHETYPES, IMPAIRMENTS: IMPAIRMENTS, LATER: LATER,
     SEV: SEV, CARRIER: CARRIER, LULL: LULL, TEAR_PHASE: TEAR_PHASE,
     ENTRY: ENTRY, EXIT: EXIT, BURN: BURN, lockTail: lockTail, lockLevels: lockLevels, glimpseLevels: glimpseLevels, burnImage: burnImage, wrapNear: wrapNear, exitMode: exitMode, burnDepth: burnDepth, walkAt: walkAt,
     drawCharacter: drawCharacter, checkForce: checkForce,

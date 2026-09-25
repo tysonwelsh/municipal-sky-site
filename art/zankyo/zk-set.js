@@ -347,9 +347,23 @@
   var TW = 0, TH = 0, dpr = 1;
 
   // P39 ramp — long-persistence yellow-green; gamma 1.3 keeps the mid-tones
-  // dark. The tube's constants live in zk-picture.js (ZP.TUBE, §3.4: P4 ages
-  // them per night on "set:tube"); the tables are built there.
-  var LUT = ZP.tubeLUT(ZP.TUBE);
+  // dark. The tube's constants live in zk-picture.js (ZP.TUBE); the tables are
+  // built there.
+  // 管 (P4, §3.4) THE NIGHT'S TUBE: the same set every night, aged
+  // differently — gamma, a tint that stays inside the green family (owner
+  // §11.1), persistence, focus, keystone, pincushion, tilt and on some nights a
+  // tired dim band — one draw on the set's own fork "set:tube", like the
+  // crack. ZK_SET_DEV.tube "base" (or _dev.tube("base")) is rc.104's tube.
+  // G2L: a green → the least luma this ramp lights it at (the afterglow's
+  // way back down the ramp, P3)
+  var TB = null, LUT = null, G2L = new Uint8Array(256);
+  function setTube(tb) {
+    TB = tb; LUT = ZP.tubeLUT(TB);
+    for (var g = 0, l = 0; g < 256; g++) { while (l < 255 && LUT.G[l] < g) l++; G2L[g] = l; }
+    return TB;
+  }
+  var nightTube = ZP.drawTube(master.fork("set:tube"));
+  setTube(DEV && DEV.tube === "base" ? ZP.drawTube(null) : nightTube);
   // the frame's working buffers, all at source resolution (§5.1, P1: the
   // ghosts and the offset map moved here from the full-resolution composite,
   // so their cost no longer grows with how many lines differ): the picture's
@@ -443,7 +457,10 @@
             // P3: this frame's lock-in (the AGC's entry gain, a leading echo
             // and the direct path's level), the exit's blank and negative
             // flags, and the reception's burn depth
-            entGain: 1, entA: 0, entD: 0, entDirect: 1, entLevel: 1, entSnow: 0, blank: false, negX: false, burnK: 0 };
+            entGain: 1, entA: 0, entD: 0, entDirect: 1, entLevel: 1, entSnow: 0, blank: false, negX: false, burnK: 0,
+            // P4: the very rare takeover's progress (0..1; held through the
+            // loss, reset by a new station)
+            take: 0 };
   // 映り THE CHARACTER (§4). A reception's look, drawn when it arrives on its
   // own fork of the master seed ("set:rx:<desc.seed>" — desc.seed is already
   // the receiver's draw, so the same night gives the same characters and no
@@ -479,6 +496,7 @@
     if (!sig) return ["idle", 0, 0];
     var P = sig.rx, e = a - sig.t0;
     if (e < 0) return ["idle", 0, 0];
+    if (sig.cutE != null && e >= sig.cutE) e = P.spanS + (e - sig.cutE);   // (QF) STOPped: straight to the collapse (cut())
     if (e < P.entryS) return [P.entry === "tan" ? "hunting" : P.entry === "fu" ? "drifting" : "tuning", e, 0];
     var segs = P.segments, gaps = P.gaps;
     for (var i = 0; i < segs.length; i++) {
@@ -556,6 +574,25 @@
     idle.nextCard = t + 6000 + Ridle.next() * 10000; idle.nextLine = t + 8000 + Ridle.next() * 12000;
     enterPhase("idle", t);
   }
+  // 切 STOP MID-RECEPTION (QF, 2026-09-25). The receiver's stop() pauses the
+  // reel and cuts its sound, but nothing told the set, so the tube walked the
+  // dead plan to its end on the audio clock — a frozen frame held for up to
+  // ~25 s after STOP — and, still "on air", refused the next reception's
+  // descriptor (never two at once), so the first press after PLAY sounded
+  // with no picture of its own. Measured on rc.F1, seed 3042: STOP at 9.5 s,
+  // the tube in hold to 21.7 s and idle at 35.1 s; the press at 17.1 s
+  // refused. Now STOP is the set losing its signal: the plan jumps to its
+  // collapse, burst and dead (the character's own exit, rc.91's lengths),
+  // and a reception that has not come up yet is simply dropped. The
+  // receiver's timings are untouched; this only runs when the station stops.
+  function cut() {
+    if (!sig) return false;
+    var e = sigTime() - sig.t0;
+    if (e < 0) { endSignal(now()); return true; }
+    if (e >= sig.rx.spanS || sig.cutE != null) return false;   // already in its exit
+    sig.cutE = e;
+    return true;
+  }
   // which dropout of the plan is on at audio time a (its index), or −1
   function dropAt(a) {
     var d = sig && sig.drops;
@@ -569,6 +606,7 @@
     if (pc > 0) S.ch = ZP.drawCharacter(master.fork("set:rx:" + S.seed + ":" + pc), { force: force, desc: sigDesc, piece: pc, burnNight: burnNight });
     S.tears.length = 0; S.shear = null; S.dropIdx = -1; S.dropKind = null;
     S.agcM = 0; S.negUntil = 0;                              // a new station: the AGC catches it afresh
+    S.take = 0;
   }
   var ENV1 = { snow: 1, ghost: 1, tear: 1, wash: 1, swell: 1, imp: 1, herr: 1, hum: 1, xt: 1, skew: 1, flag: 1, jit: 1, wave: 1, agc: 1 };
   S.env = ENV1;
@@ -673,6 +711,9 @@
       // is its only driver — with E["伸"] on top, the raster breathed on a
       // still picture. E["伸"] is still drawn (the fork is consumed alike).
       var br = ZP.breath(ch.breath, el, S.seed);
+      // (P4, §5.3) the carrier fades with the sound: at the audio LFO's rate,
+      // in phase with its gain (both run from t0), a few points of strength
+      if (ch.fade) br += ch.fade.a * Math.sin(6.2832 * ch.fade.hz * S.re);
       if (L > 0) {
         br = Math.min(br + LL.lift * L, Math.max(br, LL.liftCap));
         var lv = 1 - clamp01(br), sn0 = ch.snow, wa0 = ch.wash || { lift: 0, gain: 1 }, gsum = 0;
@@ -731,6 +772,12 @@
       var hk = inHole(a - sig.t0);
       if (hk > 0) { S.rollV += (rnd() - 0.4) * 2.2; if (rnd() < 0.25) S.holdFrame = t + 90 + rnd() * 180; }
       S.strength = clamp01(br - dd - hk * 0.75);
+      // (P4, §4.3) rare: the vertical hold a hair off — the picture rolls
+      // slowly and steadily through the hold, the blanking bar crossing it
+      if (ch.roll) S.rollV = ch.roll.dir * ch.roll.hz * TH * dtS;
+      // very rare: the other station's takeover, from `at` of this piece over
+      // `dur` s (at most 45 % of the piece); it stays taken through the loss
+      if (ch.take) { var onS = sig.rx.segments[pe[2]].onS || 0; S.take = clamp01((el - ch.take.at * onS) / Math.min(ch.take.dur, Math.max(1, 0.45 * onS))); }
       // the sync: the character's own impulses on their envelope, and a weak
       // carrier's (1 − strength) — rc.91's hold tear grew the same way
       tearRate = (ch.tear.rate || 0) * S.env.tear + clamp01(1 - S.strength) * 0.8 + hk * TP.rate;
@@ -821,7 +868,7 @@
       S.agcM += (m - S.agcM) * Math.min(1, dtS / ag.tau);
       var over = Math.pow(m / Math.max(1, S.agcM), 0.7); over = over < 0.7 ? 0.7 : over > 1.8 ? 1.8 : over;
       var eAg = ph === "hold" ? S.env.agc : 1;
-      S.agcG = (1 + (ag.hot - 1) * eAg) * over * (1 + ag.pumpD * Math.sin(6.2832 * ag.pumpHz * t / 1000 + ag.ph));
+      S.agcG = (1 + (ag.hot - 1) * eAg) * over * (1 + ag.pumpD * Math.sin(6.2832 * ag.pumpHz * (ag.lock ? S.re : t / 1000) + ag.ph));   // (P4) a locked pump runs on the reception's clock, with the sound's swell
     }
   }
 
@@ -897,7 +944,7 @@
       return;
     }
     // PASS 3's list, applied in the signal
-    ZP.ghostList(ch, ph, S.strength, t, env.ghost, ghosts);
+    ZP.ghostList(ch, ph, S.strength, t, env.ghost, ghosts, S.re);
     // (P3) a ghost-first lock-in's (or glimpse's) leading echo, and the
     // direct path still coming up under it
     if (S.entA > 0) ghosts.push({ d: S.entD, a: S.entA });
@@ -909,13 +956,16 @@
     // S.env is ENV1)
     var ck = CARRIER_PH[ph] ? 1 : 0, ts = t / 1000, hold = ph === "hold" || ph === "drifting";
     xtLive = false;
-    if (ck && ch.xtalk && env.xt > 0) { ZP.xtalkPass(Lgh, xtImage(ch.xtalk.src), ch.xtalk, ts, hold ? env.xt : 1, XT); xtLive = true; }
+    // (P4) the takeover's other station is absent until it begins, then
+    // comes by S.take, whatever the phase (it stays through the loss)
+    if (ck && ch.xtalk && ch.take) { if (S.take > 0) { ZP.xtalkPass(Lgh, xtImage(ch.xtalk.src), ch.xtalk, ts, 1, XT, S.take); xtLive = true; } }
+    else if (ck && ch.xtalk && env.xt > 0) { ZP.xtalkPass(Lgh, xtImage(ch.xtalk.src), ch.xtalk, ts, hold ? env.xt : 1, XT); xtLive = true; }
     if (ck && ch.smear) ZP.smearPass(Lgh, ch.smear);
     var X = SRCX; X.ag = null; X.hb = null; X.hum = null;
     if (ck && ch.agc) { AG.g = S.agcG * S.entGain; AG.blk = ch.agc.blk * (hold ? env.agc : 1); AG.neg = t < S.negUntil || S.negX; X.ag = AG; }
     else if (ck && (S.entGain !== 1 || S.negX)) { AG.g = S.entGain; AG.blk = 0; AG.neg = S.negX; X.ag = AG; }   // (P3) any set's AGC on a bloom lock-in; the neg exit's crushed sync
     if (ck && ch.herring && env.herr > 0) X.hb = ZP.herringRows(ch.herring, ts, hold ? env.herr : 1, HB);
-    if (ck && ch.hum && env.hum > 0) { ZP.humRows(ch.hum, ts, hold ? env.hum : 1, HUM.g, HUM.a); X.hum = HUM; }
+    if (ck && ch.hum && env.hum > 0) { ZP.humRows(ch.hum, ch.hum.lock ? S.re : ts, hold ? env.hum : 1, HUM.g, HUM.a); X.hum = HUM; }   // (P4) a locked hum on the reception's clock
     // 雪: the snow level is the carrier's weakness; this frame's multiplier is
     // the envelope and the flicker (texture). The burst is all snow.
     var level = ph === "burst" ? 1 : clamp01(1 - S.strength);
@@ -961,8 +1011,6 @@
   var aftCv = document.createElement("canvas"); aftCv.width = SW; aftCv.height = SH;
   var acx = aftCv.getContext("2d"), aftOk = false, aftA = 0;
   var aftG = new Uint8Array(SW * SH), aftImg = acx.createImageData(SW, SH), aftData = aftImg.data;
-  var G2L = new Uint8Array(256);                             // green → the least luma the LUT lights that green at
-  (function () { var l = 0; for (var g = 0; g < 256; g++) { while (l < 255 && LUT.G[l] < g) l++; G2L[g] = l; } })();
   // P2's per-frame scratch: the source pass's extras, 飽's gain, 縞's row
   // phases, 帯's row gain and offset, 混's other picture as placed
   var SRCX = { ag: null, hb: null, hum: null }, AG = { g: 1, blk: 0, neg: false };
@@ -1050,10 +1098,14 @@
       for (var x = 0; x < SW; x++) { var bc = Math.floor((x0 + (x + 0.5) * w / SW) * SW / TW); burnCol[x] = bc >= 0 && bc < SW ? bc : -1; }
       burn = burnImg;
     }
-    ZP.tubePass(mapLive ? lumaG : luma, pdata, SW, SH, LUT, idleGlow, B.idle, t / 240, burn, burnRow, burnCol);
+    // (P4, §3.4) the night's raster shape — keystone and pincushion, on the
+    // glass row each line lands on after the roll
+    var lsrc = mapLive ? lumaG : luma;
+    if (TB.trap || TB.pin) { ZP.keystone(lsrc, lumaK, TB, TH > 8 ? G.roll * SH / TH : 0); lsrc = lumaK; }
+    ZP.tubePass(lsrc, pdata, SW, SH, LUT, idleGlow, B.idle, t / 240, burn, burnRow, burnCol);
     pcx.putImageData(pimg, 0, 0);
   }
-  var burnImg = new Uint8Array(SW * SH), burnRow = new Int16Array(SH), burnCol = new Int16Array(SW);
+  var burnImg = new Uint8Array(SW * SH), burnRow = new Int16Array(SH), burnCol = new Int16Array(SW), lumaK = new Uint8Array(SW * SH);
 
   // ==========================================================================
   // PASS 5 — THE FRAME (full resolution): persistence, bloom, the raster (one
@@ -1073,7 +1125,7 @@
     fcx.globalAlpha = 1;
   }
   function composite(t) {
-    var ph = S.phase, strength = S.strength, D = ZP.TUBE.decay, ex = S.ch.exit;
+    var ph = S.phase, strength = S.strength, D = TB.decay, ex = S.ch.exit;
     fcx.globalCompositeOperation = "source-over";
     // persistence: the old frame decays under the new one (P39)
     var decay = ph === "idle" ? D.idle : ph === "dead" ? D.dead : ph === "burst" ? D.burst : D.lit;
@@ -1106,15 +1158,35 @@
     fcx.imageSmoothingEnabled = false;
     var roll = G.roll, sy = G.sy, pel = G.pel, dyBase = G.dyBase, sc = G.sc;
     var w = TW * sc * G.sx, x0 = (TW - w) / 2, h = TH * sy * sc, rs = sy * sc;
+    // (P4, §3.4) the night's yoke: the raster turned a fraction of a degree,
+    // overscanned just enough that its corners stay off the glass; and the
+    // beam's focus — the tube's, softened further by a narrow band (the
+    // reception's `soft`): a soft beam blurs the sharp raster, a sharp tube
+    // tightens the bloom instead
+    var rot = TB.tilt ? TB.tilt * Math.PI / 180 : 0, fpx = TB.focus + (S.ch.soft || 0);
+    if (rot) { var ovs = Math.cos(rot) + Math.max(TW / TH, TH / TW) * Math.abs(Math.sin(rot)); fcx.save(); fcx.translate(TW / 2, TH / 2); fcx.rotate(rot); fcx.scale(ovs, ovs); fcx.translate(-TW / 2, -TH / 2); }
 
     // bloom under, sharp over
     fcx.globalCompositeOperation = "lighter";
     var ba = ph === "idle" ? 0.35 : 0.22 + strength * 0.14, bb = 3 + strength * 2;
+    if (fpx < 0) { ba *= 1 + 0.3 * fpx; bb += 2 * fpx; }
     drawBloom(x0, w, dyBase + roll * rs, h, ba, bb);
     if (roll) drawBloom(x0, w, dyBase + (roll - TH) * rs, h, ba, bb);
     fcx.globalCompositeOperation = "source-over";
+    var soft = hasFilter && fpx > 0.15;
+    if (soft) fcx.filter = "blur(" + fpx.toFixed(2) + "px)";
     fcx.drawImage(phos, x0, dyBase + roll * rs, w, h);
-    if (roll) { fcx.drawImage(phos, x0, dyBase + (roll - TH) * rs, w, h); fcx.fillStyle = "rgba(0,0,0,0.75)"; fcx.fillRect(0, dyBase + roll * rs - 6, TW, 7); }   // the blanking bar
+    if (roll) fcx.drawImage(phos, x0, dyBase + (roll - TH) * rs, w, h);
+    if (soft) fcx.filter = "none";
+    if (roll) { fcx.fillStyle = "rgba(0,0,0,0.75)"; fcx.fillRect(0, dyBase + roll * rs - 6, TW, 7); }   // the blanking bar
+    if (rot) fcx.restore();
+    // (P4) a tired capacitor: a dim band across the glass at a fixed height,
+    // breathing slowly (some nights)
+    if (TB.dim) {
+      var dm = TB.dim, dk = dm.depth * (0.7 + 0.3 * Math.sin(6.2832 * dm.hz * t / 1000 + dm.ph)), yc = dm.y * TH, hh = Math.max(1.5, dm.h * TH);
+      fcx.fillStyle = "rgba(0,0,0," + dk.toFixed(3) + ")"; fcx.fillRect(0, yc - hh / 2, TW, hh);
+      fcx.fillStyle = "rgba(0,0,0," + (dk * 0.45).toFixed(3) + ")"; fcx.fillRect(0, yc - hh, TW, hh / 2); fcx.fillRect(0, yc + hh / 2, TW, hh / 2);
+    }
     drawAfterglow(t, ph, xmc, ex);
     // Paik's line — the loss collapse, and now and then in the idle
     var lineK = 0, dotK = 0, hasLine = !!ZP.EXIT.line[xmc], vert = xmc === "vline";   // (P3) not every exit ends in the line; vline's is down the middle
@@ -1173,7 +1245,7 @@
     // persistence (D.dead a frame), so the glow is added at that rate — added
     // at aftA every frame it piled up toward aftA / D.dead, the whole picture
     // back at full light on a dead tube
-    var dd = ph === "dead" ? ZP.TUBE.decay.dead : 1;
+    var dd = ph === "dead" ? TB.decay.dead : 1;
     if (aftA * 255 < 1) return;                                // every pixel is below the ramp's first step: nothing is lit
     // the glow's level moves it DOWN THE RAMP (green × aftA → the ramp's
     // colour there), not toward grey (RGB × aftA)
@@ -1275,14 +1347,17 @@
     if (!desc || !(desc.t0 >= 0)) return false;
     if (desc.picture === false) return false;                   // sound only (a descriptor without a picture)
     var a = sigTime();
-    if (sig && phaseOf(a)[0] !== "idle") return false;        // never two at once
+    // never two at once — but a reception already in its exit (collapse,
+    // burst, dead: its sound is over) gives way to the next, as a new station
+    // on the dial would (QF: a press in those 2.3 s sounded with no picture)
+    if (sig) { var ph0 = phaseOf(a)[0]; if (ph0 === "collapse" || ph0 === "burst" || ph0 === "dead") endSignal(now()); else if (ph0 !== "idle") return false; }
     var c = Z.getAudioContext && Z.getAudioContext();
     sig = { t0: +desc.t0, holdS: Math.max(1, +desc.holdS || 10), lossD: Math.max(0.5, +desc.lossD || 2.2), drops: (desc.drops || []).slice(), id: desc.id || null, title: desc.title || "", year: desc.year || "", video: desc.video || null, wall: !c };
     sig.rx = desc.rx || planOne(sig.holdS, sig.lossD);
     sig.drops.sort(function (p, q) { return p[0] - q[0]; });
     S.seed = (desc.seed != null ? +desc.seed : Ridle.next() * 1000); S.drop = 0; S.holdFrame = 0; S.strength = 0;
     S.piece = 0; S.dropIdx = -1; S.dropKind = null; S.shear = null; S.hlock = null; S.tears.length = 0; S.swell = 0; S.lastT = 0;
-    S.agcM = 0; S.agcG = 1; S.negUntil = 0; S.re = 0;
+    S.agcM = 0; S.agcG = 1; S.negUntil = 0; S.re = 0; S.take = 0;
     // the last reception's picture becomes the memory (§5.4)
     if (memNextOk) { var mt = mem; mem = memNext; memNext = mt; memOk = true; memNextOk = false; }
     // 映り: this reception's character, on its own fork (§5.2). A fork is
@@ -1319,6 +1394,7 @@
   // ---- public surface ----
   window.ZankyoSet = {
     signal: signal,
+    cut: cut,                                                // (QF) the station stopped: lose the signal
     setBright: setBright,
     getBright: function () { return briV; },
     brightSteps: BRI.length,
@@ -1333,7 +1409,9 @@
         var a = atime(), holdS = opts.holdS != null ? +opts.holdS : 8 + rnd() * 4, lossD = opts.lossD != null ? +opts.lossD : 1.6 + rnd() * 1.2;
         var drops = [], td = a + 0.4;
         while (td < a + 0.4 + holdS) { td += 1.2 + rnd() * 3.2; if (td < a + 0.4 + holdS) drops.push([td, 0.12 + rnd() * 0.25]); }
-        return signal({ t0: a + (opts.delayS || 0.1), holdS: holdS, lossD: lossD, drops: drops, seed: rnd() * 1000, id: "bench" });
+        // (P4) the sound's reads may ride along, as startSignal hands them over
+        return signal({ t0: a + (opts.delayS || 0.1), holdS: holdS, lossD: lossD, drops: drops, seed: rnd() * 1000, id: "bench",
+          band: opts.band, flutter: opts.flutter, grit: opts.grit, lfoHz: opts.lfoHz, d: opts.d, genPic: opts.genPic });
       },
       patterns: PATTERNS.map(function (p) { return p.name; }),
       setPattern: function (i) { P = PATTERNS[((i % PATTERNS.length) + PATTERNS.length) % PATTERNS.length]; patternIdx = PATTERNS.indexOf(P); buildCrackSVG(); if (TW > 8) buildPaths(); },
@@ -1370,6 +1448,14 @@
         return { t: t, phase: S.phase, strength: S.strength };
       },
       thaw: function () { vclock = null; kick(); },
+      // (P4) 管 the tube: no argument returns tonight's (a copy); "base" puts
+      // rc.104's tube back, a number draws the tube that seed's night gets
+      // ("set:tube" off that master seed), null returns to tonight's
+      tube: function (n) {
+        if (n === undefined) return JSON.parse(JSON.stringify(TB));
+        setTube(n === null ? nightTube : n === "base" ? ZP.drawTube(null) : ZP.drawTube(PJ.Rand.stream(+n).fork("set:tube")));
+        return JSON.parse(JSON.stringify(TB));
+      },
       clock: function () { return now(); },
       signalClock: function () { return atime(); },          // the clock a descriptor's t0 is in (s)
       frozen: function () { return vclock != null; },
@@ -1379,7 +1465,9 @@
         // leading echo and direct path, the shear, a frozen frame, a blanked
         // source, the sideways squash, the afterglow's level, the burn
         entGain: S.entGain, entA: S.entA, entDirect: S.entDirect, shear: S.shear ? { c: S.shear.c, s: S.shear.s } : null, rollPx: S.roll, rollV: S.rollV,
-        frozen: S.holdFrame === Infinity, blank: S.blank, sx: G.sx, aftA: aftA, burnK: S.burnK, burn: S.burnK > 0 ? burnImg : null, burnNight: burnNight }; },
+        frozen: S.holdFrame === Infinity, blank: S.blank, sx: G.sx, aftA: aftA, burnK: S.burnK, burn: S.burnK > 0 ? burnImg : null, burnNight: burnNight,
+        // (P4) the takeover's progress, this frame's 帯 row gains (when on), the reception's clock
+        take: S.take, hum: SRCX.hum ? HUM.g : null, re: S.re }; },
       // 光 the crack's light, last frame: the largest value the glow layer
       // added (0..255 per channel, before GLOW.k) and how many pixels it lit —
       // the probe's check that a dark tube's crack carries no light at all

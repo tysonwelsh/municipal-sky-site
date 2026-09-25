@@ -603,7 +603,7 @@
       }
       var playBtn = document.getElementById("zankyo-play");
       clearBoot();                             // the switch starts the station too
-      Z.stop();
+      Z.stop(); cutPicture();
       farHunt();
       clearLog(); Z.play();
       if (playBtn) { playBtn.classList.add("is-down"); playBtn.setAttribute("aria-pressed", "true"); }
@@ -736,6 +736,9 @@
   // on a stopped set has to make a sound and not a silent picture — and both
   // must leave the page in the same state: the boot card gone, the log cleared,
   // 逸脱 honoured, the arcade cap lit and the power LED on.
+  // (QF, 2026-09-25) every Z.stop() is followed by this: the receiver
+  // silences a reception mid-air, and the tube has to lose it too (zk-set.js cut())
+  function cutPicture() { try { if (window.ZankyoSet && ZankyoSet.cut) ZankyoSet.cut(); } catch (e) {} }
   function isPlaying() {
     try { var st = Z.getState && Z.getState(); return !!(st && st.playing); } catch (e) { return false; }
   }
@@ -755,7 +758,7 @@
     var playBtn = document.getElementById("zankyo-play"), stopBtn = document.getElementById("zankyo-stop");
     if (playBtn) playBtn.addEventListener("click", startStation);
     if (stopBtn) stopBtn.addEventListener("click", function () {
-      Z.stop();
+      Z.stop(); cutPicture();
       // STOP releases the PLAY key: the latch pops back up, which is the
       // machine saying it has stopped even with every lamp dark
       if (playBtn) { playBtn.classList.remove("is-down"); playBtn.setAttribute("aria-pressed", "false"); }
