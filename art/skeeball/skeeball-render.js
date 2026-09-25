@@ -25,13 +25,11 @@
   var S = root.ArcadeSprites, AP = root.ArcadePalette;
   var px = S.px, rect = S.rect, hline = S.hline, vline = S.vline,
     ellipse = S.ellipse, dither = S.dither, glowRing = S.glowRing,
-    text = S.text, textC = S.textC, textW = S.textW, FONT = S.FONT;
-  // the toolbox keeps its Bayer matrix private; the ramp shading and the
-  // water stain index it directly, so they carry the same 4×4 here
-  var BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+    text = S.text, textC = S.textC, textW = S.textW, ditherText = S.ditherText,
+    BAYER = S.BAYER;
 
   var W = 216, MH = 384;           // canvas width; machine-frame height
-  var H_MIN = 384, H_MAX = 448;
+  var H_MIN = 384, H_MAX = 560;
   var H = MH, TOP = 0, BOT = 0;    // canvas height; room rows above / below
 
   /* ── palette ───────────────────────────────────────────────────────── */
@@ -94,12 +92,13 @@
   // ring radii as fractions of maxRx, outside → in; even indexes are the
   // dark score TROUGHS (10/20/30/40 + the 50 hole), odd are the raised
   // cork RIMS between them. The physics rim radii [0.93, 0.744, 0.535,
-  // 0.326, 0.116] (units) sit on the outer edge (0.93) and on the middle
-  // of each cork band: measured band centres are 41.5/30.0/18.5/6.5 px
-  // laterally and 39.5/28.5/17.5/6.0 px vertically against 41.6/29.9/18.2/
-  // 6.5 and 39.2/28.2/17.2/6.1 px targets — every hoop is within 0.35 px
-  // of its physical radius, so no hoop needed shifting.
-  var RING_FR = [1, 0.825, 0.775, 0.60, 0.55, 0.375, 0.325, 0.15, 0.10];
+  // 0.326, 0.126] (units) sit on the outer edge (0.93) and on the middle
+  // of each cork band: band centres 41.5/30.0/18.5/7.0 px laterally and
+  // 39.5/28.5/17.5/6.0 px vertically against 41.6/29.9/18.2/7.0 and
+  // 39.2/28.2/17.2/6.6 px targets. The 50's hole (last entry) was 0.10 →
+  // rx 5; physics round 3 moved its rim out to 0.126, so the hole is now
+  // 0.11 → rx 6 (ry stays 5): the 50 hoop sits 0.5 px further out.
+  var RING_FR = [1, 0.825, 0.775, 0.60, 0.55, 0.375, 0.325, 0.15, 0.11];
   var GAP_LABELS = { 0: '10', 2: '20', 4: '30', 6: '40' };
   var CAB_BOT = 372;
   var SHELL = 7; // rail + outer shell thickness beyond the lane edge
@@ -179,16 +178,23 @@
     var y0 = -TOP, y1 = MH + BOT;
     rect(g, 0, y0, W, y1 - y0, PAL.NIGHT1);
     // wall panelling: faint vertical seams
-    for (var x = 6; x < W; x += 24) vline(g, x, y0, 352, PAL.NIGHT2);
+    for (var x = 6; x < W; x += 24) vline(g, x, y0, GEO.rail.y0 + 20, PAL.NIGHT2);
     // ceiling vignette at the true top, and the corners down into black
     // (TOP is a multiple of 4, so the side dither keeps its Bayer phase)
     dither(g, 0, y0, W, 10, PAL.NIGHT0, 0.7);
     dither(g, 0, y0 + 10, 14, y1 - y0 - 10, PAL.NIGHT0, 0.55);
     dither(g, W - 14, y0 + 10, 14, y1 - y0 - 10, PAL.NIGHT0, 0.55);
-    // floorboards, receding lines further apart toward the viewer
-    rect(g, 0, 352, W, y1 - 352, PAL.NIGHT0);
-    for (var fy = 356, step = 4; fy < y1; fy += step, step += 3)
-      hline(g, 0, W - 1, fy, PAL.NIGHT2);
+    // floorboards, receding lines further apart toward the viewer. Below
+    // the machine frame (tall screens) they fade into the fog and break
+    // under the cabinet's pooled shadow instead of ruling the floor.
+    rect(g, 0, GEO.rail.y0 + 20, W, y1 - GEO.rail.y0 - 20, PAL.NIGHT0);
+    var sh0 = cabL(GEO.front.y1) - 8, sh1 = cabR(GEO.front.y1) + 8;
+    for (var fy = 356, step = 4; fy < y1; fy += step, step += 3) {
+      if (fy < MH) { hline(g, 0, W - 1, fy, PAL.NIGHT2); continue; }
+      var dens = Math.max(0.12, 0.55 - (fy - MH) / 200);
+      dither(g, 0, fy, sh0, 1, PAL.NIGHT2, dens);
+      dither(g, sh1, fy, W - sh1, 1, PAL.NIGHT2, dens);
+    }
     dither(g, 0, 352, W, 8, PAL.NIGHT2, 0.3);
     // low fog hugging the floor
     dither(g, 0, 344, W, 14, PAL.PUR1, 0.35);
@@ -241,7 +247,12 @@
   // the marquee's neon tube; `chase` (attract) runs bright segments along it
   function drawTube(g, t, chase) {
     var m = GEO.marquee, x0 = m.x0 + 4, x1 = m.x1 - 5;
+    if (chase === 'dead') { // unplugged: dark glass on its bracket (view.muted)
+      for (var dx = x0; dx <= x1; dx++) px(g, dx, m.y1 - 1, dx % 9 === 4 ? PAL.PUR2 : PAL.PINK_DK);
+      return;
+    }
     if (!chase) {
+      if (BARE) return; // the bare layer keeps the score bar under the tube clean
       hline(g, x0, x1, m.y1 - 1, PAL.PINK);
       hline(g, x0, x1, m.y1, PAL.PINK_D);
       dither(g, x0, m.y1 + 1, m.x1 - m.x0 - 8, 2, PAL.PINK_DK, 0.4);
@@ -302,17 +313,19 @@
     px(g, cx - 2, top + 3, PAL.FUR2); px(g, cx, top + 2, PAL.FUR2); px(g, cx + 2, top + 3, PAL.FUR2);
   }
   // black beads with pink neon glints; dx shifts the gaze, wide = startled
-  function drawEyeBeads(g, dx, wide) {
+  // dx shifts the beads (±1), gx the pink glint — the pupil — inside them (±1)
+  function drawEyeBeads(g, dx, wide, gx) {
     var cx = GEO.possum.cx + dx, top = GEO.possum.top;
     var L = EYES.L, Rr = EYES.R, e = wide ? 1 : 0;
+    gx = gx || 0;
     rect(g, cx + L.x - e, top + L.y - e, L.w + 2 * e, L.h + 2 * e, PAL.NIGHT0);
     rect(g, cx + Rr.x - e, top + Rr.y - e, Rr.w + 2 * e, Rr.h + 2 * e, PAL.NIGHT0);
-    px(g, cx + L.x + 2, top + L.y + 1, PAL.PINK);
-    px(g, cx + Rr.x + 1, top + Rr.y + 1, PAL.PINK);
+    px(g, cx + L.x + 2 + gx, top + L.y + 1, PAL.PINK);
+    px(g, cx + Rr.x + 1 + gx, top + Rr.y + 1, PAL.PINK);
     if (wide) { // pupils blown wide: the glints swell into 2×2 neon
-      rect(g, cx + L.x + 1, top + L.y + 1, 2, 2, PAL.PINK);
-      rect(g, cx + Rr.x, top + Rr.y + 1, 2, 2, PAL.PINK);
-      px(g, cx + L.x + 1, top + L.y + 1, PAL.MOON);
+      rect(g, cx + L.x + 1 + gx, top + L.y + 1, 2, 2, PAL.PINK);
+      rect(g, cx + Rr.x + gx, top + Rr.y + 1, 2, 2, PAL.PINK);
+      px(g, cx + L.x + 1 + gx, top + L.y + 1, PAL.MOON);
     }
   }
 
@@ -387,7 +400,8 @@
   // its upper-right octant: a 7 px run where the rim is pressed flat — the
   // round stair of highlights is cut back to one straight diagonal in
   // shadow, with raw chipped cork catching the light at its upper end. The
-  // physics lowers rimH 40 % over the same arc; balls skip out into the 30.
+  // pixels span ≈ 40–67° at r ≈ 0.35 u; the physics lowers the same arc of
+  // the rim (GEO.dent, 44–69°), so balls skip out there into the 30.
   // Hand-placed pixels, relative to the ring centre (108, 158).
   var DENT = [
     // cut the round outer stair back to a straight 45° edge, 2 px inward:
@@ -405,7 +419,7 @@
     // crushed cork just inside it
     [8, -16, 'WOOD2'], [10, -14, 'WOOD2'],
     // the chip at the flat's upper end: raw cork catching the light
-    [6, -19, 'BONE_D'], [7, -18, 'CORK3']
+    [6, -19, 'BONE'], [7, -18, 'CORK3']
   ];
   function drawDent(g) {
     var cx = GEO.target.cx, cy = GEO.target.cy;
@@ -641,7 +655,7 @@
   function buildStatic() {
     staticLayer = renderLayer(false);
     bareLayer = renderLayer(true);
-    occluders = {};
+    occluders = {}; staticPix = null;
     return staticLayer;
   }
   // copy a machine-frame rectangle from the bare layer (live elements are
@@ -659,12 +673,11 @@
     return (b >>> 0) / 4294967296;
   }
 
-  function drawFrame(ctx, t, opts) {
+  function drawFrame(ctx, t) {
     if (!staticLayer) buildStatic();
     ctx.drawImage(staticLayer, 0, 0);
     var g = ctx;
     g.save(); g.translate(0, TOP);
-    if (opts && typeof opts.score === 'number') drawDrumDigits(g, opts.score);
 
     // ── the dying marquee bulb behind ROLLER's final R: 'HOLLER ROLLER' is
     // centred at 108, scale 2 → the last R occupies x 153..159
@@ -702,67 +715,92 @@
     }
   }
 
-  /* ══ the machine reacts: drawLive(ctx, t, view) ══════════════════ */
+  /* ══ the machine reacts ════════════════════════════════════════ */
+  //
+  // Two passes around the ball layer:
+  //   drawLiveUnder(ctx, t, view)  before the ball: hole glow, drums,
+  //       possum gaze, the rack, attract (neon chase, chalk), muted tube
+  //   drawLiveOver(ctx, t, view)   after the ball: the ball lifting out of
+  //       the rack, the ticket strip, the payout tag, the jackpot pulse
+  //   drawLive = both (compat; draws the live layer over the ball)
   //
   // view (all optional; main.js owns it):
   //   mode        'attract' | 'play' | 'payout'
   //   score       number shown on the drums
-  //   drum        {from, to, t0} — roll from→to starting at t0 (main sets
-  //               it when the score changes); absent = hold `score`
+  //   drum        {from, to, t0} — roll from→to starting at t0; absent = hold `score`
   //   highScore   attract shows it on the drums every 8 s
   //   ballsLeft   0..9 balls in the return rack (default 9)
-  //   lift        {t0} — the ball in slot `ballsLeft` lifts into the lane
+  //   lift        {t0} — the ball in slot `ballsLeft` lifts onto the throw line
   //   ticketsOut  tickets cranked out so far (fractional = mid-ticket)
   //   cranking    the dispenser is running (ratchet jitter)
-  //   hundreds    number of 100s this game (payout shows "13")
-  //   jackpot     {hole: 0|1, t0} — that 100 hole flashes pink
+  //   hundreds    number of 100s this game (payout hangs a "13"/"26" tag)
+  //   jackpot     {hole: 0|1, t0} — that 100 hole pulses pink (set it when
+  //               the swallow is done; during the sink use holeGlow)
   //   holeGlow    [a, b] 0..1 — a 100 hole swallowing a ball glows brighter
   //   ballSx      the ball's screen x (machine frame); the possum watches it
   //   wideT0      time of the last 100: the possum's pupils blow wide
-  function drawLive(ctx, t, view) {
+  //   muted       the marquee's neon tube is unplugged (the mute indicator)
+  function drawLiveUnder(ctx, t, view) {
     if (!staticLayer) buildStatic();
     view = view || {};
-    var g = ctx;
+    var g = ctx, mode = view.mode || 'play';
     g.save(); g.translate(0, TOP);
-    var mode = view.mode || 'play';
-
+    drawHoleGlow(g, t, view);
     drawDrumsLive(g, t, view, mode);
-    drawRackLive(g, t, view);
-    drawTicketsLive(g, t, view);
     drawEyesLive(g, t, view);
-    if (mode === 'attract') {
-      drawTube(g, t, true);
-      drawChalkNote(g, t);
-    }
-    drawHolesLive(g, t, view);
-    if (mode === 'payout' && view.hundreds > 0) {
-      // a pink "13" over the ticket window: thirteen tickets per 100
-      if (flickerAt(t, 3, 17) > 0.2) {
-        var s = slotRect();
-        var label = view.hundreds > 1 ? '13X' + view.hundreds : '13';
-        textC(g, label, s.x + s.w / 2, s.y - 20, PAL.PINK, 2);
-      }
-    }
+    drawRackLive(g, t, view);
+    if (view.muted) {
+      var m = GEO.marquee;
+      restore(g, m.x0 + 4, m.y1 - 1, m.x1 - m.x0 - 8, 4);
+      drawTube(g, t, 'dead');
+    } else if (mode === 'attract') drawTube(g, t, true);
+    if (mode === 'attract') drawChalkNote(g, t);
     g.restore();
   }
+  function drawLiveOver(ctx, t, view) {
+    if (!staticLayer) buildStatic();
+    view = view || {};
+    var g = ctx, mode = view.mode || 'play';
+    g.save(); g.translate(0, TOP);
+    drawLiftBall(g, t, view);
+    drawTicketsLive(g, t, view);
+    if (mode === 'payout' && view.hundreds > 0) drawPayoutTag(g, view.hundreds);
+    drawJackpot(g, t, view);
+    g.restore();
+  }
+  function drawLive(ctx, t, view) { drawLiveUnder(ctx, t, view); drawLiveOver(ctx, t, view); }
 
-  /* ── drums: each digit slides ~150 ms; the tens drum sticks ~200 ms ── */
-  var DRUM_T = 0.15, TENS_LAG = 0.2;
+  /* ── drums: an odometer. The lowest drum that changes rolls; each higher
+  // drum turns only while the one to its right passes 9 → 0, so every
+  // reading on the way is one the counter really passes through. The
+  // tens drum is sticky: the whole roll starts 200 ms late. ── */
+  var DRUM_STEP_T = 0.15, TENS_LAG = 0.2;
   function digitsOf(v) {
     var s = String(Math.max(0, Math.min(9999, v | 0)));
     while (s.length < 4) s = '0' + s;
     return [+s[0], +s[1], +s[2], +s[3]];
   }
-  // per-drum fractional position (drums only roll forward, through every
-  // intermediate digit, like an odometer)
   function drumPositions(from, to, t0, t) {
-    var a = digitsOf(from), b = digitsOf(to), out = [];
-    for (var i = 0; i < 4; i++) {
-      var steps = (b[i] - a[i] + 10) % 10;
-      var start = t0 + (i === 2 ? TENS_LAG : 0);
-      var k = Math.max(0, Math.min(1, (t - start) / DRUM_T));
-      k = k * k * (3 - 2 * k);
-      out.push(a[i] + steps * k);
+    from = Math.max(0, Math.min(9999, from | 0)); to = Math.max(0, Math.min(9999, to | 0));
+    if (to < from) to += 10000;                       // drums only roll forward
+    var a = digitsOf(from), b = digitsOf(to % 10000), m = 3;
+    while (m > 0 && a[m] === b[m]) m--;               // lowest place that changes
+    var place = [1000, 100, 10, 1][m];                // its unit
+    var steps = Math.round((to - from) / place);
+    var dur = DRUM_STEP_T * Math.min(3, Math.sqrt(Math.max(1, steps)));
+    var k = Math.max(0, Math.min(1, (t - t0 - (m === 2 ? TENS_LAG : 0)) / dur));
+    k = k * k * (3 - 2 * k);
+    var w = from / place + steps * k;                 // continuous count in units of `place`
+    var out = [a[0], a[1], a[2], a[3]];
+    var lower = w % 10;                               // the rolling drum
+    out[m] = lower;
+    var hi = Math.floor(w + 1e-9);
+    for (var i = m - 1; i >= 0; i--) {
+      hi = Math.floor(hi / 10);
+      var carry = lower > 9 ? lower - 9 : 0;          // only while the lower drum passes 9 → 0
+      var d = hi % 10 + carry;
+      out[i] = d;
+      lower = d;
     }
     return out;
   }
@@ -780,7 +818,6 @@
       if (off > 0) dither(g, dx, d.y0 + 2, d.cw - 2, 1, PAL.BONE_D, 0.5); // blur on the roll
     }
   }
-  function drawDrumDigits(g, value) { drawDrumCells(g, digitsOf(value)); }
   function drawDrumsLive(g, t, view, mode) {
     var score = view.score | 0;
     if (mode === 'attract' && view.highScore > 0) {
@@ -791,28 +828,28 @@
       return;
     }
     var dr = view.drum;
-    if (dr) drawDrumCells(g, drumPositions(dr.from, dr.to, dr.t0, t));
-    else drawDrumDigits(g, score);
+    if (dr && mode !== 'payout') drawDrumCells(g, drumPositions(dr.from, dr.to, dr.t0, t));
+    else drawDrumCells(g, digitsOf(dr && mode === 'payout' ? dr.to : score)); // payout: the drums hold
   }
 
   /* ── the ball-return rack ── */
   var LIFT_T = 0.4;
   function drawRackLive(g, t, view) {
     var n = view.ballsLeft == null ? 9 : Math.max(0, Math.min(9, view.ballsLeft | 0));
-    var lifting = view.lift && t - view.lift.t0 < LIFT_T && t >= view.lift.t0;
-    if (n === 9 && !lifting) return; // the static rack is already right
+    if (n === 9) return; // the static rack is already right
     var tr = troughRect();
-    restore(g, tr.x, tr.y - 6, tr.w, tr.h + 6); // balls stand 1 px proud of the trough
+    restore(g, tr.x, tr.y, tr.w, tr.h);
     for (var i = 0; i < n; i++) { var b = rackBallAt(i); drawRackBall(g, i, b.x, b.y); }
-    if (lifting) {
-      // the next ball rises out of slot n and arcs up onto the throw line
-      var k = (t - view.lift.t0) / LIFT_T, e = k * k * (3 - 2 * k);
-      var from = rackBallAt(Math.min(8, n)), to = project(0, BALL_R, 0);
-      var x = from.x + (to.sx - from.x) * e;
-      var y = from.y + (to.sy - from.y) * e - Math.sin(k * Math.PI) * 10;
-      var r = 5 + (6.8 * to.scale - 5) * e;
-      drawBall(g, x, y, r);
-    }
+  }
+  // the next ball rises out of slot `ballsLeft` and arcs up onto the throw line
+  function drawLiftBall(g, t, view) {
+    if (!view.lift || t < view.lift.t0 || t - view.lift.t0 >= LIFT_T) return;
+    var n = view.ballsLeft == null ? 9 : Math.max(0, Math.min(9, view.ballsLeft | 0));
+    var k = (t - view.lift.t0) / LIFT_T, e = k * k * (3 - 2 * k);
+    var from = rackBallAt(Math.min(8, n)), to = project(0, BALL_R, 0);
+    var x = from.x + (to.sx - from.x) * e;
+    var y = from.y + (to.sy - from.y) * e - Math.sin(k * Math.PI) * 10;
+    drawBall(g, x, y, 5 + (ballRadius(to.scale) - 5) * e);
   }
 
   /* ── the ticket dispenser: a pink strip cranks out pixel by pixel ── */
@@ -828,7 +865,6 @@
     var yTop = fr.y0 + 10;                     // leaves the slot here
     var floorY = MH + BOT - 2;                 // the strip coils on the floor
     var hang = Math.max(0, Math.min(len, floorY - yTop));
-    // pink hanging strip
     for (var k = 0; k < hang; k++) {
       var y = yTop + k, row = k % TICKET_PX;
       var c = row === 1 ? PAL.PINK : (row === 3 ? PAL.PINK_DK : PAL.PINK_D);
@@ -836,10 +872,8 @@
       else hline(g, x0, x0 + w - 1, y, c);
       px(g, x0 + w - 1, y, PAL.PINK_DK);       // shaded edge
     }
-    // the slot mouth stays dark over the strip's root, so it reads as coming *out*
-    hline(g, s.x + 2, s.x + s.w - 3, s.y + 2, PAL.NIGHT0);
-    // the rest folds into a heap on the floor, layer on layer
-    var rest = len - hang, layer = 0;
+    hline(g, s.x + 2, s.x + s.w - 3, s.y + 2, PAL.NIGHT0); // the slot mouth over the root
+    var rest = len - hang, layer = 0;          // the rest folds into a heap on the floor
     while (rest > 0) {
       var lw = Math.min(rest, 16), jig = (layer % 2) ? 1 : -1;
       var ly = floorY - layer, lx = x0 - 2 + jig + ((layer * 5) % 3);
@@ -848,17 +882,30 @@
       rest -= 16; layer++;
     }
   }
+  // a small painted card hung off the ticket window on a wire: "13" per 100
+  function drawPayoutTag(g, hundreds) {
+    var s = slotRect(), label = String(13 * hundreds);
+    var w = textW(label, 1) + 6, h = 9, x = s.x - w - 3, y = s.y + 3;
+    vline(g, x + w - 2, s.y + 1, y - 1, PAL.STEEL1);          // the wire
+    px(g, x + w - 2, s.y, PAL.STEEL2);                        // its hook on the frame
+    rect(g, x, y, w, h, PAL.PINK_DK);
+    rect(g, x + 1, y + 1, w - 2, h - 2, PAL.NIGHT1);
+    hline(g, x + 1, x + w - 2, y + h - 1, PAL.NIGHT0);         // the card's shadowed edge
+    text(g, label, x + 3, y + 2, PAL.PINK, 1);
+    px(g, x + 1, y + 1, PAL.PINK_D);                          // a nail hole
+  }
 
-  /* ── possum gaze ── */
+  /* ── possum gaze: beads ±1, the pink pupil ±1 inside them ── */
   var WIDE_T = 2.5;
   function drawEyesLive(g, t, view) {
-    var dx = 0;
-    if (typeof view.ballSx === 'number') dx = Math.max(-2, Math.min(2, Math.round((view.ballSx - 108) / 22)));
+    var gz = 0;
+    if (typeof view.ballSx === 'number') gz = Math.max(-2, Math.min(2, Math.round((view.ballSx - 108) / 22)));
+    var dx = Math.max(-1, Math.min(1, gz)), gx = gz - dx;
     var wide = typeof view.wideT0 === 'number' && t >= view.wideT0 && t - view.wideT0 < WIDE_T;
-    if (dx === 0 && !wide) return; // the static eyes (and drawFrame's blink) stand
+    if (gz === 0 && !wide) return; // the static eyes (and drawFrame's blink) stand
     var cx = GEO.possum.cx, top = GEO.possum.top;
     restore(g, cx - 12, top + 11, 24, 11);
-    drawEyeBeads(g, dx, wide);
+    drawEyeBeads(g, dx, wide, gx);
     var e = wide ? 1 : 0; // a blink covers the whole (possibly blown-wide) bead
     if (flickerAt(t, 6.7, 3) < 0.025)
       rect(g, cx + dx + EYES.L.x - e, top + EYES.L.y - e, EYES.L.w + 2 * e, EYES.L.h + 2 * e, PAL.FUR2);
@@ -872,40 +919,52 @@
     a = Math.max(0, a * 1.2 - 0.1);
     if (a <= 0.02) return;
     var str = '5¢ - SWIPE', y = GEO.lane.y1 - 38, x = Math.round(108 - textW(str, 1) / 2);
-    g.fillStyle = PAL.BONE;
-    for (var k = 0; k < str.length; k++) {
-      var gl = FONT[str[k]] || FONT[' '];
-      for (var row = 0; row < 5; row++)
-        for (var col = 0; col < 3; col++) {
-          if (!(gl[row] & (4 >> col))) continue;
-          var X = x + k * 4 + col, Y = y + row;
-          // chalk: pixels drop out on the Bayer grid as it fades
-          if (BAYER[(Y % 4) * 4 + (X % 4)] / 16 < a * 0.95) g.fillRect(X, Y, 1, 1);
-        }
+    ditherText(g, str, x, y + 1, PAL.LANE3, 1, a * 0.95);   // worn-in shadow under the chalk
+    ditherText(g, str, x, y, PAL.BONE, 1, a * 0.95);
+  }
+
+  /* ── the 100 holes: the swallow glow and the jackpot pulse ── */
+  var JACKPOT_T = 1.6, JACKPOT_HZ = 2.5;
+  function drawHoleGlow(g, t, view) {
+    if (!view.holeGlow) return;
+    var hr = GEO.holeR;
+    for (var i = 0; i < 2; i++) {
+      var glow = view.holeGlow[i] || 0, h = GEO.holes100[i];
+      if (glow > 0) glowRing(g, h.x, h.y, hr - 1, Math.round(hr * 0.6) - 1, 5, PAL.PINK_D, 0.3 + 0.6 * glow);
+    }
+  }
+  function drawJackpot(g, t, view) {
+    var jp = view.jackpot;
+    if (!jp || typeof jp.t0 !== 'number' || t < jp.t0 || t - jp.t0 >= JACKPOT_T) return;
+    var hr = GEO.holeR, h = GEO.holes100[jp.hole ? 1 : 0];
+    var on = Math.sin((t - jp.t0) * Math.PI * 2 * JACKPOT_HZ + Math.PI / 2) > 0; // ≤ 3 Hz pulse, starts lit
+    if (on) {
+      ellipse(g, h.x, h.y, hr - 2, Math.round(hr * 0.7) - 1, PAL.PINK);
+      ellipse(g, h.x, h.y + 1, hr - 5, 2, PAL.MOON);
+      glowRing(g, h.x, h.y, hr, Math.round(hr * 0.7), 6, PAL.PINK, 0.9);
+      textC(g, '100', h.x, h.y + 7, PAL.MOON, 1);
+    } else {                                   // the off-beat glows, it never goes black
+      ellipse(g, h.x, h.y, hr - 2, Math.round(hr * 0.7) - 1, PAL.PINK_D);
+      glowRing(g, h.x, h.y, hr, Math.round(hr * 0.7), 5, PAL.PINK_D, 0.7);
     }
   }
 
-  /* ── the 100 holes: jackpot flash and the swallow glow ── */
-  var JACKPOT_T = 1.6;
-  function drawHolesLive(g, t, view) {
-    var hr = GEO.holeR;
-    for (var i = 0; i < 2; i++) {
-      var h = GEO.holes100[i];
-      var glow = view.holeGlow ? view.holeGlow[i] || 0 : 0;
-      if (glow > 0) glowRing(g, h.x, h.y, hr - 1, Math.round(hr * 0.6) - 1, 5, PAL.PINK_D, 0.3 + 0.6 * glow);
-      var jp = view.jackpot;
-      if (jp && jp.hole === i && t >= jp.t0 && t - jp.t0 < JACKPOT_T) {
-        var on = Math.floor((t - jp.t0) * 8) % 2 === 0;
-        if (on) {
-          ellipse(g, h.x, h.y, hr - 2, Math.round(hr * 0.7) - 1, PAL.PINK);
-          ellipse(g, h.x, h.y + 1, hr - 5, 2, PAL.MOON);
-          glowRing(g, h.x, h.y, hr, Math.round(hr * 0.7), 6, PAL.PINK, 0.9);
-          textC(g, '100', h.x, h.y + 7, PAL.MOON, 1);
-        } else {
-          glowRing(g, h.x, h.y, hr, Math.round(hr * 0.7), 5, PAL.PINK_D, 0.7);
-        }
-      }
-    }
+  /* ── the score toast: PINK with a NIGHT0 outline, kept off the painted
+  // label column, rising 10 px over its 0.7 s life ── */
+  var TOAST_T = 0.7;
+  // kind: 'score' | 'hundred' | 'zero'; k = age 0..1 (or pass t0 and t)
+  function drawToast(ctx, str, x, y, kind, k, t) {
+    if (arguments.length >= 7) k = (t - k) / TOAST_T;  // (…, kind, t0, t)
+    if (k == null) k = 0;
+    if (k < 0 || k >= 1 || !str) return;
+    str = String(str);
+    if (Math.abs(x - 108) < 10) x = x < 108 ? 108 - 14 : 108 + 14;
+    var c = kind === 'hundred' ? PAL.MOON : (kind === 'zero' ? PAL.BONE_D : PAL.PINK);
+    var w = textW(str, 1), tx = Math.round(x - w / 2), ty = Math.round(y - 10 * k);
+    for (var oy = -1; oy <= 1; oy++)
+      for (var ox = -1; ox <= 1; ox++)
+        if (ox || oy) text(ctx, str, tx + ox, ty + oy, PAL.NIGHT0, 1);
+    text(ctx, str, tx, ty, c, 1);
   }
 
   /* ══ gameplay projection ══════════════════════════════════════════ */
@@ -921,7 +980,7 @@
   var COSB = Math.cos(BETA), SINB = Math.sin(BETA), TANB = Math.tan(BETA);
   var APRON_V = 0.27;       // drawn apron: 14 px below the outer ring ≈ 0.27 units
   var R10 = 0.93;           // outer rim radius, units ↔ rings[0] (52 × 49 px)
-  var RIMS = [0.93, 0.744, 0.535, 0.326, 0.116];
+  var RIMS = [0.93, 0.744, 0.535, 0.326, 0.126];
   var CUPS = [10, 20, 30, 40, 50];
 
   // THE FIT (numbers for the 'grand' art):
@@ -937,9 +996,13 @@
   //    linearly from the crest (238, 62 px/u, 0.646) to the lip (221.2,
   //    55.9 px/u, 0.56) over a reference surface running 0.28 → 0.2.
   //  • scale: lane = half-width / 96 (1 at the throw line, 0.646 at the
-  //    crest); bed = 0.56 / (1 + 0.16·v) → 0.470 at the ring centre, 0.41
-  //    at the 100 holes, 0.38 at the backstop. Ball sprite r = 6.8·scale
-  //    (6.8 px at the throw line, 4.4 at the crest, 3.2 at the ring centre).
+  //    crest); bed = 0.56 / (1 + 0.16·v) → 0.470 at the ring centre, 0.408
+  //    at the 100 holes, 0.395 at the backstop (v 2.60).
+  //  • ball sprite r = ballRadius(scale) = 6.8·scale^0.7 — a flattened
+  //    falloff so the ball stays legible on the bed at phone scale: 6.8 px
+  //    at the throw line, 5.0 at the crest, 4.5 at the lip, 4.0 at the ring
+  //    centre (a 9-px ball nestles in a 9-px trough), 3.6 at the 100 holes,
+  //    3.55 at the backstop. Sprites exist for every diameter 5–16.
   //  • height: y above the local surface lifts the sprite k = 73.95·scale
   //    px per unit (73.9 at the throw line, 47.8 at the crest, 34.7 at the
   //    ring centre). K0 = 73.95 is chosen so a ball RESTING on the bed
@@ -962,23 +1025,10 @@
     return y1 - (y1 - y0) * t;
   }
   function laneHalfAtRow(y) { return 108 - laneL(y); } // linear, extrapolates
-  // inverse of laneRowAt: screen row → zn (0 throw line, 1 crest)
-  function laneZAt(row) {
-    var y1 = GEO.lane.y1, y0 = GEO.ramp.y0 + 1;
-    var T = Math.max(0, Math.min(1, (y1 - row) / (y1 - y0)));
-    var q = 0.45;
-    return T / ((1 + q) - q * T);
-  }
   // lane point (x in [-1,1], zn in [0,1]) → screen pos + perspective scale
   function laneBall(x, zn) {
     var y = laneRowAt(zn), hw = laneHalfAtRow(y);
     return { x: 108 + x * hw, y: y, s: hw / laneHalfAtRow(GEO.lane.y1) };
-  }
-  // bed point (u lateral, v up-slope from the outer ring's bottom, units
-  // of R10) → screen, anchored to the drawn ring ellipses
-  function bedPoint(u, v, r10) {
-    var r0 = GEO.rings[0];
-    return { x: 108 + u * (r0.rx / r10), y: (GEO.target.cy + r0.ry) - v * (r0.ry / r10), ky: r0.ry / r10 };
   }
 
   var CREST = null;
@@ -1021,17 +1071,10 @@
     var f = foot(x, z);
     if (f.surface === 'pit') return null;
     return { sx: f.sx, sy: f.sy, scale: f.scale, surface: f.surface,
-      c: f.surface === 'bed' ? PAL.WOOD1 : PAL.LANE3 };
+      c: f.surface === 'bed' ? 'bed' : PAL.LANE3 }; // 'bed': drawBallShadow's dither + rim-light
   }
   // bed coords of a machine point (the foot under it)
   function bedUV(x, z) { return { u: x, v: (z - Z_LIP) / COSB }; }
-  // which cup the bed point (u, v) is in: 10..50, 100, or null
-  function cupAt(u, v) {
-    var d = Math.hypot(u, v - (R10 + APRON_V));
-    for (var i = RIMS.length - 1; i >= 0; i--) if (d < RIMS[i]) return CUPS[i];
-    for (var j = 0; j < 2; j++) if (Math.hypot(u - HOLES_U[j].u, v - HOLES_U[j].v) < 0.14) return 100;
-    return null;
-  }
   // the drawn 100 holes in bed units (lip-based v)
   var HOLES_U = GEO.holes100.map(function (h) {
     return { u: (h.x - 108) / PX_U, v: APRON_V + (RING_BOTTOM_ROW - h.y) / PX_V };
@@ -1042,37 +1085,156 @@
     bedTopV: APRON_V + (RING_BOTTOM_ROW - GEO.target.y0) / PX_V,  // visible bed top (under the score bar)
     bedHalfW: (108 - (cabL(GEO.target.cy) + 5)) / PX_U               // bed inner wall at the ring centre row
   };
+  // One-way check at boot: the physics' GEO against the machine as drawn.
+  // Returns a list of human-readable mismatches (empty = agreement).
   function checkGeometry(pg) {
     var bad = [];
     if (!pg) return bad;
-    function near(a, b, tol) { return Math.abs(a - b) <= tol; }
-    if (pg.rims) pg.rims.forEach(function (r, i) { if (!near(r, RIMS[i], 0.01)) bad.push('rim ' + i + ' ' + r + ' vs drawn ' + RIMS[i]); });
-    var hs = pg.holes || pg.holes100;
-    if (hs) hs.forEach(function (h, i) {
-      var d = HOLES_U[h.x < 0 || h.u < 0 ? 0 : 1], hv = h.v != null ? h.v : h.z;
-      if (!near(Math.abs(h.x != null ? h.x : h.u), Math.abs(d.u), 0.02) || !near(hv, d.v, 0.03))
-        bad.push('100 hole ' + i + ' at v ' + hv + ' vs drawn v ' + d.v.toFixed(3));
+    function chk(name, got, want, tol) {
+      if (typeof got !== 'number' || !isFinite(got)) { bad.push(name + ' missing from physics GEO'); return; }
+      if (Math.abs(got - want) > tol) bad.push(name + ' ' + got + ' vs drawn ' + (+want.toFixed(4)));
+    }
+    var E = 1e-6;
+    chk('zHop', pg.zHop, Z_HOP, E);
+    chk('L (crest z)', pg.L, Z_CREST, E);
+    chk('hCrest', pg.hCrest, HOP_H, E);
+    var bed = pg.bed || {};
+    chk('bed.z0 (lip z)', bed.z0, Z_LIP, E);
+    chk('bed.y0 (lip y)', bed.y0, Y_LIP, E);
+    chk('bed.angle', bed.angle, BETA, E);
+    if (!pg.rims || pg.rims.length !== RIMS.length) bad.push('rims: expected ' + RIMS.length);
+    else pg.rims.forEach(function (r, i) { chk('rim ' + i, r, RIMS[i], 1e-3); });
+    var hs = pg.holes || [];
+    if (hs.length !== 2) bad.push('holes: expected 2');
+    hs.forEach(function (h, i) {
+      var d = HOLES_U[h.u < 0 ? 0 : 1];
+      chk('100 hole ' + i + ' u', h.u, d.u, 0.01);
+      chk('100 hole ' + i + ' v', h.v, d.v, 0.01);   // drawn v 2.3008
     });
-    var hw = pg.bedHalfW || (pg.bed && pg.bed.halfW), top = pg.bed && pg.bed.vTop;
-    if (hw && !near(hw, DRAWN.bedHalfW, 0.06)) bad.push('bed half-width ' + hw + ' vs drawn ' + DRAWN.bedHalfW.toFixed(2));
-    if (top && top > DRAWN.bedTopV + 0.05) bad.push('backstop v ' + top + ' is under the score bar (visible bed top v ' + DRAWN.bedTopV.toFixed(2) + ')');
-    if (pg.ringC && !near(pg.ringC.v, DRAWN.ringCentreV, 0.01)) bad.push('ring centre v ' + pg.ringC.v + ' vs drawn ' + DRAWN.ringCentreV);
+    if (bed.halfW != null) chk('bed half-width', bed.halfW, DRAWN.bedHalfW, 0.03);
+    if (bed.vTop != null) chk('backstop v', bed.vTop, DRAWN.bedTopV, 0.03);
+    if (pg.ringC) chk('ring centre v', pg.ringC.v, DRAWN.ringCentreV, 1e-3);
     return bad;
   }
 
   /* ══ ball sprites and occlusion ═══════════════════════════════════ */
 
-  function drawBall(g, x, y, r) {
-    x = Math.round(x); y = Math.round(y); r = Math.max(1, Math.round(r));
-    ellipse(g, x, y, r, r, PAL.BONE);
-    if (r >= 3) {
-      dither(g, x - r + 1, y + (r >> 1) - 1, r * 2 - 1, Math.max(1, r - (r >> 1)), PAL.BONE_D, 0.55);
-      px(g, x - (r >> 1), y - (r >> 1), PAL.MOON);
+  // THE ball radius (px) for a projected scale — both files call this
+  function ballRadius(scale) { return 6.8 * Math.pow(Math.max(0, scale), 0.7); }
+
+  // Pre-rendered ball sprites, one per diameter (odd AND even, so the ball
+  // shrinks a pixel at a time instead of popping by two), each with its
+  // glint and shade laid out for that size. TINTS darken a ball that is
+  // sinking out of the light: BONE → BONE_D → FOG → PUR1.
+  var TINTS = [
+    { base: 'BONE', shade: 'BONE_D', glint: 'MOON' },
+    { base: 'BONE_D', shade: 'FOG', glint: 'BONE' },
+    { base: 'FOG', shade: 'PUR2', glint: 'BONE_D' },
+    { base: 'PUR1', shade: 'NIGHT2', glint: 'PUR2' }
+  ];
+  var D_MIN = 3, D_MAX = 16, sprites = {};
+  function ballSprite(d, tint) {
+    var key = d + ':' + tint;
+    if (sprites[key]) return sprites[key];
+    var T = TINTS[tint], c = makeCanvas(d, d), g = c.getContext('2d'), pts = [];
+    var R = d / 2, R2 = (R + 0.1) * (R + 0.1);
+    var gl = d >= 6 ? Math.floor(R - 0.3 * d) : -1, big = d >= 11;
+    for (var j = 0; j < d; j++)
+      for (var i = 0; i < d; i++) {
+        var dx = i + 0.5 - R, dy = j + 0.5 - R;
+        if (dx * dx + dy * dy > R2) continue;
+        pts.push(i, j);
+        var col = T.base;
+        // shade: the lower third dithered, the bottom arc solid
+        if (dy > R * 0.2 && BAYER[(j % 4) * 4 + (i % 4)] < 9) col = T.shade;
+        if (d >= 5 && dx * dx + (dy + 0.9) * (dy + 0.9) > R2 && dy > 0) col = T.shade;
+        if ((i === gl && j === gl) || (big && ((i === gl + 1 && j === gl) || (i === gl && j === gl + 1)))) col = T.glint;
+        px(g, i, j, PAL[col]);
+      }
+    sprites[key] = { canvas: c, pts: pts };
+    return sprites[key];
+  }
+  function drawBallTint(g, x, y, r, tint) {
+    var d = Math.round(2 * r);
+    if (d < D_MIN) { px(g, Math.floor(x), Math.floor(y), PAL[TINTS[tint].base]); return null; }
+    d = Math.min(D_MAX, d);
+    var sp = ballSprite(d, tint), x0 = Math.round(x - d / 2), y0 = Math.round(y - d / 2);
+    g.drawImage(sp.canvas, x0, y0);
+    return { sp: sp, x0: x0, y0: y0 };
+  }
+  // the ball, centred on (x, y) with radius r (machine frame)
+  function drawBall(g, x, y, r) { drawBallTint(g, x, y, r, 0); }
+  // a ball going down into the dark (the pit, a 100 hole): depth 0..1 steps
+  // it down the palette, and past the last step a NIGHT0 Bayer dither eats it
+  function drawSunkBall(g, x, y, r, depth) {
+    depth = Math.max(0, Math.min(1, depth || 0));
+    var f = depth * 4, tint = Math.min(3, Math.floor(f));
+    var o = drawBallTint(g, x, y, r, tint);
+    var dens = depth >= 0.75 ? (depth - 0.75) * 3.2 : 0;   // 0 → 0.8 over the last quarter
+    if (!o || dens <= 0) return;
+    g.fillStyle = PAL.NIGHT0;
+    for (var k = 0; k < o.sp.pts.length; k += 2) {
+      var X = o.x0 + o.sp.pts[k], Y = o.y0 + o.sp.pts[k + 1];
+      if (BAYER[((Y % 4 + 4) % 4) * 4 + ((X % 4 + 4) % 4)] / 16 < dens) g.fillRect(X, Y, 1, 1);
     }
   }
+
+  // static-layer pixel lookup (machine frame), for shadows and rim ticks
+  var staticPix = null;
+  function pixAt(x, y) {
+    if (!staticPix) { var sc = staticLayer.getContext('2d'); staticPix = sc.getImageData(0, 0, W, H).data; }
+    if (x < 0 || x >= W || y + TOP < 0 || y + TOP >= H) return -1;
+    var i = ((y + TOP) * W + x) * 4;
+    return (staticPix[i] << 16) | (staticPix[i + 1] << 8) | staticPix[i + 2];
+  }
+  function hex(c) { return parseInt(c.slice(1), 16); }
+  var GAPC = hex(PAL.GAP);
+  var CORKC = [hex(PAL.CORK1), hex(PAL.CORK2), hex(PAL.CORK3)];
+
+  // Lane/hop: a flat LANE3 ellipse. Bed (c === 'bed', what shadowAt gives):
+  // a 50 % NIGHT0 dither that never falls over the lip into the pit and
+  // never lands on the dark troughs; over a trough the contact reads as a
+  // 1-px FOG/PUR1 rim-light under the ball instead.
   function drawBallShadow(g, x, y, r, c, flat) {
+    if (c === 'bed') { drawBedShadow(g, x, y, r / 0.9); return; }
     ellipse(g, Math.round(x), Math.round(y), Math.max(1, Math.round(r)),
       Math.max(1, Math.round(r * (flat || 0.4))), c || PAL.LANE3);
+  }
+  function drawBedShadow(g, sx, sy, ballR) {
+    var cx = Math.round(sx), cy = Math.round(sy), rx = Math.max(1, Math.round(ballR * 0.9)), ry = Math.max(1, Math.round(ballR * 0.6));
+    var lip = Math.floor(LIP_ROW);
+    g.fillStyle = PAL.NIGHT0;
+    for (var j = -ry; j <= ry; j++) {
+      var Y = cy + j; if (Y > lip) break;
+      var hw = rx * Math.sqrt(Math.max(0, 1 - (j / (ry + 0.5)) * (j / (ry + 0.5))));
+      for (var X = Math.round(cx - hw); X < Math.round(cx - hw) + (Math.round(hw * 2) || 1); X++) {
+        if (pixAt(X, Y) === GAPC) continue;
+        if (BAYER[((Y % 4 + 4) % 4) * 4 + ((X % 4 + 4) % 4)] < 8) g.fillRect(X, Y, 1, 1);
+      }
+    }
+    var yl = cy + Math.round(ballR) + 1, half = Math.max(1, Math.round(ballR) - 1);
+    if (yl > lip) return;
+    for (var x = cx - half; x <= cx + half; x++)
+      if (pixAt(x, yl) === GAPC) px(g, x, yl, Math.abs(x - cx) <= half / 2 ? PAL.FOG : PAL.PUR1);
+  }
+
+  // A rim struck: the 3–4 cork pixels nearest the contact flash CORK3 → BONE.
+  // ringIndex 0..4 (physics rim index), angle in bed coords from +u toward
+  // +v (up the bed), k 1 → 0 over the flash (2 frames). Machine frame.
+  function drawRimTick(g, ringIndex, angle, k) {
+    if (!(k > 0) || ringIndex < 0 || ringIndex >= RIMS.length) return;
+    var r = RIMS[ringIndex], ccx = GEO.target.cx, ccy = GEO.target.cy + 0.5;
+    var sx = ccx + Math.cos(angle) * r * PX_U, sy = ccy - Math.sin(angle) * r * PX_V;
+    var cand = [];
+    for (var y = Math.round(sy) - 3; y <= Math.round(sy) + 3; y++)
+      for (var x = Math.round(sx) - 3; x <= Math.round(sx) + 3; x++) {
+        var c = pixAt(x, y);
+        var hit = ringIndex === 0 ? (c !== GAPC && c !== -1) : CORKC.indexOf(c) >= 0;
+        if (hit) cand.push({ x: x, y: y, d: Math.hypot(x + 0.5 - sx, y + 0.5 - sy) });
+      }
+    cand.sort(function (a, b) { return a.d - b.d; });
+    var col = k > 0.5 ? PAL.BONE : PAL.CORK3;
+    for (var i = 0; i < Math.min(4, cand.length); i++) px(g, cand[i].x, cand[i].y, col);
   }
 
   // Occluders for a ball sinking into a cup: the static target region with
@@ -1128,15 +1290,15 @@
     get GEO() { return GEO; },
     setHeight: setHeight, buildStatic: buildStatic,
     get staticLayer() { return staticLayer; }, get bareLayer() { return bareLayer; },
-    drawFrame: drawFrame, drawLive: drawLive,
+    // whole-canvas passes (they translate by TOP themselves)
+    drawFrame: drawFrame, drawLiveUnder: drawLiveUnder, drawLiveOver: drawLiveOver, drawLive: drawLive,
     // projection
     UNITS: { BALL_R: BALL_R, Z_HOP: Z_HOP, Z_CREST: Z_CREST, HOP_H: HOP_H, Z_LIP: Z_LIP, Y_LIP: Y_LIP, BETA: BETA, RIMS: RIMS, CUPS: CUPS, K0: K0 },
     DRAWN: DRAWN, checkGeometry: checkGeometry,
-    project: project, shadowAt: shadowAt, surfY: surfY, bedUV: bedUV, cupAt: cupAt,
-    laneBall: laneBall, laneZAt: laneZAt, bedPoint: bedPoint,
-    // sprites
-    drawBall: drawBall, drawBallShadow: drawBallShadow, drawSinkOccluder: drawSinkOccluder,
-    drawDrumDigits: drawDrumDigits,
+    project: project, shadowAt: shadowAt, surfY: surfY, bedUV: bedUV, ballRadius: ballRadius,
+    // machine-frame sprites (the caller translates by TOP)
+    drawBall: drawBall, drawSunkBall: drawSunkBall, drawBallShadow: drawBallShadow, drawBedShadow: drawBedShadow,
+    drawSinkOccluder: drawSinkOccluder, drawRimTick: drawRimTick, drawToast: drawToast,
     text: text, textC: textC, flickerAt: flickerAt
   };
   root.SkeeBallRender = api;
