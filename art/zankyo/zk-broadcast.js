@@ -655,10 +655,26 @@
 
   function tl() { return Z._signal.tools(); }
   function db2lin(db) { return Math.pow(10, (+db || 0) / 20); }
-  // the reels' own sound, a tenth down on every reception and every 受信
+  // the reels' own sound: a tenth down on every reception and every 受信
   // press (owner, 2026-09-24: "turn down the volume of the video clips by
-  // 10 %"). The noise around a reception keeps its level.
-  var REEL_VOL = 0.9;
+  // 10 %"), then another fifth (owner, 2026-09-25: "down by another 20 %").
+  var REEL_VOL = 0.9 * 0.8;
+  // THE RECEIVER'S OWN STATIC, 40 % down (owner, 2026-09-25: "the hiss that
+  // relates to the video … is just a little too loud; turn it down by about
+  // 40 %"). Four kinds: the rise before a reception, the dial's band, the
+  // hiss in a reception's drops and gaps, the burst at the collapse. The
+  // ones that go straight to the bus pass through staticBus(); the two that
+  // ride the reel's own envelope (the holes' hiss and the dither) already
+  // carry REEL_VOL, so they take STATIC_VOL / REEL_VOL to land at the same
+  // 60 % of where they were.
+  var STATIC_VOL = 0.6;
+  function staticBus(T) {
+    var b = T.lg("broadcast");
+    if (!b.__zkStatic || b.__zkStatic.context !== T.ctx) {
+      var sb = T.ctx.createGain(); sb.gain.value = STATIC_VOL; sb.connect(b); b.__zkStatic = sb;
+    }
+    return b.__zkStatic;
+  }
 
   // ---- the pool ----
   var pool = null, poolState = "idle", poolError = null, poolUnknownTones = {};   // idle | loading | ready | failed
@@ -2002,7 +2018,7 @@
       var nz = T.noiseSource(), bp = c.createBiquadFilter(), g = c.createGain();
       bp.type = "bandpass"; bp.Q.setValueAtTime(3, t);
       bp.frequency.setValueAtTime(600, t); bp.frequency.exponentialRampToValueAtTime(2400, t0 - 0.3); bp.frequency.exponentialRampToValueAtTime(1200, t0 + 0.4);
-      nz.connect(bp); bp.connect(g); g.connect(T.lg("broadcast"));
+      nz.connect(bp); bp.connect(g); g.connect(staticBus(T));
       PJ.Voice.env(g.gain, t, [[1.2, 0.045], [1.8, 0.03], [0.6, 0.018], [0.5, 0]]);
       nz.start(t, 0); nz.stop(t0 + 0.6);
     } catch (e) {}
@@ -2050,7 +2066,7 @@
       var f0 = 500 + 2600 * amt * (0.5 + 0.5 * Math.sin(t * 3.1));
       bp.frequency.setValueAtTime(Math.max(200, f0), t);
       bp.frequency.exponentialRampToValueAtTime(Math.max(200, f0 * (0.7 + 0.6 * amt)), t + durS);
-      nz.connect(bp); bp.connect(g); g.connect(T.lg("broadcast"));
+      nz.connect(bp); bp.connect(g); g.connect(staticBus(T));
       var peak = 0.010 + 0.030 * amt;                        // well under the reel's own 0.35 peak
       PJ.Voice.env(g.gain, t, [[0.02, peak], [durS - 0.05, peak * 0.7], [0.03, 0]]);
       nz.start(t, Math.random() * 20); nz.stop(t + durS + 0.05);
@@ -2780,7 +2796,7 @@
         lb.type = "bandpass"; lb.Q.setValueAtTime(0.9, t0);
         lb.frequency.setValueAtTime(1400, t0);
         lz.gain.setValueAtTime(0, t0);
-        hn.connect(lb); lb.connect(lz); lz.connect(T.lg("broadcast"));
+        hn.connect(lb); lb.connect(lz); lz.connect(staticBus(T));
         for (i = 0; i < lostSpans.length; i++) {
           var LS = lostSpans[i], la = t0 + LS.at, ld = Math.max(0.1, LS.dur);
           var lvl = (LS.deep ? 0.16 : 0.09) * db2lin(a.reel.gain);
@@ -2808,7 +2824,7 @@
       var cr = N(c.createWaveShaper()); var steps = Math.round(48 - 40 * grit), cc = new Float32Array(1024);
       for (i = 0; i < 1024; i++) { var cx = (i / 1023) * 2 - 1; cc[i] = Math.round(cx * steps) / steps; }
       cr.curve = cc;
-      var dn = N(T.noiseSource()), dg2 = N(c.createGain()); dg2.gain.setValueAtTime(db2lin(DITHER_DB) / steps, t0);
+      var dn = N(T.noiseSource()), dg2 = N(c.createGain()); dg2.gain.setValueAtTime(db2lin(DITHER_DB) / steps * STATIC_VOL / REEL_VOL, t0);
       dn.connect(dg2); dg2.connect(cr); dn.start(t0, 7); dn.stop(end);
       // THE TUNING ENVELOPE, WALKED FROM THE PLAN. In over the entry + 1.0 s,
       // flat across each piece, to nothing in each carrier-lost gap and back up
@@ -2882,7 +2898,8 @@
       }
       if (head) head.connect(hp);
       hp.connect(lp); lp.connect(pre); pre.connect(sh); sh.connect(mk); mk.connect(fl); fl.connect(gate); gate.connect(cr);
-      hz.connect(sg);   // the holes' static joins past the staircase, under the same envelope as the reel
+      var hzt = N(c.createGain()); hzt.gain.setValueAtTime(STATIC_VOL / REEL_VOL, t0);   // (the static's 60 %, net of the reel's own REEL_VOL)
+      hz.connect(hzt); hzt.connect(sg);   // the holes' static joins past the staircase, under the same envelope as the reel
       // Q0 — A STALL IS A LOST SIGNAL, NEVER A STUTTER. A media element that
       // runs dry mid-reception (a slow network under the reel, or a starved
       // decoder on a loaded machine: measured 30–130 ms underruns with the file
@@ -2979,7 +2996,7 @@
     // the burst after the collapse: pure static, then the afterglow
       var bn = N(T.noiseSource()), bh = N(c.createBiquadFilter()), bg = N(c.createGain());
       bh.type = "highpass"; bh.frequency.setValueAtTime(1800, burstAt);
-      bn.connect(bh); bh.connect(bg); bg.connect(T.lg("broadcast"));
+      bn.connect(bh); bh.connect(bg); bg.connect(staticBus(T));
       PJ.Voice.env(bg.gain, burstAt, [[0.005, 0.07], [BURST_S - 0.04, 0.05], [0.035, 0]]);
       bn.start(burstAt, 3); bn.stop(burstAt + BURST_S + 0.1);
     } catch (e) {
