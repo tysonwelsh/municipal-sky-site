@@ -1,0 +1,22 @@
+{
+  "id": "no-nb-phillipsrevyen-1986",
+  "title": "Phillipsrevyen 1-86 / The Phillips Review 1986, no. 1",
+  "year": 1986,
+  "src": "https://www.nb.no/items/50fdcec59f6b125533a49ad1fb7d0ad2",
+  "license": "copyrighted (Phillips Petroleum Company Norway / ConocoPhillips; nb.no: free access for all, no open licence stated)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": 0.0,
+  "durS": 88.25,
+  "bytes": 840028,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 10.0], [10.0, 22.08], [22.08, 34.08], [34.08, 46.17], [46.17, 58.17], [58.17, 88.25]],
+  "srcWindows": [[8.0, 18.0], [44.0, 56], [778.0, 790], [960.0, 972], [1410.0, 1422], [2034.0, 2064.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Norway, Norwegian and English with the programme's own burned-in subtitles; in-house video newsreel made by TVP Film og Videoproduksjon, Stavanger, for Phillips Petroleum Company Norway's information department, presented by Torunn Mo and Stig Kvendseth. Windows: the title PHILLIPSREVYEN 1-86 over breaking sea, dissolving to the two presenters' welcome; 'Regular TV at Ekofisk, what is happening?' and the Dyvi Beta jack-up beside 2/4 Bravo; the STOPP TENK INFORMER safety sticker on a hard hat; the Phillips 66 net-profit card and the oil-price figures; the cook in the Ekofisk galley stores; long window: 'Phillips is the first operator to get a permit for local TV offshore', then technical chief Thor Aresvik in front of the equipment racks: 'we may transmit our own programs, like the Phillipsrevyen... we may receive NRK from satellite'. Fetched from the National Library of Norway (nb.no) via its web player's HLS stream; the end credits avoided.",
+  "takedown": false
+}

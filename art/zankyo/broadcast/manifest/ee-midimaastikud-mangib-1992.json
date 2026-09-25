@@ -1,0 +1,22 @@
+{
+  "id": "ee-midimaastikud-mangib-1992",
+  "title": "Midimaastikud / MIDI Landscapes — Peeter Vähi plays",
+  "year": 1992,
+  "src": "https://arhiiv.err.ee/video/vaata/midimaastikud",
+  "license": "no licence notice; ETV/ERR archive, all rights reserved implied",
+  "tier": "B",
+  "tone": "music",
+  "weight": 3,
+  "gain": -0.2,
+  "durS": 57.0,
+  "bytes": 520548,
+  "band": "low",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 10.0], [10.0, 20.0], [20.0, 28.0], [28.0, 37.0], [37.0, 47.0], [47.0, 57.0]],
+  "srcWindows": [[696.0, 706.0], [800.0, 810.0], [1255.0, 1263.0], [1441.0, 1450.0], [1516.0, 1526.0], [1653.0, 1663.0]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Estonia 1992 (ETV, broadcast 20 December 1992, 'Midimaastikud'): THE PLAYING — composer Peeter Vähi (beard, grey suit) at a Korg M1, no one talking over it. W1 the first bars of 'Legend IV' (captioned on screen as a fragment from his LP Teekond Aasia südamesse / Journey to the Heart of Asia), his hands on the M1 keys in close-up; W2 later in the same piece, Vähi in mid-shot at the M1 among the palms, playing; W3 a demonstration inside the Buddhism conversation, his hands on the keys in close-up, the score on the music desk; W4 the Estonia concert hall, Vähi in denim striking a large gong in close-up, dissolving to the ensemble sitting cross-legged on the stage; W5 the same hall, Vähi at the M1 on stage in denim, playing, a gong behind him; W6 the programme's closing piece in the studio, his hands on the keys dissolving to a frontal shot of him at the M1, just before the credits. Music windows 10 s or less (W3 8 s), never a whole piece; Tier B, baked with --distort 0.5, band low for the synth. The conversation lives in its own reel, ee-midimaastikud-1992. Fetched by yt-dlp ERRArhiiv HLS; cut from local-dev/broadcast-src/_crop/ee-midimaastikud-1992.mp4 (ERR corner bug cropped off the top, non-square SAR 3:4 normalised to square-pixel 4:3)",
+  "takedown": false
+}

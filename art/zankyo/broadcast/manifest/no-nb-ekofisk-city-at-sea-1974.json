@@ -1,0 +1,22 @@
+{
+  "id": "no-nb-ekofisk-city-at-sea-1974",
+  "title": "Ekofisk: City at Sea",
+  "year": 1974,
+  "src": "https://www.nb.no/items/297c8651c5f64faa13a963392a7e7439",
+  "license": "copyrighted (Phillips Petroleum Company Norway / ConocoPhillips; nb.no: free access for all, no open licence stated)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 4,
+  "gain": -0.4,
+  "durS": 88.0,
+  "bytes": 784213,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 64.0], [64.0, 76.0], [76.0, 88.0]],
+  "srcWindows": [[18.0, 30], [180.0, 192], [555.0, 567], [840.0, 868.0], [973.0, 985], [1055.0, 1067]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Norway, English narration, colour; Universal Commercial-Industrial Films with A/S Informasjonsfilm for Phillips Petroleum Company Norway, on the first North Sea oil field. Windows: the title EKOFISK CITY AT SEA in red over a grey sea; a plotter pen tracing sea-floor contours; a loading buoy riding the swell as a tanker takes oil; long window: the concrete storage tank standing in the sea with supply ships, then the platforms bridged into one town on the water; the lay-barge control room paying pipe out toward Teesside and Emden; the animated network of pipelines joining at the field. Fetched from the National Library of Norway (nb.no) via its web player's HLS stream; the acknowledgement card and the blank tail avoided.",
+  "takedown": false
+}

@@ -1,0 +1,22 @@
+{
+  "id": "no-nb-var-venn-elektrisiteten-1964",
+  "title": "Vår venn elektrisiteten / Our Friend Electricity",
+  "year": 1964,
+  "src": "https://www.nb.no/items/a287f75008ed037d93b816e42a4b3a4e",
+  "license": "copyrighted (ABC-film for Forbrukerrådet / Statens filmsentral; nb.no: free access for all, no open licence stated)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": -0.5,
+  "durS": 88.0,
+  "bytes": 931247,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 64.0], [64.0, 76.0], [76.0, 88.0]],
+  "srcWindows": [[100.0, 112], [237.0, 249], [405.0, 417], [700.0, 728.0], [769.0, 781], [849.0, 861]],
+  "pitchHz": [null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Norway, Norwegian, colour; ABC-film information film directed by Sølve Kern for the Consumer Council and the State Film Centre, on electrical appliances in the home. Windows: the kilowatt meter's needle and the fuse board; a woman switching on a lamp and the radio in a 1960s living room; a black-and-white house fire, the warning; long window: the appliance-testing laboratory, a man in a white coat wiring a test bench, cables and plugs, an iron on a test rig; an iron being tested; the stopwatch held over a washing-machine drum. Fetched from the National Library of Norway (nb.no) via its web player's HLS stream; NB's modern title card and the end credit avoided.",
+  "takedown": false
+}

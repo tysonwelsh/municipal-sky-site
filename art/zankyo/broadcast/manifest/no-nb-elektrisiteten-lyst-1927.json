@@ -1,0 +1,23 @@
+{
+  "id": "no-nb-elektrisiteten-lyst-1927",
+  "title": "[Elektrisiteten gjør det lyst, rent, sundt og varmt] / [Electricity makes it bright, clean, healthy and warm]",
+  "year": 1927,
+  "src": "https://www.nb.no/items/df94654d66532e13a32e186bf0e4e6b4",
+  "license": "copyrighted (nb.no: free access for all, no open licence stated)",
+  "tier": "B",
+  "tone": "noise",
+  "weight": 4,
+  "gain": 0.0,
+  "durS": 76.0,
+  "bytes": 505276,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 28.0], [28.0, 40.0], [40.0, 52.0], [52.0, 64.0], [64.0, 76.0]],
+  "srcWindows": [[8.0, 36.0], [38.0, 50], [51.0, 63], [63.0, 75], [75.0, 87]],
+  "pitchHz": [null, null, null, null, null],
+  "tuned": false,
+  "notes": "Norway, silent print (no sound). Fram Film advertising film, camera Hans Berge (NB 'Hans Berge nr. 242/1'); NB dates it ca 1915-1930, and the slogan's 'Oslo' puts it after 1925. An image machine: about 17 motor-driven rollers turn to assemble a picture, pause, then turn again. Windows: long window of the slogan board 'Oslo-hjemmene får 1000 watt for 180 kroner' dissolving roller by roller into the pictures (power lines, a city at night, the electric kitchen, the home); the pictures cycling back to the slogan; the machine seen from the side with its electric motor, rollers turning; close on the rollers turning over; the next advertisement on the reel, a young man smoking a Flag cigarette. Fetched from the National Library of Norway (nb.no) via its web player's HLS stream; NB's modern title card avoided.",
+  "takedown": false,
+  "silent": true
+}

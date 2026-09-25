@@ -1,14 +1,14 @@
 {
  "_meta": {
   "built": "2026-09-25",
-  "reels": 354,
+  "reels": 363,
   "byConf": {
-   "region": 24,
-   "city": 189,
-   "country": 140,
+   "region": 26,
+   "city": 195,
+   "country": 141,
    "unknown": 1
   },
-  "countries": 78,
+  "countries": 79,
   "heard": 6,
   "dx": 15,
   "realm": {
@@ -1980,6 +1980,13 @@
   "lon": 24.749,
   "conf": "city"
  },
+ "ee-midimaastikud-mangib-1992": {
+  "country": "EE",
+  "place": "Tallinn, ETV studio and the Estonia concert hall",
+  "lat": 59.434,
+  "lon": 24.749,
+  "conf": "city"
+ },
  "ee-tee-maailmaruumi-1961": {
   "country": "EE",
   "place": "Tartu Observatory and the Tõravere building site",
@@ -2552,6 +2559,62 @@
   "place": "Quảng Trị, near the DMZ (AFVN Detachment 5, Channel II / 930 kHz)",
   "lat": 16.75,
   "lon": 107.19,
+  "conf": "region"
+ },
+ "no-nb-draugen-control-system-1992": {
+  "country": "NO",
+  "place": "ABB Industry and Offshore workshops, Norway (Draugen platform systems)",
+  "lat": 59.91,
+  "lon": 10.75,
+  "conf": "country"
+ },
+ "no-nb-ekofisk-city-at-sea-1974": {
+  "country": "NO",
+  "place": "Ekofisk field, Norwegian North Sea, and Stavanger",
+  "lat": 56.55,
+  "lon": 3.21,
+  "conf": "region"
+ },
+ "no-nb-elektrisiteten-lyst-1927": {
+  "country": "NO",
+  "place": "Oslo (Fram Film studio, Hans Berge)",
+  "lat": 59.91,
+  "lon": 10.75,
+  "conf": "city"
+ },
+ "no-nb-en-chance-linguaphone-1930": {
+  "country": "NO",
+  "place": "Bergen, Linguaphone institute office, Strandgaten 16-18",
+  "lat": 60.394,
+  "lon": 5.322,
+  "conf": "city"
+ },
+ "no-nb-jubileumsutstillingen-1914": {
+  "country": "NO",
+  "place": "Kristiania (Oslo), Frogner, Jubilee Exhibition grounds",
+  "lat": 59.927,
+  "lon": 10.7,
+  "conf": "city"
+ },
+ "no-nb-maskinhallen-frogner-1914": {
+  "country": "NO",
+  "place": "Kristiania (Oslo), Frogner, Jubilee Exhibition machine hall",
+  "lat": 59.927,
+  "lon": 10.7,
+  "conf": "city"
+ },
+ "no-nb-phillipsrevyen-1986": {
+  "country": "NO",
+  "place": "Stavanger (TVP studio) and the Ekofisk field",
+  "lat": 58.97,
+  "lon": 5.73,
+  "conf": "city"
+ },
+ "no-nb-var-venn-elektrisiteten-1964": {
+  "country": "NO",
+  "place": "Oslo area (ABC-film)",
+  "lat": 59.91,
+  "lon": 10.75,
   "conf": "region"
  }
 }

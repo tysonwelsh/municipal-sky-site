@@ -1,0 +1,23 @@
+{
+  "id": "no-nb-jubileumsutstillingen-1914",
+  "title": "Jubileumsutstillingen / The Jubilee Exhibition, Frogner 1914",
+  "year": 1914,
+  "src": "https://www.nb.no/items/3b59b1f982a1d66edef0dfa91f019189",
+  "license": "Public Domain Mark 1.0 (nb.no IIIF manifest rights)",
+  "tier": "A",
+  "tone": "noise",
+  "weight": 4,
+  "gain": 0.0,
+  "durS": 148.0,
+  "bytes": 1238436,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0], [72.0, 84.0], [84.0, 96.0], [96.0, 108.0], [108.0, 148.0]],
+  "srcWindows": [[10.0, 22], [22.0, 34], [52.0, 64], [100.0, 112], [130.0, 142], [160.0, 172], [180.0, 192], [192.0, 204], [214.0, 226], [240.0, 280.0]],
+  "pitchHz": [null, null, null, null, null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Norway, silent print (no sound). Fram Film, camera Hans Berge (NB 'Hans Berge nr. 392'): opening of the centenary-of-the-constitution exhibition at Frogner, Kristiania, 15 May 1914, later the Vigeland park. Windows: a motor car and carriages driving through the 1814-1914 gate; the procession walking a lane through 3-4000 massed spectators; King Haakon's party and uniformed officers on the grounds; the classical exhibition halls; a bronze sculpture with women passing; the long reflecting pool seen from above; visitors by the lake and the twin towers; long window: one unbroken high panorama across the pavilions and the lake. Fetched from the National Library of Norway (nb.no) via its web player's HLS stream; NB's modern title card at the head avoided.",
+  "takedown": false,
+  "silent": true
+}

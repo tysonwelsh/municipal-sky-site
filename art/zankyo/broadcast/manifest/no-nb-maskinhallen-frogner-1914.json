@@ -1,0 +1,23 @@
+{
+  "id": "no-nb-maskinhallen-frogner-1914",
+  "title": "[Interiør fra maskinhallen, jubileumsutstillingen på Frogner] / [Interior of the machine hall, Jubilee Exhibition at Frogner]",
+  "year": 1914,
+  "src": "https://www.nb.no/items/56c4a7f726c3606ab8e49089e2274603",
+  "license": "copyrighted per nb.no record (free access for all, no open licence stated)",
+  "tier": "B",
+  "tone": "noise",
+  "weight": 3,
+  "gain": 0.0,
+  "durS": 32.5,
+  "bytes": 313750,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 32.5]],
+  "srcWindows": [[13.0, 25.0], [26.0, 46.5]],
+  "pitchHz": [null, null],
+  "tuned": false,
+  "notes": "Norway, silent print (the file's sound track is blank). Camera Hans Berge, distributed by Fram Film: inside the machine hall of the 1914 centenary exhibition at Frogner, Kristiania. Windows: King Haakon's party in overcoats and top hats walking the carpet past a giant rolling press; then crowds packed among the machines, printing presses and cranes under the hall's painted vault, the camera drifting down the aisle. Fetched from the National Library of Norway (nb.no) via its web player's HLS stream; NB's modern title card avoided.",
+  "takedown": false,
+  "silent": true
+}

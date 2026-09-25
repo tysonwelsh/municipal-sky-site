@@ -1,0 +1,23 @@
+{
+  "id": "no-nb-en-chance-linguaphone-1930",
+  "title": "En chance / A Chance (Linguaphone advertising film)",
+  "year": 1930,
+  "src": "https://www.nb.no/items/271f956a5bbc613a9ad6a8234daf1df8",
+  "license": "CC BY 4.0 (nb.no IIIF manifest rights); Wilse Film Co for Norsk Linguaphone, via Nasjonalbiblioteket",
+  "tier": "A",
+  "tone": "noise",
+  "weight": 4,
+  "gain": 0.0,
+  "durS": 148.0,
+  "bytes": 680302,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 36.0], [36.0, 48.0], [48.0, 60.0], [60.0, 72.0], [72.0, 112.0], [112.0, 124.0], [124.0, 136.0], [136.0, 148.0]],
+  "srcWindows": [[17.0, 29], [108.0, 120], [130.0, 142], [144.0, 156], [156.0, 168], [198.0, 210], [240.0, 280.0], [284.0, 296], [312.0, 324], [342.0, 354]],
+  "pitchHz": [null, null, null, null, null, null, null, null, null, null],
+  "tuned": false,
+  "notes": "Norway, silent print (the file's sound track is blank), Norwegian intertitles; Wilse Film Co advertising film for the Linguaphone institute, Bergen, c. 1930 (year uncertain in NB's catalogue), with Tryggve Larssen. Windows: the boss at his roll-top desk handing out the London assignment; the man reading the Linguaphone advertisement in a magazine, close; walking a tree-lined street in an iris, and the new Kroepelien building; the painted card 'I Kroepeliens nye bygning, Strandgaten 16-18, findes Linguaphone Institutets Bergenskontor'; the institute's office, hat in hand; the man in a dressing gown by a wind-up gramophone, book open, learning English from a record (long window); the record turning on the gramophone, close; a steamer leaving for England; his handwritten letter home thanking the course. Fetched from the National Library of Norway (nb.no) via its web player's HLS stream; NB's logo and the digital intertitle cards avoided.",
+  "takedown": false,
+  "silent": true
+}

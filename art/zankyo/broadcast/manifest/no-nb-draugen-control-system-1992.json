@@ -1,0 +1,22 @@
+{
+  "id": "no-nb-draugen-control-system-1992",
+  "title": "The Draugen control system (ABB promotional film)",
+  "year": 1992,
+  "src": "https://www.nb.no/items/0bd01a5371b30c7a3f0bc2b84bf7d168",
+  "license": "copyrighted (ABB / Berge Film; nb.no: free access for all, no open licence stated)",
+  "tier": "B",
+  "tone": "voice",
+  "weight": 3,
+  "gain": 0.1,
+  "durS": 88.0,
+  "bytes": 704828,
+  "band": "normal",
+  "audioOnly": false,
+  "picture": null,
+  "windows": [[0.0, 12.0], [12.0, 24.0], [24.0, 52.0], [52.0, 64.0], [64.0, 76.0], [76.0, 88.0]],
+  "srcWindows": [[20.0, 32], [108.0, 120], [236.0, 264.0], [279.0, 291], [425.0, 437], [508.0, 520]],
+  "pitchHz": [null, null, null, null, 330.45, null],
+  "tuned": true,
+  "notes": "Norway, English narration (narrator John Shanly); ABB Industry and Offshore promotional video made by Berge Film for Norske Shell's Draugen platform, undated by NB but made before first oil in 1993 (an operator screen's clock reads 1991 or 1992-11-2x). Windows: a flat-shaded 3D model of the platform turning under the narration; a pointer tracing the Draugen field layout drawing; long window: the process screens redrawing, generator enclosure and weather-deck fire zones, a hand on the red-keyed console; the CRITICAL ALARM lamp and the control room; a 3D render of the control room; a tape dropout breaking up into the control room and the plant overview screen. Fetched from the National Library of Norway (nb.no) via its web player's HLS stream; the ABB logo cards and end credits avoided.",
+  "takedown": false
+}
