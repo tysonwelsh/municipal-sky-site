@@ -55,7 +55,11 @@
     // rim top down to the bed over bermW. A ball rolling down from the
     // backstop rides up it and drops into the 10 instead of propping
     // against a bare hoop (on a 41° bed the fillet is still downhill).
-    bermW: 0.12,
+    bermW: 0,                // (off: a fillet ski-jumps fast balls over the stack)
+    // …instead the outer rim's TOP arc is nearly flush with the bed (as on a
+    // real machine, where the backboard runs down into the 10): a ball that
+    // comes back off the backstop rolls straight into the 10 cup.
+    flushRim: 0, flushA0: 35, flushA1: 145, flushDepth: 0.8, flushTaper: 15,
     cageH: 0.9,              // wire cage over the bed, height above the plane
 
     // ── world ──
@@ -70,7 +74,7 @@
     returnAccel: 4.0,        // …reaching it at this rate
 
     // ── contacts ──
-    eLane: 0.25, eRail: 0.5, eWall: 0.45, eBed: 0.25, eRim: 0.2,
+    eLane: 0.25, eRail: 0.5, eWall: 0.45, eBed: 0.25, eRim: 0.25,
     eBackstop: 0.30, ePit: 0.2, eLip: 0.35,
     muImpact: 0.3,           // Coulomb friction at contacts (slip ↔ spin); ≥ (2/7)·tan β to roll on the bed
     muImpactRim: 0.12,       // rim tops are polished: little spin bite
@@ -94,17 +98,21 @@
     // whose bottom is below the rim tops over a cup is "in the cup" and the
     // cup soaks up its motion (cork is dead). Without it a ball rolling down
     // from the backstop skips over every shallow nest and out of the stack.
-    cupDrag: 12.0,           // 1/s, velocity decay rate while in a cup
+    cupDrag: 8.0,            // 1/s, velocity decay rate while in a cup
     cupH: 0.225,             // "in a cup": centre below this over a band (rim top + r + a little)
     capH: 0.20,              // centre height above plane below which a ball is "in" a cup
     capV: 1.6,               // …and slower than this → captured
+    capHDrop: 0.20,          // …centre height for the dropping-in case
+    capVDrop: 4.2,           // …or coming down into the open part of the cup slower than this
+    capMargin: 0.0,          // extra rim-zone half-width (beyond the tube) that doesn't count as open cup
     holeCapH: 0.06,          // down a 100 hole
+    holeDirectR: 0.065,      // a direct hit drops in if its centre is this close to the hole's
     restV: 0.06, restT: 0.5, // at rest this long on the bed → resolved where it sits
     sinkT: 0.35, gutterT: 0.35,
     timeoutT: 8.0,           // force-resolve 8 s after the throw
 
     // ── events ──
-    evRim: 0.35, evBed: 0.35, evWall: 0.3, evBackstop: 0.3, evCooldown: 0.05,
+    evRim: 0.2, evBed: 0.35, evWall: 0.3, evBackstop: 0.3, evCooldown: 0.05,
 
     // ── input range (the swipe maps into this; physics accepts any v ≥ 0) ──
     vMin: 2.6, vMax: 9.0, aimMax: 0.44, vAbsMax: 12,
@@ -125,6 +133,8 @@
     D.lipRing = T.holeR + T.rimW / 2;
     D.dent0 = T.dentA0 * Math.PI / 180; D.dent1 = T.dentA1 * Math.PI / 180;
     D.dentTap = T.dentTaper * Math.PI / 180;
+    D.flush0 = T.flushA0 * Math.PI / 180; D.flush1 = T.flushA1 * Math.PI / 180;
+    D.flushTap = T.flushTaper * Math.PI / 180;
     GEO.ballR = T.ballR;
     GEO.L = T.L; GEO.zHop = T.zHop; GEO.hCrest = T.hCrest;
     GEO.launchAngle = D.thetaCrest;
@@ -139,6 +149,8 @@
     GEO.holes = [{ u: -T.holeU, v: T.holeV, r: T.holeR }, { u: T.holeU, v: T.holeV, r: T.holeR }];
     GEO.lipH = T.lipH;
     GEO.berm = { rim: 0, w: T.bermW };
+    GEO.flush = { rim: T.flushRim, a0: T.flushA0, a1: T.flushA1, depth: T.flushDepth };
+    GEO.rimTop = rimTop; // (k, angleRad) → rim height there (dent + flush arc included)
     GEO.cageH = T.cageH;
     return GEO;
   }
@@ -182,15 +194,17 @@
     return { x: u, y: TUNE.bedY0 + v * D.sB + h * D.cB, z: TUNE.bedZ0 + v * D.cB - h * D.sB };
   }
 
-  function rimTop(k, ang) { // top height of rim k at polar angle ang (rad, −π..π)
+  // smooth 0..1 window over [a0, a1] (rad) with cosine shoulders of width tp
+  function arcWin(ang, a0, a1, tp) {
+    if (ang >= a0 && ang <= a1) return 1;
+    if (ang > a0 - tp && ang < a0) return 0.5 - 0.5 * Math.cos(Math.PI * (ang - (a0 - tp)) / tp);
+    if (ang > a1 && ang < a1 + tp) return 0.5 + 0.5 * Math.cos(Math.PI * (ang - a1) / tp);
+    return 0;
+  }
+  function rimTop(k, ang) { // top height of rim k at polar angle ang (rad, −π..π, 0 = +u, π/2 = up-bed)
     var T = TUNE, hgt = T.rimH;
-    if (k === T.dentRim) {
-      var a0 = D.dent0, a1 = D.dent1, tp = D.dentTap, w = 0;
-      if (ang >= a0 && ang <= a1) w = 1;
-      else if (ang > a0 - tp && ang < a0) w = 0.5 - 0.5 * Math.cos(Math.PI * (ang - (a0 - tp)) / tp);
-      else if (ang > a1 && ang < a1 + tp) w = 0.5 + 0.5 * Math.cos(Math.PI * (ang - a1) / tp);
-      hgt *= 1 - T.dentDepth * w;
-    }
+    if (k === T.dentRim) hgt *= 1 - T.dentDepth * arcWin(ang, D.dent0, D.dent1, D.dentTap);
+    if (k === T.flushRim) hgt *= 1 - T.flushDepth * arcWin(ang, D.flush0, D.flush1, D.flushTap);
     return hgt;
   }
 
@@ -200,6 +214,13 @@
     if (d > R[0]) return -1;
     for (var k = 0; k < R.length - 1; k++) if (d > R[k + 1]) return k;
     return R.length - 1;
+  }
+  // is the centre over the open part of cup `band` (not over a rim tube)?
+  function overClearCup(q, band) {
+    var d = Math.hypot(q.u, q.v - TUNE.ringCV), R = TUNE.rims, m = D.rho + TUNE.capMargin;
+    if (d > R[band] - m) return false;
+    if (band < R.length - 1 && d < R[band + 1] + m) return false;
+    return true;
   }
   function holeAt(u, v, rad) {
     for (var i = 0; i < 2; i++) {
@@ -295,11 +316,14 @@
   }
 
   /* A contact with anything on the bed side. The first one is the LANDING
-   * and is always reported as 'bed' {speed, surface} (or 'backstop' for a
-   * direct hit) — the ball comes down on the target with one thud even when
-   * the first thing it meets is a rim top (the cups are narrower than the
-   * ball, so a landing in the stack always meets rims). Every later rim
-   * impact above evRim is a 'rim' event: that is the rattle. */
+   * and is reported once, flagged landing: true — as 'backstop' on a direct
+   * hit, otherwise as 'bed' {speed, surface: 'plane'|'rim'|'hole'|'lip',
+   * ring|hole}. The cups are narrower than the ball (pinned geometry), so a
+   * ball coming down into the stack nearly always meets a rim top first;
+   * that first knock is the landing, not a rattle. Every LATER rim or
+   * 100-lip impact above evRim is a 'rim' event and makes `rattled` true.
+   * Contacts within evCooldown of an event of the same kind are the same
+   * impact, not a new sound. */
   function bedHit(b, kind, s, idx) {
     var T = TUNE;
     if (b.sup) b.supKind = 'bed';
@@ -311,11 +335,14 @@
       if (b.phase === 'flight') b.phase = 'bed';
       b.cd.land = b.t;
       if (kind === 'backstop') emit(b, { type: 'backstop', speed: sp, landing: true });
-      else emit(b, { type: 'bed', speed: sp, surface: kind, ring: kind === 'rim' ? idx : undefined, landing: true });
+      else {
+        var ev = { type: 'bed', speed: sp, surface: kind, landing: true };
+        if (kind === 'rim') ev.ring = idx; else if (kind === 'hole') ev.hole = idx;
+        emit(b, ev);
+      }
       return;
     }
-    // the landing's own follow-through contacts (same impact, next substeps) are not new sounds
-    if (b.t - b.cd.land < T.evCooldown) return;
+    if (b.t - b.cd.land < T.evCooldown) return; // the landing's own follow-through
     if (kind === 'rim') { if (s > T.evRim) { b.rimHits++; emitCd(b, 'rim' + idx, { type: 'rim', ring: idx, speed: sp }); } }
     else if (kind === 'hole') { if (s > T.evRim) { b.rimHits++; emitCd(b, 'hole' + idx, { type: 'rim', ring: null, hole: idx, speed: sp }); } }
     else if (kind === 'backstop') { if (s > T.evBackstop) emitCd(b, 'backstop', { type: 'backstop', speed: sp }); }
@@ -407,6 +434,23 @@
       }
     }
 
+    // dropping into a cup: centre over the open part of a cup, bottom down
+    // at the rim tops, coming down. Checked BEFORE the contacts so the cup's
+    // back wall catches the ball instead of bouncing it back out — the cups
+    // are holes in a real machine (see capHDrop).
+    if (b.launched && (b.phase === 'flight' || b.phase === 'bed')) {
+      var qc = toBed(b.x, b.y, b.z);
+      if (qc.h < T.capHDrop && qc.v > 0) {
+        var bandC = bandAt(qc.u, qc.v);
+        var vhd = b.vy * D.cB - b.vz * D.sB;
+        if (bandC >= 0 && vhd < 0 && Math.hypot(b.vx, b.vy, b.vz) < T.capVDrop && overClearCup(qc, bandC)) {
+          if (!b.touchedBed) bedHit(b, 'cup', -vhd, null);
+          b.t += dt;
+          return capture(b, qc, SCORES[bandC], bandC, null);
+        }
+      }
+    }
+
     /* contacts */
     b.sup = 0; b._supBest = 0; b.supKind = 'air';
     var s;
@@ -494,7 +538,7 @@
         // the berm outside rim 0: a straight fillet in the (radial, h) plane
         dCr = Math.hypot(q.u, q.v - T.ringCV);
         var dB = dCr - T.rims[0];
-        if (dB > 0 && dB < T.bermW + r) {
+        if (T.bermW > 0 && dB > 0 && dB < T.bermW + r) {
           var bw = T.bermW, bh = T.rimH, L2 = bw * bw + bh * bh;
           var tt = Math.max(0, Math.min(1, (dB * bw + (q.h - bh) * -bh) / L2));
           var cr = tt * bw, chh = bh - tt * bh;
@@ -579,11 +623,22 @@
       q = toBed(b.x, b.y, b.z);
       var spd = Math.hypot(b.vx, b.vy, b.vz);
       // down a 100 hole
+      // down a 100 hole: sunk into the well, or a direct hit — the centre
+      // over the mouth while the ball comes down through lip level
       var hole = holeAt(q.u, q.v, T.holeR);
-      if (hole >= 0 && q.h < T.holeCapH) return capture(b, q, 100, 5 + hole, hole);
+      if (hole >= 0) {
+        var vh = b.vy * D.cB - b.vz * D.sB;
+        if (q.h < T.holeCapH) return capture(b, q, 100, 5 + hole, hole);
+        if (vh < 0 && q.h < r + T.lipH && holeAt(q.u, q.v, T.holeDirectR) >= 0) return capture(b, q, 100, 5 + hole, hole);
+      }
       // between two rims
       var band = bandAt(q.u, q.v);
-      if (band >= 0 && q.h < T.capH && spd < T.capV) return capture(b, q, SCORES[band], band, null);
+      if (band >= 0) {
+        // settled in the cup (low and slow), or coming down into the open
+        // part of it with its bottom at the rim tops: the cups are holes in
+        // a real machine, and that is the ball dropping into the ring
+        if (q.h < T.capH && spd < T.capV) return capture(b, q, SCORES[band], band, null);
+      }
       // at rest somewhere odd (e.g. propped against the outer rim from above)
       if (spd < T.restV) {
         b.restT += dt;
