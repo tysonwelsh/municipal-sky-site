@@ -52,14 +52,23 @@ async function shoot(page, name) {
   // back a frame from before the last steps — two runs then differed over the
   // whole idle tube (175,917 px, the idle raster's breathing a few steps
   // apart). Shoot until two consecutive shots, 400 ms apart, are identical.
-  let prev = null, data = null, tries = 0;
-  for (; tries < 8; tries++) {
-    await sleep(400);
+  // (critic P1 r2) 400 ms can be too short — headless composites at ~1 fps,
+  // so two shots 400 ms apart can both be a stale frame — so now 1100 ms
+  // apart, three in a row identical. This did NOT cure the whole-tube
+  // mismatches: at load 33 the two RUNS still diverge now and then (A: the
+  // glow-off john-cage frame undecoded, then a dead tube 173,114 px apart;
+  // D: idle2 175,910 px apart, mean ΔG +5.7). That is run-to-run state, not
+  // the shot. Read a row only when it is in sync: diffPx in the hundreds or
+  // thousands along the crack, not ~175,000 over the tube.
+  let prev = null, data = null, tries = 0, same = 0;
+  for (; tries < 10; tries++) {
+    await sleep(1100);
     data = (await page.send("Page.captureScreenshot", { format: "png", clip: { x: r.x, y: r.y, width: r.w, height: r.h, scale: 1 }, captureBeyondViewport: true })).data;
-    if (prev !== null && data === prev) break;
+    same = prev !== null && data === prev ? same + 1 : 0;
+    if (same >= 2) break;
     prev = data;
   }
-  if (tries >= 8) console.error("  (" + name + ": no two consecutive shots agreed in 8 tries)");
+  if (tries >= 10) console.error("  (" + name + ": no three consecutive shots agreed in 10 tries)");
   fs.writeFileSync(path.join(OUT, name), Buffer.from(data, "base64"));
   return data;
 }

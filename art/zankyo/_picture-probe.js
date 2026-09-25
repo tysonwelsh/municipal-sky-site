@@ -113,6 +113,11 @@ const REPS = +opt("reps", "3");
 const OUT = opt("out", "") || fs.mkdtempSync(path.join(os.tmpdir(), "zk-picture-probe-"));
 fs.mkdirSync(OUT, { recursive: true });
 const LULLK = JSON.parse(opt("lullk", "null"));   // dev only: LULL constants tried in-page (never in a gate run)
+// (critic P1 r2) --noscale: register SSIM for position only, as r1 did (the
+// r2 伸-scale correction off) — shows how much of a gate rests on it;
+// --lullreel <i>: the lull mode on reel i instead of 0 (john-cage), so its
+// near-clean share can be read on a higher-contrast picture. Never in a gate run.
+const NOSCALE = argv.indexOf("--noscale") >= 0, LULL_REEL = +opt("lullreel", "0");
 const SEED = 3042;                      // the night: fixes the crack pattern and the idle timings
 const FPS = 30;
 
@@ -629,7 +634,7 @@ function PAGE_MULTI(items, reels, o) {
           rec.tHold.push(+e.toFixed(3)); rec.inHole.push(hole);
           var geo = D.buffers().geo || {}, kk = (geo.sc || 1) * (geo.sy || 1), kc = cleanK[it.reel != null ? it.reel : "card"] || 1;
           if (it.clean) lastK = kk;
-          if (clean && !it.clean) { rec.ssimRaw.push(+ssim(gr, clean).toFixed(4)); rec.ssim.push(+Math.max(rec.ssimRaw[rec.ssimRaw.length - 1], ssimReg(gr, clean, kk / kc)).toFixed(4)); }
+          if (clean && !it.clean) { rec.ssimRaw.push(+ssim(gr, clean).toFixed(4)); rec.ssim.push(+Math.max(rec.ssimRaw[rec.ssimRaw.length - 1], ssimReg(gr, clean, o.noscale ? 1 : kk / kc)).toFixed(4)); }
           if (it.grays && rec.grays.length < (it.maxGrays || 40)) rec.grays.push(b64(gr));
         }
         if (it.pngAt != null && !rec.pngs.length && st.phase === "hold" && tm / 1000 - t0 - P.segments[0].atS >= it.pngAt) rec.pngs.push(cv.toDataURL("image/png"));
@@ -682,7 +687,7 @@ async function openPage(browser, o) {
 async function runMulti(browser, items, o) {
   const page = await openPage(browser, o);
   try {
-    const res = await page.eval("(" + PAGE_MULTI.toString() + ")(" + JSON.stringify(items) + "," + JSON.stringify(REELS) + "," + JSON.stringify({ fps: FPS, lullk: LULLK }) + ")", 1800000);
+    const res = await page.eval("(" + PAGE_MULTI.toString() + ")(" + JSON.stringify(items) + "," + JSON.stringify(REELS) + "," + JSON.stringify({ fps: FPS, lullk: LULLK, noscale: NOSCALE }) + ")", 1800000);
     res.errors = page.errors;
     return res;
   } finally { await page.closeTarget(); }
@@ -1134,8 +1139,8 @@ async function lullShape(browser) {
   const extra = JSON.parse(opt("axes", "{}"));                // dev: axes merged over both variants (e.g. '{"swell":{"amt":0}}')
   const variants = [["as built", Object.assign({}, extra)], ["lull off", Object.assign({}, extra, { lull: null })]], out = {};
   for (const [name, axes] of variants) {
-    const items = [cleanItem(0)];
-    for (const a of ["遠", "嵐"]) for (let i = 0; i < 12; i++) items.push(plainItem(0, 501 + i + 0.37, { force: { archetype: a, sev: 1, axes: axes }, label: a + "·sev1·" + i }));
+    const items = [cleanItem(LULL_REEL)];
+    for (const a of ["遠", "嵐"]) for (let i = 0; i < 12; i++) items.push(plainItem(LULL_REEL, 501 + i + 0.37, { force: { archetype: a, sev: 1, axes: axes }, label: a + "·sev1·" + i }));
     const rows = legRows(await runMulti(browser, items, {}));
     const hi = rows.map((r) => { const v = r.trace.filter((t) => !t[2]).map((t) => t[1]); return v.filter((x) => x >= NEAR_CLEAN).length / Math.max(1, v.length); });
     const fails = rows.filter((r) => !r.surf);
