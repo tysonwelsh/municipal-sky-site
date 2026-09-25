@@ -5,7 +5,7 @@
  * one either costs nothing or pays out:
  *
  *   THE LEAN     every nickel the lane warps a little to one side: a
- *                constant lateral pull `laneSideA` of 0.06–0.14 u/s², sign
+ *                constant lateral pull `laneSideA` of 0.03–0.07 u/s², sign
  *                and size from the game seed. Ball one teaches it. The
  *                chalk ghost stays honest (it shows aim, not the drift).
  *   MOON         about one game in four, for one ball (never ball 1): the
@@ -54,7 +54,7 @@
   'use strict';
 
   var BALLS = 9;
-  var LEAN_MIN = 0.06, LEAN_MAX = 0.14;   // |laneSideA|, units/s²
+  var LEAN_MIN = 0.03, LEAN_MAX = 0.07;   // |laneSideA|, units/s²
   var MOON_LEAD = 1.5;                    // s of 'rising' before the moon is full
   var MOON_SET = 1.0;                     // s of 'setting' after the moon ball's done
   var MOON_HOLES = 1.5;                   // 100-hole capture radius × this
