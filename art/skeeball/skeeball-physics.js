@@ -16,13 +16,26 @@
  *          from the lip, h = height above the plane.
  *
  * Nothing is scripted after the throw. Gravity, rolling resistance and
- * contact impulses against the lane/hop surface, the crest and lip
- * edges, the pit walls, the bed plane, five raised rims (capsule-section
- * hoops; the cups between them are open wells), the two 100-hole lips,
- * the side walls and the backstop produce every bounce, rattle, skip and
- * dead roll. A ball is CAPTURED when it has sunk between two rims (or
- * down a 100 hole) and is moving slowly; the sink animation then drops
- * it below the bed over TUNE.sinkT.
+ * rigid-sphere contact impulses (restitution + Coulomb friction coupled to
+ * the ball's spin) against the lane/hop surface, the crest and lip edges,
+ * the pit walls, the bed plane, five raised rims (capsule-section hoops;
+ * the cups between them are open wells), the two 100-hole lips, the side
+ * walls, the backstop and a cage roof produce every bounce, rattle, skip,
+ * backstop rebound and dead roll.
+ *
+ * The one modelling device: the pinned cups are narrower than the ball, so
+ * a ball can only ever nest on two rim tops. What a real (deep) cup does is
+ * stood in for by (a) capture when the ball comes DOWN into the open part
+ * of a cup with its bottom at the rim tops (capHDrop, capVDrop), (b)
+ * capture when it sits low and slow in a cup (capH, capV), and (c) a drag
+ * while it is down between two rims (cupDrag). A ball that meets a rim top
+ * instead bounces — that is the rattle. The sink animation then carries
+ * the ball's momentum down below the bed over TUNE.sinkT.
+ *
+ * Geometry beyond PLAN-2 §2 (all in GEO): the dented 40, the outer rim's
+ * top arc nearly flush with the bed (backstop rebounds fall into the 10,
+ * as on a real machine), pit walls that splay from the lane's half-width
+ * to the bed's, and a cage roof over the bed.
  *
  * Semi-implicit Euler at a fixed 1/240 s substep. The only randomness is
  * hash01(seed, stepIndex): ±3 % rim restitution roughness and a tiny
@@ -106,9 +119,10 @@
     capVDrop: 4.2,           // …or coming down into the open part of the cup slower than this
     capMargin: 0.0,          // extra rim-zone half-width (beyond the tube) that doesn't count as open cup
     holeCapH: 0.06,          // down a 100 hole
-    holeDirectR: 0.065,      // a direct hit drops in if its centre is this close to the hole's
+    holeDirectR: 0.085,      // a direct hit drops in if its centre is this close to the hole's
     restV: 0.06, restT: 0.5, // at rest this long on the bed → resolved where it sits
     sinkT: 0.35, gutterT: 0.35,
+    sinkVMax: 1.5,           // capture momentum carried into the sink, units/s (cap)
     timeoutT: 8.0,           // force-resolve 8 s after the throw
 
     // ── events ──
@@ -373,11 +387,21 @@
     var dy = Math.max(0, T.hCrest - yContact);
     var spC = Math.sqrt(Math.max(0, sp * sp - 2 * T.g * T.rollK * dy));
     var zC = T.L - r * sn, yC = T.hCrest + r * cs;
-    var over = Math.max(0, (b.z - zC) * cs + (b.y - yC) * sn); // already past the crest point
-    b.z = zC + over * cs; b.y = yC + over * sn;
-    b.vz = spC * cs; b.vy = spC * sn;
+    // Put the ball on THE ballistic arc through the crest point with the
+    // crest velocity, at the time offset τ its along-path position implies
+    // (τ < 0: still a sliver short of the crest). Every throw of the same
+    // speed then flies the identical parabola whatever the substep phase —
+    // no angle jitter, no landing folds — and the ball never jumps forward.
+    var over = (b.z - zC) * cs + (b.y - yC) * sn;
+    var tau = spC > 1e-6 ? over / spC : 0;
+    b.vz = spC * cs; b.vy = spC * sn - T.g * tau;
+    b.z = zC + spC * cs * tau; b.y = yC + spC * sn * tau - 0.5 * T.g * tau * tau;
     rollOn(b, 0, cs, -sn);
     b.sup = 0; b.supKind = 'air';
+    if (!b.launched) {
+      b.launched = true; b.tLaunch = b.t; b.phase = 'flight';
+      emit(b, { type: 'launch', v: +spC.toFixed(3) });
+    }
   }
 
   function substep(b, dt) {
@@ -425,9 +449,9 @@
     }
     var px = b.x, py = b.y, pz = b.z;
     b.x += b.vx * dt; b.y += b.vy * dt; b.z += b.vz * dt;
-    // flight metric: first crossing of rim-top level above the bed (interpolated)
+    // flight metric: first crossing of cup-entry height above the bed (interpolated)
     if (b.launched && !b.landF && b.z > T.bedZ0 - r) {
-      var hTop = T.rimH + r, q0 = toBed(px, py, pz), q1 = toBed(b.x, b.y, b.z);
+      var hTop = T.capHDrop, q0 = toBed(px, py, pz), q1 = toBed(b.x, b.y, b.z);
       if (q1.h <= hTop && q1.v > -r) {
         var f = q0.h > q1.h ? Math.max(0, Math.min(1, (q0.h - hTop) / (q0.h - q1.h))) : 1;
         b.landF = { u: q0.u + (q1.u - q0.u) * f, v: q0.v + (q1.v - q0.v) * f, t: b.t + f * dt };
@@ -465,7 +489,7 @@
           var th = zc > T.zHop ? Math.atan(hopSlope(Math.min(zc, T.L))) : 0;
           zc = b.z + r * Math.sin(th);
         }
-        if (zc <= T.L) {
+        if (zc <= T.L && !(b.launched && b.vz > 0)) {
           var th2 = zc > T.zHop ? Math.atan(hopSlope(zc)) : 0;
           var c = Math.cos(th2), sn = Math.sin(th2);
           var dist = (b.y - surfaceAt(0, zc)) * c - (b.z - zc) * sn;
@@ -491,10 +515,17 @@
         }
       }
     }
-    // side rails (lane/hop) and side walls (pit/bed)
-    var hw = (b.z < T.L ? T.laneHalfW : T.bedHalfW) - r;
-    if (b.x > hw) { s = contact(b, -1, 0, 0, b.x - hw, b.launched ? T.eWall : T.eRail, T.muRail); if (s > T.evWall) emitCd(b, 'wall', { type: 'wall', speed: +s.toFixed(3) }); b.w *= 0.5; }
-    else if (b.x < -hw) { s = contact(b, 1, 0, 0, -hw - b.x, b.launched ? T.eWall : T.eRail, T.muRail); if (s > T.evWall) emitCd(b, 'wall', { type: 'wall', speed: +s.toFixed(3) }); b.w *= 0.5; }
+    // side rails (lane/hop) and side walls (pit/bed); over the pit the
+    // walls splay from the lane's half-width to the bed's, so a ball that
+    // comes back toward the lane meets a slanted wall, not a sudden step
+    var hw, sl = 0;
+    if (b.z < T.L) hw = T.laneHalfW;
+    else if (b.z < T.bedZ0) { sl = (T.bedHalfW - T.laneHalfW) / (T.bedZ0 - T.L); hw = T.laneHalfW + sl * (b.z - T.L); }
+    else hw = T.bedHalfW;
+    hw -= r;
+    var wn = 1 / Math.sqrt(1 + sl * sl), ew = b.launched ? T.eWall : T.eRail;
+    if (b.x > hw) { s = contact(b, -wn, 0, sl * wn, (b.x - hw) * wn, ew, T.muRail); if (s > T.evWall) emitCd(b, 'wall', { type: 'wall', speed: +s.toFixed(3) }); b.w *= 0.5; }
+    else if (b.x < -hw) { s = contact(b, wn, 0, sl * wn, (-hw - b.x) * wn, ew, T.muRail); if (s > T.evWall) emitCd(b, 'wall', { type: 'wall', speed: +s.toFixed(3) }); b.w *= 0.5; }
 
     // pit back wall (the bed's front face) and floor
     if (b.z > T.L && b.y < T.bedY0 && b.z > T.bedZ0 - r) contact(b, 0, 0, -1, b.z - (T.bedZ0 - r), T.ePit, T.muImpact);
@@ -675,7 +706,12 @@
       if (d < 1e-6) { du = 0; dv = 1; d = 1; }
       tu = du / d * mid; tv = T.ringCV + dv / d * mid;
     }
-    b.cap = { u0: q.u, v0: q.v, h0: q.h, u1: tu, v1: tv, h1: -D.r * 1.4, t0: b.t };
+    // the sink keeps the ball's momentum at the moment of capture (clamped),
+    // so it doesn't stop dead: Hermite from (position, velocity) to the cup
+    var vu = b.vx, vv = b.vy * D.sB + b.vz * D.cB, vh = b.vy * D.cB - b.vz * D.sB;
+    var vm = Math.hypot(vu, vv, vh), vk = vm > T.sinkVMax ? T.sinkVMax / vm : 1;
+    b.cap = { u0: q.u, v0: q.v, h0: q.h, u1: tu, v1: tv, h1: -D.r * 1.4, t0: b.t,
+              mu: vu * vk * T.sinkT, mv: vv * vk * T.sinkT, mh: Math.min(0, vh * vk) * T.sinkT };
     b.vx = b.vy = b.vz = 0;
     b.phase = 'captured';
     b.result = { kind: hole !== null ? 'hole' : 'ring', score: score, cup: score, band: band, hole: hole, t: +b.t.toFixed(4) };
@@ -709,7 +745,6 @@
     return b;
   }
 
-  function ease(s) { return s * s * (3 - 2 * s); }
 
   function pose(b) {
     var T = TUNE, r = D.r;
@@ -718,8 +753,13 @@
     if (b.cap) {
       var s = Math.min(1, (b.t - b.cap.t0) / T.sinkT);
       sinking = s;
-      var c = b.cap, k = ease(s), kh = s * s; // slide to the cup line, drop accelerating
-      var P = fromBed(c.u0 + (c.u1 - c.u0) * k, c.v0 + (c.v1 - c.v0) * k, c.h0 + (c.h1 - c.h0) * kh);
+      // cubic Hermite: starts at the capture point with the capture velocity,
+      // ends in the cup below the bed, at rest
+      var c = b.cap, s2 = s * s, s3 = s2 * s;
+      var h01 = 3 * s2 - 2 * s3, h10 = s3 - 2 * s2 + s;
+      var P = fromBed(c.u0 + (c.u1 - c.u0) * h01 + c.mu * h10,
+                      c.v0 + (c.v1 - c.v0) * h01 + c.mv * h10,
+                      c.h0 + (c.h1 - c.h0) * h01 + c.mh * h10);
       x = P.x; y = P.y; z = P.z;
       cup = b.result ? b.result.score : null;
       if (ph === 'done') ph = 'done';
