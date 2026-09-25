@@ -725,8 +725,11 @@
             "deliberately), so at rate ≠ 1 the hold would not cover the thought on the wall clock. Untested: " +
             "either untune the reel or teach §14 the rate, in a commit that measures it.");
         }
-        if (ragged.length && typeof console !== "undefined" && console.error) {
-          console.error("ZankyoBroadcast: " + ragged.length + " TUNED reel(s) have windows of differing length — " +
+        // INFO, not an error (2026-09-25): since rc.73 the owner's long windows
+        // make tuned reels ragged ON PURPOSE; the note stays for whoever next
+        // touches §11.2, but a known, accepted data shape is not a fault.
+        if (ragged.length && typeof console !== "undefined" && console.info) {
+          console.info("ZankyoBroadcast: " + ragged.length + " TUNED reel(s) have windows of differing length — " +
             ragged.slice(0, 6).join(", ") + ". §11.2 re-aims across windows and derives the hold from the one it picks, " +
             "so this moves home nights. Either give the reel equal windows or leave it untuned.");
         }
