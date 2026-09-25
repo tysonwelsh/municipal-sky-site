@@ -440,3 +440,5 @@ at all sizes, `VERSION` at `1.0.0-rc.N`, one summary for the owner.
     along the throw. The straight-from-centre novice scores 180. Sweep max
     resolve = 7.4 s: bouncebacks and vMin dead rolls under the ≤ 1.5 u/s
     return cap.
+- 2026-09-25 — **Physics round 3.** The 50's inner rim is 0.126 (was 0.116): straight-from-centre 50 = 6.3 %, best line 19.5 % (σ). The novice now throws from x0 ∈ ±0.3, aims within ±0.12 rad, at the 40's straight power, σ 12 %/6°: 156 per nine balls; competent 324. A ball rolling home (`return` or `bounceback`) is done at z < 0.6 heading in, at ≤ min(2.2, thrown) u/s. Cup rolling resistance is 2.0; audible `rim` ≥ 1.05 u/s.
+  Still out: sweep resolve p95 5.2 s / max 6.9 s (target 4.5 / 6). At g 3.2 a ball that rolls up the bed and back takes that long; a similarity rescale to g 4.0 only reaches p95 4.7 s and puts the flight at the 0.45 s floor. Competent rattle-after-landing is 46 % (≤ 45 %), within the model's selection noise.

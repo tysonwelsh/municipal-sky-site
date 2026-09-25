@@ -72,7 +72,7 @@
     bedHalfW: 1.2,
     bedTopV: 2.95,           // backstop
     ringCV: 1.20,            // ring centre (u = 0)
-    rims: [0.93, 0.744, 0.535, 0.326, 0.116],
+    rims: [0.93, 0.744, 0.535, 0.326, 0.126], // innermost 0.116 → 0.126 in round 3 (the 50's catch)
     rimH: 0.08, rimW: 0.05,  // drawn rim height above the bed plane, drawn thickness
     holeU: 0.7512, holeV: 2.57, holeR: 0.14, lipH: 0.04,
 
@@ -100,10 +100,11 @@
     laneLean: 0.16,
     crrLane: 0.018,          // rolling resistance, waxed maple
     crrBed: 0.06,            // cork bed
-    crrCup: 1.2,             // cork cup floor and walls: dead
-    // a stalled ball is walked home, never faster than returnMaxV and never
+    crrCup: 2.0,             // cork cup floor and walls: dead
+    // a stalled (or bounced-back) ball is walked home, never faster than returnMaxV and never
     // faster than returnFrac × the speed it was thrown at (floor returnMinV)
-    returnMaxV: 1.5, returnFrac: 0.7, returnMinV: 0.5, returnAccel: 0.8,
+    returnMaxV: 2.2, returnFrac: 1.0, returnMinV: 0.5, returnAccel: 1.5,
+    returnDoneZ: 0.6,        // a ball rolling home is done here (the renderer rolls it into the rail)
 
     // ── contacts ──
     eRail: 0.5, eWall: 0.45, eBed: 0.15, eRim: 0.05, eFloor: 0.05,
@@ -138,13 +139,14 @@
     restV: 0.05, restT: 0.6, // at rest on the open bed this long → resolved where it sits ('rest')
     restReach: 0.02,         // …into the 10 if within ball + rim reach of the outer rim + this
     sinkT: 0.35, gutterT: 0.35,
+    gutterDrop: 0.3,         // a falling ball this far below the lip, inside the pit, is swallowed
     sinkDepth: 1.4,          // the sink ends this many ball radii below the bed plane
     sinkVMax: 2.4,           // capture momentum carried into the sink, units/s (cap)
     timeoutT: 8.0,           // force-resolve 8 s after launch
     preLaunchT: 20.0,        // …or this long after the throw if it never launched (safety)
 
     // ── events ──
-    evRim: 0.95, evBed: 0.28, evWall: 0.24, evBackstop: 0.24, evCooldown: 0.05,
+    evRim: 1.05, evBed: 0.28, evWall: 0.24, evBackstop: 0.24, evCooldown: 0.05,
 
     // ── input range (the swipe maps into this; physics accepts any v ≥ 0) ──
     vMin: 2.08, vMax: 7.2, vAbsMax: 9.6,
@@ -667,8 +669,8 @@
     /* phase bookkeeping */
     if (!b.launched) {
       if (b.phase === 'return') {
-        if (b.z <= 0) {
-          b.z = 0; b.vx = b.vy = b.vz = 0;
+        if (b.z < T.returnDoneZ && b.vz < 0) {
+          b.vx = b.vy = b.vz = 0;
           emit(b, { type: 'return' });
           return finish(b, { kind: 'return', score: 0, cup: null, band: null, hole: null });
         }
@@ -688,9 +690,13 @@
       emit(b, { type: 'bounceback', z: +b.z.toFixed(3) });
     }
 
-    // gutter: touched the pit floor
-    if (b.y - r <= T.pitFloorY) {
-      b.y = T.pitFloorY + r; b.vx = b.vy = b.vz = 0;
+    // gutter: touched the pit floor, or dropped far enough into the pit
+    // mouth (below the lip by gutterDrop, falling, clear of the lane) that
+    // nothing can bring it back
+    var pitFloorHit = b.y - r <= T.pitFloorY;
+    if (pitFloorHit || (b.z > T.L + r && b.z < T.bedZ0 && b.vy < 0 && b.y < T.bedY0 - T.gutterDrop)) {
+      if (pitFloorHit) b.y = T.pitFloorY + r;
+      b.vx = b.vy = b.vz = 0;
       b.phase = 'gutter'; b.endT = b.t;
       emit(b, { type: 'gutter' });
       b.result = { kind: 'gutter', score: 0, cup: null, band: null, hole: null, t: +b.t.toFixed(4) };
