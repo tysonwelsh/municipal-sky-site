@@ -477,25 +477,19 @@
       /* the ball-return rack filling after the button (1-D physics in main) */
       rackRelease: function (t, r, ev) {  // a ball through the gate at the trough's left end
         var n = ev.n || 1;
-        relay(t, db(-21));
+        relay(t, db(-19));
         tone(t + 0.01, { type: 'triangle', f: 210 + 6 * n + 10 * r(), f1: 150, peak: db(-18), a: 0.0008, d: 0.07 });
-        thud(t + 0.05, db(-19), 130 + 5 * n, 700);        // the short drop into the trough
+        modal(t + 0.05, WOOD, db(-17.5), 0.97 + 0.012 * (n % 5), r);   // the drop onto the trough floor
       },
       rackRoll: function (t, r, ev) { rackRumble(t, ev.energy || 0); },
       rackWall: function (t, r, ev) {      // the first ball meets the right end wall
-        var pk = db(speedDb(ev.speed || 100, 30, 260) - 2.5);
-        thud(t, pk, 88 + 6 * r(), 450);
-        tone(t, { type: 'triangle', f: 175 + 10 * r(), f1: 140, peak: pk * 0.6, a: 0.0006, d: 0.09 });
+        var k = clamp(((ev.speed || 100) - 30) / 230, 0, 1);
+        modal(t, WOOD, db(-19 + 4 * k), 0.95 + 0.1 * k, r);
       },
-      rackClack: function (t, r, ev) {     // ball on ball: bright, dry, phenolic
+      rackClack: function (t, r, ev) {     // ball on ball: a solid, polished-wood tok with weight
         var k = clamp(((ev.speed || 60) - 20) / 100, 0, 1);
-        var pk = db(-15.6 + 3.2 * k);                      // → −16 … −12 dBFS
-        var pitch = (0.93 + 0.14 * k) * (1 + (r() - 0.5) * 0.07);
-        // the tick is tonal so its level follows speed; a little noise for the crack
-        noise(t, { f: 3300 * pitch, q: 1.4, peak: pk * 0.9, a: 0.0002, d: 0.008 });
-        tone(t, { f: 2380 * pitch, peak: pk * 0.62, a: 0.0002, d: 0.032 });
-        tone(t, { f: 3870 * pitch * (1 + (r() - 0.5) * 0.02), peak: pk * 0.4, a: 0.0002, d: 0.022 });
-        tone(t, { f: 1150 * pitch, peak: pk * 0.3, a: 0.0003, d: 0.016 });
+        rackDuck(t);
+        modal(t, BALL, db(-15.5 + 2.6 * k), 0.97 + 0.1 * k, r, ev.i);    // −16 … −12 dBFS, ±5 % pitch
       },
       rackSettled: function (t, r) {       // the last one rocks still
         tone(t, { type: 'triangle', f: 600 + 30 * r(), f1: 520, peak: db(-17), a: 0.0006, d: 0.035 });
@@ -673,28 +667,78 @@
       drum: function (t, r, ev) { drumTicks(t, ev.from || 0, ev.to || 0); }
     };
 
+    /* ── modal impacts: a 2–4 ms exciter + a few damped modes ────────
+     * Heavy 3-inch phenolic/hardwood balls. Each mode is [Hz, amplitude,
+     * −20 dB decay s]; the exciter is a lowpassed noise burst (the crack,
+     * rolled off above ~5 kHz). `scale` moves every mode together (speed,
+     * ≤ ±8 %); each ball (seeded) nudges its modes ±2 % so a train of
+     * clacks is a family, not a loop. */
+    var BALL = {                          // ball on ball: a tok with weight, no ring
+      exc: { lp: 5000, amp: 1.0, t20: 0.004, off: 0.371 },
+      modes: [[185, 0.45, 0.04], [760, 0.8, 0.055], [1080, 0.8, 0.048], [1560, 0.9, 0.036], [2350, 0.6, 0.022], [3300, 0.3, 0.01]],
+      body: 1.15
+    };
+    var WOOD = {                          // ball on the trough: the wood is the soundboard
+      exc: { lp: 3000, amp: 0.42, t20: 0.002, off: 1.113 },
+      modes: [[180, 0.4, 0.12], [290, 0.8, 0.11], [420, 0.9, 0.1], [580, 0.6, 0.085], [820, 0.3, 0.06]],
+      body: 1.2
+    };
+    // The modes' peak depends on how their phases happen to line up (±3 dB
+    // across a ball's seeded tuning), so each hit's modal sum is evaluated
+    // numerically over its first 25 ms and normalised: level follows speed only.
+    function modalPeak(fs, M) {
+      var sr = 22050, n = Math.round(sr * 0.025), pk = 0;
+      for (var j = 0; j < n; j++) {
+        var tt = j / sr, v = 0;
+        for (var i = 0; i < fs.length; i++) v += M.modes[i][1] * Math.pow(10, -tt / M.modes[i][2]) * Math.sin(2 * Math.PI * fs[i] * tt);
+        if (Math.abs(v) > pk) pk = Math.abs(v);
+      }
+      return pk || 1;
+    }
+    function modal(t, M, peak, scale, r, ballI) {
+      var pr = ballI != null ? lcg(0xba11 + (ballI | 0) * 7919) : r, fs = [];
+      for (var i = 0; i < M.modes.length; i++) fs.push(M.modes[i][0] * scale * (1 + (pr() - 0.5) * 0.04));   // a ball's own tuning (±2 %)
+      var norm = peak * M.body / modalPeak(fs, M);
+      // the exciter: a 2–4 ms lowpassed noise crack
+      noise(t, { ft: 'lowpass', f: M.exc.lp, q: 0.7, peak: peak * M.exc.amp, a: 0.0002, d: M.exc.t20 * 4, off: M.exc.off });   // same material, same crack
+      // exponential tails to −80 dB over 4 × t20 → −20 dB at t20
+      for (var k = 0; k < fs.length; k++) tone(t, { f: fs[k], peak: norm * M.modes[k][1], a: 0.0004, d: M.modes[k][2] * 4 });
+    }
+
     // the rack's rolling rumble: one long-lived voice, driven every ~100 ms by
     // rackRoll {energy}; with no fresh event it fades out by itself
     function rackRumble(t, energy) {
       if (!G.rack) {
         var src = keepSrc(ctx.createBufferSource()); src.buffer = G.noise; src.loop = true;
         var lp = keep(ctx.createBiquadFilter()); lp.type = 'lowpass'; lp.frequency.value = 260; lp.Q.value = 0.9;
-        var bp = keep(ctx.createBiquadFilter()); bp.type = 'peaking'; bp.frequency.value = 210; bp.Q.value = 3; bp.gain.value = 8;
+        var bp = keep(ctx.createBiquadFilter()); bp.type = 'peaking'; bp.frequency.value = 115; bp.Q.value = 2.5; bp.gain.value = 8;   // under the balls' 185 Hz thump
         var am = keep(ctx.createGain()); am.gain.value = 0.7;
         var lfo = keepSrc(ctx.createOscillator()); lfo.frequency.value = 11;
         var ld = keep(ctx.createGain()); ld.gain.value = 0.3;
         var g = keep(ctx.createGain()); g.gain.value = 0;
         lfo.connect(ld); ld.connect(am.gain);
-        src.connect(lp); lp.connect(bp); bp.connect(am); am.connect(g); g.connect(G.sfx);
+        var duck = keep(ctx.createGain()); duck.gain.value = 1;
+        src.connect(lp); lp.connect(bp); bp.connect(am); am.connect(g); g.connect(duck); duck.connect(G.sfx);
         src.start(t, 0.77); lfo.start(t);
-        G.rack = { g: g, lp: lp, lfo: lfo };
+        G.rack = { g: g, lp: lp, lfo: lfo, duck: duck };
       }
       var e = clamp(energy / 500, 0, 1), R = G.rack;
       R.g.gain.cancelScheduledValues(t);
       R.g.gain.setTargetAtTime(db(-14) * Math.sqrt(e), t, 0.03);
       R.g.gain.setTargetAtTime(0, t + 0.16, 0.08);          // no news: it's stopping
-      R.lp.frequency.setTargetAtTime(200 + 260 * e, t, 0.05);
+      R.lp.frequency.setTargetAtTime(150 + 170 * e, t, 0.05);
       R.lfo.frequency.setTargetAtTime(6 + 12 * e, t, 0.05);
+    }
+
+    // a clack hands the momentum on: the rolling dips for a moment, and the
+    // clack's low thump gets the room it needs (its own gain, so the level
+    // automation above is untouched)
+    function rackDuck(t) {
+      if (!G.rack) return;
+      var d = G.rack.duck.gain;
+      d.cancelScheduledValues(t); d.setValueAtTime(d.value, t);
+      d.setTargetAtTime(0.3, t, 0.003);
+      d.setTargetAtTime(1, t + 0.035, 0.04);
     }
 
     function neon(t) {                     // the pink tube: mains buzz swelling up
