@@ -3,7 +3,7 @@
  * All art is procedural pixel art drawn from PAL with a seeded RNG, so the
  * wood grain, stains, and wear are identical on every load. The machine is
  * rendered once into a static offscreen layer at boot; drawFrame() blits it
- * and paints the ambient life (neon breathing, possum
+ * and paints the ambient life (possum
  * blink); drawLive() paints everything that reacts to the game (drums,
  * racked balls, tickets, jackpot, possum gaze, attract/payout).
  *
@@ -752,10 +752,6 @@
     var g = ctx;
     g.save(); g.translate(0, TOP);
 
-    // ── neon breathing on the 100 holes
-    var breathe = 0.25 + 0.25 * (0.5 + 0.5 * Math.sin(t * 1.4));
-    for (var i = 0; i < GEO.holes100.length; i++) drawHoleBreath(g, t, i, breathe);
-
     // ── possum blink: 150ms flutters, each eye on its own clock
     var cx = GEO.possum.cx, top = GEO.possum.top;
     if (flickerAt(t, 6.7, 3) < 0.025)
@@ -765,15 +761,6 @@
 
     g.restore();
   }
-  function drawHoleBreath(g, t, i, breathe) {
-    var hr = GEO.holeR, h = GEO.holes100[i];
-    glowRing(g, h.x, h.y, hr - 1, Math.round(hr * 0.6) - 1, 4, PAL.PINK_DK, breathe);
-    if (flickerAt(t, 2.3, i * 7) > 0.2) { // pink core, rarely gutters out
-      ellipse(g, h.x, h.y + 1, 2, 1, PAL.PINK_D);
-      px(g, h.x, h.y + 1, PAL.PINK);
-    }
-  }
-
   /* ══ the machine reacts ════════════════════════════════════════ */
   //
   // Two passes around the ball layer:
