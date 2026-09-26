@@ -27,7 +27,7 @@
   var px = S.px, rect = S.rect, hline = S.hline, vline = S.vline,
     ellipse = S.ellipse, dither = S.dither, glowRing = S.glowRing,
     text = S.text, textC = S.textC, textW = S.textW, ditherText = S.ditherText,
-    BAYER = S.BAYER;
+    BAYER = S.BAYER, FONT = S.FONT;
 
   var W = 216, MH = 384;           // canvas width; machine-frame height
   var H_MIN = 384, H_MAX = 560;
@@ -253,6 +253,11 @@
   // the marquee's neon tube; `chase` (attract) runs bright segments along it
   function drawTube(g, t, chase) {
     var m = GEO.marquee, x0 = m.x0 + 4, x1 = m.x1 - 5;
+    if (chase === 'hot') { // a blink of egg 1: the tube flares white-hot pink
+      hline(g, x0, x1, m.y1 - 1, PAL.MOON); hline(g, x0, x1, m.y1, PAL.PINK);
+      dither(g, x0, m.y1 + 1, m.x1 - m.x0 - 8, 2, PAL.PINK_D, 0.6);
+      return;
+    }
     if (chase === 'dead') { // unplugged: dark glass on its bracket (view.muted)
       for (var dx = x0; dx <= x1; dx++) px(g, dx, m.y1 - 1, dx % 9 === 4 ? PAL.PUR2 : PAL.PINK_DK);
       return;
@@ -320,14 +325,19 @@
   }
   // black beads with pink neon glints; dx shifts the gaze, wide = startled
   // dx shifts the beads (±1), gx the pink glint — the pupil — inside them (±1)
-  function drawEyeBeads(g, dx, wide, gx, ty) {
+  function drawEyeBeads(g, dx, wide, gx, ty, gy, neon) {
     var cx = GEO.possum.cx + dx, top = GEO.possum.top, rt = top + (ty || 0);
     var L = EYES.L, Rr = EYES.R, e = wide ? 1 : 0;
-    gx = gx || 0;
-    rect(g, cx + L.x - e, top + L.y - e, L.w + 2 * e, L.h + 2 * e, PAL.NIGHT0);
-    rect(g, cx + Rr.x - e, rt + Rr.y - e, Rr.w + 2 * e, Rr.h + 2 * e, PAL.NIGHT0);
-    px(g, cx + L.x + 2 + gx, top + L.y + 1, PAL.PINK);
-    px(g, cx + Rr.x + 1 + gx, rt + Rr.y + 1, PAL.PINK);
+    gx = gx || 0; gy = gy || 0;
+    if (neon) { // the perfect game: pink neon eyes with a 1-px glow
+      glowRing(g, cx + L.x + 2, top + L.y + 2, 2, 3, 1, PAL.PINK_D, 0.9);
+      glowRing(g, cx + Rr.x + 1, rt + Rr.y + 2, 2, 2, 1, PAL.PINK_D, 0.9);
+    }
+    rect(g, cx + L.x - e, top + L.y - e, L.w + 2 * e, L.h + 2 * e, neon ? PAL.PINK : PAL.NIGHT0);
+    rect(g, cx + Rr.x - e, rt + Rr.y - e, Rr.w + 2 * e, Rr.h + 2 * e, neon ? PAL.PINK : PAL.NIGHT0);
+    if (neon) { px(g, cx + L.x + 1, top + L.y + 1, PAL.MOON); px(g, cx + Rr.x + 1, rt + Rr.y + 1, PAL.MOON); return; }
+    px(g, cx + L.x + 2 + gx, top + L.y + 1 + gy, PAL.PINK);
+    px(g, cx + Rr.x + 1 + gx, rt + Rr.y + 1 + gy, PAL.PINK);
     if (wide) { // pupils blown wide: the glints swell into 2×2 neon
       rect(g, cx + L.x + 1 + gx, top + L.y + 1, 2, 2, PAL.PINK);
       rect(g, cx + Rr.x + gx, rt + Rr.y + 1, 2, 2, PAL.PINK);
@@ -596,6 +606,8 @@
   }
   // the release gate in the trough's left wall
   function gateRect() { var b = troughBox(); return { x: b.x - 5, y: b.y + 2, w: 7, h: b.h - 3 }; }
+  // egg 2: the tap target on the possum's pink nose (± 4 px)
+  function noseRect() { var cx = GEO.possum.cx, top = GEO.possum.top; return { x: cx - 2 - 4, y: top + 34 - 4, w: 4 + 8, h: 3 + 8 }; }
   // the digital ticket counter: a bezelled LED window left of the ticket slot
   function counterRect() { var s = slotRect(); return { x: s.x - 21, y: s.y - 3, w: 17, h: 11 }; }
   function slotRect() { var f = frontX(), fr = GEO.front; return { x: f.x1 - 42, y: fr.y0 + 9, w: 32, h: 8 }; }
@@ -655,6 +667,31 @@
       px(g, x, y0 + 7 - wave, PAL.PUR1); // faint purple tide-line
     }
     dither(g, cabL(y0) - 6, y0 + 8, cabR(y0) - cabL(y0) + 12, 5, PAL.NIGHT0, 0.8); // pooled shadow
+    drawReturnFlap(g, 0, false);                                    // the coin return, shut
+  }
+  // the stained base band: the plinth and the tide-mark above it, full width
+  function plinthRect() { var y0 = GEO.front.y1; return { x: cabL(y0) - 2, y: y0 - 4, w: cabR(y0) - cabL(y0) + 5, h: 12 }; }
+  // egg 4: a small coin-return flap in the plinth under the coin door
+  function returnFlapRect() { var cd = coinDoorRect(); return { x: cd.x + 2, y: GEO.front.y1 + 1, w: 12, h: 5 }; }
+  function drawReturnFlap(g, open, coin, cy) {
+    var r = returnFlapRect();
+    rect(g, r.x - 1, r.y - 1, r.w + 2, r.h + 2, PAL.WOOD1);         // the cut in the plinth
+    if (open <= 0) {                                                // shut: a steel flap over a dark slot
+      rect(g, r.x, r.y, r.w, r.h, PAL.STEEL1);
+      hline(g, r.x, r.x + r.w - 1, r.y, PAL.STEEL2);
+      hline(g, r.x + 2, r.x + r.w - 3, r.y + 2, PAL.NIGHT0);
+      px(g, r.x + 1, r.y + 3, PAL.STEEL2); px(g, r.x + r.w - 2, r.y + 3, PAL.STEEL2); // rivets
+      return;
+    }
+    rect(g, r.x, r.y, r.w, r.h, PAL.NIGHT0);                        // the tray, dark
+    var fl = Math.round(open * 3);                                  // the flap tips out and down
+    rect(g, r.x, r.y + r.h - 1 + fl - 3, r.w, 1, PAL.STEEL1);
+    hline(g, r.x, r.x + r.w - 1, r.y + r.h + fl - 3, PAL.STEEL2);
+    if (coin && typeof cy === 'number') {                           // a 3-px coin dropping into the tray
+      var c1 = coin === 'dime' ? PAL.MOON : PAL.BRASS2, c2 = coin === 'dime' ? PAL.STEEL2 : PAL.BRASS1;
+      var x = r.x + 5, y = Math.round(cy);
+      hline(g, x, x + 2, y, c1); px(g, x + 1, y + 1, c2); px(g, x, y + 1, c1); px(g, x + 2, y + 1, c2);
+    }
   }
 
   function drawCobwebsAndGrime(g, R) {
@@ -780,8 +817,17 @@
   //   ticketsOut  tickets cranked out so far (fractional = mid-ticket)
   //   cranking    the dispenser is running (ratchet jitter)
   //   hundreds    number of 100s this game (the tag's "+13"/"+26" line)
-  //   ticketTag   number: the tag on the ticket window counts tickets out
   //   ticketCount number: the digital counter left of the slot (else dashes)
+  // the eggs (each draws nothing unless its field is set):
+  //   sneeze      {t0}: eyes shut, a 1-px jolt, a spray under the snout (0.5 s)
+  //   plaque      {t0, k}: a scratched brass plaque risen k (0..1) out of the stain
+  //   returnFlap  {t0, coin: 'token'|'dime'|null}: the coin return tips open
+  //   eyesNeon    true: pink neon eyes with a glow
+  //   eyeRoll     {t0}: the pupils circle once (0.6 s)
+  //   thirteen13  {t0, count}: drums hold, the tube blinks 13 times (0.1/0.09 s)
+  //   ticketMark  '13' (ticketMarkFrom = first ticket no.): tickets stamped 13
+  //   pityTicket  true: the newest ticket stamped 13
+  //   moths       {t0}: two moths loop the tube, the possum watches; null scatters
   //   ticketPile  tickets printed and not torn (≥ ticketsOut): the heap
   //   tearT0      a time: the strip parts at the slot, the heap drops (0.3 s);
   //               tearPile = how many tickets went with it
@@ -829,11 +875,17 @@
     drawRackLive(g, t, view);
     drawButtonLive(g, t, view, mode);
     drawCounterLive(g, t, view, mode);
-    if (view.muted) {
+    var th13 = thirteenBlink(t, view);
+    if (th13 !== null) {                                        // egg 1: the tube blinks 13 times
+      var m1 = GEO.marquee;
+      restore(g, m1.x0 + 4, m1.y1 - 1, m1.x1 - m1.x0 - 8, 4);
+      drawTube(g, t, th13 ? 'hot' : 'dead');
+    } else if (view.muted) {
       var m = GEO.marquee;
       restore(g, m.x0 + 4, m.y1 - 1, m.x1 - m.x0 - 8, 4);
       drawTube(g, t, 'dead');
     } else if (mode === 'attract') drawTube(g, t, true);
+    drawMoths(g, t, view);
     drawReleaseLine(g, t, view);
     if (view.grabCue) drawGrabNote(g, t, view);
     else if (mode === 'attract') drawChalkNote(g, t, view);
@@ -847,9 +899,10 @@
     g.save(); g.translate(0, TOP);
     drawLiftBall(g, t, view);
     drawCoinDrop(g, t, view);
+    drawReturnLive(g, t, view);
+    drawPlaque(g, t, view);
     drawTicketsLive(g, t, view);
     drawJam(g, t, view);
-    drawTicketTag(g, view, mode);
     drawJackpot(g, t, view);
     g.restore();
     drawJolts(ctx, t, view);         // canvas frame: the coin door rattles, the slot jolts
@@ -905,8 +958,18 @@
       if (off > 0) dither(g, dx, d.y0 + 2, d.cw - 2, 1, PAL.BONE_D, 0.5); // blur on the roll
     }
   }
+  // egg 1: 13 blinks, on 0.1 s / off 0.09 s → true (lit), false (dark) or null (over)
+  var BLINK_ON = 0.1, BLINK_OFF = 0.09;
+  function thirteenBlink(t, view) {
+    var e = view.thirteen13;
+    if (!e || typeof e.t0 !== 'number' || t < e.t0) return null;
+    var n = e.count || 13, per = BLINK_ON + BLINK_OFF, k = (t - e.t0) / per;
+    if (k >= n) return null;
+    return (t - e.t0) - Math.floor(k) * per < BLINK_ON;
+  }
   function drawDrumsLive(g, t, view, mode) {
     var score = view.score | 0;
+    if (thirteenBlink(t, view) !== null) { drawDrumCells(g, digitsOf(view.drum ? view.drum.to : score)); return; } // held
     if (mode === 'attract' && view.highScore > 0) {
       // every 8 s the drums roll over to the high score and back
       var c0 = Math.floor(t / 8) * 8, ph = t - c0;
@@ -1105,12 +1168,17 @@
     while (e - (p + 1) * TK_L >= Math.max(3, P.base - pileH(p + 1) - P.y0)) p++;
     var hang = Math.min(e, Math.max(3, P.base - pileH(p) - P.y0));
     var jamBow = view.jam ? 1 : 0;
+    // which tickets carry a "13" (egg 1's extra tickets, egg 7's pity ticket)
+    var markFrom = view.pityTicket ? Math.max(0, n - 1 + (T % 1 > 0 ? 1 : 0)) : (view.ticketMark === '13' ? (typeof view.ticketMarkFrom === 'number' ? view.ticketMarkFrom : Math.max(0, n - 12)) : Infinity);
     // 1. the hanging part, slot → pile top: 6-px cross-sections, row by row
     for (var sPos = 0; sPos < hang; sPos++) {
       var d = e - sPos, k = Math.floor(d / TK_L - 1e-9), u = Math.round(d - k * TK_L) % TK_L;
       k = n - Math.min(n, k);                                         // absolute number (oldest 0)
       var y = P.y0 + sPos + dy, x0 = P.hx - 3 + (jamBow && sPos > hang / 3 && sPos < 2 * hang / 3 ? 1 : 0);
-      for (var w = 0; w < TK_W; w++) { var c = tkColour(u, w, k, TK_W); if (c) ditherPx(g, x0 + w, y, c, fade); }
+      for (var w = 0; w < TK_W; w++) {
+        var c = k >= markFrom ? tkMark13(u, w) || tkColour(u, w, -1, TK_W) : tkColour(u, w, k, TK_W);
+        if (c) ditherPx(g, x0 + w, y, c, fade);
+      }
     }
     if (p <= 0) return;
     // 2. the heap: older than the newest TK_ART folds it's a mound…
@@ -1146,6 +1214,12 @@
       }
     }
   }
+  // a "13" stamped on a hanging ticket: 1 over 3 (3×5 each), rows 1..10, cols 1..3
+  function tkMark13(u, w) {
+    if (u < 1 || u > 10 || w < 1 || w > 3) return null;
+    var glyph = u <= 5 ? FONT['1'] : FONT['3'], row = u <= 5 ? u - 1 : u - 6;
+    return (glyph[row] & (4 >> (w - 1))) ? PAL.PINK_DK : null;
+  }
   function ditherPx(g, x, y, c, fade) {
     if (fade > 0 && BAYER[((y % 4 + 4) % 4) * 4 + ((x % 4 + 4) % 4)] / 16 < fade) return; // eaten by the dark
     px(g, x, y, c);
@@ -1167,37 +1241,12 @@
     // the slot mouth stays dark over the strip's root, so it reads as coming *out*
     hline(g, s.x + 2, s.x + s.w - 3, s.y + 2, PAL.NIGHT0);
   }
-  // A small painted card hung off the ticket window on a wire. Line 1:
-  // view.ticketTag, the running ticket count during the crank. Line 2 (or
-  // the only line, in payout): the 100s bonus, "+13" / "+26".
-  function drawTicketTag(g, view, mode) {
-    var count = typeof view.ticketTag === 'number' ? String(Math.max(0, Math.floor(view.ticketTag))) : null;
-    var bonus = view.hundreds > 0 && (mode === 'payout' || count !== null) ? String(13 * view.hundreds) : null;
-    if (count === null && bonus === null) return;
-    var lines = [];
-    if (count !== null) lines.push({ str: count, plus: false });
-    if (bonus !== null) lines.push({ str: bonus, plus: true });
-    var s = slotRect(), tw = 0;
-    lines.forEach(function (l) { tw = Math.max(tw, textW(l.str, 1) + (l.plus ? 4 : 0)); });
-    var w = tw + 6, h = 3 + 6 * lines.length, x = counterRect().x - w - 3, y = s.y + 12 - h;
-    vline(g, x + w - 2, s.y + 1, Math.max(s.y + 1, y - 1), PAL.STEEL1);   // the wire
-    px(g, x + w - 2, s.y, PAL.STEEL2);                                   // its hook on the frame
-    rect(g, x, y, w, h, PAL.PINK_DK);
-    rect(g, x + 1, y + 1, w - 2, h - 2, PAL.NIGHT1);
-    hline(g, x + 1, x + w - 2, y + h - 1, PAL.NIGHT0);                    // the card's shadowed edge
-    px(g, x + 1, y + 1, PAL.PINK_D);                                     // a nail hole
-    lines.forEach(function (l, i) {
-      var ty = y + 2 + 6 * i, tx = x + w - 3 - textW(l.str, 1);          // right-aligned, like a till
-      if (l.plus) { hline(g, tx - 4, tx - 2, ty + 2, PAL.PINK_D); vline(g, tx - 3, ty + 1, ty + 3, PAL.PINK_D); }
-      text(g, l.str, tx, ty, l.plus ? PAL.PINK_D : PAL.PINK, 1);
-    });
-    if (lines.length > 1) hline(g, x + 2, x + w - 3, y + 7, PAL.PINK_DK); // a pencilled rule between them
-  }
+
 
   /* ── the possum's head, recomposited live: gaze (beads ±1, the pink
   // pupil ±1 inside them), wide pupils, narrowed lids, the 1-px tilt, and
   // the marquee note under the snout ── */
-  var WIDE_T = 2.5, HEAD = { x0: 108 - 22, y0: 0, w: 45, h: 44 }; // machine frame
+  var SNEEZE_T = 0.5, ROLL_T = 0.6, WIDE_T = 2.5, HEAD = { x0: 108 - 22, y0: 0, w: 45, h: 44 }; // machine frame
   function headSprite() { // the possum alone (no eye beads) on transparent pixels
     if (possumSprite) return possumSprite;
     var c = makeCanvas(HEAD.w, HEAD.h), g = c.getContext('2d');
@@ -1207,27 +1256,48 @@
     return c;
   }
   function drawHeadLive(g, t, view) {
-    var gz = 0;
-    if (typeof view.ballSx === 'number') gz = Math.max(-2, Math.min(2, Math.round((view.ballSx - 108) / 22)));
+    var gz = 0, lookX = typeof view.ballSx === 'number' ? view.ballSx : null;
+    var mo = mothPos(t, view, 0);
+    if (mo) lookX = mo.x;                                         // egg 9: it watches the moth
+    if (lookX !== null) gz = Math.max(-2, Math.min(2, Math.round((lookX - 108) / 22)));
     var dx = Math.max(-1, Math.min(1, gz)), gx = gz - dx;
     var MS = root.SkeeBallMischief, NARROW_T = MS && MS.CONST && MS.CONST.NARROW_T || 3; // single owner: mischief
     var narrow = typeof view.narrowT0 === 'number' && t >= view.narrowT0 && t - view.narrowT0 < NARROW_T;
     var wide = !narrow && typeof view.wideT0 === 'number' && t >= view.wideT0 && t - view.wideT0 < WIDE_T;
     var tilt = view.tilt ? 1 : 0;
     var note = view.marqueeNote && t >= view.marqueeNote.t0 && t < view.marqueeNote.until ? view.marqueeNote : null;
-    if (!gz && !wide && !narrow && !tilt && !note) return; // the static head (and drawFrame's blink) stand
-    restore(g, HEAD.x0, HEAD.y0, HEAD.w, HEAD.h, plainLayer);
+    var sz = view.sneeze && typeof view.sneeze.t0 === 'number' && t >= view.sneeze.t0 && t - view.sneeze.t0 < SNEEZE_T ? t - view.sneeze.t0 : -1;
+    var er = view.eyeRoll && typeof view.eyeRoll.t0 === 'number' && t >= view.eyeRoll.t0 && t - view.eyeRoll.t0 < ROLL_T ? (t - view.eyeRoll.t0) / ROLL_T : -1;
+    var neon = !!view.eyesNeon;
+    if (!gz && !wide && !narrow && !tilt && !note && sz < 0 && er < 0 && !neon) return; // the static head stands
+    restore(g, HEAD.x0, HEAD.y0, HEAD.w, HEAD.h + 3, plainLayer);
     if (note) drawMarqueeNote(g, t, note);
     var hs = headSprite(), cx = GEO.possum.cx, top = GEO.possum.top;
-    if (!tilt) g.drawImage(hs, HEAD.x0, HEAD.y0);
+    var jolt = sz >= 0.15 && sz < 0.3 ? 1 : 0;                     // egg 2: the sneeze jolts it down 1 px
+    if (!tilt) g.drawImage(hs, HEAD.x0, HEAD.y0 + jolt);
     else { // a 1-px cant: left side (ear) up 1, right side (bead, ear) down 1
       var a0 = cx - 10 - HEAD.x0, a1 = cx + 3 - HEAD.x0;
       g.drawImage(hs, 0, 0, a0, HEAD.h, HEAD.x0, HEAD.y0 - 1, a0, HEAD.h);
       g.drawImage(hs, a0, 0, a1 - a0, HEAD.h, HEAD.x0 + a0, HEAD.y0, a1 - a0, HEAD.h);
       g.drawImage(hs, a1, 0, HEAD.w - a1, HEAD.h, HEAD.x0 + a1, HEAD.y0 + 1, HEAD.w - a1, HEAD.h);
     }
-    drawEyeBeads(g, dx, wide, gx, tilt);
+    var gy = 0;
+    if (er >= 0) { // egg 6: the pupils circle once — up, across, down — and come back
+      var th = er * Math.PI * 2;
+      gx = Math.round(Math.sin(th)); gy = Math.round(-Math.cos(th) * 1.5 + 0.5); dx = 0; // up −1 … down +2
+    }
+    top += jolt;
+    drawEyeBeads(g, dx, wide, gx, tilt, gy, neon && er < 0);
     var L = EYES.L, Rr = EYES.R;
+    if (sz >= 0) { // eyes screwed shut for the sneeze
+      rect(g, cx + L.x, top + L.y, L.w, L.h, PAL.FUR2); hline(g, cx + L.x, cx + L.x + L.w - 1, top + L.y + 2, PAL.FUR3);
+      rect(g, cx + Rr.x, top + Rr.y + tilt, Rr.w, Rr.h, PAL.FUR2); hline(g, cx + Rr.x, cx + Rr.x + Rr.w - 1, top + Rr.y + 2 + tilt, PAL.FUR3);
+      if (sz >= 0.2 && sz < 0.2 + 3 / 60) { // three frames of spray under the snout
+        var ny = top + 38;
+        [[-5, 0], [-3, 2], [2, 1], [4, 3], [-1, 3], [1, 0]].forEach(function (q, i) { px(g, cx + q[0], ny + q[1], i % 2 ? PAL.BONE : PAL.BONE_D); });
+      }
+      return;
+    }
     if (narrow) { // lids down to a 1-px slit, the glint riding in it
       lid(g, cx + dx + L.x, top + L.y, L.w, L.h, 2, gx + 2);
       lid(g, cx + dx + Rr.x, top + Rr.y + tilt, Rr.w, Rr.h, 2, gx + 1);
@@ -1249,6 +1319,8 @@
     var m = GEO.marquee, p = { x0: m.x0 + 6, x1: m.x1 - 6, y0: m.y0 + 7, y1: m.y1 - 7 };
     restore(g, p.x0, p.y0, p.x1 - p.x0, p.y1 - p.y0, blankLayer);
     var str = String(note.text).toUpperCase(), sp = str.indexOf(' ');
+    // a single even-length name (PAWPAW, BURL, ZEKE) splits in half around the snout
+    if (sp < 0 && str.length >= 4 && str.length % 2 === 0) { str = str.slice(0, str.length / 2) + ' ' + str.slice(str.length / 2); sp = str.length / 2 - 0.5 | 0; sp = str.indexOf(' '); }
     // the backlight stutters as the lettering changes over
     if (flickerAt(t, 9, 41) < 0.15 && t - note.t0 < 0.4) return;
     // lettered like the title, split around the possum's snout: the first
@@ -1277,6 +1349,78 @@
     var y = GEO.lane.y1 - 38, x = Math.round(108 - textW(str, 1) / 2);
     ditherText(g, str, x, y + 1, PAL.LANE3, 1, a * 0.95);   // worn-in shadow under the chalk
     ditherText(g, str, x, y, PAL.BONE, 1, a * 0.95);
+  }
+
+  /* ── egg 9: two moths find the marquee tube ── */
+  var MOTH_SCATTER = 0.4, mothMemo = null; // remembers the last swarm so a null can scatter it
+  function mothPos(t, view, i) {
+    var m = view.moths, mq = GEO.marquee, sc = -1;
+    if (m && typeof m.t0 === 'number') mothMemo = { t0: m.t0, gone: null };
+    else if (mothMemo) { if (mothMemo.gone === null) mothMemo.gone = t; sc = (t - mothMemo.gone) / MOTH_SCATTER; if (sc >= 1) { mothMemo = null; return null; } }
+    else return null;
+    var t0 = mothMemo.t0, tt = t - t0, ph = i * 2.1, cx = i ? mq.x1 - 34 : mq.x0 + 30, cy = mq.y1 + 3;
+    var x = cx + 13 * Math.sin(tt * 1.9 + ph) + 4 * Math.sin(tt * 4.3 + ph * 1.7);
+    var y = cy + 4 * Math.cos(tt * 2.6 + ph) + 2 * Math.sin(tt * 5.1 + ph);
+    if (sc >= 0) { y -= sc * sc * 70; x += (i ? 1 : -1) * sc * 30; }    // scatter up off the top
+    return { x: x, y: y };
+  }
+  function drawMoths(g, t, view) {
+    for (var i = 0; i < 2; i++) {
+      var p = mothPos(t, view, i); if (!p) return;
+      var x = Math.round(p.x), y = Math.round(p.y), up = flickerAt(t, 22, 31 + i * 5) < 0.5;
+      hline(g, x, x + 1, y, PAL.BONE_D);                                  // the body
+      if (up) { px(g, x - 1, y - 1, PAL.FOG); px(g, x + 2, y - 1, PAL.FOG); } // wings, flickering
+      else { px(g, x - 1, y, PAL.FOG); px(g, x + 2, y, PAL.FOG); }
+    }
+  }
+
+  // egg 4: the flap tips open over 0.25 s; a token or a dime drops into the
+  // tray over the next 0.3 s and sits there; it shuts again at 1.6 s
+  var FLAP_T = 0.25, FLAP_HOLD = 1.6;
+  function drawReturnLive(g, t, view) {
+    var rf = view.returnFlap;
+    if (!rf || typeof rf.t0 !== 'number' || t < rf.t0 || t - rf.t0 >= FLAP_HOLD) return;
+    var e = t - rf.t0, open = e < FLAP_T ? e / FLAP_T : (e > FLAP_HOLD - 0.2 ? (FLAP_HOLD - e) / 0.2 : 1);
+    var r = returnFlapRect(), cy = null;
+    if (rf.coin && e >= FLAP_T) cy = r.y - 3 + Math.min(1, (e - FLAP_T) / 0.3) * (r.h - 1);
+    restore(g, r.x - 1, r.y - 1, r.w + 2, r.h + 5);
+    drawReturnFlap(g, open, rf.coin, cy);
+  }
+  // egg 3: a scratched brass plaque rising out of the tide-mark by view.plaque.k
+  var PLQ_W = 44, PLQ_H = 13;
+  function drawPlaque(g, t, view) {
+    var pq = view.plaque;
+    if (!pq || !(pq.k > 0)) return;
+    var k = Math.min(1, pq.k), x0 = 108 - PLQ_W / 2, clipY = GEO.front.y1 + 5;   // it rises out of the stain
+    var y0 = Math.round(clipY - PLQ_H * k);
+    g.save(); g.beginPath(); g.rect(x0 - 2, 0, PLQ_W + 4, clipY); g.clip();
+    rect(g, x0, y0, PLQ_W, PLQ_H, PAL.BRASS1);
+    hline(g, x0, x0 + PLQ_W - 1, y0, PAL.BRASS2); vline(g, x0, y0, y0 + PLQ_H - 1, PAL.BRASS2);
+    hline(g, x0 + 1, x0 + PLQ_W - 1, y0 + PLQ_H - 1, PAL.WOOD2);
+    px(g, x0 + 2, y0 + 2, PAL.WOOD1); px(g, x0 + PLQ_W - 3, y0 + 2, PAL.WOOD1);          // screws
+    // line 1: the company's name, scratched past reading — glyph fragments only
+    var lx = x0 + 6, keys = 'BCDEGHKMNPRSTW';
+    for (var i = 0; i < 8; i++) {
+      var gl = FONT[keys[Math.floor(tkHash(i, 101) * keys.length)]];
+      for (var row = 0; row < 5; row++) for (var col = 0; col < 3; col++)
+        if ((gl[row] & (4 >> col)) && tkHash(i * 15 + row * 3 + col, 211) < 0.55) px(g, lx + i * 4 + col, y0 + 2 + row, PAL.WOOD2);
+    }
+    for (var sI = 0; sI < 5; sI++) {                                // gouges straight through them
+      var sx = lx + Math.round(tkHash(sI, 307) * 28), sl = 4 + Math.round(tkHash(sI, 311) * 5);
+      for (var q = 0; q < sl; q++) px(g, sx + q, y0 + 2 + Math.round(q * (tkHash(sI, 313) < 0.5 ? 0.6 : -0.6)) + (tkHash(sI, 313) < 0.5 ? 0 : 4), PAL.WOOD1);
+    }
+    // line 2: EST. 19 and two digits scratched out
+    text(g, 'EST. 19', x0 + 6, y0 + 7, PAL.WOOD2, 1);
+    for (var d = 0; d < 2; d++) {
+      var bx = x0 + 6 + 28 + d * 4;
+      rect(g, bx, y0 + 7, 3, 5, PAL.WOOD2);
+      for (var hh = 0; hh < 5; hh++) px(g, bx + (hh + d) % 3, y0 + 7 + hh, PAL.BRASS2);   // scratched bright
+    }
+    g.restore();
+    // water running off it
+    var dr = (t * 1.5) % 1;
+    px(g, x0 + 5, y0 + PLQ_H + Math.round(dr * 3), PAL.PUR2);
+    if (k >= 1) px(g, x0 + PLQ_W - 8, y0 + PLQ_H + Math.round(((t * 1.1 + 0.4) % 1) * 3), PAL.FOG);
   }
 
   /* ── the carry: a chalk release line across the lane, and the grab cue ── */
@@ -1891,7 +2035,8 @@
     drawBall: drawBall, drawSunkBall: drawSunkBall, drawBallShadow: drawBallShadow, drawBedShadow: drawBedShadow,
     drawSinkOccluder: drawSinkOccluder, drawRimTick: drawRimTick, drawToast: drawToast,
     troughRect: troughRect, gateRect: gateRect, RACK_BALL_R: RACK_BALL_R, grabBob: grabBob,
-    slotRect: slotRect, coinDoorRect: coinDoorRect, counterRect: counterRect, pileRect: pileRect, buttonRect: buttonRect, coinSlitRect: coinSlit, stampRect: stampRect, drawContact: drawContact,
+    slotRect: slotRect, coinDoorRect: coinDoorRect, counterRect: counterRect, pileRect: pileRect,
+    noseRect: noseRect, plinthRect: plinthRect, returnFlapRect: returnFlapRect, buttonRect: buttonRect, coinSlitRect: coinSlit, stampRect: stampRect, drawContact: drawContact,
     LIFT_T: LIFT_T, TOAST_T: TOAST_T, drawsMachineNotes: true,   // main's whack hit-test; render draws marqueeNote/doorRattle
     text: text, textC: textC, flickerAt: flickerAt
   };
