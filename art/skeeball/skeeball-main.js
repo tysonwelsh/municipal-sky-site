@@ -745,7 +745,7 @@
       emit({ type: 'sneeze', name: name || 'HOLLER ROLLER' });
       return true;
     }
-    // egg 4: the coin return
+    // egg 4: the coin return (hold the coin door: jiggling it)
     function moonNow() { return !!(state.forceMoon || (mis && mis.isMoon && mis.isMoon())); }
     function coinReturn() {
       if (!EGGS.coinReturn) return null;
@@ -759,6 +759,16 @@
       view.returnFlap = { t0: tNow, coin: found };
       emit({ type: 'coinreturn', found: found });
       return found;
+    }
+    // egg 4's trigger: a still hold on the coin door — the plate presses in at
+    // 0.4 s, and at 1.2 s the door is jiggled: the coin return (once per hold)
+    var DOOR_PRESS = 0.4, DOOR_JIGGLE = 1.2, DOOR_STILL = 6;
+    function tickDoor() {
+      if (!drag || drag.egg !== 'door' || drag.doorFired || drag.doorBroken) return;
+      var d0 = drag.pts[0], dl = drag.pts[drag.pts.length - 1], held = tNow - drag.tDown;
+      if (Math.hypot(dl.x - d0.x, dl.y - d0.y) >= DOOR_STILL) { drag.doorBroken = true; view.doorHold = null; return; }
+      if (held >= DOOR_PRESS && !view.doorHold) view.doorHold = { t0: tNow };
+      if (held >= DOOR_JIGGLE && EGGS.coinReturn) { drag.doorFired = true; coinReturn(); }
     }
     // egg 3: the plaque — a long, still press on the plinth (checked on the sim clock)
     var PLAQUE_HOLD = 3, PLAQUE_RISE = 0.6, PLAQUE_STILL = 6;
@@ -794,13 +804,6 @@
     }
     function onNose(pt) { return EGGS.sneeze && R.noseRect && inRect(pt, R.noseRect(), 3); }
     function onPlinth(pt) { return EGGS.plaque && R.plinthRect && inRect(pt, R.plinthRect(), 0); }
-    // the flap sits under the coin door: where their tap margins overlap, the nearer one wins
-    function nearerCoinDoor(pt) {
-      if (!onCoinDoor(toMachine(pt.x, pt.y))) return false;
-      var m = toMachine(pt.x, pt.y), d = R.coinDoorRect(), f = R.returnFlapRect();
-      return Math.hypot(m.x - (d.x + d.w / 2), m.y - (d.y + d.h / 2)) <= Math.hypot(m.x - (f.x + f.w / 2), m.y - (f.y + f.h / 2));
-    }
-    function onReturnFlap(pt) { return EGGS.coinReturn && R.returnFlapRect && inRect(pt, R.returnFlapRect(), 3); }
     function crankDone() { return game.ticketsCranked >= game.tickets && !(mis && mis.crankHeld()); }
     function payoutDone() { return crankDone() && tNow >= game.holdUntil; }
     // a touch during the crank: whack a jam, or run the rest of the tickets out at once
@@ -854,7 +857,7 @@
     function tickGame() {
       if (state.findAt != null && tNow >= state.findAt) findNickel();
       if (state.fill) tickFill();
-      tickPlaque(); tickMoths();
+      tickPlaque(); tickDoor(); tickMoths();
       if (state.tearAt != null && tNow - state.tearAt >= TEAR_T) { state.tearAt = null; setPile(0); }
       if (state.setdown && tNow - state.setdown.t0 >= CARRY.SETDOWN_T) { state.readyX = state.setdown.x; state.setdown = null; }
       // the sulk: the possum's eyes stay narrowed until the refused ball is home
@@ -934,8 +937,7 @@
         else if (tNow >= game.holdUntil) toAttract();    // any tap or swipe after the crank
       } else if (game.mode === 'attract') {
         var m = toMachine(pts[0].x, pts[0].y);
-        if (g.tap && onCoinDoor(m)) insertCoin();
-        else if (g.tap && onButton(m)) pressButton();
+        if (g.tap && onButton(m)) pressButton();
         else if (g.valid) nudge();
       } else if (g.valid) {
         thrown = requestThrow(laneX(toMachine(g.x0css, 0).x), g.v, g.aim, g.spin);
@@ -1342,7 +1344,8 @@
         drag = { id: id, pts: [pt], live: id !== -1, pile: true }; return true;
       }
       if (game.mode === 'attract' && onNose(pt)) { drag = { id: id, pts: [pt], live: id !== -1, egg: 'nose' }; return true; }
-      if (onReturnFlap(pt) && !nearerCoinDoor(pt)) { drag = { id: id, pts: [pt], live: id !== -1, egg: 'return' }; return true; }
+      // the coin door: a tap drops a nickel (on release), a still hold jiggles it (the coin return)
+      if (onCoinDoor(toMachine(pt.x, pt.y))) { drag = { id: id, pts: [pt], live: id !== -1, egg: 'door', tDown: tNow }; return true; }
       var plinth = onPlinth(pt);
       if (state.fill || !canStartDrag()) {      // the rack is filling, or a ball is out
         if (plinth) { drag = { id: id, pts: [pt], live: id !== -1, egg: 'plinth', plinth: true, tDown: tNow }; return true; }
@@ -1369,10 +1372,15 @@
     function endDrag(pt) {
       var d = drag; drag = null; rectCache = null;
       if (d.plaqueShown) return { plaque: true };   // the long press was for the plaque: the lift is not a tap
-      if (d.egg) {                               // the nose, the coin return, a busy-time plinth press: taps only
+      if (d.egg) {                               // the nose, the coin door, a busy-time plinth press
         var tap = Math.hypot(pt.x - d.pts[0].x, pt.y - d.pts[0].y) < GESTURE.TAP_PX;
         if (tap && d.egg === 'nose') return { egg: noseTap() };
-        if (tap && d.egg === 'return') return { egg: coinReturn() };
+        if (d.egg === 'door') {
+          view.doorHold = null;
+          if (d.doorFired) return { egg: 'jiggled' };             // a hold that jiggled the door never also pays
+          if (tap && game.mode === 'attract') return { coin: insertCoin() };
+          return { egg: false };
+        }
         return { egg: false };
       }
       if (d.pile) {                              // a tap on the pile tears it; a drag off it does nothing
@@ -1952,7 +1960,17 @@
             advance(tNow + (arg || 3.2)); var up = view.plaque && { k: view.plaque.k }; drag = null; advance(tNow + 0.05);
             return { risen: up, after: view.plaque && { k: +view.plaque.k.toFixed(3), sinking: !!view.plaque.sinking } };
           }
-          if (name === 'return') return { found: coinReturn(), flap: view.returnFlap };
+          if (name === 'return') {                   // hold the coin door still for arg (1.3) s, then let go
+            var dr = R.coinDoorRect(), k0 = canvas.getBoundingClientRect().height / R.H;
+            var pt0 = { t: 0, x: (dr.x + dr.w / 2) * k0, y: (dr.y + dr.h / 2 + R.TOP) * k0 };
+            drag = null; rectCache = canvas.getBoundingClientRect();
+            var t0 = tNow; pointerDown(pt0, -1);
+            var mid = null; advance(tNow + Math.min(0.6, arg || 1.3)); mid = view.doorHold;
+            advance(t0 + (arg || 1.3));
+            var up = drag ? endDrag(pt0) : null;
+            var fl = view.returnFlap, fired = !!(fl && fl.t0 >= t0);
+            return { found: fired ? fl.coin : undefined, fired: fired, release: up, doorHold: mid, flap: fl, credited: !!state.credited };
+          }
           if (name === 'moon') { state.forceMoon = arg !== false; return { moon: moonNow() }; }
           if (name === 'gutters') { var before = view.eyeRoll; ballOutcome(0); ballOutcome(0); ballOutcome(0); return { sighed: view.eyeRoll !== before, eyeRoll: view.eyeRoll }; }
           if (name === 'idle') { if (game.mode !== 'attract') toAttract(); noteInput(); advance(tNow + (arg || 181)); return { moths: view.moths }; }
@@ -1989,7 +2007,7 @@
         },
         letGo: function (pt) { return drag ? endDrag(pt || drag.pts[drag.pts.length - 1]) : null; },
         // one pointer event at a time (canvas css px, t in ms): the clock advances with t
-        down: function (pt) { drag = null; rectCache = canvas.getBoundingClientRect(); H._t0 = pt.t; H._ts = tNow; beginDrag(pt, -1); return drag && drag.carry ? 'carry' : 'swipe'; },
+        down: function (pt) { drag = null; rectCache = canvas.getBoundingClientRect(); H._t0 = pt.t; H._ts = tNow; if (!pointerDown(pt, -1)) return 'refused'; return drag ? (drag.carry ? 'carry' : drag.egg || (drag.pile ? 'pile' : 'swipe')) : 'none'; },
         move: function (pt) { var tt = H._ts + (pt.t - H._t0) / 1000; if (tt > tNow) advance(tt); if (drag) moveDrag(pt); return drag ? (drag.carry && drag.carry.pushing ? 'pushing' : 'hand') : 'gone'; },
         up: function (pt) { var tt = H._ts + (pt.t - H._t0) / 1000; if (tt > tNow) advance(tt); return drag ? endDrag(pt) : state.lastCarry; },
         laneAt: function (sx, sy) { return laneAt(sx, sy); },

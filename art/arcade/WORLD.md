@@ -28,7 +28,7 @@ details stop contradicting each other.
 - **Found a nickel.** If your pocket is empty when a machine settles back
   into attract, it finds a nickel in its own coin return: the pocket
   refills to 5 tokens (`skeeball-return`, flag `skeeball.found-a-nickel`).
-- **Check the coin return.** HOLLER ROLLER's return flap is usually empty. The first time on a save it holds one token (+1, `skeeball-return`, flag `skeeball.checked-the-return`); once ever, on a moon night, it holds the 1924 Mercury dime.
+- **Check the coin return.** Hold HOLLER ROLLER's coin door to jiggle it: usually nothing falls out. The first time on a save it holds one token (+1, `skeeball-return`, flag `skeeball.checked-the-return`); once ever, on a moon night, it holds the 1924 Mercury dime.
 
 ## The save document
 
