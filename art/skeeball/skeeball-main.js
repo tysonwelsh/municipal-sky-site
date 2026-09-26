@@ -521,6 +521,7 @@
     }
     function startBall(n) {
       game.n = n;
+      state.readyX = 0;                 // the next ball sits in the middle of the throw line
       view.ballsLeft = BALLS - n;
       // the lift takes the leftmost ball of the pack; the rest stay put
       var fromX = state.rackX && state.rackX.length ? state.rackX.shift() : null;
@@ -531,11 +532,11 @@
     }
     // busy while a ball is out, or a refused one is still gliding home
     function ballActive() { return !!(state.ball && state.ball.phase !== 'done'); }
-    function ballReady() { return !ballActive() && !state.rerack; }
+    function ballReady() { return !ballActive() && !state.rerack && !state.setdown; }
     function ballSeed() { return (game.seed * 1000003 + game.games * 131 + game.n * 17) | 0; }
 
     // every throw goes through here: from a swipe, the keyboard or the API
-    function requestThrow(x0, v, aim, spin) {
+    function requestThrow(x0, v, aim, spin, z0) {
       if (game.mode === 'payout') {
         if (!payoutDone()) fastForward();
         else toAttract();                 // after the crank: back to the machine, no auto-nickel
@@ -543,17 +544,19 @@
       }
       if (game.mode === 'attract') { nudge(); return false; } // drop a nickel, push the button first
       if (!ballReady() || game.n < 1) return false;
-      x0 = clamp(+x0 || 0, -0.85, 0.85);
+      x0 = clamp(+x0 || 0, -CARRY.X_MAX, CARRY.X_MAX);
+      z0 = clamp(+z0 || 0, 0, CARRY.Z_RELEASE);
       // the machine may lean, widen the holes (moon) or refuse the ball (sulk)
       var mv = mis ? mis.beforeThrow(game.n, { x0: x0, v: v, aim: aim || 0, spin: spin || 0 }) : {};
       state.refused = !!mv.refuse;
       if (mv.refuseV) v = Math.min(v, mv.refuseV);
       var tune = mv.tuneOverride ? Object.assign({}, opts.tune, mv.tuneOverride) : (opts.tune || null);
-      state.ball = P.createThrow(x0, v, aim || 0, spin || 0, ballSeed(), tune);
+      state.ball = P.createThrow(x0, v, aim || 0, spin || 0, ballSeed(), tune, z0);
+      state.throwT = tNow;
       state.trail = []; state.cap = null; state.rimTick = null; state.pendingJackpot = null; state.cameHome = false;
       view.lift = null;                   // the throw cuts any lift still under way
       if (state.refused) return 'refused'; // sent back: no `throw` event, the ball is not consumed
-      emit({ type: 'throw', x0: +x0.toFixed(4), v: +v.toFixed(4), aim: +(aim || 0).toFixed(4), spin: +(spin || 0).toFixed(4), ball: game.n });
+      emit({ type: 'throw', x0: +x0.toFixed(4), z0: +z0.toFixed(4), v: +v.toFixed(4), aim: +(aim || 0).toFixed(4), spin: +(spin || 0).toFixed(4), ball: game.n, carried: !!state.carriedThrow });
       return true;
     }
     function throwPower(power, aim, spin, x0) {
@@ -668,6 +671,7 @@
     function tickGame() {
       if (state.findAt != null && tNow >= state.findAt) findNickel();
       if (state.fill) tickFill();
+      if (state.setdown && tNow - state.setdown.t0 >= CARRY.SETDOWN_T) { state.readyX = state.setdown.x; state.setdown = null; }
       // the sulk: the possum's eyes stay narrowed until the refused ball is home
       if (state.refused || state.rerack) view.narrowT0 = tNow;
       if (state.rerack && tNow - state.rerack.t0 >= GLIDE_T) {
@@ -696,8 +700,8 @@
 
     /* ── input ─────────────────────────────────────────────────────── */
     canvas.style.touchAction = 'none';
-    function toMachine(cx, cy) { // canvas css px → machine frame
-      var r = canvas.getBoundingClientRect();
+    function toMachine(cx, cy) { // canvas css px → machine frame (the rect cached per gesture)
+      var r = crect();
       return { x: cx * R.W / r.width, y: cy * R.H / r.height - R.TOP };
     }
     function laneX(mx) { return clamp((mx - 108) / (108 - R.GEO.lane.xb0), -0.85, 0.85); }
@@ -727,9 +731,9 @@
       return m.x >= sr.x - 6 && m.x <= sr.x + sr.w + 6 && m.y >= sr.y - 6 && m.y <= sr.y + sr.h + 24;
     }
     // the lower half: below the canvas midline, including the stage band under it
-    function inSwipeZone(cy) { return cy >= canvas.getBoundingClientRect().height / 2; }
+    function inSwipeZone(cy) { return cy >= crect().height / 2; }
     // css height of the 384-row machine frame at this integer scale (power's yardstick)
-    function machineCssH() { var r = canvas.getBoundingClientRect(); return R.MH * r.height / R.H; }
+    function machineCssH() { var r = crect(); return R.MH * r.height / R.H; }
     function canStartDrag() { return !(game.mode === 'play' && !ballReady()); }
     function inactive() { return dead || hostPaused || hiddenPaused; } // paused cabinets take no input
 
@@ -752,6 +756,150 @@
       }
       if (game.mode === 'play' || thrown) puffGhost(pts, g);
       return { gesture: g, thrown: thrown };
+    }
+
+    /* ── THE CARRY: the ball rolls in your hand and leaves it like a bowler's ──
+     * A pointerdown on the resting ball (its sprite ± GRAB_CSS) picks it up:
+     * every move puts the ball's lane position under the thumb (the grab
+     * offset is kept, so it never jumps), no smoothing. Pulling back just
+     * stops it at the throw line. The ball leaves the hand the moment the
+     * thumb carries it over the RELEASE LINE (z = Z_RELEASE), at the hand's
+     * speed there, from that exact spot — or on pointerup before the line,
+     * from where it is. A slow let-go sets the ball down (it rolls back to
+     * the line; no ball spent). Speed, aim and the power curve are the
+     * swipe's (mapGesture); the launch speed is P.vForLadder(z0, v) so a
+     * firm flick is the same ring wherever the hand opens (≤ 6.4 % off the
+     * hand's speed). English is a bowler's wrist: see carryEnglish. */
+    var CARRY = {
+      Z_RELEASE: 2.4,          // the release line, lane units (≈ 69 % of the flat lane; ≈ 81 css px of thumb from the ball at 390 wide)
+      X_MAX: 0.89,             // |x| ≤ 1 − r (the rails)
+      GRAB_CSS: 14,            // the ball's sprite ± this many css px picks it up
+      SETDOWN_T: 0.4,          // a set-down ball rolls back to the line over this long
+      ENG_LATE: 40,                            // ms: the wrist's last move
+      FLICK_MIN: 12, FLICK_FULL: 40,           // ° the last 40 ms turn off the swing's line
+      CURL_MIN: 14, CURL_FULL: 34,             // ° the swing's second half turns off its first
+      W_FLICK: 0.6, W_CURL: 0.7, SPIN_MAX: 1   // blend and cap (→ the physics' ±1)
+    };
+    var DEG = Math.PI / 180;
+    // machine frame → css px (the inverse of toMachine), and the css px per art px
+    function cssK() { return crect().height / R.H; }
+    // the resting ball on the throw line, machine frame
+    function readyBall() {
+      var p = R.project(state.readyX || 0, U.BALL_R, 0);
+      return { sx: p.sx, sy: p.sy, r: ballPx(p.scale) };
+    }
+    function onReadyBall(pt) {
+      if (game.mode !== 'play' || !ballReady() || game.n < 1 || fake) return false;
+      if (view.lift && tNow - view.lift.t0 < R.LIFT_T) return false;
+      var m = toMachine(pt.x, pt.y), b = readyBall(), k = cssK();
+      return Math.hypot(m.x - b.sx, m.y - b.sy) <= b.r + CARRY.GRAB_CSS / k;
+    }
+    // THE LANE UNDER A POINT: the machine-frame sprite centre (sx, sy) of a
+    // ball rolling on the lane → its lane position {x, z} (z unclamped, may
+    // be < 0). R.project isn't invertible in closed form (foreshortened rows,
+    // stepped half-widths), so z is found by bisection on the sprite row,
+    // which falls monotonically with z, and x from the half-width there.
+    function laneAt(sx, sy) {
+      var lo = -0.6, hi = U.Z_CREST;
+      for (var i = 0; i < 32; i++) {
+        var mid = (lo + hi) / 2;
+        if (R.project(0, U.BALL_R, mid).sy > sy) lo = mid; else hi = mid;
+      }
+      var z = (lo + hi) / 2, c = R.project(0, U.BALL_R, z).sx, e = R.project(1, U.BALL_R, z).sx;
+      return { x: (sx - c) / ((e - c) || 1), z: z };
+    }
+    function carryStart(pt) {
+      var m = toMachine(pt.x, pt.y), b = readyBall();
+      drag.carry = { offX: b.sx - m.x, offY: b.sy - m.y, x: state.readyX || 0, z: 0, zRaw: 0,
+        path: [{ t: pt.t, x: state.readyX || 0, z: 0 }], roll: 0 };
+      emit({ type: 'carry', kind: 'pick' });
+    }
+    // one thumb sample while carrying; true when the ball has left the hand
+    function carryPoint(pt) {
+      var c = drag.carry, m = toMachine(pt.x, pt.y), L = laneAt(m.x + c.offX, m.y + c.offY);
+      var x = clamp(L.x, -CARRY.X_MAX, CARRY.X_MAX);
+      if (L.z >= CARRY.Z_RELEASE) {
+        // over the line: find where the thumb crossed it and let go there, then
+        var prev = drag.pts[drag.pts.length - 1], f = c.zRaw < L.z ? clamp((CARRY.Z_RELEASE - c.zRaw) / (L.z - c.zRaw), 0, 1) : 1;
+        var cross = { t: prev.t + (pt.t - prev.t) * f, x: prev.x + (pt.x - prev.x) * f, y: prev.y + (pt.y - prev.y) * f };
+        var cx = clamp(c.x + (x - c.x) * f, -CARRY.X_MAX, CARRY.X_MAX);
+        var pts = drag.pts.concat([cross]);
+        drag = null; rectCache = null;
+        state.lastCarry = carryRelease(pts, cx, CARRY.Z_RELEASE, true);
+        return true;
+      }
+      var z = Math.max(0, L.z);
+      c.roll += Math.hypot(x - c.x, z - c.z);
+      c.x = x; c.z = z; c.zRaw = L.z;
+      c.path.push({ t: pt.t, x: x, z: z });
+      if (c.path.length > 64) c.path.shift();
+      drag.pts.push(pt);
+      while (drag.pts.length > GESTURE.MAX_PTS) drag.pts.shift();
+      return false;
+    }
+    // the hand opens: a throw from (x, z0), or the ball set down
+    function carryRelease(pts, x, z0, atLine) {
+      var g = mapGesture(pts, machineCssH());
+      if (!atLine && (!g.valid || g.speed < GESTURE.SETDOWN_SPEED)) { setDown(x, z0); return { gesture: g, thrown: false, setDown: true }; }
+      var v = P.vForLadder ? P.vForLadder(z0, g.v) : g.v;   // the ladder independent of where the hand opens
+      var spin = carryEnglish(pts);
+      state.carriedThrow = true;
+      var thrown = requestThrow(x, v, g.aim, spin, z0);
+      state.carriedThrow = false;
+      emit({ type: 'carry', kind: 'release', atLine: atLine, z0: +z0.toFixed(3), vHand: +g.v.toFixed(3), v: +v.toFixed(3), spin: +spin.toFixed(3), flick: state.lastEnglish && state.lastEnglish.flick, curl: state.lastEnglish && state.lastEnglish.curl });
+      return { gesture: g, thrown: thrown, v: v, z0: z0, spin: spin, atLine: atLine };
+    }
+    // ENGLISH, like a bowler's wrist, from the forward swing (the thumb path
+    // from its lowest point — after any wind-up — to the release):
+    //  (a) the flick: the heading of the last 40 ms against the swing's line
+    //      (start → release), a sideways turn of the wrist;
+    //  (b) the curl: how far the swing turns between its first and second
+    //      halves (by length), a curled arm.
+    // Each has a dead zone so a straight push is 0 and a thumb's natural arc
+    // (a 200–260 px radius over the ~80 px carry: flick < 5°, curl < 14°)
+    // gives 0; clockwise on screen (y down) hooks right (+x).
+    // 0.6·flick + 0.7·curl (each 0..1 past its dead zone), capped ±1.
+    function carryEnglish(pts) {
+      var n = pts.length; if (n < 3) return 0;
+      var lo = 0;
+      for (var i = 1; i < n; i++) if (pts[i].y >= pts[lo].y) lo = i;   // the bottom of the wind-up
+      var sw = pts.slice(lo), m = sw.length, z = sw[m - 1], a = sw[0];
+      if (m < 3 || z.t - a.t < 60) return 0;
+      var len = 0, cum = [0];
+      for (i = 1; i < m; i++) { len += Math.hypot(sw[i].x - sw[i - 1].x, sw[i].y - sw[i - 1].y); cum.push(len); }
+      if (len < 20) return 0;
+      function atT(t) {
+        if (t <= a.t) return a;
+        for (var j = m - 1; j > 0; j--) if (sw[j - 1].t <= t) {
+          var p0 = sw[j - 1], p1 = sw[j], f = (t - p0.t) / ((p1.t - p0.t) || 1);
+          return { x: p0.x + (p1.x - p0.x) * f, y: p0.y + (p1.y - p0.y) * f };
+        }
+        return a;
+      }
+      var k = 1; while (k < m - 1 && cum[k] < len / 2) k++;
+      var mid = sw[k], l0 = atT(z.t - CARRY.ENG_LATE);
+      function turn(ax, ay, bx, by) { return Math.atan2(ax * by - ay * bx, ax * bx + ay * by) / DEG; }
+      function ramp(v, lo2, hi2) { var r = clamp((Math.abs(v) - lo2) / (hi2 - lo2), 0, 1); return v < 0 ? -r : r; }
+      var fx = z.x - a.x, fy = z.y - a.y, lx = z.x - l0.x, ly = z.y - l0.y;
+      var flick = Math.hypot(lx, ly) >= 3 ? turn(fx, fy, lx, ly) : 0;
+      var curl = turn(mid.x - a.x, mid.y - a.y, z.x - mid.x, z.y - mid.y);
+      var e = CARRY.W_FLICK * ramp(flick, CARRY.FLICK_MIN, CARRY.FLICK_FULL) + CARRY.W_CURL * ramp(curl, CARRY.CURL_MIN, CARRY.CURL_FULL);
+      state.lastEnglish = { flick: +flick.toFixed(1), curl: +curl.toFixed(1) };
+      return clamp(e, -CARRY.SPIN_MAX, CARRY.SPIN_MAX);
+    }
+    // a slow let-go: the ball is put down and rolls back to the throw line
+    function setDown(x, z) {
+      state.setdown = { x: x, z: z, t0: tNow };
+      emit({ type: 'setdown', x: +x.toFixed(3), z: +z.toFixed(3) });
+    }
+    // the synthetic pose of the ball in the hand (audio rolls it; lane units/s)
+    function carryPose() {
+      if (!drag || !drag.carry) return null;
+      var c = drag.carry, pth = c.path, a = pth[pth.length - 1], b = a;
+      for (var i = pth.length - 1; i >= 0 && a.t - pth[i].t <= 50; i--) b = pth[i];
+      var dt = (a.t - b.t) / 1000;
+      return { phase: 'carry', x: c.x, z: c.z, y: 0, r: U.BALL_R,
+        vz: dt > 0 ? (a.z - b.z) / dt : 0, vx: dt > 0 ? (a.x - b.x) / dt : 0 };
     }
 
     // the canvas rect, cached per gesture (not per coalesced sample)
@@ -778,24 +926,39 @@
       }
       // PAYOUT takes the gesture anywhere (it decides on release, never on down)
       if (game.mode !== 'payout' && !inSwipeZone(pt.y)) return;
-      drag = { id: ev.pointerId, pts: [pt], live: true };
+      beginDrag(pt, ev.pointerId);
       try { container.setPointerCapture(ev.pointerId); } catch (e) { }
       ev.preventDefault();
+    }
+    function beginDrag(pt, id) {
+      drag = { id: id, pts: [pt], live: true };
+      if (onReadyBall(pt)) carryStart(pt);      // on the ball: it's in the hand
+    }
+    function moveDrag(pt) {
+      if (drag.carry) return carryPoint(pt);
+      drag.pts.push(pt);
+      while (drag.pts.length > GESTURE.MAX_PTS) drag.pts.shift();
+      return false;
+    }
+    function endDrag(pt) {
+      var d = drag; drag = null; rectCache = null;
+      if (d.carry) {
+        var c = d.carry, pts = d.pts.concat([pt]);
+        return carryRelease(pts, c.x, c.z, false);
+      }
+      d.pts.push(pt);
+      return release(d.pts);
     }
     function onMove(ev) {
       if (!drag || ev.pointerId !== drag.id) return;
       var list = ev.getCoalescedEvents ? ev.getCoalescedEvents() : null;
       if (!list || !list.length) list = [ev];
-      for (var i = 0; i < list.length; i++) drag.pts.push(localPt(list[i]));
-      while (drag.pts.length > GESTURE.MAX_PTS) drag.pts.shift();
+      for (var i = 0; i < list.length && drag; i++) if (moveDrag(localPt(list[i]))) break; // (a carry may let go mid-list)
       ev.preventDefault();
     }
     function onUp(ev) {
       if (!drag || ev.pointerId !== drag.id) return;
-      var pts = drag.pts; drag = null;
-      pts.push(localPt(ev));
-      rectCache = null;
-      release(pts);
+      endDrag(localPt(ev));
     }
     function onCancel(ev) {
       if (drag && ev.pointerId === drag.id) { drag = null; rectCache = null; }
@@ -884,6 +1047,9 @@
       var rr = Math.round(r);
       if (rr >= 3 && pose.phase !== 'captured') {
         var a = pose.z * 9 + pose.x * 5;
+        // english makes the scuff orbit faster (the ball is spinning)
+        if (state.ball && state.ball.english && pose.phase !== 'carry' && typeof state.throwT === 'number' && !pose.synthetic)
+          a += state.ball.english * 22 * (tNow - state.throwT);
         var ox = Math.round(Math.cos(a) * (rr - 1.5)), oy = Math.round(Math.sin(a * 0.6) * (rr - 2));
         if (Math.sin(a) > -0.3) { ctx.fillStyle = SCUFF; ctx.fillRect(Math.round(x) + ox, Math.round(y) + oy, 1, 2); }
       }
@@ -928,8 +1094,10 @@
           view.holeGlow[h === 0 ? 0 : 1] = clamp(pose.sinking || 0, 0, 1);
         }
       } else {
-        var rd = game.mode === 'play' ? dragRead() : null;
-        if (rd) view.ballSx = R.project(rd.x, U.BALL_R, rd.z).sx;
+        var cp = carryPose();
+        var rd = game.mode === 'play' && !cp ? dragRead() : null;
+        if (cp) view.ballSx = R.project(cp.x, U.BALL_R, cp.z).sx;
+        else if (rd) view.ballSx = R.project(rd.x, U.BALL_R, rd.z).sx;
         else if (game.mode === 'play' && game.n >= 1) view.ballSx = 108;
       }
     }
@@ -1005,6 +1173,13 @@
       if (ticking && rt.ring != null) R.drawRimTick(ctx, rt.ring, rt.angle, 1 - (tNow - rt.t0) / RIM_TICK_T, p.sx, p.sy, r);
     }
 
+    // a ball rolling on the lane at (x, z), its scuff tumbling with the distance
+    function drawRollingBall(x, z) {
+      var p = R.project(x, U.BALL_R, z), r = ballPx(p.scale);
+      R.drawContact(ctx, p.sx, p.sy, r);
+      drawBallSprite(p.sx, p.sy, r, { x: x, z: z, phase: 'roll', synthetic: true });
+      view.ballSx = p.sx;
+    }
     // a ball resting on the lane at (x, z)
     function drawLaneBall(x, z) {
       var p = R.project(x, U.BALL_R, z), r = ballPx(p.scale);
@@ -1016,8 +1191,8 @@
     // the live read of the drag: gesture so far (plus "now", so a held
     // thumb reads as no power) and the cosmetic wind-up under the thumb
     function dragRead() {
-      if (!drag || drag.pts.length < 1) return null;
-      var r = canvas.getBoundingClientRect(), pts = drag.pts;
+      if (!drag || drag.carry || drag.pts.length < 1) return null;
+      var r = crect(), pts = drag.pts;
       if (drag.live && typeof performance !== 'undefined') {
         var last = pts[pts.length - 1], now = performance.now();
         if (now > last.t + 1) pts = pts.concat([{ t: now, x: last.x, y: last.y }]);
@@ -1096,6 +1271,12 @@
 
     // the ball on the throw line: the next ball, or the one under the thumb
     function drawThrowLine() {
+      if (drag && drag.carry) { drawRollingBall(drag.carry.x, drag.carry.z); return; } // the ball is the arrow
+      if (state.setdown) { // put down: it rolls back to the throw line
+        var ks = clamp((tNow - state.setdown.t0) / CARRY.SETDOWN_T, 0, 1), es = ks * (2 - ks);
+        drawRollingBall(state.setdown.x, state.setdown.z * (1 - es));
+        return;
+      }
       var rd = game.mode === 'play' ? dragRead() : null; // no ball on the line until the button is pushed
       if (rd) {
         drawGhost(ghostPoints(rd.x, rd.z, rd.power, rd.aim));
@@ -1110,7 +1291,7 @@
       }
       if (view.lift && tNow - view.lift.t0 < R.LIFT_T) return;
       if (tNow < kbd.until) drawGhost(ghostPoints(0, 0, MEDIUM, kbd.aim));
-      drawLaneBall(0, 0);
+      drawLaneBall(state.readyX || 0, 0);
     }
 
     // the floating score (render draws it and owns its rise and life);
@@ -1250,11 +1431,12 @@
         return {
           mode: game.mode, score: game.score, ball: game.n, ballsLeft: view.ballsLeft,
           phase: state.ball ? state.ball.phase : 'idle', filling: !!state.fill,
+          ready: game.mode === 'play' && game.n >= 1 && !state.fill && ballReady() && !(view.lift && tNow - view.lift.t0 < R.LIFT_T),
           tokens: A ? A.tokens.get() : null, scrip: A ? A.scrip.get() : null,
           highScore: view.highScore
         };
       },
-      getPose: currentPose,
+      getPose: function () { return carryPose() || currentPose(); }, // while carried: {phase:'carry', x, z, y, vz, vx, r}
       onEvent: subscribe,
       pause: function () { hostPaused = true; drag = null; syncMute(); },
       resume: function () { hostPaused = false; lastNow = null; syncMute(); },
@@ -1307,9 +1489,25 @@
           if (!points || !points.length) return null;
           if (state.fill || !canStartDrag() || (game.mode !== 'payout' && !inSwipeZone(points[0].y))) return { gesture: null, thrown: false, refused: true };
           emit({ type: 'input', kind: 'down' });
-          drag = null;
-          return release(points);
+          drag = null; rectCache = canvas.getBoundingClientRect();
+          beginDrag(points[0], -1);
+          var carried = !!drag.carry, out = null;
+          for (var i = 1; i < points.length - 1 && drag; i++) moveDrag(points[i]);
+          if (drag) out = endDrag(points[points.length - 1]);
+          else out = state.lastCarry || { thrown: true };
+          if (out) out.carried = carried;
+          return out;
         },
+        // a carry held open (for pictures): pick up at points[0], move through the rest, don't let go
+        hold: function (points) {
+          drag = null; rectCache = canvas.getBoundingClientRect();
+          beginDrag(points[0], -1);
+          for (var i = 1; i < points.length && drag; i++) moveDrag(points[i]);
+          return drag ? carryPose() || { swipe: true } : state.lastCarry;
+        },
+        letGo: function (pt) { return drag ? endDrag(pt || drag.pts[drag.pts.length - 1]) : null; },
+        laneAt: function (sx, sy) { return laneAt(sx, sy); },
+        readyBall: function () { var b = readyBall(), k = cssK(); return { x: b.sx * k, y: (b.sy + R.TOP) * k, r: b.r * k }; },
         // hold a drag open for pictures (points as in swipe); null lets go without throwing
         drag: function (points) { drag = points ? { id: -1, pts: points.slice(), live: false } : null; return drag ? mapGesture(points, machineCssH()) : null; },
         gesture: function (points) { return mapGesture(points, machineCssH()); },
