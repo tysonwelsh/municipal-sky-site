@@ -817,7 +817,9 @@
       FLOOR_K: 1.15,           // a real throw at least reaches the hop, with this margin
       PAUSE: 0.3,              // MH/s: slower than this, the thumb has paused (the swing starts after it)
       ENG_LATE: 40,                            // ms: the wrist's last move before the release
-      AIM_DEAD: 12,                            // ° (screen): a straight-intended swing's chord dead zone (see chordAim)
+      AIM_ARC: 0.6, AIM_DEAD: 3,               // aim: chord60 − 0.6·curl; under 3° (screen) is straight (see chordAim)
+      LIFT_UP: 0.6,                            // MH/s up the lane at the lift: a gentle lift of a rolling ball throws it
+      EASE_T: 0.08,                            // s: the ball's last approach to the thumb eases (speed ∝ gap / this)
       FLICK_MIN: 21, FLICK_FULL: 46,           // ° the last 40 ms before the lift turn off the swing's line
       CURL_MIN: 22, CURL_FULL: 44,             // ° the swing's second half turns off its first
       W_FLICK: 0.6, W_CURL: 0.5, SPIN_MAX: 1   // blend and cap (→ the physics' ±1)
@@ -897,8 +899,11 @@
       return out;
     }
     // the swing's aim, on the lane (screen → lane: AIM_PERSPECTIVE):
-    //  - a straight-intended swing (a thumb's natural bow or pivot arc): the
-    //    chord over its first 60 %, less a 12° dead zone — it throws straight;
+    //  - a straight-intended swing: the chord over its first 60 %, less 0.6 of
+    //    its curl (a thumb's natural pivot arc curls its own chord off the
+    //    line it meant), and anything under 3° is straight — so a natural
+    //    arc throws straight and a deliberate diagonal keeps its angle; a
+    //    bow whose whole chord is straight (< 4°) throws straight;
     //  - a deliberate curl: its opening line (the first 30 %), so it leaves
     //    along the line it started on and hooks the way it bent (start right,
     //    aim left of the 40, bend it in);
@@ -912,9 +917,11 @@
     }
     function chordAim(pts) {
       if (pts.length < 2) return 0;
-      var a60 = chordAt(pts, 0.6), m = Math.max(0, Math.abs(a60) - CARRY.AIM_DEAD);
-      var straight = a60 < 0 ? -m : m, opening = chordAt(pts, 0.3);
-      var curl = Math.abs(swingCurl(pts)), w = clamp((curl - 20) / 10, 0, 1);
+      var sc = swingCurl(pts), a = chordAt(pts, 0.6) - CARRY.AIM_ARC * sc;
+      // a bow that comes back to its line (the whole chord straight) was meant straight too
+      if (Math.abs(chordAt(pts, 1)) < CARRY.AIM_DEAD + 1) a = 0;
+      var straight = Math.abs(a) < CARRY.AIM_DEAD ? 0 : a, opening = chordAt(pts, 0.3);
+      var curl = Math.abs(sc), w = clamp((curl - 20) / 10, 0, 1);
       var ang = straight * (1 - w) + opening * w;
       return clamp(Math.atan(GESTURE.AIM_PERSPECTIVE * Math.tan(ang * DEG)), -GESTURE.AIM_MAX, GESTURE.AIM_MAX);
     }
@@ -962,9 +969,10 @@
     function tickCarry() {
       if (!drag || !drag.carry) return;
       var c = drag.carry; if (c.pushing || c.waiting) return;
-      var dx = c.tx - c.x, dz = c.tz - c.z, d = Math.hypot(dx, dz), stepMax = c.cap * STEP;
-      if (d > 1e-6) { var f = Math.min(1, stepMax / d); c.x += dx * f; c.z += dz * f; }
-      c.path.push({ t: tNow, x: c.x, z: c.z });
+      var dx = c.tx - c.x, dz = c.tz - c.z, d = Math.hypot(dx, dz);
+      var stepMax = Math.min(c.cap, d / CARRY.EASE_T) * STEP;   // it rolls into the hand: the last few px ease in
+      if (d > 1e-6) { var f = Math.min(1, stepMax / d); c.x += dx * f; c.z += dz * f; if (d < 1e-3) { c.x = c.tx; c.z = c.tz; } }
+      c.path.push({ t: tNow, x: c.x, z: c.z, tx: c.tx, tz: c.tz });
       while (c.path.length > 40) c.path.shift();
     }
     // the ball's own speed in the hand (lane u/s) over the last ≥ 16 ms
@@ -1054,6 +1062,21 @@
         if (pts.length > 1 && Math.hypot(pts[pts.length - 1].x - pts[0].x, pts[pts.length - 1].y - pts[0].y) > 12) { view.rackRattle = tNow; emit({ type: 'input', kind: 'busy' }); }
         return { thrown: false };
       }
+      pts = trimUp(pts);
+      var own = ballSpeed(c), up = handUp(pts);
+      if (own >= 0.8 * CARRY.V_HAND && up >= CARRY.LIFT_UP) {
+        // a gentle lift of a ball still rolling in the hand: it goes, at the
+        // hand's power (the swipe's rule) or its own speed, whichever is more
+        var sw = swing(pts), g = mapGesture(pts, machineCssH());
+        var v = Math.max(own, launchV(g.speed, c.z), vFloor(c.z)), aim = chordAim(sw), spin = carryEnglish(sw.full || sw);
+        state.carriedThrow = true;
+        var thrown = requestThrow(c.x, v, aim, spin, c.z);
+        state.carriedThrow = false;
+        emit({ type: 'carry', kind: 'release', z0: +c.z.toFixed(3), vHand: +launchV(g.speed, 0).toFixed(3), v: +v.toFixed(3), spin: +spin.toFixed(3), aim: +aim.toFixed(4),
+          flick: state.lastEnglish && state.lastEnglish.flick, curl: state.lastEnglish && state.lastEnglish.curl, gentle: true });
+        state.lastCarry = { thrown: thrown, v: v, z0: c.z, spin: spin, aim: aim };
+        return state.lastCarry;
+      }
       if (c.z > 0.02) setDown(c.x, c.z);
       state.lastCarry = { thrown: false, setDown: c.z > 0.02 };
       return state.lastCarry;
@@ -1119,9 +1142,13 @@
       if (!drag || !drag.carry || drag.carry.pushing || drag.carry.waiting) return null;
       var c = drag.carry, pth = c.path, a = pth[pth.length - 1], b = a;
       for (var i = pth.length - 2; i >= 0 && a.t - pth[i].t <= 0.05; i--) b = pth[i];
-      var dt = a.t - b.t;
-      return { phase: 'carry', x: c.x, z: c.z, y: 0, r: U.BALL_R,
-        vz: dt > 0 ? (a.z - b.z) / dt : 0, vx: dt > 0 ? (a.x - b.x) / dt : 0 };
+      var dt = a.t - b.t, vz = dt > 0 ? (a.z - b.z) / dt : 0, vx = dt > 0 ? (a.x - b.x) / dt : 0;
+      // the roll sound: the ball's own speed, or half the thumb's if that is more (a faster roll sounds faster)
+      if (dt > 0 && a.tz != null && b.tz != null) {
+        var tz = 0.5 * (a.tz - b.tz) / dt, tx = 0.5 * (a.tx - b.tx) / dt;
+        if (Math.hypot(tx, tz) > Math.hypot(vx, vz)) { vz = tz; vx = tx; }
+      }
+      return { phase: 'carry', x: c.x, z: c.z, y: 0, r: U.BALL_R, vz: vz, vx: vx };
     }
 
     // the canvas rect, cached per gesture (not per coalesced sample)
