@@ -388,16 +388,19 @@
       if (p && typeof p === 'object' && p.phase) {
         speed = Math.sqrt((p.vx || 0) * (p.vx || 0) + (p.vy || 0) * (p.vy || 0) + (p.vz || 0) * (p.vz || 0));
         var s = clamp(speed / 6, 0, 1);
-        if (p.phase === 'roll' || p.phase === 'hop') {          // lane, then up the hop
+        if (p.phase === 'carry') {                               // rolled up the runway under a thumb:
+          speed = Math.abs(p.vz || 0) + Math.abs(p.vx || 0);     // the same lane roll, same nodes, so the
+          base = clamp(speed / 6, 0, 1);                          // release into 'roll' is seamless
+        } else if (p.phase === 'roll' || p.phase === 'hop') {   // lane, then up the hop
           base = s; hop = p.z != null ? hopness(p) : (p.phase === 'hop' ? 1 : 0);
         } else if (p.phase === 'return') base = s;
         else if (p.phase === 'bed' && p.onBed) { base = s * 0.55; cut = 0.6; }
       } else if (!handle.getPose) {
         base = st.rollFallback; speed = base * 6;
       }
-      var R = G.rollN, lvl = Math.pow(base, 0.7);
-      R.gRoll.gain.setTargetAtTime(db(-21) * lvl * (1 - 0.7 * hop), t, 0.03);
-      R.gHop.gain.setTargetAtTime(db(-6) * lvl * Math.sqrt(hop), t, 0.02);   // the narrow body resonance needs the lift
+      var R = G.rollN, lvl = Math.pow(base, 0.5);   // slow rolls (a thumb's pace) stay audible
+      R.gRoll.gain.setTargetAtTime(db(-16) * lvl * (1 - 0.7 * hop), t, 0.03);
+      R.gHop.gain.setTargetAtTime(db(-1) * lvl * Math.sqrt(hop), t, 0.02);   // the narrow body resonance needs the lift
       R.lp.frequency.setTargetAtTime((260 + 1500 * base) * cut, t, 0.03);
       R.lfo.frequency.setTargetAtTime(clamp(speed / (2 * Math.PI * 0.11), 0.5, 20), t, 0.05);
       R.tri.frequency.setTargetAtTime(140 + 40 * base, t, 0.05);
@@ -475,6 +478,9 @@
         relay(t + 0.72, db(-20));
       },
       /* the ball-return rack filling after the button (1-D physics in main) */
+      setdown: function (t, r) {           // put down short of the line: it rolls back to it
+        rumble(t, 0.65, db(-6), 250 + 30 * r(), 7 + 2 * r());
+      },
       rackRelease: function (t, r, ev) {  // a ball through the gate at the trough's left end
         var n = ev.n || 1;
         relay(t, db(-19));
