@@ -179,7 +179,7 @@
     return {
       alto: V.singer({ seed: seed, name: "alto", part: "A", age: "mid", confidence: 0.95, brightness: 0.62, breath: 0.3, vibrato: { rate: 5.5, depth: 34, onsetDelay: 0.4 }, pan: -0.18 }),
       oldBass: V.singer({ seed: seed, name: "oldbass", part: "B", age: "old", confidence: 0.8, brightness: 0.3, breath: 0.45, pitchHabitCents: -24, timingHabitMs: 95, pan: -0.3 }),
-      child: V.singer({ seed: seed, name: "child", part: "child", age: "young", confidence: 0.55, brightness: 0.45, breath: 0.7, timingHabitMs: 40, pan: 0.12 }),
+      child: V.singer({ seed: seed, name: "child", part: "child", age: "young", confidence: 0.55, brightness: 0.6, breath: 0.7, timingHabitMs: 40, pan: 0.12 }),
       soloist: V.singer({ seed: seed, name: "soloist", part: "S", age: "mid", confidence: 0.97, brightness: 0.7, breath: 0.25, vibrato: { rate: 5.7, depth: 42, onsetDelay: 0.3 }, pan: 0.15 }),
       precentor: V.precentor({ seed: seed, pan: 0.05 }),
     };
@@ -214,7 +214,7 @@
         K.oldBass.sing(ctx, bus.near, t2, partLine("B", o.beat, "words"), SOLO * 1.15);
         // the child loses the words in the first line (hums them), finds them in the second
         var cw = WORDS.map(function (w, i) { return i >= 2 && i <= 5 ? "hum" : w; });
-        return K.child.sing(ctx, bus.near, t2, partLine("S", o.beat, cw, { oct: 2 }), SOLO * 0.7) + 1;
+        return K.child.sing(ctx, bus.near, t2, partLine("S", o.beat, cw, { oct: 2 }), SOLO * 1.1) + 1;
       } },
     { id: "lined", n: "4", name: "Lining out", desc: "the precentor ornaments a line; the ward answers slowly, each desk its own way",
       run: function (ctx, bus, t, o) {
@@ -246,7 +246,7 @@
   var PEOPLE = [
     { id: "p-alto", name: "the harmony alto", run: function (ctx, bus, t, o) { return cast(o.seed).alto.sing(ctx, bus.near, t, partLine("A", o.beat, "words"), SOLO) + 1; } },
     { id: "p-bass", name: "the old bass", run: function (ctx, bus, t, o) { return cast(o.seed).oldBass.sing(ctx, bus.near, t, partLine("B", o.beat, "words"), SOLO * 1.15) + 1; } },
-    { id: "p-child", name: "the child", run: function (ctx, bus, t, o) { return cast(o.seed).child.sing(ctx, bus.near, t, partLine("S", o.beat, "words", { oct: 2 }), SOLO * 0.7) + 1; } },
+    { id: "p-child", name: "the child", run: function (ctx, bus, t, o) { return cast(o.seed).child.sing(ctx, bus.near, t, partLine("S", o.beat, "words", { oct: 2 }), SOLO * 1.1) + 1; } },
     { id: "p-solo", name: "the soloist", run: function (ctx, bus, t, o) { return cast(o.seed).soloist.sing(ctx, bus.near, t, partLine("D", o.beat, "words"), SOLO * 0.8) + 1; } },
     { id: "p-prec", name: "the precentor", run: function (ctx, bus, t, o) { return cast(o.seed).precentor.line(ctx, bus.near, t, slow(partLine("S", o.beat, "words", { oct: 0.5 }), 1.1), SOLO * 1.05, SCALE) + 1; } },
     { id: "p-desk", name: "one desk (sopranos)", run: function (ctx, bus, t, o) { return ward(o.seed, o).desks[0].sing(ctx, bus.hall, t, partLine("S", o.beat, "words"), CONG) + 1; } },
