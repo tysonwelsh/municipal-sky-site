@@ -37,11 +37,13 @@
  *           now?() , physics? (defaults to window.SkeeBallPhysics) }
  *   opts: { enabled (default true), rates: {moon .25, sulk 1, jam 1/6,
  *           lean 1 (multiplier)}, force: {moon: ball, sulk: ball|true,
- *           jam: ticket|true, lean: u/s²} }
+ *           jam: ticket|true, lean: u/s²}, moonTonight: bool (main reads
+ *           the clock at mount; then every game has a moon ball) }
  *   mis.gameStart(gameSeed)
  *   mis.beforeThrow(ball, {x0, v, aim, spin}) → {tuneOverride, refuse, refuseV}
  *   mis.tick(t)          on the sim clock, every step
  *   mis.crankHeld()      true while the ticket strip is jammed
+ *   mis.isMoon()         true from a moon's announcement to its ball's done
  *   mis.whack()          same as an `input {kind:'whack'}` event
  *   mis.state(), mis.log(), mis.destroy()
  *   SkeeBallMischief.plan(gameSeed, rates, force) → the game's hidden roll
@@ -113,13 +115,14 @@
   // the game's hidden roll: lean, moon ball (0 = none), whether the payout
   // jams. Without `sched` (a pure call) moon and jam are plain seeded coin
   // flips at their rates; attach() passes its block schedule.
-  function plan(gameSeed, rates, force, sched, k) {
+  function plan(gameSeed, rates, force, sched, k, moonTonight) {
     rates = mergeRates(rates); force = force || {};
     var s = gameSeed | 0;
     var mag = LEAN_MIN + (LEAN_MAX - LEAN_MIN) * hash01(s, SALT.lean);
     var lean = (hash01(s, SALT.sign) < 0.5 ? -1 : 1) * mag * rates.lean;
     if (typeof force.lean === 'number') lean = force.lean;
-    var moonHit = sched ? blockHit(sched, 'moon', rates.moon, k, s) : hash01(s, SALT.moon) < rates.moon;
+    // a moon night (main reads the clock at mount): every game has its moon ball
+    var moonHit = moonTonight ? true : sched ? blockHit(sched, 'moon', rates.moon, k, s) : hash01(s, SALT.moon) < rates.moon;
     var moonBall = moonHit ? 2 + Math.floor(hash01(s, SALT.moonBall) * (BALLS - 1)) : 0;
     if (typeof force.moon === 'number' && force.moon > 0) moonBall = clamp(force.moon | 0, 2, BALLS);
     var jam = sched ? blockHit(sched, 'jam', rates.jam, k, s) : hash01(s, SALT.jam) < rates.jam;
@@ -133,6 +136,7 @@
     var enabled = opts.enabled !== false;
     var rates = mergeRates(opts.rates);
     var force = opts.force || {};
+    var moonTonight = !!opts.moonTonight;
     var view = game.view || {};
     var flags = game.flags || null;
     var physics = game.physics || root.SkeeBallPhysics || null;
@@ -162,7 +166,7 @@
     function gameStart(gameSeed) {
       var s = (gameSeed == null ? game.seed : gameSeed) | 0;
       g = {
-        plan: plan(s, rates, force, sched, gamesSeen++), ball: 0,
+        plan: plan(s, rates, force, sched, gamesSeen++, moonTonight), ball: 0,
         moon: null,               // {ball, t0, t1 (set), thrown}
         moonPending: 0,           // announce over this ball on the next tick
         sulkBall: 0, sulked: {},  // the ball to refuse once; balls already refused
@@ -316,6 +320,8 @@
       return true;
     }
     function whack() { return unjam(true, 'whack'); }
+    // a moon ball is active: from its announcement to that ball's done
+    function isMoon() { return !!(enabled && !dead && g && g.moon && g.moon.t1 == null); }
     function crankHeld() { return !!(enabled && g && g.jam && !g.jam.done); }
 
     /* ── the clock ────────────────────────────────────────────────── */
@@ -351,6 +357,7 @@
       beforeThrow: beforeThrow,
       tick: tick,
       crankHeld: crankHeld,
+      isMoon: isMoon,
       whack: whack,
       destroy: destroy,
       state: function () {
