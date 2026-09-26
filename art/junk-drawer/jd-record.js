@@ -463,8 +463,9 @@
      it, and every thumbnail is reachable by Tab now instead of only the
      three currently framed. */
   /* THE PLACING, AS A MEDAL (owner, 2026-09-17). Where a drawing came in the
-     visitor's ranking of its siblings — first to fourth — in the corner of its
-     thumbnail. Emoji rather than drawn marks: they carry the meaning at 11px,
+     visitor's ranking of its siblings — first to fourth — leading the grade
+     line under its thumbnail, where the placing and the verdict read as one
+     phrase ("gold, Prime") instead of the placing floating over the picture. Emoji rather than drawn marks: they carry the meaning at 11px,
      where a drawn medal would be a smudge, and they cost nothing to ship.
      Held back from full strength (the owner's ask) so the placing annotates
      the picture instead of competing with it.
@@ -500,14 +501,13 @@
            shows the drawing the plate shows, at the frame the plate uses */
         '<span class="rc-alt-art" data-fit="' + esc(fitKey(entry, r)) + '">' +
         svgInst(svgCache[entry.id + '/' + r.file] || '', 'jt' + i + '_') +
-        medalHTML(r.rank) +
         '</span>' +
         '<span class="rc-alt-cap">' + esc(m.label) +
         /* the strip's little grades wear the same coloured pencils as the
            card's marks (rc-g1..5 share their colour rules) */
         '<span class="rc-alt-grade' +
         (g.rank ? ' rc-g' + Math.round(g.rank) : '') + '">' +
-        esc(g.label) + '</span>' +
+        medalHTML(r.rank) + esc(g.label) + '</span>' +
         '</span></button>';
     });
     h += '</div>';

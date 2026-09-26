@@ -38,7 +38,7 @@
 }
 .jd-about--live .jd-step { opacity: 0.42; }
 .jd-about--live .jd-step.is-on { opacity: 1; }
-.jd-about .jd-step > h2 { margin-top: 0; }
+.jd-about .jd-step h2 { margin-top: 0; }
 /* the eyebrow: which scene this step belongs to, set like an axis label */
 .jd-about .jd-step-eyebrow {
   font-family: var(--mono, monospace);
@@ -917,3 +917,93 @@ html.jd-about-page.jd-folder-open { overflow: visible; }
    above it was overridden back to a NEGATIVE margin, which is why the control
    kept landing on the plate's bottom edge however often the gap was "fixed".
    Width and margin belong to the layout now; nothing to say here. */
+
+/* ============================================================================
+   THE STEP TYPE (owner, 2026-09-23). The steps inherited .jd-notes from the
+   art page: Courier Prime at 13px, the drawer's chrome. But the steps are
+   prose, and the site's rule is "mono is the chrome, Spectral is the voice"
+   (css/style.css). So: Spectral for the step body and headings; the eyebrow
+   and the demo notes stay mono because they are labels, not voice.
+
+   Three heading treatments, chosen with ?type=a|b|c on the URL (index.php
+   stamps data-type on the wrapper). Delete the two losers once one is picked.
+     a — Spectral semibold headings, sentence case          (default)
+     b — mono uppercase headings (the drawer's own label style), Spectral body
+     c — Spectral italic headings, a touch larger and looser body
+   ========================================================================== */
+.jd-about .jd-step,
+.jd-about .jd-step p {
+  font-family: var(--font-body);
+  font-size: var(--fs-md);
+  line-height: var(--lh-base);
+}
+.jd-about .jd-step p { margin: 0 0 var(--s-2); }
+.jd-about .jd-step h2 {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--fs-xl);
+  line-height: var(--lh-tight);
+  letter-spacing: 0;
+  text-transform: none;
+  border-bottom: 0;
+  padding-bottom: 0;
+  margin: 0 0 var(--s-2);
+}
+.jd-about .jd-step-eyebrow { font-family: var(--font-mono); }
+.jd-about .jd-demo-note { font-family: var(--font-mono); font-size: var(--fs-sm); line-height: var(--lh-base); }
+.jd-about .jd-step em { font-family: var(--font-voice); font-style: italic; }
+
+/* b — the drawer's label style for headings */
+.jd-about[data-type="b"] .jd-step h2 {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: var(--fs-sm);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  line-height: var(--lh-base);
+  border-bottom: 1px solid var(--rule-soft);
+  padding-bottom: var(--s-1);
+  margin: 0 0 var(--s-2);
+}
+
+/* c — italic voice headings, roomier body */
+.jd-about[data-type="c"] .jd-step h2 {
+  font-family: var(--font-voice);
+  font-style: italic;
+  font-weight: 500;
+  font-size: var(--fs-2xl);
+  line-height: 1.15;
+}
+.jd-about[data-type="c"] .jd-step,
+.jd-about[data-type="c"] .jd-step p {
+  font-size: 18px;
+  line-height: var(--lh-loose);
+}
+
+/* ============================================================================
+   STEP TEXT CENTRED ON THE DRAWER (owner, 2026-09-23). The stepper turns a
+   step on when its TOP crosses the 45% focus line, but the step is an 82vh
+   box with its prose centred inside — so at the moment a step lights up its
+   words sit ~86% of the way down the screen and only reach the drawer's
+   midline halfway through the step's scroll. The sticky-caption fix: prose
+   at the top of the box, then pinned at the midline for the rest of the
+   step, so it reads beside the drawer the whole time it is on. Desktop only;
+   the phone layout pins the pane across the top and is untouched.
+   ========================================================================== */
+@media (min-width: 769px) {
+  .jd-about--live .jd-step {
+    justify-content: flex-start;
+  }
+  .jd-about--live .jd-step-body {
+    position: sticky;
+    /* the pane's midline is (banner + viewport)/2; a step body runs roughly
+       160–260px, so its top sits about 6rem above that line */
+    top: calc(50vh + var(--banner-h) / 2 - 6rem);
+  }
+  /* the taxonomy step carries the whole legend and is far taller than the
+     others; pinned at the midline it would run off the bottom, so it pins
+     near the top instead */
+  .jd-about--live .jd-step[data-step="taxonomy"] .jd-step-body {
+    top: calc(var(--banner-h) + var(--s-3));
+  }
+}

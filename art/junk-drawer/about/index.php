@@ -75,7 +75,12 @@ include __DIR__ . '/../../../includes/header.php';
 })();
 </script>
 
-<div class="main-wrapper jd-about">
+<?php
+  // Type exploration (owner, 2026-09-23): ?type=a|b|c picks a heading treatment
+  // for the step column; see about.css "THE STEP TYPE". Default is a.
+  $jd_type = isset($_GET['type']) && preg_match('/^[abc]$/', $_GET['type']) ? $_GET['type'] : 'a';
+?>
+<div class="main-wrapper jd-about" data-type="<?php echo $jd_type; ?>">
   <div class="jd-about-grid">
 
     <!-- THE PINNED PANE: four scenes, one visible at a time. The drawer is in
@@ -93,153 +98,192 @@ include __DIR__ . '/../../../includes/header.php';
     <!-- THE STEPS -->
     <section class="jd-notes jd-about-notes" id="notes" aria-label="how the drawer works">
 
-      <header class="jd-wall-label">
-        <h1 class="jd-title">The Junk Drawer</h1>
-        <p class="jd-label-dek">A running evaluation of how language models draw</p>
-      </header>
+      <!-- wall label (h1 + dek) removed 2026-09-23 (owner): the first step
+           introduces the page in first person; a museum label above it read
+           as a second, colder opening. -->
 
       <!-- ============================ SCENE 1 ============================ -->
       <div class="jd-step" data-scene="drawer" data-step="hook">
+        <div class="jd-step-body">
         <p class="jd-step-eyebrow">The drawer</p>
-        <h2>Everything here was drawn by a machine</h2>
-        <p>Every object in the drawer is an SVG a large language model drew,
-        asked in plain words for a skeleton key or a matchbook and taken at
-        its word. The code is filed exactly as the model wrote it &mdash;
-        imperfections intact, nothing cleaned up.</p>
+        <h2>A junk drawer, and a benchmark</h2>
+        <p>This is the virtual junk drawer where I stash my collection of
+        AI-generated vector art. It is also where I&rsquo;m building my own
+        personal benchmark for evaluating how well different LLMs generate
+        SVG images. You can dig around in it right now, or keep scrolling to
+        learn more.</p>
+        </div>
       </div>
 
       <div class="jd-step" data-scene="drawer" data-step="premise">
+        <div class="jd-step-body">
         <p class="jd-step-eyebrow">The drawer</p>
-        <h2>One prompt, four models</h2>
-        <p>Each prompt goes verbatim to four frontier models from four
-        vendors. One drawing each, graded blind on a fixed taxonomy. The
-        drawer is a painting of a benchmark.</p>
+        <h2>One prompt, four models, one shot each</h2>
+        <p>Here is how it works. I write a prompt and send it, word for word,
+        to four frontier models from four different companies. Each one gets
+        a single try. Whatever comes back goes into the drawer exactly as the
+        model wrote it, imperfections and all, and I grade it without knowing
+        which model drew it.</p>
+        </div>
       </div>
 
       <div class="jd-step" data-scene="drawer" data-step="graded">
+        <div class="jd-step-body">
         <p class="jd-step-eyebrow">The drawer</p>
-        <h2>Every one of them is graded</h2>
-        <p>Pick anything out of the pile and it arrives with a tag: what it
-        is, and how it scored. Behind that tag is a full record &mdash; the
-        prompt, the model, every axis, what it cost. We will open one shortly.</p>
+        <h2>Every object has a grade</h2>
+        <p>Tap anything in the pile and it comes with a tag that tells you
+        what it is and how it scored. Behind the tag is a full record: the
+        prompt, the model, the score on every axis, and what the drawing cost
+        to generate. I&rsquo;ll open one of those records a little further
+        down.</p>
+        </div>
       </div>
 
       <!-- ============================ SCENE 2 ============================ -->
       <div class="jd-step" data-scene="instrument" data-step="try">
+        <div class="jd-step-body">
         <p class="jd-step-eyebrow">The instrument</p>
-        <h2>This is the instrument. Try it.</h2>
-        <p>Four drawings of the same prompt, dealt blind &mdash; the models'
-        names are withheld until the grades are filed, so nothing is scored on
-        reputation. Rate them on each axis, then rank them. It is the real
-        thing, wired exactly as a visitor gets it.</p>
+        <h2>This is the grading instrument. Try it.</h2>
+        <p>These are four drawings of the same prompt. The models&rsquo; names
+        are hidden until the grades are filed, so nothing gets scored on
+        reputation. Rate each drawing on each axis, then rank the four. This
+        is the real instrument, wired exactly the way a visitor to the drawer
+        gets it.</p>
         <p class="jd-demo-note"><b>This is a demo.</b> Nothing you enter here
         is recorded. Every rating you file stays in your browser.</p>
+        </div>
       </div>
 
       <div class="jd-step" data-scene="instrument" data-step="taxonomy">
+        <div class="jd-step-body">
         <p class="jd-step-eyebrow">The instrument</p>
         <h2>The taxonomy</h2>
-        <p>Five grade tiers, then four axes that name <em>where</em> a drawing
-        went wrong. An axis exists to separate a kind of failure from every
-        other kind, so that a low score says something specific. This legend
-        renders from the same file the grades are recorded against, so the
-        page and the instrument cannot disagree.</p>
+        <p>I grade on five overall tiers and four axes. The tiers say how good
+        a drawing is; the axes say <em>where</em> it went wrong. I designed
+        each axis to isolate one kind of failure from every other kind, so a
+        low score always means something specific. The legend below renders
+        from the same file the grades are recorded in, so this page and the
+        instrument can never disagree.</p>
         <section class="jd-legend" aria-label="the taxonomy">
           <div class="jd-grades" id="jd-grades"></div>
           <h3>The Axes</h3>
           <div class="jd-axes" id="jd-axes"></div>
         </section>
+        </div>
       </div>
 
       <div class="jd-step" data-scene="instrument" data-step="claude-fable-5">
+        <div class="jd-step-body">
         <p class="jd-step-eyebrow">The instrument &middot; specimen 1</p>
         <h2>What &ldquo;no problems&rdquo; looks like</h2>
-        <p>Start with the anchor. Parts attach, the stacking reads as
-        intended, and it has style. Top marks on every axis &mdash; which is
-        what makes it useful: it calibrates the other three.</p>
+        <p>Start with the best of the four. The parts attach where they
+        should, the layers stack the way the artist intended, and it has some
+        style. Top marks on every axis. That is what makes it useful here: it
+        sets the standard the other three get measured against.</p>
+        </div>
       </div>
 
       <div class="jd-step" data-scene="instrument" data-step="kimi-k3">
+        <div class="jd-step-body">
         <p class="jd-step-eyebrow">The instrument &middot; specimen 2</p>
-        <h2>A failure you cannot see &mdash; press REPLAY</h2>
-        <p>This one looks thin and a little bare, and it is easy to call it
-        simply worse. Press <b>REPLAY</b> and watch it draw: the leaves are
-        rendered <em>correctly</em>, in full &mdash; and then the pot is drawn
-        on top of them. Nothing is malformed. The parts are stacked in the
+        <h2>A failure you cannot see. Press REPLAY.</h2>
+        <p>This one looks thin and a little bare, and it would be easy to call
+        it simply worse. Press <b>REPLAY</b> and watch it draw. The leaves are
+        rendered <em>correctly</em> and in full, and then the pot is drawn on
+        top of them. Nothing is malformed. The parts are just stacked in the
         wrong order.</p>
-        <p>That is one axis, Layering, doing its whole job: naming a defect
-        the still image hides. Structure is sound, the brief is understood,
-        and it still fails &mdash; on exactly one thing.</p>
+        <p>That is one axis, Layering, doing exactly the job I built it for:
+        naming a defect the still image hides. The structure is sound and the
+        model understood the brief, and it still fails on one specific
+        thing.</p>
+        </div>
       </div>
 
       <div class="jd-step" data-scene="instrument" data-step="gemini-3-1-pro">
+        <div class="jd-step-body">
         <p class="jd-step-eyebrow">The instrument &middot; specimen 3</p>
         <h2>A different axis, a different diagnosis</h2>
-        <p>Here the stacking is fine and the problem is the object itself: the
+        <p>Here the stacking is fine and the problem is the object itself. The
         leaves float free of the pot, attached to nothing. You could not fix
-        this by reordering anything &mdash; it needs the parts moved. Same
-        taxonomy, different axis, and the score lands somewhere else.</p>
+        this by reordering the layers; the parts themselves would have to
+        move. Same taxonomy, different axis, and the score lands in a
+        different place.</p>
+        </div>
       </div>
 
       <div class="jd-step" data-scene="instrument" data-step="gpt-5-1">
+        <div class="jd-step-body">
         <p class="jd-step-eyebrow">The instrument &middot; specimen 4</p>
         <h2>The axes describe. They do not decide.</h2>
         <p>This drawing scores <em>identically</em> to the last one on all
-        four axes &mdash; and takes a lower overall grade. That is deliberate.
-        The grade is a judgment about the whole drawing, not the sum of its
-        axes, and the taxonomy says so out loud: the last axis invites the
-        rater's own taste rather than pretending it isn't there.</p>
+        four axes, and I gave it a lower overall grade. That is deliberate.
+        The grade is a judgment about the whole drawing, not a sum of the
+        axes, and the taxonomy says so out loud: the last axis makes room for
+        the rater&rsquo;s own taste instead of pretending it isn&rsquo;t
+        there.</p>
+        </div>
       </div>
 
       <div class="jd-step" data-scene="instrument" data-step="ranking">
+        <div class="jd-step-body">
         <p class="jd-step-eyebrow">The instrument &middot; the call</p>
-        <h2>Then they stop being four judgments</h2>
-        <p>The last station is the podium: the four drawings come off the
-        bench and stand in order, best to worst. Scoring each one alone
-        answers &ldquo;how good is this?&rdquo;; the ranking answers the
-        question the drawer is actually built on &mdash; <em>which of these
-        four did the job?</em> &mdash; and it is the only judgment a rater
-        cannot make one drawing at a time.</p>
+        <h2>Then the four get ranked</h2>
+        <p>The last step is the podium. The four drawings line up from best
+        to worst. Scoring each one on its own answers &ldquo;how good is
+        this?&rdquo; The ranking answers the question the whole drawer is
+        built on: <em>which of these four actually did the job?</em> It is
+        the one judgment you cannot make one drawing at a time.</p>
         <p class="jd-demo-note">The order shown here is <b>derived from the
         filed grades</b>, not read from a filed ranking: nobody ever ranked
         this specimen. Everything else on this page comes straight out of the
         record.</p>
+        </div>
       </div>
 
       <!-- ============================ SCENE 3 ============================ -->
       <div class="jd-step" data-scene="record" data-step="record">
+        <div class="jd-step-body">
         <p class="jd-step-eyebrow">The record</p>
         <h2>Every judgment becomes a record</h2>
-        <p>This is the report card behind the tag from earlier. The prompt
-        verbatim, the model and its version, the grade, every axis, where it
-        ranked against its siblings. Press an axis name and its definition
-        unfolds &mdash; the same definition the instrument showed you.</p>
+        <p>This is the report card behind the tag from earlier. The prompt,
+        word for word. The model and its exact version. The overall grade,
+        the score on every axis, and where it ranked against the other three.
+        Press an axis name and its definition unfolds, the same definition
+        the instrument showed you.</p>
+        </div>
       </div>
 
       <div class="jd-step" data-scene="record" data-step="cost">
+        <div class="jd-step-body">
         <p class="jd-step-eyebrow">The record</p>
         <h2>What it cost to collect</h2>
-        <p>Tokens in, tokens out, and the price of the call, per drawing.
-        Evaluation data has a unit cost, and a programme that does not track
-        it cannot be planned.</p>
+        <p>Tokens in, tokens out, and the price of the API call, recorded for
+        every drawing. Evaluation data has a unit cost. In my day job I plan
+        collection programs around that number, so I track it here too.</p>
+        </div>
       </div>
 
       <div class="jd-step" data-scene="record" data-step="stack">
+        <div class="jd-step-body">
         <p class="jd-step-eyebrow">The record</p>
         <h2>It is a real application, front to back</h2>
-        <p>Ratings are rows in a SQL database, not files: a schema for
-        submissions, generations, ratings and ranks, written through
-        authenticated endpoints and read back by the pages you have been
-        scrolling through. The front end, the back end, the schema and the
-        taxonomy are all mine.</p>
+        <p>The ratings are rows in a SQL database, not files. There is a
+        schema for submissions, generations, ratings, and ranks, written
+        through authenticated endpoints and read back by the pages you are
+        scrolling through now. I built the front end, the back end, the
+        schema, and the taxonomy myself, working with Claude Code.</p>
+        </div>
       </div>
 
       <div class="jd-step" data-scene="record" data-step="populations">
+        <div class="jd-step-body">
         <p class="jd-step-eyebrow">The record</p>
-        <h2>Two populations, never mixed</h2>
-        <p>My own ratings and visitors' ratings are stored separately and
-        neither overwrites the other, so the reference set stays clean while
-        the crowd set grows beside it. Both export as JSONL.</p>
+        <h2>Two sets of ratings, never mixed</h2>
+        <p>My own ratings and visitors&rsquo; ratings are stored separately,
+        and neither can overwrite the other. That keeps my reference set
+        clean while the crowd&rsquo;s set grows beside it. Both export as
+        JSONL for analysis.</p>
+        </div>
       </div>
 
       <!-- ============================ SCENE 4 ============================
@@ -249,39 +293,48 @@ include __DIR__ . '/../../../includes/header.php';
            data-fx names the card the pane shows; about-scenes.js sets it on
            the scene host and about.css shows that card alone. -->
       <div class="jd-step" data-scene="analytics" data-step="grades" data-fx="grades">
+        <div class="jd-step-body">
         <p class="jd-step-eyebrow">The analysis</p>
         <h2>Now all of it at once: where the grades fall</h2>
-        <p>Every drawing, every model, counted live from the same records you
-        just looked at. The distribution of overall grades across the whole
-        collection, and per model &mdash; the first thing the data actually
-        says. Nothing on this page is typed in by hand.</p>
+        <p>Every drawing and every model, counted live from the same records
+        you just looked at. This is the distribution of overall grades across
+        the whole collection and for each model, which is the first thing the
+        data has to say. None of these numbers are typed in by hand.</p>
+        </div>
       </div>
 
       <div class="jd-step" data-scene="analytics" data-step="spend" data-fx="cost">
+        <div class="jd-step-body">
         <p class="jd-step-eyebrow">The analysis</p>
         <h2>What the drawings cost</h2>
         <p>Spend per model, priced from each call&rsquo;s own token counts
-        rather than estimated. A collection programme has a unit cost, and
-        one that does not track it cannot be planned or defended.</p>
+        rather than estimated. Some models draw better than others, and some cost
+        a good deal more per drawing. Both facts belong in the same
+        chart.</p>
+        </div>
       </div>
 
       <div class="jd-step" data-scene="analytics" data-step="multiples" data-fx="axes">
+        <div class="jd-step-body">
         <p class="jd-step-eyebrow">The analysis</p>
         <h2>Four axes, four rulers</h2>
-        <p>The axis panels are small multiples: identical geometry, so the eye
+        <p>The axis panels are small multiples: the same shape, so your eye
         can compare them directly. What they deliberately do <em>not</em> do
         is share a scale. A three-point axis and a four-point axis are
         different rulers, and stretching them onto one would invent a
         comparison the data cannot support.</p>
+        </div>
       </div>
 
       <div class="jd-step" data-scene="analytics" data-step="limits" data-fx="axes">
+        <div class="jd-step-body">
         <p class="jd-step-eyebrow">The analysis</p>
         <h2>What this does not show</h2>
-        <p>One rater. A small visitor sample. Drawing SVGs is one narrow
-        capability and not a measure of a model. The point is the method
-        &mdash; the taxonomy, the instrument, the record, the analysis &mdash;
-        not the leaderboard.</p>
+        <p>One rater, mostly me. A small visitor sample. Drawing SVGs is one
+        narrow skill, not a measure of a model. The point of this project is
+        the method: the taxonomy, the instrument, the record, and the
+        analysis. The leaderboard is a side effect.</p>
+        </div>
       </div>
 
       <!-- outro -->

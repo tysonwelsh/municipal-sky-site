@@ -97,45 +97,44 @@ that were never curated items: write the surviving SVGs, ink-check, author the
 entry from the owner's bench ratings, title via `jd-title.php`, size from the
 bench's size flag. Blocked on nothing; wanted for the reassessment backlog.
 
-### The placings do not reach the drawer (2026-09-17)
+### Placings on the curated originals (2026-09-17)
 
-The medals are built and live — `medalHTML()` in `jd-record.js`, `.rc-alt-medal`
-in `junk-drawer.css`, gold/silver/bronze/ribbon in the top-left corner of every
+The medals ship and work: `medalHTML()` in `jd-record.js`, `.rc-alt-medal` in
+`junk-drawer.css`, gold/silver/bronze/ribbon in the top-left corner of each
 thumbnail in OTHER MODELS, SAME PROMPT, on the drawer and the /about/ report
-card alike. Nothing shows, because no response in the payload carries a `rank`.
-Measured against the live database on the day:
+card alike. As of 0.9.156 the live payload carries **48 placings across 12
+turn items** and they show.
 
-| displayed drawings | ranked in the DB | in the payload |
-|---|---|---|
-| curated items | 0 of 216 | — |
-| turn items | **114 of 116** | **0** |
+What is left is the other half of the drawer. Measured against the live
+database on the day:
 
-So there are two separate facts and they want separate work:
+| displayed drawings | ranked in the DB |
+|---|---|
+| turn items | 114 of 116 |
+| **curated items** | **0 of 216** |
 
-1. **The curated 216 were never ranked.** They are backfilled originals that
-   were never part of a ranked turn. Nothing is broken; there is nothing to
-   show. Ranking them on the bench is the only thing that will light them up,
-   and a bench rank on a curated item does already reach the payload.
+The curated 216 are backfilled originals that were never part of a ranked
+turn, so they have no placing to show and never will until one is filed. Two
+ways to change that, neither started:
 
-2. **The turn items' 114 placings are filed, attached to exactly the right
-   generations, and discarded on the way out.** This is the bug. `data.php`
-   has two branches; 0.9.155 fixed the rank lookup in the CURATED one (it
-   joined through `jd_submissions` and so could never see a rerun's rank),
-   which was correct but turned out to be the branch with no data in it. The
-   TURN branch — the one carrying all 114 — needs the same reading. Start at
-   `$tranks` in `data.php` and follow what happens to `'rank' => $rank ?: 1`
-   between there and the response the drawer receives.
+1. **Rank them on the bench.** A bench rank on a curated item already reaches
+   the payload — the curated branch of `data.php` was fixed in 0.9.155 to look
+   rank up by generation rather than through `jd_submissions`, which a rerun's
+   submission never satisfies. So this works today; it is just unranked work.
 
-Worth knowing before picking this up: 281 ranks are on file (163 `web`, 110
-`bench`, 8 `seed`) across 69 turns, so visitors have been ranking all along —
-the collection instrument was never the problem.
+2. **Carry the ranking through HARVEST.** When a rerun is harvested onto a
+   curated item its drawings come across and its ranking stays behind on the
+   rerun's own submission. 281 ranks are on file (163 `web`, 110 `bench`, 8
+   `seed`) across 69 turns; matching each curated item's generations back to
+   the turn that ranked them would light up the drawer at once. This is the
+   bigger piece and the one worth doing properly.
 
-A third, larger piece if it is ever wanted: **carry the ranking through
-harvest.** When a rerun is harvested onto a curated item its drawings come
-across and its ranking stays behind, which is why the curated column is all
-zeros. Matching each curated item's generations back to the turn that ranked
-them would light up the drawer at once, and is the only route to placings on
-the backfilled originals short of ranking them by hand.
+Also open, smaller: whose ranking wins when a curated item has gathered
+drawings from several different reruns, each ranked by a different visitor in
+a different session. Two "1st place" drawings from two sessions are not
+comparable, and a blend would be a number nobody filed. The rule used for
+turns — bench outranks web, newest otherwise — is a starting point, not an
+answer.
 
 
 ## Done
