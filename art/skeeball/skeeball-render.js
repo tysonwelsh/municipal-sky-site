@@ -396,8 +396,6 @@
       ellipse(g, h.x, h.y - 1, hr, Math.round(hr * 0.7), PAL.WOOD4); // surround, lit top
       ellipse(g, h.x, h.y, hr, Math.round(hr * 0.7), PAL.WOOD1);
       ellipse(g, h.x, h.y, hr - 2, Math.round(hr * 0.7) - 1, PAL.GAP); // the hole
-      ellipse(g, h.x, h.y + 2, hr - 5, 1, PAL.PINK_DK);  // glow from below
-      px(g, h.x, h.y + 1, PAL.PINK_D);
       textC(g, '100', h.x, h.y + 7, PAL.PINK, 1);        // label below the hole
     }
   }
@@ -598,6 +596,8 @@
   }
   // the release gate in the trough's left wall
   function gateRect() { var b = troughBox(); return { x: b.x - 5, y: b.y + 2, w: 7, h: b.h - 3 }; }
+  // the digital ticket counter: a bezelled LED window left of the ticket slot
+  function counterRect() { var s = slotRect(); return { x: s.x - 21, y: s.y - 3, w: 17, h: 11 }; }
   function slotRect() { var f = frontX(), fr = GEO.front; return { x: f.x1 - 42, y: fr.y0 + 9, w: 32, h: 8 }; }
   function coinDoorRect() { var f = frontX(), fr = GEO.front; return { x: f.x0 + 10, y: fr.y0 + 3, w: 26, h: 15 }; }
   // the vertical coin slit on the plate's left (2 × 7)
@@ -638,11 +638,7 @@
     if (!NOTITLE) text(g, 'TICKETS', x1 - 40, fr.y0 + 2, PAL.BONE_D, 1); // (the blank layer has no lettering)
     rect(g, x1 - 42, fr.y0 + 9, 32, 8, PAL.WOOD1);
     rect(g, x1 - 40, fr.y0 + 11, 28, 4, PAL.NIGHT0);
-    if (!BARE) {
-      rect(g, x1 - 34, fr.y0 + 10, 12, 5, PAL.PINK_D);  // the ticket
-      rect(g, x1 - 34, fr.y0 + 12, 12, 1, PAL.PINK);
-      px(g, x1 - 30, fr.y0 + 11, PAL.PINK_DK); px(g, x1 - 26, fr.y0 + 13, PAL.PINK_DK);
-    }
+    drawCounterFrame(g);                               // the digital ticket counter, dark
   }
 
   function drawBaseAndStain(g, R) {
@@ -785,6 +781,10 @@
   //   cranking    the dispenser is running (ratchet jitter)
   //   hundreds    number of 100s this game (the tag's "+13"/"+26" line)
   //   ticketTag   number: the tag on the ticket window counts tickets out
+  //   ticketCount number: the digital counter left of the slot (else dashes)
+  //   ticketPile  tickets printed and not torn (≥ ticketsOut): the heap
+  //   tearT0      a time: the strip parts at the slot, the heap drops (0.3 s);
+  //               tearPile = how many tickets went with it
   //   rackRattle  a time: the racked balls jitter 1 px for 0.2 s
   //   jackpot     {hole: 0|1, t0} — that 100 hole pulses pink (set it when
   //               the swallow is done; during the sink use holeGlow)
@@ -828,6 +828,7 @@
     drawHeadLive(g, t, view);        // possum gaze / lids / tilt, and the marquee note
     drawRackLive(g, t, view);
     drawButtonLive(g, t, view, mode);
+    drawCounterLive(g, t, view, mode);
     if (view.muted) {
       var m = GEO.marquee;
       restore(g, m.x0 + 4, m.y1 - 1, m.x1 - m.x0 - 8, 4);
@@ -1023,37 +1024,148 @@
     drawBall(g, x, y, 5 + (ballRadius(to.scale) - 5) * e);
   }
 
-  /* ── the ticket dispenser: a pink strip cranks out pixel by pixel ── */
-  var TICKET_PX = 4; // one ticket = 4 px of strip: fill, stripe, fill, perforation
+  /* ── the digital ticket counter ── */
+  // 3×5 LED digits in PINK over unlit PINK_DK "8"s, behind dark glass in a
+  // STEEL bezel. view.ticketCount (a number) is shown right-aligned (max
+  // 999); anything else (ATTRACT) shows dim dashes.
+  function drawCounterFrame(g) {
+    var c = counterRect();
+    rect(g, c.x - 1, c.y - 1, c.w + 2, c.h + 2, PAL.WOOD1);        // the cut in the panel
+    rect(g, c.x, c.y, c.w, c.h, PAL.STEEL1);                        // bezel
+    hline(g, c.x, c.x + c.w - 1, c.y, PAL.STEEL2); vline(g, c.x, c.y, c.y + c.h - 1, PAL.STEEL2);
+    rect(g, c.x + 2, c.y + 2, c.w - 4, c.h - 4, PAL.NIGHT0);        // dark glass
+    ditherText(g, '888', c.x + 3, c.y + 3, PAL.PINK_DK, 1, 0.45); // unlit segments, a faint ghost
+    px(g, c.x + 2, c.y + 2, PAL.PUR2);                              // a glint on the glass
+    drawCounterDigits(g, null);
+  }
+  function drawCounterDigits(g, n) {
+    var c = counterRect();
+    if (typeof n !== 'number' || !isFinite(n)) { // dashes: unlit, waiting
+      for (var j = 0; j < 3; j++) hline(g, c.x + 3 + j * 4, c.x + 5 + j * 4, c.y + 5, PAL.PINK_D);
+      return;
+    }
+    var str = String(Math.max(0, Math.min(999, Math.floor(n))));
+    text(g, str, c.x + 3 + (3 - str.length) * 4, c.y + 3, PAL.PINK, 1);
+  }
+  function drawCounterLive(g, t, view, mode) {
+    if (typeof view.ticketCount !== 'number') return;             // the static counter shows dashes
+    var c = counterRect();
+    rect(g, c.x + 2, c.y + 2, c.w - 4, c.h - 4, PAL.NIGHT0);
+    ditherText(g, '888', c.x + 3, c.y + 3, PAL.PINK_DK, 1, 0.45);
+    drawCounterDigits(g, view.ticketCount);
+    px(g, c.x + 2, c.y + 2, PAL.PUR2);
+  }
+
+  /* ── the ticket strip: it snakes out of the slot, hangs, and fan-folds
+  // into a heap on the floor that grows across rounds until it's torn off.
+  // Each ticket is 11 px long × 6 px wide along the strip, with a dotted
+  // perforation, a stripe and, every fifth ticket, a little star. The strip
+  // is drawn one pixel of arc length at a time along its path, so every
+  // perforation stays attached to its own ticket as the strip grows.
+  //   view.ticketsOut  tickets printed this round (fractional = mid-print)
+  //   view.ticketPile  printed and not yet torn, across rounds (≥ ticketsOut)
+  //   view.tearT0      a time: the strip parts at the slot and the heap
+  //                    drops away over 0.3 s (view.tearPile = how many went) */
+  var TK_L = 11, TK_W = 6, TK_ART = 15, TEAR_T = 0.3;
+  function ticketTotal(view) {
+    var out = view.ticketsOut || 0, pile = view.ticketPile || 0;
+    if (pile < out) return out;
+    if (Math.abs(pile - Math.round(pile)) < 1e-6 && out % 1) return pile - Math.floor(out) + out;
+    return pile;
+  }
+  function pileGeom() {
+    var s = slotRect(), hx = Math.round(s.x + s.w / 2), y0 = s.y + 4;
+    var base = Math.min(MH + BOT - 2, 396);                        // the floor in front of the plinth
+    return { hx: hx, y0: y0, base: base, avail: Math.max(8, base - y0 - 5) };
+  }
+  // the tap area over the hanging strip + heap (machine frame)
+  function pileRect() {
+    var p = pileGeom(), s = slotRect(), x0 = counterRect().x + counterRect().w + 2;
+    return { x: x0, y: s.y, w: Math.min(W - 2, p.hx + 24) - x0, h: p.base + 2 - s.y };
+  }
+  function tkHash(k, salt) { var b = Math.imul((k + 1) * 2654435761 ^ salt, 0x5bd1e995); b ^= b >>> 15; return (b >>> 0) / 4294967296; }
+  // colour of a ticket cross-section: u = px from the ticket's far edge,
+  // w = px across (0..TK_W−1), k = absolute ticket number (0 = oldest)
+  function tkColour(u, w, k, across) {
+    if (u === 0) return (w % 2) ? PAL.PINK_DK : null;              // the perforation (dotted)
+    if (k % 5 === 2 && u >= 5 && u <= 7 && across) {                // a little star, mid-ticket
+      var dw = w - (across - 1) / 2, du = u - 6;
+      if ((Math.abs(dw) < 0.6 && Math.abs(du) <= 1) || (Math.abs(du) === 0 && Math.abs(dw) <= 1)) return PAL.MOON;
+    }
+    if (u === 2) return PAL.PINK;                                   // the stripe
+    if (w === 0) return PAL.PINK;                                   // lit edge
+    if (w === across - 1) return PAL.PINK_DK;                       // shaded edge
+    return PAL.PINK_D;
+  }
+  function drawTicketStrip(g, t, view, T, dy, fade) {
+    var P = pileGeom(), e = T * TK_L, n = Math.floor(T + 1e-9);
+    // how many tickets lie on the floor: the strip hangs to the top of the pile
+    function pileH(pc) { return Math.min(P.avail, pc <= 0 ? 0 : 2 + Math.min(pc, TK_ART) * 0.8 + Math.max(0, pc - TK_ART) * 0.2); }
+    var p = 0;
+    while (e - (p + 1) * TK_L >= Math.max(3, P.base - pileH(p + 1) - P.y0)) p++;
+    var hang = Math.min(e, Math.max(3, P.base - pileH(p) - P.y0));
+    var jamBow = view.jam ? 1 : 0;
+    // 1. the hanging part, slot → pile top: 6-px cross-sections, row by row
+    for (var sPos = 0; sPos < hang; sPos++) {
+      var d = e - sPos, k = Math.floor(d / TK_L - 1e-9), u = Math.round(d - k * TK_L) % TK_L;
+      k = n - Math.min(n, k);                                         // absolute number (oldest 0)
+      var y = P.y0 + sPos + dy, x0 = P.hx - 3 + (jamBow && sPos > hang / 3 && sPos < 2 * hang / 3 ? 1 : 0);
+      for (var w = 0; w < TK_W; w++) { var c = tkColour(u, w, k, TK_W); if (c) ditherPx(g, x0 + w, y, c, fade); }
+    }
+    if (p <= 0) return;
+    // 2. the heap: older than the newest TK_ART folds it's a mound…
+    var blobN = Math.max(0, p - TK_ART), bH = Math.min(P.avail * 0.55, blobN * 0.2 + (blobN ? 2 : 0));
+    if (blobN > 0) {
+      var rx = Math.min(22, 9 + blobN * 0.25), ry = Math.max(2, Math.round(bH));
+      for (var j = 0; j <= ry; j++) {
+        var hw = Math.round(rx * Math.sqrt(1 - (j / (ry + 0.5)) * (j / (ry + 0.5))));
+        for (var x = P.hx - hw; x <= P.hx + hw; x++) {
+          var Y = P.base - j + dy;
+          ditherPx(g, x, Y, BAYER[(Y % 4) * 4 + (x % 4)] < 7 ? PAL.PINK_D : PAL.PINK_DK, fade);
+        }
+      }
+      for (var q = 0; q < Math.min(9, blobN); q++) {                 // a few ticket edges showing
+        var ex = P.hx - Math.round(rx * 0.7) + Math.round(tkHash(q, 7) * rx * 1.4), ey = P.base - 1 - Math.round(tkHash(q, 11) * (ry - 1)) + dy;
+        for (var qq = 0; qq < 4; qq++) ditherPx(g, ex + qq, ey, PAL.PINK, fade);
+      }
+    }
+    // …and the newest TK_ART folds lie articulated on top, zig-zagging:
+    // each fold is one ticket's length lying flat (foreshortened to 3 px)
+    var artN = Math.min(p, TK_ART), baseTop = P.base - bH;
+    for (var m = artN - 1; m >= 0; m--) {                             // bottom fold first
+      var yFold = Math.round(baseTop - (m + 0.5) * ((pileH(p) - bH) / Math.max(1, artN)) + dy);
+      var fk = n - (Math.floor(hang / TK_L) + m + 1);                 // roughly which ticket lies here
+      var dir = m % 2 ? 1 : -1, off = Math.round((tkHash(fk, 3) - 0.5) * 6), skew = tkHash(fk, 5) < 0.5 ? -1 : 1;
+      var xs = P.hx + off - dir * 5;
+      for (var a = 0; a < TK_L; a++) {
+        var X = xs + dir * a, yk = yFold + (a >= 6 ? skew : 0), uu = a;
+        for (var r = 0; r < 3; r++) {
+          var col = uu === 0 ? PAL.PINK_DK : (r === 0 ? PAL.PINK : (r === 2 ? PAL.PINK_DK : (uu === 2 ? PAL.PINK : PAL.PINK_D)));
+          ditherPx(g, X, yk + r, col, fade);
+        }
+      }
+    }
+  }
+  function ditherPx(g, x, y, c, fade) {
+    if (fade > 0 && BAYER[((y % 4 + 4) % 4) * 4 + ((x % 4 + 4) % 4)] / 16 < fade) return; // eaten by the dark
+    px(g, x, y, c);
+  }
   function drawTicketsLive(g, t, view) {
-    var out = view.ticketsOut || 0;
-    if (out <= 0 && !view.cranking) return;
-    var s = slotRect(), fr = GEO.front;
+    var s = slotRect(), T = ticketTotal(view);
+    var tearing = typeof view.tearT0 === 'number' && t >= view.tearT0 && t - view.tearT0 < TEAR_T;
+    if (tearing) {
+      var k = (t - view.tearT0) / TEAR_T, Tt = typeof view.tearPile === 'number' ? view.tearPile : T;
+      if (Tt > 0) drawTicketStrip(g, t, view, Tt, Math.round(k * k * 22), k * 0.95);
+      restore(g, s.x, s.y, s.w, s.h);                                 // the slot, parted
+      var P0 = pileGeom();
+      for (var jx = -3; jx < 3; jx++) px(g, P0.hx + jx, s.y + 5 + ((jx + 3) % 2), PAL.PINK_D); // the jagged torn edge
+      return;
+    }
+    if (T <= 0 && !view.cranking) return;
     restore(g, s.x, s.y, s.w, s.h);
-    var x0 = s.x + 8, w = 12;                  // same stub position as the static ticket
-    var len = Math.floor(out * TICKET_PX);
-    if (view.cranking && flickerAt(t, 14, 29) < 0.5) len = Math.max(0, len - 1); // ratchet
-    var yTop = fr.y0 + 10;                     // leaves the slot here
-    var floorY = MH + BOT - 2;                 // the strip coils on the floor
-    var hang = Math.max(0, Math.min(len, floorY - yTop));
-    var bow0 = view.jam ? Math.floor(hang / 3) : 1e9, bow1 = Math.floor(2 * hang / 3);
-    for (var k = 0; k < hang; k++) {
-      var y = yTop + k, row = k % TICKET_PX;
-      if (k === bow0) x0 += 1; if (k === bow1 && view.jam) x0 -= 1; // jammed: the strip bows
-      var c = row === 1 ? PAL.PINK : (row === 3 ? PAL.PINK_DK : PAL.PINK_D);
-      if (row === 3) { for (var q = 0; q < w; q += 2) px(g, x0 + q, y, PAL.PINK_DK); px(g, x0 + 1, y, PAL.PINK_D); }
-      else hline(g, x0, x0 + w - 1, y, c);
-      px(g, x0 + w - 1, y, PAL.PINK_DK);       // shaded edge
-    }
-    hline(g, s.x + 2, s.x + s.w - 3, s.y + 2, PAL.NIGHT0); // the slot mouth over the root
-    var rest = len - hang, layer = 0;          // the rest folds into a heap on the floor
-    while (rest > 0) {
-      var lw = Math.min(rest, 16), jig = (layer % 2) ? 1 : -1;
-      var ly = floorY - layer, lx = x0 - 2 + jig + ((layer * 5) % 3);
-      hline(g, lx, lx + lw - 1, ly, (layer % 2) ? PAL.PINK : PAL.PINK_D);
-      px(g, lx + lw - 1, ly, PAL.PINK_DK);
-      rest -= 16; layer++;
-    }
+    if (T > 0) drawTicketStrip(g, t, view, T + (view.cranking && flickerAt(t, 14, 29) < 0.5 ? -1 / TK_L : 0), 0, 0);
+    // the slot mouth stays dark over the strip's root, so it reads as coming *out*
+    hline(g, s.x + 2, s.x + s.w - 3, s.y + 2, PAL.NIGHT0);
   }
   // A small painted card hung off the ticket window on a wire. Line 1:
   // view.ticketTag, the running ticket count during the crank. Line 2 (or
@@ -1067,7 +1179,7 @@
     if (bonus !== null) lines.push({ str: bonus, plus: true });
     var s = slotRect(), tw = 0;
     lines.forEach(function (l) { tw = Math.max(tw, textW(l.str, 1) + (l.plus ? 4 : 0)); });
-    var w = tw + 6, h = 3 + 6 * lines.length, x = s.x - w - 3, y = s.y + 12 - h;
+    var w = tw + 6, h = 3 + 6 * lines.length, x = counterRect().x - w - 3, y = s.y + 12 - h;
     vline(g, x + w - 2, s.y + 1, Math.max(s.y + 1, y - 1), PAL.STEEL1);   // the wire
     px(g, x + w - 2, s.y, PAL.STEEL2);                                   // its hook on the frame
     rect(g, x, y, w, h, PAL.PINK_DK);
@@ -1779,7 +1891,7 @@
     drawBall: drawBall, drawSunkBall: drawSunkBall, drawBallShadow: drawBallShadow, drawBedShadow: drawBedShadow,
     drawSinkOccluder: drawSinkOccluder, drawRimTick: drawRimTick, drawToast: drawToast,
     troughRect: troughRect, gateRect: gateRect, RACK_BALL_R: RACK_BALL_R, grabBob: grabBob,
-    slotRect: slotRect, coinDoorRect: coinDoorRect, buttonRect: buttonRect, coinSlitRect: coinSlit, stampRect: stampRect, drawContact: drawContact,
+    slotRect: slotRect, coinDoorRect: coinDoorRect, counterRect: counterRect, pileRect: pileRect, buttonRect: buttonRect, coinSlitRect: coinSlit, stampRect: stampRect, drawContact: drawContact,
     LIFT_T: LIFT_T, TOAST_T: TOAST_T, drawsMachineNotes: true,   // main's whack hit-test; render draws marqueeNote/doorRattle
     text: text, textC: textC, flickerAt: flickerAt
   };
