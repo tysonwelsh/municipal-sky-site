@@ -90,6 +90,7 @@
     // real machine, where the backboard runs down into the 10): a ball that
     // comes back off the backstop rolls straight into the 10 cup
     flushRim: 0, flushA0: 35, flushA1: 145, flushDepth: 0.8, flushTaper: 15,
+    frontWear: 0.5,          // the outer rim's down-bed arc is lower by × (1 − frontWear·(−sin angle))
     cageH: 2.4,              // safety cage roof, height above the bed; < 1 % of throws touch it
 
     // ── world ──
@@ -272,6 +273,9 @@
     if (T.rimBackRise) { var sa = Math.sin(ang); if (sa > 0) hgt *= 1 + T.rimBackRise * sa; }
     if (k === T.dentRim) hgt *= 1 - T.dentDepth * arcWin(ang, D.dent0, D.dent1, D.dentTap);
     if (k === T.flushRim) hgt *= 1 - T.flushDepth * arcWin(ang, D.flush0, D.flush1, D.flushTap);
+    // the 10's front (down-bed) arc is worn low too, so a soft ball that comes
+    // down on it tips into the 10 instead of bouncing back over the lip
+    if (k === 0 && T.frontWear) { var sd = Math.sin(ang); if (sd < 0) hgt *= 1 - T.frontWear * -sd; }
     return hgt;
   }
   function inDent(D, ang) { return arcWin(ang, D.dent0, D.dent1, D.dentTap) > 0; }
