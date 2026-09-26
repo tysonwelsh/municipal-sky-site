@@ -157,6 +157,7 @@
     vMin: 2.08, vMax: 7.2, vAbsMax: 9.6,
     aimSoft: 0.35, aimMax: 0.44, // aim is linear to ±aimSoft, then compresses smoothly toward ±aimMax
     substep: 1 / 240,
+    carryMargin: 0.2,        // a carried ball leaves the thumb at most zHop − this up the lane
     trailCap: 64             // ball.trail keeps this many recent poses
   };
 
@@ -293,7 +294,10 @@
 
   /* ── ball ─────────────────────────────────────────────────────── */
 
-  function createThrow(x0, v, aim, spin, seed, tuneOverride) {
+  // z0 (optional, default 0): where the ball leaves the thumb, part-way up
+  // the lane (clamped to [0, zHop − carryMargin]); it starts rolling there at
+  // speed v along aim — honest speed, no energy compensation (see vForLadder)
+  function createThrow(x0, v, aim, spin, seed, tuneOverride, z0) {
     var T = TUNE;
     if (tuneOverride) {
       T = {};
@@ -305,12 +309,13 @@
     x0 = +x0 || 0; v = +v || 0; aim = +aim || 0; spin = +spin || 0;
     var lim = T.laneHalfW - r;
     x0 = Math.max(-lim, Math.min(lim, x0));
+    z0 = Math.max(0, Math.min(T.zHop - T.carryMargin, +z0 || 0));
     v = Math.max(0, Math.min(T.vAbsMax, v));
     aim = softAim(T, aim);
     spin = Math.max(-1, Math.min(1, spin));
     var b = {
       T: T, D: D,
-      x: x0, y: r, z: 0,
+      x: x0, y: r, z: z0,
       vx: v * Math.sin(aim), vy: 0, vz: v * Math.cos(aim),
       wx: 0, wy: 0, wz: 0,                 // angular velocity, rad/s
       english: spin,                       // the throw's english (lateral-accel coefficient)
@@ -327,7 +332,7 @@
       cap: null,                           // capture record while sinking
       endT: 0, result: null,
       events: [], trail: [],
-      input: { x0: x0, v: v, aim: aim, spin: spin }
+      input: { x0: x0, z0: z0, v: v, aim: aim, spin: spin }
     };
     rollOn(b, 0, 1, 0);
     return b;
@@ -894,7 +899,7 @@
   function simulate(args, opts) {
     args = args || {}; opts = opts || {};
     var maxT = opts.maxT || 12, dt = 1 / 120;
-    var b = createThrow(args.x0 || 0, args.v || 0, args.aim || 0, args.spin || 0, args.seed || 0, opts.tune || null);
+    var b = createThrow(args.x0 || 0, args.v || 0, args.aim || 0, args.spin || 0, args.seed || 0, opts.tune || null, args.z0 || 0);
     b.lab = opts.lab !== false;
     var trail = [];
     var keepTrail = opts.trail !== false;
@@ -907,12 +912,24 @@
     return { events: b.events, trail: trail, result: result, land: b.land, landF: b.landF, tLaunch: b.tLaunch, ball: b };
   }
 
+  // The speed to give a ball released at z0 so it reaches the hop exactly as
+  // fast as a throw of vFromLine from the throw line (straight; the lane's
+  // rolling deceleration, lean included: a = 5/7 (laneLean + crrLane·g)).
+  function vForLadder(z0, vFromLine, tuneOverride) {
+    var T = TUNE;
+    if (tuneOverride) { T = {}; for (var k in TUNE) T[k] = TUNE[k]; for (var j in tuneOverride) T[j] = tuneOverride[j]; }
+    z0 = Math.max(0, Math.min(T.zHop - T.carryMargin, +z0 || 0));
+    var a = T.rollK * (T.laneLean + T.crrLane * T.g);
+    return Math.sqrt(Math.max(0, vFromLine * vFromLine - 2 * a * z0));
+  }
+
   var SkeeBallPhysics = {
     TUNE: TUNE, GEO: GEO, SCORES: SCORES,
     createThrow: createThrow, step: step, pose: pose, simulate: simulate,
     hash01: hash01, surfaceAt: surfaceAt, configure: configure, softAim: function (a) { return softAim(TUNE, a); },
     toBed: toBed, fromBed: fromBed, bandAt: bandAt,
-    rimTop: function (k, ang) { return rimTop(DEF, k, ang); }
+    rimTop: function (k, ang) { return rimTop(DEF, k, ang); },
+    vForLadder: vForLadder
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = SkeeBallPhysics;
   if (typeof window !== 'undefined') window.SkeeBallPhysics = SkeeBallPhysics;
