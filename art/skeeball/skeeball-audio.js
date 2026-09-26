@@ -619,6 +619,24 @@
           tone(t + i * 0.045, { type: 'triangle', f: 480 + 60 * r(), peak: db(-20 - 2 * i), a: 0.0005, d: 0.04 });
         }
       },
+      tear: function (t, r, ev) {          // the strip torn off at the slot, then the heap drops
+        var n = Math.max(1, ev.n || 1), dur = 0.12 + 0.18 * Math.min(1, (n - 1) / 40);
+        // the zip along the perforations: a torn-paper hiss with a burst per perforation
+        noise(t, { f: 2600, q: 0.8, peak: db(-16), a: 0.004, hold: dur * 0.75, d: dur * 0.4 });
+        var tp = t, k = 0;
+        while (tp < t + dur) {
+          noise(tp, { ft: 'highpass', f: 1400 + 1800 * r(), q: 0.9, peak: db(-17 - 3 * r()), a: 0.0003, d: 0.006, off: r() * 1.8 });
+          tp += 0.0075 + 0.005 * r(); k++;
+        }
+        // the heap: a few soft crackles and a flutter, a papery landing
+        var t2 = t + dur + 0.02;
+        for (var i = 0; i < 12; i++) {
+          var tc = t2 + 0.34 * Math.pow(r(), 1.4);
+          noise(tc, { f: 1500 + 2500 * r(), q: 3, peak: db(-23 - 6 * r()), a: 0.0005, d: 0.016, off: r() * 1.8 });
+        }
+        rumble(t2, 0.28, db(-24), 1300, 17 + 4 * r());
+        thud(t2 + 0.22, db(-26), 160, 450);
+      },
       ticket: function (t, r) {            // pawl over the gear, then paper
         for (var i = 0; i < 3; i++) {
           var tk = t + i * 0.014;
@@ -791,6 +809,15 @@
         if (typeof s0 === 'number') st.score = s0;
       }
 
+      // tickets: a fast-forward emits the whole strip in one frame (fast: true), and
+      // identical ratchets stacked at one instant add coherently. Queue them ≥ 20–25 ms
+      // apart so a run-out is a rapid ratchet; drop what would lag > 0.8 s.
+      if (can && type === 'ticket') {
+        var tq = Math.max(t, st.ticketNext || 0);
+        if (tq - t > 0.8) return;
+        st.ticketNext = tq + (ev.fast ? 0.02 : 0.025);
+        t = tq;
+      }
       if (can && SFX[type]) {
         try { SFX[type](t, lcg(evSeed(ev, k)), ev); } catch (e) { if (window.console) console.warn('skeeball-audio', type, e); }
       }
