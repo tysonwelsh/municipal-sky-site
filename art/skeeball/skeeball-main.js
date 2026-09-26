@@ -68,9 +68,9 @@
   //   STRAIGHT prior window); when there is one, power and aim come from
   //   the window before the hook, so hooking doesn't also re-aim the throw.
   var GESTURE = {
-    SPEED_FLOOR: 0.15, SPEED_CEIL: 3.78, GAMMA: 2.0, V_TOP: 7.1,
+    SPEED_FLOOR: 0.55, SPEED_CEIL: 5.4, GAMMA: 1.4, V_TOP: 7.1,
     MIN_NORM_CSS: 384,           // power's yardstick never drops below this (landscape: 0.5 css px per art px)
-    WIN_MS: 90,                  // release window for power + aim
+    WIN_MS: 40,                  // release window for power + aim: the hand at the moment of letting go
     AIM_MAX: 25 * Math.PI / 180, // aim clamp, on the lane (P.softAim compresses further)
     // The swipe is read on the SCREEN, the aim is on the LANE: at the throw
     // line one unit of z is 32.5 canvas rows but one unit of x is 96 px
@@ -120,6 +120,12 @@
       if (id != null && q.id != null && q.id !== id) continue;
       if (pts.length && q.t < pts[pts.length - 1].t) continue; // out of order
       pts.push(q);
+    }
+    // a phone's pointerup lands 8–16 ms after the last move, at the same
+    // spot: that's the lift, not a still thumb — drop it
+    if (pts.length > 2) {
+      var u1 = pts[pts.length - 1], u0 = pts[pts.length - 2];
+      if (Math.hypot(u1.x - u0.x, u1.y - u0.y) < 0.5 && u1.t - u0.t <= 25) pts.pop();
     }
     var n = pts.length, a = pts[0], z = pts[n - 1];
     out.x0css = a.x;                       // the ball launches where it was set down
@@ -177,11 +183,24 @@
     var e = at(tEnd), tA = Math.max(a.t, tEnd - G.WIN_MS), w = at(tA), dt = (tEnd - tA) / 1000;
     if (!(dt >= 0.008)) { out.spin = 0; return out; }
     var dx = e.x - w.x, up = w.y - e.y;
-    var s = Math.hypot(dx, up) / dt / machineCssH;
-    out.speed = s;
-    out.valid = out.travel >= G.MIN_TRAVEL && up > 0;
+    var sEnd = Math.hypot(dx, up) / dt / machineCssH;
+    // POWER is the hand's fastest 40 ms going up the lane (a hand can push a
+    // ball, never pull it back: whatever it slows to before lifting, the ball
+    // has already left at its fastest) — the same rule the carry follows
+    var s = sEnd, j0 = 0;
+    for (var ii = 1; ii < n && pts[ii].t <= tEnd; ii++) {
+      while (j0 < ii - 1 && pts[ii].t - pts[j0 + 1].t >= G.WIN_MS) j0++;
+      var wdt = (pts[ii].t - pts[j0].t) / 1000, wup = pts[j0].y - pts[ii].y;
+      if (wdt >= 0.008 && wup > 0 && (pts[ii].t - pts[j0].t >= G.WIN_MS || j0 === 0)) {
+        var ws = Math.hypot(pts[ii].x - pts[j0].x, wup) / wdt / machineCssH;
+        if (ws > s) s = ws;
+      }
+    }
+    out.speed = s; out.speedEnd = sEnd;
+    // a throw goes up the lane and ends going up (or stopped): pulling back down is no throw
+    out.valid = out.travel >= G.MIN_TRAVEL && up > -0.5 && s > 0;
     // a slow release after a real dwell: the player set the ball down to aim
-    if (s < G.SETDOWN_SPEED && z.t - a.t > G.SETDOWN_MS) { out.valid = false; out.setDown = true; }
+    if (sEnd < G.SETDOWN_SPEED && s < G.SETDOWN_SPEED * 2 && z.t - a.t > G.SETDOWN_MS) { out.valid = false; out.setDown = true; }
     // a thumb held still at the end has no window direction: use the whole gesture's
     var ax = dx, ay = up;
     if (Math.hypot(dx, up) < 3) { ax = z.x - a.x; ay = a.y - z.y; }
@@ -336,6 +355,7 @@
     /* ── the game ──────────────────────────────────────────────────── */
     function setMode(m) {
       game.mode = m; view.mode = m;
+      view.releaseZ = m === 'play' ? 2.4 : null;       // the chalk release line (CARRY.Z_RELEASE)
       // a hard scroll lock while a game is running (the stage already refuses touch scrolling)
       document.documentElement.classList.toggle('skeeball-playing', m === 'play');
       if (m === 'play' && !HARNESS) { // don't lock the page with the machine half off-screen
@@ -458,6 +478,7 @@
         game.seed = (SEED0 * 1000003 + (sd.games | 0) * 7919 + (sd.lifetimeScore | 0)) | 0;
       }
       setScore(0); game.hundreds = 0; game.ballScores = []; game.games++;
+      state.touched = false; state.readySince = null;   // the grab cue waits for the first ball to sit untouched
       if (mis) mis.gameStart((game.seed * 1000003 + game.games * 7919) | 0);
       state.ball = null; state.toast = null;
       view.hundreds = 0; view.jackpot = null; view.ticketsOut = 0; view.cranking = false;
@@ -545,18 +566,19 @@
       if (game.mode === 'attract') { nudge(); return false; } // drop a nickel, push the button first
       if (!ballReady() || game.n < 1) return false;
       x0 = clamp(+x0 || 0, -CARRY.X_MAX, CARRY.X_MAX);
-      z0 = clamp(+z0 || 0, 0, CARRY.Z_RELEASE);
+      z0 = clamp(+z0 || 0, 0, CARRY.PUSH_MAX_Z);
       // the machine may lean, widen the holes (moon) or refuse the ball (sulk)
       var mv = mis ? mis.beforeThrow(game.n, { x0: x0, v: v, aim: aim || 0, spin: spin || 0 }) : {};
       state.refused = !!mv.refuse;
       if (mv.refuseV) v = Math.min(v, mv.refuseV);
       var tune = mv.tuneOverride ? Object.assign({}, opts.tune, mv.tuneOverride) : (opts.tune || null);
+      state.throwTune = tune;
       state.ball = P.createThrow(x0, v, aim || 0, spin || 0, ballSeed(), tune, z0);
       state.throwT = tNow;
       state.trail = []; state.cap = null; state.rimTick = null; state.pendingJackpot = null; state.cameHome = false;
       view.lift = null;                   // the throw cuts any lift still under way
       if (state.refused) return 'refused'; // sent back: no `throw` event, the ball is not consumed
-      emit({ type: 'throw', x0: +x0.toFixed(4), z0: +z0.toFixed(4), v: +v.toFixed(4), aim: +(aim || 0).toFixed(4), spin: +(spin || 0).toFixed(4), ball: game.n, carried: !!state.carriedThrow });
+      emit({ type: 'throw', x0: +x0.toFixed(4), z0: +z0.toFixed(4), v: +(state.throwEventV != null ? state.throwEventV : v).toFixed(4), aim: +(aim || 0).toFixed(4), spin: +(spin || 0).toFixed(4), ball: game.n, carried: !!state.carriedThrow });
       return true;
     }
     function throwPower(power, aim, spin, x0) {
@@ -758,39 +780,56 @@
       return { gesture: g, thrown: thrown };
     }
 
-    /* ── THE CARRY: the ball rolls in your hand and leaves it like a bowler's ──
-     * A pointerdown on the resting ball (its sprite ± GRAB_CSS) picks it up:
-     * every move puts the ball's lane position under the thumb (the grab
-     * offset is kept, so it never jumps), no smoothing. Pulling back just
-     * stops it at the throw line. The ball leaves the hand the moment the
-     * thumb carries it over the RELEASE LINE (z = Z_RELEASE), at the hand's
-     * speed there, from that exact spot — or on pointerup before the line,
-     * from where it is. A slow let-go sets the ball down (it rolls back to
-     * the line; no ball spent). Speed, aim and the power curve are the
-     * swipe's (mapGesture); the launch speed is P.vForLadder(z0, v) so a
-     * firm flick is the same ring wherever the hand opens (≤ 6.4 % off the
-     * hand's speed). English is a bowler's wrist: see carryEnglish. */
+    /* ── THE CARRY: the ball rolls in your hand and leaves it the moment you outrun it ──
+     * A pointerdown on the resting ball (its sprite ± GRAB_CSS; also while it
+     * is still lifting — the hand waits for it) picks it up. Every move puts
+     * the ball's lane position under the thumb (grab offset kept, no
+     * smoothing); pulling back stops it at the throw line.
+     *
+     * THE BALL LEAVES WHEN THE THUMB OUTRUNS IT. Each move, the hand's launch
+     * speed right now is vL = vForLadder(z, v(hand MH/s over the last 40 ms)).
+     * While the thumb's lane speed is ≤ vL the ball stays under it (slow
+     * rolling, aiming, repositioning: 1:1, with the rolling sound). The first
+     * move where the thumb is faster lets the ball go from where it is, at vL
+     * (at least enough to reach the hop): it rolls away from under the thumb.
+     * While the thumb is still down and speeding up, the hand keeps pushing:
+     * the ball's speed follows the hand's vL up — never down, never more than
+     * ×1.2 per 1/60 s (so the picture has no speed step) — and its heading
+     * follows the swing's chord. On pointerup the throw is settled: speed from
+     * the 40 ms before the lift (a trailing up-sample that repeats the last
+     * position is dropped), aim from the chord, english from the curl and the
+     * wrist at the release (carryEnglish); if the hand had stopped (< 0.5
+     * MH/s) and the ball is still slow, it is set down instead (no ball
+     * spent). A slow drag that reaches Z_RELEASE is thrown there or set down
+     * by the same test. */
     var CARRY = {
-      Z_RELEASE: 2.4,          // the release line, lane units (≈ 69 % of the flat lane; ≈ 81 css px of thumb from the ball at 390 wide)
+      Z_RELEASE: 2.4,          // the backstop line for a slow drag (render draws it: view.releaseZ)
       X_MAX: 0.89,             // |x| ≤ 1 − r (the rails)
       GRAB_CSS: 14,            // the ball's sprite ± this many css px picks it up
       SETDOWN_T: 0.4,          // a set-down ball rolls back to the line over this long
-      ENG_LATE: 40,                            // ms: the wrist's last move
-      FLICK_MIN: 12, FLICK_FULL: 40,           // ° the last 40 ms turn off the swing's line
-      CURL_MIN: 14, CURL_FULL: 34,             // ° the swing's second half turns off its first
-      W_FLICK: 0.6, W_CURL: 0.7, SPIN_MAX: 1   // blend and cap (→ the physics' ±1)
+      SPEED_MS: 40,            // the hand's speed: the last 40 ms
+      RAMP: 1.2,               // the pushed ball's speed grows at most ×1.2 per 1/60 s
+      V_LEAVE_MIN: 0.6,        // u/s: a ball leaving a hand that was nearly still starts at least this fast
+      PUSH_MAX_T: 0.6, PUSH_MAX_Z: 3.1,        // the hand stops pushing after this long / this far
+      FLOOR_K: 1.15,           // a real throw at least reaches the hop, with this margin
+      ENG_LATE: 40,                            // ms: the wrist's last move before the release
+      AIM_FRAC: 0.3,                           // aim: the opening 30 % of the swing
+      FLICK_MIN: 15, FLICK_FULL: 45,           // ° the last 40 ms before the lift turn off the swing's line
+      CURL_MIN: 22, CURL_FULL: 44,             // ° the swing's second half turns off its first
+      W_FLICK: 0.6, W_CURL: 0.5, SPIN_MAX: 1   // blend and cap (→ the physics' ±1)
     };
     var DEG = Math.PI / 180;
+    view.releaseZ = null;
     // machine frame → css px (the inverse of toMachine), and the css px per art px
     function cssK() { return crect().height / R.H; }
+    function lifting() { return !!(view.lift && tNow - view.lift.t0 < R.LIFT_T); }
     // the resting ball on the throw line, machine frame
     function readyBall() {
       var p = R.project(state.readyX || 0, U.BALL_R, 0);
       return { sx: p.sx, sy: p.sy, r: ballPx(p.scale) };
     }
     function onReadyBall(pt) {
-      if (game.mode !== 'play' || !ballReady() || game.n < 1 || fake) return false;
-      if (view.lift && tNow - view.lift.t0 < R.LIFT_T) return false;
+      if (game.mode !== 'play' || !ballReady() || game.n < 1 || fake || state.fill) return false;
       var m = toMachine(pt.x, pt.y), b = readyBall(), k = cssK();
       return Math.hypot(m.x - b.sx, m.y - b.sy) <= b.r + CARRY.GRAB_CSS / k;
     }
@@ -808,57 +847,186 @@
       var z = (lo + hi) / 2, c = R.project(0, U.BALL_R, z).sx, e = R.project(1, U.BALL_R, z).sx;
       return { x: (sx - c) / ((e - c) || 1), z: z };
     }
+    // the lane's own slowing (lean + rolling), for the "reaches the hop" floor
+    function vFloor(z) {
+      var T = P.TUNE, a = (T.rollK || 5 / 7) * ((T.laneLean || 0) + (T.crrLane || 0) * (T.g || 0));
+      return CARRY.FLOOR_K * Math.sqrt(Math.max(0, 2 * a * (U.Z_HOP - z)));
+    }
+    // the hand's speed over the last SPEED_MS of pts (MH/s), and its launch speed at z
+    function handSpeed(pts) {
+      var n = pts.length; if (n < 2) return 0;
+      var z = pts[n - 1], i = n - 2;
+      while (i > 0 && z.t - pts[i].t < CARRY.SPEED_MS) i--;
+      var a = pts[i], dt = (z.t - a.t) / 1000;
+      return dt > 0 ? Math.hypot(z.x - a.x, z.y - a.y) / dt / Math.max(machineCssH(), GESTURE.MIN_NORM_CSS) : 0;
+    }
+    function launchV(s, z) {
+      var v = speedToV(s, P.TUNE).v;
+      return P.vForLadder ? P.vForLadder(z, v) : v;
+    }
+    // the swing's aim: the heading of its opening (from the bottom of the
+    // wind-up to the point AIM_FRAC of the way along the path), on the lane.
+    // A curl then leaves along the line it started on and hooks the way it
+    // bent; a thumb's natural arc barely re-aims.
+    function chordAim(pts) {
+      var lo = 0, n = pts.length;
+      for (var i = 1; i < n; i++) if (pts[i].y >= pts[lo].y) lo = i;
+      var len = 0, cum = [0];
+      for (i = lo + 1; i < n; i++) { len += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y); cum.push(len); }
+      var k = lo; while (k < n - 1 && cum[k - lo] < len * CARRY.AIM_FRAC) k++;
+      var a = pts[lo], z = pts[Math.max(k, lo + 1 < n ? lo + 1 : lo)], dx = z.x - a.x, up = a.y - z.y;
+      if (!(up > 2)) return 0;
+      return clamp(Math.atan(GESTURE.AIM_PERSPECTIVE * dx / up), -GESTURE.AIM_MAX, GESTURE.AIM_MAX);
+    }
     function carryStart(pt) {
       var m = toMachine(pt.x, pt.y), b = readyBall();
+      state.touched = true; view.grabCue = false;
       drag.carry = { offX: b.sx - m.x, offY: b.sy - m.y, x: state.readyX || 0, z: 0, zRaw: 0,
-        path: [{ t: pt.t, x: state.readyX || 0, z: 0 }], roll: 0 };
+        path: [{ t: pt.t, x: state.readyX || 0, z: 0 }], roll: 0, laneV: 0, waiting: lifting() };
       emit({ type: 'carry', kind: 'pick' });
     }
-    // one thumb sample while carrying; true when the ball has left the hand
+    // one thumb sample while carrying
     function carryPoint(pt) {
-      var c = drag.carry, m = toMachine(pt.x, pt.y), L = laneAt(m.x + c.offX, m.y + c.offY);
-      var x = clamp(L.x, -CARRY.X_MAX, CARRY.X_MAX);
-      if (L.z >= CARRY.Z_RELEASE) {
-        // over the line: find where the thumb crossed it and let go there, then
-        var prev = drag.pts[drag.pts.length - 1], f = c.zRaw < L.z ? clamp((CARRY.Z_RELEASE - c.zRaw) / (L.z - c.zRaw), 0, 1) : 1;
-        var cross = { t: prev.t + (pt.t - prev.t) * f, x: prev.x + (pt.x - prev.x) * f, y: prev.y + (pt.y - prev.y) * f };
-        var cx = clamp(c.x + (x - c.x) * f, -CARRY.X_MAX, CARRY.X_MAX);
-        var pts = drag.pts.concat([cross]);
-        drag = null; rectCache = null;
-        state.lastCarry = carryRelease(pts, cx, CARRY.Z_RELEASE, true);
-        return true;
+      var c = drag.carry;
+      // how late input events arrive (their timeStamp vs now), so "now" can be read on their clock
+      if (drag.live && typeof performance !== 'undefined') { var lag = performance.now() - pt.t; c.lag = c.lag == null ? lag : Math.min(c.lag * 0.9 + lag * 0.1, lag); }
+      drag.pts.push(pt);
+      while (drag.pts.length > GESTURE.MAX_PTS) drag.pts.shift();
+      if (c.pushing) return false;                         // the ball has gone; the hand may still push it
+      var m = toMachine(pt.x, pt.y);
+      if (c.waiting) {                                     // the ball is still lifting: the hand waits under it
+        if (lifting()) return false;
+        var b = readyBall(); c.waiting = false; c.offX = b.sx - m.x; c.offY = b.sy - m.y;
+        drag.pts = [pt]; c.path = [{ t: pt.t, x: c.x, z: 0 }];
+        return false;
       }
-      var z = Math.max(0, L.z);
+      var L = laneAt(m.x + c.offX, m.y + c.offY);
+      var x = clamp(L.x, -CARRY.X_MAX, CARRY.X_MAX), z = Math.max(0, Math.min(L.z, CARRY.Z_RELEASE));
+      // the thumb's lane speed over this step against the hand's launch speed
+      var prev = c.path[c.path.length - 1], dt = (pt.t - prev.t) / 1000;
+      var s = handSpeed(drag.pts), vL = Math.max(launchV(s, c.z), vFloor(c.z));
+      var lane = dt > 0 ? Math.hypot(x - prev.x, z - prev.z) / dt : 0;
+      if (dt > 0 && z > prev.z && lane > vL) {                // outrun: the ball rolls away from under the thumb
+        // it leaves at the speed it was just moving in the hand (×1.2 at most),
+        // and the hand's push brings it up to vL and beyond from there
+        leave(Math.max(CARRY.V_LEAVE_MIN, Math.min(vL, c.laneV * CARRY.RAMP)));
+        return false;
+      }
+      if (L.z >= CARRY.Z_RELEASE) {                        // a slow drag reaching the backstop line
+        c.x = x; c.z = CARRY.Z_RELEASE;
+        if (s < GESTURE.SETDOWN_SPEED) { endCarry(); setDown(c.x, c.z); return true; }
+        leave(Math.max(CARRY.V_LEAVE_MIN, Math.min(vL, Math.max(c.laneV || 0, lane) * CARRY.RAMP))); return false;
+      }
       c.roll += Math.hypot(x - c.x, z - c.z);
+      c.laneV = lane;                                      // how fast the ball is moving in the hand
       c.x = x; c.z = z; c.zRaw = L.z;
       c.path.push({ t: pt.t, x: x, z: z });
       if (c.path.length > 64) c.path.shift();
-      drag.pts.push(pt);
-      while (drag.pts.length > GESTURE.MAX_PTS) drag.pts.shift();
       return false;
     }
-    // the hand opens: a throw from (x, z0), or the ball set down
-    function carryRelease(pts, x, z0, atLine) {
-      var g = mapGesture(pts, machineCssH());
-      if (!atLine && (!g.valid || g.speed < GESTURE.SETDOWN_SPEED)) { setDown(x, z0); return { gesture: g, thrown: false, setDown: true }; }
-      var v = P.vForLadder ? P.vForLadder(z0, g.v) : g.v;   // the ladder independent of where the hand opens
-      var spin = carryEnglish(pts);
+    // the ball leaves the hand: a live ball from where it is, at v0; the
+    // throw is settled when the thumb lifts (settleCarry)
+    function leave(v0) {
+      var c = drag.carry, aim = chordAim(drag.pts);
+      c.pushing = true;
+      state.push = { x0: c.x, z0: c.z, v: v0, target: Math.max(v0, vFloor(c.z)), aim: aim, spin: 0, t0: tNow, latched: false, tune: opts.tune || null };
+      state.ball = P.createThrow(c.x, v0, aim, 0, ballSeed(), state.push.tune, c.z);
+      state.throwT = tNow; state.trail = []; state.cap = null; state.rimTick = null; state.pendingJackpot = null; state.cameHome = false;
+      view.lift = null;
+      emit({ type: 'carry', kind: 'leave', z: +c.z.toFixed(3), v: +v0.toFixed(3) });
+    }
+    // while the thumb is down after the ball left: follow the hand's launch speed up
+    function pushPoint() {
+      var p = state.push; if (!p || p.latched || !state.ball) return;
+      var q = P.pose(state.ball);
+      p.target = Math.max(p.target, launchV(handSpeed(drag.pts), Math.max(0, q.z)));
+      p.aim = chordAim(drag.pts);
+    }
+    // on the sim clock: ramp the pushed ball toward its target (×RAMP per 1/60 s)
+    function tickPush() {
+      var p = state.push; if (!p || !state.ball) return;
+      var q = P.pose(state.ball);
+      if (!p.latched && (tNow - p.t0 > CARRY.PUSH_MAX_T || q.z > CARRY.PUSH_MAX_Z) && drag && drag.carry) { settleCarry(drag.pts.slice()); return; }
+      if (q.phase !== 'roll') { if (p.latched) state.push = null; return; }   // it's on the hop: hands off
+      var want = Math.min(p.target, p.v * Math.pow(CARRY.RAMP, STEP * 60));
+      var aimMoved = !p.latched && Math.abs(p.aim - (p.aimNow == null ? p.aim : p.aimNow)) > 0.2 * DEG;
+      if (want > p.v + 1e-4 || aimMoved) {
+        p.v = Math.max(p.v, want); p.aimNow = p.aim;
+        state.ball = P.createThrow(q.x, p.v, p.aim, p.spin, ballSeed(), p.tune, q.z);
+      }
+      if (p.latched && p.v >= p.target - 1e-4) state.push = null;          // done ramping
+    }
+    function endCarry() { var d = drag; drag = null; rectCache = null; return d; }
+    // the thumb lifts after the ball left: settle speed, aim and english (or set it down)
+    function settleCarry(pts) {
+      var p = state.push; if (!p || p.latched) return { thrown: false };
+      if (drag && drag.carry) endCarry();
+      pts = trimUp(pts);
+      var q = P.pose(state.ball), s = handSpeed(pts);
+      if (s < GESTURE.SETDOWN_SPEED && p.target < P.TUNE.vMin * 1.12) { // the hand stopped and never really pushed: put it down
+        state.ball = null; state.push = null;
+        setDown(clamp(q.x, -CARRY.X_MAX, CARRY.X_MAX), clamp(q.z, 0, CARRY.Z_RELEASE));
+        return { thrown: false, setDown: true };
+      }
+      var target = Math.max(p.target, launchV(s, Math.max(0, q.z)), vFloor(Math.max(0, q.z)));
+      var aim = chordAim(pts), spin = carryEnglish(pts);
+      // the throw proper (mischief: lean, moon, sulk), from where the ball is now, at the speed it has
+      state.ball = null;
+      state.carriedThrow = true; state.throwEventV = target;   // the throw's speed is where the push is heading
+      var thrown = requestThrow(q.x, p.v, aim, spin, Math.max(0, q.z));
+      state.carriedThrow = false; state.throwEventV = null;
+      if (thrown === true && !state.refused) {
+        state.push = { v: p.v, target: target, aim: aim, aimNow: aim, spin: spin, t0: p.t0, latched: true, tune: state.throwTune };
+      } else state.push = null;
+      var out = { thrown: thrown, v: target, z0: q.z, spin: spin, aim: aim };
+      emit({ type: 'carry', kind: 'release', z0: +Math.max(0, q.z).toFixed(3), vHand: +launchV(s, 0).toFixed(3), v: +target.toFixed(3), spin: +spin.toFixed(3), aim: +aim.toFixed(4),
+        flick: state.lastEnglish && state.lastEnglish.flick, curl: state.lastEnglish && state.lastEnglish.curl });
+      state.lastCarry = out;
+      return out;
+    }
+    // a phone's pointerup lands 8–16 ms after the last move, at the same spot: not a still sample
+    function trimUp(pts) {
+      var n = pts.length;
+      if (n > 2 && Math.hypot(pts[n - 1].x - pts[n - 2].x, pts[n - 1].y - pts[n - 2].y) < 0.5 && pts[n - 1].t - pts[n - 2].t <= 25) return pts.slice(0, n - 1);
+      return pts;
+    }
+    // the thumb lifts while the ball is still in the hand: thrown from where it is, or set down
+    function carryUp(pts) {
+      var c = drag.carry; endCarry();
+      if (c.waiting) return { thrown: false };                     // never got the ball
+      pts = trimUp(pts);
+      var s = handSpeed(pts), v = Math.max(launchV(s, c.z), vFloor(c.z));
+      if (s < GESTURE.SETDOWN_SPEED || pts.length < 2) { if (c.z > 0.02) setDown(c.x, c.z); return { thrown: false, setDown: c.z > 0.02 }; }
+      var aim = chordAim(pts), spin = carryEnglish(pts);
       state.carriedThrow = true;
-      var thrown = requestThrow(x, v, g.aim, spin, z0);
+      var thrown = requestThrow(c.x, v, aim, spin, c.z);
       state.carriedThrow = false;
-      emit({ type: 'carry', kind: 'release', atLine: atLine, z0: +z0.toFixed(3), vHand: +g.v.toFixed(3), v: +v.toFixed(3), spin: +spin.toFixed(3), flick: state.lastEnglish && state.lastEnglish.flick, curl: state.lastEnglish && state.lastEnglish.curl });
-      return { gesture: g, thrown: thrown, v: v, z0: z0, spin: spin, atLine: atLine };
+      emit({ type: 'carry', kind: 'release', z0: +c.z.toFixed(3), vHand: +launchV(s, 0).toFixed(3), v: +v.toFixed(3), spin: +spin.toFixed(3), aim: +aim.toFixed(4),
+        flick: state.lastEnglish && state.lastEnglish.flick, curl: state.lastEnglish && state.lastEnglish.curl });
+      state.lastCarry = { thrown: thrown, v: v, z0: c.z, spin: spin, aim: aim };
+      return state.lastCarry;
+    }
+    // a cancelled carry: the ball rolls back to the line (never a teleport)
+    function carryCancel() {
+      var d = drag, c = d.carry;
+      if (c.pushing && state.push && !state.push.latched && state.ball) {   // left, but not yet thrown: call it back
+        var q = P.pose(state.ball); endCarry(); state.ball = null; state.push = null;
+        setDown(clamp(q.x, -CARRY.X_MAX, CARRY.X_MAX), clamp(q.z, 0, CARRY.Z_RELEASE));
+        return;
+      }
+      endCarry();
+      if (!c.waiting && c.z > 0.02) setDown(c.x, c.z);
     }
     // ENGLISH, like a bowler's wrist, from the forward swing (the thumb path
-    // from its lowest point — after any wind-up — to the release):
-    //  (a) the flick: the heading of the last 40 ms against the swing's line
-    //      (start → release), a sideways turn of the wrist;
+    // from its lowest point — after any wind-up — to the lift):
+    //  (a) the flick: the heading of the last 40 ms before the lift against
+    //      the swing's line (start → lift), a sideways turn of the wrist;
     //  (b) the curl: how far the swing turns between its first and second
     //      halves (by length), a curled arm.
     // Each has a dead zone so a straight push is 0 and a thumb's natural arc
-    // (a 200–260 px radius over the ~80 px carry: flick < 5°, curl < 14°)
+    // (a 200–260 px radius over a 150 px swing: flick < 18°, curl < 22°)
     // gives 0; clockwise on screen (y down) hooks right (+x).
-    // 0.6·flick + 0.7·curl (each 0..1 past its dead zone), capped ±1.
+    // 0.6·flick + 0.5·curl (each 0..1 past its dead zone), capped ±1.
     function carryEnglish(pts) {
       var n = pts.length; if (n < 3) return 0;
       var lo = 0;
@@ -892,14 +1060,22 @@
       state.setdown = { x: x, z: z, t0: tNow };
       emit({ type: 'setdown', x: +x.toFixed(3), z: +z.toFixed(3) });
     }
-    // the synthetic pose of the ball in the hand (audio rolls it; lane units/s)
+    // the synthetic pose of the ball in the hand (audio rolls it; lane units/s).
+    // vz/vx read "now": the speed over the last samples (≤ 100 ms), and 0 once
+    // the thumb has sent nothing for 50 ms — a still thumb sends no moves, so
+    // the rolling sound stops within 50 ms (event times are read on their own
+    // clock: c.lag is how late input events arrive).
     function carryPose() {
-      if (!drag || !drag.carry) return null;
-      var c = drag.carry, pth = c.path, a = pth[pth.length - 1], b = a;
-      for (var i = pth.length - 1; i >= 0 && a.t - pth[i].t <= 50; i--) b = pth[i];
-      var dt = (a.t - b.t) / 1000;
-      return { phase: 'carry', x: c.x, z: c.z, y: 0, r: U.BALL_R,
-        vz: dt > 0 ? (a.z - b.z) / dt : 0, vx: dt > 0 ? (a.x - b.x) / dt : 0 };
+      if (!drag || !drag.carry || drag.carry.pushing || drag.carry.waiting) return null;
+      var c = drag.carry, pth = c.path, a = pth[pth.length - 1];
+      var now = drag.live && typeof performance !== 'undefined' ? Math.max(performance.now() - (c.lag || 0), a.t) : a.t;
+      var vz = 0, vx = 0;
+      if (now - a.t <= 50) {
+        var b = null;
+        for (var i = pth.length - 2; i >= 0 && a.t - pth[i].t <= 100; i--) b = pth[i];
+        if (b && a.t > b.t) { vz = (a.z - b.z) / ((a.t - b.t) / 1000); vx = (a.x - b.x) / ((a.t - b.t) / 1000); }
+      }
+      return { phase: 'carry', x: c.x, z: c.z, y: 0, r: U.BALL_R, vz: vz, vx: vx };
     }
 
     // the canvas rect, cached per gesture (not per coalesced sample)
@@ -935,7 +1111,7 @@
       if (onReadyBall(pt)) carryStart(pt);      // on the ball: it's in the hand
     }
     function moveDrag(pt) {
-      if (drag.carry) return carryPoint(pt);
+      if (drag.carry) { var ended = carryPoint(pt); if (!ended && drag && drag.carry && drag.carry.pushing) pushPoint(); return ended; }
       drag.pts.push(pt);
       while (drag.pts.length > GESTURE.MAX_PTS) drag.pts.shift();
       return false;
@@ -943,8 +1119,9 @@
     function endDrag(pt) {
       var d = drag; drag = null; rectCache = null;
       if (d.carry) {
-        var c = d.carry, pts = d.pts.concat([pt]);
-        return carryRelease(pts, c.x, c.z, false);
+        drag = d;                                   // (the carry functions end it themselves)
+        d.pts.push(pt);
+        return d.carry.pushing ? settleCarry(d.pts) : carryUp(d.pts);
       }
       d.pts.push(pt);
       return release(d.pts);
@@ -961,7 +1138,9 @@
       endDrag(localPt(ev));
     }
     function onCancel(ev) {
-      if (drag && ev.pointerId === drag.id) { drag = null; rectCache = null; }
+      if (!drag || ev.pointerId !== drag.id) return;
+      if (drag.carry) { carryCancel(); return; }      // the ball rolls back, never teleports
+      drag = null; rectCache = null;
     }
     function onContextMenu(ev) { ev.preventDefault(); } // a long-press / right-click menu would swallow the pointerup
     function onTouchMove(ev) { if (ev.cancelable) ev.preventDefault(); } // belt and braces for iOS
@@ -1084,6 +1263,12 @@
     // what the machine needs from the ball before anything is drawn (the
     // live layer under the ball reads the gaze and the hole glow)
     function prepView() {
+      // "ROLL IT": the first ball of a game has sat on the line untouched for 1.5 s
+      var readyNow = game.mode === 'play' && game.n >= 1 && !state.fill && ballReady() && !lifting() && !drag;
+      if (readyNow && state.readySince == null) state.readySince = tNow;
+      if (!readyNow) state.readySince = null;
+      view.grabCue = !!(readyNow && game.n === 1 && !state.touched && tNow - state.readySince > 1.5);
+      view.grabCueT0 = view.grabCue ? state.readySince + 1.5 : null;
       view.holeGlow = [0, 0];
       view.ballSx = undefined;
       var pose = currentPose();
@@ -1181,10 +1366,10 @@
       view.ballSx = p.sx;
     }
     // a ball resting on the lane at (x, z)
-    function drawLaneBall(x, z) {
+    function drawLaneBall(x, z, bob) {
       var p = R.project(x, U.BALL_R, z), r = ballPx(p.scale);
       R.drawContact(ctx, p.sx, p.sy, r);          // one LANE3 row under the resting sprite
-      R.drawBall(ctx, p.sx, p.sy, r);
+      R.drawBall(ctx, p.sx, p.sy + (bob || 0), r);  // (bob: the grab cue's little hop)
       view.ballSx = p.sx;
     }
 
@@ -1271,7 +1456,10 @@
 
     // the ball on the throw line: the next ball, or the one under the thumb
     function drawThrowLine() {
-      if (drag && drag.carry) { drawRollingBall(drag.carry.x, drag.carry.z); return; } // the ball is the arrow
+      if (drag && drag.carry && !drag.carry.pushing) {
+        if (drag.carry.waiting) return;                           // the ball is still lifting (render draws it)
+        drawRollingBall(drag.carry.x, drag.carry.z); return;      // the ball is the arrow
+      }
       if (state.setdown) { // put down: it rolls back to the throw line
         var ks = clamp((tNow - state.setdown.t0) / CARRY.SETDOWN_T, 0, 1), es = ks * (2 - ks);
         drawRollingBall(state.setdown.x, state.setdown.z * (1 - es));
@@ -1291,7 +1479,7 @@
       }
       if (view.lift && tNow - view.lift.t0 < R.LIFT_T) return;
       if (tNow < kbd.until) drawGhost(ghostPoints(0, 0, MEDIUM, kbd.aim));
-      drawLaneBall(state.readyX || 0, 0);
+      drawLaneBall(state.readyX || 0, 0, view.grabCue && R.grabBob ? R.grabBob(tNow, view) : 0);
     }
 
     // the floating score (render draws it and owns its rise and life);
@@ -1310,6 +1498,7 @@
       while (simT + STEP <= t + 1e-9) {
         simT += STEP;
         tNow = simT;
+        if (state.push) tickPush();
         if (ballActive()) {
           P.step(state.ball, STEP);
           var ev;
@@ -1491,8 +1680,11 @@
           emit({ type: 'input', kind: 'down' });
           drag = null; rectCache = canvas.getBoundingClientRect();
           beginDrag(points[0], -1);
-          var carried = !!drag.carry, out = null;
-          for (var i = 1; i < points.length - 1 && drag; i++) moveDrag(points[i]);
+          // the sim clock runs with the thumb (points' t in ms), so the carry's push happens as it would live
+          var carried = !!drag.carry, out = null, ts = tNow, p0 = points[0].t;
+          var clockTo = function (pt) { var tt = ts + (pt.t - p0) / 1000; if (tt > tNow) advance(tt); };
+          for (var i = 1; i < points.length - 1 && drag; i++) { clockTo(points[i]); if (drag) moveDrag(points[i]); }
+          clockTo(points[points.length - 1]);
           if (drag) out = endDrag(points[points.length - 1]);
           else out = state.lastCarry || { thrown: true };
           if (out) out.carried = carried;
@@ -1502,10 +1694,15 @@
         hold: function (points) {
           drag = null; rectCache = canvas.getBoundingClientRect();
           beginDrag(points[0], -1);
-          for (var i = 1; i < points.length && drag; i++) moveDrag(points[i]);
+          var ts = tNow, p0 = points[0].t;
+          for (var i = 1; i < points.length && drag; i++) { var tt = ts + (points[i].t - p0) / 1000; if (tt > tNow) advance(tt); if (drag) moveDrag(points[i]); }
           return drag ? carryPose() || { swipe: true } : state.lastCarry;
         },
         letGo: function (pt) { return drag ? endDrag(pt || drag.pts[drag.pts.length - 1]) : null; },
+        // one pointer event at a time (canvas css px, t in ms): the clock advances with t
+        down: function (pt) { drag = null; rectCache = canvas.getBoundingClientRect(); H._t0 = pt.t; H._ts = tNow; beginDrag(pt, -1); return drag && drag.carry ? 'carry' : 'swipe'; },
+        move: function (pt) { var tt = H._ts + (pt.t - H._t0) / 1000; if (tt > tNow) advance(tt); if (drag) moveDrag(pt); return drag ? (drag.carry && drag.carry.pushing ? 'pushing' : 'hand') : 'gone'; },
+        up: function (pt) { var tt = H._ts + (pt.t - H._t0) / 1000; if (tt > tNow) advance(tt); return drag ? endDrag(pt) : state.lastCarry; },
         laneAt: function (sx, sy) { return laneAt(sx, sy); },
         readyBall: function () { var b = readyBall(), k = cssK(); return { x: b.sx * k, y: (b.sy + R.TOP) * k, r: b.r * k }; },
         // hold a drag open for pictures (points as in swipe); null lets go without throwing
