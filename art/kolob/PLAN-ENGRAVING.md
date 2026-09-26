@@ -34,8 +34,11 @@ settings:
   Deseret word printed on the tape's tail is struck.
 - **Kept from A:** the four shapes, stems, flags, beams and dots; SATB closed
   score; barlines; fermatas; the breath comma; Johnston "−" and "7"; the
-  gilt strike cooling to green; the drone longa; the ringed bell with 8va;
-  the hymn running head.
+  gilt strike cooling to green; the ringed bell with 8va; the hymn running
+  head.
+- **No drone on the page.** The drone's longa and bar in the lowest bass
+  space are struck; the drone is heard, not engraved. §4.6's drone and
+  Kolob-cantus rows are withdrawn.
 - **The band** in round notes on its own layer (it fires in a minority of
   meetings). The Question's cartouche and empty measure are drawn in
   green and gilt.
