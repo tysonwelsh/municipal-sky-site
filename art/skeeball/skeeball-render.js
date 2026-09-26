@@ -667,32 +667,10 @@
       px(g, x, y0 + 7 - wave, PAL.PUR1); // faint purple tide-line
     }
     dither(g, cabL(y0) - 6, y0 + 8, cabR(y0) - cabL(y0) + 12, 5, PAL.NIGHT0, 0.8); // pooled shadow
-    drawReturnFlap(g, 0, false);                                    // the coin return, shut
   }
   // the stained base band: the plinth and the tide-mark above it, full width
   function plinthRect() { var y0 = GEO.front.y1; return { x: cabL(y0) - 2, y: y0 - 4, w: cabR(y0) - cabL(y0) + 5, h: 12 }; }
-  // egg 4: a small coin-return flap in the plinth under the coin door
-  function returnFlapRect() { var cd = coinDoorRect(); return { x: cd.x + 2, y: GEO.front.y1 + 1, w: 12, h: 5 }; }
-  function drawReturnFlap(g, open, coin, cy) {
-    var r = returnFlapRect();
-    rect(g, r.x - 1, r.y - 1, r.w + 2, r.h + 2, PAL.WOOD1);         // the cut in the plinth
-    if (open <= 0) {                                                // shut: a steel flap over a dark slot
-      rect(g, r.x, r.y, r.w, r.h, PAL.STEEL1);
-      hline(g, r.x, r.x + r.w - 1, r.y, PAL.STEEL2);
-      hline(g, r.x + 2, r.x + r.w - 3, r.y + 2, PAL.NIGHT0);
-      px(g, r.x + 1, r.y + 3, PAL.STEEL2); px(g, r.x + r.w - 2, r.y + 3, PAL.STEEL2); // rivets
-      return;
-    }
-    rect(g, r.x, r.y, r.w, r.h, PAL.NIGHT0);                        // the tray, dark
-    var fl = Math.round(open * 3);                                  // the flap tips out and down
-    rect(g, r.x, r.y + r.h - 1 + fl - 3, r.w, 1, PAL.STEEL1);
-    hline(g, r.x, r.x + r.w - 1, r.y + r.h + fl - 3, PAL.STEEL2);
-    if (coin && typeof cy === 'number') {                           // a 3-px coin dropping into the tray
-      var c1 = coin === 'dime' ? PAL.MOON : PAL.BRASS2, c2 = coin === 'dime' ? PAL.STEEL2 : PAL.BRASS1;
-      var x = r.x + 5, y = Math.round(cy);
-      hline(g, x, x + 2, y, c1); px(g, x + 1, y + 1, c2); px(g, x, y + 1, c1); px(g, x + 2, y + 1, c2);
-    }
-  }
+
 
   function drawCobwebsAndGrime(g, R) {
     var cx = cabR(cabTop()) - 1, cy = cabTop() + 2; // cobweb, top-right corner
@@ -821,7 +799,9 @@
   // the eggs (each draws nothing unless its field is set):
   //   sneeze      {t0}: eyes shut, a 1-px jolt, a spray under the snout (0.5 s)
   //   plaque      {t0, k}: a scratched brass plaque risen k (0..1) out of the stain
-  //   returnFlap  {t0, coin: 'token'|'dime'|null}: the coin return tips open
+  //   returnFlap  {t0, coin: 'token'|'dime'|null}: the coin door is jiggled —
+  //               it rattles 0.4 s; a coin drops out of the slit onto the ledge
+  //   doorHold    {t0}: the coin door is held, pressed 1 px in
   //   eyesNeon    true: pink neon eyes with a glow
   //   eyeRoll     {t0}: the pupils circle once (0.6 s)
   //   thirteen13  {t0, count}: drums hold, the tube blinks 13 times (0.1/0.09 s)
@@ -1374,18 +1354,28 @@
     }
   }
 
-  // egg 4: the flap tips open over 0.25 s; a token or a dime drops into the
-  // tray over the next 0.3 s and sits there; it shuts again at 1.6 s
-  var FLAP_T = 0.25, FLAP_HOLD = 1.6;
+  // egg 4, on the coin door itself: view.returnFlap = {t0, coin} — the
+  // player jiggled the door (drawJolts rattles the plate 0.4 s). With a
+  // coin ('token' brass / 'dime' silver) it drops OUT of the slit, lands on
+  // the plinth ledge under the plate, rests ~1.2 s, then fades into the dark.
+  var JIGGLE_T = 0.4, COIN_FALL = [0.08, 0.3], COIN_REST = 1.2, COIN_FADE = 0.3;
   function drawReturnLive(g, t, view) {
     var rf = view.returnFlap;
-    if (!rf || typeof rf.t0 !== 'number' || t < rf.t0 || t - rf.t0 >= FLAP_HOLD) return;
-    var e = t - rf.t0, open = e < FLAP_T ? e / FLAP_T : (e > FLAP_HOLD - 0.2 ? (FLAP_HOLD - e) / 0.2 : 1);
-    var r = returnFlapRect(), cy = null;
-    if (rf.coin && e >= FLAP_T) cy = r.y - 3 + Math.min(1, (e - FLAP_T) / 0.3) * (r.h - 1);
-    restore(g, r.x - 1, r.y - 1, r.w + 2, r.h + 5);
-    drawReturnFlap(g, open, rf.coin, cy);
+    if (!rf || typeof rf.t0 !== 'number' || t < rf.t0 || (rf.coin !== 'token' && rf.coin !== 'dime')) return;
+    var e = t - rf.t0, end = COIN_FALL[1] + COIN_REST + COIN_FADE;
+    if (e < COIN_FALL[0] || e >= end) return;
+    var sl = coinSlit(), ledge = GEO.front.y1 - 2;                    // resting rows 370–371
+    var k = Math.min(1, (e - COIN_FALL[0]) / (COIN_FALL[1] - COIN_FALL[0]));
+    var y = Math.round(sl.y + sl.h - 2 + (ledge - (sl.y + sl.h - 2)) * k * k);
+    var x = sl.x - 1 + (k >= 1 ? 1 : 0);                              // it tips over as it lands
+    var fade = e > COIN_FALL[1] + COIN_REST ? (e - COIN_FALL[1] - COIN_REST) / COIN_FADE : 0;
+    var c1 = rf.coin === 'dime' ? PAL.MOON : PAL.BRASS2, c2 = rf.coin === 'dime' ? PAL.STEEL2 : PAL.BRASS1;
+    if (k < 1) { vline(g, x + 1, y - 1, y + 1, c1); px(g, x + 2, y, c2); return; }   // edge-on, falling
+    ditherPx(g, x, y, c1, fade); ditherPx(g, x + 1, y, c1, fade); ditherPx(g, x + 2, y, c2, fade); // flat on the ledge
+    ditherPx(g, x + 1, y + 1, c2, fade);
+    if (rf.coin === 'token') ditherPx(g, x + 1, y, PAL.BRASS1, fade);  // a buffalo, if you squint
   }
+
   // egg 3: a scratched brass plaque rising out of the tide-mark by view.plaque.k
   var PLQ_W = 44, PLQ_H = 13;
   function drawPlaque(g, t, view) {
@@ -1618,10 +1608,14 @@
   var RATTLE_T = 0.3, JOLT_T = 0.15;
   function drawJolts(ctx, t, view) {
     var fr = GEO.front, f = frontX();
-    var rt = typeof view.doorRattle === 'number' ? view.doorRattle : (view.doorRattle && view.doorRattle.t0);
-    if (typeof rt === 'number' && t >= rt && t - rt < RATTLE_T) {
+    var rt = typeof view.doorRattle === 'number' ? view.doorRattle : (view.doorRattle && view.doorRattle.t0), rd = RATTLE_T;
+    if (view.returnFlap && typeof view.returnFlap.t0 === 'number' && t >= view.returnFlap.t0 && t - view.returnFlap.t0 < JIGGLE_T) { rt = view.returnFlap.t0; rd = JIGGLE_T; }
+    var cd = coinDoorRect();
+    if (view.doorHold && typeof view.doorHold.t0 === 'number' && t >= view.doorHold.t0)
+      shift(ctx, cd.x, cd.y, cd.w, cd.h, 0, 1, PAL.WOOD1);           // held: the plate pressed 1 px in
+    if (typeof rt === 'number' && t >= rt && t - rt < rd) {
       var dx = [1, -1, 1, 0, -1, 1][Math.floor((t - rt) * 24) % 6];
-      if (dx) { var cd = coinDoorRect(); shift(ctx, cd.x, cd.y, cd.w, cd.h, dx, 0, PAL.WOOD1); }
+      if (dx) shift(ctx, cd.x, cd.y, cd.w, cd.h, dx, 0, PAL.WOOD1);
     }
     var ut = view.unjamT0;
     if (typeof ut === 'number' && t >= ut && t - ut < JOLT_T) {
@@ -2036,7 +2030,7 @@
     drawSinkOccluder: drawSinkOccluder, drawRimTick: drawRimTick, drawToast: drawToast,
     troughRect: troughRect, gateRect: gateRect, RACK_BALL_R: RACK_BALL_R, grabBob: grabBob,
     slotRect: slotRect, coinDoorRect: coinDoorRect, counterRect: counterRect, pileRect: pileRect,
-    noseRect: noseRect, plinthRect: plinthRect, returnFlapRect: returnFlapRect, buttonRect: buttonRect, coinSlitRect: coinSlit, stampRect: stampRect, drawContact: drawContact,
+    noseRect: noseRect, plinthRect: plinthRect, buttonRect: buttonRect, coinSlitRect: coinSlit, stampRect: stampRect, drawContact: drawContact,
     LIFT_T: LIFT_T, TOAST_T: TOAST_T, drawsMachineNotes: true,   // main's whack hit-test; render draws marqueeNote/doorRattle
     text: text, textC: textC, flickerAt: flickerAt
   };
