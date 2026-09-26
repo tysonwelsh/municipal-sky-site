@@ -807,6 +807,9 @@
   //   muted       the marquee's neon tube is unplugged (the mute indicator)
   //   attractT0   when ATTRACT began: the chalk note's breath starts full there
   //   chalkText   string: replaces the attract chalk note ("DROP A NICKEL" …)
+  //   releaseZ    a lane z: a dashed chalk release line across the lane there
+  //   grabCue     bool (grabCueT0 optional): ROLL IT breathes in the chalk
+  //               slot; R.grabBob(t, view) gives the resting ball's 1-px bob
   //   credit      {t0} — a nickel is in: the start button glows, breathing (1.2 s)
   //   buttonPress a time: the button cap sits 1 px down, glow off, for 0.12 s
   //   coinDrop    a time: a nickel drops edge-on into the vertical slit (0.25 s)
@@ -843,7 +846,9 @@
       restore(g, m.x0 + 4, m.y1 - 1, m.x1 - m.x0 - 8, 4);
       drawTube(g, t, 'dead');
     } else if (mode === 'attract') drawTube(g, t, true);
-    if (mode === 'attract') drawChalkNote(g, t, view);
+    drawReleaseLine(g, t, view);
+    if (view.grabCue) drawGrabNote(g, t, view);
+    else if (mode === 'attract') drawChalkNote(g, t, view);
     g.restore();
     drawMoonRoom(ctx, t, view);      // canvas frame: the room goes bruise-purple
   }
@@ -1172,6 +1177,37 @@
     var str = String(view && view.chalkText || '5¢ - SWIPE').toUpperCase();
     var y = GEO.lane.y1 - 38, x = Math.round(108 - textW(str, 1) / 2);
     ditherText(g, str, x, y + 1, PAL.LANE3, 1, a * 0.95);   // worn-in shadow under the chalk
+    ditherText(g, str, x, y, PAL.BONE, 1, a * 0.95);
+  }
+
+  /* ── the carry: a chalk release line across the lane, and the grab cue ── */
+  // view.releaseZ (a lane z): a worn dashed chalk line across the lane at
+  // that z, following the lane's perspective width, with a LANE3 shadow
+  function drawReleaseLine(g, t, view) {
+    var z = view.releaseZ;
+    if (typeof z !== 'number' || !isFinite(z) || z < 0 || z > Z_HOP) return;
+    var row = Math.round(foot(0, z).sy), l = laneL(row) + 3, r = laneR(row) - 3;
+    for (var x = l; x <= r; x++) {
+      if ((x - l) % 5 >= 3) continue;                              // 3 on, 2 off
+      if (BAYER[(row % 4) * 4 + (x % 4)] / 16 < 0.45) px(g, x, row + 1, PAL.LANE3);
+      if (BAYER[((row + 1) % 4) * 4 + ((x + 2) % 4)] / 16 < 0.55) px(g, x, row, PAL.BONE);
+    }
+  }
+  // view.grabCue (bool; view.grabCueT0 optional): the chalk note reads
+  // ROLL IT, breathing every 2.4 s from full; the ball's 1-px bob is
+  // R.grabBob(t, view) — main adds it to the resting ball's y
+  var GRAB_BOB_P = 1.2, GRAB_BREATH = 2.4;
+  function grabBob(t, view) {
+    if (!view || !view.grabCue) return 0;
+    var t0 = typeof view.grabCueT0 === 'number' ? view.grabCueT0 : 0;
+    var ph = ((t - t0) % GRAB_BOB_P + GRAB_BOB_P) % GRAB_BOB_P;
+    return ph < 0.16 ? -1 : 0;                                       // a quick hop up, every 1.2 s
+  }
+  function drawGrabNote(g, t, view) {
+    var t0 = typeof view.grabCueT0 === 'number' ? view.grabCueT0 : 0;
+    var a = 0.72 + 0.28 * Math.cos((t - t0) * Math.PI * 2 / GRAB_BREATH); // never below ~0.45: a nudge, not a hint
+    var str = 'ROLL IT', y = GEO.lane.y1 - 38, x = Math.round(108 - textW(str, 1) / 2);
+    ditherText(g, str, x, y + 1, PAL.LANE3, 1, a * 0.95);
     ditherText(g, str, x, y, PAL.BONE, 1, a * 0.95);
   }
 
@@ -1755,7 +1791,7 @@
     // machine-frame sprites (the caller translates by TOP)
     drawBall: drawBall, drawSunkBall: drawSunkBall, drawBallShadow: drawBallShadow, drawBedShadow: drawBedShadow,
     drawSinkOccluder: drawSinkOccluder, drawRimTick: drawRimTick, drawToast: drawToast,
-    troughRect: troughRect, gateRect: gateRect, RACK_BALL_R: RACK_BALL_R,
+    troughRect: troughRect, gateRect: gateRect, RACK_BALL_R: RACK_BALL_R, grabBob: grabBob,
     slotRect: slotRect, coinDoorRect: coinDoorRect, buttonRect: buttonRect, coinSlitRect: coinSlit, stampRect: stampRect, drawContact: drawContact,
     LIFT_T: LIFT_T, TOAST_T: TOAST_T, drawsMachineNotes: true,   // main's whack hit-test; render draws marqueeNote/doorRattle
     text: text, textC: textC, flickerAt: flickerAt
