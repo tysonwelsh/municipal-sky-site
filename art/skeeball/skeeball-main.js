@@ -217,6 +217,9 @@
   var BALLS = 9, DUST_T = 0.15, NOTE_T = 1.6, RIM_TICK_T = 3 / 60, GLIDE_T = 0.25;
   // the economy (WORLD.md): tickets = floor(score / 50) + 5 at 300 + 13 per 100
   var TICKET_PER = 50, BONUS_AT = 300, BONUS = 5, PER_HUNDRED = 13;
+  function ticketsFor(score, hundreds) {
+    return Math.floor(score / TICKET_PER) + (score >= BONUS_AT ? BONUS : 0) + PER_HUNDRED * (hundreds | 0);
+  }
   var CRANK_PER = 0.12, CRANK_MAX = 4, PAYOUT_HOLD = 2, FF_HOLD = 0.5; // s per ticket, cap, linger, fast-forward hold
   var REFILL = 5;                // the nickel found in the coin return
   var SEED0 = 1913;
@@ -632,6 +635,8 @@
         } else {
           state.toast = { x: p.sx, y: p.sy - 8, t0: tNow, text: '' + ev.score, kind: 'score' };
         }
+        // the digital counter shows the tickets earned so far, live
+        view.ticketCount = ticketsFor(game.score, game.hundreds);
       }
       emit(ev);
       if (ev.type === 'done' && state.pendingJackpot) {
@@ -652,7 +657,7 @@
 
     function gameOver() {
       var s = game.score, prevBest = stats().best || 0;
-      var n = Math.floor(s / TICKET_PER) + (s >= BONUS_AT ? BONUS : 0) + PER_HUNDRED * game.hundreds;
+      var n = ticketsFor(s, game.hundreds);
       game.tickets = n;
       if (A && n > 0) A.scrip.add(n, 'skeeball');
       if (A) {
@@ -702,7 +707,6 @@
       if (A) { var st = stats(); st.pile = n; A.persist(); }
     }
     function printTicket() {
-      view.ticketCount = game.ticketsCranked;
       setPile((view.ticketPile | 0) + 1);
     }
     function pileRect() {
