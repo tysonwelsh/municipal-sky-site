@@ -217,6 +217,9 @@ Note = {
 - **Audio.** Everything audible goes through a master chain with a limiter
   (copy the pattern from `kolob-audio.js`). Lab audio must never exceed the
   app's loudness.
+- **Silent testing (owner rule).** Agents' browser checks must make no
+  sound on the owner's speakers: launch headless Chrome with `--mute-audio`
+  (taps still capture the signal), or render with an `OfflineAudioContext`.
 
 ## 8. Versions and handoffs
 
