@@ -21,7 +21,7 @@
 - NO-DO: two issues gave two reels each (Zorita nuclear plant beside the 1965 robots; the croupiers beside the 1981 children-and-computers item).
 - Netherlands: #2 Sputnik not cut (already inside `polygoon-signalen-1933-1974`).
 
-**The owner's rulings (2026-09-25):** the toothpaste reel keeps its 1963 title; the census reel keeps the tape's 1988 date and is music only; the faint centre watermark line on the 档案归档计划组 prints is fine; the cleaner *Laser* print is approved; the Czech jingles stay as cut. Still open: the two Turkish reels on ice, and whether the Vähi playing reel gets longer, undistorted music windows.
+**The owner's rulings (2026-09-25):** the toothpaste reel keeps its 1963 title; the census reel keeps the tape's 1988 date and is music only; the faint centre watermark line on the 档案归档计划组 prints is fine; the cleaner *Laser* print is approved; the Czech jingles stay as cut. The two Turkish reels on ice are dropped from the pool (raw sources kept); the Vähi playing reel keeps the Tier B music rule.
 
 **For the ear (the cutters could not listen; they chose by picture, level maps and shot lists):**
 

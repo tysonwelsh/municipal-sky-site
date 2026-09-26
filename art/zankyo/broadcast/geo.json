@@ -1,11 +1,11 @@
 {
  "_meta": {
   "built": "2026-09-25",
-  "reels": 363,
+  "reels": 361,
   "byConf": {
    "region": 26,
    "city": 195,
-   "country": 141,
+   "country": 139,
    "unknown": 1
   },
   "countries": 79,
@@ -16,7 +16,7 @@
    "orbit": 4,
    "deep-space": 1
   },
-  "note": "One entry per reel in manifest.json, keyed by reel id. A reel is placed where its pictures and sound were MADE: the studio or transmitter city for a broadcast, the location shot for a newsreel item filmed abroad (so the Spanish NO-DO item on a Berlin cybernetics show sits on Berlin, with the producer named in `place`). `conf` is how precisely the evidence places it: \"city\" = point-level, a place actually named in the title/notes (also used for a precise named non-urban site, e.g. a test range or a transmitter); \"region\" = a sub-national area or a named region with the city inferred; \"country\" = only the nation is evidenced, coordinates are the broadcaster's or producer's home city as a best guess; \"unknown\" = not placeable, coordinates are a cultural-region anchor only and should not be drawn as a fact. country \"XX\" means genuinely unplaceable. `dx: true` marks a long-distance (TV-DX) catch: the main entry is the TRANSMITTER; where the recordist's location is documented, `heard` carries the receiving point for an arc. `heard` also appears on shortwave reels whose notes name where the listener sat. `realm` (orbit | moon | deep-space) marks reels whose sound did not originate on Earth; their lat/lon is the Earth anchor (ground station, relay or launch site) named after the arrow in `place`. Reels flagged takedown in the manifest are included here for completeness. Round 5 (2026-09-25) added 102 reels, placed by their cutters under the same rules."
+  "note": "One entry per reel in manifest.json, keyed by reel id. A reel is placed where its pictures and sound were MADE: the studio or transmitter city for a broadcast, the location shot for a newsreel item filmed abroad (so the Spanish NO-DO item on a Berlin cybernetics show sits on Berlin, with the producer named in `place`). `conf` is how precisely the evidence places it: \"city\" = point-level, a place actually named in the title/notes (also used for a precise named non-urban site, e.g. a test range or a transmitter); \"region\" = a sub-national area or a named region with the city inferred; \"country\" = only the nation is evidenced, coordinates are the broadcaster's or producer's home city as a best guess; \"unknown\" = not placeable, coordinates are a cultural-region anchor only and should not be drawn as a fact. country \"XX\" means genuinely unplaceable. `dx: true` marks a long-distance (TV-DX) catch: the main entry is the TRANSMITTER; where the recordist's location is documented, `heard` carries the receiving point for an arc. `heard` also appears on shortwave reels whose notes name where the listener sat. `realm` (orbit | moon | deep-space) marks reels whose sound did not originate on Earth; their lat/lon is the Earth anchor (ground station, relay or launch site) named after the arrow in `place`. Round 5 (2026-09-25) added 102 reels, placed by their cutters under the same rules."
  },
  "aba-amdo-tibetan-news": {
   "country": "CN",
@@ -1510,20 +1510,6 @@
   "lat": 35.68,
   "lon": 139.77,
   "conf": "city"
- },
- "tr-sivil-savunma-alarm-1960s": {
-  "country": "TR",
-  "place": "Ankara (Ministry of the Interior, Civil Defence)",
-  "lat": 39.93,
-  "lon": 32.86,
-  "conf": "country"
- },
- "tr-yasayan-sayilar-1970": {
-  "country": "TR",
-  "place": "Ankara (Devlet İstatistik Enstitüsü)",
-  "lat": 39.93,
-  "lon": 32.86,
-  "conf": "country"
  },
  "trt-istiklal-marsi-1982": {
   "country": "TR",
