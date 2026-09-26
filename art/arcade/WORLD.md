@@ -28,6 +28,7 @@ details stop contradicting each other.
 - **Found a nickel.** If your pocket is empty when a machine settles back
   into attract, it finds a nickel in its own coin return: the pocket
   refills to 5 tokens (`skeeball-return`, flag `skeeball.found-a-nickel`).
+- **Check the coin return.** HOLLER ROLLER's return flap is usually empty. The first time on a save it holds one token (+1, `skeeball-return`, flag `skeeball.checked-the-return`); once ever, on a moon night, it holds the 1924 Mercury dime.
 
 ## The save document
 
@@ -82,6 +83,7 @@ Counter prices are in scrip.
 | `arrowhead` | arrowhead | 55 | dug locally. by whom, it doesn't say |
 | `mason-jar` | mason jar | 113 | the label says 13. of what, it doesn't say |
 | `glass-eye` | the glass eye | NOT FOR SALE | unique; display case only. the pusher drops it anyway. sets `coinpusher.got-the-eye` |
+| `mercury-dime` | a 1924 Mercury dime | NOT FOR SALE | unique; silent. once ever, in HOLLER ROLLER's coin return on a moon night |
 
 (Grows as machines and the counter demand. Buffalo-head tokens are coins,
 not prizes — worth 5 plain tokens, only ever two in the pusher's field.)

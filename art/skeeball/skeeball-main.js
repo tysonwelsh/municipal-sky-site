@@ -213,6 +213,25 @@
   }
 
   /* ══ the cabinet ═════════════════════════════════════════════════════ */
+  // The machine keeps a few secrets (EGGS.md). Each is one switch.
+  var EGGS = {
+    thirteen: true,   // 1 a score that is a multiple of 13
+    sneeze: true,     // 2 three taps on the possum's nose, in ATTRACT
+    plaque: true,     // 3 a long press on the stained plinth
+    coinReturn: true, // 4 the coin return (a token once; a dime, once ever, on a moon)
+    perfect: true,    // 5 nine 50s
+    sigh: true,       // 6 three gutters in a row
+    pity: true,       // 7 a score of 0
+    moonNight: true,  // 8 a real full moon tonight (read at mount, never in the sim)
+    moths: true       // 9 three minutes of ATTRACT, untouched
+  };
+  var NAMES = ['PAWPAW', 'BURL', 'ZEKE', null];   // the possum trying on names; null: the title again
+  // within ±12 h of a full moon, local clock (mean synodic month from the 2000-01-06 18:14 UTC new moon)
+  function fullMoonTonight(ms) {
+    var SYN = 29.530588853, day = 86400000, epoch = Date.UTC(2000, 0, 6, 18, 14);
+    var age = ((ms - epoch) / day) % SYN; if (age < 0) age += SYN;
+    return Math.abs(age - SYN / 2) <= 0.5;
+  }
   var MODES = { attract: 1, play: 1, payout: 1 };
   var BALLS = 9, DUST_T = 0.15, NOTE_T = 1.6, RIM_TICK_T = 3 / 60, GLIDE_T = 0.25;
   // the economy (WORLD.md): tickets = floor(score / 50) + 5 at 300 + 13 per 100
@@ -347,12 +366,15 @@
 
     // the derangement layer (skeeball-mischief.js): lean, moon, sulk, jam, tilt
     var mis = null;
+    // egg 8: the real sky, read once here (never inside the sim or the mischief)
+    if (opts.moonTonight == null) opts.moonTonight = EGGS.moonNight && !HARNESS && fullMoonTonight(Date.now());
     if (root.SkeeBallMischief && opts.mischief !== false) {
       mis = root.SkeeBallMischief.attach({
         seed: game.seed, view: view, physics: P, tune: opts.tune,
         flags: A ? A.flags : null,
         now: function () { return tNow; }, emit: emit, on: subscribe
-      }, { rates: opts.mischief || {}, force: opts.mischiefForce || (HARNESS ? parseForce(search) : undefined) });
+      }, { rates: opts.mischief || {}, force: opts.mischiefForce || (HARNESS ? parseForce(search) : undefined),
+           moonTonight: !!opts.moonTonight });
     }
 
     /* ── the game ──────────────────────────────────────────────────── */
@@ -377,6 +399,7 @@
       view.ticketTag = null; view.newBest = false;
       if (view.marqueeNote && view.marqueeNote.text === 'NEW BEST') view.marqueeNote = null;
       game.n = 0;
+      state.attractSince = tNow;
       setMode('attract');
       hint();                          // the chalk note comes in at full strength
       if (A && !FREE && A.tokens.get() <= 0) noTokens();
@@ -427,7 +450,7 @@
     // The chalk on the lane says what the machine wants next, and a nudge
     // (a swipe or a bare button press) makes it breathe in again at full strength.
     function hint() {
-      view.chalkText = state.credited ? 'PUSH THE BUTTON' : 'DROP A NICKEL';
+      view.chalkText = state.perfectChalk ? 'PERFECT' : state.credited ? 'PUSH THE BUTTON' : 'DROP A NICKEL';
       view.attractT0 = tNow;
     }
     // the coin slot: one nickel buys one credit (a second one isn't eaten)
@@ -481,6 +504,7 @@
         game.seed = (SEED0 * 1000003 + (sd.games | 0) * 7919 + (sd.lifetimeScore | 0)) | 0;
       }
       setScore(0); game.hundreds = 0; game.ballScores = []; game.games++;
+      state.perfectChalk = false; view.pityTicket = false; view.thirteen13 = null;
       state.touched = false; state.readySince = null;   // the grab cue waits for the first ball to sit untouched
       if (mis) mis.gameStart((game.seed * 1000003 + game.games * 7919) | 0);
       state.ball = null; state.toast = null;
@@ -649,6 +673,7 @@
       if (ev.type === 'done') {
         state.cap = null;
         game.ballScores.push(ev.score || 0);
+        ballOutcome(ev.score || 0);
         if (game.mode !== 'play') return;
         if (game.n < BALLS) startBall(game.n + 1);
         else gameOver();
@@ -658,6 +683,21 @@
     function gameOver() {
       var s = game.score, prevBest = stats().best || 0;
       var n = ticketsFor(s, game.hundreds);
+      game.extraHold = 0;
+      var eggs = [];
+      if (EGGS.thirteen && s > 0 && s % 13 === 0) {              // egg 1: the thirteen
+        n += 13; game.extraHold = 2.5;
+        view.thirteen13 = { t0: tNow, count: 13 };
+        setFlag('skeeball.thirteen'); eggs.push({ type: 'thirteen', score: s });
+      }
+      if (EGGS.pity && s === 0) {                                 // egg 7: the pity ticket
+        n = 1; view.pityTicket = true;
+        setFlag('skeeball.pity-ticket'); eggs.push({ type: 'pity' });
+      }
+      if (EGGS.perfect && game.ballScores.length >= BALLS && game.ballScores.every(function (b) { return b === 50; })) { // egg 5
+        view.eyesNeon = true; state.perfectChalk = true; view.chalkText = 'PERFECT'; view.attractT0 = tNow;
+        setFlag('skeeball.perfect'); eggs.push({ type: 'perfect' });
+      }
       game.tickets = n;
       if (A && n > 0) A.scrip.add(n, 'skeeball');
       if (A) {
@@ -677,8 +717,90 @@
       view.ballsLeft = 0; view.lift = null;
       view.highScore = Math.max(view.highScore || 0, s);
       setMode('payout');
+      if (eggs.length) view.ticketCount = n;
       emit({ type: 'gameover', score: s, tickets: n, hundreds: game.hundreds, best: view.newBest });
+      for (var ei = 0; ei < eggs.length; ei++) emit(eggs[ei]);
     }
+    function setFlag(k) { if (A && A.flags) A.flags.set(k); }
+    /* ── the eggs that live outside the payout ─────────────────────── */
+    // egg 6: three gutters (gutter, stuck or a ball that rolled home) in a row; a capture resets it
+    function ballOutcome(score) {
+      if (!EGGS.sigh) return;
+      state.gutters = score > 0 ? 0 : (state.gutters | 0) + 1;
+      if (state.gutters >= 3) { state.gutters = 0; view.eyeRoll = { t0: tNow }; emit({ type: 'sigh' }); }
+    }
+    // egg 2: three taps on the nose within 2 s, in ATTRACT
+    function noseTap() {
+      if (!EGGS.sneeze || game.mode !== 'attract') return false;
+      var taps = state.noseTaps = (state.noseTaps || []).filter(function (t) { return tNow - t <= 2; });
+      taps.push(tNow);
+      if (taps.length < 3) return false;
+      state.noseTaps = [];
+      state.nameIx = ((state.nameIx == null ? -1 : state.nameIx) + 1) % NAMES.length;
+      var name = NAMES[state.nameIx];
+      view.sneeze = { t0: tNow };
+      if (name) view.marqueeNote = { text: name, t0: tNow, until: tNow + 2 };
+      else if (view.marqueeNote && NAMES.indexOf(view.marqueeNote.text) >= 0) view.marqueeNote = null;
+      setFlag('skeeball.sneezed');
+      emit({ type: 'sneeze', name: name || 'HOLLER ROLLER' });
+      return true;
+    }
+    // egg 4: the coin return
+    function moonNow() { return !!(state.forceMoon || (mis && mis.isMoon && mis.isMoon())); }
+    function coinReturn() {
+      if (!EGGS.coinReturn) return null;
+      var found = null;
+      if (A && A.inventory && moonNow() && !A.inventory.has('mercury-dime')) {
+        A.inventory.grant('mercury-dime', { unique: true }); found = 'dime';      // silent: no toast, no marquee
+      } else if (A && !A.flags.get('skeeball.checked-the-return')) {
+        A.tokens.add(1, 'skeeball-return'); found = 'token';
+      }
+      setFlag('skeeball.checked-the-return');
+      view.returnFlap = { t0: tNow, coin: found };
+      emit({ type: 'coinreturn', found: found });
+      return found;
+    }
+    // egg 3: the plaque — a long, still press on the plinth (checked on the sim clock)
+    var PLAQUE_HOLD = 3, PLAQUE_RISE = 0.6, PLAQUE_STILL = 6;
+    function tickPlaque() {
+      var pq = view.plaque;
+      if (drag && drag.plinth && !drag.carry && EGGS.plaque) {
+        var d0 = drag.pts[0], dl = drag.pts[drag.pts.length - 1];
+        if (Math.hypot(dl.x - d0.x, dl.y - d0.y) >= PLAQUE_STILL) drag.plinth = false;
+        else if (!pq && tNow - drag.tDown >= PLAQUE_HOLD) {
+          view.plaque = { t0: tNow, k: 0 }; drag.plaqueShown = true; setFlag('skeeball.saw-the-plaque'); emit({ type: 'plaque', k: 'rise' });
+        } else if (pq && !pq.sinking) pq.k = Math.min(1, (tNow - pq.t0) / PLAQUE_RISE);
+      } else if (pq && !pq.sinking) {                  // let go: it sinks back
+        pq.sinking = true; pq.t1 = tNow; pq.k1 = pq.k; emit({ type: 'plaque', k: 'sink' });
+      }
+      if (pq && pq.sinking) { pq.k = Math.max(0, pq.k1 * (1 - (tNow - pq.t1) / PLAQUE_RISE)); if (pq.k <= 0) view.plaque = null; }
+    }
+    // egg 9: the moths, after three minutes of ATTRACT untouched; any input scatters them
+    var MOTHS_T = 180;
+    function noteInput() {
+      state.lastInput = tNow;
+      if (view.moths) { view.moths = null; emit({ type: 'mothsGone' }); }
+    }
+    function tickMoths() {
+      if (!EGGS.moths || view.moths || game.mode !== 'attract') return;
+      var since = Math.max(state.lastInput || 0, state.attractSince || 0);
+      if (tNow - since >= MOTHS_T) { view.moths = { t0: tNow }; emit({ type: 'moths' }); }
+    }
+    // the eggs' hit areas (render's rects; nothing until they exist)
+    function inRect(pt, r, pad) {
+      if (!r) return false;
+      var m = toMachine(pt.x, pt.y); pad = pad || 0;
+      return m.x >= r.x - pad && m.x <= r.x + r.w + pad && m.y >= r.y - pad && m.y <= r.y + r.h + pad;
+    }
+    function onNose(pt) { return EGGS.sneeze && R.noseRect && inRect(pt, R.noseRect(), 3); }
+    function onPlinth(pt) { return EGGS.plaque && R.plinthRect && inRect(pt, R.plinthRect(), 0); }
+    // the flap sits under the coin door: where their tap margins overlap, the nearer one wins
+    function nearerCoinDoor(pt) {
+      if (!onCoinDoor(toMachine(pt.x, pt.y))) return false;
+      var m = toMachine(pt.x, pt.y), d = R.coinDoorRect(), f = R.returnFlapRect();
+      return Math.hypot(m.x - (d.x + d.w / 2), m.y - (d.y + d.h / 2)) <= Math.hypot(m.x - (f.x + f.w / 2), m.y - (f.y + f.h / 2));
+    }
+    function onReturnFlap(pt) { return EGGS.coinReturn && R.returnFlapRect && inRect(pt, R.returnFlapRect(), 3); }
     function crankDone() { return game.ticketsCranked >= game.tickets && !(mis && mis.crankHeld()); }
     function payoutDone() { return crankDone() && tNow >= game.holdUntil; }
     // a touch during the crank: whack a jam, or run the rest of the tickets out at once
@@ -732,6 +854,7 @@
     function tickGame() {
       if (state.findAt != null && tNow >= state.findAt) findNickel();
       if (state.fill) tickFill();
+      tickPlaque(); tickMoths();
       if (state.tearAt != null && tNow - state.tearAt >= TEAR_T) { state.tearAt = null; setPile(0); }
       if (state.setdown && tNow - state.setdown.t0 >= CARRY.SETDOWN_T) { state.readyX = state.setdown.x; state.setdown = null; }
       // the sulk: the possum's eyes stay narrowed until the refused ball is home
@@ -758,7 +881,7 @@
       }
       view.ticketsOut = out;
       view.cranking = out < n;
-      if (e >= n * game.crankPer + PAYOUT_HOLD) toAttract();
+      if (e >= n * game.crankPer + PAYOUT_HOLD + (game.extraHold || 0)) toAttract();
     }
 
     /* ── input ─────────────────────────────────────────────────────── */
@@ -1202,34 +1325,42 @@
     function onDown(ev) {
       if (inactive()) return;
       if (ev.pointerType === 'mouse' && ev.button !== 0) return; // right/middle click: not a throw
-      emit({ type: 'input', kind: 'down' });
       // a drag whose pointerup was lost (context menu, OS gesture) expires
       if (drag && (ev.pointerId === drag.id || ev.timeStamp - drag.pts[drag.pts.length - 1].t > 1000)) drag = null;
-      if (drag) return;                        // one pointer at a time
+      if (drag) { emit({ type: 'input', kind: 'down' }); return; }  // one pointer at a time
       rectCache = canvas.getBoundingClientRect();
-      var pt = localPt(ev);
-      if (!jammedSlotHit(pt) && onPile(pt) && canTear()) {   // the ticket pile: a tap tears it off (decided on release)
-        drag = { id: ev.pointerId, pts: [pt], live: true, pile: true };
+      if (pointerDown(localPt(ev), ev.pointerId)) {
         try { container.setPointerCapture(ev.pointerId); } catch (e) { }
-        ev.preventDefault(); return;
+        ev.preventDefault();
       }
-      if (state.fill) return;                   // the rack is filling: the machine is busy, quietly
-      if (!canStartDrag()) {                    // a ball is out: the rack rattles, nothing else
-        view.rackRattle = tNow;
-        emit({ type: 'input', kind: 'busy' });
-        return;
+    }
+    // a pointer comes down at pt (canvas css px): true when a drag started
+    function pointerDown(pt, id) {
+      emit({ type: 'input', kind: 'down' });
+      noteInput();
+      if (!jammedSlotHit(pt) && onPile(pt) && canTear()) {   // the ticket pile: a tap tears it off (decided on release)
+        drag = { id: id, pts: [pt], live: id !== -1, pile: true }; return true;
+      }
+      if (game.mode === 'attract' && onNose(pt)) { drag = { id: id, pts: [pt], live: id !== -1, egg: 'nose' }; return true; }
+      if (onReturnFlap(pt) && !nearerCoinDoor(pt)) { drag = { id: id, pts: [pt], live: id !== -1, egg: 'return' }; return true; }
+      var plinth = onPlinth(pt);
+      if (state.fill || !canStartDrag()) {      // the rack is filling, or a ball is out
+        if (plinth) { drag = { id: id, pts: [pt], live: id !== -1, egg: 'plinth', plinth: true, tDown: tNow }; return true; }
+        if (!state.fill) { view.rackRattle = tNow; emit({ type: 'input', kind: 'busy' }); }  // a ball is out: the rack rattles
+        return false;
       }
       // PAYOUT takes the gesture anywhere (it decides on release, never on down)
-      if (game.mode !== 'payout' && !inSwipeZone(pt.y)) return;
-      beginDrag(pt, ev.pointerId);
-      try { container.setPointerCapture(ev.pointerId); } catch (e) { }
-      ev.preventDefault();
+      if (game.mode !== 'payout' && !inSwipeZone(pt.y) && !plinth) return false;
+      beginDrag(pt, id);
+      if (plinth && !drag.carry) { drag.plinth = true; drag.tDown = tNow; }
+      return true;
     }
     function beginDrag(pt, id) {
       drag = { id: id, pts: [pt], live: true };
       if (onReadyBall(pt)) carryStart(pt);      // on the ball: it's in the hand
     }
     function moveDrag(pt) {
+      if (drag.egg || drag.pile) { drag.pts.push(pt); return false; }
       if (drag.carry) { var ended = carryPoint(pt); if (!ended && drag && drag.carry && drag.carry.pushing) pushPoint(); return ended; }
       drag.pts.push(pt);
       while (drag.pts.length > GESTURE.MAX_PTS) drag.pts.shift();
@@ -1237,6 +1368,13 @@
     }
     function endDrag(pt) {
       var d = drag; drag = null; rectCache = null;
+      if (d.plaqueShown) return { plaque: true };   // the long press was for the plaque: the lift is not a tap
+      if (d.egg) {                               // the nose, the coin return, a busy-time plinth press: taps only
+        var tap = Math.hypot(pt.x - d.pts[0].x, pt.y - d.pts[0].y) < GESTURE.TAP_PX;
+        if (tap && d.egg === 'nose') return { egg: noseTap() };
+        if (tap && d.egg === 'return') return { egg: coinReturn() };
+        return { egg: false };
+      }
       if (d.pile) {                              // a tap on the pile tears it; a drag off it does nothing
         d.pts.push(pt);
         var mv = Math.hypot(pt.x - d.pts[0].x, pt.y - d.pts[0].y);
@@ -1292,6 +1430,7 @@
     }
     function onKey(ev) {
       if (!keysAreOurs(ev)) return;
+      noteInput();
       if (ev.key === 'm' || ev.key === 'M') {
         userMuted = !userMuted;
         syncMute();
@@ -1796,6 +1935,31 @@
         setMode: forceMode,
         // tap the coin door
         tear: function () { return tear(); },
+        // force each egg's condition (EGGS.md); returns what happened
+        egg: function (name, arg) {
+          var endWith = function (score, balls) {
+            if (game.mode !== 'play') startGame();
+            state.fill = null; game.ballScores = balls; setScore(score); game.hundreds = 0; state.ball = null;
+            gameOver(); return { mode: game.mode, tickets: game.tickets, view: { thirteen13: view.thirteen13, pityTicket: view.pityTicket, eyesNeon: view.eyesNeon, chalkText: view.chalkText, ticketCount: view.ticketCount } };
+          };
+          var nine = function (v) { var a = []; for (var i = 0; i < BALLS; i++) a.push(v); return a; };
+          if (name === 'thirteen') return endWith(arg || 130, [40, 30, 20, 10, 10, 10, 10, 0, 0]);
+          if (name === 'perfect') return endWith(450, nine(50));
+          if (name === 'zero') return endWith(0, nine(0));
+          if (name === 'nose') { if (game.mode !== 'attract') toAttract(); var r = [noseTap(), noseTap(), noseTap()]; return { sneezed: r[2], note: view.marqueeNote && view.marqueeNote.text, sneeze: view.sneeze }; }
+          if (name === 'plinth') { // hold still on the plinth for arg seconds, then let go
+            drag = { id: -1, pts: [{ t: 0, x: 0, y: 0 }], live: false, egg: 'plinth', plinth: true, tDown: tNow };
+            advance(tNow + (arg || 3.2)); var up = view.plaque && { k: view.plaque.k }; drag = null; advance(tNow + 0.05);
+            return { risen: up, after: view.plaque && { k: +view.plaque.k.toFixed(3), sinking: !!view.plaque.sinking } };
+          }
+          if (name === 'return') return { found: coinReturn(), flap: view.returnFlap };
+          if (name === 'moon') { state.forceMoon = arg !== false; return { moon: moonNow() }; }
+          if (name === 'gutters') { var before = view.eyeRoll; ballOutcome(0); ballOutcome(0); ballOutcome(0); return { sighed: view.eyeRoll !== before, eyeRoll: view.eyeRoll }; }
+          if (name === 'idle') { if (game.mode !== 'attract') toAttract(); noteInput(); advance(tNow + (arg || 181)); return { moths: view.moths }; }
+          if (name === 'touch') { noteInput(); return { moths: view.moths }; }
+          return null;
+        },
+        get eggs() { return EGGS; },
         // the two-step start, and the old one-call start (a nickel, then the button)
         insertCoin: function () { return insertCoin(); },
         pressButton: function () { return pressButton(); },
@@ -1803,12 +1967,10 @@
         // a whole gesture in canvas css px [{t ms, x, y}] → mapGesture + release
         swipe: function (points) {
           if (!points || !points.length) return null;
-          if (state.fill || !canStartDrag() || (game.mode !== 'payout' && !inSwipeZone(points[0].y))) return { gesture: null, thrown: false, refused: true };
-          emit({ type: 'input', kind: 'down' });
           drag = null; rectCache = canvas.getBoundingClientRect();
-          beginDrag(points[0], -1);
+          if (!pointerDown(points[0], -1)) return { gesture: null, thrown: false, refused: true };
           // the sim clock runs with the thumb (points' t in ms), so the carry's push happens as it would live
-          var carried = !!drag.carry, out = null, ts = tNow, p0 = points[0].t;
+          var carried = !!(drag && drag.carry), out = null, ts = tNow, p0 = points[0].t;
           var clockTo = function (pt) { var tt = ts + (pt.t - p0) / 1000; if (tt > tNow) advance(tt); };
           for (var i = 1; i < points.length - 1 && drag; i++) { clockTo(points[i]); if (drag) moveDrag(points[i]); }
           clockTo(points[points.length - 1]);
