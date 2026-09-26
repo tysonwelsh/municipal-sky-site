@@ -31,7 +31,7 @@
  *   input {kind}, mute {muted}, mode {mode}, coin, nocoin, ballstart
  *   {n, ballsLeft}, throw {x0, v, aim, spin}, jackpot, gameover {score,
  *   tickets, hundreds, best}, ticket {n}, found {tokens}, resume {n, score},
- *   and the mischief's moon / sulk / jam / unjam / possum.
+ *   tear {n} (the ticket pile torn off), and the mischief's moon / sulk / jam / unjam / possum.
  *
  * THE START: tap the coin slot (a nickel → a credit), then tap the glowing
  * button (the credit → nine balls). A swipe in ATTRACT only rattles the rack.
@@ -482,6 +482,7 @@
       if (mis) mis.gameStart((game.seed * 1000003 + game.games * 7919) | 0);
       state.ball = null; state.toast = null;
       view.hundreds = 0; view.jackpot = null; view.ticketsOut = 0; view.cranking = false;
+      view.ticketCount = 0;             // the counter starts over with the new game (the pile doesn't)
       setMode('play');
       startFill();                     // the nine balls roll into the trough; ball 1 lifts when they settle
     }
@@ -682,6 +683,7 @@
       // run the strip out at once — unless the dispenser jams on the way
       while (game.ticketsCranked < game.tickets && !(mis && mis.crankHeld())) {
         game.ticketsCranked++;
+        printTicket();
         emit({ type: 'ticket', n: game.ticketsCranked, fast: true });
       }
       game.payoutT0 = tNow - game.ticketsCranked * game.crankPer;
@@ -689,10 +691,44 @@
       game.holdUntil = tNow + FF_HOLD;
     }
 
+    /* ── the ticket pile: printed tickets hang there, round after round,
+     * until torn off. view.ticketCount is this round's count (the digital
+     * counter); view.ticketPile is everything printed and not yet torn,
+     * kept in the save (the paper is still hanging there after a reload).
+     * Scrip was already credited at the payout: tearing is cosmetic. */
+    var TEAR_T = 0.3;
+    function setPile(n) {
+      view.ticketPile = n;
+      if (A) { var st = stats(); st.pile = n; A.persist(); }
+    }
+    function printTicket() {
+      view.ticketCount = game.ticketsCranked;
+      setPile((view.ticketPile | 0) + 1);
+    }
+    function pileRect() {
+      if (R.pileRect) return R.pileRect();
+      var sr = R.slotRect(); return { x: sr.x - 4, y: sr.y, w: sr.w + 8, h: R.MH + (R.BOT || 0) - sr.y }; // under the ticket window
+    }
+    function onPile(pt) {
+      var m = toMachine(pt.x, pt.y), r = pileRect();
+      return m.x >= r.x - 4 && m.x <= r.x + r.w + 4 && m.y >= r.y - 4 && m.y <= r.y + r.h + 4;
+    }
+    function canTear() {
+      return (view.ticketPile | 0) > 0 && state.tearAt == null && !(mis && mis.crankHeld()) &&
+        !(game.mode === 'payout' && game.ticketsCranked < game.tickets);   // not while the crank is running
+    }
+    function tear() {
+      if (!canTear()) return false;
+      state.tearAt = tNow; view.tearT0 = tNow;
+      emit({ type: 'tear', n: view.ticketPile | 0 });
+      return true;
+    }
+
     // timers that live on the sim clock (deterministic under the harness)
     function tickGame() {
       if (state.findAt != null && tNow >= state.findAt) findNickel();
       if (state.fill) tickFill();
+      if (state.tearAt != null && tNow - state.tearAt >= TEAR_T) { state.tearAt = null; setPile(0); }
       if (state.setdown && tNow - state.setdown.t0 >= CARRY.SETDOWN_T) { state.readyX = state.setdown.x; state.setdown = null; }
       // the sulk: the possum's eyes stay narrowed until the refused ball is home
       if (state.refused || state.rerack) view.narrowT0 = tNow;
@@ -713,6 +749,7 @@
       var out = n > 0 ? Math.min(n, e / game.crankPer) : 0;
       while (game.ticketsCranked < Math.floor(out + 1e-9) && !(mis && mis.crankHeld())) {
         game.ticketsCranked++;
+        printTicket();
         emit({ type: 'ticket', n: game.ticketsCranked });
       }
       view.ticketsOut = out;
@@ -1167,6 +1204,11 @@
       if (drag) return;                        // one pointer at a time
       rectCache = canvas.getBoundingClientRect();
       var pt = localPt(ev);
+      if (!jammedSlotHit(pt) && onPile(pt) && canTear()) {   // the ticket pile: a tap tears it off (decided on release)
+        drag = { id: ev.pointerId, pts: [pt], live: true, pile: true };
+        try { container.setPointerCapture(ev.pointerId); } catch (e) { }
+        ev.preventDefault(); return;
+      }
       if (state.fill) return;                   // the rack is filling: the machine is busy, quietly
       if (!canStartDrag()) {                    // a ball is out: the rack rattles, nothing else
         view.rackRattle = tNow;
@@ -1191,6 +1233,11 @@
     }
     function endDrag(pt) {
       var d = drag; drag = null; rectCache = null;
+      if (d.pile) {                              // a tap on the pile tears it; a drag off it does nothing
+        d.pts.push(pt);
+        var mv = Math.hypot(pt.x - d.pts[0].x, pt.y - d.pts[0].y);
+        return { tore: mv < GESTURE.TAP_PX ? tear() : false };
+      }
       if (d.carry) {
         drag = d;                                   // (the carry functions end it themselves)
         d.pts.push(pt);
@@ -1661,6 +1708,7 @@
     // A reload starts the flow from the top (owner's call, 2026-09-25): the
     // open game and any waiting credit are dropped, not resumed. Pass
     // opts.resume = true to restore them instead (the code is kept for later).
+    view.ticketPile = A ? (stats().pile | 0) : 0; view.ticketCount = 0;   // the paper still hanging from last time
     var open = A ? stats().open : null;   // a game the last page left running
     if (opts.resume) {
       if (A && stats().credit) { state.credited = true; view.credit = { t0: 0 }; } // a paid nickel waiting for its button
@@ -1743,6 +1791,7 @@
         setView: function (partial) { for (var k in partial) view[k] = partial[k]; return view; },
         setMode: forceMode,
         // tap the coin door
+        tear: function () { return tear(); },
         // the two-step start, and the old one-call start (a nickel, then the button)
         insertCoin: function () { return insertCoin(); },
         pressButton: function () { return pressButton(); },
