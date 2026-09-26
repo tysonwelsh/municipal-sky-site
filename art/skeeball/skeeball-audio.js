@@ -136,7 +136,8 @@
       G.out = out; G.master = master; G.comp = comp; G.shaper = shaper;
       G.sfx = sfx; G.roll = roll; G.room = room; G.music = music; G.send = send; G.conv = conv;
       G.noise = nb;
-      G.nodes.push(out, shaper, trim, comp, master, sfx, roll, room, music, send, conv);
+      var dry = ctx.createGain(); dry.connect(master); G.dry = dry;   // no room send (the dime)
+      G.nodes.push(out, shaper, trim, comp, master, sfx, roll, room, music, send, conv, dry);
       buildRoom();
       buildRoll();
       setMusic(st.mode === 'ATTRACT', true);
@@ -289,8 +290,11 @@
     var CHORD = [[57, 60, 64], [57, 60, 64], [57, 62, 65], [56, 62, 64], [57, 60, 64], [57, 60, 65],
                  [56, 62, 64], [57, 60, 64], [55, 60, 64], [55, 59, 65], [56, 62, 64], [57, 60, 64]];
     var BEAT = 60 / 132;
+    function waltzCents() { return st.inTune ? 0 : 9; }
     function waltzBuffer() {
-      if (G.waltz) return G.waltz;
+      var cents = waltzCents();
+      G.waltzBufs = G.waltzBufs || {};
+      if (G.waltzBufs[cents]) return G.waltzBufs[cents];
       var sr = ctx.sampleRate, len = Math.round(36 * BEAT * sr);
       var buf = ctx.createBuffer(1, len, sr), out = buf.getChannelData(0);
       function blep(tph, dt) {           // polyBLEP residual
@@ -324,7 +328,7 @@
         });
         note(t0, BEAT * 0.8, mtof(BASS[b]), 'tri', 0, 0.55, false, 0.05);
         for (var k = 1; k < 3; k++) CHORD[b].forEach(function (m) {
-          note(t0 + k * BEAT, 0.11, mtof(m) * Math.pow(2, 9 / 1200), 'pulse', 0.125, 0.10, false, 0.04);
+          note(t0 + k * BEAT, 0.11, mtof(m) * Math.pow(2, cents / 1200), 'pulse', 0.125, 0.10, false, 0.04);
         });
         beat += 3;
       }
@@ -332,8 +336,19 @@
       for (var i = 0; i < len; i++) { var a = Math.abs(out[i]); if (a > pk) pk = a; }
       var norm = db(-20) / (pk || 1);
       for (var q = 0; q < len; q++) out[q] *= norm;
-      G.waltz = buf;
+      G.waltzBufs[cents] = buf;
       return buf;
+    }
+    // the perfect game: from now until the page is left the waltz is in tune.
+    // If it is playing, the loop is swapped for the tuned one at the same place.
+    function tuneWaltz(t) {
+      st.inTune = true;
+      if (!G || !G.waltzSrc || G.waltzCents === 0) return;
+      var old = G.waltzSrc, buf = waltzBuffer(), pos = (t - G.waltzT0) % buf.duration;
+      var s = ctx.createBufferSource(); s.buffer = buf; s.loop = true; s.connect(G.music);
+      s.start(t, pos); old.stop(t);
+      old.onended = function () { try { old.disconnect(); } catch (e) {} };
+      G.waltzSrc = s; G.waltzT0 = t - pos; G.waltzCents = 0;
     }
     function setMusic(on, immediate) {
       if (!G) return;
@@ -343,7 +358,7 @@
       if (on) {
         if (!G.waltzSrc) {
           var s = ctx.createBufferSource(); s.buffer = waltzBuffer(); s.loop = true;
-          s.connect(G.music); s.start(t); G.waltzSrc = s;
+          s.connect(G.music); s.start(t); G.waltzSrc = s; G.waltzT0 = t; G.waltzCents = waltzCents();
         }
         g.linearRampToValueAtTime(1, t + MODE_FADE);
       } else {
@@ -619,6 +634,98 @@
           tone(t + i * 0.045, { type: 'triangle', f: 480 + 60 * r(), peak: db(-20 - 2 * i), a: 0.0005, d: 0.04 });
         }
       },
+      /* ── the eggs (EGGS.md) ── */
+      thirteen: function (t) {             // 13 strikes, quickening to a trill, each a hair flatter
+        var tb = t, gap = 0.32;
+        for (var i = 0; i < 13; i++) {
+          bell(tb, BELL_BASE * semis(7), db(-23 - 0.25 * i), BELL_WORN - 4 * i);
+          tb += gap; gap *= 0.8;
+        }
+        neon(t + 0.1);
+      },
+      sneeze: function (t, r) {            // servo inhale, a small "tch", the head mechanism settling
+        noise(t, { ft: 'highpass', f: 2500, peak: db(-24), a: 0.0005, d: 0.01 });          // the servo engages
+        var o = ctx.createOscillator(); o.type = 'square';
+        o.frequency.value = 480; o.frequency.setValueAtTime(480, t);
+        o.frequency.exponentialRampToValueAtTime(1150, t + 0.45);
+        var lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2200;
+        var e = envGain(t, db(-22), 0.35, 0.04, 0.08);
+        o.connect(lp); lp.connect(e.g); e.g.connect(G.sfx); o.start(t); o.stop(e.end);
+        o.onended = function () { try { lp.disconnect(); e.g.disconnect(); } catch (err) {} };
+        noise(t + 0.05, { f: 1300, f1: 2200, glide: 0.4, q: 0.9, peak: db(-26), a: 0.3, d: 0.08 });   // the air drawn in
+        noise(t + 0.5, { ft: 'highpass', f: 2200, q: 0.7, peak: db(-15), a: 0.001, d: 0.07 });       // tch
+        noise(t + 0.5, { f: 900, q: 1.2, peak: db(-20), a: 0.001, d: 0.05 });
+        for (var i = 0; i < 6; i++) tone(t + 0.58 + i * 0.035 + 0.01 * r(), { type: 'triangle', f: 700 + 300 * r(), peak: db(-18 - 1.5 * i), a: 0.0005, d: 0.03 });
+      },
+      plaque: function (t, r, ev) {        // a slow wet creak from the base; a drip; or a sink and a thunk
+        var rise = ev.k !== 'sink', dur = rise ? 1.3 : 0.75;
+        noise(t, { f: 900, q: 3, peak: db(-20), a: 0.0005, d: 0.02 });                          // it gives
+        var o = ctx.createOscillator(); o.type = 'sawtooth';                                     // stick-slip pulses
+        o.frequency.value = rise ? 19 : 34; o.frequency.setValueAtTime(rise ? 19 : 34, t);
+        o.frequency.linearRampToValueAtTime(rise ? 33 : 17, t + dur);
+        var bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = rise ? 620 : 520; bp.Q.value = 7;
+        var lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1400;          // wet: dull
+        var e = envGain(t, db(-8), 0.12, 0.2, dur - 0.3);
+        o.connect(bp); bp.connect(lp); lp.connect(e.g); e.g.connect(G.sfx); o.start(t); o.stop(e.end);
+        o.onended = function () { try { bp.disconnect(); lp.disconnect(); e.g.disconnect(); } catch (err) {} };
+        if (rise) {                                                                               // a drip
+          tone(t + dur + 0.12, { f: 900, f1: 1900, glide: 0.03, peak: db(-19), a: 0.001, d: 0.06 });
+          tone(t + dur + 0.19, { f: 1400, f1: 2300, glide: 0.02, peak: db(-27), a: 0.001, d: 0.04 });
+        } else thud(t + dur, db(-17), 110, 450);
+      },
+      coinreturn: function (t, r, ev) {
+        if (ev.found === 'dime') {         // a single small bright silver clink, quiet and alone, dry
+          tone(t, { f: 5230, peak: db(-30.2), a: 0.0003, d: 0.35, dest: G.dry });
+          tone(t, { f: 7910, peak: db(-33.7), a: 0.0003, d: 0.22, dest: G.dry });
+          tone(t, { f: 3470, peak: db(-35.7), a: 0.0003, d: 0.3, dest: G.dry });
+          return;
+        }
+        for (var i = 0; i < 5; i++) {      // the flap: tin rattle
+          var tf = t + i * 0.03 + 0.012 * r(), g = db(-13.5 - 1.6 * i);
+          tone(tf, { f: 2150 + 400 * r(), peak: g * 0.5, a: 0.0004, d: 0.035 });
+          noise(tf, { f: 2900 + 600 * r(), q: 3, peak: g, a: 0.0004, d: 0.02 });
+        }
+        if (ev.found === 'token') {        // a heavy brass clunk into the tray
+          var tt = t + 0.24;
+          thud(tt, db(-19.5), 115, 600);
+          tone(tt, { f: 430, peak: db(-23.5), a: 0.0006, d: 0.35 });
+          tone(tt, { f: 1140, peak: db(-27.5), a: 0.0006, d: 0.25 });
+          tone(tt, { f: 1935, peak: db(-31.5), a: 0.0006, d: 0.16 });
+          tone(tt + 0.11, { f: 440, peak: db(-27), a: 0.0006, d: 0.2 });                       // it rocks once
+        }
+      },
+      perfect: function (t) {              // a short hush, then the bell, in tune, rising
+        noise(t, { ft: 'lowpass', f: 1800, q: 0.5, peak: db(-26), a: 0.02, d: 0.5 });           // hhh
+        var g = G.room.gain;               // the room holds its breath
+        g.cancelScheduledValues(t); g.setValueAtTime(g.value, t);
+        g.linearRampToValueAtTime(0.08, t + 0.12); g.setValueAtTime(0.08, t + 0.6); g.linearRampToValueAtTime(1, t + 1.6);
+        [0, 4, 7, 12].forEach(function (s, i) { bell(t + 0.65 + i * 0.2, BELL_BASE * semis(s), db(i === 3 ? -19 : -21), 0); });
+        tuneWaltz(t);
+      },
+      sigh: function (t) {                 // the bellows: a low airy exhale, a servo tick
+        var src = ctx.createBufferSource(); src.buffer = G.noise; src.loop = true;
+        var bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 0.9;
+        bp.frequency.value = 700; bp.frequency.setValueAtTime(700, t); bp.frequency.exponentialRampToValueAtTime(330, t + 0.8);
+        var g = ctx.createGain(); g.gain.value = 0;
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(db(-9), t + 0.12);
+        g.gain.setValueAtTime(db(-9), t + 0.35); g.gain.linearRampToValueAtTime(0, t + 0.8);
+        src.connect(bp); bp.connect(g); g.connect(G.sfx); src.start(t, 0.55); src.stop(t + 0.82);
+        src.onended = function () { try { bp.disconnect(); g.disconnect(); } catch (e) {} };
+        tone(t, { f: 110, f1: 78, glide: 0.75, peak: db(-24), a: 0.1, hold: 0.3, d: 0.4 });
+        noise(t + 0.84, { ft: 'highpass', f: 2600, peak: db(-21), a: 0.0005, d: 0.012 });      // servo tick
+        tone(t + 0.84, { type: 'square', f: 1300, peak: db(-30), a: 0.0005, d: 0.015 });
+      },
+      pity: function (t, r) {              // one ticket, printed slowly, a click at a time; a sad relay
+        for (var i = 0; i < 5; i++) {
+          noise(t + i * 0.22, { f: 3400 + 200 * r(), q: 6, peak: db(-2), a: 0.0003, d: 0.009 });
+          tone(t + i * 0.22, { f: 1400 - 40 * i, peak: db(-26), a: 0.0003, d: 0.01 });
+        }
+        noise(t + 0.95, { ft: 'highpass', f: 5000, peak: db(-27), a: 0.01, d: 0.15 });           // the one ticket
+        relay(t + 1.3, db(-20));
+        tone(t + 1.32, { type: 'triangle', f: 330, f1: 247, glide: 0.25, peak: db(-22), a: 0.005, d: 0.3 });
+      },
+      moths: function (t) { mothFlutter(true, t); },
+      mothsGone: function (t) { mothFlutter(false, t); },
       tear: function (t, r, ev) {          // the strip torn off at the slot, then the heap drops
         var n = Math.max(1, ev.n || 1), dur = 0.12 + 0.18 * Math.min(1, (n - 1) / 40);
         // the zip along the perforations: a torn-paper hiss with a burst per perforation
@@ -765,6 +872,30 @@
       d.setTargetAtTime(1, t + 0.035, 0.04);
     }
 
+    // two moths at the tube: papery wingbeats (~8 Hz), very quiet, on the room bus
+    function mothFlutter(on, t) {
+      if (on && !G.moths) {
+        var src = ctx.createBufferSource(); src.buffer = G.noise; src.loop = true;
+        var bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 3300; bp.Q.value = 1.3;
+        var am = ctx.createGain(); am.gain.value = 0;
+        var w1 = ctx.createOscillator(); w1.type = 'square'; w1.frequency.value = 8.1;     // one moth
+        var w2 = ctx.createOscillator(); w2.type = 'square'; w2.frequency.value = 7.3;     // the other
+        var d1 = ctx.createGain(), d2 = ctx.createGain(); d1.gain.value = 0.5; d2.gain.value = 0.35;
+        var g = ctx.createGain(); g.gain.value = 0;
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(db(-26), t + 1.2);
+        w1.connect(d1); d1.connect(am.gain); w2.connect(d2); d2.connect(am.gain);
+        src.connect(bp); bp.connect(am); am.connect(g); g.connect(G.room);
+        src.start(t, 1.31); w1.start(t); w2.start(t);
+        G.moths = { g: g, srcs: [src, w1, w2], nodes: [bp, am, d1, d2, g] };
+      } else if (!on && G.moths) {
+        var M = G.moths; G.moths = null;
+        M.g.gain.cancelScheduledValues(t); M.g.gain.setValueAtTime(M.g.gain.value, t);
+        M.g.gain.linearRampToValueAtTime(0, t + 0.3);
+        M.srcs.forEach(function (s) { s.stop(t + 0.35); });
+        M.srcs[0].onended = function () { M.nodes.forEach(function (n) { try { n.disconnect(); } catch (e) {} }); };
+      }
+    }
+
     function neon(t) {                     // the pink tube: mains buzz swelling up
       var g = ctx.createGain(); g.gain.value = 0;
       g.gain.setValueAtTime(0, t);
@@ -898,6 +1029,8 @@
         G.nodes.forEach(function (n) { try { n.disconnect(); } catch (e) {} });
         if (G.waltzSrc) try { G.waltzSrc.stop(); G.waltzSrc.disconnect(); } catch (e) {}
         if (G.drone) G.drone.o.forEach(function (o) { try { o.stop(); } catch (e) {} });
+        if (G.moths) G.moths.srcs.forEach(function (o) { try { o.stop(); } catch (e) {} });
+        if (G.dry) try { G.dry.disconnect(); } catch (e) {}
       }
       if (ctx && !injected && ctx.close) try { ctx.close(); } catch (e) {}
       G = null;
