@@ -127,7 +127,7 @@
     supportNy: 0.3,          // a contact whose normal has this much +y supports the ball (rolling)
 
     // ── english (a lateral-acceleration coefficient, not the ball's spin ω) ──
-    spinA: 0.288,            // lane lateral accel per unit english at speed ≥ spinVRef
+    spinA: 0.55,             // lane lateral accel per unit english at speed ≥ spinVRef (a readable hook)
     spinVRef: 3.2,           // the hook blooms as the ball slows below this…
     spinGrow: 2.2,           // …up to spinGrow × spinA
     spinVFloor: 0.24,        // speed floor in that ratio
