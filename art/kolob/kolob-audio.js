@@ -2292,7 +2292,9 @@ window.KolobAudio = (function () {
       });
       var at = t + e * stagger;
       var tot = choirVoiceLine(at, notes, vi, 0.85);
-      emitNote("choir", notes[0].f, at, tot);
+      // report the head this voice sings, note by note, as choirVoiceLine
+      // walks it (view-only: no dice, no timing — the page prints the head)
+      for (var hn = 0, ht = at; hn < notes.length; ht += notes[hn].dur, hn++) emitNote("choir", notes[hn].f, ht, notes[hn].dur);
       if (at + tot > lastEnd) lastEnd = at + tot;
     }
     // strings hold the open fifth under the imitation

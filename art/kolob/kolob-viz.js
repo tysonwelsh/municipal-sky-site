@@ -9,18 +9,20 @@
 //    in the middle, alternating outward), each with the paper-colored mouth
 //    near its foot. Fed by an AnalyserNode on the master bus; at rest it
 //    settles into the quiet stepped skyline of the hymnbook cover.
-//  · THE PAGE — "The Colony Tunebook" (v0.31): a grand staff engraved the
-//    way a tunebook is engraved — two staves a grand-staff gap apart, a
-//    brace, treble and bass clefs (baked outlines, no font needed). Notes
-//    print as 4-shape SHAPE-NOTE heads (fa △, sol ○, la ▭, mi ◇) with real
-//    stems, open/filled heads, flags and dots read from their lengths; the
-//    note being sung is struck gilt and cools to hymnbook green, and the
-//    ink dries as the page turns at 60 px/s. The clarinet prints cue-size,
-//    the harmonium grace-size, bells ringed; the telegraph punches paper
-//    tape down the middle; the Question is framed in cartouches; a visiting
-//    band slides through in round brass notes on its own layer. The staves
-//    and clefs are a static layer; the ink is re-engraved from data each
-//    frame. In the sacrament the page dries almost blank.
+//  · THE PAGE — "The Colony Tunebook" (v0.31; plainer in v0.32): a grand
+//    staff engraved the way a tunebook is engraved — two staves a
+//    grand-staff gap apart, a brace, treble and bass clefs (baked outlines,
+//    no font needed). Notes print as 4-shape SHAPE-NOTE heads (fa △, sol ○,
+//    la ▭, mi ◇) with real stems, open/filled heads, flags and dots read from
+//    their lengths, in one hymnbook-green ink from the moment they sound;
+//    the ink dries as the page turns at 60 px/s. Just the notes: no signs
+//    or words on the staff. The clarinet prints cue-size, the harmonium
+//    grace-size, bells as ringed heads; the telegraph punches its holes
+//    straight into the paper down the middle; the Question is framed in
+//    cartouches; a visiting band slides through in round notes on its own
+//    layer. The staves and clefs are a static layer; the ink is re-engraved
+//    from data each frame, and nothing moves but the scroll and the drying.
+//    In the sacrament the page dries almost blank.
 //  · THE WHEEL — the order of service seated round the rim of one great
 //    wheel, of which the page shows only the crown: a sun low on a far
 //    horizon. The section now playing is lettered at the crown beneath ONE
@@ -178,7 +180,12 @@ window.KolobViz = (function () {
     penta:      [1, 9/8, 5/4, 3/2, 5/3],
     hexa:       [1, 9/8, 5/4, 4/3, 3/2, 5/3],
   };
-  // 4-shape solmization per collection degree (fa sol la fa sol la mi)
+  // 4-shape solmization per collection degree (fa sol la fa sol la mi).
+  // The rudiments fix the key note as fa (major) or la (minor), so the
+  // modal collections take the shapes of the tune they are written as:
+  // dorian as a minor tune whose raised sixth is still fa, mixolydian as a
+  // major tune whose lowered seventh is still mi (the Score may add the
+  // accidental; the shape does not change with it).
   var SHAPES = {
     ionian:     ["fa", "sol", "la", "fa", "sol", "la", "mi"],
     mixolydian: ["fa", "sol", "la", "fa", "sol", "la", "mi"],
@@ -204,24 +211,28 @@ window.KolobViz = (function () {
     return { deg: best, oct: oct, n: ratios.length };
   }
   // ==========================================================================
-  // THE PAGE — "The Colony Tunebook" (v0.31, owner's Direction A). A grand
-  // staff engraved the way a tunebook is engraved: four shapes with their
-  // stems grown from the shape's own corner, open and filled heads, flags and
-  // augmentation dots read from each note's length, broad-nib contrast on the
-  // open heads and a letterpress impression on every head, pre-rendered once
-  // per size and colour at device resolution (the sprite atlas). The note
-  // being sung is struck in gilt and cools to hymnbook green; the ink dries
-  // as the page turns. Nothing prints outside the plate: a note beyond the
-  // ledger room folds an octave in and carries an 8va.
+  // THE PAGE — "The Colony Tunebook" (v0.31, owner's Direction A; made
+  // plainer in v0.32). A grand staff engraved the way a tunebook is
+  // engraved: four shapes with their stems grown from the shape's own
+  // corner, open and filled heads, flags and augmentation dots read from
+  // each note's length, broad-nib contrast on the open heads and a
+  // letterpress impression on every head, pre-rendered once per size at
+  // device resolution (the sprite atlas). One ink, hymnbook green, from the
+  // moment a note sounds; the ink dries as the page turns. Just the notes:
+  // no signs or words on the staff. Nothing prints outside the plate: a
+  // note beyond the ledger room folds silently by octaves until it fits.
   //
   // q is a diatonic-step lattice: bass rules at q = 0,2,4,6,8, middle C (the
   // meeting's tonic-root) at q = 10, treble rules at q = 12..20. The staves
   // stand a normal grand-staff gap apart (5 sp): a treble note at q10 hangs
   // on its ledger under the treble, a bass note at q10 on its ledger over the
-  // bass, and the telegraph's punched tape runs down the middle of the gap.
+  // bass, and the telegraph punches its holes along the middle of the gap.
   //
-  // Everything on the page is kept as data and re-engraved each frame from
-  // one page clock, so the scroll is exact and the gilt can cool: x is time.
+  // Everything on the page is kept as data, stamped with the audio time it
+  // sounds at, and re-engraved each frame from the page clock (the audio
+  // clock, smoothed), so the scroll is exact: x is time, and a page that
+  // falls behind catches up whole. Nothing on the page moves but the scroll
+  // and the drying.
   // Still to come with the Score (PLAN-COMPOSITION §2.3): barlines, beams
   // across beats, fermatas, the running head, Johnston signs, SATB part
   // identity and words.
@@ -241,7 +252,7 @@ window.KolobViz = (function () {
     var pos = letters[d.deg];
     if (pos == null) pos = d.deg;
     var q = Q_MID + pos + 7 * d.oct;
-    while (q < -24) q += 7;                        // guard against nonsense only; the page folds with 8va/8vb
+    while (q < -24) q += 7;                        // guard against nonsense only; the page folds (silently) at draw time
     while (q > 44) q -= 7;
     var shapes = SHAPES[cond.mode] || SHAPES.ionian;
     return { q: q, shape: shapes[d.deg] || "sol" };
@@ -255,11 +266,11 @@ window.KolobViz = (function () {
     return Q_MID + ET_LETTER[pc] + 7 * oct;
   }
 
-  // ---- inks ---------------------------------------------------------------------
-  var C_INK = [30, 77, 59], C_STRIKE = [196, 150, 48], C_GILT = [138, 122, 69],
-      C_BRASS = [152, 102, 40], C_BRASS_HI = [212, 158, 60];
+  // ---- ink ----------------------------------------------------------------------
+  // One ink (v0.32, owner): hymnbook green, from the moment a note sounds.
+  // No gilt strike, no cooling, no glow; only the drying fades it.
+  var C_INK = [30, 77, 59];
   function rgba(c, a) { return "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + (a == null ? 1 : +(+a).toFixed(3)) + ")"; }
-  function mixc(a, b, k) { return [Math.round(a[0] + (b[0] - a[0]) * k), Math.round(a[1] + (b[1] - a[1]) * k), Math.round(a[2] + (b[2] - a[2]) * k)]; }
   function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
   var FG = '"EB Garamond", Georgia, serif';
 
@@ -269,11 +280,6 @@ window.KolobViz = (function () {
   var CLEF_TREBLE = { bbox: [120, -291, 542, 900], d: "M434 2Q464 -103 464 -170Q464 -223 427.0 -257.0Q390 -291 337 -291Q287 -291 250.0 -261.5Q213 -232 213 -190Q213 -160 233.5 -133.5Q254 -107 283.5 -107.0Q313 -107 331.5 -128.5Q350 -150 350 -178Q350 -240 280 -240Q298 -268 338 -268Q353 -268 368.5 -263.5Q384 -259 401.0 -248.0Q418 -237 428.5 -213.5Q439 -190 439 -157Q439 -136 411 -6Q389 -12 356 -12Q259 -12 189.5 60.0Q120 132 120 232Q120 267 131.5 303.0Q143 339 157.5 366.5Q172 394 200.5 428.5Q229 463 248.5 483.5Q268 504 303 539Q280 621 280 689Q280 779 313.0 839.5Q346 900 379 900Q389 900 401.5 887.0Q414 874 426.0 851.0Q438 828 446.5 790.5Q455 753 455 710Q455 551 342 447L368 329Q384 332 397 332Q458 332 500.0 282.5Q542 233 542 162Q542 44 434 2ZM426 746Q426 801 394 801Q358 801 333.0 748.0Q308 695 308 630Q308 588 321 557Q359 580 392.5 639.5Q426 699 426 746ZM498 128Q498 183 466.0 216.0Q434 249 383 249L428 23Q498 52 498 128ZM407 17 361 247Q334 241 311.5 214.0Q289 187 289 158Q289 143 295.0 128.5Q301 114 309.5 104.0Q318 94 327.0 86.0Q336 78 342.0 74.5Q348 71 348 71L340 66Q307 75 277.5 106.0Q248 137 248 184Q248 231 277.5 270.5Q307 310 343 323L325 430Q168 299 168 177Q168 104 223.0 55.0Q278 6 348 6Q365 6 407 17Z" };
   var CLEF_BASS   = { bbox: [75, 166, 607, 757],   d: "M564 704Q582 704 594.5 691.0Q607 678 607.0 661.0Q607 644 593.0 631.0Q579 618 563 618Q521 618 521 663Q521 681 534.0 692.5Q547 704 564 704ZM607 469Q607 450 594.0 437.0Q581 424 564 424Q521 424 521 469Q521 485 533.5 498.0Q546 511 564.0 511.0Q582 511 594.5 497.0Q607 483 607 469ZM285 757Q366 757 421.0 701.5Q476 646 476 569Q476 531 465.5 495.0Q455 459 432.0 426.5Q409 394 386.0 367.0Q363 340 326.0 313.0Q289 286 264.0 267.5Q239 249 196.5 226.0Q154 203 135.5 193.5Q117 184 80 166L75 182Q76 183 102.0 200.0Q128 217 144.0 227.5Q160 238 191.5 263.0Q223 288 244.0 309.5Q265 331 291.5 363.5Q318 396 334.0 427.0Q350 458 361.5 498.0Q373 538 373 578Q373 735 262 735Q225 735 199.0 725.5Q173 716 161.5 702.0Q150 688 145.0 677.5Q140 667 140 659Q140 644 160 644Q168 644 179.0 647.5Q190 651 194 651Q221 651 239.0 634.0Q257 617 257 592Q257 563 235.0 544.0Q213 525 183 525Q144 525 119.0 548.0Q94 571 94 607Q94 673 150.5 715.0Q207 757 285 757Z" };
   var trebPath = null, bassPath = null;            // Path2D, built on first resize
-  var DIGITS = {                                   // time-signature numerals (100 × 130 units, y down)
-    "2": "M10 40C10 14 30 0 54 0C82 0 98 16 98 38C98 64 72 80 46 98C34 106 26 112 22 116L62 116C80 116 88 110 94 98L99 100L93 130L4 130L4 121C42 92 72 70 72 40C72 20 62 9 49 9C38 9 30 14 30 20C30 26 38 29 38 39C38 49 30 55 21 55C13 55 10 48 10 40Z",
-    "4": "M60 0L86 0L86 84L99 84L99 100L86 100L86 130L60 130L60 100L2 100L2 88ZM60 30L18 84L60 84Z"
-  };
-  var digitPath = null;
 
   // ---- the glyph atlas ----------------------------------------------------------
   // Noteheads in staff spaces (y down): polygons for fa/la/mi, ellipses for sol
@@ -356,16 +362,6 @@ window.KolobViz = (function () {
     sprites.set(key, sp);
     return sp;
   }
-  var glowCache = new Map();
-  function glowSprite(r) {
-    var key = r.toFixed(1) + "|" + dpr, g = glowCache.get(key);
-    if (g) return g;
-    var s = Math.ceil(r * dpr) * 2 + 2, cv = document.createElement("canvas"); cv.width = cv.height = s;
-    var c = cv.getContext("2d"), gr = c.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
-    gr.addColorStop(0, "rgba(232, 190, 90, 0.55)"); gr.addColorStop(0.45, "rgba(232, 190, 90, 0.2)"); gr.addColorStop(1, "rgba(232, 190, 90, 0)");
-    c.fillStyle = gr; c.fillRect(0, 0, s, s);
-    g = { cv: cv, o: s / 2 }; glowCache.set(key, g); return g;
-  }
 
   // ---- geometry -------------------------------------------------------------------
   // The plate runs from just under the wheel's horizon rule (the staff canvas
@@ -380,8 +376,7 @@ window.KolobViz = (function () {
     g.Tb = g.T + 4 * sp;                                  // treble bottom line (q12)
     g.B = g.Tb + 5 * sp;                                  // bass top line (q8): a grand-staff gap, middle C's ledger in it
     g.Bb = g.B + 4 * sp;                                  // bass bottom line (q0)
-    g.tapeY = (g.Tb + g.B) / 2;                           // the telegraph tape, centred in the gap
-    g.capY = Math.min(bot - 0.35 * sp, g.Bb + 2.35 * sp); // captions under the bass
+    g.tapeY = (g.Tb + g.B) / 2;                           // the telegraph's holes, centred in the gap
     g.xBar = Math.round(1.55 * sp + 4);
     g.clefX = g.xBar + 0.7 * sp;
     g.trebH = 6.9 * sp;
@@ -391,7 +386,7 @@ window.KolobViz = (function () {
     g.clefEnd = g.clefX + Math.max(g.trebW, g.bassW);
     g.xE = W - Math.round(3.2 * sp);                     // the engraving point
     g.fade0 = g.clefEnd + 0.4 * sp; g.fade1 = g.fade0 + 6 * sp;
-    // the ledger room: beyond it a note folds an octave in and carries 8va / 8vb
+    // the ledger room: beyond it a note folds in by octaves, silently
     g.qMaxT = 20 + Math.floor(2 * (g.T - top - 0.62 * sp) / sp);
     g.qMinB = 0 - Math.floor(2 * (bot - g.Bb - 0.62 * sp) / sp);
     g.yT = function (q) { return g.T + (20 - q) * sp / 2; };
@@ -402,24 +397,37 @@ window.KolobViz = (function () {
   }
 
   // ---- the page clock -----------------------------------------------------------
-  // PT is the page's own time: it follows the audio clock (smoothed, so the
-  // scroll is even though the audio clock ticks in chunks), holds while the
-  // meeting is held, and runs on after STOP so the last ink drains away. DRY
-  // is the drying clock: it runs faster in the sacrament and the postlude.
+  // One time base (v0.32). Every engraved item carries the AUDIO time it
+  // sounds at, and PT is the audio clock as the page reads it: smoothed, so
+  // the scroll is even though the audio clock ticks in chunks. x and the
+  // drying are both worked out from PT at draw time, so when
+  // the page has to catch up (a hidden tab, a stall, a slow device) all the
+  // ink moves at once and the page simply shows the present — nothing
+  // replays late. PT holds while the meeting is held, and after STOP it
+  // follows the audio clock on (the clock keeps running) so the last ink
+  // drains away. DRY is the drying clock: it advances with PT, faster in the
+  // sacrament and the postlude.
   var SCROLL_PX_S = 60;                            // the owner's rate (v0.31; it was 11)
-  var PT = 0, PT_OFF = null, DRY = 0;
+  var PT = 0, DRY = 0, ptSynced = false, lastAudio = -1;
+  var PT_SNAP = 0.5;                               // further off than this, the page jumps to the present
+  var PT_TAU = 0.25;                               // the smoothing's time constant, in seconds
+  var PT_LEAD = 0.1;                               // the page never runs further than this ahead of the sound
   function audioNow() { return K && K.getAudioTime ? K.getAudioTime() : 0; }
-  function toPage(t) { return PT_OFF == null ? PT + (t - audioNow()) : t + PT_OFF; }
-  function tickClock(dt) {
+  function tickClock(dt) {                         // dt: the real time since the last frame, uncapped
+    var a = audioNow(), moving = a > lastAudio + 1e-6;
+    lastAudio = a;
     if (paused) return;
+    var p0 = PT;
     PT += dt;
-    DRY += dt * (1 + (cond.section === "sacrament" ? 30 : 0) + (cond.section === "postlude" ? 5 : 0));
-    if (!playing) return;
-    var a = audioNow();
-    if (PT_OFF == null) { PT_OFF = PT - a; return; }
-    var err = (a + PT_OFF) - PT;
-    if (Math.abs(err) > 0.35) PT_OFF = PT - a;       // a new meeting, or a stall: re-anchor
-    else PT += err * 0.08;
+    if ((playing || moving) && a > 0) {            // follow the audio clock while it runs
+      var err = a - PT;
+      if (!ptSynced || Math.abs(err) > PT_SNAP) { PT = a; ptSynced = true; }
+      else {
+        PT += err * (1 - Math.exp(-dt / PT_TAU));
+        if (PT > a + PT_LEAD) PT = Math.max(p0, a + PT_LEAD);   // the sound has stalled: wait for it
+      }
+    }
+    DRY += Math.max(0, PT - p0) * (1 + (cond.section === "sacrament" ? 30 : 0) + (cond.section === "postlude" ? 5 : 0));
   }
 
   // ---- note intake ----------------------------------------------------------------
@@ -432,7 +440,6 @@ window.KolobViz = (function () {
   var tapes = [];                                  // telegraph messages
   var questions = [];                              // the question: askings, and the empty measure
   var bandNotes = [], visits = [];                  // the visiting band, on its own layer
-  var marks = [];                                  // small printed signs (the fuging ⁂)
   var MELODIC = { clarinet: 1, bagpipe: 1, choir: 1, bells: 1, harmonium: 1, strings: 1 };
   var lastBeat = { choir: 1.15 };
   function queueIntake(x) {
@@ -451,7 +458,8 @@ window.KolobViz = (function () {
   }
   function onEvent(ev) {
     if (!ev) return;
-    if (ev.cat === "fuging" || ev.cat === "visitation") queueIntake({ ev: ev });
+    if (ev.cat === "visitation") queueIntake({ ev: ev });
+    else if (ev.cat === "transport" && /^■/.test(ev.label || "")) queueIntake({ stop: ev.t != null ? ev.t : audioNow() });
   }
 
   // the beat of a line: the length that makes its notes the simplest values
@@ -489,13 +497,13 @@ window.KolobViz = (function () {
   function flushIntake() {
     intakeArmed = false;
     var batch = intake; intake = [];
-    var byLayer = {}, question = null, unanswered = null, i;
+    var byLayer = {}, question = null, unanswered = null, stopAt = null, i;
     for (i = 0; i < batch.length; i++) {
       var it = batch[i];
+      if (it.stop != null) { stopAt = stopAt == null ? it.stop : Math.min(stopAt, it.stop); continue; }
       if (it.ev) {
         var lb = it.ev.label || "";
-        if (it.ev.cat === "fuging") marks.push({ tp: toPage((it.ev.t || audioNow()) + 0.3), glyph: "⁂" });
-        else if (/^\? the question/.test(lb)) question = it.ev;
+        if (/^\? the question/.test(lb)) question = it.ev;
         else if (/^\? unanswered/.test(lb)) unanswered = it.ev;
         continue;
       }
@@ -513,23 +521,74 @@ window.KolobViz = (function () {
     });
     if (question) takeQuestion(byLayer.clarinet || [], question);
     if (unanswered) takeUnanswered(unanswered);
+    if (stopAt != null) silence(stopAt);
     // bounded memory: the page shows ~15 s; keep generously more
     if (groups.length > 700) groups.splice(0, groups.length - 700);
     if (bandNotes.length > 500) bandNotes.splice(0, bandNotes.length - 500);
+  }
+
+  // STOP: nothing more is printed. Ink the engine had scheduled (a choir
+  // line runs up to ~36 s ahead, the band's whole crossing) that will not
+  // now sound is lifted from the page; what was sounding keeps its place,
+  // its length cut to the voices' fade (the engine closes their bus over
+  // 0.6 s), and a message being keyed is cut where the key stopped. Called
+  // with the stop's audio time, from the "■" transport event or, failing
+  // that, when the conductor first reports the meeting stopped.
+  var STOP_FADE = 0.6;
+  function silence(cut) {
+    var end = cut + STOP_FADE, i, k;
+    for (i = 0, k = 0; i < groups.length; i++) {
+      var gr = groups[i];
+      if (gr.tp > cut) continue;
+      if (gr.tp + gr.dur > end) gr.dur = end - gr.tp;
+      groups[k++] = gr;
+    }
+    groups.length = k;
+    for (i = 0, k = 0; i < bandNotes.length; i++) {
+      var n = bandNotes[i];
+      if (n.tp > cut) continue;
+      if (n.tp + n.dur > end) n.dur = end - n.tp;
+      bandNotes[k++] = n;
+    }
+    bandNotes.length = k;
+    for (i = visits.length - 1; i >= 0; i--) {
+      var bd = visits[i];
+      if (bd.tp0 > cut) { visits.splice(i, 1); continue; }
+      bd.tp1 = Math.min(bd.tp1, end);
+      bd.bass = bd.bass.filter(function (bb) { return bb.tp <= cut; });
+    }
+    for (i = tapes.length - 1; i >= 0; i--) {      // a message being keyed is cut where the key stopped
+      var T = tapes[i], lim = cut - T.tp;
+      if (lim < 0) { tapes.splice(i, 1); continue; }
+      if (T.Tt > lim) {
+        T.marks = T.marks.filter(function (m) { return m.tp <= end; });   // only what was punched before the key fell silent
+        if (!T.marks.length) { tapes.splice(i, 1); continue; }
+        var lm = T.marks[T.marks.length - 1];
+        T.Tt = lm.at + lm.len;
+      }
+    }
+    for (i = questions.length - 1; i >= 0; i--) {
+      var qn = questions[i];
+      qn.asks = qn.asks.filter(function (ak) { return ak.tp0 <= cut; });
+      qn.asks.forEach(function (ak) { ak.tp1 = Math.min(ak.tp1, end); });
+      if (qn.na) {
+        if (qn.na.tp0 > cut) qn.na = null;
+        else qn.na.tp1 = Math.min(qn.na.tp1, Math.max(cut, qn.na.tp0 + 1));
+      }
+      if (!qn.asks.length && !qn.na) questions.splice(i, 1);
+    }
   }
 
   // one layer's notes from one call → groups of heads on shared stems
   function takeLayer(layer, ns, beat, question) {
     var byT = {};
     ns.forEach(function (n) { var k = Math.round(n.startTime * 50); (byT[k] = byT[k] || []).push(n); });
-    // the Question's askings share one 8va, so the phrase reads whole
-    var askFold = 0;
+    // the Question's askings fold together (if they must), so the phrase keeps its shape
+    var askMax = null;
     if (question && layer === "clarinet") {
-      var mx = -1e9;
-      ns.forEach(function (n) { mx = Math.max(mx, noteQ(n.freq).q); });
-      if (mx > 21) askFold = Math.ceil((mx - 21) / 7);
+      askMax = -1e9;
+      ns.forEach(function (n) { askMax = Math.max(askMax, noteQ(n.freq).q); });
     }
-    var answered = false;
     Object.keys(byT).sort(function (a, b) { return a - b; }).forEach(function (k) {
       var chord = byT[k].slice().sort(function (a, b) { return b.freq - a.freq; });
       var t0 = chord[0].startTime;
@@ -551,6 +610,13 @@ window.KolobViz = (function () {
         var byDur = {};
         onSt.forEach(function (p) { var dk = Math.round(p.n.duration * 20); (byDur[dk] = byDur[dk] || []).push(p); });
         var keys = Object.keys(byDur), closed = chord.length >= 3 && layer === "choir";
+        // two lengths at once on one staff are two voices, set the way a
+        // hymnal sets them: the lower first with its stem down, the upper
+        // with its stem up (if their heads would touch, the page moves the
+        // later one aside at draw time — see placeColumn)
+        var meanQ = {};
+        keys.forEach(function (dk) { var sq = 0; byDur[dk].forEach(function (p) { sq += p.q; }); meanQ[dk] = sq / byDur[dk].length; });
+        keys.sort(function (a, b) { return meanQ[a] - meanQ[b] || a - b; });
         keys.forEach(function (dk, gi) {
           var ps = byDur[dk], dur = ps[0].n.duration;
           var v = valueOf(dur / beat, layer);
@@ -560,19 +626,18 @@ window.KolobViz = (function () {
             heads.push({ q: p.q, shape: p.shape, open: v.open, dots: v.dots });
           });
           var grp = {
-            layer: layer, tp: toPage(t0), dur: dur, st: st, heads: heads, v: v,
+            layer: layer, tp: t0, dur: dur, st: st, heads: heads, v: v,
             scale: SCALE[layer] || 1, dir: 0, noStem: !v.stem, flags: v.flags
           };
           if (layer === "bells") { grp.noStem = true; grp.ring = true; grp.flags = 0; heads.forEach(function (h) { h.open = true; h.dots = 0; }); }
           if (layer === "harmonium" && question) {        // the answers: slashed grace notes
             grp.slash = true; grp.noStem = false; grp.flags = 1; grp.dir = 1;
             heads.forEach(function (h) { h.open = false; h.dots = 0; });
-            if (!answered) { grp.caption = "harmonium"; answered = true; }
           }
-          if (askFold) { grp.fixedFold = askFold; grp.ask = true; }
+          if (askMax != null) grp.askMax = askMax;
           if (!grp.dir) {
-            if (closed) grp.dir = st === "T" ? 1 : -1;
-            else if (keys.length > 1) grp.dir = gi === 0 ? 1 : -1;
+            if (keys.length > 1) grp.dir = gi === keys.length - 1 ? 1 : -1;
+            else if (closed) grp.dir = st === "T" ? 1 : -1;
             else {
               var mq = st === "T" ? 16 : 4, far = heads[0];
               heads.forEach(function (h) { if (Math.abs(h.q - mq) > Math.abs(far.q - mq)) far = h; });
@@ -584,19 +649,20 @@ window.KolobViz = (function () {
       });
     });
   }
-  // beyond the ledger room a group folds an octave (or two) in and carries
-  // 8va / 8vb; the fold is decided at draw time so a resize re-folds it
-  // A voice that keeps above the ledger room keeps one sign: a note that
-  // would fold less than the voice's last folded note, close behind it,
-  // folds as far as that note did (if it still sits on or near the staff).
+  // Beyond the ledger room a group folds in silently by octaves until it
+  // fits the plate (no 8va: the owner wants just the notes). The fold is
+  // decided at draw time, so a resize re-folds it. A voice that keeps above
+  // the ledger room keeps its shape: a note that would fold less than the
+  // voice's last folded note, close behind it, folds as far (if it still
+  // sits on or near the staff). The Question's asking folds as one phrase.
   var lastFold = {};
   function foldFor(grp, g) {
     if (grp.fold && grp.fold.sp === g.sp) return grp.fold;
     var hi = -1e9, lo = 1e9, sh = 0;
     grp.heads.forEach(function (h) { hi = Math.max(hi, h.q); lo = Math.min(lo, h.q); });
-    if (grp.fixedFold != null) sh = 7 * grp.fixedFold;
-    else if (grp.st === "T") { if (hi > g.qMaxT) while (hi - sh > 21) sh += 7; }
-    else { if (lo < g.qMinB) while (lo + sh < -1) sh += 7; }
+    if (grp.askMax != null) hi = Math.max(hi, grp.askMax);
+    if (grp.st === "T") { while (hi - sh > g.qMaxT) sh += 7; }
+    else { while (lo + sh < g.qMinB) sh += 7; }
     var key = grp.layer + grp.st, lf = lastFold[key];
     if (sh && lf && lf.sp === g.sp && grp.tp - lf.tp1 < 1.2 && lf.sh > sh &&
         (grp.st === "T" ? lo - lf.sh >= 9 : hi + lf.sh <= 11)) sh = lf.sh;
@@ -611,7 +677,9 @@ window.KolobViz = (function () {
     n.marks.forEach(function (m) { if (m.len > 0) U = Math.min(U, m.len); });
     if (!(U < 1e8)) U = 0.08;
     var last = n.marks[n.marks.length - 1];
-    tapes.push({ tp: toPage(n.startTime), marks: n.marks, U: U, Tt: last.at + last.len });
+    // each hole keeps the time it is punched, and dries from it like a note
+    var marks = n.marks.map(function (m) { return { at: m.at, len: m.len, dah: !!m.dah, tp: n.startTime + m.at + m.len }; });
+    tapes.push({ tp: n.startTime, marks: marks, U: U, Tt: last.at + last.len });
     if (tapes.length > 12) tapes.shift();
   }
   // ---- the Question ---------------------------------------------------------------
@@ -626,32 +694,32 @@ window.KolobViz = (function () {
       else { cur = { t0: n.startTime, t1: n.startTime + n.duration, n: 1 }; asks.push(cur); }
     });
     asks = asks.filter(function (a) { return a.n >= 2; });
-    var qn = { asks: asks.map(function (a) { return { tp0: toPage(a.t0), tp1: toPage(a.t1) }; }), na: null,
-               lastEnd: asks.length ? toPage(asks[asks.length - 1].t1) : toPage((ev.t || audioNow())) };
+    var qn = { asks: asks.map(function (a) { return { tp0: a.t0, tp1: a.t1 }; }), na: null,
+               lastEnd: asks.length ? asks[asks.length - 1].t1 : (ev.t || audioNow()) };
     questions.push(qn);
     if (questions.length > 4) questions.shift();
   }
   function takeUnanswered(ev) {
-    var tp = toPage(ev.t || audioNow()), qn = questions[questions.length - 1];
+    var tp = ev.t || audioNow(), qn = questions[questions.length - 1];
     var start = qn && !qn.na && Math.abs(tp - qn.lastEnd) < 40 ? qn.lastEnd + 0.9 : tp - 0.6;
     if (!qn || qn.na) { qn = { asks: [], lastEnd: start }; questions.push(qn); }
     qn.na = { tp0: start, tp1: start + 6 };
   }
   // ---- the band -------------------------------------------------------------------
-  // Round notes in brass on their own layer, sliding through the ward's page
+  // Round notes on their own layer, sliding through the ward's page
   // at the band's own (quicker) rate; ink follows its approach and recession.
   function takeBand(ns) {
     ns.sort(function (a, b) { return a.startTime - b.startTime; });
     var beat = ns[0].beat || 0.46;
     var r = clamp(1.1 / beat, 1.6, 2.6);
-    var bd = { tp0: toPage(ns[0].startTime), beat: beat, r: r, tp1: toPage(ns[ns.length - 1].startTime + ns[ns.length - 1].duration), bass: [] };
+    var bd = { tp0: ns[0].startTime, beat: beat, r: r, tp1: ns[ns.length - 1].startTime + ns[ns.length - 1].duration, bass: [] };
     ns.forEach(function (n) {
       var mel = n.part !== "bass", q = bandQ(n.freq);
       if (mel) { q -= 7; while (q > 26) q -= 7; while (q < 11) q += 7; }   // the fife is written an octave under its sound
       else { while (q > 9) q -= 7; while (q < -2) q += 7; }
       var v = valueOf(n.duration / beat, "band");
-      var nb = { tp: toPage(n.startTime), dur: n.duration, q: q, loud: n.loud == null ? 0.6 : n.loud, mel: mel, v: v, bd: bd };
-      if (!mel) bd.bass.push(nb.tp);
+      var nb = { tp: n.startTime, dur: n.duration, q: q, loud: n.loud == null ? 0.6 : n.loud, mel: mel, v: v, bd: bd };
+      if (!mel) bd.bass.push({ tp: nb.tp });              // its barlines fall on the oom
       bandNotes.push(nb);
     });
     visits.push(bd);
@@ -675,18 +743,43 @@ window.KolobViz = (function () {
     else { for (l = 10; l <= q; l += 2) out.push(l); for (l = -2; l >= q; l -= 2) out.push(l); }
     return out;
   }
-  // gilt while sounding, cooling to the base ink over 1.5 s after it ends
-  function inkOf(tp, dur, base, hi) {
-    var age = PT - tp, end = PT - (tp + dur);
-    var k = end < 0 ? 0 : clamp(end / 1.5, 0, 1);
-    k = Math.round(k * 8) / 8;
-    var glow = end < 0 ? clamp(age / 0.12, 0, 1) : clamp(1 - end / 0.8, 0, 1);
-    return { rgb: mixc(hi || C_STRIKE, base, k), glow: glow };
-  }
-  // the ink dries: ~3 %/s of page time, far faster in the sacrament
+  // the ink dries: ~3 %/s of page time, far faster in the sacrament. An item
+  // is anchored at its onset (tp, or tp0 for the spans: an asking, the empty
+  // measure, the band's visit); one first drawn late is credited its age.
   function dryA(it) {
-    if (it.d0 == null) it.d0 = DRY - Math.max(0, PT - it.tp);
+    if (it.d0 == null) it.d0 = DRY - Math.max(0, PT - (it.tp != null ? it.tp : it.tp0));
     return Math.exp(-0.03 * Math.max(0, DRY - it.d0));
+  }
+  // a rounded rectangle, also where the canvas has no roundRect (Safari < 16)
+  function rrect(c, x, y, w, h, r) {
+    if (typeof c.roundRect === "function") { c.roundRect(x, y, w, h, r); return; }
+    r = Math.max(0, Math.min(r, w / 2, h / 2));
+    c.moveTo(x + r, y);
+    c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r);
+    c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r);
+    c.closePath();
+  }
+  // The telegraph yields to the music: while a message is on the page,
+  // every head, ledger, stem, dot and bell ring that lands in the middle of
+  // the gap records a clearance here (at its own ink's strength), and no
+  // hole is punched where one lies.
+  var KO = [], koY0 = 0, koY1 = -1, KO_PAD = 0.3;
+  function koHit(y0, y1) { return y1 > koY0 && y0 < koY1; }
+  function koRect(c, x0, y0, x1, y1) {
+    if (koHit(y0, y1)) KO.push({ x: x0, y: y0, w: x1 - x0, h: y1 - y0, a: c.globalAlpha });
+  }
+  function koEllipse(c, x, y, rx, ry) {
+    if (koHit(y - ry, y + ry)) KO.push({ e: 1, x: x, y: y, rx: rx, ry: ry, a: c.globalAlpha });
+  }
+  function koCovers(x0, y0, x1, y1) {              // does any visible note's clearance touch this box?
+    for (var i = 0; i < KO.length; i++) {
+      var k = KO[i];
+      if (k.a < 0.02) continue;
+      var kx0 = k.e ? k.x - k.rx : k.x, kx1 = k.e ? k.x + k.rx : k.x + k.w;
+      var ky0 = k.e ? k.y - k.ry : k.y, ky1 = k.e ? k.y + k.ry : k.y + k.h;
+      if (kx0 < x1 && x0 < kx1 && ky0 < y1 && y0 < ky1) return true;
+    }
+    return false;
   }
   function text(c, str, x, y, font, rgb, a, align) {
     c.font = font; c.textAlign = align || "left"; c.textBaseline = "alphabetic";
@@ -695,15 +788,17 @@ window.KolobViz = (function () {
     return c.measureText(str).width;
   }
 
-  // a group of heads on one stem (a chord, or a single note)
-  function drawGroup(c, g, X, heads, st, dir, o) {
+  // a group of heads on one stem (a chord, or a single note): where its
+  // heads and stem fall. Shared by drawGroup and the column check.
+  function layoutGroup(g, X, heads, st, dir, o) {
     var sp = g.sp, sc = o.scale || 1, s = sp * sc;
     var sw = Math.max(1.4 / dpr, 0.12 * sp * (sc < 1 ? 0.85 : 1));
     var hs = heads.slice().sort(function (a, b) { return a.q - b.q; });
+    var stem = dir !== 0 && !o.noStem;
     var sx = X + dir * (0.57 * s - sw / 2);
     var placed = hs.map(function (h) {
       var k = shapeKey(h.shape, dir || 1), hx = X;
-      if (dir !== 0 && !o.noStem) { var an = anchorOf(k, dir); hx = sx - an[0] * s + dir * sw / 2; }
+      if (stem) { var an = anchorOf(k, dir); hx = sx - an[0] * s + dir * sw / 2; }
       return { h: h, k: k, x: hx, y: g.y(st, h.q) };
     });
     // a second on one stem: the upper (stem up) / lower (stem down) head crosses to the other side
@@ -713,21 +808,9 @@ window.KolobViz = (function () {
         mv.x += d * (1.14 * s - sw);
       }
     }
-    c.fillStyle = rgba(o.rgb);
-    var lth = Math.max(1.2 / dpr, 0.16 * sp);
-    placed.forEach(function (p) {
-      var ls = ledgersFor(st, p.h.q);
-      for (var li = 0; li < ls.length; li++) hLine(c, p.x - 0.98 * s, p.x + 0.98 * s, g.y(st, ls[li]), lth);
-    });
-    if (o.glow > 0.02) {                                  // the glow under the sounding heads
-      var gs = glowSprite(1.5 * s), ga = c.globalAlpha;
-      c.globalAlpha = ga * o.glow * 0.9;
-      placed.forEach(function (p) { drawSprite(c, gs, p.x, p.y); });
-      c.globalAlpha = ga;
-    }
-    var top = placed[placed.length - 1], bot = placed[0], yEnd = null;
-    if (dir !== 0 && !o.noStem) {
-      var mid = g.mid(st), y0;
+    var top = placed[placed.length - 1], bot = placed[0], y0 = null, yEnd = null;
+    if (stem) {
+      var mid = g.mid(st);
       if (dir > 0) {
         var an0 = anchorOf(bot.k, 1); y0 = bot.y + an0[1] * s;
         yEnd = Math.min(top.y - 3.5 * s, mid);
@@ -737,14 +820,63 @@ window.KolobViz = (function () {
         yEnd = Math.max(bot.y + 3.5 * s, mid);
         yEnd = Math.min(yEnd, Math.max(g.bot - 0.3 * sp, bot.y + 2.2 * s));
       }
-      vLine(c, sx, y0, yEnd, sw);
+    }
+    // augmentation dots sit right of the heads (and of an up-stem)
+    var right = -1e9;
+    placed.forEach(function (p) { right = Math.max(right, p.x + 0.64 * s); });
+    if (dir > 0 && stem) right = Math.max(right, sx + sw / 2);
+    var ledgers = [];
+    placed.forEach(function (p) {
+      var ls = ledgersFor(st, p.h.q);
+      for (var li = 0; li < ls.length; li++) ledgers.push([p.x - 0.98 * s, g.y(st, ls[li]), p.x + 0.98 * s]);
+    });
+    return { s: s, sw: sw, sx: sx, stem: stem, placed: placed, top: top, bot: bot, y0: y0, yEnd: yEnd, right: right, ledgers: ledgers };
+  }
+  // the ink a laid-out group covers, as boxes: its heads (with their dots,
+  // breve strokes or bell ring), its ledgers, its stem and its flags. Used to
+  // keep two voices at one x out of each other's way.
+  function groupBoxes(L, o) {
+    var s = L.s, out = [], hasDots = false, lh = 0.1 * s;
+    L.ledgers.forEach(function (l) { out.push([l[0], l[1] - lh, l[2], l[1] + lh, 1]); });   // [4]: a ledger
+    L.placed.forEach(function (p) {
+      var hw = o.breve ? 1.1 * s : o.ring ? 1.05 * s : 0.64 * s, hh = o.ring ? 1.05 * s : 0.52 * s;   // a bell's ring is part of its head
+      out.push([p.x - hw, p.y - hh, p.x + hw, p.y + hh]);
+      if (p.h.dots) hasDots = true;
+    });
+    if (hasDots) out.push([L.right + 0.25 * s, L.bot.y - 0.6 * s, L.right + 0.75 * s, L.top.y + 0.6 * s]);
+    if (L.stem) {
+      var ya = Math.min(L.y0, L.yEnd), yb = Math.max(L.y0, L.yEnd);
+      out.push([L.sx - L.sw / 2 - 0.08 * s, ya, L.sx + L.sw / 2 + 0.08 * s, yb]);
+      if (o.flags) {
+        var fy = L.yEnd, fl = (0.8 * (o.flags - 1) + 2.8) * s, d = L.yEnd < L.y0 ? 1 : -1;
+        out.push([L.sx, Math.min(fy, fy + d * fl), L.sx + 1.05 * s, Math.max(fy, fy + d * fl)]);
+      }
+    }
+    return out;
+  }
+  function drawGroup(c, g, X, heads, st, dir, o) {
+    var sp = g.sp, L = layoutGroup(g, X, heads, st, dir, o);
+    var s = L.s, sw = L.sw, sx = L.sx, placed = L.placed, top = L.top, bot = L.bot, yEnd = L.yEnd;
+    var pad = KO_PAD * sp;
+    c.fillStyle = rgba(o.rgb);
+    var lth = Math.max(1.2 / dpr, 0.16 * sp);
+    L.ledgers.forEach(function (l) {
+      hLine(c, l[0], l[2], l[1], lth);
+      koRect(c, l[0] - pad, l[1] - lth / 2 - pad, l[2] + pad, l[1] + lth / 2 + pad);
+    });
+    if (L.stem) {
+      vLine(c, sx, L.y0, yEnd, sw);
+      koRect(c, sx - sw / 2 - pad, Math.min(L.y0, yEnd), sx + sw / 2 + pad, Math.max(L.y0, yEnd));
       for (var f = 0; f < (o.flags || 0); f++) drawFlag(c, sx, yEnd + dir * f * 0.8 * s, dir, s, sw);
       if (o.slash) {
         c.save(); c.strokeStyle = rgba(o.rgb); c.lineWidth = Math.max(1 / dpr, 0.1 * sp); c.lineCap = "round";
         c.beginPath(); c.moveTo(sx - 0.7 * s, yEnd + dir * 2.1 * s); c.lineTo(sx + 0.8 * s, yEnd + dir * 0.9 * s); c.stroke(); c.restore();
       }
     }
-    placed.forEach(function (p) { drawSprite(c, headSprite(p.k, p.h.open, s, o.rgb), p.x, p.y); });
+    placed.forEach(function (p) {
+      drawSprite(c, headSprite(p.k, p.h.open, s, o.rgb), p.x, p.y);
+      koEllipse(c, p.x, p.y, 0.68 * s + pad, 0.55 * s + pad);
+    });
     if (o.breve) {                                        // the breve's side strokes
       placed.forEach(function (p) {
         [-1, 1].forEach(function (sd) {
@@ -754,18 +886,17 @@ window.KolobViz = (function () {
       });
     }
     // augmentation dots, each in a space, clear of the stem
-    var right = -1e9;
-    placed.forEach(function (p) { right = Math.max(right, p.x + 0.64 * s); });
-    if (dir > 0 && !o.noStem) right = Math.max(right, sx + sw / 2);
     var used = {};
     placed.slice().reverse().forEach(function (p) {
       if (!p.h.dots) return;
       var dq = p.h.q % 2 === 0 ? p.h.q + 1 : p.h.q;
       while (used[dq]) dq -= 2;
       used[dq] = 1;
-      c.beginPath(); c.arc(right + 0.5 * s, g.y(st, dq), 0.19 * s, 0, Math.PI * 2); c.fill();
+      var dy = g.y(st, dq);
+      c.beginPath(); c.arc(L.right + 0.5 * s, dy, 0.19 * s, 0, Math.PI * 2); c.fill();
+      koEllipse(c, L.right + 0.5 * s, dy, 0.19 * s + pad, 0.19 * s + pad);
     });
-    return { sx: sx, yEnd: yEnd, topY: top.y, botY: bot.y, topX: top.x, botX: bot.x, sw: sw };
+    return { sx: sx, yEnd: yEnd, topY: top.y, botY: bot.y, topX: top.x, botX: bot.x, sw: sw, L: L };
   }
   function drawFlag(c, sx, y, dir, s, sw) {
     c.save(); c.translate(sx - sw / 2, y); c.scale(s, dir > 0 ? s : -s);
@@ -778,12 +909,6 @@ window.KolobViz = (function () {
     c.bezierCurveTo(0.42, 1.34, 0.2, 1.22, 0, 1.12);
     c.closePath(); c.fill(); c.restore();
   }
-  function drawTimeSig(c, g, x, st, num, den) {
-    var top = st === "T" ? g.T : g.B, sc = (2 * g.sp) / 130;
-    [[num, top], [den, top + 2 * g.sp]].forEach(function (pr) {
-      c.save(); c.translate(x, pr[1]); c.scale(sc, sc); c.fill(digitPath[pr[0]]); c.restore();
-    });
-  }
   function drawBarline(c, g, x, kind, st) {
     var sp = g.sp, top = st === "T" ? g.T : g.B, bot = top + 4 * sp;
     if (kind === "dotted") {
@@ -795,41 +920,6 @@ window.KolobViz = (function () {
     }
     vLine(c, x, top, bot, Math.max(1.2 / dpr, 0.16 * sp));
   }
-  // 8va / 8vb: folded notes of one voice that follow each other closely
-  // share one sign — the figure at the first, a dashed line to the last,
-  // and a hook at its end
-  function drawOttavas(c, g, list) {
-    var sp = g.sp, th = Math.max(1 / dpr, 0.09 * sp), i = 0;
-    list.sort(function (a, b) { return a.x - b.x; });
-    while (i < list.length) {
-      var a = list[i], j = i;
-      while (j + 1 < list.length && list[j + 1].key === a.key && list[j + 1].tp0 - list[j].tp1 < 1.2) j++;
-      var b = list[j], up = a.st === "T";
-      var label = a.oct >= 2 ? "15" : "8", sup = a.oct >= 2 ? (up ? "ma" : "mb") : (up ? "va" : "vb");
-      var y = up ? g.T - 1.3 * sp : g.Bb + 2.1 * sp, yl = y - 0.42 * sp;
-      c.globalAlpha = a.a;
-      var x0 = a.x - 0.7 * sp;
-      if (i === j && a.stemUp) {                        // a lone note, its stem up: the sign stands before it
-        c.font = "italic 500 " + (1.25 * sp).toFixed(1) + "px " + FG;
-        var lw1 = c.measureText(label).width;
-        c.font = "italic " + (0.9 * sp).toFixed(1) + "px " + FG;
-        var tx = a.x - 0.9 * sp - lw1 - c.measureText(sup).width;
-        var wl = text(c, label, tx, y, "italic 500 " + (1.25 * sp).toFixed(1) + "px " + FG, a.rgb, 1);
-        text(c, sup, tx + wl, y, "italic " + (0.9 * sp).toFixed(1) + "px " + FG, a.rgb, 1);
-        i = j + 1;
-        continue;
-      }
-      var w = text(c, label, x0, y, "italic 500 " + (1.25 * sp).toFixed(1) + "px " + FG, a.rgb, 1);
-      var w2 = text(c, sup, x0 + w, y, "italic " + (0.9 * sp).toFixed(1) + "px " + FG, a.rgb, 1);
-      var xe = Math.min(b.x + 1.4 * sp, g.xE + 0.4 * sp);
-      c.fillStyle = rgba(b.rgb, 0.8);
-      for (var dx = x0 + w + w2 + 0.3 * sp; dx < xe - 0.3 * sp; dx += 0.8 * sp) snapRect(c, dx, yl, 0.42 * sp, th);
-      if (b.x + 1.4 * sp < g.xE) vLine(c, xe, yl, yl + (up ? 0.7 : -0.7) * sp, th);
-      i = j + 1;
-    }
-    c.globalAlpha = 1;
-  }
-
   // ---- the static staff layer: two staves, a brace, and the two clefs --------
   function buildStaffLayer(c) {
     var g = G, sp = g.sp;
@@ -870,151 +960,159 @@ window.KolobViz = (function () {
 
   // ---- the ward's page ----------------------------------------------------------
   function X(tp) { return Math.round((G.xE - (PT - tp) * SCROLL_PX_S) * dpr) / dpr; }
+  // Two voices at one x. A group is placed the first time it is drawn: if
+  // its ink would run into a group already placed close by on the same
+  // staff (a stem through the other voice's head, heads or dots that
+  // touch), it is set to the right, clear of that ink, the way a second
+  // voice is set. The offset is kept, and worked out again if the staff
+  // space changes (a resize).
+  function placeColumn(gr, g, heads, o) {
+    if (gr.col && gr.col.sp === g.sp) return gr.col.dx;
+    var sp = g.sp, tol = 0.05 * sp, gap = 0.3 * sp;
+    var bx = groupBoxes(layoutGroup(g, 0, heads, gr.st, gr.dir, o), o);
+    var bL = 1e9;
+    for (var q = 0; q < bx.length; q++) bL = Math.min(bL, bx[q][0]);
+    var dx = 0;
+    for (var pass = 0; pass < 4; pass++) {
+      var need = dx;
+      for (var i = 0; i < groups.length; i++) {
+        var A = groups[i];
+        if (A === gr || !A.col || A.col.sp !== sp || A.st !== gr.st || !(A.lastA > 0.05)) continue;
+        var off = (A.tp - gr.tp) * SCROLL_PX_S + A.col.dx;     // A's origin, from ours
+        if (off < dx - 8 * sp || off > dx + 8 * sp) continue;
+        var ab = A.col.boxes, hit = false, aR = -1e9;
+        for (var m = 0; m < ab.length; m++) {
+          var ax0 = ab[m][0] + off, ax1 = ab[m][2] + off;
+          aR = Math.max(aR, ax1);
+          for (var n = 0; !hit && n < bx.length; n++) {
+            var b = bx[n];
+            if (ab[m][4] && b[4]) continue;                     // ledgers may meet
+            if (ax0 < b[2] + dx - tol && b[0] + dx < ax1 - tol && ab[m][1] < b[3] - tol && b[1] < ab[m][3] - tol) hit = true;
+          }
+        }
+        if (hit) need = Math.max(need, aR + gap - bL);
+      }
+      if (need <= dx) break;
+      dx = need;
+    }
+    gr.col = { sp: sp, dx: dx, boxes: bx };
+    return dx;
+  }
   function drawPage(c) {
     var g = G, sp = g.sp, xR = g.xE + 3 * sp;
-    drawTapes(c);
-    // the groups — heads on their stems
-    var keep = 0, ott = [];
+    // the groups — heads on their stems, in the one ink
+    var keep = 0;
     for (var i = 0; i < groups.length; i++) {
       var gr = groups[i], x = X(gr.tp);
-      if (x < -6 * sp && !(gr.ring && x > -12 * sp)) continue;   // gone past the clefs
+      if (x < -6 * sp) continue;                               // gone past the clefs
       groups[keep++] = gr;
       if (gr.tp > PT || x > xR) continue;                      // not yet sung
       var a = dryA(gr);
+      gr.lastA = a;
       if (a < 0.02) continue;
-      var ink = inkOf(gr.tp, gr.dur, C_INK);
       var fold = foldFor(gr, g), heads = gr.heads;
       if (fold.oct) {
         var sh = (gr.st === "T" ? -7 : 7) * fold.oct;
         heads = heads.map(function (h) { return { q: h.q + sh, shape: h.shape, open: h.open, dots: h.dots }; });
       }
+      var o = { scale: gr.scale, rgb: C_INK, noStem: gr.noStem, flags: gr.flags, slash: gr.slash, breve: gr.v && gr.v.breve, ring: gr.ring };
+      x += placeColumn(gr, g, heads, o);
       c.globalAlpha = a;
-      if (gr.ring) drawRings(c, g, x, g.y(gr.st, heads[0].q), gr, a);
-      drawGroup(c, g, x, heads, gr.st, gr.dir, {
-        scale: gr.scale, rgb: ink.rgb, glow: ink.glow, noStem: gr.noStem, flags: gr.flags, slash: gr.slash, breve: gr.v && gr.v.breve
-      });
-      if (fold.oct) ott.push({ key: gr.layer + gr.st + fold.oct, st: gr.st, oct: fold.oct, x: x, tp0: gr.tp, tp1: gr.tp + gr.dur, rgb: ink.rgb, a: a,
-                               stemUp: gr.st === "T" && gr.dir > 0 && !gr.noStem });
-      if (gr.caption) text(c, gr.caption, x - 0.6 * sp, g.capY, "italic " + (1.1 * sp).toFixed(1) + "px " + FG, C_INK, 0.8);
+      drawGroup(c, g, x, heads, gr.st, gr.dir, o);
+      if (gr.ring) drawBellRing(c, g, x, g.y(gr.st, heads[0].q), gr.scale);
     }
-    drawOttavas(c, g, ott);
     groups.length = keep;
-    c.globalAlpha = 1;
-    // the fuging mark
-    for (var m = marks.length - 1; m >= 0; m--) {
-      var mk = marks[m], mx = X(mk.tp);
-      if (mx < -2 * sp) { marks.splice(m, 1); continue; }
-      if (mk.tp > PT) continue;
-      c.globalAlpha = dryA(mk);
-      text(c, mk.glyph, mx, g.T - 0.9 * sp, "italic " + (1.5 * sp).toFixed(1) + "px " + FG, inkOf(mk.tp, 0.6, C_GILT).rgb, 0.9, "center");
-    }
     c.globalAlpha = 1;
     drawQuestions(c);
   }
-  // bells: the rings spread and fade as the bell decays
-  function drawRings(c, g, x, y, gr, a) {
-    var sp = g.sp, age = PT - gr.tp, life = clamp(age / Math.max(1, gr.dur), 0, 1);
+  // a bell: a ringed head — one thin ring, drawn with the head, that dries
+  // with it (no spreading rings: nothing on the page moves but the scroll)
+  function drawBellRing(c, g, x, y, sc) {
+    var r = 0.98 * g.sp * (sc || 1), lw = Math.max(1 / dpr, 0.07 * g.sp);
     c.save();
-    for (var k = 0; k < 3; k++) {
-      var r = (0.95 + 0.5 * k + 0.8 * Math.sqrt(life)) * sp;
-      var al = (0.75 - 0.2 * k) * (1 - 0.72 * life);
-      c.strokeStyle = rgba(C_GILT, al * a); c.lineWidth = Math.max(1 / dpr, (0.1 - 0.02 * k) * sp);
-      c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.stroke();
-    }
+    c.strokeStyle = rgba(C_INK); c.lineWidth = lw;
+    c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.stroke();
     c.restore();
+    koEllipse(c, x, y, r + lw + KO_PAD * g.sp, r + lw + KO_PAD * g.sp);
   }
 
-  // the telegraph: punched paper tape down the middle of the page. A
-  // Wheatstone slip — a feed track of small holes, and the message punched
-  // above it (a round hole for a dit, a slot for a dah) — fed out of the
-  // engraving point faster than the page while it is keyed, then cut and
-  // carried with the page.
+  // the telegraph: its message punched straight into the page's paper along
+  // the middle of the gap (v0.32, owner: no tape, no container) — a round
+  // hole for a dit, a slot for a dah, each showing the plate beneath with a
+  // little shadow under its upper lip. A hole is punched at the engraving
+  // point when its key lifts and then travels with the page like a note (so
+  // the message is laid out at the page's own scale); it dries like a note,
+  // and it is never punched where a note, ledger or stem has the gap.
+  function tapeLive() {
+    for (var i = 0; i < tapes.length; i++) if (tapes[i].tp <= PT) return true;
+    return false;
+  }
+  function holeR(T) { return Math.min(0.23 * G.sp, 0.45 * T.U * SCROLL_PX_S); }
   function drawTapes(c) {
-    var g = G, sp = g.sp;
+    var g = G, sp = g.sp, cy = g.tapeY;
     for (var i = tapes.length - 1; i >= 0; i--) {
       var T = tapes[i];
       if (T.tp > PT) continue;
-      var UP = 0.55 * sp, F = UP / T.U, lead = 1.0 * sp, tail = 1.2 * sp, total = lead + T.Tt * F + tail;
-      var tf = T.tp + (total - lead) / F, xs, fed;
-      if (PT < tf) { fed = lead + (PT - T.tp) * F; xs = g.xE - fed; }
-      else { fed = total; xs = g.xE - total - (PT - tf) * SCROLL_PX_S; }
-      xs = Math.round(xs * dpr) / dpr;
-      if (xs + fed < -4 * sp) { tapes.splice(i, 1); continue; }
-      if (T.d0 == null) T.d0 = DRY;
-      var a = Math.exp(-0.03 * Math.max(0, DRY - T.d0 - Math.max(0, tf - T.tp)));
-      var h = 1.45 * sp, top = g.tapeY - h / 2;
-      c.save();
-      c.globalAlpha = a;
-      c.shadowColor = "rgba(70, 58, 30, 0.22)"; c.shadowBlur = 1.1 * dpr; c.shadowOffsetY = 0.6;
-      c.fillStyle = "#fdfaf2";
-      c.beginPath();
-      c.moveTo(xs + 0.5 * sp, top); c.lineTo(xs + fed, top); c.lineTo(xs + fed, top + h); c.lineTo(xs, top + h); c.closePath();
-      c.fill();
-      c.shadowColor = "transparent";
-      c.strokeStyle = rgba(C_INK, 0.28); c.lineWidth = Math.max(1 / dpr, 0.05 * sp);
-      c.stroke();
-      var fy = top + h * 0.74;                         // the feed track
-      c.fillStyle = "rgba(120, 104, 70, 0.3)";
-      c.beginPath();
-      for (var u = lead * 0.6; u < fed - 0.2 * sp; u += UP) { c.moveTo(xs + u + 0.09 * sp, fy); c.arc(xs + u, fy, 0.09 * sp, 0, Math.PI * 2); }
-      c.fill();
-      var cy = top + h * 0.37, hr = 0.23 * sp;           // the message holes
+      if (X(T.tp + T.Tt) < -4 * sp) { tapes.splice(i, 1); continue; }
+      var hr = holeR(T), inset = Math.min(0.04 * sp, 0.1 * hr);
       for (var j = 0; j < T.marks.length; j++) {
-        var mk = T.marks[j], u0 = lead + mk.at * F, u1 = u0 + mk.len * F;
-        if (u1 > fed) break;
-        var xa = xs + u0 + 0.04 * sp, xb = xs + u1 - 0.04 * sp;
+        var mk = T.marks[j];
+        if (mk.tp > PT) break;                           // punched when the key lifts
+        var xa = X(T.tp + mk.at) + inset, xb = X(mk.tp) - inset;
+        if (xb < -2 * sp) continue;
+        var a = dryA(mk);
+        if (a < 0.02) continue;
+        var hx0 = mk.dah ? xa : (xa + xb) / 2 - hr, hx1 = mk.dah ? Math.max(xb, xa + 2 * hr) : (xa + xb) / 2 + hr;
+        if (koCovers(hx0, cy - hr, hx1, cy + hr)) continue;   // the music has the gap here
+        c.globalAlpha = a;
         c.beginPath();
         if (!mk.dah) c.arc((xa + xb) / 2, cy, hr, 0, Math.PI * 2);
-        else c.roundRect(xa, cy - hr, Math.max(2 * hr, xb - xa), 2 * hr, hr);
+        else rrect(c, xa, cy - hr, Math.max(2 * hr, xb - xa), 2 * hr, hr);
         c.fillStyle = "#ddd1b4"; c.fill();              // the plate seen through the hole
         c.save(); c.clip();
-        c.strokeStyle = "rgba(60, 45, 20, 0.6)"; c.lineWidth = 0.2 * sp;
+        c.strokeStyle = "rgba(60, 45, 20, 0.6)"; c.lineWidth = 0.87 * hr;
+        var d = 0.39 * hr;
         c.beginPath();
-        if (!mk.dah) c.arc((xa + xb) / 2, cy + 0.09 * sp, hr, Math.PI, Math.PI * 2);
-        else { c.moveTo(xa, cy + 0.02 * sp); c.arcTo(xa, cy - hr + 0.09 * sp, xa + hr, cy - hr + 0.09 * sp, hr); c.lineTo(xb - hr, cy - hr + 0.09 * sp); c.arcTo(xb, cy - hr + 0.09 * sp, xb, cy + 0.02 * sp, hr); }
+        if (!mk.dah) c.arc((xa + xb) / 2, cy + d, hr, Math.PI, Math.PI * 2);
+        else { c.moveTo(xa, cy + 0.1 * hr); c.arcTo(xa, cy - hr + d, xa + hr, cy - hr + d, hr); c.lineTo(xb - hr, cy - hr + d); c.arcTo(xb, cy - hr + d, xb, cy + 0.1 * hr, hr); }
         c.stroke(); c.restore();
       }
-      c.restore();
     }
+    c.globalAlpha = 1;
   }
 
   // the Question: each asking in a slender double-ruled cartouche with its
-  // "?" at the head, in gilt; then, after the last, an empty measure between
-  // dotted barlines — no answer
+  // "?" at the head, in the one green ink; then, after the last, an empty
+  // measure between dotted barlines — the answer that does not come
   function drawQuestions(c) {
-    var g = G, sp = g.sp, cap = "italic " + (1.1 * sp).toFixed(1) + "px " + FG;
+    var g = G, sp = g.sp;
     for (var qi = questions.length - 1; qi >= 0; qi--) {
       var qn = questions[qi], alive = false;
-      qn.asks.forEach(function (ak, k) {
+      qn.asks.forEach(function (ak) {
         if (ak.tp0 > PT) { alive = true; return; }
         var x0 = X(ak.tp0) - 3.0 * sp, x1 = X(ak.tp1) + 0.6 * sp;
         if (x1 > -2 * sp) alive = true; else return;
-        var a = dryA(ak), ink = inkOf(ak.tp0, ak.tp1 - ak.tp0, C_GILT, mixc(C_GILT, [214, 170, 80], 0.6));
         var y0 = g.T - 2.55 * sp, y1 = g.Tb + 1.25 * sp, r = 1.15 * sp;
         c.save();
         c.beginPath(); c.rect(0, 0, g.xE + 0.5 * sp, H); c.clip();          // pulled by the burin only as far as the engraving point
-        c.globalAlpha = a;
-        c.strokeStyle = rgba(ink.rgb); c.lineWidth = Math.max(1.1 / dpr, 0.13 * sp);
-        c.beginPath(); c.roundRect(x0, y0, x1 - x0, y1 - y0, r); c.stroke();
-        c.lineWidth = Math.max(0.8 / dpr, 0.05 * sp); c.strokeStyle = rgba(ink.rgb, 0.7);
-        c.beginPath(); c.roundRect(x0 + 0.28 * sp, y0 + 0.28 * sp, x1 - x0 - 0.56 * sp, y1 - y0 - 0.56 * sp, r - 0.28 * sp); c.stroke();
-        c.lineWidth = Math.max(1.1 / dpr, 0.13 * sp); c.strokeStyle = rgba(ink.rgb);
+        c.globalAlpha = dryA(ak);
+        c.strokeStyle = rgba(C_INK); c.lineWidth = Math.max(1.1 / dpr, 0.13 * sp);
+        c.beginPath(); rrect(c, x0, y0, x1 - x0, y1 - y0, r); c.stroke();
+        c.lineWidth = Math.max(0.8 / dpr, 0.05 * sp); c.strokeStyle = rgba(C_INK, 0.7);
+        c.beginPath(); rrect(c, x0 + 0.28 * sp, y0 + 0.28 * sp, x1 - x0 - 0.56 * sp, y1 - y0 - 0.56 * sp, r - 0.28 * sp); c.stroke();
+        c.lineWidth = Math.max(1.1 / dpr, 0.13 * sp); c.strokeStyle = rgba(C_INK);
         c.beginPath(); c.moveTo(x1 + 0.35 * sp, y0 + 0.9 * sp); c.lineTo(x1 + 0.35 * sp, y1 - 0.9 * sp); c.stroke();
-        text(c, "?", x0 + 1.2 * sp, g.yT(16) + 0.95 * sp, "italic 500 " + (2.7 * sp).toFixed(1) + "px " + FG, ink.rgb, 1, "center");
-        text(c, k === 0 ? "clarinet, asking" : "asking again", x0 + 0.3 * sp, g.capY, cap, C_INK, 0.8);
+        text(c, "?", x0 + 1.2 * sp, g.yT(16) + 0.95 * sp, "italic 500 " + (2.7 * sp).toFixed(1) + "px " + FG, C_INK, 1, "center");
         c.restore();
       });
       if (qn.na) {
         var na = qn.na;
         if (na.tp0 <= PT) {
-          var xa = X(na.tp0), xb = X(na.tp1), an = dryA(na);
+          var xa = X(na.tp0), xb = X(na.tp1);
           if (xb > -2 * sp) alive = true;
-          c.globalAlpha = an; c.fillStyle = rgba(C_INK);
+          c.globalAlpha = dryA(na); c.fillStyle = rgba(C_INK);
           if (xa > -sp) { drawBarline(c, g, xa, "dotted", "T"); drawBarline(c, g, xa, "dotted", "B"); }
           if (na.tp1 <= PT && xb > -sp) { drawBarline(c, g, xb, "dotted", "T"); drawBarline(c, g, xb, "dotted", "B"); }
-          c.save(); c.beginPath(); c.rect(0, 0, g.xE + 0.5 * sp, H); c.clip();
-          text(c, "no answer", (xa + xb) / 2, g.tapeY + 0.4 * sp, "italic " + (1.25 * sp).toFixed(1) + "px " + FG, C_GILT, 0.95, "center");
-          c.restore();
           c.globalAlpha = 1;
         } else alive = true;
       }
@@ -1023,54 +1121,46 @@ window.KolobViz = (function () {
   }
 
   // ---- the band's own layer ---------------------------------------------------
+  // Round notes in the same green, on their own layer under the ward's ink,
+  // sliding through at the band's own (quicker) rate; each note's ink follows
+  // the band's approach, crossing and recession. Barlines every two of its
+  // beats. No figures or words: the round heads and the pace say "not ours".
   function drawBand(c) {
-    var g = G, sp = g.sp;
-    var keep = 0, ott = [];
+    var g = G, sp = g.sp, keep = 0;
     for (var i = 0; i < bandNotes.length; i++) {
       var n = bandNotes[i], bd = n.bd;
       var x = Math.round((g.xE - (PT - n.tp) * SCROLL_PX_S * bd.r) * dpr) / dpr;
       if (x < -6 * sp) continue;
       bandNotes[keep++] = n;
       if (n.tp > PT) continue;
-      var ink = inkOf(n.tp, n.dur, C_BRASS, C_BRASS_HI);
       c.globalAlpha = (0.12 + 0.68 * n.loud) * dryA(n);
       if (n.mel) {
-        var fold = n.q > g.qMaxT ? Math.ceil((n.q - 21) / 7) : 0, q = n.q - 7 * fold;
+        var q = n.q;
+        while (q > g.qMaxT) q -= 7;                              // folded in silently, like the ward's
         drawGroup(c, g, x, [{ q: q, shape: "round", open: n.v.open, dots: n.v.dots }], "T", q >= 16 ? -1 : 1,
-          { rgb: ink.rgb, glow: ink.glow * n.loud, noStem: !n.v.stem, flags: n.v.flags });
-        if (fold) ott.push({ key: "band" + fold, st: "T", oct: fold, x: x, tp0: n.tp, tp1: n.tp + n.dur, rgb: ink.rgb, a: c.globalAlpha });
+          { rgb: C_INK, noStem: !n.v.stem, flags: n.v.flags });
       } else {
         // the oom-pah, written the bandsman's way — a staccato quarter
-        var rb = drawGroup(c, g, x, [{ q: n.q, shape: "round", open: false }], "B", -1, { rgb: ink.rgb, glow: ink.glow * n.loud });
+        var rb = drawGroup(c, g, x, [{ q: n.q, shape: "round", open: false }], "B", -1, { rgb: C_INK });
         var dq = n.q % 2 === 0 ? n.q + 1.5 : n.q + 2;
         c.beginPath(); c.arc(rb.topX, g.yB(dq), 0.17 * sp, 0, Math.PI * 2); c.fill();
       }
     }
     bandNotes.length = keep;
-    drawOttavas(c, g, ott);
-    // the band's entry (2/4 and its caption) and its barlines, every two of its beats
+    // the band's barlines, every two of its beats
     for (var b = visits.length - 1; b >= 0; b--) {
       var bd2 = visits[b];
       var XB = function (tp) { return Math.round((g.xE - (PT - tp) * SCROLL_PX_S * bd2.r) * dpr) / dpr; };
       if (bd2.tp0 > PT) continue;
-      var xk = XB(bd2.tp0) - 2.4 * sp;
       if (XB(bd2.tp1) < -6 * sp) { visits.splice(b, 1); continue; }
-      var inkK = inkOf(bd2.tp0, 0.4, C_BRASS, C_BRASS_HI);
-      if (xk > -4 * sp && xk < g.xE) {
-        c.globalAlpha = 0.22 * dryA(bd2); c.fillStyle = rgba(inkK.rgb);
-        drawTimeSig(c, g, xk, "T", "2", "4"); drawTimeSig(c, g, xk, "B", "2", "4");
-        c.globalAlpha = 0.75 * dryA(bd2);
-        var w = text(c, "Band", xk - 0.2 * sp, g.capY, "italic 500 " + (1.15 * sp).toFixed(1) + "px " + FG, inkK.rgb, 1);
-        text(c, " — not one of ours", xk - 0.2 * sp + w, g.capY, "italic " + (1.1 * sp).toFixed(1) + "px " + FG, inkK.rgb, 0.85);
-      }
       for (var k = 1; k < bd2.bass.length; k++) {
-        var tb = bd2.bass[k];
+        var tb = bd2.bass[k].tp;
         if (tb > PT) break;
         var xb = XB(tb) - 1.8 * sp;
         if (xb < -sp || xb > g.xE) continue;
         var life = clamp((tb - bd2.tp0) / Math.max(1, bd2.tp1 - bd2.tp0), 0, 1);
-        c.globalAlpha = 0.1 + 0.4 * Math.sin(Math.PI * life);
-        c.fillStyle = rgba(C_BRASS);
+        c.globalAlpha = (0.1 + 0.4 * Math.sin(Math.PI * life)) * dryA(bd2.bass[k]);
+        c.fillStyle = rgba(C_INK);
         drawBarline(c, g, xb, "single", "T"); drawBarline(c, g, xb, "single", "B");
       }
     }
@@ -1078,7 +1168,7 @@ window.KolobViz = (function () {
   }
 
   // ---- the frame ----------------------------------------------------------------
-  var inkLayer = null, bandLayer = null;
+  var inkLayer = null, bandLayer = null, tapeLayer = null;
   var lastFrame = 0;
   function paintLayer(layer, fn) {
     var c = layer.getContext("2d");
@@ -1088,8 +1178,7 @@ window.KolobViz = (function () {
     c.setTransform(dpr, 0, 0, dpr, 0, 0);
     c.save();
     c.beginPath(); c.rect(0, G.top, W, G.bot - G.top); c.clip();   // the plate
-    fn(c);
-    c.restore();
+    try { fn(c); } finally { c.restore(); }                          // one bad frame must not leave the plate clipped
     // the ink dissolves before it reaches the clefs
     c.globalCompositeOperation = "destination-out";
     var gr = c.createLinearGradient(G.fade0, 0, G.fade1, 0);
@@ -1101,16 +1190,24 @@ window.KolobViz = (function () {
     if (!running) return;
     requestAnimationFrame(frame);
     if (!ctx2d || !G) return;
-    var dt = lastFrame ? Math.min(0.1, (ts - lastFrame) / 1000) : 0.016;
+    var raw = lastFrame ? Math.max(0, (ts - lastFrame) / 1000) : 0.016;
+    var dt = Math.min(0.1, raw);                     // for the wheel's easing
     lastFrame = ts;
-    tickClock(dt);
+    tickClock(raw);                                  // the page keeps the real time: after a hidden spell it shows the present
+    // the ward's ink first, noting where the music has the middle of the gap
+    var hasTape = tapes.length > 0;
+    KO.length = 0;
+    if (hasTape && tapeLive()) { var tH = 0.4 * G.sp; koY0 = G.tapeY - tH; koY1 = G.tapeY + tH; }
     paintLayer(inkLayer, drawPage);
+    koY0 = 0; koY1 = -1;
+    if (hasTape) paintLayer(tapeLayer, drawTapes);
     var hasBand = bandNotes.length > 0 || visits.length > 0;
     if (hasBand) paintLayer(bandLayer, drawBand);
     ctx2d.setTransform(1, 0, 0, 1, 0, 0);
     ctx2d.clearRect(0, 0, canvas.width, canvas.height);
     if (staffLayer) ctx2d.drawImage(staffLayer, 0, 0);
     if (hasBand) ctx2d.drawImage(bandLayer, 0, 0);          // the guests' layer lies under the ward's ink
+    if (hasTape) ctx2d.drawImage(tapeLayer, 0, 0);          // the telegraph's holes, under the ward's ink and never beneath a note
     ctx2d.drawImage(inkLayer, 0, 0);
     ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
 
@@ -1332,17 +1429,13 @@ window.KolobViz = (function () {
   // ---- lifecycle -------------------------------------------------------------
   function resize() {
     if (!canvas) return;
-    dpr = Math.min(2, window.devicePixelRatio || 1);
+    dpr = Math.min(3, window.devicePixelRatio || 1);   // DPR-3 phones get crisp rules (the budget allows it)
     var rect = canvas.getBoundingClientRect();
     W = Math.max(60, Math.round(rect.width));
     H = Math.max(60, Math.round(rect.height));
     canvas.width = W * dpr; canvas.height = H * dpr;
     ctx2d = canvas.getContext("2d");
     G = pageGeom();
-    if (!digitPath && typeof Path2D === "function") {
-      digitPath = {};
-      Object.keys(DIGITS).forEach(function (k) { digitPath[k] = new Path2D(DIGITS[k]); });
-    }
     function layer() { var l = document.createElement("canvas"); l.width = W * dpr; l.height = H * dpr; return l; }
     // the static staff layer (staves, brace, clefs), and the two ink layers
     // the page is re-engraved on each frame — the ward's, and the band's
@@ -1350,7 +1443,7 @@ window.KolobViz = (function () {
     var sctx = staffLayer.getContext("2d");
     sctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     buildStaffLayer(sctx);
-    inkLayer = layer(); bandLayer = layer();
+    inkLayer = layer(); bandLayer = layer(); tapeLayer = layer();
     if (wheel) {
       var xr = wheel.getBoundingClientRect();
       XW = Math.max(60, Math.round(xr.width));
@@ -1391,8 +1484,12 @@ window.KolobViz = (function () {
   }
   function setConductor(c, isPlaying, isPaused) {
     if (c) cond = c;
+    var was = playing;
     playing = !!isPlaying;
     paused = !!isPaused;
+    // stopped: nothing more is struck (the "■" event usually got here first,
+    // with the exact time; this catches a stop that came without it)
+    if (was && !playing) silence(audioNow());
   }
 
   return { init: init, setConductor: setConductor, setWheelLabels: setWheelLabels, wheelSeatAt: wheelSeatAt };
