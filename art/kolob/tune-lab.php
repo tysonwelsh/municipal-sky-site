@@ -119,7 +119,13 @@ include '../../includes/header.php';
   Wear re-rolls on every click of <strong>remembered</strong>.</p>
 </div>
 
-<script src="kolob-audio.js?v=<?php echo otl_v('kolob-audio.js'); ?>"></script>
+<?php // the engine's modules, in the SCORE.md §1 order (as index.php loads them)
+foreach (['kolob-pitch.js', 'kolob-melody.js', 'kolob-harmony.js',
+          'kolob-voices-organ.js', 'kolob-voices-choir.js', 'kolob-voices-winds.js',
+          'kolob-voices-ground.js', 'kolob-voices-field.js', 'kolob-voices-bagpipe.js',
+          'kolob-guests.js', 'kolob-meeting.js', 'kolob-core.js'] as $k_js): ?>
+<script src="<?php echo $k_js; ?>?v=<?php echo otl_v($k_js); ?>"></script>
+<?php endforeach; ?>
 <script src="tune-lab.js?v=<?php echo otl_v('tune-lab.js'); ?>"></script>
 
 <?php include '../../includes/footer.php'; ?>

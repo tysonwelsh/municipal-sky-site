@@ -163,7 +163,13 @@ include '../../includes/header.php';
 </div>
 
 <script src="../prosperos-jukebox-v2/pj2-fx.js?v=<?php echo rml_v('../prosperos-jukebox-v2/pj2-fx.js'); ?>"></script>
-<script src="kolob-audio.js?v=<?php echo rml_v('kolob-audio.js'); ?>"></script>
+<?php // the engine's modules, in the SCORE.md §1 order (as index.php loads them)
+foreach (['kolob-pitch.js', 'kolob-melody.js', 'kolob-harmony.js',
+          'kolob-voices-organ.js', 'kolob-voices-choir.js', 'kolob-voices-winds.js',
+          'kolob-voices-ground.js', 'kolob-voices-field.js', 'kolob-voices-bagpipe.js',
+          'kolob-guests.js', 'kolob-meeting.js', 'kolob-core.js'] as $k_js): ?>
+<script src="<?php echo $k_js; ?>?v=<?php echo rml_v($k_js); ?>"></script>
+<?php endforeach; ?>
 <script src="room-lab.js?v=<?php echo rml_v('room-lab.js'); ?>"></script>
 
 <?php include '../../includes/footer.php'; ?>
