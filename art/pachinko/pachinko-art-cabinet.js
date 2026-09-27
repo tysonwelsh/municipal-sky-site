@@ -595,14 +595,20 @@
   A.drawCabinetLive = function (g, view) {
     var t = view.t || 0, mode = view.mode, attract = mode === 'attract' || mode === 'work';
     // marquee bulbs: attract chases, play breathes, payout blinks all at once
-    var n = BULBS.length;
+    // at the mother lode the bulbs go wild (two chases crossing, sparks of
+    // the ones between), and the dead ones come on: mended for the visit
+    var n = BULBS.length, fxc = view.fx || {}, wild = fxc.wild || 0, mended = !!fxc.mended;
     for (var i = 0; i < n; i++) {
       var b = BULBS[i], on;
-      if (b.dead) on = 0;
+      if (b.dead && !mended) on = 0;
+      else if (wild > 0 && A.hash01(i, Math.floor(t * 12), 5) < wild) {
+        var ph1 = ((i - t * 26) % 5 + 5) % 5, ph2 = ((i + t * 19) % 7 + 7) % 7;
+        on = (ph1 < 1.4 || ph2 < 1) ? 1 : A.hash01(i, Math.floor(t * 20), 3) < 0.25 ? 1 : 0.3;
+      }
       else if (mode === 'payout') on = Math.floor(t * 6) % 2 ? 1 : 0.35;
       else if (attract) { var ph = ((i - t * 9) % 6 + 6) % 6; on = ph < 2 ? 1 : 0.35; }
       else on = 0.75 + 0.25 * Math.sin(t * 1.3 + i * 0.4);
-      if (b.bad && flick(t, 11, i) < 0.35) on = 0;
+      if (b.bad && !mended && flick(t, 11, i) < 0.35) on = 0;
       bulb(g, b.x, b.y, on);
     }
     // marbles in the feed tube

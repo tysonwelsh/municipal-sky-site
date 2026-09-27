@@ -95,8 +95,13 @@
     { door: 'rC2', mode: 'set', face: 1,  w: 0.14, good: false, note: 'down the overburden' },
     { door: 'b2', mode: 'set',  face: 1,  w: 0.14, good: false, note: 'down the company office tunnel' }
   ];
-  // the lode's clock: the sound's (pachinko-audio.js lode(), PLAN §12)
-  var LODE = { crack: 0.30, flare: 0.45, cascade: 0.55, coins: 0.8, coinsEnd: 3.0, whistle: 0.95, carts: 1.0, cheer: 1.15, box: 3.1, hold: 4.2, end: 6.5 };
+  // the lode's clock: the sound's, re-timed around the crew (pachinko-audio.js
+  // lode(), PLAN §12): the held breath 0–1.0; the crack +0.30; the whistle as
+  // the alarm +0.35 (0.8 s), toot-toot +2.75/+3.05; the flare +0.45; the
+  // cascade +0.55–1.9; the scrip +0.55–3.55; the choir +1.0–2.6 (boots to
+  // +3.0, the knockers' cheer); the carts +1.0–3.0; the music box +3.4
+  var LODE = { crack: 0.30, whistle: 0.35, flare: 0.45, cascade: 0.55, coins: 0.55, coinsEnd: 3.55, carts: 1.0, cheer: 1.0, box: 3.4, hold: 4.2, end: 6.5,
+    toots: [[0, 0.8], [2.4, 0.3], [2.7, 0.55]] };
   // the shift whistle's toots (the sound's whistleFor), played 0.38 s after `whistle`
   function whistleFor(value) {
     if (value >= 13) return [[0, 1.2], [1.45, 0.3], [1.85, 0.55]];
@@ -402,6 +407,7 @@
       S.lode = { t0: t0, x: ctx.x == null ? 177 : ctx.x, seed: (h3(S.seed, 4000 + S.lodes, 1) * 1e9) | 0, n: S.lodes };
       S.crack = { t0: t0, seed: S.lode.seed };
       S.mendAt = t0 + LODE.flare;
+      S.whistles.push({ t0: t0 + LODE.whistle, pat: LODE.toots });          // the alarm, and later toot-toot
       if (ctx.holdTally) ctx.holdTally(13);
       var done = false;
       return {
@@ -411,7 +417,7 @@
           // the 13 onto the drum a tick at a time, with the coins in the bucket
           if (ctx.holdTally) {
             var k = 0;
-            for (var i = 0; i < 13; i++) if (u >= LODE.coins + (LODE.coinsEnd - LODE.coins) * Math.pow(i / 12, 1.4)) k++;
+            for (var i = 0; i < 13; i++) if (u >= LODE.coins + (LODE.coinsEnd - LODE.coins) * Math.pow(i / 13, 1.3)) k++;
             ctx.holdTally(13 - k);
           }
           if (u >= LODE.end) done = true;
@@ -452,7 +458,8 @@
     var ALL = ['surface', 'headframe', 'overburden', 'haulage', 'measures', 'ventilation', 'barren', 'workings', 'sump', 'vein', 'payout', 'legend'];
     function fx(view) {
       var fxo = view.fx || (view.fx = {}), t = view.t != null ? view.t : now();
-      var lights = fxo.lights || (fxo.lights = {}), dark = fxo.dark || (fxo.dark = {}), lamps = fxo.extraLamps || (fxo.extraLamps = []);
+      // (main rebuilds lights and lamps each frame; the blackouts are ours, fresh each frame too)
+      var lights = fxo.lights || (fxo.lights = {}), dark = fxo.dark = {}, lamps = fxo.extraLamps || (fxo.extraLamps = []);
       var mis = fxo.mis = { t: t, lost: S.lost, lostN: S.lostN };
       function mul(rg, k) { lights[rg] = (lights[rg] == null ? 1 : lights[rg]) * k; }
 
@@ -501,14 +508,16 @@
         var hold = u < LODE.flare ? Math.min(1, u / 0.12) : 0;
         fxo.flare = Math.max(fxo.flare || 0, fl);
         ALL.forEach(function (rg) {
-          var k = hold > 0 ? 1 - 0.55 * hold : 1 + 0.9 * fl;
+          var k = hold > 0 ? 1 - 0.72 * hold : 1 + 0.9 * fl;
           if (lights[rg] === 0) return;                               // (a section still dark stays dark until the flare)
           mul(rg, k);
         });
         if (u >= LODE.flare && dark) for (var rg in dark) if (u < LODE.flare + 0.15) dark[rg] = 0;
         // the 13's cup glows through the held breath
         var cupK = u < LODE.crack ? 0.4 + 0.6 * (u / LODE.crack) : Math.max(0.3, 1 - (u - 3) / 3);
-        lamps.push({ x: L.x, y: 394, r: 26, c: '#ffd24a', k: 1.1 * cupK });
+        lamps.push({ x: L.x, y: 394, r: 30, c: '#ffd24a', k: 1.4 * cupK });
+        // the fuse's own light, climbing the stringer to the vein
+        if (u > 0.04 && u < LODE.crack + 0.1) { var fk = Math.min(1, (u - 0.04) / (LODE.crack - 0.06)); lamps.push({ x: L.x + 2, y: 388 - 25 * fk, r: 16, c: '#ffc84a', k: 1.2 }); }
         if (u < LODE.crack + 0.35) fxo.shake = u >= LODE.crack ? { t0: L.t0 + LODE.crack, dur: 0.35, amp: 2 } : fxo.shake;
         // the marquee goes wild, and the camera steps back to see it
         fxo.wild = u < LODE.flare ? 0 : u < 3.4 ? 1 : Math.max(0, 1 - (u - 3.4) / 1.4);
@@ -529,9 +538,13 @@
         }
       }
       if (steam.length) mis.steam = steam;
+      // the curator's cool pin spot on each marble the dark kept (as on every figure in the rock)
+      S.lost.forEach(function (q) { lamps.push({ x: q.x, y: q.y, r: 15, c: '#b8c4ff', k: 0.6 }); });
+      // and a work light on a cave-in's heap, so the bay that's shut reads as shut
+      (api.board().caveins || []).forEach(function (cv) { lamps.push({ x: cv.cx, y: cv.top + 4, r: 20, c: '#ffe0a0', k: 0.55 }); });
       fxo.mended = S.mended && (!S.mendAt || t >= S.mendAt);
       // the carts and the ore carry their own light (the art reads mis.lode.u)
-      if (L && t - L.t0 > LODE.carts && t - L.t0 < 3.3) CARTS.forEach(function (ct) { var p = cartAt(ct, t - L.t0, api.board()); if (p) lamps.push({ x: p.x, y: p.y - 4, r: 16, c: '#ffd070', k: 0.9 }); });
+      if (L && t - L.t0 > LODE.carts && t - L.t0 < 3.3) CARTS.forEach(function (ct) { var p = cartAt(ct, t - L.t0, api.board()); if (p) lamps.push({ x: p.x, y: p.y - 4, r: 24, c: '#ffd070', k: 1.25 }); });
       // marbles in the dark are not seen (a marble in the rock's tunnel neither)
       if (d && dk_(dark)) (view.marbles || []).forEach(function (m) {
         var x = m.x, y = m.y;

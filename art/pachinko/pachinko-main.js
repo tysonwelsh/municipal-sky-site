@@ -304,7 +304,7 @@
       world = PP.createWorld(board, game.seed);
       world.t = simT;
       game.dropped = 0; game.resolved = 0; game.score = 0; game.lodes = 0; game.wins = 0; game.mine = {};
-      game.endAt = null; game.lode = null; game.lastWin = null; game.lastDropT = null;
+      game.endAt = null; game.lode = null; game.lastWin = null; game.lastDropT = null; game.tallyHold = 0;
       tally.value = 0; tally.shown = 0; tally.prev = 0; tally.rollT0 = -1;
       trails = {};
       view.score = 0; view.marblesLeft = MARBLES; view.fx = {};
@@ -397,8 +397,10 @@
       emit({ type: 'win', value: value, total: game.score, source: source, id: e.id, x: e.x, y: e.y, m: e.m });
     }
     function stepTally() {
-      if (tally.shown === tally.value || simT < tally.nextAt) return;
-      var dir = tally.value > tally.shown ? 1 : -1, behind = Math.abs(tally.value - tally.shown);
+      // (the lode rolls its 13 on a tick at a time with the coins: held back until then)
+      var target = tally.value - (game.mode === 'play' || game.mode === 'dive' ? (game.tallyHold | 0) : 0);
+      if (tally.shown === target || simT < tally.nextAt) return;
+      var dir = target > tally.shown ? 1 : -1, behind = Math.abs(target - tally.shown);
       tally.prev = tally.shown; tally.shown += dir; tally.dir = dir; tally.rollT0 = simT;
       tally.nextAt = simT + (behind > 5 ? TALLY_FAST : TALLY_T);
       emit({ type: 'tally', value: tally.shown, dir: dir });
@@ -407,7 +409,7 @@
       game.lodes++;
       if (A) A.flags.set('pachinko.struck-the-lode');
       emit({ type: 'lode', x: e.x, n: game.lodes, m: e.m });
-      var ctxL = { t0: simT, x: e.x, emit: emit, view: view, board: board };
+      var ctxL = { t0: simT, x: e.x, emit: emit, view: view, board: board, holdTally: function (n) { game.tallyHold = Math.max(0, n | 0); } };
       var takeover = partsFirst('lode', ctxL);
       game.lode = { t0: simT, part: takeover, cheered: takeover ? 2 : 0, taken: !!takeover };
     }
@@ -435,7 +437,7 @@
 
     /* ── the end, the payout ─────────────────────────────────────── */
     function gameOver() {
-      game.endAt = null;
+      game.endAt = null; game.tallyHold = 0;
       var n = game.score, prevBest = stats().best || 0, best = false;
       if (A) {
         if (n > 0) A.scrip.add(n, 'pachinko');
@@ -616,7 +618,8 @@
       if (game.mode === 'play') stepHopper();
       stepHint();
       stepTally();
-      if (game.endAt != null && simT >= game.endAt) gameOver();
+      // (the mother lode plays out before the machine counts up: the game ends after it)
+      if (game.endAt != null && simT >= game.endAt && !(game.lode && game.lode.part && game.lode.part.busy && game.lode.part.busy(simT))) gameOver();
       if (game.mode === 'payout') stepPayout();
       if (game.mode === 'work') stepWork();
       if (game.findAt != null && simT >= game.findAt) findNickel();
@@ -694,6 +697,17 @@
       var c = { k: e, s: s, x: cx - w / 2, y: cy - h / 2, w: w, h: h };
       if (e === 0 || e === 1) {  // at rest: land the crop on whole device pixels
         c.x = Math.round(c.x * s) / s; c.y = Math.round(c.y * s) / s;
+      }
+      // the mother lode: the camera steps back to take in the marquee too
+      // (view.fx.camOut 0..1, eased by the part; in motion, so never crisp)
+      var co = e === 1 && view.fx ? view.fx.camOut || 0 : 0;
+      if (co > 0) {
+        var top = MQ.y0 - 3, bot = PR.y + PR.h, s2 = Math.min(devH / (bot - top), devW / (PR.w + 16));
+        if (s2 < c.s) {
+          var sC = Math.exp(Math.log(c.s) + (Math.log(s2) - Math.log(c.s)) * co), w2 = devW / sC, h2 = devH / sC;
+          var cyC = c.y + c.h / 2, cy2 = cyC + ((top + bot) / 2 - cyC) * co, cx2 = c.x + c.w / 2;
+          c = { k: 1, s: sC, x: cx2 - w2 / 2, y: cy2 - h2 / 2, w: w2, h: h2, out: co };
+        }
       }
       return c;
     }
@@ -935,7 +949,7 @@
       ui.mode = game.mode; ui.t = simT;
       ui.marblesLeft = view.marblesLeft;
       gameFx();
-      if (game.lode && simT - game.lode.t0 < 0.35) shakeT0 = game.lode.t0;
+      if (game.lode && !game.lode.taken && simT - game.lode.t0 < 0.35) shakeT0 = game.lode.t0;
       var pf = partsFirst('figures', view);
       if (pf) view.figures = pf;
       return cam;
@@ -1056,9 +1070,11 @@
     function blit(cam) {
       ctx.imageSmoothingEnabled = false;
       // the 13 lands with a thump: the whole case jolts a device pixel or two
-      var jx = 0, jy = 0, su = simT - shakeT0;
-      if (su >= 0 && su < 0.3 && cam.k === 1) {
-        var amp = Math.round((1 - su / 0.3) * Math.max(1, cam.s / 2));
+      var jx = 0, jy = 0, su = simT - shakeT0, dur = 0.3, sa = 1, sh = view.fx && view.fx.shake;
+      // (a part may shake it too: the vein cracking, a roof coming down)
+      if (sh && simT - sh.t0 >= 0 && simT - sh.t0 < sh.dur) { su = simT - sh.t0; dur = sh.dur; sa = sh.amp || 1; }
+      if (su >= 0 && su < dur && cam.k === 1) {
+        var amp = Math.round((1 - su / dur) * Math.max(1, cam.s / 2) * sa);
         jx = Math.floor(su * 60) % 2 ? amp : -amp; jy = Math.floor(su * 45) % 2 ? amp : 0;
       }
       drawFloor(cam, jx, jy);

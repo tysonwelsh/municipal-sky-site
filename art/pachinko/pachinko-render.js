@@ -277,6 +277,8 @@
     for (i = 0; i < figs.length; i++) {
       if (figs[i].lamp === false) continue;
       var fl = A.figureLamp(figs[i]), fh = A.hash01(i, Math.floor(t * 8), 6), ff = figs[i].facing < 0 ? -1 : 1;
+      // lamps out: every light in the section goes, their caps too
+      if (PB() && (dark[PB().regionAt(fl.x, fl.y)] || 0) >= 0.85) continue;
       if (fl.back) { px(g, Math.round(fl.x), Math.round(fl.y), 'rgba(255,208,96,0.85)'); px(g, Math.round(fl.x) - 1, Math.round(fl.y) + 1, 'rgba(255,138,42,0.5)'); px(g, Math.round(fl.x) + 1, Math.round(fl.y) + 1, 'rgba(255,138,42,0.5)'); continue; }
       if (figs[i].lampK != null && figs[i].lampK < 0.35) { px(g, Math.round(fl.x), Math.round(fl.y), fh < 0.5 ? P.FLAME0 : '#b0561e'); continue; }
       px(g, Math.round(fl.x), Math.round(fl.y), P.FLAME2);
@@ -285,9 +287,11 @@
       if (fl.lantern) { rect(g, Math.round(fl.lantern.x - 1), Math.round(fl.lantern.y - 3), 3, 3, P.FLAME1); px(g, Math.round(fl.lantern.x), Math.round(fl.lantern.y - 2), P.FLAME2); }
     }
     // coal glints: only where there is light to catch
+    var anyDark = false; for (var dkey in dark) if (dark[dkey] >= 0.85) anyDark = true;
     for (i = 0; i < mine.glints.length; i++) {
       var gp = mine.glints[i], L2 = lightAt(gp.x, gp.y);
       if (L2 < 0.35) continue;
+      if (anyDark && PB() && (dark[PB().regionAt(gp.x, gp.y)] || 0) >= 0.85) continue;   // nothing glints in the dark
       var tw = Math.sin(t * gp.rate + gp.ph);
       if (tw > 0.93) { px(g, gp.x, gp.y, P.GLINT); if (tw > 0.985 && L2 > 0.6) { px(g, gp.x - 1, gp.y, gp.c); px(g, gp.x + 1, gp.y, gp.c); px(g, gp.x, gp.y - 1, gp.c); px(g, gp.x, gp.y + 1, gp.c); } }
       else if (tw > 0.6 && L2 > 0.55) px(g, gp.x, gp.y, gp.c);

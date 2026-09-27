@@ -111,7 +111,7 @@
       var r = H(0x1c0de, x, 1);
       j = clamp(j + (r < 0.3 ? -1 : r > 0.7 ? 1 : 0), -1, 1);
       var yc = Math.round(Mm.seamY(sm, x)) + j, dist = Math.abs(x - o.x);
-      cols.push({ x: x, y: yc, d: dist, wmax: 1 + 3.2 * Math.pow(Math.max(0, 1 - dist / 150), 0.8) });
+      cols.push({ x: x, y: yc, d: dist, wmax: 1 + 5 * Math.pow(Math.max(0, 1 - dist / 170), 1.1), rag: H(0x1c0de, x, 7) });
     }
     // forks off the main crack, up and down into the rock
     var forks = [];
@@ -139,25 +139,36 @@
     if (u > 3) w = Math.max(1, w * Math.max(0, 1 - (u - 3) / 2.2), 1);
     return w;
   }
+  var band = null, bandG = null;
   function drawCrack(g, view, mis) {
     var cr = mis.crack; if (!cr) return;
     var F = fracture(view.board); if (!F) return;
     var u = cr.u, L = M().LODE, t = view.t || 0;
     if (u < L.crack) return;
+    // the rock either side of the fracture is pushed apart: a snapshot of the
+    // lit band, laid back a column at a time, above the crack up and below it down
+    var BY0 = 300, BH = 100;
+    if (!band) { band = A.makeCanvas(320, BH); bandG = band.getContext('2d'); }
+    bandG.clearRect(0, 0, 320, BH); bandG.drawImage(g.canvas, 0, BY0, 320, BH, 0, 0, 320, BH);
+    var hot = u < 3 ? 1 : Math.max(0.35, 1 - (u - 3) / 3);
     for (var i = 0; i < F.cols.length; i++) {
       var c = F.cols[i], w = openAt(c, u);
       if (w <= 0) continue;
-      var up = Math.floor(w / 2), dn = Math.ceil(w / 2) - 1;       // the gap: rows y-up … y+dn
-      var hot = u < 3 ? 1 : Math.max(0.35, 1 - (u - 3) / 3);
-      // the lips: the rock's broken edge, dark, and lit from inside
-      px(g, c.x, c.y - up - 1, 'rgba(6,5,8,0.85)'); px(g, c.x, c.y + dn + 1, 'rgba(6,5,8,0.85)');
-      if (w >= 2) { px(g, c.x, c.y - up - 2, 'rgba(255,196,90,' + (0.35 * hot).toFixed(2) + ')'); px(g, c.x, c.y + dn + 2, 'rgba(255,170,60,' + (0.25 * hot).toFixed(2) + ')'); }
-      // the inside: gold, hottest at the middle, running with light
+      var wi = Math.max(1, Math.round(w + (c.rag - 0.5) * Math.min(2, w * 0.5)));   // a ragged edge, not two rails
+      var up = Math.floor(wi / 2), dn = wi - up - 1;
+      var R = 9;
+      if (up > 0) g.drawImage(band, c.x, c.y - R - BY0, 1, R, c.x, c.y - R - up, 1, R);
+      if (dn > 0) g.drawImage(band, c.x, c.y + 1 - BY0, 1, R, c.x, c.y + 1 + dn, 1, R);
+      // the broken lips, dark, catching the light from inside
+      px(g, c.x, c.y - up - 1, P.VOID0); px(g, c.x, c.y + dn + 1, P.VOID0);
+      if (wi >= 3) { px(g, c.x, c.y - up - 2, 'rgba(255,196,90,' + (0.5 * hot).toFixed(2) + ')'); px(g, c.x, c.y + dn + 2, 'rgba(255,170,60,' + (0.3 * hot).toFixed(2) + ')'); }
+      // inside: ore. Hot gold at the heart, quartz and darker gold toward the lips, glitter
       for (var y = c.y - up; y <= c.y + dn; y++) {
-        var mid = Math.abs(y - c.y) < 1, run = Math.sin(c.x * 0.35 - u * 11 + (y - c.y)) * 0.5 + 0.5;
-        var col = mid ? (run > 0.6 ? P.GOLD5 : P.VEIN3) : (run > 0.5 ? P.GOLD4 : P.GOLD3);
-        if (hot < 0.6) col = mid ? P.GOLD4 : P.GOLD2;
-        if (H(77, c.x * 7 + y, Math.floor(t * 14)) > 0.965) col = '#ffffff';
+        var e = Math.abs(y - (c.y + (dn - up) / 2)) / Math.max(0.5, (up + dn + 1) / 2);
+        var r = H(91, c.x, y), run = Math.sin(c.x * 0.4 - u * 9) * 0.5 + 0.5;
+        var col = e < 0.35 ? (run > 0.55 ? P.GOLD5 : P.VEIN3) : e < 0.75 ? (r < 0.15 ? P.QUARTZ : P.GOLD4) : (r < 0.3 ? P.VEIN1 : P.GOLD2);
+        if (hot < 0.6) col = e < 0.5 ? P.GOLD4 : P.VEIN1;
+        if (H(77, c.x * 7 + y, Math.floor(t * 14)) > 0.95) col = '#ffffff';
         px(g, c.x, y, col);
       }
     }
@@ -171,7 +182,7 @@
   }
 
   /* ══ the lode's ore: nuggets and gold dust (pure of seed and time) ═══ */
-  var NUG = 46;
+  var NUG = 96;
   function nuggetAt(seed, i, u, F) {
     var L = M().LODE, ts = 0.42 + 1.9 * Math.pow(H(seed, i, 1), 1.25);
     if (u < ts) return null;
@@ -183,11 +194,11 @@
     var yb = ys + 8 + 16 * H(seed, i, 6);
     // to the first knock on the rock below
     var t1 = (-vy + Math.sqrt(vy * vy + 2 * g * (yb - ys))) / g;
-    if (T < t1) return { x: xs + vx * T, y: ys + vy * T + g * T * T / 2, fly: true };
+    if (T < t1) return { x: xs + vx * T, y: ys + vy * T + g * T * T / 2, fly: true, big: H(seed, i, 8) < 0.3 };
     var x1 = xs + vx * t1, vy1 = -0.35 * (vy + g * t1), vx1 = vx * 0.55, T2 = T - t1;
     var yr = 409 + Math.floor(H(seed, i, 7) * 4);
     var t2 = (-vy1 + Math.sqrt(vy1 * vy1 + 2 * g * (yr - yb))) / g;
-    if (T2 < t2) return { x: x1 + vx1 * T2, y: yb + vy1 * T2 + g * T2 * T2 / 2, fly: true };
+    if (T2 < t2) return { x: x1 + vx1 * T2, y: yb + vy1 * T2 + g * T2 * T2 / 2, fly: true, big: H(seed, i, 8) < 0.3 };
     var xr = clamp(x1 + vx1 * t2, 3, 317);
     return { x: xr, y: yr, fly: false, big: H(seed, i, 8) < 0.3 };
   }
@@ -197,7 +208,7 @@
     var u = cr.u, t = view.t || 0, L = M().LODE, seed = cr.seed | 0;
     // gold dust pouring from the open crack, a curtain that thins
     if (u > L.crack && u < 3.2) {
-      for (var d = 0; d < 110; d++) {
+      for (var d = 0; d < 180; d++) {
         var tb = L.crack + 0.05 + 2.2 * H(seed + 5, d, 1);
         var age = u - tb; if (age < 0 || age > 1.3) continue;
         var ci = Math.floor(H(seed + 5, d, 2) * F.cols.length), c = F.cols[ci];
@@ -213,11 +224,14 @@
       var x = Math.round(q.x), y = Math.round(q.y);
       if (q.fly) {
         px(g, x, y, P.GOLD4); px(g, x + 1, y, P.VEIN2); px(g, x, y + 1, P.VEIN2); px(g, x + 1, y + 1, P.VEIN1);
+        if (q.big) { px(g, x + 2, y, P.VEIN1); px(g, x + 1, y - 1, P.GOLD5); px(g, x + 2, y + 1, P.VEIN0); }
         if (H(seed, i, Math.floor(t * 12)) > 0.6) px(g, x - 1, y - 1, '#ffffff');
       } else {
-        px(g, x, y, P.VEIN2); px(g, x + 1, y, P.VEIN1); if (q.big) { px(g, x, y - 1, P.VEIN3); px(g, x + 1, y - 1, P.VEIN2); }
+        // lying in the bay among the coal: a lump of gold-bearing quartz
+        px(g, x, y, P.VEIN2); px(g, x + 1, y, P.VEIN1); px(g, x, y + 1, P.VEIN0); px(g, x - 1, y, P.QUARTZ_D);
+        if (q.big) { px(g, x, y - 1, P.VEIN3); px(g, x + 1, y - 1, P.VEIN2); px(g, x + 2, y, P.VEIN1); px(g, x - 1, y - 1, P.QUARTZ); }
         var tw = Math.sin(t * (1.3 + H(seed, i, 9)) + i * 1.7);
-        if (tw > 0.965) { px(g, x, y - 1, '#ffffff'); px(g, x - 1, y, P.GOLD5); px(g, x + 1, y - 1, P.GOLD5); }
+        if (tw > 0.95) { px(g, x, y - 1, '#ffffff'); px(g, x - 1, y - 1, P.GOLD5); px(g, x + 1, y - 2, P.GOLD5); }
       }
     }
   }
@@ -235,10 +249,11 @@
       if (b >= 0 && b < 0.16) k = Math.max(k, 0.8 * (1 - b / 0.16));
       if (cd.lode && u - t3 >= 0 && u - t3 < 0.8) k = Math.max(k, Math.floor((u - t3) * 10) % 2 ? 0.4 : 1);
       if (k <= 0.05) continue;
-      rect(g, cd.x - 1, cd.y - 1, cd.w + 2, 1, P.GOLD4); rect(g, cd.x - 1, cd.y + cd.h, cd.w + 2, 1, P.GOLD3);
-      rect(g, cd.x - 1, cd.y, 1, cd.h, P.GOLD3); rect(g, cd.x + cd.w, cd.y, 1, cd.h, P.GOLD3);
-      for (var yy = cd.y; yy < cd.y + cd.h; yy++) for (var xx = cd.x; xx < cd.x + cd.w; xx++) if (bayer(xx, yy) < k * 0.55) px(g, xx, yy, 'rgba(255,236,170,0.8)');
-      if (k > 0.5) A.textC(g, cd.name, cd.x + cd.w / 2, cd.y + 2, cd.lode ? '#ffffff' : P.INK);
+      // the card comes up bright under the flare, its name still on it
+      var paper = k > 0.6 ? '#fff6dc' : k > 0.3 ? '#f4dca0' : '#dcc088';
+      rect(g, cd.x - 1, cd.y - 1, cd.w + 2, cd.h + 2, k > 0.6 ? P.GOLD4 : P.GOLD2);
+      rect(g, cd.x, cd.y, cd.w, cd.h, cd.lode ? (k > 0.6 ? P.GOLD4 : P.GOLD2) : paper);
+      A.textC(g, cd.name, cd.x + cd.w / 2, cd.y + 2, cd.lode ? '#ffffff' : P.INK);
     }
   }
 
@@ -284,19 +299,21 @@
     var st = mis.steam; if (!st || !st.length) return;
     var t = view.t || 0;
     st.forEach(function (q, qi) {
-      // a puff every 50 ms while it sounds, each rising and drifting off the ridge
-      for (var tb = q.t0; tb < q.t0 + q.dur; tb += 0.05) {
-        var age = t - tb; if (age < 0 || age > 1.6) continue;
-        var n = Math.round(tb * 20), r = 1 + age * 3.2, cx = WHISTLE.x + age * (12 + 6 * H(n, qi, 1)) + Math.sin(age * 3 + n) * 1.2, cy = WHISTLE.y - 2 - age * (26 + 8 * H(n, qi, 2));
-        var dens = (1 - age / 1.6) * 0.8;
+      // a puff every 40 ms while it sounds: out of the whistle fast, slowing
+      // as it spreads, leaning off the ridge with the wind
+      for (var tb = q.t0; tb < q.t0 + q.dur; tb += 0.04) {
+        var age = t - tb; if (age < 0 || age > 1.9) continue;
+        var n = Math.round(tb * 25), rise = 46 * (1 - Math.exp(-age * 2.2)) + 6 * age;
+        var r = 2 + age * 6, cx = WHISTLE.x + age * (16 + 9 * H(n, qi, 1)) + Math.sin(age * 3 + n) * 1.2, cy = WHISTLE.y - 2 - rise;
+        var dens = Math.pow(1 - age / 1.9, 1.2);
         for (var y = -Math.ceil(r); y <= Math.ceil(r); y++) for (var x = -Math.ceil(r); x <= Math.ceil(r); x++) {
           var dd = Math.sqrt(x * x + y * y) / r; if (dd > 1) continue;
           var X = Math.round(cx + x), Y = Math.round(cy + y);
-          if (bayer(X, Y) < dens * (1 - dd * 0.6)) px(g, X, Y, dd < 0.5 && age < 0.5 ? '#f4f0f8' : '#c8c0d8');
+          if (bayer(X, Y) < dens * (1.05 - dd * 0.7)) px(g, X, Y, dd < 0.45 && age < 0.7 ? '#ffffff' : dd < 0.75 ? '#e4e0ee' : '#b4acc8');
         }
       }
       // the jet at the mouth while it sounds
-      if (t >= q.t0 && t < q.t0 + q.dur) { px(g, WHISTLE.x, WHISTLE.y - 1, '#ffffff'); px(g, WHISTLE.x + 1, WHISTLE.y - 2, '#ffffff'); px(g, WHISTLE.x, WHISTLE.y - 3, '#f4f0f8'); }
+      if (t >= q.t0 && t < q.t0 + q.dur) { rect(g, WHISTLE.x - 1, WHISTLE.y - 4, 3, 4, '#ffffff'); px(g, WHISTLE.x, WHISTLE.y - 5, '#f4f0f8'); }
     });
   }
   // the hoist cage: down the main shaft with the next shift's two cap lamps,
@@ -414,20 +431,7 @@
   function drawCabinet(g, view, mis) {
     var fx = view.fx || {}, t = view.t || 0, C = A.CAB;
     var wild = fx.wild || 0;
-    if (wild > 0 && C && C.marquee) {
-      var m = C.marquee, fx0 = m.x0 + 10, fx1 = m.x1 - 10, fy0 = m.y0 + 8, fy1 = m.y1 - 9;
-      // a band of light running across the letters, both ways, as fast as it can
-      g.save();
-      g.globalCompositeOperation = 'lighter';
-      [1, -1].forEach(function (dir, j) {
-        var ph = ((t * 1.6 + j * 0.5) % 1), bx = dir > 0 ? fx0 + (fx1 - fx0) * ph : fx1 - (fx1 - fx0) * ph;
-        g.globalAlpha = 0.34 * wild;
-        g.drawImage(g.canvas, Math.round(bx - 14), fy0, 28, fy1 - fy0 + 1, Math.round(bx - 14), fy0, 28, fy1 - fy0 + 1);
-      });
-      // the whole face flares on the beat
-      if (Math.floor(t * 8) % 2 === 0) { g.globalAlpha = 0.18 * wild; g.drawImage(g.canvas, fx0, fy0, fx1 - fx0 + 1, fy1 - fy0 + 1, fx0, fy0, fx1 - fx0 + 1, fy1 - fy0 + 1); }
-      g.restore();
-    }
+    if (wild > 0 && C && C.marquee) drawWild(g, t, wild, C.marquee);
     // the dark kept a marble: somebody pencilled it onto the figures card
     if (mis.lostN > 0 && C && C.lower) {
       var x = 12 + 84, y = C.lower.y0 + 6 + 3, str = '13 MARBLE, LOST', pen = function (i, col, row) { return A.hash01(505, i * 3 + col, row) < 0.12 ? null : (row + i) % 5 === 0 ? '#8a8a98' : '#5a5a6a'; };
@@ -441,13 +445,67 @@
     }
   }
 
+  // the marquee goes wild: the letters picked out of the painted face (once),
+  // light running through them both ways, the sunburst behind flickering
+  // between its rays, the whole face flaring on the beat
+  var MQ = null;
+  function marqueeMasks(g, m) {
+    var x0 = m.x0 + 10, y0 = m.y0 + 8, w = m.x1 - 10 - x0 + 1, h = m.y1 - 9 - y0 + 1;
+    var src = g.getImageData(x0, y0, w, h).data;
+    var lt = A.makeCanvas(w, h), lg = lt.getContext('2d'), li = lg.createImageData(w, h);
+    var ra = A.makeCanvas(w, h), rga = ra.getContext('2d'), rai = rga.createImageData(w, h);
+    var rb = A.makeCanvas(w, h), rgb = rb.getContext('2d'), rbi = rgb.createImageData(w, h);
+    var ocx = 188 - x0, ocy = h + 16;
+    for (var y = 0; y < h; y++) for (var x = 0; x < w; x++) {
+      var o = (y * w + x) * 4, r = src[o], gg = src[o + 1], b = src[o + 2];
+      var letter = r > 140 && r > b + 50 && gg > 60;
+      if (letter) { li.data[o] = 255; li.data[o + 1] = 246; li.data[o + 2] = 214; li.data[o + 3] = 255; continue; }
+      if (r + gg + b > 330) continue;                                  // the emblems, the bezel
+      var a = Math.atan2(y - ocy, x - ocx), ray = Math.floor(((a * 16 / Math.PI) % 2 + 2) % 2 * 2) % 4;
+      var dst = ray === 0 ? rai : ray === 2 ? rbi : null;
+      if (dst && bayer(x, y) < 0.6) { dst.data[o] = 150; dst.data[o + 1] = 70; dst.data[o + 2] = 120; dst.data[o + 3] = 255; }
+    }
+    lg.putImageData(li, 0, 0); rga.putImageData(rai, 0, 0); rgb.putImageData(rbi, 0, 0);
+    return { x: x0, y: y0, w: w, h: h, letters: lt, raysA: ra, raysB: rb };
+  }
+  function drawWild(g, t, wild, m) {
+    if (!MQ) { try { MQ = marqueeMasks(g, m); } catch (e) { MQ = false; } }
+    if (!MQ) return;
+    g.save();
+    g.globalCompositeOperation = 'lighter';
+    // the sunburst, ray and ray about
+    g.globalAlpha = 0.8 * wild;
+    g.drawImage(Math.floor(t * 9) % 2 ? MQ.raysA : MQ.raysB, MQ.x, MQ.y);
+    // two bands of light through the letters, crossing
+    [1, -1].forEach(function (dir, j) {
+      var ph = (t * 1.3 + j * 0.5) % 1, bx = dir > 0 ? MQ.w * ph : MQ.w * (1 - ph), bw = 34;
+      var sx = Math.max(0, Math.round(bx - bw / 2)), sw = Math.min(MQ.w - sx, bw);
+      if (sw > 0) { g.globalAlpha = 0.9 * wild; g.drawImage(MQ.letters, sx, 0, sw, MQ.h, MQ.x + sx, MQ.y, sw, MQ.h); }
+    });
+    // and all of it on the beat
+    if (Math.floor(t * 6) % 2 === 0) { g.globalAlpha = 0.35 * wild; g.drawImage(MQ.letters, MQ.x, MQ.y); }
+    g.restore();
+  }
+
   /* ══ the flash of the flare (the gas whoomp) ════════════════════════ */
+  var flashC = null;
   function drawFlash(g, view, mis) {
     var L = mis.lode; if (!L) return;
-    var a = L.u - M().LODE.flare; if (a < 0 || a > 0.32) return;
+    var a = L.u - M().LODE.flare; if (a < 0 || a > 0.28) return;
+    var F = fracture(view.board), o = F ? F.origin : { x: 180, y: 363 };
+    if (!flashC) {
+      // a posterised warm burst, brightest at the heart of the vein
+      flashC = A.makeCanvas(400, 400); var fg = flashC.getContext('2d'), im = fg.createImageData(400, 400), dd = im.data;
+      for (var y = 0; y < 400; y++) for (var x = 0; x < 400; x++) {
+        var r = Math.hypot(x - 200, (y - 200) * 1.5) / 200; if (r >= 1) continue;
+        var q = Math.floor(Math.pow(1 - r, 2.2) * 6 + bayer(x, y) * 0.999) / 6; if (q <= 0) continue;
+        var o4 = (y * 400 + x) * 4; dd[o4] = 255 * q; dd[o4 + 1] = 214 * q; dd[o4 + 2] = 140 * q; dd[o4 + 3] = 255;
+      }
+      fg.putImageData(im, 0, 0);
+    }
     g.save(); g.globalCompositeOperation = 'lighter';
-    g.fillStyle = 'rgba(255,214,140,' + (0.42 * (1 - a / 0.32)).toFixed(3) + ')';
-    g.fillRect(0, 0, 320, 416);
+    g.globalAlpha = 0.9 * Math.pow(1 - a / 0.28, 1.5);
+    g.drawImage(flashC, Math.round(o.x - 200), Math.round(o.y - 200));
     g.restore();
   }
   // the fuse up the stringer, cup to vein, in the held breath
@@ -456,7 +514,7 @@
     var u = L.u, LO = M().LODE; if (u < 0.04 || u > LO.crack + 0.4) return;
     var F = fracture(view.board); if (!F || !F.stringer.length) return;
     var s = F.stringer, k = clamp((u - 0.04) / (LO.crack - 0.06), 0, 1), n = Math.floor(k * s.length);
-    for (var i = s.length - 1; i >= s.length - n; i--) px(g, s[i][0], s[i][1], i === s.length - n ? '#ffffff' : P.GOLD3);
+    for (var i = s.length - 1; i >= s.length - n; i--) { px(g, s[i][0], s[i][1], i === s.length - n ? '#ffffff' : P.GOLD4); if (bayer(s[i][0] + 1, s[i][1]) < 0.5) px(g, s[i][0] + 1, s[i][1], 'rgba(255,200,80,0.5)'); if (bayer(s[i][0] - 1, s[i][1]) < 0.5) px(g, s[i][0] - 1, s[i][1], 'rgba(255,200,80,0.5)'); }
     if (n > 0 && n < s.length) { var h = s[s.length - n]; px(g, h[0] - 1, h[1], P.GOLD5); px(g, h[0] + 1, h[1], P.GOLD5); px(g, h[0], h[1] - 1, P.FLAME1); }
   }
 
