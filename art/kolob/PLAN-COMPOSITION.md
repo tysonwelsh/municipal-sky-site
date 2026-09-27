@@ -1132,3 +1132,28 @@ chose to spend the attention elsewhere.
   above. The cornet stays as the Nauvoo band's lead.
 - **Round 2's audible payoff** becomes the plumbing and bug fixes, plus one small approved idea
   pulled forward.
+
+
+## 15. Addendum 2: the owner's rulings on enrichment brief 2 and the round-2 listen (2026-09-27)
+
+The source is `critic/enrichment-2.md`, and the owner listened to `handoff/listen-r2.md`.
+
+1. **The invocation prays** (chant on the drone / the Housatonic): **declined.**
+2. **The organist's prelude on the day's first hymn: approved.** It comes after HYMN's first milestone. Keep it a draw, so it never becomes the fixed opening.
+3. **The singing school: approved, as EXPERIMENTAL.** Flag it so it can be switched off later if it proves too messy: a named experimental-features switch (e.g. `EXPERIMENTAL = { singingSchool: true }`), readable by the owner, with its own dev toggle.
+4. **The wandering refrain: approved.**
+5. **The ward's handbell choir: approved.**
+
+**The trombone choir.** The owner listened: it "sounds muddy, like a muted, muddy organ", and he asked why so much emphasis went on it. The answer: it was the only NEW sound round 2 produced (the rest was foundation), so the packet leaned on it.
+- **Work on its sound:** brighter and clearer brass, less of the distance lowpass on the near choir, real articulation.
+- **Ending:** keep it OPEN. Revert the integrator's forced final I and let the harmony end where it ends.
+- **Lesson for the integrator:** frame each packet honestly by how much is actually new to hear, and give earlier, smaller listening checkpoints of the things that matter most (the composer's hymns).
+
+**Engraving.** Engrave the trombones and the old tune; the staff should never sit blank while they play. Keep the fuller staff (every sounded note) for now; the sparer look may come back later.
+
+**Before v0.34 (all approved):**
+- fix the fast-Sunday over-representation on first visits;
+- vary the opening across visits, prioritising variation wherever possible (a per-Sunday prelude draw);
+- raise the near trombone choir;
+- lower the old tune (and re-strike its repeated notes);
+- have the organ and the house let go smoothly when a guest enters.
