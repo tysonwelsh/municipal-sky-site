@@ -3,11 +3,13 @@
 // QUESTION LAB — the audition bench for KOLOB.Question (kolob-question.js),
 // the Unanswered Question composed afresh for every seed (PLAN-COMPOSITION
 // §8.1). UNLINKED dev page, like tune-lab and room-lab: reachable only by URL
-// (/art/kolob/question-lab). Shows a seed's bank of seven questions engraved
-// plainly, plays each one, performs the whole event (three askings, the
-// answers, the drone or the strings' chorale beneath), and measures the
-// generator over 200 seeds. It loads only the substrate's rand stream and
-// the pure module; the voices it plays are the lab's own copies.
+// (/art/kolob/question-lab). Shows a visit's bank of seven questions, spelled
+// into the meeting's mode and engraved plainly; which question each of the
+// visit's meetings asks; plays each one; performs a meeting's whole event
+// (three askings, the answers, the drone or the strings' chorale beneath);
+// and measures the generator over 200 visits. It loads only the substrate's
+// rand stream and the pure module; the voices it plays are the lab's own
+// copies.
 // ============================================================================
 $page_title = "Question Lab — KOLOB · Municipal Sky";
 $page_description = "A private audition bench for the Kolob hymn engine's Unanswered Question.";
@@ -72,6 +74,11 @@ include '../../includes/header.php';
   display: flex; flex-direction: column; gap: 0.35rem;
 }
 .oql-card.lit { background: var(--lit); border-color: var(--gilt); box-shadow: 0 0 0 1px var(--gilt) inset; }
+.oql-card.out { background: var(--paper); border-style: dashed; }
+.oql-visit { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.9rem; }
+.oql .oql-chip { font-size: 0.8rem; line-height: 1.25; padding: 0.3rem 0.6rem; text-align: left; }
+.oql .oql-chip b { font-weight: 600; font-variant: small-caps; }
+.oql .oql-chip.on { background: var(--lit); border-color: var(--gilt); box-shadow: 0 0 0 1px var(--gilt) inset; }
 .oql-card-top { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; }
 .oql-card-name { font-weight: 600; font-variant: small-caps; letter-spacing: 0.04em; }
 .oql-card-tag { font-size: 0.8rem; color: var(--gilt); font-style: italic; }
@@ -94,16 +101,17 @@ include '../../includes/header.php';
 .oql-answers { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(290px, 100%), 1fr)); gap: 0.6rem; margin-top: 0.6rem; }
 .oql-answers .oql-card { background: #fffdf7; }
 
-.oql-stats { max-width: 100%; border: 1px solid var(--ink-faint); border-radius: 8px; padding: 0.8rem 1rem; background: #fffdf7; overflow-x: auto; }
-.oql-stats table { border-collapse: collapse; width: 100%; font-size: 0.86rem; min-width: 640px; }
-.oql-stats th, .oql-stats td { text-align: left; padding: 0.3rem 0.45rem; border-bottom: 1px solid var(--ink-faint); vertical-align: top; }
-.oql-stats th { font-weight: 600; font-variant: small-caps; letter-spacing: 0.03em; }
-.oql-stats .ok { color: var(--ink); font-weight: 600; }
-.oql-stats .bad { color: var(--out); font-weight: 600; }
-.oql-bars { display: flex; align-items: flex-end; gap: 2px; height: 34px; }
-.oql-bars i { display: block; width: 9px; background: var(--ink-soft); }
-.oql-bars-lab { display: flex; gap: 2px; font-size: 0.62rem; color: var(--ink-soft); }
-.oql-bars-lab b { width: 9px; text-align: center; font-weight: 400; }
+.oql-stats { max-width: 100%; border: 1px solid var(--ink-faint); border-radius: 8px; padding: 0.8rem 1rem; background: #fffdf7; }
+.oql-modes { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(420px, 100%), 1fr)); gap: 0.8rem; }
+.oql-mode { border: 1px solid var(--ink-faint); border-radius: 6px; padding: 0.6rem 0.75rem; min-width: 0; }
+.oql-mode h3 { margin: 0 0 0.35rem; font-size: 1.05rem; font-variant: small-caps; letter-spacing: 0.04em; }
+.oql-mode dl { display: grid; grid-template-columns: 7.5em minmax(0, 1fr); gap: 0.2rem 0.6rem; margin: 0; font-size: 0.86rem; }
+.oql-mode dt { font-variant: small-caps; color: var(--ink-soft); }
+.oql-mode dd { margin: 0; overflow-wrap: anywhere; }
+.oql-mode dd b { font-weight: 600; }
+.oql-mode .ok { color: var(--ink); font-weight: 600; }
+.oql-mode .bad { color: var(--out); font-weight: 600; }
+@media (max-width: 480px) { .oql-mode dl { grid-template-columns: minmax(0, 1fr); } .oql-mode dt { margin-top: 0.3rem; } }
 .oql-footnote { font-size: 0.88rem; color: var(--ink-soft); margin-top: 1.1rem; max-width: 72ch; }
 </style>
 
@@ -111,10 +119,11 @@ include '../../includes/header.php';
   <header class="oql-head">
     <p class="oql-kicker">KOLOB · dev bench · unlinked</p>
     <h1 class="oql-title">Question Lab</h1>
-    <p class="oql-lede">Every seed writes seven questions: the old one (sol–la–re′–ti–re′) and six more in its
-    spirit — rising, angular, a sixth or seventh in them, ending high on something that isn't home.
-    One is drawn for the meeting and asked three times; the second asking is bent. The answerers argue
-    in the meeting's own hymns, faster and higher each time. The last asking gets no answer.</p>
+    <p class="oql-lede">Every visit (a seed) writes seven questions, once: the old one (sol–la–re′–ti–re′) and six
+    more in its spirit — rising, angular, a sixth or seventh in them that isn't a bugle's, ending high on
+    something that isn't home. Each meeting of the visit draws one, spelled into that meeting's mode; the one
+    just heard steps aside. It is asked three times, the second asking bent. The answerers argue in the
+    meeting's own hymns, faster, higher and louder each time. The last asking gets no answer.</p>
   </header>
 
   <div class="oql-controls">
@@ -131,6 +140,12 @@ include '../../includes/header.php';
         <option value="hexa">hexatonic</option>
       </select>
     </label>
+    <label>meeting
+      <select id="oql-n">
+        <option value="1" selected>1</option><option value="2">2</option><option value="3">3</option>
+        <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+      </select>
+    </label>
     <label>material
       <select id="oql-material">
         <option value="hymns" selected>stand-in hymn lines</option>
@@ -144,33 +159,45 @@ include '../../includes/header.php';
         <option value="chorale">strings' chorale</option>
       </select>
     </label>
+    <label>room
+      <select id="oql-room">
+        <option value="none" selected>sections as planned</option>
+        <option value="form">FORM may stretch the host to 125 s</option>
+      </select>
+    </label>
     <button type="button" class="oql-go" id="oql-play">▶ play full question</button>
     <button type="button" id="oql-stop">stop</button>
     <div class="oql-now" id="oql-now"></div>
   </div>
 
-  <h2 class="oql-h2">The seven questions</h2>
+  <h2 class="oql-h2">The visit</h2>
+  <div class="oql-visit" id="oql-visit"></div>
+
+  <h2 class="oql-h2">The seven questions, as this meeting's mode sings them</h2>
   <div class="oql-bank" id="oql-bank"></div>
 
   <h2 class="oql-h2">The event</h2>
   <div class="oql-event" id="oql-event"></div>
 
-  <h2 class="oql-h2">Two hundred seeds</h2>
+  <h2 class="oql-h2">Two hundred visits</h2>
   <div class="oql-stats">
     <div style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;margin-bottom:0.5rem">
       <button type="button" id="oql-stats-mode">measure this mode</button>
       <button type="button" id="oql-stats-all">measure all six modes</button>
-      <span class="oql-meta" id="oql-stats-note">Seeds 1–200 from the seed field. The rule check here is the lab's own restatement, independent of the module's.</span>
+      <span class="oql-meta" id="oql-stats-note">Visits from the seed field on, 200 of them. The rule check, the bugle-call counts and the doubling intervals are the lab's own restatements, independent of the module's.</span>
     </div>
     <div id="oql-stats"></div>
   </div>
 
   <p class="oql-footnote">Staff: written with do = C (movable do), an octave below sounding; ♭ marks the
-  mode's lowered degrees. The old question keeps v0.30's played beats (1.3 · 0.9 · 1.0 · 0.8 · 2.8), so its
-  note values are approximate. Stand-in hymn lines stand for "today's hymns" until the composer lands; they
-  are also passed as <em>excludeLines</em>, so no question can match one. The asker is the clarinet (as in
-  v0.30); the harmonium answers, and from the second answer a second harmonium rank (a fifth up, snapped
-  into the scale) and a second clarinet argue with it.</p>
+  mode's lowered degrees; a note in the warm colour is one the gapped scale sings somewhere other than written.
+  The old question keeps v0.30's played beats (1.3 · 0.9 · 1.0 · 0.8 · 2.8), so its note values are
+  approximate. Every meeting here is in the mode chosen above (in the engine, FORM draws a mode per meeting).
+  Stand-in hymn lines stand for "today's hymns" until the composer lands; they are also passed as
+  <em>excludeLines</em>, so no question can match one. The asker is the clarinet (as in v0.30); the harmonium
+  answers, and from the second answer a second harmonium rank (a pure fifth above, or a pure third, sixth or
+  fourth where the scale's fifth would be a wolf or a tritone) and a second clarinet argue with it.
+  ▶ play sounds one question alone over the drone at the asker's own pace.</p>
 </div>
 
 <script src="../prosperos-jukebox-v2/pj2-rand.js?v=<?php echo oql_v('../prosperos-jukebox-v2/pj2-rand.js'); ?>"></script>
