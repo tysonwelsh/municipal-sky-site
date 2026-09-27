@@ -36,13 +36,13 @@
 
   /* ══ the room ══════════════════════════════════════════════════════ */
   function drawRoom(g) {
-    rect(g, 0, 0, CAB_W, CAB_H, P.NIGHT1);
-    for (var x = 3; x < CAB_W; x += 22) vline(g, x, 0, CAB_H, P.NIGHT2);     // wall panelling
-    dither(g, 0, 0, CAB_W, 16, P.NIGHT0, 0.6);
-    // the marquee's light spilling onto the wall above it
-    for (var y = 0; y < 22; y++) for (x = 0; x < CAB_W; x++) {
-      var d = Math.abs(x - 188) / 188;
-      if (bayer(x, y) < (0.55 - d * 0.4) * (y / 22)) px(g, x, y, P.PUR1);
+    // the room is the page's night (NIGHT0, so the canvas has no edge);
+    // only the marquee's glow and the cabinet's own shadow mark it
+    rect(g, 0, 0, CAB_W, CAB_H, P.NIGHT0);
+    for (var y = 0; y < 30; y++) for (var x = 0; x < CAB_W; x++) {
+      var d = Math.abs(x - 188) / 150;
+      if (bayer(x, y) < (0.5 - d * 0.5) * (y / 30)) px(g, x, y, P.NIGHT2);
+      else if (bayer(x + 2, y + 1) < (0.3 - d * 0.3) * (y / 30)) px(g, x, y, P.PUR1);
     }
   }
 
@@ -311,15 +311,15 @@
     hline(g, m.x0 + 2, m.x0 + 60, sy, P.IRON3); hline(g, m.x0 + 2, m.x0 + 60, sy + 1, P.IRON1);
     [16, 19, 30, 33].forEach(function (dx) { px(g, mx + dx - 1, sy, P.NIGHT0); });
     // the notice, on one screw, hanging a little crooked
-    var nx = m.x0 + 68, ny = m.y0 + 3, nw = 52, nh = 17;
+    var nx = m.x0 + 66, ny = m.y0 + 1, nw = 58, nh = 19;
     for (j = 0; j < nh; j++) {
       var off = j > nh / 2 ? 1 : 0;                           // hung on one screw: it has slipped a pixel
       hline(g, nx + off, nx + nw - 1 + off, ny + j, j === 0 ? P.BRASS3 : j === nh - 1 ? P.BRASS0 : P.BRASS2);
       px(g, nx + off, ny + j, P.BRASS3); px(g, nx + nw - 1 + off, ny + j, P.BRASS0);
     }
-    A.textC(g, 'EXHIBIT', nx + nw / 2 + 0, ny + 2, P.BRASS0);
+    A.textC(g, 'EXHIBIT', nx + nw / 2, ny + 1, P.BRASS0);
     A.textC(g, 'TEMPORARILY', nx + nw / 2 + 1, ny + 7, P.BRASS0);
-    A.textC(g, 'REMOVED', nx + nw / 2 + 1, ny + 12, P.BRASS0);
+    A.textC(g, 'REMOVED', nx + nw / 2 + 1, ny + 13, P.BRASS0);
     screw(g, nx + 1, ny + 1);
     px(g, nx + nw - 2, ny + 1, P.BRASS0);   // the empty screw hole on the other corner
   }
@@ -434,7 +434,7 @@
     var L = C.legend, x = L.x, y = L.y, w = L.w, h = L.h;
     card(g, x, y, w, h, R);
     tape(g, x + 8, y - 2, 12, 5); tape(g, x + w - 22, y - 3, 13, 5);
-    typed(g, 'KEY TO EXHIBITS', x + 4, y + 4, 3);
+    typed(g, 'KEY TO EXHIBITS', x + 4, y + 4, 4);
     hline(g, x + 4, x + 62, y + 10, P.INK_L);
     var items = (board && board.legend || []).filter(function (e) { return !e.slot; });
     var slots = (board && board.legend || []).filter(function (e) { return e.slot; });
@@ -471,7 +471,7 @@
       'SEED FERN, CARBONIFEROUS': 'SEED FERN', 'TRILOBITE, SURPRISED': 'TRILOBITE, SURPRISED',
       'POCKET WATCH, STILL GOING': 'WATCH, STILL GOING', 'RIBS, SOMETHING LARGE': 'RIBS, SOMETHING BIG',
       'LEDGERS, 1921 TO 1923': 'LEDGERS, 1921-23', 'STRONGBOX (LOCKED)': 'STRONGBOX, LOCKED',
-      'FISH, RED, CURLED BOTH ENDS': 'FISH, CURLS BOTH ENDS', 'PAYROLL, SEALED': 'PAYROLL, SEALED'
+      'FISH, RED, CURLED BOTH ENDS': 'RED FISH, CURLED', 'PAYROLL, SEALED': 'PAYROLL, SEALED'
     };
     return MAP[s] || s;
   }
@@ -554,7 +554,7 @@
     }
     // fingerprints: most of them right by the sticker
     var fp = [[296, 388, 4, 5, 0.3], [279, 395, 3, 5, -0.2], [308, 377, 4, 4, 0.8], [262, 399, 3, 4, 0.1], [288, 371, 3, 4, -0.5], [214, 170, 3, 5, 0.6]];
-    fp.forEach(function (f, i) { fingerprint(g, f[0], f[1], f[2], f[3], f[4], i < 5 ? 'rgba(236,228,206,0.16)' : 'rgba(236,228,206,0.09)'); });
+    fp.forEach(function (f, i) { fingerprint(g, f[0], f[1], f[2], f[3], f[4], i < 5 ? 'rgba(236,228,206,0.11)' : 'rgba(236,228,206,0.07)'); });
     // a small child's whole hand, low down, fingers spread
     for (var k = 0; k < 5; k++) fingerprint(g, 118 + k * 4, 356 - (k === 0 ? -6 : k === 4 ? 2 : 0), 1.5, 3, 0.1 * k - 0.2, 'rgba(236,228,206,0.08)');
     return c;

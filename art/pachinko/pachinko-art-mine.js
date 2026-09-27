@@ -103,7 +103,8 @@
     var R = A.rng(0xB4C6D);
     // the case's top valance, behind the rail: dark steel with the hidden
     // tube's light catching its lower lip
-    rect(g, 0, 0, GW, 12, P.CASE0); hline(g, 0, GW - 1, 11, P.CASE3); hline(g, 0, GW - 1, 10, P.CASE1);
+    rect(g, 0, 0, GW, 12, P.CASE1); hline(g, 0, GW - 1, 10, P.CASE3); hline(g, 0, GW - 1, 9, P.CASE2);
+    for (var vx = 0; vx < GW; vx += 4) px(g, vx, 5, P.CASE2);
     // sky: a gradient much too pretty for a coal town at night
     var stops = [[12, P.SKY0], [18, P.SKY1], [24, P.SKY2], [31, P.SKY3], [38, P.SKY4], [44, P.SKY5], [49, P.SKY6]];
     for (var y = 12; y < 64; y++) {
@@ -535,12 +536,12 @@
     var R = A.rng(0x6019), n = Math.round(Math.hypot(sm.x2 - sm.x1, sm.y2 - sm.y1));
     for (var i = 0; i <= n; i++) {
       var u = i / n, x = sm.x1 + (sm.x2 - sm.x1) * u, y = sm.y1 + (sm.y2 - sm.y1) * u + Math.sin(u * 9) * 2;
-      var w = 1 + Math.round(1.6 * Math.sin(u * 5 + 1) + 1.6 + (N3(u * 20, 3) - 0.5) * 2);
+      var w = Math.max(1, Math.round(1.1 * Math.sin(u * 5 + 1) + 1.4 + (N3(u * 20, 3) - 0.5) * 2));
       for (var k = -w - 1; k <= w + 1; k++) {
         var X = Math.round(x), Y = Math.round(y + k), e = Math.abs(k) >= w;
         if (Math.abs(k) === w + 1) { if (R() < 0.5) px(g, X, Y, P.DEEP0); continue; }  // the dark selvage either side
         var q = N2(X * 0.3, Y * 0.3);
-        px(g, X, Y, e ? P.QUARTZ_D : q > 0.62 ? P.QUARTZ : q < 0.35 ? '#8a8474' : P.QUARTZ_D);
+        px(g, X, Y, e ? '#6a6456' : q > 0.7 ? P.QUARTZ : q < 0.4 ? '#5a5448' : '#8a8474');
         if (!e && R() < 0.2) {
           px(g, X, Y, R() < 0.5 ? P.VEIN2 : P.VEIN1);
           if (R() < 0.35) glints.push({ x: X, y: Y, ph: R() * 6.28, rate: 0.5 + R(), c: P.VEIN3, gold: true });
@@ -558,22 +559,26 @@
     }
   }
   function paintRibs(g, cx, cy) {
-    // something large, lying on its side: a spine along the top, ribs
-    // sweeping down and forward in long arcs, the last ones broken off
-    var sx0 = cx - 40, sy0 = cy - 38;
-    for (var v = 0; v < 12; v++) {
-      var vx = sx0 + v * 7, vy = sy0 + Math.round(Math.sin(v * 0.35) * 2);
+    // something large, lying on its side: the spine along the top, the
+    // ribs bowed out like barrel staves and drawn in again, shortening
+    // toward the tail; two broken. A cage you could stand in.
+    var sx0 = cx - 42, sy0 = cy - 40;
+    for (var v = 0; v < 13; v++) {
+      var vx = sx0 + v * 7, vy = sy0 + Math.round(Math.sin(v * 0.3) * 3);
       rect(g, vx, vy, 5, 3, P.BONE_D); px(g, vx, vy, P.BONE); px(g, vx + 4, vy + 2, P.DEEP0); px(g, vx + 2, vy - 1, P.BONE_D);
-      if (v < 2 || v > 10) continue;
-      var len = 24 + Math.round(Math.sin((v - 1) / 9 * Math.PI) * 14), broken = v === 9 || v === 3;
-      if (broken) len = Math.round(len * 0.55);
-      for (var k = 0; k < len; k++) {
-        var a = k / 34, rx = vx + 2 + Math.round(Math.sin(a * 2.4) * 9), ry = vy + 3 + Math.round(Math.sin(a * 1.4) * 34);
-        px(g, rx, ry, P.BONE_D); px(g, rx + 1, ry, P.DEEP3);
-        if (k % 6 === 2) px(g, rx - 1, ry, P.BONE);
+      if (v < 2 || v > 11) continue;
+      var len = Math.round(40 - Math.abs(v - 5) * 3.2), bulge = 7 - Math.abs(v - 5) * 0.5;
+      var broken = v === 9 ? 0.5 : v === 4 ? 0.7 : 1;
+      for (var k = 0; k < len * broken; k++) {
+        var a = k / len, rx = vx + 2 + Math.round(Math.sin(a * Math.PI) * bulge - a * 5), ry = vy + 3 + k;
+        px(g, rx, ry, P.BONE_D); px(g, rx + 1, ry, a < 0.5 ? P.BONE_D : P.DEEP3); px(g, rx - 1, ry, P.DEEP1);
+        if (k % 7 === 3) px(g, rx, ry, P.BONE);
       }
     }
+    // the sternum where they meet below, mostly still in the rock
+    for (var x = sx0 + 6; x < sx0 + 70; x++) if (A.hash01(88, x, 0) < 0.6) px(g, x, sy0 + 42 + Math.round(Math.sin(x * 0.05) * 3), P.BONE_D);
   }
+
 
 
   /* ══ specimens ═════════════════════════════════════════════════════ */
@@ -804,10 +809,11 @@
       var lamp = { x: L.x, y: L.y + 3, r: electric ? 64 : 58, c: electric ? '#ffe0a0' : P.LAMP, k: electric ? 1.05 : 1.15, region: L.region, kind: electric ? 'bulb' : 'lantern', seed: 100 + i, flame: true };
       if (electric) {
         // a caged bulb hanging on its cable
-        vline(g, L.x, L.y - 7, L.y, P.IRON1);
-        rect(g, L.x - 1, L.y, 3, 4, P.IRON2); px(g, L.x - 2, L.y + 1, P.IRON2); px(g, L.x + 2, L.y + 1, P.IRON2);
-        hline(g, L.x - 1, L.x + 1, L.y + 4, P.IRON3);
-        lamp.fx = L.x; lamp.fy = L.y + 2;
+        var by = L.y - 5;
+        vline(g, L.x, by - 5, by, P.IRON1);
+        rect(g, L.x - 1, by, 3, 4, P.IRON2); px(g, L.x - 2, by + 1, P.IRON2); px(g, L.x + 2, by + 1, P.IRON2);
+        hline(g, L.x - 1, L.x + 1, by + 4, P.IRON3);
+        lamp.fx = L.x; lamp.fy = by + 2; lamp.y = by + 3;
       } else {
         // a tin lantern on a spad in the roof
         vline(g, L.x, L.y - 4, L.y - 1, P.IRON2);
@@ -821,7 +827,7 @@
     var hb = out.filter(function (l) { return l.kind === 'bulb'; }).sort(function (a, b) { return a.x - b.x; });
     for (var i = 0; i < hb.length - 1; i++) for (var x = hb[i].x; x < hb[i + 1].x; x++) {
       var u = (x - hb[i].x) / (hb[i + 1].x - hb[i].x);
-      px(g, x, Math.round(hb[i].y - 10 + Math.sin(u * Math.PI) * 2), '#141218');
+      px(g, x, Math.round(hb[i].fy - 8 + Math.sin(u * Math.PI) * 2), '#141218');
     }
     // the bays' work lights (the company wants you to see what you won)
     [[40, 388], [177, 386], [268, 388]].forEach(function (b, i) {

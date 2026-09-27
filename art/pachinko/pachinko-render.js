@@ -197,6 +197,8 @@
   function drawEmissive(g, view) {
     var t = view.t || 0, fx = view.fx || {}, lights = fx.lights || {}, dark = fx.dark || {};
     function lit(region) { return (lights[region] == null || lights[region] > 0) && !(dark[region] >= 1); }
+    // the case light's tube, glimpsed through the louvre under the valance
+    for (var tx = 2; tx < GW - 2; tx++) px(sg, tx, 11, (tx % 6 === 0) ? '#8a8672' : '#f4ecd0');
     // painted lights on the backdrop (the train's windows, the town)
     for (var i = 0; i < mine.emissive.length; i++) {
       var e = mine.emissive[i];
@@ -278,29 +280,33 @@
     var sr = r * 3;
     mcg.drawImage(scene, cx - sr, cy - sr, sr * 2, sr * 2, 6.5 - r - 0.5, 6.5 - r - 0.5, r * 2 + 1, r * 2 + 1);
     mcg.restore();
-    // glass: brighten a touch and cool it, then cut to the disc
+    // glass: gathers light, cools it; cut to the disc inside the rim
     mcg.globalCompositeOperation = 'lighter';
-    mcg.fillStyle = 'rgba(40,56,72,1)'; mcg.fillRect(0, 0, 13, 13);
+    mcg.fillStyle = 'rgb(80,108,128)'; mcg.fillRect(0, 0, 13, 13);
     mcg.globalCompositeOperation = 'destination-in';
     mcg.drawImage(maskFor(r), 0, 0);
     mcg.globalCompositeOperation = 'source-over';
-    // the cat's-eye vane, turned by spin
+    // the cat's-eye vane, turned by spin: a twisted petal of colour
     var sw = SWIRLS[Math.abs(m.id | 0) % SWIRLS.length], sp = m.spin || 0, ca = Math.cos(sp), sa = Math.sin(sp);
-    for (var u = -1; u <= 1.001; u += 0.2) {
-      var lx = u * (r - 1.2), ly = Math.sin(u * Math.PI) * 1.1;
+    for (var u = -1; u <= 1.001; u += 0.125) {
+      var lx = u * (r - 1.1), ly = Math.sin(u * Math.PI) * 1.2;
       var X = 6.5 + lx * ca - ly * sa, Y = 6.5 + lx * sa + ly * ca;
-      px(mcg, Math.floor(X), Math.floor(Y), Math.abs(u) < 0.5 ? sw[0] : sw[1]);
+      px(mcg, Math.floor(X), Math.floor(Y), Math.abs(u) < 0.55 ? sw[0] : sw[1]);
     }
-    // rim: lit top-left, deep bottom-right; a specular dot; a caustic
+    // the rim: a dark edge all round (it must read against any rock), the
+    // top-left edge catching the light, an inner ring shaded like a lens
     for (var yy = -r; yy <= r; yy++) for (var xx = -r; xx <= r; xx++) {
-      var d2 = xx * xx + yy * yy;
-      if (d2 > r * r || d2 < (r - 1) * (r - 1)) continue;
-      var edge = (xx + yy) / (r * 1.4);
-      px(mcg, 6 + xx, 6 + yy, edge > 0.3 ? '#16222e' : edge < -0.4 ? '#cfe6f4' : '#5a7a92');
+      var d = Math.sqrt(xx * xx + yy * yy);
+      if (d > r + 0.35) continue;
+      var lit = -(xx + yy) / (d || 1);                     // +1 toward the top-left
+      if (d > r - 0.65) px(mcg, 6 + xx, 6 + yy, lit > 0.55 ? '#d8ecf8' : lit > -0.2 ? '#44607a' : '#0a0e16');
+      else if (d > r - 1.65) { if (lit > 0.5) px(mcg, 6 + xx, 6 + yy, '#9ec4dc'); else if (lit < -0.5) px(mcg, 6 + xx, 6 + yy, '#26384a'); }
     }
-    px(mcg, 6 - Math.ceil(r / 2), 6 - Math.ceil(r / 2), '#ffffff');
-    px(mcg, 6 - Math.ceil(r / 2) + 1, 6 - Math.ceil(r / 2), '#e8f6ff');
-    px(mcg, 6 + Math.floor(r / 2), 6 + Math.floor(r / 2) - 1, P.FLAME1);   // lamplight focused through the glass
+    // the specular: a bright window-shaped glint, and the lamplight
+    // focused through the glass onto the far side
+    var o = -Math.ceil(r / 2);
+    px(mcg, 6 + o, 6 + o, '#ffffff'); px(mcg, 7 + o, 6 + o, '#ffffff'); px(mcg, 6 + o, 7 + o, '#eaf6ff');
+    px(mcg, 6 - o, 6 - o + (r > 3 ? 0 : -1), P.FLAME1); px(mcg, 5 - o, 6 - o, 'rgba(255,208,96,0.6)');
     g.drawImage(mc, cx - 6, cy - 6);
   }
   // a marble in a tunnel: a light moving behind the rock
@@ -324,25 +330,26 @@
   }
   function bucket(g, x, ghost, loaded) {
     if (ghost) {
-      // the ghost: a dotted outline where it would go, and a dotted drop line
-      for (var k = -4; k <= 4; k += 2) { px(g, x + k, 3, P.BONE_D); px(g, x + k, 8, P.BONE_D); }
-      px(g, x - 5, 5, P.BONE_D); px(g, x + 5, 5, P.BONE_D);
-      for (var y = 12; y < 40; y += 4) px(g, x, y, 'rgba(232,223,200,0.35)');
+      // the ghost: where the bucket would go, in chalk; a dotted drop line
+      var cg = 'rgba(232,223,200,0.55)';
+      for (var k = -6; k <= 6; k += 2) { px(g, x + k, 4, cg); }
+      for (var j = 5; j < 11; j += 2) { px(g, x - 6 + Math.floor((j - 4) * 0.6), j, cg); px(g, x + 6 - Math.floor((j - 4) * 0.6), j, cg); }
+      px(g, x, 12, cg);
+      for (var y = 16; y < 60; y += 4) px(g, x, y, 'rgba(232,223,200,0.28)');
       return;
     }
-    // trolley wheels on the rail
-    px(g, x - 3, 0, P.IRON4); px(g, x + 3, 0, P.IRON4); px(g, x - 3, 1, P.IRON2); px(g, x + 3, 1, P.IRON2);
-    // hanger
-    vline(g, x, 2, 3, P.IRON3);
-    // the bucket: tin, riveted, tapering to a spout
-    for (var j = 0; j < 5; j++) {
-      var hw = 5 - Math.floor(j * 0.8);
-      hline(g, x - hw, x + hw, 4 + j, j === 0 ? P.IRON4 : P.IRON3);
-      px(g, x - hw, 4 + j, P.IRON4); px(g, x + hw, 4 + j, P.IRON1);
+    // trolley: two wheels on the rail, a yoke
+    rect(g, x - 5, 0, 3, 2, P.IRON3); rect(g, x + 3, 0, 3, 2, P.IRON3); px(g, x - 4, 0, P.IRON4); px(g, x + 4, 0, P.IRON4);
+    hline(g, x - 4, x + 4, 2, P.IRON2); vline(g, x, 2, 3, P.IRON3);
+    // the bucket: a riveted tin skip, tapering to a spout
+    for (var j2 = 0; j2 < 7; j2++) {
+      var hw = 6 - Math.floor(j2 * 0.7);
+      hline(g, x - hw, x + hw, 4 + j2, j2 === 0 ? '#d8d8e8' : (j2 % 3 === 2 ? P.IRON3 : P.IRON4));
+      px(g, x - hw, 4 + j2, '#e8e8f4'); px(g, x + hw, 4 + j2, P.IRON1); px(g, x + hw - 1, 4 + j2, P.IRON2);
     }
-    px(g, x - 2, 5, P.IRON1); px(g, x + 2, 5, P.IRON1);         // rivets
-    rect(g, x - 1, 9, 3, 2, P.IRON2); px(g, x + 1, 10, P.IRON1);  // spout
-    if (loaded) { px(g, x - 1, 3, '#9fc0d4'); px(g, x, 3, '#cfe6f4'); px(g, x + 1, 3, '#6d8ea8'); }
+    px(g, x - 3, 6, P.IRON1); px(g, x + 3, 6, P.IRON1); px(g, x - 2, 9, P.IRON1); px(g, x + 2, 9, P.IRON1); // rivets
+    rect(g, x - 1, 11, 3, 2, P.IRON2); px(g, x + 1, 12, P.IRON0); px(g, x - 1, 11, P.IRON4);           // spout
+    if (loaded) { px(g, x - 2, 3, '#9fc0d4'); px(g, x - 1, 3, '#dff0fa'); px(g, x, 3, '#9fc0d4'); px(g, x + 1, 3, '#6d8ea8'); }
   }
 
   /* ══ draw ══════════════════════════════════════════════════════════ */

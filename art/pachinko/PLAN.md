@@ -418,3 +418,49 @@ the marble unless holding it, and no page scroll at any size.
 - 2026-09-26 — **Scripts.** `index.php` loads every `pachinko-art-*.js`
   (the kit first) between the pure modules and `pachinko-render.js`, and
   skips any listed script that doesn't exist yet.
+- 2026-09-26 — **Who crops (art director, as built).** The contract in
+  `pachinko-main.js` wins over the bullet above: `draw(ctx, view)` paints
+  the whole cabinet into a CAB_W × CAB_H canvas at 1:1 and **main owns the
+  camera** (it blits the crop). `PLAY_RECT`/`toGlass` are not needed.
+  Geometry: CAB 376 × 560, GLASS at (28, 72). Rows: 0–20 the mule's
+  shadow board, 20–66 the marquee, 72–488 the glass, 494–560 the lower
+  panel (figures card, brass plates). Left pillar: the marble feed tube
+  (`view.marblesLeft`, `R.tubeRect()`); right pillar: the coin door
+  (`R.coinRect()`, cabinet px — the start target in ATTRACT). The legend
+  card is taped over board decor `cardzone` (glass x 0–64, y 247–333).
+- 2026-09-26 — **Render pipeline and budget.** Per frame: cabinet static
+  + live (bulb chase in attract/work, breathing in play, blink in payout;
+  two dead bulbs and a loose one), then the glass in a 320 × 416 scene:
+  albedo (baked in `build(board)`) + live parts (`PachinkoBoard.pose`
+  drives the sheave, door, pump wheel, cart) + figurines → × lightmap
+  (ambient purple-black, dithered lamp pools posterised on the Bayer grid,
+  the case light over the backdrop, cool "pin spots" on each specimen) →
+  a foreground layer (pins, exhibit markers, fig tags, bay boards, the
+  pail) lit with a floor so pins always read → emissive (flames, painted
+  windows, coal and gold glints where lit, hit sparks, the watch's minute
+  hand, the canary) → marbles → hopper → nicotine tint (multiply) + sheen.
+  ~2.2 ms/frame steady in headless Chrome; `build` ~80 ms.
+- 2026-09-26 — **Light API for mischief/knockers.** `view.fx.lights =
+  {region: 0..1}` scales a region's lamps (0 = lamps out; flames vanish
+  too), `view.fx.dark = {region: 0..1}` blacks a region out (pins
+  included), `view.fx.flare = 0..1` flares every lamp (the lode),
+  `view.fx.extraLamps = [{x, y, r, c, k}]` adds pools. Figures with `lamp
+  !== false` light their own patch automatically (a lantern tool adds a
+  bigger pool). `PachinkoRender.lightAt(x, y)` for CPU decisions.
+- 2026-09-26 — **Figurines.** `PachinkoRender.drawFigure(ctx, fig)` with
+  `fig = {x, y (feet), facing ±1, who, pose {lean, head, armL, armR, legL,
+  legR, toolA} (radians), tool, lamp, hold}`; crew `who` ∈ tall (Absalom,
+  Cornish felt hat), lamp (Tobias, lantern), pick (Ezra), old (beard to
+  the knees), little (shovel twice his size), tally (spectacles, bowler).
+  `R.POSES` holds a starter vocabulary (stand, swingUp/Dn, carry, push,
+  walkA/B, cheer, point, sit, hold, lamp); `R.figureLamp`, `R.figureHands`
+  for the lightmap and for carrying a stolen marble (`fig.hold = {x, y}`
+  draws the marble there). **While `view.figures` is empty the renderer
+  shows its still-life crew** (`R.stillLife()`); set `view.fx.noStillLife`
+  to suppress it. Quantise angles to ~15° and hold poses (~8 fps).
+- 2026-09-26 — **Tunnels and marbles.** A marble with `phase: 'tunnel'`
+  is drawn as a faint light travelling behind the rock along
+  `tunnel.from → to` (arched). `hidden: true` suppresses a marble. The
+  marble: 9 px cat's-eye, dark rim so it reads on any rock, the lit scene
+  behind it sampled, flipped and shrunk inside it, the vane turned by
+  `spin`, the vane colour by `id` (five marble colours).
