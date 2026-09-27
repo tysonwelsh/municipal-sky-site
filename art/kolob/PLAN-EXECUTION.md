@@ -24,6 +24,9 @@ were approved by the owner that day.*
   - no hour-long batteries or identity gates;
   - a sanity harness run and a short listen;
   - **at most 2 critic rounds per milestone**, then ship and iterate.
+- **Every agent runs at extra-high effort (owner, 2026-09-26).** Scripts set
+  `effort: 'xhigh'` on every `agent()` call explicitly rather than relying
+  on the session setting. Wave 1 ran at medium until the owner raised it.
 - **Nothing publishes without the owner asking.** Merges to `main` happen
   after the owner has listened to the integration branch.
 - **Approval before creative direction changes.** Critics may *propose*
