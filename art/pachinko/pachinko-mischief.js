@@ -70,7 +70,7 @@
 
   /* ══ the rules (tuned in local-dev/pachinko-lab/sim.js mischief; PLAN §12) ══ */
   var RATES = {
-    theft: { p: 0.14, max: 2, lead: 0.5, horizon: 1.6, checks: [0.3, 1.4] },
+    theft: { p: 0.14, max: 2, lead: 0.6, horizon: 1.6, checks: [0.3, 1.4] },
     dark: { p: 0.8, from: 3, to: 9, flicker: 0.55, out: [2.6, 3.6], relight: 0.7, vanish: 0.25 },
     cave: { p: 0.33, from: 3, to: 9, telegraph: 1.5 }
   };
@@ -155,24 +155,32 @@
     if (e.door === notDoor) e = EXITS[(EXITS.indexOf(e) + 1) % EXITS.length];
     return e;
   }
-  // their doors, where a knocker standing in one can reach (the knockers'
-  // canSteal geometry: 9 px either side, 12 up, within 11)
+  // where a thief's hands are in the ready pose, from his feet (measured from
+  // the rig, pachinko-art-figures.js; the knockers compute it live)
+  var HANDS = { pick: { x: 19.36, y: -16.86 }, little: { x: 17.18, y: -14.08 } };
+  // their doors, each with the floor it opens onto
   function doorReach(nav) {
     var out = [];
-    for (var id in nav.doors) { var d = nav.doors[id]; out.push({ id: id, x: d.x, y: d.y }); }
+    for (var id in nav.doors) { var d = nav.doors[id]; out.push({ id: id, x: d.x, y: d.y, W: nav.walks[d.w] }); }
     return out;
   }
-  function nearDoor(doors, x, y) {
+  // would a knocker stepping out of one of them (a step or two along the
+  // floor) have the marble come right into his hands here? (canSteal's test)
+  function nearDoor(doors, x, y, who) {
+    var KC = mod('PachinkoKnockers', 'pachinko-knockers.js').core, H0 = HANDS[who] || HANDS.pick;
     for (var i = 0; i < doors.length; i++) {
-      var d = doors[i];
-      for (var s = -1; s <= 1; s += 2) { var rx = d.x + s * 9, ry = d.y - 12; if ((x - rx) * (x - rx) + (y - ry) * (y - ry) < 121) return { door: d.id, side: s }; }
+      var d = doors[i], W = d.W;
+      for (var s = -1; s <= 1; s += 2) {
+        var ox = H0.x * s, sx = clamp(Math.round(x - ox), Math.max(W.x0, d.x - 9), Math.min(W.x1, d.x + 9));
+        if (Math.abs(x - (sx + ox)) <= 3 && Math.abs(y - (KC.walkY(W, sx) + H0.y)) <= 4) return { door: d.id, side: s };
+      }
     }
     return null;
   }
   // the lab's version of canSteal over a recorded path [[t, x, y, phase]…]:
   // the first point between age c+lead and c+horizon within reach of a door,
   // before the marble leaves the board (a tunnel, the cart, a pocket)
-  function theftAt(doors, path, c) {
+  function theftAt(doors, path, c, who) {
     var T = RATES.theft;
     for (var i = 0; i < path.length; i++) {
       var q = path[i];
@@ -180,7 +188,7 @@
       if (q[3] !== 'board' && q[3] !== 'drop') return null;
       if (q[0] > c + T.horizon) return null;
       if (q[0] < c + T.lead) continue;
-      var nd = nearDoor(doors, q[1], q[2]);
+      var nd = nearDoor(doors, q[1], q[2], who);
       if (nd) return { i: i, t: q[0], x: q[1], y: q[2], door: nd.door };
     }
     return null;
@@ -248,11 +256,14 @@
       var res = K.theft({ plan: plan, who: who, to: ex.door, mode: ex.mode, face: ex.face });
       if (!res || !res.ok) return;
       S.thefts++;
-      S.log.push({ t: t, m: m.id, n: n, door: plan.door, to: ex.door, mode: ex.mode, good: ex.good });
+      S.log.push({ t: t, m: m.id, n: n, door: plan.door, to: ex.door, mode: ex.mode, good: ex.good, entry: res.entry || null });
       api.emit({ type: 'mischief', what: 'theft', m: m.id, door: plan.door, to: ex.door, mode: ex.mode, good: ex.good });
     }
     function stepTheft(t) {
       var w = world(); if (!w) return;
+      // a theft he called off before showing himself (the marble was knocked
+      // off its line) never happened: it doesn't count against the game's two
+      S.log.forEach(function (l) { if (l.entry && l.entry.state === 'aborted' && !l.refunded) { l.refunded = true; S.thefts = Math.max(0, S.thefts - 1); } });
       var checks = RATES.theft.checks;
       w.marbles.forEach(function (m) {
         if (m.done || S.idx[m.id] == null) return;
@@ -593,7 +604,7 @@
 
   var PachinkoMischief = {
     attach: attach, live: null,
-    RATES: RATES, SECTIONS: SECTIONS, EXITS: EXITS, LODE: LODE, REWARD: REWARD, CARTS: CARTS,
+    RATES: RATES, SECTIONS: SECTIONS, EXITS: EXITS, HANDS: HANDS, LODE: LODE, REWARD: REWARD, CARTS: CARTS,
     planGame: planGame, wantTheft: wantTheft, exitFor: exitFor, doorReach: doorReach, nearDoor: nearDoor, theftAt: theftAt,
     releaseOf: releaseOf, rare: rare, whistleFor: whistleFor, hash: h3,
     seamOf: seamOf, seamY: seamY, crackOrigin: crackOrigin, cartAt: cartAt, floorTop: floorTop

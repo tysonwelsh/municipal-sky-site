@@ -1333,23 +1333,37 @@
       }
       return out;
     }
-    function reachPoint(d, side) { return { x: d.x + side * 9, y: d.y - 12 }; }
+    // where his hands are, standing in the ready pose (arms out, waiting),
+    // relative to his feet: the catch is aimed at his real hands (wave 4)
+    var HOFF = {};
+    function handsOff(who, side) {
+      var key = who + side;
+      if (!HOFF[key]) HOFF[key] = handsOfFig({ x: 0, y: 0, facing: side, who: who, pose: rad(P.ready), back: false });
+      return HOFF[key];
+    }
+    // a plan: the first point of its path (at least `lead` s ahead) where a
+    // knocker stepping out of one of their doors, and a step or two along
+    // the floor, would have the marble come right into his hands
     function canSteal(mid, opts) {
       opts = opts || {};
       var w = api.world(); if (!w) return null;
       var m = null; w.marbles.forEach(function (q) { if (q.id === mid) m = q; });
       if (!m || m.done || m.stolen || m.phase === 'tunnel' || m.phase === 'cart' || m.phase === 'pocket') return null;
       var lead = opts.lead == null ? 0.45 : opts.lead, path = predict(m, opts.horizon || 1.6), n = nav(), best = null;
+      var who = opts.who || (S.nightShift != null ? K[S.nightShift].who : 'pick');
       var ds = Object.keys(n.doors).map(function (id) { return n.doors[id]; }).filter(function (d) { return !opts.door || d.id === opts.door; });
-      path.forEach(function (p) {
-        if (p.t < lead || (best && p.t >= best.t)) return;
-        ds.forEach(function (d) {
-          for (var side = -1; side <= 1; side += 2) {
-            var R0 = reachPoint(d, side);
-            if (Math.hypot(p.x - R0.x, p.y - R0.y) < 11 && (!best || p.t < best.t)) best = { m: mid, door: d.id, side: side, t: p.t, x: p.x, y: p.y, at: now() + p.t };
+      for (var i = 0; i < path.length && !best; i++) {
+        var p = path[i];
+        if (p.t < lead) continue;
+        for (var j = 0; j < ds.length && !best; j++) {
+          var d = ds[j], W = n.walks[d.w];
+          for (var side = -1; side <= 1 && !best; side += 2) {
+            var off = handsOff(who, side), sx = clamp(Math.round(p.x - off.x), Math.max(W.x0, d.x - 9), Math.min(W.x1, d.x + 9));
+            var hx = sx + off.x, hy = walkY(W, sx) + off.y;
+            if (Math.abs(p.x - hx) <= 3 && Math.abs(p.y - hy) <= 4) best = { m: mid, door: d.id, side: side, t: p.t, x: p.x, y: p.y, at: now() + p.t, sx: sx, who: who };
           }
-        });
-      });
+        }
+      }
       return best;
     }
     function theft(opts) {
@@ -1363,9 +1377,11 @@
       var relay = opts.relay != null ? K[BY_WHO[opts.relay]] : null;
       clearKnocker(k);
       k.tool = null; k.tool2 = null;                     // empty-handed: this needs both hands
+      var entry = { m: plan.m, who: k.who, plan: plan, to: to, state: 'waiting' };
+      opts.entry = entry;
       k.busy = 'theft'; k.gen = thiefScript(k, plan, n.doors[to], opts, relay); k.wait = 0;
-      S.thefts.push({ m: plan.m, who: k.who, plan: plan, to: to });
-      return { ok: true, plan: plan, who: k.who, to: to };
+      S.thefts.push(entry);
+      return { ok: true, plan: plan, who: k.who, to: to, entry: entry };
     }
     function pickExit(from) {
       var n = nav(), ids = Object.keys(n.doors).filter(function (id) { return id !== from && !n.doors[id].mouth; });
@@ -1379,21 +1395,29 @@
         k.hidden = true; k.inDoor = d.id;
       }
       // the door opens ~0.45 s before the marble arrives
-      var wakeAt = plan.at - 0.45;
+      var wakeAt = plan.at - 0.55, entry = opts.entry || {};
       while (now() < wakeAt - 1 / FPS) yield 1;
+      // a last look before he shows himself: if another marble has knocked it
+      // off its line, he stays in the rock (no telegraph for a theft that can't be)
+      var re = canSteal(plan.m, { door: plan.door, who: k.who, lead: 0.25, horizon: 0.9 });
+      if (!re) { entry.state = 'aborted'; k.busy = null; return; }
+      re.door = plan.door; plan = re; entry.plan = re; entry.state = 'out';
       k.x = d.x; k.y = d.y;
       doorOpen(d, 1); emit(k, 'door', { how: 'open' }); yield 1;
       doorOpen(d, 2);
-      k.at = { w: d.w, x: d.x }; k.x = clamp(d.x + plan.side * 2, n.walks[d.w].x0, n.walks[d.w].x1); k.y = walkY(n.walks[d.w], k.x);
+      var W0 = n.walks[d.w], x0 = clamp(d.x, W0.x0, W0.x1);
+      k.at = { w: d.w, x: x0 }; k.x = x0; k.y = walkY(W0, x0);
       k.hidden = false; k.inDoor = null; k.facing = plan.side; k.back = false;
       k.pose = P.crouch; yield 1;
+      // a step or two along the floor, to where the marble will come into his hands
+      if (Math.abs(plan.sx - k.x) > 1) { k.x = plan.sx; k.at.x = plan.sx; k.y = walkY(W0, plan.sx); k.pose = P.walk1; emit(k, 'step'); yield 1; }
       k.pose = P.ready;
       // hands out, waiting: the catch is sensed every physics step (see stepThief)
       k.thief = { m: plan.m, until: plan.at + 0.35, state: 'wait' };
       while (k.thief.state === 'wait' && now() < k.thief.until) yield 1;
       if (k.thief.state !== 'got') {
         // missed it: a swipe at the air, a shrug, back in
-        k.thief = null;
+        k.thief = null; entry.state = 'missed';
         var sw = copy(P.ready); sw.lean = 40; k.pose = sw; yield 2;
         k.pose = P.shrug; yield 4;
         yield* enterDoor(k, d); doorOpen(d, 0);
@@ -1401,6 +1425,7 @@
         return;
       }
       // got it: up to his lamp for a look, then off with it
+      entry.state = 'got';
       k.pose = P.grab; yield 1;
       k.pose = P.holdUp; yield 2;
       k.facing = -plan.side;
@@ -1409,7 +1434,7 @@
       k.hidden = true; k.inDoor = d.id; yield 1;
       doorOpen(d, 1); yield 1; doorOpen(d, 0);
       // through the rock, the marble's light with his
-      var dist = Math.abs(d.x - exit.x) + Math.abs(d.y - exit.y), frames = Math.max(6, Math.round(dist / 110 * FPS));
+      var dist = Math.abs(d.x - exit.x) + Math.abs(d.y - exit.y), frames = Math.max(6, Math.round(dist / 190 * FPS));   // running with it (wave 4: 110 kept the marble away 4 s)
       for (var f = 0; f < frames; f++) {
         var u = (f + 1) / frames;
         k.glow = { x: d.x + (exit.x - d.x) * u, y: d.y - 10 + (exit.y - d.y) * u + Math.sin(u * Math.PI) * 8, marble: true };
@@ -1464,7 +1489,7 @@
         var m = marbleById(th.m);
         if (!m || m.done) { th.state = 'lost'; return; }
         var h = handsOf(k);
-        if (Math.hypot(m.x - h.x, m.y - h.y) < 13) {
+        if (Math.hypot(m.x - h.x, m.y - h.y) < 8) {
           th.state = 'got';
           m.phase = 'pocket'; m.stolen = true; m.vx = 0; m.vy = 0; m.heldAge = m.age;
           k.hold = { id: m.id, spin: m.spin };
@@ -1580,7 +1605,7 @@
             // the night shift comes back out
             if (S.nightShift != null) { var ns = K[S.nightShift]; S.nightShift = null; if (ns.busy !== 'theft') { ns.gen = null; ns.busy = null; } }
           }
-          if (e.mode === 'play' && FORCE.theft && !S.forced.theft) { S.forced.theft = true; S.forced.theftAt = now() + 0.3; }
+          if (e.mode === 'play' && FORCE.theftdemo && !S.forced.theft) { S.forced.theft = true; S.forced.theftAt = now() + 0.3; }
           if (e.mode === 'play' && FORCE.knock && !S.forced.knock) { S.forced.knock = true; S.forced.knockAt = now() + 0.5; }
           if (e.mode === 'play' && FORCE.playdead && !S.forced.dead) { S.forced.dead = true; S.freeze = { t0: now(), until: now() + 2.4, topple: 3 }; }
           break;
