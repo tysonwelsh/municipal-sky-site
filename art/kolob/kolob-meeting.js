@@ -173,12 +173,18 @@ window.KOLOB = window.KOLOB || {};
       for (var sp = 0; sp < prefs.length; sp++) if (haveSec[prefs[sp]]) return prefs[sp];
       return null;
     }
-    var forcedType = forceVisitation ? pickW([["question", 2], ["bands", 2], ["steeples", 1], ["oldtune", 1]]) : null;
+    // THE QUESTION IS SHELVED (owner, 2026-09-27: "one of the less interesting
+    // guests… there's better stuff we could be focusing on"). Its code stays
+    // in kolob-guests.js; it simply never seats. Its dice are still thrown
+    // below, so every other draw of the meeting falls exactly where it did.
+    // The forcing switch no longer offers it.
+    var SHELVED_GUESTS = { question: true };
+    var forcedType = forceVisitation ? pickW([["bands", 2], ["steeples", 1], ["oldtune", 1]]) : null;
     if (forcedType === "question" || chance(0.29)) {
       var qSeat = (forcedType === "question" || chance(0.7))
         ? seatIn(["invocation", "testimony", "hymn"])
         : seatIn(["testimony", "interlude", "invocation"]);
-      if (qSeat) C.visitations.push({ type: "question", section: qSeat, fired: false });
+      if (qSeat && !SHELVED_GUESTS.question) C.visitations.push({ type: "question", section: qSeat, fired: false });
     }
     if (forcedType === "bands" || chance(0.36)) {
       var bSeat = forcedType === "bands"

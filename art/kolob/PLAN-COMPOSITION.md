@@ -1120,3 +1120,15 @@ The source is `critic/enrichment-1.md`. Each approved item joins its wave's mile
 - the Amen printed with KINGSFOLD.
 
 Every Earth tune gets an `lds` field (hymnal 1985 / Hymns—For Home and Church membership, with sources), shown in the Earth Tunes Lab. The tradition tunes that are not in the LDS hymnal stay, labelled.
+
+**The Question is SHELVED (owner, 2026-09-27).** After hearing the generated questions in
+question-lab, the owner judged the Question "one of the less interesting guests" and
+chose to spend the attention elsewhere.
+- **In the engine:** `SHELVED_GUESTS = { question: true }` in `kolob-meeting.js` planMeeting. Its
+  dice are still drawn, so every other draw lands where it did. The forcing switch no longer
+  offers it. The code in `kolob-guests.js`, `kolob-question.js` and `question-lab.*` stays in
+  the repo, unused.
+- **Plan changes:** §8.1 and Phase 1 are withdrawn, and so are the askers and the cornet weights
+  above. The cornet stays as the Nauvoo band's lead.
+- **Round 2's audible payoff** becomes the plumbing and bug fixes, plus one small approved idea
+  pulled forward.
