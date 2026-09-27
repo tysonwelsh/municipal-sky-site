@@ -21,9 +21,10 @@
 // lines of Notes per part, cadences, chords where the parts make them
 // unambiguous, and verses: [] (Kolob sings no English; the Deseret work will
 // underlay texts later). Dev-only fields ride along and are never rendered in
-// the app: nameEn, notes (the transcriber's uncertainties), crossCheck, and
+// the app: nameEn, notes (the transcriber's uncertainties), crossCheck,
 // engrave (the source's own key, clefs and staff order, so the lab can
-// engrave a tune the way its facsimile looks). Note.src is the pitch as the
+// engrave a tune the way its facsimile looks), and lds (whether the Latter-day
+// Saints' hymnbooks sing the tune: see THE LDS HYMNALS). Note.src is the pitch as the
 // source writes it ("C#5"); Line.barStart is the metric position of the
 // line's beat 0 within its bar, and Line.startBeat where the line begins
 // (rests between lines are not Notes, so a performer needs this).
@@ -356,6 +357,7 @@ KOLOB.Tunes = (function () {
       lineSyllables: t.syllables || null,
       tuning: tuning,
       crossCheck: t.crossCheck || [],
+      lds: t.lds || null,
       notes: t.notes || "",
       engrave: { tonic: t.key.tonic, sig: t.key.sig || "", scale: t.scale, order: t.order || parts, clefs: t.clefs, shift: t.shift || {}, shapes: !!t.shapes, sourceKey: t.key.name }
     };
@@ -505,6 +507,102 @@ KOLOB.Tunes = (function () {
   var PSALMODY = { melody: "S", order: ["T", "S", "A", "B"], clefs: { T: "treble8", S: "treble", A: "treble", B: "bass" },
                    shift: { T: -1 }, shapes: false, dialect: "tabernacle" };
   function psalmody(o) { var k; for (k in PSALMODY) if (o[k] === undefined) o[k] = PSALMODY[k]; return o; }
+
+  // ---- THE LDS HYMNALS ------------------------------------------------------------
+  // Hymn.lds (dev-only; the Earth Tunes Lab shows it under the sources): does
+  // The Church of Jesus Christ of Latter-day Saints sing this TUNE, the melody
+  // and not merely its words? null means nobody has looked yet; otherwise
+  //     { hymns1985: [{number, title, url}], homeAndChurch: [{number, title, url}],
+  //       other: "a short note", sources: [url …], checked: "YYYY-MM-DD" }
+  // hymns1985 is "Hymns" (1985), the current English hymnbook, 341 hymns.
+  // homeAndChurch is "Hymns—For Home and Church", which the Church is releasing
+  // in batches (on 2026-09-27 the Gospel Library lists 82: Nos. 1001–1072 and
+  // 1201–1210, none of them from the 1985 book; the full printed book is still
+  // to come), so an empty list there means "not among those released by the
+  // checked date". An empty hymns1985 means the tune is not in the 1985 book.
+  // title is as the Gospel Library prints it; url is the hymn's page there.
+  // HOW IT WAS CHECKED: every hymn page of both books in the Gospel Library was
+  // read for its number, title and music credit, and every hymn's page in the
+  // Church's music library (media/music/songs/…) for the tune name the Church
+  // itself gives it ("All Is Well", alternate title "Winter Quarters"). A tune
+  // counts only when that name, or the composer credit behind it, is this
+  // tune: the same words sung to another tune do not count (see FOUNDATION and
+  // KEDRON). Where a hymn does sing the tune, the melody of the Church's own
+  // MusicXML score (linked from its music-library page) was set against this
+  // file's melody part pitch by pitch (rhythms were not compared), and the note
+  // says where the two part.
+  // The Children's Songbook was read the same way: it uses none of these tunes. Notes on the 1948 hymnal cite singpraises.net's catalogue of
+  // it (an independent index of the Church's hymnals), not a Church page.
+  var CHURCH = "https://www.churchofjesuschrist.org/";
+  var HYMNS85 = CHURCH + "study/manual/hymns?lang=eng";                          // the 1985 book's contents
+  var HOMECH = CHURCH + "study/music/hymns-for-home-and-church?lang=eng";       // Home and Church, as released
+  function page85(slug) { return CHURCH + "study/manual/hymns/" + slug + "?lang=eng"; }
+  function h85(no, title, slug) { return { number: no, title: title, url: page85(slug) }; }
+  function hhc(no, title, slug) { return { number: no, title: title, url: CHURCH + "study/music/hymns-for-home-and-church/" + slug + "?lang=eng" }; }
+  function tuneName(slug) { return CHURCH + "media/music/songs/" + slug + "?lang=eng"; }   // the music library's page: its tune name
+  function sp1948(id, slug) { return "https://singpraises.net/collections/en/1948-hymns/" + id + "/" + slug + "?edition=1948"; }
+  // o: {h85: [...], hhc: [...], other, also: [urls]}. The sources list each hymn's
+  // Gospel Library page and its music-library page (the two share a slug), then
+  // o.also; a tune in neither book cites the two books' contents pages instead.
+  function lds(o) {
+    var hy = (o.h85 || []).concat(o.hhc || []), src = [];
+    hy.forEach(function (h) { src.push(h.url, tuneName(h.url.split("/").pop().split("?")[0])); });
+    if (!hy.length) src.push(HYMNS85, HOMECH);
+    return { hymns1985: o.h85 || [], homeAndChurch: o.hhc || [], other: o.other || "",
+             sources: src.concat(o.also || []), checked: "2026-09-27" };
+  }
+  var LDS = {
+    "all-is-well": lds({
+      h85: [h85(30, "Come, Come, Ye Saints", "come-come-ye-saints"),
+            h85(326, "Come, Come, Ye Saints (Men’s Choir)", "come-come-ye-saints-mens-choir")],
+      other: "The Church names the tune All Is Well, alternate title Winter Quarters (the name in the 1889 Psalmody, No. 327, this transcription's source), credits it 'English folk song'; its melody matches this one pitch for pitch. Also in the 1948 hymnal (Nos. 13, 305).",
+      also: [sp1948(34002, "come-come-ye-saints")]
+    }),
+    "kingsfold": lds({
+      h85: [h85(284, "If You Could Hie to Kolob", "if-you-could-hie-to-kolob")],
+      other: "Credited 'KINGSFOLD … arranged by Ralph Vaughan Williams … From the English Hymnal', this transcription's source: the same melody, a few notes split or merged to fit Phelps's words. The 1948 hymnal sang these words to Joseph J. Daynes's KOLOB (No. 257, choir).",
+      also: [sp1948(34247, "if-you-could-hie-to-kolob-choir")]
+    }),
+    "bethany": lds({
+      h85: [h85(100, "Nearer, My God, to Thee", "nearer-my-god-to-thee")],
+      other: "Credited to Lowell Mason; the Church names the tune Bethany; its melody matches this one pitch for pitch. Also in the 1948 hymnal (No. 124).",
+      also: [sp1948(34113, "nearer-my-god-to-thee")]
+    }),
+    "foundation": lds({
+      other: "Not the Saints' tune for these words: 'How Firm a Foundation' (1985 No. 85) is sung to FIDELITY (attr. J. Ellis, ca. 1889), the tune the 1889 Psalmody already printed for them (No. 282).",
+      also: [page85("how-firm-a-foundation"), tuneName("how-firm-a-foundation"), LDS1889(282, 239).url]
+    }),
+    "nettleton": lds({
+      hhc: [hhc(1001, "Come, Thou Fount of Every Blessing", "come-thou-fount-of-every-blessing")],
+      other: "Credited 'American folk tune; Wyeth's Repository …, 1813; alt.; arr. 2024', and altered it is: 'of ev'ry' rises do–mi–sol where Wyeth's air, transcribed here, falls mi–re–do, and there is no 'Hallelujah' chorus. Also in the 1948 hymnal (No. 24).",
+      also: [sp1948(34013, "come-thou-fount-of-every-blessing")]
+    }),
+    "simple-gifts": lds({}),
+    "god-be-with-you": lds({
+      h85: [h85(152, "God Be with You Till We Meet Again", "god-be-with-you-till-we-meet-again")],
+      other: "Credited to William G. Tomer; the Church names the tune God Be with You (alternate title Deus vobiscum); its melody matches this one pitch for pitch. Also in the 1948 hymnal (No. 47).",
+      also: [sp1948(34036, "god-be-with-you-till-we-meet-again")]
+    }),
+    "new-britain": lds({
+      hhc: [hhc(1010, "Amazing Grace", "amazing-grace")],
+      other: "Credited 'American folk tune, 19th century; arr. 2024'. The Church's melody is this 1844 tenor's in lines 1 and 4 and nearly in line 2; line 3 ('I once was lost') runs mi, sol–mi, sol–mi, do (here re–mi, sol, mi–re, do), and the second half is not repeated. The Church notes Newton's words were in an early Latter-day Saint hymnbook (1841)."
+    }),
+    "kedron": lds({
+      other: "The 1985 book's CONSOLATION (No. 115, 'Come, Ye Disconsolate') is another tune, Samuel Webbe's, not this KEDRON.",
+      also: [page85("come-ye-disconsolate"), tuneName("come-ye-disconsolate")]
+    }),
+    "idumea": lds({}),
+    "pisgah": lds({}),
+    "holy-manna": lds({ other: "'Brethren, We Have Met to Worship' is in neither book." }),
+    "coronation": lds({
+      h85: [h85(269, "Jehovah, Lord of Heaven and Earth", "jehovah-lord-of-heaven-and-earth")],
+      other: "Credited to Oliver Holden; the Church names the tune Coronation. Its first line reads as the 1991 Sacred Harp's does (re–do–re, mi at 'Jesus' name, Let', where this 1844 tenor sings mi–do–re, re), and it sings the third line, where the 1844 tenor rests. 'All Hail the Power of Jesus' Name' is in neither book. Also in the 1948 hymnal (No. 83).",
+      also: [sp1948(34072, "jehovah-lord-of-heaven-and-earth")]
+    }),
+    "wondrous-love": lds({ other: "'What Wondrous Love Is This' is in neither book." }),
+    "beach-spring": lds({}),
+    "promised-land": lds({ other: "'On Jordan's Stormy Banks' is in neither book, and neither has a tune of this name, minor or major." })
+  };
 
   // ---- ALL IS WELL ("Come, come, ye Saints") ----------------------------------
   // The pioneers' hymn, William Clayton's words (1846) to the camp-meeting
@@ -762,7 +860,8 @@ KOLOB.Tunes = (function () {
   }));
 
   // ---- FOUNDATION ("How firm a foundation") --------------------------------------------
-  // The pentatonic Southern tune the Saints sing to "How firm a foundation";
+  // The pentatonic Southern tune of "How firm a foundation" (not the Saints'
+  // tune for those words, which is FIDELITY: see THE LDS HYMNALS);
   // the 1844 Sacred Harp prints it as BELLEVUE (credited to Z. Chambless,
   // after Mercer's Cluster), with those very words, in B-flat, 4/4, 11s. The
   // second strain carries repeat dots, so "What more can he say" is sung
@@ -1014,6 +1113,10 @@ KOLOB.Tunes = (function () {
 
   // ==========================================================================
   var problems = [];
+  // each tune takes its LDS finding (null if nobody has looked yet); a finding
+  // filed under a slug no tune has is a typo, and says so
+  var slugs = SOURCES.map(function (t) { t.lds = LDS[t.slug] || null; return t.slug; });
+  Object.keys(LDS).forEach(function (s) { if (slugs.indexOf(s) < 0) problems.push("LDS: no tune '" + s + "'"); });
   var list = SOURCES.map(function (t) { return build(t, problems); });
   var index = {};
   list.forEach(function (h) { index[h.id] = h; });

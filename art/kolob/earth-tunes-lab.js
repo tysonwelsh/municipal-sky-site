@@ -474,6 +474,28 @@ window.EarthTunesLab = (function () {
       (s.note ? '<br><span class="etl-x">' + esc(s.note) + "</span>" : "") + "</p>";
   }
 
+  // whether the Latter-day Saints sing this tune (Hymn.lds, kolob-tunes.js): each
+  // hymn number links to its Gospel Library page; the note and the numbered
+  // sources ride below in small type
+  function ldsLine(h) {
+    var L = h.lds;
+    if (!L) return '<p class="etl-src etl-lds"><b>LDS hymnal:</b> <span class="etl-x">not yet checked</span></p>';
+    function hymns(arr) {
+      return arr.map(function (x) {
+        return '<a href="' + esc(x.url) + '" target="_blank" rel="noopener">#' + esc(x.number) + " “" + esc(x.title) + "”</a>";
+      }).join(", ");
+    }
+    var a = L.hymns1985, b = L.homeAndChurch, out = [];
+    if (a.length) out.push(hymns(a) + " (<i>Hymns</i>, 1985)");
+    if (b.length) out.push(hymns(b) + ' (<i class="etl-nw">Hymns—For Home and Church</i>)');
+    var head = out.length
+      ? "<b>LDS hymnal:</b> " + out.join(" · ") + (a.length ? "" : " · not in <i>Hymns</i> (1985)")
+      : '<b>Not in the LDS hymnal</b> (<i>Hymns</i>, 1985) or <i class="etl-nw">Hymns—For Home and Church</i> (as released by <span class="etl-nw">' + esc(L.checked) + "</span>)";
+    var src = L.sources.map(function (u, i) { return '<a href="' + esc(u) + '" target="_blank" rel="noopener">' + (i + 1) + "</a>"; }).join(" ");
+    return '<p class="etl-src etl-lds">' + head + '<br><span class="etl-x">' + (L.other ? esc(L.other) + " " : "") +
+      "Sources " + src + ' · checked <span class="etl-nw">' + esc(L.checked) + "</span></span></p>";
+  }
+
   // the tune the page is showing: the picker's choice, kept in the URL hash
   // (#t-<slug>) so a reload lands on the same tune
   function slugOf(h) { return h.id.split(":")[1]; }
@@ -512,6 +534,7 @@ window.EarthTunesLab = (function () {
         : "every chord is just on the fixed degrees; no note needs a comma.") + "</p>");
     html.push(srcLine(h.source, "Source:"));
     (h.crossCheck || []).forEach(function (c) { html.push(srcLine(c, "Cross-check:")); });
+    html.push(ldsLine(h));
     html.push('<div class="etl-ctl"><button type="button" class="etl-btn" data-act="play">play</button>' +
       '<button type="button" class="etl-btn" data-act="stop">stop</button>' +
       '<span class="etl-ver"><label class="etl-ver-label" for="etl-ver">version</label><select class="etl-select" id="etl-ver"' + (OLD[h.id] ? "" : " disabled") + ">" +

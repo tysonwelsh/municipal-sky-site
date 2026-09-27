@@ -98,6 +98,10 @@ include '../../includes/header.php';
 .etl-src { font-size: 0.92rem; margin: 0.15rem 0; }
 .etl-src a { color: var(--accent); }
 .etl-src .etl-x { color: var(--ink-soft); font-size: 0.86rem; }
+.etl-lds { margin-top: 0.4rem; padding-left: 0.55rem; border-left: 3px solid var(--line); overflow-wrap: break-word; }
+.etl-lds b { font-weight: 600; }
+.etl-lds .etl-x a { padding: 0 0.15rem; }
+.etl-lds .etl-nw { white-space: nowrap; }
 .etl-ctl { display: flex; flex-wrap: wrap; gap: 0.45rem; margin: 0.7rem 0 0.6rem; align-items: center; }
 .etl-ctl .etl-hint { font-size: 0.82rem; color: var(--ink-soft); font-style: italic; }
 
