@@ -273,6 +273,7 @@
     px(g, m.x, m.y + 2, P.BRASS1); px(g, m.x + m.w - 1, m.y + 2, P.BRASS0);
     var tg = ui.tongue;
     if (!tg || t < tg.t0) return;
+    if (tg.nil) { drawNil(g, tg, t, m); return; }
     var n = tg.n | 0; if (n <= 0 && tg.torn == null) return;
     var TW = 9, TL = 6, x0 = m.x + 4, y0 = m.y + 3;
     var room = C.lower.y0 - 1 - y0, hang = Math.min(n * TL, room);
@@ -309,6 +310,56 @@
         hline(g, fx, fx + TW + 3, fy, f % 2 ? P.PINK_D : P.PINK);
       }
     }
+  }
+
+  // nothing won: a cream company slip creeps out, stamped NIL in red
+  function drawNil(g, tg, t, m) {
+    var u = t - tg.t0, len = Math.min(16, Math.floor(u / 0.06) * 2);
+    var x0 = m.x + 2, y0 = m.y + 3, fall = 0, fade = 1;
+    if (tg.torn != null) { var fu = t - tg.torn; if (fu > 0.7) return; fall = Math.round(fu * fu * 520 + fu * 30); fade = 1 - fu / 0.7; }
+    for (var yy = 0; yy < len; yy++) for (var xx = 0; xx < 13; xx++) {
+      var X = x0 + xx, Y = y0 + yy + fall;
+      if (fade < 1 && bayer(X, Y) > fade) continue;
+      px(g, X, Y, xx === 0 || xx === 12 ? P.PAPER_D : yy === len - 1 ? P.PAPER_D : P.PAPER);
+    }
+    if (len >= 12 && fade > 0.5) {
+      // the rubber stamp, a little crooked and not quite inked
+      A.text(g, 'NIL', x0 + 1, y0 + 5 + fall, '#b0283a', 1, function (i, col, row) { return A.hash01(55, i * 5 + col, row) < 0.15 ? '#d86a78' : '#b0283a'; });
+      hline(g, x0 + 1, x0 + 11, y0 + 4 + fall, 'rgba(176,40,58,0.6)'); hline(g, x0 + 1, x0 + 11, y0 + 10 + fall, 'rgba(176,40,58,0.6)');
+    }
+  }
+
+  /* ── the best game, pencilled on a tag under the counter by a later
+   *    hand; beaten, the old number is scratched out and written over ── */
+  function drawBest(g, ui, t) {
+    var best = ui.best | 0, prev = ui.bestPrev | 0;
+    var nu = ui.bestT0 != null ? t - ui.bestT0 : 9;
+    if (nu < 0) best = prev;                          // the old record, until the pencil gets to it
+    if (best <= 0 && !(nu >= 0 && nu < 1)) return;
+    var k = K.tally, x = k.x, y = k.y + k.h + 4, w = 21, h = 8, pencil = '#5a5a6a';
+    // the tag on a pin, a string, the bottom slipped a pixel
+    px(g, x + 10, y - 3, P.IRON4); vline(g, x + 10, y - 2, y - 1, '#8a7e68');
+    rect(g, x + 1, y + 1, w, h, 'rgba(0,0,0,0.4)');
+    rect(g, x, y, w, h, P.PAPER); hline(g, x, x + w - 1, y + h - 1, P.PAPER_D); px(g, x + w - 1, y, P.PAPER_D);
+    function label(n) { var s2 = 'HI ' + n; return A.textW(s2) > w - 2 ? String(n) : s2; }
+    if (nu >= 0 && nu < 1) {
+      // beaten: the old number scratched through, rubbed out, the new one
+      // pencilled in a figure at a time
+      var old = label(prev || 0), ox = x + Math.round((w - A.textW(old)) / 2), hi = old.indexOf('HI ') === 0 ? A.textW('HI ') : 0;
+      var nw = label(ui.best | 0), nx = x + Math.round((w - A.textW(nw)) / 2), nhi = nw.indexOf('HI ') === 0 ? 3 : 0;
+      if (nu < 0.35) {
+        if (prev > 0) A.text(g, old, ox, y + 2, pencil); else A.text(g, 'HI', ox, y + 2, pencil);
+        var sw = A.textW(old) - hi, sl = Math.round(sw * Math.min(1, nu / 0.25));
+        for (var i = 0; i < sl; i++) px(g, ox + hi + i, y + 3 + (i % 3 === 0 ? 1 : 0), '#2a2a36');
+      } else {
+        if (nhi) A.text(g, 'HI', nx, y + 2, pencil);
+        if (nu < 0.5) dither(g, ox + hi - 1, y + 2, Math.max(4, A.textW(old) - hi + 2), 5, P.PAPER_D, 0.35);   // rubbed out
+        else A.text(g, nw.slice(nhi, nhi + 1 + Math.floor((nu - 0.5) / 0.12)), nx + (nhi ? A.textW('HI ') : 0), y + 2, pencil);
+      }
+      return;
+    }
+    var str = label(best);
+    A.text(g, str, x + Math.round((w - A.textW(str)) / 2), y + 2, pencil);
   }
 
   /* ── the speaker grille (left pillar) and the rag ───────────────── */
@@ -367,6 +418,7 @@
     var ui = view.ui; if (!ui) return;
     var t = view.t || 0;
     drawTally(g, ui, t);
+    drawBest(g, ui, t);
     drawPilot(g, ui, t);
     drawSign(g, ui, t);
     drawCoin(g, ui, t);

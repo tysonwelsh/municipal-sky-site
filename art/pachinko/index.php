@@ -51,7 +51,7 @@ include '../../includes/header.php';
     <div class="pachinko-stage" id="pachinko-mount" data-version="<?php echo htmlspecialchars($pk_version); ?>"></div>
     <div class="pachinko-placard">
         <p class="pachinko-blurb">
-            <em>MOTHER LODE</em> &mdash; Click where you want the marble to fall. Thirteen marbles a token. Please do not tap the glass.
+            <em>MOTHER LODE</em> &mdash; A working model of a coal mine, shown in section. Put a token in the coin door on the right, then click where each of thirteen marbles should fall. Space drops, the arrow keys aim, M mutes. Please do not tap the glass.
         </p>
         <p class="pachinko-build" aria-label="build version">
             <?php echo htmlspecialchars($pk_version); ?><span class="pachinko-build-sep">&middot;</span><?php echo $pk_build; ?><?php if ($pk_deployed): ?><span class="pachinko-build-sep">&middot;</span><?php echo $pk_deployed; ?><?php endif; ?>

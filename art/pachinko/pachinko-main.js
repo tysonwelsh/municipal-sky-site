@@ -223,7 +223,7 @@
       ui: {
         tally: { value: 0, prev: 0, roll: 1, dir: 1 }, tokens: tokensNow(), scrip: scripNow(), scripHeld: 0,
         sign: { side: 'insert', t0: -10 }, coin: null, tongue: null, found: null, noTokens: null, tap: null,
-        muted: false, hoverCoin: false, free: FREE, version: VERSION
+        muted: false, hoverCoin: false, free: FREE, version: VERSION, best: 0, bestT0: null
       }
     };
 
@@ -270,6 +270,7 @@
 
     /* ── the start ───────────────────────────────────────────────── */
     function insertCoin() {
+      if (game.mode === 'work') finishWork();          // a player who wants the next game doesn't wait on the crew
       if (game.mode !== 'attract' || game.startAt != null) return false;
       if (!FREE && !A.tokens.spend(1, 'pachinko')) { noTokens(); emit({ type: 'nocoin' }); return false; }
       view.ui.tokens = tokensNow();
@@ -454,8 +455,11 @@
       // the count happens dived in (the SCRIP counter, the ticket mouth and
       // the strip are all in the play framing), then the camera pulls back
       var per = n > 0 ? Math.min(TICKET_T, TICKET_ALL / n) : 0;
-      game.payout = { n: n, paid: 0, per: per, nextAt: simT + 0.25, tearAt: null, backAt: n ? null : simT + 0.9, backT0: null, doneAt: null, fast: false };
-      view.ui.tongue = n ? { n: 0, t0: simT + 0.25, torn: null } : null;
+      // nothing won: the machine issues a slip anyway, stamped NIL
+      game.payout = { n: n, paid: 0, per: per, nextAt: simT + 0.25, tearAt: n ? null : simT + 1.5, backAt: null, backT0: null, doneAt: null, fast: false };
+      view.ui.tongue = n ? { n: 0, t0: simT + 0.25, torn: null } : { n: 0, nil: true, t0: simT + 0.35, torn: null };
+      if (best) { view.ui.bestPrev = prevBest | 0; view.ui.bestT0 = simT + 0.6; }
+      view.ui.best = stats().best | 0;
     }
     function stepPayout() {
       var p = game.payout; if (!p) return;
@@ -472,7 +476,7 @@
         p.tearAt = null;
         view.ui.tongue.torn = simT;
         view.ui.scripHeld = 0;
-        emit({ type: 'tear', n: p.n });
+        emit({ type: 'tear', n: p.n, nil: !p.n });
         p.backAt = simT + AFTER_TEAR;
       }
       if (p.backAt != null && simT >= p.backAt && tally.shown === tally.value) {
@@ -521,6 +525,16 @@
       };
       w.performer = partsFirst('work', ctxW);
       emit({ type: 'work', edits: [], what: 'start' });
+    }
+    // stop the crew: whatever has passed validation is set at once (one
+    // rebuild), whatever hasn't is dropped, the tube is full
+    function finishWork() {
+      var w = game.work; if (!w) return;
+      if (w.performer && w.performer.finish) { try { w.performer.finish(); } catch (e) { warn('work.finish', e); } }
+      var acc = w.plan.accepted;
+      if (acc.length > w.applied) { var last = acc[acc.length - 1]; for (var i = w.applied; i < acc.length; i++) emit({ type: 'edit', edit: acc[i].edit, i: i, hurried: true }); setBoard(last.board); w.applied = acc.length; }
+      view.marblesLeft = MARBLES;
+      toAttract();
     }
     function applyPlanned(i) {
       var w = game.work; if (!w) return null;
@@ -716,7 +730,7 @@
         view.ui.hoverCoin = false;
       } else {
         view.hopper.ghostX = null;
-        var hc = game.mode === 'attract' && (onCoin(p) || onLedgeTokens(p));
+        var hc = (game.mode === 'attract' || game.mode === 'work') && (onCoin(p) || onLedgeTokens(p));
         view.ui.hoverCoin = hc;
         canvas.style.cursor = hc ? 'pointer' : game.mode === 'payout' ? 'default' : 'default';
       }
@@ -746,7 +760,10 @@
         return 'none';
       }
       if (game.mode === 'payout' && game.payout) { game.payout.fast = true; return 'fast'; }
-      if (game.mode === 'work' && inGlass(p, 0, 0, 0)) { tapGlass(); return 'tap'; }
+      if (game.mode === 'work') {
+        if (onCoin(p)) { insertCoin(); return 'coin'; }
+        if (inGlass(p, 0, 0, 0)) { tapGlass(); return 'tap'; }
+      }
       return 'none';
     }
     // PLEASE DO NOT TAP GLASS. The sticker shivers; the coin door's lamp
@@ -764,7 +781,7 @@
       var k = ev.key;
       if (k === ' ' || k === 'Enter' || k.indexOf('Arrow') === 0 || /^[cCmM]$/.test(k)) emit({ type: 'input', kind: 'key' });
       if (k === 'm' || k === 'M') { setMuted(!muted); ev.preventDefault(); return; }
-      if (game.mode === 'attract') {
+      if (game.mode === 'attract' || game.mode === 'work') {
         if (k === 'Enter' || k === ' ' || k === 'c' || k === 'C') { if (!ev.repeat) insertCoin(); ev.preventDefault(); }
         return;
       }
@@ -1133,6 +1150,7 @@
     function onDpr() { fit(); watchDpr(); }
     watchDpr();
 
+    view.ui.best = stats().best | 0;
     toAttract();
     var qm = HARNESS && /[?&]mode=(attract|play|payout|work)/.exec(search);
     if (qm && qm[1] !== 'attract') forceMode(qm[1]);
