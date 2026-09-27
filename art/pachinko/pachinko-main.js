@@ -313,6 +313,7 @@
       view.ui.sign = { side: 'inuse', t0: simT + 0.12 };
       setMode('dive');
       game.modeT0 = simT + COIN_T;           // the camera waits for the clunk
+      camGo(1, simT + COIN_T);
       game.diveOut = false;
       partsCall('gameStart', game.seed);
     }
@@ -320,6 +321,13 @@
     /* ── the hopper: tap the spot you want ───────────────────────── */
     function committed() { return game.dropped + (hopper.gliding ? 1 : 0); }
     function requestDrop(x) {
+      // (during the coin's clunk and the push into the glass a click is held,
+      // and the hopper goes there the moment the game is under way)
+      if (game.mode === 'dive') {
+        hopper.queue = clamp(Math.round(x * 2) / 2, board.drop.x0, board.drop.x1);
+        emit({ type: 'queue', x: hopper.queue });
+        return true;
+      }
       if (game.mode !== 'play') return false;
       x = clamp(Math.round(x * 2) / 2, board.drop.x0, board.drop.x1);
       if (committed() >= MARBLES) {
@@ -483,6 +491,7 @@
       }
       if (p.backAt != null && simT >= p.backAt && tally.shown === tally.value) {
         p.backAt = null; p.backT0 = simT; p.doneAt = simT + DIVE_T + 0.25;
+        camGo(0, simT);
         emit({ type: 'dive', dir: -1 });
       }
       if (p.doneAt != null && simT >= p.doneAt) startWork();
@@ -621,7 +630,11 @@
     /* ── the fixed step ──────────────────────────────────────────── */
     function stepGame() {
       if (game.mode === 'dive' && !game.diveOut && simT >= game.modeT0) { game.diveOut = true; emit({ type: 'dive', dir: 1 }); }
-      if (game.mode === 'dive' && simT - game.modeT0 >= DIVE_T) { setMode('play'); }
+      if (game.mode === 'dive' && simT - game.modeT0 >= DIVE_T) {
+        setMode('play');
+        // a click (or Space) held from the dive: the hopper sets off at once
+        if (hopper.queue != null && hopper.loaded && !hopper.gliding) { var q0 = hopper.queue; hopper.queue = null; startGlide(q0); }
+      }
       if (game.mode === 'play') stepHopper();
       stepHint();
       stepTally();
@@ -663,25 +676,60 @@
     }
 
     /* ── the fit and the camera ──────────────────────────────────── */
-    var devW = 1, devH = 1, sA = 1, sP = 1;
+    var devW = 1, devH = 1, sA = 1, sP = 1, fitKey = '';
     var MQ = (R && root.PachinkoArt && root.PachinkoArt.CAB && root.PachinkoArt.CAB.marquee) || { y0: 20, y1: 66 };
+    var PANEL_Y = 494;                         // the lower panel's top rim (the figures card, the plates below it)
+    var FRAC_MIN = 1.35;                       // the least a fractional PLAY scale may be (orchestrator's ruling)
     function fit() {
       var dpr = root.devicePixelRatio || 1;
-      devW = Math.max(1, Math.round(container.clientWidth * dpr));
-      devH = Math.max(1, Math.round(container.clientHeight * dpr));
+      var w = Math.max(1, Math.round(container.clientWidth * dpr)), h = Math.max(1, Math.round(container.clientHeight * dpr));
+      // (reassigning the canvas size blanks it: only when it really changed, and paint straight away)
+      var key = w + 'x' + h + '@' + dpr;
+      if (key === fitKey) return;
+      fitKey = key; devW = w; devH = h;
       canvas.width = devW; canvas.height = devH;
       canvas.style.width = (devW / dpr) + 'px'; canvas.style.height = (devH / dpr) + 'px';
       sA = Math.max(1, Math.floor(Math.min(devW / G.CAB_W, devH / G.CAB_H)));
-      sP = Math.max(sA, Math.floor(Math.min(devW / G.PLAY_RECT.w, devH / G.PLAY_RECT.h)));
+      var fitP = Math.min(devW / G.PLAY_RECT.w, devH / G.PLAY_RECT.h);
+      sP = Math.max(sA, Math.floor(fitP));
+      // a common 1× laptop (1366 × 768, 1280 × 720) would never dive: the glass
+      // stays a postage stamp at 1:1. There (only), PLAY takes a fractional
+      // nearest-neighbour scale: a slightly uneven pixel beats no dive
+      // (orchestrator's ruling, wave 5c). Everywhere else, integers.
+      if (sP === 1 && fitP >= FRAC_MIN) sP = Math.floor(fitP * 16) / 16;
       ctx.imageSmoothingEnabled = false;
       carpetCache = null;
-      if (HARNESS) render();
+      if (booted) render();
     }
+    // the camera's push in and pull back: a tween of the dive progress k
+    // (0 the whole cabinet, 1 the glass), so a game can start from a camera
+    // that's already in (a coin during WORK) without jumping out and back
+    var camT = { from: 0, to: 0, t0: 0, dur: DIVE_T };
+    function camGo(to, t0) { camT = { from: camK(), to: to, t0: t0 == null ? simT : t0, dur: DIVE_T }; }
     function camK() {
-      if (game.mode === 'dive') return clamp((simT - game.modeT0) / DIVE_T, 0, 1);
-      if (game.mode === 'play') return 1;
-      if (game.mode === 'payout') return game.payout && game.payout.backT0 != null ? 1 - clamp((simT - game.payout.backT0) / DIVE_T, 0, 1) : 1;
-      return 0;
+      var u = clamp((simT - camT.t0) / camT.dur, 0, 1);
+      return camT.from + (camT.to - camT.from) * u;
+    }
+    // where the crop's top edge goes, dived in: the glass whole; the marquee
+    // all or none (never sliced through its lettering); the lower panel all
+    // or none (never through the figures card's type) — the nearest to
+    // centred that keeps all three rules; the spare goes to the room
+    function playTop(hP) {
+      var PR = G.PLAY_RECT, c0 = PR.y + PR.h / 2 - hP / 2, gTop = PR.y, gBot = PR.y + PR.h;
+      function ok(t) {
+        var b = t + hP;
+        if (t > gTop + 0.01 || b < gBot - 0.01) return false;                       // the glass, whole
+        if (t > MQ.y0 - 2 + 0.01 && t < MQ.y1 - 1 - 0.01) return false;             // the marquee, whole or none
+        if (b > PANEL_Y + 0.01 && b < G.CAB_H - 0.01) return false;                 // the panel, whole or none
+        return true;
+      }
+      var cands = [c0, MQ.y0 - 2, MQ.y1 - 1, G.CAB_H - hP, PANEL_Y - hP, gTop, gBot - hP], best = null;
+      cands.forEach(function (t) { if (ok(t) && (best == null || Math.abs(t - c0) < Math.abs(best - c0))) best = t; });
+      if (best != null) return best;
+      // too short for the rules: the marquee all or none, as before
+      var t = c0;
+      if (t > MQ.y0 - 2 && t < MQ.y1 - 1) t = hP >= gBot - (MQ.y0 - 2) ? MQ.y0 - 2 : MQ.y1 - 1;
+      return t;
     }
     // the crop rect (cabinet px) and the scale for a dive progress k
     function camera(k) {
@@ -691,29 +739,25 @@
       if (e === 0) s = sA; if (e === 1) s = sP;
       var w = devW / s, h = devH / s;
       var cxA = G.CAB_W / 2, cyA = G.CAB_H / 2, PR = G.PLAY_RECT;
-      var cxP = PR.x + PR.w / 2, cyP = PR.y + PR.h / 2;
-      // dived in with height to spare: never slice the marquee through its
-      // lettering. All of it (if the glass still fits) or none of it, the
-      // spare going to the lower panel instead
-      var hP = devH / sP, topP = cyP - hP / 2;
-      if (topP > MQ.y0 - 2 && topP < MQ.y1 - 1) {
-        topP = hP >= PR.y + PR.h - (MQ.y0 - 2) ? MQ.y0 - 2 : MQ.y1 - 1;
-        cyP = topP + hP / 2;
-      }
+      var cxP = PR.x + PR.w / 2;
+      var hP = devH / sP, cyP = playTop(hP) + hP / 2;
       var cx = cxA + (cxP - cxA) * e, cy = cyA + (cyP - cyA) * e;
       var c = { k: e, s: s, x: cx - w / 2, y: cy - h / 2, w: w, h: h };
       if (e === 0 || e === 1) {  // at rest: land the crop on whole device pixels
         c.x = Math.round(c.x * s) / s; c.y = Math.round(c.y * s) / s;
       }
       // the mother lode: the camera steps back to take in the marquee too
-      // (view.fx.camOut 0..1, eased by the part; in motion, so never crisp)
+      // (view.fx.camOut 0..1, eased by the part). It holds its climax for
+      // two seconds, so it lands on a whole scale (a crisp pixel), and eases
+      // between the two whole scales on the way (visual critic, wave 5)
       var co = e === 1 && view.fx ? view.fx.camOut || 0 : 0;
       if (co > 0) {
-        var top = MQ.y0 - 3, bot = PR.y + PR.h, s2 = Math.min(devH / (bot - top), devW / (PR.w + 16));
+        var top = MQ.y0 - 3, bot = PR.y + PR.h, s2 = Math.max(1, Math.floor(Math.min(devH / (bot - top), devW / (PR.w + 16))));
         if (s2 < c.s) {
-          var sC = Math.exp(Math.log(c.s) + (Math.log(s2) - Math.log(c.s)) * co), w2 = devW / sC, h2 = devH / sC;
+          var sC = co >= 1 ? s2 : Math.exp(Math.log(c.s) + (Math.log(s2) - Math.log(c.s)) * co), w2 = devW / sC, h2 = devH / sC;
           var cyC = c.y + c.h / 2, cy2 = cyC + ((top + bot) / 2 - cyC) * co, cx2 = c.x + c.w / 2;
           c = { k: 1, s: sC, x: cx2 - w2 / 2, y: cy2 - h2 / 2, w: w2, h: h2, out: co };
+          if (co >= 1) { c.x = Math.round(c.x * sC) / sC; c.y = Math.round(c.y * sC) / sC; c.rest = true; }
         }
       }
       return c;
@@ -759,7 +803,8 @@
     function onLeave() { pointerIn = false; view.hopper.ghostX = null; view.ui.hoverCoin = false; }
     function onDown(ev) {
       if (ev.button != null && ev.button > 0) return;
-      try { canvas.focus({ preventScroll: true }); } catch (e) { }
+      container.classList.remove('pachinko-kbd');       // a mouse or a finger: no focus ring
+      try { canvas.focus({ preventScroll: true, focusVisible: false }); } catch (e) { }
       emit({ type: 'input', kind: 'pointer' });
       var p = toCab(ev.clientX, ev.clientY);
       pointerDown(p, ev.pointerType || 'mouse');
@@ -770,14 +815,14 @@
         if (inGlass(p, 0, 0, 0)) { tapGlass(); return 'tap'; }
         return 'none';
       }
-      if (game.mode === 'play') {
+      if (game.mode === 'play' || game.mode === 'dive') {
+        if (onCoin(p)) { emit({ type: 'input', kind: 'coin-ignored' }); return 'coin-ignored'; }
         if (inGlass(p, 8, 40, 8)) {
           var gx = clamp(p.x - G.GLASS_X, board.drop.x0, board.drop.x1);
           if (kind !== 'mouse') view.hopper.ghostX = gx;
           requestDrop(gx);
-          return 'drop';
+          return game.mode === 'dive' ? 'queued' : 'drop';
         }
-        if (onCoin(p)) { emit({ type: 'input', kind: 'coin-ignored' }); return 'coin-ignored'; }
         return 'none';
       }
       if (game.mode === 'payout' && game.payout) { game.payout.fast = true; return 'fast'; }
@@ -795,10 +840,28 @@
       game.taps = game.taps.filter(function (t) { return simT - t < 3; });
       emit({ type: 'glasstap', n: game.taps.length });
     }
+    // The keys belong to the machine only while it's the thing you're using:
+    // the canvas has the focus (a click on it, or a Tab to it) or the pointer
+    // is over the stage, at least half the stage is on screen, no modifier is
+    // held, and the key isn't aimed at one of the page's own controls (a
+    // link's Enter, a button's Space). HOLLER ROLLER's keysAreOurs
+    // (skeeball-main.js), plus the focus-or-pointer rule (wave 5c).
+    function keysAreOurs(ev) {
+      if (ev.ctrlKey || ev.metaKey || ev.altKey) return false;
+      var t = ev.target;
+      if (t && t.tagName && (/^(INPUT|TEXTAREA|SELECT|BUTTON|A|SUMMARY|OPTION|LABEL)$/.test(t.tagName) || t.isContentEditable)) return false;
+      if (HARNESS && !t) return true;                     // harness.key(): a synthetic key, no target
+      var ae = document.activeElement;
+      var focused = !!ae && (ae === canvas || (container.contains && container.contains(ae)));
+      if (!focused && !pointerIn) return false;
+      var r = container.getBoundingClientRect(), vh = root.innerHeight || 0;
+      var seen = Math.max(0, Math.min(r.bottom, vh) - Math.max(r.top, 0));
+      return r.height > 0 && seen >= r.height * 0.5;
+    }
     function onKey(ev) {
-      if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
-      var t = ev.target, tag = t && t.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || (t && t.isContentEditable)) return;
+      // (a Tab means someone is finding their way by keyboard: show the focus ring)
+      if (ev.key === 'Tab') { container.classList.add('pachinko-kbd'); return; }
+      if (!keysAreOurs(ev)) return;
       var k = ev.key;
       if (k === ' ' || k === 'Enter' || k.indexOf('Arrow') === 0 || /^[cCmM]$/.test(k)) emit({ type: 'input', kind: 'key' });
       if (k === 'm' || k === 'M') { setMuted(!muted); ev.preventDefault(); return; }
@@ -813,7 +876,8 @@
           view.hopper.ghostX = clamp(gx + (k === 'ArrowLeft' ? -d : d), board.drop.x0, board.drop.x1);
           ev.preventDefault();
         } else if (k === ' ' || k === 'Enter') {
-          requestDrop(view.hopper.ghostX == null ? hopper.x : view.hopper.ghostX);
+          // (the key that put the coin in, still held down, isn't a drop)
+          if (!(game.mode === 'dive' && ev.repeat)) requestDrop(view.hopper.ghostX == null ? hopper.x : view.hopper.ghostX);
           ev.preventDefault();
         }
         return;
@@ -1142,7 +1206,7 @@
     function warn(where, e) { if (root.console) console.warn('MOTHER LODE: ' + where + ' failed', e); }
 
     /* ── loop ────────────────────────────────────────────────────── */
-    var dead = false, rafId = 0, lastNow = null, clock = 0;
+    var dead = false, rafId = 0, lastNow = null, clock = 0, booted = false;
     function frame(now) {
       if (dead) return;
       rafId = root.requestAnimationFrame(frame);
@@ -1177,6 +1241,7 @@
     toAttract();
     var qm = HARNESS && /[?&]mode=(attract|play|payout|work)/.exec(search);
     if (qm && qm[1] !== 'attract') forceMode(qm[1]);
+    booted = true;
     if (!HARNESS) rafId = root.requestAnimationFrame(frame);
 
     // preview a state (harness): play = a free game dived in; payout = a
@@ -1189,7 +1254,7 @@
       advance(simT + COIN_T + DIVE_T + STEP * 2);
       if (m === 'play') return true;
       if (m === 'payout') { game.score = FORCE.scrip != null ? FORCE.scrip : 17; tally.value = tally.shown = game.score; gameOver(); return true; }
-      if (m === 'work') { game.score = 0; gameOver(); startWork(); return true; }
+      if (m === 'work') { game.score = 0; gameOver(); startWork(); camT = { from: 0, to: 0, t0: simT, dur: DIVE_T }; return true; }
       return true;
     }
 
