@@ -13,14 +13,15 @@ a **muted** headless Chrome.
 |---|---|---|---|
 | `distinctness.js` | Do two random seeds sound clearly different within three minutes? (design law 2) | the dump | ~2 s for 20 seeds |
 | `repetition.js` | How often does a meeting say the same thing twice, and which shapes turn up in every meeting? | the dump | ~2 s for 20 meetings |
-| `tally.js` | What is a meeting made of (cadences, guests, sections, notes per layer)? Did a change move it (A/B)? | the dump | ~2 s per 20 seeds |
+| `tally.js` | What is a meeting made of (cadences, guests, sections, notes per layer)? Did a change move it (A/B)? | the dump | ~2 s per 20 seeds; A/B of two builds at 60 seeds, ~45 s |
 | `screens.js` | What does the staff look like at 860 and 390 px, and what does a frame cost at 4× CPU throttling? | the page, muted | real time: ~2.5 min per width |
 | `capture.js` | What does a seeded meeting sound like, as a WAV, a spectrogram, loudness (LUFS) and peak? | the page, muted | real time: 4 min for a 4-min window |
 | `render.js` | Renders a dump set to keep, or to hand to a critic. | the harness | ~1 s per seed |
-| `selftest.js` | Do the instruments still read true? | the harness plus a synthetic dump | ~1 s |
+| `selftest.js` | Do the instruments still read true? | the harness plus synthetic dumps and signals | ~5 s |
 
 Every report opens with what it measured: the engine, its VERSION, its git
-commit, a fingerprint of the module bytes, the seconds per seed and the flags.
+commit, a fingerprint of the module bytes the harness was *seen* to play (see
+"Which build is measured"), the seconds per seed, the flags and the harness.
 Reports, dumps, PNGs and WAVs go to `tools/out/<tool>-<stamp>/`, which is
 gitignored, unless you pass `--out <dir>`.
 
@@ -30,7 +31,7 @@ node tools/selftest.js                           # the instruments, checked (sec
 node tools/distinctness.js                       # 20 seeds, first 180 s → out/distinctness-…/report.md
 node tools/repetition.js                         # 20 seeds, 1200 s, every complete meeting
 node tools/tally.js                              # the same, counted
-node tools/tally.js --a git:kolob-2 --b worktree # A/B: did my change move the meeting?
+node tools/tally.js --a git:kolob-2 --b worktree # A/B: did my change move the meeting? (60 seeds a side)
 node tools/screens.js --seed 1847                # staff at 20/60/120 s, 860 + 390 px, frames at 4×
 node tools/capture.js --seed 1847 --to 240       # the Listener's four minutes
 ```
@@ -50,6 +51,12 @@ prints the flags it ran with.
 - The tools start their own `php -S 127.0.0.1:8113`, or reuse one already
   running, but only if its `kolob-core.js` is byte-identical to this tree's.
 - Chrome and the server are killed on exit, including on Ctrl-C.
+- **Two runs at once** need two ports: `--chrome-port 9424 --port 8114`.
+  The Chrome profile follows the port (`…/kolob-r2-tools-chrome-9424`), or
+  name one with `--profile <dir>`. A Chrome on a profile that another Chrome
+  holds would hand itself to the first and quit, so `launch()` refuses one
+  and names the process holding it. Give the second run its own `--port`
+  too: a run that reuses another's `php -S` loses it when that run ends.
 
 ## Which build is measured
 
@@ -65,11 +72,44 @@ untracked). They can point it at any build:
 
 **The harness used** is `--harness <file>` if you give one. Otherwise it is the
 engine directory's own `_harness.js`, or this worktree's for a `git:` build.
-`KOLOB_DIR` points it at the engine's modules. A single-file build is loaded
-with `KOLOB_LEGACY`. Nothing is ever written into an engine directory. If the
-harness cannot load a build, for instance because its module list names files
-the build lacks, the tool stops with the harness's `LOAD` error rather than
-measuring half an engine.
+The tools point it at the build with `KOLOB_BASE` (the engine crew's name) and
+`KOLOB_DIR` (this crew's) alike, and load a single-file build with
+`KOLOB_LEGACY`. Nothing is ever written into an engine directory.
+
+**The harness is not taken at its word.** A harness that ignores where it is
+pointed plays its own directory's engine, and an A/B then reports "nothing
+moved" when everything did (round 2's critic caught exactly that). So every
+render runs with `lib/witness.js` preloaded (`node -r`). The witness stands by
+`fs.readFileSync` and writes down every engine file the harness reads
+(`kolob-*.js`, the substrate's `pj2-*.js`): where it lay and a hash of its
+bytes (`seed-N.witness.json` beside each dump). Before a single number is
+computed, `lib/run.js` holds that record against the build it meant, and
+**refuses the set** when:
+
+- any module came from another directory than the build's (or a substrate
+  script from another substrate than the build's own `../prosperos-jukebox-v2`);
+- a module on the build's own list went unread, or a module off it was read.
+  The list is the build's `_engine.php` (round 2 on), else `index.php`'s
+  `$kolob_engine` (the split), else the single file;
+- the bytes it read are not the list's bytes, or changed during the render, or
+  differ between seeds;
+- the harness read no engine file the witness could see;
+- the harness says, in the dump header's `engine` field, that it loaded
+  something else than the witness saw.
+
+The refusal names the harness, the build and what went wrong, for example:
+
+```
+tally.js: harness failed for seed-3 — deaf-harness.js did not play the build it was pointed at (v032, art/kolob/tools/out/_builds/90126a3dd55f/art/kolob):
+  - 12 of the files it played (kolob-pitch.js, kolob-melody.js, kolob-harmony.js and 9 more) came from art/kolob, not from art/kolob/tools/out/_builds/90126a3dd55f/art/kolob
+  - none of the 12 modules on the build's list (index.php) was read from the build
+  A harness must load from KOLOB_BASE or KOLOB_DIR (the tools set both) and play the build's own list; pass --harness <file> to use one that does.
+```
+
+The fingerprint in every report is the witnessed one: SHA-1 over the files
+played, in name order, each its name and then its bytes. A module the build
+does not play (a lab module) no longer moves it. If the harness cannot load a
+build at all, the tool stops with the harness's `LOAD` error.
 
 ## The dump format (v1)
 
@@ -79,7 +119,7 @@ one JSON array per line, `[kind, t, payload]`.
 
 | kind | `t` | payload |
 |---|---|---|
-| `"H"` | 0 | **header**, first line, written only when the harness is given the `header` argument (the tools always give it): `{format: "kolob-dump", v: 1, seed, secs, flags: [...]}`. It is built from the arguments alone, so same-argument runs stay byte-identical. It is opt-in so a plain `dump=` stays byte-identical to older dumps. A dump without it still reads: the seed comes from the `▶ … seed N` event or the file name, and the length from the last record. |
+| `"H"` | 0 | **header**, first line, written only when the harness is given the `header` argument (the tools always give it): `{format: "kolob-dump", v: 1, seed, secs, flags: [...], engine: {dir, legacy, files, fingerprint}}`. `engine` (added in round 2; the engine crew's harness may also give `list`) says where the modules were loaded from and what their bytes hash to, the witness's way; the tools hold it against their witness. It is built from the arguments and the engine alone, so same-argument runs on one build stay byte-identical. It is opt-in so a plain `dump=` stays byte-identical to older dumps. A dump without it still reads: the seed comes from the `▶ … seed N` event or the file name, and the length from the last record. |
 | `"N"` | the harness clock when the note was *emitted* (scheduled) | **a note** exactly as `onNote` delivers it: `{layer, freq, startTime, duration, …extra}`. `startTime` is when it sounds, and is usually ahead of `t`. Extras today: `marks` (telegraph), `part`, `beat` and `loud` (band). SCORE §6 adds `part, hymnId, beat, syl, deg, monzo, marks`. |
 | `"E"` | the harness clock at emission | **an event** exactly as `onEvent` delivers it. v0.30's log events are `{cat, label, detail, t}`; SCORE §6's typed events are `{type, t, …payload}`. |
 
@@ -89,7 +129,15 @@ one JSON array per line, `[kind, t, payload]`.
   the record's `t` when the event has none.
 - **Forward compatibility.** Lines of any other kind are skipped, and so is an
   unparseable line. An event neither vocabulary knows is still counted in
-  tally's "events per meeting", by its `cat` or `type`.
+  tally's "events per meeting", by its `cat` or `type` (all but `transport`,
+  the harness's own start-up line, which one harness tells and another does
+  not).
+- **Two harnesses stamp differently.** This crew's harness gives each record
+  the harness clock at emission; the engine crew's gives the music's own
+  time and drops records past the run's end (and the engine crew's engine
+  calls the meeting at 0.1 s, not 0).
+  The reader takes both. Only tally's byte-for-byte identity line cares, and
+  it says so when A and B were rendered by different harnesses.
 - **Both vocabularies at once.** During the migration one happening may be told
   twice: a log line and a typed event within a fraction of a second. The two
   are merged into one (meetings, sections, cadences, guests, hymns), and the
@@ -110,6 +158,7 @@ one JSON array per line, `[kind, t, payload]`.
 | `section` · `§ HYMN` (detail `[meter ·] 87s`) | section, planned length, meter | `section-start {section, index, dur?}` |
 | `harmony` · `∴ plagal cadence` | cadence (plagal, authentic, half, …) | `cadence {kind}` |
 | `cadence` · `∴ joint` (`meeting ends · 8s`) | section joint; the end of a meeting | `meeting-end {n, dur?}` *(requested; read already)* |
+| `cadence` · `∴ the room empties` | not a joint of its own: it says the joint that follows goes into stillness (around the sacrament), and marks that joint `still` | — |
 | `visitation` · `? the question`, `⇋ a band approaches`, `◎ the steeples answer`, `✧ an old tune remembered`, `∴ raspberry`, `◌ the tune is withheld` | guest start: question, bands, steeples, oldtune, raspberry, cumulative (with their end and mark lines) | `guest-start` / `guest-end {guest, section, logged}` |
 | `motif` · `❁ the day's hymns` | the day's material (gestures) | `hymn-announced {hymn: {id, meter, dialect}}` |
 | `verse`, `fuging`, `conductor` (`still small`), `ambient`, `telegraph`, `transport` (`seed N`) | lines, lining out, fuging, stillness, field events, telegraph, seed | `verse-start`, `telegraph`, … |
@@ -134,7 +183,7 @@ tools. `selftest.js` proves it on a synthetic typed dump.
 minutes."*
 
 ```sh
-node tools/distinctness.js [--n 20 | --seeds 1-20] [--window 180] [--engine …] [--dumps …] [--twin 0.5] [--no-sanity]
+node tools/distinctness.js [--n 20 | --seeds 1-20] [--window 180] [--engine …] [--dumps …] [--twin 0.5] [--plant-floor 1.5] [--collapse 3] [--no-sanity]
 ```
 
 It renders the first `--window` seconds of each seed and describes each seed by
@@ -165,9 +214,26 @@ Jaccard distance, and categories count 0 or 1. **D** is the weighted mean over
 groups. A feature that one seed lacks, or a layer neither seed sounds, sits the
 pair out.
 
+**A yardstick the build cannot move.** D is standardised by the build's own
+spread, so a relative threshold alone cannot see a build whose seeds have all
+collapsed into one meeting: its spread shrinks with it, and the median pair
+still looks "far". (Round 2's critic proved it: 20 copies of seed 1, each
+transposed by up to ±45 cents and 3 % faster or slower, gave a median D of
+0.106 and only 41 of 190 pairs flagged.) So the planted twin, seed 1 a
+semitone higher and 4 % slower, measured on the same scales, is the yardstick:
+
+- a pair is a **near-twin** when D < 0.5 × the median *or* D ≤ 1.5 × the
+  planted twin's D (`--plant-floor`), whatever the median says;
+- the **spread** line holds the median against the plant, and at 3× or less
+  (`--collapse`) the verdict says **COLLAPSED**: the typical pair is barely
+  farther apart than one meeting heard in another key.
+
+On the critic's collapsed set the report now reads: spread 0.7×, ⚠ COLLAPSED,
+172 of 190 pairs near-twins. On this worktree: spread 5.5×, none.
+
 **The report** gives:
 
-- the D distribution and the **near-twins** (D < 0.5 × the median);
+- the D distribution, the spread against the plant, and the **near-twins**;
 - the closest pairs, with what they share and what they don't;
 - each seed with its nearest neighbour;
 - **the features that separate seeds least**, meaning the share of pairs within
@@ -178,15 +244,17 @@ pair out.
 **Sanity checks, built in.**
 
 - The first seed is rendered twice and must be D = 0.
-- A **planted twin** must be flagged. It is the first seed heard a semitone
-  higher and 4 % slower: the same Sunday in another key.
+- The **planted twin** must be seen (D > 0) and fall inside the relative twin
+  line (0.5 × the median). The report also says how many real pairs are closer
+  than it; in a healthy build, none.
 - Every pair of different seeds must be D > 0.
 
 ### Sample (this worktree, v0.32 music with the Question shelved, seeds 1–20)
 
 > - **Pair distance D:** median **0.547**, p10 0.451, p90 0.667, closest 0.283.
-> - **Near-twins** (D < 0.5 × median = 0.274): **none**.
-> - **Sanity:** the same seed rendered twice (seed 1) D = 0.000 ✓; a planted twin (seed 1 a semitone higher and 4 % slower) D = 0.099, flagged as a near-twin ✓ (0 of 190 real pairs are closer); every pair of different seeds D > 0 ✓.
+> - **Spread:** the median pair is **5.5×** as far apart as seed 1 is from itself a semitone higher and 4 % slower (the planted twin, D = 0.099) (collapse at 3× or less).
+> - **Near-twins** (D < 0.5 × median = 0.274, or D ≤ 1.5 × the planted twin = 0.148): **none**.
+> - **Sanity:** the same seed rendered twice (seed 1) D = 0.000 ✓; the planted twin is seen (D > 0 ✓) and is closer than the median's twin line (0.099 < 0.274 ✓); 0 of 190 real pairs are closer than it; every pair of different seeds D > 0 ✓.
 > - **Separates least:** density: drone (100 % of pairs not separated), prelude length (87 %), density: strings (85 %), density: organ (82 %).
 > - **Separates most:** identity (24 % of all distance), material (16 %), pitch (13 %), tempo (12 %).
 > - **Hooks not yet fed by the engine:** cast, dialect, registration, sunday.
@@ -262,7 +330,7 @@ crew will show it worked.
 
 ```sh
 node tools/tally.js [--seeds 1-20] [--secs 1200] [--first] [--engine …] [--dumps …]
-node tools/tally.js --a <spec> --b <spec> [--seeds 1-20] [--secs 1200] [--threshold 15] [--harness-a …] [--harness-b …]
+node tools/tally.js --a <spec> --b <spec> [--seeds 1-60] [--secs 1200] [--threshold 15] [--harness-a …] [--harness-b …]
 ```
 
 Here `<spec>` is a dump directory, an engine directory, `git:<ref>` or
@@ -273,11 +341,13 @@ Here `<spec>` is a dump directory, an engine directory, `git:<ref>` or
 - the meeting's length and its sections;
 - each section type's median length and count;
 - cadences per meeting and the share of each kind;
-- joints;
+- joints (one per section; `∴ the room empties` is how a joint goes, not a
+  joint of its own, so joints per meeting equal sections per meeting);
 - guests per meeting, the share of meetings with a guest, and the share with
   each guest;
 - notes per minute and median note length per layer;
-- events per meeting by category;
+- events per meeting by category (not `transport`: that is the harness's
+  start-up line, not the music);
 - the mix of modes and kinds of Sunday.
 
 It also runs the **plan checks** that a dump can answer:
@@ -287,7 +357,8 @@ It also runs the **plan checks** that a dump can answer:
 - meeting length, ≈ 14–15 min (§0);
 - the Question never seats (§14).
 
-**A/B.** It renders both builds from the same seeds, then does three things:
+**A/B.** It renders both builds from the same seeds (**60 by default**; each
+build witnessed, as above), then does three things:
 
 1. It says which seeds played **identically**, comparing the note and event
    streams byte for byte, header excluded.
@@ -298,8 +369,28 @@ It also runs the **plan checks** that a dump can answer:
 
 Shifts beyond ±15 % but within the noise, or seen in fewer than 5 meetings,
 are listed as *worth a look, not a verdict*. With the same seeds and an
-unchanged engine every difference is exactly zero. After a re-base (new streams)
-the noise column is what keeps a 20-meeting sample honest.
+unchanged engine every difference is exactly zero.
+
+**Use 60 seeds, not 20, after the re-base.** Once the engine crew's streams
+land, no seed will play the same meeting on both sides, and the noise column is
+all that stands between a shift and a verdict. Twenty meetings a side leave a
+share such as "meetings with a guest" ±30 points wide; sixty bring it to about
+±18. Sixty seeds of 1200 s render in 30–45 s for two builds. That is why
+A/B defaults to `1-60`; the report says so when a side has fewer than 40
+meetings.
+
+The report also warns:
+
+- when **A and B hold different seeds** (two dump sets rendered apart, say).
+  Both seed lists are printed, and a warning says every shift then mixes the
+  change with which Sundays were drawn. Pass `--seeds` to compare like with
+  like.
+- when **two harnesses** rendered the two sides. Each stamps its records its
+  own way, so the byte-for-byte identity line then compares the harnesses as
+  well as the engines. The metrics do not depend on it.
+- when every shared seed played identically **but the fingerprints differ**:
+  the modules' bytes moved and the music did not (a comment, say). It says so,
+  so that "nothing moved" is never read as "the same build".
 
 ### Sample, one build (seeds 1–20, 1200 s)
 
@@ -313,20 +404,24 @@ the noise column is what keeps a 20-meeting sample honest.
 The plagal share is still v0.30's rut (§1: "about 90 % plagal"). The dialects
 of the HYMN crew are what bring it into the target.
 
-### Sample, A/B: the live v0.32 (`git:main`) against this worktree
+### Sample, A/B: the live v0.32 (`git:main`) against this worktree, 60 seeds
 
-The worktree has the same music as v0.32, with the Question shelved.
+The worktree has the same music as v0.32, with the Question shelved. `git:main`
+is the single-file build, loaded with `KOLOB_LEGACY` and witnessed like any
+other.
 
-> - **Same seeds, same meetings?** 10 of 20 seeds played identically (note and event streams byte-for-byte); the rest differ: 1, 2, 3, 5, 11, 13, 14, 15, 19, 20.
-> - **Shifts beyond ±15 % and beyond noise:** **2**: guests · guests per meeting (−50 %); guests · meetings with: question (−100 %).
-> - **Beyond ±15 % but within noise or on few meetings:** 4: share: half; meetings with a guest; per meeting: visitation; per meeting: visitation-draw.
+> - **A:** engine **main** (v0.32) · git 682ca189f5 · modules 1a641dfcb0 (single-file kolob-audio.js, witnessed) · 1200 s per seed · harness `art/kolob/_harness.js`
+> - **B:** engine **worktree** (v0.32) · git 7ee515881b · modules 074ee44959 (12 files, the list in index.php, witnessed) · 1200 s per seed · harness `art/kolob/_harness.js`
+> - **Same seeds, same meetings?** 33 of 60 shared seeds played identically (note and event streams byte-for-byte); the rest differ: 1–3, 5, 11, 13–15, 19, 20, 24, 28, 32, 33, 35–37, 39, 41, 44, 45, 48, 49, 51, 56, 57, 60.
+> - **Shifts beyond ±15 % and beyond noise:** **5** — guests · guests per meeting (−39 %); guests · meetings with a guest (−30 %); guests · meetings with: question (−100 %); events · per meeting: visitation (−34 %); events · per meeting: visitation-draw (−34 %).
 
 | metric | A | B | Δ | noise ± | meetings A/B | flag |
 |:---|---:|---:|---:|---:|---:|:---|
-| guests per meeting | 0.90 | 0.45 | −50 % | 0.43 | 13/9 | **⚑ SHIFT** |
-| meetings with a guest | 65.0 % | 45.0 % | −31 % | 30.5 pt | 13/9 | within noise |
-| meetings with: question | 45.0 % | 0.0 % | −100 % | 22.4 pt | 9/0 | **⚑ gone** |
-| meetings with: bands | 30.0 % | 30.0 % | 0 | 30.0 pt | 6/6 | |
+| guests per meeting | 0.83 | 0.51 | −39 % | 0.27 | 37/26 | **⚑ SHIFT** |
+| meetings with a guest | 62.7 % | 44.1 % | −30 % | 18.4 pt | 37/26 | **⚑ SHIFT** |
+| meetings with: question | 32.2 % | 0.0 % | −100 % | 12.1 pt | 19/0 | **⚑ gone** |
+| meetings with: bands | 27.1 % | 27.1 % | 0 | 16.7 pt | 16/16 | |
+| joints per meeting | 7.64 | 7.64 | 0 | 0.33 | 59/59 | |
 
 This is exactly the owner's ruling, measured.
 
@@ -335,13 +430,33 @@ This is exactly the owner's ruling, measured.
   are still drawn".
 - Nothing else moved beyond noise.
 
-The same command with `--a worktree --b worktree` reports "10 of 10 seeds
-played identically — nothing moved" and no flags.
+At 20 seeds the same comparison left "meetings with a guest" (−31 %) inside a
+±30.5-point noise band. At 60 it is a verdict. Two builds of 60 seeds took 32 s.
+
+The same command with `--a worktree --b worktree` reports that every seed played
+identically, "nothing moved", and no flags.
+
+### Sample, A/B the critic's way: a build the harness would not have played
+
+This is round 2's critic's repro, in a scratch repo: v0.32's split committed as
+tag `v032`, and the engine crew's working snapshot laid over it (its modules,
+`_engine.php` and its `_harness.js`, which reads `KOLOB_BASE`, not
+`KOLOB_DIR`). Before the fix, `--a git:v032 --b worktree --seeds 1-6` said "6 of
+6 seeds played identically — nothing moved". Now it reads:
+
+> - **A:** engine **v032** (v0.32) · git 90126a3dd5 · modules 074ee44959 (12 files, the list in index.php, witnessed) · 1200 s per seed · harness `art/kolob/_harness.js`
+> - **B:** engine **worktree** (v0.32) · git 90126a3dd5 · modules 9f0d73ba0f (15 files, the list in _engine.php, witnessed) · 1200 s per seed · harness `art/kolob/_harness.js`
+> - **Same seeds, same meetings?** 0 of 6 shared seeds played identically (note and event streams byte-for-byte).
+
+The same run, with the v032 side forced through a harness that ignores both
+variables, is refused. The message is the one quoted under "Which build is
+measured".
 
 ## screens.js
 
 ```sh
 node tools/screens.js [--seed 1847] [--times 20,60,120] [--widths 860,390] [--section hymn] [--fps-secs 20] [--throttle 4] [--full] [--ives] [--latin]
+                      [--port 8113] [--chrome-port 9423] [--profile <dir>]
 ```
 
 It loads `?seed=N` in muted headless Chrome and presses PLAY. At each time in
@@ -355,20 +470,39 @@ captures the **staff** canvas at each width:
 **Frame time.** After the shots, the CPU is throttled 4× for `--fps-secs`. Every
 requestAnimationFrame callback is timed, and callbacks sharing a frame are
 summed. The report gives p50/p90/p99/max per frame against the 16.7 ms budget,
-the rAF interval and the long tasks. Headless Chrome may pace rAF slowly (about
-10 fps here), and the report says so when it does. The cost of each frame is
-what matters for the budget.
+the rAF interval, the long tasks and the **load average** while it measured.
+Headless Chrome may pace rAF slowly (about 10 fps here); the report says so
+whenever the median interval is over 25 ms (a display paces it at 16.7). The
+cost of each frame is what matters for the budget.
+
+**Read p99 and max with care:**
+
+- **p99 rests on a handful of frames.** Over 20 s at 10 fps there are only
+  about 200–300 frames, so p99 is the worst 2 or 3 of them. It tells you the
+  worst moments of that window, not a steady rate.
+- **Frame cost rises with the machine's load.** On the same seed and widths
+  the round-2 critic measured p99 21.1 ms, max 60.6 ms and one 80 ms long task
+  at 860 px, against the builder's 5.07, 8.6 and 0, with a load average near
+  11 and other crews' Chromes running. The report prints `os.loadavg()` beside
+  each width and warns when it was over half the cores. Re-run on a quiet
+  machine before you read p99, max or long tasks as the page's own.
 
 Console errors and warnings from each width are listed.
 
 ### Sample (seed 1847, default times)
 
-> | width | frames | p50 ms | p90 ms | p99 ms | max ms | rAF interval (median) | long tasks | section |
-> |:---|---:|---:|---:|---:|---:|---:|---:|---:|
-> | 860 px | 218 | 1.20 | 4.20 | 5.07 | 8.6 | 116.6 ms | 0 | invocation |
-> | 390 px | 300 | 1.10 | 5.30 | 13.23 | 22.6 | 99.9 ms | 0 | invocation |
+Round 2, on a busy machine, which is the point of the new columns and notes:
+
+> | width | frames | p50 ms | p90 ms | p99 ms | max ms | rAF interval (median) | long tasks | section | load avg |
+> |:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+> | 860 px | 354 | 1.30 | 4.50 | 9.38 | 14.4 | 50.0 ms | 1 (93 ms) | invocation | 10.6 |
+> | 390 px | 270 | 1.20 | 4.41 | 9.16 | 21.1 | 99.9 ms | 0 | invocation | 8.9 |
 >
-> *Headless Chrome paced requestAnimationFrame at about 8.6 fps here, so the frame count says nothing about a real display; the per-frame cost is still what each frame would take.*
+> *Headless Chrome paced requestAnimationFrame at about 20.0 and 10.0 fps here (860 px, 390 px), so the frame count says nothing about a real display; the per-frame cost is still what each frame would take.*
+>
+> *p99 rests on the worst hundredth of the frames — 4 of 354 at 860 px, 3 of 270 at 390 px: read it, and max, as the worst moments of this window, not as a steady rate.*
+>
+> **⚠ The machine was busy** (load average 10.6 / 8.9 on 11 cores during 860 px, 390 px): other processes took the throttled CPU's time, and p99, max and the long tasks run high under load. Re-run on a quiet machine before reading them as the page's.
 >
 > | meeting time | section | staff | file |
 > |:---|---:|---:|---:|
@@ -382,20 +516,27 @@ The report embeds each PNG. At 60 s the 860 px staff carries the clarinet's
 shape-note line; seed 1847's staff is empty before about 20 s, because the
 engraved voices come later.
 
-At 4× the frame cost stays well inside the 16.7 ms budget at both widths. The
-phone's p99 of 13 ms, during the invocation, is the number to watch as the
-Score multiplies the ink.
+Round 1's builder measured the same seed on a quieter machine: p99 5.07 ms and
+max 8.6 at 860 px, p99 13.23 and max 22.6 at 390 px, no long tasks. The two
+runs agree on p50 (1.1–1.3 ms) and p90 (4.2–5.3 ms), which is where the page's
+own cost shows. They part at the tail, which is where the machine's load
+shows. At 4×, even on a busy machine, the frame cost stays inside the 16.7 ms
+budget at p99. The phone's p99 is the number to watch as the Score multiplies
+the ink, and it should be read from a quiet run.
 
 ## capture.js
 
 ```sh
 node tools/capture.js [--seed 1847 | --seeds 1847,5,9] [--from 0] [--to 240] [--meeting] [--section hymn] [--ives] [--px-per-s 8]
+                      [--port 8113] [--chrome-port 9423] [--profile <dir>]
 node tools/capture.js --wav <file.wav> [--events <file.jsonl>] [--from <s>]     # re-analyse a capture
 ```
 
 It plays the meeting in muted headless Chrome and records the window between
 `--from` and `--to`, in meeting seconds (from the moment the meeting is called).
-`--meeting` records until meeting 1 ends.
+`--meeting` records until meeting 1 ends. It reads the end through the dump
+reader, in either vocabulary: v0.30's `∴ joint — meeting ends · 8s`, a typed
+`meeting-end {dur}`, or else the next meeting's start.
 
 **The tap** is injected before any page script. Every node that connects to an
 output also feeds a ScriptProcessor. The output may be the destination, or the
@@ -407,9 +548,41 @@ every buffer knows its first sample exactly, and any dropout shows as a gap.
 
 The report states three things about the recording:
 
-- how much of the window the tap covered;
-- the number of discontinuities;
+- how much of the window the tap covered, to the sample;
+- **every discontinuity**, in a table: its meeting time to the millisecond,
+  hole or overlap, and its size in samples and milliseconds. Each is also
+  marked on the picture: a red triangle and a dashed red line through every
+  strip, labelled `tap gap N smp`;
 - the audio clock's rate against real time.
+
+A discontinuity is the recording's, not the engine's. The graph rendered those
+frames, since its clock ran on, but the tap never received them, so the WAV
+holds silence there. A Listener who hears a click at a marked time should put
+it down to the tap. The round-2 critic's 75 s capture had a 126-sample hole at
+0:40.928, and its spectrogram shows a broadband line there that reads like an
+engine click.
+
+**How the tap's blocks are laid.** Each block's first frame is read off the
+ConstantSource ramp. That ramp is a float32 holding the audio time, so it is
+good to within a sample or two, and to a few samples late in a long meeting.
+The rule for laying blocks:
+
+- A block that starts within that tolerance (at least ±4 samples) of where the
+  last one ended is contiguous, since ScriptProcessor buffers are, and is laid
+  there.
+- Anything farther is a discontinuity. The graph works in render quanta of 128
+  frames, so a measured 126 is snapped to the 128 it must have been.
+- The table keeps what was measured beside the snapped size.
+
+(The critic's "2-sample hole" 0.344 s after the 126 was this reading error
+correcting itself, one block later.)
+
+Each capture also writes `…-tap.json`, the tap's own record of coverage and
+gaps. `--wav` re-analysis reads it when it lies beside the WAV. Without it, the
+re-analysis looks for holes in the WAV itself: runs of exact digital zero in
+both channels with sound on either side, which the drone never makes. Re-found
+this way, the critic's WAV shows its two holes at 0:40.928 (126 samples) and
+0:41.272 (2 samples).
 
 An AudioWorklet tap was tried first and dropped. Adding one moves Chrome's
 rendering of the whole graph onto the worklet thread. On this machine, under
@@ -425,9 +598,13 @@ ScriptProcessor keeps rendering where it was: measured 0.995–1.00×.
     integrated level dashed;
   - a raster of every note the engine reported, one row per layer.
 
-  Section starts are marked with solid lines and guests with dashed gold lines.
+  Section starts are marked with solid lines, guests with dashed gold lines,
+  and the tap's discontinuities in red. The left margin widens to fit the
+  longest row label (`harmonium`, `telegraph`).
 - `…-events.jsonl`: the page's own notes and events, **in the dump format**,
   shifted to meeting time. The dump tools can read a browser run too.
+- `…-tap.json`: the tap's record: samples covered, block starts taken as
+  contiguous, and every discontinuity.
 - `report.md`, which gives:
   - integrated loudness (BS.1770-4 / EBU R128, gated), LRA, and the maximum
     momentary and short-term loudness;
@@ -439,36 +616,48 @@ ScriptProcessor keeps rendering where it was: measured 0.995–1.00×.
 
 Loudness is checked against BS.1770 in `selftest.js`: the 48 kHz coefficients,
 a 1 kHz tone at −20 dBFS reading −20.0 LUFS in stereo and −23.0 LUFS in one
-channel, and relative gating.
+channel, and the gating, with EBU Tech 3341's cases 3, 4 and 5 (−36/−23/−36,
+−72/−36/−23/−36/−72 and −26/−20/−26 dBFS, each −23.0 ±0.1 LUFS) and half at
+−20 and half at −40 (−20.0, where an ungated meter would read −23.0).
 
 For the Listener's standard packet (PLAN-EXECUTION §4.2) there are two runs:
 
 - `--seeds a,b,c,d,e,f --to 240` records one seed after another, about 25 min;
 - `--seed n --meeting` records a whole meeting.
 
-### Sample (seed 1847, 0–4:00)
+### Sample (seed 1847, 0–4:00), round 2
 
-> - tap: every sample of the window · no dropouts ✓ · audio clock ran at 0.997× real time · console: clean
+> - tap: all but 128 samples of the window (99.999 %) · 1 discontinuity ✗ (listed below, marked red on the picture) · audio clock ran at 0.997× real time · console: clean
+>
+> | at (meeting time) | what | size | measured |
+> |---:|:---|---:|---:|
+> | 1:34.491 | hole | 128 samples (2.7 ms) = 1 render quantum | exact |
 >
 > | measure | value |
 > |:---|---:|
 > | integrated loudness | -16.2 LUFS |
-> | loudness range (LRA) | 2.5 LU |
-> | max momentary (0.4 s) | -12.9 LUFS |
-> | max short-term (3 s) | -14.0 LUFS |
-> | sample peak | -5.40 dBFS |
-> | true peak (4× oversampled, estimate) | -5.36 dBTP |
+> | loudness range (LRA) | 2.7 LU |
+> | max momentary (0.4 s) | -11.8 LUFS |
+> | max short-term (3 s) | -12.9 LUFS |
+> | sample peak | -4.92 dBFS |
+> | true peak (4× oversampled, estimate) | -4.85 dBTP |
 >
 > | minute | median | max | min | notes |
 > |:---|---:|---:|---:|---:|
-> | 0:00–1:00 | -16.6 | -14.6 | -34.4 | 13 |
-> | 1:00–2:00 | -16.1 | -15.0 | -17.2 | 27 |
-> | 2:00–3:00 | -16.5 | -14.0 | -17.9 | 31 |
-> | 3:00–4:00 | -16.3 | -14.4 | -17.9 | 52 |
+> | 0:00–1:00 | -16.4 | -14.4 | -34.6 | 23 |
+> | 1:00–2:00 | -16.5 | -14.8 | -18.0 | 11 |
+> | 2:00–3:00 | -16.5 | -12.9 | -17.0 | 21 |
+> | 3:00–4:00 | -15.5 | -14.6 | -18.5 | 53 |
 >
-> ✓ Same plan: harness mixolydian · ordinary · 280.8 Hz; browser mixolydian · ordinary · 280.8 Hz. (prelude 0.0/0.0 ✓, invocation 94.6/95.1 ✓, hymn 166.2/166.4 ✓)
+> ✗ Different: harness mixolydian · ordinary · 280.8 Hz; browser mixolydian · ordinary · 280.8 Hz. (prelude 0.0/0.0 ✓, invocation 94.6/98.8 ✗ 4.2 s, hymn 166.2/170.8 ✗ 4.7 s)
 >
-> Note for note: 7 of the harness's 144 notes sound in the browser too (123 there). The two first part at 0:15 (ambient 350.8 Hz) — after that the browser's meeting keeps its plan but takes its own path. […]
+> Note for note: 7 of the harness's 144 notes sound in the browser too (108 there). The two first part at 0:16 (ambient 561.2 Hz) — after that the browser's meeting keeps its plan but takes its own path. […]
+
+This run was taken on a busy machine, and it shows the round-2 listing
+working. One render quantum (128 samples, exact) never reached the tap at
+1:34.491. The report lists it, and the picture marks it with a red triangle and
+a dashed red line labelled `tap gap 128 smp`, just before the invocation. The
+`harmonium` row label now fits its margin.
 
 What the picture shows:
 
@@ -479,14 +668,16 @@ What the picture shows:
 
 What it means:
 
-- The loudness is nearly flat: LRA 2.5 LU, because the master chain holds it
-  level.
-- **The browser does not play the harness's notes.** It follows the same plan
-  but parts from the harness at 0:15, and two browser runs of one seed part
-  from each other too. That is PLAN §2.2's REPRO problem: v0.30 draws every
-  choice from one die in timer order, and reads the audio clock when a timer
-  fires. Until phase 0b's streams and clock land, the harness tools describe
-  the meetings a seed *would* play, and the capture shows the one it did.
+- The loudness is nearly flat, LRA 2.5–2.7 LU across two runs, because the
+  master chain holds it level.
+- **The browser does not play the harness's notes.** It follows the same
+  Sunday (mode, kind, keynote) but parts from the harness within the first
+  20 s. Two browser runs of one seed part from each other too: round 1's
+  sections landed within 0.5 s of the harness's, and this run's invocation
+  came 4.2 s late. That is PLAN §2.2's REPRO problem: v0.30 draws every choice
+  from one die in timer order, and reads the audio clock when a timer fires.
+  Until phase 0b's streams and clock land, the harness tools describe the
+  meetings a seed *would* play, and the capture shows the one it did.
 
 `--wav` re-analysis of the same file reproduces every number above.
 
@@ -496,15 +687,31 @@ What it means:
 node tools/selftest.js
 ```
 
-It runs in seconds and uses no browser. It checks four things:
+It runs in about five seconds and uses no browser. It checks seven things:
 
-1. A real dump from this worktree reads as meetings and sections.
+1. A real dump from this worktree reads as meetings and sections. The witness
+   names the build's own list, and the harness names the same engine in the
+   header's `engine` field.
 2. A synthetic dump in SCORE §6's **typed** vocabulary reads the same way:
    meetings, sections, cadences, guests, parts, and the distinctness hooks
    (sunday, dialect, cast) all come through. An echo from the v0.30 log counts
    once.
 3. The same seed twice is D = 0, and two seeds are not.
-4. The loudness meter reads the BS.1770 references.
+4. The loudness meter reads the BS.1770 references and gates as EBU Tech 3341
+   says it must.
+5. **The witness.** A copy of the engine with one comment added is accepted
+   under its own fingerprint. The same copy rendered by a harness that ignores
+   `KOLOB_BASE`/`KOLOB_DIR` is refused.
+6. **The count** (seed 3, 1200 s). Every section of a complete meeting closes
+   on exactly one joint, `the room empties` marks the joint it tells of, and
+   `transport` is not a metric.
+7. **The capture.** A tap block read a sample or two off is laid contiguous. A
+   hole read as 126 is sized to its 128 and placed at 0:40.9. `--meeting`
+   finds meeting 1's end from a v0.30 joint, a typed `meeting-end`, or the next
+   meeting.
+
+Under the engine crew's harness as it stands, only the two header checks fail
+(it writes no header yet; see the handoff's request).
 
 Run it after any change to the engine's events or to these tools.
 
@@ -521,7 +728,8 @@ tools/
   capture.js         WAV + spectrogram + LUFS/peak (muted Chrome)
   selftest.js        the instruments, checked
   lib/dump.js        the dump reader: both event vocabularies, meetings, sections, voices, phrases
-  lib/run.js         rendering through the harness: worktree, directory or git:<ref>
+  lib/run.js         rendering through the harness: worktree, directory or git:<ref>; the witness's verdict
+  lib/witness.js     preloaded into every harness run: which engine files it actually read
   lib/chrome.js      php -S + muted headless Chrome over CDP
   lib/audio.js       WAV, BS.1770 loudness, true peak, FFT, spectrogram
   lib/util.js        arguments, statistics, markdown

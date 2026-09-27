@@ -14,7 +14,8 @@
 //                                    played the meeting the harness describes
 //
 //   node tools/capture.js [--seed 1847 | --seeds 1847,5] [--from 0] [--to 240] [--meeting]
-//        [--section hymn] [--ives] [--px-per-s 8] [--port 8113] [--chrome-port 9423] [--out <dir>]
+//        [--section hymn] [--ives] [--px-per-s 8] [--port 8113] [--chrome-port 9423]
+//        [--profile <dir>] [--out <dir>]
 //   node tools/capture.js --wav <file.wav> [--events <file.jsonl>] [--out <dir>]    (re-analyse)
 //
 // Times are meeting seconds (from the moment the meeting is called); with
@@ -23,7 +24,6 @@
 "use strict";
 const fs = require("fs");
 const path = require("path");
-const { spawnSync } = require("child_process");
 const U = require("./lib/util.js");
 const C = require("./lib/chrome.js");
 const A = require("./lib/audio.js");
@@ -39,7 +39,8 @@ const HELP = `capture.js — record a seeded meeting (muted), with spectrogram, 
   --px-per-s 8           spectrogram width per second (default 8; 600–2400 px)
   --no-harness-check     skip the comparison with the harness's plan for the seed
   --wav <file> [--events <file.jsonl>]   re-analyse an existing capture instead
-  --port 8113 --chrome-port 9423 --out <dir>`;
+  --port 8113 --chrome-port 9423 --out <dir>
+  --profile <dir>        Chrome profile (default /private/tmp/claude-501/kolob-r2-tools-chrome[-<port>])`;
 
 // ---------------------------------------------------------------------------
 // The tap, injected before any page script: every node that connects to an
@@ -128,8 +129,13 @@ const TAP = (o) => `(function(){
 // The picture, drawn in the (muted) browser's canvas so it can carry type.
 // ---------------------------------------------------------------------------
 const DRAW = function (P) {
-  const W = P.spec.width, HS = P.spec.height, ML = 74, MR = 14, MT = 44, GAP = 10, HL = 120, ROW = 11;
-  const layers = P.layers, HR = Math.max(1, layers.length) * ROW + 6, MB = 30;
+  const FONT = "11px Helvetica, Arial, sans-serif";
+  const layers = P.layers;
+  // the left margin fits the longest row label (harmonium, telegraph, …)
+  const probe = document.createElement("canvas").getContext("2d"); probe.font = FONT;
+  const ML = Math.max(74, Math.ceil(Math.max(0, ...layers.map((l) => probe.measureText(l).width))) + 16);
+  const W = P.spec.width, HS = P.spec.height, MR = 14, MT = 44, GAP = 10, HL = 120, ROW = 11;
+  const HR = Math.max(1, layers.length) * ROW + 6, MB = 30;
   const cw = ML + W + MR, ch = MT + HS + GAP + HL + GAP + HR + MB;
   const cv = document.createElement("canvas"); cv.width = cw; cv.height = ch;
   const g = cv.getContext("2d");
@@ -140,7 +146,7 @@ const DRAW = function (P) {
   for (let i = 0; i < W * HS; i++) { const c = col(raw.charCodeAt(i) / 255); img.data[4 * i] = c[0]; img.data[4 * i + 1] = c[1]; img.data[4 * i + 2] = c[2]; img.data[4 * i + 3] = 255; }
   g.putImageData(img, ML, MT);
   const X = (t) => ML + (t - P.t0) / (P.t1 - P.t0) * W;
-  g.font = "11px Helvetica, Arial, sans-serif"; g.textBaseline = "middle";
+  g.font = FONT; g.textBaseline = "middle";
   // frequency axis
   g.fillStyle = "#2b3a33"; g.strokeStyle = "rgba(255,255,255,0.18)"; g.textAlign = "right";
   [50, 100, 200, 500, 1000, 2000, 5000, 10000].forEach((f) => {
@@ -182,6 +188,19 @@ const DRAW = function (P) {
     g.fillStyle = m.kind === "section" ? "#14201a" : "#8a6d1f"; g.textAlign = "left";
     g.fillText(m.label, x + 3, m.kind === "section" ? MT - 12 : MT - 26);
   });
+  // the tap's discontinuities: red, through every strip, so a hole in the
+  // recording is never read as a click in the music
+  let lastGapX = -1e9, gapRow = 0;
+  (P.gaps || []).forEach((q) => {
+    if (q.t < P.t0 || q.t > P.t1) return;
+    const x = Math.round(X(q.t)) + 0.5;
+    gapRow = x - lastGapX < 110 ? gapRow + 1 : 0; lastGapX = x;     // close marks: labels stacked, not overprinted
+    g.strokeStyle = "rgba(200,30,30,0.9)"; g.lineWidth = 1; g.setLineDash([2, 2]);
+    g.beginPath(); g.moveTo(x, MT); g.lineTo(x, yR0 + HR); g.stroke(); g.setLineDash([]);
+    g.fillStyle = "#c81e1e";
+    g.beginPath(); g.moveTo(x - 5, MT - 1); g.lineTo(x + 5, MT - 1); g.lineTo(x, MT + 7); g.closePath(); g.fill();
+    g.textAlign = "left"; g.fillText("tap gap " + q.label, x + 4, yL0 + HL - 10 - 13 * (gapRow % 6));
+  });
   // time axis
   const span = P.t1 - P.t0, step = span > 600 ? 120 : span > 300 ? 60 : span > 90 ? 30 : 10;
   g.fillStyle = "#2b3a33"; g.textAlign = "center";
@@ -199,7 +218,7 @@ function pctl(arr, p) { return U.quantile(Array.from(arr), p); }
 
 // Build the picture's data, draw it in Chrome, write the PNG.
 async function drawPicture(b, o) {
-  const { chans, sr, t0, t1, loud, recs, title, pxPerS } = o;
+  const { chans, sr, t0, t1, loud, recs, title, pxPerS, gaps } = o;
   const mono = new Float32Array(chans[0].length);
   for (let i = 0; i < mono.length; i++) mono[i] = chans.length > 1 ? 0.5 * (chans[0][i] + chans[1][i]) : chans[0][i];
   const width = Math.max(600, Math.min(2400, Math.round((t1 - t0) * (pxPerS || 8))));
@@ -216,6 +235,7 @@ async function drawPicture(b, o) {
     .map((e) => ({ t: e.t, kind: e.kind, label: e.kind === "section" ? e.section.toUpperCase() : "✦ " + e.guest }));
   const P = {
     t0, t1, title, integrated: loud.integrated, layers, notes, marks,
+    gaps: (gaps || []).map((q) => ({ t: q.t, label: q.n + " smp" })),
     spec: { width, height: S.height, fmin: S.fmin, fmax: S.fmax, top, floor, u8: u8.toString("base64") },
     st: loud.shortTerm.map((p) => ({ t: t0 + p.t, lufs: p.lufs })).filter((_, i) => i % 2 === 0),
     mom: loud.momentary.map((p) => ({ t: t0 + p.t, lufs: p.lufs })),
@@ -241,14 +261,14 @@ function writeRecords(file, lines, shift, header) {
 }
 
 // Does the browser play the meeting the harness describes? Compare the section plan.
-function harnessCheck(seed, secs, browserRun) {
+async function harnessCheck(seed, secs, browserRun) {
+  // this worktree's engine — the one php -S serves — through the harness, witnessed like every render
   const engine = R.resolveEngine(null);
   const tmp = path.join(R.OUT_ROOT, "_tmp");
   fs.mkdirSync(tmp, { recursive: true });
-  const f = path.join(tmp, "capture-check-" + seed + ".jsonl");
-  const env = Object.assign({}, process.env, { KOLOB_DIR: engine.dir });
-  spawnSync(process.execPath, [engine.harness, String(Math.ceil(secs)), String(seed), "dump=" + f], { env, stdio: "ignore" });
-  if (!fs.existsSync(f)) return null;
+  const f = path.join(tmp, "capture-check-" + seed + "-" + process.pid + ".jsonl");
+  const res = await R.runOne(engine, seed, Math.ceil(secs), [], f);
+  if (!res.ok || res.loadError || res.verifyError) return { error: res.loadError || res.verifyError || "the harness wrote no dump (see " + res.log + ")" };
   const h = Dm.readDump(f);
   const hs = h.events.filter((e) => e.kind === "section" && e.t <= secs), bs = browserRun.events.filter((e) => e.kind === "section" && e.t <= secs);
   const hm = h.meetings[0] || {}, bm = browserRun.meetings[0] || {};
@@ -276,7 +296,61 @@ function harnessCheck(seed, secs, browserRun) {
   return { rows, same, hm, bm, ok: same && rows.every((r) => r[4] === "✓"), notes: { harness: hn.length, browser: bn.length, matched, part } };
 }
 
-function mmss(t) { return Math.floor(t / 60) + ":" + String(Math.floor(t % 60)).padStart(2, "0"); }
+function mmss(t, dp) {
+  if (!dp) return Math.floor(t / 60) + ":" + String(Math.floor(t % 60)).padStart(2, "0");
+  const s = (t % 60).toFixed(dp);
+  return Math.floor(t / 60) + ":" + (s.indexOf(".") === 1 ? "0" + s : s);
+}
+
+// Where meeting 1 ends (seconds after T0), from the page's records, in
+// either vocabulary, read by the one reader: v0.30's `∴ joint — meeting ends
+// · 8s` or a typed `meeting-end {dur}` (the joint's length and 6 s of the
+// bell's tail after it), or else the next meeting's start. Null until then.
+function meetingEnd(lines, T0) {
+  const evs = lines.map((l) => (typeof l === "string" ? JSON.parse(l) : l)).filter((r) => r[0] === "E" && r[2]).map((r, i) => Dm.normEvent(r[2], r[1], i));
+  const end = evs.find((e) => e.kind === "joint" && e.meetingEnd && e.t > T0);
+  if (end) return end.t - T0 + (end.jointDur > 0 ? end.jointDur : 8) + 6;
+  const next = evs.find((e) => e.kind === "meeting" && e.t > T0 + 1);
+  return next ? next.t - T0 : null;
+}
+
+// Lay the tap's blocks into the window. A block's first frame is read off the
+// ConstantSource ramp, a float32 that holds the audio time: at t seconds it is
+// good to about ±(t × 2⁻²³ × rate) samples, so a block that starts within a
+// few samples of where the last one ended IS contiguous (ScriptProcessor
+// buffers are) and is laid there. Anything farther is a discontinuity; the
+// graph works in render quanta of 128 frames, so a measured 126 or 130 is
+// snapped to the 128 it must have been. The listing keeps what was measured.
+function assemble(blocks, fA, fB, sr, Lc, Rc) {
+  const n = fB - fA, gaps = [];
+  let expect = null, jitter = 0, jitTol = 4;
+  const tolAt = (f) => Math.max(4, Math.ceil(2 * sr * Math.pow(2, Math.floor(Math.log2(Math.max(1, f / sr))) - 23)));
+  blocks.forEach((blk, k) => {
+    const len = blk.d.length / 2;
+    let f = blk.f;
+    if (k === 0 && f > fA) gaps.push({ f: fA, n: f - fA, raw: f - fA, tol: 0, edge: "start" });
+    if (expect != null && f !== expect) {
+      const tol = tolAt(f), d = f - expect;
+      jitTol = Math.max(jitTol, tol);
+      if (Math.abs(d) <= tol) { f = expect; jitter++; }
+      else {
+        const q = Math.round(d / 128) * 128, snapped = q !== 0 && Math.abs(d - q) <= tol ? q : d;
+        f = expect + snapped;
+        gaps.push({ f: expect, n: snapped, raw: d, tol });
+      }
+    }
+    expect = f + len;
+    for (let i = 0; i < len; i++) {
+      const j = f + i - fA;
+      if (j < 0 || j >= n) continue;
+      Lc[j] = blk.d[2 * i]; Rc[j] = blk.d[2 * i + 1];
+    }
+  });
+  if (expect != null && expect < fB) gaps.push({ f: expect, n: fB - expect, raw: fB - expect, tol: 0, edge: "end" });
+  // an overlap costs nothing; a hole costs the samples of it inside the window
+  const lost = gaps.filter((q) => q.n > 0).reduce((acc, q) => acc + Math.max(0, Math.min(fB, q.f + q.n) - Math.max(fA, q.f)), 0);
+  return { covered: n - lost, gaps, jitter, jitTol };
+}
 
 // ---------------------------------------------------------------------------
 async function analyse(o) {
@@ -284,7 +358,7 @@ async function analyse(o) {
   const loud = A.loudness(o.chans, o.sr);
   const pk = A.peaks(o.chans);
   const png = o.base + "-spectrogram.png";
-  const pic = await drawPicture(o.b, { chans: o.chans, sr: o.sr, t0: o.t0, t1: o.t1, loud, recs: o.recs || { notes: [], events: [] }, title: o.title, pxPerS: o.pxPerS, file: path.join(o.out, png) });
+  const pic = await drawPicture(o.b, { chans: o.chans, sr: o.sr, t0: o.t0, t1: o.t1, loud, recs: o.recs || { notes: [], events: [] }, title: o.title, pxPerS: o.pxPerS, gaps: o.gaps, file: path.join(o.out, png) });
   const perMin = [];
   for (let m = 0; m * 60 < o.t1 - o.t0 - 1; m++) {
     const seg = loud.shortTerm.filter((p) => p.t > m * 60 && p.t <= (m + 1) * 60 && isFinite(p.lufs)).map((p) => p.lufs);
@@ -299,6 +373,14 @@ function reportFor(r) {
   L.push("## " + r.title);
   L.push("");
   if (r.meta) L.push(r.meta), L.push("");
+  if (r.gaps && r.gaps.length) {
+    L.push("**The tap's discontinuities.** Each is a place where the recording skips: the page's graph rendered those frames (its clock ran on) but the tap never received them, so the WAV holds silence there, or, for an overlap, the later block. A click heard at one of these times is the recording's, not the engine's.");
+    L.push("");
+    L.push(U.table(["at (meeting time)", "what", "size", "measured"], r.gaps.map((q) => [mmss(q.t, 3), q.edge ? "the tap " + (q.edge === "start" ? "began late" : "ended early") : q.inferred ? "digital silence (a hole, inferred)" : q.n > 0 ? "hole" : "overlap",
+      Math.abs(q.n) + " samples (" + (1000 * Math.abs(q.n) / r.sr).toFixed(Math.abs(q.n) / r.sr < 0.001 ? 2 : 1) + " ms)" + (q.n % 128 === 0 && q.n ? " = " + Math.abs(q.n / 128) + " render quant" + (Math.abs(q.n) > 128 ? "a" : "um") : ""),
+      q.inferred ? "in the WAV" : q.raw === q.n ? "exact" : q.raw + " (block start read ±" + q.tol + ")"]), ["r", "l", "r", "r"]));
+    L.push("");
+  }
   L.push(U.table(["measure", "value"], [
     ["integrated loudness", U.fmt(r.an.loud.integrated, 1) + " LUFS"],
     ["loudness range (LRA)", r.an.loud.lra == null ? "—" : U.fmt(r.an.loud.lra, 1) + " LU"],
@@ -310,7 +392,7 @@ function reportFor(r) {
   L.push("");
   L.push("![spectrogram, loudness and voices](" + r.an.png + ")");
   L.push("");
-  L.push("*Top: spectrogram (log frequency, " + r.an.pic.floor + "…" + r.an.pic.top + " dB). Middle: loudness, short-term (3 s) in green over momentary (0.4 s) in grey, the integrated level dashed. Bottom: every note the engine reported, one row per layer. Solid lines are section starts; dashed gold lines are guests.*");
+  L.push("*Top: spectrogram (log frequency, " + r.an.pic.floor + "…" + r.an.pic.top + " dB). Middle: loudness, short-term (3 s) in green over momentary (0.4 s) in grey, the integrated level dashed. Bottom: every note the engine reported, one row per layer. Solid lines are section starts; dashed gold lines are guests" + (r.gaps && r.gaps.length ? "; dashed red lines under a red triangle are the tap's discontinuities (listed above) — holes in the recording, not sounds of the engine" : "") + ".*");
   L.push("");
   L.push("### Loudness by minute (short-term, LUFS)");
   L.push("");
@@ -322,7 +404,12 @@ function reportFor(r) {
     L.push(U.table(["time", "event"], r.timeline, ["r", "l"]));
     L.push("");
   }
-  if (r.check) {
+  if (r.check && r.check.error) {
+    L.push("### The browser's meeting against the harness's");
+    L.push("");
+    L.push("Not compared: " + r.check.error.split("\n")[0]);
+    L.push("");
+  } else if (r.check) {
     L.push("### The browser's meeting against the harness's");
     L.push("");
     L.push((r.check.ok ? "✓ Same plan: " : "✗ Different: ") + "harness " + [r.check.hm.mode, r.check.hm.meetingKind, r.check.hm.keynoteHz && r.check.hm.keynoteHz.toFixed(1) + " Hz"].join(" · ") +
@@ -339,7 +426,7 @@ function reportFor(r) {
   return L.join("\n");
 }
 
-(async () => {
+async function main() {
   const a = U.parseArgs(process.argv.slice(2), ["help", "meeting", "ives", "no-harness-check"]);
   if (a.help) { console.log(HELP); return; }
 
@@ -348,12 +435,20 @@ function reportFor(r) {
     const out = U.outDir(a, "capture-wav");
     const w = A.readWav(String(a.wav));
     const recs = a.events ? Dm.readDump(String(a.events)) : null;
-    const t0 = +a.from || 0, t1 = t0 + w.chans[0].length / w.sr;
-    const b = await C.launch({ port: +a["chrome-port"] || C.DEFAULT_CHROME_PORT });
+    let tap = null;
+    try { tap = JSON.parse(fs.readFileSync(String(a.wav).replace(/\.wav$/i, "-tap.json"), "utf8")); } catch (e) {}
+    const t0 = a.from != null ? +a.from : tap ? tap.from : 0, t1 = t0 + w.chans[0].length / w.sr;
+    const b = await C.launch({ port: +a["chrome-port"] || C.DEFAULT_CHROME_PORT, profile: a.profile });
     C.cleanupOnExit([b]);
     const base = path.basename(String(a.wav)).replace(/\.wav$/i, "");
-    const an = await analyse({ chans: w.chans, sr: w.sr, t0, t1, recs, out, base, title: base, b, pxPerS: +a["px-per-s"] || 8 });
-    fs.writeFileSync(path.join(out, "report.md"), "# Capture (re-analysed)\n\n" + reportFor({ title: base, an }) + "\n");
+    // the holes: as the capture's tap recorded them (its -tap.json beside the
+    // WAV), else re-found in the WAV itself as runs of exact digital zero
+    let gaps, gapsFrom;
+    if (tap && Array.isArray(tap.gaps)) { gaps = tap.gaps.map((q) => Object.assign({}, q, { t: q.t - (tap.from || 0) + t0 })); gapsFrom = "the capture's tap record"; }
+    else { gaps = A.zeroRuns(w.chans, w.sr).map((z) => ({ t: t0 + z.i / w.sr, n: z.n, raw: z.n, inferred: true })); gapsFrom = "runs of exact digital zero in the WAV (inferred)"; }
+    const an = await analyse({ chans: w.chans, sr: w.sr, t0, t1, recs, out, base, title: base, b, pxPerS: +a["px-per-s"] || 8, gaps });
+    const meta = "- " + (gaps.length ? gaps.length + " discontinuit" + (gaps.length > 1 ? "ies" : "y") + " ✗, from " + gapsFrom : "no discontinuities (" + gapsFrom + ") ✓");
+    fs.writeFileSync(path.join(out, "report.md"), "# Capture (re-analysed)\n\n" + reportFor({ title: base, meta, an, gaps, sr: w.sr }) + "\n");
     b.kill();
     console.log(path.join(out, "report.md"));
     process.exit(0);
@@ -365,7 +460,7 @@ function reportFor(r) {
   if (toReq <= from) throw new Error("--to must be after --from");
   const out = a.out ? U.outDir(a) : U.outDir({}, "capture-" + seeds.join("-"));
   const server = await C.ensureServer({ port: +a.port || C.DEFAULT_HTTP_PORT });
-  const b = await C.launch({ port: +a["chrome-port"] || C.DEFAULT_CHROME_PORT });
+  const b = await C.launch({ port: +a["chrome-port"] || C.DEFAULT_CHROME_PORT, profile: a.profile });
   C.cleanupOnExit([b, server.proc]);
   const logs = C.collectConsole(b);
   await C.prepare(b);
@@ -412,10 +507,8 @@ function reportFor(r) {
       await C.sleep(2000);
       await drain();
       if (a.meeting && to === toReq) {
-        const end = rec.map((l) => JSON.parse(l)).find((r) => r[0] === "E" && r[2] && r[2].cat === "cadence" && /meeting ends/.test(r[2].detail || ""));
-        const endTyped = rec.map((l) => JSON.parse(l)).filter((r) => r[0] === "E" && r[2] && r[2].type === "meeting-start")[1];
-        if (end) { const m = /(\d+)s$/.exec(end[2].detail || ""); to = Math.min(maxS, end[2].t - T0 + (m ? +m[1] : 8) + 6); }
-        else if (endTyped) to = Math.min(maxS, endTyped[2].t - T0);
+        const end = meetingEnd(rec, T0);
+        if (end != null) to = Math.min(maxS, end);
         if (to !== toReq) await b.evalJS("window.__tap.win = [" + (T0 + from) + "," + (T0 + to + 0.5) + "], 1");
       }
       if (Date.now() - lastPrint > 15000) { process.stderr.write("seed " + seed + ": " + mmss(Math.max(0, lastNow - T0)) + " / " + mmss(to) + "\n"); lastPrint = Date.now(); }
@@ -431,31 +524,25 @@ function reportFor(r) {
     blocks.sort((x, y) => x.f - y.f);
     const fA = Math.round((T0 + from) * sr), fB = Math.round((T0 + to) * sr), n = fB - fA;
     const Lc = new Float32Array(n), Rc = new Float32Array(n);
-    let gaps = 0, covered = 0, expect = null;
-    blocks.filter((blk) => blk.f + blk.d.length / 2 > fA && blk.f < fB).forEach((blk) => {
-      if (expect != null && blk.f !== expect) gaps++;
-      expect = blk.f + blk.d.length / 2;
-      for (let i = 0; i < blk.d.length / 2; i++) {
-        const j = blk.f + i - fA;
-        if (j < 0 || j >= n) continue;
-        Lc[j] = blk.d[2 * i]; Rc[j] = blk.d[2 * i + 1]; covered++;
-      }
-    });
+    const asm = assemble(blocks.filter((blk) => blk.f + blk.d.length / 2 > fA && blk.f < fB), fA, fB, sr, Lc, Rc);
+    const covered = asm.covered, gaps = asm.gaps.map((q) => Object.assign(q, { t: q.f / sr - T0 }));
     const base = "capture-" + seed + "-" + Math.round(from) + "-" + Math.round(to);
     const wav = A.writeWav16(path.join(out, base + ".wav"), Lc, Rc, sr);
+    fs.writeFileSync(path.join(out, base + "-tap.json"), JSON.stringify({ sr, from, to, samples: n, covered, jitter: asm.jitter, jitTol: asm.jitTol,
+      gaps: gaps.map((q) => ({ t: +q.t.toFixed(6), n: q.n, raw: q.raw, tol: q.tol, edge: q.edge || null })) }, null, 1) + "\n");
     writeRecords(path.join(out, base + "-events.jsonl"), rec, T0, { format: "kolob-dump", v: 1, seed, source: "browser", secs: Math.ceil(to), flags: a.ives ? ["ives"] : [], jumped });
     const run = Dm.readDump(path.join(out, base + "-events.jsonl"));
     const title = "KOLOB · seed " + seed + (jumped ? " · from the " + jumped : "") + " · " + mmss(from) + "–" + mmss(to);
-    const an = await analyse({ chans: [Lc, Rc], sr, t0: from, t1: to, recs: run, out, base, title, b, pxPerS: +a["px-per-s"] || 8 });
-    const check = a["no-harness-check"] || jumped ? null : harnessCheck(seed, to, run);
-    const timeline = run.events.filter((e) => e.t >= from - 0.01 && e.t <= to && (e.kind === "section" || e.kind === "guest" || e.kind === "meeting" || e.kind === "cadence" || e.kind === "joint" || e.kind === "stillness" || e.kind === "fuging" || e.kind === "lining" || e.kind === "field" || e.kind === "telegraph"))
+    const an = await analyse({ chans: [Lc, Rc], sr, t0: from, t1: to, recs: run, out, base, title, b, pxPerS: +a["px-per-s"] || 8, gaps });
+    const check = a["no-harness-check"] || jumped ? null : await harnessCheck(seed, to, run);
+    const timeline = run.events.filter((e) => e.t >= from - 0.01 && e.t <= to && (e.kind === "section" || e.kind === "guest" || e.kind === "meeting" || e.kind === "cadence" || e.kind === "joint" || e.kind === "joint-still" || e.kind === "stillness" || e.kind === "fuging" || e.kind === "lining" || e.kind === "field" || e.kind === "telegraph"))
       .filter((e, i, arr) => !(e.kind === "cadence" && arr[i - 1] && arr[i - 1].kind === "cadence" && e.t - arr[i - 1].t < 1))
       .slice(0, 80).map((e) => [mmss(e.t), (e.label ? e.label + (e.detail ? " — " + e.detail : "") : e.cat)]);
     const meta = "- " + url.replace(server.base, "") + (a.ives ? " · Ives switch armed" : "") + " · " + sr + " Hz · " + (n / sr).toFixed(1) + " s recorded in muted headless Chrome (" + b.args.filter((x) => /mute/.test(x)).join(" ") + ")\n" +
       "- files: `" + base + ".wav`, `" + base + "-spectrogram.png`, `" + base + "-events.jsonl` (the page's notes and events, meeting time)\n" +
-      "- tap: " + (covered >= n ? "every sample of the window" : (100 * covered / n).toFixed(1) + " % of the window") + " · " + (gaps ? gaps + " discontinuities ✗" : "no dropouts ✓") + " · audio clock ran at " + clockRatio.toFixed(3) + "× real time" + (wav.clipped ? " · " + wav.clipped + " samples clipped in the 16-bit file" : "") +
+      "- tap: " + (covered >= n ? "every sample of the window" : "all but " + (n - covered) + " samples of the window (" + (100 * covered / n).toFixed(3) + " %)") + " · " + (gaps.length ? gaps.length + " discontinuit" + (gaps.length > 1 ? "ies" : "y") + " ✗ (listed below, marked red on the picture)" : "no dropouts ✓") + (asm.jitter ? " · " + asm.jitter + " block start" + (asm.jitter > 1 ? "s" : "") + " read within ±" + asm.jitTol + " samples of contiguous and taken as contiguous" : "") + " · audio clock ran at " + clockRatio.toFixed(3) + "× real time" + (wav.clipped ? " · " + wav.clipped + " samples clipped in the 16-bit file" : "") +
       " · console: " + (logs.length - errs0 ? (logs.length - errs0) + " error(s): " + logs.slice(errs0, errs0 + 3).map((e) => e.text).join(" · ") : "clean");
-    sections.push(reportFor({ title, meta, an, timeline, check }));
+    sections.push(reportFor({ title, meta, an, timeline, check, gaps, sr }));
     process.stderr.write("seed " + seed + ": done — " + U.fmt(an.loud.integrated, 1) + " LUFS, peak " + U.fmt(an.pk.samplePeakDb, 1) + " dBFS\n");
   }
   let version = "";
@@ -465,4 +552,7 @@ function reportFor(r) {
   if (server.proc) server.proc.kill();
   console.log(path.join(out, "report.md"));
   process.exit(0);
-})().catch((e) => { console.error("capture.js: " + (e.stack || e.message)); process.exit(1); });
+}
+
+module.exports = { assemble, meetingEnd, mmss };
+if (require.main === module) main().catch((e) => { console.error("capture.js: " + (e.refusal ? e.message : e.stack || e.message)); process.exit(1); });

@@ -38,6 +38,12 @@ function readDump(file) {
   // (scheduleRaw), so order by time, keeping emission order within a tie.
   events.sort((a, b) => a.t - b.t || a.i - b.i);
   notes.sort((a, b) => a.t - b.t || a.i - b.i);
+  // a joint told as going into stillness: mark the joint that follows
+  events.forEach((e, k) => {
+    if (e.kind !== "joint-still") return;
+    const j = events.slice(k + 1, k + 6).find((x) => x.kind === "joint" && x.t - e.t < 1);
+    if (j) j.stillJoint = true;
+  });
   const run = { file, name: path.basename(file).replace(/\.jsonl$/, ""), header: header || {}, notes, events: dedupe(events), bad, records: raw };
   run.seed = seedOf(run);
   run.secs = typeof run.header.secs === "number" ? run.header.secs : lastT;
@@ -72,7 +78,7 @@ function normNote(p, at, i) {
 
 // ---------------------------------------------------------------------------
 // Events → one normalised shape: {t, cat, kind, …}
-//   kind: meeting | mode-change | section | cadence | joint | guest | guest-plan
+//   kind: meeting | mode-change | section | cadence | joint | joint-still | guest | guest-plan
 //         | material | hymn | line | lining | fuging | stillness | field
 //         | telegraph | transport | cast | vision | other
 // ---------------------------------------------------------------------------
@@ -147,7 +153,11 @@ function legacyEvent(e, p) {
       if (m) { e.kind = "cadence"; e.cadence = m[1]; } else e.kind = "chord";
       break;
     case "cadence":
-      e.kind = "joint"; e.meetingEnd = /meeting ends/.test(D); e.stillJoint = /empties/.test(L);
+      // `∴ the room empties` is not a joint of its own: it says how the joint
+      // that follows it goes (into stillness, around the sacrament), and the
+      // `∴ joint` line is still told after it. It marks that joint `still`.
+      if (/empties/.test(L)) { e.kind = "joint-still"; break; }
+      e.kind = "joint"; e.meetingEnd = /meeting ends/.test(D);
       m = /(\d+)s$/.exec(D); e.jointDur = m ? +m[1] : 0;
       break;
     case "visitation":

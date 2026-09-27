@@ -57,9 +57,25 @@ async function ensureServer(opts) {
   throw new Error("php -S did not come up on " + port + ": " + err.slice(-300));
 }
 
+// The profile follows the port unless one is named: two runs on two ports
+// never share a profile (a second Chrome on a profile in use hands itself to
+// the first and quits, and the run waits for a browser that never comes).
+function profileFor(port, named) {
+  if (named && named !== true) return path.resolve(String(named));
+  return port === DEFAULT_CHROME_PORT ? DEFAULT_PROFILE : DEFAULT_PROFILE + "-" + port;
+}
+// Is another Chrome holding this profile? (its SingletonLock names host-pid)
+function profileHolder(profile) {
+  try {
+    const pid = +String(fs.readlinkSync(path.join(profile, "SingletonLock"))).split("-").pop();
+    if (pid > 0) { process.kill(pid, 0); return pid; }
+  } catch (e) {}
+  return null;
+}
+
 async function launch(opts) {
   const port = (opts && opts.port) || DEFAULT_CHROME_PORT;
-  const profile = (opts && opts.profile) || DEFAULT_PROFILE;
+  const profile = profileFor(port, opts && opts.profile);
   const args = [
     "--headless=new", "--mute-audio", "--autoplay-policy=no-user-gesture-required",
     "--remote-debugging-port=" + port, "--user-data-dir=" + profile,
@@ -69,6 +85,8 @@ async function launch(opts) {
   if (!args.includes("--mute-audio")) throw new Error("refusing to launch Chrome without --mute-audio");
   try { await get("http://127.0.0.1:" + port + "/json/version", 800); throw new Error("port " + port + " already has a Chrome on it; stop it or pass --chrome-port"); }
   catch (e) { if (/already has/.test(e.message)) throw e; }
+  const holder = profileHolder(profile);
+  if (holder) throw new Error("the Chrome profile " + profile + " is in use by process " + holder + "; pass --profile <dir> (or another --chrome-port, which brings its own profile)");
   const chrome = spawn(CHROME, args.concat(["about:blank"]), { stdio: ["ignore", "ignore", "pipe"] });
   chrome.stderr.on("data", () => {});
   let list = null;
@@ -82,6 +100,7 @@ async function launch(opts) {
   b.chrome = chrome;
   b.port = port;
   b.args = args;
+  b.profile = profile;
   b.kill = () => { try { b.ws.close(); } catch (e) {} try { chrome.kill("SIGTERM"); } catch (e) {} };
   return b;
 }
@@ -146,4 +165,4 @@ function cleanupOnExit(things) {
   ["SIGINT", "SIGTERM"].forEach((s) => process.on(s, () => { done(); process.exit(130); }));
 }
 
-module.exports = { ensureServer, launch, connect, collectConsole, prepare, waitFor, sleep, cleanupOnExit, DEFAULT_CHROME_PORT, DEFAULT_PROFILE, DEFAULT_HTTP_PORT, REPO };
+module.exports = { ensureServer, launch, profileFor, connect, collectConsole, prepare, waitFor, sleep, cleanupOnExit, DEFAULT_CHROME_PORT, DEFAULT_PROFILE, DEFAULT_HTTP_PORT, REPO };

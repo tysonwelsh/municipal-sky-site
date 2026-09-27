@@ -191,4 +191,30 @@ function spectrogram(x, sr, opts) {
   return { db: out, width: W, height: H, fmin, fmax };
 }
 
-module.exports = { writeWav16, readWav, kCoefs, loudness, peaks, spectrogram, fftInPlace, LUFS };
+// ---------------------------------------------------------------------------
+// Holes: runs of exact digital zero in every channel, with sound on either
+// side. The engine's drone never rests on 0.0 in both channels while the hall
+// is sounding, so such a run inside a recording is a place where samples
+// never arrived — used to re-find a capture's tap holes in a WAV alone.
+// ---------------------------------------------------------------------------
+function zeroRuns(chans, sr, opts) {
+  const min = (opts && opts.min) || 2, ctxDb = (opts && opts.ctxDb) != null ? opts.ctxDb : -50, win = Math.round(sr * 0.02);
+  const n = chans[0].length, out = [];
+  const rmsDb = (a, b) => {
+    a = Math.max(0, a); b = Math.min(n, b);
+    let acc = 0, k = 0;
+    for (const c of chans) for (let i = a; i < b; i++) { acc += c[i] * c[i]; k++; }
+    return k ? 10 * Math.log10(acc / k + 1e-30) : -Infinity;
+  };
+  for (let i = 0; i < n;) {
+    if (chans.every((c) => c[i] === 0)) {
+      let j = i + 1;
+      while (j < n && chans.every((c) => c[j] === 0)) j++;
+      if (j - i >= min && i > 0 && j < n && rmsDb(i - win, i) > ctxDb && rmsDb(j, j + win) > ctxDb) out.push({ i, n: j - i });
+      i = j;
+    } else i++;
+  }
+  return out;
+}
+
+module.exports = { writeWav16, readWav, kCoefs, loudness, peaks, spectrogram, fftInPlace, LUFS, zeroRuns };

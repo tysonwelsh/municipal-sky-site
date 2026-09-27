@@ -12,8 +12,16 @@
 // each pair is. It lists the near-twins, and the features that separate
 // seeds least.
 //
+// Distances are standardised by this build's own spread, so a yardstick is
+// needed that the build cannot move: the planted twin, the first seed heard
+// a semitone higher and 4 % slower — one Sunday in another key. A pair as
+// close as that (or a little closer than 1.5× it) is a twin whatever the
+// median says, and a build whose median pair is within three plants of
+// itself has collapsed: its seeds are one meeting, transposed.
+//
 //   node tools/distinctness.js [--n 20 | --seeds 1-20] [--window 180]
-//        [--engine <dir>|git:<ref>] [--dumps <dir>] [--twin 0.5] [--out <dir>]
+//        [--engine <dir>|git:<ref>] [--dumps <dir>] [--twin 0.5]
+//        [--plant-floor 1.5] [--collapse 3] [--out <dir>]
 //
 // Output: report.md, distances.csv, features.json in the out directory.
 "use strict";
@@ -30,7 +38,9 @@ const HELP = `distinctness.js — how far apart are the first minutes of N seeds
   --harness <file>     harness to render with
   --dumps <dir>        read an existing dump set instead of rendering
   --twin 0.5           near-twin threshold, as a fraction of the median pair distance
-  --no-sanity          skip the same-seed-twice and planted-twin checks
+  --plant-floor 1.5    …or at most this many times the planted twin's distance, whatever the median
+  --collapse 3         the build has collapsed when the median pair is within this many plants
+  --no-sanity          skip the same-seed-twice render and the sanity line
   --out <dir>          (default tools/out/distinctness-<stamp>)`;
 
 // Layers that are ground or field, not voices: they count toward density and
@@ -296,7 +306,7 @@ async function main() {
   if (a.help) { console.log(HELP); return; }
   const W = +a.window || 180;
   const seeds = a.seeds ? U.parseSeeds(a.seeds, []) : U.parseSeeds("1-" + (+a.n || 20), []);
-  const twinFrac = +a.twin || 0.5;
+  const twinFrac = +a.twin || 0.5, plantFloor = +a["plant-floor"] || 1.5, collapseX = +a.collapse || 3;
   const sanity = !a["no-sanity"];
   const out = U.outDir(a, "distinctness");
 
@@ -310,9 +320,10 @@ async function main() {
   if (real.length < 3) throw new Error("need at least 3 seeds");
 
   // The planted twin: seed 1's meeting heard a semitone higher and 4 % slower —
-  // the same Sunday in another key. A tool that cannot flag this cannot flag anything.
+  // the same Sunday in another key. A tool that cannot flag this cannot flag
+  // anything; and it is the yardstick for what "the same" means in this build.
   let plant = null;
-  if (sanity) {
+  {
     const base = real[0], k = Math.pow(2, 1 / 12), s = 1.04;
     plant = JSON.parse(JSON.stringify({ name: "plant-" + base.seed, seed: base.seed, secs: base.secs, notes: base.notes, events: base.events.map((e) => Object.assign({}, e, { raw: null })) }));
     plant.notes.forEach((n) => { n.freq *= k; n.t *= s; n.dur *= s; });
@@ -334,7 +345,15 @@ async function main() {
   }
   const Ds = P.map((p) => p.D);
   const med = U.median(Ds), tau = twinFrac * med;
-  const twins = P.filter((p) => p.D < tau).sort((x, y) => x.D - y.D);
+  // the plant's distance, the yardstick the build cannot move
+  const pf = feats[feats.length - 1];
+  const plantD = pair(pf, realFeats[0], names, sc).D;
+  const plantRank = Ds.filter((d) => d < plantD).length;
+  const tauAbs = plantFloor * plantD;
+  const isTwin = (d) => d < tau || d <= tauAbs;
+  const twins = P.filter((p) => isTwin(p.D)).sort((x, y) => x.D - y.D);
+  const spread = plantD > 0 ? med / plantD : Infinity;
+  const collapsed = spread <= collapseX;
   const nearest = real.map((r, i) => {
     let best = null;
     P.forEach((p) => { if (p.i === i || p.j === i) { if (!best || p.D < best.D) best = p; } });
@@ -342,13 +361,8 @@ async function main() {
   });
 
   // sanity numbers
-  let twinD = null, plantD = null, plantRank = null;
+  let twinD = null;
   if (twin) twinD = pair(feats[real.length], realFeats[0], names, sc).D;
-  if (plant) {
-    const pf = feats[feats.length - 1];
-    plantD = pair(pf, realFeats[0], names, sc).D;
-    plantRank = Ds.filter((d) => d < plantD).length;
-  }
   const minDistinct = Math.min(...Ds);
 
   // features that separate least / groups that separate most
@@ -392,11 +406,15 @@ async function main() {
   L.push("## Verdict");
   L.push("");
   L.push("- **Pair distance D** (0 = the same in every measured respect, 1 = two standard deviations apart on everything): median **" + U.fmt(med, 3) + "**, p10 " + U.fmt(U.quantile(Ds, 0.1), 3) + ", p90 " + U.fmt(U.quantile(Ds, 0.9), 3) + ", closest " + U.fmt(minDistinct, 3) + ".");
-  L.push("- **Near-twins** (D < " + twinFrac + " × median = " + U.fmt(tau, 3) + "): " + (twins.length ? "**" + twins.length + "** — " + twins.map((p) => label(p.i) + " / " + label(p.j) + " (" + U.fmt(p.D, 3) + ")").join("; ") : "**none**") + ".");
+  L.push("- **Spread:** the median pair is **" + (isFinite(spread) ? spread.toFixed(1) + "×" : "∞ ×") + "** as far apart as seed " + real[0].seed + " is from itself a semitone higher and 4 % slower (the planted twin, D = " + U.fmt(plantD, 3) + ")" +
+    (collapsed ? ". **⚠ COLLAPSED** — at " + collapseX + "× or less, the typical pair of seeds is barely farther apart than one meeting heard in another key: design law 2 fails for this build, whatever the near-twin count says." : " (collapse at " + collapseX + "× or less)."));
+  const twinList = twins.slice(0, 12).map((p) => label(p.i) + " / " + label(p.j) + " (" + U.fmt(p.D, 3) + ")").join("; ") + (twins.length > 12 ? "; and " + (twins.length - 12) + " more" : "");
+  L.push("- **Near-twins** (D < " + twinFrac + " × median = " + U.fmt(tau, 3) + ", or D ≤ " + plantFloor + " × the planted twin = " + U.fmt(tauAbs, 3) + "): " +
+    (twins.length ? "**" + twins.length + " of " + P.length + " pairs** — " + twinList : "**none**") + ".");
   if (sanity) {
     L.push("- **Sanity:** " + [
       twin ? "the same seed rendered twice (seed " + real[0].seed + ") D = " + U.fmt(twinD, 3) + (twinD === 0 ? " ✓" : " ✗ (should be 0)") : null,
-      plant ? "a planted twin (seed " + real[0].seed + " a semitone higher and 4 % slower) D = " + U.fmt(plantD, 3) + (plantD < tau ? " — flagged as a near-twin ✓" : " — NOT flagged ✗") + " (" + plantRank + " of " + P.length + " real pairs are closer)" : null,
+      "the planted twin is seen (D > 0" + (plantD > 0 ? " ✓" : " ✗") + ") and is closer than the median's twin line (" + U.fmt(plantD, 3) + " < " + U.fmt(tau, 3) + (plantD < tau ? " ✓" : " ✗") + "); " + plantRank + " of " + P.length + " real pairs are closer than it",
       "every pair of different seeds D > 0" + (minDistinct > 0 ? " ✓" : " ✗"),
     ].filter(Boolean).join("; ") + ".");
   }
@@ -410,7 +428,7 @@ async function main() {
   L.push(U.table(["pair", "D", "twin?", "the same (within an audible step)", "different"],
     P.slice().sort((x, y) => x.D - y.D).slice(0, 8).map((p) => {
       const w = words(p);
-      return [label(p.i) + " / " + label(p.j), U.fmt(p.D, 3), p.D < tau ? "**twin**" : "",
+      return [label(p.i) + " / " + label(p.j), U.fmt(p.D, 3), isTwin(p.D) ? "**twin**" : "",
         w.same.filter((n) => !/^density: |^pulse: /.test(n)).join(", ") || "—",
         w.diff.filter((n) => !/^density: |^pulse: /.test(n)).join(", ") || "—"];
     }), ["l", "r", "c", "l", "l"]));
@@ -453,7 +471,7 @@ async function main() {
   L.push("- Each seed is rendered by the harness for " + (Math.ceil(W) + 5) + " s; only notes with an onset before " + W + " s and events before " + W + " s count. Meeting 1 supplies the keynote, mode and kind.");
   L.push("- Numeric features are standardised by their spread across these seeds (SD, floored at the JND so an inaudible spread never counts); a difference of two spreads or more counts as fully different (1). Profiles use the Jensen–Shannon distance, scaled the same way; sets the Jaccard distance; categories 0 or 1.");
   L.push("- A group's distance is the mean over its features that both seeds have; **D** is the weighted mean over groups (weights in the table above). Voices: " + "one line per layer (or layer:part), a chordal layer read by its top line; drone and field are ground, not voices.");
-  L.push("- Near-twin: D below " + twinFrac + " × the median pair distance. The threshold is relative on purpose: it names the pairs that stand out as close *in this build*; the sanity lines show it catches a real twin.");
+  L.push("- Near-twin: D below " + twinFrac + " × the median pair distance (the pairs that stand out as close *in this build*), or D at most " + plantFloor + " × the planted twin's (the pairs as close as one meeting is to itself in another key — a floor the build's own spread cannot move). The spread line holds the median against the same yardstick: at " + collapseX + "× or less the build has collapsed, and a relative threshold alone would never say so.");
   L.push("- Files: `distances.csv` (the full matrix), `features.json` (every seed's features), `dumps/` (the harness dumps and logs).");
   L.push("");
   fs.writeFileSync(path.join(out, "report.md"), L.join("\n"));
@@ -471,4 +489,4 @@ async function main() {
 }
 
 module.exports = { featuresOf, expandDensity, pair, scales, GROUPS, JND };
-if (require.main === module) main().catch((e) => { console.error("distinctness.js: " + (e.stack || e.message)); process.exit(1); });
+if (require.main === module) main().catch((e) => { console.error("distinctness.js: " + (e.refusal ? e.message : e.stack || e.message)); process.exit(1); });

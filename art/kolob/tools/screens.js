@@ -8,15 +8,19 @@
 //
 //   node tools/screens.js [--seed 1847] [--times 20,60,120] [--widths 860,390]
 //        [--section hymn] [--fps-secs 20] [--throttle 4] [--full] [--ives] [--latin]
-//        [--port 8113] [--chrome-port 9423] [--out <dir>]
+//        [--port 8113] [--chrome-port 9423] [--profile <dir>] [--out <dir>]
 //
 // Times are seconds of the meeting (the audio clock, from the moment PLAY was
 // pressed); with --section, from the moment the meeting was jumped there.
 // Headless Chrome may pace requestAnimationFrame slowly (~1 fps on some
 // machines), so frames are judged by what each one costs, not by how many came.
+// What a frame costs also rises with what else the machine is doing (other
+// crews' Chromes, harness batteries): the report prints the load average
+// beside the frame times, and says when it was too high to trust p99 and max.
 "use strict";
 const fs = require("fs");
 const path = require("path");
+const os = require("os");
 const U = require("./lib/util.js");
 const C = require("./lib/chrome.js");
 
@@ -30,7 +34,8 @@ const HELP = `screens.js — muted headless screenshots of the staff + frame tim
   --full                 also capture the whole page
   --ives / --latin       arm the Ives switch / show Latin letters
   --port 8113            the local PHP server (started if nothing serves this tree there)
-  --chrome-port 9423     Chrome's debugging port
+  --chrome-port 9423     Chrome's debugging port (another port brings its own profile)
+  --profile <dir>        Chrome profile (default /private/tmp/claude-501/kolob-r2-tools-chrome[-<port>])
   --out <dir>            (default tools/out/screens-<seed>-<stamp>)`;
 
 const INSTRUMENT = (o) => `(function(){
@@ -66,7 +71,7 @@ const VIEW = {
   const out = a.out ? U.outDir(a) : U.outDir({}, "screens-" + seed);
 
   const server = await C.ensureServer({ port: +a.port || C.DEFAULT_HTTP_PORT });
-  const b = await C.launch({ port: +a["chrome-port"] || C.DEFAULT_CHROME_PORT });
+  const b = await C.launch({ port: +a["chrome-port"] || C.DEFAULT_CHROME_PORT, profile: a.profile });
   C.cleanupOnExit([b, server.proc]);
   const logs = C.collectConsole(b);
   await C.prepare(b);
@@ -119,8 +124,9 @@ const VIEW = {
     if (fpsSecs > 0) {
       await b.evalJS("window.__frames.cb.length = 0, window.__long.length = 0, window.__frames.on = true, 1");
       await b.send("Emulation.setCPUThrottlingRate", { rate: throttle });
-      const w0 = Date.now(), a0 = await b.evalJS("KolobAudio.getAudioTime()");
+      const w0 = Date.now(), a0 = await b.evalJS("KolobAudio.getAudioTime()"), load0 = os.loadavg()[0];
       await C.sleep(fpsSecs * 1000);
+      const load1 = os.loadavg()[0];
       const raw = await b.evalJS("(window.__frames.on = false, JSON.stringify({cb: window.__frames.cb, long: window.__long, a: KolobAudio.getAudioTime(), section: KolobAudio.getConductor().section}))");
       await b.send("Emulation.setCPUThrottlingRate", { rate: 1 });
       const r = JSON.parse(raw);
@@ -133,6 +139,7 @@ const VIEW = {
         frames: ft.length, wall: (Date.now() - w0) / 1000, audio: r.a - a0, section: r.section,
         p50: U.quantile(ft, 0.5), p90: U.quantile(ft, 0.9), p99: U.quantile(ft, 0.99), max: ft.length ? Math.max(...ft) : null,
         interval: U.median(fi), long: r.long.length, longMs: U.sum(r.long),
+        load: Math.max(load0, load1),
       };
     }
     await b.evalJS("document.getElementById('kolob-stop') && document.getElementById('kolob-stop').click(), 1");
@@ -154,11 +161,20 @@ const VIEW = {
   L.push("");
   L.push("A frame's time is everything its requestAnimationFrame callbacks cost (the staff, the wheel). 16.7 ms is the whole budget of a 60 fps frame; the throttle makes this machine behave like a slower phone.");
   L.push("");
-  L.push(U.table(["width", "frames", "p50 ms", "p90 ms", "p99 ms", "max ms", "rAF interval (median)", "long tasks", "section"],
+  L.push(U.table(["width", "frames", "p50 ms", "p90 ms", "p99 ms", "max ms", "rAF interval (median)", "long tasks", "section", "load avg"],
     results.map((r) => r.fps ? [r.w + " px", String(r.fps.frames), U.fmt(r.fps.p50, 2), U.fmt(r.fps.p90, 2), U.fmt(r.fps.p99, 2), U.fmt(r.fps.max, 1),
-      U.fmt(r.fps.interval, 1) + " ms", r.fps.long + (r.fps.long ? " (" + r.fps.longMs.toFixed(0) + " ms)" : ""), r.fps.section] : [r.w + " px", "—", "", "", "", "", "", "", ""])));
-  const slow = results.find((r) => r.fps && r.fps.interval > 100);
-  if (slow) { L.push(""); L.push("*Headless Chrome paced requestAnimationFrame at about " + (1000 / slow.fps.interval).toFixed(1) + " fps here, so the frame count says nothing about a real display; the per-frame cost is still what each frame would take.*"); }
+      U.fmt(r.fps.interval, 1) + " ms", r.fps.long + (r.fps.long ? " (" + r.fps.longMs.toFixed(0) + " ms)" : ""), r.fps.section, r.fps.load.toFixed(1)] : [r.w + " px", "—", "", "", "", "", "", "", "", ""])));
+  const timed = results.filter((r) => r.fps && r.fps.frames);
+  const notes = [];
+  // a real display paces rAF at ~16.7 ms; anything past ~25 ms is headless pacing
+  const slow = timed.filter((r) => r.fps.interval > 25);
+  if (slow.length) notes.push("Headless Chrome paced requestAnimationFrame at about " + slow.map((r) => (1000 / r.fps.interval).toFixed(1)).join(" and ") + " fps here (" + slow.map((r) => r.w + " px").join(", ") + "), so the frame count says nothing about a real display; the per-frame cost is still what each frame would take.");
+  if (timed.length) {
+    notes.push("p99 rests on the worst hundredth of the frames — " + timed.map((r) => Math.max(1, Math.round(r.fps.frames / 100)) + " of " + r.fps.frames + " at " + r.w + " px").join(", ") + ": read it, and max, as the worst moments of this window, not as a steady rate.");
+    const cores = os.cpus().length, busy = timed.filter((r) => r.fps.load > cores / 2);
+    if (busy.length) notes.push("**⚠ The machine was busy** (load average " + busy.map((r) => r.fps.load.toFixed(1)).join(" / ") + " on " + cores + " cores during " + busy.map((r) => r.w + " px").join(", ") + "): other processes took the throttled CPU's time, and p99, max and the long tasks run high under load. Re-run on a quiet machine before reading them as the page's.");
+  }
+  notes.forEach((t) => { L.push(""); L.push(/^\*\*/.test(t) ? t : "*" + t + "*"); });
   L.push("");
   results.forEach((r) => {
     L.push("## " + r.w + " px (" + r.view.width + "×" + r.view.height + ", DPR " + r.view.deviceScaleFactor + (r.view.mobile ? ", phone" : "") + ")");
@@ -175,4 +191,4 @@ const VIEW = {
   if (server.proc) server.proc.kill();
   console.log(path.join(out, "report.md"));
   process.exit(0);
-})().catch((e) => { console.error("screens.js: " + (e.stack || e.message)); process.exit(1); });
+})().catch((e) => { console.error("screens.js: " + (e.refusal ? e.message : e.stack || e.message)); process.exit(1); });

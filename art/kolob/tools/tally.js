@@ -12,8 +12,11 @@
 // rendered from the same seeds, it first says which seeds came out identical.
 //
 //   node tools/tally.js [--seeds 1-20] [--secs 1200] [--engine <dir>|git:<ref>] [--dumps <dir>]
-//   node tools/tally.js --a <spec> --b <spec> [--seeds 1-20] [--secs 1200] [--threshold 15]
+//   node tools/tally.js --a <spec> --b <spec> [--seeds 1-60] [--secs 1200] [--threshold 15]
 //     where <spec> is a dump directory, an engine directory, git:<ref>, or "worktree"
+//
+// A/B renders 60 seeds a side by default (seconds of work): twenty meetings
+// leave a share such as "meetings with a guest" ±30 points of noise.
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -23,7 +26,7 @@ const D = require("./lib/dump.js");
 const R = require("./lib/run.js");
 
 const HELP = `tally.js — counts over complete meetings; --a/--b compares two builds
-  --seeds 1-20        seeds to render (default 1-20)
+  --seeds 1-20        seeds to render (default 1-20; 1-60 for A/B)
   --secs 1200         harness seconds per seed (default 1200)
   --engine / --harness / --dumps   one build (default: this worktree)
   --a <spec> --b <spec>            A/B: spec = dump dir | engine dir | git:<ref> | worktree
@@ -63,7 +66,7 @@ function metricsFor(recs) {
   const keys = (f) => [...new Set(recs.flatMap((r) => Object.keys(f(r))))].sort();
   const secTypes = [...new Set(recs.flatMap((r) => r.sections.map((s) => s.section)))].sort();
   const M = [];
-  const add = (group, id, unit, stat, support) => M.push({ group, id, unit, stat, support: support || (() => recs.length) });
+  const add = (group, id, unit, stat, support) => M.push({ group, id, unit, stat, support: support || ((rs) => rs.length) });
   const perMeeting = (f) => (rs) => U.mean(rs.map(f));
 
   add("shape", "meeting length", "min", perMeeting((r) => r.min));
@@ -90,7 +93,9 @@ function metricsFor(recs) {
   const layers = keys((r) => r.notes);
   layers.forEach((l) => add("layers", "notes/min: " + l, "", (rs) => U.sum(rs.map((r) => r.notes[l] || 0)) / U.sum(rs.map((r) => r.min)), (rs) => rs.filter((r) => r.notes[l]).length));
   layers.forEach((l) => add("layers", "note length: " + l, "s", (rs) => U.median(rs.flatMap((r) => r.noteDur[l] || [])), (rs) => rs.filter((r) => r.notes[l]).length));
-  const cats = keys((r) => r.cats);
+  // `transport` is the harness's own start-up line (▶ the meeting is called),
+  // told by one harness and not another: not the music, so never a metric
+  const cats = keys((r) => r.cats).filter((c) => c !== "transport");
   cats.forEach((c) => add("events", "per meeting: " + c, "", perMeeting((r) => r.cats[c] || 0), (rs) => rs.filter((r) => r.cats[c]).length));
   const modes = [...new Set(recs.map((r) => r.mode))].filter(Boolean).sort();
   modes.forEach((mo) => add("sundays", "mode: " + mo, "%", (rs) => rs.filter((r) => r.mode === mo).length / rs.length, (rs) => rs.filter((r) => r.mode === mo).length));
@@ -105,10 +110,10 @@ function show(v, unit) {
 }
 
 // ---------------------------------------------------------------------------
-async function loadSide(spec, a, into, harness) {
+async function loadSide(spec, a, into, harness, dfltSeeds) {
   const isDir = spec && spec !== true && fs.existsSync(String(spec)) && fs.statSync(String(spec)).isDirectory();
   const hasDumps = isDir && fs.readdirSync(String(spec)).some((f) => f.endsWith(".jsonl"));
-  const seeds = U.parseSeeds(a.seeds, U.parseSeeds("1-20"));
+  const seeds = U.parseSeeds(a.seeds, U.parseSeeds(dfltSeeds || "1-20"));
   const o = hasDumps ? { dumps: spec, seeds: a.seeds ? seeds : null } : { engine: spec === "worktree" ? null : spec, harness, seeds, secs: +a.secs || 1200, into, jobs: +a.jobs || 0 };
   const set = await R.obtainSet(o);
   const runs = set.files.map((f) => D.readDump(f));
@@ -120,6 +125,12 @@ async function loadSide(spec, a, into, harness) {
     recs.push(recordOf(run, m));
   }));
   return { set, runs, recs, partial };
+}
+// "1-20, 25" for a long list of seeds
+function seedList(seeds) {
+  const s = seeds.map(Number).sort((x, y) => x - y), out = [];
+  for (let i = 0; i < s.length;) { let j = i; while (j + 1 < s.length && s[j + 1] === s[j] + 1) j++; out.push(j > i + 1 ? s[i] + "–" + s[j] : j === i + 1 ? s[i] + ", " + s[j] : String(s[i])); i = j + 1; }
+  return out.join(", ");
 }
 // the dump minus its header: two builds that play the same meeting write the same lines
 function streamHash(run) {
@@ -159,9 +170,9 @@ async function main() {
     L.push("# Tally — " + S.recs.length + " complete meetings");
     L.push("");
     L.push("- " + R.describe(S.set.manifest));
-    L.push("- seeds " + S.runs.map((r) => r.seed).join(", ") + (a.first ? " · meeting 1 only" : "") + (S.partial ? " · " + S.partial + " partial meetings left out" : "") + " · " + stampNow);
+    L.push("- seeds " + seedList(S.runs.map((r) => r.seed)) + (a.first ? " · meeting 1 only" : "") + (S.partial ? " · " + S.partial + " partial meetings left out" : "") + " · " + stampNow);
     const verdicts = S.set.manifest && S.set.manifest.verdicts ? Object.values(S.set.manifest.verdicts) : [];
-    if (verdicts.length) L.push("- harness verdicts: " + verdicts.filter((v) => /PASS/.test(v || "")).length + "/" + verdicts.length + " PASS" + (verdicts.some((v) => !/PASS/.test(v || "")) ? " (the harness's own checks; the rest: " + [...new Set(verdicts.filter((v) => !/PASS/.test(v || "")).map((v) => v.replace(/^FAIL — /, "")))].join("; ") + ")" : ""));
+    if (verdicts.length) L.push("- harness verdicts: " + verdicts.filter((v) => /PASS/.test(v || "")).length + "/" + verdicts.length + " PASS" + (verdicts.some((v) => !/PASS/.test(v || "")) ? " (the harness's own checks; the rest: " + [...new Set(verdicts.filter((v) => !/PASS/.test(v || "")).flatMap((v) => String(v).replace(/^FAIL — /, "").split("; ")))].join("; ") + ")" : ""));
     L.push("");
     L.push("## Plan checks");
     L.push("");
@@ -184,8 +195,8 @@ async function main() {
     fs.writeFileSync(path.join(out, "metrics.json"), JSON.stringify(M.map((m) => ({ group: m.group, id: m.id, unit: m.unit, value: m.stat(S.recs), support: m.support(S.recs) })), null, 1));
   } else {
     // ---------------- A/B ----------------
-    const A = await loadSide(a.a || "worktree", a, path.join(out, "dumps-a"), a["harness-a"]);
-    const B = await loadSide(a.b || "worktree", a, path.join(out, "dumps-b"), a["harness-b"]);
+    const A = await loadSide(a.a || "worktree", a, path.join(out, "dumps-a"), a["harness-a"], "1-60");
+    const B = await loadSide(a.b || "worktree", a, path.join(out, "dumps-b"), a["harness-b"], "1-60");
     if (!A.recs.length || !B.recs.length) throw new Error("no complete meetings on one side (raise --secs)");
     const MA = metricsFor(A.recs.concat(B.recs));   // one metric list over the union, evaluated per side
     const rows = [];
@@ -212,6 +223,11 @@ async function main() {
     B.runs.forEach((r) => (byB[r.seed] = r));
     const paired = Object.keys(byA).filter((s) => byB[s]);
     const same = paired.filter((s) => streamHash(byA[s]) === streamHash(byB[s]));
+    const seedsA = [...new Set(A.runs.map((r) => r.seed))], seedsB = [...new Set(B.runs.map((r) => r.seed))];
+    const sameSeeds = seedsA.length === seedsB.length && seedsA.every((s) => byB[s]);
+    const mA = A.set.manifest || {}, mB = B.set.manifest || {};
+    const fpA = mA.fingerprint || null, fpB = mB.fingerprint || null;
+    const twoHarnesses = mA.harness && mB.harness && mA.harness !== mB.harness;
     const flagged = rows.filter((r) => /^(SHIFT|new|gone)/.test(r.flag) && !/within noise|low count/.test(r.flag));
     const noisy = rows.filter((r) => /within noise|low count/.test(r.flag));
 
@@ -219,14 +235,20 @@ async function main() {
     L.push("");
     L.push("- **A:** " + R.describe(A.set.manifest));
     L.push("- **B:** " + R.describe(B.set.manifest));
-    L.push("- seeds " + [...new Set(A.runs.map((r) => r.seed))].join(", ") + (a.first ? " · meeting 1 only" : "") + " · threshold ±" + Math.round(thr * 100) + " % · " + stampNow);
+    L.push("- " + (sameSeeds ? "seeds " + seedList(seedsA) : "seeds **A:** " + seedList(seedsA) + " · **B:** " + seedList(seedsB)) + (a.first ? " · meeting 1 only" : "") + " · threshold ±" + Math.round(thr * 100) + " % · " + stampNow);
     L.push("");
     L.push("## Verdict");
     L.push("");
-    if (paired.length) L.push("- **Same seeds, same meetings?** " + same.length + " of " + paired.length + " seeds played identically (note and event streams byte-for-byte)" + (same.length === paired.length ? " — **nothing moved.**" : same.length ? "; the rest differ: " + paired.filter((s) => !same.includes(s)).join(", ") + "." : "."));
+    if (!sameSeeds) L.push("- **⚠ A and B hold different seeds** (" + seedsA.length + " against " + seedsB.length + ", " + paired.length + " shared): every shift below mixes the change with which Sundays were drawn. Pass `--seeds` to compare like with like.");
+    if (paired.length) L.push("- **Same seeds, same meetings?** " + same.length + " of " + paired.length + " shared seeds played identically (note and event streams byte-for-byte)" +
+      (same.length === paired.length ? " — **nothing moved**" + (fpA && fpB && fpA !== fpB ? " (the modules' bytes differ, " + fpA + " against " + fpB + ", but not the music)" : "") + "." :
+        same.length ? "; the rest differ: " + seedList(paired.filter((s) => !same.includes(s)).map(Number)) + "." : ".") +
+      (same.length < paired.length && fpA && fpA === fpB ? " The two sides played the same module bytes (" + fpA + "), so the difference is the harness or the flags, not the engine." : ""));
+    if (twoHarnesses) L.push("- **Two harnesses:** A was rendered by `" + mA.harness + "`, B by `" + mB.harness + "`. Each harness stamps its records its own way, so the identity line above compares the harnesses as well as the engines; the metrics below do not depend on it.");
     L.push("- **Shifts beyond ±" + Math.round(thr * 100) + " % and beyond noise:** " + (flagged.length ? "**" + flagged.length + "** — " + flagged.map((r) => r.m.group + " · " + r.m.id + " (" + (isFinite(r.delta) ? (r.delta > 0 ? "+" : "") + (100 * r.delta).toFixed(0) + " %" : r.flag) + ")").join("; ") : "none") + ".");
     if (noisy.length) L.push("- **Beyond ±" + Math.round(thr * 100) + " % but within noise or on few meetings** (worth a look, not a verdict): " + noisy.length + " — " + noisy.slice(0, 8).map((r) => r.m.id).join("; ") + (noisy.length > 8 ? "; …" : "") + ".");
-    L.push("- **Noise** is two bootstrap standard errors of the difference (meetings resampled 300× per side); with the same seeds on both sides and an unchanged engine every difference is exactly zero.");
+    L.push("- **Noise** is two bootstrap standard errors of the difference (meetings resampled 300× per side); with the same seeds on both sides and an unchanged engine every difference is exactly zero." +
+      (Math.min(A.recs.length, B.recs.length) < 40 ? " With " + Math.min(A.recs.length, B.recs.length) + " meetings on a side the band is wide (a share such as \"meetings with a guest\" moves ±30 points on twenty): `--seeds 1-60` renders in seconds." : ""));
     L.push("");
     const valA = (grp, id) => { const r = rows.find((x) => x.m.group === grp && x.m.id === id); return r ? r.va : null; };
     const valB = (grp, id) => { const r = rows.find((x) => x.m.group === grp && x.m.id === id); return r ? r.vb : null; };
@@ -252,10 +274,11 @@ async function main() {
   L.push("");
   L.push("- Only complete meetings (the next meeting began, or the log said \"meeting ends\", inside the run). Section lengths run from one section's start to the next (the joint included); cadences are the harmony's cadences (v0.30: `∴ <kind> cadence`; typed: `cadence.kind`); joints are the section joints; a guest is counted once per meeting however long it stays.");
   L.push("- Notes per minute and note lengths count every emitted note, doublings and unpitched events included, as the engine reports them.");
+  L.push("- Events per meeting count every event by its `cat` (or typed `type`), except `transport`: the harness's own start-up line, which one harness tells and another does not.");
   L.push("");
   fs.writeFileSync(path.join(out, "report.md"), L.join("\n"));
   console.log(path.join(out, "report.md"));
 }
 
 module.exports = { recordOf, metricsFor, planChecks };
-if (require.main === module) main().catch((e) => { console.error("tally.js: " + (e.stack || e.message)); process.exit(1); });
+if (require.main === module) main().catch((e) => { console.error("tally.js: " + (e.refusal ? e.message : e.stack || e.message)); process.exit(1); });

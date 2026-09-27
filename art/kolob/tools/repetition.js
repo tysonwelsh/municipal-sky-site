@@ -210,4 +210,4 @@ async function main() {
 }
 
 module.exports = { shapeOf, analyseMeeting };
-if (require.main === module) main().catch((e) => { console.error("repetition.js: " + (e.stack || e.message)); process.exit(1); });
+if (require.main === module) main().catch((e) => { console.error("repetition.js: " + (e.refusal ? e.message : e.stack || e.message)); process.exit(1); });
