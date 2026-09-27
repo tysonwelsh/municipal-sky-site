@@ -25,6 +25,7 @@ window.KOLOB = window.KOLOB || {};
   function inFuging() { return S.inFuging(); }
   function inQuestion() { return S.inQuestion(); }
   function hallListens() { return S.hallListens(); }
+  function houseRests(layer) { return S.houseRests(layer); }
   function silenceMul() { return S.silenceMul(); }
   function gapMul() { return S.gapMul(); }
   // from kolob-core.js
@@ -127,7 +128,7 @@ window.KOLOB = window.KOLOB || {};
     if (!S.playing) return;
     var s = S.Meeting.section();
     var speaks = s === "prelude" || s === "hymn" || s === "testimony" || s === "doxology" || s === "postlude";
-    if (!speaks || inFuging() || inQuestion() || hallListens()) { cueIn("clarinet", 6, clarinetPhrase); return; }
+    if (!speaks || inFuging() || inQuestion() || hallListens() || houseRests("clarinet")) { cueIn("clarinet", 6, clarinetPhrase); return; }
     if (!airFree()) { cueIn("clarinet", wait("clarinet").rnd(5, 11), clarinetPhrase); return; }
     var R = turn("clarinet");
     // in the prelude the deacon only occasionally tries a line over the organ
@@ -275,7 +276,8 @@ window.KOLOB = window.KOLOB || {};
     if (!S.playing) return;
     var s = S.Meeting.section();
     var plays = s === "prelude" || s === "hymn" || s === "doxology" || s === "postlude";
-    if (!plays || inQuestion() || hallListens()) { cueIn("harmonium", 8, harmoniumCycle); return; }
+    var seat = s === "prelude" ? S.Meeting.seating() : null;             // (the brush arbor has no harmonium)
+    if (!plays || inQuestion() || hallListens() || houseRests("harmonium") || (seat && seat.sits.harmonium)) { cueIn("harmonium", 8, harmoniumCycle); return; }
     var R = turn("harmonium");
     // the parlor ANSWERS the deacon when an obligation stands — a fourth
     // conversational timbre, close and warm
@@ -295,9 +297,15 @@ window.KOLOB = window.KOLOB || {};
         return;
       }
     }
-    // the chord standing when the reeds speak (the book's, at t + 0.1)
-    var ch = S.Harmony.at(t + 0.1);
-    if (ch && R.chance(0.55)) {
+    // the chord standing when the reeds speak (the book's, at t + 0.1) — or,
+    // on a parlor Sunday's morning (the prelude's seating), the day's first
+    // chord, which the harmonium sets before the organ is heard
+    var ch = S.Harmony.at(t + 0.1), opening = false;
+    if (!ch && seat && seat.name === "parlor") {
+      ch = S.Harmony.advance(seat.full ? { open: false, third: true, spread: seat.spread } : { spread: seat.spread }, R, t + 0.1, "harmonium");
+      opening = true;
+    }
+    if (ch && (R.chance(0.55) || opening)) {
       var dur = R.rnd(9, 15);
       // the inner voices: tenor + alto, sustained — an occasional warmth,
       // not a constant one; the hymn keeps its sky (the alto's loose entry

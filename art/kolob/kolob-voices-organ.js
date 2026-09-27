@@ -20,6 +20,7 @@ window.KOLOB = window.KOLOB || {};
   function intensity() { return S.intensity(); }
   function silenceMul() { return S.silenceMul(); }
   function hallListens() { return S.hallListens(); }
+  function houseRests(layer) { return S.houseRests(layer); }
   function gapMul() { return S.gapMul(); }
   // from kolob-core.js
   function turn(label) { return S.turn(label); }
@@ -104,7 +105,7 @@ window.KOLOB = window.KOLOB || {};
     if (s === "sacrament") { cueIn("organ", 6, organCycle); return; }
     // the organist rests while the house listens (the trombones at dawn play
     // chords of their own) and comes back when they have gone by
-    if (hallListens()) { cueIn("organ", 6, organCycle); return; }
+    if (hallListens() || houseRests("organ")) { cueIn("organ", 6, organCycle); return; }
     var R = turn("organ");
     // every chord the organist plays is voiced from, and written into, the
     // chord book at the moment it sounds: t + 0.1
@@ -123,7 +124,16 @@ window.KOLOB = window.KOLOB || {};
     // a swell under a cadence moment, then hands the hymn back to the voices.
     // The sustained ground of this piece is the sine DRONE, nothing else.
     if (s === "prelude" || s === "postlude") {
-      var chord = S.Harmony.advance({}, R, t + 0.1, "organ");
+      // the prelude's seating (kolob-meeting.js): the brush arbor has no
+      // organ; and the day's first chord may be full, its third sung
+      var seat = s === "prelude" ? S.Meeting.seating() : null;
+      if (seat && seat.sits.organ) { cueIn("organ", 6, organCycle); return; }
+      var first = {};
+      if (seat && !S.Harmony.at(t + 0.1)) {
+        first.spread = seat.spread;
+        if (seat.full) { first.open = false; first.third = true; }
+      }
+      var chord = S.Harmony.advance(first, R, t + 0.1, "organ");
       var dur = R.rnd(6, 11);
       organChord(t + 0.1, dur, chord, 0.75 * (0.6 + intensity() * 0.4));
       cueLayer("organ", dur + R.rnd(4, 10) * silenceMul(), organCycle);

@@ -99,15 +99,31 @@ window.KOLOB = window.KOLOB || {};
     cumulative: false,           // the tune is withheld until the doxology
     assemblyFired: false,
     assemblyUntil: 0,
+    seating: null,               // the prelude's seating (THE PRELUDE'S SEATING)
   };
   var forceVisitation = false;   // the 𐐌𐐚𐐞 switch: guarantee a guest next meeting
   var forceRaspberry = false;    // dev/test hook only — never part of the 𐐌𐐚𐐞 pool
   // CUMULATIVE FORM's governor — the 𐐐𐐄𐐢 pill: "always" | "natural" | "never"
   var cumulativeMode = "natural";
-  // META-SEASONS — the journey across meetings. A slow seeded cosine swings
-  // the colony from quiet fast-day troughs to conference/jubilee peaks over
-  // 4-7 meetings, the way ZANKYŌ's meta-arc drifts its cycles dark and back.
-  var metaPhase = 0, metaPeriod = 5, seasonPos = 0;
+  // THE CALENDAR (PLAN-COMPOSITION §7.1; the pre-v0.34 polish). Each meeting
+  // draws a Sunday of the colony year at the calendar's own odds — there is
+  // no journey across meetings, and the first visit is no longer the trough
+  // of one. (v0.32's meta-season cosine began every visit at its fast-day
+  // bottom, rnd(0, 0.3) of the swing, so meeting 1 was a fast Sunday 36 % of
+  // the time, not the plan's 15 %, and the lean Sunday, the plain temper and
+  // the thinnest prelude came with it.) The four kinds the house knows stand
+  // in for the calendar's nine: ordinary for the ordinary Sunday and the
+  // wedding, fast for the fast, conference for General Conference and the
+  // dedication, jubilee for Pioneer Day, Christmas and Easter — the plan's
+  // shares folded onto the kinds, then leaned half-way to the middle of each
+  // band the owner ruled (ordinary 45–55, fast ~15, conference 15–20,
+  // jubilee 10–15). The season is now the Sunday's own warmth, placed inside
+  // its kind by the die that once set the cosine's phase: a fast Sunday runs
+  // low, a jubilee high, and they overlap at the edges, as the kinds do.
+  var CALENDAR = [["ordinary", 0.52], ["fast", 0.15], ["conference", 0.19], ["jubilee", 0.14]];
+  var SEASON_OF = { fast: [0, 0.35], ordinary: [0.2, 0.7], conference: [0.5, 0.9], jubilee: [0.7, 1] };
+  var seasonPos = 0;
+  var F0_RANGE = [52, 78];       // the keynote's window, Hz of F0 (see THE KEYNOTE in planMeeting)
 
   // a weighted pick from a die already thrown (u in [0,1)): the plan throws
   // its dice first and reads them after, so a pool that is empty or forced
@@ -127,18 +143,26 @@ window.KOLOB = window.KOLOB || {};
   function planMeeting(t) {
     C.meetingNum++;
     var R = stream("meeting");
-    var periodDie = R.rnd(4, 7), phaseDie = R.rnd(0, 0.3);
-    if (C.meetingNum === 1) { metaPeriod = periodDie; metaPhase = phaseDie; }
-    else { metaPhase += 1 / metaPeriod; if (metaPhase >= 1) { metaPhase -= 1; metaPeriod = periodDie; } }
-    seasonPos = 0.5 - 0.5 * Math.cos(2 * Math.PI * metaPhase);   // 0 trough … 1 festival peak
+    // (the first die is the old cosine's period, thrown still so that every
+    // die after it lands where it did; the second places the season)
+    R.rnd(4, 7);
+    var seasonDie = R.rnd(0, 0.3) / 0.3;
 
-    S.F0 = R.rnd(58, 74);
-    var activity = R.pickW([
-      ["ordinary", 3],
-      ["fast", 1 + 2.5 * (1 - seasonPos)],
-      ["conference", 0.6 + 2.6 * seasonPos],
-      ["jubilee", 0.2 + 1.8 * seasonPos],
-    ]);
+    // THE KEYNOTE — the day's fundamental, a seven-semitone window (A♭3 to
+    // E♭4 at the keynote, F0·4; F0 52–78 Hz). v0.32 drew 58–74 Hz, 4.2
+    // semitones: in 43 % of pairs of visits the keynote did not tell them
+    // apart. Every voice was sung at both new ends before it widened (the
+    // pre-v0.34 polish's compass check, the harness's f0= pin, six seeds ×
+    // 20 minutes at each end): the choir's basses keep their 5th percentile
+    // at D♯2 and its sopranos their 95th at G5, the trombones stay in their
+    // compass (the guest places its octave), and every voice moves by the
+    // semitone or two the window grew and no further. (The band's cornet
+    // already stood above its compass at v0.32's top — p95 G6 at 74 Hz — and
+    // is a semitone higher at 78: a known edge, not a new one.)
+    S.F0 = R.rnd(F0_RANGE[0], F0_RANGE[1]);
+    var activity = R.pickW(CALENDAR);
+    var sr = SEASON_OF[activity];
+    seasonPos = sr[0] + (sr[1] - sr[0]) * seasonDie;               // 0 the fast-day trough … 1 the festival
     C.meeting = { activity: activity };
     var A = MEETINGS[activity];
     // Mode lottery, tilted bright or modal by the kind of Sunday.
@@ -332,6 +356,13 @@ window.KOLOB = window.KOLOB || {};
       var tbExact = TB.plan(tbInfo, tbStream);
       if (tbExact) { dawn.at = tbExact.at; dawn.dur = tbExact.dur; plan[0].dur = Math.max(plan[0].dur, tbExact.holdUntil); }
     }
+    // the prelude's seating: who wakes the Sunday, and when (below)
+    C.seating = seatPrelude();
+    if (C.seating.len !== 1 && plan[0].type === "prelude") plan[0].dur *= C.seating.len;
+    emitEvent({
+      type: "prelude-seating", n: C.meetingNum, seating: C.seating.name, at: C.seating.at, full: C.seating.full, spread: C.seating.spread,
+      len: C.seating.len, preludeS: +plan[0].dur.toFixed(2), sits: Object.keys(C.seating.sits), cat: "seating", label: "⌖ the prelude is seated", detail: C.seating.name,
+    });
     enterSection(0, t);
     // The Liahona: the load-bearing draws, surfaced as the oracle's pointing.
     emitEvent({
@@ -347,6 +378,83 @@ window.KOLOB = window.KOLOB || {};
       cat: "meeting", label: "☀ meeting " + C.meetingNum,
       detail: "F0 " + S.F0.toFixed(1) + " Hz · " + S.mode + " · " + activity + " · season " + seasonPos.toFixed(2),
     });
+  }
+
+  // ==========================================================================
+  // THE PRELUDE'S SEATING (PLAN-COMPOSITION §7.4, pulled forward by the
+  // pre-v0.34 polish; the owner: "prioritize variation wherever we can").
+  // Round 2 woke every visit on one timetable — the drone at 0:00.1 and the
+  // organ at 0:02.7 on 400 of 400 seeds, the field at 0:16, the strings at
+  // 0:24, the harmonium, the clarinet, the tines and the wire each at its
+  // fixed second — and 358 of 400 first chords were a bare fifth. Now each
+  // Sunday draws how its morning is seated, on its own stream prelude:<n>
+  // (so no other die moves), and each seating wakes the valley in its own
+  // order, every entrance drawn within its own window:
+  //   voluntary — the organist first, a chord and a breath (the old way,
+  //               but never at the same second twice)
+  //   ground    — the drone alone at the downbeat; the field; then the organ
+  //   valley    — the field and the tines first, the valley before the house
+  //   strings   — a string pad on the open fifth before anything
+  //   parlor    — the harmonium first, close and warm; the deacon answers
+  //   arbor     — the brush arbor: no organ and no harmonium in the prelude,
+  //               the strings on bare fifths, the clarinet over them
+  // and two seatings the guests bring with them:
+  //   trombones — the trombones at dawn: only the drone before them, and
+  //               the house wakes in its drawn order after they have gone
+  //   steeples  — the steeples call the valley in: they ring first (a
+  //               drawn 1–6 s in, cued like the trombones), then the house
+  // The organist's first chord of a seating may be FULL (its third sung)
+  // at the seating's own odds, and it is set in close or open position (an
+  // even draw): a morning is not always the same bare fifth.
+  // A seating also sets how long its prelude lasts (len: a factor on the
+  // plan's drawn length — an organ voluntary is brisk, a valley waking is
+  // slow — so the first hymn comes in anywhere from about 1:45 to 3:35; a
+  // guest's seating keeps the length its guest needs).
+  // THE WAKING (what the first meeting's downbeat cues) is the only part a
+  // later meeting does not use — its layers are already awake; the rests
+  // (sits), the bare fifths, the first chord and the length apply to every
+  // prelude.
+  // Every die of the seating is thrown, whichever seating it lands on.
+  // ==========================================================================
+  var WAKERS = ["drone", "organ", "ambient", "strings", "harmonium", "clarinet", "bells", "telegraph"];
+  var SEATINGS = {
+    voluntary: { w: 3,   full: 0.5,  len: [0.75, 1],    at: { drone: [0.3, 4], organ: [1.2, 5], ambient: [10, 22], strings: [18, 34], harmonium: [26, 40], clarinet: [30, 46], bells: [36, 56], telegraph: [45, 70] } },
+    ground:    { w: 2,   full: 0.4,  len: [0.9, 1.2],   at: { drone: [0.1, 1], ambient: [4, 12], organ: [10, 18], bells: [20, 34], strings: [24, 40], harmonium: [30, 44], clarinet: [36, 50], telegraph: [40, 66] } },
+    valley:    { w: 2,   full: 0.45, len: [1, 1.3],     at: { ambient: [0.3, 3], bells: [4, 10], drone: [6, 14], telegraph: [12, 30], organ: [16, 28], strings: [26, 40], harmonium: [34, 50], clarinet: [40, 56] } },
+    strings:   { w: 1.5, full: 0.35, len: [0.8, 1.1],   at: { strings: [0.3, 2.5], drone: [3, 9], ambient: [8, 20], organ: [14, 26], harmonium: [28, 42], clarinet: [34, 50], bells: [40, 58], telegraph: [46, 72] } },
+    parlor:    { w: 1.5, full: 0.5,  len: [0.75, 1],    at: { harmonium: [0.5, 3], drone: [2, 8], clarinet: [8, 16], ambient: [12, 24], organ: [18, 30], strings: [24, 38], bells: [38, 56], telegraph: [44, 70] } },
+    arbor:     { w: 1.5, full: 0,    len: [0.9, 1.25],  sits: { organ: true, harmonium: true }, fifths: true,
+                 at: { drone: [0.5, 5], ambient: [2, 10], strings: [6, 16], clarinet: [14, 26], bells: [20, 34], organ: [20, 40], harmonium: [30, 50], telegraph: [30, 60] } },
+    // (anchored: every entrance but the drone's is counted from the guest —
+    // the trombones' last chord and its air, or the steeples' first bell)
+    trombones: { w: 0,   full: 0.5,  anchored: true,
+                 at: { drone: [0.5, 4], organ: [0.5, 4], ambient: [2, 9], strings: [4, 12], harmonium: [8, 18], clarinet: [10, 22], bells: [14, 30], telegraph: [18, 40] } },
+    steeples:  { w: 0,   full: 0.45, anchored: true,
+                 at: { drone: [0.3, 4], ambient: [6, 14], organ: [10, 20], strings: [16, 30], harmonium: [24, 40], clarinet: [30, 46], telegraph: [30, 60], bells: [40, 60] } },
+  };
+  var SEATING_ODDS = Object.keys(SEATINGS).filter(function (k) { return SEATINGS[k].w > 0; }).map(function (k) { return [k, SEATINGS[k].w]; });
+  var STEEPLES_AT = [1, 6];                        // the steeples calling the valley in, s into the prelude
+  function seatPrelude() {
+    var PR = stream("prelude");
+    var pickU = PR.next(), fullU = PR.next(), steeplesU = PR.next(), spreadU = PR.next(), lenU = PR.next();
+    var U = {};
+    WAKERS.forEach(function (l) { U[l] = PR.next(); });
+    var name = pickWith(pickU, SEATING_ODDS), anchor = 0;
+    var tb = visitationOf("trombones"), st = visitationOf("steeples");
+    if (tb && tb.section === "prelude") { name = "trombones"; anchor = tb.at + tb.dur + 2; }
+    else if (st && st.section === "prelude") {
+      name = "steeples";
+      st.at = +(STEEPLES_AT[0] + (STEEPLES_AT[1] - STEEPLES_AT[0]) * steeplesU).toFixed(2);
+      st.cued = true;                              // it keeps its own time now: cued as the prelude begins
+      anchor = st.at;
+    }
+    var spec = SEATINGS[name], at = {};
+    WAKERS.forEach(function (l) {
+      var r = spec.at[l], x = r[0] + (r[1] - r[0]) * U[l];
+      at[l] = +((spec.anchored && l !== "drone" ? anchor : 0) + x).toFixed(2);
+    });
+    var len = spec.len ? spec.len[0] + (spec.len[1] - spec.len[0]) * lenU : 1;
+    return { name: name, at: at, full: fullU < spec.full, spread: spreadU < 0.5 ? "open" : "close", len: +len.toFixed(3), sits: spec.sits || {}, fifths: !!spec.fifths };
   }
 
   function visitationOf(type) {
@@ -371,24 +479,16 @@ window.KOLOB = window.KOLOB || {};
     var meter = METERS[(first && first.meter) || "CM"] || METERS.CM;
     var src = C.cumulative ? Motif.anyWorking(mo, R) : Motif.theme();
     var tune = meter.map(function (nSyl) { return Prosody.pourIntoLine(src, nSyl, R); });
-    var before = null;                              // the chord before the hymn's last
     var lines = tune.map(function (ln) {
       var hz = Harmony.harmonize(ln.map(function (x) { return { deg: x.deg, dur: x.durBeats }; }), mo, R);
-      if (hz.length) {
-        before = hz.length > 1 ? hz[hz.length - 2].chord : (mo.chord || null);
-        mo = Harmony.standingOn(mo, hz[hz.length - 1].chord);
-      }
+      if (hz.length) mo = Harmony.standingOn(mo, hz[hz.length - 1].chord);
       return hz;
     });
-    // …and the near choir brings the hymn home: its last chord is the tonic.
-    // Harmony sets each note from the grammar, and a line may end where it
-    // falls (on IV, vi, iii or V — over half the dawns did); the tune's last
-    // note is always a rest tone (do, mi or sol), so the tonic holds it, voiced
-    // by Harmony from the chord before it: V–I, IV–I, the amen.
-    var last = lines.length ? lines[lines.length - 1] : null;
-    if (last && last.length && last[last.length - 1].chord && last[last.length - 1].chord.root !== 0) {
-      last[last.length - 1].chord = Harmony.voice(0, { cadence: true, open: false }, Harmony.standingOn(mo, before), R);
-    }
+    // …and the dawn ends where its harmony falls. Harmony sets each note from
+    // the grammar, and the last line may close on IV, vi, iii or V as well as
+    // on the tonic; the owner heard round 2's forced tonic close and ruled it
+    // open (PLAN-COMPOSITION §15: "keep it open"). The morning is not over
+    // when the trombones stop — the house comes in after them.
     return {
       mode: S.mode, keynoteHz: S.F0 * S.ROOT_MULT, lines: lines,
       tune: { space: "d7", lines: tune.map(function (ln) { return ln.map(function (x) { return x.deg; }); }) },
@@ -451,7 +551,7 @@ window.KOLOB = window.KOLOB || {};
     // moment its plan drew (the trombones: seconds into the prelude — too
     // early for the poll below, which waits out a section's first fifth)
     C.visitations.forEach(function (V) {
-      if (CUED[V.type] && V.section === s.type && !V.fired) cueAt("guests", t + (V.at || 0), function (tc) { cuedArrival(V, tc); });
+      if ((CUED[V.type] || V.cued) && V.section === s.type && !V.fired) cueAt("guests", t + (V.at || 0), function (tc) { cuedArrival(V, tc); });
     });
   }
 
@@ -507,7 +607,7 @@ window.KOLOB = window.KOLOB || {};
     // over a hush, a fuging gathering, a joint, or each other.
     for (var vv = 0; vv < C.visitations.length; vv++) {
       var V = C.visitations[vv];
-      if (!V.fired && !CUED[V.type] && V.section === C.section && x > 0.2 && x < 0.55 &&
+      if (!V.fired && !(CUED[V.type] || V.cued) && V.section === C.section && x > 0.2 && x < 0.55 &&
           !C.jointing && !inHush() && !inFuging() && !inVisit()) {
         arrive(V, t);
         break;
@@ -575,6 +675,10 @@ window.KOLOB = window.KOLOB || {};
   function arrive(V, t) {
     V.fired = true;
     V.logged = !UNLOGGED[V.type];
+    // THE HOUSE LETS GO (SCORE's guest rule; the pre-v0.34 polish): the
+    // organ's chord, the strings' pad and the harmonium's and clarinet's
+    // lines release over 1.5 s as the visitor comes in (kolob-core.js)
+    S.houseLetsGo(t, V.type, V.logged);
     // type → set piece; each receives its visitation record (the old tune its
     // drawn tune, the trombones their stream and chorale)
     var vdur = (VISIT_FN[V.type] || twoBandsCross)(V, t);
@@ -801,6 +905,11 @@ window.KOLOB = window.KOLOB || {};
     guests: function () {
       return C.visitations.map(function (v) { return { type: v.type, section: v.section, at: v.at != null ? v.at : null, dur: v.dur != null ? v.dur : null, fired: !!v.fired }; });
     },
+    // the prelude's seating (THE PRELUDE'S SEATING): its name, the waking's
+    // entrances (s after the downbeat), whether the first chord is full, who
+    // sits the prelude out, and whether the strings keep to bare fifths
+    seating: function () { return C.seating || null; },
+    waking: function () { return C.seating ? C.seating.at : null; },
     hymnId: hymnId,
     moment: moment,
   });
@@ -899,7 +1008,7 @@ window.KOLOB = window.KOLOB || {};
   // LENT — what this room shares with the rest of the house (KOLOB._s)
   // ==========================================================================
   // A new seed is a new visit: the meeting count and the seasons start again.
-  function resetVisit() { C.meetingNum = 0; metaPhase = 0; metaPeriod = 5; seasonPos = 0; }
+  function resetVisit() { C.meetingNum = 0; seasonPos = 0; }
 
   S.MEETINGS = MEETINGS;
   S.Meeting = Book;
@@ -926,6 +1035,9 @@ window.KOLOB = window.KOLOB || {};
   // the room's public face on the KOLOB namespace
   // (dawnChorale: the trombones' material as the plan writes it — for the
   // harness, which proves what the choir is handed)
-  KOLOB.Meeting = { MEETINGS: MEETINGS, book: Book, desk: Desk, planMeeting: planMeeting, conductorTick: conductorTick, runJoint: runJoint, dawnChorale: dawnChorale };
+  // (CALENDAR and F0_RANGE are read by the harness; F0_RANGE is writable for
+  // the compass check, which sings every voice at both ends of the keynote)
+  KOLOB.Meeting = { MEETINGS: MEETINGS, book: Book, desk: Desk, planMeeting: planMeeting, conductorTick: conductorTick, runJoint: runJoint, dawnChorale: dawnChorale,
+                    CALENDAR: CALENDAR, F0_RANGE: F0_RANGE };
   (KOLOB._rooms = KOLOB._rooms || {})["kolob-meeting.js"] = true;   // the load guard's roll call
 })();

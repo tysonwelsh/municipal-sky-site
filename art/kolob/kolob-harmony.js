@@ -147,6 +147,26 @@ window.KOLOB.Harmony = (function () {
     var s = nearestOfClass(P, a + Math.round(n * 0.5), classes, a + 1, a + n + 2);
     return [b, t, a, s];
   }
+  function openSpread(P, v, R) {
+    var n = P.n;
+    if (v[3] + n <= R.s[1]) return [v[0], v[1], v[2], v[3] + n];
+    if (v[1] - n > v[0] && v[1] - n >= R.t[0]) return [v[0], v[1] - n, v[2], v[3]].sort(function (a, b) { return a - b; });
+    return v;
+  }
+  function withThird(P, v, classes, R) {
+    var third = null, k;
+    for (k in classes) if (classes[k] === "third") third = +k;
+    if (third == null) return v;
+    for (var i = 0; i < 4; i++) if (P.classOf(v[i]) === third) return v;
+    var lims = [R.b, R.t, R.a, R.s], order = [2, 1, 3];
+    for (var j = 0; j < order.length; j++) {
+      var p = order[j], lo = Math.max(lims[p][0], v[p - 1] + 1), hi = Math.min(lims[p][1], p < 3 ? v[p + 1] - 1 : lims[p][1]);
+      var best = null;
+      for (var x = lo; x <= hi; x++) if (P.classOf(x) === third && (best == null || Math.abs(x - v[p]) < Math.abs(best - v[p]))) best = x;
+      if (best != null) { var out = v.slice(); out[p] = best; return out; }
+    }
+    return v;
+  }
   function chordOf(P, root7, classes, open, voicing, fifths) {
     return {
       root: root7, tones: classes, voicing: voicing, open: open, fifths: fifths || 0,
@@ -167,7 +187,18 @@ window.KOLOB.Harmony = (function () {
     var R = ranges(P.n);
     var prev = moment.chord ? moment.chord.voicing.slice() : null;
     var next, fifths = 0;
-    if (!prev) next = defaultVoicing(P, root7, classes);
+    if (!prev) {
+      next = defaultVoicing(P, root7, classes);
+      // opts.third (the pre-v0.34 polish: a morning's first chord may be
+      // FULL): a fresh seat stacks root and fifth and may leave the third
+      // out even when the chord has one — so the third is set in, in the
+      // inner voice nearest it that it fits between its neighbours
+      if (opts.third && !open) next = withThird(P, next, classes, R);
+      // opts.spread "open": the same chord in open position — the soprano an
+      // octave up where it stays in its window, else the tenor an octave
+      // down (a morning's first chord is not always the one close stack)
+      if (opts.spread === "open") next = openSpread(P, next, R);
+    }
     else {
       // candidates: nearest-motion / contrary soprano / open-dropped alto
       var n = P.n;
