@@ -42,6 +42,16 @@ settings:
 - **The band** in round notes on its own layer (it fires in a minority of
   meetings). The Question's cartouche and empty measure are drawn in
   green and gilt.
+- **Owner's changes after seeing v0.31 live (2026-09-27), for v0.32:**
+  - **Green ink only.** Notes appear green and stay green. There is no gilt strike, no
+    gold-to-green cooling and no glow. The slow drying fade stays.
+  - **No text on the staff.** No 8va/15ma brackets or labels, no captions, and no time-signature
+    figures for the band. Out-of-range notes use ledger lines as far as the plate allows, then
+    fold silently. The Question's cartouche and "?" stay, in green, pending the owner's word.
+  - **The telegraph is holes punched straight into the paper,** with no tape ribbon or
+    container, centred on the middle line.
+  - **No pulse or expanding-ring animations.** A bell is a static ringed head. Only the scroll
+    and the drying move.
 - **Directions B and C are not pursued.** Their mockups stay in `mockups/`
   for reference.
 
