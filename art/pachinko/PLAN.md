@@ -724,3 +724,109 @@ the marble unless holding it, and no page scroll at any size.
   over one (energy would be +7.8), and the 10 ms envelope's spread rises
   with density (3.8 → 5.0 dB), so a stream stays ticks, not a wash; a
   13-marble stream: 283 ticks at up to 116/s, 3 dropped by the voice cap.
+- 2026-09-27 — **The tommyknockers (wave 3, rc.12–rc.13). The contract is
+  the header of `pachinko-knockers.js`.** One PARTS plug-in
+  (`PachinkoKnockers.attach(api)`); main is unchanged.
+  - **Stop motion.** One shared shutter at 8 fps: every pose holds and snaps
+    to the next, limbs quantised to 15°, lean and head to 5°. Old Jory moves
+    on every other frame. Scripts are generators (`yield n` holds a pose n
+    frames). Poses per knocker live in `POSES`; each man rests his own way
+    (Absalom's hands behind his back, Ezra on his pick, Pip on his shovel's
+    grip, Tobias's lantern out front, Jory on his cane, Pengelly reading).
+    A toy's straight legs are planted: the lower boot always touches the floor.
+  - **Where they can be (`buildNav`).** Feet on a floor or a rung, always.
+    Walks: the surface (y 64), every gallery floor piece over 12 px (trimmed
+    3 px each end), the dry sump's floor (y 383) and the sills of their doors.
+    Links: hops over openings ≤ 24 px; ladders (the main shaft and the
+    ladderway as painted, plus four the knockers brought: manway A→B x 150,
+    the chute B→C x 130, east B→C x 240, the sump raise C→sump x 93, all on
+    pin-free columns); and the rock between their doors. **Doors:** the two
+    tunnel mouths, one hairline arch in the back wall of each gallery
+    (a1 118, a2 166, b1 105, b2 228, c1 114, c2 172, s1 30 in the sump)
+    and six beyond the working faces where the company stopped (rA/rA2 at
+    seam A's level, rB/rB2, rC/rC2). A knocker in the rock is hidden; his
+    lamp is a glow moving behind it. **Stances** for a point: standing
+    within reach (bent, for work at his feet), on a rope ladder hung from
+    the walk above, or on a ladder stood on the walk below; they pass in
+    front of the rock as toys in a model, never through it. Every drift pin
+    is reachable (`kn/navtest.js`).
+  - **Routes.** Dijkstra over a graph cached per layout. Speeds: walk
+    step × 8/s (4 px for Absalom and Ezra, 3 for the rest, 2 on fours for
+    Jory), a rung a frame, rock 80 px/s. In WORK they hurry: +1 px a step,
+    two rungs a frame, 150 px/s through the rock, rope ladders unroll at
+    24 px a frame.
+  - **WORK.** Each accepted edit becomes a job for the free knocker with
+    the lowest (route + setup) × his job factor (Ezra 0.8, Pip 0.9, Absalom
+    1.0, Tobias 1.5, Pengelly 1.8 for close surface jobs only, Jory 4).
+    Pins: hands on it, two tugs (it wobbles, is lifted out of the baked
+    foreground), POP, a look at it; a dress swap goes over his shoulder and
+    a new one comes out of the apron; held to the rock at its new place,
+    tick, tick, TOCK. **The edit lands at the TOCK** (`PachinkoBoard.applyEdit`
+    on the board as it stands + `api.setBoard` + an `edit` event): the crew
+    finish in any order, and because the edits commute the last TOCK leaves
+    the layout the planner validated. (`ctx.apply` is not used; on a coin,
+    main's `finishWork` sets the planner's final board, which is the same.)
+    The brace gets a plank and three blows at a point 5 px in from the end;
+    a mouth is boarded up or prised open; the dinner pail is shoved. Tobias
+    goes and holds his lantern up for the first job under way; Pengelly
+    reads the job off his card while the planner decides it, and pencils a
+    mark for every TOCK. **WORK ends 1.4 s after the last TOCK** (at least
+    5.5 s in); the crew climb down and pack up in attract. Over 12 games:
+    2–4 edits, WORK 7.2–10.3 s, first TOCK at 3.5–7.2 s, every accepted
+    edit carried out. A coin during WORK: `finish()` snaps everyone home.
+  - **Attract.** A repertoire per man, picked by seed and the shutter
+    count: Absalom looks at the painted moon and takes his cap off to it,
+    oils the sheave, crouches to look at the man for scale, knocks along
+    the fence; Ezra picks at the haulage face, pushes the ore cart to the
+    chute at its own pace, polishes a lamp hook; Tobias reads the legend
+    card from behind by lantern (a rope ladder down behind it: the paper
+    glows and his shadow is on it), walks the moth away from its lamp,
+    times the vent door; Jory eats his lunch on the lip of the chute (a
+    crumb goes down the hole), dozes against a pillar while his lamp burns
+    down, knocks on a pillar; Pip digs at the sump raise, knocks on the
+    rib and listens, goes down to see the pump, hops over the hole for no
+    reason; Pengelly counts the fence posts.
+  - **Play.** At the dive everyone is at his post and one (Ezra or Pip, by
+    seed) goes into the rock on the night shift: the thief-in-waiting; the
+    physics' anti-stall knock shows as his glow right there. Reactions only
+    (sensed every physics step, shown on the next frame): the head and the
+    face turn to the nearest marble within 95 px; a duck when one will pass
+    his head within 0.12 s (his lamp gutters; Tobias keeps the lantern low);
+    a hop (6 px off the floor) when one rolls at his boots or drops on them;
+    a flinch at a nearby clack or a hard hit; all look up at the hopper for
+    0.7 s at each release; the tallyman marks his card at a win.
+  - **The lode.** Everyone freezes for the held breath (0–1.0 s after the
+    `lode` event, the sound's clock), then cheers arms up, toy-stiff, with
+    little hops out of step until 3.0 s, except Old Jory, who takes his cap
+    off and holds it to his chest, the lamp still burning on it.
+  - **Rendering (art-figures, render).** A sprite cache (every figure is
+    one blit: six cost 0.04 ms, down from 3.3); a back view for ladders;
+    toppling (±90°); cap off; a second hand (pencil, bread, cap, rag); the
+    tally card shows his count. `view.props` in three layers (back: ladders,
+    rope ladders, doors, the pail; front: pins in hand, dust, crumbs; glow:
+    a lamp behind the rock, the warm inside of a door). `fx.lifted` hides a
+    pulled pin from the baked foreground (a nail hole shows); every pin
+    moved this visit leaves its old nail hole in the rock (baked from
+    `board.edits`); a shut adit is boarded over; `fig.lampK` dims a lamp;
+    `fig.hold.id` colours a held marble; `fx.moth` moves the moth;
+    `fx.cardLamp` lights the legend card from behind with a shadow puppet.
+  - **Performance** (headless Chrome, software canvas, 1440×900): render
+    3.0 ms/frame with or without the six figures; the knockers' step 5 µs in
+    attract, p99 0.2 ms in WORK; the only frames over 2 ms are the
+    `R.build` re-bakes at each TOCK (37–52 ms, a hit-stop on the mallet).
+  - **For the mischief phase (wave 4):** `api.knockers` / `part.canSteal(m,
+    {lead, horizon, door})` (a path prediction on a copy of the marble:
+    call it once per marble, not every step), `part.theft({m | plan, who,
+    to, mode: set|toss|drop, v, relay})`, `part.knockListen({x, y, who, n,
+    alarm})`, `part.doors()`, `part.nightShift()`, `part.perform(who, name)`
+    (any attract routine), `part.busy(who)`. A stolen marble is frozen in
+    the world (`phase 'pocket'`, `m.stolen`), hidden in the view, drawn in
+    his hands, and its age is given back on release. Harness:
+    `?force=theft`, `?force=knock`, `?force=playdead`.
+  - **Events out:** `figure {what, x, y, who}` with step · climb · hop ·
+    land · pull · tap · set · lay · push · toss · knock · listen · door
+    {how} · rope {how} · pick · oil · eat · snore · wake · flick · mark ·
+    topple · upright · release {m, how} · sweep · dig · capoff; `stolen {m,
+    x, y, who}`; `edit {edit, i, who}`. The sound plays step, tap, set,
+    pull, lay (and cheer, which the knockers leave to the lode's own
+    voices); the rest are requested in `requests.md`.
