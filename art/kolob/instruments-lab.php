@@ -116,7 +116,7 @@ include '../../includes/header.php';
 </div>
 
 <script src="../prosperos-jukebox-v2/pj2-rand.js?v=<?php echo kil_v('../prosperos-jukebox-v2/pj2-rand.js'); ?>"></script>
-<script src="kolob-voices-organ.js?v=<?php echo kil_v('kolob-voices-organ.js'); ?>"></script>
+<script src="kolob-voices-pipeorgan.js?v=<?php echo kil_v('kolob-voices-pipeorgan.js'); ?>"></script>
 <script src="kolob-voices-band.js?v=<?php echo kil_v('kolob-voices-band.js'); ?>"></script>
 <script src="kolob-voices-folk.js?v=<?php echo kil_v('kolob-voices-folk.js'); ?>"></script>
 <script src="instruments-lab.js?v=<?php echo kil_v('instruments-lab.js'); ?>"></script>

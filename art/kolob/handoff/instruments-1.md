@@ -8,7 +8,7 @@ Branch `kolob-instruments`, 2026-09-26. This is lab and dev work only, so there 
 
 | file | what it is |
 |---|---|
-| `kolob-voices-organ.js` | `KOLOB.VoicesOrgan`: a registrable pipe organ. Stops: Principal 8′, Flute 8′, Flute 4′, Vox Humana 8′ + Tremulant, Trumpet 8′, Mixture II–III (breaks back in the treble), Bourdon 16′ pedal. It has a swell box (lowpass + gain), chiff on flue attacks, wind sag on big registrations, C/C♯ chest sides, and exact frequencies passed in (just intonation). |
+| `kolob-voices-pipeorgan.js` | `KOLOB.VoicesOrgan`: a registrable pipe organ. Stops: Principal 8′, Flute 8′, Flute 4′, Vox Humana 8′ + Tremulant, Trumpet 8′, Mixture II–III (breaks back in the treble), Bourdon 16′ pedal. It has a swell box (lowpass + gain), chiff on flue attacks, wind sag on big registrations, C/C♯ chest sides, and exact frequencies passed in (just intonation). |
 | `kolob-voices-band.js` | `KOLOB.VoicesBand`: saxhorn band with cornet, alto horn, tuba, plus light snare and bass drum (`flam`, `roll`). Brightness follows the dynamic, each note scoops a few cents up to pitch, and there is a soft edge at forte. |
 | `kolob-voices-folk.js` | `KOLOB.VoicesFolk`:<br>• **fiddle**: one bowed voice per line, with bow changes, slurs, cuts, delayed vibrato, rosin noise, 7-limit double stops and open-string drones through a shared body filter<br>• **handbells**: a sung twelfth over the fundamental, a clapper knock, damped or left to ring<br>• **gulls**: "kee-ow" cries; in a flock the lead bird traces the given notes<br>• **cart wheels**: stick-slip axle creak once a turn, gravel crunch, knocks and bed rattle, crossing the stereo field |
 | `instruments-lab.php` / `.js` | Audition bench on the Kolob paper look. Has a seed field, room (tabernacle IR / meetinghouse / dry), stop and a live meter. **check** renders a phrase offline and reports peak, RMS, pre-chain peak, clipped samples, stray transients, five-band spectrum, centroid and a spectrogram. |
@@ -261,3 +261,10 @@ URL: http://127.0.0.1:8105/art/kolob/instruments-lab.php. Seed 1847 is the defau
 - **Longer handbell lifetimes.** An undamped low bell now lives ~2.1 × ring + 0.5 s (≈ 11.6 s for G3, was ≈ 8.7 s). In the lab this costs no more at peak (85 live nodes), but a dense peal would hold more nodes.
 - **The band is still the most expensive voice** (3.2× the old organ per second). A shared per-section lowpass is the fallback if a phone needs it.
 - **The lab's tabernacle is the wide room alone** (dry 1 + wet 0.4). The app blends both rooms, and at balance 0.45 the organ layer's dry path sums to about 1.41. So the lab reads about 3 dB under the app in absolute terms. Relative comparisons, and the calibration above, are unaffected.
+
+## Integrator's note (2026-09-27)
+
+The add/add collision is resolved by renaming this branch's registrable organ to
+`kolob-voices-pipeorgan.js`. It is still `KOLOB.VoicesOrgan`, and `instruments-lab.php` is
+updated. The split keeps `kolob-voices-organ.js` for v0.30's organ room. CAST adopts
+`kolob-voices-pipeorgan.js`.
