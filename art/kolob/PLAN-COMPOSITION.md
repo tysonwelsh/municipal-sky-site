@@ -1052,7 +1052,7 @@ own files.
 - **Voice-leading:** 0 % voice crossing except where a dialect allows it;
   every sounded pitch in the lattice.
 - **REPRO:** identical scores under jitter.
-- **Budget:** CPU within budget at 4× throttling on mobile (desks scale down).
+- **Budget:** CPU within budget at 4× throttling on mobile, with the full congregation (owner: no fewer voices on phones).
 - **The owner's ear.**
 
 ## 13. Decisions
