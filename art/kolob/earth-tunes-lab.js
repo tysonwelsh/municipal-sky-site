@@ -10,9 +10,17 @@
 //    metre puts them. Round heads; legibility is the point, not facsimile.
 //  · THE ORGAN plays the stored ratios exactly: Hz = keynote × ratio(monzo),
 //    with the keynote set to the tune's own tonic so the pitch sits where the
-//    book put it. Sines and a soft triangle, a gentle envelope, one limiter.
-//    It schedules every note ahead on the audio clock; the only timer on the
-//    page is a visual one that lights the notes as they sound.
+//    book put it. One oscillator per note (a principal with a little octave
+//    and twelfth, as a PeriodicWave) into a shared filter and pan per part,
+//    one limiter. Notes are handed to a PJ2.Clock a few hundred milliseconds
+//    ahead of the audio clock, never all at once, and every note's two nodes
+//    disconnect when it ends, so a four-part PISGAH costs what one bar does.
+//    It plays legato, as an organist would: each note's release runs into
+//    the next, except a repeated pitch, which is lifted just before it
+//    strikes again; tied notes sound once. STOP fades the whole organ out in
+//    25 ms instead of cutting it. The commas (kolob-tunes.js header) are on
+//    by default; "fixed degrees" plays every degree at its table ratio, so
+//    the owner can hear what the commas fix.
 //  · THE COMPARISON keeps a frozen copy of v0.30's OLD_TUNES incipits (the
 //    data the owner judged wrong) so the old and the new can be heard in the
 //    same key, one after the other. It is a snapshot for this page only; the
@@ -118,7 +126,7 @@ window.EarthTunesLab = (function () {
     parts.forEach(function (p) { line.notes[p].forEach(function (n) { minBeats = Math.min(minBeats, n.beats); span = Math.max(span, n.beat + n.beats); }); });
     if (nextStart != null) span = Math.max(span, nextStart - line.startBeat);
     var unit = 30 * Math.pow(4 / den, 0.75);
-    unit = Math.max(unit, 15 / minBeats);
+    unit = Math.max(unit, 19 / minBeats);                          // room for a semiquaver's head, flags and a barline
     var head = 34 + nsig * 8 + (rowIdx === 0 ? 20 : 0) + 22;
     var W = Math.ceil(head + span * unit + 20);
     var staffH = 4 * SP, pad = 30, gap = 8;
@@ -143,7 +151,7 @@ window.EarthTunesLab = (function () {
         out.push('<text class="ac" x="' + (26 + k * 8) + '" y="' + f1(staffY(baseClef, ps.step, top) + 4) + '" font-size="13">' + (sharpSig ? "♯" : "♭") + "</text>");
       }
       if (rowIdx === 0) {
-        var tx = 30 + nsig * 8;
+        var tx = 35 + nsig * 8;
         out.push('<text class="tx" x="' + tx + '" y="' + (top + 2 * SP - 1) + '" font-size="13" font-weight="600">' + barBeats + "</text>");
         out.push('<text class="tx" x="' + tx + '" y="' + (top + 4 * SP - 1) + '" font-size="13" font-weight="600">' + den + "</text>");
       }
@@ -156,7 +164,7 @@ window.EarthTunesLab = (function () {
       // notes and rests
       var ns = line.notes[p], cursor = 0, prevX = null, prevY = null;
       ns.forEach(function (n, ni) {
-        if (n.beat > cursor + 1e-6) out.push(restSvg(head + cursor * unit + 5, (n.beat - cursor) / den, top));
+        if (n.beat > cursor + 1e-6) out.push(restsSvg(cursor, n.beat, line.barStart, barBeats, den, head, unit, top));
         var x = head + n.beat * unit + 9, src = parseSrc(n.src);
         var y = staffY(clef, src.step, top);
         var g = glyphOf(n.beats / den);
@@ -168,6 +176,9 @@ window.EarthTunesLab = (function () {
         // accidental, shown when the written one differs from the signature
         var inSig = sig[src.L] || 0, wr = src.acc === "#" ? 1 : src.acc === "b" ? -1 : src.acc === "n" ? 0 : inSig;
         if (src.acc && wr !== inSig) out.push('<text class="ac" x="' + f1(x - 15) + '" y="' + f1(y + 4) + '" font-size="12">' + (wr > 0 ? "♯" : wr < 0 ? "♭" : "♮") + "</text>");
+        // the comma (Johnston's + and −): this note leans a syntonic comma
+        // off its degree so the chord it sounds in stays just
+        if (n.comma && !opts.fixed) out.push('<text class="cm" x="' + f1(x - 9) + '" y="' + f1(y - 5) + '" font-size="9" text-anchor="end">' + (n.comma > 0 ? "+" : "−") + "</text>");
         // head
         var open = g.kind === "w" || g.kind === "h";
         out.push('<ellipse class="hd' + (open ? " op" : "") + '" cx="' + f1(x) + '" cy="' + f1(y) + '" rx="5" ry="3.6" transform="rotate(-20 ' + f1(x) + " " + f1(y) + ')"/>');
@@ -197,26 +208,54 @@ window.EarthTunesLab = (function () {
         prevX = x; prevY = y;
         cursor = n.beat + n.beats;
       });
-      if (span > cursor + 1e-6) out.push(restSvg(head + cursor * unit + 5, (span - cursor) / den, top));
+      if (span > cursor + 1e-6) out.push(restsSvg(cursor, span, line.barStart, barBeats, den, head, unit, top));
     });
     out.push("</svg>");
     return out.join("");
   }
+  // the silence from beat `from` to beat `to` of a line, as rests the way a
+  // hymnal prints them: never across a barline, a bar's worth of silence as
+  // one whole-bar rest in the middle of the bar, anything shorter as the
+  // largest plain values that fit, in order
+  function restsSvg(from, to, barStart, barBeats, den, head, unit, top) {
+    var out = [], b = from;
+    while (b < to - 1e-6) {
+      var intoBar = (((barStart + b) % barBeats) + barBeats) % barBeats;
+      var barEnd = b + (barBeats - intoBar);
+      var segEnd = Math.min(to, barEnd);
+      if (intoBar < 1e-6 && segEnd >= barEnd - 1e-6) {             // a whole bar: the whole rest, centred
+        out.push(restSvg(head + (b + barBeats / 2) * unit - 4, 1, top));
+      } else {
+        var c = b;
+        while (c < segEnd - 1e-6) {
+          var room = (segEnd - c) / den, vals = [1, 0.5, 0.25, 0.125, 0.0625], v = vals[vals.length - 1];
+          for (var k = 0; k < vals.length; k++) if (vals[k] <= room + 1e-6) { v = vals[k]; break; }
+          out.push(restSvg(head + c * unit + 5, v, top));
+          c += v * den;
+        }
+      }
+      b = segEnd;
+    }
+    return out.join("");
+  }
   function restSvg(x, whole, top) {
     x = f1(x + 2);
-    if (whole >= 0.5 - 1e-6) {                                     // half/whole rest block on the middle line
+    if (whole >= 0.5 - 1e-6) {                                     // whole rest hangs from the 4th line; half sits on the middle
       var y = whole >= 1 - 1e-6 ? top + SP : top + 2 * SP - 3;
       return '<rect class="hd" x="' + x + '" y="' + y + '" width="8" height="3"/>';
     }
     if (whole >= 0.25 - 1e-6) return '<path class="fl" d="M' + x + " " + (top + SP) + " l 4 5 l -4 4 l 5 6 q -6 -2 -2 5" + '"/>';
-    return '<path class="fl" d="M' + x + " " + (top + 2 * SP) + " l 4 -4 m -4 4 l 0 8" + '"/><circle class="hd" cx="' + x + '" cy="' + (top + 2 * SP - 3) + '" r="1.6"/>';
+    var two = whole < 0.125 - 1e-6;                                // a semiquaver rest carries a second hook
+    return '<path class="fl" d="M' + x + " " + (top + 2 * SP) + " l 4 -4 m -4 4 l 0 8" + '"/><circle class="hd" cx="' + x + '" cy="' + (top + 2 * SP - 3) + '" r="1.6"/>' +
+      (two ? '<circle class="hd" cx="' + f1(+x - 1) + '" cy="' + (top + 2 * SP + 2) + '" r="1.6"/>' : "");
   }
 
   function engraveTune(h, opts) {
     var L = h.lines.concat(h.refrain || []);
     return L.map(function (ln, i) {
       var next = i + 1 < L.length ? L[i + 1].startBeat : null;
-      return '<div class="etl-row">' + engraveRow(h, ln, i, next, opts) + "</div>";
+      var cap = ln.devNote ? '<p class="etl-cap">' + esc(ln.devNote) + "</p>" : "";
+      return '<div class="etl-row">' + cap + engraveRow(h, ln, i, next, opts) + "</div>";
     }).join("");
   }
 
@@ -245,105 +284,184 @@ window.EarthTunesLab = (function () {
   }
 
   // ---- the organ -------------------------------------------------------------------
-  var ctx = null, master = null, live = [], playing = null, timer = null;
+  var ctx = null, master = null, clock = null, wave = null, session = null, live = [];
+  var playing = null, timer = null, quietUntil = 0;
+  var LEVEL = 0.5, FADE = 0.025;                                   // the master level; the stop fade
+  var COMMA = [-4, 4, -1, 0];                                       // 81/80
   function ensureCtx() {
     if (ctx) return;
     ctx = new (window.AudioContext || window.webkitAudioContext)();
-    master = ctx.createGain(); master.gain.value = 0.5;
+    master = ctx.createGain(); master.gain.value = LEVEL;
     var lim = ctx.createDynamicsCompressor();
     lim.threshold.value = -10; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = 0.003; lim.release.value = 0.15;
     master.connect(lim); lim.connect(ctx.destination);
-    api.master = master; api.limiter = lim;
-  }
-  function voice(t, dur, hz, gainMul, pan) {
-    var g = ctx.createGain(), lp = ctx.createBiquadFilter(), pn = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
-    lp.type = "lowpass"; lp.frequency.value = Math.min(4200, hz * 7); lp.Q.value = 0.3;
-    var o1 = ctx.createOscillator(), o2 = ctx.createOscillator(), o3 = ctx.createOscillator();
-    var g2 = ctx.createGain(), g3 = ctx.createGain();
-    o1.type = "sine"; o2.type = "sine"; o3.type = "triangle";
-    o1.frequency.value = hz; o2.frequency.value = hz * 2; o3.frequency.value = hz;
-    g2.gain.value = 0.28; g3.gain.value = 0.22;
-    o1.connect(lp); o2.connect(g2); g2.connect(lp); o3.connect(g3); g3.connect(lp);
-    lp.connect(g);
-    if (pn) { pn.pan.value = pan; g.connect(pn); pn.connect(master); } else g.connect(master);
-    var peak = 0.16 * gainMul, rel = Math.min(0.12, dur * 0.3);
-    g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(peak, t + 0.025);
-    g.gain.setValueAtTime(peak, t + Math.max(0.03, dur - rel));
-    g.gain.linearRampToValueAtTime(0, t + dur);
-    [o1, o2, o3].forEach(function (o) { o.start(t); o.stop(t + dur + 0.05); live.push(o); });
+    // a principal with a little octave and twelfth: one oscillator per note
+    var re = new Float32Array(8), im = new Float32Array(8);
+    im[1] = 1; im[2] = 0.3; im[3] = 0.1; im[4] = 0.07; im[5] = 0.02; im[6] = 0.015;
+    wave = ctx.createPeriodicWave(re, im);
+    clock = window.PJ2 && PJ2.Clock ? PJ2.Clock.create(ctx, { aheadS: 0.3 }) : null;
+    api.master = master; api.limiter = lim; api.ctx = ctx;
   }
   var PAN = { S: -0.25, A: 0.3, T: 0.1, B: -0.05 };
+  // a session: one gain for everything a PLAY starts, with a filter and a
+  // pan per part under it. STOP fades the session, not the master, and the
+  // next PLAY opens a fresh one, so nothing waits on a gain being restored.
+  function openSession() {
+    var g = ctx.createGain(); g.gain.value = 1; g.connect(master);
+    return { gain: g, buses: {}, nodes: [g] };
+  }
+  function bus(part) {                                             // one filter and pan per part, shared by its notes
+    var S = session;
+    if (S.buses[part]) return S.buses[part];
+    var lp = ctx.createBiquadFilter(), pn = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+    lp.type = "lowpass"; lp.frequency.value = 3200; lp.Q.value = 0.4;
+    if (pn) { pn.pan.value = PAN[part] || 0; lp.connect(pn); pn.connect(S.gain); S.nodes.push(pn); } else lp.connect(S.gain);
+    S.nodes.push(lp);
+    return (S.buses[part] = lp);
+  }
+  function voice(t, e) {
+    if (!session) return;
+    var o = ctx.createOscillator(), g = ctx.createGain();
+    o.setPeriodicWave(wave); o.frequency.value = e.hz;
+    o.connect(g); g.connect(bus(e.part));
+    var peak = 0.13 * (e.mel ? 1 : 0.62);
+    // legato: the release begins where the next note does and dies under it;
+    // a repeated pitch is lifted 45 ms early so it can be struck again
+    var relAt = t + e.dur, tau = 0.035;
+    if (e.lift) { relAt = Math.max(t + 0.03, t + e.dur - 0.045); tau = 0.012; }
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(peak, t + 0.02);
+    g.gain.setValueAtTime(peak, relAt);
+    g.gain.setTargetAtTime(0, relAt, tau);
+    o.start(t); o.stop(relAt + tau * 8);
+    var rec = { o: o, g: g, t: t };
+    live.push(rec);
+    o.onended = function () {                                      // leave nothing connected behind
+      try { o.disconnect(); g.disconnect(); } catch (x) {}
+      var i = live.indexOf(rec); if (i >= 0) live.splice(i, 1);
+    };
+  }
 
-  // the events of a hymn: [{t, dur, hz, part, b}]
+  // the events of a hymn: [{t, dur, hz, part, bs, mel, lift}], t from 0.
+  // Fermatas are read from the melody: each adds 0.8 beat of hold at the
+  // end of its note, and every part that sounds across that moment holds too.
   function eventsOf(h, opts) {
     var spb = h.beatS / opts.tempo, key = keynoteHz(h), melody = h.melodyPart;
     var L = h.lines.concat(h.refrain || []);
     var ferm = [];
     L.forEach(function (ln) { (ln.notes[melody] || []).forEach(function (n) { if (n.fermata) ferm.push(ln.startBeat + n.beat + n.beats); }); });
     function at(b) { var x = 0; for (var i = 0; i < ferm.length; i++) if (ferm[i] <= b + 1e-6) x += 0.8; return (b + x) * spb; }
-    var ev = [];
-    L.forEach(function (ln) {
-      Object.keys(ln.notes).forEach(function (p) {
-        if (opts.melodyOnly && p !== melody) return;
-        ln.notes[p].forEach(function (n) {
-          var b = ln.startBeat + n.beat, t = at(b), end = at(b + n.beats) + (n.fermata ? 0.8 * spb : 0);
-          ev.push({ t: t, dur: Math.max(0.06, end - t - 0.012), hz: key * ratio(n.monzo), part: p, b: Math.round(b * 1000) / 1000, mel: p === melody });
-        });
+    var parts = {}, ev = [];
+    L.forEach(function (ln) { Object.keys(ln.notes).forEach(function (p) { parts[p] = true; }); });
+    Object.keys(parts).forEach(function (p) {
+      if (opts.melodyOnly && p !== melody) return;
+      var seq = [];
+      L.forEach(function (ln) { (ln.notes[p] || []).forEach(function (n) { seq.push({ b: ln.startBeat + n.beat, beats: n.beats, n: n, bs: [ln.startBeat + n.beat] }); }); });
+      for (var i = 0; i < seq.length - 1; i++) {                   // a tie sounds once
+        while (seq[i].n.tie && seq[i + 1] && seq[i + 1].n.deg === seq[i].n.deg && Math.abs(seq[i + 1].b - seq[i].b - seq[i].beats) < 1e-6) {
+          seq[i].beats += seq[i + 1].beats; seq[i].bs.push(seq[i + 1].b); seq[i].n = { tie: seq[i + 1].n.tie, deg: seq[i + 1].n.deg, monzo: seq[i].n.monzo, comma: seq[i].n.comma };
+          seq.splice(i + 1, 1);
+        }
+      }
+      var hzOf = function (n) {
+        var m = n.monzo;
+        if (opts.fixed && n.comma) m = [m[0] - COMMA[0] * n.comma, m[1] - COMMA[1] * n.comma, m[2] - COMMA[2] * n.comma, m[3]];
+        return key * ratio(m);
+      };
+      seq.forEach(function (x, k) {
+        var t = at(x.b), end = at(x.b + x.beats), hz = hzOf(x.n), nx = seq[k + 1];
+        ev.push({ t: t, dur: Math.max(0.06, end - t), hz: hz, part: p, mel: p === melody,
+                  bs: x.bs.map(function (v) { return Math.round(v * 1000) / 1000; }),
+                  lift: !!(nx && Math.abs(nx.b - x.b - x.beats) < 1e-6 && Math.abs(hzOf(nx.n) - hz) < 0.01) });
       });
     });
     ev.sort(function (a, b) { return a.t - b.t; });
     return ev;
   }
 
-  function stop() {
-    live.forEach(function (o) { try { o.stop(); } catch (e) {} });
-    live = [];
-    if (timer) { clearInterval(timer); timer = null; }
-    if (playing && playing.card) playing.card.classList.remove("is-playing");
+  function lightsOff() {
     document.querySelectorAll(".etl svg .hi").forEach(function (g) { g.classList.remove("hi"); });
+  }
+  function light(e, on) {
+    if (!e.scope) return;
+    if (!e.el) {
+      e.el = [];
+      e.bs.forEach(function (b) {
+        var q = e.scope.querySelectorAll('g.nt[data-p="' + e.part + '"][data-b="' + b + '"]');
+        for (var i = 0; i < q.length; i++) e.el.push(q[i]);
+      });
+    }
+    for (var i = 0; i < e.el.length; i++) e.el[i].classList.toggle("hi", on);
+  }
+
+  // stop: fade the session out over 25 ms, then silence every oscillator, so
+  // a stop (or a switch to another tune mid-note) never clicks
+  function stop() {
+    if (timer) { clearInterval(timer); timer = null; }
+    if (ctx && session) {
+      var now = ctx.currentTime, S = session;
+      if (clock) clock.stop();
+      S.gain.gain.setValueAtTime(1, now);
+      S.gain.gain.linearRampToValueAtTime(0, now + FADE);
+      live = live.filter(function (r) {
+        if (r.t > now + FADE) {                                    // never began: drop it now
+          try { r.o.onended = null; r.o.stop(); r.o.disconnect(); r.g.disconnect(); } catch (x) {}
+          return false;
+        }
+        try { r.o.stop(now + FADE + 0.005); } catch (x) {}
+        return true;
+      });
+      quietUntil = now + FADE + 0.005;
+      setTimeout(function () { S.nodes.forEach(function (n) { try { n.disconnect(); } catch (x) {} }); }, 250);
+      session = null;
+    }
+    if (playing && playing.card) playing.card.classList.remove("is-playing");
+    lightsOff();
     document.querySelectorAll(".etl-btn.is-on").forEach(function (b) { b.classList.remove("is-on"); });
     playing = null;
     nowEl.textContent = "";
   }
 
-  // play one or more hymns back to back; `scoreEls` light the notes
+  // play one or more hymns back to back; `scope` elements light the notes
   function play(seq, card, btn, label) {
     stop(); ensureCtx();
     if (ctx.state === "suspended") ctx.resume();
-    var t0 = ctx.currentTime + 0.12, all = [], off = t0;
+    session = openSession();
+    var t0 = Math.max(ctx.currentTime + 0.12, quietUntil + 0.01), all = [], off = t0;
     seq.forEach(function (item) {
-      var ev = eventsOf(item.h, item.opts);
-      ev.forEach(function (e) { e.t += off; e.scope = item.scope; all.push(e); });
-      var last = ev.length ? ev[ev.length - 1] : null;
-      var end = 0; ev.forEach(function (e) { end = Math.max(end, e.t + e.dur); });
-      off = (ev.length ? end : off) + 0.9;
+      var ev = eventsOf(item.h, item.opts), end = off;
+      ev.forEach(function (e) { e.t += off; e.scope = item.scope; all.push(e); end = Math.max(end, e.t + e.dur); });
+      off = end + 0.9;
     });
-    all.forEach(function (e) { voice(e.t, e.dur, e.hz, e.mel ? 1 : 0.62, PAN[e.part] || 0); });
-    playing = { card: card, events: all, end: off, label: label };
+    all.sort(function (a, b) { return a.t - b.t; });
+    if (clock) {                                                   // handed over a few hundred ms ahead, never all at once
+      var lane = clock.lane("notes");
+      all.forEach(function (e) { lane.at(e.t, function (t) { voice(t, e); }); });
+      clock.start();
+    } else {
+      all.forEach(function (e) { voice(e.t, e); });
+    }
+    playing = { card: card, events: all, end: off, label: label, idx: 0, on: [] };
     if (card) card.classList.add("is-playing");
     if (btn) btn.classList.add("is-on");
     nowEl.textContent = "playing " + label;
     api.lastEvents = all;
-    timer = setInterval(function () {                          // visual only: the notes that are sounding
+    timer = setInterval(function () {                              // visual only: the notes that are sounding
       if (!playing) return;
-      var now = ctx.currentTime;
-      if (now > playing.end) { stop(); return; }
-      if (!followEl.checked) return;
-      playing.events.forEach(function (e) {
-        if (!e.scope) return;
-        if (!e.el) e.el = e.scope.querySelectorAll('g.nt[data-p="' + e.part + '"][data-b="' + e.b + '"]');
-        var on = now >= e.t && now < e.t + e.dur;
-        for (var i = 0; i < e.el.length; i++) e.el[i].classList.toggle("hi", on);
-      });
-    }, 60);
+      var now = ctx.currentTime, P = playing;
+      if (now > P.end) { stop(); return; }
+      if (!followEl.checked) { if (P.on.length) { P.on.forEach(function (e) { light(e, false); }); P.on = []; } return; }
+      while (P.idx < P.events.length && P.events[P.idx].t <= now) { light(P.events[P.idx], true); P.on.push(P.events[P.idx]); P.idx++; }
+      P.on = P.on.filter(function (e) { if (now >= e.t + e.dur) { light(e, false); return false; } return true; });
+    }, 50);
   }
 
   // ---- the page ------------------------------------------------------------------------
   var listEl = document.getElementById("etl-tunes"), tocEl = document.getElementById("etl-toc");
   var nowEl = document.getElementById("etl-now"), followEl = document.getElementById("etl-follow");
   var melEl = document.getElementById("etl-melody"), tempoEl = document.getElementById("etl-tempo"), tempoOut = document.getElementById("etl-tempo-out");
-  function opts() { return { tempo: +tempoEl.value, melodyOnly: melEl.checked }; }
+  var fixedEl = document.getElementById("etl-fixed");
+  function opts() { return { tempo: +tempoEl.value, melodyOnly: melEl.checked, fixed: !!(fixedEl && fixedEl.checked) }; }
 
   var ordered = SEVEN.map(function (id) { return TUNES.byId(id); }).filter(Boolean)
     .concat(TUNES.list.filter(function (h) { return SEVEN.indexOf(h.id) < 0; }));
@@ -351,7 +469,9 @@ window.EarthTunesLab = (function () {
   function srcLine(s, lead) {
     if (!s) return "";
     return '<p class="etl-src">' + lead + ' <a href="' + esc(s.url) + '" target="_blank" rel="noopener">' + esc(s.book) + "</a>, " +
-      esc(s.year) + ", " + (typeof s.page === "number" ? "p. " + s.page : esc(s.page)) + (s.note ? '<br><span class="etl-x">' + esc(s.note) + "</span>" : "") + "</p>";
+      esc(s.year) + ", " + (typeof s.page === "number" ? "p. " + s.page : esc(s.page)) +
+      (s.tuneName ? ', where the tune is printed as <b>' + esc(s.tuneName) + "</b>" : "") +
+      (s.note ? '<br><span class="etl-x">' + esc(s.note) + "</span>" : "") + "</p>";
   }
 
   function render() {
@@ -366,8 +486,14 @@ window.EarthTunesLab = (function () {
       html.push('<section class="etl-card" id="t-' + slug + '" data-id="' + esc(h.id) + '">');
       html.push("<h2>" + esc(h.nameEn) + '<span class="etl-ds">' + esc(h.nameDs) + "</span></h2>");
       html.push('<p class="etl-meta"><b>' + esc(h.engrave.sourceKey) + "</b> · " + esc(h.meter) + " · " + esc(h.modeOfTime) +
-        " · Kolob mode <b>" + esc(h.mode) + "</b> · dialect " + esc(h.dialect) + " · form " + esc(h.form) +
+        " · Kolob mode <b>" + esc(h.mode) + "</b>" + (h.melodyMode && h.melodyMode !== h.mode ? " (the melody alone: " + esc(h.melodyMode) + ")" : "") +
+        " · dialect " + esc(h.dialect) + " · form " + esc(h.form) +
         " · " + L.length + " lines · parts " + parts.join(" ") + " (melody " + h.melodyPart + ")</p>");
+      var tu = h.tuning;
+      if (tu && tu.onsets) html.push('<p class="etl-meta etl-tune">Just intonation: ' +
+        (tu.sourBefore ? tu.sourBefore + " of " + tu.onsets + " chords would sound a sour third, sixth or fifth on the fixed degrees; " + tu.moved + " notes lean a comma (<b>+</b> / <b>−</b>) and " +
+          (tu.sourAfter ? tu.sourAfter + " passing chords stay sour (a held note is never re-tuned)." : "every chord is just.")
+          : "every chord is just on the fixed degrees; no note needs a comma.") + "</p>");
       html.push(srcLine(h.source, "Source:"));
       (h.crossCheck || []).forEach(function (c) { html.push(srcLine(c, "Cross-check:")); });
       html.push('<div class="etl-ctl"><button type="button" class="etl-btn" data-act="play">play</button>');
@@ -409,8 +535,10 @@ window.EarthTunesLab = (function () {
   document.getElementById("etl-stop").addEventListener("click", stop);
   tempoEl.addEventListener("input", function () { tempoOut.textContent = (+tempoEl.value).toFixed(2) + "×"; });
   melEl.addEventListener("change", render);
+  if (fixedEl) fixedEl.addEventListener("change", render);
 
-  var api = { tunes: ordered, render: render, stop: stop, play: play, eventsOf: eventsOf, oldHymn: oldHymn, keynoteHz: keynoteHz, engraveTune: engraveTune };
+  var api = { tunes: ordered, render: render, stop: stop, play: play, eventsOf: eventsOf, oldHymn: oldHymn, keynoteHz: keynoteHz, engraveTune: engraveTune,
+              liveCount: function () { return live.length; } };
   render();
   return api;
 })();

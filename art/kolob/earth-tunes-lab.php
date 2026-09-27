@@ -10,7 +10,8 @@
 // notes on what is uncertain. The seven tunes v0.30 carried as incipits get
 // a "v0.30" toggle, so the old and the new can be heard side by side.
 //
-// Loads only kolob-tunes.js (a pure module) and this page's own script.
+// Loads kolob-tunes.js (a pure module), the substrate's PJ2.Clock (the
+// lookahead scheduler the organ hands its notes to), and this page's script.
 // ============================================================================
 $page_title = "Earth Tunes Lab — KOLOB · Municipal Sky";
 $page_description = "A private review bench for the Kolob hymn engine's public-domain Earth tunes.";
@@ -90,6 +91,8 @@ include '../../includes/header.php';
 .etl-score { background: var(--sheet); border: 1px solid var(--line); border-radius: 6px; padding: 0.4rem 0.3rem; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .etl-score svg { display: block; height: auto; }
 .etl-row + .etl-row { border-top: 1px dashed rgba(107, 95, 71, 0.25); }
+.etl-cap { font-size: 0.82rem; font-style: italic; color: var(--accent); margin: 0.35rem 0.4rem 0; max-width: 70ch; }
+.etl-tune { font-size: 0.86rem; }
 .etl-old { margin-top: 0.6rem; border-color: rgba(154, 63, 46, 0.45); }
 .etl-old-cap { font-size: 0.82rem; color: var(--old); margin: 0.1rem 0.4rem 0.2rem; font-style: italic; }
 
@@ -108,6 +111,7 @@ include '../../includes/header.php';
 .etl svg .tx { fill: #3a3024; font-family: "EB Garamond", Georgia, serif; }
 .etl svg .ac { fill: #1f1a12; font-family: Georgia, serif; }
 .etl svg .sl { fill: none; stroke: #4a3d2c; stroke-width: 1; }
+.etl svg .cm { fill: var(--accent); font-family: Georgia, serif; font-weight: 600; }
 .etl svg .hi .hd { fill: var(--accent); stroke: var(--accent); }
 .etl svg .hi .hd.op { fill: #f3d9bd; }
 
@@ -133,6 +137,7 @@ include '../../includes/header.php';
     <label>tempo <input type="range" id="etl-tempo" min="0.5" max="1.6" step="0.05" value="1" /> <output id="etl-tempo-out">1.00×</output></label>
     <label><input type="checkbox" id="etl-melody" /> melody only</label>
     <label><input type="checkbox" id="etl-follow" checked /> light the notes</label>
+    <label title="Play every degree at its table ratio, without the comma adjustments"><input type="checkbox" id="etl-fixed" /> fixed degrees</label>
     <button type="button" class="etl-btn" id="etl-stop">stop</button>
     <span class="etl-now" id="etl-now"></span>
   </div>
@@ -141,11 +146,16 @@ include '../../includes/header.php';
   <div id="etl-tunes"></div>
 
   <p class="etl-foot">Pitches are the tunes' own degrees tuned as Kolob tunes them (5-limit just intonation on the
-  tune's own do; accidentals as leading tones). Each part keeps the octave the book writes it in, except that the
-  shape-note tenor, printed in the treble clef, sounds an octave down. Rests, fermatas and written-out repeats are
-  the source's. "Light the notes" follows the playing on the engraving.</p>
+  tune's own do; accidentals as leading tones). Where a chord would sound a sour third, sixth or fifth on the fixed
+  degrees, the note that starts there leans a syntonic comma (81/80, about a fifth of a semitone): a small
+  <b>+</b> or <b>−</b> beside the head, after Johnston. "Fixed degrees" turns the commas off, to hear what they
+  fix. Each part keeps the octave the book writes it in, except that the shape-note tenor, printed in the treble
+  clef, sounds an octave down. Rests, fermatas and written-out repeats are the source's; a line's italic caption
+  says where the text comes from somewhere other than the cited page. "Light the notes" follows the playing on the
+  engraving.</p>
 </div>
 
+<script src="../prosperos-jukebox-v2/pj2-clock.js?v=<?php echo etl_v('../prosperos-jukebox-v2/pj2-clock.js'); ?>"></script>
 <script src="kolob-tunes.js?v=<?php echo etl_v('kolob-tunes.js'); ?>"></script>
 <script src="earth-tunes-lab.js?v=<?php echo etl_v('earth-tunes-lab.js'); ?>"></script>
 
