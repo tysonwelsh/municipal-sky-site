@@ -186,6 +186,41 @@
   }
   function ward(seed, o) { return V.congregation({ seed: seed, desks: o.desks, voicesPerDesk: o.per }); }
 
+  // THE FULL WARD (owner's A/B, 2026-09-26): thirty-two people, each with a
+  // throat of their own — own vowel banks, breath and tilt as well as their
+  // own pitch, timing and vibrato — against the same thirty-two seated as
+  // eight desks of four. Eight to a part; power-matched to the desks (each
+  // voice at 1/√8 of the part, as a desk's four sum at 1/√4 and a part's two
+  // desks at 1/√2).
+  var FULL_PARTS = ["S", "A", "T", "B"];
+  function fullWard(seed) {
+    var root = PJ2.Rand.stream(seed).fork("fullward"), people = [];
+    FULL_PARTS.forEach(function (part, pi) {
+      for (var k = 0; k < 8; k++) {
+        var r = root.fork(part + ":" + k);
+        var base = { S: 0.30, A: -0.30, T: 0.45, B: -0.45 }[part] * 0.9;
+        people.push(V.singer({
+          seed: seed, name: "ward-" + part + k, part: part,
+          age: r.pick(["young", "mid", "mid", "old"]),
+          confidence: r.rnd(0.45, 0.9),
+          brightness: r.rnd(0.3, 0.65),
+          breath: r.rnd(0.2, 0.55),
+          pitchHabitCents: r.rnd(-12, 12),
+          timingHabitMs: r.rnd(0, 70) + r.rnd(-10, 25),
+          tractScale: r.rnd(0.95, 1.05),
+          pan: Math.max(-0.9, Math.min(0.9, base + r.rnd(-0.3, 0.3))),
+        }));
+      }
+    });
+    return {
+      sing: function (ctx, dest, t, parts, gain) {
+        var end = t, g = (gain == null ? 1 : gain) / Math.sqrt(8);
+        people.forEach(function (p) { var line = parts[p.spec.part]; if (line) end = Math.max(end, p.sing(ctx, dest, t, line, g)); });
+        return end;
+      },
+    };
+  }
+
   // --------------------------------------------------------------------------
   // THE DEMONSTRATIONS. Each: (ctx, bus, t0, o) → end time. o = {seed, desks,
   // per, beat}. Level constants are set so each sits at the quartet's level
@@ -203,6 +238,10 @@
       } },
     { id: "ward", n: "2", name: "The congregation", desc: "desks of people, the line on the vowels of a verse",
       run: function (ctx, bus, t, o) { return ward(o.seed, o).sing(ctx, bus.hall, t, parts(o.beat, "words"), CONG) + 1; } },
+    { id: "full32", n: "2a", name: "The full ward: 32 people, each their own voice", desc: "every singer with a throat of their own (8 to a part) — the owner's A/B",
+      run: function (ctx, bus, t, o) { return fullWard(o.seed).sing(ctx, bus.hall, t, parts(o.beat, "words"), CONG) + 1; } },
+    { id: "desks32", n: "2b", name: "The same 32 as 8 desks of 4", desc: "four to a shared throat — the economical way, for the A/B",
+      run: function (ctx, bus, t, o) { return V.congregation({ seed: o.seed, desks: 8, voicesPerDesk: 4 }).sing(ctx, bus.hall, t, parts(o.beat, "words"), CONG) + 1; } },
     { id: "forward", n: "3", name: "People come forward", desc: "twice through: the harmony alto; then the old bass and a child on the tune",
       run: function (ctx, bus, t, o) {
         var W = ward(o.seed, o), K = cast(o.seed), L = lineDur(o.beat) + o.beat;
