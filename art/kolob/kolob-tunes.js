@@ -989,7 +989,9 @@ KOLOB.Tunes = (function () {
       source: { book: "Shaker manuscript hymnal, 'Dancing Song' (Western Reserve Historical Society; facsimile via American Music Preservation)",
                 year: 1848, page: "ms. leaf", tuneName: "Dancing Song",
                 url: "https://www.americanmusicpreservation.com/Images/Simple%20Gifts%20manuscript2.jpg" },
-      meter: "irregular", time: "2/4", beatS: 0.5, pickup: 0.5,
+      // beatS 1.1 (♩ ≈ 55): the manuscript writes the tune in quavers and semiquavers under a
+      // 2/4 signature, so at the house 0.5 s it ran at twice a singing pace (owner, 2026-09-27)
+      meter: "irregular", time: "2/4", beatS: 1.1, pickup: 0.5,
       key: { tonic: "C", sig: "", name: "C major (letteral)" }, scale: "ionian",
       melody: "S", dialect: "shaker", order: ["S"], clefs: { S: "treble" },
       syllables: [13, 11, 11, 11, 13, 11, 11, 11, 8, 10, 8, 10, 8, 10, 8, 10],
