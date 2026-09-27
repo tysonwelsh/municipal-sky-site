@@ -539,7 +539,9 @@ different ward.
 - **The congregation:** the massed singing, rendered as 4–8 **desks**
   (small groups sharing formant filters, each slightly detuned and delayed).
   This sounds like a room full of people without being a room full of
-  oscillators, and the desk count scales down on phones.
+  oscillators. **Owner ruling (2026-09-26): phones get the same congregation
+  as desktop, with no fewer voices.** If a phone struggles, simplify
+  elsewhere first.
 - **The cast:** 8–12 **individuals per meeting**, drawn from a roster of
   about 40 archetypes. Each has a Deseret name, a voice (formant set,
   vibrato, breath, age), a pitch habit, a timing habit, confidence, a
