@@ -62,8 +62,62 @@
     }
     mine = A.paintMine(b);
     mine.overlay = A.buildCabinetOverlay(b, mine.figs);
+    pinSpr = {};
+    bakeHistory(mine.albedo.getContext('2d'), b);
     return R;
   }
+
+  /* ══ the crew's marks on the board (knockers, wave 3) ══════════════
+   * Every pin the knockers have moved this visit leaves its old nail hole in
+   * the rock (the board's history, from board.edits), and a tunnel mouth
+   * they have shut is boarded over. Baked into the albedo at build. */
+  function bakeHistory(g, b) {
+    var hist = {};
+    (b.edits || []).forEach(function (e) { if (e.type === 'nudge') (hist[e.id] = hist[e.id] || []).push(e); });
+    for (var id in hist) {
+      var f = b.byId && b.byId[id]; if (!f || !f.home) continue;
+      var h = f.home, x = h.x, y = h.y, spots = [[x, y]];
+      hist[id].forEach(function (e) {
+        x = Math.max(h.x - 3, Math.min(h.x + 3, x + e.dx)); y = Math.max(h.y - 3, Math.min(h.y + 3, y + e.dy));
+        spots.push([x, y]);
+      });
+      var seen = {};
+      for (var i = 0; i < spots.length - 1; i++) {
+        var hx = Math.round(spots[i][0]), hy = Math.round(spots[i][1]), k = hx + ',' + hy;
+        if (seen[k] || Math.hypot(hx - f.x, hy - f.y) < 2.5) continue;
+        seen[k] = 1;
+        px(g, hx, hy, P.VOID0); px(g, hx + 1, hy, 'rgba(0,0,0,0.5)'); px(g, hx - 1, hy - 1, 'rgba(255,244,224,0.22)');
+      }
+    }
+    // shut adits: three boards nailed across the arch (the office door shows its own)
+    (b.fixtures || []).forEach(function (t) {
+      if (t.kind !== 'tunnel' || t.open !== false || t.dress === 'door') return;
+      var ax = Math.round(t.a.x), ay = Math.round(t.a.y), r = Math.round(t.a.r || 6);
+      [-3, 0, 3].forEach(function (dy, j) {
+        A.thick(g, ax - r - 1, ay + dy + (j === 1 ? 1 : 0), ax + r, ay + dy - (j === 1 ? 0 : 1), 2, j === 1 ? P.TIM2 : P.TIM3);
+        px(g, ax - r, ay + dy, P.IRON4); px(g, ax + r - 1, ay + dy - 1, P.IRON4);
+      });
+    });
+  }
+  // a pin's own sprite, lifted off the baked foreground (for a pin in hand)
+  var pinSpr = {};
+  R.pinSprite = function (id) {
+    if (!mine || !board || !board.byId) return null;
+    if (pinSpr[id] !== undefined) return pinSpr[id];
+    var p = board.byId[id];
+    if (!p || p.kind !== 'pin') return (pinSpr[id] = null);
+    var c = A.makeCanvas(7, 7), g = c.getContext('2d');
+    g.drawImage(mine.fore, Math.round(p.x) - 3, Math.round(p.y) - 3, 7, 7, 0, 0, 7, 7);
+    return (pinSpr[id] = c);
+  };
+  // …or a spare of a dressing from elsewhere on the board
+  R.pinSpriteByDress = function (dress) {
+    if (!board || !board.byKind || !board.byKind.pin) return null;
+    var ps = board.byKind.pin;
+    for (var i = 0; i < ps.length; i++) if (ps[i].dress === dress && ps[i].region !== 'surface') return R.pinSprite(ps[i].id);
+    for (i = 0; i < ps.length; i++) if (ps[i].dress === dress) return R.pinSprite(ps[i].id);
+    return null;
+  };
 
   /* ══ light ═════════════════════════════════════════════════════════ */
   var AMBIENT = [46, 36, 72];        // the purple-black of a mine with the lamps out
@@ -113,8 +167,10 @@
       var fl = A.figureLamp(figs[i]);
       var rk = lights[board && PB() ? PB().regionAt(fl.x, fl.y) : ''] ;
       if (rk === 0) continue;
-      out.push({ x: fl.x, y: fl.y, r: 24, c: P.LAMP, k: 0.8 * (0.85 + 0.15 * A.hash01(i + 5, Math.floor(t * 8), 3)), kind: 'candle' });
-      if (fl.lantern) out.push({ x: fl.lantern.x, y: fl.lantern.y, r: 44, c: P.LAMP, k: 0.95, kind: 'lantern' });
+      var lk = figs[i].lampK == null ? 1 : figs[i].lampK;
+      if (lk <= 0) continue;
+      out.push({ x: fl.x, y: fl.y, r: 24, c: P.LAMP, k: 0.8 * lk * (0.85 + 0.15 * A.hash01(i + 5, Math.floor(t * 8), 3)), kind: 'candle' });
+      if (fl.lantern) out.push({ x: fl.lantern.x, y: fl.lantern.y, r: 44, c: P.LAMP, k: 0.95 * Math.max(lk, 0.5), kind: 'lantern' });
     }
     (fx.extraLamps || []).forEach(function (e) { out.push({ x: e.x, y: e.y, r: e.r || 30, c: e.c || P.LAMP, k: e.k == null ? 1 : e.k }); });
     return out;
@@ -220,6 +276,8 @@
     for (i = 0; i < figs.length; i++) {
       if (figs[i].lamp === false) continue;
       var fl = A.figureLamp(figs[i]), fh = A.hash01(i, Math.floor(t * 8), 6), ff = figs[i].facing < 0 ? -1 : 1;
+      if (fl.back) { px(g, Math.round(fl.x), Math.round(fl.y), 'rgba(255,208,96,0.85)'); px(g, Math.round(fl.x) - 1, Math.round(fl.y) + 1, 'rgba(255,138,42,0.5)'); px(g, Math.round(fl.x) + 1, Math.round(fl.y) + 1, 'rgba(255,138,42,0.5)'); continue; }
+      if (figs[i].lampK != null && figs[i].lampK < 0.35) { px(g, Math.round(fl.x), Math.round(fl.y), fh < 0.5 ? P.FLAME0 : '#b0561e'); continue; }
       px(g, Math.round(fl.x), Math.round(fl.y), P.FLAME2);
       px(g, Math.round(fl.x + ff), Math.round(fl.y - 1), fh < 0.6 ? P.FLAME1 : P.FLAME0);
       if (fh > 0.85) px(g, Math.round(fl.x + ff * 2), Math.round(fl.y - 1), P.FLAME0);
@@ -255,9 +313,10 @@
     // the wedding ring catches the light now and then
     if (mine.ring && lightAt(mine.ring.x, mine.ring.y) > 0.3 && Math.sin(t * 0.9) > 0.97) px(g, mine.ring.x - 1, mine.ring.y - 1, '#ffffff');
     // a moth at the ventilation road's lantern, never quite getting there
-    if (mine.moth && lit(mine.moth.region)) {
+    var moth = fx.moth || mine.moth;
+    if (moth && lit(moth.region || mine.moth.region)) {
       var mk = Math.floor(t * 12), ma = mk * 0.9 + Math.sin(mk * 0.37) * 1.7, mr = 4 + A.hash01(9, mk >> 2, 0) * 5;
-      var mx = Math.round(mine.moth.x + Math.cos(ma) * mr), my = Math.round(mine.moth.y + Math.sin(ma) * mr * 0.6);
+      var mx = Math.round(moth.x + Math.cos(ma) * mr), my = Math.round(moth.y + Math.sin(ma) * mr * 0.6);
       var up = mk % 2;
       px(g, mx, my, P.MOTH_D); px(g, mx - 1, my - up, P.MOTH); px(g, mx + 1, my - up, P.MOTH);
     }
@@ -402,6 +461,41 @@
     }
   }
 
+  /* ══ the legend card, lit from behind ══════════════════════════════ */
+  var cardGlow = {};
+  function drawCardLamp(ctx, cl, t) {
+    var L = C.legend; if (!L) return;
+    var k = Math.max(0, Math.min(1, cl.k == null ? 1 : cl.k)), lx = Math.round(cl.x + C.GX), ly = Math.round(cl.y + C.GY);
+    ctx.save();
+    ctx.beginPath(); ctx.rect(L.x + 1, L.y + 1, L.w - 2, L.h - 2); ctx.clip();
+    // the paper takes the light: a warm, posterised pool (screen)
+    var r = cl.r || 34, lvl = Math.round(k * 10) / 10, key = r + ':' + lvl;
+    var pool0 = cardGlow[key];
+    if (!pool0) {
+      var n = r * 2 + 1; pool0 = cardGlow[key] = A.makeCanvas(n, n);
+      var pg = pool0.getContext('2d'), im = pg.createImageData(n, n), dd = im.data;
+      for (var yy = 0; yy < n; yy++) for (var xx = 0; xx < n; xx++) {
+        var dist = Math.hypot(xx - r, yy - r) / r; if (dist >= 1) continue;
+        var q = Math.floor(Math.pow(1 - dist, 1.3) * lvl * 5 + bayer(xx, yy) * 0.999) / 5; if (q <= 0) continue;
+        var o = (yy * n + xx) * 4; dd[o] = 255 * q; dd[o + 1] = 170 * q; dd[o + 2] = 70 * q; dd[o + 3] = 255;
+      }
+      pg.putImageData(im, 0, 0);
+    }
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = 0.8;
+    ctx.drawImage(pool0, lx - r, ly - r);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+    // his shadow on the paper, soft-edged by the paper's thickness
+    if (cl.fig && A.figureSilhouette) {
+      // his shadow on the paper: one crisp warm-dark shape, no ink line
+      var sil = A.figureSilhouette(cl.fig, true), fx0 = Math.round(cl.fig.x + C.GX) - 36, fy0 = Math.round(cl.fig.y + C.GY) - 54;
+      ctx.globalAlpha = 0.58 * k; ctx.drawImage(sil, fx0, fy0);
+      ctx.globalAlpha = 1;
+    }
+    ctx.restore();
+  }
+
   /* ══ draw ══════════════════════════════════════════════════════════ */
   function draw(ctx, view) {
     if (!mine) build(view.board || board);
@@ -414,8 +508,12 @@
     sg.globalCompositeOperation = 'source-over';
     sg.drawImage(mine.albedo, 0, 0);
     drawKinematics(sg, view);
+    // the knockers' kit: ladders, rope ladders, their doors (behind them)…
+    if (A.drawProps) A.drawProps(sg, view, 'back');
     var figs = figuresFor(view);
     for (var i = 0; i < figs.length; i++) A.drawFigure(sg, figs[i]);
+    // …and what is in their hands (in front)
+    if (A.drawProps) A.drawProps(sg, view, 'front');
     // b. light
     paintLight(view);
     sg.globalCompositeOperation = 'multiply';
@@ -428,10 +526,21 @@
     fcg.drawImage(light2, 0, 0);
     fcg.globalCompositeOperation = 'destination-in';
     fcg.drawImage(mine.fore, 0, 0);
+    // a pin the knockers have pulled is out of the rock: its nail hole shows
+    var lifted = view.fx && view.fx.lifted, lid;
+    if (lifted) {
+      fcg.globalCompositeOperation = 'destination-out';
+      for (lid in lifted) { var lp = board.byId && board.byId[lid], ls = lp && R.pinSprite(lid); if (ls) fcg.drawImage(ls, Math.round(lp.x) - 3, Math.round(lp.y) - 3); }
+    }
     fcg.globalCompositeOperation = 'source-over';
     sg.drawImage(foreC, 0, 0);
+    if (lifted) for (lid in lifted) {
+      var hp = board.byId && board.byId[lid]; if (!hp) continue;
+      px(sg, Math.round(hp.x), Math.round(hp.y), P.VOID0); px(sg, Math.round(hp.x) + 1, Math.round(hp.y), 'rgba(0,0,0,0.5)');
+    }
     // c. emissive
     drawEmissive(sg, view);
+    if (A.drawProps) A.drawProps(sg, view, 'glow');
     // the game's answers inside the glass: lit bay cards, pockets hopping
     if (A.drawGlassFx) A.drawGlassFx(sg, view, board);
     // d. marbles (their faint trails first), hopper
@@ -442,7 +551,7 @@
       else if (!ms[i].hidden) drawMarble(sg, ms[i], t);
     }
     // marbles carried by figurines (a theft) are drawn at their hands
-    for (i = 0; i < figs.length; i++) if (figs[i].hold) drawMarble(sg, { x: figs[i].hold.x, y: figs[i].hold.y, r: 4, spin: t * 2, id: 7 }, t);
+    for (i = 0; i < figs.length; i++) if (figs[i].hold) drawMarble(sg, { x: figs[i].hold.x, y: figs[i].hold.y, r: 4, spin: figs[i].hold.spin != null ? figs[i].hold.spin : 0, id: figs[i].hold.id != null ? figs[i].hold.id : 7 }, t);
     drawHopper(sg, view);
     // e. the glass
     sg.globalCompositeOperation = 'multiply';
@@ -452,6 +561,9 @@
 
     ctx.drawImage(scene, C.GX, C.GY);
     ctx.drawImage(mine.overlay, 0, 0);
+    // a knocker reading the legend card from behind, by his own light: the
+    // paper glows and his shadow is on it
+    if (view.fx && view.fx.cardLamp) drawCardLamp(ctx, view.fx.cardLamp, t);
     // the machine's own dials (pachinko-art-counters.js): the SCRIP counter,
     // the coin door's card and lamp, your pocket, the ticket mouth
     if (A.drawMachine) A.drawMachine(ctx, view);
