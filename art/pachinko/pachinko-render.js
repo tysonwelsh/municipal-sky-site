@@ -219,9 +219,10 @@
     var figs = figuresFor(view);
     for (i = 0; i < figs.length; i++) {
       if (figs[i].lamp === false) continue;
-      var fl = A.figureLamp(figs[i]), fh = A.hash01(i, Math.floor(t * 8), 6);
+      var fl = A.figureLamp(figs[i]), fh = A.hash01(i, Math.floor(t * 8), 6), ff = figs[i].facing < 0 ? -1 : 1;
       px(g, Math.round(fl.x), Math.round(fl.y), P.FLAME2);
-      px(g, Math.round(fl.x), Math.round(fl.y - 1), fh < 0.6 ? P.FLAME1 : P.FLAME0);
+      px(g, Math.round(fl.x + ff), Math.round(fl.y - 1), fh < 0.6 ? P.FLAME1 : P.FLAME0);
+      if (fh > 0.85) px(g, Math.round(fl.x + ff * 2), Math.round(fl.y - 1), P.FLAME0);
       if (fl.lantern) { rect(g, Math.round(fl.lantern.x - 1), Math.round(fl.lantern.y - 3), 3, 3, P.FLAME1); px(g, Math.round(fl.lantern.x), Math.round(fl.lantern.y - 2), P.FLAME2); }
     }
     // coal glints: only where there is light to catch
@@ -253,8 +254,21 @@
     }
     // the wedding ring catches the light now and then
     if (mine.ring && lightAt(mine.ring.x, mine.ring.y) > 0.3 && Math.sin(t * 0.9) > 0.97) px(g, mine.ring.x - 1, mine.ring.y - 1, '#ffffff');
-    // the canary blinks
-    if (mine.canary && A.hash01(3, Math.floor(t * 4), 1) < 0.08) px(g, mine.canary.x, mine.canary.y, P.CANARY);
+    // a moth at the ventilation road's lantern, never quite getting there
+    if (mine.moth && lit(mine.moth.region)) {
+      var mk = Math.floor(t * 12), ma = mk * 0.9 + Math.sin(mk * 0.37) * 1.7, mr = 4 + A.hash01(9, mk >> 2, 0) * 5;
+      var mx = Math.round(mine.moth.x + Math.cos(ma) * mr), my = Math.round(mine.moth.y + Math.sin(ma) * mr * 0.6);
+      var up = mk % 2;
+      px(g, mx, my, P.MOTH_D); px(g, mx - 1, my - up, P.MOTH); px(g, mx + 1, my - up, P.MOTH);
+    }
+    // and a rat's tail in the crack by the door, twitching; now and then it isn't there
+    if (mine.rat) {
+      var rk = Math.floor(t * 3), gone = A.hash01(21, Math.floor(t / 7), 0) < 0.3;
+      if (!gone) {
+        var tw = A.hash01(22, rk, 0) < 0.25 ? 1 : 0, rx = mine.rat.x, ry = mine.rat.y;
+        px(g, rx, ry, P.RAT); px(g, rx - 1, ry, P.RAT); px(g, rx - 2, ry + tw, P.RAT); px(g, rx - 3, ry + tw, P.RAT_D || '#8a6a6a'); px(g, rx - 4, ry + 1, '#8a6a6a');
+      }
+    }
   }
 
   /* ══ the marble ════════════════════════════════════════════════════ */

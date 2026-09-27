@@ -516,3 +516,21 @@ the marble unless holding it, and no page scroll at any size.
   carried over the top of the wheel. Event `ride`. (3) The office tunnel,
   the one scratched off the legend, empties into the GOB bay. (4) The
   cart takes up to three and tips them out together.
+- 2026-09-26 — **Art round 2 (orchestrator review).** No canary, no birds
+  (owner ruling). The ventilation road has a moth circling its lantern
+  (live, 12 fps) and a rat's tail twitching in a crack by the office door,
+  sometimes withdrawn. Figurines rebuilt as old miners: peg-doll heads, soft
+  caps with a carbide lamp (the flame is the signature pixel), white or grey
+  gnome beards (Absalom and Tobias to the belt, Old Jory to the knees),
+  stoops per knocker, leather aprons, earth-colour paint, and a cast shadow on
+  the rock behind (`fig.shadow !== false`). **Pins are dressed by host rock**
+  inside the one silhouette rule: rusted rail spikes in sandstone and soil,
+  blued in shale, galvanised in limestone, black-blue coal knuckles, quartz
+  and gold ore nuggets (both twinkle), bone condyles, end-grain props,
+  bolts with bearing plates, brass tacks in the backdrop. **Shafts are
+  inferred** from paired vertical columns of `prop` pins (10–32 px apart,
+  ≥ 3 each): the art paints a lagged well between them, with a ladder; the
+  one under the headframe opens at the collar and carries the hoist rope
+  and a kibble. **Bays** show museum cards with `slot.label` (abbreviated
+  to fit: STOK., SMITH, CANN., OVERBUR.) at staggered heights, and a pink
+  scrip stub `+value` only where `slot.value > 0`; the 13 bay is gold.

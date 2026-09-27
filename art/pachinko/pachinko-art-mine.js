@@ -16,7 +16,7 @@
  * Galleries are cut where board.floors say; pins are dressed per `dress`.
  *
  * paintMine(board) → { albedo, caseLight, vignette, lamps, glints,
- *   emissive, pins, figs, stillLife, watch, ring, canary }
+ *   emissive, pins, figs, stillLife, watch, ring, moth, rat }
  * drawWheel(g, fixture, pose, t), drawCart(g, fixture, pose, t): live parts.
  */
 (function (root) {
@@ -352,6 +352,52 @@
     });
   }
 
+  /* ══ shafts: paired columns of prop pins are a timbered shaft ═══════ */
+  function findShafts(board) {
+    var props = (board.fixtures || []).filter(function (f) { return f.kind === 'pin' && f.dress === 'prop'; });
+    var cols = {};
+    props.forEach(function (p) { var k = Math.round(p.x); (cols[k] = cols[k] || []).push(p.y); });
+    var xs = Object.keys(cols).map(Number).filter(function (x) { return cols[x].length >= 3; }).sort(function (a, b) { return a - b; });
+    var out = [];
+    for (var i = 0; i < xs.length - 1; i++) {
+      var a = xs[i], b = xs[i + 1];
+      if (b - a < 10 || b - a > 32) continue;
+      var y0 = Math.max(Math.min.apply(null, cols[a]), Math.min.apply(null, cols[b])), y1 = Math.min(Math.max.apply(null, cols[a]), Math.max.apply(null, cols[b]));
+      if (y1 - y0 < 16) continue;
+      out.push({ x0: a, x1: b, y0: y0 - 6, y1: y1 + 6, ys: cols[a].slice().sort(function (p, q) { return p - q; }) });
+      i++;
+    }
+    return out;
+  }
+  function paintShafts(g, board, shafts) {
+    var hf = decor(board, 'headframe');
+    shafts.forEach(function (sh, si) {
+      var a = sh.x0 + 3, b = sh.x1 - 3, main = hf && Math.abs((sh.x0 + sh.x1) / 2 - hf.x) < 12;
+      if (main) sh.y0 = SURF + 1;                           // the main shaft opens at the collar
+      // the shaft: a black well, lagged with boards down both walls
+      for (var y = sh.y0; y < sh.y1; y++) {
+        for (var x = a; x <= b; x++) {
+          var q = A.hash01(33, x, y >> 2) * 0.6 + (bayer(x, y) - 0.5) * 0.4 + (x - a) / (b - a) * 0.3;
+          px(g, x, y, q < 0.15 ? P.VOID2 : q < 0.55 ? P.VOID1 : P.VOID0);
+        }
+        px(g, a, y, (y % 7 === 0) ? P.TIM0 : P.TIM2); px(g, a + 1, y, P.TIM1);
+        px(g, b, y, (y % 7 === 3) ? P.TIM0 : P.TIM1); px(g, b - 1, y, P.VOID0);
+        px(g, a - 1, y, P.TIM3); px(g, b + 1, y, P.TIM2);
+      }
+      // a ladder down one wall
+      var lx = si % 2 ? b - 4 : a + 2;
+      for (y = sh.y0 + 2; y < sh.y1; y++) { px(g, lx, y, P.TIM2); px(g, lx + 3, y, P.TIM2); if (y % 4 === 0) hline(g, lx, lx + 3, y, P.TIM3); }
+      // the main shaft (under the headframe) carries the hoist rope and a kibble
+      if (main) {
+        var rx = a + 4;
+        for (y = sh.y0 - 8; y < sh.y1 - 14; y++) px(g, rx, y, '#1a1418');
+        var ky = sh.y1 - 14;
+        hline(g, rx - 2, rx + 2, ky, P.IRON3); rect(g, rx - 3, ky + 1, 7, 6, P.IRON2); hline(g, rx - 3, rx + 3, ky + 1, P.IRON4);
+        vline(g, rx + 3, ky + 1, ky + 6, P.IRON0); px(g, rx - 1, ky + 3, P.RUST);
+      }
+    });
+  }
+
   /* ══ rails ═════════════════════════════════════════════════════════ */
   function drawRail(g, r) {
     var x1 = r.x1, y1 = r.y1, x2 = r.x2, y2 = r.y2, len = Math.hypot(x2 - x1, y2 - y1), n = Math.max(1, Math.round(len));
@@ -411,55 +457,101 @@
   /* ══ pins ══════════════════════════════════════════════════════════ */
   // every pin: a 3×3 body, a bright top-left pixel, a dark bottom-right
   // one, and a little shadow down-right on the rock
-  // every pin is a stud standing proud of the rock: a dark rim, a lit
-  // top-left (the silhouette rule), a dark bottom-right, a shadow on the
-  // rock. Palette per dress: [rim, body, light, spec, dark]
-  var PIN = {
-    spike: ['#0c0a10', '#6a6a7e', '#a8a8c0', '#f0f0ff', '#34343e'],
-    nail: ['#0c0a10', '#7a7a8a', '#b4b4c8', '#ffffff', '#3a3a46'],
-    bolt: ['#0c0a10', '#5e5e70', '#9a9ab0', '#e8e8f8', '#2e2e3a'],
-    hook: ['#0c0a10', '#5e5e70', '#9a9ab0', '#e8e8f8', '#2e2e3a'],
-    lamphook: ['#0c0a10', '#5e5e70', '#9a9ab0', '#e8e8f8', '#2e2e3a'],
-    rivet: ['#0c0a10', '#6a6a7e', '#a8a8c0', '#f0f0ff', '#34343e'],
-    fencepost: ['#120c08', '#7a5a34', '#a8804a', '#e0c080', '#3a2816'],
-    root: ['#120c08', '#6e5030', '#9a7648', '#d0a870', '#3a2616'],
-    prop: ['#120c08', '#a07c48', '#c8a060', '#f0d8a0', '#5a3e20'],
-    bone: ['#16121a', '#b8ae94', '#e0d8c0', '#fffaf0', '#6a6254'],
-    rib: ['#16121a', '#b8ae94', '#e0d8c0', '#fffaf0', '#6a6254'],
-    coal: ['#050408', '#26242e', '#5a5a70', '#dfe6ff', '#0c0a10'],
-    ore: ['#0c0806', '#5a4020', '#c8922e', '#fff0a0', '#2a1c0c']
+  // Every pin keeps ONE readable silhouette rule: a dark rim, a lit
+  // top-left, a dark bottom-right, a shadow on the rock down-right. Within
+  // that rule the shape says what the pin is (a rail spike's long head, a
+  // roof bolt, a tack, a prop's end grain, a coal knuckle, an ore nugget,
+  // a bone's condyle, a root knot) and the paint says which rock it's in.
+  // Sprite letters: o rim, s spec, l light, b body, d dark, x accent, y accent 2
+  var SPR = {
+    stud: ['.ooo.', 'oslbo', 'olbdo', 'obddo', '.ooo.'],
+    spike: ['ooooo', 'oslbo', 'olbdo', '.obo.', '..o..'],
+    spikeR: ['ooooo', 'oslbo', 'obbdo', '.obdo', '..oo.'],
+    bolt: ['ooooo', 'osldo', 'olbdo', 'obddo', 'ooooo'],
+    tack: ['.ooo.', 'oslbo', 'olbdo', '.odo.', '.....'],
+    prop: ['.ooo.', 'olxbo', 'oxsxo', 'obxdo', '.ooo.'],
+    coal: ['.oo..', 'oslo.', 'olbboo', 'obbxdo', '.oddo', '..oo.'],
+    coal2: ['..ooo', '.osbo', 'olbbo', 'obxdo', '.ooo.'],
+    ore: ['..oo.', '.osxo', 'olxbo', 'obbdo', '.ooo.'],
+    ore2: ['.ooo.', 'osxbo', 'olbxo', '.obdo', '..oo.'],
+    bone: ['.o.o.', 'oslbo', '.olo.', 'obbdo', '.o.o.'],
+    root: ['o.oo.', '.olbo', 'olsbo', 'obddo', '.o.oo'],
+    hook: ['.ooo.', 'osxbo', 'olxdo', '.oob.', '..ol.'],
+    post: ['.ooo.', 'oslbo', 'olbdo', 'obbdo', 'obbdo']
   };
-  function drawPin(ga, g, p) {
-    var k = PIN[p.dress] || PIN.spike, cx = Math.round(p.x), cy = Math.round(p.y);
-    // the shadow on the rock (albedo), down-right
-    px(ga, cx + 2, cy + 1, 'rgba(0,0,0,0.5)'); px(ga, cx + 1, cy + 2, 'rgba(0,0,0,0.5)'); px(ga, cx + 2, cy + 2, 'rgba(0,0,0,0.65)');
-    px(ga, cx + 3, cy + 2, 'rgba(0,0,0,0.3)'); px(ga, cx + 2, cy + 3, 'rgba(0,0,0,0.3)'); px(ga, cx + 3, cy + 3, 'rgba(0,0,0,0.25)');
-    // rim (a rounded 5×5 less corners)
-    hline(g, cx - 1, cx + 1, cy - 2, k[0]); hline(g, cx - 1, cx + 1, cy + 2, k[0]);
-    vline(g, cx - 2, cy - 1, cy + 1, k[0]); vline(g, cx + 2, cy - 1, cy + 1, k[0]);
-    // body
-    rect(g, cx - 1, cy - 1, 3, 3, k[1]);
-    px(g, cx, cy - 1, k[2]); px(g, cx - 1, cy, k[2]);
-    px(g, cx - 1, cy - 1, k[3]);                       // the lit top-left
-    px(g, cx + 1, cy + 1, k[4]); px(g, cx + 1, cy, k[4]); px(g, cx, cy + 1, k[4]);
-    // dress details
+  // metal paints by host rock: [spec, light, body, dark]
+  var METAL = {
+    sand: ['#f0c8a0', '#b07a50', '#7a4a2e', '#3a2014'],   // rusted iron
+    sand2: ['#f0c8a0', '#b07a50', '#7a4a2e', '#3a2014'],
+    soil: ['#e0b890', '#9a6a44', '#6a4028', '#301a10'],
+    clay: ['#f0b890', '#b0664a', '#7a3a26', '#3a1810'],   // redder rust
+    shale: ['#e0ecff', '#8898c0', '#4c5a80', '#20283c'],  // blued steel
+    shale2: ['#e0ecff', '#8898c0', '#4c5a80', '#20283c'],
+    shale3: ['#ecdcff', '#9484b4', '#56487a', '#241c38'],
+    lime: ['#ffffff', '#c0c4c8', '#8a8e96', '#44484e'],   // galvanised
+    coalA: ['#dfe6ff', '#6a7494', '#2e3040', '#0c0c14'], coalB: ['#dfe6ff', '#6a7494', '#2e3040', '#0c0c14'], coalC: ['#dfe6ff', '#6a7494', '#2e3040', '#0c0c14'],
+    deep: ['#e8e0f0', '#7a6e8a', '#443a52', '#1a1422'], floor: ['#fff0c0', '#d8b060', '#9a7430', '#4a3410']
+  };
+  var BRASS = ['#fff4c8', '#e0c070', '#a8843c', '#4e3814'];
+  function pinLook(p) {
+    var band = p.y < SURF - 2 ? 'sky' : A.bandAt(p.x, p.y), h = A.hash01(91, Math.round(p.x), Math.round(p.y));
+    var m = METAL[band] || METAL.deep, spr = 'stud', pal, x1 = null, x2 = null;
     switch (p.dress) {
-      case 'hook': case 'lamphook':
-        px(g, cx, cy, k[0]); px(g, cx + 1, cy + 3, k[1]); px(g, cx, cy + 4, k[2]); px(g, cx - 1, cy + 3, k[1]); break;
-      case 'bolt':
-        px(ga, cx - 3, cy + 1, P.IRON1); px(ga, cx + 3, cy + 1, P.IRON1); break; // the bearing plate
-      case 'root':
-        line(ga, cx - 2, cy - 2, cx - 5, cy - 6, P.ROOT); px(ga, cx + 2, cy - 3, P.ROOT); px(ga, cx + 3, cy - 5, P.SOIL2); break;
-      case 'bone': case 'rib':
-        px(g, cx - 2, cy - 1, k[1]); px(g, cx - 3, cy - 1, k[0]); break;
-      case 'ore':
-        px(g, cx, cy, P.VEIN2); px(ga, cx - 3, cy, P.QUARTZ_D); px(ga, cx + 3, cy - 1, P.QUARTZ_D); break;
-      case 'prop':
-        px(g, cx, cy, P.TIM2); break;
       case 'spike':
-        if (A.hash01(71, cx, cy) < 0.25) px(g, cx + 1, cy, P.RUST); break;
+        spr = h < 0.5 ? 'spike' : 'spikeR'; pal = m;
+        break;
+      case 'bolt': case 'rivet':
+        spr = p.dress === 'bolt' ? 'bolt' : 'stud'; pal = m;
+        break;
+      case 'nail':
+        spr = 'tack'; pal = p.material === 'brass' || band === 'sky' ? BRASS : m;
+        break;
+      case 'hook': case 'lamphook':
+        spr = 'hook'; pal = m; x1 = '#0a080c';
+        break;
+      case 'prop':
+        spr = 'prop'; pal = ['#f4dca8', '#c8a060', '#a07c48', '#5a3e20']; x1 = '#7a5830';
+        break;
+      case 'fencepost':
+        spr = 'post'; pal = ['#e8c890', '#a8804a', '#7a5a34', '#3a2816'];
+        break;
+      case 'root':
+        spr = 'root'; pal = ['#d8b080', '#9a7448', '#6e5030', '#3a2616'];
+        break;
+      case 'coal':
+        spr = h < 0.5 ? 'coal' : 'coal2'; pal = ['#dfe6ff', '#5a6480', '#22222e', '#08080c']; x1 = '#3a4460';
+        break;
+      case 'ore':
+        spr = h < 0.5 ? 'ore' : 'ore2'; pal = ['#fffbe8', '#e0dac4', '#a8a290', '#4a4436']; x1 = h < 0.8 ? '#e8b64a' : '#fff0a0';
+        break;
+      case 'bone': case 'rib':
+        spr = 'bone'; pal = ['#fffaf0', '#e0d8c0', '#b8ae94', '#6a6254'];
+        break;
+      default:
+        pal = m;
     }
-    return { id: p.id, x: p.x, y: p.y, region: p.region, hx: cx - 1, hy: cy - 1, hi: k[3], hi2: k[2] };
+    return { spr: SPR[spr], pal: pal, x1: x1 || pal[2], x2: x2 || pal[3], kind: spr };
+  }
+  function drawPin(ga, g, p) {
+    var L = pinLook(p), cx = Math.round(p.x), cy = Math.round(p.y);
+    var rows = L.spr, hgt = rows.length, oy = cy - (hgt >> 1), ox = cx - 2;
+    // the shadow on the rock (albedo), down-right of the sprite's body
+    for (var j = 0; j < hgt; j++) for (var i = 0; i < rows[j].length; i++) {
+      var ch = rows[j][i]; if (ch === '.') continue;
+      var sx = ox + i + 2, sy = oy + j + 2;
+      px(ga, sx, sy, 'rgba(0,0,0,0.42)');
+    }
+    var C = { o: '#0a080c', s: L.pal[0], l: L.pal[1], b: L.pal[2], d: L.pal[3], x: L.x1, y: L.x2 };
+    for (j = 0; j < hgt; j++) for (i = 0; i < rows[j].length; i++) {
+      ch = rows[j][i]; if (ch === '.') continue;
+      px(g, ox + i, oy + j, C[ch]);
+    }
+    // a little context painted on the rock around some of them
+    if (p.dress === 'bolt') { hline(ga, ox - 1, ox + 5, oy + 5, P.IRON1); }                    // the bearing plate's lower edge
+    if (p.dress === 'root') { line(ga, ox, oy, ox - 3, oy - 5, P.ROOT); px(ga, ox + 4, oy - 2, P.ROOT); }
+    if (p.dress === 'ore') { px(ga, ox - 1, oy + 2, P.QUARTZ_D); px(ga, ox + 5, oy + 1, P.QUARTZ_D); }
+    if (L.kind === 'spike' || L.kind === 'spikeR') { if (A.hash01(71, cx, cy) < 0.3) px(g, ox + 3, oy + 1, P.RUST); }
+    return { id: p.id, x: p.x, y: p.y, region: p.region, hx: ox + 1, hy: oy + 1, hi: L.pal[0], hi2: L.pal[1], kind: L.kind };
   }
 
   /* ══ pockets, tunnels, bays ════════════════════════════════════════ */
@@ -502,6 +594,14 @@
     var b = f.b, bx = Math.round(b.x), by = Math.round(b.y);
     disc(g, bx + 0.5, by + 0.5, 3.2, P.VOID0); px(g, bx - 2, by - 3, P.TIM2); px(g, bx + 2, by - 3, P.TIM2); hline(g, bx - 3, bx + 3, by - 4, P.TIM3);
   }
+  // a bay's name, abbreviated the way a museum does when the card is small
+  var ABBR = { STOKER: 'STOK.', SMITHING: 'SMITH', CANNEL: 'CANN.', OVERBURDEN: 'OVERBUR.', 'THE MOTHER LODE': 'LODE', NOTHING: 'NIL' };
+  function bayName(s, w) {
+    var n = String(s.label || '').toUpperCase(), max = Math.floor((w - 2) / 4);
+    if (n.length > max) n = ABBR[n] || n.slice(0, max);
+    if (n.length > max) n = n.slice(0, max);
+    return n;
+  }
   function drawBays(g, fg, board) {
     var slots = (board.fixtures || []).filter(function (f) { return f.kind === 'slot'; });
     slots.forEach(function (s, i) {
@@ -521,12 +621,28 @@
           for (y = GH - hh; y < GH; y++) px(g, x, y, A.hash01(84, x, y) < 0.3 ? P.COAL3 : heap);
         }
       }
-      // the value, enamel-painted on a little board
-      var v = String(s.value), cx = (s.x0 + s.x1) / 2;
-      var w = A.textW(v) + 4;
-      rect(fg, Math.round(cx - w / 2), 399, w, 8, lode ? P.GOLD1 : P.NIGHT0);
-      hline(fg, Math.round(cx - w / 2), Math.round(cx - w / 2) + w - 1, 399, lode ? P.GOLD3 : P.PUR2);
-      A.textC(fg, v, cx, 401, lode ? P.GOLD5 : (s.value ? P.PINK : P.FOG));
+      // the placard: a small typed card at the back of the bay with the
+      // grade's name; where the bay pays, a pink scrip stub pinned to it
+      var name = bayName(s, s.x1 - s.x0), cx = (s.x0 + s.x1) / 2, stag = (i % 2) * 5;
+      if (lode) {
+        var w13 = A.textW('13') + 4;
+        rect(fg, Math.round(cx - w13 / 2), 397, w13, 9, '#1a0e04'); hline(fg, Math.round(cx - w13 / 2), Math.round(cx - w13 / 2) + w13 - 1, 397, P.GOLD3);
+        A.textC(fg, '13', cx, 399, P.GOLD5);
+        return;
+      }
+      var cw = Math.max(A.textW(name) + 4, 13), cxl = Math.round(cx - cw / 2), pays = s.value > 0;
+      var cy0 = 389 + stag;
+      rect(fg, cxl, cy0, cw, 8, P.PAPER_D); hline(fg, cxl, cxl + cw - 1, cy0, P.PAPER); px(fg, cxl + cw - 1, cy0 + 7, P.PAPER_DD);
+      A.textC(fg, name, cx, cy0 + 2, P.INK_L);
+      px(fg, Math.round(cx), cy0 - 1, P.IRON3);                                         // the pin holding it up
+      if (pays) {
+        // the stub: pink paper, a notch, the amount
+        var v = '+' + s.value, sw2 = A.textW(v) + 5, sx0 = Math.round(cx - sw2 / 2);
+        var ty = cy0 + 9;
+        rect(fg, sx0, ty, sw2, 7, P.PINK_D); rect(fg, sx0 + 1, ty + 1, sw2 - 2, 5, P.PINK);
+        px(fg, sx0, ty + 3, P.VOID0); px(fg, sx0 + sw2 - 1, ty + 3, P.VOID0);           // the ticket's notches
+        A.textC(fg, v, cx + 0.5, ty + 1, '#ffffff');
+      }
     });
   }
 
@@ -710,16 +826,13 @@
     px(g, x + 1, y + 1, P.IRON1); px(g, x + 38, y + 9, P.IRON1); // screws
     px(g, x + 38, y + 1, P.IRON1); px(g, x + 1, y + 9, P.IRON1);
   }
-  function canaryCage(g, x, y) {
-    // a domed wire cage hanging from a spad, the bird alive, the door shut
-    line(g, x, y - 6, x, y - 3, P.IRON3);
-    for (var a = 0; a <= 8; a++) px(g, Math.round(x - 4 + a), Math.round(y - Math.sin(a / 8 * Math.PI) * 3), P.BRASS2);
-    for (var b = -4; b <= 4; b += 2) vline(g, x + b, y, y + 7, P.BRASS1);
-    hline(g, x - 4, x + 4, y + 7, P.BRASS2); hline(g, x - 3, x + 3, y + 4, P.BRASS1);
-    // the bird
-    rect(g, x - 1, y + 2, 3, 2, P.CANARY); px(g, x + 2, y + 2, P.CANARY); px(g, x + 3, y + 2, P.GOLD2);
-    px(g, x - 2, y + 3, P.CANARY_D); px(g, x + 1, y + 1, P.CANARY); px(g, x + 2, y + 1, P.INK);
+  function ratCrack(g, x, y) {
+    // a crack at the foot of the rock, black, the kind something lives in
+    var pts = [[0, 0], [1, -1], [2, -1], [3, -2], [4, -2], [5, -3], [6, -3], [7, -4]];
+    pts.forEach(function (p, i) { px(g, x + p[0], y + p[1], P.VOID0); if (i < 5) px(g, x + p[0], y + p[1] + 1, P.VOID0); });
+    px(g, x - 1, y + 1, P.VOID1);
   }
+
   function initials(g, x, y) {
     // carved into a prop: R.L. + J.M. and a heart that did not come out right
     A.text(g, 'RL', x, y, P.TIM0); A.text(g, '+', x + 2, y + 6, P.TIM0); A.text(g, 'JM', x, y + 12, P.TIM0);
@@ -765,7 +878,7 @@
     plaque: function (g, x, y) { plaque(g, x - 17, y - 5); }, trilobite: function (g, x, y) { trilobite(g, x, y); crinoid(g, x + 11, y + 8, 4); crinoid(g, x - 22, y + 6, 3); },
     payroll: payroll, dollarm: function (g, x, y) { dollArm(g, x - 3, y + 6); }, watch: watch, ring: ring,
     ribs: function (g, x, y) { paintRibs(g, x, y); }, ledgers: ledgerRoom, strongbox: strongbox,
-    fish: fish, canary: canaryCage
+    fish: fish
   };
 
   // where to put a numbered marker so it sits clear of the pins
@@ -844,21 +957,44 @@
   /* ══ the still life: the crew, mid-job ═════════════════════════════ */
   function stillLife(board) {
     var d = Math.PI / 180, POS = A.POSES || {};
+    var pins = (board.fixtures || []).filter(function (f) { return f.kind === 'pin'; });
     function pose(name, extra) { var p = {}, b = POS[name] || {}; for (var k in b) p[k] = b[k]; for (k in extra || {}) p[k] = extra[k]; return p; }
-    var ft = function (fid, x) { var f = (board.floors || []).filter(function (q) { return q.id === fid; })[0]; return f ? (floorTopAt(f, x) || f.y) : 0; };
+    // stand a knocker on a floor near x: on a piece (never over a hole),
+    // where the fewest pins would cross him
+    function place(fig, fid, x0, span) {
+      var f = (board.floors || []).filter(function (q) { return q.id === fid; })[0];
+      var best = null, bs = 1e9;
+      for (var x = x0 - span; x <= x0 + span; x++) {
+        var y;
+        if (fid === 'surface') y = SURF;
+        else {
+          if (!f) break;
+          y = floorTopAt(f, x); var yl = floorTopAt(f, x - 6), yr = floorTopAt(f, x + 6);
+          if (y == null || yl == null || yr == null) continue;
+          y = Math.round(Math.min(y, (yl + yr) / 2));
+        }
+        fig.x = x; fig.y = y;
+        var bx = A.figureBox(fig), n = 0;
+        pins.forEach(function (p) { if (p.x > bx.x - 2 && p.x < bx.x + bx.w + 2 && p.y > bx.y - 2 && p.y < bx.y + bx.h) n++; });
+        var sc = n * 10 + Math.abs(x - x0) * 0.2;
+        if (sc < bs) { bs = sc; best = { x: x, y: y }; }
+      }
+      if (best) { fig.x = best.x; fig.y = best.y; }
+      return fig;
+    }
     return [
-      // Absalom on the surface, pointing up at the sheave as if it were his idea
-      { x: 54, y: 64, facing: 1, who: 'tall', pose: pose('point', { armR: 140 * d, head: -20 * d }), tool: null },
-      // Ezra at the haulage face with the pick up
-      { x: 200, y: ft('floorA', 200), facing: 1, who: 'pick', pose: pose('swingUp'), tool: 'pick' },
+      // Absalom on the grass by the headframe, pointing up at the sheave as if it were his idea
+      place({ facing: 1, who: 'tall', pose: pose('point', { armR: 145 * d, head: -25 * d }), tool: null }, 'surface', 54, 14),
+      // Ezra at the haulage face, the pick up
+      place({ facing: 1, who: 'pick', pose: pose('swingUp'), tool: 'pick' }, 'floorA', 176, 26),
       // Tobias in the ventilation road with the big lantern, by the door
-      { x: 150, y: ft('floorB', 150), facing: 1, who: 'lamp', pose: pose('lamp'), tool: 'lantern' },
-      // the old one, sitting on the workings' floor by a pillar, cane across his knees
-      { x: 142, y: ft('floorC', 142), facing: -1, who: 'old', pose: pose('sit', { armR: 70 * d, toolA: -60 * d }), tool: 'cane' },
-      // the little one with the shovel, digging out the sump
-      { x: 84, y: 383, facing: -1, who: 'little', pose: pose('swingDn', { armR: 45 * d, armL: 35 * d, toolA: 20 * d }), tool: 'shovel' },
-      // the tallyman on the surface by the houses, counting
-      { x: 238, y: 64, facing: -1, who: 'tally', pose: pose('hold', { armR: 60 * d, head: 25 * d }), tool: 'tally' }
+      place({ facing: 1, who: 'lamp', pose: pose('lamp'), tool: 'lantern' }, 'floorB', 150, 22),
+      // Old Jory in the workings, bent over his cane, looking at something on the floor
+      place({ facing: -1, who: 'old', pose: pose('lean', { head: 20 * d, armR: 22 * d }), tool: 'cane' }, 'floorC', 140, 22),
+      // Pip at the lip of the sump with the shovel, digging for nothing, hard
+      place({ facing: -1, who: 'little', pose: pose('swingDn', { armR: 45 * d, armL: 35 * d, toolA: 20 * d }), tool: 'shovel' }, 'floorC', 84, 16),
+      // Mr. Pengelly on the surface by the houses, keeping count
+      place({ facing: -1, who: 'tally', pose: pose('hold', { armR: 70 * d, head: 25 * d }), tool: 'tally' }, 'surface', 238, 16)
     ];
   }
 
@@ -875,7 +1011,7 @@
       segs.forEach(function (s) { line(g, s[0][0], s[0][1], s[1][0], s[1][1], P.IRON3); });
       disc(g, x + 0.5, y + 0.5, f.hub, P.IRON3); px(g, Math.round(x) - 1, Math.round(y) - 1, P.IRON4);
       // the hoist rope: down the shaft on the left, off to the hoist house on the right
-      line(g, x - f.r - 1, y, x - f.r - 1, 70, '#1a1418');
+      line(g, x - f.r + 1, y, x - f.r + 1, 66, '#1a1418');
       line(g, x + 2, y - f.r - 1, 140, 54, '#1a1418');
     } else if (f.dress === 'door') {
       // the ventilation door: planks on a strap hinge, swinging in the draught
@@ -972,6 +1108,7 @@
     paintSection(g, board, gals);
     paintGround(g, board, em);
     paintWorkings(g, board, gals);
+    paintShafts(g, board, findShafts(board));
     var glints = [];
     // coal glints in the seams
     var R = A.rng(0x61147);
@@ -980,17 +1117,26 @@
       if (k === 'coalA' || k === 'coalB' || k === 'coalC') glints.push({ x: x, y: y, ph: R() * 6.28, rate: 0.5 + R() * 1.6, c: R() < 0.2 ? P.GLINT : P.GLINT_D });
     }
     paintVein(g, board, glints);
-    // specimens (the board's, then the art's own: the fish, the canary)
+    // specimens (the board's, then the art's own: the fish)
     var specs = decorAll(board, 'specimen').slice();
     var maxFig = specs.reduce(function (m, s) { return Math.max(m, s.fig || 0); }, 0);
     specs.push({ kind: 'specimen', what: 'fish', x: 188, y: 289, fig: maxFig + 1, label: 'Fig. ' + (maxFig + 1) + ': fish, red, curled both ends', art: true });
-    var out = { watch: null, ring: null, canary: null };
+    var out = { watch: null, ring: null };
+    // the moth's lantern (the ventilation road's first) and the rat's crack,
+    // at the foot of the wall beside the office door
+    var vl = decorAll(board, 'lamp').filter(function (l) { return l.region === 'ventilation'; })[0];
+    if (vl) out.moth = { x: vl.x, y: vl.y - 1, region: vl.region };
+    var od = (board.fixtures || []).filter(function (f) { return f.kind === 'tunnel' && f.dress === 'door'; })[0];
+    var fB = (board.floors || []).filter(function (f) { return f.id === 'floorB'; })[0];
+    if (od && fB) {
+      var rx = Math.round(od.a.x - (od.a.r || 7) - 6), ry = Math.round((floorTopAt(fB, rx) || fB.y) - 3);
+      ratCrack(g, rx - 7, ry + 1); out.rat = { x: rx - 7, y: ry + 1 };
+    }
     specs.forEach(function (s) {
       var fn = SPEC[s.what]; if (fn) fn(g, s.x, s.y);
       if (s.what === 'watch') out.watch = { x: s.x, y: s.y, a0: 0.7 };
       if (s.what === 'ring') out.ring = { x: s.x, y: s.y };
     });
-    canaryCage(g, 196, 226); out.canary = { x: 195, y: 229 };
     // tunnels, pockets, bays, rails
     var fs = board.fixtures || [];
     fs.forEach(function (f) { if (f.kind === 'tunnel') drawTunnelMouth(g, f); });
@@ -1016,6 +1162,10 @@
     // pins last, into the foreground layer (lit with a floor: they stand
     // proud of the rock, toward the glass, and must always read)
     var pinOut = pins.map(function (p) { return drawPin(g, fg, p); });
+    pinOut.forEach(function (q, i) {
+      if (q.kind === 'coal' || q.kind === 'coal2') glints.push({ x: q.hx, y: q.hy, ph: i * 1.7, rate: 0.7 + (i % 5) * 0.2, c: P.GLINT_D, pin: true });
+      if (q.kind === 'ore' || q.kind === 'ore2') glints.push({ x: q.hx + 1, y: q.hy + 1, ph: i * 2.3, rate: 0.5 + (i % 4) * 0.2, c: P.VEIN3, gold: true, pin: true });
+    });
     // the curator's pin spots: a small cool light on each figure in the rock
     specs.forEach(function (s, i) {
       var reg = root.PachinkoBoard ? root.PachinkoBoard.regionAt(s.x, s.y) : null;
@@ -1024,7 +1174,7 @@
     return {
       fore: fore, albedo: c, caseLight: buildCaseLight(), vignette: buildVignette(), lamps: lamps, glints: glints,
       emissive: em, pins: pinOut, figs: specs, stillLife: stillLife(board),
-      watch: out.watch, ring: out.ring, canary: out.canary
+      watch: out.watch, ring: out.ring, moth: out.moth, rat: out.rat
     };
   };
   A.GW = GW; A.GH = GH; A.SURF = SURF;

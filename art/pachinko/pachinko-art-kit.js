@@ -65,7 +65,7 @@
     COAT_B: '#2c3e6a', COAT_B2: '#40588e', COAT_R: '#6a1e28', COAT_R2: '#8e3038', COAT_G: '#34482c', COAT_G2: '#4a6440',
     COAT_K: '#1c1a22', COAT_K2: '#34303e', COAT_O: '#8a5a1c', COAT_O2: '#b07a2a',
     APRON: '#5a3a22', APRON2: '#7a5232', BEARD: '#e6e2d8', BEARD_D: '#aaa498', BOOT: '#141016', CAP: '#22202a', CAP2: '#3c3846',
-    CANARY: '#ffe040', CANARY_D: '#c09a18',
+    MOTH: '#d8ccb0', MOTH_D: '#8a7e68', RAT: '#c89a9a',
     FISH: '#e0283c', FISH2: '#ff5a64', FISH_D: '#8a1224'
   };
 
