@@ -398,3 +398,23 @@ the marble unless holding it, and no page scroll at any size.
 ## 12. Decisions log
 
 (Filled in as the build goes: TUNE values, rulings, reversals.)
+
+- 2026-09-26 — **The render contract (architect, wave 1).** The full text
+  is the comment block at the top of `pachinko-main.js`; in short:
+  `window.PachinkoRender = { GLASS_W 320, GLASS_H 416, CAB_W, CAB_H
+  (≤ 376 × 560), GLASS_X, GLASS_Y, PLAY_RECT?, build(board), draw(ctx,
+  view), toGlass?(canvasX, canvasY, view) }`. `build` pre-renders the
+  static layers for a layout and is called again after drift edits.
+  `draw` fills the screen canvas (device px, sized by main) with the
+  camera rect: the whole cabinet at `cam.k` 0, `PLAY_RECT` at 1 (the art
+  director's request, adopted); main also passes the camera it computed
+  as `view.cam = {k, s, x, y, w, h}` (s an integer at rest). `view = {mode,
+  t, cam, board, marbles [{x, y, r, spin, id, phase, tunnel?}], hopper
+  {x, ghostX}, figures [], fx {}, hits [{id, t, speed}], score,
+  marblesLeft}`. Board space = glass-interior px, 320 × 416, origin top
+  left, y down. Kinematic parts: `PachinkoBoard.pose(fixture, t)`. If
+  render.js is missing or throws, main draws its debug view (`?debug=1`
+  forces it, `?debug=2` overlays it).
+- 2026-09-26 — **Scripts.** `index.php` loads every `pachinko-art-*.js`
+  (the kit first) between the pure modules and `pachinko-render.js`, and
+  skips any listed script that doesn't exist yet.
