@@ -251,10 +251,11 @@
       c.beginPath(); c.rect(0, 0, G.GLASS_W, G.GLASS_H); c.clip();
       if (!overlay) {
         board.regions.forEach(function (r) { c.fillStyle = REG_TINT[r.id] || '#111'; c.fillRect(r.x, r.y, r.w, r.h); });
-        board.bands.forEach(function (bd) {
-          bd.pieces.forEach(function (pc) {
+        (board.floors || []).forEach(function (fl) {
+          fl.pieces.forEach(function (pc) {
             c.fillStyle = '#3a3040'; c.beginPath();
-            pc.poly.forEach(function (q, i) { if (i) c.lineTo(q[0], q[1]); else c.moveTo(q[0], q[1]); });
+            pc.top.forEach(function (q, i) { if (i) c.lineTo(q[0], q[1]); else c.moveTo(q[0], q[1]); });
+            c.lineTo(pc.x1, fl.y + 6); c.lineTo(pc.x0, fl.y + 6);
             c.closePath(); c.fill();
           });
         });

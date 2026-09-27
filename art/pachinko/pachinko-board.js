@@ -187,7 +187,7 @@
     /* ── surface: the painted backdrop, nailed up, and the headframe ── */
     // the sheave wheel turns at the top of the headframe; posts and the back-leg brace below
     F.push({ id: 'sheave', kind: 'wheel', x: 84, y: 42, r: 11, hub: 2.5, paddles: 6, mode: 'spin', omega: 2.2, theta0: 0,
-      region: 'headframe', material: 'steel', dress: 'sheave', legend: 1 });
+      region: 'headframe', material: 'spoke', dress: 'sheave', legend: 1 });
     rail('headframe.postL', 72, 50, 72, 64, 'timber', 'post');
     rail('headframe.postR', 96, 50, 96, 64, 'timber', 'post');
     rail('headframe.brace', 99, 46, 128, 64, 'timber', 'brace', { drift: true });
@@ -294,7 +294,7 @@
       if (Math.abs(seam) < 8) return 'ore';
       if (x > 246) return 'bone';          // the ribs of something large
       return 'coal';
-    }, { jitter: 2, skip: function (x, y) { return y > 350 && Math.abs(x - LODE_X) < 16; } });
+    }, { jitter: 2, skip: function (x, y) { return (y > 350 && Math.abs(x - LODE_X) < 16) || (y > 340 && Math.abs(x - LODE_X) < 8); } });
 
     /* ── the payout bays ──────────────────────────────────────────── */
     // thirteen bays; the 13 (THE MOTHER LODE) is the narrow one just right of centre
@@ -328,7 +328,7 @@
         legend: 20 + j, label: SLOTS[j].label, region: 'payout', material: 'timber', dress: SLOTS[j].value === 13 ? 'lode' : 'bay' });
     }
     // the guard over the 13: a knuckle of bone right over the cup
-    pin('guard.top', LODE_X, 354, 'bone', 'bone', { drift: true });
+    pin('guard.top', LODE_X, 354, 'bone', 'bone', { drift: true, teeter: true });
     pin('guard.l', LODE_X - 12, 356, 'ore', 'ore', { drift: true });
     pin('guard.r', LODE_X + 14, 362, 'ore', 'ore', { drift: true });
 
@@ -547,7 +547,8 @@
       step: function (k) {
         for (var n = 0; n < k && i < N; n++, i++) {
           var x = b.drop.x0 + (b.drop.x1 - b.drop.x0) * (i + 0.5) / N;
-          var r = P.simulate(b, x, seed * 7919 + i, { maxT: 14 });
+          var sd = seed * 7919 + i;
+          var r = P.simulate(b, x, sd, { maxT: 14, t0: hash01(sd, 99991) * 60 });
           if (r.timeout) timeouts++;
           if (r.outcome && r.outcome.kind === 'slot') hits[r.outcome.id]++;
           else if (r.outcome && r.outcome.kind === 'pocket') pocket++;

@@ -67,11 +67,13 @@
       rock:   { e: 0.26, mu: 0.16 },
       ore:    { e: 0.30, mu: 0.14 },
       bone:   { e: 0.42, mu: 0.09 },
+      spoke:  { e: 0.12, mu: 0.35 },   // the sheave's spokes: grippy, they carry a marble round
       glass:  { e: 0.88, mu: 0.03 }
     },
     rough: 0.03,        // ±3 % restitution per contact
     jitter: 3,          // seeded tangential nudge on a contact (px/s)
     perchKick: 2.5,     // per-step tangential push off a pin top (px/s)
+    teeterKick: 0.5,    // …and off the teetering bone over the 13 (slower: it hesitates)
     restV: 10,          // normal speeds under this don't bounce (they roll)
     rollDecel: 6,       // rolling resistance while in contact (px/s²)
     eventV: 16,         // a contact faster than this is a tick (event)
@@ -228,6 +230,11 @@
     var e = M.e * (1 + T.rough * (2 * hash01(m.seed, 3000 + m.n) - 1));
     var imp = -vn;
     var vnNew = imp > T.restV ? e * imp : 0;
+    // the bone over the 13 has a worn, cupped top: a marble landing square on it dies there
+    if (f && f.teeter && ny < -0.55) {
+      vnNew = 0; vt *= 0.2;
+      if (m.perch !== f.id) { m.perch = f.id; emit(w, m, { type: 'teeter', id: f.id, x: m.x, y: m.y }); }
+    }
     // Coulomb friction on the tangential part, plus rolling resistance
     var dvt = Math.min(Math.abs(vt), M.mu * (imp + vnNew));
     vt -= Math.sign(vt) * dvt;
@@ -235,7 +242,10 @@
     var jit = (hash01(m.seed, 5000 + m.n) * 2 - 1) * T.jitter * (imp > T.restV ? 1 : 0.35);
     // perched on the top of a pin or a cap (normal nearly straight up, barely
     // moving): it can't stay there. Tip it off, the same way for the same seed.
-    if (ny < -0.96 && Math.abs(vt) < 12 && f && f.kind !== 'rail') jit += (hash01(m.seed, 7000 + m.knocks) < 0.5 ? -1 : 1) * T.perchKick;
+    if (ny < -0.96 && Math.abs(vt) < 12 && f && f.kind !== 'rail') {
+      // …except the bone over the 13, where it TEETERS: a held breath before it picks a side
+      jit += (hash01(m.seed, 7000 + m.knocks) < 0.5 ? -1 : 1) * (f.teeter ? T.teeterKick : T.perchKick);
+    }
     m.n++;
     vt += jit;
     m.vx = sx + nx * vnNew + tx * vt;
@@ -301,6 +311,15 @@
       var dx = m.x - wh.x, dy = m.y - wh.y;
       if (dx * dx + dy * dy > (wh.r + m.r + 2) * (wh.r + m.r + 2)) continue;
       var segs = B.wheelSegments(wh, t), om = B.wheelOmega(wh, t);
+      // riding the wheel: count how far round the hub the marble has been carried
+      if (wh.mode === 'spin') {
+        var ang = Math.atan2(dy, dx);
+        if (m.ride && m.ride.id === wh.id) {
+          var da = ang - m.ride.a; if (da > Math.PI) da -= 2 * Math.PI; if (da < -Math.PI) da += 2 * Math.PI;
+          m.ride.sum += da; m.ride.a = ang; m.ride.t = w.t;
+          if (!m.ride.looped && Math.abs(m.ride.sum) > Math.PI) { m.ride.looped = true; emit(w, m, { type: 'ride', id: wh.id, x: m.x, y: m.y }); }
+        } else m.ride = { id: wh.id, a: ang, sum: 0, t: w.t, looped: false };
+      }
       for (var s = 0; s < segs.length; s++) {
         var a = segs[s][0], c = segs[s][1];
         var q = closest(m.x, m.y, a[0], a[1], c[0], c[1]);
