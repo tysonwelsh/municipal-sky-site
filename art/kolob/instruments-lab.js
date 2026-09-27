@@ -163,6 +163,26 @@ window.InstrumentsLab = (function () {
     return { dur: tail(t, h.dur + 0.5, st), stats: st };
   };
 
+  // ---- the cornet alone: the Question, as Ives gave it to a trumpet ----------
+  // (owner, 2026-09-27: "I'm not seeing the cornet"). The band's lead cornet,
+  // unaccompanied, asks v0.30's question — sol la re' ti re' — three times as
+  // Kolob 2 will: the first and last verbatim, the middle one bent.
+  P.cornet = function (ctx, into, t, o, seed) {
+    var band = KOLOB.VoicesBand.create(ctx, into, { seed: seed });
+    var q = 0.88 * ((o.beat || 0.5) / 0.5);
+    var ASK = [[5, 1.3], [6, 0.9], [9, 1.0], [7, 0.8], [9, 2.8]];            // 1-based degrees of the old question
+    var BENT = [[5, 1.3], [6, 0.9], [9, 0.7], [8, 0.4], [7, 0.8], [9, 2.8]];
+    var tt = t;
+    [ASK, BENT, ASK].forEach(function (fig, k) {
+      var at = 0, notes = fig.map(function (n) { var x = { f: deg(K, n[0]), dur: n[1] * q, at: at, acc: at === 0 }; at += n[1] * q; return x; });
+      band.play(tt, notes, "cornet", k === 1 ? "mf" : "mp");
+      tt += at + 3.2;                                                          // the silence where an answer would be
+    });
+    keep(ctx, "cornet", band);
+    var st = band.stats();
+    return { dur: tail(t, tt - t, st), stats: st };
+  };
+
   // ---- the band: an eight-bar quickstep strain in F, played twice -----------
   P.band = function (ctx, into, t, o, seed) {
     var band = KOLOB.VoicesBand.create(ctx, into, { seed: seed });
@@ -417,6 +437,7 @@ window.InstrumentsLab = (function () {
     { id: "organ", name: "The organ", phrase: "OLD HUNDRED, two lines, SATB + pedal" },
     { id: "reference", name: "The v0.30 organ (level reference)", phrase: "organChord as the prelude plays it, line for line — hymn principal on the new organ matches its loudness" },
     { id: "band", name: "The brass band", phrase: "a quickstep strain, twice (mf, then f)" },
+    { id: "cornet", name: "The cornet alone", phrase: "the Question, asked three times (the middle one bent), as Ives gave it to a trumpet" },
     { id: "fiddle", name: "The fiddle", phrase: "a reel in D over the open D string" },
     { id: "handbells", name: "The handbells", phrase: "a Primary song in 6/8" },
     { id: "gulls", name: "The gulls", phrase: "a flock crossing; the lead bird traces OLD HUNDRED" },
