@@ -57,11 +57,23 @@
 // III and v and VII into pure triads (te at 9/5, re at 10/9) — the wolves the
 // wave-1 critic heard in the Question's chorale. Harmony's own frequencies
 // are therefore NOT used unless material.trustFreqs is set; its degrees are.
-// Its voicings are re-seated under the pinned soprano (inner voices dropped
-// an octave until nothing crosses), and the whole chorale is placed in the
-// trombones' ranges: the choir plays it where the instruments are warm (an
-// octave down if it sits high), and a part that still strays is folded
-// line by line.
+//
+// THE VOICING. The chords are the engine's; who plays which of their tones,
+// and in which octave, is the choir's. Harmony voices each chord for its
+// own soprano and then pins the tune over it, so its alto can stand above
+// the melody and its parts move in blocks — fifths and octaves in parallel,
+// leaps of an octave in every part (it rewards parallel fifths: the
+// dispersed harmony of the Sacred Harp, right for the ward, wrong for a
+// Moravian chorale). So the soprano is set to the tune, and the lower three
+// are voiced again under it by the fallback harmonizer's own voicer, one
+// pass over the whole chorale: inner voices near, no parallels, no
+// crossing, each line closing in root position. Over 66 tunes (1,882
+// chords) of the engine's Harmony that took the parallel fifths and octaves
+// from about 1,900 to about 30, and the inner voices' leaps past a fifth
+// from about 650 to about 10.
+// Then the whole chorale is placed in the trombones' ranges: the choir plays
+// it where the instruments are warm (an octave down if it sits high), and a
+// part that still strays is folded line by line.
 //
 // THE PLAYERS. Four parts on three instruments of KOLOB.VoicesBand:
 // soprano on the alto trombone, alto and tenor on tenor trombones, bass on
@@ -71,11 +83,12 @@
 // point; the near one has width); both share one town room, so they stand
 // in the same place. However the dice fell for their distances and
 // dynamics, the far choir is trimmed to be heard 7–9 LU under the near
-// one (a drawn gap), so the antiphony never collapses into two equal
-// choirs. Each phrase is an arch — a breath attack, a swell to
-// its middle, a fade on the fermata — and a repeated line comes back
-// softer. In a minor mode the near choir may end on a major chord (the
-// tierce de Picardie: the dawn's own answer).
+// one (a drawn gap; the lab measures it within about 1.5 LU of the draw,
+// with the far choir also some 12 dB poorer above 1 kHz), so the antiphony
+// never collapses into two equal choirs. Each phrase is an arch — a
+// breath attack, a swell to its middle, a fade on the fermata — and a
+// repeated line comes back softer. In a minor mode the near choir may end
+// on a major chord (the tierce de Picardie: the dawn's own answer).
 //
 // PURE PLANNING. plan(), score(), chorale(), harmonize() and decide() touch
 // no AudioContext, DOM, clock or Math.random; every die comes from the
@@ -89,16 +102,19 @@
 //
 // Public surface: window.KOLOB.GuestTrombones
 //   plan(meetingInfo, stream) → { guest, seat: "prelude", at, dur, holdUntil,
-//        exchanges, odds, logged: true } | null
+//        exchanges, lines, estimated, odds, logged: true } | null
 //     meetingInfo: { n, kind: "ordinary"|"fast"|"conference"|"jubilee",
 //       sunday?: "easter"|"christmas"|"funeral"|"dedication"|"pioneer"|…,
 //       sections: [{type, dur}], guests: [{type, section}], material?, force? }
+//     (with material — best, a prepared chorale — dur is exact; without it,
+//     an estimate from a nominal Common Meter hymn, and estimated: true)
 //   perform(ctx, dest, t, material, stream, hooks?) → end time (s, absolute)
 //     hooks: { onNote({freq, t, dur, part, choir, line, loud}), onPhrase(ph),
 //              only: "far"|"near" (a lab's solo; the engine never sets it) }
 //   decide(meetingInfo, stream) → { seat, why, odds, roll }   (plan, explained)
 //   score(material, stream, t0) → the whole performance as data (pure)
-//   chorale(material) → the material, read, tuned and placed (pure)
+//   chorale(material) → the material, read, tuned, voiced and placed (pure);
+//     itself material — pass it to plan() and perform() (see chorale)
 //   harmonize(mode, melodyLines) → chords, four parts (pure, deterministic)
 //   SAMPLES (a short hymn melody per mode), ODDS, EXCLUDES, LEVEL, LABEL
 // ============================================================================
@@ -132,7 +148,8 @@ window.KOLOB.GuestTrombones = (function () {
   var AT = [4, 14];                                // the moment in the prelude, s
   var MAX_DUR = 90;                                // the exchanges shorten to fit
   // the guest's own bus. At 1.15 the dawn's loudest 3 s (the near choir)
-  // sit about 2.5 LU under the organ reference in the lab — in the app
+  // sit 2–4 LU under the organ reference in the lab (six modes, both
+  // sources: handoff r2-trombones-1) — in the app
   // (where the organ layer plays at 0.52 into both rooms, and a guest goes
   // to the wide room alone) that is about the organ's own level at dawn; the
   // far choir sits some 7–9 LU under it. For the owner's ear.
@@ -303,8 +320,13 @@ window.KOLOB.GuestTrombones = (function () {
   };
   // root motion in 7-degree space: down a fifth is the strongest
   var MOTION = { 0: 0.9, 3: 0, 4: 0.6, 1: 0.5, 5: 0.5, 2: 1.1, 6: 1.3 };
-  // the vocal SATB compass the harmonizer writes in, as ratios of the keynote
-  var VOICE = { B: [0.28, 0.95], T: [0.45, 1.4], A: [0.7, 2.0] };
+  // the compass the voicer writes in, as ratios of the keynote: the
+  // trombones' own, not a singing choir's — the floors are the comfortable
+  // floors of RANGE (below) over a middle-C keynote (55, 98 and 147 Hz over
+  // 260). A singers' compass (bass from 0.28, alto from 0.7) left a soprano
+  // that dips to the keynote no alto under it: one chord in eighteen of the
+  // engine's fell back to a plain stack, and its parallels came with it.
+  var VOICE = { B: [0.22, 0.95], T: [0.4, 1.4], A: [0.56, 2.0] };
 
   function indicesIn(mode, lo, hi) {
     var n = col(mode).ratios.length, out = [];
@@ -320,11 +342,71 @@ window.KOLOB.GuestTrombones = (function () {
     else if (pos === "close") c += fn === "T" ? 0 : fn === "R" ? 0.6 : fn === "D" ? 1 : 1.8;
     return c;
   }
+  // THE VOICER: the SATB seats one chord can take under a given soprano, and
+  // the price of moving from one seat to the next — shared by the harmonizer
+  // (which chooses its chords) and the re-voicer (which is handed them).
+  // A chord here is { cls: [root, third, fifth] (or [root, fifth]: open),
+  // open, name }; seats are collection indices [B, T, A, S].
+  function voicer(mode) {
+    var n = col(mode).ratios.length;
+    var Bs = indicesIn(mode, VOICE.B[0], VOICE.B[1]), Ts = indicesIn(mode, VOICE.T[0], VOICE.T[1]), As = indicesIn(mode, VOICE.A[0], VOICE.A[1]);
+    function voicings(ch, s) {
+      var out = [], has = {};
+      ch.cls.forEach(function (k) { has[k] = true; });
+      var root = ch.cls[0], third = ch.open ? null : ch.cls[1];
+      Bs.forEach(function (b) {
+        var bc = mod(b, n), inv = 0;
+        if (bc === root) inv = 0; else if (third != null && bc === third) inv = 1.2; else return;
+        Ts.forEach(function (tt) {
+          if (tt <= b || tt - b > Math.round(n * 1.5) || !has[mod(tt, n)]) return;
+          As.forEach(function (a) {
+            if (a <= tt || a >= s || a - tt > n || s - a > n || !has[mod(a, n)]) return;
+            var v = [b, tt, a, s], cnt = {};
+            v.forEach(function (x) { var q = mod(x, n); cnt[q] = (cnt[q] || 0) + 1; });
+            var cost = inv;
+            // the low-interval limit: a third or a fourth between bass and
+            // tenor, down under B♭2, is mud on brass — the tenor stands a
+            // fifth or more above a low bass
+            if (ratioOf(mode, b) < 0.45 && cents(ratioOf(mode, tt) / ratioOf(mode, b)) < 690) cost += 3;
+            if (!ch.open) {
+              if (!cnt[ch.cls[1]]) cost += 3;                     // no third
+              if (!cnt[ch.cls[2]]) cost += 0.6;                   // no fifth
+              if ((cnt[ch.cls[1]] || 0) > 1) cost += 0.8;          // a doubled third
+              if (mode === "ionian" && ch.name === "V" && (cnt[6] || 0) > 1) cost += 3;   // a doubled leading tone
+            } else if (!cnt[ch.cls[0]] || !cnt[ch.cls[1]]) return;
+            out.push({ v: v, cost: cost });
+          });
+        });
+      });
+      return out;
+    }
+    function ivl(a, b) { return mod(Math.round(cents(ratioOf(mode, b) / ratioOf(mode, a))), 1200); }
+    function perfect(cc) { return cc < 30 || cc > 1170 || Math.abs(cc - 702) < 30; }
+    function move(p, q, breath) {
+      var cst = (Math.abs(q[1] - p[1]) + Math.abs(q[2] - p[2]) + 0.4 * Math.abs(q[0] - p[0])) * (breath ? 0.3 : 0.6);
+      if (Math.abs(q[1] - p[1]) > n / 2) cst += 1.5;
+      if (Math.abs(q[2] - p[2]) > n / 2) cst += 1.5;
+      if (Math.abs(q[0] - p[0]) > n) cst += 2;               // a bass leap wider than the octave
+      if (breath) return cst;
+      for (var i = 0; i < 4; i++) for (var j = i + 1; j < 4; j++) {
+        var di = q[i] - p[i], dj = q[j] - p[j];
+        if (!di || !dj || (di > 0) !== (dj > 0)) continue;
+        var c1 = ivl(p[i], p[j]), c2 = ivl(q[i], q[j]);
+        if (perfect(c1) && perfect(c2) && Math.abs(c1 % 1200 - c2 % 1200) < 40) cst += 8;
+      }
+      var dB = q[0] - p[0], dS = q[3] - p[3];
+      if (dB && dS && (dB > 0) === (dS > 0) && Math.abs(dS) > 1 && perfect(ivl(q[0], q[3]))) cst += 1;
+      if (q[1] > p[2] || q[2] < p[1]) cst += 0.5;
+      return cst;
+    }
+    return { n: n, voicings: voicings, move: move };
+  }
+
   function harmonize(mode, melodyLines) {
     mode = modeName(mode);
-    var c = col(mode), n = c.ratios.length;
+    var n = col(mode).ratios.length;
     var V = VOCAB[mode].map(function (v) { return { name: v[0], cls: v[1], r7: v[2], fn: v[3], open: v[1].length === 2 }; });
-    var Bs = indicesIn(mode, VOICE.B[0], VOICE.B[1]), Ts = indicesIn(mode, VOICE.T[0], VOICE.T[1]), As = indicesIn(mode, VOICE.A[0], VOICE.A[1]);
+    var Vc = voicer(mode), voicings = Vc.voicings, move = Vc.move;
     // the melody, flattened, with its line ends and a register the soprano
     // can sing (its middle near 1.45 × the keynote)
     var notes = [];
@@ -345,50 +427,6 @@ window.KOLOB.GuestTrombones = (function () {
       if (!x.end) return null;
       if (x.last) return "final";
       return x.line % 2 === 0 ? "open" : "close";
-    }
-    function voicings(ch, s) {
-      var out = [], has = {};
-      ch.cls.forEach(function (k) { has[k] = true; });
-      var root = ch.cls[0], third = ch.open ? null : ch.cls[1];
-      Bs.forEach(function (b) {
-        var bc = mod(b, n), inv = 0;
-        if (bc === root) inv = 0; else if (third != null && bc === third) inv = 1.2; else return;
-        Ts.forEach(function (tt) {
-          if (tt <= b || tt - b > Math.round(n * 1.5) || !has[mod(tt, n)]) return;
-          As.forEach(function (a) {
-            if (a <= tt || a >= s || a - tt > n || s - a > n || !has[mod(a, n)]) return;
-            var v = [b, tt, a, s], cnt = {};
-            v.forEach(function (x) { var q = mod(x, n); cnt[q] = (cnt[q] || 0) + 1; });
-            var cost = inv;
-            if (!ch.open) {
-              if (!cnt[ch.cls[1]]) cost += 3;                     // no third
-              if (!cnt[ch.cls[2]]) cost += 0.6;                   // no fifth
-              if ((cnt[ch.cls[1]] || 0) > 1) cost += 0.8;          // a doubled third
-              if (mode === "ionian" && ch.name === "V" && (cnt[6] || 0) > 1) cost += 3;   // a doubled leading tone
-            } else if (!cnt[ch.cls[0]] || !cnt[ch.cls[1]]) return;
-            out.push({ v: v, cost: cost });
-          });
-        });
-      });
-      return out;
-    }
-    function ivl(a, b) { return mod(Math.round(cents(ratioOf(mode, b) / ratioOf(mode, a))), 1200); }
-    function perfect(cc) { return cc < 30 || cc > 1170 || Math.abs(cc - 702) < 30; }
-    function move(p, q, breath) {
-      var cst = (Math.abs(q[1] - p[1]) + Math.abs(q[2] - p[2]) + 0.4 * Math.abs(q[0] - p[0])) * (breath ? 0.3 : 0.6);
-      if (Math.abs(q[1] - p[1]) > n / 2) cst += 1.5;
-      if (Math.abs(q[2] - p[2]) > n / 2) cst += 1.5;
-      if (breath) return cst;
-      for (var i = 0; i < 4; i++) for (var j = i + 1; j < 4; j++) {
-        var di = q[i] - p[i], dj = q[j] - p[j];
-        if (!di || !dj || (di > 0) !== (dj > 0)) continue;
-        var c1 = ivl(p[i], p[j]), c2 = ivl(q[i], q[j]);
-        if (perfect(c1) && perfect(c2) && Math.abs(c1 % 1200 - c2 % 1200) < 40) cst += 8;
-      }
-      var dB = q[0] - p[0], dS = q[3] - p[3];
-      if (dB && dS && (dB > 0) === (dS > 0) && Math.abs(dS) > 1 && perfect(ivl(q[0], q[3]))) cst += 1;
-      if (q[1] > p[2] || q[2] < p[1]) cst += 0.5;
-      return cst;
     }
     // the pass: states per melody note
     var layers = [];
@@ -526,12 +564,14 @@ window.KOLOB.GuestTrombones = (function () {
   function degOf(x) { return typeof x === "number" ? x : (x && x.deg != null ? +x.deg : null); }
   function beatsOf(x) { return x && typeof x === "object" ? num(x.beats != null ? x.beats : (x.durBeats != null ? x.durBeats : x.dur), 1) : 1; }
 
-  // one chord, from any of the accepted shapes → {degs, beats, fermata, freqs?, hold}
+  // one chord, from any of the accepted shapes → {degs, beats, fermata,
+  // freqs?, hold, tones?} — tones is Harmony's own {class: "root" | "third" |
+  // "fifth"}, when the chord comes straight from Harmony.harmonize()
   function readChord(ch) {
     if (Array.isArray(ch)) return { degs: ch.slice(0, 4), beats: 1 };
     if (!ch || typeof ch !== "object") return null;
-    if (ch.chord && ch.chord.voicing) return { degs: ch.chord.voicing.slice(0, 4), beats: num(ch.dur, 1), freqs: ch.chord.freqs || null };
-    if (ch.degs) return { degs: ch.degs.slice(0, 4), beats: num(ch.beats != null ? ch.beats : ch.dur, 1), fermata: !!ch.fermata, freqs: ch.freqs || null, hold: !!ch.hold };
+    if (ch.chord && ch.chord.voicing) return { degs: ch.chord.voicing.slice(0, 4), beats: num(ch.dur, 1), freqs: ch.chord.freqs || null, tones: ch.chord.tones || null };
+    if (ch.degs) return { degs: ch.degs.slice(0, 4), beats: num(ch.beats != null ? ch.beats : ch.dur, 1), fermata: !!ch.fermata, freqs: ch.freqs || null, hold: !!ch.hold, tones: ch.tones || null };
     return null;
   }
   function splitInto(list, lens) {
@@ -546,9 +586,86 @@ window.KOLOB.GuestTrombones = (function () {
     return out;
   }
 
-  // chords (collection or d7 degrees) → lines of parts
+  // WHAT A GIVEN CHORD IS: its root, third and fifth, as classes of the mode.
+  // Harmony says so itself (its tones; an open chord has no third, unless
+  // the tune sings it). A bare [B,T,A,S] is read against the mode's own
+  // triads (the harmonizer's vocabulary): the one that holds all its tones,
+  // rooted on its bass if one is, else with its bass for a third — and a
+  // chord of two tones, root and fifth, stays open. Anything else (a
+  // diminished triad, a seventh) is taken as it stands, rooted on its bass.
+  function chordSpec(mode, d, tones) {
+    var n = col(mode).ratios.length, sCls = mod(d[3], n), roles = {}, classes = [];
+    d.forEach(function (x) { if (x != null) { var k = mod(x, n); if (classes.indexOf(k) < 0) classes.push(k); } });
+    if (tones) Object.keys(tones).forEach(function (k) { roles[tones[k]] = mod(+k, n); });
+    var cls = null, name = null;
+    if (roles.root != null && roles.fifth != null && roles.root !== roles.fifth) {
+      var third = roles.third != null ? roles.third : (sCls !== roles.root && sCls !== roles.fifth ? sCls : null);
+      cls = third != null ? [roles.root, third, roles.fifth] : [roles.root, roles.fifth];
+      VOCAB[mode].forEach(function (v) { if (v[1][0] === cls[0] && v[1].length === 3 && cls.length === 3 && v[1][1] === cls[1]) name = v[0]; });
+    } else {
+      var bassCls = mod(d[0], n), best = null, bs = -1;
+      VOCAB[mode].forEach(function (v) {
+        if (!classes.every(function (k) { return v[1].indexOf(k) >= 0; })) return;
+        var sc = v[1][0] === bassCls ? 2 : (v[1].length === 3 && v[1][1] === bassCls ? 1 : 0);
+        if (sc > bs) { bs = sc; best = v; }
+      });
+      if (best) {
+        name = best[0];
+        var tri = best[1];
+        cls = tri.length === 3 && classes.length === 2 && classes.indexOf(tri[1]) < 0 ? [tri[0], tri[2]] : tri.slice();
+      } else cls = [bassCls].concat(classes.filter(function (k) { return k !== bassCls; }));
+    }
+    return { cls: cls, open: cls.length === 2, name: name };
+  }
+
+  // THE RE-VOICING: the chords as given, seated for four trombones under the
+  // soprano by the harmonizer's own pass — one sweep over the whole chorale
+  // for the cheapest path: inner voices near, contrary and oblique motion,
+  // no parallel fifths or octaves, no crossing, a line closing in root
+  // position, a breath between lines. The chords stay the engine's; only who
+  // plays which tone, and in which octave, is the choir's.
+  // rows: [{ s (the soprano's index), spec (chordSpec), end, brk }] → each
+  // row gets v: [B, T, A, S]
+  function revoice(mode, rows) {
+    var Vc = voicer(mode), n = Vc.n, prev = null;
+    rows.forEach(function (x) {
+      var st = Vc.voicings(x.spec, x.s).map(function (vc) {
+        return { v: vc.v, own: vc.cost + (x.end && mod(vc.v[0], n) !== x.spec.cls[0] ? 4 : 0), cost: 1e9, back: -1 };
+      });
+      // a soprano no seat fits under (far out of the compass): the chord's
+      // tones stacked plainly down from it, rather than a broken chain
+      if (!st.length) st.push({ v: stack(x.spec, x.s, n), own: 50, cost: 1e9, back: -1 });
+      if (prev) {
+        st.forEach(function (s2) {
+          prev.forEach(function (p, pj) {
+            var c = p.cost + s2.own + Vc.move(p.v, s2.v, x.brk);
+            if (c < s2.cost) { s2.cost = c; s2.back = pj; }
+          });
+        });
+      } else st.forEach(function (s2) { s2.cost = s2.own; });
+      x.states = st; prev = st;
+    });
+    var bi = -1, bc = 1e9;
+    prev.forEach(function (s2, k) { if (s2.cost < bc) { bc = s2.cost; bi = k; } });
+    for (var i = rows.length - 1; i >= 0; i--) {
+      var s3 = rows[i].states[bi];
+      rows[i].v = s3.v; bi = s3.back;
+      delete rows[i].states;
+    }
+    return rows;
+  }
+  function stack(spec, s, n) {
+    function below(x, set) { for (var y = x - 1; y > x - 2 * n; y--) if (set.indexOf(mod(y, n)) >= 0) return y; return x - n; }
+    var a = below(s, spec.cls), t = below(a, spec.cls), b = below(t - Math.floor(n / 2) + 1, [spec.cls[0]]);
+    return [b, t, a, s];
+  }
+
+  // chords (collection or d7 degrees) → lines of parts.
+  //   o: { space ("d7" | "collection"), trust (Harmony's own frequencies),
+  //        tune (the tune's lines, collection indices), voiced (the
+  //        harmonizer's own output: already seated, played as it stands) }
   //
-  // THE RE-SEATING. Harmony pins its soprano to the tune but folds each note
+  // THE SOPRANO. Harmony pins its soprano to the tune but folds each note
   // into the soprano's compass on its own, so the tune can leap a sixth or
   // an octave where it steps, and its alto can stand above the melody. An
   // arranger would not. Best of all, the engine passes the tune it
@@ -559,12 +676,13 @@ window.KOLOB.GuestTrombones = (function () {
   // exactly; a melodic fifth or sixth comes back inverted, the price of
   // guessing), and each line is set where a soprano sings (its middle near
   // 1.45 × the keynote), which also mends a guess that went astray between
-  // lines. Either way, each lower part, in turn, keeps its own note if
-  // it sits under the part above within an octave (the bass within an octave
-  // and a half), else takes the nearest octave that does, nearest to where
-  // that part just was. Classes never change — only octaves.
-  function fromChords(mode, K, lines, space, trust, tuneLines) {
-    var n = col(mode).ratios.length;
+  // lines. Then the lower parts are voiced again under it (THE RE-VOICING,
+  // above): Harmony voiced them for ITS soprano, and moved under the tune's
+  // they would go in blocks — octaves and fifths in parallel, leaps of an
+  // octave in every part.
+  function fromChords(mode, K, lines, o) {
+    o = o || {};
+    var n = col(mode).ratios.length, space = o.space === "d7" ? "d7" : "collection", tuneLines = o.tune;
     function octaveNear(x, ref) {
       var best = x, bd = 1e9;
       for (var k = -5; k <= 5; k++) { var y = x + k * n, dd = Math.abs(cents(ratioOf(mode, y) / ratioOf(mode, ref))); if (dd < bd - 1e-9) { bd = dd; best = y; } }
@@ -572,7 +690,8 @@ window.KOLOB.GuestTrombones = (function () {
     }
     var L = lines.map(function (ln) {
       return ln.map(function (ch) {
-        return { ch: ch, d: ch.degs.map(function (x) { return x == null ? null : (space === "d7" ? fromD7(mode, x) : Math.round(x)); }) };
+        var d = ch.degs.map(function (x) { return x == null ? null : (space === "d7" ? fromD7(mode, x) : Math.round(x)); });
+        return { ch: ch, d: d, orig: d.slice() };
       });
     });
     function anchor(group) {                         // set a run of soprano notes where a soprano sings
@@ -583,57 +702,52 @@ window.KOLOB.GuestTrombones = (function () {
       for (var k = -4; k <= 4; k++) { var dd = Math.abs(Math.log(ratioOf(mode, med + k * n) / 1.45)); if (dd < bd - 1e-9) { bd = dd; sh = k * n; } }
       group.forEach(function (x) { if (x.d[3] != null) x.d[3] += sh; });
     }
-    var fits = tuneLines && tuneLines.length === L.length && L.every(function (ln, i) { return tuneLines[i].length === ln.length; });
-    if (fits) {
-      // the tune itself: its octaves are the truth
-      L.forEach(function (ln, i) { ln.forEach(function (x, j) { if (x.d[3] != null) x.d[3] = tuneLines[i][j]; }); });
-      var all = [];
-      L.forEach(function (ln) { all = all.concat(ln); });
-      anchor(all);
-    } else {
-      // the tune, rebuilt from its given steps, a line at a time
-      var given = null, cur = null;
-      L.forEach(function (ln) {
-        ln.forEach(function (x) {
-          var s0 = x.d[3];
-          if (s0 == null) return;
-          if (given == null) cur = s0;
-          else {
-            var step = s0 - given;
-            if (Math.abs(cents(ratioOf(mode, s0) / ratioOf(mode, given))) > 600) step = octaveNear(s0, given) - given;
-            cur += step;
-          }
-          given = s0; x.d[3] = cur;
+    if (!o.voiced) {
+      var fits = tuneLines && tuneLines.length === L.length && L.every(function (ln, i) { return tuneLines[i].length === ln.length; });
+      if (fits) {
+        // the tune itself: its octaves are the truth
+        L.forEach(function (ln, i) { ln.forEach(function (x, j) { x.d[3] = tuneLines[i][j]; }); });
+        var all = [];
+        L.forEach(function (ln) { all = all.concat(ln); });
+        anchor(all);
+      } else {
+        // the tune, rebuilt from its given steps, a line at a time
+        var given = null, cur = null;
+        L.forEach(function (ln) {
+          ln.forEach(function (x) {
+            var s0 = x.d[3];
+            if (given == null) cur = s0;
+            else {
+              var step = s0 - given;
+              if (Math.abs(cents(ratioOf(mode, s0) / ratioOf(mode, given))) > 600) step = octaveNear(s0, given) - given;
+              cur += step;
+            }
+            given = s0; x.d[3] = cur;
+          });
+          anchor(ln);
         });
-        anchor(ln);
+      }
+      var rows = [];
+      L.forEach(function (ln, li) {
+        ln.forEach(function (x, j) {
+          rows.push({ s: x.d[3], spec: chordSpec(mode, x.orig, x.ch.tones), end: j === ln.length - 1, brk: li > 0 && j === 0, x: x });
+        });
       });
+      revoice(mode, rows).forEach(function (r) { r.x.d = r.v.slice(); });
     }
-    var prev = [null, null, null, null];
     return L.map(function (ln) {
       var parts = { B: [], T: [], A: [], S: [] }, beat = 0;
       ln.forEach(function (x) {
         var ch = x.ch, d = x.d;
-        for (var v = 2; v >= 0; v--) {
-          if (d[v] == null) continue;
-          var above = null;
-          for (var w = v + 1; w < 4; w++) if (d[w] != null) { above = d[w]; break; }
-          if (above == null) continue;
-          var room = v === 0 ? Math.round(1.5 * n) : n;
-          var ok = function (y) { return y < above && above - y <= room; };
-          var cands = [];
-          for (var k2 = -5; k2 <= 5; k2++) if (ok(d[v] + k2 * n)) cands.push(d[v] + k2 * n);
-          if (!cands.length) { var g = 0; while (d[v] >= above && g++ < 6) d[v] -= n; continue; }
-          if (ok(d[v]) && (prev[v] == null || Math.abs(d[v] - prev[v]) <= n)) continue;
-          var ref = prev[v] != null ? prev[v] : above - Math.ceil(n / 2);
-          cands.sort(function (a, b) { return Math.abs(a - ref) - Math.abs(b - ref) || b - a; });
-          d[v] = cands[0];
-        }
-        prev = d.slice();
-        var classes = d.filter(function (y) { return y != null; });
-        var tune = tuneChord(mode, classes);
+        var tune = tuneChord(mode, d.filter(function (y) { return y != null; }));
+        // Harmony's own frequencies, when trusted: each tone class as Harmony
+        // tuned it, in the octave the choir plays it
+        var hz = null;
+        if (o.trust && ch.freqs) { hz = {}; x.orig.forEach(function (y, i) { if (y != null && ch.freqs[i] > 0) hz[mod(y, n)] = ch.freqs[i]; }); }
         PARTS.forEach(function (p, pi) {
           if (d[pi] == null) return;
-          var f = trust && ch.freqs && ch.freqs[pi] ? ch.freqs[pi] : K * ratioOf(mode, d[pi]) * tune[mod(d[pi], n)];
+          var f = K * ratioOf(mode, d[pi]) * tune[mod(d[pi], n)];
+          if (hz && hz[mod(d[pi], n)]) { var g = hz[mod(d[pi], n)]; f = g * Math.pow(2, Math.round(Math.log(f / g) / Math.LN2)); }
           var last = parts[p][parts[p].length - 1];
           if (ch.hold && last && Math.abs(last.f - f) < 0.01 && last.beat + last.beats >= beat - 1e-9) { last.beats += ch.beats; return; }
           parts[p].push({ f: f, beat: beat, beats: ch.beats, cls: mod(d[pi], n) });
@@ -718,8 +832,13 @@ window.KOLOB.GuestTrombones = (function () {
   }
 
   // chorale(material) → { mode, keynoteHz, lines: [{parts:{B,T,A,S}, beats}],
-  //   source, octave, voices }
+  //   source, octave, voices, prepared: true }
+  // What it returns is itself material: handed back (to plan, score or
+  // perform), it is used as it stands. Harmonizing a melody here costs up to
+  // ~65 ms, re-voicing Harmony's chords ~10: an engine prepares the chorale
+  // when it plans the meeting, not inside a clock callback.
   function chorale(material) {
+    if (material && material.prepared && material.lines) return material;
     var M = material || {};
     var mode = modeName(M.mode || (M.hymn && M.hymn.mode));
     var K = num(M.keynoteHz, 260), space = M.space === "d7" ? "d7" : "collection";
@@ -732,11 +851,16 @@ window.KOLOB.GuestTrombones = (function () {
         else {
           var mp = h.melodyPart || "S";
           var ml = h.lines.map(function (ln) { return ((ln.notes && ln.notes[mp]) || []).map(function (nt) { return { idx: fromD7(mode, nt.deg), beats: num(nt.beats, 1) }; }); });
-          lines = fromChords(mode, K, harmonize(mode, ml.filter(function (l) { return l.length; })), "collection", false); source = "hymn melody, harmonized here";
+          lines = fromChords(mode, K, harmonize(mode, ml.filter(function (l) { return l.length; })), { voiced: true }); source = "hymn melody, harmonized here";
         }
       } else if (M.lines || M.chords) {
         var raw = M.lines ? M.lines : splitInto(M.chords, M.lineLengths);
-        var cl = raw.map(function (ln) { return (ln || []).map(readChord).filter(function (c) { return c && c.degs && c.degs.length === 4; }); }).filter(function (ln) { return ln.length; });
+        // (a chord needs its soprano; every tone it gives must be a number)
+        var cl = raw.map(function (ln) {
+          return (ln || []).map(readChord).filter(function (c) {
+            return c && c.degs && c.degs.length === 4 && c.degs[3] != null && c.degs.every(function (x) { return x == null || isFinite(+x); });
+          });
+        }).filter(function (ln) { return ln.length; });
         // the tune the chords harmonize, if the engine passes it too
         var tl = null;
         if (M.tune && M.tune.lines) {
@@ -745,26 +869,26 @@ window.KOLOB.GuestTrombones = (function () {
             return (ln || []).map(function (x) { var d = degOf(x); return d == null ? null : (tsp === "d7" ? fromD7(mode, d) : Math.round(d)); }).filter(function (x) { return x != null; });
           }).filter(function (ln) { return ln.length; });
         }
-        if (cl.length) { lines = fromChords(mode, K, cl, space, !!M.trustFreqs, tl); source = tl && tl.length === cl.length ? "chords, with the tune" : "chords"; }
+        if (cl.length) { lines = fromChords(mode, K, cl, { space: space, trust: !!M.trustFreqs, tune: tl }); source = tl && tl.length === cl.length ? "chords, with the tune" : "chords"; }
       } else if (M.melody || M.melodyLines) {
         var mlines = M.melodyLines ? M.melodyLines : splitInto(M.melody, M.lineLengths);
         var idxLines = mlines.map(function (ln) {
           return (ln || []).map(function (x) { var d = degOf(x); return d == null ? null : { idx: space === "d7" ? fromD7(mode, d) : Math.round(d), beats: beatsOf(x) }; }).filter(Boolean);
         }).filter(function (ln) { return ln.length; });
-        if (idxLines.length) { lines = fromChords(mode, K, harmonize(mode, idxLines), "collection", false); source = "melody, harmonized here"; }
+        if (idxLines.length) { lines = fromChords(mode, K, harmonize(mode, idxLines), { voiced: true }); source = "melody, harmonized here"; }
       }
     } catch (e) { lines = null; }
     if (!lines || !lines.length || !lines.some(function (l) { return l.beats > 0; })) {
       var smp = sampleMaterial(mode, K);
       var sl = smp.melodyLines.map(function (ln) { return ln.map(function (x) { return { idx: fromD7(mode, x.deg), beats: x.beats }; }); });
-      lines = fromChords(mode, K, harmonize(mode, sl), "collection", false);
+      lines = fromChords(mode, K, harmonize(mode, sl), { voiced: true });
       source = "sample (" + mode + ")";
     }
     // a single long line becomes two: an antiphony needs a call and an answer
     if (lines.length === 1 && lines[0].beats >= 4) lines = halve(lines[0]);
     var octave = place(lines);
     var voices = PARTS.filter(function (p) { return lines.some(function (l) { return l.parts[p].length; }); });
-    return { mode: mode, keynoteHz: K, lines: lines, source: source, octave: octave, voices: voices };
+    return { mode: mode, keynoteHz: K, lines: lines, source: source, octave: octave, voices: voices, prepared: true };
   }
   function halve(line) {
     var cut = line.beats / 2, a = { parts: {}, beats: 0 }, b = { parts: {}, beats: 0 };
@@ -818,7 +942,15 @@ window.KOLOB.GuestTrombones = (function () {
     lens.sort(function (a, b) { return a - b; });
     return { beats: ln.beats, onset: onset, median: lens.length ? lens[Math.floor(lens.length / 2)] : 1 };
   }
-  function heldEnd(mt, fermata) { return mt.onset + (mt.beats - mt.onset) * fermata; }
+  // The hold is the written length times the fermata — unless the line is
+  // written with its fermata already (the engine's pourIntoLine ends every
+  // line on a note of 2.2–5 beats): a fermata is not held twice. So the
+  // last sonority lasts the longer of its written length and a two-note
+  // close held by the fermata.
+  function heldEnd(mt, fermata) {
+    var last = mt.beats - mt.onset;
+    return mt.onset + Math.max(last, Math.min(last * fermata, 2 * mt.median * fermata));
+  }
   function timeline(ch, sh) {
     var metas = ch ? ch.lines.map(lineMeta) : NOMINAL;
     var all = [];
@@ -956,7 +1088,7 @@ window.KOLOB.GuestTrombones = (function () {
       far.dispose(); near.dispose(); town.dispose();
       try { sg.disconnect(); sent.disconnect(); bus.disconnect(); } catch (e) {}
     };
-    sent.start(t); sent.stop(tail);
+    sent.start(Math.max(0, t)); sent.stop(tail);      // (a lab may place t before the context's birth: a solo choir heard from its first phrase)
     perform.last = { far: far, near: near, score: sc };
     return sc.end;
   }

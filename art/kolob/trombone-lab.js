@@ -226,8 +226,9 @@ window.TromboneLab = (function () {
   }
   P.reference = function (ctx, into, t, o) {
     var chords = [[-6, -2, 3, 8], [-3, 1, 6, 8], [-2, 0, 5, 9], [-6, -2, 3, 8]];
-    var gainMul = o.gainMul != null ? o.gainMul : REF_GAINMUL, n = 0;
+    var gainMul = o.gainMul != null ? o.gainMul : REF_GAINMUL, n = 0, most = 0;
     chords.forEach(function (c, i) {
+      var n0 = n;
       var freqs = c.map(function (d) { return deg(260, d); });
       var tt = t + i * REF_STEP, dur = REF_DUR, stops = 0.5, trem = 0.15, pedal = 0.6;
       var master = ctx.createGain(); master.connect(into); n++;
@@ -261,14 +262,25 @@ window.TromboneLab = (function () {
       var peak = gainMul * 0.7;
       var atk = Math.min(2.2, dur * 0.3);
       env(master, tt, [[atk, peak], [Math.max(0.1, dur - atk - dur * 0.28), peak * 0.92], [dur * 0.28, 0]]);
+      most = Math.max(most, n - n0);
     });
-    return { dur: (chords.length - 1) * REF_STEP + REF_DUR + 0.5, stats: { standing: 0, created: n, peakLive: n } };
+    // the chords never overlap (6.3 s each, 6.4 s apart): one chord's nodes
+    // are the most ever live (the instruments lab's card says 180 — every
+    // node created — a wave-1 critic's note)
+    return { dur: (chords.length - 1) * REF_STEP + REF_DUR + 0.5, stats: { standing: 0, created: n, peakLive: most } };
   };
 
   // ---- the dawn exchange: KOLOB.GuestTrombones.perform, as the engine calls it
+  // (o.prompt, the live "far only" / "near only" buttons: the performance is
+  // placed so that choir's first phrase begins at once, rather than after
+  // the other choir's silence — the near choir's first line is ~12 s in)
   P.dawn = function (ctx, into, t, o) {
-    var st = settings(o), mat = material(st);
-    var end = G.perform(ctx, into, t, mat, streamFor(st.seed), { only: o.only || null });
+    var st = settings(o), mat = material(st), t0 = t;
+    if (o.only && o.prompt) {
+      var first = G.score(mat, streamFor(st.seed), 0).phrases.filter(function (ph) { return ph.choir === o.only; })[0];
+      if (first) t0 = t - first.t0;
+    }
+    var end = G.perform(ctx, into, t0, mat, streamFor(st.seed), { only: o.only || null });
     var last = G.perform.last;
     var s = merge(last.far.stats(), last.near.stats());
     return { dur: tail(t, end - t + 3, s), stats: s, score: last.score };
@@ -705,7 +717,7 @@ window.TromboneLab = (function () {
       if (ph.id === "dawn") {
         ["far", "near"].forEach(function (c) {
           var b2 = el("button", "ktl-play", c + " only"); b2.type = "button";
-          b2.addEventListener("click", function () { play("dawn", { only: c }).then(function (res) { readout.textContent = statLine(res.stats); }); });
+          b2.addEventListener("click", function () { play("dawn", { only: c, prompt: true }).then(function (res) { readout.textContent = statLine(res.stats); }); });
           row.appendChild(b2);
         });
       }
