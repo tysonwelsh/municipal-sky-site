@@ -1109,6 +1109,8 @@ The source is `critic/enrichment-1.md`. Each approved item joins its wave's mile
 
   The answerers stay the harmonium (and a second rank). The draw weights are to be tuned by ear.
 
+  **Owner, later the same day: the cornet asks most of the time.** Starting weights are cornet ≈ 55 %, clarinet ≈ 20 %, a sung vowel ≈ 15 %, fiddle ≈ 10 %, to be tuned by ear.
+
 **Earth tunes to add** (the transcription agent is on branch kolob-tunes):
 - "The Spirit of God" (Hymns #2; needed for the Hosanna);
 - "High on the Mountain Top" (#5);
