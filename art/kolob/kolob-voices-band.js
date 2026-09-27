@@ -292,7 +292,7 @@ window.KOLOB.VoicesBand = (function () {
   // (see the header, FAR ACROSS THE TOWN). The curves, pure:
   function dirDbAt(d) { return -22 * Math.pow(d, 1.5); }             // −3 dB at 0.25, −17 at 0.85, −22 at 1
   function airDbAt(d) { return dirDbAt(d) - 8 + 16 * d; }            // the town's air: 8 under the direct … 8 over
-  function veilAt(d) { return 16000 * Math.pow(5000 / 16000, d); }   // a gentle lowpass: 11.9 kHz at 0.25, 5.6 kHz at 0.85
+  function veilAt(d) { return 16000 * Math.pow(5000 / 16000, d); }   // a gentle lowpass: 12 kHz at 0.25, 6 kHz at 0.85, 5 kHz at 1
   function shelfDbAt(d) { return -14 * d; }                          // the air's loss above 2.5 kHz: −3.5 dB at 0.25, −12 at 0.85
   function echoAt(d) { return d > 0.4 ? 0.3 * ((d - 0.4) / 0.6) : 0; }
   // how loud a band sounds at distance d, in dB against the same band with
