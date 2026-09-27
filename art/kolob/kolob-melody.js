@@ -10,26 +10,34 @@
 // caller's stream as its last argument, R — the voice's turn, the guest's
 // stream, the meeting's motif:<n> — so the motif engine throws nothing that
 // belongs to anyone else.
+//
+// It reads nothing of the house (round 2, milestone 2). Where it needs the
+// meeting it takes a MOMENT, the plain object the chorister makes
+// (kolob-meeting.js, THE CHORISTER'S BOOK), just before the dice:
+//
+//   moment.section           the rite (which material, which transforms)
+//   moment.arc               how far through the section (0..1): the
+//                            doxology's reprise, the postlude's dispersal
+//   moment.now               the music's now: the dialogue's deadlines
+//   moment.cumulative,       the withheld tune, and whether it has been
+//   moment.assemblyFired     sung whole yet
+//   moment.activity,         the kind of Sunday and the season: the day's
+//   moment.seasonPos         temper
+//
+// Prosody needs no moment at all. The motif engine keeps the meeting's
+// material as its own state (the theme, the lineage, the ledger of
+// obligations between voices); what it reports goes to a log the house
+// hands it (Motif.setLog), and to nobody if none is given.
 // ============================================================================
 
 window.KOLOB = window.KOLOB || {};
 (function () {
   "use strict";
   var KOLOB = window.KOLOB;
-  // The house's shared state. Each room lends what the others need onto S
-  // (see the LENT block at the foot of this file); a name written S.x belongs
-  // to another room; a bare name is this room's own or borrowed below.
-  var S = KOLOB._s = KOLOB._s || {};
-
-  // ---- BORROWED — the other rooms' functions, bound late through S (every
-  // room is loaded before the first note, so the call always finds its owner) ----
-  // from kolob-meeting.js
-  function localArc() { return S.localArc(); }
-  // from kolob-core.js
-  function now() { return S.now(); }
-  function emitEvent(ev) { return S.emitEvent(ev); }
-  // (the other rooms' state, read and written through S: S.ctx, S.C,
-  // S.seasonPos)
+  // The motif engine's report, as the house hands it a way to speak (the
+  // clerk's minutes: kolob-meeting.js wires it); silent until then.
+  var log = function () {};
+  function setLog(fn) { log = typeof fn === "function" ? fn : function () {}; }
 
   // ==========================================================================
   // PROSODY — hymn meters. A verse is lines of counted syllables; the melody
@@ -342,9 +350,9 @@ window.KOLOB = window.KOLOB || {};
       }
       return true;
     }
-    function pickTransform(voice, m, chain, R) {
+    function pickTransform(voice, m, chain, mo, R) {
       var w = VOICE_WEIGHTS[voice] || VOICE_WEIGHTS.clarinet;
-      var tilt = SECTION_TILT[S.C.section] || {};
+      var tilt = SECTION_TILT[mo.section] || {};
       var dia = meetingDialect || {};
       var last = lastRealLink(chain);
       var pool = [];
@@ -382,8 +390,8 @@ window.KOLOB = window.KOLOB || {};
     // CUMULATIVE FORM — is this motif the withheld theme? While the flag
     // holds, the theme family may circulate only as fragments (endings
     // first); the whole tune waits for the doxology assembly.
-    function withheld(m) {
-      return S.C.cumulative && !S.C.assemblyFired && working.theme && m && m.name === working.theme.name;
+    function withheld(m, mo) {
+      return mo.cumulative && !mo.assemblyFired && working.theme && m && m.name === working.theme.name;
     }
     // Ives's staging, endings before beginnings: what fragment family each
     // section may work while the tune is withheld.
@@ -397,14 +405,14 @@ window.KOLOB = window.KOLOB || {};
       doxology:   ["fragmentHead", "sequence"],
       postlude:   ["fragmentTail", "augment"],
     };
-    function developWithheld(voice, m, R) {
-      var fam = CUMULATIVE_STAGE[S.C.section] || ["fragmentTail"];
+    function developWithheld(voice, m, mo, R) {
+      var fam = CUMULATIVE_STAGE[mo.section] || ["fragmentTail"];
       var out = clone(m);
       var forced = null;
       for (var fi = 0; fi < fam.length; fi++) {
         if (allowedTransform(fam[fi], out, out.chain)) { forced = fam[fi]; break; }
       }
-      if (!forced) return develop(voice, out, 1, R);  // guards refused; one gentle link
+      if (!forced) return develop(voice, out, 1, mo, R);  // guards refused; one gentle link
       out = TRANSFORMS[forced](out, R);
       out.gen = m.gen + 1;
       out.chain = m.chain.concat([forced]);
@@ -412,26 +420,26 @@ window.KOLOB = window.KOLOB || {};
       recentre(out);
       stats.developments++;
       remember(out);
-      emitEvent({ cat: "motif", label: "◆ " + out.name + "·g" + out.gen, detail: forced + " · withheld" });
+      log({ cat: "motif", label: "◆ " + out.name + "·g" + out.gen, detail: forced + " · withheld" });
       // occasionally one more free link — but only one, and never verbatim
-      if (R.chance(0.4)) out = develop(voice, out, 1, R);
+      if (R.chance(0.4)) out = develop(voice, out, 1, mo, R);
       return out;
     }
     // Identity tether: every 3rd generation, the ancestor's opening is grafted
     // back on — development may wander the valley, but the head returns.
-    function tether(m) {
+    function tether(m, mo) {
       var anc = ancestorOf(m.name);
       if (!anc) return m;
       // under the withholding the graft is capped at 2 — the head may haunt,
       // never announce
-      var kCap = withheld(m) ? 2 : 3;
+      var kCap = withheld(m, mo) ? 2 : 3;
       var k = Math.min(kCap, anc.notes.length, Math.max(1, m.notes.length - 1));
       m.notes = clone(anc).notes.slice(0, k).concat(m.notes.slice(k));
       m.chain = m.chain.concat(["tether"]);
       stats.transformsUsed.tether = (stats.transformsUsed.tether || 0) + 1;
       return m;
     }
-    function develop(voice, m, maxChain, R) {
+    function develop(voice, m, maxChain, mo, R) {
       if (m.gen >= 9) {                            // renewal: the line returns to its source
         var anc = ancestorOf(m.name);
         if (anc) m = anc;
@@ -440,7 +448,7 @@ window.KOLOB = window.KOLOB || {};
       var links = R.rint(1, maxChain || 2);
       var used = [];
       for (var i = 0; i < links; i++) {
-        var name = pickTransform(voice, out, out.chain.concat(used), R);
+        var name = pickTransform(voice, out, out.chain.concat(used), mo, R);
         if (!name) break;
         out = TRANSFORMS[name](out, R);
         used.push(name);
@@ -453,17 +461,17 @@ window.KOLOB = window.KOLOB || {};
       }
       out.gen = m.gen + 1;
       out.chain = m.chain.concat(used);
-      if (out.gen >= 3 && out.gen % 3 === 0) out = tether(out);
+      if (out.gen >= 3 && out.gen % 3 === 0) out = tether(out, mo);
       recentre(out);
       stats.developments++;
       remember(out);
-      emitEvent({ cat: "motif", label: "◆ " + out.name + "·g" + out.gen, detail: used.join("+") + " · " + (out.gesture || "") });
+      log({ cat: "motif", label: "◆ " + out.name + "·g" + out.gen, detail: used.join("+") + " · " + (out.gesture || "") });
       return out;
     }
-    // Which motif should a voice work right now? R: the voice's turn.
-    function request(voice, R) {
-      var m;
-      switch (S.C.section) {
+    // Which motif should a voice work right now? mo: the moment; R: the voice's turn.
+    function request(voice, mo, R) {
+      var m, sec = mo.section;
+      switch (sec) {
         case "prelude": case "invocation":
           m = R.chance(0.7) ? working.theme : R.pick(working.subs); break;
         case "hymn":
@@ -478,16 +486,16 @@ window.KOLOB = window.KOLOB || {};
       if (!m) m = working.theme;
       // CUMULATIVE: MORE of the theme's parts than usual — the form is
       // presence of the fragments, absence of the whole
-      if (withheld(working.theme) && m !== working.theme && R.chance(0.33)) m = working.theme;
+      if (withheld(working.theme, mo) && m !== working.theme && R.chance(0.33)) m = working.theme;
       // Work the LINEAGE (what the meeting has built) about half the time in
       // the singing sections; the tether keeps it recognizable.
-      if (S.C.section === "hymn" || S.C.section === "doxology") {
+      if (sec === "hymn" || sec === "doxology") {
         var line = lineage[m.name];
         if (line && line.gen > 0 && line.gen < 6 && R.chance(0.45)) m = line;
       }
       // State it plainly first — the tradition trusts its tunes.
-      if ((S.C.section === "prelude" || S.C.section === "invocation") && m.gen === 0 && R.chance(0.5) && !withheld(m)) return clone(m);
-      if (S.C.section === "doxology" && !climaxReprised && localArc() > 0.55 && !(S.C.cumulative && !S.C.assemblyFired)) {
+      if ((sec === "prelude" || sec === "invocation") && m.gen === 0 && R.chance(0.5) && !withheld(m, mo)) return clone(m);
+      if (sec === "doxology" && !climaxReprised && mo.arc > 0.55 && !(mo.cumulative && !mo.assemblyFired)) {
         // THE reprise: once per meeting, at the doxology's height, something
         // returns whole — usually the literal theme, sometimes its deepest
         // descendant, sometimes the lesser hymn. Recognition, varied.
@@ -495,45 +503,45 @@ window.KOLOB = window.KOLOB || {};
         var roll = R.rnd(0, 1);
         var deepLine = lineage[working.theme.name];
         if (roll < 0.25 && deepLine && deepLine.gen >= 3) {
-          emitEvent({ cat: "motif", label: "✸ reprise " + working.theme.name, detail: "the theme returns, transfigured — g" + deepLine.gen });
+          log({ cat: "motif", label: "✸ reprise " + working.theme.name, detail: "the theme returns, transfigured — g" + deepLine.gen });
           return clone(deepLine);
         }
         if (roll < 0.4 && working.subs.length) {
           var subRe = R.pick(working.subs);
-          emitEvent({ cat: "motif", label: "✸ reprise " + subRe.name, detail: "the lesser hymn returns — " + (subRe.gesture || "") });
+          log({ cat: "motif", label: "✸ reprise " + subRe.name, detail: "the lesser hymn returns — " + (subRe.gesture || "") });
           return clone(subRe);
         }
-        emitEvent({ cat: "motif", label: "✸ reprise " + working.theme.name, detail: "the theme returns, verbatim — " + (working.theme.gesture || "") });
+        log({ cat: "motif", label: "✸ reprise " + working.theme.name, detail: "the theme returns, verbatim — " + (working.theme.gesture || "") });
         return clone(working.theme);
       }
-      if (S.C.section === "postlude") {
+      if (sec === "postlude") {
         var deep = lineage[m.name];
-        return decompose((deep && deep.gen > m.gen) ? clone(deep) : clone(m), R);
+        return decompose((deep && deep.gen > m.gen) ? clone(deep) : clone(m), mo, R);
       }
       // the withheld theme develops only through its section's fragment family
-      if (withheld(m)) return developWithheld(voice, m, R);
-      return develop(voice, m, S.C.section === "doxology" ? 3 : 2, R);
+      if (withheld(m, mo)) return developWithheld(voice, m, mo, R);
+      return develop(voice, m, sec === "doxology" ? 3 : 2, mo, R);
     }
     // Postlude: the motif releases its notes one at a time into the evening.
-    function decompose(m, R) {
+    function decompose(m, mo, R) {
       var out = clone(m);
-      var x = localArc();
+      var x = mo.arc;
       var keep = Math.max(1, Math.round(out.notes.length * (1 - 0.8 * x)));
       while (out.notes.length > keep) out.notes.splice(R.rint(1, Math.max(1, out.notes.length - 1)), 1);
       out.notes.forEach(function (n) { n.durBeats *= 1 + x; });
       out.gen = m.gen + 1;
       out.chain = m.chain.concat(["dissolve"]);
-      emitEvent({ cat: "motif", label: "࿙ " + out.name + " disperses", detail: "notes let go into the dusk" });
+      log({ cat: "motif", label: "࿙ " + out.name + " disperses", detail: "notes let go into the dusk" });
       return out;
     }
 
     // ---- dialogue ledger: real obligations between voices ----
-    // (deadlines are kept on the music's clock: the poster's scheduled now)
-    function post(fromVoice, toVoice, motif, type, R) {
-      ledger.push({ from: fromVoice, to: toVoice, motif: clone(motif), type: type, deadline: now() + R.rnd(8, 20) });
+    // (deadlines are kept on the music's clock: the poster's moment.now)
+    function post(fromVoice, toVoice, motif, type, mo, R) {
+      ledger.push({ from: fromVoice, to: toVoice, motif: clone(motif), type: type, deadline: mo.now + R.rnd(8, 20) });
       if (ledger.length > 6) ledger.shift();
     }
-    function claim(voice, R) {
+    function claim(voice, mo, R) {
       var i, ob = null;
       for (i = 0; i < ledger.length; i++) {
         if (ledger[i].to === voice) { ob = ledger.splice(i, 1)[0]; break; }
@@ -542,7 +550,7 @@ window.KOLOB = window.KOLOB || {};
         // An obligation past its deadline is taken up by whichever voice
         // speaks next (never the caller itself) — the answer is always heard.
         for (i = 0; i < ledger.length; i++) {
-          if (ledger[i].from !== voice && now() > ledger[i].deadline) { ob = ledger.splice(i, 1)[0]; break; }
+          if (ledger[i].from !== voice && mo.now > ledger[i].deadline) { ob = ledger.splice(i, 1)[0]; break; }
         }
       }
       if (!ob) return null;
@@ -557,7 +565,7 @@ window.KOLOB = window.KOLOB || {};
         // the caller's notes verbatim; the choir sets them (renderer's job).
         ans = clone(m);
         ans.linedOut = true;
-      } else if (ob.type === "imitate") ans = develop(voice, m, 1, R);
+      } else if (ob.type === "imitate") ans = develop(voice, m, 1, mo, R);
       else if (ob.type === "invert") {
         var op = "invert";
         if (lastRealLink(m.chain) === "invert") op = isPalindromic(m) ? "transpose" : "retrograde";
@@ -565,15 +573,15 @@ window.KOLOB = window.KOLOB || {};
         stats.transformsUsed[op] = (stats.transformsUsed[op] || 0) + 1;
         recentre(ans); remember(ans);
       }
-      else ans = develop(voice, m, 2, R);
+      else ans = develop(voice, m, 2, mo, R);
       stats.answers++;
-      emitEvent({ cat: "motif", label: "⇄ " + voice + " answers " + ob.from, detail: ob.type + " · " + ans.name + "·g" + ans.gen });
+      log({ cat: "motif", label: "⇄ " + voice + " answers " + ob.from, detail: ob.type + " · " + ans.name + "·g" + ans.gen });
       return ans;
     }
-    function overdueFor(voice) {
+    function overdueFor(voice, mo) {
       for (var i = 0; i < ledger.length; i++) {
         if (ledger[i].to === voice) return true;
-        if (ledger[i].from !== voice && S.ctx && now() > ledger[i].deadline) return true;
+        if (ledger[i].from !== voice && mo.now != null && mo.now > ledger[i].deadline) return true;
       }
       return false;
     }
@@ -582,25 +590,26 @@ window.KOLOB = window.KOLOB || {};
       return false;
     }
 
-    // R: the meeting's motif:<n> stream (the day's gestures are part of its plan)
-    function newMeeting(R) {
+    // mo: the new meeting's moment; R: its motif:<n> stream (the day's
+    // gestures are part of its plan)
+    function newMeeting(mo, R) {
       // THE DAY'S TEMPER — the developmental dialect for the whole meeting.
       // Tilted by the kind of Sunday and the season: fast days run plain and
       // terse, festivals run florid and expansive, but any temper can surface.
-      var act = S.C.meeting ? S.C.meeting.activity : "ordinary";
+      var act = mo.activity || "ordinary", season = mo.seasonPos || 0;
       dialectName = R.pickW([
-        ["plain",     2 + 2.5 * (1 - S.seasonPos) + (act === "fast" ? 1.5 : 0)],
+        ["plain",     2 + 2.5 * (1 - season) + (act === "fast" ? 1.5 : 0)],
         ["psalmodic", 1.8 + (act === "fast" ? 1 : 0)],
         ["terse",     1.2 + (act === "fast" ? 2 : 0)],
-        ["florid",    0.8 + 2.4 * S.seasonPos + (act === "jubilee" ? 1.5 : 0)],
-        ["expansive", 1 + 2 * S.seasonPos + (act === "conference" ? 1.2 : 0)],
-        ["restless",  1.2 + S.seasonPos + (act === "conference" ? 1 : 0)],
+        ["florid",    0.8 + 2.4 * season + (act === "jubilee" ? 1.5 : 0)],
+        ["expansive", 1 + 2 * season + (act === "conference" ? 1.2 : 0)],
+        ["restless",  1.2 + season + (act === "conference" ? 1 : 0)],
       ]);
       meetingDialect = DIALECTS[dialectName];
       // Draw DISTINCT gestures from the pool. Most stay home today — and a
       // lean fast Sunday sometimes carries only two hymns in its pocket.
       var leanDie = R.chance(0.5);
-      var draw = (S.C.meeting && S.C.meeting.activity === "fast" && leanDie) ? 2 : 3;
+      var draw = (mo.activity === "fast" && leanDie) ? 2 : 3;
       var idxs = [];
       while (idxs.length < draw) {
         var gi = R.rint(0, GESTURES.length - 1);
@@ -617,7 +626,7 @@ window.KOLOB = window.KOLOB || {};
       // CUMULATIVE: a 3-note theme withheld and finally assembled is an
       // anticlimax — seat the day's longest hymn in the theme's chair (the
       // chair keeps its name; the tune changes hands)
-      if (S.C.cumulative && working.theme.notes.length < 5) {
+      if (mo.cumulative && working.theme.notes.length < 5) {
         var best = -1;
         for (var wi = 0; wi < working.subs.length; wi++) {
           var cand = working.subs[wi].notes.length;
@@ -637,7 +646,7 @@ window.KOLOB = window.KOLOB || {};
       lineage = {};
       climaxReprised = false;
       stats.gestures = idxs.map(function (g2) { return GESTURES[g2].name; });
-      emitEvent({
+      log({
         cat: "motif", label: "❁ the day's hymns",
         detail: stats.gestures.map(function (g3, k) { return NAMES[k] + " " + g3; }).join(" · ") + " · temper: " + dialectName,
       });
@@ -646,11 +655,11 @@ window.KOLOB = window.KOLOB || {};
       if (type === "doxology") climaxReprised = false;
     }
     function theme() { return working.theme; }
-    function anyWorking(R) {
+    function anyWorking(mo, R) {
       // under the withholding, casual callers never receive the raw theme
-      if (S.C.cumulative && !S.C.assemblyFired) {
+      if (mo.cumulative && !mo.assemblyFired) {
         if (working.subs.length) return R.pick(working.subs);
-        return developWithheld("choir", working.theme, R);
+        return developWithheld("choir", working.theme, mo, R);
       }
       return (R.chance(0.7) || !working.subs.length) ? working.theme : R.pick(working.subs);
     }
@@ -658,7 +667,7 @@ window.KOLOB = window.KOLOB || {};
     return {
       newMeeting: newMeeting, onSection: onSection, theme: theme, anyWorking: anyWorking,
       request: request, post: post, claim: claim, overdueFor: overdueFor, pendingLineOut: pendingLineOut,
-      decompose: decompose, develop: develop,
+      decompose: decompose, develop: develop, setLog: setLog,
       stats: function () {
         return {
           developments: stats.developments, answers: stats.answers,
@@ -677,12 +686,10 @@ window.KOLOB = window.KOLOB || {};
   })();
 
   // ==========================================================================
-  // LENT — what this room shares with the rest of the house (KOLOB._s)
+  // The room's public face — the house reaches it here, as KOLOB.Melody
+  // (it lends nothing onto KOLOB._s: it is not one of the house's rooms but
+  // a composer the house calls)
   // ==========================================================================
-  S.METERS = METERS;
-  S.Prosody = Prosody;
-  S.Motif = Motif;
-  // the room's public face on the KOLOB namespace
   KOLOB.Melody = { METERS: METERS, Prosody: Prosody, Motif: Motif };
   (KOLOB._rooms = KOLOB._rooms || {})["kolob-melody.js"] = true;   // the load guard's roll call
 })();

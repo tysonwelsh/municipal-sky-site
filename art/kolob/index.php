@@ -107,7 +107,7 @@ include '../../includes/header.php';
     <!-- Hymn board + broadside. The board holds a printed PROGRAMME card
          (v0.20): the day in small capitals under a short double rule; the
          mode and the meter (during a hymn) beneath, with the direction line
-         (stillness, fuging, the question, two bands, the steeples answer, the
+         (stillness, fuging, two bands, the steeples answer, an old tune, the
          whole tune) as a gilt rubric on the same line; and the day's numbers
          (theme, develops, answers) as one printed line. Idle, the card says
          the valley is still. The seed row sits on the green beneath the card.
@@ -170,8 +170,8 @@ include '../../includes/header.php';
              meeting withholds the tune until the doxology sings it whole. -->
         <button type="button" class="kolob-latin-toggle kolob-cumulative-toggle is-deseret" id="kolob-cumulative" aria-label="the tune withheld until the doxology — about one meeting in twelve" aria-pressed="false">𐐐𐐄𐐢</button>
         <!-- The Ives switch: while on, every meeting is guaranteed a visitation
-             (the unanswered question or the two bands). Checking it restarts the
-             meeting so the guarantee begins at once. -->
+             (the two bands, the steeples or the old tune). Checking it restarts
+             the meeting so the guarantee begins at once. -->
         <button type="button" class="kolob-latin-toggle kolob-ives-toggle is-deseret" id="kolob-ives" aria-label="guarantee an Ives visitation (restarts the meeting)" aria-pressed="false">𐐌𐐚𐐞</button>
         <!-- Dev script toggle: Deseret <-> Latin labels (development aid) -->
         <button type="button" class="kolob-latin-toggle" id="kolob-latin" aria-label="switch to the Latin alphabet">Latin</button>

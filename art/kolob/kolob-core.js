@@ -46,15 +46,18 @@
 // THE HOUSE, ROOM BY ROOM (Kolob 2, phase 0a — split from the one-file
 // kolob-audio.js of v0.30 without changing a note; SCORE.md §1 is the plan):
 //   kolob-pitch.js     the tuning: collections, degrees, frequencies, monzos
+//   kolob-score.js     the score as it is written: the chord book
 //   kolob-melody.js    meters, prosody, the motif engine and its gestures
-//   kolob-harmony.js   the four-part engine
+//   kolob-harmony.js   the four-part engine (pure: handed a moment and dice)
 //   kolob-voices-*.js  the instruments: organ, choir, winds (clarinet and
 //                      harmonium), ground (drone, strings, bells, tuba), field
 //                      (still small voice, telegraph, the valley), bagpipe
 //                      (shelved)
 //   kolob-guests.js    the visitations: the question, the bands, the steeples,
 //                      the old tune, the cumulative assembly, the raspberry
-//   kolob-meeting.js   the chorister: meetings, sections, joints, the arc
+//   kolob-meeting.js   the chorister: meetings, sections, joints, the arc;
+//                      the chorister's book (S.Meeting, C's only door) and
+//                      the chord desk (S.Harmony)
 //   kolob-core.js      this file: the context, the rooms, the layers, the
 //                      clock, the dice, and the KolobAudio facade
 // The rooms share one state object, KOLOB._s (S); see the note at the top of
@@ -126,9 +129,9 @@ window.KolobAudio = (function () {
   function skipToSection(type) { return S.skipToSection(type); }
   function resetVisit() { return S.resetVisit(); }
   // (the other rooms' state, read and written through S: S.F0, S.mode, S.SCALE,
-  // S.Harmony, S.C, S.forceVisitation, S.forceRaspberry, S.cumulativeMode,
-  // S.seasonPos, S.Motif, S.VI_TO_CHORDPOS, S.OLD_TUNES, S.TELEGRAPH_WORDS,
-  // S.FIELD_FNS)
+  // S.Harmony (the chord desk), S.Meeting (the chorister's book),
+  // S.forceVisitation, S.forceRaspberry, S.cumulativeMode, S.seasonPos,
+  // S.VI_TO_CHORDPOS, S.CHOIR_PART, S.OLD_TUNES, S.TELEGRAPH_WORDS, S.FIELD_FNS)
 
   // ----- Core audio graph -----
   var ctx = null;
@@ -225,7 +228,7 @@ window.KolobAudio = (function () {
   // stream(label): this meeting's stream `label:<n>` (n = the meeting number).
   function stream(label) {
     if (auditioning) return audition();
-    var n = S.C ? S.C.meetingNum : 0;
+    var n = S.Meeting ? S.Meeting.meetingNum() : 0;
     if (dice.n !== n) dice = { n: n, streams: {}, turns: {} };
     return dice.streams[label] || (dice.streams[label] = visitRoot().fork(label + ":" + n));
   }
@@ -792,7 +795,7 @@ window.KolobAudio = (function () {
   // The landscape voices (organ, drone, strings) never claim it — they are
   // the prairie the speeches happen in.
   var air = { busyUntil: 0, holders: 0 };
-  function airLimit() { return S.C.section === "hymn" || S.C.section === "doxology" ? 2 : 1; }
+  function airLimit() { var s = S.Meeting.section(); return s === "hymn" || s === "doxology" ? 2 : 1; }
   function airFree() {
     if (!ctx) return true;
     if (now() >= air.busyUntil) { air.holders = 0; return true; }
@@ -847,7 +850,8 @@ window.KolobAudio = (function () {
         break;
       }
       case "organ": {
-        var ch = S.Harmony.voice(0, { open: false, dry: true }, A);
+        // voiced from the chord standing now, and written nowhere
+        var ch = S.Harmony.voice(0, { open: false }, A, t);
         organChord(t, 6, ch, 0.85);
         break;
       }
@@ -866,11 +870,11 @@ window.KolobAudio = (function () {
         break;
       }
       case "choir": {
-        var ch2 = S.Harmony.voice(0, { open: false, dry: true }, A);
+        var ch2 = S.Harmony.voice(0, { open: false }, A, t);
         [0, 1, 3].forEach(function (vi, k) {
           choirVoiceLine(t + k * 0.12, [{ f: ch2.freqs[S.VI_TO_CHORDPOS[vi]], dur: 4.5 }], vi, 0.85);
+          emitNote("choir", ch2.freqs[S.VI_TO_CHORDPOS[vi]], t, 4.5, { part: S.CHOIR_PART[vi] });   // every voice that sounds
         });
-        emitNote("choir", ch2.freqs[3], t, 4.5);
         break;
       }
       case "clarinet": {
@@ -1118,23 +1122,25 @@ window.KolobAudio = (function () {
     // count starts again, so ?seed=X and GATHER X call the same first meeting
     reseed: function (s) { seed = (s >>> 0) || 1847; reseedDice(); if (!playing) resetVisit(); },
     getConductor: function () {
+      var M = S.Meeting, plan = M.plan();
       return {
-        meeting: S.C.meetingNum, activity: S.C.meeting ? S.C.meeting.activity : null,
-        section: S.C.section, meter: S.C.meter, mode: S.mode,
+        meeting: M.meetingNum(), activity: M.activity(),
+        section: M.section(), meter: M.meter(), mode: S.mode,
         local: localArc(), intensity: intensity(),
         hush: inHush(), fuging: inFuging(),
         // (the page's clock: this is what is sounding now, read off the audio clock)
-        visit: (ctx && ctx.currentTime < S.C.assemblyUntil) ? "assembly" : (inVisit() ? S.C.visitType : null),
+        visit: (ctx && ctx.currentTime < M.assemblyUntil()) ? "assembly" : (inVisit() ? M.visitType() : null),
         f0: S.F0, season: S.seasonPos,
-        sectionIndex: S.C.si, planLength: S.C.plan.length,
-        plan: S.C.plan.map(function (s) { return s.type; }),   // the wheel folds hymns onto one seat
+        sectionIndex: M.sectionIndex(), planLength: plan.length,
+        plan: plan,                                            // the wheel folds hymns onto one seat
         fifths: S.Harmony.fifthCount(),
       };
     },
-    getHarmony: function () { return S.Harmony.current(); },
+    // the chord standing now (the chord book's, on the audio clock)
+    getHarmony: function () { return S.Harmony.at(ctx ? ctx.currentTime : 0); },
     getAudioTime: function () { return ctx ? ctx.currentTime : 0; },
     skipToSection: skipToSection,
-    getMotifStats: function () { return S.Motif.stats(); },
+    getMotifStats: function () { return KOLOB.Melody.Motif.stats(); },
     setNoteListener: function (fn) { noteListeners.push(fn); },
     setEventListener: function (fn) { eventListeners.push(fn); },
     setForceVisitation: function (on) { S.forceVisitation = !!on; },

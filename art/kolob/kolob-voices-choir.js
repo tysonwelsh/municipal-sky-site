@@ -44,7 +44,9 @@ window.KOLOB = window.KOLOB || {};
   function airFree() { return S.airFree(); }
   function claimAir(durS, marginS) { return S.claimAir(durS, marginS); }
   // (the other rooms' state, read and written through S: S.ctx, S.playing,
-  // S.Harmony, S.METERS, S.Prosody, S.MEETINGS, S.C, S.Motif)
+  // S.Harmony (the chord desk), S.Meeting (the chorister's book), S.moment)
+  // the composers, on the KOLOB namespace
+  var Motif = KOLOB.Melody.Motif, Prosody = KOLOB.Melody.Prosody, METERS = KOLOB.Melody.METERS;
 
   // ==========================================================================
   // VOICE: CHOIR — SATB from the harmony engine. Formant-filtered "ah"/"oo",
@@ -106,13 +108,15 @@ window.KOLOB = window.KOLOB || {};
   }
   function activeVoices() {
     var size = Math.round(getLayerParam("choir", "size", 3));
-    var meet = S.C.meeting ? S.MEETINGS[S.C.meeting.activity].choirSize : 3;
+    var sunday = S.Meeting.sunday();
+    var meet = sunday ? sunday.choirSize : 3;
     var n = Math.max(1, Math.min(4, Math.min(size, meet)));
     return n === 1 ? [0] : n === 2 ? [0, 3] : n === 3 ? [0, 1, 3] : [0, 1, 2, 3];
   }
   // Render a harmonized line: chords per syllable from Harmony.harmonize.
   // voiceIdx order in chord.voicing is [b,t,a,s]; CHOIR vi is [s,a,t,b]=[0..3].
   var VI_TO_CHORDPOS = [3, 2, 1, 0];
+  var PART = ["S", "A", "T", "B"];                 // the part each choir voice sings (the note's report)
   function choirHarmonizedLine(t, harmonized, beat, gainMul) {
     var vis = activeVoices();
     var lineNotes = { 0: [], 1: [], 2: [], 3: [] };
@@ -139,7 +143,7 @@ window.KOLOB = window.KOLOB || {};
       // the bass staff, the soprano the treble. emitNote is view-only; the sound
       // is unchanged (the voices already sang above).
       for (var vv = 0; vv < vis.length; vv++) {
-        emitNote("choir", ch2.freqs[VI_TO_CHORDPOS[vis[vv]]], at, dur2);
+        emitNote("choir", ch2.freqs[VI_TO_CHORDPOS[vis[vv]]], at, dur2, { part: PART[vis[vv]], chord: ch2.id });
       }
     }
     return total;
@@ -148,7 +152,7 @@ window.KOLOB = window.KOLOB || {};
   // the choir's waiting stream; a turn it sings is a fork of its own.
   function choirVerse(tc) {
     if (!S.playing) return;
-    var s = S.C.section;
+    var s = S.Meeting.section();
     var sings = s === "hymn" || s === "doxology";
     if (!sings || inFuging() || inQuestion()) { cueIn("choir", 6, choirVerse); return; }
     if (!airFree()) { cueIn("choir", wait("choir").rnd(4, 9), choirVerse); return; }
@@ -156,14 +160,15 @@ window.KOLOB = window.KOLOB || {};
     var R = turn("choir");
     var t = tc + 0.15;
     var beat = R.rnd(1.05, 1.5);                               // slow — hymn time, prairie time
-    var meterLines = S.METERS[S.C.meter] || S.METERS.CM;
+    var meterLines = METERS[S.Meeting.meter()] || METERS.CM;
+    var mo = S.moment();
 
     // Lining-out answer takes precedence: sing back the deacon's line, slower.
-    if (S.Motif.pendingLineOut("choir")) {
-      var call = S.Motif.claim("choir", R);
+    if (Motif.pendingLineOut("choir")) {
+      var call = Motif.claim("choir", mo, R);
       if (call) {
         var ln = call.notes.map(function (n) { return { deg: n.deg, dur: n.durBeats }; });
-        var hz = S.Harmony.harmonize(ln, R);
+        var hz = S.Harmony.harmonize(ln, R, t, beat * 1.4, "choir");
         var total = choirHarmonizedLine(t, hz, beat * 1.4, 0.95);  // 0.7x tempo of the call
         claimAir(total, R.rnd(4, 9) * silenceMul());
         emitNote("choir", 0, t, total);
@@ -174,39 +179,41 @@ window.KOLOB = window.KOLOB || {};
 
     // A verse: 2 lines of the meter per speech (whole verses would crowd the
     // air; the field hears the hymn in couplets, with sky between).
-    var motif = S.Motif.overdueFor("choir") ? S.Motif.claim("choir", R) : S.Motif.request("choir", R);
+    var motif = Motif.overdueFor("choir", mo) ? Motif.claim("choir", mo, R) : Motif.request("choir", mo, R);
     if (!motif) { cueIn("choir", 6, choirVerse); return; }
     var nLines = s === "doxology" ? 1 : 2;
     var lineStart = t, sungTotal = 0;
     for (var li = 0; li < nLines; li++) {
-      var nSyl = meterLines[(S.C.verseLine + li) % meterLines.length];
-      var line = S.Prosody.pourIntoLine(motif, nSyl, R);
+      var nSyl = meterLines[(S.Meeting.verseLine() + li) % meterLines.length];
+      var line = Prosody.pourIntoLine(motif, nSyl, R);
       var ln2 = line.map(function (n) { return { deg: n.deg, dur: n.durBeats }; });
-      var hz2 = S.Harmony.harmonize(ln2, R);
+      // each line's chords are written into the book where they are sung
+      var hz2 = S.Harmony.harmonize(ln2, R, lineStart, beat, "choir");
       var lt = choirHarmonizedLine(lineStart, hz2, beat, 0.9);
-      emitEvent({ cat: "verse", label: "¶ " + S.C.meter + " line " + (li + 1), detail: nSyl + " syllables · " + motif.name + "·g" + motif.gen });
+      emitEvent({ cat: "verse", label: "¶ " + S.Meeting.meter() + " line " + (li + 1), detail: nSyl + " syllables · " + motif.name + "·g" + motif.gen });
       sungTotal += lt;
       lineStart += lt + R.rnd(1.8, 3.4);                       // the breath between lines
       sungTotal += 2.5;
     }
-    S.C.verseLine = (S.C.verseLine || 0) + nLines;                 // the hymn walks its stanza
+    S.Meeting.advanceVerse(nLines);                              // the hymn walks its stanza
     // the doxology closes each speech with the amen
     if (s === "doxology") {
-      var cadChords = S.Harmony.cadence("plagal", R);
+      var cadChords = S.Harmony.cadence("plagal", R, lineStart, "choir");
       var cd = R.rnd(2.8, 3.8);
       for (var ci = 0; ci < cadChords.length; ci++) {
+        S.Harmony.write(cadChords[ci], lineStart + ci * cd, "choir");
         var vis = activeVoices();
         for (var v = 0; v < vis.length; v++) {
           var vi = vis[v];
           var vf = cadChords[ci].freqs[VI_TO_CHORDPOS[vi]];
           choirVoiceLine(lineStart + ci * cd, [{ f: vf, dur: cd * (ci ? 1.6 : 1.02) }], vi, 0.9);
-          emitNote("choir", vf, lineStart + ci * cd, cd);       // print every voice of the amen
+          emitNote("choir", vf, lineStart + ci * cd, cd, { part: PART[vi], chord: cadChords[ci].id });   // print every voice of the amen
         }
       }
       sungTotal += cd * 2 + 1;
     }
     claimAir(sungTotal, R.rnd(5, 12) * silenceMul());
-    if (R.chance(0.4)) S.Motif.post("choir", R.pickW([["clarinet", 3], ["bells", 1]]), motif, R.pickW([["imitate", 3], ["invert", 2], ["develop", 2]]), R);
+    if (R.chance(0.4)) Motif.post("choir", R.pickW([["clarinet", 3], ["bells", 1]]), motif, R.pickW([["imitate", 3], ["invert", 2], ["develop", 2]]), mo, R);
     var gap = R.rnd(10, 22) * gapMul();
     cueLayer("choir", sungTotal + gap, choirVerse);
   }
@@ -218,12 +225,12 @@ window.KOLOB = window.KOLOB || {};
   // ==========================================================================
   // at scheduled time tc (the conductor's cue); its dice are a fuging turn
   function fugingEntry(tc) {
-    var theme = S.Motif.theme();
+    var theme = Motif.theme();
     if (!theme) return 4;
     var R = turn("fuging");
     // under the withholding a fuging head may quote at most 3 notes — the
     // imitation foreshadows, it must not announce
-    var headCap = S.C.cumulative && !S.C.assemblyFired ? 3 : 6;
+    var headCap = S.Meeting.withheld() ? 3 : 6;
     var head = theme.notes.slice(0, Math.min(headCap, theme.notes.length));
     var t = tc + 0.3;
     var beat = R.rnd(1.0, 1.3);
@@ -242,23 +249,30 @@ window.KOLOB = window.KOLOB || {};
       var tot = choirVoiceLine(at, notes, vi, 0.85);
       // report the head this voice sings, note by note, as choirVoiceLine
       // walks it (view-only: no dice, no timing — the page prints the head)
-      for (var hn = 0, ht = at; hn < notes.length; ht += notes[hn].dur, hn++) emitNote("choir", notes[hn].f, ht, notes[hn].dur);
+      for (var hn = 0, ht = at; hn < notes.length; ht += notes[hn].dur, hn++) emitNote("choir", notes[hn].f, ht, notes[hn].dur, { part: PART[vi] });
       if (at + tot > lastEnd) lastEnd = at + tot;
     }
     // strings hold the open fifth under the imitation
     stringsPad(t, (lastEnd - t) + 4, 0.7, true);
-    // convergence: all voices land a plagal amen together
+    // convergence: all voices land a plagal amen together (written into
+    // the chord book where it is sung, and every voice of it reported)
     var cadAt = lastEnd + R.rnd(0.5, 1.2);
-    var chords = S.Harmony.cadence("plagal", R);
+    var chords = S.Harmony.cadence("plagal", R, cadAt, "fuging");
     var cd = R.rnd(2.6, 3.4);
     for (var ci = 0; ci < chords.length; ci++) {
+      S.Harmony.write(chords[ci], cadAt + ci * cd, "fuging");
       var avs = activeVoices();
       for (var v = 0; v < avs.length; v++) {
         var vvi = avs[v];
-        choirVoiceLine(cadAt + ci * cd, [{ f: chords[ci].freqs[VI_TO_CHORDPOS[vvi]], dur: cd * (ci ? 1.7 : 1.02) }], vvi, 0.95);
+        var cf = chords[ci].freqs[VI_TO_CHORDPOS[vvi]];
+        choirVoiceLine(cadAt + ci * cd, [{ f: cf, dur: cd * (ci ? 1.7 : 1.02) }], vvi, 0.95);
+        emitNote("choir", cf, cadAt + ci * cd, cd * (ci ? 1.7 : 1.02), { part: PART[vvi], chord: chords[ci].id });
       }
     }
-    organChord(cadAt, cd * 2.4, chords[chords.length - 1], 0.55);
+    // the organ follows the amen as it is sung (round 2: it used to sound
+    // the final chord under the first) and holds the last as long as ever
+    organChord(cadAt, cd * 1.02, chords[0], 0.55);
+    organChord(cadAt + cd, cd * 1.4, chords[chords.length - 1], 0.55);
     var totalDur = (cadAt + cd * 2.4) - t;
     claimAir(totalDur, 4);
     emitEvent({ cat: "fuging", label: "⁂ fuging entry ×" + entryCount, detail: "stagger " + stagger.toFixed(1) + "s · at the fifth · " + (theme.gesture || "") });
@@ -271,6 +285,7 @@ window.KOLOB = window.KOLOB || {};
   S.choirVoiceLine = choirVoiceLine;
   S.activeVoices = activeVoices;
   S.VI_TO_CHORDPOS = VI_TO_CHORDPOS;
+  S.CHOIR_PART = PART;
   S.choirHarmonizedLine = choirHarmonizedLine;
   S.choirVerse = choirVerse;
   S.fugingEntry = fugingEntry;

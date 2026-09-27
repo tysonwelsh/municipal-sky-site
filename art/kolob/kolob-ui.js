@@ -43,8 +43,6 @@
     amen: "𐐁𐐣𐐇𐐤",                        // AMEN
     verse: "𐐚𐐊𐐡𐐝",                       // VERSE
     speaks: "𐐝𐐑𐐀𐐗𐐝",                    // SPEAKS
-    theQuestion: "𐐜 𐐗𐐎𐐇𐐝𐐕𐐊𐐤",          // THE QUESTION
-    unanswered: "𐐊𐐤𐐈𐐤𐐝𐐊𐐡𐐔",            // UNANSWERED
     raspberry: "𐐡𐐈𐐞𐐒𐐇𐐡𐐆",              // RASPBERRY
     amenDash: "𐐁𐐣𐐇𐐤—",                  // AMEN—
     twoBands: "𐐓𐐅 𐐒𐐈𐐤𐐔𐐞",              // TWO BANDS
@@ -55,6 +53,7 @@
     lastBell: "𐐜 𐐢𐐈𐐝𐐓 𐐒𐐇𐐢",           // THE LAST BELL
     steeplesFlag: "𐐝𐐓𐐀𐐑𐐊𐐢𐐞",           // STEEPLES
     oldTune: "𐐊𐐤 𐐄𐐢𐐔 𐐓𐐅𐐤 𐐡𐐆𐐣𐐇𐐣𐐒𐐊𐐡𐐔", // AN OLD TUNE REMEMBERED
+    oldTuneFlag: "𐐊𐐤 𐐄𐐢𐐔 𐐓𐐅𐐤",          // AN OLD TUNE (the direction line)
     memoryOut: "𐐜 𐐣𐐇𐐣𐐊𐐡𐐆 𐐘𐐆𐐚𐐞 𐐍𐐓",   // THE MEMORY GIVES OUT
     tuneWithheld: "𐐜 𐐓𐐅𐐤 𐐆𐐞 𐐎𐐆𐐛𐐐𐐇𐐢𐐔", // THE TUNE IS WITHHELD
     wholeTune: "𐐜 𐐐𐐄𐐢 𐐓𐐅𐐤 𐐈𐐓 𐐢𐐈𐐝𐐓",  // THE WHOLE TUNE, AT LAST
@@ -134,12 +133,11 @@
     answers: "ANSWERS", linesOut: "LINES OUT", shadows: "SHADOWS",
     theme: "THEME", hymnsOfDay: "THE DAY'S HYMNS", amen: "AMEN",
     verse: "VERSE", speaks: "SPEAKS", liahona: "LIAHONA", sample: "SAMPLE",
-    theQuestion: "THE QUESTION", unanswered: "UNANSWERED",
     raspberry: "RASPBERRY", amenDash: "AMEN—",
     twoBands: "TWO BANDS", bandNears: "A BAND APPROACHES",
     bandsCross: "THE BANDS CROSS", bandPasses: "PASSES ON",
     theSteeples: "THE STEEPLES ANSWER", lastBell: "THE LAST BELL", steeplesFlag: "STEEPLES",
-    oldTune: "AN OLD TUNE REMEMBERED", memoryOut: "THE MEMORY GIVES OUT",
+    oldTune: "AN OLD TUNE REMEMBERED", oldTuneFlag: "AN OLD TUNE", memoryOut: "THE MEMORY GIVES OUT",
     tuneWithheld: "THE TUNE IS WITHHELD", wholeTune: "THE WHOLE TUNE, AT LAST",
     wholeFlag: "THE WHOLE TUNE",
     orderOfService: "ORDER OF SERVICE", theStops: "THE INSTRUMENTS",
@@ -210,8 +208,6 @@
       var SV = TT(STR, STR_EN);
       if (label.indexOf("raspberry") >= 0) return { glyph: "∴", text: SV.raspberry };
       if (label.indexOf("amen—") >= 0) return { glyph: "∴", text: SV.amenDash };
-      if (label.indexOf("unanswered") >= 0) return { glyph: "?", text: SV.unanswered };
-      if (label.indexOf("question") >= 0) return { glyph: "?", text: SV.theQuestion };
       if (label.indexOf("approaches") >= 0) return { glyph: "⇋", text: SV.bandNears };
       if (label.indexOf("cross") >= 0) return { glyph: "⇋", text: SV.bandsCross };
       if (label.indexOf("passes") >= 0) return { glyph: "⇋", text: SV.bandPasses };
@@ -221,7 +217,7 @@
       if (label.indexOf("memory gives out") >= 0) return { glyph: "✧", text: SV.memoryOut };
       if (label.indexOf("withheld") >= 0) return { glyph: "◌", text: SV.tuneWithheld };
       if (label.indexOf("whole tune") >= 0) return { glyph: "✶", text: SV.wholeTune };
-      return { glyph: "⇋", text: SV.twoBands };
+      return null;                                            // a guest the minutes do not know is not named as another
     }
     if (cat === "verse") {
       if (label.indexOf("lines out") >= 0) return { glyph: "☞", text: LAYERS_DS.clarinet + " " + TT(STR, STR_EN).linesOut };
@@ -413,8 +409,9 @@
   // the drone is the constant ground; the field and the wire already write
   // their own minutes (ambient + telegraph events) — don't double-book them
   // the tuba is never named here: his moment is logged as RASPBERRY instead;
-  // the visiting band writes its own minutes (its visitation events)
-  var PHRASE_SKIP = { drone: 1, ambient: 1, telegraph: 1, tuba: 1, band: 1 };
+  // the visiting band and the old tune write their own minutes (their
+  // visitation events)
+  var PHRASE_SKIP = { drone: 1, ambient: 1, telegraph: 1, tuba: 1, band: 1, oldtune: 1 };
   function onNoteForLog(n) {
     if (!n || !n.layer || PHRASE_SKIP[n.layer]) return;
     var end = n.startTime + (n.duration || 0);
@@ -499,15 +496,17 @@
   function metersDots(m) { return METER_DOTS[m] || m; }
 
   // The direction line — the event flag printed as a rubric on the programme
-  // card, after the mode · meter line: stillness, fuging, the question, two
-  // bands, the steeples answer, the whole tune. Empty when nothing fires.
-  var VISIT_FLAG = { question: "theQuestion", bands: "twoBands", steeples: "theSteeples", assembly: "wholeFlag" };
+  // card, after the mode · meter line: stillness, fuging, two bands, the
+  // steeples answer, an old tune, the whole tune. Empty when nothing fires —
+  // and for a guest this table does not name (v0.32 called the old tune
+  // "two bands").
+  var VISIT_FLAG = { bands: "twoBands", steeples: "theSteeples", oldtune: "oldTuneFlag", assembly: "wholeFlag" };
   function directionFor(c, playing) {
     if (!playing) return "";
     var S = TT(STR, STR_EN);
     if (c.hush) return S.stillness;
     if (c.fuging) return S.fuging;
-    if (c.visit) return S[VISIT_FLAG[c.visit] || "twoBands"];
+    if (c.visit) return VISIT_FLAG[c.visit] ? S[VISIT_FLAG[c.visit]] : "";
     return "";
   }
   function updateDirection(c, playing) {
@@ -754,7 +753,7 @@
 
   // ==========================================================================
   // The Ives switch — while armed, every meeting is guaranteed one visitation
-  // (the unanswered question or the two bands). Arming it mid-meeting
+  // (the two bands, the steeples or the old tune). Arming it mid-meeting
   // restarts the meeting so the guarantee begins counting immediately.
   // ==========================================================================
   function wireIvesToggle() {

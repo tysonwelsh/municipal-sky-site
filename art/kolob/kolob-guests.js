@@ -53,7 +53,9 @@ window.KOLOB = window.KOLOB || {};
   function env(g, t, pts) { return S.env(g, t, pts); }
   function claimAir(durS, marginS) { return S.claimAir(durS, marginS); }
   // (the other rooms' state, read and written through S: S.ctx, S.mode,
-  // S.Harmony, S.MEETINGS, S.C, S.Motif, S.VI_TO_CHORDPOS)
+  // S.Harmony (the chord desk), S.Meeting (the chorister's book), S.moment,
+  // S.VI_TO_CHORDPOS, S.CHOIR_PART, S.reportLine)
+  var Motif = KOLOB.Melody.Motif;
 
   // THE RASPBERRY AMEN's cluster — two hands of neighboring seconds, every
   // tone a collection ratio, so the wrongness is spelled in the meeting's
@@ -73,7 +75,7 @@ window.KOLOB = window.KOLOB || {};
   // closed with the plagal amen. The withholding lifts when it ends.
   // ==========================================================================
   function cumulativeAssembly(tc) {
-    var theme = S.Motif.theme();
+    var theme = Motif.theme();
     if (!theme) return 8;
     var R = stream("guest:cumulative");
     var t = tc + 0.4;
@@ -81,8 +83,8 @@ window.KOLOB = window.KOLOB || {};
     // if the hour is late (the x>0.7 fallback), the statement compresses
     var beat = localArc() > 0.7 ? R.rnd(0.95, 1.15) : R.rnd(1.3, 1.6);
     var line = theme.notes.map(function (n) { return { deg: n.deg, dur: n.durBeats }; });
-    var hz = S.Harmony.harmonize(line, R);
     var at = t + breath;
+    var hz = S.Harmony.harmonize(line, R, at, beat, "assembly");   // each chord written where it is sung
     var total = choirHarmonizedLine(at, hz, beat, 0.95);
     // the deacon doubles the melody an octave above the sopranos
     var cnotes = theme.notes.map(function (n) {
@@ -95,15 +97,21 @@ window.KOLOB = window.KOLOB || {};
     stringsPad(at, total + chDur * 2 + 2, 0.85, true);
     // the plagal amen — every voice lands together
     var cadAt = at + total + R.rnd(0.4, 0.9);
-    var chords = S.Harmony.cadence("plagal", R);
+    var chords = S.Harmony.cadence("plagal", R, cadAt, "assembly");
     var avs = activeVoices();
     for (var ci = 0; ci < chords.length; ci++) {
+      S.Harmony.write(chords[ci], cadAt + ci * chDur, "assembly");
       for (var v = 0; v < avs.length; v++) {
         var vi = avs[v];
-        choirVoiceLine(cadAt + ci * chDur, [{ f: chords[ci].freqs[S.VI_TO_CHORDPOS[vi]], dur: chDur * (ci ? 1.7 : 1.02) }], vi, 0.9);
+        var cf = chords[ci].freqs[S.VI_TO_CHORDPOS[vi]];
+        choirVoiceLine(cadAt + ci * chDur, [{ f: cf, dur: chDur * (ci ? 1.7 : 1.02) }], vi, 0.9);
+        emitNote("choir", cf, cadAt + ci * chDur, chDur * (ci ? 1.7 : 1.02), { part: S.CHOIR_PART[vi], chord: chords[ci].id });   // every voice of the amen
       }
     }
-    organChord(cadAt, chDur * 2.2, chords[chords.length - 1], 0.55);
+    // the organ follows the amen as it is sung (round 2: it used to sound
+    // the final chord under the first), ending where it always did
+    organChord(cadAt, chDur * 1.02, chords[0], 0.55);
+    organChord(cadAt + chDur, chDur * 1.2, chords[chords.length - 1], 0.55);
     var dur = (cadAt + chDur * 2.2) - t;
     claimAir(dur, 6);
     emitEvent({ cat: "visitation", label: "✶ the whole tune, at last", detail: theme.name + " · " + (theme.gesture || "") + " · " + Math.round(dur) + "s" });
@@ -150,11 +158,12 @@ window.KOLOB = window.KOLOB || {};
           anotes.push({ f: degFreq(projDeg(adeg) + colN() + lift), dur: Math.max(0.3, abeat * R.rnd(0.7, 1.2)) });
         }
         var adur = renderHarmonium(aAt, anotes, 0.5 + k * 0.12);
-        emitNote("harmonium", anotes[0].f, aAt, adur);
+        S.reportLine("harmonium", aAt, anotes);
         // from the third answer the answerers argue among themselves
         if (k >= 2) {
           var bnotes = anotes.map(function (n) { return { f: n.f * 1.5, dur: n.dur * R.rnd(0.8, 1) }; });
           renderHarmonium(aAt + abeat * 0.5, bnotes, 0.3 + k * 0.08);
+          S.reportLine("harmonium", aAt + abeat * 0.5, bnotes, { part: "doubling" });
         }
         cursor = aAt + adur + R.rnd(2.5, 4.5) * Math.pow(0.85, k);
       } else {
@@ -185,7 +194,7 @@ window.KOLOB = window.KOLOB || {};
     var R = stream("guest:bands");
     // under the withholding the visiting band gets a lesser hymn — even a
     // stranger's quickstep must not give the tune away
-    var theme = (S.C.cumulative && !S.C.assemblyFired) ? S.Motif.anyWorking(R) : S.Motif.theme();
+    var theme = S.Meeting.withheld() ? Motif.anyWorking(S.moment(), R) : Motif.theme();
     var t = tc + 0.4;
     var dur = R.rnd(45, 65);
     var beat = R.rnd(0.4, 0.52);               // quickstep — unrelated to the meeting's time
@@ -283,8 +292,10 @@ window.KOLOB = window.KOLOB || {};
     var R = stream("guest:steeples");
     var Y = synth("steeples");
     var t = tc + 0.3;
-    var remaining = Math.max(20, S.C.sectionDur * (1 - localArc()));
-    var dur = Math.min(R.rnd(45, 75), remaining + 12);
+    // the whole minute: the section waits for the last bell (round 2 — the
+    // conductor holds the joint while a guest sounds), so the steeples are no
+    // longer cut short to fit what was left of it
+    var dur = R.rnd(45, 75);
 
     // the home steeple — center field, the same bell the joints ring
     var homeBase = harm(R.pick([4, 5, 6]));
@@ -296,7 +307,7 @@ window.KOLOB = window.KOLOB || {};
     // the visitors: fixed transposed bases drawn without replacement — a bell
     // keeps its key; a festive Sunday wakes a third steeple
     var pool = [9 / 8, 4 / 3, 16 / 9, 6 / 5];
-    var nVis = S.MEETINGS[S.C.meeting.activity].bells >= 0.8 && R.chance(0.7) ? 3 : 2;
+    var nVis = S.Meeting.sunday().bells >= 0.8 && R.chance(0.7) ? 3 : 2;
     var visitors = [];
     for (var v = 0; v < nVis; v++) {
       var trans = pool.splice(R.rint(0, pool.length - 1), 1)[0];
@@ -369,8 +380,10 @@ window.KOLOB = window.KOLOB || {};
   // BOTH the LDS hymnal and the shared American congregational tradition.
   // Each entry is the tune's opening incipit only, in 7-degree space (deg 0 =
   // tonic; negatives below), verified against hymnary.org incipit indices.
-  // Unengraved: the memory is never emitNoted — it comes from outside the
-  // valley (or outside the present); the clerk's row is the only record.
+  // Unengraved: the memory comes from outside the valley (or outside the
+  // present), so the page never prints it and the clerk's row is its only
+  // record — its notes are reported on a layer of their own, "oldtune",
+  // which the page does not engrave (round 2: every sounded note is told).
   //
   // MODE LAW (the inversion rule): major memories surface only on major-ish
   // Sundays. KINGSFOLD — the house hymn, "If You Could Hie to Kolob" (LDS
@@ -422,6 +435,7 @@ window.KOLOB = window.KOLOB || {};
   // with a breath of octave, dulled by distance, at the field's edge, all
   // tail. Not one of the console's instruments; it has no stop.
   function farVoice(t, notes, gainMul, side, det) {
+    var told = [];
     var o = S.ctx.createOscillator(); o.type = "triangle";
     var o2 = S.ctx.createOscillator(); o2.type = "sine";
     var g2 = S.ctx.createGain(); g2.gain.setValueAtTime(0.1, t);
@@ -444,10 +458,12 @@ window.KOLOB = window.KOLOB || {};
         o2.frequency.setValueAtTime(prevF * 2, tt);
         o2.frequency.linearRampToValueAtTime(f * 2, tt + port);
       }
+      told.push({ f: f, dur: notes[i].dur });
       prevF = f;
       tt += notes[i].dur;
       total += notes[i].dur;
     }
+    S.reportLine("oldtune", t, told);
     var peak = 0.14 * (gainMul || 1);
     env(g, t, [[1.2, peak], [Math.max(0.4, total - 2.6), peak * 0.85], [1.6, 0]]);
     o.start(t); o.stop(t + total + 2);
@@ -472,7 +488,7 @@ window.KOLOB = window.KOLOB || {};
     if (R.chance(0.4)) notes[R.rint(2, notes.length - 1)].dur *= 1.6;
     var dur1 = farVoice(t, notes, 1.0, side, det);
     var total = dur1;
-    emitEvent({ cat: "visitation", label: "✧ an old tune remembered", detail: tune.name + " · " + S.C.section });
+    emitEvent({ cat: "visitation", label: "✧ an old tune remembered", detail: tune.name + " · " + S.Meeting.section() });
     if (R.chance(0.6)) {
       // a fainter second try — the head only, trailing off
       var gap = R.rnd(6, 10);

@@ -3,7 +3,7 @@
 // quotations). UNLINKED dev tool, like the bagpipe lab.
 //
 // The tune DATA is read live from KolobAudio.getOldTunes() — the pool lives in
-// kolob-audio.js and only there, so a correction after an ear pass propagates
+// kolob-guests.js and only there, so a correction after an ear pass propagates
 // here automatically. What this file mirrors is only the RENDERING vocabulary:
 //   · PLAIN — close, clean, center, steady beat: the transcription-check
 //     voice. If a tune sounds wrong here, the degree data is wrong.
@@ -17,7 +17,7 @@
 window.TuneLab = (function () {
   "use strict";
 
-  // ---- tuning, mirrored from kolob-audio.js -------------------------------
+  // ---- tuning, mirrored from kolob-pitch.js --------------------------------
   var COLLECTIONS = {
     ionian:     { ratios: [1, 9/8, 5/4, 4/3, 3/2, 5/3, 15/8], map: [0,1,2,3,4,5,6] },
     mixolydian: { ratios: [1, 9/8, 5/4, 4/3, 3/2, 5/3, 16/9], map: [0,1,2,3,4,5,6] },
@@ -185,7 +185,7 @@ window.TuneLab = (function () {
     var K = window.KolobAudio;
     var host = document.getElementById("otl-tunes");
     if (!host) return;
-    if (!K || !K.getOldTunes) { host.innerHTML = "<p>KolobAudio.getOldTunes() missing — load kolob-audio.js first.</p>"; return; }
+    if (!K || !K.getOldTunes) { host.innerHTML = "<p>KolobAudio.getOldTunes() missing — load the engine first (the list in _engine.php).</p>"; return; }
     var tunes = K.getOldTunes();
     host.innerHTML = "";
     tunes.forEach(function (tn) {

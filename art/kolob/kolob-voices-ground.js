@@ -42,7 +42,9 @@ window.KOLOB = window.KOLOB || {};
   function airFree() { return S.airFree(); }
   function claimAir(durS, marginS) { return S.claimAir(durS, marginS); }
   // (the other rooms' state, read and written through S: S.ctx, S.playing,
-  // S.F0, S.ROOT_MULT, S.Harmony, S.MEETINGS, S.C, S.Motif)
+  // S.F0, S.ROOT_MULT, S.Harmony (the chord desk), S.Meeting (the
+  // chorister's book), S.moment)
+  var Motif = KOLOB.Melody.Motif;
 
   // ==========================================================================
   // VOICE: TUBA — the visiting brass.
@@ -90,7 +92,8 @@ window.KOLOB = window.KOLOB || {};
     var overlap = 20;
     var presence = getLayerParam("drone", "presence", 0.5);
     var fifthAmt = getLayerParam("drone", "fifth", 0.4);
-    var bright = S.C.meeting ? S.MEETINGS[S.C.meeting.activity].bright : 0.5;
+    var sunday = S.Meeting.sunday();
+    var bright = sunday ? sunday.bright : 0.5;
     var partials = [
       { h: 1, g: 0.4 }, { h: 2, g: 0.24 }, { h: 3, g: 0.12 }, { h: 4, g: 0.07 },
     ];
@@ -109,7 +112,7 @@ window.KOLOB = window.KOLOB || {};
     }
     var peak = 0.5 * (0.5 + presence * 0.8);
     // the drone holds through everything, even the sacrament — softer, never gone
-    if (S.C.section === "sacrament") peak *= 0.8;
+    if (S.Meeting.section() === "sacrament") peak *= 0.8;
     env(master, t, [[overlap * 0.7, peak], [dur - overlap * 1.4, peak * 0.95], [overlap * 0.7, 0]]);
     emitNote("drone", S.F0, t, dur);
     cueLayer("drone", dur - overlap, droneCycle);
@@ -125,10 +128,18 @@ window.KOLOB = window.KOLOB || {};
     var Y = synth("strings");
     var warmth = getLayerParam("strings", "warmth", 0.5);
     var lonesome = getLayerParam("strings", "lonesome", 0.4);
-    var ch = S.Harmony.current();
+    // the chord standing when the bows begin (the book's, at t)
+    var ch = S.Harmony.at(t);
     var rootF = ch ? ch.freqs[0] * 2 : S.F0 * S.ROOT_MULT;
     var fifthF = rootF * 1.5;
-    var pitches = fifthOnly ? [rootF, fifthF] : [rootF, fifthF, rootF * 2];
+    // a chord whose own fifth is not pure (the diminished one on ti, on re in
+    // aeolian, on la in dorian, on mi in mixolydian) has no open fifth to
+    // give: its pad is the bare octave. v0.32 bowed a pure fifth over it, a
+    // pitch outside the day's tuning, against the choir's own; round 2 found
+    // it when every sounded note was first reported.
+    var pure = pureFifth(rootF);
+    var pitches = pure ? (fifthOnly ? [rootF, fifthF] : [rootF, fifthF, rootF * 2]) : [rootF, rootF * 2];
+    var parts = pure ? ["root", "fifth", "octave"] : ["root", "octave"];
     var master = S.ctx.createGain();
     master.connect(panAt("strings", 0));
     var lp = S.ctx.createBiquadFilter();
@@ -149,7 +160,7 @@ window.KOLOB = window.KOLOB || {};
     if (lonesome > 0.05) {
       var lo = S.ctx.createOscillator();
       lo.type = "sine";
-      lo.frequency.setValueAtTime(fifthF * 4, t);
+      lo.frequency.setValueAtTime((pure ? fifthF : rootF) * 4, t);
       var lg = S.ctx.createGain(); lg.gain.setValueAtTime(lonesome * 0.05, t);
       lo.connect(lg); lg.connect(master);
       lo.start(t); lo.stop(t + dur + 0.5);
@@ -157,11 +168,26 @@ window.KOLOB = window.KOLOB || {};
     var peak = (gainMul || 1) * 0.7 * (0.4 + intensity() * 0.7);
     var edge = Math.min(8, dur * 0.3);
     env(master, t, [[edge, peak], [Math.max(0.5, dur - edge * 2), peak * 0.92], [edge, 0]]);
-    emitNote("strings", rootF, t, dur);
+    // every bowed pitch (round 2): the root, its fifth and, when the pad is
+    // full, the root's octave (the lonesome sine is the fifth's overtone, a
+    // colour of the pad, not a note)
+    for (var pp = 0; pp < pitches.length; pp++) emitNote("strings", pitches[pp], t, dur, { part: parts[pp], chord: ch ? ch.id : null });
+  }
+  // is the pure fifth above f a tone of the day's collection (any octave)?
+  function pureFifth(f) {
+    var r = f * 1.5 / (S.F0 * S.ROOT_MULT);
+    while (r >= 2) r /= 2;
+    while (r < 1) r *= 2;
+    var ratios = S.COL().ratios;
+    for (var i = 0; i < ratios.length; i++) {
+      var c = Math.abs(1200 * Math.log2(r / ratios[i]));
+      if (c < 2 || c > 1198) return true;
+    }
+    return false;
   }
   function stringsCycle(t) {
     if (!S.playing) return;
-    var s = S.C.section;
+    var s = S.Meeting.section();
     if (s === "invocation" || s === "sacrament" || s === "interlude") { cueIn("strings", 8, stringsCycle); return; }
     var R = turn("strings");
     var dur = R.rnd(22, 34);
@@ -217,7 +243,7 @@ window.KOLOB = window.KOLOB || {};
     emitNote("bells", 0, t, 7);
   }
   // (where the tine sits and how long it rings are sound-level)
-  function tineTap(t, f, amp) {
+  function tineTap(t, f, amp, extra) {
     var Y = synth("bells");
     var dest = panAt("bells", Y.rnd(-0.4, 0.4));
     var partials = [[1, 1], [5.43, 0.35]];
@@ -237,22 +263,24 @@ window.KOLOB = window.KOLOB || {};
     n.connect(nf); nf.connect(ng); ng.connect(dest);
     env(ng, t, [[0.003, amp * 0.2], [0.06, 0]]);
     n.start(t, noiseOffset()); n.stop(t + 0.15);
-    emitNote("bells", f, t, 1);
+    emitNote("bells", f, t, 1, extra);
   }
   // The tines' turn, at scheduled time tc.
   function tineCycle(tc) {
     if (!S.playing) return;
-    var s = S.C.section;
+    var s = S.Meeting.section();
     if (s === "invocation" || s === "sacrament" || inFuging()) { cueIn("bells", 9, tineCycle); return; }
     if (!airFree()) { cueIn("bells", wait("bells").rnd(6, 12), tineCycle); return; }
     var R = turn("bells");
     var tineAmt = getLayerParam("bells", "tine", 0.5);
-    var motif = S.Motif.overdueFor("bells") ? S.Motif.claim("bells", R) : S.Motif.request("bells", R);
+    var mo = S.moment();
+    var motif = Motif.overdueFor("bells", mo) ? Motif.claim("bells", mo, R) : Motif.request("bells", mo, R);
     if (!motif) { cueIn("bells", 9, tineCycle); return; }
     var head = motif.notes.slice(0, R.rint(4, 6));
     var t = tc + 0.1;
     var beat = R.rnd(0.55, 0.85);
-    var tones = S.Harmony.chordTones();
+    var leanOn = S.Harmony.at(t);                              // the chord standing as the tines begin
+    var tones = S.Harmony.chordTones(t);
     var total = 0;
     for (var i = 0; i < head.length; i++) {
       var pd = projDeg(head[i].deg) + colN();                  // up where a music box lives
@@ -261,7 +289,7 @@ window.KOLOB = window.KOLOB || {};
         if (!tones[cls]) pd += 1;                              // lean onto the chord
       }
       var f = degFreq(pd) * 2;
-      tineTap(t + total, f, 0.3 * tineAmt * 2);
+      tineTap(t + total, f, 0.3 * tineAmt * 2, i === 0 && leanOn ? { chord: leanOn.id } : null);   // (the lean's chord, told with the first tap)
       total += Math.max(0.35, head[i].durBeats * beat * 0.6);
     }
     claimAir(total, R.rnd(3, 7));

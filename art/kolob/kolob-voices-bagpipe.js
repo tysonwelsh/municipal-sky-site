@@ -37,8 +37,9 @@ window.KOLOB = window.KOLOB || {};
   function airFree() { return S.airFree(); }
   function claimAir(durS, marginS) { return S.claimAir(durS, marginS); }
   // (the other rooms' state, read and written through S: S.ctx, S.playing,
-  // S.F0, S.ROOT_MULT, S.SHELVED, S.Harmony, S.Prosody, S.C, S.seasonPos,
-  // S.Motif)
+  // S.F0, S.ROOT_MULT, S.SHELVED, S.Harmony (the chord desk), S.Meeting (the
+  // chorister's book), S.moment, S.seasonPos)
+  var Motif = KOLOB.Melody.Motif, Prosody = KOLOB.Melody.Prosody;
 
   // ==========================================================================
   // VOICE: BAGPIPE — SHELVED (see SHELVED in kolob-core.js): kept whole, never
@@ -135,21 +136,23 @@ window.KOLOB = window.KOLOB || {};
   // parallel-fifth pipe sound the tradition rewards), sustained and swelling.
   function bagpipeChord(t, dur, gainMul, R) {
     var Y = synth("bagpipe");
-    var ch = S.Harmony.current() || S.Harmony.advance({}, R);
+    var ch = S.Harmony.at(t) || S.Harmony.advance({}, R, t, "bagpipe");     // the chord standing as the drones swell
     var rootF = ch ? ch.freqs[0] * 2 : S.F0 * S.ROOT_MULT;           // into the chanter register
     var fifthF = rootF * 1.5;
     var pan = Y.rnd(-0.3, 0.3);
     bagpipeReed(t, rootF, dur, gainMul, { pan: pan, swell: true });
     bagpipeReed(t + Y.rnd(0.02, 0.08), fifthF, dur, gainMul * 0.85, { pan: pan, swell: true });
-    if (R.chance(0.5)) bagpipeReed(t + Y.rnd(0.02, 0.1), rootF * 2, dur, gainMul * 0.55, { pan: pan, swell: true });
-    emitNote("bagpipe", rootF, t, dur);
-    emitNote("bagpipe", fifthF, t, dur);
+    var octave = R.chance(0.5);
+    if (octave) bagpipeReed(t + Y.rnd(0.02, 0.1), rootF * 2, dur, gainMul * 0.55, { pan: pan, swell: true });
+    emitNote("bagpipe", rootF, t, dur, { chord: ch ? ch.id : null });
+    emitNote("bagpipe", fifthF, t, dur, { chord: ch ? ch.id : null });
+    if (octave) emitNote("bagpipe", rootF * 2, t, dur, { chord: ch ? ch.id : null });   // the doubling is a note too
   }
   // How much the piper plays in this section (0 = tacet), before the season
   // scales it. THE ORDER OF SERVICE governs the reed's frequency of use.
   function bagpipePresence() {
     var base;
-    switch (S.C.section) {
+    switch (S.Meeting.section()) {
       case "prelude":    base = 0.3;  break;
       case "invocation": base = 0.12; break;
       case "hymn":       base = 0.7;  break;
@@ -163,14 +166,14 @@ window.KOLOB = window.KOLOB || {};
     // The piper is a festival creature: seasonPos 0 (fast-day trough) → quieter,
     // 1 (conference/jubilee peak) → out on the bluff.
     var seasonMul = 0.55 + 0.75 * S.seasonPos;
-    var act = S.C.meeting ? S.C.meeting.activity : "ordinary";
+    var act = S.Meeting.activity() || "ordinary";
     if (act === "fast") seasonMul *= 0.4;
     else if (act === "jubilee") seasonMul *= 1.15;
     return Math.max(0, Math.min(1, base * seasonMul));
   }
   // Which role this section wants — melodic line vs. sustained harmony.
   function bagpipeRole(R) {
-    switch (S.C.section) {
+    switch (S.Meeting.section()) {
       case "doxology":   return R.chance(0.7) ? "harmony" : "melody";  // swells the final praise
       case "hymn":       return R.chance(0.5) ? "harmony" : "melody";
       case "invocation": return R.chance(0.55) ? "harmony" : "melody";
@@ -181,7 +184,7 @@ window.KOLOB = window.KOLOB || {};
     if (!S.playing || S.SHELVED.bagpipe) return;     // shelved: the piper never comes down off the bluff
     var R = turn("bagpipe");
     var pres = bagpipePresence();
-    if (pres <= 0.001 || S.C.section === "sacrament") {
+    if (pres <= 0.001 || S.Meeting.section() === "sacrament") {
       cueLayer("bagpipe", R.rnd(6, 12), bagpipeCycle); return;
     }
     // gate by presence: some turns the piper simply stays his hand, and comes
@@ -203,13 +206,14 @@ window.KOLOB = window.KOLOB || {};
     // melodic role — claims the air like the deacon
     var pace = getLayerParam("bagpipe", "pace", 1);
     var beat = R.rnd(0.9, 1.25) / pace;
-    var motif = S.Motif.overdueFor("bagpipe") ? S.Motif.claim("bagpipe", R) : S.Motif.request("bagpipe", R);
+    var mo = S.moment();
+    var motif = Motif.overdueFor("bagpipe", mo) ? Motif.claim("bagpipe", mo, R) : Motif.request("bagpipe", mo, R);
     if (!motif) { cueLayer("bagpipe", 5, bagpipeCycle); return; }
     var nSy = Math.max(motif.notes.length, R.pickW([[6, 2], [8, 3], [10, 1]]));
-    var line = S.Prosody.pourIntoLine(motif, nSy, R);
+    var line = Prosody.pourIntoLine(motif, nSy, R);
     var pan = synth("bagpipe").rnd(-0.35, 0.35);
     var total = bagpipeLine(tc + 0.12, bagpipeToNotes({ notes: line }, beat, R), gm, pan);
-    if (R.chance(0.4)) S.Motif.post("bagpipe", R.pickW([["choir", 2], ["clarinet", 2], ["bells", 1]]), motif, R.pickW([["imitate", 3], ["invert", 2], ["develop", 2]]), R);
+    if (R.chance(0.4)) Motif.post("bagpipe", R.pickW([["choir", 2], ["clarinet", 2], ["bells", 1]]), motif, R.pickW([["imitate", 3], ["invert", 2], ["develop", 2]]), mo, R);
     claimAir(total, R.rnd(3, 8) * silenceMul());
     var gap = R.rnd(6, 14) * gapMul();
     cueLayer("bagpipe", total + gap, bagpipeCycle);

@@ -65,6 +65,25 @@ window.KOLOB = window.KOLOB || {};
     return Math.floor(SCALE.length / 2);
   }
   function harm(h) { return F0 * h; }            // harmonic h of the fundamental
+  // A TUNING, spelled out (round 2) — the same projection and the same
+  // degree → frequency as above, but for a mode and an F0 the caller names,
+  // so the composers can work from a moment in their hands instead of the
+  // meeting's current mode. Pure: it reads nothing but its arguments.
+  function tuning(modeName, f0) {
+    var col = COLLECTIONS[modeName] || COLLECTIONS.ionian;
+    var n = col.ratios.length;
+    function classOf(i) { return ((i % n) + n) % n; }
+    return {
+      mode: COLLECTIONS[modeName] ? modeName : "ionian", F0: f0, n: n, ratios: col.ratios,
+      classOf: classOf,
+      projDeg: function (d7) {
+        if (n === 7) return d7;
+        var oct = Math.floor(d7 / 7);
+        return col.map[((d7 % 7) + 7) % 7] + oct * n;
+      },
+      degFreq: function (i) { return f0 * ROOT_MULT * col.ratios[classOf(i)] * Math.pow(2, Math.floor(i / n)); },
+    };
+  }
   // Gravity: do and sol. Phrases rest on do / mi / sol (collection-degree classes).
   function gravityDegs() { var n = colN(); return n === 5 ? { 0: true, 3: true } : { 0: true, 4: true }; }
   function restDegs() { var n = colN(); return n === 5 ? { 0: true, 2: true, 3: true } : { 0: true, 2: true, 4: true }; }
@@ -154,8 +173,8 @@ window.KOLOB = window.KOLOB || {};
   S.harm = harm;
   // the room's public face on the KOLOB namespace
   KOLOB.Pitch = {
-    COLLECTIONS: COLLECTIONS, MODE_NAMES: MODE_NAMES, MODE_MONZOS: MODE_MONZOS,
-    colN: colN, projDeg: projDeg, degFreq: degFreq,
+    COLLECTIONS: COLLECTIONS, MODE_NAMES: MODE_NAMES, MODE_MONZOS: MODE_MONZOS, ROOT_MULT: ROOT_MULT,
+    colN: colN, projDeg: projDeg, degFreq: degFreq, tuning: tuning,
     ratio: ratio, mul: mul, div: div, fromFraction: fromFraction, cents: cents,
     octaveReduce: octaveReduce, degMonzo: degMonzo, commaOf: commaOf,
   };

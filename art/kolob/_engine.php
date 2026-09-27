@@ -49,9 +49,9 @@ return [
     '../prosperos-jukebox-v2/pj2-rand.js',
     '../prosperos-jukebox-v2/pj2-clock.js',
     '../prosperos-jukebox-v2/pj2-fx.js',
-    // the tuning
-    'kolob-pitch.js',
-    // the composers
+    // the tuning, and the score as it is written (the chord book)
+    'kolob-pitch.js', 'kolob-score.js',
+    // the composers (pure: handed a moment and the caller's dice)
     'kolob-melody.js', 'kolob-harmony.js',
     // the voices
     'kolob-voices-organ.js', 'kolob-voices-choir.js', 'kolob-voices-winds.js',

@@ -40,7 +40,8 @@ window.KOLOB = window.KOLOB || {};
   function noiseOffset() { return S.noiseOffset(); }
   function env(g, t, pts) { return S.env(g, t, pts); }
   // (the other rooms' state, read and written through S: S.ctx, S.playing,
-  // S.F0, S.C, S.Motif)
+  // S.F0, S.Meeting (the chorister's book))
+  var Motif = KOLOB.Melody.Motif;
 
   // ==========================================================================
   // VOICE: THE STILL SMALL VOICE — a near-threshold murmur, close to the ear.
@@ -108,7 +109,7 @@ window.KOLOB = window.KOLOB || {};
   // sometimes, and that choice is its own turn's die.
   function stillVoicePhrase(t) {
     if (!S.playing) return;
-    var s = S.C.section;
+    var s = S.Meeting.section();
     if (s !== "invocation" && s !== "sacrament" && s !== "testimony") { cueIn("voice", 7, stillVoicePhrase); return; }
     var R = turn("voice");
     if (s === "testimony" && !R.chance(0.3)) { cueIn("voice", 7, stillVoicePhrase); return; }
@@ -188,7 +189,7 @@ window.KOLOB = window.KOLOB || {};
   // and the relay's clack are synth:telegraph.
   function telegraphCycle(tc) {
     if (!S.playing) return;
-    var s = S.C.section;
+    var s = S.Meeting.section();
     var taps = s === "prelude" || s === "hymn" || s === "testimony" || s === "postlude";
     if (!taps) { cueIn("telegraph", wait("telegraph").rnd(20, 40), telegraphCycle); return; }
     var R = turn("telegraph");
@@ -314,7 +315,7 @@ window.KOLOB = window.KOLOB || {};
     // the colony flashes the day's theme toward home — sine Morse behind a
     // narrow-band static that is not quite there
     var Y = synth("field");
-    var theme = S.Motif.theme();
+    var theme = Motif.theme();
     var headLen = R.rint(3, 5);
     var head = theme ? theme.notes.slice(0, headLen) : [{ deg: 0, durBeats: 1 }, { deg: 4, durBeats: 2 }];
     var side = Y.pick([-0.7, 0.7]);
@@ -391,7 +392,7 @@ window.KOLOB = window.KOLOB || {};
   // The valley's turn, at scheduled time t: which event, and when the next.
   function ambientEvent(t) {
     if (!S.playing) return;
-    var s = S.C.section;
+    var s = S.Meeting.section();
     if (s === "sacrament") { cueIn("ambient", 9, ambientEvent); return; }
     var R = turn("field");
     var pool = s === "invocation"

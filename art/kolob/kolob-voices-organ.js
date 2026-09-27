@@ -30,7 +30,7 @@ window.KOLOB = window.KOLOB || {};
   function getLayerParam(layer, key, fallback) { return S.getLayerParam(layer, key, fallback); }
   function env(g, t, pts) { return S.env(g, t, pts); }
   // (the other rooms' state, read and written through S: S.ctx, S.playing,
-  // S.Harmony, S.C)
+  // S.Harmony (the chord desk), S.Meeting (the chorister's book))
 
   // ==========================================================================
   // VOICE: ORGAN — the tabernacle instrument. Additive drawbar ranks (no
@@ -86,19 +86,28 @@ window.KOLOB = window.KOLOB || {};
     var peak = (gainMul || 1) * 0.7;
     var atk = Math.min(2.2, dur * 0.3);
     env(master, t, [[atk, peak], [Math.max(0.1, dur - atk - dur * 0.28), peak * 0.92], [dur * 0.28, 0]]);
-    emitNote("organ", chord.freqs[0] * 0.5, t, dur);
+    // every pipe that speaks is a note (round 2): each voice of the chord an
+    // octave down, and the pedal an octave under the bass — with the chord
+    // book's id for the chord (the raspberry's cluster and the rail's
+    // audition are no chord of the book's, and say none)
+    for (var pv = 0; pv < nTones; pv++) emitNote("organ", chord.freqs[pv] * 0.5, t, dur, organTag(chord, nTones === 4 ? ORGAN_PART[pv] : null));
+    if (pedal > 0.05) emitNote("organ", chord.freqs[0] * 0.25, t, dur, organTag(chord, "pedal"));
   }
+  var ORGAN_PART = ["B", "T", "A", "S"];
+  function organTag(chord, part) { var x = { part: part }; if (chord.id != null) x.chord = chord.id; return x; }
   // The organist's turn, at scheduled time t (the organ's lane on the clock);
   // every die of the turn is the turn's own.
   function organCycle(t) {
     if (!S.playing) return;
-    var s = S.C.section;
+    var s = S.Meeting.section();
     if (s === "sacrament") { cueIn("organ", 6, organCycle); return; }
     var R = turn("organ");
+    // every chord the organist plays is voiced from, and written into, the
+    // chord book at the moment it sounds: t + 0.1
     if (s === "invocation" || s === "testimony" || s === "interlude") {
       // mostly tacet — a rare soft open chord, like the organist resting hands
       if (R.chance(0.25)) {
-        var ch = S.Harmony.advance({ open: true }, R);
+        var ch = S.Harmony.advance({ open: true }, R, t + 0.1, "organ");
         organChord(t + 0.1, R.rnd(10, 16), ch, 0.35);
       }
       cueLayer("organ", R.rnd(20, 36) * silenceMul(), organCycle);
@@ -110,14 +119,16 @@ window.KOLOB = window.KOLOB || {};
     // a swell under a cadence moment, then hands the hymn back to the voices.
     // The sustained ground of this piece is the sine DRONE, nothing else.
     if (s === "prelude" || s === "postlude") {
-      var chord = S.Harmony.advance({}, R);
+      var chord = S.Harmony.advance({}, R, t + 0.1, "organ");
       var dur = R.rnd(6, 11);
       organChord(t + 0.1, dur, chord, 0.75 * (0.6 + intensity() * 0.4));
       cueLayer("organ", dur + R.rnd(4, 10) * silenceMul(), organCycle);
       return;
     }
     if (R.chance(0.6)) {
-      var ch2 = S.Harmony.current() || S.Harmony.advance({}, R);
+      // under the singing: the chord the congregation is on when the swell
+      // begins (the book's, at t + 0.1), or a fresh one if none stands yet
+      var ch2 = S.Harmony.at(t + 0.1) || S.Harmony.advance({}, R, t + 0.1, "organ");
       var d2 = R.rnd(7, 12);
       organChord(t + 0.1, d2, ch2, (s === "doxology" ? 0.65 : 0.5) * (0.6 + intensity() * 0.5));
     }

@@ -4,6 +4,13 @@
 // Meetings, sections, the intensity arc, the conductor's tick, stillness,
 // and the joints between sections. Split from kolob-audio.js (v0.30); see
 // the room list in kolob-core.js.
+//
+// Round 2, milestone 2: C — the meeting's own state — stays in this room.
+// The house reads it through THE CHORISTER'S BOOK (S.Meeting, below), a
+// frozen set of accessors, and the composers receive a MOMENT made from it.
+// The harmony the house sings is voiced, written into the chord book at its
+// time and announced at THE CHORD DESK (S.Harmony, below); and a section
+// does not turn over while a guest is still sounding.
 // ============================================================================
 
 window.KOLOB = window.KOLOB || {};
@@ -45,7 +52,10 @@ window.KOLOB = window.KOLOB || {};
   function setRoomBalance(x, rampS, hold) { return S.setRoomBalance(x, rampS, hold); }
   // (the other rooms' state, read and written through S: S.ctx, S.droneDuck,
   // S.roomBalanceHeld, S.roomRampNext, S.playing, S.F0, S.mode, S.ROOM_BALANCE,
-  // S.ROOM_RAMP_S, S.air, S.Harmony, S.METERS, S.Motif)
+  // S.ROOM_RAMP_S, S.air)
+  // the composers, reached on the KOLOB namespace (they read nothing of the
+  // house; see THE CHORISTER'S BOOK and THE CHORD DESK below)
+  var Harmony = KOLOB.Harmony, Motif = KOLOB.Melody.Motif, METERS = KOLOB.Melody.METERS;
 
   // ==========================================================================
   // THE CHORISTER — meeting conductor.
@@ -136,7 +146,7 @@ window.KOLOB = window.KOLOB || {};
       ["aeolian", 1.2 - b * 0.8],
     ]);
     rebuildScale();
-    S.Harmony.reset();
+    Desk.reset(t);                  // a new tuning: a clean page in the chord book
 
     // the dice of the order of service: three hymns are always drawn (the most
     // any Sunday sings) and every mutation's die is thrown
@@ -266,9 +276,9 @@ window.KOLOB = window.KOLOB || {};
     // section, only the meeting's final cadence. Never on a fast Sunday; a
     // solemn meeting does not end on a joke.
     C.raspberry = forceRaspberry || (activity !== "fast" && razzDie);
-    S.Motif.newMeeting(stream("motif"));
+    Motif.newMeeting(moment(), stream("motif"));
     if (C.cumulative) {
-      var wTheme = S.Motif.theme();
+      var wTheme = Motif.theme();
       emitEvent({ cat: "visitation", label: "◌ the tune is withheld", detail: (wTheme ? wTheme.name + " · " : "") + "until the doxology" });
     }
     enterSection(0, t);
@@ -301,14 +311,14 @@ window.KOLOB = window.KOLOB || {};
     if (s.type === "hymn") C.verseLine = 0;
     if (s.type === "hymn" && s.meter) {
       C.meter = s.meter;
-      emitEvent({ cat: "liahona", label: "⌖ the meter is given", detail: C.meter + " — " + S.METERS[C.meter].join(".") });
+      emitEvent({ cat: "liahona", label: "⌖ the meter is given", detail: C.meter + " — " + METERS[C.meter].join(".") });
     }
     // the doxology SUNRISE: a dark-mode meeting may lift into major at the
     // last — rare, and the most audible surprise the engine owns
     if (s.type === "doxology" && (S.mode === "aeolian" || S.mode === "dorian") && sunriseDie) {
       S.mode = sunriseMode;
       rebuildScale();
-      S.Harmony.reset();
+      Desk.reset(t);                // the new mode starts a clean page
       emitEvent({
         cat: "meeting", label: "☀ sunrise",
         detail: "F0 " + S.F0.toFixed(1) + " Hz · " + S.mode + " · " + (C.meeting ? C.meeting.activity : "") + " · season " + seasonPos.toFixed(2),
@@ -318,7 +328,7 @@ window.KOLOB = window.KOLOB || {};
     // the gathering moves in the room with the section — unless the room lab holds it
     if (!S.roomBalanceHeld) setRoomBalance(S.ROOM_BALANCE[s.type] != null ? S.ROOM_BALANCE[s.type] : 0.45, S.roomRampNext);
     S.roomRampNext = S.ROOM_RAMP_S;
-    S.Motif.onSection(s.type);
+    Motif.onSection(s.type);
   }
 
   // (every clock below is the music's now: the cue's scheduled time)
@@ -381,6 +391,7 @@ window.KOLOB = window.KOLOB || {};
         var vdur = (VISIT_FN[V.type] || twoBandsCross)(V, t);
         C.visitType = V.type;
         C.visitUntil = t + vdur;
+        guestSpan(V.type, t, vdur);
         break;
       }
     }
@@ -393,6 +404,7 @@ window.KOLOB = window.KOLOB || {};
       C.assemblyFired = true;
       var adur = cumulativeAssembly(t);
       C.assemblyUntil = t + adur;
+      guestSpan("assembly", t, adur);
     }
     if (C.section === "hymn" && C.fugingPlanned && !C.fugingFired && x > 0.6 && x < 0.8 && !inHush() && !inVisit()) {
       C.fugingFired = true;
@@ -409,8 +421,12 @@ window.KOLOB = window.KOLOB || {};
     if (C.section !== "sacrament" && C.section !== "testimony" && !C.jointing && !inHush() && unbiddenDie) {
       stillness("unbidden", t);
     }
-    // Section end → joint → advance.
-    if (!C.jointing && x >= 1) {
+    // Section end → joint → advance. A guest still sounding HOLDS THE JOINT:
+    // the section runs on until the visitor has gone by (owner: "it's
+    // ambient music… if the section needs to be a bit longer, that's okay"),
+    // and the assembly of the withheld tune finishes before the amen of the
+    // joint. v0.32 turned the section over under a band in mid-crossing.
+    if (!C.jointing && x >= 1 && !guestSounding()) {
       C.jointing = true;
       var last = C.si >= C.plan.length - 1;
       var jointDur = runJoint(last, t);
@@ -420,6 +436,18 @@ window.KOLOB = window.KOLOB || {};
       });
     }
     cueAt("conductor", t + 0.6, conductorTick);
+  }
+
+  // a guest is sounding: a visitation, or the whole tune at last
+  function guestSounding() { return inVisit() || (!!S.ctx && now() < C.assemblyUntil); }
+  // A guest's span, told as SCORE.md §6's typed events (the page's minutes
+  // keep their own rows; these are for the harness and the typed bus)
+  function guestSpan(type, t, dur) {
+    var sec = C.section;
+    emitEvent({ type: "guest-start", guest: type, section: sec, until: t + dur, logged: true });
+    cueAt("conductor", t + dur, function () {
+      emitEvent({ type: "guest-end", guest: type, section: sec, logged: true });
+    });
   }
 
   // Dev aid: jump the meeting to a section of the plan. Voices notice on
@@ -483,8 +511,9 @@ window.KOLOB = window.KOLOB || {};
       // should be. The tuba player commits to it. Held long enough to be
       // unmistakably on purpose; the bell rings anyway, unbothered; the
       // clerk's pen stops mid-word.
-      var rChords = S.Harmony.cadence("plagal", R);
+      var rChords = Desk.cadence("plagal", R, t, "joint");
       var rDur = R.rnd(2.6, 3.6);
+      Desk.write(rChords[0], t, "joint");                      // (the amen it sets up is never written: it never sounds)
       organChord(t, rDur * 1.02, rChords[0], 0.6);             // the setup, in earnest
       organChord(t + rDur, 3.2, razzCluster(), 0.5);           // the resolution that isn't
       tubaBlat(t + rDur);
@@ -501,9 +530,10 @@ window.KOLOB = window.KOLOB || {};
       });
     } else {
       var kind = isLast || C.section === "doxology" ? "plagal" : (C.section === "prelude" || C.section === "hymn" ? R.pickW([["plagal", 3], ["authentic", 2], ["half", 1]]) : "plagal");
-      var chords = S.Harmony.cadence(kind, R);
+      var chords = Desk.cadence(kind, R, t, "joint");
       var chDur = R.rnd(2.6, 3.6);
       for (var i = 0; i < chords.length; i++) {
+        Desk.write(chords[i], t + i * chDur, "joint");
         organChord(t + i * chDur, chDur * (i === chords.length - 1 ? 1.7 : 1.02), chords[i], 0.6);
       }
       dur = chDur * chords.length + 1.5;
@@ -521,13 +551,149 @@ window.KOLOB = window.KOLOB || {};
   }
 
   // ==========================================================================
+  // THE CHORISTER'S BOOK — C's frozen interface (round 2, milestone 2)
+  // ==========================================================================
+  // C is this room's own: the plan, the section, the hymn's meter and verse,
+  // the guests, the withheld tune. The other rooms read it ONLY through
+  // these accessors (S.Meeting), so C can change its shape behind them — the
+  // FORM crew will — without an edit in every voice. The object is frozen:
+  // no room can add to it or rebind it. The one write the house makes is the
+  // verse's walk (advanceVerse).
+  //
+  //   meetingNum()    this visit's meeting count, from 1
+  //   activity()      the kind of Sunday: ordinary | fast | conference |
+  //                   jubilee (null before the first meeting)
+  //   sunday()        that kind's row of MEETINGS (silenceMul, hymns, bells,
+  //                   choirSize, bright, meterW), or null
+  //   section()       the rite now: prelude … postlude, or interlude
+  //   sectionIndex()  its place in the plan;  plan() the plan's sections
+  //   sectionDur()    its planned length, s (a guest may hold it longer)
+  //   meter()         the hymn's meter (CM, LM, SM, 87.87, CMD)
+  //   verseLine()     where the hymn stands in its stanza; advanceVerse(k)
+  //   cumulative()    the tune is withheld this meeting; assemblyFired()
+  //                   it has been sung whole; withheld() the first and not
+  //                   yet the second; assemblyUntil() when the assembly ends
+  //   visitType()     the last guest that came (a guest is sounding while
+  //                   S.inVisit())
+  //   moment()        THE MOMENT: a plain object, the meeting at the music's
+  //                   now — what the composers (Melody, Harmony) are handed
+  //                   instead of the house:
+  //                     { now, meeting, section, activity, bright, mode, F0,
+  //                       seasonPos, arc, cumulative, assemblyFired, chord }
+  //                   (chord is filled by the chord desk: the chord standing
+  //                   at the time the caller names; null here)
+  function moment() {
+    var A = C.meeting ? MEETINGS[C.meeting.activity] : null;
+    return {
+      now: now(), meeting: C.meetingNum, section: C.section,
+      activity: C.meeting ? C.meeting.activity : null, bright: A ? A.bright : 0.5,
+      mode: S.mode, F0: S.F0, seasonPos: seasonPos, arc: localArc(),
+      cumulative: !!C.cumulative, assemblyFired: !!C.assemblyFired, chord: null,
+    };
+  }
+  var Book = Object.freeze({
+    meetingNum: function () { return C.meetingNum; },
+    activity: function () { return C.meeting ? C.meeting.activity : null; },
+    sunday: function () { return C.meeting ? MEETINGS[C.meeting.activity] : null; },
+    section: function () { return C.section; },
+    sectionIndex: function () { return C.si; },
+    sectionDur: function () { return C.sectionDur; },
+    plan: function () { return C.plan.map(function (s) { return s.type; }); },
+    meter: function () { return C.meter; },
+    verseLine: function () { return C.verseLine || 0; },
+    advanceVerse: function (k) { C.verseLine = (C.verseLine || 0) + k; },
+    cumulative: function () { return !!C.cumulative; },
+    assemblyFired: function () { return !!C.assemblyFired; },
+    withheld: function () { return !!C.cumulative && !C.assemblyFired; },
+    assemblyUntil: function () { return C.assemblyUntil; },
+    visitType: function () { return C.visitType; },
+    moment: moment,
+  });
+
+  // ==========================================================================
+  // THE CHORD DESK — the meeting's harmony, voiced, written, announced
+  // ==========================================================================
+  // The four-part engine (kolob-harmony.js) is pure: it voices a chord from
+  // the chord the moment stands on and hands it back. The desk is where the
+  // meeting uses it. Every call names the time its chord will sound, t; the
+  // desk voices from the chord standing at t in the CHORD BOOK
+  // (kolob-score.js) — not from whichever chord happened to be written
+  // last — writes the new chord into the book at t, and announces it (the
+  // harmony row, now with its time, its id and the whole voicing as sung).
+  // The accompaniment asks the book the same question: at(t), the chord
+  // standing when its note begins. So the organ, the harmonium, the strings
+  // and the lean of the deacon's line follow the verse as it is sung, not
+  // the last chord of the couplet the choir wrote half a minute ahead.
+  //
+  //   at(t), chordTones(t)          the chord standing at t (null if none)
+  //   advance(opts, R, t, by)       the next chord by the grammar, written at t
+  //   harmonize(line, R, t, beat, by)
+  //                                 a line set under its tune, each chord
+  //                                 written where it is sung (t + beats × beat)
+  //   cadence(kind, R, t, by)       the two chords of a cadence, voiced from
+  //                                 the chord at t; the CALLER writes each one
+  //                                 at the time it sounds (its dice decide it)
+  //   write(chord, t, by)           into the book, and announced
+  //   voice(root7, opts, R, t)      a chord voiced and written nowhere (the
+  //                                 rail's audition)
+  //   reset(t)                      a clean page: a new meeting, a sunrise
+  var Desk = (function () {
+    var book = KOLOB.Score.chordBook();
+    var fifths = 0;                   // parallel fifths sung: counted, reported — they should be > 0
+    function momentAt(t) { var m = moment(); m.chord = book.at(t); return m; }
+    function write(chord, t, by) {
+      if (!chord) return null;
+      book.write(chord, t, by);
+      fifths += chord.fifths || 0;
+      var v = chord.voicing;
+      emitEvent({
+        cat: "harmony",
+        label: "♮ " + Harmony.ROMAN[chord.root] + (chord.open ? " open" : ""),
+        detail: "b" + v[0] + " t" + v[1] + " a" + v[2] + " s" + v[3] + (fifths ? " · 5ths " + fifths : ""),
+        // for the harness (the page reads only the label): when it sounds,
+        // which chord it is, who wrote it, the voicing as sung
+        at: t, chord: chord.id, by: by || "", page: book.page(), n: S.colN(),
+        voicing: v.slice(), freqs: chord.freqs.slice(), pinned: !!chord.pinned, seat: chord.seat || 1,
+      });
+      return chord;
+    }
+    function advance(opts, R, t, by) { return write(Harmony.advance(opts, momentAt(t), R), t, by || "organ"); }
+    function harmonize(lineNotes, R, t, beat, by) {
+      var hz = Harmony.harmonize(lineNotes, momentAt(t), R);
+      var at = t;
+      for (var i = 0; i < hz.length; i++) { write(hz[i].chord, at, by || "choir"); at += hz[i].dur * beat; }
+      return hz;
+    }
+    function cadence(kind, R, t, by) {
+      var chords = Harmony.cadence(kind, momentAt(t), R);
+      kind = kind || "plagal";
+      emitEvent({ cat: "harmony", label: "∴ " + kind + " cadence", detail: kind === "half" ? "resting on the dominant" : "amen", kind: kind, by: by || "", at: t });
+      return chords;
+    }
+    function voice(root7, opts, R, t) { return Harmony.voice(root7, opts, momentAt(t), R); }
+    return {
+      at: function (t) { return book.at(t); },
+      chordTones: function (t) { return Harmony.chordTones(book.at(t)); },
+      advance: advance, harmonize: harmonize, cadence: cadence, write: write, voice: voice,
+      reset: function () { book.reset(); },
+      fifthCount: function () { return fifths; },
+      pageNumber: function () { return book.page(); },
+    };
+  })();
+
+  // the motif engine speaks through the clerk's minutes
+  Motif.setLog(function (ev) { return emitEvent(ev); });
+
+  // ==========================================================================
   // LENT — what this room shares with the rest of the house (KOLOB._s)
   // ==========================================================================
   // A new seed is a new visit: the meeting count and the seasons start again.
   function resetVisit() { C.meetingNum = 0; metaPhase = 0; metaPeriod = 5; seasonPos = 0; }
 
   S.MEETINGS = MEETINGS;
-  S.C = C;
+  S.Meeting = Book;
+  S.moment = moment;
+  S.Harmony = Desk;
   Object.defineProperty(S, "forceVisitation", { enumerable: true, configurable: true, get: function () { return forceVisitation; }, set: function (v) { forceVisitation = v; } });
   Object.defineProperty(S, "forceRaspberry", { enumerable: true, configurable: true, get: function () { return forceRaspberry; }, set: function (v) { forceRaspberry = v; } });
   Object.defineProperty(S, "cumulativeMode", { enumerable: true, configurable: true, get: function () { return cumulativeMode; }, set: function (v) { cumulativeMode = v; } });
@@ -545,6 +711,6 @@ window.KOLOB = window.KOLOB || {};
   S.conductorTick = conductorTick;
   S.skipToSection = skipToSection;
   // the room's public face on the KOLOB namespace
-  KOLOB.Meeting = { MEETINGS: MEETINGS, C: C, planMeeting: planMeeting, conductorTick: conductorTick, runJoint: runJoint };
+  KOLOB.Meeting = { MEETINGS: MEETINGS, book: Book, desk: Desk, planMeeting: planMeeting, conductorTick: conductorTick, runJoint: runJoint };
   (KOLOB._rooms = KOLOB._rooms || {})["kolob-meeting.js"] = true;   // the load guard's roll call
 })();
