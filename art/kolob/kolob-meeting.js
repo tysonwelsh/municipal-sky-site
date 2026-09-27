@@ -511,9 +511,9 @@ window.KOLOB = window.KOLOB || {};
       // should be. The tuba player commits to it. Held long enough to be
       // unmistakably on purpose; the bell rings anyway, unbothered; the
       // clerk's pen stops mid-word.
-      var rChords = Desk.cadence("plagal", R, t, "joint");
+      var rChords = Desk.cadence("plagal", R, t, "raspberry");
       var rDur = R.rnd(2.6, 3.6);
-      Desk.write(rChords[0], t, "joint");                      // (the amen it sets up is never written: it never sounds)
+      Desk.write(rChords[0], t, "raspberry");                  // (the amen it sets up is never written: it never sounds)
       organChord(t, rDur * 1.02, rChords[0], 0.6);             // the setup, in earnest
       organChord(t + rDur, 3.2, razzCluster(), 0.5);           // the resolution that isn't
       tubaBlat(t + rDur);
