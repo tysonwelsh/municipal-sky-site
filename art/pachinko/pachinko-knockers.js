@@ -152,8 +152,8 @@
     toss2:   { lean: 25, head: 0, armL: 15, armR: 60, legL: -15, legR: 30 },
     point:   { lean: -6, head: -12, armL: -5, armR: 120, legL: -6, legR: 6 },
     pointUp: { lean: -15, head: -30, armL: -5, armR: 150, legL: -6, legR: 6 },
-    cheer:   { lean: -15, head: -15, armL: 165, armR: 165, legL: -15, legR: 15 },
-    cheer2:  { lean: -10, head: -30, armL: 150, armR: 180, legL: 0, legR: 0 },
+    cheer:   { lean: -15, head: -15, armL: -150, armR: 150, legL: -15, legR: 15 },  // a V: both arms up
+    cheer2:  { lean: -10, head: -30, armL: -165, armR: 135, legL: 0, legR: 0 },
     stiff:   { lean: 0, head: 0, armL: 0, armR: 0, legL: 0, legR: 0 },
     knock1:  { lean: 10, head: 5, armL: -6, armR: 105, legL: 0, legR: 0 },
     knock2:  { lean: 15, head: 5, armL: -6, armR: 75, legL: 0, legR: 0 },
