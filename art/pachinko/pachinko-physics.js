@@ -105,6 +105,7 @@
     function ci(x) { return Math.floor((x + 32) / CELL); }
     function cj(y) { return Math.floor((y + 64) / CELL); }
     board.fixtures.forEach(function (f) {
+      if (f.buried) return;             // under a cave-in's heap
       if (f.kind === 'pin' || f.kind === 'rubble') put(ci(f.x - f.r), cj(f.y - f.r), ci(f.x + f.r), cj(f.y + f.r), f);
       else if (f.kind === 'rail') {
         var x0 = Math.min(f.x1, f.x2) - f.r, x1 = Math.max(f.x1, f.x2) + f.r, y0 = Math.min(f.y1, f.y2) - f.r, y1 = Math.max(f.y1, f.y2) + f.r;
@@ -539,8 +540,12 @@
 
   function configure(partial) { for (var k in partial) TUNE[k] = partial[k]; }
 
+  // a new layout under a live world (a cave-in mid-game): the marbles stay
+  // where they are, the static hash is rebuilt so the new rubble collides
+  function setBoard(w, board) { w.board = board; w.grid = buildGrid(board); return w; }
+
   var api = {
-    TUNE: TUNE, configure: configure,
+    TUNE: TUNE, configure: configure, setBoard: setBoard,
     createWorld: createWorld, addMarble: addMarble, stepWorld: stepWorld,
     createDrop: createDrop, step: step, simulate: simulate
   };

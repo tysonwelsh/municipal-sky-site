@@ -64,6 +64,7 @@
     mine.overlay = A.buildCabinetOverlay(b, mine.figs);
     pinSpr = {};
     bakeHistory(mine.albedo.getContext('2d'), b);
+    if (A.bakeMischief) { try { A.bakeMischief(mine.albedo.getContext('2d'), mine.fore.getContext('2d'), b); } catch (e) { if (root.console) console.warn('MOTHER LODE: bakeMischief', e); } }
     return R;
   }
 
@@ -514,6 +515,7 @@
     for (var i = 0; i < figs.length; i++) A.drawFigure(sg, figs[i]);
     // …and what is in their hands (in front)
     if (A.drawProps) A.drawProps(sg, view, 'front');
+    mischief(sg, view, 'albedo');
     // b. light
     paintLight(view);
     sg.globalCompositeOperation = 'multiply';
@@ -538,11 +540,13 @@
       var hp = board.byId && board.byId[lid]; if (!hp) continue;
       px(sg, Math.round(hp.x), Math.round(hp.y), P.VOID0); px(sg, Math.round(hp.x) + 1, Math.round(hp.y), 'rgba(0,0,0,0.5)');
     }
+    mischief(sg, view, 'crack');
     // c. emissive
     drawEmissive(sg, view);
     if (A.drawProps) A.drawProps(sg, view, 'glow');
     // the game's answers inside the glass: lit bay cards, pockets hopping
     if (A.drawGlassFx) A.drawGlassFx(sg, view, board);
+    mischief(sg, view, 'emissive');
     // d. marbles (their faint trails first), hopper
     var ms = view.marbles || [];
     for (i = 0; i < ms.length; i++) if (ms[i].trail && ms[i].phase !== 'tunnel' && !ms[i].hidden) drawTrail(sg, ms[i]);
@@ -552,6 +556,7 @@
     }
     // marbles carried by figurines (a theft) are drawn at their hands
     for (i = 0; i < figs.length; i++) if (figs[i].hold) drawMarble(sg, { x: figs[i].hold.x, y: figs[i].hold.y, r: 4, spin: figs[i].hold.spin != null ? figs[i].hold.spin : 0, id: figs[i].hold.id != null ? figs[i].hold.id : 7 }, t);
+    mischief(sg, view, 'over');
     drawHopper(sg, view);
     // e. the glass
     sg.globalCompositeOperation = 'multiply';
@@ -567,6 +572,13 @@
     // the machine's own dials (pachinko-art-counters.js): the SCRIP counter,
     // the coin door's card and lamp, your pocket, the ticket mouth
     if (A.drawMachine) A.drawMachine(ctx, view);
+    mischief(ctx, view, 'cabinet');
+  }
+  // mischief and the mother lode (pachinko-art-mischief.js, wave 4): a
+  // failure there costs its layer for the frame, never the whole view
+  function mischief(g, view, layer) {
+    if (!A.drawMischief) return;
+    try { A.drawMischief(g, view, layer); } catch (e) { if (!mischief.warned && root.console) { mischief.warned = true; console.warn('MOTHER LODE: drawMischief ' + layer, e); } }
   }
 
   R.build = build;

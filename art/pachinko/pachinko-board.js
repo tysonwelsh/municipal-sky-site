@@ -569,9 +569,58 @@
     return finish(c);
   }
 
+  /* ── cave-ins (the mischief phase, wave 4) ────────────────────────
+   * The roof of a payout bay comes down: broken rock heaps over the bay
+   * from divider to divider (two sloped rails of rubble and a capstone on
+   * top, or one slope against a wall), so a marble landing on it rolls off
+   * into the next bay. It stays for the rest of the game; the WORK that
+   * follows digs it out ({type: 'clear', id}: the crew's job, knockers).
+   * Never the 13, never the bays either side of it (their dividers stand
+   * tall: a heap there would make a pocket a marble could sit in).
+   *   caveIn(board, {slot, id?}) → a NEW board with board.caveins[] + the
+   *   rubble fixtures (kind 'rail' dress 'rubble', kind 'rubble' circles),
+   *   each carrying `cave: id` */
+  var CAVE_BAYS = [0, 1, 2, 3, 4, 5, 9, 10, 11, 12];
+  var CAVE_TOP = 375, CAVE_FOOT = 385.5;
+  function caveIn(b, spec) {
+    var c = clone(b), s = c.byId['slot.' + spec.slot];
+    if (!s || CAVE_BAYS.indexOf(spec.slot) < 0) return c;
+    var n = (c.caveSeq | 0) + 1, id = spec.id || ('cave.' + n);
+    var x0 = s.x0, x1 = s.x1, cx = (x0 + x1) / 2, F = c.fixtures;
+    function rr(rid, ax, ay, bx, by) { F.push({ id: rid, kind: 'rail', x1: ax, y1: ay, x2: bx, y2: by, r: 1.5, region: 'payout', material: 'rock', dress: 'rubble', cave: id }); }
+    function stone(rid, x, y, r) { F.push({ id: rid, kind: 'rubble', x: x, y: y, r: r, region: 'payout', material: 'rock', dress: 'rubble', cave: id }); }
+    // the pins in the roof over the bay come down with it (buried in the
+    // heap; the dig-out puts them back where they were)
+    // (flagged, not removed: a drift nudge on a buried pin still lands, so
+    // the dig-out and the drift edits commute)
+    var buried = [];
+    F.forEach(function (f) {
+      if (f.kind !== 'pin' || f.buried || f.id.indexOf('divcap.') === 0) return;
+      if (f.y > CAVE_TOP - 12 && f.y < CAVE_FOOT && f.x > x0 - 6 && f.x < x1 + 6) { f.buried = id; buried.push(f.id); }
+    });
+    var shape;
+    if (x0 <= 0) { rr(id + '.r', 0, CAVE_TOP - 2, x1, CAVE_FOOT); shape = 'right'; }            // against the left wall: one slope
+    else if (x1 >= W) { rr(id + '.l', x0, CAVE_FOOT, W, CAVE_TOP - 2); shape = 'left'; }      // against the right wall
+    else { rr(id + '.l', x0, CAVE_FOOT, cx, CAVE_TOP); rr(id + '.r', cx, CAVE_TOP, x1, CAVE_FOOT); stone(id + '.cap', cx, CAVE_TOP - 1, 2.5); shape = 'roof'; }
+    c.caveins = (c.caveins || []).concat([{ id: id, slot: s.id, n: spec.slot, x0: x0, x1: x1, cx: cx, top: CAVE_TOP, foot: CAVE_FOOT, shape: shape, seed: spec.seed | 0, buried: buried }]);
+    c.caveSeq = n;
+    c.gen = (c.gen | 0) + 1;
+    return finish(c);
+  }
+  function clearCave(b, id) {
+    var c = clone(b);
+    c.fixtures = c.fixtures.filter(function (f) { return f.cave !== id; });
+    c.fixtures.forEach(function (f) { if (f.buried === id) delete f.buried; });
+    c.caveins = (c.caveins || []).filter(function (q) { return q.id !== id; });
+    c.gen = (c.gen | 0) + 1;
+    return finish(c);
+  }
+
   // edit: {type:'nudge', id, dx, dy} | {type:'dress', id, dress} |
   //       {type:'rail', id, end:1|2, d} | {type:'mouth', id, open} | {type:'pocket', id, dx}
+  //       | {type:'clear', id} (a cave-in dug out: not drift, never drawn by drawEdits)
   function applyEdit(b, e) {
+    if (e.type === 'clear') return clearCave(b, e.id);
     var c = clone(b), f = c.byId[e.id];
     if (!f) return c;
     var home = f.home || (f.home = { x: f.x, y: f.y, x1: f.x1, y1: f.y1, x2: f.x2, y2: f.y2 });
@@ -688,6 +737,7 @@
     wheelAngle: wheelAngle, wheelOmega: wheelOmega, wheelSegments: wheelSegments,
     slotAt: slotAt,
     EDITS: EDITS, drawEdits: drawEdits, applyEdit: applyEdit,
+    CAVE_BAYS: CAVE_BAYS, caveIn: caveIn, clearCave: clearCave,
     validate: validate, validator: validator,
     hash01: hash01, strSeed: strSeed
   };

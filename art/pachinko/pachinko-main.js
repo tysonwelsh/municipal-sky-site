@@ -409,7 +409,7 @@
       emit({ type: 'lode', x: e.x, n: game.lodes, m: e.m });
       var ctxL = { t0: simT, x: e.x, emit: emit, view: view, board: board };
       var takeover = partsFirst('lode', ctxL);
-      game.lode = { t0: simT, part: takeover, cheered: 0 };
+      game.lode = { t0: simT, part: takeover, cheered: takeover ? 2 : 0, taken: !!takeover };
     }
 
     /* ── physics events → the game ───────────────────────────────── */
@@ -620,7 +620,7 @@
       if (game.mode === 'payout') stepPayout();
       if (game.mode === 'work') stepWork();
       if (game.findAt != null && simT >= game.findAt) findNickel();
-      if (game.lode && game.lode.part && game.lode.part.step(simT)) game.lode.part = null;
+      if (game.lode && game.lode.part && game.lode.part.step(simT)) { game.lode.part = null; if (game.lode.taken) game.lode = null; }
       // the placeholder crew cheer the 13 (twice, toy voices)
       if (game.lode && !game.lode.part && game.lode.cheered < 2 && simT - game.lode.t0 > 0.5 + game.lode.cheered * 1.1 && R && R.stillLife) {
         var fg = (R.stillLife() || [])[game.lode.cheered * 3 % 6];
@@ -847,7 +847,7 @@
       // the 13: every lamp flares, gold light pours out of the cup (the
       // placeholder for the spectacle phase's mother lode)
       var flare = 0;
-      if (game.lode && !game.lode.part) {
+      if (game.lode && !game.lode.part && !game.lode.taken) {
         var lu = t - game.lode.t0;
         flare = lu < 0.15 ? lu / 0.15 : lu < 2.6 ? 1 - 0.25 * Math.max(0, Math.sin(lu * 9)) * 0.4 : Math.max(0, 1 - (lu - 2.6) / 1.4);
         if (lu < 4) {
@@ -900,7 +900,7 @@
       fx.flare = flare;
       fx.lode = game.lode ? { t0: game.lode.t0 } : null;
       // the crew during the 13: arms up, toy-stiff, in stop motion
-      if (game.lode && !game.lode.part && game.mode !== 'work' && R && R.stillLife && R.POSES) {
+      if (game.lode && !game.lode.part && !game.lode.taken && game.mode !== 'work' && R && R.stillLife && R.POSES) {
         var lu2 = t - game.lode.t0;
         if (lu2 < 3.2) {
           view.figures = (R.stillLife() || []).map(function (f, i) {

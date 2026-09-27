@@ -449,6 +449,8 @@
         return; // painted with the gallery
       case 'pail':
         return; // drawn with the pocket
+      case 'rubble':
+        return; // a cave-in's heap: painted whole by pachinko-art-mischief.js
       default:
         along(function (x, y) { px(g, Math.round(x), Math.round(y), P.TIM3); });
     }
@@ -1150,7 +1152,7 @@
     fs.forEach(function (f) { if (f.kind === 'pocket') drawPocket(fg, f, board); });
     var lamps = buildLamps(board, g);
     // markers: exhibits (black roundels) and figures (bone tags)
-    var pins = fs.filter(function (f) { return f.kind === 'pin'; }), taken = [];
+    var pins = fs.filter(function (f) { return f.kind === 'pin' && !f.buried; }), taken = [];
     var zone = decor(board, 'cardzone'); if (zone) taken.push({ x: zone.x, y: zone.y, w: zone.w, h: zone.h });
     (board.legend || []).forEach(function (e) {
       if (e.slot) return;
