@@ -449,8 +449,10 @@ window.KolobViz = (function () {
       Promise.resolve().then(flushIntake);
     }
   }
+  // (a note or event that says logged: false — an unlogged guest's, the
+  // Hosanna's shout — is never engraved: SCORE §6, PLAN §8.12)
   function onNote(n) {
-    if (!n) return;
+    if (!n || n.logged === false) return;
     if (n.layer === "telegraph") { if (n.marks && n.marks.length) queueIntake({ note: n }); return; }
     if (n.layer === "band") { if (n.freq > 20) queueIntake({ note: n }); return; }
     if (!n.freq || n.freq < 20 || !MELODIC[n.layer]) return;
@@ -459,7 +461,7 @@ window.KolobViz = (function () {
   // the typed bus (SCORE.md §6; round 2): the page reads the event's type,
   // never its label — the Question's askings and its silence, and STOP
   function onEvent(ev) {
-    if (!ev) return;
+    if (!ev || ev.logged === false) return;
     if (ev.type === "question-asking" || ev.type === "question-unanswered") queueIntake({ ev: ev });
     else if (ev.type === "transport" && ev.action === "stop") queueIntake({ stop: ev.t != null ? ev.t : audioNow() });
   }

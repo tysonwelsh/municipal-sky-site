@@ -175,6 +175,20 @@ window.KOLOB = window.KOLOB || {};
         var total = choirHarmonizedLine(t, hz, beat * 1.4, 0.95);  // 0.7x tempo of the call
         claimAir(total, R.rnd(4, 9) * silenceMul());
         emitNote("choir", 0, t, total);
+        // THE LINE AS LINED (SCORE §5.1's practice "lined"; round 2, the
+        // critic): the deacon gave the hymn's first line and the choir sings
+        // it back — told with its Score like every sung line, as the first
+        // line of the verse the hymn stands in, and practice "lined". It is
+        // the precentor's line again, not the next of the stanza: the verse's
+        // walk (the couplets, practice "sung") does not count it. Typed only
+        // (SCORE §6: new words carry no label); the minutes keep the row
+        // they always gave it (the deacon's ☞), and write none for this.
+        var linedMeter = S.Meeting.meter(), linedLines = METERS[linedMeter] || METERS.CM;
+        emitEvent({
+          type: "verse-line", hymnId: S.Meeting.hymnId(), verse: Math.floor(S.Meeting.verseLine() / linedLines.length), line: 0, speechLine: 1,
+          practice: "lined", meter: linedMeter, syllables: call.notes.length, motif: call.name, gen: call.gen, start: t, beatS: beat * 1.4,
+          score: KOLOB.Harmony.toLine(hz, S.moment(), { trochee: linedMeter === "87.87" }),
+        });
         cueLayer("choir", total + R.rnd(6, 14) * gapMul(), choirVerse);
         return;
       }

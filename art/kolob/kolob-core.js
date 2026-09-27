@@ -345,7 +345,8 @@ window.KolobAudio = (function () {
   // the label. The legacy { cat, label, detail } still ride on the same
   // object (one event, both vocabularies), for the dev tools and the
   // harness's older tallies. A guest the minutes must not name (the
-  // Hosanna) says logged: false on every event it sends.
+  // Hosanna) says logged: false on every event it sends, and on every note
+  // the page may not show (a visitor's notes name it: guest, logged).
   var noteListeners = [], eventListeners = [];
   function emitNote(layer, freq, startTime, duration, extra) {
     for (var i = 0; i < noteListeners.length; i++) {

@@ -63,6 +63,17 @@ window.KOLOB = window.KOLOB || {};
     ev.logged = !(V && V.logged === false);
     return emitEvent(ev);
   }
+  // …and its notes say the same (round 2, the critic): each note a visitor
+  // sounds names the guest and whether the page may show it. A note that
+  // says logged: false is neither printed in the minutes nor engraved; the
+  // steeples' first bell and the band's steps used to reach the page untagged
+  // when their events had been hushed. extra: the note's own fields.
+  function guestNote(V, guest, extra) {
+    var o = extra || {};
+    o.guest = guest;
+    o.logged = !(V && V.logged === false);
+    return o;
+  }
 
   // THE RASPBERRY AMEN's cluster — two hands of neighboring seconds, every
   // tone a collection ratio, so the wrongness is spelled in the meeting's
@@ -170,7 +181,10 @@ window.KOLOB = window.KOLOB || {};
           anotes.push({ f: degFreq(projDeg(adeg) + colN() + lift), dur: Math.max(0.3, abeat * R.rnd(0.7, 1.2)) });
         }
         var adur = renderHarmonium(aAt, anotes, 0.5 + k * 0.12);
-        S.reportLine("harmonium", aAt, anotes);
+        // (FOR WHOEVER UNSHELVES THE QUESTION: the answers are told as the
+        // guest's; the clarinet's askings are told inside renderClarinetLine,
+        // which takes no tag — an unlogged Question must pass one there)
+        S.reportLine("harmonium", aAt, anotes, guestNote(V, "question"));
         // from the third answer the answerers argue among themselves
         // (FOR WHOEVER UNSHELVES THE QUESTION: the second rank is a PURE
         // fifth above each answer, and above a degree whose fifth is not in
@@ -180,7 +194,7 @@ window.KOLOB = window.KOLOB || {};
         if (k >= 2) {
           var bnotes = anotes.map(function (n) { return { f: n.f * 1.5, dur: n.dur * R.rnd(0.8, 1) }; });
           renderHarmonium(aAt + abeat * 0.5, bnotes, 0.3 + k * 0.08);
-          S.reportLine("harmonium", aAt + abeat * 0.5, bnotes, { part: "doubling" });
+          S.reportLine("harmonium", aAt + abeat * 0.5, bnotes, guestNote(V, "question", { part: "doubling" }));
         }
         cursor = aAt + adur + R.rnd(2.5, 4.5) * Math.pow(0.85, k);
       } else {
@@ -271,7 +285,7 @@ window.KOLOB = window.KOLOB || {};
       fart.gain.linearRampToValueAtTime(0.5, tt + 0.03);
       fart.gain.setValueAtTime(0.5, tt + nd * 0.7);
       fart.gain.linearRampToValueAtTime(0.08, tt + nd * 0.95); // the tongue lifts
-      emitNote("band", f, tt, nd, { part: "melody", beat: beat, loud: nearness(tt) });
+      emitNote("band", f, tt, nd, guestNote(V, "bands", { part: "melody", beat: beat, loud: nearness(tt) }));
       tt += nd; di++;
       if (tt > soundEnd) soundEnd = tt;
     }
@@ -282,7 +296,7 @@ window.KOLOB = window.KOLOB || {};
       og.gain.setValueAtTime(0.0001, bt);
       og.gain.linearRampToValueAtTime(0.55, bt + 0.02);
       og.gain.linearRampToValueAtTime(0.0001, bt + beat * 0.8);
-      emitNote("band", bf, bt, beat, { part: "bass", beat: beat, loud: nearness(bt) });
+      emitNote("band", bf, bt, beat, guestNote(V, "bands", { part: "bass", beat: beat, loud: nearness(bt) }));
       if (bt + beat > soundEnd) soundEnd = bt + beat;
       bt += beat * 2; bar++;
     }
@@ -384,7 +398,7 @@ window.KOLOB = window.KOLOB || {};
       var st = all[s3];
       if (st.home) {
         bellStrike(st.at, st.gain, st.base, panAt("bells", Y.rnd(-0.2, 0.2)), { hum: true });
-        emitNote("bells", 0, st.at, BELL_RING_S);
+        emitNote("bells", 0, st.at, BELL_RING_S, guestNote(V, "steeples"));
       } else {
         bellStrike(st.at, st.gain, st.base, st.dest, { hum: false });
       }
@@ -439,11 +453,23 @@ window.KOLOB = window.KOLOB || {};
   // from the tunes, never hand-listed. KINGSFOLD — the house hymn, "If You
   // Could Hie to Kolob" (LDS #284) — is weighed double among the tunes the
   // Saints sing, and those above the tradition's tunes they do not.
+  //
+  // A MEMORY IS A WHOLE THOUGHT (round 2, the critic's ear). A tune whose
+  // opening the day holds only in a short first line — SIMPLE GIFTS on a
+  // mixolydian or hexatonic Sunday (its second line sings ti); DESERET,
+  // MARTYR and NETTLETON on a pentatonic one — came and went in five or six
+  // seconds, where v0.30's memories lasted twelve to sixteen. So a tune
+  // surfaces only where the lines the day holds last MIN_MEMORY_S even at
+  // the quickest remembered tempo; every mode keeps tunes enough (the pool
+  // is printed by the harness), so the old tune comes as often as it did.
   // ==========================================================================
   var COMMA = [-4, 4, -1, 0];                          // 81/80, the syntonic comma
   var DARK = { aeolian: true, dorian: true };
   var HOUSE_HYMN = "earth:kingsfold";
   var OLD_TUNE_CENTRE = 8;                             // where the memory sits: a 7-space degree above the keynote (v0.30's register)
+  var OLD_TUNE_CEILING = 14;                           // …and never above do two octaves up, where the far voice's lowpass stands
+  var TEMPO_MIN = 1.15, TEMPO_MAX = 1.45;              // the remembered tempo: the book's beat held this much longer
+  var MIN_MEMORY_S = 8;                                // the shortest memory, at the quickest remembered tempo
   function earthTunes() { return (KOLOB.Tunes && KOLOB.Tunes.list) || []; }
   function openingLines(h) { return (h.lines || []).concat(h.refrain || []); }
   // does the day's tuning hold this melody note, exactly?
@@ -468,11 +494,17 @@ window.KOLOB = window.KOLOB || {};
     var sung = !!(L && ((L.hymns1985 && L.hymns1985.length) || (L.homeAndChurch && L.homeAndChurch.length)));
     return sung ? 3 : 1.5;
   }
+  // how many opening lines the memory may sing on this Sunday: the lines the
+  // law lets the day hold, if they make a whole thought — else none
+  function linesAdmitted(h, mode) {
+    var k = linesHeld(h, mode);
+    return k > 0 && beatsOf(excerpt(h, k)) * h.beatS * TEMPO_MIN >= MIN_MEMORY_S ? k : 0;
+  }
   // the pool for the day's mode: [[{id, lines}, weight], …] in the book's order
   function oldTuneCandidates(mode) {
     var m = mode || S.mode, pool = [];
     earthTunes().forEach(function (h) {
-      var k = linesHeld(h, m);
+      var k = linesAdmitted(h, m);
       if (k > 0) pool.push([{ id: h.id, lines: k }, tuneWeight(h)]);
     });
     return pool;
@@ -500,11 +532,77 @@ window.KOLOB = window.KOLOB || {};
   function beatsOf(notes) { var b = 0; notes.forEach(function (n) { b += n.beats + n.restAfter; }); return b; }
   // The register: the octave that sets the excerpt's middle nearest where
   // v0.30's memories sat. A tune's tenor melody (the Sacred Harp's) is
-  // written low; it rises to the same far place.
+  // written low; it rises to the same far place. On a tie the lower octave,
+  // and a lower one again where the top would pass the ceiling, if the
+  // bottom stays at the keynote or above (round 2, the critic: MARTYR's tie
+  // rounded up and sang to 1.3 kHz, over the far voice's lowpass and far
+  // over v0.30's memories, which never passed about 880 Hz).
   function octaveFor(notes) {
     var lo = Infinity, hi = -Infinity;
     notes.forEach(function (n) { if (n.deg < lo) lo = n.deg; if (n.deg > hi) hi = n.deg; });
-    return Math.round((OLD_TUNE_CENTRE - (lo + hi) / 2) / 7);
+    var o = Math.ceil((OLD_TUNE_CENTRE - (lo + hi) / 2) / 7 - 0.5);
+    while (hi + 7 * o > OLD_TUNE_CEILING && lo + 7 * (o - 1) >= 0) o--;
+    return o;
+  }
+  // THE LEAP SUNG PURE (round 2, the critic's ear; PLAN §2.4's comma
+  // tracking). The day's fixed tuning makes one fourth and one fifth a comma
+  // wide — te to me in the minor modes (27/20: KINGSFOLD's "voice of
+  // Je-sus", in the house hymn), re to la in the major (40/27) — and no
+  // singer leaps a wolf. Where the memory leaps a fourth or a fifth within
+  // a line (a breath between lines lets the singer take the next pitch from
+  // the drone again) that the day's pitches make a wolf, one of the two
+  // notes leans a syntonic comma and the leap rings pure: the one whose
+  // leaned pitch is the simpler ratio over the keynote, the drone's nearer
+  // kin — so te rises to 9/5 (not me falling to 32/27), and re falls to
+  // 10/9, the choir's own ii re (not la rising to 27/16). A lean that takes
+  // a note further from the drone than a hair is never taken (in practice
+  // only re and te ever lean, as a just choir leans them: a note of the
+  // drone's own chords never wavers); nor one that would sour the other
+  // neighbour; a run of one note leans together (never a comma jump on a
+  // repeated note). The law is unchanged — the day holds every note; the
+  // lean is how a singer tunes the leap. No die is thrown.
+  //   ms: the day's monzos, in the order sung; joined[i]: note i follows
+  //   note i-1 in the same breath → the comma each leans (-1, 0, +1)
+  var LEAN_HAIR = 0.5;                                  // how much further from the drone a lean may take a note (bits of Tenney height)
+  function leanBy(m, c) { return c ? KOLOB.Pitch.mul(m, [COMMA[0] * c, COMMA[1] * c, COMMA[2] * c, 0]) : m; }
+  function wolfLeap(a, b) {
+    var d = KOLOB.Pitch.div(b, a), c = KOLOB.Pitch.cents(d);
+    var semi = Math.round((((c % 1200) + 1200) % 1200) / 100) % 12;
+    if (semi === 7) return !(d[1] === 1 && d[2] === 0 && d[3] === 0);       // a fifth: 3/2, or the wolf 40/27
+    if (semi === 5) return !(d[1] === -1 && d[2] === 0 && d[3] === 0);      // a fourth: 4/3, or the wolf 27/20
+    return false;
+  }
+  function tenney(m) {                                   // how far a pitch is from the drone: log2 of n·d
+    var r = KOLOB.Pitch.octaveReduce(m);
+    return Math.abs(r[0]) + Math.abs(r[1]) * Math.log2(3) + Math.abs(r[2]) * Math.log2(5) + Math.abs(r[3]) * Math.log2(7);
+  }
+  function leapLeans(ms, joined) {
+    var lean = ms.map(function () { return 0; });
+    function at(i) { return leanBy(ms[i], lean[i]); }
+    function tied(i) { return !joined || !!joined[i]; }   // note i follows i-1 in one breath
+    function same(i, j) { return ms[i].join() === ms[j].join() && lean[i] === lean[j]; }
+    // a neighbour in the same breath that the lean would sour
+    function sours(x, y, m, left) { return left ? wolfLeap(at(x), m) && !wolfLeap(at(x), at(y)) : wolfLeap(m, at(y)) && !wolfLeap(at(x), at(y)); }
+    for (var i = 1; i < ms.length; i++) {
+      if (!tied(i) || !wolfLeap(at(i - 1), at(i))) continue;
+      var best = null;
+      [i - 1, i].forEach(function (j) {
+        if (lean[j]) return;                             // a note leans once
+        var lo = j, hi = j;
+        while (lo > 0 && tied(lo) && same(lo - 1, j)) lo--;
+        while (hi < ms.length - 1 && tied(hi + 1) && same(hi + 1, j)) hi++;
+        [-1, 1].forEach(function (c) {
+          var m = leanBy(ms[j], c), ok = tenney(m) <= tenney(ms[j]) + LEAN_HAIR;
+          // the leap it is for rings pure, and neither neighbour of the run sours
+          if (j === i ? wolfLeap(at(i - 1), m) : wolfLeap(m, at(i))) ok = false;
+          if (lo > 0 && lo - 1 !== i - 1 && tied(lo) && sours(lo - 1, lo, m, true)) ok = false;
+          if (hi < ms.length - 1 && hi + 1 !== i && tied(hi + 1) && sours(hi, hi + 1, m, false)) ok = false;
+          if (ok && (!best || tenney(m) < best.h - 1e-9)) best = { lo: lo, hi: hi, c: c, h: tenney(m) };
+        });
+      });
+      if (best) for (var k = best.lo; k <= best.hi; k++) lean[k] = best.c;
+    }
+    return lean;
   }
   // The pool as the tune lab reads it (KolobAudio.getOldTunes): v0.30's
   // shape — name, weight, minor, [[deg, beats]] of the first line, in the
@@ -517,7 +615,7 @@ window.KOLOB = window.KOLOB || {};
       return {
         id: h.id, name: String(h.nameEn || h.id).toLowerCase(), w: tuneWeight(h), minor: !!DARK[h.mode],
         notes: ex.map(function (n) { return [n.deg + 7 * o - 7, n.beats]; }),
-        modes: MODES.filter(function (m) { return linesHeld(h, m) > 0; }),
+        modes: MODES.filter(function (m) { return linesAdmitted(h, m) > 0; }),
       };
     });
   }
@@ -582,7 +680,7 @@ window.KOLOB = window.KOLOB || {};
   function oldTuneRemembered(V, tc) {
     var R = stream("guest:oldtune");
     // every die first, whether it is used or not (SCORE §3)
-    var tempoDie = R.rnd(1.15, 1.45);            // its own remembered tempo: slower than the book's
+    var tempoDie = R.rnd(TEMPO_MIN, TEMPO_MAX);  // its own remembered tempo: slower than the book's
     var twoDie = R.chance(0.5);                  // the second line too
     var dropDie = R.chance(0.5), dropAt = R.rnd(0, 1);
     var holdDie = R.chance(0.4), holdAt = R.rnd(0, 1);
@@ -621,16 +719,21 @@ window.KOLOB = window.KOLOB || {};
       lines: nLines === 2 ? [0, 1] : [0], octave: oct, beatS: beatS, wear: { dropped: dropped, held: held }, detuneCents: 8,
     });
     // each note, as the far voice sings it: its pitch the day's own for its
-    // degree (the law made sure), set an octave `oct` from where it is written
+    // degree (the law made sure), set an octave `oct` from where it is
+    // written — and a leap the day would sing as a wolf, sung pure (each try
+    // is tuned as it is sung: the head alone leaps only what the head leaps)
     function sung(ns, try2) {
-      return ns.map(function (n) {
-        var d = n.deg + 7 * oct, idx = projDeg(d);
-        var f = degFreq(idx) * det, dur = n.beats * beatS;
+      var idxs = ns.map(function (n) { return projDeg(n.deg + 7 * oct); });
+      var ms = idxs.map(function (idx) { return KOLOB.Pitch.degMonzo(S.mode, idx); });
+      var lean = leapLeans(ms, ns.map(function (n, i) { return i > 0 && n.line === ns[i - 1].line; }));
+      return ns.map(function (n, i) {
+        var d = n.deg + 7 * oct, c = lean[i];
+        var f = degFreq(idxs[i]) * det * (c ? Math.pow(81 / 80, c) : 1), dur = n.beats * beatS;
         return {
           f: f, dur: dur, restAfter: try2 ? 0 : n.restAfter * beatS, breath: !try2 && n.breath,
           tell: function (at) {
-            emitNote("oldtune", f, at, dur, { part: h.melodyPart, hymnId: h.id, line: n.line, index: n.index, beat: n.beat,
-                                              deg: d, monzo: KOLOB.Pitch.degMonzo(S.mode, idx), tryNo: try2 ? 2 : 1 });
+            emitNote("oldtune", f, at, dur, guestNote(V, "oldtune", { part: h.melodyPart, hymnId: h.id, line: n.line, index: n.index, beat: n.beat,
+                                                                      deg: d, monzo: leanBy(ms[i], c), comma: c, tryNo: try2 ? 2 : 1 }));
           },
         };
       });
@@ -666,11 +769,13 @@ window.KOLOB = window.KOLOB || {};
   S.oldTuneRemembered = oldTuneRemembered;
   // the room's public face on the KOLOB namespace (the old tune's law and
   // excerpt are here for the harness and the labs: linesHeld(tune, mode),
-  // excerpt(tune, k), octaveFor(notes))
+  // linesAdmitted(tune, mode), excerpt(tune, k), octaveFor(notes),
+  // leapLeans(monzos, joined), wolfLeap(a, b))
   KOLOB.Guests = {
     cumulativeAssembly: cumulativeAssembly, unansweredQuestion: unansweredQuestion, twoBandsCross: twoBandsCross, steeplesAnswer: steeplesAnswer,
     oldTuneRemembered: oldTuneRemembered, oldTuneCandidates: oldTuneCandidates, oldTunePool: oldTunePool,
-    linesHeld: linesHeld, excerpt: excerpt, octaveFor: octaveFor,
+    linesHeld: linesHeld, linesAdmitted: linesAdmitted, excerpt: excerpt, octaveFor: octaveFor, leapLeans: leapLeans, wolfLeap: wolfLeap,
+    MIN_MEMORY_S: MIN_MEMORY_S, TEMPO_MIN: TEMPO_MIN,
   };
   (KOLOB._rooms = KOLOB._rooms || {})["kolob-guests.js"] = true;   // the load guard's roll call
 })();

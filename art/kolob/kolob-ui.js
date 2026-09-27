@@ -215,7 +215,8 @@
         var g = GUEST_ROWS[ev.guest], st = g && g[ev.stage];
         return st ? minute(st[0], S[st[1]], "visitation") : null; // a guest the minutes do not know is not named as another
       }
-      case "verse-line":    return minute("¶", S.verse + (ev.speechLine != null ? " " + ev.speechLine : ""), "verse");
+      case "verse-line":                                     // (a line sung back to the deacon is his ☞ row's; it writes none of its own)
+        return ev.practice === "lined" ? null : minute("¶", S.verse + (ev.speechLine != null ? " " + ev.speechLine : ""), "verse");
       case "lining-out":    return minute("☞", LAYERS_DS.clarinet + " " + S.linesOut, "verse");
       case "field": {
         var fd = TT(FIELD_DS, FIELD_EN)[ev.field];

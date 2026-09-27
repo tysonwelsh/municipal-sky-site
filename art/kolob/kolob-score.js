@@ -303,16 +303,18 @@ window.KOLOB.Score = (function () {
 
   // ==========================================================================
   // THE EVENTS (SCORE.md §6) — every typed event's payload, by field kind.
-  // A "?" kind may be null. The first block is the contract's table; the
-  // second is what round 2 added so that nothing the page prints is read off
-  // a label any more (requested for §6). An event may carry more than this —
-  // the legacy {cat, label, detail} ride along on the same object.
+  // A "?" kind may be null; an object is a payload of its own, checked field
+  // by field (the hymn a hymn-announced names). The first block is the
+  // contract's table; the second is what round 2 added so that nothing the
+  // page prints is read off a label any more (requested for §6). An event
+  // may carry more than this — the legacy {cat, label, detail} ride along on
+  // the same object.
   // ==========================================================================
   var EVENTS = {
     "meeting-start":       { n: "int", sunday: "str?", kind: "str", mode: "mode", keynoteHz: "num", houseDialect: "str?" },
     "section-start":       { section: "str", index: "int" },
-    "hymn-announced":      { hymn: "obj", leaderDs: "str?" },
-    "verse-start":         { hymnId: "str", verse: "int", practice: "practice" },
+    "hymn-announced":      { hymn: { id: "hymnId", number: "num?", nameDs: "str?", meter: "str", dialect: "dialect?" }, leaderDs: "str?" },
+    "verse-start":         { hymnId: "hymnId", verse: "int", practice: "practice" },
     "cadence":             { kind: "cadence" },
     "guest-start":         { guest: "str", section: "str", logged: "bool" },
     "guest-end":           { guest: "str", section: "str", logged: "bool" },
@@ -329,7 +331,7 @@ window.KOLOB.Score = (function () {
     "skip":                { to: "str" },
     "joint":               { last: "bool", toward: "str?", dur: "num" },
     "room-empties":        { toward: "str?" },
-    "verse-line":          { hymnId: "str", verse: "int", line: "int", speechLine: "int", practice: "practice", score: "obj" },
+    "verse-line":          { hymnId: "hymnId", verse: "int", line: "int", speechLine: "int", practice: "practice", score: "obj" },
     "lining-out":          { meter: "str", syllables: "int" },
     "fuging":              { entries: "int" },
     "field":               { field: "str" },
@@ -348,7 +350,27 @@ window.KOLOB.Score = (function () {
     mode: function (x) { return MODES.indexOf(x) >= 0; },
     cadence: function (x) { return CADENCES.indexOf(x) >= 0; },
     practice: function (x) { return PRACTICES.indexOf(x) >= 0; },
+    dialect: function (x) { return DIALECTS.indexOf(x) >= 0; },
+    hymnId: function (x) { return isStr(x) && ID.test(x); },
   };
+  // the payload against its spec; `at` names where (the type, and the field
+  // a nested payload hangs from)
+  function payload(o, spec, at, out) {
+    Object.keys(spec).forEach(function (k) {
+      var kind = spec[k];
+      if (!has(o, k)) { out.push(at + ": no " + k); return; }
+      if (isObj(kind)) {
+        if (!isObj(o[k])) out.push(at + "." + k + " " + JSON.stringify(o[k]) + ": not an object");
+        else payload(o[k], kind, at + "." + k, out);
+        return;
+      }
+      var opt = kind.charAt(kind.length - 1) === "?";
+      if (opt) kind = kind.slice(0, -1);
+      if (opt && o[k] === null) return;
+      if (!KINDS[kind](o[k])) out.push(at + "." + k + " " + JSON.stringify(o[k]) + ": not " + kind);
+    });
+    return out;
+  }
   function validateEvent(ev, where) {
     var w = where || "event";
     if (!isObj(ev)) return [w + ": not an object"];
@@ -357,14 +379,7 @@ window.KOLOB.Score = (function () {
     if (!spec) return [w + ": unknown type '" + ev.type + "'"];
     var out = [];
     if (ev.t != null && !isNum(ev.t)) out.push(w + " " + ev.type + ".t: not a time");
-    Object.keys(spec).forEach(function (k) {
-      var kind = spec[k], opt = kind.charAt(kind.length - 1) === "?";
-      if (opt) kind = kind.slice(0, -1);
-      if (!has(ev, k)) { out.push(w + " " + ev.type + ": no " + k); return; }
-      if (opt && ev[k] === null) return;
-      if (!KINDS[kind](ev[k])) out.push(w + " " + ev.type + "." + k + " " + JSON.stringify(ev[k]) + ": not " + kind);
-    });
-    return out;
+    return payload(ev, spec, w + " " + ev.type, out);
   }
 
   function validate(obj, kind, opts) {
@@ -399,8 +414,10 @@ window.KOLOB.Score = (function () {
       if (typeof x === "function") { problems.push(path + ": a function is dropped"); return; }
       if (typeof x !== "object") { problems.push(path + ": a " + typeof x + " is not JSON"); return; }
       if (seen.indexOf(x) >= 0) { problems.push(path + ": a cycle"); return; }
+      // a plain object's prototype is an Object.prototype — this realm's or
+      // another's (a vm context, an iframe: round 2, the critic) — or none
       var proto = Object.getPrototypeOf(x);
-      if (!Array.isArray(x) && proto !== Object.prototype && proto !== null) { problems.push(path + ": not a plain object"); return; }
+      if (!Array.isArray(x) && proto !== null && Object.getPrototypeOf(proto) !== null) { problems.push(path + ": not a plain object"); return; }
       seen.push(x);
       if (Array.isArray(x)) x.forEach(function (y, i) { walk(y, path + "[" + i + "]"); });
       else Object.keys(x).forEach(function (k) { walk(x[k], path + "." + k); });

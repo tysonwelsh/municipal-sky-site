@@ -328,7 +328,11 @@ window.KOLOB = window.KOLOB || {};
     C.fugingUntil = 0;
     // the fuging entry is an EVENT, not a fixture — some hymns are meadows
     C.fugingPlanned = s.type === "hymn" && fugingDie;
-    if (s.type === "hymn") C.verseLine = 0;
+    // a singing section is a hymn of its own (its own hymnId), and begins at
+    // its first line — the doxology too (round 2, the critic: it walked on
+    // from wherever the last hymn had stopped, so its Score opened at verse 1,
+    // or mid-stanza with no verse-start at all)
+    if (s.type === "hymn" || s.type === "doxology") C.verseLine = 0;
     if (s.type === "hymn" && s.meter) {
       C.meter = s.meter;
       emitEvent({ type: "liahona", points: "meter", meter: C.meter, cat: "liahona", label: "⌖ the meter is given", detail: C.meter + " — " + METERS[C.meter].join(".") });
@@ -503,8 +507,9 @@ window.KOLOB = window.KOLOB || {};
     });
   }
   // THE UNLOGGED GUESTS — a guest that "just happens, low-key" (PLAN §8.12,
-  // the Hosanna): it sends logged: false on every event, the minutes print
-  // none of them, and the hymn board's direction line never names it. The
+  // the Hosanna): it sends logged: false on every event and on every note the
+  // page may not show, the minutes print none of them, the staff engraves
+  // none of those notes, and the hymn board's direction line never names it. The
   // Hosanna is not built yet; the table is read when a guest arrives, so a
   // test may add any guest to it (KOLOB._s.UNLOGGED_GUESTS.oldtune = true).
   var UNLOGGED = { hosanna: true };
