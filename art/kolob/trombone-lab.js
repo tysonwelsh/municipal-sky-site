@@ -27,7 +27,10 @@
 // the dawn in every mode; "calibrate" sets the choir beside the reference.
 //
 // Dev console: TromboneLab.check(id, o), TromboneLab.render(id, o),
-// TromboneLab.all(), TromboneLab.calibrate(), TromboneLab.odds().
+// TromboneLab.all(), TromboneLab.calibrate(), TromboneLab.odds(),
+// TromboneLab.brass() (the pre-v0.34 polish: is it brass, and not the organ?
+// — the centroid by dynamic, the attack's rise and the legato joins, beside
+// the organ reference).
 // Public surface: window.TromboneLab
 // ============================================================================
 window.TromboneLab = (function () {
@@ -593,6 +596,74 @@ window.TromboneLab = (function () {
       }, Promise.resolve());
     }).then(function () { return check("dawn", o); }).then(function (d) { out.dawn = d; return out; });
   }
+  // THE BRASS CHECK (the pre-v0.34 polish; console: TromboneLab.brass()).
+  // Is it brass, and is it not the organ? Each trombone plays one hymn line
+  // (eight notes of 0.9 s, the first tongued, the rest legato-tongued as the
+  // guest plays them) dry, at pp, mp, mf, f and ff; the organ reference's
+  // first chord plays at three levels. For each it reports: the centroid
+  // (200 Hz–8 kHz) while the notes hold, and the share of energy above
+  // 1.5 kHz — brass brightens as it is blown harder, an organ does not; how
+  // long the first note takes to reach 90 % of its held level; and the dip
+  // at each legato join (the lowest 5 ms within ±35 ms of the join, against
+  // the note before) — a tongued line has a pulse, an organ none.
+  function brass() {
+    var MAJ7 = [1, 9 / 8, 5 / 4, 4 / 3, 3 / 2, 5 / 3, 15 / 8], BASE = { altoTrombone: 349.2, tenorTrombone: 233.1, bassTrombone: 116.5 };
+    function pw(x, a, N) {
+      var re = new Float32Array(N), im = new Float32Array(N);
+      for (var i = 0; i < N; i++) re[i] = (x[a + i] || 0) * (0.5 - 0.5 * Math.cos(2 * Math.PI * i / N));
+      fft(re, im);
+      var p = new Float64Array(N / 2); for (var k = 0; k < N / 2; k++) p[k] = re[k] * re[k] + im[k] * im[k]; return p;
+    }
+    function spectrum(x, a, b, N) { var acc = new Float64Array(N / 2); for (var s0 = a; s0 + N <= b; s0 += N / 2) { var p = pw(x, s0, N); for (var k = 0; k < N / 2; k++) acc[k] += p[k]; } return acc; }
+    function measures(P, N) {
+      var num = 0, den = 0, hi = 0, all = 0;
+      for (var k = 1; k < N / 2; k++) { var hz = k * SR / N; if (hz >= 200 && hz <= 8000) { num += P[k] * hz; den += P[k]; } if (hz >= 60) { all += P[k]; if (hz >= 1500) hi += P[k]; } }
+      return { centroidHz: Math.round(den ? num / den : 0), above1k5Db: +(10 * Math.log10((hi + 1e-20) / (all + 1e-20))).toFixed(1) };
+    }
+    function frames(x) { var out = []; for (var s0 = 0; s0 + 240 <= x.length; s0 += 240) { var e = 0; for (var i = s0; i < s0 + 240; i++) e += x[i] * x[i]; out.push(Math.sqrt(e / 240)); } return out; }
+    function mono(buf) { var L = buf.getChannelData(0), R = buf.getChannelData(1), m = new Float32Array(L.length); for (var i = 0; i < L.length; i++) m[i] = (L[i] + R[i]) / 2; return m; }
+    function riseMs(fr, at, heldAt) { var held = 0; for (var k = heldAt; k < heldAt + 60; k++) held += fr[k] / 60; for (var j = at; j < at + 400; j++) if (fr[j] >= 0.9 * held) return Math.round((j - at) * 5); return null; }
+    function line(inst, dyn) {
+      var degs = [0, 2, 4, 2, 5, 4, 2, 0], spb = 0.9, t0 = 0.3;
+      var off = new OfflineAudioContext(2, Math.ceil(SR * (t0 + degs.length * spb + 1.5)), SR);
+      var band = VB.create(off, off.destination, { seed: 1847 });
+      var notes = degs.map(function (d, i) { var last = i === degs.length - 1; return { f: BASE[inst] * MAJ7[d], at: i * spb, dur: spb - (last ? 0 : 0.022), legato: i > 0, rel: last ? 0.2 : 0.022 }; });
+      band.play(t0, notes, inst, dyn);
+      return off.startRendering().then(function (buf) {
+        var m = mono(buf), fr = frames(m), on = notes.map(function (n) { return Math.round((t0 + n.at) * SR); });
+        var acc = new Float64Array(1024);
+        on.forEach(function (o) { var P = spectrum(m, o + 0.15 * SR, o + 0.75 * SR, 2048); for (var k = 0; k < 1024; k++) acc[k] += P[k]; });
+        var dips = on.slice(1).map(function (o) {
+          var c = Math.floor(o / 240), before = 0, mn = Infinity;
+          for (var k = c - 60; k < c - 16; k++) before += fr[k] / 44;
+          for (var q = c - 7; q < c + 8; q++) mn = Math.min(mn, fr[q]);
+          return 20 * Math.log10((mn + 1e-12) / (before + 1e-12));
+        });
+        var r = measures(acc, 2048);
+        r.inst = inst; r.dyn = dyn;
+        r.riseMs = riseMs(fr, Math.floor(on[0] / 240), Math.floor(on[0] / 240) + 50);
+        r.joinDipDb = +(dips.reduce(function (a, b) { return a + b; }, 0) / dips.length).toFixed(1);
+        r.lufs = +loudness([buf.getChannelData(0), buf.getChannelData(1)]).I.toFixed(1);
+        return r;
+      });
+    }
+    function organ(gainMul) {
+      var off = new OfflineAudioContext(2, SR * 8, SR);
+      P.reference(off, off.destination, 0.1, { gainMul: gainMul });
+      return off.startRendering().then(function (buf) {
+        var m = mono(buf), fr = frames(m), r = measures(spectrum(m, 2.5 * SR, 5 * SR, 2048), 2048);
+        r.inst = "organ (the v0.30 reference)"; r.gainMul = gainMul;
+        r.riseMs = riseMs(fr, Math.floor(0.1 * SR / 240), Math.floor(3 * SR / 240));
+        r.joinDipDb = null;
+        return r;
+      });
+    }
+    var jobs = [];
+    ["altoTrombone", "tenorTrombone", "bassTrombone"].forEach(function (inst) { [0.2, 0.45, 0.6, 0.78, 0.95].forEach(function (d) { jobs.push(function () { return line(inst, d); }); }); });
+    [0.3, REF_GAINMUL, 0.8].forEach(function (g) { jobs.push(function () { return organ(g); }); });
+    var rows = [];
+    return jobs.reduce(function (p, j) { return p.then(j).then(function (r) { rows.push(r); }); }, Promise.resolve()).then(function () { return rows; });
+  }
   function all(o) {
     o = o || {};
     var rows = [];
@@ -602,14 +673,14 @@ window.TromboneLab = (function () {
       }, Promise.resolve()).then(function () { return { reference: ref, rows: rows }; });
     });
   }
-  // THE ODDS: plan() per Sunday, and a stand-in planner's mix (the engine's
-  // measured shares: ordinary 38 %, fast 28 %, conference 22 %, jubilee 13 %;
-  // bands 35 %; another prelude guest 11 %) — the harness measures the same
-  // against the real planMeeting
+  // THE ODDS: plan() per Sunday, and a stand-in planner's mix (the
+  // calendar's shares since the pre-v0.34 polish: ordinary 52 %, fast 15 %,
+  // conference 19 %, jubilee 14 %; bands 35 %; another prelude guest 11 %) —
+  // the harness measures the same against the real planMeeting
   function odds(N) {
     N = N || 20000;
     var R0 = window.PJ2.Rand.stream(99).fork("lab:odds");
-    var kinds = [["ordinary", 0.38], ["fast", 0.28], ["conference", 0.22], ["jubilee", 0.13]];
+    var kinds = [["ordinary", 0.52], ["fast", 0.15], ["conference", 0.19], ["jubilee", 0.14]];
     var rows = {}, seated = 0, withBands = 0;
     for (var i = 1; i <= N; i++) {
       var kind = R0.pickW(kinds), bands = R0.chance(0.35), pre = R0.chance(0.11);
@@ -813,5 +884,5 @@ window.TromboneLab = (function () {
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", mount);
   else mount();
 
-  return { play: play, stop: stop, check: check, render: render, calibrate: calibrate, all: all, odds: odds, loudness: loudness, setRoom: setRoom, material: function (o) { return material(settings(o)); }, _P: P };
+  return { play: play, stop: stop, check: check, render: render, calibrate: calibrate, all: all, odds: odds, brass: brass, loudness: loudness, setRoom: setRoom, material: function (o) { return material(settings(o)); }, _P: P };
 })();

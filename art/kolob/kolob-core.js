@@ -802,10 +802,21 @@ window.KolobAudio = (function () {
       d.spent.push(h);
       if (d.pans[L]) { d.spent.push.apply(d.spent, d.pans[L]); delete d.pans[L]; }
       delete d.hands[L];
+      var written = te;
       ns.forEach(function (n) {
         var heard = Math.max(n.s, Math.min(n.e, until));
         released.push({ layer: L, freq: n.f, startTime: n.s, duration: n.e - n.s, until: heard });
+        written = Math.max(written, n.e);
         n.e = heard;
+      });
+      // the spent hands leave the hall once the last note written through
+      // them has stopped (its oscillators stop up to half a second after
+      // their written end): a long session does not keep a pile of silent
+      // doors open (the panners stay wired to the hands, so what went
+      // through them can still be traced — the harness does)
+      cueAt("conductor", written + 1, function () {
+        try { h.disconnect(); } catch (e) {}
+        var at = d.spent.indexOf(h); if (at >= 0) d.spent.splice(at, 1);
       });
       for (var i = handsLog.length - 1; i >= 0; i--) if (handsLog[i].node === h) { handsLog[i].at = te; handsLog[i].until = until; handsLog[i].guest = guest; break; }
       layers.push(L);
