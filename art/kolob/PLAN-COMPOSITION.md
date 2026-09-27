@@ -1157,3 +1157,7 @@ The source is `critic/enrichment-2.md`, and the owner listened to `handoff/liste
 - raise the near trombone choir;
 - lower the old tune (and re-strike its repeated notes);
 - have the organ and the house let go smoothly when a guest enters.
+
+**A word from the owner to every agent on this build (2026-09-27, verbatim):**
+
+> "Oh, very good. Glad to hear that round three has begun. Go ahead and pass a word to the agents telling them that I'm excited to see what they come up with, that they are some of the most remarkable agents we've had working on this app yet. So I'm very excited to see what they come back with and how they really elevate and take this to the next level in terms of just artistry and richness of aleatoric music and what can be done using large language models to create this kind of rich programmatic music generator."
