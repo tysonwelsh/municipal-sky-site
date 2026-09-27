@@ -23,15 +23,30 @@
 //  · Conical bores: cornet and alto horn (saxhorns) are mellower than a
 //    trumpet — the waves fall off faster and the formant sits lower.
 //
-// Cost: 3 nodes per brass note (osc → lowpass → gain); snare 6, bass drum
-// 5; ~12 standing nodes per band. A quickstep strain with four parts runs
-// about 25 nodes live at once.
+//  · THE CORNET BITES. Its wave is the ff spectrum and the lowpass makes
+//    every softer dynamic out of it; a tongued note flares brighter for its
+//    first ~15 ms, then settles. At ff the upper harmonics stand up (H5 8–14
+//    dB and H10 about 20–23 dB under the fundamental) — the lead has to cut
+//    through a town square. At piano it stays round.
+//
+// Cost (reported by stats(), counted from the nodes actually built): 3 per
+// brass note (osc → lowpass → gain); a snare stroke 5, a bass-drum stroke 5,
+// a flam 10, a roll 25; 8 standing nodes per band. The quickstep strain in
+// the lab peaks at about 45 live nodes. The per-note brightness sweeps are
+// read once per 128-sample block (k-rate): they move over tens of
+// milliseconds, and it keeps each note's filter off the per-sample path.
 //
 // Public surface: KOLOB.VoicesBand.create(ctx, destination, opts) → band
+//   opts: { gain (1), rand (a PJ2.Rand stream, "synth:band") | seed }
 //   band.play(t, notes, instrument, dynamics)
-//      notes: [{f, dur, at?, acc?, stacc?}]  instrument: "cornet"|"alto"|"tuba"
+//      notes: [{f, dur, at?, acc?, stacc?, dyn?}]  instrument: "cornet"|"alto"|"tuba"
 //      dynamics: "pp"…"ff" or 0–1
 //   band.drum(t, kind, dynamics)             kind: "snare"|"flam"|"roll"|"bass"
+//      Every stroke sounds AT OR AFTER t — nothing reaches back before the
+//      time it was asked for, so a clock callback can never schedule into
+//      the past. The accent lands KOLOB.VoicesBand.LEAD[kind] seconds after
+//      t (flam 0.028, roll 0.2, snare and bass 0): to put a roll's accent on
+//      beat b, call drum(b - LEAD.roll, "roll").
 //   band.out (a gain — fade and pan the whole band from outside)
 //   band.stats() → { standing, created, peakLive }
 // ============================================================================
@@ -45,11 +60,20 @@ window.KOLOB.VoicesBand = (function () {
 
   // the sections: spectral tilt of the wave, the formant the bell throws,
   // cutoff range (× f) from piano to forte, attack, where they stand, level
+  // The attack's brightness: the cutoff runs from lo×f up to its peak —
+  // lo + (hi − lo) × dyn^curve, times f — times a FLARE (bloom, or bloomAcc
+  // on an accent; bloomDyn lets the flare grow with the dynamic), reached at
+  // flareAt × atk, then settles to `settle` × peak with time constant
+  // settleTau. The alto horns and the tuba keep the round attack they had;
+  // the cornet bites (a steeper curve, a higher top, a real flare).
   var INSTR = {
-    cornet: { tilt: 0.95, formant: 1250, fw: 700,  lo: 2.2, hi: 9,   atk: 0.022, scoop: 22, pan: -0.28, level: 0.11, grain: 1.6, vib: 4 },
-    alto:   { tilt: 1.25, formant: 800,  fw: 500,  lo: 1.8, hi: 5.5, atk: 0.034, scoop: 14, pan: 0.22,  level: 0.055, grain: 0,   vib: 0 },
-    tuba:   { tilt: 1.05, formant: 420,  fw: 320,  lo: 2.5, hi: 9,   atk: 0.045, scoop: 18, pan: 0.04,  level: 0.12, grain: 1.2, vib: 0 },
+    cornet: { tilt: 0.7,  formant: 1250, fw: 1100, lo: 2.2, hi: 16, curve: 3.0, settle: 0.85, bloom: 1.7,  bloomAcc: 2.0,  bloomDyn: 0.3, flareAt: 0.6, settleTau: 0.06, atk: 0.022, scoop: 22, pan: -0.28, level: 0.11,  grain: 1.6, vib: 4 },
+    alto:   { tilt: 1.25, formant: 800,  fw: 500, lo: 1.8, hi: 5.5, curve: 1.4, settle: 0.72, bloom: 1.05, bloomAcc: 1.15, bloomDyn: 0,   flareAt: 1.2, settleTau: 0.08, atk: 0.034, scoop: 14, pan: 0.22,  level: 0.055, grain: 0,   vib: 0 },
+    tuba:   { tilt: 1.05, formant: 420,  fw: 320, lo: 2.5, hi: 9,   curve: 1.4, settle: 0.72, bloom: 1.05, bloomAcc: 1.15, bloomDyn: 0,   flareAt: 1.2, settleTau: 0.08, atk: 0.045, scoop: 18, pan: 0.04,  level: 0.12,  grain: 1.2, vib: 0 },
   };
+  // how far ahead of t each drum stroke's accent lands (every stroke sounds
+  // at or after t)
+  var LEAD = { snare: 0, bass: 0, flam: 0.028, roll: 0.2 };
 
   function mulberry(seed) {
     var s = seed >>> 0;
@@ -126,6 +150,8 @@ window.KOLOB.VoicesBand = (function () {
       return waves[key];
     }
 
+    // pitch and brightness automation is read once a block (see the header)
+    function kRate(p) { try { p.automationRate = "k-rate"; } catch (e) {} }
     // one tongued brass note
     function note(t, f, dur, k, dyn, acc, stacc) {
       var spec = INSTR[k];
@@ -134,6 +160,7 @@ window.KOLOB.VoicesBand = (function () {
       var rel = t + len, tEnd = rel + 0.25;
       var o = ctx.createOscillator(), lp = ctx.createBiquadFilter(), g = ctx.createGain();
       o.setPeriodicWave(waveFor(k, f));
+      kRate(o.frequency); kRate(o.detune); kRate(lp.frequency);
       // the lip finds the slot: a few cents flat, locked within ~30 ms
       var sc = spec.scoop * (0.6 + 0.8 * d) * R.rnd(0.7, 1.2);
       o.frequency.setValueAtTime(f, t);
@@ -143,12 +170,15 @@ window.KOLOB.VoicesBand = (function () {
         o.detune.setValueAtTime(0, t + 0.25);
         for (var vt = t + 0.3, ph = 0; vt < rel - 0.05; vt += 0.09, ph++) o.detune.linearRampToValueAtTime(ph % 2 ? -spec.vib : spec.vib, vt);
       }
-      // brightness follows breath
-      var cLo = Math.min(9000, f * spec.lo), cHi = Math.min(12000, f * (spec.lo + (spec.hi - spec.lo) * Math.pow(d, 1.4)));
+      // brightness follows breath: the cutoff flares with the tongue, then
+      // settles where the dynamic holds it
+      var cLo = Math.min(9000, f * spec.lo);
+      var cPk = Math.min(14000, f * (spec.lo + (spec.hi - spec.lo) * Math.pow(d, spec.curve)));
+      var flare = (acc ? spec.bloomAcc : spec.bloom) * (1 - spec.bloomDyn + spec.bloomDyn * d);
       lp.type = "lowpass"; lp.Q.value = 1.1;
       lp.frequency.setValueAtTime(cLo, t);
-      lp.frequency.linearRampToValueAtTime(cHi * (acc ? 1.15 : 1.05), t + spec.atk * 1.2);
-      lp.frequency.setTargetAtTime(cHi * 0.72, t + spec.atk * 1.2, 0.08);
+      lp.frequency.linearRampToValueAtTime(Math.min(16000, cPk * flare), t + spec.atk * spec.flareAt);
+      lp.frequency.setTargetAtTime(cPk * spec.settle, t + spec.atk * spec.flareAt, spec.settleTau);
       lp.frequency.setTargetAtTime(cLo, rel, 0.03);
       var lv = spec.level * (0.25 + 0.75 * d);
       g.gain.setValueAtTime(0, t);
@@ -207,14 +237,15 @@ window.KOLOB.VoicesBand = (function () {
       count(5, t, t + 0.9);
       return 5;
     }
+    // every stroke at or after t: the accent lands LEAD[kind] later
     function drum(t, kind, dynamics) {
       var lv = 0.3 * (0.25 + 0.75 * dynOf(dynamics));
       if (kind === "bass") return bassDrum(t, lv);
-      if (kind === "flam") return snare(t - 0.028, lv * 0.45) + snare(t, lv);
-      if (kind === "roll") {                         // a short five-stroke roll into t
+      if (kind === "flam") return snare(t, lv * 0.45) + snare(t + LEAD.flam, lv);
+      if (kind === "roll") {                         // a five-stroke roll from t to its accent at t + 0.2
         var n = 0;
-        for (var i = 0; i < 4; i++) n += snare(t - 0.2 + i * 0.05, lv * (0.35 + i * 0.06));
-        return n + snare(t, lv);
+        for (var i = 0; i < 4; i++) n += snare(t + i * 0.05, lv * (0.35 + i * 0.06));
+        return n + snare(t + LEAD.roll, lv);
       }
       return snare(t, lv);
     }
@@ -223,13 +254,13 @@ window.KOLOB.VoicesBand = (function () {
       var ev = [];
       spans.forEach(function (s) { ev.push([s[0], s[2]], [s[1], -s[2]]); });
       ev.sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; });
-      var live = 0, peak = 0;
-      ev.forEach(function (e) { live += e[1]; if (live > peak) peak = live; });
-      return { standing: standing, created: created, peakLive: peak + standing };
+      var live = 0, peak = 0, until = 0;
+      ev.forEach(function (e) { live += e[1]; if (live > peak) peak = live; if (e[1] < 0 && e[0] > until) until = e[0]; });
+      return { standing: standing, created: created, peakLive: peak + standing, until: until };
     }
 
     return { out: out, play: play, drum: drum, stats: report };
   }
 
-  return { create: create, INSTRUMENTS: Object.keys(INSTR), DYNAMICS: DYN };
+  return { create: create, INSTRUMENTS: Object.keys(INSTR), DYNAMICS: DYN, LEAD: LEAD };
 })();

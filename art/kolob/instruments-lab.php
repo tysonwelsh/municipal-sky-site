@@ -107,7 +107,12 @@ include '../../includes/header.php';
   <p class="kil-footnote">Node counts are per phrase: every play builds fresh instruments, so
   “created” is the phrase's whole cost and “live at peak” is the most nodes alive at one instant.
   The seed moves only sound-level detail (detune, breath, the flock's chatter, the wheels'
-  creaks) — never the notes. The level reference is the v0.30 organ, rebuilt line for line.</p>
+  creaks) — never the notes. The level reference is the v0.30 organ as the prelude plays it,
+  rebuilt line for line; it and the new organ both sound as they leave the organ, before the app's
+  organ-layer volume (0.52). <strong>check</strong> renders the seed in the seed field, the room,
+  and for the organ the registration and the swell on the slider; it reports loudness (LUFS,
+  integrated and the loudest 3&nbsp;s) and counts clicks as bursts above 4&nbsp;kHz that stand
+  21.6&nbsp;dB clear of the 30&nbsp;ms either side, down to −100&nbsp;dBFS.</p>
 </div>
 
 <script src="../prosperos-jukebox-v2/pj2-rand.js?v=<?php echo kil_v('../prosperos-jukebox-v2/pj2-rand.js'); ?>"></script>

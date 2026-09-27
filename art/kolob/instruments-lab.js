@@ -4,15 +4,21 @@
 // Every instrument plays a short musical phrase in just intonation, through
 // the app's own master chain (glue → master 0.6 → tanh → compressor, copied
 // from kolob-audio.js init) plus a safety limiter, in the app's rooms. The
-// lab never plays louder than the app: its level reference is the v0.30
-// organ chord, rebuilt here line for line, and every phrase is balanced
-// against it.
+// lab never plays louder than the app. Its level reference is the v0.30
+// organChord as the prelude plays it (gainMul 0.75 × (0.6 + 0.4 × 0.21) —
+// mid-prelude intensity — peak gainMul × 0.7, linear ramps through env()),
+// rebuilt line for line; the new organ is calibrated against it. Both are
+// heard as they leave the organ, before the app's organ-layer volume (0.52).
 //
 // CHECK renders a phrase offline (OfflineAudioContext, same graph) and
-// reports what a critic would measure: peak and RMS at the output, peak
-// before the chain (clipping has nowhere to hide), transient spikes that
-// fall outside the phrase's intended attacks, the spectrum in five bands,
-// and a spectrogram. Dev console: InstrumentsLab.check(id, {reg}).
+// reports what a critic would measure: loudness (BS.1770 integrated, and
+// the loudest 3 s), peak and RMS at the output, peak before the chain
+// (clipping has nowhere to hide), clicks — spikes of high-frequency energy
+// that stand out of the sound on both sides, however quiet — the spectrum in
+// five bands, and a spectrogram. It renders the seed in the seed field and,
+// for the organ, the swell on the slider. Dev console:
+// InstrumentsLab.check(id, {reg, swell, seed, room}); InstrumentsLab.render()
+// returns the rendered AudioBuffer itself.
 //
 // Public surface: window.InstrumentsLab
 // ============================================================================
@@ -87,9 +93,11 @@ window.InstrumentsLab = (function () {
     var guard = ctx.createDynamicsCompressor();
     guard.threshold.setValueAtTime(-1, t); guard.knee.setValueAtTime(0, t); guard.ratio.setValueAtTime(20, t);
     guard.attack.setValueAtTime(0.002, t); guard.release.setValueAtTime(0.1, t);
+    // the last hop: a fader, so a live room change crossfades instead of cutting
+    var fade = ctx.createGain(); fade.gain.value = 1;
     voicesBus.connect(glue); glue.connect(master); master.connect(sat); sat.connect(comp); comp.connect(guard);
-    guard.connect(dest);
-    return { input: session, out: guard };
+    guard.connect(fade); fade.connect(dest);
+    return { input: session, out: fade };
   }
 
   // ==========================================================================
@@ -133,6 +141,8 @@ window.InstrumentsLab = (function () {
   }
 
   var P = {};
+  // a phrase lasts until its last note has rung out, not when the tune stops
+  function tail(t, dur, st) { return Math.max(dur, (st.until || 0) - t + 0.1); }
 
   // ---- the organ ------------------------------------------------------------
   P.organ = function (ctx, into, t, o, seed) {
@@ -148,8 +158,9 @@ window.InstrumentsLab = (function () {
       organ.setSwell(0.45, t + h.dur * 0.62, h.dur * 0.3);
     }
     organ.play(t, h.notes, reg);
-    live.organ = organ;
-    return { dur: h.dur + 0.5, stats: organ.stats() };
+    keep(ctx, "organ", organ);
+    var st = organ.stats();
+    return { dur: tail(t, h.dur + 0.5, st), stats: st };
   };
 
   // ---- the band: an eight-bar quickstep strain in F, played twice -----------
@@ -183,10 +194,13 @@ window.InstrumentsLab = (function () {
         ch.forEach(function (a) {
           band.play(bt, ALTO[h].map(function (rt) { return { f: F * rt, dur: e * 0.9, at: a, stacc: true }; }), "alto", r ? "mf" : "mp");
         });
+        // drum strokes sound at or after the time asked; LEAD is how far after
+        // it the accent lands — so ask early by that much to land on the beat
+        var LEAD = KOLOB.VoicesBand.LEAD;
         band.drum(bt, "bass", r ? "mf" : "mp");
-        if (bar === 3 && r === 0) band.drum(bt + b, "flam", "mf");
+        if (bar === 3 && r === 0) band.drum(bt + b - LEAD.flam, "flam", "mf");
         else if (bar !== 7) band.drum(bt + b, "snare", "mp");
-        if (bar === 7 && r === 0) band.drum(bt + b + e, "roll", "mf");
+        if (bar === 7 && r === 0) band.drum(bt + b + e - LEAD.roll, "roll", "mf");
       }
     }
     // the final chord of the strain
@@ -195,8 +209,9 @@ window.InstrumentsLab = (function () {
     band.play(ft, ALTO.I.map(function (rt) { return { f: F * rt, dur: 1.2 }; }), "alto", "mf");
     band.play(ft, [{ f: F / 4, dur: 1.2, acc: true }], "tuba", "f");
     band.drum(ft, "bass", "f");
-    live.band = band;
-    return { dur: bars * reps * barLen + 1.8, stats: band.stats() };
+    keep(ctx, "band", band);
+    var st = band.stats();
+    return { dur: tail(t, bars * reps * barLen + 1.8, st), stats: st };
   };
 
   // ---- the fiddle: a reel in D, over its own open strings -------------------
@@ -227,15 +242,18 @@ window.InstrumentsLab = (function () {
         });
       });
     }
-    // tag: the 7/6 slide into the major third, then the ringing close on the
-    // harmonic seventh over the open D
-    push(3, e * 2, { also: [D * 7 / 6], acc: true });
-    push(1, e * 2, { also: [D * 7 / 4 / 2 * 2], acc: true });
+    // tag: on the one string, a finger lands on the blue third (7/6 over D)
+    // and slides up to the major third (5/4) over the open D; then the
+    // ringing close — D with the harmonic seventh (7/4) on the A string —
+    // and D with A, open
+    push(3, e * 2, { orn: "slide", from: D * 7 / 6, acc: true });
+    push(1, e * 2, { also: [D * 7 / 4], acc: true });
     push(1, e * 5, { also: [deg(D, 5)], slur: false, acc: true });
     var drone = o.drone === false ? [] : [D];
     folk.fiddle(t, notes, { drone: drone, droneLevel: 0.32, dyn: 0.75 });
-    live.folk = folk;
-    return { dur: at + 0.6, stats: folk.stats() };
+    keep(ctx, "folk", folk);
+    var st = folk.stats();
+    return { dur: tail(t, at + 0.6, st), stats: st };
   };
 
   // ---- the handbells: a Primary song in 6/8 ---------------------------------
@@ -258,8 +276,9 @@ window.InstrumentsLab = (function () {
       notes.push({ f: deg(G / 2, CH[bars][1]), at: bars * 6 * e + 3 * e, dur: 3 * e, v: 0.4, pan: 0.35 });
     }
     folk.handbells(t, notes);
-    live.folk = folk;
-    return { dur: at + 3, stats: folk.stats() };
+    keep(ctx, "folk", folk);
+    var st = folk.stats();
+    return { dur: tail(t, at + 0.5, st), stats: st };
   };
 
   // ---- the gulls: a flock crossing, the lead bird tracing OLD HUNDRED's head
@@ -267,8 +286,9 @@ window.InstrumentsLab = (function () {
     var folk = KOLOB.VoicesFolk.create(ctx, into, { seed: seed });
     var head = [f(1, 1), f(1, 1), f(7), f(6), f(5), f(1, 1), f(2, 1), f(3, 1)];
     folk.gulls(t, { notes: head, beat: o.beat || 0.5, birds: o.birds || 4, from: -0.8, to: 0.75, dist: 0.2 });
-    live.folk = folk;
-    return { dur: head.length * (o.beat || 0.5) + 3.2, stats: folk.stats() };
+    keep(ctx, "folk", folk);
+    var st = folk.stats();
+    return { dur: tail(t, head.length * (o.beat || 0.5) + 3.2, st), stats: st };
   };
 
   // ---- the handcart company: wheels under a unison line ---------------------
@@ -290,7 +310,7 @@ window.InstrumentsLab = (function () {
     near.gain.linearRampToValueAtTime(1, t + total * 0.4); near.gain.setValueAtTime(1, t + total * 0.6);
     near.gain.linearRampToValueAtTime(0.0, t + total + 0.4);
     mix.connect(near); near.connect(pn); pn.connect(into);
-    var nodes = 10;
+    var nodes = 8;                                  // bus, f1, f2, lp, mix, lg, pn, near
     for (var v = 0; v < 5; v++) {
       var o = ctx.createOscillator(); o.type = "sawtooth";
       var g = ctx.createGain(); g.gain.setValueAtTime(0, t);
@@ -324,89 +344,134 @@ window.InstrumentsLab = (function () {
     var total = 0; line.forEach(function (n) { total += n[1] * beat; });
     folk.wheels(t, total + 3, { beat: beat, carts: o.carts || 2, from: -0.75, to: 0.7, creak: 0.8 });
     var cn = company(ctx, into, t + 1.2, line, beat);
-    live.folk = folk;
+    keep(ctx, "folk", folk);
     var st = folk.stats(); st.created += cn; st.peakLive += cn;
-    return { dur: total + 3.4, stats: st };
+    return { dur: tail(t, total + 3.4, st), stats: st };
   };
 
-  // ---- the reference: the v0.30 organ chord, line for line ------------------
-  P.reference = function (ctx, into, t) {
-    var chords = [[1, 3, 5, 8], [4, 6, 8, 11], [5, 7, 9, 12], [1, 3, 5, 8]];
-    var n = 0;
+  // ---- the reference: the v0.30 organ, as the prelude plays it -------------
+  // kolob-audio.js organChord(t, dur, chord, gainMul), line for line, with the
+  // organ layer's default params (stops 0.5, tremulant 0.15, pedal 0.6):
+  // every rank a sine, the unison rank a detuned pair, the whole chord an
+  // octave down, a sine pedal two octaves under the bass, and env()'s LINEAR
+  // ramps — [atk, peak] [hold, peak × 0.92] [dur × 0.28, 0] with atk =
+  // min(2.2, dur × 0.3) and peak = gainMul × 0.7. The prelude calls it with
+  // gainMul = 0.75 × (0.6 + 0.4 × intensity), intensity 0.12 → 0.30, i.e.
+  // 0.49 … 0.54; the lab takes the middle (0.513). The chords are voiced the
+  // way the app's Harmony spreads SATB (bass an octave under the keynote,
+  // soprano an octave over), and last 6 s, the prelude's shortest; the lab
+  // closes the app's 4–10 s silences between them to a breath. The tremulant
+  // LFO runs at 5.5 Hz (the app draws 5–6). What the lab plays is what the
+  // organ layer receives — in the app the layer's volume (0.52) follows.
+  var REF_GAINMUL = 0.75 * (0.6 + 0.4 * 0.21);
+  var REF_DUR = 6, REF_STEP = 6.4;
+  function env(g, t, pts) {                         // kolob-audio.js env(): from true zero, linear
+    g.gain.setValueAtTime(0, t);
+    var tt = t;
+    for (var i = 0; i < pts.length; i++) { tt += pts[i][0]; g.gain.linearRampToValueAtTime(pts[i][1], tt); }
+    return tt;
+  }
+  P.reference = function (ctx, into, t, o) {
+    // I – IV – V – I, SATB as [B, T, A, S] in 1-based degrees of the keynote
+    var chords = [[-6, -2, 3, 8], [-3, 1, 6, 8], [-2, 0, 5, 9], [-6, -2, 3, 8]];
+    var gainMul = o.gainMul != null ? o.gainMul : REF_GAINMUL, n = 0;
     chords.forEach(function (c, i) {
-      var freqs = c.map(function (d) { return deg(K / 2, d); });
-      var tt = t + i * 3.2, dur = 3.4, stops = 0.5, trem = 0.15, pedal = 0.6;
-      var m = ctx.createGain(); m.connect(into); n++;
+      var freqs = c.map(function (d) { return deg(K, d); });  // chord.freqs, around the keynote
+      var tt = t + i * REF_STEP, dur = REF_DUR, stops = 0.5, trem = 0.15, pedal = 0.6;
+      var master = ctx.createGain(); master.connect(into); n++;
       var RANKS = [1, 2, 3, 4], PP = [1, 0.48, 0.22, 0.1], FL = [1, 0.65, 0.09, 0.32];
-      freqs.forEach(function (fr) {
-        fr *= 0.5 * 2;                               // the app halves chord.freqs; ours are already low
-        for (var r = 0; r < 4; r++) {
-          var g = PP[r] * (1 - stops) + FL[r] * stops; if (g < 0.05) continue;
-          var pair = r === 0 ? 2 : 1;
+      var nTones = freqs.length;
+      for (var v = 0; v < nTones; v++) {
+        var f0 = freqs[v] * 0.5;
+        for (var r = 0; r < RANKS.length; r++) {
+          var g = PP[r] * (1 - stops) + FL[r] * stops;
+          if (g < 0.05) continue;
+          var pair = r === 0 ? 2 : 1;                           // chorus detune on the unison rank only
           for (var d = 0; d < pair; d++) {
-            var o = ctx.createOscillator(); o.frequency.value = fr * RANKS[r] * (pair === 2 ? (d ? 1.0015 : 0.9985) : 1);
-            var og = ctx.createGain(); og.gain.value = g * 0.16 / 2 / pair;
-            o.connect(og); og.connect(m); o.start(tt); o.stop(tt + dur + 0.3); n += 2;
+            var osc = ctx.createOscillator(); osc.type = "sine";
+            osc.frequency.setValueAtTime(f0 * RANKS[r] * (pair === 2 ? (d ? 1.0015 : 0.9985) : 1), tt);
+            var og = ctx.createGain(); og.gain.setValueAtTime(g * 0.16 / Math.sqrt(nTones) / pair, tt);
+            osc.connect(og); og.connect(master);
+            osc.start(tt); osc.stop(tt + dur + 0.3); n += 2;
           }
         }
-      });
-      var sub = ctx.createOscillator(); sub.frequency.value = freqs[0] * 0.5;
-      var sg = ctx.createGain(); sg.gain.value = pedal * 0.15; sub.connect(sg); sg.connect(m); sub.start(tt); sub.stop(tt + dur + 0.3);
-      var lfo = ctx.createOscillator(); lfo.frequency.value = 5.5; var lg = ctx.createGain(); lg.gain.value = trem * 0.1;
-      lfo.connect(lg); lg.connect(m.gain); lfo.start(tt); lfo.stop(tt + dur + 0.3);
-      n += 4;
-      var peak = 0.75 * 0.9, atk = Math.min(2.2, dur * 0.3);
-      m.gain.setValueAtTime(0, tt); m.gain.linearRampToValueAtTime(peak, tt + 0.6);
-      m.gain.setValueAtTime(peak * 0.92, tt + dur - 0.9); m.gain.linearRampToValueAtTime(0, tt + dur);
-      void atk;
+      }
+      if (pedal > 0.05) {
+        var sub = ctx.createOscillator(); sub.type = "sine"; sub.frequency.setValueAtTime(freqs[0] * 0.25, tt);
+        var sg = ctx.createGain(); sg.gain.setValueAtTime(pedal * 0.15, tt);
+        sub.connect(sg); sg.connect(master); sub.start(tt); sub.stop(tt + dur + 0.3); n += 2;
+      }
+      if (trem > 0.02) {
+        var lfo = ctx.createOscillator(); lfo.frequency.setValueAtTime(5.5, tt);
+        var lg = ctx.createGain(); lg.gain.setValueAtTime(trem * 0.1, tt);
+        lfo.connect(lg); lg.connect(master.gain); lfo.start(tt); lfo.stop(tt + dur + 0.3); n += 2;
+      }
+      var peak = gainMul * 0.7;
+      var atk = Math.min(2.2, dur * 0.3);
+      env(master, tt, [[atk, peak], [Math.max(0.1, dur - atk - dur * 0.28), peak * 0.92], [dur * 0.28, 0]]);
     });
-    return { dur: chords.length * 3.2 + 1, stats: { standing: 0, created: n, peakLive: n } };
+    return { dur: (chords.length - 1) * REF_STEP + REF_DUR + 0.5, stats: { standing: 0, created: n, peakLive: n } };
   };
 
   var PHRASES = [
     { id: "organ", name: "The organ", phrase: "OLD HUNDRED, two lines, SATB + pedal" },
+    { id: "reference", name: "The v0.30 organ (level reference)", phrase: "organChord as the prelude plays it, line for line — hymn principal on the new organ matches its loudness" },
     { id: "band", name: "The brass band", phrase: "a quickstep strain, twice (mf, then f)" },
     { id: "fiddle", name: "The fiddle", phrase: "a reel in D over the open D string" },
     { id: "handbells", name: "The handbells", phrase: "a Primary song in 6/8" },
     { id: "gulls", name: "The gulls", phrase: "a flock crossing; the lead bird traces OLD HUNDRED" },
     { id: "handcart", name: "The handcart company", phrase: "two carts under a walking unison line" },
-    { id: "reference", name: "Level reference", phrase: "the v0.30 organ, rebuilt — what the app sounds like" },
   ];
 
   // ==========================================================================
   // LIVE PLAYBACK
   // ==========================================================================
-  var ctx = null, chain = null, irBuf = null, room = "wide", live = {}, current = null, analyser = null;
+  // One live context. Phrases play into `labIn`, which feeds the current room
+  // chain; the analyser (the meter) sits after it and is built once. A room
+  // change builds the new chain and crossfades — the phrase keeps playing.
+  var actx = null, chain = null, irBuf = null, room = "wide", live = {}, current = null, analyser = null, labIn = null;
+  // only the live context's instruments answer the page's controls (an
+  // offline CHECK builds its own, and must not steal the swell slider)
+  function keep(c, key, inst) { if (c === actx) live[key] = inst; }
   function ensure() {
-    if (ctx) return Promise.resolve();
-    ctx = new (window.AudioContext || window.webkitAudioContext)();
-    return fetchIR(ctx).then(function (b) { irBuf = b; rebuild(); });
+    if (actx) return Promise.resolve();
+    actx = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = actx.createAnalyser(); analyser.fftSize = 2048; analyser.connect(actx.destination);
+    labIn = actx.createGain();
+    return fetchIR(actx).then(function (b) { irBuf = b; rebuild(); });
   }
   function rebuild() {
-    if (chain) { try { chain.out.disconnect(); } catch (e) {} }
-    analyser = ctx.createAnalyser(); analyser.fftSize = 2048; analyser.connect(ctx.destination);
-    chain = buildChain(ctx, room, irBuf, analyser);
+    var old = chain, t = actx.currentTime, X = 0.25;
+    chain = buildChain(actx, room, irBuf, analyser);
+    labIn.connect(chain.input);
+    if (!old) return;
+    // crossfade the rooms; then let the old one go
+    chain.out.gain.setValueAtTime(0, t); chain.out.gain.linearRampToValueAtTime(1, t + X);
+    old.out.gain.setValueAtTime(1, t); old.out.gain.linearRampToValueAtTime(0, t + X);
+    setTimeout(function () {
+      try { labIn.disconnect(old.input); } catch (e) {}
+      try { old.out.disconnect(); } catch (e2) {}
+    }, (X + 0.15) * 1000);
   }
   function stop() {
     if (!current) return;
-    var g = current.gain, c = current;
-    g.gain.setTargetAtTime(0, ctx.currentTime, 0.03);
+    var c = current;
+    c.gain.gain.setTargetAtTime(0, actx.currentTime, 0.03);
     setTimeout(function () { try { c.gain.disconnect(); } catch (e) {} }, 400);
     current = null;
   }
   function play(id, o) {
     return ensure().then(function () {
-      if (ctx.state === "suspended") ctx.resume();
+      if (actx.state === "suspended") actx.resume();
       stop();
-      var g = ctx.createGain(); g.connect(chain.input);
-      var seed = seedValue();
-      var res = P[id](ctx, g, ctx.currentTime + 0.12, o || {}, seed);
-      current = { gain: g, id: id, until: ctx.currentTime + res.dur };
+      var g = actx.createGain(); g.connect(labIn);
+      var res = P[id](actx, g, actx.currentTime + 0.12, o || {}, seedValue());
+      current = { gain: g, id: id, until: actx.currentTime + res.dur };
       return res;
     });
   }
-  function setRoom(r) { room = r; if (ctx) rebuild(); }
-  function setSwell(e) { if (live.organ && ctx) live.organ.setSwell(e, ctx.currentTime, 0.25); }
+  function setRoom(r) { room = r; if (actx) rebuild(); }
+  function setSwell(e) { if (live.organ && actx) live.organ.setSwell(e, actx.currentTime, 0.25); }
   function seedValue() {
     var el = document.getElementById("kil-seed");
     var v = el ? parseInt(el.value, 10) : 1847;
@@ -424,14 +489,18 @@ window.InstrumentsLab = (function () {
   // CHECK — offline render + the critic's measures
   // ==========================================================================
   var offlineIR = null;
-  function check(id, o) {
+  // render(id, o) → Promise<{buf, res}>: the phrase through the chain,
+  // offline. buf has four channels: 0–1 the output, 2–3 the signal before
+  // the chain. o: {reg, swell, seed, room, …phrase options}
+  function render(id, o) {
     o = o || {};
+    var seed = o.seed != null ? o.seed : 1847;
     var probe = new OfflineAudioContext(2, SR, SR);
     var irP = offlineIR ? Promise.resolve(offlineIR) : fetchIR(probe).then(function (b) { offlineIR = b; return b; });
     return irP.then(function (ir) {
-      // dry run to learn the duration, then the real render
+      // a dry run to learn the duration, then the real render
       var dummy = new OfflineAudioContext(2, SR, SR);
-      var est = P[id](dummy, dummy.destination, 0.1, o, o.seed || 1847);
+      var est = P[id](dummy, dummy.destination, 0.1, o, seed);
       var len = Math.ceil((est.dur + 1.2 + (o.room === "dry" ? 0 : 3)) * SR);
       var off = new OfflineAudioContext(4, len, SR);
       off.destination.channelCount = 4; off.destination.channelInterpretation = "discrete";
@@ -442,11 +511,51 @@ window.InstrumentsLab = (function () {
       ch.input.connect(split); split.connect(merger, 0, 2); split.connect(merger, 1, 3);
       var mainSplit = off.createChannelSplitter(2);
       ch.out.disconnect(); ch.out.connect(mainSplit); mainSplit.connect(merger, 0, 0); mainSplit.connect(merger, 1, 1);
-      var res = P[id](off, ch.input, 0.1, o, o.seed || 1847);
-      return off.startRendering().then(function (buf) { return analyse(buf, res, id, o); });
+      var res = P[id](off, ch.input, 0.1, o, seed);
+      return off.startRendering().then(function (buf) { return { buf: buf, res: res }; });
     });
   }
+  function check(id, o) {
+    o = o || {};
+    return render(id, o).then(function (r) { return analyse(r.buf, r.res, id, o); });
+  }
   function db(x) { return 20 * Math.log10(x + 1e-12); }
+  // ---- loudness, BS.1770-4: K-weighting (48 kHz coefficients), 400 ms
+  // blocks at 75 % overlap, gated at −70 LUFS and −10 LU; and the loudest
+  // 3-second window (short-term maximum)
+  function biquad(x, b, a) {
+    var y = new Float32Array(x.length), x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+    for (var i = 0; i < x.length; i++) {
+      var v = b[0] * x[i] + b[1] * x1 + b[2] * x2 - a[1] * y1 - a[2] * y2;
+      x2 = x1; x1 = x[i]; y2 = y1; y1 = v; y[i] = v;
+    }
+    return y;
+  }
+  function kWeight(x) {
+    var s1 = biquad(x, [1.53512485958697, -2.69169618940638, 1.19839281085285], [1, -1.69065929318241, 0.73248077421585]);
+    return biquad(s1, [1, -2, 1], [1, -1.99004745483398, 0.99007225036621]);
+  }
+  function highpass4k(x) {                        // 2 × 2nd-order Butterworth at 4 kHz
+    var w = Math.tan(Math.PI * 4000 / SR), q = Math.SQRT1_2, nn = 1 / (1 + w / q + w * w);
+    var bb = [nn, -2 * nn, nn], aa = [1, 2 * (w * w - 1) * nn, (1 - w / q + w * w) * nn];
+    return biquad(biquad(x, bb, aa), bb, aa);
+  }
+  function loudness(chs) {
+    var k = chs.map(kWeight), n = k[0].length;
+    var sq = new Float64Array(n + 1);                // running sum of both channels' squares
+    for (var i = 0; i < n; i++) { var e = 0; for (var c = 0; c < k.length; c++) e += k[c][i] * k[c][i]; sq[i + 1] = sq[i] + e; }
+    function L(s, len) { return -0.691 + 10 * Math.log10((sq[s + len] - sq[s]) / len + 1e-20); }
+    var B = Math.round(0.4 * SR), H = Math.round(0.1 * SR), S3 = Math.round(3 * SR), blocks = [];
+    for (var s = 0; s + B <= n; s += H) blocks.push(L(s, B));
+    var abs = blocks.filter(function (l) { return l > -70; });
+    function meanL(ls) { var m = 0; ls.forEach(function (l) { m += Math.pow(10, (l + 0.691) / 10); }); return -0.691 + 10 * Math.log10(m / Math.max(1, ls.length) + 1e-20); }
+    var gate = meanL(abs) - 10;
+    var I = meanL(abs.filter(function (l) { return l > gate; }));
+    var sMax = -Infinity;
+    for (var s3 = 0; s3 + S3 <= n; s3 += H) sMax = Math.max(sMax, L(s3, S3));
+    if (!isFinite(sMax)) sMax = L(0, n);
+    return { I: abs.length ? I : -Infinity, S: sMax };
+  }
   function analyse(buf, res, id, o) {
     var L = buf.getChannelData(0), Rr = buf.getChannelData(1), PL = buf.getChannelData(2), PR = buf.getChannelData(3);
     var n = L.length, pk = 0, ppk = 0, clip = 0, ss = 0, act = 0;
@@ -456,28 +565,39 @@ window.InstrumentsLab = (function () {
       var a = Math.max(Math.abs(L[i]), Math.abs(Rr[i])); if (a > pk) pk = a; if (a > 0.989) clip++;
       var b = Math.max(Math.abs(PL[i]), Math.abs(PR[i])); if (b > ppk) ppk = b;
     }
+    var lu = loudness([L, Rr]);
     // RMS over the loud part (blocks within 30 dB of the loudest block)
     var B = 2400, blocks = [];
     for (var s = 0; s + B <= n; s += B) { var e = 0; for (var j = s; j < s + B; j++) e += mono[j] * mono[j]; blocks.push(e / B); }
     var bmax = Math.max.apply(null, blocks);
     blocks.forEach(function (e) { if (e > bmax * 0.001) { ss += e; act++; } });
     var rms = Math.sqrt(ss / Math.max(1, act));
-    // transients: 1 ms blocks of the second difference, against the median
-    // of the 30 ms either side — a click is a spike ≥ 12× (21.6 dB)
-    var H = 48, hf = [];
-    for (var k = 2; k + H <= n; k += H) {
+    // CLICKS: a click is broadband, so it shows above 4 kHz, where tones
+    // (and a ringing bell) leave the band nearly empty. 1 ms blocks of the
+    // signal through a 4th-order high-pass at 4 kHz; a click is a block ≥ 12×
+    // (21.6 dB) over the LOUDEST block of the 30 ms on EACH side — an attack
+    // has its sustain after it, a decay has its ring before it, and a bright
+    // low tone's once-a-period edge has its own twin a period away. The floor
+    // is −100 dBFS above 4 kHz, not a level: a cut at −55 dBFS into digital
+    // silence (−79 dBFS above 4 kHz) is a click too, and the ear finds it in
+    // a quiet room. Below the floor sits Chrome's own end to every
+    // setTargetAtTime(0): it snaps to zero once the gain is under ~4.5e-5,
+    // a step of at most −87 dBFS — inaudible, and in every release there is.
+    var hp = highpass4k(mono), H = 48, hf = [];
+    for (var k = 0; k + H <= n; k += H) {
       var e2 = 0;
-      for (var q = k; q < k + H; q++) { var d2 = mono[q] - 2 * mono[q - 1] + mono[q - 2]; e2 += d2 * d2; }
+      for (var q = k; q < k + H; q++) e2 += hp[q] * hp[q];
       hf.push(Math.sqrt(e2 / H));
     }
-    var spikes = [];
+    function pct(arr, p) { var c = arr.slice().sort(function (a2, b2) { return a2 - b2; }); return c[Math.min(c.length - 1, Math.floor(c.length * p))]; }
+    var spikes = [], worst = null;
     for (var z = 30; z < hf.length - 30; z++) {
-      // a click stands above BOTH sides: an attack out of silence has its
-      // sustain after it, and a decaying strike has its ring
-      var bef = hf.slice(z - 30, z - 2).sort(function (a2, b2) { return a2 - b2; });
-      var aft = hf.slice(z + 3, z + 30).sort(function (a2, b2) { return a2 - b2; });
-      var med = Math.max(bef[bef.length >> 1], aft[aft.length >> 1]);
-      if (hf[z] > med * 12 && hf[z] > 0.002) spikes.push(+(z * H / SR).toFixed(3));
+      if (hf[z] < 1e-5) continue;
+      var ref = Math.max(pct(hf.slice(z - 30, z - 2), 1), pct(hf.slice(z + 3, z + 30), 1));
+      if (hf[z] > ref * 12) {
+        spikes.push(+(z * H / SR).toFixed(3));
+        if (!worst || hf[z] > worst.hf) worst = { t: +(z * H / SR).toFixed(3), hf: hf[z], db: +db(hf[z]).toFixed(1), overDb: +db(hf[z] / (ref + 1e-20)).toFixed(1) };
+      }
     }
     // spectrum: average power in five bands + centroid (Welch, 4096)
     var N = 4096, bands = [0, 0, 0, 0, 0], cnum = 0, cden = 0, tnum = 0, tden = 0;
@@ -499,9 +619,11 @@ window.InstrumentsLab = (function () {
     }
     var tot = bands.reduce(function (a3, b3) { return a3 + b3; }, 0);
     var out = {
-      id: id, reg: o.reg || null, seconds: +(n / SR).toFixed(2),
+      id: id, reg: o.reg || null, seed: o.seed != null ? o.seed : 1847, swell: o.swell != null ? o.swell : null, room: o.room || "wide",
+      seconds: +(n / SR).toFixed(2),
+      lufs: +lu.I.toFixed(1), lufsShortMax: +lu.S.toFixed(1),
       peakDb: +db(pk).toFixed(2), rmsDb: +db(rms).toFixed(2), preChainPeakDb: +db(ppk).toFixed(2),
-      clippedSamples: clip, transients: spikes.length, transientTimes: spikes.slice(0, 24),
+      clippedSamples: clip, transients: spikes.length, transientTimes: spikes.slice(0, 24), worstTransient: worst,
       bandsPct: { sub: 0, low: 0, mid: 0, pres: 0, air: 0 }, centroidHz: Math.round(cnum / (cden || 1)), timbreCentroidHz: Math.round(tnum / (tden || 1)),
       nodes: res.stats,
     };
@@ -604,14 +726,17 @@ window.InstrumentsLab = (function () {
       var report = el("div", "kil-report");
       chk.addEventListener("click", function () {
         chk.disabled = true; report.textContent = "rendering offline…";
-        var o2 = { room: room };
-        if (ph.id === "organ") o2.reg = regSel.value;
+        // the check renders what the page is set to: its seed, its room, and
+        // for the organ the registration and the swell on the slider
+        var o2 = { room: room, seed: seedValue() };
+        if (ph.id === "organ") { o2.reg = regSel.value; o2.swell = +document.getElementById("kil-swell").value; }
         check(ph.id, o2).then(function (r) {
           chk.disabled = false;
           report.textContent = "";
           var p = el("p", "kil-meas",
-            "peak " + r.peakDb + " dBFS · rms " + r.rmsDb + " dBFS · before the chain " + r.preChainPeakDb + " dBFS · clipped " + r.clippedSamples +
-            " · stray transients " + r.transients + " · centroid " + r.centroidHz + " Hz (200 Hz–8 kHz: " + r.timbreCentroidHz + ") · bands % sub " + r.bandsPct.sub + " / low " + r.bandsPct.low +
+            "seed " + r.seed + (r.reg ? " · " + r.reg + " · swell " + r.swell : "") + " · loudness " + r.lufs + " LUFS (loudest 3 s " + r.lufsShortMax + ")" +
+            " · peak " + r.peakDb + " dBFS · rms " + r.rmsDb + " dBFS · before the chain " + r.preChainPeakDb + " dBFS · clipped " + r.clippedSamples +
+            " · clicks " + r.transients + (r.transients ? " (first at " + r.transientTimes[0] + " s)" : "") + " · centroid " + r.centroidHz + " Hz (200 Hz–8 kHz: " + r.timbreCentroidHz + ") · bands % sub " + r.bandsPct.sub + " / low " + r.bandsPct.low +
             " / mid " + r.bandsPct.mid + " / presence " + r.bandsPct.pres + " / air " + r.bandsPct.air);
           report.appendChild(p);
           var cv = el("canvas", "kil-spec"); cv.width = 640; cv.height = 160; report.appendChild(cv);
@@ -636,5 +761,5 @@ window.InstrumentsLab = (function () {
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", mount);
   else mount();
 
-  return { play: play, stop: stop, check: check, setRoom: setRoom, phrases: PHRASES, drawSpectrogram: drawSpectrogram, _P: P };
+  return { play: play, stop: stop, check: check, render: render, loudness: loudness, setRoom: setRoom, phrases: PHRASES, drawSpectrogram: drawSpectrogram, _P: P };
 })();

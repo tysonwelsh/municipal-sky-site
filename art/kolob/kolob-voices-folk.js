@@ -13,37 +13,51 @@
 //             mode near 460 Hz and the bridge hill near 2.8 kHz. The body
 //             is one filter chain per fiddle, not per note. A reel is ONE
 //             bowed voice that changes pitch, not a string of separate
-//             notes: bow changes dip and dig; slurs glide; rosin hisses.
-//             Double stops and drones are extra strings on the same bow,
-//             tuned to whatever exact ratio the caller hands over — 7/4 and
-//             7/6 ring as the old fiddlers' "blue" intervals do.
+//             notes: bow changes dip and dig; slurs glide; rosin hisses; a
+//             rest lifts the bow off every string it was on. Double stops
+//             and drones are extra strings on the same bow, tuned to whatever
+//             exact ratio the caller hands over — 7/4 and 7/6 ring as the old
+//             fiddlers' "blue" intervals do — and a SLIDE lands a finger
+//             below the note (7/6 under a 5/4, say) and slides it home.
 //  HANDBELLS — English handbells are tuned so the twelfth (3×) sings over
 //             the fundamental; a few inharmonic upper partials die fast;
 //             the leather-padded clapper gives a soft knock. Children damp
-//             them against their shoulders, or forget to.
+//             them against their shoulders, or forget to — and a forgotten
+//             bell rings until it has all but gone before it lets go.
 //  GULLS    — a gull's cry is a nasal, harsh, harmonic tone that scoops up
 //             to a pitch and falls off it ("kee-ow"), with a rasp of
 //             irregular amplitude. Heard closely, the lead bird's held
-//             pitches are the notes of a tune (PLAN §8.10).
+//             pitches are the notes of a tune (PLAN §8.10) — the whole tune
+//             moved by one octave into the gulls' register, so its shape
+//             survives, last rise and all.
 //  WHEELS   — a wooden wheel on a dry axle: stick-slip friction (a buzzing
 //             creak whose rate wanders) through the wheel's wooden
 //             resonances, once a revolution; iron tire on gravel beneath;
 //             the knock of a rut now and then; the cart bed rattling.
 //             The revolution is the rhythm (two beats a turn).
 //
-// Cost: fiddle ≈ 7 standing + ~9 per bowed line (not per note) + 2 per
-// double-stop string; handbell 10 per strike; gull cry 8; a cart ≈ 18
-// standing for the whole roll + 4 per rut knock. Reported by stats().
+// Cost (reported by stats(), counted from the nodes actually built): the
+// fiddle's body is 7 standing nodes (5 filters, a panner, and the out gain
+// every folk instance has); a bowed line is 4 per string (oscillator, gain,
+// vibrato LFO and its depth) + 3 for the rosin — 7 for a plain line, 4 more
+// for each double-stop string or drone. A handbell strike is 12; a gull cry
+// 8; a cart 13 for the whole roll, + 2 per knock (5 when the bed rattles).
+// Pitch automation (glides, slides, vibrato, the axle's rate) is read once
+// per 128-sample block (k-rate); amplitude stays sample-accurate.
 //
 // Public surface: KOLOB.VoicesFolk.create(ctx, destination, opts) → folk
-//   folk.fiddle(t, notes, {drone: [f…], droneLevel, dyn, pan})
-//       notes: [{f, dur, at?, slur?, acc?, also?: [f…], orn?: "cut"}]
+//   opts: { gain (1), fiddlePan (−0.12), rand (a PJ2.Rand stream,
+//           "synth:folk") | seed }
+//   folk.fiddle(t, notes, {drone: [f…], droneLevel, dyn})
+//       notes: [{f, dur, at?, slur?, acc?, v?, also?: [f…],
+//                orn?: "cut" | "slide", from?: f}]      f 0/null = a rest
 //   folk.handbell(t, f, {dur?, v, pan})           dur omitted: let it ring
 //   folk.handbells(t, notes)                      notes: [{f, at, dur?, v?, pan?}]
 //   folk.gull(t, f, {hold, v, pan, dist, kind: "long"|"ha"})
 //   folk.gulls(t, {notes: [f…], beat, birds, from, to, dist, v})
+//       birds: the flock around the lead bird (default 5; 0 = the lead alone)
 //   folk.wheels(t, dur, {beat, carts, from, to, creak, v})
-//   folk.out · folk.stats()
+//   folk.out · folk.stats() → { standing, created, peakLive, until }
 // ============================================================================
 
 window.KOLOB = window.KOLOB || {};
@@ -142,27 +156,55 @@ window.KOLOB.VoicesFolk = (function () {
       hs.forEach(function (p) { p[1] *= nrm; });
       return (bowWaves[key] = wave(hs));
     }
+    // pitch automation is read once a block (see the header)
+    function kRate(p) { try { p.automationRate = "k-rate"; } catch (e) {} }
+    // a rest holds its string's last pitch silently (a leading rest takes
+    // the first sounded one), so the finger is already there when it sounds
+    function fillRests(steps) {
+      var first = null;
+      for (var i = 0; i < steps.length; i++) if (!steps[i].rest) { first = steps[i].f; break; }
+      for (var j = 0; j < steps.length; j++) if (steps[j].rest) steps[j].f = j ? steps[j - 1].f : first;
+      return first != null;
+    }
     // one bowed string playing a sequence of pitches under one bow arm
-    function bowedString(t0, tEnd, steps, lv, into, n0) {
+    function bowedString(t0, tEnd, steps, lv, into) {
       var o = ctx.createOscillator(), g = ctx.createGain();
+      kRate(o.frequency); kRate(o.detune);
       o.setPeriodicWave(bowWave(steps[0].f));
-      o.frequency.setValueAtTime(steps[0].f, t0);
+      var s0 = steps[0];
+      o.frequency.setValueAtTime(s0.orn === "slide" && s0.dur > 0.12 ? (s0.from || s0.f * 15 / 16) : s0.f, t0);
       g.gain.setValueAtTime(0, t0);
       o.connect(g); g.connect(into);
       // vibrato: one LFO per string, its depth automated per note
       var lfo = ctx.createOscillator(), vd = ctx.createGain();
       lfo.frequency.value = R.rnd(5.2, 6.2); vd.gain.setValueAtTime(0, t0);
       lfo.connect(vd); vd.connect(o.detune);
+      var off = true;                                // the bow is off this string
       steps.forEach(function (s, i) {
-        var t = s.t, end = s.t + s.dur;
-        if (i > 0) {
-          if (s.f !== steps[i - 1].f) {
-            // left hand: a finger lands — a quick glide, faster when slurred
-            o.frequency.setTargetAtTime(s.f, t - 0.004, s.slur ? 0.012 : 0.006);
-          }
+        var t = s.t;
+        if (s.rest) {
+          // the bow lifts: the string rings down in a few hundredths
+          if (!off) { g.gain.setTargetAtTime(0, t, 0.02); vd.gain.setTargetAtTime(0, t, 0.02); }
+          off = true;
+          return;
+        }
+        // a slide lands the finger below the note and slides it home
+        var slide = s.orn === "slide" && s.dur > 0.12;
+        var startF = slide ? (s.from || s.f * 15 / 16) : s.f;
+        if (i > 0 && startF !== steps[i - 1].f) {
+          // left hand: a finger lands — a quick glide, faster when slurred;
+          // after a rest it is simply there (the bow finds it waiting)
+          if (off) o.frequency.setValueAtTime(startF, Math.max(t0, t - 0.01));
+          else o.frequency.setTargetAtTime(startF, t - 0.004, s.slur ? 0.012 : 0.006);
+        }
+        if (slide) {
+          var hold = Math.min(0.05, s.dur * 0.2), glide = Math.min(0.11, s.dur * 0.35);
+          o.frequency.setValueAtTime(startF, t + hold);
+          o.frequency.exponentialRampToValueAtTime(s.f, t + hold + glide);
         }
         var v = lv * (s.v != null ? s.v : 1);
-        if (i === 0) {
+        if (off) {
+          // the bow lands on the string: it bites (harder on accents), settles
           g.gain.setTargetAtTime(v * (s.acc ? 1.35 : 1.12), t, 0.012);
           g.gain.setTargetAtTime(v, t + 0.05, 0.05);
         } else if (s.newBow) {
@@ -174,6 +216,7 @@ window.KOLOB.VoicesFolk = (function () {
         } else {
           g.gain.setTargetAtTime(v, t, 0.03);
         }
+        off = false;
         // grace-note cut: a flick to the note above and back
         if (s.orn === "cut" && s.dur > 0.12) {
           o.frequency.setValueAtTime(s.f * 9 / 8, t);
@@ -183,51 +226,54 @@ window.KOLOB.VoicesFolk = (function () {
         var vib = s.dur > 0.42 ? 11 : 0;
         vd.gain.setTargetAtTime(0, t, 0.02);
         if (vib) vd.gain.setTargetAtTime(vib, t + Math.min(0.28, s.dur * 0.4), 0.12);
-        if (s.rest) g.gain.setTargetAtTime(0, t, 0.02);
-        void end;
       });
       g.gain.setTargetAtTime(0, tEnd - 0.03, 0.03);
       o.start(t0); o.stop(tEnd + 0.2);
       lfo.start(t0); lfo.stop(tEnd + 0.2);
       count(4, t0, tEnd + 0.2);
-      return 4 + (n0 || 0);
+      return 4;
     }
     function fiddle(t, notes, o) {
       o = o || {};
+      if (!notes || !notes.length) return 0;
+      var steps = notes.map(function (nt, i) {
+        return { t: t + (nt.at || 0), dur: nt.dur, f: nt.f, slur: !!nt.slur, newBow: i === 0 || !nt.slur,
+                 acc: !!nt.acc, v: nt.v, orn: nt.orn, from: nt.from, rest: !nt.f };
+      });
+      if (!fillRests(steps)) return 0;                // all rests: the fiddler sits this one out
       var into = body();
       var dyn = o.dyn != null ? o.dyn : 0.7;
       var lv = 0.09 * (0.4 + 0.6 * dyn), n = 0;
-      var steps = notes.map(function (nt, i) {
-        return { t: t + (nt.at || 0), dur: nt.dur, f: nt.f, slur: !!nt.slur, newBow: i === 0 || !nt.slur,
-                 acc: !!nt.acc, v: nt.v, orn: nt.orn, rest: !nt.f };
-      });
-      // rests hold the previous pitch silently
-      for (var i = 0; i < steps.length; i++) if (steps[i].rest) steps[i].f = i ? steps[i - 1].f : (notes[1] || {}).f || 440;
       var t0 = steps[0].t, tEnd = steps[steps.length - 1].t + steps[steps.length - 1].dur;
       n += bowedString(t0, tEnd, steps, lv, into);
-      // double stops: a second string, sounding only under notes that ask
-      var hasAlso = notes.some(function (nt) { return nt.also && nt.also.length; });
-      if (hasAlso) {
+      // double stops: a second string, bowed only under the notes that ask
+      if (notes.some(function (nt) { return nt.f && nt.also && nt.also.length; })) {
         var ds = steps.map(function (s, i) {
-          var a = notes[i].also && notes[i].also[0];
-          return { t: s.t, dur: s.dur, f: a || s.f, slur: s.slur, newBow: s.newBow, acc: s.acc, v: a ? (s.v != null ? s.v : 1) * 0.8 : 0.0001, rest: false };
+          var a = !s.rest && notes[i].also && notes[i].also[0];
+          return { t: s.t, dur: s.dur, f: a || 0, slur: s.slur, newBow: s.newBow, acc: s.acc, v: (s.v != null ? s.v : 1) * 0.8, rest: !a };
         });
+        fillRests(ds);
         n += bowedString(t0, tEnd, ds, lv, into);
       }
-      // drones: open strings bowed alongside, the fiddler leaning on them
+      // drones: open strings bowed alongside, the fiddler leaning on them —
+      // and lifted with the bow at every rest
       (o.drone || []).forEach(function (df) {
         var dl = (o.droneLevel != null ? o.droneLevel : 0.45);
-        var dsteps = steps.map(function (s) { return { t: s.t, dur: s.dur, f: df, slur: s.slur, newBow: s.newBow, acc: s.acc, v: dl, rest: false }; });
+        var dsteps = steps.map(function (s) { return { t: s.t, dur: s.dur, f: df, slur: s.slur, newBow: s.newBow, acc: s.acc, v: dl, rest: s.rest }; });
         n += bowedString(t0, tEnd, dsteps, lv, into);
       });
       // rosin: bow noise, a band of hiss that follows the bow's pressure
       var bn = ctx.createBiquadFilter(); bn.type = "bandpass"; bn.frequency.value = 3400; bn.Q.value = 0.8;
       var bg = ctx.createGain(); bg.gain.setValueAtTime(0, t0);
       noise(t0, tEnd - t0 + 0.2, bn); bn.connect(bg); bg.connect(into);
+      var lifted = true;
       steps.forEach(function (s) {
-        if (!s.newBow || s.rest) return;
-        bg.gain.setTargetAtTime(lv * (s.acc ? 0.34 : 0.22), s.t, 0.004);
-        bg.gain.setTargetAtTime(lv * 0.06, s.t + 0.03, 0.03);
+        if (s.rest) { if (!lifted) bg.gain.setTargetAtTime(0, s.t, 0.02); lifted = true; return; }
+        if (s.newBow || lifted) {
+          bg.gain.setTargetAtTime(lv * (s.acc ? 0.34 : 0.22), s.t, 0.004);
+          bg.gain.setTargetAtTime(lv * 0.06, s.t + 0.03, 0.03);
+        }
+        lifted = false;
       });
       bg.gain.setTargetAtTime(0, tEnd - 0.03, 0.03);
       count(3, t0, tEnd + 0.2);
@@ -248,7 +294,13 @@ window.KOLOB.VoicesFolk = (function () {
       }
       var ring = o.dur != null ? o.dur : 3.4 * Math.pow(523 / f, 0.45);   // lower bells ring longer
       var damp = o.dur != null;
-      var tEnd = t + (damp ? o.dur + 0.3 : ring * 1.6 + 0.2);
+      // A damped bell is stopped at the shoulder (60 ms) and let go 0.45 s
+      // later, 65 dB down. A bell left to ring rings until its longest
+      // partial (the fundamental, τ = 0.45 × ring) is 40 dB under the strike,
+      // then fades over 70 ms and is let go half a second later — some 100 dB
+      // down. It never stops while it can still be heard.
+      var tFade = t + (damp ? o.dur : ring * 2.1);
+      var tEnd = tFade + (damp ? 0.45 : 0.5);
       function part(type, fr, pw, amp, tau, atk) {
         var os = ctx.createOscillator(), g = ctx.createGain();
         if (pw) os.setPeriodicWave(pw); else os.type = type;
@@ -256,7 +308,7 @@ window.KOLOB.VoicesFolk = (function () {
         g.gain.setValueAtTime(0, t);
         g.gain.linearRampToValueAtTime(amp, t + atk);
         g.gain.setTargetAtTime(0, t + atk, tau);
-        if (damp) g.gain.setTargetAtTime(0, t + o.dur, 0.06);
+        g.gain.setTargetAtTime(0, tFade, damp ? 0.06 : 0.07);
         os.connect(g); g.connect(dest);
         os.start(t); os.stop(tEnd);
         n += 2;
@@ -270,7 +322,7 @@ window.KOLOB.VoicesFolk = (function () {
       var kg = ctx.createGain();
       kg.gain.setValueAtTime(0, t); kg.gain.linearRampToValueAtTime(v * 0.3, t + 0.003);
       kg.gain.setTargetAtTime(0, t + 0.004, 0.01);
-      noise(t, 0.06, bp); bp.connect(kg); kg.connect(dest);
+      noise(t, 0.1, bp); bp.connect(kg); kg.connect(dest);
       n += 3;
       count(n, t, tEnd);
       return n;
@@ -301,6 +353,7 @@ window.KOLOB.VoicesFolk = (function () {
       var tEnd = t + up + hold + fall + 0.05;
       var os = ctx.createOscillator(); os.setPeriodicWave(gullW);
       // kee — the scoop up to the pitch — hold — ow, the fall away
+      kRate(os.frequency);
       os.frequency.setValueAtTime(f * (kind === "ha" ? 0.86 : 0.72), t);
       os.frequency.exponentialRampToValueAtTime(f * 1.015, t + up);
       os.frequency.setTargetAtTime(f, t + up, 0.02);
@@ -324,31 +377,41 @@ window.KOLOB.VoicesFolk = (function () {
       var pn = panner(o.pan || 0, t);
       os.connect(bp); bp.connect(lp); lp.connect(g); g.connect(rasp); rasp.connect(pn);
       os.start(t); os.stop(tEnd); am.start(t); am.stop(tEnd);
-      count(9, t, tEnd);
-      return 9;
+      count(8, t, tEnd);
+      return 8;
     }
     // a flock crossing: the lead bird traces the notes; the others chatter
     function gulls(t, o) {
       o = o || {};
-      var notes = o.notes || [];
-      var beat = o.beat || 0.42, birds = o.birds || 5;
+      var notes = (o.notes || []).filter(function (f) { return f > 0; });
+      var beat = o.beat || 0.42, birds = o.birds != null ? Math.max(0, o.birds) : 5;
       var from = o.from != null ? o.from : -0.8, to = o.to != null ? o.to : 0.8;
       var dist = o.dist != null ? o.dist : 0.3, v = o.v != null ? o.v : 1;
       var span = Math.max(notes.length * beat, 2.5) + 1.5, n = 0;
       function panAt(tt) { var x = Math.max(0, Math.min(1, (tt - t) / span)); return from + (to - from) * x; }
       function distAt(tt) { var x = Math.max(0, Math.min(1, (tt - t) / span)); return dist + (1 - dist) * 0.55 * Math.pow(2 * x - 1, 2); }
-      // gulls' register: fold the tune into ~650–1400 Hz
-      function reg(f) { while (f < 650) f *= 2; while (f > 1400) f /= 2; return f; }
+      // the gulls' register is ~650–1400 Hz. The TUNE moves there by one
+      // octave shift for the whole head, chosen to put its middle (the
+      // geometric mean of its lowest and highest notes) nearest 954 Hz — so
+      // every step and leap keeps its direction. (Folding note by note would
+      // send a tune's last rise down a seventh.) The chatter is only pitches
+      // drawn from the tune, so each of those folds on its own.
+      var shift = 1;
+      if (notes.length) {
+        var mid = Math.sqrt(Math.min.apply(null, notes) * Math.max.apply(null, notes));
+        shift = Math.pow(2, Math.round(Math.log(954 / mid) / Math.LN2));
+      }
+      function fold(f) { while (f < 650) f *= 2; while (f > 1400) f /= 2; return f; }
       var tt = t + 0.6;
       notes.forEach(function (f, i) {
         var at = tt + i * beat + R.rnd(-0.03, 0.03);
-        n += gull(at, reg(f), { hold: beat * 0.55, pan: panAt(at), dist: distAt(at), v: v });
+        n += gull(at, f * shift, { hold: beat * 0.55, pan: panAt(at), dist: distAt(at), v: v });
       });
       // the chatter: short cries and laughs from the rest of the flock
       var chatter = Math.round(birds * span * 0.55);
       for (var c = 0; c < chatter; c++) {
         var ct = t + R.rnd(0, span);
-        var base = reg(notes.length ? R.pick(notes) * R.pick([1, 1.5, 0.75]) : R.rnd(700, 1200));
+        var base = fold(notes.length ? R.pick(notes) * R.pick([1, 1.5, 0.75]) : R.rnd(700, 1200));
         var kind = R.chance(0.45) ? "ha" : "long";
         var d = Math.min(1, distAt(ct) + R.rnd(0.1, 0.35));
         if (kind === "ha") {
@@ -390,14 +453,19 @@ window.KOLOB.VoicesFolk = (function () {
       // the axle: stick-slip friction — a buzz whose rate wanders — through
       // the wheel's wooden resonances, voiced once a turn
       var ax = ctx.createOscillator(); ax.type = "sawtooth";
+      kRate(ax.frequency);
+      var r0 = R.rnd(95, 150);
+      // stick-slip is never steady: the rate stumbles — 2.5–3.5 % RMS, peaks
+      // near ±10 % (a tone either way), up to ~20 times a second — the
+      // difference between a creak and a buzz. The noise through the 22 Hz
+      // lowpass is 0.025 RMS, so the depth is scaled to the axle's own rate.
       var jit = ctx.createBiquadFilter(); jit.type = "lowpass"; jit.frequency.value = 22;
-      var jg = ctx.createGain(); jg.gain.value = R.rnd(18, 30);
+      var jg = ctx.createGain(); jg.gain.value = r0 * R.rnd(1.0, 1.4);
       noise(t, dur + 0.1, jit); jit.connect(jg); jg.connect(ax.frequency);
       var w1 = ctx.createBiquadFilter(); w1.type = "bandpass"; w1.frequency.value = R.rnd(850, 1100); w1.Q.value = 6;
       var w2 = ctx.createBiquadFilter(); w2.type = "bandpass"; w2.frequency.value = R.rnd(1700, 2300); w2.Q.value = 7;
       var ag = ctx.createGain(); ag.gain.setValueAtTime(0, t);
       ax.connect(w1); ax.connect(w2); w1.connect(ag); w2.connect(ag); ag.connect(near);
-      var r0 = R.rnd(95, 150);
       ax.frequency.setValueAtTime(r0, t);
       for (var k = 0, wt = t + R.rnd(0, turn * 0.5); wt < tEnd - 0.3; wt += turn, k++) {
         var cl = creakAmt * 0.5 * R.rnd(0.6, 1.1);
@@ -416,12 +484,13 @@ window.KOLOB.VoicesFolk = (function () {
         n += knock(wt + turn * 0.5, near, 0.35 + (R.chance(0.25) ? 0.5 : 0));
       }
       ax.start(t); ax.stop(tEnd + 0.1);
-      n += 7;
-      count(13, t, tEnd + 0.1);
+      n += 7;                                       // ax, jit, jg + its noise, w1, w2, ag
+      count(13, t, tEnd + 0.1);                     // + near, air, pn and the gravel's cr, cg, noise
       return n;
     }
     function knock(t, dest, amt) {
       var o = ctx.createOscillator(), g = ctx.createGain();
+      kRate(o.frequency);
       o.type = "sine"; o.frequency.setValueAtTime(R.rnd(95, 130), t); o.frequency.exponentialRampToValueAtTime(60, t + 0.08);
       g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.12 * amt, t + 0.005);
       g.gain.setTargetAtTime(0, t + 0.006, 0.035);
@@ -453,9 +522,9 @@ window.KOLOB.VoicesFolk = (function () {
       var ev = [];
       spans.forEach(function (s) { ev.push([s[0], s[2]], [s[1], -s[2]]); });
       ev.sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; });
-      var live = 0, peak = 0;
-      ev.forEach(function (e) { live += e[1]; if (live > peak) peak = live; });
-      return { standing: standing, created: created, peakLive: peak + standing };
+      var live = 0, peak = 0, until = 0;
+      ev.forEach(function (e) { live += e[1]; if (live > peak) peak = live; if (e[1] < 0 && e[0] > until) until = e[0]; });
+      return { standing: standing, created: created, peakLive: peak + standing, until: until };
     }
 
     return {
