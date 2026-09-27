@@ -23,6 +23,7 @@
  *   opts.seed           the session seed (the distant train's schedule)
  *   opts.train          false: no distant train; or [t, …] (audio s) to force it
  *   opts.room           false: no hum and no mine air (the lab measures contacts dry)
+ *   opts.cheer          false: the lode without its choir (the lab measures the choir by difference)
  *
  * ═══════════════════════ THE EVENT CONTRACT ═══════════════════════
  * TIMING. Send `t` (seconds, the sim clock, the same clock as the physics'
@@ -63,7 +64,7 @@
  *   tally {value, dir}                     one tick of the SCRIP drum counter
  *   feed {n}                               a marble rattling back up into the feed tube
  *   award {id, value}                      the ore cart pays on a catch (a bell on the cart)
- *   edit {edit}                            a drift edit lands: the moved pin rings in its new place
+ *   edit {edit, i?, who?}                  a drift edit lands (the TOCK): the moved pin rings in its new place
  *   glasstap {n}                           somebody taps the glass (PLEASE DO NOT)
  *   found {tokens}                         a nickel turns up in the coin return
  *   gameover {scrip}                       the closing phrase; the pocket watch ticks
@@ -71,12 +72,21 @@
  *                                          game sends one, pockets blow it by themselves.
  *   lode    {x?}                           THE MOTHER LODE. Until the game sends one,
  *                                          the 13 slot sets it off by itself.
- *   stolen  {m, x, y}                      a knocker grabs the marble and runs for it
+ *   stolen  {m, x, y, who}                 a knocker grabs the marble and runs for it (his own feet)
  *   dark    {region, what: 'flicker'|'out'|'on'}   lamps telegraph / go out / relight
  *   lost    {m, x?}                        the marble never comes out of the dark
  *   cavein  {region, x?, what: 'telegraph'|'fall'|'clear'}
  *   work    {edits}                        the knockers get their tools out
- *   figure  {what: 'step'|'tap'|'pull'|'lay'|'set'|'cheer', x?, y?, who?}   a figurine
+ *   figure  {what, who, x, y, …}           a figurine (who: tall pick lamp old little tally;
+ *           each man has his own foot note and voice box). what:
+ *           step · climb · hop · land · tap (tick) · set (TOCK) · flick · pull ·
+ *           toss · lay · push · mark · knock {n 1–3 | soft, tx, ty} · listen (the
+ *           room holds its breath; sometimes the rock knocks back) · door {how:
+ *           open|close} · rope {how: down|up} · pick · dig · sweep · oil (the
+ *           sheave stops creaking for 90 s) · eat · snore · wake · topple (a
+ *           dropped toy, his tool with him) · upright · release {m, how: set|
+ *           toss|drop} · cheer (one voice box; ignored during the lode, whose
+ *           choir is built in) · capoff (silent)
  *   rare    {}                             the rare tier's hook: silent on purpose
  * Heard but silent: release, win, glide, workplan, mute (main calls
  * setMuted). Anything else is ignored. Every event may carry `t`.
@@ -190,6 +200,10 @@
     door:   { modes: [[1, 1, 0.06], [1.7, 0.6, 0.045], [2.9, 0.3, 0.022]], body: [[95, 0.5, 0.07]], fixed: 55, click: -18, lvl: 2, att: 0.0015 },
     // the ore cart's steel bucket (G4)
     bucket: { modes: [[1, 1, 0.28], [1.41, 0.7, 0.22], [2.07, 0.5, 0.15], [2.9, 0.3, 0.1], [4.1, 0.15, 0.05]], fixed: 67, click: -4, lvl: 0 },
+    // the figurines: carved linden feet (each man his own note) and ladder rungs
+    // (a varnished boot on planking clacks: the sharp edge is what's heard over the music box)
+    foot:   { modes: [[1, 1, 0.024], [2.31, 0.45, 0.013], [3.87, 0.3, 0.007], [5.9, 0.22, 0.004]], body: [[380, 0.25, 0.02]], reg: [83, 95], click: -20, lvl: 0, att: 0.0003, burst: 0.7, burstLp: 9000 },
+    rung:   { modes: [[1, 1, 0.04], [2.62, 0.4, 0.02], [4.1, 0.15, 0.01]], reg: [79, 88], click: -18, lvl: 0, att: 0.0008 },
     // glass on glass: each marble colour has its own note
     glass:  { modes: [[1, 1, 0.045], [2.93, 0.35, 0.018], [5.1, 0.15, 0.008]], reg: [91, 103], click: 0, lvl: -1 }
   };
@@ -300,7 +314,7 @@
     addModes(out, 0, sr, modes, 1);
     if (T.att) ramp(out, sr, T.att);
     // the strike's own edge, voiced by the pin (the marble's glass click is separate)
-    addBurst(out, 0, sr, 0.0008, 0.25, Math.min(12000, f0 * 3), 0, r);
+    addBurst(out, 0, sr, 0.0008, T.burst || 0.25, T.burstLp || Math.min(12000, f0 * 3), 0, r);
     if (echo) {                                           // the lamp on its hook jiggles
       var s1 = Math.round(echo * sr);
       addModes(out, s1, sr, modes.slice(0, 2), T.echo[1]);
@@ -996,7 +1010,7 @@
         creak(at + 0.01, { rate: 38, rate1: 30, f: 820, peak: db(-31), d: 0.12, lane: lane });
         if (at - (st.lastDraught || -9) > 0.45) { draught(at + 0.03, x, 1, r); st.lastDraught = at; }
       } else if (ev.id === 'sheave') {
-        creak(at + 0.02, { rate: 22 + 6 * r(), rate1: 17, f: 640, peak: db(-32 + 4 * k), d: 0.22, lane: lane });
+        if (!(st.oiled > at)) creak(at + 0.02, { rate: 22 + 6 * r(), rate1: 17, f: 640, peak: db(-32 + 4 * k), d: 0.22, lane: lane });   // (unless Absalom has oiled it)
       } else {
         noise(at, { ft: 'lowpass', f: 700, q: 0.7, peak: db(-31 + 5 * k), a: 0.002, d: 0.08, dest: G.lanes[lane] });   // dust off the paddle
       }
@@ -1185,97 +1199,107 @@
       var tc0 = at + 0.55, notes = scaleBetween(79, 103), n = 0, tt;
       for (i = 0; i < notes.length; i++) { tt = tc0 + i * 0.045; chime(tt, notes[i], -17 + i * 0.12, 20 + i * 26); n++; }
       var t2 = tc0 + notes.length * 0.045 + 0.05;
-      for (i = notes.length - 2; i >= 0; i--) { tt = t2 + (notes.length - 2 - i) * 0.072; chime(tt, notes[i], -18.5, 300 - i * 26); }
+      for (i = notes.length - 2; i >= 0; i--) { tt = t2 + (notes.length - 2 - i) * 0.072; chime(tt, notes[i], -21.5, 300 - i * 26); }   // (under the crew)
       var t3 = t2 + (notes.length - 1) * 0.072 + 0.08;
       [91, 95, 98, 103].forEach(function (m, j) { chime(t3 + j * 0.012, m, -16.5, 177); });
       // the scrip pours: coins into the plastic bucket, fast, then the stragglers
-      for (i = 0; i < 30; i++) coinIntoBucket(at + 0.8 + 2.7 * Math.pow(i / 30, 1.6) + 0.02 * r(), -17 - 3 * r(), 150 + 140 * r(), r);
-      // the whistle, long, then toot-toot
-      shiftWhistle(at + 0.95, whistleFor(13), -18);
+      for (i = 0; i < 30; i++) { var tcn = at + 0.55 + 3.0 * Math.pow(i / 30, 1.3) + 0.02 * r(); coinIntoBucket(tcn, -17 - 3 * r() - (tcn - at > 1.0 && tcn - at < 2.6 ? 4 : 0), 150 + 140 * r(), r); }
+      // the whistle: the alarm as the vein splits, then (after the crew) toot-toot
+      shiftWhistle(at + 0.35, [[0, 0.8], [2.4, 0.3], [2.7, 0.55]], -18);
       // carts race: the haulage way rattles end to end
       noise(at + 1.0, { ft: 'lowpass', f: 180, q: 0.8, peak: db(-24), a: 0.2, hold: 1.4, d: 0.5, dest: G.lanes[1] });
       for (i = 0; i < 26; i++) play(tickBuf('track', i % 2 ? 79 : 74, i % 3), at + 1.05 + i * 0.07, { gain: db(i % 2 ? -32 : -28), lane: clamp(Math.round(i / 5), 0, 6), tier: 1 });
       // the crew cheers: six carved men, tiny voices, not supposed to be alive
-      cheer(at + 1.15, r);
+      if (opts.cheer !== false) cheer(at, r);          // (the arms go up at +1.0)
       // and the music box plays the tune through, the broken tine ringing for once
-      flourishBuf(function (fb) { play(fb, Math.max(at + 3.1, ctx.currentTime + 0.02), { gain: db(-19), lane: 3, tier: 1 }); });
+      flourishBuf(function (fb) { play(fb, Math.max(at + 3.4, ctx.currentTime + 0.02), { gain: db(-19), lane: 3, tier: 1 }); });
       st.tineFixed = true;                             // the knockers fixed it; for the rest of the visit
     }
 
-    // formant voices: a glottal pulse through three vowel bands, a breath for the h
-    function glottal() {                               // a PeriodicWave belongs to its context: kept in G
-      if (G.glottal) return G.glottal;
-      var N = 40, re = new Float32Array(N + 1), im = new Float32Array(N + 1);
-      for (var i = 1; i <= N; i++) im[i] = 1 / Math.pow(i, 1.12);   // bright enough to feed F2 at a toy's pitch
-      G.glottal = ctx.createPeriodicWave(re, im);
-      return G.glottal;
+    /* ── the crew's voices: bellows voice boxes ────────────────────────
+     * Not people sped up: the figurines are carved linden, so their voices
+     * are what a 1920s doll has, a free reed pushed by a little leather
+     * bellows, through a flap that opens the "oo" into an "ay". The pitch
+     * rides the bellows' pressure (it climbs as the squeeze starts, sags as
+     * it empties, and ends in a wheeze of leaking air), the leather flutters,
+     * and the six boxes are tuned to one chord: a music-box choir. */
+    function reedWave() {                              // a PeriodicWave belongs to its context: kept in G
+      if (G.reed) return G.reed;
+      var N = 32, re = new Float32Array(N + 1), im = new Float32Array(N + 1);
+      for (var i = 1; i <= N; i++) im[i] = (i % 2 ? 1 : 0.45) / Math.pow(i, 0.85);   // reedy, a little nasal
+      G.reed = ctx.createPeriodicWave(re, im);
+      return G.reed;
     }
-    var VOWEL = { u: [330, 900, 2300], a: [700, 1200, 2600], e: [560, 1800, 2550], i: [320, 2250, 2950], o: [520, 920, 2450] };
-    function toyVoice(t, o) {
-      var sc = o.scale || 1.35, f0 = o.f0, dest = G.lanes[o.lane == null ? 3 : o.lane];
-      var src = ctx.createOscillator(); src.setPeriodicWave(glottal());
+    var VOICEBOX = { tall: 74, pick: 79, lamp: 71, old: 67, little: 81, tally: 76 };   // D5 G5 B4 G4 A5 E5: G6/9
+    function voiceBox(t, o) {
+      t = Math.max(t, 0.01);
+      var F = mtof(o.note) * cents(o.cents || 0), dest = G.lanes[o.lane == null ? 3 : o.lane], weak = o.weak ? 1 : 0;
+      var osc = ctx.createOscillator(); osc.setPeriodicWave(reedWave());
+      var flap = ctx.createBiquadFilter(); flap.type = 'lowpass'; flap.Q.value = 4.5;
+      var box = ctx.createBiquadFilter(); box.type = 'peaking'; box.frequency.value = o.box || 1450; box.Q.value = 2.2; box.gain.value = 9;
+      var hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 230; hp.Q.value = 0.7;    // a tin box has no bottom
+      var flut = ctx.createGain(); flut.gain.value = 1;
+      var lfo = ctx.createOscillator(); lfo.frequency.value = 11 + 3 * ((o.note | 0) % 3);                  // the leather flutters
+      var ld = ctx.createGain(); ld.gain.value = 0.1 + 0.15 * weak;
+      var env = ctx.createGain(); env.gain.value = 0;
       var nz = ctx.createBufferSource(); nz.buffer = G.noise; nz.loop = true;
-      var vib = ctx.createOscillator(); vib.frequency.value = 5.5 + (o.shake || 0) * 2;
-      var vd = ctx.createGain(); vd.gain.value = 25 + (o.shake || 0) * 60;   // cents; old Jory's is all wobble
-      vib.connect(vd); vd.connect(src.detune);
-      var pre = ctx.createGain(); pre.gain.value = 1;
-      var nzg = ctx.createGain(); nzg.gain.value = 0;
-      src.connect(pre);
-      var sum = ctx.createGain(); sum.gain.value = 0;
-      var F = [0, 1, 2].map(function (i) {
-        var bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = [4, 7, 9][i];
-        var g = ctx.createGain(); g.gain.value = [0.75, 1.25, 0.9][i];
-        pre.connect(bp); nzg.connect(bp); bp.connect(g); g.connect(sum);
-        return bp;
-      });
-      nz.connect(nzg);
-      sum.connect(dest); sum.connect(G.sends[1]);
-      var fr = src.frequency, end = t;
-      function vowel(tt, v, glide) {
-        for (var i = 0; i < 3; i++) {
-          var hz = VOWEL[v][i] * sc;
-          if (glide) F[i].frequency.linearRampToValueAtTime(hz, tt); else F[i].frequency.setValueAtTime(hz, tt);
-        }
+      var nbp = ctx.createBiquadFilter(); nbp.type = 'bandpass'; nbp.frequency.value = 2600; nbp.Q.value = 0.8;
+      var ng = ctx.createGain(); ng.gain.value = 0;                                                         // air past the reed
+      lfo.connect(ld); ld.connect(flut.gain);
+      osc.connect(flap); flap.connect(box); box.connect(hp); hp.connect(flut); flut.connect(env);
+      nz.connect(nbp); nbp.connect(ng);
+      env.connect(dest); env.connect(G.sends[1]); ng.connect(dest);
+      var fr = osc.frequency, ff = flap.frequency, pk = o.peak, end = t;
+      fr.value = F * 0.8; ff.value = 500;
+      // one squeeze of the bellows: [start, dur, pressure-pitch in, out, flap open Hz]
+      function squeeze(tt, dur, p0, p1, open, closed) {
+        fr.setValueAtTime(F * 0.8, tt);
+        fr.exponentialRampToValueAtTime(F * p0, tt + 0.05);
+        fr.exponentialRampToValueAtTime(F * p1, tt + dur - 0.06);
+        fr.exponentialRampToValueAtTime(F * p1 * 0.86, tt + dur);                    // it empties
+        ff.setValueAtTime(closed || 520, tt);
+        ff.exponentialRampToValueAtTime(open, tt + 0.045);
+        ff.setValueAtTime(open, tt + dur - 0.07);
+        ff.exponentialRampToValueAtTime(closed || 520, tt + dur);
+        env.gain.setValueAtTime(0, tt); env.gain.linearRampToValueAtTime(pk, tt + 0.025);
+        env.gain.setValueAtTime(pk, tt + dur - 0.05); env.gain.linearRampToValueAtTime(0, tt + dur + 0.01);
+        ng.gain.setValueAtTime(pk * (0.5 + weak), tt); ng.gain.linearRampToValueAtTime(pk * 0.25, tt + 0.06);
+        ng.gain.setValueAtTime(pk * 0.25, tt + dur - 0.08); ng.gain.linearRampToValueAtTime(pk * (1.3 + weak), tt + dur); ng.gain.linearRampToValueAtTime(0, tt + dur + 0.07);
+        end = Math.max(end, tt + dur + 0.08);
       }
-      function syl(tt, dur, v0, v1, p0, p1, pk, h) {
-        if (h) { nzg.gain.setValueAtTime(0, tt - 0.06); nzg.gain.linearRampToValueAtTime(pk * 0.9, tt - 0.03); nzg.gain.linearRampToValueAtTime(0, tt + 0.02); }
-        vowel(tt, v0, false); vowel(tt + dur * 0.8, v1, true);
-        fr.setValueAtTime(f0 * p0, tt); fr.exponentialRampToValueAtTime(f0 * p1, tt + dur);
-        sum.gain.setValueAtTime(0, tt); sum.gain.linearRampToValueAtTime(pk, tt + 0.03);
-        sum.gain.setValueAtTime(pk, tt + dur - 0.05); sum.gain.linearRampToValueAtTime(0, tt + dur);
-        end = Math.max(end, tt + dur);
+      var sl = o.slow || 1;
+      if (o.kind === 'whoop') squeeze(t, 0.42, 0.85, 1.38, 2600, 600);               // a squeeze toy, rising
+      else if (o.kind === 'hey') squeeze(t, 0.22, 1.05, 0.98, 2800, 800);
+      else {                                                                           // hoo-RAY: two squeezes, the flap shut then open
+        squeeze(t, 0.17 * sl, 1.0 - 0.05 * weak, 0.98 - 0.06 * weak, 820, 480);
+        squeeze(t + 0.22 * sl, 0.38 * sl, 1.07 - 0.06 * weak, 1.0 - 0.08 * weak, 3100, 700);
       }
-      var pk = o.peak;
-      fr.value = f0;
-      if (o.kind === 'whoop') {
-        syl(t, 0.42, 'u', 'i', 0.9, 1.9, pk, false);
-      } else if (o.kind === 'hey') {
-        syl(t, 0.3, 'e', 'i', 1.3, 1.1, pk, true);
-      } else {                                          // hoo-RAY
-        syl(t, 0.17, 'u', 'u', 1.0, 0.95, pk * 0.8, true);
-        var t2 = t + 0.22;
-        syl(t2, 0.4 * (o.slow || 1), 'e', 'i', 1.12, 1.5, pk, false);
-        F[2].frequency.setValueAtTime(1600 * sc, t2);  // the r, then into the ay
-        F[2].frequency.linearRampToValueAtTime(VOWEL.e[2] * sc, t2 + 0.06);
-      }
-      [src, nz, vib].forEach(function (s) { s.start(Math.max(0, t - 0.08)); s.stop(end + 0.05); });
-      src.onended = function () { [pre, nzg, sum, vd].concat(F).forEach(function (n) { try { n.disconnect(); } catch (e) {} }); };
+      [osc, lfo, nz].forEach(function (sN) { sN.start(t); sN.stop(end + 0.05); });
+      osc.onended = function () { [flap, box, hp, flut, ld, env, nbp, ng].forEach(function (n) { try { n.disconnect(); } catch (e) {} }); };
     }
-    function cheer(t, r) {
-      var crew = [
-        { f0: 245, kind: 'hooray', lane: 2 },             // Absalom, the tall one
-        { f0: 285, kind: 'hooray', lane: 4 },             // Tobias, the lantern man
-        { f0: 265, kind: 'hey', lane: 3 },                // Ezra, the pick
-        { f0: 228, kind: 'hooray', lane: 1, shake: 1, slow: 1.3 },   // Old Jory
-        { f0: 390, kind: 'whoop', lane: 5 },              // the little one
-        { f0: 315, kind: 'hey', lane: 4 }                 // the tallyman
+    // the lode's cheer, on the knockers' own clock: they hold still for the
+    // breath (0–1.0 s), then the arms go up and they hop, stiff and out of
+    // step, until 3 s (each on frames (f + 3i) % 4 === 0 of their 8 fps
+    // shutter, Old Jory excepted: he has his cap off). The boots are heard.
+    var CREW = ['tall', 'pick', 'lamp', 'old', 'little', 'tally'];
+    function cheer(t0, r) {
+      var t = t0 + 1.0;
+      var parts = [
+        ['tall', 'hooray', 0, 2], ['pick', 'hooray', 0.05, 4], ['lamp', 'hey', 0.1, 3],
+        ['old', 'hooray', 0.24, 1], ['little', 'whoop', 0.02, 5], ['tally', 'hey', 0.15, 4]
       ];
-      crew.forEach(function (c, i) {
-        var tt = t + [0, 0.05, 0.11, 0.2, 0.03, 0.15][i] + 0.03 * r();
-        toyVoice(tt, { f0: c.f0 * (0.97 + 0.06 * r()), kind: c.kind, lane: c.lane, shake: c.shake, slow: c.slow, peak: db(-21) });
+      parts.forEach(function (p) {
+        voiceBox(t + p[2] + 0.03 * r(), { note: VOICEBOX[p[0]], cents: (r() - 0.5) * 18, kind: p[1], lane: p[3], peak: db(-17),
+          weak: p[0] === 'old', slow: p[0] === 'old' ? 1.35 : 1, box: 1250 + 400 * r() });
       });
-      toyVoice(t + 0.75, { f0: 400, kind: 'whoop', lane: 5, peak: db(-23) });   // and the little one again
-      toyVoice(t + 0.9, { f0: 318, kind: 'hey', lane: 4, peak: db(-25) });
+      voiceBox(t + 0.7, { note: VOICEBOX.little + 2, kind: 'whoop', lane: 5, peak: db(-19), box: 1600 });   // and the little one again, higher
+      voiceBox(t + 0.85, { note: VOICEBOX.tally, kind: 'hey', lane: 4, peak: db(-21), box: 1500 });
+      voiceBox(t + 1.05, { note: VOICEBOX.tall, kind: 'hooray', lane: 2, peak: db(-21) });
+      // their boots: a hop is one frame up; the landing is the next frame
+      for (var i = 0; i < 6; i++) {
+        if (CREW[i] === 'old') continue;
+        for (var f = 8; f < 24; f++) if ((f + 3 * i) % 4 === 0) foot(t0 + (f + 1) / 8, CREW[i], 40 + 48 * i, 157, -31, r, f % 2, true);
+      }
     }
 
     /* ── event routing ─────────────────────────────────────────────── */
@@ -1432,6 +1456,7 @@
         case 'edit': {                                     // a drift edit lands: the moved pin rings in its new place
           var ed = ev.edit || {}, fx = fixture(ed.id);
           if (fx && fx.kind === 'pin') {
+            st.setPin = { id: fx.id, x: fx.x, y: fx.y, material: fx.material, dress: fx.dress, at: at };
             var fk = timbreKey('pin', fx);
             play(tickBuf(fk, noteFor(TB[fk], fx.id, fx.y), 1), at + 0.02, { gain: db(-27), lane: laneOf(fx.x), tier: tierOf(fx.y) });
           } else play(tickBuf('wood', 64, 1), at + 0.02, { gain: db(-30), lane: 3, tier: 1 });
@@ -1477,11 +1502,11 @@
           if (st.lodeUntil > at) return;
           lode(at, ev.x, r); return;
         case 'stolen': {
-          // caught in two wooden hands; then little carved feet, at the toy's eight steps a second
+          // caught in two wooden hands; then his carved feet, at the toy's eight steps a second, into the rock
           play(clickBuf(1), at, { gain: db(-24), lane: lane });
           play(tickBuf('wood', 69, 0), at + 0.02, { gain: db(-27), lane: lane, rate: 1.7 });
           play(tickBuf('wood', 67, 1), at + 0.05, { gain: db(-29), lane: lane, rate: 1.8 });
-          for (var s = 0; s < 7; s++) play(tickBuf('wood', s % 2 ? 67 : 69, s % 3), at + 0.14 + s * 0.125, { gain: db(-28 - s * 1.6), lane: lane, tier: 2, rate: 2.1 + (s % 2) * 0.15 });
+          for (var s = 0; s < 7; s++) foot(at + 0.14 + s * 0.125, ev.who || 'pick', x, ev.y, -29 - s * 1.7, r, s % 2);
           return;
         }
         case 'dark': {
@@ -1543,19 +1568,209 @@
           play(tickBuf('spike', 91, 2), at + 0.3, { gain: db(-33), lane: 3, tier: 1 });
           return;
         }
-        case 'figure': {
-          var fw = ev.what || 'step', nv = voicesAt(at);
-          if (nv > 36) return;
-          if (fw === 'step') play(tickBuf('wood', 69, Math.floor(r() * 3)), at, { gain: db(-38 + 3 * r()), lane: lane, rate: 2.0 + 0.3 * r(), tier: tierOf(ev.y) });
-          else if (fw === 'tap' || fw === 'set') {         // a mallet on a pin: the pin's own note
-            play(tickBuf('spike', noteFor(TB.spike, 'tap' + Math.round(x || 0), ev.y), 0), at, { gain: db(-29), lane: lane, tier: tierOf(ev.y) });
-            play(tickBuf('wood', 64, 2), at, { gain: db(-33), lane: lane, rate: 1.5 });
-          } else if (fw === 'pull') creak(at, { rate: 60, rate1: 110, f: 2400, q: 8, peak: db(-33), d: 0.14, lane: lane });   // a nail out of wood
-          else if (fw === 'lay') play(tickBuf('prop', 64, 1), at, { gain: db(-28), lane: lane, tier: tierOf(ev.y) });
-          else if (fw === 'cheer') toyVoice(at, { f0: 260 + 120 * r(), kind: r() < 0.5 ? 'hey' : 'whoop', lane: lane, peak: db(-27) });
+        case 'figure': figure(ev, at, r); return;
+        case 'rare': return;       // the rare tier's hook: silent until the adventure fills it
+      }
+    }
+
+    /* ── the figurines: tiny, wooden, toy ──────────────────────────────
+     * Carved linden men about 30 px tall, moving on an 8 fps shutter. Every
+     * sound is small and dry and a little too clean, like a toy's. */
+    var FOOT = { tall: 86, pick: 91, lamp: 88, old: 83, little: 95, tally: 93 };        // each man's own note (D6 G6 E6 B5 B6 A6)
+    var TOOL = { tall: null, pick: 'pick', lamp: 'lantern', old: 'cane', little: 'shovel', tally: 'card' };
+    function floorOf(y) {
+      if (y == null) return 'plank';
+      if (y < 80 || y > 330) return 'dirt';            // the surface; the dry sump
+      if (y > 140 && y < 165) return 'track';          // the haulage way's sleepers
+      return 'plank';                                   // the galleries' planking
+    }
+    function foot(at, who, x, y, lvl, r, alt, noFloor) {
+      var note = FOOT[who] || 88, lane = laneOf(x), fl = noFloor ? 'plank' : floorOf(y);
+      var rate = (alt ? 0.965 : 1) * (0.99 + 0.02 * r()), L = lvl + (fl === 'dirt' ? -3 : 0);
+      play(tickBuf('foot', note, Math.floor(r() * 3)), at, { gain: db(L), lane: lane, rate: fl === 'dirt' ? rate * 0.86 : rate, tier: tierOf(y) });
+      if (fl === 'plank') play(tickBuf('plank', 57, Math.floor(r() * 3)), at, { gain: db(L - 9), lane: lane, rate: 1.15 });
+      else if (fl === 'dirt') noise(at, { ft: 'lowpass', f: 1800, q: 0.7, peak: db(L - 8), a: 0.001, d: 0.02, dest: G.lanes[lane] });
+    }
+    // how busy the crew is (steps give way first when a lot is going on)
+    function figRoom(at) {
+      var q = st.figRecent || (st.figRecent = []), i = 0;
+      while (i < q.length && q[i] < at - 0.5) i++;
+      if (i) q.splice(0, i);
+      q.push(at);
+      return q.length;
+    }
+    function pinNoteAt(x, y) { return noteFor(TB.spike, 'k' + Math.round((x || 0) / 6) + ':' + Math.round((y || 0) / 6), y); }
+    function figure(ev, at, r) {
+      var w = ev.what || 'step', who = ev.who || 'pick', x = ev.x == null ? 160 : ev.x, y = ev.y, lane = laneOf(x), tier = tierOf(y);
+      var busy = figRoom(at);
+      if (busy > 22 && (w === 'step' || w === 'climb')) return;
+      if (voicesAt(at) > 40) return;
+      var n = st.figN = (st.figN | 0) + 1;
+      switch (w) {
+        case 'step': {
+          foot(at, who, x, y, who === 'tall' ? -27 : who === 'little' ? -30 : who === 'old' ? -29 : -28, r, n % 2);   // (heard between the music box's tines)
+          if (who === 'old') play(tickBuf('rung', 91, n % 3), at + 0.09, { gain: db(-37), lane: lane, rate: 1.35 });                 // the cane's ferrule
+          else if (who === 'lamp' && n % 2) play(tickBuf('tin', 86, n % 3), at + 0.02, { gain: db(-45), lane: lane, rate: 1.7 });     // the lantern's bail
+          else if (who === 'little' && n % 4 === 0) play(tickBuf('bolt', 79, n % 3), at + 0.03, { gain: db(-46), lane: lane, rate: 1.5 });   // the shovel on his shoulder
           return;
         }
-        case 'rare': return;       // the rare tier's hook: silent until the adventure fills it
+        case 'climb':                                      // a rung under a wooden boot
+          play(tickBuf('rung', TB.rung.notes[(Math.round((y || 0) / 8)) % TB.rung.notes.length], n % 3), at, { gain: db(-34), lane: lane, tier: tier });
+          if (r() < 0.25) creak(at + 0.01, { rate: 45, rate1: 30, f: 1600, q: 9, peak: db(-34), d: 0.08, lane: lane });   // the ladder gives a little
+          return;
+        case 'hop': creak(at, { rate: 70, rate1: 120, f: 2600, q: 10, peak: db(-27), d: 0.05, lane: lane }); return;   // a peg-joint knee (the narrow band eats ~18 dB)
+        case 'land': foot(at, who, x, y, -33, r, 0); foot(at + 0.009, who, x, y, -35, r, 1); return;                  // two boots at once
+        case 'tap': {                                      // tick: a light blow on the pin
+          play(tickBuf('spike', pinNoteAt(x, y), 0), at, { gain: db(-33), lane: lane, tier: tier });
+          play(tickBuf('wood', 76, n % 3), at, { gain: db(-35), lane: lane, rate: 1.4 });
+          return;
+        }
+        case 'set': {                                      // TOCK: the big one (edit rings the pin's own note beside it)
+          play(tickBuf('prop', 62, 1), at, { gain: db(-24), lane: lane, rate: 1.3, tier: tier });
+          play(tickBuf('spike', pinNoteAt(x, y), 1), at, { gain: db(-29), lane: lane, tier: tier });
+          noise(at + 0.01, { ft: 'lowpass', f: 1500, q: 0.6, peak: db(-40), a: 0.002, d: 0.08, dest: G.lanes[lane] });   // a puff of rock dust
+          return;
+        }
+        case 'flick': {                                    // a fingernail on the pin he just set: it rings on its own
+          var sp = st.setPin && at - st.setPin.at < 4 ? st.setPin : null;
+          play(clickBuf(n % 6), at, { gain: db(-40), lane: lane, rate: 0.6 });
+          if (sp) { var k2 = timbreKey('pin', sp); play(tickBuf(k2, noteFor(TB[k2], sp.id, sp.y), 2), at + 0.004, { gain: db(-28), lane: laneOf(sp.x), tier: tierOf(sp.y) }); }
+          else play(tickBuf('spike', pinNoteAt(x, y), 2), at + 0.004, { gain: db(-30), lane: lane, tier: tier });
+          return;
+        }
+        case 'pull':                                       // a nail out of wood: a squeak, then it lets go
+          creak(at, { rate: 60, rate1: 110, f: 2400, q: 8, peak: db(-33), d: 0.14, lane: lane });
+          tone(at + 0.14, { f: 900, f1: 520, peak: db(-34), a: 0.001, d: 0.03, dest: G.lanes[lane] });
+          play(clickBuf(n % 6), at + 0.14, { gain: db(-37), lane: lane, rate: 0.7 });
+          return;
+        case 'toss': {                                     // the old pin over his shoulder: it tinks off somewhere
+          noise(at, { f: 1500, f1: 3000, q: 1, peak: db(-41), a: 0.01, d: 0.1, dest: G.lanes[lane] });
+          var tl = clamp(lane + (r() < 0.5 ? -1 : 1) * (1 + Math.floor(r() * 2)), 0, 6), tn = pinNoteAt(x + 30, y);
+          play(tickBuf('spike', tn, 0), at + 0.32 + 0.1 * r(), { gain: db(-31), lane: tl, tier: tier });
+          play(tickBuf('spike', tn, 1), at + 0.47 + 0.1 * r(), { gain: db(-38), lane: tl, tier: tier, rate: 1.01 });
+          return;
+        }
+        case 'lay':                                        // a timber laid down, and it settles
+          play(tickBuf('prop', 64, 1), at, { gain: db(-28), lane: lane, tier: tier });
+          play(tickBuf('prop', 67, 2), at + 0.06, { gain: db(-35), lane: lane, tier: tier, rate: 1.1 });
+          return;
+        case 'push': {                                     // a shove at the ore cart, or the dinner pail
+          if (x < 110 && y != null && Math.abs(y - 157) < 20) {
+            play(tickBuf('bucket', 67, n % 3), at, { gain: db(-31), lane: lane, rate: 1.2 });
+            noise(at + 0.02, { ft: 'lowpass', f: 260, q: 0.8, peak: db(-37), a: 0.03, d: 0.25, dest: G.lanes[lane] });
+          } else if (y != null && Math.abs(x - 214) < 34 && Math.abs(y - 276) < 30) {
+            play(tickBuf('tin', 86, n % 3), at, { gain: db(-32), lane: lane, rate: 0.9 });
+            noise(at + 0.01, { f: 2200, q: 1.5, peak: db(-38), a: 0.01, d: 0.12, dest: G.lanes[lane] });
+          } else play(tickBuf('wood', 64, n % 3), at, { gain: db(-33), lane: lane });
+          return;
+        }
+        case 'mark':                                       // the tallyman's pencil: one stroke
+          noise(at, { ft: 'highpass', f: 3500, q: 0.7, peak: db(-44), a: 0.004, d: 0.05, dest: G.lanes[lane] });
+          noise(at + 0.07, { ft: 'highpass', f: 4200, q: 0.7, peak: db(-47), a: 0.003, d: 0.025, dest: G.lanes[lane] });
+          return;
+        case 'knock': {                                    // knuckles on stone: the rock's own note
+          var tx = ev.tx == null ? x : ev.tx, ty = ev.ty == null ? y : ev.ty;
+          var kn = noteFor(TB.stone, 'r' + Math.round(tx / 5) + ':' + Math.round((ty || 0) / 5), ty);
+          var kl = ev.soft ? -35 : (ev.n === 3 ? -25 : -27);
+          play(tickBuf('stone', kn, (ev.n | 0) % 3), at, { gain: db(kl), lane: laneOf(tx), tier: 2, rate: 1.25 });
+          play(clickBuf(n % 6), at, { gain: db(kl - 9), lane: laneOf(tx), rate: 0.45 });
+          st.lastKnock = { x: tx, y: ty, at: at };
+          return;
+        }
+        case 'listen': {                                   // an ear to the rock: the room holds its breath a little
+          var hg = G.hum.gain;
+          hg.cancelScheduledValues(at); hg.setValueAtTime(hg.value, at);
+          hg.linearRampToValueAtTime(0.5, at + 0.15); hg.setValueAtTime(0.5, at + 0.8); hg.linearRampToValueAtTime(1, at + 1.1);
+          // …and sometimes something deep in the rock knocks back
+          if (h01(hashStr('ans'), Math.round(at * 10)) < 0.5) {
+            var ax = st.lastKnock ? st.lastKnock.x : x;
+            [0, 0.17, 0.31].forEach(function (d, i2) { play(knockBuf(i2 % 4), at + 0.42 + d, { gain: db(-41 - i2), lane: laneOf(ax + 30), tier: 2, rate: 0.8 }); });
+          }
+          return;
+        }
+        case 'door':
+          if (ev.how === 'close') {                        // a plank door shut in the rock, the latch
+            play(tickBuf('prop', 74, n % 3), at, { gain: db(-31), lane: lane, rate: 1.5, tier: 2 });
+            play(clickBuf(n % 6), at + 0.03, { gain: db(-39), lane: lane, rate: 0.6 });
+          } else {                                         // the latch, then a tiny hinge
+            play(clickBuf(n % 6), at, { gain: db(-38), lane: lane, rate: 0.6 });
+            creak(at + 0.02, { rate: 50, rate1: 90, f: 1900, q: 11, peak: db(-37), d: 0.16, lane: lane });
+          }
+          return;
+        case 'rope': {
+          if (ev.how === 'up') {                           // hauled in, rung by rung, the rope rasping over the lip
+            for (var u = 0; u < 5; u++) play(tickBuf('rung', TB.rung.notes[u % TB.rung.notes.length], u % 3), at + u * 0.09, { gain: db(-38 - u * 0.5), lane: lane, rate: 1.2 });
+            noise(at, { f: 1200, q: 2, peak: db(-43), a: 0.05, hold: 0.25, d: 0.15, dest: G.lanes[lane] });
+          } else {                                         // unrolled over a lip: the rungs slap down the rock, quicker and quicker
+            var tr = at, gap = 0.06;
+            for (var d3 = 0; d3 < 7; d3++) { play(tickBuf('rung', TB.rung.notes[(6 - d3) % TB.rung.notes.length], d3 % 3), tr, { gain: db(-36 - d3 * 0.6), lane: lane, tier: tier, rate: 1.15 }); tr += gap; gap *= 0.8; }
+            noise(at, { f: 1800, f1: 900, q: 0.8, peak: db(-42), a: 0.02, d: 0.3, dest: G.lanes[lane] });
+          }
+          return;
+        }
+        case 'pick': {                                     // Ezra's pick into the coal face, and the chips
+          play(tickBuf('spike', 79, n % 3), at, { gain: db(-31), lane: lane, rate: 0.9, tier: tier });
+          play(tickBuf('coal', TB.coal.notes[n % TB.coal.notes.length], n % 3), at, { gain: db(-29), lane: lane, tier: tier });
+          for (var c3 = 0; c3 < 3; c3++) play(tickBuf('coal', TB.coal.notes[(n + c3 * 2) % TB.coal.notes.length], c3), at + 0.06 + c3 * 0.05 + 0.03 * r(), { gain: db(-38 - 3 * c3), lane: lane, rate: 1.6 + 0.3 * r() });
+          return;
+        }
+        case 'dig':                                        // the shovel into dirt
+          noise(at, { f: 900, f1: 600, q: 1.2, peak: db(-36), a: 0.005, d: 0.1, dest: G.lanes[lane] });
+          play(tickBuf('plank', 55, n % 3), at + 0.02, { gain: db(-39), lane: lane, rate: 0.8 });
+          if (r() < 0.3) play(tickBuf('bolt', 79, n % 3), at + 0.01, { gain: db(-42), lane: lane, rate: 1.4 });
+          return;
+        case 'sweep': noise(at, { f: 3200, f1: 2000, q: 0.9, peak: db(-41), a: 0.01, d: 0.12, dest: G.lanes[lane] }); return;
+        case 'oil': {                                      // the oilcan's bottom: pok (and the sheave is quiet for a while)
+          tone(at, { f: 1900, f1: 1450, peak: db(-34), a: 0.0006, d: 0.03, dest: G.lanes[lane] });
+          play(clickBuf(n % 6), at, { gain: db(-40), lane: lane, rate: 0.8 });
+          tone(at + 0.09, { f: 1500, f1: 1900, peak: db(-39), a: 0.0006, d: 0.025, dest: G.lanes[lane] });   // …and back
+          st.oiled = at + 90;
+          return;
+        }
+        case 'eat':                                        // Old Jory's crust
+          for (var e2 = 0; e2 < 3; e2++) noise(at + e2 * (0.035 + 0.02 * r()), { f: 2500 + 1500 * r(), q: 2, peak: db(-33 - e2), a: 0.0006, d: 0.012, dest: G.lanes[lane] });
+          return;
+        case 'snore': {                                    // a toy's snore: a rasp in, a little whistle out
+          var sr2 = ctx.createOscillator(); sr2.type = 'sawtooth'; sr2.frequency.value = 38;
+          var sbp = ctx.createBiquadFilter(); sbp.type = 'bandpass'; sbp.frequency.value = 700; sbp.Q.value = 3;
+          var se = envGain(at, db(-30), 0.3, 0.12, 0.1);
+          sr2.connect(sbp); sbp.connect(se.g); se.g.connect(G.lanes[lane]); sr2.start(at); sr2.stop(se.end);
+          sr2.onended = function () { try { sbp.disconnect(); se.g.disconnect(); } catch (e) {} };
+          tone(at + 0.6, { f: 1900, f1: 1500, peak: db(-45), a: 0.08, d: 0.3, dest: G.lanes[lane] });
+          return;
+        }
+        case 'wake':                                       // a start: a snort, his cane knocked over
+          noise(at, { f: 600, q: 2, peak: db(-34), a: 0.003, d: 0.05, dest: G.lanes[lane] });
+          play(tickBuf('wood', 69, n % 3), at + 0.08, { gain: db(-32), lane: lane, rate: 1.3 });
+          play(tickBuf('wood', 67, (n + 1) % 3), at + 0.15, { gain: db(-38), lane: lane, rate: 1.4 });
+          return;
+        case 'topple': {                                   // a dropped wooden toy, flat on his side
+          play(tickBuf('prop', 67, 0), at, { gain: db(-21), lane: lane, rate: 1.6, tier: tier });
+          play(tickBuf('prop', 69, 1), at + 0.055, { gain: db(-27), lane: lane, rate: 1.8, tier: tier });
+          [0.085, 0.1, 0.112].forEach(function (d4, i4) { play(tickBuf('wood', 69, i4), at + d4, { gain: db(-34 - 2 * i4), lane: lane, rate: 2.4 }); });   // the pegs rattle
+          var tool = TOOL[who];
+          if (tool === 'pick') { play(tickBuf('spike', 81, 2), at + 0.03, { gain: db(-27), lane: lane, rate: 0.9 }); play(tickBuf('spike', 81, 1), at + 0.14, { gain: db(-34), lane: lane, rate: 0.9 }); }
+          else if (tool === 'lantern') { play(tickBuf('tin', 86, 2), at + 0.02, { gain: db(-29), lane: lane }); play(tickBuf('glass', 98, 1), at + 0.05, { gain: db(-34), lane: lane }); }
+          else if (tool === 'shovel') { play(tickBuf('bolt', 79, 1), at + 0.03, { gain: db(-27), lane: lane }); play(tickBuf('bolt', 79, 2), at + 0.16, { gain: db(-35), lane: lane }); }
+          else if (tool === 'cane') { play(tickBuf('wood', 69, 2), at + 0.04, { gain: db(-28), lane: lane, rate: 1.3 }); play(tickBuf('wood', 67, 1), at + 0.2, { gain: db(-36), lane: lane, rate: 1.3 }); }
+          else if (tool === 'card') noise(at + 0.03, { ft: 'highpass', f: 2500, peak: db(-36), a: 0.005, d: 0.08, dest: G.lanes[lane] });
+          return;
+        }
+        case 'upright':                                    // snapped back up while nobody looked: one peg clicks home
+          play(clickBuf(n % 6), at, { gain: db(-38), lane: lane, rate: 0.5 });
+          play(tickBuf('wood', 71, n % 3), at, { gain: db(-38), lane: lane, rate: 2.6 });
+          return;
+        case 'release': {                                  // a stolen marble let go: set down, tossed or dropped
+          if (ev.how === 'toss') noise(at, { f: 1400, f1: 2800, q: 1, peak: db(-40), a: 0.01, d: 0.1, dest: G.lanes[lane] });
+          else if (ev.how === 'set') { play(clickBuf(n % 6), at + 0.02, { gain: db(-34), lane: lane }); play(tickBuf('plank', 57, n % 3), at + 0.02, { gain: db(-37), lane: lane }); }
+          play(tickBuf('wood', 69, n % 3), at, { gain: db(-37), lane: lane, rate: 1.9 });   // the hands open
+          return;
+        }
+        case 'cheer':                                      // one of them, one voice box (the lode brings its own choir)
+          if (st.lodeUntil > at) return;
+          voiceBox(at, { note: VOICEBOX[who] || 76, kind: r() < 0.5 ? 'hey' : 'whoop', lane: lane, peak: db(-27) });
+          return;
+        case 'capoff': return;                             // silent is right
       }
     }
 

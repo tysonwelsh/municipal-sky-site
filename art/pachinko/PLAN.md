@@ -830,3 +830,41 @@ the marble unless holding it, and no page scroll at any size.
     x, y, who}`; `edit {edit, i, who}`. The sound plays step, tap, set,
     pull, lay (and cheer, which the knockers leave to the lode's own
     voices); the rest are requested in `requests.md`.
+- 2026-09-27 — **Sound, wave 4: the figurines, the choir, the lode's new
+  clock (audio; supersedes the lode timing and the `figure` line above).**
+  **Figures:** every verb the knockers emit has a sound, tiny and wooden.
+  `step` is a carved-linden boot with each man's own note (D6 Absalom, G6
+  Ezra, E6 Tobias, B5 Jory, B6 Pip, A6 Pengelly), duller on dirt, with a
+  plank's body on the galleries; Jory's cane ticks after each step,
+  Tobias's lantern bail jingles on alternate steps, Pip's shovel rattles
+  now and then. `climb` a rung (and sometimes the ladder gives), `hop` a
+  peg-knee creak, `land` two boots at once, `tap`/`set` tick-tick-**TOCK**
+  (the TOCK 9.6 dB over the ticks; `edit` rings the moved pin's own note
+  with it), `flick` rings the pin just set, `pull` a squeak then a pop,
+  `toss` a pin tinking off to one side twice, `lay`, `push` (the cart's
+  bucket or the pail's tin by position), `mark` a pencil stroke, `knock
+  {n, tx, ty | soft}` knuckles on the rock's own note, `listen` (the hum
+  drops to half for 1 s and, one time in two, something in the rock knocks
+  back), `door {how}` latch and hinge / a plank shut, `rope {how}` rungs
+  slapping down the rock / hauled in, `pick` steel into coal with chips,
+  `dig`, `sweep`, `oil` (the oilcan's bottom; **the sheave stops creaking
+  for 90 s**), `eat`, `snore`, `wake`, `topple` (a dropped toy, −23 dBFS,
+  his own tool clattering after him), `upright` (one peg clicks home),
+  `release {how}`, `stolen {who}` (his own feet), `cheer` (one voice box;
+  ignored during the lode). `capoff` is silent. A step budget (22 figure
+  sounds per 0.5 s) drops steps first when the crew is busy.
+  **The choir:** the crew's voices are 1920s doll voice boxes, not people:
+  a free reed on a leather bellows through a flap that opens "oo" into
+  "ay"; the pitch rides the squeeze and ends in a wheeze; the six are tuned
+  to G6/9 (Jory G4 wheezy and late, Tobias B4, Absalom D5, Pengelly E5,
+  Ezra G5, Pip A5 with a rising squeeze-toy whoop). Their spectrum is a
+  reed's (odd harmonics: H3 ≈ H1, H2 −13 dB), not a voice's.
+  **The lode, re-timed around the crew** (from the `lode` event): 0–1.0
+  the held breath; +0.30 the crack; **+0.35 the whistle as the alarm
+  (0.8 s)**; +0.45 lamps flare; +0.55–1.9 the cascade (the tumble-down 3 dB
+  lower); +0.55–3.55 the scrip (4 dB softer during 1.0–2.6); **+1.0–2.6
+  the choir, and until +3.0 the boots of their stiff hops, on the
+  knockers' own shutter frames ((f + 3i) % 4 === 0, Jory excepted)**;
+  +1.0–3.0 the carts; **+2.75 and +3.05 toot-toot**; **+3.4** the music box
+  with the mended tine. The choir measures +7.8 dB over everything else
+  in 350–1000 Hz and +3…4 dB above it higher up.
