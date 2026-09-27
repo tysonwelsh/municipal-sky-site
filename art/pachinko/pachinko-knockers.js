@@ -1656,6 +1656,10 @@
         case 'release':
           S.lookUp = { t0: t, x: e.x };
           break;
+        case 'whistle':
+          // the shift whistle on the hoist house: they all look up at it
+          S.lookUp = { t0: t + 0.38, x: 143 };
+          break;
         case 'clack':
           K.forEach(function (k) { if (!k.hidden && Math.hypot(k.x - e.x, k.y - 20 - e.y) < 60) k.react.flinch = t + 0.28; });
           break;

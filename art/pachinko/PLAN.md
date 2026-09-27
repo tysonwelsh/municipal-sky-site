@@ -868,3 +868,118 @@ the marble unless holding it, and no page scroll at any size.
   +1.0–3.0 the carts; **+2.75 and +3.05 toot-toot**; **+3.4** the music box
   with the mended tine. The choir measures +7.8 dB over everything else
   in 350–1000 Hz and +3…4 dB above it higher up.
+- 2026-09-27 — **Mischief and the mother lode (wave 4, rc.17–rc.21). The
+  contract is the header of `pachinko-mischief.js`.** One PARTS plug-in
+  (`PachinkoMischief.attach`) with a pure core that the lab's `sim.js
+  mischief` also loads; the art is `pachinko-art-mischief.js`, drawn in five
+  guarded render layers (albedo, crack, emissive, over, cabinet) and baked at
+  build (`A.bakeMischief`).
+  - **Theft (the cheat).** Every marble gets two looks, at 0.3 s and 1.4 s
+    old, each a seeded coin at **p 0.14**. On yes, the knockers'
+    `canSteal` looks 0.6–1.6 s ahead for a door where the night-shift
+    knocker, stepping out and a step or two along, would have the marble come
+    **into his hands**. The hands' offset in the ready pose is measured from
+    the rig: Ezra +19.4/−16.9, Pip +17.2/−14.1 (`HANDS`). **Max 2 a game.**
+    - The telegraph is the door opening 0.55 s ahead. At the door he looks
+      again: if another marble has knocked it off its line, he stays in the
+      rock, and the theft is refunded against the two.
+    - The catch radius is 8 px (it was 13 in wave 3, and the marble jumped).
+    - He runs through the rock at 190 px/s (it was 110, which kept the marble
+      4 s), so a theft takes about 3 s from the grab to the set-down.
+    - Live: 6/6 and 2/2 catches, and one in a real-click game.
+  - **Theft exits** (`EXITS`: door, mode, face, weight):
+    - good: c1 toss → 0.26 (lobbed at the lode, the 13 ~10%); b1 set → 0.08;
+      rC set ← 0.10 (the EGG chute); b2 set ← 0.12 (the dinner pail);
+    - bad: s1 set ← 0.16 (GOB); rC2 set → 0.14 (OVERBURDEN); b2 set → 0.14
+      (the office tunnel).
+    - The weights are set so a stolen marble's 13-rate and pay match what it
+      had on its own (`mis/sites.js exits`, `mis/exitcheck.js`).
+  - **Lamps go out.** 80% of games. The section is picked by seed:
+    haulage + measures, ventilation + barren, or workings + vein + sump.
+    - It starts from marble 3–9, when a game marble is 14–48 px above the
+      section, falling.
+    - Two flickers (0 and 0.19 s), out at +0.55 for 2.6–3.6 s, then the
+      carbide catches: a stutter, lights ×1.55 easing back over 0.7 s.
+    - In the dark, everything goes: pins, the knockers' caps (render skips
+      flames and coal glints where `fx.dark ≥ 0.85`) and marbles (tunnel
+      lights too). The glass's own reflection streak stays: it's on the glass.
+    - The mother lode's flare relights a dark `deep` section.
+    - `dark {region, regions, what, section}`; the flag
+      `pachinko.lights-out`.
+  - **The vanish.** A vanish is planned in 25% of games (0.25 of all games,
+    drawn as 0.25/0.8 within dark games) and keeps a marble in 16–22%.
+    - The first game marble 0.12 s deep in the section's rock band is
+      marked done with `outcome {kind: 'lost'}`, and a `done {lost: true}`
+      is pushed into `world.events` so main counts it. `lost {m, x, y}` goes
+      out at once.
+    - When the light returns it is set in the rock where it went, under a cool
+      pin spot, with a bone tag **13**. "13 MARBLE, LOST" is pencilled on the
+      figures card, with a stroke for each one kept since. It lasts the
+      visit (`S.lost`, max 3 drawn).
+  - **Cave-in** (an event). 33% of games, from marble 3–9, never on top of the
+    dark. `PachinkoBoard.caveIn(board, {slot})` roofs a bay from divider to
+    divider:
+    - two rock rails peaking at y 375 with a capstone, or one slope against a
+      wall;
+    - the pins within 12 px over it are **flagged `buried`**, not removed, so
+      drift nudges still commute; physics and art skip them.
+    - It is never the 13 or its two neighbours (`CAVE_BAYS`). Every site
+      validates, with the 13 unchanged at 1.87% (`mis/sites.js caves`).
+
+    The sequence:
+    - The telegraph: the nearest free knocker (never the night shift) goes
+      to the floor over the bay and does `knockListen` (3 knocks, an ear to
+      it, alarm). `cavein telegraph` fires at his first knock, and dust
+      sifts down.
+    - The fall comes 1.5 s later, waiting up to 1.4 s for the bay to clear of
+      marbles. `PachinkoPhysics.setBoard` rebuilds the static hash, and main
+      keeps the live world. Then rocks, a dust cloud, a shake, the flag
+      `pachinko.cave-in`, and a work light on the heap.
+    - WORK: main plans `{type:'clear'}` first and validates the drift on the
+      cleared board. The knockers' `clearWork` (pick or shovel, rock flying,
+      5 blows) lands it: `cavein clear`.
+  - **The shift whistle.** The steam comes from a whistle on the hoist
+    house's stack (143, 40) on the sound's pattern, 0.38 s after `whistle`.
+    The hoist cage takes two cap lamps down the main shaft and back up (3.5
+    s), and the crew look up at the whistle.
+  - **The mother lode.** `lode(ctx)` takes the 13, on the sound's re-timed
+    clock. From the `lode` event:
+    - 0–0.45: the held breath, lights ×0.28, the cup lamp. The fuse climbs
+      the stringer (0.04–0.30).
+    - +0.30: the crack runs both ways from the stringer's junction at 600
+      px/s, with 7 forks. It opens over 0.4 s to 1–6 px (widest at the
+      middle), and the rock either side is displaced, with gold and quartz
+      inside. It narrows after +3.0 to a 1 px glowing seam that lasts until
+      the next game. Shake amp 2.
+    - +0.35: the whistle's steam (0.8 s), then toots at +2.75 and +3.05.
+    - +0.45: the flare (lights ×1.9, easing to 1 by 4.5) and a burst of warm
+      light from the vein (0.28 s).
+    - +0.4–2.3: 96 nuggets, analytic, bouncing once, left lying in the bays
+      until the next game. Gold dust pours from the open crack.
+    - +0.55–2.1: the bay cards ring up and back on the sound's cascade
+      steps.
+    - +1.0–3.0: two carts race floors B and C, hop the openings, and tip off
+      the end.
+    - **+0.55–3.55: the 13 rolls onto the drum a tick at a time with the
+      coins** (`ctx.holdTally`).
+    - The marquee goes wild (`fx.wild`): the letters are picked out of the
+      painted face, two bands of light run through them, and the sunburst
+      flickers ray against ray. **The dead bulbs come on for the rest of the
+      visit** (`fx.mended`).
+    - The camera steps back to take in the marquee (`fx.camOut`, 0.5–4.2).
+    - The game end waits for the spectacle (`busy` to +4.2).
+    - Main's placeholder lode and its two `figure cheer` events are gone
+      when a part takes the 13.
+  - **The rare tier:** `rare(state)` → false and `REWARD.rare = null`. Main
+    emits `rare` only if a reward exists.
+  - **Fairness** (`node sim.js mischief 1500`, the same drops with and
+    without):
+
+    | | novice | competent |
+    |---|---|---|
+    | scrip per game | 9.78 → 10.01 | 11.10 → 10.93 (−1.5%; one marble in 13 = 7.7%) |
+    | the 13 | 20.6‰ → 22.1‰ | 26.5‰ → 26.2‰ (SE ≈ 1.1‰) |
+    | thefts | 1 in 9.3 marbles | 1 in 10.4 marbles |
+    | a stolen marble's 13 | 1.68% → 3.26% | 2.76% → 3.08% |
+
+    Base metrics unchanged: NaN 0, timeouts 0, median 3.67 s.
