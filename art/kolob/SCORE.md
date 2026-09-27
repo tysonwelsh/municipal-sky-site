@@ -84,7 +84,8 @@ Background: `PLAN-COMPOSITION.md` §2 (foundations), `PLAN-EXECUTION.md`
   | label | used for |
   |---|---|
   | `meeting:<n>` | the meeting plan (n = meeting number from 1) |
-  | `question:<n>` | the Question in meeting n. Within it: `bank` for the seven questions, `pick`, `bend`, `answers`, `ground`, `seat` |
+  | `question:bank` | the visit's seven questions, written **once per visit (seed)**, not per meeting (owner's intent; corrected 2026-09-26 after the second look) |
+  | `question:<n>` | the Question in meeting n: `pick` (from the visit's bank; the one heard most recently steps aside), `bend`, `answers`, `ground`, `seat` |
   | `hymn:<n>:<i>` | the i-th hymn of meeting n (the composer; `harmony` and `performance` below it) |
   | `cast:<n>` | the ward seated for meeting n; `member:<id>` below it |
   | `guest:<type>:<n>` | a guest in meeting n |
