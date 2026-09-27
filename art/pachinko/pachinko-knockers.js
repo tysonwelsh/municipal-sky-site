@@ -92,8 +92,15 @@
   var PB = root.PachinkoBoard || (typeof require !== 'undefined' ? require('./pachinko-board.js') : null);
   var FPS = 8, D = Math.PI / 180, SURF = 64, RUNG = 4;
 
-  function hash01(a, b) { return PB.hash01(a | 0, b | 0); }
-  function h3(a, b, c) { return PB.hash01((a | 0) * 7919 + (c | 0), b | 0); }
+  // the knockers' own mixer (murmur3's finaliser over three keys): nearby
+  // inputs must not give nearby answers, or a knocker picks the same job six
+  // times running
+  function h3(a, b, c) {
+    var h = Math.imul(a | 0, 0x9E3779B1) ^ Math.imul((b | 0) + 0x7F4A7C15, 0x85EBCA77) ^ Math.imul((c | 0) + 0x165667B1, 0xC2B2AE3D);
+    h ^= h >>> 16; h = Math.imul(h, 0x85EBCA6B); h ^= h >>> 13; h = Math.imul(h, 0xC2B2AE35); h ^= h >>> 16;
+    return (h >>> 0) / 4294967296;
+  }
+  function hash01(a, b) { return h3(a, b, 0x51ED); }
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
   function sgn(v) { return v < 0 ? -1 : 1; }
 
@@ -155,6 +162,9 @@
     sitEdge: { lean: -10, head: 10, armL: 30, armR: 45, legL: 15, legR: 30 },
     eat1:    { lean: -5, head: 5, armL: 60, armR: 30, legL: 15, legR: 30 },
     eat2:    { lean: -5, head: -5, armL: 150, armR: 30, legL: 30, legR: 15 },
+    lampCheck:{ lean: -5, head: -10, armL: -6, armR: 165, legL: -6, legR: 6 },
+    scratch: { lean: 5, head: 15, armL: -6, armR: 180, legL: -6, legR: 6 },
+    scratch2:{ lean: 5, head: 20, armL: -6, armR: 165, legL: -6, legR: 6 },
     doze:    { lean: -20, head: 45, armL: 30, armR: 15, legL: 90, legR: 75 },
     sitFloor:{ lean: -20, head: 10, armL: 30, armR: 45, legL: 90, legR: 75 },
     yawn:    { lean: -20, head: -30, armL: 165, armR: 180, legL: -10, legR: 10 },
@@ -567,7 +577,7 @@
       var n = nav(), lad = n.ladders[m.ladder], W = n.walks[m.w];
       // step onto it (at its top or its foot), climb, step off
       var yFrom = m.down ? lad.y0 : lad.y1, yTo = m.down ? lad.y1 : lad.y0;
-      k.x = lad.x; k.y = yFrom; k.back = true; k.pose = P.hang; yield 1;
+      k.x = lad.x; k.y = yFrom; k.back = true; k.at = { ladder: lad.id, y: yFrom }; k.pose = P.hang; yield 1;
       yield* climb(k, lad, yTo, m.down);
       k.back = false; k.at = { w: m.w, x: clamp(m.x, W.x0, W.x1) }; k.x = k.at.x; k.y = walkY(W, k.x);
       k.pose = restPose(k); yield 1;
@@ -994,31 +1004,55 @@
       S.work = null;
       S.lifted = {};
       if (hurried) K.forEach(function (k) { if (k.busy !== 'theft') snapHome(k); });
-      // otherwise they finish up (off the ladders, tools away) in their own time
-      else K.forEach(function (k) { if (k.busy === 'work') k.busy = 'packing'; });
+      // otherwise they finish up (off the ladders, tools away) in their own time;
+      // a job cut short (main's hard cap) puts its pin back and packs up
+      else K.forEach(function (k) {
+        if (k.busy !== 'work') return;
+        k.busy = 'packing';
+        var open = W.jobs.filter(function (j) { return j.who === k.who && j.state !== 'set' && j.state !== 'done'; })[0];
+        if (open) {
+          k.carry = null;
+          k.gen = (function* () { k.pose = P.shrug; yield 3; yield* leaveStance(k); k.tool = k.own; k.tool2 = null; })();
+          k.wait = 0;
+        }
+      });
     }
 
     /* ══ ATTRACT: pottering ═══════════════════════════════════════════ */
     function nextActivity(k) {
+      var name = pickActivity(k);
+      // never the same thing twice running
+      if (name === k.lastAct && name !== 'homeward') name = pickActivity(k);
+      k.lastAct = k.act = name;
+      var r = seedN(k.i * 23 + 9, S.tick);
+      return name === 'idle' ? idle(k, 10 + ((r * 100) | 0) % 6) : ACTS[name](k);
+    }
+    function pickActivity(k) {
       var r = seedN(k.i * 17 + 3, Math.floor(S.tick / 7) + (k.acts = (k.acts | 0) + 1)), p = post(k);
       var far = !k.at || !k.at.w || (k.at.w !== p.w) || Math.abs(k.x - p.x) > 60;
-      if (far) return homeward(k);
-      switch (k.who) {
-        case 'tall': return r < 0.22 ? moon(k) : r < 0.42 ? oilSheave(k) : r < 0.58 ? scaleMan(k) : r < 0.76 ? fence(k) : idle(k, 18 + ((r * 100) | 0) % 10);
-        case 'pick': return r < 0.35 ? pickFace(k) : r < 0.55 ? pushCart(k) : r < 0.72 ? polishHook(k) : idle(k, 16);
-        case 'lamp': return r < 0.3 ? readCard(k) : r < 0.55 ? mothWalk(k) : r < 0.75 ? ventDoor(k) : idle(k, 16);
-        case 'old': return r < 0.35 ? lunch(k) : r < 0.6 ? doze(k) : r < 0.8 ? amble(k) : knockPillar(k);
-        case 'little': return r < 0.3 ? dig(k) : r < 0.5 ? knockRib(k) : r < 0.7 ? sumpVisit(k) : r < 0.85 ? sweep(k) : hopHole(k);
-        case 'tally': return r < 0.45 ? countFence(k) : r < 0.7 ? idle(k, 20) : surveyHouses(k);
+      var name = far ? 'homeward' : null;
+      if (!name) switch (k.who) {
+        case 'tall': name = r < 0.22 ? 'moon' : r < 0.42 ? 'oilSheave' : r < 0.58 ? 'scaleMan' : r < 0.76 ? 'fence' : 'idle'; break;
+        case 'pick': name = r < 0.38 ? 'pickFace' : r < 0.62 ? 'pushCart' : r < 0.86 ? 'polishHook' : 'idle'; break;
+        case 'lamp': name = r < 0.34 ? 'readCard' : r < 0.6 ? 'mothWalk' : r < 0.86 ? 'ventDoor' : 'idle'; break;
+        case 'old': name = r < 0.35 ? 'lunch' : r < 0.6 ? 'doze' : r < 0.8 ? 'amble' : 'knockPillar'; break;
+        case 'little': name = r < 0.3 ? 'dig' : r < 0.5 ? 'knockRib' : r < 0.7 ? 'sumpVisit' : r < 0.85 ? 'sweep' : 'hopHole'; break;
+        case 'tally': name = r < 0.45 ? 'countFence' : r < 0.7 ? 'idle' : 'surveyHouses'; break;
       }
-      return idle(k, 12);
+      return name || 'idle';
     }
     function* homeward(k) { var p = post(k); yield* goTo(k, p.w, p.x); k.pose = restPose(k); yield 4; }
+    // standing about, the way the old do: weight from foot to foot, a look up
+    // at the roof, a hand to the lamp to see it's burning, a scratch, a yawn
     function* idle(k, n) {
       for (var i = 0; i < n; i++) {
         var r = hash01(k.i * 31 + i, S.tick);
-        k.pose = r < 0.15 ? P.shift : r < 0.22 ? P.look : restPose(k);
-        if (r > 0.93) k.facing = -k.facing;
+        if (r < 0.12) k.pose = P.shift;
+        else if (r < 0.2) k.pose = P.look;
+        else if (r < 0.26) { k.pose = P.lampCheck; k.lampK = 0.6; yield 2; k.lampK = 1; k.pose = P.lampCheck; }
+        else if (r < 0.31) { k.pose = P.scratch; yield 2; k.pose = P.scratch2; }
+        else k.pose = restPose(k);
+        if (r > 0.9) k.facing = -k.facing;
         yield 3;
       }
       if (hash01(k.i, S.tick) < 0.3) { k.pose = P.yawn; yield 4; }
