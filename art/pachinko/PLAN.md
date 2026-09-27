@@ -464,3 +464,55 @@ the marble unless holding it, and no page scroll at any size.
   marble: 9 px cat's-eye, dark rim so it reads on any rock, the lit scene
   behind it sampled, flipped and shrunk inside it, the vane turned by
   `spin`, the vane colour by `id` (five marble colours).
+- 2026-09-26 — **The layout (architect, wave 1, rc.1–rc.3).** Laid on the
+  art director's painted strata (drop y 16, ground y 64, seams A/B/C at
+  y 142–160 / 222–240 / 292–320, deep rock 320–384, bays 384–416). Pins
+  live in the rock bands (roots, spikes, roof bolts, coal and ore
+  knuckles, bone); only the gallery *floors* collide (the marble rides
+  the glass). **Galleries are partial**, driven part way along each seam
+  to a rock face (A to x 213, B to x 263, C from x 65 to x 247); beyond
+  the face the seam is coal pins. A full-width floor with shafts washed
+  out drop position (every drop funnelled to the same few shafts), so the
+  right-hand lane falls through rock the whole way and the left and centre
+  go through the galleries. The legend-card corner (x 0–64, y 240–330) is
+  walled off by a rock rib.
+- 2026-09-26 — **TUNE (physics).** R 4, g 1000 px/s², drag 0.35/s, vMax
+  560, dt 1/240. Restitution/friction: steel 0.45/0.06, brass 0.55/0.07,
+  timber 0.34/0.12, track 0.22/0.04, plank 0.16/0.06, rock 0.26/0.16,
+  ore 0.30/0.14, bone 0.42/0.09, spoke 0.12/0.35, glass 0.88/0.03.
+  roughness ±3 %, jitter 3, perchKick 2.5 (a marble can't sit on a pin
+  top), teeterKick 0.5, restV 10, eventV 16, stall 8 px/s for 0.6 s →
+  knock 110 px/s, timeout 12 s. The drop leaves the hopper at 60 px/s.
+  Cart period 2.6 s (loads only at the loading end / outbound, tips out at
+  0.55 rad, a loose marble in the bucket goes out with the load; a
+  marble rolling along the track passes in front of the cart). Sheave ω
+  2.2, pump ω −2.6, vent door ±0.75 rad / 2.8 s. g was raised from the
+  planned "slow and hypnotic" 170 because the pin fields ate ~0.2 s per
+  10 px; 1000 with ~23 contacts reads as a busy, ticking fall.
+- 2026-09-26 — **Bay values.** The bays are named for what comes out of a
+  mine and most of it is waste: GOB, SLATE, BONY, STEAM, SLACK, STOKER 0 ·
+  SMITHING 1 · THE MOTHER LODE 13 · BLOCK 1 · CANNEL, CULM, EGG,
+  OVERBURDEN 0; the lunch pail 2. Tuned to the economy target: pachinko
+  loses most marbles, and the 13 is the game.
+- 2026-09-26 — **Metrics (sim.js all, 10 000 drops, rc.3).** NaN 0,
+  timeouts 0, median 4.24 s (p95 5.98), 7 of 10 000 over 8 s (max 8.8 —
+  open); contacts median 23, 88 % in 12–35; moving part or tunnel 45 %.
+  The 13: 2.8 % uniform, 8.3 % at its best x ±2. Every slot's best x is
+  ≥ 2× its uniform rate; best±2 in 25–55 % for GOB, STEAM, SLACK, STOKER,
+  SMITHING; several narrow bays sit below 25 % (BLOCK 6.7 %, CANNEL 15 %,
+  EGG 18 %) and OVERBURDEN (the right wall lane, a 0) is 64 %. Economy
+  (scrip per token): competent 11.2, novice 7.1; HOLLER ROLLER estimated
+  from PLAN-2 §8/§9: competent 14.0 (band 9.8–18.2 ✓), novice 4.5 (the
+  pachinko novice is above its band: the 13 alone gives a random dropper
+  ~4.7). Drift: 50 layouts in 10 chains of 2–4 edits per game, 0 with an
+  unreachable paying bay, 7 with the 13 outside its bands, the 13's best
+  x moved ≥ 6 px within 3 games in 10/10 chains; the validator rejected
+  80 candidate edits (mostly slow drops and the 13 getting too easy).
+- 2026-09-26 — **Unrequested physical touches.** (1) The bone over the 13
+  has a worn, cupped top: a marble landing square on it stops and
+  teeters for ~0.5 s before choosing a side (half go in; if it dawdles
+  the knockers knock it off). Event `teeter`, ≈ once in 20 games.
+  (2) The sheave's spokes are grippy: now and then (1.7 %) a marble is
+  carried over the top of the wheel. Event `ride`. (3) The office tunnel,
+  the one scratched off the legend, empties into the GOB bay. (4) The
+  cart takes up to three and tips them out together.
