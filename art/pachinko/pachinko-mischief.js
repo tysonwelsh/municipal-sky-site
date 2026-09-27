@@ -344,9 +344,9 @@
       if (cx < 97) return { x: clamp(cx, 16, 88), y: 382 };
       return { x: cx, y: 328 };
     }
-    // (the cave-in is live only once main plans its dig-out in WORK and
-    // rebuilds the physics' static hash mid-game: see the wave-4 handoff)
-    var CAVE_LIVE = false;
+    // (main plans the dig-out in WORK and rebuilds the physics' static hash
+    // mid-game; the knockers dig: the `clear` job)
+    var CAVE_LIVE = true;
     function stepCave(t) {
       if (!CAVE_LIVE) return;
       var P = S.plan && S.plan.cave, c = S.cave;

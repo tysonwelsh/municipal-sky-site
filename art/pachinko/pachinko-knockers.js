@@ -796,7 +796,12 @@
       }
     }
     function target(j) {
-      var e = j.edit, b = api.board(), f = b.byId[e.id] || j.board.byId[e.id];
+      var e = j.edit, b = api.board();
+      if (e.type === 'clear') {   // a cave-in's heap: the top of it
+        var cv = (b.caveins || []).filter(function (q) { return q.id === e.id; })[0];
+        return cv ? { x: cv.cx, y: cv.top + 3 } : null;
+      }
+      var f = b.byId[e.id] || j.board.byId[e.id];
       if (!f) return null;
       if (f.kind === 'pin') return { x: f.x, y: f.y };
       if (f.kind === 'rail') {
@@ -854,6 +859,7 @@
       else if (e.type === 'rail') yield* railWork(k, j, W, f, T, st);
       else if (e.type === 'mouth') yield* mouthWork(k, j, W, f, T);
       else if (e.type === 'pocket') yield* pailWork(k, j, W, f, T);
+      else if (e.type === 'clear') yield* clearWork(k, j, W, T, st);
       else { yield* waitTurn(k, j, W); apply(j, W); }
       j.state = 'done';
       markTally();
@@ -979,6 +985,35 @@
         S.dust.push({ kind: 'flying', x: T.x, y: T.y - 4, vx: -k.facing * 30, vy: -50, t0: now(), plank: true });
         yield 3;
       }
+      k.tool = k.own;
+    }
+    // a cave-in dug out (wave 4): at the heap with the pick or the shovel,
+    // rock flying over his shoulder, until the bay is clear and the pins that
+    // came down with the roof are back in it
+    function* clearWork(k, j, W, T, st) {
+      k.facing = sgn(T.x - k.x) || 1;
+      var tool = k.who === 'little' || k.who === 'tall' ? 'shovel' : k.who === 'pick' ? 'pick' : 'mallet';
+      var onRope = st && st.kind !== 'stand', spr = R && R.pinSpriteByDress ? R.pinSpriteByDress('coal') : null;
+      k.tool = tool;
+      for (var i = 0; i < 5; i++) {
+        if (onRope || tool === 'mallet') {
+          var hold = aim(k, P.holdPin, T, 'L'), up = copy(hold), hit = aim(k, hold, { x: T.x, y: T.y + 2 }, 'R', -30);
+          up.armR = 165; k.pose = up; yield 1; k.pose = hit;
+        } else if (tool === 'pick') { k.pose = P.swingUp; yield 1; k.pose = P.swingTop; yield 1; k.pose = P.swingDn; }
+        else { k.pose = P.dig1; yield 1; k.pose = P.dig2; }
+        emit(k, 'dig', { tx: Math.round(T.x), ty: Math.round(T.y) });
+        S.dust.push({ kind: 'dust', x: T.x, y: T.y, n: 4, t0: now(), dx: -k.facing });
+        if (i % 2 === 0) S.dust.push({ kind: 'flying', x: T.x, y: T.y - 2, vx: -k.facing * (26 + 9 * i), vy: -58 - 6 * i, t0: now(), spr: spr, dress: 'coal' });
+        yield 2;
+      }
+      yield* waitTurn(k, j, W);
+      if (W.cancelled) return;
+      // the last of it: the heap goes, the bay's clear
+      k.pose = P.pop; apply(j, W); emit(k, 'set');
+      api.emit({ type: 'cavein', region: 'payout', x: Math.round(T.x), what: 'clear' });
+      S.dust.push({ kind: 'dust', x: T.x, y: T.y + 6, n: 8, t0: now() });
+      S.dust.push({ kind: 'glint', x: T.x, y: T.y + 8, t0: now(), big: true });
+      yield 3;
       k.tool = k.own;
     }
     // the dinner pail shoved along its ledge

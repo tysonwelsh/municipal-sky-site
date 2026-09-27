@@ -491,10 +491,13 @@
     /* ── WORK: the crew rebuild the board ────────────────────────── */
     // the drift planner: draw candidate edits by seed, validate each (on top
     // of the ones already accepted) in slices, keep the ones that pass
-    function planDrift(b, seed) {
+    // `pre`: jobs that come first and need no validating (a cave-in dug out);
+    // `b` is the board as it will be after them
+    function planDrift(b, seed, pre) {
+      pre = pre || [];
       var want = 2 + Math.floor(PB.hash01(seed, 4242) * 3);
       var cands = PB.drawEdits(b, seed, want * 3, 0);
-      var plan = { want: want, cands: cands, ci: 0, cur: b, accepted: [], rejected: [], v: null, cand: null, done: false };
+      var plan = { want: want + pre.length, cands: cands, ci: 0, cur: b, accepted: pre.slice(), rejected: [], v: null, cand: null, done: false };
       plan.step = function (k) {
         while (k > 0 && !plan.done) {
           if (!plan.v) {
@@ -519,7 +522,10 @@
       game.payout = null;
       setMode('work');
       view.ui.tongue = null;
-      var w = game.work = { t0: simT, plan: planDrift(board, hashSeed(game.seed, 77)), applied: 0, nextEditAt: simT + 1.0, feedAt: simT + 0.6, fed: 0, performer: null, emitted: false };
+      // a cave-in this game: the crew dig it out first, and the drift is planned on the cleared board
+      var b0 = board, pre = [];
+      (board.caveins || []).forEach(function (cv) { b0 = PB.clearCave(b0, cv.id); pre.push({ edit: { type: 'clear', id: cv.id }, board: b0 }); });
+      var w = game.work = { t0: simT, plan: planDrift(b0, hashSeed(game.seed, 77), pre), applied: 0, nextEditAt: simT + 1.0, feedAt: simT + 0.6, fed: 0, performer: null, emitted: false };
       view.marblesLeft = 0;
       var ctxW = {
         t0: simT, seed: game.seed, board: board, plan: w.plan, emit: emit, view: view,
@@ -607,8 +613,9 @@
       if (renderOK && R.build) { try { R.build(b); } catch (e) { renderOK = false; warn('build', e); } }
       // a fresh world on the new layout, on the same clock (no marbles are in play in WORK)
       var live = world.marbles.filter(function (m) { return !m.done; });
-      if (!live.length) { world = PP.createWorld(b, game.seed); world.t = simT; }
-      else world.board = b;
+      if (!live.length && game.mode !== 'play' && game.mode !== 'dive') { world = PP.createWorld(b, game.seed); world.t = simT; }
+      // mid-game (a cave-in): the marbles stay put and the static hash is rebuilt, so the rubble collides
+      else if (PP.setBoard) PP.setBoard(world, b); else world.board = b;
     }
 
     /* ── the fixed step ──────────────────────────────────────────── */
