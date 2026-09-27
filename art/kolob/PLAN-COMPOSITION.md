@@ -1083,3 +1083,38 @@ own files.
 
 **Open:**
 1. **The engraving direction:** from the mockups (A, B, C).
+
+
+---
+
+## 14. Addendum 1: the owner's rulings on the first enrichment brief (2026-09-27)
+
+The source is `critic/enrichment-1.md`. Each approved item joins its wave's milestones.
+
+1. **Colony composers: approved.** About 12 fictional colony hymnists, each with habits (meters, range, rhythm cells, leap rate, a signature cadence, a fondness for fuges or refrains). They weight the composer's search. The event log names the author in Deseret; the staff shows nothing. *HYMN crew, first milestone.* The 16+ Earth tunes are the reference data for extracting habits.
+2. **Tunes that fit together: approved, for COMPOSED hymns only.** Rounds (a canon over a short repeating ground) and the partner hymn (the closing hymn composed on the first hymn's chords, the two combined in the last verse). Owner's clarification: this concerns the generated music, not the Earth tunes. *HYMN + FORM.* The fit check falls back to not combining, and the owner hears it in hymn-lab first.
+3. **The trombone choir at dawn: approved.** A Moravian-style trombone choir plays the day's first hymn as a distant chorale in the first minute of the prelude, answered by a closer choir. It leans toward Easter, Christmas, funerals and dedications, and never shares a meeting with the crossing bands. *GUEST.*
+4. **The organist between the lines: approved, sparingly.** Short fills between hymn lines and verses in each organist's style. At most one strange fill per meeting; none in the unaccompanied dialects. *CAST.* The owner: "let's not overuse it."
+5. **Rituals:**
+   - **The pitching** (sections hum their first notes before a Sacred Harp hymn, building a chord from the 32 voices): **approved.** *CAST, with the chorister's keying.*
+   - **The pin drop: declined.**
+
+**The Question:**
+- **Seat and length.** The invocation (or any section) may lengthen when the Question needs room. The owner: this is ambient music, pieces vary in length, and a longer section is fine. FORM lets the section yield to the event rather than squeezing it; target ≈ 100 s for a Question in the invocation.
+- **Who asks: the asker varies by visit** (owner: "open to having different instruments pose the question"). Each visit draws its asker from the stream `question:asker`:
+  - the clarinet (v0.30's voice);
+  - the **cornet**, Ives's trumpet (`kolob-voices-band.js`; auditioned as "The cornet alone" in the instruments lab);
+  - a solo cast singer on a vowel;
+  - rarely, the fiddle.
+
+  The answerers stay the harmonium (and a second rank). The draw weights are to be tuned by ear.
+
+**Earth tunes to add** (the transcription agent is on branch kolob-tunes):
+- "The Spirit of God" (Hymns #2; needed for the Hosanna);
+- "High on the Mountain Top" (#5);
+- "Redeemer of Israel" (#6);
+- "Praise to the Man" (#27);
+- "We Thank Thee, O God, for a Prophet" (#19);
+- the Amen printed with KINGSFOLD.
+
+Every Earth tune gets an `lds` field (hymnal 1985 / Hymns—For Home and Church membership, with sources), shown in the Earth Tunes Lab. The tradition tunes that are not in the LDS hymnal stay, labelled.
