@@ -201,7 +201,8 @@
     var game = {
       mode: 'attract', modeT0: 0, seed: FIXED_SEED != null ? FIXED_SEED : SEED0, games: 0,
       dropped: 0, resolved: 0, score: 0, lodes: 0, wins: 0, mine: {}, endAt: null,
-      startAt: null, findAt: null, payout: null, work: null, lode: null, taps: [], lastWin: null
+      startAt: null, findAt: null, payout: null, work: null, lode: null, taps: [], lastWin: null,
+      lastDropT: null, hintOn: false
     };
     var hopper = { x: 160, from: 160, to: 160, g0: -1, dur: 0, gliding: false, loaded: true, reloadAt: 0, queue: null, tickX: 160, speed: 0 };
     var tally = { value: 0, shown: 0, nextAt: 0, rollT0: -1, dir: 1, prev: 0 };
@@ -302,7 +303,7 @@
       world = PP.createWorld(board, game.seed);
       world.t = simT;
       game.dropped = 0; game.resolved = 0; game.score = 0; game.lodes = 0; game.wins = 0; game.mine = {};
-      game.endAt = null; game.lode = null; game.lastWin = null;
+      game.endAt = null; game.lode = null; game.lastWin = null; game.lastDropT = null;
       tally.value = 0; tally.shown = 0; tally.prev = 0; tally.rollT0 = -1;
       trails = {};
       view.score = 0; view.marblesLeft = MARBLES; view.fx = {};
@@ -367,11 +368,22 @@
     function release(x) {
       var m = PP.addMarble(world, x);
       game.mine[m.id] = true;
-      game.dropped++;
+      game.dropped++; game.lastDropT = simT;
       view.marblesLeft = MARBLES - game.dropped;
       hopper.loaded = false; hopper.reloadAt = simT + RELOAD;
       emit({ type: 'release', x: x, n: game.dropped, left: MARBLES - game.dropped, m: m.id });
       return m;
+    }
+
+    /* ── the chalk on the glass: how to play, for a first game or a
+     *    player who has stopped ─────────────────────────────────────── */
+    function stepHint() {
+      var on = false;
+      if (game.mode === 'play' && game.dropped < MARBLES && !hopper.gliding && hopper.queue == null) {
+        if (game.dropped === 0) on = game.games <= 1 || simT - game.modeT0 > 4;
+        else on = simT - game.lastDropT > 9;
+      }
+      if (on !== game.hintOn) { game.hintOn = on; view.ui.hint = { on: on, t0: simT }; }
     }
 
     /* ── wins, the tally, the lode ───────────────────────────────── */
@@ -588,6 +600,7 @@
       if (game.mode === 'dive' && !game.diveOut && simT >= game.modeT0) { game.diveOut = true; emit({ type: 'dive', dir: 1 }); }
       if (game.mode === 'dive' && simT - game.modeT0 >= DIVE_T) { setMode('play'); }
       if (game.mode === 'play') stepHopper();
+      stepHint();
       stepTally();
       if (game.endAt != null && simT >= game.endAt) gameOver();
       if (game.mode === 'payout') stepPayout();
@@ -627,6 +640,7 @@
 
     /* ── the fit and the camera ──────────────────────────────────── */
     var devW = 1, devH = 1, sA = 1, sP = 1;
+    var MQ = (R && root.PachinkoArt && root.PachinkoArt.CAB && root.PachinkoArt.CAB.marquee) || { y0: 20, y1: 66 };
     function fit() {
       var dpr = root.devicePixelRatio || 1;
       devW = Math.max(1, Math.round(container.clientWidth * dpr));
@@ -654,6 +668,14 @@
       var w = devW / s, h = devH / s;
       var cxA = G.CAB_W / 2, cyA = G.CAB_H / 2, PR = G.PLAY_RECT;
       var cxP = PR.x + PR.w / 2, cyP = PR.y + PR.h / 2;
+      // dived in with height to spare: never slice the marquee through its
+      // lettering. All of it (if the glass still fits) or none of it, the
+      // spare going to the lower panel instead
+      var hP = devH / sP, topP = cyP - hP / 2;
+      if (topP > MQ.y0 - 2 && topP < MQ.y1 - 1) {
+        topP = hP >= PR.y + PR.h - (MQ.y0 - 2) ? MQ.y0 - 2 : MQ.y1 - 1;
+        cyP = topP + hP / 2;
+      }
       var cx = cxA + (cxP - cxA) * e, cy = cyA + (cyP - cyA) * e;
       var c = { k: e, s: s, x: cx - w / 2, y: cy - h / 2, w: w, h: h };
       if (e === 0 || e === 1) {  // at rest: land the crop on whole device pixels
@@ -786,15 +808,23 @@
       var fx = view.fx, t = simT;
       // drop spent entries
       ['bays', 'pockets', 'awards'].forEach(function (k) { var b = fx[k]; if (b) for (var id in b) if (t - b[id].t0 > 2.5) delete b[id]; });
-      var lamps = [], lights = {};
+      var lamps = [], lights = {}, glows = [];
       // the shift whistle: after a pocket catch the galleries light in sequence
       var pk = fx.pockets, lastPocket = -10;
       if (pk) for (var pid in pk) lastPocket = Math.max(lastPocket, pk[pid].t0);
       var ws = t - lastPocket;
-      if (ws < 1.4) {
-        [['haulage', 0], ['ventilation', 0.18], ['workings', 0.36], ['sump', 0.5], ['vein', 0.6]].forEach(function (q) {
-          var u = ws - q[1];
-          if (u > 0 && u < 0.7) lights[q[0]] = 1 + 0.8 * Math.sin(Math.PI * u / 0.7);
+      if (ws < 1.6) {
+        // …as a chase of warm light along each gallery floor, the haulage way
+        // first and then on down the mine, like the company's bulbs coming on
+        (board.floors || []).forEach(function (fl, gi) {
+          var start = gi * 0.22, span = fl.x1 - fl.x0;
+          for (var bx = fl.x0 + 8; bx < fl.x1; bx += 22) {
+            var u = ws - start - (bx - fl.x0) / Math.max(1, span) * 0.35;
+            if (u < 0 || u > 0.55) continue;
+            var kk0 = Math.sin(Math.PI * u / 0.55);
+            lamps.push({ x: bx, y: fl.y - 8, r: 15, c: '#ffcf70', k: 1.25 * kk0 });
+            glows.push({ x: bx, y: fl.y - 9, k: kk0 });
+          }
         });
       }
       // the 13: every lamp flares, gold light pours out of the cup (the
@@ -817,7 +847,7 @@
             var dist = Math.abs(sx - lx);
             if (dist > front) continue;
             var age = (front - dist) / 150, kk = Math.max(0, 1 - age / 1.6) * (lu < 2.6 ? 1 : 1 - (lu - 2.6) / 0.8);
-            if (kk > 0.05) lamps.push({ x: sx, y: seam.y1 + (sx - seam.x1) * slope - 2, r: 16, c: '#ffc84a', k: 1.4 * kk });
+            if (kk > 0.05) { lamps.push({ x: sx, y: seam.y1 + (sx - seam.x1) * slope - 2, r: 16, c: '#ffc84a', k: 1.4 * kk }); glows.push({ x: sx, y: seam.y1 + (sx - seam.x1) * slope - 1, k: kk, gold: true }); }
           }
         }
         if (flare > 0) ['surface', 'headframe', 'overburden', 'haulage', 'measures', 'ventilation', 'barren', 'workings', 'sump', 'vein'].forEach(function (rg) { lights[rg] = Math.max(lights[rg] || 1, 1 + 0.9 * flare); });
@@ -848,6 +878,7 @@
         lamps.push({ x: cp.pose.x, y: cp.pose.y - 6, r: 16, c: '#ffd060', k: 1.1 * (1 - aa / 0.9) });
       }
       fx.extraLamps = lamps;
+      fx.glows = glows;
       fx.lights = lights;
       fx.flare = flare;
       fx.lode = game.lode ? { t0: game.lode.t0 } : null;
@@ -1133,7 +1164,8 @@
           marblesLeft: view.marblesLeft, inPlay: world.marbles.filter(function (m) { return !m.done; }).length,
           hopper: { x: hopper.x, loaded: hopper.loaded, gliding: hopper.gliding, queued: hopper.queue },
           tokens: tokensNow(), scripBalance: scripNow(), lodes: game.lodes, games: game.games, muted: muted,
-          boardGen: board.gen | 0, edits: (board.edits || []).length
+          boardGen: board.gen | 0, edits: (board.edits || []).length,
+          audio: audio ? (audio.isUnlocked ? (audio.isUnlocked() ? 'unlocked' : 'locked') : 'attached') : 'none'
         };
       },
       onEvent: subscribe,

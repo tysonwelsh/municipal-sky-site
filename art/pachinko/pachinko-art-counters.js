@@ -344,6 +344,25 @@
     g.drawImage(g.canvas, s.x, s.y, s.w + 1, s.h + 1, s.x + dx, s.y + dy, s.w + 1, s.h + 1);
   }
 
+  /* ── chalk on the glass: how to play (the attendant's hand, not the
+   *    museum's; the sticker in the corner says the opposite) ─────────── */
+  var HINT = ['PICK A SPOT ON THE GLASS', 'THE BUCKET GOES THERE'];
+  function drawHint(g, ui, t) {
+    var h = ui.hint; if (!h) return;
+    var u = t - h.t0, a = h.on ? Math.min(1, u / 0.5) : Math.max(0, 1 - u / 0.35);
+    if (a <= 0) return;
+    // chalk: a little uneven, every letter dragged, some pixels skipped
+    var cx = C.GX + 178, y0 = C.GY + 19;
+    for (var li = 0; li < HINT.length; li++) {
+      var str = HINT[li], w = A.textW(str), x0 = Math.round(cx - w / 2 + (li ? 5 : 0)), y = y0 + li * 8 + (li ? 1 : 0);
+      A.text(g, str, x0, y, '#f4ecd0', 1, function (i, col, row) {
+        var hh = A.hash01(91 + li, i * 7 + col, row);
+        if (a < 1 && hh > a) return null;                 // it comes and goes a stroke at a time
+        return hh < 0.22 ? 'rgba(244,236,208,0.6)' : 'rgba(244,236,208,0.92)';
+      });
+    }
+  }
+
   A.drawMachine = function (g, view) {
     var ui = view.ui; if (!ui) return;
     var t = view.t || 0;
@@ -355,11 +374,27 @@
     drawMouth(g, ui, t);
     drawSpeaker(g, ui, t);
     drawStickerShiver(g, ui, t);
+    drawHint(g, ui, t);
   };
 
   /* ══ inside the glass: bays and pockets answering ══════════════════ */
   A.drawGlassFx = function (g, view, board) {
     var fx = view.fx || {}, t = view.t || 0, cards = A.bayCards || {};
+    // glows: lights that must read in the dark (the whistle's chase along
+    // the galleries, the lode's fuse along the vein): a hot core and a
+    // dithered halo laid over the lit scene
+    var gl = fx.glows || [];
+    for (var gi = 0; gi < gl.length; gi++) {
+      var q = gl[gi], k0 = Math.max(0, Math.min(1, q.k)), X = Math.round(q.x), Y = Math.round(q.y), rr = 6;
+      var halo = q.gold ? 'rgba(255,200,80,0.55)' : 'rgba(255,208,130,0.5)';
+      for (var dy = -rr; dy <= rr; dy++) for (var dx = -rr; dx <= rr; dx++) {
+        var dd = Math.sqrt(dx * dx + dy * dy) / rr;
+        if (dd >= 1 || bayer(X + dx, Y + dy) >= k0 * (1 - dd) * 0.9) continue;
+        px(g, X + dx, Y + dy, halo);
+      }
+      if (k0 > 0.25) { px(g, X, Y, q.gold ? P.VEIN3 : '#fff4d0'); px(g, X + 1, Y, q.gold ? P.GOLD4 : P.FLAME1); }
+      if (k0 > 0.6) { px(g, X, Y - 1, P.FLAME1); px(g, X + 1, Y + 1, P.FLAME0); }
+    }
     var bays = fx.bays;
     if (bays) for (var id in bays) {
       var b = bays[id], u = t - b.t0, cd = cards[id];

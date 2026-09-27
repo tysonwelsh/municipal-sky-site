@@ -332,7 +332,8 @@
     F.push({ id: 'tunnel.drift', kind: 'tunnel', a: { x: 9, y: 231, r: 7 }, b: { x: T_.driftX, y: 324, vx: T_.driftVx, vy: 40, spread: T_.driftSpread }, delay: 1.0, open: true,
       region: 'ventilation', material: 'rock', dress: 'adit', legend: 5 });
     // (its exit sits just under the legend card, never behind it: integration, wave 2)
-    F.push({ id: 'tunnel.office', kind: 'tunnel', a: { x: 256, y: 231, r: 7 }, b: { x: 9, y: 341, vx: 4, vy: 30 }, delay: 1.1, open: true,
+    // and it throws them out sideways, into the GOB or the SLATE: the company's waste either way
+    F.push({ id: 'tunnel.office', kind: 'tunnel', a: { x: 256, y: 231, r: 7 }, b: { x: 9, y: 341, vx: 45, vy: 30, spread: 45 }, delay: 1.1, open: true,
       region: 'ventilation', material: 'rock', dress: 'door', legend: 4 });
 
     /* ── the barren measures ──────────────────────────────────────── */
@@ -398,7 +399,7 @@
       { value: 0,  label: 'BONY' },
       { value: 1,  label: 'STEAM' },
       { value: 0,  label: 'SLACK' },
-      { value: 1,  label: 'STOKER' },
+      { value: 0,  label: 'STOKER' },     // was 1: the broad centre bay handed a novice free scrip (integration, wave 2)
       { value: 1,  label: 'SMITHING' },
       { value: 13, label: 'THE MOTHER LODE' },
       { value: 0,  label: 'REFUSE' },
