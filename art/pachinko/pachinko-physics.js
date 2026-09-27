@@ -53,30 +53,34 @@
 
   var TUNE = {
     R: 4,               // marble radius (px)
-    g: 170,             // gravity along the board (px/s²)
+    g: 1000,            // gravity along the board (px/s²)
     drag: 0.35,         // linear damping (1/s): the glass front
-    vMax: 330,          // speed cap (px/s)
+    vMax: 560,          // speed cap (px/s)
     dt: 1 / 240,
     // restitution / tangential friction by material (glass marble on …)
     mat: {
-      steel:  { e: 0.58, mu: 0.06 },
+      steel:  { e: 0.45, mu: 0.06 },
       brass:  { e: 0.55, mu: 0.07 },
       timber: { e: 0.34, mu: 0.12 },
+      track:  { e: 0.22, mu: 0.04 },   // the haulage track: steel rail on sleepers, dead
+      plank:  { e: 0.16, mu: 0.06 },   // gallery floors: planking over dirt
       rock:   { e: 0.26, mu: 0.16 },
       ore:    { e: 0.30, mu: 0.14 },
-      bone:   { e: 0.46, mu: 0.09 },
+      bone:   { e: 0.42, mu: 0.09 },
       glass:  { e: 0.88, mu: 0.03 }
     },
     rough: 0.03,        // ±3 % restitution per contact
     jitter: 3,          // seeded tangential nudge on a contact (px/s)
+    perchKick: 2.5,     // per-step tangential push off a pin top (px/s)
     restV: 10,          // normal speeds under this don't bounce (they roll)
     rollDecel: 6,       // rolling resistance while in contact (px/s²)
     eventV: 16,         // a contact faster than this is a tick (event)
     rollTickDist: 9,    // a rolling marble ticks once per this many px on a rail
-    stallV: 7, stallT: 0.6, knockV: 55,
+    stallV: 8, stallT: 0.6, knockV: 110,
     timeout: 12,
     cartCatchV: 60,     // relative speed under which a marble in the bucket is caught
-    cartTipRelease: 0.55 // tilt (rad) at which the bucket lets go
+    cartTipRelease: 0.55, // tilt (rad) at which the bucket lets go
+    cartMaxAge: 5.0     // a marble older than this isn't picked up (it still tips out with the load)
   };
 
   var CELL = 16;
@@ -135,7 +139,7 @@
     x = Math.max(b.drop.x0, Math.min(b.drop.x1, x));
     var s = seed == null ? (w.seed * 31 + w.nextId * 977) | 0 : seed | 0;
     var m = {
-      id: w.nextId++, seed: s, x: x, y: b.drop.y, vx: (hash01(s, 1) - 0.5) * 2, vy: 12,
+      id: w.nextId++, seed: s, x: x, y: b.drop.y, vx: (hash01(s, 1) - 0.5) * 2, vy: 60,
       r: T.R, spin: 0, w: 0, phase: 'drop', t0: w.t, age: 0,
       slowT: 0, knocks: 0, n: 0, hits: 0, touched: {}, lastHit: null, lastHitT: -1, rollAcc: 0,
       tunnel: null, cart: null, outcome: null, done: false, x0: x
@@ -206,7 +210,7 @@
     m.knocks++; m.slowT = 0;
     var dir = hash01(m.seed, 900 + m.knocks) < 0.5 ? -1 : 1;
     m.vx += dir * T.knockV * (0.6 + 0.4 * hash01(m.seed, 950 + m.knocks));
-    m.vy -= T.knockV * 0.5;
+    m.vy -= T.knockV;
     emit(w, m, { type: 'knock', n: m.knocks, x: m.x, y: m.y });
   }
 
@@ -229,6 +233,9 @@
     vt -= Math.sign(vt) * dvt;
     // seeded jitter so a marble can't balance on a pin top forever
     var jit = (hash01(m.seed, 5000 + m.n) * 2 - 1) * T.jitter * (imp > T.restV ? 1 : 0.35);
+    // perched on the top of a pin or a cap (normal nearly straight up, barely
+    // moving): it can't stay there. Tip it off, the same way for the same seed.
+    if (ny < -0.96 && Math.abs(vt) < 12 && f && f.kind !== 'rail') jit += (hash01(m.seed, 7000 + m.knocks) < 0.5 ? -1 : 1) * T.perchKick;
     m.n++;
     vt += jit;
     m.vx = sx + nx * vnNew + tx * vt;
@@ -317,7 +324,23 @@
       if (Math.abs(m.x - p.x) > ct.w + 8 || Math.abs(m.y - (p.y - ct.h / 2)) > ct.h + 10) continue;
       var cv = B.cartVel(ct, t);
       var pivX = p.x + (ct.dump === 'left' ? -ct.w / 2 : ct.w / 2), pivY = p.y - 3;
+      // the marble in the bucket's frame (un-tipped about the dump corner): the
+      // bucket only collides from above and inside. A marble rolling along the
+      // track passes in front of the cart (it rides the glass), so the cart
+      // never shoves marbles back up the track.
+      var ca0 = Math.cos(-p.tilt), sa0 = Math.sin(-p.tilt), rx = m.x - pivX, ry = m.y - pivY;
+      var lx = rx * ca0 - ry * sa0 + (pivX - p.x), ly = rx * sa0 + ry * ca0;
+      var above = ly < -ct.h + 1, inX0 = Math.abs(lx) < ct.w / 2;
+      // in the bucket only if it came in over the rim (a marble rolling along
+      // the track passes in front of the cart: it rides the glass)
+      if (above && inX0) m.bucket = ct.id;
+      else if (!inX0 || ly > 2) { if (m.bucket === ct.id) m.bucket = null; }
+      var inside = m.bucket === ct.id && inX0 && ly < 0;
+      if (!above && !inside) continue;
+      // tipping with a loose marble in the bucket: it goes out with the load
+      if (inside && Math.abs(p.tilt) > w.T.cartTipRelease && m.phase !== 'cart') { tipOut(w, m, ct, pivX, pivY); continue; }
       for (var k = 0; k < cs.segs.length; k++) {
+        if (k === 1 && !(inside || (above && Math.abs(lx) < ct.w / 2))) continue;
         var A = cs.segs[k][0], C = cs.segs[k][1];
         var q2 = closest(m.x, m.y, A[0], A[1], C[0], C[1]);
         var fx = m.x - q2.x, fy = m.y - q2.y, f2 = fx * fx + fy * fy, r2 = m.r + 1;
@@ -329,8 +352,8 @@
         if (imp2) m.touched.moving = 1;
       }
       // caught? inside the bucket, low, slow relative to the cart, and not tipping
-      var inX = Math.abs(m.x - p.x) < ct.w / 2 - 1, inY = m.y > p.y - 3 - ct.h && m.y < p.y - 3;
-      if (inX && inY && Math.abs(p.tilt) < 0.1 && Math.hypot(m.vx - cv.vx, m.vy) < w.T.cartCatchV && m.phase !== 'cart') {
+      var inX = m.bucket === ct.id && Math.abs(m.x - p.x) < ct.w / 2 - 1, inY = m.y > p.y - 3 - ct.h && m.y < p.y - 3;
+      if (inX && inY && Math.abs(p.tilt) < 0.1 && Math.hypot(m.vx - cv.vx, m.vy) < w.T.cartCatchV && m.phase !== 'cart' && !(m.cartOff > w.t) && m.age < w.T.cartMaxAge && B.cartLoading(ct, t)) {
         var load = w.cartLoad[ct.id] | 0;
         if (load < 3) {
           w.cartLoad[ct.id] = load + 1;
@@ -355,14 +378,19 @@
     m.x = nx; m.y = ny;
     m.spin += cv.vx / m.r * h;
     if (Math.abs(p.tilt) > w.T.cartTipRelease) {
-      var dir = ct.dump === 'left' ? -1 : 1;
-      m.phase = 'board';
-      m.vx = dir * (40 + 14 * hash01(m.seed, 77)) + cv.vx; m.vy = -10;
-      m.x += dir * 2; m.slowT = 0;
       w.cartLoad[ct.id] = Math.max(0, (w.cartLoad[ct.id] | 0) - 1);
-      m.cart = null;
-      emit(w, m, { type: 'cart', id: ct.id, what: 'dump', x: m.x, y: m.y });
+      tipOut(w, m, ct, pivX, pivY);
     }
+  }
+  // tipped out over the lip, clear of the bucket, into the chute below
+  function tipOut(w, m, ct, pivX, pivY) {
+    var dir = ct.dump === 'left' ? -1 : 1;
+    m.phase = 'board';
+    m.x = pivX + dir * (m.r + 1.5 + 2 * hash01(m.seed, 78)); m.y = pivY - m.r - 1;
+    m.vx = dir * (30 + 20 * hash01(m.seed, 77)); m.vy = 20;
+    m.slowT = 0;
+    m.cart = null; m.bucket = null; m.cartOff = w.t + 1.5;
+    emit(w, m, { type: 'cart', id: ct.id, what: 'dump', x: m.x, y: m.y });
   }
 
   function tickTunnel(w, m) {

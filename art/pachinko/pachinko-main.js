@@ -12,17 +12,17 @@
  *     draw(ctx, view)                  // draw one frame
  *   }
  *
- * THE CAMERA (art-1 request, adopted). main.js sizes the screen canvas to
- * the stage in DEVICE pixels and hands it to draw(). The renderer fills
- * ctx.canvas with the camera rect: the whole cabinet at k = 0, lerped to
- * PachinkoRender.PLAY_RECT (cabinet px; default the glass + 3 px) at k = 1,
- * extending the shorter axis to the canvas aspect (never stretching).
- * main.js also computes that camera for you in view.cam = {k, s, x, y, w, h}:
- * s = device px per cabinet px (an INTEGER at rest, eased in between),
- * x, y, w, h = the visible rect in cabinet px. The simplest renderer does
- *   ctx.setTransform(s, 0, 0, s, -x * s, -y * s)  and draws the cabinet.
- * Input maps back with PachinkoRender.toGlass(canvasX, canvasY, view) if it
- * exists (canvas px → glass/board {x, y}), else with view.cam.
+ * THE CAMERA. By default `ctx` is a CAB_W × CAB_H canvas at 1:1 logical
+ * pixels (no transform, imageSmoothingEnabled false): draw the whole
+ * cabinet in it, and main.js blits the camera crop to the screen at an
+ * integer scale at rest (ATTRACT: the whole cabinet; PLAY: PLAY_RECT, by
+ * default the glass + 3 px, extended on the long axis to fill the stage),
+ * easing between the two for the dive. Pixels are crisp at rest.
+ * (Opt-in alternative, the art-1 proposal: set PachinkoRender.DRAWS_CAMERA
+ * = true and `ctx` is the screen canvas in device px instead; draw the
+ * camera rect yourself from view.cam = {k, s, x, y, w, h}: s = device px
+ * per cabinet px, x/y/w/h the visible rect in cabinet px. Input then uses
+ * PachinkoRender.toGlass(canvasX, canvasY, view) if present.)
  * Board space maps to cabinet space as (GLASS_X + x, GLASS_Y + y).
  * Board space = the glass interior, 320 × 416 px, origin top-left, y down —
  * the same space as the physics (pachinko-physics.js) and the layout
@@ -136,7 +136,7 @@
       var dpr = root.devicePixelRatio || 1;
       var c = camera(diveK());
       var px = (ev.clientX - rect.left) * dpr, py = (ev.clientY - rect.top) * dpr;
-      if (renderOK && DEBUG !== 1 && R.toGlass) { try { var q = R.toGlass(px, py, view); if (q) return q; } catch (e) { } }
+      if (renderOK && DEBUG !== 1 && R.DRAWS_CAMERA && R.toGlass) { try { var q = R.toGlass(px, py, view); if (q) return q; } catch (e) { } }
       return { x: c.x + px / c.s - G.GLASS_X, y: c.y + py / c.s - G.GLASS_Y };
     }
     function onMove(ev) {
@@ -206,13 +206,20 @@
       view.cam.s = cam.s;
       var drew = false;
       if (renderOK && DEBUG !== 1) {
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.imageSmoothingEnabled = false;
-        try { R.draw(ctx, view); drew = true; } catch (e) { renderOK = false; warn('draw', e); }
-        if (drew && DEBUG === 2) {
-          cctx.clearRect(0, 0, G.CAB_W, G.CAB_H); debugDraw(cctx, true);
-          ctx.setTransform(1, 0, 0, 1, 0, 0); blit(cam);
-        }
+        try {
+          if (R.DRAWS_CAMERA) {
+            ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.imageSmoothingEnabled = false;
+            R.draw(ctx, view);
+          } else {
+            cctx.setTransform(1, 0, 0, 1, 0, 0); cctx.imageSmoothingEnabled = false;
+            R.draw(cctx, view);
+            if (DEBUG === 2) debugDraw(cctx, true);
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.fillStyle = '#07060d'; ctx.fillRect(0, 0, devW, devH);
+            blit(cam);
+          }
+          drew = true;
+        } catch (e) { renderOK = false; warn('draw', e); }
       }
       if (!drew) {
         cctx.setTransform(1, 0, 0, 1, 0, 0);
