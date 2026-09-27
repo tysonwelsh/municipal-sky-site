@@ -582,3 +582,84 @@ the marble unless holding it, and no page scroll at any size.
   chains, 0 with an unreachable paying bay, 8 with the 13 outside its
   bands, the 13's best x moved ≥ 6 px within 3 games in 9/10 chains; 49
   candidate edits rejected by validation.
+- 2026-09-26 — **The game (integration, wave 2; rc.7–rc.10). The full text
+  is the header of `pachinko-main.js`.** The states are ATTRACT → DIVE →
+  PLAY → PAYOUT → WORK → ATTRACT.
+  - **The start:** the coin door (its click area also takes in the pilot
+    bulb, the INSERT TOKEN card and your pocket's readout), or Enter, C or
+    space.
+  - **The dive:** it waits COIN_T 0.55 s for the coin's mechanism, then
+    runs DIVE_T 0.7 s (smootherstep, zoom interpolated in log space),
+    integer scale at rest. Dived in, spare height never slices the marquee
+    through its lettering: the whole marquee shows if the glass still
+    fits, otherwise none of it, and the spare goes to the lower panel.
+  - **The hopper:** it glides 0.09–0.24 s (full at 200 px), with a ratchet
+    event every 7 px. RELOAD is 0.35 s, and one click is queued (a newer
+    click replaces it).
+  - **The end:** a 0.9 s beat after the 13th marble resolves.
+  - **Payout:** a deliberate change from §5's order. The count happens
+    *dived in* (the SCRIP counter, the ticket mouth and the strip are all
+    in the play framing on every target screen): TICKET_T 0.11 s, 3.4 s in
+    all, tear after 0.55 s, then the camera pulls back. Scrip is credited
+    at game end.
+  - **WORK:** `planDrift` draws 2–4 edits by seed and validates each on top
+    of the ones accepted (300 drops, 6 per 120 Hz step). The accepted edits
+    are carried out every 0.85 s while the tube refills (0.07 s a marble).
+    WORK lasts at least 3.4 s and never more than 9. A coin during WORK
+    sets whatever has passed validation at once and starts the game.
+  - **The later phases** plug in through PARTS
+    (`PachinkoKnockers/Mischief/Spectacle.attach(api)` → `work/lode/
+    figures/fx/rare/step/gameStart/gameEnd`) without editing main. The
+    rare tier is a `rare()` hook that nothing answers yet.
+  - **Mute** is saved in localStorage `mother-lode.muted`.
+- 2026-09-26 — **The machine's dials (`pachinko-art-counters.js`, integration).**
+  - **Right pillar, top to bottom:**
+    - the SCRIP drum counter (3 × 7 odometer figures, one tick per scrip,
+      and it counts back down at payout);
+    - a pencilled HI tag with your best, rewritten when you beat it;
+    - the pilot bulb;
+    - the typed flip card, INSERT TOKEN / MODEL IN USE;
+    - the coin door (a glowing slit, the token going in, a rattle on an
+      empty pocket, the found nickel dropping into the return);
+    - your pocket (a brass token and 2 drums, a pink ticket and 3 drums);
+    - the ticket mouth, with the pink strip at payout (folding up on the
+      lip past the ledge), or a cream slip stamped NIL when nothing was won.
+  - **Left pillar:** a speaker grille with a rag stuffed in it when muted.
+  - **Inside the glass:**
+    - a bay card lights under a work light when it pays, and its scrip stub
+      flips; a worthless bay's card is knocked;
+    - pockets hop and puff coal dust;
+    - a pocket catch (the shift whistle) sends a chase of lit bulbs along
+      each gallery, the haulage way first;
+    - the 13's placeholder: all lamps up, a gold fuse running out along
+      the vein, the crew cheering in stop motion, a 1–2 device px jolt.
+  - Chalk on the glass says PICK A SPOT ON THE GLASS / THE BUCKET GOES
+    THERE on a first game, or when you idle 9 s mid-game.
+  - The room is drawn in cabinet px: the marquee's dithered spill on the
+    wall, a skirting board, and screen-wide carpet with gum.
+- 2026-09-26 — **Economy and bays (integration, rc.9; supersedes rc.6's).**
+  - STOKER 1 → **0**. The broad centre bay was handing a random dropper
+    free scrip: the left half of the board paid 1.0–1.7 a marble wherever
+    you dropped.
+  - The office tunnel now throws its marbles out sideways (vx 45 ± 45)
+    into GOB or SLATE, so **SLATE is reachable** (3.7 % uniform; its best
+    drop is the far right, x ≈ 306, across the whole mine).
+  - The office exit moved from (8,330) to (9,341). The old exit dropped
+    **13 % of all drops** under the legend card's bottom edge; now 3 in
+    3000 graze its shadow pixel. The card's right edge was never the
+    problem.
+  - Legend abbreviations: HEADFRAME, SHEAVE / DINNER PAIL, TIN / TUNNEL
+    TO OFFICE. Worn ink now prints faint instead of dropping pixels.
+  - **Metrics (sim.js metrics, 10 000 drops):** NaN 0, timeouts 0; median
+    3.68 s, max 8.00. Drops that pay something: 43 % (was 56 %). Scrip per
+    token: **novice 10.3, uniform 9.8, competent 13.6** (HOLLER ROLLER
+    14.0, band 9.8–18.2 ✓).
+  - The novice/competent ratio is structural at about 1.4×. No value set
+    tried moved it much: hitting the best spot ±2 px only lands its target
+    25–55 % of the time. So value moved to what you can read (the pockets,
+    the coal beside the lode, EGG, CANNEL) and off what you can't.
+  - REFUSE (86 %) and OVERBURDEN (75 %) stay deterministic 0-value lanes
+    on purpose: the gamble down the old drift (7–8 % the 13), and the wall.
+  - **Drift, 30 layouts in 6 chains:** 0 with an unreachable paying bay;
+    the 13 out of band in 4; the 13's best x moved ≥ 6 px within 3 games
+    in 5 of 6 chains.
