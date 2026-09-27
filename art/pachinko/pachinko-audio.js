@@ -53,10 +53,19 @@
  *                                          in attract only; the mine's air in play
  *   coin    {tokens?} · nocoin             a token in / an empty pocket
  *   dive    {dir: 1 | -1}                  the push through the glass (−1: back out)
- *   hopper  {x, from?, glide?}             the hopper slides along its rail (glide s)
+ *   hopper  {x, from?, glide?}             the carriage sets off along its rack (glide s)
+ *   ratchet {x}                            one pawl tick on the rack (main sends one per 7 px)
+ *   queue {x} · empty                      a click held for the reload / a click with none left
  *   reload  {left}                         the next marble drops from the feed tube
  *   payout  {n?, total?}                   ONE scrip into the plastic bucket (a
  *                                          count-up is queued ≥ 45 ms apart)
+ *   ticket {n, left} · tear {n}            the pink strip feeding out / torn off
+ *   tally {value, dir}                     one tick of the SCRIP drum counter
+ *   feed {n}                               a marble rattling back up into the feed tube
+ *   award {id, value}                      the ore cart pays on a catch (a bell on the cart)
+ *   edit {edit}                            a drift edit lands: the moved pin rings in its new place
+ *   glasstap {n}                           somebody taps the glass (PLEASE DO NOT)
+ *   found {tokens}                         a nickel turns up in the coin return
  *   gameover {scrip}                       the closing phrase; the pocket watch ticks
  *   whistle {value?}                       the shift whistle (small wins). Until the
  *                                          game sends one, pockets blow it by themselves.
@@ -69,7 +78,8 @@
  *   work    {edits}                        the knockers get their tools out
  *   figure  {what: 'step'|'tap'|'pull'|'lay'|'set'|'cheer', x?, y?, who?}   a figurine
  *   rare    {}                             the rare tier's hook: silent on purpose
- * Anything else is ignored.
+ * Heard but silent: release, win, glide, workplan, mute (main calls
+ * setMuted). Anything else is ignored. Every event may carry `t`.
  * ══════════════════════════════════════════════════════════════════
  *
  * Graph:
@@ -143,7 +153,7 @@
     // steel, the brightest: rusted rail spikes, blued, galvanised
     spike:  { modes: [[1, 1, 0.24], [2.76, 0.45, 0.1], [5.4, 0.22, 0.05], [8.93, 0.08, 0.025]], reg: [84, 98], click: -4, lvl: -1, jit: 0.012 },
     // roof bolts through bearing plates: the plate answers, lower
-    bolt:   { modes: [[1, 1, 0.15], [1.51, 0.7, 0.12], [2.93, 0.3, 0.05], [4.7, 0.12, 0.02]], reg: [74, 86], click: -6, lvl: 0 },
+    bolt:   { modes: [[1, 1, 0.15], [1.51, 0.7, 0.12], [2.93, 0.3, 0.05], [4.7, 0.12, 0.02]], reg: [74, 86], click: -8, lvl: 0 },
     // lamp hooks ring longest, and the lamp on the hook jiggles after
     hook:   { modes: [[1, 1, 0.42], [2.76, 0.4, 0.16], [5.4, 0.2, 0.06]], reg: [86, 98], click: -5, lvl: -2, echo: [0.047, 0.28] },
     // thin nails: the backdrop's, the pockets' lips
@@ -151,33 +161,33 @@
     // the headframe's riveted plate: clangy
     rivet:  { modes: [[1, 1, 0.32], [1.59, 0.55, 0.22], [2.14, 0.4, 0.13], [2.31, 0.3, 0.1]], reg: [81, 91], click: -5, lvl: -2 },
     // brass tacks: warm, nearly harmonic, a long ring
-    brass:  { modes: [[1, 1, 0.8], [2.02, 0.42, 0.4], [3.03, 0.2, 0.2], [4.1, 0.1, 0.09]], reg: [84, 96], click: -6, lvl: -3 },
+    brass:  { modes: [[1, 1, 0.8], [2.02, 0.42, 0.4], [3.03, 0.2, 0.2], [4.1, 0.1, 0.09]], reg: [84, 96], click: -9, lvl: -3 },
     // pit props, end-grain: hollow
-    prop:   { modes: [[1, 1, 0.075], [2.31, 0.45, 0.045], [3.9, 0.2, 0.02]], body: [[180, 0.35, 0.05]], reg: [62, 74], click: -9, lvl: 2, att: 0.0015 },
+    prop:   { modes: [[1, 1, 0.075], [2.31, 0.45, 0.045], [3.9, 0.2, 0.02]], body: [[180, 0.35, 0.05]], reg: [62, 74], click: -17, lvl: 2, att: 0.0015 },
     // roots in the soil: dull and short
-    root:   { modes: [[1, 1, 0.045], [2.6, 0.3, 0.022]], reg: [57, 69], click: -11, lvl: 2, att: 0.002 },
-    fencepost: { modes: [[1, 1, 0.065], [2.4, 0.5, 0.035], [4.1, 0.2, 0.015]], reg: [67, 79], click: -9, lvl: 1, att: 0.0012 },
+    root:   { modes: [[1, 1, 0.045], [2.6, 0.3, 0.022]], reg: [57, 69], click: -20, lvl: 2, att: 0.002 },
+    fencepost: { modes: [[1, 1, 0.065], [2.4, 0.5, 0.035], [4.1, 0.2, 0.015]], reg: [67, 79], click: -15, lvl: 1, att: 0.0012 },
     // coal: dull and glassy (a brittle knuckle; the glass click is most of it)
     coal:   { modes: [[1, 1, 0.055], [1.47, 0.6, 0.04], [2.63, 0.5, 0.022], [4.2, 0.3, 0.012]], reg: [74, 86], click: -1, lvl: 0 },
     // rock faces, pillars, the legend's rib: dead stone
-    stone:  { modes: [[1, 1, 0.03], [1.8, 0.5, 0.016], [3.1, 0.2, 0.008]], reg: [62, 72], click: -6, lvl: 1, att: 0.001 },
+    stone:  { modes: [[1, 1, 0.03], [1.8, 0.5, 0.016], [3.1, 0.2, 0.008]], reg: [62, 72], click: -11, lvl: 1, att: 0.001 },
     // quartz with gold in it: crystalline, and it glints (a beating twin)
     ore:    { modes: [[1, 1, 0.18], [1.003, 0.5, 0.18], [1.52, 0.55, 0.13], [2.31, 0.35, 0.07], [3.6, 0.2, 0.04]], reg: [91, 103], click: -3, lvl: -2 },
     // bone: a dry click with a little knock under it
-    bone:   { modes: [[1, 1, 0.028], [2.2, 0.5, 0.016], [3.7, 0.3, 0.009], [0.28, 0.45, 0.035]], reg: [79, 91], click: 0, lvl: -1 },
+    bone:   { modes: [[1, 1, 0.028], [2.2, 0.5, 0.016], [3.7, 0.3, 0.009], [0.28, 0.22, 0.03]], reg: [79, 91], click: 0, lvl: -1 },
     // the haulage track: a steel rail rings long and low
-    track:  { modes: [[1, 1, 0.32], [1.34, 0.6, 0.26], [2.9, 0.3, 0.11], [4.4, 0.15, 0.05]], reg: [72, 84], click: -4, lvl: -1 },
+    track:  { modes: [[1, 1, 0.32], [1.34, 0.6, 0.26], [2.9, 0.3, 0.11], [4.4, 0.15, 0.05]], reg: [72, 84], click: -7, lvl: -1 },
     // planking over dirt: a dull tup
-    plank:  { modes: [[1, 1, 0.045], [2.1, 0.4, 0.022]], body: [[120, 0.5, 0.06]], reg: [50, 62], click: -10, lvl: 3, att: 0.002 },
+    plank:  { modes: [[1, 1, 0.045], [2.1, 0.4, 0.022]], body: [[120, 0.5, 0.06]], reg: [50, 62], click: -20, lvl: 3, att: 0.002 },
     // posts, braces, walls, the bays' dividers
-    wood:   { modes: [[1, 1, 0.055], [2.3, 0.5, 0.03], [3.7, 0.25, 0.015]], reg: [57, 69], click: -8, lvl: 2, att: 0.0015 },
+    wood:   { modes: [[1, 1, 0.055], [2.3, 0.5, 0.03], [3.7, 0.25, 0.015]], reg: [57, 69], click: -17, lvl: 2, att: 0.0015 },
     // tin: the pail's base
     tin:    { modes: [[1, 1, 0.35], [1.0052, 0.5, 0.3], [2.27, 0.4, 0.2], [3.58, 0.2, 0.1]], reg: [84, 88], click: -3, lvl: -2 },
     // the sheave: cast iron, one note (E5)
-    spoke:  { modes: [[1, 1, 0.5], [1.62, 0.6, 0.38], [2.47, 0.4, 0.22], [3.3, 0.25, 0.12]], fixed: 76, click: -6, lvl: -1 },
+    spoke:  { modes: [[1, 1, 0.5], [1.62, 0.6, 0.38], [2.47, 0.4, 0.22], [3.3, 0.25, 0.12]], fixed: 76, click: -9, lvl: -1 },
     // the pump wheel's paddles (A3) and the ventilation door (G3): boards
-    paddle: { modes: [[1, 1, 0.07], [2.2, 0.5, 0.035]], body: [[140, 0.5, 0.05]], fixed: 57, click: -10, lvl: 2, att: 0.0015 },
-    door:   { modes: [[1, 1, 0.06], [1.7, 0.6, 0.045], [2.9, 0.3, 0.022]], body: [[95, 0.5, 0.07]], fixed: 55, click: -10, lvl: 2, att: 0.0015 },
+    paddle: { modes: [[1, 1, 0.07], [2.2, 0.5, 0.035]], body: [[140, 0.5, 0.05]], fixed: 57, click: -18, lvl: 2, att: 0.0015 },
+    door:   { modes: [[1, 1, 0.06], [1.7, 0.6, 0.045], [2.9, 0.3, 0.022]], body: [[95, 0.5, 0.07]], fixed: 55, click: -18, lvl: 2, att: 0.0015 },
     // the ore cart's steel bucket (G4)
     bucket: { modes: [[1, 1, 0.28], [1.41, 0.7, 0.22], [2.07, 0.5, 0.15], [2.9, 0.3, 0.1], [4.1, 0.15, 0.05]], fixed: 67, click: -4, lvl: 0 },
     // glass on glass: each marble colour has its own note
@@ -418,31 +428,39 @@
                  [55, 62], [57, 64], [55, 62], [53, 60], [48, 55], [52, 59], [50, 57], [55, 55]];
   var MB_EIGHTH = 60 / 108 / 2;
   var MB_BROKEN = 86;
-  function renderMusicBox(sr, o) {
+  // the plan: every tine plucked in one pass of the cylinder
+  function musicBoxPlan(sr, o) {
     o = o || {};
     var fixed = !!o.fixed, speed = o.speed || 1, bars = o.bars || 16, loop = o.loop !== false;
-    var E = MB_EIGHTH / speed, r = lcg(o.seed || 0x6d62);
+    var E = MB_EIGHTH / speed, r = lcg(o.seed || 0x6d62), notes = [];
     function when(n) {                              // the governor hunts; the last bar sags
       var t = n * E + (loop ? 0.035 * Math.sin(2 * Math.PI * n * E / 5.3) : 0);
       if (loop && n > 60) t += (n - 60) * (n - 60) * 0.012;
       return t;
     }
-    var total = bars * 4, len = Math.round(sr * (loop ? when(total) : when(total) + 2.6));
-    var out = new Float32Array(len), n = 0, i;
+    var total = bars * 4, n = 0, i;
     for (i = 0; i < MB_MEL.length && n < total; i++) {
       var m = MB_MEL[i][0];
       if (m) {
         var t = when(n) + (r() - 0.5) * 0.012;
         var warp = loop ? 9 * Math.sin(2 * Math.PI * t / 2.1) - (n > 60 ? 12 : 0) : 0;
-        tineInto(out, Math.max(0, Math.round(t * sr)), sr, mtof(m) * cents(warp), 0.9, r, m === MB_BROKEN && !fixed, loop);
+        notes.push({ s0: Math.max(0, Math.round(t * sr)), f: mtof(m) * cents(warp), amp: 0.9, broken: m === MB_BROKEN && !fixed });
       }
       n += MB_MEL[i][1];
     }
     for (var b = 0; b < bars; b++) for (var k = 0; k < 2; k++) {
       var tb = when(b * 4 + k * 2) + 0.004 + (r() - 0.5) * 0.01;
       var wb = loop ? 9 * Math.sin(2 * Math.PI * tb / 2.1) : 0;
-      tineInto(out, Math.round(tb * sr), sr, mtof(MB_BASS[b][k]) * cents(wb), k ? 0.4 : 0.55, r, false, loop);
+      notes.push({ s0: Math.round(tb * sr), f: mtof(MB_BASS[b][k]) * cents(wb), amp: k ? 0.4 : 0.55, broken: false });
     }
+    return { len: Math.round(sr * (loop ? when(total) : when(total) + 2.6)), loop: loop, notes: notes, seed: (o.seed || 0x6d62) ^ 0x5eed };
+  }
+  function musicBoxNotes(out, plan, from, to, sr, r) {
+    for (var i = from; i < to && i < plan.notes.length; i++) { var q = plan.notes[i]; tineInto(out, q.s0, sr, q.f, q.amp, r, q.broken, plan.loop); }
+  }
+  function renderMusicBox(sr, o) {
+    var p = musicBoxPlan(sr, o), out = new Float32Array(p.len);
+    musicBoxNotes(out, p, 0, p.notes.length, sr, lcg(p.seed));
     return out;
   }
 
@@ -453,10 +471,12 @@
     var len = Math.round(sr * spec.len), chans = [];
     for (var c = 0; c < 2; c++) {
       var d = new Float32Array(len), r = lcg(spec.seed + c * 7919), lp = 0, a = 1 - Math.exp(-2 * Math.PI * spec.lp / sr), en = 0, j;
+      var pre = Math.round(spec.pre * sr), fadeN = spec.fade * sr, k = Math.exp(-1 / (spec.tau * sr)), env = 1;
       for (j = 0; j < len; j++) {
-        var t = j / sr - spec.pre;
         lp += a * ((r() * 2 - 1) - lp);
-        d[j] = t < 0 ? 0 : lp * Math.exp(-t / spec.tau) * Math.min(1, t / spec.fade);
+        if (j < pre) { d[j] = 0; continue; }
+        d[j] = lp * env * Math.min(1, (j - pre) / fadeN);
+        env *= k;
       }
       (spec.early || []).forEach(function (e) {
         var k = Math.round((e[0] + (c ? 0.0017 : 0)) * sr);
@@ -478,7 +498,7 @@
   }
   var IR_MINE = { len: 1.3, tau: 0.17, lp: 3400, pre: 0.004, fade: 0.012, seed: 0x3a1e,
     early: [[0.007, 0.5], [0.013, -0.35], [0.019, 0.3], [0.029, -0.2], [0.041, 0.15]] };
-  var IR_FAR = { len: 4.2, tau: 0.56, lp: 1300, pre: 0.05, fade: 0.25, seed: 0x7a11, echoes: [[0.92, 0.55], [2.05, 0.28]] };
+  var IR_FAR = { len: 3.4, tau: 0.5, lp: 1300, pre: 0.05, fade: 0.25, seed: 0x7a11, echoes: [[0.92, 0.55], [2.05, 0.28]] };
 
   /* ═════════════════════════════════════════════════════════════════ */
   function attach(handle, unlockEl, opts) {
@@ -578,10 +598,8 @@
       var sends = [0.075, 0.15, 0.25].map(function (v) { var g = ctx.createGain(); g.gain.value = v; g.connect(sendAll); G.nodes.push(g); return g; });
       sfx.connect(sends[0]);                                        // (a little room on everything)
       // the valley: the train's own distance
-      var farIR = ctx.createBuffer(2, Math.round(sr * IR_FAR.len), sr), fr = renderIR(sr, IR_FAR);
-      farIR.getChannelData(0).set(fr[0]); farIR.getChannelData(1).set(fr[1]);
       var far = ctx.createGain(), farLP = ctx.createBiquadFilter(); farLP.type = 'lowpass'; farLP.frequency.value = 1500; farLP.Q.value = 0.5;
-      var farConv = ctx.createConvolver(); farConv.normalize = false; farConv.buffer = farIR;
+      var farConv = ctx.createConvolver(); farConv.normalize = false;       // its 4 s IR is rendered off the gesture (idle, below)
       var farDry = ctx.createGain(); farDry.gain.value = 0.3;
       var farWet = ctx.createGain(); farWet.gain.value = 0.85;
       far.connect(farLP); farLP.connect(farDry); farDry.connect(master); farLP.connect(farConv); farConv.connect(farWet); farWet.connect(master);
@@ -608,7 +626,18 @@
       setMode(st.mode, true);
       if (opts.room === false) { roomLP.disconnect(); air.disconnect(); }
       if (!injected) pumpTimer = setInterval(pump, 25);
-      idle(function () { musicBuf(); flourishBuf(); });
+      G.farConv = farConv;
+      if (injected) valley();                          // live: at the first calm moment (see valley())
+      idle(function () { flourishBuf(); }, 3000);
+    }
+    // the valley's 3.4 s IR costs ~50–100 ms of main thread (the convolver prepares
+    // it synchronously), so it's built when nothing is moving: the first WORK or
+    // ATTRACT, or 12 s before a train is due. A train before it plays dry and far.
+    function valley() {
+      if (!G || G.farReady) return;
+      G.farReady = true;
+      var sr = ctx.sampleRate, fb = ctx.createBuffer(2, Math.round(sr * IR_FAR.len), sr), fr = renderIR(sr, IR_FAR);
+      fb.getChannelData(0).set(fr[0]); fb.getChannelData(1).set(fr[1]); G.farConv.buffer = fb;
     }
     function panner(p) {
       if (ctx.createStereoPanner) { var s = ctx.createStereoPanner(); s.pan.value = p; return s; }
@@ -687,13 +716,32 @@
         return fadeTail(normPeak(out, 1), sr, 0.02);
       });
     }
-    function musicBuf() {
-      var key = 'mb:' + (st.tineFixed ? 1 : 0);
-      return banked(key, function () { return normPeak(renderMusicBox(ctx.sampleRate, { fixed: st.tineFixed }), db(-24)); });
+    // the music box takes 100–300 ms to render, so it is baked a few tines at
+    // a time (≈ 6 ms a slice) off the first gesture; `cb` gets the buffer
+    function bake(key, o, peak, cb, pace) {
+      if (G.bank[key]) { if (cb) cb(G.bank[key]); return; }
+      pace = pace || [6, 16];                        // [ms of work, ms between slices]
+      var waiting = G.baking || (G.baking = {});
+      if (waiting[key]) { if (cb) waiting[key].push(cb); return; }
+      waiting[key] = cb ? [cb] : [];
+      var sr = ctx.sampleRate, plan = musicBoxPlan(sr, o), out = new Float32Array(plan.len), r = lcg(plan.seed), i = 0;
+      function finish() {
+        var b = G.bank[key] = makeBuf(normPeak(out, peak));
+        var cbs = waiting[key]; delete waiting[key];
+        cbs.forEach(function (f) { try { f(b); } catch (e) {} });
+      }
+      if (injected) { musicBoxNotes(out, plan, 0, plan.notes.length, sr, r); finish(); return; }
+      var clock = root.performance && root.performance.now ? function () { return root.performance.now(); } : function () { return +new Date(); };
+      function slice() {
+        if (dead || !G) return;
+        var t0 = clock();
+        while (i < plan.notes.length && clock() - t0 < pace[0]) { musicBoxNotes(out, plan, i, i + 1, sr, r); i++; }
+        if (i < plan.notes.length) setTimeout(slice, pace[1]); else finish();
+      }
+      setTimeout(slice, pace[1]);
     }
-    function flourishBuf() {
-      return banked('fl', function () { return normPeak(renderMusicBox(ctx.sampleRate, { fixed: true, speed: 1.55, bars: 8, loop: false, seed: 0xf1 }), 1); });
-    }
+    function musicBuf(cb) { var f = st.tineFixed; bake('mb:' + (f ? 1 : 0), { fixed: f }, db(-24), cb); }
+    function flourishBuf(cb) { bake('fl', { fixed: true, speed: 1.55, bars: 8, loop: false, seed: 0xf1 }, 1, cb, [3, 40]); }   // gently, in the background
 
     /* ── continuous: the house (the hum of electricity) ───────────── */
     function buildRoom() {
@@ -782,8 +830,11 @@
         var key = st.tineFixed ? 1 : 0;
         if (G.musicSrc && G.musicKey !== key) { stopMusicSrc(t + 0.05); }
         if (!G.musicSrc) {
-          var s = ctx.createBufferSource(); s.buffer = musicBuf(); s.loop = true;
-          s.connect(G.music); s.start(t + 0.02); G.musicSrc = s; G.musicKey = key;
+          musicBuf(function (buf) {
+            if (dead || !G || st.mode !== 'attract' || G.musicSrc) return;
+            var t1 = ctx.currentTime, s = ctx.createBufferSource(); s.buffer = buf; s.loop = true;
+            s.connect(G.music); s.start(t1 + 0.02); G.musicSrc = s; G.musicKey = key;
+          });
         }
         g.linearRampToValueAtTime(1, t + 1.5);
       } else {
@@ -798,6 +849,7 @@
     }
     function setMode(m, immediate) {
       st.mode = m;
+      if (!immediate && (m === 'work' || m === 'attract')) idle(valley, 400);
       var t = ctx.currentTime, inside = m === 'dive' || m === 'play' || m === 'work';
       setMusic(m === 'attract', immediate);
       var ag = G.air.gain;
@@ -833,7 +885,7 @@
       var key = timbreKey(kind, ev), T = TB[key];
       var sp = ev.speed || 60, k = clamp(Math.log(sp / 16) / Math.log(420 / 16), 0, 1);
       var id = String(ev.id || key), x = ev.x, y = ev.y;
-      var L = -31 + 17 * k + (T.lvl || 0);
+      var L = -30 + 17 * k + (T.lvl || 0);            // −30…−13 dBFS by speed (HOLLER ROLLER's ball, matched in LUFS)
       if (kind === 'rail') L -= 1;
       // the same pin still ringing from a moment ago: it takes less
       var last = st.lastPin[id];
@@ -883,6 +935,10 @@
           tone(tt, { f: f * 1.73, peak: db(-45 - 3 * i), a: 0.0005, d: 0.035, dest: G.lanes[laneOf(x)] });
         }
       }
+    }
+    function fixture(id) {
+      if (id == null) return null;
+      try { var b = handle && handle.view && handle.view.board; return (b && b.byId && b.byId[id]) || null; } catch (e) { return null; }
     }
     function dark(x, y) {
       if (x == null || y == null || !BI.regionAt) return null;
@@ -1045,7 +1101,9 @@
       var bus = ctx.createGain(); bus.gain.value = 1; bus.connect(pn);
       // two long, lonesome blasts; now and then the crossing call (long, long, short, long)
       var pat = r() < 0.4 ? [[0, 1.2], [1.55, 1.2], [3.05, 0.42], [3.7, 2.0]] : [[0, 1.6], [2.0, 2.5]];
-      var doppler = -18 - 16 * r(), peak = db(-19);
+      // (the valley's reverb is a unit-energy IR lowpassed at 1.3 kHz: it gives a held tone in that band
+      // about +10 dB, so the chimes start very low; the whole call measures ≈ −34 dBFS RMS)
+      var doppler = -18 - 16 * r(), peak = db(-42);
       pat.forEach(function (p, i) {
         for (var c = 0; c < 3; c++) chimeWhistle(t + p[0] + 0.012 * c, mtof(WHISTLE[c]), p[1], { peak: peak * (c === 1 ? 1 : 0.8), sharp: WHISTLE_TUNE[c], doppler: doppler * (i + 1) / pat.length, bright: 0, slow: 1, vib: c * 0.4, dest: bus });
       });
@@ -1054,11 +1112,11 @@
       var src = ctx.createBufferSource(); src.buffer = G.noise; src.loop = true;
       var lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 95;
       var g = ctx.createGain(); g.gain.value = 0;
-      g.gain.setValueAtTime(0, t - 1.5); g.gain.linearRampToValueAtTime(db(-24), t + len * 0.4); g.gain.linearRampToValueAtTime(0, t + len);
+      var t0 = Math.max(0, t - 1.5);
+      g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(db(-30), t + len * 0.4); g.gain.linearRampToValueAtTime(0, t + len);
       src.connect(lp); lp.connect(g); g.connect(bus);
-      src.start(Math.max(0, t - 1.5), 0.2); src.stop(t + len + 0.1);
+      src.start(t0, 0.2); src.stop(t + len + 0.1);
       src.onended = function () { try { lp.disconnect(); g.disconnect(); bus.disconnect(); pn.disconnect(); } catch (e) {} };
-      st.trains++;
       return t + len;
     }
     // the shift whistle at the tipple: the train's cousin, closer, brighter,
@@ -1140,19 +1198,17 @@
       // the crew cheers: six carved men, tiny voices, not supposed to be alive
       cheer(at + 1.15, r);
       // and the music box plays the tune through, the broken tine ringing for once
-      play(flourishBuf(), at + 3.1, { gain: db(-19), lane: 3, tier: 1 });
+      flourishBuf(function (fb) { play(fb, Math.max(at + 3.1, ctx.currentTime + 0.02), { gain: db(-19), lane: 3, tier: 1 }); });
       st.tineFixed = true;                             // the knockers fixed it; for the rest of the visit
-      idle(musicBuf, 9000);
     }
 
     // formant voices: a glottal pulse through three vowel bands, a breath for the h
-    var GLOTTAL = null;
-    function glottal() {
-      if (GLOTTAL) return GLOTTAL;
+    function glottal() {                               // a PeriodicWave belongs to its context: kept in G
+      if (G.glottal) return G.glottal;
       var N = 40, re = new Float32Array(N + 1), im = new Float32Array(N + 1);
-      for (var i = 1; i <= N; i++) im[i] = 1 / Math.pow(i, 1.35);
-      GLOTTAL = ctx.createPeriodicWave(re, im);
-      return GLOTTAL;
+      for (var i = 1; i <= N; i++) im[i] = 1 / Math.pow(i, 1.12);   // bright enough to feed F2 at a toy's pitch
+      G.glottal = ctx.createPeriodicWave(re, im);
+      return G.glottal;
     }
     var VOWEL = { u: [330, 900, 2300], a: [700, 1200, 2600], e: [560, 1800, 2550], i: [320, 2250, 2950], o: [520, 920, 2450] };
     function toyVoice(t, o) {
@@ -1167,8 +1223,8 @@
       src.connect(pre);
       var sum = ctx.createGain(); sum.gain.value = 0;
       var F = [0, 1, 2].map(function (i) {
-        var bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = [5, 9, 12][i];
-        var g = ctx.createGain(); g.gain.value = [1, 0.55, 0.3][i];
+        var bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = [4, 7, 9][i];
+        var g = ctx.createGain(); g.gain.value = [0.75, 1.25, 0.9][i];
         pre.connect(bp); nzg.connect(bp); bp.connect(g); g.connect(sum);
         return bp;
       });
@@ -1202,7 +1258,7 @@
         F[2].frequency.setValueAtTime(1600 * sc, t2);  // the r, then into the ay
         F[2].frequency.linearRampToValueAtTime(VOWEL.e[2] * sc, t2 + 0.06);
       }
-      [src, nz, vib].forEach(function (s) { s.start(t - 0.08); s.stop(end + 0.05); });
+      [src, nz, vib].forEach(function (s) { s.start(Math.max(0, t - 0.08)); s.stop(end + 0.05); });
       src.onended = function () { [pre, nzg, sum, vd].concat(F).forEach(function (n) { try { n.disconnect(); } catch (e) {} }); };
     }
     function cheer(t, r) {
@@ -1329,18 +1385,71 @@
           return;
         }
         case 'hopper': {
-          // the carriage runs along its brass rack: a ratchet tick every 6 px
-          var dx = Math.abs((ev.x || 0) - (ev.from == null ? st.lastHopper : ev.from));
-          if (!(dx >= 0) || st.lastHopper < 0 && ev.from == null) dx = 30;
-          var nt = clamp(Math.round(dx / 6), 1, 40), gl = ev.glide || 0.2;
-          for (var h = 0; h < nt; h++) {
-            var th = at + gl * Math.pow((h + 0.5) / nt, 0.8), xx = ev.from == null ? x : ev.from + (x - ev.from) * h / nt;
-            noise(th, { f: 5200 + 400 * r(), q: 5, peak: db(-30 - 3 * (h % 2)), a: 0.0004, d: 0.006, dest: G.lanes[laneOf(xx)] });
-          }
-          tone(at + gl, { type: 'triangle', f: 900, f1: 760, peak: db(-31), a: 0.0006, d: 0.03, dest: G.lanes[lane] });
-          st.lastHopper = x == null ? st.lastHopper : x;
+          // the carriage lets go of its detent, and at the end it seats with a clunk
+          // (the ticks along the way are main's `ratchet` events)
+          var gl = ev.glide || 0.2, fromLane = laneOf(ev.from == null ? x : ev.from);
+          noise(at, { ft: 'highpass', f: 3000, q: 0.7, peak: db(-33), a: 0.0004, d: 0.008, dest: G.lanes[fromLane] });
+          tone(at + gl, { type: 'triangle', f: 900, f1: 760, peak: db(-30), a: 0.0006, d: 0.03, dest: G.lanes[lane] });
+          play(tickBuf('brass', 88, 2), at + gl, { gain: db(-33), lane: lane, tier: 0 });
           return;
         }
+        case 'ratchet': {                                  // a brass pawl over one tooth of the rack
+          var odd = (st.ratchetN = (st.ratchetN | 0) + 1) % 2;
+          noise(at, { f: 5000 + 500 * r(), q: 5, peak: db(odd ? -31 : -34), a: 0.0004, d: 0.006, dest: G.lanes[lane] });
+          tone(at, { type: 'triangle', f: 2150 + 150 * odd, peak: db(-39), a: 0.0004, d: 0.012, dest: G.lanes[lane] });
+          return;
+        }
+        case 'queue':                                      // held for the reload: a soft detent
+          noise(at, { f: 3200, q: 3, peak: db(-34), a: 0.0004, d: 0.01, dest: G.lanes[lane] });
+          return;
+        case 'empty':                                      // nothing left in the tube: the gate snaps on air
+          tone(at, { type: 'triangle', f: 640 + 40 * r(), f1: 470, peak: db(-25), a: 0.0006, d: 0.035, dest: G.lanes[0] });
+          noise(at, { f: 1300, q: 2, peak: db(-27), a: 0.0004, d: 0.015, dest: G.lanes[0] });
+          return;
+        case 'tally':                                      // the SCRIP drum turns one digit: a brass detent
+          noise(at, { f: 2900, q: 5, peak: db(-26), a: 0.0004, d: 0.01, dest: G.lanes[6] });
+          tone(at, { type: 'square', f: 1480, peak: db(-38), a: 0.0004, d: 0.01, dest: G.lanes[6] });
+          return;
+        case 'ticket':                                     // the pink strip feeds out between rollers
+          noise(at, { f: 3600 + 300 * r(), q: 6, peak: db(-28), a: 0.0003, d: 0.009, dest: G.lanes[5] });
+          noise(at + 0.02, { ft: 'highpass', f: 4500, peak: db(-36), a: 0.004, d: 0.05, dest: G.lanes[5] });
+          return;
+        case 'tear': {                                     // torn off at the slot: a papery zip
+          var tn = Math.max(1, ev.n | 0), td = 0.1 + 0.12 * Math.min(1, (tn - 1) / 20);
+          noise(at, { f: 2600, q: 0.8, peak: db(-21), a: 0.004, hold: td * 0.7, d: td * 0.4, dest: G.lanes[5] });
+          for (var tp = 0; tp < td / 0.009; tp++) noise(at + tp * 0.009 * (0.8 + 0.4 * r()), { ft: 'highpass', f: 1500 + 1800 * r(), q: 0.9, peak: db(-22 - 3 * r()), a: 0.0003, d: 0.006, dest: G.lanes[5], off: r() * 1.8 });
+          return;
+        }
+        case 'feed': {                                     // a marble back up the tube: it lands on the column, higher each time
+          var fn2 = clamp(ev.n | 0, 1, 13), fnote = TB.glass.notes[Math.min(TB.glass.notes.length - 1, Math.floor(fn2 / 3))];
+          play(tickBuf('glass', fnote, fn2 % 2), at, { gain: db(-31 - 0.2 * fn2), lane: 0, rate: 0.75 + 0.02 * fn2 });
+          play(clickBuf(fn2 % 6), at + 0.004, { gain: db(-35), lane: 0 });
+          return;
+        }
+        case 'award':                                      // the cart's bell: it pays on a catch
+          chime(at + 0.05, 83, -21, x == null ? 60 : x);
+          return;
+        case 'edit': {                                     // a drift edit lands: the moved pin rings in its new place
+          var ed = ev.edit || {}, fx = fixture(ed.id);
+          if (fx && fx.kind === 'pin') {
+            var fk = timbreKey('pin', fx);
+            play(tickBuf(fk, noteFor(TB[fk], fx.id, fx.y), 1), at + 0.02, { gain: db(-27), lane: laneOf(fx.x), tier: tierOf(fx.y) });
+          } else play(tickBuf('wood', 64, 1), at + 0.02, { gain: db(-30), lane: 3, tier: 1 });
+          return;
+        }
+        case 'glasstap': {                                 // a knuckle on the display glass: the pane, the case, the rattle
+          var gn = ev.n | 0;
+          play(knockBuf(gn % 4), at, { gain: db(-15), lane: 3, rate: 1.6 });
+          tone(at, { f: 1180 + 40 * (gn % 3), peak: db(-27), a: 0.0006, d: 0.3, dest: G.dry });
+          tone(at, { f: 2790, peak: db(-33), a: 0.0006, d: 0.16, dest: G.dry });
+          for (var gr = 0; gr < 3; gr++) noise(at + 0.03 + gr * 0.021, { f: 2400 + 700 * r(), q: 4, peak: db(-33 - 3 * gr), a: 0.0004, d: 0.008, dest: G.lanes[gr * 3] });
+          return;
+        }
+        case 'found':                                      // a nickel in the coin return, alone, bright, dry
+          tone(at + 0.2, { f: 4620, peak: db(-26), a: 0.0003, d: 0.35, dest: G.dry });
+          tone(at + 0.2, { f: 7300, peak: db(-30), a: 0.0003, d: 0.22, dest: G.dry });
+          tone(at + 0.31, { f: 4610, peak: db(-32), a: 0.0003, d: 0.25, dest: G.dry });
+          return;
         case 'reload': {
           // the column in the feed tube shuffles down one: glass knocks on glass
           var left = ev.left == null ? 6 : ev.left, nn = clamp(left, 1, 12);
@@ -1363,7 +1472,7 @@
           st.watchUntil = Math.max(st.watchUntil, at + 5.5);   // and in the lull, the watch is still going
           return;
         }
-        case 'whistle': shiftWhistle(at + 0.05, whistleFor(ev.value | 0)); return;
+        case 'whistle': shiftWhistle(at + 0.38, whistleFor(ev.value | 0)); return;   // after the plink
         case 'lode':
           if (st.lodeUntil > at) return;
           lode(at, ev.x, r); return;
@@ -1593,15 +1702,21 @@
           st.watchNext = tt + 0.01;
         }
       }
-      // the distant train
+      // the distant train (its valley first, if nothing calm has come along yet)
+      if (st.nextTrain != null && now >= st.nextTrain - 12 && !G.farReady) valley();
       if (st.nextTrain != null && now >= st.nextTrain - 0.2) {
         if (st.lodeUntil > now) st.nextTrain = st.lodeUntil + 6;
-        else { train(Math.max(now + 0.05, st.nextTrain), st.trains); st.nextTrain = trainPlan(now, st.trains); }
+        else {
+          var tt0 = Math.max(now + 0.05, st.nextTrain), kk = st.trains;
+          st.trains++; st.nextTrain = trainPlan(now, st.trains);
+          try { train(tt0, kk); } catch (e) { if (root.console) console.warn('pachinko-audio train', e); }
+        }
       }
       // the case light stutters, now and then
       if (st.nextFlicker != null && now >= st.nextFlicker) {
-        flicker(now + 0.05, lcg(mixh(SEED, 900 + Math.round(now))));
-        st.nextFlicker = now + 55 + 85 * h01(SEED, 901 + Math.round(now));
+        var fr0 = Math.round(now);
+        st.nextFlicker = now + 55 + 85 * h01(SEED, 901 + fr0);
+        try { flicker(now + 0.05, lcg(mixh(SEED, 900 + fr0))); } catch (e) {}
       }
       // held-back whistles and lodes, and cleanups
       if (st.pending.length) {
@@ -1715,7 +1830,7 @@
       api._graph = function () { return G; };
       api._stats = function () { var s = JSON.parse(JSON.stringify(st.stats)); s.fill = st.fill; s.trains = st.trains; s.tineFixed = st.tineFixed; s.bank = Object.keys(G.bank).length; return s; };
       api._event = onEvent;
-      api._train = function (t) { return train(t, 99); };
+      api._train = function (t) { st.trains++; return train(t, 99); };
     }
     return api;
   }

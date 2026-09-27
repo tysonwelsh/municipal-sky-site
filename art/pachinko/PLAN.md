@@ -582,6 +582,54 @@ the marble unless holding it, and no page scroll at any size.
   chains, 0 with an unreachable paying bay, 8 with the 13 outside its
   bands, the 13's best x moved ≥ 6 px within 3 games in 9/10 chains; 49
   candidate edits rejected by validation.
+- 2026-09-26 — **The sound's event contract (audio, wave 2; the full text
+  is the header of `pachinko-audio.js`).** `PachinkoAudio.attach(handle,
+  unlockEl, opts)` → `{destroy, setMuted, isUnlocked}`, HOLLER ROLLER's
+  shape; main's rc.7 wiring (`attach(handle, canvas, {muted, version,
+  seed})` outside the harness or with `?audio=1`, `setMuted(muted ||
+  paused || hidden)`) matches it and needs no change. **Timing:** every
+  event's `t` (sim seconds) is mapped onto the audio clock with a 35 ms
+  lead, so the ticks inside one frame keep their true spacing (0 resyncs
+  in a whole real game). **Physics, forwarded verbatim:** drop, pin, rail,
+  roll, wheel, ride, clack, cart {what}, tunnel {what}, pocket, slot,
+  award, teeter, knock, timeout, done. **Game (all present in main rc.7):**
+  input, mode {attract|dive|play|payout|work}, coin, nocoin, found, dive
+  {dir}, hopper {x, from, glide} (the carriage sets off and seats),
+  ratchet {x} (one pawl tick each), queue, empty, reload {left}, feed {n},
+  tally, ticket, payout (ONE scrip into the plastic bucket; a count-up is
+  queued ≥ 45 ms apart), tear {n}, gameover {scrip}, whistle {value}
+  (played 0.38 s after its event, behind the pocket's plink), lode {x},
+  work, edit {edit} (the moved pin rings in its new place), figure {what:
+  step|tap|pull|lay|set|cheer, x, y}, glasstap {n}, rare (silent).
+  **For the mischief/spectacle phases (not yet emitted):** stolen {m, x,
+  y}, dark {region, what: flicker|out|on}, lost {m}, cavein {region, x,
+  what: telegraph|fall|clear}. Heard but silent: release, win, glide,
+  workplan, mute. If the game never sends `whistle`/`lode`, pockets and
+  the 13 slot set them off by themselves (a 0.12–0.26 s grace lets a
+  late game event replace the automatic one).
+- 2026-09-26 — **The lode's sound, on a clock the spectacle can match
+  (audio).** From the `lode` event: 0–1.0 s the room and music drop to
+  20 % (the held breath); **+0.30 the vein cracks** (a sub drop 54→29 Hz,
+  a crack, 30 micro-fractures over 0.5 s, 22 falling stones to +1.75);
+  +0.45 every lamp flares (a gas whoomp); +0.55–1.9 the cascade (every
+  bay's bar up G5–G7 in 45 ms steps, tumbling back in 72 ms steps, a
+  G-major chord at ≈ +1.9); +0.8–3.5 thirty scrip into the plastic bucket;
+  +0.95 the shift whistle long, toot-toot at +2.4/+2.8; +1.0–3.0 the carts
+  race; **+1.15–2.3 the crew cheers** (six formant toy voices, hoo-RAY,
+  hey, whoops; old Jory's wobbles); +3.1–6.5 the music box plays the
+  tune through with its broken tine ringing for once, and from then on
+  the attract loop's high D is mended for the rest of the visit. Busy
+  until +8 s (the distant train waits).
+- 2026-09-26 — **The tuning (audio).** The machine is one instrument in G
+  major pentatonic: every pin is a tuned nail (its note from a hash of its
+  id, its register falling with depth, so a marble's descent is a
+  descending run; ±14 cents of seeded mistuning, "old nails aren't
+  tuned"), every bay a tuned bar, each marble colour a glass note (two
+  marbles meeting ring a dyad), the train and the shift whistle an
+  E-minor chord (E G B; the shift whistle an octave up: the model's
+  whistle is the size of a thumb), the music box in G with the F-natural
+  of the old modes. Measured levels: the next entry and
+  `local-dev/pachinko-lab/reports/wave2-audio.md`.
 - 2026-09-26 — **The game (integration, wave 2; rc.7–rc.10). The full text
   is the header of `pachinko-main.js`.** The states are ATTRACT → DIVE →
   PLAY → PAYOUT → WORK → ATTRACT.
@@ -663,3 +711,16 @@ the marble unless holding it, and no page scroll at any size.
   - **Drift, 30 layouts in 6 chains:** 0 with an unreachable paying bay;
     the 13 out of band in 4; the 13's best x moved ≥ 6 px within 3 games
     in 5 of 6 chains.
+- 2026-09-26 — **Sound levels, measured (audio; silent OfflineAudioContext
+  renders, BS.1770 LUFS, true peak).** Against HOLLER ROLLER's own audio
+  rendered the same way: a whole game −27.5 LUFS (HR −27.1); a plain drop
+  −29.9 (an HR ball −28.1; a drop into a pocket −27.9); attract −29.5 (HR
+  −27.0; the music box is meant to be low); **the lode −22.0, short-term
+  max −16.8** (HR's jackpot −27.2: the roar is deliberate). No clipped
+  sample in any render; the loudest true peak is the lode's −7.0 dBFS.
+  One tick −30…−13 dBFS peak by speed; the distant train ≈ −41 dBFS in its
+  band (355–710 Hz), faint on purpose; the hum's audible part (the tube's
+  buzz, 0.7–2.8 kHz) ≈ −44 in play. Density: six marbles at once +5 LU
+  over one (energy would be +7.8), and the 10 ms envelope's spread rises
+  with density (3.8 → 5.0 dB), so a stream stays ticks, not a wash; a
+  13-marble stream: 283 ticks at up to 116/s, 3 dropped by the voice cap.
