@@ -44,6 +44,9 @@
  *   dress, speed} · roll {id, speed} · wheel {id, speed} · clack {other, speed}
  *   · cart {id, what:'catch'|'dump'} · tunnel {id, what:'in'|'out'} ·
  *   pocket {id, value, legend} · slot {id, value, legend, x} · knock {n} ·
+ *   award {id, value} (the cart pays on a catch; the marble rides on) ·
+ *   teeter {id} (landed square on the bone over the 13) · ride {id} (carried
+ *   over a wheel) ·
  *   timeout {x} · done {outcome}
  */
 (function (root) {
@@ -177,6 +180,7 @@
       var dmp = 1 - T.drag * h; m.vx *= dmp; m.vy *= dmp;
       var sp = Math.hypot(m.vx, m.vy);
       if (sp > T.vMax) { m.vx *= T.vMax / sp; m.vy *= T.vMax / sp; }
+      var x0 = m.x, y0 = m.y;
       m.x += m.vx * h; m.y += m.vy * h;
       m.spin += m.w * h; m.w *= (1 - 0.6 * h);
       if (m.phase === 'drop' && m.y > b.drop.y + 6) m.phase = 'board';
@@ -186,7 +190,9 @@
       checkCatchers(w, m);
       if (m.done) continue;
       // stall watch
-      if (m.phase !== 'cart' && Math.hypot(m.vx, m.vy) < T.stallV) {
+      // (by how far it actually moved: a marble wedged between two pins can
+      // keep a jittering velocity that the contacts cancel every step)
+      if (m.phase !== 'cart' && Math.hypot(m.x - x0, m.y - y0) / h < T.stallV) {
         m.slowT += h;
         if (m.slowT > T.stallT) knock(w, m);
       } else m.slowT = 0;
@@ -380,6 +386,8 @@
           m.cart = { id: ct.id, lx: Math.max(-ct.w / 2 + m.r + 1, Math.min(ct.w / 2 - m.r - 1, m.x - p.x)) + (load ? (load % 2 ? -3 : 3) : 0), ly: -m.r - 1 - (load ? 2 : 0) };
           m.touched.moving = 1; m.touched.cart = 1;
           emit(w, m, { type: 'cart', id: ct.id, what: 'catch', x: m.x, y: m.y });
+          // a full load pays a little on the spot (the marble rides on)
+          if (ct.award) { m.award = (m.award | 0) + ct.award; emit(w, m, { type: 'award', id: ct.id, value: ct.award, x: m.x, y: m.y }); }
         }
       }
     }
@@ -418,7 +426,7 @@
       m.phase = 'board';
       m.x = tn.b.x; m.y = tn.b.y;
       var j = hash01(m.seed, 400 + m.n);
-      m.vx = tn.b.vx * (0.8 + 0.4 * j); m.vy = tn.b.vy;
+      m.vx = tn.b.spread != null ? tn.b.vx + (2 * j - 1) * tn.b.spread : tn.b.vx * (0.8 + 0.4 * j); m.vy = tn.b.vy;
       m.slowT = 0;
       m.tunnel = null;
       emit(w, m, { type: 'tunnel', id: tn.id, what: 'out', x: m.x, y: m.y });
@@ -522,7 +530,7 @@
     }
     if (!m.done) { resolveSlot(w, m, m.x); }
     return {
-      outcome: m.outcome, t: m.tDone - (opts.t0 || 0), timeout: m.age > w.T.timeout, knocks: knocks,
+      outcome: m.outcome, award: m.award | 0, value: (m.outcome ? m.outcome.value : 0) + (m.award | 0), t: m.tDone - (opts.t0 || 0), timeout: m.age > w.T.timeout, knocks: knocks,
       pins: pins, rails: rails, wheels: wheels, rolls: rolls, contacts: pins + rails + wheels,
       moving: !!(m.touched.moving || m.touched.tunnel), tunnel: !!m.touched.tunnel, cart: !!m.touched.cart,
       path: path, events: ev, nan: !isFinite(m.x + m.y)
