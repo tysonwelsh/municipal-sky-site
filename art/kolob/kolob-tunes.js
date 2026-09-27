@@ -1112,6 +1112,347 @@ KOLOB.Tunes = (function () {
   })();
 
   // ==========================================================================
+  // ADDED: FIVE TUNES THE SAINTS SING (Hymns, 1985), FROM THE 1889 PSALMODY
+  // ==========================================================================
+  // The owner asked for tunes that ARE in the Latter-day Saints' hymnbook,
+  // beside the tradition tunes above. These five are Hymns (1985) Nos. 2, 5,
+  // 6, 19 and 27, and each is taken down from The Latter-day Saints'
+  // Psalmody (1889), the Church's tunebook "providing music for every hymn in
+  // the L.D.S. hymn book", whose plates are public domain (the 1985
+  // arrangements may not be, and were not used for any note). Each tune keeps
+  // the Psalmody's own name for it and its layout: tenor on top in the treble
+  // clef (sung an octave down), soprano and alto together, bass below. `number` is the tune's Hymns (1985) number, the
+  // hymn-board number a Latter-day Saint would know it by (as ALL IS WELL's
+  // 30); none collides with a number above.
+  // HOW THEY WERE CHECKED: every part read bar by bar from the archive.org
+  // leaves rendered at 400 dpi, with a notehead detector and a pitch ruler;
+  // then the finished token strings were drawn back onto the plate (a ring at
+  // each note's staff position) and every ring was looked at on its printed
+  // head, every part, every system. Each melody was then set against the
+  // Church's own MusicXML (the Hymns 1985 score; compared, never copied) pitch
+  // by pitch, and against the 1927 Latter-day Saint Hymns (public domain) by
+  // eye; the notes and crossCheck say where they part.
+  // ASSEMBLY ("The Spirit of God") is the hymn Kolob's Hosanna calls for: the
+  // Saints sing it after the Hosanna Shout when they dedicate a temple.
+
+  // ---- ASSEMBLY ("The Spirit of God like a fire is burning") --------------------
+  // W. W. Phelps's hymn for the Kirtland Temple dedication (1836), to the
+  // anonymous tune first printed with these words in 1844. The Psalmody (No.
+  // 274) sets it in B-flat, common time; the first strain carries a repeat sign
+  // (the second couplet of each verse), so it is written out twice, then the
+  // chorus.
+  (function () {
+    var VS = "F4:1 | B4:2 C5:1 C5:1 | D5:2 C5:1 B4:1 | B4:2 A4:1 G4:1 | F4:1.5 _G4:.5 F4:1 / E4:1 | D4:1 _F4:1 B4:1 D5:1 | C5:1 _F4:1 G4:1 E5:1 | D5:1 _C5:1 B4:1 A4:1 | B4:3 / ";
+    var VA = "D4:1 | D4:2 F4:1 F4:1 | F4:2 E4:1 D4:1 | G4:2 F4:1 E4:1 | D4:1.5 E4:.5 D4:1 / C4:1 | B3:1 _D4:1 D4:1 F4:1 | F4:2 E4:1 E4:1 | F4:1 _G4:1 F4:1 F4:1 | F4:3 / ";
+    var VT = "B4:1 | B4:2 A4:1 A4:1 | B4:2 A4:1 B4:1 | B4:2 B4:1 B4:1 | B4:2 B4:1 / F4:1 | F4:2 F4:1 B4:1 | A4:1 _B4:1 B4:1 C5:1 | B4:1 _E5:1 D5:1 C5:1 | D5:3 / ";
+    var VB = "B2:1 | B2:2 F3:1 F3:1 | B3:2 F3:1 G3:1 | E3:2 E3:1 E3:1 | B2:2 B2:1 / A2:1 | B2:2 B2:1 B2:1 | F3:1 _D3:1 E3:1 C3:1 | D3:1 _E3:1 F3:1 F3:1 | B2:3 / ";
+    SOURCES.push(psalmody({
+      slug: "assembly", nameEn: "ASSEMBLY", nameDs: "𐐲𐑅𐐯𐑋𐐺𐑊𐐨", number: 2,
+      source: LDS1889(274, 227), meter: "12.11.12.11R", time: "4/4", beatS: 0.6, pickup: 1,
+      key: { tonic: "B", sig: "2b", name: "B-flat major" }, scale: "ionian", refrainLine: 4,
+      syllables: [12, 11, 12, 11, 12, 11, 12, 11],
+      lineNotes: { 2: "The first strain again (the plate's repeat sign), for the second couplet of the verse." },
+      parts: {
+        S: VS + VS + "F4:1 | F4:2 D4:1 F4:1 | F4:2 D4:1 F4:1 | B4:1 _D5:1 C5:1 B4:1 | A4:1 _G4:1 F4:.5 _G4:.5 / " +
+           "A4:.5 _F4:.5 | B4:2 C5:1 D5:1 | G4:2 A4:1 B4:1 | E5:2 D5:1.5 C5:.5 | C5:3 / " +
+           "C5:1 | D5:1 _B4:1 C5:1 D5:1 | G4:2 E5:1 D5:1 | C5:1.5 _D5:.5 C5:1 B4:1 | A4:1 _G4:1 F4:.5 _G4:.5 / " +
+           "A4:.5 _F4:.5 | B4:1.5 _C5:.5 D5:.5 _C5:.5 B4:.5 _A4:.5 | G4:1 _E5:1 D5:1 C5:1 | B4:2 A4:1 A4:1 | B4:3 |",
+        A: VA + VA + "D4:1 | D4:2 B3:1 D4:1 | D4:2 B3:1 D4:1 | D4:1 _F4:1 F4:1 En4:1 | F4:2 F4:1 / " +
+           "E4:1 | D4:1 _F4:1 F4:1 F4:1 | E4:2 F4:1 F4:1 | F4:2 F4:1.5 F4:.5 | F4:3 / " +
+           "F4:1 | F4:2 F4:1 F4:1 | E4:2 F4:1 F4:1 | F4:2 F4:1 En4:1 | F4:2 F4:1 / " +
+           "F4:1 | F4:2 F4:1 D4:1 | E4:2 F4:1 E4:1 | D4:2 C4:1 E4:1 | D4:3 |",
+        T: VT + VT + "B4:1 | B4:2 B4:1 B4:1 | B4:2 B4:1 B4:1 | B4:2 A4:1 C5:1 | C5:1 _A4:1 B4:1 / " +
+           "F4:1 | F4:1 _B4:1 A4:1 B4:1 | B4:2 E5:1 D5:1 | C5:2 B4:1.5 A4:.5 | A4:3 / " +
+           "A4:1 | B4:2 A4:1 B4:1 | B4:2 A4:1 B4:1 | A4:1.5 _B4:.5 A4:1 C5:1 | C5:2 D5:1 / " +
+           "E5:1 | D5:1.5 _C5:.5 B4:1 B4:1 | B4:1 _C5:1 B4:1 G4:1 | F4:2 F4:1 F4:1 | F4:3 |",
+        B: VB + VB + "B2:1 | B2:2 B2:1 B2:1 | B2:2 B2:1 B2:1 | B2:2 C3:1 C3:1 | F3:1 _E3:1 D3:1 / " +
+           "C3:1 | B2:1 _D3:1 C3:1 B2:1 | E3:2 C3:1 B2:1 | A2:2 B2:1.5 F3:.5 | F3:3 / " +
+           "F3:1 | B3:1 _D3:1 F3:1 B3:1 | E3:2 C3:1 B2:1 | F3:2 F3:1 C3:1 | F3:1 _E3:1 D3:1 / " +
+           "C3:1 | B2:2 B2:1 B2:1 | E3:1 _C3:1 D3:1 E3:1 | F3:2 F3:1 F3:1 | B2:3 |"
+      },
+      crossCheck: [
+        { book: "A Collection of Sacred Hymns, for the Use of the Latter Day Saints (J. C. Little & G. B. Gardner, Bellows Falls)", year: 1844, page: "No. 1 (p. 4)",
+          url: IA + "collectionofsacr00litt/page/n5/mode/1up",
+          note: "The first Latter Day Saint hymnbook with any music, and the tune's first printing with these words: 'The Spirit of God', headed 12 11 12 11 12 11, air and bass only, in C and 2/2. Its air is this tune (the first line runs sol | do re re | mi re do | do ti la | sol la sol fa, as here), with repeat dots on the first strain; the chorus opens differently ('We'll sing and we'll shout with the' in dotted figures that fall to mi and turn back, where 1889 holds sol and drops to mi), then follows the same outline through 'armies of heaven' and 'Hosanna, hosanna'. Compared at page resolution; not transcribed." },
+        { book: "Latter-day Saint Hymns (Deseret Book)", year: 1927, page: "No. 127",
+          url: IA + "latter-day-saint-hymns-1927-b/page/n133/mode/1up",
+          note: "'The Spirit of God Like a Fire', B-flat, common time, crotchet = 80, four parts on two staves. Its melody agrees with the 1889 soprano note for note, with the same repeat of the first strain, in the verse and in the refrain (checked bar by bar there: the slurred 'heav-en, Ho-', the dotted 'God and the', 'high-est be' over the alto's E-natural)." }
+      ],
+      notes: "The 1889 Psalmody prints No. 274 ASSEMBLY, '12s & 11s. [Page 268.]', with no composer credit, over two leaves (the second headed 'ASSEMBLY. (Concluded.)'): four parts on three staves, the tenor on top. " +
+             "The first strain ends 'come forth' at a repeat sign, and the verse's second couplet ('The visions and blessings …') is sung to it, so it is written out twice, the return taking the same F pickup in all parts; the chorus follows once. No fermatas, no rests, no divided notes. " +
+             "The plate splits 'fi-re' into two syllables (so the lines are 12s and 11s, as it is headed), where the 1985 book slurs 'fire' over the same two notes. Melismas are the plate's slurs and beams: 'burn-' (dotted F–G) and 'high-' (dotted C–D); 'lat-', 'glo-', '-gins', 'ar-', 'heav-', 'giv-' and the chorus's 'glo-' (slurred crotchets); '-en', 'Ho-', 'Hence-', '-forth', 'and' and 'for-' (quaver pairs); and 'ev-', a crotchet G leaping up to E-flat. The alto's E-naturals (under 'of' in 'armies of heaven' and 'be' in 'highest be') are printed. " +
+             "Tune name: ASSEMBLY is the Psalmody's name and the Church's (the Church's music library: 'Assembly', alternate title 'Paraclete'); hymnary.org files it as PARACLETE (also published as ASSEMBLY) and dates it 'ca. 1844', as the Church does ('Anon., ca. 1844'). The church paper named other tunes for these words in 1836 (AMERICAN STAR, then HOSANNA for the Kirtland dedication, by Wikipedia's account of the Messenger and Advocate); whether either is this tune is not known here, for the 1835 hymnbook printed words only."
+    }));
+  })();
+
+  // ---- DESERET ("High on the mountain top") -------------------------------------
+  // Joel H. Johnson's words, Ebenezer Beesley's tune, in A-flat and 4/4 (No.
+  // 192). The last two lines are Beesley's staggered entries: at "In
+  // Deseret's" the alto and tenor come in after the soprano and bass, and at
+  // "On Zion's mount" the tenor and bass come in after the soprano and alto.
+  SOURCES.push(psalmody({
+    slug: "deseret", nameEn: "DESERET", nameDs: "𐐼𐐯𐑆𐐲𐑉𐐯𐐻", number: 5,
+    source: LDS1889(192, 155), meter: "66.66.88", time: "4/4", beatS: 0.58, pickup: 1,
+    key: { tonic: "A", sig: "4b", name: "A-flat major" }, scale: "ionian",
+    syllables: [6, 6, 6, 6, 8, 8],
+    lineNotes: { 4: "The rests are the plate's: the soprano and bass lead 'In', the alto and tenor come in on the second beat of 'Des-', and the alto and bass drop out at 'sweet, peace-'.", 5: "The tenor and bass rest on 'On' and come in on the second beat of 'Zi-', as printed." },
+    parts: {
+      S: "E4:1 | A4:1 A4:1 A4:1 B4:1 | C5:3 / " +
+         "B4:1 | C5:1 E5:1 D5:1 C5:1 | B4:3 / " +
+         "B4:1 | C5:1 B4:1 C5:1 Dn5:1 | E5:2 / " +
+         "B4:2 | A4:1 G4:1 F4:1 F4:1 | E4:3 / " +
+         "E4:1 | E4:1 _D5:1 C5:1 _B4:1 | C5:3 C5:1 | C5:1 _F5:1 E5:1 _Dn5:1 | E5:3 / " +
+         "E5:1 | E5:2 D5:2 | C5:1 _B4:1 _A4:1 B4:1 | A4:2 G4:2 | A4:3 |",
+      A: "E4:1 | E4:1 E4:1 A4:1 G4:1 | A4:3 / " +
+         "G4:1 | A4:1 A4:1 G4:1 A4:1 | G4:3 / " +
+         "G4:1 | A4:1 B4:1 A4:1 A4:1 | G4:2 / " +
+         "G4:2 | F4:1 E4:1 Dn4:1 Dn4:1 | E4:3 / " +
+         "r:1 | r:1 E4:1 E4:1 E4:1 | E4:3 r:1 | r:1 A4:1 G4:1 F4:1 | G4:3 / " +
+         "E4:1 | E4:2 E4:2 | E4:1 _G4:1 F4:1 F4:1 | F4:2 E4:2 | E4:3 |",
+      T: "E5:1 | E5:1 C5:1 E5:1 E5:1 | E5:3 / " +
+         "E5:1 | E5:1 E5:1 E5:1 E5:1 | E5:3 / " +
+         "E5:1 | E5:1 E5:1 E5:1 B4:1 | B4:2 / " +
+         "E5:2 | C5:1 B4:1 B4:1 A4:1 | G4:3 / " +
+         "r:1 | r:1 B4:1 A4:1 G4:1 | A4:3 C5:1 | C5:2 B4:2 | B4:3 / " +
+         "r:1 | r:1 G4:1 A4:1 B4:1 | A4:1 _D5:1 _C5:1 D5:1 | C5:2 B4:1 _D5:1 | C5:3 |",
+      B: "E3:1 | C3:1 A2:1 C3:1 E3:1 | A3:3 / " +
+         "E3:1 | A3:1 C4:1 B3:1 A3:1 | E3:3 / " +
+         "E3:1 | A3:1 G3:1 A3:1 F3:1 | E3:2 / " +
+         "E3:2 | A2:1 B2:1 B2:1 B2:1 | E3:3 / " +
+         "E3:1 | E3:2 E3:2 | A3:3 r:1 | r:1 A3:1 B3:1 B2:1 | E3:3 / " +
+         "r:1 | r:1 E3:1 F3:1 G3:1 | A3:1 _En3:1 F3:1 D3:1 | E3:2 E3:2 | A2:3 |"
+    },
+    crossCheck: [
+      { book: "Latter-day Saint Hymns (Deseret Book)", year: 1927, page: "No. 131",
+        url: IA + "latter-day-saint-hymns-1927-b/page/n137/mode/1up",
+        note: "'High On the Mountain Top', credited Ebenezer Beesley, headed '4, 6's & 2, 8's', A-flat, 4/4, crotchet = 100, four parts on two staves. Its melody agrees with the 1889 soprano note for note, and it prints the same rests at 'In' and 'On', the slurred 'Des-er-', 'peace-ful' and 'mount', and the D-naturals." }
+    ],
+    notes: "The 1889 Psalmody prints No. 192 DESERET, '4-6s & 2-8s. [Page 134.]', credited E. BEESLEY (Ebenezer Beesley, one of the book's five compilers), over two leaves: four parts on three staves, the tenor on top. No fermatas, no repeats. " +
+           "Every rest is printed: at 'In' only the soprano and bass sing (the alto and tenor enter on the second beat of 'Des-'), the alto and bass rest on 'sweet, peace-' while the soprano and tenor carry it, and the tenor and bass rest on 'On' and enter on the second beat of 'Zi-'. " +
+           "The soprano's D-naturals (the raised fourth, leaning up to E-flat, at 'look up' and 'peace-ful') and the alto's in 'all the world', and the bass's E-natural under 'mount', are printed. Melismas: 'Des-' (E-flat–D-flat), 'er-' (C–B-flat), 'peace-' (C–F), 'ful' (E-flat–D-natural) and 'mount' (C–B-flat–A-flat), as the plate slurs them and as the Church's score places the words. " +
+           "Read at 400 dpi with a notehead detector and a pitch ruler, and checked by drawing the transcription back onto the plate."
+  }));
+
+  // ---- NEW SALEM ("Redeemer of Israel") -----------------------------------------
+  // W. W. Phelps's hymn after Joseph Swain, to Freeman Lewis's tune
+  // (hymnary.org: DAVIS, first printed in Wyeth's Repository, Part Second,
+  // 1813). The Psalmody (No. 319) names it NEW SALEM and sets it in E-flat,
+  // common time, 11.8.11.8.
+  SOURCES.push(psalmody({
+    slug: "new-salem", nameEn: "NEW SALEM", nameDs: "𐑌𐑏 𐑅𐐩𐑊𐐲𐑋", number: 6,
+    source: LDS1889(319, 277), meter: "11.8.11.8", time: "4/4", beatS: 0.64, pickup: 1,
+    key: { tonic: "E", sig: "3b", name: "E-flat major" }, scale: "ionian",
+    syllables: [11, 8, 11, 8],
+    parts: {
+      S: "E4:1 | E4:1 _F4:1 G4:1 A4:1 | B4:2 C5:.5 _B4:.5 A4:1 | G4:2 F4:1 F4:1 | E4:3 / " +
+         "B4:1 | E5:2 E5:1 E5:1 | D5:1 _B4:1 C5:1 C5:1 | B4:3 / " +
+         "B4:1 | E5:2 E5:.5 _D5:.5 C5:1 | B4:2 G4:1 B4:1 | C5:2 C5:.5 _B4:.5 A4:.5 _G4:.5 | F4:2 / " +
+         "E4:1 _G4:1 | B4:1.5 _C5:.5 B4:1 E4:1 | G4:2 F4:1 F4:1 | E4:3 |",
+      A: "E4:1 | E4:1 _D4:1 E4:1 F4:1 | G4:2 A4:.5 _G4:.5 F4:1 | E4:2 D4:1 D4:1 | E4:3 / " +
+         "G4:1 | G4:2 G4:1 G4:1 | F4:1 _D4:1 E4:1 E4:1 | D4:3 / " +
+         "G4:1 | G4:2 G4:1 A4:1 | G4:2 E4:1 G4:1 | A4:2 A4:.5 _G4:.5 F4:.5 _E4:.5 | D4:2 / " +
+         "E4:2 | E4:2 E4:1 E4:1 | E4:2 D4:1 D4:1 | E4:3 |",
+      T: "G4:1 | G4:1 _B4:1 B4:1 E5:1 | E5:2 E5:1 C5:1 | B4:2 A4:1 A4:1 | G4:3 / " +
+         "E5:1 | B4:2 B4:1 B4:1 | B4:2 An4:1 An4:1 | B4:3 / " +
+         "B4:1 | B4:2 B4:1 E5:1 | E5:2 B4:1 E5:1 | E5:2 E5:1 B4:1 | B4:2 / " +
+         "G4:1 _B4:1 | G4:1.5 _B4:.5 G4:1 G4:1 | B4:2 A4:1 A4:1 | G4:3 |",
+      B: "E3:1 | E3:1 _B2:1 E3:1 E3:1 | E3:2 A2:1 A2:1 | B2:2 B2:1 B2:1 | E3:3 / " +
+         "E3:1 | E3:2 E3:1 E3:1 | F3:2 F3:1 F3:1 | B2:3 / " +
+         "E3:1 | E3:2 E3:1 E3:1 | E3:2 E3:1 E3:1 | A2:2 A2:1 E3:1 | B2:2 / " +
+         "E3:2 | E3:2 E3:1 E3:1 | B2:2 B2:1 B2:1 | E3:3 |"
+    },
+    crossCheck: [
+      { book: "Latter-day Saint Hymns (Deseret Book)", year: 1927, page: "No. 231",
+        url: IA + "latter-day-saint-hymns-1927-b/page/n232/mode/1up",
+        note: "'Redeemer of Israel', '(P. M.)', E-flat, common time, crotchet = 72, four parts on two staves. Its melody agrees with the 1889 soprano note for note, quaver pairs included, and its tenor has the same A-naturals in 'bless-ing we call'." }
+    ],
+    notes: "The 1889 Psalmody prints No. 319 NEW SALEM, 'P. M. (Page 212.)', with no composer credit, on one leaf, with a footnote: 'The hymn on page 307 may also be sung to this tune.' Four parts on three staves, the tenor on top; no fermatas, no repeats (the heavy barline after 'call' marks the half, with no dots). " +
+           "The tenor's A-naturals on '-ing we' ('bless-ing we call': the dominant of the dominant, over the bass's F) are printed. A blot of ink sits on the bass staff in that bar; the bass there is a minim F and two crotchet Fs, whose heads and stems stand clear of it. " +
+           "Melismas are the plate's slurs and beams: '-deem' (E-flat–F), '-rael' (C–B-flat quavers: 'Is-rael' is two syllables, as the meter wants), 'bless-' (D–B-flat), '-ow' (E-flat–D quavers), '-lar' and 'by' (quaver pairs), 'Our' (E-flat–G) and 'King' (dotted B-flat–C). " +
+           "Tune name: NEW SALEM is the Psalmody's; the Church's music library calls it Dulcimer (alternate titles New Salem, Davis, Meditation) and credits Freeman Lewis; hymnary.org files it as DAVIS (Lewis), first printed in Wyeth's Repository of Sacred Music, Part Second (1813), not compared here. The four-part setting is the Psalmody's own."
+  }));
+
+  // ---- MARTYR ("Praise to the man") ---------------------------------------------
+  // Phelps's hymn for Joseph Smith, to a Scottish tune in D and 2/4 (No. 278),
+  // with its own chorus strain, "Hail to the Prophet, ascended to heaven!"
+  SOURCES.push(psalmody({
+    slug: "martyr", nameEn: "MARTYR", nameDs: "𐑋𐐪𐑉𐐻𐐲𐑉", number: 27,
+    source: LDS1889(278, 233), meter: "11.10.11.10R", time: "2/4", beatS: 0.64, pickup: 0,
+    key: { tonic: "D", sig: "2#", name: "D major" }, scale: "ionian", refrainLine: 4,
+    syllables: [11, 10, 11, 10, 11, 10, 11, 10],
+    cadences: { 4: "half" },
+    parts: {
+      S: "D4:1 D4:.75 D4:.25 | F4:.5 _D4:.5 F4:.5 A4:.5 | D5:1 F5:.75 E5:.25 | D5:.5 _A4:.5 A4:1 | / " +
+         "G4:1 B4:.75 G4:.25 | F4:1 A4:.75 F4:.25 | E4:.5 _D4:.5 E4:.5 F4:.5 | E4:2 | / " +
+         "D4:1 D4:.75 D4:.25 | F4:.5 _D4:.5 F4:.5 A4:.5 | D5:1 F5:.75 E5:.25 | D5:.5 _A4:.5 A4:1 | / " +
+         "G4:1 B4:.75 G4:.25 | F4:1 A4:.75 F4:.25 | E4:.5 _D4:.5 E4:.5 F4:.5 | D4:2 | / " +
+         "D5:1 D5:.75 D5:.25 | C5:.5 _B4:.5 A4:.5 A4:.5 | D5:1 D5:.75 D5:.25 | C5:.5 _B4:.5 A4:1 | / " +
+         "D5:1 D5:.75 D5:.25 | C5:.5 _A4:.5 E5:.5^ D5:.5 | C5:.5 _A4:.5 D5:.5 B4:.5 | A4:.5 _G4:.5 _F4:.5 _E4:.5 | / " +
+         "D4:1 D4:.75 D4:.25 | F4:.5 _D4:.5 F4:.5 A4:.5 | D5:1 F5:.75 E5:.25 | D5:.5 _A4:.5 A4:1 | / " +
+         "G4:1 B4:.75 G4:.25 | F4:1 A4:.75 F4:.25 | E4:.5 _D4:.5 E4:.5 F4:.5 | D4:2 |",
+      A: "D4:1 D4:.75 D4:.25 | D4:1 D4:.5 F4:.5 | F4:1 A4:.75 G4:.25 | F4:1 F4:1 | / " +
+         "D4:1 D4:.75 D4:.25 | D4:1 F4:.75 D4:.25 | C4:1 C4:.5 C4:.5 | C4:2 | / " +
+         "D4:1 D4:.75 D4:.25 | D4:1 D4:.5 F4:.5 | F4:1 A4:.75 G4:.25 | F4:1 F4:1 | / " +
+         "D4:1 D4:.75 D4:.25 | D4:1 F4:.75 D4:.25 | C4:1 C4:.5 C4:.5 | D4:2 | / " +
+         "F4:1 D4:.75 F4:.25 | E4:1 A4:.5 G4:.5 | F4:1 D4:.75 F4:.25 | E4:1 A4:.5 _G4:.5 | / " +
+         "F4:1 F4:.75 F4:.25 | E4:1 E4:.5^ F4:.5 | E4:1 G#4:.5 G#4:.5 | A4:.5 _G4:.5 _F4:.5 _E4:.5 | / " +
+         "D4:1 D4:.75 D4:.25 | D4:1 D4:.5 F4:.5 | F4:1 A4:.75 G4:.25 | F4:1 F4:1 | / " +
+         "D4:1 D4:.75 D4:.25 | D4:1 F4:.75 D4:.25 | C4:1 C4:.5 C4:.5 | D4:2 |",
+      T: "F4:1 F4:.75 F4:.25 | A4:.5 _F4:.5 A4:.5 D5:.5 | A4:1 C5:.75 C5:.25 | D5:1 D5:1 | / " +
+         "B4:1 D5:.75 B4:.25 | A4:1 A4:.75 A4:.25 | A4:1 A4:.5 A4:.5 | A4:2 | / " +
+         "F4:1 F4:.75 F4:.25 | A4:.5 _F4:.5 A4:.5 D5:.5 | A4:1 C5:.75 C5:.25 | D5:1 D5:1 | / " +
+         "B4:1 D5:.75 B4:.25 | A4:1 A4:.75 A4:.25 | G4:1 G4:.5 G4:.5 | F4:2 | / " +
+         "A4:1 A4:.75 A4:.25 | A4:1 A4:.5 A4:.5 | A4:1 A4:.75 A4:.25 | A4:1 A4:1 | / " +
+         "A4:1 A4:.75 A4:.25 | A4:1 A4:.5^ A4:.5 | A4:.5 _C5:.5 B4:.5 B4:.5 | A4:.5 _G4:.5 _F4:.5 _E4:.5 | / " +
+         "F4:1 F4:.75 F4:.25 | A4:.5 _F4:.5 A4:.5 D5:.5 | A4:1 C5:.75 C5:.25 | D5:1 D5:1 | / " +
+         "B4:1 D5:.75 B4:.25 | A4:1 A4:.75 A4:.25 | G4:1 G4:.5 G4:.5 | F4:2 |",
+      B: "D3:1 D3:.75 D3:.25 | D3:1 D3:.5 D3:.5 | D3:1 A2:.75 A2:.25 | D3:1 D3:1 | / " +
+         "G2:1 G2:.75 G2:.25 | D3:1 D3:.75 D3:.25 | A2:1 A2:.5 A2:.5 | A2:2 | / " +
+         "D3:1 D3:.75 D3:.25 | D3:1 D3:.5 D3:.5 | D3:1 A2:.75 A2:.25 | D3:1 D3:1 | / " +
+         "G2:1 G2:.75 G2:.25 | D3:1 D3:.75 D3:.25 | A2:1 A2:.5 A2:.5 | D3:2 | / " +
+         "D3:.5 _E3:.5 F3:.75 D3:.25 | A3:.5 _G3:.5 F3:.5 E3:.5 | D3:.5 _E3:.5 F3:.75 D3:.25 | A3:.5 _G3:.5 F3:.5 _E3:.5 | / " +
+         "D3:1 D3:.75 D3:.25 | A3:1 C3:.5^ D3:.5 | E3:1 E3:.5 E3:.5 | A3:.5 _G3:.5 _F3:.5 _E3:.5 | / " +
+         "D3:1 D3:.75 D3:.25 | D3:1 D3:.5 D3:.5 | D3:1 A2:.75 A2:.25 | D3:1 D3:1 | / " +
+         "G2:1 G2:.75 G2:.25 | D3:1 D3:.75 D3:.25 | A2:1 A2:.5 A2:.5 | D3:2 |"
+    },
+    crossCheck: [
+      { book: "Latter-day Saint Hymns (Deseret Book)", year: 1927, page: "No. 167",
+        url: IA + "latter-day-saint-hymns-1927-b/page/n171/mode/1up",
+        note: "'Praise to the Man', D major, 2/4, crotchet = 66, four parts on two staves, the chorus running on to the next leaf. Its melody agrees with the 1889 soprano note for note, rhythm included: the quaver pairs on 'man', 'ho-', 'Proph-', 'fight' and 'breth-', the dotted 'Je-sus a-', the fermata over 'rants', and the unison run on 'vain'. Its harmony was not compared." }
+    ],
+    notes: "The 1889 Psalmody prints No. 278 MARTYR, '11s & 10s. [Page 325.]', with no composer credit (the Church credits 'Scottish folk song'), over two leaves: four parts on three staves, the tenor on top; three verses under the verse music, and the chorus 'Hail to the Prophet' as a separate strain on the second leaf ('MARTYR (Concluded.)'). No repeats, no rests. " +
+           "Melismas are where the plate beams several notes to one syllable: 'man', 'o-' and 'Gods' (F-sharp–D), 'ho-', 'sa-' and 'breth-' (D–A), 'Proph-', 'na-' and 'he-' (E–D), the chorus's 'Proph-' and 'heav-' (C-sharp–B), 'ty-' and 'fight' (C-sharp–A), and 'vain' on four quavers A–G–F-sharp–E. " +
+           "The one fermata is on 'rants' (the chorus's sixth bar), printed over the tenor, under the soprano–alto staff and under the bass: all four parts hold it. The alto's G-sharps in 'fight him in' are the plate's (one sharp, carried through the bar). In the chorus the tenor holds the dominant A under 'Hail to the Prophet … Traitors and tyrants', and on 'vain' all four parts run down A–G–F-sharp–E in octaves and unison, as printed. " +
+           "Line 5's cadence ('ascended to heaven') is set by hand to 'half': the voices hold A major while the bass walks A–G–F-sharp–E, so the last onset names no chord and the automatic reading gave 'none'. Line 6 ends on the unison run, and 'none' is kept. " +
+           "Tempo: the 1889 book gives none; the 1927 hymnal marks crotchet = 66 and the Church's score 'Vigorously'. beatS 0.64 (crotchet about 94) is brisk enough for the dotted 'Praise to the' and the running 'vain', still a congregation's pace. " +
+           "Read at 400 dpi with a notehead detector and a pitch ruler, and checked by drawing the transcription back onto the plate."
+  }));
+
+  // ---- FOWLER ("We thank thee, O God, for a prophet") ---------------------------
+  // William Fowler's words, to a tune by Caroline Norton ("MRS NORTON" on the
+  // plate), in E-flat and common time (No. 271); nearly every beat is a
+  // dotted-quaver snap.
+  SOURCES.push(psalmody({
+    slug: "fowler", nameEn: "FOWLER", nameDs: "𐑁𐐵𐑊𐐲𐑉", number: 19,
+    source: LDS1889(271, 223), meter: "98.98D", time: "4/4", beatS: 0.75, pickup: 1,
+    key: { tonic: "E", sig: "3b", name: "E-flat major" }, scale: "ionian",
+    syllables: [9, 8, 9, 8, 9, 8, 9, 8],
+    parts: {
+      S: "E4:.75 _F4:.25 | G4:1 G4:.75 F4:.25 E4:.75 _F4:.25 G4:.75 A4:.25 | B4:2 G4:1 / " +
+         "E4:.75 _F4:.25 | G4:1 G4:.75 F4:.25 G4:1 B4:.75 G4:.25 | F4:3 / " +
+         "E4:.75 _F4:.25 | G4:1 G4:.75 F4:.25 E4:.75 _F4:.25 G4:.75 A4:.25 | B4:2 C5:1^ / " +
+         "C5:.75~ C5:.25 | B4:1 B4:.75 B4:.25 B4:1 B4:.75 A4:.25 | G4:3 / " +
+         "B4:1 | E5:1 E5:.75 E5:.25 D5:1 C5:.75 C5:.25 | B4:2 G4:1 / " +
+         "E4:.75 _F4:.25 | G4:1 G4:.75 F4:.25 G4:1 B4:.75 G4:.25 | F4:3 / " +
+         "G4:.5 _B4:.5 | E5:1 E5:.75 E5:.25 D5:1 C5:.75 C5:.25 | B4:2 G4:1 / " +
+         "E4:.75 _F4:.25 | G4:1 B4:.75 G4:.25 F4:1 G4:.75 F4:.25 | E4:3 |",
+      A: "E4:1 | E4:1 E4:.75 E4:.25 E4:1 E4:.75 F4:.25 | G4:2 E4:1 / " +
+         "E4:1 | E4:1 E4:.75 D4:.25 E4:1 G4:.75 E4:.25 | D4:3 / " +
+         "E4:.75~ E4:.25 | E4:1 E4:.75 E4:.25 E4:1 E4:.75 F4:.25 | G4:2 A4:1^ / " +
+         "A4:.75~ A4:.25 | G4:1 G4:.75 G4:.25 G4:1 G4:.75 F4:.25 | E4:3 / " +
+         "G4:1 | G4:1 G4:.75 G4:.25 B4:1 A4:.75 A4:.25 | G4:2 E4:1 / " +
+         "E4:1 | E4:1 E4:.75 D4:.25 E4:1 G4:.75 E4:.25 | D4:3 / " +
+         "G4:1 | G4:1 G4:.75 G4:.25 B4:1 A4:.75 A4:.25 | G4:2 E4:1 / " +
+         "E4:1 | E4:1 G4:.75 E4:.25 D4:1 E4:.75 D4:.25 | E4:3 |",
+      T: "G4:.75 _A4:.25 | B4:1 B4:.75 A4:.25 G4:.75 _A4:.25 B4:.75 E5:.25 | E5:2 B4:1 / " +
+         "G4:.75 _A4:.25 | B4:1 B4:.75 B4:.25 B4:1 B4:.75 B4:.25 | B4:3 / " +
+         "G4:.75 _A4:.25 | B4:1 B4:.75 A4:.25 G4:.75 _A4:.25 B4:.75 E5:.25 | E5:2 E5:1^ / " +
+         "E5:.75~ E5:.25 | E5:1 E5:.75 E5:.25 E5:1 B4:.75 B4:.25 | B4:3 / " +
+         "B4:1 | B4:1 B4:.75 B4:.25 B4:1 E5:.75 E5:.25 | E5:2 B4:1 / " +
+         "G4:.75 _A4:.25 | B4:1 B4:.75 B4:.25 B4:1 B4:.75 B4:.25 | B4:3 / " +
+         "B4:1 | B4:1 B4:.75 B4:.25 B4:1 E5:.75 E5:.25 | E5:2 B4:1 / " +
+         "G4:.75 _A4:.25 | B4:1 B4:.75 B4:.25 B4:1 A4:.75 A4:.25 | G4:3 |",
+      B: "E3:1 | E3:1 E3:.75 E3:.25 E3:1 E3:.75 E3:.25 | E3:2 E3:1 / " +
+         "E3:1 | E3:1 E3:.75 B2:.25 E3:1 E3:.75 E3:.25 | B2:3 / " +
+         "E3:.75~ E3:.25 | E3:1 E3:.75 E3:.25 E3:1 E3:.75 E3:.25 | E3:2 A2:1^ / " +
+         "A2:.75~ A2:.25 | B2:1 B2:.75 B2:.25 B2:1 B2:.75 B2:.25 | E3:3 / " +
+         "E3:1 | E3:1 E3:.75 E3:.25 E3:1 E3:.75 E3:.25 | E3:2 E3:1 / " +
+         "E3:1 | E3:1 E3:.75 B2:.25 E3:1 E3:.75 E3:.25 | B2:3 / " +
+         "E3:1 | E3:1 E3:.75 E3:.25 E3:1 E3:.75 E3:.25 | E3:2 E3:1 / " +
+         "E3:1 | E3:1 E3:.75 E3:.25 B2:1 B2:.75 B2:.25 | E3:3 |"
+    },
+    crossCheck: [
+      { book: "Latter-day Saint Hymns (Deseret Book)", year: 1927, page: "No. 298",
+        url: IA + "latter-day-saint-hymns-1927-b/page/n303/mode/1up",
+        note: "'We Thank Thee, O God, For a Prophet', E-flat, four parts on two staves, crotchet = 69, continuing on the next leaf. Its melody agrees with the 1889 soprano note for note, including the two places where the 1985 book differs: B-flat (sol) on 'our' in 'To lighten our minds', and the G–B-flat quavers on the seventh line's pickup 'We'." }
+    ],
+    notes: "The 1889 Psalmody prints No. 271 FOWLER, '9s & 8s. [Page 166.]' (the page of the words in the hymn book), credited MRS NORTON, over two leaves (the second headed 'FOWLER (Concluded.)'): four parts on three staves, the tenor on top, E-flat, common time, a crotchet pickup made of a dotted quaver and a semiquaver. No repeats, no rests, no divided notes. " +
+           "Lines 1, 2, 3, 6 and 8 begin on a beamed dotted-quaver–semiquaver pickup under one syllable ('We', 'To', 'We', 'Be-', 'And'), stored as a slurred pair, and 'God' and 'send-' carry the same pair inside the bar; line 5's pickup 'We' is a plain crotchet, and line 7's two beamed quavers, G–B-flat. " +
+           "The one fermata is on 'pel' of 'Gospel' (the end of line 3), printed in all four parts; that line rests on the IV chord, so its cadence reads 'none'. The fourth line's pickup 'To' is a dotted quaver tied to a semiquaver of the same pitch (verse 2 sings 'And we' on the two notes); the plate prints one tie over the soprano–alto stems, a tie over the tenor and one under the bass, and the alto is taken as tied with the soprano. At the third line's pickup the alto and bass tie an E-flat across the pair while the soprano and tenor slur up a step. " +
+           "beatS 0.75 (crotchet 80): the dotted snaps on nearly every beat need room to be sung (the semiquaver then lasts about 190 ms); the 1927 hymnal marks crotchet = 69, so 80 is brisk but a singing pace. " +
+           "Read at 400 dpi with a notehead detector and a pitch ruler, and checked by drawing the transcription back onto the plate."
+  }));
+
+  // ---- the five in the Saints' hymnbooks (see THE LDS HYMNALS) --------------------
+  // Checked 2026-09-27 as the section above describes: each hymn's Gospel
+  // Library page for its number and title, the music library's tune name, and
+  // the Church's MusicXML melody against this file's, pitch by pitch. None of
+  // the 82 Hymns—For Home and Church released so far has any of these tunes
+  // (their music-library tune names were all read), so homeAndChurch is empty.
+  LDS["assembly"] = lds({
+    h85: [h85(2, "The Spirit of God", "the-spirit-of-god")],
+    other: "The Church names the tune Assembly (alternate title Paraclete), credited 'Anon., ca. 1844'; its melody matches this one pitch for pitch. Sung after the Hosanna Shout at temple dedications. Also in the 1948 hymnal (Nos. 213, 327).",
+    also: [sp1948(34203, "the-spirit-of-god"), HOMECH]
+  });
+  LDS["deseret"] = lds({
+    h85: [h85(5, "High on the Mountain Top", "high-on-the-mountain-top"),
+          h85(333, "High on the Mountain Top (Men’s Choir)", "high-on-the-mountain-top-mens-choir")],
+    other: "The Church names the tune Deseret and credits Ebenezer Beesley, as the 1889 book does; the melody of No. 5 matches this one pitch for pitch (No. 333, for men's voices, has the same tune name; its melody was not compared). Also in the 1948 hymnal (Nos. 62, 312).",
+    also: [sp1948(34051, "high-on-the-mountain-top"), HOMECH]
+  });
+  LDS["new-salem"] = lds({
+    h85: [h85(6, "Redeemer of Israel", "redeemer-of-israel")],
+    other: "The Church names the tune Dulcimer (alternate titles New Salem, Davis, Meditation) and credits Freeman Lewis; its melody matches this one pitch for pitch. Also in the 1948 hymnal (Nos. 195, 332).",
+    also: [sp1948(34185, "redeemer-of-israel"), HOMECH]
+  });
+  LDS["martyr"] = lds({
+    h85: [h85(27, "Praise to the Man", "praise-to-the-man")],
+    other: "The Church names the tune Martyr (alternate title Scotland the Brave), credited 'Scottish folk song'. Its melody matches this one pitch for pitch but in three bars ('Je-ho-vah', 'dis-pen-sa-tion', 'plan for his breth-ren'), where 1985 sings do–sol in two crotchets and 1889 slurs do–sol in quavers and repeats the sol. Also in the 1948 hymnal (Nos. 147, 326).",
+    also: [sp1948(34137, "praise-to-the-man"), HOMECH]
+  });
+  LDS["fowler"] = lds({
+    h85: [h85(19, "We Thank Thee, O God, for a Prophet", "we-thank-thee-o-god-for-a-prophet")],
+    other: "The Church names the tune Fowler (alternate title Prophet) and credits Caroline Sheridan Norton. Its melody matches this one but twice: 'our' in 'To lighten our minds' is la in 1985, sol here and in 1927; and the seventh line's pickup 'We' is one sol in 1985, mi–sol quavers here. Also in the 1948 hymnal (Nos. 196, 331).",
+    also: [sp1948(34186, "we-thank-thee-o-god-for-a-prophet"), HOMECH]
+  });
+
+  // ---- KINGSFOLD's Amen -------------------------------------------------------------
+  // The English Hymnal prints No. 574 over two leaves; the second (p. 747,
+  // after the verses) closes with an "A-men.": two semibreve chords, every part
+  // printed, A minor then E major (iv – I, the plagal Amen with a Picardy
+  // third). It is Hymn.amen on KINGSFOLD: one Line in the SCORE §5 shape (its
+  // notes by part, beats counted from the Amen's own start, chords, the cadence
+  // "plagal", comma-tuned like every other line), plus the dev fields
+  // amen.source and amen.devNote. A performer sings it after the last verse,
+  // at the tune's beatS. It is built by this file's builder from the tokens
+  // below, in KINGSFOLD's own key, clefs and time; the KINGSFOLD entry above is
+  // untouched: the builder is wrapped here, so that a tune listed in AMENS
+  // comes back with its Amen attached.
+  var AMENS = {
+    "kingsfold": {
+      source: { book: "The English Hymnal (ed. R. Vaughan Williams), with No. 574", year: 1906, page: 747,
+                url: IA + "englishhymnalwit00unse/page/n780/mode/1up" },
+      parts: { S: "E4:2 E4:2 |", A: "C4:2 B3:2 |", T: "A3:2 G#3:2 |", B: "A2:2 E3:2 |" },
+      note: "The Amen printed after the verses of No. 574 (p. 747): two semibreves in each part, soprano E–E, alto C–B, tenor A–G-sharp (the sharp printed), bass A–E; the tenor and bass on the lower staff, as KINGSFOLD's are. Read from the archive.org leaf at full size with a pitch ruler."
+    }
+  };
+  build = (function (inner) {
+    return function (t, problems) {
+      var h = inner(t, problems), a = AMENS[t.slug], o = {}, k;
+      if (!a) return h;
+      for (k in t) o[k] = t[k];
+      o.slug = t.slug + " (Amen)"; o.parts = a.parts; o.pickup = 0; o.syllables = [2];
+      o.refrainLine = null; o.lineNotes = null; o.cadences = null;
+      var amen = inner(o, problems).lines[0];
+      amen.peak = false;
+      amen.source = a.source;
+      amen.devNote = a.note;
+      h.amen = amen;
+      return h;
+    };
+  })(build);
+
+  // ==========================================================================
   var problems = [];
   // each tune takes its LDS finding (null if nobody has looked yet); a finding
   // filed under a slug no tune has is a typo, and says so
