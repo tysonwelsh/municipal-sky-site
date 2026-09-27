@@ -39,12 +39,8 @@
 .jd-about--live .jd-step { opacity: 0.42; }
 .jd-about--live .jd-step.is-on { opacity: 1; }
 .jd-about .jd-step h2 { margin-top: 0; }
-/* the eyebrow: which scene this step belongs to, set like an axis label */
-.jd-about .jd-step-eyebrow {
-  font-family: var(--mono, monospace);
-  font-size: var(--fs-xs); letter-spacing: 0.18em; text-transform: uppercase;
-  opacity: 0.6; margin: 0 0 var(--s-1);
-}
+/* no eyebrow (owner, 2026-09-26): a step is its heading and its prose. The
+   scene a step belongs to is on the timeline, and the pane shows it. */
 /* the demo notice — under the drawing, beside the controls, stated plainly */
 .jd-about .jd-demo-note {
   margin: var(--s-2) 0 0;
@@ -104,6 +100,12 @@
 }
 .jd-about--live .jd-scene.has-ghost > .jd-inline-card:not(.jd-scene-ghost) { visibility: hidden; }
 .jd-about--live .jd-scene-ghost { visibility: visible; }
+/* a ghost is a still picture: nothing in it may animate or transition. A
+   clone restarts every animation its original had finished (a card's
+   entrance, a drawing's draw-on), so without this the stand-in itself moved
+   for a frame or two as it went up */
+.jd-about--live .jd-scene-ghost,
+.jd-about--live .jd-scene-ghost * { animation: none !important; transition: none !important; }
 /* the pre-render: a host laid out but invisible, so a card can be opened,
    fitted and cloned before the reader ever reaches it */
 .jd-about--live .jd-scene.is-prerender {
@@ -922,8 +924,8 @@ html.jd-about-page.jd-folder-open { overflow: visible; }
    THE STEP TYPE (owner, 2026-09-23). The steps inherited .jd-notes from the
    art page: Courier Prime at 13px, the drawer's chrome. But the steps are
    prose, and the site's rule is "mono is the chrome, Spectral is the voice"
-   (css/style.css). So: Spectral for the step body and headings; the eyebrow
-   and the demo notes stay mono because they are labels, not voice.
+   (css/style.css). So: Spectral for the step body and headings; the demo
+   notes stay mono because they are labels, not voice.
 
    Three heading treatments, chosen with ?type=a|b|c on the URL (index.php
    stamps data-type on the wrapper). Delete the two losers once one is picked.
@@ -949,7 +951,6 @@ html.jd-about-page.jd-folder-open { overflow: visible; }
   padding-bottom: 0;
   margin: 0 0 var(--s-2);
 }
-.jd-about .jd-step-eyebrow { font-family: var(--font-mono); }
 .jd-about .jd-demo-note { font-family: var(--font-mono); font-size: var(--fs-sm); line-height: var(--lh-base); }
 .jd-about .jd-step em { font-family: var(--font-voice); font-style: italic; }
 
@@ -991,8 +992,24 @@ html.jd-about-page.jd-folder-open { overflow: visible; }
    the phone layout pins the pane across the top and is untouched.
    ========================================================================== */
 @media (min-width: 769px) {
+  /* THE HANDOVER (owner, 2026-09-26): a pinned caption holds until the end
+     of its step's box, and the next step's prose begins right at that end —
+     so the incoming paragraph rode up and parked flush under the pinned one
+     (measured: the gap closed to 0px at every step) before either moved.
+     The fix is room at the foot of every step. A sticky caption never enters
+     its step's bottom padding, so the padding is a gap the two paragraphs
+     keep between them: the outgoing one lets go while the incoming one is
+     still at the bottom edge of the screen, and they travel together, the
+     old leaving as the new arrives. --jd-step-gap is sized so a typical
+     caption (~14rem) lets go just as the next one reaches the viewport's
+     bottom: viewport − pin line − caption. The 70vh above it is the pinned
+     stretch, a little shorter than before so the page grows by less than
+     the gap does. */
   .jd-about--live .jd-step {
+    --jd-step-gap: calc(50vh - var(--banner-h) / 2 - 8rem);
     justify-content: flex-start;
+    min-height: calc(70vh + var(--jd-step-gap));
+    padding-bottom: var(--jd-step-gap);
   }
   .jd-about--live .jd-step-body {
     position: sticky;
@@ -1006,4 +1023,99 @@ html.jd-about-page.jd-folder-open { overflow: visible; }
   .jd-about--live .jd-step[data-step="taxonomy"] .jd-step-body {
     top: calc(var(--banner-h) + var(--s-3));
   }
+}
+
+/* ============================================================================
+   THE POSTER (owner, 2026-09-26). Scene 1's pile is a picture of the real
+   drawer, captured by scripts/capture-drawer-poster.js and laid in as the
+   well's floor (index.php sets html.jd-poster-on and --jd-poster-url only
+   when the capture is on disk; ?live turns it off). The pile is still BUILT —
+   the cards read the same payload — but only the specimen is ever painted:
+   one live drawing, one drop-shadow, one real tag, instead of the whole
+   collection re-compositing inside a pane the page scrolls past.
+   The live wall shade, varnish and vignette stay on top of the picture; the
+   capture is taken without them so nothing is doubled.
+   ========================================================================== */
+html.jd-poster-on .jd-about .jd-well {
+  background: #8d6537 var(--jd-poster-url) center / 100% 100% no-repeat;
+}
+/* the succulent is SPECIMEN in about-scenes.js — the one object scene 1 lifts */
+html.jd-poster-on .jd-about .jd-pile > .jd-item:not([data-id="2026-07-28-desktop-succulent"]) {
+  display: none;
+}
+/* a pick dims the rest of the pile (brightness .68 on every other item); with
+   the rest of the pile in the picture, the shade falls on the picture */
+html.jd-poster-on .jd-about .jd-well::before {
+  content: '';
+  position: absolute; inset: 0; z-index: 1;
+  pointer-events: none;
+  background: rgba(24, 12, 4, 0.34);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+html.jd-poster-on .jd-about .jd-well.jd-has-pick::before { opacity: 1; }
+
+/* the way into the real thing: a manila button on the drawer's floor, in the
+   corner the Take-a-Turn plate leaves free. Above the vignette (62). */
+.jd-about .jd-open-drawer {
+  position: absolute; z-index: 64;
+  right: calc(var(--wall) + 12px);
+  bottom: calc(var(--wall) + 12px);
+  font-family: var(--font-mono);
+  font-size: 0.62rem; letter-spacing: 0.14em; line-height: 1;
+  text-transform: uppercase; text-decoration: none; white-space: nowrap;
+  color: #3a2a12;
+  background:
+    linear-gradient(178deg, rgba(255, 250, 228, 0.55) 0%, rgba(255, 250, 228, 0) 40%),
+    #e8d9a8;
+  border: 1px solid rgba(74, 53, 18, 0.55); border-radius: 3px;
+  padding: 0.62rem 0.8rem 0.56rem;
+  box-shadow: 2px 3px 7px rgba(22, 11, 4, 0.5);
+}
+.jd-about .jd-open-drawer:hover { background: #f1e6c0; }
+.jd-about .jd-open-drawer:active { transform: translateY(1px); box-shadow: 1px 1px 3px rgba(22, 11, 4, 0.5); }
+
+/* a phone gives the drawer the full width and 62vh, which is taller than 4:5;
+   the picture is 4:5, so the stage keeps that shape here and the picture is
+   never stretched */
+@media (max-width: 768px) {
+  html.jd-poster-on .jd-about--live .jd-stage {
+    height: auto;
+    aspect-ratio: 4 / 5;
+    width: min(100%, calc(62vh * 0.8));
+    min-height: 0;
+  }
+  .jd-about .jd-open-drawer { font-size: 0.54rem; padding: 0.55rem 0.65rem 0.5rem; }
+}
+
+/* the craquelure is the floor's aging and lies UNDER the objects. Over the
+   floor it is baked into the picture beneath them; left live across the whole
+   stage it would crack the pictured objects too. So the live layer keeps only
+   the frame: its padding is the wall, and the mask cuts the well out of it. */
+html.jd-poster-on .jd-about .jd-craquelure {
+  padding: var(--wall);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+
+/* a card's scrim lands on <body> as a full-screen modal before about-scenes.js
+   carries it into the pane. The script moves it before the next paint; this
+   makes sure a scrim that is on <body> for any reason never paints over the
+   walkthrough (the page opens no modal of its own — the tag's REPORT CARD
+   button scrolls to the record scene instead). */
+html.jd-about-page body > .jd-turn-scrim,
+html.jd-about-page body > .jd-record-scrim,
+html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
+
+/* NO IMMERSIVE MODE HERE. On a phone the drawer page hides the site banner
+   while the drawer fills the screen (junk-drawer.css "IMMERSIVE MODE") and
+   brings it back on scroll. This page's drawer is a pinned pane, not the
+   whole screen: the banner painted, then slid away as the stylesheet
+   landed and the page jumped up under it (owner, 2026-09-26: first-load
+   flashing), and the reader was left without the site's navigation until
+   they scrolled. The banner simply stays. */
+@media (max-width: 768px) {
+  html.jd-about-page body { padding-top: var(--banner-h); }
+  html.jd-about-page .site-banner { transform: none; transition: none; }
 }

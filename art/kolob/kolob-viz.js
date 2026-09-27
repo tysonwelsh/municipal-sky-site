@@ -9,16 +9,20 @@
 //    in the middle, alternating outward), each with the paper-colored mouth
 //    near its foot. Fed by an AnalyserNode on the master bus; at rest it
 //    settles into the quiet stepped skyline of the hymnbook cover.
-//  · THE PAGE — a scrolling engraving on a GRAND STAFF: two five-line staves
-//    joined by a brace, a treble clef and a bass clef (baked as outlines, no
-//    font needed). Melodic notes print as 4-shape SHAPE-NOTE heads (fa △, sol ○,
-//    la ▭, mi ◇) in green ink, each snapped to the line or space of its pitch —
-//    the tonic-root sits at middle C, so the choir bass fills the bass staff and
-//    the soprano the treble, with ledger lines (middle C included) for the
-//    excursions. The staves and clefs are a static layer; only the ink scrolls.
-//    Deeper motif generations print worn — double-struck, spread. The ink dries
-//    and pales as the page scrolls on. In the sacrament the page goes almost
-//    blank; ink returns with the doxology.
+//  · THE PAGE — "The Colony Tunebook" (v0.31; plainer in v0.32): a grand
+//    staff engraved the way a tunebook is engraved — two staves a
+//    grand-staff gap apart, a brace, treble and bass clefs (baked outlines,
+//    no font needed). Notes print as 4-shape SHAPE-NOTE heads (fa △, sol ○,
+//    la ▭, mi ◇) with real stems, open/filled heads, flags and dots read from
+//    their lengths, in one hymnbook-green ink from the moment they sound;
+//    the ink dries as the page turns at 60 px/s. Just the notes: no signs
+//    or words on the staff. The clarinet prints cue-size, the harmonium
+//    grace-size, bells as ringed heads; the telegraph punches its holes
+//    straight into the paper down the middle; the Question is framed in
+//    cartouches; a visiting band slides through in round notes on its own
+//    layer. The staves and clefs are a static layer; the ink is re-engraved
+//    from data each frame, and nothing moves but the scroll and the drying.
+//    In the sacrament the page dries almost blank.
 //  · THE WHEEL — the order of service seated round the rim of one great
 //    wheel, of which the page shows only the crown: a sun low on a far
 //    horizon. The section now playing is lettered at the crown beneath ONE
@@ -39,10 +43,7 @@ window.KolobViz = (function () {
   var K = window.KolobAudio;
 
   var canvas = null, ctx2d = null;
-  var page = null, pctx = null;                    // offscreen ink layer (scrolls)
-  var staffLayer = null;                           // static: the staves + clefs
-  var fadeCanvas = null, fadeCtx = null, fadeGrad = null;  // left-edge ink fade
-  var fadeX0 = 90, fadeX1 = 150;                    // ink: ~0 at x≤fadeX0, full at x≥fadeX1
+  var staffLayer = null;                           // static: the staves, brace and clefs (the ink and band layers are below, with the page)
   var wheel = null, xctx = null;                   // the order of service, with the facade inside it
   var W = 0, H = 0, XW = 0, XH = 0, dpr = 1;
   var running = false;
@@ -50,11 +51,7 @@ window.KolobViz = (function () {
   var cond = { section: null, local: 0, intensity: 0, f0: 65, mode: "ionian", hush: false, fuging: false };
   var playing = false;
   var paused = false;                              // the meeting held: the page stops turning and drying
-  var curGen = 0;                                  // engraving wear follows the working generation
 
-  var INK = "#1e4d3b";                             // hymnbook green
-  var INK_SOFT = "rgba(30, 77, 59, 0.55)";
-  var RULE = "rgba(30, 77, 59, 0.42)";            // the printed staff rules
   var PIPE = "#17201a";                            // the black of the facade
   var PAPER = "#f5f0e4";                           // cream, for the pipe mouths
 
@@ -183,7 +180,12 @@ window.KolobViz = (function () {
     penta:      [1, 9/8, 5/4, 3/2, 5/3],
     hexa:       [1, 9/8, 5/4, 4/3, 3/2, 5/3],
   };
-  // 4-shape solmization per collection degree (fa sol la fa sol la mi)
+  // 4-shape solmization per collection degree (fa sol la fa sol la mi).
+  // The rudiments fix the key note as fa (major) or la (minor), so the
+  // modal collections take the shapes of the tune they are written as:
+  // dorian as a minor tune whose raised sixth is still fa, mixolydian as a
+  // major tune whose lowered seventh is still mi (the Score may add the
+  // accidental; the shape does not change with it).
   var SHAPES = {
     ionian:     ["fa", "sol", "la", "fa", "sol", "la", "mi"],
     mixolydian: ["fa", "sol", "la", "fa", "sol", "la", "mi"],
@@ -204,18 +206,37 @@ window.KolobViz = (function () {
       var d = Math.abs(Math.log2(r / ratios[i]));
       if (d < bd) { bd = d; best = i; }
     }
+    // a pitch just under the octave belongs to the next octave's do
+    if (Math.abs(Math.log2(r / 2)) < bd) { best = 0; oct++; }
     return { deg: best, oct: oct, n: ratios.length };
   }
   // ==========================================================================
-  // THE GRAND STAFF — two five-line staves joined by a brace.
-  // q is a diatonic-step lattice spanning BOTH staves: bass rules at
-  // q=0,2,4,6,8; the middle-C gap (q=10, a shared ledger, undrawn); treble
-  // rules at q=12,14,16,18,20. The tonic-root (~middle C, F0·4) is anchored at
-  // q=10, so the melody rides the gap and lower treble, the choir bass fills the
-  // bass staff, and high doublings the upper treble — the ~4-octave range that
-  // used to pile onto ledger lines now sits on its proper staff.
-  // STAFFPOS gives the diatonic letter (0..6) of each collection degree, so the
-  // gapped folk scales (penta/hexa) simply leave their missing letters empty.
+  // THE PAGE — "The Colony Tunebook" (v0.31, owner's Direction A; made
+  // plainer in v0.32). A grand staff engraved the way a tunebook is
+  // engraved: four shapes with their stems grown from the shape's own
+  // corner, open and filled heads, flags and augmentation dots read from
+  // each note's length, broad-nib contrast on the open heads and a
+  // letterpress impression on every head, pre-rendered once per size at
+  // device resolution (the sprite atlas). One ink, hymnbook green, from the
+  // moment a note sounds; the ink dries as the page turns. Just the notes:
+  // no signs or words on the staff. Nothing prints outside the plate: a
+  // note beyond the ledger room folds silently by octaves until it fits.
+  //
+  // q is a diatonic-step lattice: bass rules at q = 0,2,4,6,8, middle C (the
+  // meeting's tonic-root) at q = 10, treble rules at q = 12..20. The staves
+  // stand a normal grand-staff gap apart (5 sp): a treble note at q10 hangs
+  // on its ledger under the treble, a bass note at q10 on its ledger over the
+  // bass, and the telegraph punches its holes along the middle of the gap.
+  //
+  // Everything on the page is kept as data, stamped with the audio time it
+  // sounds at, and re-engraved each frame from the page clock (the audio
+  // clock, smoothed), so the scroll is exact: x is time, and a page that
+  // falls behind catches up whole. Nothing on the page moves but the scroll
+  // and the drying.
+  // Still to come with the Score (PLAN-COMPOSITION §2.3): barlines, beams
+  // across beats, fermatas, the running head, Johnston signs, SATB part
+  // identity and words.
+  // ==========================================================================
   var STAFFPOS = {
     ionian:     [0, 1, 2, 3, 4, 5, 6],
     mixolydian: [0, 1, 2, 3, 4, 5, 6],
@@ -225,343 +246,972 @@ window.KolobViz = (function () {
     hexa:       [0, 1, 2, 3, 4, 5],
   };
   var Q_MID = 10;                                  // middle C / the meeting's tonic-root
-  var BASS_RULES = [0, 2, 4, 6, 8], TREBLE_RULES = [12, 14, 16, 18, 20];
-  var STAFF_LO = -4, STAFF_HI = 24;                // fold only beyond ~4 octaves
-  // Vertical lattice: q0..q20 fill the central 70% of the strip; 15% of clear
-  // paper above and below carries the ledger lines.
-  function stepFrac() { return 0.70 / 20; }        // fraction of H per diatonic step
-  function stepPx() { return H * stepFrac(); }
-  function yOfQ(q) { return H * (0.85 - stepFrac() * q); }   // q0 at 85%, q20 at 15%
-  function staffQ(freq) {
+  function noteQ(freq) {
     var d = degOf(freq);
     var letters = STAFFPOS[cond.mode] || STAFFPOS.ionian;
     var pos = letters[d.deg];
     if (pos == null) pos = d.deg;
-    var q = Q_MID + pos + 7 * d.oct;               // diatonic letter from the tonic-root
-    while (q < STAFF_LO) q += 7;                    // fold only the rare >4-octave extremes
-    while (q > STAFF_HI) q -= 7;
-    return q;
+    var q = Q_MID + pos + 7 * d.oct;
+    while (q < -24) q += 7;                        // guard against nonsense only; the page folds (silently) at draw time
+    while (q > 44) q -= 7;
+    var shapes = SHAPES[cond.mode] || SHAPES.ionian;
+    return { q: q, shape: shapes[d.deg] || "sol" };
   }
-  // ledger positions for a note at q: middle C in the gap, plus each staff line
-  // the note has climbed beyond its own staff (never on the drawn rules).
-  function ledgersForQ(q) {
-    var out = [], l;
-    if (q === Q_MID) out.push(Q_MID);
-    for (l = 22; l <= q; l += 2) out.push(l);      // above the treble staff
-    for (l = -2; l >= q; l -= 2) out.push(l);      // below the bass staff
-    return out;
+  // the visiting band plays in its own key: its staff letter comes from the
+  // equal-tempered distance to the ward's do, not from the ward's scale
+  var ET_LETTER = [0, 0, 1, 2, 2, 3, 3, 4, 5, 5, 6, 6];
+  function bandQ(freq) {
+    var s = Math.round(12 * Math.log2(freq / ((cond.f0 || 65) * 4)));
+    var oct = Math.floor(s / 12), pc = s - oct * 12;
+    return Q_MID + ET_LETTER[pc] + 7 * oct;
   }
+
+  // ---- ink ----------------------------------------------------------------------
+  // One ink (v0.32, owner): hymnbook green, from the moment a note sounds.
+  // No gilt strike, no cooling, no glow; only the drying fades it.
+  var C_INK = [30, 77, 59];
+  function rgba(c, a) { return "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + (a == null ? 1 : +(+a).toFixed(3)) + ")"; }
+  function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
+  var FG = '"EB Garamond", Georgia, serif';
 
   // The two clefs, baked as self-contained outlines (traced from a serif music
   // glyph) so they render identically for every visitor — no font dependency.
-  // Coordinates are font units (y-up, 1000 upm); drawClef flips and scales them.
+  // Coordinates are font units (y-up, 1000 upm).
   var CLEF_TREBLE = { bbox: [120, -291, 542, 900], d: "M434 2Q464 -103 464 -170Q464 -223 427.0 -257.0Q390 -291 337 -291Q287 -291 250.0 -261.5Q213 -232 213 -190Q213 -160 233.5 -133.5Q254 -107 283.5 -107.0Q313 -107 331.5 -128.5Q350 -150 350 -178Q350 -240 280 -240Q298 -268 338 -268Q353 -268 368.5 -263.5Q384 -259 401.0 -248.0Q418 -237 428.5 -213.5Q439 -190 439 -157Q439 -136 411 -6Q389 -12 356 -12Q259 -12 189.5 60.0Q120 132 120 232Q120 267 131.5 303.0Q143 339 157.5 366.5Q172 394 200.5 428.5Q229 463 248.5 483.5Q268 504 303 539Q280 621 280 689Q280 779 313.0 839.5Q346 900 379 900Q389 900 401.5 887.0Q414 874 426.0 851.0Q438 828 446.5 790.5Q455 753 455 710Q455 551 342 447L368 329Q384 332 397 332Q458 332 500.0 282.5Q542 233 542 162Q542 44 434 2ZM426 746Q426 801 394 801Q358 801 333.0 748.0Q308 695 308 630Q308 588 321 557Q359 580 392.5 639.5Q426 699 426 746ZM498 128Q498 183 466.0 216.0Q434 249 383 249L428 23Q498 52 498 128ZM407 17 361 247Q334 241 311.5 214.0Q289 187 289 158Q289 143 295.0 128.5Q301 114 309.5 104.0Q318 94 327.0 86.0Q336 78 342.0 74.5Q348 71 348 71L340 66Q307 75 277.5 106.0Q248 137 248 184Q248 231 277.5 270.5Q307 310 343 323L325 430Q168 299 168 177Q168 104 223.0 55.0Q278 6 348 6Q365 6 407 17Z" };
   var CLEF_BASS   = { bbox: [75, 166, 607, 757],   d: "M564 704Q582 704 594.5 691.0Q607 678 607.0 661.0Q607 644 593.0 631.0Q579 618 563 618Q521 618 521 663Q521 681 534.0 692.5Q547 704 564 704ZM607 469Q607 450 594.0 437.0Q581 424 564 424Q521 424 521 469Q521 485 533.5 498.0Q546 511 564.0 511.0Q582 511 594.5 497.0Q607 483 607 469ZM285 757Q366 757 421.0 701.5Q476 646 476 569Q476 531 465.5 495.0Q455 459 432.0 426.5Q409 394 386.0 367.0Q363 340 326.0 313.0Q289 286 264.0 267.5Q239 249 196.5 226.0Q154 203 135.5 193.5Q117 184 80 166L75 182Q76 183 102.0 200.0Q128 217 144.0 227.5Q160 238 191.5 263.0Q223 288 244.0 309.5Q265 331 291.5 363.5Q318 396 334.0 427.0Q350 458 361.5 498.0Q373 538 373 578Q373 735 262 735Q225 735 199.0 725.5Q173 716 161.5 702.0Q150 688 145.0 677.5Q140 667 140 659Q140 644 160 644Q168 644 179.0 647.5Q190 651 194 651Q221 651 239.0 634.0Q257 617 257 592Q257 563 235.0 544.0Q213 525 183 525Q144 525 119.0 548.0Q94 571 94 607Q94 673 150.5 715.0Q207 757 285 757Z" };
   var trebPath = null, bassPath = null;            // Path2D, built on first resize
-  function drawClef(c, clef, path, leftX, targetTop, targetH) {
-    var bb = clef.bbox, gh = bb[3] - bb[1], s = targetH / gh;
-    c.save();
-    c.translate(leftX - bb[0] * s, targetTop + bb[3] * s);
-    c.scale(s, -s);                                // font units are y-up
-    c.fillStyle = INK;
-    c.fill(path);
+
+  // ---- the glyph atlas ----------------------------------------------------------
+  // Noteheads in staff spaces (y down): polygons for fa/la/mi, ellipses for sol
+  // and the band's round notes. The fa's upright edge is the stem's side.
+  var SH = {
+    fa_u: { poly: [[-0.64, 0.45], [0.64, 0.45], [0.64, -0.47]] },
+    fa_d: { poly: [[-0.64, -0.47], [-0.64, 0.45], [0.64, 0.45]] },
+    la: { poly: [[-0.55, -0.42], [0.55, -0.42], [0.55, 0.42], [-0.55, 0.42]] },
+    mi: { poly: [[0, -0.54], [0.66, 0], [0, 0.54], [-0.66, 0]] },
+    sol: { ell: [0.60, 0.43, -0.26] },
+    round: { ell: [0.59, 0.42, -0.36] }
+  };
+  // stem attach points (the head's own edge on the stem side), in sp
+  var ANCH = {
+    fa_u: { u: [0.64, 0.45] }, fa_d: { d: [-0.64, -0.47] },
+    la: { u: [0.55, 0.2], d: [-0.55, -0.2] },
+    mi: { u: [0.66, 0.02], d: [-0.66, -0.02] },
+    sol: { u: [0.58, -0.08], d: [-0.58, 0.08] },
+    round: { u: [0.57, -0.1], d: [-0.57, 0.1] }
+  };
+  function shapeKey(shape, dir) { return shape === "fa" ? (dir < 0 ? "fa_d" : "fa_u") : shape; }
+  function anchorOf(k, dir) { var a = ANCH[k]; return (dir < 0 ? a.d : a.u) || a.u || a.d; }
+  // broad-nib contrast: an edge is thick when it runs across the nib (held at 25°)
+  var NIB = 25 * Math.PI / 180;
+  function insetPoly(pts, tMin, tMax) {
+    var n = pts.length, area = 0, i;
+    for (i = 0; i < n; i++) { var p = pts[i], q = pts[(i + 1) % n]; area += p[0] * q[1] - q[0] * p[1]; }
+    var sg = area > 0 ? 1 : -1, lines = [];
+    for (i = 0; i < n; i++) {
+      var a = pts[i], b = pts[(i + 1) % n], dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy);
+      var ux = dx / L, uy = dy / L, nx = -sg * uy, ny = sg * ux;
+      var av = Math.atan2(-dy, dx), k = Math.pow(Math.abs(Math.sin(av - NIB)), 2);
+      var d = tMin + (tMax - tMin) * k;
+      lines.push({ px: a[0] + nx * d, py: a[1] + ny * d, rx: ux, ry: uy });
+    }
+    var out = [];
+    for (i = 0; i < n; i++) {
+      var l1 = lines[(i + n - 1) % n], l2 = lines[i];
+      var cr = l1.rx * l2.ry - l1.ry * l2.rx;
+      var t = ((l2.px - l1.px) * l2.ry - (l2.py - l1.py) * l2.rx) / cr;
+      out.push([l1.px + l1.rx * t, l1.py + l1.ry * t]);
+    }
+    return out;
+  }
+  function polyTo(p, pts, s) { p.moveTo(pts[0][0] * s, pts[0][1] * s); for (var i = 1; i < pts.length; i++) p.lineTo(pts[i][0] * s, pts[i][1] * s); p.closePath(); }
+  function headPaths(k, s, open) {
+    var sh = SH[k], full = new Path2D();
+    if (sh.poly) {
+      polyTo(full, sh.poly, s);
+      if (open) polyTo(full, insetPoly(sh.poly, 0.075, 0.21), s);
+    } else {
+      var e = sh.ell;
+      full.ellipse(0, 0, e[0] * s, e[1] * s, e[2], 0, Math.PI * 2);
+      if (open) full.ellipse(0, 0, e[0] * s * 0.66, e[1] * s * 0.5, e[2] - 0.5, 0, Math.PI * 2);
+    }
+    return full;
+  }
+  var sprites = new Map();
+  function headSprite(k, open, px, rgb) {
+    var key = k + "|" + (open ? 1 : 0) + "|" + px.toFixed(2) + "|" + rgb.join(",") + "|" + dpr;
+    var sp = sprites.get(key);
+    if (sp) return sp;
+    if (sprites.size > 1500) sprites.clear();
+    var s = px * dpr, size = Math.ceil(s * 1.8 / 2) * 2 + 8;
+    var cv = document.createElement("canvas"); cv.width = cv.height = size;
+    var c = cv.getContext("2d"), o = size / 2;
+    c.translate(o, o);
+    var full = headPaths(k, s, open);
+    c.fillStyle = rgba(rgb);
+    c.shadowColor = rgba(rgb, 0.3); c.shadowBlur = 0.7 * dpr;           // a hair of ink spread
+    c.fill(full, "evenodd");
+    c.shadowColor = "transparent";
+    // letterpress impression: a pale inner edge low-right, as if pressed into the cream
+    c.save(); c.clip(full, "evenodd");
+    c.translate(-0.6 * dpr, -0.6 * dpr);
+    c.strokeStyle = "rgba(255, 250, 236, 0.34)"; c.lineWidth = 1.0 * dpr;
+    c.stroke(full);
     c.restore();
+    sp = { cv: cv, o: o };
+    sprites.set(key, sp);
+    return sp;
   }
 
-  // ---- note intake -----------------------------------------------------------
-  var pending = [];                                // notes waiting for their startTime
-  var pendingTelegraph = [];                        // telegraph runs waiting to start
-  var activeTelegraph = [];                          // runs keying out mark-by-mark
-  var MELODIC = { clarinet: 1, bagpipe: 1, choir: 1, bells: 1, harmonium: 1, strings: 1, ambient: 0 };
+  // ---- geometry -------------------------------------------------------------------
+  // The plate runs from just under the wheel's horizon rule (the staff canvas
+  // is drawn 20px up over the wheel band) to just above the console (drawn
+  // 12px up into the canvas foot). Nothing is inked outside it.
+  var G = null;
+  function pageGeom() {
+    var top = 20, bot = H - 13;
+    var sp = clamp((bot - top) / 19, 6, 11.5);
+    var g = { sp: sp, top: top, bot: bot };
+    g.T = Math.round(top + (bot - top - 13 * sp) / 2);   // treble top line (q20)
+    g.Tb = g.T + 4 * sp;                                  // treble bottom line (q12)
+    g.B = g.Tb + 5 * sp;                                  // bass top line (q8): a grand-staff gap, middle C's ledger in it
+    g.Bb = g.B + 4 * sp;                                  // bass bottom line (q0)
+    g.tapeY = (g.Tb + g.B) / 2;                           // the telegraph's holes, centred in the gap
+    g.xBar = Math.round(1.55 * sp + 4);
+    g.clefX = g.xBar + 0.7 * sp;
+    g.trebH = 6.9 * sp;
+    g.trebW = g.trebH * (CLEF_TREBLE.bbox[2] - CLEF_TREBLE.bbox[0]) / (CLEF_TREBLE.bbox[3] - CLEF_TREBLE.bbox[1]);
+    g.bassH = 3.3 * sp;
+    g.bassW = g.bassH * (CLEF_BASS.bbox[2] - CLEF_BASS.bbox[0]) / (CLEF_BASS.bbox[3] - CLEF_BASS.bbox[1]);
+    g.clefEnd = g.clefX + Math.max(g.trebW, g.bassW);
+    g.xE = W - Math.round(3.2 * sp);                     // the engraving point
+    g.fade0 = g.clefEnd + 0.4 * sp; g.fade1 = g.fade0 + 6 * sp;
+    // the ledger room: beyond it a note folds in by octaves, silently
+    g.qMaxT = 20 + Math.floor(2 * (g.T - top - 0.62 * sp) / sp);
+    g.qMinB = 0 - Math.floor(2 * (bot - g.Bb - 0.62 * sp) / sp);
+    g.yT = function (q) { return g.T + (20 - q) * sp / 2; };
+    g.yB = function (q) { return g.B + (8 - q) * sp / 2; };
+    g.y = function (st, q) { return st === "T" ? g.yT(q) : g.yB(q); };
+    g.mid = function (st) { return st === "T" ? g.yT(16) : g.yB(4); };
+    return g;
+  }
+
+  // ---- the page clock -----------------------------------------------------------
+  // One time base (v0.32). Every engraved item carries the AUDIO time it
+  // sounds at, and PT is the audio clock as the page reads it: smoothed, so
+  // the scroll is even though the audio clock ticks in chunks. x and the
+  // drying are both worked out from PT at draw time, so when
+  // the page has to catch up (a hidden tab, a stall, a slow device) all the
+  // ink moves at once and the page simply shows the present — nothing
+  // replays late. PT holds while the meeting is held, and after STOP it
+  // follows the audio clock on (the clock keeps running) so the last ink
+  // drains away. DRY is the drying clock: it advances with PT, faster in the
+  // sacrament and the postlude.
+  var SCROLL_PX_S = 60;                            // the owner's rate (v0.31; it was 11)
+  var PT = 0, DRY = 0, ptSynced = false, lastAudio = -1;
+  var PT_SNAP = 0.5;                               // further off than this, the page jumps to the present
+  var PT_TAU = 0.25;                               // the smoothing's time constant, in seconds
+  var PT_LEAD = 0.1;                               // the page never runs further than this ahead of the sound
+  function audioNow() { return K && K.getAudioTime ? K.getAudioTime() : 0; }
+  function tickClock(dt) {                         // dt: the real time since the last frame, uncapped
+    var a = audioNow(), moving = a > lastAudio + 1e-6;
+    lastAudio = a;
+    if (paused) return;
+    var p0 = PT;
+    PT += dt;
+    if ((playing || moving) && a > 0) {            // follow the audio clock while it runs
+      var err = a - PT;
+      if (!ptSynced || Math.abs(err) > PT_SNAP) { PT = a; ptSynced = true; }
+      else {
+        PT += err * (1 - Math.exp(-dt / PT_TAU));
+        if (PT > a + PT_LEAD) PT = Math.max(p0, a + PT_LEAD);   // the sound has stalled: wait for it
+      }
+    }
+    DRY += Math.max(0, PT - p0) * (1 + (cond.section === "sacrament" ? 30 : 0) + (cond.section === "postlude" ? 5 : 0));
+  }
+
+  // ---- note intake ----------------------------------------------------------------
+  // The engine emits notes when it SCHEDULES them, a line at a time, often
+  // seconds early. Everything one call emits (and the events it raises) is
+  // taken in together at the end of the task, so a hymn line is read as a
+  // line: its beat is estimated from its own lengths, its chords stacked.
+  var intake = [], intakeArmed = false;
+  var groups = [];                                 // engraved note groups (heads on one stem)
+  var tapes = [];                                  // telegraph messages
+  var questions = [];                              // the question: askings, and the empty measure
+  var bandNotes = [], visits = [];                  // the visiting band, on its own layer
+  var MELODIC = { clarinet: 1, bagpipe: 1, choir: 1, bells: 1, harmonium: 1, strings: 1 };
+  var lastBeat = { choir: 1.15 };
+  function queueIntake(x) {
+    intake.push(x);
+    if (!intakeArmed) {
+      intakeArmed = true;
+      Promise.resolve().then(flushIntake);
+    }
+  }
   function onNote(n) {
     if (!n) return;
-    // the wire is not a voice: it carries a Morse run to lay down as tape
-    if (n.layer === "telegraph" && n.marks && n.marks.length) {
-      if (pendingTelegraph.length > 20) pendingTelegraph.shift();
-      pendingTelegraph.push(n);
-      return;
-    }
-    if (!n.freq || n.freq < 20) return;
-    if (!MELODIC[n.layer]) return;
-    if (pending.length > 240) pending.shift();
-    pending.push(n);
+    if (n.layer === "telegraph") { if (n.marks && n.marks.length) queueIntake({ note: n }); return; }
+    if (n.layer === "band") { if (n.freq > 20) queueIntake({ note: n }); return; }
+    if (!n.freq || n.freq < 20 || !MELODIC[n.layer]) return;
+    queueIntake({ note: n });
   }
   function onEvent(ev) {
     if (!ev) return;
-    if (ev.cat === "motif") {
-      var m = /·g(\d+)/.exec(ev.label || "");
-      if (m) curGen = parseInt(m[1], 10);
-    }
-    if (ev.cat === "fuging") stampFuging();
-    if (ev.cat === "meeting") curGen = 0;
+    if (ev.cat === "visitation") queueIntake({ ev: ev });
+    else if (ev.cat === "transport" && /^■/.test(ev.label || "")) queueIntake({ stop: ev.t != null ? ev.t : audioNow() });
   }
 
-  // ---- drawing ---------------------------------------------------------------
-  function shapePath(c, shape, x, y, s) {
+  // the beat of a line: the length that makes its notes the simplest values
+  // (quarters, halves, dotted, eighths), held between 0.75 and 1.65 s with a
+  // gentle pull toward hymn time
+  var GRID = [0.25, 0.5, 1, 1.5, 2, 3, 4];
+  function estimateBeat(durs, fallback) {
+    var ds = durs.filter(function (d) { return d > 0.08 && d < 7; });
+    if (ds.length < 3) return fallback;
+    var best = fallback, bc = 1e9;
+    for (var b = 0.75; b <= 1.651; b += 0.01) {
+      var cost = 0.5 * Math.abs(Math.log2(b / 1.15)) * ds.length * 0.25;
+      for (var i = 0; i < ds.length; i++) {
+        var r = ds[i] / b, e = 9;
+        for (var j = 0; j < GRID.length; j++) e = Math.min(e, Math.abs(Math.log2(r / GRID[j])));
+        cost += e;
+      }
+      if (cost < bc) { bc = cost; best = b; }
+    }
+    return best;
+  }
+  // seconds → a note value against the line's beat
+  function valueOf(beats, layer) {
+    if (layer === "strings" && beats >= 7) return { open: true, stem: false, breve: true, dots: 0, flags: 0 };
+    if (beats >= 3.5) return { open: true, stem: false, dots: 0, flags: 0 };
+    if (beats >= 2.6) return { open: true, stem: true, dots: 1, flags: 0 };
+    if (beats >= 1.75) return { open: true, stem: true, dots: 0, flags: 0 };
+    if (beats >= 1.3) return { open: false, stem: true, dots: 1, flags: 0 };
+    if (beats >= 0.72) return { open: false, stem: true, dots: 0, flags: 0 };
+    if (beats >= 0.36) return { open: false, stem: true, dots: 0, flags: 1 };
+    return { open: false, stem: true, dots: 0, flags: 2 };
+  }
+  var SCALE = { choir: 1, bagpipe: 1, strings: 1, bells: 1, clarinet: 0.75, harmonium: 0.6 };
+
+  function flushIntake() {
+    intakeArmed = false;
+    var batch = intake; intake = [];
+    var byLayer = {}, question = null, unanswered = null, stopAt = null, i;
+    for (i = 0; i < batch.length; i++) {
+      var it = batch[i];
+      if (it.stop != null) { stopAt = stopAt == null ? it.stop : Math.min(stopAt, it.stop); continue; }
+      if (it.ev) {
+        var lb = it.ev.label || "";
+        if (/^\? the question/.test(lb)) question = it.ev;
+        else if (/^\? unanswered/.test(lb)) unanswered = it.ev;
+        continue;
+      }
+      var n = it.note;
+      if (n.layer === "telegraph") { takeTape(n); continue; }
+      (byLayer[n.layer] = byLayer[n.layer] || []).push(n);
+    }
+    if (byLayer.band) takeBand(byLayer.band);
+    Object.keys(byLayer).forEach(function (layer) {
+      if (layer === "band") return;
+      var ns = byLayer[layer];
+      var beat = estimateBeat(ns.map(function (n) { return n.duration; }), lastBeat[layer] || lastBeat.choir || 1.15);
+      if (ns.length >= 3) lastBeat[layer] = beat;
+      takeLayer(layer, ns, beat, question);
+    });
+    if (question) takeQuestion(byLayer.clarinet || [], question);
+    if (unanswered) takeUnanswered(unanswered);
+    if (stopAt != null) silence(stopAt);
+    // bounded memory: the page shows ~15 s; keep generously more
+    if (groups.length > 700) groups.splice(0, groups.length - 700);
+    if (bandNotes.length > 500) bandNotes.splice(0, bandNotes.length - 500);
+  }
+
+  // STOP: nothing more is printed. Ink the engine had scheduled (a choir
+  // line runs up to ~36 s ahead, the band's whole crossing) that will not
+  // now sound is lifted from the page; what was sounding keeps its place,
+  // its length cut to the voices' fade (the engine closes their bus over
+  // 0.6 s), and a message being keyed is cut where the key stopped. Called
+  // with the stop's audio time, from the "■" transport event or, failing
+  // that, when the conductor first reports the meeting stopped.
+  var STOP_FADE = 0.6;
+  function silence(cut) {
+    var end = cut + STOP_FADE, i, k;
+    for (i = 0, k = 0; i < groups.length; i++) {
+      var gr = groups[i];
+      if (gr.tp > cut) continue;
+      if (gr.tp + gr.dur > end) gr.dur = end - gr.tp;
+      groups[k++] = gr;
+    }
+    groups.length = k;
+    for (i = 0, k = 0; i < bandNotes.length; i++) {
+      var n = bandNotes[i];
+      if (n.tp > cut) continue;
+      if (n.tp + n.dur > end) n.dur = end - n.tp;
+      bandNotes[k++] = n;
+    }
+    bandNotes.length = k;
+    for (i = visits.length - 1; i >= 0; i--) {
+      var bd = visits[i];
+      if (bd.tp0 > cut) { visits.splice(i, 1); continue; }
+      bd.tp1 = Math.min(bd.tp1, end);
+      bd.bass = bd.bass.filter(function (bb) { return bb.tp <= cut; });
+    }
+    for (i = tapes.length - 1; i >= 0; i--) {      // a message being keyed is cut where the key stopped
+      var T = tapes[i], lim = cut - T.tp;
+      if (lim < 0) { tapes.splice(i, 1); continue; }
+      if (T.Tt > lim) {
+        T.marks = T.marks.filter(function (m) { return m.tp <= end; });   // only what was punched before the key fell silent
+        if (!T.marks.length) { tapes.splice(i, 1); continue; }
+        var lm = T.marks[T.marks.length - 1];
+        T.Tt = lm.at + lm.len;
+      }
+    }
+    for (i = questions.length - 1; i >= 0; i--) {
+      var qn = questions[i];
+      qn.asks = qn.asks.filter(function (ak) { return ak.tp0 <= cut; });
+      qn.asks.forEach(function (ak) { ak.tp1 = Math.min(ak.tp1, end); });
+      if (qn.na) {
+        if (qn.na.tp0 > cut) qn.na = null;
+        else qn.na.tp1 = Math.min(qn.na.tp1, Math.max(cut, qn.na.tp0 + 1));
+      }
+      if (!qn.asks.length && !qn.na) questions.splice(i, 1);
+    }
+  }
+
+  // one layer's notes from one call → groups of heads on shared stems
+  function takeLayer(layer, ns, beat, question) {
+    var byT = {};
+    ns.forEach(function (n) { var k = Math.round(n.startTime * 50); (byT[k] = byT[k] || []).push(n); });
+    // the Question's askings fold together (if they must), so the phrase keeps its shape
+    var askMax = null;
+    if (question && layer === "clarinet") {
+      askMax = -1e9;
+      ns.forEach(function (n) { askMax = Math.max(askMax, noteQ(n.freq).q); });
+    }
+    Object.keys(byT).sort(function (a, b) { return a - b; }).forEach(function (k) {
+      var chord = byT[k].slice().sort(function (a, b) { return b.freq - a.freq; });
+      var t0 = chord[0].startTime;
+      // staff: the upper half of a full chord on the treble, the lower on the
+      // bass (closed score); a single note or a pair by its own pitch
+      var parts = chord.map(function (n, idx) {
+        var nq = noteQ(n.freq), st;
+        if (chord.length >= 3) {
+          st = idx < Math.ceil(chord.length / 2) ? "T" : "B";
+          if (st === "T" && nq.q < 6) st = "B";
+          if (st === "B" && nq.q > 14) st = "T";
+        } else st = nq.q >= Q_MID ? "T" : "B";
+        return { n: n, q: nq.q, shape: nq.shape, st: st };
+      });
+      ["T", "B"].forEach(function (st) {
+        var onSt = parts.filter(function (p) { return p.st === st; });
+        if (!onSt.length) return;
+        // heads that last alike share a stem; a different length gets its own
+        var byDur = {};
+        onSt.forEach(function (p) { var dk = Math.round(p.n.duration * 20); (byDur[dk] = byDur[dk] || []).push(p); });
+        var keys = Object.keys(byDur), closed = chord.length >= 3 && layer === "choir";
+        // two lengths at once on one staff are two voices, set the way a
+        // hymnal sets them: the lower first with its stem down, the upper
+        // with its stem up (if their heads would touch, the page moves the
+        // later one aside at draw time — see placeColumn)
+        var meanQ = {};
+        keys.forEach(function (dk) { var sq = 0; byDur[dk].forEach(function (p) { sq += p.q; }); meanQ[dk] = sq / byDur[dk].length; });
+        keys.sort(function (a, b) { return meanQ[a] - meanQ[b] || a - b; });
+        keys.forEach(function (dk, gi) {
+          var ps = byDur[dk], dur = ps[0].n.duration;
+          var v = valueOf(dur / beat, layer);
+          var seen = {}, heads = [];
+          ps.forEach(function (p) {
+            if (seen[p.q]) return; seen[p.q] = 1;               // unison parts share a head
+            heads.push({ q: p.q, shape: p.shape, open: v.open, dots: v.dots });
+          });
+          var grp = {
+            layer: layer, tp: t0, dur: dur, st: st, heads: heads, v: v,
+            scale: SCALE[layer] || 1, dir: 0, noStem: !v.stem, flags: v.flags
+          };
+          if (layer === "bells") { grp.noStem = true; grp.ring = true; grp.flags = 0; heads.forEach(function (h) { h.open = true; h.dots = 0; }); }
+          if (layer === "harmonium" && question) {        // the answers: slashed grace notes
+            grp.slash = true; grp.noStem = false; grp.flags = 1; grp.dir = 1;
+            heads.forEach(function (h) { h.open = false; h.dots = 0; });
+          }
+          if (askMax != null) grp.askMax = askMax;
+          if (!grp.dir) {
+            if (keys.length > 1) grp.dir = gi === keys.length - 1 ? 1 : -1;
+            else if (closed) grp.dir = st === "T" ? 1 : -1;
+            else {
+              var mq = st === "T" ? 16 : 4, far = heads[0];
+              heads.forEach(function (h) { if (Math.abs(h.q - mq) > Math.abs(far.q - mq)) far = h; });
+              grp.dir = far.q >= mq ? -1 : 1;
+            }
+          }
+          groups.push(grp);
+        });
+      });
+    });
+  }
+  // Beyond the ledger room a group folds in silently by octaves until it
+  // fits the plate (no 8va: the owner wants just the notes). The fold is
+  // decided at draw time, so a resize re-folds it. A voice that keeps above
+  // the ledger room keeps its shape: a note that would fold less than the
+  // voice's last folded note, close behind it, folds as far (if it still
+  // sits on or near the staff). The Question's asking folds as one phrase.
+  var lastFold = {};
+  function foldFor(grp, g) {
+    if (grp.fold && grp.fold.sp === g.sp) return grp.fold;
+    var hi = -1e9, lo = 1e9, sh = 0;
+    grp.heads.forEach(function (h) { hi = Math.max(hi, h.q); lo = Math.min(lo, h.q); });
+    if (grp.askMax != null) hi = Math.max(hi, grp.askMax);
+    if (grp.st === "T") { while (hi - sh > g.qMaxT) sh += 7; }
+    else { while (lo + sh < g.qMinB) sh += 7; }
+    var key = grp.layer + grp.st, lf = lastFold[key];
+    if (sh && lf && lf.sp === g.sp && grp.tp - lf.tp1 < 1.2 && lf.sh > sh &&
+        (grp.st === "T" ? lo - lf.sh >= 9 : hi + lf.sh <= 11)) sh = lf.sh;
+    if (sh) lastFold[key] = { sp: g.sp, sh: sh, tp1: grp.tp + grp.dur };
+    grp.fold = { sp: g.sp, oct: sh / 7 };
+    return grp.fold;
+  }
+
+  // ---- the telegraph ------------------------------------------------------------
+  function takeTape(n) {
+    var U = 1e9;
+    n.marks.forEach(function (m) { if (m.len > 0) U = Math.min(U, m.len); });
+    if (!(U < 1e8)) U = 0.08;
+    var last = n.marks[n.marks.length - 1];
+    // each hole keeps the time it is punched, and dries from it like a note
+    var marks = n.marks.map(function (m) { return { at: m.at, len: m.len, dah: !!m.dah, tp: n.startTime + m.at + m.len }; });
+    tapes.push({ tp: n.startTime, marks: marks, U: U, Tt: last.at + last.len });
+    if (tapes.length > 12) tapes.shift();
+  }
+  // ---- the Question ---------------------------------------------------------------
+  // The clarinet's askings arrive in the same call that raises "? the
+  // question": each unbroken run of its notes is one asking, framed in a
+  // cartouche. The harmonium's answers (same call) print as grace notes.
+  function takeQuestion(clar, ev) {
+    var ns = clar.slice().sort(function (a, b) { return a.startTime - b.startTime; });
+    var asks = [], cur = null;
+    ns.forEach(function (n) {
+      if (cur && n.startTime - cur.t1 < 0.08) { cur.t1 = n.startTime + n.duration; cur.n++; }
+      else { cur = { t0: n.startTime, t1: n.startTime + n.duration, n: 1 }; asks.push(cur); }
+    });
+    asks = asks.filter(function (a) { return a.n >= 2; });
+    var qn = { asks: asks.map(function (a) { return { tp0: a.t0, tp1: a.t1 }; }), na: null,
+               lastEnd: asks.length ? asks[asks.length - 1].t1 : (ev.t || audioNow()) };
+    questions.push(qn);
+    if (questions.length > 4) questions.shift();
+  }
+  function takeUnanswered(ev) {
+    var tp = ev.t || audioNow(), qn = questions[questions.length - 1];
+    var start = qn && !qn.na && Math.abs(tp - qn.lastEnd) < 40 ? qn.lastEnd + 0.9 : tp - 0.6;
+    if (!qn || qn.na) { qn = { asks: [], lastEnd: start }; questions.push(qn); }
+    qn.na = { tp0: start, tp1: start + 6 };
+  }
+  // ---- the band -------------------------------------------------------------------
+  // Round notes on their own layer, sliding through the ward's page
+  // at the band's own (quicker) rate; ink follows its approach and recession.
+  function takeBand(ns) {
+    ns.sort(function (a, b) { return a.startTime - b.startTime; });
+    var beat = ns[0].beat || 0.46;
+    var r = clamp(1.1 / beat, 1.6, 2.6);
+    var bd = { tp0: ns[0].startTime, beat: beat, r: r, tp1: ns[ns.length - 1].startTime + ns[ns.length - 1].duration, bass: [] };
+    ns.forEach(function (n) {
+      var mel = n.part !== "bass", q = bandQ(n.freq);
+      if (mel) { q -= 7; while (q > 26) q -= 7; while (q < 11) q += 7; }   // the fife is written an octave under its sound
+      else { while (q > 9) q -= 7; while (q < -2) q += 7; }
+      var v = valueOf(n.duration / beat, "band");
+      var nb = { tp: n.startTime, dur: n.duration, q: q, loud: n.loud == null ? 0.6 : n.loud, mel: mel, v: v, bd: bd };
+      if (!mel) bd.bass.push({ tp: nb.tp });              // its barlines fall on the oom
+      bandNotes.push(nb);
+    });
+    visits.push(bd);
+    if (visits.length > 3) visits.shift();
+  }
+
+  // ---- drawing helpers ------------------------------------------------------------
+  function snapRect(c, x, y, w, h) {
+    var r = dpr, x0 = Math.round(x * r), y0 = Math.round(y * r);
+    var x1 = Math.max(x0 + 1, Math.round((x + w) * r)), y1 = Math.max(y0 + 1, Math.round((y + h) * r));
+    c.fillRect(x0 / r, y0 / r, (x1 - x0) / r, (y1 - y0) / r);
+  }
+  function hLine(c, x0, x1, y, th) { snapRect(c, x0, y - th / 2, x1 - x0, th); }
+  function vLine(c, x, y0, y1, th) { snapRect(c, x - th / 2, Math.min(y0, y1), th, Math.abs(y1 - y0)); }
+  function drawSprite(c, sp, x, y) {
+    c.drawImage(sp.cv, Math.round(x * dpr - sp.o) / dpr, Math.round(y * dpr - sp.o) / dpr, sp.cv.width / dpr, sp.cv.height / dpr);
+  }
+  function ledgersFor(st, q) {
+    var out = [], l;
+    if (st === "T") { for (l = 10; l >= q; l -= 2) out.push(l); for (l = 22; l <= q; l += 2) out.push(l); }
+    else { for (l = 10; l <= q; l += 2) out.push(l); for (l = -2; l >= q; l -= 2) out.push(l); }
+    return out;
+  }
+  // the ink dries: ~3 %/s of page time, far faster in the sacrament. An item
+  // is anchored at its onset (tp, or tp0 for the spans: an asking, the empty
+  // measure, the band's visit); one first drawn late is credited its age.
+  function dryA(it) {
+    if (it.d0 == null) it.d0 = DRY - Math.max(0, PT - (it.tp != null ? it.tp : it.tp0));
+    return Math.exp(-0.03 * Math.max(0, DRY - it.d0));
+  }
+  // a rounded rectangle, also where the canvas has no roundRect (Safari < 16)
+  function rrect(c, x, y, w, h, r) {
+    if (typeof c.roundRect === "function") { c.roundRect(x, y, w, h, r); return; }
+    r = Math.max(0, Math.min(r, w / 2, h / 2));
+    c.moveTo(x + r, y);
+    c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r);
+    c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r);
+    c.closePath();
+  }
+  // The telegraph yields to the music: while a message is on the page,
+  // every head, ledger, stem, dot and bell ring that lands in the middle of
+  // the gap records a clearance here (at its own ink's strength), and no
+  // hole is punched where one lies.
+  var KO = [], koY0 = 0, koY1 = -1, KO_PAD = 0.3;
+  function koHit(y0, y1) { return y1 > koY0 && y0 < koY1; }
+  function koRect(c, x0, y0, x1, y1) {
+    if (koHit(y0, y1)) KO.push({ x: x0, y: y0, w: x1 - x0, h: y1 - y0, a: c.globalAlpha });
+  }
+  function koEllipse(c, x, y, rx, ry) {
+    if (koHit(y - ry, y + ry)) KO.push({ e: 1, x: x, y: y, rx: rx, ry: ry, a: c.globalAlpha });
+  }
+  function koCovers(x0, y0, x1, y1) {              // does any visible note's clearance touch this box?
+    for (var i = 0; i < KO.length; i++) {
+      var k = KO[i];
+      if (k.a < 0.02) continue;
+      var kx0 = k.e ? k.x - k.rx : k.x, kx1 = k.e ? k.x + k.rx : k.x + k.w;
+      var ky0 = k.e ? k.y - k.ry : k.y, ky1 = k.e ? k.y + k.ry : k.y + k.h;
+      if (kx0 < x1 && x0 < kx1 && ky0 < y1 && y0 < ky1) return true;
+    }
+    return false;
+  }
+  function text(c, str, x, y, font, rgb, a, align) {
+    c.font = font; c.textAlign = align || "left"; c.textBaseline = "alphabetic";
+    c.fillStyle = rgba(rgb, a == null ? 1 : a);
+    c.fillText(str, x, y);
+    return c.measureText(str).width;
+  }
+
+  // a group of heads on one stem (a chord, or a single note): where its
+  // heads and stem fall. Shared by drawGroup and the column check.
+  function layoutGroup(g, X, heads, st, dir, o) {
+    var sp = g.sp, sc = o.scale || 1, s = sp * sc;
+    var sw = Math.max(1.4 / dpr, 0.12 * sp * (sc < 1 ? 0.85 : 1));
+    var hs = heads.slice().sort(function (a, b) { return a.q - b.q; });
+    var stem = dir !== 0 && !o.noStem;
+    var sx = X + dir * (0.57 * s - sw / 2);
+    var placed = hs.map(function (h) {
+      var k = shapeKey(h.shape, dir || 1), hx = X;
+      if (stem) { var an = anchorOf(k, dir); hx = sx - an[0] * s + dir * sw / 2; }
+      return { h: h, k: k, x: hx, y: g.y(st, h.q) };
+    });
+    // a second on one stem: the upper (stem up) / lower (stem down) head crosses to the other side
+    for (var i = 1; i < placed.length; i++) {
+      if (placed[i].h.q - placed[i - 1].h.q === 1) {
+        var d = dir || 1, mv = d > 0 ? placed[i] : placed[i - 1];
+        mv.x += d * (1.14 * s - sw);
+      }
+    }
+    var top = placed[placed.length - 1], bot = placed[0], y0 = null, yEnd = null;
+    if (stem) {
+      var mid = g.mid(st);
+      if (dir > 0) {
+        var an0 = anchorOf(bot.k, 1); y0 = bot.y + an0[1] * s;
+        yEnd = Math.min(top.y - 3.5 * s, mid);
+        yEnd = Math.max(yEnd, Math.min(g.top + 0.3 * sp, top.y - 2.2 * s));   // a stem stays on the plate
+      } else {
+        var an1 = anchorOf(top.k, -1); y0 = top.y + an1[1] * s;
+        yEnd = Math.max(bot.y + 3.5 * s, mid);
+        yEnd = Math.min(yEnd, Math.max(g.bot - 0.3 * sp, bot.y + 2.2 * s));
+      }
+    }
+    // augmentation dots sit right of the heads (and of an up-stem)
+    var right = -1e9;
+    placed.forEach(function (p) { right = Math.max(right, p.x + 0.64 * s); });
+    if (dir > 0 && stem) right = Math.max(right, sx + sw / 2);
+    var ledgers = [];
+    placed.forEach(function (p) {
+      var ls = ledgersFor(st, p.h.q);
+      for (var li = 0; li < ls.length; li++) ledgers.push([p.x - 0.98 * s, g.y(st, ls[li]), p.x + 0.98 * s]);
+    });
+    return { s: s, sw: sw, sx: sx, stem: stem, placed: placed, top: top, bot: bot, y0: y0, yEnd: yEnd, right: right, ledgers: ledgers };
+  }
+  // the ink a laid-out group covers, as boxes: its heads (with their dots,
+  // breve strokes or bell ring), its ledgers, its stem and its flags. Used to
+  // keep two voices at one x out of each other's way.
+  function groupBoxes(L, o) {
+    var s = L.s, out = [], hasDots = false, lh = 0.1 * s;
+    L.ledgers.forEach(function (l) { out.push([l[0], l[1] - lh, l[2], l[1] + lh, 1]); });   // [4]: a ledger
+    L.placed.forEach(function (p) {
+      var hw = o.breve ? 1.1 * s : o.ring ? 1.05 * s : 0.64 * s, hh = o.ring ? 1.05 * s : 0.52 * s;   // a bell's ring is part of its head
+      out.push([p.x - hw, p.y - hh, p.x + hw, p.y + hh]);
+      if (p.h.dots) hasDots = true;
+    });
+    if (hasDots) out.push([L.right + 0.25 * s, L.bot.y - 0.6 * s, L.right + 0.75 * s, L.top.y + 0.6 * s]);
+    if (L.stem) {
+      var ya = Math.min(L.y0, L.yEnd), yb = Math.max(L.y0, L.yEnd);
+      out.push([L.sx - L.sw / 2 - 0.08 * s, ya, L.sx + L.sw / 2 + 0.08 * s, yb]);
+      if (o.flags) {
+        var fy = L.yEnd, fl = (0.8 * (o.flags - 1) + 2.8) * s, d = L.yEnd < L.y0 ? 1 : -1;
+        out.push([L.sx, Math.min(fy, fy + d * fl), L.sx + 1.05 * s, Math.max(fy, fy + d * fl)]);
+      }
+    }
+    return out;
+  }
+  function drawGroup(c, g, X, heads, st, dir, o) {
+    var sp = g.sp, L = layoutGroup(g, X, heads, st, dir, o);
+    var s = L.s, sw = L.sw, sx = L.sx, placed = L.placed, top = L.top, bot = L.bot, yEnd = L.yEnd;
+    var pad = KO_PAD * sp;
+    c.fillStyle = rgba(o.rgb);
+    var lth = Math.max(1.2 / dpr, 0.16 * sp);
+    L.ledgers.forEach(function (l) {
+      hLine(c, l[0], l[2], l[1], lth);
+      koRect(c, l[0] - pad, l[1] - lth / 2 - pad, l[2] + pad, l[1] + lth / 2 + pad);
+    });
+    if (L.stem) {
+      vLine(c, sx, L.y0, yEnd, sw);
+      koRect(c, sx - sw / 2 - pad, Math.min(L.y0, yEnd), sx + sw / 2 + pad, Math.max(L.y0, yEnd));
+      for (var f = 0; f < (o.flags || 0); f++) drawFlag(c, sx, yEnd + dir * f * 0.8 * s, dir, s, sw);
+      if (o.slash) {
+        c.save(); c.strokeStyle = rgba(o.rgb); c.lineWidth = Math.max(1 / dpr, 0.1 * sp); c.lineCap = "round";
+        c.beginPath(); c.moveTo(sx - 0.7 * s, yEnd + dir * 2.1 * s); c.lineTo(sx + 0.8 * s, yEnd + dir * 0.9 * s); c.stroke(); c.restore();
+      }
+    }
+    placed.forEach(function (p) {
+      drawSprite(c, headSprite(p.k, p.h.open, s, o.rgb), p.x, p.y);
+      koEllipse(c, p.x, p.y, 0.68 * s + pad, 0.55 * s + pad);
+    });
+    if (o.breve) {                                        // the breve's side strokes
+      placed.forEach(function (p) {
+        [-1, 1].forEach(function (sd) {
+          vLine(c, p.x + sd * 0.82 * s, p.y - 0.55 * s, p.y + 0.55 * s, sw);
+          vLine(c, p.x + sd * 1.02 * s, p.y - 0.55 * s, p.y + 0.55 * s, sw);
+        });
+      });
+    }
+    // augmentation dots, each in a space, clear of the stem
+    var used = {};
+    placed.slice().reverse().forEach(function (p) {
+      if (!p.h.dots) return;
+      var dq = p.h.q % 2 === 0 ? p.h.q + 1 : p.h.q;
+      while (used[dq]) dq -= 2;
+      used[dq] = 1;
+      var dy = g.y(st, dq);
+      c.beginPath(); c.arc(L.right + 0.5 * s, dy, 0.19 * s, 0, Math.PI * 2); c.fill();
+      koEllipse(c, L.right + 0.5 * s, dy, 0.19 * s + pad, 0.19 * s + pad);
+    });
+    return { sx: sx, yEnd: yEnd, topY: top.y, botY: bot.y, topX: top.x, botX: bot.x, sw: sw, L: L };
+  }
+  function drawFlag(c, sx, y, dir, s, sw) {
+    c.save(); c.translate(sx - sw / 2, y); c.scale(s, dir > 0 ? s : -s);
     c.beginPath();
-    if (shape === "fa") {                          // right triangle, the fa flag
-      c.moveTo(x - s, y + s * 0.8);
-      c.lineTo(x + s, y + s * 0.8);
-      c.lineTo(x - s, y - s * 0.8);
-      c.closePath();
-    } else if (shape === "la") {                   // rectangle
-      c.rect(x - s, y - s * 0.7, s * 2, s * 1.4);
-    } else if (shape === "mi") {                   // diamond
-      c.moveTo(x, y - s * 0.9);
-      c.lineTo(x + s, y);
-      c.lineTo(x, y + s * 0.9);
-      c.lineTo(x - s, y);
-      c.closePath();
-    } else {                                       // sol — the oval
-      c.ellipse(x, y, s, s * 0.72, -0.22, 0, Math.PI * 2);
-    }
+    c.moveTo(0, 0); c.lineTo(0.13, 0);
+    c.bezierCurveTo(0.2, 0.55, 0.58, 0.82, 0.82, 1.22);
+    c.bezierCurveTo(1.04, 1.6, 1.02, 2.2, 0.8, 2.72);
+    c.lineTo(0.73, 2.68);
+    c.bezierCurveTo(0.88, 2.22, 0.82, 1.82, 0.6, 1.56);
+    c.bezierCurveTo(0.42, 1.34, 0.2, 1.22, 0, 1.12);
+    c.closePath(); c.fill(); c.restore();
   }
-  // the short strokes that carry a note above/below its staff — middle C in the
-  // gap, and one per staff line the note has climbed past the treble/bass edge
-  function drawLedgers(x, q, s, alpha) {
-    var ls = ledgersForQ(q);
-    if (!ls.length) return;
-    pctx.save();
-    pctx.globalAlpha = alpha * 0.72;
-    pctx.strokeStyle = INK;
-    pctx.lineWidth = 1;
-    var half = s * 2.0;
-    for (var i = 0; i < ls.length; i++) {
-      var ly = yOfQ(ls[i]);
-      pctx.beginPath(); pctx.moveTo(x - half, ly); pctx.lineTo(x + half, ly); pctx.stroke();
+  function drawBarline(c, g, x, kind, st) {
+    var sp = g.sp, top = st === "T" ? g.T : g.B, bot = top + 4 * sp;
+    if (kind === "dotted") {
+      for (var q = 0; q < 4; q++) {
+        var yy = top + (q + 0.5) * sp;
+        c.beginPath(); c.arc(x, yy - 0.18 * sp, 0.11 * sp, 0, Math.PI * 2); c.arc(x, yy + 0.2 * sp, 0.11 * sp, 0, Math.PI * 2); c.fill();
+      }
+      return;
     }
-    pctx.restore();
-  }
-  function printNote(n) {
-    var d = degOf(n.freq);
-    var shapes = SHAPES[cond.mode] || SHAPES.ionian;
-    var shape = shapes[d.deg] || "sol";
-    var q = staffQ(n.freq);                        // the grand-staff line/space
-    var x = W - 26;
-    var y = yOfQ(q);
-    var sp = stepPx();
-    var s = sp * (n.layer === "clarinet" ? 0.85 : n.layer === "bagpipe" ? 0.92 : n.layer === "bells" ? 0.6 : 0.74);
-    var filled = (n.duration || 1) < 1.6;          // long notes print hollow
-    var alpha = n.layer === "choir" ? 0.68 : n.layer === "harmonium" ? 0.45 : n.layer === "bells" ? 0.72 : 0.95;
-    var wear = Math.min(0.5, curGen * 0.07);       // engraving wear: deep descendants double-strike
-
-    pctx.save();
-    pctx.translate(0.5, 0.5);
-    pctx.strokeStyle = INK;
-    pctx.fillStyle = INK;
-    pctx.lineWidth = 1.2;
-    pctx.globalAlpha = alpha;
-    drawLedgers(x, q, s, alpha);
-    if (wear > 0.06) {                             // the worn plate: a pale offset strike
-      pctx.save();
-      pctx.globalAlpha = alpha * wear;
-      shapePath(pctx, shape, x + 1.6, y + 1.1, s);
-      pctx.stroke();
-      pctx.restore();
-    }
-    shapePath(pctx, shape, x, y, s);
-    if (filled) pctx.fill(); else pctx.stroke();
-    // the stem points away from the middle line of the note's own staff
-    // (treble middle = q16, bass middle = q4), the way engraved notation sets it
-    var pivot = q >= Q_MID ? 16 : 4;
-    var stemLen = 2.2 * sp;
-    pctx.globalAlpha = alpha * 0.8;
-    pctx.beginPath();
-    if (q < pivot) { pctx.moveTo(x + s, y - 1); pctx.lineTo(x + s, y - stemLen); }
-    else { pctx.moveTo(x - s, y + 1); pctx.lineTo(x - s, y + stemLen); }
-    pctx.stroke();
-    pctx.restore();
-  }
-  // ---- the wire's Morse, as telegraph tape -----------------------------------
-  // The telegraph is not a voice, so it is not engraved as note-heads. Its run
-  // of dits (dots) and dahs (short bars) is laid on a faint wire through the
-  // middle of the grand staff — the way a telegraph register inked a paper tape.
-  // The taps are far too quick to space out by scroll time, so the whole run is
-  // stamped at once, then travels and fades with the rest of the ink.
-  // The final layout of a mark run: each mark's resting x (left edge) once the
-  // whole tape has been keyed out, with the band's right edge at the engraving
-  // point. The gap AFTER each mark groups the tape: tight within a letter, wider
-  // between letters, wider still between words (matching the keyed timing).
-  function telegraphLayout(marks) {
-    var sp = stepPx();
-    var rd = Math.max(1.4, sp * 0.26), dahLen = sp * 1.7, dahThick = Math.max(2, sp * 0.44);
-    var gi = sp * 0.5, gl = sp * 1.5, gw = sp * 2.8;
-    function gapW(g) { return g === "w" ? gw : g === "l" ? gl : g === "e" ? 0 : gi; }
-    var xs = [], gapAfter = [], total = 0, i;
-    for (i = 0; i < marks.length; i++) {
-      xs[i] = total;
-      gapAfter[i] = gapW(marks[i].gap);
-      total += (marks[i].dah ? dahLen : 2 * rd) + gapAfter[i];
-    }
-    var last = marks[marks.length - 1];
-    var fxLeft = (W - 26) - total;                 // band left edge, once complete
-    var fx = xs.map(function (x) { return fxLeft + x; });
-    return { fx: fx, gapAfter: gapAfter, rd: rd, dahLen: dahLen, dahThick: dahThick,
-             Tt: last.at + last.len };
-  }
-  // Stamp ONE dit/dah (with its leading run of wire) onto the scrolling page.
-  function stampMark(mark, x, lay, leadGap) {
-    var y = yOfQ(Q_MID);                            // the middle-C line, dead centre
-    var mw = mark.dah ? lay.dahLen : 2 * lay.rd;
-    pctx.save();
-    pctx.translate(0.5, 0.5);
-    // the wire, continuing from the previous mark
-    pctx.globalAlpha = 0.3;
-    pctx.strokeStyle = INK;
-    pctx.lineWidth = 1;
-    pctx.beginPath(); pctx.moveTo(x - leadGap, y); pctx.lineTo(x + mw, y); pctx.stroke();
-    // the mark
-    pctx.fillStyle = INK;
-    pctx.globalAlpha = 0.72;
-    if (mark.dah) pctx.fillRect(x, y - lay.dahThick / 2, lay.dahLen, lay.dahThick);
-    else { pctx.beginPath(); pctx.arc(x + lay.rd, y, lay.rd, 0, Math.PI * 2); pctx.fill(); }
-    pctx.restore();
+    vLine(c, x, top, bot, Math.max(1.2 / dpr, 0.16 * sp));
   }
   // ---- the static staff layer: two staves, a brace, and the two clefs --------
-  // Drawn once per resize onto its own canvas, then composited under the
-  // scrolling ink each frame (so the rules and clefs hold still while notes
-  // travel).
   function buildStaffLayer(c) {
+    var g = G, sp = g.sp;
     c.clearRect(0, 0, W, H);
-    var xL = 12, xR = W;                            // rules run from the barline to the right edge; the brace hangs on the margin
-    var sp = stepPx(), staffH = 8 * sp;
-    // the ten rules
-    c.strokeStyle = RULE; c.lineWidth = 1;
-    var rules = BASS_RULES.concat(TREBLE_RULES);
-    for (var i = 0; i < rules.length; i++) {
-      var yy = Math.round(yOfQ(rules[i])) + 0.5;     // snapped: every rule one crisp pixel
-      c.beginPath(); c.moveTo(xL, yy); c.lineTo(xR, yy); c.stroke();
-    }
-    // the left barline joining the staves through the gap
-    c.strokeStyle = INK_SOFT; c.lineWidth = 1.2;
-    c.beginPath(); c.moveTo(xL + 0.5, Math.round(yOfQ(20)) + 0.5); c.lineTo(xL + 0.5, Math.round(yOfQ(0)) + 0.5); c.stroke();
-    // the brace
-    var bx = 5, yt = yOfQ(20), yb = yOfQ(0), mid = (yt + yb) / 2;   // the brace's tip at the plate's edge
-    c.strokeStyle = INK; c.lineWidth = 1.6; c.lineCap = "round";
+    var lw = Math.max(1, Math.round(0.13 * sp * dpr)) / dpr;
+    c.fillStyle = rgba(C_INK, 0.52);
+    [12, 14, 16, 18, 20].forEach(function (q) { hLine(c, g.xBar, W, g.yT(q), lw); });
+    [0, 2, 4, 6, 8].forEach(function (q) { hLine(c, g.xBar, W, g.yB(q), lw); });
+    c.fillStyle = rgba(C_INK);
+    vLine(c, g.xBar, g.T - lw / 2, g.Bb + lw / 2, Math.max(1.4 / dpr, 0.16 * sp));   // the system's opening barline
+    var bw = 1.25 * sp, bx0 = g.xBar - 0.35 * sp - bw, yt = g.T, bh = g.Bb - g.T;   // the brace
+    c.save(); c.translate(bx0, yt); c.scale(bw, bh);
     c.beginPath();
-    c.moveTo(bx + 6, yt);
-    c.quadraticCurveTo(bx - 3, yt, bx + 1, (yt + mid) / 2);
-    c.quadraticCurveTo(bx + 5, mid - 3, bx - 4, mid);
-    c.quadraticCurveTo(bx + 5, mid + 3, bx + 1, (yb + mid) / 2);
-    c.quadraticCurveTo(bx - 3, yb, bx + 6, yb);
-    c.stroke();
-    // the two clefs — treble curl on the G line (q14), bass dots on the F line (q6)
+    c.moveTo(1, 0);
+    c.bezierCurveTo(0.32, 0.03, 0.26, 0.14, 0.3, 0.26);
+    c.bezierCurveTo(0.34, 0.38, 0.32, 0.47, 0, 0.5);
+    c.bezierCurveTo(0.32, 0.53, 0.34, 0.62, 0.3, 0.74);
+    c.bezierCurveTo(0.26, 0.86, 0.32, 0.97, 1, 1);
+    c.bezierCurveTo(0.56, 0.96, 0.62, 0.86, 0.6, 0.74);
+    c.bezierCurveTo(0.58, 0.6, 0.5, 0.53, 0.06, 0.5);
+    c.bezierCurveTo(0.5, 0.47, 0.58, 0.4, 0.6, 0.26);
+    c.bezierCurveTo(0.62, 0.14, 0.56, 0.04, 1, 0);
+    c.closePath(); c.fill();
+    c.restore();
     if (!trebPath && typeof Path2D === "function") {
       trebPath = new Path2D(CLEF_TREBLE.d);
       bassPath = new Path2D(CLEF_BASS.d);
     }
-    var bassH = 0.80 * staffH;
-    if (trebPath) {
-      // Seat each clef by its reference line so size can change without shifting
-      // the seating: the treble curl (0.58 down its glyph) rides the G line
-      // (q14); the bass dots (0.24 down) straddle the F line (q6).
-      var trebH = 1.28 * staffH;
-      drawClef(c, CLEF_TREBLE, trebPath, xL + 8, yOfQ(14) - 0.583 * trebH, trebH);
-      drawClef(c, CLEF_BASS,   bassPath, xL + 8, yOfQ(6)  - 0.237 * bassH, bassH);
+    function clef(cl, path, left, topY, h) {
+      var bb = cl.bbox, s = h / (bb[3] - bb[1]);
+      c.save(); c.translate(left - bb[0] * s, topY + bb[3] * s); c.scale(s, -s); c.fill(path); c.restore();
     }
-    // The scrolling ink must be gone by the time it reaches the clefs. Compute
-    // the right edge of the (wider) bass clef, and fade the ink to nothing just
-    // before it — so notes never cross the clefs or the brace.
-    var bassW = bassH * (CLEF_BASS.bbox[2] - CLEF_BASS.bbox[0]) / (CLEF_BASS.bbox[3] - CLEF_BASS.bbox[1]);
-    fadeX0 = xL + 8 + bassW + 4;                    // ink ≈ 0 here (just past the clefs)
-    fadeX1 = fadeX0 + 58;                           // ink at full strength here
-  }
-  function stampFuging() {
-    if (!pctx) return;
-    pctx.save();
-    pctx.globalAlpha = 0.5;
-    pctx.fillStyle = INK;
-    pctx.font = "italic " + Math.max(13, Math.round(H * 0.06)) + "px serif";
-    pctx.fillText("⁂", W - 34, H * 0.16);
-    pctx.restore();
+    if (trebPath) {                                   // seated on their lines: the curl on G (q14), the dots round F (q6)
+      clef(CLEF_TREBLE, trebPath, g.clefX, g.yT(14) - 0.583 * g.trebH, g.trebH);
+      clef(CLEF_BASS, bassPath, g.clefX, g.yB(6) - 0.237 * g.bassH, g.bassH);
+    }
   }
 
+  // ---- the ward's page ----------------------------------------------------------
+  function X(tp) { return Math.round((G.xE - (PT - tp) * SCROLL_PX_S) * dpr) / dpr; }
+  // Two voices at one x. A group is placed the first time it is drawn: if
+  // its ink would run into a group already placed close by on the same
+  // staff (a stem through the other voice's head, heads or dots that
+  // touch), it is set to the right, clear of that ink, the way a second
+  // voice is set. The offset is kept, and worked out again if the staff
+  // space changes (a resize).
+  function placeColumn(gr, g, heads, o) {
+    if (gr.col && gr.col.sp === g.sp) return gr.col.dx;
+    var sp = g.sp, tol = 0.05 * sp, gap = 0.3 * sp;
+    var bx = groupBoxes(layoutGroup(g, 0, heads, gr.st, gr.dir, o), o);
+    var bL = 1e9;
+    for (var q = 0; q < bx.length; q++) bL = Math.min(bL, bx[q][0]);
+    var dx = 0;
+    for (var pass = 0; pass < 4; pass++) {
+      var need = dx;
+      for (var i = 0; i < groups.length; i++) {
+        var A = groups[i];
+        if (A === gr || !A.col || A.col.sp !== sp || A.st !== gr.st || !(A.lastA > 0.05)) continue;
+        var off = (A.tp - gr.tp) * SCROLL_PX_S + A.col.dx;     // A's origin, from ours
+        if (off < dx - 8 * sp || off > dx + 8 * sp) continue;
+        var ab = A.col.boxes, hit = false, aR = -1e9;
+        for (var m = 0; m < ab.length; m++) {
+          var ax0 = ab[m][0] + off, ax1 = ab[m][2] + off;
+          aR = Math.max(aR, ax1);
+          for (var n = 0; !hit && n < bx.length; n++) {
+            var b = bx[n];
+            if (ab[m][4] && b[4]) continue;                     // ledgers may meet
+            if (ax0 < b[2] + dx - tol && b[0] + dx < ax1 - tol && ab[m][1] < b[3] - tol && b[1] < ab[m][3] - tol) hit = true;
+          }
+        }
+        if (hit) need = Math.max(need, aR + gap - bL);
+      }
+      if (need <= dx) break;
+      dx = need;
+    }
+    gr.col = { sp: sp, dx: dx, boxes: bx };
+    return dx;
+  }
+  function drawPage(c) {
+    var g = G, sp = g.sp, xR = g.xE + 3 * sp;
+    // the groups — heads on their stems, in the one ink
+    var keep = 0;
+    for (var i = 0; i < groups.length; i++) {
+      var gr = groups[i], x = X(gr.tp);
+      if (x < -6 * sp) continue;                               // gone past the clefs
+      groups[keep++] = gr;
+      if (gr.tp > PT || x > xR) continue;                      // not yet sung
+      var a = dryA(gr);
+      gr.lastA = a;
+      if (a < 0.02) continue;
+      var fold = foldFor(gr, g), heads = gr.heads;
+      if (fold.oct) {
+        var sh = (gr.st === "T" ? -7 : 7) * fold.oct;
+        heads = heads.map(function (h) { return { q: h.q + sh, shape: h.shape, open: h.open, dots: h.dots }; });
+      }
+      var o = { scale: gr.scale, rgb: C_INK, noStem: gr.noStem, flags: gr.flags, slash: gr.slash, breve: gr.v && gr.v.breve, ring: gr.ring };
+      x += placeColumn(gr, g, heads, o);
+      c.globalAlpha = a;
+      drawGroup(c, g, x, heads, gr.st, gr.dir, o);
+      if (gr.ring) drawBellRing(c, g, x, g.y(gr.st, heads[0].q), gr.scale);
+    }
+    groups.length = keep;
+    c.globalAlpha = 1;
+    drawQuestions(c);
+  }
+  // a bell: a ringed head — one thin ring, drawn with the head, that dries
+  // with it (no spreading rings: nothing on the page moves but the scroll)
+  function drawBellRing(c, g, x, y, sc) {
+    var r = 0.98 * g.sp * (sc || 1), lw = Math.max(1 / dpr, 0.07 * g.sp);
+    c.save();
+    c.strokeStyle = rgba(C_INK); c.lineWidth = lw;
+    c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.stroke();
+    c.restore();
+    koEllipse(c, x, y, r + lw + KO_PAD * g.sp, r + lw + KO_PAD * g.sp);
+  }
+
+  // the telegraph: its message punched straight into the page's paper along
+  // the middle of the gap (v0.32, owner: no tape, no container) — a round
+  // hole for a dit, a slot for a dah, each showing the plate beneath with a
+  // little shadow under its upper lip. A hole is punched at the engraving
+  // point when its key lifts and then travels with the page like a note (so
+  // the message is laid out at the page's own scale); it dries like a note,
+  // and it is never punched where a note, ledger or stem has the gap.
+  function tapeLive() {
+    for (var i = 0; i < tapes.length; i++) if (tapes[i].tp <= PT) return true;
+    return false;
+  }
+  function holeR(T) { return Math.min(0.23 * G.sp, 0.45 * T.U * SCROLL_PX_S); }
+  function drawTapes(c) {
+    var g = G, sp = g.sp, cy = g.tapeY;
+    for (var i = tapes.length - 1; i >= 0; i--) {
+      var T = tapes[i];
+      if (T.tp > PT) continue;
+      if (X(T.tp + T.Tt) < -4 * sp) { tapes.splice(i, 1); continue; }
+      var hr = holeR(T), inset = Math.min(0.04 * sp, 0.1 * hr);
+      for (var j = 0; j < T.marks.length; j++) {
+        var mk = T.marks[j];
+        if (mk.tp > PT) break;                           // punched when the key lifts
+        var xa = X(T.tp + mk.at) + inset, xb = X(mk.tp) - inset;
+        if (xb < -2 * sp) continue;
+        var a = dryA(mk);
+        if (a < 0.02) continue;
+        var hx0 = mk.dah ? xa : (xa + xb) / 2 - hr, hx1 = mk.dah ? Math.max(xb, xa + 2 * hr) : (xa + xb) / 2 + hr;
+        if (koCovers(hx0, cy - hr, hx1, cy + hr)) continue;   // the music has the gap here
+        c.globalAlpha = a;
+        c.beginPath();
+        if (!mk.dah) c.arc((xa + xb) / 2, cy, hr, 0, Math.PI * 2);
+        else rrect(c, xa, cy - hr, Math.max(2 * hr, xb - xa), 2 * hr, hr);
+        c.fillStyle = "#ddd1b4"; c.fill();              // the plate seen through the hole
+        c.save(); c.clip();
+        c.strokeStyle = "rgba(60, 45, 20, 0.6)"; c.lineWidth = 0.87 * hr;
+        var d = 0.39 * hr;
+        c.beginPath();
+        if (!mk.dah) c.arc((xa + xb) / 2, cy + d, hr, Math.PI, Math.PI * 2);
+        else { c.moveTo(xa, cy + 0.1 * hr); c.arcTo(xa, cy - hr + d, xa + hr, cy - hr + d, hr); c.lineTo(xb - hr, cy - hr + d); c.arcTo(xb, cy - hr + d, xb, cy + 0.1 * hr, hr); }
+        c.stroke(); c.restore();
+      }
+    }
+    c.globalAlpha = 1;
+  }
+
+  // the Question: each asking in a slender double-ruled cartouche with its
+  // "?" at the head, in the one green ink; then, after the last, an empty
+  // measure between dotted barlines — the answer that does not come
+  function drawQuestions(c) {
+    var g = G, sp = g.sp;
+    for (var qi = questions.length - 1; qi >= 0; qi--) {
+      var qn = questions[qi], alive = false;
+      qn.asks.forEach(function (ak) {
+        if (ak.tp0 > PT) { alive = true; return; }
+        var x0 = X(ak.tp0) - 3.0 * sp, x1 = X(ak.tp1) + 0.6 * sp;
+        if (x1 > -2 * sp) alive = true; else return;
+        var y0 = g.T - 2.55 * sp, y1 = g.Tb + 1.25 * sp, r = 1.15 * sp;
+        c.save();
+        c.beginPath(); c.rect(0, 0, g.xE + 0.5 * sp, H); c.clip();          // pulled by the burin only as far as the engraving point
+        c.globalAlpha = dryA(ak);
+        c.strokeStyle = rgba(C_INK); c.lineWidth = Math.max(1.1 / dpr, 0.13 * sp);
+        c.beginPath(); rrect(c, x0, y0, x1 - x0, y1 - y0, r); c.stroke();
+        c.lineWidth = Math.max(0.8 / dpr, 0.05 * sp); c.strokeStyle = rgba(C_INK, 0.7);
+        c.beginPath(); rrect(c, x0 + 0.28 * sp, y0 + 0.28 * sp, x1 - x0 - 0.56 * sp, y1 - y0 - 0.56 * sp, r - 0.28 * sp); c.stroke();
+        c.lineWidth = Math.max(1.1 / dpr, 0.13 * sp); c.strokeStyle = rgba(C_INK);
+        c.beginPath(); c.moveTo(x1 + 0.35 * sp, y0 + 0.9 * sp); c.lineTo(x1 + 0.35 * sp, y1 - 0.9 * sp); c.stroke();
+        text(c, "?", x0 + 1.2 * sp, g.yT(16) + 0.95 * sp, "italic 500 " + (2.7 * sp).toFixed(1) + "px " + FG, C_INK, 1, "center");
+        c.restore();
+      });
+      if (qn.na) {
+        var na = qn.na;
+        if (na.tp0 <= PT) {
+          var xa = X(na.tp0), xb = X(na.tp1);
+          if (xb > -2 * sp) alive = true;
+          c.globalAlpha = dryA(na); c.fillStyle = rgba(C_INK);
+          if (xa > -sp) { drawBarline(c, g, xa, "dotted", "T"); drawBarline(c, g, xa, "dotted", "B"); }
+          if (na.tp1 <= PT && xb > -sp) { drawBarline(c, g, xb, "dotted", "T"); drawBarline(c, g, xb, "dotted", "B"); }
+          c.globalAlpha = 1;
+        } else alive = true;
+      }
+      if (!alive && !qn.asks.some(function (ak) { return ak.tp0 > PT; })) questions.splice(qi, 1);
+    }
+  }
+
+  // ---- the band's own layer ---------------------------------------------------
+  // Round notes in the same green, on their own layer under the ward's ink,
+  // sliding through at the band's own (quicker) rate; each note's ink follows
+  // the band's approach, crossing and recession. Barlines every two of its
+  // beats. No figures or words: the round heads and the pace say "not ours".
+  function drawBand(c) {
+    var g = G, sp = g.sp, keep = 0;
+    for (var i = 0; i < bandNotes.length; i++) {
+      var n = bandNotes[i], bd = n.bd;
+      var x = Math.round((g.xE - (PT - n.tp) * SCROLL_PX_S * bd.r) * dpr) / dpr;
+      if (x < -6 * sp) continue;
+      bandNotes[keep++] = n;
+      if (n.tp > PT) continue;
+      c.globalAlpha = (0.12 + 0.68 * n.loud) * dryA(n);
+      if (n.mel) {
+        var q = n.q;
+        while (q > g.qMaxT) q -= 7;                              // folded in silently, like the ward's
+        drawGroup(c, g, x, [{ q: q, shape: "round", open: n.v.open, dots: n.v.dots }], "T", q >= 16 ? -1 : 1,
+          { rgb: C_INK, noStem: !n.v.stem, flags: n.v.flags });
+      } else {
+        // the oom-pah, written the bandsman's way — a staccato quarter
+        var rb = drawGroup(c, g, x, [{ q: n.q, shape: "round", open: false }], "B", -1, { rgb: C_INK });
+        var dq = n.q % 2 === 0 ? n.q + 1.5 : n.q + 2;
+        c.beginPath(); c.arc(rb.topX, g.yB(dq), 0.17 * sp, 0, Math.PI * 2); c.fill();
+      }
+    }
+    bandNotes.length = keep;
+    // the band's barlines, every two of its beats
+    for (var b = visits.length - 1; b >= 0; b--) {
+      var bd2 = visits[b];
+      var XB = function (tp) { return Math.round((g.xE - (PT - tp) * SCROLL_PX_S * bd2.r) * dpr) / dpr; };
+      if (bd2.tp0 > PT) continue;
+      if (XB(bd2.tp1) < -6 * sp) { visits.splice(b, 1); continue; }
+      for (var k = 1; k < bd2.bass.length; k++) {
+        var tb = bd2.bass[k].tp;
+        if (tb > PT) break;
+        var xb = XB(tb) - 1.8 * sp;
+        if (xb < -sp || xb > g.xE) continue;
+        var life = clamp((tb - bd2.tp0) / Math.max(1, bd2.tp1 - bd2.tp0), 0, 1);
+        c.globalAlpha = (0.1 + 0.4 * Math.sin(Math.PI * life)) * dryA(bd2.bass[k]);
+        c.fillStyle = rgba(C_INK);
+        drawBarline(c, g, xb, "single", "T"); drawBarline(c, g, xb, "single", "B");
+      }
+    }
+    c.globalAlpha = 1;
+  }
+
+  // ---- the frame ----------------------------------------------------------------
+  var inkLayer = null, bandLayer = null, tapeLayer = null;
   var lastFrame = 0;
-  var scrollAcc = 0;
-  var SCROLL_PX_S = 11;                            // the page turns slowly — prairie time
+  function paintLayer(layer, fn) {
+    var c = layer.getContext("2d");
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    c.globalCompositeOperation = "source-over"; c.globalAlpha = 1;
+    c.clearRect(0, 0, layer.width, layer.height);
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    c.save();
+    c.beginPath(); c.rect(0, G.top, W, G.bot - G.top); c.clip();   // the plate
+    try { fn(c); } finally { c.restore(); }                          // one bad frame must not leave the plate clipped
+    // the ink dissolves before it reaches the clefs
+    c.globalCompositeOperation = "destination-out";
+    var gr = c.createLinearGradient(G.fade0, 0, G.fade1, 0);
+    gr.addColorStop(0, "rgba(0,0,0,1)"); gr.addColorStop(1, "rgba(0,0,0,0)");
+    c.fillStyle = gr; c.fillRect(0, 0, G.fade1 + 1, H);
+    c.globalCompositeOperation = "source-over";
+  }
   function frame(ts) {
     if (!running) return;
     requestAnimationFrame(frame);
-    if (!ctx2d || !pctx) return;
-    var dt = lastFrame ? Math.min(0.1, (ts - lastFrame) / 1000) : 0.016;
+    if (!ctx2d || !G) return;
+    var raw = lastFrame ? Math.max(0, (ts - lastFrame) / 1000) : 0.016;
+    var dt = Math.min(0.1, raw);                     // for the wheel's easing
     lastFrame = ts;
+    tickClock(raw);                                  // the page keeps the real time: after a hidden spell it shows the present
+    // the ward's ink first, noting where the music has the middle of the gap
+    var hasTape = tapes.length > 0;
+    KO.length = 0;
+    if (hasTape && tapeLive()) { var tH = 0.4 * G.sp; koY0 = G.tapeY - tH; koY1 = G.tapeY + tH; }
+    paintLayer(inkLayer, drawPage);
+    koY0 = 0; koY1 = -1;
+    if (hasTape) paintLayer(tapeLayer, drawTapes);
+    var hasBand = bandNotes.length > 0 || visits.length > 0;
+    if (hasBand) paintLayer(bandLayer, drawBand);
+    ctx2d.setTransform(1, 0, 0, 1, 0, 0);
+    ctx2d.clearRect(0, 0, canvas.width, canvas.height);
+    if (staffLayer) ctx2d.drawImage(staffLayer, 0, 0);
+    if (hasBand) ctx2d.drawImage(bandLayer, 0, 0);          // the guests' layer lies under the ward's ink
+    if (hasTape) ctx2d.drawImage(tapeLayer, 0, 0);          // the telegraph's holes, under the ward's ink and never beneath a note
+    ctx2d.drawImage(inkLayer, 0, 0);
+    ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    // scroll the ink leftward (whole pixels only; sub-pixel drift blurs ink);
-    // a held meeting holds the page too
-    if (!paused) scrollAcc += SCROLL_PX_S * dt;
-    var shift = Math.floor(scrollAcc);
-    if (shift > 0) {
-      scrollAcc -= shift;
-      pctx.save();
-      pctx.globalCompositeOperation = "copy";
-      pctx.drawImage(page, -shift, 0);
-      pctx.restore();
-    }
-    // the ink dries: a whisper of erasure each frame. 0.0006/frame at 60fps
-    // ≈ 3.5%/s — a note holds for a minute and is gone within two. The
-    // sacrament blanks the page in a few seconds; the postlude dries faster.
-    pctx.save();
-    pctx.globalCompositeOperation = "destination-out";
-    pctx.globalAlpha = paused ? 0 : 0.0006 + (cond.section === "sacrament" ? 0.02 : 0) + (cond.section === "postlude" ? 0.004 : 0);
-    pctx.fillRect(0, 0, W, H);
-    pctx.restore();
-
-    // print notes whose moment has come
-    if (playing && K && K.getAudioTime) {
-      var now = K.getAudioTime();
-      var i = 0;
-      while (i < pending.length) {
-        if (pending[i].startTime <= now + 0.03) {
-          if (pending[i].startTime > now - 2) printNote(pending[i]);
-          pending.splice(i, 1);
-        } else i++;
-      }
-      // telegraph: a message that has begun moves to the active list; there each
-      // mark is stamped at the instant it is keyed. To land at readable spacing
-      // despite the slow scroll, a mark is stamped to the RIGHT of its resting
-      // place by exactly the scroll still to come before the message ends — so
-      // by the last tap the whole run has drifted into its proper tape.
-      var j = 0;
-      while (j < pendingTelegraph.length) {
-        var pt = pendingTelegraph[j];
-        if (pt.startTime <= now + 0.03) {
-          if (pt.startTime > now - 3 && pt.marks && pt.marks.length) {
-            activeTelegraph.push({ marks: pt.marks, t0: pt.startTime, count: 0, lay: telegraphLayout(pt.marks) });
-          }
-          pendingTelegraph.splice(j, 1);
-        } else j++;
-      }
-      var a = 0;
-      while (a < activeTelegraph.length) {
-        var msg = activeTelegraph[a];
-        while (msg.count < msg.marks.length && msg.t0 + msg.marks[msg.count].at <= now + 0.02) {
-          var mi = msg.count, mk = msg.marks[mi];
-          var mx = msg.lay.fx[mi] + SCROLL_PX_S * (msg.lay.Tt - mk.at);
-          stampMark(mk, mx, msg.lay, mi > 0 ? msg.lay.gapAfter[mi - 1] : msg.lay.rd);
-          msg.count++;
-        }
-        if (msg.count >= msg.marks.length) activeTelegraph.splice(a, 1); else a++;
-      }
-    }
-
-    // composite to screen: the static staves + clefs, then the scrolling ink —
-    // but the ink is first pulled through a left-edge fade so notes dissolve to
-    // nothing just before the clefs and brace instead of sliding across them.
-    ctx2d.clearRect(0, 0, W, H);
-    if (staffLayer) ctx2d.drawImage(staffLayer, 0, 0, W, H);
-    if (fadeCtx && fadeGrad) {
-      fadeCtx.globalCompositeOperation = "source-over";
-      fadeCtx.clearRect(0, 0, W, H);
-      fadeCtx.drawImage(page, 0, 0);
-      fadeCtx.globalCompositeOperation = "destination-in";   // keep ink only where the mask is opaque
-      fadeCtx.fillStyle = fadeGrad;
-      fadeCtx.fillRect(0, 0, W, H);
-      ctx2d.drawImage(fadeCanvas, 0, 0);
-    } else {
-      ctx2d.drawImage(page, 0, 0);
-    }
-
-    drawWheel(dt);                                 // the facade rides inside the wheel
+    if (XW > 120) drawWheel(dt);                   // the facade rides inside the wheel (once the band is laid out)
   }
 
   // ---- the wheel — the order of service round the crown -----------------------
@@ -779,33 +1429,21 @@ window.KolobViz = (function () {
   // ---- lifecycle -------------------------------------------------------------
   function resize() {
     if (!canvas) return;
-    dpr = Math.min(2, window.devicePixelRatio || 1);
+    dpr = Math.min(3, window.devicePixelRatio || 1);   // DPR-3 phones get crisp rules (the budget allows it)
     var rect = canvas.getBoundingClientRect();
     W = Math.max(60, Math.round(rect.width));
     H = Math.max(60, Math.round(rect.height));
     canvas.width = W * dpr; canvas.height = H * dpr;
     ctx2d = canvas.getContext("2d");
-    ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
-    var old = page;
-    page = document.createElement("canvas");
-    page.width = W; page.height = H;
-    pctx = page.getContext("2d");
-    if (old) pctx.drawImage(old, 0, 0, W, H);
-    // rebuild the static staff layer (staves, brace, clefs) at device resolution
-    staffLayer = document.createElement("canvas");
-    staffLayer.width = W * dpr; staffLayer.height = H * dpr;
+    G = pageGeom();
+    function layer() { var l = document.createElement("canvas"); l.width = W * dpr; l.height = H * dpr; return l; }
+    // the static staff layer (staves, brace, clefs), and the two ink layers
+    // the page is re-engraved on each frame — the ward's, and the band's
+    staffLayer = layer();
     var sctx = staffLayer.getContext("2d");
     sctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    buildStaffLayer(sctx);                          // also sets fadeX0 / fadeX1
-    // a same-size layer used to fade the scrolling ink toward the left (built
-    // fresh so it tracks W/H); the gradient is the fade mask, transparent under
-    // the clefs and opaque out where the notes are engraved.
-    fadeCanvas = document.createElement("canvas");
-    fadeCanvas.width = W; fadeCanvas.height = H;
-    fadeCtx = fadeCanvas.getContext("2d");
-    fadeGrad = fadeCtx.createLinearGradient(fadeX0, 0, fadeX1, 0);
-    fadeGrad.addColorStop(0, "rgba(0,0,0,0)");
-    fadeGrad.addColorStop(1, "rgba(0,0,0,1)");
+    buildStaffLayer(sctx);
+    inkLayer = layer(); bandLayer = layer(); tapeLayer = layer();
     if (wheel) {
       var xr = wheel.getBoundingClientRect();
       XW = Math.max(60, Math.round(xr.width));
@@ -822,6 +1460,21 @@ window.KolobViz = (function () {
     if (!canvas && !wheel) return;
     resize();
     window.addEventListener("resize", resize);
+    // the plates may be laid out after init (the stylesheet still loading):
+    // re-measure whenever either canvas changes size
+    if (typeof ResizeObserver === "function") {
+      var armed = false, ro = new ResizeObserver(function () {
+        if (armed) return; armed = true;
+        requestAnimationFrame(function () {
+          armed = false;
+          var r1 = canvas ? canvas.getBoundingClientRect() : null, r2 = wheel ? wheel.getBoundingClientRect() : null;
+          if ((r1 && (Math.round(r1.width) !== W || Math.round(r1.height) !== H)) ||
+              (r2 && (Math.round(r2.width) !== XW || Math.round(r2.height) !== XH))) resize();
+        });
+      });
+      if (canvas) ro.observe(canvas);
+      if (wheel) ro.observe(wheel);
+    }
     if (K) {
       if (K.setNoteListener) K.setNoteListener(onNote);
       if (K.setEventListener) K.setEventListener(onEvent);
@@ -831,8 +1484,12 @@ window.KolobViz = (function () {
   }
   function setConductor(c, isPlaying, isPaused) {
     if (c) cond = c;
+    var was = playing;
     playing = !!isPlaying;
     paused = !!isPaused;
+    // stopped: nothing more is struck (the "■" event usually got here first,
+    // with the exact time; this catches a stop that came without it)
+    if (was && !playing) silence(audioNow());
   }
 
   return { init: init, setConductor: setConductor, setWheelLabels: setWheelLabels, wheelSeatAt: wheelSeatAt };

@@ -412,8 +412,9 @@
   var phraseQueue = [];                         // rows waiting for their startTime
   // the drone is the constant ground; the field and the wire already write
   // their own minutes (ambient + telegraph events) — don't double-book them
-  // the tuba is never named here: his moment is logged as RASPBERRY instead
-  var PHRASE_SKIP = { drone: 1, ambient: 1, telegraph: 1, tuba: 1 };
+  // the tuba is never named here: his moment is logged as RASPBERRY instead;
+  // the visiting band writes its own minutes (its visitation events)
+  var PHRASE_SKIP = { drone: 1, ambient: 1, telegraph: 1, tuba: 1, band: 1 };
   function onNoteForLog(n) {
     if (!n || !n.layer || PHRASE_SKIP[n.layer]) return;
     var end = n.startTime + (n.duration || 0);

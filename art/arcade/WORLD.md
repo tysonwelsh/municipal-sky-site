@@ -9,6 +9,9 @@ Everything decided *incidentally* while building machines gets written down
 here the day it's decided. Ten cabinets stay one building only if the
 details stop contradicting each other.
 
+**Read `HEART.md` first**: what this place is about and how it should feel.
+This file is the rulebook; that one is the reason.
+
 ---
 
 ## The economy law

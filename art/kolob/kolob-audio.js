@@ -2292,7 +2292,9 @@ window.KolobAudio = (function () {
       });
       var at = t + e * stagger;
       var tot = choirVoiceLine(at, notes, vi, 0.85);
-      emitNote("choir", notes[0].f, at, tot);
+      // report the head this voice sings, note by note, as choirVoiceLine
+      // walks it (view-only: no dice, no timing — the page prints the head)
+      for (var hn = 0, ht = at; hn < notes.length; ht += notes[hn].dur, hn++) emitNote("choir", notes[hn].f, ht, notes[hn].dur);
       if (at + tot > lastEnd) lastEnd = at + tot;
     }
     // strings hold the open fifth under the imitation
@@ -2426,7 +2428,9 @@ window.KolobAudio = (function () {
   // marching tempo, swells as it approaches, crosses the meeting, and
   // recedes. It claims no air and defers to no one; the resident voices
   // carry on exactly as they were. The collision is the piece. The visitor
-  // is never engraved on the page — it is not one of ours.
+  // is engraved on its own layer, in round notes — not one of ours (v0.31:
+  // its notes are reported to the page with layer "band"; the report draws
+  // no dice and moves nothing).
   // ==========================================================================
   function twoBandsCross() {
     // under the withholding the visiting band gets a lesser hymn — even a
@@ -2472,6 +2476,12 @@ window.KolobAudio = (function () {
     og.gain.setValueAtTime(0, t);
     oom.connect(og); og.connect(bus);
 
+    // how near the band is (0..1) at a moment — the same approach/cross/recede
+    // as its bus gain, for the page's ink
+    function nearness(at) {
+      var x = (at - t) / dur;
+      return x < 0.45 ? x / 0.45 : x < 0.6 ? 1 : Math.max(0, 1 - (x - 0.6) / 0.4);
+    }
     var tt = t, di = 0;
     while (tt < t + dur - beat) {
       var deg = degs[di % degs.length];
@@ -2482,6 +2492,7 @@ window.KolobAudio = (function () {
       fart.gain.linearRampToValueAtTime(0.5, tt + 0.03);
       fart.gain.setValueAtTime(0.5, tt + nd * 0.7);
       fart.gain.linearRampToValueAtTime(0.08, tt + nd * 0.95); // the tongue lifts
+      emitNote("band", f, tt, nd, { part: "melody", beat: beat, loud: nearness(tt) });
       tt += nd; di++;
     }
     var bt = t, bar = 0;
@@ -2491,6 +2502,7 @@ window.KolobAudio = (function () {
       og.gain.setValueAtTime(0.0001, bt);
       og.gain.linearRampToValueAtTime(0.55, bt + 0.02);
       og.gain.linearRampToValueAtTime(0.0001, bt + beat * 0.8);
+      emitNote("band", bf, bt, beat, { part: "bass", beat: beat, loud: nearness(bt) });
       bt += beat * 2; bar++;
     }
     fife.start(t); fife.stop(t + dur + 0.5);
