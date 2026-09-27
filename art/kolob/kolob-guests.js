@@ -100,12 +100,13 @@ window.KOLOB = window.KOLOB || {};
     var chords = S.Harmony.cadence("plagal", R, cadAt, "assembly");
     var avs = activeVoices();
     for (var ci = 0; ci < chords.length; ci++) {
-      S.Harmony.write(chords[ci], cadAt + ci * chDur, "assembly");
+      var amenDur = chDur * (ci ? 1.7 : 1.02);
+      S.Harmony.write(chords[ci], cadAt + ci * chDur, "assembly", amenDur);
       for (var v = 0; v < avs.length; v++) {
         var vi = avs[v];
         var cf = chords[ci].freqs[S.VI_TO_CHORDPOS[vi]];
-        choirVoiceLine(cadAt + ci * chDur, [{ f: cf, dur: chDur * (ci ? 1.7 : 1.02) }], vi, 0.9);
-        emitNote("choir", cf, cadAt + ci * chDur, chDur * (ci ? 1.7 : 1.02), { part: S.CHOIR_PART[vi], chord: chords[ci].id });   // every voice of the amen
+        choirVoiceLine(cadAt + ci * chDur, [{ f: cf, dur: amenDur }], vi, 0.9);
+        emitNote("choir", cf, cadAt + ci * chDur, amenDur, { part: S.CHOIR_PART[vi], chord: chords[ci].id });   // every voice of the amen
       }
     }
     // the organ follows the amen as it is sung (round 2: it used to sound
@@ -115,7 +116,10 @@ window.KOLOB = window.KOLOB || {};
     var dur = (cadAt + chDur * 2.2) - t;
     claimAir(dur, 6);
     emitEvent({ cat: "visitation", label: "✶ the whole tune, at last", detail: theme.name + " · " + (theme.gesture || "") + " · " + Math.round(dur) + "s" });
-    return dur;
+    // the span the conductor holds is the SOUND's, counted from the cue: the
+    // held amen (its last chord, ×1.7) and the strings under it both outlast
+    // the air claimed above, which is unchanged (round 2)
+    return Math.max(cadAt + chDur * 2.7, at + total + chDur * 2 + 2) - tc;
   }
 
   // ==========================================================================
@@ -160,6 +164,11 @@ window.KOLOB = window.KOLOB || {};
         var adur = renderHarmonium(aAt, anotes, 0.5 + k * 0.12);
         S.reportLine("harmonium", aAt, anotes);
         // from the third answer the answerers argue among themselves
+        // (FOR WHOEVER UNSHELVES THE QUESTION: the second rank is a PURE
+        // fifth above each answer, and above a degree whose fifth is not in
+        // the collection it is a pitch outside the day's tuning — the harness
+        // lists it as off the tuning; take the collection's own fifth, as the
+        // strings' pureFifth guard does, or rule that the argument may leave it)
         if (k >= 2) {
           var bnotes = anotes.map(function (n) { return { f: n.f * 1.5, dur: n.dur * R.rnd(0.8, 1) }; });
           renderHarmonium(aAt + abeat * 0.5, bnotes, 0.3 + k * 0.08);
@@ -241,7 +250,7 @@ window.KOLOB = window.KOLOB || {};
       var x = (at - t) / dur;
       return x < 0.45 ? x / 0.45 : x < 0.6 ? 1 : Math.max(0, 1 - (x - 0.6) / 0.4);
     }
-    var tt = t, di = 0;
+    var tt = t, di = 0, soundEnd = t + dur;         // (the last note told, for the span)
     while (tt < t + dur - beat) {
       var deg = degs[di % degs.length];
       var nd = Math.min(2, 0.9 + (di % 4 === 0 ? 0.5 : 0)) * beat;
@@ -253,6 +262,7 @@ window.KOLOB = window.KOLOB || {};
       fart.gain.linearRampToValueAtTime(0.08, tt + nd * 0.95); // the tongue lifts
       emitNote("band", f, tt, nd, { part: "melody", beat: beat, loud: nearness(tt) });
       tt += nd; di++;
+      if (tt > soundEnd) soundEnd = tt;
     }
     var bt = t, bar = 0;
     while (bt < t + dur - beat) {
@@ -262,6 +272,7 @@ window.KOLOB = window.KOLOB || {};
       og.gain.linearRampToValueAtTime(0.55, bt + 0.02);
       og.gain.linearRampToValueAtTime(0.0001, bt + beat * 0.8);
       emitNote("band", bf, bt, beat, { part: "bass", beat: beat, loud: nearness(bt) });
+      if (bt + beat > soundEnd) soundEnd = bt + beat;
       bt += beat * 2; bar++;
     }
     fife.start(t); fife.stop(t + dur + 0.5);
@@ -274,7 +285,9 @@ window.KOLOB = window.KOLOB || {};
     cueAt("guests", tc + dur, function () {
       emitEvent({ cat: "visitation", label: "⇋ passes on", detail: "" });
     });
-    return dur;
+    // the span is the band's sound, counted from the cue: it steps off 0.4 s
+    // after it, and its last note may ring a moment past the fade (round 2)
+    return soundEnd - tc;
   }
 
   // ==========================================================================
@@ -288,6 +301,7 @@ window.KOLOB = window.KOLOB || {};
   // ==========================================================================
   // (the steeples' keys and the times of their strikes are musical; where
   // each stands in the valley and how loud it carries are synth:steeples)
+  var BELL_RING_S = 7;                           // how long a strike is told as ringing
   function steeplesAnswer(V, tc) {
     var R = stream("guest:steeples");
     var Y = synth("steeples");
@@ -353,21 +367,25 @@ window.KOLOB = window.KOLOB || {};
     for (var s2 = 1; s2 < all.length; s2++) {
       if (all[s2].at - all[s2 - 1].at < 0.6) all[s2].at = all[s2 - 1].at + 0.7;
     }
+    var ringEnd = t + dur;
     for (var s3 = 0; s3 < all.length; s3++) {
       var st = all[s3];
       if (st.home) {
         bellStrike(st.at, st.gain, st.base, panAt("bells", Y.rnd(-0.2, 0.2)), { hum: true });
-        emitNote("bells", 0, st.at, 7);
+        emitNote("bells", 0, st.at, BELL_RING_S);
       } else {
         bellStrike(st.at, st.gain, st.base, st.dest, { hum: false });
       }
+      if (st.at + BELL_RING_S > ringEnd) ringEnd = st.at + BELL_RING_S;
     }
 
     emitEvent({ cat: "visitation", label: "◎ the steeples answer", detail: nVis + " far bells · " + Math.round(dur) + "s" });
     cueAt("guests", tc + dur, function () {
       emitEvent({ cat: "visitation", label: "◎ the last bell", detail: "" });
     });
-    return dur;
+    // the span runs until the last bell has rung out, not until it is struck:
+    // the prelude or the postlude waits for the ring (round 2)
+    return ringEnd - tc;
   }
 
   // ==========================================================================

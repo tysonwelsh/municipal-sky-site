@@ -30,7 +30,10 @@ harness, and muted headless Chrome (`--mute-audio`).
     voicing: motion from the chord before, the third present, the root doubled,
     parallel octaves refused, parallel fifths welcome.
   - It is held to the hymnal's spacing: at most an octave from S to A and from
-    A to T.
+    A to T. *(Corrected in Round 2: that holds on the first try. Once
+    spacing becomes only a cost (seat ≥ 2), a chord may open wider: 28 of
+    15 293 pinned chords (0.18 %, all at seat ≥ 2) have S–A wider than an
+    octave, and 2 have A–T; 154 runs.)*
   - When nothing passes, the choir reaches in a fixed order: spacing becomes a
     cost; the lower voices go a third further down (bass to E2, tenor to B2,
     alto to A3); the bass takes the chord's third or fifth (a sixth chord); a
@@ -78,11 +81,18 @@ harness, and muted headless Chrome (`--mute-audio`).
 - **One audible consequence in the amens.** The fuging convergence and the
   assembly's amen used to hold the *final* chord in the organ under the choir's
   IV. The organ now plays IV then I with the choir, ending exactly where it did.
-- **Result:** every accompanying note took the chord standing at its onset, and
-  sounds that chord's pitches:
+- **Result:** every accompanying note took the chord standing *in the book*
+  at its onset, and sounds that chord's pitches:
   - 6 seeds, 1200 s: 4 356 of 4 356 notes (organ, harmonium, strings, choir,
     clarinet, tines);
   - 406 seeds: all pass.
+
+  *(Corrected in Round 2: this measured agreement with the book, not with the
+  choir. The book also holds the joint's cadence and the organ's advance, so
+  the check passed while those chords sounded under a line still being sung:
+  on this commit, 46 of 222 accompanying notes begun under the choir named
+  another chord on seed 9 alone. Round 2 below fixes the cause and adds the
+  check against the sung chord.)*
 
 ### c. A guest holds the joint
 
@@ -221,7 +231,8 @@ harness, and muted headless Chrome (`--mute-audio`).
 
 - **Harness, 6 seeds × 1200 s** (1847, 5, 9, 77, 4242, 12): all PASS.
   - Soprano ≤ alto: 0 of 596 pinned chords.
-  - Chord timeline: 4 356/4 356.
+  - Chord timeline: 4 356/4 356 — the chord standing in the book, not the
+    chord being sung (see Round 2).
   - Pitch adherence: 100 %.
   - Consecutive octaves in a sung line: 0.
 - **406 seeds × 1200 s** (1847, 5, 9, 77, 4242, 12, 1001–1400): **406/406 PASS**.
@@ -336,7 +347,7 @@ harness, and muted headless Chrome (`--mute-audio`).
 - **`?seed=5` with the Ives switch on.** The old tune comes in the prelude at
   0:14, and the hymn board reads 𐐊𐐤 𐐄𐐢𐐔 𐐓𐐅𐐤.
 - **The steeples** now ring their full minute, and the prelude or postlude
-  waits for the last bell. `?seed=113`, with the Ives switch armed *before*
+  waits for the last bell to be struck *(Round 2: and now for it to ring out)*. `?seed=113`, with the Ives switch armed *before*
   PLAY: the steeples come in the postlude at 9:06, and the meeting's end
   waits about 30 s for them. (`node _harness.js 1500 113 ives` prints the
   spans.)
@@ -415,3 +426,307 @@ harness, and muted headless Chrome (`--mute-audio`).
   Reporting their strike pitch would put ringed heads on the page, which the
   owner has not asked for.
 - **The chord book keeps ten minutes** and the chord standing before them.
+
+---
+
+## Round 2 — the critic's findings, answered
+
+*Same crew, same branch, on top of `ee88499`. The critic's eight findings,
+in their order. Every one is fixed or disclosed; I disagree with none.*
+
+### 1. The joint waits for the choir (major)
+
+**The cause.** The choir writes its couplet up to half a minute ahead. When a
+section's time ran out mid-couplet, three things sang over it:
+
+- the joint's organ cadence (`runJoint`), written into the same book;
+- the next section's organ advance;
+- a couplet the choir *began* during the joint, sung into the next section.
+
+The strings, the harmonium and the leans then read those chords under the
+choir's. On the committed M2, over seeds 1001–1100 × 1200 s:
+
+- 129 of 1 019 joints began under a sounding choir line;
+- 42 couplets were begun during a joint;
+- 164 sections were entered with the old section's choir still singing,
+  17.9 s into the new one on average.
+
+**The fix** (`kolob-meeting.js`, `kolob-voices-choir.js`, `kolob-guests.js`):
+
+- **The chord desk keeps `sungUntil()`.** It is the end of the last chord the
+  choir has written. `write(chord, t, by, dur)` now takes how long a sung chord
+  lasts (`by` choir, fuging or assembly). `harmonize` passes each chord's own
+  length, and the three amens pass theirs (×1.02, then the held last chord
+  ×1.6 or ×1.7).
+- **The joint waits for it.** It waits until the choir's written lines are
+  sung, plus a breath of 1.0 s (`jointHeld()`). This is added to the guest
+  hold.
+- **No couplet begins under the joint.** `choirVerse` waits while the
+  chorister's book says `jointing()` (a new accessor).
+- **The fuging waits for a verse the choir is still singing** (`choirSinging()`
+  in its trigger; its window x 0.6–0.8 is unchanged).
+  - Why: once the joint was fixed, the new check found one more case (seed
+    3007, Ives, 1500 s). The fuging's convergence amen was written between
+    two lines of a couplet the choir had written ahead: two SATB chords at
+    once, from the same four voices.
+  - On M2, 64 of 157 fugings (per 100 runs) began while a verse was still
+    being sung.
+  - I tried letting the convergence alone wait instead. 31 of 148 amens then
+    stood apart from their entries, by a median 10 s and up to 55 s. I chose
+    the cleaner rule: the entries begin once the choir is free.
+- **The cumulative assembly waits likewise** for a doxology line the choir is
+  still singing. It used to begin under one in 5 of 10 assemblies (100 runs).
+  The line holds the joint, so the payoff is never lost. The assembly checks
+  before the joint does, in the same tick.
+- **`Desk.reset()` also clears `sungUntil`.** It is called by a new meeting, a
+  sunrise, and so PLAY after STOP. That STOP shuts the written-ahead lines
+  outside. The harness's STOP→PLAY run and `transport` both pass.
+
+**Result.** 154 runs:
+
+- 54 standard runs:
+  - 1847/5/9/77/4242/12 and 2001–2030 × 1200 s;
+  - 3001–3012 Ives × 1500 s;
+  - 3/12/1847/5/21/113 with Ives, raspberry and cumulative × 1500 s.
+- 100 statistics runs: 1001–1100 × 1200 s.
+
+What they show:
+
+- **Every accompanying note begun under a sounding choir chord names that
+  chord.**
+  - 15 994 of 15 994 notes: organ 9 930, strings 4 158, harmonium 1 460,
+    clarinet lean 290, tines 156.
+  - The critic's `sung.js` and `sung2.js` agree: 0 mismatches.
+- **0 of 1 569 joints began under the choir.** 0 couplets were begun in a
+  joint, and 0 sections were entered with the old choir still singing
+  (`overrun.js`).
+- **Seed 9, the critic's worked example.**
+  - The choir's vi at 325.46 s is now sung to its end (333.1 s).
+  - The joint's IV comes at 334.90 s, not 325.90.
+  - The doxology line the choir began inside the joint at 858 s is no longer
+    begun.
+
+**What it costs: the hymns run longer.** In v0.32 those couplets were sung
+anyway, over the joint's amen and into the next section. Now the section
+waits for them (owner: "if the section needs to be a bit longer, that's
+okay").
+
+How far past its plan a section runs before its joint (100 runs, M2 → now):
+
+| section | median | p90 | longest | mean actual length |
+|---|---|---|---|---|
+| hymn | 8.4 → 14.1 s | 12.2 → 36.3 s | 14.5 → 77.9 s | 156.7 → 167.2 s |
+| doxology | 8.7 → 9.5 s | 12.4 → 31.0 s | 16.6 → 42.5 s | 95.0 → 101.6 s |
+| every other section | unchanged | | | |
+
+- The longest case is seed 1083: a slow 87.87 couplet of 80 s, begun 11 s
+  before the hymn's planned end.
+- Meetings per 1200 s: 1.97 → 1.94.
+
+**An option for the owner's ear, not shipped.** One more condition would stop
+the choir beginning a *new* couplet in the hymn's last tenth
+(`S.localArc() > 0.9` beside `jointing()` in `choirVerse`).
+
+- Measured over the same 100 seeds: hymn p90 25.6 s, longest 47 s.
+- The choir sings 3.8 % fewer notes.
+
+I left it out. It takes singing away, and the ruling allows the length.
+
+### 2. The harness check that can see (b) (major)
+
+`_harness.js` has four new parts:
+
+- **THE SUNG CHORD** (after the critic's `sung.js`, the same rule). Every
+  accompanying note that names a chord and begins inside a chord-bearing
+  choir note's `[start, start + dur)` must name the chord of the latest-begun
+  such note. The accompaniment is organ, harmonium, strings, the clarinet's
+  and the tines' leans, and the bagpipe. Choir notes are cut at a STOP (the
+  stopped meeting's lines are shut outside).
+  - It also fails any joint whose first chord begins under the choir.
+  - The old check still runs, renamed `chord timeline (the book)`. It proves
+    the notes agree with the book, which is all it ever proved.
+- **Guest spans must cover their sound.** For each `guest-start`, the notes
+  its own cue told must end by `until`.
+- **`joints held past the plan`** is a tally: how many sections waited, the
+  median and the longest.
+
+**The checks have teeth.** Run on the committed M2 (`ee88499`, via
+`KOLOB_BASE`):
+
+- Seed 9 gives "176 of 222 … 3 joints begun under the choir's singing": FAIL,
+  and the same count as `sung.js`.
+- Over seeds 1001–1100 the new checks fail all 100 runs:
+  - the sung chord in 92 (1 804 notes);
+  - joints under the choir in 93;
+  - guest spans in 53.
+- The critic's i3001 is reproduced exactly: steeples 16.1–81.1 s, sounding to
+  87.0 s. So is i3006: assembly 612.5–630.9 s, to 633.0 s.
+
+**The handoff's claim is corrected in place** (under b, and in "How I verified
+it"). It was "4 356 of 4 356 … matched the sung chord". It now says what was
+measured: the chord standing in the book.
+
+### 3. The page prints more than v0.32 did (minor, disclosed; a ruling is requested)
+
+Reporting every sounded note changes what the engraving shows. `kolob-viz.js`
+prints every note on its melodic layers (choir, clarinet, bells, harmonium,
+strings, bagpipe), and I may not touch its drawing. What the owner will now
+see:
+
+- **A strings pad prints two or three stacked breves** (root, fifth, octave)
+  where v0.32 printed one. The root often sits on ledger lines under the
+  treble. The critic's screenshot, seed 5 at ~55 s:
+  `/private/tmp/claude-501/kolob-r2-engine-critic/ui-seed5.png`.
+- **The harmonium prints a T+A dyad** for its held inner voices, and every
+  note of its shadow and answer lines. v0.32 printed one long head.
+- **The fuging's and the assembly's amens print as choir chords**, every voice.
+- **New in this round: the doxology amen's held last chord prints at its sung
+  length** (×1.6). It was told as long as the first chord. A reported note is
+  the written note.
+
+**Request (to the integrator, or the engraving crew).** Please get the
+owner's ruling.
+
+- If he wants the old look, the notes already carry `part`. The viz can skip
+  strings `fifth`/`octave`, harmonium `A` (keeping `T`) and `doubling`, and
+  keep the choir amens.
+- That is a drawing change, and not mine to make.
+
+### 4. The steeples' last bell rang into the joint (minor, fixed)
+
+- `steeplesAnswer` returns the span to the end of the **ring**. That is the
+  last strike plus `BELL_RING_S` (7 s, the same length each home strike is
+  told as ringing). Before, it ended at the last strike.
+- The prelude or postlude now waits for the bell to ring out.
+- 0 spans shorter than their sound in the 54 standard runs (critic's 12-run
+  Ives set included).
+
+### 5. The bands' and the assembly's spans were short (minor, fixed)
+
+- **The bands** return `soundEnd − tc`. That is the later of the fade's end
+  and the last told note, counted from the cue (they step off 0.4 s after it).
+- **The assembly** returns the later of its held amen (cadence + 2.7 chord
+  lengths) and the strings under it, counted from the cue.
+  - Its `claimAir` is unchanged, so the air the other voices wait on is as
+    before.
+  - Only the hold and the typed span grow: about 2 s for the assembly, and
+    0.4–0.6 s for the bands.
+- The harness checks every span against its sound (item 2): 0 short, in all
+  154 runs.
+
+### 6. The shelved pure fifths (info, noted in the code)
+
+A comment now stands at each place, for whoever unshelves them:
+
+- the bagpipe's `rootF * 1.5` (kolob-voices-bagpipe.js:141);
+- the Question's second rank, `n.f * 1.5` (kolob-guests.js:167).
+
+Each names the strings' `pureFifth` guard as the remedy, and says the harness
+will list the notes as off the tuning. Neither sounds while shelved.
+
+### 7. Two exceptions, now stated (info)
+
+- **"Held to the hymnal's spacing" has an exception**, now written into the
+  claim.
+  - After this round: 30 of 15 413 pinned chords (0.19 %) have S–A wider than
+    an octave, all at seat ≥ 2, where spacing is only a cost. 2 have A–T
+    wider.
+  - 0 cross.
+- **The free voicings' parallel octaves inside cadence pairs** (the
+  `defaultVoicing` fallback) stay as disclosed under "Known issues". They are
+  the HYMN crew's.
+
+### 8. Polish
+
+- **`Desk.reset()` takes no time,** and is now documented and called so.
+- **For SCORE §1 (request to the integrator):** Melody's `Motif` is callable
+  as `(moment, stream)` and reads nothing of the house. It is still a
+  stateful singleton, though: theme, lineage and ledger. `Motif.newMeeting`
+  resets the meeting's shared material, so a composer that calls it resets
+  the house's too. Please write that beside the moment's fields.
+
+### Round 2's statistics (committed M2 → now, seeds 1001–1100 × 1200 s)
+
+| metric | M2 | now | shift | why |
+|---|---|---|---|---|
+| section overrun past plan, mean | 8.56 s | 11.82 s | +38 % | the choir holds the joint (item 1) |
+| overrun > 12 s, per run | 0.77 | 2.21 | ×2.9 | the same |
+| sections entered · joints/min | 11.14 · 0.509 | 10.93 · 0.499 | −1.9 % · −2.2 % | the hymns are longer |
+| fuging entries, per run | 1.57 | 1.37 | −12.7 % | a fuging no longer begins under a verse; 64 of 157 did |
+| choir notes/min · onsets/min | 16.54 · 6.59 | 15.69 · 6.19 | −5.2 % · −6.0 % | no couplet begun in a joint (0.42/run did); fewer fugings |
+| verse lines/min | 0.567 | 0.542 | −4.5 % | the couplets not begun in a joint |
+| plagal cadences/min | 0.472 | 0.448 | −5.2 % | fewer fuging and doxology amens, fewer joints per minute |
+| harmony voicings/min | 7.09 | 6.80 | −4.1 % | fewer choir chords |
+| stillnesses, per run | 2.24 | 2.11 | −5.8 % (z −0.8) | chance; the conductor's dice fall on other ticks |
+| guests fired · drawn | 0.83 · 1.05 | 0.82 · 1.03 | ≈ | — |
+| every other layer's notes/min, the silence share, the planned section lengths | | | within ±4.5 % | — |
+
+- **Against M1** (a20d993, the same seeds):
+  - choir notes −2.1 %;
+  - fuging entries −12.7 %;
+  - plagal cadences −5.1 %;
+  - overrun past plan +41 %;
+  - the silence share −3.5 %.
+
+  The rest is as in the M2 table above (the reporting of every note).
+- **It is still Kolob:** the same Sundays, the same guests, the same cadence
+  mix (plagal ≈ 82 %), the same air. The hymns breathe out their last line
+  before the organ closes them.
+
+### Round 2's verification
+
+- **Harness.** The 54 standard runs and the 100 statistics runs all PASS.
+  - Soprano ≤ alto: 0 of 15 413 pinned chords.
+  - Pitch adherence: 100 %.
+- **REPRO PASS:** `1500 1847 ives razz cumulative`, `1200 77`, `1500 9 ives`,
+  `1500 21 ives`, `1200 4242`. **`transport` PASS:** 1847 and 77.
+- **Muted headless Chrome** (port 9421, `--mute-audio`, the worktree on :8111):
+  - **The three-tab REPRO driver, seed 1847, 120 s.**
+    - Tab B (all 18 stops auditioned, a layer muted, volumes moved) equals
+      tab A.
+    - Tab C (paused 10 s at 40 s; the audio clock stood still and nothing
+      sounded) equals A.
+    - Tab A equals the harness line for line (87 lines).
+    - Every console is clean.
+  - **index.php, seed 5, Ives on.** The board read 𐐊𐐤 𐐄𐐢𐐔 𐐓𐐅𐐤 and, in Latin,
+    "an old tune". The minutes carry the old-tune row, nothing names "two
+    bands", and the console is clean.
+  - **The labs** (room, tune, bagpipe, question, voices, instruments,
+    earth-tunes) load with clean consoles.
+  - **Seed 9 to 340 s, past the critic's example.** The tab equals the
+    harness line for line (367 lines). Its third joint comes after the
+    choir's vi has been sung out (5:34.6 from the downbeat). The console is
+    clean.
+- **Scratch tools** are in `/private/tmp/claude-501/r2m2b/`:
+  - `batch.sh`, `sbatch.sh`, `stats2.js`, `holds.js`, `worst.js`,
+    `overlap.js`, `fugdelay.js`, `satb.js`, `overrun.js`;
+  - `cr/` (Chrome drivers);
+  - `gate/` and `fugB/` (the two experiments above);
+  - `_harness.r2.js` (this harness).
+
+### Round 2's harness changes (untracked; the integrator copies it)
+
+- **New printed lines:**
+  - `the sung chord` (with `joints begun under the choir`);
+  - `joints held past the plan`;
+  - `spans shorter than their sound`, on the guests line.
+- **Renamed:** `chord timeline (the book)`.
+- **New verdicts:**
+  - an accompanying note naming a chord the choir is not singing;
+  - a joint begun under the choir;
+  - a guest span shorter than its sound.
+- **Copies:** `/private/tmp/claude-501/r2m2b/_harness.r2.js`, and
+  `…/scratchpad/r2m2/_harness.r2.js`.
+
+### How to hear it (Round 2)
+
+- **`?seed=9`, the first hymn, near 5:25.** The choir sings its line out on
+  vi. A breath, then the organ's IV–I and the next hymn. Before, the organ's
+  IV came in at 5:26 under the choir's vi.
+- **Any hymn's end.** The last couplet is finished before the joint. A hymn
+  may run up to a minute past its plan when a slow couplet begins near the
+  end.
+- **`?seed=113`, with the Ives switch armed before PLAY.**
+  - The steeples come in the postlude at 9:46.
+  - The meeting's end waits about 36 s, until the last bell has rung out.
+  - The next meeting begins at 11:12.

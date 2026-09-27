@@ -10,7 +10,8 @@
 // frozen set of accessors, and the composers receive a MOMENT made from it.
 // The harmony the house sings is voiced, written into the chord book at its
 // time and announced at THE CHORD DESK (S.Harmony, below); and a section
-// does not turn over while a guest is still sounding.
+// does not turn over while a guest, or a line the choir has written, is
+// still sounding.
 // ============================================================================
 
 window.KOLOB = window.KOLOB || {};
@@ -146,7 +147,7 @@ window.KOLOB = window.KOLOB || {};
       ["aeolian", 1.2 - b * 0.8],
     ]);
     rebuildScale();
-    Desk.reset(t);                  // a new tuning: a clean page in the chord book
+    Desk.reset();                   // a new tuning: a clean page in the chord book
 
     // the dice of the order of service: three hymns are always drawn (the most
     // any Sunday sings) and every mutation's die is thrown
@@ -318,7 +319,7 @@ window.KOLOB = window.KOLOB || {};
     if (s.type === "doxology" && (S.mode === "aeolian" || S.mode === "dorian") && sunriseDie) {
       S.mode = sunriseMode;
       rebuildScale();
-      Desk.reset(t);                // the new mode starts a clean page
+      Desk.reset();                 // the new mode starts a clean page
       emitEvent({
         cat: "meeting", label: "☀ sunrise",
         detail: "F0 " + S.F0.toFixed(1) + " Hz · " + S.mode + " · " + (C.meeting ? C.meeting.activity : "") + " · season " + seasonPos.toFixed(2),
@@ -397,8 +398,10 @@ window.KOLOB = window.KOLOB || {};
     }
     // The cumulative assembly: the withheld tune arrives in the doxology. A
     // hush or a guest may delay it; past x 0.7 the fallback fires regardless
-    // (compressed) — the payoff is never skipped.
-    if (C.cumulative && !C.assemblyFired && C.section === "doxology" &&
+    // (compressed) — the payoff is never skipped. It waits for a doxology
+    // line the choir is still singing (the same choir sings it; round 2),
+    // and that line holds the joint, so the wait never costs the payoff.
+    if (C.cumulative && !C.assemblyFired && C.section === "doxology" && !choirSinging() &&
         ((x > 0.35 && !C.jointing && !inHush() && !inFuging() && !inVisit()) ||
          (x > 0.7 && !C.jointing))) {
       C.assemblyFired = true;
@@ -406,7 +409,12 @@ window.KOLOB = window.KOLOB || {};
       C.assemblyUntil = t + adur;
       guestSpan("assembly", t, adur);
     }
-    if (C.section === "hymn" && C.fugingPlanned && !C.fugingFired && x > 0.6 && x < 0.8 && !inHush() && !inVisit()) {
+    // The fuging waits for a verse the choir is still singing (round 2): the
+    // same four voices cannot go out one by one while they sing the couplet
+    // they wrote half a minute ahead, and v0.32's convergence amen could land
+    // on a chord of that couplet. Its window is unchanged; a hymn whose
+    // window the verses fill is a meadow.
+    if (C.section === "hymn" && C.fugingPlanned && !C.fugingFired && x > 0.6 && x < 0.8 && !inHush() && !inVisit() && !choirSinging()) {
       C.fugingFired = true;
       var fugDur = fugingEntry(t);
       C.fugingUntil = t + fugDur;
@@ -426,7 +434,11 @@ window.KOLOB = window.KOLOB || {};
     // ambient music… if the section needs to be a bit longer, that's okay"),
     // and the assembly of the withheld tune finishes before the amen of the
     // joint. v0.32 turned the section over under a band in mid-crossing.
-    if (!C.jointing && x >= 1 && !guestSounding()) {
+    // So does the choir: a couplet is written half a minute ahead, and the
+    // organ's cadence waits until its last chord has been sung and the
+    // congregation has drawn a breath — v0.32 laid the joint's amen, and the
+    // next section's first chords, under a line still being sung.
+    if (!C.jointing && x >= 1 && !jointHeld()) {
       C.jointing = true;
       var last = C.si >= C.plan.length - 1;
       var jointDur = runJoint(last, t);
@@ -440,6 +452,12 @@ window.KOLOB = window.KOLOB || {};
 
   // a guest is sounding: a visitation, or the whole tune at last
   function guestSounding() { return inVisit() || (!!S.ctx && now() < C.assemblyUntil); }
+  // what holds the joint: a guest, or a line the choir has written and not
+  // yet sung to its end (the chord desk keeps that time: sungUntil), and a
+  // breath after it
+  var CHOIR_BREATH_S = 1.0;
+  function choirSinging() { return !!S.ctx && now() < Desk.sungUntil(); }
+  function jointHeld() { return guestSounding() || (!!S.ctx && now() < Desk.sungUntil() + CHOIR_BREATH_S); }
   // A guest's span, told as SCORE.md §6's typed events (the page's minutes
   // keep their own rows; these are for the harness and the typed bus)
   function guestSpan(type, t, dur) {
@@ -567,7 +585,10 @@ window.KOLOB = window.KOLOB || {};
   //                   choirSize, bright, meterW), or null
   //   section()       the rite now: prelude … postlude, or interlude
   //   sectionIndex()  its place in the plan;  plan() the plan's sections
-  //   sectionDur()    its planned length, s (a guest may hold it longer)
+  //   sectionDur()    its planned length, s (a guest, or a line the choir
+  //                   is still singing, may hold it longer)
+  //   jointing()      the section's time is up and its joint is sounding
+  //                   (a voice that would begin a line waits for the next)
   //   meter()         the hymn's meter (CM, LM, SM, 87.87, CMD)
   //   verseLine()     where the hymn stands in its stanza; advanceVerse(k)
   //   cumulative()    the tune is withheld this meeting; assemblyFired()
@@ -598,6 +619,7 @@ window.KOLOB = window.KOLOB || {};
     section: function () { return C.section; },
     sectionIndex: function () { return C.si; },
     sectionDur: function () { return C.sectionDur; },
+    jointing: function () { return !!C.jointing; },
     plan: function () { return C.plan.map(function (s) { return s.type; }); },
     meter: function () { return C.meter; },
     verseLine: function () { return C.verseLine || 0; },
@@ -633,17 +655,27 @@ window.KOLOB = window.KOLOB || {};
   //   cadence(kind, R, t, by)       the two chords of a cadence, voiced from
   //                                 the chord at t; the CALLER writes each one
   //                                 at the time it sounds (its dice decide it)
-  //   write(chord, t, by)           into the book, and announced
+  //   write(chord, t, by, dur)      into the book, and announced; a chord the
+  //                                 choir sings (by choir, fuging, assembly)
+  //                                 names how long it is sung, dur
+  //   sungUntil()                   when the last chord the choir has written
+  //                                 stops sounding — the joint waits for it
   //   voice(root7, opts, R, t)      a chord voiced and written nowhere (the
   //                                 rail's audition)
-  //   reset(t)                      a clean page: a new meeting, a sunrise
+  //   reset()                       a clean page: a new meeting, a sunrise
+  //                                 (and a PLAY after STOP, which is a new
+  //                                 meeting: the stopped one's lines are
+  //                                 shut outside and hold nothing)
   var Desk = (function () {
     var book = KOLOB.Score.chordBook();
     var fifths = 0;                   // parallel fifths sung: counted, reported — they should be > 0
+    var sung = 0;                     // the end of the last chord the choir has written
+    var SINGERS = { choir: true, fuging: true, assembly: true };
     function momentAt(t) { var m = moment(); m.chord = book.at(t); return m; }
-    function write(chord, t, by) {
+    function write(chord, t, by, dur) {
       if (!chord) return null;
       book.write(chord, t, by);
+      if (SINGERS[by] && dur > 0 && t + dur > sung) sung = t + dur;
       fifths += chord.fifths || 0;
       var v = chord.voicing;
       emitEvent({
@@ -661,7 +693,7 @@ window.KOLOB = window.KOLOB || {};
     function harmonize(lineNotes, R, t, beat, by) {
       var hz = Harmony.harmonize(lineNotes, momentAt(t), R);
       var at = t;
-      for (var i = 0; i < hz.length; i++) { write(hz[i].chord, at, by || "choir"); at += hz[i].dur * beat; }
+      for (var i = 0; i < hz.length; i++) { write(hz[i].chord, at, by || "choir", hz[i].dur * beat); at += hz[i].dur * beat; }
       return hz;
     }
     function cadence(kind, R, t, by) {
@@ -675,7 +707,8 @@ window.KOLOB = window.KOLOB || {};
       at: function (t) { return book.at(t); },
       chordTones: function (t) { return Harmony.chordTones(book.at(t)); },
       advance: advance, harmonize: harmonize, cadence: cadence, write: write, voice: voice,
-      reset: function () { book.reset(); },
+      sungUntil: function () { return sung; },
+      reset: function () { book.reset(); sung = 0; },
       fifthCount: function () { return fifths; },
       pageNumber: function () { return book.page(); },
     };

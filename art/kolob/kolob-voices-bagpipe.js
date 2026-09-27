@@ -138,6 +138,14 @@ window.KOLOB = window.KOLOB || {};
     var Y = synth("bagpipe");
     var ch = S.Harmony.at(t) || S.Harmony.advance({}, R, t, "bagpipe");     // the chord standing as the drones swell
     var rootF = ch ? ch.freqs[0] * 2 : S.F0 * S.ROOT_MULT;           // into the chanter register
+    // FOR WHOEVER UNSHELVES THE PIPE: this is a PURE fifth over the chord's
+    // root, and over a chord whose own fifth is not pure (the diminished one
+    // on ti; re in aeolian, la in dorian, mi in mixolydian) it is a pitch
+    // outside the day's tuning, against the choir's. The strings had the same
+    // fault and now bow the bare octave there (pureFifth, kolob-voices-
+    // ground.js); the pipe needs the same guard, or the chord's own fifth,
+    // before it plays again (round 2 — the harness lists these notes as off
+    // the tuning when the pipe is unshelved)
     var fifthF = rootF * 1.5;
     var pan = Y.rnd(-0.3, 0.3);
     bagpipeReed(t, rootF, dur, gainMul, { pan: pan, swell: true });

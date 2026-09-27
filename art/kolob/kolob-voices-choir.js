@@ -154,7 +154,10 @@ window.KOLOB = window.KOLOB || {};
     if (!S.playing) return;
     var s = S.Meeting.section();
     var sings = s === "hymn" || s === "doxology";
-    if (!sings || inFuging() || inQuestion()) { cueIn("choir", 6, choirVerse); return; }
+    // no couplet is begun under the joint's amen: the hymn's time is up, and
+    // the next line belongs to the next section (round 2 — v0.32 could start
+    // a couplet here and sing it half a minute into whatever came next)
+    if (!sings || inFuging() || inQuestion() || S.Meeting.jointing()) { cueIn("choir", 6, choirVerse); return; }
     if (!airFree()) { cueIn("choir", wait("choir").rnd(4, 9), choirVerse); return; }
 
     var R = turn("choir");
@@ -201,13 +204,16 @@ window.KOLOB = window.KOLOB || {};
       var cadChords = S.Harmony.cadence("plagal", R, lineStart, "choir");
       var cd = R.rnd(2.8, 3.8);
       for (var ci = 0; ci < cadChords.length; ci++) {
-        S.Harmony.write(cadChords[ci], lineStart + ci * cd, "choir");
+        var amenDur = cd * (ci ? 1.6 : 1.02);                    // the amen's last chord is held
+        S.Harmony.write(cadChords[ci], lineStart + ci * cd, "choir", amenDur);
         var vis = activeVoices();
         for (var v = 0; v < vis.length; v++) {
           var vi = vis[v];
           var vf = cadChords[ci].freqs[VI_TO_CHORDPOS[vi]];
-          choirVoiceLine(lineStart + ci * cd, [{ f: vf, dur: cd * (ci ? 1.6 : 1.02) }], vi, 0.9);
-          emitNote("choir", vf, lineStart + ci * cd, cd, { part: PART[vi], chord: cadChords[ci].id });   // print every voice of the amen
+          choirVoiceLine(lineStart + ci * cd, [{ f: vf, dur: amenDur }], vi, 0.9);
+          // print every voice of the amen, as long as it is sung (round 2:
+          // the held last chord was told as long as the first)
+          emitNote("choir", vf, lineStart + ci * cd, amenDur, { part: PART[vi], chord: cadChords[ci].id });
         }
       }
       sungTotal += cd * 2 + 1;
@@ -260,13 +266,14 @@ window.KOLOB = window.KOLOB || {};
     var chords = S.Harmony.cadence("plagal", R, cadAt, "fuging");
     var cd = R.rnd(2.6, 3.4);
     for (var ci = 0; ci < chords.length; ci++) {
-      S.Harmony.write(chords[ci], cadAt + ci * cd, "fuging");
+      var amenDur = cd * (ci ? 1.7 : 1.02);
+      S.Harmony.write(chords[ci], cadAt + ci * cd, "fuging", amenDur);
       var avs = activeVoices();
       for (var v = 0; v < avs.length; v++) {
         var vvi = avs[v];
         var cf = chords[ci].freqs[VI_TO_CHORDPOS[vvi]];
-        choirVoiceLine(cadAt + ci * cd, [{ f: cf, dur: cd * (ci ? 1.7 : 1.02) }], vvi, 0.95);
-        emitNote("choir", cf, cadAt + ci * cd, cd * (ci ? 1.7 : 1.02), { part: PART[vvi], chord: chords[ci].id });
+        choirVoiceLine(cadAt + ci * cd, [{ f: cf, dur: amenDur }], vvi, 0.95);
+        emitNote("choir", cf, cadAt + ci * cd, amenDur, { part: PART[vvi], chord: chords[ci].id });
       }
     }
     // the organ follows the amen as it is sung (round 2: it used to sound
