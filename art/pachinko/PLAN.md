@@ -534,3 +534,51 @@ the marble unless holding it, and no page scroll at any size.
   and a kibble. **Bays** show museum cards with `slot.label` (abbreviated
   to fit: STOK., SMITH, CANN., OVERBUR.) at staggered heights, and a pink
   scrip stub `+value` only where `slot.value > 0`; the 13 bay is gold.
+- 2026-09-26 — **The pins are composed (rc.6, orchestrator review of the
+  rc.4 still life).** The uniform offset grid is gone. The pin fields are
+  mine furniture built from five figures (`line`, `arc`, `vee`, `patch`,
+  tulip `pocket` in `pachinko-board.js`): the main shaft lined with timber
+  sets under the headframe (drop between the posts and it rattles down to
+  the ore cart), roots under the grass, sparse sandstone, a fault with
+  broken rock below it, V funnels over two shafts, roof-bolt lines over
+  seams A and B, the ladderway's two stiles (down to the old drift), a
+  dome of bone (the ammonite), dense broken patches, bedded coal-lane
+  rock beyond each gallery face, a fan of rivets by the sheave and of
+  roots by the pump, the vein's seam as a sieve of ore knuckles, three
+  steep ribs, and the lode's knuckles. A post-pass keeps every shaft mouth
+  and pocket clear so nothing wedges. The stall watch now measures how far
+  the marble actually moved (a marble wedged between two pins could keep
+  a jittering velocity that the contacts cancelled every step).
+- 2026-09-26 — **The route to the 13 (rc.6).** The old drift (mouth at
+  the far left of seam B, reached down the ladderway) now comes out over
+  the lode (190, 324), vx 13 ± 31: a marble that takes it finds the 13
+  about one time in ten and the REFUSE bay most of the rest. So the 13's
+  best drop is the far left (x ≈ 12–20), a route a player can learn from
+  the legend ("5. The old drift"); the knockers' mouth edits open and
+  close it. The cup sits behind the teetering bone (177, 352) with ore
+  guards (165/189, 362): the way in is off the bone. Knobs, found by a
+  random search in `local-dev/pachinko-lab/search.js` and exposed as
+  `PachinkoBoard.base(knobs)`: `{deepPitch 19, knuckle 10, guard 12,
+  driftX 190, driftVx 13, driftSpread 31}`.
+- 2026-09-26 — **Economy, rebalanced for a trickle (rc.6; supersedes the
+  earlier bay values).** Bays: GOB 0, SLATE 0, BONY 0, STEAM 1, SLACK 0,
+  STOKER 1, SMITHING 1, THE MOTHER LODE 13, REFUSE 0 (was BLOCK),
+  CANNEL 1, CULM 0, EGG 2, OVERBURDEN 0. Pockets: the powder box 2 (a
+  tulip in the middle measures, new), the lunch pail 1 (a tulip, moved
+  under the manway stream). The ore cart pays 1 when it takes a marble
+  (`award`; the marble rides on). 56 % of uniform drops pay something.
+  Expected scrip per token (13 marbles): **novice 12.4, uniform 11.7,
+  competent 16.6** (best single spot 18.7, at the main shaft x ≈ 78);
+  HOLLER ROLLER competent 14.0 → band 9.8–18.2 ✓. The novice figure is
+  well above skee ball's 4.5: that is the price of "most drops pay
+  something", and it was the orchestrator's call.
+- 2026-09-26 — **Metrics (rc.6, sim.js all, 10 000 drops).** NaN 0,
+  timeouts 0, median 3.65 s (p05 1.9, p95 5.3, max 8.0), contacts median
+  18 (76 % in 12–35), moving part or tunnel 46 %. The 13: 2.1 % uniform,
+  7.8 % at its best x ±2. Every bay ×≥ 2 over uniform at its best x.
+  Deterministic lanes (over 55 %): REFUSE 86 % (the drift route when it
+  misses the lode) and OVERBURDEN 75 % (the right wall), both 0-value.
+  Unreachable: SLATE (0, under the sump fan). Drift: 50 layouts / 10
+  chains, 0 with an unreachable paying bay, 8 with the 13 outside its
+  bands, the 13's best x moved ≥ 6 px within 3 games in 9/10 chains; 49
+  candidate edits rejected by validation.
