@@ -216,12 +216,14 @@
 .kolob-viz-wrap {
   position: relative;
   height: 240px;                    /* v0.31: a grand-staff gap and ledger room above and below (kolob-viz.js pageGeom) */
-  /* The staff and the wheel are almost one plate: the staff's top ledger room
-     (33px above the first rule) is laid over the foot of the wheel band, so the
-     first rule sits about 17px beneath the wheel's horizon (12px on a phone).
-     Notes above the staff may drift over the wheel — by design. Beneath, the
-     console is drawn up 12px into the bottom ledger room (the canvas takes
-     no pointer, so the dots stay pressable there). */
+  /* The staff and the wheel are almost one plate: the canvas is laid 20px up
+     over the foot of the wheel band, and the plate (the only place ink is
+     printed; kolob-viz.js pageGeom) begins at the band's foot, just under the
+     wheel's horizon rule. The first staff rule sits 53px below the canvas top,
+     33px of ledger room above it and about 36px beneath the horizon (46, 26
+     and 30px on a phone); nothing prints over the wheel. Beneath, the console
+     is drawn up 12px into the bottom ledger room (the canvas takes no
+     pointer, so the dots stay pressable there). */
   margin: -20px 0 -12px;
   z-index: 2;                       /* over the wheel band (both are z-index 1 by the frame rule) */
 }

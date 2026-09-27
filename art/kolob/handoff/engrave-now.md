@@ -176,3 +176,156 @@ three layer composites.
   frame).
 - Pausing holds the page pixel-still, and it resumes where it stopped.
 - Every run finished with zero console errors.
+
+---
+
+# Kolob v0.32 — a cleaner page, and it keeps time
+
+*Branch `kolob-engrave`, on top of v0.31 (`c54aca0`). 2026-09-27.*
+
+This section supersedes parts of the v0.31 description above. There is no gilt strike, no 8va, no captions, no tape ribbon and no spreading bell rings any more; see "The owner's changes".
+
+It does two things:
+
+- It fixes what the independent review found in the v0.31 engraving. The review is the section "## engraving" in `art/kolob/handoff-second-look.md`, in the `kolob2` worktree.
+- It folds in four binding changes the owner asked for after seeing v0.31 live.
+
+The wheel and the organ facade are untouched. The owner's rules still hold: 60 px/s, no red or rubrics, no words, no decoded word on the telegraph, no drone on the page, and the telegraph centred in a normal grand-staff gap.
+
+## The owner's changes (binding)
+
+1. **One ink.**
+   - Notes are hymnbook green from the moment they sound.
+   - There is no gilt strike, no gold-to-green cooling, and no glow under a sounding note.
+   - The band's round notes and barlines are green too (they were brass).
+   - The Question's cartouche and its "?" are green.
+   - Only the drying fades the ink.
+2. **Just the notes.** Removed:
+   - the 8va, 8vb and 15ma signs, both the figure and the dashed line;
+   - the captions ("clarinet, asking", "asking again", "harmonium", "Band — not one of ours" and "no answer");
+   - the band's 2/4.
+
+   I also removed the gilt ⁂ that marked a fuging entry. It was a text glyph printed over the staff, so it falls under "anything similar". It is easy to restore in green if it is wanted.
+
+   A note uses real ledger lines as far as the plate allows. That is two ledgers above the treble (q24) and two below the bass (q−4), at both 860 and 390 px. Beyond that it folds silently by octaves until it fits (`foldFor`). The Question's asking folds as one phrase, so it keeps its shape.
+
+   The Question keeps its double-ruled cartouche and "?". The frame could also go if the owner wants: it is one block in `drawQuestions`. The empty measure's dotted barlines stay, because they are notation, not text.
+3. **The telegraph is punched straight into the paper.**
+   - A dit is a round hole and a dah is a slot. Each shows the plate beneath, with the same inner shadow under its upper lip.
+   - They run along the middle of the gap, with no ribbon, edge, background or feed track, and no decoded word.
+   - A hole is punched at the engraving point when its key lifts, then travels with the page. So the message is laid out at the page's own 60 px/s: a Morse unit is 4.2 px, and a hole is about 3.8 px across.
+   - The ribbon used to be fed out faster than the page, which was a second motion. That is gone.
+   - No hole is punched where a note head, ledger, stem, dot or bell ring holds the gap (`KO` clearances, `koCovers`). Each hole dries from the moment it was punched.
+4. **Nothing moves but the scroll and the drying.**
+   - The bells' spreading, fading rings are gone. A bell is a ringed head, one thin green ring drawn with the head, and it dries like every note.
+   - The strike glow is gone with the gilt.
+
+## The review's findings
+
+1. **[major] Tab hidden (or any re-anchor) replayed ink late.** Fixed with one time base.
+   - Every engraved item now carries the **audio** time it sounds at. PT is the audio clock as the page reads it: smoothed with a 0.25 s time constant, never more than 0.1 s ahead of the sound, and snapping to the present when it is more than 0.5 s off.
+   - x and the drying are worked out from PT at draw time. `toPage` and `PT_OFF` are gone.
+   - The clock takes the real frame time, uncapped. After a hidden spell the first frame lands exactly on the present, and all the ink moves at once. The wheel still gets the capped dt.
+   - DRY advances with PT, so the drying catches up too. An item first drawn late is credited its age.
+2. **[minor] STOP kept printing notes that no longer sound.**
+   - `silence(cut)` runs on the "■" transport event, at its exact audio time. The conductor's transition to stopped is a fallback.
+   - It lifts everything scheduled after the stop: groups, band notes and visits, the Question's askings and empty measure, and telegraph holes. It cuts what was sounding to the voices' 0.6 s fade.
+   - PAUSE is unchanged: it holds pixel-still and resumes in place.
+3. **[minor] `dryA()` NaN.** `dryA` anchors at `tp`, or at `tp0` for spans, so these now dry like everything else:
+   - the cartouche;
+   - the empty measure;
+   - the band's visit.
+
+   The band's barlines each dry from their own onset.
+4. **[minor] Telegraph against alto/tenor ledger heads.** The tape itself is gone (owner's change 3). The holes are never punched where a head, ledger or stem holds the gap, and the telegraph stays centred.
+5. **[minor] Ottava line through unfolded ledger notes, and 15ma for three- or four-octave folds.** Both are moot: the signs are gone (owner's change 2), and folding is silent, to the plate's ledger room.
+6. **[minor] Fuging entries printed as one whole note.**
+   - `kolob-audio.js` `fugingEntry` now emits each head note it sings (freq, start, length) in place of the single whole-entry emit. The loop draws no dice and changes no timing.
+   - The page prints each voice's head in shapes, stems and dots.
+7. **[minor] Two voices at one x shared a column.**
+   - `takeLayer` sets two lengths at once on one staff the way a hymnal sets two voices: the lower first with its stem down, the upper with its stem up. v0.31 went by duration order.
+   - At draw time `placeColumn` places each group once, the first time it is drawn. If its ink would run into a group already placed close by on the same staff (a stem through a head, heads, dots, ledgers or bell rings touching), it is set to the right, clear of that ink, as a second voice.
+   - The offset is kept, and worked out again on a resize. This covers a clarinet doubling the choir 0.1 s later, harmonium under clarinet, the E4-dotted-half-under-G4-whole case, and the fuging voices.
+8. **Polish.**
+   - Done:
+     - `devicePixelRatio` cap raised to 3.
+     - `rrect()` falls back to `arcTo` where `roundRect` is missing.
+     - `paintLayer` runs its drawing in `try/finally`, so one bad frame can't leave the plate clipped.
+     - The stale geometry comment in `kolob.css` is corrected (numbers measured in the browser).
+   - **Mixolydian solmization is unchanged, on purpose.** Shape-note rudiments fix the key note as fa (major) or la (minor): a tune's last bass note is its key, and it is always fa or la. So a mixolydian tune is a major tune whose lowered seventh keeps the mi shape (with an accidental). That is the same practice the review accepts for dorian's raised sixth staying fa. The review's `sol la mi fa sol la fa` would put the key note on sol, which the rudiments never do. A comment in `SHAPES` now says why.
+   - The phone's "4.8 s visible" note is unchanged (60 px/s is the owner's rate).
+   - Not done: `noteQ` still reads the 300 ms-polled `cond.f0`/`mode`, not the note's own tuning (listed in the review, not in this brief).
+
+## Engine change (view-only) and proof that the music is unchanged
+
+- `fugingEntry`: `emitNote("choir", notes[0].f, at, tot)` became a loop that emits each head note at its start (`at + Σ previous lengths`) with its length. That is exactly how `choirVoiceLine` walks it.
+- The A/B used `harness-dump.js`, the full note and event stream on the virtual clock. It compared v0.31 (`c54aca0`) with v0.32 over 1500 s, for seeds 1847, 7, 2026 and 99 with the Ives switch on, and 1847 and 314 without it. Results:
+  - **event streams byte-identical** in all six runs;
+  - **every non-fuging note byte-identical** in all six;
+  - each of the 37 old entry emits is replaced by its head notes: same start, same first pitch, contiguous, lengths summing to the old total (169 head notes in all).
+- `node _harness.js 600 1847` and `node _harness.js 900 2026 ives` both PASS.
+- The minutes' phrase rows are unchanged. The first head note starts where the old emit did, and the phrase's end is the same.
+
+## Verification (muted headless Chrome, CDP; `--mute-audio` on every launch)
+
+The runs were driven by `run.js`, `lab.js` and `cdp.js`. Screenshots and data are in
+`/private/tmp/claude-501/-Users-tysonwelsh-Sites-municipal-sky-site/9f8f9e47-5fee-4146-97e4-e448a823ca04/scratchpad/v032/shots/`.
+The v0.31 comparisons ran against a `git archive` of `c54aca0`, served on its own port.
+
+- **Tab hidden (finding 1).**
+  - The test used a real background tab: a second tab brought to the front over CDP, so `visibilityState` is "hidden" and rAF pauses. It ran seed 1847 with the Ives switch on, in the hymn, hidden for 45 s across the band's arrival.
+  - **Page clock, final build** (a temporary debug trace, since removed):
+    - the first frame back (dt 45.13 s) lands exactly on the audio clock;
+    - all 125 later frames stay within −0.010 to +0.100 s of it, bounded by the 0.1 s lead clamp.
+  - **Where the struck ink was.** This was measured on this branch before the owner's green-ink change; the clock code is unchanged since. The probe required every struck-gilt pixel to sit at the head of a note sounding at that audio time.
+    - Before hiding: 0 % unexplained in both builds.
+    - After return, v0.31: 57.0 % of the struck ink was unexplained, in 89 of 118 probes, through all 41 s probed.
+    - After return, v0.32: 0.2 %, in two probes. Both were a chord's antialiased edge over its own fading glow, 0.2–0.3 s after it ended.
+  - **Screenshots, final build:** `hide-old-w-092.png` (v0.31) against `hide-new-w-092.png` (v0.32), both 7 s after return.
+    - In v0.31 the band has already passed on but is still crossing the page, struck gilt, with the hymn's chords replayed late.
+    - In v0.32 the page shows the present.
+
+    The gilt-era pair is `hide-old-082.png` / `hide-new-082.png`.
+- **STOP (finding 2).** STOP was pressed mid-verse, with 39 engraved notes already scheduled (the latest starting 31 s later).
+  - v0.31 printed fresh ink at the engraving point 3.1, 5.3, 7.4 and 9.6 s after STOP, exactly at the choir's scheduled onsets, on a silent page.
+  - v0.32 (final build) printed nothing after the note that was sounding at STOP.
+  - Gilt era: v0.31's last strike came 15.1 s after STOP (it was still striking when the window closed); v0.32's came 0.4 s after.
+  - Screenshots: `tr-old-z-030.png` / `tr-new-z-030.png`, 6 s after STOP.
+  - A lab STOP during a long telegraph message cuts the message where the key fell silent.
+- **PAUSE and PLAY.**
+  - The plate hash is identical 3 s apart while held (both builds), and the page resumes in place.
+  - PLAY after STOP starts on a clean page.
+- **Resize.** 860 → 390 @3× → 1280 → 860 @1× → 390 @3× → 860 re-measures and re-folds, with 0 errors.
+- **Lab** (`kolob-viz.js` driven by a fake engine; shots `labt*`, `labo*`, `labv*`, `labq*`, `labrr*`):
+  - The telegraph among alto A3/B3 and tenor D4–F4 ledger notes, at 860 and 390 @3×: no hole under a head, ledger or stem.
+  - The Question's frame, the empty measure and the band's barlines in the sacrament: v0.31 kept them at full ink (pure `C_INK`); v0.32 dries them below the staff lines' 0.52.
+  - Silent folds of C7 and D7 bells and of a B7 clarinet.
+  - Two voices at one x: the E4 dotted half under a G4 whole, a clarinet doubling 0.1 s later, and harmonium with clarinet.
+  - `roundRect` deleted from the canvas prototype: v0.31 throws "c.roundRect is not a function" every frame (162 times in 3 s); v0.32 draws the cartouche through `arcTo`, with 0 errors.
+- **Console.** There were zero errors in every v0.32 run, at 860 and at 390 @3×: hymn, Question, band, telegraph, bells, resize, 4× throttle, hidden tab and stop/pause. The only entry was my own probe's `getImageData` readback warning.
+- **Performance.**
+  - At 390 px @3× with 4× CPU throttling, in the same session: v0.32 takes 0.93 ms mean script per frame (p99 1.9); v0.31 takes 1.18 ms (p99 3.1), and that is at v0.31's own DPR-2 cap.
+  - At 860 px: 0.4–0.7 ms mean, p99 ≤ 1.4.
+  - Headless Chrome ran both builds at a steady 30 fps under 4× throttling in that session. Earlier the same day both held 60 fps, so the rate is the environment, not the page.
+- **Screenshots of the final page** (normal, Question, band, telegraph, bell):
+  - 860 px: `n860-042.png` (hymn), `n860-057.png` (telegraph), `n860-081.png` (bells), `q860-027.png` (Question), `b860-055.png` (band);
+  - 390 px @3×: `n390-045.png`, `n390-057.png`, `n390-078.png`, `q390-024.png`, `b390-055.png`.
+
+## Observations for the owner (not changed here)
+
+- **STOP then PLAY within about 30 s re-sounds the old meeting's scheduled voices.** STOP fades the voices' bus to zero, but it does not cancel oscillators already scheduled; choir lines run up to about 36 s ahead. `play()` reopens the bus, so those old lines sound under the new meeting's prelude. The page does not print them (they were lifted at STOP).
+
+  This predates v0.31 and is in the engine. A fix would stop or disconnect scheduled sources on STOP. It was not made here because it changes what is heard.
+- The page no longer shows *which* notes are sounding: that was the gilt strike, now removed. The engraving point at the right of the page is where each note appears as it sounds.
+- The band's round notes lie on their own layer under the ward's ink. So a band note and a ward note can touch at one x; the column check only sets the ward's own voices aside. They are told apart by head shape (round against shapes) and by the band's fainter ink.
+- The reviewer's scratch tools are still useful for the Score rounds. In addition to them, this round's are in the scratch directory above: `run.js` (with a real background-tab hide and several pixel probes), `lab/lab.html` (with `?old` and `&norr` switches), `analyze-*.js`, and `ab/compare.js` for the engine A/B.
+
+## Files changed
+
+- `art/kolob/kolob-viz.js`: the page (everything above).
+- `art/kolob/kolob-audio.js`: the fuging entry's per-note emits (view-only).
+- `art/kolob/kolob.css`: the geometry comment only.
+- `art/kolob/VERSION`: v0.32.
+- `art/kolob/handoff/engrave-now.md`: this section.
+
+`index.php`'s fingerprint list already covers every changed asset (`kolob-audio.js`, `kolob-viz.js`, `kolob.css`, plus `index.php` itself), and it reads `VERSION` for the footer.
