@@ -539,7 +539,26 @@ different ward.
 - **The congregation:** the massed singing, rendered as 4–8 **desks**
   (small groups sharing formant filters, each slightly detuned and delayed).
   This sounds like a room full of people without being a room full of
-  oscillators, and the desk count scales down on phones.
+  oscillators. **Owner ruling (2026-09-26): phones get the same congregation
+  as desktop, with no fewer voices.** If a phone struggles, simplify
+  elsewhere first.
+  **Owner ruling, later the same day: the full ward.** Instead of desks, the
+  congregation is **32 individual singers, 8 to a part, each with a throat of
+  their own**: their own vowel banks, breath and tilt as well as their own
+  pitch, timing and vibrato. The source is voices-lab demo 2a on branch
+  `kolob-voices`.
+  - **Measured (offline, desktop):** about 1,150 audio nodes, rendering at
+    3.8× realtime, against 390 nodes at 9.4× for 8 desks of 4.
+  - **For the CAST crew:**
+    - make it cheap enough to hold on a mid-range phone alongside a whole
+      meeting. Options: fewer vowel banks per person, releasing each note's
+      nodes promptly, a lighter throat for inner parts, sharing the room
+      send;
+    - **prove it** with a real-time run of a full meeting at 4× CPU
+      throttling;
+    - the desk engine stays in the code only as a documented fallback, used
+      if a device proves it cannot keep up. It is never a planned reduction
+      on phones.
 - **The cast:** 8–12 **individuals per meeting**, drawn from a roster of
   about 40 archetypes. Each has a Deseret name, a voice (formant set,
   vibrato, breath, age), a pitch habit, a timing habit, confidence, a
@@ -1050,7 +1069,7 @@ own files.
 - **Voice-leading:** 0 % voice crossing except where a dialect allows it;
   every sounded pitch in the lattice.
 - **REPRO:** identical scores under jitter.
-- **Budget:** CPU within budget at 4× throttling on mobile (desks scale down).
+- **Budget:** CPU within budget at 4× throttling on mobile, with the full congregation (owner: no fewer voices on phones).
 - **The owner's ear.**
 
 ## 13. Decisions
