@@ -331,7 +331,8 @@
     field('coalB', [{ y: 220, x0: 284, x1: 309, dx: 20 }, { y: 236, x0: 294, x1: 309, dx: 20 }], function () { return 'coal'; });
     F.push({ id: 'tunnel.drift', kind: 'tunnel', a: { x: 9, y: 231, r: 7 }, b: { x: T_.driftX, y: 324, vx: T_.driftVx, vy: 40, spread: T_.driftSpread }, delay: 1.0, open: true,
       region: 'ventilation', material: 'rock', dress: 'adit', legend: 5 });
-    F.push({ id: 'tunnel.office', kind: 'tunnel', a: { x: 256, y: 231, r: 7 }, b: { x: 8, y: 330, vx: 4, vy: 30 }, delay: 1.1, open: true,
+    // (its exit sits just under the legend card, never behind it: integration, wave 2)
+    F.push({ id: 'tunnel.office', kind: 'tunnel', a: { x: 256, y: 231, r: 7 }, b: { x: 9, y: 341, vx: 4, vy: 30 }, delay: 1.1, open: true,
       region: 'ventilation', material: 'rock', dress: 'door', legend: 4 });
 
     /* ── the barren measures ──────────────────────────────────────── */

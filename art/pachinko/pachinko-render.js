@@ -323,6 +323,21 @@
     px(mcg, 6 - o, 6 - o + (r > 3 ? 0 : -1), P.FLAME1); px(mcg, 5 - o, 6 - o, 'rgba(255,208,96,0.6)');
     g.drawImage(mc, cx - 6, cy - 6);
   }
+  // a marble's trail: where the glass was a moment ago, a few dithered
+  // pixels of cool light that fall away (only where it moved fast)
+  function drawTrail(g, m) {
+    var tr = m.trail, n = tr.length / 2;
+    if (n < 2) return;
+    for (var i = 0; i < n - 1; i++) {
+      var x = tr[i * 2], y = tr[i * 2 + 1], x2 = tr[i * 2 + 2], y2 = tr[i * 2 + 3];
+      var d = Math.hypot(x2 - x, y2 - y);
+      if (d < 3) continue;
+      var k = (i + 1) / n;                                   // older → fainter
+      var X = Math.round(x), Y = Math.round(y);
+      if (Math.hypot(X - m.x, Y - m.y) < (m.r || 4) + 1) continue;
+      if (bayer(X, Y) < 0.35 + k * 0.4) px(g, X, Y, 'rgba(190,220,255,' + (0.12 + k * 0.28).toFixed(2) + ')');
+    }
+  }
   // a marble in a tunnel: a light moving behind the rock
   function drawTunnelLight(g, m, t) {
     var tu = m.tunnel; if (!tu || !tu.from || !tu.to) return;
@@ -339,31 +354,52 @@
     // the rail
     hline(g, 0, GW - 1, 1, P.BRASS3); hline(g, 0, GW - 1, 2, P.BRASS1); hline(g, 0, GW - 1, 0, P.BRASS0);
     for (var x = 20; x < GW; x += 70) { rect(g, x, 0, 2, 4, P.BRASS1); px(g, x, 0, P.BRASS3); }
+    // a queued drop: a chalk tick on the rail where the bucket goes next
+    if (hp.queued != null) { var qx = Math.round(hp.queued); px(g, qx, 3, '#f4ecd0'); px(g, qx - 1, 4, 'rgba(244,236,208,0.6)'); px(g, qx + 1, 4, 'rgba(244,236,208,0.6)'); }
     if (hp.ghostX != null && Math.abs(hp.ghostX - (hp.x || 0)) > 2) bucket(g, Math.round(hp.ghostX), true, false);
-    if (hp.x != null) bucket(g, Math.round(hp.x), false, view.marblesLeft == null || view.marblesLeft > 0);
+    if (hp.x != null) {
+      var loaded = hp.loaded != null ? hp.loaded : (view.marblesLeft == null || view.marblesLeft > 0);
+      // an empty bucket clicked: it rattles on the rail
+      var rt = hp.rattle != null ? t - hp.rattle : 9, jig = rt < 0.25 ? (Math.floor(rt * 40) % 2 ? 1 : -1) : 0;
+      // gliding, the skip swings back against the motion; the trolley's wheels turn
+      var lean = hp.speed ? Math.max(-1, Math.min(1, Math.round(-hp.speed / 350))) : 0;
+      bucket(g, Math.round(hp.x) + jig, false, loaded, lean);
+    }
   }
-  function bucket(g, x, ghost, loaded) {
+  function bucket(g, x, ghost, loaded, lean) {
     if (ghost) {
-      // the ghost: where the bucket would go, in chalk; a dotted drop line
-      var cg = 'rgba(232,223,200,0.55)';
-      for (var k = -6; k <= 6; k += 2) { px(g, x + k, 4, cg); }
-      for (var j = 5; j < 11; j += 2) { px(g, x - 6 + Math.floor((j - 4) * 0.6), j, cg); px(g, x + 6 - Math.floor((j - 4) * 0.6), j, cg); }
-      px(g, x, 12, cg);
-      for (var y = 16; y < 60; y += 4) px(g, x, y, 'rgba(232,223,200,0.28)');
+      // the ghost: where the bucket would go, drawn in chalk on the glass,
+      // and a dotted chalk line down through the painted sky to the ground
+      var cg = 'rgba(244,236,208,0.85)';
+      hline(g, x - 6, x + 6, 4, cg);
+      for (var j = 5; j <= 10; j++) { var hw = 6 - Math.floor((j - 4) * 0.7); px(g, x - hw, j, cg); px(g, x + hw, j, cg); }
+      hline(g, x - 1, x + 1, 11, cg); px(g, x, 12, cg);
+      for (var y = 15; y < 64; y += 3) px(g, x, y, 'rgba(244,236,208,' + (0.7 - (y - 15) / 49 * 0.45).toFixed(2) + ')');
       return;
     }
-    // trolley: two wheels on the rail, a yoke
-    rect(g, x - 5, 0, 3, 2, P.IRON3); rect(g, x + 3, 0, 3, 2, P.IRON3); px(g, x - 4, 0, P.IRON4); px(g, x + 4, 0, P.IRON4);
+    // trolley: two wheels on the rail (a spoke pixel that turns with x), a yoke
+    rect(g, x - 5, 0, 3, 2, P.IRON3); rect(g, x + 3, 0, 3, 2, P.IRON3);
+    var sp = ((x % 3) + 3) % 3;
+    px(g, x - 5 + sp, 0, P.IRON4); px(g, x + 3 + sp, 0, P.IRON4); px(g, x - 5 + (sp + 1) % 3, 1, P.IRON1); px(g, x + 3 + (sp + 1) % 3, 1, P.IRON1);
     hline(g, x - 4, x + 4, 2, P.IRON2); vline(g, x, 2, 3, P.IRON3);
-    // the bucket: a riveted tin skip, tapering to a spout
+    // the bucket: a riveted tin skip, tapering to a spout (the lower half
+    // swings a pixel back when the trolley runs)
+    lean = lean || 0;
     for (var j2 = 0; j2 < 7; j2++) {
-      var hw = 6 - Math.floor(j2 * 0.7);
-      hline(g, x - hw, x + hw, 4 + j2, j2 === 0 ? '#d8d8e8' : (j2 % 3 === 2 ? P.IRON3 : P.IRON4));
-      px(g, x - hw, 4 + j2, '#e8e8f4'); px(g, x + hw, 4 + j2, P.IRON1); px(g, x + hw - 1, 4 + j2, P.IRON2);
+      var hw = 6 - Math.floor(j2 * 0.7), o = j2 >= 4 ? lean : 0;
+      hline(g, x - hw + o, x + hw + o, 4 + j2, j2 === 0 ? '#d8d8e8' : (j2 % 3 === 2 ? P.IRON3 : P.IRON4));
+      px(g, x - hw + o, 4 + j2, '#e8e8f4'); px(g, x + hw + o, 4 + j2, P.IRON1); px(g, x + hw - 1 + o, 4 + j2, P.IRON2);
     }
-    px(g, x - 3, 6, P.IRON1); px(g, x + 3, 6, P.IRON1); px(g, x - 2, 9, P.IRON1); px(g, x + 2, 9, P.IRON1); // rivets
-    rect(g, x - 1, 11, 3, 2, P.IRON2); px(g, x + 1, 12, P.IRON0); px(g, x - 1, 11, P.IRON4);           // spout
-    if (loaded) { px(g, x - 2, 3, '#9fc0d4'); px(g, x - 1, 3, '#dff0fa'); px(g, x, 3, '#9fc0d4'); px(g, x + 1, 3, '#6d8ea8'); }
+    px(g, x - 3, 6, P.IRON1); px(g, x + 3, 6, P.IRON1); px(g, x - 2 + lean, 9, P.IRON1); px(g, x + 2 + lean, 9, P.IRON1); // rivets
+    rect(g, x - 1 + lean, 11, 3, 2, P.IRON2); px(g, x + 1 + lean, 12, P.IRON0); px(g, x - 1 + lean, 11, P.IRON4);  // spout
+    if (loaded) {
+      // the next marble, sitting in the skip: a glass cap showing over the rim
+      px(g, x - 2, 3, '#9fc0d4'); px(g, x - 1, 3, '#dff0fa'); px(g, x, 3, '#9fc0d4'); px(g, x + 1, 3, '#6d8ea8');
+      px(g, x - 1, 2, '#6d8ea8'); px(g, x, 2, '#b8d8ea');
+    } else {
+      // empty: the dark of the skip's mouth
+      hline(g, x - 4, x + 4, 4, P.IRON1); hline(g, x - 3, x + 3, 5, P.IRON0);
+    }
   }
 
   /* ══ draw ══════════════════════════════════════════════════════════ */
@@ -396,8 +432,11 @@
     sg.drawImage(foreC, 0, 0);
     // c. emissive
     drawEmissive(sg, view);
-    // d. marbles, hopper
+    // the game's answers inside the glass: lit bay cards, pockets hopping
+    if (A.drawGlassFx) A.drawGlassFx(sg, view, board);
+    // d. marbles (their faint trails first), hopper
     var ms = view.marbles || [];
+    for (i = 0; i < ms.length; i++) if (ms[i].trail && ms[i].phase !== 'tunnel' && !ms[i].hidden) drawTrail(sg, ms[i]);
     for (i = 0; i < ms.length; i++) {
       if (ms[i].phase === 'tunnel') drawTunnelLight(sg, ms[i], t);
       else if (!ms[i].hidden) drawMarble(sg, ms[i], t);
@@ -413,6 +452,9 @@
 
     ctx.drawImage(scene, C.GX, C.GY);
     ctx.drawImage(mine.overlay, 0, 0);
+    // the machine's own dials (pachinko-art-counters.js): the SCRIP counter,
+    // the coin door's card and lamp, your pocket, the ticket mouth
+    if (A.drawMachine) A.drawMachine(ctx, view);
   }
 
   R.build = build;

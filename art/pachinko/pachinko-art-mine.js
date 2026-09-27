@@ -604,6 +604,8 @@
   }
   function drawBays(g, fg, board) {
     var slots = (board.fixtures || []).filter(function (f) { return f.kind === 'slot'; });
+    // where each bay's card (and stub) went, for the game to light (integration)
+    var cards = A.bayCards = {};
     slots.forEach(function (s, i) {
       var x0 = Math.round(s.x0) + 2, x1 = Math.round(s.x1) - 2, y0 = 389, y1 = GH;
       var lode = s.value >= 13 || s.dress === 'lode';
@@ -628,6 +630,7 @@
         var w13 = A.textW('13') + 4;
         rect(fg, Math.round(cx - w13 / 2), 397, w13, 9, '#1a0e04'); hline(fg, Math.round(cx - w13 / 2), Math.round(cx - w13 / 2) + w13 - 1, 397, P.GOLD3);
         A.textC(fg, '13', cx, 399, P.GOLD5);
+        cards[s.id] = { x: Math.round(cx - w13 / 2), y: 397, w: w13, h: 9, lode: true, name: '13' };
         return;
       }
       var cw = Math.max(A.textW(name) + 4, 13), cxl = Math.round(cx - cw / 2), pays = s.value > 0;
@@ -635,6 +638,7 @@
       rect(fg, cxl, cy0, cw, 8, P.PAPER_D); hline(fg, cxl, cxl + cw - 1, cy0, P.PAPER); px(fg, cxl + cw - 1, cy0 + 7, P.PAPER_DD);
       A.textC(fg, name, cx, cy0 + 2, P.INK_L);
       px(fg, Math.round(cx), cy0 - 1, P.IRON3);                                         // the pin holding it up
+      cards[s.id] = { x: cxl, y: cy0, w: cw, h: 8, name: name, value: s.value };
       if (pays) {
         // the stub: pink paper, a notch, the amount
         var v = '+' + s.value, sw2 = A.textW(v) + 5, sx0 = Math.round(cx - sw2 / 2);
@@ -642,6 +646,7 @@
         rect(fg, sx0, ty, sw2, 7, P.PINK_D); rect(fg, sx0 + 1, ty + 1, sw2 - 2, 5, P.PINK);
         px(fg, sx0, ty + 3, P.VOID0); px(fg, sx0 + sw2 - 1, ty + 3, P.VOID0);           // the ticket's notches
         A.textC(fg, v, cx + 0.5, ty + 1, '#ffffff');
+        cards[s.id].stub = { x: sx0, y: ty, w: sw2, h: 7 };
       }
     });
   }

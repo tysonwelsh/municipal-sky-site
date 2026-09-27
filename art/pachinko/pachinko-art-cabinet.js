@@ -391,7 +391,8 @@
   function typeInk(seed) {
     return function (i, col, row) {
       var h = A.hash01(seed, i, 0);
-      if (h < 0.1) return A.hash01(seed, i, col * 5 + row) < 0.8 ? P.INK_L : null;
+      // a worn letter prints faint where the ribbon is dry, never missing (so an I stays an I)
+      if (h < 0.1) return A.hash01(seed, i, col * 5 + row) < 0.8 ? P.INK_L : P.PAPER_DD;
       return h > 0.92 ? P.INK_L : P.INK;
     };
   }
@@ -424,9 +425,12 @@
    * bar with its man. */
   function shortLegend(e) {
     var s = String(e.text).toUpperCase().replace(/[—–]/g, '-').replace(/\s+/g, ' ');
+    // the card holds 17 characters a line: abbreviated the way the typist
+    // would (integration: 'HEADFRAME & SHEAVE' and 'MINER'S DINNER PAIL' ran off it)
     var MAP = {
-      'HEADFRAME AND SHEAVE WHEEL': 'HEADFRAME & SHEAVE', 'ORE CART (4 TON)': 'ORE CART, 4 TON',
-      'THE OLD DRIFT (ABANDONED 1923)': 'OLD DRIFT (1923)', "MINER'S LUNCH PAIL": "MINER'S DINNER PAIL"
+      'HEADFRAME AND SHEAVE WHEEL': 'HEADFRAME, SHEAVE', 'ORE CART (4 TON)': 'ORE CART, 4 TON',
+      'THE OLD DRIFT (ABANDONED 1923)': 'OLD DRIFT (1923)', "MINER'S LUNCH PAIL": 'DINNER PAIL, TIN',
+      'TUNNEL TO THE COMPANY OFFICE': 'TUNNEL TO OFFICE'
     };
     return MAP[s] || s;
   }
