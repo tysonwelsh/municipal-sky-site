@@ -456,10 +456,12 @@ window.KolobViz = (function () {
     if (!n.freq || n.freq < 20 || !MELODIC[n.layer]) return;
     queueIntake({ note: n });
   }
+  // the typed bus (SCORE.md §6; round 2): the page reads the event's type,
+  // never its label — the Question's askings and its silence, and STOP
   function onEvent(ev) {
     if (!ev) return;
-    if (ev.cat === "visitation") queueIntake({ ev: ev });
-    else if (ev.cat === "transport" && /^■/.test(ev.label || "")) queueIntake({ stop: ev.t != null ? ev.t : audioNow() });
+    if (ev.type === "question-asking" || ev.type === "question-unanswered") queueIntake({ ev: ev });
+    else if (ev.type === "transport" && ev.action === "stop") queueIntake({ stop: ev.t != null ? ev.t : audioNow() });
   }
 
   // the beat of a line: the length that makes its notes the simplest values
@@ -502,9 +504,8 @@ window.KolobViz = (function () {
       var it = batch[i];
       if (it.stop != null) { stopAt = stopAt == null ? it.stop : Math.min(stopAt, it.stop); continue; }
       if (it.ev) {
-        var lb = it.ev.label || "";
-        if (/^\? the question/.test(lb)) question = it.ev;
-        else if (/^\? unanswered/.test(lb)) unanswered = it.ev;
+        if (it.ev.type === "question-asking") question = it.ev;
+        else if (it.ev.type === "question-unanswered") unanswered = it.ev;
         continue;
       }
       var n = it.note;

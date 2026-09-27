@@ -216,10 +216,12 @@ window.KOLOB = window.KOLOB || {};
     // from the other side of the sky
     if (R.chance(0.1)) {
       tt = keyMorse(tt + R.rnd(1.5, 2.5), seq, -side, 0.033);
-      emitEvent({ cat: "telegraph", label: "⌁ a reply from home", detail: word });
+      emitEvent({ type: "telegraph", word: word, wordDs: null, marks: seq, reply: true, cat: "telegraph", label: "⌁ a reply from home", detail: word });
     }
     emitNote("telegraph", 0, t, tt - t, { marks: seq });
-    emitEvent({ cat: "telegraph", label: "⌁ the wire flashes home", detail: word });
+    // (SCORE §6's wordDs: the wire keys English; the Deseret spelling of the
+    // word is the page's to make — the engine has no transliterator)
+    emitEvent({ type: "telegraph", word: word, wordDs: null, marks: seq, reply: false, cat: "telegraph", label: "⌁ the wire flashes home", detail: word });
     cueLayer("telegraph", tt - t + R.rnd(45, 90) * gapMul(), telegraphCycle);
   }
 
@@ -233,6 +235,12 @@ window.KOLOB = window.KOLOB || {};
   // and when (what the page is told) are R's; its colour, its place in the
   // valley and its tail are synth:field.
   // ==========================================================================
+  // what each field event is called in the minutes' English (the dev log;
+  // the page prints the field's own word, by key — SCORE §6's field event)
+  var FIELD_NAMES = {
+    wind: "wind off the benches", crickets: "crickets", clock: "the meetinghouse clock", fork: "a tuning fork, giving the pitch",
+    bell: "a bell across the valley", beacon: "the Kolob beacon", rain: "rain on the roof", coyote: "a far coyote",
+  };
   function evWind(t, R) {
     var Y = synth("field");
     var dur = R.rnd(12, 24);
@@ -244,7 +252,7 @@ window.KOLOB = window.KOLOB || {};
     env(g, t, [[dur * 0.45, 0.055], [dur * 0.55, 0]]);
     n.start(t, noiseOffset()); n.stop(t + dur + 0.3);
     emitNote("ambient", 0, t, dur);
-    return "wind off the benches";
+    return FIELD_NAMES.wind;
   }
   function evCrickets(t, R) {
     if (intensity() > 0.5) return evWind(t, R);                // crickets keep still when the hall is full
@@ -265,7 +273,7 @@ window.KOLOB = window.KOLOB || {};
       tt += period * Y.rnd(0.9, 1.15);
     }
     emitNote("ambient", 0, t, span);
-    return "crickets";
+    return FIELD_NAMES.crickets;
   }
   function evClock(t, R) {
     var Y = synth("field");
@@ -280,7 +288,7 @@ window.KOLOB = window.KOLOB || {};
       o.start(tt); o.stop(tt + 0.12);
     }
     emitNote("ambient", 0, t, ticks);
-    return "the meetinghouse clock";
+    return FIELD_NAMES.clock;
   }
   // (the fork's only die is its ring: sound-level; the stillness calls it too)
   function evTuningFork(t) {
@@ -293,7 +301,7 @@ window.KOLOB = window.KOLOB || {};
     env(g, t, [[0.01, 0.05], [synth("field").rnd(6, 10), 0]]);
     o.start(t); o.stop(t + 11);
     emitNote("ambient", f, t, 8);
-    return "a tuning fork, giving the pitch";
+    return FIELD_NAMES.fork;
   }
   function evFarBell(t, R) {
     var Y = synth("field");
@@ -309,7 +317,7 @@ window.KOLOB = window.KOLOB || {};
       o.start(t); o.stop(t + 12);
     }
     emitNote("ambient", base, t, 8);
-    return "a bell across the valley";
+    return FIELD_NAMES.bell;
   }
   function evBeacon(t, R) {
     // the colony flashes the day's theme toward home — sine Morse behind a
@@ -348,7 +356,7 @@ window.KOLOB = window.KOLOB || {};
       emitNote("ambient", f, tt, isDah ? 0.35 : 0.15);
       tt += (isDah ? 0.42 : 0.22) + R.rnd(0.05, 0.12);
     }
-    return "the Kolob beacon";
+    return FIELD_NAMES.beacon;
   }
   // rain on the roof — a rare visitor; the patter is an LFO on lowpassed noise
   function evRain(t, R) {
@@ -368,7 +376,7 @@ window.KOLOB = window.KOLOB || {};
     n.start(t, noiseOffset()); n.stop(t + dur + 0.3);
     lfo.start(t); lfo.stop(t + dur + 0.3);
     emitNote("ambient", 0, t, dur);
-    return "rain on the roof";
+    return FIELD_NAMES.rain;
   }
   // a far coyote — a falling fifth, very quiet, once in a great while
   function evCoyote(t) {
@@ -386,7 +394,7 @@ window.KOLOB = window.KOLOB || {};
     env(g, t, [[0.2, 0.02], [1.2, 0.014], [0.5, 0]]);
     o.start(t); o.stop(t + 2.4);
     emitNote("ambient", 0, t, 2);                              // a gliss owns no single pitch
-    return "a far coyote";
+    return FIELD_NAMES.coyote;
   }
   var FIELD_FNS = { wind: evWind, crickets: evCrickets, clock: evClock, fork: evTuningFork, rain: evRain, coyote: evCoyote, bell: evFarBell, beacon: evBeacon };
   // The valley's turn, at scheduled time t: which event, and when the next.
@@ -400,7 +408,11 @@ window.KOLOB = window.KOLOB || {};
       : [[evWind, 4], [evCrickets, 3], [evClock, 3], [evTuningFork, 2], [evFarBell, 3], [evBeacon, 2.5], [evRain, 0.3], [evCoyote, 0.3]];
     var fn = R.pickW(pool);
     var name = fn(t + 0.1, R);
-    emitEvent({ cat: "ambient", label: "⋆ " + name, detail: s });
+    // the field's key for what SOUNDED (the crickets keep still in a full
+    // hall and the wind speaks for them: the name tells which)
+    var field = null;
+    for (var k in FIELD_NAMES) if (FIELD_NAMES[k] === name) field = k;
+    emitEvent({ type: "field", field: field, name: name, section: s, cat: "ambient", label: "⋆ " + name, detail: s });
     var gap = R.rnd(25, 70) * (1.15 - intensity() * 0.35) * silenceMul();
     cueLayer("ambient", gap, ambientEvent);
   }

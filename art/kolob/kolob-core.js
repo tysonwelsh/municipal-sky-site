@@ -131,7 +131,7 @@ window.KolobAudio = (function () {
   // (the other rooms' state, read and written through S: S.F0, S.mode, S.SCALE,
   // S.Harmony (the chord desk), S.Meeting (the chorister's book),
   // S.forceVisitation, S.forceRaspberry, S.cumulativeMode, S.seasonPos,
-  // S.VI_TO_CHORDPOS, S.CHOIR_PART, S.OLD_TUNES, S.TELEGRAPH_WORDS, S.FIELD_FNS)
+  // S.VI_TO_CHORDPOS, S.CHOIR_PART, S.TELEGRAPH_WORDS, S.FIELD_FNS)
 
   // ----- Core audio graph -----
   var ctx = null;
@@ -339,6 +339,13 @@ window.KolobAudio = (function () {
   // ==========================================================================
   // LISTENERS / LOG
   // ==========================================================================
+  // THE BUS (SCORE.md §6; round 2, milestone 3). Every event the page or the
+  // harness reads is TYPED — { type, t, …payload }, its words in
+  // KOLOB.Score.EVENTS — and the page reads the type and the payload, never
+  // the label. The legacy { cat, label, detail } still ride on the same
+  // object (one event, both vocabularies), for the dev tools and the
+  // harness's older tallies. A guest the minutes must not name (the
+  // Hosanna) says logged: false on every event it sends.
   var noteListeners = [], eventListeners = [];
   function emitNote(layer, freq, startTime, duration, extra) {
     for (var i = 0; i < noteListeners.length; i++) {
@@ -913,7 +920,7 @@ window.KolobAudio = (function () {
       case "ambient": evFarBell(t, A); break;
       default: return;
     }
-    emitEvent({ cat: "transport", label: "◈ sample " + layer, detail: "" });
+    emitEvent({ type: "transport", action: "sample", layer: layer, cat: "transport", label: "◈ sample " + layer, detail: "" });
   }
 
   // ==========================================================================
@@ -960,7 +967,7 @@ window.KolobAudio = (function () {
       cueAt("conductor", t0 + 1, conductorTick);
     });
     clock.start();                   // the downbeat falls inside the first window: it fires now
-    emitEvent({ cat: "transport", label: "▶ the meeting is called", detail: "seed " + seed });
+    emitEvent({ type: "transport", action: "play", seed: seed, cat: "transport", label: "▶ the meeting is called", detail: "seed " + seed });
   }
   // HOLD the meeting where it stands — see the clock's notes above. The
   // page's transport and the lock-screen pause both come here; PLAY, the
@@ -1031,7 +1038,7 @@ window.KolobAudio = (function () {
       masterGain.gain.setValueAtTime(masterVolume, t + 0.7);
       scheduleForStop();
     }
-    emitEvent({ cat: "transport", label: "■ the benches empty", detail: "" });
+    emitEvent({ type: "transport", action: "stop", cat: "transport", label: "■ the benches empty", detail: "" });
   }
   function scheduleForStop() {
     setTimeout(function () {
@@ -1129,7 +1136,9 @@ window.KolobAudio = (function () {
         local: localArc(), intensity: intensity(),
         hush: inHush(), fuging: inFuging(),
         // (the page's clock: this is what is sounding now, read off the audio clock)
-        visit: (ctx && ctx.currentTime < M.assemblyUntil()) ? "assembly" : (inVisit() ? M.visitType() : null),
+        // (a guest the minutes may not name — logged: false, the Hosanna —
+        // is not told to the page at all)
+        visit: (ctx && ctx.currentTime < M.assemblyUntil()) ? "assembly" : (inVisit() && M.visitLogged() ? M.visitType() : null),
         f0: S.F0, season: S.seasonPos,
         sectionIndex: M.sectionIndex(), planLength: plan.length,
         plan: plan,                                            // the wheel folds hymns onto one seat
@@ -1143,13 +1152,16 @@ window.KolobAudio = (function () {
     getMotifStats: function () { return KOLOB.Melody.Motif.stats(); },
     setNoteListener: function (fn) { noteListeners.push(fn); },
     setEventListener: function (fn) { eventListeners.push(fn); },
-    setForceVisitation: function (on) { S.forceVisitation = !!on; },
+    // on: true (a guest, drawn as the switch draws it), false, or — dev, the
+    // harness and the labs — a guest's name ("bands", "steeples", "oldtune")
+    setForceVisitation: function (on) { S.forceVisitation = typeof on === "string" ? on : !!on; },
     setForceRaspberry: function (on) { S.forceRaspberry = !!on; },
     setCumulativeMode: function (s) { if (s === "always" || s === "natural" || s === "never") S.cumulativeMode = s; },
     getCumulativeMode: function () { return S.cumulativeMode; },
-    // dev accessor for the tune lab — the pool lives HERE and only here, so
-    // lab and engine can never drift apart
-    getOldTunes: function () { return JSON.parse(JSON.stringify(S.OLD_TUNES)); },
+    // dev accessor for the tune lab — the pool is the Earth tunes
+    // (kolob-tunes.js), read through the old-tune guest's own law, so lab and
+    // engine can never drift apart (v0.30's shape, plus id and modes)
+    getOldTunes: function () { return S.oldTunePool(); },
     isForceVisitation: function () { return S.forceVisitation; },
     // the rooms (dev — the room lab drives these; the sections drive the balance)
     getRooms: function () {

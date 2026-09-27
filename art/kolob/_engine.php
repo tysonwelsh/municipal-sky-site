@@ -13,14 +13,17 @@
 // and the harness (art/kolob/_harness.js) reads this same file, so a module
 // added here is loaded everywhere at once. The order is SCORE.md §1's: the
 // Jukebox v2 substrate first (read-only, by relative path — never modified
-// from Kolob), then pitch, the composers, the voices, the performers, and
-// last the core that raises the KolobAudio facade over them. (The lab
-// modules — kolob-tunes.js, kolob-question.js, kolob-voices-vocal/-pipeorgan/
-// -band/-folk.js — join this list on the day the engine first uses them.)
+// from Kolob), then pitch, the score and the Earth tunes, the composers,
+// the voices, the performers, and last the core that raises the KolobAudio
+// facade over them. (The lab modules — kolob-question.js, kolob-voices-vocal/
+// -pipeorgan/-band/-folk.js — join this list on the day the engine first
+// uses them; kolob-tunes.js joined in round 2, milestone 3, when the old
+// tune began to sing the Earth tunes.)
 //
 // THE LOAD GUARD. Each kolob-*.js room answers a roll call as its last act
-// (KOLOB._rooms["kolob-organ.js"] = true), and the substrate is checked by the
-// globals it raises; kolob_engine_tags() prints a guard that names every room
+// (KOLOB._rooms["kolob-organ.js"] = true), and the substrate — and the Earth
+// tunes, whose file answers no roll call (it is the tunes crew's) — are
+// checked by the globals they raise; kolob_engine_tags() prints a guard that names every room
 // that did not answer, so a missing or broken module is reported at load, not
 // as "S.x is not a function" at the first cue that needs it.
 // ============================================================================
@@ -36,7 +39,7 @@ if (!function_exists('kolob_engine_tags')) {
         $names = array_map('basename', $engine);
         echo '<script>(function () {'
             . 'var need = ' . json_encode($names) . ', K = window.KOLOB || {}, r = K._rooms || {}, P = window.PJ2 || {},'
-            . ' sub = { "pj2-rand.js": P.Rand, "pj2-clock.js": P.Clock, "pj2-fx.js": P.Fx }, miss = [];'
+            . ' sub = { "pj2-rand.js": P.Rand, "pj2-clock.js": P.Clock, "pj2-fx.js": P.Fx, "kolob-tunes.js": K.Tunes }, miss = [];'
             . ' need.forEach(function (f) { if (f in sub ? !sub[f] : !r[f]) miss.push(f); });'
             . ' if (!window.KolobAudio) miss.push("the KolobAudio facade");'
             . ' if (miss.length) console.error("KOLOB AUDIO ENGINE FAILED TO LOAD: " + miss.join(", "));'
@@ -49,8 +52,9 @@ return [
     '../prosperos-jukebox-v2/pj2-rand.js',
     '../prosperos-jukebox-v2/pj2-clock.js',
     '../prosperos-jukebox-v2/pj2-fx.js',
-    // the tuning, and the score as it is written (the chord book)
-    'kolob-pitch.js', 'kolob-score.js',
+    // the tuning, the score as it is written, and the Earth tunes (the old
+    // tune sings them)
+    'kolob-pitch.js', 'kolob-score.js', 'kolob-tunes.js',
     // the composers (pure: handed a moment and the caller's dice)
     'kolob-melody.js', 'kolob-harmony.js',
     // the voices

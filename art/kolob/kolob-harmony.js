@@ -394,10 +394,118 @@ window.KOLOB.Harmony = (function () {
     return out;
   }
 
+  // ==========================================================================
+  // THE LINE AS WRITTEN (round 2, milestone 3) — a harmonized line set down
+  // as a Score Line (SCORE.md §5), so the page, the harness and the
+  // composers to come can read what the choir sang as notation: four parts
+  // by beat, each note spelled as a degree and pitched as an exact monzo
+  // (the ii chord's re a comma low, 10/9, as it is sung), the chord at every
+  // onset with its numeral and quality, and the cadence the line comes to.
+  // Nothing here is drawn or chosen: it is a transcription of a line
+  // already voiced. The engine composes no hymn yet (the choir walks the
+  // day's motifs through the meter), so a line stands alone: no tune peak,
+  // no fermata.
+  //   harmonized  [{chord, dur}] from harmonize() (dur in beats)
+  //   opts        { syl0 (the line's first syllable, 0), trochee (the meter
+  //               stresses its first syllable: 87.87), id (keep the chords'
+  //               book ids on them; true) }
+  // ==========================================================================
+  var VOICE_PART = ["B", "T", "A", "S"];                 // a voicing's order, bass up
+  var ROMAN_UP = ["I", "II", "III", "IV", "V", "VI", "VII"];
+  var COMMA_DOWN = [4, -4, 1, 0];                        // 80/81: the ii's re, a comma low
+  function chordMonzo(P, idx, root7) {
+    var Pi = window.KOLOB.Pitch, m = Pi.degMonzo(P.mode, idx), d = P.classOf(idx);
+    if (root7 === 1 && P.n >= 6 && d === P.classOf(P.projDeg(1)) && Math.abs(P.ratios[d] - 9 / 8) < 1e-9) m = Pi.mul(m, COMMA_DOWN);
+    return m;
+  }
+  // a collection index spelled as a 7-space degree (the gapped scales fold
+  // fa and ti away, so every index has one degree: its lowest)
+  function degOf(P, idx) {
+    if (P.n === 7) return idx;
+    var map = window.KOLOB.Pitch.COLLECTIONS[P.mode].map, c = P.classOf(idx), oct = Math.floor(idx / P.n);
+    return map.indexOf(c) + 7 * oct;
+  }
+  function centsOf(r) { return 1200 * Math.log2(r); }
+  function nearCents(c, want) { return Math.abs(c - want) < 30; }   // (not near(): that is the voicing's own, above)
+  // the chord's quality, read off the pitches it sounds (so the ii with its
+  // re a comma low is the minor chord it is sung as)
+  function qualityOf(chord, P) {
+    var byRole = {}, f = chord.freqs, v = chord.voicing;
+    // (the chord's tones are keyed by collection class)
+    for (var i = 0; i < 4; i++) byRole[i] = chord.tones[P.classOf(v[i])] || null;
+    var rootF = null;
+    for (var j = 0; j < 4; j++) if (byRole[j] === "root") { rootF = f[j]; break; }
+    if (rootF == null) return "other";
+    var t3 = null, t5 = null;
+    for (var k = 0; k < 4; k++) {
+      var c = ((centsOf(f[k] / rootF) % 1200) + 1200) % 1200;
+      if (byRole[k] === "third") t3 = c;
+      if (byRole[k] === "fifth") t5 = c;
+    }
+    if (chord.open || t3 == null) return t5 != null && nearCents(t5, 702) ? "open5" : "other";
+    if (t5 == null) t5 = 702;
+    if (nearCents(t3, 316) && nearCents(t5, 610)) return "dim";
+    if (!nearCents(t5, 702)) return "other";
+    if (nearCents(t3, 386)) return "maj";
+    if (nearCents(t3, 316)) return "min";
+    if (nearCents(t3, 204) || nearCents(t3, 498)) return "sus";
+    return "other";
+  }
+  function numeral(root7, q) {
+    var r = ROMAN_UP[((root7 % 7) + 7) % 7];
+    if (q === "min" || q === "dim") r = r.toLowerCase();
+    return r + (q === "dim" ? "°" : q === "open5" ? "5" : "");
+  }
+  function toLine(harmonized, moment, opts) {
+    opts = opts || {};
+    var P = tuningOf(moment), syl0 = opts.syl0 || 0;
+    var notes = { S: [], A: [], T: [], B: [] }, chords = [], at = 0;
+    for (var i = 0; i < harmonized.length; i++) {
+      var ch = harmonized[i].chord, dur = harmonized[i].dur;
+      var stress = (i % 2 === (opts.trochee ? 0 : 1)) ? 1 : 0;
+      for (var vi = 0; vi < 4; vi++) {
+        var idx = ch.voicing[vi];
+        notes[VOICE_PART[vi]].push({
+          beat: at, beats: dur, deg: degOf(P, idx), monzo: chordMonzo(P, idx, ch.root),
+          tie: false, fermata: false, syl: syl0 + i, stress: stress, nct: null, ornament: null,
+        });
+      }
+      var q = qualityOf(ch, P);
+      var prev = chords[chords.length - 1];
+      if (prev && prev.rootDeg === ch.root && prev.quality === q && Math.abs(prev.beat + prev.len - at) < 1e-9) prev.len += dur;
+      else {
+        var cObj = { beat: at, len: dur, roman: numeral(ch.root, q), rootDeg: ((ch.root % 7) + 7) % 7, quality: q };
+        if (opts.id !== false && ch.id != null) cObj.id = ch.id;       // the chord book's id (the notes name it)
+        chords.push(cObj);
+      }
+      at += dur;
+    }
+    // the cadence the line comes to: the last change of harmony into its
+    // last chord (the Earth tunes' reading, kolob-tunes.js cadenceOf)
+    var kind = "none";
+    var z = chords[chords.length - 1], y = null;
+    for (var k = chords.length - 2; k >= 0 && !y; k--) if (chords[k].rootDeg !== (z && z.rootDeg)) y = chords[k];
+    var lastS = notes.S[notes.S.length - 1];
+    if (z && z.rootDeg === 0) {
+      if (z.quality === "open5") kind = "openfifth";
+      else if (!y) kind = "imperfect";
+      else if (y.rootDeg === 3 || y.rootDeg === 1) kind = "plagal";
+      else if (y.rootDeg === 4 || y.rootDeg === 6) kind = lastS && ((lastS.deg % 7) + 7) % 7 === 0 ? "authentic" : "imperfect";
+      else kind = "imperfect";
+    } else if (z && z.rootDeg === 4) kind = "half";
+    else if (z && z.rootDeg === 5 && y && y.rootDeg === 4) kind = "deceptive";
+    return {
+      notes: notes,
+      cadence: { kind: kind, beat: lastS ? lastS.beat : 0 },
+      chords: chords, peak: false, breathAfter: true, fermataBeats: [],
+    };
+  }
+
   return {
     ROMAN: ROMAN, ranges: ranges,
     voice: voice, advance: advance, cadence: cadence, harmonize: harmonize,
     chordTones: chordTones, standingOn: standingOn,
+    toLine: toLine, chordMonzo: function (moment, idx, root7) { return chordMonzo(tuningOf(moment), idx, root7); },
   };
 })();
 (window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-harmony.js"] = true;   // the load guard's roll call

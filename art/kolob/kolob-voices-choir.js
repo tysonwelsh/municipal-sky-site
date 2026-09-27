@@ -186,14 +186,26 @@ window.KOLOB = window.KOLOB || {};
     if (!motif) { cueIn("choir", 6, choirVerse); return; }
     var nLines = s === "doxology" ? 1 : 2;
     var lineStart = t, sungTotal = 0;
+    var hymnId = S.Meeting.hymnId(), meterName = S.Meeting.meter();
     for (var li = 0; li < nLines; li++) {
-      var nSyl = meterLines[(S.Meeting.verseLine() + li) % meterLines.length];
+      var at = S.Meeting.verseLine() + li;                     // the line's place in the hymn, from its first
+      var nSyl = meterLines[at % meterLines.length];
       var line = Prosody.pourIntoLine(motif, nSyl, R);
       var ln2 = line.map(function (n) { return { deg: n.deg, dur: n.durBeats }; });
       // each line's chords are written into the book where they are sung
       var hz2 = S.Harmony.harmonize(ln2, R, lineStart, beat, "choir");
       var lt = choirHarmonizedLine(lineStart, hz2, beat, 0.9);
-      emitEvent({ cat: "verse", label: "¶ " + S.Meeting.meter() + " line " + (li + 1), detail: nSyl + " syllables · " + motif.name + "·g" + motif.gen });
+      // THE LINE AS WRITTEN (SCORE §5, §6): a stanza begins, and each line
+      // is told with its Score — four parts, spelled and pitched, and its
+      // chords (a transcription: no die is thrown for it)
+      var verse = Math.floor(at / meterLines.length), inStanza = at % meterLines.length;
+      if (inStanza === 0) emitEvent({ type: "verse-start", hymnId: hymnId, verse: verse, practice: "sung" });
+      emitEvent({
+        type: "verse-line", hymnId: hymnId, verse: verse, line: inStanza, speechLine: li + 1, practice: "sung",
+        meter: meterName, syllables: nSyl, motif: motif.name, gen: motif.gen, start: lineStart, beatS: beat,
+        score: KOLOB.Harmony.toLine(hz2, S.moment(), { trochee: meterName === "87.87" }),
+        cat: "verse", label: "¶ " + meterName + " line " + (li + 1), detail: nSyl + " syllables · " + motif.name + "·g" + motif.gen,
+      });
       sungTotal += lt;
       lineStart += lt + R.rnd(1.8, 3.4);                       // the breath between lines
       sungTotal += 2.5;
@@ -282,7 +294,7 @@ window.KOLOB = window.KOLOB || {};
     organChord(cadAt + cd, cd * 1.4, chords[chords.length - 1], 0.55);
     var totalDur = (cadAt + cd * 2.4) - t;
     claimAir(totalDur, 4);
-    emitEvent({ cat: "fuging", label: "⁂ fuging entry ×" + entryCount, detail: "stagger " + stagger.toFixed(1) + "s · at the fifth · " + (theme.gesture || "") });
+    emitEvent({ type: "fuging", entries: entryCount, stagger: stagger, cat: "fuging", label: "⁂ fuging entry ×" + entryCount, detail: "stagger " + stagger.toFixed(1) + "s · at the fifth · " + (theme.gesture || "") });
     return totalDur;
   }
 

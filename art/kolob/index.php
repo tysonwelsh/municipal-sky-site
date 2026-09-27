@@ -19,9 +19,9 @@ function kolob_v($file)
 //                so it reads as the moment the live files landed (UTC)
 // The engine is a family of modules, loaded in the SCORE.md §1 order from the
 // ONE list in _engine.php (the Jukebox v2 substrate — pj2-rand, pj2-clock,
-// pj2-fx — then pitch, the composers, the voices, the performers, and last
-// the core that raises the KolobAudio facade over them). The labs read the
-// same list; so does the harness.
+// pj2-fx — then pitch, the score and the Earth tunes, the composers, the
+// voices, the performers, and last the core that raises the KolobAudio
+// facade over them). The labs read the same list; so does the harness.
 $kolob_engine  = require __DIR__ . '/_engine.php';
 $kolob_assets  = array_merge($kolob_engine, ['kolob-ui.js', 'kolob-viz.js', 'kolob-text.js', 'kolob.css', 'index.php', '_engine.php']);
 $kolob_version = trim((string) @file_get_contents(__DIR__ . '/VERSION')) ?: 'dev';

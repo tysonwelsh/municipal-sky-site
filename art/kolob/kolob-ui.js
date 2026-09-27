@@ -4,8 +4,9 @@
 // drawn by the viz — this file only hands it the labels and the dev jump)
 //
 // EVERYTHING the reader sees is set in the DESERET ALPHABET. The engine emits
-// English event labels internally; this file maps them to Deseret renderings
-// (glyph + transliterated word + numerals) before anything is printed. The
+// typed events (SCORE.md §6); this file maps each type and its payload to a
+// Deseret rendering (glyph + transliterated word + numerals) before anything
+// is printed — it never reads the English labels the engine still sends. The
 // piece does not explain itself. Latin survives only in numerals and in
 // invisible aria-labels for screen readers.
 //
@@ -109,16 +110,6 @@
   // per-event FIELD labels, keyed to the audio engine's field keys
   var FIELD_DS = { wind: "𐐎𐐆𐐤𐐔", crickets: "𐐗𐐡𐐆𐐗𐐇𐐓𐐝", clock: "𐐗𐐢𐐉𐐗", fork: "𐐓𐐅𐐤𐐆𐐥 𐐙𐐃𐐡𐐗", rain: "𐐡𐐁𐐤", coyote: "𐐗𐐌𐐄𐐓𐐆", bell: "𐐒𐐇𐐢", beacon: "𐐒𐐀𐐗𐐊𐐤" };
   var FIELD_EN = { wind: "WIND", crickets: "CRICKETS", clock: "CLOCK", fork: "TUNING FORK", rain: "RAIN", coyote: "COYOTE", bell: "BELL", beacon: "BEACON" };
-  var AMBIENT_DS = [
-    [/wind/i, "𐐎𐐆𐐤𐐔", "WIND"],
-    [/cricket/i, "𐐗𐐡𐐆𐐗𐐇𐐓𐐝", "CRICKETS"],
-    [/clock/i, "𐐗𐐢𐐉𐐗", "CLOCK"],
-    [/fork/i, "𐐓𐐅𐐤𐐆𐐥 𐐙𐐃𐐡𐐗", "TUNING FORK"],
-    [/rain/i, "𐐡𐐁𐐤", "RAIN"],
-    [/coyote/i, "𐐗𐐌𐐄𐐓𐐆", "COYOTE"],
-    [/bell/i, "𐐒𐐇𐐢", "BELL"],
-    [/beacon/i, "𐐒𐐀𐐗𐐊𐐤", "BEACON"],
-  ];
 
   // ==========================================================================
   // DEV LATIN MODE — a development aid only. The piece speaks Deseret; this
@@ -169,7 +160,6 @@
   try { previewMode = /[?&]kolobPreview=1/.test(location.search); } catch (e) {}
   var PREVIEW_CONDUCTOR = { meeting: 3, section: "hymn", meter: "CM", activity: "conference", mode: "mixolydian", f0: 65.4, fuging: true };
   function TT(dsTable, enTable) { return latinMode ? enTable : dsTable; }
-  function ambientName(entry) { return latinMode ? entry[2] : entry[1]; }
   // gesture ciphers run 𐐀..𐐚 (the Deseret alphabet from its first letter);
   // the Latin equivalents run A..Z then & — the schoolroom's own 27th letter
   function gestureLatin(ds) {
@@ -185,75 +175,68 @@
   // ==========================================================================
   // Deseret rendering of engine events → the clerk's minutes.
   // Returns null to omit an event entirely (harmony chatter, etc.).
+  //
+  // TYPED (round 2, milestone 3): every row is chosen by the event's TYPE and
+  // written from its payload (SCORE.md §6; the words are KOLOB.Score.EVENTS)
+  // — never by reading the English label, which the engine still sends
+  // alongside for its dev tools. Each row keeps the class v0.32's category
+  // gave it (the gilt glyphs of the Liahona, the fuging, the guests and the
+  // meeting; the motif's ink), so the minutes look exactly as they did. A
+  // guest the minutes may not name (logged: false — the Hosanna) prints
+  // nothing, whatever it sends.
   // ==========================================================================
+  // a guest's moments, by guest and stage → [glyph, the string's key]
+  var GUEST_ROWS = {
+    bands:     { approaches: ["⇋", "bandNears"], cross: ["⇋", "bandsCross"], passes: ["⇋", "bandPasses"] },
+    steeples:  { answer: ["◎", "theSteeples"], "last-bell": ["◎", "lastBell"] },
+    oldtune:   { remembered: ["✧", "oldTune"], "gives-out": ["✧", "memoryOut"] },
+    assembly:  { withheld: ["◌", "tuneWithheld"], "whole-tune": ["✶", "wholeTune"] },
+    raspberry: { blat: ["∴", "raspberry"], amen: ["∴", "amenDash"] },
+  };
+  var ROMAN_MOTIF = { "Ⅰ": 1, "Ⅱ": 1, "Ⅲ": 1 };
+  function minute(glyph, text, cls) { return { glyph: glyph, text: text, cls: cls }; }
+  function layerName(l) { return TT(LAYERS_DS, LAYERS_EN)[l] || l; }
   function dsEvent(ev) {
-    var cat = ev.cat || "";
-    var label = ev.label || "";
-    if (cat === "harmony") return null;                       // too many; the page stays open
-    if (cat === "meeting") {
-      var mm = /meeting (\d+)/.exec(label);
-      return { glyph: "☀", text: TT(STR, STR_EN).meeting + (mm ? " " + mm[1] : "") };
-    }
-    if (cat === "section") {
-      var sec = label.replace("§", "").trim().toLowerCase();
-      return { glyph: "§", text: TT(SECTIONS_DS, SECTIONS_EN)[sec] || sec };
-    }
-    if (cat === "liahona") return { glyph: "⌖", text: TT(STR, STR_EN).liahona };
-    if (cat === "conductor") return { glyph: "◦", text: TT(STR, STR_EN).stillness };
-    if (cat === "cadence") return { glyph: "∴", text: TT(STR, STR_EN).amen };
-    if (cat === "fuging") return { glyph: "⁂", text: TT(STR, STR_EN).fuging };
-    if (cat === "telegraph") return { glyph: "⌁", text: LAYERS_DS.telegraph };
-    if (cat === "phrase") return { glyph: "♮", text: (TT(LAYERS_DS, LAYERS_EN)[label] || label) + " " + TT(STR, STR_EN).speaks };
-    if (cat === "visitation") {
-      var SV = TT(STR, STR_EN);
-      if (label.indexOf("raspberry") >= 0) return { glyph: "∴", text: SV.raspberry };
-      if (label.indexOf("amen—") >= 0) return { glyph: "∴", text: SV.amenDash };
-      if (label.indexOf("approaches") >= 0) return { glyph: "⇋", text: SV.bandNears };
-      if (label.indexOf("cross") >= 0) return { glyph: "⇋", text: SV.bandsCross };
-      if (label.indexOf("passes") >= 0) return { glyph: "⇋", text: SV.bandPasses };
-      if (label.indexOf("steeples") >= 0) return { glyph: "◎", text: SV.theSteeples };
-      if (label.indexOf("last bell") >= 0) return { glyph: "◎", text: SV.lastBell };
-      if (label.indexOf("old tune") >= 0) return { glyph: "✧", text: SV.oldTune };
-      if (label.indexOf("memory gives out") >= 0) return { glyph: "✧", text: SV.memoryOut };
-      if (label.indexOf("withheld") >= 0) return { glyph: "◌", text: SV.tuneWithheld };
-      if (label.indexOf("whole tune") >= 0) return { glyph: "✶", text: SV.wholeTune };
-      return null;                                            // a guest the minutes do not know is not named as another
-    }
-    if (cat === "verse") {
-      if (label.indexOf("lines out") >= 0) return { glyph: "☞", text: LAYERS_DS.clarinet + " " + TT(STR, STR_EN).linesOut };
-      var lm = /line (\d+)/.exec(label);
-      return { glyph: "¶", text: TT(STR, STR_EN).verse + (lm ? " " + lm[1] : "") };
-    }
-    if (cat === "ambient") {
-      for (var i = 0; i < AMBIENT_DS.length; i++) {
-        if (AMBIENT_DS[i][0].test(label)) return { glyph: "⋆", text: ambientName(AMBIENT_DS[i]) };
+    if (!ev || ev.logged === false) return null;             // the unlogged guest: not a word
+    var S = TT(STR, STR_EN);
+    switch (ev.type) {
+      case "meeting-start": return minute("☀", S.meeting + (ev.n != null ? " " + ev.n : ""), "meeting");
+      case "sunrise":       return minute("☀", S.meeting, "meeting");          // (v0.32: a sunrise is a meeting's row without its number)
+      case "section-start": return minute("§", TT(SECTIONS_DS, SECTIONS_EN)[ev.section] || ev.section, "section");
+      case "liahona":       return minute("⌖", S.liahona, "liahona");
+      case "stillness":
+      case "skip":          return minute("◦", S.stillness, "conductor");      // (v0.32 wrote the dev jump as a stillness too)
+      case "joint":
+      case "room-empties":  return minute("∴", S.amen, "cadence");
+      case "fuging":        return minute("⁂", S.fuging, "fuging");
+      case "telegraph":     return minute("⌁", LAYERS_DS.telegraph, "telegraph");
+      case "phrase":        return minute("♮", layerName(ev.layer) + " " + S.speaks, "phrase");
+      case "guest": {
+        var g = GUEST_ROWS[ev.guest], st = g && g[ev.stage];
+        return st ? minute(st[0], S[st[1]], "visitation") : null; // a guest the minutes do not know is not named as another
       }
-      return { glyph: "⋆", text: TT(LAYERS_DS, LAYERS_EN).ambient };
-    }
-    if (cat === "motif") {
-      if (label.indexOf("reprise") >= 0) return { glyph: "✸", text: TT(STR, STR_EN).reprise + " " + motifName(label.replace(/^.*reprise\s*/, "")) };
-      if (label.indexOf("answers") >= 0) {
-        var pa = /⇄ (\w+) answers (\w+)/.exec(label);
-        if (pa) return { glyph: "⇄", text: (TT(LAYERS_DS, LAYERS_EN)[pa[1]] || pa[1]) + " " + TT(STR, STR_EN).answers + " " + (TT(LAYERS_DS, LAYERS_EN)[pa[2]] || pa[2]) };
-        return { glyph: "⇄", text: TT(STR, STR_EN).answers };
+      case "verse-line":    return minute("¶", S.verse + (ev.speechLine != null ? " " + ev.speechLine : ""), "verse");
+      case "lining-out":    return minute("☞", LAYERS_DS.clarinet + " " + S.linesOut, "verse");
+      case "field": {
+        var fd = TT(FIELD_DS, FIELD_EN)[ev.field];
+        return minute("⋆", fd || TT(LAYERS_DS, LAYERS_EN).ambient, "ambient");
       }
-      if (label.indexOf("shadows") >= 0) return { glyph: "〰", text: LAYERS_DS.harmonium + " " + TT(STR, STR_EN).shadows };
-      if (label.indexOf("disperses") >= 0) return { glyph: "࿙", text: TT(STR, STR_EN).disperses };
-      if (label.indexOf("❁") >= 0) return { glyph: "❁", text: TT(STR, STR_EN).hymnsOfDay };
-      var gm = /(Ⅰ|Ⅱ|Ⅲ)·g(\d+)/.exec(label);
-      if (gm) return { glyph: "◆", text: motifName(gm[1]) + "·" + gm[2] + " " + TT(STR, STR_EN).develops };
-      return { glyph: "◆", text: TT(STR, STR_EN).develops };
+      case "motif-reprise": return minute("✸", S.reprise + " " + motifName(ev.name), "motif");
+      case "motif-answer":  return minute("⇄", layerName(ev.voice) + " " + S.answers + " " + layerName(ev.from), "motif");
+      case "motif-shadow":  return minute("〰", LAYERS_DS.harmonium + " " + S.shadows, "motif");
+      case "motif-disperse": return minute("࿙", S.disperses, "motif");
+      case "hymns-of-the-day": return minute("❁", S.hymnsOfDay, "motif");
+      case "motif-develop":
+        return ROMAN_MOTIF[ev.name] && ev.gen != null
+          ? minute("◆", motifName(ev.name) + "·" + ev.gen + " " + S.develops, "motif")
+          : minute("◆", S.develops, "motif");
+      case "transport":
+        if (ev.action === "play") return minute("▶", S.meeting, "transport");
+        if (ev.action === "stop") return minute("■", S.idle, "transport");
+        if (ev.action === "sample") return minute("◈", S.sample + " " + (TT(LAYERS_DS, LAYERS_EN)[ev.layer] || ""), "transport");
+        return null;
     }
-    if (cat === "transport") {
-      if (label.indexOf("▶") >= 0) return { glyph: "▶", text: TT(STR, STR_EN).meeting };
-      if (label.indexOf("■") >= 0) return { glyph: "■", text: TT(STR, STR_EN).idle };
-      if (label.indexOf("sample") >= 0) {
-        var sl = label.replace("◈ sample", "").trim();
-        return { glyph: "◈", text: TT(STR, STR_EN).sample + " " + (TT(LAYERS_DS, LAYERS_EN)[sl] || "") };
-      }
-      return null;
-    }
-    return null;
+    return null;                                              // chords, cadences, spans, the hymn's announcement: the page stays open
   }
 
   // ==========================================================================
@@ -382,11 +365,12 @@
   }
   function logEvent(ev) {
     var log = document.getElementById("kolob-log"); if (!log) return;
+    noteGuest(ev);
     var d = dsEvent(ev);
     if (!d) return;
     var empty = log.querySelector(".kolob-log-empty"); if (empty) empty.remove();
     var row = document.createElement("div");
-    row.className = "kolob-log-row cat-" + (ev.cat || "conductor");
+    row.className = "kolob-log-row cat-" + (d.cls || "conductor");
     row.innerHTML =
       '<span class="kolob-log-time">' + fmtTime(ev.t || 0) + '</span>' +
       '<span class="kolob-log-glyph">' + d.glyph + '</span>' +
@@ -395,6 +379,18 @@
     while (log.children.length > LOG_CAP) log.removeChild(log.lastChild);
   }
   if (K.setEventListener) K.setEventListener(logEvent);
+
+  // THE UNLOGGED GUESTS (SCORE §6: logged: false — the Hosanna "just
+  // happens, low-key": no row in the minutes, no direction on the board).
+  // The engine does not tell the conductor's poll about such a guest; the
+  // page keeps its own tally from the typed spans as well, so a guest that
+  // says logged: false is never named here, whatever the poll says.
+  var unloggedGuests = {};
+  function noteGuest(ev) {
+    if (!ev || (ev.type !== "guest-start" && ev.type !== "guest-end")) return;
+    if (ev.type === "guest-start" && ev.logged === false) unloggedGuests[ev.guest] = true;
+    if (ev.type === "guest-end") delete unloggedGuests[ev.guest];
+  }
 
   // ==========================================================================
   // Phrase log — every instrument that starts speaking gets a minutes row, so
@@ -412,8 +408,10 @@
   // the visiting band and the old tune write their own minutes (their
   // visitation events)
   var PHRASE_SKIP = { drone: 1, ambient: 1, telegraph: 1, tuba: 1, band: 1, oldtune: 1 };
+  // (and a layer the minutes have no name for is not written in English;
+  // a note an unlogged guest sounds — logged: false — writes no row)
   function onNoteForLog(n) {
-    if (!n || !n.layer || PHRASE_SKIP[n.layer]) return;
+    if (!n || !n.layer || PHRASE_SKIP[n.layer] || !LAYERS_DS[n.layer] || n.logged === false) return;
     var end = n.startTime + (n.duration || 0);
     var last = phraseLast[n.layer] != null ? phraseLast[n.layer] : -1e9;
     if (n.startTime > last + PHRASE_GAP_S) {
@@ -429,7 +427,7 @@
     var now = K.getAudioTime();
     while (phraseQueue.length && phraseQueue[0].at <= now + 0.05) {
       var p = phraseQueue.shift();
-      if (p.at > now - 3) logEvent({ cat: "phrase", t: p.at, label: p.layer });
+      if (p.at > now - 3) logEvent({ type: "phrase", t: p.at, layer: p.layer });
     }
   }
   if (K.setNoteListener) K.setNoteListener(onNoteForLog);
@@ -506,7 +504,7 @@
     var S = TT(STR, STR_EN);
     if (c.hush) return S.stillness;
     if (c.fuging) return S.fuging;
-    if (c.visit) return VISIT_FLAG[c.visit] ? S[VISIT_FLAG[c.visit]] : "";
+    if (c.visit) return VISIT_FLAG[c.visit] && !unloggedGuests[c.visit] ? S[VISIT_FLAG[c.visit]] : "";
     return "";
   }
   function updateDirection(c, playing) {

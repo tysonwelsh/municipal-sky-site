@@ -90,6 +90,7 @@ window.KOLOB = window.KOLOB || {};
     visitations: [],             // Ives guests drawn for this meeting
     visitUntil: 0,
     visitType: null,
+    visitLogged: true,           // the last guest may be named on the page
     raspberry: false,            // this meeting ends on the organist's own amen
     cumulative: false,           // the tune is withheld until the doxology
     assemblyFired: false,
@@ -213,6 +214,7 @@ window.KOLOB = window.KOLOB || {};
     C.visitations = [];
     C.visitUntil = 0;
     C.visitType = null;
+    C.visitLogged = true;
     var haveSec = {};
     for (var vp = 0; vp < plan.length; vp++) haveSec[plan[vp].type] = true;
     function seatIn(prefs) {
@@ -225,7 +227,11 @@ window.KOLOB = window.KOLOB || {};
     // below, so every other draw of the meeting falls exactly where it did.
     // The forcing switch no longer offers it.
     var SHELVED_GUESTS = { question: true };
-    var forcedType = forceVisitation ? pickWith(forcedDie, [["bands", 2], ["steeples", 1], ["oldtune", 1]]) : null;
+    // (the switch draws its guest; a dev who names one — the harness, a
+    // lab — gets that one, and the die is thrown all the same)
+    var FORCEABLE = { bands: true, steeples: true, oldtune: true };
+    var forcedPick = pickWith(forcedDie, [["bands", 2], ["steeples", 1], ["oldtune", 1]]);
+    var forcedType = forceVisitation ? (FORCEABLE[forceVisitation] ? forceVisitation : forcedPick) : null;
     if (forcedType === "question" || qDie) {
       var qSeat = (forcedType === "question" || qSeatDie)
         ? seatIn(["invocation", "testimony", "hymn"])
@@ -244,9 +250,11 @@ window.KOLOB = window.KOLOB || {};
       var stSeat = forcedType === "steeples" ? "prelude" : (stSeatDie ? "prelude" : "postlude");
       C.visitations.push({ type: "steeples", section: stSeat, fired: false });
     }
-    // THE OLD TUNE — its own die, gated by the mode law (tuneFitsMode): major
-    // memories on major-ish Sundays; on dark Sundays the gate OPENS for
-    // KINGSFOLD alone. Seats where remembering belongs: the prelude's
+    // THE OLD TUNE — its own die, gated by the mode law (kolob-guests.js,
+    // oldTuneCandidates): an Earth tune surfaces only on a Sunday of its own
+    // colour — the minor tunes on dark Sundays, the major on bright ones —
+    // and only where the day's tuning holds every note of the melody it
+    // will sing. Seats where remembering belongs: the prelude's
     // pre-gathering reverie, or testimony. Never the sacrament.
     var oldPool = oldTuneCandidates();
     if (oldPool.length && (forcedType === "oldtune" || oDie)) {
@@ -272,7 +280,10 @@ window.KOLOB = window.KOLOB || {};
         }
       }
     }
-    if (C.visitations.length) emitEvent({ cat: "visitation-draw", label: C.visitations.map(function (v) { return v.type + "@" + v.section; }).join(",") });
+    if (C.visitations.length) emitEvent({
+      type: "guests-drawn", guests: C.visitations.map(function (v) { return { guest: v.type, section: v.section }; }),
+      cat: "visitation-draw", label: C.visitations.map(function (v) { return v.type + "@" + v.section; }).join(","),
+    });
     // THE RASPBERRY AMEN — its own flag, not a seated visitation: it has no
     // section, only the meeting's final cadence. Never on a fast Sunday; a
     // solemn meeting does not end on a joke.
@@ -280,15 +291,23 @@ window.KOLOB = window.KOLOB || {};
     Motif.newMeeting(moment(), stream("motif"));
     if (C.cumulative) {
       var wTheme = Motif.theme();
-      emitEvent({ cat: "visitation", label: "◌ the tune is withheld", detail: (wTheme ? wTheme.name + " · " : "") + "until the doxology" });
+      emitEvent({
+        type: "guest", guest: "assembly", stage: "withheld", logged: true, theme: wTheme ? wTheme.name : null,
+        cat: "visitation", label: "◌ the tune is withheld", detail: (wTheme ? wTheme.name + " · " : "") + "until the doxology",
+      });
     }
     enterSection(0, t);
     // The Liahona: the load-bearing draws, surfaced as the oracle's pointing.
     emitEvent({
+      type: "liahona", points: "day", mode: S.mode, kind: activity, f0: S.F0,
       cat: "liahona", label: "⌖ the Liahona points",
       detail: S.mode + " · " + activity + " · F0 " + S.F0.toFixed(1) + " Hz",
     });
+    // (SCORE §6: the calendar's Sunday and the house dialect are FORM's and
+    // the composer's, and not yet drawn — null until they are)
     emitEvent({
+      type: "meeting-start", n: C.meetingNum, sunday: null, kind: activity, mode: S.mode,
+      keynoteHz: S.F0 * S.ROOT_MULT, houseDialect: null, f0: S.F0, season: seasonPos,
       cat: "meeting", label: "☀ meeting " + C.meetingNum,
       detail: "F0 " + S.F0.toFixed(1) + " Hz · " + S.mode + " · " + activity + " · season " + seasonPos.toFixed(2),
     });
@@ -312,7 +331,7 @@ window.KOLOB = window.KOLOB || {};
     if (s.type === "hymn") C.verseLine = 0;
     if (s.type === "hymn" && s.meter) {
       C.meter = s.meter;
-      emitEvent({ cat: "liahona", label: "⌖ the meter is given", detail: C.meter + " — " + METERS[C.meter].join(".") });
+      emitEvent({ type: "liahona", points: "meter", meter: C.meter, cat: "liahona", label: "⌖ the meter is given", detail: C.meter + " — " + METERS[C.meter].join(".") });
     }
     // the doxology SUNRISE: a dark-mode meeting may lift into major at the
     // last — rare, and the most audible surprise the engine owns
@@ -321,11 +340,23 @@ window.KOLOB = window.KOLOB || {};
       rebuildScale();
       Desk.reset();                 // the new mode starts a clean page
       emitEvent({
+        type: "sunrise", mode: S.mode, keynoteHz: S.F0 * S.ROOT_MULT, f0: S.F0,
         cat: "meeting", label: "☀ sunrise",
         detail: "F0 " + S.F0.toFixed(1) + " Hz · " + S.mode + " · " + (C.meeting ? C.meeting.activity : "") + " · season " + seasonPos.toFixed(2),
       });
     }
-    emitEvent({ cat: "section", label: "§ " + s.type.toUpperCase(), detail: (s.type === "hymn" ? C.meter + " · " : "") + Math.round(s.dur) + "s" });
+    emitEvent({
+      type: "section-start", section: s.type, index: i, dur: s.dur, meter: s.type === "hymn" ? C.meter : null,
+      cat: "section", label: "§ " + s.type.toUpperCase(), detail: (s.type === "hymn" ? C.meter + " · " : "") + Math.round(s.dur) + "s",
+    });
+    // a singing section announces its hymn (SCORE §6). The engine composes
+    // no hymn yet — the choir walks the day's motifs through the meter — so
+    // the board has no number, no name and no dialect to give; the composer
+    // (the HYMN crew) fills them. The id is the hymn's, and the verses and
+    // lines below name it.
+    if (s.type === "hymn" || s.type === "doxology") {
+      emitEvent({ type: "hymn-announced", hymn: { id: hymnId(), number: null, nameDs: null, meter: C.meter, dialect: null }, leaderDs: null });
+    }
     // the gathering moves in the room with the section — unless the room lab holds it
     if (!S.roomBalanceHeld) setRoomBalance(S.ROOM_BALANCE[s.type] != null ? S.ROOM_BALANCE[s.type] : 0.45, S.roomRampNext);
     S.roomRampNext = S.ROOM_RAMP_S;
@@ -387,12 +418,16 @@ window.KOLOB = window.KOLOB || {};
       if (!V.fired && V.section === C.section && x > 0.2 && x < 0.55 &&
           !C.jointing && !inHush() && !inFuging() && !inVisit()) {
         V.fired = true;
+        // a guest the minutes may not name (UNLOGGED below) carries it on
+        // every event it sends, and the page is never told it came
+        V.logged = !UNLOGGED[V.type];
         // type → set piece; the old tune receives its visitation record (the drawn tune)
         var VISIT_FN = { question: unansweredQuestion, bands: twoBandsCross, steeples: steeplesAnswer, oldtune: oldTuneRemembered };
         var vdur = (VISIT_FN[V.type] || twoBandsCross)(V, t);
         C.visitType = V.type;
+        C.visitLogged = V.logged;
         C.visitUntil = t + vdur;
-        guestSpan(V.type, t, vdur);
+        guestSpan(V.type, t, vdur, V.logged);
         break;
       }
     }
@@ -460,13 +495,19 @@ window.KOLOB = window.KOLOB || {};
   function jointHeld() { return guestSounding() || (!!S.ctx && now() < Desk.sungUntil() + CHOIR_BREATH_S); }
   // A guest's span, told as SCORE.md §6's typed events (the page's minutes
   // keep their own rows; these are for the harness and the typed bus)
-  function guestSpan(type, t, dur) {
-    var sec = C.section;
-    emitEvent({ type: "guest-start", guest: type, section: sec, until: t + dur, logged: true });
+  function guestSpan(type, t, dur, logged) {
+    var sec = C.section, lg = logged !== false;
+    emitEvent({ type: "guest-start", guest: type, section: sec, until: t + dur, logged: lg });
     cueAt("conductor", t + dur, function () {
-      emitEvent({ type: "guest-end", guest: type, section: sec, logged: true });
+      emitEvent({ type: "guest-end", guest: type, section: sec, logged: lg });
     });
   }
+  // THE UNLOGGED GUESTS — a guest that "just happens, low-key" (PLAN §8.12,
+  // the Hosanna): it sends logged: false on every event, the minutes print
+  // none of them, and the hymn board's direction line never names it. The
+  // Hosanna is not built yet; the table is read when a guest arrives, so a
+  // test may add any guest to it (KOLOB._s.UNLOGGED_GUESTS.oldtune = true).
+  var UNLOGGED = { hosanna: true };
 
   // Dev aid: jump the meeting to a section of the plan. Voices notice on
   // their next scheduled fire; a few tail notes from the old section may
@@ -486,7 +527,7 @@ window.KOLOB = window.KOLOB || {};
       S.droneDuck.gain.setValueAtTime(1, t);
     }
     enterSection(idx, t);
-    emitEvent({ cat: "conductor", label: "↷ skipped", detail: "to " + type + " (dev)" });
+    emitEvent({ type: "skip", to: type, cat: "conductor", label: "↷ skipped", detail: "to " + type + " (dev)" });
     return true;
   }
 
@@ -505,7 +546,7 @@ window.KOLOB = window.KOLOB || {};
     if (forkDie) evTuningFork(t + forkAt);
     S.droneDuck.gain.setValueAtTime(0.12, t + 1.4 + holdS);
     S.droneDuck.gain.linearRampToValueAtTime(1, t + 1.4 + holdS + 3);
-    emitEvent({ cat: "conductor", label: "◦ the still small voice", detail: why + " · " + holdS.toFixed(1) + "s" });
+    emitEvent({ type: "stillness", why: why, holdS: holdS, cat: "conductor", label: "◦ the still small voice", detail: why + " · " + holdS.toFixed(1) + "s" });
   }
 
   // ==========================================================================
@@ -521,7 +562,7 @@ window.KOLOB = window.KOLOB || {};
     if (next === "sacrament" || C.section === "sacrament") {
       // fade into (or out of) the quietest room through pure drone — no chord
       dur = R.rnd(4, 7);
-      emitEvent({ cat: "cadence", label: "∴ the room empties", detail: "into stillness" });
+      emitEvent({ type: "room-empties", toward: next, cat: "cadence", label: "∴ the room empties", detail: "into stillness" });
     } else if (isLast && C.raspberry) {
       // THE RASPBERRY AMEN (after the close of Ives's Second Symphony): the
       // cadence sets up in earnest — the IV played perfectly straight — and
@@ -541,10 +582,10 @@ window.KOLOB = window.KOLOB || {};
         meetinghouseBell(t + dur * 0.75, 1.0, R);
       }
       cueAt("conductor", t + rDur + 0.15, function () {
-        emitEvent({ cat: "visitation", label: "∴ raspberry", detail: "the tuba's own" });
+        emitEvent({ type: "guest", guest: "raspberry", stage: "blat", logged: true, cat: "visitation", label: "∴ raspberry", detail: "the tuba's own" });
       });
       cueAt("conductor", t + rDur + 0.9, function () {
-        emitEvent({ cat: "visitation", label: "∴ amen—", detail: "the organist's own" });
+        emitEvent({ type: "guest", guest: "raspberry", stage: "amen", logged: true, cat: "visitation", label: "∴ amen—", detail: "the organist's own" });
       });
     } else {
       var kind = isLast || C.section === "doxology" ? "plagal" : (C.section === "prelude" || C.section === "hymn" ? R.pickW([["plagal", 3], ["authentic", 2], ["half", 1]]) : "plagal");
@@ -564,7 +605,7 @@ window.KOLOB = window.KOLOB || {};
         }
       }
     }
-    emitEvent({ cat: "cadence", label: "∴ joint", detail: (isLast ? "meeting ends" : "toward " + next) + " · " + Math.round(dur) + "s" });
+    emitEvent({ type: "joint", last: !!isLast, toward: next, dur: dur, cat: "cadence", label: "∴ joint", detail: (isLast ? "meeting ends" : "toward " + next) + " · " + Math.round(dur) + "s" });
     return dur;
   }
 
@@ -595,7 +636,10 @@ window.KOLOB = window.KOLOB || {};
   //                   it has been sung whole; withheld() the first and not
   //                   yet the second; assemblyUntil() when the assembly ends
   //   visitType()     the last guest that came (a guest is sounding while
-  //                   S.inVisit())
+  //                   S.inVisit()); visitLogged() whether the page may name it
+  //   hymnId()        the hymn being sung (SCORE §3: h:<meeting>:<i>, the
+  //                   i-th singing section of the meeting — hymns and the
+  //                   doxology — counted from 1)
   //   moment()        THE MOMENT: a plain object, the meeting at the music's
   //                   now — what the composers (Melody, Harmony) are handed
   //                   instead of the house:
@@ -611,6 +655,11 @@ window.KOLOB = window.KOLOB || {};
       mode: S.mode, F0: S.F0, seasonPos: seasonPos, arc: localArc(),
       cumulative: !!C.cumulative, assemblyFired: !!C.assemblyFired, chord: null,
     };
+  }
+  function hymnId() {
+    var k = 0;
+    for (var i = 0; i <= C.si && i < C.plan.length; i++) if (C.plan[i].type === "hymn" || C.plan[i].type === "doxology") k++;
+    return "h:" + C.meetingNum + ":" + Math.max(1, k);
   }
   var Book = Object.freeze({
     meetingNum: function () { return C.meetingNum; },
@@ -629,6 +678,8 @@ window.KOLOB = window.KOLOB || {};
     withheld: function () { return !!C.cumulative && !C.assemblyFired; },
     assemblyUntil: function () { return C.assemblyUntil; },
     visitType: function () { return C.visitType; },
+    visitLogged: function () { return C.visitLogged !== false; },
+    hymnId: hymnId,
     moment: moment,
   });
 
@@ -679,10 +730,11 @@ window.KOLOB = window.KOLOB || {};
       fifths += chord.fifths || 0;
       var v = chord.voicing;
       emitEvent({
+        type: "chord",
         cat: "harmony",
         label: "♮ " + Harmony.ROMAN[chord.root] + (chord.open ? " open" : ""),
         detail: "b" + v[0] + " t" + v[1] + " a" + v[2] + " s" + v[3] + (fifths ? " · 5ths " + fifths : ""),
-        // for the harness (the page reads only the label): when it sounds,
+        // for the harness and the page to come (the minutes print no chord): when it sounds,
         // which chord it is, who wrote it, the voicing as sung
         at: t, chord: chord.id, by: by || "", page: book.page(), n: S.colN(),
         voicing: v.slice(), freqs: chord.freqs.slice(), pinned: !!chord.pinned, seat: chord.seat || 1,
@@ -699,7 +751,11 @@ window.KOLOB = window.KOLOB || {};
     function cadence(kind, R, t, by) {
       var chords = Harmony.cadence(kind, momentAt(t), R);
       kind = kind || "plagal";
-      emitEvent({ cat: "harmony", label: "∴ " + kind + " cadence", detail: kind === "half" ? "resting on the dominant" : "amen", kind: kind, by: by || "", at: t });
+      // (SCORE §6's cadence: its kind, who closes with it, when; the hymn's
+      // id while a hymn is sung)
+      var sec = C.section;
+      emitEvent({ type: "cadence", kind: kind, by: by || "", at: t, hymnId: sec === "hymn" || sec === "doxology" ? hymnId() : null,
+                  cat: "harmony", label: "∴ " + kind + " cadence", detail: kind === "half" ? "resting on the dominant" : "amen" });
       return chords;
     }
     function voice(root7, opts, R, t) { return Harmony.voice(root7, opts, momentAt(t), R); }
@@ -743,6 +799,7 @@ window.KOLOB = window.KOLOB || {};
   S.gapMul = gapMul;
   S.conductorTick = conductorTick;
   S.skipToSection = skipToSection;
+  S.UNLOGGED_GUESTS = UNLOGGED;
   // the room's public face on the KOLOB namespace
   KOLOB.Meeting = { MEETINGS: MEETINGS, book: Book, desk: Desk, planMeeting: planMeeting, conductorTick: conductorTick, runJoint: runJoint };
   (KOLOB._rooms = KOLOB._rooms || {})["kolob-meeting.js"] = true;   // the load guard's roll call
