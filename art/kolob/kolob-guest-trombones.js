@@ -82,17 +82,22 @@
 // (opposite sides of the stereo field) and a spread (the far choir is one
 // point; the near one has width); both share one town room, so they stand
 // in the same place. However the dice fell for their distances and
-// dynamics, the far choir is trimmed to be heard 7–9 LU under the near
+// dynamics, the far choir is trimmed to be heard 6–8 LU under the near
 // one (a drawn gap; the lab measures it within about 1.5 LU of the draw),
-// so the antiphony never collapses into two equal choirs. It is also
-// darker, by how far it stands: 3–9 dB poorer above 1 kHz over seeds 1–12
-// (about 5.5 at the median), 12 dB at the far end of its distance — and at
-// the near end of it (farDist under 0.8, about four seeds in ten) the two
-// choirs' colour is nearly the same, and "far" is heard in the level, the
-// side and the town's air (the round-2 critic's measure). Each phrase is an arch — a
-// breath attack, a swell to its middle, a fade on the fermata — and a
-// repeated line comes back softer. In a minor mode the near choir may end
-// on a major chord (the tierce de Picardie: the dawn's own answer).
+// so the antiphony never collapses into two equal choirs. Far is heard in
+// the level, the side, the town's air and the echo off the houses — and
+// only a little in the colour: the pre-v0.34 polish took away round 2's
+// 600 Hz veil (the owner heard the far choir as a muffled hum), so the far
+// choir keeps its brass (its centroid about 0.9 kHz against the near
+// choir's 1.0, in the lab over five chorales, where round 2's was 0.4–0.5)
+// and loses only the air above 2.5 kHz. Each phrase is an arch — a breath
+// attack, a swell to its middle, a fade on the fermata — its notes
+// legato-tongued, and a repeated line comes back softer. The near choir
+// plays mp–mf, present and warm (round 2's p–mp sat 7 dB under the house
+// that followed it). In a minor mode the near choir may end on a major
+// chord (the tierce de Picardie: the dawn's own answer) when the hymn ends
+// on its tonic; the owner ruled the ending itself open (PLAN §15), so it
+// ends wherever the hymn's harmony falls.
 //
 // PURE PLANNING. plan(), score(), chorale(), harmonize() and decide() touch
 // no AudioContext, DOM, clock or Math.random; every die comes from the
@@ -151,13 +156,16 @@ window.KOLOB.GuestTrombones = (function () {
   var EXCLUDES = ["bands"];                       // never with the crossing bands
   var AT = [4, 14];                                // the moment in the prelude, s
   var MAX_DUR = 90;                                // the exchanges shorten to fit
-  // the guest's own bus. At 1.15 the dawn's loudest 3 s (the near choir)
-  // sit 2–4 LU under the organ reference in the lab (six modes, both
-  // sources: handoff r2-trombones-1) — in the app
-  // (where the organ layer plays at 0.52 into both rooms, and a guest goes
-  // to the wide room alone) that is about the organ's own level at dawn; the
-  // far choir sits some 7–9 LU under it. For the owner's ear.
-  var LEVEL = 1.15;
+  // the guest's own bus. Round 2's 1.15 left the near choir 4–7 LU under
+  // the organ reference in the lab, and in the app 7 dB under the house that
+  // followed it (the round-2 Listener: −31 dB in the 300 Hz–4 kHz band
+  // against −24). The pre-v0.34 polish raises it: the near choir now plays
+  // mp–mf (shapeOf) through a brighter bore, and this bus is 2 dB up, so
+  // the near choir is heard 4.5–5 dB louder than in round 2 and sits within
+  // about 2 LU of the organ reference while it plays (the trombone lab, five
+  // chorales: handoff r25-polish-1); the far choir keeps its drawn 6–8 LU
+  // under it.
+  var LEVEL = 1.45;
 
   function oddsFor(info) {
     var w = ODDS.weight;
@@ -184,7 +192,7 @@ window.KOLOB.GuestTrombones = (function () {
       farDist: r.rnd(0.74, 0.88),
       nearDist: r.rnd(0.16, 0.3),
       farDyn: r.rnd(0.52, 0.62),       // mp–mf where they stand: the distance takes the rest
-      nearDyn: r.rnd(0.4, 0.5),        // p–mp: close, present, and early
+      nearDyn: r.rnd(0.5, 0.62),       // mp–mf: close, present, warm (the pre-v0.34 polish: round 2's p–mp sat 7 dB under the house)
       gap: r.rnd(0.5, 1.4),            // how long the answer waits after the call lets go
       fermata: r.rnd(1.7, 2.3),        // the line's last chord, held
       swell: r.rnd(0.08, 0.16),        // each phrase's arch
@@ -194,7 +202,7 @@ window.KOLOB.GuestTrombones = (function () {
       picardy: r.chance(0.55),         // a minor hymn ends major
       flatCents: r.rnd(0, 3),          // cold brass across the town, a hair flat
       echoSoft: r.rnd(0.78, 0.9),      // a repeated line comes back softer
-      gapLu: r.rnd(7, 9),              // how much quieter the far choir is heard than the near one
+      gapLu: r.rnd(6, 8),              // how much quieter the far choir is heard than the near one
     };
   }
 
@@ -558,7 +566,7 @@ window.KOLOB.GuestTrombones = (function () {
   var PARTS = ["B", "T", "A", "S"];
   // the trombones' compass: comfortable, and the most a chorale may ask
   var RANGE = {
-    S: { inst: "altoTrombone",  comf: [196, 660], ext: [147, 740] },
+    S: { inst: "altoTrombone",  comf: [196, 660], ext: [147, 784] },   // (to G5: the keynote's wider window, the pre-v0.34 polish, sets a high hymn's top there)
     A: { inst: "tenorTrombone", comf: [147, 440], ext: [104, 587] },
     T: { inst: "tenorTrombone", comf: [98, 370],  ext: [70, 466] },   // the F attachment reaches C2
     B: { inst: "bassTrombone",  comf: [55, 262],  ext: [41, 330] },
@@ -957,6 +965,15 @@ window.KOLOB.GuestTrombones = (function () {
     var last = mt.beats - mt.onset;
     return mt.onset + Math.max(last, Math.min(last * fermata, 2 * mt.median * fermata));
   }
+  // THE PACE: seconds per written beat. The shape draws the time of the
+  // chorale's commonest note (beatS); a hymn written in half notes would
+  // then run its beats at half that — round 2's fast Sundays played the dawn
+  // at 0.52–0.60 s a beat, brisk for a chorale at sunrise (the round-2
+  // Listener). So no beat is quicker than BEAT_FLOOR_S (the pre-v0.34
+  // polish): a slow hymn is played slow.
+  var BEAT_FLOOR_S = 0.9;
+  var TONGUE_S = 0.022;                            // how early a legato-tongued note stops for the next
+  function spbOf(sh, unit, far) { return Math.max(BEAT_FLOOR_S, sh.beatS / unit) * (far ? sh.farLag : 1); }
   function timeline(ch, sh) {
     var metas = ch ? ch.lines.map(lineMeta) : NOMINAL;
     var all = [];
@@ -964,7 +981,7 @@ window.KOLOB.GuestTrombones = (function () {
     all.sort(function (a, b) { return a - b; });
     var unit = all.length ? all[Math.floor(all.length / 2)] : 1;
     function phraseLen(mt, far) {
-      var spb = sh.beatS / unit * (far ? sh.farLag : 1);
+      var spb = spbOf(sh, unit, far);
       return heldEnd(mt, sh.fermata) * spb;
     }
     var E = sh.exchanges, order, t, starts;
@@ -976,7 +993,11 @@ window.KOLOB.GuestTrombones = (function () {
         starts.push([t, t + len]);
         t += len + (k < order.length - 1 ? 0.6 + sh.gap : 0.9);
       }
-      if (t <= MAX_DUR || E <= 2) break;
+      // (two exchanges are the antiphony's least; a hymn so slow that two
+      // still run past MAX_DUR by more than 10 s — the beat floor can make
+      // one of a fast Sunday's half-note tunes — plays one: the far choir's
+      // first line, and the near choir's last)
+      if (t <= MAX_DUR || E <= 1 || (E === 2 && t <= MAX_DUR + 10)) break;
       E--;
     }
     return { exchanges: E, order: order, spans: starts, end: t, unit: unit };
@@ -995,7 +1016,7 @@ window.KOLOB.GuestTrombones = (function () {
     var minor = ch.mode === "aeolian" || ch.mode === "dorian";
     tl.order.forEach(function (li, k) {
       var far = k % 2 === 0, line = ch.lines[li], mt = lineMeta(line);
-      var spb = sh.beatS / tl.unit * (far ? sh.farLag : 1);
+      var spb = spbOf(sh, tl.unit, far);
       var start = t0 + tl.spans[k][0];
       var base = (far ? sh.farDyn : sh.nearDyn) * (k >= ch.lines.length ? sh.echoSoft : 1);
       var final = k === tl.order.length - 1;
@@ -1005,16 +1026,22 @@ window.KOLOB.GuestTrombones = (function () {
         var src = line.parts[p];
         parts[p] = src.map(function (nt, i) {
           var last = nt.beat + nt.beats >= line.beats - 1e-6;
-          var prev = src[i - 1];
+          var prev = src[i - 1], next = src[i + 1];
           var joined = !!prev && prev.beat + prev.beats >= nt.beat - 1e-6;
-          var dur = (last ? heldEnd(mt, sh.fermata) - nt.beat : nt.beats) * spb;
+          // (a note the next one joins lets go quickly: the chorale is
+          // legato-TONGUED — the next note speaks on a soft tongue, not
+          // through a crossfade; see kolob-voices-band.js, THE TROMBONES)
+          var tongued = !!next && nt.beat + nt.beats >= next.beat - 1e-6;
+          // (a note the next one joins stops a breath early: the tongue
+          // meets the air, TONGUE_S before the next note speaks)
+          var dur = (last ? heldEnd(mt, sh.fermata) - nt.beat : nt.beats) * spb - (tongued && !last ? TONGUE_S : 0);
           var f = nt.f * (far ? Math.pow(2, -sh.flatCents / 1200) : 1);
           if (final && last && minor && sh.picardy && isMinorThirdOverTonic(nt.f, line, ch.keynoteHz)) f *= 25 / 24;
           return {
             f: f, t: start + nt.beat * spb, dur: dur,
             dyn: arc(nt.beat), dynEnd: last ? arc(nt.beat) * 0.72 : arc(nt.beat + nt.beats),
             atk: joined ? null : (far ? sh.farAtk : sh.nearAtk), legato: joined,
-            rel: last ? (far ? 0.3 : 0.24) : 0.05,
+            rel: last ? (far ? 0.3 : 0.24) : (tongued ? 0.022 : 0.05),
           };
         });
       });
