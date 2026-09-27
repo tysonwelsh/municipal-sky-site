@@ -250,8 +250,21 @@ window.EarthTunesLab = (function () {
       (two ? '<circle class="hd" cx="' + f1(+x - 1) + '" cy="' + (top + 2 * SP + 2) + '" r="1.6"/>' : "");
   }
 
-  function engraveTune(h, opts) {
+  // a tune's lines as the book prints them, and its Amen after the last one when
+  // the book prints one (KINGSFOLD's, from the English Hymnal's next leaf): the
+  // Amen's beats count from zero, so it is set to start where the tune ends
+  function linesOf(h) {
     var L = h.lines.concat(h.refrain || []);
+    if (!h.amen) return L;
+    var last = L[L.length - 1], len = 0;
+    Object.keys(last.notes).forEach(function (p) { last.notes[p].forEach(function (n) { len = Math.max(len, n.beat + n.beats); }); });
+    var a = {}; for (var k in h.amen) a[k] = h.amen[k];
+    a.startBeat = (last.startBeat || 0) + len;
+    return L.concat([a]);
+  }
+
+  function engraveTune(h, opts) {
+    var L = linesOf(h);
     return L.map(function (ln, i) {
       var next = i + 1 < L.length ? L[i + 1].startBeat : null;
       var cap = ln.devNote ? '<p class="etl-cap">' + esc(ln.devNote) + "</p>" : "";
@@ -347,7 +360,7 @@ window.EarthTunesLab = (function () {
   // end of its note, and every part that sounds across that moment holds too.
   function eventsOf(h, opts) {
     var spb = h.beatS / opts.tempo, key = keynoteHz(h), melody = h.melodyPart;
-    var L = h.lines.concat(h.refrain || []);
+    var L = linesOf(h);
     var ferm = [];
     L.forEach(function (ln) { (ln.notes[melody] || []).forEach(function (n) { if (n.fermata) ferm.push(ln.startBeat + n.beat + n.beats); }); });
     function at(b) { var x = 0; for (var i = 0; i < ferm.length; i++) if (ferm[i] <= b + 1e-6) x += 0.8; return (b + x) * spb; }
@@ -520,7 +533,7 @@ window.EarthTunesLab = (function () {
     stop();
     var o = opts(), html = [], h = current(), i = ordered.indexOf(h);
     pickEl.value = slugOf(h);
-    var L = h.lines.concat(h.refrain || []), parts = Object.keys(L[0].notes);
+    var L = linesOf(h), parts = Object.keys(L[0].notes);
     html.push('<section class="etl-card" id="t-' + slugOf(h) + '" data-id="' + esc(h.id) + '">');
     html.push("<h2>" + esc(h.nameEn) + '<span class="etl-ds">' + esc(h.nameDs) + "</span></h2>");
     html.push('<p class="etl-meta"><b>' + esc(h.engrave.sourceKey) + "</b> · " + esc(h.meter) + " · " + esc(h.modeOfTime) +
