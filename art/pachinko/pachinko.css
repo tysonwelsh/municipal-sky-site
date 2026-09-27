@@ -27,6 +27,7 @@ html.pachinko-playing body {
 
 .pachinko-stage {
     display: block;              /* main.js places the canvas on whole device pixels */
+    position: relative;          /* the room's layers sit exactly over the canvas */
     width: 100%;
     height: calc(100vh - var(--banner-h, 56px));
     height: calc(100dvh - var(--banner-h, 56px));
@@ -49,6 +50,25 @@ html.pachinko-playing body {
 }
 
 .pachinko-canvas:focus-visible {
+    outline: 1px dashed #6f5d95;
+    outline-offset: -1px;
+}
+
+/* the room around the machine (pachinko-art-room.js): two transparent
+ * layers laid exactly over the game canvas, clear over the cabinet, and
+ * never in the way of a click */
+.pachinko-room {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: block;
+    pointer-events: none;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+}
+
+/* the keyboard focus ring, drawn on top of the room */
+.pachinko-canvas:focus-visible ~ .pachinko-room-live {
     outline: 1px dashed #6f5d95;
     outline-offset: -1px;
 }
