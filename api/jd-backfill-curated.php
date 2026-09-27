@@ -93,6 +93,23 @@ if (!jd_has_column($db, 'jd_submissions', 'item_id')) {
     echo "jd_submissions.item_id is missing — run api/setup-jd-tables.php first.\n";
     exit(1);
 }
+// Same refusal for the slot column (2026-09-27): the widest entry on disk must
+// fit the LIVE ENUM, or every rerun item below would fail one by one with a
+// truncation warning. jd_slot_capacity reads the schema; JD_SLOT_LETTERS is
+// only what the code was written for.
+$widest = 0;
+foreach ($entries as $path) {
+    $e = json_decode((string) file_get_contents($path), true);
+    if (is_array($e) && (empty($e['retired']) || $includeRetired)) {
+        $widest = max($widest, count($e['responses'] ?? []));
+    }
+}
+$capacity = jd_slot_capacity($db);
+if ($capacity !== null && $widest > $capacity) {
+    echo "jd_generations.slot holds only $capacity slot(s) here and the widest entry has $widest responses"
+       . " — run api/setup-jd-tables.php?key=<jd_setup_key> first (db/junk-drawer-schema.md, Runbook). Nothing written.\n";
+    exit(1);
+}
 
 $filedItems = 0; $appended = 0; $current = 0; $filedGens = 0; $filedSeeds = 0;
 $filedAxes = 0; $leveled = 0; $leveledItems = 0;

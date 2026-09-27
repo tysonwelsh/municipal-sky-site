@@ -26,11 +26,39 @@ Each line of its output names a table or migration and says `ok`, `added`,
 JD_DEV_MOCK=1 php api/setup-jd-tables.php
 ```
 
-**2026-09-10:** the run widens `jd_generations.slot` to sixteen letters.
-Until it has run, saving a rating on a curated item with more than four
-responses fails (the sync cannot file slot `e`); everything else is
-unaffected. Then, optionally, run `api/jd-backfill-curated.php?key=…` once so
-the bench queue sees every rerun set without waiting for a save.
+**2026-09-10 migration — ran on production 2026-09-27.** It widened
+`jd_generations.slot` to sixteen letters and added `jd_submissions.device_ref`
+(+ `idx_jds_device`). For seventeen days it had NOT run: every save on a
+curated item with more than four responses died in the sync with a bare
+`SQLSTATE[01000] 1265 Data truncated for column 'slot'` in `api/error_log`,
+and every visitor turn was filed without a device code. The curated backfill
+was run the same day: 49 of 49 live items are on file (18 filed whole, 21
+appended, 6 levelled), 154 generations, 154 seed grades, 616 + 270 seed axis
+and rank rows; every `data.php` payload came back identical, the analytics
+charts unchanged. Backups: `~/Desktop/municipal-sky-db-backup-2026-09-27.sql`
+(before) and `…-2026-09-27-1850.sql` (immediately before the first write).
+
+**The guard, so it cannot recur silently (2026-09-27):**
+`jd_slot_capacity()` in `api/jd-curated-sync.php` reads the LIVE width of the
+`slot` column (information_schema on MySQL, the CHECK in `sqlite_master` on
+SQLite). The sync refuses an item that would not fit with a sentence that
+names this runbook, and `api/jd-backfill-curated.php` refuses up front when
+the widest entry on disk exceeds the live column — before writing a row. A
+dry run reports it too. The refusal says *what to run*; it does not run it.
+
+**How to know the schema is current** (no key needed for the first two):
+1. `git log -1 --format=%h -- api/setup-jd-tables.php` — the last commit that
+   touched the runner. If it is newer than the last time you ran the runner
+   against production, run it.
+2. `api/jd-backfill-curated.php?key=…&dry-run=1` — a refusal on the first
+   line means the runner is due.
+3. The runner itself is the ground truth and is safe to re-run at any time.
+
+**A dev SQLite made before 2026-09-10 is still four slots** — the runner cannot
+widen a CHECK. Delete `local-dev/jd-dev.sqlite` and run
+`JD_DEV_MOCK=1 php api/setup-jd-tables.php` to recreate it (the local dev
+server proxies `data.php` and `/api/*` to production, so the dev database only
+matters to the mock).
 
 ## The shape in one paragraph
 
@@ -170,8 +198,9 @@ submission ranked since 2026-08-22; the double-write is kept deliberately (see
   and ranked, `jd_pick_rating(['bench', '*'])` still lets the bench's win.
 - **The rubric is `taxonomy.json`.** No axis id, grade label or model name is
   hard-coded in SQL or PHP; a taxonomy edit needs no schema change.
-- **Slots are sixteen.** A curated item with more responses than that is
-  refused by the sync, never truncated; none exists (the largest holds eight).
+- **Slots are sixteen — in the code.** The sync trusts the DATABASE's word
+  on how many it has (`jd_slot_capacity`) and refuses an item that would not
+  fit, never truncates; none exceeds sixteen (the largest holds eight).
 
 ## History
 
@@ -183,8 +212,11 @@ submission ranked since 2026-08-22; the double-write is kept deliberately (see
   live in `jd_ratings` under `client = 'bench'`.
 - 2026-08-22 — `jd_ranks`.
 - 2026-09-10 — `jd_generations.slot` widened to `a`–`p` (MySQL `MODIFY`;
-  a SQLite dev database is recreated). Run the setup script once after the
-  deploy; nothing reads the new letters until a sync writes them.
+  a SQLite dev database is recreated) and `jd_submissions.device_ref` added.
+  **Ran on production 2026-09-27** — seventeen days after the deploy; see the
+  Runbook for what that cost and the guard added the same day.
+- 2026-09-27 — the curated backfill brought every live item into the database
+  (49/49). Ratings are edited in `?admin` from here on, never in `entry.json`.
 - 2026-09-05 — `title`, `size_class`, `suppressed`, `retire_requested_at`,
   `rerun_requested_at` on `jd_submissions`. Before this, those five facts were
   `kind = 'flag'` rows in `jd_ratings`, hung off whichever generation was

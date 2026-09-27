@@ -238,7 +238,15 @@ code change — which is the test a future rubric edit should still pass.
   toward `complete`/ranked (the bench's own word still outranks a seed).
   **After deploying a sync change, re-run the backfill once** —
   `api/jd-backfill-curated.php?key=<jd_setup_key>` (dry-run first with
-  `&dry-run=1`) — it reports what it levelled per item. Defunct-axis
+  `&dry-run=1`) — it reports what it levelled per item.
+  **After deploying a change to `api/setup-jd-tables.php`, RUN IT** (the
+  Runbook in `db/junk-drawer-schema.md`) — the 2026-09-10 widening sat unrun
+  on production until 2026-09-27, and every save on a rerun item failed
+  meanwhile. Since 2026-09-27 the sync and the backfill refuse with a
+  sentence naming the runner when the live `slot` column is too narrow, so
+  a dry run of the backfill doubles as the "is the schema current?" check.
+  **Every live item is in the database as of 2026-09-27 (49/49)**; ratings
+  are changed in `?admin`, not by editing `entry.json`. Defunct-axis
   annotations are never seeded. A legacy keep beside a rerun set has no
   consistent rank note, so it seeds no ranks and, with five served
   responses, the bench cannot seat it anyway — the ledger says so.

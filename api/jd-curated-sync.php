@@ -38,6 +38,57 @@ require_once __DIR__ . '/jd-config.php';
 
 const JD_SLOT_LETTERS = 'abcdefghijklmnop';
 
+/**
+ * How many slot letters the LIVE jd_generations.slot column actually holds —
+ * read from the schema, not assumed from JD_SLOT_LETTERS. The two disagree
+ * exactly when a deploy widened the code but api/setup-jd-tables.php was
+ * never run against that database (2026-09-10 → 2026-09-27 on production:
+ * every save on a rerun item died with a bare "1265 Data truncated for
+ * column 'slot'" and nobody could tell why from the log). Returns the
+ * count, or null when the column cannot be read (then nothing is refused
+ * on its account — the INSERT will speak for itself).
+ */
+function jd_slot_capacity(PDO $db): ?int
+{
+    try {
+        if (jd_db_driver($db) === 'sqlite') {
+            $q = $db->prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'jd_generations'");
+            $q->execute();
+            $ddl = (string) $q->fetchColumn();
+            if (!preg_match('/slot\s+TEXT[^,]*?IN\s*\(([^)]*)\)/i', $ddl, $m)) {
+                return null;
+            }
+            $list = $m[1];
+        } else {
+            $q = $db->prepare(
+                'SELECT COLUMN_TYPE FROM information_schema.COLUMNS
+                  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?'
+            );
+            $q->execute(['jd_generations', 'slot']);
+            $type = (string) $q->fetchColumn();
+            if (!preg_match('/^enum\((.*)\)$/i', $type, $m)) {
+                return null;
+            }
+            $list = $m[1];
+        }
+        $n = preg_match_all("/'[a-p]'/", $list);
+        return $n > 0 ? $n : null;
+    } catch (PDOException $e) {
+        return null;
+    }
+}
+
+/**
+ * The sentence a refused write should carry instead of SQLSTATE 01000: it
+ * names the migration runner, so the fix is in the log line itself.
+ */
+function jd_slot_capacity_message(int $capacity, int $needed, string $itemId): string
+{
+    return "jd_generations.slot holds only $capacity slot(s) on this database and $itemId needs $needed "
+         . "— a schema migration has not been run here. Run api/setup-jd-tables.php?key=<jd_setup_key> "
+         . "(db/junk-drawer-schema.md, Runbook), then retry.";
+}
+
 // entry.json vendor strings → the provider slugs jd_generations.provider uses.
 const JD_VENDOR_PROVIDER = [
     'Anthropic'   => 'anthropic',
@@ -212,6 +263,14 @@ function jd_curated_sync(PDO $db, array $entry, array $taxonomy, bool $dryRun = 
         $out['leveled'] = $subId !== null
             ? jd_curated_level_seeds($db, $subId, $entry, $taxonomy, $dryRun) : 0;
         return $out;
+    }
+
+    // Refuse with a sentence, not a truncation warning, when the live column
+    // is narrower than the code (the migration that was never run). Checked
+    // here — before the dry-run return — so a dry run reports it too.
+    $capacity = jd_slot_capacity($db);
+    if ($capacity !== null && count($responses) > $capacity) {
+        throw new PDOException(jd_slot_capacity_message($capacity, count($responses), $itemId));
     }
 
     $liveAxes = jd_live_axes($taxonomy);
