@@ -106,7 +106,7 @@
     { who: 'lamp',   name: 'Tobias',       tool: 'lantern', step: 3, every: 1, post: { floor: 'floorB', x: 164 },  zone: ['floorB'],             job: 1.5 },
     { who: 'old',    name: 'Old Jory',     tool: 'cane',    step: 2, every: 2, post: { floor: 'floorC', x: 160 },  zone: ['floorC'],             job: 4.0 },
     { who: 'little', name: 'Pip',          tool: 'shovel',  step: 3, every: 1, post: { floor: 'floorC', x: 78 },   zone: ['floorC', 'sump'],     job: 0.9 },
-    { who: 'tally',  name: 'Mr. Pengelly', tool: 'tally',   step: 3, every: 1, post: { floor: 'surface', x: 238 }, zone: ['surface'],            job: 99 }
+    { who: 'tally',  name: 'Mr. Pengelly', tool: 'tally',   step: 3, every: 1, post: { floor: 'surface', x: 238 }, zone: ['surface'],            job: 1.8 }
   ];
   var BY_WHO = {}; CREW.forEach(function (c, i) { BY_WHO[c.who] = i; });
 
@@ -155,7 +155,8 @@
     sitEdge: { lean: -10, head: 10, armL: 30, armR: 45, legL: 15, legR: 30 },
     eat1:    { lean: -5, head: 5, armL: 60, armR: 30, legL: 15, legR: 30 },
     eat2:    { lean: -5, head: -5, armL: 150, armR: 30, legL: 30, legR: 15 },
-    doze:    { lean: 20, head: 45, armL: 15, armR: 15, legL: 15, legR: 30 },
+    doze:    { lean: -20, head: 45, armL: 30, armR: 15, legL: 90, legR: 75 },
+    sitFloor:{ lean: -20, head: 10, armL: 30, armR: 45, legL: 90, legR: 75 },
     yawn:    { lean: -20, head: -30, armL: 165, armR: 180, legL: -10, legR: 10 },
     lookMoon:{ lean: -15, head: -40, armL: -6, armR: 6, legL: -6, legR: 6 },
     capoff:  { lean: 5, head: 15, armL: 60, armR: 6, legL: -6, legR: 6 },
@@ -323,52 +324,79 @@
     if (L.kind === 'rock') return sp.door * 2 + L.dist / sp.rock;
     return 1;
   }
+  // the static graph (built once per layout): link endpoints as nodes, the
+  // links as edges, and along each walk its nodes in order (neighbours only)
+  function graph(nav) {
+    if (nav.graph) return nav.graph;
+    var nodes = [], key = {}, adj = [];
+    function node(p) {
+      var kk = p.w + '@' + p.x;
+      if (key[kk] == null) { key[kk] = nodes.length; nodes.push({ w: p.w, x: p.x }); adj.push([]); }
+      return key[kk];
+    }
+    nav.links.forEach(function (L, li) {
+      var ia = node(L.a), ib = node(L.b);
+      adj[ia].push({ to: ib, li: li, dir: 1 }); adj[ib].push({ to: ia, li: li, dir: -1 });
+    });
+    var byW = {};
+    nodes.forEach(function (n, i) { (byW[n.w] = byW[n.w] || []).push(i); });
+    for (var w in byW) {
+      var ids = byW[w].sort(function (a, b) { return nodes[a].x - nodes[b].x; });
+      for (var i = 0; i < ids.length - 1; i++) {
+        adj[ids[i]].push({ to: ids[i + 1], li: -1 }); adj[ids[i + 1]].push({ to: ids[i], li: -1 });
+      }
+    }
+    return (nav.graph = { nodes: nodes, adj: adj, byW: byW });
+  }
   // from {w, x} to {w, x}; returns [moves] or null. opts.noRock: walk only
   function route(nav, from, to, c, opts) {
     opts = opts || {};
     var sp = speeds(c, opts.hurry);
     if (from.w === to.w) { var same = [{ type: 'walk', w: to.w, x: to.x }]; same.cost = Math.abs(from.x - to.x) / sp.walk; return same; }
-    var nodes = [{ w: from.w, x: from.x }, { w: to.w, x: to.x }], edges = [];
-    function node(p) { nodes.push({ w: p.w, x: p.x }); return nodes.length - 1; }
-    nav.links.forEach(function (L, li) {
-      if (opts.noRock && L.kind === 'rock') return;
-      var ia = node(L.a), ib = node(L.b), cost = linkCost(L, sp, nav);
-      edges.push([ia, ib, cost, li, 1]); edges.push([ib, ia, cost, li, -1]);
-    });
-    // along each walk: every pair of nodes on the same walk
-    var byW = {};
-    nodes.forEach(function (n, i) { (byW[n.w] = byW[n.w] || []).push(i); });
-    for (var wid in byW) {
-      var ids = byW[wid];
-      for (var i = 0; i < ids.length; i++) for (var j = 0; j < ids.length; j++) if (i !== j) {
-        edges.push([ids[i], ids[j], Math.abs(nodes[ids[i]].x - nodes[ids[j]].x) / sp.walk, -1, 0]);
+    var G = graph(nav), N = G.nodes.length, S0 = N, G0 = N + 1;
+    function nodeAt(i) { return i === S0 ? from : i === G0 ? to : G.nodes[i]; }
+    function edges(i) {
+      var out = [];
+      if (i === S0 || i === G0) {
+        var p = nodeAt(i);
+        (G.byW[p.w] || []).forEach(function (j) { out.push({ to: j, li: -1 }); });
+        return out;
+      }
+      out = G.adj[i].slice();
+      var n0 = G.nodes[i];
+      if (to.w === n0.w) out.push({ to: G0, li: -1 });
+      return out;
+    }
+    var dist = new Array(N + 2), prev = new Array(N + 2), done = new Array(N + 2);
+    for (var q = 0; q < N + 2; q++) { dist[q] = Infinity; prev[q] = null; done[q] = false; }
+    dist[S0] = 0;
+    for (var it = 0; it < N + 2; it++) {
+      var u = -1, bd = Infinity;
+      for (q = 0; q < N + 2; q++) if (!done[q] && dist[q] < bd) { bd = dist[q]; u = q; }
+      if (u < 0 || u === G0) break;
+      done[u] = true;
+      var es = edges(u);
+      for (var k = 0; k < es.length; k++) {
+        var e = es[k], cost;
+        if (e.li < 0) cost = Math.abs(nodeAt(u).x - nodeAt(e.to).x) / sp.walk;
+        else { var L = nav.links[e.li]; if (opts.noRock && L.kind === 'rock') continue; cost = linkCost(L, sp, nav); }
+        if (dist[u] + cost < dist[e.to]) { dist[e.to] = dist[u] + cost; prev[e.to] = { from: u, li: e.li, dir: e.dir }; }
       }
     }
-    var dist = nodes.map(function () { return Infinity; }), prev = nodes.map(function () { return null; }), done = nodes.map(function () { return false; });
-    var out = nodes.map(function () { return []; });
-    edges.forEach(function (e) { out[e[0]].push(e); });
-    dist[0] = 0;
-    for (var it = 0; it < nodes.length; it++) {
-      var u = -1, bd = Infinity;
-      for (var q = 0; q < nodes.length; q++) if (!done[q] && dist[q] < bd) { bd = dist[q]; u = q; }
-      if (u < 0 || u === 1) break;
-      done[u] = true;
-      out[u].forEach(function (e) { if (dist[u] + e[2] < dist[e[1]]) { dist[e[1]] = dist[u] + e[2]; prev[e[1]] = e; } });
-    }
-    if (!isFinite(dist[1])) return null;
-    var chain = [], cur = 1;
-    while (cur !== 0) { var e = prev[cur]; chain.unshift(e); cur = e[0]; }
+    if (!isFinite(dist[G0])) return null;
+    var chain = [], cur = G0;
+    while (cur !== S0) { var pv = prev[cur]; chain.unshift({ a: pv.from, b: cur, li: pv.li, dir: pv.dir }); cur = pv.from; }
     var moves = [];
-    chain.forEach(function (e) {
-      var a = nodes[e[0]], b = nodes[e[1]];
-      if (e[3] < 0) { if (moves.length && moves[moves.length - 1].type === 'walk' && moves[moves.length - 1].w === b.w) moves[moves.length - 1].x = b.x; else moves.push({ type: 'walk', w: b.w, x: b.x }); return; }
-      var L = nav.links[e[3]];
+    chain.forEach(function (st) {
+      var a = nodeAt(st.a), b = nodeAt(st.b);
+      if (st.li < 0) { if (moves.length && moves[moves.length - 1].type === 'walk' && moves[moves.length - 1].w === b.w) moves[moves.length - 1].x = b.x; else moves.push({ type: 'walk', w: b.w, x: b.x }); return; }
+      var L = nav.links[st.li];
       if (moves.length === 0 || moves[moves.length - 1].w !== a.w || moves[moves.length - 1].x !== a.x) moves.push({ type: 'walk', w: a.w, x: a.x });
       if (L.kind === 'hop') moves.push({ type: 'hop', w: b.w, x: b.x });
-      else if (L.kind === 'ladder') moves.push({ type: 'ladder', ladder: L.ladder, w: b.w, x: b.x, down: e[4] > 0 });
-      else if (L.kind === 'rock') moves.push({ type: 'rock', from: e[4] > 0 ? L.door : L.door2, to: e[4] > 0 ? L.door2 : L.door, w: b.w, x: b.x });
+      else if (L.kind === 'ladder') moves.push({ type: 'ladder', ladder: L.ladder, w: b.w, x: b.x, down: st.dir > 0 });
+      else if (L.kind === 'rock') moves.push({ type: 'rock', from: st.dir > 0 ? L.door : L.door2, to: st.dir > 0 ? L.door2 : L.door, w: b.w, x: b.x });
     });
-    moves.cost = dist[1];
+    moves.cost = dist[G0];
     return moves;
   }
 
@@ -386,9 +414,11 @@
         for (var dx = 6; dx <= 13; dx += 1) {
           var x = P.x - side * dx;
           if (x < w.x0 || x > w.x1) continue;
-          var y = walkY(w, x), sy = y - sh, d = Math.hypot(P.x - x, P.y - sy);
-          if (P.y > y - 3) continue;                          // at or below his boots: not standing
-          if (d <= arm + 1 && P.y > y - sh - arm + 2) { out.push({ kind: 'stand', w: w.id, x: x, y: y, face: side, cost: Math.abs(d - arm * 0.8) * 0.02 }); break; }
+          var y = walkY(w, x);
+          if (P.y > y + 1) continue;                          // below his boots: not from here
+          // low work (at his feet): he bends to it, his shoulder a good way lower
+          var low = P.y > y - 10, sy = y - sh + (low ? 7 : 0), d = Math.hypot(P.x - x, P.y - sy);
+          if (d <= arm + 1 && P.y > y - sh - arm + 2) { out.push({ kind: 'stand', w: w.id, x: x, y: y, face: side, low: low, cost: Math.abs(d - arm * 0.8) * 0.02 + (low ? 0.3 : 0) }); break; }
         }
         // a rope ladder from this walk, down beside it; or a ladder stood on
         // it, up beside it (the nearest place along the walk that will do)
@@ -714,11 +744,13 @@
         finish: function () { endWork(true); }
       };
     }
+    // the tallyman reads the job off his card (while the planner decides it)
+    // and points the way; then he stands by with his pencil, or lends a hand
     function* foreman(k, W) {
       k.pose = P.read; yield 6;
-      k.pose = P.point; k.facing = 1; yield 4;
-      k.pose = P.read;
-      while (!W.done && !W.cancelled) yield 2;
+      k.pose = P.point; k.facing = k.x > 160 ? -1 : 1; yield 4;
+      k.pose = restPose(k); yield 2;
+      k.busy = null;
     }
     function stepWork() {
       var W = S.work; if (!W || W.done || W.cancelled) return;
@@ -732,8 +764,10 @@
         if (j.state !== 'queued') return;
         var best = null, bc = Infinity;
         K.forEach(function (k) {
-          if (k.busy || k.who === 'tally') return;
+          if (k.busy) return;
           var c = jobCost(k, j);
+          // the tallyman only lends a hand on the surface, and only if it's close
+          if (k.who === 'tally' && (!isFinite(c) || target(j).y > SURF + 50 || c > 4)) return;
           if (c < bc) { bc = c; best = k; }
         });
         if (best) { j.state = 'going'; j.who = best.who; best.busy = 'work'; best.gen = jobScript(best, j, W); }
@@ -755,7 +789,11 @@
       var e = j.edit, b = api.board(), f = b.byId[e.id] || j.board.byId[e.id];
       if (!f) return null;
       if (f.kind === 'pin') return { x: f.x, y: f.y };
-      if (f.kind === 'rail') { var e1 = e.end === 1; return { x: e1 ? f.x1 : f.x2, y: e1 ? f.y1 : f.y2 }; }
+      if (f.kind === 'rail') {
+        // a few px in from the end being worked (the foot of the brace is in the grass)
+        var e1 = e.end === 1, ex = e1 ? f.x1 : f.x2, ey = e1 ? f.y1 : f.y2, ox = e1 ? f.x2 : f.x1, oy = e1 ? f.y2 : f.y1, L0 = Math.hypot(ox - ex, oy - ey) || 1;
+        return { x: ex + (ox - ex) / L0 * 5, y: ey + (oy - ey) / L0 * 5 };
+      }
       if (f.kind === 'tunnel') return { x: f.a.x, y: f.a.y };
       if (f.kind === 'pocket') return { x: f.x - sgn(e.dx) * 10, y: f.y + 5 };
       return null;
@@ -769,6 +807,11 @@
     function bestStance(k, T, j) {
       var n = nav(), sts = stances(n, T, k.who, { sills: true }), best = null;
       var from = k.at && k.at.w ? { w: k.at.w, x: k.x } : post(k);
+      // route only the most promising few (setup cost plus the crow's distance)
+      var fx0 = k.x, fy0 = k.y;
+      sts.forEach(function (st) { st.guess = st.cost + (Math.abs(st.x - fx0) + Math.abs(st.y - fy0)) / 60; });
+      sts.sort(function (a, b) { return a.guess - b.guess; });
+      sts = sts.slice(0, 6);
       sts.forEach(function (st) {
         var r = route(n, from, { w: st.w, x: st.x }, k.c, { hurry: true });
         if (!r) return;
@@ -798,7 +841,7 @@
       yield* toStance(k, st, T);
       var f = api.board().byId[e.id];
       if (e.type === 'nudge' || e.type === 'dress') yield* pinWork(k, j, W, f, T, st);
-      else if (e.type === 'rail') yield* railWork(k, j, W, f, T);
+      else if (e.type === 'rail') yield* railWork(k, j, W, f, T, st);
       else if (e.type === 'mouth') yield* mouthWork(k, j, W, f, T);
       else if (e.type === 'pocket') yield* pailWork(k, j, W, f, T);
       else { yield* waitTurn(k, j, W); apply(j, W); }
@@ -830,7 +873,8 @@
       if (!ladder) { k.pose = P.rummage; yield 1; }
       k.tool = toolFor(k);
       // hands on it
-      var reach = aim(k, P.reach, T, 'R'); reach = aim(k, reach, T, 'L');
+      var B0 = st.low ? P.bend : P.reach;
+      var reach = aim(k, B0, T, 'R'); reach = aim(k, reach, T, 'L');
       k.pose = reach; k.tool = null; yield 2;
       // three tugs; it wobbles on the second
       for (var t2 = 0; t2 < 2; t2++) {
@@ -863,7 +907,7 @@
         var nx = clamp(k.x + (NP.x - T.x), n0(k).x0, n0(k).x1);
         k.x = nx; k.at.x = nx; k.y = walkY(nav().walks[k.at.w], nx); k.pose = gaitPose(k, 0); emit(k, 'step'); yield 1;
       }
-      var hold = aim(k, P.holdPin, NP, 'L');
+      var hold = aim(k, st.low ? P.bend : P.holdPin, NP, 'L');
       k.carry = { spr: k.carry.spr, dress: k.carry.dress, lifted: e.id, at: { x: NP.x, y: NP.y } };
       k.tool = toolFor(k);
       k.pose = hold; yield 2;
@@ -891,12 +935,12 @@
     }
     function n0(k) { return nav().walks[k.at.w]; }
     // the headframe's back-leg brace: a timber knocked along, or a length added
-    function* railWork(k, j, W, f, T) {
-      var e = j.edit;
+    function* railWork(k, j, W, f, T, st) {
+      var e = j.edit, B1 = st && st.low ? P.bend : P.holdPin;
       k.facing = sgn(T.x - k.x) || 1;
-      if (e.d > 0) { k.tool = 'plank'; k.pose = P.carry; yield 3; k.pose = aim(k, P.holdPin, T, 'L'); yield 2; emit(k, 'lay'); }
+      if (e.d > 0) { k.tool = 'plank'; k.pose = P.carry; yield 3; k.pose = aim(k, B1, T, 'L'); yield 2; emit(k, 'lay'); }
       k.tool = 'mallet';
-      var hold = aim(k, P.holdPin, T, 'L'), hit = aim(k, hold, T, 'R', -30), up = copy(hold); up.armR = 165;
+      var hold = aim(k, B1, T, 'L'), hit = aim(k, hold, T, 'R', -30), up = copy(hold); up.armR = 165;
       for (var i = 0; i < 2; i++) { k.pose = up; yield 1; k.pose = hit; emit(k, 'tap'); yield 1; }
       yield* waitTurn(k, j, W);
       if (W.cancelled) return;
@@ -1051,7 +1095,7 @@
     // Tobias reads the legend card by his lantern, from behind: the paper
     // glows and his shadow is on it
     function* readCard(k) {
-      var rx = 24;
+      var rx = 34;
       yield* goTo(k, 'floorB.0', rx);
       k.facing = -1; k.pose = P.bend; yield 3;
       var ry = walkY(nav().walks['floorB.0'], rx);
@@ -1102,33 +1146,36 @@
     }
     function* lunch(k) {
       // on the lip of the chute, legs over the hole, lunch out
-      var w = nav().walks['floorC.1'], x = w.x1;
-      yield* goTo(k, 'floorC.1', x);
-      k.facing = 1; k.sit = 'edge'; k.tool = null;
-      S.pail = { x: x - 7, y: walkY(w, x - 7), owner: k.i };
+      var w = nav().walks['floorC.2'], x = w.x0;
+      yield* goTo(k, 'floorC.2', x);
+      // shuffle to the very lip, turn, and sit with his legs over the hole
+      k.x = x - 2; k.facing = -1; k.sit = 'edge'; k.tool = null;
+      S.pail = { x: x + 6, y: walkY(w, x + 6), owner: k.i };
       k.pose = P.sitEdge; yield 4;
       k.tool2 = 'bread';
       for (var i = 0; i < 6; i++) {
         k.pose = P.eat2; emit(k, 'eat'); yield 3; k.pose = P.eat1; yield 3;
-        if (i === 3) S.dust.push({ kind: 'crumb', x: k.x + 3, y: k.y - 4, t0: now(), fall: true });
+        if (i === 3) S.dust.push({ kind: 'crumb', x: k.x - 4, y: k.y - 2, t0: now(), fall: true });
       }
       k.tool2 = null; k.pose = P.sitEdge; yield 8;
       S.pail = null; k.sit = false; k.tool = k.own; k.pose = P.caneRest; yield 3;
     }
     // …or dozes against a pillar, and his lamp burns down
     function* doze(k) {
-      yield* goTo(k, 'floorC.2', 178);
-      k.facing = 1; k.sit = 'floor';
-      k.pose = P.sitEdge; yield 4;
+      yield* goTo(k, 'floorC.2', 180);
+      // his back to the coal pillar, legs out, the cane across his knees
+      k.facing = -1; k.sit = 'floor'; k.tool = null;
+      k.pose = P.sitFloor; yield 4;
       for (var i = 0; i < 10; i++) {
         k.pose = P.doze; k.lampK = Math.max(0.3, 1 - i * 0.08);
         if (i % 3 === 2) { emit(k, 'snore'); S.dust.push({ kind: 'zzz', x: k.x + 4, y: k.y - 26, t0: now() }); }
         yield 5;
       }
       // wakes with a start
-      k.pose = P.flinch; k.lampK = 1; emit(k, 'wake'); yield 2;
-      k.pose = P.sitEdge; yield 4;
-      k.sit = false; k.pose = P.caneRest; yield 3;
+      var start = copy(P.sitFloor); start.head = -30; start.armL = 120; start.armR = 105;
+      k.pose = start; k.lampK = 1; emit(k, 'wake'); yield 2;
+      k.pose = P.sitFloor; yield 4;
+      k.sit = false; k.tool = k.own; k.pose = restPose(k); yield 3;
     }
     function* amble(k) {
       var w = nav().walks['floorC.2'];
@@ -1198,11 +1245,16 @@
       k.facing = 1; k.pose = P.read; yield 10; k.pose = P.pointUp; yield 6;
     }
 
+    var ACTS = { moon: moon, oilSheave: oilSheave, scaleMan: scaleMan, fence: fence, pickFace: pickFace, pushCart: pushCart,
+      polishHook: polishHook, readCard: readCard, mothWalk: mothWalk, ventDoor: ventDoor, lunch: lunch, doze: doze, amble: amble,
+      knockPillar: knockPillar, knockRib: knockRib, dig: dig, sweep: sweep, hopHole: hopHole, sumpVisit: sumpVisit,
+      countFence: countFence, surveyHouses: surveyHouses, homeward: homeward };
+
     /* ══ PLAY: at their posts, reacting ═══════════════════════════════ */
     function* playIdle(k) {
       for (var i = 0; i < 400; i++) {
         var r = hash01(k.i * 13 + i, S.tick);
-        if (k.who === 'old' && r < 0.05) { k.sit = 'floor'; k.pose = P.sitEdge; yield 40; k.sit = false; }
+        if (k.who === 'old' && r < 0.05) { k.sit = 'floor'; k.tool = null; k.pose = P.sitFloor; yield 40; k.sit = false; k.tool = k.own; }
         else if (k.who === 'tally' && r < 0.1) { k.pose = P.read; yield 12; }
         else if (k.who === 'lamp' && r < 0.08) { k.pose = P.lanternUp; yield 10; }
         else k.pose = r < 0.12 ? P.shift : restPose(k);
@@ -1446,6 +1498,11 @@
     function frame() {
       var t = now();
       if (S.work) stepWork();
+      // a tapped glass: one of them goes over like a dropped toy, and later snaps back up
+      var fz = S.freeze;
+      if (fz && fz.topple && fz.toppler == null) fz.toppler = pickToppler();
+      if (fz && fz.topple && fz.toppler >= 0 && !fz.fell && t < fz.until) { fz.fell = true; emit(K[fz.toppler], 'topple'); }
+      if (fz && fz.fell && !fz.up && t >= fz.until) { fz.up = true; emit(K[fz.toppler], 'upright'); }
       K.forEach(function (k) {
         if (S.freeze && S.freeze.until > t && !(k.busy === 'theft')) return;   // playing dead: nothing moves
         if (S.lode && t - S.lode.t0 < 1.0 && k.busy !== 'theft') return;        // the held breath
@@ -1454,7 +1511,7 @@
         if (!k.gen) return;
         var r = k.gen.next();
         if (r.done) { k.gen = null; if (k.busy !== 'theft' && k.busy !== 'work') k.busy = null; }
-        if (r.done && k.busy === 'packing') k.busy = null;
+        if (r.done && (k.busy === 'packing' || k.busy === 'act')) k.busy = null;
         else k.wait = Math.max(0, (r.value | 0) - 1);
       });
       // things that fall and fade
@@ -1553,6 +1610,14 @@
       theft: theft,
       knockListen: knockListen,
       nightShift: function () { return S.nightShift != null ? K[S.nightShift].who : null; },
+      // any of the pottering routines, by name, now (the lab; the spectacle phase)
+      perform: function (who, name) {
+        var k = K[BY_WHO[who]], fn = ACTS[name];
+        if (!k || !fn || k.busy === 'theft') return false;
+        clearKnocker(k); k.gen = fn(k); k.wait = 0; k.busy = 'act';
+        return true;
+      },
+      activities: function () { return Object.keys(ACTS); },
       busy: function (who) { var k = K[BY_WHO[who]]; return k ? k.busy : null; },
       knockers: K, state: S, nav: nav, core: core
     };
@@ -1602,7 +1667,7 @@
         if (lu < 1.0) return k.freezePose || base;
         if (lu < 3.0 && !k.back) {
           if (k.who === 'old') return P.capoff;
-          return (Math.floor(lu * FPS) + k.i) % 3 === 0 ? P.cheer2 : P.cheer;
+          return (Math.floor(lu * FPS) + k.i) % 2 ? P.cheer2 : P.cheer;
         }
       }
       if (rc.hop != null && t - rc.hop < 0.5 && free) {
@@ -1649,6 +1714,8 @@
         }
         var pose = k.shown || k.pose, hopUp = 0;
         if (k.react.hop != null && t - k.react.hop < 0.5 && !k.busy && !k.back && !k.sit) { var hf = Math.floor((t - k.react.hop) * FPS); hopUp = hf === 1 ? -6 : hf === 2 ? -4 : 0; }
+        // the cheer: little stiff hops, out of step with each other
+        if (S.lode && t - S.lode.t0 >= 1.0 && t - S.lode.t0 < 3.0 && k.who !== 'old' && !k.back && !k.sit && k.busy !== 'theft' && (Math.floor((t - S.lode.t0) * FPS) + k.i * 3) % 4 === 0) hopUp = -3;
         var fig = {
           x: Math.round(k.x), y: Math.round(k.y + k.dy + hopUp), facing: k.shownFacing || k.facing, who: k.who,
           pose: quant(pose), tool: k.tool, tool2: (k.over && k.over.until > S.tick && k.over.tool2) || k.tool2, lamp: k.lamp,
@@ -1667,7 +1734,7 @@
           var cr = ART.CREW[k.who], lg = Math.min(Math.abs(fig.pose.legL || 0), Math.abs(fig.pose.legR || 0));
           fig.y += Math.round(cr.leg * (1 - Math.cos(lg)));
         }
-        if (k.sit === 'edge' || k.sit === 'floor') { var cr2 = ART && ART.CREW[k.who]; fig.y = Math.round(k.y + (cr2 ? cr2.leg + 1 : 8)) - (k.sit === 'floor' ? 3 : 0); }
+        if (k.sit === 'edge' || k.sit === 'floor') { var cr2 = ART && ART.CREW[k.who]; fig.y = Math.round(k.y + (cr2 ? cr2.leg + 1 : 8)) - (k.sit === 'floor' ? 2 : 0); }
         if (k.hold) { var hh = handsOfFig(fig); fig.hold = { x: hh.x, y: hh.y, id: k.hold.id, spin: k.hold.spin }; fig.tool = null; }
         k.fig = fig;
         out.push(fig);
