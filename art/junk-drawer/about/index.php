@@ -23,6 +23,29 @@ $page_description = "A running evaluation of how language models draw: one promp
 $jd_extra_assets = ['about/index.php', 'about/about.css', 'about/about-scenes.js', '_stage.php', '_scripts.php'];
 $jd_base = '/art/junk-drawer/';
 $jd_page_label = 'about';
+
+// THE POSTER (owner, 2026-09-26). Scene 1 used to mount the whole pile — every
+// drawing live, each with its own drop-shadow, pinned in a pane the page
+// scrolls past — and it lagged. Now the pile is a picture of itself: a
+// capture of the real drawer (scripts/capture-drawer-poster.js) laid in as
+// the well's floor, with ONE live object on top of it, the specimen scene 1
+// lifts, so the tag it opens is still the real tag. The capture records the
+// scatter it was taken from; that layout is handed to the drawer's own
+// session store, so the live specimen lands exactly where the picture left a
+// space for it, and "open the drawer" opens the same drawer the reader saw.
+// ?live brings back the full pile — the capture script needs it, and so does
+// any comparison against the real thing.
+$jd_poster = null;
+if (!isset($_GET['live'])
+    && is_readable(__DIR__ . '/drawer-poster.json')
+    && is_readable(__DIR__ . '/drawer-poster.webp')
+    && is_readable(__DIR__ . '/drawer-poster@2x.webp')) {
+  $jd_poster = json_decode(file_get_contents(__DIR__ . '/drawer-poster.json'), true);
+  if (!is_array($jd_poster) || empty($jd_poster['specimen'])) $jd_poster = null;
+}
+$jd_extra_assets[] = 'about/drawer-poster.json';
+$jd_extra_assets[] = 'about/drawer-poster.webp';
+$jd_extra_assets[] = 'about/drawer-poster@2x.webp';
 require __DIR__ . '/../_assets.php';
 
 include __DIR__ . '/../../../includes/header.php';
@@ -30,6 +53,38 @@ include __DIR__ . '/../../../includes/header.php';
 
 <link rel="stylesheet" href="/art/junk-drawer/junk-drawer.css?v=<?php echo jd_v('junk-drawer.css'); ?>" />
 <link rel="stylesheet" href="about.css?v=<?php echo jd_v('about/about.css'); ?>" />
+<?php if ($jd_poster): ?>
+<link rel="preload" as="image" href="drawer-poster@2x.webp?v=<?php echo jd_v('about/drawer-poster@2x.webp'); ?>" media="(min-resolution: 1.5dppx)" />
+<link rel="preload" as="image" href="drawer-poster.webp?v=<?php echo jd_v('about/drawer-poster.webp'); ?>" media="(max-resolution: 1.49dppx)" />
+<style>
+  html.jd-poster-on .jd-about {
+    --jd-poster-url: image-set(
+      url("drawer-poster.webp?v=<?php echo jd_v('about/drawer-poster.webp'); ?>") 1x,
+      url("drawer-poster@2x.webp?v=<?php echo jd_v('about/drawer-poster@2x.webp'); ?>") 2x);
+  }
+</style>
+<script>
+/* the poster's layout, handed to the drawer before it scatters: the pile
+   reuses a stored scatter that covers every item on the page (jd-core's
+   layoutFor), so the one live object lands where the picture expects it.
+   Merged over whatever this session already holds, so a visitor's own won
+   items keep their places. */
+(function () {
+  document.documentElement.classList.add('jd-poster-on');
+  window.JD_POSTER = <?php echo json_encode([
+    'specimen' => $jd_poster['specimen'],
+    'place' => $jd_poster['place'] ?? null,
+  ], JSON_UNESCAPED_SLASHES); ?>;
+  var scatter = <?php echo json_encode($jd_poster['scatter'] ?? new stdClass, JSON_UNESCAPED_SLASHES); ?>;
+  try {
+    var KEY = 'jd-scatter-v2';
+    var held = JSON.parse(sessionStorage.getItem(KEY) || 'null') || {};
+    Object.keys(scatter).forEach(function (k) { held[k] = scatter[k]; });
+    sessionStorage.setItem(KEY, JSON.stringify(held));
+  } catch (e) {}
+})();
+</script>
+<?php endif; ?>
 
 <script>
 /* ---- DEMO MODE: the seal ---------------------------------------------------
@@ -81,6 +136,14 @@ include __DIR__ . '/../../../includes/header.php';
   $jd_type = isset($_GET['type']) && preg_match('/^[abc]$/', $_GET['type']) ? $_GET['type'] : 'a';
 ?>
 <div class="main-wrapper jd-about" data-type="<?php echo $jd_type; ?>">
+<script>
+  /* the walkthrough's layout from the first paint. about-scenes.js sets this
+     class too, but it loads at the foot of the page, after the browser has
+     already painted every step stacked in one column beside the drawer — the
+     no-JS reading — and then re-laid them out as the walkthrough. Set here,
+     a page with JS never shows the stacked version. */
+  document.currentScript.parentNode.classList.add('jd-about--live');
+</script>
   <div class="jd-about-grid">
 
     <!-- THE PINNED PANE: four scenes, one visible at a time. The drawer is in
@@ -103,9 +166,8 @@ include __DIR__ . '/../../../includes/header.php';
            as a second, colder opening. -->
 
       <!-- ============================ SCENE 1 ============================ -->
-      <div class="jd-step" data-scene="drawer" data-step="hook">
+      <div class="jd-step is-on" data-scene="drawer" data-step="hook">
         <div class="jd-step-body">
-        <p class="jd-step-eyebrow">The drawer</p>
         <h2>A junk drawer, and a benchmark</h2>
         <p>This is the virtual junk drawer where I stash my collection of
         AI-generated vector art. It is also where I&rsquo;m building my own
@@ -117,7 +179,6 @@ include __DIR__ . '/../../../includes/header.php';
 
       <div class="jd-step" data-scene="drawer" data-step="premise">
         <div class="jd-step-body">
-        <p class="jd-step-eyebrow">The drawer</p>
         <h2>One prompt, four models, one shot each</h2>
         <p>Here is how it works. I write a prompt and send it, word for word,
         to four frontier models from four different companies. Each one gets
@@ -129,7 +190,6 @@ include __DIR__ . '/../../../includes/header.php';
 
       <div class="jd-step" data-scene="drawer" data-step="graded">
         <div class="jd-step-body">
-        <p class="jd-step-eyebrow">The drawer</p>
         <h2>Every object has a grade</h2>
         <p>Tap anything in the pile and it comes with a tag that tells you
         what it is and how it scored. Behind the tag is a full record: the
@@ -142,7 +202,6 @@ include __DIR__ . '/../../../includes/header.php';
       <!-- ============================ SCENE 2 ============================ -->
       <div class="jd-step" data-scene="instrument" data-step="try">
         <div class="jd-step-body">
-        <p class="jd-step-eyebrow">The instrument</p>
         <h2>This is the grading instrument. Try it.</h2>
         <p>These are four drawings of the same prompt. The models&rsquo; names
         are hidden until the grades are filed, so nothing gets scored on
@@ -156,7 +215,6 @@ include __DIR__ . '/../../../includes/header.php';
 
       <div class="jd-step" data-scene="instrument" data-step="taxonomy">
         <div class="jd-step-body">
-        <p class="jd-step-eyebrow">The instrument</p>
         <h2>The taxonomy</h2>
         <p>I grade on five overall tiers and four axes. The tiers say how good
         a drawing is; the axes say <em>where</em> it went wrong. I designed
@@ -174,7 +232,6 @@ include __DIR__ . '/../../../includes/header.php';
 
       <div class="jd-step" data-scene="instrument" data-step="claude-fable-5">
         <div class="jd-step-body">
-        <p class="jd-step-eyebrow">The instrument &middot; specimen 1</p>
         <h2>What &ldquo;no problems&rdquo; looks like</h2>
         <p>Start with the best of the four. The parts attach where they
         should, the layers stack the way the artist intended, and it has some
@@ -185,7 +242,6 @@ include __DIR__ . '/../../../includes/header.php';
 
       <div class="jd-step" data-scene="instrument" data-step="kimi-k3">
         <div class="jd-step-body">
-        <p class="jd-step-eyebrow">The instrument &middot; specimen 2</p>
         <h2>A failure you cannot see. Press REPLAY.</h2>
         <p>This one looks thin and a little bare, and it would be easy to call
         it simply worse. Press <b>REPLAY</b> and watch it draw. The leaves are
@@ -201,7 +257,6 @@ include __DIR__ . '/../../../includes/header.php';
 
       <div class="jd-step" data-scene="instrument" data-step="gemini-3-1-pro">
         <div class="jd-step-body">
-        <p class="jd-step-eyebrow">The instrument &middot; specimen 3</p>
         <h2>A different axis, a different diagnosis</h2>
         <p>Here the stacking is fine and the problem is the object itself. The
         leaves float free of the pot, attached to nothing. You could not fix
@@ -213,7 +268,6 @@ include __DIR__ . '/../../../includes/header.php';
 
       <div class="jd-step" data-scene="instrument" data-step="gpt-5-1">
         <div class="jd-step-body">
-        <p class="jd-step-eyebrow">The instrument &middot; specimen 4</p>
         <h2>The axes describe. They do not decide.</h2>
         <p>This drawing scores <em>identically</em> to the last one on all
         four axes, and I gave it a lower overall grade. That is deliberate.
@@ -226,7 +280,6 @@ include __DIR__ . '/../../../includes/header.php';
 
       <div class="jd-step" data-scene="instrument" data-step="ranking">
         <div class="jd-step-body">
-        <p class="jd-step-eyebrow">The instrument &middot; the call</p>
         <h2>Then the four get ranked</h2>
         <p>The last step is the podium. The four drawings line up from best
         to worst. Scoring each one on its own answers &ldquo;how good is
@@ -243,7 +296,6 @@ include __DIR__ . '/../../../includes/header.php';
       <!-- ============================ SCENE 3 ============================ -->
       <div class="jd-step" data-scene="record" data-step="record">
         <div class="jd-step-body">
-        <p class="jd-step-eyebrow">The record</p>
         <h2>Every judgment becomes a record</h2>
         <p>This is the report card behind the tag from earlier. The prompt,
         word for word. The model and its exact version. The overall grade,
@@ -255,7 +307,6 @@ include __DIR__ . '/../../../includes/header.php';
 
       <div class="jd-step" data-scene="record" data-step="cost">
         <div class="jd-step-body">
-        <p class="jd-step-eyebrow">The record</p>
         <h2>What it cost to collect</h2>
         <p>Tokens in, tokens out, and the price of the API call, recorded for
         every drawing. Evaluation data has a unit cost. In my day job I plan
@@ -265,7 +316,6 @@ include __DIR__ . '/../../../includes/header.php';
 
       <div class="jd-step" data-scene="record" data-step="stack">
         <div class="jd-step-body">
-        <p class="jd-step-eyebrow">The record</p>
         <h2>It is a real application, front to back</h2>
         <p>The ratings are rows in a SQL database, not files. There is a
         schema for submissions, generations, ratings, and ranks, written
@@ -277,7 +327,6 @@ include __DIR__ . '/../../../includes/header.php';
 
       <div class="jd-step" data-scene="record" data-step="populations">
         <div class="jd-step-body">
-        <p class="jd-step-eyebrow">The record</p>
         <h2>Two sets of ratings, never mixed</h2>
         <p>My own ratings and visitors&rsquo; ratings are stored separately,
         and neither can overwrite the other. That keeps my reference set
@@ -294,7 +343,6 @@ include __DIR__ . '/../../../includes/header.php';
            the scene host and about.css shows that card alone. -->
       <div class="jd-step" data-scene="analytics" data-step="grades" data-fx="grades">
         <div class="jd-step-body">
-        <p class="jd-step-eyebrow">The analysis</p>
         <h2>Now all of it at once: where the grades fall</h2>
         <p>Every drawing and every model, counted live from the same records
         you just looked at. This is the distribution of overall grades across
@@ -305,7 +353,6 @@ include __DIR__ . '/../../../includes/header.php';
 
       <div class="jd-step" data-scene="analytics" data-step="spend" data-fx="cost">
         <div class="jd-step-body">
-        <p class="jd-step-eyebrow">The analysis</p>
         <h2>What the drawings cost</h2>
         <p>Spend per model, priced from each call&rsquo;s own token counts
         rather than estimated. Some models draw better than others, and some cost
@@ -316,7 +363,6 @@ include __DIR__ . '/../../../includes/header.php';
 
       <div class="jd-step" data-scene="analytics" data-step="multiples" data-fx="axes">
         <div class="jd-step-body">
-        <p class="jd-step-eyebrow">The analysis</p>
         <h2>Four axes, four rulers</h2>
         <p>The axis panels are small multiples: the same shape, so your eye
         can compare them directly. What they deliberately do <em>not</em> do
@@ -328,7 +374,6 @@ include __DIR__ . '/../../../includes/header.php';
 
       <div class="jd-step" data-scene="analytics" data-step="limits" data-fx="axes">
         <div class="jd-step-body">
-        <p class="jd-step-eyebrow">The analysis</p>
         <h2>What this does not show</h2>
         <p>One rater, mostly me. A small visitor sample. Drawing SVGs is one
         narrow skill, not a measure of a model. The point of this project is

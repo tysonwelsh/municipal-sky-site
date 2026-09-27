@@ -81,6 +81,35 @@
 
   root.classList.add('jd-about--live');
 
+  /* ---- the poster (see index.php / about.css "THE POSTER") ----------------
+     Scene 1 shows a picture of the pile with the specimen live on top. The
+     page is not the place to dig, so the drawer gets a way in: a button to
+     the real one. And the specimen is seated on the spot the capture recorded
+     — the stored scatter usually does that already, but a drawing filed since
+     the capture makes the drawer scatter fresh, and the live object must
+     never land on top of a picture of something else. */
+  if (window.JD_POSTER) {
+    var posterStage = pane.querySelector('.jd-stage');
+    if (posterStage) {
+      var openA = document.createElement('a');
+      openA.className = 'jd-open-drawer';
+      openA.href = BASE;
+      openA.textContent = 'Open the drawer →';
+      posterStage.appendChild(openA);
+    }
+    var seat = window.JD_POSTER.place;
+    if (seat) {
+      poll(function () {
+        var it = pane.querySelector('.jd-pile [data-id="' + window.JD_POSTER.specimen + '"]');
+        if (!it || !it.style.left) return false;
+        it.style.left = seat.left;
+        it.style.top = seat.top;
+        it.style.setProperty('--rot', seat.rot);
+        return true;
+      }, 100, 300);
+    }
+  }
+
   /* ---- the payload, read once and shared ---------------------------------
      Grades and axis values are NEVER hard-coded here: they are read from
      data.php, the same source the drawer and the report card read, so this
@@ -172,7 +201,7 @@
   /* THE FOCUS LINE. On a desktop the pane is beside the prose and 45% down
      the viewport is the natural trigger. On a phone the pane is pinned ACROSS
      THE TOP, so 45% lands 130px BEHIND the graphic: a step became active
-     while its eyebrow and headline were still hidden, and every scene change
+     while its headline was still hidden, and every scene change
      opened on a headless mid-paragraph. Under the pane, the line drops to
      just below it. Measured from the pane itself, so it survives any change
      to the pane's height. */
@@ -452,9 +481,14 @@
        the card it replaced (whose svg is very much still in the document, so
        the old detached-node test let it live), both leave one behind. Twelve
        cells of parked Web Animations each is not a rounding error on a phone,
-       and only the live plate's control is ever interactive. */
+       and only the live plate's control is ever interactive.
+       A GHOST'S STRIP STAYS: it is part of the picture, and taking it out
+       shrank the ghost by the strip's row at the moment it went up (owner,
+       2026-09-26). It costs nothing — snapshot() strips the draw-on state
+       from every copy, so a ghost holds no animations at all. */
     [].slice.call(host.querySelectorAll('.jd-filmstrip')).forEach(function (b) {
       if (b.__svg === svg) return;
+      if (b.closest('.jd-scene-ghost')) return;
       if (b.__svg && b.__svg.__jdFilmstrip) {
         try { b.__svg.__jdFilmstrip.destroy(); } catch (e) {}
         b.__svg.__jdFilmstrip = null;
@@ -462,10 +496,23 @@
     });
     try {
       window.JD_filmstrip(svg, after, {
+        /* autoplay:false, as the cards' own mounts have it — parked at the
+           finished drawing. With the default (play once on mount) every
+           arrival and every job swap blanked the drawing and drew it again,
+           which read as a flash (owner, 2026-09-26). REPLAY still plays it. */
+        autoplay: false,
         pfx: 'fs' + name.charAt(0) + (++sbSeq) + '_',
         label: name === 'record' ? 'Replay the drawing' : 'Replay this drawing'
       });
     } catch (e) {}
+  }
+
+  function finishDrawings(card) {
+    [].forEach.call(card.querySelectorAll('svg'), function (svg) {
+      var fs = svg.__jdFilmstrip;
+      if (!fs) return;
+      try { fs.pause(); fs.seekMark(fs.get().M); } catch (e) {}
+    });
   }
 
   function fitCard(host) {
@@ -524,7 +571,11 @@
 
     var left = Math.max(0, (availW - natW * k) / 2);
     card.style.transform = 'translateX(' + left.toFixed(1) + 'px) scale(' + k.toFixed(4) + ')';
-    host.style.height = Math.ceil(natH * k) + 'px';
+    /* while a swap is covered, the host keeps the GHOST's height: the card
+       under it is mid-deal (the podium is 120px shorter than a drawing) and
+       the pane centres its host, so sizing to the hidden card dropped the
+       visible ghost by half the difference for a frame */
+    host.style.height = Math.ceil(host.__hold && host.__ghostH ? host.__ghostH : natH * k) + 'px';
     host.__jdFit = { natW: natW, natH: natH, k: k, availW: availW, availH: availH, card: card };
     spanCache = null;
     /* the real card is whole and sized: its ghost, if one was standing in
@@ -533,7 +584,7 @@
        report card and the folder keep their contents after closing, so a
        late re-fit would otherwise measure a closed card and throw away the
        picture the next handoff needs). */
-    if (host.getAttribute('data-scene-pane') === curScene) dropGhost(host);
+    if (host.getAttribute('data-scene-pane') === curScene && !host.__hold) dropGhost(host);
     return true;
   }
 
@@ -601,6 +652,51 @@
     return el;
   }
 
+  /* THE FIRST-OPEN FLASH (owner, 2026-09-26: "things blink and flash on the
+     screen … once I've scrolled down and back up it doesn't happen"). A card
+     module builds its scrim on <body> the first time it opens, and the polls
+     above only carried it into the pane on their next tick — so for a frame
+     or more every card painted as what it is everywhere else, a full-screen
+     modal over a grey backdrop. The warm-up opens all three at load, so the
+     page flashed grey three times before the reader had touched it; after
+     that the scrims live in the pane and are reused, which is why it never
+     happened twice. A MutationObserver runs before the next paint, so a
+     scrim is moved the instant it lands on <body> — when its scene wants it.
+     A card the READER opens outside its scene (the tag's REPORT CARD button
+     in scene 1) is left alone to be the modal it was asked to be. */
+  /* The tag's REPORT CARD button opens the report card as a modal. On this
+     page the report card has a scene of its own, so the button takes the
+     reader there instead of stacking a modal over the walkthrough. Capture
+     phase, so it runs before jd-core's own handler on the button. */
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('.jd-itemtag .jd-fullrecord');
+    if (!a) return;
+    var to = document.getElementById('step-record-record');
+    if (!to) return;
+    e.preventDefault();
+    e.stopPropagation();
+    to.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+  }, true);
+
+  var SCRIM_SCENE = { 'jd-turn-scrim': 'instrument', 'jd-record-scrim': 'record',
+                      'jd-folder-scrim': 'analytics' };
+  if (window.MutationObserver) {
+    new MutationObserver(function (records) {
+      records.forEach(function (rec) {
+        [].forEach.call(rec.addedNodes, function (n) {
+          if (n.nodeType !== 1 || n.classList.contains('jd-scene-ghost')) return;
+          for (var cls in SCRIM_SCENE) {
+            if (n.classList.contains(cls) && wanted(SCRIM_SCENE[cls])) {
+              n.classList.add('jd-inline-card');
+              sceneEls[SCRIM_SCENE[cls]].appendChild(n);
+              return;
+            }
+          }
+        });
+      });
+    }).observe(document.body, { childList: true });
+  }
+
   /* ---- GHOSTS ----------------------------------------------------------------
      A ghost is a static clone of a card as it last stood, kept in the card's
      own host: it is what the pane shows for that scene while the real card
@@ -621,6 +717,22 @@
     g.setAttribute('inert', '');
     g.style.transform = card.style.transform;
     rewriteIds(g, 'g' + name.charAt(0) + '-');
+    /* A PICTURE OF A FINISHED DRAWING. A drawing on a card is held finished
+       by the draw-on engine's paused animations — inline stroke dashes and
+       a CSS animation, parked at their end by the filmstrip. A clone copies
+       the inline styles but not the pause, so every animation in the ghost
+       started again from nothing and the ghost showed an empty plate (owner,
+       2026-09-26: the flash between the blank card and the rated one).
+       Stripped here, the ghost shows the drawing plainly, as it stood. */
+    [].forEach.call(g.querySelectorAll('[style]'), function (el) {
+      var st = el.style;
+      if (!st.animation && !st.strokeDasharray && !st.strokeDashoffset) return;
+      st.animation = '';
+      st.strokeDasharray = '';
+      st.strokeDashoffset = '';
+      st.removeProperty('--jdfo');
+      st.removeProperty('--jdo');
+    });
     var old = host.querySelector('.jd-scene-ghost');
     if (old) host.removeChild(old);
     host.insertBefore(g, host.firstChild);
@@ -781,9 +893,21 @@
       var self = this;
       if (this._mode === mode) return;
       if (!this._svgs || !this._svgs.length || !window.JD_turn) return;
+      var rated = mode === 'rated';
+      /* THE SWAP FLASH. The rated job opens on the card's own last station —
+         everything is filed, so it deals straight to the podium — and only
+         then does the rail drive to the drawing the step names: for a frame
+         or two the reader saw a podium between two drawings. So a swap to a
+         named drawing is covered by a picture of the card as it stood, and
+         the real card is shown only once the rail has landed (_railTo). */
+      var ihost = sceneEls.instrument;
+      if (rated && this._pending && ihost) {
+        if (window.JD_turn.isOpen()) snapshot('instrument');
+        ihost.__hold = true;
+        ihost.classList.add('has-ghost');
+      }
       if (window.JD_turn.isOpen()) closeCards();
       this._mode = mode;
-      var rated = mode === 'rated';
       /* THE RANKS ARE DERIVED, AND THAT IS SAID OUT LOUD (owner, 2026-09-15).
          The podium seats each print from resp.rank, and this specimen has no
          rank on file — nobody ever ranked it. Its filed GRADES order the
@@ -849,13 +973,21 @@
     _railTo: function (slot) {
       if (!slot) return;
       var self = this;
-      var gen = self._gen, presses = 0, lastPress = 0;
+      var gen = self._gen, presses = 0, lastPress = 0, ticks = 0;
       var host = sceneEls.instrument;
+      /* the swap cover comes off once the card shows the drawing asked for —
+         or, if the rail never gets there, after ~2.7s rather than never */
+      function release() {
+        if (!host.__hold) return;
+        host.__hold = false;
+        fitCard(host);
+      }
       poll(function () {
         if (gen !== self._gen || !wanted('instrument')) return true;
         var scrim = realCard(host);
         var cur = scrim && scrim.querySelector('.jd-rail-step.is-current');
-        if (cur && cur.getAttribute('data-step') === slot) { fitSoon(host); return true; }
+        if (cur && cur.getAttribute('data-step') === slot) { release(); fitSoon(host); return true; }
+        if (++ticks > 45) { release(); return true; }
         var btn = scrim && scrim.querySelector(
           '[data-act="step"][data-step="' + slot + '"]');
         var now = Date.now();
@@ -907,6 +1039,7 @@
          was loaded so re-entering the scene deals it again */
       this._mode = null;
       this._gen++;
+      if (sceneEls.instrument) sceneEls.instrument.__hold = false;
     }
   };
 
@@ -929,6 +1062,12 @@
           }
           var el = inline('.jd-record-scrim', host);
           if (!el || !el.querySelector('.rc-scroll > *')) return false;
+          /* opening a report card draws its photograph on — right in the
+             drawer, where the reader pressed for it; here the card arrives
+             because the page scrolled, and a drawing that blanks and redraws
+             as it slides in reads as a flash. So it arrives finished, before
+             it is ever shown; the filmstrip's play button still replays it. */
+          finishDrawings(el);
           fitSoon(host); watchCard(host);
           return true;
         }, 60, 100);
