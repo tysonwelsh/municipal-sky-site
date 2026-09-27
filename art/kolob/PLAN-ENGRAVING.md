@@ -16,6 +16,35 @@ as they are.
 **Process.** This plan proposes three directions. **No build starts until
 the owner has seen mockups and chosen one.**
 
+## Owner's decision (2026-09-26): Direction A, "The Colony Tunebook"
+
+The build reproduces `mockups/engraving-a-tunebook.html` (in the main
+checkout; copied to this branch when the ENGRAVE crew starts) with these
+settings:
+
+- **Scroll speed: 60 px/s** (today's is 11).
+- **No rubrics.** No vermilion ink anywhere. Directions, the Question's
+  cartouche and captions use green and gilt only.
+- **No words.** No Deseret underlay between the staves. §4.3's words and
+  PLAN-COMPOSITION §6.5's underlay are shelved for the page (the choir may
+  still sing phonemes later). Without words, the gap between the staves
+  can shrink back toward a normal grand-staff gap, with the telegraph tape
+  centred on the middle line.
+- **Telegraph: punched tape in the middle, with no decoded word.** The
+  Deseret word printed on the tape's tail is struck.
+- **Kept from A:** the four shapes, stems, flags, beams and dots; SATB closed
+  score; barlines; fermatas; the breath comma; Johnston "−" and "7"; the
+  gilt strike cooling to green; the ringed bell with 8va; the hymn running
+  head.
+- **No drone on the page.** The drone's longa and bar in the lowest bass
+  space are struck; the drone is heard, not engraved. §4.6's drone and
+  Kolob-cantus rows are withdrawn.
+- **The band** in round notes on its own layer (it fires in a minority of
+  meetings). The Question's cartouche and empty measure are drawn in
+  green and gilt.
+- **Directions B and C are not pursued.** Their mockups stay in `mockups/`
+  for reference.
+
 ---
 
 ## 1. What's wrong today
