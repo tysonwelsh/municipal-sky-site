@@ -13,7 +13,18 @@ TINYINT → INTEGER); nothing may rely on a dialect difference.
 
 ## Runbook
 
-After **every** deploy that touches `api/setup-jd-tables.php`, run it once:
+**Since 2026-09-27 the deploy runs this for you.** The last step of
+`.github/workflows/deploy.yml` calls `api/setup-jd-tables.php` and then
+`api/jd-backfill-curated.php` after every upload to production, using the
+`JD_SETUP_KEY` repo secret (= `jd_setup_key` in the server's
+`private_config/secrets.php`; set with `gh secret set JD_SETUP_KEY`). A
+`FAILED` line, a refusal, or an unreachable endpoint fails the workflow run,
+which is where to look when a deploy goes red. If the secret is missing the
+step only warns — and then nothing below has happened. Files shipped with
+`scripts/push-files.sh` bypass Actions, so after pushing a schema or sync
+change that way, run the two URLs by hand.
+
+By hand, after any deploy that touches `api/setup-jd-tables.php`, run it once:
 
 ```
 https://municipalsky.com/api/setup-jd-tables.php?key=<jd_setup_key>
