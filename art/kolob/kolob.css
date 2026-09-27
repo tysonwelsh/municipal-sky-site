@@ -215,7 +215,7 @@
    staves plus ledger room above and below. */
 .kolob-viz-wrap {
   position: relative;
-  height: 220px;
+  height: 240px;                    /* v0.31: a grand-staff gap and ledger room above and below (kolob-viz.js pageGeom) */
   /* The staff and the wheel are almost one plate: the staff's top ledger room
      (33px above the first rule) is laid over the foot of the wheel band, so the
      first rule sits about 17px beneath the wheel's horizon (12px on a phone).
@@ -848,5 +848,5 @@
   .kolob-transport .kolob-ctl-label { display: none; }
   .kolob-console .kolob-lever-wrap { flex: 1 1 auto; width: auto; min-width: 0; }
   .kolob-wheel-wrap { height: 185px; }
-  .kolob-viz-wrap { height: 184px; }
+  .kolob-viz-wrap { height: 196px; }
 }
