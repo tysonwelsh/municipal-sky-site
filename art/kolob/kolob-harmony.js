@@ -5,6 +5,10 @@
 // plagal gravity, and SATB voicing that rewards the Sacred Harp's parallel
 // fifths. Split from kolob-audio.js (v0.30); see the room list in
 // kolob-core.js.
+//
+// Its dice are the caller's (round 2): advance, voice, cadence and harmonize
+// take the caller's stream as D (the caller's dice), their last argument —
+// not R, which in this room has always named the voices' ranges.
 // ============================================================================
 
 window.KOLOB = window.KOLOB || {};
@@ -24,8 +28,6 @@ window.KOLOB = window.KOLOB || {};
   function projDeg(d7) { return S.projDeg(d7); }
   function degFreq(i) { return S.degFreq(i); }
   // from kolob-core.js
-  function chance(p) { return S.chance(p); }
-  function pickW(pool) { return S.pickW(pool); }
   function emitEvent(ev) { return S.emitEvent(ev); }
   // (the other rooms' state, read and written through S: S.F0, S.ROOT_MULT,
   // S.MEETINGS, S.C)
@@ -142,10 +144,12 @@ window.KOLOB = window.KOLOB || {};
       var s = nearestOfClass(a + Math.round(n * 0.5), classes, a + 1, a + n + 2);
       return [b, t, a, s];
     }
-    function voice(root7, opts) {
+    // opts.dry: voice the chord from where the harmony stands, but write
+    // nothing down (the rail's audition: the meeting's harmony never moves)
+    function voice(root7, opts, D) {
       opts = opts || {};
       var bright = S.C.meeting ? S.MEETINGS[S.C.meeting.activity].bright : 0.5;
-      var open = opts.open != null ? opts.open : chance(0.25 + 0.35 * (1 - bright));
+      var open = opts.open != null ? opts.open : D.chance(0.25 + 0.35 * (1 - bright));
       var classes = toneClasses(root7, open);
       var R = ranges();
       var prev = cur ? cur.voicing.slice() : null;
@@ -156,7 +160,7 @@ window.KOLOB = window.KOLOB || {};
         var n = colN();
         var rootIdx = projDeg(root7);
         var bClasses = {}; bClasses[classOf(rootIdx)] = "root";
-        if (!opts.cadence && chance(0.1)) bClasses[classOf(projDeg(root7 + 4))] = "fifth";  // inversion, never at cadence
+        if (!opts.cadence && D.chance(0.1)) bClasses[classOf(projDeg(root7 + 4))] = "fifth";  // inversion, never at cadence
         var b = nearestOfClass(prev[0], bClasses, R.b[0], R.b[1]);
         var cands = [];
         var c1 = [b,
@@ -197,10 +201,12 @@ window.KOLOB = window.KOLOB || {};
           if (sc && sc.score < bestScore) { best = cands[ci]; bestScore = sc.score; bestFifths = sc.fifths; }
         }
         next = best || defaultVoicing(root7, classes);
-        if (bestFifths > 0) parallelFifths += bestFifths;
+        if (bestFifths > 0 && !opts.dry) parallelFifths += bestFifths;
       }
       var freqs = next.map(function (idx) { return chordFreq(idx, root7); });
-      cur = { root: root7, tones: classes, voicing: next, freqs: freqs, open: open };
+      var chord = { root: root7, tones: classes, voicing: next, freqs: freqs, open: open };
+      if (opts.dry) return chord;
+      cur = chord;
       emitEvent({
         cat: "harmony",
         label: "♮ " + ROMAN[root7] + (open ? " open" : ""),
@@ -209,26 +215,26 @@ window.KOLOB = window.KOLOB || {};
       });
       return cur;
     }
-    function advance(opts) {
+    function advance(opts, D) {
       opts = opts || {};
       var from = cur ? cur.root : 0;
       var pool = (CHORD_MOVES[from] || CHORD_MOVES[0]).map(function (m) { return m.slice(); });
       if (S.C.section === "doxology") pool.forEach(function (m) { if (from === 3 && m[0] === 0) m[1] *= 2.5; });
       if (S.C.section === "testimony") pool.forEach(function (m) { if (m[0] !== from) m[1] *= 0.5; });
-      var root7 = opts.root != null ? opts.root : pickW(pool);
-      return voice(root7, opts);
+      var root7 = opts.root != null ? opts.root : D.pickW(pool);
+      return voice(root7, opts, D);
     }
     // A cadence is a two-chord act. Plagal is the house style — the amen.
-    function cadence(kind) {
+    function cadence(kind, D) {
       var seq = kind === "authentic" ? [4, 0] : kind === "half" ? [cur ? cur.root : 0, 4] : [3, 0];
       var out = [];
-      for (var i = 0; i < seq.length; i++) out.push(voice(seq[i], { cadence: true, open: i === seq.length - 1 ? chance(0.55) : false }));
+      for (var i = 0; i < seq.length; i++) out.push(voice(seq[i], { cadence: true, open: i === seq.length - 1 ? D.chance(0.55) : false }, D));
       emitEvent({ cat: "harmony", label: "∴ " + (kind || "plagal") + " cadence", detail: kind === "half" ? "resting on the dominant" : "amen" });
       return out;
     }
     // Set an SATB frame under a melodic line (the lining-out answer): the
     // soprano is pinned to the line; the machine voices beneath it.
-    function harmonize(lineNotes) {
+    function harmonize(lineNotes, D) {
       var out = [], prevRoot = cur ? cur.root : 0;
       for (var i = 0; i < lineNotes.length; i++) {
         var idx = projDeg(lineNotes[i].deg);
@@ -244,8 +250,8 @@ window.KOLOB = window.KOLOB || {};
             roots.push([r, w]);
           }
         }
-        var root7 = roots.length ? pickW(roots) : 0;
-        var ch = voice(root7, { open: chance(0.3) });
+        var root7 = roots.length ? D.pickW(roots) : 0;
+        var ch = voice(root7, { open: D.chance(0.3) }, D);
         // pin the soprano: replace with the melody index (kept within range by octave)
         var R = ranges();
         var sIdx = idx;
@@ -280,4 +286,5 @@ window.KOLOB = window.KOLOB || {};
   S.Harmony = Harmony;
   // the room's public face on the KOLOB namespace
   KOLOB.Harmony = Harmony;
+  (KOLOB._rooms = KOLOB._rooms || {})["kolob-harmony.js"] = true;   // the load guard's roll call
 })();

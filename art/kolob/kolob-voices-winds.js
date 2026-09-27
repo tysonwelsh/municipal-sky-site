@@ -27,14 +27,13 @@ window.KOLOB = window.KOLOB || {};
   function silenceMul() { return S.silenceMul(); }
   function gapMul() { return S.gapMul(); }
   // from kolob-core.js
-  function rnd(a, b) { return S.rnd(a, b); }
-  function rint(a, b) { return S.rint(a, b); }
-  function chance(p) { return S.chance(p); }
-  function pickW(pool) { return S.pickW(pool); }
+  function turn(label) { return S.turn(label); }
+  function wait(label) { return S.wait(label); }
+  function synth(voice) { return S.synth(voice); }
   function emitNote(layer, freq, startTime, duration, extra) { return S.emitNote(layer, freq, startTime, duration, extra); }
   function emitEvent(ev) { return S.emitEvent(ev); }
-  function scheduleLayer(fn, baseMs, layer) { return S.scheduleLayer(fn, baseMs, layer); }
-  function scheduleRaw(fn, ms) { return S.scheduleRaw(fn, ms); }
+  function cueIn(lane, dtS, fn) { return S.cueIn(lane, dtS, fn); }
+  function cueLayer(layer, baseS, fn) { return S.cueLayer(layer, baseS, fn); }
   function panAt(layer, p) { return S.panAt(layer, p); }
   function getLayerParam(layer, key, fallback) { return S.getLayerParam(layer, key, fallback); }
   function env(g, t, pts) { return S.env(g, t, pts); }
@@ -49,10 +48,13 @@ window.KOLOB = window.KOLOB || {};
   // grace notes, no trills. Lines out the hymn for the choir; speaks alone
   // in testimony with real silence around it.
   // ==========================================================================
-  function renderClarinetLine(t, notes, gainMul) {
+  // R: the caller's stream — the grace notes are the deacon's choice, so
+  // they are musical dice; where he stands and how he breathes are synth:clarinet
+  function renderClarinetLine(t, notes, gainMul, R) {
+    var Y = synth("clarinet");
     var vib = getLayerParam("clarinet", "vibrato", 0.4);
     var graceAmt = getLayerParam("clarinet", "grace", 0.5);
-    var dest = panAt("clarinet", rnd(-0.25, 0.25));
+    var dest = panAt("clarinet", Y.rnd(-0.25, 0.25));
     var o = S.ctx.createOscillator();
     o.type = "triangle";
     var oct = S.ctx.createOscillator();
@@ -77,7 +79,7 @@ window.KOLOB = window.KOLOB || {};
         oct.frequency.linearRampToValueAtTime(n.f * 2, tt + port);
       }
       // a single grace note into longer notes — an upper neighbor, lightly
-      if (n.dur > 1.6 && i > 0 && chance(graceAmt * 0.5)) {
+      if (n.dur > 1.6 && i > 0 && R.chance(graceAmt * 0.5)) {
         var gf = n.f * Math.pow(2, 1 / 12 * 2);
         o.frequency.setValueAtTime(gf, tt - 0.09);
         o.frequency.linearRampToValueAtTime(n.f, tt + 0.05);
@@ -91,7 +93,7 @@ window.KOLOB = window.KOLOB || {};
     // frequency never goes negative — depth here is f*0.004, tiny by design.
     if (vib > 0.05) {
       var lfo = S.ctx.createOscillator();
-      lfo.frequency.setValueAtTime(rnd(4.5, 5.5), t);
+      lfo.frequency.setValueAtTime(Y.rnd(4.5, 5.5), t);
       var lg = S.ctx.createGain();
       lg.gain.setValueAtTime(0, t);
       lg.gain.setValueAtTime(0, t + total * 0.4);
@@ -100,47 +102,49 @@ window.KOLOB = window.KOLOB || {};
       lfo.start(t); lfo.stop(t + total + 0.5);
     }
     var peak = (gainMul || 1) * 0.34;
-    env(g, t, [[rnd(0.4, 0.8), peak], [Math.max(0.2, total - 1.8), peak * 0.9], [rnd(0.9, 1.4), 0]]);
+    env(g, t, [[Y.rnd(0.4, 0.8), peak], [Math.max(0.2, total - 1.8), peak * 0.9], [Y.rnd(0.9, 1.4), 0]]);
     o.start(t); o.stop(t + total + 1.6);
     oct.start(t); oct.stop(t + total + 1.6);
     return total;
   }
-  function clarinetToNotes(motif, beat) {
+  function clarinetToNotes(motif, beat, R) {
     return motif.notes.map(function (n, i) {
       var d = n.durBeats * beat;
-      if (i === 0 || i === motif.notes.length - 1) d = Math.max(d, beat * rnd(1.6, 2.4));
+      if (i === 0 || i === motif.notes.length - 1) d = Math.max(d, beat * R.rnd(1.6, 2.4));
       // a wind player's phrase keeps moving: interior notes ≤ ~3 beats, the
       // ends ≤ ~4 — augmented material sings long in the choir, not here
       d = Math.min(d, beat * (i === motif.notes.length - 1 ? 4 : 2.8));
       return { f: degFreq(projDeg(n.deg) + colN()), dur: Math.max(0.4, d) };  // an octave above the choir root
     });
   }
-  function clarinetPhrase() {
+  // The deacon's turn, at scheduled time tc.
+  function clarinetPhrase(tc) {
     if (!S.playing) return;
     var s = S.C.section;
     var speaks = s === "prelude" || s === "hymn" || s === "testimony" || s === "doxology" || s === "postlude";
-    if (!speaks || inFuging() || inQuestion()) { scheduleRaw(clarinetPhrase, 6000); return; }
-    if (!airFree()) { scheduleRaw(clarinetPhrase, rnd(5, 11) * 1000); return; }
+    if (!speaks || inFuging() || inQuestion()) { cueIn("clarinet", 6, clarinetPhrase); return; }
+    if (!airFree()) { cueIn("clarinet", wait("clarinet").rnd(5, 11), clarinetPhrase); return; }
+    var R = turn("clarinet");
     // in the prelude the deacon only occasionally tries a line over the organ
-    if (s === "prelude" && chance(0.55)) { scheduleRaw(clarinetPhrase, rnd(10, 18) * 1000); return; }
+    if (s === "prelude" && R.chance(0.55)) { cueIn("clarinet", R.rnd(10, 18), clarinetPhrase); return; }
 
     var pace = getLayerParam("clarinet", "pace", 1);
-    var beat = rnd(1.0, 1.4) / pace;
-    var motif = S.Motif.overdueFor("clarinet") ? S.Motif.claim("clarinet") : S.Motif.request("clarinet");
-    if (!motif) { scheduleRaw(clarinetPhrase, 6000); return; }
+    var beat = R.rnd(1.0, 1.4) / pace;
+    var motif = S.Motif.overdueFor("clarinet") ? S.Motif.claim("clarinet", R) : S.Motif.request("clarinet", R);
+    if (!motif) { cueIn("clarinet", 6, clarinetPhrase); return; }
 
-    var t = S.ctx.currentTime + 0.12;
+    var t = tc + 0.12;
     var total;
     var lined = false;
     var spoken = motif;                                        // what actually sounded (the shadow reads this)
-    if (s === "hymn" && chance(0.5)) {
+    if (s === "hymn" && R.chance(0.5)) {
       // LINING-OUT: state the first line of the hymn plainly, then post it to
       // the choir, which sings it back harmonized and slower.
       var nSyl = (S.METERS[S.C.meter] || S.METERS.CM)[0];
-      var line = S.Prosody.pourIntoLine(motif, nSyl);
+      var line = S.Prosody.pourIntoLine(motif, nSyl, R);
       var lm = { name: motif.name, gen: motif.gen, chain: motif.chain.slice(), gesture: motif.gesture, notes: line };
-      total = renderClarinetLine(t, clarinetToNotes(lm, beat), 1);
-      S.Motif.post("clarinet", "choir", lm, "line-out");
+      total = renderClarinetLine(t, clarinetToNotes(lm, beat, R), 1, R);
+      S.Motif.post("clarinet", "choir", lm, "line-out", R);
       emitEvent({ cat: "verse", label: "☞ the deacon lines out", detail: S.C.meter + " · " + nSyl + " syllables · " + motif.name });
       lined = true;
       spoken = lm;
@@ -152,7 +156,7 @@ window.KOLOB = window.KOLOB || {};
         for (var i = 0; i < m2.notes.length; i += 2) {
           var pd = projDeg(m2.notes[i].deg);
           var cls = ((pd % colN()) + colN()) % colN();
-          if (!tones[cls] && chance(0.7)) {
+          if (!tones[cls] && R.chance(0.7)) {
             var up = ((pd + 1) % colN() + colN()) % colN();
             m2.notes[i].deg += tones[up] ? 1 : -1;
           }
@@ -162,27 +166,27 @@ window.KOLOB = window.KOLOB || {};
       // a short gesture walks on toward its rest tone — and usually answer
       // it with a consequent after a breath. Antecedent–consequent: the
       // period form the hymns think in.
-      var nSy = Math.max(m2.notes.length, pickW([[6, 1], [8, 3], [10, 2], [12, 1]]));
-      var line1 = S.Prosody.pourIntoLine(m2, nSy);
+      var nSy = Math.max(m2.notes.length, R.pickW([[6, 1], [8, 3], [10, 2], [12, 1]]));
+      var line1 = S.Prosody.pourIntoLine(m2, nSy, R);
       var gm2 = s === "testimony" ? 0.8 : 1;
       spoken = { name: m2.name, gen: m2.gen, chain: [], gesture: m2.gesture, notes: line1 };
-      total = renderClarinetLine(t, clarinetToNotes(spoken, beat), gm2);
-      if (chance(s === "testimony" ? 0.35 : 0.6)) {
-        var cons = S.Motif.develop("clarinet", motif, 1);
-        var line2 = S.Prosody.pourIntoLine(cons, Math.max(4, nSy - pickW([[0, 2], [2, 2]])));
-        var breath2 = rnd(1.4, 2.4);
-        total += breath2 + renderClarinetLine(t + total + breath2, clarinetToNotes({ notes: line2 }, beat), gm2 * 0.95);
+      total = renderClarinetLine(t, clarinetToNotes(spoken, beat, R), gm2, R);
+      if (R.chance(s === "testimony" ? 0.35 : 0.6)) {
+        var cons = S.Motif.develop("clarinet", motif, 1, R);
+        var line2 = S.Prosody.pourIntoLine(cons, Math.max(4, nSy - R.pickW([[0, 2], [2, 2]])), R);
+        var breath2 = R.rnd(1.4, 2.4);
+        total += breath2 + renderClarinetLine(t + total + breath2, clarinetToNotes({ notes: line2 }, beat, R), gm2 * 0.95, R);
       }
-      if (chance(0.4) && !lined) S.Motif.post("clarinet", pickW([["choir", 2], ["bells", 2], ["harmonium", 1]]), motif, pickW([["imitate", 3], ["invert", 2], ["develop", 2]]));
+      if (R.chance(0.4) && !lined) S.Motif.post("clarinet", R.pickW([["choir", 2], ["bells", 2], ["harmonium", 1]]), motif, R.pickW([["imitate", 3], ["invert", 2], ["develop", 2]]), R);
     }
     // the harmonium shadows the deacon a breath behind, in the parlor —
     // reading the line as actually spoken, not the raw motif
-    if (chance(getLayerParam("harmonium", "shadow", 0.5)) && s !== "testimony") {
-      harmoniumShadow(t + rnd(0.4, 0.9), spoken, beat);
+    if (R.chance(getLayerParam("harmonium", "shadow", 0.5)) && s !== "testimony") {
+      harmoniumShadow(t + R.rnd(0.4, 0.9), spoken, beat);
     }
-    claimAir(total, (s === "testimony" ? rnd(10, 22) : rnd(4, 10)) * silenceMul());
-    var gap = (s === "testimony" ? rnd(18, 40) : rnd(9, 20)) * gapMul();
-    scheduleLayer(clarinetPhrase, (total + gap) * 1000, "clarinet");
+    claimAir(total, (s === "testimony" ? R.rnd(10, 22) : R.rnd(4, 10)) * silenceMul());
+    var gap = (s === "testimony" ? R.rnd(18, 40) : R.rnd(9, 20)) * gapMul();
+    cueLayer("clarinet", total + gap, clarinetPhrase);
   }
 
   // ==========================================================================
@@ -191,16 +195,18 @@ window.KOLOB = window.KOLOB || {};
   // voices (alto+tenor) of the sounding chord, close and warm; shadows the
   // deacon's lines a breath behind.
   // ==========================================================================
+  // (every die here is sound-level: synth:harmonium)
   function renderHarmonium(t, notes, gainMul) {
+    var Y = synth("harmonium");
     var reed = getLayerParam("harmonium", "reed", 0.5);
     var bellows = getLayerParam("harmonium", "bellows", 0.5);
-    var dest = panAt("harmonium", rnd(-0.2, 0.2));
+    var dest = panAt("harmonium", Y.rnd(-0.2, 0.2));
     var mix = S.ctx.createGain();
     var os = [];
     for (var d = 0; d < 2; d++) {
       var o = S.ctx.createOscillator();
       o.type = "sawtooth";
-      o.frequency.setValueAtTime(notes[0].f * (d ? 1 + rnd(0.003, 0.005) : 1 - rnd(0.003, 0.005)), t);
+      o.frequency.setValueAtTime(notes[0].f * (d ? 1 + Y.rnd(0.003, 0.005) : 1 - Y.rnd(0.003, 0.005)), t);
       var og = S.ctx.createGain(); og.gain.setValueAtTime(0.5, t);
       o.connect(og); og.connect(mix);
       os.push(o);
@@ -229,13 +235,13 @@ window.KOLOB = window.KOLOB || {};
     // bellows: slow AM + a matching breath of pitch wobble
     if (bellows > 0.05) {
       var lfo = S.ctx.createOscillator();
-      lfo.frequency.setValueAtTime(rnd(0.2, 0.4), t);
+      lfo.frequency.setValueAtTime(Y.rnd(0.2, 0.4), t);
       var lg = S.ctx.createGain(); lg.gain.setValueAtTime(bellows * 0.12, t);
       lfo.connect(lg); lg.connect(g.gain);
       lfo.start(t); lfo.stop(t + total + 0.5);
     }
     var peak = (gainMul || 1) * 0.22;
-    env(g, t, [[rnd(0.8, 1.4), peak], [Math.max(0.2, total - 3), peak * 0.9], [rnd(1.4, 2), 0]]);
+    env(g, t, [[Y.rnd(0.8, 1.4), peak], [Math.max(0.2, total - 3), peak * 0.9], [Y.rnd(1.4, 2), 0]]);
     for (var oi2 = 0; oi2 < os.length; oi2++) { os[oi2].start(t); os[oi2].stop(t + total + 2.2); }
     return total;
   }
@@ -249,38 +255,42 @@ window.KOLOB = window.KOLOB || {};
     emitNote("harmonium", notes[0].f, t, notes.length * beat);
     emitEvent({ cat: "motif", label: "〰 harmonium shadows the deacon", detail: motif.name + "·g" + motif.gen });
   }
-  function harmoniumCycle() {
+  // The parlor organ's turn, at scheduled time t.
+  function harmoniumCycle(t) {
     if (!S.playing) return;
     var s = S.C.section;
     var plays = s === "prelude" || s === "hymn" || s === "doxology" || s === "postlude";
-    if (!plays || inQuestion()) { scheduleRaw(harmoniumCycle, 8000); return; }
+    if (!plays || inQuestion()) { cueIn("harmonium", 8, harmoniumCycle); return; }
+    var R = turn("harmonium");
     // the parlor ANSWERS the deacon when an obligation stands — a fourth
     // conversational timbre, close and warm
     if (S.Motif.overdueFor("harmonium") && airFree()) {
-      var ans = S.Motif.claim("harmonium");
+      var ans = S.Motif.claim("harmonium", R);
       if (ans) {
-        var abeat = rnd(1.1, 1.5);
-        var poured = S.Prosody.pourIntoLine(ans, Math.max(ans.notes.length, rint(6, 8)));
+        var abeat = R.rnd(1.1, 1.5);
+        var poured = S.Prosody.pourIntoLine(ans, Math.max(ans.notes.length, R.rint(6, 8)), R);
         var anotes = poured.map(function (n) {
           return { f: degFreq(projDeg(n.deg) + colN()), dur: Math.min(abeat * 3.5, Math.max(0.5, n.durBeats * abeat)) };
         });
-        var atot = renderHarmonium(S.ctx.currentTime + 0.1, anotes, 0.7);
-        emitNote("harmonium", anotes[0].f, S.ctx.currentTime + 0.1, atot);
-        claimAir(atot, rnd(4, 9) * silenceMul());
-        scheduleLayer(harmoniumCycle, (atot + rnd(14, 26) * gapMul()) * 1000, "harmonium");
+        var atot = renderHarmonium(t + 0.1, anotes, 0.7);
+        emitNote("harmonium", anotes[0].f, t + 0.1, atot);
+        claimAir(atot, R.rnd(4, 9) * silenceMul());
+        cueLayer("harmonium", atot + R.rnd(14, 26) * gapMul(), harmoniumCycle);
         return;
       }
     }
     var ch = S.Harmony.current();
-    if (ch && chance(0.55)) {
-      var dur = rnd(9, 15);
+    if (ch && R.chance(0.55)) {
+      var dur = R.rnd(9, 15);
       // the inner voices: tenor + alto, sustained — an occasional warmth,
-      // not a constant one; the hymn keeps its sky
-      renderHarmonium(S.ctx.currentTime + 0.1, [{ f: ch.freqs[1], dur: dur }], 0.6 * (0.5 + intensity() * 0.6));
-      renderHarmonium(S.ctx.currentTime + rnd(0.2, 0.6), [{ f: ch.freqs[2], dur: dur * rnd(0.85, 1) }], 0.5 * (0.5 + intensity() * 0.6));
-      emitNote("harmonium", ch.freqs[1], S.ctx.currentTime + 0.1, dur);
+      // not a constant one; the hymn keeps its sky (the alto's loose entry
+      // and release are the player's hands: sound-level)
+      var Y = synth("harmonium");
+      renderHarmonium(t + 0.1, [{ f: ch.freqs[1], dur: dur }], 0.6 * (0.5 + intensity() * 0.6));
+      renderHarmonium(t + Y.rnd(0.2, 0.6), [{ f: ch.freqs[2], dur: dur * Y.rnd(0.85, 1) }], 0.5 * (0.5 + intensity() * 0.6));
+      emitNote("harmonium", ch.freqs[1], t + 0.1, dur);
     }
-    scheduleLayer(harmoniumCycle, rnd(14, 26) * 1000 * gapMul(), "harmonium");
+    cueLayer("harmonium", R.rnd(14, 26) * gapMul(), harmoniumCycle);
   }
 
   // ==========================================================================
@@ -290,4 +300,5 @@ window.KOLOB = window.KOLOB || {};
   S.clarinetPhrase = clarinetPhrase;
   S.renderHarmonium = renderHarmonium;
   S.harmoniumCycle = harmoniumCycle;
+  (KOLOB._rooms = KOLOB._rooms || {})["kolob-voices-winds.js"] = true;   // the load guard's roll call
 })();

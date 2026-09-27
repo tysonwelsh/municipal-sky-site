@@ -22,29 +22,27 @@ window.KOLOB = window.KOLOB || {};
   // from kolob-voices-organ.js
   function organChord(t, dur, chord, gainMul) { return S.organChord(t, dur, chord, gainMul); }
   // from kolob-voices-choir.js
-  function fugingEntry() { return S.fugingEntry(); }
+  function fugingEntry(t) { return S.fugingEntry(t); }
   // from kolob-voices-ground.js
   function tubaBlat(t, gainMul) { return S.tubaBlat(t, gainMul); }
-  function meetinghouseBell(t, gainMul) { return S.meetinghouseBell(t, gainMul); }
+  function meetinghouseBell(t, gainMul, R) { return S.meetinghouseBell(t, gainMul, R); }
   // from kolob-voices-field.js
   function evTuningFork(t) { return S.evTuningFork(t); }
   // from kolob-guests.js
   function razzCluster() { return S.razzCluster(); }
-  function cumulativeAssembly() { return S.cumulativeAssembly(); }
-  function unansweredQuestion() { return S.unansweredQuestion(); }
-  function twoBandsCross() { return S.twoBandsCross(); }
-  function steeplesAnswer() { return S.steeplesAnswer(); }
+  function cumulativeAssembly(t) { return S.cumulativeAssembly(t); }
+  function unansweredQuestion(V, t) { return S.unansweredQuestion(V, t); }
+  function twoBandsCross(V, t) { return S.twoBandsCross(V, t); }
+  function steeplesAnswer(V, t) { return S.steeplesAnswer(V, t); }
   function oldTuneCandidates() { return S.oldTuneCandidates(); }
-  function oldTuneRemembered(V) { return S.oldTuneRemembered(V); }
+  function oldTuneRemembered(V, t) { return S.oldTuneRemembered(V, t); }
   // from kolob-core.js
-  function rnd(a, b) { return S.rnd(a, b); }
-  function rint(a, b) { return S.rint(a, b); }
-  function chance(p) { return S.chance(p); }
-  function pick(arr) { return S.pick(arr); }
-  function pickW(pool) { return S.pickW(pool); }
+  function stream(label) { return S.stream(label); }
+  function turn(label) { return S.turn(label); }
+  function now() { return S.now(); }
+  function cueAt(lane, t, fn) { return S.cueAt(lane, t, fn); }
   function emitEvent(ev) { return S.emitEvent(ev); }
   function setRoomBalance(x, rampS, hold) { return S.setRoomBalance(x, rampS, hold); }
-  function scheduleRaw(fn, ms) { return S.scheduleRaw(fn, ms); }
   // (the other rooms' state, read and written through S: S.ctx, S.droneDuck,
   // S.roomBalanceHeld, S.roomRampNext, S.playing, S.F0, S.mode, S.ROOM_BALANCE,
   // S.ROOM_RAMP_S, S.air, S.Harmony, S.METERS, S.Motif)
@@ -95,14 +93,31 @@ window.KOLOB = window.KOLOB || {};
   // 4-7 meetings, the way ZANKYŌ's meta-arc drifts its cycles dark and back.
   var metaPhase = 0, metaPeriod = 5, seasonPos = 0;
 
-  function planMeeting() {
+  // a weighted pick from a die already thrown (u in [0,1)): the plan throws
+  // its dice first and reads them after, so a pool that is empty or forced
+  // never changes how many dice were thrown
+  function pickWith(u, pool) {
+    var total = 0, i;
+    for (i = 0; i < pool.length; i++) total += pool[i][1];
+    var r = u * total;
+    for (i = 0; i < pool.length; i++) { r -= pool[i][1]; if (r <= 0) return pool[i][0]; }
+    return pool.length ? pool[pool.length - 1][0] : null;
+  }
+
+  // THE PLAN — every die of the meeting is thrown from meeting:<n>, in one
+  // fixed order, whether it is used or not (SCORE.md §3: a hymn not sung, a
+  // guest refused, a switch that forces another guest in — none of them
+  // shifts a die that follows). t is the downbeat or the joint that calls it.
+  function planMeeting(t) {
     C.meetingNum++;
-    if (C.meetingNum === 1) { metaPeriod = rnd(4, 7); metaPhase = rnd(0, 0.3); }
-    else { metaPhase += 1 / metaPeriod; if (metaPhase >= 1) { metaPhase -= 1; metaPeriod = rnd(4, 7); } }
+    var R = stream("meeting");
+    var periodDie = R.rnd(4, 7), phaseDie = R.rnd(0, 0.3);
+    if (C.meetingNum === 1) { metaPeriod = periodDie; metaPhase = phaseDie; }
+    else { metaPhase += 1 / metaPeriod; if (metaPhase >= 1) { metaPhase -= 1; metaPeriod = periodDie; } }
     seasonPos = 0.5 - 0.5 * Math.cos(2 * Math.PI * metaPhase);   // 0 trough … 1 festival peak
 
-    S.F0 = rnd(58, 74);
-    var activity = pickW([
+    S.F0 = R.rnd(58, 74);
+    var activity = R.pickW([
       ["ordinary", 3],
       ["fast", 1 + 2.5 * (1 - seasonPos)],
       ["conference", 0.6 + 2.6 * seasonPos],
@@ -112,7 +127,7 @@ window.KOLOB = window.KOLOB || {};
     var A = MEETINGS[activity];
     // Mode lottery, tilted bright or modal by the kind of Sunday.
     var b = A.bright;
-    S.mode = pickW([
+    S.mode = R.pickW([
       ["ionian", 2 + 2 * b],
       ["penta", 2.5],
       ["hexa", 1.5],
@@ -123,29 +138,40 @@ window.KOLOB = window.KOLOB || {};
     rebuildScale();
     S.Harmony.reset();
 
+    // the dice of the order of service: three hymns are always drawn (the most
+    // any Sunday sings) and every mutation's die is thrown
+    var preludeDur = R.rnd(60, 90), invocationDur = R.rnd(60, 100);
+    var hymnDice = [];
+    for (var hd = 0; hd < 3; hd++) hymnDice.push({ dur: R.rnd(120, 180), meter: R.pickW(A.meterW) });
+    var testimonyDur = R.rnd(110, 160), sacramentDur = R.rnd(100, 150), doxologyDur = R.rnd(70, 110), postludeDur = R.rnd(40, 70);
+    var cutTestimony = R.chance(0.25);
+    var addInterlude = R.chance(0.15), interludeDur = R.rnd(50, 80);
+    var tradeTS = R.chance(0.1);
+    var secondDox = R.chance(0.5), secondDoxDur = R.rnd(40, 60);
+
     var plan = [];
-    plan.push({ type: "prelude", dur: rnd(60, 90) });
-    plan.push({ type: "invocation", dur: rnd(60, 100) });
+    plan.push({ type: "prelude", dur: preludeDur });
+    plan.push({ type: "invocation", dur: invocationDur });
     for (var h = 0; h < A.hymns; h++) {
-      plan.push({ type: "hymn", dur: rnd(120, 180), meter: pickW(A.meterW) });
+      plan.push({ type: "hymn", dur: hymnDice[h].dur, meter: hymnDice[h].meter });
     }
-    plan.push({ type: "testimony", dur: rnd(110, 160) });
-    plan.push({ type: "sacrament", dur: rnd(100, 150) });
-    plan.push({ type: "doxology", dur: rnd(70, 110) });
-    plan.push({ type: "postlude", dur: rnd(40, 70) });
+    plan.push({ type: "testimony", dur: testimonyDur });
+    plan.push({ type: "sacrament", dur: sacramentDur });
+    plan.push({ type: "doxology", dur: doxologyDur });
+    plan.push({ type: "postlude", dur: postludeDur });
     // THE ORDER IS NOT FIXED — seeded mutations keep the ritual itself
     // aleatoric. Some Sundays have no testimony; some hold an interlude of
     // organ and tines between hymns; testimony and sacrament may trade
     // places; a jubilee may sing the doxology twice.
-    if (chance(0.25)) {
+    if (cutTestimony) {
       for (var ti = plan.length - 1; ti >= 0; ti--) if (plan[ti].type === "testimony") plan.splice(ti, 1);
     }
-    if (A.hymns >= 2 && chance(0.15)) {
+    if (A.hymns >= 2 && addInterlude) {
       for (var hi = 0; hi < plan.length; hi++) {
-        if (plan[hi].type === "hymn") { plan.splice(hi + 1, 0, { type: "interlude", dur: rnd(50, 80) }); break; }
+        if (plan[hi].type === "hymn") { plan.splice(hi + 1, 0, { type: "interlude", dur: interludeDur }); break; }
       }
     }
-    if (chance(0.1)) {
+    if (tradeTS) {
       var tIdx = -1, sIdx = -1;
       for (var pi = 0; pi < plan.length; pi++) {
         if (plan[pi].type === "testimony") tIdx = pi;
@@ -153,11 +179,20 @@ window.KOLOB = window.KOLOB || {};
       }
       if (tIdx >= 0 && sIdx >= 0) { var tmp = plan[tIdx]; plan[tIdx] = plan[sIdx]; plan[sIdx] = tmp; }
     }
-    if (activity === "jubilee" && chance(0.5)) {
-      plan.splice(plan.length - 1, 0, { type: "doxology", dur: rnd(40, 60) });
+    if (activity === "jubilee" && secondDox) {
+      plan.splice(plan.length - 1, 0, { type: "doxology", dur: secondDoxDur });
     }
     C.plan = plan;
     C.si = 0;
+    // the guests' dice — each guest keeps its own die, as before, and all are
+    // thrown every meeting
+    var forcedDie = R.rnd(0, 1);
+    var qDie = R.chance(0.29), qSeatDie = R.chance(0.7);
+    var bDie = R.chance(0.36), bSeatDie = R.chance(0.7);
+    var stDie = R.chance(0.075), stSeatDie = R.chance(0.55);
+    var oDie = R.chance(0.15), oSeatDie = R.chance(0.65), oTuneDie = R.rnd(0, 1);
+    var cumDie = R.chance(0.08);
+    var razzDie = R.chance(0.05);
     // IVES VISITATIONS — guests in the meeting. Each rolls its OWN dice
     // (bands 36%, question 29%, per the owner's taste — roughly half of
     // meetings carry one of the pair; a double bill lands ~1 in 10). The
@@ -179,23 +214,23 @@ window.KOLOB = window.KOLOB || {};
     // below, so every other draw of the meeting falls exactly where it did.
     // The forcing switch no longer offers it.
     var SHELVED_GUESTS = { question: true };
-    var forcedType = forceVisitation ? pickW([["bands", 2], ["steeples", 1], ["oldtune", 1]]) : null;
-    if (forcedType === "question" || chance(0.29)) {
-      var qSeat = (forcedType === "question" || chance(0.7))
+    var forcedType = forceVisitation ? pickWith(forcedDie, [["bands", 2], ["steeples", 1], ["oldtune", 1]]) : null;
+    if (forcedType === "question" || qDie) {
+      var qSeat = (forcedType === "question" || qSeatDie)
         ? seatIn(["invocation", "testimony", "hymn"])
         : seatIn(["testimony", "interlude", "invocation"]);
       if (qSeat && !SHELVED_GUESTS.question) C.visitations.push({ type: "question", section: qSeat, fired: false });
     }
-    if (forcedType === "bands" || chance(0.36)) {
+    if (forcedType === "bands" || bDie) {
       var bSeat = forcedType === "bands"
         ? seatIn(["hymn", "doxology", "postlude"])
-        : (chance(0.7) ? seatIn(["doxology", "hymn", "postlude"]) : seatIn(["hymn", "postlude", "doxology"]));
+        : (bSeatDie ? seatIn(["doxology", "hymn", "postlude"]) : seatIn(["hymn", "postlude", "doxology"]));
       if (bSeat) C.visitations.push({ type: "bands", section: bSeat, fired: false });
     }
     // the steeples: bells at the meeting's edges — the framing sections where
     // a bell has civic meaning (calling the valley in, ringing it home)
-    if (forcedType === "steeples" || chance(0.075)) {
-      var stSeat = forcedType === "steeples" ? "prelude" : (chance(0.55) ? "prelude" : "postlude");
+    if (forcedType === "steeples" || stDie) {
+      var stSeat = forcedType === "steeples" ? "prelude" : (stSeatDie ? "prelude" : "postlude");
       C.visitations.push({ type: "steeples", section: stSeat, fired: false });
     }
     // THE OLD TUNE — its own die, gated by the mode law (tuneFitsMode): major
@@ -203,11 +238,11 @@ window.KOLOB = window.KOLOB || {};
     // KINGSFOLD alone. Seats where remembering belongs: the prelude's
     // pre-gathering reverie, or testimony. Never the sacrament.
     var oldPool = oldTuneCandidates();
-    if (oldPool.length && (forcedType === "oldtune" || chance(0.15))) {
+    if (oldPool.length && (forcedType === "oldtune" || oDie)) {
       var oSeat = forcedType === "oldtune"
         ? seatIn(["prelude", "testimony", "hymn"])
-        : (chance(0.65) ? seatIn(["prelude", "testimony"]) : seatIn(["testimony", "interlude", "prelude"]));
-      if (oSeat) C.visitations.push({ type: "oldtune", section: oSeat, fired: false, tune: pickW(oldPool) });
+        : (oSeatDie ? seatIn(["prelude", "testimony"]) : seatIn(["testimony", "interlude", "prelude"]));
+      if (oSeat) C.visitations.push({ type: "oldtune", section: oSeat, fired: false, tune: pickWith(oTuneDie, oldPool) });
     }
     // CUMULATIVE FORM (after Ives's cumulative settings): the day's theme is
     // WITHHELD — only its fragments circulate, endings first — until the
@@ -215,7 +250,7 @@ window.KOLOB = window.KOLOB || {};
     // (~1 meeting in 12) because it is a meeting-SHAPE, not an event.
     // Governed by the 𐐐𐐄𐐢 pill: always / natural 8% / never. Set BEFORE
     // Motif.newMeeting() — the theme-length guard there reads the flag.
-    C.cumulative = cumulativeMode === "always" || (cumulativeMode === "natural" && chance(0.08));
+    C.cumulative = cumulativeMode === "always" || (cumulativeMode === "natural" && cumDie);
     C.assemblyFired = false;
     C.assemblyUntil = 0;
     if (C.cumulative) {
@@ -230,13 +265,13 @@ window.KOLOB = window.KOLOB || {};
     // THE RASPBERRY AMEN — its own flag, not a seated visitation: it has no
     // section, only the meeting's final cadence. Never on a fast Sunday; a
     // solemn meeting does not end on a joke.
-    C.raspberry = forceRaspberry || (activity !== "fast" && chance(0.05));
-    S.Motif.newMeeting();
+    C.raspberry = forceRaspberry || (activity !== "fast" && razzDie);
+    S.Motif.newMeeting(stream("motif"));
     if (C.cumulative) {
       var wTheme = S.Motif.theme();
       emitEvent({ cat: "visitation", label: "◌ the tune is withheld", detail: (wTheme ? wTheme.name + " · " : "") + "until the doxology" });
     }
-    enterSection(0);
+    enterSection(0, t);
     // The Liahona: the load-bearing draws, surfaced as the oracle's pointing.
     emitEvent({
       cat: "liahona", label: "⌖ the Liahona points",
@@ -248,17 +283,21 @@ window.KOLOB = window.KOLOB || {};
     });
   }
 
-  function enterSection(i) {
+  // A section begins at t (a joint's end, the downbeat, or a dev jump). Its
+  // dice come from its own fork of the plan, thrown whether used or not.
+  function enterSection(i, t) {
     var s = C.plan[i];
+    var R = stream("meeting").fork("section:" + i);
+    var fugingDie = R.chance(0.6), sunriseDie = R.chance(0.4), sunriseMode = R.pick(["ionian", "mixolydian"]);
     C.si = i;
     C.section = s.type;
-    C.sectionStart = S.ctx ? S.ctx.currentTime : 0;
+    C.sectionStart = t;
     C.sectionDur = s.dur;
     C.jointing = false;
     C.fugingFired = false;
     C.fugingUntil = 0;
     // the fuging entry is an EVENT, not a fixture — some hymns are meadows
-    C.fugingPlanned = s.type === "hymn" && chance(0.6);
+    C.fugingPlanned = s.type === "hymn" && fugingDie;
     if (s.type === "hymn") C.verseLine = 0;
     if (s.type === "hymn" && s.meter) {
       C.meter = s.meter;
@@ -266,8 +305,8 @@ window.KOLOB = window.KOLOB || {};
     }
     // the doxology SUNRISE: a dark-mode meeting may lift into major at the
     // last — rare, and the most audible surprise the engine owns
-    if (s.type === "doxology" && (S.mode === "aeolian" || S.mode === "dorian") && chance(0.4)) {
-      S.mode = pick(["ionian", "mixolydian"]);
+    if (s.type === "doxology" && (S.mode === "aeolian" || S.mode === "dorian") && sunriseDie) {
+      S.mode = sunriseMode;
       rebuildScale();
       S.Harmony.reset();
       emitEvent({
@@ -282,9 +321,10 @@ window.KOLOB = window.KOLOB || {};
     S.Motif.onSection(s.type);
   }
 
+  // (every clock below is the music's now: the cue's scheduled time)
   function localArc() {
     if (!S.ctx) return 0;
-    return Math.max(0, Math.min(1, (S.ctx.currentTime - C.sectionStart) / C.sectionDur));
+    return Math.max(0, Math.min(1, (now() - C.sectionStart) / C.sectionDur));
   }
   // Global intensity 0..1 — ceilings kept LOW. This is open country; even the
   // doxology's full gathering leaves sky above it.
@@ -295,7 +335,7 @@ window.KOLOB = window.KOLOB || {};
       case "invocation": return 0.06 + 0.08 * x;
       case "hymn": {
         var base = 0.28 + 0.34 * (x < 0.75 ? smooth(x / 0.75) : 1 - 0.25 * smooth((x - 0.75) / 0.25));
-        if (S.ctx && S.ctx.currentTime < C.fugingUntil) base += 0.12;
+        if (S.ctx && now() < C.fugingUntil) base += 0.12;
         return Math.min(0.75, base);
       }
       case "testimony": return 0.2;
@@ -307,9 +347,9 @@ window.KOLOB = window.KOLOB || {};
     return 0.25;
   }
   function smooth(z) { z = Math.max(0, Math.min(1, z)); return z * z * (3 - 2 * z); }
-  function inHush() { return S.ctx && S.ctx.currentTime < C.hushUntil; }
-  function inFuging() { return S.ctx && S.ctx.currentTime < C.fugingUntil; }
-  function inVisit() { return S.ctx && S.ctx.currentTime < C.visitUntil; }
+  function inHush() { return S.ctx && now() < C.hushUntil; }
+  function inFuging() { return S.ctx && now() < C.fugingUntil; }
+  function inVisit() { return S.ctx && now() < C.visitUntil; }
   // the question is a scored passage — its performers' free cycles sit out;
   // the bands are a COLLISION — nobody sits out, that is the piece
   function inQuestion() { return inVisit() && C.visitType === "question"; }
@@ -319,8 +359,13 @@ window.KOLOB = window.KOLOB || {};
   function gapMul() { return (2.2 - intensity() * 0.9) * silenceMul(); }
 
   // --- conductor poll: advances sections, fires fuging entries, keeps time ---
-  function conductorTick() {
+  // A cue every 0.6 s of the music. Its three dice (the stillness after a
+  // gathering, the testimony's silence, the unbidden one) are thrown on every
+  // tick, used or not.
+  function conductorTick(t) {
     if (!S.playing) return;
+    var R = stream("conductor");
+    var afterDie = R.chance(0.3), testimonyDie = R.chance(0.008), unbiddenDie = R.chance(0.0004);
     var x = localArc();
     // Fuging entry: once per hymn, past the shoulder — the voices go their
     // ways and gather again. A stillness follows the convergence.
@@ -333,9 +378,9 @@ window.KOLOB = window.KOLOB || {};
         V.fired = true;
         // type → set piece; the old tune receives its visitation record (the drawn tune)
         var VISIT_FN = { question: unansweredQuestion, bands: twoBandsCross, steeples: steeplesAnswer, oldtune: oldTuneRemembered };
-        var vdur = (VISIT_FN[V.type] || twoBandsCross)(V);
+        var vdur = (VISIT_FN[V.type] || twoBandsCross)(V, t);
         C.visitType = V.type;
-        C.visitUntil = S.ctx.currentTime + vdur;
+        C.visitUntil = t + vdur;
         break;
       }
     }
@@ -346,53 +391,55 @@ window.KOLOB = window.KOLOB || {};
         ((x > 0.35 && !C.jointing && !inHush() && !inFuging() && !inVisit()) ||
          (x > 0.7 && !C.jointing))) {
       C.assemblyFired = true;
-      var adur = cumulativeAssembly();
-      C.assemblyUntil = S.ctx.currentTime + adur;
+      var adur = cumulativeAssembly(t);
+      C.assemblyUntil = t + adur;
     }
     if (C.section === "hymn" && C.fugingPlanned && !C.fugingFired && x > 0.6 && x < 0.8 && !inHush() && !inVisit()) {
       C.fugingFired = true;
-      var fugDur = fugingEntry();
-      C.fugingUntil = S.ctx.currentTime + fugDur;
-      if (chance(0.3)) scheduleRaw(function () { stillness("after the gathering"); }, (fugDur + 1.5) * 1000);
+      var fugDur = fugingEntry(t);
+      C.fugingUntil = t + fugDur;
+      if (afterDie) cueAt("conductor", t + fugDur + 1.5, function (ts) { stillness("after the gathering", ts); });
     }
     // Testimony: the Cage silences — rare, long, authoritative.
-    if (C.section === "testimony" && !inHush() && chance(0.008)) {
-      stillness("testimony");
+    if (C.section === "testimony" && !inHush() && testimonyDie) {
+      stillness("testimony", t);
     }
     // And once in a great while a silence falls where none was scheduled —
     // about once a meeting, somewhere, unannounced.
-    if (C.section !== "sacrament" && C.section !== "testimony" && !C.jointing && !inHush() && chance(0.0004)) {
-      stillness("unbidden");
+    if (C.section !== "sacrament" && C.section !== "testimony" && !C.jointing && !inHush() && unbiddenDie) {
+      stillness("unbidden", t);
     }
     // Section end → joint → advance.
     if (!C.jointing && x >= 1) {
       C.jointing = true;
       var last = C.si >= C.plan.length - 1;
-      var jointDur = runJoint(last);
-      scheduleRaw(function () {
-        if (C.si >= C.plan.length - 1) planMeeting();
-        else enterSection(C.si + 1);
-      }, (jointDur + 0.5) * 1000);
+      var jointDur = runJoint(last, t);
+      cueAt("conductor", t + jointDur + 0.5, function (tn) {
+        if (C.si >= C.plan.length - 1) planMeeting(tn);
+        else enterSection(C.si + 1, tn);
+      });
     }
-    scheduleRaw(conductorTick, 600);
+    cueAt("conductor", t + 0.6, conductorTick);
   }
 
   // Dev aid: jump the meeting to a section of the plan. Voices notice on
   // their next scheduled fire; a few tail notes from the old section may
   // ring over the seam — acceptable for a rehearsal skip.
+  // (a press of a button, not a cue: its now is the audio clock's)
   function skipToSection(type) {
     if (!S.playing) return false;
     var idx = -1;
     for (var i = 0; i < C.plan.length; i++) if (C.plan[i].type === type) { idx = i; break; }
     if (idx < 0) return false;
+    var t = now();
     C.hushUntil = 0;
     S.air.busyUntil = 0; S.air.holders = 0;
     if (S.droneDuck && S.ctx) {
       // release any stillness dip that was in flight
-      S.droneDuck.gain.cancelScheduledValues(S.ctx.currentTime);
-      S.droneDuck.gain.setValueAtTime(1, S.ctx.currentTime);
+      S.droneDuck.gain.cancelScheduledValues(t);
+      S.droneDuck.gain.setValueAtTime(1, t);
     }
-    enterSection(idx);
+    enterSection(idx, t);
     emitEvent({ cat: "conductor", label: "↷ skipped", detail: "to " + type + " (dev)" });
     return true;
   }
@@ -400,15 +447,16 @@ window.KOLOB = window.KOLOB || {};
   // The stillness — the ground falls away. Only the DRONE recedes; the other
   // voices keep speaking and stand exposed in the open air. Sometimes a
   // tuning fork rings in it; the ground breathes back after.
-  function stillness(why) {
+  function stillness(why, t) {
     if (!S.playing || !S.droneDuck) return;
-    var t = S.ctx.currentTime;
-    var holdS = rnd(6, 14) * silenceMul();
+    var R = turn("stillness");
+    var holdS = R.rnd(6, 14) * silenceMul();
+    var forkDie = R.chance(0.5), forkAt = R.rnd(2, holdS * 0.5);
     C.hushUntil = t + holdS + 2.5;
     S.droneDuck.gain.cancelScheduledValues(t);
     S.droneDuck.gain.setValueAtTime(S.droneDuck.gain.value || 1, t);
     S.droneDuck.gain.linearRampToValueAtTime(0.12, t + 1.4);
-    if (chance(0.5)) evTuningFork(t + rnd(2, holdS * 0.5));
+    if (forkDie) evTuningFork(t + forkAt);
     S.droneDuck.gain.setValueAtTime(0.12, t + 1.4 + holdS);
     S.droneDuck.gain.linearRampToValueAtTime(1, t + 1.4 + holdS + 3);
     emitEvent({ cat: "conductor", label: "◦ the still small voice", detail: why + " · " + holdS.toFixed(1) + "s" });
@@ -418,13 +466,15 @@ window.KOLOB = window.KOLOB || {};
   // SECTION JOINTS — an organ cadence and a single bell. No cymbals in Zion.
   // ==========================================================================
 
-  function runJoint(isLast) {
-    var t = S.ctx.currentTime + 0.2;
+  // A joint's dice are its own fork of joints:<n>, one per section ended.
+  function runJoint(isLast, tc) {
+    var R = stream("joints").fork("joint:" + C.si);
+    var t = tc + 0.2;
     var dur = 4;
     var next = !isLast && C.plan[C.si + 1] ? C.plan[C.si + 1].type : null;
     if (next === "sacrament" || C.section === "sacrament") {
       // fade into (or out of) the quietest room through pure drone — no chord
-      dur = rnd(4, 7);
+      dur = R.rnd(4, 7);
       emitEvent({ cat: "cadence", label: "∴ the room empties", detail: "into stillness" });
     } else if (isLast && C.raspberry) {
       // THE RASPBERRY AMEN (after the close of Ives's Second Symphony): the
@@ -433,36 +483,35 @@ window.KOLOB = window.KOLOB || {};
       // should be. The tuba player commits to it. Held long enough to be
       // unmistakably on purpose; the bell rings anyway, unbothered; the
       // clerk's pen stops mid-word.
-      var rChords = S.Harmony.cadence("plagal");
-      var rDur = rnd(2.6, 3.6);
+      var rChords = S.Harmony.cadence("plagal", R);
+      var rDur = R.rnd(2.6, 3.6);
       organChord(t, rDur * 1.02, rChords[0], 0.6);             // the setup, in earnest
       organChord(t + rDur, 3.2, razzCluster(), 0.5);           // the resolution that isn't
       tubaBlat(t + rDur);
       dur = rDur + 3.2 + 1.5;
       // the sexton usually didn't notice — the ritual visibly continues
-      if (chance(Math.max(MEETINGS[C.meeting.activity].bells, 0.6))) {
-        meetinghouseBell(t + dur * 0.75, 1.0);
+      if (R.chance(Math.max(MEETINGS[C.meeting.activity].bells, 0.6))) {
+        meetinghouseBell(t + dur * 0.75, 1.0, R);
       }
-      var razzWait = (t + rDur) - S.ctx.currentTime;
-      scheduleRaw(function () {
+      cueAt("conductor", t + rDur + 0.15, function () {
         emitEvent({ cat: "visitation", label: "∴ raspberry", detail: "the tuba's own" });
-      }, (razzWait + 0.15) * 1000);
-      scheduleRaw(function () {
+      });
+      cueAt("conductor", t + rDur + 0.9, function () {
         emitEvent({ cat: "visitation", label: "∴ amen—", detail: "the organist's own" });
-      }, (razzWait + 0.9) * 1000);
+      });
     } else {
-      var kind = isLast || C.section === "doxology" ? "plagal" : (C.section === "prelude" || C.section === "hymn" ? pickW([["plagal", 3], ["authentic", 2], ["half", 1]]) : "plagal");
-      var chords = S.Harmony.cadence(kind);
-      var chDur = rnd(2.6, 3.6);
+      var kind = isLast || C.section === "doxology" ? "plagal" : (C.section === "prelude" || C.section === "hymn" ? R.pickW([["plagal", 3], ["authentic", 2], ["half", 1]]) : "plagal");
+      var chords = S.Harmony.cadence(kind, R);
+      var chDur = R.rnd(2.6, 3.6);
       for (var i = 0; i < chords.length; i++) {
         organChord(t + i * chDur, chDur * (i === chords.length - 1 ? 1.7 : 1.02), chords[i], 0.6);
       }
       dur = chDur * chords.length + 1.5;
-      if (chance(MEETINGS[C.meeting.activity].bells)) {
-        meetinghouseBell(t + dur * 0.7, isLast ? 1.0 : rnd(0.5, 0.8));
-        if (C.meeting.activity === "jubilee" && chance(0.6)) {
+      if (R.chance(MEETINGS[C.meeting.activity].bells)) {
+        meetinghouseBell(t + dur * 0.7, isLast ? 1.0 : R.rnd(0.5, 0.8), R);
+        if (C.meeting.activity === "jubilee" && R.chance(0.6)) {
           // a small peal for a festival Sunday
-          for (var p = 1; p <= rint(2, 4); p++) meetinghouseBell(t + dur * 0.7 + p * rnd(1.4, 2.2), rnd(0.4, 0.7));
+          for (var p = 1; p <= R.rint(2, 4); p++) meetinghouseBell(t + dur * 0.7 + p * R.rnd(1.4, 2.2), R.rnd(0.4, 0.7), R);
           dur += 5;
         }
       }
@@ -474,13 +523,17 @@ window.KOLOB = window.KOLOB || {};
   // ==========================================================================
   // LENT — what this room shares with the rest of the house (KOLOB._s)
   // ==========================================================================
+  // A new seed is a new visit: the meeting count and the seasons start again.
+  function resetVisit() { C.meetingNum = 0; metaPhase = 0; metaPeriod = 5; seasonPos = 0; }
+
   S.MEETINGS = MEETINGS;
   S.C = C;
-  Object.defineProperty(S, "forceVisitation", { enumerable: true, get: function () { return forceVisitation; }, set: function (v) { forceVisitation = v; } });
-  Object.defineProperty(S, "forceRaspberry", { enumerable: true, get: function () { return forceRaspberry; }, set: function (v) { forceRaspberry = v; } });
-  Object.defineProperty(S, "cumulativeMode", { enumerable: true, get: function () { return cumulativeMode; }, set: function (v) { cumulativeMode = v; } });
-  Object.defineProperty(S, "seasonPos", { enumerable: true, get: function () { return seasonPos; }, set: function (v) { seasonPos = v; } });
+  Object.defineProperty(S, "forceVisitation", { enumerable: true, configurable: true, get: function () { return forceVisitation; }, set: function (v) { forceVisitation = v; } });
+  Object.defineProperty(S, "forceRaspberry", { enumerable: true, configurable: true, get: function () { return forceRaspberry; }, set: function (v) { forceRaspberry = v; } });
+  Object.defineProperty(S, "cumulativeMode", { enumerable: true, configurable: true, get: function () { return cumulativeMode; }, set: function (v) { cumulativeMode = v; } });
+  Object.defineProperty(S, "seasonPos", { enumerable: true, configurable: true, get: function () { return seasonPos; }, set: function (v) { seasonPos = v; } });
   S.planMeeting = planMeeting;
+  S.resetVisit = resetVisit;
   S.localArc = localArc;
   S.intensity = intensity;
   S.inHush = inHush;
@@ -493,4 +546,5 @@ window.KOLOB = window.KOLOB || {};
   S.skipToSection = skipToSection;
   // the room's public face on the KOLOB namespace
   KOLOB.Meeting = { MEETINGS: MEETINGS, C: C, planMeeting: planMeeting, conductorTick: conductorTick, runJoint: runJoint };
+  (KOLOB._rooms = KOLOB._rooms || {})["kolob-meeting.js"] = true;   // the load guard's roll call
 })();

@@ -25,11 +25,10 @@ window.KOLOB = window.KOLOB || {};
   function silenceMul() { return S.silenceMul(); }
   function gapMul() { return S.gapMul(); }
   // from kolob-core.js
-  function rnd(a, b) { return S.rnd(a, b); }
-  function chance(p) { return S.chance(p); }
-  function pickW(pool) { return S.pickW(pool); }
+  function turn(label) { return S.turn(label); }
+  function synth(voice) { return S.synth(voice); }
   function emitNote(layer, freq, startTime, duration, extra) { return S.emitNote(layer, freq, startTime, duration, extra); }
-  function scheduleLayer(fn, baseMs, layer) { return S.scheduleLayer(fn, baseMs, layer); }
+  function cueLayer(layer, baseS, fn) { return S.cueLayer(layer, baseS, fn); }
   function panAt(layer, p) { return S.panAt(layer, p); }
   function getLayerParam(layer, key, fallback) { return S.getLayerParam(layer, key, fallback); }
   function noiseSource() { return S.noiseSource(); }
@@ -42,7 +41,7 @@ window.KOLOB = window.KOLOB || {};
   // S.Motif)
 
   // ==========================================================================
-  // VOICE: BAGPIPE — SHELVED (see SHELVED, top of file): kept whole, never
+  // VOICE: BAGPIPE — SHELVED (see SHELVED in kolob-core.js): kept whole, never
   // scheduled, gain pinned at zero. The piper on the bluff. A double-reed CHANTER: a detuned
   // sawtooth pair driven through a waveshaper's reed-BUZZ, coloured by two
   // fixed nasal FORMANTS and a breath of filtered air — the one voice with
@@ -124,24 +123,25 @@ window.KOLOB = window.KOLOB || {};
     }
     return total;
   }
-  function bagpipeToNotes(motif, beat) {
+  function bagpipeToNotes(motif, beat, R) {
     return motif.notes.map(function (n, i) {
       var d = n.durBeats * beat;
-      if (i === 0 || i === motif.notes.length - 1) d = Math.max(d, beat * rnd(1.4, 2.2));
+      if (i === 0 || i === motif.notes.length - 1) d = Math.max(d, beat * R.rnd(1.4, 2.2));
       d = Math.min(d, beat * (i === motif.notes.length - 1 ? 4 : 3));
       return { f: degFreq(projDeg(n.deg) + colN()), dur: Math.max(0.4, d) };
     });
   }
   // Harmony role — the sounding chord's open fifth (no third: the bright,
   // parallel-fifth pipe sound the tradition rewards), sustained and swelling.
-  function bagpipeChord(t, dur, gainMul) {
-    var ch = S.Harmony.current() || S.Harmony.advance();
+  function bagpipeChord(t, dur, gainMul, R) {
+    var Y = synth("bagpipe");
+    var ch = S.Harmony.current() || S.Harmony.advance({}, R);
     var rootF = ch ? ch.freqs[0] * 2 : S.F0 * S.ROOT_MULT;           // into the chanter register
     var fifthF = rootF * 1.5;
-    var pan = rnd(-0.3, 0.3);
+    var pan = Y.rnd(-0.3, 0.3);
     bagpipeReed(t, rootF, dur, gainMul, { pan: pan, swell: true });
-    bagpipeReed(t + rnd(0.02, 0.08), fifthF, dur, gainMul * 0.85, { pan: pan, swell: true });
-    if (chance(0.5)) bagpipeReed(t + rnd(0.02, 0.1), rootF * 2, dur, gainMul * 0.55, { pan: pan, swell: true });
+    bagpipeReed(t + Y.rnd(0.02, 0.08), fifthF, dur, gainMul * 0.85, { pan: pan, swell: true });
+    if (R.chance(0.5)) bagpipeReed(t + Y.rnd(0.02, 0.1), rootF * 2, dur, gainMul * 0.55, { pan: pan, swell: true });
     emitNote("bagpipe", rootF, t, dur);
     emitNote("bagpipe", fifthF, t, dur);
   }
@@ -169,49 +169,50 @@ window.KOLOB = window.KOLOB || {};
     return Math.max(0, Math.min(1, base * seasonMul));
   }
   // Which role this section wants — melodic line vs. sustained harmony.
-  function bagpipeRole() {
+  function bagpipeRole(R) {
     switch (S.C.section) {
-      case "doxology":   return chance(0.7) ? "harmony" : "melody";  // swells the final praise
-      case "hymn":       return chance(0.5) ? "harmony" : "melody";
-      case "invocation": return chance(0.55) ? "harmony" : "melody";
+      case "doxology":   return R.chance(0.7) ? "harmony" : "melody";  // swells the final praise
+      case "hymn":       return R.chance(0.5) ? "harmony" : "melody";
+      case "invocation": return R.chance(0.55) ? "harmony" : "melody";
       default:           return "melody";                            // prelude, interlude, postlude
     }
   }
-  function bagpipeCycle() {
+  function bagpipeCycle(tc) {
     if (!S.playing || S.SHELVED.bagpipe) return;     // shelved: the piper never comes down off the bluff
+    var R = turn("bagpipe");
     var pres = bagpipePresence();
     if (pres <= 0.001 || S.C.section === "sacrament") {
-      scheduleLayer(bagpipeCycle, rnd(6, 12) * 1000, "bagpipe"); return;
+      cueLayer("bagpipe", R.rnd(6, 12), bagpipeCycle); return;
     }
     // gate by presence: some turns the piper simply stays his hand, and comes
     // back around soon to try again
-    if (!chance(pres)) { scheduleLayer(bagpipeCycle, rnd(3, 7) * 1000, "bagpipe"); return; }
+    if (!R.chance(pres)) { cueLayer("bagpipe", R.rnd(3, 7), bagpipeCycle); return; }
     var gm = 0.9 * (0.6 + intensity() * 0.5);
-    var role = bagpipeRole();
+    var role = bagpipeRole(R);
     // the melodic line wants the open air; when it's taken (the choir and the
     // deacon are singing), the piper sustains harmony under them instead of
     // competing for the line — so the reed is present either way
     if (role === "melody" && !airFree()) role = "harmony";
     if (role === "harmony") {
       // a landscape voice: it does not claim the air
-      var dur = rnd(6, 11);
-      bagpipeChord(S.ctx.currentTime + 0.1, dur, gm * 0.85);
-      scheduleLayer(bagpipeCycle, (dur + rnd(2, 6) * gapMul()) * 1000, "bagpipe");
+      var dur = R.rnd(6, 11);
+      bagpipeChord(tc + 0.1, dur, gm * 0.85, R);
+      cueLayer("bagpipe", dur + R.rnd(2, 6) * gapMul(), bagpipeCycle);
       return;
     }
     // melodic role — claims the air like the deacon
     var pace = getLayerParam("bagpipe", "pace", 1);
-    var beat = rnd(0.9, 1.25) / pace;
-    var motif = S.Motif.overdueFor("bagpipe") ? S.Motif.claim("bagpipe") : S.Motif.request("bagpipe");
-    if (!motif) { scheduleLayer(bagpipeCycle, 5000, "bagpipe"); return; }
-    var nSy = Math.max(motif.notes.length, pickW([[6, 2], [8, 3], [10, 1]]));
-    var line = S.Prosody.pourIntoLine(motif, nSy);
-    var pan = rnd(-0.35, 0.35);
-    var total = bagpipeLine(S.ctx.currentTime + 0.12, bagpipeToNotes({ notes: line }, beat), gm, pan);
-    if (chance(0.4)) S.Motif.post("bagpipe", pickW([["choir", 2], ["clarinet", 2], ["bells", 1]]), motif, pickW([["imitate", 3], ["invert", 2], ["develop", 2]]));
-    claimAir(total, rnd(3, 8) * silenceMul());
-    var gap = rnd(6, 14) * gapMul();
-    scheduleLayer(bagpipeCycle, (total + gap) * 1000, "bagpipe");
+    var beat = R.rnd(0.9, 1.25) / pace;
+    var motif = S.Motif.overdueFor("bagpipe") ? S.Motif.claim("bagpipe", R) : S.Motif.request("bagpipe", R);
+    if (!motif) { cueLayer("bagpipe", 5, bagpipeCycle); return; }
+    var nSy = Math.max(motif.notes.length, R.pickW([[6, 2], [8, 3], [10, 1]]));
+    var line = S.Prosody.pourIntoLine(motif, nSy, R);
+    var pan = synth("bagpipe").rnd(-0.35, 0.35);
+    var total = bagpipeLine(tc + 0.12, bagpipeToNotes({ notes: line }, beat, R), gm, pan);
+    if (R.chance(0.4)) S.Motif.post("bagpipe", R.pickW([["choir", 2], ["clarinet", 2], ["bells", 1]]), motif, R.pickW([["imitate", 3], ["invert", 2], ["develop", 2]]), R);
+    claimAir(total, R.rnd(3, 8) * silenceMul());
+    var gap = R.rnd(6, 14) * gapMul();
+    cueLayer("bagpipe", total + gap, bagpipeCycle);
   }
 
   // ==========================================================================
@@ -219,4 +220,5 @@ window.KOLOB = window.KOLOB || {};
   // ==========================================================================
   S.bagpipeLine = bagpipeLine;
   S.bagpipeCycle = bagpipeCycle;
+  (KOLOB._rooms = KOLOB._rooms || {})["kolob-voices-bagpipe.js"] = true;   // the load guard's roll call
 })();

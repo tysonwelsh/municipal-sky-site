@@ -31,14 +31,13 @@ window.KOLOB = window.KOLOB || {};
   function silenceMul() { return S.silenceMul(); }
   function gapMul() { return S.gapMul(); }
   // from kolob-core.js
-  function rnd(a, b) { return S.rnd(a, b); }
-  function rint(a, b) { return S.rint(a, b); }
-  function chance(p) { return S.chance(p); }
-  function pickW(pool) { return S.pickW(pool); }
+  function turn(label) { return S.turn(label); }
+  function wait(label) { return S.wait(label); }
+  function synth(voice) { return S.synth(voice); }
   function emitNote(layer, freq, startTime, duration, extra) { return S.emitNote(layer, freq, startTime, duration, extra); }
   function emitEvent(ev) { return S.emitEvent(ev); }
-  function scheduleLayer(fn, baseMs, layer) { return S.scheduleLayer(fn, baseMs, layer); }
-  function scheduleRaw(fn, ms) { return S.scheduleRaw(fn, ms); }
+  function cueIn(lane, dtS, fn) { return S.cueIn(lane, dtS, fn); }
+  function cueLayer(layer, baseS, fn) { return S.cueLayer(layer, baseS, fn); }
   function panAt(layer, p) { return S.panAt(layer, p); }
   function getLayerParam(layer, key, fallback) { return S.getLayerParam(layer, key, fallback); }
   function env(g, t, pts) { return S.env(g, t, pts); }
@@ -58,7 +57,9 @@ window.KOLOB = window.KOLOB || {};
     oo: [[325, 700, 2530], [370, 630, 2750], [300, 870, 2240], [280, 630, 2340]],
   };
   var CHOIR_PANS = [0.35, -0.35, 0.55, -0.55];   // S A T B — spread wide; the frontier is broad
+  // (the singer's own detune and breath are sound-level: synth:choir)
   function choirVoiceLine(t, notes, vi, gainMul) {
+    var Y = synth("choir");
     // one SATB voice walks a line of {f, dur} with scoops between pitches
     var vowelAmt = getLayerParam("choir", "vowel", 0.4);
     var scoop = getLayerParam("choir", "scoop", 0.5);
@@ -85,7 +86,7 @@ window.KOLOB = window.KOLOB || {};
     vg.connect(dest);
     // the line: pitch moves by scoops (short linearRamps on the OSCILLATOR,
     // never on a biquad), a breath of portamento into each syllable
-    var det = 1 + rnd(-0.004, 0.004);
+    var det = 1 + Y.rnd(-0.004, 0.004);
     o.frequency.setValueAtTime(notes[0].f * det, t);
     var tt = t, total = 0;
     for (var i = 0; i < notes.length; i++) {
@@ -99,7 +100,7 @@ window.KOLOB = window.KOLOB || {};
       total += n.dur;
     }
     var peak = (gainMul || 1) * 0.5;
-    env(vg, t, [[rnd(0.6, 1.2), peak], [Math.max(0.2, total - 2.4), peak * 0.88], [rnd(1, 1.6), 0]]);
+    env(vg, t, [[Y.rnd(0.6, 1.2), peak], [Math.max(0.2, total - 2.4), peak * 0.88], [Y.rnd(1, 1.6), 0]]);
     o.start(t); o.stop(t + total + 1.8);
     return total;
   }
@@ -126,7 +127,7 @@ window.KOLOB = window.KOLOB || {};
     var total = 0;
     for (var v2 = 0; v2 < vis.length; v2++) {
       var vi2 = vis[v2];
-      var stagger = vi2 === 0 ? 0 : rnd(0.05, 0.25);           // the congregation breathes together, loosely
+      var stagger = vi2 === 0 ? 0 : synth("choir").rnd(0.05, 0.25);   // the congregation breathes together, loosely
       var tot = choirVoiceLine(t + stagger, lineNotes[vi2], vi2, gainMul * (vi2 === 0 ? 1 : 0.8));
       if (tot > total) total = tot;
     }
@@ -143,53 +144,56 @@ window.KOLOB = window.KOLOB || {};
     }
     return total;
   }
-  function choirVerse() {
+  // The choir's turn, at scheduled time tc. Waiting for the air draws from
+  // the choir's waiting stream; a turn it sings is a fork of its own.
+  function choirVerse(tc) {
     if (!S.playing) return;
     var s = S.C.section;
     var sings = s === "hymn" || s === "doxology";
-    if (!sings || inFuging() || inQuestion()) { scheduleRaw(choirVerse, 6000); return; }
-    if (!airFree()) { scheduleRaw(choirVerse, rnd(4, 9) * 1000); return; }
+    if (!sings || inFuging() || inQuestion()) { cueIn("choir", 6, choirVerse); return; }
+    if (!airFree()) { cueIn("choir", wait("choir").rnd(4, 9), choirVerse); return; }
 
-    var t = S.ctx.currentTime + 0.15;
-    var beat = rnd(1.05, 1.5);                                 // slow — hymn time, prairie time
+    var R = turn("choir");
+    var t = tc + 0.15;
+    var beat = R.rnd(1.05, 1.5);                               // slow — hymn time, prairie time
     var meterLines = S.METERS[S.C.meter] || S.METERS.CM;
 
     // Lining-out answer takes precedence: sing back the deacon's line, slower.
     if (S.Motif.pendingLineOut("choir")) {
-      var call = S.Motif.claim("choir");
+      var call = S.Motif.claim("choir", R);
       if (call) {
         var ln = call.notes.map(function (n) { return { deg: n.deg, dur: n.durBeats }; });
-        var hz = S.Harmony.harmonize(ln);
+        var hz = S.Harmony.harmonize(ln, R);
         var total = choirHarmonizedLine(t, hz, beat * 1.4, 0.95);  // 0.7x tempo of the call
-        claimAir(total, rnd(4, 9) * silenceMul());
+        claimAir(total, R.rnd(4, 9) * silenceMul());
         emitNote("choir", 0, t, total);
-        scheduleLayer(choirVerse, (total + rnd(6, 14) * gapMul()) * 1000, "choir");
+        cueLayer("choir", total + R.rnd(6, 14) * gapMul(), choirVerse);
         return;
       }
     }
 
     // A verse: 2 lines of the meter per speech (whole verses would crowd the
     // air; the field hears the hymn in couplets, with sky between).
-    var motif = S.Motif.overdueFor("choir") ? S.Motif.claim("choir") : S.Motif.request("choir");
-    if (!motif) { scheduleRaw(choirVerse, 6000); return; }
+    var motif = S.Motif.overdueFor("choir") ? S.Motif.claim("choir", R) : S.Motif.request("choir", R);
+    if (!motif) { cueIn("choir", 6, choirVerse); return; }
     var nLines = s === "doxology" ? 1 : 2;
     var lineStart = t, sungTotal = 0;
     for (var li = 0; li < nLines; li++) {
       var nSyl = meterLines[(S.C.verseLine + li) % meterLines.length];
-      var line = S.Prosody.pourIntoLine(motif, nSyl);
+      var line = S.Prosody.pourIntoLine(motif, nSyl, R);
       var ln2 = line.map(function (n) { return { deg: n.deg, dur: n.durBeats }; });
-      var hz2 = S.Harmony.harmonize(ln2);
+      var hz2 = S.Harmony.harmonize(ln2, R);
       var lt = choirHarmonizedLine(lineStart, hz2, beat, 0.9);
       emitEvent({ cat: "verse", label: "¶ " + S.C.meter + " line " + (li + 1), detail: nSyl + " syllables · " + motif.name + "·g" + motif.gen });
       sungTotal += lt;
-      lineStart += lt + rnd(1.8, 3.4);                         // the breath between lines
+      lineStart += lt + R.rnd(1.8, 3.4);                       // the breath between lines
       sungTotal += 2.5;
     }
     S.C.verseLine = (S.C.verseLine || 0) + nLines;                 // the hymn walks its stanza
     // the doxology closes each speech with the amen
     if (s === "doxology") {
-      var cadChords = S.Harmony.cadence("plagal");
-      var cd = rnd(2.8, 3.8);
+      var cadChords = S.Harmony.cadence("plagal", R);
+      var cd = R.rnd(2.8, 3.8);
       for (var ci = 0; ci < cadChords.length; ci++) {
         var vis = activeVoices();
         for (var v = 0; v < vis.length; v++) {
@@ -201,10 +205,10 @@ window.KOLOB = window.KOLOB || {};
       }
       sungTotal += cd * 2 + 1;
     }
-    claimAir(sungTotal, rnd(5, 12) * silenceMul());
-    if (chance(0.4)) S.Motif.post("choir", pickW([["clarinet", 3], ["bells", 1]]), motif, pickW([["imitate", 3], ["invert", 2], ["develop", 2]]));
-    var gap = rnd(10, 22) * gapMul();
-    scheduleLayer(choirVerse, (sungTotal + gap) * 1000, "choir");
+    claimAir(sungTotal, R.rnd(5, 12) * silenceMul());
+    if (R.chance(0.4)) S.Motif.post("choir", R.pickW([["clarinet", 3], ["bells", 1]]), motif, R.pickW([["imitate", 3], ["invert", 2], ["develop", 2]]), R);
+    var gap = R.rnd(10, 22) * gapMul();
+    cueLayer("choir", sungTotal + gap, choirVerse);
   }
 
   // ==========================================================================
@@ -212,19 +216,21 @@ window.KOLOB = window.KOLOB || {};
   // the octave by turns) and gather again into homophony. Strings hold the
   // open fifth beneath. After the convergence: the stillness.
   // ==========================================================================
-  function fugingEntry() {
+  // at scheduled time tc (the conductor's cue); its dice are a fuging turn
+  function fugingEntry(tc) {
     var theme = S.Motif.theme();
     if (!theme) return 4;
+    var R = turn("fuging");
     // under the withholding a fuging head may quote at most 3 notes — the
     // imitation foreshadows, it must not announce
     var headCap = S.C.cumulative && !S.C.assemblyFired ? 3 : 6;
     var head = theme.notes.slice(0, Math.min(headCap, theme.notes.length));
-    var t = S.ctx.currentTime + 0.3;
-    var beat = rnd(1.0, 1.3);
+    var t = tc + 0.3;
+    var beat = R.rnd(1.0, 1.3);
     var vis = [3, 2, 1, 0];                                    // B, T, A, S — bottom up
-    var stagger = rnd(2.4, 3.2);
+    var stagger = R.rnd(2.4, 3.2);
     var octForVi = { 0: 7, 1: 7, 2: 0, 3: 0 };                 // upper voices an octave up (7-space)
-    var entryCount = Math.min(4, rint(2, activeVoices().length + 1));
+    var entryCount = Math.min(4, R.rint(2, activeVoices().length + 1));
     var lastEnd = t;
     for (var e = 0; e < entryCount; e++) {
       var vi = vis[e % 4];
@@ -242,9 +248,9 @@ window.KOLOB = window.KOLOB || {};
     // strings hold the open fifth under the imitation
     stringsPad(t, (lastEnd - t) + 4, 0.7, true);
     // convergence: all voices land a plagal amen together
-    var cadAt = lastEnd + rnd(0.5, 1.2);
-    var chords = S.Harmony.cadence("plagal");
-    var cd = rnd(2.6, 3.4);
+    var cadAt = lastEnd + R.rnd(0.5, 1.2);
+    var chords = S.Harmony.cadence("plagal", R);
+    var cd = R.rnd(2.6, 3.4);
     for (var ci = 0; ci < chords.length; ci++) {
       var avs = activeVoices();
       for (var v = 0; v < avs.length; v++) {
@@ -268,4 +274,5 @@ window.KOLOB = window.KOLOB || {};
   S.choirHarmonizedLine = choirHarmonizedLine;
   S.choirVerse = choirVerse;
   S.fugingEntry = fugingEntry;
+  (KOLOB._rooms = KOLOB._rooms || {})["kolob-voices-choir.js"] = true;   // the load guard's roll call
 })();

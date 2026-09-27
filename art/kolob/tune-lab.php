@@ -5,7 +5,7 @@
 // URL (/art/kolob/tune-lab). Purpose: verify each incipit transcription by
 // ear ("plain") and hear the production far-voice treatment ("remembered"),
 // across modes, before trusting the pool. The tune data is read live from
-// kolob-audio.js — this page holds no copy of it.
+// the engine (kolob-guests.js, via KolobAudio) — this page holds no copy of it.
 // ============================================================================
 $page_title = "Tune Lab — KOLOB · Municipal Sky";
 $page_description = "A private audition bench for the Kolob hymn engine's old-tune pool.";
@@ -119,13 +119,9 @@ include '../../includes/header.php';
   Wear re-rolls on every click of <strong>remembered</strong>.</p>
 </div>
 
-<?php // the engine's modules, in the SCORE.md §1 order (as index.php loads them)
-foreach (['kolob-pitch.js', 'kolob-melody.js', 'kolob-harmony.js',
-          'kolob-voices-organ.js', 'kolob-voices-choir.js', 'kolob-voices-winds.js',
-          'kolob-voices-ground.js', 'kolob-voices-field.js', 'kolob-voices-bagpipe.js',
-          'kolob-guests.js', 'kolob-meeting.js', 'kolob-core.js'] as $k_js): ?>
-<script src="<?php echo $k_js; ?>?v=<?php echo otl_v($k_js); ?>"></script>
-<?php endforeach; ?>
+<?php // the engine, from the one list (_engine.php), exactly as index.php loads it
+$k_engine = require __DIR__ . '/_engine.php';
+kolob_engine_tags($k_engine, 'otl_v'); ?>
 <script src="tune-lab.js?v=<?php echo otl_v('tune-lab.js'); ?>"></script>
 
 <?php include '../../includes/footer.php'; ?>

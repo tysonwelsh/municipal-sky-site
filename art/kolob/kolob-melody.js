@@ -5,6 +5,11 @@
 // engine — the gesture pool (each with its Deseret cipher), the transform
 // algebra, genealogy and the ledger. Split from kolob-audio.js (v0.30); see
 // the room list in kolob-core.js.
+//
+// Its dice are never its own (round 2): every call that draws takes the
+// caller's stream as its last argument, R — the voice's turn, the guest's
+// stream, the meeting's motif:<n> — so the motif engine throws nothing that
+// belongs to anyone else.
 // ============================================================================
 
 window.KOLOB = window.KOLOB || {};
@@ -21,12 +26,7 @@ window.KOLOB = window.KOLOB || {};
   // from kolob-meeting.js
   function localArc() { return S.localArc(); }
   // from kolob-core.js
-  function rng() { return S.rng(); }
-  function rnd(a, b) { return S.rnd(a, b); }
-  function rint(a, b) { return S.rint(a, b); }
-  function chance(p) { return S.chance(p); }
-  function pick(arr) { return S.pick(arr); }
-  function pickW(pool) { return S.pickW(pool); }
+  function now() { return S.now(); }
   function emitEvent(ev) { return S.emitEvent(ev); }
   // (the other rooms' state, read and written through S: S.ctx, S.C,
   // S.seasonPos)
@@ -53,8 +53,8 @@ window.KOLOB = window.KOLOB || {};
       }
       return d;
     }
-    // Fit a motif to exactly n syllable-notes (7-degree space).
-    function pourIntoLine(motif, n) {
+    // Fit a motif to exactly n syllable-notes (7-degree space). R: the caller's stream.
+    function pourIntoLine(motif, n, R) {
       var src = motif.notes.map(function (x) { return { deg: x.deg, durBeats: x.durBeats }; });
       var out;
       if (src.length === n) out = src;
@@ -73,9 +73,9 @@ window.KOLOB = window.KOLOB || {};
         var goal = nearestRest7(out[out.length - 1].deg);
         while (out.length < n) {
           var lastD = out[out.length - 1].deg;
-          var step = goal === lastD ? pick([-1, 1]) : (goal > lastD ? 1 : -1);
-          if (chance(0.2)) step *= -1;                           // a wayward syllable
-          out.push({ deg: lastD + step, durBeats: pickW([[1, 5], [1.5, 2], [0.5, 2]]) });
+          var step = goal === lastD ? R.pick([-1, 1]) : (goal > lastD ? 1 : -1);
+          if (R.chance(0.2)) step *= -1;                         // a wayward syllable
+          out.push({ deg: lastD + step, durBeats: R.pickW([[1, 5], [1.5, 2], [0.5, 2]]) });
         }
       }
       // the fermata: last syllable lands on a rest tone and holds
@@ -83,7 +83,7 @@ window.KOLOB = window.KOLOB || {};
       tail.deg = nearestRest7(tail.deg);
       // the fermata breathes but never stalls: an augmented final note times a
       // big multiplier was producing 20-beat holds. Absolute cap at 5 beats.
-      tail.durBeats = Math.min(5, Math.max(2.2, tail.durBeats * rnd(1.4, 2)));
+      tail.durBeats = Math.min(5, Math.max(2.2, tail.durBeats * R.rnd(1.4, 2)));
       tail.fermata = true;
       return out;
     }
@@ -171,15 +171,16 @@ window.KOLOB = window.KOLOB || {};
       };
     }
 
-    // ---- the transform algebra (each returns a NEW motif, chain appended) ----
+    // ---- the transform algebra (each returns a NEW motif, chain appended;
+    // R is the stream of whoever is developing it) ----
     var TRANSFORMS = {
       invert: function (m) {
         var axis = m.notes[0].deg;
         m.notes.forEach(function (n) { n.deg = axis - (n.deg - axis); });
         return m;
       },
-      transpose: function (m) {
-        var by = pickW([[1, 3], [2, 3], [-1, 3], [-2, 2], [3, 1], [4, 1], [-4, 1]]);
+      transpose: function (m, R) {
+        var by = R.pickW([[1, 3], [2, 3], [-1, 3], [-2, 2], [3, 1], [4, 1], [-4, 1]]);
         m.notes.forEach(function (n) { n.deg += by; });
         return m;
       },
@@ -191,13 +192,13 @@ window.KOLOB = window.KOLOB || {};
         m.notes = m.notes.slice(-Math.max(2, Math.ceil(m.notes.length / 2)));
         return m;
       },
-      augment: function (m) {
-        var f = rnd(1.35, 1.9);
+      augment: function (m, R) {
+        var f = R.rnd(1.35, 1.9);
         m.notes.forEach(function (n) { n.durBeats = Math.min(7, n.durBeats * f); });
         return m;
       },
-      diminish: function (m) {
-        var f = rnd(0.55, 0.75);
+      diminish: function (m, R) {
+        var f = R.rnd(0.55, 0.75);
         m.notes.forEach(function (n) { n.durBeats = Math.max(0.4, n.durBeats * f); });
         return m;
       },
@@ -205,17 +206,17 @@ window.KOLOB = window.KOLOB || {};
         m.notes.reverse();
         return m;
       },
-      sequence: function (m) {                     // restate at a transposition — real sequencing
-        var step = pickW([[1, 3], [2, 2], [-1, 3], [-2, 2]]);
+      sequence: function (m, R) {                  // restate at a transposition — real sequencing
+        var step = R.pickW([[1, 3], [2, 2], [-1, 3], [-2, 2]]);
         var rep = clone(m).notes.map(function (n) { return { deg: n.deg + step, durBeats: n.durBeats }; });
         m.notes = m.notes.concat(rep).slice(0, 12);
         return m;
       },
-      ornament: function (m) {                     // passing tones between leaps — grace, not filigree
+      ornament: function (m, R) {                  // passing tones between leaps — grace, not filigree
         var res = [];
         for (var i = 0; i < m.notes.length; i++) {
           var n = m.notes[i], nx = m.notes[i + 1];
-          if (nx && res.length < 9 && Math.abs(nx.deg - n.deg) >= 2 && n.durBeats >= 1 && chance(0.55)) {
+          if (nx && res.length < 9 && Math.abs(nx.deg - n.deg) >= 2 && n.durBeats >= 1 && R.chance(0.55)) {
             res.push({ deg: n.deg, durBeats: n.durBeats * 0.65 });
             res.push({ deg: n.deg + Math.sign(nx.deg - n.deg), durBeats: Math.max(0.4, n.durBeats * 0.35) });
           } else res.push({ deg: n.deg, durBeats: n.durBeats });
@@ -223,26 +224,26 @@ window.KOLOB = window.KOLOB || {};
         m.notes = res;
         return m;
       },
-      rotate: function (m) {                       // start the cell from a later note — the same
+      rotate: function (m, R) {                    // start the cell from a later note — the same
         var len = m.notes.length;                  // pitches, a fresh angle of approach (modal turn)
         if (len < 3) return m;
-        var k = 1 + Math.floor(rng() * (len - 1));
+        var k = 1 + Math.floor(R.rnd(0, 1) * (len - 1));
         m.notes = m.notes.slice(k).concat(m.notes.slice(0, k));
         return m;
       },
-      intervalExpand: function (m) {               // widen every interval about the head — the same
-        var axis = m.notes[0].deg, f = rnd(1.4, 1.9);  // shape, opened out into bolder leaps
+      intervalExpand: function (m, R) {            // widen every interval about the head — the same
+        var axis = m.notes[0].deg, f = R.rnd(1.4, 1.9);  // shape, opened out into bolder leaps
         m.notes.forEach(function (n) { n.deg = axis + Math.round((n.deg - axis) * f); });
         return recentre(m);
       },
-      intervalCompress: function (m) {             // narrow every interval — the shape drawn in
-        var axis = m.notes[0].deg, f = rnd(0.4, 0.65);  // toward chant, close to the reciting tone
+      intervalCompress: function (m, R) {          // narrow every interval — the shape drawn in
+        var axis = m.notes[0].deg, f = R.rnd(0.4, 0.65);  // toward chant, close to the reciting tone
         m.notes.forEach(function (n) { n.deg = axis + Math.round((n.deg - axis) * f); });
         return m;
       },
-      syncopate: function (m) {                    // lilt: lengthen a strong note and clip the next
+      syncopate: function (m, R) {                 // lilt: lengthen a strong note and clip the next
         for (var i = 0; i < m.notes.length - 1; i++) {  // — a dotted / snap displacement of the pulse
-          if (m.notes[i].durBeats >= 1 && chance(0.5)) {
+          if (m.notes[i].durBeats >= 1 && R.chance(0.5)) {
             var take = m.notes[i].durBeats * 0.4;
             m.notes[i].durBeats += take;
             m.notes[i + 1].durBeats = Math.max(0.3, m.notes[i + 1].durBeats - take * 0.6);
@@ -251,12 +252,12 @@ window.KOLOB = window.KOLOB || {};
         }
         return m;
       },
-      mordent: function (m) {                      // a quick neighbor flick on one held note — the
+      mordent: function (m, R) {                   // a quick neighbor flick on one held note — the
         var res = [], did = false;                 // reed's shake, distinct from filling a leap
         for (var i = 0; i < m.notes.length; i++) {
           var n = m.notes[i];
-          if (!did && n.durBeats >= 1.5 && res.length < 8 && chance(0.7)) {
-            var dir = chance(0.5) ? 1 : -1;
+          if (!did && n.durBeats >= 1.5 && res.length < 8 && R.chance(0.7)) {
+            var dir = R.chance(0.5) ? 1 : -1;
             res.push({ deg: n.deg, durBeats: Math.max(0.3, n.durBeats * 0.3) });
             res.push({ deg: n.deg + dir, durBeats: 0.3 });
             res.push({ deg: n.deg, durBeats: Math.max(0.4, n.durBeats * 0.4) });
@@ -341,7 +342,7 @@ window.KOLOB = window.KOLOB || {};
       }
       return true;
     }
-    function pickTransform(voice, m, chain) {
+    function pickTransform(voice, m, chain, R) {
       var w = VOICE_WEIGHTS[voice] || VOICE_WEIGHTS.clarinet;
       var tilt = SECTION_TILT[S.C.section] || {};
       var dia = meetingDialect || {};
@@ -353,7 +354,7 @@ window.KOLOB = window.KOLOB || {};
         if (last && AFFINITY[last] && AFFINITY[last][name]) wt *= AFFINITY[last][name];
         pool.push([name, wt]);
       }
-      return pool.length ? pickW(pool) : null;
+      return pool.length ? R.pickW(pool) : null;
     }
     // Keep the centre of mass in the singable window by whole octaves —
     // internal intervals untouched, the contour survives intact.
@@ -396,15 +397,15 @@ window.KOLOB = window.KOLOB || {};
       doxology:   ["fragmentHead", "sequence"],
       postlude:   ["fragmentTail", "augment"],
     };
-    function developWithheld(voice, m) {
+    function developWithheld(voice, m, R) {
       var fam = CUMULATIVE_STAGE[S.C.section] || ["fragmentTail"];
       var out = clone(m);
       var forced = null;
       for (var fi = 0; fi < fam.length; fi++) {
         if (allowedTransform(fam[fi], out, out.chain)) { forced = fam[fi]; break; }
       }
-      if (!forced) return develop(voice, out, 1);  // guards refused; one gentle link
-      out = TRANSFORMS[forced](out);
+      if (!forced) return develop(voice, out, 1, R);  // guards refused; one gentle link
+      out = TRANSFORMS[forced](out, R);
       out.gen = m.gen + 1;
       out.chain = m.chain.concat([forced]);
       stats.transformsUsed[forced] = (stats.transformsUsed[forced] || 0) + 1;
@@ -413,7 +414,7 @@ window.KOLOB = window.KOLOB || {};
       remember(out);
       emitEvent({ cat: "motif", label: "◆ " + out.name + "·g" + out.gen, detail: forced + " · withheld" });
       // occasionally one more free link — but only one, and never verbatim
-      if (chance(0.4)) out = develop(voice, out, 1);
+      if (R.chance(0.4)) out = develop(voice, out, 1, R);
       return out;
     }
     // Identity tether: every 3rd generation, the ancestor's opening is grafted
@@ -430,23 +431,23 @@ window.KOLOB = window.KOLOB || {};
       stats.transformsUsed.tether = (stats.transformsUsed.tether || 0) + 1;
       return m;
     }
-    function develop(voice, m, maxChain) {
+    function develop(voice, m, maxChain, R) {
       if (m.gen >= 9) {                            // renewal: the line returns to its source
         var anc = ancestorOf(m.name);
         if (anc) m = anc;
       }
       var out = clone(m);
-      var links = rint(1, maxChain || 2);
+      var links = R.rint(1, maxChain || 2);
       var used = [];
       for (var i = 0; i < links; i++) {
-        var name = pickTransform(voice, out, out.chain.concat(used));
+        var name = pickTransform(voice, out, out.chain.concat(used), R);
         if (!name) break;
-        out = TRANSFORMS[name](out);
+        out = TRANSFORMS[name](out, R);
         used.push(name);
         stats.transformsUsed[name] = (stats.transformsUsed[name] || 0) + 1;
       }
       if (!used.length) {
-        out = TRANSFORMS.transpose(out);
+        out = TRANSFORMS.transpose(out, R);
         used.push("transpose");
         stats.transformsUsed.transpose = (stats.transformsUsed.transpose || 0) + 1;
       }
@@ -459,46 +460,46 @@ window.KOLOB = window.KOLOB || {};
       emitEvent({ cat: "motif", label: "◆ " + out.name + "·g" + out.gen, detail: used.join("+") + " · " + (out.gesture || "") });
       return out;
     }
-    // Which motif should a voice work right now?
-    function request(voice) {
+    // Which motif should a voice work right now? R: the voice's turn.
+    function request(voice, R) {
       var m;
       switch (S.C.section) {
         case "prelude": case "invocation":
-          m = chance(0.7) ? working.theme : pick(working.subs); break;
+          m = R.chance(0.7) ? working.theme : R.pick(working.subs); break;
         case "hymn":
-          m = pickW([[working.theme, 3], [working.subs[0], 2], [working.subs[1] || working.theme, 2]]); break;
+          m = R.pickW([[working.theme, 3], [working.subs[0], 2], [working.subs[1] || working.theme, 2]]); break;
         case "testimony": case "sacrament":
-          m = chance(0.55) ? pick(working.subs) : working.theme; break;
+          m = R.chance(0.55) ? R.pick(working.subs) : working.theme; break;
         case "doxology":
-          m = chance(0.65) ? working.theme : pick(working.subs); break;
+          m = R.chance(0.65) ? working.theme : R.pick(working.subs); break;
         default:
           m = working.theme;
       }
       if (!m) m = working.theme;
       // CUMULATIVE: MORE of the theme's parts than usual — the form is
       // presence of the fragments, absence of the whole
-      if (withheld(working.theme) && m !== working.theme && chance(0.33)) m = working.theme;
+      if (withheld(working.theme) && m !== working.theme && R.chance(0.33)) m = working.theme;
       // Work the LINEAGE (what the meeting has built) about half the time in
       // the singing sections; the tether keeps it recognizable.
       if (S.C.section === "hymn" || S.C.section === "doxology") {
         var line = lineage[m.name];
-        if (line && line.gen > 0 && line.gen < 6 && chance(0.45)) m = line;
+        if (line && line.gen > 0 && line.gen < 6 && R.chance(0.45)) m = line;
       }
       // State it plainly first — the tradition trusts its tunes.
-      if ((S.C.section === "prelude" || S.C.section === "invocation") && m.gen === 0 && chance(0.5) && !withheld(m)) return clone(m);
+      if ((S.C.section === "prelude" || S.C.section === "invocation") && m.gen === 0 && R.chance(0.5) && !withheld(m)) return clone(m);
       if (S.C.section === "doxology" && !climaxReprised && localArc() > 0.55 && !(S.C.cumulative && !S.C.assemblyFired)) {
         // THE reprise: once per meeting, at the doxology's height, something
         // returns whole — usually the literal theme, sometimes its deepest
         // descendant, sometimes the lesser hymn. Recognition, varied.
         climaxReprised = true;
-        var roll = rng();
+        var roll = R.rnd(0, 1);
         var deepLine = lineage[working.theme.name];
         if (roll < 0.25 && deepLine && deepLine.gen >= 3) {
           emitEvent({ cat: "motif", label: "✸ reprise " + working.theme.name, detail: "the theme returns, transfigured — g" + deepLine.gen });
           return clone(deepLine);
         }
         if (roll < 0.4 && working.subs.length) {
-          var subRe = pick(working.subs);
+          var subRe = R.pick(working.subs);
           emitEvent({ cat: "motif", label: "✸ reprise " + subRe.name, detail: "the lesser hymn returns — " + (subRe.gesture || "") });
           return clone(subRe);
         }
@@ -507,18 +508,18 @@ window.KOLOB = window.KOLOB || {};
       }
       if (S.C.section === "postlude") {
         var deep = lineage[m.name];
-        return decompose((deep && deep.gen > m.gen) ? clone(deep) : clone(m));
+        return decompose((deep && deep.gen > m.gen) ? clone(deep) : clone(m), R);
       }
       // the withheld theme develops only through its section's fragment family
-      if (withheld(m)) return developWithheld(voice, m);
-      return develop(voice, m, S.C.section === "doxology" ? 3 : 2);
+      if (withheld(m)) return developWithheld(voice, m, R);
+      return develop(voice, m, S.C.section === "doxology" ? 3 : 2, R);
     }
     // Postlude: the motif releases its notes one at a time into the evening.
-    function decompose(m) {
+    function decompose(m, R) {
       var out = clone(m);
       var x = localArc();
       var keep = Math.max(1, Math.round(out.notes.length * (1 - 0.8 * x)));
-      while (out.notes.length > keep) out.notes.splice(rint(1, Math.max(1, out.notes.length - 1)), 1);
+      while (out.notes.length > keep) out.notes.splice(R.rint(1, Math.max(1, out.notes.length - 1)), 1);
       out.notes.forEach(function (n) { n.durBeats *= 1 + x; });
       out.gen = m.gen + 1;
       out.chain = m.chain.concat(["dissolve"]);
@@ -527,11 +528,12 @@ window.KOLOB = window.KOLOB || {};
     }
 
     // ---- dialogue ledger: real obligations between voices ----
-    function post(fromVoice, toVoice, motif, type) {
-      ledger.push({ from: fromVoice, to: toVoice, motif: clone(motif), type: type, deadline: S.ctx.currentTime + rnd(8, 20) });
+    // (deadlines are kept on the music's clock: the poster's scheduled now)
+    function post(fromVoice, toVoice, motif, type, R) {
+      ledger.push({ from: fromVoice, to: toVoice, motif: clone(motif), type: type, deadline: now() + R.rnd(8, 20) });
       if (ledger.length > 6) ledger.shift();
     }
-    function claim(voice) {
+    function claim(voice, R) {
       var i, ob = null;
       for (i = 0; i < ledger.length; i++) {
         if (ledger[i].to === voice) { ob = ledger.splice(i, 1)[0]; break; }
@@ -540,7 +542,7 @@ window.KOLOB = window.KOLOB || {};
         // An obligation past its deadline is taken up by whichever voice
         // speaks next (never the caller itself) — the answer is always heard.
         for (i = 0; i < ledger.length; i++) {
-          if (ledger[i].from !== voice && S.ctx.currentTime > ledger[i].deadline) { ob = ledger.splice(i, 1)[0]; break; }
+          if (ledger[i].from !== voice && now() > ledger[i].deadline) { ob = ledger.splice(i, 1)[0]; break; }
         }
       }
       if (!ob) return null;
@@ -555,15 +557,15 @@ window.KOLOB = window.KOLOB || {};
         // the caller's notes verbatim; the choir sets them (renderer's job).
         ans = clone(m);
         ans.linedOut = true;
-      } else if (ob.type === "imitate") ans = develop(voice, m, 1);
+      } else if (ob.type === "imitate") ans = develop(voice, m, 1, R);
       else if (ob.type === "invert") {
         var op = "invert";
         if (lastRealLink(m.chain) === "invert") op = isPalindromic(m) ? "transpose" : "retrograde";
-        ans = TRANSFORMS[op](clone(m)); ans.gen = m.gen + 1; ans.chain = m.chain.concat([op]);
+        ans = TRANSFORMS[op](clone(m), R); ans.gen = m.gen + 1; ans.chain = m.chain.concat([op]);
         stats.transformsUsed[op] = (stats.transformsUsed[op] || 0) + 1;
         recentre(ans); remember(ans);
       }
-      else ans = develop(voice, m, 2);
+      else ans = develop(voice, m, 2, R);
       stats.answers++;
       emitEvent({ cat: "motif", label: "⇄ " + voice + " answers " + ob.from, detail: ob.type + " · " + ans.name + "·g" + ans.gen });
       return ans;
@@ -571,7 +573,7 @@ window.KOLOB = window.KOLOB || {};
     function overdueFor(voice) {
       for (var i = 0; i < ledger.length; i++) {
         if (ledger[i].to === voice) return true;
-        if (ledger[i].from !== voice && S.ctx && S.ctx.currentTime > ledger[i].deadline) return true;
+        if (ledger[i].from !== voice && S.ctx && now() > ledger[i].deadline) return true;
       }
       return false;
     }
@@ -580,12 +582,13 @@ window.KOLOB = window.KOLOB || {};
       return false;
     }
 
-    function newMeeting() {
+    // R: the meeting's motif:<n> stream (the day's gestures are part of its plan)
+    function newMeeting(R) {
       // THE DAY'S TEMPER — the developmental dialect for the whole meeting.
       // Tilted by the kind of Sunday and the season: fast days run plain and
       // terse, festivals run florid and expansive, but any temper can surface.
       var act = S.C.meeting ? S.C.meeting.activity : "ordinary";
-      dialectName = pickW([
+      dialectName = R.pickW([
         ["plain",     2 + 2.5 * (1 - S.seasonPos) + (act === "fast" ? 1.5 : 0)],
         ["psalmodic", 1.8 + (act === "fast" ? 1 : 0)],
         ["terse",     1.2 + (act === "fast" ? 2 : 0)],
@@ -596,10 +599,11 @@ window.KOLOB = window.KOLOB || {};
       meetingDialect = DIALECTS[dialectName];
       // Draw DISTINCT gestures from the pool. Most stay home today — and a
       // lean fast Sunday sometimes carries only two hymns in its pocket.
-      var draw = (S.C.meeting && S.C.meeting.activity === "fast" && chance(0.5)) ? 2 : 3;
+      var leanDie = R.chance(0.5);
+      var draw = (S.C.meeting && S.C.meeting.activity === "fast" && leanDie) ? 2 : 3;
       var idxs = [];
       while (idxs.length < draw) {
-        var gi = rint(0, GESTURES.length - 1);
+        var gi = R.rint(0, GESTURES.length - 1);
         if (idxs.indexOf(gi) < 0) idxs.push(gi);
       }
       working.theme = fromGesture(GESTURES[idxs[0]], NAMES[0]);
@@ -607,8 +611,8 @@ window.KOLOB = window.KOLOB || {};
       for (var si = 1; si < idxs.length; si++) working.subs.push(fromGesture(GESTURES[idxs[si]], NAMES[si]));
       // Perturb each once, gently, so no two meetings state a gesture the same.
       [working.theme].concat(working.subs).forEach(function (m) {
-        var op = pickW([["transpose", 3], ["augment", 2], ["ornament", 1], ["diminish", 1]]);
-        if (allowedTransform(op, m, [])) { TRANSFORMS[op](m); m.chain = ["seed"]; }
+        var op = R.pickW([["transpose", 3], ["augment", 2], ["ornament", 1], ["diminish", 1]]);
+        if (allowedTransform(op, m, [])) { TRANSFORMS[op](m, R); m.chain = ["seed"]; }
       });
       // CUMULATIVE: a 3-note theme withheld and finally assembled is an
       // anticlimax — seat the day's longest hymn in the theme's chair (the
@@ -642,13 +646,13 @@ window.KOLOB = window.KOLOB || {};
       if (type === "doxology") climaxReprised = false;
     }
     function theme() { return working.theme; }
-    function anyWorking() {
+    function anyWorking(R) {
       // under the withholding, casual callers never receive the raw theme
       if (S.C.cumulative && !S.C.assemblyFired) {
-        if (working.subs.length) return pick(working.subs);
-        return developWithheld("choir", working.theme);
+        if (working.subs.length) return R.pick(working.subs);
+        return developWithheld("choir", working.theme, R);
       }
-      return (chance(0.7) || !working.subs.length) ? working.theme : pick(working.subs);
+      return (R.chance(0.7) || !working.subs.length) ? working.theme : R.pick(working.subs);
     }
 
     return {
@@ -680,4 +684,5 @@ window.KOLOB = window.KOLOB || {};
   S.Motif = Motif;
   // the room's public face on the KOLOB namespace
   KOLOB.Melody = { METERS: METERS, Prosody: Prosody, Motif: Motif };
+  (KOLOB._rooms = KOLOB._rooms || {})["kolob-melody.js"] = true;   // the load guard's roll call
 })();

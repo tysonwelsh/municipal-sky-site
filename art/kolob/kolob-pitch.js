@@ -141,9 +141,10 @@ window.KOLOB = window.KOLOB || {};
   // ==========================================================================
   // LENT — what this room shares with the rest of the house (KOLOB._s)
   // ==========================================================================
-  Object.defineProperty(S, "F0", { enumerable: true, get: function () { return F0; }, set: function (v) { F0 = v; } });
+  // (configurable, so the room can be loaded twice without "Cannot redefine")
+  Object.defineProperty(S, "F0", { enumerable: true, configurable: true, get: function () { return F0; }, set: function (v) { F0 = v; } });
   S.ROOT_MULT = ROOT_MULT;
-  Object.defineProperty(S, "mode", { enumerable: true, get: function () { return mode; }, set: function (v) { mode = v; } });
+  Object.defineProperty(S, "mode", { enumerable: true, configurable: true, get: function () { return mode; }, set: function (v) { mode = v; } });
   S.COL = COL;
   S.colN = colN;
   S.projDeg = projDeg;
@@ -158,4 +159,5 @@ window.KOLOB = window.KOLOB || {};
     ratio: ratio, mul: mul, div: div, fromFraction: fromFraction, cents: cents,
     octaveReduce: octaveReduce, degMonzo: degMonzo, commaOf: commaOf,
   };
+  (KOLOB._rooms = KOLOB._rooms || {})["kolob-pitch.js"] = true;   // the load guard's roll call
 })();

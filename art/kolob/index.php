@@ -17,16 +17,13 @@ function kolob_v($file)
 //                shifts the instant any JS/CSS/markup ships, with no upkeep
 //   · deployed — the newest asset's mtime; the server stamps this at upload,
 //                so it reads as the moment the live files landed (UTC)
-// The engine is a family of modules (Kolob 2, phase 0a), loaded in the
-// SCORE.md §1 order — pitch, the composers, the voices, the performers, and
-// last the core that raises the KolobAudio facade over them.
-$kolob_engine  = ['kolob-pitch.js',
-                  'kolob-melody.js', 'kolob-harmony.js',
-                  'kolob-voices-organ.js', 'kolob-voices-choir.js', 'kolob-voices-winds.js',
-                  'kolob-voices-ground.js', 'kolob-voices-field.js', 'kolob-voices-bagpipe.js',
-                  'kolob-guests.js', 'kolob-meeting.js',
-                  'kolob-core.js'];
-$kolob_assets  = array_merge($kolob_engine, ['kolob-ui.js', 'kolob-viz.js', 'kolob-text.js', 'kolob.css', 'index.php', '../prosperos-jukebox-v2/pj2-fx.js']);
+// The engine is a family of modules, loaded in the SCORE.md §1 order from the
+// ONE list in _engine.php (the Jukebox v2 substrate — pj2-rand, pj2-clock,
+// pj2-fx — then pitch, the composers, the voices, the performers, and last
+// the core that raises the KolobAudio facade over them). The labs read the
+// same list; so does the harness.
+$kolob_engine  = require __DIR__ . '/_engine.php';
+$kolob_assets  = array_merge($kolob_engine, ['kolob-ui.js', 'kolob-viz.js', 'kolob-text.js', 'kolob.css', 'index.php', '_engine.php']);
 $kolob_version = trim((string) @file_get_contents(__DIR__ . '/VERSION')) ?: 'dev';
 $kolob_build   = substr(md5(implode('', array_map('kolob_v', $kolob_assets))), 0, 6);
 $kolob_mtime   = 0;
@@ -202,14 +199,12 @@ include '../../includes/header.php';
 </div>
 
 <script src="../background-audio.js?v=<?php echo kolob_v('../background-audio.js'); ?>"></script>
-<!-- The Jukebox v2 substrate's room-blend crossfader (PJ2.Fx.roomBlend), shared
-     by relative path the way ZANKYŌ shares it — never modified from here. The
-     engine degrades to one room if it is missing. -->
-<script src="../prosperos-jukebox-v2/pj2-fx.js?v=<?php echo kolob_v('../prosperos-jukebox-v2/pj2-fx.js'); ?>"></script>
-<?php foreach ($kolob_engine as $kolob_js): ?>
-<script src="<?php echo $kolob_js; ?>?v=<?php echo kolob_v($kolob_js); ?>"></script>
-<?php endforeach; ?>
-<script>if(!window.KolobAudio)console.error("KOLOB AUDIO ENGINE FAILED TO LOAD");</script>
+<!-- The engine, room by room, from _engine.php: first the Jukebox v2 substrate
+     (pj2-rand's dice, pj2-clock's clock, pj2-fx's room crossfade), shared by
+     relative path the way ZANKYŌ shares it and never modified from here; then
+     Kolob's own rooms. The guard printed after them names any room that did
+     not answer the roll call. -->
+<?php kolob_engine_tags($kolob_engine, 'kolob_v'); ?>
 <script src="kolob-text.js?v=<?php echo kolob_v('kolob-text.js'); ?>"></script>
 <script src="kolob-viz.js?v=<?php echo kolob_v('kolob-viz.js'); ?>"></script>
 <script src="kolob-ui.js?v=<?php echo kolob_v('kolob-ui.js'); ?>"></script>

@@ -5,6 +5,10 @@
 // guests: the unanswered question, two bands crossing, the steeples, the
 // old tune half-remembered. Split from kolob-audio.js (v0.30); see the room
 // list in kolob-core.js.
+//
+// Each guest is called by the conductor's cue at its scheduled time t and
+// throws its dice from its own stream, guest:<type>:<n> (round 2): a guest
+// that throws more or fewer never alters a hymn.
 // ============================================================================
 
 window.KOLOB = window.KOLOB || {};
@@ -30,7 +34,7 @@ window.KOLOB = window.KOLOB || {};
   function activeVoices() { return S.activeVoices(); }
   function choirHarmonizedLine(t, harmonized, beat, gainMul) { return S.choirHarmonizedLine(t, harmonized, beat, gainMul); }
   // from kolob-voices-winds.js
-  function renderClarinetLine(t, notes, gainMul) { return S.renderClarinetLine(t, notes, gainMul); }
+  function renderClarinetLine(t, notes, gainMul, R) { return S.renderClarinetLine(t, notes, gainMul, R); }
   function renderHarmonium(t, notes, gainMul) { return S.renderHarmonium(t, notes, gainMul); }
   // from kolob-voices-ground.js
   function stringsPad(t, dur, gainMul, fifthOnly) { return S.stringsPad(t, dur, gainMul, fifthOnly); }
@@ -38,15 +42,12 @@ window.KOLOB = window.KOLOB || {};
   // from kolob-meeting.js
   function localArc() { return S.localArc(); }
   // from kolob-core.js
-  function rnd(a, b) { return S.rnd(a, b); }
-  function rint(a, b) { return S.rint(a, b); }
-  function chance(p) { return S.chance(p); }
-  function pick(arr) { return S.pick(arr); }
-  function pickW(pool) { return S.pickW(pool); }
+  function stream(label) { return S.stream(label); }
+  function synth(voice) { return S.synth(voice); }
   function emitNote(layer, freq, startTime, duration, extra) { return S.emitNote(layer, freq, startTime, duration, extra); }
   function emitEvent(ev) { return S.emitEvent(ev); }
   function wideSend() { return S.wideSend(); }
-  function scheduleRaw(fn, ms) { return S.scheduleRaw(fn, ms); }
+  function cueAt(lane, t, fn) { return S.cueAt(lane, t, fn); }
   function panAt(layer, p) { return S.panAt(layer, p); }
   function getLayerParam(layer, key, fallback) { return S.getLayerParam(layer, key, fallback); }
   function env(g, t, pts) { return S.env(g, t, pts); }
@@ -71,29 +72,30 @@ window.KOLOB = window.KOLOB || {};
   // clarinet doubling above, organ beneath, strings holding the fifth,
   // closed with the plagal amen. The withholding lifts when it ends.
   // ==========================================================================
-  function cumulativeAssembly() {
+  function cumulativeAssembly(tc) {
     var theme = S.Motif.theme();
     if (!theme) return 8;
-    var t = S.ctx.currentTime + 0.4;
-    var breath = rnd(2, 3);                        // the room inhales
+    var R = stream("guest:cumulative");
+    var t = tc + 0.4;
+    var breath = R.rnd(2, 3);                      // the room inhales
     // if the hour is late (the x>0.7 fallback), the statement compresses
-    var beat = localArc() > 0.7 ? rnd(0.95, 1.15) : rnd(1.3, 1.6);
+    var beat = localArc() > 0.7 ? R.rnd(0.95, 1.15) : R.rnd(1.3, 1.6);
     var line = theme.notes.map(function (n) { return { deg: n.deg, dur: n.durBeats }; });
-    var hz = S.Harmony.harmonize(line);
+    var hz = S.Harmony.harmonize(line, R);
     var at = t + breath;
     var total = choirHarmonizedLine(at, hz, beat, 0.95);
     // the deacon doubles the melody an octave above the sopranos
     var cnotes = theme.notes.map(function (n) {
       return { f: degFreq(projDeg(n.deg) + colN()), dur: Math.max(0.4, Math.min(beat * 3.5, n.durBeats * beat)) };
     });
-    renderClarinetLine(at + 0.1, cnotes, 0.8);
+    renderClarinetLine(at + 0.1, cnotes, 0.8, R);
     // the ground beneath the arrival
     if (hz.length) organChord(at, Math.max(6, total * 0.55), hz[0].chord, 0.5);
-    var chDur = rnd(2.8, 3.4);
+    var chDur = R.rnd(2.8, 3.4);
     stringsPad(at, total + chDur * 2 + 2, 0.85, true);
     // the plagal amen — every voice lands together
-    var cadAt = at + total + rnd(0.4, 0.9);
-    var chords = S.Harmony.cadence("plagal");
+    var cadAt = at + total + R.rnd(0.4, 0.9);
+    var chords = S.Harmony.cadence("plagal", R);
     var avs = activeVoices();
     for (var ci = 0; ci < chords.length; ci++) {
       for (var v = 0; v < avs.length; v++) {
@@ -118,9 +120,10 @@ window.KOLOB = window.KOLOB || {};
   // The last asking gets no answer. The air is claimed, so the meeting holds
   // back and the drone is left alone with it.
   // ==========================================================================
-  function unansweredQuestion() {
-    var t = S.ctx.currentTime + 0.5;
-    var beat = rnd(0.8, 0.95);
+  function unansweredQuestion(V, tc) {
+    var R = stream("guest:question");
+    var t = tc + 0.5;
+    var beat = R.rnd(0.8, 0.95);
     // the perennial question: rising, angular, ending high and unresolved
     // (a 9th above the root — a step past the octave, asking)
     var QDEGS = [[4, 1.3], [5, 0.9], [8, 1.0], [6, 0.8], [8, 2.8]];
@@ -129,31 +132,31 @@ window.KOLOB = window.KOLOB || {};
     });
     var qdur = 0;
     for (var qq = 0; qq < qNotes.length; qq++) qdur += qNotes[qq].dur;
-    var N = rint(4, 5);
+    var N = R.rint(4, 5);
     var cursor = t;
     for (var k = 0; k < N; k++) {
-      renderClarinetLine(cursor, qNotes, 0.9);
+      renderClarinetLine(cursor, qNotes, 0.9, R);
       var afterQ = cursor + qdur;
       if (k < N - 1) {
         // the answer: more notes, quicker, higher, less patient each time
-        var aAt = afterQ + rnd(1.2, 2.2);
+        var aAt = afterQ + R.rnd(1.2, 2.2);
         var count = 3 + k * 2;
         var abeat = 1.25 * Math.pow(0.75, k);
         var lift = k >= 2 ? colN() : 0;
         var adeg = 2, anotes = [];
         for (var an = 0; an < count; an++) {
-          adeg += rint(-(1 + k), 1 + k) || 1;
+          adeg += R.rint(-(1 + k), 1 + k) || 1;
           adeg = Math.max(0, Math.min(9 + k, adeg));
-          anotes.push({ f: degFreq(projDeg(adeg) + colN() + lift), dur: Math.max(0.3, abeat * rnd(0.7, 1.2)) });
+          anotes.push({ f: degFreq(projDeg(adeg) + colN() + lift), dur: Math.max(0.3, abeat * R.rnd(0.7, 1.2)) });
         }
         var adur = renderHarmonium(aAt, anotes, 0.5 + k * 0.12);
         emitNote("harmonium", anotes[0].f, aAt, adur);
         // from the third answer the answerers argue among themselves
         if (k >= 2) {
-          var bnotes = anotes.map(function (n) { return { f: n.f * 1.5, dur: n.dur * rnd(0.8, 1) }; });
+          var bnotes = anotes.map(function (n) { return { f: n.f * 1.5, dur: n.dur * R.rnd(0.8, 1) }; });
           renderHarmonium(aAt + abeat * 0.5, bnotes, 0.3 + k * 0.08);
         }
-        cursor = aAt + adur + rnd(2.5, 4.5) * Math.pow(0.85, k);
+        cursor = aAt + adur + R.rnd(2.5, 4.5) * Math.pow(0.85, k);
       } else {
         cursor = afterQ;                       // the last asking hangs
       }
@@ -162,9 +165,9 @@ window.KOLOB = window.KOLOB || {};
     var total = (cursor - t) + tail;
     claimAir(total - 4, 6);
     emitEvent({ cat: "visitation", label: "? the question", detail: "×" + N + " askings · " + Math.round(total) + "s" });
-    scheduleRaw(function () {
+    cueAt("guests", tc + (cursor - t + 1.5), function () {
       emitEvent({ cat: "visitation", label: "? unanswered", detail: "the drone alone" });
-    }, (cursor - t + 1.5) * 1000);
+    });
     return total;
   }
 
@@ -178,15 +181,16 @@ window.KOLOB = window.KOLOB || {};
   // its notes are reported to the page with layer "band"; the report draws
   // no dice and moves nothing).
   // ==========================================================================
-  function twoBandsCross() {
+  function twoBandsCross(V, tc) {
+    var R = stream("guest:bands");
     // under the withholding the visiting band gets a lesser hymn — even a
     // stranger's quickstep must not give the tune away
-    var theme = (S.C.cumulative && !S.C.assemblyFired) ? S.Motif.anyWorking() : S.Motif.theme();
-    var t = S.ctx.currentTime + 0.4;
-    var dur = rnd(45, 65);
-    var beat = rnd(0.4, 0.52);                 // quickstep — unrelated to the meeting's time
-    var trans = pickW([[9 / 8, 3], [4 / 3, 2], [16 / 9, 1]]);   // its own key, justly tuned to itself
-    var fromLeft = chance(0.5);
+    var theme = (S.C.cumulative && !S.C.assemblyFired) ? S.Motif.anyWorking(R) : S.Motif.theme();
+    var t = tc + 0.4;
+    var dur = R.rnd(45, 65);
+    var beat = R.rnd(0.4, 0.52);               // quickstep — unrelated to the meeting's time
+    var trans = R.pickW([[9 / 8, 3], [4 / 3, 2], [16 / 9, 1]]);   // its own key, justly tuned to itself
+    var fromLeft = R.chance(0.5);
 
     // the visiting band's own wire into the hall
     var bus = S.ctx.createGain();
@@ -255,12 +259,12 @@ window.KOLOB = window.KOLOB || {};
     oom.start(t); oom.stop(t + dur + 0.5);
 
     emitEvent({ cat: "visitation", label: "⇋ a band approaches", detail: (fromLeft ? "from the west" : "from the east") + " · its own key" });
-    scheduleRaw(function () {
+    cueAt("guests", tc + dur * 0.5, function () {
       emitEvent({ cat: "visitation", label: "⇋ the bands cross", detail: "two times at once" });
-    }, dur * 0.5 * 1000);
-    scheduleRaw(function () {
+    });
+    cueAt("guests", tc + dur, function () {
       emitEvent({ cat: "visitation", label: "⇋ passes on", detail: "" });
-    }, dur * 1000);
+    });
     return dur;
   }
 
@@ -273,13 +277,17 @@ window.KOLOB = window.KOLOB || {};
   // carries on beneath them, and the visitors are never engraved on the page
   // (not one of ours). The home bell has the first word and the last.
   // ==========================================================================
-  function steeplesAnswer() {
-    var t = S.ctx.currentTime + 0.3;
+  // (the steeples' keys and the times of their strikes are musical; where
+  // each stands in the valley and how loud it carries are synth:steeples)
+  function steeplesAnswer(V, tc) {
+    var R = stream("guest:steeples");
+    var Y = synth("steeples");
+    var t = tc + 0.3;
     var remaining = Math.max(20, S.C.sectionDur * (1 - localArc()));
-    var dur = Math.min(rnd(45, 75), remaining + 12);
+    var dur = Math.min(R.rnd(45, 75), remaining + 12);
 
     // the home steeple — center field, the same bell the joints ring
-    var homeBase = harm(pick([4, 5, 6]));
+    var homeBase = harm(R.pick([4, 5, 6]));
     while (homeBase > 700) homeBase /= 2;
     while (homeBase < 300) homeBase *= 2;
     var ringAmt = getLayerParam("bells", "ring", 0.55);
@@ -288,10 +296,10 @@ window.KOLOB = window.KOLOB || {};
     // the visitors: fixed transposed bases drawn without replacement — a bell
     // keeps its key; a festive Sunday wakes a third steeple
     var pool = [9 / 8, 4 / 3, 16 / 9, 6 / 5];
-    var nVis = S.MEETINGS[S.C.meeting.activity].bells >= 0.8 && chance(0.7) ? 3 : 2;
+    var nVis = S.MEETINGS[S.C.meeting.activity].bells >= 0.8 && R.chance(0.7) ? 3 : 2;
     var visitors = [];
     for (var v = 0; v < nVis; v++) {
-      var trans = pool.splice(rint(0, pool.length - 1), 1)[0];
+      var trans = pool.splice(R.rint(0, pool.length - 1), 1)[0];
       var base = homeBase * trans;
       while (base > 700) base /= 2;
       while (base < 300) base *= 2;
@@ -302,27 +310,27 @@ window.KOLOB = window.KOLOB || {};
       lp.type = "lowpass";
       lp.frequency.setValueAtTime(2400, t);
       var pan = S.ctx.createStereoPanner();
-      pan.pan.setValueAtTime((v % 2 === 0 ? 1 : -1) * rnd(0.7, 0.95), t);
+      pan.pan.setValueAtTime((v % 2 === 0 ? 1 : -1) * Y.rnd(0.7, 0.95), t);
       g.connect(lp); lp.connect(pan); pan.connect(wideSend());                   // a far steeple: all tabernacle
-      visitors.push({ base: base, dest: g, period: rnd(5.5, 11), gain: homeGain * rnd(0.35, 0.5) });
+      visitors.push({ base: base, dest: g, period: R.rnd(5.5, 11), gain: homeGain * Y.rnd(0.35, 0.5) });
     }
 
     // every strike scheduled upfront at absolute times (the bands precedent)
     var all = [];
     // the home steeple: first word, steady period, and the last bell alone
     var homeTimes = [t];
-    var ht = t + rnd(7, 9);
-    while (ht < t + dur - 6) { homeTimes.push(ht + rnd(-0.4, 0.4)); ht += rnd(7, 9); }
-    homeTimes.push(t + dur - rnd(0.5, 1.5));
+    var ht = t + R.rnd(7, 9);
+    while (ht < t + dur - 6) { homeTimes.push(ht + R.rnd(-0.4, 0.4)); ht += R.rnd(7, 9); }
+    homeTimes.push(t + dur - R.rnd(0.5, 1.5));
     for (var h = 0; h < homeTimes.length; h++) {
       all.push({ at: homeTimes[h], base: homeBase, home: true, gain: homeGain * (h === homeTimes.length - 1 ? 0.9 : 1) });
     }
     for (var v2 = 0; v2 < visitors.length; v2++) {
       var vis = visitors[v2];
       var times = [];
-      var vt = t + 3.5 + v2 * rnd(2, 4);                       // each answers in turn
-      var lastAt = t + dur * rnd(0.72, 0.85);                  // gone before the last bell
-      while (vt < lastAt) { times.push(vt + rnd(-0.4, 0.4)); vt += vis.period; }
+      var vt = t + 3.5 + v2 * R.rnd(2, 4);                     // each answers in turn
+      var lastAt = t + dur * R.rnd(0.72, 0.85);                // gone before the last bell
+      while (vt < lastAt) { times.push(vt + R.rnd(-0.4, 0.4)); vt += vis.period; }
       for (var k = 0; k < times.length; k++) {
         // ring in over the first two strikes, taper over the final two
         var m = k === 0 ? 0.55 : k === 1 ? 0.85 : k >= times.length - 1 ? 0.45 : k >= times.length - 2 ? 0.75 : 1;
@@ -337,7 +345,7 @@ window.KOLOB = window.KOLOB || {};
     for (var s3 = 0; s3 < all.length; s3++) {
       var st = all[s3];
       if (st.home) {
-        bellStrike(st.at, st.gain, st.base, panAt("bells", rnd(-0.2, 0.2)), { hum: true });
+        bellStrike(st.at, st.gain, st.base, panAt("bells", Y.rnd(-0.2, 0.2)), { hum: true });
         emitNote("bells", 0, st.at, 7);
       } else {
         bellStrike(st.at, st.gain, st.base, st.dest, { hum: false });
@@ -345,9 +353,9 @@ window.KOLOB = window.KOLOB || {};
     }
 
     emitEvent({ cat: "visitation", label: "◎ the steeples answer", detail: nVis + " far bells · " + Math.round(dur) + "s" });
-    scheduleRaw(function () {
+    cueAt("guests", tc + dur, function () {
       emitEvent({ cat: "visitation", label: "◎ the last bell", detail: "" });
-    }, dur * 1000);
+    });
     return dur;
   }
 
@@ -447,33 +455,34 @@ window.KOLOB = window.KOLOB || {};
     return total;
   }
 
-  function oldTuneRemembered(V) {
+  function oldTuneRemembered(V, tc) {
+    var R = stream("guest:oldtune");
     var tune = (V && V.tune) || OLD_TUNES[0];
-    var t = S.ctx.currentTime + 0.6;
-    var beat = rnd(1.1, 1.4);                    // its own remembered tempo
-    var side = pick([-0.85, 0.85]);
+    var t = tc + 0.6;
+    var beat = R.rnd(1.1, 1.4);                  // its own remembered tempo
+    var side = synth("oldtune").pick([-0.85, 0.85]);   // which edge of the field: sound-level
     var det = Math.pow(2, 8 / 1200);             // 8 cents sharp of true — worn
     var notes = tune.notes.map(function (n) { return { deg: n[0], dur: n[1] * beat }; });
     // seeded wear — never the first two notes; recognition lives in the head
-    if (chance(0.5) && notes.length > 4) {
-      var di = rint(2, notes.length - 2);
+    if (R.chance(0.5) && notes.length > 4) {
+      var di = R.rint(2, notes.length - 2);
       notes[di - 1].dur += notes[di].dur;        // a note dropped, its neighbor held wrong in its place
       notes.splice(di, 1);
     }
-    if (chance(0.4)) notes[rint(2, notes.length - 1)].dur *= 1.6;
+    if (R.chance(0.4)) notes[R.rint(2, notes.length - 1)].dur *= 1.6;
     var dur1 = farVoice(t, notes, 1.0, side, det);
     var total = dur1;
     emitEvent({ cat: "visitation", label: "✧ an old tune remembered", detail: tune.name + " · " + S.C.section });
-    if (chance(0.6)) {
+    if (R.chance(0.6)) {
       // a fainter second try — the head only, trailing off
-      var gap = rnd(6, 10);
+      var gap = R.rnd(6, 10);
       var head = notes.slice(0, Math.min(5, notes.length - 1));
       var t2 = t + dur1 + gap;
       var dur2 = farVoice(t2, head, 0.6, side, det);
       total = dur1 + gap + dur2;
-      scheduleRaw(function () {
+      cueAt("guests", t2 + dur2, function () {
         emitEvent({ cat: "visitation", label: "✧ the memory gives out", detail: tune.name });
-      }, (t2 - S.ctx.currentTime + dur2) * 1000);
+      });
     }
     return total + 4;
   }
@@ -491,4 +500,5 @@ window.KOLOB = window.KOLOB || {};
   S.oldTuneRemembered = oldTuneRemembered;
   // the room's public face on the KOLOB namespace
   KOLOB.Guests = { OLD_TUNES: OLD_TUNES, cumulativeAssembly: cumulativeAssembly, unansweredQuestion: unansweredQuestion, twoBandsCross: twoBandsCross, steeplesAnswer: steeplesAnswer, oldTuneRemembered: oldTuneRemembered };
+  (KOLOB._rooms = KOLOB._rooms || {})["kolob-guests.js"] = true;   // the load guard's roll call
 })();

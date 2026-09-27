@@ -26,15 +26,13 @@ window.KOLOB = window.KOLOB || {};
   function silenceMul() { return S.silenceMul(); }
   function gapMul() { return S.gapMul(); }
   // from kolob-core.js
-  function rnd(a, b) { return S.rnd(a, b); }
-  function rint(a, b) { return S.rint(a, b); }
-  function chance(p) { return S.chance(p); }
-  function pick(arr) { return S.pick(arr); }
-  function pickW(pool) { return S.pickW(pool); }
+  function turn(label) { return S.turn(label); }
+  function wait(label) { return S.wait(label); }
+  function synth(voice) { return S.synth(voice); }
   function emitNote(layer, freq, startTime, duration, extra) { return S.emitNote(layer, freq, startTime, duration, extra); }
   function emitEvent(ev) { return S.emitEvent(ev); }
-  function scheduleLayer(fn, baseMs, layer) { return S.scheduleLayer(fn, baseMs, layer); }
-  function scheduleRaw(fn, ms) { return S.scheduleRaw(fn, ms); }
+  function cueIn(lane, dtS, fn) { return S.cueIn(lane, dtS, fn); }
+  function cueLayer(layer, baseS, fn) { return S.cueLayer(layer, baseS, fn); }
   function panAt(layer, p) { return S.panAt(layer, p); }
   function getLayerParam(layer, key, fallback) { return S.getLayerParam(layer, key, fallback); }
   function fieldDest(key, pan) { return S.fieldDest(key, pan); }
@@ -51,7 +49,10 @@ window.KOLOB = window.KOLOB || {};
   // drone. Never words.
   // ==========================================================================
   var VOICE_VOWELS = [[320, 850], [430, 1100], [540, 1450], [660, 1800], [790, 2050]];
+  // (never words, never a pitch the page prints: every die of the murmur —
+  // its drift, its syllables, its vowels, its commas — is synth:voice)
   function stillVoiceRender(t, dur) {
+    var Y = synth("voice");
     var dest = panAt("voice", 0);
     var presence = getLayerParam("voice", "presence", 0.4);
     var sylAmt = getLayerParam("voice", "syllables", 0.4);
@@ -60,7 +61,7 @@ window.KOLOB = window.KOLOB || {};
     o.type = "sawtooth";
     // recitation-tone drift — prosody, not song
     o.frequency.setValueAtTime(S.F0 * 2, t);
-    o.frequency.linearRampToValueAtTime(S.F0 * 2 * rnd(0.985, 1.02), t + dur * 0.5);
+    o.frequency.linearRampToValueAtTime(S.F0 * 2 * Y.rnd(0.985, 1.02), t + dur * 0.5);
     o.frequency.linearRampToValueAtTime(S.F0 * 2 * 0.985, t + dur);
     // LESSON: pre-attenuate before high-Q formants (they boost ~9x).
     var pre = S.ctx.createGain(); pre.gain.setValueAtTime(0.16, t);
@@ -81,17 +82,17 @@ window.KOLOB = window.KOLOB || {};
     // frequency under exponential-approach automation destabilizes — measured)
     var pv1 = 500, pv2 = 1400;
     while (st < end) {
-      var syl = 1 / (sylRate * rnd(0.8, 1.25));
-      var v = pick(VOICE_VOWELS);
+      var syl = 1 / (sylRate * Y.rnd(0.8, 1.25));
+      var v = Y.pick(VOICE_VOWELS);
       f1.frequency.setValueAtTime(pv1, st); f1.frequency.linearRampToValueAtTime(v[0], st + 0.035);
       f2.frequency.setValueAtTime(pv2, st); f2.frequency.linearRampToValueAtTime(v[1], st + 0.035);
       pv1 = v[0]; pv2 = v[1];
       var on = Math.max(0.04, syl * 0.24);
-      var hold = syl * rnd(0.4, 0.62);
+      var hold = syl * Y.rnd(0.4, 0.62);
       gate.gain.setValueAtTime(0, st);
       gate.gain.linearRampToValueAtTime(1, st + on);
       gate.gain.linearRampToValueAtTime(0, st + on + hold);
-      st += syl + (chance(0.2) ? rnd(0.3, 1.1) : 0);           // long breath commas
+      st += syl + (Y.chance(0.2) ? Y.rnd(0.3, 1.1) : 0);       // long breath commas
     }
     // The real governor of the voice's loudness. It was pinned near-threshold
     // here (0.24), so raising only the layer trim doubled a near-silent source
@@ -103,14 +104,17 @@ window.KOLOB = window.KOLOB || {};
     emitNote("voice", 0, t, dur);
     return dur;
   }
-  function stillVoicePhrase() {
+  // The voice's turn, at scheduled time t. In testimony it speaks only
+  // sometimes, and that choice is its own turn's die.
+  function stillVoicePhrase(t) {
     if (!S.playing) return;
     var s = S.C.section;
-    var speaks = s === "invocation" || s === "sacrament" || (s === "testimony" && chance(0.3));
-    if (!speaks) { scheduleRaw(stillVoicePhrase, 7000); return; }
-    var dur = rnd(7, 15);
-    stillVoiceRender(S.ctx.currentTime + 0.05, dur);
-    scheduleLayer(stillVoicePhrase, (dur + rnd(6, 16) * silenceMul()) * 1000, "voice");
+    if (s !== "invocation" && s !== "sacrament" && s !== "testimony") { cueIn("voice", 7, stillVoicePhrase); return; }
+    var R = turn("voice");
+    if (s === "testimony" && !R.chance(0.3)) { cueIn("voice", 7, stillVoicePhrase); return; }
+    var dur = R.rnd(7, 15);
+    stillVoiceRender(t + 0.05, dur);
+    cueLayer("voice", dur + R.rnd(6, 16) * silenceMul(), stillVoicePhrase);
   }
 
   // ==========================================================================
@@ -179,23 +183,29 @@ window.KOLOB = window.KOLOB || {};
     }
     return end;
   }
-  function telegraphCycle() {
+  // The wire's turn, at scheduled time tc. The word, and whether home
+  // replies, are the wire's musical dice; which side of the sky it sits on
+  // and the relay's clack are synth:telegraph.
+  function telegraphCycle(tc) {
     if (!S.playing) return;
     var s = S.C.section;
     var taps = s === "prelude" || s === "hymn" || s === "testimony" || s === "postlude";
-    if (!taps || chance(0.4)) { scheduleRaw(telegraphCycle, rnd(20, 40) * 1000); return; }
+    if (!taps) { cueIn("telegraph", wait("telegraph").rnd(20, 40), telegraphCycle); return; }
+    var R = turn("telegraph");
+    if (R.chance(0.4)) { cueIn("telegraph", R.rnd(20, 40), telegraphCycle); return; }
+    var Y = synth("telegraph");
     var clack = getLayerParam("telegraph", "clack", 0.5);
-    var t = S.ctx.currentTime + 0.1;
-    var word = pick(TELEGRAPH_WORDS);
+    var t = tc + 0.1;
+    var word = R.pick(TELEGRAPH_WORDS);
     var seq = telegraphMessage(word);
-    if (!seq.length) { scheduleRaw(telegraphCycle, 15000); return; }
-    var side = pick([-0.8, 0.8]);
+    if (!seq.length) { cueIn("telegraph", 15, telegraphCycle); return; }
+    var side = Y.pick([-0.8, 0.8]);
     var tt = keyMorse(t, seq, side, 0.055);
     // the relay clack — the instrument's wooden body speaking
-    if (chance(clack)) {
+    if (Y.chance(clack)) {
       var n = noiseSource();
       var nf = S.ctx.createBiquadFilter();
-      nf.type = "bandpass"; nf.frequency.setValueAtTime(rnd(1800, 2600), tt); nf.Q.setValueAtTime(5, tt);
+      nf.type = "bandpass"; nf.frequency.setValueAtTime(Y.rnd(1800, 2600), tt); nf.Q.setValueAtTime(5, tt);
       var ng = S.ctx.createGain();
       n.connect(nf); nf.connect(ng); ng.connect(panAt("telegraph", side));
       env(ng, tt, [[0.003, 0.04], [0.05, 0]]);
@@ -203,13 +213,13 @@ window.KOLOB = window.KOLOB || {};
     }
     // once in a long while, a REPLY comes from home — the same word, fainter,
     // from the other side of the sky
-    if (chance(0.1)) {
-      tt = keyMorse(tt + rnd(1.5, 2.5), seq, -side, 0.033);
+    if (R.chance(0.1)) {
+      tt = keyMorse(tt + R.rnd(1.5, 2.5), seq, -side, 0.033);
       emitEvent({ cat: "telegraph", label: "⌁ a reply from home", detail: word });
     }
     emitNote("telegraph", 0, t, tt - t, { marks: seq });
     emitEvent({ cat: "telegraph", label: "⌁ the wire flashes home", detail: word });
-    scheduleLayer(telegraphCycle, (tt - t + rnd(45, 90) * gapMul()) * 1000, "telegraph");
+    cueLayer("telegraph", tt - t + R.rnd(45, 90) * gapMul(), telegraphCycle);
   }
 
   // ==========================================================================
@@ -217,24 +227,30 @@ window.KOLOB = window.KOLOB || {};
   // wind off the benches, crickets after dark, the meetinghouse clock, a
   // tuning fork giving the pitch, a far bell, and the KOLOB BEACON — the
   // meeting's theme flashed home as light-Morse behind a narrow static.
+  //
+  // Each event takes R, the field's turn: how long it lasts, what it rings
+  // and when (what the page is told) are R's; its colour, its place in the
+  // valley and its tail are synth:field.
   // ==========================================================================
-  function evWind(t) {
-    var dur = rnd(12, 24);
+  function evWind(t, R) {
+    var Y = synth("field");
+    var dur = R.rnd(12, 24);
     var n = noiseSource();
     var f = S.ctx.createBiquadFilter();
-    f.type = "lowpass"; f.frequency.setValueAtTime(rnd(260, 520), t);
+    f.type = "lowpass"; f.frequency.setValueAtTime(Y.rnd(260, 520), t);
     var g = S.ctx.createGain();
-    n.connect(f); f.connect(g); g.connect(fieldDest("wind", rnd(-0.5, 0.5)));
+    n.connect(f); f.connect(g); g.connect(fieldDest("wind", Y.rnd(-0.5, 0.5)));
     env(g, t, [[dur * 0.45, 0.055], [dur * 0.55, 0]]);
     n.start(t, noiseOffset()); n.stop(t + dur + 0.3);
     emitNote("ambient", 0, t, dur);
     return "wind off the benches";
   }
-  function evCrickets(t) {
-    if (intensity() > 0.5) return evWind(t);                   // crickets keep still when the hall is full
-    var span = rnd(4, 9);
-    var f = rnd(4200, 4800);
-    var period = rnd(0.38, 0.5);
+  function evCrickets(t, R) {
+    if (intensity() > 0.5) return evWind(t, R);                // crickets keep still when the hall is full
+    var Y = synth("field");
+    var span = R.rnd(4, 9);
+    var f = Y.rnd(4200, 4800);
+    var period = Y.rnd(0.38, 0.5);
     var tt = t;
     while (tt < t + span) {
       for (var c = 0; c < 2; c++) {                            // the paired chirp
@@ -245,15 +261,16 @@ window.KOLOB = window.KOLOB || {};
         env(g, tt + c * 0.045, [[0.004, 0.016], [0.035, 0]]);
         o.start(tt + c * 0.045); o.stop(tt + c * 0.045 + 0.08);
       }
-      tt += period * rnd(0.9, 1.15);
+      tt += period * Y.rnd(0.9, 1.15);
     }
     emitNote("ambient", 0, t, span);
     return "crickets";
   }
-  function evClock(t) {
-    var ticks = rint(4, 8);
+  function evClock(t, R) {
+    var Y = synth("field");
+    var ticks = R.rint(4, 8);
     for (var i = 0; i < ticks; i++) {
-      var tt = t + i * rnd(0.96, 1.04);
+      var tt = t + i * Y.rnd(0.96, 1.04);
       var o = S.ctx.createOscillator();
       o.type = "sine"; o.frequency.setValueAtTime(i % 2 ? 430 : 480, tt);
       var g = S.ctx.createGain();
@@ -264,6 +281,7 @@ window.KOLOB = window.KOLOB || {};
     emitNote("ambient", 0, t, ticks);
     return "the meetinghouse clock";
   }
+  // (the fork's only die is its ring: sound-level; the stillness calls it too)
   function evTuningFork(t) {
     var f = harm(8);
     while (f > 900) f /= 2;
@@ -271,35 +289,38 @@ window.KOLOB = window.KOLOB || {};
     o.type = "sine"; o.frequency.setValueAtTime(f, t);
     var g = S.ctx.createGain();
     o.connect(g); g.connect(fieldDest("fork", 0));
-    env(g, t, [[0.01, 0.05], [rnd(6, 10), 0]]);
+    env(g, t, [[0.01, 0.05], [synth("field").rnd(6, 10), 0]]);
     o.start(t); o.stop(t + 11);
     emitNote("ambient", f, t, 8);
     return "a tuning fork, giving the pitch";
   }
-  function evFarBell(t) {
-    var base = harm(pick([4, 5]));
+  function evFarBell(t, R) {
+    var Y = synth("field");
+    var base = harm(R.pick([4, 5]));
     while (base > 520) base /= 2;
     var ratios = [1, 2.0, 2.76];
     for (var i = 0; i < ratios.length; i++) {
       var o = S.ctx.createOscillator();
-      o.type = "sine"; o.frequency.setValueAtTime(base * ratios[i] + (i ? rnd(0.3, 1.4) : 0), t);
+      o.type = "sine"; o.frequency.setValueAtTime(base * ratios[i] + (i ? Y.rnd(0.3, 1.4) : 0), t);
       var g = S.ctx.createGain();
-      o.connect(g); g.connect(fieldDest("bell", pick([-0.6, 0.6])));
-      env(g, t, [[0.02, 0.035 / (1 + i * 0.8)], [rnd(6, 11) / (1 + i * 0.5), 0]]);
+      o.connect(g); g.connect(fieldDest("bell", Y.pick([-0.6, 0.6])));
+      env(g, t, [[0.02, 0.035 / (1 + i * 0.8)], [Y.rnd(6, 11) / (1 + i * 0.5), 0]]);
       o.start(t); o.stop(t + 12);
     }
     emitNote("ambient", base, t, 8);
     return "a bell across the valley";
   }
-  function evBeacon(t) {
+  function evBeacon(t, R) {
     // the colony flashes the day's theme toward home — sine Morse behind a
     // narrow-band static that is not quite there
+    var Y = synth("field");
     var theme = S.Motif.theme();
-    var head = theme ? theme.notes.slice(0, rint(3, 5)) : [{ deg: 0, durBeats: 1 }, { deg: 4, durBeats: 2 }];
-    var side = pick([-0.7, 0.7]);
+    var headLen = R.rint(3, 5);
+    var head = theme ? theme.notes.slice(0, headLen) : [{ deg: 0, durBeats: 1 }, { deg: 4, durBeats: 2 }];
+    var side = Y.pick([-0.7, 0.7]);
     var st = noiseSource();
     var sf = S.ctx.createBiquadFilter();
-    sf.type = "bandpass"; sf.frequency.setValueAtTime(rnd(950, 1200), t); sf.Q.setValueAtTime(14, t);
+    sf.type = "bandpass"; sf.frequency.setValueAtTime(Y.rnd(950, 1200), t); sf.Q.setValueAtTime(14, t);
     var sg = S.ctx.createGain();
     st.connect(sf); sf.connect(sg); sg.connect(fieldDest("beacon", side));
     var span = head.length * 0.5 + 1.5;
@@ -324,19 +345,20 @@ window.KOLOB = window.KOLOB || {};
       env(g, tt, [[0.01, 0.15], [isDah ? 0.3 : 0.1, 0.127], [0.05, 0]]);
       o.start(tt); o.stop(tt + 0.6);
       emitNote("ambient", f, tt, isDah ? 0.35 : 0.15);
-      tt += (isDah ? 0.42 : 0.22) + rnd(0.05, 0.12);
+      tt += (isDah ? 0.42 : 0.22) + R.rnd(0.05, 0.12);
     }
     return "the Kolob beacon";
   }
   // rain on the roof — a rare visitor; the patter is an LFO on lowpassed noise
-  function evRain(t) {
-    var dur = rnd(8, 16);
+  function evRain(t, R) {
+    var Y = synth("field");
+    var dur = R.rnd(8, 16);
     var n = noiseSource();
     var f = S.ctx.createBiquadFilter();
-    f.type = "lowpass"; f.frequency.setValueAtTime(rnd(900, 1400), t);
+    f.type = "lowpass"; f.frequency.setValueAtTime(Y.rnd(900, 1400), t);
     var patter = S.ctx.createGain();
     patter.gain.setValueAtTime(0.7, t);
-    var lfo = S.ctx.createOscillator(); lfo.frequency.setValueAtTime(rnd(0.5, 1), t);
+    var lfo = S.ctx.createOscillator(); lfo.frequency.setValueAtTime(Y.rnd(0.5, 1), t);
     var lg = S.ctx.createGain(); lg.gain.setValueAtTime(0.3, t);
     lfo.connect(lg); lg.connect(patter.gain);
     var g = S.ctx.createGain();
@@ -349,6 +371,7 @@ window.KOLOB = window.KOLOB || {};
   }
   // a far coyote — a falling fifth, very quiet, once in a great while
   function evCoyote(t) {
+    var Y = synth("field");
     var f = harm(6);
     while (f > 700) f /= 2;
     while (f < 380) f *= 2;
@@ -356,27 +379,29 @@ window.KOLOB = window.KOLOB || {};
     o.type = "sine";
     o.frequency.setValueAtTime(f * 1.4, t);
     o.frequency.linearRampToValueAtTime(f * 1.5, t + 0.25);
-    o.frequency.linearRampToValueAtTime(f, t + rnd(1.2, 1.8));
+    o.frequency.linearRampToValueAtTime(f, t + Y.rnd(1.2, 1.8));
     var g = S.ctx.createGain();
-    o.connect(g); g.connect(fieldDest("coyote", pick([-0.7, 0.7])));
+    o.connect(g); g.connect(fieldDest("coyote", Y.pick([-0.7, 0.7])));
     env(g, t, [[0.2, 0.02], [1.2, 0.014], [0.5, 0]]);
     o.start(t); o.stop(t + 2.4);
     emitNote("ambient", 0, t, 2);                              // a gliss owns no single pitch
     return "a far coyote";
   }
   var FIELD_FNS = { wind: evWind, crickets: evCrickets, clock: evClock, fork: evTuningFork, rain: evRain, coyote: evCoyote, bell: evFarBell, beacon: evBeacon };
-  function ambientEvent() {
+  // The valley's turn, at scheduled time t: which event, and when the next.
+  function ambientEvent(t) {
     if (!S.playing) return;
     var s = S.C.section;
-    if (s === "sacrament") { scheduleRaw(ambientEvent, 9000); return; }
+    if (s === "sacrament") { cueIn("ambient", 9, ambientEvent); return; }
+    var R = turn("field");
     var pool = s === "invocation"
       ? [[evWind, 4], [evCrickets, 3], [evTuningFork, 2]]
       : [[evWind, 4], [evCrickets, 3], [evClock, 3], [evTuningFork, 2], [evFarBell, 3], [evBeacon, 2.5], [evRain, 0.3], [evCoyote, 0.3]];
-    var fn = pickW(pool);
-    var name = fn(S.ctx.currentTime + 0.1);
+    var fn = R.pickW(pool);
+    var name = fn(t + 0.1, R);
     emitEvent({ cat: "ambient", label: "⋆ " + name, detail: s });
-    var gap = rnd(25, 70) * (1.15 - intensity() * 0.35) * silenceMul();
-    scheduleLayer(ambientEvent, gap * 1000, "ambient");
+    var gap = R.rnd(25, 70) * (1.15 - intensity() * 0.35) * silenceMul();
+    cueLayer("ambient", gap, ambientEvent);
   }
 
   // ==========================================================================
@@ -392,4 +417,5 @@ window.KOLOB = window.KOLOB || {};
   S.evFarBell = evFarBell;
   S.FIELD_FNS = FIELD_FNS;
   S.ambientEvent = ambientEvent;
+  (KOLOB._rooms = KOLOB._rooms || {})["kolob-voices-field.js"] = true;   // the load guard's roll call
 })();

@@ -28,13 +28,12 @@ window.KOLOB = window.KOLOB || {};
   function inFuging() { return S.inFuging(); }
   function gapMul() { return S.gapMul(); }
   // from kolob-core.js
-  function rnd(a, b) { return S.rnd(a, b); }
-  function rint(a, b) { return S.rint(a, b); }
-  function chance(p) { return S.chance(p); }
-  function pick(arr) { return S.pick(arr); }
+  function turn(label) { return S.turn(label); }
+  function wait(label) { return S.wait(label); }
+  function synth(voice) { return S.synth(voice); }
   function emitNote(layer, freq, startTime, duration, extra) { return S.emitNote(layer, freq, startTime, duration, extra); }
-  function scheduleLayer(fn, baseMs, layer) { return S.scheduleLayer(fn, baseMs, layer); }
-  function scheduleRaw(fn, ms) { return S.scheduleRaw(fn, ms); }
+  function cueIn(lane, dtS, fn) { return S.cueIn(lane, dtS, fn); }
+  function cueLayer(layer, baseS, fn) { return S.cueLayer(layer, baseS, fn); }
   function panAt(layer, p) { return S.panAt(layer, p); }
   function getLayerParam(layer, key, fallback) { return S.getLayerParam(layer, key, fallback); }
   function noiseSource() { return S.noiseSource(); }
@@ -83,10 +82,11 @@ window.KOLOB = window.KOLOB || {};
   // series of F0, in very long crossfading cycles. It never stops — in the
   // sacrament it is all there is. The stillness is the point.
   // ==========================================================================
-  function droneCycle() {
+  // at scheduled time t — the downbeat, then each overlap
+  function droneCycle(t) {
     if (!S.playing) return;
-    var t = S.ctx.currentTime;
-    var dur = rnd(60, 90);
+    var R = turn("drone");
+    var dur = R.rnd(60, 90);
     var overlap = 20;
     var presence = getLayerParam("drone", "presence", 0.5);
     var fifthAmt = getLayerParam("drone", "fifth", 0.4);
@@ -112,7 +112,7 @@ window.KOLOB = window.KOLOB || {};
     if (S.C.section === "sacrament") peak *= 0.8;
     env(master, t, [[overlap * 0.7, peak], [dur - overlap * 1.4, peak * 0.95], [overlap * 0.7, 0]]);
     emitNote("drone", S.F0, t, dur);
-    scheduleLayer(droneCycle, (dur - overlap) * 1000, "drone");
+    cueLayer("drone", dur - overlap, droneCycle);
   }
 
   // ==========================================================================
@@ -120,7 +120,9 @@ window.KOLOB = window.KOLOB || {};
   // trapezoid pads; one quiet high "lonesome" partial riding above. Widest in
   // the doxology; silent in the invocation and the sacrament.
   // ==========================================================================
+  // (the bows' detune is sound-level: synth:strings)
   function stringsPad(t, dur, gainMul, fifthOnly) {
+    var Y = synth("strings");
     var warmth = getLayerParam("strings", "warmth", 0.5);
     var lonesome = getLayerParam("strings", "lonesome", 0.4);
     var ch = S.Harmony.current();
@@ -137,7 +139,7 @@ window.KOLOB = window.KOLOB || {};
       for (var d = 0; d < 3; d++) {
         var o = S.ctx.createOscillator();
         o.type = "sawtooth";
-        o.frequency.setValueAtTime(pitches[p] * (1 + (d - 1) * rnd(0.002, 0.0035)), t);
+        o.frequency.setValueAtTime(pitches[p] * (1 + (d - 1) * Y.rnd(0.002, 0.0035)), t);
         var og = S.ctx.createGain();
         og.gain.setValueAtTime(0.09 / pitches.length, t);
         o.connect(og); og.connect(lp);
@@ -157,14 +159,15 @@ window.KOLOB = window.KOLOB || {};
     env(master, t, [[edge, peak], [Math.max(0.5, dur - edge * 2), peak * 0.92], [edge, 0]]);
     emitNote("strings", rootF, t, dur);
   }
-  function stringsCycle() {
+  function stringsCycle(t) {
     if (!S.playing) return;
     var s = S.C.section;
-    if (s === "invocation" || s === "sacrament" || s === "interlude") { scheduleRaw(stringsCycle, 8000); return; }
-    var dur = rnd(22, 34);
+    if (s === "invocation" || s === "sacrament" || s === "interlude") { cueIn("strings", 8, stringsCycle); return; }
+    var R = turn("strings");
+    var dur = R.rnd(22, 34);
     var overlap = 8;
-    stringsPad(S.ctx.currentTime + 0.1, dur, s === "doxology" ? 1 : 0.75, chance(0.7));
-    scheduleLayer(stringsCycle, (dur - overlap) * 1000 * (s === "doxology" ? 0.9 : 1.3), "strings");
+    stringsPad(t + 0.1, dur, s === "doxology" ? 1 : 0.75, R.chance(0.7));
+    cueLayer("strings", (dur - overlap) * (s === "doxology" ? 0.9 : 1.3), stringsCycle);
   }
 
   // ==========================================================================
@@ -177,18 +180,20 @@ window.KOLOB = window.KOLOB || {};
   // and beating doublets are the meetinghouse bell's, untouched. opts.hum
   // adds the 0.5× hum partial (the home bell keeps its hum; visitors don't,
   // so transposed hums never pile up under the drone).
+  // (the doublets' beating and the partials' decay are sound-level: synth:bells)
   function bellStrike(t, gainMul, base, dest, opts) {
+    var Y = synth("bells");
     var ratios = [1, 2.0, 2.76, 3.98, 5.4];
     var g0 = (gainMul || 0.6) * 0.55;
     for (var i = 0; i < ratios.length; i++) {
       for (var d = 0; d < 2; d++) {                            // beating doublets — a real bell shimmers
         var o = S.ctx.createOscillator();
         o.type = "sine";
-        o.frequency.setValueAtTime(base * ratios[i] + (d ? rnd(0.4, 2.2) : 0), t);
+        o.frequency.setValueAtTime(base * ratios[i] + (d ? Y.rnd(0.4, 2.2) : 0), t);
         var og = S.ctx.createGain();
         o.connect(og); og.connect(dest);
         var pg = g0 * 0.5 / (1 + i * 1.0);
-        env(og, t, [[0.005, pg], [rnd(3.5, 8) / (1 + i * 0.55), 0]]);
+        env(og, t, [[0.005, pg], [Y.rnd(3.5, 8) / (1 + i * 0.55), 0]]);
         o.start(t); o.stop(t + 10);
       }
     }
@@ -197,21 +202,24 @@ window.KOLOB = window.KOLOB || {};
       hum.type = "sine"; hum.frequency.setValueAtTime(base * 0.5, t);
       var hg = S.ctx.createGain();
       hum.connect(hg); hg.connect(dest);
-      env(hg, t, [[0.012, g0 * 0.28], [rnd(5, 9), 0]]);
+      env(hg, t, [[0.012, g0 * 0.28], [Y.rnd(5, 9), 0]]);
       hum.start(t); hum.stop(t + 10);
     }
   }
-  function meetinghouseBell(t, gainMul) {
+  // R: the caller's stream (the joint's, or the audition's) — which bell is a pitch
+  function meetinghouseBell(t, gainMul, R) {
     if (!S.ctx) return;
     var ringAmt = getLayerParam("bells", "ring", 0.55);
-    var base = harm(pick([4, 5, 6]));
+    var base = harm(R.pick([4, 5, 6]));
     while (base > 700) base /= 2;
     while (base < 300) base *= 2;
-    bellStrike(t, (gainMul || 0.6) * ringAmt, base, panAt("bells", rnd(-0.2, 0.2)), { hum: true });
+    bellStrike(t, (gainMul || 0.6) * ringAmt, base, panAt("bells", synth("bells").rnd(-0.2, 0.2)), { hum: true });
     emitNote("bells", 0, t, 7);
   }
+  // (where the tine sits and how long it rings are sound-level)
   function tineTap(t, f, amp) {
-    var dest = panAt("bells", rnd(-0.4, 0.4));
+    var Y = synth("bells");
+    var dest = panAt("bells", Y.rnd(-0.4, 0.4));
     var partials = [[1, 1], [5.43, 0.35]];
     for (var i = 0; i < partials.length; i++) {
       var o = S.ctx.createOscillator();
@@ -219,7 +227,7 @@ window.KOLOB = window.KOLOB || {};
       o.frequency.setValueAtTime(f * partials[i][0], t);
       var og = S.ctx.createGain();
       o.connect(og); og.connect(dest);
-      env(og, t, [[0.003, amp * partials[i][1]], [i === 0 ? rnd(0.7, 1.2) : rnd(0.12, 0.2), 0]]);
+      env(og, t, [[0.003, amp * partials[i][1]], [i === 0 ? Y.rnd(0.7, 1.2) : Y.rnd(0.12, 0.2), 0]]);
       o.start(t); o.stop(t + 1.5);
     }
     // the fingernail thump — the felt against the tine
@@ -231,17 +239,19 @@ window.KOLOB = window.KOLOB || {};
     n.start(t, noiseOffset()); n.stop(t + 0.15);
     emitNote("bells", f, t, 1);
   }
-  function tineCycle() {
+  // The tines' turn, at scheduled time tc.
+  function tineCycle(tc) {
     if (!S.playing) return;
     var s = S.C.section;
-    if (s === "invocation" || s === "sacrament" || inFuging()) { scheduleRaw(tineCycle, 9000); return; }
-    if (!airFree()) { scheduleRaw(tineCycle, rnd(6, 12) * 1000); return; }
+    if (s === "invocation" || s === "sacrament" || inFuging()) { cueIn("bells", 9, tineCycle); return; }
+    if (!airFree()) { cueIn("bells", wait("bells").rnd(6, 12), tineCycle); return; }
+    var R = turn("bells");
     var tineAmt = getLayerParam("bells", "tine", 0.5);
-    var motif = S.Motif.overdueFor("bells") ? S.Motif.claim("bells") : S.Motif.request("bells");
-    if (!motif) { scheduleRaw(tineCycle, 9000); return; }
-    var head = motif.notes.slice(0, rint(4, 6));
-    var t = S.ctx.currentTime + 0.1;
-    var beat = rnd(0.55, 0.85);
+    var motif = S.Motif.overdueFor("bells") ? S.Motif.claim("bells", R) : S.Motif.request("bells", R);
+    if (!motif) { cueIn("bells", 9, tineCycle); return; }
+    var head = motif.notes.slice(0, R.rint(4, 6));
+    var t = tc + 0.1;
+    var beat = R.rnd(0.55, 0.85);
     var tones = S.Harmony.chordTones();
     var total = 0;
     for (var i = 0; i < head.length; i++) {
@@ -254,9 +264,9 @@ window.KOLOB = window.KOLOB || {};
       tineTap(t + total, f, 0.3 * tineAmt * 2);
       total += Math.max(0.35, head[i].durBeats * beat * 0.6);
     }
-    claimAir(total, rnd(3, 7));
-    var gap = rnd(20, 45) * gapMul();
-    scheduleLayer(tineCycle, (total + gap) * 1000, "bells");
+    claimAir(total, R.rnd(3, 7));
+    var gap = R.rnd(20, 45) * gapMul();
+    cueLayer("bells", total + gap, tineCycle);
   }
 
   // ==========================================================================
@@ -270,4 +280,5 @@ window.KOLOB = window.KOLOB || {};
   S.meetinghouseBell = meetinghouseBell;
   S.tineTap = tineTap;
   S.tineCycle = tineCycle;
+  (KOLOB._rooms = KOLOB._rooms || {})["kolob-voices-ground.js"] = true;   // the load guard's roll call
 })();

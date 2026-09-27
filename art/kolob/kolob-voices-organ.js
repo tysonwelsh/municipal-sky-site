@@ -21,11 +21,11 @@ window.KOLOB = window.KOLOB || {};
   function silenceMul() { return S.silenceMul(); }
   function gapMul() { return S.gapMul(); }
   // from kolob-core.js
-  function rnd(a, b) { return S.rnd(a, b); }
-  function chance(p) { return S.chance(p); }
+  function turn(label) { return S.turn(label); }
+  function synth(voice) { return S.synth(voice); }
   function emitNote(layer, freq, startTime, duration, extra) { return S.emitNote(layer, freq, startTime, duration, extra); }
-  function scheduleLayer(fn, baseMs, layer) { return S.scheduleLayer(fn, baseMs, layer); }
-  function scheduleRaw(fn, ms) { return S.scheduleRaw(fn, ms); }
+  function cueIn(lane, dtS, fn) { return S.cueIn(lane, dtS, fn); }
+  function cueLayer(layer, baseS, fn) { return S.cueLayer(layer, baseS, fn); }
   function panAt(layer, p) { return S.panAt(layer, p); }
   function getLayerParam(layer, key, fallback) { return S.getLayerParam(layer, key, fallback); }
   function env(g, t, pts) { return S.env(g, t, pts); }
@@ -78,7 +78,7 @@ window.KOLOB = window.KOLOB || {};
       sub.start(t); sub.stop(t + dur + 0.3);
     }
     if (trem > 0.02) {
-      var lfo = S.ctx.createOscillator(); lfo.frequency.setValueAtTime(rnd(5, 6), t);
+      var lfo = S.ctx.createOscillator(); lfo.frequency.setValueAtTime(synth("organ").rnd(5, 6), t);
       var lg = S.ctx.createGain(); lg.gain.setValueAtTime(trem * 0.1, t);
       lfo.connect(lg); lg.connect(master.gain);
       lfo.start(t); lfo.stop(t + dur + 0.3);
@@ -88,37 +88,40 @@ window.KOLOB = window.KOLOB || {};
     env(master, t, [[atk, peak], [Math.max(0.1, dur - atk - dur * 0.28), peak * 0.92], [dur * 0.28, 0]]);
     emitNote("organ", chord.freqs[0] * 0.5, t, dur);
   }
-  function organCycle() {
+  // The organist's turn, at scheduled time t (the organ's lane on the clock);
+  // every die of the turn is the turn's own.
+  function organCycle(t) {
     if (!S.playing) return;
     var s = S.C.section;
+    if (s === "sacrament") { cueIn("organ", 6, organCycle); return; }
+    var R = turn("organ");
     if (s === "invocation" || s === "testimony" || s === "interlude") {
       // mostly tacet — a rare soft open chord, like the organist resting hands
-      if (chance(0.25)) {
-        var ch = S.Harmony.advance({ open: true });
-        organChord(S.ctx.currentTime + 0.1, rnd(10, 16), ch, 0.35);
+      if (R.chance(0.25)) {
+        var ch = S.Harmony.advance({ open: true }, R);
+        organChord(t + 0.1, R.rnd(10, 16), ch, 0.35);
       }
-      scheduleLayer(organCycle, rnd(20, 36) * 1000 * silenceMul(), "organ");
+      cueLayer("organ", R.rnd(20, 36) * silenceMul(), organCycle);
       return;
     }
-    if (s === "sacrament") { scheduleRaw(organCycle, 6000); return; }
     // The organ is an INSTRUMENT here, never a bed. In the prelude and the
     // postlude the organist plays phrases — a chord, a breath, a chord —
     // with real silence between. In the singing sections it only punctuates,
     // a swell under a cadence moment, then hands the hymn back to the voices.
     // The sustained ground of this piece is the sine DRONE, nothing else.
     if (s === "prelude" || s === "postlude") {
-      var chord = S.Harmony.advance();
-      var dur = rnd(6, 11);
-      organChord(S.ctx.currentTime + 0.1, dur, chord, 0.75 * (0.6 + intensity() * 0.4));
-      scheduleLayer(organCycle, (dur + rnd(4, 10) * silenceMul()) * 1000, "organ");
+      var chord = S.Harmony.advance({}, R);
+      var dur = R.rnd(6, 11);
+      organChord(t + 0.1, dur, chord, 0.75 * (0.6 + intensity() * 0.4));
+      cueLayer("organ", dur + R.rnd(4, 10) * silenceMul(), organCycle);
       return;
     }
-    if (chance(0.6)) {
-      var ch2 = S.Harmony.current() || S.Harmony.advance();
-      var d2 = rnd(7, 12);
-      organChord(S.ctx.currentTime + 0.1, d2, ch2, (s === "doxology" ? 0.65 : 0.5) * (0.6 + intensity() * 0.5));
+    if (R.chance(0.6)) {
+      var ch2 = S.Harmony.current() || S.Harmony.advance({}, R);
+      var d2 = R.rnd(7, 12);
+      organChord(t + 0.1, d2, ch2, (s === "doxology" ? 0.65 : 0.5) * (0.6 + intensity() * 0.5));
     }
-    scheduleLayer(organCycle, rnd(12, 24) * 1000 * gapMul() * 0.6, "organ");
+    cueLayer("organ", R.rnd(12, 24) * gapMul() * 0.6, organCycle);
   }
 
   // ==========================================================================
@@ -126,4 +129,5 @@ window.KOLOB = window.KOLOB || {};
   // ==========================================================================
   S.organChord = organChord;
   S.organCycle = organCycle;
+  (KOLOB._rooms = KOLOB._rooms || {})["kolob-voices-organ.js"] = true;   // the load guard's roll call
 })();
