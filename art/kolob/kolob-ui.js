@@ -56,6 +56,9 @@
     oldTune: "𐐊𐐤 𐐄𐐢𐐔 𐐓𐐅𐐤 𐐡𐐆𐐣𐐇𐐣𐐒𐐊𐐡𐐔", // AN OLD TUNE REMEMBERED
     oldTuneFlag: "𐐊𐐤 𐐄𐐢𐐔 𐐓𐐅𐐤",          // AN OLD TUNE (the direction line)
     memoryOut: "𐐜 𐐣𐐇𐐣𐐊𐐡𐐆 𐐘𐐆𐐚𐐞 𐐍𐐓",   // THE MEMORY GIVES OUT
+    trombonesDawn: "𐐓𐐡𐐉𐐣𐐒𐐄𐐤𐐞 𐐈𐐓 𐐔𐐃𐐤",   // TROMBONES AT DAWN (the row, and the direction line)
+    nearAnswers: "𐐜 𐐤𐐀𐐡 𐐗𐐎𐐌𐐊𐐡 𐐈𐐤𐐝𐐊𐐡𐐞", // THE NEAR CHOIR ANSWERS
+    twoChoirs: "𐐜 𐐓𐐅 𐐗𐐎𐐌𐐊𐐡𐐞 𐐓𐐊𐐘𐐇𐐜𐐊𐐡", // THE TWO CHOIRS TOGETHER
     tuneWithheld: "𐐜 𐐓𐐅𐐤 𐐆𐐞 𐐎𐐆𐐛𐐐𐐇𐐢𐐔", // THE TUNE IS WITHHELD
     wholeTune: "𐐜 𐐐𐐄𐐢 𐐓𐐅𐐤 𐐈𐐓 𐐢𐐈𐐝𐐓",  // THE WHOLE TUNE, AT LAST
     wholeFlag: "𐐜 𐐐𐐄𐐢 𐐓𐐅𐐤",            // THE WHOLE TUNE (telemetry)
@@ -129,6 +132,7 @@
     bandsCross: "THE BANDS CROSS", bandPasses: "PASSES ON",
     theSteeples: "THE STEEPLES ANSWER", lastBell: "THE LAST BELL", steeplesFlag: "STEEPLES",
     oldTune: "AN OLD TUNE REMEMBERED", oldTuneFlag: "AN OLD TUNE", memoryOut: "THE MEMORY GIVES OUT",
+    trombonesDawn: "TROMBONES AT DAWN", nearAnswers: "THE NEAR CHOIR ANSWERS", twoChoirs: "THE TWO CHOIRS TOGETHER",
     tuneWithheld: "THE TUNE IS WITHHELD", wholeTune: "THE WHOLE TUNE, AT LAST",
     wholeFlag: "THE WHOLE TUNE",
     orderOfService: "ORDER OF SERVICE", theStops: "THE INSTRUMENTS",
@@ -190,6 +194,7 @@
     bands:     { approaches: ["⇋", "bandNears"], cross: ["⇋", "bandsCross"], passes: ["⇋", "bandPasses"] },
     steeples:  { answer: ["◎", "theSteeples"], "last-bell": ["◎", "lastBell"] },
     oldtune:   { remembered: ["✧", "oldTune"], "gives-out": ["✧", "memoryOut"] },
+    trombones: { far: ["♪", "trombonesDawn"], answer: ["♪", "nearAnswers"], together: ["♪", "twoChoirs"] },
     assembly:  { withheld: ["◌", "tuneWithheld"], "whole-tune": ["✶", "wholeTune"] },
     raspberry: { blat: ["∴", "raspberry"], amen: ["∴", "amenDash"] },
   };
@@ -406,9 +411,9 @@
   // the drone is the constant ground; the field and the wire already write
   // their own minutes (ambient + telegraph events) — don't double-book them
   // the tuba is never named here: his moment is logged as RASPBERRY instead;
-  // the visiting band and the old tune write their own minutes (their
-  // visitation events)
-  var PHRASE_SKIP = { drone: 1, ambient: 1, telegraph: 1, tuba: 1, band: 1, oldtune: 1 };
+  // the visiting band, the old tune and the trombones at dawn write their
+  // own minutes (their visitation events)
+  var PHRASE_SKIP = { drone: 1, ambient: 1, telegraph: 1, tuba: 1, band: 1, oldtune: 1, trombones: 1 };
   // (and a layer the minutes have no name for is not written in English;
   // a note an unlogged guest sounds — logged: false — writes no row)
   function onNoteForLog(n) {
@@ -496,10 +501,10 @@
 
   // The direction line — the event flag printed as a rubric on the programme
   // card, after the mode · meter line: stillness, fuging, two bands, the
-  // steeples answer, an old tune, the whole tune. Empty when nothing fires —
-  // and for a guest this table does not name (v0.32 called the old tune
-  // "two bands").
-  var VISIT_FLAG = { bands: "twoBands", steeples: "theSteeples", oldtune: "oldTuneFlag", assembly: "wholeFlag" };
+  // steeples answer, an old tune, trombones at dawn, the whole tune. Empty
+  // when nothing fires — and for a guest this table does not name (v0.32
+  // called the old tune "two bands").
+  var VISIT_FLAG = { bands: "twoBands", steeples: "theSteeples", oldtune: "oldTuneFlag", trombones: "trombonesDawn", assembly: "wholeFlag" };
   function directionFor(c, playing) {
     if (!playing) return "";
     var S = TT(STR, STR_EN);
@@ -752,7 +757,8 @@
 
   // ==========================================================================
   // The Ives switch — while armed, every meeting is guaranteed one visitation
-  // (the two bands, the steeples or the old tune). Arming it mid-meeting
+  // (the two bands, the steeples, the old tune or the trombones at dawn).
+  // Arming it mid-meeting
   // restarts the meeting so the guarantee begins counting immediately.
   // ==========================================================================
   function wireIvesToggle() {

@@ -581,3 +581,4 @@ window.KOLOB.VoicesBand = (function () {
     DYNAMICS: DYN, LEAD: LEAD,
   };
 })();
+(window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-voices-band.js"] = true;   // the load guard's roll call (the engine plays it from round 2: the trombones at dawn)

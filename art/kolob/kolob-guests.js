@@ -3,8 +3,10 @@
 //
 // The raspberry amen's cluster, the cumulative assembly, and the Ives
 // guests: the unanswered question, two bands crossing, the steeples, the
-// old tune half-remembered (an Earth tune, from kolob-tunes.js). Split from kolob-audio.js (v0.30); see the room
-// list in kolob-core.js.
+// old tune half-remembered (an Earth tune, from kolob-tunes.js) — and, from
+// round 2, the trombone choir at dawn (kolob-guest-trombones.js plays it;
+// it is placed and told here). Split from kolob-audio.js (v0.30); see the
+// room list in _engine.php.
 //
 // Each guest is called by the conductor's cue at its scheduled time t and
 // throws its dice from its own stream, guest:<type>:<n> (round 2): a guest
@@ -757,6 +759,60 @@ window.KOLOB = window.KOLOB || {};
   }
 
   // ==========================================================================
+  // THE TROMBONE CHOIR AT DAWN (round 2; PLAN-COMPOSITION §14, item 3). In
+  // Bethlehem the Moravians' trombones climb the belfry to play chorales
+  // down onto the sleeping town; in Salem the Easter sunrise begins with
+  // brass choirs in different streets, playing a hymn to one another, a
+  // phrase here and the next phrase there. The colony keeps the custom. The
+  // plan drew the moment and wrote the chorale (the day's first hymn, as
+  // Harmony sets the day's theme — see dawnChorale in kolob-meeting.js); the
+  // guest's own room (kolob-guest-trombones.js) places the two choirs, one
+  // far across the settlement and one near on the other side, through the
+  // guests' door into the tabernacle. Here it is played at t and told:
+  //   · the far choir's first call    — ♪ trombones at dawn
+  //   · the near choir's first answer — ♪ the near choir answers
+  //   · the far choir joining the last chord, when it does
+  //                                   — ♪ the two choirs together
+  // Its notes are reported on their own layer (trombones), named as the
+  // guest's; the staff does not engrave them (a visitor's, like the old
+  // tune's). It claims the air for its length, and the organ, the harmonium
+  // and the strings rest their hands while it sounds (S.hallListens): the
+  // first hymn is heard before anyone sings it.
+  // ==========================================================================
+  function trombonesAtDawn(V, tc) {
+    var G = KOLOB.GuestTrombones;
+    if (!G || !V || !V.material || !V.stream) return 4;
+    var calls = [];                               // [stage, t, side] — the rows to tell
+    var end = G.perform(S.ctx, wideSend(), tc, V.material, V.stream, {
+      onNote: function (x) {
+        emitNote("trombones", x.freq, x.t, x.dur, guestNote(V, "trombones", { part: x.part, choir: x.choir, line: x.line, loud: x.loud }));
+      },
+      onPhrase: function (ph) {
+        var side = ph.pan < 0 ? "west" : "east";
+        if (ph.joins) calls.push(["together", ph.t0, side]);
+        else if (ph.choir === "far" && !calls.some(function (c) { return c[0] === "far"; })) calls.push(["far", ph.t0, side]);
+        else if (ph.choir === "near" && !calls.some(function (c) { return c[0] === "answer"; })) calls.push(["answer", ph.t0, side]);
+      },
+    });
+    claimAir(end - tc, 3);
+    var ROWS = {
+      far: ["♪ trombones at dawn", function (c) { return "far to the " + c[2]; }],
+      answer: ["♪ the near choir answers", function (c) { return "from the " + c[2]; }],
+      together: ["♪ the two choirs together", function () { return "the last chord"; }],
+    };
+    calls.forEach(function (c) {
+      function say() {
+        tell(V, { type: "guest", guest: "trombones", stage: c[0], side: c[2], section: S.Meeting.section(),
+                  cat: "visitation", label: ROWS[c[0]][0], detail: ROWS[c[0]][1](c) });
+      }
+      if (c[1] <= tc + 1e-6) say();               // the far choir's first call is now
+      else cueAt("guests", c[1], say);
+    });
+    // the span: the choirs' last chord, and the town's air a moment after it
+    return end - tc + 2;
+  }
+
+  // ==========================================================================
   // LENT — what this room shares with the rest of the house (KOLOB._s)
   // ==========================================================================
   S.razzCluster = razzCluster;
@@ -767,13 +823,14 @@ window.KOLOB = window.KOLOB || {};
   S.oldTunePool = oldTunePool;
   S.oldTuneCandidates = oldTuneCandidates;
   S.oldTuneRemembered = oldTuneRemembered;
+  S.trombonesAtDawn = trombonesAtDawn;
   // the room's public face on the KOLOB namespace (the old tune's law and
   // excerpt are here for the harness and the labs: linesHeld(tune, mode),
   // linesAdmitted(tune, mode), excerpt(tune, k), octaveFor(notes),
   // leapLeans(monzos, joined), wolfLeap(a, b))
   KOLOB.Guests = {
     cumulativeAssembly: cumulativeAssembly, unansweredQuestion: unansweredQuestion, twoBandsCross: twoBandsCross, steeplesAnswer: steeplesAnswer,
-    oldTuneRemembered: oldTuneRemembered, oldTuneCandidates: oldTuneCandidates, oldTunePool: oldTunePool,
+    oldTuneRemembered: oldTuneRemembered, oldTuneCandidates: oldTuneCandidates, oldTunePool: oldTunePool, trombonesAtDawn: trombonesAtDawn,
     linesHeld: linesHeld, linesAdmitted: linesAdmitted, excerpt: excerpt, octaveFor: octaveFor, leapLeans: leapLeans, wolfLeap: wolfLeap,
     MIN_MEMORY_S: MIN_MEMORY_S, TEMPO_MIN: TEMPO_MIN,
   };

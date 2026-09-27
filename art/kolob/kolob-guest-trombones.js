@@ -83,9 +83,13 @@
 // point; the near one has width); both share one town room, so they stand
 // in the same place. However the dice fell for their distances and
 // dynamics, the far choir is trimmed to be heard 7–9 LU under the near
-// one (a drawn gap; the lab measures it within about 1.5 LU of the draw,
-// with the far choir also some 12 dB poorer above 1 kHz), so the antiphony
-// never collapses into two equal choirs. Each phrase is an arch — a
+// one (a drawn gap; the lab measures it within about 1.5 LU of the draw),
+// so the antiphony never collapses into two equal choirs. It is also
+// darker, by how far it stands: 3–9 dB poorer above 1 kHz over seeds 1–12
+// (about 5.5 at the median), 12 dB at the far end of its distance — and at
+// the near end of it (farDist under 0.8, about four seeds in ten) the two
+// choirs' colour is nearly the same, and "far" is heard in the level, the
+// side and the town's air (the round-2 critic's measure). Each phrase is an arch — a
 // breath attack, a swell to its middle, a fade on the fermata — and a
 // repeated line comes back softer. In a minor mode the near choir may end
 // on a major chord (the tierce de Picardie: the dawn's own answer).
@@ -561,8 +565,10 @@ window.KOLOB.GuestTrombones = (function () {
   };
 
   function num(x, d) { x = +x; return isFinite(x) && x > 0 ? x : d; }
-  function degOf(x) { return typeof x === "number" ? x : (x && x.deg != null ? +x.deg : null); }
-  function beatsOf(x) { return x && typeof x === "object" ? num(x.beats != null ? x.beats : (x.durBeats != null ? x.durBeats : x.dur), 1) : 1; }
+  // (a note is a degree, {deg, beats | durBeats | dur}, or a [deg, beats]
+  // row — the SAMPLES' own shape; the critic found a row read as degree 0)
+  function degOf(x) { return typeof x === "number" ? x : Array.isArray(x) ? (x[0] != null ? +x[0] : null) : (x && x.deg != null ? +x.deg : null); }
+  function beatsOf(x) { return Array.isArray(x) ? num(x[1], 1) : x && typeof x === "object" ? num(x.beats != null ? x.beats : (x.durBeats != null ? x.durBeats : x.dur), 1) : 1; }
 
   // one chord, from any of the accepted shapes → {degs, beats, fermata,
   // freqs?, hold, tones?} — tones is Harmony's own {class: "root" | "third" |
@@ -1021,7 +1027,12 @@ window.KOLOB.GuestTrombones = (function () {
         var ns = fin.parts[p], lastN = ns[ns.length - 1];
         jp[p] = lastN ? [{ f: lastN.f * Math.pow(2, -sh.flatCents / 1200), t: lastN.t + 0.12, dur: Math.max(0.6, lastN.dur - 0.12), dyn: sh.farDyn * 0.9, dynEnd: sh.farDyn * 0.65, atk: sh.farAtk, legato: false, rel: 0.3 }] : [];
       });
-      phrases.push({ choir: "far", line: fin.line, t0: fin.t1 - 0.5, t1: fin.t1, pan: farSide * sh.farPan, parts: jp, joins: true });
+      // (the join begins where its first chord enters — just after the near
+      // choir's last onset — not as that chord fades: a row the engine
+      // prints at t0 must come when the two choirs are heard together)
+      var jt0 = Infinity;
+      PARTS.forEach(function (p) { jp[p].forEach(function (nt) { if (nt.t < jt0) jt0 = nt.t; }); });
+      phrases.push({ choir: "far", line: fin.line, t0: isFinite(jt0) ? jt0 : fin.t1 - 0.5, t1: fin.t1, pan: farSide * sh.farPan, parts: jp, joins: true });
     }
     var end = t0;
     phrases.forEach(function (ph) { PARTS.forEach(function (p) { ph.parts[p].forEach(function (nt) { end = Math.max(end, nt.t + nt.dur + nt.rel * 3); }); }); });
@@ -1106,3 +1117,4 @@ window.KOLOB.GuestTrombones = (function () {
     get LEVEL() { return LEVEL; }, set LEVEL(v) { LEVEL = +v; },
   };
 })();
+(window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-guest-trombones.js"] = true;   // the load guard's roll call (the engine seats it from round 2)

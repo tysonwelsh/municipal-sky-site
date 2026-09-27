@@ -24,7 +24,8 @@
 //  · THE COMPARISON keeps a frozen copy of v0.30's OLD_TUNES incipits (the
 //    data the owner judged wrong) so the old and the new can be heard in the
 //    same key, one after the other. It is a snapshot for this page only; the
-//    engine's own table stays in kolob-audio.js until integration.
+//    engine no longer has that table (round 2: the old tune sings these
+//    Earth tunes, from KOLOB.Tunes — kolob-guests.js).
 //
 // Public surface: window.EarthTunesLab (for headless checks)
 // ============================================================================

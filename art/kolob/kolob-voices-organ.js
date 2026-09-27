@@ -19,6 +19,7 @@ window.KOLOB = window.KOLOB || {};
   // from kolob-meeting.js
   function intensity() { return S.intensity(); }
   function silenceMul() { return S.silenceMul(); }
+  function hallListens() { return S.hallListens(); }
   function gapMul() { return S.gapMul(); }
   // from kolob-core.js
   function turn(label) { return S.turn(label); }
@@ -101,6 +102,9 @@ window.KOLOB = window.KOLOB || {};
     if (!S.playing) return;
     var s = S.Meeting.section();
     if (s === "sacrament") { cueIn("organ", 6, organCycle); return; }
+    // the organist rests while the house listens (the trombones at dawn play
+    // chords of their own) and comes back when they have gone by
+    if (hallListens()) { cueIn("organ", 6, organCycle); return; }
     var R = turn("organ");
     // every chord the organist plays is voiced from, and written into, the
     // chord book at the moment it sounds: t + 0.1

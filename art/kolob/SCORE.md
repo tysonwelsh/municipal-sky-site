@@ -1,7 +1,8 @@
 # KOLOB 2 — THE CONTRACT
 
 *This is the interface every Kolob 2 crew codes against. It is owned by the
-integrator (branch `kolob-2`). Draft 1, 2026-09-26.*
+integrator (branch `kolob-2`). Draft 1, 2026-09-26; round 2's requests
+adopted 2026-09-27 (§9, which wins where it and an earlier section differ).*
 
 To change this contract, write a request in your handoff note. **Do not edit
 this file from a crew branch.**
@@ -234,3 +235,123 @@ Note = {
   - requests to the integrator (contract changes, files outside ownership);
   - known issues.
 - **Commits** go on the crew branch only, staging named paths.
+
+---
+
+## 9. Round 2, adopted (integration, 2026-09-27)
+
+*The requests of handoffs `r2-engine-1/2/3` and `r2-trombones-1`, adopted
+into the contract at the round's integration. Where this section and an
+earlier one disagree, this section wins; the code named is the authority
+for the details.*
+
+### 9.1 Modules (§1)
+
+- **The load order is `_engine.php`.** New engine modules are added there,
+  and only there. `index.php`, the labs and the harness read it. A room
+  answers the load guard's roll call as its last act
+  (`KOLOB._rooms["kolob-x.js"] = true`); the substrate and the Earth tunes
+  are checked by the globals they raise.
+- **The engine now also loads** `kolob-voices-band.js` (the brass) and
+  `kolob-guest-trombones.js` (the trombone choir at dawn). The lab-only
+  modules are `kolob-question.js`, `kolob-voices-vocal.js`,
+  `kolob-voices-pipeorgan.js` and `kolob-voices-folk.js`.
+- **The composers are pure.** `KOLOB.Melody` and `KOLOB.Harmony` are handed
+  a **moment** and the caller's stream and read nothing of the house:
+
+  ```js
+  moment = { now, meeting, section, activity, bright, mode, F0, seasonPos,
+             arc, cumulative, assemblyFired, chord }   // chord: the chord stood on, or null
+  ```
+
+  The house reads the meeting only through `S.Meeting` (the chorister's
+  book, a frozen set of accessors: `kolob-meeting.js`). `S.Harmony` is the
+  **chord desk**: it voices from the chord standing at a time, writes into
+  the chord book, and announces.
+
+### 9.2 Streams (§3)
+
+The labels as implemented (`kolob-core.js`, THE DICE):
+
+| label | draws |
+|---|---|
+| `meeting:<n>` | the plan: season, F0, kind, mode, every section length and mutation, every guest's die and seat, cumulative, raspberry; `section:<i>` below it per section entered |
+| `motif:<n>` | the day's temper and gestures (`Motif.newMeeting`) |
+| `conductor:<n>` | three dice per 0.6 s tick, always thrown |
+| `joints:<n>` | `joint:<i>` per section ended |
+| `stillness:<n>`, `fuging:<n>`, `<voice>:<n>` | a turn each: `<voice>:<n>` → `turn:<k>` |
+| `<voice>:wait:<n>` | how long a refused voice waits |
+| `guest:<type>:<n>` | each guest (`bands`, `steeples`, `oldtune`, `cumulative`, `question`, `trombones`); the trombones fork `seat`, `shape`, `synth` and `material` (the dawn's chorale) below theirs |
+| `synth:<voice>` | sound-level detail, the whole visit |
+| `audition` | everything `sample()` throws |
+
+- **Musical against sound-level.** Anything the note or event streams
+  report, or any pitch that sounds, is musical. How a note sounds is
+  sound-level. **A reported note is the written note**: where a player
+  places it (the harmonium's loose alto, the choir's stagger) is
+  sound-level.
+- The substrate's `setRoomBalance` crossfade starts at the pump's
+  `currentTime` (an indirect clock read); it is sound-level.
+
+### 9.3 Time (§4)
+
+- **Never use PJ2's `lane.in()` or `lane.every()` in musical code.** Both
+  measure from `ctx.currentTime`. Use `S.cueAt(lane, t, fn)` and
+  `S.cueIn(lane, dt, fn)`, which measure from the scheduled now.
+- **A guest that keeps its own time** (the trombones) is cued when its
+  section begins, at the moment its plan drew. The conductor's poll finds
+  the others.
+
+### 9.4 The Score (§5)
+
+- **The chord book** (`KOLOB.Score.chordBook()`): every chord is written in
+  at the time it sounds. The accompaniment reads the chord standing at its
+  own onset. A composer's `Line.chords` will be written into it.
+- **Line:** `chords[].id` (the chord book's id); `startBeat`.
+- **Note:** `alt`, and `comma` (−1, 0, +1: a leap sung pure; the old tune).
+- **Performance:** `lines`, `octave`, `beatS`, `wear`, `detuneCents` (the
+  old tune).
+- **Earth tunes:** `lds` (the hymnal's membership, with sources);
+  `source.page` may be a string.
+- **Chord qualities** add `sus` and `other` (a gapped scale's stack that is
+  no triad).
+
+### 9.5 Events (§6)
+
+- **One event, both vocabularies.** Every event carries its `type` and
+  payload **and** the legacy `cat`/`label`/`detail`, on one object, until
+  the legacy fields are retired. The page reads types only. A reader of a
+  type it does not know may fall back to the words (`tools/lib/dump.js`
+  does).
+- **The words** are `KOLOB.Score.EVENTS` (`kolob-score.js`). It is the
+  machine-readable table, and a payload spec may nest (`hymn-announced.hymn`).
+  Round 2 adds: `transport`, `sunrise`, `liahona`, `stillness`, `skip`,
+  `joint`, `room-empties`, `verse-line`, `lining-out`, `fuging`, `field`,
+  `chord`, `guest {guest, stage, logged}`, `guests-drawn`,
+  `hymns-of-the-day`, and `motif-develop/-reprise/-answer/-disperse/-shadow`.
+- **Nulls until their crews draw them:** `meeting-start.sunday` and
+  `houseDialect`; `hymn-announced`'s `number`, `nameDs` and `dialect`;
+  `telegraph.wordDs`. `cast` and `vision` are not emitted yet.
+- **`guest-start` / `guest-end`** carry `until` as well: when the guest's
+  sound ends. A section never turns over inside that span.
+- **`verse-line` with `practice: "lined"`** is the choir's reply to the
+  deacon's lined-out line: typed only, outside the verse walk. The page
+  prints no row for it.
+- **`question-asking`** is emitted once per Question (`k: 0`, `askings: N`).
+  Whoever unshelves the Question chooses between that and one per asking.
+- **Notes (`onNote`) carry, where they apply:**
+  - `part` (S/A/T/B, `pedal`, `root`/`fifth`/`octave`, `doubling`);
+  - `chord` (the chord book's id);
+  - `hymnId`, `line`, `index`, `beat`, `deg`, `monzo`, `comma`, `tryNo`;
+  - on a guest's notes: `guest` and `logged`. A note that says
+    `logged: false` is neither printed in the minutes nor engraved.
+- **Layers** add `oldtune` and `trombones`. Neither is engraved. A trombone
+  note also carries `choir` (`far` | `near`) and `loud`.
+- **The trombones' guest events:** `guest-start`/`guest-end` with
+  `guest: "trombones"`, `section: "prelude"`; and `guest` with the stages
+  `far` (the far choir's first call), `answer` (the near choir's first
+  answer) and `together` (the far choir joins the last chord), each with
+  `side` (`west` | `east`).
+- **`KolobAudio.setForceVisitation(name)`** names the guest the Ives switch
+  forces: `bands`, `steeples`, `oldtune` or `trombones` (`true` draws one).
+  A `logged: false` guest is listed in `KOLOB._s.UNLOGGED_GUESTS`.

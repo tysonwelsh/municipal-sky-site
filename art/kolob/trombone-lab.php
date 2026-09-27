@@ -34,6 +34,8 @@ include '../../includes/header.php';
   font-family: "EB Garamond", Georgia, serif;
   color: var(--ink);
   max-width: 960px;
+  width: 100%;              /* the site's body is a column flex: without a width the card is sized to its widest table, and the page scrolls sideways after a check (the round-2 critic) */
+  box-sizing: border-box;
   margin: 0 auto;
   padding: 1.5rem 1rem 4rem;
 }

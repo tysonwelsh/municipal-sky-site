@@ -10,6 +10,15 @@
 //   · the v0.30 log events  {cat, label, detail, t}  — read by their words;
 //   · the SCORE.md §6 typed events  {type, t, …payload} — read by their fields.
 // Whatever neither knows is still counted, by its `cat` or `type`.
+// Since round 2's milestone 3 the engine sends ONE event carrying both
+// (type and payload, and the legacy cat/label/detail on the same object),
+// and types many happenings §6's first table does not name (joint, guest,
+// chord, field, hymns-of-the-day…). An event is read by its type where this
+// file knows the type, and by its words otherwise — so a joint, a guest's
+// stage and the day's material are still read on a typed engine (the
+// integration found them all falling to "other"). Its `cat` stays the log's
+// word where it has one, so an A/B against a log-only build counts the same
+// categories on both sides.
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -83,8 +92,10 @@ function normNote(p, at, i) {
 //         | telegraph | transport | cast | vision | other
 // ---------------------------------------------------------------------------
 function normEvent(p, at, i) {
-  const e = { i, t: typeof p.t === "number" ? p.t : at, cat: p.type || p.cat || "?", label: p.label || "", detail: p.detail || "", raw: p };
-  if (p.type) typedEvent(e, p); else legacyEvent(e, p);
+  const e = { i, t: typeof p.t === "number" ? p.t : at, cat: p.cat || p.type || "?", label: p.label || "", detail: p.detail || "", raw: p };
+  if (p.type) typedEvent(e, p);
+  if (!e.kind && p.cat) legacyEvent(e, p);              // a type this file does not know, told in words too
+  if (!e.kind) e.kind = "other";
   // hooks any event may carry, in either vocabulary (dialect, registration)
   if (typeof p.dialect === "string") e.dialect = p.dialect;
   if (p.hymn && typeof p.hymn.dialect === "string") e.dialect = p.hymn.dialect;
@@ -118,7 +129,7 @@ function typedEvent(e, p) {
     case "vision": e.kind = "vision"; e.vision = p.name; break;
     case "telegraph": e.kind = "telegraph"; e.word = p.word; break;
     case "registration": e.kind = "registration"; e.registration = p.name || p.stops || p.registration; break;
-    default: e.kind = "other";
+    default: e.kind = null;                               // (normEvent reads its words, if it has any)
   }
 }
 
@@ -128,6 +139,7 @@ const GUEST_WORDS = [
   [/band approaches/, "bands", "start"], [/passes on/, "bands", "end"], [/bands cross/, "bands", "mark"],
   [/steeples answer/, "steeples", "start"], [/last bell/, "steeples", "end"],
   [/old tune remembered/, "oldtune", "start"], [/memory gives out/, "oldtune", "mark"],
+  [/trombones at dawn/, "trombones", "start"], [/near choir answers/, "trombones", "mark"], [/two choirs together/, "trombones", "mark"],
   [/raspberry/, "raspberry", "start"], [/amen—/, "raspberry", "mark"],
   [/tune is withheld/, "cumulative", "start"], [/whole tune, at last/, "cumulative", "mark"],
 ];

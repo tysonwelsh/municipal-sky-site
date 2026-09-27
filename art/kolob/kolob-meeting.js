@@ -44,6 +44,7 @@ window.KOLOB = window.KOLOB || {};
   function steeplesAnswer(V, t) { return S.steeplesAnswer(V, t); }
   function oldTuneCandidates() { return S.oldTuneCandidates(); }
   function oldTuneRemembered(V, t) { return S.oldTuneRemembered(V, t); }
+  function trombonesAtDawn(V, t) { return S.trombonesAtDawn(V, t); }
   // from kolob-core.js
   function stream(label) { return S.stream(label); }
   function turn(label) { return S.turn(label); }
@@ -56,7 +57,10 @@ window.KOLOB = window.KOLOB || {};
   // S.ROOM_RAMP_S, S.air)
   // the composers, reached on the KOLOB namespace (they read nothing of the
   // house; see THE CHORISTER'S BOOK and THE CHORD DESK below)
-  var Harmony = KOLOB.Harmony, Motif = KOLOB.Melody.Motif, METERS = KOLOB.Melody.METERS;
+  var Harmony = KOLOB.Harmony, Motif = KOLOB.Melody.Motif, Prosody = KOLOB.Melody.Prosody, METERS = KOLOB.Melody.METERS;
+  // the trombone choir at dawn plans itself (kolob-guest-trombones.js: pure,
+  // handed a stream); read late, as a guest the house can do without
+  function Trombones() { return KOLOB.GuestTrombones || null; }
 
   // ==========================================================================
   // THE CHORISTER — meeting conductor.
@@ -215,12 +219,6 @@ window.KOLOB = window.KOLOB || {};
     C.visitUntil = 0;
     C.visitType = null;
     C.visitLogged = true;
-    var haveSec = {};
-    for (var vp = 0; vp < plan.length; vp++) haveSec[plan[vp].type] = true;
-    function seatIn(prefs) {
-      for (var sp = 0; sp < prefs.length; sp++) if (haveSec[prefs[sp]]) return prefs[sp];
-      return null;
-    }
     // THE QUESTION IS SHELVED (owner, 2026-09-27: "one of the less interesting
     // guests… there's better stuff we could be focusing on"). Its code stays
     // in kolob-guests.js; it simply never seats. Its dice are still thrown
@@ -229,16 +227,26 @@ window.KOLOB = window.KOLOB || {};
     var SHELVED_GUESTS = { question: true };
     // (the switch draws its guest; a dev who names one — the harness, a
     // lab — gets that one, and the die is thrown all the same)
-    var FORCEABLE = { bands: true, steeples: true, oldtune: true };
-    var forcedPick = pickWith(forcedDie, [["bands", 2], ["steeples", 1], ["oldtune", 1]]);
+    var FORCEABLE = { bands: true, steeples: true, oldtune: true, trombones: true };
+    var forcedPick = pickWith(forcedDie, [["bands", 2], ["steeples", 1], ["oldtune", 1], ["trombones", 1]]);
     var forcedType = forceVisitation ? (FORCEABLE[forceVisitation] ? forceVisitation : forcedPick) : null;
+    // the trombones asked for by name keep the prelude for themselves, and no
+    // band crosses their morning (the guests who would have sat there take
+    // their other seats; the dice are thrown as ever)
+    var dawnAsked = forcedType === "trombones";
+    var haveSec = {};
+    for (var vp = 0; vp < plan.length; vp++) haveSec[plan[vp].type] = true;
+    function seatIn(prefs) {
+      for (var sp = 0; sp < prefs.length; sp++) if (haveSec[prefs[sp]] && !(dawnAsked && prefs[sp] === "prelude")) return prefs[sp];
+      return null;
+    }
     if (forcedType === "question" || qDie) {
       var qSeat = (forcedType === "question" || qSeatDie)
         ? seatIn(["invocation", "testimony", "hymn"])
         : seatIn(["testimony", "interlude", "invocation"]);
       if (qSeat && !SHELVED_GUESTS.question) C.visitations.push({ type: "question", section: qSeat, fired: false });
     }
-    if (forcedType === "bands" || bDie) {
+    if ((forcedType === "bands" || bDie) && !dawnAsked) {
       var bSeat = forcedType === "bands"
         ? seatIn(["hymn", "doxology", "postlude"])
         : (bSeatDie ? seatIn(["doxology", "hymn", "postlude"]) : seatIn(["hymn", "postlude", "doxology"]));
@@ -247,7 +255,7 @@ window.KOLOB = window.KOLOB || {};
     // the steeples: bells at the meeting's edges — the framing sections where
     // a bell has civic meaning (calling the valley in, ringing it home)
     if (forcedType === "steeples" || stDie) {
-      var stSeat = forcedType === "steeples" ? "prelude" : (stSeatDie ? "prelude" : "postlude");
+      var stSeat = forcedType === "steeples" ? "prelude" : (stSeatDie && !dawnAsked ? "prelude" : "postlude");
       C.visitations.push({ type: "steeples", section: stSeat, fired: false });
     }
     // THE OLD TUNE — its own die, gated by the mode law (kolob-guests.js,
@@ -262,6 +270,23 @@ window.KOLOB = window.KOLOB || {};
         ? seatIn(["prelude", "testimony", "hymn"])
         : (oSeatDie ? seatIn(["prelude", "testimony"]) : seatIn(["testimony", "interlude", "prelude"]));
       if (oSeat) C.visitations.push({ type: "oldtune", section: oSeat, fired: false, tune: pickWith(oTuneDie, oldPool) });
+    }
+    // THE TROMBONE CHOIR AT DAWN (round 2; PLAN-COMPOSITION §14, item 3 —
+    // after the Moravians of Bethlehem and the Salem Easter sunrise): some
+    // Sundays, in the prelude's first minute, a trombone choir far across the
+    // settlement plays a line of the day's first hymn, and a nearer choir on
+    // the other side answers with the next. It keeps its own dice —
+    // guest:trombones:<n>, the odds, the moment and the shape of the
+    // exchanges — so a Sunday without it is the Sunday it was. It sits only
+    // in the prelude, never beside another guest there, and never in a
+    // meeting the bands cross (kolob-guest-trombones.js decides; it is told
+    // who is already seated, and the bands are drawn first).
+    var TB = Trombones(), tbStream = null, tbInfo = null;
+    if (TB) {
+      tbStream = stream("guest:trombones");
+      tbInfo = { n: C.meetingNum, kind: activity, sunday: null, sections: plan, guests: C.visitations, force: dawnAsked };
+      var tbSeat = TB.plan(tbInfo, tbStream);
+      if (tbSeat) C.visitations.push({ type: "trombones", section: "prelude", at: tbSeat.at, dur: tbSeat.dur, fired: false, stream: tbStream });
     }
     // CUMULATIVE FORM (after Ives's cumulative settings): the day's theme is
     // WITHHELD — only its fragments circulate, endings first — until the
@@ -296,6 +321,17 @@ window.KOLOB = window.KOLOB || {};
         cat: "visitation", label: "◌ the tune is withheld", detail: (wTheme ? wTheme.name + " · " : "") + "until the doxology",
       });
     }
+    // The trombones' chorale is written now that the day's theme exists (so
+    // its harmonizing is paid here, not in the clock's callback), and the
+    // prelude yields to the choir: it lasts at least until the far choir's
+    // last chord has rung out over the town.
+    var dawn = visitationOf("trombones");
+    if (dawn) {
+      dawn.material = TB.chorale(dawnChorale(plan, dawn.stream.fork("material")));
+      tbInfo.material = dawn.material;             // (with the chorale in hand, the plan's length is exact)
+      var tbExact = TB.plan(tbInfo, tbStream);
+      if (tbExact) { dawn.at = tbExact.at; dawn.dur = tbExact.dur; plan[0].dur = Math.max(plan[0].dur, tbExact.holdUntil); }
+    }
     enterSection(0, t);
     // The Liahona: the load-bearing draws, surfaced as the oracle's pointing.
     emitEvent({
@@ -311,6 +347,52 @@ window.KOLOB = window.KOLOB || {};
       cat: "meeting", label: "☀ meeting " + C.meetingNum,
       detail: "F0 " + S.F0.toFixed(1) + " Hz · " + S.mode + " · " + activity + " · season " + seasonPos.toFixed(2),
     });
+  }
+
+  function visitationOf(type) {
+    for (var i = 0; i < C.visitations.length; i++) if (C.visitations[i].type === type) return C.visitations[i];
+    return null;
+  }
+  // THE DAWN'S CHORALE — what the trombones play until the hymn composer
+  // exists: the day's theme poured into the first hymn's meter, one line
+  // per line of it, and set in four parts by Harmony in the day's mode, each
+  // line voiced on from the last; with the tune itself, so the choir's
+  // soprano keeps its octaves. On a withheld Sunday (the cumulative form)
+  // a working motif stands in for the theme, as it does for the visiting
+  // band: the dawn must not give the tune away. Every die is the guest's
+  // own (R, a fork of guest:trombones:<n>); nothing is written into the
+  // chord book and nothing is announced — it is the trombones' page, not
+  // the hall's. The trombone room reads it, tunes it and re-voices it.
+  function dawnChorale(plan, R) {
+    var mo = moment();
+    mo.section = "prelude"; mo.arc = 0; mo.chord = null;
+    var first = null;
+    for (var i = 0; i < plan.length; i++) if (plan[i].type === "hymn") { first = plan[i]; break; }
+    var meter = METERS[(first && first.meter) || "CM"] || METERS.CM;
+    var src = C.cumulative ? Motif.anyWorking(mo, R) : Motif.theme();
+    var tune = meter.map(function (nSyl) { return Prosody.pourIntoLine(src, nSyl, R); });
+    var before = null;                              // the chord before the hymn's last
+    var lines = tune.map(function (ln) {
+      var hz = Harmony.harmonize(ln.map(function (x) { return { deg: x.deg, dur: x.durBeats }; }), mo, R);
+      if (hz.length) {
+        before = hz.length > 1 ? hz[hz.length - 2].chord : (mo.chord || null);
+        mo = Harmony.standingOn(mo, hz[hz.length - 1].chord);
+      }
+      return hz;
+    });
+    // …and the near choir brings the hymn home: its last chord is the tonic.
+    // Harmony sets each note from the grammar, and a line may end where it
+    // falls (on IV, vi, iii or V — over half the dawns did); the tune's last
+    // note is always a rest tone (do, mi or sol), so the tonic holds it, voiced
+    // by Harmony from the chord before it: V–I, IV–I, the amen.
+    var last = lines.length ? lines[lines.length - 1] : null;
+    if (last && last.length && last[last.length - 1].chord && last[last.length - 1].chord.root !== 0) {
+      last[last.length - 1].chord = Harmony.voice(0, { cadence: true, open: false }, Harmony.standingOn(mo, before), R);
+    }
+    return {
+      mode: S.mode, keynoteHz: S.F0 * S.ROOT_MULT, lines: lines,
+      tune: { space: "d7", lines: tune.map(function (ln) { return ln.map(function (x) { return x.deg; }); }) },
+    };
   }
 
   // A section begins at t (a joint's end, the downbeat, or a dev jump). Its
@@ -365,6 +447,12 @@ window.KOLOB = window.KOLOB || {};
     if (!S.roomBalanceHeld) setRoomBalance(S.ROOM_BALANCE[s.type] != null ? S.ROOM_BALANCE[s.type] : 0.45, S.roomRampNext);
     S.roomRampNext = S.ROOM_RAMP_S;
     Motif.onSection(s.type);
+    // a guest that keeps its own time is cued as its section begins, at the
+    // moment its plan drew (the trombones: seconds into the prelude — too
+    // early for the poll below, which waits out a section's first fifth)
+    C.visitations.forEach(function (V) {
+      if (CUED[V.type] && V.section === s.type && !V.fired) cueAt("guests", t + (V.at || 0), function (tc) { cuedArrival(V, tc); });
+    });
   }
 
   // (every clock below is the music's now: the cue's scheduled time)
@@ -419,19 +507,9 @@ window.KOLOB = window.KOLOB || {};
     // over a hush, a fuging gathering, a joint, or each other.
     for (var vv = 0; vv < C.visitations.length; vv++) {
       var V = C.visitations[vv];
-      if (!V.fired && V.section === C.section && x > 0.2 && x < 0.55 &&
+      if (!V.fired && !CUED[V.type] && V.section === C.section && x > 0.2 && x < 0.55 &&
           !C.jointing && !inHush() && !inFuging() && !inVisit()) {
-        V.fired = true;
-        // a guest the minutes may not name (UNLOGGED below) carries it on
-        // every event it sends, and the page is never told it came
-        V.logged = !UNLOGGED[V.type];
-        // type → set piece; the old tune receives its visitation record (the drawn tune)
-        var VISIT_FN = { question: unansweredQuestion, bands: twoBandsCross, steeples: steeplesAnswer, oldtune: oldTuneRemembered };
-        var vdur = (VISIT_FN[V.type] || twoBandsCross)(V, t);
-        C.visitType = V.type;
-        C.visitLogged = V.logged;
-        C.visitUntil = t + vdur;
-        guestSpan(V.type, t, vdur, V.logged);
+        arrive(V, t);
         break;
       }
     }
@@ -488,6 +566,39 @@ window.KOLOB = window.KOLOB || {};
     }
     cueAt("conductor", t + 0.6, conductorTick);
   }
+
+  // A GUEST ARRIVES at t: marked, its set piece placed, its span told (the
+  // page's direction line names it while it sounds; the joint waits for it).
+  // A guest the minutes may not name (UNLOGGED below) carries that on every
+  // event and note it sends, and the page is never told it came.
+  var VISIT_FN = { question: unansweredQuestion, bands: twoBandsCross, steeples: steeplesAnswer, oldtune: oldTuneRemembered, trombones: trombonesAtDawn };
+  function arrive(V, t) {
+    V.fired = true;
+    V.logged = !UNLOGGED[V.type];
+    // type → set piece; each receives its visitation record (the old tune its
+    // drawn tune, the trombones their stream and chorale)
+    var vdur = (VISIT_FN[V.type] || twoBandsCross)(V, t);
+    C.visitType = V.type;
+    C.visitLogged = V.logged;
+    C.visitUntil = t + vdur;
+    guestSpan(V.type, t, vdur, V.logged);
+  }
+  // THE GUESTS THAT KEEP THEIR OWN TIME — cued when their section begins
+  // (enterSection), at the moment their plan drew, never found by the poll.
+  // The cue still asks: the guest's own meeting, its section still standing
+  // (a dev jump may have left it), no joint sounding, no other guest.
+  var CUED = { trombones: true };
+  function cuedArrival(V, t) {
+    if (!S.playing || V.fired || C.visitations.indexOf(V) < 0 || C.section !== V.section || C.jointing || inVisit()) return;
+    arrive(V, t);
+  }
+  // THE HOUSE LISTENS — a guest that is a chorale of its own (the trombones
+  // at dawn, in the day's mode and on its own chords): while it sounds, the
+  // organ, the harmonium and the strings rest their hands, and the melodic
+  // voices find the air taken (the guest claims it); the drone and the field
+  // stay — the chorale is the day's own mode, and it is morning outside.
+  var LISTENED = { trombones: true };
+  function hallListens() { return inVisit() && !!LISTENED[C.visitType]; }
 
   // a guest is sounding: a visitation, or the whole tune at last
   function guestSounding() { return inVisit() || (!!S.ctx && now() < C.assemblyUntil); }
@@ -642,6 +753,9 @@ window.KOLOB = window.KOLOB || {};
   //                   yet the second; assemblyUntil() when the assembly ends
   //   visitType()     the last guest that came (a guest is sounding while
   //                   S.inVisit()); visitLogged() whether the page may name it
+  //   guests()        the guests drawn for this meeting, as plain rows
+  //                   {type, section, at, dur, fired} (a copy: the harness
+  //                   and the page to come read it; nothing writes through it)
   //   hymnId()        the hymn being sung (SCORE §3: h:<meeting>:<i>, the
   //                   i-th singing section of the meeting — hymns and the
   //                   doxology — counted from 1)
@@ -684,6 +798,9 @@ window.KOLOB = window.KOLOB || {};
     assemblyUntil: function () { return C.assemblyUntil; },
     visitType: function () { return C.visitType; },
     visitLogged: function () { return C.visitLogged !== false; },
+    guests: function () {
+      return C.visitations.map(function (v) { return { type: v.type, section: v.section, at: v.at != null ? v.at : null, dur: v.dur != null ? v.dur : null, fired: !!v.fired }; });
+    },
     hymnId: hymnId,
     moment: moment,
   });
@@ -800,12 +917,15 @@ window.KOLOB = window.KOLOB || {};
   S.inFuging = inFuging;
   S.inVisit = inVisit;
   S.inQuestion = inQuestion;
+  S.hallListens = hallListens;
   S.silenceMul = silenceMul;
   S.gapMul = gapMul;
   S.conductorTick = conductorTick;
   S.skipToSection = skipToSection;
   S.UNLOGGED_GUESTS = UNLOGGED;
   // the room's public face on the KOLOB namespace
-  KOLOB.Meeting = { MEETINGS: MEETINGS, book: Book, desk: Desk, planMeeting: planMeeting, conductorTick: conductorTick, runJoint: runJoint };
+  // (dawnChorale: the trombones' material as the plan writes it — for the
+  // harness, which proves what the choir is handed)
+  KOLOB.Meeting = { MEETINGS: MEETINGS, book: Book, desk: Desk, planMeeting: planMeeting, conductorTick: conductorTick, runJoint: runJoint, dawnChorale: dawnChorale };
   (KOLOB._rooms = KOLOB._rooms || {})["kolob-meeting.js"] = true;   // the load guard's roll call
 })();

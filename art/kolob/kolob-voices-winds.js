@@ -24,6 +24,7 @@ window.KOLOB = window.KOLOB || {};
   function intensity() { return S.intensity(); }
   function inFuging() { return S.inFuging(); }
   function inQuestion() { return S.inQuestion(); }
+  function hallListens() { return S.hallListens(); }
   function silenceMul() { return S.silenceMul(); }
   function gapMul() { return S.gapMul(); }
   // from kolob-core.js
@@ -126,7 +127,7 @@ window.KOLOB = window.KOLOB || {};
     if (!S.playing) return;
     var s = S.Meeting.section();
     var speaks = s === "prelude" || s === "hymn" || s === "testimony" || s === "doxology" || s === "postlude";
-    if (!speaks || inFuging() || inQuestion()) { cueIn("clarinet", 6, clarinetPhrase); return; }
+    if (!speaks || inFuging() || inQuestion() || hallListens()) { cueIn("clarinet", 6, clarinetPhrase); return; }
     if (!airFree()) { cueIn("clarinet", wait("clarinet").rnd(5, 11), clarinetPhrase); return; }
     var R = turn("clarinet");
     // in the prelude the deacon only occasionally tries a line over the organ
@@ -274,7 +275,7 @@ window.KOLOB = window.KOLOB || {};
     if (!S.playing) return;
     var s = S.Meeting.section();
     var plays = s === "prelude" || s === "hymn" || s === "doxology" || s === "postlude";
-    if (!plays || inQuestion()) { cueIn("harmonium", 8, harmoniumCycle); return; }
+    if (!plays || inQuestion() || hallListens()) { cueIn("harmonium", 8, harmoniumCycle); return; }
     var R = turn("harmonium");
     // the parlor ANSWERS the deacon when an obligation stands — a fourth
     // conversational timbre, close and warm

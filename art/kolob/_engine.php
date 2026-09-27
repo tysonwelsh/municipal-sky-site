@@ -16,9 +16,11 @@
 // from Kolob), then pitch, the score and the Earth tunes, the composers,
 // the voices, the performers, and last the core that raises the KolobAudio
 // facade over them. (The lab modules — kolob-question.js, kolob-voices-vocal/
-// -pipeorgan/-band/-folk.js — join this list on the day the engine first
-// uses them; kolob-tunes.js joined in round 2, milestone 3, when the old
-// tune began to sing the Earth tunes.)
+// -pipeorgan/-folk.js — join this list on the day the engine first uses
+// them; kolob-tunes.js joined in round 2, milestone 3, when the old tune
+// began to sing the Earth tunes; kolob-voices-band.js and
+// kolob-guest-trombones.js joined at round 2's integration, when the
+// trombone choir began to play at dawn.)
 //
 // THE LOAD GUARD. Each kolob-*.js room answers a roll call as its last act
 // (KOLOB._rooms["kolob-organ.js"] = true), and the substrate — and the Earth
@@ -60,8 +62,10 @@ return [
     // the voices
     'kolob-voices-organ.js', 'kolob-voices-choir.js', 'kolob-voices-winds.js',
     'kolob-voices-ground.js', 'kolob-voices-field.js', 'kolob-voices-bagpipe.js',
-    // the performers
-    'kolob-guests.js', 'kolob-meeting.js',
+    'kolob-voices-band.js',
+    // the performers (the trombone choir at dawn plans and plays itself;
+    // the guests' room places it, the meeting seats it)
+    'kolob-guest-trombones.js', 'kolob-guests.js', 'kolob-meeting.js',
     // the facade
     'kolob-core.js',
 ];

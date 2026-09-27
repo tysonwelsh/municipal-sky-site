@@ -52,9 +52,13 @@
 //   kolob-voices-*.js  the instruments: organ, choir, winds (clarinet and
 //                      harmonium), ground (drone, strings, bells, tuba), field
 //                      (still small voice, telegraph, the valley), bagpipe
-//                      (shelved)
+//                      (shelved), band (the brass: the trombones at dawn)
+//   kolob-guest-trombones.js  the trombone choir at dawn: its seat, its
+//                      chorale and its two choirs (pure planning; it plays
+//                      when the guests' room places it)
 //   kolob-guests.js    the visitations: the question, the bands, the steeples,
-//                      the old tune, the cumulative assembly, the raspberry
+//                      the old tune, the trombones, the cumulative assembly,
+//                      the raspberry
 //   kolob-meeting.js   the chorister: meetings, sections, joints, the arc;
 //                      the chorister's book (S.Meeting, C's only door) and
 //                      the chord desk (S.Harmony)
@@ -452,6 +456,12 @@ window.KolobAudio = (function () {
       applyLayerGain(layer);
     }
     makeClock();
+    // the town's air, for the trombones at dawn, is poured now — once, at the
+    // button press — not inside the clock's callback that first needs it
+    // (KOLOB.VoicesBand.warm: an outdoor tail of 2.6 s, tens of ms to build)
+    if (KOLOB.VoicesBand && KOLOB.VoicesBand.warm) {
+      try { KOLOB.VoicesBand.warm(ctx); } catch (e) { if (window.console) console.warn("Kolob: the town's air could not be built:", e); }
+    }
   }
   // Every layer sings in both rooms; its depth bias seats it.
   function seatLayer(name, src) {

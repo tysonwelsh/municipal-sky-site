@@ -25,6 +25,7 @@ window.KOLOB = window.KOLOB || {};
   function harm(h) { return S.harm(h); }
   // from kolob-meeting.js
   function intensity() { return S.intensity(); }
+  function hallListens() { return S.hallListens(); }
   function inFuging() { return S.inFuging(); }
   function gapMul() { return S.gapMul(); }
   // from kolob-core.js
@@ -189,6 +190,7 @@ window.KOLOB = window.KOLOB || {};
     if (!S.playing) return;
     var s = S.Meeting.section();
     if (s === "invocation" || s === "sacrament" || s === "interlude") { cueIn("strings", 8, stringsCycle); return; }
+    if (hallListens()) { cueIn("strings", 8, stringsCycle); return; }       // (the house listens: the trombones at dawn)
     var R = turn("strings");
     var dur = R.rnd(22, 34);
     var overlap = 8;
