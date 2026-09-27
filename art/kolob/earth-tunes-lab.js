@@ -457,7 +457,7 @@ window.EarthTunesLab = (function () {
   }
 
   // ---- the page ------------------------------------------------------------------------
-  var listEl = document.getElementById("etl-tunes"), tocEl = document.getElementById("etl-toc");
+  var listEl = document.getElementById("etl-tunes"), pickEl = document.getElementById("etl-pick");
   var nowEl = document.getElementById("etl-now"), followEl = document.getElementById("etl-follow");
   var melEl = document.getElementById("etl-melody"), tempoEl = document.getElementById("etl-tempo"), tempoOut = document.getElementById("etl-tempo-out");
   var fixedEl = document.getElementById("etl-fixed");
@@ -474,71 +474,100 @@ window.EarthTunesLab = (function () {
       (s.note ? '<br><span class="etl-x">' + esc(s.note) + "</span>" : "") + "</p>";
   }
 
+  // the tune the page is showing: the picker's choice, kept in the URL hash
+  // (#t-<slug>) so a reload lands on the same tune
+  function slugOf(h) { return h.id.split(":")[1]; }
+  function current() {
+    var want = (location.hash || "").replace(/^#t-/, ""), hit = null;
+    ordered.forEach(function (h) { if (slugOf(h) === want) hit = h; });
+    return hit || ordered[0];
+  }
+  function fillPicker() {
+    var html = ['<optgroup label="The seven, re-transcribed (v0.30 carried these as incipits)">'];
+    ordered.forEach(function (h, i) {
+      if (i === SEVEN.length) html.push('</optgroup><optgroup label="Added: public-domain tunes of Kolob\'s families">');
+      html.push('<option value="' + esc(slugOf(h)) + '">' + esc(h.nameEn) + "</option>");
+    });
+    html.push("</optgroup>");
+    pickEl.innerHTML = html.join("");
+  }
+
+  // one card: the selected tune's information, its player (play, stop, and
+  // for the seven a version menu), the engraving, and the transcriber's notes
   function render() {
     stop();
-    var o = opts(), html = [], toc = [];
-    ordered.forEach(function (h, i) {
-      if (i === 0) html.push('<h2 class="etl-sec">The seven, re-transcribed (v0.30 carried these as incipits)</h2>');
-      if (i === SEVEN.length) html.push('<h2 class="etl-sec">Added: public-domain tunes of Kolob\'s families</h2>');
-      var slug = h.id.split(":")[1], L = h.lines.concat(h.refrain || []);
-      toc.push('<a href="#t-' + slug + '">' + esc(h.nameEn) + "</a>");
-      var parts = Object.keys(L[0].notes);
-      html.push('<section class="etl-card" id="t-' + slug + '" data-id="' + esc(h.id) + '">');
-      html.push("<h2>" + esc(h.nameEn) + '<span class="etl-ds">' + esc(h.nameDs) + "</span></h2>");
-      html.push('<p class="etl-meta"><b>' + esc(h.engrave.sourceKey) + "</b> · " + esc(h.meter) + " · " + esc(h.modeOfTime) +
-        " · Kolob mode <b>" + esc(h.mode) + "</b>" + (h.melodyMode && h.melodyMode !== h.mode ? " (the melody alone: " + esc(h.melodyMode) + ")" : "") +
-        " · dialect " + esc(h.dialect) + " · form " + esc(h.form) +
-        " · " + L.length + " lines · parts " + parts.join(" ") + " (melody " + h.melodyPart + ")</p>");
-      var tu = h.tuning;
-      if (tu && tu.onsets) html.push('<p class="etl-meta etl-tune">Just intonation: ' +
-        (tu.sourBefore ? tu.sourBefore + " of " + tu.onsets + " chords would sound a sour third, sixth or fifth on the fixed degrees; " + tu.moved + " notes lean a comma (<b>+</b> / <b>−</b>) and " +
-          (tu.sourAfter ? tu.sourAfter + " passing chords stay sour (a held note is never re-tuned)." : "every chord is just.")
-          : "every chord is just on the fixed degrees; no note needs a comma.") + "</p>");
-      html.push(srcLine(h.source, "Source:"));
-      (h.crossCheck || []).forEach(function (c) { html.push(srcLine(c, "Cross-check:")); });
-      html.push('<div class="etl-ctl"><button type="button" class="etl-btn" data-act="play">play</button>');
-      if (OLD[h.id]) {
-        html.push('<button type="button" class="etl-btn is-old" data-act="old">v0.30</button>' +
-          '<button type="button" class="etl-btn is-old" data-act="ab">v0.30 → new</button>' +
-          '<button type="button" class="etl-btn" data-act="showold">show v0.30</button>');
-      }
-      html.push('<span class="etl-hint">' + (o.melodyOnly ? "melody only" : "all parts the book prints") + "</span></div>");
-      html.push('<div class="etl-score etl-new">' + engraveTune(h, o) + "</div>");
-      if (OLD[h.id]) html.push('<div class="etl-score etl-old" hidden><p class="etl-old-cap">v0.30 incipit, on the same staff and in the same key (its rhythm in plain beats)</p>' + engraveTune(oldHymn(h), { melodyOnly: true }) + "</div>");
-      html.push('<details class="etl-notes"' + (i < 3 ? " open" : "") + '><summary>transcriber\'s notes</summary><p>' + esc(h.notes).replace(/\. /g, ".</p><p>") + "</p></details>");
-      html.push("</section>");
-    });
+    var o = opts(), html = [], h = current(), i = ordered.indexOf(h);
+    pickEl.value = slugOf(h);
+    var L = h.lines.concat(h.refrain || []), parts = Object.keys(L[0].notes);
+    html.push('<section class="etl-card" id="t-' + slugOf(h) + '" data-id="' + esc(h.id) + '">');
+    html.push("<h2>" + esc(h.nameEn) + '<span class="etl-ds">' + esc(h.nameDs) + "</span></h2>");
+    html.push('<p class="etl-meta"><b>' + esc(h.engrave.sourceKey) + "</b> · " + esc(h.meter) + " · " + esc(h.modeOfTime) +
+      " · Kolob mode <b>" + esc(h.mode) + "</b>" + (h.melodyMode && h.melodyMode !== h.mode ? " (the melody alone: " + esc(h.melodyMode) + ")" : "") +
+      " · dialect " + esc(h.dialect) + " · form " + esc(h.form) +
+      " · " + L.length + " lines · parts " + parts.join(" ") + " (melody " + h.melodyPart + ")</p>");
+    var tu = h.tuning;
+    if (tu && tu.onsets) html.push('<p class="etl-meta etl-tune">Just intonation: ' +
+      (tu.sourBefore ? tu.sourBefore + " of " + tu.onsets + " chords would sound a sour third, sixth or fifth on the fixed degrees; " + tu.moved + " notes lean a comma (<b>+</b> / <b>−</b>) and " +
+        (tu.sourAfter ? tu.sourAfter + " passing chords stay sour (a held note is never re-tuned)." : "every chord is just.")
+        : "every chord is just on the fixed degrees; no note needs a comma.") + "</p>");
+    html.push(srcLine(h.source, "Source:"));
+    (h.crossCheck || []).forEach(function (c) { html.push(srcLine(c, "Cross-check:")); });
+    html.push('<div class="etl-ctl"><button type="button" class="etl-btn" data-act="play">play</button>' +
+      '<button type="button" class="etl-btn" data-act="stop">stop</button>' +
+      '<span class="etl-ver"><label class="etl-ver-label" for="etl-ver">version</label><select class="etl-select" id="etl-ver"' + (OLD[h.id] ? "" : " disabled") + ">" +
+      '<option value="new">new transcription</option>' +
+      (OLD[h.id] ? '<option value="old">v0.30 incipit</option><option value="ab">v0.30, then the new first lines</option>' : "") +
+      "</select></span>" +
+      '<span class="etl-hint">' + (OLD[h.id] ? "" : "added tune: no v0.30 version · ") + (o.melodyOnly ? "melody only" : "all parts the book prints") + "</span></div>");
+    html.push('<div class="etl-score etl-new">' + engraveTune(h, o) + "</div>");
+    if (OLD[h.id]) html.push('<div class="etl-score etl-old" hidden><p class="etl-old-cap">v0.30 incipit, on the same staff and in the same key (its rhythm in plain beats)</p>' + engraveTune(oldHymn(h), { melodyOnly: true }) + "</div>");
+    html.push('<details class="etl-notes" open><summary>transcriber\'s notes</summary><p>' + esc(h.notes).replace(/\. /g, ".</p><p>") + "</p></details>");
+    html.push("</section>");
     listEl.innerHTML = html.join("");
-    tocEl.innerHTML = toc.join("");
+  }
+
+  // the version menu decides which engraving shows: the new tune, v0.30's
+  // incipit, or both (for "v0.30, then the new first lines")
+  function showVersion(card, v) {
+    var newEl = card.querySelector(".etl-new"), oldEl = card.querySelector(".etl-old");
+    if (newEl) newEl.hidden = v === "old";
+    if (oldEl) oldEl.hidden = v === "new";
   }
 
   listEl.addEventListener("click", function (ev) {
     var btn = ev.target.closest("button[data-act]"); if (!btn) return;
     var card = btn.closest(".etl-card"), h = TUNES.byId(card.getAttribute("data-id")), o = opts();
     var act = btn.getAttribute("data-act");
+    if (act === "stop") { stop(); return; }
+    var verEl = card.querySelector("#etl-ver"), v = verEl && !verEl.disabled ? verEl.value : "new";
     var newEl = card.querySelector(".etl-new"), oldEl = card.querySelector(".etl-old");
-    if (act === "play") {
-      if (playing && playing.card === card && btn.classList.contains("is-on")) { stop(); return; }
-      play([{ h: h, opts: o, scope: newEl }], card, btn, h.nameEn);
-    } else if (act === "old") {
-      if (oldEl) oldEl.hidden = false;
+    showVersion(card, v);
+    if (v === "old") {
       play([{ h: oldHymn(h), opts: { tempo: o.tempo, melodyOnly: true }, scope: oldEl }], card, btn, h.nameEn + " — v0.30 incipit");
-    } else if (act === "ab") {
-      if (oldEl) oldEl.hidden = false;
+    } else if (v === "ab") {
       var firstTwo = { id: h.id, beatS: h.beatS, melodyPart: h.melodyPart, engrave: h.engrave, lines: h.lines.slice(0, 2), refrain: null };
       play([{ h: oldHymn(h), opts: { tempo: o.tempo, melodyOnly: true }, scope: oldEl }, { h: firstTwo, opts: { tempo: o.tempo, melodyOnly: true }, scope: newEl }],
            card, btn, h.nameEn + " — v0.30, then the new first lines");
-    } else if (act === "showold") {
-      oldEl.hidden = !oldEl.hidden; btn.classList.toggle("is-on", !oldEl.hidden);
+    } else {
+      play([{ h: h, opts: o, scope: newEl }], card, btn, h.nameEn);
     }
   });
-  document.getElementById("etl-stop").addEventListener("click", stop);
+  listEl.addEventListener("change", function (ev) {
+    if (ev.target.id !== "etl-ver") return;
+    stop(); showVersion(ev.target.closest(".etl-card"), ev.target.value);
+  });
+  pickEl.addEventListener("change", function () {
+    history.replaceState(null, "", "#t-" + pickEl.value);
+    render();
+  });
+  window.addEventListener("hashchange", render);
   tempoEl.addEventListener("input", function () { tempoOut.textContent = (+tempoEl.value).toFixed(2) + "×"; });
   melEl.addEventListener("change", render);
   if (fixedEl) fixedEl.addEventListener("change", render);
 
   var api = { tunes: ordered, render: render, stop: stop, play: play, eventsOf: eventsOf, oldHymn: oldHymn, keynoteHz: keynoteHz, engraveTune: engraveTune,
               liveCount: function () { return live.length; } };
+  fillPicker();
   render();
   return api;
 })();

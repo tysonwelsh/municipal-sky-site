@@ -3,12 +3,14 @@
 // EARTH TUNES LAB — the owner's review bench for kolob-tunes.js.
 //
 // UNLINKED dev page (like tune-lab, room-lab, bagpipe-lab): reachable only by
-// URL (/art/kolob/earth-tunes-lab). One card per Earth tune: its name, the
+// URL (/art/kolob/earth-tunes-lab). A menu picks one Earth tune (owner, 2026-09-27),
+// and its card shows: its name, the
 // public-domain printing it was taken from (with a link to the facsimile),
 // the tune engraved part by part the way the source prints it, a player
 // (just intonation, a small organ, through a limiter), and the transcriber's
-// notes on what is uncertain. The seven tunes v0.30 carried as incipits get
-// a "v0.30" toggle, so the old and the new can be heard side by side.
+// notes on what is uncertain. The card's player is play, stop and a version
+// menu; for the seven tunes v0.30 carried as incipits the menu offers the old
+// incipit and "v0.30, then the new first lines", so the two can be compared.
 //
 // Loads kolob-tunes.js (a pure module), the substrate's PJ2.Clock (the
 // lookahead scheduler the organ hands its notes to), and this page's script.
@@ -40,6 +42,8 @@ include '../../includes/header.php';
   --old: #9a3f2e;
   font-family: "EB Garamond", Georgia, serif;
   color: var(--ink);
+  width: 100%;               /* a flex child with auto margins is sized to its content; on a phone that grows
+                                the layout viewport to the widest engraving (the same fix as kolob.css) */
   max-width: 1040px;
   margin: 0 auto;
   padding: 1.5rem 16px 4rem;
@@ -71,9 +75,18 @@ include '../../includes/header.php';
 .etl-btn.is-old { border-color: var(--old); color: var(--old); }
 .etl-btn.is-old:hover, .etl-btn.is-old.is-on { background: var(--old); color: #fff; }
 
-.etl-toc { display: flex; flex-wrap: wrap; gap: 0.35rem 0.9rem; font-size: 0.95rem; margin: 0 0 1.2rem; }
-.etl-toc a { color: var(--accent); text-decoration: none; font-variant: small-caps; letter-spacing: 0.03em; }
-.etl-toc a:hover { text-decoration: underline; }
+.etl-pickbar { display: flex; align-items: center; gap: 0.7rem; margin: 0 0 0.8rem; }
+.etl-pick-label { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.18em; color: var(--accent); }
+.etl-select {
+  font-family: inherit; font-size: 1rem; color: var(--ink); background: #fff8ea;
+  border: 1px solid var(--ink); border-radius: 5px; padding: 0.35rem 0.6rem; line-height: 1.2; max-width: 100%;
+}
+.etl-pick { flex: 1 1 auto; min-width: 0; width: 100%; font-size: 1.1rem; font-variant: small-caps; letter-spacing: 0.03em; }
+.etl-card, .etl-score { min-width: 0; max-width: 100%; }
+.etl-ctl .etl-select { font-size: 0.95rem; }
+.etl-ctl .etl-ver-label { font-size: 0.86rem; color: var(--ink-soft); margin-left: 0.3rem; }
+.etl-ver { display: inline-flex; align-items: center; gap: 0.45rem; max-width: 100%; }
+.etl-now:empty { display: none; }
 .etl-sec { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.18em; color: var(--accent); margin: 1.8rem 0 0.7rem; border-bottom: 1px solid var(--line); padding-bottom: 0.3rem; }
 
 .etl-card { border: 1px solid var(--line); border-radius: 10px; background: var(--paper); padding: 1rem 1rem 1.1rem; margin: 0 0 1.2rem; }
@@ -89,7 +102,7 @@ include '../../includes/header.php';
 .etl-ctl .etl-hint { font-size: 0.82rem; color: var(--ink-soft); font-style: italic; }
 
 .etl-score { background: var(--sheet); border: 1px solid var(--line); border-radius: 6px; padding: 0.4rem 0.3rem; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-.etl-score svg { display: block; height: auto; }
+.etl-score svg { display: block; height: auto; max-width: none; }  /* scroll inside the card; never shrink below legibility */
 .etl-row + .etl-row { border-top: 1px dashed rgba(107, 95, 71, 0.25); }
 .etl-cap { font-size: 0.82rem; font-style: italic; color: var(--accent); margin: 0.35rem 0.4rem 0; max-width: 70ch; }
 .etl-tune { font-size: 0.86rem; }
@@ -128,21 +141,22 @@ include '../../includes/header.php';
     <h1 class="etl-title">Earth Tunes Lab</h1>
     <p class="etl-lede">Every Earth tune in <code>kolob-tunes.js</code>, taken down again from a public-domain printing.
     Each card links the facsimile it came from, engraves the parts the book prints (in the book's key and clefs),
-    and plays them in just intonation. The seven v0.30 tunes carry a <b>v0.30</b> button: hear the old incipit,
-    then the new tune.</p>
+    and plays them in just intonation. Choose a tune from the list; for the seven v0.30 carried, the version menu plays
+    the old incipit, the new transcription, or one after the other.</p>
     <div class="etl-err" id="etl-err" hidden></div>
   </header>
 
+  <div class="etl-pickbar">
+    <label class="etl-pick-label" for="etl-pick">Tune</label>
+    <select id="etl-pick" class="etl-select etl-pick"></select>
+  </div>
   <div class="etl-bar" id="etl-bar">
     <label>tempo <input type="range" id="etl-tempo" min="0.5" max="1.6" step="0.05" value="1" /> <output id="etl-tempo-out">1.00×</output></label>
     <label><input type="checkbox" id="etl-melody" /> melody only</label>
     <label><input type="checkbox" id="etl-follow" checked /> light the notes</label>
     <label title="Play every degree at its table ratio, without the comma adjustments"><input type="checkbox" id="etl-fixed" /> fixed degrees</label>
-    <button type="button" class="etl-btn" id="etl-stop">stop</button>
     <span class="etl-now" id="etl-now"></span>
   </div>
-
-  <nav class="etl-toc" id="etl-toc"></nav>
   <div id="etl-tunes"></div>
 
   <p class="etl-foot">Pitches are the tunes' own degrees tuned as Kolob tunes them (5-limit just intonation on the
