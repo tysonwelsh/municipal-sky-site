@@ -3,7 +3,8 @@
 *This is the interface every Kolob 2 crew codes against. It is owned by the
 integrator (branch `kolob-2`). Draft 1, 2026-09-26; round 2's requests
 adopted 2026-09-27 (§9, which wins where it and an earlier section differ);
-round 3's composed hymns adopted 2026-09-27 (§10, which wins over both).*
+round 3's composed hymns adopted 2026-09-27 (§10, which wins over both);
+round 3b's ward adopted 2026-09-28 (§11, which wins over all three).*
 
 To change this contract, write a request in your handoff note. **Do not edit
 this file from a crew branch.**
@@ -515,3 +516,134 @@ A composed hymn is sung verse by verse in its dialect's practice:
   thread), and tells each stage's row as its phrase is laid out.
 - **`KolobAudio`** adds `getHymnal()`, `getHymn(id)`, `hymnalStats()` and
   `clockHealth()` (cues fired after their time; for the silent checks).
+
+---
+
+## 11. Round 3b, adopted (the ward sings the meeting)
+
+*The CAST crew's requests (`handoff/r3-cast-1.md`, both halves) and the HYMN
+crew's performance requests (`handoff/r3-hymn2-1.md`, 2–3), adopted as round
+3b wires the ward into the meeting. Where this section and an earlier one
+disagree, this section wins; the code named is the authority for the details.
+Handoff: `handoff/r3b-ward-1.md`.*
+
+### 11.1 Modules (§1, §9.1, §10.1)
+
+- **`kolob-voices-vocal.js`** (the ward's voices: a throat each, the shared
+  throat, ARMING) joins the engine among the voices, and **`kolob-cast.js`**
+  (the ward and its people, the plan of each hymn, its cue sheet, the
+  performer's desk) among the performers, before the hymnal
+  (`_engine.php`). Neither is lab-only any more.
+- **The performer of every composed hymn is the ward** (`S.singHymn` →
+  `singHymnWard`, `kolob-voices-choir.js`), and so is every line the house's
+  choir sang around the hymns: `S.choirVoiceLine` gives each old SATB voice's
+  line to that section of the ward, its eight people each in their own voice
+  (`wardSectionLine`). Round 3's four formant voices remain whole as the
+  fallback (`singHymnHouse`, `houseVoiceLine`), used when the cast is not
+  loaded or the dev switch `?choir=house` is set.
+- **`VoicesVocal`** (voices-1 request 2, r3-cast requests 6 and 10):
+  `singer(spec).sing(ctx, dest, t, notes, gain, { breathBefore, breathe, pan,
+  inhale, defer })`; `spec.sharedPan`, `spec.sharedThroat`, `spec.level`;
+  `arm(ctx, horizon, now)`, `joined(ctx)`, `pending(ctx)`, `parting(ctx)`,
+  `forget(ctx)` (a stopped meeting's queue is let go); `budget` (the ledger of
+  nodes alive).
+- **`Cast`**: `seat`, `planHymn`, `score` (the whole sheet, the cast lab's),
+  `segment(ward, hymn, plan, piece, opts)` (the meeting's: `"intro"`,
+  `{verse: v}`, `"amen"`, `"tag"`, each from its own start, the same dice and
+  arithmetic as the whole; `opts.carry` carries each singer's last note across
+  pieces for the breath), `performer(ward, {V, synth, organ})` with the desk
+  (`enqueue(t0, sheet)`, `tick(ctx, buses, horizon, pace)`, `clear()`,
+  `pending()`, `stats()`), `ACTION_DS`, `ACTION_FORWARD`, `WARD_GAIN`.
+
+### 11.2 Streams (§3, §9.2, §10.2)
+
+| label | draws |
+|---|---|
+| `cast:<n>` | the ward seated for meeting n (with its plan): `families`, `member:<id>` (`S0`…`B7`), `roles`, `role:<role>`, `role:testimony:<k>`, `rename:<id>`. Meeting 0 is the rail's audition |
+| `hymn:<n>:<i>` → `performance` | round 3's forks (§10.2), and now the cast's plan: its dice thrown on the fork's own sequence (verses, hummed, unison, descant, treble verse, the enthusiast, the child's, the alto's and the old bass's verses, the keying under the organ, every verse on the notes, the order they come forward), then `vowels:<v>`, `precentor:<v>:<li>`, `orn:<id>:<v>:<li>`, `child:<v>`, `descant:<li>`, `pitching`, and `fuging:<v>` (the ward's fuging) |
+| `synth:vocal` → `meeting:<n>` → `member:<id>` | sound-level: each person's own throat, breath and jitter |
+
+### 11.3 The Score and the Performance (§5.1, §10.3, §10.4)
+
+- **Hymn** (r3-hymn2): `voiceOrder`, `kind`, `drone`, `fuge`
+  (`{line, lines, gap, head, headNotes, entries, repeatFrom}`), `tag` (a Line,
+  like `amen`), `round`, `partner` and `wandering` (dev); `Note.septimal`;
+  `Chord.ring`, `Chord.swipe`. The performer sings the lines from
+  `fuge.repeatFrom` a second time before any refrain, the `refrain` after
+  every stanza, and the `tag` after the last verse.
+- **Performance** adds `forward: [{memberId, role, action, lines, gainDb}]`;
+  the plan adds `keying: {kind: "keying" | "pitching", by, habit, under?}`,
+  `layout` (`pews` | `square`) and `chorister`.
+- **The practices** (every built dialect):
+
+  | dialect | before the first verse | the verses | the close |
+  |---|---|---|---|
+  | Tabernacle | the organ modulates (keyed away) and gives out the tune; now and then (~20 %) the chorister hums the first note under its last chord | `sung`; one middle verse now and then `hummed` (the organ rests) or in `unison`; the last of three or four the soloist's `descant`, or now and then her treble verse alone over the organ | the plagal A-men |
+  | Sacred Harp | the pitching | verse 1 `notes`, then `sung` (now and then every verse on the notes); the hollow square | the bare fifths written |
+  | psalmody | the pitching | `sung`, the fuge sung twice; the hollow square | the written close |
+  | Old Way | the chorister keys it | `lined`: the precentor gives each line, the ward answers | none |
+  | gospel | the chorister keys it | `sung` (now and then a middle verse in `unison`), the quartet in the ward, the refrain after each verse | the tag |
+  | Shaker and Primary | the chorister keys it | `unison`, a few men humming the drone under it where the tune has one | none |
+
+- **The ward's parts** (`Cast.assignment`): eight a part; the Sacred Harp and
+  the psalmody double the treble and the tenor in octaves; gospel seats the
+  quartet (the tenor harmony with five trebles, the lead with the altos and
+  three trebles, the baritone with the tenors, the bass); unison, lined and
+  the Old Way put everyone on the tune (the men an octave down); a child
+  sings the tune.
+- **Who comes forward**: one or two on a line, never more; never the same
+  person two verses running (the precentor excepted); the treble verse is
+  the soloist's alone; the newcomer is silent in the day's first hymn until
+  the line they join on.
+
+### 11.4 Events (§6, §9.5, §10.5)
+
+- **`cast`** is emitted: `{memberId, nameDs, action, actionDs, role, hymnId,
+  verse?, line?}` — `action` in English (dev), `actionDs` the minutes'
+  Deseret capitals. The actions: `keys the hymn`, `hums the first note`,
+  `pitches the tune`, `lines out`, `comes forward`, `sings the descant`,
+  `sings the treble verse`, `sings the tune`, `loses the words`, `finds them
+  again`, `joins in`, `sings out` (a person comes forward: the minutes give
+  these a ✦ row, the precentor's lining-out its ☞ row), and `blends back into
+  the ward`, `falls silent` (their moment ends: no row).
+- **`hymn-announced`**: `leaderDs` is the chorister; `ward` (an extra) is
+  `{chorister, keying: {kind, habit, under, by, byDs} | null, practices: [..],
+  forward: [{memberId, nameDs, role, verse, action, actionDs}], layout}` —
+  who will come forward, named before they do.
+- **`lining-out`** of a composed Old Way line names the precentor: `by`,
+  `nameDs`.
+- **`verse-start.performance`** is the cast's Performance (with `forward`),
+  plus `tempoMul` and `beatS`.
+- **`prelude-seating`** carries `ward: {seated: 32, people: [{memberId,
+  role, nameDs, part}]}`.
+- **Notes of the ward** (`onNote`, layer `choir`): a section's written notes
+  once for each section singing a Score part in an octave (not once for each
+  of its eight people), as §10.5; and a person's own line once for that
+  person — `member`, `role`, and `sings: "key"` (the keying or the pitching's
+  tonic), `"descant"`, or `"drone"` (the Shakers'), with the section in
+  `part`; `pitching` (the pitching's notes), `liningOut` (the precentor's
+  line), `tag`, `repeat` (a fuge sung again).
+
+### 11.5 Time and the house (§4, §9.3, §10.6)
+
+- **The ward's desk.** Every piece the ward sings (a hymn's intro, each
+  verse, the amen, the tag, the fuging, a section's line) is written as a cue
+  sheet when the meeting decides it (a verse `PREP_S` = 4.5 s before it
+  begins) and put on the desk at its start on the audio clock. One pump, a cue
+  on the `ward` lane every 0.12 s of the music's time, hands the lines to the
+  voices 3 s ahead (at most 12 a call unless due within 1.2 s) and joins each
+  to the room 0.6 s before it sounds (ARMING). The pump reads the music's now,
+  never the audio clock. STOP clears the desk and `VoicesVocal.forget`s the
+  queue; a piece whose hymn no longer owns its section (a dev jump) hands
+  nothing more.
+- **Levels.** The ward pours into the choir layer (its slider, its seat in
+  the rooms) at `WARD_LEVEL` (0.16, `kolob-core.js`); a person come forward
+  into a nearer seat beside it (`ROOM_DEPTH["choir-near"]`, under the same
+  slider). A section of eight standing in for a house voice sings at
+  `HOUSE_SECTION_GAIN` (0.68, `kolob-voices-choir.js`).
+- **`KolobAudio`** adds `getWard()` (who is seated: the people, by role, in
+  Deseret; `nameEn` and the archetype dev-only), `wardStats()` (lines handed,
+  tight, late, the tightest margin, the most in one pump, mouths joined),
+  `getChoir()` (`"ward"` | `"house"`) and `setChoir(which)` (dev, before
+  PLAY; `?choir=house` sets it).
+
