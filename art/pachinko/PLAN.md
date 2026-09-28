@@ -1248,3 +1248,59 @@ the marble unless holding it, and no page scroll at any size.
   bail jingling). `forscale` and `capoff {real}` are silent. **The lode**
   also wakes the room's dead troffers: starter ticks at +0.67 and +0.95,
   a buzz from +1.18 for half a second.
+- 2026-09-28 — **The last mile (wave 8, rc.44; the final critic's six
+  blockers and its polish list, `local-dev/pachinko-lab/reports/wave8-last-mile.md`).**
+  - **ATTRACT's scale on ordinary screens** (orchestrator's ruling for the
+    owner: readability over pixel purity at 1×). Where the whole-cabinet
+    scale would be 1, ATTRACT takes a fractional nearest-neighbour scale on a
+    1/16 grid, as big as fits, if that is at least `FRAC_MIN_A` 1.2: 1920 ×
+    1080 → 1.8125, 1680 × 1050 and 1536 × 864 @1.25 → 1.75, 1440 × 900 → 1.5,
+    1366 × 768 → 1.25; 1280 × 720 (fit 1.19) stays 1. Whole scales wherever
+    they are ≥ 2. PLAY is unchanged (whole ≥ 2, else fractional ≥ 1.35).
+  - **The lode's camera** (`lodeFrame()` in main): the climax scale is the
+    largest whole scale ≥ 2 at which the marquee and the glass fit, else a
+    fractional one ≥ 1.35, never above PLAY's; equal to PLAY's, it pans. Its
+    crop keeps the dive's rules: marquee whole, glass whole, the lower panel
+    whole or none. 1440 × 900 @2: s 3, y −2.7…560 (the whole cabinet; was
+    −27…535, through the figures card). 1920 × 1080, 1680 × 1050, 1536 × 864
+    and 1280 × 800 @2 now pan at s 2 (or 3) to show the marquee (y −18…494
+    at 1080p). 1366: 1.625 → 1.5 (was → 1). Too small for both: it holds.
+  - **The 13's guard is out of the drift** (`LODE_GUARD` and `lodeZone` in
+    the board): knuckle.l/r, guard.top/l/r are never carried, no pin whose
+    home is within 14 px of the cup's centre and y 328–384 moves, and no pin
+    is set down there. A drifted knuckle over the cup had made the far-left
+    route pay 60 scrip a token (the 13 at 31 %). Lab (`w8/lanes.js`, main's
+    planner over 12 thirty-game visits, every 10-px lane): before, max 61.9;
+    after, max 23.1 at 200 drops a lane, and the flagged lanes measured with
+    1500–2000 drops are 15.6–20.2 (the highest is the powder box shoved under
+    the middle). The critic's seed-303 far-left visit: 35.7 → 7.0 a token.
+    Over 360 drifted boards the uniform 13 (1.38 → 1.45 %) and scrip a token
+    (10.47 → 10.46) are unchanged. `sim.js drift 90`: 0 unreachable paying
+    bays either way, the 13 out of band 9 → 7, its best x moved ≥ 6 px within
+    3 games in 18/18 → 17/18 chains. `sim.js metrics` and `sim.js mischief
+    1500` unchanged.
+  - **The shift whistle's full show** (the bells, the cage, the steam, the
+    bulb chase) at most once every `WHISTLE_REST` 4 s and never during a
+    lode; a catch inside the window keeps its plink, light and hop. The chase
+    now keys on the whistle, not the pocket, and skips a dark section.
+  - **The theft's telegraph:** the door comes off its latch about 0.95 s
+    ahead (an early `canSteal` look, lead 0.5, horizon 1.35), with the latch
+    sound, and his lamp shows through a 3-px crack that brightens over 0.4 s
+    (`doorcrack` prop and a small lamp); at 0.55 s he steps out as before. An
+    abort at the last look closes the door again. The open door's glow and
+    the crack are a new props layer, `lit`, drawn after the light and under
+    the figures.
+  - **Smaller:** the fish hold is not a glass tap (a press on the fish is a
+    tap only if let go before it warms); Fig. 12's tag hangs under the fish,
+    out of the needle's way; the hung moon's nail is 6 px above its centre
+    and it settles at ±0.48 rad, with lopsided seas painted the same on the
+    backdrop and the cut-out (`A.MOON_SEAS`); a moon repair cut short by a
+    game (`S.moonFixGen`) is picked up again in the next ATTRACT; a kept
+    marble's tag is placed clear of every tag, marker and specimen
+    (`A.tagSpot`), and its spot takes the tag in; Jory's Z is a 4 × 4 Z off
+    his face, away from the fish; the "ALT n" pencil mark is cut; the lost
+    tally stands clear of LOST; the plaque's gouged name is seeded letter
+    debris (no name exists anywhere in the source); every canvas read back
+    more than once is `willReadFrequently`; the canvas has
+    `scroll-margin-top` for the fixed banner; the room stops waiting for a
+    machine that never mounted after ~12 s.
