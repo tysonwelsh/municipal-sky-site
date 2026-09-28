@@ -726,3 +726,129 @@ the Sunday's organist takes the bench in the meeting. Handoff:
 - **`KolobAudio`** adds `getOrganist()`, `organStats()` (cases, nodes built,
   the most alive at once, plans on the desk), `getOrgan()` (`"pipe"` |
   `"house"`) and `setOrgan(which)` (dev, before PLAY; `?organ=house`).
+
+### 11.7 The styles in the meeting, the forms, the new guests (round 3b, step 3)
+
+*The HYMN crew's remaining requests (`handoff/r3-hymn2-1.md`: 1, 2, 4, 5, B,
+C) and the GUEST crew's (`handoff/r3-guests-1.md`: loading, seating, the near
+send, the clock, SCORE), adopted as every style, the round, the partner hymn,
+the wandering refrain, the handbell choir and the singing school come into the
+meeting. Handoff: `handoff/r3b-styles-1.md`.*
+
+- **Modules.** `kolob-experimental.js` joins the engine after the organist
+  (before the voices), `kolob-voices-folk.js` among the voices (the handbells:
+  it now answers the roll call), and `kolob-guest-handbells.js` and
+  `kolob-guest-singingschool.js` beside the trombones (`_engine.php`).
+- **The proofreader (request 1).** `validateNote` allows a note one Johnston
+  "7" (36/35, 48.77 c) further from its spelling for every factor of 7 in
+  its monzo — gospel's ringing sevenths, sung on the seventh harmonic. The
+  5-limit's slack is unchanged.
+- **Ids.** `r:<n>:<k>` joins `h:<n>:<i>`: the meeting's wandering refrain —
+  `k` 0 as the composer wrote it, `k` ≥ 1 each statement of it (§5, `ID`).
+- **The house dialect** is drawn from all six (`kolob-hymnal.js`
+  `HOUSE_ODDS`, per kind; the arbor leans to the psalmody too). The
+  calendar's Sundays (step 4) lean the draw through `SUNDAY_LEAN` and the
+  unison song's kind through `KIND_LEAN` (a row's `kind`, handed to the
+  composer), read only when `info.sunday` names the day.
+- **The day's forms** (`Hymnal.forms(info, rows, R)`, pure, on
+  `forms:<n>`): `{round, partner, refrain, payoff}`.
+  - *A round* — a hymn row after the first (never the doxology) written by
+    the composer's `round()` (`row.piece: "round"`; an Old Way row takes the
+    Shakers' dialect): about one meeting in five.
+  - *The partner hymn* — the first doxology written by `partner()` on the
+    first hymn (`row.partnerOf`), 14 tries, in the dialect the fit check can
+    pass (`PARTNER_DIALECTS`: the Tabernacle on the Tabernacle; the Shakers'
+    unison on a Shaker or an Old Way tune); only when the first hymn is at
+    home and the doxology keeps the day's mode; never with the cumulative
+    assembly. About one meeting in four composes one; the composer combines
+    about half of them.
+  - *The wandering refrain* — `wanderingRefrain()` fitted to the keys of the
+    hymns it follows, and a statement of it after the first hymn, after one
+    later hymn, and in the doxology (`refrainIn()` into each one's key and
+    dialect, `REFRAIN_SET`): at most three; never on a fast Sunday or at a
+    funeral; about one meeting in four.
+  - *The doxology's one payoff* (the rule): the cumulative assembly, else
+    the partner hymn (the payoff die's bottom), else the refrain (its top) —
+    the two never both — else, on a Sunday with none, the bands crossing it.
+    A band seated in the doxology leaves it (for a hymn, or the postlude)
+    whenever the payoff is another's.
+  - The desk writes them as hymns (`prepare(seed, n, rows, forms)`; an order
+    carries `piece`: `compose`, `round`, `partner` (on its first hymn),
+    `refrain`, `refrainIn` (on the refrain)); the refrain's orders stand
+    aside (no hymn is written knowing them, no board number).
+- **Streams.**
+
+  | label | draws |
+  |---|---|
+  | `forms:<n>` | forks `round`, `round:which`, `payoff`, `refrain:later` |
+  | `refrain:<n>` | the composer's refrain as written; `refrain:<n>:<k>` each statement (`k` 0–2), and → `performance` the ward's singing of it (`tempo`, `vowels:<v>`, …) |
+  | `hymn:<n>:<i>` → `performance` | adds the forks `round` (by the parts or the pews, two or three times round, once through first, which side of the chapel first) and `quartet` (whether, and which of the surest three of each section) |
+  | `cast:<n>` | adds `primary` (how many) and `primary:<k>` (each child: the family they sit with, the name, the voice) |
+  | `guest:handbells:<n>`, `guest:singingschool:<n>` | the guests' own (their handoff: `seat`, `shape`, `material`, `synth`; `seat`, `lesson`, `vowels`, `material`, `synth`) |
+  | `synth:band` → `partner:<id>` | sound-level: the cornet against the partner |
+
+- **The ward's practices** (§11.3's table, extended):
+  - gospel: now and then (`QUARTET_RATE`, 45 %) the verses are `quartet`:
+    four of the ward (`plan.quartet`: the Score's part → member) sing the
+    stanza on the near bus, each at the Score's exact pitch and on the beat
+    (their own habits taken back out), and the ward comes in on the refrain
+    and the tag; the enthusiast may sing out on the refrain;
+  - the Primary song (`hymn.kind: "primary"`): the Primary (`ward.primary`,
+    `plan.primary`: the children, the child among them) sings every line at
+    the front, `unison`; the ward joins the chorus after the first verse; the
+    chorister `leads the Primary`;
+  - a round (`hymn.round`): unaccompanied, keyed; `plan.round = {by: "parts"
+    | "pews", entries, times, side, segments, delayBeats, groups}`; verses
+    `["unison", "round"]` or `["round"]`; in the `round` verse each group
+    enters `delayBeats` after the last and goes round `times` times; no
+    A-men; the chorister `sets the round going`;
+  - a statement of the refrain (`Cast.planRefrain`): no keying, no organ;
+    the first: a verse by the enthusiast alone (`forward.alone`) then the
+    ward's; after a later hymn the ward's, the enthusiast singing out; in the
+    doxology the ward's, nobody forward. It is sung after the hymn's last
+    verse, before its A-men or tag;
+  - the partner's last verse: when `hymn.partner.combined`, the first tune
+    (`hymn.partner.firstTune`) played against it on the chorister's clock
+    (`Cast.clock`) — by the organist on `trumpet solo` (`PARTNER_ORGAN`, 60 %
+    where there is an organ) or by a cornet of the ward's band (a man of the
+    pews, `S.seatedSend("cornet")`).
+- **Performance.** Practices add `quartet` and `round` (`PRACTICES`); a
+  forward entry may carry `alone` (the rest of the ward is silent under it).
+- **Events** (`kolob-score.js` EVENTS): `round-entry {hymnId, entry, group,
+  verse, singers}`; `partner {hymnId, of, by: "organ" | "cornet" | "none",
+  combined, verse, player}`; `refrain {refrainId, statement, after, dox, by,
+  key, dialect}`; `payoff {kind: "assembly" | "partner" | "refrain" |
+  "bands", section, hymnId}` — told once, as the payoff sounds. `cast` adds
+  the actions `starts the refrain`, `leads the quartet`, `leads the Primary`,
+  `sets the round going`, `plays the first hymn on the cornet` (a ✦ row), and
+  the organist's `plays the first hymn against it` (a ✦ row). `hymnal`
+  carries each row's `piece` and `forms: {round, partner, refrain: {id,
+  dialect, after}, payoff, why}`. A statement's `verse-start` and
+  `verse-line` carry `refrain: true`; a round's `verse-line` its `group` and
+  `pass`. `guest` from the new guests: `handbells` stages `ring` (the first
+  sound), `verse2`, `round-entry`, `cascade`; `singingschool` stages `fork`,
+  `try`, `cut`, `alone`, `again` (and `experimental: true`).
+- **Notes.** A round's: `group`, `pass`; the Primary's: `primary`, the part
+  of the tune they sing; a statement's: `refrain`, `hymnId` `r:<n>:<k>`; the
+  partner's first tune: on layer `organ` (`part: "partner"`, `partner`) or
+  layer `cornet` (`part: "partner"`, `partner`, `of`, `line`, `beat`, `deg`,
+  `monzo`, `octave`, `keyMonzo`). The bells: layer `handbells` (`part`,
+  `role`, `ringer`, `bell`, `tech`, `pan`, `loud`, `reached`, `rings` — the
+  hymn rung); the practice: layer `choir` (the fork on `ambient`) with
+  `stage`, `wrong`, `rehearses`; both guest-tagged (`guest`, `logged`).
+- **The guests seated** (`planMeeting`): the singing school after the
+  trombones (the prelude; the switch `KOLOB.Experimental.snapshot()` handed
+  down; its morning is the seating `school`, the house waking after the
+  practice), the handbell choir after the forms (the bands' final section
+  known): both keep their own time (`cued`), their material made ready at
+  their cue (`standingMaterial`: the day's first hymn — the doxology's, for
+  the bells in the postlude — `prepare()`d and scored, the section held for
+  it), laid out through `hooks.defer` on the guests' lane, and the house
+  listens while they sound (`LISTENED`). Forcing: `handbells` and
+  `singingschool` join `FORCEABLE` (the school's switch still rules); the
+  Ives switch's own pick may bring the handbells.
+- **The rooms.** `S.seatedSend(layer)`: a guest who stands in the chapel is
+  seated as a layer (`ROOM_DEPTH.handbells` −0.35, `cornet` −0.12), or into
+  the layer's own gain where there is one (the practice into `choir`), through
+  the meeting's doors (`doors.seats`; STOP closes them).
+- **`S.Meeting`** adds `forms()`, `payoff()`, `refrainAfter(hymnId)`.
