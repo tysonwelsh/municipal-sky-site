@@ -479,7 +479,8 @@ window.KOLOB.GuestHandbells = (function () {
     bells.forEach(function (b) { if (letters.indexOf(b.letter) < 0) letters.push(b.letter); });
     letters.sort(function (a, b) { return a - b; });
     var R = Math.max(1, Math.min(sh.ringers, letters.length));
-    // (a small set: fewer ringers, two places each at least, never one alone)
+    // (a small set: fewer ringers, two places each where the set allows —
+    // but eight still stand in the line, and then some ring a single bell)
     if (letters.length < 2 * R) R = Math.max(Math.min(8, letters.length), Math.ceil(letters.length / 2));
     R = Math.min(R, letters.length);
     var ringers = [];
@@ -571,7 +572,9 @@ window.KOLOB.GuestHandbells = (function () {
     var rings = [], current = {};
     strikes.forEach(function (s) {
       var cur = current[s.bell];
-      var sounding = cur && ringStop(cur) > s.t + 0.005;
+      // (a bell damped at the very moment it is struck again — a repeated
+      // note, legato — is simply struck again: the hand never lets it stop)
+      var sounding = cur && ringStop(cur) > s.t - 0.03;
       var merge = sounding && s.tech !== "mart" && s.tech !== "thumb" && cur.tech !== "mart" && cur.tech !== "thumb" && (cur.damp == null || cur.damp >= s.t - 0.03);
       if (merge) {
         cur.hits.push({ at: +(s.t - cur.t).toFixed(4), v: s.v });
@@ -691,6 +694,11 @@ window.KOLOB.GuestHandbells = (function () {
         });
       });
     }
+    // THE TUNE IN THE BASS BELLS: an octave down, if the whole tune fits the
+    // set there (a tune that would fall off the bottom stays where it is
+    // rather than breaking its line into octave leaps)
+    var bassShift = -1;
+    H.lines.forEach(function (ln, li) { (ln.parts[mp] || []).forEach(function (n) { if (fOf(n, li, mp, -1) < RANGE[0] * 0.985) bassShift = 0; }); });
     // THE LINES, ONE SETTING AT A TIME
     function ringLine(ln, li, t0, set, v, opts2) {
       opts2 = opts2 || {};
@@ -703,7 +711,7 @@ window.KOLOB.GuestHandbells = (function () {
         if (set === "bass" && !tune) return;                     // (the harmony is rung as chords below)
         ns.forEach(function (n, k) {
           var a = t0 + T(ln, n.beat), b = t0 + T(ln, n.beat + n.beats), last = isLast(ln, n), long = n.beats >= 2 - 1e-6;
-          var extra = set === "bass" && tune ? -1 : 0;
+          var extra = set === "bass" && tune ? bassShift : 0;
           var vv = v * (tune ? 1.12 : p === "B" ? 0.92 : 0.8) * (ln.peak ? 1.06 : 1);
           var tech = "damp", damp = b, shake = 0;
           if (set === "mart" && !tune) {
@@ -910,7 +918,7 @@ window.KOLOB.GuestHandbells = (function () {
       [0, 1].forEach(function (o) {
         var f = fz * degRatio(rd.mode, d) * Math.pow(2, o);
         if (f < RANGE[0] || f > RANGE[1]) return;
-        strike({ t: chordT, f: f, letter: d + 7 * o, alt: 0, v: Math.min(1, dyn * 0.9), tech: sh.finalShake ? "shake" : "ring", damp: null, shake: sh.finalShake ? 1.6 : 0, part: "all", role: "final chord" });
+        strike({ t: chordT, f: f, letter: d + 7 * o, alt: 0, v: Math.min(1, dyn * 0.72), tech: sh.finalShake ? "shake" : "ring", damp: null, shake: sh.finalShake ? 1.6 : 0, part: "all", role: "final chord" });
       });
     });
     return chordT + (sh.finalShake ? 2.0 : 1.2);

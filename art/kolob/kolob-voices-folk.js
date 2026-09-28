@@ -477,6 +477,7 @@ window.KOLOB.VoicesFolk = (function () {
       function partial(kind, fr, pw, tau) {
         if (!(fr > 0) || fr > sr * 0.45) return;
         var os = ctx.createOscillator(), g = ctx.createGain(); n += 2;
+        g.gain.value = 0;                     // (silent from birth, not from its first event)
         if (pw) os.setPeriodicWave(pw); else os.type = "sine";
         os.frequency.setValueAtTime(fr, t);
         var peak = 0, tp = t, atk = kind === "u" ? 0.0015 : 0.0025;

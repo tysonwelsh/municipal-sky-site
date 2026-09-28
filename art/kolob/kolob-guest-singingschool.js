@@ -632,13 +632,30 @@ window.KOLOB.GuestSingingSchool = (function () {
     });
     var chorister = VV.singer({ part: "A", age: "mid", confidence: 0.95, brightness: 0.55, breath: 0.2, rand: synth.fork("chorister"), name: "chorister", pan: 0.02, vibrato: { rate: 5.3, depth: 26, onsetDelay: 0.4 } });
     var G_DESK = 0.42, G_CHOR = 0.75;
+    // THE DOOR. VoicesVocal (round 3, as it stands) lets one sample of its
+    // breath noise through at the instant each sung line's throat is built,
+    // 0.45 s before the line's first vowel: its noise starts on the same
+    // sample as its gains' first automation, while they still stand at their
+    // default of 1. Thirty-two singers a line make a tick in every breath
+    // between lines (the handoff has the measurement and the one-line fix,
+    // for the voice's owner). Until then each line sings through a door of
+    // its own, shut for the first 4 ms of the throat's life and open well
+    // before the inhale (0.42 s before the vowel): one gain node a line.
+    function door(t) {
+      var born = t - 0.45, g = ctx.createGain();
+      g.gain.setValueAtTime(0, Math.max(0, born - 0.01));
+      g.gain.setValueAtTime(0, Math.max(0, born + 0.004));
+      g.gain.linearRampToValueAtTime(1, Math.max(0, born + 0.02));
+      g.connect(bus);
+      return g;
+    }
     sc.items.forEach(function (it) {
       if (it.kind === "sing") {
         var notes = it.notes.map(function (n) { return n.rest ? { rest: true, dur: n.dur } : { f: n.f, dur: n.dur, vowel: n.vowel, stress: n.stress }; });
         var g = G_DESK * (it.stage === "pitch" ? 0.55 : it.stage === "alone" ? 1.12 : it.stage === "again" ? 1.06 : 1);
-        desks[it.desk].sing(ctx, bus, it.t, notes, g);
+        desks[it.desk].sing(ctx, door(it.t), it.t, notes, g);
       } else if (it.kind === "chorister") {
-        chorister.sing(ctx, bus, it.t, it.notes, G_CHOR);
+        chorister.sing(ctx, door(it.t), it.t, it.notes, G_CHOR);
       } else if (it.kind === "fork") {
         fork(ctx, bus, it.t, it.f);
       } else if (it.kind === "tap") {
