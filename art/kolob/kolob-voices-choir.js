@@ -191,6 +191,15 @@ window.KOLOB = window.KOLOB || {};
       if (seat && seat.hum && !seat.hum.sung) { choirHum(tc, seat); return; }
     }
     var sings = s === "hymn" || s === "doxology";
+    // (round 3b, step 4) a rite seated for THE CHOIR ALONE: the ward hums a
+    // few of the day's chords, once, early in the rite, the organ, the
+    // harmonium and the deacon waiting (kolob-calendar.js SCENES); a rite
+    // LINED OUT ONLY: the ward answers the deacon's lines, as in a hymn
+    var scene = !sings && S.Meeting.scene ? S.Meeting.scene() : null;
+    if (scene && scene.hum && !scene.hum.sung && !S.Meeting.jointing() && !S.hallListens() && !inQuestion() && S.localArc() > 0.06 && S.localArc() < 0.6) {
+      choirHum(tc, scene); return;
+    }
+    var answers = !!(scene && scene.lined);
     // a composed hymn owns its section's singing (THE COMPOSED HYMN, below):
     // the choir's own turns wait for the next section — except, once the
     // hymn is sung, to answer the deacon if he lines out a line of the
@@ -202,7 +211,7 @@ window.KOLOB = window.KOLOB || {};
     // a couplet here and sing it half a minute into whatever came next)
     // (nor while a planned fuging waits for its window: the verses leave it
     // free — round 2 of the polish; see the conductor's fuging)
-    if (!sings || inFuging() || inQuestion() || S.Meeting.jointing() || S.Meeting.fugingNear()) { cueIn("choir", 6, choirVerse); return; }
+    if ((!sings && !(answers && Motif.pendingLineOut("choir"))) || inFuging() || inQuestion() || S.Meeting.jointing() || S.Meeting.fugingNear()) { cueIn("choir", 6, choirVerse); return; }
     if (!airFree()) { cueIn("choir", wait("choir").rnd(4, 9), choirVerse); return; }
 
     var R = turn("choir");
@@ -238,7 +247,7 @@ window.KOLOB = window.KOLOB || {};
         return;
       }
     }
-    if (composedHere) { cueIn("choir", 6, choirVerse); return; }
+    if (composedHere || !sings) { cueIn("choir", 6, choirVerse); return; }
 
     // A verse: 2 lines of the meter per speech (whole verses would crowd the
     // air; the field hears the hymn in couplets, with sky between).
@@ -757,8 +766,12 @@ window.KOLOB = window.KOLOB || {};
     var O = KOLOB.Organist, who = S.Meeting.organist ? S.Meeting.organist() : null;
     if (!O || !O.hymnHands || !who) return null;
     if (h.fuge && h.fuge.repeatFrom != null) return null;
+    // (round 3b, step 4: the stops lean by the light of the hymn's rite and
+    // the Sunday — kolob-calendar.js regLean; 0 without the calendar)
+    var CAL = KOLOB.Calendar, day = S.Meeting.day ? S.Meeting.day() : null;
+    var reg = CAL && row.light != null ? CAL.regLean(row.light, day ? day.id : null) : 0;
     return O.hymnHands(who, h, S.hymnStream(S.Meeting.meetingNum(), row.i),
-                       { verses: plan.verses.length, beatS: P.beatS / (plan.tempoMul || 1), hymnIndex: row.i - 1, accompanied: true });
+                       { verses: plan.verses.length, beatS: P.beatS / (plan.tempoMul || 1), hymnIndex: row.i - 1, accompanied: true, reg: reg });
   }
   // …and the walk into a keyed hymn's key: from the day's own tonic chord
   // (where the joint's amen left the organ) to the new key, through a chord
@@ -1258,8 +1271,12 @@ window.KOLOB = window.KOLOB || {};
     var pre0 = (KOLOB.Cast.who(W, "precentor") || W.members[0]);
     // the house lets go as the hymn begins, and listens while it is sung
     if (S.houseLetsGo) S.houseLetsGo(Math.max(tc, start - 1.5), "hymn", true);
-    // a hymn keyed away from home: the drone steps back while it is sung
-    var keyed = row.key !== "home";
+    // a hymn keyed away from home: the drone steps back while it is sung —
+    // and (round 3b, step 4: the reckoning) so it does under a hymn at home
+    // while the drone stands on the key's third or fifth, not its tonic: the
+    // cantus note keeps sounding, softly, under the hymn's own harmony
+    var dn = S.droneNote ? S.droneNote() : null;
+    var keyed = row.key !== "home" || !!(dn && (dn.role === "third" || dn.role === "fifth"));
     if (keyed && S.droneDuck) {
       S.droneDuck.gain.cancelScheduledValues(start);
       S.droneDuck.gain.setValueAtTime(1, start);

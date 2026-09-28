@@ -236,7 +236,7 @@ window.KOLOB.Organist = (function () {
   function dynOf(style, reg) { var d = VERSE_DYN[style] || {}; return d[reg] != null ? d[reg] : 0; }
   var VERSE_RESERVE = -0.8;
   // how a verse's registration is named in the plan's words
-  var SAYS = { "soft flutes": "on soft flutes", "flutes 8 & 4": "on the flutes, 8′ and 4′", "hymn principal": "on the principal",
+  var SAYS = { "soft flutes": "on soft flutes", "quiet flute": "on one quiet flute", "flutes 8 & 4": "on the flutes, 8′ and 4′", "hymn principal": "on the principal",
                "principal & 4": "on the principal and the 4′", "vox & flutes": "on the vox humana over the flutes",
                "full organ": "on the full organ", "principal & mixture": "on the principal and the mixture",
                "sixteen & four": "on a 16′ and a 4′, nothing between" };
@@ -321,6 +321,10 @@ window.KOLOB.Organist = (function () {
     if (info.houseDialect === "gospel") w.victorian *= 1.2;
     if (info.ives) w.improviser *= 1.6;
     if (info.bright != null) w.improviser *= 0.8 + 0.5 * info.bright;
+    // (round 3b, step 4: the calendar's Sunday leans the bench — a Victorian
+    // at a wedding or a dedication, the plain organist at a funeral: info.lean,
+    // factors on the three; the same die)
+    if (info.lean) ["plain", "victorian", "improviser"].forEach(function (k) { if (info.lean[k] != null) w[k] *= info.lean[k]; });
     var force = info.style && STYLES[info.style] ? info.style : null;
     var tot = w.plain + w.victorian + w.improviser, x = dStyle * tot;
     var style = force || (x < w.plain ? "plain" : x < w.plain + w.victorian ? "victorian" : "improviser");
@@ -1070,20 +1074,27 @@ window.KOLOB.Organist = (function () {
   // ==========================================================================
   // THE HYMN — giving out, the verses under the ward, fills, interludes
   // ==========================================================================
-  // the registrations, verse by verse
-  function verseRegs(style, verses, R) {
+  // the registrations, verse by verse. lean (round 3b, step 4: THE ARC OF
+  // LIGHT, kolob-calendar.js regLean — the light of the hymn's rite and the
+  // Sunday's own hand, −1 the plainest … +1 the fullest; 0 as before) moves
+  // the thresholds the same four dice are read against: a hymn in the early
+  // morning keeps nearer the flutes, the doxology in full light reaches for
+  // the full organ (a Victorian's last verse even of two, a plain
+  // organist's principal), a funeral's organ stays soft
+  function verseRegs(style, verses, R, lean) {
     var out = [], d = [R.rnd(0, 1), R.rnd(0, 1), R.rnd(0, 1), R.rnd(0, 1)];
+    var up = Math.max(0, lean || 0), dn = Math.max(0, -(lean || 0));
     for (var v = 0; v < verses; v++) {
       var last = v === verses - 1 && verses > 1, r;
-      if (style === "plain") r = last && d[0] < 0.35 ? "hymn principal" : "soft flutes";
+      if (style === "plain") r = last && d[0] < 0.35 + 0.35 * up - 0.25 * dn ? "hymn principal" : v === 0 && dn > 0.5 ? "quiet flute" : "soft flutes";
       else if (style === "victorian") {
-        if (v === 0) r = "hymn principal";
-        else if (last) r = verses >= 3 && d[1] < 0.7 ? "full organ" : "hymn principal";
-        else r = d[2] < 0.55 ? "vox & flutes" : "flutes 8 & 4";
+        if (v === 0) r = dn > 0.55 ? "flutes 8 & 4" : "hymn principal";
+        else if (last) r = (verses >= 3 || up > 0.6) && d[1] < 0.7 + 0.25 * up - 0.35 * dn ? "full organ" : "hymn principal";
+        else r = d[2] < 0.55 + 0.2 * dn - 0.15 * up ? "vox & flutes" : "flutes 8 & 4";
       } else {
-        if (v === 0) r = d[1] < 0.5 ? "principal & 4" : "hymn principal";
-        else if (last) r = d[2] < 0.45 ? "principal & mixture" : d[2] < 0.75 ? "full organ" : "hymn principal";
-        else r = d[3] < 0.4 ? "sixteen & four" : d[3] < 0.75 ? "flutes 8 & 4" : "principal & 4";
+        if (v === 0) r = d[1] < 0.5 + 0.3 * dn ? "principal & 4" : "hymn principal";
+        else if (last) r = d[2] < 0.45 - 0.2 * dn ? "principal & mixture" : d[2] < 0.75 + 0.2 * up - 0.3 * dn ? "full organ" : "hymn principal";
+        else r = d[3] < 0.4 + 0.2 * dn ? "sixteen & four" : d[3] < 0.75 ? "flutes 8 & 4" : "principal & 4";
       }
       out.push(r);
     }
@@ -1125,7 +1136,7 @@ window.KOLOB.Organist = (function () {
     var verses = Math.max(1, opts.verses || 2), beatS = opts.beatS || h.beatS, lines = verseLinesOf(h);
     var hymnIndex = opts.hymnIndex || 0, scale = scaleOf(h.mode, h.keyMonzo);
     var withOrgan = opts.accompanied != null ? !!opts.accompanied : accompaniedDialect(h.dialect);
-    var regs = verseRegs(style, verses, R.fork("regs"));
+    var regs = verseRegs(style, verses, R.fork("regs"), opts.reg);
     var giveReg = style === "plain" ? "flutes 8 & 4" : style === "victorian" ? R.pickW([["trumpet", 0.45], ["hymn principal", 0.55]]) : R.pickW([["trumpet solo", 0.5], ["principal & 4", 0.5]]);
     var tacetDie = R.rnd(0, 1), tacetAt = R.rnd(0, 1);
     organist.ledger.hymns++;

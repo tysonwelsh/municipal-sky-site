@@ -905,7 +905,9 @@ window.KolobAudio = (function () {
     return until;
   }
   // a house voice asks before it begins a turn: is my release still going?
-  function houseRests(layer) { return !!ctx && now() < (houseRest[layer] || 0); }
+  // (round 3b, step 4: or does the rite's seating sit me out — the brush
+  // arbor's organ, the lined-out rite's strings, the choir alone's deacon)
+  function houseRests(layer) { return !!ctx && (now() < (houseRest[layer] || 0) || !!(S.Meeting && S.Meeting.sits && S.Meeting.sits(layer))); }
 
   function panAt(layer, p) {
     var d = liveDoors();
@@ -1367,6 +1369,9 @@ window.KolobAudio = (function () {
       var M = S.Meeting, plan = M.plan();
       return {
         meeting: M.meetingNum(), activity: M.activity(),
+        // (round 3b, step 4: the calendar's Sunday, for the programme card;
+        // the rite's light and its seating)
+        sunday: M.day ? M.day() : null, light: M.light ? M.light() : null, scene: M.scene && M.scene() ? M.scene().name : null,
         section: M.section(), meter: M.meter(), mode: S.mode,
         local: localArc(), intensity: intensity(),
         hush: inHush(), fuging: inFuging(),

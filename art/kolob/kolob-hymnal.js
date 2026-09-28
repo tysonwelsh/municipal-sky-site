@@ -27,6 +27,24 @@
 // (partner()), the refrain as written (wanderingRefrain()) and each of its
 // statements set in the key and dialect of the hymn it follows (refrainIn()).
 //
+// THE LIGHT (round 3b, step 4; PLAN §7.3). Each hymn's dialect is drawn
+// leaning by the light of its section, from the calendar's arc: a hymn sung
+// early in the morning leans to the plain and open styles (the Sacred Harp,
+// the Old Way, the Shakers), the hymns grow fuller one after another, and
+// the doxology, full light, leans hard to the Tabernacle and the gospel ring
+// — the sevenths, the full organ (KOLOB.Calendar.dialectLean). The house
+// dialect itself is the Sunday's, drawn as before.
+//
+// THE RECKONING (round 3b, step 4; PLAN §7.2). On a Sunday the drone reckons
+// (kolob-calendar.js), the doxology's order carries the sections before it:
+// the desk writes the doxology — the composer's first, and then up to
+// seven more on the stream's reckoning:<k> forks — and keeps the first whose
+// opening notes stand, one a section, on each section's key (the tonic, the
+// third or the fifth), marking it hymn.reckoning = {ok, k, from, cantus}. If
+// none does, it keeps the first as written, marked {ok: false}: the meeting
+// falls back to the drone on the keynote. The same by every road (the worker
+// loads kolob-calendar.js too).
+//
 // KEYS PER HYMN (§3.7). The chorister keys each hymn from the day's keynote:
 // at home, or a just fourth away either way (4/3 up, the subdominant; 3/4
 // down, the dominant) — never further, and with a pull toward home: a hymn
@@ -144,9 +162,9 @@ window.KOLOB = window.KOLOB || {};
   // plan(info, R): the day's hymnal, from R (the meeting's hymnal:<n>
   // stream). Every die is thrown for every singing section in the plan,
   // used or not, so a change of one hymn's dialect never moves another's key.
-  //   info: { n, kind, mode, sections: [{type, meter}], seating (its name),
-  //           trombones (the dawn plays the first hymn), cumulative,
-  //           theme ([deg]), subs ([[deg]]) }
+  //   info: { n, kind, sunday?, mode, sections: [{type, meter, index, mode,
+  //           light}], seating (its name), trombones (the dawn plays the
+  //           first hymn), cumulative, theme ([deg]), subs ([[deg]]) }
   //   → { house, rows: [{ i, id, section, meter, dialect, key, keyMonzo,
   //                       mode, gestures }] }
   function plan(info, R) {
@@ -168,7 +186,15 @@ window.KOLOB = window.KOLOB || {};
       table[house] = HOUSE_W;
       for (var d in nb) if (d !== house) table[d] = nb[d];
       if (dox && house !== "sacredharp" && house !== "oldway") table.tabernacle = (table.tabernacle || 0) + 2;
-      var dialect = pickWith(dDie, poolOf(table, null, sunLean));
+      // (the light of the hymn's section leans it: plain early, the
+      // Tabernacle and the gospel ring at full light — round 3b, step 4)
+      var litLean = s.light != null && KOLOB.Calendar && KOLOB.Calendar.dialectLean ? KOLOB.Calendar.dialectLean(s.light) : null;
+      // (and the Sunday leans its doxology: a funeral rising into the
+      // Tabernacle's "all is well", Easter's and a dedication's full
+      // Tabernacle, Pioneer Day's gospel ring)
+      var SD = dox && info.sunday && KOLOB.Calendar && KOLOB.Calendar.SUNDAYS[info.sunday] ? KOLOB.Calendar.SUNDAYS[info.sunday].dox : null;
+      if (SD && litLean) { var lt2 = {}; for (var lk in litLean) lt2[lk] = litLean[lk] * (SD[lk] != null ? SD[lk] : 1); litLean = lt2; }
+      var dialect = pickWith(dDie, poolOf(table, litLean, sunLean));
       // the key: home, or a fourth away, pulled home
       var key = "home";
       if (!dox) {
@@ -187,7 +213,7 @@ window.KOLOB = window.KOLOB || {};
       else g = k === 1 ? info.theme : (subs.length ? subs[(k - 2) % subs.length] : info.theme);
       rows.push({
         i: k, id: "h:" + info.n + ":" + k, section: s.type, index: s.index != null ? s.index : null,
-        meter: s.meter || null, dialect: dialect, key: key, keyMonzo: KEYS[key].slice(), mode: s.mode || info.mode,
+        meter: s.meter || null, dialect: dialect, key: key, keyMonzo: KEYS[key].slice(), mode: s.mode || info.mode, light: s.light != null ? s.light : null,
         gestures: g && g.length ? [g.slice()] : null,
       });
       // (the calendar's lean on the unison song's kind: step 4's hook)
@@ -403,6 +429,28 @@ window.KOLOB = window.KOLOB || {};
   // partner.fit: the composer's own); a partner whose first hymn could not
   // be written is composed on its own.
   function errand(Cm, stream, how, opts, dep) {
+    // THE RECKONING'S DOXOLOGY (round 3b, step 4): written a few ways, the
+    // first whose opening stands on every section's key kept; else the
+    // first as written (a partner is written once: its tune is the first
+    // hymn's partner, not the reckoning's to choose)
+    if (opts && opts.reckon) {
+      var rk = opts.reckon, Cal = (typeof window !== "undefined" && window.KOLOB) ? window.KOLOB.Calendar : null;
+      var plain = {}; for (var ok in opts) if (ok !== "reckon") plain[ok] = opts[ok];
+      // (the tune's own first notes, one a section, on the first candidate
+      // they fit; else its strong notes — the skeleton — on the first that
+      // fits so; else the first as written, and the drone stays home)
+      var tries = how === "partner" ? 1 : Math.max(1, rk.candidates || 1), first = null, firstFit = null, skel = null;
+      for (var k = 0; k < tries; k++) {
+        var hk = errand(Cm, k ? stream.fork("reckoning:" + k) : stream, how, plain, dep);
+        var fit = Cal && hk ? Cal.reckon(hk, { sections: rk.sections }, "notes") : { ok: false, why: "no calendar in this room" };
+        if (!first) { first = hk; firstFit = fit; }
+        if (fit.ok) { hk.reckoning = { ok: true, k: k, tries: k + 1, by: "notes", from: fit.from, n: fit.n, cantus: fit.cantus }; return hk; }
+        if (!skel && Cal && hk) { var sf = Cal.reckon(hk, { sections: rk.sections }, "strong"); if (sf.ok) skel = { h: hk, fit: sf, k: k }; }
+      }
+      if (skel) { skel.h.reckoning = { ok: true, k: skel.k, tries: tries, by: "strong", from: skel.fit.from, n: skel.fit.n, cantus: skel.fit.cantus }; return skel.h; }
+      if (first) first.reckoning = { ok: false, k: 0, tries: tries, why: firstFit ? firstFit.why : null };
+      return first;
+    }
     if (how === "round") return Cm.round(stream, opts);
     if (how === "partner" && dep) return Cm.partner(stream, dep, opts).hymn;
     if (how === "refrain") return Cm.wanderingRefrain(stream, opts).hymn;
@@ -435,19 +483,25 @@ window.KOLOB = window.KOLOB || {};
   // the composer's rooms, in the order the page loaded them (the worker loads
   // the same files at the same versions — the same bytes, the same hymns)
   var DESK_FILES = ["pj2-rand.js", "kolob-pitch.js", "kolob-score.js", "kolob-tunes.js", "kolob-dialects.js", "kolob-hymnists.js", "kolob-composer.js"];
+  // (and the calendar, where the page has it: the reckoning is read there —
+  // round 3b, step 4; a lab without it writes no reckoned doxology)
+  var DESK_OPTIONAL = ["kolob-calendar.js"];
   function deskUrls() {
     if (typeof document === "undefined" || !document.getElementsByTagName) return null;
     var scripts = document.getElementsByTagName("script"), urls = [];
-    for (var i = 0; i < DESK_FILES.length; i++) {
-      var found = null;
-      for (var j = 0; j < scripts.length && !found; j++) {
+    function find(name) {
+      for (var j = 0; j < scripts.length; j++) {
         var src = scripts[j].src || "";
-        var file = src.split("?")[0].split("/").pop();
-        if (file === DESK_FILES[i]) found = src;
+        if (src.split("?")[0].split("/").pop() === name) return src;
       }
+      return null;
+    }
+    for (var i = 0; i < DESK_FILES.length; i++) {
+      var found = find(DESK_FILES[i]);
       if (!found) return null;
       urls.push(found);
     }
+    DESK_OPTIONAL.forEach(function (f) { var u = find(f); if (u) urls.push(u); });
     return urls;
   }
 
@@ -520,7 +574,9 @@ window.KOLOB = window.KOLOB || {};
   // just after the first hymn (they are sung minutes before the rest). The
   // refrain's orders stand aside: no hymn is written knowing them, and they
   // take no number on the board.
-  function prepare(seed, n, rows, fm) {
+  // (rk, round 3b, step 4: the reckoning's order — {doxId, sections,
+  // candidates} — laid on the doxology's; see THE RECKONING above)
+  function prepare(seed, n, rows, fm, rk) {
     // (the orders of meetings long gone are dropped; the worker forgets them too)
     order = order.filter(function (k) {
       var keep = jobs[k] && jobs[k].n >= n - 1 && jobs[k].seed === seed;
@@ -543,6 +599,7 @@ window.KOLOB = window.KOLOB || {};
       if (r.kind) opts.kind = r.kind;
       if (r.piece === "round") { how = "round"; opts = { dialect: r.dialect, mode: r.mode, keyMonzo: r.keyMonzo, id: r.id }; }
       else if (r.partnerOf) { how = "partner"; dep = keyOf(seed, r.partnerOf); opts = { dialect: r.dialect, id: r.id, tries: PARTNER_TRIES }; }
+      if (rk && r.id === rk.doxId) opts.reckon = { sections: rk.sections, candidates: rk.candidates };
       post({ key: key, n: n, i: r.i, id: r.id, seed: seed, label: "hymn:" + n + ":" + r.i, opts: opts, others: earlier.slice(), hymn: null, state: "queued", piece: how, dep: dep, how: null });
       earlier.push(key);
       if (refrain && r.i === 1) {

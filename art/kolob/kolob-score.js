@@ -376,6 +376,16 @@ window.KOLOB.Score = (function () {
     "partner":             { hymnId: "hymnId", of: "hymnId", by: "str", combined: "bool" },
     "refrain":             { refrainId: "hymnId", statement: "int", after: "hymnId", dox: "bool", by: "str?" },
     "payoff":              { kind: "str", section: "str" },
+    // round 3b, step 4: the shape of a visit — the calendar's Sunday once a
+    // meeting (the light of every rite, their seatings, whether the doxology
+    // was ordered for the reckoning); a rite's seating as it begins (not the
+    // plain house); and the Kolob reckoning — read once (ok, or why it fell
+    // back), and each turn of the drone at a joint (from, to: monzos over the
+    // keynote; the section it turns into; its glide in seconds)
+    "calendar":            { n: "int", sunday: "str?", kind: "str", lights: "arr", rites: "arr" },
+    "scene":               { section: "str", index: "int", scene: "str" },
+    "reckoning":           { ok: "bool", doxId: "hymnId?" },
+    "drone-turn":          { index: "int", to: "arr", glide: "num" },
   };
   var KINDS = {
     int: isInt, num: isNum, str: isStr, bool: isBool, obj: isObj, arr: Array.isArray,

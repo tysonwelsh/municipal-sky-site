@@ -25,7 +25,8 @@
 // at round 3b's second step, when the Sunday's organist took the bench;
 // kolob-experimental.js, kolob-voices-folk.js, kolob-guest-handbells.js and
 // kolob-guest-singingschool.js at its third, when the handbell choir and the
-// singing school came into the meeting.)
+// singing school came into the meeting; kolob-calendar.js at its fourth, when
+// every visit began to draw a Sunday of the colony year.)
 //
 // THE LOAD GUARD. Each kolob-*.js room answers a roll call as its last act
 // (KOLOB._rooms["kolob-organ.js"] = true), and the substrate — and the Earth
@@ -75,6 +76,10 @@ return [
     // meeting before seating an experimental feature (the singing school);
     // ?exp=-singingSchool turns one off for a visit
     'kolob-experimental.js',
+    // the Sunday of the colony year, the arc of light, the rites' seatings
+    // and the Kolob reckoning (round 3b, step 4): pure; the meeting draws
+    // the Sunday from it, and the composer's desk reads the reckoning in it
+    'kolob-calendar.js',
     // the voices (the registrable pipe organ, round 3b, step 2: the meeting's
     // one organ — kolob-voices-organ.js keeps the old one as the A/B)
     'kolob-voices-pipeorgan.js',

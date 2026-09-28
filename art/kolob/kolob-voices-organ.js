@@ -218,10 +218,29 @@ window.KOLOB = window.KOLOB || {};
   // ==========================================================================
   var HOUSE_REF = 0.513, HOUSE_TRIM = 0, HOUSE_SWELL = 0.62;
   var houseSwell = { until: -1e9 };
+  // THE HOUSE'S STOPS BY THE LIGHT (round 3b, step 4; PLAN §7.3): the
+  // organ layer's registration, leaned by the light of the rite and the
+  // Sunday (kolob-calendar.js regLean, −1 … +1): at dawn and in the
+  // stillness the principal steps back and the flutes carry the chord; in
+  // full light the 4′, the pedal and a share of the mixture are drawn — the
+  // daylight in the full organ. Held to its level (HOUSE_LEAN_DB a decibel
+  // and a little per unit of lean, against the way the stops move it), so
+  // the light changes the colour more than the loudness.
+  var HOUSE_LEAN_DB = 1.2;
+  function houseLean() {
+    var CAL = KOLOB.Calendar, M = S.Meeting;
+    if (!CAL || !M || !M.light) return 0;
+    var L = M.light(), day = M.day ? M.day() : null;
+    return L == null ? 0 : CAL.regLean(L, day ? day.id : null);
+  }
   function houseReg() {
     var stops = getLayerParam("organ", "stops", 0.5), trem = getLayerParam("organ", "tremulant", 0.15), pedal = getLayerParam("organ", "pedal", 0.6);
-    return { principal8: +(1 - stops).toFixed(3), flute8: +(0.35 + 0.65 * stops).toFixed(3), flute4: +(0.2 + 0.4 * stops).toFixed(3),
-             bourdon16: +(+pedal).toFixed(3), trem: +(trem * 0.5).toFixed(3) };
+    var reg = { principal8: 1 - stops, flute8: 0.35 + 0.65 * stops, flute4: 0.2 + 0.4 * stops, bourdon16: +pedal, trem: trem * 0.5 };
+    var lean = houseLean();
+    if (lean < 0) { reg.principal8 *= 1 + 0.65 * lean; reg.flute4 *= 1 + 0.4 * lean; reg.bourdon16 *= 1 + 0.3 * lean; }
+    else if (lean > 0) { reg.principal8 = Math.min(1, reg.principal8 + 0.4 * lean); reg.flute4 += 0.3 * lean; reg.mixture = 0.5 * lean * lean; reg.bourdon16 = Math.min(1, reg.bourdon16 + 0.3 * lean); }
+    for (var k in reg) reg[k] = +reg[k].toFixed(3);
+    return reg;
   }
   // the chord on an organ (the meeting's case, or a lab's): freqs as the
   // desk voices them (bass first); o = { reg, depth (how far the box moves,
@@ -230,7 +249,8 @@ window.KOLOB = window.KOLOB || {};
   function pipeChordOn(organ, t, dur, freqs, gainMul, o) {
     o = o || {};
     var reg = o.reg || houseReg(), n = freqs.length, ph = o.phrase || { until: -1e9 };
-    var G = (gainMul || 1) / HOUSE_REF * Math.pow(10, HOUSE_TRIM / 20);
+    var leanDb = o.reg ? 0 : -HOUSE_LEAN_DB * houseLean();
+    var G = (gainMul || 1) / HOUSE_REF * Math.pow(10, (HOUSE_TRIM + leanDb) / 20);
     var depth = o.depth != null ? o.depth : 0.6, eOpen = HOUSE_SWELL, eShut = Math.max(0, eOpen - 0.4 * depth);
     var atk = Math.min(2.2, dur * 0.3), rel = dur * 0.28;
     // (a chord that comes while the last still sounds finds the box already
@@ -249,7 +269,11 @@ window.KOLOB = window.KOLOB || {};
     var org = S.Meeting && S.Meeting.organist ? S.Meeting.organist() : null;
     var reg = pipeChordOn(caseAt(t), t, dur, chord.freqs, gainMul, { depth: org ? Math.max(0.3, org.habits.swell) : 0.6, phrase: houseSwell });
     var nTones = chord.freqs.length;
-    for (var pv = 0; pv < nTones; pv++) emitNote("organ", chord.freqs[pv] * 0.5, t, dur, organTag(chord, nTones === 4 ? ORGAN_PART[pv] : null));
+    // (round 3b, step 4: the house's stops as the light drew them — told on
+    // its notes for the measuring tools: "flutes" at dawn and in the
+    // stillness, "full" in full light, "principal" between)
+    var lean = houseLean(), stops = lean <= -0.4 ? "flutes" : lean >= 0.5 ? "full" : "principal";
+    for (var pv = 0; pv < nTones; pv++) { var tg = organTag(chord, nTones === 4 ? ORGAN_PART[pv] : null); tg.houseStops = stops; emitNote("organ", chord.freqs[pv] * 0.5, t, dur, tg); }
     // the pedal's 16′ under the bass (where the bourdon is drawn), sounding
     // an octave under its key unless that would fall below the case's floor
     if ((reg.bourdon16 || 0) > 0) {

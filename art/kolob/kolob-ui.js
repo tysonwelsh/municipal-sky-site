@@ -72,6 +72,12 @@
     aRound: "𐐝𐐊𐐥 𐐈𐐞 𐐊 𐐡𐐍𐐤𐐔",           // SUNG AS A ROUND
     againstIt: "𐐜 𐐙𐐊𐐡𐐝𐐓 𐐐𐐆𐐣 𐐊𐐘𐐇𐐤𐐝𐐓 𐐆𐐓", // THE FIRST HYMN AGAINST IT
     refrain: "𐐜 𐐡𐐆𐐙𐐡𐐁𐐤",               // THE REFRAIN
+    // (round 3b, step 4: a rite's seating, and the drone's tune)
+    linedOut: "𐐢𐐌𐐤𐐔 𐐍𐐓 𐐄𐐤𐐢𐐀",          // LINED OUT ONLY
+    brushArbor: "𐐒𐐡𐐊𐐟 𐐂𐐡𐐒𐐊𐐡",           // BRUSH ARBOR
+    organVoluntary: "𐐃𐐡𐐘𐐊𐐤 𐐚𐐉𐐢𐐊𐐤𐐓𐐇𐐡𐐀",  // ORGAN VOLUNTARY
+    choirAlone: "𐐜 𐐗𐐎𐐌𐐊𐐡 𐐊𐐢𐐄𐐤",         // THE CHOIR ALONE
+    dronesTune: "𐐜 𐐔𐐡𐐄𐐤𐐞 𐐓𐐅𐐤",          // THE DRONE'S TUNE
     liahona: "𐐢𐐀𐐊𐐐𐐄𐐤𐐊",                // LIAHONA
     sample: "𐐝𐐈𐐣𐐑𐐊𐐢",                   // SAMPLE
     orderOfService: "𐐃𐐡𐐔𐐊𐐡 𐐊𐐚 𐐝𐐊𐐡𐐚𐐆𐐝", // ORDER OF SERVICE
@@ -99,6 +105,11 @@
     conference: "𐐗𐐉𐐤𐐙𐐡𐐇𐐤𐐝",
     jubilee: "𐐖𐐅𐐒𐐆𐐢𐐀",
   };
+  // THE SUNDAY (round 3b, step 4): the programme card names the calendar's
+  // Sunday — its Deseret is the calendar's own (KOLOB.Calendar.SUNDAYS[id].ds,
+  // read from the conductor), these the Latin switch's
+  var SUNDAYS_EN = { ordinary: "AN ORDINARY SUNDAY", fast: "FAST SUNDAY", conference: "GENERAL CONFERENCE", pioneer: "PIONEER DAY",
+                     christmas: "CHRISTMAS", easter: "EASTER", wedding: "A WEDDING", funeral: "A FUNERAL", dedication: "A DEDICATION" };
   var MODES_DS = {
     ionian: "𐐌𐐄𐐤𐐆𐐊𐐤",
     mixolydian: "𐐣𐐆𐐗𐐝𐐄𐐢𐐆𐐔𐐆𐐊𐐤",
@@ -176,7 +187,7 @@
   // engine plays. Mirrors the ?latin=1 switch; not persisted.
   var previewMode = false;
   try { previewMode = /[?&]kolobPreview=1/.test(location.search); } catch (e) {}
-  var PREVIEW_CONDUCTOR = { meeting: 3, section: "hymn", meter: "CM", activity: "conference", mode: "mixolydian", f0: 65.4, fuging: true };
+  var PREVIEW_CONDUCTOR = { meeting: 3, section: "hymn", meter: "CM", activity: "conference", sunday: { id: "conference", nameDs: "𐐖𐐇𐐤𐐊𐐡𐐊𐐢 𐐗𐐉𐐤𐐙𐐡𐐇𐐤𐐝" }, mode: "mixolydian", f0: 65.4, fuging: true };
   function TT(dsTable, enTable) { return latinMode ? enTable : dsTable; }
   // gesture ciphers run 𐐀..𐐚 (the Deseret alphabet from its first letter);
   // the Latin equivalents run A..Z then & — the schoolroom's own 27th letter
@@ -228,7 +239,12 @@
   var FORWARD_ROW = { "keys the hymn": 1, "hums the first note": 1, "pitches the tune": 1, "comes forward": 1, "sings the descant": 1,
                       "sings the treble verse": 1, "sings the tune": 1, "loses the words": 1, "finds them again": 1, "joins in": 1, "sings out": 1,
                       // (round 3b, step 3: the refrain begun, the quartet, the Primary, a round set going, the cornet against the partner)
-                      "starts the refrain": 1, "leads the quartet": 1, "leads the Primary": 1, "sets the round going": 1, "plays the first hymn on the cornet": 1 };
+                      "starts the refrain": 1, "leads the quartet": 1, "leads the Primary": 1, "sets the round going": 1, "plays the first hymn on the cornet": 1,
+                      // (round 3b, step 4: a verse given to the men, or to the women)
+                      "gives the verse to the men": 1, "gives the verse to the women": 1 };
+  // (round 3b, step 4) a rite's seating in the minutes — the plain house
+  // gives none
+  var SCENE_ROW = { lined: "linedOut", arbor: "brushArbor", voluntary: "organVoluntary", choir: "choirAlone" };
   // (round 3b, step 2) the organist's moments that earn a row: the chorale
   // prelude, the walk into a new key, a fill between the lines, the strange
   // key, a line left to the ward — not every stop drawn, nor the giving-out
@@ -243,7 +259,9 @@
     if (!ev || ev.logged === false) return null;             // the unlogged guest: not a word
     var S = TT(STR, STR_EN);
     switch (ev.type) {
-      case "meeting-start": return minute("☀", S.meeting + (ev.n != null ? " " + ev.n : ""), "meeting");
+      case "meeting-start": return minute("☀", S.meeting + (ev.n != null ? " " + ev.n : "") + (ev.sunday ? " · " + (latinMode ? SUNDAYS_EN[ev.sunday] || ev.sunday.toUpperCase() : ev.sundayDs || "") : ""), "meeting");
+      case "scene":         return SCENE_ROW[ev.scene] ? minute("⌖", (TT(SECTIONS_DS, SECTIONS_EN)[ev.section] || ev.section) + " · " + S[SCENE_ROW[ev.scene]], "section") : null;
+      case "drone-turn":    return ev.dox ? minute("∿", S.dronesTune, "liahona") : null;   // (the drone home under the doxology: the tune it has spelled; its other turns write no row)
       case "sunrise":       return minute("☀", S.meeting, "meeting");          // (v0.32: a sunrise is a meeting's row without its number)
       case "section-start": return minute("§", TT(SECTIONS_DS, SECTIONS_EN)[ev.section] || ev.section, "section");
       case "liahona":       return minute("⌖", S.liahona, "liahona");
@@ -565,7 +583,10 @@
       mm.textContent = "";
       return;
     }
-    day.textContent = TT(ACTIVITIES_DS, ACTIVITIES_EN)[c.activity] || "";
+    // (round 3b, step 4: the calendar's Sunday — the kind of meeting where a
+    // page has no calendar)
+    var sd = c.sunday && c.sunday.id ? (latinMode ? SUNDAYS_EN[c.sunday.id] : c.sunday.nameDs) : null;
+    day.textContent = sd || TT(ACTIVITIES_DS, ACTIVITIES_EN)[c.activity] || "";
     var mode = TT(MODES_DS, MODES_EN)[c.mode] || "";
     // (the meter: a composed hymn's, as it was announced — typed — while its
     // section lasts; else the conductor's, during a hymn)
