@@ -737,7 +737,8 @@ window.KOLOB.Cast = (function () {
   function roundGroupName(ward, ids) {
     var parts = {}; ids.forEach(function (id) { var m = ward.byId[id]; if (m) parts[m.part] = true; });
     var p = Object.keys(parts).sort(function (a, b) { return PARTS.indexOf(a) - PARTS.indexOf(b); });
-    return p.length === 2 && parts.S && parts.A ? "the women" : p.length === 2 && parts.T && parts.B ? "the men" : p.map(function (x) { return PART_NAME[x] + "s"; }).join(" and ");
+    var MANY = { S: "trebles", A: "altos", T: "tenors", B: "basses" };
+    return p.length === 2 && parts.S && parts.A ? "the women" : p.length === 2 && parts.T && parts.B ? "the men" : p.map(function (x) { return MANY[x]; }).join(" and ");
   }
   function roundGroups(ward, by, n, side) {
     var seated = ward.members.filter(function (m) { return m.k != null; });
