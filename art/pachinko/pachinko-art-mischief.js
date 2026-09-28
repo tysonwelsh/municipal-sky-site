@@ -59,7 +59,9 @@
           px(g, x, y, c);
         }
       }
-      // chunks: each a lump with a lit top-left and a dark underside
+      // chunks: each a lump with a lit top-left and a dark underside, stood
+      // proud of the heap like the pins (the foreground: they must read)
+      var cg = fg || g;
       for (var k = 0; k < 26; k++) {
         var cx = xa + H(sd, k, 1) * (xb - xa), top = heapTop(cv, cx);
         var cy = top + 1 + H(sd, k, 2) * Math.min(20, 416 - top - 3), r = 1 + Math.floor(H(sd, k, 3) * 2.2);
@@ -69,9 +71,9 @@
           if (i * i * 0.8 + j * j > r * r + 0.6) continue;
           var X = Math.round(cx + i), Y = Math.round(cy + j);
           if (Y < heapTop(cv, X) - 0.5 || X < xa || X > xb) continue;
-          px(g, X, Y, (i + j < -r) ? lit : (i + j > r - 1) ? dk : body);
+          px(cg, X, Y, (i + j < -r) ? lit : (i + j > r - 1) ? dk : body);
         }
-        if (coal && H(sd, k, 5) < 0.5) px(g, Math.round(cx - r + 1), Math.round(cy - r + 1), P.GLINT_D);
+        if (coal && H(sd, k, 5) < 0.5) px(cg, Math.round(cx - r + 1), Math.round(cy - r + 1), P.GLINT_D);
       }
       // the pins that came down with it: a knuckle or two showing in the rubble
       (board.fixtures || []).forEach(function (f, i) {
@@ -84,17 +86,24 @@
       var sx = xa + 3 + H(sd, 3, 7) * (xb - xa - 6), sy = heapTop(cv, sx) + 5, dir = H(sd, 4, 7) < 0.5 ? -1 : 1;
       for (var s = 0; s < 8; s++) { var X2 = Math.round(sx + dir * s * 0.8), Y2 = Math.round(sy - s * 0.6); px(g, X2, Y2, s % 3 ? P.TIM3 : P.TIM2); px(g, X2, Y2 + 1, P.TIM1); }
       px(g, Math.round(sx + dir * 7), Math.round(sy - 5), P.END); px(g, Math.round(sx + dir * 8), Math.round(sy - 6), P.TIM4);
-      // one corner of the bay's card, crooked in the rubble
+      // one corner of the bay's card, crooked in the rubble (paper: it reads)
       if (card && cv.shape === 'roof') {
-        var kx = Math.round(cv.cx + (H(sd, 5, 7) < 0.5 ? -5 : 2)), ky = Math.round(heapTop(cv, kx) + 4);
-        for (var q = 0; q < 4; q++) { hline(g, kx + q, kx + q + 3, ky + q, q === 0 ? P.PAPER : P.PAPER_D); }
-        px(g, kx + 4, ky + 3, P.INK_L); px(g, kx + 5, ky + 3, P.INK_L);
+        var kx = Math.round(cv.cx + (H(sd, 5, 7) < 0.5 ? -6 : 2)), ky = Math.round(heapTop(cv, kx) + 3);
+        for (var q = 0; q < 4; q++) { hline(cg, kx + q, kx + q + 4, ky + q, q === 0 ? P.PAPER : P.PAPER_D); }
+        px(cg, kx + 4, ky + 2, P.INK_L); px(cg, kx + 5, ky + 2, P.INK_L); px(cg, kx + 6, ky + 3, P.INK_L);
       }
-      // NO ROAD: two sticks crossed and planted on it, the miners' sign that a way is shut
-      var mx = cv.shape === 'right' ? 6 : cv.shape === 'left' ? 313 : Math.round(cv.cx + (H(sd, 6, 7) < 0.5 ? -6 : 6));
+      // NO ROAD: two sticks crossed and planted on it, the miners' sign that a
+      // way is shut: pale new-cut timber, so it reads on the dark heap
+      var mx = cv.shape === 'right' ? 7 : cv.shape === 'left' ? 312 : Math.round(cv.cx + (H(sd, 6, 7) < 0.5 ? -6 : 6));
       var my = Math.round(heapTop(cv, mx)) - 1;
-      for (var d = 0; d < 6; d++) { px(g, mx - 2 + d, my - 5 + d, d < 2 ? P.TIM4 : P.TIM3); px(g, mx + 3 - d, my - 5 + d, d < 2 ? P.TIM4 : P.TIM2); }
-      px(g, mx, my - 3, P.END);
+      for (var d = 0; d < 8; d++) {
+        px(cg, mx - 3 + d, my - 7 + d, d < 3 ? '#e8cc94' : '#c8a868'); px(cg, mx + 4 - d, my - 7 + d, d < 3 ? '#d8b87c' : '#a8884c');
+        if (d < 7) { px(cg, mx - 3 + d, my - 6 + d, '#3a2818'); }
+      }
+      px(cg, mx, my - 4, '#f4dca8'); px(cg, mx + 1, my - 4, '#f4dca8');
+      // the work light the crew hung over it: a caged bulb on its flex
+      var wx = Math.round(cv.cx), wy = Math.round(cv.top) - 9;
+      vline(g, wx, wy - 12, wy - 1, '#141218'); rect(g, wx - 1, wy, 3, 3, P.IRON2); px(g, wx, wy + 2, P.BONE);   // (the renderer lights it: R's caveLamp)
     });
   };
 
@@ -471,25 +480,28 @@
     var dk = view.fx && view.fx.dark, PB = root.PachinkoBoard; if (!dk || !PB) return false;
     return (dk[PB.regionAt(x, y)] || 0) >= 0.85;
   }
+  var keptSeen = {};
   function drawKept(g, view, mis, layer) {
+    var t = view.t || 0;
     (mis.lost || []).forEach(function (q, i) {
-      if (isDark(view, q.x, q.y)) return;
-      var x = q.x, y = q.y, sw = SW[Math.abs(q.id | 0) % SW.length];
+      if (isDark(view, q.x, q.y)) { keptSeen[q.n] = null; return; }
+      if (keptSeen[q.n] == null || t < keptSeen[q.n]) keptSeen[q.n] = t;      // (draw-side memory: when the light found it)
+      var x = q.x, y = q.y, u = t - keptSeen[q.n];
+      // the tag hangs higher than a bay card, on a thread (so "13" is a figure, not the jackpot)
+      var n = 13 + i, s2 = String(n), tw = A.textW(s2) + 4, sw = u < 1.2 ? Math.round(Math.sin(u * 11) * 2 * (1 - u / 1.2)) : 0, tx = x + 5 + sw, ty = y - 15;
       if (layer === 'albedo') {
         // half sunk: the rock closed round it a little, a crack or two
-        A.disc(g, x + 0.5, y + 0.5, 3.6, P.DEEP0);
-        A.disc(g, x + 0.5, y + 0.5, 2.6, '#6d8ea8'); A.disc(g, x, y, 1.6, '#9fc0d4');
-        px(g, x - 1, y + 1, sw[1]); px(g, x, y, sw[0]); px(g, x + 1, y - 1, sw[1]);
-        px(g, x - 2, y - 2, '#f4fbff'); px(g, x + 2, y + 2, '#26384a');
-        px(g, x + 3, y - 3, P.DEEP0); px(g, x + 4, y - 4, P.DEEP1); px(g, x - 4, y + 2, P.DEEP0);
+        A.disc(g, x + 0.5, y + 0.5, 4.2, P.DEEP0);
+        px(g, x + 4, y - 4, P.DEEP0); px(g, x + 5, y - 5, P.DEEP1); px(g, x - 5, y + 2, P.DEEP0);
+        // the curator's tag, a card on a thread, in the spot's light
+        A.line(g, x + 2, y - 3, tx + (tw >> 1), ty + 6, '#8a7e68');
+        rect(g, tx, ty, tw, 7, P.PAPER_D); hline(g, tx, tx + tw - 1, ty + 6, P.PAPER_DD); hline(g, tx, tx + tw - 1, ty, '#cdbd8e');
+        A.text(g, s2, tx + 2, ty + 1, P.INK);
       } else {
-        // the curator's tag: bone, the next figure number, on a thread
-        var n = 13 + i, s = String(n), tw = A.textW(s) + 4, tx = x + 5, ty = y - 11;
-        px(g, x + 3, y - 3, P.BONE_D); px(g, x + 4, y - 4, P.BONE_D);
-        rect(g, tx, ty, tw, 7, P.BONE); hline(g, tx, tx + tw - 1, ty + 6, P.BONE_D);
-        A.text(g, s, tx + 2, ty + 1, P.INK);
-        // and the glint a glass marble can't help giving
-        if (Math.sin((view.t || 0) * 0.8 + i * 2) > 0.94) px(g, x - 1, y - 2, '#ffffff');
+        // the glass itself, dusty and still: its vane frozen where it stopped
+        if (A.drawMarble) A.drawMarble(g, { x: x, y: y, r: 4, id: q.id, spin: (q.n || 1) * 1.3 }, t, { dim: true, still: true });
+        // the spot clicks on when the light comes back (a flash of cold white)
+        if (u < 0.15) for (var a = 0; a < 24; a++) { var an = a / 24 * Math.PI * 2; px(g, Math.round(x + Math.cos(an) * 8), Math.round(y + Math.sin(an) * 7), 'rgba(220,230,255,0.55)'); }
       }
     });
   }

@@ -746,7 +746,7 @@
       var x = Math.round(q.x), y = Math.round(q.y), k = q.k == null ? 1 : q.k;
       for (var j = 2; j < 9; j++) for (var i = -2; i <= 2; i++) {
         var dd = (i * i) / 6 + Math.abs(j - 5) / 4;
-        if (dd < 1 && A.bayer(x + i, y - j) < (1 - dd) * 0.7 * k) px(g, x + i, y - j, j > 6 ? P.FLAME0 : P.LAMP);
+        if (dd < 1 && A.bayer(x + i, y - j) < (1 - dd) * 1.1 * k) px(g, x + i, y - j, j > 6 ? P.FLAME0 : dd < 0.4 ? P.FLAME1 : P.LAMP);
       }
     },
     plank: function (g, q) {

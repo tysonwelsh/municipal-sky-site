@@ -312,6 +312,25 @@
       var G = mine.gals[gi];
       for (var bx = G.x0 + 10; bx < G.x1 - 4; bx += 22) { L = lampRec(); L.x = bx; L.y = G.top + 4; L.r = 18; setColour(L, '#ffe0a0'); L.k = 1.1 * LODE.lift; L.haze = 0.5; }
     }
+    // a cave-in's work light, hung by the crew over the heap: the bay that's
+    // shut reads as shut, for the rest of the game
+    var cvs = (board && board.caveins) || [];
+    for (i = 0; i < cvs.length; i++) {
+      var cv = cvs[i], wl = caveLamp(cv);
+      L = lampRec(); L.x = wl.x; L.y = wl.y + 2; L.r = 30; L.ry = 0.85; setColour(L, '#ffe0a0'); L.k = 1.05 * (0.92 + 0.08 * A.hash01(cvs.length + i, Math.floor(t * 3), 5)); L.haze = 0.8; L.dark = true;
+    }
+    // an open door in the rock is a warm lit slot (a knocker's lamp inside):
+    // the thief's telegraph, and his light while he's out of it
+    var pr = view.props || [];
+    for (i = 0; i < pr.length; i++) {
+      var q = pr[i];
+      if (q.kind === 'door' && q.open === 2) { L = lampRec(); L.x = q.x; L.y = q.y - 5; L.r = 22; setColour(L, P.LAMP); L.k = 0.95; L.haze = 0.8; L.dark = true; }
+    }
+    for (i = 0; i < figs.length; i++) if (figs[i].hold && figs[i].lamp !== false) {
+      // the thief with the marble in his hands: his lamp burns full
+      var hf = A.figureLamp(figs[i], FL);
+      L = lampRec(); L.x = hf.x; L.y = hf.y + 6; L.r = 26; setColour(L, P.LAMP); L.k = 0.7; L.dark = true;
+    }
     var ex = fx.extraLamps || [];
     for (i = 0; i < ex.length; i++) {
       var e = ex[i]; if (!(e.k == null || e.k > 0)) continue;
@@ -435,7 +454,7 @@
         // past 1, the lamp's core pushes the rock beyond the colour it was
         // painted (added back as albedo × the overflow): a pool has a hot heart
         if (qr > 1 || qg > 1 || qb > 1) {
-          var or = qr > 1 ? Math.min(0.9, qr - 1) : 0, og = qg > 1 ? Math.min(0.9, qg - 1) : 0, ob = qb > 1 ? Math.min(0.9, qb - 1) : 0;
+          var or = qr > 1 ? Math.min(0.55, (qr - 1) * 0.8) : 0, og = qg > 1 ? Math.min(0.55, (qg - 1) * 0.8) : 0, ob = qb > 1 ? Math.min(0.55, (qb - 1) * 0.8) : 0;
           uO[o + x] = 0xff000000 | (((ob * 255) | 0) << 16) | (((og * 255) | 0) << 8) | ((or * 255) | 0);
           anyOver = true;
           if (qr > 1) qr = 1; if (qg > 1) qg = 1; if (qb > 1) qb = 1;
@@ -488,6 +507,9 @@
     return s;
   }
   function PB() { return root.PachinkoBoard; }
+  // where the crew hung the work light over a cave-in's heap (art-mischief draws its cage)
+  var CL = { x: 0, y: 0 };
+  function caveLamp(cv) { CL.x = Math.round(cv.cx); CL.y = Math.round(cv.top) - 8; return CL; }
 
   /* ══ live albedo: the moving parts ═════════════════════════════════ */
   function drawKinematics(g, view) {
@@ -536,6 +558,9 @@
       if (L.kind === 'bulb') { px(g, L.fx, L.fy, P.FLAME2); px(g, L.fx, L.fy + 1, P.FLAME1); px(g, L.fx - 1, L.fy, 'rgba(255,224,160,0.55)'); px(g, L.fx + 1, L.fy, 'rgba(255,224,160,0.55)'); }
       else { px(g, L.fx, L.fy, P.FLAME2); px(g, L.fx, L.fy - 1, h < 0.5 ? P.FLAME1 : P.FLAME0); if (h > 0.8) px(g, L.fx + 1, L.fy - 1, P.FLAME0); }
     }
+    // a cave-in's work light
+    var cvs = (board && board.caveins) || [];
+    for (i = 0; i < cvs.length; i++) { var wl = caveLamp(cvs[i]); if (!(anyDark && sampleD(wl.x, wl.y) >= 0.85)) { px(g, wl.x, wl.y + 1, P.FLAME2); px(g, wl.x, wl.y + 2, P.FLAME1); } }
     // at the lode, the bulbs strung along every gallery are lit
     if (LODE.lift > 0.12 && mine.gals) for (var gi = 0; gi < mine.gals.length; gi++) {
       var G = mine.gals[gi];
