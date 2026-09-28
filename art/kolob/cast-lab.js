@@ -57,6 +57,13 @@
   }
 
   var KEYNOTE_HZ = 261.63, GIVE_OUT = 2.8;
+  // how far ahead of its first sound a handed line (and each of its mouths)
+  // joins the room — the voices' ARMING. Five of this page's pump intervals
+  // (120 ms): a pump stalled for half a second still joins every mouth in
+  // time. (A page playing sound is not timer-throttled in the background;
+  // a caller whose pump can stall longer should lead by more — a longer
+  // lead costs a little audio time, never sound.)
+  var ARM_LEAD = 0.6;
   var S = null;    // { s, ward, hymn, plan, sheet }
 
   // ==========================================================================
@@ -76,7 +83,7 @@
     } catch (e) { showErr("build failed: " + (e && e.stack || e)); return; }
     syncURL(s);
     drawBoard(); drawChart(); drawPeople(); drawLog();
-    $("kcl-playbtn").disabled = false; $("kcl-measure").disabled = false; $("kcl-stress").disabled = false;
+    $("kcl-playbtn").disabled = false; $("kcl-measure").disabled = false; $("kcl-stress").disabled = false; $("kcl-headroom").disabled = false;
     $("kcl-organ").disabled = !D.get(S.hymn.dialect).organ;
   }
   $("kcl-build").addEventListener("click", build);
@@ -274,7 +281,7 @@
       function pump() {
         if (AC !== ac) return;
         var now = ac.currentTime;
-        perf.pump(ac, room, t0, sheet, now + 3.0, { max: 12, urgent: now + 1.2 });
+        perf.pump(ac, room, t0, sheet, now + 3.0, { max: 12, urgent: now + 1.2, arm: now + ARM_LEAD, now: now });
         paint(now - t0);
         if (now > t0 + sheet.end + 3.5) stop();
       }
@@ -407,10 +414,13 @@
       var org = opts.organ === false ? { play: null } : organFor(ctx, room, t0, sheet);
       var perf = Cast.performer(S.ward, { V: V, synth: PJ2.Rand.stream(S.s.seed).fork("synth:vocal"), organ: org.play });
       var q = 128 / sr, lastPump = 0;
-      perf.pump(ctx, room, t0, sheet, 3.0);
+      // (armed as the live pump arms: each line joins the room ARM_LEAD before
+      // it sounds, the next pump being a second on — so what is measured is
+      // the path that is played)
+      perf.pump(ctx, room, t0, sheet, 3.0, { arm: 1 + ARM_LEAD, now: 0 });
       for (var s = 1; s < t0 + len; s += 1) {
         (function (at) {
-          ctx.suspend(Math.round(at / q) * q).then(function () { perf.pump(ctx, room, t0, sheet, Math.min(at + 3.0, t0 + len - 0.5)); lastPump = at; ctx.resume(); });
+          ctx.suspend(Math.round(at / q) * q).then(function () { perf.pump(ctx, room, t0, sheet, Math.min(at + 3.0, t0 + len - 0.5), { arm: at + 1 + ARM_LEAD, now: at }); lastPump = at; ctx.resume(); });
         })(s);
       }
       var ms0 = performance.now();
@@ -492,16 +502,19 @@
         var skipped = false, t0 = ac.currentTime + 2.0, sheet = freshSheet();
         V.budget.reset();
         var perf = Cast.performer(S.ward, { V: V, synth: PJ2.Rand.stream(S.s.seed).fork("synth:vocal") });
-        var wall0 = performance.now(), ac0 = ac.currentTime, samples = [], handed = 0, late = 0, minMargin = 1e9, pumpMs = [], hymns = 1;
+        var wall0 = performance.now(), ac0 = ac.currentTime, samples = [], handed = 0, late = 0, minMargin = 1e9, pumpMs = [], hymns = 1, joinedMax = 0, joinedSum = 0, joinedN = 0;
         var under0 = ac.playbackStats ? { events: ac.playbackStats.underrunEvents, seconds: ac.playbackStats.underrunDuration } : null;
         var iv = setInterval(function () {
-          var now = ac.currentTime;
+          // both clocks read together, before the pump (a long pump read
+          // between them used to shave the measured ratio)
+          var now = ac.currentTime, wallNow = performance.now();
           if (!skipped && now > ac0 + 3) { skipped = KA.skipToSection("hymn") || true; }
           if (now > t0 + sheet.end + 1.5) { t0 = now + 1.5; sheet = freshSheet(); hymns++; }
-          var p0 = performance.now(), got = withWard ? perf.pump(ac, room, t0, sheet, now + 3.0, { max: 12, urgent: now + 1.2 }) : [];
+          var p0 = performance.now(), got = withWard ? perf.pump(ac, room, t0, sheet, now + 3.0, { max: 12, urgent: now + 1.2, arm: now + ARM_LEAD, now: now }) : [];
           pumpMs.push(performance.now() - p0);
           got.forEach(function (c) { handed++; var m = t0 + c.at - now; if (m < minMargin) minMargin = m; if (m < 0.45) late++; });
-          samples.push([performance.now() - wall0, now - ac0]);
+          samples.push([wallNow - wall0, now - ac0]);
+          var jn = V.joined ? V.joined(ac) : 0; joinedMax = Math.max(joinedMax, jn); joinedSum += jn; joinedN++;
           if (performance.now() - wall0 > seconds * 1000) {
             clearInterval(iv);
             try { po && po.disconnect(); } catch (e) { /* none */ }
@@ -513,7 +526,7 @@
               cuesHanded: handed, lateCues: late, minMarginS: +minMargin.toFixed(2), hymnsStarted: hymns,
               pumpMsP95: +pumpMs[Math.floor(pumpMs.length * 0.95)].toFixed(1), pumpMsMax: +pumpMs[pumpMs.length - 1].toFixed(1),
               longTasks: longTasks.length, longTaskMaxMs: longTasks.length ? Math.round(Math.max.apply(null, longTasks)) : 0,
-              wardNodesPeak: V.budget.report(ac0, ac.currentTime).peak, meetingSection: KA.getConductor ? KA.getConductor().section : null,
+              wardNodesPeak: V.budget.report(ac0, ac.currentTime).peak, joinedMax: joinedMax, joinedMean: joinedN ? Math.round(joinedSum / joinedN) : 0, meetingSection: KA.getConductor ? KA.getConductor().section : null,
               baseLatency: ac.baseLatency, outputLatency: ac.outputLatency, sampleRate: ac.sampleRate,
             };
             var ps = ac.playbackStats || null;
@@ -525,7 +538,7 @@
               tr("the pump", res.cuesHanded + " lines handed · " + res.lateCues + " late · the tightest " + res.minMarginS + " s ahead · a pump takes " + res.pumpMsP95 + " ms (95th pct), " + res.pumpMsMax + " ms at most", res.lateCues === 0) +
               tr("main thread", res.longTasks + " long tasks, the longest " + res.longTaskMaxMs + " ms") +
               (res.underruns ? tr("the audio thread", res.underruns.events + " underruns (" + res.underruns.seconds + " s of glitch)", res.underruns.events === 0) : "") +
-              tr("the ward's nodes", "peak " + res.wardNodesPeak + " sounding at once") + "</table>";
+              tr("the ward's nodes", "peak " + res.wardNodesPeak + " built and alive at once · at most " + res.joinedMax + " mouths, breaths and consonants joined to the room (mean " + res.joinedMean + ")") + "</table>";
             resolve(res);
           }
         }, 120);
@@ -592,7 +605,7 @@
         return capacity(ac, step, hold, function () {
           var now = ac.currentTime;
           if (!skipped && now > 3) skipped = KA.skipToSection("hymn") || true;
-          if (perf) { if (now > t0 + sheet.end + 1.5) { t0 = now + 1.5; sheet = freshSheet(); } perf.pump(ac, room, t0, sheet, now + 3.0, { max: 12, urgent: now + 1.2 }); }
+          if (perf) { if (now > t0 + sheet.end + 1.5) { t0 = now + 1.5; sheet = freshSheet(); } perf.pump(ac, room, t0, sheet, now + 3.0, { max: 12, urgent: now + 1.2, arm: now + ARM_LEAD, now: now }); }
         }).then(function (r) { if (room) room.detach(); KA.stop(); return r; });
       });
     }
@@ -614,6 +627,8 @@
         return out;
       });
   }
+
+  $("kcl-headroom").addEventListener("click", function () { headroom({ step: 25 }).catch(function (e) { showErr(String(e && e.stack || e)); }); });
 
   // for the headless checks (CDP): window.CastLab
   window.CastLab = {

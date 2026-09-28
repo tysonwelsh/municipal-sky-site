@@ -823,10 +823,15 @@ window.KOLOB.Cast = (function () {
   //   start before `horizon` (the caller's clock read, plus its lookahead)
   //   to its singer at t0 + cue.at; returns the cues handed. schedule()
   //   hands them all (offline). The glue never reads a clock of its own.
-  //   pace = { max, urgent }: hand at most `max` cues a call (a line of the
-  //   full ward is thirty-two graphs; built in one go it is a long task on a
-  //   phone's main thread), except that every cue due before `urgent` goes
-  //   now whatever the count.
+  //   pace = { max, urgent, arm, now }: hand at most `max` cues a call (a line of
+  //   the full ward is thirty-two graphs; built in one go it is a long task
+  //   on a phone's main thread), except that every cue due before `urgent`
+  //   goes now whatever the count; and with `arm` (the caller's clock plus
+  //   ~1 s) a line is built when handed but joins the room only once it is
+  //   due to sound before `arm`, each of its mouths only around the moments
+  //   it may sound, and parts from it once the caller's `now` has passed
+  //   (VoicesVocal's ARMING: a built line not yet joined costs the audio
+  //   thread nothing). Without `arm`, every line joins the room as handed.
   // ==========================================================================
   var LEAD = 0.7;   // how early a cue must be handed over: the inhale, the consonant
   var FORWARD_INHALE = 0.55;   // the chance a forward voice's breath is heard (the ward's is ~0.1)
@@ -837,12 +842,13 @@ window.KOLOB.Cast = (function () {
       if (singers[id]) return singers[id];
       var m = ward.byId[id], spec = {};
       for (var k in m.voice) spec[k] = m.voice[k];
-      spec.name = "member:" + id; spec.sharedPan = true; spec.pan = m.pew ? m.pew.x : 0;
+      spec.name = "member:" + id; spec.sharedPan = true; spec.sharedThroat = true; spec.pan = m.pew ? m.pew.x : 0;
       if (synth) spec.rand = synth.fork("member:" + id); else spec.seed = 1;
       return (singers[id] = V.singer(spec));
     }
     function pump(ctx, buses, t0, sheet, horizon, pace) {
       var handed = [], max = pace && pace.max || Infinity, urgent = pace && pace.urgent != null ? pace.urgent : -Infinity;
+      var defer = !!(pace && pace.arm != null && V.arm);
       sheet._ci = sheet._ci || 0; sheet._oi = sheet._oi || 0;
       while (sheet._ci < sheet.cues.length && t0 + sheet.cues[sheet._ci].at - LEAD <= horizon) {
         if (handed.length >= max && t0 + sheet.cues[sheet._ci].at - LEAD > urgent) break;
@@ -850,13 +856,15 @@ window.KOLOB.Cast = (function () {
         // a voice heard on its own breathes where a person would; in the
         // ward, only a few are heard to (the voices' own small share)
         voiceOf(c.memberId).sing(ctx, c.bus === "near" ? buses.near : buses.hall, t0 + c.at, c.notes, c.gain,
-                                 { breathBefore: c.breathBefore, pan: c.pan, inhale: c.forward ? FORWARD_INHALE : null });
+                                 { breathBefore: c.breathBefore, pan: c.pan, inhale: c.forward ? FORWARD_INHALE : null, defer: defer });
         handed.push(c);
       }
       while (sheet._oi < sheet.organ.length && t0 + sheet.organ[sheet._oi].at - LEAD <= horizon) {
         var o = sheet.organ[sheet._oi++];
         if (opts.organ) opts.organ(t0 + o.at, o);
       }
+      // the lines about to sound join the room (handed early, joined late)
+      if (defer) V.arm(ctx, pace.arm, pace.now);
       return handed;
     }
     return {

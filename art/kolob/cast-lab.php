@@ -207,10 +207,14 @@ include '../../includes/header.php';
     their speed is a CPU reading. The join meter reads the 3–12 kHz band in the 150 ms around every note join (the hiss the
     owner heard lived there), with the singers' folds silenced as well, so the breath and the consonants can be read alone.
     The phone test plays the hymn in real time with a whole meeting underneath (the app's engine, in the same audio
-    context) and reports whether the audio clock and the pump kept up; the headless driver sets the CPU throttle.</p>
+    context) and reports whether the audio clock and the pump kept up; the headless driver sets the CPU throttle, which
+    slows this page's main thread, not the audio thread. The headroom test measures the audio thread: how many plain
+    probe voices it can still carry alone, under the meeting, and under the meeting and the ward — and so what share a
+    phone four times slower would need.</p>
     <div class="kcl-play">
       <button class="kcl-btn" id="kcl-measure" type="button" disabled>Render &amp; measure the joins</button>
       <button class="kcl-btn" id="kcl-stress" type="button" disabled>Phone test: real time, a meeting underneath (60 s)</button>
+      <button class="kcl-btn" id="kcl-headroom" type="button" disabled>Headroom: the audio thread's share (about 5 min)</button>
     </div>
     <div class="kcl-wrap" id="kcl-report"></div>
     <canvas id="kcl-spec" width="1000" height="260" hidden></canvas>
