@@ -693,9 +693,11 @@ three dialects, playing:
 - the URL rewritten;
 - the spread panel counting sung endings.
 
-**Timing:** a hymn composes in about 100–550 ms in Node, depending on the
-dialect and the seed, the same as round 1. Most of that is repair rounds,
-most often for "not an Earth tune".
+**Timing** (Node, the machine otherwise idle, seeds 100–139): a hymn
+composes in about 58 ms for the Tabernacle, 38 ms for the Sacred Harp and
+25 ms for the Old Way. Some of the batteries above ran in parallel and
+report slower times. Repair rounds are the cost, most often for "not an
+Earth tune".
 
 ## New in the surface (for the integrator)
 
