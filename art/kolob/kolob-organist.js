@@ -1133,7 +1133,10 @@ window.KOLOB.Organist = (function () {
     // drawn, the fills so far (the cap is the hymn's; never two joins
     // running), and whether the meeting's one strange fill is spent
     var st = { reg: undefined, fills: 0, lastFillJoin: -9, joinNo: 0, strangeUsed: organist.ledger.strange >= 1 };
-    function open(kind) { var p = newPlan("hymn", organist, h); p._reg = st.reg; p.piece = kind; p.accompanied = withOrgan; return p; }
+    // (each piece carries the style's hymn level, HYMN_LIFT, as the whole
+    // hymn does in accompany: a piece the meeting plays on its own sits
+    // where the same notes sit in the lab's hymn)
+    function open(kind) { var p = newPlan("hymn", organist, h); p._reg = st.reg; p.piece = kind; p.accompanied = withOrgan; p.liftDb = HYMN_LIFT[style] || 0; return p; }
     function close(p, next) { st.reg = p._reg; p.next = next; return finish(p, next); }
     function strayOf(v) { return clamp(0.3 * v + 0.25 * hymnIndex + (verses === 1 ? 0.3 : 0), 0, 1); }
 
@@ -1313,7 +1316,7 @@ window.KOLOB.Organist = (function () {
     opts = opts || {};
     var H = hymnHands(organist, h, stream, opts), plan = newPlan("hymn", organist, h);
     var verses = H.verses, beatS = H.beatS, lines = verseLinesOf(h), hymnIndex = opts.hymnIndex || 0, t = 0;
-    plan.accompanied = H.accompanied; plan.verses = verses; plan.beatS = r3(beatS); plan.liftDb = H.liftDb;
+    plan.accompanied = H.accompanied; plan.verses = verses; plan.beatS = r3(beatS); plan.liftDb = H.liftDb;   // (absorb takes a piece's notes, not its lift: the whole carries it once)
     // ---- unaccompanied: the ward alone, lines end to end; the organist sits
     if (!H.accompanied) {
       for (var uv = 0; uv < verses; uv++) {

@@ -755,11 +755,13 @@ window.KOLOB = window.KOLOB || {};
   // (where the joint's amen left the organ) to the new key, through a chord
   // the two keys share — its common tone held — the new key's V7, and I
   // (the Victorian leans a 4–3 on the dominant; the improviser now and then
-  // detours by a chromatic mediant). → its length
-  function organistModulates(h, row, P, plan, t0, who) {
+  // detours by a chromatic mediant), at the hymn's own level (org.liftDb:
+  // the style's, as the organist's hands carry it). → its length
+  function organistModulates(h, row, P, plan, t0, who, org) {
     var mp = KOLOB.Organist.modulate(who, { keyMonzo: [0, 0, 0, 0], mode: S.mode }, { keyMonzo: h.keyMonzo, mode: h.mode },
                                      S.hymnStream(S.Meeting.meetingNum(), row.i), { beatS: P.beatS / (plan.tempoMul || 1) });
     if (!mp.phrases.length) return 0;
+    mp.liftDb = org && org.liftDb || 0;
     S.organistPlays(mp, t0, { hymnId: h.id, key: null, modulation: true, style: who.style, alive: function () { return S.Meeting.hands.owns(h.id); } });
     var end = 0; mp.sections.forEach(function (s) { end = Math.max(end, s.end); });
     return end;
@@ -1272,7 +1274,7 @@ window.KOLOB = window.KOLOB || {};
     }
     // the modulation, then the intro: the organ's giving-out, the keying or
     // the pitching
-    if (P.organ && P.pivot) t += org ? organistModulates(h, row, P, plan, t, who) : organModulates(h, P, t);
+    if (P.organ && P.pivot) t += org ? organistModulates(h, row, P, plan, t, who, org) : organModulates(h, P, t);
     var gp = org ? org.giveOut(0) : null;
     if (gp) S.organistPlays(gp, t, tagFor({ givingOut: true, verse: -1 }));
     var intro = piece("intro", t, gp ? { giveOut: gp.next } : null);

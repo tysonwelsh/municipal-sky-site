@@ -17,8 +17,9 @@
 // ward waits for them), the interludes, the amen — and, on some Sundays,
 // the chorale prelude on the day's first hymn. The house's own chords (the
 // voluntaries, the joints' amens, a soft chord in the testimony, a guest's)
-// are the same pipes, on the house registration the rail's knobs set, the
-// swell box opening on each chord as the organist's habit moves it.
+// are the same pipes, on the house registration the organ layer's own
+// parameters set (stops, tremulant, pedal), the swell box opening on each
+// chord as the organist's habit moves it.
 //
 // The old organ is kept whole, with its tremulant mended (request R1), as
 // the owner's A/B (?organ=house) and as the fallback when the pipe organ or
@@ -196,8 +197,8 @@ window.KOLOB = window.KOLOB || {};
   // same chords are the pipes' now, as the chord desk voices them: every
   // voice of the chord an octave down, as before (the organ still lives in
   // the warm low-middle), the bass on the pedal too, on the HOUSE
-  // REGISTRATION the rail's knobs set (stops: the principal ↔ the flutes;
-  // the tremulant; the pedal's bourdon). A pipe speaks when its key goes
+  // REGISTRATION the organ layer's parameters set (stops: the principal ↔
+  // the flutes; the tremulant; the pedal's bourdon). A pipe speaks when its key goes
   // down — it cannot fade in — so the SWELL BOX is how a chord comes and
   // goes: shut as the keys go down, opening over the old organ's attack,
   // shutting over its release before the hands lift; as far as the Sunday's
@@ -275,8 +276,14 @@ window.KOLOB = window.KOLOB || {};
   // his own). So everything the organist plays in a hymn — the walk into its
   // key, the giving-out, the verses, the fills, the interludes, the amen — is
   // lifted by UNDER_WARD_DB, back to where the owner's organ sat under the
-  // singing (handoff r3b-organ-1: ±2 LU, seed by seed). The knob, for the
-  // owner's ear: 0 is the organist lab's level, some 5 dB softer.
+  // singing (handoff r3b-organ-1: ±2 LU, seed by seed). Measured again once
+  // every piece carried its style's own hymn level (HYMN_LIFT, kolob-
+  // organist.js — the Victorian's half a decibel under the plain
+  // organist's, as the lab centres them): the loudest 3 s of the
+  // Victorian's hymns 1.1 LU under the old organ's, the plain organist's
+  // 0.9 — a shade soft of it, as the owner's "pretty loud" asks rather than
+  // over. The knob, for the owner's ear: 0 is the organist lab's level, some
+  // 5 dB softer.
   var UNDER_WARD_DB = 5.0;
   function organistPlays(plan, t0, tag) {
     if (!pipeOn() || !plan || !plan.phrases) return null;
