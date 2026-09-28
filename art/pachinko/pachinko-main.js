@@ -95,6 +95,9 @@
  *     rare(ctx) → reward | false               the rare tier (a hook only)
  *     destroy()
  *
+ * THE EGGS (EGGS.md): nine secrets, each behind one switch in EGGS below;
+ *   events glassknock · moon · twobits · fish · trainwave · forscale.
+ *
  * ?harness=1  no rAF loop: window.__pachinko.harness owns the clock:
  *             {stepTo(t), render(), coin(), request(x), drop(x) (a free
  *             marble, outside the count), play(xs), lode(), setMode(m),

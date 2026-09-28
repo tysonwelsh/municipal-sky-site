@@ -69,6 +69,14 @@
  *                                         alarm: he backs off, arms up. The
  *                                         cave-in telegraph. → {ok, who, tKnock}
  *   part.nightShift()                     who is in the rock during a game
+ *   part.glassKnock()                     THE KNOCK ON THE GLASS (EGGS.md #1): the
+ *                                         lantern man walks up to the glass and
+ *                                         knocks; everyone else plays dead
+ *                                         (S.hush). → {ok, busy()} | {ok:false}.
+ *                                         part.glassReady(), part.glassBusy()
+ *   (the other eggs they act in: the painted moon Absalom puts straight (#2),
+ *   two bits out of the rock (#3), the welcome back (#6), the real moon (#9);
+ *   api.eggs are main's switches, api.visit the visit's once-only state)
  *   part.busy(who)                        is he doing something scripted
  *   api.knockers                          the same part (set at attach)
  *   PachinkoKnockers.live                 the last attached part (the lab)

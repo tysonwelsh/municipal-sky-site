@@ -1164,3 +1164,57 @@ the marble unless holding it, and no page scroll at any size.
   page (a natural game and `force=theft,vanish,cavein`): −26.6 / −26.7
   LUFS (unchanged), true peak −6.6, no clipping; the pile-up of cave-in,
   whistle and near miss peaks −8.4, a theft in the lode −6.7.
+- 2026-09-28 — **The secrets (wave 6b, rc.39–rc.41; the map is `EGGS.md`,
+  the report `local-dev/pachinko-lab/reports/wave6-secrets.md`).** Nine eggs,
+  each behind one switch in `EGGS` at the top of `pachinko-main.js`; the parts
+  read `api.eggs` and `api.visit` (the visit's once-only state), the art
+  `view.eggs`. The one real-clock read is `fullMoonTonight(Date.now())` at
+  mount (HOLLER ROLLER's reckoning, ±12 h); the harness never sees it.
+  - **The knock on the glass** (the headline). Main tries it in the quiet
+    after a game's last marble: `knockWanted()` (EGGS on, not yet this visit,
+    game ≥ 2, no lode this game, `hash01(hashSeed(seed, 1313), 7) < KNOCK_P`
+    0.5), from `KNOCK_AFTER` 0.75 s, waiting up to `KNOCK_WAIT` 3 s for
+    `quietNow()` (every part's `quiet(t)`: mischief has no dark, no lode, no
+    falling cave-in; every marble done) and the knockers' `glassReady()`.
+    `game.knock` holds `gameOver` until the knockers' `glassBusy()` is false,
+    then `KNOCK_BEAT` 0.6 s. The knockers' `glassKnock()` takes Tobias (Old
+    Jory if Tobias isn't at his post): 4 frames still, **turn** to the front
+    (everyone else holds still: `S.hush`, `stillFor(k, t)`, which the freeze
+    checks now all use), 5 frames, 12 steps in on twos growing in the room's
+    perspective (`GK`: eye level glass y 228, vanishing point x 160, s = 1/z,
+    z eased `1 − (1 − 1/4)(1 − (1 − u)^1.5)`, so 1 → 4), arrive 3, the lamp up
+    (`liftHalf` 1, `lift` 6), three knocks 0.375 s apart (wound back 2 frames,
+    the knuckles to the pane 1), the hand open on the glass 4, the stare 5 +
+    head on one side 5 + 4 (a click on the glass while he `listen`s: a nod),
+    the lamp down 4, turn his back, 10 steps out on ones, home. ~11 s. Events
+    `glassknock {what, s, x, y, n}`; flag `pachinko.knocked-on-the-glass`;
+    knuckle prints `S.glassMarks` for the visit.
+  - **The close-up** (`pachinko-art-secrets.js`): painted again at every size
+    by a unit-space painter rasterised at pixel centres (polygons, ellipses,
+    capsules, lunes, a rotate/shift for the waddle, the head's tilt and nod),
+    lit by his own lantern in 6 flat scalar bands (`AMB [.16, .13, .25]`, `KEY
+    [1, .8, .5]`, falloff `1/(1 + (d/8.5)²)`, a cool rim on up-facing edges),
+    the head and barrel shaded away from the lamp with lunes, an outline, a
+    varnish speck in each painted eye from s 2.6. Cached per (who, view, s to
+    0.02, pose, fist, tilt, nod, lamp). His shadow on the rock (albedo, thrown
+    away from his lantern, bigger and softer with s), a patch of shade under
+    his boots, the lantern's haze, the glass's sheen shivers a pixel on each
+    knock. `fx.glassHush` (0..1 with s): the ambient ×(1 − 0.3), the case light
+    ×(1 − 0.25), every lamp but his ×(1 − 0.42) (`L.own`).
+  - **The other eggs:** hung the moon (a tap within 10 px of `decor moon`;
+    a damped swing `ω 2π/1.15, τ 0.85`, kick 3.6 rad/s, settling at ±0.38 rad;
+    Absalom fixes it in ATTRACT from 2.6 s, from the far side), two bits
+    (five taps with onsets 1, ½, ½, 1 beats ±20 %/±30 %, beat 0.14–0.9 s; the
+    answer at +2 and +3 beats, 6 s rest), the fortune fish (a hold of 0.8 s
+    within 9 px of (193, 288); the fish is now always painted live, `A.liveFish`),
+    the back of the card (crayon strokes seen mirrored where `fx.cardLamp`
+    lights the paper), welcome back (the first invitation of a visit with
+    `stats.games > 0`), for scale (`ui.gamesEver ≥ 13`), wave at the train
+    (a tap in glass x 170–222, y 40–58; toots at +0.7/+1.1; 12 s rest), moon
+    nights (Absalom's moon routine 0.22 → 0.4, and to the window). **Cut:**
+    damp powder (the powder box's third marble: its gag landed on top of the
+    shift whistle's own show, and it was clever rather than tender).
+  - **Leftovers:** the old drift's light in the deep rock (y > 300) is r 32,
+    k 1.7, with a trailing glow 0.12 of the route behind; bay 12 is out of the
+    cave-in choices (filtered in mischief: its heap sat under the sticker);
+    the dead troffers stutter on with the lode's wake-up (room art).

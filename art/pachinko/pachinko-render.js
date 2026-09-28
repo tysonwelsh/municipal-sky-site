@@ -933,6 +933,8 @@
     sg.globalCompositeOperation = 'source-over';
     sg.drawImage(mine.albedo, 0, 0);
     drawKinematics(sg, view);
+    // the painted moon on its nail, the red fish (pachinko-art-secrets.js: they can move)
+    secrets(sg, view, 'under');
     // the knockers' kit: ladders, rope ladders, their doors…
     if (A.drawProps) A.drawProps(sg, view, 'back');
     var figs = figuresFor(view), i;

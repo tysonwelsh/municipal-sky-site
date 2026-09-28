@@ -1,8 +1,16 @@
 /* MOTHER LODE — the secrets' art (wave 6b; the map is EGGS.md)
  *
  * What the machine keeps to itself, drawn. Everything here is guarded: a
- * failure costs its layer for the frame, never the view (render.js calls
- * A.drawSecrets(g, view, layer) for 'albedo', 'glass', 'cabinet').
+ * failure costs its layer for the frame, never the view. render.js calls
+ * A.drawSecrets(g, view, layer) for:
+ *   'under'    (albedo, before the crew's shadows) the painted moon on its
+ *              nail (#2), the red fish, Fig. 12 (#4: always painted here)
+ *   'albedo'   (after the shadows) the shadow of the one at the glass (#1)
+ *   'glass'    (lit, before the glass's tint) the one at the glass, close up;
+ *              his knuckle prints and the coal dust off them (#1); the
+ *              painted train's answer (#8)
+ *   'cabinet'  (the paper outside the glass) the crayon through the lit
+ *              legend card (#5); the second man for scale (#7)
  *
  * THE KNOCK ON THE GLASS (EGGS.md #1). One of the crew, close up: the only
  * time any of them is seen from the front. He is the same toy as ever (the
@@ -12,13 +20,15 @@
  * the glass: never a scaled sprite, always whole board pixels. His lantern
  * lights him (a warm key in flat bands, no dither: a painted toy lit by one
  * lamp); the room's purple-black is the fill. His shadow grows on the rock
- * behind him. His knuckles leave coal dust on the inside of the glass.
+ * behind him. His knuckles leave prints on the inside of the glass.
  *   A.closeRig(g)          his joints in his own units (× s from his feet):
  *                          {lantern, fist, capLamp, head}
- *   A.drawCloseKnocker(g, gk, t)   into the glass scene (board px)
+ *   A.drawCloseKnocker(g, gk)   into the glass scene (board px)
  * view.fx.glassKnock = {who, view: front|back, s, x, y (his feet), pose,
- *   lamp 0..1, fist 0|1|2, tilt (degrees), shiver, lantern {x, y}}
- * view.fx.glassMarks = [{x, y, n, seed}]
+ *   lamp 0..1, fist 0|1|2|3, tilt (degrees), nod, shiver, lantern {x, y}}
+ * view.fx.glassMarks = [{x, y, n, seed, t0}]; view.fx.moon = {a, x, y};
+ * view.fx.fish = {t0, rel}; view.fx.train = {t0}; view.fx.cardLamp;
+ * view.ui.gamesEver; view.eggs (main's switches).
  *
  * Deterministic: no Math.random, no Date.
  */
@@ -435,7 +445,8 @@
     if (gk.view !== 'back' && s >= 1.8) {
       var B = body(c), hc = B.hc, dx = lu[0] - hc[0], dy = lu[1] - hc[1], dl = Math.hypot(dx, dy) || 1;
       Pn.rot((gk.tilt || 0) * D2R, 0, B.neckY); Pn.shift(0, gk.nod ? 0.8 : 0);
-      Pn.dot(hc[0] + dx / dl * B.r * 0.62, hc[1] + dy / dl * B.r * 0.62 - 0.4, GLOSS);
+      // (on the crown, toward the lamp's side: a glint low on the face reads as a tooth)
+      Pn.dot(hc[0] + dx / dl * B.r * 0.55, hc[1] - B.r * 0.55, GLOSS);
       // the painted eyes take the light too: a speck of varnish in each
       if (s >= 2.6) { Pn.dot(hc[0] - 1.95 + 0.2, hc[1] - 0.95 - 0.22, '#e8dcc8'); Pn.dot(hc[0] + 1.95 + 0.2, hc[1] - 0.95 - 0.22, '#e8dcc8'); }
       Pn.rot(0); Pn.shift(0, 0);
@@ -682,9 +693,10 @@
   A.drawSecrets = function (g, view, layer) {
     var fx = view.fx || {}, gk = fx.glassKnock;
     var eg = view.eggs || {};
-    if (layer === 'albedo') {
+    if (layer === 'under') {
       if (fx.moon) drawMoon(g, fx.moon);
       drawFish(g, eg.fortuneFish === false ? null : fx.fish, view.t || 0);
+    } else if (layer === 'albedo') {
       if (gk) drawCloseShadow(g, gk);
     } else if (layer === 'glass') {
       if (gk) {
