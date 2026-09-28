@@ -1195,3 +1195,14 @@ style in the real meeting. The owner will hear it in practice and then decide ho
 "either for technical or aesthetic reasons". Crews should still MEASURE the cost (CPU, audio
 thread, nodes) and report it honestly, but do not cut features or voices to meet a phone budget
 in this round.
+
+**For the round-3b engine crews (the ward, organ, styles and form steps): the staff's requests.** From
+handoff/r3b-engrave-1.md. kolob-viz.js already reads these fields.
+1. Add `verses: P.verses` to `verse-start`'s `performance` in kolob-voices-choir.js, so that hymns
+   without an A-men end on a final bar.
+2. Tag the ward's notes with part, hymnId, beat and syllable, as the house choir's are, so the page
+   prints four parts rather than 32 heads.
+3. Tag the organ's giving-out and accompaniment (and the organist's prelude and fills), so the page
+   knows what to print and what not to.
+4. Put the handbells on their own layer. Give the dawn trombones' notes a beat, so they can print
+   with bars.
