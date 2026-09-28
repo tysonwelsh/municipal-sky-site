@@ -1074,3 +1074,65 @@ the marble unless holding it, and no page scroll at any size.
   - **Sim metrics after** (`sim.js metrics 6000`): NaN 0, timeouts 0, median
     3.82 s (the slower tunnels), max 8.00; the 13 2.1 % uniform, 7.8 % at its
     best x; scrip per token novice 10.3, competent 13.6 (unchanged).
+- 2026-09-28 — **The light, and every visual fix (wave 5b, rc.25–rc.37;
+  the visual critic's list, `local-dev/pachinko-lab/reports/wave5b-visual-fixes.md`).**
+  - **One light model** (`pachinko-render.js`). A 2-px grid (160 × 208)
+    is computed first each frame: ambient purple-black by depth
+    (`AMB_TOP [.09,.07,.15]` under the grass → `AMB_BOT [.045,.036,.09]`),
+    the case light over the painted sky (fading by y 84), every lamp's pool,
+    the dark, the vignette. From it, one pass writes three canvases: the
+    lightmap (posterised to `STEPS` 12 on the Bayer grid), the pins' light
+    (never below `FLOOR [.40,.38,.49]` unless the section is dark) and a warm
+    haze round each flame (additive, r 0.42 × the pool). `R.lightAt`,
+    `R.darkAt`/`A.darkAt` and a figure's colour read the same grid, so what
+    the CPU decides and what is drawn always agree. Nothing is allocated per
+    frame by the grid; the falloffs are inlined.
+  - **Pools:** `fall(d) = 0.82(1−d²)² + 0.6·max(0, 1−d/0.24)²` × k. Lamps hung
+    in a gallery are ellipses (ry 0.62) and fill their own gallery
+    (× 0.5 + 0.8 × a per-cell gallery mask): the galleries are lit slots in
+    dark rock. Past 1, the light over-exposes: albedo × min(0.55, 0.8(L−1))
+    is added back (a pool's hot heart). The gallery walls are worked coal
+    that takes the light (`BACK #1a1418…#5e4c4a`); limestone darkened 30%.
+  - **Museum pin spots:** a crisp cool disc (`#dfe6ff`, flat to 0.74 r, ramp
+    to 1), sized per specimen (`SPOT`) and widened to take in its tag.
+  - **Figures** are drawn after the light, each in ONE flat colour: the grid
+    at his chest (× 1.08, + a hair of room), quantised to 1/16; their cast
+    shadows stay in the albedo. Flames stay emissive. `A.drawFigureShadow`,
+    `A.drawFigureBody(g, fig, tint)`, `A.figureChest(fig, out)`,
+    `A.figureLamp(fig, out)` (the offset cached with the pose's sprite).
+  - **Lamps out:** each cell's region's dark, box-blurred twice (radius 3
+    cells): a ~10 px soft edge, no seams between a section's regions. The
+    dark multiplies the light (and the haze) after the pools, so a
+    neighbour's lamp spills over its edge; every lamp in it (the crew's and
+    the extras too) is snuffed at D ≥ 0.85, scaled by 1 − D below. Glows,
+    flames, glints, sparks and markers skip D ≥ 0.85.
+  - **The mother lode** (the part's clock, `fx.mis.lode.u`): the held breath
+    (0–0.45) takes the ambient ×0.3, the case light ×0.35, the pin floor
+    ×0.5, the crew's lamps ×0.15 and every extra lamp above y 355 ×0.2 (the
+    cup and the fuse stay). The flare: a warm ambient lift (0.26/0.19/0.11 ×
+    lift, easing out over 2.2 s), every pool ×2 for 0.4 s easing over 1.6 s,
+    a flood from the crack's origin (r 150–220, k 1.35 × lift), and every
+    gallery's bulbs (every 22 px along each roof). Measured on the 1:1
+    cabinet (my bands): the upper board 16.1 → 7.4 in the held breath
+    (−54%; rc.22 −22%) → 74.9 at the flare (×4.6; rc.22 +27%); the deep
+    22.6 → 14.4 → 105.1.
+  - **The vein** (`pachinko-art-mischief.js`): after the white-hot break
+    (0.16 s a column) the crack is a baked texture of quartz, dark vugs and
+    faceted gold nuggets (lit facet up-left, dark down-right, a black seam
+    round each), each glinting on its own phase; `wmax` 3–10 px, settling
+    by +3.6 to `ws` = wmax/2 (2–5 px), painted into the albedo and lit by
+    its own ember lamps (every 24 px, k 0.6) until the next game. The crack
+    is drawn under the figures and the pins (no pin is ever shown displaced).
+  - **Paper outside the glass** is lit by the room: `R.paperLight` 0.78 in
+    attract → 0.60 dived in (lifted by the flare); the cards' overlay is a
+    cached dimmed copy, the counters' paper uses `A.paperK`. The legend card
+    162 → 133 (attract) → 93 (play) mean luminance; the board 39 → 31.
+  - **The build is cached** (`A.paintMine`): the painted sky, strata,
+    galleries, ground, vein, specimens and sills are baked once a visit
+    (keyed by the floors, faces and decor); the shafts, bays and rails keyed
+    by their own geometry; pins are cached sprites; the overlay and the light
+    model's cells cached. `R.build` 42.5 ms → 2.3 ms (a nudge) / 3.1 ms (the
+    brace). Frames (1440×900@2, `critic/perf-flush.js`): draw p50 5.1–6.4 ms,
+    TOCK frames 5.4–12 ms (were 54–71), none over 16.7 ms but the first.
+  - **Crispness:** 14,873 blocks at ×4 in PLAY, 0 non-uniform, 0 different
+    from the 1:1 cabinet.
