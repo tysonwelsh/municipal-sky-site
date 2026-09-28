@@ -610,3 +610,38 @@ any of them directly (`lab4.html?dump=…&t=…`, below).
    by `STACK` (0.2 sp), the way a chord stands. The critic's frame (seed
    11 at 5:55.5): the alto at 1.91 sp, the soprano beside it at 3.54 sp,
    no overlap.
+
+### One call for you: the 6/8 hymn (as in round 2)
+
+In seed 37's gospel hymn in 6/8, the lead sings dotted-eighth-and-sixteenth
+pairs. At 60 px/s a sixteenth sits 0.8 of a staff space before the next
+note at 860 px (1.0 at 390 px), and a head is 1.3 to 1.4 staff spaces wide.
+Within the 2.4 limit the page cannot set such pairs apart. At 860 px, 26 pairs
+of heads still touch and 16 of the hymn's 37 bars touch ink (at 390 px:
+2 and 8). Round 2 had the same at 860 px (27 and 16), plus 86 notes that
+jumped. **This is the page's density, not the placing.** In the lab, with
+the limit removed, keeping the heads apart made the notes fall up to 18.7
+staff spaces behind the sound at 860 px (3.4 seconds, far off the plate's
+right edge), and 23 pairs still touched. At 390 px it took 8.3 staff
+spaces (1.2 seconds). The ways out are the same as in round 2: scroll quick
+hymns faster (for example, scale the rate to the hymn's beat), or accept it.
+
+### Known issues (round 3; the round 2 list stands otherwise)
+
+- **A second's upper head can be struck just past the plate's edge.**
+  When a chord already stands at the limit, the upper voice's head goes one
+  head further. The engraving point is 3.2 staff spaces from the plate's
+  right edge, so a head set more than about 2.5 past its time is partly off
+  the plate for its first fifth of a second, and then scrolls on whole. It
+  does not move on the page. This happens once in the eleven meetings (seed
+  11's critic's frame, at 3.54 sp at 860 px and 3.46 sp at 390 px). The
+  other choice there is a head on a head.
+- **Where the room runs out, a bar keeps its air in proportion.** One bar
+  in seed 12 stands 0.22 sp from the ink before it (0.23 at 390 px), against
+  0.35 wanted. It does not touch.
+- **Rests are not moved** after a pushed note. None touches a note in these
+  meetings, but the lab's sample is small (13 rests; psalm tunes' fuges).
+- Round 2's table labelled three meetings wrongly. From the dumps: seed 11
+  is a psalm tune and a Tabernacle hymn, both 3/4; seed 21 is two psalm
+  tunes in 3/4; seed 5 is Sacred Harp 4/4 and a Shaker song in 3/4. The
+  numbers below use these.
