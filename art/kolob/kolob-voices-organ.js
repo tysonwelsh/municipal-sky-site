@@ -95,6 +95,86 @@ window.KOLOB = window.KOLOB || {};
     for (var pv = 0; pv < nTones; pv++) emitNote("organ", chord.freqs[pv] * 0.5, t, dur, organTag(chord, nTones === 4 ? ORGAN_PART[pv] : null));
     if (pedal > 0.05) emitNote("organ", chord.freqs[0] * 0.25, t, dur, organTag(chord, "pedal"));
   }
+  // THE ORGAN UNDER A COMPOSED HYMN (round 3): one part of the Score played
+  // as written — legato, as an organist doubles a hymn's voices, each pipe
+  // speaking at the pitch the ward sings (the 8′ principal, a 4′ above it,
+  // and, for "full", the twelfth and fifteenth), the bass with a 16′ pedal
+  // under it. A new pitch is taken almost at once (a pipe has no glide: a
+  // few milliseconds' ramp so the oscillator does not click); a repeated
+  // note is struck again, the key let up for an instant. Every pipe that
+  // speaks is reported, with the tag the caller gives each note (its part,
+  // its hymn, the beat, its monzo and the hymn's key).
+  //   notes: [{at, dur, f, syl, tag}] (at: s from t); opts: {reg, pedal}
+  function organPartLine(t, notes, gainMul, opts) {
+    opts = opts || {};
+    if (!notes || !notes.length) return 0;
+    var stops = getLayerParam("organ", "stops", 0.5);
+    var full = opts.reg === "full";
+    var RANKS = full ? [1, 2, 3, 4] : [1, 2];
+    var P = [1, 0.48, 0.22, 0.1], FL = [1, 0.65, 0.09, 0.32];
+    var dest = panAt("organ", 0);
+    var master = S.ctx.createGain();
+    master.connect(dest);
+    var t0 = t + notes[0].at, end = t + notes[notes.length - 1].at + notes[notes.length - 1].dur;
+    var oscs = [];
+    RANKS.forEach(function (rk, r) {
+      var g = P[r] * (1 - stops) + FL[r] * stops;
+      if (g < 0.05) return;
+      var o = S.ctx.createOscillator();
+      o.type = "sine";
+      var og = S.ctx.createGain(); og.gain.setValueAtTime(g * 0.075 * (full ? 1.15 : 1), t0);
+      o.connect(og); og.connect(master);
+      oscs.push({ o: o, mul: rk });
+    });
+    if (opts.pedal) {
+      var ped = S.ctx.createOscillator();
+      ped.type = "sine";
+      var pg = S.ctx.createGain(); pg.gain.setValueAtTime(getLayerParam("organ", "pedal", 0.6) * 0.07, t0);
+      ped.connect(pg); pg.connect(master);
+      oscs.push({ o: ped, mul: 0.5 });
+    }
+    // the pitches, note by note
+    oscs.forEach(function (x) { x.o.frequency.setValueAtTime(notes[0].f * x.mul, t0 - 0.01); });
+    var g = master.gain, peak = (gainMul || 1) * 0.5;
+    g.setValueAtTime(0, t0 - 0.04);                            // (silent before the pipes start: a gain is 1 until its first event)
+    g.setValueAtTime(0, t0 - 0.01);
+    g.linearRampToValueAtTime(peak, t0 + 0.05);
+    var gT = t0 + 0.05;
+    for (var i = 1; i < notes.length; i++) {
+      var n = notes[i], p = notes[i - 1], c = t + n.at;
+      if (Math.abs(n.f - p.f) > 0.01) {
+        oscs.forEach(function (x) { x.o.frequency.setValueAtTime(p.f * x.mul, c - 0.006); x.o.frequency.linearRampToValueAtTime(n.f * x.mul, c + 0.006); });
+      } else if (n.syl && c - 0.05 > gT) {
+        // the key let up and pressed again
+        g.setValueAtTime(peak, c - 0.05);
+        g.linearRampToValueAtTime(peak * 0.25, c - 0.012);
+        g.linearRampToValueAtTime(peak, c + 0.02);
+        gT = c + 0.02;
+      }
+      // (a rest in the part: the key let up for its length)
+      var gapS = c - (t + p.at + p.dur);
+      if (gapS > 0.08 && c - gapS > gT) {
+        g.setValueAtTime(peak, t + p.at + p.dur);
+        g.linearRampToValueAtTime(0, t + p.at + p.dur + 0.04);
+        g.setValueAtTime(0, c - 0.03);
+        g.linearRampToValueAtTime(peak, c + 0.02);
+        gT = c + 0.02;
+      }
+    }
+    g.setValueAtTime(peak, Math.max(gT + 0.005, end - 0.01));
+    g.linearRampToValueAtTime(0, end + 0.18);
+    oscs.forEach(function (x) { x.o.start(t0 - 0.02); x.o.stop(end + 0.3); });
+    notes.forEach(function (n) {
+      emitNote("organ", n.f, t + n.at, n.dur, n.tag || null);
+      if (opts.pedal) {
+        var pt = {}; for (var k in (n.tag || {})) pt[k] = n.tag[k];
+        pt.part = "pedal";
+        if (pt.monzo) pt.monzo = [pt.monzo[0] - 1, pt.monzo[1], pt.monzo[2], pt.monzo[3] || 0];
+        emitNote("organ", n.f * 0.5, t + n.at, n.dur, pt);
+      }
+    });
+    return end - t;
+  }
   var ORGAN_PART = ["B", "T", "A", "S"];
   function organTag(chord, part) { var x = { part: part }; if (chord.id != null) x.chord = chord.id; return x; }
   // The organist's turn, at scheduled time t (the organ's lane on the clock);
@@ -158,6 +238,7 @@ window.KOLOB = window.KOLOB || {};
   // LENT — what this room shares with the rest of the house (KOLOB._s)
   // ==========================================================================
   S.organChord = organChord;
+  S.organPartLine = organPartLine;
   S.organCycle = organCycle;
   (KOLOB._rooms = KOLOB._rooms || {})["kolob-voices-organ.js"] = true;   // the load guard's roll call
 })();

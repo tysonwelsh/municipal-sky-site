@@ -658,6 +658,9 @@ window.KOLOB = window.KOLOB || {};
       if (type === "doxology") climaxReprised = false;
     }
     function theme() { return working.theme; }
+    // the day's other gestures (round 3: the day's hymnal seeds each hymn's
+    // first line from one of them — a copy of the list, the motifs as drawn)
+    function subs() { return working.subs.slice(); }
     function anyWorking(mo, R) {
       // under the withholding, casual callers never receive the raw theme
       if (mo.cumulative && !mo.assemblyFired) {
@@ -668,7 +671,7 @@ window.KOLOB = window.KOLOB || {};
     }
 
     return {
-      newMeeting: newMeeting, onSection: onSection, theme: theme, anyWorking: anyWorking,
+      newMeeting: newMeeting, onSection: onSection, theme: theme, subs: subs, anyWorking: anyWorking,
       request: request, post: post, claim: claim, overdueFor: overdueFor, pendingLineOut: pendingLineOut,
       decompose: decompose, develop: develop, setLog: setLog,
       stats: function () {
