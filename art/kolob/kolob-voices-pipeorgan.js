@@ -37,9 +37,17 @@
 //    pipe briefly overblowing. An open pipe (the principal) spits at its
 //    octave; a stopped pipe (the wood flutes, the bourdon) at its twelfth,
 //    since a stopped pipe has no even harmonics to overblow to. It is a short
-//    band of the shared noise buffer, 20–50 ms long, about 20 dB under the
+//    band of the shared noise buffer, 20–50 ms long, about 25 dB under the
 //    tone: heard as the pipe's consonant, never as a hiss. Flutes chiff more
-//    than principals; reeds do not chiff at all.
+//    than principals; reeds do not chiff at all. And only a pipe that speaks
+//    out of silence is heard to spit: played legato, its breath is masked
+//    (round 3 — see CHIFF_LEGATO; the owner heard the old chiff, full on
+//    every key of every chord, as "a breath, or a brushing sound, in between
+//    the notes when the hymns are being sung").
+//  · THE TOUCH (round 3): one pipe per key. A note that lands on a key
+//    already down (a unison between parts, a note written twice, a repeat
+//    not lifted) holds that key on; it never speaks a second pipe over the
+//    first. To strike again, lift first.
 //  · C and C♯ SIDES: pipes stand on two chests, left and right, alternating
 //    by semitone — so a line walks gently across the case. Two panners for
 //    the whole organ, not one per note.
@@ -65,14 +73,25 @@
 //
 // Public surface: KOLOB.VoicesOrgan.create(ctx, destination, opts) → organ
 //   opts: { gain (1), swell (0.8), wind (0–1, 1 = the default sag; 0 steady),
-//           rand (a PJ2.Rand stream, "synth:organ") | seed, t0 }
-//   organ.play(t, notes, registration)      notes: [{f, dur, at?, v?, pedal?}]
+//           rand (a PJ2.Rand stream, "synth:organ") | seed, t0,
+//           chiff (1: the breath's size; 0 none — a lab's A/B), legatoChiff }
+//   organ.play(t, notes, registration, {texture})
+//                                    notes: [{f, dur, at?, v?, pedal?, pedalOnly?}]
+//     texture: the voices the music carries — fixes the level law for the
+//     call, so a voice moving alone is no louder than its chord
 //   organ.chord(t, freqs, dur, registration, {pedal: true, v})
 //   organ.setSwell(expression 0..1, t, rampS)
-//   organ.stats() → { standing, created, peakLive }
-//   KOLOB.VoicesOrgan.REGISTRATIONS (frozen) / STOPS / resolve(registration)
-//     resolve() always returns a fresh object; an unknown name warns once
-//     and draws "hymn principal".
+//   organ.dispose(t)                 the tremulant's motor and the wind stop at t
+//   organ.stats() → { standing, created, peakLive, until }   (kept as it goes)
+//   KOLOB.VoicesOrgan.REGISTRATIONS (frozen) / STOPS / resolve(registration) / CHIFF
+//     resolve() always returns a fresh object; an unknown name, or a stop
+//     misspelt in an object, warns once (a name draws "hymn principal").
+//
+// Round 3 (the organist's crew): the reed's release no longer snaps (the
+// anchor that cut a blooming trumpet down 3–13 % in one sample on short
+// notes is gone); the touch; the legato chiff; dispose(); stats kept as they
+// go; the misspelt-stop warning; texture. The organist (kolob-organist.js)
+// plays this organ; organist-lab.php hears and measures it.
 // ============================================================================
 
 window.KOLOB = window.KOLOB || {};
@@ -136,7 +155,12 @@ window.KOLOB.VoicesOrgan = (function () {
       });
       return o;
     }
-    for (var k in src) if (Object.prototype.hasOwnProperty.call(src, k)) o[k] = src[k];
+    // an object's keys are stops, or the two words a registration may carry;
+    // a misspelt stop ({principle8: 1}) is named once, not played as silence
+    for (var k in src) if (Object.prototype.hasOwnProperty.call(src, k)) {
+      if (!STOPS[k] && k !== "trem" && k !== "swell") warnOnce("stop:" + k, "KOLOB.VoicesOrgan: no stop named “" + k + "” — ignored");
+      o[k] = src[k];
+    }
     return o;
   }
   function sigOf(reg, keys) { return keys.map(function (k) { return k + (reg[k] || 0).toFixed(2); }).join(","); }
@@ -177,16 +201,45 @@ window.KOLOB.VoicesOrgan = (function () {
   // the old one's layer, not a louder instrument in its chair.
   var KEY_LEVEL = 0.0695;
   // the chiff's level against a key, and its time constants (s): a flue
-  // pipe's consonant is 20–50 ms long and ~20 dB under the tone it starts
-  var CHIFF_LEVEL = 1.0;
+  // pipe's consonant is 20–50 ms long and ~25 dB under the tone it starts
+  // (round 3: 1.0 → 0.55, −5 dB — the owner's "breath between the notes")
+  var CHIFF_LEVEL = 0.55;
+  // …but only a pipe that speaks OUT OF SILENCE is heard to spit. Played
+  // legato — another key still down, or let go a moment ago — the wind is
+  // already moving in the chest and the new pipe's breath is masked by the
+  // ones sounding; it speaks almost clean. Round 3: under a hymn, every
+  // moving part used to cough at full strength on every beat, and the owner
+  // heard it as "a breath, or a brushing sound, in between the notes when
+  // the hymns are being sung". The legato attack keeps a fifth of it
+  // (−14 dB); the first chord out of real silence keeps it all. A quarter
+  // second of lift — the ward's breath at a line's end — is not silence:
+  // the wind is still up in the chest, and the next chord speaks legato.
+  var CHIFF_LEGATO = 0.2;
+  var LEGATO_S = 0.25;                 // a key let go this recently still counts as "down"
 
   // ---- create -------------------------------------------------------------
   function create(ctx, destination, opts) {
     opts = opts || {};
     var R = streamOf(opts);
-    var created = 0, spans = [], standing = 0;
-    function count(n, t0, t1) { created += n; spans.push([t0, t1, n]); }
+    var created = 0, standing = 0;
+    // the stats are kept as they go (round 3): the spans still sounding, the
+    // peak and the last stop — so a meeting-long instance never sorts an
+    // ever-growing history on every stats() call (wave-1 open issue)
+    var live = [], liveN = 0, peakN = 0, untilT = 0;
+    function count(n, t0, t1) {
+      created += n;
+      if (t1 > untilT) untilT = t1;
+      // plays arrive in (nearly) time order: what ended before this one
+      // began has left the case
+      live = live.filter(function (s) { if (s[0] > t0) return true; liveN -= s[1]; return false; });
+      live.push([t1, n]); liveN += n;
+      if (liveN > peakN) peakN = liveN;
+    }
     var t0 = opts.t0 != null ? opts.t0 : 0;           // when the standing nodes wake (scheduled, not read)
+    // the breath's size (a lab's A/B: 0 is no chiff at all), and how much of
+    // it a legato key keeps
+    var chiffMul = opts.chiff != null ? Math.max(0, opts.chiff) : 1;
+    var legatoChiff = opts.legatoChiff != null ? opts.legatoChiff : CHIFF_LEGATO;
     var windDepth = opts.wind != null ? Math.max(0, opts.wind) : 1;
 
     // standing graph:  sideL/sideR → manual → trem → windGain → swellLP → swellGain → out
@@ -331,6 +384,8 @@ window.KOLOB.VoicesOrgan = (function () {
     // for a stopped one), broad enough to read as breath, pitched enough to
     // read as the pipe's own
     function chiff(t, f, amt, dest, harmonic, tau) {
+      var off = R.rnd(0, 1.7);                     // thrown every time, so a lab's A/B stays aligned
+      amt *= chiffMul;
       if (amt < 0.004) return 0;
       var fc = Math.min(4800, Math.max(500, f * harmonic));
       // a constant-Q band passes more noise the higher it sits; level it so
@@ -344,37 +399,58 @@ window.KOLOB.VoicesOrgan = (function () {
       g.gain.linearRampToValueAtTime(amt, t + 0.006);
       g.gain.setTargetAtTime(0, t + 0.014, tau);
       src.connect(bp); bp.connect(g); g.connect(dest);
-      src.start(t, R.rnd(0, 1.7)); src.stop(t + 0.014 + tau * 8);
+      src.start(t, off); src.stop(t + 0.014 + tau * 8);
       return 3;
     }
-    // a pipe's gain envelope: speech, hold, release (never a step)
+    // a pipe's gain envelope: speech, hold, release (never a step). The
+    // release is a setTarget from WHEREVER the gain stands when it begins:
+    // no anchor. (Round 3 — the wave-1 critic's reed click: the old anchor,
+    // setValueAtTime(lv, rel), snapped a reed that was still blooming down to
+    // its level, 3–13 % in one sample, on every note shorter than ~0.12 s —
+    // up to 27 dB of spray above 4 kHz on the trumpet. The bloom's own
+    // setTarget now runs on until the release takes over from its value.)
     function envelope(g, t, atk, lv, rel, tau, over) {
       g.gain.setValueAtTime(0, t);
       if (over) {                                   // reeds speak with a small bloom
         g.gain.linearRampToValueAtTime(lv * over, t + atk);
         g.gain.setTargetAtTime(lv, t + atk, 0.05);
       } else g.gain.linearRampToValueAtTime(lv, t + atk);
-      g.gain.setValueAtTime(lv, Math.max(t + atk + 0.01, rel));
-      g.gain.setTargetAtTime(0, Math.max(t + atk + 0.01, rel), tau);
+      var r = Math.max(t + atk + 0.01, rel);
+      g.gain.setTargetAtTime(0, r, tau);
+      return { g: g, rel: r, tau: tau };
+    }
+    // a key held longer than first written (the same key struck again while
+    // it is still down: the finger simply stays): the release moves, the
+    // pipes play on. Oscillators accept a later stop() until they have ended.
+    function holdLonger(k, rel) {
+      k.envs.forEach(function (e) {
+        e.g.gain.cancelScheduledValues(e.rel);
+        e.g.gain.setTargetAtTime(0, rel, e.tau);
+        e.rel = rel;
+      });
+      k.oscs.forEach(function (o) { try { o.stop(rel + 0.4); } catch (x) {} });
+      k.rel = rel;
     }
 
-    // one key at 8′ pitch f — every drawn stop on it
-    function key(t, f, dur, reg, v, pedal, windOn) {
-      var n = 0, rel = t + dur, tEnd = rel + 0.4;
+    // one key at 8′ pitch f — every drawn stop on it. → the key's record
+    // { n (nodes built), envs, oscs, rel } (the touch below may hold it longer)
+    function key(t, f, dur, reg, v, pedal, windOn, legato) {
+      var n = 0, rel = t + dur, tEnd = rel + 0.4, envs = [], oscs = [];
+      var ck = legato ? legatoChiff : 1;             // the breath: out of silence, or masked
       if (pedal) {
-        var bl = reg.bourdon16 || 0; if (bl <= 0) return 0;
+        var bl = reg.bourdon16 || 0; if (bl <= 0) return null;
         var fp = f / 2 >= 38 ? f / 2 : f;           // the 16′ an octave under, unless that is below the floor
         if (!waveCache.bourdon) {
           var acc = {}; STOPS.bourdon16.harm.forEach(function (p) { acc[p[0]] = p[1]; });
           waveCache.bourdon = makeWave(acc);
         }
         var gp = ctx.createGain(); gp.connect(pedalBus);
-        pipeOsc(waveCache.bourdon, fp, t, tEnd, gp, false, windOn);
-        envelope(gp, t, 0.07, KEY_LEVEL * bl * STOPS.bourdon16.level * v, rel, 0.06);
+        oscs.push(pipeOsc(waveCache.bourdon, fp, t, tEnd, gp, false, windOn));
+        envs.push(envelope(gp, t, 0.07, KEY_LEVEL * bl * STOPS.bourdon16.level * v, rel, 0.06));
         // the stopped 16′ coughs at its twelfth, softly — a big pipe's breath
-        n += 2 + chiff(t, fp, 0.35 * CHIFF_LEVEL * KEY_LEVEL * bl * STOPS.bourdon16.chiff * v, pedalBus, 3, 0.03);
+        n += 2 + chiff(t, fp, ck * 0.35 * CHIFF_LEVEL * KEY_LEVEL * bl * STOPS.bourdon16.chiff * v, pedalBus, 3, 0.03);
         count(n, t, tEnd);
-        return n;
+        return { n: n, envs: envs, oscs: oscs, rel: envs[0].rel };
       }
       var tremOn = (reg.trem || 0) > 0.02;
       var dest = sideOf(f);
@@ -383,26 +459,27 @@ window.KOLOB.VoicesOrgan = (function () {
       var w = flueWaves(reg, f);
       if (w.found || w.upper) {
         var g = ctx.createGain(); g.connect(dest); n++;
-        if (w.found) { pipeOsc(w.found, f, t, tEnd, g, tremOn, windOn); n++; }
-        if (w.upper) { pipeOsc(w.upper, f * (1 + R.rnd(0.0003, 0.0008)), t, tEnd, g, tremOn, windOn); n++; }
-        envelope(g, t, atk, KEY_LEVEL * v, rel, 0.035);
+        if (w.found) { oscs.push(pipeOsc(w.found, f, t, tEnd, g, tremOn, windOn)); n++; }
+        if (w.upper) { oscs.push(pipeOsc(w.upper, f * (1 + R.rnd(0.0003, 0.0008)), t, tEnd, g, tremOn, windOn)); n++; }
+        envs.push(envelope(g, t, atk, KEY_LEVEL * v, rel, 0.035));
         // open pipes (the principal) spit at the octave, stopped flutes at
         // the twelfth, and a little longer; a reed drawn over them masks the
         // breath, so it thins under the trumpet
         var open = (reg.principal8 || 0) > 0;
         var ch = w.chiff * (1 - 0.6 * Math.min(1, reg.trumpet8 || 0)) * (open ? 1 : 1.4);
-        n += chiff(t, f, CHIFF_LEVEL * KEY_LEVEL * ch * v, dest, open ? 2 : 3, open ? 0.016 : 0.022);
+        n += chiff(t, f, ck * CHIFF_LEVEL * KEY_LEVEL * ch * v, dest, open ? 2 : 3, open ? 0.016 : 0.022);
       }
       ["trumpet8", "vox8"].forEach(function (s) {
         var lv = reg[s] || 0; if (lv <= 0) return;
         var kind = STOPS[s].reed;
         var gr = ctx.createGain(); gr.connect(dest);
-        pipeOsc(reedWave(kind, f), f, t, tEnd, gr, tremOn, windOn);
-        envelope(gr, t, kind === "trumpet" ? 0.016 : 0.028, KEY_LEVEL * lv * STOPS[s].level * v, rel, 0.03, kind === "trumpet" ? 1.25 : 1.1);
+        oscs.push(pipeOsc(reedWave(kind, f), f, t, tEnd, gr, tremOn, windOn));
+        envs.push(envelope(gr, t, kind === "trumpet" ? 0.016 : 0.028, KEY_LEVEL * lv * STOPS[s].level * v, rel, 0.03, kind === "trumpet" ? 1.25 : 1.1));
         n += 2;
       });
+      if (!envs.length) return null;
       count(n, t, tEnd);
-      return n;
+      return { n: n, envs: envs, oscs: oscs, rel: envs[0].rel };
     }
 
     // ---- the wind ---------------------------------------------------------
@@ -450,11 +527,43 @@ window.KOLOB.VoicesOrgan = (function () {
       tremPitch.gain.setTargetAtTime(depth * 7, t, 0.08);      // ±7 cents
     }
 
-    // play(t, notes, registration): notes = [{f, dur, at?, v?, pedal?}]
+    // THE TOUCH (round 3). An organ has one pipe per key per stop, and a key
+    // that is already down cannot be struck again: the finger stays. So a
+    // note that lands on a key still sounding on the same registration — a
+    // unison between two parts, a common tone written twice, a repeated note
+    // played without lifting — sounds nothing new: the key is held on to the
+    // later of the two releases. (Before, the pipe spoke twice over itself:
+    // two oscillators on one pitch with unrelated phases, a flutter and a
+    // second chiff at every such join.) To re-strike, a player lifts first:
+    // a note that begins more than 5 ms after the key's release speaks again.
+    // A key that speaks while the hands are already down speaks legato, its
+    // breath masked (CHIFF_LEGATO); the first chord out of silence chiffs.
+    var held = [];                                  // {sig, f, t, k}: keys sounding
+    var lastT = -1e9;
+    function heldAt(sig, f, tt) {
+      for (var i = held.length - 1; i >= 0; i--) {
+        var h = held[i];
+        if (h.sig === sig && h.t <= tt + 1e-6 && h.k.rel >= tt - 0.005 && Math.abs(h.f / f - 1) < 0.002) return h;
+      }
+      return null;
+    }
+    function handsDown(pedal, tt) {
+      for (var i = held.length - 1; i >= 0; i--) {
+        var h = held[i];
+        if (!!h.pedal === !!pedal && h.t < tt - 1e-4 && h.k.rel > tt - LEGATO_S) return true;
+      }
+      return false;
+    }
+    // play(t, notes, registration, o): notes = [{f, dur, at?, v?, pedal?, pedalOnly?}]
     // Chords are notes sharing an `at`; lines are notes walking in `at`.
-    function play(t, notes, registration) {
+    // o.texture (round 3): the number of voices the music carries. Given, it
+    // fixes the level law for the whole call (texture^−0.3 on every key), so
+    // an inner voice moving alone is no louder than the chord it moves in;
+    // left out, each onset is levelled by how many keys it puts down.
+    function play(t, notes, registration, o) {
       var reg = resolve(registration);
       if (!notes || !notes.length) return 0;
+      o = o || {};
       // the reservoir gives only so much: every stop adds, but a big
       // registration is not the plain sum of its ranks
       var S = 0; for (var sk in STOPS) if (sk !== "bourdon16") S += (reg[sk] || 0) * STOPS[sk].level;
@@ -462,20 +571,32 @@ window.KOLOB.VoicesOrgan = (function () {
       // only a registration that can draw the wind down is wired to it
       var windOn = !!wind && load(reg, 4) > 1.6;
       tremTo(reg.trem || 0, t);
+      var sig = sigOf(reg, Object.keys(STOPS).concat(["trem"])), psig = "P" + (reg.bourdon16 || 0).toFixed(2);
+      var fixedV = o.texture ? Math.pow(Math.max(1, o.texture), -0.3) : 0;
       var groups = {}, n = 0;
       notes.forEach(function (nt) { var k = (nt.at || 0).toFixed(3); (groups[k] = groups[k] || []).push(nt); });
       Object.keys(groups).sort(function (x, y) { return x - y; }).forEach(function (k) {
         var g = groups[k], tt = t + (+k);
+        if (tt > lastT) lastT = tt;
         var fresh = newKeys(tt, g.map(function (nt) { return nt.f; }));
         if (windOn && fresh > 0) sag(tt, load(reg, fresh) - 1.6);
-        var vScale = Math.pow(g.length, -0.3);   // more keys, louder — but not linearly
+        var vScale = fixedV || Math.pow(g.length, -0.3);   // more keys, louder — but not linearly
+        var legM = handsDown(false, tt), legP = handsDown(true, tt);
         g.forEach(function (nt) {
-          var v = (nt.v != null ? nt.v : 1) * vScale;
-          if (!nt.pedalOnly) n += key(tt, nt.f, nt.dur, reg, v * regScale, false, windOn);
-          if (nt.pedal) n += key(tt, nt.f, nt.dur, reg, (nt.v != null ? nt.v : 1), true, windOn);
-          down.push({ f: nt.f, until: tt + nt.dur });
+          var v = (nt.v != null ? nt.v : 1) * vScale, end = tt + nt.dur, h, kr;
+          if (!nt.pedalOnly) {
+            if ((h = heldAt(sig, nt.f, tt))) { if (end > h.k.rel) holdLonger(h.k, end); }
+            else if ((kr = key(tt, nt.f, nt.dur, reg, v * regScale, false, windOn, legM))) { n += kr.n; held.push({ sig: sig, f: nt.f, t: tt, k: kr }); }
+          }
+          if (nt.pedal) {
+            if ((h = heldAt(psig, nt.f, tt))) { if (end > h.k.rel) holdLonger(h.k, end); }
+            else if ((kr = key(tt, nt.f, nt.dur, reg, (nt.v != null ? nt.v : 1), true, windOn, legP))) { n += kr.n; held.push({ sig: psig, f: nt.f, t: tt, k: kr, pedal: true }); }
+          }
+          down.push({ f: nt.f, until: end });
         });
       });
+      // the keys long let go leave the list (kept small for a meeting-long organ)
+      if (held.length > 192) held = held.filter(function (h) { return h.k.rel > lastT - 8; });
       return n;
     }
     // chord(t, freqs, dur, registration, {pedal, v}): the bass doubled in the pedal
@@ -488,24 +609,32 @@ window.KOLOB.VoicesOrgan = (function () {
       }), registration);
     }
 
+    // dispose(t): the organ is shut at scheduled time t — the tremulant's
+    // motor and the wind stop, and the case leaves the graph once they have
+    // (wave-1 open issue: every organ built left two sources running for
+    // ever). Without t it is shut at once.
+    var disposed = false;
+    function dispose(t) {
+      if (disposed) return;
+      disposed = true;
+      var tt = t != null ? t : 0;
+      tremLfo.onended = function () { try { out.disconnect(); } catch (e) {} };
+      try { tremLfo.stop(tt); } catch (e) {}
+      if (wind) { try { wind.stop(tt); } catch (e2) {} }
+    }
+
     return {
       out: out,
       play: play,
       chord: chord,
       setSwell: setSwell,
       swell: function () { return swellNow; },
-      stats: function () { return report(); },
+      dispose: dispose,
+      stats: function () { return { standing: standing, created: created, peakLive: peakN + standing, until: untilT }; },
     };
-
-    function report() {
-      var ev = [];
-      spans.forEach(function (s) { ev.push([s[0], s[2]], [s[1], -s[2]]); });
-      ev.sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; });
-      var live = 0, peak = 0, until = 0;
-      ev.forEach(function (e) { live += e[1]; if (live > peak) peak = live; if (e[1] < 0 && e[0] > until) until = e[0]; });
-      return { standing: standing, created: created, peakLive: peak + standing, until: until };
-    }
   }
 
-  return { create: create, STOPS: STOPS, REGISTRATIONS: REGISTRATIONS, resolve: resolve };
+  return { create: create, STOPS: STOPS, REGISTRATIONS: REGISTRATIONS, resolve: resolve,
+           CHIFF: { level: CHIFF_LEVEL, legato: CHIFF_LEGATO, legatoS: LEGATO_S } };
 })();
+(window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-voices-pipeorgan.js"] = true;   // the load guard's roll call (for the day it joins the engine)
