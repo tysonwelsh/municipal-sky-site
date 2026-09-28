@@ -27,12 +27,14 @@ it never costs a marble or changes a score. Each is one switch to remove, in
   the knockers or the render. Egg 9 reads the clock once, in main at mount,
   and passes a flag (HOLLER ROLLER's own reckoning of the full moon); the
   harness never sees it.
-- **Misfire-tested.** 24 normal games in one visit (novice drops, the drift
-  route, one spot spammed, the pockets, a sweep; fast streams and slow;
-  casual taps anywhere on the glass between games) fire none of them except
-  by their real condition: the knock once, in a qualifying game; for scale at
-  the 13th game ever. The tests are `local-dev/pachinko-lab/w6s/misfire.js` and
-  the report `local-dev/pachinko-lab/reports/wave6-secrets.md`.
+- **Misfire-tested.** Three visits of normal play: 68 games in all, with
+  novice drops, the drift route, one spot spammed, the pockets and a sweep,
+  fast streams and slow, and 74 casual taps anywhere on the glass between
+  games. They fire none of the eggs except by their real condition: the knock
+  once a visit (games 4, 3 and 3, never in a first game or a lode game), and
+  for scale at the 13th game ever. The test is
+  `local-dev/pachinko-lab/w6s/misfire.js`; the numbers are in
+  `local-dev/pachinko-lab/reports/wave6-secrets.md`.
 - **One switch each**, in `EGGS` in `pachinko-main.js`: `glassKnock`,
   `hungTheMoon`, `twoBits`, `fortuneFish`, `crayon`, `welcomeBack`,
   `forScale`, `trainWave`, `moonNight`. The parts read them as `api.eggs`,

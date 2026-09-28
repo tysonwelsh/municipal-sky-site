@@ -133,7 +133,7 @@
     glassKnock: true,     // 1. once a visit, in the quiet after a game's last marble, one of them walks up to the glass and knocks
     hungTheMoon: true,    // 2. tap the painted moon: it swings crooked on its nail, and Absalom goes and puts it straight
     twoBits: true,        // 3. tap "shave and a haircut" on the glass: something in the rock knocks "two bits"
-    fortuneFish: true,    // 4. hold a finger on the glass over the red fish (Fig. 12): it warms, flips, and points down the hall
+    fortuneFish: true,    // 4. hold a finger on the glass over the red fish (Fig. 12): it goes stiff as a needle and points down the hall
     crayon: true,         // 5. the legend card lit from behind shows a child's drawing on its back
     welcomeBack: true,    // 6. come back another night: the lantern man lifts his lamp to you instead of pointing at the door
     forScale: true,       // 7. your 13th game on this machine: the man for scale on the legend card gets company
@@ -147,7 +147,7 @@
     var age = ((ms - epoch) / day) % SYN; if (age < 0) age += SYN;
     return Math.abs(age - SYN / 2) <= 0.5;
   }
-  // the fish's hold, the two bits' rhythm, the powder box's count
+  // the fish's hold, the two bits' rhythm, the train's rest between answers
   var FISH_HOLD = 0.8, FISH_R = 9, TWO_BITS_TOL = 0.2, TRAIN_REST = 12;
   // the knock: never in a visit's first game, never after a lode; a game that
   // qualifies has it with KNOCK_P; it waits KNOCK_AFTER for the quiet after the

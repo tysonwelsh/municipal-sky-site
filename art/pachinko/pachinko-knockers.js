@@ -1492,7 +1492,8 @@
       // up and down twice, the railroad's "go ahead")
       if (api.eggs && api.eggs.welcomeBack && api.visit && api.visit.returning && !S.welcomed) {
         S.welcomed = true;
-        k.facing = 1; k.pose = P.lanternLow; yield 3;
+        yield* getOff(k);                                  // (off a rope ladder, out of the rock: onto his feet)
+        k.back = false; k.facing = 1; k.pose = P.lanternLow; yield 3;
         for (var w = 0; w < 2; w++) {
           k.pose = P.lanternUp; if (w === 0) emit(k, 'greet'); yield 4;
           k.pose = P.lanternOut; yield 3;
