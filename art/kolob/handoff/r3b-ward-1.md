@@ -18,7 +18,7 @@ silent: the Node harness, and headless Chrome launched with `--headless=new
 
 Commits: `5010c106` (the ward sings the meeting), `a101f534` (the hummed and
 unison verses; the Shakers' practice; the sister organist's name), `764c2c65`
-(SCORE §11), and this note.
+(SCORE §11), and this note (`b9b58729` its draft, then its final).
 
 ---
 
@@ -45,14 +45,14 @@ unison verses; the Shakers' practice; the sister organist's name), `764c2c65`
    hymns had at least one person come forward (three, typically).
 3. **The ward finds its pitch before a hymn.** Before any hymn without the
    organ, the chorister gives the note (humming it, or "fa… sol… la…", or
-   sol–do, by her habit). Before a Sacred Harp or psalmody tune, the
-   **pitching**: she hums the tonic, and the tenors, then the basses, the
+   sol–do, by habit). Before a Sacred Harp or psalmody tune, the
+   **pitching**: the chorister hums the tonic, and the tenors, then the basses, the
    trebles and the altos find their first notes on top of it — a chord of
    thirty-two slightly different voices building for three or four seconds.
-   Now and then, before a Tabernacle hymn, she hums the first note under the
-   organ's last chord.
+   Now and then, before a Tabernacle hymn, the chorister hums the first note
+   under the organ's last chord.
 4. **The Old Way is lined out by a person.** It used to be the deacon's
-   clarinet. Now the precentor — a named man or woman of the ward — sings
+   clarinet. Now the precentor — a named man of the ward — sings
    each line, ornamented, and the ward answers it slowly, each their own way.
    (The clarinet still lines out the day's material around the hymns.)
 5. **One congregation throughout.** The few things the old choir sang around
@@ -61,7 +61,7 @@ unison verses; the Shakers' practice; the sister organist's name), `764c2c65`
 6. **The choir is a little louder than before.** The ward sits level with the
    organ in a Tabernacle hymn: about 3.6 dB above v0.35's four voices. If you
    want it back where it was, the choir slider, or `WARD_LEVEL` in
-   `kolob-core.js` (0.16; 0.1 is v0.35's level).
+   `kolob-core.js` (0.16; 0.1 is about v0.35's level).
 
 **What is small, or not there yet:**
 
@@ -91,12 +91,15 @@ v0.35's four voices (`?seed=7&choir=house`).
 ### The listening note
 
 The times are the minutes' own clock: mm:ss from pressing ▶. They were read
-from the harness (which plays the same meeting as the browser, note for note:
-REPRO, below). The names are the page's Deseret; the English is for you.
+from the harness, and the browser keeps them: seed 7 played from ▶ in muted
+Chrome announced its hymn at 2:54 and brought forward the child at 3:06, the
+visitor at 3:14, the alto at 3:38, the old bass at 3:53 and the descant and
+the enthusiast at 4:40 — the harness's times, to the second. The names are
+the page's Deseret; the English is for you.
 
 | what | seed | when | listen for |
 |---|---|---|---|
-| **A Tabernacle hymn by the ward, people coming forward, and the descant** | **7** | **2:54–5:14** | BOUNTIFUL (№263, the tune the trombones played at dawn). The organ gives out the last line alone (≈2:57). **Verse 1 at 3:06:** a child, Minnie Rigby, sings the tune, a little high, from its first note; a visitor, Phebe Rigby (a beat behind), joins on the third line at **3:14**. **Verse 2 at 3:38:** the harmony alto, Mehitable Whiting, comes forward; the old bass, Levi Farr, on the last two lines from **3:53** (flat, late, huge). Verse 3 at 4:09: the ward alone. **Verse 4 at 4:40:** the soloist Electa Zundel's **descant** above everyone, and the enthusiast Rhoda Merrill singing out. The A-men at 5:11 |
+| **A Tabernacle hymn by the ward, people coming forward, and the descant** | **7** | **2:54–5:14** | BOUNTIFUL (№263, the tune the trombones played at dawn). The organ gives out the last line alone (≈2:57). **Verse 1 at 3:06:** a child, Minnie Rigby, sings the tune, a little high, from its first note; a visitor, Phebe Rigby (a beat behind), joins on the second line at **3:14**. **Verse 2 at 3:38:** the harmony alto, Mehitable Whiting, comes forward; the old bass, Levi Farr, on the last two lines from **3:53** (flat, late, huge). Verse 3 at 4:09: the ward alone. **Verse 4 at 4:40:** the soloist Electa Zundel's **descant** above everyone, and the enthusiast Rhoda Merrill singing out. The A-men at 5:11 |
 | **The Sacred Harp: the pitching, then "on the notes"** | **12** | **2:49–4:34** | MANTI SPRING (№232), sung in the hollow square. **2:54: the pitching** — the chorister, Eunice Tanner, hums the tonic, and the sections find their first notes on top of it, a chord building for three or four seconds. **Verse 1 at 2:59 on the notes** (fa, sol, la, mi); a visitor, Susannah Allred, joins on the second line at 3:07. Verse 2 at 3:31: the child, Josie Stoddard, on the tune an octave up — she loses the words at once and finds them at 3:39. Verse 3 at 4:03: the enthusiast, Martha Heap; the old bass, Mosiah Gee, on the last lines at 4:18. No organ, no amen |
 | **The Old Way, lined out by the precentor** | **18** | **3:07–5:42** | ZARAHEMLA CROSSING (№258), a fast Sunday. **3:11:** the chorister, Abigail Merrill, keys it (sol–do, then the note). **3:14:** the precentor, Ezra Stoddard (a bass who lines out an octave down), sings the first line quickly, ornamented; the ward answers it slowly, everyone on the tune, each their own way. He lines out again at 3:59, 4:29 and 5:05; the old bass, Asa Skousen, comes forward in the reply from **4:29** |
 | **A descant, then an Old Way, in one sitting** | **32** | **2:54–7:20** | MERIDIAN (№47): the chorister, Heber Whiting, hums the first note under the organ's last chord (**3:04**); the child, Hattie Rowberry, on the tune from 3:06; a shy newcomer, Rhoda Walser, joins on the third line (3:19); **verse 4 at 4:35: the descant** (Patience Mecham); A-men 5:04. Then ZARAHEMLA (№192) in the Old Way: keyed at 5:41, the precentor Josiah Rowberry (a clear tenor with a light turn) from **5:44**, the child beside him in the reply; she loses the words at 6:38 and finds them at 7:05 |
@@ -172,15 +175,54 @@ organ's giving-out and four verses; load average 2.2–3.1):
 | the ward's own nodes alive by its ledger: peak · mean; mouths joined to the room: mean · max | 1,266 · 661; 50 · 99 | — |
 | the audio clock against the wall | 1.000 | 1.000 |
 
-WHOLE_MEETING_TABLE
+**A whole meeting** (seed 7, a jubilee, from ▶ for 16 minutes: the dawn's
+trombones, the invocation, three hymn sections — a Tabernacle hymn, a
+psalmody hymn with its fuge, a Tabernacle hymn — the testimony and the
+sacrament; load average 2.3–2.8):
+
+| | the ward | v0.35's four voices |
+|---|---|---|
+| the audio thread's share of each second: median · p90 · worst 5 s · worst second | **9.5 % · 20.2 % · 30.9 % · 34.0 %** | 6.7 % · 7.9 % · 12.3 % · 13.0 % |
+| Chrome's render capacity: median · p90 · max | 9.8 % · 21.1 % · 60 % | 6.8 % · 9.5 % · 15.7 % |
+| one render callback: median · p99 · max | 0.54 ms · 1.87 ms · **4.89 ms** | 0.36 ms · 0.72 ms · 1.18 ms |
+| nodes the context holds, peak (created in 16 min) | 1,910 (37,171) | 425 (7,031) |
+| the ward's own nodes alive: peak · mean; mouths joined: mean · max | 1,490 · 271; 20 · 99 | — |
+
+**By section** (Chrome's render capacity, median · p90 · max, one reading a
+second):
+
+| section | the ward | v0.35's four voices |
+|---|---|---|
+| prelude (the trombones at dawn) | 11.1 · 16.3 · 28.6 | 9.8 · 13.1 · 15.7 |
+| invocation | 6.4 · 9.8 · 18.9 | 6.1 · 8.7 · 11.2 |
+| **the hymn sections** (525 s) | **16.2 · 24.6 · 60** | 7.1 · 9.4 · 12.4 |
+| testimony | 6.8 · 9.1 · 10.8 | 6.0 · 8.1 · 10.2 |
+| sacrament | 5.3 · 7.8 · 9.3 | 5.3 · 7.7 · 9.6 |
+
+(The meeting's doxology and postlude fall after the sixteenth minute on this
+seed and were not traced. The audio clock kept time throughout: its
+one-second readings are 1.000 at the median, and the few at 0.90–0.97 are
+each followed by one at 1.03–1.12 — the poll's own jitter, not the audio
+falling behind; the four-voice run never dipped.)
 
 **Reading it.**
 - **In a hymn the ward about doubles the audio thread's work** (+7.5 points
-  of this Mac's thread at the median, +15 in the worst five seconds).
-- **The worst single callback** took 4.56 ms of its 5.2 ms: on this Mac, in
-  a moment where many lines join at once. It did not glitch (the clock kept
-  time), but it is the figure that says where a slower machine would first
-  crackle.
+  of this Mac's thread at the median, +15 in the worst five seconds). Over a
+  whole meeting it is +3 points at the median, because the hymns are about
+  half of it.
+- **Outside the hymns it costs almost nothing** (+0.3 to +1.3 points in the
+  prelude, the invocation and the testimony; the same in the sacrament):
+  that is the measurement behind keeping one congregation throughout.
+- **The peaks are where the most is going on at once.** Chrome's render
+  capacity read over 40 % in 9 of the meeting's 957 seconds, all between
+  7:07 and 7:58 — the psalmody hymn's second verse (the fuge sung twice, its
+  parts entering one after another, the alto and the child forward) — and
+  over 30 % in 19 (those, three seconds of the first hymn's second verse, the old bass forward, at
+  3:58–4:00, and 8:08). The trace's own per-second sum never passed 34 %.
+- **The worst single callback** took 4.56 ms (the hymn) and 4.89 ms (the
+  whole meeting) of its 5.2 ms: on this Mac, in a moment where many lines
+  join at once. Nothing was dropped (the clock kept time), but it is the
+  figure that says where a slower machine would first crackle.
 - **A phone** (not tested; the owner deferred it): a mid-range phone core is
   roughly 2.5–4× slower than this one, which puts a ward hymn at roughly
   40–65 % of a phone's audio thread at the median, 60–100 % in its worst five
@@ -218,7 +260,7 @@ window, the median; flatness is the band's spectral flatness as heard (about
 | | the gap between lines (6, median 0.18 s) | **−16.4 dB** | 0.048 | −18.2 dB (BETHEL's gap) |
 | | inside held notes (101) | −17.1 dB | 0.035 | |
 | seed 12, MANTI SPRING (Sacred Harp), verse 1 on the notes, verse 2 | joins (69) | **−17.9 dB** | 0.059 | −18.2 dB · 0.065 (WINTER QUARTERS) |
-| | line starts (7) | −7.5 dB | 0.142 | −9.2 dB · 0.144 (WINTER QUARTERS' line starts) |
+| | line starts (7) | −7.5 dB | 0.142 | −9.2 dB · 0.144 (WINTER QUARTERS' line starts; r3-cast's first pass, whose consonants are today's) |
 | | the gap between lines (6, median 0.25 s) | **−16.2 dB** | 0.046 | −18.8 dB (its gap) |
 | | inside held notes (88) | −19.6 dB | 0.030 | |
 
@@ -254,8 +296,8 @@ was sung).
   seeds 7 (1200 s), 27 (1200 s: a Shaker song and an Old Way) and 1847 (1500 s,
   ives razz cumulative).
 - **TRANSPORT passes** on seeds 20 and 1847 (pause holds; STOP then PLAY lets
-  none of the stopped meeting's lines back into the hall: at 330 s, 0 of 79
-  stale sources, the ward's).
+  none of the stopped meeting's lines back into the hall: stopped at 330 s,
+  the A-men of seed 20's first hymn, 0 of 79 stale sources).
 - **New section, "the ward"** (every run): the choir is the ward; the board
   names the chorister in Deseret; every unaccompanied hymn keyed (the Old
   Way, gospel, the Shakers) and every Sacred Harp and psalmody tune pitched,
@@ -294,8 +336,10 @@ was sung).
   **0 console errors**, the audio clock at 1.000 of the wall, 0 of
   1,389–1,660 clock cues late, 133–573 of the ward's lines handed, 0 late;
   the minutes print the ✦ rows.
-- The hymn traces above (seed 7, ward and house): the audio clock at 1.000,
-  0 console errors.
+- The traces above (seed 7: the hymn and the first sixteen minutes, ward and
+  house): 0 console errors.
+- Seed 7 from ▶ for 5½ minutes: every person came forward at the harness's
+  time (the listening note), 0 console errors.
 - The ward's level, calibrated at the master (above).
 
 **Pure and reproducible:** the ward is seated from `cast:<n>` (every member
@@ -346,11 +390,12 @@ when (the pump reads the music's now). REPRO above is the proof.
   around the hymns), and the cast lab's (`INHALE`, `FRIC_PEAK`, `INTRINSIC`).
 - **The cost** (above): about twice v0.35's audio work in a hymn; a phone is
   not tested.
-- **The lines the ward sings around the hymns are handed late** (as little as
-  0.15 s before the music's now, 24 of 444 lines in seed 12): the house
-  decides them at the moment they sound. The audio clock runs a lookahead
-  behind the music's now, so they still arrive before they sound (0 late),
-  but a singer's breath before such a line may be dropped.
+- **The lines the ward sings around the hymns are handed close to their
+  time** (as little as 0.15 s before they sound, by the music's clock: 24 of
+  444 lines in seed 12, 16 of 573 in seed 40): the house decides them the
+  moment it sings them. The engine's clock fires its cues ahead of the audio
+  clock, so they still arrive before they sound (0 late), but a singer's
+  breath before such a line may be dropped.
 - **The testimony-bearers and the organist** are seated, not performing.
 - **Practices not yet:** the round, the partner hymn and the wandering
   refrain (placed by FORM); echoes are the composer's where written, not a
