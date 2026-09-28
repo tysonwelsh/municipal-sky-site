@@ -595,7 +595,7 @@ window.KOLOB.Composer = (function () {
         var degs = steps.map(function (s) { return cad[1] + s; });
         if (!degs.every(function (d) { return classes.indexOf(cls(d)) >= 0; })) continue;
         var fw = D.figures[fnm];
-        if (H && role === "home") (H.ending || []).forEach(function (e) { if (figureName(e[0]) === fnm) fw *= 1 + e[1]; });
+        if (H && role === "home") (H.ending || []).forEach(function (e) { if (figureName(e[0]) === fnm) fw *= 1 + 0.6 * e[1]; });
         figPool.push([fnm, fw]);
       }
       if (!figPool.length) figPool.push(["fall", 1]);
@@ -711,7 +711,7 @@ window.KOLOB.Composer = (function () {
     // the strong syllables stand on the chord of home more often than not
     for (i = 0; i < n; i++) {
       if (!P.notes[i].stress || P.fixed[i] != null) continue;
-      var k = cls(d[i] - P.doDeg);
+      var k = cls(d[i] - P.home);                                         // the final's own triad, in every mode
       if (k === 0 || k === 2 || k === 4) c -= W.stressHome; else if (k === 6 || k === 3) c += W.stressTense;
     }
     // the leading tone of a major tune leads
@@ -913,11 +913,10 @@ window.KOLOB.Composer = (function () {
         var sPool = [];
         for (var s = lo; s <= hi; s++) {
           if (classes.indexOf(cls(s)) < 0) continue;
-          var rel = cls(s - doDeg), w = rel === 0 ? 3 : rel === 4 ? 2.2 : rel === 2 ? 1.8 : 0.5;
-          if (MINOR[mode] && cls(s - sk.base) === 0) w += 1.5;
+          var rel = cls(s - sk.base), w = rel === 0 ? 3 : rel === 4 ? 2.2 : rel === 2 ? 1.8 : 0.5;
           if (prevEnd == null) {
             // the hymn opens on the chord of home: do, mi, sol (or sol below, as a pickup)
-            if (rel !== 0 && rel !== 2 && rel !== 4 && !(MINOR[mode] && cls(s - sk.base) === 0)) w *= 0.04;
+            if (rel !== 0 && rel !== 2 && rel !== 4) w *= 0.04;
             w *= Math.exp(-Math.abs(s - (sk.base + (notes[0].stress ? 1 : -1))) / 2.5);
             if (!notes[0].stress && s - sk.base === -3) w *= 2.5;
           }
@@ -929,7 +928,7 @@ window.KOLOB.Composer = (function () {
       }
       var apex = L.peak ? sk.peak : Math.min(hi, Math.max(start, target) + 2 + Math.floor(u01(L.die.fork("apex")) * 2.5));
       var apexPos = L.peak && peakIdx > 0 ? peakIdx / (n - 1) : 0.45;
-      var P = { notes: notes, fixed: fixed, lo: lo, hi: hi, start: start, letter: L.letter, prevEnd: prevEnd, doDeg: doDeg, major: major,
+      var P = { notes: notes, fixed: fixed, lo: lo, hi: hi, start: start, letter: L.letter, prevEnd: prevEnd, doDeg: doDeg, home: sk.base, major: major,
                 curve: contourCurve(L.contour, n, start, target, apex, apexPos, lo), leapTarget: leapTarget, sequence: H ? H.sequence : 0.3,
                 avoid: (avoid || []).map(function (a) { return a.map(function (x) { return x + sk.base; }); }) };
       var res = searchLine(P, W, mode, classes, done, i === 0 ? gesture : null, R, tries);
@@ -1244,7 +1243,7 @@ window.KOLOB.Composer = (function () {
     var sk = planSkeleton(R.fork("skeleton"), fr, D, H, keySemi);
     var rh = planRhythm(fr, sk, D, H);
     var gesture = opts.gestures && opts.gestures[0] ? opts.gestures[0].map(function (g) { return typeof g === "number" ? g + sk.base : g.deg + sk.base; }) : null;
-    var named = nameOf(R.fork("naming"));
+    var named = nameOf(R.fork("naming:" + D.id));
     var tempoDie = R.fork("tempo").rnd(0.95, 1.05);
     var best = null, repairs = [];
     var mel = composeMelody(fr, sk, rh, D, H, gesture, 0);
@@ -1314,8 +1313,15 @@ window.KOLOB.Composer = (function () {
       D.refs.forEach(function (id) {
         var t = K.Tunes.byId(id);
         if (!t) return;
+        // a dialect that sings the tune alone (the Old Way) is measured
+        // against the Earth tunes' melodies alone
+        if (D.parts.length === 1) {
+          var only = {}; for (var k0 in t) only[k0] = t[k0];
+          only.lines = t.lines.map(function (l) { var o = {}; for (var k1 in l) o[k1] = l[k1]; o.notes = {}; o.notes[t.melodyPart] = l.notes[t.melodyPart]; o.chords = []; return o; });
+          only.refrain = null;
+          t = only;
+        }
         var f = fingerprint(t);
-        // the Old Way's reference is the lined-out tunes' melodies alone
         rows.push({ id: id, share: f.share, melodyRange: f.melodyRange });
       });
       var mean = {};
