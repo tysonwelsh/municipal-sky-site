@@ -656,11 +656,7 @@ window.KOLOB.VoicesVocal = (function () {
       var osc = mk(function () { return ctx.createOscillator(); });
       osc.setPeriodicWave(waveFor(ctx, who.tilt, who.variant));
       var envG = mk(function () { return gainNode(ctx, 0); });
-      var lfo = mk(function () { return ctx.createOscillator(); });
-      lfo.type = "sine";
-      var lfoG = mk(function () { return gainNode(ctx, 0); });
       osc.connect(envG); asp.connect(envG); envG.connect(sum);
-      lfo.connect(lfoG); lfoG.connect(osc.detune);
       if (!firstOsc) firstOsc = osc;
       var endP = end + late + who.lag;
 
@@ -696,9 +692,14 @@ window.KOLOB.VoicesVocal = (function () {
         prevF = target;
       }
 
-      // --- detune: habit + wandering + (old) sag inside long notes ---
-      var dt = osc.detune, walk = 0, dT = born;
-      dt.setValueAtTime(who.habit, born);
+      // --- detune: habit + wandering + (old) sag + the vibrato, as ONE
+      // curve. The vibrato used to be an oscillator of its own (and a gain)
+      // modulating the detune: two more nodes running for every singer. It
+      // is worked out here instead, sample by sample at 125 a second, and
+      // written into the detune with the drift, as one value curve. The
+      // same shapes as before: a little shimmer at every onset, the full
+      // vibrato blooming late, and only in a note long enough to hold it.
+      var walkPts = [[born, 0]], walk = 0, wT = born;
       for (var j3 = 0; j3 < ev.length; j3++) {
         var e3 = ev[j3];
         if (e3.rest) continue;
@@ -706,18 +707,12 @@ window.KOLOB.VoicesVocal = (function () {
         for (var st = 1; st <= steps; st++) {
           walk = walk * 0.6 + gauss(r) * who.drift;
           var sag = who.sag * (st / steps) * (e3.d > 1 ? 1 : 0.3);
-          var at3 = Math.max(s3 + e3.d * st / steps, dT + 0.01);
-          dt.linearRampToValueAtTime(who.habit + walk - sag, at3); dT = at3;
+          var at3 = Math.max(s3 + e3.d * st / steps, wT + 0.01);
+          walkPts.push([at3, walk - sag]); wT = at3;
         }
       }
-
-      // --- vibrato: late bloom. A little shimmer at the onset; the full
-      // vibrato only in a note long enough to have one ---
-      lfo.frequency.setValueAtTime(who.vibRate, born);
-      var vg = lfoG.gain, vT = born, vCur = 0;
-      vg.setValueAtTime(0, born);
-      function vset(v, time) { time = Math.max(time, vT + 0.001); vg.setValueAtTime(v, time); vT = time; vCur = v; }
-      function vramp(v, time) { time = Math.max(time, vT + 0.002); vg.linearRampToValueAtTime(v, time); vT = time; vCur = v; }
+      var depthPts = [[born, 0]], vT = born, vCur = 0, rates = [[born, who.vibRate]];
+      function vpt(v, time) { time = Math.max(time, vT + 0.001); depthPts.push([time, v]); vT = time; vCur = v; }
       for (var j4 = 0; j4 < ev.length; j4++) {
         var e4 = ev[j4];
         if (e4.rest) continue;
@@ -725,15 +720,32 @@ window.KOLOB.VoicesVocal = (function () {
         var nextS = j4 + 1 < ev.length ? on[j4 + 1] : endP;
         // settle back to a shimmer across the join (a ramp, not a step: a
         // step in depth is a step in pitch)
-        vset(vCur, s4 - 0.03);
-        vramp(who.vibDepth * 0.12, s4 + 0.05);
+        vpt(vCur, s4 - 0.03);
+        vpt(who.vibDepth * 0.12, s4 + 0.05);
         var rateJ = r.rnd(0.96, 1.04);
         if (nextS - bloomAt > 0.25) {
-          vset(who.vibDepth * 0.12, bloomAt);
-          vramp(who.vibDepth, Math.min(nextS - 0.06, bloomAt + 0.45));
-          lfo.frequency.setValueAtTime(who.vibRate * rateJ, bloomAt);
+          vpt(who.vibDepth * 0.12, bloomAt);
+          vpt(who.vibDepth, Math.min(nextS - 0.06, bloomAt + 0.45));
+          rates.push([bloomAt, who.vibRate * rateJ]);
         }
       }
+      function lerpAt(pts, time) {
+        if (time <= pts[0][0]) return pts[0][1];
+        for (var q1 = 1; q1 < pts.length; q1++) {
+          if (time <= pts[q1][0]) { var p0 = pts[q1 - 1], p1 = pts[q1], u = (time - p0[0]) / Math.max(1e-9, p1[0] - p0[0]); return p0[1] + (p1[1] - p0[1]) * u; }
+        }
+        return pts[pts.length - 1][1];
+      }
+      var CURVE_HZ = 125, c0 = soundFrom, c1 = soundTo, nC = Math.max(2, Math.ceil((c1 - c0) * CURVE_HZ) + 1);
+      var curve = new Float32Array(nC), phase = r.rnd(0, Math.PI * 2), ri = 0;
+      for (var k5 = 0; k5 < nC; k5++) {
+        var tk = c0 + (c1 - c0) * k5 / (nC - 1);
+        while (ri + 1 < rates.length && rates[ri + 1][0] <= tk) ri++;
+        curve[k5] = who.habit + lerpAt(walkPts, tk) + lerpAt(depthPts, tk) * Math.sin(phase);
+        phase += 2 * Math.PI * rates[ri][1] * (c1 - c0) / (nC - 1);
+      }
+      osc.detune.setValueAtTime(curve[0], born);
+      osc.detune.setValueCurveAtTime(curve, c0, c1 - c0);
 
       // --- the envelope: phrase shape, accents, articulation, consonants.
       // Every change takes at least MIN_RAMP; a point that cannot fit before
@@ -786,7 +798,6 @@ window.KOLOB.VoicesVocal = (function () {
 
       var startAt = soundFrom + r.rnd(0, 0.01);
       osc.start(startAt); osc.stop(soundTo);
-      lfo.start(startAt + r.rnd(0, 1 / who.vibRate)); lfo.stop(soundTo);
     }
 
     aspSrc.start(soundFrom, r.rnd(0, 1.9)); aspSrc.stop(soundTo);
