@@ -422,7 +422,7 @@ window.KOLOB.VoicesOrgan = (function () {
       var src = ctx.createBufferSource(); src.buffer = noiseBuf(ctx);
       var bp = ctx.createBiquadFilter(); bp.type = "bandpass";
       bp.frequency.value = fc; bp.Q.value = 1.4;
-      var g = ctx.createGain();
+      var g = ctx.createGain(); g.gain.value = 0;      // (silent at birth: SPEECH OUT OF NOTHING, below)
       g.gain.setValueAtTime(0, t);
       g.gain.linearRampToValueAtTime(amt, t + 0.006);
       g.gain.setTargetAtTime(0, t + 0.014, tau);
@@ -437,7 +437,22 @@ window.KOLOB.VoicesOrgan = (function () {
     // its level, 3–13 % in one sample, on every note shorter than ~0.12 s —
     // up to 27 dB of spray above 4 kHz on the trumpet. The bloom's own
     // setTarget now runs on until the release takes over from its value.)
+    // SPEECH OUT OF NOTHING (round 3b, step 2). A gain is 1 until its first
+    // event, and the browser forgives a source's start a hair it does not
+    // forgive the event: a key put down a hair past a sample (t × rate some
+    // 3·10⁻⁷ of a sample over a whole one: the float arithmetic of a
+    // joint's amen) starts its pipes AT that sample, where setValueAtTime(0,
+    // t) has not yet happened. For that one sample the gain is 1. A pipe's
+    // own wave starts at nought (sine phase) and says nothing there; the
+    // chiff's noise starts wherever its offset falls, and one sample of it
+    // went out at full size, through the pedal, which has no shutters to
+    // round it: a lone spike 25 dB over the chord's own treble (seed 32,
+    // 7:59.7, the joint's amen after the Old Way hymn, out of silence).
+    // Reproduced in an OfflineAudioContext with t a hair past a frame, and
+    // gone with the gain made nought first. So every gain a key makes is
+    // silent at birth.
     function envelope(g, t, atk, lv, rel, tau, over) {
+      g.gain.value = 0;
       g.gain.setValueAtTime(0, t);
       if (over) {                                   // reeds speak with a small bloom
         g.gain.linearRampToValueAtTime(lv * over, t + atk);
