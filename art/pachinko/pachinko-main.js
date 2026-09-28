@@ -1065,7 +1065,9 @@
         for (var ai = 0; ai < game.alts.length; ai++) {
           var al = game.alts[ai], ap = altPlace(al.edit); if (!ap) continue;
           var au = t - al.t0, flash = game.mode === 'work' && au < 0.3 ? 1.4 : 1;
-          if (fade > 0) lamps.push({ x: ap.x, y: ap.y, r: 14, c: '#fff2dc', k: 0.95 * fade * flash });
+          // (a pin's spot is tight; a board, a mouth or a pail gets a wider one)
+          var big = al.edit.type !== 'move' && al.edit.type !== 'nudge' && al.edit.type !== 'dress';
+          if (fade > 0) lamps.push({ x: ap.x, y: ap.y, r: big ? 20 : 14, c: '#fff2dc', k: (big ? 1.15 : 0.95) * fade * flash });
           altOut.push({ x: ap.x, y: ap.y, type: al.edit.type, id: al.edit.id, t0: al.t0, from: ap.from || null, k: fade });
         }
       }

@@ -678,6 +678,11 @@
         var hdx = home.x2 - home.x1, hdy = home.y2 - home.y1, HL = Math.hypot(hdx, hdy) || 1, ux = hdx / HL, uy = hdy / HL;
         var s1 = (f.x1 - home.x1) * ux + (f.y1 - home.y1) * uy, s2 = (f.x2 - home.x2) * ux + (f.y2 - home.y2) * uy;
         if (e.end === 1) s1 = clampTo(s1 - e.d, -RAIL_HOME, RAIL_HOME); else s2 = clampTo(s2 + e.d, -RAIL_HOME, RAIL_HOME);
+        // …and never into a wheel's spokes: an end is pulled back until it's clear
+        var wheels = c.byKind.wheel;
+        function clearOfWheels(x, y) { return !wheels.some(function (w) { return Math.hypot(x - w.x, y - w.y) < w.r + 5; }); }
+        for (var g1 = 0; g1 < 12 && !clearOfWheels(home.x1 + ux * s1, home.y1 + uy * s1); g1++) s1 += s1 < 0 ? 1 : -1;
+        for (var g2 = 0; g2 < 12 && !clearOfWheels(home.x2 + ux * s2, home.y2 + uy * s2); g2++) s2 += s2 < 0 ? 1 : -1;
         f.x1 = home.x1 + ux * s1; f.y1 = home.y1 + uy * s1; f.x2 = home.x2 + ux * s2; f.y2 = home.y2 + uy * s2;
       } else if (e.type === 'mouth' && f.kind === 'tunnel') {
         f.open = !!e.open;
