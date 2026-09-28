@@ -175,9 +175,11 @@ window.KOLOB.VoicesVocal = (function () {
     fa: { c: "f", v: "ah" }, sol: { c: "s", v: "oh", coda: "l" }, la: { c: "l", v: "ah" }, mi: { c: "m", v: "ee" },
     hum: { v: "hum" }, mm: { v: "hum" },
   };
-  var CONS_DUR = { f: 0.075, s: 0.09, l: 0.06, m: 0.075 };
-  // the fricatives' strength, per singer (a ward's s is thirty-two small ones)
-  var FRIC_PEAK = { s: 0.024, f: 0.011 };
+  var CONS_DUR = { f: 0.07, s: 0.08, l: 0.06, m: 0.075 };
+  // the fricatives' strength, per singer. A ward's s is thirty-two small
+  // ones, each at its own moment, so it smears into a brush a tenth of a
+  // second long: each must be small (the owner heard the brush as a hiss)
+  var FRIC_PEAK = { s: 0.015, f: 0.008 };
   // no level change faster than this (s): a 0.5 ms fall is a glottal click
   var MIN_RAMP = 0.010;
 
@@ -773,7 +775,8 @@ window.KOLOB.VoicesVocal = (function () {
           var nx = ev[j5 + 1];
           var nsc = nx.syl && nx.syl.c ? nx.syl.c : null;
           var cd2 = nsc ? CONS_DUR[nsc] : 0.05;
-          var dip = nsc === "f" || nsc === "s" ? 0.06 : nsc === "m" ? 0.55 : nsc === "l" ? 0.62 : 0.72;
+          // (a sung s or f all but stops the voice; in a legato ward, not quite)
+          var dip = nsc === "f" || nsc === "s" ? 0.25 : nsc === "m" ? 0.55 : nsc === "l" ? 0.62 : 0.72;
           var nL = lvl * (0.8 + 0.2 * nx.stress);
           var dipAt = eEnd - cd2 * 0.8;
           if (len <= 0.9 && fits(dipAt - 0.04) && dipAt - 0.04 > s5 + 0.06) pt(dipAt - 0.04, L * 0.97);
