@@ -251,9 +251,11 @@
         W.sing(ctx, bus.hall, t2, parts(o.beat, "words"), CONG * 0.8);
         K.alto.sing(ctx, bus.near, t2, partLine("A", o.beat, "words"), SOLO * 0.8);
         K.oldBass.sing(ctx, bus.near, t2, partLine("B", o.beat, "words"), SOLO * 1.15);
-        // the child loses the words in the first line (hums them), finds them in the second
+        // the child loses the words in the first line (hums them), finds them in
+        // the second. At pitch: the tune is in the treble here, and a child tops
+        // out near G5 (an octave up is for a tune in the tenor — open issue 4)
         var cw = WORDS.map(function (w, i) { return i >= 2 && i <= 5 ? "hum" : w; });
-        return K.child.sing(ctx, bus.near, t2, partLine("S", o.beat, cw, { oct: 2 }), SOLO * 1.1) + 1;
+        return K.child.sing(ctx, bus.near, t2, partLine("S", o.beat, cw), SOLO * 1.1) + 1;
       } },
     { id: "lined", n: "4", name: "Lining out", desc: "the precentor ornaments a line; the ward answers slowly, each desk its own way",
       run: function (ctx, bus, t, o) {
@@ -285,7 +287,7 @@
   var PEOPLE = [
     { id: "p-alto", name: "the harmony alto", run: function (ctx, bus, t, o) { return cast(o.seed).alto.sing(ctx, bus.near, t, partLine("A", o.beat, "words"), SOLO) + 1; } },
     { id: "p-bass", name: "the old bass", run: function (ctx, bus, t, o) { return cast(o.seed).oldBass.sing(ctx, bus.near, t, partLine("B", o.beat, "words"), SOLO * 1.15) + 1; } },
-    { id: "p-child", name: "the child", run: function (ctx, bus, t, o) { return cast(o.seed).child.sing(ctx, bus.near, t, partLine("S", o.beat, "words", { oct: 2 }), SOLO * 1.1) + 1; } },
+    { id: "p-child", name: "the child", run: function (ctx, bus, t, o) { return cast(o.seed).child.sing(ctx, bus.near, t, partLine("S", o.beat, "words"), SOLO * 1.1) + 1; } },
     { id: "p-solo", name: "the soloist", run: function (ctx, bus, t, o) { return cast(o.seed).soloist.sing(ctx, bus.near, t, partLine("D", o.beat, "words"), SOLO * 0.8) + 1; } },
     { id: "p-prec", name: "the precentor", run: function (ctx, bus, t, o) { return cast(o.seed).precentor.line(ctx, bus.near, t, slow(partLine("S", o.beat, "words", { oct: 0.5 }), 1.1), SOLO * 1.05, SCALE) + 1; } },
     { id: "p-desk", name: "one desk (sopranos)", run: function (ctx, bus, t, o) { return ward(o.seed, o).desks[0].sing(ctx, bus.hall, t, partLine("S", o.beat, "words"), CONG) + 1; } },
@@ -326,7 +328,7 @@
       var rep = V.budget.report(t0 - 0.5, end);
       var len = end - t0;
       $("vl-status").innerHTML = "playing <b>" + d.name + "</b> · " + len.toFixed(1) + " s · nodes alive: " + (id === "quartet" ? "47 (v0.30's own, 11 a voice — not in the ledger)" : "peak <b>" + rep.peak + "</b>, mean " + rep.mean.toFixed(0)) +
-        " · desks " + o.desks + " × " + o.per;
+        (id === "full32" || id === "desks32" ? " · thirty-two singers" : /^(ward|forward|lined|notes|descant|hum|p-desk)/.test(id) ? " · desks " + o.desks + " × " + o.per : "");
       drawBudget(rep);
       statusTimer = setInterval(function () { if (liveCtx === ctx && ctx.currentTime > t0 + len + 2.5) stopLive(); }, 500);
     }).catch(function (e) { showErr(String(e && e.stack || e)); });
@@ -606,10 +608,103 @@
     }).catch(function (e) { showErr(String(e && e.stack || e)); });
   });
 
+  // --- THE HONK TEST (open issue 2): one steady singer sings a scale across
+  // the part's compass on each vowel. Every note's level (the steady middle,
+  // RMS, dry), and how far any note stands above the mean of its two
+  // neighbours: the old mouth let a harmonic land on its +16 dB first
+  // formant, and a note honked up to 8 dB over the notes beside it.
+  function honkTest(seed) {
+    var SC = [1, 9 / 8, 5 / 4, 4 / 3, 3 / 2, 5 / 3, 15 / 8];
+    function hzOf(d) { return 261.63 * SC[((d % 7) + 7) % 7] * Math.pow(2, Math.floor(d / 7)); }
+    var RANGE = { S: [0, 11], A: [-3, 8], T: [-7, 4], B: [-12, 0] }, VOW = ["ah", "oh", "oo", "ee", "eh"], NOTE = 0.7;
+    var out = { parts: {}, worstExcess: 0, worstJump: 0, worstAt: "" }, chainP = Promise.resolve();
+    Object.keys(RANGE).forEach(function (part) {
+      chainP = chainP.then(function () {
+        var sr = 48000, lines = [], t = 0.6;
+        VOW.forEach(function (v) {
+          var notes = [];
+          for (var d = RANGE[part][0]; d <= RANGE[part][1]; d++) notes.push({ f: hzOf(d), dur: NOTE, vowel: v, stress: 1 });
+          lines.push({ v: v, t: t, notes: notes }); t += notes.length * NOTE + 1.2;
+        });
+        var ctx = new OfflineAudioContext(1, Math.ceil((t + 1) * sr), sr);
+        var s = V.singer({ seed: seed || 11, name: "honk-" + part, part: part, age: "mid", confidence: 0.95, brightness: 0.5, breath: 0.35, pitchHabitCents: 0, timingHabitMs: 0, pan: 0 });
+        lines.forEach(function (L) { s.sing(ctx, ctx.destination, L.t, L.notes, 1); });
+        return ctx.startRendering().then(function (buf) {
+          var x = buf.getChannelData(0), res = {};
+          lines.forEach(function (L) {
+            var dbs = L.notes.map(function (n, i) {
+              var a = Math.floor((L.t + i * NOTE + 0.25) * sr), b = Math.floor((L.t + i * NOTE + 0.6) * sr), s2 = 0;
+              for (var k = a; k < b; k++) s2 += x[k] * x[k];
+              return 10 * Math.log10(s2 / (b - a) + 1e-15);
+            });
+            var ex = 0, jump = 0, at = -1;
+            for (var i = 1; i < dbs.length; i++) jump = Math.max(jump, Math.abs(dbs[i] - dbs[i - 1]));
+            for (var j = 1; j < dbs.length - 1; j++) { var e = dbs[j] - (dbs[j - 1] + dbs[j + 1]) / 2; if (e > ex) { ex = e; at = j; } }
+            res[L.v] = { maxExcessDb: +ex.toFixed(2), atHz: at >= 0 ? +L.notes[at].f.toFixed(1) : null, maxJumpDb: +jump.toFixed(2), meanDb: +(dbs.reduce(function (p, q) { return p + q; }, 0) / dbs.length).toFixed(2) };
+            if (ex > out.worstExcess) { out.worstExcess = +ex.toFixed(2); out.worstAt = part + " " + L.v + " " + res[L.v].atHz + " Hz"; }
+            out.worstJump = Math.max(out.worstJump, +jump.toFixed(2));
+          });
+          out.parts[part] = res;
+        });
+      });
+    });
+    return chainP.then(function () { return out; });
+  }
+  $("vl-honk").addEventListener("click", function () {
+    $("vl-report").innerHTML = "<p>singing scales on five vowels in four parts…</p>";
+    honkTest(opts().seed).then(function (r) {
+      $("vl-report").innerHTML = "<p><b>The honk test</b> — one steady singer, a scale across the part's compass on each vowel. The worst note stands <b>" + r.worstExcess +
+        " dB</b> above its neighbours (" + r.worstAt + "); the largest step between adjacent notes is " + r.worstJump + " dB.</p><table><tr><th>part</th><th>ah</th><th>oh</th><th>oo</th><th>ee</th><th>eh</th></tr>" +
+        Object.keys(r.parts).map(function (p) { return "<tr><td>" + p + "</td>" + ["ah", "oh", "oo", "ee", "eh"].map(function (v) { var x = r.parts[p][v]; return "<td class='" + (x.maxExcessDb > 3 ? "vl-no" : "vl-ok") + "'>+" + x.maxExcessDb + " · " + x.meanDb + " dB</td>"; }).join("") + "</tr>"; }).join("") +
+        "</table><p class='vl-note'>Each cell: the worst note over its neighbours, then the vowel's mean level. The open vowels carry (ah), the closed ones sit a dB or two under (oo, ee), as in real voices.</p>";
+    }).catch(function (e) { showErr(String(e && e.stack || e)); });
+  });
+
+  // --- THE JOIN METER: the 3–12 kHz band in the 150 ms around every note
+  // join of the lab's line (where the owner heard a hiss), as heard and with
+  // the singers' folds silenced (the breath and the consonants alone)
+  function joinTimes(beat, t0) {
+    var out = [], t = t0;
+    for (var i = 0; i < 14; i++) { if (i) out.push({ t: t, kind: i === 8 ? "line" : "note" }); t += BEATS[i] * beat * (i === 13 ? 1.5 : 1); }
+    return out;
+  }
+  function joinMeter(id) {
+    var d = byId(id || "full32"), o = Object.assign(opts(), { room: 0 });
+    function once(silent) {
+      var sr = 48000, probe = new OfflineAudioContext(2, sr, sr);
+      var dur = d.run(probe, { near: probe.createGain(), hall: probe.createGain() }, 0.6, o) + 1.5;
+      var ctx = new OfflineAudioContext(2, Math.ceil(sr * dur), sr);
+      if (silent) { var orig = ctx.createPeriodicWave.bind(ctx); ctx.createPeriodicWave = function (re, im) { return orig(new Float32Array(re.length), new Float32Array(im.length), { disableNormalization: true }); }; }
+      var g = ctx.createGain(); g.gain.value = 0.6; g.connect(ctx.destination);
+      d.run(ctx, { near: g, hall: g }, 0.6, o);
+      return ctx.startRendering();
+    }
+    function band(buf) {
+      var x = mono(buf), sr = buf.sampleRate, N = 1024, hop = 240, e = [], b0 = Math.ceil(3000 * N / sr), b1 = Math.floor(12000 * N / sr);
+      stft(x, sr, N, hop, function (mag, fr, s) { var p = 0; for (var b = b0; b <= b1; b++) p += mag[b] * mag[b]; e.push([(s + N / 2) / sr, p]); });
+      var joins = joinTimes(o.beat, 0.6), res = {};
+      joins.forEach(function (j) {
+        var sum = 0, n = 0; e.forEach(function (f) { if (f[0] >= j.t - 0.06 && f[0] < j.t + 0.09) { sum += f[1]; n++; } });
+        var r = res[j.kind] = res[j.kind] || { p: 0, n: 0 }; r.p += n ? sum / n : 0; r.n++;
+      });
+      var o2 = {}; for (var k in res) o2[k] = +(10 * Math.log10(res[k].p / res[k].n + 1e-20)).toFixed(1);
+      return o2;
+    }
+    return Promise.all([once(false), once(true)]).then(function (rs) { return { demo: d.id, heard: band(rs[0]), breath: band(rs[1]) }; });
+  }
+  $("vl-joins").addEventListener("click", function () {
+    $("vl-report").innerHTML = "<p>rendering the full ward twice (as heard, and the folds silenced)…</p>";
+    joinMeter("full32").then(function (r) {
+      $("vl-report").innerHTML = "<p><b>The join meter</b> — the full ward (2a), dry: the 3–12 kHz band in the 150 ms around each join (relative dB; the same scale for both rows).</p><table>" +
+        row("as heard", "note joins " + r.heard.note + " · the line's breath " + r.heard.line) +
+        row("the breath and the consonants alone", "note joins " + r.breath.note + " · the line's breath " + r.breath.line) + "</table>";
+    }).catch(function (e) { showErr(String(e && e.stack || e)); });
+  });
+
   // for the headless bench (CDP): window.VoicesLab.measure("ward") → report
   window.VoicesLab = {
     demos: DEMOS.map(function (d) { return d.id; }), people: PEOPLE.map(function (d) { return d.id; }),
-    play: play, stop: stopLive, measure: measure, flangeTest: flangeTest, budgetTable: budgetTable,
+    play: play, stop: stopLive, measure: measure, flangeTest: flangeTest, budgetTable: budgetTable, honkTest: honkTest, joinMeter: joinMeter,
     specPng: function (a) { drawSpec(a._cols); return $("vl-spec").toDataURL("image/png"); },
     ready: irReady,
     // the detector's own sanity check: a sine with one hard step in it must

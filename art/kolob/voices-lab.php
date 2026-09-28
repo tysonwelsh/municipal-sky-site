@@ -91,7 +91,7 @@ include '../../includes/header.php';
     <header class="vl-head">
       <p class="vl-kicker">Kolob 2 · sound lab · unlisted</p>
       <h1 class="vl-title">Voices Lab</h1>
-      <p class="vl-lede">One common-metre line, four parts, sung six ways: the quartet Kolob sings today,
+      <p class="vl-lede">One common-metre line, four parts, sung many ways: the quartet Kolob sings today,
         and the ward that replaces it. People in a hall on a bright morning, not a pad.</p>
     </header>
 
@@ -107,7 +107,9 @@ include '../../includes/header.php';
       <button type="button" class="vl-btn" id="vl-stop">stop</button>
     </div>
 
-    <p class="vl-sec">The six demonstrations</p>
+    <p class="vl-sec">The demonstrations</p>
+    <p class="vl-note">The full ward (2a, thirty-two singers, a throat each) is the owner's choice; the desks (2, 2b, and the
+      desk knobs) are kept only as the documented fallback for a device that proves it cannot hold the ward.</p>
     <div class="vl-demos" id="vl-demos"></div>
 
     <p class="vl-sec">One person at a time</p>
@@ -121,6 +123,8 @@ include '../../includes/header.php';
         <button type="button" class="vl-btn" id="vl-measure">render &amp; measure the last demo</button>
         <button type="button" class="vl-btn" id="vl-flange">flanger test (one desk vs. a naive pair)</button>
         <button type="button" class="vl-btn" id="vl-budget-btn">node budget, 6 desks + 2 soloists</button>
+        <button type="button" class="vl-btn" id="vl-honk">the honk test (scales on five vowels)</button>
+        <button type="button" class="vl-btn" id="vl-joins">the join meter (the full ward)</button>
       </div>
       <div id="vl-report"></div>
       <canvas class="vl-canvas" id="vl-spec" width="1000" height="260" hidden></canvas>
