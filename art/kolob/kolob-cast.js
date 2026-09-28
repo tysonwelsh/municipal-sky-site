@@ -378,7 +378,7 @@ window.KOLOB.Cast = (function () {
   // whether or not it is used.
   //   opts = { verses (default drawn by dialect), organ (the hymn is
   //            accompanied: the organ gives out the tune, no keying),
-  //            first (the day's first hymn: the newcomer's), last }
+  //            first (the day's first hymn: the newcomer's) }
   // → { hymnId, dialect, layout, keying: {kind, by, habit} | null,
   //     verses: [Performance + { forward: [{memberId, role, action, lines, gainDb}], vowelsSeed }],
   //     tempoMul, rubato, holdMul, amen }
@@ -553,6 +553,14 @@ window.KOLOB.Cast = (function () {
     var seated = ward.members.filter(function (m) { return m.k != null; });
     function ev(type, at, payload) { var e = { type: type, t: round(at, 3) }; for (var k in payload) e[k] = payload[k]; events.push(e); }
     function castEv(at, m, action) { ev("cast", at, { memberId: m.id, nameDs: m.nameDs, action: action }); }
+    // a person's moment ends: they blend back into the ward (nobody moves —
+    // "forward" is only how near they are heard); the newcomer, once in,
+    // simply keeps singing
+    function stepBack(at, id) {
+      var m = ward.byId[id];
+      if (m.role === "newcomer") return;
+      castEv(at, m, m.role === "precentor" ? "falls silent" : "blends back into the ward");
+    }
     function hz(monzo, oct) { return base * ratio(monzo) * oct; }
     function panFor(m) { return panOf(m, plan.layout, ward); }
 
@@ -589,7 +597,7 @@ window.KOLOB.Cast = (function () {
         var fw = {};
         (P.forward || []).forEach(function (f) { if (f.lines.indexOf(li) >= 0) fw[f.memberId] = f; });
         Object.keys(fw).forEach(function (id) { if (!fwdOn[id]) { castEv(t, ward.byId[id], fw[id].action); fwdOn[id] = true; } });
-        Object.keys(fwdOn).forEach(function (id) { if (fwdOn[id] && !fw[id]) { castEv(t, ward.byId[id], "returns to the pew"); fwdOn[id] = false; } });
+        Object.keys(fwdOn).forEach(function (id) { if (fwdOn[id] && !fw[id]) { stepBack(t, id); fwdOn[id] = false; } });
 
         if (P.practice === "lined") {
           // the precentor lines the line out, quickly, ornamented; the ward answers it slowly
@@ -662,7 +670,7 @@ window.KOLOB.Cast = (function () {
         on.forEach(function (x) { if (x - lastJ > 0.03) { joins.push({ t: round(x, 4), kind: Math.abs(x - t0) < 0.01 ? "line" : "note" }); lastJ = x; } });
         t = t0 + span + (P.practice === "lined" ? 0.5 : 0);
       });
-      Object.keys(fwdOn).forEach(function (id) { if (fwdOn[id]) castEv(t, ward.byId[id], "returns to the pew"); });
+      Object.keys(fwdOn).forEach(function (id) { if (fwdOn[id]) stepBack(t, id); });
       if (P.practice !== "lined" && !lastVerse) t += 1.1 * beat0;
     });
     // ---- the amen (the Tabernacle's) ----
