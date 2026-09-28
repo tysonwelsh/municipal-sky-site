@@ -36,7 +36,11 @@
   // ==========================================================================
   var MODES = [["", "any (the dialect draws)"], ["ionian", "ionian (major)"], ["mixolydian", "mixolydian"], ["dorian", "dorian"], ["aeolian", "aeolian (minor)"], ["penta", "pentatonic"], ["hexa", "hexatonic"]];
   var METER_NAMES = { "CM": "CM 8.6.8.6", "LM": "LM 8.8.8.8", "SM": "SM 6.6.8.6", "CMD": "CMD (doubled)", "87.87": "8.7.8.7", "87.87D": "8.7.8.7 D", "76.76D": "7.6.7.6 D", "11s": "11s (11.11.11.11)", "10.10R": "10.10 with refrain" };
-  var KEYS = [["0,0,0,0", "do on the keynote"], ["2,-1,0,0", "up a just fourth (4/3)"], ["-1,1,0,0", "up a just fifth (3/2)"], ["1,-1,0,0", "down a fourth (2/3)"], ["-2,1,0,0", "down a fifth (3/4)"]];
+  // (2/3 is a fifth down, 3/4 a fourth down — the labels were swapped in round 1)
+  var KEYS = [["0,0,0,0", "do on the keynote"], ["2,-1,0,0", "up a just fourth (4/3)"], ["-1,1,0,0", "up a just fifth (3/2)"], ["1,-1,0,0", "down a just fifth (2/3)"], ["-2,1,0,0", "down a just fourth (3/4)"]];
+  // ?key= takes a name, a ratio or the monzo itself: up4 · 4/3 · 2,-1,0,0
+  var KEY_ALIAS = { home: "0,0,0,0", "1/1": "0,0,0,0", up4: "2,-1,0,0", "4/3": "2,-1,0,0", up5: "-1,1,0,0", "3/2": "-1,1,0,0", down5: "1,-1,0,0", "2/3": "1,-1,0,0", down4: "-2,1,0,0", "3/4": "-2,1,0,0" };
+  var KEY_NAME = { "0,0,0,0": "home", "2,-1,0,0": "up4", "-1,1,0,0": "up5", "1,-1,0,0": "down5", "-2,1,0,0": "down4" };
   function fill(sel, pairs) { sel.innerHTML = pairs.map(function (p) { return '<option value="' + esc(p[0]) + '">' + esc(p[1]) + "</option>"; }).join(""); }
   fill($("khl-mode"), MODES);
   fill($("khl-meter"), [["", "any (the dialect draws)"]].concat(Object.keys(C.METERS).map(function (m) { return [m, METER_NAMES[m] || m]; })));
@@ -46,9 +50,21 @@
   var Q = new URLSearchParams(location.search);
   if (Q.get("seed")) $("khl-seed").value = Q.get("seed");
   ["dialect", "mode", "meter", "hymnist"].forEach(function (k) { if (Q.get(k) != null) $("khl-" + k).value = Q.get(k); });
+  if (Q.get("key") != null) { var kq = String(Q.get("key")).replace(/\s/g, ""), kv = KEY_ALIAS[kq] || kq; if (KEY_NAME[kv]) $("khl-key").value = kv; }
+  // the address bar always holds the link that composes this hymn again
+  function syncURL(s) {
+    try {
+      var u = new URLSearchParams();
+      u.set("seed", s.seed); u.set("dialect", s.dialect);
+      if (s.mode) u.set("mode", s.mode); if (s.meter) u.set("meter", s.meter); if (s.hymnist) u.set("hymnist", s.hymnist);
+      var kn = KEY_NAME[s.keyMonzo.join(",")]; if (kn && kn !== "home") u.set("key", kn);
+      history.replaceState(null, "", location.pathname + "?" + u.toString());
+    } catch (e) { /* a sandboxed page keeps its address */ }
+  }
   $("khl-tempo").addEventListener("input", function () { $("khl-tempo-out").textContent = (+this.value).toFixed(2) + "×"; });
 
   var KEYNOTE_HZ = 261.63;                 // the day's keynote, about middle C (the app's F0 · 4)
+  var GIVE_OUT = 2.8;                      // the organ alone, giving out the tune: about +9 dB over its doubling level
   var hymn = null, seedNow = null;
 
   // the day's theme, as the motif engine draws it from the same seed: the
@@ -82,6 +98,7 @@
     hymn._ms = Math.round(performance.now() - t0);
     hymn._theme = th;
     seedNow = s.seed;
+    syncURL(s);
     render();
     $("khl-playbtn").disabled = false;
     $("khl-organ").disabled = !D.get(hymn.dialect).organ;
@@ -115,7 +132,9 @@
     var refs = C.references()[h.dialect], fp = r.fingerprint, tol = refs.tolerance;
     if ((h.mode === "aeolian" || h.mode === "dorian") && tol.minor) { var t2 = {}; for (var k in tol) t2[k] = tol[k]; for (k in tol.minor) t2[k] = tol.minor[k]; tol = t2; }
     var ROWS = [["par5", "moves with parallel fifths"], ["thirdless", "chords with no third"], ["crossing", "chords with parts crossed"], ["chromatic", "chromatic notes"],
-                ["sevenths", "chords with a seventh"], ["leap", "melody leaps (a third or more)"], ["melisma", "melody notes slurred"], ["melodyRange", "melody's compass (steps)"]];
+                ["sevenths", "chords with a seventh"], ["leap", "melody leaps (a third or more)"], ["melisma", "melody notes slurred"], ["melodyRange", "melody's compass (steps)"],
+                ["closeThird", "line closes that keep their third"], ["closeHome", "line closes on home's chord"], ["closeDom", "line closes on the dominant"]]
+      .filter(function (row) { return h.dialect !== "oldway" || !/^close/.test(row[0]); });
     $("khl-fp").innerHTML = '<table class="khl-table"><tr><th>measure</th><th>this hymn</th><th>Earth tunes (' + refs.tunes.length + ")</th><th>tolerance</th></tr>" +
       ROWS.map(function (row) {
         var v = row[0] === "melodyRange" ? fp.melodyRange : fp.share[row[0]], t = tol[row[0]], ref = refs.mean[row[0]];
@@ -124,12 +143,13 @@
         return "<tr><td>" + esc(row[1]) + '</td><td class="num ' + (inT ? "in" : "out") + '">' + show(v) + '</td><td class="num">' + show(ref) + '</td><td class="num">' + (t ? show(t[0]) + "–" + show(t[1]) : "") + "</td></tr>";
       }).join("") +
       '<tr><td>cadences</td><td colspan="3">' + esc(Object.keys(fp.cadences).map(function (c) { return c + " " + fp.cadences[c]; }).join(" · ")) + "</td></tr>" +
-      '<tr><td>parts\' compass</td><td colspan="3">' + esc(Object.keys(fp.range).map(function (p) { return p + " " + fp.range[p]; }).join(" · ")) + " steps</td></tr></table>" +
+      '<tr><td>parts\' compass</td><td colspan="3">' + esc(Object.keys(fp.rangeSemi).map(function (p) { return p + " " + fp.rangeSemi[p] + " semitones (" + fp.range[p] + " steps)"; }).join(" · ")) + " — an octave and a fourth is 17</td></tr>" +
+      '<tr><td>how it ends</td><td colspan="3">' + esc(C.sungEnding(h, 3)) + " (the last three notes, named from the final)</td></tr></table>" +
       '<p class="khl-cap">Earth tunes: ' + esc(refs.tunes.map(function (t) { return t.id.replace("earth:", "").toUpperCase(); }).join(", ")) + "</p>";
     // the plan
     $("khl-plan").innerHTML = '<table class="khl-table"><tr><th>line</th><th>role</th><th>cadence planned</th><th>ending (drawn first)</th><th>contour</th><th>rhythm cell</th><th>search</th></tr>' +
       r.lines.map(function (L, i) {
-        return "<tr><td>" + (i + 1) + " · " + esc(L.letter) + (L.copyOf ? " (= " + L.copyOf + ")" : "") + (r.peak.line === i + 1 ? " ★" : "") + "</td><td>" + esc(L.role) + "</td><td>" + esc(L.cadence) + " on " + solName(L.target, h.mode) +
+        return "<tr><td>" + (i + 1) + " · " + esc(L.letter) + (L.copyOf ? " (= " + L.copyOf + ")" : "") + (r.peak.line === i + 1 ? " ★" : "") + "</td><td>" + esc(L.role) + "</td><td>" + esc(L.cadence) + (L.full ? ", its third kept" : "") + " on " + solName(L.target, h.mode) +
                "</td><td>" + esc(L.figure) + "</td><td>" + esc(L.contour) + "</td><td>" + esc(L.cell) + '</td><td class="num">' + (L.copyOf ? "copied" : "cost " + L.searchCost + ", top-8 differ by " + L.topSpread) + "</td></tr>";
       }).join("") + "</table>" +
       '<p class="khl-cap">★ the peak: ' + r.peak.stepsOverFinal + " steps over the final, at " + pct(r.peak.at) + " of the tune (planned 60–75%). Compass " + r.peak.span + " steps.</p>";
@@ -465,7 +485,15 @@
       var withOrgan = Dl.organ && $("khl-organ").checked, lined = h.dialect === "oldway" && $("khl-lined").checked;
       var ward = fullWard(seed), T0 = ac.currentTime + 1.0, t = T0, marks = [], jobs = [], g1 = 1 / Math.sqrt(8);
       var verseLines = h.lines.concat(h.refrain || []), base = KEYNOTE_HZ * ratio(h.keyMonzo);
-      var organ = withOrgan ? K.VoicesOrgan.create(ac, room.hall, { gain: 0.9, seed: seed, t0: T0 }) : null;
+      // the organ plays into a bus of its own, so that its giving-out — the
+      // organ alone — can stand at the ward's level (at the doubling gain it
+      // sat some 12 dB under the singers: round 2's critic), and settle under
+      // the ward when they stand to sing
+      var organBus = null, organ = null;
+      if (withOrgan) {
+        organBus = ac.createGain(); organBus.gain.setValueAtTime(GIVE_OUT, T0 - 0.5); organBus.connect(room.hall);
+        organ = K.VoicesOrgan.create(ac, organBus, { gain: 0.9, seed: seed, t0: T0 });
+      }
       function job(at, fn) { jobs.push({ at: at, fn: fn }); }
       // one line (lines[i]) at t0, by everyone who sings it; → the line's end
       function singLine(t0, lines, i, bs, vowelOf, opts) {
@@ -499,7 +527,13 @@
       if (organ) {
         var lastI = h.lines.length - 1, t0i = t;
         job(t0i, function () { organLine(t0i, h.lines, lastI, beatS, "hymn principal"); });
+        // (the staff lights with the organ, too: the last line, all four parts)
+        ["S", "A", "T", "B"].forEach(function (p) {
+          partEvents(h, p, t0i, beatS, [h.lines[lastI]], null).ev.forEach(function (e) { marks.push({ t: e.t, end: e.t + e.dur, p: p, b: e.beatAbs, amen: false, label: "the organ gives out the tune" }); });
+        });
         t = partEvents(h, "S", t, beatS, [h.lines[lastI]], null).end + 0.9 * beatS;
+        organBus.gain.setValueAtTime(GIVE_OUT, t - 0.45);
+        organBus.gain.linearRampToValueAtTime(1, t - 0.05);          // the ward stands; the organ steps back under them
       }
       for (var v = 0; v < verses; v++) {
         (function (v) {
@@ -564,7 +598,7 @@
   // ==========================================================================
   $("khl-spreadbtn").addEventListener("click", function () {
     var s = settings(), N = 24, i = 0, out = $("khl-spreadout"), btn = this;
-    var T = { finalFigure: {}, lineEnd: {}, contour: {}, cadence: {}, meter: {}, peakLine: {}, hymnist: {}, opening: {} }, peaks = [], fps = [], fails = {};
+    var T = { lastTwo: {}, lastThree: {}, finalFigure: {}, lineEnd: {}, contour: {}, cadence: {}, meter: {}, peakLine: {}, hymnist: {}, opening: {} }, peaks = [], fps = [], fails = {};
     btn.disabled = true;
     function inc(t, k) { T[t][k] = (T[t][k] || 0) + 1; }
     function step() {
@@ -573,6 +607,7 @@
         var r = h.report;
         inc("meter", h.meter); inc("hymnist", h.hymnist ? h.hymnist.nameEn : "—"); inc("peakLine", "line " + r.peak.line);
         r.lines.forEach(function (L) { inc("contour", L.contour); inc("cadence", L.cadence.split(" ")[0]); inc("lineEnd", solName(L.target, h.mode) + " by " + L.figure); if (L.role === "home") inc("finalFigure", L.figure); });
+        inc("lastTwo", C.sungEnding(h, 2)); inc("lastThree", C.sungEnding(h, 3));
         var m = h.lines[0].notes[h.melodyPart].filter(function (x) { return x.syl !== null; }).map(function (x) { return x.deg; });
         inc("opening", m.slice(1, 5).map(function (d, j) { return d - m[j]; }).join(" "));
         peaks.push(r.peak.at); fps.push(r.fingerprint);
@@ -588,10 +623,12 @@
         return name + ": " + arr.length + " kinds, the commonest " + pct(arr[0][1] / tot) + " (" + arr[0][0] + "), entropy " + H.toFixed(2) + " bits\n    " + arr.slice(0, 8).map(function (x) { return x[0] + " " + x[1]; }).join(" · ");
       }
       var refs = C.references()[s.dialect], mean = {};
-      ["par5", "thirdless", "crossing", "chromatic", "sevenths", "leap", "melisma"].forEach(function (k2) { mean[k2] = fps.reduce(function (a, f) { return a + f.share[k2]; }, 0) / fps.length; });
+      C.FP_KEYS.filter(function (k2) { return s.dialect !== "oldway" || !/^close/.test(k2); }).forEach(function (k2) { mean[k2] = fps.reduce(function (a, f) { return a + f.share[k2]; }, 0) / fps.length; });
       var mn = Math.min.apply(null, peaks), mx = Math.max.apply(null, peaks), av = peaks.reduce(function (a, b) { return a + b; }, 0) / peaks.length;
       out.innerHTML = "<pre>" + esc([
-        line("finalFigure", "how the last line ends"), line("lineEnd", "every line's ending (note, figure)"), line("opening", "the first line's opening intervals"),
+        "(the endings AS SUNG, named from the final as if it were do; a comma marks a note below it)",
+        line("lastTwo", "the hymn's last two notes"), line("lastThree", "the hymn's last three notes"), line("finalFigure", "the last line's ending figure (as drawn)"),
+        line("lineEnd", "every line's ending (note, figure)"), line("opening", "the first line's opening intervals"),
         line("contour", "line contours"), line("cadence", "cadences"), line("meter", "meters"), line("hymnist", "hymnists"), line("peakLine", "where the peak falls (line)"),
         "the peak's place in the tune: " + pct(mn) + " to " + pct(mx) + ", mean " + pct(av) + " (planned 60–75%)",
         "measured, mean of " + N + " (Earth tunes' mean; tolerance): " + Object.keys(mean).map(function (k2) { var t = refs.tolerance[k2]; return k2 + " " + pct(mean[k2]) + " (" + pct(refs.mean[k2]) + (t ? "; " + pct(t[0]) + "–" + pct(t[1]) : "") + ")"; }).join(" · "),
@@ -607,12 +644,12 @@
   var LISTEN = {
     tabernacle: [
       "<b>The Tabernacle</b> is the Latter-day Saint hymnal's own voice (Careless, Beesley, Stephens): the tune on top, the organ under the ward, warm full chords.",
-      "Listen for: the organ giving out the last line first, then the congregation. Every line ends on a real cadence — a half close that leaves you leaning, a full close home at the end; now and then the harmony slips aside (a <i>deceptive</i> close) or leans on the dominant's own dominant for colour. At the end of a line the alto or tenor sometimes holds a note over the chord change and then settles (a <i>4–3 suspension</i>). The highest note of the tune should come about two-thirds of the way through, not at the start.",
-      "And after the last verse, the plagal <i>A-men</i>.",
+      "Listen for: the organ giving out the last line first, then the congregation. Every line ends on a real cadence — a half close that leaves you leaning, a full close home at the end, the bass stepping sol–do beneath it; now and then the harmony slips aside (a <i>deceptive</i> close) or leans on the dominant's own dominant for colour. At the end of a line the alto or tenor sometimes holds a note over the chord change and then settles (a <i>4–3 suspension</i>). The highest note of the tune should come about two-thirds of the way through, not at the start.",
+      "And after the last verse, the plagal <i>A-men</i> (the bass fa–do).",
     ],
     sacredharp: [
       "<b>The Sacred Harp</b> is the Georgia singing school's sound: loud, bright, raw. The tune is in the <i>tenor</i> (the men in the middle, doubled an octave up by some women), with the treble and bass as melodies of their own.",
-      "Listen for: open fifths and bare octaves where you expect a sweet third; parts moving in parallel fifths (welcome here); every line ending on a hollow, bare chord; no organ, no amen. The first verse is sung <i>on the notes</i> — fa, sol, la, mi — as the singing schools teach; the next on the words.",
+      "Listen for: open fifths and bare octaves where you expect a sweet third; parts moving in parallel fifths (welcome here); most lines ending on a hollow, bare chord (in a major tune, now and then an inner line closes full, its third kept, as the 1844 book has it; the last chord is always bare); no organ, no amen. The first verse is sung <i>on the notes</i> — fa, sol, la, mi — as the singing schools teach; the next on the words.",
     ],
     oldway: [
       "<b>The Old Way</b> is lining out: a precentor half-sings each line, and the congregation answers it extremely slowly, every singer decorating the tune in their own way — a slow cloud of voices, unmetered and haunting.",
