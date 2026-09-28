@@ -189,14 +189,14 @@
       if (at(xx - 1, yy) || at(xx + 1, yy) || at(xx, yy - 1) || at(xx, yy + 1)) px(g, X0 + xx, Y0 + yy, '#12060a');
     }
     // fill: gold bands, lit at the top, burnt at the bottom
-    var bands = [[0, P.GOLD5], [0.12, P.GOLD4], [0.36, P.GOLD3], [0.62, P.GOLD2], [0.86, P.GOLD1]];
+    var bands = [[0, P.GOLD5], [0.2, P.GOLD4], [0.48, P.GOLD3], [0.74, P.GOLD2], [0.92, P.GOLD1]];
     for (yy = 0; yy < H; yy++) for (xx = 0; xx < W; xx++) {
       if (!M[yy][xx]) continue;
       var t = (yy - oy) / LH, c = bands[0][1];
       for (var k = 0; k < bands.length; k++) if (t >= bands[k][0]) c = bands[k][1];
       var nk = 0; for (k = 0; k < bands.length; k++) if (t >= bands[k][0]) nk = k;
       if (nk + 1 < bands.length && bayer(X0 + xx, Y0 + yy) < (t - bands[nk][0]) / (bands[nk + 1][0] - bands[nk][0]) - 0.35) c = bands[nk + 1][1];
-      if (!at(xx - 1, yy - 1) || !at(xx, yy - 1)) c = t < 0.5 ? P.GOLD5 : P.GOLD4;     // lit edge
+      if (!at(xx - 1, yy - 1) || !at(xx, yy - 1)) c = t < 0.5 ? '#fffbe8' : P.GOLD5;     // lit edge (white-hot along the tops)
       else if (!at(xx + 1, yy + 1) || !at(xx + 1, yy)) c = P.GOLD1;                     // shadow edge
       px(g, X0 + xx, Y0 + yy, c);
     }
@@ -237,6 +237,12 @@
     }
     // a glow along the bottom (the lamp inside the box), and grime at the top
     for (y = fy1 - 5; y <= fy1; y++) for (x = fx0; x <= fx1; x++) if (bayer(x, y) < (y - fy1 + 6) / 10) px(g, x, y, P.MQ_RAY2);
+    // the tubes behind the face: a warm halo round where the letters stand
+    var hcx = 190, hcy = fy0 + 16;
+    for (y = fy0; y <= fy1; y++) for (x = fx0; x <= fx1; x++) {
+      var hd = Math.hypot((x - hcx) / 150, (y - hcy) / 16);
+      if (hd < 1 && bayer(x + 1, y) < (1 - hd) * 0.55) px(g, x, y, hd < 0.55 ? '#7a3a4e' : '#5a2a4a');
+    }
     dither(g, fx0, fy0, fx1 - fx0 + 1, 2, P.NIGHT0, 0.5);
     // the inner bezel
     hline(g, fx0 - 1, fx1 + 1, fy0 - 1, P.CASE0); hline(g, fx0 - 1, fx1 + 1, fy1 + 1, P.CASE4);

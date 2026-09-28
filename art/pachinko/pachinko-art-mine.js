@@ -358,6 +358,24 @@
     });
   }
 
+  /* ══ the crew's footholds beyond the working faces ═══════════════════
+   * Past the faces the knockers come out of their little doors onto sills
+   * nobody painted: a lip of rock with a lit top edge, so no toy ever stands
+   * on nothing (the knockers' own door list says where) */
+  function paintSills(g) {
+    var K = root.PachinkoKnockers && root.PachinkoKnockers.core, ds = (K && K.DOORS) || [];
+    ds.forEach(function (d) {
+      if (!d.sill) return;
+      var x0 = d.sill[0] - 3, x1 = d.sill[1] + 3, y = d.y;
+      for (var x = x0; x <= x1; x++) {
+        var end = x === x0 || x === x1, rag = A.hash01(57, x, y) < 0.3 ? 1 : 0;
+        px(g, x, y, end ? '#4a3e44' : (x % 5 === 0 ? '#6a5a52' : '#8a786a'));
+        px(g, x, y + 1, '#3a2e34'); if (!end) px(g, x, y + 2 + rag, '#1a1216');
+      }
+      px(g, x0 - 1, y + 1, '#2a2026'); px(g, x1 + 1, y + 1, '#2a2026');
+    });
+  }
+
   /* ══ shafts: paired columns of prop pins are a timbered shaft ═══════ */
   function findShafts(board) {
     var props = (board.fixtures || []).filter(function (f) { return f.kind === 'pin' && f.dress === 'prop'; });
@@ -1267,6 +1285,7 @@
     paintSection(g, board, gals);
     paintGround(g, board, em);
     paintWorkings(g, board, gals);
+    paintSills(g);
     // coal glints in the seams
     var glints = [], R = A.rng(0x61147);
     for (var i = 0; i < 1400 && glints.length < 110; i++) {

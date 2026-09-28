@@ -445,6 +445,9 @@
     tool2(K, c, fig.tool2, B.handL, false);
   }
 
+  // a direction snapped to the nearest of the eight (for heads that must
+  // stay crisp lines at any angle)
+  function oct(x, y) { var a = Math.round(Math.atan2(y, x) / (Math.PI / 4)) * (Math.PI / 4); return [Math.round(Math.cos(a)), Math.round(Math.sin(a))]; }
   function tool(K, c, kind, hand, a) {
     if (!kind) return;
     var s = K.s, X = K.X, Y = K.Y, L = K.L, P1 = K.P1, fig = K.fig;
@@ -453,25 +456,35 @@
     var k;
     switch (kind) {
       case 'pick': {
-        L(along(-4), along(11), 1, P.TIM4);
-        var hd = along(11);
-        L([hd[0] - dir[1] * 5, hd[1] + dir[0] * 5], [hd[0] + dir[1] * 5, hd[1] - dir[0] * 5], 1, P.IRON3);
-        P1([hd[0] - dir[1] * 5 + dir[0], hd[1] + dir[0] * 5 + dir[1]], P.IRON3);
-        P1([hd[0] + dir[1] * 5 + dir[0], hd[1] - dir[0] * 5 + dir[1]], P.IRON4);
-        P1(hd, P.IRON4);
+        // the handle: one clean line; the head: square to it, snapped to the
+        // nearest 45 degrees so it is always a straight or a true diagonal
+        // line (a pick at 30 degrees drawn exactly turns into a fork)
+        L(along(-4), along(10), 1, P.TIM4);
+        var hd = along(11), q = oct(-dir[1], dir[0]), dq = oct(dir[0], dir[1]);
+        var hx = Math.round(hd[0]), hy = Math.round(hd[1]);
+        for (k = -4; k <= 4; k++) P1([hx + q[0] * k, hy + q[1] * k], k === 0 ? P.IRON4 : (k < 0 ? P.IRON4 : P.IRON3));
+        // the points curve back toward the hands a pixel; the eye is thick
+        P1([hx + q[0] * 5 - dq[0], hy + q[1] * 5 - dq[1]], P.IRON3); P1([hx - q[0] * 5 - dq[0], hy - q[1] * 5 - dq[1]], P.IRON4);
+        P1([hx + dq[0], hy + dq[1]], P.IRON2); P1([hx - dq[0], hy - dq[1]], P.IRON2);
         break;
       }
       case 'shovel': {
-        L(along(-3), along(16), 1, P.TIM4);
-        var bl = along(17);
-        for (k = 0; k < 6; k++) L([bl[0] - dir[1] * 2.5 + dir[0] * k, bl[1] + dir[0] * 2.5 + dir[1] * k], [bl[0] + dir[1] * 2.5 + dir[0] * k, bl[1] - dir[0] * 2.5 + dir[1] * k], 1, k === 0 ? P.IRON4 : (k === 5 ? P.IRON2 : P.IRON3));
+        L(along(-3), along(15), 1, P.TIM4);
+        // the blade: a filled quad (no gaps at any angle), a lit edge
+        var b0 = along(16);
+        K.F([[b0[0] - dir[1] * 2.6, b0[1] + dir[0] * 2.6], [b0[0] + dir[1] * 2.6, b0[1] - dir[0] * 2.6],
+          [b0[0] + dir[1] * 2.2 + dir[0] * 6, b0[1] - dir[0] * 2.2 + dir[1] * 6], [b0[0] - dir[1] * 2.2 + dir[0] * 6, b0[1] + dir[0] * 2.2 + dir[1] * 6]], P.IRON3);
+        L([b0[0] - dir[1] * 2.4, b0[1] + dir[0] * 2.4], [b0[0] + dir[1] * 2.4, b0[1] - dir[0] * 2.4], 1, P.IRON4);
         L(along(-3, -1.5), along(-3, 1.5), 1, P.TIM3);   // the D-grip
         break;
       }
       case 'mallet': {
         L(along(-1), along(7), 1, P.TIM4);
-        var mh = along(8);
-        for (k = -2; k <= 2; k++) L([mh[0] - dir[1] * k, mh[1] + dir[0] * k], [mh[0] - dir[1] * k + dir[0] * 3, mh[1] + dir[0] * k + dir[1] * 3], 1, k === -2 ? P.END : P.TIM3);
+        // the head: a solid block square to the handle (filled, never slats)
+        var m0 = along(7);
+        K.F([[m0[0] - dir[1] * 2.5, m0[1] + dir[0] * 2.5], [m0[0] + dir[1] * 2.5, m0[1] - dir[0] * 2.5],
+          [m0[0] + dir[1] * 2.5 + dir[0] * 3.2, m0[1] - dir[0] * 2.5 + dir[1] * 3.2], [m0[0] - dir[1] * 2.5 + dir[0] * 3.2, m0[1] + dir[0] * 2.5 + dir[1] * 3.2]], P.TIM3);
+        P1([m0[0] - dir[1] * 2 + dir[0] * 0.5, m0[1] + dir[0] * 2 + dir[1] * 0.5], P.END); P1([m0[0] + dir[1] * 2 + dir[0] * 2.5, m0[1] - dir[0] * 2 + dir[1] * 2.5], P.TIM2);
         break;
       }
       case 'cane':

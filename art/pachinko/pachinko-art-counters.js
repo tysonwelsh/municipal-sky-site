@@ -289,19 +289,21 @@
     var n = tg.n | 0; if (n <= 0 && tg.torn == null) return;
     var TW = 9, TL = 6, x0 = m.x + 4, y0 = m.y + 3;
     var room = C.lower.y0 - 1 - y0, hang = Math.min(n * TL, room);
-    var fall = 0, fade = 1;
+    var fall = 0, fade = 1, clipY = C.H;
     if (tg.torn != null) {
+      // torn off: the paper drops as one piece in three stop-motion frames
+      // and folds away behind the ledge (never a dithered ghost over the sticker)
       var fu = t - tg.torn;
-      if (fu > 0.7) return;
-      fall = Math.round(fu * fu * 520 + fu * 30); fade = 1 - fu / 0.7;
+      if (fu > 0.2) return;
+      fall = [0, 10, 26, 48][Math.min(3, Math.floor(fu / 0.05))]; clipY = C.lower.y0 - 1;
     }
     // the newest ticket is still coming out of the mouth (a feed of ~0.1 s)
     for (var i = 0; i < Math.ceil(hang / TL); i++) {
       var ty = y0 + i * TL + fall;
-      if (ty > C.H) break;
+      if (ty > clipY) break;
       var h2 = Math.min(TL, y0 + hang - (y0 + i * TL));
       for (var yy = 0; yy < h2; yy++) {
-        var Y = ty + yy; if (Y >= C.H) break;
+        var Y = ty + yy; if (Y >= clipY) break;
         if (fade < 1 && bayer(x0, Y) > fade) continue;
         var edge = yy === TL - 1;                                          // the perforation
         for (var xx = 0; xx < TW; xx++) {
