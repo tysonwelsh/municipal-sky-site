@@ -280,7 +280,10 @@
   function paintSection(g, board, gals) {
     var img = g.getImageData(0, 0, GW, GH), d = img.data, cache = {};
     function tone(k, i) { var key = k + i; return cache[key] || (cache[key] = A.rgb(TONES[k][i])); }
-    var BACK = [A.rgb(P.VOID0), A.rgb(P.VOID1), A.rgb(P.VOID2), A.rgb(P.COAL2)];
+    // the gallery's back wall: worked coal, pick-marked. Dark, but it takes
+    // a lamp's light (the galleries are where the mine is lit)
+    var BACK = [A.rgb('#1a1418'), A.rgb('#2e2428'), A.rgb('#44363a'), A.rgb('#5e4c4a')];
+    var HOLE = [A.rgb(P.VOID0), A.rgb(P.VOID1), A.rgb(P.VOID2), A.rgb(P.COAL2)];
     var SUMPC = [A.rgb(P.VOID1), A.rgb(P.DEEP0), A.rgb(P.DEEP1), A.rgb(P.CLAY0)];
     var tops = gals.map(function (G) { var a = []; for (var x = 0; x < GW; x++) a[x] = floorTopAt(G.floor, x); return a; });
     for (var y = SURF; y < GH; y++) {
@@ -293,7 +296,7 @@
           if (y > G.top && (ft == null ? y < G.floor.y + 9 : y < ft)) {
             var n = fbm(x * 0.2, y * 0.3), pick = (A.hash01(17, x, (y / 3) | 0) < 0.08) ? 0.6 : 0;
             var q = (y - G.top < 3 ? 0 : n * 2.2 + pick) + (bayer(x, y) - 0.5) * 0.9;
-            if (ft == null) q = q * 0.6 + 0.4 - (y - G.floor.y + 4) * 0.12;  // an opening: a hole going down
+            if (ft == null) { q = q * 0.6 + 0.4 - (y - G.floor.y + 4) * 0.12; c = HOLE[q < 0.5 ? 0 : q < 1.3 ? 1 : q < 2.0 ? 2 : 3]; break; }  // an opening: a hole going down
             c = BACK[q < 0.5 ? 0 : q < 1.3 ? 1 : q < 2.0 ? 2 : 3];
             break;
           }
@@ -1080,30 +1083,7 @@
     }
   };
 
-  /* ══ case light and vignette (for the lightmap) ════════════════════ */
-  function buildCaseLight() {
-    var c = A.makeCanvas(GW, GH), g = c.getContext('2d');
-    for (var y = 0; y < 96; y++) {
-      var k = y < 58 ? 1 : Math.max(0, 1 - (y - 58) / 34);
-      for (var x = 0; x < GW; x++) {
-        var q = Math.floor(k * 6 + bayer(x, y) * 0.999) / 6;
-        if (q <= 0) continue;
-        g.fillStyle = 'rgb(' + Math.round(196 * q) + ',' + Math.round(186 * q) + ',' + Math.round(200 * q) + ')';
-        g.fillRect(x, y, 1, 1);
-      }
-    }
-    return c;
-  }
-  function buildVignette() {
-    var c = A.makeCanvas(GW, GH), g = c.getContext('2d');
-    g.fillStyle = '#ffffff'; g.fillRect(0, 0, GW, GH);
-    for (var y = 64; y < GH; y++) for (var x = 0; x < GW; x++) {
-      var e = Math.min(x, GW - 1 - x), k = Math.max(0, (16 - e) / 16);
-      k = Math.max(k, Math.max(0, (y - 400) / 30));
-      if (k > 0 && bayer(x, y) < k) px(g, x, y, k > 0.6 ? '#3a2e5a' : '#7a6aa0');
-    }
-    return c;
-  }
+  /* (the case light and the vignette live in the renderer's light model now) */
 
   /* ══ paintMine ═════════════════════════════════════════════════════ */
   A.paintMine = function (board) {
@@ -1179,7 +1159,8 @@
       lamps.push({ x: s.x, y: s.y, r: 15, c: '#b8c4ff', k: 0.55, region: reg, kind: 'spot', seed: 300 + i, flame: false });
     });
     return {
-      fore: fore, albedo: c, caseLight: buildCaseLight(), vignette: buildVignette(), lamps: lamps, glints: glints,
+      gals: gals.map(function (G) { return { x0: G.x0, x1: G.x1, top: G.top, y: G.floor.y, id: G.id }; }),
+      fore: fore, albedo: c, lamps: lamps, glints: glints,
       emissive: em, pins: pinOut, figs: specs, stillLife: stillLife(board),
       watch: out.watch, ring: out.ring, moth: out.moth, rat: out.rat
     };

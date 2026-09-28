@@ -45,7 +45,7 @@
     SOIL0: '#2e1c12', SOIL1: '#452c1a', SOIL2: '#5e3e22', ROOT: '#7a5a38',
     SAND0: '#6a5232', SAND1: '#8a6c40', SAND2: '#a8874e', SAND3: '#c4a468',
     SHALE0: '#22283c', SHALE1: '#2e3752', SHALE2: '#3e4a6a', SHALE3: '#56648a',
-    LIME0: '#50545e', LIME1: '#6c727e', LIME2: '#8c929c', LIME3: '#acb2b8',
+    LIME0: '#3a3d46', LIME1: '#4e525c', LIME2: '#656a74', LIME3: '#acb2b8',   // (the bed darkened 30 %: the section darkens with depth; LIME3 stays for the fossils)
     COAL0: '#0a090c', COAL1: '#131218', COAL2: '#1d1b24', COAL3: '#2b2934', GLINT: '#dfe6ff', GLINT_D: '#8a93b8',
     CLAY0: '#3a3a30', CLAY1: '#525440', CLAY2: '#6a6e52',
     DEEP0: '#140e1a', DEEP1: '#211828', DEEP2: '#302238', DEEP3: '#42304c',

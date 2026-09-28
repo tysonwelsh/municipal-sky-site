@@ -159,32 +159,55 @@
     return e.thin;
   };
 
-  function drawFigure(g, fig) {
+  // drawFigure(g, fig): the shadow and the toy together, unlit (the old
+  // single pass). The renderer uses the two halves: the shadow goes on the
+  // rock before the light (the lamps decide how dark it is), the toy after
+  // it, painted in ONE flat colour of light (a model is lit as a whole: no
+  // dither of a lamp's pool across his face)
+  function drawFigure(g, fig) { drawFigureShadow(g, fig); drawFigureBody(g, fig, null); }
+  function drawFigureShadow(g, fig) {
+    if (fig.shadow === false) return;
     var e = sprite(fig);
+    var fx = Math.round(fig.x), fy = Math.round(fig.y);
+    g.save();
+    if (fig.rot) {
+      var r = fig.rot > 0 ? 1 : -1;
+      g.translate(fx, fy - 4); g.rotate(r * Math.PI / 2);
+      g.globalAlpha = 0.42; g.drawImage(e.shd, -O + 2 * r, -OY - 3);
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      g.globalAlpha = 0.5; g.fillStyle = '#000'; g.fillRect(fx - (r > 0 ? 2 : 24), fy, 26, 1);
+      g.restore();
+      return;
+    }
+    // the cast shadow: a toy stood a little way in front of the painted
+    // rock throws its silhouette onto it, down and to the right
+    g.globalAlpha = 0.42; g.drawImage(e.shd, fx - O + 3, fy - OY + 2);
+    // and the dark patch it stands in
+    g.globalAlpha = 0.5; g.fillStyle = '#000';
+    g.fillRect(fx - 5, fy, 11, 1); g.fillRect(fx - 3, fy + 1, 7, 1);
+    g.restore();
+  }
+  var tintC = null, tintG = null;
+  function drawFigureBody(g, fig, tint) {
+    var e = sprite(fig), spr = e.spr;
+    if (tint) {
+      if (!tintC) { tintC = A.makeCanvas(SZ, SZ); tintG = tintC.getContext('2d'); }
+      tintG.globalCompositeOperation = 'copy'; tintG.drawImage(spr, 0, 0);
+      tintG.globalCompositeOperation = 'multiply'; tintG.fillStyle = tint; tintG.fillRect(0, 0, SZ, SZ);
+      tintG.globalCompositeOperation = 'destination-in'; tintG.drawImage(spr, 0, 0);
+      tintG.globalCompositeOperation = 'source-over';
+      spr = tintC;
+    }
     var fx = Math.round(fig.x), fy = Math.round(fig.y);
     if (fig.rot) {
       // knocked over: the toy lies stiff on its side, its back to the floor
       var r = fig.rot > 0 ? 1 : -1;
-      g.save();
-      g.translate(fx, fy - 4);
-      g.rotate(r * Math.PI / 2);
-      if (fig.shadow !== false) { g.globalAlpha = 0.42; g.drawImage(e.shd, -O + 2 * r, -OY - 3); g.globalAlpha = 1; }
-      g.drawImage(e.spr, -O, -OY);
+      g.save(); g.translate(fx, fy - 4); g.rotate(r * Math.PI / 2);
+      g.drawImage(spr, -O, -OY);
       g.restore();
-      if (fig.shadow !== false) { g.save(); g.globalAlpha = 0.5; g.fillStyle = '#000'; g.fillRect(fx - (r > 0 ? 2 : 24), fy, 26, 1); g.restore(); }
       return;
     }
-    var ox = fx - O, oy = fy - OY;
-    // the cast shadow: a toy stood a little way in front of the painted
-    // rock throws its silhouette onto it, down and to the right
-    if (fig.shadow !== false) {
-      g.save(); g.globalAlpha = 0.42; g.drawImage(e.shd, ox + 3, oy + 2);
-      // and the dark patch it stands in
-      g.globalAlpha = 0.5; g.fillStyle = '#000';
-      g.fillRect(fx - 5, fy, 11, 1); g.fillRect(fx - 3, fy + 1, 7, 1);
-      g.restore();
-    }
-    g.drawImage(e.spr, ox, oy);
+    g.drawImage(spr, fx - O, fy - OY);
   }
 
   /* ── painting one pose into a 72 × 72 sprite (feet at 36, 54) ────── */
@@ -540,32 +563,44 @@
     g.putImageData(im, 0, 0);
   }
 
-  // where the cap lamp's flame is (board space)
-  function figureLamp(fig) {
-    var f = fig.facing < 0 ? -1 : 1, out;
+  // where the cap lamp's flame is (board space). `out` (optional) is filled
+  // and returned instead of a new object (the renderer asks every frame)
+  function figureLamp(fig, out) {
+    var f = fig.facing < 0 ? -1 : 1;
+    if (out) { out.back = false; out.fallen = false; out.inHand = false; out.lantern = null; }
+    else out = {};
     if (fig.rot) {
       // knocked over: the lamp lies on the floor at the head's end
       var c0 = CREW[fig.who] || CREW.pick, len = c0.leg + c0.torso + c0.head * 2;
-      return { x: fig.x + (fig.rot > 0 ? 1 : -1) * len, y: fig.y - 3, fallen: true };
+      out.x = fig.x + (fig.rot > 0 ? 1 : -1) * len; out.y = fig.y - 3; out.fallen = true;
+      return out;
     }
     if (fig.back) {
       var B = rigBack(fig), top = B.headC[1] - B.c.head + 1;
-      out = { x: fig.x + B.headC[0] * f, y: fig.y + top - 2, back: true };
+      out.x = fig.x + B.headC[0] * f; out.y = fig.y + top - 2; out.back = true;
       if (fig.capOff) { out.x = fig.x + B.handL[0] * -f; out.y = fig.y + B.handL[1] - 2; }
       return out;
     }
     var R = rig(fig), c = R.c, hc = R.headC;
     var tp = hc[1] - c.head + 1, lx = hc[0] + 2, ly = tp - 1;
-    out = { x: fig.x + lx * f, y: fig.y + ly };
+    out.x = fig.x + lx * f; out.y = fig.y + ly;
     if (fig.capOff) {
       var hl = limbEnd(R.shL, armAngle(R, (fig.pose && fig.pose.armL) || 0), c.arm);
       out.x = fig.x + (hl[0] + 1) * f; out.y = fig.y + hl[1] - 2; out.inHand = true;
     }
     if (fig.tool === 'lantern') {
       var hand = limbEnd(R.shR, armAngle(R, (fig.pose && fig.pose.armR) || 0), c.arm);
-      out.lantern = { x: fig.x + hand[0] * f, y: fig.y + hand[1] + 5 };
+      var ln = out._lan || (out._lan = {});
+      ln.x = fig.x + hand[0] * f; ln.y = fig.y + hand[1] + 5;
+      out.lantern = ln;
     }
     return out;
+  }
+  // the chest: where a figure takes his one flat colour of light from
+  function figureChest(fig) {
+    var c = CREW[fig.who] || CREW.pick;
+    if (fig.rot) return { x: fig.x + (fig.rot > 0 ? 1 : -1) * (c.leg + 4), y: fig.y - 3 };
+    return { x: fig.x, y: fig.y - c.leg - Math.round(c.torso * 0.6) };
   }
   function figureHands(fig) {
     var f = fig.facing < 0 ? -1 : 1;
@@ -591,6 +626,9 @@
   }
 
   A.drawFigure = drawFigure;
+  A.drawFigureShadow = drawFigureShadow;
+  A.drawFigureBody = drawFigureBody;
+  A.figureChest = figureChest;
   A.figureLamp = figureLamp;
   A.figureHands = figureHands;
   A.figureShoulders = figureShoulders;
@@ -627,10 +665,12 @@
     for (var i = 0; i < props.length; i++) {
       var q = props[i];
       if ((q.layer || LAYER[q.kind] || 'back') !== layer) continue;
+      // lamps out: nothing glows in a dark section (the renderer's soft dark)
+      if (layer === 'glow' && A.darkAt && A.darkAt(q.x, q.y) >= 0.85) continue;
       var fn = PROP[q.kind]; if (fn) fn(g, q, t);
     }
   }
-  var LAYER = { ladder: 'back', rope: 'back', door: 'back', plank: 'back', pail: 'back', coil: 'back', pin: 'front', dust: 'front', crumb: 'front', glint: 'front',
+  var LAYER = { ladder: 'back', rope: 'back', door: 'back', plank: 'back', pail: 'back', coil: 'back', pin: 'front', dust: 'front', crumb: 'front', glint: 'glow',
     glow: 'glow', doorglow: 'glow', zzz: 'glow', halo: 'glow', drip: 'front' };
   var PROP = {
     // a wooden ladder (fixed in a raise or propped up): stiles and rungs, its
