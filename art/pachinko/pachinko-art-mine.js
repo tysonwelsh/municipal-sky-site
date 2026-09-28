@@ -212,20 +212,6 @@
       rect(g, x0 + 7, y0 + 8, 3, 6 - (i ? 1 : 0), P.TIM1);
       vline(g, x0 + 14, y0 - 8, y0 - 4, P.IRON2);
     });
-    // the fence: posts are the fencepost pins; shafts to the ground, two
-    // strands of wire sagging between neighbours
-    var posts = pinsOf(board, 'fencepost').sort(function (a, b) { return a.x - b.x; });
-    for (var i = 0; i < posts.length; i++) {
-      var p = posts[i];
-      vline(g, Math.round(p.x), Math.round(p.y) + 1, 64, P.TIM1);
-      var q = posts[i + 1];
-      if (q && q.x - p.x < 30) for (var s = 0; s < 2; s++) {
-        for (var xx = Math.round(p.x) + 1; xx < Math.round(q.x); xx++) {
-          var u = (xx - p.x) / (q.x - p.x), sag = Math.sin(u * Math.PI) * 1.4;
-          if ((xx + s) % 2) px(g, xx, Math.round(p.y + (q.y - p.y) * u + 2 + s * 3 + sag), '#6a6470');
-        }
-      }
-    }
     // the headframe: two timber legs, the back brace, cross bracing, the
     // sheave deck; the wheel itself is live
     var hf = decor(board, 'headframe');
@@ -240,6 +226,23 @@
     }
     // the man, for scale (see the card). He is to scale.
     px(g, 60, 61, P.INK); px(g, 60, 62, P.INK); px(g, 60, 60, P.FACE_D);
+  }
+
+  // the fence: posts are the fencepost pins (they drift), so it's painted per build
+  function paintFence(g, board) {
+    // shafts to the ground, two strands of wire sagging between neighbours
+    var posts = pinsOf(board, 'fencepost').sort(function (a, b) { return a.x - b.x; });
+    for (var i = 0; i < posts.length; i++) {
+      var p = posts[i];
+      vline(g, Math.round(p.x), Math.round(p.y) + 1, 64, P.TIM1);
+      var q = posts[i + 1];
+      if (q && q.x - p.x < 30) for (var s = 0; s < 2; s++) {
+        for (var xx = Math.round(p.x) + 1; xx < Math.round(q.x); xx++) {
+          var u = (xx - p.x) / (q.x - p.x), sag = Math.sin(u * Math.PI) * 1.4;
+          if ((xx + s) % 2) px(g, xx, Math.round(p.y + (q.y - p.y) * u + 2 + s * 3 + sag), '#6a6470');
+        }
+      }
+    }
   }
 
   /* ══ strata + galleries (one ImageData pass) ═══════════════════════ */
@@ -537,20 +540,28 @@
     }
     return { spr: SPR[spr], pal: pal, x1: x1 || pal[2], x2: x2 || pal[3], kind: spr };
   }
+  // each look is rasterised once (a 5-6 px sprite and its shadow) and
+  // stamped: a whole board of pins is a few hundred blits, not thousands of px
+  var PINSPR = {};
+  function pinStamp(L) {
+    var key = L.kind + '|' + L.pal.join(',') + '|' + L.x1 + '|' + L.x2, e = PINSPR[key];
+    if (e) return e;
+    var rows = L.spr, h = rows.length, w = 0;
+    for (var j = 0; j < h; j++) w = Math.max(w, rows[j].length);
+    var c = A.makeCanvas(w, h), g = c.getContext('2d'), sh = A.makeCanvas(w, h), sg = sh.getContext('2d');
+    var C = { o: '#0a080c', s: L.pal[0], l: L.pal[1], b: L.pal[2], d: L.pal[3], x: L.x1, y: L.x2 };
+    for (j = 0; j < h; j++) for (var i = 0; i < rows[j].length; i++) {
+      var ch = rows[j][i]; if (ch === '.') continue;
+      px(g, i, j, C[ch]); px(sg, i, j, 'rgba(0,0,0,0.42)');
+    }
+    return (PINSPR[key] = { c: c, sh: sh });
+  }
   function drawPin(ga, g, p) {
     var L = pinLook(p), cx = Math.round(p.x), cy = Math.round(p.y);
-    var rows = L.spr, hgt = rows.length, oy = cy - (hgt >> 1), ox = cx - 2;
+    var hgt = L.spr.length, oy = cy - (hgt >> 1), ox = cx - 2, st = pinStamp(L);
     // the shadow on the rock (albedo), down-right of the sprite's body
-    for (var j = 0; j < hgt; j++) for (var i = 0; i < rows[j].length; i++) {
-      var ch = rows[j][i]; if (ch === '.') continue;
-      var sx = ox + i + 2, sy = oy + j + 2;
-      px(ga, sx, sy, 'rgba(0,0,0,0.42)');
-    }
-    var C = { o: '#0a080c', s: L.pal[0], l: L.pal[1], b: L.pal[2], d: L.pal[3], x: L.x1, y: L.x2 };
-    for (j = 0; j < hgt; j++) for (i = 0; i < rows[j].length; i++) {
-      ch = rows[j][i]; if (ch === '.') continue;
-      px(g, ox + i, oy + j, C[ch]);
-    }
+    ga.drawImage(st.sh, ox + 2, oy + 2);
+    g.drawImage(st.c, ox, oy);
     // a little context painted on the rock around some of them
     if (p.dress === 'bolt') { hline(ga, ox - 1, ox + 5, oy + 5, P.IRON1); }                    // the bearing plate's lower edge
     if (p.dress === 'root') { line(ga, ox, oy, ox - 3, oy - 5, P.ROOT); px(ga, ox + 4, oy - 2, P.ROOT); }
@@ -1085,30 +1096,45 @@
 
   /* (the case light and the vignette live in the renderer's light model now) */
 
-  /* ══ paintMine ═════════════════════════════════════════════════════ */
-  A.paintMine = function (board) {
-    var c = A.makeCanvas(GW, GH), g = c.getContext('2d', { willReadFrequently: true });
-    var fore = A.makeCanvas(GW, GH), fg = fore.getContext('2d');
+  /* ══ paintMine ═════════════════════════════════════════════════════
+   * Most of the section can't be changed by the crew's drift: the painted
+   * sky, the strata and the galleries cut in them, the ground, the vein and
+   * the specimens, the bays, the timbering. Those are painted once a visit
+   * (keyed by what they depend on) and stamped; a build after a TOCK only
+   * repaints what drift CAN move (pins, the brace, a mouth, the pail, a heap). */
+  function makeLayer() { var c = A.makeCanvas(GW, GH); return { c: c, g: c.getContext('2d') }; }
+  var STATIC = { key: null }, SHAFTS = { key: null }, BAYS = { key: null }, RAILS = { key: null };
+  var ALB = null, FORE = null;
+  function staticKey(board) {
+    var fl = (board.floors || []).map(function (f) { return [f.id, f.y, f.x0, f.x1, (f.openings || []).map(function (o) { return o.x + '/' + o.w; }).join(','), (f.pieces || []).length].join(':'); }).join(';');
+    var faces = (board.fixtures || []).filter(function (f) { return (f.kind === 'rail' && f.dress === 'face') || (f.kind === 'tunnel' && f.dress === 'door'); })
+      .map(function (f) { return f.kind === 'rail' ? [f.x1, f.y1, f.x2, f.y2].join(',') : [f.a.x, f.a.y, f.a.r].join(','); }).join(';');
+    return fl + '|' + faces + '|' + JSON.stringify(board.decor || []) + '|' + (board.regions || []).length;
+  }
+  function staticLayers(board) {
+    var key = staticKey(board);
+    if (STATIC.key === key) return STATIC;
+    var U = makeLayer(), O = makeLayer();
+    var g = U.c.getContext('2d', { willReadFrequently: true });
     var gals = galleries(board);
     paintBackdrop(g, board);
     var em = paintTrainAndTown(g);
     paintSection(g, board, gals);
     paintGround(g, board, em);
     paintWorkings(g, board, gals);
-    paintShafts(g, board, findShafts(board));
-    var glints = [];
     // coal glints in the seams
-    var R = A.rng(0x61147);
+    var glints = [], R = A.rng(0x61147);
     for (var i = 0; i < 1400 && glints.length < 110; i++) {
       var x = (R() * GW) | 0, y = (SURF + 10 + R() * (320 - SURF)) | 0, k = A.bandAt(x, y);
       if (k === 'coalA' || k === 'coalB' || k === 'coalC') glints.push({ x: x, y: y, ph: R() * 6.28, rate: 0.5 + R() * 1.6, c: R() < 0.2 ? P.GLINT : P.GLINT_D });
     }
-    paintVein(g, board, glints);
-    // specimens (the board's, then the art's own: the fish)
+    // over the shafts: the vein, the rat's crack, the specimens
+    var og = O.g;
+    paintVein(og, board, glints);
     var specs = decorAll(board, 'specimen').slice();
     var maxFig = specs.reduce(function (m, s) { return Math.max(m, s.fig || 0); }, 0);
     specs.push({ kind: 'specimen', what: 'fish', x: 188, y: 289, fig: maxFig + 1, label: 'Fig. ' + (maxFig + 1) + ': fish, red, curled both ends', art: true });
-    var out = { watch: null, ring: null };
+    var out = { watch: null, ring: null, moth: null, rat: null };
     // the moth's lantern (the ventilation road's first) and the rat's crack,
     // at the foot of the wall beside the office door
     var vl = decorAll(board, 'lamp').filter(function (l) { return l.region === 'ventilation'; })[0];
@@ -1117,18 +1143,61 @@
     var fB = (board.floors || []).filter(function (f) { return f.id === 'floorB'; })[0];
     if (od && fB) {
       var rx = Math.round(od.a.x - (od.a.r || 7) - 6), ry = Math.round((floorTopAt(fB, rx) || fB.y) - 3);
-      ratCrack(g, rx - 7, ry + 1); out.rat = { x: rx - 7, y: ry + 1 };
+      ratCrack(og, rx - 7, ry + 1); out.rat = { x: rx - 7, y: ry + 1 };
     }
     specs.forEach(function (s) {
-      var fn = SPEC[s.what]; if (fn) fn(g, s.x, s.y);
+      var fn = SPEC[s.what]; if (fn) fn(og, s.x, s.y);
       if (s.what === 'watch') out.watch = { x: s.x, y: s.y, a0: 0.7 };
       if (s.what === 'ring') out.ring = { x: s.x, y: s.y };
     });
+    STATIC = { key: key, under: U.c, over: O.c, em: em, glints: glints, specs: specs, out: out,
+      gals: gals.map(function (G) { return { x0: G.x0, x1: G.x1, top: G.top, y: G.floor.y, id: G.id }; }) };
+    return STATIC;
+  }
+  function shaftLayer(board) {
+    var sh = findShafts(board), key = JSON.stringify(sh);
+    if (SHAFTS.key === key) return SHAFTS.c;
+    var L = makeLayer(); paintShafts(L.g, board, sh);
+    SHAFTS = { key: key, c: L.c };
+    return L.c;
+  }
+  function bayLayers(board) {
+    var slots = (board.fixtures || []).filter(function (f) { return f.kind === 'slot'; });
+    var key = JSON.stringify(slots.map(function (s) { return [s.id, s.x0, s.x1, s.value, s.label, s.dress]; }));
+    if (BAYS.key !== key) {
+      var La = makeLayer(), Lf = makeLayer();
+      drawBays(La.g, Lf.g, board);
+      BAYS = { key: key, a: La.c, f: Lf.c, cards: A.bayCards };
+    }
+    A.bayCards = {};
+    for (var id in BAYS.cards) A.bayCards[id] = BAYS.cards[id];
+    return BAYS;
+  }
+  function railLayer(board) {
+    var rails = (board.fixtures || []).filter(function (f) { return f.kind === 'rail'; });
+    var key = JSON.stringify(rails.map(function (r) { return [r.x1, r.y1, r.x2, r.y2, r.dress, r.r]; }));
+    if (RAILS.key === key) return RAILS.c;
+    var L = makeLayer();
+    rails.forEach(function (f) { drawRail(L.g, f); });
+    RAILS = { key: key, c: L.c };
+    return L.c;
+  }
+  A.paintMine = function (board) {
+    var st = staticLayers(board);
+    if (!ALB) { ALB = makeLayer(); FORE = makeLayer(); }
+    var c = ALB.c, g = ALB.g, fore = FORE.c, fg = FORE.g;
+    g.clearRect(0, 0, GW, GH); fg.clearRect(0, 0, GW, GH);
+    g.drawImage(st.under, 0, 0);
+    paintFence(g, board);
+    g.drawImage(shaftLayer(board), 0, 0);
+    g.drawImage(st.over, 0, 0);
+    var glints = st.glints.slice(), specs = st.specs, out = st.out;
     // tunnels, pockets, bays, rails
     var fs = board.fixtures || [];
     fs.forEach(function (f) { if (f.kind === 'tunnel') drawTunnelMouth(g, f); });
-    drawBays(g, fg, board);
-    fs.forEach(function (f) { if (f.kind === 'rail') drawRail(g, f); });
+    var B = bayLayers(board);
+    g.drawImage(B.a, 0, 0); fg.drawImage(B.f, 0, 0);
+    g.drawImage(railLayer(board), 0, 0);
     fs.forEach(function (f) { if (f.kind === 'pocket') drawPocket(fg, f, board); });
     var lamps = buildLamps(board, g);
     // markers: exhibits (black roundels) and figures (bone tags)
@@ -1159,9 +1228,8 @@
       lamps.push({ x: s.x, y: s.y, r: 15, c: '#b8c4ff', k: 0.55, region: reg, kind: 'spot', seed: 300 + i, flame: false });
     });
     return {
-      gals: gals.map(function (G) { return { x0: G.x0, x1: G.x1, top: G.top, y: G.floor.y, id: G.id }; }),
-      fore: fore, albedo: c, lamps: lamps, glints: glints,
-      emissive: em, pins: pinOut, figs: specs, stillLife: stillLife(board),
+      gals: st.gals, fore: fore, albedo: c, lamps: lamps, glints: glints,
+      emissive: st.em, pins: pinOut, figs: specs, stillLife: stillLife(board),
       watch: out.watch, ring: out.ring, moth: out.moth, rat: out.rat
     };
   };

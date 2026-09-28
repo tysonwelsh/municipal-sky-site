@@ -57,7 +57,7 @@
   var scene = null, sg = null, mc = null, mcg = null;
   var lightC = null, lg = null, light2C = null, lg2 = null, hazeC = null, hg = null;
   var foreC = null, fcg = null, maskC = null, mkg = null, hotC = null, htg = null, overC = null, ovg = null;
-  var board = null;
+  var board = null, overlayKey = null, overlayC = null, regKey = null;
 
   /* ══ build ═════════════════════════════════════════════════════════ */
   function build(b) {
@@ -80,8 +80,10 @@
     mine = A.paintMine(b);
     mine.pinById = {};
     for (var pi = 0; pi < mine.pins.length; pi++) mine.pinById[mine.pins[pi].id] = mine.pins[pi];
-    mine.overlay = A.buildCabinetOverlay(b, mine.figs);
-    overlayDim.key = null;
+    // the cards taped to the glass only change with what's typed on them
+    var ok = JSON.stringify(b.legend || []) + '|' + mine.figs.map(function (f) { return f.fig + ':' + f.label; }).join(';');
+    if (ok !== overlayKey) { overlayKey = ok; overlayC = A.buildCabinetOverlay(b, mine.figs); overlayDim.key = null; }
+    mine.overlay = overlayC;
     pinSpr = {};
     bakeHistory(mine.albedo.getContext('2d'), b);
     if (A.bakeMischief) { try { A.bakeMischief(mine.albedo.getContext('2d'), mine.fore.getContext('2d'), b); } catch (e) { if (root.console) console.warn('MOTHER LODE: bakeMischief', e); } }
@@ -189,7 +191,9 @@
   }
   // which region each cell is in (for the dark), per layout
   function regionCells(b) {
-    var rs = (b && b.regions) || [];
+    var rs = (b && b.regions) || [], key = JSON.stringify(rs);
+    if (key === regKey) return;
+    regKey = key;
     regIds = rs.map(function (r) { return r.id; });
     for (var cy = 0; cy < NY; cy++) for (var cx = 0; cx < NX; cx++) {
       var x = cx * CELL + 1, y = cy * CELL + 1, ri = -1;
@@ -200,7 +204,11 @@
 
   // the galleries' insides (a lamp hung in a gallery fills it, and the rock
   // round it only takes the spill: the galleries are lit slots in the dark)
+  var galKey = null;
   function galleryCells(gals) {
+    var key = JSON.stringify(gals);
+    if (key === galKey) return;
+    galKey = key;
     GAL.fill(0);
     gals.forEach(function (G) {
       for (var cy = Math.max(0, Math.floor(G.top / CELL)); cy <= Math.min(NY - 1, Math.floor((G.y + 1) / CELL)); cy++)
