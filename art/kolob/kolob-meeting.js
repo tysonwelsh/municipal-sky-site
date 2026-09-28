@@ -1051,14 +1051,14 @@ window.KOLOB = window.KOLOB || {};
       // the organ's amen is the Tabernacle's (PLAN §3.C: the amen lives there,
       // and stays Kolob's signature as the share of the Sundays sung in that
       // voice): a Sacred Harp house closes its sections as its tunes close
-      // theirs, dominant to home, and the meeting too; the Old Way's house
-      // keeps the amen for the meeting's end and closes between as often by
-      // the dominant as by the amen (round 3: the plagal share follows the
-      // house — round 2's joints were 82 % plagal on every Sunday)
+      // theirs, dominant to home, and the meeting too (round 3: the plagal
+      // share follows the house — round 2's joints were 82 % plagal on every
+      // Sunday). The Old Way's lined hymns carry no harmony at all; the
+      // organist's amens between its sections are the Sunday's only closes,
+      // and stay as ever.
       var kindDie = R.pickW([["plagal", 3], ["authentic", 2], ["half", 1]]);
       var kind = isLast || C.section === "doxology" ? "plagal" : (C.section === "prelude" || C.section === "hymn" ? kindDie : "plagal");
       if (C.house === "sacredharp") kind = isLast || kindDie !== "half" ? "authentic" : "half";
-      else if (C.house === "oldway" && !isLast) kind = kindDie === "plagal" && C.section !== "doxology" ? "authentic" : kind;
       var chords = Desk.cadence(kind, R, t, "joint");
       var chDur = R.rnd(2.6, 3.6);
       // the brush arbor has no organ (THE PRELUDE'S SEATING): its amen is

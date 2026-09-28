@@ -63,12 +63,14 @@ window.KOLOB = window.KOLOB || {};
   // THE HOUSE DIALECT AND EACH HYMN'S (pure)
   // ==========================================================================
   // (weights; a dialect the composer has not built yet is left out of the
-  // pool when it is read — its weight is the hook the next crew fills)
+  // pool when it is read — its weight is the hook the next crew fills. An
+  // ordinary Sunday mixes, the Tabernacle — the home dialect, PLAN §3.C —
+  // leading it about 56 : 27 : 17 while there are three)
   var HOUSE_ODDS = {
-    ordinary:   { tabernacle: 4.2, sacredharp: 3.0, oldway: 1.5, psalmody: 1.2, gospel: 0.8, shaker: 0.6 },
+    ordinary:   { tabernacle: 5.0, sacredharp: 2.4, oldway: 1.5, psalmody: 1.2, gospel: 0.8, shaker: 0.6 },
     fast:       { sacredharp: 4.2, oldway: 3.4, tabernacle: 0.7, psalmody: 1.0, shaker: 0.8 },
     conference: { tabernacle: 7.0, sacredharp: 1.0, oldway: 0.3, gospel: 1.2, psalmody: 0.5 },
-    jubilee:    { tabernacle: 5.0, sacredharp: 1.4, gospel: 3.0, shaker: 0.6 },
+    jubilee:    { tabernacle: 5.0, sacredharp: 1.0, gospel: 3.0, shaker: 0.6 },
   };
   // a hymn's own dialect, given the house's: the house's own at 6, its
   // neighbours at these weights (a Sacred Harp house sings the Old Way
