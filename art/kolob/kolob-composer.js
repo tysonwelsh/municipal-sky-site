@@ -908,6 +908,8 @@ window.KOLOB.Composer = (function () {
           cands.push([k, wg * (notes[k].stress ? 1 + notes[k].beats : 0.25)]);
         }
         if (!cands.length) for (k = 1; k < longIdx; k++) if (fixed[k] == null) cands.push([k, 1]);
+        // (a short varied line whose head and ending leave no room: the peak displaces the head)
+        if (!cands.length) for (k = 1; k < figStart; k++) if (!notes[k].cont) cands.push([k, 1 + (notes[k].stress ? 1 : 0)]);
         peakIdx = cands.length ? pickW(L.die.fork("peakAt"), cands) : -1;
         if (peakIdx >= 0) fixed[peakIdx] = sk.peak;
       }

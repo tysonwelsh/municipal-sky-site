@@ -281,6 +281,16 @@ for the Old Way. The modes of time rotated through 4/4, 3/4, 6/8, 2/2 and
 | same stream, same hymn | every re-composed hymn identical |
 | a hard check still failing after repair | 1 of 216: a Tabernacle hymn in 7.6.7.6 D whose run of 6 intervals with 2 leaps echoes ASSEMBLY (it is flagged in the lab's checks) |
 
+**Every dialect with every meter and mode of time:** 486 hymns. That is 3
+dialects × all 9 meters × all 6 modes of time × 3 modes (ionian, aeolian,
+pentatonic), with the hymnists taken in turn. It includes the unidiomatic
+pairings the menus allow, such as an Old Way hymn in 11s or 6/8.
+- 0 invalid or thrown;
+- 0 hard checks failing after repair.
+
+(It caught one bug before this note: a short varied line whose head and
+ending left no room for the peak. The peak now displaces the head.)
+
 **40 hymns per dialect (seeds 100–139):**
 
 | hard check | result |
