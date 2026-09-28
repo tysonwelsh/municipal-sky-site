@@ -562,7 +562,7 @@ any of them directly (`lab4.html?dump=…&t=…`, below).
 |---|---|---|---|
 | **A second after a bar** (the critic's frame) | 11, the Tabernacle hymn in 3/4 | about 0:43 (5:56 into the meeting) | after the bar, the soprano's half note stands just right of the alto's, a step below it, instead of on it |
 | **A bar with its room** | 34, the Sacred Harp hymn in 3/2 | 0:11 (5:36 into the meeting) | the high tenor on ledger lines above the bass staff: its ledgers stop either side of the bar (in round 2 they ran past it) |
-| **Nothing jumps** | 37, the gospel hymn in 6/8 | 0:13 to 0:25 | the quick notes print where they stay. (This hymn is still crowded; see "One call for you" below.) |
+| **Nothing jumps** | 37, the gospel hymn in 6/8 | from 0:04, through both verses | the quick notes print where they stay; in round 2, 86 of them jumped back a frame after they were printed. (This hymn is still crowded; see "One call for you" below.) |
 
 ### The critic's findings, one by one (`kolob-viz.js`)
 
@@ -616,17 +616,17 @@ any of them directly (`lab4.html?dump=…&t=…`, below).
 ### One call for you: the 6/8 hymn (as in round 2)
 
 In seed 37's gospel hymn in 6/8, the lead sings dotted-eighth-and-sixteenth
-pairs. At 60 px/s a sixteenth sits 0.8 of a staff space before the next
-note at 860 px (1.0 at 390 px), and a head is 1.3 to 1.4 staff spaces wide.
-Within the 2.4 limit the page cannot set such pairs apart. At 860 px, 26 pairs
-of heads still touch and 16 of the hymn's 37 bars touch ink (at 390 px:
-2 and 8). Round 2 had the same at 860 px (27 and 16), plus 86 notes that
+pairs. At 60 px/s a sixteenth sits 0.8 of a staff space before the next note
+at 860 px (1.0 at 390 px), and a head is 1.3 to 1.4 staff spaces wide.
+Within the 2.4 limit the page cannot set such pairs apart. At 860 px, 26
+pairs of heads still touch and 16 of the hymn's 37 bars touch ink (at 390
+px: 2 and 8). Round 2 had the same at 860 px (27 and 16), plus 86 notes that
 jumped. **This is the page's density, not the placing.** In the lab, with
 the limit removed, keeping the heads apart made the notes fall up to 18.7
 staff spaces behind the sound at 860 px (3.4 seconds, far off the plate's
-right edge), and 23 pairs still touched. At 390 px it took 8.3 staff
-spaces (1.2 seconds). The ways out are the same as in round 2: scroll quick
-hymns faster (for example, scale the rate to the hymn's beat), or accept it.
+right edge), and 23 pairs still touched. At 390 px it took 8.3 staff spaces
+(1.2 seconds). The ways out are the same as in round 2: scroll quick hymns
+faster (for example, scale the rate to the hymn's beat), or accept it.
 
 ### Known issues (round 3; the round 2 list stands otherwise)
 
@@ -735,7 +735,7 @@ either; for the rest, see "One call for you" above.
   **0 page errors**. STOP in the middle of a verse (seed 7, 3:12) and
   in the middle of the fuging (6:38) lifts everything scheduled after it,
   with 0 errors (`stoptest.js`).
-- **The critic's frame, without the cap:** a lab build with no limit on
+- **The 6/8 hymn without the cap:** a lab build with no limit on
   the offsets (`viz-nocap.js`, never shipped) was run on the 6/8 hymn to
   see whether its crowding is the placing's fault. It is not (see "One
   call for you").
