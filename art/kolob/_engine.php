@@ -73,6 +73,9 @@ return [
     // round 3's new guests, loaded but not yet seated by the meeting (the
     // experimental registry first: the planner will consult it)
     'kolob-experimental.js', 'kolob-guest-handbells.js', 'kolob-guest-singingschool.js',
+    // the organist (round 3): plans and a performer on the registrable pipe
+    // organ; loaded but not yet seated by the meeting
+    'kolob-voices-pipeorgan.js', 'kolob-organist.js',
     'kolob-hymnal.js', 'kolob-guest-trombones.js', 'kolob-guests.js', 'kolob-meeting.js',
     // the facade
     'kolob-core.js',
