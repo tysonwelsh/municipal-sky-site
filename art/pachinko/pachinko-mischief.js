@@ -5,21 +5,23 @@
  * per game, each a pure function of (state, seed):
  *
  *   KNOCKER THEFT (the cheat). The knocker on the night shift is in the rock.
- *     Each marble is looked at twice (at 0.3 s and 1.4 s old): if a seeded
- *     coin says so and its path passes one of their doors in reach, he steps
+ *     In about one game in two he means to (the game's plan, by seed): from
+ *     its marble on, each is looked at twice (at 0.3 s and 1.4 s old), and
+ *     the first whose path passes one of their doors in reach is his: he steps
  *     out ~0.45 s early (the telegraph), catches it in two hands, runs it
  *     through the rock and comes out of another door, where he sets it down,
  *     lobs it or lets it drop: good or bad by seed (EXITS, lab-measured). The
  *     knockers do the running (pachinko-knockers.js theft()); this file says
- *     when and where to. Max 2 a game.
+ *     when and where to. One a game at most; never in a visit's first game.
  *   LAMPS GO OUT. A section of the mine (SECTIONS) is picked by seed; when a
  *     marble is about to fall into it, its lamps flicker twice, then it goes
  *     dark: the marble falls through unseen (the physics carries on; you hear
  *     the ticks). Every light in it goes, the knockers' caps too. Then the
- *     carbide catches and it comes back, brighter for a moment. In about one
- *     game in four the dark keeps a marble: it never comes out (no score), and
- *     when the light returns it is set in the rock where it went, a new
- *     exhibit, pencilled onto the figures card (Fig. 13).
+ *     carbide catches and it comes back, brighter for a moment. About one
+ *     game in four has a dark, and one of those in two keeps a marble (never
+ *     in a visit's first game): it never comes out (no score), and when the
+ *     light returns it is set in the rock where it went, a new exhibit,
+ *     pencilled onto the figures card (Fig. 13).
  *   CAVE-IN (an event, not a cheat). A knocker goes to the floor over a bay,
  *     knocks, puts his ear to it, and backs off; dust sifts down; the roof over
  *     the bay comes down (PachinkoBoard.caveIn: a heap from divider to
@@ -58,8 +60,8 @@
  *   [:slot], lode (a real marble set over the 13), pocket (a real marble set
  *   over the pail: the whistle). Deterministic: no Math.random, no Date.
  *
- * PURE CORE (Node, the lab's sim.js): RATES, SECTIONS, EXITS, planGame(seed),
- *   wantTheft(seed, n, check), exitFor(seed, n), doorReach(nav), theftAt(…),
+ * PURE CORE (Node, the lab's sim.js): RATES, SECTIONS, EXITS, planGame(seed,
+ *   force, {game}), wantTheft(plan, n), exitFor(seed, n), doorReach(nav), theftAt(…),
  *   releaseOf(nav, exit), rare(state).
  */
 (function (root) {
@@ -69,10 +71,16 @@
   function mod(name, file) { return root[name] || (req ? req('./' + file) : null); }
 
   /* ══ the rules (tuned in local-dev/pachinko-lab/sim.js mischief; PLAN §12) ══ */
+  // (wave 5c: the machine OCCASIONALLY cheats. It was ~2.2 events a game,
+  // which made the mischief weather. Now each game the machine decides, by
+  // seed, whether it will: a theft in about one game in two (one at most), a
+  // dark in about one in four (and one of those in two keeps a marble: about
+  // one game in eight), a cave-in in one in five. The first game of a visit
+  // is clean of cheats: no theft, no vanish. ~0.9 events a game after it.)
   var RATES = {
-    theft: { p: 0.14, max: 2, lead: 0.6, horizon: 1.6, checks: [0.3, 1.4] },
-    dark: { p: 0.8, from: 3, to: 9, flicker: 0.55, out: [2.6, 3.6], relight: 0.7, vanish: 0.25 },
-    cave: { p: 0.33, from: 3, to: 9, telegraph: 1.5 }
+    theft: { p: 0.5, from: 2, to: 9, max: 1, lead: 0.6, horizon: 1.6, checks: [0.3, 1.4] },
+    dark: { p: 0.26, from: 3, to: 9, flicker: 0.55, out: [2.6, 3.6], relight: 0.7, vanish: 0.6 },
+    cave: { p: 0.2, from: 3, to: 9, telegraph: 1.5 }
   };
   // the dark takes a section: its regions (the light API's), the band of rock
   // a lost marble is kept in, and where a marble about to fall in is watched
@@ -125,9 +133,14 @@
   function ease(u) { u = clamp(u, 0, 1); return u * u * (3 - 2 * u); }
 
   /* ── the per-game plan: a pure function of the game's seed ──────── */
-  function planGame(seed, force) {
+  // info.game: this game's number in the visit (1 = the first: no cheats)
+  function planGame(seed, force, info) {
     force = force || {};
-    var R = RATES, p = { seed: seed | 0 };
+    var R = RATES, p = { seed: seed | 0 }, first = !!(info && info.game === 1);
+    // the theft: whether he'll try this game, and from which marble he watches
+    if (force.theft) p.theft = { from: 1, max: 3 };
+    else if (!first && h3(seed, 13, 1) < R.theft.p) p.theft = { from: R.theft.from + Math.floor(h3(seed, 13, 2) * (R.theft.to - R.theft.from + 1)), max: R.theft.max };
+    else p.theft = null;
     var dk = force.dark || force.vanish ? true : h3(seed, 11, 1) < R.dark.p;
     if (dk) {
       var sec = typeof force.dark === 'string' && SECTIONS[force.dark] ? force.dark : SECTION_ORDER[Math.floor(h3(seed, 11, 3) * 3)];
@@ -135,7 +148,7 @@
         n: force.dark || force.vanish ? 1 : R.dark.from + Math.floor(h3(seed, 11, 2) * (R.dark.to - R.dark.from + 1)),
         section: sec,
         dur: R.dark.out[0] + (R.dark.out[1] - R.dark.out[0]) * h3(seed, 11, 4),
-        vanish: force.vanish ? true : force.dark ? false : h3(seed, 11, 5) < R.dark.vanish / R.dark.p
+        vanish: force.vanish ? true : force.dark || first ? false : h3(seed, 11, 5) < R.dark.vanish
       };
     } else p.dark = null;
     var cv = force.cavein ? true : h3(seed, 12, 1) < R.cave.p;
@@ -152,8 +165,9 @@
     return p;
   }
   function PBk() { return mod('PachinkoBoard', 'pachinko-board.js'); }
-  // is this marble (the n-th of the game) one they'd take, at this look?
-  function wantTheft(seed, n, check) { return h3(seed, 2000 + n, 7 + check) < RATES.theft.p; }
+  // is this marble (the n-th of the game) one they'd take? (the game's plan:
+  // from its marble on, the first that passes a door in reach is his)
+  function wantTheft(plan, n) { var T = plan && plan.theft; return !!T && n >= T.from; }
   // where it comes out, good or bad by seed (never the door it went in by)
   function exitFor(seed, n, notDoor) {
     var e = pick(EXITS, h3(seed, 3000 + n, 1));
@@ -198,13 +212,13 @@
     }
     return null;
   }
-  // where a thief lets it go (the knockers' thiefScript; a toss or a drop
-  // leaves from his hands, which the lab places by the rig's proportions)
-  function releaseOf(nav, exit) {
-    var d = nav.doors[exit.door], W = nav.walks[d.w], KC = mod('PachinkoKnockers', 'pachinko-knockers.js').core, f = exit.face;
-    if (exit.mode === 'set') { var x = d.x + f * 8; return { x: x, y: KC.walkY(W, clamp(x, W.x0 - 6, W.x1 + 6)) - 6, vx: f * 22, vy: 0 }; }
-    if (exit.mode === 'toss') return { x: d.x + f * 6, y: d.y - 16, vx: f * 110, vy: -90 };
-    return { x: d.x + f * 7, y: d.y - 12, vx: 0, vy: 10 };
+  // where a thief lets it go: the knockers' own releasePoint, the very one the
+  // live thief uses (wave 5c: the lab used to model the throw from a point 8 px
+  // off the real one, inside a coal pillar, and measured a game nobody played)
+  // (seed: the marble's; the lab passes the one it simulates)
+  function releaseOf(nav, exit, board, seed) {
+    var KC = mod('PachinkoKnockers', 'pachinko-knockers.js').core;
+    return KC.releasePoint(nav, exit, board || nav.board, seed == null ? null : KC.throwU({ seed: seed }));
   }
   // the rare tier's trigger: nothing, in this build (the adventure fills it)
   function rare(state) { return false; }
@@ -240,7 +254,7 @@
     /* ── a new game ─────────────────────────────────────────────── */
     function newGame(seed) {
       S.seed = seed | 0; S.games++;
-      S.plan = planGame(S.seed, FORCE);
+      S.plan = planGame(S.seed, FORCE, { game: S.games });
       S.idx = {}; S.born = {}; S.looked = {}; S.released = 0; S.thefts = 0; S.stolenAt = {};
       S.dark = null; S.darkDone = false; S.cave = null; S.caveDone = false;
       S.crack = null; S.lode = null; S.forced = {};
@@ -250,8 +264,8 @@
     function lookAt(m, check, t) {
       var K = kn(); if (!K || !K.canSteal || !K.theft) return;
       var n = S.idx[m.id];
-      if (S.thefts >= RATES.theft.max) return;
-      if (!FORCE.theft && !wantTheft(S.seed, n, check)) return;
+      var TP = S.plan && S.plan.theft;
+      if (!TP || S.thefts >= TP.max || !wantTheft(S.plan, n)) return;
       if (S.dark || lodeOn(t) || (S.cave && !S.cave.fallT)) return;      // one piece of mischief at a time
       var who = K.nightShift && K.nightShift();
       if (!who || (K.busy && K.busy(who))) return;
@@ -308,7 +322,12 @@
       }
       if (!d.out && t >= d.tOut) { d.out = true; darkEvent('out'); flag('pachinko.lights-out'); }
       // the lode lights up the dark (the crack opens right through it)
-      if (S.lode && d.out && !d.on && d.section === 'deep' && t - S.lode.t0 >= LODE.flare && d.tOn > t) { d.tOn = t; d.tEnd = t + RATES.dark.relight; }
+      // (only a dark that was already out when the flare fired, and only in the
+      // lode's own window: a dark that starts after the lode keeps its course)
+      if (S.lode && d.out && !d.on && d.section === 'deep' && d.tOn > t) {
+        var lu0 = t - S.lode.t0;
+        if (lu0 >= LODE.flare && lu0 < LODE.hold && d.tOut <= S.lode.t0 + LODE.flare) { d.tOn = t; d.tEnd = t + RATES.dark.relight; }
+      }
       if (d.out && !d.on && d.vanish && !d.lost && t < d.tOn - 0.3) findVictim(d, t);
       if (!d.on && t >= d.tOn) {
         d.on = true; darkEvent('on');
@@ -420,7 +439,8 @@
             for (var i = 0; i < 13; i++) if (u >= LODE.coins + (LODE.coinsEnd - LODE.coins) * Math.pow(i / 13, 1.3)) k++;
             ctx.holdTally(13 - k);
           }
-          if (u >= LODE.end) done = true;
+          // (the lode's state ends here, in the sim: never from the view)
+          if (u >= LODE.end) { done = true; if (S.lode && S.lode.t0 === t0) S.lode = null; }
           return done;
         },
         busy: function (t) { return t - t0 < LODE.hold; }
@@ -522,7 +542,6 @@
         // the marquee goes wild, and the camera steps back to see it
         fxo.wild = u < LODE.flare ? 0 : u < 3.4 ? 1 : Math.max(0, 1 - (u - 3.4) / 1.4);
         fxo.camOut = u < 0.5 ? 0 : u < 1.1 ? ease((u - 0.5) / 0.6) : u < 3.3 ? 1 : 1 - ease((u - 3.3) / 0.9);
-        if (u > LODE.end) S.lode = null;
       }
       if (S.crack) {
         mis.crack = { t0: S.crack.t0, seed: S.crack.seed, u: t - S.crack.t0 };

@@ -201,8 +201,8 @@
     var game = {
       mode: 'attract', modeT0: 0, seed: FIXED_SEED != null ? FIXED_SEED : SEED0, games: 0,
       dropped: 0, resolved: 0, score: 0, lodes: 0, wins: 0, mine: {}, endAt: null,
-      startAt: null, findAt: null, payout: null, work: null, lode: null, taps: [], lastWin: null,
-      lastDropT: null, hintOn: false
+      findAt: null, payout: null, work: null, lode: null, taps: [], lastWin: null,
+      lastDropT: null, hintOn: false, credited: 0, owed: null
     };
     var hopper = { x: 160, from: 160, to: 160, g0: -1, dur: 0, gliding: false, loaded: true, reloadAt: 0, queue: null, tickX: 160, speed: 0 };
     var tally = { value: 0, shown: 0, nextAt: 0, rollT0: -1, dir: 1, prev: 0 };
@@ -261,17 +261,39 @@
     function toAttract() {
       setMode('attract');
       view.figures = [];
-      view.ui.sign = { side: 'insert', t0: simT };
-      view.marblesLeft = MARBLES;
+      view.ui.sign = { side: game.owed ? 'credit' : 'insert', t0: simT };
+      view.marblesLeft = game.owed ? MARBLES - game.owed.dropped : MARBLES;
       hopper.loaded = true; hopper.queue = null;
       game.payout = null; game.work = null;
-      if (A && !FREE && A.tokens.get() <= 0) noTokens();
+      if (A && !FREE && A.tokens.get() <= 0 && !game.owed) noTokens();
+    }
+
+    /* ── a game left open (a reload, a phone evicting the tab): the token
+     *    isn't lost and neither is the scrip. Every win is credited to your
+     *    pocket the moment it lands (the drum and the ledge still count it
+     *    out at the end), and the game is saved as it goes; the next page
+     *    starts in ATTRACT with the marbles still owed in the feed tube, and
+     *    the coin door takes up the game again without a token. Marbles that
+     *    were still on the glass come back. (HOLLER ROLLER's saveOpen, and its
+     *    owner's rule: a reload starts the flow from the top.) ──────────── */
+    function saveOpen() {
+      if (!A) return;
+      try {
+        var st = stats();
+        st.open = { v: 1, seed: game.seed | 0, dropped: game.resolved | 0, score: game.score | 0, credited: game.credited | 0, lodes: game.lodes | 0 };
+        A.persist();
+      } catch (e) { }
+    }
+    function clearOpen() {
+      if (!A) return;
+      try { var st = stats(); if (st.open) { delete st.open; A.persist(); } } catch (e) { }
     }
 
     /* ── the start ───────────────────────────────────────────────── */
     function insertCoin() {
       if (game.mode === 'work') finishWork();          // a player who wants the next game doesn't wait on the crew
-      if (game.mode !== 'attract' || game.startAt != null) return false;
+      if (game.mode !== 'attract') return false;
+      if (game.owed) { resumeGame(game.owed); return true; }
       if (!FREE && !A.tokens.spend(1, 'pachinko')) { noTokens(); emit({ type: 'nocoin' }); return false; }
       view.ui.tokens = tokensNow();
       view.ui.coin = { t0: simT };
@@ -298,24 +320,39 @@
       var st = stats();
       return hashSeed(SEED0 * 1000003 + (st.games | 0) * 7919 + (st.lifetimeScrip | 0), game.games);
     }
-    function startGame() {
+    function startGame(resume) {
       game.games++;
-      game.seed = newGameSeed();
+      game.seed = resume ? resume.seed | 0 : newGameSeed();
       world = PP.createWorld(board, game.seed);
       world.t = simT;
-      game.dropped = 0; game.resolved = 0; game.score = 0; game.lodes = 0; game.wins = 0; game.mine = {};
+      game.dropped = 0; game.resolved = 0; game.score = 0; game.lodes = 0; game.wins = 0; game.mine = {}; game.credited = 0;
       game.endAt = null; game.lode = null; game.lastWin = null; game.lastDropT = null; game.tallyHold = 0;
       tally.value = 0; tally.shown = 0; tally.prev = 0; tally.rollT0 = -1;
       trails = {};
       view.score = 0; view.marblesLeft = MARBLES; view.fx = {};
       view.ui.tongue = null; view.ui.scripHeld = 0;
       hopper.loaded = true; hopper.queue = null; hopper.gliding = false; hopper.reloadAt = 0;
+      if (resume) {
+        game.dropped = game.resolved = clamp(resume.dropped | 0, 0, MARBLES - 1);
+        game.score = resume.score | 0; game.credited = resume.credited | 0; game.lodes = resume.lodes | 0;
+        tally.value = tally.shown = tally.prev = game.score;
+        view.score = game.score; view.marblesLeft = MARBLES - game.dropped;
+        view.ui.scripHeld = game.credited;
+      }
+      game.owed = null;
       view.ui.sign = { side: 'inuse', t0: simT + 0.12 };
       setMode('dive');
       game.modeT0 = simT + COIN_T;           // the camera waits for the clunk
       camGo(1, simT + COIN_T);
       game.diveOut = false;
-      partsCall('gameStart', game.seed);
+      partsCall('gameStart', game.seed, { resumed: resume ? game.dropped : 0 });
+      saveOpen();
+    }
+    function resumeGame(o) {
+      view.ui.coin = { t0: simT };
+      game.findAt = null; view.ui.noTokens = null;
+      emit({ type: 'resume', dropped: o.dropped | 0, score: o.score | 0 });
+      startGame(o);
     }
 
     /* ── the hopper: tap the spot you want ───────────────────────── */
@@ -381,6 +418,7 @@
       view.marblesLeft = MARBLES - game.dropped;
       hopper.loaded = false; hopper.reloadAt = simT + RELOAD;
       emit({ type: 'release', x: x, n: game.dropped, left: MARBLES - game.dropped, m: m.id });
+      saveOpen();
       return m;
     }
 
@@ -399,6 +437,8 @@
     function win(value, source, e) {
       if (!(value > 0)) return;
       game.score += value; game.wins++;
+      // (into your pocket now: a reload can't lose it; the drum still counts it out)
+      if (A) { A.scrip.add(value, 'pachinko'); game.credited += value; view.ui.scripHeld = game.credited; }
       view.score = game.score;
       tally.value = game.score;
       game.lastWin = { t: simT, value: value, source: source };
@@ -438,6 +478,7 @@
         win(e.value, 'award', e);
       } else if (e.type === 'done' && game.mine[e.m]) {
         game.resolved++;
+        saveOpen();
         delete trails[e.m];
         if (game.resolved >= MARBLES && game.mode === 'play' && game.endAt == null) game.endAt = simT + END_BEAT;
       }
@@ -448,8 +489,10 @@
       game.endAt = null; game.tallyHold = 0;
       var n = game.score, prevBest = stats().best || 0, best = false;
       if (A) {
-        if (n > 0) A.scrip.add(n, 'pachinko');
+        if (n > game.credited) A.scrip.add(n - game.credited, 'pachinko');    // (the wins went in as they landed)
+        game.credited = n;
         var st = stats();
+        delete st.open;
         st.games++; st.best = Math.max(st.best || 0, n); st.lifetimeScrip = (st.lifetimeScrip | 0) + n;
         st.motherLodes = (st.motherLodes | 0) + game.lodes;
         best = n > prevBest && n > 0;
@@ -644,6 +687,8 @@
       if (game.mode === 'work') stepWork();
       if (game.findAt != null && simT >= game.findAt) findNickel();
       if (game.lode && game.lode.part && game.lode.part.step(simT)) { game.lode.part = null; if (game.lode.taken) game.lode = null; }
+      // (main's own fallback lode, when no part takes the 13: over after 4.2 s, in the sim)
+      if (game.lode && !game.lode.part && !game.lode.taken && simT - game.lode.t0 > 4.2) game.lode = null;
       // the placeholder crew cheer the 13 (twice, toy voices)
       if (game.lode && !game.lode.part && game.lode.cheered < 2 && simT - game.lode.t0 > 0.5 + game.lode.cheered * 1.1 && R && R.stillLife) {
         var fg = (R.stillLife() || [])[game.lode.cheered * 3 % 6];
@@ -952,8 +997,7 @@
             if (kk > 0.05) { lamps.push({ x: sx, y: seam.y1 + (sx - seam.x1) * slope - 2, r: 16, c: '#ffc84a', k: 1.4 * kk }); glows.push({ x: sx, y: seam.y1 + (sx - seam.x1) * slope - 1, k: kk, gold: true }); }
           }
         }
-        if (flare > 0) ['surface', 'headframe', 'overburden', 'haulage', 'measures', 'ventilation', 'barren', 'workings', 'sump', 'vein'].forEach(function (rg) { lights[rg] = Math.max(lights[rg] || 1, 1 + 0.9 * flare); });
-        if (lu > 4.2) game.lode = null;
+        if (flare > 0) board.regions.forEach(function (rg) { if (rg.id !== 'payout' && rg.id !== 'legend') lights[rg.id] = Math.max(lights[rg.id] || 1, 1 + 0.9 * flare); });
       }
       // a hit strikes a little light off the pin (the clatter lights the mine)
       for (var i = Math.max(0, view.hits.length - 24); i < view.hits.length; i++) {
@@ -1238,6 +1282,14 @@
     watchDpr();
 
     view.ui.best = stats().best | 0;
+    // a game the last page left open: owed, waiting behind the coin door
+    try {
+      var open0 = A ? stats().open : null;
+      if (open0 && open0.v === 1 && (open0.dropped | 0) < MARBLES) {
+        game.owed = open0;
+        tally.value = tally.shown = tally.prev = open0.score | 0;
+      } else if (open0) clearOpen();
+    } catch (e) { game.owed = null; }
     toAttract();
     var qm = HARNESS && /[?&]mode=(attract|play|payout|work)/.exec(search);
     if (qm && qm[1] !== 'attract') forceMode(qm[1]);

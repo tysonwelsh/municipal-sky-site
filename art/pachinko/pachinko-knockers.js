@@ -446,7 +446,54 @@
     return out;
   }
 
-  var core = { FPS: FPS, CREW: CREW, POSES: P, LADDERS: LADDERS, DOORS: DOORS, buildNav: buildNav, route: route, stances: stances, walkY: walkY, speeds: speeds };
+  /* ── where a thief lets a stolen marble go (THE one source of truth: the
+   *    live thief and the lab's fairness model both use it, wave 5c) ─────
+   * exit {door, mode 'set'|'toss'|'drop', face ±1}. A 'set' puts it down on
+   * the floor a step in front of him, rolling; a 'toss' lobs it from over his
+   * head; a 'drop' lets it fall from his hands. The point is then moved (a
+   * fixed search, so the same exit always gives the same point) until no pin,
+   * rubble or rail is within reach: a marble is never let go inside anything. */
+  var MARBLE_R = 4;
+  function clearAt(board, x, y) {
+    var fs = board.fixtures || [];
+    if (x < MARBLE_R + 1 || x > (board.W || 320) - MARBLE_R - 1) return false;
+    for (var i = 0; i < fs.length; i++) {
+      var f = fs[i], rr;
+      if (f.buried) continue;
+      if (f.kind === 'pin' || f.kind === 'rubble') { rr = MARBLE_R + f.r + 0.75; if ((x - f.x) * (x - f.x) + (y - f.y) * (y - f.y) < rr * rr) return false; }
+      else if (f.kind === 'rail') {
+        var dx = f.x2 - f.x1, dy = f.y2 - f.y1, L2 = dx * dx + dy * dy, u = L2 ? ((x - f.x1) * dx + (y - f.y1) * dy) / L2 : 0;
+        u = u < 0 ? 0 : u > 1 ? 1 : u;
+        var qx = f.x1 + dx * u - x, qy = f.y1 + dy * u - y; rr = MARBLE_R + f.r + 0.75;
+        if (qx * qx + qy * qy < rr * rr) return false;
+      }
+    }
+    return true;
+  }
+  // u: two numbers in [0, 1) from the marble's own seed: a lob is a toy's
+  // throw, not a cannon (120 ± 40 across, 80 ± 40 up: the lode about one
+  // time in ten from c1, measured in local-dev/pachinko-lab/w5c/tosswin.js)
+  function releasePoint(nav, exit, board, u) {
+    var d = nav.doors[exit.door]; if (!d) return null;
+    var W = nav.walks[d.w], f = exit.face || 1, x, y, vx, vy, u1 = u ? u[0] : 0.5, u2 = u ? u[1] : 0.5;
+    if (exit.mode === 'set') { x = d.x + f * 8; y = walkY(W, clamp(x, W.x0 - 6, W.x1 + 6)) - 6; vx = f * 22; vy = 0; }
+    else if (exit.mode === 'toss') { x = d.x + f * 6; y = d.y - 24; vx = f * (120 + (2 * u1 - 1) * 40); vy = -80 + (2 * u2 - 1) * 40; }   // over his head (wave 5c: from -16, which started it in pillar.0)
+    else { x = d.x + f * 7; y = d.y - 12; vx = 0; vy = 10; }
+    board = board || nav.board;
+    if (board && !clearAt(board, x, y)) {
+      var found = false;
+      for (var r = 1; r <= 12 && !found; r++) {
+        var tries = [[f * r, 0], [0, -r], [f * r, -r], [-f * r, 0], [-f * r, -r]];
+        for (var i = 0; i < tries.length; i++) if (clearAt(board, x + tries[i][0], y + tries[i][1])) { x += tries[i][0]; y += tries[i][1]; found = true; break; }
+      }
+    }
+    return { x: x, y: y, vx: vx, vy: vy };
+  }
+
+  function throwU(m) { return [h3(m.seed | 0, 611, 7), h3(m.seed | 0, 612, 7)]; }
+
+  var core = { FPS: FPS, CREW: CREW, POSES: P, LADDERS: LADDERS, DOORS: DOORS, buildNav: buildNav, route: route, stances: stances, walkY: walkY, speeds: speeds,
+    releasePoint: releasePoint, clearAt: clearAt, throwU: throwU };
 
   /* ══ THE PART ══════════════════════════════════════════════════════════ */
   function attach(api) {
@@ -1494,10 +1541,11 @@
       else out.pose = P.grab;
       // let go
       if (mm) {
-        var hands = handsOf(out), hx = hands.x, hy = hands.y, W = nav().walks[exit.w];
-        if (mode === 'set') { hx = out.x + out.facing * 8; hy = walkY(W, clamp(hx, W.x0 - 6, W.x1 + 6)) - 6; }
-        var v = opts.v || (mode === 'toss' ? { vx: out.facing * 110, vy: -90 } : mode === 'set' ? { vx: out.facing * 22, vy: 0 } : { vx: 0, vy: 10 });
-        mm.phase = 'board'; mm.x = hx; mm.y = hy; mm.vx = v.vx; mm.vy = v.vy; mm.slowT = 0; mm.stolen = false;
+        // where it goes: the one release point the lab measures too (his hands
+        // are a pixel or two off it for one 8 fps frame, which nobody sees)
+        var rp = releasePoint(nav(), { door: exit.id, mode: mode, face: out.facing }, api.board(), throwU(mm));
+        var v = opts.v || { vx: rp.vx, vy: rp.vy };
+        mm.phase = 'board'; mm.x = rp.x; mm.y = rp.y; mm.vx = v.vx; mm.vy = v.vy; mm.slowT = 0; mm.stolen = false;
         if (mm.heldAge != null) { mm.age = mm.heldAge; mm.heldAge = null; }
         emit(out, 'release', { m: plan.m, how: mode });
       }
@@ -1824,7 +1872,8 @@
         // a flicker when he ducks
         if (k.react.flicker > t) fig.lampK = 0.25;
         // knocked flat by a tapped glass
-        if (S.freeze && S.freeze.until > t && S.freeze.topple && k.i === (S.freeze.toppler != null ? S.freeze.toppler : (S.freeze.toppler = pickToppler())) && !k.back && !k.onLadder) {
+        // (the toppler is chosen on the shutter, in the sim; the view only reads it)
+        if (S.freeze && S.freeze.until > t && S.freeze.topple && S.freeze.toppler != null && k.i === S.freeze.toppler && !k.back && !k.onLadder) {
           fig.rot = fig.facing > 0 ? -90 : 90; fig.pose = quant(P.stiff);
         }
         // feet planted: a straight-legged toy's lower boot on the floor
