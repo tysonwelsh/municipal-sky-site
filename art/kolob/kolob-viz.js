@@ -16,8 +16,12 @@
 //    la ▭, mi ◇) with real stems, open/filled heads, flags and dots read from
 //    their lengths, in one hymnbook-green ink from the moment they sound;
 //    the ink dries as the page turns at 60 px/s. Just the notes: no signs
-//    or words on the staff. The clarinet prints cue-size, the harmonium
-//    grace-size, bells as ringed heads; the telegraph punches its holes
+//    or words on the staff. Each voice is staffed by the part it reports
+//    (closed score: S and A on the treble, T and B on the bass). The
+//    clarinet prints cue-size, the harmonium grace-size, bells as ringed
+//    heads; the trombone choir at dawn prints its chorale in closed score,
+//    the far choir pale and the near one full; an old tune remembered prints
+//    faint and fine in round notes; the telegraph punches its holes
 //    straight into the paper down the middle; the Question is framed in
 //    cartouches; a visiting band slides through in round notes on its own
 //    layer. The staves and clefs are a static layer; the ink is re-engraved
@@ -234,8 +238,8 @@ window.KolobViz = (function () {
   // falls behind catches up whole. Nothing on the page moves but the scroll
   // and the drying.
   // Still to come with the Score (PLAN-COMPOSITION §2.3): barlines, beams
-  // across beats, fermatas, the running head, Johnston signs, SATB part
-  // identity and words.
+  // across beats, fermatas, the running head, Johnston signs and words.
+  // (SATB part identity came with round 2.5: each note's reported part.)
   // ==========================================================================
   var STAFFPOS = {
     ionian:     [0, 1, 2, 3, 4, 5, 6],
@@ -440,8 +444,31 @@ window.KolobViz = (function () {
   var tapes = [];                                  // telegraph messages
   var questions = [];                              // the question: askings, and the empty measure
   var bandNotes = [], visits = [];                  // the visiting band, on its own layer
-  var MELODIC = { clarinet: 1, bagpipe: 1, choir: 1, bells: 1, harmonium: 1, strings: 1 };
+  // (round 2.5: the trombone choir at dawn and the old tune are engraved too
+  // — the staff never sits blank while a guest of ours is playing)
+  var MELODIC = { clarinet: 1, bagpipe: 1, choir: 1, bells: 1, harmonium: 1, strings: 1, trombones: 1, oldtune: 1 };
   var lastBeat = { choir: 1.15 };
+  // Closed score, read from the part each note reports (SCORE §6): the
+  // soprano and alto on the treble, the tenor and bass on the bass; where
+  // two voices share a staff, the upper's stems go up and the lower's down.
+  // A reported part holds its staff down to two ledgers into the gap (the
+  // telegraph's lane lies beyond); a note that would go further prints on
+  // the other staff, where it sits (a part kept on its own staff, the
+  // trombones', folds back an octave instead: foldFor). A note with no
+  // such part (the strings' root, fifth and octave, the clarinet, the
+  // bells) takes the staff its pitch belongs to, middle C and above on the
+  // treble.
+  var PART_STAFF = { S: "T", A: "T", T: "B", B: "B" };
+  var PART_DIR = { S: 1, A: -1, T: 1, B: -1 };
+  var GAP_T = 8, GAP_B = 12;                       // the deepest a part reaches into the gap: two ledgers
+  function staffOf(n, q, strict) {
+    var ps = PART_STAFF[n.part];
+    if (!ps) return q >= Q_MID ? "T" : "B";
+    if (strict) return ps;
+    if (ps === "T" && q < GAP_T) return "B";
+    if (ps === "B" && q > GAP_B) return "T";
+    return ps;
+  }
   function queueIntake(x) {
     intake.push(x);
     if (!intakeArmed) {
@@ -485,18 +512,23 @@ window.KolobViz = (function () {
     }
     return best;
   }
-  // seconds → a note value against the line's beat
-  function valueOf(beats, layer) {
+  // seconds → a note value against the line's beat. A line whose beat is
+  // the tune's own (fine: the old tune's notes say where they fall in it)
+  // can also print a dotted eighth, three quarters of a beat (MARTYR's
+  // dotted figure). Against a beat estimated from the lengths, that is too
+  // fine to tell from a quarter sung short, and the line reads as before.
+  function valueOf(beats, layer, fine) {
     if (layer === "strings" && beats >= 7) return { open: true, stem: false, breve: true, dots: 0, flags: 0 };
     if (beats >= 3.5) return { open: true, stem: false, dots: 0, flags: 0 };
     if (beats >= 2.6) return { open: true, stem: true, dots: 1, flags: 0 };
     if (beats >= 1.75) return { open: true, stem: true, dots: 0, flags: 0 };
     if (beats >= 1.3) return { open: false, stem: true, dots: 1, flags: 0 };
+    if (fine && beats >= 0.62 && beats < 0.87) return { open: false, stem: true, dots: 1, flags: 1 };
     if (beats >= 0.72) return { open: false, stem: true, dots: 0, flags: 0 };
     if (beats >= 0.36) return { open: false, stem: true, dots: 0, flags: 1 };
     return { open: false, stem: true, dots: 0, flags: 2 };
   }
-  var SCALE = { choir: 1, bagpipe: 1, strings: 1, bells: 1, clarinet: 0.75, harmonium: 0.6 };
+  var SCALE = { choir: 1, bagpipe: 1, strings: 1, bells: 1, clarinet: 0.75, harmonium: 0.6, trombones: 1, oldtune: 1 };
 
   function flushIntake() {
     intakeArmed = false;
@@ -515,8 +547,10 @@ window.KolobViz = (function () {
       (byLayer[n.layer] = byLayer[n.layer] || []).push(n);
     }
     if (byLayer.band) takeBand(byLayer.band);
+    if (byLayer.trombones) takeTrombones(byLayer.trombones);
+    if (byLayer.oldtune) takeOldTune(byLayer.oldtune);
     Object.keys(byLayer).forEach(function (layer) {
-      if (layer === "band") return;
+      if (layer === "band" || layer === "trombones" || layer === "oldtune") return;
       var ns = byLayer[layer];
       var beat = estimateBeat(ns.map(function (n) { return n.duration; }), lastBeat[layer] || lastBeat.choir || 1.15);
       if (ns.length >= 3) lastBeat[layer] = beat;
@@ -582,10 +616,26 @@ window.KolobViz = (function () {
     }
   }
 
-  // one layer's notes from one call → groups of heads on shared stems
-  function takeLayer(layer, ns, beat, question) {
-    var byT = {};
-    ns.forEach(function (n) { var k = Math.round(n.startTime * 50); (byT[k] = byT[k] || []).push(n); });
+  // one layer's notes from one call → groups of heads on shared stems.
+  // opt, for the guests: staff — one staff for the whole call; strict — a
+  // part keeps its own staff however deep in the gap (foldFor keeps it off
+  // the telegraph's line); shift — a written octave per staff ({T, B}, in
+  // steps of the staff); shape — one head for every note; ink, thin, dry —
+  // its ink, its line weight and how fast it dries, against the ward's (1
+  // each); fineBeat — the beat is the tune's own (valueOf)
+  function takeLayer(layer, ns, beat, question, opt) {
+    opt = opt || {};
+    var byT = {}, voices = { T: {}, B: {} };
+    ns.forEach(function (n) {
+      var nq = noteQ(n.freq), st = opt.staff || staffOf(n, nq.q, opt.strict);
+      var p = { n: n, q: nq.q + (opt.shift ? opt.shift[st] || 0 : 0), shape: opt.shape || nq.shape, st: st };
+      if (PART_DIR[n.part]) voices[st][n.part] = 1;
+      var k = Math.round(n.startTime * 50);
+      (byT[k] = byT[k] || []).push(p);
+    });
+    // two parts or more on one staff in this call are voices: each keeps
+    // its own stem when it moves alone (the alto's passing note stems down)
+    var voiced = { T: Object.keys(voices.T).length > 1, B: Object.keys(voices.B).length > 1 };
     // the Question's askings fold together (if they must), so the phrase keeps its shape
     var askMax = null;
     if (question && layer === "clarinet") {
@@ -593,26 +643,15 @@ window.KolobViz = (function () {
       ns.forEach(function (n) { askMax = Math.max(askMax, noteQ(n.freq).q); });
     }
     Object.keys(byT).sort(function (a, b) { return a - b; }).forEach(function (k) {
-      var chord = byT[k].slice().sort(function (a, b) { return b.freq - a.freq; });
-      var t0 = chord[0].startTime;
-      // staff: the upper half of a full chord on the treble, the lower on the
-      // bass (closed score); a single note or a pair by its own pitch
-      var parts = chord.map(function (n, idx) {
-        var nq = noteQ(n.freq), st;
-        if (chord.length >= 3) {
-          st = idx < Math.ceil(chord.length / 2) ? "T" : "B";
-          if (st === "T" && nq.q < 6) st = "B";
-          if (st === "B" && nq.q > 14) st = "T";
-        } else st = nq.q >= Q_MID ? "T" : "B";
-        return { n: n, q: nq.q, shape: nq.shape, st: st };
-      });
+      var parts = byT[k].slice().sort(function (a, b) { return b.n.freq - a.n.freq; });
+      var t0 = parts[0].n.startTime;
       ["T", "B"].forEach(function (st) {
         var onSt = parts.filter(function (p) { return p.st === st; });
         if (!onSt.length) return;
         // heads that last alike share a stem; a different length gets its own
         var byDur = {};
         onSt.forEach(function (p) { var dk = Math.round(p.n.duration * 20); (byDur[dk] = byDur[dk] || []).push(p); });
-        var keys = Object.keys(byDur), closed = chord.length >= 3 && layer === "choir";
+        var keys = Object.keys(byDur), closed = parts.length >= 3 && layer === "choir";
         // two lengths at once on one staff are two voices, set the way a
         // hymnal sets them: the lower first with its stem down, the upper
         // with its stem up (if their heads would touch, the page moves the
@@ -622,7 +661,7 @@ window.KolobViz = (function () {
         keys.sort(function (a, b) { return meanQ[a] - meanQ[b] || a - b; });
         keys.forEach(function (dk, gi) {
           var ps = byDur[dk], dur = ps[0].n.duration;
-          var v = valueOf(dur / beat, layer);
+          var v = valueOf(dur / beat, layer, opt.fineBeat);
           var seen = {}, heads = [];
           ps.forEach(function (p) {
             if (seen[p.q]) return; seen[p.q] = 1;               // unison parts share a head
@@ -632,6 +671,9 @@ window.KolobViz = (function () {
             layer: layer, tp: t0, dur: dur, st: st, heads: heads, v: v,
             scale: SCALE[layer] || 1, dir: 0, noStem: !v.stem, flags: v.flags
           };
+          if (opt.ink != null && opt.ink !== 1) grp.ink = opt.ink;
+          if (opt.thin) grp.thin = opt.thin;
+          if (opt.dry) grp.dry = opt.dry;
           if (layer === "bells") { grp.noStem = true; grp.ring = true; grp.flags = 0; heads.forEach(function (h) { h.open = true; h.dots = 0; }); }
           if (layer === "harmonium" && question) {        // the answers: slashed grace notes
             grp.slash = true; grp.noStem = false; grp.flags = 1; grp.dir = 1;
@@ -639,17 +681,162 @@ window.KolobViz = (function () {
           }
           if (askMax != null) grp.askMax = askMax;
           if (!grp.dir) {
-            if (keys.length > 1) grp.dir = gi === keys.length - 1 ? 1 : -1;
-            else if (closed) grp.dir = st === "T" ? 1 : -1;
-            else {
-              var mq = st === "T" ? 16 : 4, far = heads[0];
-              heads.forEach(function (h) { if (Math.abs(h.q - mq) > Math.abs(far.q - mq)) far = h; });
-              grp.dir = far.q >= mq ? -1 : 1;
+            var vd = voiced[st] ? voiceDir(ps) : 0, pd = posDir(heads, st);
+            if (vd) {
+              grp.dir = vd;
+              if (pd !== vd && keys.length === 1) grp.alt = pd;   // alone on its staff: if the voice's stem would be stubby (layoutGroup)
             }
+            else if (keys.length > 1) grp.dir = gi === keys.length - 1 ? 1 : -1;
+            else if (closed) grp.dir = st === "T" ? 1 : -1;
+            else grp.dir = pd;
           }
           groups.push(grp);
         });
       });
+    });
+  }
+  // the position rule: the stem turns away from the head that lies furthest
+  // from its staff's middle line (down from a high note, up from a low one)
+  function posDir(heads, st) {
+    var mq = st === "T" ? 16 : 4, far = heads[0];
+    heads.forEach(function (h) { if (Math.abs(h.q - mq) > Math.abs(far.q - mq)) far = h; });
+    return far.q >= mq ? -1 : 1;
+  }
+  // the stem the parts on one stem agree on (S and T up, A and B down), or
+  // 0 when they don't agree or report no part: a shared stem goes the
+  // closed score's way, a lone line the way its heads lie. A voice's own
+  // stem that the plate's edge or the gap would cut short (a lone high
+  // soprano's, stem up over the treble) takes the position rule instead:
+  // see layoutGroup.
+  function voiceDir(ps) {
+    var d = 0;
+    for (var i = 0; i < ps.length; i++) {
+      var pd = PART_DIR[ps[i].n.part];
+      if (!pd || (d && pd !== d)) return 0;
+      d = pd;
+    }
+    return d;
+  }
+
+  // ---- the trombone choir at dawn ------------------------------------------------
+  // A four-part chorale, the day's first hymn, printed as the hymnal prints
+  // it before anyone sings it: a closed score, the soprano and alto
+  // trombones on the treble, tenor and bass on the bass, each part on its
+  // own staff the whole chorale through. Parts that move together share a
+  // stem, turned the way the chord lies (the bass's low chords stem up
+  // into the gap, not down onto the console); a part that moves alone keeps
+  // its voice's stem (the alto's and the bass's down). The two choirs
+  // answer each other across the town, and the page shows which is which by
+  // its ink alone: the far choir's lines are pale, the near choir's full.
+  // When the far choir joins the near one's last chord it doubles it, and
+  // unison parts share a head: the chord is printed once.
+  //
+  // The chorale is set where the trombones are warm, which is not where a
+  // hymnal's voices sit: often the tenor and alto lie a third to a fifth
+  // under their singers'. So the page chooses, for the whole chorale and
+  // for each staff, the octave it is written in: as it sounds, unless an
+  // octave up (or down) spares the reader at least a quarter of a ledger
+  // line a note — the way a men's choir's tenors are printed on the treble
+  // an octave above their sound. The bass staff never climbs over the
+  // treble's octave. The engine plays the whole chorale in one call, so the
+  // page reads it whole.
+  var TROMBONE_INK = { far: 0.42, near: 1 };
+  function ledgerCost(st, q) {                     // ledger lines a note needs, the gap's weighing more; past the plate, more again
+    if (st === "T") return q < 12 ? 1.5 * Math.floor((12 - q) / 2) : q > 20 ? Math.floor((q - 20) / 2) + (q > 24 ? 3 : 0) : 0;
+    return q > 8 ? 1.5 * Math.floor((q - 8) / 2) : q < 0 ? Math.floor(-q / 2) + (q < -4 ? 3 : 0) : 0;
+  }
+  function writtenOctaves(ns) {
+    var out = { T: 0, B: 0 };
+    ["T", "B"].forEach(function (st) {
+      var qs = [];
+      ns.forEach(function (n) { if (PART_STAFF[n.part] === st) qs.push(noteQ(n.freq).q); });
+      if (!qs.length) return;
+      var cost = {}, best = 0;
+      [-7, 0, 7].forEach(function (k) {
+        var c = 0;
+        qs.forEach(function (q) { c += ledgerCost(st, q + k); });
+        cost[k] = c / qs.length;
+        if (cost[k] < cost[best]) best = k;
+      });
+      if (best && cost[best] < cost[0] - 0.25) out[st] = best;
+    });
+    if (out.B > out.T) out.B = out.T;
+    return out;
+  }
+  function takeTrombones(ns) {
+    var near = ns.filter(function (n) { return n.choir !== "far"; });
+    ns = ns.filter(function (n) {
+      if (n.choir !== "far") return true;
+      for (var i = 0; i < near.length; i++) {
+        var m = near[i];
+        if (m.part === n.part && m.startTime <= n.startTime + 1e-6 && n.startTime - m.startTime < 0.3 &&
+            Math.abs(Math.log2(n.freq / m.freq)) < 0.03) return false;   // the far choir, joining: already printed
+      }
+      return true;
+    });
+    var shift = writtenOctaves(ns);
+    ["far", "near"].forEach(function (ch) {
+      var mine = ns.filter(function (n) { return (n.choir === "far") === (ch === "far"); });
+      if (!mine.length) return;
+      // each choir has its own beat (the far one drags a little)
+      var key = "trombones:" + ch;
+      var beat = choraleBeat(mine) || estimateBeat(mine.map(function (n) { return n.duration; }), lastBeat[key] || lastBeat.choir || 1.15);
+      if (mine.length >= 3) lastBeat[key] = beat;
+      takeLayer("trombones", mine, beat, null, { strict: true, shift: shift, ink: TROMBONE_INK[ch] });
+    });
+  }
+  // A chorale moves in its beat: its commonest length is the quarter, so a
+  // brisk dawn reads in quarters and halves as the chorale book prints it,
+  // not in eighths pulled toward hymn time. Null when no length is common
+  // enough to be sure (then the line's own estimate stands).
+  function choraleBeat(ns) {
+    var bins = {}, n = 0, best = null, bc = 0;
+    ns.forEach(function (x) {
+      if (!(x.duration > 0.2 && x.duration < 2.5)) return;
+      var k = Math.round(Math.log2(x.duration) * 25);          // bins of about 3 %
+      bins[k] = (bins[k] || 0) + 1; n++;
+    });
+    Object.keys(bins).forEach(function (k) {
+      k = +k;
+      var c = bins[k] + 0.5 * ((bins[k - 1] || 0) + (bins[k + 1] || 0));
+      if (c > bc) { bc = c; best = k; }
+    });
+    return best != null && n >= 6 && bc >= 0.25 * n ? clamp(Math.pow(2, best / 25), 0.35, 1.8) : null;
+  }
+
+  // ---- the old tune -----------------------------------------------------------------
+  // An Earth tune remembered: the colony's own hymn, from the tunebook, but
+  // from the Earth of three thousand years ago, and the memory prints it
+  // the way Earth's hymnals had come to print it — in round notes (the
+  // book of 1985 among them), before the colony took up the shapes again.
+  // It is engraved finely and faintly, a hairline of green that dries twice
+  // as fast as the ward's ink, so the tune fades from the page as it fades
+  // from the air; the second try, the head alone trailing off, is fainter
+  // still. One staff for the whole memory: the one its line needs the
+  // fewest ledger lines on. Its beat is the book's own: the notes report
+  // where they fall in the tune, and the wear (a note dropped, one held
+  // wrong) moves the time but not the beat, so the middle of the ratios is
+  // the beat.
+  var OLDTUNE_INK = { 1: 0.5, 2: 0.3 };
+  function takeOldTune(ns) {
+    ns = ns.slice().sort(function (a, b) { return a.startTime - b.startTime; });
+    var rs = [], qs = [];
+    for (var i = 0; i < ns.length; i++) {
+      qs.push(noteQ(ns[i].freq).q);
+      var a = ns[i - 1], b = ns[i];
+      if (a && a.tryNo === b.tryNo && a.line === b.line && typeof a.beat === "number" && typeof b.beat === "number" && b.beat > a.beat)
+        rs.push((b.startTime - a.startTime) / (b.beat - a.beat));
+    }
+    rs.sort(function (x, y) { return x - y; });
+    var beat = rs.length >= 2 ? clamp(rs[rs.length >> 1], 0.3, 3)
+      : estimateBeat(ns.map(function (n) { return n.duration; }), lastBeat.oldtune || lastBeat.choir || 1.15);
+    lastBeat.oldtune = beat;
+    var cT = 0, cB = 0;
+    qs.forEach(function (q) { cT += ledgerCost("T", q); cB += ledgerCost("B", q); });
+    var st = cT <= cB ? "T" : "B";
+    [1, 2].forEach(function (tryNo) {
+      var mine = ns.filter(function (n) { return (n.tryNo === 2 ? 2 : 1) === tryNo; });
+      if (mine.length) takeLayer("oldtune", mine, beat, null, { staff: st, shape: "round", ink: OLDTUNE_INK[tryNo], thin: 0.7, dry: 2, fineBeat: rs.length >= 2 });
     });
   }
   // Beyond the ledger room a group folds in silently by octaves until it
@@ -658,20 +845,60 @@ window.KolobViz = (function () {
   // the ledger room keeps its shape: a note that would fold less than the
   // voice's last folded note, close behind it, folds as far (if it still
   // sits on or near the staff). The Question's asking folds as one phrase.
+  // The gap is the telegraph's: no stem ever crosses its middle. So a fold
+  // never carries a head into the gap (nothing is lifted over the bass
+  // staff's ledger-free space, q9, or sunk under the treble's, q11), and a
+  // head that would sit more than two ledgers into the gap, on the
+  // telegraph's line (a part kept on its own staff: a trombone tenor high
+  // over the bass staff), folds back toward its staff. When folding a
+  // whole chord would carry a head into the gap (a trombone chord whose
+  // bass drops under the plate while its tenor sits high), or a head lies
+  // too deep in it, the chord folds head by head, each only as far as it
+  // needs: the tenor stays where it is and the bass comes up an octave.
   var lastFold = {};
+  var FOLD_B = 9, FOLD_T = 11;                     // no fold carries a head past these into the gap
   function foldFor(grp, g) {
     if (grp.fold && grp.fold.sp === g.sp) return grp.fold;
-    var hi = -1e9, lo = 1e9, sh = 0;
+    var hi = -1e9, lo = 1e9, sh = 0, tr = grp.st === "T";
     grp.heads.forEach(function (h) { hi = Math.max(hi, h.q); lo = Math.min(lo, h.q); });
+    var deep = tr ? lo < GAP_T : hi > GAP_B;       // a head on the telegraph's line
     if (grp.askMax != null) hi = Math.max(hi, grp.askMax);
-    if (grp.st === "T") { while (hi - sh > g.qMaxT) sh += 7; }
+    if (tr) { while (hi - sh > g.qMaxT) sh += 7; }
     else { while (lo + sh < g.qMinB) sh += 7; }
     var key = grp.layer + grp.st, lf = lastFold[key];
     if (sh && lf && lf.sp === g.sp && grp.tp - lf.tp1 < 1.2 && lf.sh > sh &&
-        (grp.st === "T" ? lo - lf.sh >= 9 : hi + lf.sh <= 11)) sh = lf.sh;
+        (tr ? lo - lf.sh >= 9 : hi + lf.sh <= 11)) sh = lf.sh;
+    var per = null;
+    if (deep || (sh && (tr ? lo - sh < FOLD_T : hi + sh > FOLD_B))) {
+      per = []; sh = 0;                            // head by head: only a head off the plate, or too deep in the gap, folds
+      grp.heads.forEach(function (h) {
+        var d = 0;                                 // this head's move, in steps (up +)
+        if (tr) { while (h.q + d > g.qMaxT) d -= 7; while (h.q + d < GAP_T) d += 7; }
+        else { while (h.q + d < g.qMinB) d += 7; while (h.q + d > GAP_B) d -= 7; }
+        per.push(d);
+        sh = Math.max(sh, tr ? -d : d);            // (the voice's shape follows the plate-edge folds only)
+      });
+      if (!per.some(function (d) { return d; })) per = null;
+    }
     if (sh) lastFold[key] = { sp: g.sp, sh: sh, tp1: grp.tp + grp.dur };
-    grp.fold = { sp: g.sp, oct: sh / 7 };
+    grp.fold = { sp: g.sp, oct: per ? 0 : sh / 7, per: per, heads: null };
     return grp.fold;
+  }
+  // the heads as they print, folded (two parts folded onto one line print
+  // one head)
+  function drawnHeads(grp, g) {
+    var f = foldFor(grp, g);
+    if (!f.oct && !f.per) return grp.heads;
+    if (f.heads) return f.heads;
+    var dq = grp.st === "T" ? -7 : 7, seen = {}, out = [];
+    grp.heads.forEach(function (h, i) {
+      var q = h.q + (f.per ? f.per[i] : dq * f.oct);
+      if (seen[q]) return;
+      seen[q] = 1;
+      out.push({ q: q, shape: h.shape, open: h.open, dots: h.dots });
+    });
+    f.heads = out;
+    return out;
   }
 
   // ---- the telegraph ------------------------------------------------------------
@@ -746,12 +973,13 @@ window.KolobViz = (function () {
     else { for (l = 10; l <= q; l += 2) out.push(l); for (l = -2; l >= q; l -= 2) out.push(l); }
     return out;
   }
-  // the ink dries: ~3 %/s of page time, far faster in the sacrament. An item
-  // is anchored at its onset (tp, or tp0 for the spans: an asking, the empty
-  // measure, the band's visit); one first drawn late is credited its age.
+  // the ink dries: ~3 %/s of page time, far faster in the sacrament (and
+  // an item's own dry, when it has one, faster again: the old tune's). An
+  // item is anchored at its onset (tp, or tp0 for the spans: an asking, the
+  // empty measure, the band's visit); one first drawn late is credited its age.
   function dryA(it) {
     if (it.d0 == null) it.d0 = DRY - Math.max(0, PT - (it.tp != null ? it.tp : it.tp0));
-    return Math.exp(-0.03 * Math.max(0, DRY - it.d0));
+    return Math.exp(-0.03 * (it.dry || 1) * Math.max(0, DRY - it.d0));
   }
   // a rounded rectangle, also where the canvas has no roundRect (Safari < 16)
   function rrect(c, x, y, w, h, r) {
@@ -794,10 +1022,37 @@ window.KolobViz = (function () {
   // a group of heads on one stem (a chord, or a single note): where its
   // heads and stem fall. Shared by drawGroup and the column check.
   function layoutGroup(g, X, heads, st, dir, o) {
-    var sp = g.sp, sc = o.scale || 1, s = sp * sc;
-    var sw = Math.max(1.4 / dpr, 0.12 * sp * (sc < 1 ? 0.85 : 1));
+    var sp = g.sp, sc = o.scale || 1, s = sp * sc, th = o.thin || 1;   // thin: a finer burin (the old tune)
+    var sw = Math.max((th < 1 ? 1 : 1.4) / dpr, 0.12 * sp * (sc < 1 ? 0.85 : 1) * th);
     var hs = heads.slice().sort(function (a, b) { return a.q - b.q; });
     var stem = dir !== 0 && !o.noStem;
+    // A stem never crosses the middle of the gap, where the other staff's
+    // stems and the telegraph's holes lie: one reaching into the gap stops
+    // short of it, and one whose head already lies too near it to grow a
+    // stem there turns away from the gap instead (a tenor high over the
+    // bass staff, an alto deep under the treble). Before that, a voice's own
+    // stem (o.alt: the position rule's way) that the plate's edge or the gap
+    // would cut under 3 sp past its head turns the position rule's way, if
+    // that stem grows longer.
+    var gapPad = 0.3 * sp, mid = g.mid(st);
+    var yHi = g.y(st, hs[hs.length - 1].q), yLo = g.y(st, hs[0].q);
+    function stemEnd(d) {                          // where a stem turned d ends
+      var ye;
+      if (d > 0) {
+        ye = Math.min(yHi - 3.5 * s, mid);
+        ye = Math.max(ye, Math.min(g.top + 0.3 * sp, yHi - 2.2 * s));   // a stem stays on the plate
+        if (st === "B") ye = Math.max(ye, Math.min(g.tapeY + gapPad, yHi - 2.2 * s));   // …and on its side of the gap
+      } else {
+        ye = Math.max(yLo + 3.5 * s, mid);
+        ye = Math.min(ye, Math.max(g.bot - 0.3 * sp, yLo + 2.2 * s));
+        if (st === "T") ye = Math.min(ye, Math.max(g.tapeY - gapPad, yLo + 2.2 * s));
+      }
+      return ye;
+    }
+    function reach(d) { return d > 0 ? yHi - stemEnd(1) : stemEnd(-1) - yLo; }   // past the stem's last head
+    if (stem && o.alt && o.alt !== dir && reach(dir) < 3 * s && reach(o.alt) > reach(dir)) dir = o.alt;
+    if (stem && st === "B" && dir > 0 && yHi - (g.tapeY + gapPad) < 2.2 * s) dir = -1;
+    else if (stem && st === "T" && dir < 0 && (g.tapeY - gapPad) - yLo < 2.2 * s) dir = 1;
     var sx = X + dir * (0.57 * s - sw / 2);
     var placed = hs.map(function (h) {
       var k = shapeKey(h.shape, dir || 1), hx = X;
@@ -813,16 +1068,9 @@ window.KolobViz = (function () {
     }
     var top = placed[placed.length - 1], bot = placed[0], y0 = null, yEnd = null;
     if (stem) {
-      var mid = g.mid(st);
-      if (dir > 0) {
-        var an0 = anchorOf(bot.k, 1); y0 = bot.y + an0[1] * s;
-        yEnd = Math.min(top.y - 3.5 * s, mid);
-        yEnd = Math.max(yEnd, Math.min(g.top + 0.3 * sp, top.y - 2.2 * s));   // a stem stays on the plate
-      } else {
-        var an1 = anchorOf(top.k, -1); y0 = top.y + an1[1] * s;
-        yEnd = Math.max(bot.y + 3.5 * s, mid);
-        yEnd = Math.min(yEnd, Math.max(g.bot - 0.3 * sp, bot.y + 2.2 * s));
-      }
+      if (dir > 0) { var an0 = anchorOf(bot.k, 1); y0 = bot.y + an0[1] * s; }
+      else { var an1 = anchorOf(top.k, -1); y0 = top.y + an1[1] * s; }
+      yEnd = stemEnd(dir);
     }
     // augmentation dots sit right of the heads (and of an up-stem)
     var right = -1e9;
@@ -833,7 +1081,7 @@ window.KolobViz = (function () {
       var ls = ledgersFor(st, p.h.q);
       for (var li = 0; li < ls.length; li++) ledgers.push([p.x - 0.98 * s, g.y(st, ls[li]), p.x + 0.98 * s]);
     });
-    return { s: s, sw: sw, sx: sx, stem: stem, placed: placed, top: top, bot: bot, y0: y0, yEnd: yEnd, right: right, ledgers: ledgers };
+    return { s: s, sw: sw, sx: sx, stem: stem, dir: dir, placed: placed, top: top, bot: bot, y0: y0, yEnd: yEnd, right: right, ledgers: ledgers };
   }
   // the ink a laid-out group covers, as boxes: its heads (with their dots,
   // breve strokes or bell ring), its ledgers, its stem and its flags. Used to
@@ -843,7 +1091,7 @@ window.KolobViz = (function () {
     L.ledgers.forEach(function (l) { out.push([l[0], l[1] - lh, l[2], l[1] + lh, 1]); });   // [4]: a ledger
     L.placed.forEach(function (p) {
       var hw = o.breve ? 1.1 * s : o.ring ? 1.05 * s : 0.64 * s, hh = o.ring ? 1.05 * s : 0.52 * s;   // a bell's ring is part of its head
-      out.push([p.x - hw, p.y - hh, p.x + hw, p.y + hh]);
+      out.push([p.x - hw, p.y - hh, p.x + hw, p.y + hh, 0, 1]);                                        // [5]: a head
       if (p.h.dots) hasDots = true;
     });
     if (hasDots) out.push([L.right + 0.25 * s, L.bot.y - 0.6 * s, L.right + 0.75 * s, L.top.y + 0.6 * s]);
@@ -859,10 +1107,11 @@ window.KolobViz = (function () {
   }
   function drawGroup(c, g, X, heads, st, dir, o) {
     var sp = g.sp, L = layoutGroup(g, X, heads, st, dir, o);
+    dir = L.dir;                                          // (turned away from the gap, if it had to be)
     var s = L.s, sw = L.sw, sx = L.sx, placed = L.placed, top = L.top, bot = L.bot, yEnd = L.yEnd;
     var pad = KO_PAD * sp;
     c.fillStyle = rgba(o.rgb);
-    var lth = Math.max(1.2 / dpr, 0.16 * sp);
+    var th = o.thin || 1, lth = Math.max((th < 1 ? 0.9 : 1.2) / dpr, 0.16 * sp * th);
     L.ledgers.forEach(function (l) {
       hLine(c, l[0], l[2], l[1], lth);
       koRect(c, l[0] - pad, l[1] - lth / 2 - pad, l[2] + pad, l[1] + lth / 2 + pad);
@@ -967,7 +1216,12 @@ window.KolobViz = (function () {
   // its ink would run into a group already placed close by on the same
   // staff (a stem through the other voice's head, heads or dots that
   // touch), it is set to the right, clear of that ink, the way a second
-  // voice is set. The offset is kept, and worked out again if the staff
+  // voice is set. Quick notes ask a little more air: where either note is
+  // flagged, a head that would all but touch a head beside it (the old
+  // tune's sixteenths, a quarter of its beat apart at 60 px/s) is set aside
+  // the same way. (Heads only: a flag reaching toward the next note of an
+  // ordinary run of eighths is left as it was, so a run is not pushed along
+  // note by note.) The offset is kept, and worked out again if the staff
   // space changes (a resize).
   function placeColumn(gr, g, heads, o) {
     if (gr.col && gr.col.sp === g.sp) return gr.col.dx;
@@ -983,14 +1237,14 @@ window.KolobViz = (function () {
         if (A === gr || !A.col || A.col.sp !== sp || A.st !== gr.st || !(A.lastA > 0.05)) continue;
         var off = (A.tp - gr.tp) * SCROLL_PX_S + A.col.dx;     // A's origin, from ours
         if (off < dx - 8 * sp || off > dx + 8 * sp) continue;
-        var ab = A.col.boxes, hit = false, aR = -1e9;
+        var ab = A.col.boxes, hit = false, aR = -1e9, air = o.flags || A.flags ? gap : 0;
         for (var m = 0; m < ab.length; m++) {
           var ax0 = ab[m][0] + off, ax1 = ab[m][2] + off;
           aR = Math.max(aR, ax1);
           for (var n = 0; !hit && n < bx.length; n++) {
-            var b = bx[n];
+            var b = bx[n], ha = air && ab[m][5] && b[5] ? air : 0;   // two heads, one of them flagged: air between them
             if (ab[m][4] && b[4]) continue;                     // ledgers may meet
-            if (ax0 < b[2] + dx - tol && b[0] + dx < ax1 - tol && ab[m][1] < b[3] - tol && b[1] < ab[m][3] - tol) hit = true;
+            if (ax0 - ha < b[2] + dx - tol && b[0] + dx < ax1 + ha - tol && ab[m][1] < b[3] - tol && b[1] < ab[m][3] - tol) hit = true;
           }
         }
         if (hit) need = Math.max(need, aR + gap - bL);
@@ -1010,15 +1264,10 @@ window.KolobViz = (function () {
       if (x < -6 * sp) continue;                               // gone past the clefs
       groups[keep++] = gr;
       if (gr.tp > PT || x > xR) continue;                      // not yet sung
-      var a = dryA(gr);
+      var a = dryA(gr) * (gr.ink || 1);                    // a guest's own ink: the far choir's, the old tune's
       gr.lastA = a;
       if (a < 0.02) continue;
-      var fold = foldFor(gr, g), heads = gr.heads;
-      if (fold.oct) {
-        var sh = (gr.st === "T" ? -7 : 7) * fold.oct;
-        heads = heads.map(function (h) { return { q: h.q + sh, shape: h.shape, open: h.open, dots: h.dots }; });
-      }
-      var o = { scale: gr.scale, rgb: C_INK, noStem: gr.noStem, flags: gr.flags, slash: gr.slash, breve: gr.v && gr.v.breve, ring: gr.ring };
+      var heads = drawnHeads(gr, g), o = inkOpts(gr);
       x += placeColumn(gr, g, heads, o);
       c.globalAlpha = a;
       drawGroup(c, g, x, heads, gr.st, gr.dir, o);
@@ -1027,6 +1276,10 @@ window.KolobViz = (function () {
     groups.length = keep;
     c.globalAlpha = 1;
     drawQuestions(c);
+  }
+  // how a group is engraved (alt: the stem it takes if its voice's own would be stubby)
+  function inkOpts(gr) {
+    return { scale: gr.scale, rgb: C_INK, noStem: gr.noStem, flags: gr.flags, slash: gr.slash, breve: gr.v && gr.v.breve, ring: gr.ring, thin: gr.thin, alt: gr.alt };
   }
   // a bell: a ringed head — one thin ring, drawn with the head, that dries
   // with it (no spreading rings: nothing on the page moves but the scroll)
