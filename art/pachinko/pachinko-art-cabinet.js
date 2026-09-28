@@ -249,9 +249,10 @@
     vline(g, fx0 - 1, fy0 - 1, fy1 + 1, P.CASE0); vline(g, fx1 + 1, fy0 - 1, fy1 + 1, P.CASE4);
     // the title
     var tb = drawTitle(g, 'MOTHER LODE', 190, fy0 + 3);
-    // emblems at the ends: a miner's lamp on the left, crossed pick and hammer on the right
-    emblemLamp(g, fx0 + 14, fy0 + 7);
-    emblemPicks(g, fx1 - 20, fy0 + 7);
+    // emblems at the ends: the company's own scrip tokens, GOOD FOR 1 AT
+    // THE COMPANY STORE round the rim (too small to read), a 1 in the middle
+    emblemToken(g, fx0 + 19, fy0 + 14, 0);
+    emblemToken(g, fx1 - 15, fy0 + 14, 1);
     // a crack in the face, taped over at one end
     var cx = fx1 - 44, cy = fy0;
     for (var i = 0; i < 9; i++) px(g, cx + i + (i % 3 === 0 ? 1 : 0), cy + i + ((i * 7) % 3 === 0 ? 1 : 0), '#b8a8c8');
@@ -259,6 +260,14 @@
     // bulb sockets (the bulbs are live)
     for (i = 0; i < BULBS.length; i++) { var bb = BULBS[i]; rect(g, bb.x - 2, bb.y - 2, 5, 5, P.CASE0); px(g, bb.x - 2, bb.y - 2, P.BRASS1); }
     return tb;
+  }
+  function emblemToken(g, cx, cy, flip) {
+    disc(g, cx + 0.5, cy + 0.5, 9, P.BRASS0); disc(g, cx + 0.5, cy + 0.5, 8, P.BRASS2); disc(g, cx + 0.5, cy + 0.5, 6.4, P.BRASS3);
+    for (var a = 0; a < 26; a++) { var an = a / 26 * Math.PI * 2; if (a % 3) px(g, Math.round(cx + Math.cos(an) * 7.2), Math.round(cy + Math.sin(an) * 7.2), P.BRASS1); }
+    // the cut-out in the middle that company scrip had (so you couldn't pass it off as money), and the 1
+    if (flip) { disc(g, cx + 0.5, cy + 0.5, 2.2, P.MQ_BG0); px(g, cx - 1, cy - 1, P.BRASS1); }
+    else { A.text(g, '1', cx - 1, cy - 2, P.BRASS0); px(g, cx - 3, cy - 3, P.BRASS4); }
+    px(g, cx - 5, cy - 5, P.BRASS4); px(g, cx - 4, cy - 6, P.BRASS4); px(g, cx - 6, cy - 3, '#fff4c8');
   }
   function emblemLamp(g, x, y) {
     // a carbide cap lamp: reflector disc, the burner, a flame
@@ -284,9 +293,10 @@
     ellipse(g, 17, 10, 12, 5, '#fff');                     // barrel
     thick(g, 27, 9, 33, 4, 4, '#fff');                     // neck
     thick(g, 33, 4, 40, 7, 3, '#fff'); px(g, 41, 8, '#fff'); // the long head, nose down
-    thick(g, 32, 3, 29, -4, 1, '#fff'); thick(g, 34, 3, 35, -4, 1, '#fff'); // ears, too long, as they are
+    thick(g, 32, 3, 28, -6, 2, '#fff'); thick(g, 35, 3, 36, -6, 2, '#fff');   // the ears: a mule's, too long, as they are
+    for (var mn = 0; mn < 4; mn++) px(g, 28 + mn * 1.4, 5 - mn * 1.2, '#fff');   // a short mane, standing up
     [[9, 14], [12, 14], [23, 14], [26, 14]].forEach(function (l, i) { thick(g, l[0], l[1], l[0] + (i % 2 ? 0 : -1), 20, 2, '#fff'); });
-    line(g, 5, 8, 2, 15, '#fff'); px(g, 2, 16, '#fff');   // tail
+    line(g, 5, 8, 4, 13, '#fff'); rect(g, 2, 13, 4, 4, '#fff'); px(g, 1, 16, '#fff');   // a thin tail with a tuft on the end
     var d = g.getImageData(0, 0, W, H).data, m = [];
     for (var y = 0; y < H; y++) { m[y] = []; for (var x = 0; x < W; x++) m[y][x] = d[(y * W + x) * 4 + 3] > 100; }
     return { m: m, w: W, h: H };

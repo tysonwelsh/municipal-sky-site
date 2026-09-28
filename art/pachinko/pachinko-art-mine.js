@@ -124,11 +124,12 @@
     for (i = 0; i < 60; i++) { var qx = (R() * GW) | 0, qy = 13 + ((R() * R()) * 24) | 0; px(g, qx, qy, R() < 0.3 ? P.STAR : P.SKY3); }
     // the moon: too big, too gold, perfectly round, a painted halo
     var mo = decor(board, 'moon') || { x: 262, y: 26 }, mx = mo.x, my = mo.y;
-    S.glowRing(g, mx, my, 9, 9, 7, P.SKY3, 0.55);
-    S.glowRing(g, mx, my, 9, 9, 3, P.SKY4, 0.6);
-    ellipse(g, mx, my, 8, 8, P.MOONP);
-    dither(g, mx - 8, my + 2, 17, 7, P.MOONP_D, 0.25);
-    ellipse(g, mx - 3, my - 2, 2, 2, P.MOONP_D); ellipse(g, mx + 3, my + 3, 2, 1, P.MOONP_D); px(g, mx + 4, my - 4, P.MOONP_D);
+    // (too pretty: a perfect cream disc with a painted halo in two flat rings)
+    ellipse(g, mx, my, 13, 13, P.SKY3); ellipse(g, mx, my, 10, 10, '#8a4a7c');
+    ellipse(g, mx, my, 8, 8, '#fff6d4');
+    ellipse(g, mx, my, 7, 7, P.MOONP);
+    ellipse(g, mx + 1, my + 1, 6, 6, '#eedc9e');
+    ellipse(g, mx - 3, my - 2, 2, 2, '#e2cc8a'); ellipse(g, mx + 3, my + 3, 2, 1, '#e2cc8a'); px(g, mx + 4, my - 4, '#e2cc8a');
     // ridges: the far one blue, fog pooled in the hollows, nearer ones darker
     ridge(g, 46, P.RIDGE4, P.RIDGE3, 0.8, 1, 0.3);
     for (x = 0; x < GW; x++) for (y = 50; y < 58; y++) if (bayer(x, y) < 0.4 - (y - 50) * 0.045) px(g, x, y, P.FOG);

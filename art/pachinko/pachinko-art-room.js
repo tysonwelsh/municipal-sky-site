@@ -375,6 +375,12 @@
 
   // the wall things: the clock, the lost-articles card, the EXIT box, the outlet, the window
   function drawWallThings(g, em, R) {
+    // the missing ceiling tile: a joist's lit edge across the dark inside it,
+    // and a wire hanging out of it with a bare socket on the end
+    hline(g, 204, 258, -104, '#6a6278'); hline(g, 204, 258, -103, '#3a3444'); hline(em, 214, 236, -104, '#4a4456');
+    var wp = [[226, -73], [226, -69], [227, -65], [229, -62], [229, -58], [228, -55]];
+    for (var wi = 0; wi < wp.length - 1; wi++) line(g, wp[wi][0], wp[wi][1], wp[wi + 1][0], wp[wi + 1][1], '#7a7488');
+    rect(g, 227, -55, 3, 3, '#8a8494'); px(em, 227, -55, '#8a8494'); px(em, 226, -66, '#5a5464');
     // the clock: a company clock, the name on its face scratched off
     var c = CLOCK;
     ellipse(g, c.cx, c.cy, c.r + 1, c.r + 1, '#2a2430');
@@ -1023,16 +1029,40 @@
   }
   function glowLevel(t, calm) { if (calm) return 2; var v = Math.sin(t * 2 * Math.PI / 4.6) + 0.35 * Math.sin(t * 2 * Math.PI / 17); return v > 0.5 ? 2 : v > -0.55 ? 1 : 0; }
 
+  var wake = { t0: null };
   function drawLive(g, t, calm, rb, flare) {
     // the cigarette in the stand: the ember breathes, the smoke climbs and leans toward the hall
     var ex = ASH.x + 8, ey = ASH.foot - 63;
     var br = calm ? 0.6 : 0.5 + 0.5 * Math.sin(t * 1.3) * Math.sin(t * 0.37);
     px(g, ex, ey, br > 0.2 ? '#ff7a2a' : '#a8401a');
     if (br > 0.75) px(g, ex, ey - 1, '#ffb070');
+    var lx = null;
     for (var i = 0; i < 44; i++) {
       var yy = ey - 2 - i, a = i / 44, sway = Math.sin(i * 0.16 - t * 1.7) * (1 + a * 5) + a * a * 9;
-      var xx = Math.round(ex + sway);
-      if (bay(xx, yy) < (1 - a) * 0.85) px(g, xx, yy, i < 10 ? '#b0a8b8' : i < 24 ? '#8a8098' : '#6a6080');
+      // near the top it curls over once, the way a thread of smoke does in still air
+      if (i > 30) sway += Math.sin((i - 30) * 0.5) * 2.5;
+      var xx = Math.round(ex + sway), col = i < 10 ? 'rgba(190,182,200,0.8)' : i < 24 ? 'rgba(150,140,170,0.6)' : 'rgba(120,110,145,' + (0.45 * (1 - (i - 24) / 20)).toFixed(2) + ')';
+      if (i > 36 && bay(xx, yy) > (1 - a) * 1.6) { lx = xx; continue; }            // breaking up at the end
+      px(g, xx, yy, col);
+      if (lx != null && Math.abs(xx - lx) > 1) px(g, (xx + lx) >> 1, yy, col);    // never a gap in the line
+      lx = xx;
+    }
+    // the unplugged plug's prongs catch the marquee's light now and then
+    if (calm || Math.floor(t / 2.3) % 3 === 0) { px(g, -25, 532, '#fff8e8'); px(g, -24, 534, '#d8d8e4'); }
+    // the mother lode wakes the building for one beat: HOLLER ROLLER's
+    // backlight stutters on, SCRIP CREEK's neon buzzes pink, then it's dark
+    if (flare > 0.5) { if (wake.t0 == null || t < wake.t0) wake.t0 = t; } else if (flare <= 0.02) wake.t0 = null;
+    var wu = wake.t0 != null ? t - wake.t0 : 9;
+    if (!calm && wu < 1.4) {
+      var on = wu < 0.08 || (wu > 0.16 && wu < 0.3) || (wu > 0.42 && wu < 1.1 && h01(Math.floor(t * 20), 7, 521) > 0.15);
+      if (on) {
+        var hm = HRG.marquee;
+        rect(g, HRF.x + hm.x0 + 6, HRF.y + hm.y0 + 7, hm.x1 - hm.x0 - 12, hm.y1 - hm.y0 - 14, P.LIT);
+        S.textC(g, 'HOLLER ROLLER', HRF.x + 108, HRF.y + hm.y0 + 13, P.WOOD1, 2);
+        for (var hx2 = hm.x0 + 4; hx2 <= hm.x1 - 5; hx2++) px(g, HRF.x + hx2, HRF.y + hm.y1 - 1, P.PINK);
+      }
+      var on2 = wu > 0.1 && wu < 1.3 && h01(Math.floor(t * 30), 8, 522) > 0.25;
+      if (on2) { var nm = 'SCRIP CREEK'; text(g, nm, SCF.x + Math.round(108 - textW(nm, 2) / 2), SCF.y + 20, P.PINK, 2); }
     }
     // the moth at the EXIT sign
     var mt = calm ? 0 : Math.floor(t * 8) / 8;
