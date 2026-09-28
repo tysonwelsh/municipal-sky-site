@@ -202,6 +202,15 @@
   };
   var ROMAN_MOTIF = { "Ⅰ": 1, "Ⅱ": 1, "Ⅲ": 1 };
   function minute(glyph, text, cls) { return { glyph: glyph, text: text, cls: cls }; }
+  // (round 3b) the ward's people in the minutes: a name set in the clerk's
+  // capitals (the Deseret small letters are the capitals + 0x28), and the
+  // moments that earn a row — a person coming forward; not their stepping
+  // back, nor the precentor's line-by-line (his ☞ row says it)
+  function capsDs(s) {
+    return String(s || "").replace(/[\u{10428}-\u{1044F}]/gu, function (ch) { return String.fromCodePoint(ch.codePointAt(0) - 0x28); });
+  }
+  var FORWARD_ROW = { "keys the hymn": 1, "hums the first note": 1, "pitches the tune": 1, "comes forward": 1, "sings the descant": 1,
+                      "sings the treble verse": 1, "sings the tune": 1, "loses the words": 1, "finds them again": 1, "joins in": 1, "sings out": 1 };
   function layerName(l) { return TT(LAYERS_DS, LAYERS_EN)[l] || l; }
   function dsEvent(ev) {
     if (!ev || ev.logged === false) return null;             // the unlogged guest: not a word
@@ -232,7 +241,13 @@
         return ev.hymn && ev.hymn.number != null ? minute("№", S.hymnNo + " " + ev.hymn.number + (ev.hymn.nameDs ? " " + ev.hymn.nameDs : ""), "verse") : null;
       case "lining-out":                                     // (a composed hymn lined out: the deacon's row once a verse, at its first line)
         if (ev.composed && ev.line > 0) return null;
-        return minute("☞", LAYERS_DS.clarinet + " " + S.linesOut, "verse");
+        // (round 3b: the ward's precentor lines out — his name, in the
+        // minutes' capitals; the deacon's clarinet still lines out the
+        // day's material around the hymns)
+        return minute("☞", (ev.nameDs ? capsDs(ev.nameDs) : LAYERS_DS.clarinet) + " " + S.linesOut, "verse");
+      case "cast":                                           // (round 3b: a person of the ward comes forward — their name and what they do)
+        if (!ev.actionDs || !FORWARD_ROW[ev.action]) return null;
+        return minute("✦", capsDs(ev.nameDs) + " " + (latinMode ? String(ev.action).toUpperCase() : ev.actionDs), "verse");
       case "field": {
         var fd = TT(FIELD_DS, FIELD_EN)[ev.field];
         return minute("⋆", fd || TT(LAYERS_DS, LAYERS_EN).ambient, "ambient");

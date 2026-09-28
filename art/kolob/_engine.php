@@ -15,12 +15,13 @@
 // Jukebox v2 substrate first (read-only, by relative path — never modified
 // from Kolob), then pitch, the score and the Earth tunes, the composers,
 // the voices, the performers, and last the core that raises the KolobAudio
-// facade over them. (The lab modules — kolob-question.js, kolob-voices-vocal/
-// -pipeorgan/-folk.js — join this list on the day the engine first uses
+// facade over them. (The lab modules — kolob-question.js, kolob-voices-
+// pipeorgan/-folk.js — join this list on the day the engine first uses
 // them; kolob-tunes.js joined in round 2, milestone 3, when the old tune
 // began to sing the Earth tunes; kolob-voices-band.js and
 // kolob-guest-trombones.js joined at round 2's integration, when the
-// trombone choir began to play at dawn.)
+// trombone choir began to play at dawn; kolob-voices-vocal.js and
+// kolob-cast.js at round 3b, when the ward began to sing the meeting.)
 //
 // THE LOAD GUARD. Each kolob-*.js room answers a roll call as its last act
 // (KOLOB._rooms["kolob-organ.js"] = true), and the substrate — and the Earth
@@ -66,10 +67,15 @@ return [
     'kolob-voices-organ.js', 'kolob-voices-choir.js', 'kolob-voices-winds.js',
     'kolob-voices-ground.js', 'kolob-voices-field.js', 'kolob-voices-bagpipe.js',
     'kolob-voices-band.js',
+    // the ward's thirty-two voices (round 3b: a throat each; the meeting's
+    // one congregation)
+    'kolob-voices-vocal.js',
     // the performers (the trombone choir at dawn plans and plays itself;
     // the guests' room places it, the meeting seats it; the day's hymnal
     // orders the meeting's hymns from the composer and brings them back —
     // round 3's integration, when the meeting began to sing them)
+    // the Sunday's ward and its people, the performer of every hymn (round 3b)
+    'kolob-cast.js',
     'kolob-hymnal.js', 'kolob-guest-trombones.js', 'kolob-guests.js', 'kolob-meeting.js',
     // the facade
     'kolob-core.js',

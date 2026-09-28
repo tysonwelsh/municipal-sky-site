@@ -31,7 +31,7 @@ window.KOLOB = window.KOLOB || {};
   function organChord(t, dur, chord, gainMul) { return S.organChord(t, dur, chord, gainMul); }
   // from kolob-voices-choir.js
   function fugingEntry(t) { return S.fugingEntry(t); }
-  function singHymn(h, row, t) { return S.singHymn(h, row, t); }
+  function singHymn(h, row, t, pre) { return S.singHymn(h, row, t, pre); }
   // from kolob-voices-ground.js
   function tubaBlat(t, gainMul) { return S.tubaBlat(t, gainMul); }
   function stringsPad(t, dur, gainMul, fifthOnly) { return S.stringsPad(t, dur, gainMul, fifthOnly); }
@@ -413,8 +413,17 @@ window.KOLOB = window.KOLOB || {};
       // (typed only, as new words are: SCORE §9.5)
       emitEvent({ type: "hymnal", house: C.house, hymns: day.rows.map(function (r) { return { id: r.id, section: r.section, dialect: r.dialect, key: r.key, meter: r.meter }; }) });
     }
+    // THE WARD (round 3b; PLAN-COMPOSITION §5): the Sunday's thirty-two and
+    // the people among them — the chorister, the precentor, the soloist, and
+    // three to five of the old bass, the harmony alto, the enthusiast, the
+    // child and the newcomer; the testimony-bearers and the organist are
+    // seated too (their turns are later rounds'). Pure seating on cast:<n>
+    // (kolob-cast.js); they sing every hymn, and everything the choir sings
+    // around the hymns. Told with the prelude's seating, by role, in Deseret.
+    C.ward = KOLOB.Cast && S.castStream ? KOLOB.Cast.seat(S.castStream(C.meetingNum)) : null;
+    var wardTold = C.ward ? { seated: 32, people: C.ward.individuals.map(function (id) { var m = C.ward.byId[id]; return { memberId: id, role: m.role, nameDs: m.nameDs, part: m.part }; }) } : null;
     emitEvent({
-      type: "prelude-seating", n: C.meetingNum, seating: C.seating.name, under: C.seating.under, style: C.seating.style, at: C.seating.at, full: C.seating.full, spread: C.seating.spread,
+      type: "prelude-seating", n: C.meetingNum, seating: C.seating.name, under: C.seating.under, style: C.seating.style, at: C.seating.at, full: C.seating.full, spread: C.seating.spread, ward: wardTold,
       len: C.seating.len, preludeS: +plan[0].dur.toFixed(2), sits: Object.keys(C.seating.sits), lean: C.seating.lean, hum: C.seating.hum ? { n: C.seating.hum.n, s: C.seating.hum.s, at: C.seating.hum.at, until: C.seating.hum.until } : null,
       cat: "seating", label: "⌖ the prelude is seated", detail: C.seating.name + (C.seating.style ? " · " + C.seating.style : "") + (C.seating.under !== C.seating.name ? " (the morning after: " + C.seating.under + ")" : ""),
     });
@@ -727,14 +736,18 @@ window.KOLOB = window.KOLOB || {};
     // round 2 did, and the board has nothing to give but the meter.
     if (s.type === "hymn" || s.type === "doxology") {
       if (composed) {
+        // the ward's plan for it first (who keys it, who comes forward and
+        // when), so the board can name them (round 3b: THE WARD SINGS THE
+        // HYMN, kolob-voices-choir.js)
+        var pre = S.hymnPlan ? S.hymnPlan(composed, row) : null;
         emitEvent({
-          type: "hymn-announced", leaderDs: null,
+          type: "hymn-announced", leaderDs: pre ? pre.leaderDs : null, ward: pre ? pre.announce : null,
           hymn: { id: composed.id, number: composed.number, nameDs: composed.nameDs, meter: composed.meter, dialect: composed.dialect,
                   authorDs: composed.hymnist ? composed.hymnist.nameDs : null, mode: composed.mode, key: row.key, keyMonzo: composed.keyMonzo.slice(),
                   form: composed.form, modeOfTime: composed.modeOfTime },
         });
         C.hymn = { id: composed.id, row: row, dialect: composed.dialect, key: row.key, active: true, from: t, until: t };
-        var perf = singHymn(composed, row, t);
+        var perf = singHymn(composed, row, t, pre);
         if (perf && perf.end > t) C.sectionDur = s.dur = Math.max(s.dur, perf.end - t + perf.tail);
       } else {
         emitEvent({ type: "hymn-announced", hymn: { id: hymnId(), number: null, nameDs: null, meter: C.meter, dialect: null, authorDs: null }, leaderDs: null });
@@ -1236,6 +1249,8 @@ window.KOLOB = window.KOLOB || {};
     // hymn being sung ({id, dialect, key, active, until}, a copy; null when
     // none), and the performer's hands (above)
     house: function () { return C.house; },
+    // the Sunday's ward (round 3b: kolob-cast.js's Ward, seated with the plan), or null
+    ward: function () { return C.ward || null; },
     hymnal: function () { return C.hymnal.map(function (r) { var o = {}; for (var k in r) o[k] = r[k]; return o; }); },
     hymn: function () { return C.hymn ? { id: C.hymn.id, dialect: C.hymn.dialect, key: C.hymn.key, active: C.hymn.active, from: C.hymn.from, until: C.hymn.until } : null; },
     hymnSounding: hymnSounding,
