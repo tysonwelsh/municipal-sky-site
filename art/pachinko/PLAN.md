@@ -1218,3 +1218,33 @@ the marble unless holding it, and no page scroll at any size.
     k 1.7, with a trailing glow 0.12 of the route behind; bay 12 is out of the
     cave-in choices (filtered in mischief: its heap sat under the sticker);
     the dead troffers stutter on with the lode's wake-up (room art).
+- 2026-09-28 — **Sound, round 4: the eggs (audio; the contract is the
+  header of `pachinko-audio.js`).** **The knock on the glass** (`glassknock`):
+  nothing announces it. On `turn` the room sinks over 1.2 s to near-silence
+  (the mains hum to 3 %, the mine's air to 5 %, the music off, the case
+  light's tube to 28 %: it buzzes over his boots otherwise); measured on the
+  real page, the mains drop 30 dB and the room sits at the flame's hiss. His
+  `step`s are the lantern man's own boot (E6), louder and drier with `s` (the
+  case's room crossfades out; −40 → −20 dBFS), emerging from the quiet about
+  step 8 and rising to +12 dB over it at `arrive`. `lift`: the bail creaks,
+  the carbide hiss comes close (with a sputter now and then). `knock` ×3: a
+  new kernel, a small linden knuckle on the case's plate glass (the pane's
+  damped modes 120–1100 Hz, its short ring above, a soft onset), −23 dBFS,
+  dry and near, the same buffer three times: +14 dB over the hush. `hold`:
+  only the flame. `nod`: one peg. `lower`, `away` (the hiss goes), `home`:
+  the room back in 0.1 s. **Knocking back** reaches the sound as `empty`
+  (no marbles left): while he's out, `empty` is the player's own knuckle on
+  the same pane (the same modes, a harder, brighter onset); `glasstap` is
+  now that pane too. The train and the tube's flicker wait while he's out;
+  if `home` never comes, 16 s. **The others:** `moon` swing (a plywood clack
+  on its nail, the nail's creak, seven knocks on the backboard, settling) /
+  straight (one tock); **two bits** sounds on the knockers' own `figure knock
+  {twobits}` (they fire within one physics step of the beat: measured 0.40
+  s apart for a 0.40 s beat), brighter and louder than a working knock so it
+  cuts through the music box (+6/+7 dB); `fish` warm (24 cellophane crinkles
+  as it curls, +5…10 dB over attract above 3 kHz) / cool (one); `trainwave`
+  toot (the distant train's own three-chime whistle, short, 7 dB nearer than
+  its call, the valley answering); `figure greet` (the lantern up twice, the
+  bail jingling). `forscale` and `capoff {real}` are silent. **The lode**
+  also wakes the room's dead troffers: starter ticks at +0.67 and +0.95,
+  a buzz from +1.18 for half a second.

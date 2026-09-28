@@ -72,7 +72,8 @@
  *                                          pail's tin or the powder box) · rail (the brace groans) ·
  *                                          clear (the cave-in's heap slumps). hurried (a coin mid-
  *                                          WORK, all at once): one quick triple click
- *   glasstap {n}                           somebody taps the glass (PLEASE DO NOT)
+ *   glasstap {n, gx?, gy?, at?, side?}     somebody taps the glass (PLEASE DO NOT): a person's
+ *                                          knuckle on the pane he knocks on, and the case rattles
  *   found {tokens}                         a nickel turns up in the coin return
  *   gameover {scrip, best?}                the closing phrase; the pocket watch ticks; a new
  *                                          best: the HI tag is rubbed out and pencilled again
@@ -104,8 +105,30 @@
  *           dropped toy, his tool with him) · upright · release {m, how: set|
  *           toss|drop} · cheer (one voice box; ignored during the lode, whose
  *           choir is built in) · point {at} (a peg arm snaps out) · dig {tx, ty}
- *           (into a cave-in's rubble when ty > 330) · mark {nearly} · capoff (silent)
+ *           (into a cave-in's rubble when ty > 330) · mark {nearly} · greet (the
+ *           lantern up twice, its bail jingling) · capoff (silent; {real} too)
  *   rare    {}                             the rare tier's hook: silent on purpose
+ * THE EGGS (EGGS.md):
+ *   glassknock {what, who, s, x, y, n?, of?, fx?, fy?, away?}   THE KNOCK ON THE GLASS.
+ *           turn: the room holds its breath (the mains hum and the mine's air sink
+ *           to a whisper over 1.2 s, the music stops; only the tube is left) ·
+ *           step {n, of, s, away?}: his boots (the lantern man's own note), louder
+ *           and drier as s grows 1 → 4, the case's room crossfading out · arrive ·
+ *           lift: the bail creaks, the carbide hiss comes close · knock {n}: a
+ *           linden knuckle on the plate glass from the inside, dry, near, −23
+ *           dBFS, the same three times · hold: only the flame · nod: one peg ·
+ *           lower · away · home: the room is simply back (0.1 s, not a swell).
+ *           While he's out, a click is `empty` (no marbles left): the sound makes
+ *           it the player's own knuckle on the same pane (knocking back). The
+ *           train and the tube's flicker wait; if `home` never comes, 16 s.
+ *   moon {what: swing|straight, side}      the plywood moon on its nail: clack, creak,
+ *                                          knocking the backboard as it settles / one tock
+ *   twobits {…}                            silent itself: the answer is two `figure knock
+ *                                          {twobits}` from the rock (brighter, on the beat)
+ *   fish {what: warm|cool}                 cellophane crinkling as it curls / one last crinkle
+ *   trainwave {what: wave|toot, n}         the distant train's own whistle, two short toots
+ *                                          (a little nearer than its own call), a puff of steam
+ *   forscale                               silent (a pencil nobody hears)
  * Heard but silent: release, win, glide, workplan, mute (main calls
  * setMuted). Anything else is ignored. Every event may carry `t`.
  * ══════════════════════════════════════════════════════════════════
@@ -433,6 +456,19 @@
     onePoleLP(out, sr, 1500);
     return fadeTail(normPeak(out, 1), sr, 0.01);
   }
+  // a knuckle on the case's plate glass: the pane's own modes, damped by its
+  // wooden frame (dull: 120–1100 Hz), its short glassy ring above, and the
+  // knuckle. A carved linden knuckle is soft (a slow onset, no crack); a
+  // person's is harder and brighter. The same pane either way.
+  function renderGlassKnock(sr, seed, human) {
+    var r = lcg(seed), out = new Float32Array(Math.round(sr * 0.36));
+    var pane = [[121, 0.45, 0.13], [197, 0.8, 0.11], [289, 0.7, 0.09], [409, 0.9, 0.075], [566, 0.6, 0.055], [787, 0.42, 0.04], [1131, 0.28, 0.03]];
+    addModes(out, 0, sr, pane.map(function (m) { return [m[0] * (1 + (r() - 0.5) * 0.01), m[1], m[2]]; }), 1);
+    ramp(out, sr, human ? 0.0006 : 0.0014);
+    addModes(out, 0, sr, [[2340, 0.16, 0.09], [3170, 0.1, 0.07], [4480, 0.05, 0.045]], human ? 1.4 : 1);
+    addBurst(out, 0, sr, human ? 0.0015 : 0.003, human ? 0.7 : 0.4, human ? 3500 : 1700, 120, r);
+    return fadeTail(normPeak(out, 1), sr, 0.01);
+  }
   // a pocket watch's escapement: tick (bright) and tock (a hair lower)
   function renderWatch(sr, seed, tock) {
     var r = lcg(seed), out = new Float32Array(Math.round(sr * 0.03));
@@ -641,7 +677,7 @@
       var air = ctx.createGain(); air.gain.value = 0; air.connect(master);
       var music = ctx.createGain(); music.gain.value = 0; music.connect(master);
       var musicSend = ctx.createGain(); musicSend.gain.value = 0.12; music.connect(musicSend); musicSend.connect(sendAll);
-      var dry = ctx.createGain(); dry.connect(master);
+      var dry = ctx.createGain(); dry.connect(master);          // (no room send: the dime, and the knock on the glass)
 
       var nb = ctx.createBuffer(1, sr * 2, sr), nd = nb.getChannelData(0), nr = lcg(0xb0a7 ^ 0x1de);
       for (var k = 0; k < nd.length; k++) nd[k] = nr() * 2 - 1;
@@ -740,6 +776,7 @@
     function pailBuf(v) { return banked('pa:' + v, function () { return renderPail(ctx.sampleRate, 0x9a11 + v * 53); }); }
     function powderBuf(v) { return banked('pw:' + v, function () { return renderPowder(ctx.sampleRate, 0x90d + v * 53); }); }
     function knockBuf(v) { return banked('kn:' + v, function () { return renderKnock(ctx.sampleRate, 0x4e0c + v * 71); }); }
+    function paneBuf(human) { return banked('gk:' + (human ? 1 : 0), function () { return renderGlassKnock(ctx.sampleRate, 0x61a55 + (human ? 7 : 0), human); }); }
     function watchBuf(tock) { return banked('w:' + tock, function () { return renderWatch(ctx.sampleRate, 0x3a7c + tock, tock); }); }
     function tineBuf(note, broken) {
       return banked('ti:' + note + ':' + (broken ? 1 : 0), function () {
@@ -781,11 +818,12 @@
       room.gain.value = 0; room.gain.setValueAtTime(0, t);
       room.gain.linearRampToValueAtTime(1, t + 1.2);
       var hum = keep(ctx.createGain()); hum.connect(room);
+      var mains = keep(ctx.createGain()); mains.connect(hum);   // (the knock on the glass takes these away, and leaves the tube)
       // mains: 60 Hz and its partials (the transformer in the base)
       [[60, -33.5], [120, -35], [180, -43], [240, -47], [300, -52]].forEach(function (p, i) {
         var o = keepSrc(ctx.createOscillator()); o.frequency.value = p[0]; o.detune.value = i ? 0.4 * i : 0;
         var g = keep(ctx.createGain()); g.gain.value = db(p[1]);
-        o.connect(g); g.connect(hum); o.start(t);
+        o.connect(g); g.connect(mains); o.start(t);
         if (i === 1) G.h120 = g;
       });
       // the 120 breathes (the tube's slow flutter) and shimmers
@@ -805,7 +843,7 @@
       var lfo3D = keep(ctx.createGain()); lfo3D.gain.value = db(-21) * 0.55;
       lfo3.connect(lfo3D); lfo3D.connect(tube.gain);
       lfo.start(t); lfo2.start(t); saw.start(t); lfo3.start(t);
-      G.hum = hum; G.flick = flick;
+      G.hum = hum; G.flick = flick; G.mains = mains; G.tube = tube;
     }
     // the mine's air: it breathes through the ventilation door (a 2.8 s swing,
     // two breaths a swing), and something very low under it. Play only.
@@ -1227,6 +1265,18 @@
       // carts race: the haulage way rattles end to end
       noise(at + 1.0, { ft: 'lowpass', f: 180, q: 0.8, peak: db(-24), a: 0.2, hold: 1.4, d: 0.5, dest: G.lanes[1] });
       for (i = 0; i < 26; i++) play(tickBuf('track', i % 2 ? 79 : 74, i % 3), at + 1.05 + i * 0.07, { gain: db(i % 2 ? -32 : -28), lane: clamp(Math.round(i / 5), 0, 6), tier: 1 });
+      // the room's two dead ceiling troffers try to come on (starter ticks at +0.67 and +0.95),
+      // catch at +1.17 and buzz for half a second, then go dead again
+      [0.67, 0.95].forEach(function (d) {
+        [0, 0.03].forEach(function (d2) { noise(at + d + d2, { ft: 'highpass', f: 4200, peak: db(-33), a: 0.0005, d: 0.008, dest: G.dry }); });
+        tone(at + d + 0.04, { type: 'sawtooth', f: 120, peak: db(-36), a: 0.005, hold: 0.03, d: 0.03, dest: G.dry });
+      });
+      noise(at + 1.17, { ft: 'highpass', f: 4200, peak: db(-32), a: 0.0005, d: 0.008, dest: G.dry });
+      var tro = ctx.createOscillator(); tro.type = 'sawtooth'; tro.frequency.value = 120;
+      var trb = ctx.createBiquadFilter(); trb.type = 'bandpass'; trb.frequency.value = 1800; trb.Q.value = 1.2;
+      var tre = envGain(at + 1.18, db(-24), 0.02, 0.05, 0.46);
+      tro.connect(trb); trb.connect(tre.g); tre.g.connect(G.dry); tro.start(at + 1.18); tro.stop(tre.end);
+      tro.onended = function () { try { trb.disconnect(); tre.g.disconnect(); } catch (e) {} };
       // the crew cheers: six carved men, tiny voices, not supposed to be alive
       if (opts.cheer !== false) cheer(at, r);          // (the arms go up at +1.0)
       // and the music box plays the tune through, the broken tine ringing for once
@@ -1451,7 +1501,8 @@
         case 'queue':                                      // held for the reload: a soft detent
           noise(at, { f: 3200, q: 3, peak: db(-34), a: 0.0004, d: 0.01, dest: G.lanes[lane] });
           return;
-        case 'empty':                                      // nothing left in the tube: the gate snaps on air
+        case 'empty':                                      // nothing left in the tube: the gate snaps on air…
+          if (st.hush) { playClose(paneBuf(true), at, db(-19), 0); return; }   // …but while he's at the glass, a click is knocking back
           tone(at, { type: 'triangle', f: 640 + 40 * r(), f1: 470, peak: db(-25), a: 0.0006, d: 0.035, dest: G.lanes[0] });
           noise(at, { f: 1300, q: 2, peak: db(-27), a: 0.0004, d: 0.015, dest: G.lanes[0] });
           return;
@@ -1500,12 +1551,11 @@
           } else play(tickBuf('wood', 64, 1), at + 0.02, { gain: db(-30), lane: 3, tier: 1 });
           return;
         }
-        case 'glasstap': {                                 // a knuckle on the display glass: the pane, the case, the rattle
-          var gn = ev.n | 0;
-          play(knockBuf(gn % 4), at, { gain: db(-15), lane: 3, rate: 1.6 });
-          tone(at, { f: 1180 + 40 * (gn % 3), peak: db(-27), a: 0.0006, d: 0.3, dest: G.dry });
-          tone(at, { f: 2790, peak: db(-33), a: 0.0006, d: 0.16, dest: G.dry });
-          for (var gr = 0; gr < 3; gr++) noise(at + 0.03 + gr * 0.021, { f: 2400 + 700 * r(), q: 4, peak: db(-33 - 3 * gr), a: 0.0004, d: 0.008, dest: G.lanes[gr * 3] });
+        case 'glasstap': {                                 // a knuckle on the display glass (the same pane he knocks on), the case's rattle
+          var gn = ev.n | 0, gxp = ev.gx == null ? 0 : panOf(ev.gx) * 0.3;
+          if (st.hush) { playClose(paneBuf(true), at, db(-19), gxp); return; }   // knocking back: just the pane
+          playClose(paneBuf(true), at, db(-16), gxp);
+          for (var gr = 0; gr < 3; gr++) noise(at + 0.03 + gr * 0.021, { f: 2400 + 700 * r(), q: 4, peak: db(-34 - 3 * gr), a: 0.0004, d: 0.008, dest: G.lanes[gr * 3] });
           return;
         }
         case 'found':                                      // a nickel in the coin return, alone, bright, dry
@@ -1617,6 +1667,37 @@
           return;
         }
         case 'figure': figure(ev, at, r); return;
+        case 'glassknock': glassKnock(ev, at, r); return;
+        case 'moon': {                                     // the painted moon, a plywood cut-out on a nail
+          var ml = laneOf(262 + 6 * (ev.side || 1));
+          if (ev.what === 'straight') { play(tickBuf('wood', 67, 1), at, { gain: db(-26), lane: ml, rate: 1.3, tier: 0 }); return; }
+          play(tickBuf('wood', 71, 0), at, { gain: db(-29), lane: ml, rate: 1.6, tier: 0 });              // knocked: thin plywood on its nail
+          creak(at + 0.02, { rate: 42, rate1: 26, f: 1700, q: 10, peak: db(-31), d: 0.3, lane: ml });        // the nail
+          for (var mt = at + 0.28, mg = 0.3, mi = 0; mi < 7; mi++, mt += mg, mg *= 0.8)                     // it knocks the backboard as it swings and settles
+            play(tickBuf('wood', 69, mi % 3), mt, { gain: db(-31 - 2 * mi), lane: ml, rate: 1.45 + 0.03 * (mi % 2), tier: 0 });
+          return;
+        }
+        case 'twobits': return;   // the answer is the knockers' two `figure knock {twobits}` (on the beat, within one physics step)
+        case 'fish': {                                     // the red cellophane fish on a warm palm: it crinkles as it curls
+          var fl2 = laneOf(193);
+          // (each crinkle holds 2–6 ms of papery noise: shorter and it has no energy to hear)
+          if (ev.what === 'cool') { noise(at, { f: 5200, q: 0.8, peak: db(-25), a: 0.0005, hold: 0.004, d: 0.006, dest: G.lanes[fl2] }); return; }
+          for (var fc = 0; fc < 24; fc++) {
+            var ft = at + 1.3 * Math.pow(fc / 24, 0.8) + 0.02 * r();
+            noise(ft, { f: 3500 + 4000 * r(), q: 0.8, peak: db(-24 + 6 * Math.sin(Math.PI * fc / 24) - 3 * r()), a: 0.0005, hold: 0.002 + 0.004 * r(), d: 0.005, dest: G.lanes[fl2], off: r() * 1.8 });
+          }
+          return;
+        }
+        case 'trainwave': {                                // the painted train answers: its own whistle, two short toots, a little nearer
+          if (ev.what === 'wave') { if (G.farConv && !G.farReady) valley(); return; }
+          var tw = panner(0.15); tw.connect(G.far);
+          var twb = ctx.createGain(); twb.gain.value = 1; twb.connect(tw);
+          for (var c3 = 0; c3 < 3; c3++) chimeWhistle(at + 0.008 * c3, mtof(WHISTLE[c3]), 0.3, { peak: db(-34) * (c3 === 1 ? 1 : 0.8), sharp: WHISTLE_TUNE[c3], bright: 0.1, dest: twb });
+          noise(at, { ft: 'highpass', f: 2500, q: 0.6, peak: db(-44), a: 0.01, d: 0.2, dest: twb });   // a puff of steam
+          setTimeoutAudio(at + 1.2, function () { try { twb.disconnect(); tw.disconnect(); } catch (e) {} });
+          return;
+        }
+        case 'forscale': return;   // a pencil nobody hears
         case 'nearmiss': nearMiss(ev, at, r); return;
         case 'resume': {                                   // a game a reload left open: no coin, a quiet re-latch
           play(clickBuf(2), at, { gain: db(-33), lane: 6, rate: 0.5 });                          // the door's latch lifts…
@@ -1734,7 +1815,20 @@
           noise(at, { ft: 'highpass', f: 3500, q: 0.7, peak: db(-44), a: 0.004, d: 0.05, dest: G.lanes[lane] });
           noise(at + 0.07, { ft: 'highpass', f: 4200, q: 0.7, peak: db(-47), a: 0.003, d: 0.025, dest: G.lanes[lane] });
           return;
+        case 'greet':                                      // welcome back: the lantern up twice, its bail jingling ("go ahead")
+          [0, 0.875].forEach(function (d) {
+            play(tickBuf('tin', 86, 1), at + d, { gain: db(-33), lane: lane, rate: 1.6 });
+            creak(at + d + 0.01, { rate: 55, rate1: 80, f: 2200, q: 9, peak: db(-37), d: 0.15, lane: lane });
+          });
+          return;
         case 'knock': {                                    // knuckles on stone: the rock's own note
+          if (ev.twobits) {                                // "two bits": deadpan, a touch brighter than a working knock, the same twice
+            var tbl = laneOf(ev.tx == null ? x : ev.tx);   // (it has to cut through the music box in attract)
+            play(tickBuf('stone', 67, 1), at, { gain: db(-19), lane: tbl, tier: 1, rate: 1.35 });
+            play(tickBuf('stone', 72, 2), at, { gain: db(-25), lane: tbl, rate: 1.5 });
+            play(clickBuf(3), at, { gain: db(-25), lane: tbl, rate: 0.5 });
+            return;
+          }
           var tx = ev.tx == null ? x : ev.tx, ty = ev.ty == null ? y : ev.ty;
           var kn = noteFor(TB.stone, 'r' + Math.round(tx / 5) + ':' + Math.round((ty || 0) / 5), ty);
           var kl = ev.soft ? -35 : (ev.n === 3 ? -25 : -27);
@@ -1847,6 +1941,104 @@
           voiceBox(at, { note: VOICEBOX[who] || 76, kind: r() < 0.5 ? 'hey' : 'whoop', lane: lane, peak: db(-27) });
           return;
         case 'capoff': return;                             // silent is right
+      }
+    }
+
+    /* ── the knock on the glass (EGGS.md #1) ────────────────────────────
+     * The one moment the place stops joking. Nothing announces it: the room
+     * just goes quiet (the mains hum and the mine's air sink away over a
+     * second and the music stops; the fluorescent tube is all that's left),
+     * and his boots come closer and drier, the same man's note every step.
+     * The lamp's hiss. Three knocks from the inside of the glass: a small
+     * linden knuckle on the plate, dull, with the glass's short ring, the
+     * same three times, dry and near. Then the room is simply back. */
+    function playClose(buf, t, gain, pan, rate) {       // just behind the glass: no room on it
+      if (!(gain > 1e-5)) return;
+      var s2 = ctx.createBufferSource(); s2.buffer = buf; if (rate) s2.playbackRate.value = rate;
+      var g2 = ctx.createGain(); g2.gain.value = gain;
+      var p2 = panner(pan || 0);
+      s2.connect(g2); g2.connect(p2); p2.connect(G.dry);
+      s2.start(Math.max(t, 0));
+      s2.onended = function () { try { g2.disconnect(); p2.disconnect(); } catch (e) {} };
+    }
+    function glide(param, to, t, dur) {
+      param.cancelScheduledValues(t); param.setValueAtTime(param.value, t); param.linearRampToValueAtTime(to, t + dur);
+    }
+    function hush(t) {
+      if (st.hush) return;
+      st.hush = { t0: t };
+      glide(G.mains.gain, 0.03, t, 1.2);                 // near-silence: a whisper of mains,
+      glide(G.air.gain, G.air.gain.value * 0.05, t, 1.2); // the mine's breath held,
+      glide(G.music.gain, 0, t, 0.8);
+      glide(G.tube.gain, db(-21) * 0.28, t, 1.2);         // and the case light's tube, faint (it buzzes over his boots otherwise)
+    }
+    function unhush(t) {
+      if (!st.hush) return;
+      st.hush = null;
+      var inside = st.mode === 'dive' || st.mode === 'play' || st.mode === 'work';
+      glide(G.mains.gain, 1, t, 0.1);                    // not a swell: just back
+      glide(G.air.gain, inside ? (st.mode === 'work' ? 0.6 : 1) : 0, t, 0.1);
+      glide(G.music.gain, st.mode === 'attract' ? 1 : 0, t, 0.1);
+      glide(G.tube.gain, db(-21), t, 0.1);
+      hissOff(t, 0.05);
+    }
+    function hissOn(t, x) {
+      if (G.hiss) return;
+      var src = ctx.createBufferSource(); src.buffer = G.noise; src.loop = true;
+      var bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 3000; bp.Q.value = 0.7;
+      var hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 1200; hp.Q.value = 0.7;
+      var am = ctx.createGain(); am.gain.value = 0.8;
+      var lfo = ctx.createOscillator(); lfo.frequency.value = 8.3;               // the carbide flame's flutter
+      var ld = ctx.createGain(); ld.gain.value = 0.2;
+      var g = ctx.createGain(); g.gain.value = 0;
+      var pn = panner(panOf(x) * 0.25);
+      lfo.connect(ld); ld.connect(am.gain);
+      src.connect(bp); bp.connect(hp); hp.connect(am); am.connect(g); g.connect(pn); pn.connect(G.dry);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(db(-30), t + 0.5);
+      src.start(t, 0.61); lfo.start(t);
+      G.hiss = { src: src, lfo: lfo, g: g, nodes: [bp, hp, am, ld, g, pn] };
+      // now and then the flame sputters
+      for (var i = 0; i < 6; i++) noise(t + 0.4 + i * (0.31 + 0.07 * (i % 3)), { ft: 'highpass', f: 2600, q: 0.8, peak: db(-44 - (i % 2) * 3), a: 0.0006, d: 0.004, dest: G.dry });
+    }
+    function hissOff(t, dur) {
+      var H = G.hiss; if (!H) return; G.hiss = null;
+      H.g.gain.cancelScheduledValues(t); H.g.gain.setValueAtTime(H.g.gain.value, t); H.g.gain.linearRampToValueAtTime(0, t + dur);
+      try { H.src.stop(t + dur + 0.05); H.lfo.stop(t + dur + 0.05); } catch (e) {}
+      H.src.onended = function () { H.nodes.forEach(function (n) { try { n.disconnect(); } catch (e) {} }); };
+    }
+    function glassKnock(ev, at, r) {
+      var w = ev.what, x = ev.x == null ? 160 : ev.x, s3 = clamp(ev.s || 1, 1, 4), c = (s3 - 1) / 3;
+      switch (w) {
+        case 'turn': hush(at); return;
+        case 'step': case 'arrive': {
+          // his carved boots (E6, the lantern man's own note): louder and drier as he comes, the case's room fading out of them
+          var L = -40 + 20 * c, n = ev.n | 0, feet = w === 'arrive' ? [0, 0.012] : [0];
+          feet.forEach(function (d, i) {
+            var b = tickBuf('foot', FOOT.lamp, (n + i) % 3), rate = (n + i) % 2 ? 0.965 : 1;
+            if (c < 0.95) play(b, at + d, { gain: db(L) * (1 - c), lane: laneOf(x), tier: 1, rate: rate });
+            playClose(b, at + d, db(L) * c, panOf(x) * (1 - 0.6 * c), rate);
+            if (c > 0.3) playClose(tickBuf('plank', 57, n % 3), at + d, db(L - 11) * c, panOf(x) * 0.3, 1.15);   // the case's floor, just there
+          });
+          return;
+        }
+        case 'lift':                                       // the lantern's bail creaks up; its flame comes close
+          creak(at, { rate: 55, rate1: 85, f: 2200, q: 9, peak: db(-33), d: 0.25, dest: G.dry });
+          hissOn(at, x);
+          return;
+        case 'knock':                                      // the same three times, nothing added
+          playClose(paneBuf(false), at, db(-23), ev.fx == null ? 0 : panOf(ev.fx) * 0.25);
+          return;
+        case 'hold': return;                               // silence; only the flame
+        case 'nod':                                        // one peg clicking home
+          playClose(clickBuf(2), at, db(-41), 0, 0.5);
+          playClose(tickBuf('wood', 71, 1), at, db(-41), 0, 2.6);
+          return;
+        case 'lower':
+          creak(at, { rate: 85, rate1: 55, f: 2100, q: 9, peak: db(-38), d: 0.2, dest: G.dry });
+          if (G.hiss) { var hg = G.hiss.g.gain; hg.cancelScheduledValues(at); hg.setValueAtTime(hg.value, at); hg.linearRampToValueAtTime(db(-40), at + 0.4); }
+          return;
+        case 'away': hissOff(at + 0.2, 1.0); return;
+        case 'home': unhush(at); return;
       }
     }
 
@@ -2070,6 +2262,12 @@
           st.watchNext = tt + 0.01;
         }
       }
+      // while he's at the glass nothing else happens; if 'home' never comes, the room comes back by itself
+      if (st.hush) {
+        if (st.nextTrain != null && st.nextTrain < now + 1) st.nextTrain = now + 20;
+        if (st.nextFlicker != null && st.nextFlicker < now + 1) st.nextFlicker = now + 25;
+        if (now - st.hush.t0 > 16) unhush(now);
+      }
       // the distant train (its valley first, if nothing calm has come along yet)
       if (st.nextTrain != null && now >= st.nextTrain - 12 && !G.farReady) valley();
       if (st.nextTrain != null && now >= st.nextTrain - 0.2) {
@@ -2173,6 +2371,7 @@
         G.nodes.forEach(function (n) { try { n.disconnect(); } catch (e) {} });
         if (G.musicSrc) try { G.musicSrc.stop(); G.musicSrc.disconnect(); } catch (e) {}
         if (st.cart) try { st.cart.src.stop(); st.cart.lfo.stop(); } catch (e) {}
+        if (G.hiss) try { G.hiss.src.stop(); G.hiss.lfo.stop(); } catch (e) {}
       }
       if (ctx && !injected && ctx.close) try { ctx.close(); } catch (e) {}
       G = null;
