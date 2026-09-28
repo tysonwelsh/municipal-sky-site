@@ -1187,3 +1187,11 @@ are closed. Do NOT "fix" it into audibility; that would add a breath between eve
 **Recommended:** render a short, silent A/B packet for the owner with and without each source,
 so he can confirm by ear which one he heard. The meetings' own hymn voices (the engine choir and
 house organ) are noise-free.
+
+**Owner ruling (2026-09-28): build without the phone constraint, then scale back by ear.** Defer
+the technical scaling decisions (the full ward's cost on phones and similar). Build round 3b "as
+though there were no technical constraints": the full 32-voice ward, the organist, every guest and
+style in the real meeting. The owner will hear it in practice and then decide how to scale back,
+"either for technical or aesthetic reasons". Crews should still MEASURE the cost (CPU, audio
+thread, nodes) and report it honestly, but do not cut features or voices to meet a phone budget
+in this round.
