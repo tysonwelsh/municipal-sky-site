@@ -713,3 +713,40 @@ stem, a rest touching a note, and page errors. Every bar keeps at least
 2.40 sp after its time (the cap). The one head past it is the critic's
 second in seed 11, at 3.54 sp. In the 6/8 hymn, nothing moves any more
 either; for the rest, see "One call for you" above.
+
+### How it was checked (all silent)
+
+- **The real page**, muted headless Chrome over CDP (`--headless=new
+  --mute-audio --autoplay-policy=no-user-gesture-required`, port 9473,
+  profile `/private/tmp/claude-501/kolob-e5-chrome`; `php -S` on 8154
+  serving this worktree), driver `r3b-e5/drv.js`. Seed 11's Tabernacle
+  hymn at 860 and 390 px: **0 console errors, no horizontal scroll**.
+- **Frame budget at 390 px with 4× CPU throttling**, 25 s recorded during a
+  hymn (`shots/r3-fps-*/report.json`; the machine's load was 2.8 to 3.0):
+
+  | run | fps | frame cost mean / p99 / worst | long tasks | console errors |
+  |---|---|---|---|---|
+  | Tabernacle, seed 7 (0:30–0:55) | **60** | 0.87 / 1.6 / 2.3 ms | 0 | 0 |
+  | Sacred Harp, seed 3 (0:42–1:07, through the fuging) | **60** | 0.78 / 1.9 / 4.0 ms | 0 | 0 |
+  | Gospel 6/8, seed 37 (0:10–0:35, the densest placing) | **60** | 1.03 / 2.2 / 3.9 ms | 0 | 0 |
+
+- **The replay lab** (`r3b-e5/lab/lab4.html`, the dumps of round 2):
+  22 whole-meeting replays of round 3 and 22 of round 2, all with
+  **0 page errors**. STOP in the middle of a verse (seed 7, 3:12) and
+  in the middle of the fuging (6:38) lifts everything scheduled after it,
+  with 0 errors (`stoptest.js`).
+- **The critic's frame, without the cap:** a lab build with no limit on
+  the offsets (`viz-nocap.js`, never shipped) was run on the 6/8 hymn to
+  see whether its crowding is the placing's fault. It is not (see "One
+  call for you").
+- The harness does not load the page, and no engine file changed.
+
+### Requests (round 3)
+
+Unchanged from round 2: the integrator's `verses: P.verses` on
+`verse-start` (the final bar after a hymn's last verse), the fuging's
+`beat` (its bars and waiting rests), and the owner's calls on the 6/8
+hymn, stems across the gap's middle, Johnston's marks and the organ-alone
+printing. The VERSION suggestion from round 2 stands; round 3 adds to it
+"(bars clear of every note's ledger lines, dots and sharps; nothing moves
+once printed; a second set beside its chord)".
