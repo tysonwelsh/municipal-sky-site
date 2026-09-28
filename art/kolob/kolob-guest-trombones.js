@@ -184,7 +184,9 @@ window.KOLOB.GuestTrombones = (function () {
   // drawn nearness (0.16–0.3, 2.2 dB of level between its ends) made half
   // as loud a difference (NEAR_EVEN), so one Sunday's near choir is not
   // 3 LU louder than another's by the luck of where it stood.
-  var LEVEL = 1.4;
+  // The owner, after v0.34's preview (2026-09-28): "still not terribly
+  // enthused… maybe just turn them down in the mix". 4 dB down: 1.4 → 0.88.
+  var LEVEL = 0.88;
   var NEAR_EVEN = { at: 0.23, share: 0.5 };
 
   function oddsFor(info) {

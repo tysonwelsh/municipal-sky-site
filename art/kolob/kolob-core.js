@@ -272,7 +272,9 @@ window.KolobAudio = (function () {
   var ROOM_DEPTH = { voice: -0.35, telegraph: -0.25, harmonium: -0.15, clarinet: -0.08, bells: 0, choir: 0.05, organ: 0.10, strings: 0.15, drone: 0.15, tuba: 0, bagpipe: 0.05, ambient: 0.20 };
 
   var layerGains = {};
-  var layerVolumes = { organ: 0.52, drone: 0.55, choir: 0.8, clarinet: 0.38, bagpipe: 0.18, harmonium: 0.45, strings: 0.5, bells: 0.5, voice: 0.35, telegraph: 0.25, tuba: 0.5, ambient: 0.5 };
+  // organ 0.52 → 0.40 (about 2.3 dB down): the owner found the organ "pretty
+  // loud" in the v0.34 preview (2026-09-28)
+  var layerVolumes = { organ: 0.40, drone: 0.55, choir: 0.8, clarinet: 0.38, bagpipe: 0.18, harmonium: 0.45, strings: 0.5, bells: 0.5, voice: 0.35, telegraph: 0.25, tuba: 0.5, ambient: 0.5 };
   var layerMuted = {}; LAYERS.forEach(function (l) { layerMuted[l] = false; });
   var layerRate = {}; LAYERS.forEach(function (l) { layerRate[l] = 1; });
 
