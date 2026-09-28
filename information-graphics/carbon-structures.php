@@ -111,8 +111,9 @@ include '../includes/header.php';
     <div class="post-container">
       <section class="prose-flow">
         <p>I made this dashboard in collaboration with
-          <a href="https://journals.aps.org/prx/abstract/10.1103/w4p6-b9mp" target="_blank">Kamil Iwanowski</a>, a
-          researcher and PhD candidate in physics at NYU whose work is on the design of materials.</p>
+          <a href="https://www.linkedin.com/in/kamiliwanowski/" target="_blank">Kamil Iwanowski</a>, a
+          researcher and PhD candidate in the Applied Physics and Applied Mathematics department at Columbia University
+          whose work is on the design of materials.</p>
         <p>I met Kamil at an event in Brooklyn, where we connected over our shared interest in data visualizations.
           When he showed me some of the visualizations he had made for his research, I asked if he had considered
           using D3.js, a JavaScript library for making bespoke data visualizations. I shared some of the other
