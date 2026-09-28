@@ -660,3 +660,56 @@ in the same lab.
 | **The tenor's ledger lines at a bar** (seed 34, 5:36.4; round 2 above, round 3 below) | `lab-shots/cmp-h34-860-t336.4.png`; singly `lab-shots/r3-{before,after}/h34-860-t336.4.png` |
 | **The second at the plate's edge**, the frame it is struck (seed 11, 5:55.51, round 3; right edge enlarged) | `lab-shots/g11edge/crop-g11-860-t355.51.png` |
 | **The real page**, seed 11's Tabernacle hymn, 0:43 and 0:46 after it was announced | `shots/r3-tab11/staff-{860,390}-t{043,046}.png` |
+
+### Numbers: the replay lab over whole meetings
+
+The real `kolob-viz.js` replayed eleven harness dumps (up to seven minutes
+each, at 10×) at 860 and 390 px. An instrumented copy checks every frame
+(`mkinstr.js`, `lab/check4.js`, `labstats.js`, `battery.sh`,
+`mdtable.py`). It checks every bar against the ink either side of it,
+every pair of notes on a staff for heads that overlap, and every note, bar
+and rest for any movement after it is printed. It also draws every note
+alone and looks for ink outside the note's measured boxes. The checker
+measures each build with that build's own boxes, so round 2's bar counts
+are low: its boxes missed some of its ink (the last column). Each entry
+reads round 2 → round 3.
+
+| meeting (its hymns) | bars touching ink, 860 px | 390 px | heads overlapping, 860 px | 390 px |
+|---|---|---|---|---|
+| seed 7 (Tabernacle 4/4, psalm tune 2/2) | 0 → **0** | 0 → **0** | 0 → **0** | 0 → **0** |
+| seed 34 (gospel 4/4, Sacred Harp 3/2) | 0 → **0** | 0 → **0** | 1 → **0** | 0 → **0** |
+| seed 3 (Sacred Harp 4/4 and 2/2) | 0 → **0** | 0 → **0** | 0 → **0** | 0 → **0** |
+| seed 1 (gospel 4/4 and 3/4) | 0 → **0** | 0 → **0** | 0 → **0** | 0 → **0** |
+| seed 11 (psalm tune 3/4, Tabernacle 3/4) | 0 → **0** | 0 → **0** | 1 → **0** | 1 → **0** |
+| seed 12 (Sacred Harp 2/2 and 3/4) | 1 → **0** | 0 → **0** | 1 → **0** | 0 → **0** |
+| seed 21 (two psalm tunes, 3/4) | 0 → **0** | 0 → **0** | 0 → **0** | 0 → **0** |
+| seed 5 (Sacred Harp 4/4, Shaker 3/4) | 0 → **0** | 0 → **0** | 0 → **0** | 0 → **0** |
+| seed 18 (the Old Way) | 0 → **0** | 0 → **0** | 0 → **0** | 0 → **0** |
+| seed 22 (Shaker) | 0 → **0** | 0 → **0** | 0 → **0** | 0 → **0** |
+| seed 37 (gospel 6/8) | 16 → **16** | 10 → **8** | 27 → **26** | 2 → **2** |
+
+| meeting | notes moved after print, 860 px | 390 px | bars moved after print, 860 px | 390 px | notes with ink outside their measure, 860 px | 390 px |
+|---|---|---|---|---|---|---|
+| seed 7 (Tabernacle 4/4, psalm tune 2/2) | 0 → **0** | 0 → **0** | 34 → **0** | 23 → **0** | 145 → **0** | 145 → **0** |
+| seed 34 (gospel 4/4, Sacred Harp 3/2) | 0 → **0** | 0 → **0** | 25 → **0** | 16 → **0** | 72 → **0** | 72 → **0** |
+| seed 3 (Sacred Harp 4/4 and 2/2) | 0 → **0** | 0 → **0** | 4 → **0** | 0 → **0** | 40 → **0** | 46 → **0** |
+| seed 1 (gospel 4/4 and 3/4) | 3 → **0** | 3 → **0** | 10 → **0** | 3 → **0** | 59 → **0** | 59 → **0** |
+| seed 11 (psalm tune 3/4, Tabernacle 3/4) | 5 → **0** | 2 → **0** | 33 → **0** | 25 → **0** | 14 → **0** | 14 → **0** |
+| seed 12 (Sacred Harp 2/2 and 3/4) | 1 → **0** | 2 → **0** | 34 → **0** | 11 → **0** | 9 → **0** | 9 → **0** |
+| seed 21 (two psalm tunes, 3/4) | 3 → **0** | 4 → **0** | 20 → **0** | 16 → **0** | 36 → **0** | 36 → **0** |
+| seed 5 (Sacred Harp 4/4, Shaker 3/4) | 0 → **0** | 0 → **0** | 12 → **0** | 9 → **0** | 48 → **0** | 49 → **0** |
+| seed 18 (the Old Way) | 0 → **0** | 0 → **0** | 0 → **0** | 0 → **0** | 9 → **0** | 9 → **0** |
+| seed 22 (Shaker) | 0 → **0** | 0 → **0** | 0 → **0** | 0 → **0** | 12 → **0** | 12 → **0** |
+| seed 37 (gospel 6/8) | 86 → **0** | 66 → **0** | 32 → **0** | 28 → **0** | 74 → **0** | 80 → **0** |
+
+In the ten meetings other than the 6/8 hymn, at both widths, round 3 has
+no bar touching ink and no two heads overlapping. Nothing moves after it
+is printed. The push's estimate of the ink before a bar always equals the
+ink drawn there (round 2 missed on up to 34 bars a meeting), and no ink
+lies outside its measure. These are also 0: other ink of two notes
+meeting (stems, flags, signs), the tune crossing staves or turning its
+stem, a rest touching a note, and page errors. Every bar keeps at least
+0.29 sp of air, except one in seed 12 (0.22 sp). A chord is set at most
+2.40 sp after its time (the cap). The one head past it is the critic's
+second in seed 11, at 3.54 sp. In the 6/8 hymn, nothing moves any more
+either; for the rest, see "One call for you" above.
