@@ -385,6 +385,19 @@ its fuging):
   were running). **I could not get a capture with zero holes on this
   machine tonight.** A capture on a quiet machine should confirm.
 
+**A second capture**, from the dawn through the first hymn's giving-out
+(seed 7, 0:00–3:30, after the trombones began to be laid out a phrase at a
+time):
+
+- the audio clock ran at 0.999× real time;
+- the console was clean;
+- −17.2 LUFS, sample peak −4.5 dBFS;
+- one tap hole of one render quantum at 3:00.087. The engine had done
+  nothing for the 5 s before it (its last work was the giving-out's cue at
+  2:55).
+
+Captures are in the scratchpad (`cap7c/`, `cap7d/`).
+
 **The page:**
 
 - `index.php` at 860 and 390 px: the board shows HYMN 263 · its Deseret
