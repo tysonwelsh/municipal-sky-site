@@ -486,3 +486,251 @@ spread.
 - **Rare check failures** (about 0.5 % after repair) are reported honestly
   in the lab's checks panel. In a meeting, the composer would simply be
   asked again with the next fork.
+
+---
+
+# Round 2: the critic's twelve findings, fixed
+
+*HYMN crew, round 3, the fixer's pass. Branch `kolob-r3-hymn`, commits
+`b89b0c4` (composer and dialects) and `67fa364` (the lab). 2026-09-27.
+Nothing pushed or published; VERSION not bumped.*
+
+## What you will hear differently
+
+- **The Tabernacle hymns now come fully home.** Every full close ends with
+  the bass on the root: the bass sings *sol–do* under the last chord, and
+  *fa–do* under the *A-men*. Before, about half the hymns in the lab's
+  other keys ended on a tonic with its third in the bass, which sounds like
+  a door left open. BETHEL (seed 4) was one of them.
+- **The tune's sevenths fall.** Where the tune sings the seventh of a
+  dominant-seventh chord (usually *fa* over V7), it now steps down to *mi*
+  or holds into a chord that keeps it. It never rises to *sol* any more.
+- **No awkward leaps beside the high note.** The tune no longer jumps a
+  seventh or a tritone to or from its peak. MANTI's descending seventh and
+  the *fa → mi* tritone in the tenor of SABBATH SPRING and WINTER QUARTERS
+  are gone.
+- **More kinds of ending.** Tabernacle tunes now come home by *ti–do*
+  about as often as by *re–do*. Before, nearly all of them ended *re–do*.
+- **The Sacred Harp is a little warmer.** In a major tune, about one inner
+  line in three now closes on a full chord with its third, as the 1844 book
+  often does. The last chord is still bare.
+- **The organ's introduction is louder.** It used to be about 12 dB under
+  the singers. It now plays at close to their level, and the staff lights
+  up while it plays.
+- **The key menu tells the truth.** "Down a fifth" and "down a fourth"
+  were swapped. A link can now carry the key (`&key=down5`), and the
+  address bar always holds a link that composes the same hymn again.
+
+## Ten to try (this table replaces the one above)
+
+Serve the worktree as before and open
+`http://127.0.0.1:8123/art/kolob/hymn-lab.php?seed=<n>&dialect=<d>`. The
+names, meters and hymnists are unchanged. Some lines have new notes,
+because the peak and the endings are placed more carefully.
+
+| seed | dialect | hymn | listen for |
+|---|---|---|---|
+| 4 | Tabernacle | BETHEL, CM, Lovina Fife | the organ gives out the last line (the notes light); line 2 turns to the dominant through V/V and settles on V in root position; the diminished seventh on the approach in line 3; the cadential six-four in the last line, V–I with the bass *sol–do*, and the *A-men* (IV–I, bass *fa–do*) |
+| 5 | Tabernacle | MANTI, CM, Emmeline Vail | V7/IV twice (a flat seventh leaning to IV), the approach diminished seventh, one 4–3 suspension in the last line; it ends *do–ti–do* |
+| 8 | Tabernacle | COTTONWOOD, 8.7.8.7 in 3/4, Thankful Beeson | waltz time; three 4–3 suspensions at the closes; it ends *re–ti–do* |
+| 1 | Tabernacle | NAUVOO, CMD in 2/2, Emmeline Vail | long and stately; five suspensions, three V7/IV, two cadential six-fours; ends V7–I |
+| 3, mode **aeolian** | Tabernacle | MORONI, 8.7.8.7 in 3/4 | a minor Tabernacle hymn: raised leading tone at the half closes, line 2 turns to the relative major; the last line rises on the unraised seventh, so it closes modally (VII–i), then *A-men* iv–i |
+| 1 | Sacred Harp | RIMLIGHT, 11s in 6/8, Ammon Stroud | (new) a major camp-meeting tune; lines 2 and 3 close **full**, with their third, before a bare last chord |
+| 4 | Sacred Harp | SABBATH SPRING, CM, aeolian, Ammon Stroud | the tune in the tenor, sung on the notes the first time; bare fifths at the closes |
+| 7 | Sacred Harp | WINTER QUARTERS, CM, aeolian, 2/2, Abner Hale | the singing-school master's leaping minor tune; it ends *sol* up to *do*, the shape-note close |
+| 2 | Old Way | SEGO, CM, aeolian, 3/2, Zina Carrow | the precentor lines out each line; the ward answers slowly, ornamenting at the 13 marked places |
+| 4 | Old Way | EVENING, CM, pentatonic, Tirzah Quayle | a gapped tune; untick "lined out" to hear the ward alone |
+
+**The one question is still the same: does each sound like a real hymn
+in its style?** For the Tabernacle especially, listen to the last chord of
+each verse and the *A-men*. They should sound finished, the way a hymnal
+ending does.
+
+## The twelve findings, one by one
+
+The numbers come from the critic's own measure, rebuilt as a script. Each
+run covers the same kind of sample the critic used. "Lab keys" are the four
+non-home keys the lab offers.
+
+| # | finding | what changed | before | after |
+|---|---|---|---|---|
+| 1 | Tabernacle closes and amens on I6 | the final chord of every authentic or plagal close, of a tonicized arrival and of whatever comes home is voiced in root position (hard rule in the voicing search). V and V7 before the last close are held to root position too; an inner authentic close's dominant leans that way. Both chords of the *A-men* are on their roots. New hard check: **"the closes stand on their roots"** | lab keys: 47.5 % end on I6, amen I6 47.5 %, last bass move *sol–do* 15 % | 0 % I6, 0 % amen I6, *sol–do* 98.3 % (240 hymns, seeds 700–759 × lab keys); inverted authentic/plagal closes 0 of 408 |
+| 2 | the tune's seventh rises | `planChords` refuses a seventh chord whose seventh is in the tune unless the tune steps down, or holds into a chord that keeps the note (a transition rule). Inner voices: leaving a seventh unresolved costs more (8, was 5), and leaping off it within the same chord costs 4 | 104 of 668 unresolved, 96 in the soprano | 0 of 810 (seeds 700–759 × lab keys); 1 of 602 on seeds 2000–2199 home, in the tenor, none in the soprano |
+| 3 | sevenths and tritones beside the peak | the peak goes only where the fixed notes beside it are within a fifth and not a tritone away, and where a note two away can be reached in two leaps. If the line has no such place in the band, a varied line's head gives up notes, and then **the peak line's ending is drawn again** from the endings its cadence allows. Also: a varied line's head gives way when it would run into the ending by a tritone or seventh; an ending figure that itself sings a tritone in that mode is never drawn (e.g. *sol*–*do* on the wrong degrees of aeolian). New hard check: **"singable leaps"** (no tritone, no seventh, nothing past the octave inside a line) | 44 of 450 hymns, 41 at the peak | 0 of 720 (240 per dialect); 0 of 200 on seeds 2000–2199 |
+| 4 | the spread counted names, not notes; re–do everywhere | `Composer.sungEnding(h, k)` names the last two or three **sung** notes from the final (a comma marks a note below it: *ti,* is the leading tone under the final). `spread()` and the lab's spread panel now lead with them. The cause is fixed too: the floor comes down to meet the last line's ending when that ending dips below the final (*ti–do*, *la–ti–do*, *sol–do*). A figure that does not fit is **drawn again** from the same table, never replaced by the heaviest. The Tabernacle's last line leans to the leading tone (`homeFigures`) in the major modes | Tabernacle last two notes *re–do* 90 % (2 kinds); last three *mi–re–do* 68 %; Old Way *re–do* 81 % | see "the spread" below |
+| 5 | key labels swapped; no `?key=` | labels fixed (2/3 is down a fifth, 3/4 down a fourth); `?key=` takes `up4`, `up5`, `down4`, `down5`, `home`, a ratio (`2/3`) or the monzo; the address bar is rewritten on every compose, so it always reproduces the hymn | — | checked in Chrome: `?key=down5` selects 2/3 and composes in it |
+| 6 | the peak's position was never checked | the peak line is chosen for how many of its middle syllables fall inside 60–75 %; an ABAC form turns its repeated line into A′ when that is where the room is; the peak's slot is chosen inside the band. **"a planned peak"** now fails a hymn whose high note is outside 60–75 %, give or take one syllable (one syllable is 2–4 % of a hymn) | 13 of 108 Tabernacle, 4 of 96 Sacred Harp, 7 of 48 Old Way outside; lowest 19 % | none outside the band plus one syllable in 1,622 hymns (the batteries below); range 56–71 % |
+| 7 | the cadence mix never compared; Sacred Harp closes too bare | the fingerprint reads each line's close from the notes: `closeThird`, `closeHome`, `closeDom` (in `FP_KEYS`, `references()`, the lab's table and the spread). The Sacred Harp now draws a **full close** (the third kept) for an inner line: 30 % in the major modes, 4 % in minor, less for a hymnist who loves the open fifth. See the note below | 11 % of closes with a third | 23.8 % (major 31.5 %, minor 7.7 %) against the Earth tunes' 24.6 % (major 35 %, minor 9 %) on the same ruler; the last chord is still always bare |
+| 8 | range counted in steps | the check counts semitones (≤ 17, an octave and a fourth); the Sacred Harp's part windows are cut to 17 semitones; the tune's floor is never more than 17 semitones under its peak | a Sacred Harp treble of 18 semitones (seed 11061) | 0 parts wider than 17 semitones in 720 hymns |
+| 9 | a tonicized arrival on V6 | covered by #1: a tonicized arrival is a full close, so V stands on its root | 5 of 25 inverted | 0 of 92 |
+| 10 | direct fifths and octaves, the soprano leaping | the cost is now 12 (it was 1.5), with the parallels' own weight behind it | 18 of 108 hymns | 0 in 440 Tabernacle hymns |
+| 11 | the organ's giving-out 12 dB under the ward, and unlit | the organ plays into a bus of its own at +9 dB for the giving-out, which ramps back as the ward stands to sing; the giving-out's notes are marked, so the staff lights | organ alone −29 dBFS, ward −15 to −18; lit 0 | organ alone −19 to −22 dBFS; ward with organ −16 to −23; the Sacred Harp ward −13 to −23; 4 notes lit during the giving-out, at 860 and at 390 |
+| 12 | the report could describe a discarded melody | `h.report.lines` is built from the **kept** round: the Score's own line plans and that round's search. `Line.plan` gains `via` (tonicize or relative) and `full` (dev) | — | 0 mismatches between the report and the Score in 1,160 hymns |
+
+### Where I read it differently (and why)
+
+- **#7, how often the 1844 book keeps the third.** I built one ruler for
+  both books: the sonority sounding at each line's cadence beat, read from
+  the notes. On it, the ten Sacred Harp references keep the third at
+  **25 %** of their closes (a mean over the tunes), not 47 %. The major
+  ones are at about 35 % and the minor ones at about 9 %. Four of the ten
+  do end on a full triad (NEW BRITAIN, PISGAH, HOLY MANNA, CORONATION); the
+  critic is right about that.
+  - I matched the colony's inner closes to this ruler rather than to 40 %.
+  - I kept every **last** chord bare, because PLAN §3.A (the owner's plan)
+    says "bare-fifth endings".
+  - **Request to the owner:** should a major Sacred Harp tune sometimes
+    end on a full chord, as four of the ten Earth tunes do? That is one
+    number to change (`reqUpper` in `kolob-dialects.js`).
+- **#4, whether re–do is still too common.**
+  - **The Old Way** ends *re–do* in 60 % of hymns on seeds 2000–2199. That
+    is exactly its references (3 of 5), and it has 5 kinds of ending.
+  - **The Tabernacle** in the home key ends *re–do* in 64 % and *ti–do*
+    in 31 %; in the lab's other keys it is 40 % and 40 %. In the home key
+    the soprano cannot go lower than *ti* under the final, so *la–ti–do*
+    and *sol–do* do not fit there. That is realistic for a hymn in C.
+  - A hymnist's signature ending still weighs heavily on purpose. Thankful
+    Beeson, the Tabernacle's commonest hymnist, loves *mi–re–do*.
+- **#1, the 1.7–3.5 % of last bass moves that are not *sol–do*.** These
+  are modal closes, on purpose:
+  - ♭VII–I in mixolydian;
+  - VII–i in minor, when the tune rises on the unraised seventh.
+  - Before home, a modal VII only *leans* to root position. With the tune
+    on the subtonic over VII's root, the tune and the bass would climb to
+    the final in octaves.
+  - The final chord is always on its root.
+  - In minor, the Tabernacle's last line now leans *away* from that rise
+    (`homeFigures.minor`), so most minor hymns close V–i with the raised
+    leading tone.
+- **#2, what is left.** The one unresolved seventh in 602 is in the tenor
+  (V7 repeated, *fa* to *sol*). In round 1 the critic's count also
+  included sevenths held as 4–3 suspensions (V7/V into V, the tenor
+  holding *do* and then falling to *ti*). Those are resolved, just late,
+  and the measure now follows the suspension.
+
+## The spread, counted as sung
+
+"Last two" and "last three" are the hymn's last sung notes, named from the
+final. A comma marks a note below the final.
+
+**Seeds 700–759, the four lab keys (240 hymns per dialect):**
+
+| dialect | last two | last three |
+|---|---|---|
+| Tabernacle | 6 kinds: *ti,–do* 40 %, *re–do* 40 %, *do–do* 11 %, *mi–do* 4 %, *sol,–do* 3 % | 13 kinds; the commonest, *mi–re–do*, is 28 % |
+| Sacred Harp | 6 kinds: *re–do* 47 %, *mi–do* 23 %, *ti,–do* 12 %, *sol,–do* 10 %, *do–do* 6 % | 20 kinds; *mi–re–do* 40 % |
+| Old Way | 4 kinds: *re–do* 48 %, *ti,–do* 28 %, *do–do* 18 %, *sol,–do* 7 % | 19 kinds; *mi–re–do* 28 % |
+
+**The critic's seeds, 2000–2199 in the home key:**
+- **Tabernacle:** *re–do* 64 %, *ti,–do* 31 %; last three *mi–re–do* 43 %
+  (it was 90 % and 68 %).
+- **Old Way:** *re–do* 60 % (it was 81 %).
+
+**The Earth references:**
+- **Tabernacle:** *ti–do* 3 of 7, *re–do* 3, *mi–do* 1.
+- **Sacred Harp:** *re–do* 7 of 10.
+- **Old Way:** *re–do* 3 of 5.
+
+## The fingerprints now (seeds 100–139, home key)
+
+| measure | Tabernacle | Earth | Sacred Harp | Earth | Old Way | Earth |
+|---|---|---|---|---|---|---|
+| parallel fifths | 0 % | 0 % | 20.3 % | 14.6 % | — | — |
+| chords with no third | 3.8 % | 3.2 % | 46.2 % | 50.7 % | — | — |
+| crossing | 0 % | 0 % | 6.4 % | 6.3 % | — | — |
+| chromatic | 1.7 % | 0.7 % | 0 % | 0.1 % | 0 % | 0.5 % |
+| sevenths | 9.5 % | 10.9 % | 0 % | 0.7 % | — | — |
+| melody leaps | 29.1 % | 23.3 % | 34.4 % | 38.2 % | 27.8 % | 40.4 % |
+| melisma | 6.2 % | 13.3 % | 10.6 % | 14.6 % | 12.8 % | 19.7 % |
+| closes keeping their third | 95.6 % | 98.2 % | 23.8 % | 24.6 % | — | — |
+| closes on home's chord | 50.6 % | 53.0 % | 64.0 % | 56.1 % | — | — |
+| closes on the dominant | 45.2 % | 29.2 % | 36.0 % | 28.1 % | — | — |
+| melody compass (steps) | 8.0 | 7.7 | 7.5 | 7.9 | 6.3 | 8.4 |
+
+The Tabernacle's other idioms are unchanged in kind (40 hymns):
+- first inversions: 25.4 % of chords;
+- V7 in 37 of 40 hymns (the seventh rule takes a few away);
+- the cadential six-four in 21 hymns;
+- V/V in 14;
+- the approach diminished seventh in 10;
+- V7/IV in 8;
+- 4–3 suspensions: 0.57 per hymn.
+
+## How it was checked (all silent)
+
+**The acceptance battery:** 216 hymns, every dialect × six modes × the
+dialect's meters × 2 seeds, rotating the keys and modes of time.
+- 0 invalid Scores;
+- 0 failing a JSON round-trip;
+- 0 nondeterministic;
+- 0 hard checks failing (round 1 had 1).
+
+**Every dialect × all 9 meters × 6 modes of time × 3 modes:** 486 hymns,
+with the hymnists in turn.
+- 0 invalid, 0 thrown.
+- 1 hard check failing: a pentatonic Long Meter hymn by Orson Tebbs in
+  2/2 (seed 9029). It shares a run of six intervals with two leaps with
+  NEW BRITAIN, and five repairs could not shake it. The lab shows the
+  failure.
+
+**The critic's measures, rebuilt:**
+- 720 hymns: seeds 700–759 × the lab keys × three dialects;
+- 200 hymns on seeds 2000–2199 in the home key, Tabernacle and Old Way;
+- no hard check failing.
+
+**Do the hymnists still shape what they write?** Yes (16 Tabernacle hymns
+each):
+- leap rate: Tebbs 0.21 to Oakes 0.38;
+- sevenths: Carrow 3 % to Vail 13 %;
+- endings: Hale, Lund and Oakes lean *ti–do*; Tebbs, Carrow and Vail lean
+  *re–do*.
+
+**The lab in muted headless Chrome over CDP**, at 860 and 390 px, all
+three dialects, playing:
+- 0 console errors;
+- no horizontal scroll;
+- `?key=down5` honoured;
+- the URL rewritten;
+- the spread panel counting sung endings.
+
+**Timing:** a hymn composes in about 100–550 ms in Node, depending on the
+dialect and the seed, the same as round 1. Most of that is repair rounds,
+most often for "not an Earth tune".
+
+## New in the surface (for the integrator)
+
+- **`KOLOB.Composer.sungEnding(hymn, k)`:** the last k sung notes, named
+  from the final.
+- **`KOLOB.Composer.FP_KEYS`:** the fingerprint's compared measures.
+- **`fingerprint(h)`:** new fields:
+  - `share.closeThird`, `share.closeHome`, `share.closeDom`;
+  - `rangeSemi` (each part's compass in semitones);
+  - `closes`.
+- **`Line.plan` (dev):** gains `via` (tonicize or relative) and `full`.
+- **`Hymn.report.lines[i].full`:** a Sacred Harp line that closes with its
+  third.
+- **Dialect profiles:**
+  - `TABERNACLE.homeFigures.{major,minor}`: the last line's ending
+    leanings;
+  - `SACREDHARP.fullClose.{major,minor}`: the full-close rates;
+  - `closeThird`, `closeHome` and `closeDom` tolerances in every dialect.
+- **New stream forks** under `skeleton/line:<k>`:
+  - `close:full`;
+  - under the line's die: `figure:refit`, `figure:peak` and
+    `peakAt:repair:<r>`.
+
+  Every earlier fork is untouched, so a seed keeps its name, frame, meter,
+  mode and hymnist.
+
+## Known issues, still open
+
+- **The Tabernacle closes on the dominant more often than the Psalmody**
+  (45 % against 29 %). The Psalmody also rests on IV and on vi mid-verse
+  ("none:IV", "half:iii"), and the colony's cadence tables have no such
+  close yet. That would be a small addition to `TABERNACLE.cadences`.
+- **The Tabernacle's melisma** is still 6 % against the book's 13 %.
+- **The Old Way's tunes** are still narrower and more stepwise than their
+  references, on purpose.
+- **A peak can sit at 59 %.** That is one syllable under the band, which
+  the check allows, so the lab can print "59 % (planned 60–75 %)" beside a
+  passing check.
