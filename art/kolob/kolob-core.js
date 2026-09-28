@@ -246,6 +246,11 @@ window.KolobAudio = (function () {
   }
   // wait(label): the voice's waiting-room stream (how long a refusal waits).
   function wait(label) { return stream(label + ":wait"); }
+  // hymnStream(n, i): the i-th hymn of meeting n (SCORE §3: hymn:<n>:<i> —
+  // the composer writes on it, and the performance is a fork below it).
+  // The day's hymnal hands the seed and the label to the composer's desk,
+  // which may be another thread: the same fork is born there.
+  function hymnStream(n, i) { return visitRoot().fork("hymn:" + n + ":" + i); }
   // synth(voice): sound-level detail for a voice, the whole visit long.
   function synth(voice) {
     if (auditioning) return audition();
@@ -459,6 +464,12 @@ window.KolobAudio = (function () {
       applyLayerGain(layer);
     }
     makeClock();
+    // the composer's desk is opened now — at the button press, not in a
+    // cue — so its rooms are loaded long before the first hymn is ordered
+    // (kolob-hymnal.js: a worker where the page has one)
+    if (KOLOB.Hymnal && KOLOB.Hymnal.warm) {
+      try { KOLOB.Hymnal.warm(); } catch (e) { if (window.console) console.warn("Kolob: the composer's desk could not be opened:", e); }
+    }
     // the town's air, for the trombones at dawn, is poured now — once, at the
     // button press — not inside the clock's callback that first needs it
     // (KOLOB.VoicesBand.warm: an outdoor tail of 2.6 s, tens of ms to build)
@@ -700,11 +711,17 @@ window.KolobAudio = (function () {
     return clock;
   }
   // cueAt: call fn(t) at scheduled time t, on the named lane.
+  // (the clock's health, for the silent checks: how many cues fired after
+  // their own time — a callback that runs late places its notes in the past —
+  // and how late the latest was, on the audio clock)
+  var clockHealth = { cues: 0, late: 0, maxLate: 0 };
   function cueAt(lane, t, fn) {
     if (!clock) return null;
     return clock.lane(lane).at(t, function (tt) {
       var was = musicNow;
       musicNow = tt;
+      clockHealth.cues++;
+      if (ctx && ctx.currentTime > tt + 0.003) { clockHealth.late++; if (ctx.currentTime - tt > clockHealth.maxLate) clockHealth.maxLate = ctx.currentTime - tt; }
       try { fn(tt); } finally { musicNow = was; }
     });
   }
@@ -913,7 +930,13 @@ window.KolobAudio = (function () {
   // The landscape voices (organ, drone, strings) never claim it — they are
   // the prairie the speeches happen in.
   var air = { busyUntil: 0, holders: 0 };
-  function airLimit() { var s = S.Meeting.section(); return s === "hymn" || s === "doxology" ? 2 : 1; }
+  // (a composed hymn holds the air alone: the ward is the whole speech —
+  // round 3; two voices share it in a singing section otherwise)
+  function airLimit() {
+    var s = S.Meeting.section();
+    if (S.Meeting.hymnSounding && S.Meeting.hymnSounding()) return 1;
+    return s === "hymn" || s === "doxology" ? 2 : 1;
+  }
   function airFree() {
     if (!ctx) return true;
     if (now() >= air.busyUntil) { air.holders = 0; return true; }
@@ -1194,6 +1217,10 @@ window.KolobAudio = (function () {
   S.cueAt = cueAt;
   S.cueIn = cueIn;
   S.cueLayer = cueLayer;
+  S.hymnStream = hymnStream;
+  S.visitSeed = function () { return seed; };
+  // is the music's now a cue's? (the hymnal counts a hymn written inside one)
+  S.inCue = function () { return musicNow != null; };
   // harness only: re-salt the sound-level streams (the score must not move)
   S.setSynthSalt = function (salt) { synthSalt = salt ? String(salt) + ":" : ""; synths = {}; };
   S.SHELVED = SHELVED;
@@ -1274,6 +1301,13 @@ window.KolobAudio = (function () {
     getAudioTime: function () { return ctx ? ctx.currentTime : 0; },
     skipToSection: skipToSection,
     getMotifStats: function () { return KOLOB.Melody.Motif.stats(); },
+    // the day's hymnal (round 3): the house dialect and the day's hymns, the
+    // hymn being sung, and the composer's desk's account of itself (how many
+    // were written, where, how long they took; late ones written in a cue)
+    getHymnal: function () { return { house: S.Meeting.house(), hymns: S.Meeting.hymnal(), singing: S.Meeting.hymn() }; },
+    getHymn: function (id) { return KOLOB.Hymnal ? KOLOB.Hymnal.hymnOf(id) : null; },
+    hymnalStats: function () { return KOLOB.Hymnal ? KOLOB.Hymnal.stats() : null; },
+    clockHealth: function () { return { cues: clockHealth.cues, late: clockHealth.late, maxLate: +clockHealth.maxLate.toFixed(4) }; },
     setNoteListener: function (fn) { noteListeners.push(fn); },
     setEventListener: function (fn) { eventListeners.push(fn); },
     // on: true (a guest, drawn as the switch draws it), false, or — dev, the
