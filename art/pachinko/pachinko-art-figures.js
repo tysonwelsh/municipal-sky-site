@@ -805,8 +805,9 @@
     },
     zzz: function (g, q) {
       var x = Math.round(q.x), y = Math.round(q.y);
-      // a small z, the house font's, drifting up out of a sleeping beard
-      A.text(g, 'z', x, y, 'rgba(216,204,240,0.75)');
+      // a small z (3 × 3, never the font's z, which is a 2 on a tag)
+      var zc = 'rgba(216,204,240,0.8)';
+      px(g, x, y, zc); px(g, x + 1, y, zc); px(g, x + 2, y, zc); px(g, x + 1, y + 1, zc); px(g, x, y + 2, zc); px(g, x + 1, y + 2, zc); px(g, x + 2, y + 2, zc);
     }
   };
   var PIN_PAL = {

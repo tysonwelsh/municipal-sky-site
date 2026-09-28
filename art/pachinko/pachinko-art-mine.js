@@ -503,6 +503,8 @@
   var BRASS = ['#fff4c8', '#e0c070', '#a8843c', '#4e3814'];
   function pinLook(p) {
     var band = p.y < SURF - 2 ? 'sky' : A.bandAt(p.x, p.y), h = A.hash01(91, Math.round(p.x), Math.round(p.y));
+    // in the painted sky every pin is one of the brass tacks holding the backdrop up
+    if (band === 'sky' && (p.dress === 'rivet' || p.dress === 'bolt' || p.dress === 'spike' || !p.dress)) return { spr: SPR.tack, pal: BRASS, x1: BRASS[2], x2: BRASS[3], kind: 'tack' };
     var m = METAL[band] || METAL.deep, spr = 'stud', pal, x1 = null, x2 = null;
     switch (p.dress) {
       case 'spike':
@@ -524,10 +526,10 @@
         spr = 'post'; pal = ['#e8c890', '#a8804a', '#7a5a34', '#3a2816'];
         break;
       case 'root':
-        spr = 'root'; pal = ['#d8b080', '#9a7448', '#6e5030', '#3a2616'];
+        spr = 'root'; pal = ['#f4d8a8', '#b88e5a', '#6e5030', '#3a2616'];
         break;
       case 'coal':
-        spr = h < 0.5 ? 'coal' : 'coal2'; pal = ['#dfe6ff', '#5a6480', '#22222e', '#08080c']; x1 = '#3a4460';
+        spr = h < 0.5 ? 'coal' : 'coal2'; pal = ['#f4f8ff', '#8a94b4', '#2a2a38', '#08080c']; x1 = '#4a5474';
         break;
       case 'ore':
         spr = h < 0.5 ? 'ore' : 'ore2'; pal = ['#fffbe8', '#e0dac4', '#a8a290', '#4a4436']; x1 = h < 0.8 ? '#e8b64a' : '#fff0a0';
@@ -611,7 +613,7 @@
     disc(g, bx + 0.5, by + 0.5, 3.2, P.VOID0); px(g, bx - 2, by - 3, P.TIM2); px(g, bx + 2, by - 3, P.TIM2); hline(g, bx - 3, bx + 3, by - 4, P.TIM3);
   }
   // a bay's name, abbreviated the way a museum does when the card is small
-  var ABBR = { STOKER: 'STOK.', SMITHING: 'SMITH', CANNEL: 'CANN.', OVERBURDEN: 'OVERBUR.', 'THE MOTHER LODE': 'LODE', NOTHING: 'NIL' };
+  var ABBR = { STOKER: 'STOK.', SMITHING: 'SMITH', CANNEL: 'CANN.', OVERBURDEN: 'OVERB.', 'THE MOTHER LODE': 'LODE', NOTHING: 'NIL' };
   function bayName(s, w) {
     var n = String(s.label || '').toUpperCase(), max = Math.floor((w - 2) / 4);
     if (n.length > max) n = ABBR[n] || n.slice(0, max);
@@ -650,6 +652,9 @@
         return;
       }
       var cw = Math.max(A.textW(name) + 4, 13), cxl = Math.round(cx - cw / 2), pays = s.value > 0;
+      // (never under the frame's shadow at either wall)
+      if (cxl + cw > GW - 5) { cxl = GW - 5 - cw; cx = cxl + cw / 2; }
+      if (cxl < 4) { cxl = 4; cx = cxl + cw / 2; }
       var cy0 = 389 + stag;
       rect(fg, cxl, cy0, cw, 8, P.PAPER_D); hline(fg, cxl, cxl + cw - 1, cy0, P.PAPER); px(fg, cxl + cw - 1, cy0 + 7, P.PAPER_DD);
       A.textC(fg, name, cx, cy0 + 2, P.INK_L);

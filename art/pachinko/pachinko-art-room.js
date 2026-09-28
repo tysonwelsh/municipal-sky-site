@@ -1055,8 +1055,16 @@
     // the clock: it said 2:13 when you came in, and it only goes forward
     var secs = 2 * 3600 + 13 * 60 + t, hh = secs / 3600 % 12, mm = secs / 60 % 60, ss = Math.floor(secs % 60);
     var c = CLOCK;
+    // the dial: nicotine cream, lit by the marquee's spill (it has to read:
+    // it is the one thing in the room that only goes forward)
+    ellipse(g, c.cx, c.cy, c.r - 1, c.r - 1, '#9a8c6c'); ellipse(g, c.cx, c.cy, c.r - 3, c.r - 3, '#aa9c78');
+    for (var q = 0; q < 12; q++) {
+      var qa = q / 12 * Math.PI * 2, qr = c.r - 2;
+      px(g, Math.round(c.cx + Math.sin(qa) * qr), Math.round(c.cy - Math.cos(qa) * qr), q % 3 ? '#6a5e48' : '#1a1410');
+    }
+    for (var sq = 0; sq < 7; sq++) px(g, c.cx - 3 + sq, c.cy + 5 + (sq % 2), sq % 3 ? '#7a6c52' : '#3a3024');   // the name, scratched off
     function hand(frac, len, col) { var a = frac * Math.PI * 2; line(g, c.cx, c.cy, c.cx + Math.sin(a) * len, c.cy - Math.cos(a) * len, col); }
-    hand(hh / 12, 5, P.INK); hand(Math.floor(mm) / 60, 8, P.INK); if (!calm) hand(ss / 60, 8, '#a8302a');
+    hand(hh / 12, 5, '#141016'); hand(Math.floor(mm) / 60, 7, '#141016'); if (!calm) hand(ss / 60, 8, '#b0302a');
     px(g, c.cx, c.cy, '#6a1a18');
     // a glint on the dropped token, and in SCRIP CREEK's field
     var gs = Math.floor(t / 5.1);

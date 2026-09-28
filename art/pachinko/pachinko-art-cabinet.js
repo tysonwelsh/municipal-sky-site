@@ -352,7 +352,7 @@
     for (var y = t.y0 + 10; y < t.y1; y += 30) { hline(g, t.x - 1, t.x + t.w, y, P.BRASS2); hline(g, t.x - 1, t.x + t.w, y + 1, P.BRASS0); }
     // the elbow at the top that turns into the case
     rect(g, t.x, t.y0 - 6, GX - t.x + 1, 7, P.IRON1); hline(g, t.x, GX, t.y0 - 6, P.IRON3);
-    A.text(g, '13', t.x + 1, t.y1 + 3, P.BRASS2);
+    A.text(g, '13', t.x + 1, t.y1 + 3, P.BRASS0); px(g, t.x + 8, t.y1 + 3, P.BRASS1);   // stamped into the elbow: its capacity, not a count
   }
 
   /* ══ plates and cards (dry company-museum voice) ═══════════════════ */
@@ -375,12 +375,12 @@
   }
   function drawPlates(g) {
     var y = C.lower.y0 + 7;
-    var h1 = plate(g, 196, y, 172, [
+    var h1 = plate(g, 208, y, 160, [
       'MOTHER LODE',
       'A WORKING MODEL OF A BITUMINOUS',
       'MINE, SHOWN IN SECTION. 1 IN=40 FT'
     ]);
-    plate(g, 196, y + h1 + 4, 172, [
+    plate(g, 208, y + h1 + 4, 160, [
       'THE FIGURES ARE CARVED LINDEN,',
       'HAND PAINTED. NOT MECHANICAL.'
     ]);
@@ -480,15 +480,15 @@
     return MAP[s] || s;
   }
   function drawFiguresCard(g, figs, R) {
-    var x = 12, y = C.lower.y0 + 6, w = 176, h = 56;
+    var x = 12, y = C.lower.y0 + 6, w = 190, h = 56;
     card(g, x, y, w, h, R);
     tape(g, x + 76, y - 2, 16, 5);
     typed(g, 'FIGURES IN THE ROCK', x + 4, y + 3, 5);
     hline(g, x + 4, x + 78, y + 9, P.INK_L);
     var col = 0, row = 0, perCol = Math.ceil(figs.length / 2);
     for (var i = 0; i < figs.length; i++) {
-      var f = figs[i], cx = x + 3 + col * 87, cy = y + 12 + row * 7;
-      var t = shortFig(f); if (t.length > 19) t = t.slice(0, 19);
+      var f = figs[i], cx = x + 3 + col * 96, cy = y + 12 + row * 7;
+      var t = shortFig(f); if (t.length > 20) t = t.slice(0, 20);
       typed(g, (f.fig < 10 ? ' ' : '') + f.fig, cx, cy, 200 + i);
       typed(g, t, cx + 11, cy, 240 + i);
       if (++row >= perCol) { row = 0; col++; }
@@ -498,13 +498,12 @@
   /* ══ glass decals ══════════════════════════════════════════════════ */
   // PLEASE DO NOT TAP GLASS: a printed sticker at the bottom right of the
   // glass, over the frame, and every fingerprint in the building on it.
-  C.sticker = { x: GX + GW - 36, y: GY + GH - 14, w: 60, h: 17 };
+  C.sticker = { x: GX + GW - 32, y: GY + GH - 14, w: 55, h: 17 };
   function drawSticker(g) {
     var s = C.sticker;
     rect(g, s.x + 1, s.y + 1, s.w, s.h, 'rgba(0,0,0,0.4)');
-    rect(g, s.x, s.y, s.w, s.h, P.BONE);
-    rect(g, s.x + 1, s.y + 1, s.w - 2, s.h - 2, P.RED2);
-    rect(g, s.x + 2, s.y + 2, s.w - 4, s.h - 4, P.BONE);
+    rect(g, s.x, s.y, s.w, s.h, P.RED2);
+    rect(g, s.x + 1, s.y + 1, s.w - 2, s.h - 2, P.BONE);
     A.textC(g, 'PLEASE DO NOT', s.x + s.w / 2, s.y + 3, P.RED1);
     A.textC(g, 'TAP GLASS', s.x + s.w / 2, s.y + 9, P.RED1);
     // a corner peeling

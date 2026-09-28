@@ -110,10 +110,11 @@
     var k = K.tally, tl = ui.tally || { value: 0, prev: 0, roll: 1, dir: 1 };
     bezel(g, k.x, k.y, k.w, k.h);
     // the label: a pink scrip stub riveted on, the same paper the bays pay in
-    var lx = k.x + 1, ly = k.y + 2;
-    rect(g, lx, ly, k.w - 2, 7, P.PINK_D); rect(g, lx, ly + 1, k.w - 2, 5, P.PINK);
-    px(g, lx, ly + 3, P.BRASS1); px(g, lx + k.w - 3, ly + 3, P.BRASS1);   // the ticket's notches
-    A.textC(g, 'SCRIP', k.x + k.w / 2 + 0.5, ly + 1, '#ffffff');
+    // (the stub is pinned over the bezel's edges, so the P has room)
+    var lx = k.x, ly = k.y + 2;
+    rect(g, lx, ly, k.w, 7, P.PINK_D); rect(g, lx, ly + 1, k.w, 5, P.PINK);
+    px(g, lx, ly, P.BRASS1); px(g, lx + k.w - 1, ly, P.BRASS1); px(g, lx, ly + 6, P.BRASS1); px(g, lx + k.w - 1, ly + 6, P.BRASS1);   // the ticket's notched corners
+    A.text(g, 'SCRIP', lx + 1, ly + 1, '#ffffff');
     // three drums behind a glass strip
     var wy = k.y + 11, lit = ui.mode === 'play' || ui.mode === 'dive' || ui.mode === 'payout';
     var ink = lit ? '#f4ecd8' : '#bdb4a0';
@@ -125,6 +126,15 @@
     var justRolled = tl.roll < 1 && tl.dir > 0;
     px(g, k.x + k.w - 2, k.y + 10, justRolled ? P.FLAME1 : P.BRASS0);
     screw(g, k.x + 1, k.y + k.h - 2); screw(g, k.x + k.w - 3, k.y + k.h - 2);
+  }
+
+  // paper on the cabinet is lit by the room (the renderer's A.paperK, 0..1):
+  // in PLAY the house lights are down and the cards go down with them
+  var PAPERS = {};
+  function paper(hex) {
+    var k = A.paperK == null ? 1 : A.paperK, key = hex + k, c = PAPERS[key];
+    if (!c) { var a = A.rgb(hex); c = PAPERS[key] = 'rgb(' + Math.round(a[0] * k) + ',' + Math.round(a[1] * k * 0.96) + ',' + Math.round(a[2] * k * 0.9) + ')'; }
+    return c;
   }
 
   /* ── the flip card and the pilot bulb ───────────────────────────── */
@@ -158,14 +168,15 @@
     line(g, k.nx, k.ny + 1, x0 + 2, k.y, '#8a7e68'); line(g, k.nx, k.ny + 1, x0 + w - 3, k.y, '#8a7e68');
     // the card: nicotine cream, a darker rim, a shadow on the enamel
     rect(g, x0 + 1, k.y + 1, w, k.h, 'rgba(0,0,0,0.45)');
-    rect(g, x0, k.y, w, k.h, sx < 0.2 ? P.PAPER_DD : P.PAPER);
+    rect(g, x0, k.y, w, k.h, sx < 0.2 ? paper(P.PAPER_DD) : paper(P.PAPER));
     if (w > 6) {
+      var pd = paper(P.PAPER_D);
       for (var yy = k.y; yy < k.y + k.h; yy++) for (var xx = x0; xx < x0 + w; xx++) {
         var e = Math.min(xx - x0, x0 + w - 1 - xx, yy - k.y, k.y + k.h - 1 - yy);
-        if (e < 2 && bayer(xx, yy) < 0.45 - e * 0.2) px(g, xx, yy, P.PAPER_D);
+        if (e < 2 && bayer(xx, yy) < 0.45 - e * 0.2) px(g, xx, yy, pd);
       }
       // the hole the string goes through, reinforced
-      px(g, Math.round(cx), k.y + 1, P.PAPER_DD);
+      px(g, Math.round(cx), k.y + 1, paper(P.PAPER_DD));
     }
     if (sx < 0.9) return;
     var lines = SIDES[side] || SIDES.insert;
@@ -251,6 +262,7 @@
     var none = ui.noTokens != null && t - ui.noTokens < 1.6 && tok === 0;
     var tink = none ? (Math.floor(t * 8) % 2 ? '#ff6a5a' : '#6a2a2a') : '#f1dc9a';
     if (tok == null) { A.text(g, '--', k.x + 10, y1 + 1, P.BRASS0); }
+    else if (tok > 99) drums(g, D5, k.x + 7, y1, 3, 4, 7, 0, tok, shown.tPrev, tu, tok >= shown.tPrev ? 1 : -1, tink, '#120e14');
     else drums(g, D5, k.x + 9, y1, 2, 4, 7, 1, tok, shown.tPrev, tu, tok >= shown.tPrev ? 1 : -1, tink, '#120e14');
     // row 2: a pink ticket, and the scrip you're carrying
     var y2 = k.y + 11;
@@ -340,7 +352,7 @@
     // the tag on a pin, a string, the bottom slipped a pixel
     px(g, x + 10, y - 3, P.IRON4); vline(g, x + 10, y - 2, y - 1, '#8a7e68');
     rect(g, x + 1, y + 1, w, h, 'rgba(0,0,0,0.4)');
-    rect(g, x, y, w, h, P.PAPER); hline(g, x, x + w - 1, y + h - 1, P.PAPER_D); px(g, x + w - 1, y, P.PAPER_D);
+    rect(g, x, y, w, h, paper(P.PAPER)); hline(g, x, x + w - 1, y + h - 1, paper(P.PAPER_D)); px(g, x + w - 1, y, paper(P.PAPER_D));
     function label(n) { var s2 = 'HI ' + n; return A.textW(s2) > w - 2 ? String(n) : s2; }
     if (nu >= 0 && nu < 1) {
       // beaten: the old number scratched through, rubbed out, the new one
