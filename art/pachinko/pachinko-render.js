@@ -402,7 +402,10 @@
         for (var cx = c0; cx <= c1; cx++) {
           var dx = (cx * CELL + 1 - L.x) * irx, d2 = dx * dx + dy2;
           if (d2 >= 1) continue;
-          var d = Math.sqrt(d2), f = spot ? spotFall(d) : fall(d), ci = row + cx;
+          // (fall/spotFall inlined: a double returned from a call is a heap allocation)
+          var d = Math.sqrt(d2), ci = row + cx, f;
+          if (spot) f = d < 0.74 ? 1 : 1 - (d - 0.74) * 3.846;
+          else { var fa = 1 - d2, fc = d < 0.24 ? 1 - d * 4.1667 : 0; f = 0.82 * fa * fa + 0.6 * fc * fc; }
           if (gal) f *= 0.5 + 0.8 * GAL[ci];
           LR[ci] += kr * f; LG[ci] += kg * f; LB[ci] += kb * f;
           if (hz > 0) {
@@ -541,9 +544,10 @@
     if (view.fx && view.fx.noStillLife) return [];
     return mine.stillLife || [];
   }
+  var CH = { x: 0, y: 0 };
   function drawFigures(g, figs) {
     for (var i = 0; i < figs.length; i++) {
-      var f = figs[i], ch = A.figureChest(f);
+      var f = figs[i], ch = A.figureChest(f, CH);
       A.drawFigureBody(g, f, tintAt(ch.x, ch.y));
     }
   }
@@ -889,7 +893,7 @@
   var overlayDim = { key: null, c: null, g: null };
   function paperLight(view) {
     var k = view.cam && view.cam.k != null ? view.cam.k : 0, fl = (view.fx && view.fx.flare) || 0;
-    var v = 0.86 - 0.26 * k;
+    var v = 0.78 - 0.18 * k;
     v = Math.min(1, v + 0.3 * fl * k);
     return Math.round(v * 20) / 20;
   }

@@ -116,7 +116,7 @@
 
   /* ── the sprite cache ─────────────────────────────────────────────── */
   var SZ = 72, O = 36, OY = 54;
-  var cache = {}, cacheN = 0;
+  var cache = {}, cacheN = 0, FKEYS = typeof WeakMap !== 'undefined' ? new WeakMap() : null;
   function deg(v) { return Math.round((v || 0) / d2r); }
   function keyOf(fig) {
     var p = fig.pose || {};
@@ -126,7 +126,12 @@
       deg(p.legL) + ',' + deg(p.legR) + ',' + deg(p.toolA) + (fig.back ? ',' + (fig.liftL | 0) + ',' + (fig.liftR | 0) : '');
   }
   function sprite(fig) {
-    var key = keyOf(fig), e = cache[key];
+    // (a figure object lives for one frame and is asked for several times:
+    // key it once. A WeakMap, not a property: copies of a figure with a new
+    // pose must never inherit the old key)
+    var key = FKEYS ? FKEYS.get(fig) : undefined;
+    if (key === undefined) { key = keyOf(fig); if (FKEYS) FKEYS.set(fig, key); }
+    var e = cache[key];
     if (e) return e;
     if (cacheN > 900) { cache = {}; cacheN = 0; }
     var spr = A.makeCanvas(SZ, SZ), s = spr.getContext('2d');
@@ -579,8 +584,19 @@
   }
 
   // where the cap lamp's flame is (board space). `out` (optional) is filled
-  // and returned instead of a new object (the renderer asks every frame)
+  // and returned instead of a new object (the renderer asks every frame):
+  // the offset depends only on the pose, so it's kept with the pose's sprite
   function figureLamp(fig, out) {
+    if (out && !fig.rot) {
+      var e = sprite(fig), lo = e.lamp;
+      if (!lo) { var z = {}; for (var k in fig) z[k] = fig[k]; z.x = 0; z.y = 0; lo = e.lamp = figureLampAt(z, {}); if (lo.lantern) lo.lantern = { x: lo.lantern.x, y: lo.lantern.y }; }
+      out.x = fig.x + lo.x; out.y = fig.y + lo.y; out.back = !!lo.back; out.fallen = false; out.inHand = !!lo.inHand;
+      if (lo.lantern) { var ln = out._lan || (out._lan = {}); ln.x = fig.x + lo.lantern.x; ln.y = fig.y + lo.lantern.y; out.lantern = ln; } else out.lantern = null;
+      return out;
+    }
+    return figureLampAt(fig, out);
+  }
+  function figureLampAt(fig, out) {
     var f = fig.facing < 0 ? -1 : 1;
     if (out) { out.back = false; out.fallen = false; out.inHand = false; out.lantern = null; }
     else out = {};
@@ -612,10 +628,12 @@
     return out;
   }
   // the chest: where a figure takes his one flat colour of light from
-  function figureChest(fig) {
+  function figureChest(fig, out) {
     var c = CREW[fig.who] || CREW.pick;
-    if (fig.rot) return { x: fig.x + (fig.rot > 0 ? 1 : -1) * (c.leg + 4), y: fig.y - 3 };
-    return { x: fig.x, y: fig.y - c.leg - Math.round(c.torso * 0.6) };
+    out = out || {};
+    if (fig.rot) { out.x = fig.x + (fig.rot > 0 ? 1 : -1) * (c.leg + 4); out.y = fig.y - 3; return out; }
+    out.x = fig.x; out.y = fig.y - c.leg - Math.round(c.torso * 0.6);
+    return out;
   }
   function figureHands(fig) {
     var f = fig.facing < 0 ? -1 : 1;

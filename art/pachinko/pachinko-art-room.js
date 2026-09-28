@@ -989,7 +989,10 @@
     var cache = w.cache || (w.cache = { c: mk(bw, bh) });
     if (cache.c.width < bw || cache.c.height < bh) cache.c = mk(Math.max(bw, cache.c.width), Math.max(bh, cache.c.height));
     var g = ctx2d(cache.c); g.clearRect(0, 0, cache.c.width, cache.c.height);
-    var img = g.createImageData(bw, bh), d = img.data;
+    // (one buffer per wisp, grown as needed and reused: no allocation a step)
+    if (!cache.img || cache.img.width < bw || cache.img.height < bh) cache.img = g.createImageData(Math.max(bw, cache.img ? cache.img.width : 0) + 8, Math.max(bh, cache.img ? cache.img.height : 0) + 4);
+    var img = cache.img, d = img.data, IW = img.width;
+    for (var cr = 0; cr < bh; cr++) d.fill(0, cr * IW * 4, (cr * IW + bw) * 4);
     var any = false;
     var nshift = Math.floor(t * 0.7) + w.i * 37;
     for (var y = y0; y < y0 + bh; y++) {
@@ -1005,14 +1008,14 @@
         den *= (0.45 + 0.55 * NZ[nrow + ((x + nshift) & 255)]) * fade;
         var a = Math.min(1, den) * Math.min(1, I * 1.8);
         if (dth(x, y, a)) {
-          var o = ((y - y0) * bw + (x - x0)) * 4, hz = 170 + 50 * Math.min(1, den);
+          var o = ((y - y0) * IW + (x - x0)) * 4, hz = 170 + 50 * Math.min(1, den);
           d[o] = hz * Math.min(1.1, lr) + 34; d[o + 1] = hz * Math.min(1.1, lgg) + 30; d[o + 2] = hz * Math.min(1.1, lb) + 48;
           d[o + 3] = 40 + 60 * a;
           any = true;
         }
       }
     }
-    g.putImageData(img, 0, 0);
+    g.putImageData(img, 0, 0, 0, 0, bw, bh);
     return any ? { c: cache.c, x: x0, y: y0 } : null;
   }
 
