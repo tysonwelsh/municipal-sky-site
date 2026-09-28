@@ -516,12 +516,15 @@ finished this section.*
 
 What you will notice:
 
-- **A barline no longer lands on a ledger line, a dot or a sharp.** The
-  page used two different pictures of a note. It used one to work out how
-  much room a bar needed, and another to place the bar. The first left out
-  ledger lines and guessed where dots and sharps were. Now there is one
-  picture of each note's ink, the same one the page draws, and both steps
-  use it.
+- **A barline is no longer squeezed against a note.** The page used two
+  different pictures of a note. It used one to work out how much room a
+  bar needed, and another to place the bar. The first left out ledger lines
+  and the stems as the beams draw them, and guessed where dots and sharps
+  were. Where it missed ink, the downbeat did not make room, and the bar
+  was squeezed in. In seed 34's Sacred Harp hymn in 3/2, three bars stood
+  0.05 of a staff space from the note after them, which reads as touching.
+  Now there is one picture of each note's ink, the same one the page
+  draws, and both steps use it.
 - **A note never moves once it is printed.** Where a bar wanted more room
   than the 2.4-staff-space limit allows, a note was printed as far over as
   the bar wanted, and a frame later it jumped back to the limit. In the
@@ -547,3 +550,63 @@ What you will notice:
 Nothing else has changed: green ink only, no text, 60 px/s, the telegraph's
 holes, the Old Way as one line, Johnston's marks off, and nothing moves but
 the scroll and the drying.
+
+### How to see it
+
+The times are counted from when the hymn is announced. The replay lab shows
+any of them directly (`lab4.html?dump=…&t=…`, below).
+
+| what | seed | when | look for |
+|---|---|---|---|
+| **A second after a bar** (the critic's frame) | 11, the Tabernacle hymn in 3/4 | about 0:43 (5:56 into the meeting) | after the bar, the soprano's half note stands just right of the alto's, a step below it, instead of on it |
+| **A bar with its room** | 34, the Sacred Harp hymn in 3/2 | 0:11 (5:36 into the meeting) | the bar clear of the note after it; in round 2 it touched |
+| **Nothing jumps** | 37, the gospel hymn in 6/8 | 0:13 to 0:25 | the quick notes print where they stay. (This hymn is still crowded; see "One call for you" below.) |
+
+### The critic's findings, one by one (`kolob-viz.js`)
+
+1. **The push's estimate and the bar's place used different ink. Fixed:
+   one measure.** A note's ink is now measured one way everywhere:
+   `groupBoxes` on `inkLayout`. `inkLayout` lays the group out as
+   `drawPage` does, with a beamed note's stem run to its beam. The boxes
+   cover every stroke `drawGroup` lays: heads at their real width
+   (`headExt`: the diamond's, the tune's rim, a bell's ring), ledger lines,
+   dots (placed once in `layoutGroup`, `L.dots`, and drawn from there),
+   the signs before and over a head (`signsOf`, which `headMarks` now
+   draws from), the stem from its head's edge, an unbeamed note's flag and
+   a grace's slash. `placeColumn` keeps two copies: `col.ink`, the whole
+   measure, which is what a bar weighs, and `col.boxes`, the same without
+   ledger lines, which is what the other voice of a hymn weighs (a
+   second's ledger runs under the first head). The bar's push
+   (`barExtents(m, g, true)` in `barPush`) and its placing (`barPlace`)
+   both read `inkOf`. The replay lab checks this directly. The push's
+   estimate of the ink before each bar equals the ink drawn there
+   (`prMiss`: round 2 missed on up to 34 bars a meeting; now 0), and no
+   pixel of any note lies outside its boxes (round 2: 9 to 145 notes a
+   meeting; now 0).
+2. **`return dx` returned the uncapped offset. Fixed.** `placeColumn`
+   stores `min(need, lim)` and returns that same value, first time and
+   every time after. `drawPage` only reads it. A bar is now placed once
+   too (`barPlace`, `m.at`). Round 2 re-placed it every frame from what
+   that frame drew, so it crept as the ink beside it dried.
+3. **The push stopped at the downbeat. Fixed.** Everything that falls due
+   is set before anything is drawn, in time order (`setDue`). At one
+   time, the hymn's notes come first, then their bar, then a guest's note,
+   which keeps clear of the bar (`clearance`). So a note after a pushed
+   downbeat is set after it and clears it, within the cap. So does a note
+   that arrives in the same frame (a slow frame, a hidden tab: round 2 set
+   those in list order). The voices of a chord on one staff start together
+   from the furthest any of them must go (`chordPlace`), so a voice pushed
+   by its own run does not leave the other behind. `startOf` is the
+   downbeat's push. Rests are not moved; the lab now measures them
+   against the notes' ink too (13 rests print in these meetings; none
+   touches a note).
+4. **Heads overlapping under the cap. Fixed, outside the 6/8 density
+   case.** A chord's second is set the engraver's way even at the cap.
+   The chord stays within `HYMN_DX_MAX` (2.4 sp), and the upper voice
+   steps one head to the right, past it (`clearance`: at most `SIDE_MAX`,
+   2.6 sp, past the other voice). This happens only where the notes after
+   it, set at the cap, would still clear it (`roomAfter`), so nothing
+   after it has to pass the cap for it. Two heads a third apart may meet
+   by `STACK` (0.2 sp), the way a chord stands. The critic's frame (seed
+   11 at 5:55.5): the alto at 1.91 sp, the soprano beside it at 3.54 sp,
+   no overlap.
