@@ -49,9 +49,30 @@ html.pachinko-playing body {
     cursor: crosshair;
 }
 
+.pachinko-canvas:focus,
 .pachinko-canvas:focus-visible {
+    outline: none;
+}
+
+/* the focus ring only for someone finding their way by keyboard (main.js
+   adds .pachinko-kbd on a Tab and drops it on a click or a touch) */
+.pachinko-kbd .pachinko-canvas:focus-visible {
     outline: 1px dashed #6f5d95;
     outline-offset: -1px;
+}
+
+.pachinko-ooo {
+    position: absolute;
+    left: 50%;
+    top: 40%;
+    transform: translate(-50%, -50%);
+    margin: 0;
+    padding: 0.8rem 1.2rem;
+    background: #e8dcc0;
+    color: #2a2230;
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    box-shadow: 3px 3px 0 #000;
 }
 
 /* the room around the machine (pachinko-art-room.js): two transparent
@@ -68,7 +89,7 @@ html.pachinko-playing body {
 }
 
 /* the keyboard focus ring, drawn on top of the room */
-.pachinko-canvas:focus-visible ~ .pachinko-room-live {
+.pachinko-kbd .pachinko-canvas:focus-visible ~ .pachinko-room-live {
     outline: 1px dashed #6f5d95;
     outline-offset: -1px;
 }

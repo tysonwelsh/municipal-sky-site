@@ -151,6 +151,15 @@
     var VERSION = (container.getAttribute && container.getAttribute('data-version') || 'dev').trim();
 
     var PB = root.PachinkoBoard, PP = root.PachinkoPhysics;
+    // (the board or the physics didn't load: the machine is out of order, and says so)
+    if (!PB || !PP || !PB.base || !PP.createWorld) {
+      var ooo = document.createElement('p');
+      ooo.className = 'pachinko-ooo';
+      ooo.textContent = 'OUT OF ORDER. The attendant has been notified.';
+      container.appendChild(ooo);
+      if (root.console) console.warn('MOTHER LODE: pachinko-board.js or pachinko-physics.js did not load');
+      return { VERSION: 'out-of-order', destroy: function () { ooo.remove(); }, pause: function () { }, resume: function () { }, getState: function () { return { mode: 'out-of-order' }; }, onEvent: function () { return function () { }; }, drop: function () { return false; } };
+    }
     var R = root.PachinkoRender && typeof root.PachinkoRender.draw === 'function' ? root.PachinkoRender : null;
     var G = {};
     for (var fk in FALLBACK) G[fk] = FALLBACK[fk];
@@ -813,6 +822,10 @@
       var cands = [c0, MQ.y0 - 2, MQ.y1 - 1, G.CAB_H - hP, PANEL_Y - hP, gTop, gBot - hP], best = null;
       cands.forEach(function (t) { if (ok(t) && (best == null || Math.abs(t - c0) < Math.abs(best - c0))) best = t; });
       if (best != null) return best;
+      // a small screen: show the marquee's bottom frame (its bulbs, no
+      // lettering) rather than slice the figures card through its title
+      var t2 = PANEL_Y + 3 - hP;
+      if (t2 <= gTop + 0.01 && t2 + hP >= gBot - 0.01 && t2 >= MQ.y1 - 9) return t2;
       // too short for the rules: the marquee all or none, as before
       var t = c0;
       if (t > MQ.y0 - 2 && t < MQ.y1 - 1) t = hP >= gBot - (MQ.y0 - 2) ? MQ.y0 - 2 : MQ.y1 - 1;
@@ -884,7 +897,7 @@
         view.hopper.ghostX = null;
         var hc = (game.mode === 'attract' || game.mode === 'work') && (onCoin(p) || onLedgeTokens(p));
         view.ui.hoverCoin = hc;
-        canvas.style.cursor = hc ? 'pointer' : game.mode === 'payout' ? 'default' : 'default';
+        canvas.style.cursor = hc ? 'pointer' : 'default';
       }
     }
     function onLeave() { pointerIn = false; view.hopper.ghostX = null; view.ui.hoverCoin = false; }
@@ -1301,7 +1314,11 @@
         var amp = Math.round((1 - su / dur) * Math.max(1, cam.s / 2) * sa);
         jx = Math.floor(su * 60) % 2 ? amp : -amp; jy = Math.floor(su * 45) % 2 ? amp : 0;
       }
-      drawFloor(cam, jx, jy);
+      view.jolt = [jx, jy];          // (the room overlay jolts with the case, exactly)
+      // the room overlay (pachinko-art-room.js) paints everything outside the
+      // case: main's own floor and wall spill would only be painted under it
+      var roomOn = !!(root.PachinkoRoom && root.PachinkoRoom.CUT);
+      if (!roomOn) drawFloor(cam, jx, jy);
       var sx = Math.max(0, cam.x), sy = Math.max(0, cam.y);
       var ex = Math.min(G.CAB_W, cam.x + cam.w), ey = Math.min(G.CAB_H, cam.y + cam.h);
       if (ex > sx && ey > sy) {
@@ -1309,7 +1326,7 @@
         if (cam.k === 0 || cam.k === 1) { dx = Math.round(dx); dy = Math.round(dy); }
         ctx.drawImage(cab, sx, sy, ex - sx, ey - sy, dx, dy, (ex - sx) * cam.s, (ey - sy) * cam.s);
       }
-      blitRoom(cam, jx, jy);
+      if (!roomOn) blitRoom(cam, jx, jy);
     }
 
     /* the debug view: the board's primitives, regions tinted */
@@ -1383,10 +1400,12 @@
     var dprMq = null;
     function watchDpr() {
       if (!root.matchMedia) return;
-      if (dprMq) dprMq.removeEventListener('change', onDpr);
+      mqOff();
       dprMq = root.matchMedia('(resolution: ' + (root.devicePixelRatio || 1) + 'dppx)');
-      dprMq.addEventListener('change', onDpr);
+      // (Safari before 14 has only the old addListener)
+      if (dprMq.addEventListener) dprMq.addEventListener('change', onDpr); else if (dprMq.addListener) dprMq.addListener(onDpr);
     }
+    function mqOff() { if (!dprMq) return; if (dprMq.removeEventListener) dprMq.removeEventListener('change', onDpr); else if (dprMq.removeListener) dprMq.removeListener(onDpr); }
     function onDpr() { fit(); watchDpr(); }
     watchDpr();
 
@@ -1446,7 +1465,7 @@
         partsCall('destroy');
         root.removeEventListener('resize', fit); root.removeEventListener('keydown', onKey);
         document.removeEventListener('visibilitychange', onVisibility);
-        if (dprMq) dprMq.removeEventListener('change', onDpr);
+        mqOff();
         if (ro) ro.disconnect();
         canvas.removeEventListener('pointermove', onMove);
         canvas.removeEventListener('pointerdown', onDown);
@@ -1454,6 +1473,10 @@
         document.documentElement.classList.remove('pachinko-playing');
         canvas.remove();
         listeners = [];
+        // (nothing of this machine stays reachable once it's gone)
+        if (root.__pachinko === handle) root.__pachinko = null;
+        if (root.PachinkoKnockers && root.PachinkoKnockers.live && parts.indexOf(root.PachinkoKnockers.live) >= 0) root.PachinkoKnockers.live = null;
+        if (root.PachinkoMischief && root.PachinkoMischief.live && parts.indexOf(root.PachinkoMischief.live) >= 0) root.PachinkoMischief.live = null;
       }
     };
 

@@ -354,7 +354,12 @@
     // …and when the light comes back, there it is, set in the rock: an exhibit
     function keepLost(L) {
       S.lostN++;
-      if (S.lost.length < 3) S.lost.push({ x: L.x, y: L.y, id: L.id, t: now(), n: S.lostN });
+      // (set in the rock where it went, but never right over the 13's cup,
+      // where its bone tag "13" read as the jackpot: moved along the band)
+      var x = L.x, y = Math.min(L.y, 368);
+      if (Math.abs(x - 177) < 30 && y > 320) x = x < 177 ? 142 : 216;
+      if (S.lost.length < 3) S.lost.push({ x: x, y: y, id: L.id, t: now(), n: S.lostN });
+      api.emit({ type: 'kept', m: L.id, x: x, y: y, n: S.lostN });
     }
 
     /* ── CAVE-IN ────────────────────────────────────────────────── */
@@ -365,9 +370,7 @@
     }
     // (main plans the dig-out in WORK and rebuilds the physics' static hash
     // mid-game; the knockers dig: the `clear` job)
-    var CAVE_LIVE = true;
     function stepCave(t) {
-      if (!CAVE_LIVE) return;
       var P = S.plan && S.plan.cave, c = S.cave;
       if (!c) {
         if (!P || S.caveDone || S.mode !== 'play' || S.released < P.n || S.dark || lodeOn(t)) return;
@@ -475,7 +478,7 @@
     });
 
     /* ── the view ───────────────────────────────────────────────── */
-    var ALL = ['surface', 'headframe', 'overburden', 'haulage', 'measures', 'ventilation', 'barren', 'workings', 'sump', 'vein', 'payout', 'legend'];
+    var ALL = (PB && PB.REGIONS ? PB.REGIONS.map(function (r) { return r.id; }) : ['surface', 'headframe', 'overburden', 'haulage', 'measures', 'ventilation', 'barren', 'workings', 'sump', 'vein', 'payout', 'legend']);
     function fx(view) {
       var fxo = view.fx || (view.fx = {}), t = view.t != null ? view.t : now();
       // (main rebuilds lights and lamps each frame; the blackouts are ours, fresh each frame too)
@@ -558,7 +561,8 @@
       }
       if (steam.length) mis.steam = steam;
       // the curator's cool pin spot on each marble the dark kept (as on every figure in the rock)
-      S.lost.forEach(function (q) { lamps.push({ x: q.x, y: q.y, r: 15, c: '#b8c4ff', k: 0.6 }); });
+      // (the moment it's found: the spot clicks on, bright, and settles)
+      S.lost.forEach(function (q) { var qa = t - q.t; lamps.push({ x: q.x, y: q.y, r: 15, c: '#b8c4ff', k: qa >= 0 && qa < 0.12 ? 0 : qa < 0.5 ? 1.5 : 0.6 }); });
       // and a work light on a cave-in's heap, so the bay that's shut reads as shut
       (api.board().caveins || []).forEach(function (cv) { lamps.push({ x: cv.cx, y: cv.top + 4, r: 20, c: '#ffe0a0', k: 0.55 }); });
       fxo.mended = S.mended && (!S.mendAt || t >= S.mendAt);

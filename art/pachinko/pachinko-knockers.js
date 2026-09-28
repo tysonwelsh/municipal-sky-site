@@ -1842,7 +1842,6 @@
     var part = {
       step: function (t) {
         nav();
-        if (S.work && S.work.ctx.plan && !S.work.done) { /* stepWork runs on frames */ }
         sense(t);
         stepThief(t);
         var tn = Math.floor(t * FPS);

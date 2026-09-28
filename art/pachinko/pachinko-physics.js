@@ -435,6 +435,13 @@
   function tickTunnel(w, m) {
     var tn = w.board.byId[m.tunnel.id];
     if (w.t >= m.tunnel.tOut) {
+      // (another marble still in the mouth: this one waits its turn, a
+      // moment at a time, rather than coming out on top of it)
+      for (var i = 0; i < w.marbles.length; i++) {
+        var o = w.marbles[i];
+        if (o === m || o.done || o.phase === 'tunnel' || o.phase === 'pocket') continue;
+        if (Math.abs(o.x - tn.b.x) < 2 * m.r + 1 && Math.abs(o.y - tn.b.y) < 2 * m.r + 1 && w.t - m.tunnel.tOut < 1) { m.tunnel.tOut = w.t + 0.06; return; }
+      }
       m.phase = 'board';
       m.x = tn.b.x; m.y = tn.b.y;
       var j = hash01(m.seed, 400 + m.n);
