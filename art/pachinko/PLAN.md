@@ -1164,7 +1164,7 @@ the marble unless holding it, and no page scroll at any size.
   page (a natural game and `force=theft,vanish,cavein`): −26.6 / −26.7
   LUFS (unchanged), true peak −6.6, no clipping; the pile-up of cave-in,
   whistle and near miss peaks −8.4, a theft in the lode −6.7.
-- 2026-09-28 — **The secrets (wave 6b, rc.39–rc.41; the map is `EGGS.md`,
+- 2026-09-28 — **The secrets (wave 6b, rc.39–rc.42; the map is `EGGS.md`,
   the report `local-dev/pachinko-lab/reports/wave6-secrets.md`).** Nine eggs,
   each behind one switch in `EGGS` at the top of `pachinko-main.js`; the parts
   read `api.eggs` and `api.visit` (the visit's once-only state), the art
