@@ -1050,7 +1050,7 @@
   };
   // the curator's spot for each (rx, ry): a disc that takes in the specimen and its tag
   var SPOT = { keys: [13, 11], fern: [16, 13], plaque: [26, 13], trilobite: [12, 13], payroll: [11, 10], dollarm: [11, 12],
-    watch: [11, 10], ring: [9, 8], ribs: [30, 24], ledgers: [18, 13], strongbox: [12, 11], fish: [11, 8] };
+    watch: [11, 10], ring: [9, 8], ribs: [24, 17], ledgers: [18, 13], strongbox: [12, 11], fish: [11, 8] };
 
   // where to put a numbered marker so it sits clear of the pins
   function placeTag(pins, taken, ax, ay, w, h, cands) {
@@ -1396,7 +1396,7 @@
       // (widened to take in its tag, which sits at the spot's softer edge)
       var sp = SPOT[s.what] || [12, 12], rx = sp[0], ry = sp[1], tg = tagAt[s.fig];
       if (tg) { rx = Math.max(rx, Math.abs(tg.x + tg.w / 2 - s.x) + tg.w / 2 + 1); ry = Math.max(ry, Math.abs(tg.y + 3 - s.y) + 4); }
-      lamps.push({ x: s.x, y: s.y, r: rx, ry: ry / rx, c: '#dfe6ff', k: 1.0, region: reg, kind: 'spot', seed: 300 + i, flame: false });
+      lamps.push({ x: s.x, y: s.y, r: rx, ry: ry / rx, c: '#dfe6ff', k: s.what === 'ribs' ? 0.75 : 1.0, region: reg, kind: 'spot', seed: 300 + i, flame: false });
     });
     return {
       gals: st.gals, fore: fore, albedo: c, lamps: lamps, glints: glints,

@@ -298,10 +298,12 @@
       if (lk <= 0) continue;
       L = lampRec();
       L.x = fl.x; L.y = fl.y; L.r = 26 * (1 + LODE.boost * 0.5); setColour(L, P.LAMP);
-      L.k = 0.85 * lk * (0.85 + 0.15 * A.hash01(i + 5, Math.floor(t * 8), 3)); L.haze = 0.55; L.dark = true;
+      // (in the lode's held breath the crew's lamps sink to their flames too)
+      var hk = 1 - 0.85 * LODE.hush;
+      L.k = 0.85 * lk * hk * (0.85 + 0.15 * A.hash01(i + 5, Math.floor(t * 8), 3)); L.haze = 0.55; L.dark = true;
       if (fl.lantern) {
         L = lampRec();
-        L.x = fl.lantern.x; L.y = fl.lantern.y; L.r = 46 * boost; setColour(L, P.LAMP); L.k = 1.0 * Math.max(lk, 0.5); L.haze = 1; L.dark = true;
+        L.x = fl.lantern.x; L.y = fl.lantern.y; L.r = 46 * boost; setColour(L, P.LAMP); L.k = 1.0 * Math.max(lk, 0.5) * hk; L.haze = 1; L.dark = true;
       }
     }
     // the lode: the flare's light comes FROM the vein and floods up through
@@ -344,7 +346,8 @@
     for (i = 0; i < ex.length; i++) {
       var e = ex[i]; if (!(e.k == null || e.k > 0)) continue;
       L = lampRec();
-      L.x = e.x; L.y = e.y; L.r = e.r || 30; L.k = e.k == null ? 1 : e.k; setColour(L, e.c || P.LAMP);
+      // (the held breath hushes every light but the cup's glow and the fuse down in the deep)
+      L.x = e.x; L.y = e.y; L.r = e.r || 30; L.k = (e.k == null ? 1 : e.k) * (e.y > 355 ? 1 : 1 - 0.8 * LODE.hush); setColour(L, e.c || P.LAMP);
       L.dark = true;                               // (an extra lamp in a dark section is snuffed with it)
     }
   }
