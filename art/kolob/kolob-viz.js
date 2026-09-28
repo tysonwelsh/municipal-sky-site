@@ -613,6 +613,9 @@ window.KolobViz = (function () {
   var PART_STAFF = { S: "T", A: "T", T: "B", B: "B" };
   var PART_DIR = { S: 1, A: -1, T: 1, B: -1 };
   var GAP_T = 8, GAP_B = 12;                       // the deepest a part reaches into the gap: two ledgers
+  // (a composed hymn's tune goes further, and keeps its staff: to a step
+  // over its third ledger — THE HYMNAL ON THE STAFF)
+  var TUNE_T = 5, TUNE_B = 15;
   function staffOf(n, q, strict) {
     var ps = PART_STAFF[n.part];
     if (!ps) return q >= Q_MID ? "T" : "B";
@@ -693,7 +696,7 @@ window.KolobViz = (function () {
     intakeArmed = false;
     var batch = intake; intake = [];
     var byLayer = {}, question = null, unanswered = null, stopAt = null, i;
-    var hymnLines = {}, lineEvs = {}, lineOrder = [];
+    var hymnLines = {}, lineEvs = {}, lineOrder = [], fugs = [];
     function lineNotes(k) { if (!hymnLines[k]) { hymnLines[k] = []; if (!lineEvs[k]) lineOrder.push(k); } return hymnLines[k]; }
     for (i = 0; i < batch.length; i++) {
       var it = batch[i];
@@ -710,6 +713,7 @@ window.KolobViz = (function () {
       }
       var n = it.note;
       if (n.layer === "telegraph") { takeTape(n); continue; }
+      if (n.fuging && n.hymnId && CHOIR_LAYERS[n.layer]) { fugs.push(n); continue; }   // the fuge between the verses: takeFuging
       // a composed hymn's notes are engraved from its Score, a line at a time
       var route = scoreRoute(n);
       if (route) { lineNotes(lineKey(n)).push({ n: n, under: route === "under" }); continue; }
@@ -721,6 +725,7 @@ window.KolobViz = (function () {
       // no Score to read it by: the notes print as the page hears them (never the organ under the ward)
       ns.forEach(function (x) { if (!x.under) (byLayer[x.n.layer] = byLayer[x.n.layer] || []).push(x.n); });
     });
+    if (fugs.length && !takeFuging(fugs)) fugs.forEach(function (fn) { (byLayer[fn.layer] = byLayer[fn.layer] || []).push(fn); });
     if (byLayer.band) takeBand(byLayer.band);
     if (byLayer.trombones) takeTrombones(byLayer.trombones);
     if (byLayer.oldtune) takeOldTune(byLayer.oldtune);
@@ -1046,7 +1051,9 @@ window.KolobViz = (function () {
   //  · the barlines of its mode of time, from the line's own place in the
   //    bar; a double bar where each line of the poem ends, and the final bar
   //    where the hymn ends (after the A-men, or after the last verse when
-  //    the performance names how many it sings);
+  //    the performance names how many it sings); each bar standing clear of
+  //    the ink either side of it, the downbeat's notes making room for it
+  //    where the page is tight (drawHymnBar);
   //  · every note at its written value — quarters, halves, dots, a whole in
   //    a Sacred Harp 3/2 — and the quick notes of one voice beamed within
   //    the beat of the mode of time instead of flagged; rests where a part
@@ -1065,7 +1072,14 @@ window.KolobViz = (function () {
   //    bass the bass (kolob-dialects.js, GOSPEL.voiceOrder);
   //  · THE TUNE MARKED in every dialect that sings in parts, by a slightly
   //    heavier head: the soprano's in the Tabernacle, the tenor's in the
-  //    Sacred Harp and the psalmody, the lead's in gospel;
+  //    Sacred Harp and the psalmody, the lead's in gospel — and the tune
+  //    keeps its staff and its stem however high it climbs (a Sacred Harp
+  //    tenor on its third ledger over the bass staff, its stem shortened,
+  //    never turned: the gap between the staves is shared out with the tune
+  //    first, shareGap);
+  //  · the fuging between the verses, the voices entering one by one on the
+  //    tune's head, printed as a free passage: its written values in the
+  //    verse's beat, no barlines, the close under a fermata (takeFuging);
   //  · a unison (the Old Way, the Shaker's and the Primary's songs) as one
   //    line on the staff it sits best on, the Old Way's ornaments marked
   //    where the composer placed them — a turn, a slide into the note, a
@@ -1087,6 +1101,7 @@ window.KolobViz = (function () {
   // figure. true — or KolobViz.setTuningMarks(true) — prints them.)
   var TUNING_MARKS = false;                        // Johnston's − + 7
   var marks = [];                                  // a composed line's own marks: bars, rests, fermatas, ties and slurs
+  var lastEndBar = null;                           // the last line's double bar, until the next line comes
   var wardSpans = [];                              // where the ward sings a composed line (the organ under it is not printed)
   var hymnBook = {}, hymnIds = [];                 // id → what the page knows of a hymn (its Score, from the engine)
   var VOICE_ORDER = { gospel: ["S", "T", "A", "B"] };
@@ -1269,30 +1284,45 @@ window.KolobViz = (function () {
       return out;
     }
     parts.forEach(function (p) {
-      var pl = plan[p] || { st: "T", dir: 1 }, ns = line.notes[p];
+      var pl = plan[p] || { st: "T", dir: 1 }, ns = line.notes[p], tune = multi && p === melody;
       ns.forEach(function (n, j) {
         var q = Q_MID + ks + n.deg, st = single || pl.st, hop = false;
         if (!single) {                                  // (two ledgers into the gap at most: past that, the other staff —
           // but a step further, hanging under its second ledger, where the
-          // other staff leaves the gap open then: deepOK, below)
-          if (st === "T" && q < GAP_T - 1) { st = "B"; hop = true; }
-          else if (st === "B" && q > GAP_B + 1) { st = "T"; hop = true; }
+          // other staff leaves the gap open then: deepOK, below. The TUNE
+          // never crosses: a Sacred Harp tenor climbing to its high notes
+          // stays on the bass staff on its third ledger, and a step over it,
+          // its stem kept and shortened — the reader follows the melody on
+          // one staff, as a closed-score hymnal prints it; only past that,
+          // where its head would all but touch the other staff, does it go
+          // over)
+          var dT = tune ? TUNE_T : GAP_T - 1, dB = tune ? TUNE_B : GAP_B + 1;
+          if (st === "T" && q < dT) { st = "B"; hop = true; }
+          else if (st === "B" && q > dB) { st = "T"; hop = true; }
         }
         var cuts = [n.beat].concat(downbeatsIn(n.beat, n.beat + n.beats), [n.beat + n.beats]);
         for (var c = 0; c + 1 < cuts.length; c++) {
           var b = cuts[c], b1 = cuts[c + 1], last = c + 2 === cuts.length;
           W.push({ p: p, n: n, j: j, seg: c, b: b, b1: b1, q: q, st: st, hop: hop, dir: single || hop ? 0 : pl.dir,
                    w: (b1 - b) / ts.den, tp: T(b), dur: Math.max(0.05, T(b1) - T(b)),
-                   heavy: multi && p === melody, tied: c > 0 || (j > 0 && !!ns[j - 1].tie), tieOn: last ? !!n.tie : true,
+                   heavy: tune, tied: c > 0 || (j > 0 && !!ns[j - 1].tie), tieOn: last ? !!n.tie : true,
                    head: null, grp: null });
         }
       });
     });
     // (a part a step deeper than two ledgers stays on its staff only if the
     // other staff has no note then reaching toward it; else it crosses)
+    // (the tune past its second ledger stays unless a note of the other
+    // staff then lies within a space and a half of it: two heads all but
+    // touching across the gap, where it goes over after all)
+    W.forEach(function (x) {
+      if (single || x.hop || !x.heavy || !(x.st === "T" ? x.q < GAP_T - 1 : x.q > GAP_B + 1)) return;
+      var other = x.st === "T" ? "B" : "T", ux = uOf(x.st, x.q);
+      if (W.some(function (y) { return y.st === other && y.b < x.b1 - 1e-6 && y.b1 > x.b + 1e-6 && Math.abs(uOf(y.st, y.q) - ux) < 1.5; })) { x.st = other; x.hop = true; x.dir = 0; }
+    });
     W.forEach(function (x) {
       var deep = x.st === "T" ? x.q < GAP_T : x.q > GAP_B;
-      if (single || x.hop || !deep) return;
+      if (single || x.hop || !deep || x.heavy) return;
       var other = x.st === "T" ? "B" : "T", crowd = W.some(function (y) {
         return y !== x && y.st === other && y.b < x.b1 - 1e-6 && y.b1 > x.b + 1e-6 && (other === "B" ? y.q > Q_MID : y.q < Q_MID);
       });
@@ -1353,12 +1383,14 @@ window.KolobViz = (function () {
             heads.push(x.head);
           });
           var grp = { layer: layer, tp: set.xs[0].tp, dur: dur, st: st, heads: heads, v: v, scale: 1, dir: set.dir,
-                      noStem: !v.stem, flags: v.flags, hymn: true, voice: set.voice, win: winOf(set.xs[0].b), xs: set.xs, lead: 0 };
+                      noStem: !v.stem, flags: v.flags, hymn: true, voice: set.voice, win: winOf(set.xs[0].b), xs: set.xs, lead: 0,
+                      tune: set.xs.some(function (x) { return x.heavy; }) };
           if (!grp.dir) grp.dir = posDir(heads, st);
-          // two voices on one note of one length: one head, two stems (the lower voice's head is the upper's)
+          // two voices on one note of one length: one head, two stems (the lower voice's head is the upper's,
+          // and goes where it goes: coOf)
           if (set.voice !== "both" && set.voice !== "hop" && set.voice !== "one" && heads.length === 1) {
             var ck = heads[0].q + "|" + v.open + "|" + v.dots;
-            if (coAt[ck]) { heads[0].ghost = true; grp.noCol = true; }
+            if (coAt[ck]) { heads[0].ghost = true; grp.noCol = true; grp.coOf = coAt[ck]; }
             else coAt[ck] = grp;
           }
           set.xs.forEach(function (x) { x.grp = grp; });
@@ -1405,8 +1437,9 @@ window.KolobViz = (function () {
     W.forEach(function (x) { sts[x.st] = 1; });
     var stList = ["T", "B"].filter(function (s) { return sts[s]; });
     var sys = { hymnId: h.id, tp: t0, tp1: tEnd };
-    // rests, where a part that sings in this line is silent
-    var restAt = {};
+    // rests, where a part that sings in this line is silent (they join the
+    // page after the bars, so a rest just after a barline is set from it)
+    var restAt = {}, restMarks = [];
     parts.forEach(function (p) {
       var ns = line.notes[p], t = 0, gaps = [];
       ns.forEach(function (n) { if (n.beat > t + 1e-6) gaps.push([t, n.beat]); t = Math.max(t, n.beat + n.beats); });
@@ -1424,7 +1457,7 @@ window.KolobViz = (function () {
             if (restAt[key]) { if (restAt[key].voice !== voice) { restAt[key].voice = "C"; restAt[key].q = restQ(st, full ? 1 : r.v, "C", null); } return; }
             // (a voice's rest stands clear of the other voice's notes sounding over it)
             var qs = W.filter(function (x) { return x.st === st && x.p !== p && x.b < re - 1e-6 && x.b1 > ra + 1e-6; }).map(function (x) { return x.q; });
-            marks.push(restAt[key] = { kind: "rest", tp: T(ra), st: st, v: r.v, full: !!r.full, voice: voice, q: restQ(st, full ? 1 : r.v, voice, qs), sys: sys });
+            restMarks.push(restAt[key] = { kind: "rest", tp: T(ra), st: st, v: r.v, full: !!r.full, voice: voice, q: restQ(st, full ? 1 : r.v, voice, qs), sys: sys });
           });
           a = e;
         }
@@ -1434,26 +1467,42 @@ window.KolobViz = (function () {
     var lastLine = !amen && !giving && vl && li === vl.length - 1;
     var final = amen || (lastLine && !(sc && sc.amen) && typeof h.verses === "number" && verse === h.verses - 1);
     // (each bar knows the notes either side of it, so that on a crowded
-    // page it stands between their inks: drawHymnBar)
+    // page it stands between their inks: drawHymnBar — before it, every note
+    // begun in the two seconds before it whose ink might reach it: a quarter
+    // stemmed up beside the beamed eighths of the other voice as much as the
+    // last eighth)
     function before(bb) {
-      var best = -1e9, out = [];
-      made.forEach(function (gp) {
-        var gb = gp.xs[0].b;
-        if (gb >= bb - 1e-6) return;
-        if (gb > best + 1e-6) { best = gb; out = [gp]; } else if (Math.abs(gb - best) < 1e-6) out.push(gp);
-      });
-      return out;
+      var tb = T(bb);
+      return made.filter(function (gp) { return gp.xs[0].b < bb - 1e-6 && gp.tp > tb - 2; });
     }
+    // (and the rests just before it: their ink is the bar's to clear too)
+    function restsBefore(tb) { return restMarks.filter(function (r) { return r.tp < tb - 1e-6 && r.tp > tb - 4; }); }
     var b = (ts.bar - (bar0 % ts.bar)) % ts.bar;
     if (b < 1e-6) b = ts.bar;
     for (; b < span - 1e-6; b += ts.bar) {
       var lead = 0, nx = [];
       stList.forEach(function (st) { (byGrpOn[st + "|" + Math.round(b * 1000)] || []).forEach(function (gp) { lead = Math.max(lead, gp.lead); nx.push(gp); }); });
-      marks.push({ kind: "bar", type: "single", tp: T(b), sts: stList, off: lead ? -(lead + 0.55) : 0, pv: before(b), nx: nx, sys: sys });
+      var bm = { kind: "bar", type: "single", tp: T(b), sts: stList, off: lead ? -(lead + 0.55) : 0, pv: before(b), pvRests: restsBefore(T(b)), nx: nx, sys: sys };
+      // the notes on the downbeat make room for their bar if they must (placeColumn),
+      // and a rest there stands after it
+      nx.forEach(function (gp) { gp.barIn = bm; });
+      restMarks.forEach(function (r) { if (Math.abs(r.tp - bm.tp) < 1e-6) r.barIn = bm; });
+      marks.push(bm);
     }
     // (the double bar stands just before the next line's first note; the
     // final bar where the last note's written length ends)
-    marks.push({ kind: "bar", type: final ? "final" : "double", tp: final ? T(span) : tEnd, sts: stList, off: final ? 0 : -1.35, pv: before(span + 1), nx: null, sys: sys });
+    var endBar = { kind: "bar", type: final ? "final" : "double", tp: final ? T(span) : tEnd, sts: stList, off: final ? 0 : -1.35, pv: before(span + 1), pvRests: restsBefore(T(span) + 1e-3), nx: null, sys: sys };
+    marks.push(endBar);
+    restMarks.forEach(function (r) { marks.push(r); });
+    // the line before's double bar learns this line's first notes: it stands
+    // clear of them too (they make room for it, as for any bar)
+    var le = lastEndBar;
+    if (le && le.sys.hymnId === h.id && t0 - le.tp > -1.5 && t0 - le.tp < 4 && made.length) {
+      var fb0 = Math.min.apply(null, made.map(function (gp) { return gp.xs[0].b; }));
+      le.nx = made.filter(function (gp) { return Math.abs(gp.xs[0].b - fb0) < 1e-6 && !gp.barIn; });
+      le.nx.forEach(function (gp) { gp.barIn = le; });
+    }
+    lastEndBar = final ? null : endBar;
     // fermatas: over the treble, under the bass (over a unison)
     var fbs = {};
     W.forEach(function (x) { if (x.n.fermata && x.seg === 0) fbs[Math.round(x.b * 1000)] = x.b; });
@@ -1485,19 +1534,7 @@ window.KolobViz = (function () {
         i = j;
       }
     });
-    // the gap between the staves, shared out note by note: a treble stem may
-    // reach down into it as far as the bass's ink at that moment allows (and
-    // a bass stem up as far as the treble's); only where both staves send a
-    // stem into the gap at once does each keep to its own half
-    made.forEach(function (gp) {
-      var other = gp.st === "T" ? "B" : "T", up = false, qx = null;
-      made.forEach(function (o2) {
-        if (o2.st !== other || Math.abs(o2.tp - gp.tp) > 0.35) return;
-        if (o2.v.stem && (other === "B" ? o2.dir > 0 : o2.dir < 0)) up = true;
-        o2.heads.forEach(function (hd) { qx = qx == null ? hd.q : other === "B" ? Math.max(qx, hd.q) : Math.min(qx, hd.q); });
-      });
-      gp.room = up ? null : { q: qx };
-    });
+    shareRoom(made);
     if (!giving) wardSpans.push({ tp0: t0, tp1: tEnd });
     if (wardSpans.length > 60) wardSpans.splice(0, wardSpans.length - 60);
     return true;
@@ -1518,6 +1555,69 @@ window.KolobViz = (function () {
     }
     return q;
   }
+  // The gap between the staves, shared out note by note: a treble stem may
+  // reach down into it as far as the bass's ink at that moment allows (and
+  // a bass stem up as far as the treble's). Where both staves send a stem
+  // into the gap at once, the gap is divided between them (shareGap):
+  // at the telegraph's line, as round 2.5 had it, when both stems fit;
+  // else moved so that each keeps a stem — the tune's first
+  function shareRoom(made) {
+    made.forEach(function (gp) {
+      gp.gapIn = !!(gp.v.stem && (gp.st === "T" ? gp.dir < 0 : gp.dir > 0));
+      gp.uNear = null;
+      gp.heads.forEach(function (hd) { var u = uOf(gp.st, hd.q); gp.uNear = gp.uNear == null ? u : gp.st === "T" ? Math.min(gp.uNear, u) : Math.max(gp.uNear, u); });
+    });
+    // (a beam's notes share one stem height: each asks for room from the
+    // beam's head nearest the gap, and a little more, for the beam itself)
+    made.forEach(function (gp) {
+      if (!gp.beam || gp.beam.shared) return;
+      var bm = gp.beam, u = null;
+      bm.shared = true;
+      bm.members.forEach(function (m) { if (m.uNear != null) u = u == null ? m.uNear : bm.st === "T" ? Math.min(u, m.uNear) : Math.max(u, m.uNear); });
+      bm.members.forEach(function (m) { m.uNear = u; m.want = GAP_WANT + 0.4; });
+    });
+    made.forEach(function (gp) {
+      var other = gp.st === "T" ? "B" : "T", qx = null, facing = [];
+      made.forEach(function (o2) {
+        if (o2.st !== other || Math.abs(o2.tp - gp.tp) > 0.35) return;
+        if (o2.gapIn) facing.push(o2);
+        o2.heads.forEach(function (hd) { qx = qx == null ? hd.q : other === "B" ? Math.max(qx, hd.q) : Math.min(qx, hd.q); });
+      });
+      gp.room = { q: qx, div: null };
+      if (!gp.gapIn) return;
+      facing.forEach(function (o2) {
+        var d = gp.st === "T" ? shareGap(gp, o2) : shareGap(o2, gp);
+        if (d == null) return;
+        if (gp.room.div == null) gp.room.div = d;
+        else gp.room.div = gp.st === "T" ? Math.max(gp.room.div, d) : Math.min(gp.room.div, d);
+      });
+    });
+  }
+  // Heights in the gap, in staff spaces over the bass staff's top line: the
+  // treble's bottom line at 5, the telegraph's holes at 2.5. (The same at
+  // every staff size, so a line's sharing of the gap is worked out once.)
+  function uOf(st, q) { return st === "T" ? 5 + (q - 12) / 2 : (q - 8) / 2; }
+  // Two stems in the gap at once, the treble's down (tg) and the bass's up
+  // (bg): where they divide it (a height each stays 0.3 sp clear of), or
+  // null when they do not meet — each then runs as far as the other staff's
+  // heads allow, beside the other's stem if they pass. The division is the
+  // telegraph's line where both keep a stem there; else it moves toward the
+  // one that has room to give, the tune keeping at least 2.2 sp of stem (2.6
+  // under a beam, its want) and the other voice at least 1.3; where even
+  // that will not fit, the tune has
+  // what it needs and the other voice what is left (layoutGroup turns an
+  // other voice's stem that is left under 1.3 sp; the tune's never turns).
+  var GAP_WANT = 2.2, GAP_MIN = 1.3;
+  function shareGap(tg, bg) {
+    var uT = tg.uNear, uB = bg.uNear;
+    var eT = Math.max(uT - 3.5, uB + 0.95, 0.45), eB = Math.min(uB + 3.5, uT - 0.95, 4.55);
+    if (eB + 0.6 <= eT) return null;
+    var lo = uB + (bg.tune ? bg.want || GAP_WANT : GAP_MIN) + 0.3, hi = uT - (tg.tune ? tg.want || GAP_WANT : GAP_MIN) - 0.3;
+    if (lo <= hi) return clamp(2.5, lo, hi);
+    var lo2 = uB + GAP_MIN + 0.3, hi2 = uT - GAP_MIN - 0.3;   // (no room for the tune's 2.2: all the other voice can give)
+    if (lo2 > hi2) return null;
+    return bg.tune ? hi2 : lo2;
+  }
   // a silent stretch as rests, in whole-note units (the plainest values,
   // largest first: hymn-lab's)
   function splitRest(w) {
@@ -1535,6 +1635,99 @@ window.KolobViz = (function () {
   function makeBeam(gs, st) {
     var v = gs[0].voice, bm = { members: gs.slice(), st: st, fixed: v === "one" ? 0 : gs[0].dir, geo: null };
     gs.forEach(function (gp) { gp.beam = bm; });
+  }
+  // The fuging between the verses: the voices go out one by one on the
+  // tune's first notes, a few seconds apart, and gather into the dialect's
+  // close. Its entries come by the second, not by the bar (the engine
+  // staggers them 2.4–3.2 s), so the page prints it as a hymnal prints a
+  // free passage: no barlines inside it; each voice's notes at their
+  // written values in the verse's own beat, its quick notes beamed within
+  // its beat; the voices in closed score as in the verses (the stems by
+  // part, the tune's heads heavier); the close as two chords in whole
+  // notes, a fermata over the last, and a double bar after it. → false
+  // while the hymn's beat is not known (the old reading then prints it)
+  function takeFuging(ns) {
+    var h = hymnBook[ns[0].hymnId];
+    if (!h || !(h.bs > 0.05)) return false;
+    var bs = h.bs, ts = timeSig(h.modeOfTime), dialect = h.dialect || "tabernacle", plan = staffPlan(dialect);
+    var melody = h.melodyPart || MELODY_PART[dialect] || "S", win = ts.den === 8 ? 3 : 1;
+    ns = ns.slice().sort(function (a, b) { return a.startTime - b.startTime; });
+    function partOf(n) { return n.sings || n.part; }
+    function onKey(n) { return Math.round(n.startTime * 50); }
+    // the close: the chords at its end, where the voices sing together
+    var ons = [], byOn = {};
+    ns.forEach(function (n) { var k = onKey(n); if (!byOn[k]) { byOn[k] = []; ons.push(k); } byOn[k].push(n); });
+    var close = {}, nClose = 0;
+    for (var i = ons.length - 1; i >= 0 && nClose < 2 && byOn[ons[i]].length >= 2; i--) { close[ons[i]] = ++nClose; }
+    var parts = {};
+    ns.forEach(function (n) { parts[partOf(n)] = 1; });
+    var multi = Object.keys(parts).length > 1, made = [], t0 = ns[0].startTime, tEnd = t0;
+    ns.forEach(function (n) { tEnd = Math.max(tEnd, n.startTime + n.duration); });
+    var sys = { hymnId: h.id, tp: t0, tp1: tEnd };
+    function placeOf(n, tune, pl) {                  // its staff and step (the tune keeps its staff, as in the verses)
+      var tq = taggedQ(n) || noteQ(n.freq), st = pl.st, hop = false;
+      if (multi) {
+        if (st === "T" && tq.q < (tune ? TUNE_T : GAP_T - 1)) { st = "B"; hop = true; }
+        else if (st === "B" && tq.q > (tune ? TUNE_B : GAP_B + 1)) { st = "T"; hop = true; }
+      }
+      return { q: tq.q, shape: tq.shape, st: st, hop: hop };
+    }
+    // each voice's entry, beamed in the entry's own beat
+    var byPart = {};
+    ns.forEach(function (n) { if (!close[onKey(n)]) (byPart[partOf(n)] = byPart[partOf(n)] || []).push(n); });
+    Object.keys(byPart).forEach(function (p) {
+      var pl = plan[p] || { st: "T", dir: 1 }, tune = multi && p === melody, e0 = byPart[p][0].startTime, run = [];
+      byPart[p].forEach(function (n) {
+        var at = placeOf(n, tune, pl), beats = Math.max(0.25, Math.round(n.duration / bs * 4) / 4), v = writtenValue(beats / ts.den);
+        var grp = { layer: n.layer, tp: n.startTime, dur: n.duration, st: at.st, heads: [{ q: at.q, shape: at.shape, open: v.open, dots: v.dots, heavy: tune }],
+                    v: v, scale: 1, dir: at.hop || !multi ? 0 : pl.dir, noStem: !v.stem, flags: v.flags, hymn: true,
+                    voice: at.hop ? "hop" : multi ? p : "one", win: Math.floor((n.startTime - e0) / bs / win + 1e-6), tune: tune, lead: 0 };
+        if (!grp.dir) grp.dir = posDir(grp.heads, at.st);
+        groups.push(grp); made.push(grp);
+        var last = run[run.length - 1], quick = grp.flags >= 1 && grp.v.stem && !at.hop;
+        if (quick && last && last.win === grp.win && last.st === grp.st && Math.abs(last.tp + last.dur - grp.tp) < 0.05) run.push(grp);
+        else { if (run.length >= 2) makeBeam(run, run[0].st); run = quick ? [grp] : []; }
+      });
+      if (run.length >= 2) makeBeam(run, run[0].st);
+    });
+    // the close: on each staff, its voices' heads together
+    var wv = writtenValue(1), lastGs = [];
+    ons.forEach(function (k) {
+      if (!close[k]) return;
+      var onSt = {};
+      byOn[k].forEach(function (n) {
+        var p = partOf(n), pl = plan[p] || { st: "T", dir: 1 }, tune = multi && p === melody, at = placeOf(n, tune, pl);
+        var o = onSt[at.st] = onSt[at.st] || { heads: [], ps: {}, dur: 0, tp: n.startTime };
+        o.ps[p] = pl.dir; o.dur = Math.max(o.dur, n.duration);
+        var same = o.heads.filter(function (hd) { return hd.q === at.q; })[0];
+        if (same) { if (tune) same.heavy = true; return; }
+        o.heads.push({ q: at.q, shape: at.shape, open: true, dots: 0, heavy: tune });
+      });
+      var gs = [];
+      Object.keys(onSt).forEach(function (st) {
+        var o = onSt[st], two = Object.keys(o.ps).length > 1;
+        var grp = { layer: byOn[k][0].layer, tp: o.tp, dur: o.dur, st: st, heads: o.heads, v: wv, scale: 1, dir: two ? (st === "T" ? 1 : -1) : 0,
+                    noStem: true, flags: 0, hymn: true, voice: two ? "both" : "one", win: 0, tune: o.heads.some(function (hd) { return hd.heavy; }), lead: 0 };
+        if (!grp.dir) grp.dir = posDir(o.heads, st);
+        groups.push(grp); made.push(grp); gs.push(grp);
+      });
+      if (close[k] === 1) lastGs = gs;           // (the last chord: numbered from the end)
+    });
+    lastGs.forEach(function (gp) {
+      gp.ferm = gp.st === "T" ? 1 : -1;
+      marks.push({ kind: "ferm", tp: gp.tp, st: gp.st, up: gp.st === "T", grps: [gp], sys: sys });
+    });
+    shareRoom(made);
+    // the double bar after the close (and before the verse that follows)
+    var sts = {};
+    made.forEach(function (gp) { sts[gp.st] = 1; });
+    var tLast = lastGs.length ? lastGs[0].tp : t0;
+    var endBar = { kind: "bar", type: "double", tp: tEnd, sts: ["T", "B"].filter(function (st) { return sts[st]; }), off: -1.35,
+                   pv: made.filter(function (gp) { return gp.tp >= tLast - 1e-6; }), pvRests: [], nx: null, sys: sys };
+    marks.push(endBar);
+    lastEndBar = endBar;
+    wardSpans.push({ tp0: t0, tp1: tEnd });
+    return true;
   }
   // The organ alone. Its notes are printed only where no one sings over
   // them — under a composed line of the ward, or under the choir's own
@@ -1573,8 +1766,9 @@ window.KolobViz = (function () {
     var hi = -1e9, lo = 1e9, sh = 0, tr = grp.st === "T";
     grp.heads.forEach(function (h) { hi = Math.max(hi, h.q); lo = Math.min(lo, h.q); });
     // (a composed hymn's note may hang a step under the second ledger: its
-    // line knew the other staff left room there — takeHymnLine)
-    var gT = grp.hymn ? GAP_T - 1 : GAP_T, gB = grp.hymn ? GAP_B + 1 : GAP_B;
+    // line knew the other staff left room there — takeHymnLine; its tune
+    // goes a step past the third)
+    var gT = grp.hymn ? (grp.tune ? TUNE_T : GAP_T - 1) : GAP_T, gB = grp.hymn ? (grp.tune ? TUNE_B : GAP_B + 1) : GAP_B;
     var deep = tr ? lo < gT : hi > gB;             // a head on the telegraph's line
     if (grp.askMax != null) hi = Math.max(hi, grp.askMax);
     if (tr) { while (hi - sh > g.qMaxT) sh += 7; }
@@ -1742,10 +1936,16 @@ window.KolobViz = (function () {
   // nearest head then, or none), as far as that head allows, short of the
   // other staff's own lines.
   function gapLimit(g, st, room) {
-    var sp = g.sp;
+    var sp = g.sp, y;
     if (!room) return st === "T" ? g.tapeY - 0.3 * sp : g.tapeY + 0.3 * sp;
-    if (st === "T") return room.q != null ? Math.min(g.B - 0.45 * sp, g.yB(room.q) - 0.95 * sp) : g.B - 0.45 * sp;
-    return room.q != null ? Math.max(g.Tb + 0.45 * sp, g.yT(room.q) + 0.95 * sp) : g.Tb + 0.45 * sp;
+    if (st === "T") {
+      y = room.q != null ? Math.min(g.B - 0.45 * sp, g.yB(room.q) - 0.95 * sp) : g.B - 0.45 * sp;
+      if (room.div != null) y = Math.min(y, g.B - (room.div + 0.3) * sp);     // (the gap divided with a bass stem: shareGap)
+      return y;
+    }
+    y = room.q != null ? Math.max(g.Tb + 0.45 * sp, g.yT(room.q) + 0.95 * sp) : g.Tb + 0.45 * sp;
+    if (room.div != null) y = Math.max(y, g.B - (room.div - 0.3) * sp);
+    return y;
   }
   // a group of heads on one stem (a chord, or a single note): where its
   // heads and stem fall. Shared by drawGroup and the column check.
@@ -1763,14 +1963,19 @@ window.KolobViz = (function () {
     // open at that moment — gapLimit, o.room.) Before that, a voice's own
     // stem (o.alt: the position rule's way) that the plate's edge or the gap
     // would cut under 3 sp past its head turns the position rule's way, if
-    // that stem grows longer.
+    // that stem grows longer. (Round 3b, round 2: where both staves send a
+    // stem into the gap at once, the line has divided it between them —
+    // shareGap — at the telegraph's line when both fit, else nearer the
+    // voice with room to give, the tune's stem first.)
     var gapPad = 0.3 * sp, mid = g.mid(st);
     var yHi = g.y(st, hs[hs.length - 1].q), yLo = g.y(st, hs[0].q);
     // (o.keep: a voice of a closed score — the alto under a soprano, the
     // tenor over a bass — keeps its own stem even near the gap: shortened
     // there, down to 1.3 sp past its head, rather than turned into the
-    // other voice's)
-    var minS = o.keep ? 1.3 : 2.2, gapY = gapLimit(g, st, o.room);
+    // other voice's. o.tune: the tune's own stem is never turned — a Sacred
+    // Harp tenor high over the bass staff keeps its stem up, as short as the
+    // gap leaves it, down to 1 sp)
+    var minS = o.tune ? 1.0 : o.keep ? 1.3 : 2.2, gapY = gapLimit(g, st, o.room);
     function stemEnd(d) {                          // where a stem turned d ends
       var ye;
       // (o.ferm: a fermata stands beyond this stem — over the treble, under
@@ -1790,33 +1995,35 @@ window.KolobViz = (function () {
     function reach(d) { return d > 0 ? yHi - stemEnd(1) : stemEnd(-1) - yLo; }   // past the stem's last head
     // (a beamed group's stem is the beam's: its direction and its end are
     // the beam's own, already kept off the gap's middle — beamGeo)
-    if (!o.beamY) {
+    if (!o.beamY && !o.tune) {
       if (stem && o.alt && o.alt !== dir && reach(dir) < 3 * s && reach(o.alt) > reach(dir)) dir = o.alt;
       if (stem && st === "B" && dir > 0 && yHi - gapY < minS * s) dir = -1;
       else if (stem && st === "T" && dir < 0 && gapY - yLo < minS * s) dir = 1;
     }
     var sx = X + dir * (0.57 * s - sw / 2);
+    // (a heavy head — the tune's — is drawn HEAVY times the size: its stem
+    // meets its own edge, hs2)
     var placed = hs.map(function (h) {
-      var k = shapeKey(h.shape, dir || 1), hx = X;
-      if (stem) { var an = anchorOf(k, dir); hx = sx - an[0] * s + dir * sw / 2; }
-      return { h: h, k: k, x: hx, y: g.y(st, h.q) };
+      var k = shapeKey(h.shape, dir || 1), hx = X, hs2 = h.heavy ? s * HEAVY : s;
+      if (stem) { var an = anchorOf(k, dir); hx = sx - an[0] * hs2 + dir * sw / 2; }
+      return { h: h, k: k, x: hx, y: g.y(st, h.q), hs: hs2 };
     });
     // a second on one stem: the upper (stem up) / lower (stem down) head crosses to the other side
     for (var i = 1; i < placed.length; i++) {
       if (placed[i].h.q - placed[i - 1].h.q === 1) {
         var d = dir || 1, mv = d > 0 ? placed[i] : placed[i - 1];
-        mv.x += d * (1.14 * s - sw);
+        mv.x += d * (0.57 * (placed[i].hs + placed[i - 1].hs) - sw);
       }
     }
     var top = placed[placed.length - 1], bot = placed[0], y0 = null, yEnd = null;
     if (stem) {
-      if (dir > 0) { var an0 = anchorOf(bot.k, 1); y0 = bot.y + an0[1] * s; }
-      else { var an1 = anchorOf(top.k, -1); y0 = top.y + an1[1] * s; }
+      if (dir > 0) { var an0 = anchorOf(bot.k, 1); y0 = bot.y + an0[1] * bot.hs; }
+      else { var an1 = anchorOf(top.k, -1); y0 = top.y + an1[1] * top.hs; }
       yEnd = o.beamY ? o.beamY(sx) : stemEnd(dir);
     }
     // augmentation dots sit right of the heads (and of an up-stem)
     var right = -1e9;
-    placed.forEach(function (p) { right = Math.max(right, p.x + 0.64 * s); });
+    placed.forEach(function (p) { right = Math.max(right, p.x + 0.64 * p.hs); });
     if (dir > 0 && stem) right = Math.max(right, sx + sw / 2);
     var ledgers = [];
     placed.forEach(function (p) {
@@ -1834,11 +2041,11 @@ window.KolobViz = (function () {
     L.ledgers.forEach(function (l) { out.push([l[0], l[1] - lh, l[2], l[1] + lh, 1]); });   // [4]: a ledger
     L.placed.forEach(function (p) {
       if (p.h.ghost) return;
-      var hw = o.breve ? 1.1 * s : o.ring ? 1.05 * s : 0.64 * s, hh = o.ring ? 1.05 * s : 0.52 * s;   // a bell's ring is part of its head
+      var hw = o.breve ? 1.1 * s : o.ring ? 1.05 * s : 0.64 * p.hs, hh = o.ring ? 1.05 * s : 0.52 * p.hs;   // a bell's ring is part of its head
       out.push([p.x - hw, p.y - hh, p.x + hw, p.y + hh, 0, 1]);                                        // [5]: a head
       if (p.h.dots) hasDots = true;
       var lead = headLead(p.h, s);                                                                     // an accidental, a tuning mark, a grace before it
-      if (lead > 0.7 * s) out.push([p.x - lead, p.y - 1.2 * s, p.x - 0.64 * s, p.y + 1.2 * s]);
+      if (lead > 0.7 * s) out.push([p.x - lead, p.y - 1.2 * s, p.x - 0.64 * s, p.y + 1.2 * s, 0, 0, 1]);                 // [6]: a sign before a head
     });
     if (hasDots) out.push([L.right + 0.25 * s, L.bot.y - 0.6 * s, L.right + 0.75 * s, L.top.y + 0.6 * s]);
     if (L.stem) {
@@ -1874,7 +2081,7 @@ window.KolobViz = (function () {
     placed.forEach(function (p) {
       if (p.h.ghost) return;
       drawSprite(c, headSprite(p.k, p.h.open, s, o.rgb, p.h.heavy), p.x, p.y);
-      koEllipse(c, p.x, p.y, 0.68 * s + pad, 0.55 * s + pad);
+      koEllipse(c, p.x, p.y, 0.68 * p.hs + pad, 0.55 * p.hs + pad);
       if (p.h.acc || p.h.jm || p.h.orn) headMarks(c, g, p, st, s, sw, o, L);
     });
     if (o.breve) {                                        // the breve's side strokes
@@ -1913,7 +2120,7 @@ window.KolobViz = (function () {
   // how far a head's own signs reach to its left: an accidental, Johnston's
   // marks (if they are printed), a slide or a grace before it
   function headLead(h, s) {
-    var l = 0.64;
+    var l = 0.64 * (h.heavy ? HEAVY : 1);
     if (h.acc) l += 1.25;
     if (TUNING_MARKS && h.jm) l += 0.85 * ((h.jm.c ? 1 : 0) + (h.jm.s7 ? 1 : 0));
     if (h.orn === "grace" || h.orn === "slide") l = Math.max(l, 0.64 + 1.4);
@@ -1922,7 +2129,7 @@ window.KolobViz = (function () {
   // a head's signs: before it its accidental and (the owner's call) its
   // tuning marks; the Old Way's ornament where the composer placed one
   function headMarks(c, g, p, st, s, sw, o, L) {
-    var x = p.x - 0.64 * s, y = p.y, h = p.h;
+    var x = p.x - 0.64 * (p.hs || s), y = p.y, h = p.h;
     if (h.acc) {
       x -= 0.3 * s;
       var nm = h.acc === "s" ? "sharp" : h.acc === "f" ? "flat" : "natural", bx = GLYPHS[nm].box;
@@ -2078,27 +2285,96 @@ window.KolobViz = (function () {
     marks.length = keep;
     c.globalAlpha = 1;
   }
-  // a single bar, the double bar at a line's end, the final bar at the hymn's
-  // At 60 px/s a quick note before a downbeat leaves little room: the bar
-  // stands in the middle of what room there is, never on a head.
-  function drawHymnBar(c, g, m, x) {
-    var sp = g.sp, xb = x + m.off * sp, thin = Math.max(1.2 / dpr, 0.16 * sp);
-    var pr = -1e9, nl = 1e9;
+  // A single bar, the double bar at a line's end, the final bar at the
+  // hymn's. At 60 px/s a quick note before a downbeat leaves little room,
+  // so a bar is set the engraver's way: it stands clear of the ink either
+  // side of it — the notes and rests before it (their heads and dots, their
+  // stems, an unbeamed note's flag: a stem-up eighth's reaches 1.6 sp past
+  // its head) and the notes on its downbeat (an accidental, a head, a stem
+  // down, which keeps a little more air so that it never reads as a second
+  // bar). Where there is not that much room, the downbeat's notes on both
+  // staves make it, together, when they are first set (placeColumn → barPush)
+  // — the page's time bends by a staff space or so at the bar, as a
+  // hymnal's spacing does. Only the ink between the staff's own lines is
+  // weighed: the bar stands there alone.
+  var BAR_AIR = 0.35, BAR_AIR_STEM = 0.5;          // in sp: from the ink before a bar; after it, to a head or a stem
+  function barInk(m, g) {                          // the bar's own ink, left and right of its x (xb)
+    var thin = Math.max(1.2 / dpr, 0.16 * g.sp);
+    return { th: thin, wl: m.type === "double" ? 0.5 * g.sp + thin / 2 : m.type === "final" ? 0.8 * g.sp + thin / 2 : thin / 2,
+             wr: m.type === "final" ? 0 : thin / 2 };
+  }
+  // (the staff and a space either side of it: a stem that ends just over the
+  // staff, or a head on the ledger by it, would read as one stroke with a bar)
+  function inBand(g, st, b) { var top = st === "T" ? g.T : g.B, sp = g.sp; return b[3] > top - sp && b[1] < top + 5 * sp; }
+  function drawnInk(gr) {                          // the boxes of what this frame drew (page x)
+    if (gr.boxF !== FRAME) { gr.boxF = FRAME; gr.boxC = groupBoxes(gr.lastL, gr.lastO || {}); }
+    return gr.boxC;
+  }
+  // a rest's place about its own time's x: after its bar, if one stands at it
+  function restPlace(r, g) {
+    var sp = g.sp, nm = REST_OF[r.full ? 1 : r.v] || REST_OF[0.25], bx = GLYPHS[nm[0]].box;
+    var rx = (r.full ? 1.4 : 0.5) * sp;
+    if (r.barIn && r.barIn.relSp === sp) rx = Math.max(rx, r.barIn.rel + BAR_AIR * sp - bx[0] * sp);
+    return { rx: rx, nm: nm, x0: rx + bx[0] * sp, x1: rx + Math.max(bx[2] * sp, nm[1] ? 1.13 * sp : 0), y0: bx[1] * sp, y1: bx[3] * sp };
+  }
+  // what a bar must clear, about its own time's x: pr, the rightmost ink
+  // before it; nl, the leftmost after it, less its air. now: as this frame
+  // drew them; else as they will be set before the downbeat makes room
+  function barExtents(m, g, now) {
+    var sp = g.sp, xm = X(m.tp), pr = -1e9, nl = 1e9;
     (m.pv || []).forEach(function (gr) {
-      if (gr.drawnAt !== FRAME) return;
-      var r = gr.lastX + 0.66 * sp;
-      if (gr.heads.some(function (h) { return h.dots && !h.ghost; })) r += 0.75 * sp;
-      pr = Math.max(pr, r);
+      if (m.sts.indexOf(gr.st) < 0) return;
+      var bx, off;
+      if (gr.drawnAt === FRAME && gr.lastL) { bx = drawnInk(gr); off = -xm; }
+      else if (now) return;
+      else { var ik = inkOf(gr, g); bx = ik.boxes; off = (gr.tp - m.tp) * SCROLL_PX_S + ik.dx; }
+      bx.forEach(function (b) { if (inBand(g, gr.st, b)) pr = Math.max(pr, b[2] + off); });
+    });
+    (m.pvRests || []).forEach(function (r) {
+      if (m.sts.indexOf(r.st) < 0 || (now && dryA(r) < 0.02)) return;
+      var rp = restPlace(r, g), ry = g.y(r.st, r.q != null ? r.q : restQ(r.st, r.full ? 1 : r.v, r.voice, null));
+      if (inBand(g, r.st, [0, ry + rp.y0, 0, ry + rp.y1])) pr = Math.max(pr, (r.tp - m.tp) * SCROLL_PX_S + rp.x1);
+    });
+    // (a guest's notes on the same staff — the clarinet over a psalm tune —
+    // are not the hymn's to move, but the bar keeps clear of them too)
+    foreignNow.forEach(function (gr) {
+      if (gr.drawnAt !== FRAME || m.sts.indexOf(gr.st) < 0 || Math.abs(gr.lastX - xm) > 5 * sp) return;
+      var before = gr.tp < m.tp;
+      drawnInk(gr).forEach(function (b) {
+        if (!inBand(g, gr.st, b)) return;
+        if (before) pr = Math.max(pr, b[2] - xm); else nl = Math.min(nl, b[0] - xm - BAR_AIR * sp);
+      });
     });
     (m.nx || []).forEach(function (gr) {
-      if (gr.drawnAt !== FRAME) return;
-      var l = 0.64 * sp;
-      gr.heads.forEach(function (h) { if (!h.ghost) l = Math.max(l, headLead(h, sp)); });
-      nl = Math.min(nl, gr.lastX - l);
+      var bx, off, L;
+      if (now) { if (gr.drawnAt !== FRAME || !gr.lastL) return; bx = drawnInk(gr); off = -xm; L = gr.lastL; }
+      else { var pg = prepGroup(gr, g); L = layoutGroup(g, 0, pg.heads, gr.st, gr.dir, pg.o); bx = groupBoxes(L, pg.o); off = (gr.tp - m.tp) * SCROLL_PX_S; }
+      var sb = L.stem ? L.sx - L.sw / 2 - 0.08 * L.s : null;
+      bx.forEach(function (b) {
+        if (!inBand(g, gr.st, b)) return;
+        var stem = sb != null && !b[4] && !b[5] && Math.abs(b[0] - sb) < 1e-6;
+        nl = Math.min(nl, b[0] + off - (stem ? BAR_AIR_STEM : BAR_AIR) * sp);
+      });
     });
-    if (nl < 1e8) xb = Math.min(xb, nl - 0.35 * sp);
-    var lo = pr + (m.type === "single" ? 0.35 : m.type === "double" ? 0.85 : 1.1) * sp, hi = nl - 0.15 * sp;
-    if (pr > -1e8 && xb < lo) xb = nl < 1e8 && hi < lo ? (lo + hi) / 2 : lo;
+    return { pr: pr, nl: nl };
+  }
+  // the room the downbeat's notes make for their bar (0 if there is room
+  // already): worked out once per staff size, the same for every note on
+  // that downbeat, so a chord across the staves stays upright
+  function barPush(m, g) {
+    if (m.push && m.push.sp === g.sp) return m.push.dx;
+    m.push = { sp: g.sp, dx: 0 };                  // (set first: a bar is never asked twice while it is being worked out)
+    var e = barExtents(m, g, false), bi = barInk(m, g);
+    if (e.pr > -1e8 && e.nl < 1e8) m.push.dx = Math.max(0, e.pr + BAR_AIR * g.sp + bi.wl + bi.wr - e.nl);
+    return m.push.dx;
+  }
+  function drawHymnBar(c, g, m, x) {
+    var sp = g.sp, bi = barInk(m, g), thin = bi.th, xb = x + m.off * sp;
+    var e = barExtents(m, g, true);
+    var lo = x + e.pr + BAR_AIR * sp + bi.wl, hi = x + e.nl - bi.wr;
+    if (e.nl < 1e8 && xb > hi) xb = hi;
+    if (e.pr > -1e8 && xb < lo) xb = e.nl < 1e8 && hi < lo ? (lo + hi) / 2 : lo;
+    m.rel = xb + bi.wr - x; m.relSp = sp;           // (a rest on its downbeat stands after it: restPlace)
     m.sts.forEach(function (st) {
       var top = st === "T" ? g.T : g.B, bot = top + 4 * sp;
       if (m.type === "double") { vLine(c, xb - 0.5 * sp, top, bot, thin); vLine(c, xb, top, bot, thin); }
@@ -2108,13 +2384,23 @@ window.KolobViz = (function () {
   }
   // a rest: the whole hanging from the fourth line, the half on the middle
   // line, the rest on the middle; a voice's own raised or lowered a space
-  // when the two share the staff
+  // when the two share the staff. A whole or half rest set off the staff
+  // hangs from (or sits on) a ledger line of its own, as a hymnal prints it.
   var REST_OF = { 1: ["rest1", 0], 0.75: ["rest2", 1], 0.5: ["rest2", 0], 0.375: ["rest4", 1], 0.25: ["rest4", 0], 0.1875: ["rest8", 1], 0.125: ["rest8", 0], 0.0625: ["rest16", 0] };
   function drawRest(c, g, m, x) {
-    var sp = g.sp, r = REST_OF[m.full ? 1 : m.v] || REST_OF[0.25];
+    var sp = g.sp, rp = restPlace(m, g), r = rp.nm;
     var q = m.q != null ? m.q : restQ(m.st, m.full ? 1 : m.v, m.voice, null);
-    var rx = x + (m.full ? 1.4 : 0.5) * sp, ry = g.y(m.st, q);
+    var rx = x + rp.rx, ry = g.y(m.st, q), pad = KO_PAD * sp;
+    if (r[0] === "rest1" || r[0] === "rest2") {
+      var lth = Math.max(1.2 / dpr, 0.16 * sp);
+      ledgersFor(m.st, q).forEach(function (l) {
+        var ly = g.y(m.st, l);
+        hLine(c, rx - 0.95 * sp, rx + 0.95 * sp, ly, lth);
+        koRect(c, rx - 0.95 * sp - pad, ly - lth / 2 - pad, rx + 0.95 * sp + pad, ly + lth / 2 + pad);
+      });
+    }
     drawGlyph(c, r[0], rx, ry, sp, C_INK);
+    koRect(c, x + rp.x0 - pad, ry + rp.y0 - pad, x + rp.x1 + pad, ry + rp.y1 + pad);
     if (r[1]) { var dq = q % 2 === 0 ? q + 1 : q; c.beginPath(); c.arc(rx + 0.95 * sp, g.y(m.st, dq), 0.18 * sp, 0, Math.PI * 2); c.fill(); }
   }
   // a fermata over the treble's topmost ink at its beat (under the bass's lowest)
@@ -2221,6 +2507,12 @@ window.KolobViz = (function () {
   // ordinary run of eighths is left as it was, so a run is not pushed along
   // note by note.) The offset is kept, and worked out again if the staff
   // space changes (a resize).
+  // (a hymn's note is never set more than HYMN_DX_MAX staff spaces after its
+  // time: where the music is denser than 60 px/s can hold — a 6/8 hymn's
+  // quick bars — the offsets would otherwise carry on from note to note and
+  // bar to bar, and the page drift from the sound; there it lets the inks
+  // come close instead)
+  var HYMN_DX_MAX = 2.4;
   function placeColumn(gr, g, heads, o) {
     if (gr.col && gr.col.sp === g.sp) return gr.col.dx;
     var sp = g.sp, tol = 0.05 * sp, gap = 0.3 * sp;
@@ -2231,7 +2523,8 @@ window.KolobViz = (function () {
     if (gr.hymn) bx = bx.filter(function (b0) { return !b0[4]; });
     var bL = 1e9;
     for (var q = 0; q < bx.length; q++) bL = Math.min(bL, bx[q][0]);
-    var dx = 0;
+    var cap = gr.hymn ? HYMN_DX_MAX * sp : 1e9;
+    var dx = gr.barIn ? Math.min(cap, barPush(gr.barIn, g)) : 0;   // (a downbeat's note makes room for its bar first)
     for (var pass = 0; pass < 4; pass++) {
       var need = dx;
       for (var i = 0; i < groups.length; i++) {
@@ -2246,7 +2539,7 @@ window.KolobViz = (function () {
           aR = Math.max(aR, ax1);
           for (var n = 0; !hit && n < bx.length; n++) {
             var b = bx[n], ha = air && ab[m][5] && b[5] ? air : 0;   // two heads, one of them flagged: air between them
-            if (hy) ha = 0;                                     // (a hymn's beamed voices need no flag's air)
+            if (hy) ha = ab[m][6] || b[6] ? 0.2 * sp : 0;      // (a hymn's beamed voices need no flag's air; a sharp is not set against the ink before it)
             if (ab[m][4] && b[4]) continue;                     // ledgers may meet
             if (ax0 - ha < b[2] + dx - tol && b[0] + dx < ax1 + ha - tol && ab[m][1] < b[3] - tol && b[1] < ab[m][3] - tol) hit = true;
           }
@@ -2256,11 +2549,13 @@ window.KolobViz = (function () {
       if (need <= dx) break;
       dx = need;
     }
-    gr.col = { sp: sp, dx: dx, boxes: bx };
+    gr.col = { sp: sp, dx: Math.min(dx, cap), boxes: bx };
     return dx;
   }
+  var foreignNow = [];                             // this frame's notes that are not a composed hymn's (drawHymnBar keeps clear of them)
   function drawPage(c) {
     var g = G, sp = g.sp, xR = g.xE + 3 * sp;
+    foreignNow.length = 0;
     // the groups — heads on their stems, in the one ink
     var keep = 0, beamsNow = [];
     for (var i = 0; i < groups.length; i++) {
@@ -2275,19 +2570,16 @@ window.KolobViz = (function () {
       var a = dryA(gr) * (gr.ink || 1);                    // a guest's own ink: the far choir's, the old tune's
       gr.lastA = a;
       if (a < 0.02) continue;
-      var heads = drawnHeads(gr, g), o = inkOpts(gr);
-      if (gr.beam) {                                           // a beamed note: its stem is the beam's
-        var bg = beamGeo(gr.beam, g);
-        if (bg) { gr.dir = bg.dir; o.flags = 0; }
-      }
-      x += gr.noCol ? 0 : placeColumn(gr, g, heads, o);
+      var pg = prepGroup(gr, g), heads = pg.heads, o = pg.o;
+      x += gr.noCol ? coDx(gr, g) : placeColumn(gr, g, heads, o);
       if (gr.beam && gr.beam.geo) {
         o.beamY = beamYAt(gr.beam, gr.beam.geo);
         if (beamsNow.indexOf(gr.beam) < 0) beamsNow.push(gr.beam);
       }
       c.globalAlpha = a;
       var r = drawGroup(c, g, x, heads, gr.st, gr.dir, o);
-      gr.drawnAt = FRAME; gr.lastX = x; gr.lastSx = r.sx; gr.lastL = r.L;
+      gr.drawnAt = FRAME; gr.lastX = x; gr.lastSx = r.sx; gr.lastL = r.L; gr.lastO = o;
+      if (!gr.hymn) foreignNow.push(gr);
       if (gr.ring) drawBellRing(c, g, x, g.y(gr.st, heads[0].q), gr.scale);
     }
     groups.length = keep;
@@ -2296,10 +2588,36 @@ window.KolobViz = (function () {
     c.globalAlpha = 1;
     drawQuestions(c);
   }
+  // a group's heads and how it is engraved, this frame (a beamed note's stem is the beam's)
+  function prepGroup(gr, g) {
+    var heads = drawnHeads(gr, g), o = inkOpts(gr);
+    if (gr.beam) {
+      var bg = beamGeo(gr.beam, g);
+      if (bg) { gr.dir = bg.dir; o.flags = 0; }
+    }
+    return { heads: heads, o: o };
+  }
+  // (a second voice's stem on the first's head goes where that head went)
+  function coDx(gr, g) { var p = gr.coOf; return p && p.col && p.col.sp === g.sp ? p.col.dx : 0; }
+  // the ink a group will lay, as boxes about its own time's x, and its
+  // column's offset: set now if it has not been (a bar asks after the notes
+  // before it)
+  function inkOf(gr, g) {
+    if (gr.noCol) {
+      if (!(gr.inkBx && gr.inkBx.sp === g.sp)) {
+        var pg = prepGroup(gr, g);
+        gr.inkBx = { sp: g.sp, boxes: groupBoxes(layoutGroup(g, 0, pg.heads, gr.st, gr.dir, pg.o), pg.o) };
+      }
+      return { dx: coDx(gr, g), boxes: gr.inkBx.boxes };
+    }
+    if (!(gr.col && gr.col.sp === g.sp)) { var p2 = prepGroup(gr, g); placeColumn(gr, g, p2.heads, p2.o); }
+    return gr.col;
+  }
   // how a group is engraved (alt: the stem it takes if its voice's own would be stubby)
   function inkOpts(gr) {
     return { scale: gr.scale, rgb: C_INK, noStem: gr.noStem, flags: gr.flags, slash: gr.slash, breve: gr.v && gr.v.breve, ring: gr.ring, thin: gr.thin, alt: gr.alt,
-             keep: gr.hymn && (gr.voice === "both" || (gr.voice !== "one" && gr.voice !== "hop")), room: gr.room, ferm: gr.ferm || 0 };
+             keep: gr.hymn && (gr.voice === "both" || (gr.voice !== "one" && gr.voice !== "hop")), room: gr.room, ferm: gr.ferm || 0,
+             tune: !!(gr.hymn && gr.tune && gr.voice !== "one" && gr.voice !== "hop" && gr.voice !== "both") };
   }
   // a bell: a ringed head — one thin ring, drawn with the head, that dries
   // with it (no spreading rings: nothing on the page moves but the scroll)
@@ -2779,7 +3097,7 @@ window.KolobViz = (function () {
     return {
       PT: PT, sp: G ? G.sp : null, xE: G ? G.xE : null,
       groups: groups.map(function (gr) { return { layer: gr.layer, tp: gr.tp, st: gr.st, dir: gr.dir, x: gr.drawnAt === FRAME ? gr.lastX : null, voice: gr.voice || null, beam: gr.beam ? gr.beam.members.indexOf(gr) : null, heads: gr.heads.map(function (h) { return h.q + (h.heavy ? "H" : "") + (h.ghost ? "G" : "") + (h.acc || "") + (h.jm ? "j" : "") + (h.orn ? "o" : ""); }).join(","), flags: gr.flags, alone: gr.alone ? !!gr.aloneOk : null }; }),
-      marks: marks.map(function (m) { return { kind: m.kind, type: m.type || null, tp: m.tp, x: X(m.tp) + (m.off || 0) * (G ? G.sp : 0), st: m.st || (m.sts || []).join(""), v: m.v, voice: m.voice }; }),
+      marks: marks.map(function (m) { return { kind: m.kind, type: m.type || null, tp: m.tp, x: X(m.tp) + (m.rel != null && G && m.relSp === G.sp ? m.rel : (m.off || 0) * (G ? G.sp : 0)), st: m.st || (m.sts || []).join(""), v: m.v, voice: m.voice, push: m.push ? m.push.dx : null }; }),
     };
   }
 
