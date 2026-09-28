@@ -108,14 +108,14 @@ window.KOLOB.Dialects = (function () {
              mk("vii°", 6, "D", { cost: 1.2, bassOnly: 1 }), mk("V7", 4, "D", { seventh: true, cost: 0.2 }), mk("ii7", 1, "P", { seventh: true, cost: 0.7, bassOnly: 1 }),
              mk("V/V", 1, "A", { a3: 1, cost: 0.35, to: ["V", "V7", "I64"] }), mk("V7/V", 1, "A", { a3: 1, seventh: true, cost: 0.55, to: ["V", "V7", "I64"] }),
              mk("V7/IV", 0, "A", { seventh: true, a7: -1, cost: 0.6, to: ["IV", "ii"] }), mk("V/vi", 2, "A", { a3: 1, cost: 1.0, to: ["vi"] }),
-             mk("vii°7/V", 3, "A", { a3: 0, cost: 0.9, dim7: true, only: "approach", to: ["V", "V7", "I64"] }),
+             mk("vii°7/V", 3, "A", { a3: 0, cost: 0.35, dim7: true, only: "approach", to: ["V", "V7", "I64"] }),
              mk("I64", 0, "C", { bassOnly: 2, cost: 0.2, to: ["V", "V7"] }));
       // the diminished seventh on the raised fourth: F♯ A C E♭
       var d7 = V[V.length - 2]; d7.tones = [{ c: 3, alt: 1 }, { c: 5, alt: 0 }, { c: 0, alt: 0 }, { c: 2, alt: -1 }]; d7.sev = true;
     } else if (MINOR[mode]) {
       V.push(mk("i", 0, "T"), mk("III", 2, "T", { cost: 0.3 }), mk("iv", 3, "P"), mk("v", 4, "D", { cost: 0.6 }), mk("V", 4, "D", { a3: 1 }),
              mk("V7", 4, "D", { a3: 1, seventh: true, cost: 0.2 }), mk("VI", 5, "T", { cost: 0.2 }), mk("VII", 6, "D", { cost: 0.4 }),
-             mk("vii°7", 6, "A", { cost: 0.9, dim7: true, only: "approach", to: ["i", "V", "V7"] }), mk("i64", 0, "C", { bassOnly: 2, cost: 0.2, to: ["V", "V7"] }));
+             mk("vii°7", 6, "A", { cost: 0.4, dim7: true, only: "approach", to: ["i", "V", "V7", "i64"] }), mk("i64", 0, "C", { bassOnly: 2, cost: 0.2, to: ["V", "V7"] }));
       var dd = V[V.length - 2]; dd.tones = [{ c: 6, alt: 1 }, { c: 1, alt: 0 }, { c: 3, alt: 0 }, { c: 5, alt: 0 }]; dd.sev = true;
       if (mode === "aeolian") V.push(mk("ii°", 1, "P", { bassOnly: 1, cost: 0.5 }));
       else V.push(mk("ii", 1, "P", { cost: 0.3 }), mk("IV", 3, "P", { cost: 0.4 }));
@@ -216,7 +216,10 @@ window.KOLOB.Dialects = (function () {
     for (var k = 0; k < n; k++) { var row = []; for (var v = 0; v < vocab.length; v++) row.push(u01(R) * 0.45); noise.push(row); }
     function emit(k, ch) {
       var s = slots[k], m = cls(s.deg), t = toneOf(ch, m), c = standing(ch) + noise[k][vocab.indexOf(ch)];
-      if (ch.only === "approach" && !(ctx.approach && ctx.approach.indexOf(k) >= 0)) return INF;
+      if (ch.only === "approach") {
+        if (!(ctx.approach && ctx.approach.indexOf(k) >= 0)) return INF;
+        if (ctx.favour && ctx.favour.indexOf(k) >= 0) c -= 0.3 + 0.45 * color;   // the organist's favourite colour, where it belongs
+      }
       if (t && t.alt !== 0) return INF;                              // a cross-relation with the tune
       // every other note of a melisma must at least pass by step
       for (var j = 1; j < s.notes.length; j++) {
@@ -291,6 +294,7 @@ window.KOLOB.Dialects = (function () {
     var mode = ctx.mode, B = ctx.bounds, T = ctx.tess, H = ctx.H || {}, out = [];
     var color = H.color != null ? H.color : 0.5;
     var sd = slot.deg, sS = semi(mode, sd, 0), sT = toneOf(ch, cls(sd));
+    var sMax = sS; slot.notes.forEach(function (n) { sMax = Math.max(sMax, semi(mode, n.deg, 0)); });   // (a melisma may climb)
     var sOut = semi(mode, slot.notes[slot.notes.length - 1].deg, 0);   // where a melisma leaves the tune
     var bassTones = [];
     if (ch.bassOnly != null) bassTones.push([ch.bassOnly, 0]);
@@ -309,7 +313,7 @@ window.KOLOB.Dialects = (function () {
         ch.tones.forEach(function (ta) {
           degsOfClass(ta.c, B.A).forEach(function (ad) {
             var sA = semi(mode, ad, ta.alt);
-            if (sA > sS || sS - sA > 12) return;
+            if (sA > sS || sMax - sA > 12) return;
             ch.tones.forEach(function (tt) {
               degsOfClass(tt.c, B.T).forEach(function (td) {
                 var sTn = semi(mode, td, tt.alt);
@@ -379,8 +383,14 @@ window.KOLOB.Dialects = (function () {
       c += v === 3 ? d * 0.04 : d * 0.13;
       if (v < 3 && d > 7) c += 1.5;
       if (v === 3 && d > 12) c += 2;
-      if (d === 6) c += 3;
+      if (d === 6) c += v === 3 ? 10 : 3;
       if (d === 0 && a.ch !== b.ch) c -= 0.2;
+    }
+    // no augmented second (fa to the raised seventh, in minor), no diminished third
+    var dA = [a.S, a.A, a.T, a.B], dB = [b.S, b.A, b.T, b.B];
+    for (v = 1; v <= 3; v++) {
+      var st = Math.abs(dB[v].d - dA[v].d), se = Math.abs(sb[v] - sa[v]);
+      if ((st === 1 && se === 3) || (st === 2 && se === 2)) c += 20;
     }
     // overlapping: a voice passing where its neighbour just was
     for (v = 0; v < 3; v++) { if (sb[v + 1] > sa[v]) c += 1; if (sb[v] < sa[v + 1]) c += 1; }
@@ -490,6 +500,10 @@ window.KOLOB.Dialects = (function () {
           }
           var iv = Math.abs(sm - sw) % 12;
           if (iv === 0 || (q === "S" && (iv === 1 || iv === 11))) bad = true;
+          // no crossing, and no gap over an octave between neighbouring upper voices
+          var ORD = ["S", "A", "T", "B"], ip = ORD.indexOf(p), iq = ORD.indexOf(q);
+          if ((iq < ip && sw < sm) || (iq > ip && sw > sm)) bad = true;
+          if (Math.abs(iq - ip) === 1 && ip + iq < 5 && Math.abs(sw - sm) > 12) bad = true;
           var m1 = sb - sm, m2 = swn - sw;
           if (m1 && m2 && (m1 > 0) === (m2 > 0)) {
             var i1 = Math.abs(sm - sw) % 12, i2 = Math.abs(sb - swn) % 12;
@@ -522,13 +536,16 @@ window.KOLOB.Dialects = (function () {
     var mode = ctx.mode, vocab = tabernacleVocab(mode), R = ctx.R, out = [], prevCh = null, prevV = null;
     ctx.lines.forEach(function (line, li) {
       var slots = slotsOf(line), Rl = R.fork("line:" + li);
-      var approach = [];
+      // where the approach diminished seventh may stand: leading into the
+      // tune's peak, and into the dominant of a cadence
+      var approach = [], favour = [];
       if (line.peakIdx >= 0) {
         var ps = -1; slots.forEach(function (s, k) { if (s.idx <= line.peakIdx && line.peakIdx < s.idx + s.notes.length) ps = k; });
-        if (ps >= 1) approach.push(ps - 1, ps);
+        if (ps >= 1) { approach.push(ps - 2, ps - 1, ps); favour.push(ps - 1, ps); }
       }
-      if (line.role === "home" || line.peakIdx >= 0) approach.push(slots.fin - 2);
-      var pc = planChords(line, slots, vocab, prevCh, { mode: mode, H: ctx.H, first: li === 0, approach: approach, shortBeat: ctx.shortBeat }, Rl.fork("chords"));
+      if (line.cadence === "authentic" || line.cadence === "half") approach.push(slots.fin - 2, slots.fin - 3);
+      if (line.role === "home") favour.push(slots.fin - 2);
+      var pc = planChords(line, slots, vocab, prevCh, { mode: mode, H: ctx.H, first: li === 0, approach: approach, favour: favour, shortBeat: ctx.shortBeat }, Rl.fork("chords"));
       var relaxed = false;
       if (!pc) { relaxed = true; pc = planChords({ cadence: "none", plan: null, role: line.role === "home" ? "home" : "open", notes: line.notes }, slots, vocab, prevCh, { mode: mode, H: ctx.H, first: li === 0, approach: [], shortBeat: 9, loose: true }, Rl.fork("chords:relaxed")); }
       var chords = pc.chords;
@@ -763,6 +780,8 @@ window.KOLOB.Dialects = (function () {
       function reqUpper(k, d, third) {
         var s = slots[k], c = 0;
         if ((s.final || s.trail) && third) c += line.role === "home" ? 30 : kind === "imperfect" ? 0 : 10;
+        // the last chord of a line is the chord its cadence names: home's, or the dominant's
+        if (s.final || s.trail) { var r = cls(d - finRoot); if (r !== 0 && r !== 2 && r !== 4) c += 12; }
         return c;
       }
       var bass = counterLine(slots, mode, B.B, { T: tune }, true, reqBass, openW * 0.25, nB, 0);

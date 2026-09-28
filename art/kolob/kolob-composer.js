@@ -530,8 +530,9 @@ window.KOLOB.Composer = (function () {
     var mp = D.melodyPart, rng = D.ranges[mp], tess = D.tess[mp];
     var best = 0, bestCost = 1e9;
     for (var o = -2; o <= 2; o++) {
-      var lo = keySemi + semi(fr.mode, Math.max(-3, peakTo - span) + 7 * o), hi = keySemi + semi(fr.mode, peakTo + 7 * o);
-      var c = Math.max(0, rng[0] - lo) * 3 + Math.max(0, hi - rng[1]) * 3 + Math.abs((lo + hi) / 2 - (tess[0] + tess[1]) / 2) * 0.2;
+      var lo = keySemi + semi(fr.mode, Math.max(-3, peakTo - span) + 7 * o), hi = keySemi + semi(fr.mode, peakTo + 7 * o), fin = keySemi + 12 * o;
+      // a final below the compass cannot be mended; a peak above it can come down
+      var c = Math.max(0, rng[0] - fin) * 10 + Math.max(0, rng[0] - lo) * 3 + Math.max(0, hi - rng[1]) * 1.5 + Math.abs((lo + hi) / 2 - (tess[0] + tess[1]) / 2) * 0.2;
       if (c < bestCost) { bestCost = c; best = o; }
     }
     // a peak the key puts out of reach comes down (to a note the mode has)
@@ -741,7 +742,10 @@ window.KOLOB.Composer = (function () {
     }
     c -= W.memory * memo;
     // a repair steers clear of the tune it echoed
-    if (P.avoid) for (i = 0; i < P.avoid.length; i++) { var ar = sharedRun(d, P.avoid[i]); if (ar >= 5) c += 3 * (ar - 4); }
+    if (P.avoid && P.avoid.length) {
+      var withTail = (P.prevTail || []).concat(d);
+      for (i = 0; i < P.avoid.length; i++) { var cl = closeness(withTail, P.avoid[i]); if (cl.quote) c += 8; else if (cl.run >= 5) c += cl.run - 4; }
+    }
     // the day's gesture, heard in the tune's opening line
     if (gesture && gesture.length > 2) {
       var gi = intervals(gesture), m2 = Math.min(gi.length, iv.length, 6), match = 0;
@@ -886,9 +890,10 @@ window.KOLOB.Composer = (function () {
         var tv = fixed[k - 1] + tw;
         fixed[k] = tv >= lo && tv <= hi && classes.indexOf(cls(tv)) >= 0 ? tv : fixed[k - 1];
       }
-      // a varied line keeps its model's head
+      // a varied line keeps its model's head (a late repair lets it go, when
+      // the head itself is what echoes another tune)
       var headN = 0;
-      if (first) {
+      if (first && !(repairRound >= 2 && avoid && avoid.length)) {
         headN = Math.max(2, Math.floor(Math.min(n, first.n) * 0.45));
         for (k = 0; k < headN && k < figStart; k++) fixed[k] = first.degs[k];
       }
@@ -923,14 +928,15 @@ window.KOLOB.Composer = (function () {
           else { var dj = Math.abs(s - prevEnd); w *= dj <= 2 ? 2 : dj <= 4 ? 1 : 0.15; }
           sPool.push([s, w]);
         }
-        start = pickW(L.startDie, sPool);
+        start = pickW(repairRound ? L.startDie.fork("repair:" + repairRound) : L.startDie, sPool);
         fixed[0] = start;
       }
       var apex = L.peak ? sk.peak : Math.min(hi, Math.max(start, target) + 2 + Math.floor(u01(L.die.fork("apex")) * 2.5));
       var apexPos = L.peak && peakIdx > 0 ? peakIdx / (n - 1) : 0.45;
       var P = { notes: notes, fixed: fixed, lo: lo, hi: hi, start: start, letter: L.letter, prevEnd: prevEnd, doDeg: doDeg, home: sk.base, major: major,
                 curve: contourCurve(L.contour, n, start, target, apex, apexPos, lo), leapTarget: leapTarget, sequence: H ? H.sequence : 0.3,
-                avoid: (avoid || []).map(function (a) { return a.map(function (x) { return x + sk.base; }); }) };
+                avoid: (avoid || []).map(function (a) { return a.map(function (x) { return x + sk.base; }); }),
+                prevTail: done.length ? done[done.length - 1].degs.slice(-5) : [] };
       var res = searchLine(P, W, mode, classes, done, i === 0 ? gesture : null, R, tries);
       var rec = { i: i, letter: L.letter, role: L.role, plan: L.plan, degs: res.degs, n: n, syl: L.syl, cadence: L.cadence, targetClass: L.targetClass, figure: L.figure,
                   figSteps: L.figSteps.slice(), target: target, peakIdx: peakIdx, headN: headN, cost: r3(res.cost), topSpread: res.topSpread };
@@ -1075,6 +1081,19 @@ window.KOLOB.Composer = (function () {
     });
     return EARTH_MEL;
   }
+  // how close two melodies come: the longest run of intervals they share —
+  // and whether it is the tune's own (a scale walked by step is everyone's:
+  // a run is only a quotation when it is long, or carries leaps of its own)
+  function closeness(a, b) {
+    var ia = intervals(a), ib = intervals(b), best = { run: 0, leaps: 0 };
+    for (var i = 0; i < ia.length; i++) for (var j = 0; j < ib.length; j++) {
+      var k = 0, lp = 0;
+      while (i + k < ia.length && j + k < ib.length && ia[i + k] === ib[j + k]) { if (Math.abs(ia[i + k]) >= 2) lp++; k++; }
+      if (k > best.run || (k === best.run && lp > best.leaps)) best = { run: k, leaps: lp };
+    }
+    best.quote = best.run >= 9 || (best.run >= 6 && best.leaps >= 2);
+    return best;
+  }
   function melodyOf(h) {
     var m = [];
     (h.lines || []).concat(h.refrain || []).forEach(function (l) { (l.notes[h.melodyPart] || []).forEach(function (n) { if (n.syl !== null) m.push(n.deg); }); });
@@ -1145,12 +1164,12 @@ window.KOLOB.Composer = (function () {
     var nd = Object.keys(distinct).length, boring = nd < (D.id === "oldway" ? 4 : 5) || Object.keys(durs).length < 2;
     add("not a boring tune", !boring, nd + " pitches, " + Object.keys(durs).length + " note lengths");
     // 7. not an Earth tune, and not another hymn of the meeting
-    var near = { run: 0, id: null };
-    earthMelodies().forEach(function (e) { var r = sharedRun(mel, e.degs); if (r > near.run) near = { run: r, id: e.id }; });
-    add("not an Earth tune", near.run < 7, "longest run of intervals shared with an Earth tune: " + near.run + (near.id ? " (" + near.id.replace("earth:", "").toUpperCase() + ")" : ""));
-    var nearO = { run: 0, id: null };
-    (ctx.others || []).forEach(function (o) { var r = sharedRun(mel, melodyOf(o)); if (r > nearO.run) nearO = { run: r, id: o.id }; });
-    add("not another hymn of the meeting", nearO.run < 6, (ctx.others || []).length ? "longest shared run: " + nearO.run : "no other hymn given");
+    var near = { run: 0, leaps: 0, quote: false, id: null };
+    earthMelodies().forEach(function (e) { var r = closeness(mel, e.degs); if (r.quote > near.quote || (r.quote === near.quote && r.run > near.run)) { r.id = e.id; near = r; } });
+    add("not an Earth tune", !near.quote, "longest run of intervals shared with an Earth tune: " + near.run + " (" + near.leaps + " leaps)" + (near.id ? ", " + near.id.replace("earth:", "").toUpperCase() : "") + " — a quotation is 9 in a row, or 6 with two leaps");
+    var nearO = { run: 0, leaps: 0, quote: false };
+    (ctx.others || []).forEach(function (o) { var r = closeness(mel, melodyOf(o)); if (r.quote > nearO.quote || (r.quote === nearO.quote && r.run > nearO.run)) nearO = r; });
+    add("not another hymn of the meeting", !nearO.quote, (ctx.others || []).length ? "longest shared run: " + nearO.run + " (" + nearO.leaps + " leaps)" : "no other hymn given");
     // the idiom: this hymn's fingerprint against the dialect's Earth tunes (reported, not a gate:
     // one short hymn can stray where thirty cannot — the lab's spread panel measures the thirty)
     var tol = D.tolerance, idiom = [];
@@ -1247,13 +1266,14 @@ window.KOLOB.Composer = (function () {
     var tempoDie = R.fork("tempo").rnd(0.95, 1.05);
     var best = null, repairs = [];
     var mel = composeMelody(fr, sk, rh, D, H, gesture, 0);
-    for (var round = 0; round < 4; round++) {
+    for (var round = 0; round < 6; round++) {
       if (round > 0) {
         var failed = best.result.checks.filter(function (c) { return c.hard && !c.ok; }).map(function (c) { return c.name; });
         repairs.push({ round: round, failed: failed });
-        var melodyFail = failed.some(function (f) { return /peak|boring|Earth|another hymn|range/.test(f); });
+        // (a setting that will not come right with this tune is given another tune, from round two)
+        var melodyFail = failed.some(function (f) { return /peak|boring|Earth|another hymn|range/.test(f) || (round >= 2 && /voice-leading|cadence/.test(f)); });
         var avoid = [];
-        if (best.result.earthNearest && best.result.earthNearest.run >= 7) earthMelodies().forEach(function (e) { if (e.id === best.result.earthNearest.id) avoid.push(e.degs); });
+        if (best.result.earthNearest && best.result.earthNearest.quote) earthMelodies().forEach(function (e) { if (e.id === best.result.earthNearest.id) avoid.push(e.degs); });
         (opts.others || []).forEach(function (o) { avoid.push(melodyOf(o)); });
         if (melodyFail) mel = composeMelody(fr, sk, rh, D, H, gesture, round, null, avoid);
       }

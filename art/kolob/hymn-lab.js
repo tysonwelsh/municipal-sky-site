@@ -98,11 +98,12 @@
   var MODE_NAME = { ionian: "ionian (major)", mixolydian: "mixolydian", dorian: "dorian", aeolian: "aeolian (minor)", penta: "pentatonic", hexa: "hexatonic" };
   function render() {
     var h = hymn, r = h.report, Dl = D.get(h.dialect);
-    var bpm = Math.round(60 / h.beatS);
+    // the pulse a singer feels: the dotted crotchet in 6/8, else the written beat
+    var compound = /\/8$/.test(h.modeOfTime), bpm = Math.round(60 / (h.beatS * (compound ? 3 : 1)));
     $("khl-hymn").innerHTML =
       '<div class="khl-board"><span class="khl-num">' + h.number + '</span><span class="khl-name">' + esc(h.nameDs) + '</span><span class="khl-en">' + esc(h.nameEn) + " (dev)</span></div>" +
       '<p class="khl-meta"><b>' + esc(DIALECT_NAME[h.dialect]) + "</b> · " + esc(METER_NAMES[h.meter] || h.meter) + " · form " + esc(h.form) + " · " + esc(MODE_NAME[h.mode]) +
-      " · " + esc(h.modeOfTime) + " at " + bpm + " beats a minute · " + (h.hymnist ? "by " + esc(h.hymnist.nameDs) + ' <span class="khl-en">' + esc(h.hymnist.nameEn) + "</span>" : "") +
+      " · " + esc(h.modeOfTime) + " at " + bpm + (compound ? " dotted-crotchet beats" : " beats") + " a minute · " + (h.hymnist ? "by " + esc(h.hymnist.nameDs) + ' <span class="khl-en">' + esc(h.hymnist.nameEn) + "</span>" : "") +
       (r.frame.alto ? " · with an alto" : h.dialect === "sacredharp" ? " · three parts (no alto)" : "") + "</p>" +
       '<p class="khl-about">' + esc(Dl.about) + (h._theme && h._theme.name ? " · first line seeded from the day's theme, “" + esc(h._theme.name) + "”" : "") + " · composed in " + h._ms + " ms</p>" +
       '<div class="khl-score" id="khl-scorebox">' + engrave(h) + "</div>";
