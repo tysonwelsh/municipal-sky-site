@@ -237,10 +237,15 @@ window.KOLOB.Cast = (function () {
     filling.sort(function (a, b) { return ROLE_ORDER.indexOf(a) - ROLE_ORDER.indexOf(b); });
     for (var ti = 0; ti < nTest; ti++) filling.push("testimony");
     filling.push("organist");
-    var testN = 0;
+    var testN = 0, usedArch = {};
     filling.forEach(function (role) {
       var label = role === "testimony" ? "role:testimony:" + testN++ : "role:" + role;
-      var r = stream.fork(label), arch = r.pick(ROSTER[role]);
+      // (the testimony-bearers are drawn without replacement: two young
+      // fathers on one Sunday is one too many — the same single die, a
+      // smaller pool)
+      var pool = ROSTER[role].filter(function (a) { return !usedArch[role + ":" + a.id]; });
+      var r = stream.fork(label), arch = r.pick(pool.length ? pool : ROSTER[role]);
+      usedArch[role + ":" + arch.id] = true;
       var person;
       if (role === "child" || role === "organist") {
         // the child sits with a family (a mother or father in the pews); the
@@ -276,11 +281,37 @@ window.KOLOB.Cast = (function () {
       var h = arch.habit || {}, habit = {};
       Object.keys(h).forEach(function (key) { habit[key] = typeof h[key] === "string" ? h[key] : round(rr(r, h[key]), 3); });
       person.habit = habit;
+      // the people who lead keep time: the chorister (who sets the tempo
+      // and cuts off), the precentor and the soloist are on the beat and on
+      // the note, whatever habit the pew had given them (drawn last, so no
+      // other die moves)
+      if (LEADS[role] && person.voice) {
+        person.voice.timingHabitMs = round(r.rnd(LEADS[role][0], LEADS[role][1]), 1);
+        person.voice.pitchHabitCents = round(r.rnd(-LEADS[role][2], LEADS[role][2]), 2);
+      }
       if (role === "testimony") (roles.testimony = roles.testimony || []).push(person.id); else roles[role] = person.id;
       individuals.push(person.id);
     });
+    // who is who: no two of the people you come to know share a name, and
+    // none shares one with anyone in the pews (the log and the chart name
+    // them) — a clash re-draws the later one's given name, on a fork of its own
+    var nameCount = {};
+    members.forEach(function (m) { nameCount[m.nameDs] = (nameCount[m.nameDs] || 0) + 1; });
+    individuals.forEach(function (id) {
+      var m = byId[id];
+      if (nameCount[m.nameDs] < 2) return;
+      var rn = stream.fork("rename:" + id), list = m.part === "child" ? CHILDREN : m.part === "S" || m.part === "A" ? WOMEN : m.part === "T" || m.part === "B" ? MEN : WOMEN.concat(MEN);
+      var fam = FAMILIES.filter(function (f) { return f[0] === m.family; })[0];
+      for (var tries = 0; tries < 24 && nameCount[m.nameDs] > 1; tries++) {
+        var g = rn.pick(list), ds = deseret(g[1] + " " + fam[1]);
+        if (nameCount[ds]) continue;
+        nameCount[m.nameDs]--; m.nameDs = ds; m.nameEn = g[0] + " " + fam[0]; nameCount[ds] = 1;
+      }
+    });
     return { members: members, byId: byId, individuals: individuals, roles: roles };
   }
+  // [timing habit lo, hi (ms), pitch habit ± (cents)] for the roles that lead
+  var LEADS = { chorister: [-4, 6, 4], precentor: [-5, 8, 5], soloist: [-5, 5, 4] };
 
   // who fills a role this Sunday (or null)
   function who(ward, role) { var id = ward.roles[role]; return id ? ward.byId[Array.isArray(id) ? id[0] : id] : null; }
@@ -539,7 +570,8 @@ window.KOLOB.Cast = (function () {
   // → { cues: [Cue…], organ: [OrganCue…], events: [typed events], end,
   //     joins: [{t, kind: "note"|"line"}] (for the benches), forwardAt: [...] }
   //   Cue = { at, memberId, bus: "hall"|"near", pan, gain, notes: [{f, dur,
-  //           vowel, stress, slur, slide}], breathBefore, what, verse, line }
+  //           vowel, stress, slur, slide}], breathBefore (the silence since
+  //           this singer's own last note), what, verse, line }
   //   OrganCue = { at, notes: [{f, dur, at, pedal, v}], registration }
   // ==========================================================================
   var WARD_GAIN = 1 / Math.sqrt(8);
@@ -631,7 +663,7 @@ window.KOLOB.Cast = (function () {
           var vOf = vowelOf;
           // the child loses the words of one line (hums), and finds them in the next
           if (role === "child" && m.habit && R) {
-            var lose = R.fork("child:" + vi).rnd(0, 1) < (m.habit.loses || 0.5), lostLine = R.fork("child:" + vi).rint(0, lines.length - 2);
+            var cr = R.fork("child:" + vi), lose = cr.rnd(0, 1) < (m.habit.loses || 0.5), lostLine = cr.rint(0, lines.length - 2);   // one fork, two draws
             if (lose && li === lostLine) { vOf = function () { return "hum"; }; castEv(t0, m, "loses the words"); }
             if (lose && li === lostLine + 1) castEv(t0, m, "finds them again");
           }
@@ -686,6 +718,15 @@ window.KOLOB.Cast = (function () {
       t = t0a + lineSpan(hymn.amen, null, beat0, (plan.rubato || 0) * 1.5, plan.holdMul);
     }
     cues.sort(function (a, b) { return a.at - b.at; });
+    // the breath each singer really has before each line: the silence since
+    // their own last note (the voices fit the inhale inside it; the figures
+    // above stand only for a singer's first line of the hymn)
+    var lastEnd = {};
+    cues.forEach(function (c) {
+      var len = 0; c.notes.forEach(function (n) { len += n.dur; });
+      if (lastEnd[c.memberId] != null) c.breathBefore = round(Math.max(0, Math.min(0.8, c.at - lastEnd[c.memberId])), 3);
+      lastEnd[c.memberId] = Math.max(lastEnd[c.memberId] != null ? lastEnd[c.memberId] : -1e9, c.at + len);
+    });
     events.sort(function (a, b) { return a.t - b.t; });
     return { hymnId: hymn.id, cues: cues, organ: organ, events: events, joins: joins, end: round(t, 3) };
 
@@ -695,7 +736,7 @@ window.KOLOB.Cast = (function () {
       // her octave: do near the middle of her part
       var mid = { S: 392, A: 294, T: 220, B: 147 }[part] || 262, doHz = keynote * ratio(hymn.keyMonzo || [0, 0, 0, 0]);
       while (doHz < mid / 1.45) doHz *= 2; while (doHz > mid * 1.45) doHz /= 2;
-      var firstM = first.S || first.T || first.melody, fHz = firstM ? keynote * ratio(hymn.keyMonzo || [0, 0, 0, 0]) * ratio(firstM.monzo) : doHz;
+      var firstM = first.melody || first.S || first.T, fHz = firstM ? keynote * ratio(hymn.keyMonzo || [0, 0, 0, 0]) * ratio(firstM.monzo) : doHz;
       while (fHz < doHz / 1.5) fHz *= 2; while (fHz > doHz * 1.9) fHz /= 2;
       var d0 = doOf(hymn.mode), notes;
       function deg(d) { var mz = spelled(hymn, d0 + d, 0); return mz ? doHz * ratio(mz) / ratio(spelled(hymn, d0, 0)) : doHz; }
@@ -788,6 +829,7 @@ window.KOLOB.Cast = (function () {
   //   now whatever the count.
   // ==========================================================================
   var LEAD = 0.7;   // how early a cue must be handed over: the inhale, the consonant
+  var FORWARD_INHALE = 0.55;   // the chance a forward voice's breath is heard (the ward's is ~0.1)
   function performer(ward, opts) {
     opts = opts || {};
     var V = opts.V || K.VoicesVocal, synth = opts.synth, singers = {};
@@ -805,7 +847,10 @@ window.KOLOB.Cast = (function () {
       while (sheet._ci < sheet.cues.length && t0 + sheet.cues[sheet._ci].at - LEAD <= horizon) {
         if (handed.length >= max && t0 + sheet.cues[sheet._ci].at - LEAD > urgent) break;
         var c = sheet.cues[sheet._ci++];
-        voiceOf(c.memberId).sing(ctx, c.bus === "near" ? buses.near : buses.hall, t0 + c.at, c.notes, c.gain, { breathBefore: c.breathBefore, pan: c.pan });
+        // a voice heard on its own breathes where a person would; in the
+        // ward, only a few are heard to (the voices' own small share)
+        voiceOf(c.memberId).sing(ctx, c.bus === "near" ? buses.near : buses.hall, t0 + c.at, c.notes, c.gain,
+                                 { breathBefore: c.breathBefore, pan: c.pan, inhale: c.forward ? FORWARD_INHALE : null });
         handed.push(c);
       }
       while (sheet._oi < sheet.organ.length && t0 + sheet.organ[sheet._oi].at - LEAD <= horizon) {
