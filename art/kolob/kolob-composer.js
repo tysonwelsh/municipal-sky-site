@@ -56,7 +56,10 @@
 // kolob-dialects.js; here are what they need of the desk — E's kinds and D's
 // refrain in the frame, the fuge's longer line and the septimal tuning in
 // the Score, their own checks — and the three new kinds of piece at the
-// foot: the round, the partner hymn, the wandering refrain.
+// foot: the round, the partner hymn, the wandering refrain. (Its second
+// pass, after the critic: a fuge may run across two Score lines; D's chords
+// are tuned a line at a time, so a note sung again stays put; the refrain's
+// compass is measured against the day's keys before it is drawn.)
 // ============================================================================
 
 window.KOLOB = window.KOLOB || {};
@@ -694,7 +697,7 @@ window.KOLOB.Composer = (function () {
         var degs = steps.map(function (s) { return cad[1] + s; });
         if (!degs.every(function (d) { return classes.indexOf(cls(d)) >= 0; })) continue;
         if (tritoneIn(fr.mode, degs)) continue;                    // (sol–do is a tritone in some modes' places)
-        var fw = D.figures[fnm];
+        var fw = D.figures[fnm] * (fr.kind && D.kindFigures && D.kindFigures[fr.kind] && D.kindFigures[fr.kind][fnm] != null ? D.kindFigures[fr.kind][fnm] : 1);
         var hf = D.homeFigures ? D.homeFigures[MINOR[fr.mode] ? "minor" : "major"] : null;
         if (role === "home" && hf && hf[fnm] != null) fw *= hf[fnm];
         if (H && role === "home") (H.ending || []).forEach(function (e) { if (figureName(e[0]) === fnm) fw *= 1 + 0.6 * e[1]; });
@@ -757,6 +760,10 @@ window.KOLOB.Composer = (function () {
     var N = sk.lines.length, byLetter = {};
     return sk.lines.map(function (L, i) {
       var cellPool = weightsOf(D.cells, H && H.cells, 0.4);
+      // (round 3, second pass: a dialect may lean its cells by the mode of time —
+      // dialect E's dotted six-eight foot slurs a syllable over two notes, and
+      // the unison songs had come to slur twice as often as SIMPLE GIFTS, which never does)
+      if (D.timeCells && D.timeCells[fr.time]) cellPool = cellPool.map(function (c) { var m = D.timeCells[fr.time][c[0]]; return m != null ? [c[0], c[1] * m] : c; });
       var cell = pickW(L.cellDie.fork("which"), cellPool);
       var rate = D.cellRate != null ? D.cellRate : 0.5;
       var ids = [];
@@ -1027,6 +1034,13 @@ window.KOLOB.Composer = (function () {
     var W = D.weights, doDeg = sk.base + DO_OF[mode], major = !MINOR[mode] && mode !== "mixolydian";
     var tries = D.search + (repairRound ? 80 : 0);
     var leapTarget = clamp((H ? H.leap : D.leap) * (D.leapScale || 1), 0.05, 0.7);
+    // (round 3, second pass: dialect E's kinds walk by their own measure — a
+    // Shaker hymn most of all, SIMPLE GIFTS leaping one step in seven; the
+    // unison songs had leapt one in three, whatever the hymnist's habit)
+    if (fr.kind && D.kindLeap && D.kindLeap[fr.kind] != null) {
+      leapTarget = clamp(leapTarget * D.kindLeap[fr.kind], 0.05, 0.7);
+      if (D.kindWeights && D.kindWeights[fr.kind]) { var W2 = {}; for (var wk in W) W2[wk] = W[wk]; for (wk in D.kindWeights[fr.kind]) W2[wk] = D.kindWeights[fr.kind][wk]; W = W2; }
+    }
     sk.lines.forEach(function (L, i) {
       var lay = rh[i], notes = lay.notes, n = notes.length;
       var R = L.die.fork(repairRound ? "repair:" + repairRound : "melody");
@@ -1345,18 +1359,118 @@ window.KOLOB.Composer = (function () {
     });
     return best;
   }
-  // (dialect D) the chords in time order, each tuned to agree with any note
-  // HELD into it from the chord before — a swipe's lead, a suspension — for
-  // a held note cannot move, and the chord that turns under it must be tuned
-  // to it (the barbershop's rule: the lead holds, the others find the ring)
-  function tuneLinePartsHeld(mode, parts, chords) {
+  // EVERY TUNING A CHORD MAY TAKE (dialect D): its spelled root, or a
+  // syntonic comma either side, so long as each tone stays within a comma
+  // of its spelling — the ringing seventh 4:5:6:7; and a minor seventh chord
+  // sung as its own harmonics, 10:12:15:18 (the seventh 9/5), so that ii7 may
+  // stand on the grave re, 10/9, with fa, la and do where the scale has them.
+  // (The first three dialects keep tuneChordTones' one best tuning.)
+  var MIN7_IV = [0, 2, -1, 0];                                              // 9/5
+  // how far a pitch stands from its spelling, in cents, as the proofreader
+  // reads it: a septimal note through Johnston's 7 (each 7 in its monzo is a
+  // 36/35 below the note it marks)
+  var JOHNSTON7 = mzCents([2, 2, -1, -1]);
+  function offSpelling(m, sp) { return mzCents(m) - mzCents(sp) + JOHNSTON7 * (m[3] || 0); }
+  function chordTunings(mode, tones, seven, min7) {
+    var root = tones[0], rootSp = spelledMonzo(mode, root[0], root[1]), out = [];
+    [0, 1, -1].forEach(function (k, ki) {
+      var r = k === 0 ? rootSp : k > 0 ? mz(rootSp, COMMA) : mz(rootSp, mzNeg(COMMA));
+      var by = {}, cost = Math.abs(k) * 0.6 + ki * 1e-4, ok = true;        // (a tie keeps the spelling, then a comma up, as tuneChordTones does)
+      tones.forEach(function (t, i) {
+        var sp = spelledMonzo(mode, t[0], t[1]), st = ((semi(mode, t[0], t[1]) - semi(mode, root[0], root[1])) % 12 + 12) % 12;
+        var iv = seven ? SEPT_IV[Math.min(i, 3)] : min7 && st === 10 ? MIN7_IV : JUST[st];
+        var m = i === 0 ? r : mz(r, iv), dc = mzCents(m) - mzCents(sp), o = Math.round(dc / 1200);
+        m = mz(m, [-o, 0, 0, 0]);
+        // (the seventh partial: spelled on its degree with Johnston's 7, and
+        // within a syntonic comma of that spelling — so V7 and II7 never stand
+        // a comma high, where the seventh would read two commas sharp)
+        if (seven && i === 3) { if (Math.abs(offSpelling(m, sp)) > 23) ok = false; by[t[0] + ":" + t[1]] = { m: m, dev: 0, sept: true }; return; }
+        var dev = Math.round((mzCents(m) - mzCents(sp)) / 21.506);
+        if (Math.abs(dev) > 1) ok = false;
+        cost += Math.abs(dev);
+        by[t[0] + ":" + t[1]] = { m: m, dev: dev };
+      });
+      if (ok) out.push({ byClass: by, cost: cost, k: k, ring: !!seven });
+    });
+    return out;
+  }
+  // (dialect D) THE LINE'S TUNINGS CHOSEN TOGETHER. Each chord could take
+  // the tuning that moves the fewest of its own notes off their spelling —
+  // and round 3's critic heard what that costs: a voice singing the same
+  // written note again into the next chord slid a comma, 189 times in forty
+  // hymns, 42 of them a quarter-tone (fa from ii7 on 9/8, 27/20, down to the
+  // ringing seventh of V7, 21/16; sol from I down to VI7's seventh on 5/3,
+  // 35/24). A barbershop quartet tunes the chord to the note it already has.
+  // So the line's chords choose their roots together, by a small search: each
+  // tuning's own cost (its notes off their spelling), and at every change of
+  // chord a cost for every note a voice strikes again that does not stay put
+  // (squared, and a quarter-tone surcharged, so one 49-cent slide costs far
+  // more than two commas shared; the lead's, the tune's own, three times
+  // over), and for a bass
+  // that moves by an impure fourth or fifth. The
+  // chain then stands on pure fifths — VI7 on 27/16, II7 on 9/8, V7 on 3/2 —
+  // and a prepared seventh falls by the septimal comma, 27 c, at most.
+  function chooseTunings(mode, parts, order, lead) {
+    var cands = order.map(function (ch) {
+      var seven = !!(ch.ring && ch.tones && ch.tones.length === 4), c = ch.tones ? chordTunings(mode, ch.tones, seven, ch.quality === "min7") : [];
+      return c.length ? c : [{ byClass: null, cost: 0, k: 0 }];
+    });
+    function chordOf(b) { var ci = -1; for (var i = 0; i < order.length; i++) if (order[i].beat <= b + EPS) ci = i; return ci; }
+    // the joins each change of chord makes: a voice's note struck again, and the bass's step
+    var joins = order.map(function () { return []; }), bass = order.map(function () { return null; });
+    for (var p in parts) {
+      var ns = parts[p];
+      for (var k = 1; k < ns.length; k++) {
+        var a = ns[k - 1], b = ns[k];
+        if (a.nct || b.nct || Math.abs(a.beat + a.beats - b.beat) > EPS) continue;
+        var ci = chordOf(b.beat);
+        if (ci < 1 || chordOf(a.beat) !== ci - 1) continue;
+        if (a.deg === b.deg && (a.alt || 0) === (b.alt || 0)) joins[ci].push([a, b, p === lead ? 3 : 1]);
+        if (p === "B") bass[ci] = [a, b];
+      }
+    }
+    function pitch(n, c) { return mzCents(tuneNote(mode, n, c.byClass ? c : null).monzo); }
+    function step(ci, u, v) {
+      var cu = cands[ci - 1][u], cv = cands[ci][v], c = 0;
+      joins[ci].forEach(function (j) { var d = Math.abs(pitch(j[0], cu) - pitch(j[1], cv)) / 21.506; c += (d * d + (d > 1.5 ? 6 : 0)) * j[2]; });
+      if (bass[ci]) {
+        var iv = Math.abs(pitch(bass[ci][1], cv) - pitch(bass[ci][0], cu)) % 1200;
+        if ((Math.abs(iv - 700) < 30 || Math.abs(iv - 500) < 30) && Math.abs(iv - 701.955) > 1 && Math.abs(iv - 498.045) > 1) c += 0.8;
+      }
+      return c;
+    }
+    var cost = [], back = [];
+    order.forEach(function (ch, ci) {
+      cost.push([]); back.push([]);
+      cands[ci].forEach(function (cv, v) {
+        if (ci === 0) { cost[0].push(cv.cost); back[0].push(-1); return; }
+        var best = 1e18, arg = 0;
+        cands[ci - 1].forEach(function (cu, u) { var x = cost[ci - 1][u] + step(ci, u, v); if (x < best - 1e-9) { best = x; arg = u; } });
+        cost[ci].push(best + cv.cost); back[ci].push(arg);
+      });
+    });
+    var pick = new Array(order.length);
+    if (order.length) {
+      var last = 0, L = cost[order.length - 1];
+      for (var v2 = 1; v2 < L.length; v2++) if (L[v2] < L[last] - 1e-9) last = v2;
+      for (var ci2 = order.length - 1; ci2 >= 0; ci2--) { pick[ci2] = cands[ci2][last]; last = back[ci2][last]; }
+    }
+    return pick.map(function (c) { return c && c.byClass ? c : null; });
+  }
+  // (dialect D) the chords in time order, each tuned as the line's search
+  // chose — and to agree with any note HELD into it from the chord before (a
+  // swipe's lead, a suspension), for a held note cannot move, and the chord
+  // that turns under it must be tuned to it (the barbershop's rule: the lead
+  // holds, the others find the ring)
+  function tuneLinePartsHeld(mode, parts, chords, lead) {
     var order = chords.slice().sort(function (a, b) { return a.beat - b.beat; }), all = [];
     for (var p in parts) parts[p].forEach(function (n) { all.push(n); });
+    var chosen = chooseTunings(mode, parts, order, lead);
     order.forEach(function (ch, ci) {
       var end = ci + 1 < order.length ? order[ci + 1].beat : 1e9;
       var held = all.filter(function (n) { return n.beat < ch.beat - EPS && n.beat + n.beats > ch.beat + EPS && n.monzo && !n.nct; });
       var seven = ch.ring && ch.tones && ch.tones.length === 4;
-      var tt0 = (seven && tuneChordTones7(mode, ch.tones)) || tuneChordTones(mode, ch.tones);
+      var tt0 = chosen[ci];
       // a note held into the chord fixes it: the root is found FROM the held
       // note (the lead holding do while the chord swipes to II7 makes do the
       // seventh partial, and re, fi and la are tuned to it — 8/7, a septimal
@@ -1376,8 +1490,10 @@ window.KOLOB.Composer = (function () {
             var m = mz(r0, iv), dc = mzCents(m) - mzCents(sp); m = mz(m, [-Math.round(dc / 1200), 0, 0, 0]);
             by[t[0] + ":" + t[1]] = { m: m, dev: Math.round((mzCents(m) - mzCents(sp)) / 21.506), sept: !!(seven && i === 3) };
           });
-          // (only while every tone stays within a comma and a septimal comma of its spelling)
-          if (Object.keys(by).every(function (k2) { return Math.abs(mzCents(by[k2].m) - mzCents(spelledMonzo(mode, +k2.split(":")[0], +k2.split(":")[1]))) < 52; })) tt0 = { byClass: by };
+          // (only while every tone stays within a syntonic comma of its
+          // spelling — a septimal one read through Johnston's 7 — the
+          // proofreader's own allowance)
+          if (Object.keys(by).every(function (k2) { return Math.abs(offSpelling(by[k2].m, spelledMonzo(mode, +k2.split(":")[0], +k2.split(":")[1]))) < 23; })) tt0 = { byClass: by };
         }
       }
       all.forEach(function (n) {
@@ -1395,8 +1511,8 @@ window.KOLOB.Composer = (function () {
     all.forEach(function (n) { if (!n.monzo || (n.monzo.join() === "0,0,0,0" && n.deg !== 0)) { n.monzo = spelledMonzo(mode, n.deg, n.alt || 0); n.comma = 0; } });
     return 0;
   }
-  function tuneLineParts(mode, parts, chords, ring) {
-    if (ring) return tuneLinePartsHeld(mode, parts, chords);
+  function tuneLineParts(mode, parts, chords, ring, lead) {
+    if (ring) return tuneLinePartsHeld(mode, parts, chords, lead);
     var wolves = 0;
     for (var p in parts) parts[p].forEach(function (n) {
       var ch = null;
@@ -1573,7 +1689,7 @@ window.KOLOB.Composer = (function () {
       var pl = l.plan, mel = l.notes[h.melodyPart], fin = null;
       for (var k = mel.length - 1; k >= 0; k--) if (mel[k].stress && mel[k].syl !== null) { fin = mel[k]; break; }
       var targetOk = fin && cls(fin.deg - ctx.sk.base) === cls(pl.targetClass);
-      var kindOk = pl.cadence === l.cadence.kind || (pl.cadence === "imperfect" && l.cadence.kind === "authentic");
+      var kindOk = pl.cadence === l.cadence.kind || (pl.cadence === "imperfect" && l.cadence.kind === "authentic") || !!l.plan.elided;   // (a fuge runs on through its first line's close)
       if (!targetOk || !kindOk) missed.push("line " + (i + 1) + ": planned " + pl.cadence + " on " + pl.targetClass + ", got " + l.cadence.kind + (targetOk ? "" : " (wrong last note)"));
     });
     add("cadence plan met", !missed.length, missed.length ? missed.join("; ") : lines.map(function (l) { return l.cadence.kind; }).join(" · "));
@@ -1633,7 +1749,18 @@ window.KOLOB.Composer = (function () {
     add("not another hymn of the meeting", !nearO.quote, (ctx.others || []).length ? "longest shared run: " + nearO.run + " (" + nearO.leaps + " leaps)" : "no other hymn given");
     // 8. (round 3) each new dialect's own law
     if (D.id === "psalmody") {
-      var fg = h.fuge, fl = fg ? h.lines[fg.line] : null;
+      var fg = h.fuge, fl = null;
+      // (the fuge as sung: its line, or its two lines run together — the
+      // second's notes moved on by the first's length)
+      if (fg) {
+        var fls = (fg.lines || [fg.line]).map(function (i) { return h.lines[i]; }), fOff = 0;
+        fl = { notes: {}, cadence: null };
+        fls.forEach(function (l, j) {
+          Object.keys(l.notes).forEach(function (q) { (fl.notes[q] = fl.notes[q] || []).push.apply(fl.notes[q], l.notes[q].map(function (n) { return { beat: n.beat + fOff, beats: n.beats, deg: n.deg, alt: n.alt, syl: n.syl }; })); });
+          if (j === fls.length - 1) fl.cadence = { kind: l.cadence.kind, beat: l.cadence.beat + fOff };
+          fOff += j + 1 < fls.length ? fls[j + 1].startBeat - l.startBeat : 0;
+        });
+      }
       if (fl) {
         var probs = [], head = fg.entries.filter(function (e) { return e.part === "T"; })[0];
         var tuneOn = (fl.notes.T || []).filter(function (n) { return n.syl !== null; }), hs = Math.max(2, fg.head || 3);
@@ -1659,8 +1786,9 @@ window.KOLOB.Composer = (function () {
         // they meet on the written cadence: every part begins a note there
         var cb2 = fl.cadence.beat;
         ["S", "A", "T", "B"].forEach(function (q) { if (!(fl.notes[q] || []).some(function (n) { return Math.abs(n.beat - cb2) < EPS; })) probs.push(q + " misses the cadence"); });
+        var where = fls.length > 1 ? "lines " + (fg.lines[0] + 1) + "–" + (fg.lines[1] + 1) : "line " + (fg.line + 1);
         add("the fuge", !probs.length, probs.length ? probs.slice(0, 3).join("; ") :
-            "line " + (fg.line + 1) + ": " + fg.entries.map(function (e) { return e.part + " at beat " + e.at + (e.transpose ? " (" + (e.transpose > 0 ? "+" : "") + e.transpose + " steps)" : ""); }).join(", ") + "; all four meet on the " + fl.cadence.kind + " close at beat " + cb2);
+            where + ": " + fg.entries.map(function (e) { return e.part + " at beat " + e.at + (e.transpose ? " (" + (e.transpose > 0 ? "+" : "") + e.transpose + " steps)" : ""); }).join(", ") + "; a head of " + (fg.headNotes || hs) + " notes; all four meet on the " + fl.cadence.kind + " close");
       } else add("the fuge", true, "none written in this tune (a plain psalm tune)", false);
     }
     if (D.id === "gospel") {
@@ -1695,7 +1823,8 @@ window.KOLOB.Composer = (function () {
           rung + " dominant sevenths, every one tuned on the seventh partial; " + full + " sung complete, exactly 4:5:6:7");
       if (D.alwaysRefrain) add("a refrain after the verse", !!(h.refrain && h.refrain.length), h.refrain ? h.refrain.length + " lines of refrain" : "no refrain");
       var rep = ctx.harm || {};
-      add("swipes, echoes and the tag", true, (rep.swipes || 0) + " swipes, " + (rep.echoes || 0) + " echoes, " + (h.tag ? "a tag (" + (h.tag.plan && h.tag.plan.chain ? h.tag.plan.chain.join("–") : "") + ")" : "no tag"), false);
+      // (the tag is the harmonizer's until the Hymn is finished: read it there — round 3's first pass read h.tag, not yet set, and always said "no tag")
+      add("swipes, echoes and the tag", true, (rep.swipes || 0) + " swipes, " + (rep.echoes || 0) + " echoes, " + (rep.tag ? "a tag (" + (rep.tag.chain || []).join("–") + ")" : "no tag"), false);
     }
     if (D.id === "shaker") {
       var ps = Object.keys(h.lines[0].notes);
@@ -1722,7 +1851,8 @@ window.KOLOB.Composer = (function () {
     ["S", "A", "T", "B"].forEach(function (p) { if (D.ranges[p]) { bounds[p] = degBounds(mode, keySemi, D.ranges[p]); tess[p] = degBounds(mode, keySemi, D.tess[p]); } });
     var lines = sk.lines.map(function (L, i) {
       var notes = rh[i].notes.map(function (n, k) { return { beat: n.beat, beats: n.beats, deg: mel[i].degs[k], syl: n.cont ? null : n.syl, stress: n.stress, cont: n.cont }; });
-      return { notes: notes, cadence: L.cadence, plan: L.plan || null, role: L.role, full: !!L.full, bare: !!L.bare, refrain: !!L.refrain, targetClass: L.targetClass, peakIdx: L.peak ? mel[i].peakIdx : -1 };
+      return { notes: notes, cadence: L.cadence, plan: L.plan || null, role: L.role, full: !!L.full, bare: !!L.bare, refrain: !!L.refrain, targetClass: L.targetClass, peakIdx: L.peak ? mel[i].peakIdx : -1,
+               len: rh[i].len, barStart: rh[i].barStart || 0 };                // (the fuge runs two lines together, on the tune's own bar)
     });
     var altoDie = u01(R.fork("alto"));
     var altoOn = D.altoRate != null && altoDie < D.altoRate * (H ? 0.4 + H.alto : 1);
@@ -1745,20 +1875,20 @@ window.KOLOB.Composer = (function () {
       // the melody's syllables, counted through the verse (and again through the refrain)
       var sylAtBeat = {};
       hl.parts[mp].forEach(function (n) { if (n.syl !== null && n.syl !== undefined && !n.cont) sylAtBeat[r3(n.beat)] = off + n.syl; });
-      var fermata = L.role === "home" ? D.id !== "sacredharp" : L.fermDie < (D.fermata || 0) * (H ? 0.5 + H.fermata : 1);
+      var fermata = (L.role === "home" ? D.id !== "sacredharp" : L.fermDie < (D.fermata || 0) * (H ? 0.5 + H.fermata : 1)) && !hl.elided;
       for (var p in hl.parts) {
         parts[p] = hl.parts[p].map(function (n) {
           var isMel = p === mp;
           // (a part that sings its own words at its own time — the fuge's
           // entries, the men's echo — keeps the syllable it sings)
-          var syl = isMel ? (n.cont || n.syl === null || n.syl === undefined ? null : off + n.syl) : n.ownSyl != null ? off + n.ownSyl : (n.nct || sylAtBeat[r3(n.beat)] == null ? null : sylAtBeat[r3(n.beat)]);
+          var syl = isMel ? (n.cont || n.syl === null || n.syl === undefined ? null : off + n.syl) : n.ownSyl != null ? off + n.ownSyl : (n.nct || n.tiedInto || sylAtBeat[r3(n.beat)] == null ? null : sylAtBeat[r3(n.beat)]);
           var o = { beat: r3(n.beat), beats: r3(n.beats), deg: n.deg, monzo: [0, 0, 0, 0], tie: !!n.tie, fermata: fermata && Math.abs(n.beat - hl.cadBeat) < EPS && !n.nct,
                     syl: syl, stress: n.stress ? 1 : 0, nct: n.nct || null, ornament: n.ornament || null };
           if (n.alt) o.alt = n.alt;
           return o;
         });
       }
-      if (hl.chords.length) tuneLineParts(mode, parts, hl.chords, !!D.ring);
+      if (hl.chords.length) tuneLineParts(mode, parts, hl.chords, !!D.ring, mp);
       else if (harm.drone) parts[mp].forEach(function (n) { n.monzo = spelledMonzo(mode, n.deg, n.alt || 0); n.comma = 0; });   // (over a drone: just against home's note)
       else tuneMelodyAlone(mode, parts[mp]);
       for (p in parts) parts[p].forEach(function (n) { if (n.comma) commas++; });
@@ -1766,14 +1896,15 @@ window.KOLOB.Composer = (function () {
         notes: parts,
         cadence: { kind: hl.cadenceKind, beat: r3(hl.cadBeat) },
         chords: hl.chords.map(function (c) { var o = {}; for (var k in c) if (c[k] !== undefined) o[k] = c[k]; o.beat = r3(o.beat); o.len = r3(o.len); return o; }),
-        peak: !!L.peak, breathAfter: true, fermataBeats: fermata ? [r3(hl.cadBeat)] : [],
-        startBeat: r3(beatAt), barStart: lay.barStart,
+        peak: !!L.peak, breathAfter: !hl.elided, fermataBeats: fermata ? [r3(hl.cadBeat)] : [],
+        startBeat: r3(beatAt), barStart: hl.barStart != null ? hl.barStart : lay.barStart,
         plan: { letter: L.letter + (L.prime ? "'" : ""), role: L.role, cadence: L.cadence, via: L.plan || null, full: !!L.full, targetClass: L.targetClass, figure: L.figure, contour: L.contour,
                 cell: lay.cell, copyOf: L.copyOf != null ? L.copyOf : null, refrain: L.refrain },
       };
       // (round 3, dev: a bare close, a fuge's entries, the men's echo, the swipes)
       if (L.bare) line.plan.bare = true;
       if (hl.fuge) line.plan.fuge = hl.fuge;
+      if (hl.elided) line.plan.elided = true;                                // (a fuge runs on through this line's close)
       if (hl.echo) line.plan.echo = hl.echo;
       if (hl.nct && hl.nct.swipes) line.plan.swipes = hl.nct.swipes;
       // (a fuge begins before the tune does: the line is longer by the tune's delay)
@@ -1815,6 +1946,11 @@ window.KOLOB.Composer = (function () {
     if (P1) partnerFrame(fr, sk, rh, D, P1, !!opts._partnerRhythm);
     var gesture = opts.gestures && opts.gestures[0] ? opts.gestures[0].map(function (g) { return typeof g === "number" ? g + sk.base : g.deg + sk.base; }) : null;
     var named = nameOf(R.fork("naming:" + D.id));
+    // (a hymn never takes the name of another hymn of the meeting — round 3's
+    // critic found the partner of CUMORAH named CUMORAH; the name is drawn
+    // again, from a die of its own, and nothing else moves)
+    var taken = (opts.others || []).map(function (o) { return o && o.nameEn; }).concat(opts.avoidNames || []);
+    for (var nk = 1; nk < 12 && taken.indexOf(named.nameEn) >= 0; nk++) named = nameOf(R.fork("naming:" + D.id + ":again:" + nk));
     var tempoDie = R.fork("tempo").rnd(0.95, 1.05);
     var best = null, repairs = [], quoted = {};
     var mel = composeMelody(fr, sk, rh, D, H, gesture, 0);
@@ -1846,7 +1982,7 @@ window.KOLOB.Composer = (function () {
       if (D.voiceOrder) h.voiceOrder = D.voiceOrder.slice();                 // D: the parts top to bottom (the lead second)
       if (fr.kind) h.kind = fr.kind;                                        // E: shaker, gift or primary
       if (harm.drone) h.drone = harm.drone;                                 // E: the hummed drone's degrees (from the final)
-      if (harm.fuge && harm.fuge.line >= 0) h.fuge = { line: harm.fuge.line, gap: harm.fuge.gap, head: harm.fuge.head, entries: harm.fuge.entries, repeatFrom: harm.fuge.line };
+      if (harm.fuge && harm.fuge.line >= 0) h.fuge = { line: harm.fuge.line, lines: harm.fuge.lines || [harm.fuge.line], gap: harm.fuge.gap, head: harm.fuge.head, headNotes: harm.fuge.headNotes, entries: harm.fuge.entries, repeatFrom: harm.fuge.line };
       if (fr.kind === "gift") { var vc = vocablesFor(R.fork("vocables"), built.lines); h.verses = [vc.ds]; h.vocablesEn = vc.en; }
       if (K.Score && K.Score.hymn) h = K.Score.hymn(h);
       // where the peak fell, as a share of the tune's syllables
@@ -1889,7 +2025,7 @@ window.KOLOB.Composer = (function () {
     if (D.tag && best.harm.tag) {
       var tg = best.harm.tag, tp = {}, last = tg.cadBeat;
       for (var q in tg.parts) tp[q] = tg.parts[q].map(function (n) { var o = { beat: r3(n.beat), beats: r3(n.beats), deg: n.deg, monzo: [0, 0, 0, 0], tie: false, fermata: Math.abs(n.beat - last) < EPS || (n.beat < last && n.beat + n.beats > last + EPS), syl: q === D.melodyPart ? n.syl : null, stress: n.stress ? 1 : 0, nct: null, ornament: null }; if (n.alt) o.alt = n.alt; return o; });
-      tuneLineParts(fr.mode, tp, tg.chords, !!D.ring);
+      tuneLineParts(fr.mode, tp, tg.chords, !!D.ring, D.melodyPart);
       var tl = { notes: tp, cadence: { kind: tg.cadenceKind, beat: r3(last) }, chords: tg.chords, peak: false, breathAfter: false, fermataBeats: [r3(last)], plan: { letter: "Tag", role: "tag", chain: tg.chain } };
       h.tag = K.Score && K.Score.line ? K.Score.line(tl) : tl;
     }
@@ -1974,6 +2110,17 @@ window.KOLOB.Composer = (function () {
     var fam = MINOR[mode] ? "minor" : mode === "mixolydian" ? "mixolydian" : "major";
     var ground = pickW(F.fork("ground"), GROUNDS[fam]);
     var T = TIMES[time], bar = T.bar, segLen = G * bar, chordLen = segLen / ground.length;
+    // (round 3, second pass — the critic saw a round's IV begin in the middle
+    // of a bar: a ground of four chords in two bars of three-four changes every
+    // beat and a half. A ground's chords change on the bar's strong beats — the
+    // downbeat and, in four-four and six-eight, the half bar — so a ground that
+    // will not divide the segment so is drawn again from those that will)
+    var strongStep = time === "4/4" ? 2 : time === "6/8" ? 3 : bar;
+    function onBeat(g) { var cl = segLen / g.length; return Math.abs(cl / strongStep - Math.round(cl / strongStep)) < EPS && cl >= strongStep - EPS; }
+    if (!onBeat(ground)) {
+      var fits = GROUNDS[fam].filter(function (g) { return onBeat(g[0]); });
+      if (fits.length) { ground = pickW(F.fork("ground:meter"), fits); chordLen = segLen / ground.length; }
+    }
     var classes = TUNE_CLASSES[mode], RR = ROUND_RHYTHMS[time];
     // the chords of the ground, as a Score has them (so the notes are tuned by them)
     var groundChords = ground.map(function (nm, i) {
@@ -2322,11 +2469,12 @@ window.KOLOB.Composer = (function () {
     var D = K.Dialects.get(h.dialect), mp = h.melodyPart, rng = D.ranges[mp], tess = D.tess[mp];
     var degs = []; h.lines.forEach(function (l) { l.notes[mp].forEach(function (n) { degs.push(n.deg); }); });
     var lo0 = semi(h.mode, Math.min.apply(null, degs), 0), hi0 = semi(h.mode, Math.max.apply(null, degs), 0), fin = semi(h.mode, h.lines[h.lines.length - 1].notes[mp].slice(-1)[0].deg, 0);
-    var home = Math.round(mzCents(h.keyMonzo) / 100);
+    // (the tune's notes are counted from its final; in a key, the final stands
+    // on that key's own pitch — in the octave that suits the part best)
     return keys.map(function (km) {
       var ks = Math.round(mzCents(km) / 100), best = null;
       for (var o = -2; o <= 2; o++) {
-        var lo = ks - home + lo0 + 12 * o, hi = ks - home + hi0 + 12 * o, f = ks - home + fin + 12 * o;
+        var lo = ks + lo0 + 12 * o, hi = ks + hi0 + 12 * o, f = ks + fin + 12 * o;
         var fits = lo >= rng[0] && hi <= rng[1], comfy = f >= tess[0] - 3 && f <= tess[1];
         var c = (fits ? 0 : 10) + (comfy ? 0 : 3) + Math.abs((lo + hi) / 2 - (tess[0] + tess[1]) / 2) * 0.1;
         if (!best || c < best.c) best = { c: c, keyMonzo: km.slice(), keySemi: ks, octave: o, lo: lo, hi: hi, final: f, fits: fits, closeInTess: comfy };
@@ -2334,11 +2482,64 @@ window.KOLOB.Composer = (function () {
       delete best.c; return best;
     });
   }
+  // THE ROOM THE DAY'S KEYS LEAVE A REFRAIN (round 3, second pass; the
+  // critic's fix). A key a fourth up and a key a fifth up put the refrain's
+  // final on three different notes of the singers' voices — do, fa and sol
+  // of the day — and the part that sings the tune has only so much voice: the
+  // quartet's lead (dialect D) sings from sol below the keynote to do above
+  // it, so a refrain in the key a fifth up can climb only a fourth over its
+  // final before the lead runs out. So before a note is drawn, the compass is
+  // measured against every key: how far under its final the tune may go (sol,
+  // la or ti below) and how far over (mi to la), such that in each key some
+  // octave puts the final where the part sings comfortably and the whole
+  // tune inside the part's compass. → { pairs: [[floor, peak, weight]], all }
+  // (steps from the final; `all` when the day's keys leave the lilt's whole
+  // compass free, and the refrain is drawn exactly as before)
+  function refrainRoom(D, keys, mode, homeSemi) {
+    var mp = D.melodyPart, rng = D.ranges[mp], tess = D.tess[mp], classes = TUNE_CLASSES[mode] || TUNE_CLASSES.ionian;
+    function sits(a, b) {
+      return keys.every(function (km) {
+        var ks = Math.round(mzCents(km) / 100) - homeSemi;
+        for (var o = -3; o <= 3; o++) {
+          var f = homeSemi + ks + 12 * o;
+          if (f >= tess[0] - 3 && f <= tess[1] && f - a >= rng[0] && f + b <= rng[1]) return true;
+        }
+        return false;
+      });
+    }
+    var pairs = [], all = true, PW = { 5: 1.2, 4: 1.6, 3: 0.6, 2: 0.4 }, FW = { "-3": 1.6, "-2": 1, "-1": 0.6 };
+    for (var fl = -3; fl <= -1; fl++) for (var pk = 2; pk <= 5; pk++) {
+      if (classes.indexOf(cls(fl)) < 0 || classes.indexOf(cls(pk)) < 0) continue;
+      var ok = sits(-semi(mode, fl, 0), semi(mode, pk, 0));
+      // (the lilt's own compass: sol or la below, fa to la above)
+      if (!ok && fl <= REFRAIN_PROFILE.floorMax && fl >= REFRAIN_PROFILE.floorMin && pk >= 3) all = false;
+      if (ok) pairs.push([fl, pk, PW[pk] * FW[fl]]);
+    }
+    return { pairs: pairs, all: all };
+  }
   function wanderingRefrain(stream, opts) {
     opts = opts || {};
     var keys = opts.keys && opts.keys.length ? opts.keys : [[0, 0, 0, 0]], dialect = opts.dialect || "gospel", tries = opts.tries || 8, best = null;
+    // (the compass first: where the day's keys leave the lilt its whole room,
+    // the profile is the lilt's own; where they do not, each try draws a
+    // compass that sits in every key — a peak and a floor — and keeps to it)
+    var D0 = K.Dialects.get(dialect) || K.Dialects.get("gospel"), mode0 = opts.mode && SEMIS[opts.mode] ? opts.mode : null;
+    var roomOf = {}, homeSemi = Math.round(mzCents(keys[0]) / 100);
     for (var t = 0; t < tries; t++) {
-      var h = compose(t ? stream.fork("refrain:" + t) : stream, { dialect: dialect, mode: opts.mode, keyMonzo: keys[0], hymnist: opts.hymnist, id: opts.id, _profile: REFRAIN_PROFILE });
+      var S = t ? stream.fork("refrain:" + t) : stream, prof = REFRAIN_PROFILE;
+      // (the mode is the refrain's own draw, thrown as compose() throws it —
+      // the hymnist's leaning on the dialect's table — so the room is measured
+      // in the mode the refrain will be written in)
+      var Hs = K.Hymnists, Hr = Hs ? (opts.hymnist ? Hs.byId(opts.hymnist) : Hs.draw(S.fork("hymnist"), D0.id)) : null;
+      var mode = mode0 || pickW(S.fork("frame").fork("mode"), weightsOf(D0.modes, Hr && Hr.modes));
+      var room = roomOf[mode] || (roomOf[mode] = refrainRoom(D0, keys, mode, homeSemi));
+      if (!room.all) {
+        var pair = room.pairs.length ? pickW(S.fork("refrain:room"), room.pairs.map(function (p) { return [p, p[2]]; })) : [-1, 2];
+        var sp = pair[1] - pair[0];
+        prof = {}; for (var pk in REFRAIN_PROFILE) prof[pk] = REFRAIN_PROFILE[pk];
+        prof.peakTo = {}; prof.peakTo[pair[1]] = 1; prof.floorMin = pair[0]; prof.floorMax = pair[0]; prof.range = [sp, sp]; prof.maxSpan = sp;
+      }
+      var h = compose(S, { dialect: dialect, mode: opts.mode, keyMonzo: keys[0], hymnist: opts.hymnist, id: opts.id, _profile: prof });
       var kf = keyFit(h, keys), all = kf.every(function (x) { return x.fits && x.closeInTess; });
       var bad = h.report.checks.filter(function (c) { return c.hard && !c.ok; }).length;
       var score = bad * 10 + kf.filter(function (x) { return !x.fits; }).length * 5 + kf.filter(function (x) { return !x.closeInTess; }).length;

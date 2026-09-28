@@ -25,14 +25,16 @@
 //   F  THE OLD WAY  the tune alone, slow, with ornament slots for the
 //                   singers who will decorate it (the performer's work).
 //   B  PSALMODY     the tune in the tenor; rugged four-part homophony that
-//                   breaks into a FUGE — the bass leads off with the line's
-//                   head, the tenor, the counter and the treble follow a
-//                   half-bar or a bar apart, and all four meet on a written
+//                   breaks into a FUGE, usually across the last two lines —
+//                   the bass leads off with the first line's opening, five
+//                   or six notes, the tenor, the counter and the treble take
+//                   it up a half-bar or a bar apart, at the dominant and at
+//                   home's pitch in turn, and all four meet on a written
 //                   cadence; open fifths and passing clashes let stand.
 //   D  GOSPEL       close harmony with the tune in the second voice (the
 //                   lead); dominant sevenths in circle-of-fifths chains, sung
 //                   4:5:6:7 so they ring; swipes under held words; the men's
-//                   echo; a refrain after every verse; a tag.
+//                   echo; a refrain after every verse; a tag (in minor too).
 //   E  SHAKER AND   one melody in unison, in dance time, now and then over a
 //      PRIMARY      hummed drone: a Shaker hymn, a gift song on vocables, a
 //                   Primary song with its chorus.
@@ -496,7 +498,7 @@ window.KOLOB.Dialects = (function () {
         var best = INF, arg = -1;
         for (var i = 0; i < cands[k - 1].length; i++) {
           if (cost[k - 1][i] - 1.2 >= best) continue;                  // (a move may earn back ~1)
-          var x = cost[k - 1][i] + moveCost(cands[k - 1][i], cc[j], mode, parW);
+          var x = cost[k - 1][i] + moveCost(cands[k - 1][i], cc[j], mode, parW) + (ctx.moveExtra ? ctx.moveExtra(cands[k - 1][i], cc[j], slots[k]) : 0);
           if (x < best) { best = x; arg = i; }
         }
         cost[k].push(best + cc[j].cost); back[k].push(arg);
@@ -753,7 +755,7 @@ window.KOLOB.Dialects = (function () {
   }
   // one part's line through the slots, against the parts already fixed
   //   fixed: { part: [ {d, a} per slot ] }; req(k, d) → extra cost (cadences)
-  function counterLine(slots, mode, bounds, fixed, isBass, req, openW, noise, crossW, cons) {
+  function counterLine(slots, mode, bounds, fixed, isBass, req, openW, noise, crossW, cons, crossS) {
     var n = slots.length, INF = 1e9, cands = [], cost = [], back = [], CONS_ = cons || CONS;
     var names = Object.keys(fixed);
     for (var k = 0; k < n; k++) {
@@ -770,6 +772,7 @@ window.KOLOB.Dialects = (function () {
           if (isBass && s > sf) c += 6;                              // the bass stays under the tune
           if (!isBass && names[i] === "B" && s <= sf) c += 6;
           if (!isBass && names[i] === "T" && s < sf) c += crossW;     // the treble may cross the tenor, now and then
+          if (crossS && names[i] === "S" && s > sf) c += crossS;       // (the psalmody's counter keeps under the treble, as a rule)
           if (s === sf && names[i] !== "B") c += 0.5;
         }
         // an open sonority is the sound of the book
@@ -1008,8 +1011,13 @@ window.KOLOB.Dialects = (function () {
       return c;
     }
     var bass = counterLine(slots, mode, B.B, { T: tune }, true, reqBass, openW * 0.25, nB, 0, CONS_B);
-    var treble = counterLine(slots, mode, B.S, { T: tune, B: bass.line }, false, reqUpper, openW, nS, 0.9 + 0.4 * (1 - (H.open != null ? H.open : 0.6)), CONS_B);
-    var alto = counterLine(slots, mode, B.A, { T: tune, B: bass.line, S: treble.line }, false, reqUpper, openW * 0.6, nA, 0.7, CONS_B);
+    // (round 3, second pass: the critic measured the psalmody crossing in a
+    // quarter of its chords against CORONATION's one in fifty — the counter
+    // over the treble, mostly, where nothing held it under. The treble still
+    // crosses the tenor now and then, the counter now and then the tenor; the
+    // fuge crosses as its entries must.)
+    var treble = counterLine(slots, mode, B.S, { T: tune, B: bass.line }, false, reqUpper, openW, nS, 1.6 + 0.5 * (1 - (H.open != null ? H.open : 0.6)), CONS_B);
+    var alto = counterLine(slots, mode, B.A, { T: tune, B: bass.line, S: treble.line }, false, reqUpper, openW * 0.6, nA, 1.3, CONS_B, 1.4);
     var parts = {
       S: slotNotes(slots, line, treble.line), A: slotNotes(slots, line, alto.line),
       T: line.notes.map(function (x) { return { beat: x.beat, beats: x.beats, deg: x.deg, alt: 0, nct: null, syl: x.syl, stress: x.stress, tie: false, cont: x.cont }; }),
@@ -1056,26 +1064,38 @@ window.KOLOB.Dialects = (function () {
   }
 
   // ---- THE FUGE ------------------------------------------------------------
-  // line: the tune's line (the tenor), with its notes, cadence and plan;
+  // line: the tune's line (the tenor), with its notes, cadence and plan — or,
+  // for a fuge across two lines (pair), the two lines' notes run together;
   // returns the line with four staggered entries, or null (the line stays
   // homophonic) when the words cannot be fitted to the entries
-  function fugeLine(line, li, ctx, openW) {
+  //
+  // (round 3, second pass — the critic heard the first pass's fuges: a head
+  // of three notes in forty of forty-nine, two in seven, never an imitation
+  // past it, entries a fourth apart as often as a fifth, and the fuge's own
+  // strong beats read half a bar out wherever the entries were half a bar
+  // apart. So now: the fuge runs across the tune's last two lines where the
+  // words allow, as Billings's and Read's do — the head is the first line's
+  // opening, four to six notes, and there is time for every voice to take it
+  // up; the entries stand a bar apart where that fits, else half a bar; each
+  // voice keeps the tune's shape a few notes past the head where it sounds;
+  // the heads alternate dominant and tonic — the bass at the dominant, the
+  // tenor at home's pitch (it is the tune), the counter at the dominant, the
+  // treble at home's; and the strong beats are read on the tune's own bar.)
+  function fugeLine(line, li, ctx, openW, pair) {
     var mode = ctx.mode, H = ctx.H || {}, R = ctx.R.fork("fuge:" + li), W = ctx.win, u = ctx.split, bar = ctx.bar;
-    var E = fugeGap(bar), ten = line.notes;
+    var ten = line.notes, bs0 = line.barStart || 0;
     // the syllables, and where each begins in the tune
     var sylStart = [], sylNotes = [];
     ten.forEach(function (x, i) { if (!x.cont) { sylStart.push(x.beat); sylNotes.push([i]); } else sylNotes[sylNotes.length - 1].push(i); });
     var nS = sylStart.length;
     var cs = nS - 1; while (cs > 0 && !ten[sylNotes[cs][0]].stress) cs--;        // the cadence syllable (the long note)
     var firstStress = 0; while (firstStress < nS && !ten[sylNotes[firstStress][0]].stress) firstStress++;
-    var C = E + sylStart[cs];                                                // where everyone meets
-    var lenT = ten[ten.length - 1].beat + ten[ten.length - 1].beats;
-    var entries = [["B", 0], ["A", 2 * E], ["S", 3 * E]];
+    var E = fugeGap(bar), C = 0;
     // the rhythm of one entering voice: the head in the tune's own rhythm,
     // the words between spread over the time left (stressed syllables longer),
     // the cadence and a feminine ending's syllables with everyone else's
-    function rhythmFor(o, hs) {
-      var HL = sylStart[hs], m = cs - hs, Dv = C - o - HL;
+    function rhythmFor(o, hs, E1) {
+      var C1 = E1 + sylStart[cs], HL = sylStart[hs], m = cs - hs, Dv = C1 - o - HL;
       var U = Math.floor(Dv / u + 1e-9);
       if (m < 1 || U < m) return null;
       var w = [], tot = 0;
@@ -1087,35 +1107,47 @@ window.KOLOB.Dialects = (function () {
       // the head: the tune's own notes (a melisma of the head sung as the tune sings it)
       for (var h = 0; h < hs; h++) sylNotes[h].forEach(function (i, q) { var x = ten[i]; notes.push({ beat: o + x.beat, beats: x.beats, syl: h, stress: x.stress, cont: q > 0, head: true, src: i }); });
       var t = o + HL;
-      for (j = 0; j < m; j++) { notes.push({ beat: t, beats: alloc[j] * u, syl: hs + j, stress: ten[sylNotes[hs + j][0]].stress, cont: false }); t += alloc[j] * u; }
+      for (j = 0; j < m; j++) { notes.push({ beat: t, beats: alloc[j] * u, syl: hs + j, stress: ten[sylNotes[hs + j][0]].stress, cont: false, src: sylNotes[hs + j][0] }); t += alloc[j] * u; }
       // the cadence syllable and what follows it, in step with the tune
       for (j = cs; j < nS; j++) {
         var i0 = sylNotes[j][0], last = sylNotes[j][sylNotes[j].length - 1];
-        notes.push({ beat: E + ten[i0].beat, beats: ten[last].beat + ten[last].beats - ten[i0].beat, syl: j, stress: ten[i0].stress, cont: false, cad: j === cs });
+        notes.push({ beat: E1 + ten[i0].beat, beats: ten[last].beat + ten[last].beats - ten[i0].beat, syl: j, stress: ten[i0].stress, cont: false, cad: j === cs });
       }
       return notes;
     }
-    // the head is the line's opening words: to the second stress, and a syllable more
-    // (four entries apart, with the longest head the words allow; failing that,
-    // the treble comes in with the counter)
-    var hs0 = clamp(firstStress + 3, 2, cs - 1), plan = null;
-    [3 * E, 2 * E].forEach(function (sAt) {
-      for (var hs = hs0; hs >= 2 && !plan; hs--) {
-        var rB = rhythmFor(0, hs), rA = rhythmFor(2 * E, hs), rS = rhythmFor(sAt, hs);
-        if (rB && rA && rS) plan = { hs: hs, B: rB, A: rA, S: rS, sAt: sAt };
-      }
+    // THE PLAN: the entry distance, the treble's entry, the head's length. A
+    // one-line fuge takes, as before, the head to the second stress and a
+    // syllable more; a fuge across two lines the first line's opening, to its
+    // third stress (never past the first line). Of what fits, the best: four
+    // entries of their own before a longer head, a longer head before a
+    // shorter distance (a head counted in notes, up to six)
+    var nA = pair ? pair.nA : nS;
+    var hsMax = pair ? clamp(firstStress + 5, 2, Math.min(cs - 1, nA - 1)) : clamp(firstStress + 3, 2, cs - 1), plan = null;
+    var gaps = pair && bar !== fugeGap(bar) ? [bar, fugeGap(bar)] : [fugeGap(bar)];
+    gaps.forEach(function (E1) {
+      [3 * E1, 2 * E1].forEach(function (sAt) {
+        for (var hs = hsMax; hs >= 2; hs--) {
+          var rB = rhythmFor(0, hs, E1), rA = rhythmFor(2 * E1, hs, E1), rS = rhythmFor(sAt, hs, E1);
+          if (!(rB && rA && rS)) continue;
+          var headNotes = 0; for (var h = 0; h < hs; h++) headNotes += sylNotes[h].length;
+          var score = (sAt === 3 * E1 ? 3.5 : 0) + Math.min(headNotes, 6) + (E1 === bar ? 0.3 : 0);
+          if (!plan || score > plan.score + 1e-9) plan = { hs: hs, B: rB, A: rA, S: rS, sAt: sAt, E: E1, headNotes: headNotes, score: score };
+          break;                                                             // (the longest head this spacing allows)
+        }
+      });
     });
     if (!plan) return null;
-    entries[2][1] = plan.sAt;
+    E = plan.E; C = E + sylStart[cs];
     // the tenor: the tune, a gap late
     var T = ten.map(function (x) { return { beat: x.beat + E, beats: x.beats, deg: x.deg, alt: 0, nct: null, syl: x.syl, stress: x.stress, tie: false, cont: x.cont }; });
     var parts = { T: T };
     var kind = line.cadence, finRoot = kind === "half" ? 4 : 0, tuneFin = ten[sylNotes[cs][0]].deg;
     // what a written part sounds at a beat (or null)
     function soundAt(p, b) { var n = noteAt(parts[p], b); return n ? semi(mode, n.deg, n.alt || 0) : null; }
-    function strongAt(b) { var inBar = ((b % bar) + bar) % bar; return inBar < EPS || (bar === 4 && Math.abs(inBar - 2) < EPS) || (bar === 6 && Math.abs(inBar - 3) < EPS); }
-    function vert(s, b, isBass, written) {
-      var c = 0;
+    // (the fuge's beat b is the tune's beat b − E: its place in the bar is read on the tune's own bar)
+    function strongAt(b) { var inBar = (((b - E + bs0) % bar) + bar) % bar; return inBar < EPS || (bar === 4 && Math.abs(inBar - 2) < EPS) || (bar === 6 && Math.abs(inBar - 3) < EPS); }
+    function vert(s, b, isBass, written, self) {
+      var c = 0, R0 = { S: 1, A: 2, T: 3, B: 4 };
       written.forEach(function (p) {
         var sf = soundAt(p, b); if (sf == null) return;
         var tab = isBass || p === "B" ? CONS_B.bass : CONS_B.upper, iv = Math.abs(s - sf) % 12;
@@ -1123,6 +1155,7 @@ window.KOLOB.Dialects = (function () {
         if (isBass && s > sf) c += 6;
         if (!isBass && p === "B" && s <= sf) c += 6;
         if (s === sf) c += 0.5;
+        if (self && !isBass && p !== "B" && (R0[self] < R0[p] ? s < sf : s > sf)) c += 0.5;   // (a free part crossing another: let stand, at a price)
       });
       return c;
     }
@@ -1141,47 +1174,90 @@ window.KOLOB.Dialects = (function () {
       return c;
     }
     var report = [];
-    // one voice: the head at a drawn transposition, the rest by a Viterbi
-    // through its compass against the parts already written
-    function writeVoice(p, rhythm, written, prefer, entryNo) {
-      var win = W[p], isBass = p === "B", headIdx = [], restIdx = [];
-      rhythm.forEach(function (x, i) { (x.head ? headIdx : restIdx).push(i); });
-      var die = u01(R.fork("head:" + p));
-      // the head's transposition, in steps: an octave, a fifth or a fourth
-      // away (or at the unison), the one that lies in the compass, sounds
-      // with what is already singing, and keeps the tonic–dominant alternation
-      var best = null, together = written.some(function (q) { return parts[q][0] && Math.abs(parts[q][0].beat - rhythm[0].beat) < EPS; });
-      // (a voice that enters WITH another may take the head a third or a tenth above it instead)
-      [-14, -11, -10, -7, -4, -3, 0, 3, 4, 7, 8, 11].concat(together ? [2, 9] : []).forEach(function (t) {
-        var degs = headIdx.map(function (i) { return ten[rhythm[i].src].deg + t; }), c = 0;
-        if (degs.some(function (d) { return d < win[0] || d > win[1]; })) return;
-        // (the entry itself lands consonant: no second, seventh or tritone against what sounds)
-        var s0 = semi(mode, degs[0], 0), clash = written.some(function (q) { var o = soundAt(q, rhythm[headIdx[0]].beat); if (o == null) return false; var ic = Math.abs(s0 - o) % 12; return ic === 1 || ic === 2 || ic === 10 || ic === 11 || ic === 6; });
-        if (clash) return;
-        for (var q = 1; q < degs.length; q++) if (Math.abs(semi(mode, degs[q], 0) - semi(mode, degs[q - 1], 0)) % 12 === 6) return;   // the head sings no tritone
-        var klass = ((t % 7) + 7) % 7;
-        c += klass === prefer ? 0 : (klass === 0 || klass === 4 || klass === 3) ? 0.7 : together && klass === 2 ? 0.4 : 2;
-        headIdx.forEach(function (i, q) { c += vert(semi(mode, degs[q], 0), rhythm[i].beat, isBass, written) + heldClash(semi(mode, degs[q], 0), rhythm[i].beat, rhythm[i].beat + rhythm[i].beats, isBass, written); });
-        // (a head that shadows a voice already singing — in octaves, in fifths — is no entry at all)
-        written.forEach(function (q2) {
-          var same = 0;
-          headIdx.forEach(function (i, q) { var o = soundAt(q2, rhythm[i].beat); if (o != null) { var ic = Math.abs(semi(mode, degs[q], 0) - o) % 12; if (ic === 0 || ic === 7) same++; } });
-          if (same >= 2) c += 2.5 * (same - 1);
-        });
-        var mean = degs.reduce(function (a, b) { return a + b; }, 0) / degs.length;
-        c += Math.abs(mean - (win[0] + win[1]) / 2) * 0.25 + die * 0.3;
-        if (!best || c < best.c) best = { t: t, c: c, degs: degs };
+    // THE HEADS FIRST, CHOSEN TOGETHER — as a fugue's exposition is written:
+    // the entries are placed, then the free parts are filled against them.
+    // (Round 3's first pass wrote each voice whole, the bass first; a later
+    // entry at the dominant then too often landed on a second against the
+    // bass's free notes, and the counter took the head a fourth up instead.)
+    // Each head's transposition — an octave, a fifth or a fourth away, or at
+    // the unison — must lie in its part's compass, sing no tritone, and enter
+    // consonant against every head already sounding; of the sets that do, the
+    // one that keeps the alternation — the bass at the dominant, the tenor
+    // (the tune) at home's pitch, the counter at the dominant, the treble at
+    // home's — and sounds best where the heads overlap. Then each free part,
+    // the bass's first, is walked against the heads and the tune.
+    var PLAN = { B: plan.B, A: plan.A, S: plan.S }, PREFER = { B: 4, A: 4, S: 0 }, ENTRY = { B: 1, A: 3, S: 4 };
+    var together = Math.abs(plan.sAt - 2 * E) < EPS;
+    function isDis(ic) { return ic === 1 || ic === 2 || ic === 10 || ic === 11 || ic === 6; }
+    function headOf(p, t) { return PLAN[p].filter(function (x) { return x.head; }).map(function (x) { return { beat: x.beat, beats: x.beats, deg: ten[x.src].deg + t }; }); }
+    var headT = T.filter(function (n) { return n.syl !== null && n.syl < plan.hs || (n.syl === null && n.beat < E + sylStart[plan.hs] - EPS); })
+                 .map(function (n) { return { beat: n.beat, beats: n.beats, deg: n.deg }; });
+    function options(p, extra) {
+      var win = W[p], out = [];
+      [-14, -11, -10, -7, -4, -3, 0, 3, 4, 7, 8, 11].concat(extra || []).forEach(function (t) {
+        if (out.some(function (o) { return o.t === t; })) return;
+        var hd = headOf(p, t);
+        if (hd.some(function (x) { return x.deg < win[0] || x.deg > win[1]; })) return;
+        for (var q = 1; q < hd.length; q++) if (Math.abs(semi(mode, hd[q].deg, 0) - semi(mode, hd[q - 1].deg, 0)) % 12 === 6) return;   // the head sings no tritone
+        var klass = ((t % 7) + 7) % 7, c = klass === PREFER[p] ? 0 : (klass === 0 || klass === 4) ? 2.2 : p === "S" && together && klass === 2 ? 1.2 : klass === 3 ? 3.5 : 4.5;
+        var mean = hd.reduce(function (a2, x) { return a2 + x.deg; }, 0) / hd.length;
+        c += Math.abs(mean - (win[0] + win[1]) / 2) * 0.25 + u01(R.fork("head:" + p + ":" + t)) * 0.3;
+        out.push({ t: t, hd: hd, c: c });
       });
-      if (!best) return false;
-      // the rest: a walk through the compass
-      var INF = 1e9, noise = [], prevHead = best.degs[best.degs.length - 1], prevHead2 = best.degs.length > 1 ? best.degs[best.degs.length - 2] : null;
+      return out;
+    }
+    // two heads against each other, wherever both sound: the square's table
+    // (the bass's with the bass); an entry that lands on a dissonance is no entry
+    var RANK = { S: 1, A: 2, T: 3, B: 4 };
+    function pairCost(h1, b1, h2, b2, o1, o2) {
+      var c = 0, bass = b1 || b2, onsets = {}, same = 0;
+      h1.concat(h2).forEach(function (x) { onsets[Math.round(x.beat * 1000)] = true; });
+      Object.keys(onsets).forEach(function (k) {
+        var t = +k / 1000, x = noteAt(h1, t), y = noteAt(h2, t);
+        if (!x || !y) return;
+        var sx = semi(mode, x.deg, 0), sy = semi(mode, y.deg, 0), ic = Math.abs(sx - sy) % 12;
+        if (isDis(ic) && (Math.abs(t - h1[0].beat) < EPS || Math.abs(t - h2[0].beat) < EPS)) c += 1e6;
+        c += (bass ? CONS_B.bass : CONS_B.upper)[ic][strongAt(t) ? 0 : 1];
+        if (b1 && sx > sy) c += 6; if (b2 && sy > sx) c += 6;
+        if (o1 && o2 && o1 !== o2 && (o1 < o2 ? sx < sy : sy < sx)) c += 0.5;     // (an upper voice's head under a lower one's: a crossing, let stand at a price)
+        if (ic === 0 || ic === 7) same++;
+      });
+      if (same >= 2) c += 2.5 * (same - 1);                               // (a head that shadows another is no entry at all)
+      return c;
+    }
+    var oB = options("B"), oA = options("A"), bestSet = null;
+    oB.forEach(function (b) {
+      var cb = b.c + pairCost(headT, false, b.hd, true, 3, 4);
+      if (cb >= 1e6) return;
+      oA.forEach(function (a) {
+        var ca = cb + a.c + pairCost(headT, false, a.hd, false, 3, 2) + pairCost(b.hd, true, a.hd, false, 4, 2);
+        if (ca >= 1e6 || (bestSet && ca >= bestSet.c)) return;
+        // (a treble that enters WITH the counter may take the head a third or a tenth above it)
+        options("S", together ? [a.t + 2, a.t + 9] : []).forEach(function (sO) {
+          var cs2 = ca + sO.c + pairCost(headT, false, sO.hd, false, 3, 1) + pairCost(b.hd, true, sO.hd, false, 4, 1) + pairCost(a.hd, false, sO.hd, false, 2, 1);
+          if (cs2 < 1e6 && (!bestSet || cs2 < bestSet.c)) bestSet = { c: cs2, B: b, A: a, S: sO };
+        });
+      });
+    });
+    if (!bestSet) return null;
+    ["B", "A", "S"].forEach(function (p) { parts[p] = bestSet[p].hd.map(function (x) { return { beat: x.beat, beats: x.beats, deg: x.deg, alt: 0 }; }); });
+    // then each free part, walked through its compass against everything written
+    function writeRest(p) {
+      var rhythm = PLAN[p], win = W[p], isBass = p === "B", headIdx = [], restIdx = [], best = bestSet[p];
+      rhythm.forEach(function (x, i) { (x.head ? headIdx : restIdx).push(i); });
+      var written = ["T", "B", "A", "S"].filter(function (q) { return q !== p; });
+      var INF = 1e9, noise = [], prevHead = best.hd[best.hd.length - 1].deg, prevHead2 = best.hd.length > 1 ? best.hd[best.hd.length - 2].deg : null;
       var Rn = R.fork("walk:" + p);
       restIdx.forEach(function () { var row = []; for (var d = win[0]; d <= win[1]; d++) row.push(u01(Rn) * 0.3); noise.push(row); });
       var cost = [], back = [];
+      // (the imitation runs on past the head: the next few notes keep the
+      // tune's own shape, at the head's transposition, wherever that sounds)
+      var imit = restIdx.map(function (i, k) { var x = rhythm[i]; return x.cad || x.src == null || k > 2 ? null : ten[x.src].deg + best.t; });
       restIdx.forEach(function (i, k) {
         var x = rhythm[i], row = [], brow = [];
         for (var d = win[0]; d <= win[1]; d++) {
-          var s = semi(mode, d, 0), c = vert(s, x.beat, isBass, written) + heldClash(s, x.beat, x.beat + x.beats, isBass, written) + noise[k][d - win[0]];
+          var s = semi(mode, d, 0), c = vert(s, x.beat, isBass, written, p) + heldClash(s, x.beat, x.beat + x.beats, isBass, written) + noise[k][d - win[0]];
+          if (imit[k] != null && d === imit[k]) c -= 1.1 - 0.25 * k;
           if (x.cad || i > restIdx[0] && rhythm[i - 1] && rhythm[i - 1].cad) {
             // the written cadence: the bass on its root, the others on its chord (bare unless the plan keeps the third)
             if (isBass) { if (cls(d) !== finRoot) c += 25; }
@@ -1222,24 +1298,65 @@ window.KOLOB.Dialects = (function () {
       }
       var hq = 0, rq = 0;
       parts[p] = rhythm.map(function (x) {
-        var d = x.head ? best.degs[hq++] : degsRest[rq++];
+        var d = x.head ? best.hd[hq++].deg : degsRest[rq++];
         return { beat: Math.round(x.beat * 1000) / 1000, beats: Math.round(x.beats * 1000) / 1000, deg: d, alt: 0, nct: null, syl: x.cont ? null : x.syl, ownSyl: x.cont ? null : x.syl, stress: x.stress, tie: false };
       });
-      report.push({ part: p, at: rhythm[0].beat, transpose: best.t, entry: entryNo });
-      return true;
+      report.push({ part: p, at: rhythm[0].beat, transpose: best.t, entry: ENTRY[p] });
     }
-    // the bass leads (at home's pitch or the dominant's), the counter answers
-    // at the other, the treble at the first again — the tenor, the tune,
-    // stands between at its own pitch
-    var tonicFirst = u01(R.fork("order")) < 0.55;
-    var ok = writeVoice("B", plan.B, ["T"], tonicFirst ? 0 : 4, 1) &&
-             writeVoice("A", plan.A, ["T", "B"], tonicFirst ? 4 : 0, 3) &&
-             writeVoice("S", plan.S, ["T", "B", "A"], tonicFirst ? 0 : 4, 4);
-    if (!ok) return null;
+    // (the first pass's die for the entries' order is still thrown, so that no other draw moves)
+    u01(R.fork("order"));
+    writeRest("B"); writeRest("A"); writeRest("S");
     report.splice(1, 0, { part: "T", at: E, transpose: 0, entry: 2 });
     var read = readChords(parts, mode);
     var kindReal = realOpenKind(read, C, kind);
-    return { parts: parts, chords: read.list, cadenceKind: kindReal, cadBeat: C, shift: E, nct: {}, fuge: { gap: E, head: plan.hs, entries: report } };
+    // (the line begins E before the tune: its own bar is the tune's, moved back by E)
+    return { parts: parts, chords: read.list, cadenceKind: kindReal, cadBeat: C, shift: E, barStart: (((bs0 - E) % bar) + bar) % bar, nct: {},
+             fuge: { gap: E, head: plan.hs, headNotes: plan.headNotes, entries: report } };
+  }
+  // A FUGE ACROSS TWO LINES: the tune's two lines run together into one, the
+  // fuge written on it, and the result cut back into the Score's two lines at
+  // the tune's own join (a note sung across it tied over; the later voices,
+  // still on the first line's words, keep them). The first line's close is
+  // passed through — the fuge runs on — and the second line's is the meeting.
+  function fugePair(A, B, li, ctx, openW) {
+    var nA = 0; A.notes.forEach(function (n) { if (!n.cont) nA++; });
+    var lenA = A.len;
+    if (lenA == null) return null;
+    var merged = {
+      notes: A.notes.concat(B.notes.map(function (n) { return { beat: n.beat + lenA, beats: n.beats, deg: n.deg, syl: n.syl == null ? null : n.syl + nA, stress: n.stress, cont: n.cont }; })),
+      cadence: B.cadence, plan: B.plan, role: B.role, full: B.full, bare: B.bare, refrain: B.refrain, targetClass: B.targetClass, barStart: A.barStart, len: lenA + (B.len || 0),
+    };
+    var res = fugeLine(merged, li, ctx, openW, { nA: nA });
+    if (!res) return null;
+    var Bd = res.shift + lenA, pa = {}, pb = {};
+    function copyN(n) { var o = {}; for (var k in n) o[k] = n[k]; return o; }
+    Object.keys(res.parts).forEach(function (p) {
+      pa[p] = []; pb[p] = [];
+      res.parts[p].forEach(function (n) {
+        if (n.beat + n.beats <= Bd + EPS) { pa[p].push(n); return; }
+        if (n.beat >= Bd - EPS) {
+          var m = copyN(n); m.beat = Math.round((n.beat - Bd) * 1000) / 1000;
+          if (m.syl != null) m.syl -= nA;
+          if (m.ownSyl != null) m.ownSyl -= nA;                                  // (a later voice still on the first line's words: a syllable before the line's own)
+          pb[p].push(m); return;
+        }
+        var a = copyN(n), b = copyN(n);                                          // sung across the join: tied over
+        a.beats = Math.round((Bd - n.beat) * 1000) / 1000; a.tie = true;
+        b.beat = 0; b.beats = Math.round((n.beat + n.beats - Bd) * 1000) / 1000; b.syl = null; b.ownSyl = null; b.stress = 0; b.tiedInto = true; if (b.cont != null) b.cont = true;
+        pa[p].push(a); pb[p].push(b);
+      });
+    });
+    var ca = [], cb = [];
+    res.chords.forEach(function (c) {
+      var end = c.beat + c.len;
+      if (c.beat < Bd - EPS) { var x = copyN(c); x.len = Math.round((Math.min(end, Bd) - c.beat) * 1000) / 1000; ca.push(x); }
+      if (end > Bd + EPS) { var y = copyN(c); y.beat = Math.round(Math.max(0, c.beat - Bd) * 1000) / 1000; y.len = Math.round((end - Math.max(c.beat, Bd)) * 1000) / 1000; cb.push(y); }
+    });
+    // the first line's own close (the tenor's long note), passed through
+    var sA = slotsOf(A), cadA = res.shift + sA[sA.fin].beat;
+    var fg = res.fuge; fg.lines = [li, li + 1];
+    return [{ parts: pa, chords: ca, cadenceKind: "none", cadBeat: cadA, shift: res.shift, barStart: res.barStart, nct: {}, fuge: fg, elided: true },
+            { parts: pb, chords: cb, cadenceKind: res.cadenceKind, cadBeat: Math.round((res.cadBeat - Bd) * 1000) / 1000, shift: 0, nct: {}, fugeEnd: true }];
   }
   function harmonizePsalmody(ctx) {
     var H = ctx.H || {}, out = [];
@@ -1253,11 +1370,18 @@ window.KOLOB.Dialects = (function () {
     // entries there, the other
     var order = nV >= 4 ? (fd < 0.68 ? [nV - 2, nV - 1] : [nV - 1, nV - 2]) : [nV - 1];
     var fugue = null, tried = [], lines = [];
-    if (want) for (var oi = 0; oi < order.length && !fugue; oi++) {
+    // (round 3, second pass: first the fuge across the last two lines, as the
+    // fuging tunes run theirs; failing that, one line, as before)
+    if (want && nV >= 4 && ctx.lines[nV - 2] && ctx.lines[nV - 1]) {
+      var fp = fugePair(ctx.lines[nV - 2], ctx.lines[nV - 1], nV - 2, ctx, openW);
+      if (fp) { lines[nV - 2] = fp[0]; lines[nV - 1] = fp[1]; fugue = { line: nV - 2, lines: [nV - 2, nV - 1], entries: fp[0].fuge.entries, gap: fp[0].fuge.gap, head: fp[0].fuge.head, headNotes: fp[0].fuge.headNotes }; }
+      else tried.push((nV - 2) + "+" + (nV - 1));
+    }
+    if (want && !fugue) for (var oi = 0; oi < order.length && !fugue; oi++) {
       var li0 = order[oi], line0 = ctx.lines[li0];
       if (!line0 || line0.notes.length < 5) { tried.push(li0); continue; }
       var f0 = fugeLine(line0, li0, ctx, openW);
-      if (f0) { lines[li0] = f0; fugue = { line: li0, entries: f0.fuge.entries, gap: f0.fuge.gap, head: f0.fuge.head }; } else tried.push(li0);
+      if (f0) { lines[li0] = f0; fugue = { line: li0, lines: [li0], entries: f0.fuge.entries, gap: f0.fuge.gap, head: f0.fuge.head, headNotes: f0.fuge.headNotes }; } else tried.push(li0);
     }
     ctx.lines.forEach(function (line, li) { out.push(lines[li] || psalmodyLine(line, li, ctx, openW)); });
     out.fuge = fugue || { line: -1, wanted: want, tried: tried };
@@ -1316,8 +1440,13 @@ window.KOLOB.Dialects = (function () {
   function gospelTrans(a, b, strong) {
     if (a.to) {
       if (a.to.indexOf(b.name) < 0) return 8;
-      // the chain: a seventh falling a fifth into another seventh
-      return b.sev && cls(a.root - 4) === b.root ? -0.3 : 0;
+      // the chain: a seventh falling a fifth into another RINGING seventh
+      // (III7 → VI7 → II7 → V7). Into the minor ii7 the chain still falls, but
+      // the ring breaks — round 3's critic heard seed 3's "whole chain" turn
+      // to ii7 at its third link — so that turn is taken where the tune asks
+      // for it (fa, which II7's fi would contradict), not by preference.
+      if (b.sev && cls(a.root - 4) === b.root) return b.q === "dom7" ? -0.55 : 0.25;
+      return 0;
     }
     if (a.name === b.name) return strong ? 0.5 : 0.1;
     var k = a.name + ">" + b.name;
@@ -1402,15 +1531,81 @@ window.KOLOB.Dialects = (function () {
              sem: [semi(mode, td, t1.alt), semi(mode, sd, 0), semi(mode, rd, t2.alt), semi(mode, bd, t0.alt)], cost: 50, inv: 0, ch: ch };
   }
   // the tag's swipe chains: the lead holds home's note (do) as the POST while
-  // the chords turn round it — every chord here keeps do
+  // the chords turn round it — every chord here keeps do. (A minor tune's
+  // tag — round 3's critic found none — turns round la: the tonic, its own
+  // ringing seventh falling to iv, the submediant; the last chord the minor
+  // tonic.)
   var TAGS = [["I", "I7", "IV", "iv", "I"], ["IV", "iv", "I"], ["vi", "II7", "IV", "I"], ["I", "II7", "iv", "I"], ["I", "I7", "IV", "I"]];
+  var MINOR_TAGS = [["i", "i7", "iv", "i"], ["VI", "iv", "i"], ["i", "VI", "iv", "i"], ["i", "i7", "iv", "VI", "i"], ["i", "i7", "iv", "i"]];
+  // parallel fifths and octaves in a line's chosen voicings (the four voices
+  // in their vertical order; the lead moves from where its melisma left it)
+  function parallelsIn(voicings, prevV) {
+    var n = 0;
+    for (var k = 0; k < voicings.length; k++) {
+      var a = k ? voicings[k - 1] : prevV, b = voicings[k];
+      if (!a || !b) continue;
+      var sa = a.semOut || a.sem, sb = b.sem;
+      for (var i = 0; i < PAIRS.length; i++) {
+        var p = PAIRS[i][0], q = PAIRS[i][1], mp = sb[p] - sa[p], mq = sb[q] - sa[q];
+        if (!mp || !mq || (mp > 0) !== (mq > 0)) continue;
+        var i1 = Math.abs(sa[p] - sa[q]) % 12, i2 = Math.abs(sb[p] - sb[q]) % 12;
+        if ((i1 === 7 && i2 === 7) || (i1 === 0 && i2 === 0)) n++;
+      }
+    }
+    return n;
+  }
+  // THE HARMONY'S FIELDS DRAWN ROUND THE LEAD. The voice search keeps each
+  // harmony part in a window round the middle of its compass; a tune that
+  // sits low (a minor tune whose lead walks down to mi below the keynote)
+  // can then leave the tenor harmony one note above it and the baritone one
+  // note below, an octave apart, and a chord change moves both a step
+  // together — parallel octaves no search can mend. Round the lead's own
+  // compass instead: the tenor harmony from just over its lowest note to a
+  // little over its highest, the baritone from under its lowest to just
+  // under its highest, each still inside an octave and a fourth.
+  function leadWindows(ctx, VB) {
+    var mode = ctx.mode, lo = 1e9, hi = -1e9, b = ctx.bounds;
+    ctx.lines.forEach(function (l) { l.notes.forEach(function (n) { var x = semi(mode, n.deg, 0); lo = Math.min(lo, x); hi = Math.max(hi, x); }); });
+    function degIn(sLo, sHi, bd) {
+      var dl = null, dh = null;
+      for (var d = bd[0]; d <= bd[1]; d++) { var x = semi(mode, d, 0); if (x >= sLo && dl == null) dl = d; if (x <= sHi) dh = d; }
+      return dl == null || dh == null || dh < dl ? null : [dl, dh];
+    }
+    var sLo = Math.max(lo + 1, hi + 3 - 17), S = degIn(sLo, sLo + 17, b.S) || VB.S;
+    var aHi = hi - 1, A = degIn(Math.max(aHi - 17, lo - 10), aHi, b.A) || VB.A;
+    return { S: S, A: A, B: VB.B };
+  }
+  // A SWIPE THAT WOULD MAKE A VOICE SLIDE A QUARTER-TONE. Where the chord
+  // swiped to is a ringing seventh and the lead holds its fifth (or its
+  // seventh), a voice that strikes the other of the two again, on the same
+  // written note, must move by 36/35 — 49 cents — for the two notes that were
+  // a minor third 6:5 in the chord before are 6:7 in the ring, and the held
+  // lead cannot move (round 3's critic: 42 such slides in forty hymns). So
+  // at a swipe the other voices would rather move than strike that note
+  // again: the swipe is the chord turning under the word, and they turn.
+  function swipeRestrike(a, b, slot) {
+    if (!slot || !slot.swipe || !b.ch || b.ch.q !== "dom7") return 0;
+    var t = b.ch.tones, fifth = t[2].c, seventh = t[3].c, lead = cls(b.A.d), c = 0;
+    if (lead !== fifth && lead !== seventh) return 0;
+    var other = lead === fifth ? seventh : fifth, va = [a.S, a.A, a.T, a.B], vb = [b.S, b.A, b.T, b.B];
+    [0, 2, 3].forEach(function (v) { if (vb[v].d === va[v].d && vb[v].a === va[v].a && cls(vb[v].d) === other) c += 9; });
+    return c;
+  }
   function harmonizeGospel(ctx) {
+    // (the tune voiced in the windows round the middle of each part's compass;
+    // where that leaves a line no way but parallels, the whole tune is voiced
+    // again in windows drawn round the lead — the same dice, thrown alike)
+    var PW = partWindows({ mode: ctx.mode, bounds: ctx.bounds, tess: ctx.tess }, ["S", "A", "B"]);
+    var VB = { S: PW.S, A: PW.A, B: PW.B };
+    var first = harmonizeGospelIn(ctx, VB);
+    if (!first.parallels) return first;
+    var again = harmonizeGospelIn(ctx, leadWindows(ctx, VB));
+    return again.parallels < first.parallels ? again : first;
+  }
+  function harmonizeGospelIn(ctx, VB) {
     var mode = ctx.mode, H = ctx.H || {}, R = ctx.R, vocab = gospelVocab(mode), out = [], prevCh = null, prevV = null;
     var bounds = ctx.bounds, sev = H.sevenths != null ? H.sevenths : 0.5, u = ctx.split;
-    // (the voice search's own fields; each harmony part kept inside an octave and a fourth)
-    var PW = partWindows({ mode: mode, bounds: bounds, tess: ctx.tess }, ["S", "A", "B"]);
-    var VB = { S: PW.S, A: PW.A, B: PW.B };
-    var swipes = 0, echoes = 0;
+    var swipes = 0, echoes = 0, parallels = 0;
     ctx.lines.forEach(function (line, li) {
       var Rl = R.fork("line:" + li), base = slotsOf(line), slots = [];
       // SWIPES: a held note (two beats or more) may carry two chords, the lead holding
@@ -1452,7 +1647,8 @@ window.KOLOB.Dialects = (function () {
       var full = line.role === "home" || line.cadence === "authentic";
       var rootAt = slots.map(function (s) { return full && (s.final || s.trail); });
       var vl = voiceLine(slots, chords, prevV, { mode: mode, bounds: VB, tess: { S: ctx.tess.S, A: ctx.tess.A, B: ctx.tess.B }, H: H, parW: 60, rootAt: rootAt, cap: 90,
-                                                 voicer: voicingsGospel, fallback: fallbackGospel });
+                                                 voicer: voicingsGospel, fallback: fallbackGospel, moveExtra: swipeRestrike });
+      parallels += parallelsIn(vl.voicings, prevV);
       // (a seventh chord the voices could not sing complete is sung — and so
       // named — as its triad: a chord is only called ringing when it rings)
       chords = chords.map(function (ch, k) {
@@ -1548,7 +1744,8 @@ window.KOLOB.Dialects = (function () {
     // last chord that rings
     if (ctx.tag && prevV) {
       var lastLine = ctx.lines[ctx.lines.length - 1], ls = slotsOf(lastLine), fd = ls[ls.fin].deg;
-      var chain = TAGS[Math.floor(u01(R.fork("tag")) * TAGS.length)].filter(function (nm) { return vocab.some(function (c) { return c.name === nm && toneOf(c, cls(fd)) && !toneOf(c, cls(fd)).alt; }); });
+      var TG = MINOR[mode] ? MINOR_TAGS : TAGS;
+      var chain = TG[Math.floor(u01(R.fork("tag")) * TG.length)].filter(function (nm) { return vocab.some(function (c) { return c.name === nm && toneOf(c, cls(fd)) && !toneOf(c, cls(fd)).alt; }); });
       if (chain.length >= 3 && cls(fd) === 0) {
         var beat = ctx.bar >= 4 ? ctx.bar / 2 : ctx.bar, pre = ls.slice(Math.max(0, ls.fin - 2), ls.fin), tn = [], t = 0;
         pre.forEach(function (s, j) { tn.push({ beat: t, beats: s.beats, deg: s.deg, stress: s.stress, syl: j, cont: false }); t += s.beats; });
@@ -1566,7 +1763,7 @@ window.KOLOB.Dialects = (function () {
                                { mode: mode, H: H, first: false, approach: [], shortBeat: 9, loose: true, trans: gospelTrans, cadenceChords: gospelCadence, standing: gospelStanding }, R.fork("tag:pre"));
         var tch = (preCh ? preCh.chords : pre.map(function () { return byName(chain[0]); })).concat(chain.map(byName));
         var tv = voiceLine(sl2, tch, prevV, { mode: mode, bounds: VB, tess: { S: ctx.tess.S, A: ctx.tess.A, B: ctx.tess.B }, H: H, parW: 30, rootAt: sl2.map(function (s) { return s.final; }),
-                                              voicer: voicingsGospel, fallback: fallbackGospel });
+                                              voicer: voicingsGospel, fallback: fallbackGospel, moveExtra: swipeRestrike });
         var tp = { T: tn.map(function (n) { return { beat: n.beat, beats: n.beats, deg: n.deg, alt: 0, nct: null, syl: n.syl, stress: n.stress, tie: false }; }), S: [], A: [], B: [] };
         sl2.forEach(function (s, k) {
           var v = tv.voicings[k];
@@ -1579,7 +1776,7 @@ window.KOLOB.Dialects = (function () {
                     chain: chain };
       }
     }
-    out.swipes = swipes; out.echoes = echoes;
+    out.swipes = swipes; out.echoes = echoes; out.parallels = parallels;
     return out;
   }
 
@@ -1786,8 +1983,18 @@ window.KOLOB.Dialects = (function () {
     // Holden, Charlestown 1793, in the 1844 book — is the New England
     // psalmody it has. The fuge is measured against its own rules.)
     refs: ["earth:coronation"],
-    tolerance: { par5: [0.02, 0.4], thirdless: [0.12, 0.6], crossing: [0, 0.25], chromatic: [0, 0.01], sevenths: [0, 0.1], leap: [0.12, 0.55], melisma: [0.02, 0.3], melodyRange: [5, 10],
-                 closeThird: [0, 0.8], closeHome: [0.25, 0.85], closeDom: [0, 0.6], stagger: [0.03, 0.5] },
+    // (round 3, second pass: outside the fuge the parts now keep their order
+    // nearly as CORONATION does — the critic found the counter over the treble
+    // in a fifth of the chords — and inside it they cross as entries must; a
+    // fuge across two lines of a four-line tune is half the hymn, so the whole
+    // may cross in up to a third of its chords. A plain psalm tune, with no
+    // fuge, has no silent entries: the fuge's own check says whether one was
+    // written, and this measure no longer asks every tune for one.)
+    tolerance: { par5: [0.02, 0.4], thirdless: [0.12, 0.6], crossing: [0, 0.35], chromatic: [0, 0.01], sevenths: [0, 0.1], leap: [0.12, 0.55], melisma: [0.02, 0.3], melodyRange: [5, 10],
+                 closeThird: [0, 0.8], closeHome: [0.25, 0.85], closeDom: [0, 0.6], stagger: [0, 0.5] },
+    // (and the Yankee tunesmiths slurred their tenor's passing notes — CORONATION
+    // 13 % of its notes; the colony's psalm tunes had 8 %, and one in seven none)
+    melismaAdd: 0.35,
     harmonize: harmonizePsalmody,
   };
   var GOSPEL = {
@@ -1849,6 +2056,14 @@ window.KOLOB.Dialects = (function () {
     tempo: 0.92, fermata: 0.05, amen: false, refrains: 0.2, search: 130, organ: false,
     droneRate: { shaker: 0.45, gift: 0.55, primary: 0.1 },
     weights: w({ leapAppetite: 1.0, repeat: 0.06, threeSame: 1.4, contour: 0.3, memory: 0.5 }),
+    // (round 3, second pass — the critic measured the unison songs leaping in
+    // three intervals of ten, SIMPLE GIFTS in one of seven: a Shaker hymn now
+    // walks, a gift song and a Primary song skip about the triad a little
+    // more; and the dotted six-eight foot, which slurs a syllable, is rarer)
+    kindLeap: { shaker: 0.45, gift: 0.55, primary: 0.6 },
+    kindFigures: { shaker: { triad: 0.25, fifth: 0.35, third: 0.35 }, gift: { triad: 0.6, fifth: 0.7 } },
+    kindWeights: { shaker: { leapAppetite: 0.6, leapFit: 1.8 }, gift: { leapAppetite: 0.7, leapFit: 1.6 }, primary: { leapAppetite: 0.7, leapFit: 1.6 } },
+    timeCells: { "6/8": { dotted: 0.35, dotS: 0.3, slurS: 0.3, slurU: 0.3 }, "3/4": { dotted: 0.35, dotS: 0.3, slurS: 0.3, slurU: 0.3 } },
     rules: { parallels: true, crossing: true, spacing: false },
     refs: ["earth:simple-gifts"],
     tolerance: { leap: [0.08, 0.45], melisma: [0, 0.15], melodyRange: [4, 9], par5: [0, 0], thirdless: [0, 1], crossing: [0, 0], chromatic: [0, 0], sevenths: [0, 0], closeThird: [0, 0], closeHome: [0, 0], closeDom: [0, 0] },

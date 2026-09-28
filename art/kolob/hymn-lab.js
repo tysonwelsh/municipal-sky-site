@@ -59,6 +59,9 @@
   if (Q.get("seed")) $("khl-seed").value = Q.get("seed");
   ["dialect", "mode", "meter", "hymnist", "kind"].forEach(function (k) { if (Q.get(k) != null) $("khl-" + k).value = Q.get(k); });
   if (Q.get("key") != null) { var kq = String(Q.get("key")).replace(/\s/g, ""), kv = KEY_ALIAS[kq] || kq; if (KEY_NAME[kv]) $("khl-key").value = kv; }
+  // (and the three listening switches: ?breath=0 · ?room=0 · ?together=1)
+  var SWITCHES = { breath: true, room: true, together: false };
+  Object.keys(SWITCHES).forEach(function (k) { if (Q.get(k) != null && $("khl-" + k)) $("khl-" + k).checked = !/^(0|off|false|no)$/i.test(Q.get(k)); });
   function kindShown() { $("khl-kindf").hidden = $("khl-dialect").value !== "shaker"; }
   kindShown();
   // the address bar always holds the link that composes this hymn again
@@ -68,10 +71,13 @@
       u.set("seed", s.seed); u.set("dialect", s.dialect);
       if (s.mode) u.set("mode", s.mode); if (s.meter) u.set("meter", s.meter); if (s.hymnist) u.set("hymnist", s.hymnist); if (s.kind && s.dialect === "shaker") u.set("kind", s.kind);
       var kn = KEY_NAME[s.keyMonzo.join(",")]; if (kn && kn !== "home") u.set("key", kn);
+      Object.keys(SWITCHES).forEach(function (k) { var el = $("khl-" + k); if (el && el.checked !== SWITCHES[k]) u.set(k, el.checked ? "1" : "0"); });
       history.replaceState(null, "", location.pathname + "?" + u.toString());
     } catch (e) { /* a sandboxed page keeps its address */ }
   }
   $("khl-tempo").addEventListener("input", function () { $("khl-tempo-out").textContent = (+this.value).toFixed(2) + "×"; });
+  // (a switch thrown is kept in the link, and heard from the next Play)
+  Object.keys(SWITCHES).forEach(function (k) { var el = $("khl-" + k); if (el) el.addEventListener("change", function () { if (hymn) syncURL(settings()); }); });
 
   var KEYNOTE_HZ = 261.63;                 // the day's keynote, about middle C (the app's F0 · 4)
   var GIVE_OUT = 2.8;                      // the organ alone, giving out the tune: about +9 dB over its doubling level
@@ -135,7 +141,7 @@
     return '<div class="khl-board"><span class="khl-num">' + h.number + '</span><span class="khl-name">' + esc(h.nameDs) + '</span><span class="khl-en">' + esc(h.nameEn) + " (dev)</span></div>" +
       '<p class="khl-meta"><b>' + esc(DIALECT_NAME[h.dialect]) + "</b>" + (h.kind ? " · " + esc(KIND_NAME[h.kind] || h.kind) : "") + " · " + esc(METER_NAMES[h.meter] || h.meter) + " · form " + esc(h.form) + " · " + esc(MODE_NAME[h.mode]) +
       " · " + esc(h.modeOfTime) + " at " + bpm + (compound ? " dotted-crotchet beats" : " beats") + " a minute" + (h.hymnist ? " · by " + esc(h.hymnist.nameDs) + ' <span class="khl-en">' + esc(h.hymnist.nameEn) + "</span>" : "") +
-      (r.frame && r.frame.alto ? " · with an alto" : h.dialect === "sacredharp" ? " · three parts (no alto)" : "") + (h.drone ? " · over a hummed drone" : "") + (h.fuge ? " · a fuge in line " + (h.fuge.line + 1) : "") + (h.tag ? " · a tag" : "") + "</p>";
+      (r.frame && r.frame.alto ? " · with an alto" : h.dialect === "sacredharp" ? " · three parts (no alto)" : "") + (h.drone ? " · over a hummed drone" : "") + (h.fuge ? " · a fuge in " + ((h.fuge.lines || []).length > 1 ? "lines " + (h.fuge.lines[0] + 1) + "–" + (h.fuge.lines[1] + 1) : "line " + (h.fuge.line + 1)) + " (a head of " + (h.fuge.headNotes || h.fuge.head) + " notes)" : "") + (h.tag ? " · a tag" : "") + "</p>";
   }
   function render() {
     var h = hymn, r = h.report, Dl = D.get(h.dialect);
@@ -226,6 +232,25 @@
     if (shape === "mi") return '<path class="' + cls + '" d="M' + f1(x) + " " + f1(y - 4.4) + " L" + f1(x + 5.5) + " " + f1(y) + " L" + f1(x) + " " + f1(y + 4.4) + " L" + f1(x - 5.5) + " " + f1(y) + ' Z"/>';
     return '<ellipse class="' + cls + '" cx="' + f1(x) + '" cy="' + f1(y) + '" rx="5.3" ry="3.8"/>';                 // sol: round
   }
+  // a silent stretch as rests, in whole-note units (the plainest values,
+  // largest first; a dotted one where it fits)
+  function splitRest(w) {
+    var V = [1, 0.75, 0.5, 0.375, 0.25, 0.1875, 0.125, 0.0625], out = [], at = 0;
+    while (w > 1e-6) { var v = V.filter(function (x) { return x <= w + 1e-6; })[0] || w; out.push({ v: v, at: at }); at += v; w -= v; }
+    return out;
+  }
+  function restGlyphs(vs) { return vs.map(function (v) { return typeof v === "number" ? { v: v, at: 0 } : v; }); }
+  // one rest: the whole hangs from the fourth line, the half sits on the
+  // third, the crotchet a stroke, the quaver a flag on a slant (a dot if dotted)
+  function restSvg(v, x, top, full) {
+    var base = v >= 0.75 && v < 1 || v === 0.375 || v === 0.1875 ? v / 1.5 : v, dot = base !== v, o = [];
+    if (base >= 1 || full) o.push('<rect class="rs" x="' + f1(x - 5) + '" y="' + f1(top + SP) + '" width="10" height="' + f1(SP / 2) + '"/>');
+    else if (base >= 0.5) o.push('<rect class="rs" x="' + f1(x - 5) + '" y="' + f1(top + 2 * SP - SP / 2) + '" width="10" height="' + f1(SP / 2) + '"/>');
+    else if (base >= 0.25) o.push('<path class="rs" d="M' + f1(x - 2) + " " + f1(top + SP * 0.7) + " l4 5 l-4 4 l4 5 q-5 -1.5 -1 4" + '"/>');
+    else o.push('<circle class="rs" cx="' + f1(x - 1.5) + '" cy="' + f1(top + 1.6 * SP) + '" r="1.8"/><path class="rs" d="M' + f1(x - 1.5) + " " + f1(top + 1.6 * SP) + " q3 1 5 -1 l-4 " + f1(2.2 * SP) + '"/>');
+    if (dot) o.push('<circle class="rs" cx="' + f1(x + 9) + '" cy="' + f1(top + 1.5 * SP) + '" r="1.3"/>');
+    return o.join("");
+  }
   function engraveLine(h, line, rowIdx, label) {
     var T = h.modeOfTime.split("/"), barBeats = +T[0], den = +T[1];
     var staves = layoutOf(h), step0 = finalStep(h), doOf = C.doOf(h.mode);
@@ -303,6 +328,25 @@
           prevX = x; prevY = y;
         });
       });
+      // RESTS where a part is silent — the fuge's voices before they enter (round
+      // 3's critic: the silent bars were engraved blank) — on a staff of one part:
+      // each gap cut at the barlines and written in the plainest rests
+      if (parts.length === 1) (function (p) {
+        var ns = line.notes[p], gaps = [], t = 0, bs = line.barStart || 0;
+        ns.forEach(function (n) { if (n.beat > t + 1e-6) gaps.push([t, n.beat]); t = Math.max(t, n.beat + n.beats); });
+        gaps.forEach(function (g) {
+          var a = g[0];
+          while (a < g[1] - 1e-6) {
+            var nextBar = a + (barBeats - ((a + bs) % barBeats + barBeats) % barBeats), b = Math.min(g[1], nextBar), whole = (b - a) / den;
+            var full = Math.abs((b - a) - barBeats) < 1e-6;
+            restGlyphs(full ? [1] : splitRest(whole)).forEach(function (r) { out.push(restSvg(r.v, head + (a + r.at * den) * unit + 9 + (full ? (barBeats * unit) / 2 - 12 : 0), top, full)); });
+            a = b;
+          }
+        });
+        // (a note tied over the line's end, into the next line: the tie drawn out to the edge)
+        var last = ns[ns.length - 1];
+        if (last && last.tie) { var lx = head + last.beat * unit + 9, ly = staffY(clef, step0 + last.deg, top) + 7; out.push('<path class="sl" d="M' + f1(lx + 4) + " " + f1(ly) + " Q " + f1((lx + W - 6) / 2) + " " + f1(ly + 6) + " " + f1(W - 6) + " " + f1(ly) + '"/>'); }
+      })(parts[0]);
       // the shape-note syllables under the tune (Sacred Harp: the tenor)
       if (sylRow && sv[1][0] === "T") line.notes.T.forEach(function (n) {
         if (n.syl === null) return;
@@ -320,7 +364,7 @@
   // every system of a hymn (its lines, refrain, amen, tag), in order: the
   // row a line is engraved on is its index here
   function systems(h) {
-    var L = h.lines.map(function (l, i) { return [l, (h.round ? "segment " : "line ") + (i + 1) + " · " + l.plan.letter + (h.round ? " · " + (l.plan.rhythm || "") + ", " + (l.plan.register || "") : " · " + l.cadence.kind) + (h.fuge && h.fuge.line === i ? " · the fuge" : "")]; });
+    var L = h.lines.map(function (l, i) { return [l, (h.round ? "segment " : "line ") + (i + 1) + " · " + l.plan.letter + (h.round ? " · " + (l.plan.rhythm || "") + ", " + (l.plan.register || "") : " · " + l.cadence.kind) + (h.fuge && (h.fuge.lines || [h.fuge.line]).indexOf(i) >= 0 ? " · the fuge" + ((h.fuge.lines || []).length > 1 ? (i === h.fuge.lines[0] ? " (it runs on into the next line)" : " (the voices meet)") : "") : "")]; });
     (h.refrain || []).forEach(function (l, i) { L.push([l, "refrain " + (i + 1) + " · " + l.cadence.kind]); });
     if (h.amen) L.push([h.amen, "the amen (after the last verse)"]);
     if (h.tag) L.push([h.tag, "the tag (after the last refrain): " + ((h.tag.plan && h.tag.plan.chain) || []).join("–")]);
@@ -383,19 +427,35 @@
   // THE WARD — thirty-two people, eight to a part, each with a throat of
   // their own (voices-lab demo 2a, the owner's choice)
   // ==========================================================================
-  // (the owner's A/B for the sound he hears between the notes: the singers'
-  // breath, and the room's reverberation, each can be switched off)
+  // (the owner's A/B for the sound he hears "in between notes when the hymns
+  // are being sung". Three switches:
+  //   breath   — the singers' breath off: the aspiration in the tone and the
+  //              intake between lines;
+  //   room     — the church's reverberation off;
+  //   together — the ward in step: nobody late or early (each singer's timing
+  //              habit, 0–95 ms, set to none) and every slide between notes a
+  //              sure singer's (confidence 0.95, so the scoop into each new
+  //              pitch is short).
+  // The critic's silent renders (eight altos, dry) put the likeliest cause in
+  // the third: eight people changing pitch at staggered moments, each with a
+  // 50–140 ms scoop, smear the band above 2.5 kHz into noise at every join —
+  // spectral flatness 2.3× the mid-note's as the ward sings, 1.26× with the
+  // ward together; the breath switch leaves it at 2.3×. The switches change
+  // only who sings how: the dice are thrown alike either way.)
   function breathOn() { return !$("khl-breath") || $("khl-breath").checked; }
   function roomOn() { return !$("khl-room") || $("khl-room").checked; }
+  function togetherOn() { return !!$("khl-together") && $("khl-together").checked; }
   function fullWard(seed) {
-    var root = PJ2.Rand.stream(seed).fork("fullward"), people = [];
+    var root = PJ2.Rand.stream(seed).fork("fullward"), people = [], tight = togetherOn();
     ["S", "A", "T", "B"].forEach(function (part) {
       for (var k = 0; k < 8; k++) {
         var r = root.fork(part + ":" + k), base = { S: 0.30, A: -0.30, T: 0.45, B: -0.45 }[part] * 0.9;
-        people.push({ part: part, k: k, appetite: r.rnd(0.3, 1), spread: r.rnd(0, 0.3), singer: V.singer({
-          seed: seed, name: "ward-" + part + k, part: part, age: r.pick(["young", "mid", "mid", "old"]),
-          confidence: r.rnd(0.45, 0.9), brightness: r.rnd(0.3, 0.65), breath: r.rnd(0.2, 0.55) * (breathOn() ? 1 : 0),
-          pitchHabitCents: r.rnd(-12, 12), timingHabitMs: r.rnd(0, 70) + r.rnd(-10, 25), tractScale: r.rnd(0.95, 1.05),
+        var appetite = r.rnd(0.3, 1), spread = r.rnd(0, 0.3), age = r.pick(["young", "mid", "mid", "old"]);
+        var conf = r.rnd(0.45, 0.9), bright = r.rnd(0.3, 0.65), breath = r.rnd(0.2, 0.55), habit = r.rnd(-12, 12), late = r.rnd(0, 70) + r.rnd(-10, 25);
+        people.push({ part: part, k: k, appetite: appetite, spread: spread, singer: V.singer({
+          seed: seed, name: "ward-" + part + k, part: part, age: age,
+          confidence: tight ? 0.95 : conf, brightness: bright, breath: breath * (breathOn() ? 1 : 0),
+          pitchHabitCents: habit, timingHabitMs: tight ? 0 : late, tractScale: r.rnd(0.95, 1.05),
           pan: Math.max(-0.9, Math.min(0.9, base + r.rnd(-0.3, 0.3))) }) });
       }
     });
@@ -640,7 +700,7 @@
         if (h.fuge && h.fuge.repeatFrom != null) for (var q = h.fuge.repeatFrom; q < h.lines.length; q++) order.splice(h.lines.length + (q - h.fuge.repeatFrom), 0, q);
         order.forEach(function (li, oi) {
           var line = verseLines[li], next = oi + 1 < order.length && order[oi + 1] === li + 1 ? verseLines[li + 1] : null, row = rowOf(line);
-          var lab = label + " · " + (li < h.lines.length ? "line " + (li + 1) : "refrain") + (h.fuge && h.fuge.line === li ? " (the fuge)" : "");
+          var lab = label + " · " + (li < h.lines.length ? "line " + (li + 1) : "refrain") + (h.fuge && (h.fuge.lines || [h.fuge.line]).indexOf(li) >= 0 ? " (the fuge)" : "");
           if (lined) {
             // the precentor lines out the line; the ward answers it, slowly, each their own way
             var tp = t, pe = partEvents(line, next, h.melodyPart, tp, beatS * 0.42);
@@ -752,16 +812,20 @@
       return t + 2.5;
     });
   }
-  // THE WANDERING REFRAIN: in the lilt, fitted to the day's keys (here: the
-  // lab's key, a fourth up and a fifth down), in this hymn's dialect
+  // THE WANDERING REFRAIN: in the lilt, fitted to the day's keys, in this
+  // hymn's dialect. The day's hymns are keyed a just fourth or a just fifth
+  // from the keynote (PLAN §3.7), so the lab's day is its key, a fourth up
+  // (4/3) and a fifth up (3/2): three different notes for the final to stand
+  // on. (Round 3's first pass tried a fourth up and a fifth DOWN — the same
+  // note an octave apart — and so tested two keys, not three.)
   function composeRefrain() {
     var s = settings(), d = hymn ? hymn.dialect : "gospel", k0 = s.keyMonzo;
-    var keys = [k0, [k0[0] + 2, k0[1] - 1, k0[2], k0[3]], [k0[0] + 1, k0[1] - 1, k0[2], k0[3]]];
+    var keys = [k0, [k0[0] + 2, k0[1] - 1, k0[2], k0[3]], [k0[0] - 1, k0[1] + 1, k0[2], k0[3]]];
     var r = C.wanderingRefrain(PJ2.Rand.stream(s.seed).fork("wandering"), { keys: keys, dialect: d, id: "h:1:4" });
     extra.refrain = r;
     // the same tune in each key of the day, set in the hymn's dialect
     r.inKeys = keys.map(function (km, i) { return i === 0 ? r.hymn : C.refrainIn(PJ2.Rand.stream(s.seed).fork("wandering:" + i), r, { dialect: d, keyMonzo: km, id: "h:1:4" }); });
-    var where = ["in the lab's key", "a fourth up", "a fifth down"];
+    var where = ["in the lab's key", "a fourth up", "a fifth up"];
     $("khl-refrainout").innerHTML = miniCard(r.hymn, "refrain",
       '<p class="khl-note"><b>' + (r.fits ? "It sits well in every key of the day." : "It does not sit well in every key — see below.") + "</b> Compass " + r.compass + " semitones. " +
       r.keys.map(function (k, i) { return where[i] + ": " + (k.fits ? "✓" : "✗") + " (" + k.lo + " to " + k.hi + " semitones from middle C; the close on " + k.final + (k.closeInTess ? "" : ", low") + ")"; }).join(" · ") + "</p>");
@@ -778,7 +842,7 @@
           var alone = i === 0 && li === 0;
           t = S.singLine(h, i === 0 ? "refrain" : "none", li, t, line, all[li + 1] || null, beatS, function (e) { return e.n.syl != null ? vowels[e.n.syl] : null; },
                          { who: alone ? function (p) { return p.part === "T" && p.k === 0; } : null, assign: alone ? function () { return [h.melodyPart, h.melodyPart === "S" ? 0.5 : 1]; } : null, gain: alone ? 2.4 : 1,
-                           label: "the wandering refrain, " + ["in the first hymn's key", "a fourth up, after a later hymn", "a fifth down, in the doxology"][i] + (alone ? " — the enthusiast starts it alone" : "") });
+                           label: "the wandering refrain, " + ["in the first hymn's key", "a fourth up, after a later hymn", "a fifth up, in the doxology"][i] + (alone ? " — the enthusiast starts it alone" : "") });
         });
         t += 2.2;
       });
@@ -858,7 +922,7 @@
     ],
     psalmody: [
       "<b>New England psalmody</b> is Billings's Boston, the 1770s: the tune in the tenor, four rough-hewn parts in plain chords — until the <b>fuge</b>.",
-      "Listen for the fuging line (marked on the staff and in the plan, usually the third): the <i>bass starts it alone</i> with the line's opening words and notes; half a bar or a bar later the <i>tenor</i> comes in with the same opening (it is the tune), then the <i>counter</i> (the alto), then the <i>treble</i> — the words overlapping, a four-way conversation — and all four land together on one written chord. The fuge is then sung a second time, as the books repeat it. Elsewhere: open fifths, a clash left standing where two lines pass, bare closes; no organ, no amen.",
+      "Listen for the <b>fuge</b> (marked on the staff; usually it runs through the last two lines, as Billings's do): the <i>bass starts it alone</i> with the first line's opening — five or six notes and their words; half a bar or a bar later the <i>tenor</i> comes in with the same opening (it is the tune), then the <i>counter</i> (the alto), then the <i>treble</i>, each taking up the same notes, higher or lower — the words overlapping, a four-way conversation — until all four land together on one written chord at the end of the verse. The fuge is then sung a second time, as the books repeat it. Elsewhere: open fifths, a clash left standing where two lines pass, bare closes; no organ, no amen.",
     ],
     gospel: [
       "<b>Gospel and barbershop</b>: the parlour quartet and Moody and Sankey's revival hymns. The tune is the <i>lead</i>, the second voice from the top (the altos and some sopranos sing it); a tenor harmony floats above it, the baritone and the bass below.",

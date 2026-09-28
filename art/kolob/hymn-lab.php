@@ -117,6 +117,8 @@ include '../../includes/header.php';
 .khl svg .hd { fill: #1f1a12; stroke: #1f1a12; stroke-width: 1.2; }
 .khl svg .hd.op { fill: var(--sheet); }
 .khl svg .sm { stroke: #1f1a12; stroke-width: 1.1; }
+.khl svg .rs { fill: #1f1a12; stroke: #1f1a12; stroke-width: 1.1; }
+.khl svg path.rs { fill: none; stroke-width: 1.6; stroke-linejoin: round; }
 .khl svg .fl { fill: none; stroke: #1f1a12; stroke-width: 1.3; }
 .khl svg .tx { fill: #3a3024; font-family: "EB Garamond", Georgia, serif; }
 .khl svg .ac { fill: #1f1a12; font-family: Georgia, serif; }
@@ -173,6 +175,7 @@ include '../../includes/header.php';
     <label><input type="checkbox" id="khl-lined" checked /> lined out</label>
     <label title="the singers' breath: the aspiration in the tone and the intake between lines"><input type="checkbox" id="khl-breath" checked /> breath</label>
     <label title="the room's reverberation (the church's echo)"><input type="checkbox" id="khl-room" checked /> room</label>
+    <label title="the ward sings together: no one late or early, and every singer's slide between notes as short as a sure singer's"><input type="checkbox" id="khl-together" /> together</label>
     <label>verses <select id="khl-verses"><option>1</option><option selected>2</option><option>3</option></select></label>
     <label>tempo <input type="range" id="khl-tempo" min="0.6" max="1.4" step="0.05" value="1" /> <output id="khl-tempo-out">1.00×</output></label>
     <span class="khl-now" id="khl-now"></span>
@@ -234,7 +237,8 @@ include '../../includes/header.php';
     <h2 class="khl-sec">The wandering refrain</h2>
     <p class="khl-note">Two lines in the camp-meeting lilt that belong to the meeting rather than to any one hymn: sung after the
     first hymn, again after a later one in that hymn's key, and in the doxology. Written so its compass and its close sit well in
-    every key of the day (here: the lab's key, a fourth up, a fifth down), and set in the hymn above's dialect. Play: the three
+    every key of the day (here: the lab's key, a fourth up and a fifth up — the final on three different notes), and set in the
+    hymn above's dialect. Play: the three
     keys in turn — the first time, one enthusiast starts it alone.</p>
     <div class="khl-play">
       <button class="khl-btn" id="khl-refrainbtn" type="button">Compose the refrain</button>
