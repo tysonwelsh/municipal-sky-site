@@ -22,7 +22,10 @@
 // joined at round 2's integration, when the trombone choir began to play at
 // dawn; kolob-voices-vocal.js and kolob-cast.js at round 3b, when the ward
 // began to sing the meeting; kolob-organist.js and kolob-voices-pipeorgan.js
-// at round 3b's second step, when the Sunday's organist took the bench.)
+// at round 3b's second step, when the Sunday's organist took the bench;
+// kolob-experimental.js, kolob-voices-folk.js, kolob-guest-handbells.js and
+// kolob-guest-singingschool.js at its third, when the handbell choir and the
+// singing school came into the meeting.)
 //
 // THE LOAD GUARD. Each kolob-*.js room answers a roll call as its last act
 // (KOLOB._rooms["kolob-organ.js"] = true), and the substrate — and the Earth
@@ -68,12 +71,18 @@ return [
     // prelude, the hymn in pieces, the walk into a new key — played on the
     // pipe organ among the voices
     'kolob-organist.js',
+    // the experiments' switch (round 3b, step 3): the engine asks it once a
+    // meeting before seating an experimental feature (the singing school);
+    // ?exp=-singingSchool turns one off for a visit
+    'kolob-experimental.js',
     // the voices (the registrable pipe organ, round 3b, step 2: the meeting's
     // one organ — kolob-voices-organ.js keeps the old one as the A/B)
     'kolob-voices-pipeorgan.js',
     'kolob-voices-organ.js', 'kolob-voices-choir.js', 'kolob-voices-winds.js',
     'kolob-voices-ground.js', 'kolob-voices-field.js', 'kolob-voices-bagpipe.js',
     'kolob-voices-band.js',
+    // the folk instruments: the ward's handbells (round 3b, step 3)
+    'kolob-voices-folk.js',
     // the ward's thirty-two voices (round 3b: a throat each; the meeting's
     // one congregation)
     'kolob-voices-vocal.js',
@@ -83,7 +92,9 @@ return [
     // round 3's integration, when the meeting began to sing them)
     // the Sunday's ward and its people, the performer of every hymn (round 3b)
     'kolob-cast.js',
-    'kolob-hymnal.js', 'kolob-guest-trombones.js', 'kolob-guests.js', 'kolob-meeting.js',
+    // (and the guests who stand in the room — the ward's handbell choir and
+    // the singing school — plan and play themselves, round 3b, step 3)
+    'kolob-hymnal.js', 'kolob-guest-trombones.js', 'kolob-guest-handbells.js', 'kolob-guest-singingschool.js', 'kolob-guests.js', 'kolob-meeting.js',
     // the facade
     'kolob-core.js',
 ];

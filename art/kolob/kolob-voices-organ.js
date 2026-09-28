@@ -335,7 +335,7 @@ window.KOLOB = window.KOLOB || {};
     if (x.deg != null) n.deg = x.deg;
     if (x.orn) n.orn = x.orn;
     if (tag.verse != null) n.verse = tag.verse;
-    ["givingOut", "modulation", "interlude", "amen", "prelude"].forEach(function (k) { if (tag[k]) n[k] = true; });
+    ["givingOut", "modulation", "interlude", "amen", "prelude", "partner"].forEach(function (k) { if (tag[k]) n[k] = true; });
     if (!x.pedalOnly) emitNote("organ", f, st, dur, n);
     if (x.pedal) {
       var p = {}; for (var k in n) p[k] = n[k];

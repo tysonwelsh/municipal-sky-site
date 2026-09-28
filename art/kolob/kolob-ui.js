@@ -62,6 +62,16 @@
     tuneWithheld: "𐐜 𐐓𐐅𐐤 𐐆𐐞 𐐎𐐆𐐛𐐐𐐇𐐢𐐔", // THE TUNE IS WITHHELD
     wholeTune: "𐐜 𐐐𐐄𐐢 𐐓𐐅𐐤 𐐈𐐓 𐐢𐐈𐐝𐐓",  // THE WHOLE TUNE, AT LAST
     wholeFlag: "𐐜 𐐐𐐄𐐢 𐐓𐐅𐐤",            // THE WHOLE TUNE (telemetry)
+    // (round 3b, step 3: the handbells, the singing school, a round, the partner hymn, the refrain)
+    handbells: "𐐜 𐐐𐐈𐐤𐐔𐐒𐐇𐐢𐐞",          // THE HANDBELLS
+    cascade: "𐐜 𐐗𐐈𐐝𐐗𐐁𐐔",               // THE CASCADE
+    singingSchool: "𐐜 𐐝𐐆𐐥𐐆𐐥 𐐝𐐗𐐅𐐢",     // THE SINGING SCHOOL
+    stopsThem: "𐐜 𐐗𐐃𐐡𐐆𐐝𐐓𐐊𐐡 𐐝𐐓𐐉𐐑𐐝 𐐜𐐇𐐣", // THE CHORISTER STOPS THEM
+    onTheNotes: "𐐉𐐤 𐐜 𐐤𐐄𐐓𐐝",            // ON THE NOTES
+    again: "𐐊𐐘𐐇𐐤",                        // AGAIN
+    aRound: "𐐝𐐊𐐥 𐐈𐐞 𐐊 𐐡𐐍𐐤𐐔",           // SUNG AS A ROUND
+    againstIt: "𐐜 𐐙𐐊𐐡𐐝𐐓 𐐐𐐆𐐣 𐐊𐐘𐐇𐐤𐐝𐐓 𐐆𐐓", // THE FIRST HYMN AGAINST IT
+    refrain: "𐐜 𐐡𐐆𐐙𐐡𐐁𐐤",               // THE REFRAIN
     liahona: "𐐢𐐀𐐊𐐐𐐄𐐤𐐊",                // LIAHONA
     sample: "𐐝𐐈𐐣𐐑𐐊𐐢",                   // SAMPLE
     orderOfService: "𐐃𐐡𐐔𐐊𐐡 𐐊𐐚 𐐝𐐊𐐡𐐚𐐆𐐝", // ORDER OF SERVICE
@@ -136,6 +146,8 @@
     trombonesDawn: "TROMBONES AT DAWN", nearAnswers: "THE NEAR CHOIR ANSWERS", twoChoirs: "THE TWO CHOIRS TOGETHER",
     tuneWithheld: "THE TUNE IS WITHHELD", wholeTune: "THE WHOLE TUNE, AT LAST",
     wholeFlag: "THE WHOLE TUNE",
+    handbells: "THE HANDBELLS", cascade: "THE CASCADE", singingSchool: "THE SINGING SCHOOL", stopsThem: "THE CHORISTER STOPS THEM",
+    onTheNotes: "ON THE NOTES", again: "AGAIN", aRound: "SUNG AS A ROUND", againstIt: "THE FIRST HYMN AGAINST IT", refrain: "THE REFRAIN",
     orderOfService: "ORDER OF SERVICE", theStops: "THE INSTRUMENTS",
     copyParams: "COPY PARAMETERS", copied: "COPIED ✓",
     minutes: "CLERK'S MINUTES", broadside: "THE BROADSIDE", hymnBoard: "HYMN BOARD",
@@ -198,6 +210,10 @@
     oldtune:   { remembered: ["✧", "oldTune"], "gives-out": ["✧", "memoryOut"] },
     trombones: { far: ["♪", "trombonesDawn"], answer: ["♪", "nearAnswers"], together: ["♪", "twoChoirs"] },
     assembly:  { withheld: ["◌", "tuneWithheld"], "whole-tune": ["✶", "wholeTune"] },
+    // (round 3b, step 3) the ward's handbell choir: its first sound, and the
+    // cascade; the singing school: the fork, the stop, the part alone, again
+    handbells: { ring: ["♫", "handbells"], cascade: ["♫", "cascade"] },
+    singingschool: { fork: ["♪", "singingSchool"], cut: ["♪", "stopsThem"], alone: ["♪", "onTheNotes"], again: ["♪", "again"] },
     raspberry: { blat: ["∴", "raspberry"], amen: ["∴", "amenDash"] },
   };
   var ROMAN_MOTIF = { "Ⅰ": 1, "Ⅱ": 1, "Ⅲ": 1 };
@@ -210,7 +226,9 @@
     return String(s || "").replace(/[\u{10428}-\u{1044F}]/gu, function (ch) { return String.fromCodePoint(ch.codePointAt(0) - 0x28); });
   }
   var FORWARD_ROW = { "keys the hymn": 1, "hums the first note": 1, "pitches the tune": 1, "comes forward": 1, "sings the descant": 1,
-                      "sings the treble verse": 1, "sings the tune": 1, "loses the words": 1, "finds them again": 1, "joins in": 1, "sings out": 1 };
+                      "sings the treble verse": 1, "sings the tune": 1, "loses the words": 1, "finds them again": 1, "joins in": 1, "sings out": 1,
+                      // (round 3b, step 3: the refrain begun, the quartet, the Primary, a round set going, the cornet against the partner)
+                      "starts the refrain": 1, "leads the quartet": 1, "leads the Primary": 1, "sets the round going": 1, "plays the first hymn on the cornet": 1 };
   // (round 3b, step 2) the organist's moments that earn a row: the chorale
   // prelude, the walk into a new key, a fill between the lines, the strange
   // key, a line left to the ward — not every stop drawn, nor the giving-out
@@ -218,7 +236,7 @@
   var ORGANIST_ROW = { "plays the day's first hymn as a prelude": 1, "puts the tune in the pedals": 1, "lets the flutes run in another key": 1,
                        "modulates to the next hymn's key": 1, "links the lines": 1, "holds a note over into the next line": 1, "echoes the line on the echo flute": 1,
                        "quotes the next line between the lines": 1, "turns an arabesque between the lines": 1, "runs a sequence between the lines": 1,
-                       "strays into a strange key": 1, "lifts both hands; the ward sings a line alone": 1 };
+                       "strays into a strange key": 1, "lifts both hands; the ward sings a line alone": 1, "plays the first hymn against it": 1 };
   function actionKey(a) { return String(a || "").replace(/ \(.*\)$/, ""); }
   function layerName(l) { return TT(LAYERS_DS, LAYERS_EN)[l] || l; }
   function dsEvent(ev) {
@@ -245,7 +263,14 @@
         if (ev.composed) return null;
         return ev.practice === "lined" ? null : minute("¶", S.verse + (ev.speechLine != null ? " " + ev.speechLine : ""), "verse");
       case "verse-start":                                    // (round 3: a composed hymn's verse — the motif couplets' stanzas keep their line rows)
+        if (ev.refrain) return null;                         // (round 3b, step 3: the refrain has its own row)
         return ev.composed ? minute("¶", S.verse + " " + (ev.verse + 1), "verse") : null;
+      case "round-entry":                                    // (round 3b, step 3: a hymn sung as a round — one row, as it begins)
+        return ev.entry === 1 ? minute("⟳", S.aRound, "verse") : null;
+      case "partner":                                        // (the partner hymn's last verse: the first hymn against it)
+        return ev.combined ? minute("⚭", S.againstIt, "visitation") : null;
+      case "refrain":                                        // (each statement of the wandering refrain)
+        return minute("↺", S.refrain, "verse");
       case "hymn-announced":                                 // (round 3: the number and the Deseret name, as the board gives them)
         return ev.hymn && ev.hymn.number != null ? minute("№", S.hymnNo + " " + ev.hymn.number + (ev.hymn.nameDs ? " " + ev.hymn.nameDs : ""), "verse") : null;
       case "lining-out":                                     // (a composed hymn lined out: the deacon's row once a verse, at its first line)
@@ -559,7 +584,7 @@
   // steeples answer, an old tune, trombones at dawn, the whole tune. Empty
   // when nothing fires — and for a guest this table does not name (v0.32
   // called the old tune "two bands").
-  var VISIT_FLAG = { bands: "twoBands", steeples: "theSteeples", oldtune: "oldTuneFlag", trombones: "trombonesDawn", assembly: "wholeFlag" };
+  var VISIT_FLAG = { bands: "twoBands", steeples: "theSteeples", oldtune: "oldTuneFlag", trombones: "trombonesDawn", assembly: "wholeFlag", handbells: "handbells", singingschool: "singingSchool" };
   function directionFor(c, playing) {
     if (!playing) return "";
     var S = TT(STR, STR_EN);

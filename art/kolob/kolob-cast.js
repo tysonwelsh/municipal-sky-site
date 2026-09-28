@@ -19,6 +19,8 @@
 //    Math.random. The caller hands in PJ2.Rand streams and gets plain JSON
 //    back, so the harness can seat a ward and lay out a hymn in Node.
 //      seat(stream, opts)                  → the Ward (stream: cast:<n>)
+//      planRefrain(ward, refrain, stream, {k, dox}) → a statement of the
+//                                             wandering refrain's plan
 //      planHymn(ward, hymn, stream, opts)  → the plan: the keying or the
 //                                             pitching, then a Performance
 //                                             per verse (SCORE §5.1), and
@@ -42,6 +44,19 @@
 // newcomer arriving on the second line of the day's first hymn). "Forward"
 // means their voice leaves the hall for the near bus, a few dB up: the
 // same person, heard.
+//
+// ROUND 3B, STEP 3 — THE STYLES' OWN WAYS. A gospel hymn is sung, on some
+// Sundays, by a QUARTET of four of the ward standing (the tenor harmony, the
+// lead, the baritone, the bass: on the note and together, so its sevenths
+// ring), the ward coming in on the refrain and the tag. The PRIMARY — six to
+// nine of the ward's children, seated with their families (seat's fork
+// `primary`) — sings the Primary song, the ward joining its chorus. A hymn
+// the composer wrote as a ROUND is sung as one: once through together, now
+// and then, then the ward going in group by group (by its sections, or by
+// the pews from one side of the chapel to the other), each going round and
+// dropping out in turn. And the meeting's WANDERING REFRAIN is planned here
+// as a small hymn (planRefrain): the enthusiast starts it alone, the ward
+// takes it up.
 //
 // THE KEYING AND THE PITCHING. Before an unaccompanied hymn the chorister
 // gives the key in her own habit — a hummed do and the tune's first note,
@@ -140,6 +155,12 @@ window.KOLOB.Cast = (function () {
    ["sings the treble verse", "s-i-ng-z dh-u t-r-e-b-u-l v-u-r-s"], ["sings the tune", "s-i-ng-z dh-u t-oo-n"], ["loses the words", "l-oo-z-i-z dh-u w-u-r-d-z"],
    ["finds them again", "f-ie-n-d-z dh-e-m u-g-e-n"], ["joins in", "j-oi-n-z i-n"], ["sings out", "s-i-ng-z ow-t"],
    ["blends back into the ward", "b-l-e-n-d-z b-a-k i-n-t-oo dh-u w-aw-r-d"], ["falls silent", "f-aw-l-z s-ie-l-u-n-t"],
+   // (round 3b, step 3) the refrain, the quartet, the Primary, the round, the partner hymn
+   ["starts the refrain", "s-t-ah-r-t-s dh-u r-i-f-r-ay-n"], ["leads the quartet", "l-ee-d-z dh-u k-w-aw-r-t-e-t"],
+   ["sings in the quartet", "s-i-ng-z i-n dh-u k-w-aw-r-t-e-t"], ["leads the Primary", "l-ee-d-z dh-u p-r-ie-m-e-r-ee"],
+   ["sets the round going", "s-e-t-s dh-u r-ow-n-d g-oh-i-ng"],
+   ["plays the first hymn against it", "p-l-ay-z dh-u f-u-r-s-t h-i-m u-g-e-n-s-t i-t"],
+   ["plays the first hymn on the cornet", "p-l-ay-z dh-u f-u-r-s-t h-i-m o-n dh-u k-aw-r-n-e-t"],
    // (round 3b, step 2) the organist at the bench (kolob-organist.js says
    // these; a parenthesis after one — which key he strays to — is the dev
    // tools' only)
@@ -169,7 +190,8 @@ window.KOLOB.Cast = (function () {
   // the actions a person COMES FORWARD with (the rest say how their moment
   // goes on, or ends): the minutes give these a row
   var ACTION_FORWARD = { "keys the hymn": 1, "hums the first note": 1, "pitches the tune": 1, "lines out": 1, "comes forward": 1, "sings the descant": 1,
-                         "sings the treble verse": 1, "sings the tune": 1, "loses the words": 1, "finds them again": 1, "joins in": 1, "sings out": 1 };
+                         "sings the treble verse": 1, "sings the tune": 1, "loses the words": 1, "finds them again": 1, "joins in": 1, "sings out": 1,
+                         "starts the refrain": 1, "leads the quartet": 1, "leads the Primary": 1, "sets the round going": 1, "plays the first hymn on the cornet": 1 };
   var ROSTER = {
     chorister: [
       { id: "brisk", en: "the brisk one: quick tempo, short holds, cuts off clean", parts: ["S", "A", "T"], voice: { confidence: [0.9, 0.97] }, habit: { tempoMul: [1.03, 1.08], rubato: [0.02, 0.06], holdMul: [1.2, 1.5], keying: "hum" } },
@@ -284,6 +306,11 @@ window.KOLOB.Cast = (function () {
     // (keep the roster's own order, so the chart and the log read the same way every time)
     filling.sort(function (a, b) { return ROLE_ORDER.indexOf(a) - ROLE_ORDER.indexOf(b); });
     for (var ti = 0; ti < nTest; ti++) filling.push("testimony");
+    // (round 3b, step 3: a Sunday of the wandering refrain needs the
+    // enthusiast — he starts it — so one is seated if the draw left him out:
+    // last of the pews' people, on his own role's fork, so everyone else is
+    // who they would have been)
+    if (opts.enthusiast && filling.indexOf("enthusiast") < 0) filling.push("enthusiast");
     filling.push("organist");
     var testN = 0, usedArch = {};
     filling.forEach(function (role) {
@@ -366,7 +393,34 @@ window.KOLOB.Cast = (function () {
         nameCount[m.nameDs]--; m.nameDs = ds; m.nameEn = g[0] + " " + fam[0]; nameCount[ds] = 1;
       }
     });
-    return { members: members, byId: byId, individuals: individuals, roles: roles };
+    // (the enthusiast seated late keeps the roster's order in the lists)
+    individuals.sort(function (a, b) { return ROLE_ORDER.indexOf(byId[a].role) - ROLE_ORDER.indexOf(byId[b].role); });
+    // THE PRIMARY (round 3b, step 3; PLAN-COMPOSITION §3.E, §5.2): the
+    // ward's children, who sing the Primary song when the day's unison song
+    // is one — six to nine of them, each sitting with a family of the pews,
+    // each a child's voice of their own. Seated after everyone else, on the
+    // fork `primary` (each child on primary:<k>), so no other die moves; a
+    // child never takes a name already in the room. They are not among the
+    // thirty-two (k is null) and sing nothing else; the child you come to
+    // know, if the Sunday seated one, sings with them.
+    var pr = stream.fork("primary"), primary = [], nP = pr.rint(6, 9);
+    var fams2 = members.filter(function (m) { return m.k != null; });
+    for (var pk = 0; pk < nP; pk++) {
+      var rc = stream.fork("primary:" + pk), parent2 = fams2[rc.rint(0, fams2.length - 1)];
+      var fam2 = FAMILIES.filter(function (f) { return f[0] === parent2.family; })[0], nm2 = null, ds2 = null;
+      for (var tr2 = 0; tr2 < 16; tr2++) { var g2 = rc.pick(CHILDREN.concat(tr2 > 7 ? WOMEN.concat(MEN) : [])); ds2 = deseret(g2[1] + " " + fam2[1]); nm2 = g2[0]; if (!nameCount[ds2]) break; }
+      nameCount[ds2] = (nameCount[ds2] || 0) + 1;
+      var kid = {
+        id: "p" + pk, part: "child", k: null, primary: true,
+        nameEn: nm2 + " " + fam2[0], nameDs: ds2, family: fam2[0],
+        pew: { x: round(Math.max(-0.92, Math.min(0.92, parent2.pew.x + rc.rnd(-0.1, 0.1))), 3), row: parent2.pew.row },
+        voice: { part: "child", age: "young", confidence: round(rc.rnd(0.42, 0.72)), brightness: round(rc.rnd(0.5, 0.72)), breath: round(rc.rnd(0.45, 0.7)),
+                 pitchHabitCents: round(rc.rnd(-14, 16), 2), timingHabitMs: round(rc.rnd(15, 75), 1), tractScale: round(rc.rnd(0.96, 1.06)) },
+        appetite: round(rc.rnd(0.2, 0.5)), spread: round(rc.rnd(0.05, 0.3)), parent: parent2.id,
+      };
+      members.push(kid); byId[kid.id] = kid; primary.push(kid.id);
+    }
+    return { members: members, byId: byId, individuals: individuals, roles: roles, primary: primary };
   }
   // [timing habit lo, hi (ms), pitch habit ± (cents)] for the roles that lead
   var LEADS = { chorister: [-4, 6, 4], precentor: [-5, 8, 5], soloist: [-5, 5, 4] };
@@ -524,6 +578,52 @@ window.KOLOB.Cast = (function () {
       else if (v > 0 && v < verses - 1 && v === uniV) p = "unison";
       practice.push(p);
     }
+    // ---- the round, the Primary, the quartet (round 3b, step 3) ----
+    // A ROUND (the composer's round(): h.round): sung unaccompanied — once
+    // through together first, now and then, then as a canon: the ward goes
+    // in by its sections (trebles, altos, tenors, basses — or women and men,
+    // or trebles, altos and men) or by the pews (the room from one side to
+    // the other), each group a segment behind the last, going round two or
+    // three times and dropping out in the order it came in. Its dice on the
+    // fork `round`, thrown for every hymn.
+    var rd = r.fork("round"), rdBy = rd.chance(0.55) ? "parts" : "pews", rdTimes = rd.chance(0.6) ? 2 : 3, rdOnce = rd.chance(0.6), rdSide = rd.chance(0.5) ? 1 : -1;
+    var canon = null;
+    if (hymn.round) {
+      var ents = Math.max(2, Math.min(4, hymn.round.entries || 2));
+      canon = { by: rdBy, entries: ents, times: rdTimes, side: rdSide, segments: hymn.round.segments, delayBeats: hymn.round.delayBeats, groups: roundGroups(ward, rdBy, ents, rdSide) };
+      practice = verses >= 2 && rdOnce ? ["unison", "round"] : ["round"];
+      verses = practice.length;
+      keying = { kind: "keying", by: ch.id, habit: chH.keying === "fasola" ? "hum" : (chH.keying || "hum") };
+    }
+    // THE PRIMARY SONG (the unison song's third kind, hymn.kind "primary"):
+    // the Primary sings it — the ward's children, and the child you come to
+    // know among them — the ward listening, and joining them on the chorus
+    // after the first verse; a Primary teacher (the chorister) leads them.
+    var primary = hymn.kind === "primary" && ward.primary && ward.primary.length ? ward.primary.concat(who(ward, "child") ? ["child"] : []) : null;
+    // THE QUARTET (gospel, D): on some Sundays four of the ward stand up and
+    // sing the verses as the parlour quartet sings them — the tenor harmony
+    // over the lead, the baritone and the bass under it, close, on the note
+    // and together, so the ringing sevenths ring — and the ward comes in on
+    // the refrain and the tag (Moody and Sankey's meetings: the quartet on
+    // the verse, everyone on the chorus). Else the quartet is the ward's
+    // own, the lead in its second voice (assignment()). Its die on the fork
+    // `quartet`, thrown for every hymn.
+    var qd = r.fork("quartet"), qDie = qd.rnd(0, 1), qPick = [qd.rnd(0, 1), qd.rnd(0, 1), qd.rnd(0, 1), qd.rnd(0, 1)];
+    var quartet = null;
+    if (dl === "gospel" && hymn.voiceOrder && qDie < QUARTET_RATE) {
+      quartet = {};
+      // the Score's part → who sings it: the tenor harmony a treble, the
+      // lead an alto, the baritone a tenor, the bass a bass — each the
+      // surest of three in their section (the pews' own people, none of the
+      // people you come to know: they keep their moments)
+      [["S", "S"], ["T", "A"], ["A", "T"], ["B", "B"]].forEach(function (pp, qi) {
+        var pool = ward.members.filter(function (m) { return m.k != null && m.part === pp[1] && !m.role; })
+          .sort(function (a, b) { return b.voice.confidence - a.voice.confidence || (a.k - b.k); }).slice(0, 3);
+        if (pool.length) quartet[pp[0]] = pool[Math.min(pool.length - 1, Math.floor(qPick[qi] * pool.length))].id;
+      });
+      if (Object.keys(quartet).length < 4) quartet = null;
+      else for (var qv = 0; qv < verses; qv++) practice[qv] = "quartet";
+    }
     // ---- who comes forward ----
     var fwd = practice.map(function () { return []; });
     function busy(vv, lines) { var n = 0; fwd[vv].forEach(function (f) { if (f.lines.some(function (li) { return lines.indexOf(li) >= 0; })) n++; }); return n; }
@@ -538,19 +638,30 @@ window.KOLOB.Cast = (function () {
     }
     var all = []; for (var li = 0; li < nLines; li++) all.push(li);
     var tail = all.slice(Math.max(0, nLines - 2));
+    // (a round's groups are its texture, the Primary's children its voices,
+    // and the quartet's verses are the four's: nobody else comes forward in
+    // them — but the enthusiast sings out on the gospel refrain, the chorus
+    // being everyone's)
+    var solo = !!(canon || primary || quartet);
+    if (quartet && who(ward, "enthusiast") && hymn.refrain && hymn.refrain.length && dEnth < 0.75) {
+      var refL = []; for (var rl = hymn.lines.length; rl < nLines; rl++) refL.push(rl);
+      add(verses - 1, "enthusiast", "sings out", refL, 3);
+    }
     if (dl === "oldway") for (var vo = 0; vo < verses; vo++) add(vo, "precentor", "lines out", all, 4);
-    if (opts.first && who(ward, "newcomer")) {
+    if (solo) { /* (none of the moments below) */ }
+    else if (opts.first && who(ward, "newcomer")) {
       var jl = Math.min(nLines - 1, who(ward, "newcomer").habit.joinsLine || 1);
       add(0, "newcomer", "joins in", all.slice(jl, jl + 1), 3);
     }
-    if (practice.indexOf("descant") >= 0) add(practice.indexOf("descant"), "soloist", "sings the descant", all, 5);
+    if (solo) { /* (as above) */ }
+    else if (practice.indexOf("descant") >= 0) add(practice.indexOf("descant"), "soloist", "sings the descant", all, 5);
     else if (dl === "tabernacle" && verses >= 3 && dTreble < 0.22) add(1, "soloist", "sings the treble verse", all, 4);
     // the middle verses: the alto, the child, the old bass — in an order the dice choose
     var mids = []; for (var vm = dl === "sacredharp" ? 1 : 0; vm < verses; vm++) mids.push(vm);
     var order = dOrder < 0.33 ? ["alto", "child", "oldbass"] : dOrder < 0.66 ? ["child", "oldbass", "alto"] : ["oldbass", "alto", "child"];
     var wants = { alto: dAltoV, child: dChildV, oldbass: dBassV };
     order.forEach(function (role, oi) {
-      if (!who(ward, role)) return;
+      if (solo || !who(ward, role)) return;
       if (role === "alto" && !hymn.lines[0].notes.A) return;                            // no alto part to hear
       var start = Math.floor(wants[role] * mids.length);
       for (var tryN = 0; tryN < mids.length; tryN++) {
@@ -561,23 +672,83 @@ window.KOLOB.Cast = (function () {
         if (add(vv, role, act, lines, role === "oldbass" ? 5 : role === "child" ? 4 : 4)) break;
       }
     });
-    if (who(ward, "enthusiast") && dEnth < 0.75) add(verses - 1, "enthusiast", "sings out", all, 3);
+    if (!solo && who(ward, "enthusiast") && dEnth < 0.75) add(verses - 1, "enthusiast", "sings out", all, 3);
     // ---- the Performances (SCORE §5.1) ----
     var singers = ward.members.filter(function (m) { return m.k != null; }).map(function (m) { return m.id; });
     var perf = practice.map(function (p, vi) {
+      var sing = singers.slice().concat(fwd[vi].some(function (f) { return f.role === "child"; }) ? ["child"] : []);
+      if (p === "quartet") sing = ["S", "T", "A", "B"].map(function (q) { return quartet[q]; }).concat(hymn.refrain && hymn.refrain.length ? singers : []);
+      if (primary) sing = primary.concat(vi > 0 && hymn.refrain && hymn.refrain.length ? singers : []);
       var o = {
         hymnId: hymn.id, verse: vi, practice: p, tempoMul: round(tempoMul * (dl === "oldway" ? 1 : 1), 3), rubato: round(rubato, 3),
-        organ: organ && p !== "hummed" ? { registration: [verses >= 3 && vi === verses - 1 ? "full organ" : "hymn principal"] } : null,
-        singers: singers.slice().concat(fwd[vi].some(function (f) { return f.role === "child"; }) ? ["child"] : []),
+        organ: organ && !canon && p !== "hummed" ? { registration: [verses >= 3 && vi === verses - 1 ? "full organ" : "hymn principal"] } : null,
+        singers: sing.filter(function (x, i, a) { return a.indexOf(x) === i; }),
         forward: fwd[vi],
       };
       return K.Score && K.Score.performance ? K.Score.performance(o) : o;
     });
     return {
-      hymnId: hymn.id, dialect: dl, layout: layoutFor(dl), keying: keying, verses: perf,
-      tempoMul: round(tempoMul, 3), rubato: round(rubato, 3), holdMul: round(holdMul, 3), organ: organ,
-      amen: !!hymn.amen, first: !!opts.first, chorister: ch.id,
+      hymnId: hymn.id, dialect: dl, layout: canon && canon.by === "pews" ? "pews" : layoutFor(dl), keying: keying, verses: perf,
+      tempoMul: round(tempoMul, 3), rubato: round(rubato, 3), holdMul: round(holdMul, 3), organ: organ && !canon,
+      amen: !!hymn.amen && !canon, first: !!opts.first, chorister: ch.id,
+      round: canon, primary: primary, quartet: quartet,
     };
+  }
+  var QUARTET_RATE = 0.45;                         // the quartet sings a gospel hymn's verses about this often
+  // the groups of a round: by the sections (2: the women and the men; 3:
+  // the trebles, the altos and the men; 4: each section), or by the pews —
+  // the thirty-two in the order they sit across the chapel, from one side
+  // (side 1: the audience's left first) to the other, cut in `n`
+  // ==========================================================================
+  // planRefrain(ward, refrain, stream, opts) → the plan of one statement of
+  // the meeting's wandering refrain (round 3b, step 3; PLAN §15 item 4), as
+  // planHymn gives a hymn's: the refrain's Score is a small hymn (the
+  // composer's, set in the key and dialect of the hymn it follows).
+  //   opts.k 0 — after the first hymn's last verse: the enthusiast starts it
+  //              ALONE, once through, and the ward takes it up;
+  //   opts.k 1 — it comes back after a later hymn: the ward sings it, the
+  //              enthusiast singing out;
+  //   opts.dox — in the doxology: the ward sings it unprompted, everyone at
+  //              once, nobody forward.
+  // Nobody keys it (it is caught up, not given out) and the organ does not
+  // play it. stream: the statement's own (r:<n>:<k> → performance).
+  // ==========================================================================
+  function planRefrain(ward, rh, stream, opts) {
+    opts = opts || {};
+    var ch = who(ward, "chorister") || ward.members[0], chH = ch.habit || {}, en = who(ward, "enthusiast");
+    var nL = rh.lines.length + (rh.refrain ? rh.refrain.length : 0), all = [];
+    for (var li = 0; li < nL; li++) all.push(li);
+    var pr = rh.dialect === "shaker" ? "unison" : "sung", verses = [];
+    if (!opts.dox && opts.k === 0 && en) verses.push({ practice: pr, forward: [{ memberId: en.id, role: "enthusiast", action: "starts the refrain", lines: all, gainDb: 5, alone: true }] });
+    verses.push({ practice: pr, forward: !opts.dox && opts.k > 0 && en ? [{ memberId: en.id, role: "enthusiast", action: "sings out", lines: all, gainDb: 3 }] : [] });
+    var singers = ward.members.filter(function (m) { return m.k != null; }).map(function (m) { return m.id; });
+    var tempoMul = (chH.tempoMul || 1) * (stream ? stream.fork("tempo").rnd(1.0, 1.06) : 1);    // (caught up a shade quicker than the hymn)
+    var perf = verses.map(function (V, vi) {
+      var o = { hymnId: rh.id, verse: vi, practice: V.practice, tempoMul: round(tempoMul, 3), rubato: round(chH.rubato || 0.05, 3), organ: null,
+                singers: V.forward.some(function (f) { return f.alone; }) ? [V.forward[0].memberId] : singers.slice(), forward: V.forward };
+      return K.Score && K.Score.performance ? K.Score.performance(o) : o;
+    });
+    return {
+      hymnId: rh.id, dialect: rh.dialect, layout: layoutFor(rh.dialect), keying: null, verses: perf,
+      tempoMul: round(tempoMul, 3), rubato: round(chH.rubato || 0.05, 3), holdMul: round(chH.holdMul || 1.6, 3), organ: false,
+      amen: false, first: false, chorister: ch.id, refrain: { k: opts.k || 0, dox: !!opts.dox, starter: !opts.dox && opts.k === 0 && en ? en.id : null },
+    };
+  }
+  function roundGroupName(ward, ids) {
+    var parts = {}; ids.forEach(function (id) { var m = ward.byId[id]; if (m) parts[m.part] = true; });
+    var p = Object.keys(parts).sort(function (a, b) { return PARTS.indexOf(a) - PARTS.indexOf(b); });
+    return p.length === 2 && parts.S && parts.A ? "the women" : p.length === 2 && parts.T && parts.B ? "the men" : p.map(function (x) { return PART_NAME[x] + "s"; }).join(" and ");
+  }
+  function roundGroups(ward, by, n, side) {
+    var seated = ward.members.filter(function (m) { return m.k != null; });
+    if (by === "parts") {
+      var cut = n === 2 ? [["S", "A"], ["T", "B"]] : n === 3 ? [["S"], ["A"], ["T", "B"]] : [["S"], ["A"], ["T"], ["B"]];
+      return cut.map(function (ps) { return seated.filter(function (m) { return ps.indexOf(m.part) >= 0; }).map(function (m) { return m.id; }); });
+    }
+    var sorted = seated.slice().sort(function (a, b) { return side * (a.pew.x - b.pew.x) || (a.k - b.k) || (a.part < b.part ? -1 : 1); });
+    var out = []; for (var g = 0; g < n; g++) out.push([]);
+    sorted.forEach(function (m, i) { out[Math.min(n - 1, Math.floor(i * n / sorted.length))].push(m.id); });
+    return out;
   }
 
   // ==========================================================================
@@ -690,6 +861,13 @@ window.KOLOB.Cast = (function () {
   // lines) }. The organist lays the organ by the chorister's clock (below);
   // the ward waits where the organist asks it to. Nothing else moves.
   var WARD_GAIN = 1 / Math.sqrt(8);
+  // (round 3b, step 3) the quartet: each of the four about a section's
+  // strength, a step nearer; the tenor harmony and the lead at the centre's
+  // left and right, the baritone and the bass beside them. The Primary: each
+  // child a little over a pew's voice (a row of six to ten small voices
+  // stands where a section would)
+  var QUARTET_GAIN = 0.62, QUARTET_PAN = { S: -0.12, T: 0.06, A: 0.2, B: -0.26 };
+  var PRIMARY_GAIN = WARD_GAIN * 1.5;
   function writer(ward, hymn, plan, opts) {
     opts = opts || {};
     var orgst = opts.organist || null;
@@ -754,6 +932,18 @@ window.KOLOB.Cast = (function () {
         return n.syl != null ? vowels[n.syl] : null;
       };
       ev("verse-start", t, { hymnId: hymn.id, verse: vi, practice: P.practice });
+      if (P.practice === "round") { roundVerse(vi, P, vowelOf); return; }
+      // (the one who leads a verse of their own kind: the chorister before
+      // the Primary, the quartet's lead before the four — told once, at the
+      // first verse they lead, and stepping back at its end)
+      var leads = null, leadsEnd = null, lastV = plan.verses.length - 1;
+      if (plan.primary) { if (vi === 0) leads = [ch, "leads the Primary"]; if (vi === lastV) leadsEnd = ch; }
+      else if (P.practice === "quartet" && plan.quartet) {
+        var qLead = ward.byId[plan.quartet.T];
+        if (vi === 0 || plan.verses[vi - 1].practice !== "quartet") leads = [qLead, "leads the quartet"];
+        if (vi === lastV || plan.verses[vi + 1].practice !== "quartet") leadsEnd = qLead;
+      }
+      if (leads && leads[0]) castEv(t, leads[0], leads[1], { verse: vi, line: 0 });
       var fwdOn = {};
       // the order the lines are sung in: the stanza and its refrain — and a
       // fuging tune sings its fuge twice, as the books repeat it (the lines
@@ -806,6 +996,19 @@ window.KOLOB.Cast = (function () {
         // everyone who sings this line
         var singers = seated.slice(), heard = {};
         if (fw.child) singers.push(ward.byId.child);
+        // (round 3b, step 3) the quartet's verse: the four alone on the
+        // stanza, the ward with them on the refrain; the Primary's song:
+        // the children, the ward joining them on the chorus after the
+        // first verse
+        var stanza = li < hymn.lines.length, qOf = {};
+        if (P.practice === "quartet" && plan.quartet) {
+          Object.keys(plan.quartet).forEach(function (q) { qOf[plan.quartet[q]] = q; });
+          if (stanza) singers = Object.keys(qOf).map(function (id) { return ward.byId[id]; });
+        }
+        if (plan.primary) {
+          var kids = plan.primary.map(function (id) { return ward.byId[id]; }).filter(Boolean);
+          singers = kids.concat(!stanza && vi > 0 ? seated : []);
+        }
         singers.forEach(function (m) {
           var f = fw[m.id], role = m.role;
           if (f && f.role === "precentor") f = null;                                     // (the reply is the ward's)
@@ -826,7 +1029,9 @@ window.KOLOB.Cast = (function () {
             return;
           }
           var asg = assignment(hymn, m, P.practice === "descant" && role === "soloist" ? "sung" : P.practice), part = asg[0], oct = asg[1];
-          if (f && f.action === "sings the treble verse") { part = hymn.melodyPart; oct = hymn.melodyPart === "S" && (m.part === "T" || m.part === "B") ? 0.5 : 1; }
+          if (f && (f.action === "sings the treble verse" || f.alone)) { part = hymn.melodyPart; oct = hymn.melodyPart === "S" && (m.part === "T" || m.part === "B") ? 0.5 : 1; }
+          var inQuartet = qOf[m.id] && stanza;
+          if (inQuartet) { part = qOf[m.id]; oct = 1; }
           var off = P.practice === "lined" ? m.spread * bs * 0.6 : hymn.dialect === "shaker" ? m.spread * bs * 0.35 : 0;
           var pn2 = partNotes(line, next, part, bs, rit, plan.holdMul);
           var vOf = vowelOf;
@@ -852,24 +1057,47 @@ window.KOLOB.Cast = (function () {
             if (P.practice === "lined" && R) notes = decorate(hymn, notes, R.fork("orn:" + m.id + ":" + vi + ":" + li), m.appetite, base);
             // the written notes, once a section's part and octave (the
             // child only doubles the tune; a soloist alone is herself)
-            var alone = f && f.action === "sings the treble verse";
+            var alone = f && (f.action === "sings the treble verse" || f.alone);
             var key = alone ? m.id : m.part + "|" + part + "|" + oct;
-            if (role !== "child" && !heard[key] && pn2.length) {
+            if ((role !== "child" || plan.primary) && !heard[key] && pn2.length) {
               heard[key] = true;
               var extra = alone ? { member: m.id, role: role } : null;
               if (repeat) { extra = extra || {}; extra.repeat = true; }
-              pn2.forEach(function (x) { tell(t0 + x.t, x, m.part, part, oct, where, extra); });
+              // (the Primary's children, told once for them all, as the
+              // section of the tune they are: its part, and "primary")
+              var sec = m.part;
+              if (m.part === "child") { sec = hymn.melodyPart; extra = extra || {}; extra.primary = true; }
+              pn2.forEach(function (x) { tell(t0 + x.t, x, sec, part, oct, where, extra); });
             }
           }
           if (!notes.length) return;
           if (f) { bus = "near"; gain = WARD_GAIN * Math.pow(10, (f.gainDb || 4) / 20); }
+          var at0 = t0 + off, pan = panFor(m);
+          // the quartet stands and sings on the note and together — the
+          // ring wants it: each of the four sings the Score's exact pitch
+          // (their own habit of pitch taken back out of it) and on the beat
+          // (their lateness taken back), near, a section's strength each
+          if (inQuartet) {
+            var cor = Math.pow(2, -((m.voice && m.voice.pitchHabitCents) || 0) / 1200);
+            notes = notes.map(function (x) { if (x.rest) return x; var y = {}; for (var k in x) y[k] = x[k]; y.f = x.f * cor; return y; });
+            at0 = Math.max(0, at0 - Math.max(0, ((m.voice && m.voice.timingHabitMs) || 0) / 1000));
+            bus = "near"; gain = QUARTET_GAIN; pan = QUARTET_PAN[qOf[m.id]];
+          }
+          // the Primary stands in a row at the front, the ward's children
+          // (the child you know among them), a little louder than a pew
+          if (m.primary || (plan.primary && role === "child")) {
+            var pi = plan.primary.indexOf(m.primary ? m.id : "child");
+            bus = "near"; gain = PRIMARY_GAIN; pan = round(-0.5 + (plan.primary.length > 1 ? pi / (plan.primary.length - 1) : 0.5), 3);
+          }
           // (a soloist singing the treble verse sings alone: the ward rests)
-          cues.push({ at: round(t0 + off + (notes[0].rest ? 0 : 0), 4), memberId: m.id, bus: bus, pan: panFor(m), gain: round(gain * (P.practice === "lined" ? 0.9 : 1), 4),
-                      notes: strip(notes), breathBefore: round(bb, 3), what: P.practice, verse: vi, line: li, forward: !!f });
+          cues.push({ at: round(at0 + (notes[0].rest ? 0 : 0), 4), memberId: m.id, bus: bus, pan: pan, gain: round(gain * (P.practice === "lined" ? 0.9 : 1), 4),
+                      notes: strip(notes), breathBefore: round(bb, 3), what: P.practice, verse: vi, line: li, forward: !!f || !!inQuartet });
         });
-        // the soloist's treble verse: the rest of the ward is silent under her
-        if ((P.forward || []).some(function (f) { return f.action === "sings the treble verse"; })) {
-          var solo = ward.roles.soloist;
+        // the soloist's treble verse (and the enthusiast starting the
+        // refrain): the rest of the ward is silent under them
+        var aloneF = (P.forward || []).filter(function (f) { return (f.action === "sings the treble verse" || f.alone) && f.lines.indexOf(li) >= 0; })[0];
+        if (aloneF) {
+          var solo = aloneF.memberId;
           for (var ci = cues.length - 1; ci >= 0 && cues[ci].verse === vi && cues[ci].line === li; ci--) if (cues[ci].memberId !== solo) cues.splice(ci, 1);
           for (var wi = written.length - 1; wi >= 0 && written[wi].verse === vi && written[wi].line === li; wi--) if (written[wi].member !== solo && !written[wi].liningOut) written.splice(wi, 1);
         }
@@ -886,6 +1114,49 @@ window.KOLOB.Cast = (function () {
         t = t0 + span + (P.practice === "lined" ? 0.5 : 0) + (orgst && orgst.waits && orgst.waits[li] ? orgst.waits[li] : 0);
       });
       Object.keys(fwdOn).forEach(function (id) { if (fwdOn[id]) stepBack(t, id); });
+      if (leadsEnd) stepBack(t, leadsEnd.id);
+    }
+
+    // ---- A ROUND (round 3b, step 3): the ward in its groups, each a
+    // segment behind the last, each going round plan.round.times times on
+    // the tune (the women at pitch, the men an octave down) and dropping out
+    // in the order it came in; the chorister sets it going. One cue a
+    // singer a time round (its segments sung straight on, a breath at the
+    // top of the round) ----
+    function roundVerse(vi, P, vowelOf) {
+      var rp = plan.round, k = hymn.lines.length, bs = beat0;
+      var segB = rp.delayBeats || lengthOf(hymn.lines[0]), segS = segB * bs, t00 = t, mp = hymn.melodyPart;
+      castEv(t00, ch, "sets the round going", { verse: vi, line: 0 });
+      rp.groups.forEach(function (ids, g) {
+        var g0 = t00 + g * segS;
+        ev("round-entry", g0, { hymnId: hymn.id, verse: vi, entry: g + 1, group: rp.by === "parts" ? roundGroupName(ward, ids) : "pews " + (g + 1) + " of " + rp.groups.length, singers: ids.length });
+        for (var pass = 0; pass < rp.times; pass++) {
+          var p0 = g0 + pass * k * segS, heard = {}, perLine = [];
+          for (var li = 0; li < k; li++) {
+            var line = hymn.lines[li], pn = partNotes(line, null, mp, bs, 0, plan.holdMul);
+            // (a breath at the top of the round: the last segment's last note gives it up)
+            if (li === k - 1 && pn.length) { var lx = pn[pn.length - 1]; pn = pn.slice(0, -1).concat([{ t: lx.t, dur: Math.max(0.12, lx.dur - Math.min(0.3 * bs, 0.25 * lx.dur)), n: lx.n }]); }
+            perLine.push(pn);
+            told.push({ verse: vi, line: li, at: round(p0 + li * segS, 4), len: round(segS, 4), beatS: round(bs, 5), practice: "round", lined: null, repeat: pass > 0 || g > 0, group: g, pass: pass });
+          }
+          ids.forEach(function (id) {
+            var m = ward.byId[id], oct = mp === "S" && (m.part === "T" || m.part === "B") ? 0.5 : mp === "T" && (m.part === "S" || m.part === "A") ? 2 : 1, all = [];
+            perLine.forEach(function (pn, li) { pn.forEach(function (x) { all.push({ t: li * segS + x.t, dur: x.dur, n: x.n }); }); });
+            var notes = toSung(all, 0, function (n) { return hz(n.monzo, oct); }, vowelOf);
+            if (!notes.length) return;
+            cues.push({ at: round(p0 + (m.spread || 0) * bs * 0.25, 4), memberId: id, bus: "hall", pan: panFor(m), gain: round(WARD_GAIN, 4), notes: strip(notes),
+                        breathBefore: round(pass ? 0.25 : 0.5, 3), what: "round", verse: vi, line: 0 });
+            // the written notes: once for each group, time round and octave
+            if (!heard[oct]) {
+              heard[oct] = true;
+              perLine.forEach(function (pn, li) { pn.forEach(function (x) { tell(p0 + li * segS + x.t, x, m.part, mp, oct, { verse: vi, line: li }, { group: g, pass: pass, repeat: pass > 0 || g > 0 ? true : undefined }); }); });
+            }
+          });
+        }
+        joins.push({ t: round(g0, 4), kind: "line" });
+      });
+      t = t00 + (rp.times * k + rp.groups.length - 1) * segS;
+      stepBack(t, ch.id);
     }
 
     // ---- THE AMEN (the Tabernacle's), and THE TAG (the barbershop's: the
@@ -1197,7 +1468,8 @@ window.KOLOB.Cast = (function () {
   }
 
   return {
-    seat: seat, planHymn: planHymn, score: score, segment: segment, performer: performer,
+    seat: seat, planHymn: planHymn, planRefrain: planRefrain, score: score, segment: segment, performer: performer,
+    clock: clockOf, roundGroups: roundGroups, QUARTET_RATE: QUARTET_RATE,
     who: who, panOf: panOf, layoutFor: layoutFor, descantLine: descantLine, deseret: deseret, deseretCaps: deseretCaps,
     assignment: assignment,
     ROLES: ROLE_ORDER, ROLE_NAME: ROLE_NAME, ROSTER: ROSTER, PART_NAME: PART_NAME,

@@ -47,6 +47,8 @@ window.KOLOB = window.KOLOB || {};
   function oldTuneCandidates() { return S.oldTuneCandidates(); }
   function oldTuneRemembered(V, t) { return S.oldTuneRemembered(V, t); }
   function trombonesAtDawn(V, t) { return S.trombonesAtDawn(V, t); }
+  function handbellsRing(V, t) { return S.handbellsRing(V, t); }
+  function singingSchool(V, t) { return S.singingSchool(V, t); }
   // from kolob-core.js
   function stream(label) { return S.stream(label); }
   function turn(label) { return S.turn(label); }
@@ -259,17 +261,21 @@ window.KOLOB = window.KOLOB || {};
     var SHELVED_GUESTS = { question: true };
     // (the switch draws its guest; a dev who names one — the harness, a
     // lab — gets that one, and the die is thrown all the same)
-    var FORCEABLE = { bands: true, steeples: true, oldtune: true, trombones: true };
-    var forcedPick = pickWith(forcedDie, [["bands", 2], ["steeples", 1], ["oldtune", 1], ["trombones", 1]]);
+    var FORCEABLE = { bands: true, steeples: true, oldtune: true, trombones: true, handbells: true, singingschool: true };
+    var forcedPick = pickWith(forcedDie, [["bands", 2], ["steeples", 1], ["oldtune", 1], ["trombones", 1], ["handbells", 1]]);
     var forcedType = forceVisitation ? (FORCEABLE[forceVisitation] ? forceVisitation : forcedPick) : null;
     // the trombones asked for by name keep the prelude for themselves, and no
     // band crosses their morning (the guests who would have sat there take
     // their other seats; the dice are thrown as ever)
     var dawnAsked = forcedType === "trombones";
+    // (and the singing school asked for by name keeps the morning too: no
+    // other guest is seated in the prelude — the trombones' dice are thrown
+    // all the same)
+    var morningAsked = dawnAsked || forcedType === "singingschool";
     var haveSec = {};
     for (var vp = 0; vp < plan.length; vp++) haveSec[plan[vp].type] = true;
     function seatIn(prefs) {
-      for (var sp = 0; sp < prefs.length; sp++) if (haveSec[prefs[sp]] && !(dawnAsked && prefs[sp] === "prelude")) return prefs[sp];
+      for (var sp = 0; sp < prefs.length; sp++) if (haveSec[prefs[sp]] && !(morningAsked && prefs[sp] === "prelude")) return prefs[sp];
       return null;
     }
     if (forcedType === "question" || qDie) {
@@ -287,7 +293,7 @@ window.KOLOB = window.KOLOB || {};
     // the steeples: bells at the meeting's edges — the framing sections where
     // a bell has civic meaning (calling the valley in, ringing it home)
     if (forcedType === "steeples" || stDie) {
-      var stSeat = forcedType === "steeples" ? "prelude" : (stSeatDie && !dawnAsked ? "prelude" : "postlude");
+      var stSeat = forcedType === "steeples" ? "prelude" : (stSeatDie && !morningAsked ? "prelude" : "postlude");
       C.visitations.push({ type: "steeples", section: stSeat, fired: false });
     }
     // THE OLD TUNE — its own die, gated by the mode law (kolob-guests.js,
@@ -316,9 +322,26 @@ window.KOLOB = window.KOLOB || {};
     var TB = Trombones(), tbStream = null, tbInfo = null;
     if (TB) {
       tbStream = stream("guest:trombones");
-      tbInfo = { n: C.meetingNum, kind: activity, sunday: null, sections: plan, guests: C.visitations, force: dawnAsked };
+      tbInfo = { n: C.meetingNum, kind: activity, sunday: null, sections: plan, guests: C.visitations, force: forcedType === "trombones" };
       var tbSeat = TB.plan(tbInfo, tbStream);
-      if (tbSeat) C.visitations.push({ type: "trombones", section: "prelude", at: tbSeat.at, dur: tbSeat.dur, fired: false, stream: tbStream });
+      if (tbSeat && forcedType !== "singingschool") C.visitations.push({ type: "trombones", section: "prelude", at: tbSeat.at, dur: tbSeat.dur, fired: false, stream: tbStream });
+    }
+    // THE SINGING SCHOOL (round 3b, step 3; PLAN-COMPOSITION §15 item 3 —
+    // EXPERIMENTAL, KOLOB.Experimental.singingSchool, ?exp=-singingSchool):
+    // some Sundays you arrive while the choir is still practising the day's
+    // first hymn — the fork, one part goes wrong, the chorister raps the
+    // stand, that part alone on the notes, and all of them again. The prelude
+    // only, never at a funeral, never when another guest has the morning
+    // (kolob-guest-singingschool.js decides, on guest:singingschool:<n>; the
+    // switch is read here, once, and handed down so the planner stays pure).
+    // It keeps its own time (cued), and the morning is seated around it
+    // (seatPrelude: the house wakes after the practice).
+    var SSg = KOLOB.GuestSingingSchool || null;
+    if (SSg) {
+      var ssStream = stream("guest:singingschool");
+      var ssSeat = SSg.plan({ n: C.meetingNum, kind: activity, sunday: null, sections: plan, guests: C.visitations,
+                              experimental: KOLOB.Experimental ? KOLOB.Experimental.snapshot() : {}, force: forcedType === "singingschool" }, ssStream);
+      if (ssSeat) C.visitations.push({ type: "singingschool", section: "prelude", at: ssSeat.at, dur: ssSeat.dur, fired: false, cued: true, stream: ssStream, experimental: true });
     }
     // CUMULATIVE FORM (after Ives's cumulative settings): the day's theme is
     // WITHHELD — only its fragments circulate, endings first — until the
@@ -329,18 +352,18 @@ window.KOLOB = window.KOLOB || {};
     C.cumulative = cumulativeMode === "always" || (cumulativeMode === "natural" && cumDie);
     C.assemblyFired = false;
     C.assemblyUntil = 0;
-    if (C.cumulative) {
-      // a marching band may still call, but never over the assembly
+    // (the doxology's payoff — the assembly, the partner hymn, the refrain or
+    // the bands — is settled with the day's hymnal, below: a band seated in
+    // the doxology moves out whenever the payoff is another's)
+    function bandsLeaveTheDoxology() {
       for (var cvi = 0; cvi < C.visitations.length; cvi++) {
         if (C.visitations[cvi].type === "bands" && C.visitations[cvi].section === "doxology") {
           C.visitations[cvi].section = haveSec.hymn ? "hymn" : "postlude";
         }
       }
     }
-    if (C.visitations.length) emitEvent({
-      type: "guests-drawn", guests: C.visitations.map(function (v) { return { guest: v.type, section: v.section }; }),
-      cat: "visitation-draw", label: C.visitations.map(function (v) { return v.type + "@" + v.section; }).join(","),
-    });
+    // a marching band may still call, but never over the assembly
+    if (C.cumulative) bandsLeaveTheDoxology();
     // THE RASPBERRY AMEN — its own flag, not a seated visitation: it has no
     // section, only the meeting's final cadence. Never on a fast Sunday; a
     // solemn meeting does not end on a joke.
@@ -374,6 +397,10 @@ window.KOLOB = window.KOLOB || {};
     // the prelude's seating: who wakes the Sunday, and when (below)
     C.seating = seatPrelude();
     if (C.seating.len !== 1 && plan[0].type === "prelude") plan[0].dur *= C.seating.len;
+    // (the practice's morning lasts until it is over and the house has played
+    // a while after it; its exact length is known at its cue)
+    var school = visitationOf("singingschool");
+    if (school && plan[0].type === "prelude") plan[0].dur = Math.max(plan[0].dur, school.at + school.dur + SCHOOL_AFTER_S);
     // THE DAY'S HYMNAL (round 3; PLAN-COMPOSITION §3, §3.7, §4): the house
     // dialect, and for every singing section — each hymn and the doxology —
     // its own dialect (leaning to the house's) and key (leaning home), the
@@ -382,7 +409,7 @@ window.KOLOB = window.KOLOB || {};
     // written on hymn:<n>:<i> by the composer, ordered now and written off
     // the audio path (kolob-hymnal.js). The trombones' dawn keys the first
     // hymn at home: they play it before anyone has sung.
-    C.house = null; C.hymnal = []; C.hymn = null;
+    C.house = null; C.hymnal = []; C.hymn = null; C.forms = null; C.payoff = C.cumulative ? "assembly" : null;
     if (HY) {
       var th = Motif.theme(), subsM = Motif.subs ? Motif.subs() : [];
       // (a dark Sunday's doxology may rise into major — the sunrise, drawn
@@ -408,11 +435,47 @@ window.KOLOB = window.KOLOB || {};
       }, stream("hymnal"));
       C.house = day.house;
       C.hymnal = day.rows;
-      HY.prepare(S.visitSeed(), C.meetingNum, day.rows);
+      // THE DAY'S FORMS (round 3b, step 3): a round, the partner hymn, the
+      // wandering refrain — and the doxology's one payoff (kolob-hymnal.js
+      // forms, on forms:<n>). A band seated in the doxology leaves it when
+      // the payoff is another's; with none, the bands are the payoff.
+      var fm = HY.forms ? HY.forms({ n: C.meetingNum, kind: activity, sunday: null, cumulative: !!C.cumulative }, day.rows, stream("forms")) : null;
+      C.forms = fm;
+      if (fm && fm.payoff) { C.payoff = fm.payoff; bandsLeaveTheDoxology(); }
+      HY.prepare(S.visitSeed(), C.meetingNum, day.rows, fm);
       if (dawn && day.rows.length) dawn.hymnId = day.rows[0].id;
       // (typed only, as new words are: SCORE §9.5)
-      emitEvent({ type: "hymnal", house: C.house, hymns: day.rows.map(function (r) { return { id: r.id, section: r.section, dialect: r.dialect, key: r.key, meter: r.meter }; }) });
+      emitEvent({ type: "hymnal", house: C.house, hymns: day.rows.map(function (r) { return { id: r.id, section: r.section, dialect: r.dialect, key: r.key, meter: r.meter, piece: r.piece || (r.partnerOf ? "partner" : "hymn") }; }),
+                  forms: fm ? { round: fm.round, partner: fm.partner, refrain: fm.refrain ? { id: fm.refrain.id, dialect: fm.refrain.dialect, after: fm.refrain.statements.map(function (x) { return x.after; }) } : null, payoff: fm.payoff, why: fm.dice.why } : null });
     }
+    if (!C.payoff && C.visitations.some(function (v) { return v.type === "bands" && v.section === "doxology"; })) C.payoff = "bands";
+    // (the practice rehearses the day's first hymn)
+    if (school && C.hymnal.length) school.hymnId = C.hymnal[0].id;
+    // THE WARD'S HANDBELL CHOIR (round 3b, step 3; PLAN-COMPOSITION §15
+    // item 5): about one meeting in eight, eight to twelve ringers in a line
+    // across the front of the chapel ring the day's hymn (or a round of their
+    // own) in the invocation, before the sacrament, or in the postlude —
+    // never with the steeples, never beside another guest
+    // (kolob-guest-handbells.js decides, on guest:handbells:<n>, told who is
+    // already seated: planned after the practice and after the bands have
+    // found their section). They keep their own time (cued), stand in the
+    // room a step nearer than the ward (seatedSend), and ring the day's
+    // first hymn — the doxology's, in the postlude.
+    var HBg = KOLOB.GuestHandbells || null;
+    if (HBg) {
+      var hbStream = stream("guest:handbells");
+      var hbSeat = HBg.plan({ n: C.meetingNum, kind: activity, sunday: null, sections: plan, guests: C.visitations, force: forcedType === "handbells" }, hbStream);
+      if (hbSeat) {
+        var hbRows = C.hymnal.filter(function (r) { return r.piece !== "round"; });
+        var hbRow = hbSeat.seat === "postlude" ? hbRows[hbRows.length - 1] : hbRows[0];
+        C.visitations.push({ type: "handbells", section: hbSeat.seat, at: hbSeat.at, dur: hbSeat.dur, fired: false, cued: true, stream: hbStream,
+                             hymnId: hbRow ? hbRow.id : null, piece: hbSeat.piece });
+      }
+    }
+    if (C.visitations.length) emitEvent({
+      type: "guests-drawn", guests: C.visitations.map(function (v) { return { guest: v.type, section: v.section }; }),
+      cat: "visitation-draw", label: C.visitations.map(function (v) { return v.type + "@" + v.section; }).join(","),
+    });
     // THE WARD (round 3b; PLAN-COMPOSITION §5): the Sunday's thirty-two and
     // the people among them — the chorister, the precentor, the soloist, and
     // three to five of the old bass, the harmony alto, the enthusiast, the
@@ -430,7 +493,7 @@ window.KOLOB = window.KOLOB || {};
     C.organist = null; C.chorale = null;
     var OR = KOLOB.Organist && S.castStream ? KOLOB.Organist : null;
     if (OR) C.organist = OR.seat(S.castStream(C.meetingNum), { kind: activity, houseDialect: C.house, bright: MEETINGS[activity] ? MEETINGS[activity].bright : 0.5, ives: !!S.forceVisitation });
-    C.ward = KOLOB.Cast && S.castStream ? KOLOB.Cast.seat(S.castStream(C.meetingNum), { organist: C.organist ? C.organist.style : null }) : null;
+    C.ward = KOLOB.Cast && S.castStream ? KOLOB.Cast.seat(S.castStream(C.meetingNum), { organist: C.organist ? C.organist.style : null, enthusiast: !!(C.forms && C.forms.refrain) }) : null;
     if (C.organist && C.ward && C.ward.byId.organist) { C.organist.nameDs = C.ward.byId.organist.nameDs; C.organist.nameEn = C.ward.byId.organist.nameEn; }
     // THE CHORALE PRELUDE: some Sundays the organist's prelude on the day's
     // first hymn is the morning (the organist's own die, cast:<n> →
@@ -442,7 +505,7 @@ window.KOLOB = window.KOLOB || {};
       var fh = C.hymnal[0];
       var pd = OR.preludeDraw(C.organist, S.castStream(C.meetingNum), {
         hymn: fh, trombones: !!dawn, withheld: !!C.cumulative, organSits: !!C.seating.sits.organ, unison: fh.dialect === "oldway" || fh.dialect === "shaker",
-        guest: C.seating.name === "steeples" ? "the steeples" : null, hum: !!C.seating.hum,
+        guest: C.seating.name === "steeples" ? "the steeples" : C.seating.name === "school" ? "the singing school" : null, hum: !!C.seating.hum,
       });
       C.organist.preludeDraw = pd;
       if (pd.play) { C.seating = choraleSeating(C.seating); C.chorale = { hymnId: fh.id, begun: false, until: 0, plan: null }; }
@@ -593,6 +656,11 @@ window.KOLOB = window.KOLOB || {};
                  at: { drone: [0.5, 6], organ: [0.5, 4], ambient: [1, 30], strings: [4, 12], harmonium: [8, 18], clarinet: [10, 22], bells: [4, 40], telegraph: [8, 60] } },
     steeples:  { w: 0,   full: 0.45, anchored: { organ: true, ambient: true, strings: true, harmonium: true, clarinet: true, telegraph: true, bells: true },
                  at: { drone: [0.3, 4], ambient: [6, 14], organ: [10, 20], strings: [16, 30], harmonium: [24, 40], clarinet: [30, 46], telegraph: [30, 60], bells: [40, 60] } },
+    // (round 3b, step 3: the singing school — the choir still practising as
+    // you arrive; the house wakes after it, counted from the practice's end,
+    // and the valley and the drone at their own times: it is morning outside)
+    school:    { w: 0,   full: 0.45, anchored: HOUSE_WAKERS,
+                 at: { drone: [0.5, 6], organ: [1, 5], ambient: [2, 30], strings: [4, 12], harmonium: [8, 18], clarinet: [10, 22], bells: [6, 40], telegraph: [8, 60] } },
     // (round 3b, step 2: the organist's chorale prelude on the day's first
     // hymn — seated over the drawn morning when the organist's own die says
     // so, never drawn here: choraleSeating. anchored: counted from its end)
@@ -621,8 +689,9 @@ window.KOLOB = window.KOLOB || {};
     FIELD_KEYS.forEach(function (k) { palU[k] = PR.next(); });
     var voiceU = PR.next();
     var under = pickWith(pickU, SEATING_ODDS), name = under, anchor = 0;
-    var tb = visitationOf("trombones"), st = visitationOf("steeples");
+    var tb = visitationOf("trombones"), st = visitationOf("steeples"), ss = visitationOf("singingschool");
     if (tb && tb.section === "prelude") { name = "trombones"; anchor = tb.at + tb.dur + 2; }
+    else if (ss && ss.section === "prelude") { name = "school"; anchor = ss.at + ss.dur + 2; }
     else if (st && st.section === "prelude") {
       name = "steeples";
       st.at = +(STEEPLES_AT[0] + (STEEPLES_AT[1] - STEEPLES_AT[0]) * steeplesU).toFixed(2);
@@ -684,7 +753,8 @@ window.KOLOB = window.KOLOB || {};
   // likely length: the house also listens while the organist plays,
   // however long that proves to be). The same dice as the drawn morning.
   var CHORALE_EST = 44;
-  var CHORALE_AFTER_S = 26;                      // the prelude goes on at least this long after the chorale (the house wakes into it)
+  var CHORALE_AFTER_S = 26;
+  var SCHOOL_AFTER_S = 22;                       // …and after the singing school's practice                      // the prelude goes on at least this long after the chorale (the house wakes into it)
   function choraleSeating(seat) {
     var spec = SEATINGS.chorale, U = seat._u.U, at = {};
     WAKERS.concat(["choir"]).forEach(function (l) {
@@ -768,7 +838,7 @@ window.KOLOB = window.KOLOB || {};
     if (composed) C.meter = composed.meter;
     if (s.type === "hymn" && s.meter) {
       if (!composed) C.meter = s.meter;
-      emitEvent({ type: "liahona", points: "meter", meter: C.meter, cat: "liahona", label: "⌖ the meter is given", detail: C.meter + " — " + METERS[C.meter].join(".") });
+      emitEvent({ type: "liahona", points: "meter", meter: C.meter, cat: "liahona", label: "⌖ the meter is given", detail: C.meter + " — " + (METERS[C.meter] ? METERS[C.meter].join(".") : String(C.meter)) });   // (a round's "meter" is its segments' lengths)
     }
     // the doxology SUNRISE: a dark-mode meeting may lift into major at the
     // last — rare, and the most audible surprise the engine owns
@@ -950,7 +1020,8 @@ window.KOLOB = window.KOLOB || {};
   // page's direction line names it while it sounds; the joint waits for it).
   // A guest the minutes may not name (UNLOGGED below) carries that on every
   // event and note it sends, and the page is never told it came.
-  var VISIT_FN = { question: unansweredQuestion, bands: twoBandsCross, steeples: steeplesAnswer, oldtune: oldTuneRemembered, trombones: trombonesAtDawn };
+  var VISIT_FN = { question: unansweredQuestion, bands: twoBandsCross, steeples: steeplesAnswer, oldtune: oldTuneRemembered, trombones: trombonesAtDawn,
+                   handbells: handbellsRing, singingschool: singingSchool };
   function arrive(V, t) {
     V.fired = true;
     V.logged = !UNLOGGED[V.type];
@@ -961,6 +1032,8 @@ window.KOLOB = window.KOLOB || {};
     // type → set piece; each receives its visitation record (the old tune its
     // drawn tune, the trombones their stream and chorale)
     var vdur = (VISIT_FN[V.type] || twoBandsCross)(V, t);
+    // (the bands crossing a doxology are its payoff, when nothing else is)
+    if (V.type === "bands" && C.section === "doxology") emitEvent({ type: "payoff", kind: "bands", section: "doxology", hymnId: C.hymn ? C.hymn.id : null });
     C.visitType = V.type;
     C.visitLogged = V.logged;
     C.visitUntil = t + vdur;
@@ -974,7 +1047,26 @@ window.KOLOB = window.KOLOB || {};
   function cuedArrival(V, t) {
     if (!S.playing || V.fired || C.visitations.indexOf(V) < 0 || C.section !== V.section || C.jointing || inVisit()) return;
     if (V.type === "trombones" && !V.material) dawnFromHymnal(V);
+    if ((V.type === "handbells" || V.type === "singingschool") && !V.material) standingMaterial(V);
     arrive(V, t);
+  }
+  // THE BELLS' AND THE PRACTICE'S MATERIAL (round 3b, step 3): the day's
+  // hymn as the composer wrote it (the first hymn; the doxology's, for the
+  // bells in the postlude) — waiting since the plan, or written now and
+  // counted — made ready by the guest itself (prepare: pure, on its own
+  // stream), and the section held as long as the piece now is exactly
+  function standingMaterial(V) {
+    var G = V.type === "handbells" ? KOLOB.GuestHandbells : KOLOB.GuestSingingSchool;
+    if (!G) return;
+    var h = V.hymnId && Hymnal() ? Hymnal().get(V.hymnId) : null;
+    var mat = { hymn: h, keynoteHz: S.F0 * S.ROOT_MULT, mode: S.mode };
+    if (V.type === "handbells") { mat.seat = V.section; if (V.piece) mat.piece = V.piece; }
+    try { V.material = G.prepare(mat, V.stream); }
+    catch (e) { V.material = null; if (window.console) console.warn("Kolob: the " + V.type + " could not be made ready:", e); return; }
+    var sc = G.score(V.material, V.stream, 0);
+    V.dur = sc.end;
+    var hold = (V.at || 0) + V.dur + (V.type === "singingschool" ? SCHOOL_AFTER_S : 3);
+    if (C.section === V.section) C.sectionDur = C.plan[C.si].dur = Math.max(C.sectionDur, hold);
   }
   // THE DAWN PLAYS THE FIRST HYMN (round 3): the trombones take up the
   // day's first composed hymn at their cue — written off the audio path
@@ -1005,7 +1097,7 @@ window.KOLOB = window.KOLOB || {};
   // organ, the harmonium and the strings rest their hands, and the melodic
   // voices find the air taken (the guest claims it); the drone and the field
   // stay — the chorale is the day's own mode, and it is morning outside.
-  var LISTENED = { trombones: true };
+  var LISTENED = { trombones: true, handbells: true, singingschool: true };
   // …and while a composed hymn is sung (round 3): the ward and (in the
   // Tabernacle) the organ under it are the music; the house's own voices —
   // the organist's free chords, the harmonium, the strings, the clarinet —
@@ -1334,6 +1426,15 @@ window.KOLOB = window.KOLOB || {};
     },
     hymnal: function () { return C.hymnal.map(function (r) { var o = {}; for (var k in r) o[k] = r[k]; return o; }); },
     hymn: function () { return C.hymn ? { id: C.hymn.id, dialect: C.hymn.dialect, key: C.hymn.key, active: C.hymn.active, from: C.hymn.from, until: C.hymn.until } : null; },
+    // (round 3b, step 3) the day's forms (a copy) and the doxology's one
+    // payoff; the refrain's statement that follows a hymn, if one does
+    forms: function () { return C.forms ? JSON.parse(JSON.stringify({ round: C.forms.round, partner: C.forms.partner, refrain: C.forms.refrain, payoff: C.forms.payoff })) : null; },
+    payoff: function () { return C.payoff || null; },
+    refrainAfter: function (id) {
+      if (!C.forms || !C.forms.refrain) return null;
+      var st = C.forms.refrain.statements.filter(function (x) { return x.after === id; })[0];
+      return st ? JSON.parse(JSON.stringify(st)) : null;
+    },
     hymnSounding: hymnSounding,
     hands: HymnHands,
   });

@@ -295,7 +295,11 @@ window.KolobAudio = (function () {
   var ROOM_DEPTH = { voice: -0.35, telegraph: -0.25, harmonium: -0.15, clarinet: -0.08, bells: 0, choir: 0.05, organ: 0.10, strings: 0.15, drone: 0.15, tuba: 0, bagpipe: 0.05, ambient: 0.20,
                      // (round 3b: a person of the ward come forward — the alto's verse, the
                      // precentor's line, the descant — is heard a step nearer than the ward)
-                     "choir-near": -0.2 };
+                     "choir-near": -0.2,
+                     // (round 3b, step 3: the handbell choir stands at the front of the
+                     // chapel, as near as the still small voice; the cornet of the ward's
+                     // band plays the first hymn against the partner from the front pew)
+                     handbells: -0.35, cornet: -0.12 };
 
   var layerGains = {};
   var choirNear = null;            // (round 3b) the ward's nearer way into the rooms, under the choir's slider
@@ -510,6 +514,29 @@ window.KolobAudio = (function () {
     if (roomBlend) roomBlend.register(name, src, ROOM_DEPTH[name] || 0);
     else if (roomWide) src.connect(roomWide.send);
     else src.connect(voicesBus);
+  }
+  // THE STANDING GUESTS' WAY INTO THE ROOM (round 3b, step 3; the guest
+  // crew's request 2): a guest who stands IN the chapel — the handbell choir,
+  // the cornet of the ward's band — is seated as a layer is, into both rooms
+  // at a depth of its own (ROOM_DEPTH), a step nearer than the ward, and not
+  // through the tabernacle's wide send the visitors from outside take; the
+  // singing school, the ward's own choir practising, goes into the choir's
+  // own layer (its slider, its seat). One seat for each (the room blend has
+  // no unregister), and the meeting's own door in front of it, so STOP
+  // closes it as it closes the wide send.
+  var guestSeats = {};
+  function seatedSend(layer) {
+    var d = liveDoors();
+    if (d.seats[layer]) return d.seats[layer];
+    var into = layerGains[layer];
+    if (!into) {
+      if (!guestSeats[layer]) { guestSeats[layer] = ctx.createGain(); guestSeats[layer].gain.setValueAtTime(1, ctx.currentTime); seatLayer(layer, guestSeats[layer]); }
+      into = guestSeats[layer];
+    }
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(1, ctx.currentTime);
+    g.connect(into);
+    return (d.seats[layer] = g);
   }
   // the tabernacle's send for the guests outside the windows — through the
   // meeting's doors, like every other voice
@@ -771,7 +798,7 @@ window.KolobAudio = (function () {
   var doors = null;
   var closing = [];                // doors shut at STOP, disconnected after the fade
   var hallRinging = false;         // a meeting was stopped: its echo is still in the rooms
-  function openDoors() { return { pans: {}, field: {}, wide: null, hands: {}, spent: [], ward: null }; }
+  function openDoors() { return { pans: {}, field: {}, wide: null, hands: {}, spent: [], ward: null, seats: {} }; }
   function liveDoors() { return doors || (doors = openDoors()); }
   function shutDoors(d) {
     var k, i;
@@ -781,6 +808,7 @@ window.KolobAudio = (function () {
       for (i = 0; i < d.spent.length; i++) d.spent[i].disconnect();
       for (k in d.field) d.field[k].disconnect();
       if (d.wide) d.wide.disconnect();
+      for (k in d.seats) d.seats[k].disconnect();
       if (d.ward) { d.ward.hall.disconnect(); d.ward.near.disconnect(); }
     } catch (e) {}
   }
@@ -1270,6 +1298,8 @@ window.KolobAudio = (function () {
   S.cueIn = cueIn;
   S.cueLayer = cueLayer;
   S.hymnStream = hymnStream;
+  S.seatedSend = seatedSend;
+  S.formStream = function (label) { return visitRoot().fork(label); };
   S.castStream = castStream;
   S.wardBuses = wardBuses;
   S.visitSeed = function () { return seed; };
