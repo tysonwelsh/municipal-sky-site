@@ -473,14 +473,22 @@ window.KOLOB.Cast = (function () {
     else if (dKeyAcc < 0.2) keying = { kind: "keying", by: ch.id, habit: "hum", under: true };   // hummed to the ward as the organ's introduction ends
     // ---- the practices ----
     var practice = [];
+    // (a hummed verse, or one in unison, is ONE of the middle verses — the
+    // die that chooses it also says which — never two running; round 3b.
+    // Unison is the chorister's call in the Tabernacle and gospel; a Sacred
+    // Harp class, a singing school and the Old Way keep their own ways)
+    var mid = Math.max(1, verses - 2);
+    var humV = dHum < 0.14 ? 1 + Math.min(mid - 1, Math.floor(dHum / 0.14 * mid)) : -1;
+    var uniV = dUni < 0.1 && (dl === "tabernacle" || dl === "gospel") ? 1 + Math.min(mid - 1, Math.floor(dUni / 0.1 * mid)) : -1;
     for (var v = 0; v < verses; v++) {
       var p = "sung";
       if (dl === "oldway") p = "lined";
+      else if (dl === "shaker") p = "unison";                                           // (one tune, everyone on it: the Shakers' way, and the Primary's)
       else if (dl === "sacredharp" && v === 0) p = "notes";
       else if (dl === "sacredharp" && dNotesAll < 0.1) p = "notes";                   // (some classes sing every verse on the notes)
       else if (dl === "tabernacle" && v === verses - 1 && verses >= 3 && who(ward, "soloist") && dDesc < (who(ward, "soloist").habit.descant || 0.5)) p = "descant";
-      else if (dl === "tabernacle" && v > 0 && v < verses - 1 && dHum < 0.14) p = "hummed";
-      else if (v > 0 && v < verses - 1 && dUni < 0.1) p = "unison";
+      else if (dl === "tabernacle" && v > 0 && v < verses - 1 && v === humV) p = "hummed";
+      else if (v > 0 && v < verses - 1 && v === uniV) p = "unison";
       practice.push(p);
     }
     // ---- who comes forward ----
