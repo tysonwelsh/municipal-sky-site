@@ -597,6 +597,7 @@
     var trs = fx.transits || [];
     for (i = 0; i < trs.length; i++) {
       var mk2 = mine.markers && mine.markers[trs[i].id]; if (!mk2) continue;
+      if (anyDark && sampleD(mk2.x + mk2.w / 2, mk2.y + 3) >= 0.5) continue;
       var lit2 = trs[i].u < 0.18 || (trs[i].exitIn != null && trs[i].exitIn < 0.5);
       if (lit2) { rect(g, mk2.x - 1, mk2.y - 1, mk2.w + 2, mk2.h + 2, P.GOLD3); rect(g, mk2.x, mk2.y, mk2.w, mk2.h, '#2a1a08'); A.text(g, String(mk2.n), mk2.x + 2, mk2.y + 1, '#fff4c8'); }
     }
