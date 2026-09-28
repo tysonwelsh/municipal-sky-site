@@ -220,6 +220,14 @@ window.KolobAudio = (function () {
   S.houseChoir = (function () {
     try { return typeof location !== "undefined" && /[?&]choir=house\b/.test(location.search || ""); } catch (e) { return false; }
   })();
+  // THE ORGAN SWITCH (round 3b, step 2, dev): ?organ=house plays the meeting
+  // on the house's old additive organ, as round 3b's first step did (the
+  // organist is still seated and named, and plays nothing: no chorale
+  // prelude, no fills) — the owner's A/B against the pipe organ and the
+  // Sunday's organist (the meeting's organ otherwise)
+  S.houseOrgan = (function () {
+    try { return typeof location !== "undefined" && /[?&]organ=house\b/.test(location.search || ""); } catch (e) { return false; }
+  })();
   var root = null;                 // the visit's stream: every fork is born of it
   var dice = { n: -1, streams: {}, turns: {} };   // this meeting's streams, by label
   var synths = {};                 // synth:<voice>, one per voice for the whole visit
@@ -1201,6 +1209,7 @@ window.KolobAudio = (function () {
     playing = false;
     if (clock) clock.stop();         // every pending cue is cancelled: nothing of this meeting is called again
     if (S.wardStop) S.wardStop();    // and nothing more of the ward's is handed to the voices, or joined
+    if (S.organStop && ctx) S.organStop(ctx.currentTime + 0.7);   // nor of the organist's; the organ's case is shut after the fade
     if (doors) { closing.push(doors); doors = null; }
     hallRinging = true;
     if (bg) bg.stopped();
@@ -1367,6 +1376,21 @@ window.KolobAudio = (function () {
     wardStats: function () { return S.wardStats ? S.wardStats() : null; },
     getChoir: function () { return !S.houseChoir && KOLOB.Cast && KOLOB.VoicesVocal && S.wardOn ? "ward" : "house"; },
     setChoir: function (which) { if (!playing) S.houseChoir = which === "house"; },
+    // the organ (round 3b, step 2): who is on the bench this Sunday (their
+    // style and habits; the name in Deseret, nameEn dev-only; whether the
+    // morning was seated for the chorale prelude, and the meeting's ledger —
+    // hymns, fills, the one strange fill), what the pipes cost (the cases,
+    // the nodes built, the most alive at once, plans still on the desk);
+    // setOrgan("house" | "pipe") is the dev switch ?organ=house sets
+    getOrganist: function () {
+      var o = S.Meeting && S.Meeting.organist ? S.Meeting.organist() : null;
+      if (!o) return null;
+      return { style: o.style, nameDs: o.nameDs, nameEn: o.nameEn, habits: JSON.parse(JSON.stringify(o.habits)), ledger: { hymns: o.ledger.hymns, fills: o.ledger.fills, strange: o.ledger.strange },
+               prelude: o.preludeDraw || null, chorale: S.Meeting.chorale ? S.Meeting.chorale() : null };
+    },
+    organStats: function () { return S.organStats ? S.organStats() : null; },
+    getOrgan: function () { return S.pipeOn && !S.houseOrgan && KOLOB.VoicesOrgan && KOLOB.Organist ? "pipe" : "house"; },
+    setOrgan: function (which) { if (!playing) S.houseOrgan = which === "house"; },
     setNoteListener: function (fn) { noteListeners.push(fn); },
     setEventListener: function (fn) { eventListeners.push(fn); },
     // on: true (a guest, drawn as the switch draws it), false, or — dev, the

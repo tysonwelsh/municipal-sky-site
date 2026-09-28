@@ -211,6 +211,15 @@
   }
   var FORWARD_ROW = { "keys the hymn": 1, "hums the first note": 1, "pitches the tune": 1, "comes forward": 1, "sings the descant": 1,
                       "sings the treble verse": 1, "sings the tune": 1, "loses the words": 1, "finds them again": 1, "joins in": 1, "sings out": 1 };
+  // (round 3b, step 2) the organist's moments that earn a row: the chorale
+  // prelude, the walk into a new key, a fill between the lines, the strange
+  // key, a line left to the ward — not every stop drawn, nor the giving-out
+  // (the hymn's own rows say it has begun)
+  var ORGANIST_ROW = { "plays the day's first hymn as a prelude": 1, "puts the tune in the pedals": 1, "lets the flutes run in another key": 1,
+                       "modulates to the next hymn's key": 1, "links the lines": 1, "holds a note over into the next line": 1, "echoes the line on the echo flute": 1,
+                       "quotes the next line between the lines": 1, "turns an arabesque between the lines": 1, "runs a sequence between the lines": 1,
+                       "strays into a strange key": 1, "lifts both hands; the ward sings a line alone": 1 };
+  function actionKey(a) { return String(a || "").replace(/ \(.*\)$/, ""); }
   function layerName(l) { return TT(LAYERS_DS, LAYERS_EN)[l] || l; }
   function dsEvent(ev) {
     if (!ev || ev.logged === false) return null;             // the unlogged guest: not a word
@@ -246,7 +255,12 @@
         // day's material around the hymns)
         return minute("☞", (ev.nameDs ? capsDs(ev.nameDs) : LAYERS_DS.clarinet) + " " + S.linesOut, "verse");
       case "cast":                                           // (round 3b: a person of the ward comes forward — their name and what they do)
-        if (!ev.actionDs || !FORWARD_ROW[ev.action]) return null;
+        if (!ev.actionDs) return null;
+        if (ev.memberId === "organist") {                    // (round 3b, step 2: the organist at the bench)
+          if (!ORGANIST_ROW[actionKey(ev.action)]) return null;
+          return minute("✦", capsDs(ev.nameDs) + " " + (latinMode ? actionKey(ev.action).toUpperCase() : ev.actionDs), "verse");
+        }
+        if (!FORWARD_ROW[ev.action]) return null;
         return minute("✦", capsDs(ev.nameDs) + " " + (latinMode ? String(ev.action).toUpperCase() : ev.actionDs), "verse");
       case "field": {
         var fd = TT(FIELD_DS, FIELD_EN)[ev.field];

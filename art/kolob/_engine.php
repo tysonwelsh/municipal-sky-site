@@ -16,12 +16,13 @@
 // from Kolob), then pitch, the score and the Earth tunes, the composers,
 // the voices, the performers, and last the core that raises the KolobAudio
 // facade over them. (The lab modules — kolob-question.js, kolob-voices-
-// pipeorgan/-folk.js — join this list on the day the engine first uses
-// them; kolob-tunes.js joined in round 2, milestone 3, when the old tune
-// began to sing the Earth tunes; kolob-voices-band.js and
-// kolob-guest-trombones.js joined at round 2's integration, when the
-// trombone choir began to play at dawn; kolob-voices-vocal.js and
-// kolob-cast.js at round 3b, when the ward began to sing the meeting.)
+// folk.js — join this list on the day the engine first uses them;
+// kolob-tunes.js joined in round 2, milestone 3, when the old tune began to
+// sing the Earth tunes; kolob-voices-band.js and kolob-guest-trombones.js
+// joined at round 2's integration, when the trombone choir began to play at
+// dawn; kolob-voices-vocal.js and kolob-cast.js at round 3b, when the ward
+// began to sing the meeting; kolob-organist.js and kolob-voices-pipeorgan.js
+// at round 3b's second step, when the Sunday's organist took the bench.)
 //
 // THE LOAD GUARD. Each kolob-*.js room answers a roll call as its last act
 // (KOLOB._rooms["kolob-organ.js"] = true), and the substrate — and the Earth
@@ -63,7 +64,13 @@ return [
     // the hymn composer (round 3, M1): pure, loaded ahead of the performers;
     // the engine begins singing its hymns in round 3's integration
     'kolob-dialects.js', 'kolob-hymnists.js', 'kolob-composer.js',
-    // the voices
+    // the Sunday's organist (round 3b, step 2): pure planning — the chorale
+    // prelude, the hymn in pieces, the walk into a new key — played on the
+    // pipe organ among the voices
+    'kolob-organist.js',
+    // the voices (the registrable pipe organ, round 3b, step 2: the meeting's
+    // one organ — kolob-voices-organ.js keeps the old one as the A/B)
+    'kolob-voices-pipeorgan.js',
     'kolob-voices-organ.js', 'kolob-voices-choir.js', 'kolob-voices-winds.js',
     'kolob-voices-ground.js', 'kolob-voices-field.js', 'kolob-voices-bagpipe.js',
     'kolob-voices-band.js',

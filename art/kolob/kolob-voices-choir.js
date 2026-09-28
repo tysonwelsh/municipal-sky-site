@@ -552,7 +552,10 @@ window.KOLOB = window.KOLOB || {};
     var vl = Hy().verseLines(h), tl = Hy().timeline(h, vl, beatS);
     var verseLen = lined ? tl.lines.reduce(function (a, x) { return a + x.len * 1.42 + 0.85; }, 0) : tl.len;
     var gap = lined ? 0.5 : (D === "tabernacle" ? 1.1 : 1.0) * beatS;
-    var organ = D === "tabernacle";
+    // (round 3b, step 2: the organ plays where the dialect's own profile
+    // says it does — today the Tabernacle alone; gospel's says no organ)
+    var Dp = KOLOB.Dialects && KOLOB.Dialects.get ? KOLOB.Dialects.get(D) : null;
+    var organ = Dp && Dp.organ != null ? !!Dp.organ : D === "tabernacle";
     var pivot = organ && row.key !== "home";
     var intro = organ ? (pivot ? 6 * beatS : 0) + Hy().partLine(h.lines[h.lines.length - 1], h.melodyPart, beatS, null).len + 0.9 * beatS : 0;
     var amen = h.amen ? Hy().partLine(h.amen, h.melodyPart, beatS, null).len + 0.3 * beatS : 0;
@@ -731,6 +734,35 @@ window.KOLOB = window.KOLOB || {};
                     1.3 * (p === "S" ? 1 : 0.85), { reg: "principal", pedal: p === "B" });
     });
     return d1 + d2 + 1.0 * bs;
+  }
+
+  // THE ORGANIST'S HANDS ON A HYMN (round 3b, step 2): the Sunday's
+  // organist (S.Meeting.organist — kolob-organist.js's seat), writing the
+  // hymn in pieces (hymnHands) on the hymn's own stream (hymn:<n>:<i> →
+  // organist:<style>), at the chorister's beat — or null: an unaccompanied
+  // hymn, the old organ asked for (?organ=house), no organist or no pipes on
+  // the page, or a fuge sung twice (the ward's order of lines, which the
+  // organist's writer does not keep: the old organ plays that one)
+  function organistAt(h, row, P, plan) {
+    if (!P.organ || !S.pipeOn || !S.pipeOn() || !S.organistPlays) return null;
+    var O = KOLOB.Organist, who = S.Meeting.organist ? S.Meeting.organist() : null;
+    if (!O || !O.hymnHands || !who) return null;
+    if (h.fuge && h.fuge.repeatFrom != null) return null;
+    return O.hymnHands(who, h, S.hymnStream(S.Meeting.meetingNum(), row.i),
+                       { verses: plan.verses.length, beatS: P.beatS / (plan.tempoMul || 1), hymnIndex: row.i - 1, accompanied: true });
+  }
+  // …and the walk into a keyed hymn's key: from the day's own tonic chord
+  // (where the joint's amen left the organ) to the new key, through a chord
+  // the two keys share — its common tone held — the new key's V7, and I
+  // (the Victorian leans a 4–3 on the dominant; the improviser now and then
+  // detours by a chromatic mediant). → its length
+  function organistModulates(h, row, P, plan, t0, who) {
+    var mp = KOLOB.Organist.modulate(who, { keyMonzo: [0, 0, 0, 0], mode: S.mode }, { keyMonzo: h.keyMonzo, mode: h.mode },
+                                     S.hymnStream(S.Meeting.meetingNum(), row.i), { beatS: P.beatS / (plan.tempoMul || 1) });
+    if (!mp.phrases.length) return 0;
+    S.organistPlays(mp, t0, { hymnId: h.id, key: null, modulation: true, style: who.style, alive: function () { return S.Meeting.hands.owns(h.id); } });
+    var end = 0; mp.sections.forEach(function (s) { end = Math.max(end, s.end); });
+    return end;
   }
 
   // THE FUGING, ON THE HYMN'S OWN HEAD (PLAN §3.B): the voices go out one by
@@ -1223,10 +1255,27 @@ window.KOLOB = window.KOLOB || {};
     }
     claimAir(P.estimate + 2, 1);
     var t = start;
-    // the Tabernacle's modulation (the house organ, as round 3), then the
-    // intro: the organ's giving-out, the keying or the pitching
-    if (P.organ && P.pivot) t += organModulates(h, P, t);
-    var intro = piece("intro", t);
+    // THE ORGANIST AT THE HYMN (round 3b, step 2): in an accompanied hymn
+    // the Sunday's organist plays the organ's part on the pipes — the walk
+    // into a keyed hymn's key by a common tone, the giving-out in their own
+    // manner, the Score's four parts under every verse on the chorister's
+    // clock (the same arithmetic as the ward's, note for note), a fill
+    // between two lines now and then (the ward waits for it), an interlude
+    // between the verses, the amen. Without the pipes or the organist (the
+    // A/B, ?organ=house; a lab without them), the house organ as round 3b's
+    // first step had it.
+    var org = organistAt(h, row, P, plan), who = org ? S.Meeting.organist() : null, V = plan.verses.length;
+    function tagFor(extra) {
+      var o = { hymnId: id, key: h.keyMonzo, style: who ? who.style : null, alive: function () { return hands.owns(id); } };
+      for (var k in extra) o[k] = extra[k];
+      return o;
+    }
+    // the modulation, then the intro: the organ's giving-out, the keying or
+    // the pitching
+    if (P.organ && P.pivot) t += org ? organistModulates(h, row, P, plan, t, who) : organModulates(h, P, t);
+    var gp = org ? org.giveOut(0) : null;
+    if (gp) S.organistPlays(gp, t, tagFor({ givingOut: true, verse: -1 }));
+    var intro = piece("intro", t, gp ? { giveOut: gp.next } : null);
     t += intro.end;
     hands.until(id, t);
     var beatS = intro.beatS;
@@ -1237,8 +1286,10 @@ window.KOLOB = window.KOLOB || {};
     return { end: tc + P.estimate, tail: P.tail, verses: P.verses, plan: P, cast: plan };
 
     // one piece of the sheet, from t0: on the desk, and told as it goes
-    function piece(which, t0) {
-      var sg = KOLOB.Cast.segment(W, h, plan, which, { stream: R, keynoteHz: K, beatS: P.beatS, carry: carry, at: t0 });
+    // (orgst: the organist's hands — the sheet then carries no organ lines,
+    // and the ward waits where the organist asks: kolob-cast.js)
+    function piece(which, t0, orgst) {
+      var sg = KOLOB.Cast.segment(W, h, plan, which, { stream: R, keynoteHz: K, beatS: P.beatS, carry: carry, at: t0, organist: org ? (orgst || {}) : null });
       sg.hymn = h; sg.hymnId = id;
       sg.alive = function () { return hands.owns(id); };
       onDesk(W, t0, sg);
@@ -1301,14 +1352,27 @@ window.KOLOB = window.KOLOB || {};
       emitEvent({ type: "lining-out", meter: h.meter, syllables: mine.length, hymnId: id, verse: L.verse, line: L.line, composed: true, by: pre0.id, nameDs: pre0.nameDs, start: t0 + L.lined.at,
                   cat: "verse", label: "☞ the precentor lines out", detail: h.meter + " · line " + (L.line + 1) + " · " + pre0.nameDs + " · " + h.nameEn });
     }
+    // the chorister's clock, as the ward's writer keeps it (kolob-cast.js):
+    // the verse's beat (a hummed verse a little broader), each line's
+    // broadening (the hymn's last line most), her fermatas
+    function verseBeat(v) { return beatS * (plan.verses[v].practice === "hummed" ? 1.06 : 1); }
+    function lineClock(v, i) { return { rit: (plan.rubato || 0) * (v === V - 1 && i === vl.length - 1 ? 2.2 : 0.35), hold: plan.holdMul }; }
     function verse(v, tv) {
       if (!S.playing || !hands.owns(id)) return;
-      var Pv = plan.verses[v], sg = piece({ verse: v }, tv), ends = tv + sg.end;
+      var Pv = plan.verses[v], op = null;
+      if (org) {
+        // the organist's verse first: the ward waits for its fills
+        op = org.verse(v, 0, { bs: verseBeat(v), clock: function (i) { return lineClock(v, i); }, rest: !Pv.organ });
+        S.organistPlays(op, tv, tagFor({ verse: v }));
+      }
+      var sg = piece({ verse: v }, tv, op ? { waits: op.waits } : null), ends = tv + sg.end;
       var assembly = cumulative && v === 0;
       cueAt("choir", Math.max(S.now(), tv - AHEAD_S - 0.01), function () {
         if (!hands.owns(id)) return;
         var bs = sg.lines.length ? sg.lines[0].beatS : beatS, perf = {};
         for (var k in Pv) perf[k] = Pv[k];
+        // (the organ's registration is the organist's own)
+        if (org && perf.organ) perf.organ = { registration: [org.regs[v]], organist: who.style };
         perf.tempoMul = +(h.beatS / bs).toFixed(3); perf.beatS = +bs.toFixed(3);
         emitEvent({ type: "verse-start", hymnId: id, verse: v, practice: Pv.practice, composed: true, performance: perf });
       });
@@ -1362,7 +1426,17 @@ window.KOLOB = window.KOLOB || {};
             run(k + 1, tg + span + (span > 0 ? 2.5 : 0));
           });
         } else if (step === "verse") {
-          var nv = t + P.gap;
+          // the organist bridges the verses — the plain organist's breath,
+          // the Victorian's close played again softly, the improviser's
+          // first line sequenced over a pedal point — except after the
+          // fuging, whose amen has already gathered the ward
+          var gapS = P.gap;
+          if (org && steps[k - 1] !== "fuging") {
+            var ip = org.interlude(v, 0);
+            S.organistPlays(ip, t, tagFor({ verse: v, interlude: true }));
+            gapS = ip.next;
+          }
+          var nv = t + gapS;
           hands.until(id, nv);
           later(nv, function () { verse(v + 1, nv); });
         } else finish(t);
@@ -1376,7 +1450,10 @@ window.KOLOB = window.KOLOB || {};
     function finish(tf) {
       var endAt = tf;
       if (h.amen && plan.amen) {
-        var ta = tf + 0.3 * beatS, am = piece("amen", ta), alen = am.end;
+        var ta = tf + 0.3 * beatS;
+        // the organ under the ward's amen, as written (the organist's)
+        if (org) S.organistPlays(org.amen(0, { bs: beatS, ck: { rit: (plan.rubato || 0) * 1.5, hold: plan.holdMul } }), ta, tagFor({ verse: V - 1, amen: true, amenLine: vl.length }));
+        var am = piece("amen", ta), alen = am.end;
         cueAt("choir", ta + alen, function (tc2) {
           if (!hands.owns(id)) return;
           emitEvent({ type: "cadence", kind: "plagal", by: "hymn", at: tc2, hymnId: id, amen: true,

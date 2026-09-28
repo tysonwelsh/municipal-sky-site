@@ -352,6 +352,9 @@ window.KOLOB.Score = (function () {
     // round 3: the day's hymnal — the house dialect and each singing
     // section's hymn (its id, dialect, key), drawn with the plan
     "hymnal":              { house: "dialect", hymns: "arr" },
+    // round 3b, step 2: the organist's chorale prelude on the day's first
+    // hymn — its span (the house listens through it) and its manner
+    "chorale-prelude":     { hymnId: "hymnId", t0: "num", until: "num", style: "str?", manner: "str?" },
   };
   var KINDS = {
     int: isInt, num: isNum, str: isStr, bool: isBool, obj: isObj, arr: Array.isArray,

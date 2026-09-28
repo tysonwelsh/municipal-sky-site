@@ -420,10 +420,37 @@ window.KOLOB = window.KOLOB || {};
     // seated too (their turns are later rounds'). Pure seating on cast:<n>
     // (kolob-cast.js); they sing every hymn, and everything the choir sings
     // around the hymns. Told with the prelude's seating, by role, in Deseret.
-    C.ward = KOLOB.Cast && S.castStream ? KOLOB.Cast.seat(S.castStream(C.meetingNum)) : null;
+    // THE ORGANIST (round 3b, step 2; PLAN-COMPOSITION §5.2, §14 item 4,
+    // §15 item 2): the Sunday's organist — the plain organist, the
+    // Victorian or the improviser (kolob-organist.js seat: the kind of
+    // Sunday, the house, the light and the Ives switch tilt the draw) — on
+    // cast:<n>'s fork `organist`, seated first so that the ward's organist
+    // (its name, its archetype) is the same person; the meeting's ledger
+    // (hymns, fills, the one strange fill) is theirs.
+    C.organist = null; C.chorale = null;
+    var OR = KOLOB.Organist && S.castStream ? KOLOB.Organist : null;
+    if (OR) C.organist = OR.seat(S.castStream(C.meetingNum), { kind: activity, houseDialect: C.house, bright: MEETINGS[activity] ? MEETINGS[activity].bright : 0.5, ives: !!S.forceVisitation });
+    C.ward = KOLOB.Cast && S.castStream ? KOLOB.Cast.seat(S.castStream(C.meetingNum), { organist: C.organist ? C.organist.style : null }) : null;
+    if (C.organist && C.ward && C.ward.byId.organist) { C.organist.nameDs = C.ward.byId.organist.nameDs; C.organist.nameEn = C.ward.byId.organist.nameEn; }
+    // THE CHORALE PRELUDE: some Sundays the organist's prelude on the day's
+    // first hymn is the morning (the organist's own die, cast:<n> →
+    // organist:prelude, at the style's odds; refused when the dawn is the
+    // trombones' or the steeples', when the tune is withheld, in the brush
+    // arbor, on a humming morning, and when the first hymn is one line sung
+    // in unison) — seated over the morning the Sunday drew (choraleSeating)
+    if (C.organist && HY && C.hymnal.length && S.pipeOn && S.pipeOn()) {
+      var fh = C.hymnal[0];
+      var pd = OR.preludeDraw(C.organist, S.castStream(C.meetingNum), {
+        hymn: fh, trombones: !!dawn, withheld: !!C.cumulative, organSits: !!C.seating.sits.organ, unison: fh.dialect === "oldway" || fh.dialect === "shaker",
+        guest: C.seating.name === "steeples" ? "the steeples" : null, hum: !!C.seating.hum,
+      });
+      C.organist.preludeDraw = pd;
+      if (pd.play) { C.seating = choraleSeating(C.seating); C.chorale = { hymnId: fh.id, begun: false, until: 0, plan: null }; }
+    }
     var wardTold = C.ward ? { seated: 32, people: C.ward.individuals.map(function (id) { var m = C.ward.byId[id]; return { memberId: id, role: m.role, nameDs: m.nameDs, part: m.part }; }) } : null;
+    var organistTold = C.organist ? { style: C.organist.style, nameDs: C.organist.nameDs, nameEn: C.organist.nameEn /* dev only, never rendered */, prelude: C.organist.preludeDraw ? { play: C.organist.preludeDraw.play, why: C.organist.preludeDraw.why, odds: C.organist.preludeDraw.odds } : null } : null;
     emitEvent({
-      type: "prelude-seating", n: C.meetingNum, seating: C.seating.name, under: C.seating.under, style: C.seating.style, at: C.seating.at, full: C.seating.full, spread: C.seating.spread, ward: wardTold,
+      type: "prelude-seating", n: C.meetingNum, seating: C.seating.name, under: C.seating.under, style: C.seating.style, at: C.seating.at, full: C.seating.full, spread: C.seating.spread, ward: wardTold, organist: organistTold,
       len: C.seating.len, preludeS: +plan[0].dur.toFixed(2), sits: Object.keys(C.seating.sits), lean: C.seating.lean, hum: C.seating.hum ? { n: C.seating.hum.n, s: C.seating.hum.s, at: C.seating.hum.at, until: C.seating.hum.until } : null,
       cat: "seating", label: "⌖ the prelude is seated", detail: C.seating.name + (C.seating.style ? " · " + C.seating.style : "") + (C.seating.under !== C.seating.name ? " (the morning after: " + C.seating.under + ")" : ""),
     });
@@ -566,6 +593,11 @@ window.KOLOB = window.KOLOB || {};
                  at: { drone: [0.5, 6], organ: [0.5, 4], ambient: [1, 30], strings: [4, 12], harmonium: [8, 18], clarinet: [10, 22], bells: [4, 40], telegraph: [8, 60] } },
     steeples:  { w: 0,   full: 0.45, anchored: { organ: true, ambient: true, strings: true, harmonium: true, clarinet: true, telegraph: true, bells: true },
                  at: { drone: [0.3, 4], ambient: [6, 14], organ: [10, 20], strings: [16, 30], harmonium: [24, 40], clarinet: [30, 46], telegraph: [30, 60], bells: [40, 60] } },
+    // (round 3b, step 2: the organist's chorale prelude on the day's first
+    // hymn — seated over the drawn morning when the organist's own die says
+    // so, never drawn here: choraleSeating. anchored: counted from its end)
+    chorale:   { w: 0,   full: 0.5,  anchored: { strings: true, harmonium: true, clarinet: true },
+                 at: { drone: [0.3, 3], organ: [2.5, 7], ambient: [8, 26], bells: [30, 56], telegraph: [40, 76], strings: [4, 14], harmonium: [8, 20], clarinet: [10, 24] } },
   };
   var SEATING_ODDS = Object.keys(SEATINGS).filter(function (k) { return SEATINGS[k].w > 0; }).map(function (k) { return [k, SEATINGS[k].w]; });
   var STEEPLES_AT = [1, 6];                        // the steeples calling the valley in, s into the prelude
@@ -637,7 +669,35 @@ window.KOLOB = window.KOLOB || {};
       sits: spec.sits || {}, fifths: !!spec.fifths, lean: lean, leanPow: +pow.toFixed(3),
       speak: tex.speak != null ? tex.speak : null, chord: tex.chord != null ? tex.chord : null, field: field,
       organDur: (styleSpec && styleSpec.organDur) || 1, hum: hum,
+      // (the waking's own dice, kept: the chorale prelude, seated once the
+      // organist is, re-times the morning on them — choraleSeating)
+      _u: { U: U, fullU: fullU },
     };
+  }
+  // THE CHORALE PRELUDE'S MORNING (round 3b, step 2): the organist's
+  // chorale prelude on the day's first hymn is one of the prelude's
+  // seatings — seated like the guests' (the trombones', the steeples'),
+  // over the one the Sunday drew, which keeps its texture, its length and
+  // its manner for the rest of the prelude ("under"). The drone and the
+  // valley wake around the organist; the house — the strings, the harmonium
+  // and the deacon — is counted from the chorale's end (CHORALE_EST, its
+  // likely length: the house also listens while the organist plays,
+  // however long that proves to be). The same dice as the drawn morning.
+  var CHORALE_EST = 44;
+  var CHORALE_AFTER_S = 26;                      // the prelude goes on at least this long after the chorale (the house wakes into it)
+  function choraleSeating(seat) {
+    var spec = SEATINGS.chorale, U = seat._u.U, at = {};
+    WAKERS.concat(["choir"]).forEach(function (l) {
+      var r = spec.at[l] || CHOIR_CALL, x = r[0] + (r[1] - r[0]) * U[l];
+      at[l] = x;
+    });
+    Object.keys(spec.anchored).forEach(function (l) { at[l] += at.organ + CHORALE_EST; });
+    Object.keys(at).forEach(function (l) { at[l] = +at[l].toFixed(2); });
+    at.voice = seat.at.voice;
+    var out = {};
+    for (var k in seat) out[k] = seat[k];
+    out.name = "chorale"; out.at = at; out.full = seat._u.fullU < spec.full; out.sits = {}; out.fifths = false; out.hum = null;
+    return out;
   }
 
   function visitationOf(type) {
@@ -818,7 +878,7 @@ window.KOLOB = window.KOLOB || {};
     for (var vv = 0; vv < C.visitations.length; vv++) {
       var V = C.visitations[vv];
       if (!V.fired && !(CUED[V.type] || V.cued) && V.section === C.section && x > 0.2 && x < 0.55 &&
-          !C.jointing && !inHush() && !inFuging() && !inVisit() && !hymnSounding()) {
+          !C.jointing && !inHush() && !inFuging() && !inVisit() && !hymnSounding() && !choraleSounding()) {
         arrive(V, t);
         break;
       }
@@ -862,7 +922,7 @@ window.KOLOB = window.KOLOB || {};
     // And once in a great while a silence falls where none was scheduled —
     // about once a meeting, somewhere, unannounced.
     // (never under a hymn being sung: the ground stays under the singers)
-    if (C.section !== "sacrament" && C.section !== "testimony" && !C.jointing && !inHush() && !hymnSounding() && unbiddenDie) {
+    if (C.section !== "sacrament" && C.section !== "testimony" && !C.jointing && !inHush() && !hymnSounding() && !choraleSounding() && unbiddenDie) {
       stillness("unbidden", t);
     }
     // Section end → joint → advance. A guest still sounding HOLDS THE JOINT:
@@ -951,7 +1011,11 @@ window.KOLOB = window.KOLOB || {};
   // the organist's free chords, the harmonium, the strings, the clarinet —
   // speak around the hymn, not over it (PLAN-COMPOSITION §1.1: the motif
   // engine works AROUND the hymns), and come back when it is done
-  function hallListens() { return (inVisit() && !!LISTENED[C.visitType]) || hymnSounding(); }
+  // …and while the organist plays the chorale prelude (round 3b, step 2):
+  // the drone and the valley stay (it is morning outside); the house's own
+  // voices wait for the organist, and so does a guest
+  function hallListens() { return (inVisit() && !!LISTENED[C.visitType]) || hymnSounding() || choraleSounding(); }
+  function choraleSounding() { return !!C.chorale && C.chorale.begun && !!S.ctx && now() < C.chorale.until; }
 
   // a guest is sounding: a visitation, or the whole tune at last
   function guestSounding() { return inVisit() || (!!S.ctx && now() < C.assemblyUntil); }
@@ -964,7 +1028,7 @@ window.KOLOB = window.KOLOB || {};
   // an answer between verses are the hymn's own)
   function hymnSounding() { return !!C.hymn && (C.hymn.active || (!!S.ctx && now() < C.hymn.until)); }
   function choirSinging() { return !!S.ctx && (now() < Desk.sungUntil() || hymnSounding()); }
-  function jointHeld() { return guestSounding() || (!!S.ctx && (now() < Desk.sungUntil() + CHOIR_BREATH_S || (!!C.hymn && (C.hymn.active || now() < C.hymn.until + CHOIR_BREATH_S)))); }
+  function jointHeld() { return guestSounding() || choraleSounding() || (!!S.ctx && (now() < Desk.sungUntil() + CHOIR_BREATH_S || (!!C.hymn && (C.hymn.active || now() < C.hymn.until + CHOIR_BREATH_S)))); }
   // A guest's span, told as SCORE.md §6's typed events (the page's minutes
   // keep their own rows; these are for the harness and the typed bus)
   function guestSpan(type, t, dur, logged) {
@@ -1251,6 +1315,23 @@ window.KOLOB = window.KOLOB || {};
     house: function () { return C.house; },
     // the Sunday's ward (round 3b: kolob-cast.js's Ward, seated with the plan), or null
     ward: function () { return C.ward || null; },
+    // the Sunday's organist (round 3b, step 2: kolob-organist.js's seat —
+    // its style, its habits, its name, and the meeting's ledger, which the
+    // organist's hands write as they play), or null
+    organist: function () { return C.organist || null; },
+    // the chorale prelude, when the morning was seated for it ({hymnId,
+    // begun, until}, a copy), or null; choraleBegins(t0, until, what): the
+    // organist has begun it — the house listens until `until`, the prelude
+    // lasts long enough for it and a breath, and it is told
+    chorale: function () { return C.chorale ? { hymnId: C.chorale.hymnId, begun: C.chorale.begun, until: C.chorale.until } : null; },
+    choraleBegins: function (t0, until, what) {
+      if (!C.chorale || C.chorale.begun) return;
+      C.chorale.begun = true; C.chorale.until = until; C.chorale.plan = what || null;
+      var need = until - C.sectionStart + CHORALE_AFTER_S;
+      if (C.section === "prelude" && need > C.sectionDur) { C.sectionDur = need; if (C.plan[0] && C.plan[0].type === "prelude") C.plan[0].dur = need; }
+      emitEvent({ type: "chorale-prelude", hymnId: C.chorale.hymnId, t0: t0, until: until, style: what ? what.style : null, manner: what ? what.manner : null,
+                  cat: "organist", label: "♫ the chorale prelude", detail: (what ? what.style + " · " + what.manner + " · " : "") + (until - t0).toFixed(1) + " s" });
+    },
     hymnal: function () { return C.hymnal.map(function (r) { var o = {}; for (var k in r) o[k] = r[k]; return o; }); },
     hymn: function () { return C.hymn ? { id: C.hymn.id, dialect: C.hymn.dialect, key: C.hymn.key, active: C.hymn.active, from: C.hymn.from, until: C.hymn.until } : null; },
     hymnSounding: hymnSounding,

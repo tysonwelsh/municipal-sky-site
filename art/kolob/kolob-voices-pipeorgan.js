@@ -87,7 +87,7 @@
 //     trem: false leaves the tremulant as it stands (a phrase laid in
 //     pieces: only its first piece draws the tremulant, at the phrase's t)
 //   organ.chord(t, freqs, dur, registration, {pedal: true, v})
-//   organ.setSwell(expression 0..1, t, rampS)
+//   organ.setSwell(expression 0..1, t, rampS, cancel)   cancel: take back the moves written from t on
 //   organ.dispose(t)                 the tremulant's motor and the wind stop at t
 //   organ.stats() → { standing, created, peakLive, until }   (kept as it goes)
 //   KOLOB.VoicesOrgan.REGISTRATIONS (frozen) / STOPS / resolve(registration) / CHIFF
@@ -302,8 +302,12 @@ window.KOLOB.VoicesOrgan = (function () {
     function swellLevel(e) { return 0.32 + 0.68 * Math.pow(e, 1.3); }
     swellLP.frequency.value = swellCut(swellNow);
     swellGain.gain.value = swellLevel(swellNow);
-    function setSwell(e, t, rampS) {
+    // (cancel, round 3b: the moves already written from t on are taken
+    // back first — the meeting's house chords shape the box chord by chord,
+    // and a chord that comes while the last still sounds keeps it open)
+    function setSwell(e, t, rampS, cancel) {
       e = Math.max(0, Math.min(1, e)); swellNow = e;
+      if (cancel) { swellLP.frequency.cancelScheduledValues(t); swellGain.gain.cancelScheduledValues(t); }
       var tau = Math.max(0.02, (rampS == null ? 0.4 : rampS) / 3);
       swellLP.frequency.setTargetAtTime(swellCut(e), t, tau);
       swellGain.gain.setTargetAtTime(swellLevel(e), t, tau);
@@ -689,4 +693,4 @@ window.KOLOB.VoicesOrgan = (function () {
   return { create: create, STOPS: STOPS, REGISTRATIONS: REGISTRATIONS, resolve: resolve,
            CHIFF: { level: CHIFF_LEVEL, legato: CHIFF_LEGATO, legatoS: LEGATO_S } };
 })();
-(window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-voices-pipeorgan.js"] = true;   // the load guard's roll call (for the day it joins the engine)
+(window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-voices-pipeorgan.js"] = true;   // the load guard's roll call (round 3b: the engine's organ)

@@ -140,7 +140,32 @@ window.KOLOB.Cast = (function () {
    ["sings the treble verse", "s-i-ng-z dh-u t-r-e-b-u-l v-u-r-s"], ["sings the tune", "s-i-ng-z dh-u t-oo-n"], ["loses the words", "l-oo-z-i-z dh-u w-u-r-d-z"],
    ["finds them again", "f-ie-n-d-z dh-e-m u-g-e-n"], ["joins in", "j-oi-n-z i-n"], ["sings out", "s-i-ng-z ow-t"],
    ["blends back into the ward", "b-l-e-n-d-z b-a-k i-n-t-oo dh-u w-aw-r-d"], ["falls silent", "f-aw-l-z s-ie-l-u-n-t"],
+   // (round 3b, step 2) the organist at the bench (kolob-organist.js says
+   // these; a parenthesis after one — which key he strays to — is the dev
+   // tools' only)
+   ["plays the day's first hymn as a prelude", "p-l-ay-z dh-u d-ay-z f-u-r-s-t h-i-m a-z u p-r-e-l-y-oo-d"],
+   ["puts the tune in the pedals", "p-uu-t-s dh-u t-oo-n i-n dh-u p-e-d-u-l-z"], ["lets the flutes run in another key", "l-e-t-s dh-u f-l-oo-t-s r-u-n i-n u-n-u-dh-u-r k-ee"],
+   ["gives out the tune", "g-i-v-z ow-t dh-u t-oo-n"], ["modulates to the next hymn's key", "m-o-j-u-l-ay-t-s t-oo dh-u n-e-k-s-t h-i-m-z k-ee"],
+   ["links the lines", "l-i-ng-k-s dh-u l-ie-n-z"], ["holds a note over into the next line", "h-oh-l-d-z u n-oh-t oh-v-u-r i-n-t-oo dh-u n-e-k-s-t l-ie-n"],
+   ["echoes the line on the echo flute", "e-k-oh-z dh-u l-ie-n o-n dh-u e-k-oh f-l-oo-t"], ["quotes the next line between the lines", "k-w-oh-t-s dh-u n-e-k-s-t l-ie-n b-i-t-w-ee-n dh-u l-ie-n-z"],
+   ["turns an arabesque between the lines", "t-u-r-n-z a-n a-r-u-b-e-s-k b-i-t-w-ee-n dh-u l-ie-n-z"], ["runs a sequence between the lines", "r-u-n-z u s-ee-k-w-u-n-s b-i-t-w-ee-n dh-u l-ie-n-z"],
+   ["strays into a strange key", "s-t-r-ay-z i-n-t-oo u s-t-r-ay-n-j k-ee"], ["lifts both hands; the ward sings a line alone", "l-i-f-t-s b-oh-th h-a-n-d-z dh-u w-aw-r-d s-i-ng-z u l-ie-n u-l-oh-n"],
+   // …and the stops they draw (told, never given a row in the minutes)
+   ["draws the soft flutes", "d-r-aw-z dh-u s-aw-f-t f-l-oo-t-s"], ["draws one quiet flute", "d-r-aw-z w-u-n k-w-ie-u-t f-l-oo-t"],
+   ["draws the flutes, 8′ and 4′", "d-r-aw-z dh-u f-l-oo-t-s ay-t f-uu-t a-n-d f-aw-r f-uu-t"], ["draws the principal", "d-r-aw-z dh-u p-r-i-n-s-i-p-u-l"],
+   ["draws the principal and the 4′ flute", "d-r-aw-z dh-u p-r-i-n-s-i-p-u-l a-n-d dh-u f-aw-r f-uu-t f-l-oo-t"],
+   ["pulls the vox humana, with the tremulant", "p-uu-l-z dh-u v-o-k-s h-y-oo-m-a-n-u w-i-dh dh-u t-r-e-m-y-u-l-u-n-t"],
+   ["pulls the vox humana over the flutes", "p-uu-l-z dh-u v-o-k-s h-y-oo-m-a-n-u oh-v-u-r dh-u f-l-oo-t-s"],
+   ["sets the tune on the vox humana", "s-e-t-s dh-u t-oo-n o-n dh-u v-o-k-s h-y-oo-m-a-n-u"], ["draws the echo flute", "d-r-aw-z dh-u e-k-oh f-l-oo-t"],
+   ["draws the trumpet", "d-r-aw-z dh-u t-r-u-m-p-i-t"], ["sets the tune on the trumpet", "s-e-t-s dh-u t-oo-n o-n dh-u t-r-u-m-p-i-t"],
+   ["draws the full organ, mixtures and all", "d-r-aw-z dh-u f-uu-l aw-r-g-u-n m-i-k-s-ch-u-r-z a-n-d aw-l"],
+   ["draws the principal and the mixture", "d-r-aw-z dh-u p-r-i-n-s-i-p-u-l a-n-d dh-u m-i-k-s-ch-u-r"],
+   ["draws a 16′ and a 4′ with nothing between", "d-r-aw-z u s-i-k-s-t-ee-n f-uu-t a-n-d u f-aw-r f-uu-t w-i-dh n-u-th-i-ng b-i-t-w-ee-n"],
+   ["draws the mixture alone", "d-r-aw-z dh-u m-i-k-s-ch-u-r u-l-oh-n"], ["sets the flutes running", "s-e-t-s dh-u f-l-oo-t-s r-u-n-i-ng"],
+   ["draws the flutes with the tremulant", "d-r-aw-z dh-u f-l-oo-t-s w-i-dh dh-u t-r-e-m-y-u-l-u-n-t"], ["changes the stops", "ch-ay-n-j-i-z dh-u s-t-o-p-s"],
   ].forEach(function (a) { ACTION_DS[a[0]] = deseretCaps(a[1]); });
+  // (an action's key: its words without the dev tools' parenthesis)
+  function actionKey(action) { return String(action || "").replace(/ \(.*\)$/, ""); }
   // the actions a person COMES FORWARD with (the rest say how their moment
   // goes on, or ends): the minutes give these a row
   var ACTION_FORWARD = { "keys the hymn": 1, "hums the first note": 1, "pitches the tune": 1, "lines out": 1, "comes forward": 1, "sings the descant": 1,
@@ -267,6 +292,14 @@ window.KOLOB.Cast = (function () {
       // fathers on one Sunday is one too many — the same single die, a
       // smaller pool)
       var pool = ROSTER[role].filter(function (a) { return !usedArch[role + ":" + a.id]; });
+      // (round 3b, step 2: the organist on the bench is the organist the
+      // Sunday seated — kolob-organist.js draws the style, with the day's
+      // own tilts; the ward's archetype is one of that style's — the same
+      // single die, a smaller pool, so no other die moves)
+      if (role === "organist" && opts.organist) {
+        var own = pool.filter(function (a) { return a.habit && a.habit.style === opts.organist; });
+        if (own.length) pool = own;
+      }
       var r = stream.fork(label), arch = r.pick(pool.length ? pool : ROSTER[role]);
       usedArch[role + ":" + arch.id] = true;
       var person;
@@ -647,9 +680,19 @@ window.KOLOB.Cast = (function () {
   // the caller's clock) carry each singer's last note from one piece to the
   // next, for the breath before their first line in it.
   // ==========================================================================
+  //
+  // THE ORGANIST'S OWN HANDS (round 3b, step 2). In the meeting the Sunday's
+  // organist plays the organ's part (kolob-organist.js, hymnHands), and the
+  // sheet carries no organ lines of its own: opts.organist = { giveOut (the
+  // organist's giving-out, s from the intro's start to where the ward may
+  // begin; in place of the sheet's), waits ({line: s} — after that line of
+  // this verse the ward waits while the organist plays a fill between the
+  // lines) }. The organist lays the organ by the chorister's clock (below);
+  // the ward waits where the organist asks it to. Nothing else moves.
   var WARD_GAIN = 1 / Math.sqrt(8);
   function writer(ward, hymn, plan, opts) {
     opts = opts || {};
+    var orgst = opts.organist || null;
     var R = opts.stream, keynote = opts.keynoteHz || 261.63, keyM = hymn.keyMonzo || [0, 0, 0, 0], base = keynote * ratio(keyM);
     var cues = [], organ = [], events = [], joins = [], written = [], told = [], t = 0;
     var ch = ward.byId[plan.chorister] || ward.members[0];
@@ -688,7 +731,8 @@ window.KOLOB.Cast = (function () {
     // (accompanied hymns: its last line, alone); the keying, or the pitching ----
     function intro() {
       ev("hymn-announced", t, { hymn: { id: hymn.id, number: hymn.number, nameDs: hymn.nameDs, meter: hymn.meter, dialect: hymn.dialect, authorDs: hymn.hymnist ? hymn.hymnist.nameDs : null }, leaderDs: ch.nameDs });
-      if (plan.organ) {
+      if (plan.organ && orgst && orgst.giveOut != null) t += orgst.giveOut;       // (the organist gives it out)
+      else if (plan.organ) {
         var lastI = hymn.lines.length - 1, gl = hymn.lines[lastI];
         organ.push({ at: round(t, 4), notes: organNotes(gl, null, beat0, 0.02, plan.holdMul), registration: "hymn principal", giveOut: true, verse: -1, line: lastI });
         t += lineSpan(gl, null, beat0, 0.02, plan.holdMul) + 0.9 * beat0;
@@ -829,15 +873,17 @@ window.KOLOB.Cast = (function () {
           for (var ci = cues.length - 1; ci >= 0 && cues[ci].verse === vi && cues[ci].line === li; ci--) if (cues[ci].memberId !== solo) cues.splice(ci, 1);
           for (var wi = written.length - 1; wi >= 0 && written[wi].verse === vi && written[wi].line === li; wi--) if (written[wi].member !== solo && !written[wi].liningOut) written.splice(wi, 1);
         }
-        // the organ under the line (accompanied, and not while the ward hums)
-        if (plan.organ && P.organ) organ.push({ at: round(t0, 4), notes: organNotes(line, next, bs, rit, plan.holdMul), registration: P.organ.registration[0], verse: vi, line: li });
+        // the organ under the line (accompanied, and not while the ward hums;
+        // the organist's own hands play it in the meeting)
+        if (plan.organ && P.organ && !orgst) organ.push({ at: round(t0, 4), notes: organNotes(line, next, bs, rit, plan.holdMul), registration: P.organ.registration[0], verse: vi, line: li });
         // the joins, for the benches: every part's onsets
         var on = [];
         Object.keys(line.notes).forEach(function (p) { partNotes(line, next, p, bs, rit, plan.holdMul).forEach(function (x) { on.push(t0 + x.t); }); });
         on.sort(function (a, b) { return a - b; });
         var lastJ = -1;
         on.forEach(function (x) { if (x - lastJ > 0.03) { joins.push({ t: round(x, 4), kind: Math.abs(x - t0) < 0.01 ? "line" : "note" }); lastJ = x; } });
-        t = t0 + span + (P.practice === "lined" ? 0.5 : 0);
+        // (and the ward waits for the organist's fill between the lines)
+        t = t0 + span + (P.practice === "lined" ? 0.5 : 0) + (orgst && orgst.waits && orgst.waits[li] ? orgst.waits[li] : 0);
       });
       Object.keys(fwdOn).forEach(function (id) { if (fwdOn[id]) stepBack(t, id); });
     }
@@ -855,7 +901,7 @@ window.KOLOB.Cast = (function () {
         var key = m.part + "|" + asg[0] + "|" + asg[1];
         if (!heard[key] && pn3.length) { heard[key] = true; pn3.forEach(function (x) { tell(t0a + x.t, x, m.part, asg[0], asg[1], where, extra); }); }
       });
-      if (plan.organ && which === "amen") organ.push({ at: round(t0a, 4), notes: organNotes(line, null, bs, rit, plan.holdMul), registration: "hymn principal", verse: vi, line: lines.length, amen: true });
+      if (plan.organ && which === "amen" && !orgst) organ.push({ at: round(t0a, 4), notes: organNotes(line, null, bs, rit, plan.holdMul), registration: "hymn principal", verse: vi, line: lines.length, amen: true });
       var span = lineSpan(line, null, bs, rit, plan.holdMul);
       told.push({ verse: vi, line: lines.length, at: round(t0a, 4), len: round(span, 4), beatS: round(bs, 5), practice: "sung", lined: null, repeat: false });
       told[told.length - 1][which] = true;
@@ -1155,7 +1201,7 @@ window.KOLOB.Cast = (function () {
     who: who, panOf: panOf, layoutFor: layoutFor, descantLine: descantLine, deseret: deseret, deseretCaps: deseretCaps,
     assignment: assignment,
     ROLES: ROLE_ORDER, ROLE_NAME: ROLE_NAME, ROSTER: ROSTER, PART_NAME: PART_NAME,
-    PRACTICE_DO: PRACTICE_DO, ACTION_DS: ACTION_DS, ACTION_FORWARD: ACTION_FORWARD, WARD_GAIN: WARD_GAIN,
+    PRACTICE_DO: PRACTICE_DO, ACTION_DS: ACTION_DS, ACTION_FORWARD: ACTION_FORWARD, WARD_GAIN: WARD_GAIN, actionKey: actionKey,
     rosterSize: function () { var n = 0; for (var r in ROSTER) n += ROSTER[r].length; return n; },
   };
 })();
