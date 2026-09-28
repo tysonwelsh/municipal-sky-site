@@ -44,7 +44,10 @@ window.KOLOB.Score = (function () {
   var CADENCES = ["authentic", "half", "plagal", "deceptive", "openfifth", "imperfect", "none"];
   var NCT = ["pass", "nbr", "susp", "app", "ant", "esc"];
   var ORNAMENTS = ["grace", "slide", "turn"];
-  var PRACTICES = ["sung", "notes", "lined", "hummed", "unison", "descant"];
+  // (round 3b, step 3: "quartet" — gospel's verse sung by four of the ward
+  // standing, the ward on the refrain; "round" — a hymn sung as a canon, the
+  // ward going in group by group)
+  var PRACTICES = ["sung", "notes", "lined", "hummed", "unison", "descant", "quartet", "round"];
   // the contract's qualities and the Earth tunes' (the "…" of §5): a chord the
   // engine's gapped scales stack that is no triad is "other"
   var QUALITIES = ["maj", "min", "dim", "aug", "dom7", "maj7", "min7", "hdim7", "open5", "unison", "sus", "other"];
@@ -61,6 +64,12 @@ window.KOLOB.Score = (function () {
   PARENT_CENTS.penta = PARENT_CENTS.hexa = PARENT_CENTS.ionian;
   var COMMA_C = 21.506;                      // 81/80: the most a spelling may be off its pitch
   var SPELL_SLACK = COMMA_C + 1.5;           // (and a float's breath)
+  // (round 3b: the ringing seventh. Gospel's dominant sevenths are sung on
+  // the seventh harmonic, 4:5:6:7, and a note on it stands one Johnston "7"
+  // — 36/35 — under the spelling a 5-limit score would give it; SCORE §2's
+  // commaOf reads it so. The proofreader allows that much again for every
+  // factor of 7 a monzo carries, and no more: r3-hymn2-1's request 1)
+  var SEPTIMAL_C = 1200 * Math.log(36 / 35) / Math.LN2;   // 48.770 c
 
   // ==========================================================================
   // SMALL HANDS
@@ -159,7 +168,7 @@ window.KOLOB.Score = (function () {
       var cls = ((n.deg % 7) + 7) % 7, oct = Math.floor(n.deg / 7);
       var spelled = 1200 * oct + PARENT_CENTS[opts.mode][cls];
       var off = monzoCents(n.monzo) - spelled;
-      var room = SPELL_SLACK + (n.alt ? 100 + 12 : 0);
+      var room = SPELL_SLACK + (n.alt ? 100 + 12 : 0) + SEPTIMAL_C * Math.abs(n.monzo[3]);
       if (Math.abs(off) > room) out.push(w + ": deg " + n.deg + " is spelled " + spelled.toFixed(1) + " c, its monzo sounds " + monzoCents(n.monzo).toFixed(1) + " c (" + off.toFixed(1) + " c off)");
     }
     return out;
@@ -229,7 +238,10 @@ window.KOLOB.Score = (function () {
     if (!Array.isArray(l.fermataBeats) || !l.fermataBeats.every(isNum)) out.push(w + ".fermataBeats: not a list of beats");
     return out;
   }
-  var ID = /^(h:\d+:\d+|earth:[a-z0-9][a-z0-9-]*|gift:\S+)$/;
+  // (round 3b: r:<n>:<k> — the meeting's wandering refrain, k 0 as it was
+  // written, 1–3 each statement of it in the key and dialect of the hymn it
+  // follows)
+  var ID = /^(h:\d+:\d+|r:\d+:\d+|earth:[a-z0-9][a-z0-9-]*|gift:\S+)$/;
   function validateHymn(h, where) {
     var out = [], w = where || (h && h.id) || "hymn";
     if (!isObj(h)) return [w + ": not an object"];
@@ -355,6 +367,15 @@ window.KOLOB.Score = (function () {
     // round 3b, step 2: the organist's chorale prelude on the day's first
     // hymn — its span (the house listens through it) and its manner
     "chorale-prelude":     { hymnId: "hymnId", t0: "num", until: "num", style: "str?", manner: "str?" },
+    // round 3b, step 3: the day's forms — a round's groups going in one by
+    // one; the partner hymn's last verse, the first hymn played against it
+    // (by the organ or a cornet of the ward's band); each statement of the
+    // wandering refrain (k 0 after the first hymn, the enthusiast first; the
+    // last in the doxology, unprompted) — and the doxology's one payoff
+    "round-entry":         { hymnId: "hymnId", entry: "int", group: "str" },
+    "partner":             { hymnId: "hymnId", of: "hymnId", by: "str", combined: "bool" },
+    "refrain":             { refrainId: "hymnId", statement: "int", after: "hymnId", dox: "bool", by: "str?" },
+    "payoff":              { kind: "str", section: "str" },
   };
   var KINDS = {
     int: isInt, num: isNum, str: isStr, bool: isBool, obj: isObj, arr: Array.isArray,
