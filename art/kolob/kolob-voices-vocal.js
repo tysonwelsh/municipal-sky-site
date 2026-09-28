@@ -42,8 +42,11 @@
 //    thirty-two times over. Now the breathiness is IN the voice: the noise
 //    passes through each person's own envelope, so it rises and falls with
 //    the tone and can never be heard without it. A breath you can hear is an
-//    inhale, and only where a phrase breathes (a rest, or a line's start),
-//    quiet, low (below ~3 kHz), and not every singer's. The s and f of the
+//    inhale, and only where a phrase breathes (a rest, or a line's start):
+//    from a few of the ward (about three of thirty-two), each at their own
+//    moment, quiet, and low (below ~2 kHz) — not the whole ward drawing one
+//    breath before every line, which is what round 3's first inhale did
+//    (see INHALE). The s and f of the
 //    shape syllables are softer and shorter. No level change is faster than
 //    10 ms (a short note before "fa" or "sol" used to cut in half a
 //    millisecond — a glottal click).
@@ -93,12 +96,15 @@
 //   slide  true → a long, deliberate portamento into this note (precentor)
 // t is the VOWEL onset of the first note, as written: the singer lands it
 // there plus their own lateness. A leading consonant anticipates it by up to
-// ~0.09 s and an inhale by ~0.36 s, so give sing() that much lead.
+// ~0.09 s and an inhale by up to ~0.4 s, so give sing() that much lead.
 // sing(ctx, dest, t, notes, gain, opts?) — opts:
 //   breathBefore  seconds of silence the caller left before t (a line's
-//                 breath): the inhale fits inside it (default 0.36; below
-//                 0.12 there is no audible inhale)
+//                 breath): the inhale fits inside it (default 0.22, a
+//                 hymn's breath between lines; below 0.12 there is no
+//                 audible inhale). Pass the real gap.
 //   breathe       false → no audible inhale at all (a humming bed)
+//   inhale        0..1, the chance this line's breaths are heard (default:
+//                 a ward's small share, ~0.1; a voice alone breathes more)
 //   pan           this line's place in the field (a performer moving a
 //                 singer between the pews and the hollow square)
 // ============================================================================
@@ -182,6 +188,19 @@ window.KOLOB.VoicesVocal = (function () {
   var FRIC_PEAK = { s: 0.015, f: 0.008 };
   // no level change faster than this (s): a 0.5 ms fall is a glottal click
   var MIN_RAMP = 0.010;
+  // THE INHALE. Heard only where a phrase breathes — and from a few of the
+  // ward, not from half of it. Round 3's first inhale came from some fifteen
+  // of the thirty-two within a tenth of a second of each other, a collective
+  // "hhh" filling every gap between the lines (the critic measured it +10 dB
+  // over HEAD in the gap at 3–12 kHz, and as loud there as the voices' own
+  // tails): the owner's "almost like a breath", moved, not gone. Now a
+  // singer's chance of an inhale that can be heard is small in the ward
+  // (share + perBreath × breath: about three of the thirty-two), each one's
+  // moment is their own (it ends 20–130 ms before their own onset and lasts
+  // 0.12–0.26 s, inside the gap the caller left), and it is low and soft. A
+  // caller can give one voice a larger share (opts.inhale: a soloist, the
+  // precentor, the chorister keying — one person breathing is a person).
+  var INHALE = { share: 0.04, perBreath: 0.14, peak: 0.0055 };
 
   // A bank's filter chain (all FIXED for the bank's life). Cascade peaking
   // resonators, the way a vocal tract is built (Klatt's cascade branch): the
@@ -290,7 +309,10 @@ window.KOLOB.VoicesVocal = (function () {
   //   asp   aspiration: above ~1.1 kHz, softened above ~5.5 kHz — it goes into
   //         the voice and through the mouth, so it takes the vowel's colour
   //   fric  the s and the f: a band around 5.2 kHz, straight out
-  //   inh   an inhale: 350 Hz – 2.8 kHz, a soft "hh", never a hiss
+  //   inh   an inhale: 350 Hz – 1.9 kHz, a soft "hh", never a hiss — the
+  //         top is a sixth-order Butterworth (three sections), so nothing of
+  //         it reaches the band where a hiss lives (the second-order 2.8 kHz
+  //         lowpass it had left real energy at 3–6 kHz)
   function bakedNoise(ctx, kind) {
     var cache = ctx.__kolobVocalNoise || (ctx.__kolobVocalNoise = {});
     if (cache[kind]) return cache[kind];
@@ -302,7 +324,8 @@ window.KOLOB.VoicesVocal = (function () {
     for (var i = 0; i < n; i++) { st ^= st << 13; st ^= st >>> 17; st ^= st << 5; x[i] = (st >>> 0) / 2147483648 - 1; }
     var stages = kind === "asp" ? [["highpass", 1100, 0.5, 0], ["lowpass", 5500, -3, 0]]
       : kind === "fric" ? [["bandpass", 5200, 0.9, 0]]
-      : [["highpass", 350, 0, 0], ["lowpass", 2800, 0, 0], ["peaking", 1500, 1.2, 4]];
+      : [["highpass", 350, 0, 0], ["peaking", 1300, 1.2, 4],
+         ["lowpass", 1900, -5.72, 0], ["lowpass", 1900, -3.01, 0], ["lowpass", 1900, 5.72, 0]];   // (Q 0.518, 0.707, 1.932, in dB)
     stages.forEach(function (s) {
       var c = biquadCoefs(s[0], s[1], s[2], s[3], sr), x1 = 0, x2 = 0, y1 = 0, y2 = 0;
       for (var j = 0; j < n; j++) {
@@ -603,26 +626,34 @@ window.KOLOB.VoicesVocal = (function () {
     // the mouth closes after the last release (its banks fall silent)
     if (cur) gateRamp(cur, mEnd + 0.08, mEnd + 0.14, 0);
 
-    // ---- the inhale: only where a phrase breathes, and not every singer ----
+    // ---- the inhale: only where a phrase breathes, from a few, each in their own time ----
     var breaths = [];
-    var bb = opts.breathBefore != null ? opts.breathBefore : 0.36;
-    var dIn = r.rnd(0, 1);                                   // (drawn whether or not it is used)
-    if (opts.breathe !== false && bb >= 0.12 && dIn < 0.25 + 0.6 * br) breaths.push({ at: ms[0] - Math.min(0.36, bb - 0.04), len: Math.min(0.32, bb - 0.08) });
-    for (var q = 0; q < ev.length; q++) {
-      var dR = r.rnd(0, 1);
-      if (!ev[q].rest || ev[q].d <= 0.25 || q + 1 >= ev.length || opts.breathe === false) continue;
-      var nextOn = ms[q + 1];
-      if (dR < 0.25 + 0.6 * br) breaths.push({ at: nextOn - Math.min(0.36, ev[q].d - 0.06), len: Math.min(0.32, ev[q].d - 0.1) });
+    var bb = opts.breathBefore != null ? opts.breathBefore : 0.22;
+    var share = opts.inhale != null ? clamp(opts.inhale, 0, 1) : INHALE.share + INHALE.perBreath * br;
+    // room: the silence before this onset (the singer released the line or
+    // the note before it at its start). The dice are thrown whether or not
+    // they are used.
+    function inhaleBefore(onset, room) {
+      var dA = r.rnd(0, 1), dEnd = r.rnd(0.02, 0.13), dLen = r.rnd(0.12, 0.26);
+      if (opts.breathe === false || dA >= share) return;
+      var len = Math.min(dLen, room - dEnd - 0.03);
+      if (len >= 0.1) breaths.push({ at: onset - dEnd - len, len: len });
     }
-    breaths = breaths.filter(function (b) { return b.at >= born + 0.01 && b.len >= 0.1; });
+    var k0 = 0; while (k0 < ev.length && ev[k0].rest) k0++;          // the first sounding note
+    if (k0 < ev.length && bb >= 0.12) inhaleBefore(ms[k0], bb + (ms[k0] - ms[0]));
+    for (var q = k0; q < ev.length; q++) {
+      // a rest of a quarter-second or more inside the line is a phrase breath
+      if (ev[q].rest && ev[q].d > 0.25 && q + 1 < ev.length) inhaleBefore(ms[q + 1], ms[q + 1] - (ev[q].s + late));
+    }
+    breaths = breaths.filter(function (b) { return b.at >= born + 0.01; });
     if (breaths.length) {
       var inSrc = mk(function () { return ctx.createBufferSource(); });
       inSrc.buffer = bakedNoise(ctx, "inh"); inSrc.loop = true;
       var inh = mk(function () { return gainNode(ctx, 0); });
       inSrc.connect(inh); inh.connect(out);
+      var pk = INHALE.peak * (0.5 + br);
       breaths.forEach(function (b) {
         // a draw of air: a soft rise and a quicker fall, never above a murmur
-        var pk = 0.011 * (0.5 + br);
         inh.gain.setValueAtTime(0, b.at);
         inh.gain.linearRampToValueAtTime(pk, b.at + b.len * 0.65);
         inh.gain.linearRampToValueAtTime(0, b.at + b.len);
