@@ -262,7 +262,10 @@ window.KOLOB.Dialects = (function () {
     }
     function emit(k, ch) {
       var s = slots[k], m = cls(s.deg), t = toneOf(ch, m), c = standing(ch) + noise[k][vocab.indexOf(ch)];
-      if (ch.only === "approach") {
+      // (a partner hymn stands on the first hymn's chords: the one there, or none)
+      var forced = ctx.forcedAt ? ctx.forcedAt(k) : null;
+      if (forced && vocab.some(function (x) { return x.name === forced; }) && ch.name !== forced) return INF;
+      if (ch.only === "approach" && !forced) {
         if (!(ctx.approach && ctx.approach.indexOf(k) >= 0)) return INF;
         if (ctx.favour && ctx.favour.indexOf(k) >= 0) c -= 0.3 + 0.45 * color;   // the organist's favourite colour, where it belongs
       }
@@ -609,9 +612,15 @@ window.KOLOB.Dialects = (function () {
       }
       if (line.cadence === "authentic" || line.cadence === "half") approach.push(slots.fin - 2, slots.fin - 3);
       if (line.role === "home") favour.push(slots.fin - 2);
-      var pc = planChords(line, slots, vocab, prevCh, { mode: mode, H: ctx.H, first: li === 0, approach: approach, favour: favour, shortBeat: ctx.shortBeat }, Rl.fork("chords"));
+      var forcedAt = ctx.forced ? function (k) { return ctx.forced(li, slots[k].beat); } : null;
+      var pc = planChords(line, slots, vocab, prevCh, { mode: mode, H: ctx.H, first: li === 0, approach: approach, favour: favour, shortBeat: ctx.shortBeat, forcedAt: forcedAt }, Rl.fork("chords"));
       var relaxed = false;
-      if (!pc) { relaxed = true; pc = planChords({ cadence: "none", plan: null, role: line.role === "home" ? "home" : "open", notes: line.notes }, slots, vocab, prevCh, { mode: mode, H: ctx.H, first: li === 0, approach: [], shortBeat: 9, loose: true }, Rl.fork("chords:relaxed")); }
+      // (a partner whose weak notes will not sit on every one of the first
+      // hymn's chords keeps those chords on the beats, and chooses between them)
+      if (!pc && forcedAt) pc = planChords(line, slots, vocab, prevCh, { mode: mode, H: ctx.H, first: li === 0, approach: approach, favour: favour, shortBeat: ctx.shortBeat,
+                                                                         forcedAt: function (k) { return slots[k].stress || slots[k].final ? forcedAt(k) : null; } }, Rl.fork("chords"));
+      if (!pc) { relaxed = true; pc = planChords({ cadence: "none", plan: null, role: line.role === "home" ? "home" : "open", notes: line.notes }, slots, vocab, prevCh, { mode: mode, H: ctx.H, first: li === 0, approach: [], shortBeat: 9, loose: true, forcedAt: forcedAt ? function (k) { return slots[k].stress ? forcedAt(k) : null; } : null }, Rl.fork("chords:relaxed")); }
+      if (!pc) pc = planChords({ cadence: "none", plan: null, role: line.role === "home" ? "home" : "open", notes: line.notes }, slots, vocab, prevCh, { mode: mode, H: ctx.H, first: li === 0, approach: [], shortBeat: 9, loose: true }, Rl.fork("chords:relaxed"));
       var chords = pc.chords;
       // THE CLOSE STANDS ON ITS ROOT. A full close (authentic or plagal, the
       // tonicized arrival in the dominant or the relative, and whatever
@@ -1424,7 +1433,8 @@ window.KOLOB.Dialects = (function () {
       slots.forEach(function (s, k) { if (s.idx === finIdx) fin = k; });
       slots.forEach(function (s, k) { s.final = k === fin; s.trail = s.idx > finIdx; });
       slots.fin = fin;
-      var gctx = { mode: mode, H: H, first: li === 0, approach: [], shortBeat: ctx.shortBeat, trans: gospelTrans, cadenceChords: gospelCadence, standing: gospelStanding };
+      var gctx = { mode: mode, H: H, first: li === 0, approach: [], shortBeat: ctx.shortBeat, trans: gospelTrans, cadenceChords: gospelCadence, standing: gospelStanding,
+                   forcedAt: ctx.forced ? function (k) { return ctx.forced(li, slots[k].beat); } : null };
       var pc = planChords(line, slots, vocab, prevCh, gctx, Rl.fork("chords"));
       var relaxed = false;
       if (!pc && slots.length !== base.length) {                        // (no chords will turn under those held words: sing them plain)
@@ -1443,6 +1453,17 @@ window.KOLOB.Dialects = (function () {
       var rootAt = slots.map(function (s) { return full && (s.final || s.trail); });
       var vl = voiceLine(slots, chords, prevV, { mode: mode, bounds: VB, tess: { S: ctx.tess.S, A: ctx.tess.A, B: ctx.tess.B }, H: H, parW: 30, rootAt: rootAt,
                                                  voicer: voicingsGospel, fallback: fallbackGospel });
+      // (a seventh chord the voices could not sing complete is sung — and so
+      // named — as its triad: a chord is only called ringing when it rings)
+      chords = chords.map(function (ch, k) {
+        if (!ch.sev) return ch;
+        var v = vl.voicings[k], sc = ch.tones[ch.tones.length - 1];
+        var has7 = [v.S, v.A, v.T, v.B].some(function (x) { return cls(x.d) === sc.c && x.a === sc.alt; });
+        if (has7) return ch;
+        var tri = { name: ch.name.replace("7", ""), root: ch.root, tones: ch.tones.slice(0, 3), fn: ch.fn, sev: false, cost: ch.cost, to: null, dim7: false };
+        tri.q = qualityOf(mode, tri); tri.roman = tri.name;
+        return tri;
+      });
       // the Score's parts: the lead is the tune itself; the others one note a slot
       var parts = { T: line.notes.map(function (n) { return { beat: n.beat, beats: n.beats, deg: n.deg, alt: 0, nct: null, syl: n.syl, stress: n.stress, tie: false, cont: n.cont }; }), S: [], A: [], B: [] };
       slots.forEach(function (s, k) {
@@ -1481,7 +1502,7 @@ window.KOLOB.Dialects = (function () {
           if (mel.some(function (s) { return sHeld - semi(mode, s.deg - 7, 0) > 12; })) shiftE = mel.every(function (s) { return semi(mode, s.deg, 0) < sHeld; }) ? 0 : -7;
           var okR = true, en = [];
           mel.forEach(function (s, j) {
-            var d = s.deg + shiftE; if (d < VB.A[0] - 2 || d > VB.A[1] + 2 || sHeld - semi(mode, d, 0) > 12) okR = false;
+            var d = s.deg + shiftE; if (d < VB.A[0] || d > VB.A[1] || sHeld - semi(mode, d, 0) > 12) okR = false;
             var last = j === mel.length - 1, bt = t0 + gap + j * each, bl = last ? fs.beat + fs.beats - bt : each;
             en.push([{ beat: bt, beats: bl, deg: d, alt: 0, nct: toneOf(finCh, cls(s.deg)) ? null : "pass", syl: null, ownSyl: s.notes[0].syl, stress: j === 0 || last ? 1 : 0, tie: false },
                      { beat: bt, beats: bl, deg: bd, alt: 0, nct: null, syl: null, ownSyl: s.notes[0].syl, stress: j === 0 || last ? 1 : 0, tie: false }]);
@@ -1776,7 +1797,7 @@ window.KOLOB.Dialects = (function () {
       home: [["authentic", 0, 1, ALL]],
     },
     // S the tenor harmony (over the lead), T the lead (the tune), A the baritone (under it), B the bass
-    ranges: { S: [-2, 17], T: [-7, 10], A: [-12, 5], B: [-20, -1] }, tess: { S: [3, 14], T: [-3, 7], A: [-8, 2], B: [-17, -5] },
+    ranges: { S: [-2, 17], T: [-8, 12], A: [-12, 5], B: [-20, -1] }, tess: { S: [3, 14], T: [-3, 8], A: [-8, 2], B: [-17, -5] },
     tempo: 0.95, fermata: 0.3, amen: false, refrains: 1, alwaysRefrain: true, search: 140, organ: false,
     swipeRate: 0.42, echoRate: 1, tag: true, ring: true,
     weights: w({ leapAppetite: 0.9, repeat: 0.08, threeSame: 1.2, stressTense: 0.15, sameAsOther: 1.1 }),
