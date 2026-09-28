@@ -179,6 +179,21 @@
        already lying on the plate clear of the real rect (closes the race
        between the pile's apply pass and this module's artwork fetch) */
     if (window.JD_enforceTurnCorner) window.JD_enforceTurnCorner();
+    /* …and re-seated whenever the drawer changes size — above all the moment
+       a drawer that was hidden gets its dimensions (see seat) — with the
+       corner cleared of junk again each time */
+    if (window.ResizeObserver) {
+      var lastW = 0, lastH = 0;
+      new ResizeObserver(function () {
+        var pr = pile.getBoundingClientRect();
+        if (!(pr.width > 0 && pr.height > 0)) return;
+        if (Math.abs(pr.width - lastW) < 0.5 && Math.abs(pr.height - lastH) < 0.5) return;
+        lastW = pr.width; lastH = pr.height;
+        if (el && el.parentNode && seat(el, el.parentNode) && window.JD_enforceTurnCorner) {
+          window.JD_enforceTurnCorner();
+        }
+      }).observe(pile);
+    }
     el.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
         e.preventDefault();          /* Space must not scroll the page */
@@ -214,14 +229,22 @@
      the stored map holds only truths. */
   function seat(node, pile) {
     var host = pile.getBoundingClientRect(), r = node.getBoundingClientRect();
-    var hw = Math.min(0.45, (r.width || 40) / 2 / (host.width || 1));
-    var hh = Math.min(0.45, (r.height || 40) / 2 / (host.height || 1));
+    /* A DRAWER WITH NO SIZE IS NOT SEATED AGAINST (2026-09-27). Measured
+       while hidden (the /about/ walkthrough restores mid-page with the
+       drawer's scene display:none), host and node both read 0, the half-
+       sizes clamp to 0.45, and the corner math put the button in the MIDDLE
+       of the drawer — its no-junk zone with it. The size watch below seats
+       it the moment the drawer has real dimensions. */
+    if (!(host.width > 0 && host.height > 0 && r.width > 0)) return false;
+    var hw = Math.min(0.45, r.width / 2 / host.width);
+    var hh = Math.min(0.45, r.height / 2 / host.height);
     node.style.left = ((hw + CORNER.inset) * 100).toFixed(2) + '%';
     node.style.top = ((1 - hh - CORNER.inset) * 100).toFixed(2) + '%';
     node.style.setProperty('--rot', CORNER.rot + 'deg');
     node.style.zIndex = Z_FIXED;
     var map = JD_store.get(SCATTER_KEY);
     if (map && map[ID]) { delete map[ID]; JD_store.set(SCATTER_KEY, map); }
+    return true;
   }
 
   /* THE PRESS. One class on the wrapper; junk-drawer.css owns every frame of

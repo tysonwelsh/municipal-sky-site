@@ -93,7 +93,14 @@ async function main() {
       const s = document.createElement('style');
       s.textContent =
         '.jd-pile [data-id="${SPECIMEN}"], .jd-wallshade, .jd-varnish, .jd-vignette,' +
-        '.jd-itemtag, .jd-rope, .jd-timeline { visibility: hidden !important; }' +
+        '.jd-itemtag, .jd-rope, .jd-timeline,' +
+        // the analytics folder and the instructions sheet stay out of the
+        // picture (owner, 2026-09-27): on /about/ they are furniture that
+        // leads nowhere, and the walkthrough shows the folder in scene 4
+        '.jd-pile .jd-item--folder, .jd-pile .jd-item--sheet,' +
+        // the Take-a-Turn button is drawn LIVE on /about/ (it seats itself by
+        // its own corner rules, which a picture at another size cannot match)
+        '.jd-pile .jd-item--turn { visibility: hidden !important; }' +
         '* { transition: none !important; animation: none !important; outline: none !important; }';
       if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
       document.head.appendChild(s);

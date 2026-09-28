@@ -10,27 +10,36 @@ This file is a working draft only: the page does not read it, and `.md` files ar
 
 `step: hook` · _Pane: the drawer (picture + live succulent)_
 
-### A junk drawer, and a benchmark
+# About the SVG Junk Drawer
+
+_(the page title: "About the" small and italic on its own line over "SVG Junk Drawer", a double rule — at the head of this step, so it scrolls away with the opening paragraphs)_
+
+### My personal SVG benchmark
 
 This is the virtual junk drawer where I stash my collection of AI-generated vector art.
 
 It is also where I’m building my own personal benchmark for evaluating how well large language models generate SVG images.
 
+Feel free to click through or rearrange the items. You can [open the full drawer](/art/junk-drawer/) to see everything it can do, or just keep scrolling to learn more.
+
 `step: premise` · _Pane: the drawer_
 
-### One prompt, four models, one shot each
+### What are SVG images?
 
-Here is how it works. I write a prompt and send it, word for word, to four frontier models from four different companies. Each one gets a single try. Whatever comes back goes into the drawer exactly as the model wrote it, imperfections and all, and I grade it without knowing which model drew it.
+An SVG is a drawing written in code: a list of shapes, coordinates, and colors. Unlike most AI-generated art, SVGs are vector images, so they can be edited in programs like Adobe Illustrator or scaled to any size without losing sharpness.
 
-⚠ "four frontier models from four different companies" — 20 of the 67 items are Claude-only (early era), and the report card later shows two Claude models among five.
+They also make for a fun way to test the coding skills of a model, because mistakes in the code show up in the drawing.
 
 `step: graded` · _Pane: the drawer; the succulent lifts and its tag opens_
 
-### Every object has a grade
+### Every item has a grade
 
-Tap anything in the pile and it comes with a tag that tells you what it is and how it scored. Behind the tag is a full record: the prompt, the model, the score on every axis, and what the drawing cost to generate. I’ll open one of those records a little further down.
+Every item in this drawer began as a prompt sent to four leading models.
 
-⚠ "Tap anything in the pile" — on this page only the succulent responds.
+Once the four drawings come back, the person who wrote the prompt grades each one without knowing which model made it. Those grades are stored as data, with the aim of building a running comparison of how well each model draws.
+
+Keep scrolling to learn more, or dig around in the drawer yourself.
+
 
 ---
 
@@ -38,47 +47,168 @@ Tap anything in the pile and it comes with a tag that tells you what it is and h
 
 `step: try` · _Pane: the rating card, blank — the reader can fill it in_
 
-### This is the grading instrument. Try it.
+### The instrument
 
-These are four drawings of the same prompt. The models’ names are hidden until the grades are filed, so nothing gets scored on reputation. Rate each drawing on each axis, then rank the four. This is the real instrument, wired exactly the way a visitor to the drawer gets it.
+This is the interface used to collect the grades. Graders evaluate each drawing one at a time before ranking the four drawings from best to worst.
 
-> **Demo note (small print under the card):** This is a demo. Nothing you enter here is recorded. Every rating you file stays in your browser.
+Go ahead and try it out.
 
-`step: taxonomy` · _Pane: the rating card, blank; the legend (grades + axes) renders under this text from taxonomy.json_
+> **Demo note (small print under the card):** This is a demo. Nothing you enter here is saved or recorded.
+
+
+`step: taxonomy` · _Pane: the rating card, blank; the four categories render under this text from taxonomy.json (each axis's one-line `summary` — edit the wording there; mirrored below)_
 
 ### The taxonomy
 
-I grade on five overall tiers and four axes. The tiers say how good a drawing is; the axes say _where_ it went wrong. I designed each axis to isolate one kind of failure from every other kind, so a low score always means something specific. The legend below renders from the same file the grades are recorded in, so this page and the instrument can never disagree.
+Images are graded in four distinct categories, each designed to isolate a single kind of failure. They are:
 
-[ the taxonomy legend renders here — edit it in taxonomy.json, not here ]
+- **Understanding Assignment** — Did the model attempt to draw what the prompt asked for?
+- **Structural Coherence** — Do the individual parts connect, with correct proportions, anatomy, and perspective?
+- **Layering** — Are the parts stacked in the right order, with correct use of opacity?
+- **Je ne sais quoi** — Does the image have that ineffable spark? You know it when you see it.
 
-`step: claude-fable-5` · _Pane: rating card, specimen 1: Claude Fable 5, filed ratings shown_
 
-### What “no problems” looks like
+---
 
-Start with the best of the four. The parts attach where they should, the layers stack the way the artist intended, and it has some style. Top marks on every axis. That is what makes it useful here: it sets the standard the other three get measured against.
+## Scene 3 — The report card
 
-`step: kimi-k3` · _Pane: rating card, specimen 2: Kimi K3 (has the REPLAY / ▶ control)_
+`step: claude-fable-5` · _Pane: the report card, turned to Claude Fable 5’s drawing (grade, ratings, rank, tokens and cost where recorded)_
 
-### A failure you cannot see. Press REPLAY.
+### This is a great SVG!
 
-This one looks thin and a little bare, and it would be easy to call it simply worse. Press **REPLAY** and watch it draw. The leaves are rendered _correctly_ and in full, and then the pot is drawn on top of them. Nothing is malformed. The parts are just stacked in the wrong order.
+Here’s an example of a primo SVG drawn by Claude Fable 5.
 
-That is one axis, Layering, doing exactly the job I built it for: naming a defect the still image hides. The structure is sound and the model understood the brief, and it still fails on one specific thing.
+The individual parts are well connected, the layers stack correctly, and the pot has the tasteful, Scandinavian influence I was hoping for when I wrote the prompt.
 
-⚠ "Press REPLAY" — the control is an unlabeled ▶ on the filmstrip.
+It earned top marks in every category.
 
-`step: gemini-3-1-pro` · _Pane: rating card, specimen 3: Gemini 3.1 Pro_
+`step: gemini-3-1-pro` · _Pane: the report card, turned to Gemini 3.1 Pro_
 
-### A different axis, a different diagnosis
+### This one has problems. But which *kind* of problems?
 
-Here the stacking is fine and the problem is the object itself. The leaves float free of the pot, attached to nothing. You could not fix this by reordering the layers; the parts themselves would have to move. Same taxonomy, different axis, and the score lands in a different place.
+Here’s an example of an image with problems in both the Understanding Assignment and Structural Coherence categories.
 
-`step: gpt-5-1` · _Pane: rating card, specimen 4: GPT-5.1_
+Can you spot the problem with Understanding Assignment?
 
-### The axes describe. They do not decide.
+`step: gemini-answer` · _Pane: the same Gemini card (no card change)_
 
-This drawing scores _identically_ to the last one on all four axes, and I gave it a lower overall grade. That is deliberate. The grade is a judgment about the whole drawing, not a sum of the axes, and the taxonomy says so out loud: the last axis makes room for the rater’s own taste instead of pretending it isn’t there.
+### Problems with Understanding Assignment
+
+The prompt asked for a _desktop_ succulent, but this model drew a pot that is resting on a stand with wooden legs. That’s the sort of stand you’d see holding a large floor plant, not a smaller pot that sits on a desk.
+
+This is an issue with Understanding Assignment because the model attempted to draw something other than what was asked for in the prompt.
+
+`step: gemini-structure` · _Pane: the same Gemini card (no card change)_
+
+### Problems with Structural Coherence
+
+There are other problems with this image: the succulent’s leaves are oddly proportioned and float in midair.
+
+These issues belong in the Structural Coherence category, because they have to do with how well the individual parts fit together.
+
+`step: kimi-k3` · _Pane: the report card, turned to Kimi K3 (the filmstrip’s ▶ replays the drawing)_
+
+### Problems with Layering
+
+Here’s an example of an image with big problems in the Layering category.
+
+Notice how the leaves of the plant are hidden on the bottom layer of the image, behind the pot, when they should be sitting on top, emerging from the mouth of the pot.
+
+Press ▶ under the drawing to see what I mean. It shows how the model did a pretty good job drawing the leaves, but then made the mistake of drawing the mouth of the pot over them. Textbook layering issue.
+
+---
+
+## Scene 4 — The analysis
+
+Each visual is its own paper card, drawn by this page from the analytics endpoint (no folder), one per step; a change of card scrolls like a change of scene.
+
+`step: stack` · _Pane: the record as a bare, wide spreadsheet on the page (no card or title), report-card width — one row per prompt drawn by the four-model cast (51): item (its title; hover or tap shows the full prompt), then each model’s grade and four category ratings, numbers only; scrolls both ways (from the full data.php)_
+
+### A real application, front to back
+
+The SVG Junk Drawer is more than just a pretty interface — it also has a functional back end.
+
+Behind the drawer, a server-side pipeline sends the user’s prompt to all four models at once, with the same system prompt and limits. The ratings are rows in a SQL database, written through authenticated endpoints into a schema for submissions, generations, ratings, and ranks.
+
+The only thing it doesn’t have is actual users (other than myself!)
+
+`step: grades` · _Pane: one card — “How the models compare”: the average overall grade (dots, with n) above the spread (horizontal bars by grade, coloured by the report card’s grade ramp), each with its own subtitle_
+
+### Insights into overall quality
+
+Let’s look at how the models compare across all of their drawings.
+
+Besides the four category ratings, every drawing gets one overall grade on a five-point scale:
+
+5. Prime
+4. Choice
+3. Select
+2. Standard
+1. Utility
+
+(The same scale the USDA uses for beef!)
+
+`step: grades-analysis` · _Pane: the same card (no card change); no heading_
+
+### By the averages
+
+The sample is small, about 95 drawings per model, all graded by one rater, so treat these as early results.
+
+On average overall grade, Claude Opus 5 and Gemini 3.1 Pro finish neck and neck.
+
+Kimi K3 is not far behind in third, with GPT-5.1 a distant fourth.
+
+`step: distribution` · _Pane: the same card (no card change)_
+
+### Same averages, but different distributions
+
+The shape of the distributions tells them apart.
+
+Despite the similar averages, Gemini generated more drawings with a Choice grade.
+
+Meanwhile Opus had a few more Prime quality SVGs, and that tail lifted its average.
+
+`step: multiples` · _Pane: the four category panels, two by two, each on its own scale_
+
+### The je ne sais quoi factor
+
+How did Opus end up with more Prime grade drawings?
+
+Category by category, Opus and Gemini are close. Gemini even edges ahead on Understanding Assignment.
+
+But Opus’s clearest lead is in Je ne sais quoi, which suggests it’s the spark that turns a good drawing into a great one.
+
+(Though again ... the sample size is small!)
+
+`step: spend` · _Pane: bars — average cost per drawing, per model, with n_
+
+### Style doesn’t come cheap
+
+But je ne sais quoi isn’t free! Opus’s drawings cost roughly twice as much as Gemini’s.
+
+Notably, Kimi K3’s drawings are the cheapest of the four, even though it outperforms GPT-5.1 on overall quality.
+
+---
+
+## Outro — back to the drawer
+
+`step: outro` · _Pane: the drawer (clicking it opens the full drawer page)_
+
+### Thanks for digging through the drawer
+
+The SVG Junk Drawer is a personal side project built to show my approach to data collection and evaluation: a clear taxonomy, an instrument people can actually use, a clean record, and analysis that doesn’t overstate what the data can show.
+
+You can [open the full drawer](/art/junk-drawer/) to explore or take a turn yourself.
+
+If you’d like to talk about evaluation and data work, [find me on LinkedIn](https://www.linkedin.com/in/tysonwelsh).
+
+_(then the colophon: the drawer on its own page · the generative art series · the build stamp)_
+
+---
+
+## Cut from the page (2026-09-27)
+
+Kept here in case any of them come back.
 
 `step: ranking` · _Pane: the ranking podium_
 
@@ -90,11 +220,13 @@ The last step is the podium. The four drawings line up from best to worst. Scori
 
 ⚠ The demo note says nobody ranked this specimen — but three of the four (Kimi, Gemini, GPT) come from a rerun that WAS ranked (with Opus 5 as the fourth); Fable 5 came from a different generation run.
 
----
+`step: gpt-5-1` · _Pane: the report card, turned to GPT-5.1_
 
-## Scene 3 — The record
+### The axes describe. They do not decide.
 
-`step: record` · _Pane: the report card for the succulent (Claude Fable 5)_
+This drawing scores _identically_ to the last one on all four axes, and I gave it a lower overall grade. That is deliberate. The grade is a judgment about the whole drawing, not a sum of the axes, and the taxonomy says so out loud: the last axis makes room for the rater’s own taste instead of pretending it isn’t there.
+
+`step: record` · _Pane: the report card, back on Claude Fable 5_
 
 ### Every judgment becomes a record
 
@@ -108,56 +240,14 @@ Tokens in, tokens out, and the price of the API call, recorded for every drawing
 
 ⚠ The report card on screen shows no tokens or cost (Fable 5 was generated by a different pipeline and has none recorded).
 
-`step: stack` · _Pane: the report card (same as above)_
-
-### It is a real application, front to back
-
-The ratings are rows in a SQL database, not files. There is a schema for submissions, generations, ratings, and ranks, written through authenticated endpoints and read back by the pages you are scrolling through now. I built the front end, the back end, the schema, and the taxonomy myself, working with Claude Code.
-
 `step: populations` · _Pane: the report card (same as above)_
 
 ### Two sets of ratings, never mixed
 
 My own ratings and visitors’ ratings are stored separately, and neither can overwrite the other. That keeps my reference set clean while the crowd’s set grows beside it. Both export as JSONL for analysis.
 
----
-
-## Scene 4 — The analysis
-
-`step: grades` · _Pane: analytics folder: the grades card_
-
-### Now all of it at once: where the grades fall
-
-Every drawing and every model, counted live from the same records you just looked at. This is the distribution of overall grades across the whole collection and for each model, which is the first thing the data has to say. None of these numbers are typed in by hand.
-
-⚠ "the distribution of overall grades" — the chart shows per-model averages, not a distribution. The analytics also leave out Claude Fable 5.
-
-`step: spend` · _Pane: analytics folder: the cost card_
-
-### What the drawings cost
-
-Spend per model, priced from each call’s own token counts rather than estimated. Some models draw better than others, and some cost a good deal more per drawing. Both facts belong in the same chart.
-
-⚠ "Both facts belong in the same chart" — the chart shows cost only.
-
-`step: multiples` · _Pane: analytics folder: the four axis panels_
-
-### Four axes, four rulers
-
-The axis panels are small multiples: the same shape, so your eye can compare them directly. What they deliberately do _not_ do is share a scale. A three-point axis and a four-point axis are different rulers, and stretching them onto one would invent a comparison the data cannot support.
-
 `step: limits` · _Pane: analytics folder: the four axis panels_
 
 ### What this does not show
 
 One rater, mostly me. A small visitor sample. Drawing SVGs is one narrow skill, not a measure of a model. The point of this project is the method: the taxonomy, the instrument, the record, and the analysis. The leaderboard is a side effect.
-
----
-
-## Outro (after the last step)
-
-the drawer on its own page · the generative art series
-
-_(then the build stamp, e.g. `0.9.159 · 1a2b3c · 2026-09-26 22:00 UTC`, and the site's newsletter box)_
-
-⚠ No name, contact, or call to action anywhere on the page yet.

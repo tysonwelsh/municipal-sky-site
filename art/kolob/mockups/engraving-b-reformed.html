@@ -1,0 +1,1294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deseret Reformed Notation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Noto+Sans+Deseret&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f5f0e4; --paper-lo: #ece5d3; --desk: #e6dfcd;
+    --ink: #1e4d3b; --ink-soft: rgba(30,77,59,.66); --ink-faint: rgba(30,77,59,.3);
+    --gilt: #8a7a45; --verm: #b0432c;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--desk); }
+  body { margin: 0; color: var(--ink); font-family: "EB Garamond", Georgia, serif; overflow-x: hidden; }
+  .plate {
+    max-width: 860px; margin: 28px auto 40px; padding: 30px 32px 34px;
+    background: linear-gradient(178deg, var(--paper) 0%, var(--paper) 88%, var(--paper-lo) 100%);
+    box-shadow: 0 1px 0 rgba(255,252,242,.7) inset, 0 8px 26px rgba(40,50,30,.13), 0 1px 3px rgba(40,50,30,.12);
+  }
+  @media (max-width: 600px) { .plate { margin: 0; padding: 20px 16px 28px; box-shadow: none; } }
+  header .kicker { font-size: .74rem; letter-spacing: .16em; text-transform: uppercase; color: var(--gilt); margin: 0 0 .25rem; }
+  header h1 { font-weight: 500; font-size: 1.5rem; margin: 0 0 .4rem; letter-spacing: .01em; }
+  header h1 .ds { font-family: "Noto Sans Deseret"; font-size: .9em; color: var(--gilt); margin-left: .35em; }
+  header p { font-size: .98rem; line-height: 1.42; margin: 0 0 .3rem; max-width: 44em; color: var(--ink-soft); }
+  header p em { color: var(--ink); }
+  hr.rule { border: 0; border-top: 1px solid var(--ink-faint); margin: 1.1rem 0 1rem; }
+  h2 { font-weight: 500; font-size: .78rem; letter-spacing: .16em; text-transform: uppercase; margin: 1.6rem 0 .55rem; color: var(--ink-soft); }
+  h2 small { letter-spacing: .02em; text-transform: none; font-size: .9rem; font-style: italic; color: var(--gilt); margin-left: .4em; }
+  canvas { display: block; }
+  #live, #phone { width: 100%; }
+  .phone-wrap { margin: .9rem auto 0; width: 390px; max-width: 100%; }
+  .phone-wrap .cap { font-size: .8rem; font-style: italic; color: var(--gilt); margin: 0 0 .25rem; }
+  .phone-wrap canvas { border-top: 1px solid var(--ink-faint); border-bottom: 1px solid var(--ink-faint); }
+  .controls { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem 1rem; margin: .7rem 0 0; font-size: .86rem; color: var(--ink-soft); }
+  .controls button { font: inherit; font-size: .84rem; color: var(--paper); background: var(--ink); border: 0; border-radius: 2px; padding: .18rem .75rem; cursor: pointer; min-width: 4.4rem; }
+  .controls button:focus-visible, .controls input:focus-visible, .controls select:focus-visible { outline: 2px solid var(--gilt); outline-offset: 2px; }
+  .controls label { display: inline-flex; align-items: center; gap: .3rem; cursor: pointer; white-space: nowrap; }
+  .controls input[type=checkbox] { accent-color: var(--ink); margin: 0; }
+  .controls select { font: inherit; font-size: .84rem; color: var(--ink); background: transparent; border: 1px solid var(--ink-faint); border-radius: 2px; padding: 0 .2rem; }
+  .scrub { display: flex; align-items: center; gap: .6rem; flex: 1 1 100%; }
+  .scrub input { flex: 1; accent-color: var(--gilt); min-width: 0; }
+  .scrub output { font-variant-numeric: tabular-nums; min-width: 5.2em; text-align: right; }
+  .note { font-size: .82rem; font-style: italic; color: var(--ink-soft); margin: .45rem 0 0; }
+  .static-box { overflow-x: hidden; }
+  /* the key */
+  details.key { margin-top: 1.4rem; border-top: 1px solid var(--ink-faint); padding-top: .5rem; }
+  details.key summary { cursor: pointer; font-size: .78rem; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-soft); list-style: none; }
+  details.key summary::-webkit-details-marker { display: none; }
+  details.key summary::before { content: "▸ "; color: var(--gilt); }
+  details.key[open] summary::before { content: "▾ "; }
+  .keygrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem 1.1rem; margin-top: .7rem; }
+  .keygrid .wide { grid-column: 1 / -1; }
+  .keygrid figure { margin: 0; }
+  .keygrid canvas { width: 100%; height: 50px; }
+  .keygrid .wide canvas { height: 92px; }
+  .keygrid figcaption { font-size: .8rem; line-height: 1.3; color: var(--ink-soft); }
+  .keygrid figcaption b { font-weight: 500; color: var(--ink); }
+  @media (max-width: 600px) { .keygrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  footer { margin-top: 1.5rem; font-size: .76rem; color: var(--ink-faint); font-style: italic; }
+</style>
+</head>
+<body>
+<main class="plate">
+  <header>
+    <p class="kicker">Kolob · the engraving · mockup B</p>
+    <h1>Deseret Reformed Notation <span class="ds">𐐡𐐯𐑁𐐫𐑉𐑋𐐼</span></h1>
+    <p>The staff is kept, so pitch reads as it always has. The glyphs have moved on. Seven heads descend from the 1801 shapes, redrawn with the bowls and hooked strokes of the 1854 alphabet.</p>
+    <p>Stems and flags are gone. Each head trails a <em>tail as long as the note sounds</em>, so you can see the rhythm. The melody is one broad-nib line from head to head, like a neume. Parts are told apart by how the head is cut, not by colour.</p>
+  </header>
+  <hr class="rule">
+
+  <h2>Live <small>the page as it turns</small></h2>
+  <div id="liveBox"><canvas id="live" aria-label="Scrolling engraving of the passage in Deseret Reformed Notation"></canvas></div>
+  <div class="phone-wrap" id="phoneWrap" hidden>
+    <p class="cap">phone, 390 px</p>
+    <canvas id="phone" aria-label="The same engraving at phone width"></canvas>
+  </div>
+  <div class="controls">
+    <div class="scrub"><button id="play" type="button">Pause</button>
+      <input id="scrub" type="range" min="0" max="48" step="0.01" value="0" aria-label="Time in the passage">
+      <output id="clock">0.0 s</output></div>
+    <label>speed <select id="speed"><option value="11">11 px/s (the app today)</option><option value="40" selected>40 px/s (proposed)</option></select></label>
+    <label><input type="checkbox" id="rubrics" checked> rubrics</label>
+    <label><input type="checkbox" id="words" checked> words</label>
+      <label><input type="checkbox" id="bandtoggle" checked /> band</label>
+    <label><input type="checkbox" id="phoneT"> phone preview</label>
+  </div>
+  <p class="note">The band scrolls on its own layer at its own tempo (×2.05, a march against a hymn). The ward's ink moves at the page rate. The note sounding now is struck in gilt, then cools to green.</p>
+
+  <details class="key" open>
+    <summary>Key to the notation</summary>
+    <div class="keygrid" id="keygrid"></div>
+  </details>
+
+  <h2>Plate <small>the whole passage, set in systems</small></h2>
+  <div class="static-box"><canvas id="static" aria-label="The whole passage engraved as a still plate"></canvas></div>
+  <p class="note">Each system holds 16 seconds (8 on a phone). On this still plate the band's layer is fixed where it came in. Live, it slides past at its own rate.</p>
+  <footer>Mockup B for PLAN-ENGRAVING §3. Everything is drawn from the shared passage (engraving-passage.js) and drawn on canvas, with no music font.</footer>
+</main>
+
+<script src="engraving-passage.js"></script>
+<script>
+(function () {
+  "use strict";
+  var P = window.KOLOB_PASSAGE;
+  var DUR = P.duration;
+  var C = {
+    paper: "#f5f0e4", ink: "#1e4d3b", gilt: "#8a7a45", strike: "#a8893a",
+    glow: "226,190,98", verm: "#b0432c", brass: "#9a6428", sepia: "#7b6a4c",
+  };
+  var DS = "'Noto Sans Deseret'", GAR = "'EB Garamond'";
+  var state = { t: 0, playing: true, speed: 40, rubrics: true, words: true, phone: false };
+
+  // ---------------------------------------------------------------- utilities
+  function mod(a, n) { return ((a % n) + n) % n; }
+  function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
+  function hex2rgb(h) { var n = parseInt(h.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
+  function mix(a, b, k) {
+    var A = hex2rgb(a), B = hex2rgb(b);
+    return "rgb(" + Math.round(A[0] + (B[0] - A[0]) * k) + "," + Math.round(A[1] + (B[1] - A[1]) * k) + "," + Math.round(A[2] + (B[2] - A[2]) * k) + ")";
+  }
+  function rubric(fallback) { return state.rubrics ? C.verm : (fallback || C.gilt); }
+  var SYL = ["do", "re", "mi", "fa", "sol", "la", "ti"];
+  function shapeOf(deg) { return SYL[mod(deg, 7)]; }
+
+  // ------------------------------------------------------------- the glyphs
+  // Seven heads. Each keeps its 1801 ancestor's body (fa △, sol ○, la ▭, mi ◇)
+  // and takes one Deseret feature: waisted straight sides and a hooked pen
+  // entry. The lower tetrachord gets Aikin's 1846 seven-shape bodies (do ▲,
+  // re a bowl, ti a cone), and mi a notched banner cut from the la square.
+  // Local coordinates, centred on the head, in px.
+  function headPath(shape, hw, hh) {
+    var p = new Path2D();
+    if (shape === "do") {                       // ▲ isosceles, apex up, waisted sides
+      p.moveTo(0, -hh * 1.04);
+      p.quadraticCurveTo(hw * 0.40, -hh * 0.02, hw * 1.04, hh * 0.9);
+      p.quadraticCurveTo(0, hh * 0.74, -hw * 1.04, hh * 0.9);
+      p.quadraticCurveTo(-hw * 0.40, -hh * 0.02, 0, -hh * 1.04);
+    } else if (shape === "fa") {                // ◣ the 1801 fa flag, waisted hypotenuse
+      p.moveTo(-hw, -hh * 0.98);
+      p.quadraticCurveTo(-hw * 0.12, hh * 0.18, hw * 1.02, hh * 0.9);
+      p.lineTo(-hw, hh * 0.9);
+      p.closePath();
+    } else if (shape === "re") {                // ◡ the bowl: sol's lower half, flat lid
+      p.moveTo(-hw, -hh * 0.72);
+      p.quadraticCurveTo(0, -hh * 0.56, hw, -hh * 0.72);
+      p.bezierCurveTo(hw * 1.02, hh * 0.45, hw * 0.52, hh * 1.0, 0, hh * 1.0);
+      p.bezierCurveTo(-hw * 0.52, hh * 1.0, -hw * 1.02, hh * 0.45, -hw, -hh * 0.72);
+    } else if (shape === "sol") {               // ○ the oval, tilted like a pen's
+      p.ellipse(0, 0, hw * 1.0, hh * 0.8, -0.32, 0, Math.PI * 2);
+    } else if (shape === "la") {                // ▭ waisted square
+      p.moveTo(-hw, -hh * 0.76);
+      p.quadraticCurveTo(0, -hh * 0.6, hw, -hh * 0.76);
+      p.lineTo(hw, hh * 0.76);
+      p.quadraticCurveTo(0, hh * 0.6, -hw, hh * 0.76);
+      p.closePath();
+    } else if (shape === "mi") {                // ⊏ the la square, notched: a banner
+      p.moveTo(-hw, -hh * 0.78);
+      p.lineTo(hw * 1.04, -hh * 0.78);
+      p.quadraticCurveTo(hw * 0.52, -hh * 0.2, hw * 0.4, 0);
+      p.quadraticCurveTo(hw * 0.52, hh * 0.2, hw * 1.04, hh * 0.78);
+      p.lineTo(-hw, hh * 0.78);
+      p.closePath();
+    } else {                                    // ti ◇ → the cone: round crown, point below
+      p.moveTo(0, hh * 1.08);
+      p.quadraticCurveTo(-hw * 0.46, hh * 0.3, -hw * 0.94, -hh * 0.18);
+      p.bezierCurveTo(-hw * 0.94, -hh * 1.12, hw * 0.94, -hh * 1.12, hw * 0.94, -hh * 0.18);
+      p.quadraticCurveTo(hw * 0.46, hh * 0.3, 0, hh * 1.08);
+    }
+    return p;
+  }
+  // the Deseret pen-entry hook each head carries at its upper left: where the
+  // stroke of 𐐊, 𐐓 or 𐐙 begins
+  var CENTROID = { do: [0, 0.3], fa: [-0.36, 0.3], re: [0, 0.08], sol: [0, 0], la: [0, 0], mi: [-0.1, 0], ti: [0, -0.12] };
+  var HOOK_AT = {
+    do: [-0.22, -0.66], fa: [-1.0, -0.98], re: [-1.0, -0.72], sol: [-0.72, -0.5],
+    la: [-1.0, -0.76], mi: [-1.0, -0.78], ti: [-0.72, -0.72],
+  };
+  // a hairline ascender that rises from the corner and turns right into a
+  // hooked terminal (the stroke of 𐐊), drawn with the same steep nib
+  function hookPts(shape, hw, hh) {
+    var a = HOOK_AT[shape], x = a[0] * hw, y = a[1] * hh, L = hh * 0.8, pts = [];
+    for (var i = 0; i <= 12; i++) {
+      var u = i / 12, iu = 1 - u;
+      var px = iu * iu * iu * x + 3 * iu * iu * u * (x - L * 0.08) + 3 * iu * u * u * (x - L * 0.02) + u * u * u * (x + L * 0.55);
+      var py = iu * iu * iu * (y + L * 0.2) + 3 * iu * iu * u * (y - L * 0.5) + 3 * iu * u * u * (y - L * 0.72) + u * u * u * (y - L * 0.62);
+      pts.push({ x: px, y: py, w: hh * (0.34 - 0.2 * u) });
+    }
+    return pts;
+  }
+  function transformed(path, sx, sy, rot) {
+    var m = new DOMMatrix();
+    m.rotateSelf(rot * 180 / Math.PI); m.scaleSelf(sx, sy);
+    var p = new Path2D(); p.addPath(path, m); return p;
+  }
+
+  // One head. o = { treat: solid|open|double|ring|cue, color, alpha, scale, glow, age }
+  function drawHead(c, shape, cx, cy, sp, o) {
+    var s = o.scale || 1, hw = 0.64 * sp * s, hh = 0.5 * sp * s;
+    var col = o.color || C.ink;
+    c.save();
+    c.translate(cx, cy);
+    c.globalAlpha = o.alpha == null ? 1 : o.alpha;
+    if (o.glow > 0.01) {                         // the strike: a soft gilt light behind the head
+      var g = c.createRadialGradient(0, 0, 0, 0, 0, sp * 2.3 * s);
+      g.addColorStop(0, "rgba(" + C.glow + "," + (0.7 * o.glow).toFixed(3) + ")");
+      g.addColorStop(0.45, "rgba(" + C.glow + "," + (0.25 * o.glow).toFixed(3) + ")");
+      g.addColorStop(1, "rgba(" + C.glow + ",0)");
+      c.fillStyle = g;
+      c.fillRect(-sp * 2.4 * s, -sp * 2.4 * s, sp * 4.8 * s, sp * 4.8 * s);
+    }
+    var body = headPath(shape, hw, hh), hook = hookPts(shape, hw, hh);
+    var treat = o.treat || "solid";
+    if (treat === "solid" || treat === "cue") {
+      c.shadowColor = "rgba(30,77,59,0.28)"; c.shadowBlur = 1.2;   // a hair of ink spread
+      c.fillStyle = col; c.fill(body); ribbon(c, hook, 0.5);
+      c.shadowBlur = 0;
+      impress(c, body, sp);
+    } else {
+      var face = new Path2D();
+      var cc = CENTROID[shape], dbl = treat === "double";
+      var ksx = shape === "sol" ? 0.64 : dbl ? 0.62 : 0.56, ksy = shape === "sol" ? 0.5 : dbl ? 0.58 : 0.5;
+      var m = new DOMMatrix().translateSelf(cc[0] * hw, cc[1] * hh).rotateSelf(shape === "sol" ? -14 : 0).scaleSelf(ksx, ksy).translateSelf(-cc[0] * hw, -cc[1] * hh);
+      var counter = new Path2D(); counter.addPath(headPath(shape, hw, hh), m);
+      face.addPath(body); face.addPath(counter);
+      c.fillStyle = C.paper; c.fill(body);       // open heads knock the tails out behind them
+      c.fillStyle = col; c.fill(face, "evenodd"); ribbon(c, hook, 0.5);
+      if (treat === "double") {                  // the clarinet: a second, outer outline
+        c.lineWidth = Math.max(0.8, 0.085 * sp);
+        c.strokeStyle = col;
+        c.stroke(transformed(headPath(shape, hw, hh), 1.42, 1.5, 0));
+      }
+      if (treat === "ring") {                    // the bell: rings that widen as the sound decays
+        var age = o.age || 0;
+        for (var k = 0; k < 3; k++) {
+          var r = sp * s * (1.05 + 0.42 * k + 0.22 * Math.min(age, 6));
+          var a = Math.exp(-age / 3.5) * (0.85 - k * 0.24);
+          if (o.still) a = 0.8 - k * 0.24;
+          if (a <= 0.02) continue;
+          c.globalAlpha = (o.alpha == null ? 1 : o.alpha) * a;
+          c.lineWidth = Math.max(0.7, (0.09 - k * 0.018) * sp);
+          c.strokeStyle = col;
+          c.beginPath(); c.ellipse(0, 0, r * 1.12, r * 0.9, 0, 0, Math.PI * 2); c.stroke();
+        }
+      }
+    }
+    c.restore();
+    return { hw: hw * (treat === "double" ? 1.42 : 1), hh: hh };
+  }
+  // the letterpress impression: a pale inner edge on the lower right, as if
+  // the glyph had been pressed into the cream
+  function impress(c, path, sp) {
+    c.save();
+    c.clip(path);
+    c.translate(-0.45, -0.5);
+    c.strokeStyle = "rgba(255,251,238,0.3)";
+    c.lineWidth = Math.max(0.8, sp * 0.08);
+    c.stroke(path);
+    c.restore();
+  }
+  // A variable-width broad-nib stroke through points {x,y,w}. The nib is held
+  // steep, so horizontals print full and verticals fall to a hairline.
+  function ribbon(c, pts, minW) {
+    if (pts.length < 2) return;
+    var L = [], R = [];
+    for (var i = 0; i < pts.length; i++) {
+      var a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)];
+      var dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1;
+      dx /= d; dy /= d;
+      var w = Math.max(minW, pts[i].w * (0.28 + 0.72 * Math.abs(dx))) / 2;
+      L.push([pts[i].x - dy * w, pts[i].y + dx * w]);
+      R.push([pts[i].x + dy * w, pts[i].y - dx * w]);
+    }
+    c.beginPath();
+    c.moveTo(L[0][0], L[0][1]);
+    for (i = 1; i < L.length; i++) c.lineTo(L[i][0], L[i][1]);
+    for (i = R.length - 1; i >= 0; i--) c.lineTo(R[i][0], R[i][1]);
+    c.closePath();
+    c.fill();
+  }
+  // Johnston's signs, reformed: the comma-minus a tapered wedge, the septimal
+  // seven an angle with a Deseret hook at its foot
+  function johnston(c, kind, x, y, sp, col) {
+    c.save();
+    c.fillStyle = col; c.strokeStyle = col;
+    if (kind === "minus") {
+      c.beginPath();
+      c.moveTo(x - sp * 0.42, y - sp * 0.1);
+      c.lineTo(x + sp * 0.32, y - sp * 0.05);
+      c.quadraticCurveTo(x + sp * 0.42, y, x + sp * 0.32, y + sp * 0.05);
+      c.lineTo(x - sp * 0.42, y + sp * 0.1);
+      c.closePath(); c.fill();
+    } else {
+      c.lineWidth = Math.max(1, sp * 0.13); c.lineCap = "round"; c.lineJoin = "miter";
+      c.beginPath();
+      c.moveTo(x - sp * 0.34, y - sp * 0.44);
+      c.lineTo(x + sp * 0.3, y - sp * 0.44);
+      c.quadraticCurveTo(x - sp * 0.02, y - sp * 0.05, x - sp * 0.1, y + sp * 0.4);
+      c.quadraticCurveTo(x - sp * 0.12, y + sp * 0.52, x - sp * 0.3, y + sp * 0.46);
+      c.stroke();
+    }
+    c.restore();
+  }
+
+  // ------------------------------------------------------------- the plate
+  var CLEF_TREBLE = { bbox: [120, -291, 542, 900], d: "M434 2Q464 -103 464 -170Q464 -223 427.0 -257.0Q390 -291 337 -291Q287 -291 250.0 -261.5Q213 -232 213 -190Q213 -160 233.5 -133.5Q254 -107 283.5 -107.0Q313 -107 331.5 -128.5Q350 -150 350 -178Q350 -240 280 -240Q298 -268 338 -268Q353 -268 368.5 -263.5Q384 -259 401.0 -248.0Q418 -237 428.5 -213.5Q439 -190 439 -157Q439 -136 411 -6Q389 -12 356 -12Q259 -12 189.5 60.0Q120 132 120 232Q120 267 131.5 303.0Q143 339 157.5 366.5Q172 394 200.5 428.5Q229 463 248.5 483.5Q268 504 303 539Q280 621 280 689Q280 779 313.0 839.5Q346 900 379 900Q389 900 401.5 887.0Q414 874 426.0 851.0Q438 828 446.5 790.5Q455 753 455 710Q455 551 342 447L368 329Q384 332 397 332Q458 332 500.0 282.5Q542 233 542 162Q542 44 434 2ZM426 746Q426 801 394 801Q358 801 333.0 748.0Q308 695 308 630Q308 588 321 557Q359 580 392.5 639.5Q426 699 426 746ZM498 128Q498 183 466.0 216.0Q434 249 383 249L428 23Q498 52 498 128ZM407 17 361 247Q334 241 311.5 214.0Q289 187 289 158Q289 143 295.0 128.5Q301 114 309.5 104.0Q318 94 327.0 86.0Q336 78 342.0 74.5Q348 71 348 71L340 66Q307 75 277.5 106.0Q248 137 248 184Q248 231 277.5 270.5Q307 310 343 323L325 430Q168 299 168 177Q168 104 223.0 55.0Q278 6 348 6Q365 6 407 17Z" };
+  var CLEF_BASS = { bbox: [75, 166, 607, 757], d: "M564 704Q582 704 594.5 691.0Q607 678 607.0 661.0Q607 644 593.0 631.0Q579 618 563 618Q521 618 521 663Q521 681 534.0 692.5Q547 704 564 704ZM607 469Q607 450 594.0 437.0Q581 424 564 424Q521 424 521 469Q521 485 533.5 498.0Q546 511 564.0 511.0Q582 511 594.5 497.0Q607 483 607 469ZM285 757Q366 757 421.0 701.5Q476 646 476 569Q476 531 465.5 495.0Q455 459 432.0 426.5Q409 394 386.0 367.0Q363 340 326.0 313.0Q289 286 264.0 267.5Q239 249 196.5 226.0Q154 203 135.5 193.5Q117 184 80 166L75 182Q76 183 102.0 200.0Q128 217 144.0 227.5Q160 238 191.5 263.0Q223 288 244.0 309.5Q265 331 291.5 363.5Q318 396 334.0 427.0Q350 458 361.5 498.0Q373 538 373 578Q373 735 262 735Q225 735 199.0 725.5Q173 716 161.5 702.0Q150 688 145.0 677.5Q140 667 140 659Q140 644 160 644Q168 644 179.0 647.5Q190 651 194 651Q221 651 239.0 634.0Q257 617 257 592Q257 563 235.0 544.0Q213 525 183 525Q144 525 119.0 548.0Q94 571 94 607Q94 673 150.5 715.0Q207 757 285 757Z" };
+  var trebPath = new Path2D(CLEF_TREBLE.d), bassPath = new Path2D(CLEF_BASS.d);
+  function drawClef(c, clef, path, leftX, top, h) {
+    var bb = clef.bbox, s = h / (bb[3] - bb[1]);
+    c.save(); c.translate(leftX - bb[0] * s, top + bb[3] * s); c.scale(s, -s);
+    c.fillStyle = C.ink; c.fill(path); c.restore();
+  }
+
+  // Vertical plan of the plate, in staff spaces (sp) from the top:
+  //   1.55 running head · 6–10 treble · 10–18 the gap (words, then the tape,
+  //   then the tenor's ledger room) · 18–22 bass · 24 foot.
+  function geom(W, sp, dpr) {
+    var g = { W: W, sp: sp, dpr: dpr };
+    g.H = Math.round(24.2 * sp);
+    g.yRH = 1.7 * sp;
+    g.trebTop = 6 * sp; g.trebBot = 10 * sp; g.bassTop = 18 * sp; g.bassBot = 22 * sp;
+    g.wordsY = g.trebBot + 2.35 * sp;
+    g.tapeTop = g.trebBot + 3.2 * sp; g.tapeH = 1.3 * sp;
+    g.xBar = Math.round(1.25 * sp);
+    g.clefX = g.xBar + 0.75 * sp;
+    g.bassClefH = 3.2 * sp; g.bassClefW = g.bassClefH * 532 / 591;
+    g.inkX0 = g.clefX + g.bassClefW + 0.5 * sp;
+    g.inkX1 = g.inkX0 + 5.5 * sp;
+    g.E = W - 2.3 * sp;
+    return g;
+  }
+  function yT(g, d) { return g.trebBot - (d - 2) * g.sp / 2; }
+  function yB(g, d) { return g.bassTop - (d + 2) * g.sp / 2; }
+  function yOn(g, staff, d) { return staff === "B" ? yB(g, d) : yT(g, d); }
+  function ledgersFor(staff, d) {
+    var out = [], l;
+    if (staff === "T") { if (d <= 0) for (l = 0; l >= d; l -= 2) out.push(l); if (d >= 12) for (l = 12; l <= d; l += 2) out.push(l); }
+    else { if (d >= 0) for (l = 0; l <= d; l += 2) out.push(l); if (d <= -12) for (l = -12; l >= d; l -= 2) out.push(l); }
+    return out;
+  }
+  var LEDGER_LIMIT_T = 15;                        // two ledgers above the treble; beyond that, 8va
+  function snap(g, y, lwDev) { var d = g.dpr; return (Math.round(y * d - lwDev / 2) + lwDev / 2) / d; }
+  function ruleW(g, k) { return Math.max(1, Math.round(k * g.sp * g.dpr)); }
+
+  function drawStaffLayer(c, g, opts) {
+    var sp = g.sp;
+    // the plate mark: a faint pressed rectangle, the only "depth" the paper gets
+    c.save();
+    c.strokeStyle = "rgba(30,77,59,0.07)"; c.lineWidth = 1;
+    c.strokeRect(0.5, 0.5, g.W - 1, g.H - 1);
+    c.strokeStyle = "rgba(255,252,242,0.8)";
+    c.beginPath(); c.moveTo(1.5, g.H - 1.5); c.lineTo(g.W - 1.5, g.H - 1.5); c.lineTo(g.W - 1.5, 1.5); c.stroke();
+    c.restore();
+    var lw = ruleW(g, 0.12);
+    c.strokeStyle = "rgba(30,77,59,0.52)"; c.lineWidth = lw / g.dpr;
+    var xR = g.W - 0.6 * sp;
+    [g.trebTop, g.trebBot, g.bassTop, g.bassBot].forEach(function () {});
+    for (var i = 0; i < 5; i++) {
+      [g.trebTop + i * sp, g.bassTop + i * sp].forEach(function (y) {
+        var yy = snap(g, y, lw);
+        c.beginPath(); c.moveTo(g.xBar, yy); c.lineTo(xR, yy); c.stroke();
+      });
+    }
+    // system barline and brace
+    c.strokeStyle = C.ink; c.lineWidth = ruleW(g, 0.16) / g.dpr;
+    c.beginPath(); c.moveTo(g.xBar, g.trebTop); c.lineTo(g.xBar, g.bassBot); c.stroke();
+    var bx = g.xBar - 0.45 * sp, yt = g.trebTop, yb = g.bassBot, mid = (yt + yb) / 2;
+    c.fillStyle = C.ink;
+    c.beginPath();
+    c.moveTo(bx + 0.35 * sp, yt);
+    c.bezierCurveTo(bx - 0.35 * sp, yt + 1.5 * sp, bx + 0.25 * sp, mid - 2.5 * sp, bx - 0.55 * sp, mid);
+    c.bezierCurveTo(bx + 0.25 * sp, mid + 2.5 * sp, bx - 0.35 * sp, yb - 1.5 * sp, bx + 0.35 * sp, yb);
+    c.bezierCurveTo(bx - 0.05 * sp, yb - 1.5 * sp, bx + 0.55 * sp, mid + 2.5 * sp, bx - 0.3 * sp, mid);
+    c.bezierCurveTo(bx + 0.55 * sp, mid - 2.5 * sp, bx - 0.05 * sp, yt + 1.5 * sp, bx + 0.35 * sp, yt);
+    c.fill();
+    // clefs
+    var trebH = 1.28 * 4 * sp;
+    drawClef(c, CLEF_TREBLE, trebPath, g.clefX + 0.25 * sp, yT(g, 4) - 0.583 * trebH, trebH);
+    drawClef(c, CLEF_BASS, bassPath, g.clefX, yB(g, -4) - 0.237 * g.bassClefH, g.bassClefH);
+    // the tape: a ribbon of paper running through the middle of the plate
+    drawTapeRibbon(c, g, g.xBar + 0.4 * sp, xR);
+  }
+  function drawTapeRibbon(c, g, x0, x1) {
+    var y = g.tapeTop, h = g.tapeH;
+    c.save();
+    c.fillStyle = "rgba(60,50,20,0.05)";                     // its shadow on the plate
+    c.fillRect(x0 + 1, y + 1.2, x1 - x0, h);
+    c.fillStyle = "#fbf8ee";
+    c.fillRect(x0, y, x1 - x0, h);
+    c.strokeStyle = "rgba(30,77,59,0.22)"; c.lineWidth = 1 / g.dpr;
+    var a = snap(g, y, 1), b = snap(g, y + h, 1);
+    c.beginPath(); c.moveTo(x0, a); c.lineTo(x1, a); c.moveTo(x0, b); c.lineTo(x1, b); c.stroke();
+    // the tape's torn head at the left, where it feeds out of the brace
+    c.fillStyle = C.paper;
+    c.beginPath(); c.moveTo(x0 - 1, y - 1); c.lineTo(x0 + 0.35 * g.sp, y + h / 2); c.lineTo(x0 - 1, y + h + 1); c.fill();
+    c.restore();
+  }
+
+  // ------------------------------------------------------------ the passage
+  // derived tables
+  var choir = P.notes.slice().sort(function (a, b) { return a.t - b.t; });
+  var byPart = { S: [], A: [], T: [], B: [] };
+  choir.forEach(function (n) { byPart[n.part].push(n); });
+  var BEAT = P.beat, T0 = P.notes[0].t;
+  function beatOf(n) { return Math.round((n.t - T0) / BEAT); }
+  function stressOf(n) {                          // 4/4 with a one-beat pickup; the amen leans on its first chord
+    var b = beatOf(n);
+    if (b === 18) return 1;
+    var m = mod(b - 1, 4);
+    return m === 0 ? 1 : m === 2 ? 0.62 : 0.3;
+  }
+  // phrases (for the melody's ligature): line 1, line 2, amen
+  function phraseOf(n) { var b = beatOf(n); return b < 9 ? 0 : b < 17 ? 1 : 2; }
+  var lineEndBeat = {};
+  choir.forEach(function (n) { if (n.lineEnd && n.part === "S") lineEndBeat[Math.round((n.t + n.dur - T0) / BEAT)] = n.lineEnd; });
+  var bars = P.bars.map(function (b) {
+    var beat = Math.round((b.t - T0) / BEAT);
+    var kind = b.kind;
+    if (kind === "single" && lineEndBeat[beat]) kind = "lineEnd";
+    return { t: b.t, kind: kind };
+  });
+  var asks = {};
+  P.question.forEach(function (q) { if (q.role === "ask") (asks[q.asking] = asks[q.asking] || []).push(q); });
+  var answers = P.question.filter(function (q) { return q.role === "answer"; });
+  var tel = P.telegraph;
+  var BI = P.bandInfo, BR = BI.tempoRatio;
+  var bandMel = P.band.filter(function (b) { return !b.part; });
+  var bandBass = P.band.filter(function (b) { return b.part === "bass"; });
+
+  // ------------------------------------------------------------- a view
+  // live: x = E − (t − τ)·v (the pen at E); still: x = x0 + (τ − ta)·v
+  function makeView(g, o) {
+    var v = { g: g, sp: g.sp, live: !!o.live, t: o.t, v: o.v, ta: o.ta || 0, tb: o.tb, x0: o.x0 };
+    if (v.live) {
+      var S = Math.round(o.t * o.v * g.dpr) / g.dpr;            // whole device pixels
+      var Sb = Math.round(o.t * o.v * BR * g.dpr) / g.dpr;
+      v.x = function (tau) { return g.E - S + tau * o.v; };
+      v.xb = function (tau) { return g.E - Sb + tau * o.v * BR; };
+      v.pen = g.E;
+      v.tMin = o.t - (g.E - g.inkX0) / o.v - 1;
+    } else {
+      v.x = function (tau) { return o.x0 + (tau - o.ta) * o.v; };
+      v.xb = function (tau) { return v.x(BI.t0 + (tau - BI.t0) * BR); };
+      v.pen = Infinity;
+      v.tMin = o.ta - 12; v.t = Infinity;
+    }
+    return v;
+  }
+  // how a note of onset τ, length d looks now: drying alpha and the gilt strike
+  function inkState(v, tau, d) {
+    if (!v.live) return { alpha: 1, color: C.ink, glow: 0, sounding: false };
+    var age = v.t - tau, end = tau + d;
+    var alpha = Math.exp(-0.028 * Math.max(0, age));
+    var sounding = v.t >= tau && v.t < end;
+    var cool = sounding ? 0 : clamp((v.t - end) / 1.2, 0, 1);
+    var glow = age >= 0 ? Math.exp(-age / 0.45) : 0;
+    return { alpha: alpha, color: cool >= 1 ? C.ink : mix(C.strike, C.ink, cool), glow: glow, sounding: sounding };
+  }
+
+  // Tail + optional turn into the next head, as one ribbon.
+  function tailPoints(v, x0, x1, y, w0, wEnd, next) {
+    var pts = [], pen = v.pen, full = Math.max(1, x1 - x0);
+    var turnW = next ? Math.min(0.9 * v.sp, full * 0.45) : 0;
+    var xFlat = x1 - turnW;
+    var xStop = Math.min(xFlat, pen);
+    var n = Math.max(4, Math.ceil((xStop - x0) / 3));
+    for (var i = 0; i <= n; i++) {
+      var x = x0 + (xStop - x0) * i / n, s = (x - x0) / full;
+      pts.push({ x: x, y: y, w: wEnd + (w0 - wEnd) * Math.pow(1 - s, 1.25) });
+    }
+    if (next && pen >= next.x) {
+      var ax = xFlat, bx = next.x, by = next.y;
+      for (var k = 1; k <= 10; k++) {
+        var u = k / 10, iu = 1 - u;
+        var px = iu * iu * iu * ax + 3 * iu * iu * u * (ax + turnW * 0.55) + 3 * iu * u * u * (bx - turnW * 0.35) + u * u * u * bx;
+        var py = iu * iu * iu * y + 3 * iu * iu * u * y + 3 * iu * u * u * by + u * u * u * by;
+        pts.push({ x: px, y: py, w: wEnd });
+      }
+    }
+    return pts;
+  }
+
+  // ---- the voices
+  var HEAD_PAD = 0.2;                             // sp between onset x and the head's left edge
+  function headCX(v, tau, scale) { return v.x(tau) + (HEAD_PAD + 0.64 * (scale || 1)) * v.sp; }
+
+  function drawLedgers(c, v, staff, d, cx, hw, col, alpha) {
+    var ls = ledgersFor(staff, d); if (!ls.length) return;
+    var g = v.g, lw = ruleW(g, 0.16);
+    c.save(); c.globalAlpha = alpha; c.strokeStyle = col; c.lineWidth = lw / g.dpr;
+    ls.forEach(function (l) {
+      var y = snap(g, yOn(g, staff, l), lw);
+      c.beginPath(); c.moveTo(cx - hw - 0.4 * v.sp, y); c.lineTo(cx + hw + 0.4 * v.sp, y); c.stroke();
+    });
+    c.restore();
+  }
+
+  // a line of notes of one voice: heads, tails, and (if ligate) the turns between
+  function drawLine(c, v, notes, spec, off) {
+    var sp = v.sp, g = v.g;
+    var items = [];
+    for (var i = 0; i < notes.length; i++) {
+      var n = notes[i], tau = n.t + off;
+      if (tau > v.t || tau + n.dur < v.tMin) continue;
+      var d = n.deg, staff = spec.staff, oct = false;
+      if (staff === "T" && d > LEDGER_LIMIT_T) { d -= 7; oct = true; }
+      items.push({ n: n, tau: tau, d: d, staff: staff, y: yOn(g, staff, d), cx: headCX(v, tau, spec.scale), oct: oct, i: i });
+    }
+    // tails first, heads over them
+    items.forEach(function (it, k) {
+      var n = it.n, st = inkState(v, it.tau, n.dur);
+      var x1 = v.x(it.tau + n.dur);
+      var nxt = null;
+      if (spec.ligate) {
+        var nn = notes[it.i + 1];
+        if (nn && Math.abs(nn.t - (n.t + n.dur)) < 0.05 && (!spec.phrase || spec.phrase(nn) === spec.phrase(n))) {
+          var nd = nn.deg; if (staff === "T" && nd > LEDGER_LIMIT_T) nd -= 7;
+          nxt = { x: v.x(nn.t + off) + HEAD_PAD * sp * 0.5, y: yOn(g, it.staff, nd) };
+        }
+      }
+      var w0 = spec.tailW(n) * sp, wEnd = Math.max(0.55, 0.055 * sp);
+      var startX = it.cx + (spec.treat === "solid" || spec.treat === "cue" ? 0 : 0.5 * sp * (spec.scale || 1));
+      c.save();
+      c.globalAlpha = st.alpha * (spec.tailAlpha || 1);
+      c.fillStyle = st.color;
+      ribbon(c, tailPoints(v, startX, x1, it.y, w0, wEnd, nxt), 0.5);
+      if (spec.slash) {                           // grace slash through the tail's root
+        c.strokeStyle = st.color; c.lineWidth = Math.max(0.6, 0.06 * sp);
+        c.beginPath(); c.moveTo(it.cx + 0.45 * sp, it.y + 0.4 * sp); c.lineTo(it.cx + 0.95 * sp, it.y - 0.4 * sp); c.stroke();
+      }
+      c.restore();
+    });
+    items.forEach(function (it) {
+      var n = it.n, st = inkState(v, it.tau, n.dur);
+      var hw = 0.64 * sp * (spec.scale || 1);
+      drawLedgers(c, v, it.staff, it.d, it.cx, hw, st.color, st.alpha);
+      drawHead(c, shapeOf(n.deg), it.cx, it.y, sp, { treat: spec.treat, scale: spec.scale, color: st.color, alpha: st.alpha, glow: st.glow, age: v.t - it.tau, still: !v.live });
+      // Johnston's sign sits before the head, on the side away from the
+      // incoming line (above if the voice rose into the note, below if it fell)
+      var prev = notes[it.i - 1], side = prev && prev.deg > n.deg ? 1 : -1;
+      if (n.comma) johnston(c, "minus", it.cx - hw - 0.55 * sp, it.y + side * 0.62 * sp, sp, st.color);
+      if (n.septimal) johnston(c, "seven", it.cx - hw - 0.62 * sp, it.y + side * 0.62 * sp, sp, st.color);
+      if (it.oct) drawOttava(c, v, it, n, st);
+    });
+  }
+  function drawOttava(c, v, it, n, st) {
+    var sp = v.sp, y = v.g.trebTop - 2.2 * sp, x0 = it.cx - 0.6 * sp, x1 = Math.min(v.pen, v.x(it.tau + n.dur));
+    c.save(); c.globalAlpha = st.alpha; c.fillStyle = st.color; c.strokeStyle = st.color;
+    c.font = "italic 500 " + (1.3 * sp).toFixed(1) + "px " + GAR;
+    c.fillText("8", x0, y + 0.45 * sp);
+    c.lineWidth = Math.max(0.7, 0.08 * sp); c.setLineDash([0.5 * sp, 0.35 * sp]);
+    c.beginPath(); c.moveTo(x0 + 0.9 * sp, y); c.lineTo(x1, y); c.stroke();
+    c.setLineDash([]);
+    if (x1 >= v.x(it.tau + n.dur) - 1) { c.beginPath(); c.moveTo(x1, y); c.lineTo(x1, y + 0.7 * sp); c.stroke(); }
+    c.restore();
+  }
+
+  var SPECS = {
+    S: { staff: "T", treat: "solid", ligate: true, phrase: phraseOf, tailW: function (n) { return 0.17 + 0.22 * stressOf(n); } },
+    A: { staff: "T", treat: "open", tailW: function () { return 0.14; }, tailAlpha: 0.72 },
+    T: { staff: "B", treat: "open", tailW: function () { return 0.14; }, tailAlpha: 0.72 },
+    B: { staff: "B", treat: "open", tailW: function () { return 0.16; }, tailAlpha: 0.72 },
+    clar: { staff: "T", treat: "double", scale: 0.84, ligate: true, tailW: function (n) { return n === asks[n.asking][0] ? 0.32 : 0.2; } },
+    harm: { staff: "T", treat: "cue", scale: 0.62, ligate: true, slash: true, tailW: function () { return 0.13; }, tailAlpha: 0.85 },
+    bell: { staff: "T", treat: "ring", scale: 0.95, tailW: function () { return 0.12; }, tailAlpha: 0.7 },
+  };
+
+  // ---- barlines, breath, fermatas
+  function drawBar(c, v, x, kind, col, alpha) {
+    var g = v.g, sp = v.sp;
+    c.save(); c.globalAlpha = alpha; c.strokeStyle = col; c.fillStyle = col;
+    var thin = ruleW(g, 0.16) / g.dpr, thick = 0.5 * sp;
+    [[g.trebTop, g.trebBot], [g.bassTop, g.bassBot]].forEach(function (s) {
+      var y0 = s[0], y1 = s[1];
+      function line(xx, w) { c.lineWidth = w; c.beginPath(); c.moveTo(xx, y0); c.lineTo(xx, y1); c.stroke(); }
+      if (kind === "single") line(x, thin);
+      else if (kind === "lineEnd") {             // the line-end: a bar with its corners turned back
+        line(x, thin * 1.2);
+        c.lineWidth = thin * 1.6;
+        c.beginPath(); c.moveTo(x - 0.5 * sp, y0 - 0.02 * sp); c.lineTo(x, y0 - 0.02 * sp);
+        c.moveTo(x - 0.5 * sp, y1 + 0.02 * sp); c.lineTo(x, y1 + 0.02 * sp); c.stroke();
+      } else if (kind === "double") { line(x - 0.4 * sp, thin); line(x, thin); }
+      else if (kind === "final") { line(x - 0.75 * sp, thin); c.fillRect(x - 0.25 * sp, y0, thick, y1 - y0); }
+      else if (kind === "dotted") {
+        for (var y = y0; y <= y1 + 0.01; y += 0.5 * sp) { c.beginPath(); c.arc(x, y, Math.max(0.6, 0.085 * sp), 0, Math.PI * 2); c.fill(); }
+      }
+    });
+    c.restore();
+  }
+  function drawFermata(c, v, xa, xb, y, up, col, alpha) {
+    var sp = v.sp, h = 0.95 * sp * (up ? -1 : 1), th = 0.2 * sp * (up ? -1 : 1);
+    var xm = (xa + xb) / 2;
+    c.save(); c.globalAlpha = alpha; c.fillStyle = col;
+    c.beginPath();
+    c.moveTo(xa, y);
+    c.quadraticCurveTo(xm, y + 2 * h, xb, y);
+    c.quadraticCurveTo(xm, y + 2 * h - 2 * th, xa, y);
+    c.fill();
+    c.beginPath(); c.arc(xm, y + h * 0.35, 0.16 * sp, 0, Math.PI * 2); c.fill();
+    c.restore();
+  }
+  function drawBreath(c, v, x, alpha) {
+    var sp = v.sp, y = v.g.trebTop - 0.9 * sp;
+    c.save(); c.globalAlpha = alpha; c.fillStyle = C.ink;
+    c.beginPath(); c.arc(x, y, 0.24 * sp, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.moveTo(x + 0.2 * sp, y + 0.05 * sp); c.quadraticCurveTo(x + 0.2 * sp, y + 0.6 * sp, x - 0.18 * sp, y + 0.82 * sp);
+    c.quadraticCurveTo(x + 0.04 * sp, y + 0.5 * sp, x - 0.05 * sp, y + 0.2 * sp); c.fill();
+    c.restore();
+  }
+
+  // ---- the running head
+  function drawRunningHead(c, v, off) {
+    var h = P.hymnHeader, tau = h.t + off; if (tau > v.t) return;
+    if (!v.live && (tau < v.ta - 0.5 || tau >= v.tb)) return;
+    var sp = v.sp, y = v.g.yRH;
+    var st = inkState(v, tau, 0);
+    var segs = [
+      [GAR, "500", "№ " + h.number, C.ink], [DS, "400", h.nameDs, C.ink],
+      [GAR, "400", "C.M.", C.ink], [GAR, "400", h.dialect.toUpperCase(), C.ink],
+      [GAR, "400", "DO = C  ·  4/4", C.ink], [GAR, "400", "LED BY", C.ink], [DS, "400", h.leaderDs, C.ink],
+    ];
+    c.save();
+    c.globalAlpha = st.alpha;
+    var sz = 0.98 * sp;
+    c.letterSpacing = (0.12 * sp).toFixed(1) + "px";
+    // measure, then stamp: live, the head is set whole as the hymn begins,
+    // ending at the first note; on the still plate it opens the system
+    var total = 2.1 * sp;
+    segs.forEach(function (s, i) {
+      c.font = s[1] + " " + (s[0] === DS ? sz : sz * 1.05).toFixed(1) + "px " + s[0];
+      total += c.measureText(s[2]).width + (i === 5 ? 0.45 * sp : 0.6 * sp);
+      if (i !== 5 && i < segs.length - 1) total += c.measureText("·").width + 0.6 * sp;
+    });
+    var x = v.live ? v.x(tau) + 1.5 * sp - total : Math.max(v.x(tau), v.x0);
+    var limit = v.live ? Infinity : v.g.W - 5 * sp, stop = false;
+    c.fillStyle = C.gilt;
+    c.fillRect(x, y - 0.35 * sp, 1.6 * sp, Math.max(1, 0.1 * sp));       // a short gilt rule leads it in
+    x += 2.1 * sp;
+    segs.forEach(function (s, i) {
+      c.font = s[1] + " " + (s[0] === DS ? sz : sz * 1.05).toFixed(1) + "px " + s[0];
+      c.fillStyle = s[3];
+      if (stop || x + c.measureText(s[2]).width > limit) { stop = true; return; }
+      c.fillText(s[2], x, y);
+      x += c.measureText(s[2]).width + (i === 5 ? 0.45 * sp : 0.6 * sp);
+      if (i !== 5 && i < segs.length - 1) { c.fillStyle = C.gilt; c.fillText("·", x, y); x += c.measureText("·").width + 0.6 * sp; }
+    });
+    c.restore();
+  }
+
+  // ---- words between the staves
+  function drawWords(c, v, off) {
+    if (!state.words) return;
+    var sp = v.sp, y = v.g.wordsY, fs = 1.18 * sp;
+    var syl = P.syllables;
+    c.save();
+    c.textAlign = "center";
+    for (var i = 0; i < syl.length; i++) {
+      var s = syl[i], tau = s.t + off;
+      if (tau > v.t || tau < v.tMin) continue;
+      var st = inkState(v, tau, s.dur);
+      var cx = headCX(v, tau, 1);
+      c.globalAlpha = st.alpha;
+      c.fillStyle = st.color;
+      c.font = fs.toFixed(1) + "px " + DS;
+      c.fillText(s.text, cx, y);
+      var w = c.measureText(s.text).width;
+      if (s.verse) {
+        c.font = "500 " + (1.15 * sp).toFixed(1) + "px " + GAR;
+        c.textAlign = "right"; c.fillText(s.verse + ".", cx - w / 2 - 0.45 * sp, y); c.textAlign = "center";
+      }
+      if (s.hyphenAfter && syl[i + 1] && syl[i + 1].t + off <= v.t) {
+        var nx = headCX(v, syl[i + 1].t + off, 1);
+        c.font = fs.toFixed(1) + "px " + DS;
+        var nw = c.measureText(syl[i + 1].text).width;
+        var hx = ((cx + w / 2) + (nx - nw / 2)) / 2;
+        c.fillRect(hx - 0.3 * sp, y - 0.38 * sp, 0.6 * sp, Math.max(0.8, 0.09 * sp));
+      }
+    }
+    c.restore();
+  }
+
+  // ---- the telegraph: punched paper tape in the middle of the plate
+  function drawTape(c, v, off) {
+    var g = v.g, sp = v.sp, y0 = g.tapeTop, h = g.tapeH;
+    c.save();
+    c.beginPath(); c.rect(g.inkX0 - 2 * sp, y0, Math.min(v.pen, g.W) - g.inkX0 + 2 * sp, h); c.clip();
+    // the feed holes: always running, the wire is always present
+    var step = 0.25, fy = y0 + 0.27 * h, fr = Math.max(0.55, 0.075 * sp);
+    var tStart = Math.max(v.tMin, off), tEnd = Math.min(v.t, off + DUR);
+    for (var k = Math.ceil(tStart / step); k * step <= tEnd; k++) {
+      var tau = k * step, x = v.x(tau);
+      c.globalAlpha = inkState(v, tau, 0).alpha;
+      punch(c, x - fr, fy - fr, 2 * fr, 2 * fr, fr, sp);
+    }
+    // the message
+    var T = tel.t + off, my = y0 + 0.66 * h, mh = 0.4 * sp;
+    if (T <= v.t && T + tel.dur + 6 > v.tMin) {
+      tel.marks.forEach(function (m) {
+        var a = T + m.at; if (a > v.t) return;
+        var xa = v.x(a), xb = Math.min(v.pen, v.x(a + m.len));
+        var st = inkState(v, a, m.len);
+        c.globalAlpha = st.alpha;
+        punch(c, xa, my - mh / 2, Math.max(xb - xa, 0.8), mh, Math.min(mh / 2, (xb - xa) / 2), sp);
+      });
+      // decoded: once the run is keyed, the tape prints the word after it,
+      // letter by letter as each passes the pen, with a vermilion rule under
+      var tEndMsg = T + tel.dur;
+      if (v.t >= tEndMsg) {
+        var st2 = inkState(v, tEndMsg, 0);
+        var xw = v.x(tEndMsg) + 0.55 * sp;
+        c.globalAlpha = st2.alpha;
+        c.font = (0.95 * sp).toFixed(1) + "px " + DS;
+        c.fillStyle = C.ink;
+        var gl = Array.from(tel.wordDs), xx = xw;
+        gl.forEach(function (ch) { var w = c.measureText(ch).width; if (xx + w <= v.pen) c.fillText(ch, xx, y0 + 0.87 * h); xx += w + 0.08 * sp; });
+        var ww = Math.min(v.pen, xx) - xw;
+        if (ww > 0) { c.fillStyle = rubric(C.gilt); c.fillRect(xw, y0 + 0.93 * h, ww, Math.max(0.8, 0.07 * sp)); }
+        // letter ticks under the run: where each Morse letter ends
+        c.fillStyle = C.ink;
+        c.globalAlpha = st2.alpha * 0.55;
+        tel.marks.forEach(function (m) { if (m.gap === "l") { var xl = v.x(T + m.at + m.len + 1.5 * 0.07); c.fillRect(xl - 0.5, my + mh / 2 + 0.12 * sp, 1, 0.22 * sp); } });
+      }
+    }
+    c.restore();
+  }
+  // a perforation: the plate shows through, with the tape's cut edge in shadow
+  function punch(c, x, y, w, h, r, sp) {
+    w = Math.max(w, 0.5); r = clamp(r, 0, Math.min(w, h) / 2);
+    c.save();
+    c.beginPath(); c.roundRect(x, y, w, h, r);
+    c.fillStyle = "#e4dcc6"; c.fill();
+    c.clip();
+    c.strokeStyle = "rgba(40,36,20,0.35)"; c.lineWidth = Math.max(0.8, 0.09 * sp);
+    c.beginPath(); c.roundRect(x + 0.45, y + 0.55, w, h, r); c.stroke();
+    c.restore();
+  }
+
+  // ---- the drone: a longa in the lowest bass space, running under everything
+  function drawDrone(c, v, off) {
+    var g = v.g, sp = v.sp, d = P.drone, tau = d.t + off;
+    if (tau > v.t || tau + d.dur < v.tMin) return;
+    var y = yB(g, -9), x0 = v.x(tau), x1 = Math.min(v.pen, v.x(tau + d.dur));
+    c.save();
+    c.fillStyle = C.gilt; c.globalAlpha = 0.5;
+    c.fillRect(x0 + 0.5 * sp, y - 0.14 * sp, Math.max(0, x1 - x0 - 0.5 * sp), 0.28 * sp);
+    c.globalAlpha = 0.9;
+    c.fillRect(x0 + 0.5 * sp, y - 0.2 * sp, Math.max(0, x1 - x0 - 0.5 * sp), Math.max(0.6, 0.05 * sp));
+    // the longa: square head, tail down on the right
+    var st = inkState(v, tau, 0);
+    c.globalAlpha = st.alpha; c.fillStyle = C.ink;
+    c.fillRect(x0 - 0.1 * sp, y - 0.42 * sp, 0.95 * sp, 0.84 * sp);
+    c.fillRect(x0 + 0.72 * sp, y - 0.42 * sp, 0.13 * sp, 2.2 * sp);
+    c.font = "italic " + (1.0 * sp).toFixed(1) + "px " + GAR;
+    c.fillStyle = rubric(C.ink);
+    c.fillText("drone · do, two octaves down", x0 + 1.4 * sp, g.bassBot + 1.35 * sp);
+    c.restore();
+  }
+
+  // ---- the hymn
+  function drawHymn(c, v, off) {
+    var g = v.g, sp = v.sp;
+    // bars under the notes
+    bars.forEach(function (b) {
+      var tau = b.t + off; if (tau > v.t || tau < v.tMin) return;
+      drawBar(c, v, v.x(tau) - 0.05 * sp, b.kind, C.ink, inkState(v, tau, 0).alpha);
+    });
+    P.breaths.forEach(function (b) {
+      var tau = b.t + off; if (tau > v.t || tau < v.tMin) return;
+      drawBreath(c, v, v.x(tau), inkState(v, tau, 0).alpha);
+    });
+    ["B", "T", "A", "S"].forEach(function (p) { drawLine(c, v, byPart[p], SPECS[p], off); });
+    // fermatas: an arc over the whole held length, above the treble and below the bass
+    byPart.S.forEach(function (n) {
+      if (!n.fermata) return;
+      var tau = n.t + off; if (tau > v.t || tau + n.dur < v.tMin) return;
+      var st = inkState(v, tau, n.dur);
+      var xa = headCX(v, tau, 1) - 0.4 * sp, xb = Math.min(v.pen, v.x(tau + n.dur) - 0.2 * sp);
+      if (xb - xa < sp) return;
+      drawFermata(c, v, xa, xb, g.trebTop - 1.0 * sp, true, st.color, st.alpha);
+      drawFermata(c, v, xa, xb, g.bassBot + 1.0 * sp, false, st.color, st.alpha);
+    });
+  }
+
+  // ---- the question
+  function drawQuestion(c, v, off) {
+    var g = v.g, sp = v.sp;
+    Object.keys(asks).forEach(function (k) {
+      var ns = asks[k], ta = ns[0].t + off, last = ns[ns.length - 1], te = last.t + last.dur + off;
+      if (ta > v.t || te < v.tMin) return;
+      var dMax = -99, dMin = 99;
+      ns.forEach(function (n) { dMax = Math.max(dMax, n.deg); dMin = Math.min(dMin, n.deg); });
+      var x0 = v.x(ta) - 1.35 * sp, x1 = v.x(te) + 0.5 * sp;
+      var y0 = yT(g, dMax) - 1.05 * sp, y1 = yT(g, dMin) + 1.05 * sp, r = (y1 - y0) / 2;
+      var st = inkState(v, ta, te - ta);
+      var col = rubric(C.gilt);
+      c.save();
+      c.globalAlpha = inkState(v, ta, 0).alpha;
+      c.beginPath(); c.rect(0, 0, Math.min(v.pen, g.W), g.H); c.clip();
+      c.strokeStyle = col;
+      c.lineWidth = Math.max(0.9, 0.12 * sp);
+      c.beginPath(); c.roundRect(x0, y0, x1 - x0, y1 - y0, r); c.stroke();
+      c.lineWidth = Math.max(0.6, 0.05 * sp);
+      c.beginPath(); c.roundRect(x0 + 0.22 * sp, y0 + 0.22 * sp, x1 - x0 - 0.44 * sp, y1 - y0 - 0.44 * sp, r - 0.22 * sp); c.stroke();
+      if (v.t >= te) {                             // the cartouche's tie: a bar across its closed end
+        c.fillStyle = col;
+        c.fillRect(x1 + 0.28 * sp, y0 + 0.1 * sp, Math.max(1, 0.2 * sp), y1 - y0 - 0.2 * sp);
+      }
+      c.fillStyle = col;
+      c.font = "italic 600 " + (2.0 * sp).toFixed(1) + "px " + GAR;
+      c.fillText("?", x0 + 0.55 * sp, (y0 + y1) / 2 + 0.68 * sp);
+      c.restore();
+      drawLine(c, v, ns, SPECS.clar, off);
+    });
+    drawLine(c, v, answers, SPECS.harm, off);
+    // no answer: an empty measure, dotted at both ends, the drone beneath
+    var na = P.noAnswer, tau = na.t + off;
+    if (tau <= v.t && tau + na.dur > v.tMin) {
+      var a = inkState(v, tau, 0).alpha;
+      var xa = v.x(tau) + 1.7 * sp, xe = v.x(tau + na.dur);
+      drawBar(c, v, xa, "dotted", C.ink, a * 0.8);
+      if (xe <= v.pen) {
+        drawBar(c, v, xe, "dotted", C.ink, a * 0.8);
+        c.save(); c.globalAlpha = a; c.fillStyle = rubric(C.gilt); c.textAlign = "center";
+        c.font = "italic " + (1.1 * sp).toFixed(1) + "px " + GAR;
+        c.fillText("no answer", (xa + xe) / 2, g.trebTop - 0.9 * sp);
+        c.restore();
+      }
+    }
+  }
+
+  // ---- the band: round notes, Earth notation, on their own layer
+  function BAND_A(l) { return 0.1 + 0.52 * l; }
+  function bandStaffY(g, d, bass) { return bass ? yB(g, d + 4) : yT(g, d + 4); }
+  function drawBand(c, v, off) {
+    var g = v.g, sp = v.sp;
+    var t0 = BI.t0 + off;
+    if (t0 > v.t) return;
+    var xOf = v.xb;
+    if (xOf(BI.t1 + off) < g.inkX0 - 4 * sp) return;
+    var dry = function (tau) { return v.live ? Math.exp(-0.028 * Math.max(0, v.t - tau)) : 1; };
+    var ink = C.brass;
+    c.save();
+    // signature: one sharp (the band's own key, sol), 2/4, and the rubric
+    var xs = xOf(t0) - 3.6 * sp, aSig = 0.4 * dry(t0);
+    c.globalAlpha = aSig; c.fillStyle = ink;
+    sharp(c, xs, yT(g, 10), sp); sharp(c, xs, yB(g, -4), sp);
+    c.font = "600 " + (2.25 * sp).toFixed(1) + "px " + GAR;
+    c.textAlign = "center";
+    [[g.trebTop, g.trebBot], [g.bassTop, g.bassBot]].forEach(function (s) {
+      c.fillText("2", xs + 1.7 * sp, s[0] + 1.65 * sp); c.fillText("4", xs + 1.7 * sp, s[0] + 3.65 * sp);
+    });
+    c.textAlign = "left";
+    c.globalAlpha = 0.9 * dry(t0);
+    c.fillStyle = rubric(C.gilt);
+    c.font = "italic " + (1.2 * sp).toFixed(1) + "px " + GAR;
+    c.fillText("Band — a march in sol, not one of ours", xs - 0.2 * sp, g.trebTop - 2.9 * sp);
+    // barlines every two band beats
+    for (var b = 2; b <= 26; b += 2) {
+      var tb = t0 + b * BI.beat; if (tb > v.t) break;
+      var li = BAND_A(Math.sin(Math.PI * Math.min(b, 24) / 26));
+      drawBar(c, v, xOf(tb) - 0.35 * sp, b === 26 ? "double" : "single", ink, 0.7 * li * dry(tb));
+    }
+    // the melody: eighths beamed in pairs, dotted quarters, halves
+    var mel = bandMel.map(function (n) { return { n: n, tau: n.t + off, beat: Math.round((n.t - BI.t0) / BI.beat * 2) / 2 }; });
+    for (var i = 0; i < mel.length; i++) {
+      var m = mel[i]; if (m.tau > v.t) break;
+      var nx = mel[i + 1];
+      var pair = m.n.beats === 0.5 && m.beat % 1 === 0 && nx && nx.n.beats === 0.5 && nx.beat === m.beat + 0.5 && nx.tau <= v.t;
+      if (pair) { roundPair(c, v, xOf, m, nx, ink, dry); i++; }
+      else roundNote(c, v, xOf, m, ink, dry, false);
+    }
+    bandBass.forEach(function (n) {
+      var tau = n.t + off; if (tau > v.t) return;
+      roundNote(c, v, xOf, { n: n, tau: tau }, ink, dry, true);
+      // the eighth rest on the off-beat
+      var tr = tau + 0.5 * BI.beat; if (tr > v.t) return;
+      restEighth(c, xOf(tr) + 0.6 * sp, yB(g, -6), sp, ink, BAND_A(n.loud) * dry(tr) * 0.9);
+    });
+    c.restore();
+  }
+  function sharp(c, x, y, sp) {
+    c.fillRect(x - 0.22 * sp, y - 1.3 * sp, 0.1 * sp, 2.4 * sp);
+    c.fillRect(x + 0.18 * sp, y - 1.1 * sp, 0.1 * sp, 2.4 * sp);
+    c.save(); c.translate(x, y);
+    [-0.4, 0.4].forEach(function (dy) { c.beginPath(); c.moveTo(-0.55 * sp, (dy + 0.12) * sp); c.lineTo(0.55 * sp, (dy - 0.12) * sp); c.lineTo(0.55 * sp, (dy + 0.1) * sp); c.lineTo(-0.55 * sp, (dy + 0.34) * sp); c.fill(); });
+    c.restore();
+  }
+  function roundHead(c, x, y, sp, open) {
+    c.save(); c.translate(x, y); c.rotate(-0.36);
+    c.beginPath(); c.ellipse(0, 0, 0.62 * sp, 0.44 * sp, 0, 0, Math.PI * 2);
+    if (open) { c.ellipse(0, 0, 0.5 * sp, 0.2 * sp, 0, 0, Math.PI * 2, true); }
+    c.fill(); c.restore();
+  }
+  function bandLedgers(c, v, x, bass, d) {
+    var ls = ledgersFor(bass ? "B" : "T", d + 4), g = v.g, sp = v.sp;
+    ls.forEach(function (l) { c.fillRect(x - 1.0 * sp, yOn(g, bass ? "B" : "T", l) - 0.08 * sp, 2.0 * sp, 0.16 * sp); });
+  }
+  function roundNote(c, v, xOf, m, ink, dry, bass) {
+    var g = v.g, sp = v.sp, n = m.n;
+    var x = xOf(m.tau) + 0.8 * sp, y = bandStaffY(g, n.deg, bass);
+    var a = BAND_A(n.loud) * dry(m.tau);
+    c.globalAlpha = a; c.fillStyle = ink; c.strokeStyle = ink;
+    bandLedgers(c, v, x, bass, n.deg);
+    roundHead(c, x, y, sp, n.beats >= 2);
+    if (n.beats === 1.5) { c.beginPath(); c.arc(x + 1.05 * sp, y - ((n.deg + 4) % 2 === 0 ? 0.5 * sp : 0), 0.15 * sp, 0, Math.PI * 2); c.fill(); }
+    var d = n.deg + 4, mid = bass ? -6 : 6, up = d < mid;
+    var sx = up ? x + 0.56 * sp : x - 0.56 * sp, sy = up ? y - 3.5 * sp : y + 3.5 * sp;
+    c.fillRect(sx - 0.06 * sp, Math.min(y, sy), 0.12 * sp, Math.abs(sy - y));
+    if (n.beats === 0.5) flag(c, sx, sy, up, sp);
+  }
+  function flag(c, x, y, up, sp) {
+    var s = up ? 1 : -1;
+    c.beginPath();
+    c.moveTo(x, y);
+    c.bezierCurveTo(x + 0.2 * sp, y + s * 1.0 * sp, x + 1.3 * sp, y + s * 1.4 * sp, x + 0.8 * sp, y + s * 2.8 * sp);
+    c.bezierCurveTo(x + 1.0 * sp, y + s * 1.7 * sp, x + 0.3 * sp, y + s * 1.5 * sp, x, y + s * 1.3 * sp);
+    c.fill();
+  }
+  function roundPair(c, v, xOf, a, b, ink, dry) {
+    var g = v.g, sp = v.sp;
+    var xa = xOf(a.tau) + 0.8 * sp, xb = xOf(b.tau) + 0.8 * sp;
+    var ya = bandStaffY(g, a.n.deg), yb = bandStaffY(g, b.n.deg);
+    var up = (a.n.deg + b.n.deg + 8) / 2 < 6;
+    var al = BAND_A(a.n.loud) * dry(a.tau);
+    c.globalAlpha = al; c.fillStyle = ink;
+    bandLedgers(c, v, xa, false, a.n.deg); bandLedgers(c, v, xb, false, b.n.deg);
+    roundHead(c, xa, ya, sp, false); roundHead(c, xb, yb, sp, false);
+    var sxa = up ? xa + 0.56 * sp : xa - 0.56 * sp, sxb = up ? xb + 0.56 * sp : xb - 0.56 * sp;
+    var slope = clamp((yb - ya) / 2, -0.5 * sp, 0.5 * sp);
+    var base = up ? Math.min(ya, yb) - 3.3 * sp : Math.max(ya, yb) + 3.3 * sp;
+    var bya = base - slope / 2, byb = base + slope / 2;
+    c.fillRect(sxa - 0.06 * sp, Math.min(ya, bya), 0.12 * sp, Math.abs(bya - ya));
+    c.fillRect(sxb - 0.06 * sp, Math.min(yb, byb), 0.12 * sp, Math.abs(byb - yb));
+    var th = 0.5 * sp * (up ? 1 : -1);
+    c.beginPath(); c.moveTo(sxa - 0.06 * sp, bya); c.lineTo(sxb + 0.06 * sp, byb); c.lineTo(sxb + 0.06 * sp, byb + th); c.lineTo(sxa - 0.06 * sp, bya + th); c.fill();
+  }
+  function restEighth(c, x, y, sp, ink, a) {
+    c.save(); c.globalAlpha = a; c.fillStyle = ink; c.strokeStyle = ink;
+    c.beginPath(); c.arc(x - 0.3 * sp, y - 0.55 * sp, 0.2 * sp, 0, Math.PI * 2); c.fill();
+    c.lineWidth = Math.max(0.8, 0.12 * sp);
+    c.beginPath(); c.moveTo(x - 0.35 * sp, y - 0.4 * sp); c.quadraticCurveTo(x, y - 0.3 * sp, x + 0.3 * sp, y - 0.75 * sp); c.lineTo(x - 0.1 * sp, y + 0.8 * sp); c.stroke();
+    c.restore();
+  }
+
+  // ---- the bell
+  function drawBells(c, v, off) {
+    drawLine(c, v, P.bells, SPECS.bell, off);
+  }
+
+  // ---- the engraving point: two small gilt register ticks
+  function drawPen(c, v) {
+    var g = v.g, sp = v.sp, x = Math.round(g.E * g.dpr) / g.dpr + 0.25 * sp;
+    c.save(); c.fillStyle = C.gilt; c.globalAlpha = 0.75;
+    [[g.trebTop - 0.9 * sp, 1], [g.bassBot + 0.9 * sp, -1]].forEach(function (a) {
+      c.beginPath(); c.moveTo(x - 0.28 * sp, a[0] - a[1] * 0.45 * sp); c.lineTo(x + 0.28 * sp, a[0] - a[1] * 0.45 * sp); c.lineTo(x, a[0]); c.fill();
+    });
+    c.restore();
+  }
+
+  function drawInk(c, v) {
+    var offs = v.live ? [0, -DUR] : [0];
+    offs.forEach(function (off) {
+      drawDrone(c, v, off);
+      drawTape(c, v, off);
+      drawRunningHead(c, v, off);
+      drawWords(c, v, off);
+      drawHymn(c, v, off);
+      drawBells(c, v, off);
+      drawQuestion(c, v, off);
+    });
+    offs.forEach(function (off) { drawBand(c, v, off); });
+  }
+
+  // --------------------------------------------------------- canvases
+  function sizeCanvas(cv, cssW, cssH) {
+    var dpr = window.devicePixelRatio || 1;
+    var w = Math.round(cssW * dpr), h = Math.round(cssH * dpr);
+    if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+    cv.style.height = cssH + "px";
+    if (cv.style.width !== cssW + "px") cv.style.width = cssW + "px";
+    return dpr;
+  }
+  function spFor(W) { return clamp(W / 78, 8, 10.5); }
+
+  var layers = {};
+  function liveRender(cv, cssW, key) {
+    var sp = spFor(cssW), dpr = window.devicePixelRatio || 1;
+    var g = geom(cssW, sp, dpr);
+    sizeCanvas(cv, cssW, g.H);
+    var L = layers[key];
+    if (!L || L.w !== cv.width || L.h !== cv.height || L.rub !== state.rubrics) {
+      L = layers[key] = { w: cv.width, h: cv.height, rub: state.rubrics, staff: document.createElement("canvas"), ink: document.createElement("canvas") };
+      [L.staff, L.ink].forEach(function (x) { x.width = cv.width; x.height = cv.height; });
+      var sc = L.staff.getContext("2d"); sc.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawStaffLayer(sc, g);
+    }
+    var v = makeView(g, { live: true, t: state.t, v: state.speed * sp / 10 });
+    var ic = L.ink.getContext("2d");
+    ic.setTransform(1, 0, 0, 1, 0, 0); ic.globalCompositeOperation = "source-over"; ic.globalAlpha = 1;
+    ic.clearRect(0, 0, L.ink.width, L.ink.height);
+    ic.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ic.save(); ic.beginPath(); ic.rect(g.inkX0 - 2 * sp, 0, g.W - 0.6 * sp - g.inkX0 + 2 * sp, g.H); ic.clip();
+    drawInk(ic, v);
+    ic.restore();
+    // the left fade: the ink dissolves before it reaches the clefs
+    ic.globalCompositeOperation = "destination-in";
+    var fg = ic.createLinearGradient(g.inkX0, 0, g.inkX1, 0);
+    fg.addColorStop(0, "rgba(0,0,0,0)"); fg.addColorStop(1, "rgba(0,0,0,1)");
+    ic.fillStyle = fg; ic.fillRect(0, 0, g.W, g.H);
+    ic.globalCompositeOperation = "source-over";
+    var c = cv.getContext("2d");
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    c.fillStyle = C.paper; c.fillRect(0, 0, cv.width, cv.height);
+    c.drawImage(L.staff, 0, 0);
+    c.drawImage(L.ink, 0, 0);
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    drawPen(c, v);
+  }
+
+  function staticRender() {
+    var cv = document.getElementById("static");
+    var cssW = cv.parentNode.clientWidth;
+    var sp = spFor(cssW), dpr = window.devicePixelRatio || 1;
+    var g = geom(cssW, sp, dpr);
+    var secs = cssW > 600 ? 16 : 8, n = Math.ceil(DUR / secs);
+    var gapY = 1.2 * sp, H = n * g.H + (n - 1) * gapY;
+    sizeCanvas(cv, cssW, H);
+    var c = cv.getContext("2d");
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    c.fillStyle = C.paper; c.fillRect(0, 0, cv.width, cv.height);
+    var x0 = g.inkX0 + 0.4 * sp, xR = g.W - 1.2 * sp, v = (xR - x0) / secs;
+    for (var i = 0; i < n; i++) {
+      c.setTransform(dpr, 0, 0, dpr, 0, i * (g.H + gapY) * dpr);
+      drawStaffLayer(c, g);
+      var view = makeView(g, { live: false, v: v, ta: i * secs, tb: (i + 1) * secs, x0: x0 });
+      c.save(); c.beginPath(); c.rect(x0 - 0.3 * sp, 0, g.W - 0.6 * sp - x0 + 0.3 * sp, g.H); c.clip();
+      drawInk(c, view);
+      c.restore();
+      c.fillStyle = C.gilt; c.font = "italic " + (0.95 * sp).toFixed(1) + "px " + GAR;
+      c.textAlign = "right";
+      c.fillText((i * secs) + "–" + Math.min(DUR, (i + 1) * secs) + " s", g.W - 0.8 * sp, g.yRH);
+      c.textAlign = "left";
+    }
+  }
+
+  // --------------------------------------------------------- the key
+  var KEY = [
+    { wide: true, cap: "<b>Seven heads</b>, solid and open. Each is a descendant of the 1801 shape for its degree (do and fa from the fa triangle, re and sol from the oval, mi and la from the square, ti from the mi diamond), cut with the Deseret pen's hook at the upper left.", draw: keyHeads },
+    { cap: "<b>Tails.</b> The tail's length is the time the note is held. It thins as the sound decays.", draw: keyTails },
+    { cap: "<b>Ligature.</b> The melody is one pen line. It is heavy on stressed beats and turns in a hairline to the next head.", draw: keyLig },
+    { cap: "<b>Parts.</b> Solid for the melody, open for the inner parts, double outline for the clarinet, cue size for the harmonium, rings for a bell.", draw: keyParts },
+    { cap: "<b>Tuning (Johnston).</b> A wedge before re means the lowered re (10/9). A hooked 7 marks the septimal ring (7/4).", draw: keyTuning },
+    { cap: "<b>Held and breathing.</b> A fermata arc spans the whole hold. The comma marks a breath. A bar with turned corners ends a line, then come the double and final bars.", draw: keyTime },
+    { cap: "<b>The wire.</b> Punched tape between the staves. Slots are as long as the key was held, and the word is printed after the run.", draw: keyTape },
+    { cap: "<b>The question.</b> Each clarinet asking sits in a cartouche marked “?”. When no answer comes, the empty measure is closed by dotted bars.", draw: keyQuestion },
+    { cap: "<b>The band.</b> Round heads, stems and beams: Earth notation, in brass ink, on its own faster layer.", draw: keyBand },
+    { cap: "<b>Drone and 8va.</b> A longa and a gilt line in the lowest space. Notes beyond two ledger lines fold down an octave under an 8 bracket.", draw: keyDrone },
+  ];
+  function keyGeom(W, H) {
+    var sp = 7.2, dpr = window.devicePixelRatio || 1;
+    return { W: W, H: H, sp: sp, dpr: dpr, trebTop: H / 2 - 2 * sp, trebBot: H / 2 + 2 * sp, bassTop: 1e4, bassBot: 1e4, E: W, tapeTop: H / 2 - 0.65 * sp, tapeH: 1.3 * sp, inkX0: 0 };
+  }
+  function keyStaff(c, g, x0, x1) {
+    var lw = ruleW(g, 0.12);
+    c.strokeStyle = "rgba(30,77,59,0.45)"; c.lineWidth = lw / g.dpr;
+    for (var i = 0; i < 5; i++) { var y = snap(g, g.trebTop + i * g.sp, lw); c.beginPath(); c.moveTo(x0, y); c.lineTo(x1, y); c.stroke(); }
+  }
+  function keyView(g, v) { return { g: g, sp: g.sp, live: false, t: Infinity, v: v || 30, pen: Infinity, tMin: -1e9, x: function (t) { return t * (v || 30); } }; }
+  function keyHeads(c, g) {
+    var sp = g.sp, n = 7, cell = Math.min(g.W / n, 110);
+    var x0 = (g.W - cell * n) / 2;
+    c.textAlign = "center";
+    for (var i = 0; i < n; i++) {
+      var cx = x0 + cell * (i + 0.5);
+      var ks = Math.min(2.4 * sp, cell / 4.2);
+      drawHead(c, SYL[i], cx - 1.05 * ks, g.H * 0.36, ks, { treat: "solid" });
+      drawHead(c, SYL[i], cx + 1.05 * ks, g.H * 0.36, ks, { treat: "open" });
+      c.fillStyle = C.ink; c.font = "italic " + (1.55 * sp).toFixed(1) + "px " + GAR;
+      c.fillText(SYL[i], cx, g.H * 0.86);
+      c.fillStyle = C.gilt; c.font = (1.2 * sp).toFixed(1) + "px " + GAR;
+      c.fillText("from " + ["fa", "sol", "la", "fa", "sol", "la", "mi"][i], cx, g.H * 0.99);
+    }
+    c.textAlign = "left";
+  }
+  function keyTails(c, g) {
+    var v = keyView(g, 34); keyStaff(c, g, 4, g.W - 4);
+    var y = yT(g, 5), sp = g.sp;
+    var lens = [0.5, 1, 2, 3];
+    var x = 10;
+    lens.forEach(function (L) {
+      var cx = x + 0.84 * sp;
+      c.fillStyle = C.ink; ribbon(c, tailPoints(v, cx, x + L * 0.9 * 34 * (g.W / 260), y, 0.4 * sp, 0.55, null), 0.5);
+      drawHead(c, "la", cx, y, sp, { treat: "solid" });
+      x += L * 0.9 * 34 * (g.W / 260) + 0.3 * sp;
+    });
+  }
+  function keyLig(c, g) {
+    var sp = g.sp; keyStaff(c, g, 4, g.W - 4);
+    var v = keyView(g, 1), degs = [4, 7, 8, 9, 7], x = 10, step = (g.W - 22) / 5.2;
+    var pts = degs.map(function (d, i) { return { x: x + i * step, y: yT(g, d), d: d }; });
+    pts.forEach(function (p, i) {
+      var nx = pts[i + 1];
+      c.fillStyle = C.ink;
+      ribbon(c, tailPoints(v, p.x + 0.84 * sp, nx ? nx.x + 0.1 * sp : p.x + step, p.y, (i === 1 || i === 3 ? 0.46 : 0.28) * sp, 0.55, nx ? { x: nx.x + 0.1 * sp, y: nx.y } : null), 0.5);
+    });
+    pts.forEach(function (p) { drawHead(c, shapeOf(p.d), p.x + 0.84 * sp, p.y, sp, { treat: "solid" }); });
+  }
+  function keyParts(c, g) {
+    var sp = g.sp; keyStaff(c, g, 4, g.W - 4);
+    var y = yT(g, 5), items = [["solid", 1], ["open", 1], ["double", 0.84], ["cue", 0.62], ["ring", 0.95]];
+    var step = (g.W - 16) / items.length;
+    items.forEach(function (it, i) {
+      drawHead(c, it[0] === "ring" ? "do" : "sol", 8 + step * (i + 0.5), y, sp, { treat: it[0], scale: it[1], age: 1.2, still: true });
+      c.fillStyle = C.gilt; c.font = "italic " + (step < 70 ? 1.05 : 1.25) * sp + "px " + GAR; c.textAlign = "center";
+      c.fillText(["melody", "inner", "clarinet", step < 70 ? "harm." : "harmonium", "bell"][i], 8 + step * (i + 0.5), g.H - 1);
+      c.textAlign = "left";
+    });
+  }
+  function keyTuning(c, g) {
+    var sp = g.sp; keyStaff(c, g, 4, g.W - 4);
+    var a = g.W * 0.3, b = g.W * 0.7;
+    drawHead(c, "re", a, yT(g, 8), sp, { treat: "solid" }); johnston(c, "minus", a - 0.64 * sp - 0.55 * sp, yT(g, 8) - 0.62 * sp, sp, C.ink);
+    drawHead(c, "fa", b, yT(g, 3), sp, { treat: "open" }); johnston(c, "seven", b - 0.64 * sp - 0.62 * sp, yT(g, 3) - 0.5 * sp, sp, C.ink);
+    c.fillStyle = C.gilt; c.font = "italic " + (1.25 * sp).toFixed(1) + "px " + GAR;
+    c.fillText("10/9", a + 1.2 * sp, yT(g, 8) + 0.4 * sp); c.fillText("7/4", b + 1.2 * sp, yT(g, 3) + 0.4 * sp);
+  }
+  function keyTime(c, g) {
+    var sp = g.sp; keyStaff(c, g, 4, g.W - 4);
+    var v = keyView(g, 1);
+    var gg = Object.assign({}, g, { bassTop: g.trebTop, bassBot: g.trebBot });
+    var vv = Object.assign({}, v, { g: gg });
+    var y = yT(g, 7);
+    c.fillStyle = C.ink; ribbon(c, tailPoints(v, 12, g.W * 0.36, y, 0.42 * sp, 0.55, null), 0.5);
+    drawHead(c, "do", 12, y, sp, { treat: "solid" });
+    drawFermata(c, v, 9, g.W * 0.36, g.trebTop - 0.9 * sp, true, C.ink, 1);
+    drawBreath(c, v, g.W * 0.43, 1);
+    [["lineEnd", 0.56], ["double", 0.72], ["final", 0.9]].forEach(function (k) { drawBar(c, vv, g.W * k[1], k[0], C.ink, 1); });
+  }
+  function keyTape(c, g) {
+    var sp = g.sp;
+    var gg = Object.assign({}, g, { inkX0: 6, tapeTop: g.H / 2 - 0.9 * sp, tapeH: 1.8 * sp, sp: sp });
+    drawTapeRibbon(c, gg, 4, g.W - 4);
+    var v = { g: gg, sp: sp * 1.4, live: false, t: Infinity, pen: g.W - 6, tMin: -1e9, x: function (t) { return 10 + (t - tel.t) * (g.W - 20) / (tel.dur + 1.1); } };
+    drawTape(c, v, 0);
+  }
+  function keyQuestion(c, g) {
+    var sp = g.sp; keyStaff(c, g, 4, g.W - 4);
+    var y0 = yT(g, 8) - 1.05 * sp, y1 = yT(g, 4) + 1.05 * sp, x0 = 6, x1 = g.W * 0.56;
+    c.strokeStyle = rubric(C.gilt); c.lineWidth = 0.12 * sp;
+    c.beginPath(); c.roundRect(x0, y0, x1 - x0, y1 - y0, (y1 - y0) / 2); c.stroke();
+    c.lineWidth = 0.05 * sp; c.beginPath(); c.roundRect(x0 + 0.22 * sp, y0 + 0.22 * sp, x1 - x0 - 0.44 * sp, y1 - y0 - 0.44 * sp, (y1 - y0) / 2 - 0.22 * sp); c.stroke();
+    c.fillStyle = rubric(C.gilt); c.fillRect(x1 + 0.28 * sp, y0 + 0.1 * sp, 0.2 * sp, y1 - y0 - 0.2 * sp);
+    c.font = "italic 500 " + (1.55 * sp).toFixed(1) + "px " + GAR; c.fillText("?", x0 + 0.62 * sp, (y0 + y1) / 2 + 0.5 * sp);
+    var v = keyView(g, 1);
+    [[4, 0.3], [5, 0.41], [8, 0.5]].forEach(function (p, i, arr) {
+      var cx = g.W * p[1] - 0.3 * sp, nx = arr[i + 1];
+      c.fillStyle = C.ink; ribbon(c, tailPoints(v, cx + 0.55 * sp, nx ? g.W * nx[1] - 0.3 * sp - 0.6 * sp : x1 - 0.8 * sp, yT(g, p[0]), 0.3 * sp, 0.55, nx ? { x: g.W * nx[1] - 0.3 * sp - 0.6 * sp, y: yT(g, nx[0]) } : null), 0.5);
+    });
+    [[4, 0.3], [5, 0.41], [8, 0.5]].forEach(function (p) { drawHead(c, shapeOf(p[0]), g.W * p[1] - 0.3 * sp, yT(g, p[0]), sp, { treat: "double", scale: 0.84 }); });
+    var gg = Object.assign({}, g, { bassTop: g.trebTop, bassBot: g.trebBot });
+    drawBar(c, { g: gg, sp: sp }, g.W * 0.7, "dotted", C.ink, 0.85);
+    drawBar(c, { g: gg, sp: sp }, g.W * 0.94, "dotted", C.ink, 0.85);
+  }
+  function keyBand(c, g) {
+    var sp = g.sp; keyStaff(c, g, 4, g.W - 4);
+    var v = { g: g, sp: sp };
+    c.fillStyle = C.brass;
+    sharp(c, 12, yT(g, 10), sp);
+    c.font = "600 " + (2.25 * sp).toFixed(1) + "px " + GAR; c.textAlign = "center";
+    c.fillText("2", 26, g.trebTop + 1.65 * sp); c.fillText("4", 26, g.trebTop + 3.65 * sp); c.textAlign = "left";
+    var xOf = function (t) { return t; };
+    var mk = function (x, deg, beats) { return { n: { deg: deg, beats: beats, loud: 1 }, tau: x }; };
+    var dry = function () { return 1; };
+    roundPair(c, v, xOf, mk(g.W * 0.25, 0, 0.5), mk(g.W * 0.36, 2, 0.5), C.brass, dry);
+    roundPair(c, v, xOf, mk(g.W * 0.47, 4, 0.5), mk(g.W * 0.58, 7, 0.5), C.brass, dry);
+    roundNote(c, v, xOf, mk(g.W * 0.72, 6, 1), C.brass, dry, false);
+    roundNote(c, v, xOf, mk(g.W * 0.85, 4, 2), C.brass, dry, false);
+    c.globalAlpha = 1;
+  }
+  function keyDrone(c, g) {
+    var sp = g.sp; keyStaff(c, g, 4, g.W - 4);
+    var y = yT(g, 3);
+    c.fillStyle = C.gilt; c.globalAlpha = 0.5; c.fillRect(12, y - 0.14 * sp, g.W * 0.4, 0.28 * sp);
+    c.globalAlpha = 0.9; c.fillRect(12, y - 0.2 * sp, g.W * 0.4, 0.05 * sp); c.globalAlpha = 1;
+    c.fillStyle = C.ink; c.fillRect(6, y - 0.42 * sp, 0.95 * sp, 0.84 * sp); c.fillRect(6 + 0.82 * sp, y - 0.42 * sp, 0.13 * sp, 2.2 * sp);
+    var v = keyView(g, 1), cx = g.W * 0.66, yb = yT(g, 7);
+    drawHead(c, "do", cx, yb, sp, { treat: "ring", scale: 0.95, still: true });
+    var yo = g.trebTop - 1.1 * sp;
+    c.fillStyle = C.ink; c.font = "italic 500 " + (1.3 * sp).toFixed(1) + "px " + GAR; c.fillText("8", cx - 1.4 * sp, yo + 0.45 * sp);
+    c.strokeStyle = C.ink; c.lineWidth = 0.8; c.setLineDash([0.5 * sp, 0.35 * sp]);
+    c.beginPath(); c.moveTo(cx - 0.5 * sp, yo); c.lineTo(g.W - 10, yo); c.stroke(); c.setLineDash([]);
+    c.beginPath(); c.moveTo(g.W - 10, yo); c.lineTo(g.W - 10, yo + 0.7 * sp); c.stroke();
+  }
+  function buildKey() {
+    var grid = document.getElementById("keygrid");
+    grid.innerHTML = "";
+    KEY.forEach(function (k) {
+      var f = document.createElement("figure"); if (k.wide) f.className = "wide";
+      var cv = document.createElement("canvas"); f.appendChild(cv);
+      var cap = document.createElement("figcaption"); cap.innerHTML = k.cap; f.appendChild(cap);
+      grid.appendChild(f);
+      k.cv = cv;
+    });
+  }
+  function renderKey() {
+    KEY.forEach(function (k) {
+      var cv = k.cv, W = cv.parentNode.clientWidth, H = k.wide ? 92 : 62;
+      var dpr = sizeCanvas(cv, W, H);
+      var c = cv.getContext("2d");
+      c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, cv.width, cv.height);
+      c.setTransform(dpr, 0, 0, dpr, 0, 0);
+      k.draw(c, keyGeom(W, H));
+    });
+  }
+
+  // --------------------------------------------------------- the loop
+  var live = document.getElementById("live"), phone = document.getElementById("phone");
+  function renderLive() {
+    liveRender(live, live.parentNode.clientWidth, "main");
+    if (state.phone) liveRender(phone, Math.min(390, phone.parentNode.clientWidth), "phone");
+    document.getElementById("scrub").value = state.t.toFixed(2);
+    document.getElementById("clock").textContent = state.t.toFixed(1) + " s";
+  }
+  function renderAll() { renderLive(); staticRender(); renderKey(); }
+
+  var last = 0;
+  function tick(ts) {
+    requestAnimationFrame(tick);
+    var dt = last ? Math.min(0.1, (ts - last) / 1000) : 0;
+    last = ts;
+    if (!state.playing) return;
+    state.t = mod(state.t + dt, DUR);
+    renderLive();
+  }
+  // exact-time rendering for screenshots: pauses, draws everything at t
+  window.renderAt = function (t) {
+    state.playing = false;
+    document.getElementById("play").textContent = "Play";
+    state.t = mod(t, DUR);
+    renderAll();
+    return state.t;
+  };
+  window.setMockOptions = function (o) { Object.assign(state, o); syncControls(); renderAll(); };
+  function syncControls() {
+    document.getElementById("rubrics").checked = state.rubrics;
+    document.getElementById("words").checked = state.words;
+    document.getElementById("phoneT").checked = state.phone;
+    document.getElementById("speed").value = String(state.speed);
+    document.getElementById("phoneWrap").hidden = !state.phone;
+  }
+
+  document.getElementById("play").addEventListener("click", function () {
+    state.playing = !state.playing; this.textContent = state.playing ? "Pause" : "Play";
+  });
+  document.getElementById("scrub").addEventListener("input", function () {
+    state.t = +this.value; renderLive();
+  });
+  document.getElementById("speed").addEventListener("change", function () { state.speed = +this.value; renderLive(); });
+  document.getElementById("rubrics").addEventListener("change", function () { state.rubrics = this.checked; renderAll(); });
+  document.getElementById("words").addEventListener("change", function () { state.words = this.checked; renderAll(); });
+  document.getElementById("phoneT").addEventListener("change", function () {
+    state.phone = this.checked; document.getElementById("phoneWrap").hidden = !state.phone; renderLive();
+  });
+  var rz = null;
+  window.addEventListener("resize", function () { clearTimeout(rz); rz = setTimeout(renderAll, 120); });
+
+  buildKey();
+  state.t = 7.5;
+  renderAll();
+  Promise.all([
+    document.fonts.load("16px 'Noto Sans Deseret'", "𐐗𐐄𐐢𐐉𐐒"),
+    document.fonts.load("16px 'EB Garamond'"), document.fonts.load("italic 16px 'EB Garamond'"),
+    document.fonts.load("600 16px 'EB Garamond'"),
+  ]).catch(function () {}).then(function () { renderAll(); requestAnimationFrame(tick); });
+})();
+</script>
+<script>
+(function () {  /* the band switch: reloads with ?band=0 / without it */
+  var on = !/[?&]band=0\b/.test(location.search), cb = document.getElementById("bandtoggle");
+  if (!cb) return;
+  cb.checked = on;
+  cb.addEventListener("change", function () {
+    var q = location.search.replace(/[?&]band=[01]/, "").replace(/^&/, "?");
+    if (!cb.checked) q += (q ? "&" : "?") + "band=0";
+    location.search = q;
+  });
+})();
+</script>
+</body>
+</html>

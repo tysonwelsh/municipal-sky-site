@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Colony Tunebook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Noto+Sans+Deseret&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================================
+   KOLOB engraving mockup A — THE COLONY TUNEBOOK: traditional, perfected.
+   Dev-only design mockup (not loaded by the app). Engraves the shared passage
+   (engraving-passage.js) live and as a still plate. Everything on the canvases
+   is driven by one time value: window.renderAt(t).
+   ========================================================================== */
+:root {
+  --paper: #f5f0e4;
+  --paper-lo: #ece5d3;
+  --plate: #f8f4ea;
+  --ink: #1e4d3b;
+  --ink-soft: rgba(30, 77, 59, 0.66);
+  --ink-faint: rgba(30, 77, 59, 0.26);
+  --rule: rgba(30, 77, 59, 0.42);
+  --gilt: #8a7a45;
+  --rubric: #b23e26;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--paper-lo);
+  color: var(--ink);
+  font-family: "EB Garamond", Georgia, serif;
+  -webkit-text-size-adjust: 100%;
+}
+.sheet {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 34px 16px 56px;
+  background: linear-gradient(178deg, var(--paper) 0%, var(--paper) 88%, var(--paper-lo) 100%);
+  box-shadow: 0 0 0 1px rgba(30, 77, 59, 0.06), 0 10px 40px rgba(60, 50, 20, 0.10);
+  min-height: 100vh;
+}
+header.intro { margin: 0 0 22px; }
+.kicker {
+  font-size: 0.72rem; letter-spacing: 0.26em; text-transform: uppercase;
+  color: var(--gilt); margin: 0 0 6px;
+}
+h1 {
+  font-weight: 500; font-size: 1.55rem; margin: 0 0 4px; letter-spacing: 0.02em;
+  font-variant: small-caps;
+}
+h1 .sub { font-style: italic; font-variant: normal; font-weight: 400; color: var(--ink-soft); font-size: 1.15rem; }
+.intro p { margin: 0; font-size: 1rem; line-height: 1.45; max-width: 44em; color: var(--ink); }
+.intro p + p { margin-top: 6px; }
+.dbl {
+  height: 6px; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); margin: 16px 0 20px;
+}
+h2 {
+  font-weight: 500; font-variant: small-caps; letter-spacing: 0.08em; font-size: 1.02rem;
+  margin: 26px 0 8px; color: var(--ink);
+  display: flex; align-items: baseline; gap: 10px;
+}
+h2 small { font-variant: normal; letter-spacing: 0; font-style: italic; font-weight: 400; color: var(--ink-soft); font-size: 0.92rem; }
+
+.plate {
+  position: relative;
+  background: var(--plate);
+  border: 1px solid rgba(30, 77, 59, 0.13);
+  border-radius: 2px;
+  box-shadow: inset 0 1px 3px rgba(70, 60, 30, 0.10), inset 0 -1px 0 rgba(255, 255, 255, 0.7);
+  overflow: hidden;
+}
+.plate canvas { display: block; }
+.scrollbox { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
+.scrollbox .plate { display: inline-block; vertical-align: top; }
+
+.controls {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px;
+  margin: 10px 0 0; font-size: 0.9rem;
+}
+.controls button {
+  font: inherit; font-size: 0.86rem; color: var(--ink); background: transparent;
+  border: 1px solid var(--rule); border-radius: 2px; padding: 2px 10px; cursor: pointer;
+  min-width: 2.2em;
+}
+.controls button[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.controls .grp { display: inline-flex; align-items: center; gap: 6px; }
+.controls .lbl { font-variant: small-caps; letter-spacing: 0.06em; color: var(--ink-soft); }
+.controls input[type=range] { width: 200px; max-width: 46vw; accent-color: #1e4d3b; }
+.controls .time { font-variant-numeric: tabular-nums; min-width: 4.4em; color: var(--ink-soft); }
+.controls label { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+.controls input[type=checkbox] { accent-color: #1e4d3b; margin: 0; }
+
+.phone-wrap { overflow-x: auto; }
+.phone {
+  width: 392px; padding: 0; margin: 0;
+}
+.note { font-size: 0.92rem; line-height: 1.45; color: var(--ink-soft); margin: 8px 0 0; max-width: 46em; }
+.legend {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 6px 22px;
+  margin: 14px 0 0; padding: 12px 0 0; border-top: 1px solid var(--ink-faint);
+  font-size: 0.9rem; line-height: 1.4;
+}
+.legend div b { font-weight: 500; font-variant: small-caps; letter-spacing: 0.04em; }
+.legend .ds { font-family: "Noto Sans Deseret", sans-serif; font-size: 0.85em; }
+.red { color: var(--rubric); }
+body.no-rubrics .red { color: var(--gilt); }
+footer { margin-top: 30px; font-size: 0.8rem; color: var(--ink-soft); letter-spacing: 0.04em; }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <header class="intro">
+    <p class="kicker">Kolob · engraving mockup A of three</p>
+    <h1>The Colony Tunebook <span class="sub">— traditional, perfected</span></h1>
+    <p>The Sacred Harp plate done as well as a plate can be done: four shapes, real stems, flags, beams, dots and rests, closed-score SATB, words between the staves, barlines in the mode of time. Nothing is invented; everything is finished.</p>
+    <p>The three thousand years show only in the details: Deseret words, Ben Johnston's just-intonation signs where the choir tunes pure, a telegraph that punches paper tape through the middle of the page, and a gilt strike on whatever is sounding that cools to hymnbook green as it dries.</p>
+  </header>
+  <div class="dbl"></div>
+
+  <h2>Live <small>the page as it scrolls in the app</small></h2>
+  <div class="plate" id="live-plate"><canvas id="live"></canvas></div>
+  <div class="controls" id="controls">
+    <span class="grp"><button id="play" type="button" aria-pressed="true">Pause</button></span>
+    <span class="grp"><input id="scrub" type="range" min="0" max="48" step="0.01" value="0" aria-label="Time" /><span class="time" id="clock">0.0 s</span></span>
+    <span class="grp"><span class="lbl">speed</span>
+      <button type="button" data-speed="11">11</button>
+      <button type="button" data-speed="40">40</button>
+      <button type="button" data-speed="60" aria-pressed="true">60</button>
+      <span class="lbl">px/s</span></span>
+    <span class="grp">
+      <label><input type="checkbox" id="rubrics" /> <span class="lbl">rubrics</span></label>
+      <label><input type="checkbox" id="words" /> <span class="lbl">words</span></label>
+      <label><input type="checkbox" id="bandtoggle" checked /> band</label>
+      <label><input type="checkbox" id="phone" checked /> <span class="lbl">phone preview</span></label>
+    </span>
+  </div>
+  <p class="note">11 px/s is the app's current rate: a quarter note gets 10 px, narrower than its own head, so no duration can be read. At <b>40 px/s</b> a beat is 36 px, the widest Deseret syllable fits under its note, and a line of the hymn fills the page.</p>
+
+  <div id="phone-sec">
+    <h2>Phone <small>390 px, same passage, same moment</small></h2>
+    <div class="phone-wrap"><div class="plate phone"><canvas id="phonecv"></canvas></div></div>
+  </div>
+
+  <h2>The plate <small>the whole passage, engraved still, for close reading</small></h2>
+  <div class="scrollbox"><div class="plate" id="static-plate"><canvas id="still"></canvas></div></div>
+  <div class="legend">
+    <div><b>Shapes.</b> fa △ · sol ○ · la □ · mi ◇ — do re mi fa sol la ti sing fa sol la fa sol la mi. Stems grow from the shape's own corner.</div>
+    <div><b>Closed score.</b> Soprano and alto share the treble, tenor and bass the bass; where the rhythm agrees the chord shares one stem, turned away from the words.</div>
+    <div><b>Johnston signs.</b> <b>−</b> lowers a comma (81/80): the re sung 10/9 over the ii chord. <b>7</b> lowers a septimal comma (36/35): the ringing seventh.</div>
+    <div><b>Telegraph.</b> Punched tape along the middle of the page, under the words.</div>
+    <div><b class="red">Band.</b> Round notes in brass on their own layer, in sol, 2/4, moving at the band's tempo (×2.05); ink follows its loudness. On this plate its layer is laid from the head of the plate at that rate, so its whole strain can be read.</div>
+    <div><b class="red">Question.</b> Each asking framed in a cartouche with its “?”; the harmonium's answer in grace notes; then an empty measure between dotted bars.</div>
+  </div>
+  <footer>Mockup · passage from <code>engraving-passage.js</code> · all ink drawn on canvas from one time value (<code>renderAt(t)</code>).</footer>
+</div>
+
+<script src="engraving-passage.js"></script>
+<script>
+(function () {
+  "use strict";
+  var P = window.KOLOB_PASSAGE;
+
+  // ---------------------------------------------------------------- inks ---
+  var INK = [30, 77, 59], STRIKE = [196, 150, 48], GILT = [138, 122, 69],
+      RUBRIC = [178, 62, 38], BRASS = [152, 102, 40], BRASS_HI = [212, 158, 60];
+  function rgba(c, a) { return "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + (a == null ? 1 : +a.toFixed(3)) + ")"; }
+  function mix(a, b, k) { return [Math.round(a[0] + (b[0] - a[0]) * k), Math.round(a[1] + (b[1] - a[1]) * k), Math.round(a[2] + (b[2] - a[2]) * k)]; }
+  var FG = '"EB Garamond", Georgia, serif';
+  var FD = '"Noto Sans Deseret", "EB Garamond", sans-serif';
+  function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
+
+  // -------------------------------------------------------- the passage ---
+  var BEAT = P.beat, T0 = P.hymnHeader.t + 0.4, DUR = P.duration;
+  var SHAPE_OF = ["fa", "sol", "la", "fa", "sol", "la", "mi"];
+  function shapeOf(d) { return SHAPE_OF[((d % 7) + 7) % 7]; }
+  function valueOf(b) {
+    if (b >= 3.5) return { open: true, dots: 0, flags: 0, whole: true };
+    if (b >= 2.75) return { open: true, dots: 1, flags: 0 };
+    if (b >= 1.75) return { open: true, dots: 0, flags: 0 };
+    if (b >= 1.25) return { open: false, dots: 1, flags: 0 };
+    if (b >= 0.75) return { open: false, dots: 0, flags: 0 };
+    return { open: false, dots: 0, flags: 1 };
+  }
+  function quant(b) { return [0.5, 1, 1.5, 2, 3, 4].reduce(function (a, o) { return Math.abs(o - b) < Math.abs(a - b) ? o : a; }); }
+
+  var chords = [];
+  P.notes.forEach(function (n) {
+    var c = chords[n.chord] || (chords[n.chord] = { t: n.t, dur: n.dur, beats: n.beats, parts: {} });
+    c.parts[n.part] = n;
+  });
+  chords.forEach(function (c, i) {
+    var s = c.parts.S;
+    c.syl = P.syllables[i]; c.fermata = !!s.fermata; c.amen = !!s.amen; c.i = i;
+  });
+  var dblBar = P.bars.filter(function (b) { return b.kind === "double"; })[0];
+  var finalBar = P.bars.filter(function (b) { return b.kind === "final"; })[0];
+  // the silent beat after the double bar (the data's "17 (=rest)") — and the
+  // amen's six beats (rest + half + dotted half) get their own 6/4
+  var amenRest = { t: dblBar.t, dur: BEAT };
+
+  // the band
+  var BI = P.bandInfo, BB = BI.beat;
+  var bandMel = [], bandBass = [];
+  P.band.forEach(function (n) {
+    var o = { t: n.t, dur: n.dur, beats: n.beats, deg: n.deg, loud: n.loud, beat: Math.round((n.t - BI.t0) / BB * 2) / 2 };
+    o.q = 14 + n.deg;                 // the band's do is G4 (q14); its own key, G
+    (n.part === "bass" ? bandBass : bandMel).push(o);
+  });
+  var bandGroups = [];                 // eighths beamed by the band's beat
+  (function () {
+    var cur = null;
+    bandMel.forEach(function (n) {
+      if (n.beats === 0.5) {
+        var b = Math.floor(n.beat + 1e-6);
+        if (cur && cur.b === b) cur.notes.push(n); else { cur = { b: b, notes: [n] }; bandGroups.push(cur); }
+        n.group = cur;
+      } else cur = null;
+    });
+    bandGroups = bandGroups.filter(function (g) { if (g.notes.length < 2) { g.notes[0].group = null; return false; } return true; });
+  })();
+
+  // the question
+  var askings = { 1: [], 2: [] }, answers = [];
+  P.question.forEach(function (n) {
+    var o = { t: n.t, dur: n.dur, deg: n.deg, q: 10 + n.deg, beats: quant(n.dur / BEAT) };
+    if (n.role === "ask") askings[n.asking].push(o); else answers.push(o);
+  });
+  [1, 2].forEach(function (k) {                // consecutive eighths beam together
+    var a = askings[k], grp = null;
+    a.forEach(function (n) { if (n.beats === 0.5) { if (!grp) grp = []; grp.push(n); n.group = grp; } else grp = null; });
+    a.forEach(function (n) { if (n.group && n.group.length < 2) n.group = null; });
+  });
+
+  // ------------------------------------------------------------- glyphs ---
+  var CLEF_TREBLE = { bbox: [120, -291, 542, 900], d: "M434 2Q464 -103 464 -170Q464 -223 427.0 -257.0Q390 -291 337 -291Q287 -291 250.0 -261.5Q213 -232 213 -190Q213 -160 233.5 -133.5Q254 -107 283.5 -107.0Q313 -107 331.5 -128.5Q350 -150 350 -178Q350 -240 280 -240Q298 -268 338 -268Q353 -268 368.5 -263.5Q384 -259 401.0 -248.0Q418 -237 428.5 -213.5Q439 -190 439 -157Q439 -136 411 -6Q389 -12 356 -12Q259 -12 189.5 60.0Q120 132 120 232Q120 267 131.5 303.0Q143 339 157.5 366.5Q172 394 200.5 428.5Q229 463 248.5 483.5Q268 504 303 539Q280 621 280 689Q280 779 313.0 839.5Q346 900 379 900Q389 900 401.5 887.0Q414 874 426.0 851.0Q438 828 446.5 790.5Q455 753 455 710Q455 551 342 447L368 329Q384 332 397 332Q458 332 500.0 282.5Q542 233 542 162Q542 44 434 2ZM426 746Q426 801 394 801Q358 801 333.0 748.0Q308 695 308 630Q308 588 321 557Q359 580 392.5 639.5Q426 699 426 746ZM498 128Q498 183 466.0 216.0Q434 249 383 249L428 23Q498 52 498 128ZM407 17 361 247Q334 241 311.5 214.0Q289 187 289 158Q289 143 295.0 128.5Q301 114 309.5 104.0Q318 94 327.0 86.0Q336 78 342.0 74.5Q348 71 348 71L340 66Q307 75 277.5 106.0Q248 137 248 184Q248 231 277.5 270.5Q307 310 343 323L325 430Q168 299 168 177Q168 104 223.0 55.0Q278 6 348 6Q365 6 407 17Z" };
+  var CLEF_BASS = { bbox: [75, 166, 607, 757], d: "M564 704Q582 704 594.5 691.0Q607 678 607.0 661.0Q607 644 593.0 631.0Q579 618 563 618Q521 618 521 663Q521 681 534.0 692.5Q547 704 564 704ZM607 469Q607 450 594.0 437.0Q581 424 564 424Q521 424 521 469Q521 485 533.5 498.0Q546 511 564.0 511.0Q582 511 594.5 497.0Q607 483 607 469ZM285 757Q366 757 421.0 701.5Q476 646 476 569Q476 531 465.5 495.0Q455 459 432.0 426.5Q409 394 386.0 367.0Q363 340 326.0 313.0Q289 286 264.0 267.5Q239 249 196.5 226.0Q154 203 135.5 193.5Q117 184 80 166L75 182Q76 183 102.0 200.0Q128 217 144.0 227.5Q160 238 191.5 263.0Q223 288 244.0 309.5Q265 331 291.5 363.5Q318 396 334.0 427.0Q350 458 361.5 498.0Q373 538 373 578Q373 735 262 735Q225 735 199.0 725.5Q173 716 161.5 702.0Q150 688 145.0 677.5Q140 667 140 659Q140 644 160 644Q168 644 179.0 647.5Q190 651 194 651Q221 651 239.0 634.0Q257 617 257 592Q257 563 235.0 544.0Q213 525 183 525Q144 525 119.0 548.0Q94 571 94 607Q94 673 150.5 715.0Q207 757 285 757Z" };
+  var trebPath = new Path2D(CLEF_TREBLE.d), bassPath = new Path2D(CLEF_BASS.d);
+
+  // time-signature numerals, engraved (100 wide × 130 tall units, y down):
+  // the page's Garamond has old-style figures, which no time signature uses
+  var DIGITS = {
+    "2": "M10 40C10 14 30 0 54 0C82 0 98 16 98 38C98 64 72 80 46 98C34 106 26 112 22 116L62 116C80 116 88 110 94 98L99 100L93 130L4 130L4 121C42 92 72 70 72 40C72 20 62 9 49 9C38 9 30 14 30 20C30 26 38 29 38 39C38 49 30 55 21 55C13 55 10 48 10 40Z",
+    "4": "M60 0L86 0L86 84L99 84L99 100L86 100L86 130L60 130L60 100L2 100L2 88ZM60 30L18 84L60 84Z",
+    "6": "M82 7C72 2 62 0 53 0C23 0 4 30 4 68C4 108 24 130 53 130C81 130 99 111 99 85C99 60 81 45 59 45C45 45 35 51 29 59C31 26 41 8 55 8C63 8 67 12 67 18C67 26 61 28 61 36C61 44 69 49 77 49C87 49 93 41 93 32C93 20 90 12 82 7ZM29 88C29 67 39 53 53 53C67 53 75 67 75 88C75 110 65 122 53 122C39 122 29 108 29 88Z"
+  };
+  var digitPath = {};
+  Object.keys(DIGITS).forEach(function (k) { digitPath[k] = new Path2D(DIGITS[k]); });
+
+  // noteheads, in staff spaces (y down). Polygons for fa/la/mi, ellipses for
+  // sol and the band's round notes. The fa's upright edge is the stem's side.
+  var SH = {
+    fa_u: { poly: [[-0.64, 0.45], [0.64, 0.45], [0.64, -0.47]] },
+    fa_d: { poly: [[-0.64, -0.47], [-0.64, 0.45], [0.64, 0.45]] },
+    la: { poly: [[-0.55, -0.42], [0.55, -0.42], [0.55, 0.42], [-0.55, 0.42]] },
+    mi: { poly: [[0, -0.54], [0.66, 0], [0, 0.54], [-0.66, 0]] },
+    sol: { ell: [0.60, 0.43, -0.26] },
+    round: { ell: [0.59, 0.42, -0.36] }
+  };
+  // stem attach points (the head's edge on the stem side), in sp
+  var ANCH = {
+    fa_u: { u: [0.64, 0.45] }, fa_d: { d: [-0.64, -0.47] },
+    la: { u: [0.55, 0.2], d: [-0.55, -0.2] },
+    mi: { u: [0.66, 0.02], d: [-0.66, -0.02] },
+    sol: { u: [0.58, -0.08], d: [-0.58, 0.08] },
+    round: { u: [0.57, -0.1], d: [-0.57, 0.1] }
+  };
+  function shapeKey(shape, dir) { return shape === "fa" ? (dir < 0 ? "fa_d" : "fa_u") : shape; }
+  function anchorOf(k, dir) { var a = ANCH[k]; return (dir < 0 ? a.d : a.u) || a.u || a.d; }
+
+  // broad-nib contrast: an edge is thick when it runs across the nib (held at 25°)
+  var NIB = 25 * Math.PI / 180;
+  function insetPoly(pts, tMin, tMax) {
+    var n = pts.length, area = 0, i;
+    for (i = 0; i < n; i++) { var p = pts[i], q = pts[(i + 1) % n]; area += p[0] * q[1] - q[0] * p[1]; }
+    var sg = area > 0 ? 1 : -1, lines = [];
+    for (i = 0; i < n; i++) {
+      var a = pts[i], b = pts[(i + 1) % n], dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy);
+      var ux = dx / L, uy = dy / L, nx = -sg * uy, ny = sg * ux;
+      var av = Math.atan2(-dy, dx), k = Math.pow(Math.abs(Math.sin(av - NIB)), 2);
+      var d = tMin + (tMax - tMin) * k;
+      lines.push({ px: a[0] + nx * d, py: a[1] + ny * d, rx: ux, ry: uy });
+    }
+    var out = [];
+    for (i = 0; i < n; i++) {
+      var l1 = lines[(i + n - 1) % n], l2 = lines[i];
+      var cr = l1.rx * l2.ry - l1.ry * l2.rx;
+      var t = ((l2.px - l1.px) * l2.ry - (l2.py - l1.py) * l2.rx) / cr;
+      out.push([l1.px + l1.rx * t, l1.py + l1.ry * t]);
+    }
+    return out;
+  }
+  function polyTo(p, pts, s) { p.moveTo(pts[0][0] * s, pts[0][1] * s); for (var i = 1; i < pts.length; i++) p.lineTo(pts[i][0] * s, pts[i][1] * s); p.closePath(); }
+  function headPaths(k, s, open, heavy) {
+    var sh = SH[k], outer = new Path2D(), full = new Path2D();
+    var tMin = 0.06, tMax = heavy ? 0.24 : 0.19;
+    if (sh.poly) {
+      polyTo(outer, sh.poly, s); polyTo(full, sh.poly, s);
+      if (open) polyTo(full, insetPoly(sh.poly, tMin, tMax), s);
+    } else {
+      var e = sh.ell;
+      outer.ellipse(0, 0, e[0] * s, e[1] * s, e[2], 0, Math.PI * 2);
+      full.ellipse(0, 0, e[0] * s, e[1] * s, e[2], 0, Math.PI * 2);
+      if (open) full.ellipse(0, 0, e[0] * s * (heavy ? 0.6 : 0.66), e[1] * s * (heavy ? 0.44 : 0.5), e[2] - 0.5, 0, Math.PI * 2);
+    }
+    return { outer: outer, full: full };
+  }
+
+  // the sprite atlas: every head is pre-rendered once per size, colour and dpr
+  var sprites = new Map();
+  function headSprite(k, open, px, rgb, heavy, dpr) {
+    var key = k + "|" + (open ? 1 : 0) + "|" + px.toFixed(2) + "|" + rgb.join(",") + "|" + (heavy ? 1 : 0) + "|" + dpr;
+    var sp = sprites.get(key);
+    if (sp) return sp;
+    var s = px * dpr, size = Math.ceil(s * 1.8 / 2) * 2 + 8;
+    var cv = document.createElement("canvas"); cv.width = cv.height = size;
+    var c = cv.getContext("2d"), o = size / 2;
+    c.translate(o, o);
+    var ps = headPaths(k, s, open, heavy);
+    c.fillStyle = rgba(rgb);
+    c.shadowColor = rgba(rgb, 0.3); c.shadowBlur = 0.7 * dpr;           // a hair of ink spread
+    c.fill(ps.full, "evenodd");
+    c.shadowColor = "transparent";
+    // letterpress impression: a pale inner edge low-right, as if pressed into the cream
+    c.save(); c.clip(ps.full, "evenodd");
+    c.translate(-0.6 * dpr, -0.6 * dpr);
+    c.strokeStyle = "rgba(255, 250, 236, 0.34)"; c.lineWidth = 1.0 * dpr;
+    c.stroke(ps.full);
+    c.restore();
+    sp = { cv: cv, o: o };
+    sprites.set(key, sp);
+    return sp;
+  }
+  var glowCache = new Map();
+  function glowSprite(r, dpr) {
+    var key = r.toFixed(1) + "|" + dpr, g = glowCache.get(key);
+    if (g) return g;
+    var s = Math.ceil(r * dpr) * 2 + 2, cv = document.createElement("canvas"); cv.width = cv.height = s;
+    var c = cv.getContext("2d"), gr = c.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
+    gr.addColorStop(0, "rgba(232, 190, 90, 0.55)"); gr.addColorStop(0.45, "rgba(232, 190, 90, 0.2)"); gr.addColorStop(1, "rgba(232, 190, 90, 0)");
+    c.fillStyle = gr; c.fillRect(0, 0, s, s);
+    g = { cv: cv, o: s / 2 }; glowCache.set(key, g); return g;
+  }
+
+  // ----------------------------------------------------------- geometry ---
+  function geom(W, sp) {
+    var g = { W: W, sp: sp };
+    g.T = Math.round(6.1 * sp);          // treble top line (q20)
+    g.Tb = g.T + 4 * sp;                  // treble bottom line (q12)
+    g.B = g.Tb + 8 * sp;                  // bass top line (q8) — the gap holds words and tape
+    g.Bb = g.B + 4 * sp;                  // bass bottom line (q0)
+    g.H = Math.round(g.Bb + 4.4 * sp);
+    g.headY = 1.45 * sp;                  // running head baseline
+    g.wordsY = g.Tb + 2.6 * sp;           // syllable baseline
+    g.tapeY = g.Tb + 4.05 * sp;           // tape centre line
+    g.rubY = g.Bb + 3.45 * sp;            // the rubric line under the bass
+    g.xBar = Math.round(1.55 * sp + 4);
+    g.clefX = g.xBar + 0.7 * sp;
+    g.trebH = 6.9 * sp;
+    g.trebW = g.trebH * (CLEF_TREBLE.bbox[2] - CLEF_TREBLE.bbox[0]) / (CLEF_TREBLE.bbox[3] - CLEF_TREBLE.bbox[1]);
+    g.bassH = 3.3 * sp;
+    g.bassW = g.bassH * (CLEF_BASS.bbox[2] - CLEF_BASS.bbox[0]) / (CLEF_BASS.bbox[3] - CLEF_BASS.bbox[1]);
+    g.clefEnd = g.clefX + Math.max(g.trebW, g.bassW);
+    g.xE = W - Math.round(3.2 * sp);      // the engraving point
+    g.fade0 = g.clefEnd + 0.4 * sp; g.fade1 = g.fade0 + 6 * sp;
+    g.yT = function (q) { return g.T + (20 - q) * sp / 2; };
+    g.yB = function (q) { return g.B + (8 - q) * sp / 2; };
+    g.y = function (st, q) { return st === "T" ? g.yT(q) : g.yB(q); };
+    g.mid = function (st) { return st === "T" ? g.yT(16) : g.yB(4); };
+    return g;
+  }
+
+  // ------------------------------------------------------ drawing helpers ---
+  // D = { c, g, sp, dpr, st (toggles), map (time→x, gating, age) }
+  function snapRect(D, x, y, w, h) {
+    var r = D.dpr, x0 = Math.round(x * r), y0 = Math.round(y * r);
+    var x1 = Math.max(x0 + 1, Math.round((x + w) * r)), y1 = Math.max(y0 + 1, Math.round((y + h) * r));
+    D.c.fillRect(x0 / r, y0 / r, (x1 - x0) / r, (y1 - y0) / r);
+  }
+  function hLine(D, x0, x1, y, th) { snapRect(D, x0, y - th / 2, x1 - x0, th); }
+  function vLine(D, x, y0, y1, th) { snapRect(D, x - th / 2, Math.min(y0, y1), th, Math.abs(y1 - y0)); }
+  function drawSprite(D, sp, x, y) {
+    var r = D.dpr;
+    D.c.drawImage(sp.cv, Math.round(x * r - sp.o) / r, Math.round(y * r - sp.o) / r, sp.cv.width / r, sp.cv.height / r);
+  }
+  function revealClip(D) {                     // nothing prints ahead of the engraving point
+    if (!D.map.live) return;
+    D.c.beginPath(); D.c.rect(0, 0, D.g.xE + 0.7 * D.sp, D.g.H); D.c.clip();
+  }
+  function rub(D) { return D.st.rubrics ? RUBRIC : GILT; }
+  function rubText(D) { return D.st.rubrics ? RUBRIC : INK; }
+
+  // colour + alpha of a mark struck at t lasting dur: gilt while sounding,
+  // cooling to the base ink over 1.5 s; drying with age (live only)
+  function inkOf(D, t, dur, base, hi) {
+    var m = D.map;
+    if (!m.live) return { rgb: base, a: 1, glow: 0 };
+    var age = m.tn - t, end = m.tn - (t + dur);
+    var k = end < 0 ? 0 : clamp(end / 1.5, 0, 1);
+    k = Math.round(k * 8) / 8;
+    var glow = end < 0 ? clamp(age / 0.12, 0, 1) : clamp(1 - end / 0.8, 0, 1);
+    return { rgb: mix(hi || STRIKE, base, k), a: Math.max(0.34, Math.exp(-0.03 * Math.max(0, age))), glow: glow };
+  }
+
+  function ledgersFor(st, q) {
+    var out = [], l;
+    if (st === "T") { for (l = 10; l >= q; l -= 2) out.push(l); for (l = 22; l <= q; l += 2) out.push(l); }
+    else { for (l = 10; l <= q; l += 2) out.push(l); for (l = -2; l >= q; l -= 2) out.push(l); }
+    return out;
+  }
+
+  // a group of heads on one stem (a chord, or a single note)
+  // heads: [{q, shape, open, dots, acc ('-'|'7'), heavy}]
+  function drawGroup(D, X, heads, st, dir, o) {
+    var c = D.c, g = D.g, sp = D.sp, sc = o.scale || 1, s = sp * sc;
+    var sw = Math.max(1.6 / D.dpr, 0.12 * sp * (sc < 1 ? 0.85 : 1));
+    var hs = heads.slice().sort(function (a, b) { return a.q - b.q; });
+    var sx = X + dir * (0.57 * s - sw / 2);
+    var placed = hs.map(function (h, i) {
+      var k = shapeKey(h.shape, dir), hx = X;
+      if (dir !== 0) { var an = anchorOf(k, dir); hx = sx - an[0] * s + dir * sw / 2; }
+      return { h: h, k: k, x: hx, y: g.y(st, h.q) };
+    });
+    // a second on one stem: the upper (stem up) / lower (stem down) head crosses to the other side
+    for (var i = 1; i < placed.length; i++) {
+      if (placed[i].h.q - placed[i - 1].h.q === 1 && dir !== 0) {
+        var mv = dir > 0 ? placed[i] : placed[i - 1];
+        mv.x += dir * (1.14 * s - sw);
+      }
+    }
+    c.fillStyle = rgba(o.rgb);
+    // ledgers
+    var lth = Math.max(1.4 / D.dpr, 0.16 * sp);
+    placed.forEach(function (p) {
+      ledgersFor(st, p.h.q).forEach(function (lq) {
+        hLine(D, p.x - (0.62 + 0.36) * s, p.x + (0.62 + 0.36) * s, g.y(st, lq), lth);
+      });
+    });
+    // glow under the sounding heads
+    if (o.glow > 0.02) {
+      var gs = glowSprite(1.5 * s, D.dpr), ga = c.globalAlpha;
+      c.globalAlpha = ga * o.glow * 0.9;
+      placed.forEach(function (p) { drawSprite(D, gs, p.x, p.y); });
+      c.globalAlpha = ga;
+    }
+    // stem
+    var top = placed[placed.length - 1], bot = placed[0], yEnd = null;
+    if (dir !== 0 && !o.noStem) {
+      var mid = g.mid(st), y0;
+      if (dir > 0) {
+        var an0 = anchorOf(bot.k, 1); y0 = bot.y + an0[1] * s;
+        yEnd = o.stemEnd != null ? o.stemEnd : Math.min(top.y - 3.5 * s, mid);
+      } else {
+        var an1 = anchorOf(top.k, -1); y0 = top.y + an1[1] * s;
+        yEnd = o.stemEnd != null ? o.stemEnd : Math.max(bot.y + 3.5 * s, mid);
+      }
+      vLine(D, sx, y0, yEnd, sw);
+      if (o.flag) drawFlag(D, sx, yEnd, dir, s, sw);
+      if (o.slash) {
+        c.save(); c.strokeStyle = rgba(o.rgb); c.lineWidth = 0.1 * sp; c.lineCap = "round";
+        c.beginPath(); c.moveTo(sx - 0.7 * s, yEnd + dir * 2.1 * s); c.lineTo(sx + 0.8 * s, yEnd + dir * 0.9 * s); c.stroke(); c.restore();
+      }
+    }
+    // heads
+    placed.forEach(function (p) {
+      drawSprite(D, headSprite(p.k, p.h.open, s, o.rgb, p.h.heavy, D.dpr), p.x, p.y);
+    });
+    // augmentation dots, each in a space, clear of the stem
+    var right = -1e9;
+    placed.forEach(function (p) { right = Math.max(right, p.x + 0.64 * s); });
+    if (dir > 0) right = Math.max(right, sx + sw / 2);
+    var used = {};
+    placed.slice().reverse().forEach(function (p) {
+      if (!p.h.dots) return;
+      var dq = p.h.q % 2 === 0 ? p.h.q + 1 : p.h.q;
+      while (used[dq]) dq -= 2;
+      used[dq] = 1;
+      c.beginPath(); c.arc(right + 0.5 * s, g.y(st, dq), 0.19 * s, 0, Math.PI * 2); c.fill();
+    });
+    // Johnston accidentals, tucked before the head
+    placed.forEach(function (p) {
+      if (!p.h.acc) return;
+      var ax = p.x - 0.66 * s - 0.35 * s;
+      if (p.h.acc === "-") {
+        snapRect(D, ax - 0.72 * s, p.y - 0.085 * s, 0.72 * s, 0.17 * s);
+      } else if (p.h.acc === "7") {
+        c.save(); c.strokeStyle = rgba(o.rgb); c.lineCap = "butt";
+        c.lineWidth = 0.13 * s;
+        c.beginPath(); c.moveTo(ax - 0.66 * s, p.y - 0.62 * s); c.lineTo(ax - 0.02 * s, p.y - 0.62 * s); c.stroke();
+        c.lineWidth = 0.21 * s;
+        c.beginPath(); c.moveTo(ax - 0.08 * s, p.y - 0.6 * s); c.quadraticCurveTo(ax - 0.36 * s, p.y - 0.05 * s, ax - 0.44 * s, p.y + 0.66 * s); c.stroke();
+        c.restore();
+      }
+    });
+    return { sx: sx, yEnd: yEnd, topY: top.y, botY: bot.y, topX: top.x, botX: bot.x, sw: sw };
+  }
+
+  function drawFlag(D, sx, y, dir, s, sw) {
+    var c = D.c;
+    c.save(); c.translate(sx - sw / 2, y); c.scale(s, dir > 0 ? s : -s);
+    c.beginPath();
+    c.moveTo(0, 0); c.lineTo(0.13, 0);
+    c.bezierCurveTo(0.2, 0.55, 0.58, 0.82, 0.82, 1.22);
+    c.bezierCurveTo(1.04, 1.6, 1.02, 2.2, 0.8, 2.72);
+    c.lineTo(0.73, 2.68);
+    c.bezierCurveTo(0.88, 2.22, 0.82, 1.82, 0.6, 1.56);
+    c.bezierCurveTo(0.42, 1.34, 0.2, 1.22, 0, 1.12);
+    c.closePath(); c.fill(); c.restore();
+  }
+  function drawFermata(D, x, y, up, s) {       // y = the fermata's flat side
+    var c = D.c, k = up ? -1 : 1;
+    c.beginPath();
+    c.ellipse(x, y, 0.98 * s, 0.98 * s, 0, Math.PI, 2 * Math.PI, !up);
+    c.ellipse(x, y + k * 0.02 * s, 0.86 * s, 0.76 * s, 0, 2 * Math.PI, Math.PI, up);
+    c.closePath();
+    c.save(); c.scale(1, 1); c.fill(); c.restore();
+    c.beginPath(); c.arc(x, y + k * 0.24 * s, 0.17 * s, 0, Math.PI * 2); c.fill();
+  }
+  function drawQuarterRest(D, x, y, s) {       // y = the middle line
+    var c = D.c;
+    c.save(); c.translate(x, y); c.scale(s, s);
+    c.beginPath();
+    c.moveTo(-0.12, -1.48); c.lineTo(0.5, -0.74);
+    c.bezierCurveTo(0.28, -0.5, 0.2, -0.3, 0.2, -0.1);
+    c.bezierCurveTo(0.2, 0.12, 0.34, 0.3, 0.56, 0.52);
+    c.lineTo(0.5, 0.58);
+    c.bezierCurveTo(0.22, 0.46, -0.04, 0.5, -0.04, 0.76);
+    c.bezierCurveTo(-0.04, 0.98, 0.08, 1.22, 0.24, 1.42);
+    c.lineTo(0.18, 1.48);
+    c.bezierCurveTo(-0.14, 1.22, -0.38, 0.96, -0.38, 0.7);
+    c.bezierCurveTo(-0.38, 0.44, -0.12, 0.34, 0.16, 0.38);
+    c.lineTo(-0.4, -0.3);
+    c.bezierCurveTo(-0.16, -0.52, -0.02, -0.74, -0.02, -0.96);
+    c.bezierCurveTo(-0.02, -1.16, -0.1, -1.32, -0.16, -1.42);
+    c.closePath(); c.fill(); c.restore();
+  }
+  function drawEighthRest(D, x, y, s) {
+    var c = D.c;
+    c.save(); c.translate(x, y); c.scale(s, s);
+    c.beginPath(); c.arc(-0.2, -0.42, 0.21, 0, Math.PI * 2); c.fill();
+    c.beginPath();
+    c.moveTo(-0.3, -0.26); c.quadraticCurveTo(0.08, -0.12, 0.38, -0.56);
+    c.lineTo(0.46, -0.52); c.lineTo(0.06, 0.78); c.lineTo(-0.06, 0.78); c.lineTo(0.28, -0.3);
+    c.quadraticCurveTo(0.02, -0.14, -0.3, -0.2); c.closePath(); c.fill();
+    c.restore();
+  }
+  function drawSharp(D, x, y, s) {
+    var c = D.c, sw = 0.11 * s;
+    c.fillRect(x - 0.24 * s - sw / 2, y - 1.2 * s, sw, 2.55 * s);
+    c.fillRect(x + 0.24 * s - sw / 2, y - 1.35 * s, sw, 2.55 * s);
+    [-0.42, 0.46].forEach(function (dy) {
+      c.beginPath();
+      c.moveTo(x - 0.5 * s, y + (dy + 0.16) * s); c.lineTo(x + 0.5 * s, y + (dy - 0.14) * s);
+      c.lineTo(x + 0.5 * s, y + (dy - 0.14 - 0.36) * s); c.lineTo(x - 0.5 * s, y + (dy + 0.16 - 0.36) * s);
+      c.closePath(); c.fill();
+    });
+  }
+  function drawTimeSig(D, x, st, num, den, s) {  // x = left edge; two numerals, each 2 sp tall
+    var c = D.c, g = D.g, top = st === "T" ? g.T : g.B;
+    [[num, top], [den, top + 2 * s]].forEach(function (pr) {
+      var p = digitPath[pr[0]], sc = (2 * s) / 130;
+      c.save(); c.translate(x, pr[1]); c.scale(sc, sc); c.fill(p); c.restore();
+    });
+  }
+  function drawBarline(D, x, kind, st, th) {
+    var g = D.g, sp = D.sp, top = st === "T" ? g.T : g.B, bot = top + 4 * sp;
+    var thin = Math.max(1.4 / D.dpr, 0.16 * sp);
+    if (kind === "dotted") {
+      for (var q = 0; q < 4; q++) {
+        var yy = top + (q + 0.5) * sp;
+        D.c.beginPath(); D.c.arc(x, yy - 0.18 * sp, 0.11 * sp, 0, Math.PI * 2); D.c.arc(x, yy + 0.2 * sp, 0.11 * sp, 0, Math.PI * 2); D.c.fill();
+      }
+      return;
+    }
+    if (kind === "double") { vLine(D, x - 0.56 * sp, top, bot, thin); vLine(D, x, top, bot, thin); return; }
+    if (kind === "final") { vLine(D, x - 0.8 * sp, top, bot, thin); snapRect(D, x - 0.5 * sp, top, 0.5 * sp, 4 * sp); return; }
+    vLine(D, x, top, bot, th || thin);
+  }
+
+  // a beamed group of eighths (one beam), on one staff
+  function drawBeamed(D, notes, st, o) {
+    var g = D.g, sp = D.sp, s = sp * (o.scale || 1);
+    var mid = st === "T" ? 16 : 4, far = notes[0];
+    notes.forEach(function (n) { if (Math.abs(n.q - mid) > Math.abs(far.q - mid)) far = n; });
+    var dir = o.dir || (far.q >= mid ? -1 : 1);
+    var sw = Math.max(1.6 / D.dpr, 0.12 * sp * ((o.scale || 1) < 1 ? 0.85 : 1));
+    var pts = notes.map(function (n) {
+      var x = n.X, sx = x + dir * (0.57 * s - sw / 2), y = g.y(st, n.q);
+      return { n: n, sx: sx, y: y, ideal: y - dir * 3.4 * s };
+    });
+    var a = pts[0], b = pts[pts.length - 1];
+    var dy = clamp(b.ideal - a.ideal, -0.9 * s, 0.9 * s), dx = (b.sx - a.sx) || 1, m = dy / dx;
+    var shift = 0;
+    pts.forEach(function (p) {
+      var by = a.ideal + m * (p.sx - a.sx);
+      var need = p.y - dir * 3.0 * s;          // at least 3 sp of stem
+      if (dir > 0 && by > need) shift = Math.min(shift, need - by);
+      if (dir < 0 && by < need) shift = Math.max(shift, need - by);
+    });
+    function beamY(x) { return a.ideal + shift + m * (x - a.sx); }
+    pts.forEach(function (p, i) {
+      var ok = D.map.gate(p.n.X);
+      if (!ok) return;
+      var ink = o.inkFor(p.n);
+      D.c.globalAlpha = ink.a;
+      drawGroup(D, p.n.X, [p.n.head], st, dir, { scale: o.scale, rgb: ink.rgb, glow: ink.glow, stemEnd: beamY(p.sx), slash: o.slash && i === 0 });
+    });
+    // the beam, pulled by the burin as far as the engraving point
+    var ink0 = o.inkFor(notes[0]);
+    var th = 0.5 * s * (dir > 0 ? 1 : -1);
+    var xa = a.sx - sw / 2, xb = b.sx + sw / 2;
+    var xr = D.map.live ? Math.min(xb, D.g.xE + 0.4 * sp) : xb;
+    if (xr > xa) {
+      D.c.globalAlpha = ink0.a; D.c.fillStyle = rgba(ink0.rgb);
+      D.c.beginPath();
+      D.c.moveTo(xa, beamY(xa)); D.c.lineTo(xr, beamY(xr)); D.c.lineTo(xr, beamY(xr) + th); D.c.lineTo(xa, beamY(xa) + th);
+      D.c.closePath(); D.c.fill();
+    }
+    return { dir: dir, beamY: beamY, xa: xa, xb: xb };
+  }
+
+  function text(D, str, x, y, font, rgb, a, align) {
+    var c = D.c;
+    c.font = font; c.textAlign = align || "left"; c.textBaseline = "alphabetic";
+    c.fillStyle = rgba(rgb, a == null ? 1 : a);
+    c.fillText(str, x, y);
+    return c.measureText(str).width;
+  }
+
+  // ------------------------------------------------------------ the page ---
+  // everything that belongs to the ward's page (not the band), for one
+  // cycle of the loop (off = 0 or −DUR)
+  function drawPage(D, off) {
+    var c = D.c, g = D.g, sp = D.sp, m = D.map, st = D.st;
+    function X(t) { return m.X(t + off); }
+    function vis(x0, x1) { return x1 > -40 && x0 < g.W + 40; }
+    function inkT(t, dur, base) { return inkOf(D, t + off, dur, base || INK); }
+
+    // (the drone's longa and bar were struck by the owner, 2026-09-26: the drone is heard, not engraved)
+
+    // -- the running head, scrolling in with the first note
+    (function () {
+      var hh = P.hymnHeader, x = X(hh.t) - 0.4 * sp;
+      if (!vis(x, x + 40 * sp) || !m.gate(x)) return;
+      var ink = inkT(hh.t, 0.8), y = g.headY, fsz = (1.12 * sp).toFixed(1), cx = x;
+      c.save();
+      if (m.live) { c.beginPath(); c.rect(0, 0, g.xE + 0.6 * sp, g.H); c.clip(); }
+      c.globalAlpha = ink.a;
+      cx += text(D, hh.number, cx, y, "600 " + (1.3 * sp).toFixed(1) + "px " + FG, st.rubrics ? RUBRIC : ink.rgb);
+      cx += 0.7 * sp;
+      cx += text(D, hh.nameDs, cx, y, (1.0 * sp).toFixed(1) + "px " + FD, ink.rgb);
+      c.fontVariantCaps = "all-small-caps";
+      var rest = "  ·  C.M.  ·  " + hh.dialect + "  ·  led by ";
+      cx += text(D, rest, cx, y, fsz + "px " + FG, ink.rgb, 0.8);
+      c.fontVariantCaps = "normal";
+      cx += text(D, hh.leaderDs, cx, y, (0.95 * sp).toFixed(1) + "px " + FD, ink.rgb);
+      c.fontVariantCaps = "all-small-caps";
+      cx += text(D, "  ·  do = c", cx, y, fsz + "px " + FG, ink.rgb, 0.8);
+      c.fontVariantCaps = "normal";
+      c.fillStyle = rgba(ink.rgb, 0.45);
+      hLine(D, x, cx, y + 0.5 * sp, Math.max(1 / D.dpr, 0.06 * sp));
+      c.restore();
+      c.globalAlpha = 1;
+    })();
+
+    // -- the time signature, before the pickup
+    (function () {
+      var x = X(T0) - 2.5 * sp;
+      if (!vis(x, x + 2 * sp) || !m.gate(x)) return;
+      var ink = inkT(T0 - 0.5, 0.5);
+      c.globalAlpha = ink.a; c.fillStyle = rgba(ink.rgb);
+      drawTimeSig(D, x - 0.75 * sp, "T", "4", "4", sp);
+      drawTimeSig(D, x - 0.75 * sp, "B", "4", "4", sp);
+      c.globalAlpha = 1;
+    })();
+
+    // -- barlines (per staff, so they never cut the words)
+    P.bars.forEach(function (b) {
+      var x = b.kind === "double" ? X(b.t) - 2.3 * sp : b.kind === "final" ? X(b.t) - 0.2 * sp : X(b.t) - 1.25 * sp;
+      if (!vis(x - 10, x + 10) || !m.gate(x)) return;
+      var ink = inkT(b.t, 0);
+      c.globalAlpha = ink.a; c.fillStyle = rgba(ink.rgb);
+      drawBarline(D, x, b.kind, "T"); drawBarline(D, x, b.kind, "B");
+    });
+    // the breath between the lines: a comma above the staff, before the bar
+    P.breaths.forEach(function (br) {
+      var x = X(br.t + 0.12) - 2.5 * sp;
+      if (!vis(x - 10, x + 10) || !m.gate(x)) return;
+      var ink = inkT(br.t, 0.1);
+      c.globalAlpha = ink.a; c.fillStyle = rgba(ink.rgb);
+      c.save(); c.translate(x, g.T - 1.3 * sp); c.scale(sp * 1.05, sp * 1.05);
+      c.beginPath(); c.arc(0, 0, 0.26, 0, Math.PI * 2); c.fill();
+      c.beginPath(); c.moveTo(0.24, -0.06); c.bezierCurveTo(0.3, 0.42, 0.1, 0.78, -0.22, 0.96); c.lineTo(-0.26, 0.9);
+      c.bezierCurveTo(-0.02, 0.72, 0.1, 0.46, 0.04, 0.16); c.closePath(); c.fill();
+      c.restore();
+    });
+    // the amen's own measure: 6/4, and the silent beat
+    (function () {
+      var x = X(amenRest.t);
+      if (!vis(x - 3 * sp, x + 3 * sp) || !m.gate(x - 1.3 * sp)) return;
+      var ink = inkT(amenRest.t, amenRest.dur);
+      c.globalAlpha = ink.a; c.fillStyle = rgba(ink.rgb);
+      drawTimeSig(D, x - 1.45 * sp, "T", "6", "4", sp);
+      drawTimeSig(D, x - 1.45 * sp, "B", "6", "4", sp);
+      if (m.gate(x)) {
+        drawQuarterRest(D, x + 1.2 * sp, g.yT(16), sp);
+        drawQuarterRest(D, x + 1.2 * sp, g.yB(4), sp);
+      }
+    })();
+
+    // -- the hymn: SATB closed score, chords on shared stems, words between
+    var wordFont = (1.28 * sp).toFixed(1) + "px " + FD;
+    var sylW = [];
+    c.font = wordFont;
+    chords.forEach(function (ch, i) { sylW[i] = c.measureText(ch.syl.text).width; });
+    chords.forEach(function (ch, i) {
+      var x = X(ch.t);
+      if (!vis(x - 4 * sp, x + 4 * sp) || !m.gate(x)) return;
+      var v = valueOf(ch.beats), ink = inkT(ch.t, ch.dur);
+      c.globalAlpha = ink.a;
+      function head(n) {
+        return { q: 10 + n.deg, shape: shapeOf(n.deg), open: v.open, dots: v.dots, heavy: !!n.melody && v.open,
+                 acc: n.comma === -1 ? "-" : n.septimal ? "7" : null };
+      }
+      var tr = drawGroup(D, x, [head(ch.parts.S), head(ch.parts.A)], "T", 1, { rgb: ink.rgb, glow: ink.glow });
+      var bs = drawGroup(D, x, [head(ch.parts.T), head(ch.parts.B)], "B", -1, { rgb: ink.rgb, glow: ink.glow });
+      if (ch.fermata) {
+        c.fillStyle = rgba(ink.rgb);
+        drawFermata(D, tr.topX, Math.min(g.T - 1.0 * sp, tr.yEnd - 0.8 * sp), true, sp);
+        drawFermata(D, bs.botX, Math.max(g.Bb + 1.0 * sp, bs.yEnd + 0.8 * sp), false, sp);
+      }
+      if (st.words) {
+        text(D, ch.syl.text, x, g.wordsY, wordFont, ink.rgb, 1, "center");
+        if (ch.syl.verse) text(D, ch.syl.verse + ".", x - sylW[i] / 2 - 0.55 * sp, g.wordsY, (1.2 * sp).toFixed(1) + "px " + FG, ink.rgb, 1, "right");
+        var prev = chords[i - 1];
+        if (prev && prev.syl.hyphenAfter) {
+          var xa = X(prev.t) + sylW[i - 1] / 2, xb = x - sylW[i] / 2, gap = xb - xa;
+          if (gap > 0.9 * sp) { c.fillStyle = rgba(ink.rgb); var hw = Math.min(0.75 * sp, gap * 0.45); snapRect(D, (xa + xb) / 2 - hw / 2, g.wordsY - 0.42 * sp, hw, Math.max(1 / D.dpr, 0.1 * sp)); }
+        }
+      }
+    });
+    c.globalAlpha = 1;
+
+    // -- the telegraph: punched paper tape along the middle of the page
+    drawTape(D, off);
+
+    // -- the bell: a ringed head, 8va, rings spreading as it decays
+    P.bells.forEach(function (b) {
+      var x = X(b.t) + 1.6 * sp;                // an engraver's space after the final bar
+      if (!vis(x - 6 * sp, x + 8 * sp) || !m.gate(X(b.t))) return;
+      var ink = inkT(b.t, 0.9), q = 10 + b.deg, fold = 0;
+      while (q > 23) { q -= 7; fold++; }
+      var y = g.yT(q);
+      // rings
+      var age = m.live ? m.tn - (b.t + off) : 99, life = clamp(age / b.dur, 0, 1);
+      c.save();
+      for (var k = 0; k < 3; k++) {
+        var r = m.live ? (0.95 + 0.5 * k + 0.8 * Math.sqrt(life)) * sp : (0.95 + 0.45 * k) * sp;
+        var a = m.live ? (0.75 - 0.2 * k) * (1 - 0.72 * life) : (0.62 - 0.17 * k);
+        c.strokeStyle = rgba(GILT, a * ink.a); c.lineWidth = Math.max(1 / D.dpr, (0.1 - 0.02 * k) * sp);
+        c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.stroke();
+      }
+      c.restore();
+      c.globalAlpha = ink.a;
+      drawGroup(D, x, [{ q: q, shape: shapeOf(b.deg), open: true }], "T", 0, { rgb: ink.rgb, glow: ink.glow });
+      if (fold) {
+        var yb = g.T - 2.0 * sp, xe = x + 4.0 * sp;
+        xe = m.live ? Math.min(xe, g.xE + 0.4 * sp) : xe;
+        var w = text(D, "8", x - 0.6 * sp, yb + 0.35 * sp, "italic 600 " + (1.5 * sp).toFixed(1) + "px " + FG, ink.rgb);
+        text(D, "va", x - 0.6 * sp + w, yb + 0.35 * sp, "italic " + (1.0 * sp).toFixed(1) + "px " + FG, ink.rgb);
+        c.fillStyle = rgba(ink.rgb, 0.8);
+        for (var dx = x + 1.6 * sp; dx < xe - 0.3 * sp; dx += 0.9 * sp) c.fillRect(dx, yb - 0.05 * sp, 0.5 * sp, Math.max(1 / D.dpr, 0.1 * sp));
+        if (!m.live || xe < g.xE) vLine(D, xe, yb - 0.05 * sp, yb + 0.9 * sp, Math.max(1 / D.dpr, 0.1 * sp));
+      }
+      text(D, "bell", x - 0.8 * sp, g.rubY, "italic " + (1.1 * sp).toFixed(1) + "px " + FG, rubText(D), 0.85 * ink.a);
+      c.globalAlpha = 1;
+    });
+
+    // -- the Question
+    drawQuestion(D, off);
+  }
+
+  function drawQuestion(D, off) {
+    var c = D.c, g = D.g, sp = D.sp, m = D.map;
+    function X(t) { return m.X(t + off); }
+    var cap = "italic " + (1.1 * sp).toFixed(1) + "px " + FG;
+    [1, 2].forEach(function (k) {
+      var a = askings[k], first = a[0], last = a[a.length - 1];
+      var x0 = X(first.t) - 2.5 * sp, x1 = Math.max(X(last.t) + 2.6 * sp, X(last.t + last.dur) - 0.9 * sp);
+      if (x1 < -40 || x0 > g.W + 40 || !m.gate(x0 + 0.1 * sp)) return;
+      var inkC = inkOf(D, first.t + off, last.t + last.dur - first.t, rub(D), mix(rub(D), [230, 140, 90], 0.3));
+      // the cartouche: a slender double rule, round-ended, with its "?" at the head
+      var y0 = g.T - 2.1 * sp, y1 = g.Tb + 1.25 * sp, r = 1.15 * sp;
+      c.save();
+      if (m.live) { c.beginPath(); c.rect(0, 0, g.xE + 0.5 * sp, g.H); c.clip(); }
+      c.globalAlpha = inkC.a;
+      c.strokeStyle = rgba(rub(D)); c.lineWidth = Math.max(1.2 / D.dpr, 0.13 * sp);
+      c.beginPath(); c.roundRect(x0, y0, x1 - x0, y1 - y0, r); c.stroke();
+      c.lineWidth = Math.max(0.8 / D.dpr, 0.05 * sp); c.strokeStyle = rgba(rub(D), 0.7);
+      c.beginPath(); c.roundRect(x0 + 0.28 * sp, y0 + 0.28 * sp, x1 - x0 - 0.56 * sp, y1 - y0 - 0.56 * sp, r - 0.28 * sp); c.stroke();
+      // the knot at the tail
+      c.lineWidth = Math.max(1.2 / D.dpr, 0.13 * sp); c.strokeStyle = rgba(rub(D));
+      c.beginPath(); c.moveTo(x1 + 0.35 * sp, y0 + 0.9 * sp); c.lineTo(x1 + 0.35 * sp, y1 - 0.9 * sp); c.stroke();
+      c.restore();
+      c.globalAlpha = inkC.a;
+      text(D, "?", x0 + 1.05 * sp, g.yT(16) + 0.95 * sp, "italic 500 " + (2.7 * sp).toFixed(1) + "px " + FG, rub(D), 1, "center");
+      c.save(); revealClip(D);
+      text(D, k === 1 ? "clarinet, asking" : "asking again", x0 + 0.3 * sp, g.rubY, cap, rubText(D), 0.85);
+      c.restore();
+      // the slur over the phrase
+      c.save();
+      if (m.live) { c.beginPath(); c.rect(0, 0, g.xE + 0.5 * sp, g.H); c.clip(); }
+      var sa = X(first.t) + 0.45 * sp, sb = X(last.t) + 0.1 * sp, sy = g.T - 0.35 * sp;
+      c.fillStyle = rgba(INK, inkC.a * 0.85);
+      c.beginPath(); c.moveTo(sa, sy + 0.2 * sp);
+      c.bezierCurveTo(sa + (sb - sa) * 0.25, sy - 1.3 * sp, sa + (sb - sa) * 0.75, sy - 1.3 * sp, sb, sy + 0.2 * sp);
+      c.bezierCurveTo(sa + (sb - sa) * 0.75, sy - 1.05 * sp, sa + (sb - sa) * 0.25, sy - 1.05 * sp, sa, sy + 0.2 * sp);
+      c.fill(); c.restore();
+      // the notes, cue-size
+      var done = {};
+      a.forEach(function (n) {
+        var x = X(n.t); n.X = x;
+        n.head = { q: n.q, shape: shapeOf(n.deg), open: valueOf(n.beats).open, dots: valueOf(n.beats).dots };
+      });
+      a.forEach(function (n) {
+        if (n.group) {
+          if (done[n.group[0].t]) return; done[n.group[0].t] = 1;
+          drawBeamed(D, n.group, "T", { scale: 0.75, inkFor: function (nn) { return inkOf(D, nn.t + off, nn.dur, INK); } });
+          return;
+        }
+        if (!m.gate(n.X)) return;
+        var ink = inkOf(D, n.t + off, n.dur, INK), v = valueOf(n.beats);
+        c.globalAlpha = ink.a;
+        drawGroup(D, n.X, [n.head], "T", n.q >= 16 ? -1 : 1, { scale: 0.75, rgb: ink.rgb, glow: ink.glow, flag: v.flags });
+      });
+      c.globalAlpha = 1;
+    });
+    // the harmonium's answer: grace notes, beamed, slashed
+    var xa = X(answers[0].t);
+    if (xa > -60 && xa < g.W + 60 && m.gate(xa)) {
+      answers.forEach(function (n) { n.X = X(n.t); n.head = { q: n.q, shape: shapeOf(n.deg), open: false }; });
+      drawBeamed(D, answers, "T", { scale: 0.6, dir: 1, slash: true, inkFor: function (nn) { return inkOf(D, nn.t + off, nn.dur, INK); } });
+      c.globalAlpha = 1;
+      c.save(); revealClip(D);
+      text(D, "harmonium", xa - 0.4 * sp, g.rubY, cap, rubText(D), 0.85);
+      c.restore();
+    }
+    // no answer: an empty measure between dotted barlines, the drone beneath
+    var na = P.noAnswer, x0 = X(na.t) + 0.9 * sp, x1 = X(na.t + na.dur);
+    [x0, x1].forEach(function (x) {
+      if (x < -20 || x > g.W + 20 || !m.gate(x)) return;
+      var ink = inkOf(D, na.t + off, 0, INK);
+      c.globalAlpha = ink.a; c.fillStyle = rgba(ink.rgb);
+      drawBarline(D, x, "dotted", "T"); drawBarline(D, x, "dotted", "B");
+    });
+    if (m.gate(x1) && x1 > -60 && x0 < g.W + 60) {
+      c.globalAlpha = 1;
+      text(D, "no answer", (x0 + x1) / 2, g.wordsY, "italic " + (1.2 * sp).toFixed(1) + "px " + FG, rubText(D), 0.8, "center");
+    }
+    c.globalAlpha = 1;
+  }
+
+  // -------------------------------------------------------- the telegraph ---
+  // Wheatstone slip: a feed track of small holes, and the message punched above
+  // it — a round hole for a dit, a slot for a dah — at one unit = 0.45 sp. The
+  // tape is fed out of the engraving point faster than the page while it is
+  // keyed, then cut and carried with the page; its tail bears the decoded word.
+  function drawTape(D, off) {
+    var c = D.c, g = D.g, sp = D.sp, m = D.map, T = P.telegraph;
+    var U = T.marks[0].len, UP = 0.55 * sp, F = UP / U;                 // px of tape per second of keying
+    var lead = 1.0 * sp, Tt = T.marks[T.marks.length - 1].at + T.marks[T.marks.length - 1].len;
+    var wf = (1.05 * sp).toFixed(1) + "px " + FD;
+    c.font = wf; var ww = c.measureText(T.wordDs).width;
+    var tail = 1.2 * sp, total = lead + Tt * F + tail;
+    var t0 = T.t + off, tf = t0 + (total - lead) / F;           // when the tape is cut
+    var xs, fed;
+    if (m.live) {
+      if (m.tn < t0) return;
+      if (m.tn < tf) { fed = lead + (m.tn - t0) * F; xs = g.xE - fed; }
+      else { fed = total; xs = g.xE - total - (m.tn - tf) * m.v; }
+    } else { fed = total; xs = m.X(tf) - total; }
+    if (xs + fed < -20 || xs > g.W + 20) return;
+    var a = m.live ? Math.max(0.4, Math.exp(-0.03 * Math.max(0, m.tn - tf))) : 1;
+    var h = 1.55 * sp, y = g.tapeY, top = y - h / 2;
+    c.save();
+    c.globalAlpha = a;
+    // the ribbon, with a soft shadow and a diagonal cut at its head
+    c.shadowColor = "rgba(70, 58, 30, 0.22)"; c.shadowBlur = 2.2 * D.dpr / 2; c.shadowOffsetY = 0.6;
+    c.fillStyle = "#fdfaf2";
+    c.beginPath();
+    c.moveTo(xs + 0.5 * sp, top); c.lineTo(xs + fed, top); c.lineTo(xs + fed, top + h); c.lineTo(xs, top + h); c.closePath();
+    c.fill();
+    c.shadowColor = "transparent";
+    c.strokeStyle = rgba(INK, 0.28); c.lineWidth = Math.max(1 / D.dpr, 0.05 * sp);
+    c.stroke();
+    // the feed track
+    var fy = top + h * 0.74;
+    c.fillStyle = "rgba(120, 104, 70, 0.3)";
+    for (var u = lead * 0.6; u < fed - 0.2 * sp; u += UP) {
+      c.beginPath(); c.arc(xs + u, fy, 0.09 * sp, 0, Math.PI * 2); c.fill();
+    }
+    // the message holes
+    var cy = top + h * 0.37, hr = 0.24 * sp;
+    T.marks.forEach(function (mk) {
+      var u0 = lead + mk.at * F, u1 = u0 + mk.len * F;
+      if (u1 > fed) return;
+      var xa = xs + u0 + 0.04 * sp, xb = xs + u1 - 0.04 * sp;
+      c.beginPath();
+      if (!mk.dah) c.arc((xa + xb) / 2, cy, hr, 0, Math.PI * 2);
+      else c.roundRect(xa, cy - hr, xb - xa, 2 * hr, hr);
+      c.fillStyle = "#ddd1b4"; c.fill();                        // the plate seen through the hole
+      c.save(); c.clip();
+      c.strokeStyle = "rgba(60, 45, 20, 0.6)"; c.lineWidth = 0.2 * sp;
+      c.beginPath();
+      if (!mk.dah) c.arc((xa + xb) / 2, cy + 0.09 * sp, hr, Math.PI * 1.0, Math.PI * 2.0);
+      else { c.moveTo(xa, cy + 0.02 * sp); c.arcTo(xa, cy - hr + 0.09 * sp, xa + hr, cy - hr + 0.09 * sp, hr); c.lineTo(xb - hr, cy - hr + 0.09 * sp); c.arcTo(xb, cy - hr + 0.09 * sp, xb, cy + 0.02 * sp, hr); }
+      c.stroke(); c.restore();
+    });
+    // (the decoded word on the tail was struck by the owner, 2026-09-26)
+    if (false) {
+      var wx = xs + lead + Tt * F + 1.0 * sp, wy = top + h * 0.72;
+      var ink = inkOf(D, tf, 0.6, INK);
+      c.globalAlpha = a * ink.a;
+      text(D, T.wordDs, wx, wy, wf, ink.rgb);
+      c.fillStyle = rgba(D.st.rubrics ? RUBRIC : GILT, 0.9);
+      snapRect(D, wx, wy + 0.18 * sp, ww, Math.max(1 / D.dpr, 0.07 * sp));
+    }
+    c.restore();
+  }
+
+  // ------------------------------------------------------------- the band ---
+  // round notes, brass ink, its own layer at its own rate; ink follows loudness
+  function drawBand(D, off) {
+    if (!bandMel.length) return;                   // the band switch is off
+    var c = D.c, g = D.g, sp = D.sp, m = D.map;
+    function XB(t) { return m.XB(t + off); }
+    var first = bandMel[0], xf = XB(first.t);
+    function bInk(n) {
+      var ink = inkOf(D, n.t + off, n.dur, BRASS, BRASS_HI);
+      ink.a *= 0.07 + 0.63 * n.loud; return ink;
+    }
+    if (xf > g.W + 40) return;
+    // entry: key signature (one sharp — the band plays in sol), 2/4, and its rubric
+    var xk = xf - 4.4 * sp;
+    if (m.gate(xk) && xk > -80) {
+      var inkK = inkOf(D, first.t + off - 0.3, 0.3, BRASS, BRASS_HI);
+      c.globalAlpha = inkK.a * 0.32; c.fillStyle = rgba(inkK.rgb);
+      drawSharp(D, xk, g.yT(20), sp); drawSharp(D, xk, g.yB(6), sp);
+      drawTimeSig(D, xk + 0.9 * sp, "T", "2", "4", sp);
+      drawTimeSig(D, xk + 0.9 * sp, "B", "2", "4", sp);
+      c.globalAlpha = inkK.a;
+      var cap = "italic " + (1.1 * sp).toFixed(1) + "px " + FG;
+      var lx = m.live ? xk - 0.3 * sp : XB(BI.t0 + 6 * BB);
+      c.save(); revealClip(D);
+      var w = text(D, "Band", lx, g.rubY, "italic 500 " + (1.15 * sp).toFixed(1) + "px " + FG, rubText(D), 0.9);
+      text(D, " — in sol, 2/4; not one of ours", lx + w, g.rubY, cap, rubText(D), 0.8);
+      c.restore();
+    }
+    // barlines every two of the band's beats
+    for (var b = 2; b <= 26; b += 2) {
+      var tb = BI.t0 + b * BB, x = XB(tb) - (b === 26 ? 0.2 : 0.9) * sp;
+      if (x < -10 || x > g.W + 10 || !m.gate(x)) continue;
+      var ld = Math.sin(Math.PI * clamp(b / 26, 0, 1));
+      var ink = inkOf(D, tb + off, 0, BRASS, BRASS_HI);
+      c.globalAlpha = ink.a * (0.08 + 0.5 * ld); c.fillStyle = rgba(ink.rgb);
+      drawBarline(D, x, b === 26 ? "final" : "single", "T");
+      drawBarline(D, x, b === 26 ? "final" : "single", "B");
+    }
+    // the melody
+    var done = {};
+    bandMel.forEach(function (n) {
+      n.X = XB(n.t);
+      n.head = { q: n.q, shape: "round", open: valueOf(n.beats).open, dots: valueOf(n.beats).dots };
+    });
+    bandMel.forEach(function (n) {
+      if (n.X < -40 || n.X > g.W + 40) return;
+      if (n.group) {
+        if (done[n.group.b]) return; done[n.group.b] = 1;
+        drawBeamed(D, n.group.notes, "T", { inkFor: bInk });
+        return;
+      }
+      if (!m.gate(n.X)) return;
+      var ink = bInk(n), v = valueOf(n.beats);
+      c.globalAlpha = ink.a;
+      drawGroup(D, n.X, [n.head], "T", n.q >= 16 ? -1 : 1, { rgb: ink.rgb, glow: ink.glow * n.loud, flag: v.flags });
+    });
+    // the oom-pah: an eighth and an eighth rest on every beat, written the
+    // bandsman's way — a staccato quarter — so the rests don't litter the page
+    bandBass.forEach(function (n) {
+      var x = XB(n.t);
+      if (x < -40 || x > g.W + 40 || !m.gate(x)) return;
+      var ink = bInk(n);
+      c.globalAlpha = ink.a;
+      var r = drawGroup(D, x, [{ q: n.q, shape: "round", open: false }], "B", -1, { rgb: ink.rgb, glow: ink.glow * n.loud });
+      var dq = n.q % 2 === 0 ? n.q + 1.5 : n.q + 2;
+      c.beginPath(); c.arc(r.topX, g.yB(dq), 0.17 * sp, 0, Math.PI * 2); c.fill();
+    });
+    c.globalAlpha = 1;
+  }
+
+  // ------------------------------------------------- the static staff layer ---
+  function drawStaves(c, g, dpr, x0, x1, y0) {
+    var D = { c: c, dpr: dpr };
+    var sp = g.sp, lw = Math.max(1, Math.round(0.13 * sp * dpr)) / dpr;
+    c.save(); c.translate(0, y0);
+    c.fillStyle = rgba(INK, 0.52);
+    [12, 14, 16, 18, 20].forEach(function (q) { hLine(D, g.xBar, x1, g.yT(q), lw); });
+    [0, 2, 4, 6, 8].forEach(function (q) { hLine(D, g.xBar, x1, g.yB(q), lw); });
+    // the system's opening barline through both staves
+    c.fillStyle = rgba(INK);
+    vLine(D, g.xBar, g.T - lw / 2, g.Bb + lw / 2, Math.max(1.4 / dpr, 0.16 * sp));
+    // the brace
+    var bx0 = g.xBar - 0.35 * sp - 1.25 * sp, bw = 1.25 * sp, yt = g.T, yb = g.Bb, bh = yb - yt;
+    c.save(); c.translate(bx0, yt); c.scale(bw, bh);
+    c.beginPath();
+    c.moveTo(1, 0);
+    c.bezierCurveTo(0.32, 0.03, 0.26, 0.14, 0.3, 0.26);
+    c.bezierCurveTo(0.34, 0.38, 0.32, 0.47, 0, 0.5);
+    c.bezierCurveTo(0.32, 0.53, 0.34, 0.62, 0.3, 0.74);
+    c.bezierCurveTo(0.26, 0.86, 0.32, 0.97, 1, 1);
+    c.bezierCurveTo(0.56, 0.96, 0.62, 0.86, 0.6, 0.74);
+    c.bezierCurveTo(0.58, 0.6, 0.5, 0.53, 0.06, 0.5);
+    c.bezierCurveTo(0.5, 0.47, 0.58, 0.4, 0.6, 0.26);
+    c.bezierCurveTo(0.62, 0.14, 0.56, 0.04, 1, 0);
+    c.closePath(); c.fill();
+    c.restore();
+    // the clefs, seated on their lines
+    function clef(cl, path, left, topY, h) {
+      var bb = cl.bbox, s = h / (bb[3] - bb[1]);
+      c.save(); c.translate(left - bb[0] * s, topY + bb[3] * s); c.scale(s, -s); c.fill(path); c.restore();
+    }
+    clef(CLEF_TREBLE, trebPath, g.clefX, g.yT(14) - 0.583 * g.trebH, g.trebH);
+    clef(CLEF_BASS, bassPath, g.clefX, g.yB(6) - 0.237 * g.bassH, g.bassH);
+    c.restore();
+  }
+
+  // ---------------------------------------------------------- live engraver ---
+  function Live(canvas, fixedW) {
+    this.canvas = canvas; this.fixedW = fixedW; this.W = 0;
+  }
+  Live.prototype.resize = function () {
+    var dpr = Math.min(2, window.devicePixelRatio || 1);
+    var W = this.fixedW || Math.round(this.canvas.parentElement.clientWidth);
+    if (W === this.W && dpr === this.dpr) return;
+    var sp = W >= 600 ? 11 : 8, g = geom(W, sp);
+    this.W = W; this.dpr = dpr; this.g = g;
+    var cv = this.canvas;
+    cv.style.width = W + "px"; cv.style.height = g.H + "px";
+    cv.width = W * dpr; cv.height = g.H * dpr;
+    function layer() { var l = document.createElement("canvas"); l.width = W * dpr; l.height = g.H * dpr; return l; }
+    this.staff = layer(); this.ink = layer(); this.band = layer();
+    var sc = this.staff.getContext("2d"); sc.setTransform(dpr, 0, 0, dpr, 0, 0);
+    drawStaves(sc, g, dpr, 0, W, 0);
+  };
+  Live.prototype.render = function (st) {
+    this.resize();
+    var g = this.g, dpr = this.dpr, W = this.W, sp = g.sp, v = st.v, tn = st.t, r = BI.tempoRatio;
+    var map = {
+      live: true, tn: tn, v: v,
+      X: function (t) { return g.xE - (tn - t) * v; },
+      XB: function (t) { return g.xE - (tn - t) * v * r; },
+      gate: function (x) { return x <= g.xE + 0.5; }
+    };
+    var self = this;
+    function paint(layerCv, fn) {
+      var c = layerCv.getContext("2d");
+      c.setTransform(1, 0, 0, 1, 0, 0); c.globalCompositeOperation = "source-over"; c.globalAlpha = 1;
+      c.clearRect(0, 0, layerCv.width, layerCv.height);
+      c.setTransform(dpr, 0, 0, dpr, 0, 0);
+      c.save(); c.beginPath(); c.rect(0, 0, W, g.H); c.clip();
+      var D = { c: c, g: g, sp: sp, dpr: dpr, st: st, map: map };
+      fn(D, -DUR); fn(D, 0);
+      c.restore();
+      // the ink dissolves before it reaches the clefs
+      c.setTransform(dpr, 0, 0, dpr, 0, 0);
+      c.globalCompositeOperation = "destination-in";
+      var gr = c.createLinearGradient(g.fade0, 0, g.fade1, 0);
+      gr.addColorStop(0, "rgba(0,0,0,0)"); gr.addColorStop(1, "rgba(0,0,0,1)");
+      c.fillStyle = gr; c.fillRect(0, 0, W, g.H);
+      c.globalCompositeOperation = "source-over";
+    }
+    paint(this.ink, drawPage);
+    paint(this.band, drawBand);
+    var c = this.canvas.getContext("2d");
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    c.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    c.drawImage(this.staff, 0, 0);
+    c.drawImage(this.band, 0, 0);                  // the guests' layer lies under the ward's ink
+    c.drawImage(this.ink, 0, 0);
+  };
+
+  // --------------------------------------------------------- the still plate ---
+  // three systems, each justified to the measure, cut where the music breathes
+  function renderStill(canvas, st) {
+    var W = 828, sp = 11, dpr = Math.min(2, window.devicePixelRatio || 1), g = geom(W, sp);
+    var xs0 = g.clefEnd + 1.0 * sp, right = W - 1.0 * sp, B2 = 34.7;
+    var v1 = (right - xs0 + 1.9 * sp) / dblBar.t;
+    var v2 = (right - xs0 - 1.5 * sp) / (B2 - dblBar.t);
+    var v3 = (v1 + v2) / 2;
+    // [start time, x of start, rate, clip left, clip right]
+    var systems = [
+      { a: 0, x: xs0, v: v1 },
+      { a: dblBar.t, x: xs0 + 1.5 * sp, v: v2 },
+      { a: B2, x: xs0 + 0.6 * sp, v: v3 }
+    ];
+    systems[0].cr = xs0 + dblBar.t * v1 - 1.9 * sp;
+    systems[1].cr = right + 0.2 * sp;
+    systems[2].cr = Math.min(right, xs0 + 0.6 * sp + (DUR - B2) * v3);
+    var sysGap = 0.9 * sp, H = Math.round(g.H * 3 + sysGap * 2 + 0.4 * sp);
+    canvas.style.width = W + "px"; canvas.style.height = H + "px";
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    var c = canvas.getContext("2d");
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    c.clearRect(0, 0, W, H);
+    systems.forEach(function (sy, j) {
+      var y0 = j * (g.H + sysGap);
+      function X(t) { return sy.x + (t - sy.a) * sy.v; }
+      var map = {
+        live: false, v: sy.v, X: X,
+        // the band's layer, laid from the head of the plate at its own rate
+        XB: function (t) { return X(1.3 + (t - BI.t0) * BI.tempoRatio); },
+        gate: function () { return true; }
+      };
+      drawStaves(c, g, dpr, 0, sy.cr + 0.5, y0);
+      c.save(); c.translate(0, y0);
+      c.beginPath(); c.rect(g.clefEnd + 0.3 * sp, 0, sy.cr - g.clefEnd - 0.3 * sp + (j === 1 ? 0 : 0.6 * sp), g.H); c.clip();
+      var D = { c: c, g: g, sp: sp, dpr: dpr, st: st, map: map };
+      drawBand(D, 0);
+      drawPage(D, 0);
+      c.restore();
+    });
+  }
+
+  // ----------------------------------------------------------------- page ---
+  var st = { t: 0, v: 60, playing: true, rubrics: false, words: false, phone: true };   // the owner's choice, 2026-09-26
+  var live = new Live(document.getElementById("live"));
+  var phone = new Live(document.getElementById("phonecv"), 390);
+  var still = document.getElementById("still");
+  var scrub = document.getElementById("scrub"), clock = document.getElementById("clock"), playBtn = document.getElementById("play");
+  var ready = false;
+
+  function draw() {
+    if (!ready) return;
+    live.render(st);
+    if (st.phone) phone.render(st);
+    scrub.value = st.t.toFixed(2);
+    clock.textContent = st.t.toFixed(1) + " s";
+  }
+  function drawStill() { if (ready) renderStill(still, st); }
+  window.renderAt = function (t) {
+    st.playing = false; playBtn.textContent = "Play"; playBtn.setAttribute("aria-pressed", "false");
+    st.t = ((t % DUR) + DUR) % DUR;
+    draw();
+    return st.t;
+  };
+  window.setEngravingOptions = function (o) {
+    Object.keys(o || {}).forEach(function (k) { st[k] = o[k]; });
+    syncUI(); draw(); drawStill();
+  };
+  function syncUI() {
+    document.querySelectorAll("[data-speed]").forEach(function (b) { b.setAttribute("aria-pressed", String(+b.dataset.speed === st.v)); });
+    document.getElementById("rubrics").checked = st.rubrics;
+    document.getElementById("words").checked = st.words;
+    document.getElementById("phone").checked = st.phone;
+    document.getElementById("phone-sec").style.display = st.phone ? "" : "none";
+    document.body.classList.toggle("no-rubrics", !st.rubrics);
+  }
+  playBtn.addEventListener("click", function () {
+    st.playing = !st.playing;
+    playBtn.textContent = st.playing ? "Pause" : "Play";
+    playBtn.setAttribute("aria-pressed", String(st.playing));
+    last = 0;
+  });
+  scrub.addEventListener("input", function () { window.renderAt(+scrub.value); });
+  document.querySelectorAll("[data-speed]").forEach(function (b) {
+    b.addEventListener("click", function () { st.v = +b.dataset.speed; syncUI(); draw(); });
+  });
+  ["rubrics", "words", "phone"].forEach(function (id) {
+    document.getElementById(id).addEventListener("change", function (e) { st[id] = e.target.checked; syncUI(); draw(); drawStill(); });
+  });
+  window.addEventListener("resize", function () { draw(); });
+
+  var last = 0;
+  function loop(ts) {
+    requestAnimationFrame(loop);
+    if (!st.playing || !ready) { last = ts; return; }
+    var dt = last ? Math.min(0.1, (ts - last) / 1000) : 0;
+    last = ts;
+    st.t = (st.t + dt) % DUR;
+    draw();
+  }
+  var fontsReady = Promise.all([
+    document.fonts.load('16px "Noto Sans Deseret"', "𐐗𐐄𐐢"),
+    document.fonts.load('16px "EB Garamond"'), document.fonts.load('italic 16px "EB Garamond"'),
+    document.fonts.load('600 16px "EB Garamond"'), document.fonts.load('italic 500 16px "EB Garamond"')
+  ]).catch(function () {});
+  var timeout = new Promise(function (r) { setTimeout(r, 2500); });
+  Promise.race([fontsReady, timeout]).then(function () {
+    ready = true; syncUI(); st.t = 8; draw(); drawStill();
+    window.engravingReady = true;
+    requestAnimationFrame(loop);
+  });
+})();
+</script>
+<script>
+(function () {  /* the band switch: reloads with ?band=0 / without it */
+  var on = !/[?&]band=0\b/.test(location.search), cb = document.getElementById("bandtoggle");
+  if (!cb) return;
+  cb.checked = on;
+  cb.addEventListener("change", function () {
+    var q = location.search.replace(/[?&]band=[01]/, "").replace(/^&/, "?");
+    if (!cb.checked) q += (q ? "&" : "?") + "band=0";
+    location.search = q;
+  });
+})();
+</script>
+</body>
+</html>

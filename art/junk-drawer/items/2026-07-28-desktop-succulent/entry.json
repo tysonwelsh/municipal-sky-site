@@ -102,7 +102,7 @@
       "notes": "Rerun of the original prompt through the live turn flow (bench rerun, submission 01M181QE6M7FVDM8JMXAGJ2KVM), rated blind by the owner; filed rank 1 of 4. Axis ratings live in jd_ratings, per the DB-era rule. viewBox normalized: tightened from \"0 0 400 460\" to ink bounds (\"63.0 183.0 273.8 266.2\").",
       "annotations": {
         "understanding-assignment": 4.0,
-        "structural-coherence": 3.0,
+        "structural-coherence": 2.0,
         "layering": 1.0,
         "jnsq": 3.0
       },
@@ -157,7 +157,7 @@
       "transcript": null,
       "notes": "Rerun of the original prompt through the live turn flow (bench rerun, submission 01M181QE6M7FVDM8JMXAGJ2KVM), rated blind by the owner; filed rank 3 of 4. Axis ratings live in jd_ratings, per the DB-era rule. viewBox normalized: tightened from \"0 0 400 460\" to ink bounds (\"18.0 28.0 363.8 423.8\").",
       "annotations": {
-        "understanding-assignment": 3.0,
+        "understanding-assignment": 2.0,
         "structural-coherence": 1.0,
         "layering": 3.0,
         "jnsq": 1.0

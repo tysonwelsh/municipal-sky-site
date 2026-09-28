@@ -13,25 +13,22 @@ include '../includes/header.php';
             <div class="section-divider"></div>
 
             <!-- Entry List -->
-            <div class="entry-list">
+            <div class="entry-list entry-list--undated">
                 <div class="entry">
-                    <span class="entry-date">2026.08.17</span>
                     <div class="entry-content">
-                        <a href="carbon-structures" class="entry-title">Visualizing the Structure of Amorphous Carbon</a>
+                        <a href="/information-graphics/carbon-structures" class="entry-title">Visualizing the Structure of Amorphous Carbon</a>
                         <span class="entry-description">Interactive 3D point clouds of simulated carbon atomic structures.</span>
                     </div>
                 </div>
                 <div class="entry">
-                    <span class="entry-date">2026.02.23</span>
                     <div class="entry-content">
-                        <a href="underworld-occupations" class="entry-title">Classifying Rabelais&rsquo;s Underworld With the Bureau of Labor Statistics</a>
+                        <a href="/information-graphics/underworld-occupations" class="entry-title">Classifying Rabelais&rsquo;s Underworld With the Bureau of Labor Statistics</a>
                         <span class="entry-description">Renaissance satire meets federal labor data.</span>
                     </div>
                 </div>
                 <div class="entry">
-                    <span class="entry-date">2026.02.03</span>
                     <div class="entry-content">
-                        <a href="gendered-pronouns" class="entry-title">The Distribution of Pronouns by Gender
+                        <a href="/information-graphics/gendered-pronouns" class="entry-title">The Distribution of Pronouns by Gender
                             Across Classic Novels</a>
                         <span class="entry-description">Mapping masculine and feminine third-person pronouns across
                             classic literature.</span>

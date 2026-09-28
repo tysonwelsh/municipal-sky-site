@@ -106,6 +106,10 @@
    for a frame or two as it went up */
 .jd-about--live .jd-scene-ghost,
 .jd-about--live .jd-scene-ghost * { animation: none !important; transition: none !important; }
+/* THE RELAY (2026-09-27): the report card for the NEXT drawing, rising
+   behind the one riding out — a change of drawing is a scroll, like a
+   change of scene. */
+.jd-about--live .jd-scene-relay { z-index: 2; }
 /* the pre-render: a host laid out but invisible, so a card can be opened,
    fitted and cloned before the reader ever reaches it */
 .jd-about--live .jd-scene.is-prerender {
@@ -629,7 +633,7 @@
    four axes — laid two by two instead of in a row, each panel its full
    box with its own key (jd-furniture.js treats this page as it treats a
    narrow viewport for that). The turn-by-turn table is left off. */
-.jd-about [data-scene-pane="analytics"] .jd-inline-card { width: 660px; }
+.jd-about [data-scene-pane="analytics"] .jd-inline-card { width: 700px; }
 .jd-about .jd-inline-card .jd-folder-card { width: 100%; }
 .jd-about .jd-inline-card .jd-folder-scroll {
   display: block;
@@ -885,6 +889,12 @@ html.jd-about-page.jd-folder-open { overflow: visible; }
     margin-bottom: var(--s-5);
   }
   .jd-about--live .jd-step:last-of-type { margin-bottom: 30vh; }
+  /* THE HANDOFF'S RUNWAY, PHONE (2026-09-27). With the report card turned
+     per drawing, a view can be a single 42vh step — shorter than the pinned
+     pane's own height, which is how much scroll a handoff takes — so the
+     card never came to rest. A pane's height of room before each new view
+     gives the change its scroll and the card its still moment. */
+  .jd-about--live .jd-step--scene-head { margin-top: calc(66vh + 28px); }
 
   /* the drawer's own phone page-snap is written for the art page, where the
      stage IS the viewport and the notes are a second landing. Here the stage
@@ -982,46 +992,81 @@ html.jd-about-page.jd-folder-open { overflow: visible; }
 }
 
 /* ============================================================================
-   STEP TEXT CENTRED ON THE DRAWER (owner, 2026-09-23). The stepper turns a
-   step on when its TOP crosses the 45% focus line, but the step is an 82vh
-   box with its prose centred inside — so at the moment a step lights up its
-   words sit ~86% of the way down the screen and only reach the drawer's
-   midline halfway through the step's scroll. The sticky-caption fix: prose
-   at the top of the box, then pinned at the midline for the rest of the
-   step, so it reads beside the drawer the whole time it is on. Desktop only;
-   the phone layout pins the pane across the top and is untouched.
+   THE STEP TEXT MOVES WITH THE SCROLL (owner, 2026-09-26). It used to be
+   pinned: prose at the top of an 82vh step, held at the drawer's midline
+   for the rest of the step (2026-09-23, so the words sat beside the drawer
+   while their step was on). But a paragraph that stops while the wheel keeps
+   turning reads as a broken scroll, and the gap fix that followed only
+   moved the stop. So nothing pins: every paragraph travels at the page's
+   own speed, and the spacing does the pacing instead.
+   The prose sits at the TOP of its step, so it is on the drawer's midline
+   (the 45% focus line) at the moment its step lights; the step is 66vh, so
+   the next paragraph arrives on that line just as this one clears the top —
+   one paragraph in the middle at a time, a steady gap of the step's height
+   less the paragraph's between them. Desktop only; the phone layout pins
+   the pane across the top and is untouched.
    ========================================================================== */
 @media (min-width: 769px) {
-  /* THE HANDOVER (owner, 2026-09-26): a pinned caption holds until the end
-     of its step's box, and the next step's prose begins right at that end —
-     so the incoming paragraph rode up and parked flush under the pinned one
-     (measured: the gap closed to 0px at every step) before either moved.
-     The fix is room at the foot of every step. A sticky caption never enters
-     its step's bottom padding, so the padding is a gap the two paragraphs
-     keep between them: the outgoing one lets go while the incoming one is
-     still at the bottom edge of the screen, and they travel together, the
-     old leaving as the new arrives. --jd-step-gap is sized so a typical
-     caption (~14rem) lets go just as the next one reaches the viewport's
-     bottom: viewport − pin line − caption. The 70vh above it is the pinned
-     stretch, a little shorter than before so the page grows by less than
-     the gap does. */
+  /* EVERY STEP CLEARS THE SCREEN BEFORE THE NEXT ARRIVES (owner, 2026-09-27:
+     "by the time [the next step] scrolls in, I can still see the bottom of
+     the list"). A fixed 66vh step only works for prose shorter than ~21vh;
+     anything longer was still on screen when its successor reached the
+     focus line. So a step is now as tall as its prose PLUS the distance from
+     the focus line (45vh) up to the banner, plus a little air: when the next
+     step's top reaches the line, this one's last line has just passed under
+     the banner. Long steps get more scroll, short ones less, and none
+     overlaps. */
   .jd-about--live .jd-step {
-    --jd-step-gap: calc(50vh - var(--banner-h) / 2 - 8rem);
+    --jd-hold: 14vh;
     justify-content: flex-start;
-    min-height: calc(70vh + var(--jd-step-gap));
-    padding-bottom: var(--jd-step-gap);
+    /* a floor for very short steps (a two-line step left the next heading
+       peeking in at the foot of the screen): with border-box sizing this
+       only lengthens a step whose prose is shorter than ~16vh */
+    min-height: calc(58vh + var(--jd-hold));
+    padding-bottom: calc(45vh - var(--banner-h) + var(--s-3));
   }
+  /* THE HOLD (owner, 2026-09-28: "a subtle little lock in place … when it
+     arrives, and then they scroll a bit … and then it starts to leave").
+     The prose pins at the focus line for --jd-hold of scroll, then goes on
+     at the page's speed. A sticky element is held until its box's content
+     edge reaches it, so the hold is a spacer of exactly that height after
+     the prose (inside the content box, above the step's bottom padding,
+     which stays the clearance before the next step). Short on purpose: a
+     long hold read as a broken scroll (2026-09-26). */
   .jd-about--live .jd-step-body {
     position: sticky;
-    /* the pane's midline is (banner + viewport)/2; a step body runs roughly
-       160–260px, so its top sits about 6rem above that line */
-    top: calc(50vh + var(--banner-h) / 2 - 6rem);
+    top: 45vh;
   }
-  /* the taxonomy step carries the whole legend and is far taller than the
-     others; pinned at the midline it would run off the bottom, so it pins
-     near the top instead */
-  .jd-about--live .jd-step[data-step="taxonomy"] .jd-step-body {
-    top: calc(var(--banner-h) + var(--s-3));
+  .jd-about--live .jd-step::after {
+    content: "";
+    display: block;
+    height: var(--jd-hold);
+    flex: none;
+  }
+  /* THE OPENING LINE (owner, 2026-09-27). The first step began 6vh down, so
+     at load its prose sat near the top and the next step's heading showed at
+     the foot of the screen. Starting it ON the focus line puts the opening
+     words beside the drawer's middle, where every later step is read, and
+     leaves the next step (66vh further) below the fold. */
+  .jd-about--live .jd-step:first-of-type {
+    margin-top: calc(45vh - var(--banner-h) - var(--s-2));
+  }
+  /* THE TITLE AND THE OPENING LINE LEAVE TOGETHER (owner, 2026-09-28: "it
+     should scroll along with the paragraph when the paragraph moves up").
+     The title scrolls at the page's speed, so the first step does too: no
+     hold on it, and no hold spacer. */
+  .jd-about--live .jd-step:first-of-type .jd-step-body { position: static; }
+  .jd-about--live .jd-step:first-of-type::after { content: none; }
+  /* THE HANDOFF'S RUNWAY. A scene change runs over the pane's height of
+     scroll (D = 100vh - banner - s-3 + the strip's 28px GAP) that ENDS as
+     the new scene's first step reaches the focus line (about-scenes.js,
+     handoff). This margin sets when it STARTS relative to the outgoing
+     scene's last step: its graphic holds still while that step's prose
+     rises from the focus line by its own height plus 15vh, then graphic and
+     prose leave together. margin = D - (45vh - banner) + 15vh. */
+  .jd-about--live .jd-step--scene-head {
+    /* + the hold: the outgoing step's prose now leaves --jd-hold later */
+    margin-top: calc(70vh - var(--s-3) + 28px + 14vh);
   }
 }
 
@@ -1036,16 +1081,23 @@ html.jd-about-page.jd-folder-open { overflow: visible; }
    The live wall shade, varnish and vignette stay on top of the picture; the
    capture is taken without them so nothing is doubled.
    ========================================================================== */
-html.jd-poster-on .jd-about .jd-well {
+/* AWAKE (2026-09-27): once the reader reaches for the drawer, the live pile
+   takes over from the picture — every rule that stands in for the pile
+   applies only while html lacks .jd-drawer-awake. The live pile lands on the
+   picture's own layout (the capture's scatter), so nothing moves. */
+html.jd-poster-on:not(.jd-drawer-awake) .jd-about .jd-well {
   background: #8d6537 var(--jd-poster-url) center / 100% 100% no-repeat;
 }
 /* the succulent is SPECIMEN in about-scenes.js — the one object scene 1 lifts */
-html.jd-poster-on .jd-about .jd-pile > .jd-item:not([data-id="2026-07-28-desktop-succulent"]) {
+/* the Take-a-Turn button is live from the start: it is one object, it is
+   not in the picture, and a live button seats itself against the corner by
+   its own rules, which a capture at another size cannot match */
+html.jd-poster-on:not(.jd-drawer-awake) .jd-about .jd-pile > .jd-item:not([data-id="2026-07-28-desktop-succulent"]):not([data-turn]) {
   display: none;
 }
 /* a pick dims the rest of the pile (brightness .68 on every other item); with
    the rest of the pile in the picture, the shade falls on the picture */
-html.jd-poster-on .jd-about .jd-well::before {
+html.jd-poster-on:not(.jd-drawer-awake) .jd-about .jd-well::before {
   content: '';
   position: absolute; inset: 0; z-index: 1;
   pointer-events: none;
@@ -1053,7 +1105,7 @@ html.jd-poster-on .jd-about .jd-well::before {
   opacity: 0;
   transition: opacity 0.25s ease;
 }
-html.jd-poster-on .jd-about .jd-well.jd-has-pick::before { opacity: 1; }
+html.jd-poster-on:not(.jd-drawer-awake) .jd-about .jd-well.jd-has-pick::before { opacity: 1; }
 
 /* the way into the real thing: a manila button on the drawer's floor, in the
    corner the Take-a-Turn plate leaves free. Above the vignette (62). */
@@ -1092,7 +1144,7 @@ html.jd-poster-on .jd-about .jd-well.jd-has-pick::before { opacity: 1; }
    floor it is baked into the picture beneath them; left live across the whole
    stage it would crack the pictured objects too. So the live layer keeps only
    the frame: its padding is the wall, and the mask cuts the well out of it. */
-html.jd-poster-on .jd-about .jd-craquelure {
+html.jd-poster-on:not(.jd-drawer-awake) .jd-about .jd-craquelure {
   padding: var(--wall);
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
@@ -1119,3 +1171,463 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
   html.jd-about-page body { padding-top: var(--banner-h); }
   html.jd-about-page .site-banner { transform: none; transition: none; }
 }
+
+/* THE CATEGORIES AS A BULLETED LIST (owner, 2026-09-27). On this page the
+   taxonomy step introduces the four categories in a sentence ending "They
+   are:" — so they read as a plain list in the step's own type: the name,
+   a dash, the one-line question. The drawer's small-caps label style is
+   for its field notes, not for prose. */
+.jd-about .jd-axes--list {
+  margin: var(--s-2) 0 0;
+  padding-left: 1.2em;
+  list-style: disc;
+}
+.jd-about .jd-axes--list .jd-axis-row { margin: 0 0 var(--s-1); padding-left: 0.2em; }
+.jd-about .jd-axes--list .jd-axis-label {
+  display: inline;
+  font-size: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+  font-weight: 600;
+  color: var(--ink);
+}
+/* the space after the dash is an escape (\0020): a literal space straight
+   after the \2014 escape is read as the escape's terminator and dropped.
+   The space before is non-breaking, so the dash never starts a line. */
+.jd-about .jd-axes--list .jd-axis-label::after {
+  content: "\00a0\2014\0020"; white-space: pre-wrap; font-weight: 400;
+}
+.jd-about .jd-axes--list .jd-axis-desc { color: inherit; }
+
+
+/* ============================================================================
+   THE CHARTS (owner, 2026-09-27). Scene 4 no longer mounts the analytics
+   folder: about-scenes.js draws three charts of its own from the folder's
+   endpoint, and the pane shows them on the page itself — no manila, no
+   card, no frame. Tufte's rules, in this site's type: the only ink is the
+   data (a dot or a bar per model), a hairline per row to carry the eye,
+   faint ticks at the scale's points, and the words of the scale beneath.
+   Names and values sit on the marks, so there is no legend and no axis
+   of numbers. Titles are the drawer's small mono caps; values are mono;
+   the subtitle is the page's own text voice, muted.
+   ========================================================================== */
+.jd-about .jd-charts {
+  --jdc-name: 10.5rem;         /* the model-name column */
+  --jdc-val: 5.4rem;           /* the value column (value + its n) */
+  /* THE PAPER (owner, 2026-09-27: "give them a container … that fits the
+     theme"). The report card's stock, so the analysis reads as one more
+     document from the same file: the cream card, its grain and mottle
+     (copied from .jd-record-scrim's tokens in junk-drawer.css, which are
+     scoped to that scrim), the double hairline border, the drop shadow,
+     and the card's slate ink. The charts inside keep their plain marks. */
+  --jdc-card: #efe4c6;
+  --jdc-ink: #37414f;
+  --jdc-hair: rgba(55, 65, 79, 0.22);
+  --jdc-ground: var(--jdc-card); /* the dots' rings, cut from the paper */
+  position: relative;
+  box-sizing: border-box;
+  padding: 30px 34px 28px;
+  color: var(--jdc-ink);
+  background: var(--jdc-card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+  border: 1px solid rgba(48, 38, 20, 0.55);
+  box-shadow: 14px 22px 34px -10px rgba(6, 3, 0, 0.5),
+              3px 6px 12px -4px rgba(6, 3, 0, 0.4);
+}
+/* the inner hairline of the double border, and the paper's mottle */
+.jd-about .jd-charts::before {
+  content: ""; position: absolute; inset: 5px; z-index: 1; pointer-events: none;
+  border: 1px solid rgba(55, 65, 79, 0.42);
+}
+.jd-about .jd-charts::after {
+  content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cfilter id='m' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.011 0.016' numOctaves='4' seed='23'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.44 0 0 0 0 0.32 0 0 0 0 0.11 0 0 0 0.14 0'/%3E%3C/filter%3E%3Crect width='420' height='420' filter='url(%23m)'/%3E%3C/svg%3E");
+  background-size: 420px 420px;
+}
+.jd-about .jd-charts > .jdc { position: relative; z-index: 2; }
+.jd-about .jd-charts-wrap { box-sizing: border-box; padding: 2px 30px 40px 4px; }
+/* one chart per card since 2026-09-27 (each view its own card) */
+.jd-about .jd-charts .jdc { display: block; margin: 0; }
+.jd-about .jdc figcaption {
+  margin: 0 0 20px; padding-bottom: 12px;
+  border-bottom: 1px solid rgba(55, 65, 79, 0.35);
+  text-align: center;
+}
+/* the chart titles in the page's own text face (owner, 2026-09-27), set
+   like the step headings beside them, a size down: not the drawer's mono */
+.jd-about .jdc-title {
+  display: block;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 1.22rem; line-height: 1.25;
+  letter-spacing: 0; text-transform: none;
+  color: #1f2530;
+}
+.jd-about .jdc-sub {
+  display: block; margin-top: 6px;
+  font-size: 0.98rem; line-height: 1.35; font-style: italic;
+  color: rgba(55, 65, 79, 0.85);
+}
+.jd-about .jdc-row {
+  display: grid;
+  grid-template-columns: var(--jdc-name) 1fr var(--jdc-val);
+  align-items: center;
+  column-gap: 14px;
+  min-height: 34px;
+}
+.jd-about .jdc-name {
+  font-family: var(--font-mono); font-size: 0.9rem;
+  text-align: right; color: var(--jdc-ink);
+  white-space: nowrap;
+}
+.jd-about .jdc-val {
+  font-family: var(--font-mono); font-size: 0.9rem;
+  font-variant-numeric: tabular-nums; color: #1f2530;
+}
+.jd-about .jdc-track { position: relative; height: 14px; }
+/* the row's hairline, and the scale's points as faint ticks on it */
+.jd-about .jdc-rule {
+  position: absolute; left: 0; right: 0; top: 50%;
+  height: 1px; background: var(--jdc-hair);
+}
+.jd-about .jdc-tick {
+  position: absolute; top: 50%; width: 1px; height: 7px; margin: -3px 0 0;
+  background: var(--jdc-hair);
+}
+/* the mark: a dot with a ring of page around it, so a dot on a tick reads
+   as sitting on the line, not merged into it */
+.jd-about .jdc-dot {
+  position: absolute; top: 50%;
+  width: 11px; height: 11px; margin: -5.5px 0 0 -5.5px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--jdc-ground);
+}
+/* the scale's own words under the last row */
+.jd-about .jdc-scale { min-height: 0; margin-top: 4px; }
+.jd-about .jdc-scale .jdc-track { height: 1.2em; }
+.jd-about .jdc-scale .jdc-track { height: auto; min-height: 1.3em; }
+.jd-about .jdc-tl {
+  position: absolute; top: 0; transform: translateX(-50%);
+  font-family: var(--font-mono); font-size: 0.74rem; letter-spacing: 0.02em;
+  line-height: 1.25; color: rgba(55, 65, 79, 0.8); white-space: nowrap;
+}
+/* the end words sit inside the scale, flush to their ends, and may wrap
+   rather than meet in the middle of a narrow panel */
+.jd-about .jdc-tl:first-child { transform: none; white-space: normal; max-width: 48%; text-align: left; }
+.jd-about .jdc-tl:last-child { transform: none; left: auto !important; right: 0; white-space: normal; max-width: 48%; text-align: right; }
+/* the multiples: two by two, each panel titled, the name column narrower */
+.jd-about .jdc-multiples {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 26px 30px;
+}
+.jd-about .jdc-multiples { grid-template-columns: 1.45fr 1fr; gap: 30px 26px; }
+.jd-about .jdc-panel { --jdc-name: 8.6rem; --jdc-val: 2.2rem; }
+.jd-about .jdc-panel.is-right { --jdc-name: 0px; }
+.jd-about .jdc-panel .jdc-row { column-gap: 10px; min-height: 30px; }
+.jd-about .jdc-panel.is-right .jdc-row { column-gap: 0 10px; grid-template-columns: 0 1fr var(--jdc-val); }
+.jd-about .jdc-panel.is-right .jdc-name { visibility: hidden; overflow: hidden; }
+.jd-about .jdc-panel .jdc-name,
+.jd-about .jdc-panel .jdc-val { font-size: 0.82rem; }
+.jd-about .jdc-ptitle {
+  margin: 0 0 8px calc(var(--jdc-name) + 10px);
+  font-size: 1.05rem; color: #1f2530; white-space: nowrap;
+}
+.jd-about .jdc-panel.is-right .jdc-ptitle { margin-left: 0; }
+/* the bar: a length from zero, thin, the data end rounded */
+.jd-about .jdc-bar {
+  position: absolute; left: 0; top: 50%;
+  height: 10px; margin-top: -5px;
+  border-radius: 0 4px 4px 0;
+}
+.jd-about .jdc-barrow .jdc-track { height: 14px; }
+.jd-about .jdc-endval { position: absolute; top: 50%; transform: translateY(-50%); line-height: 1; white-space: nowrap; }
+
+/* THE CHARTS ON A PHONE. The pane is ~360px wide and 66vh tall, and a 700px
+   chart scaled into it came out at half size. Here the chart lays out at the
+   pane's own width instead: a narrower name column, and the four category
+   panels in one column with the names on every panel (a single column has
+   no left-hand panel to carry them). The pane's warm ground shows through,
+   and the dots' rings match it. */
+@media (max-width: 768px) {
+  .jd-about [data-scene-pane="analytics"] .jd-inline-card { width: 100%; }
+  .jd-about .jd-charts { --jdc-name: 7.2rem; --jdc-val: 2.8rem; padding: 20px 16px 18px; }
+  .jd-about .jd-charts-wrap { padding: 4px 14px 22px 8px; }
+  .jd-about .jdc-row { column-gap: 8px; min-height: 28px; }
+  .jd-about .jdc-name, .jd-about .jdc-val { font-size: 0.78rem; }
+  .jd-about .jdc-sub { font-size: 0.9rem; }
+  .jd-about .jdc-multiples { grid-template-columns: 1fr; gap: 14px; }
+  .jd-about .jdc-panel, .jd-about .jdc-panel.is-right { --jdc-name: 7.2rem; }
+  .jd-about .jdc-panel.is-right .jdc-row { grid-template-columns: var(--jdc-name) 1fr var(--jdc-val); column-gap: 8px; }
+  .jd-about .jdc-panel.is-right .jdc-ptitle { margin-left: calc(var(--jdc-name) + 8px); }
+  .jd-about .jdc-panel.is-right .jdc-name { visibility: visible; }
+  .jd-about .jdc-panel .jdc-row { min-height: 22px; }
+  .jd-about .jdc-ptitle { font-size: 0.92rem; margin-bottom: 2px; }
+  /* too narrow for five tier names: the scale keeps its ends, the ticks
+     keep the rest */
+  .jd-about .jdc-tl { font-size: 0.64rem; }
+  .jd-about .jdc-tl:not(:first-child):not(:last-child) { display: none; }
+}
+
+/* THE PAGE TITLE (owner, 2026-09-28, third pass). A title block at the
+   head of the opening step, so it scrolls away with the opening paragraphs.
+   "About the" is part of the title — small italic on its own line — over
+   the name in the page's heading face at display size (sentence case; the
+   site's h1 caps are for section labels), closed by a double rule, heavy
+   over hairline. On desktop the block reaches from 17vh down to the focus
+   line: the title sits high in the column, near the top of the drawer,
+   and the opening heading still lands where every later step is read. */
+.jd-about .jd-about-head { margin: 0 0 var(--s-4); }
+.jd-about .jd-about-kicker {
+  display: block;
+  margin: 0 0 0.2rem;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 0.5em;
+  letter-spacing: 0.01em;
+  color: var(--ink-soft);
+}
+.jd-about .jd-about-title {
+  margin: 0;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: clamp(2.2rem, 1.7rem + 1.1vw, 2.8rem);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  text-transform: none;
+  color: var(--ink);
+}
+.jd-about .jd-about-title::after {
+  content: "";
+  display: block;
+  width: 4.5rem;
+  height: 3px;
+  margin-top: 1.1rem;
+  background: var(--ink);
+  box-shadow: 0 6px 0 -2px var(--ink);
+}
+@media (min-width: 769px) {
+  .jd-about--live .jd-about-head {
+    --jd-head: max(10rem, 28vh);
+    min-height: var(--jd-head); box-sizing: border-box; margin: 0;
+    padding-bottom: var(--s-4);
+  }
+  .jd-about--live .jd-step:first-of-type {
+    margin-top: calc(45vh - var(--banner-h) - var(--s-2) - max(10rem, 28vh));
+  }
+}
+.jd-about .jd-step-body a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 0.15em; }
+
+/* THE RECORD AS A SPREADSHEET (owner, 2026-09-27): one row per prompt, each
+   model's grade and four ratings across the row in a group of columns — raw
+   values in a grid, on the same paper as the charts, in the card's slate ink.
+   Gridlines on every cell, a two-row shaded head (the models over their
+   columns), a numbered row gutter, a firmer rule where each model's group
+   begins; one monospaced face, text left and numbers right. A fixed window
+   scrolls both ways (the page's own scroll resumes at its ends); the head,
+   the row numbers and the prompt column hold still. Sticky cells need an
+   opaque ground, and the card's base cream reads as a pale block against
+   paper its grain has darkened, so they use the paper as it renders. */
+.jd-about .jdc-tablewrap {
+  max-height: 540px;
+  overflow: auto;
+  border: 1px solid rgba(55, 65, 79, 0.45);
+}
+.jd-about .jdc-tablewrap:focus-visible { outline: 2px solid rgba(55, 65, 79, 0.5); outline-offset: 2px; }
+.jd-about .jdc-sheet {
+  --jdc-grid: rgba(55, 65, 79, 0.22);
+  --jdc-group: rgba(55, 65, 79, 0.55);
+  --jdc-paper: #d9ccac;
+  --jdc-headfill: #cfbf98;
+  --jdc-h1: 30px;             /* the model row's height: the column row sticks under it */
+  border-collapse: separate; border-spacing: 0;
+  table-layout: fixed;
+  width: max-content;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  color: var(--jdc-ink);
+  font-variant-numeric: tabular-nums;
+}
+.jd-about .jdc-sheet th,
+.jd-about .jdc-sheet td {
+  padding: 5px 7px;
+  border-right: 1px solid var(--jdc-grid);
+  border-bottom: 1px solid var(--jdc-grid);
+  white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+  line-height: 1.3;
+}
+.jd-about .jdc-sheet th {
+  position: sticky; top: 0; z-index: 2;
+  background: var(--jdc-headfill);
+  font-weight: 600;
+  text-align: left;
+  color: #1f2530;
+  text-overflow: clip;
+}
+.jd-about .jdc-sheet tr.jdc-h1 th { height: var(--jdc-h1); box-sizing: border-box; }
+.jd-about .jdc-sheet tr.jdc-h2 th {
+  top: var(--jdc-h1);
+  border-bottom: 1px solid rgba(55, 65, 79, 0.5);
+  white-space: normal; vertical-align: bottom;
+  font-weight: 400; font-size: 0.66rem;
+}
+.jd-about .jdc-sheet th[rowspan] { border-bottom: 1px solid rgba(55, 65, 79, 0.5); vertical-align: bottom; }
+.jd-about .jdc-sheet .jdc-g-head { text-align: left; border-left: 1px solid var(--jdc-group); }
+.jd-about .jdc-sheet .jdc-g-start { border-left: 1px solid var(--jdc-group); }
+/* the row gutter: numbered, shaded like the head, holding still sideways */
+.jd-about .jdc-sheet .jdc-rn {
+  position: sticky; left: 0; z-index: 1;
+  width: 2.8rem; min-width: 2.8rem; max-width: 2.8rem;
+  text-align: right;
+  background: var(--jdc-headfill);
+  color: rgba(55, 65, 79, 0.75);
+  border-right: 1px solid rgba(55, 65, 79, 0.5);
+}
+.jd-about .jdc-sheet th.jdc-rn { z-index: 4; }
+/* the date comes first and scrolls; the prompt holds still beside the row
+   numbers, so the date slides under it as the table scrolls sideways */
+.jd-about .jdc-sheet .jdc-c-prompt {
+  position: sticky; left: 2.8rem; z-index: 1;
+  width: 12rem; min-width: 12rem; max-width: 12rem;
+  background: var(--jdc-paper);
+  border-right: 1px solid rgba(55, 65, 79, 0.5);
+}
+.jd-about .jdc-sheet th.jdc-c-prompt { z-index: 4; background: var(--jdc-headfill); }
+.jd-about .jdc-sheet .jdc-c-date { width: 6.4rem; min-width: 6.4rem; max-width: 6.4rem; background: var(--jdc-paper); }
+.jd-about .jdc-sheet th.jdc-c-date { background: var(--jdc-headfill); }
+.jd-about .jdc-sheet .jdc-c-num { width: 6.2rem; min-width: 6.2rem; max-width: 6.2rem; text-align: right; }
+.jd-about .jdc-sheet th.jdc-c-num { text-align: right; }
+@media (max-width: 768px) {
+  .jd-about .jdc-tablewrap { max-height: 380px; }
+  .jd-about .jdc-sheet .jdc-c-prompt { width: 8.5rem; min-width: 8.5rem; max-width: 8.5rem; }
+}
+
+/* THE SHEET ON ITS OWN (owner, 2026-09-27): the table is the whole visual —
+   no card, title or subtitle — straight on the white page, as wide as a
+   report card (740px, the record host's width). */
+.jd-about [data-scene-pane="analytics"] .jd-inline-card.jd-sheet-card { width: 740px; }
+.jd-about .jd-sheet-card {
+  --jdc-ink: #37414f;
+  --jdc-hair: rgba(55, 65, 79, 0.22);
+  color: var(--jdc-ink);
+  background: var(--paper);
+}
+.jd-about .jd-sheet-card .jdc { margin: 0; }
+.jd-about .jd-sheet-card .jdc-tablewrap { max-height: 720px; }
+/* the rows keep the drawer's cream (owner: "the same kind of beige … that
+   fits the theme"): every body cell, frozen or not, on the report card's
+   paper tone, under a deeper head */
+.jd-about .jd-sheet-card .jdc-sheet { --jdc-paper: #efe4c6; --jdc-headfill: #ddd0ad; }
+.jd-about .jd-sheet-card .jdc-sheet td { background: var(--jdc-paper); }
+.jd-about .jd-sheet-card .jdc-sheet td.jdc-rn { background: var(--jdc-headfill); }
+.jd-about .jd-sheet-card .jdc-tablewrap { background: var(--jdc-paper, #efe4c6); }
+@media (max-width: 768px) {
+  .jd-about [data-scene-pane="analytics"] .jd-inline-card.jd-sheet-card { width: 100%; }
+  .jd-about .jd-sheet-card .jdc-tablewrap { max-height: 60vh; }
+}
+
+/* the prompt card beside an Item cell (about-scenes.js, "the prompt card"):
+   the report card's prompt box in miniature — cream paper, a slate hairline,
+   the tracked label over the prompt in the typewriter face */
+.jd-prompt-tip {
+  position: fixed; z-index: 90;
+  max-width: 22rem;
+  padding: 10px 12px 11px;
+  background: #efe4c6;
+  border: 1px solid rgba(55, 65, 79, 0.45);
+  box-shadow: 3px 6px 14px -4px rgba(6, 3, 0, 0.45);
+  color: #37414f;
+  pointer-events: none;
+  opacity: 0; visibility: hidden;
+  transition: opacity 0.12s ease, visibility 0s linear 0.12s;
+}
+.jd-prompt-tip.is-on { opacity: 1; visibility: visible; transition: opacity 0.12s ease; }
+.jd-prompt-tip-h {
+  display: block; margin-bottom: 5px;
+  font-family: var(--font-mono); font-size: 0.62rem;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: rgba(55, 65, 79, 0.8);
+}
+.jd-prompt-tip p {
+  margin: 0;
+  font-family: var(--font-mono); font-size: 0.78rem; line-height: 1.45;
+  color: #1f2530;
+}
+.jd-about .jdc-sheet td.jdc-c-prompt { cursor: help; }
+
+/* the Item head's hint: quiet, grey, italic, in the page's text voice */
+.jd-about .jdc-sheet .jdc-hint {
+  font-family: var(--font-body);
+  font-style: italic; font-weight: 400;
+  font-size: 0.72rem; letter-spacing: 0; text-transform: none;
+  color: rgba(55, 65, 79, 0.6);
+  white-space: nowrap;
+}
+@media (hover: none) {
+  /* a touch screen has no hover: the same hint, in its own words */
+  .jd-about .jdc-sheet .jdc-hint { font-size: 0; }
+  .jd-about .jdc-sheet .jdc-hint::after { content: "(tap to see prompt)"; font-size: 0.68rem; }
+}
+
+/* each value's n (owner, 2026-09-27): how many drawings the average rests
+   on, beside it in the muted ink — the scale's words under the axis are gone,
+   the ticks carry the scale */
+.jd-about .jdc-n {
+  margin-left: 0.6em;
+  font-size: 0.68rem;
+  color: rgba(55, 65, 79, 0.62);
+}
+
+/* THE GRADE DISTRIBUTIONS (owner, 2026-09-27): one row of small multiples.
+   The grade names once, down the left; each model a column of five
+   horizontal bars that line up with them across the row, on one shared
+   scale, rising from a hairline at each panel's left edge; the count at the
+   bar's end. No gridlines, no value axis — the counts are on the bars. */
+.jd-about .jdc-hrow { display: grid; column-gap: 14px; row-gap: 7px; align-items: center; }
+.jd-about .jdc-hrow-t { margin: 0 0 4px; font-size: 0.95rem; white-space: nowrap; }
+.jd-about .jdc-hrow-lab {
+  font-family: var(--font-mono); font-size: 0.74rem;
+  text-align: right; color: var(--jdc-ink); white-space: nowrap;
+  padding-right: 2px;
+}
+.jd-about .jdc-hrow-cell {
+  display: flex; align-items: center; gap: 5px;
+  height: 18px;
+  border-left: 1px solid rgba(55, 65, 79, 0.45);
+}
+.jd-about .jdc-hrow-bar { display: block; height: 11px; min-width: 1px; border-radius: 0 3px 3px 0; }
+.jd-about .jdc-hrow-n {
+  font-family: var(--font-mono); font-size: 0.7rem; line-height: 1;
+  color: #1f2530; font-variant-numeric: tabular-nums;
+}
+@media (max-width: 768px) {
+  .jd-about .jdc-hrow { column-gap: 8px; row-gap: 5px; }
+  .jd-about .jdc-hrow-t { font-size: 0.72rem; white-space: normal; }
+  .jd-about .jdc-hrow-lab { font-size: 0.62rem; }
+  .jd-about .jdc-hrow-n { font-size: 0.6rem; }
+}
+
+/* two charts under one title (the average and the spread): each keeps its
+   own subtitle, set as a small left-aligned lead-in, with air between them */
+.jd-about .jdc-pair figcaption { margin-bottom: 14px; }
+.jd-about .jdc-sec + .jdc-sec { margin-top: 24px; padding-top: 18px; border-top: 1px solid rgba(55, 65, 79, 0.18); }
+.jd-about .jdc-sec-sub { margin: 0 0 10px; text-align: left; font-size: 0.92rem; }
+
+/* a numbered list in a step (the grade scale): the step's own type, the
+   numbers in the drawer's mono so they read as the scale's values */
+.jd-about .jd-step-list { margin: 0 0 var(--s-2); padding-left: 1.6em; }
+.jd-about .jd-step-list li { margin: 0 0 2px; padding-left: 0.2em; }
+.jd-about .jd-step-list li::marker { font-family: var(--font-mono); font-size: 0.86em; color: var(--ink-soft); }
+
+/* FOCUS (owner, 2026-09-27): a step can dim part of its card to point at
+   the rest. "spread-top2": the averages recede, and in the spread only the
+   two leaders stay at full strength. Opacity eases, so the emphasis moves
+   rather than blinks. */
+.jd-about .jdc-sec-avg,
+.jd-about .jdc-hrow-t,
+.jd-about .jdc-hrow-cell { transition: opacity 0.35s ease; }
+.jd-about [data-scene-pane="analytics"][data-focus="spread-top2"] .jdc-sec-avg { opacity: 0.28; }
+.jd-about [data-scene-pane="analytics"][data-focus="spread-top2"] .jdc-hrow-t:not([data-model="claude-opus-5"]):not([data-model="gemini-3-1-pro"]),
+.jd-about [data-scene-pane="analytics"][data-focus="spread-top2"] .jdc-hrow-cell:not([data-model="claude-opus-5"]):not([data-model="gemini-3-1-pro"]) { opacity: 0.22; }
+@media (prefers-reduced-motion: reduce) {
+  .jd-about .jdc-sec-avg, .jd-about .jdc-hrow-t, .jd-about .jdc-hrow-cell { transition: none; }
+}
+

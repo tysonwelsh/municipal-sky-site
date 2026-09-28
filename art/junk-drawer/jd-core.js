@@ -276,6 +276,11 @@ function JD_reduced() {
    served with 200 would otherwise be injected as furniture). onFail runs
    once the retries are spent. */
 function JD_fetchArt(opts) {
+  /* a page can say which furniture it wants (JD_FURNITURE, a list of the
+     modules' script attributes — the /about/ walkthrough keeps only the
+     Take-a-Turn button); the rest is not fetched: no art, no build, no
+     object — those modules wait on it forever */
+  if (window.JD_FURNITURE && window.JD_FURNITURE.indexOf(opts.attr) < 0) return;
   var RETRY_MS = [600, 1800];
   var tag = document.querySelector('script[' + opts.attr + ']');
   var v = tag && tag.getAttribute(opts.attr);
@@ -985,15 +990,21 @@ var JD_admin = (function () {
          old responses that carry their grades (the report card is where
          that history surfaces, when it lands). */
       var axes = (tax.axes || []).filter(function (ax) { return !ax.defunct; });
+      /* a list marked data-summary (the /about/ walkthrough) introduces the
+         taxonomy to a reader, so it takes each axis's one-line `summary`;
+         everywhere else keeps the full rater-facing description */
+      var brief = axesEl.hasAttribute('data-summary');
+      /* a <ul> host gets list items, so a bulleted list is a real list */
+      var rowTag = axesEl.tagName === 'UL' || axesEl.tagName === 'OL' ? 'li' : 'div';
       axes.forEach(function (ax) {
-        var row = document.createElement('div');
+        var row = document.createElement(rowTag);
         row.className = 'jd-axis-row';
         var label = document.createElement('span');
         label.className = 'jd-axis-label';
         label.textContent = ax.label || ax.id;
         var desc = document.createElement('span');
         desc.className = 'jd-axis-desc';
-        desc.textContent = ax.description || '';
+        desc.textContent = (brief && ax.summary) || ax.description || '';
         row.appendChild(label);
         row.appendChild(desc);
         axesEl.appendChild(row);
@@ -1010,7 +1021,13 @@ var JD_admin = (function () {
   }
 
   /* ---------- one request, then the pile ---------------------------------- */
-  fetch(JD_API + '/art/junk-drawer/data.php')
+  /* THE SLIM PILE (2026-09-27). A page that lets the reader dig through the
+     pile but never opens the record behind it (the /about/ walkthrough) sets
+     window.JD_SLIM, and the drawer asks data.php?slim=1: every item, but only
+     the response it shows, with only what its tag prints — no alternatives,
+     no ratings (see _slim.php). Same shape as the full payload, so nothing
+     downstream knows the difference. */
+  fetch(JD_API + '/art/junk-drawer/data.php' + (window.JD_SLIM ? '?slim=1' : ''))
     .then(function (r) {
       if (!r.ok) throw new Error('data.php ' + r.status);
       return r.json();
@@ -1035,6 +1052,14 @@ var JD_admin = (function () {
       (tax.sizeTiers || []).forEach(function (t) { tiers[t.id] = t.box; });
       boxFor = function (sc) { return tiers[sc] || BASE[sc] || BASE.m; };
       turnBox = boxFor('m');   /* the turn button is a medium drawer object */
+      /* THE BUTTON GOES IN NOW, not after the pile (2026-09-27). It needs
+         only its tier box, and waiting for every drawing in the collection
+         to download left a cold load (a hard refresh) with no button for
+         seconds — the /about/ walkthrough, whose pile is a picture without
+         the button in it, showed an empty corner. Built first, it also lets
+         the pile's apply pass measure the real plate when it keeps junk out
+         of the corner. The later ready() call below is then a no-op. */
+      if (window.JD_turnObject) window.JD_turnObject.ready(turnBox);
       return Promise.all(data.items.map(function (item) {
         var primary = item.responses.filter(function (r) {
           return r.rid === item.primary;

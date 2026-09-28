@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Kolob Engraving C</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Noto+Sans+Deseret&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================================
+   KOLOB — ENGRAVING MOCKUP C · THE SPECTRUM (light engraving)
+   Dev-only design mockup (PLAN-ENGRAVING §3C). Engraves the shared fixed
+   passage (engraving-passage.js). Everything is drawn from one time value:
+   window.renderAt(t) renders both live canvases at exactly t (and pauses).
+   ========================================================================== */
+:root {
+  --paper: #f5f0e4;
+  --paper-lo: #efe8d6;
+  --ink: #1e4d3b;
+  --ink-soft: rgba(30, 77, 59, 0.66);
+  --ink-faint: rgba(30, 77, 59, 0.3);
+  --rule: rgba(30, 77, 59, 0.28);
+  --gilt: #8a7a45;
+  --vermilion: #b5412a;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { background: #fbf9f3; }
+body {
+  font-family: "EB Garamond", Georgia, serif; color: var(--ink);
+  padding: 28px 16px 56px; overflow-x: hidden;
+}
+.plate {
+  max-width: 860px; margin: 0 auto; background: var(--paper);
+  border: 1px solid rgba(138, 122, 69, 0.28);
+  box-shadow: 0 1px 0 #fffdf6 inset, 0 10px 30px rgba(60, 50, 20, 0.07);
+  padding: 30px 16px 26px;
+}
+header { max-width: 640px; margin: 0 auto 20px; text-align: center; }
+.kicker { font-size: 0.72rem; letter-spacing: 0.26em; text-transform: uppercase; color: var(--gilt); }
+h1 { font-weight: 500; font-size: clamp(1.45rem, 4.4vw, 1.9rem); letter-spacing: 0.02em; margin: 6px 0 10px; }
+h1 em { font-weight: 400; color: var(--gilt); }
+.idea { font-size: 1.02rem; line-height: 1.5; color: var(--ink-soft); }
+.rule { height: 1px; background: linear-gradient(90deg, transparent, rgba(138,122,69,0.55) 20%, rgba(138,122,69,0.55) 80%, transparent); margin: 18px auto 0; max-width: 420px; }
+h2 {
+  font-weight: 500; font-size: 0.74rem; letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--gilt); margin: 30px 0 10px; text-align: center;
+}
+.viz { position: relative; width: 100%; }
+.viz canvas, .phone canvas, .strip canvas { display: block; }
+.controls {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+  gap: 8px 16px; margin: 12px 0 0; font-size: 0.92rem; color: var(--ink-soft);
+}
+.controls button {
+  font: inherit; font-size: 0.86rem; letter-spacing: 0.08em; color: var(--ink); background: transparent;
+  border: 1px solid var(--ink-faint); border-radius: 2px; padding: 3px 12px 2px; cursor: pointer; min-width: 78px;
+}
+.controls button:hover { border-color: var(--gilt); }
+.controls .scrub { display: flex; align-items: center; gap: 8px; flex: 1 1 260px; max-width: 420px; }
+.controls input[type=range] { flex: 1; accent-color: #8a7a45; min-width: 0; }
+.controls .tnum { font-variant-numeric: tabular-nums; min-width: 4.4em; text-align: right; }
+.controls label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; white-space: nowrap; }
+.controls input[type=checkbox] { accent-color: #1e4d3b; }
+.speed { display: inline-flex; gap: 0; }
+.speed button { min-width: 0; padding: 3px 9px 2px; border-radius: 0; }
+.speed button + button { border-left: none; }
+.speed button[aria-pressed=true] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.key {
+  margin: 14px auto 0; max-width: 700px; font-size: 0.86rem; line-height: 1.55; color: var(--ink-soft);
+  text-align: center;
+}
+.key b { font-weight: 500; color: var(--ink); }
+.key .r { color: var(--vermilion); font-style: italic; }
+.phone-wrap { display: flex; flex-direction: column; align-items: center; }
+.phone { width: 390px; max-width: 100%; border-left: 1px solid rgba(138,122,69,0.25); border-right: 1px solid rgba(138,122,69,0.25); }
+.phone-note { font-size: 0.82rem; color: var(--ink-soft); margin-top: 6px; font-style: italic; }
+.strip {
+  overflow-x: auto; overflow-y: hidden; border-top: 1px solid rgba(138,122,69,0.22);
+  border-bottom: 1px solid rgba(138,122,69,0.22); -webkit-overflow-scrolling: touch;
+}
+.strip-note { font-size: 0.82rem; color: var(--ink-soft); text-align: center; margin-top: 6px; font-style: italic; }
+footer { margin-top: 26px; text-align: center; font-size: 0.78rem; color: var(--ink-faint); letter-spacing: 0.06em; }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main class="plate">
+  <header>
+    <p class="kicker">Kolob · the engraving · direction C</p>
+    <h1>The Spectrum <em>— light engraving</em></h1>
+    <p class="idea">The staff is ruled in the spectral lines of Kolob’s light, warm at dawn and cooling toward day.
+      Each note is struck as light at the engraving point and cools to hymnbook green as it dries, trailing a line
+      exactly as long as it is sung. When the four parts lock in just tuning, their partials gather into one bracket of light.</p>
+    <div class="rule"></div>
+  </header>
+
+  <section>
+    <div class="viz" id="liveWrap"><canvas id="live" aria-label="The passage engraved as light, scrolling"></canvas></div>
+    <div class="controls">
+      <button id="play" type="button">Pause</button>
+      <span class="scrub"><input id="scrub" type="range" min="0" max="48" step="0.01" value="0" aria-label="Time" /><span class="tnum" id="tnum">0.0 s</span></span>
+      <span class="speed" role="group" aria-label="Scroll speed">
+        <button type="button" data-pps="11" aria-pressed="false">11</button>
+        <button type="button" data-pps="40" aria-pressed="true">40 px/s</button>
+      </span>
+      <label><input type="checkbox" id="rubrics" checked /> rubrics</label>
+      <label><input type="checkbox" id="words" checked /> words</label>
+      <label><input type="checkbox" id="bandtoggle" checked /> band</label>
+      <label><input type="checkbox" id="phoneT" checked /> phone preview</label>
+    </div>
+    <p class="key">
+      <b>Treble</b> soprano ● · alto ○ &nbsp; <b>Bass</b> tenor ● · bass ○ &nbsp;·&nbsp; the gilt-rimmed head is the tune ·
+      a trail of light is exactly as long as the note · <b>−</b> re lowered a comma (10/9) · <b>7</b> the septimal seventh ·
+      nested brackets: the chord has locked · punched tape: the telegraph · brass round notes: the visiting band, at its own tempo ·
+      <span class="r">red</span>: rubrics
+    </p>
+  </section>
+
+  <section id="phoneSec" class="phone-wrap">
+    <h2>Phone · 390 px</h2>
+    <div class="phone"><canvas id="phone" aria-label="The same passage at phone width"></canvas></div>
+    <p class="phone-note">Same passage, same clock. Staff spaces shrink; the partial brackets keep two rings.</p>
+  </section>
+
+  <section>
+    <h2>The whole passage, still</h2>
+    <div class="strip" id="stripWrap"><canvas id="still" aria-label="The whole passage as one still plate"></canvas></div>
+    <p class="strip-note">48 seconds at 40 px/s, left to right. The band’s layer runs at its own tempo (×2.05); on the still plate it is laid from the hymn’s opening so its whole strain can be read against the ward’s time.</p>
+  </section>
+
+  <footer>Mockup C · dev only · engraves <code>engraving-passage.js</code></footer>
+</main>
+
+<script src="engraving-passage.js"></script>
+<script>
+(function () {
+  "use strict";
+  var P = window.KOLOB_PASSAGE;
+  var DUR = P.duration;
+
+  // ---- palette -------------------------------------------------------------
+  var INK = [30, 77, 59], GOLD = [198, 156, 66], GILT = [138, 122, 69], WHITEGOLD = [255, 247, 222];
+  var BRASS = [168, 108, 48], VERM = [181, 65, 42], PAPER = [245, 240, 228], TAPE = [236, 228, 207];
+  var DAWN = [190, 146, 64], DAY = [88, 132, 120];
+  function mix(a, b, k) { return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k]; }
+  function rgba(c, a) { return "rgba(" + (c[0] | 0) + "," + (c[1] | 0) + "," + (c[2] | 0) + "," + (a == null ? 1 : Math.max(0, Math.min(1, a))).toFixed(3) + ")"; }
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  function smooth(a, b, v) { var k = clamp((v - a) / (b - a), 0, 1); return k * k * (3 - 2 * k); }
+
+  var SHAPES = ["fa", "sol", "la", "fa", "sol", "la", "mi"];   // ionian: do re mi fa sol la ti
+  function shapeOf(deg) { return SHAPES[((deg % 7) + 7) % 7]; }
+  var FONT_DS = "'Noto Sans Deseret'";
+  var FONT_G = "'EB Garamond', 'Noto Sans Deseret', Georgia, serif";
+
+  // ---- the clefs, baked outlines (from kolob-viz.js) ------------------------
+  var CLEF_TREBLE = { bbox: [120, -291, 542, 900], d: "M434 2Q464 -103 464 -170Q464 -223 427.0 -257.0Q390 -291 337 -291Q287 -291 250.0 -261.5Q213 -232 213 -190Q213 -160 233.5 -133.5Q254 -107 283.5 -107.0Q313 -107 331.5 -128.5Q350 -150 350 -178Q350 -240 280 -240Q298 -268 338 -268Q353 -268 368.5 -263.5Q384 -259 401.0 -248.0Q418 -237 428.5 -213.5Q439 -190 439 -157Q439 -136 411 -6Q389 -12 356 -12Q259 -12 189.5 60.0Q120 132 120 232Q120 267 131.5 303.0Q143 339 157.5 366.5Q172 394 200.5 428.5Q229 463 248.5 483.5Q268 504 303 539Q280 621 280 689Q280 779 313.0 839.5Q346 900 379 900Q389 900 401.5 887.0Q414 874 426.0 851.0Q438 828 446.5 790.5Q455 753 455 710Q455 551 342 447L368 329Q384 332 397 332Q458 332 500.0 282.5Q542 233 542 162Q542 44 434 2ZM426 746Q426 801 394 801Q358 801 333.0 748.0Q308 695 308 630Q308 588 321 557Q359 580 392.5 639.5Q426 699 426 746ZM498 128Q498 183 466.0 216.0Q434 249 383 249L428 23Q498 52 498 128ZM407 17 361 247Q334 241 311.5 214.0Q289 187 289 158Q289 143 295.0 128.5Q301 114 309.5 104.0Q318 94 327.0 86.0Q336 78 342.0 74.5Q348 71 348 71L340 66Q307 75 277.5 106.0Q248 137 248 184Q248 231 277.5 270.5Q307 310 343 323L325 430Q168 299 168 177Q168 104 223.0 55.0Q278 6 348 6Q365 6 407 17Z" };
+  var CLEF_BASS = { bbox: [75, 166, 607, 757], d: "M564 704Q582 704 594.5 691.0Q607 678 607.0 661.0Q607 644 593.0 631.0Q579 618 563 618Q521 618 521 663Q521 681 534.0 692.5Q547 704 564 704ZM607 469Q607 450 594.0 437.0Q581 424 564 424Q521 424 521 469Q521 485 533.5 498.0Q546 511 564.0 511.0Q582 511 594.5 497.0Q607 483 607 469ZM285 757Q366 757 421.0 701.5Q476 646 476 569Q476 531 465.5 495.0Q455 459 432.0 426.5Q409 394 386.0 367.0Q363 340 326.0 313.0Q289 286 264.0 267.5Q239 249 196.5 226.0Q154 203 135.5 193.5Q117 184 80 166L75 182Q76 183 102.0 200.0Q128 217 144.0 227.5Q160 238 191.5 263.0Q223 288 244.0 309.5Q265 331 291.5 363.5Q318 396 334.0 427.0Q350 458 361.5 498.0Q373 538 373 578Q373 735 262 735Q225 735 199.0 725.5Q173 716 161.5 702.0Q150 688 145.0 677.5Q140 667 140 659Q140 644 160 644Q168 644 179.0 647.5Q190 651 194 651Q221 651 239.0 634.0Q257 617 257 592Q257 563 235.0 544.0Q213 525 183 525Q144 525 119.0 548.0Q94 571 94 607Q94 673 150.5 715.0Q207 757 285 757Z" };
+  var trebPath = new Path2D(CLEF_TREBLE.d), bassPath = new Path2D(CLEF_BASS.d);
+
+  // ---- glow sprites (pre-rendered once) -------------------------------------
+  function makeSprite(stops) {
+    var c = document.createElement("canvas"); c.width = c.height = 128;
+    var g = c.getContext("2d"), gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+    stops.forEach(function (s) { gr.addColorStop(s[0], s[1]); });
+    g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+    return c;
+  }
+  var BLOOM = makeSprite([[0, "rgba(255,251,236,1)"], [0.22, "rgba(255,238,190,0.85)"], [0.5, "rgba(226,184,92,0.46)"], [0.78, "rgba(214,170,80,0.14)"], [1, "rgba(214,172,86,0)"]]);
+  var HALO = makeSprite([[0, "rgba(232,196,112,0.55)"], [0.45, "rgba(226,186,98,0.22)"], [1, "rgba(226,186,98,0)"]]);
+  function sprite(c, img, x, y, r, a) {
+    if (a <= 0.004 || r <= 0) return;
+    c.globalAlpha = Math.min(1, a);
+    c.drawImage(img, x - r, y - r, 2 * r, 2 * r);
+    c.globalAlpha = 1;
+  }
+
+  // ---- precomputed passage structure -----------------------------------------
+  var chords = [];
+  P.notes.forEach(function (n) {
+    var c = chords[n.chord] || (chords[n.chord] = { t: n.t, dur: n.dur, parts: {} });
+    c.parts[n.part] = n;
+  });
+  var bandMel = P.band.filter(function (b) { return b.part !== "bass"; });
+  var bandBass = P.band.filter(function (b) { return b.part === "bass"; });
+  var BI = P.bandInfo, R = BI.tempoRatio;
+  // beam groups for the band melody: eighths sharing a beat, beamed in pairs (2/4)
+  var bandGroups = [];
+  (function () {
+    var byBeat = {};
+    bandMel.forEach(function (b) {
+      var beat = Math.round((b.t - BI.t0) / BI.beat * 2) / 2;
+      b._beat = beat;
+      if (b.beats === 0.5) (byBeat[Math.floor(beat)] = byBeat[Math.floor(beat)] || []).push(b);
+    });
+    Object.keys(byBeat).forEach(function (k) {
+      var g = byBeat[k];
+      if (g.length === 2) { bandGroups.push(g); g.forEach(function (b) { b._beamed = true; }); }
+    });
+  })();
+  var asks = [1, 2].map(function (k) { return P.question.filter(function (q) { return q.asking === k; }); });
+  var answers = P.question.filter(function (q) { return q.role === "answer"; });
+  var TEL = P.telegraph, U = 0.07;
+  var telLetters = Array.from(TEL.wordDs);
+
+  // ============================================================================
+  // GEOMETRY — every length in staff spaces (sp)
+  // ============================================================================
+  function makeGeom(cssW, sp, still, pps) {
+    var G = { sp: sp, W: cssW, still: still, phone: sp < 8 };
+    G.headY = 1.55 * sp;                 // running head baseline
+    G.trebTop = 5.5 * sp;
+    G.trebBot = G.trebTop + 4 * sp;
+    G.bassTop = G.trebBot + 7.5 * sp;    // the gap: middle-C tape, then the words, then tenor ledger room
+    G.bassBot = G.bassTop + 4 * sp;
+    G.H = Math.ceil(G.bassBot + 2.5 * sp);
+    G.yC = G.trebBot + sp;               // the middle-C line (treble's), where the tape runs
+    G.wordY = G.trebBot + 3.55 * sp;     // syllable baseline
+    G.xL = 1.9 * sp;                     // the system's left barline
+    var bassH = 0.8 * 4 * sp;
+    var bassW = bassH * (CLEF_BASS.bbox[2] - CLEF_BASS.bbox[0]) / (CLEF_BASS.bbox[3] - CLEF_BASS.bbox[1]);
+    G.clefX = G.xL + 0.75 * sp;
+    G.fadeX0 = G.clefX + bassW + 0.6 * sp;
+    G.fadeX1 = G.fadeX0 + 5.5 * sp;
+    G.engX = cssW - 2.6 * sp;             // the engraving point: the slit where light enters
+    G.x0 = G.fadeX0 + 2.2 * sp;           // (still plate) where t = 0 lies
+    if (still) { G.W = Math.ceil(G.x0 + DUR * pps + 2 * sp); }
+    return G;
+  }
+  function yTreb(G, deg) { return G.trebBot - (deg - 2) * G.sp / 2; }
+  function yBass(G, deg) { return G.bassTop - (deg + 2) * G.sp / 2; }
+  function ledgers(staff, deg) {
+    var out = [], l;
+    if (staff === "t") { for (l = 0; l >= deg; l -= 2) out.push(l); for (l = 12; l <= deg; l += 2) out.push(l); }
+    else { for (l = 0; l <= deg; l += 2) out.push(l); for (l = -12; l >= deg; l -= 2) out.push(l); }
+    return out;
+  }
+
+  // ============================================================================
+  // GLYPHS
+  // ============================================================================
+  // a shape-note head; f = size factor (1 = full); sp units. With `inner`, the
+  // counter is added for an open (broad-nib) head, filled evenodd.
+  function headPath(c, shape, x, y, sp, f, inner) {
+    var s = sp * f;
+    c.beginPath();
+    if (shape === "fa") {
+      c.moveTo(x - 0.62 * s, y + 0.47 * s); c.lineTo(x + 0.64 * s, y + 0.47 * s); c.lineTo(x - 0.62 * s, y - 0.49 * s); c.closePath();
+      if (inner) { var cx = x - 0.2 * s, cy = y + 0.15 * s, k = 0.42;
+        c.moveTo(cx + (-0.62 * s - (cx - x)) * k, cy + (0.47 * s - (cy - y)) * k);
+        c.lineTo(cx + (0.64 * s - (cx - x)) * k, cy + (0.47 * s - (cy - y)) * k);
+        c.lineTo(cx + (-0.62 * s - (cx - x)) * k, cy + (-0.49 * s - (cy - y)) * k); c.closePath(); }
+    } else if (shape === "la") {
+      c.rect(x - 0.58 * s, y - 0.42 * s, 1.16 * s, 0.84 * s);
+      if (inner) c.rect(x - 0.38 * s, y - 0.17 * s, 0.76 * s, 0.34 * s);
+    } else if (shape === "mi") {
+      c.moveTo(x, y - 0.52 * s); c.lineTo(x + 0.64 * s, y); c.lineTo(x, y + 0.52 * s); c.lineTo(x - 0.64 * s, y); c.closePath();
+      if (inner) { c.moveTo(x, y - 0.24 * s); c.lineTo(x + 0.3 * s, y); c.lineTo(x, y + 0.24 * s); c.lineTo(x - 0.3 * s, y); c.closePath(); }
+    } else if (shape === "round") {         // Earth notation: the round head
+      c.ellipse(x, y, 0.6 * s, 0.43 * s, -0.36, 0, Math.PI * 2);
+      if (inner) { c.moveTo(x + 0.42 * s, y); c.ellipse(x, y, 0.42 * s, 0.2 * s, -0.62, 0, Math.PI * 2); }
+    } else {                                 // sol
+      c.ellipse(x, y, 0.63 * s, 0.45 * s, -0.33, 0, Math.PI * 2);
+      if (inner) { c.moveTo(x + 0.4 * s, y); c.ellipse(x, y, 0.4 * s, 0.22 * s, -0.7, 0, Math.PI * 2); }
+    }
+  }
+  function headHalfW(shape, f) { return (shape === "la" ? 0.58 : 0.63) * f; }
+
+  // a shape-note struck as light. w = warmth (1 = sounding gilt, 0 = dry ink)
+  function lightHead(c, G, shape, x, y, f, open, w, dry, melody) {
+    var sp = G.sp;
+    var col = mix(INK, GOLD, w);
+    c.lineJoin = "round";
+    headPath(c, shape, x, y, sp, f, open);
+    c.fillStyle = rgba(col, dry);
+    c.fill("evenodd");
+    c.lineWidth = 0.06 * sp; c.strokeStyle = rgba(mix(INK, [140, 100, 34], w), dry * 0.95);
+    headPath(c, shape, x, y, sp, f, false); c.stroke();
+    if (w > 0.02) {
+      // the white-gold core: light inside the head
+      if (open) {
+        headPath(c, shape, x, y, sp, f * 0.52, false);
+        c.fillStyle = rgba(WHITEGOLD, w * 0.95); c.fill();
+      } else {
+        headPath(c, shape, x - 0.06 * sp, y - 0.04 * sp, sp, f * 0.46, false);
+        c.fillStyle = rgba(WHITEGOLD, Math.pow(w, 1.3) * 0.92); c.fill();
+      }
+    }
+    if (melody) {   // the tune: a gilt edge that outlives the light
+      headPath(c, shape, x, y, sp, f * 1.02, false);
+      c.lineWidth = 0.1 * sp; c.strokeStyle = rgba(mix(GILT, GOLD, w * 0.6), 0.95 * Math.max(dry, 0.7));
+      c.stroke();
+    }
+  }
+  function drawLedgers(c, G, staff, deg, x, f, a, col) {
+    var ls = ledgers(staff, deg); if (!ls.length) return;
+    var sp = G.sp, half = (0.63 * f + 0.38) * sp;
+    c.strokeStyle = rgba(col || INK, a); c.lineWidth = 0.16 * sp; c.lineCap = "butt";
+    for (var i = 0; i < ls.length; i++) {
+      var ly = staff === "t" ? yTreb(G, ls[i]) : yBass(G, ls[i]);
+      c.beginPath(); c.moveTo(x - half, ly); c.lineTo(x + half, ly); c.stroke();
+    }
+  }
+  // the duration trail: light that runs from the head for exactly as long as
+  // the note is held (x is time). Solid for S/T, open (a double hairline) for A/B.
+  function trail(c, G, x0, x1, y, wHead, wTip, dry, open, thick) {
+    if (x1 - x0 < 0.5) return;
+    var sp = G.sp;
+    var g = c.createLinearGradient(x0, 0, x1, 0);
+    g.addColorStop(0, rgba(mix(INK, GOLD, wHead * 0.8), dry));
+    g.addColorStop(1, rgba(mix(INK, GOLD, wTip), Math.max(dry, wTip)));
+    c.lineCap = "round";
+    if (open) {
+      c.strokeStyle = g; c.lineWidth = 0.06 * sp;
+      var o = 0.11 * sp * thick;
+      c.beginPath(); c.moveTo(x0, y - o); c.lineTo(x1, y - o); c.moveTo(x0, y + o); c.lineTo(x1, y + o); c.stroke();
+      if (wTip > 0.05) {  // lit between the rails
+        c.strokeStyle = rgba(WHITEGOLD, wTip * 0.8); c.lineWidth = 0.12 * sp * thick;
+        c.beginPath(); c.moveTo(Math.max(x0, x1 - 3 * sp), y); c.lineTo(x1, y); c.stroke();
+      }
+      c.beginPath(); c.moveTo(x1, y - o); c.lineTo(x1, y + o); c.strokeStyle = g; c.lineWidth = 0.06 * sp; c.stroke();
+    } else {
+      c.strokeStyle = g; c.lineWidth = 0.2 * sp * thick;
+      c.beginPath(); c.moveTo(x0, y); c.lineTo(x1, y); c.stroke();
+    }
+  }
+  function fermata(c, G, x, y, inverted, col, a) {
+    var sp = G.sp, d = inverted ? -1 : 1;
+    c.fillStyle = rgba(col, a);
+    c.beginPath();
+    c.ellipse(x, y, 0.95 * sp, 0.82 * sp, 0, Math.PI, 2 * Math.PI, d < 0);
+    c.lineTo(x + 0.86 * sp, y);
+    c.ellipse(x, y + d * 0.04 * sp, 0.86 * sp, 0.62 * sp, 0, 0, Math.PI, d > 0);
+    c.closePath(); c.fill();
+        c.beginPath(); c.arc(x, y - d * 0.28 * sp, 0.16 * sp, 0, Math.PI * 2); c.fill();
+  }
+  function sharp(c, G, x, y, col, a) {
+    var sp = G.sp;
+    c.fillStyle = rgba(col, a);
+    c.fillRect(x - 0.24 * sp, y - 1.3 * sp, 0.1 * sp, 2.5 * sp);
+    c.fillRect(x + 0.14 * sp, y - 1.4 * sp, 0.1 * sp, 2.5 * sp);
+    for (var k = -1; k <= 1; k += 2) {
+      var yy = y + k * 0.42 * sp;
+      c.beginPath();
+      c.moveTo(x - 0.5 * sp, yy + 0.12 * sp); c.lineTo(x + 0.5 * sp, yy - 0.14 * sp);
+      c.lineTo(x + 0.5 * sp, yy - 0.14 * sp + 0.24 * sp); c.lineTo(x - 0.5 * sp, yy + 0.12 * sp + 0.24 * sp);
+      c.closePath(); c.fill();
+    }
+  }
+  function timeSig(c, G, x, top, num, den, col, a) {
+    var sp = G.sp;
+    c.fillStyle = rgba(col, a);
+    c.font = "600 " + (2.55 * sp).toFixed(1) + "px 'EB Garamond', Georgia, serif";
+    c.textAlign = "center"; c.textBaseline = "alphabetic";
+    c.fillText(num, x, top + 1.86 * sp);
+    c.fillText(den, x, top + 3.86 * sp);
+  }
+  function barline(c, G, x, kind, a, col) {
+    var sp = G.sp;
+    col = col || INK;
+    [[G.trebTop, G.trebBot], [G.bassTop, G.bassBot]].forEach(function (st) {
+      c.fillStyle = rgba(col, a);
+      var h = st[1] - st[0];
+      if (kind === "dotted") {
+        for (var k = 0; k <= 8; k++) {
+          if (k % 2 === 0) continue;
+          c.beginPath(); c.arc(x, st[0] + k * sp / 2, 0.11 * sp, 0, Math.PI * 2); c.fill();
+        }
+        return;
+      }
+      var tw = 0.16 * sp;
+      if (kind === "double") { c.fillRect(x - 0.3 * sp - tw, st[0], tw, h); c.fillRect(x + 0.3 * sp - tw, st[0], tw, h); }
+      else if (kind === "final") { c.fillRect(x - 0.62 * sp, st[0], tw, h); c.fillRect(x - 0.1 * sp, st[0], 0.5 * sp, h); }
+      else c.fillRect(x - tw / 2, st[0], tw, h);
+    });
+  }
+
+  // ============================================================================
+  // THE STATIC LAYER: brace, system barline, clefs
+  // ============================================================================
+  function buildStatic(G, dpr) {
+    var cv = document.createElement("canvas");
+    cv.width = Math.round(G.W * dpr); cv.height = Math.round(G.H * dpr);
+    var c = cv.getContext("2d"); c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var sp = G.sp;
+    // system barline
+    c.fillStyle = rgba(INK, 0.9);
+    c.fillRect(G.xL - 0.08 * sp, G.trebTop, 0.16 * sp, G.bassBot - G.trebTop);
+    // brace: two S-curves, filled between an outer and an inner edge
+    var bx = G.xL - 1.45 * sp, w = 1.05 * sp, yt = G.trebTop, yb = G.bassBot, mid = (yt + yb) / 2, h = mid - yt;
+    c.beginPath();
+    [1, -1].forEach(function (d) {
+      var ye = mid - d * h;
+      c.moveTo(bx + w, ye);
+      c.bezierCurveTo(bx + 0.05 * w, ye + d * 0.04 * h, bx + 0.95 * w, mid - d * 0.08 * h, bx, mid);
+      c.bezierCurveTo(bx + 1.35 * w, mid - d * 0.12 * h, bx + 0.28 * w, ye + d * 0.02 * h, bx + w, ye);
+      c.closePath();
+    });
+    c.fillStyle = rgba(INK, 0.95); c.fill();
+    // clefs
+    function clef(def, path, leftX, top, hh) {
+      var bb = def.bbox, s = hh / (bb[3] - bb[1]);
+      c.save(); c.translate(leftX - bb[0] * s, top + bb[3] * s); c.scale(s, -s);
+      c.fillStyle = rgba(INK, 1); c.fill(path); c.restore();
+    }
+    var staffH = 4 * sp, trebH = 1.28 * staffH, bassH = 0.8 * staffH;
+    clef(CLEF_TREBLE, trebPath, G.clefX, yTreb(G, 4) - 0.583 * trebH, trebH);
+    clef(CLEF_BASS, bassPath, G.clefX, yBass(G, -4) - 0.237 * bassH, bassH);
+    return cv;
+  }
+
+  // ============================================================================
+  // THE SCENE — one time value draws everything
+  // ============================================================================
+  function drawStaffLines(c, G, o) {
+    var sp = G.sp, dpr = o.dpr;
+    var temp = G.still ? 0.35 : 0.5 - 0.5 * Math.cos(2 * Math.PI * o.t / DUR);   // dawn → day → dawn over the loop
+    var lw = Math.max(1, Math.round(0.13 * sp * dpr)) / dpr;
+    var x1 = G.W;
+    var ys = [];
+    for (var i = 0; i < 5; i++) ys.push({ y: G.trebTop + i * sp, k: 0.12 * (i / 4) });
+    for (i = 0; i < 5; i++) ys.push({ y: G.bassTop + i * sp, k: -0.12 + 0.12 * (i / 4) - 0.08 });
+    ys.forEach(function (L) {
+      var y = Math.round(L.y * dpr) / dpr + (Math.round(0.13 * sp * dpr) % 2 ? 0.5 / dpr : 0);
+      var col = mix(DAWN, DAY, clamp(temp + L.k, 0, 1));
+      // halation: a faint breadth of light about the line
+      var gh = c.createLinearGradient(G.xL, 0, x1, 0);
+      gh.addColorStop(0, rgba(col, 0.02)); gh.addColorStop(G.still ? 0.5 : 0.85, rgba(col, 0.07)); gh.addColorStop(1, rgba(col, G.still ? 0.03 : 0.1));
+      c.fillStyle = gh; c.fillRect(G.xL, y - 0.3 * sp, x1 - G.xL, 0.6 * sp);
+      // the line itself, fine and luminous
+      var g = c.createLinearGradient(G.xL, 0, x1, 0);
+      g.addColorStop(0, rgba(mix(col, INK, 0.35), 0.62));
+      g.addColorStop(G.still ? 1 : 0.8, rgba(col, 0.6));
+      if (!G.still) g.addColorStop(1, rgba(mix(col, WHITEGOLD, 0.3), 0.75));
+      c.strokeStyle = g; c.lineWidth = lw;
+      c.beginPath(); c.moveTo(G.xL, y); c.lineTo(x1, y); c.stroke();
+    });
+    return temp;
+  }
+  function drawSlit(c, G) {
+    var sp = G.sp, x = G.engX, y0 = G.trebTop - 2.2 * sp, y1 = G.bassBot + 1.3 * sp;
+    var g = c.createLinearGradient(x - 1.4 * sp, 0, x + 1.4 * sp, 0);
+    g.addColorStop(0, "rgba(255,244,210,0)"); g.addColorStop(0.5, "rgba(255,246,218,0.55)"); g.addColorStop(1, "rgba(255,244,210,0)");
+    var v = c.createLinearGradient(0, y0, 0, y1);
+    c.fillStyle = g; c.fillRect(x - 1.4 * sp, y0, 2.8 * sp, y1 - y0);
+    v.addColorStop(0, "rgba(198,156,66,0)"); v.addColorStop(0.15, "rgba(198,156,66,0.28)"); v.addColorStop(0.85, "rgba(198,156,66,0.28)"); v.addColorStop(1, "rgba(198,156,66,0)");
+    c.fillStyle = v; c.fillRect(x - 0.03 * sp, y0, 0.06 * sp, y1 - y0);
+  }
+
+  function drawInk(c, G, o) {
+    var sp = G.sp, t = o.t, still = G.still, pps = o.pps, dpr = o.dpr;
+    var scroll = Math.round(t * pps * dpr) / dpr, scrollB = Math.round(t * pps * R * dpr) / dpr;
+    var X = still ? function (te) { return G.x0 + te * pps; } : function (te) { return G.engX - scroll + te * pps; };
+    var XB = still ? function (te) { return G.x0 + 1.2 * pps + (te - BI.t0) * pps * R; }
+                   : function (te) { return G.engX - scrollB + te * pps * R; };
+    var seen = still ? function () { return true; } : function (te) { return te <= t + 1e-6; };
+    var age = still ? function () { return 60; } : function (te) { return t - te; };
+    var off = function (x) { return x < G.fadeX0 - 8 * sp || x > G.W + 4 * sp; };
+    function dryOf(a) { return still ? 1 : 0.58 + 0.42 * Math.exp(-a / 14); }
+    function warmOf(te, dur) {         // head: struck gilt, holds a glow while sounding, then cools
+      if (still) return 0.1;
+      var a = t - te; if (a < 0) return 0;
+      var hold = a < dur ? 0.82 : 0.82 * Math.exp(-(a - dur) / 0.75);
+      return Math.max(Math.exp(-a / 1.4), hold);
+    }
+    function tipWarm(te, dur) { if (still) return 0.1; var a = t - Math.min(t, te + dur); return Math.exp(-a / 0.9); }
+    var rub = function (fallback) { return o.rubrics ? VERM : fallback; };
+    var gapPx = Math.min(1.25 * sp, 0.3 * P.beat * pps);
+
+    // ---------- the running head ----------
+    var hh = P.hymnHeader;
+    if (seen(hh.t)) {
+      var hx = X(hh.t), hdry = dryOf(age(hh.t)), hw = warmOf(hh.t, 1.2);
+      c.textBaseline = "alphabetic"; c.textAlign = "left";
+      var parts = G.phone
+        ? [["214", GOLD], [" · ", INK], [hh.nameDs, INK], [" · C.M.", INK]]
+        : [["Hymn ", INK], ["214", GOLD], ["  ·  ", GILT], [hh.nameDs, INK], ["  ·  ", GILT], ["C.M.", INK], ["  ·  ", GILT], ["Tabernacle", INK], ["  ·  ", GILT], [hh.leaderDs, INK], ["  ·  ", GILT], ["do = C", INK]];
+      c.font = "500 " + (1.18 * sp).toFixed(1) + "px " + FONT_G;
+      try { c.fontVariantCaps = "all-small-caps"; c.letterSpacing = (0.09 * sp).toFixed(1) + "px"; } catch (e) {}
+      parts.forEach(function (p) {
+        var col = p[1] === GOLD ? mix(GILT, GOLD, hw) : mix(p[1], GOLD, hw * 0.5);
+        c.fillStyle = rgba(col, hdry * (p[1] === GILT ? 0.8 : 0.92));
+        c.fillText(p[0], hx, G.headY);
+        hx += c.measureText(p[0]).width;
+      });
+      try { c.fontVariantCaps = "normal"; c.letterSpacing = "0px"; } catch (e) {}
+    }
+    // the hymn's time signature
+    var tsT = 2.0 - Math.max(0.62, 2.4 * sp / pps);
+    if (seen(tsT)) {
+      var tsx = X(tsT), tsd = dryOf(age(tsT));
+      if (!off(tsx)) { timeSig(c, G, tsx, G.trebTop, "4", "4", INK, tsd); timeSig(c, G, tsx, G.bassTop, "4", "4", INK, tsd); }
+    }
+
+    // ---------- the drone: a long line of light in the lowest bass space ----------
+    (function () {
+      var d = P.drone, y = G.bassBot - 0.5 * sp;
+      var xa = Math.max(G.fadeX0 - 4 * sp, X(d.t)), xb = still ? X(d.t + d.dur) : Math.min(G.engX, X(d.t + d.dur));
+      if (xb <= xa) return;
+      var g = c.createLinearGradient(xa, 0, xb, 0);
+      var vg = c.createLinearGradient(0, y - 0.38 * sp, 0, y + 0.38 * sp);
+      vg.addColorStop(0, rgba(GOLD, 0)); vg.addColorStop(0.5, rgba(GOLD, still ? 0.32 : 0.42)); vg.addColorStop(1, rgba(GOLD, 0));
+      c.fillStyle = vg; c.fillRect(xa, y - 0.38 * sp, xb - xa, 0.76 * sp);
+      c.fillStyle = rgba(WHITEGOLD, 0.95); c.fillRect(xa, y - 0.05 * sp, xb - xa, 0.1 * sp);
+      c.setLineDash([0.12 * sp, 0.5 * sp]); c.strokeStyle = rgba(mix(GOLD, INK, 0.35), 0.7); c.lineWidth = 0.1 * sp;
+      c.beginPath(); c.moveTo(xa, y); c.lineTo(xb, y); c.stroke(); c.setLineDash([]);
+      var hx0 = X(d.t);
+      if (!off(hx0)) {   // its longa
+        c.fillStyle = rgba(INK, 0.9);
+        c.fillRect(hx0 - 0.55 * sp, y - 0.42 * sp, 1.1 * sp, 0.84 * sp);
+        c.fillRect(hx0 + 0.45 * sp, y - 0.42 * sp, 0.14 * sp, 1.9 * sp);
+        c.font = "italic " + (1.0 * sp).toFixed(1) + "px " + FONT_G; c.textAlign = "left";
+        c.fillStyle = rgba(rub(GILT), 0.9); c.fillText("drone", hx0 + 1.0 * sp, y + 1.55 * sp);
+      }
+      if (!still) sprite(c, BLOOM, xb, y, 1.2 * sp, 0.55);
+    })();
+
+    // ---------- the telegraph: punched paper tape on the middle-C line ----------
+    drawTape(c, G, o, X, seen, still, rub);
+
+    // ---------- the band: round notes on their own layer, at their own tempo ----------
+    drawBand(c, G, o, XB, seen, off, rub);
+
+    // ---------- barlines, breath, fermatas ----------
+    P.bars.forEach(function (b) {
+      if (!seen(b.t)) return;
+      var bx = X(b.t) - 1.05 * sp; if (off(bx)) return;
+      barline(c, G, bx, b.kind, 0.78 * dryOf(age(b.t)));
+    });
+    P.breaths.forEach(function (b) {
+      if (!seen(b.t)) return;
+      var bx = X(b.t); if (off(bx)) return;
+      c.font = "600 " + (2.4 * sp).toFixed(1) + "px 'EB Garamond', Georgia, serif"; c.textAlign = "center";
+      c.fillStyle = rgba(INK, 0.9 * dryOf(age(b.t))); c.fillText(",", bx, G.trebTop - 0.35 * sp);
+    });
+    if (P.noAnswer && seen(P.noAnswer.t)) {
+      var na = P.noAnswer, nx0 = X(na.t) + 0.6 * sp, nx1 = X(na.t + na.dur) + 0.6 * sp;
+      barline(c, G, nx0, "dotted", 0.8 * dryOf(age(na.t)), GILT);
+      if (seen(na.t + na.dur)) barline(c, G, nx1, "dotted", 0.8, GILT);
+      c.font = "italic " + (1.1 * sp).toFixed(1) + "px " + FONT_G; c.textAlign = "center";
+      var cx = still ? (nx0 + nx1) / 2 : Math.min((nx0 + nx1) / 2, nx0 + 4 * sp);
+      c.fillStyle = rgba(rub(GILT), 0.9); c.fillText("no answer", cx, G.headY);
+    }
+
+    // ---------- the hymn: SATB as light ----------
+    drawChoir(c, G, o, X, seen, age, off, dryOf, warmOf, tipWarm, gapPx);
+
+    // ---------- the question ----------
+    drawQuestion(c, G, o, X, seen, age, off, dryOf, warmOf, tipWarm, gapPx, rub);
+
+    // ---------- the bell ----------
+    P.bells.forEach(function (b) {
+      if (!seen(b.t)) return;
+      var deg = b.deg, va = false;
+      while (deg > 13) { deg -= 7; va = true; }
+      var bx = X(b.t), by = yTreb(G, deg), a = age(b.t);
+      if (off(bx)) return;
+      var w = warmOf(b.t, b.dur * 0.35), dry = dryOf(a);
+      // expanding rings: the sound decaying, drawn
+      var env = still ? 0.5 : Math.exp(-a / (b.dur * 0.55));
+      for (var k = 0; k < 4; k++) {
+        var ph = still ? (0.9 + k * 0.9) : ((a * 0.9 + k * 0.85) % 3.4) + 0.9;
+        var r = ph * sp, ra = env * (still ? 0.55 - k * 0.1 : (1 - (ph - 0.9) / 3.4));
+        c.strokeStyle = rgba(mix(GOLD, INK, still ? 0.3 : 0.1), ra * 0.8); c.lineWidth = 0.07 * sp;
+        c.beginPath(); c.arc(bx, by, r, 0, Math.PI * 2); c.stroke();
+      }
+      sprite(c, BLOOM, bx, by, 2.6 * sp, still ? 0 : Math.exp(-a / 0.5));
+      // its long decaying trail
+      var xe = Math.min(X(b.t + b.dur), still ? 1e9 : G.engX);
+      var g = c.createLinearGradient(bx, 0, X(b.t + b.dur), 0);
+      g.addColorStop(0, rgba(mix(INK, GOLD, w), 0.9)); g.addColorStop(1, rgba(GOLD, 0));
+      c.strokeStyle = g; c.lineWidth = 0.18 * sp; c.lineCap = "round";
+      c.beginPath(); c.moveTo(bx + 0.7 * sp, by); c.lineTo(xe, by); c.stroke();
+      lightHead(c, G, shapeOf(b.deg), bx, by, 1, false, w, dry, false);
+      c.strokeStyle = rgba(mix(INK, GOLD, 0.5 + w * 0.5), dry); c.lineWidth = 0.09 * sp;   // the bell's own ring
+      c.beginPath(); c.arc(bx, by, 0.95 * sp, 0, Math.PI * 2); c.stroke();
+      if (va) {   // 8va: printed an octave down, as engravers do
+        var vy = G.trebTop - 2.4 * sp, vx1 = still ? X(b.t + b.dur) : Math.min(G.engX, X(b.t + b.dur));
+        c.font = "italic 600 " + (1.25 * sp).toFixed(1) + "px 'EB Garamond', Georgia, serif"; c.textAlign = "left";
+        c.fillStyle = rgba(INK, 0.9 * dry); c.fillText("8va", bx - 0.9 * sp, vy + 0.4 * sp);
+        var tx = bx - 0.9 * sp + c.measureText("8va").width + 0.4 * sp;
+        c.strokeStyle = rgba(INK, 0.75 * dry); c.lineWidth = 0.08 * sp; c.setLineDash([0.5 * sp, 0.4 * sp]);
+        c.beginPath(); c.moveTo(tx, vy); c.lineTo(vx1, vy); c.stroke(); c.setLineDash([]);
+        if (still || seen(b.t + b.dur)) { c.beginPath(); c.moveTo(vx1, vy); c.lineTo(vx1, vy + 0.7 * sp); c.stroke(); }
+      }
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  function drawChoir(c, G, o, X, seen, age, off, dryOf, warmOf, tipWarm, gapPx) {
+    var sp = G.sp, t = o.t, still = G.still;
+    var KS = G.phone ? [2, 3] : [2, 3, 4];
+    function rK(k) { return 0.58 * sp * (1 + 1.05 * Math.log2(k)); }
+    chords.forEach(function (ch, ci) {
+      if (!seen(ch.t)) return;
+      var x = X(ch.t); if (off(x)) return;
+      var a = still ? 60 : t - ch.t, dry = dryOf(a);
+      var sounding = !still && a < ch.dur;
+      var ps = ["S", "A", "T", "B"].map(function (p) {
+        var n = ch.parts[p], staff = (p === "S" || p === "A") ? "t" : "b";
+        return { n: n, p: p, staff: staff, y: staff === "t" ? yTreb(G, n.deg) : yBass(G, n.deg), open: p === "A" || p === "B", shape: shapeOf(n.deg) };
+      });
+      var w = warmOf(ch.t, ch.dur), wt = tipWarm(ch.t, ch.dur);
+      // --- the partials: first each head rings alone, then the chord locks ---
+      var env = still ? 0.36 : (a < ch.dur ? 1 : Math.exp(-(a - ch.dur) / 0.55));
+      var lk = still ? 1 : smooth(0.06, 0.34, a);
+      var septimal = ps[2].n.septimal;
+      if (env > 0.02) {
+        c.lineCap = "round";
+        var flash = still ? 0 : Math.exp(-Math.pow((a - 0.34) / 0.16, 2));
+        // unlocked: each head's partials, slightly out of true
+        if (lk < 1) ps.forEach(function (q, qi) {
+          KS.forEach(function (k, ki) {
+            var r = rK(k) + (qi - 1.5) * 0.14 * sp * (1 - lk);
+            c.strokeStyle = rgba(GOLD, env * (1 - lk) * (0.5 - ki * 0.12)); c.lineWidth = 0.07 * sp;
+            c.beginPath(); c.arc(x, q.y, r, -0.9, 0.9); c.stroke();
+          });
+        });
+        // locked: the parts' partials align into one bracket per staff
+        if (lk > 0) [[ps[0], ps[1]], [ps[2], ps[3]]].forEach(function (pair) {
+          var yu = pair[0].y, yl = pair[1].y;
+          KS.forEach(function (k, ki) {
+            var r = rK(k);
+            var al = env * lk * ((septimal ? 0.95 : 0.78) - ki * 0.17) + flash * 0.25;
+            c.strokeStyle = rgba(mix(GOLD, WHITEGOLD, flash * 0.4), al); c.lineWidth = (0.085 + (ki === 0 ? 0.025 : 0)) * sp;
+            c.beginPath();
+            c.arc(x, yu, r, -1.0, 0); c.lineTo(x + r, yl); c.arc(x, yl, r, 0, 1.0);
+            c.stroke();
+          });
+        });
+        if (septimal && lk > 0) {   // the barbershop ring: the 7th partial, whole
+          var ty = ps[2].y;
+          sprite(c, HALO, x, ty, 2.9 * sp, env * lk * 0.9);
+          c.strokeStyle = rgba(GOLD, env * lk * 0.9); c.lineWidth = 0.09 * sp;
+          c.beginPath(); c.arc(x, ty, 1.7 * sp, 0, Math.PI * 2); c.stroke();
+        }
+      }
+      // --- trails, ledgers, heads ---
+      var tipX = still ? X(ch.t + ch.dur) - gapPx : Math.min(X(ch.t) + (t - ch.t) * o.pps, X(ch.t + ch.dur) - gapPx);
+      ps.forEach(function (q) {
+        var hw = headHalfW(q.shape, 1) * sp;
+        trail(c, G, x + hw + 0.12 * sp, tipX, q.y, w, wt, dry, q.open, q.p === "S" ? 1.12 : 1);
+      });
+      if (sounding) ps.forEach(function (q) { sprite(c, BLOOM, G.engX, q.y, 1.35 * sp, 0.8); });
+      ps.forEach(function (q) {
+        drawLedgers(c, G, q.staff, q.n.deg, x, 1, 0.8 * dry);
+        if (!still) sprite(c, BLOOM, x, q.y, 2.8 * sp, Math.exp(-a / 0.5));
+        lightHead(c, G, q.shape, x, q.y, 1, q.open, w, dry, q.n.melody);
+        // Johnston accidentals: small luminous marks before the head
+        if (q.n.comma || q.n.septimal) {
+          var ax = x - 1.25 * sp, acol = mix(INK, GOLD, Math.max(0.35, w));
+          sprite(c, HALO, ax - 0.1 * sp, q.y, 1.3 * sp, still ? 0.5 : 0.35 + 0.5 * w);
+          c.fillStyle = rgba(acol, Math.max(dry, 0.85));
+          if (q.n.comma) c.fillRect(ax - 0.4 * sp, q.y - 0.08 * sp, 0.72 * sp, 0.16 * sp);
+          else {
+            c.font = "600 " + (1.55 * sp).toFixed(1) + "px 'EB Garamond', Georgia, serif"; c.textAlign = "center";
+            c.fillText("7", ax - 0.05 * sp, q.y + 0.52 * sp);
+          }
+        }
+      });
+      // fermatas over the treble, under the bass
+      if (ps[0].n.fermata) {
+        fermata(c, G, x, Math.min(G.trebTop - 0.9 * sp, ps[0].y - 1.5 * sp), false, INK, dry);
+        fermata(c, G, x, Math.max(G.bassBot + 0.9 * sp, ps[3].y + 1.5 * sp), true, INK, dry);
+      }
+    });
+    // --- the words, between the staves ---
+    if (!o.words) return;
+    var syl = P.syllables;
+    c.textBaseline = "alphabetic";
+    var fs = (G.phone ? 1.5 : 1.42) * sp;
+    syl.forEach(function (s, i) {
+      if (!seen(s.t)) return;
+      var x = X(s.t); if (off(x)) return;
+      var a = still ? 60 : t - s.t, dry = dryOf(a);
+      var w = still ? 0 : (a < s.dur ? 1 : Math.exp(-(a - s.dur) / 1.0));
+      c.font = fs.toFixed(1) + "px " + FONT_DS; c.textAlign = "center";
+      var tw = c.measureText(s.text).width;
+      c.fillStyle = rgba(mix(INK, GILT, w * 0.85), 0.92 * dry);
+      c.fillText(s.text, x, G.wordY);
+      if (s.verse) {
+        c.font = "500 " + (1.25 * sp).toFixed(1) + "px 'EB Garamond', Georgia, serif"; c.textAlign = "right";
+        c.fillStyle = rgba(INK, 0.85 * dry); c.fillText(s.verse + ".", x - tw / 2 - 0.45 * sp, G.wordY);
+      }
+      if (s.hyphenAfter && syl[i + 1] && seen(syl[i + 1].t)) {
+        c.font = fs.toFixed(1) + "px " + FONT_DS;
+        var nx = X(syl[i + 1].t), nw = c.measureText(syl[i + 1].text).width;
+        var hx = (x + tw / 2 + nx - nw / 2) / 2;
+        c.fillStyle = rgba(INK, 0.75 * dry);
+        c.fillRect(hx - 0.32 * sp, G.wordY - 0.42 * sp, 0.64 * sp, 0.11 * sp);
+      }
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  function drawQuestion(c, G, o, X, seen, age, off, dryOf, warmOf, tipWarm, gapPx, rub) {
+    var sp = G.sp, t = o.t, still = G.still;
+    // the clarinet asks: cue-size heads in a slender cartouche, "?" at its head
+    asks.forEach(function (fig, k) {
+      if (!fig.length || !seen(fig[0].t)) return;
+      var first = fig[0], last = fig[fig.length - 1];
+      var ys = fig.map(function (q) { return yTreb(G, q.deg); });
+      var yTop = Math.min.apply(null, ys) - 1.75 * sp, yBot = Math.max.apply(null, ys) + 0.95 * sp;
+      var rr = (yBot - yTop) / 2, cy = (yTop + yBot) / 2;
+      var xs = X(first.t) - 3.1 * sp;
+      var endT = last.t + last.dur, done = still || t >= endT;
+      var xe = done ? Math.max(X(endT) - rr - 0.2 * sp, X(last.t) + 0.5 * sp) : G.engX + 0.4 * sp;
+      if (xe < G.fadeX0 - 6 * sp) return;
+      var ca = 0.88 * (still ? 1 : 0.7 + 0.3 * Math.exp(-(t - first.t) / 20));
+      c.beginPath();
+      c.moveTo(xe, yTop); c.lineTo(xs + rr, yTop);
+      c.arc(xs + rr, cy, rr, -Math.PI / 2, Math.PI / 2, true);
+      c.lineTo(xe, yBot);
+      if (done) c.arc(xe, cy, rr, Math.PI / 2, -Math.PI / 2, true);
+      c.fillStyle = rgba(o.rubrics ? VERM : GOLD, 0.035); c.fill();
+      c.strokeStyle = rgba(rub(GILT), ca); c.lineWidth = 0.085 * sp; c.stroke();
+      // the question mark at its head
+      c.font = "italic 500 " + (1.7 * sp).toFixed(1) + "px 'EB Garamond', Georgia, serif"; c.textAlign = "center";
+      c.fillStyle = rgba(rub(GILT), 0.95); c.fillText("?", xs + 1.25 * sp, cy + 0.55 * sp);
+      // the slur over the asking
+      var shown = fig.filter(function (q) { return seen(q.t); });
+      var sx0 = X(first.t), sx1 = X(shown[shown.length - 1].t);
+      if (sx1 - sx0 > sp) {
+        var sy = yTop + 0.55 * sp;
+        c.beginPath();
+        c.moveTo(sx0, ys[0] - 0.9 * sp);
+        c.bezierCurveTo(sx0 + (sx1 - sx0) * 0.2, sy - 0.2 * sp, sx0 + (sx1 - sx0) * 0.8, sy - 0.2 * sp, sx1, ys[shown.length - 1] - 0.9 * sp);
+        c.bezierCurveTo(sx0 + (sx1 - sx0) * 0.8, sy + 0.08 * sp, sx0 + (sx1 - sx0) * 0.2, sy + 0.08 * sp, sx0, ys[0] - 0.9 * sp);
+        c.fillStyle = rgba(INK, 0.8 * dryOf(age(first.t))); c.fill();
+      }
+      fig.forEach(function (q, i) {
+        if (!seen(q.t)) return;
+        var x = X(q.t), y = ys[i], a = still ? 60 : t - q.t, dry = dryOf(a);
+        var w = warmOf(q.t, q.dur), wt = tipWarm(q.t, q.dur), f = 0.76, shape = shapeOf(q.deg);
+        var tip = still ? X(q.t + q.dur) - gapPx * 0.6 : Math.min(X(q.t) + (t - q.t) * o.pps, X(q.t + q.dur) - gapPx * 0.6);
+        // a single voice rings alone: its own partial arcs
+        var env = still ? 0.3 : (a < q.dur ? 1 : Math.exp(-(a - q.dur) / 0.5));
+        if (env > 0.02) [2, 3].forEach(function (kk, ki) {
+          c.strokeStyle = rgba(GOLD, env * (0.55 - ki * 0.18)); c.lineWidth = 0.065 * sp;
+          c.beginPath(); c.arc(x, y, 0.45 * sp * (1 + 1.05 * Math.log2(kk)), -0.85, 0.85); c.stroke();
+        });
+        trail(c, G, x + 0.55 * sp, tip, y, w, wt, dry, false, 0.72);
+        if (!still && a < q.dur) sprite(c, BLOOM, G.engX, y, 0.9 * sp, 0.5);
+        if (!still) sprite(c, BLOOM, x, y, 1.9 * sp, 0.9 * Math.exp(-a / 0.4));
+        drawLedgers(c, G, "t", q.deg, x, f, 0.8 * dry);
+        lightHead(c, G, shape, x, y, f, false, w, dry, false);
+      });
+    });
+    // the harmonium answers: grace-size, quick, low
+    answers.forEach(function (q) {
+      if (!seen(q.t)) return;
+      var x = X(q.t); if (off(x)) return;
+      var y = yTreb(G, q.deg), a = still ? 60 : t - q.t, dry = dryOf(a) * 0.9;
+      var w = warmOf(q.t, q.dur), wt = tipWarm(q.t, q.dur);
+      var tip = still ? X(q.t + q.dur) - 0.5 * sp : Math.min(X(q.t) + (t - q.t) * o.pps, X(q.t + q.dur) - 0.5 * sp);
+      trail(c, G, x + 0.45 * sp, tip, y, w, wt, dry, false, 0.55);
+      if (!still) sprite(c, BLOOM, x, y, 1.5 * sp, 0.8 * Math.exp(-a / 0.4));
+      drawLedgers(c, G, "t", q.deg, x, 0.6, 0.75 * dry);
+      lightHead(c, G, shapeOf(q.deg), x, y, 0.6, false, w, dry, false);
+      c.strokeStyle = rgba(mix(INK, GOLD, w), dry); c.lineWidth = 0.08 * sp;   // the grace slash
+      c.beginPath(); c.moveTo(x + 0.3 * sp, y + 0.55 * sp); c.lineTo(x + 1.0 * sp, y - 0.55 * sp); c.stroke();
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // THE TELEGRAPH — punched tape along the middle-C line. The perforator feeds
+  // the tape out of the slit at its own speed while the message is keyed (so the
+  // holes land at readable spacing), prints the decoded word on the tail, then
+  // the tape rides the page like the ink. Light shows through the holes.
+  function drawTape(c, G, o, X, seen, still, rub) {
+    var sp = G.sp, t = o.t, pps = o.pps;
+    var y = G.yC, th = 0.62 * sp;
+    var u = Math.max(0.5 * sp, pps * U), v = u / U;
+    var lead = 2 * u;
+    c.font = (1.02 * sp).toFixed(1) + "px " + FONT_DS;
+    var wordW = c.measureText(TEL.wordDs).width + 0.3 * sp * telLetters.length;
+    var keyedLen = TEL.dur / U * u;
+    var tail = 3 * u + 1.2 * sp + wordW + 1.6 * sp;
+    var Ltot = lead + keyedLen + tail;
+    var te0 = TEL.t - lead / v, Tf = te0 + Ltot / v;
+    // the wire, always present
+    var wx0 = Math.max(G.fadeX0 - 4 * sp, X(0)), wx1 = still ? X(DUR) : G.engX;
+    c.strokeStyle = rgba(INK, 0.26); c.lineWidth = 0.07 * sp;
+    c.beginPath(); c.moveTo(wx0, y); c.lineTo(wx1, y); c.stroke();
+    if (!still && t < te0) return;
+    var visLen = still ? Ltot : Math.min(Ltot, (Math.min(t, Tf) - te0) * v);
+    function xo(oo) {            // x of the tape at offset oo (px from its start)
+      if (still) return X(Tf) - (Ltot - oo);
+      return G.engX - (Math.min(t, Tf) - (te0 + oo / v)) * v - Math.max(0, t - Tf) * pps;
+    }
+    var xa = xo(0), xb = xo(visLen);
+    if (xb < G.fadeX0 - 4 * sp) return;
+    // the ribbon, with a faint edge and shadow
+    c.fillStyle = rgba(INK, 0.07); c.fillRect(xa + 0.1 * sp, y - th + 0.18 * sp, xb - xa, 2 * th);
+    c.beginPath();
+    c.moveTo(xa + 0.5 * sp, y - th); c.lineTo(xb, y - th); c.lineTo(xb, y + th); c.lineTo(xa, y + th); c.closePath();
+    c.fillStyle = rgba(TAPE, 1); c.fill();
+    c.strokeStyle = rgba(INK, 0.32); c.lineWidth = 0.06 * sp; c.stroke();
+    c.save(); c.beginPath(); c.rect(xa, y - th, xb - xa, 2 * th); c.clip();
+    // feed holes: a tiny sprocket row
+    c.fillStyle = rgba(INK, 0.22);
+    for (var fo = lead * 0.5; fo < visLen; fo += u) {
+      c.beginPath(); c.arc(xo(fo), y + 0.4 * sp, 0.075 * sp, 0, Math.PI * 2); c.fill();
+    }
+    // the code holes: light through the paper
+    var hr = Math.min(0.42 * u, 0.25 * sp), hy = y - 0.08 * sp;
+    TEL.marks.forEach(function (m, i) {
+      var o0 = lead + m.at / U * u, len = m.len / U * u;
+      if (o0 > visLen) return;
+      var a = still ? 60 : t - (TEL.t + m.at);
+      var lit = still ? 0.55 : 0.55 + 0.45 * Math.exp(-a / 0.7);
+      var x0 = xo(o0), x1 = xo(o0 + len);
+      var cx = (x0 + x1) / 2;
+      sprite(c, BLOOM, cx, hy, (m.dah ? 1.3 : 0.95) * sp, lit * 0.85);
+      c.beginPath();
+      if (m.dah) { c.moveTo(x0 + hr * 0.2, hy - hr); c.lineTo(x1 - hr * 0.2, hy - hr); c.arc(x1 - hr * 0.2, hy, hr, -Math.PI / 2, Math.PI / 2); c.lineTo(x0 + hr * 0.2, hy + hr); c.arc(x0 + hr * 0.2, hy, hr, Math.PI / 2, -Math.PI / 2); }
+      else c.arc(cx, hy, hr, 0, Math.PI * 2);
+      c.fillStyle = rgba(mix(WHITEGOLD, GOLD, 1 - lit), 1); c.fill();
+      c.strokeStyle = rgba(mix(GOLD, INK, 0.45), 0.55); c.lineWidth = 0.05 * sp; c.stroke();
+    });
+    // decoded: each Deseret letter as its letter completes, then the word
+    if (!G.phone) {
+      c.font = (0.92 * sp).toFixed(1) + "px " + FONT_DS; c.textAlign = "center"; c.textBaseline = "middle";
+      TEL.marks.forEach(function (m, i) {
+        if (m.gap !== "l" && m.gap !== "e") return;
+        var oe = lead + (m.at + m.len) / U * u + 1.5 * u;
+        if (oe > visLen + 0.5 * u) return;
+        c.fillStyle = rgba(INK, 0.78);
+        c.fillText(telLetters[m.letterIndex], xo(oe), y + 0.02 * sp);
+      });
+    }
+    var wo = lead + keyedLen + 3 * u + 1.2 * sp;
+    if (wo < visLen) {
+      c.font = "500 " + (1.02 * sp).toFixed(1) + "px " + FONT_DS; c.textAlign = "left"; c.textBaseline = "middle";
+      try { c.letterSpacing = (0.3 * sp).toFixed(1) + "px"; } catch (e) {}
+      var wxp = xo(wo);
+      var ww = still ? 0.5 : Math.exp(-Math.max(0, t - Tf) / 1.2);
+      c.fillStyle = rgba(mix(INK, GILT, ww), 0.95); c.fillText(TEL.wordDs, wxp, y - 0.02 * sp);
+      try { c.letterSpacing = "0px"; } catch (e) {}
+      c.fillStyle = rgba(rub(GILT), 0.9); c.fillRect(wxp, y + 0.44 * sp, wordW - 0.3 * sp, 0.07 * sp);
+    }
+    c.restore();
+    c.textBaseline = "alphabetic";
+    if (!still && t < Tf) sprite(c, BLOOM, G.engX, y, 1.3 * sp, 0.8);   // the perforator at the slit
+  }
+
+  // ---------------------------------------------------------------------------
+  // THE BAND — "not one of ours": standard Earth notation, round heads, stems,
+  // beams and flags, in brass ink, on a layer that scrolls at the band's tempo.
+  function drawBand(c, G, o, XB, seen, off, rub) {
+    if (BI.off) return;                            // the band switch is off
+    var sp = G.sp, t = o.t, still = G.still;
+    if (!seen(BI.t0 - 6 * sp / (o.pps * R))) return;
+    function loudAt(te) { var x = (te - BI.t0) / (BI.t1 - BI.t0); return Math.sin(Math.PI * clamp(x, 0, 1)); }
+    function alphaOf(loud) { return 0.07 + 0.38 * loud; }
+    function staffOf(b) { return b.part === "bass" ? "b" : "t"; }
+    function yOf(b) { var d = b.deg + 4; return staffOf(b) === "b" ? yBass(G, d) : yTreb(G, d); }
+    function stemUp(b) { var d = b.deg + 4; return staffOf(b) === "b" ? d < -6 : d < 6; }
+    var BR = BRASS;
+    // its signatures and rubric, at its entry
+    var sx = XB(BI.t0) - 5.6 * sp;
+    if ((still || sx <= G.engX) && !off(sx)) {
+      var sa = 0.42;
+      sharp(c, G, sx, yTreb(G, 10), BR, sa); sharp(c, G, sx, yBass(G, -4), BR, sa);
+      timeSig(c, G, sx + 1.9 * sp, G.trebTop, "2", "4", BR, sa); timeSig(c, G, sx + 1.9 * sp, G.bassTop, "2", "4", BR, sa);
+      c.font = "italic 500 " + (1.35 * sp).toFixed(1) + "px 'EB Garamond', Georgia, serif"; c.textAlign = "left";
+      c.fillStyle = rgba(rub(BR), 0.92); c.fillText("Band", sx - 0.6 * sp, G.trebTop - 2.2 * sp);
+      var bw = c.measureText("Band").width;
+      c.font = "italic " + (1.05 * sp).toFixed(1) + "px 'EB Garamond', Georgia, serif";
+      c.fillStyle = rgba(rub(BR), 0.75); c.fillText(" — in sol, a march; not one of ours", sx - 0.6 * sp + bw, G.trebTop - 2.2 * sp);
+    }
+    // barlines every two beats
+    for (var k = 1; k <= 13; k++) {
+      var bt = BI.t0 + k * 2 * BI.beat;
+      if (!seen(bt)) break;
+      var bx = XB(bt) - 0.75 * sp; if (off(bx)) continue;
+      barline(c, G, bx, k === 13 ? "double" : "single", alphaOf(loudAt(bt)) * 0.55, BR);
+    }
+    var all = bandMel.concat(bandBass);
+    all.forEach(function (b) {
+      if (!seen(b.t)) return;
+      var x = XB(b.t); if (off(x)) return;
+      var y = yOf(b), al = alphaOf(b.loud), d = b.deg + 4, st = staffOf(b);
+      drawLedgers(c, G, st, d, x, 0.95, al * 0.9, BR);
+      var open = b.beats >= 2;
+      headPath(c, "round", x, y, sp, 1, open);
+      c.fillStyle = rgba(BR, al); c.fill("evenodd");
+      if (b.beats === 1.5) { var dy = (Math.round((y - G.trebTop) / sp * 2) % 2 === 0) ? -0.5 * sp : 0; c.beginPath(); c.arc(x + 1.05 * sp, y + dy, 0.17 * sp, 0, Math.PI * 2); c.fill(); }
+      if (b._beamed) return;
+      var up = stemUp(b), L = 3.4 * sp;
+      var stx = up ? x + 0.56 * sp : x - 0.56 * sp;
+      c.fillStyle = rgba(BR, al);
+      c.fillRect(stx - 0.05 * sp, up ? y - L : y + 0.1 * sp, 0.1 * sp, L - 0.1 * sp);
+      if (b.beats === 0.5) {    // a flag
+        var fy = up ? y - L : y + L, d2 = up ? 1 : -1;
+        c.beginPath();
+        c.moveTo(stx, fy);
+        c.bezierCurveTo(stx + 0.1 * sp, fy + d2 * 1.0 * sp, stx + 1.2 * sp, fy + d2 * 1.3 * sp, stx + 0.75 * sp, fy + d2 * 2.6 * sp);
+        c.bezierCurveTo(stx + 1.0 * sp, fy + d2 * 1.5 * sp, stx + 0.3 * sp, fy + d2 * 1.3 * sp, stx, fy + d2 * 0.9 * sp);
+        c.closePath(); c.fill();
+      }
+    });
+    // beams
+    bandGroups.forEach(function (g) {
+      if (!seen(g[1].t)) {
+        if (!seen(g[0].t)) return;
+      }
+      var a = g[0], b = g[1];
+      var xa = XB(a.t), xb = seen(b.t) ? XB(b.t) : null;
+      if (off(xa)) return;
+      var ya = yOf(a), yb = seen(b.t) ? yOf(b) : ya;
+      var up = (a.deg + b.deg) / 2 + 4 < 6;
+      var sgn = up ? -1 : 1, L = 3.4 * sp;
+      var ea = ya + sgn * L, eb = yb + sgn * L;
+      var mid = (ea + eb) / 2, dd = clamp(eb - ea, -0.8 * sp, 0.8 * sp);
+      ea = mid - dd / 2; eb = mid + dd / 2;
+      var need = up ? Math.min(ya - 2.8 * sp - ea, yb - 2.8 * sp - eb, 0) : Math.max(ya + 2.8 * sp - ea, yb + 2.8 * sp - eb, 0);
+      ea += need; eb += need;
+      var al = alphaOf(a.loud);
+      c.fillStyle = rgba(BR, al);
+      var sxa = up ? xa + 0.56 * sp : xa - 0.56 * sp;
+      c.fillRect(sxa - 0.06 * sp, Math.min(ya, ea), 0.12 * sp, Math.abs(ya - ea));
+      if (xb == null) return;
+      var sxb = up ? xb + 0.56 * sp : xb - 0.56 * sp;
+      c.fillRect(sxb - 0.06 * sp, Math.min(yb, eb), 0.12 * sp, Math.abs(yb - eb));
+      var bt = 0.5 * sp * -sgn;
+      c.beginPath(); c.moveTo(sxa - 0.06 * sp, ea); c.lineTo(sxb + 0.06 * sp, eb); c.lineTo(sxb + 0.06 * sp, eb + bt); c.lineTo(sxa - 0.06 * sp, ea + bt); c.closePath(); c.fill();
+    });
+  }
+
+  // ============================================================================
+  // VIEWS
+  // ============================================================================
+  function View(canvas, opts) {
+    this.cv = canvas; this.ctx = canvas.getContext("2d"); this.opts = opts;
+    this.ink = document.createElement("canvas"); this.ictx = this.ink.getContext("2d");
+  }
+  View.prototype.layout = function (cssW, pps) {
+    var dpr = Math.max(1, window.devicePixelRatio || 1);
+    var sp = this.opts.sp(cssW);
+    var G = makeGeom(cssW, sp, !!this.opts.still, pps);
+    this.G = G; this.dpr = dpr;
+    this.cv.width = Math.round(G.W * dpr); this.cv.height = Math.round(G.H * dpr);
+    this.cv.style.width = G.W + "px"; this.cv.style.height = G.H + "px";
+    this.ink.width = this.cv.width; this.ink.height = this.cv.height;
+    this.stat = buildStatic(G, dpr);
+  };
+  View.prototype.render = function (st) {
+    var G = this.G, dpr = this.dpr, c = this.ctx, ic = this.ictx;
+    var o = { t: st.t, pps: st.pps, dpr: dpr, rubrics: st.rubrics, words: st.words };
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    c.globalCompositeOperation = "source-over"; c.globalAlpha = 1;
+    c.fillStyle = rgba(PAPER); c.fillRect(0, 0, G.W, G.H);
+    if (!G.still) drawSlit(c, G);
+    drawStaffLines(c, G, o);
+    // the ink, on its own layer so it can dissolve before the clefs
+    ic.setTransform(1, 0, 0, 1, 0, 0); ic.globalCompositeOperation = "source-over"; ic.globalAlpha = 1;
+    ic.clearRect(0, 0, this.ink.width, this.ink.height);
+    ic.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ic.save(); ic.beginPath(); ic.rect(0, 0, G.W, G.H); ic.clip();
+    drawInk(ic, G, o);
+    ic.restore();
+    ic.globalCompositeOperation = "destination-in";
+    var fg = ic.createLinearGradient(G.fadeX0, 0, G.fadeX1, 0);
+    fg.addColorStop(0, "rgba(0,0,0,0)"); fg.addColorStop(1, "rgba(0,0,0,1)");
+    ic.fillStyle = fg; ic.fillRect(0, 0, G.W, G.H);
+    ic.globalCompositeOperation = "source-over";
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    c.drawImage(this.stat, 0, 0);
+    c.drawImage(this.ink, 0, 0);
+  };
+
+  // ---- state + controls -------------------------------------------------------
+  var state = { t: 12.0, playing: true, pps: 40, rubrics: true, words: true, phone: true };
+  var live = new View(document.getElementById("live"), { sp: function (w) { return clamp(w / 80, 6.6, 10.6); } });
+  var phone = new View(document.getElementById("phone"), { sp: function (w) { return clamp(w / 54, 6.2, 7.4); } });
+  var still = new View(document.getElementById("still"), { sp: function () { return 10.4; }, still: true });
+  var liveWrap = document.getElementById("liveWrap"), phoneSec = document.getElementById("phoneSec");
+  var playBtn = document.getElementById("play"), scrub = document.getElementById("scrub"), tnum = document.getElementById("tnum");
+
+  function layoutAll() {
+    live.layout(Math.floor(liveWrap.clientWidth), state.pps);
+    phone.layout(Math.floor(Math.min(390, phoneSec.clientWidth)), state.pps);
+    still.layout(0, 40);
+    still.render({ t: DUR, pps: 40, rubrics: state.rubrics, words: state.words });
+  }
+  function renderLive() {
+    live.render(state);
+    if (state.phone) phone.render(state);
+    scrub.value = state.t.toFixed(2);
+    tnum.textContent = state.t.toFixed(1) + " s";
+  }
+  playBtn.addEventListener("click", function () { state.playing = !state.playing; playBtn.textContent = state.playing ? "Pause" : "Play"; last = 0; });
+  scrub.addEventListener("input", function () { state.t = +scrub.value; renderLive(); });
+  Array.prototype.forEach.call(document.querySelectorAll(".speed button"), function (b) {
+    b.addEventListener("click", function () {
+      state.pps = +b.dataset.pps;
+      Array.prototype.forEach.call(document.querySelectorAll(".speed button"), function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
+      renderLive();
+    });
+  });
+  document.getElementById("rubrics").addEventListener("change", function (e) { state.rubrics = e.target.checked; still.render({ t: DUR, pps: 40, rubrics: state.rubrics, words: state.words }); renderLive(); });
+  document.getElementById("words").addEventListener("change", function (e) { state.words = e.target.checked; still.render({ t: DUR, pps: 40, rubrics: state.rubrics, words: state.words }); renderLive(); });
+  document.getElementById("phoneT").addEventListener("change", function (e) { state.phone = e.target.checked; phoneSec.hidden = !state.phone; if (state.phone) { layoutAll(); } renderLive(); });
+
+  var last = 0;
+  function frame(ts) {
+    requestAnimationFrame(frame);
+    if (!state.playing) { last = 0; return; }
+    var dt = last ? Math.min(0.1, (ts - last) / 1000) : 0;
+    last = ts;
+    state.t = (state.t + dt) % DUR;
+    renderLive();
+  }
+  window.renderAt = function (t) {
+    state.playing = false; playBtn.textContent = "Play";
+    state.t = ((t % DUR) + DUR) % DUR;
+    renderLive();
+    return state.t;
+  };
+  window.setMockOptions = function (opts) {   // for screenshots: {pps, rubrics, words}
+    Object.keys(opts || {}).forEach(function (k) { state[k] = opts[k]; });
+    layoutAll(); renderLive();
+  };
+
+  var ro = null;
+  function start() {
+    layoutAll(); renderLive();
+    if (window.ResizeObserver) {
+      var lastW = liveWrap.clientWidth;
+      ro = new ResizeObserver(function () { if (liveWrap.clientWidth !== lastW) { lastW = liveWrap.clientWidth; layoutAll(); renderLive(); } });
+      ro.observe(liveWrap);
+    }
+    requestAnimationFrame(frame);
+    window.mockReady = true;
+  }
+  var fontsReady = document.fonts && document.fonts.load
+    ? Promise.all([
+        document.fonts.load("500 16px 'EB Garamond'"), document.fonts.load("italic 16px 'EB Garamond'"),
+        document.fonts.load("600 16px 'EB Garamond'"), document.fonts.load("16px 'Noto Sans Deseret'", "𐐗")
+      ]).catch(function () {})
+    : Promise.resolve();
+  Promise.race([fontsReady, new Promise(function (r) { setTimeout(r, 2500); })]).then(start);
+})();
+</script>
+<script>
+(function () {  /* the band switch: reloads with ?band=0 / without it */
+  var on = !/[?&]band=0\b/.test(location.search), cb = document.getElementById("bandtoggle");
+  if (!cb) return;
+  cb.checked = on;
+  cb.addEventListener("change", function () {
+    var q = location.search.replace(/[?&]band=[01]/, "").replace(/^&/, "?");
+    if (!cb.checked) q += (q ? "&" : "?") + "band=0";
+    location.search = q;
+  });
+})();
+</script>
+</body>
+</html>

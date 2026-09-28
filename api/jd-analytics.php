@@ -271,6 +271,14 @@ foreach ($rates as $r) {
         }
         $gradeByModel[$modelId]['sum'] += $value;
         $gradeByModel[$modelId]['n']++;
+        // the same rows, counted by grade (2026-09-27): the /about/ page draws
+        // each model's distribution from exactly the ratings its average is
+        // made of, so a histogram always sums to that average's n
+        $bin = (int) round($value);
+        if (!isset($gradeByModel[$modelId]['hist'])) {
+            $gradeByModel[$modelId]['hist'] = [];
+        }
+        $gradeByModel[$modelId]['hist'][$bin] = ($gradeByModel[$modelId]['hist'][$bin] ?? 0) + 1;
         // the turn table's cell: ONE grade per model per turn — the bench's
         // when the curator re-graded it, else the visitor's own
         $tsub = (string) $gen['submission_id'];
@@ -412,10 +420,17 @@ usort($firsts, static fn($a, $b) => [$b['rate'], $b['firsts']] <=> [$a['rate'], 
 
 $grades = [];
 foreach ($gradeByModel as $id => $g) {
+    // hist: grade rank (as a string key, "1".."5") => how many ratings
+    $hist = [];
+    foreach (($g['hist'] ?? []) as $bin => $count) {
+        $hist[(string) $bin] = $count;
+    }
+    ksort($hist);
     $grades[] = [
         'model_id' => $id,
         'avg'      => round($g['sum'] / $g['n'], 3),
         'n'        => $g['n'],
+        'hist'     => (object) $hist,
     ];
 }
 usort($grades, static fn($a, $b) => $b['avg'] <=> $a['avg']);

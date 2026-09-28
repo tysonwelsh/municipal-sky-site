@@ -502,6 +502,13 @@ usort($items, function ($a, $b) {
     return strcmp($b['created'], $a['created']) ?: strcmp($b['id'], $a['id']);
 });
 
+// Slim mode: ?slim=1 — the pile and its tags only (see _slim.php).
+if (isset($_GET['slim'])) {
+    require_once __DIR__ . '/_slim.php';
+    echo json_encode(jd_slim_payload($taxonomy, $items));
+    exit();
+}
+
 echo json_encode([
     'generated' => gmdate('c'),
     'count' => count($items),

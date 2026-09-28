@@ -1,5 +1,5 @@
 <?php
-$page_title = "The Junk Drawer - Municipal Sky";
+$page_title = "The SVG Junk Drawer - Municipal Sky";
 $page_description = "A drawer of machine-made objects: SVGs drawn by large language models, kept imperfections intact and graded like the model output they are. Dig around.";
 // $page_image — Phase 3 ships a painted-drawer share image (PLAN-FRONTEND §6);
 // until then the site default OG image serves.
@@ -27,28 +27,27 @@ include '../../includes/header.php';
        data.php's payload (junk-drawer.js); everything else is static copy. -->
   <section class="jd-notes" id="notes">
 
+    <!-- THE NOTES, SHORT (owner, 2026-09-28): a quick introduction in the
+         about page's voice, and the way to it. The grade legend, the axes and
+         the item count went: the about page explains the taxonomy with the
+         real instrument beside it, so this page only has to say what the
+         drawer is and where to learn more. -->
     <header class="jd-wall-label">
-      <h1 class="jd-title">The Junk Drawer</h1>
-      <p class="jd-label-dek">A drawer of machine-made objects, graded like model output</p>
-      <p class="jd-count" id="jd-count"></p>
+      <h1 class="jd-title">The SVG Junk Drawer</h1>
     </header>
 
     <div class="jd-intro">
-      <p>Every object in the drawer above is an SVG drawn by a large language
-      model &mdash; asked, in plain words, for a skeleton key or a matchbook,
-      and taken at its word. What lands in the drawer is exactly the code the
-      model wrote, imperfections intact, and each response is graded like the
-      model output it is: an overall grade on a five-tier scale, then notes
-      along the fixed axes below. The rubric is data &mdash; the legend
-      renders from the same file the grades are recorded in.</p>
+      <p>This is the virtual junk drawer where I stash my collection of
+      AI-generated vector art.</p>
+      <p>Every object in it is an SVG drawn by a large language model. Each
+      prompt goes to four leading models at once, and every drawing gets
+      graded, without knowing which model made it.</p>
+      <p>Dig around: drag things, or tap one to see its tag. Press the blue
+      button to give the four models a prompt of your own.</p>
     </div>
 
-    <section class="jd-legend" aria-label="how to read the grades">
-      <h2>How to Read the Grades</h2>
-      <div class="jd-grades" id="jd-grades"></div>
-      <h3>The Axes</h3>
-      <div class="jd-axes" id="jd-axes"></div>
-    </section>
+    <p class="jd-about-cta"><a href="/art/junk-drawer/about/">How the drawer
+    works, and what it shows &rarr;</a></p>
 
     <!-- The COLOPHON section and its paragraph went 2026-09-10 (owner call).
          What stays is the bare foot of the notes: the series link and the

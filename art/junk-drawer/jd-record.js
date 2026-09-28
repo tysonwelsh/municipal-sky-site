@@ -797,10 +797,15 @@
 
   /* fetch any response SVGs not yet cached (primaries arrive from the pile
      loader; alternatives load lazily on first open) */
+  /* one request per drawing, however many callers ask at once: three cards
+     built together (the /about/ walkthrough) used to fetch every drawing
+     three times, because the cache only fills when a fetch lands */
+  var svgInflight = {};
   function ensureSVGs(entry) {
     return Promise.all(entry.responses.map(function (r) {
       var key = entry.id + '/' + r.file;
       if (svgCache[key]) return null;
+      if (svgInflight[key]) return svgInflight[key];
       /* a visitor's own won item has no file on the server: its SVG is primed
          into the cache when the entry is filed, and its `url` is a data: URL
          for the download link only — never a path to join to JD_API */
@@ -808,11 +813,12 @@
         svgCache[key] = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"></svg>';
         return null;
       }
-      return fetch(JD_API + r.url).then(function (res) {
+      return (svgInflight[key] = fetch(JD_API + r.url).then(function (res) {
         if (!res.ok) throw new Error(r.url + ' ' + res.status);
         return res.text();
       }).then(function (t) { svgCache[key] = t; })
-        .catch(function () { svgCache[key] = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"></svg>'; });
+        .catch(function () { svgCache[key] = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"></svg>'; })
+        .then(function () { delete svgInflight[key]; }));
     }));
   }
 
@@ -1360,6 +1366,47 @@
     openFromHash: function () {
       var h = decodeURIComponent(location.hash.slice(1));
       if (h && payload && byId(payload.items, h)) open(h, true);
+    },
+    /* A FINISHED CARD, NOT A DIALOG (2026-09-27, the /about/ walkthrough).
+       The markup open() renders for one response, in a frame of its own —
+       no modal, no history, no draw-on, no listeners — resolved once every
+       drawing on it has been fetched. For pages that SHOW report cards
+       rather than open them: the walkthrough used to drive the live modal
+       (open it, press its thumbnails, wait for each render), and every one
+       of those steps was a race it could lose. `rid` names the response;
+       omitted, the drawer's pick. Resolves null when the item is unknown or
+       the drawer's data has not arrived (ready() says which). */
+    ready: function () { return !!payload; },
+    /* `item` is an entry id — looked up in the data the drawer handed over —
+       or the ENTRY ITSELF, from the caller's own copy of data.php. The
+       walkthrough passes the entry: the drawer only hands its data over
+       once it has fetched every drawing in the pile, and a page that shows
+       three cards should not wait on seventy drawings to show them. */
+    card: function (item, rid, data) {
+      var entry = item && typeof item === 'object' ? item
+        : (payload ? byId(payload.items, item) : null);
+      if (!entry) return Promise.resolve(null);
+      /* the card's markup reads the taxonomy (grade words, axis names) from
+         the payload; a caller with its own copy of data.php lends it for the
+         one synchronous render below if the drawer has not handed over yet */
+      var lent = !payload && data && data.taxonomy ? data : null;
+      injectDefs();
+      return ensureSVGs(entry).then(function () {
+        var i = 0;
+        for (var j = 0; j < entry.responses.length; j++) {
+          if (entry.responses[j].rid === (rid || entry.primary)) { i = j; break; }
+        }
+        markSeq = 0;
+        var html, own = payload;
+        if (!payload && lent) payload = lent;
+        try { html = cardHTML(entry, entry.responses[i], i); }
+        finally { if (payload === lent) payload = own; }
+        var el = document.createElement('div');
+        el.className = 'jd-record-scrim is-on';
+        el.innerHTML = '<div class="jd-record" aria-label="report card">' +
+          '<div class="rc-scroll">' + html + '</div></div>';
+        return el;
+      });
     }
   };
 })();

@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "version": 24,
-  "updated": "2026-09-14",
+  "version": 25,
+  "updated": "2026-09-27",
   "grades": [
     {
       "id": "prime",
@@ -273,6 +273,7 @@
       "id": "understanding-assignment",
       "label": "Understanding Assignment",
       "description": "Did the model appear to understand the intent behind the user's request? Did it attempt to render the objects specified in the prompt? Setting aside any issues related to execution, does the drawing resemble what you would expect given the prompt?",
+      "summary": "Did the model attempt to draw what the prompt asked for?",
       "values": [
         {
           "id": "read-the-brief",
@@ -330,6 +331,7 @@
       "id": "structural-coherence",
       "label": "Structural Coherence",
       "description": "Are the constituent parts that make up the item well assembled, and do they connect to each other correctly? Does the drawing correctly depict anatomy, proportions, and point of view? If fixing the drawing means repositioning parts of the item on the x or y-axis, it is an issue with Structural Coherence.",
+      "summary": "Do the individual parts connect, with correct proportions, anatomy, and perspective?",
       "values": [
         {
           "id": "sound",
@@ -355,6 +357,7 @@
       "id": "layering",
       "label": "Layering",
       "description": "Are the constituent parts of the item stacked in the correct order? Are there any issues with opacity, fill, or undesired background elements? If the drawing could be fixed by making adjustments to how parts of the image are arranged on the z-axis or by erasing an undesired part of the background, it is an issue with Layering.",
+      "summary": "Are the parts stacked in the right order, with correct use of opacity?",
       "values": [
         {
           "id": "clean",
@@ -380,6 +383,7 @@
       "id": "jnsq",
       "label": "Je ne sais quoi",
       "description": "The intangible. Does it have style or is it a dud? Is it tasteful or is it tacky? You know it when you see it. Feel free to rely on your own subjective judgment.",
+      "summary": "Does the image have that ineffable spark? You know it when you see it.",
       "values": [
         {
           "id": "abundant",
@@ -616,6 +620,11 @@
       "date": "2026-09-14",
       "version": 24,
       "note": "Owner call: jnsq's DESCRIPTION reworded to plainly license the rater's own taste — style or dud, tasteful or tacky, you know it when you see it, subjective judgment invited. It replaces the 'more than the sum of its axes' framing, which described the axis to a reader of the rubric rather than telling a rater what to do. Description only; the axis id, ranks and value labels/descriptions are unchanged, so nothing filed is affected, and every instrument renders this text from this file. The DEFUNCT je-ne-sais-quoi axis keeps the old wording, as the record for responses graded under it. Completes the pass begun at v22 — all four live axes now read as questions put to the rater."
+    },
+    {
+      "date": "2026-09-27",
+      "version": 25,
+      "note": "Owner call: each live axis gains a one-line `summary` — the question a grader asks, in plain words — for pages that introduce the taxonomy to a reader rather than instruct a rater (the /about/ walkthrough's category list). Display only: descriptions, ids, ranks and value labels are unchanged, and every instrument (report card, turn survey) still renders the full description."
     }
   ]
 }
