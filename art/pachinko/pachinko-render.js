@@ -99,6 +99,15 @@
   function bakeHistory(g, b) {
     var hist = {};
     (b.edits || []).forEach(function (e) { if (e.type === 'nudge') (hist[e.id] = hist[e.id] || []).push(e); });
+    // a pin carried a whole cell (the crew's 'move'): its old nail hole, and
+    // a scuff of rock dust where it was worked out
+    (b.edits || []).forEach(function (e) {
+      if (e.type !== 'move' || !e.from) return;
+      var f = b.byId && b.byId[e.id], hx = Math.round(e.from.x), hy = Math.round(e.from.y);
+      if (f && Math.hypot(hx - f.x, hy - f.y) < 2.5) return;
+      px(g, hx, hy, P.VOID0); px(g, hx + 1, hy, 'rgba(0,0,0,0.5)'); px(g, hx, hy + 1, 'rgba(0,0,0,0.35)'); px(g, hx - 1, hy - 1, 'rgba(255,244,224,0.22)');
+      px(g, hx - 2, hy + 1, 'rgba(200,190,170,0.18)'); px(g, hx + 2, hy + 2, 'rgba(200,190,170,0.14)');
+    });
     for (var id in hist) {
       var f = b.byId && b.byId[id]; if (!f || !f.home) continue;
       var h = f.home, x = h.x, y = h.y, spots = [[x, y]];
@@ -558,6 +567,32 @@
       if (L.kind === 'bulb') { px(g, L.fx, L.fy, P.FLAME2); px(g, L.fx, L.fy + 1, P.FLAME1); px(g, L.fx - 1, L.fy, 'rgba(255,224,160,0.55)'); px(g, L.fx + 1, L.fy, 'rgba(255,224,160,0.55)'); }
       else { px(g, L.fx, L.fy, P.FLAME2); px(g, L.fx, L.fy - 1, h < 0.5 ? P.FLAME1 : P.FLAME0); if (h > 0.8) px(g, L.fx + 1, L.fy - 1, P.FLAME0); }
     }
+    // what the crew changed last shift: a chalk ring round each (drawn by a
+    // hand in a hurry, not quite closed), and for a pin carried a cell, a
+    // dotted chalk line from where it was
+    var alts = fx.alterations || [];
+    for (i = 0; i < alts.length; i++) {
+      var al = alts[i], ak = Math.min(1, al.k == null ? 1 : al.k); if (ak <= 0.05) continue;
+      if (anyDark && sampleD(al.x, al.y) >= 0.85) continue;
+      var ax = Math.round(al.x), ay = Math.round(al.y), seed = (ax * 31 + ay) | 0, rr = al.type === 'pocket' || al.type === 'chute' ? 9 : 6;
+      var chalk = CHALK[Math.min(3, Math.floor(ak * 3.99))];
+      for (var ai = 0; ai < 22; ai++) {
+        if (ai > 19) continue;                                     // the gap where the chalk lifted
+        var an = (ai / 22) * Math.PI * 2 + seed, wob = (A.hash01(seed, ai, 3) - 0.5) * 1.2;
+        px(g, Math.round(ax + Math.cos(an) * (rr + wob)), Math.round(ay + Math.sin(an) * (rr * 0.85 + wob)), chalk);
+      }
+      if (al.from) {
+        var fx0 = al.from.x, fy0 = al.from.y, dl = Math.hypot(ax - fx0, ay - fy0);
+        for (var dd = 0; dd < dl - rr; dd += 2) { var u2 = dd / dl; px(g, Math.round(fx0 + (ax - fx0) * u2), Math.round(fy0 + (ay - fy0) * u2), chalk); }
+      }
+    }
+    // the drift's legend marker (5) lights as a marble goes in and again as it comes out
+    var trs = fx.transits || [];
+    for (i = 0; i < trs.length; i++) {
+      var mk2 = mine.markers && mine.markers[trs[i].id]; if (!mk2) continue;
+      var lit2 = trs[i].u < 0.18 || (trs[i].exitIn != null && trs[i].exitIn < 0.5);
+      if (lit2) { rect(g, mk2.x - 1, mk2.y - 1, mk2.w + 2, mk2.h + 2, P.GOLD3); rect(g, mk2.x, mk2.y, mk2.w, mk2.h, '#2a1a08'); A.text(g, String(mk2.n), mk2.x + 2, mk2.y + 1, '#fff4c8'); }
+    }
     // a cave-in's work light
     var cvs = (board && board.caveins) || [];
     for (i = 0; i < cvs.length; i++) { var wl = caveLamp(cvs[i]); if (!(anyDark && sampleD(wl.x, wl.y) >= 0.85)) { px(g, wl.x, wl.y + 1, P.FLAME2); px(g, wl.x, wl.y + 2, P.FLAME1); } }
@@ -628,6 +663,7 @@
   }
 
   /* ══ the marble ════════════════════════════════════════════════════ */
+  var CHALK = ['rgba(244,236,208,0.25)', 'rgba(244,236,208,0.45)', 'rgba(244,236,208,0.65)', 'rgba(244,236,208,0.85)'];
   var SWIRLS = [[P.PINK, P.PINK_D], [P.GOLD3, P.GOLD1], ['#4ad0a0', '#1e7058'], ['#5a8aff', '#2a3a9a'], ['#ff7040', '#8a2a10']];
   var discMask = {};
   function maskFor(r) {
@@ -710,17 +746,48 @@
     }
   }
   var TRAIL = []; for (var ti = 0; ti < 10; ti++) TRAIL.push('rgba(190,220,255,' + (0.12 + (ti + 0.5) / 10 * 0.28).toFixed(2) + ')');
-  // a marble in a tunnel: a light moving behind the rock, warm enough to see
-  // (the old drift is the route to the 13: you have to be able to follow it)
-  function drawTunnelLight(g, m, t) {
-    var tu = m.tunnel; if (!tu || !tu.from || !tu.to) return;
-    var k = tu.k, x = tu.from.x + (tu.to.x - tu.from.x) * k, y = tu.from.y + (tu.to.y - tu.from.y) * k + Math.sin(k * Math.PI) * 10;
-    var X = Math.round(x), Y = Math.round(y);
-    for (var j = -3; j <= 3; j++) for (var i = -3; i <= 3; i++) {
-      var d = (i * i + j * j) / 10;
-      if (d < 1 && bayer(X + i, Y + j) < (1 - d) * 0.7) px(g, X + i, Y + j, d < 0.3 ? 'rgba(220,236,255,0.7)' : 'rgba(170,200,255,0.4)');
+  // a marble in a tunnel: a light moving behind the rock along the tunnel's
+  // own route (the old drift is the way to the 13: you have to be able to
+  // follow it). As it goes, the drift's timber sets show one after another
+  // in its light and go dark again behind it
+  var SETS = {};
+  function setsOf(path) {
+    var key = path.map(function (p) { return p[0] + ',' + p[1]; }).join(';');
+    if (SETS[key]) return SETS[key];
+    var segs = [], L = 0;
+    for (var i = 1; i < path.length; i++) { var d = Math.hypot(path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1]); segs.push(d); L += d; }
+    var out = { L: L, sets: [] };
+    for (var s0 = 10; s0 < L - 6; s0 += 15) {
+      var a = s0;
+      for (i = 0; i < segs.length; i++) { if (a <= segs[i]) break; a -= segs[i]; }
+      i = Math.min(i, segs.length - 1);
+      var q = segs[i] ? a / segs[i] : 0, x = path[i][0] + (path[i + 1][0] - path[i][0]) * q, y = path[i][1] + (path[i + 1][1] - path[i][1]) * q;
+      var tx = (path[i + 1][0] - path[i][0]) / (segs[i] || 1), ty = (path[i + 1][1] - path[i][1]) / (segs[i] || 1);
+      out.sets.push({ s: s0, x: x, y: y, nx: -ty, ny: tx });
     }
-    px(g, X, Y, '#eaf6ff');
+    return (SETS[key] = out);
+  }
+  function drawTunnelLight(g, m, t) {
+    var tu = m.tunnel; if (!tu) return;
+    var x, y;
+    if (tu.x != null) { x = tu.x; y = tu.y; } else if (tu.from && tu.to) { var k0 = tu.k; x = tu.from.x + (tu.to.x - tu.from.x) * k0; y = tu.from.y + (tu.to.y - tu.from.y) * k0 + Math.sin(k0 * Math.PI) * 10; } else return;
+    if (tu.path && tu.path.length > 1) {
+      var S0 = setsOf(tu.path), head = (tu.k || 0) * S0.L;
+      for (var i = 0; i < S0.sets.length; i++) {
+        var st = S0.sets[i], d = head - st.s, b = d >= 0 ? 1 - d / 34 : 1 + d / 10;
+        if (b <= 0.05) continue;
+        // a timber set: two posts and a cap, square to the drift
+        var cx = st.x, cy = st.y, nx = st.nx, ny = st.ny, col = b > 0.66 ? P.TIM4 : b > 0.33 ? P.TIM3 : P.TIM2;
+        for (var j = -4; j <= 4; j++) px(g, Math.round(cx + nx * j), Math.round(cy + ny * j), j === -4 || j === 4 ? col : (b > 0.5 && Math.abs(j) < 3 ? 'rgba(255,200,120,' + (0.35 * b).toFixed(2) + ')' : null) || col);
+        px(g, Math.round(cx + nx * -4 - ny), Math.round(cy + ny * -4 + nx), P.TIM1); px(g, Math.round(cx + nx * 4 - ny), Math.round(cy + ny * 4 + nx), P.TIM1);
+      }
+    }
+    var X = Math.round(x), Y = Math.round(y);
+    for (var jj = -3; jj <= 3; jj++) for (var ii = -3; ii <= 3; ii++) {
+      var dd = (ii * ii + jj * jj) / 10;
+      if (dd < 1 && bayer(X + ii, Y + jj) < (1 - dd) * 0.8) px(g, X + ii, Y + jj, dd < 0.3 ? 'rgba(236,244,255,0.8)' : 'rgba(180,210,255,0.45)');
+    }
+    px(g, X, Y, '#ffffff');
   }
 
   /* ══ the hopper: an aerial-tram bucket on the rail across the top ═══ */
@@ -934,6 +1001,9 @@
     // the coin door's card and lamp, your pocket, the ticket mouth
     if (A.drawMachine) A.drawMachine(ctx, view);
     mischief(ctx, view, 'cabinet');
+    // the attendant pencils the crew's alterations on the legend card
+    var nAlt = (view.fx && view.fx.alterations || []).length;
+    if (nAlt > 0 && C.legend) { var LL = C.legend; A.text(ctx, 'ALT ' + nAlt, LL.x + LL.w - 21, LL.y + 4, '#5a5a6a', 1, function (i2, col, row) { return A.hash01(611, i2 * 3 + col, row) < 0.1 ? null : '#5a5a6a'; }); }
   }
   // mischief and the mother lode (pachinko-art-mischief.js, wave 4): a
   // failure there costs its layer for the frame, never the whole view

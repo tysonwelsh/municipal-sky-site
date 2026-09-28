@@ -122,7 +122,7 @@
     var p = fig.pose || {};
     return (fig.who || 'pick') + (fig.facing < 0 ? '-' : '+') + (fig.back ? 'B' : '') + '|' + (fig.tool || '') + '|' + (fig.tool2 || '') + '|' +
       (fig.lamp === false ? 0 : (fig.lampK != null && fig.lampK < 0.35 ? 1 : 2)) + (fig.capOff ? 'c' : '') + '|' +
-      (fig.tool === 'tally' ? (fig.tallyN | 0) : '') + '|' + deg(p.lean) + ',' + deg(p.head) + ',' + deg(p.armL) + ',' + deg(p.armR) + ',' +
+      (fig.tool === 'tally' ? (fig.tallyN | 0) + 'n' + (fig.nearly | 0) : '') + '|' + deg(p.lean) + ',' + deg(p.head) + ',' + deg(p.armL) + ',' + deg(p.armR) + ',' +
       deg(p.legL) + ',' + deg(p.legR) + ',' + deg(p.toolA) + (fig.back ? ',' + (fig.liftL | 0) + ',' + (fig.liftR | 0) : '');
   }
   function sprite(fig) {
@@ -502,6 +502,8 @@
         var n = fig.tallyN == null ? 4 : Math.max(0, fig.tallyN | 0);
         for (k = 0; k < Math.min(n, 12); k++) px(s, Math.round(X(hand) - 1 + (k % 3) * (K.f > 0 ? 1 : -1)), Math.round(Y(hand) - 4 + Math.floor(k / 3)), P.INK_L);
         if (n > 12) px(s, Math.round(X(hand) + 1), Math.round(Y(hand) - 5), P.RED1);   // a second card, clipped behind
+        // a near miss at the 13 marked in red pencil along the bottom: NEARLY
+        for (k = 0; k < Math.min(fig.nearly | 0, 5); k++) px(s, Math.round(X(hand) - 2 + k * (K.f > 0 ? 1 : -1)), Math.round(Y(hand)), '#c83a3a');
         break;
       }
       case 'coil': {

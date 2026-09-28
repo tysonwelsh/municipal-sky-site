@@ -425,7 +425,16 @@
           if (i % 11 === 0) px(g, X, Y, P.TIM0);
         });
         return;
-      case 'post': case 'brace': case 'timber': case 'chute':
+      case 'chute':
+        // a board knocked in under a shaft mouth: a nailed plank, lit on top
+        along(function (x, y, i) {
+          var X = Math.round(x), Y = Math.round(y);
+          px(g, X, Y - 1, i % 9 === 0 ? P.TIM3 : P.TIM4); px(g, X, Y, P.TIM3); px(g, X, Y + 1, P.TIM1);
+        });
+        px(g, Math.round(x1 + (x2 - x1) * 0.1), Math.round(y1 + (y2 - y1) * 0.1), P.IRON4); px(g, Math.round(x1 + (x2 - x1) * 0.9), Math.round(y1 + (y2 - y1) * 0.9), P.IRON4);
+        px(g, Math.round(x1), Math.round(y1), P.END); px(g, Math.round(x2), Math.round(y2), P.END);
+        return;
+      case 'post': case 'brace': case 'timber':
         along(function (x, y, i) {
           var X = Math.round(x), Y = Math.round(y);
           px(g, X - 1, Y, P.TIM4); px(g, X, Y, P.TIM3); px(g, X + 1, Y, P.TIM2);
@@ -1337,7 +1346,7 @@
     fs.forEach(function (f) { if (f.kind === 'pocket') drawPocket(fg, f, board); });
     var lamps = buildLamps(board, g);
     // markers: exhibits (black roundels) and figures (bone tags)
-    var pins = fs.filter(function (f) { return f.kind === 'pin' && !f.buried; }), taken = [], tagAt = {};
+    var pins = fs.filter(function (f) { return f.kind === 'pin' && !f.buried; }), taken = [], tagAt = {}, markers = {};
     var zone = decor(board, 'cardzone'); if (zone) taken.push({ x: zone.x, y: zone.y, w: zone.w, h: zone.h });
     // the specimens themselves: nothing is pinned over one
     specs.forEach(function (s) { var b = SPECBOX[s.what] || [10, 10]; taken.push({ x: s.x - (b[0] >> 1), y: s.y - (b[1] >> 1), w: b[0], h: b[1] }); });
@@ -1347,7 +1356,7 @@
       if (ref) { ax = ref.kind === 'tunnel' ? ref.a.x : ref.kind === 'cart' ? ref.x1 - 8 : ref.x; ay = ref.kind === 'tunnel' ? ref.a.y : ref.y; }
       else { var rg = (board.regions || []).filter(function (r) { return r.id === e.ref; })[0]; if (!rg) return; ax = rg.x + rg.w * 0.42; ay = rg.y + rg.h / 2; }
       var w = A.textW(String(e.n)) + 4, t = placeTag(pins, taken, ax, ay, w, 7, CANDS);
-      if (t) exhibitMarker(fg, e.n, t, e.scratched);
+      if (t) { exhibitMarker(fg, e.n, t, e.scratched); markers[e.ref] = { x: t.x, y: t.y, w: t.w, h: t.h, n: e.n }; }
     });
     specs.forEach(function (s) {
       var b = SPECBOX[s.what] || [10, 10], hw = b[0] >> 1, hh = b[1] >> 1;
@@ -1371,7 +1380,7 @@
     });
     return {
       gals: st.gals, fore: fore, albedo: c, lamps: lamps, glints: glints,
-      emissive: st.em, pins: pinOut, figs: specs, stillLife: stillLife(board),
+      emissive: st.em, pins: pinOut, figs: specs, stillLife: stillLife(board), markers: markers,
       watch: out.watch, ring: out.ring, moth: out.moth, rat: out.rat
     };
   };

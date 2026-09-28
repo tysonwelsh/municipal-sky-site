@@ -179,10 +179,10 @@
       px(g, Math.round(cx), k.y + 1, paper(P.PAPER_DD));
     }
     if (sx < 0.9) return;
-    var lines = SIDES[side] || SIDES.insert;
+    var lines = side === 'credit' ? ['CREDIT', Math.max(0, ui.marblesLeft | 0) + ' LEFT'] : (SIDES[side] || SIDES.insert);
     typedLine(g, lines[0], cx + 0.5, k.y + 4, 71);
     typedLine(g, lines[1], cx + 0.5, k.y + 10, 72);
-    if (side === 'insert') {
+    if (side === 'insert' || side === 'credit') {
       // a typed arrow down to the slot, the way a typist draws one: v's
       var ax = Math.round(cx);
       px(g, ax - 2, k.y + 16, P.INK); px(g, ax + 2, k.y + 16, P.INK); px(g, ax - 1, k.y + 17, P.INK); px(g, ax + 1, k.y + 17, P.INK); px(g, ax, k.y + 18, P.INK);
@@ -193,7 +193,7 @@
     }
   }
   function drawPilot(g, ui, t) {
-    var b = K.bulb, attract = ui.mode === 'attract';
+    var b = K.bulb, attract = ui.coinOpen != null ? !!ui.coinOpen : ui.mode === 'attract';
     var tap = ui.tap != null ? t - ui.tap : 9;
     var on;
     if (!attract) on = 0;
@@ -210,7 +210,7 @@
   /* ── the coin door: the slot's glow, a token going in, the rattle,
    *    the nickel in the return ─────────────────────────────────────── */
   function drawCoin(g, ui, t) {
-    var c = C.coin, attract = ui.mode === 'attract';
+    var c = C.coin, attract = ui.coinOpen != null ? !!ui.coinOpen : ui.mode === 'attract';
     var tap = ui.tap != null ? t - ui.tap : 9;
     // the slot glows in ATTRACT (a lamp behind it: that's where it starts)
     var glow = attract && (ui.hoverCoin || tap < 0.9 || Math.floor(t * 2) % 2 === 0);
