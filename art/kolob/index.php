@@ -108,8 +108,10 @@ include '../../includes/header.php';
          (v0.20): the day in small capitals under a short double rule; the
          mode and the meter (during a hymn) beneath, with the direction line
          (stillness, fuging, two bands, the steeples answer, an old tune, the
-         whole tune) as a gilt rubric on the same line; and the day's numbers
-         (theme, develops, answers) as one printed line. Idle, the card says
+         whole tune) as a gilt rubric on the same line; the hymn being sung
+         (round 3: its number, its Deseret name, its meter and its hymnist,
+         from the typed hymn-announced); and the day's numbers (theme,
+         develops, answers) as one printed line. Idle, the card says
          the valley is still. The seed row sits on the green beneath the card.
          The broadside verse sits beside, centred on the board's height. -->
     <div class="kolob-columns">
@@ -119,6 +121,7 @@ include '../../includes/header.php';
             <div class="kolob-prog-day" id="kolob-rh-left">𐐜 𐐚𐐈𐐢𐐆 𐐆𐐞 𐐝𐐓𐐆𐐢</div>
             <div class="kolob-prog-rule" aria-hidden="true"></div>
             <div class="kolob-prog-line"><span class="kolob-prog-mm" id="kolob-rh-mm"></span><span class="kolob-direction" id="kolob-direction" aria-label="performance direction"></span></div>
+            <div class="kolob-board-nums kolob-board-hymn" id="kolob-board-hymn" aria-label="the hymn: its number, its name, its meter and its hymnist"></div>
             <div class="kolob-board-nums" id="kolob-board-nums"><span class="kolob-board-n">—</span></div>
           </div>
           <div class="kolob-seed-row">
