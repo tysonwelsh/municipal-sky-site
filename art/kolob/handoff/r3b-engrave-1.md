@@ -500,3 +500,50 @@ everything scheduled after it, with 0 errors (`stoptest.js`,
   are resolved above. Its notes on gospel's voice order, a single voice's
   stems, solmization, the organ alone and the harness's gospel FAILs still
   stand.
+
+---
+
+## Round 3: the critic's four findings
+
+*Same branch, 2026-09-28. The only file changed is `kolob-viz.js`. VERSION
+is not bumped. Two agents started this round and stalled while writing one
+large edit. A third read their uncommitted work, judged it coherent, kept
+it, and committed it as a checkpoint (`2816486d`). It then measured the
+work over whole meetings, on the real page and in the replay lab, and
+finished this section.*
+
+### For the owner, in plain words
+
+What you will notice:
+
+- **A barline no longer lands on a ledger line, a dot or a sharp.** The
+  page used two different pictures of a note. It used one to work out how
+  much room a bar needed, and another to place the bar. The first left out
+  ledger lines and guessed where dots and sharps were. Now there is one
+  picture of each note's ink, the same one the page draws, and both steps
+  use it.
+- **A note never moves once it is printed.** Where a bar wanted more room
+  than the 2.4-staff-space limit allows, a note was printed as far over as
+  the bar wanted, and a frame later it jumped back to the limit. In the
+  quick 6/8 gospel hymn that happened to 86 notes. Now a note is printed
+  where it stays. **Barlines no longer creep either.** A bar used to shift
+  by a hair as the ink beside it dried (34 bars in seed 7's meeting). Now
+  each bar is placed once, when the engraving point reaches it, and stays
+  there.
+- **The notes after a downbeat make way for it.** When the downbeat's chord
+  moves right to make room for its bar, the notes after it are set clear of
+  it, within the same limit. Notes that arrive together (a slow frame, a
+  hidden tab) are set one at a time, in the order they sound. The two
+  voices of a chord on one staff start from one place, so one voice is
+  never set past the other as if it were in the way.
+- **Two voices a step apart no longer print on top of each other.** In
+  round 2, where the downbeat had moved over to the limit, the soprano's
+  head could land on the alto's a step below it (seed 11, the Tabernacle
+  hymn in 3/4). Now the upper voice's head stands beside the lower one's,
+  as a hymnal prints a second. The chord stays within the limit. Only the
+  upper head goes one head's width past it, and only where the notes after
+  it still have room.
+
+Nothing else has changed: green ink only, no text, 60 px/s, the telegraph's
+holes, the Old Way as one line, Johnston's marks off, and nothing moves but
+the scroll and the drying.
