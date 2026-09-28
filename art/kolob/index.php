@@ -17,7 +17,13 @@ function kolob_v($file)
 //                shifts the instant any JS/CSS/markup ships, with no upkeep
 //   · deployed — the newest asset's mtime; the server stamps this at upload,
 //                so it reads as the moment the live files landed (UTC)
-$kolob_assets  = ['kolob-audio.js', 'kolob-ui.js', 'kolob-viz.js', 'kolob-text.js', 'kolob.css', 'index.php', '../prosperos-jukebox-v2/pj2-fx.js'];
+// The engine is a family of modules, loaded in the SCORE.md §1 order from the
+// ONE list in _engine.php (the Jukebox v2 substrate — pj2-rand, pj2-clock,
+// pj2-fx — then pitch, the score and the Earth tunes, the composers, the
+// voices, the performers, and last the core that raises the KolobAudio
+// facade over them). The labs read the same list; so does the harness.
+$kolob_engine  = require __DIR__ . '/_engine.php';
+$kolob_assets  = array_merge($kolob_engine, ['kolob-ui.js', 'kolob-viz.js', 'kolob-text.js', 'kolob.css', 'index.php', '_engine.php']);
 $kolob_version = trim((string) @file_get_contents(__DIR__ . '/VERSION')) ?: 'dev';
 $kolob_build   = substr(md5(implode('', array_map('kolob_v', $kolob_assets))), 0, 6);
 $kolob_mtime   = 0;
@@ -101,7 +107,7 @@ include '../../includes/header.php';
     <!-- Hymn board + broadside. The board holds a printed PROGRAMME card
          (v0.20): the day in small capitals under a short double rule; the
          mode and the meter (during a hymn) beneath, with the direction line
-         (stillness, fuging, the question, two bands, the steeples answer, the
+         (stillness, fuging, two bands, the steeples answer, an old tune, the
          whole tune) as a gilt rubric on the same line; and the day's numbers
          (theme, develops, answers) as one printed line. Idle, the card says
          the valley is still. The seed row sits on the green beneath the card.
@@ -164,8 +170,9 @@ include '../../includes/header.php';
              meeting withholds the tune until the doxology sings it whole. -->
         <button type="button" class="kolob-latin-toggle kolob-cumulative-toggle is-deseret" id="kolob-cumulative" aria-label="the tune withheld until the doxology — about one meeting in twelve" aria-pressed="false">𐐐𐐄𐐢</button>
         <!-- The Ives switch: while on, every meeting is guaranteed a visitation
-             (the unanswered question or the two bands). Checking it restarts the
-             meeting so the guarantee begins at once. -->
+             (the two bands, the steeples, the old tune or the trombones at
+             dawn). Checking it restarts the meeting so the guarantee begins
+             at once. -->
         <button type="button" class="kolob-latin-toggle kolob-ives-toggle is-deseret" id="kolob-ives" aria-label="guarantee an Ives visitation (restarts the meeting)" aria-pressed="false">𐐌𐐚𐐞</button>
         <!-- Dev script toggle: Deseret <-> Latin labels (development aid) -->
         <button type="button" class="kolob-latin-toggle" id="kolob-latin" aria-label="switch to the Latin alphabet">Latin</button>
@@ -193,12 +200,12 @@ include '../../includes/header.php';
 </div>
 
 <script src="../background-audio.js?v=<?php echo kolob_v('../background-audio.js'); ?>"></script>
-<!-- The Jukebox v2 substrate's room-blend crossfader (PJ2.Fx.roomBlend), shared
-     by relative path the way ZANKYŌ shares it — never modified from here. The
-     engine degrades to one room if it is missing. -->
-<script src="../prosperos-jukebox-v2/pj2-fx.js?v=<?php echo kolob_v('../prosperos-jukebox-v2/pj2-fx.js'); ?>"></script>
-<script src="kolob-audio.js?v=<?php echo kolob_v('kolob-audio.js'); ?>"></script>
-<script>if(!window.KolobAudio)console.error("KOLOB AUDIO ENGINE FAILED TO LOAD");</script>
+<!-- The engine, room by room, from _engine.php: first the Jukebox v2 substrate
+     (pj2-rand's dice, pj2-clock's clock, pj2-fx's room crossfade), shared by
+     relative path the way ZANKYŌ shares it and never modified from here; then
+     Kolob's own rooms. The guard printed after them names any room that did
+     not answer the roll call. -->
+<?php kolob_engine_tags($kolob_engine, 'kolob_v'); ?>
 <script src="kolob-text.js?v=<?php echo kolob_v('kolob-text.js'); ?>"></script>
 <script src="kolob-viz.js?v=<?php echo kolob_v('kolob-viz.js'); ?>"></script>
 <script src="kolob-ui.js?v=<?php echo kolob_v('kolob-ui.js'); ?>"></script>

@@ -16,7 +16,7 @@
   var errEl = document.getElementById("rml-err");
   function showErr(msg) { if (!errEl) return; errEl.hidden = false; errEl.textContent = msg; }
   window.onerror = function (msg, src, line) { showErr("JS error: " + msg + " @ " + (src || "").split("/").pop() + ":" + line); return false; };
-  if (!K) { showErr("Kolob engine missing — kolob-audio.js did not load."); return; }
+  if (!K) { showErr("Kolob engine missing — the rooms in _engine.php did not load."); return; }
   if (!window.PJ2 || !window.PJ2.Fx || !window.PJ2.Fx.roomBlend) showErr("pj2-fx.js did not load — the room amount slider will do nothing.");
 
   // ---- the candidate rooms (OpenAIR, University of York, CC BY-SA 3.0) -------

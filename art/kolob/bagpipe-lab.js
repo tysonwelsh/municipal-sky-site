@@ -14,7 +14,8 @@
 // What's copied in a patch is PURE TIMBRE (reed wave, buzz, formants, breath,
 // motion, drone, envelope). Mode and tonic are audition context, not part of
 // the voice — Kolob supplies those at runtime. The timbre vocabulary mirrors
-// kolob-audio.js so a dialed-in patch drops straight into a KolobAudio voice.
+// the engine's bagpipe (kolob-voices-bagpipe.js; shelved) so a dialed-in
+// patch drops straight into a KolobAudio voice.
 //
 // Public surface: window.BagpipeLab
 // ============================================================================
@@ -22,7 +23,7 @@ window.BagpipeLab = (function () {
   "use strict";
 
   // ==========================================================================
-  // KOLOB TUNING — mirrored from kolob-audio.js. 5-limit JI over a fixed tonic.
+  // KOLOB TUNING — mirrored from kolob-pitch.js. 5-limit JI over a fixed tonic.
   //   degFreq(i) = F0 * ROOT_MULT * ratios[degree] * 2^octave
   // ==========================================================================
   var COLLECTIONS = {

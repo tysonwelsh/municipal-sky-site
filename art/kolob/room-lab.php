@@ -10,7 +10,7 @@
 // measured impulse responses from the OpenAIR collection kept under
 // ../prosperos-jukebox-v2/ir/ (CC BY-SA 3.0, University of York; provenance
 // in that folder's README). When one is right, the owner names it and it
-// gets baked into ROOM_WIDE in kolob-audio.js.
+// gets baked into ROOM_WIDE in kolob-core.js.
 // ============================================================================
 $page_title = "Room Lab — KOLOB · Municipal Sky";
 $page_description = "A private workbench for choosing the rooms the Kolob hymn engine sings in.";
@@ -162,8 +162,9 @@ include '../../includes/header.php';
   </div>
 </div>
 
-<script src="../prosperos-jukebox-v2/pj2-fx.js?v=<?php echo rml_v('../prosperos-jukebox-v2/pj2-fx.js'); ?>"></script>
-<script src="kolob-audio.js?v=<?php echo rml_v('kolob-audio.js'); ?>"></script>
+<?php // the engine, from the one list (_engine.php), exactly as index.php loads it
+$k_engine = require __DIR__ . '/_engine.php';
+kolob_engine_tags($k_engine, 'rml_v'); ?>
 <script src="room-lab.js?v=<?php echo rml_v('room-lab.js'); ?>"></script>
 
 <?php include '../../includes/footer.php'; ?>

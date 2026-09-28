@@ -9,8 +9,8 @@
 //
 // The parameter vocabulary here (detuned saw pairs, bandpass formants, a
 // breath-noise layer, a sustained drone bank) is deliberately the same
-// vocabulary kolob-audio.js already speaks, so a dialed-in patch translates
-// straight into a real KolobAudio voice later.
+// vocabulary the engine already speaks (kolob-voices-bagpipe.js), so a
+// dialed-in patch translates straight into a real KolobAudio voice later.
 // ============================================================================
 $page_title = "Bagpipe Lab — KOLOB · Municipal Sky";
 $page_description = "A private workbench for tuning a bagpipe voice for the Kolob hymn engine.";
