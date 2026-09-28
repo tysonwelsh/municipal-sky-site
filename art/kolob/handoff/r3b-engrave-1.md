@@ -516,15 +516,17 @@ finished this section.*
 
 What you will notice:
 
-- **A barline is no longer squeezed against a note.** The page used two
-  different pictures of a note. It used one to work out how much room a
-  bar needed, and another to place the bar. The first left out ledger lines
-  and the stems as the beams draw them, and guessed where dots and sharps
-  were. Where it missed ink, the downbeat did not make room, and the bar
-  was squeezed in. In seed 34's Sacred Harp hymn in 3/2, three bars stood
-  0.05 of a staff space from the note after them, which reads as touching.
-  Now there is one picture of each note's ink, the same one the page
-  draws, and both steps use it.
+- **A barline is no longer crowded by ledger lines, dots or sharps.** The
+  page used two different pictures of a note. It used one to work out how
+  much room a bar needed, and another to place the bar. The first left out
+  ledger lines and the stems as the beams draw them, and guessed where
+  dots and sharps were. Where it missed ink, the downbeat did not make
+  room. In seed 34's Sacred Harp hymn in 3/2, the high tenor's ledger
+  lines ran unbroken from the notes before a bar to the note after it,
+  0.05 of a staff space from the bar (three bars). Now there is one
+  picture of each note's ink, the same one the page draws, and both steps
+  use it. The downbeat moves over, and the ledger lines stop either side
+  of the bar.
 - **A note never moves once it is printed.** Where a bar wanted more room
   than the 2.4-staff-space limit allows, a note was printed as far over as
   the bar wanted, and a frame later it jumped back to the limit. In the
@@ -559,7 +561,7 @@ any of them directly (`lab4.html?dump=…&t=…`, below).
 | what | seed | when | look for |
 |---|---|---|---|
 | **A second after a bar** (the critic's frame) | 11, the Tabernacle hymn in 3/4 | about 0:43 (5:56 into the meeting) | after the bar, the soprano's half note stands just right of the alto's, a step below it, instead of on it |
-| **A bar with its room** | 34, the Sacred Harp hymn in 3/2 | 0:11 (5:36 into the meeting) | the bar clear of the note after it; in round 2 it touched |
+| **A bar with its room** | 34, the Sacred Harp hymn in 3/2 | 0:11 (5:36 into the meeting) | the high tenor on ledger lines above the bass staff: its ledgers stop either side of the bar (in round 2 they ran past it) |
 | **Nothing jumps** | 37, the gospel hymn in 6/8 | 0:13 to 0:25 | the quick notes print where they stay. (This hymn is still crowded; see "One call for you" below.) |
 
 ### The critic's findings, one by one (`kolob-viz.js`)
@@ -645,3 +647,16 @@ hymns faster (for example, scale the rate to the hymn's beat), or accept it.
   is a psalm tune and a Tabernacle hymn, both 3/4; seed 21 is two psalm
   tunes in 3/4; seed 5 is Sacred Harp 4/4 and a Shaker song in 3/4. The
   numbers below use these.
+
+### Before and after (muted headless Chrome)
+
+All paths are in `/private/tmp/claude-501/-Users-tysonwelsh-Sites-municipal-sky-site/9f8f9e47-5fee-4146-97e4-e448a823ca04/scratchpad/r3b-e5/`.
+"Before" is round 2's committed `kolob-viz.js` (`5e2d6235`, `viz-r2.js`)
+in the same lab.
+
+| scene | pictures |
+|---|---|
+| **The critic's second** (seed 11, 5:56.3; round 2 above, round 3 below, 860 px) | `lab-shots/cmp-g11-860-t356.3.png`; singly `lab-shots/r3-{before,after}/g11-{860,390}-t356.3.png` |
+| **The tenor's ledger lines at a bar** (seed 34, 5:36.4; round 2 above, round 3 below) | `lab-shots/cmp-h34-860-t336.4.png`; singly `lab-shots/r3-{before,after}/h34-860-t336.4.png` |
+| **The second at the plate's edge**, the frame it is struck (seed 11, 5:55.51, round 3; right edge enlarged) | `lab-shots/g11edge/crop-g11-860-t355.51.png` |
+| **The real page**, seed 11's Tabernacle hymn, 0:43 and 0:46 after it was announced | `shots/r3-tab11/staff-{860,390}-t{043,046}.png` |
