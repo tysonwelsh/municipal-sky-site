@@ -33,6 +33,7 @@ window.KOLOB = window.KOLOB || {};
   function fugingEntry(t) { return S.fugingEntry(t); }
   // from kolob-voices-ground.js
   function tubaBlat(t, gainMul) { return S.tubaBlat(t, gainMul); }
+  function stringsPad(t, dur, gainMul, fifthOnly) { return S.stringsPad(t, dur, gainMul, fifthOnly); }
   function meetinghouseBell(t, gainMul, R) { return S.meetinghouseBell(t, gainMul, R); }
   // from kolob-voices-field.js
   function evTuningFork(t) { return S.evTuningFork(t); }
@@ -360,8 +361,9 @@ window.KOLOB = window.KOLOB || {};
     C.seating = seatPrelude();
     if (C.seating.len !== 1 && plan[0].type === "prelude") plan[0].dur *= C.seating.len;
     emitEvent({
-      type: "prelude-seating", n: C.meetingNum, seating: C.seating.name, at: C.seating.at, full: C.seating.full, spread: C.seating.spread,
-      len: C.seating.len, preludeS: +plan[0].dur.toFixed(2), sits: Object.keys(C.seating.sits), cat: "seating", label: "⌖ the prelude is seated", detail: C.seating.name,
+      type: "prelude-seating", n: C.meetingNum, seating: C.seating.name, under: C.seating.under, style: C.seating.style, at: C.seating.at, full: C.seating.full, spread: C.seating.spread,
+      len: C.seating.len, preludeS: +plan[0].dur.toFixed(2), sits: Object.keys(C.seating.sits), lean: C.seating.lean, hum: C.seating.hum ? { n: C.seating.hum.n, s: C.seating.hum.s, at: C.seating.hum.at, until: C.seating.hum.until } : null,
+      cat: "seating", label: "⌖ the prelude is seated", detail: C.seating.name + (C.seating.style ? " · " + C.seating.style : "") + (C.seating.under !== C.seating.name ? " (the morning after: " + C.seating.under + ")" : ""),
     });
     enterSection(0, t);
     // The Liahona: the load-bearing draws, surfaced as the oracle's pointing.
@@ -390,19 +392,52 @@ window.KOLOB = window.KOLOB || {};
   // Sunday draws how its morning is seated, on its own stream prelude:<n>
   // (so no other die moves), and each seating wakes the valley in its own
   // order, every entrance drawn within its own window:
-  //   voluntary — the organist first, a chord and a breath (the old way,
-  //               but never at the same second twice)
-  //   ground    — the drone alone at the downbeat; the field; then the organ
-  //   valley    — the field and the tines first, the valley before the house
-  //   strings   — a string pad on the open fifth before anything
-  //   parlor    — the harmonium first, close and warm; the deacon answers
-  //   arbor     — the brush arbor: no organ and no harmonium in the prelude,
-  //               the strings on bare fifths, the clarinet over them
+  //   voluntary — the organist first, and the organ leads the prelude, in
+  //               one of three manners: a WALK of short chords, the old
+  //               BREATH (a long chord, a long rest), or a CONSORT with
+  //               the strings
+  //   ground    — the drone alone at the downbeat; the field; then the
+  //               organ, seldom
+  //   valley    — the field and the tines first, and the valley keeps
+  //               speaking; the house comes late and plays little
+  //   strings   — a string pad on the open fifth before anything, and the
+  //               pads overlap all prelude long
+  //   parlor    — the harmonium first, close and warm, and the deacon
+  //               answers; the parlor keeps the prelude, the organ sparing
+  //   arbor     — the brush arbor: no organ and no harmonium in the prelude
+  //               (its amen is bowed, not played — runJoint), the strings on
+  //               bare fifths, the clarinet over them
+  //   humming   — the ward hums as it gathers: a few voices of the choir on
+  //               "mm", two to four of the day's chords, before the organist
+  //               has touched a key (the organ waits for the hum to end)
   // and two seatings the guests bring with them:
-  //   trombones — the trombones at dawn: only the drone before them, and
-  //               the house wakes in its drawn order after they have gone
+  //   trombones — the trombones at dawn: the house (organ, strings,
+  //               harmonium, clarinet) wakes in its drawn order after they
+  //               have gone, but the valley does not wait for them — the
+  //               drone, the field, the wire and the tines wake at their
+  //               own drawn times, under the far choir and the near one
+  //               (the house listens; the morning outside does not)
   //   steeples  — the steeples call the valley in: they ring first (a
   //               drawn 1–6 s in, cued like the trombones), then the house
+  // THE PRELUDE'S TEXTURE (lean; round 2 of the polish — the critic: the
+  // seatings changed who enters when, and nothing after, so three minutes
+  // later every Sunday had the same texture): each seating also leans the
+  // whole prelude — how long each voice rests between its turns (a factor
+  // on its drawn gap: under 1 it plays more, over 1 less), how often the
+  // deacon tries a line and the parlor organ sets a chord, and which of the
+  // valley's sounds come most. How hard it leans is drawn too (a lean of
+  // 0.55–1 as an exponent on every factor), so two organ voluntaries are
+  // not one texture. A guest's seating (trombones, steeples) leans the way
+  // the Sunday would have been seated without it (the seating die still
+  // names one: "under"), so the morning after the dawn is itself drawn.
+  // And every Sunday has a hand of its own on top of its seating's (the
+  // critic, again: a seating is nine textures, and two Sundays seated alike
+  // were near-twins by three minutes in): each voice's rest is leaned by a
+  // die of its own, up to 1.8 times either way around the seating's lean
+  // (so one voluntary's deacon is busy and another's all but silent), and
+  // the valley keeps its own palette — every field sound weighted by a die,
+  // up to 2.5 times either way around the seating's weights (one morning is
+  // crickets and the clock, another wind and the beacon).
   // The organist's first chord of a seating may be FULL (its third sung)
   // at the seating's own odds, and it is set in close or open position (an
   // even draw): a morning is not always the same bare fifth.
@@ -412,34 +447,86 @@ window.KOLOB = window.KOLOB || {};
   // guest's seating keeps the length its guest needs).
   // THE WAKING (what the first meeting's downbeat cues) is the only part a
   // later meeting does not use — its layers are already awake; the rests
-  // (sits), the bare fifths, the first chord and the length apply to every
-  // prelude.
+  // (sits), the bare fifths, the first chord, the hum, the lean and the
+  // length apply to every prelude.
   // Every die of the seating is thrown, whichever seating it lands on.
   // ==========================================================================
   var WAKERS = ["drone", "organ", "ambient", "strings", "harmonium", "clarinet", "bells", "telegraph"];
+  // the house: what the dawn's trombones hold back until they have gone
+  var HOUSE_WAKERS = { organ: true, strings: true, harmonium: true, clarinet: true };
+  // the choir's first call, when it does not hum: it only listens for its
+  // hymn (v0.32's fixed 20 s; drawn now, so even the grid it listens on is
+  // the Sunday's own)
+  var CHOIR_CALL = [12, 30];
+  // the still voice's first call: it only listens for the invocation, on a
+  // 7 s round (v0.32's fixed 12 s put its first phrase on the same second
+  // in one visit of twelve — the grid is the Sunday's own now)
+  var VOICE_CALL = [5, 12];
+  // lean: gap factors per layer; speak: the deacon's chance to try a line on
+  // a prelude turn (0.45 outside a leaning seating); chord: the parlor
+  // organ's chance to set a chord (0.55); field: weights on the valley's
+  // sounds (the others 1); organDur: a factor on the organ's chord lengths.
+  // w: the seating's odds. The organ voluntary, v0.32's only morning, was
+  // drawn half again as often as any other until round 2 of the polish,
+  // and was the commonest way a visit woke (a quarter of first visits) and
+  // the likeliest pair of near-twins; now it is one of the house's mornings
+  // at the same odds as the ground and the valley
   var SEATINGS = {
-    voluntary: { w: 3,   full: 0.5,  len: [0.75, 1],    at: { drone: [0.3, 4], organ: [1.2, 5], ambient: [10, 22], strings: [18, 34], harmonium: [26, 40], clarinet: [30, 46], bells: [36, 56], telegraph: [45, 70] } },
-    ground:    { w: 2,   full: 0.4,  len: [0.9, 1.2],   at: { drone: [0.1, 1], ambient: [4, 12], organ: [10, 18], bells: [20, 34], strings: [24, 40], harmonium: [30, 44], clarinet: [36, 50], telegraph: [40, 66] } },
-    valley:    { w: 2,   full: 0.45, len: [1, 1.3],     at: { ambient: [0.3, 3], bells: [4, 10], drone: [6, 14], telegraph: [12, 30], organ: [16, 28], strings: [26, 40], harmonium: [34, 50], clarinet: [40, 56] } },
-    strings:   { w: 1.5, full: 0.35, len: [0.8, 1.1],   at: { strings: [0.3, 2.5], drone: [3, 9], ambient: [8, 20], organ: [14, 26], harmonium: [28, 42], clarinet: [34, 50], bells: [40, 58], telegraph: [46, 72] } },
-    parlor:    { w: 1.5, full: 0.5,  len: [0.75, 1],    at: { harmonium: [0.5, 3], drone: [2, 8], clarinet: [8, 16], ambient: [12, 24], organ: [18, 30], strings: [24, 38], bells: [38, 56], telegraph: [44, 70] } },
+    voluntary: { w: 2,   full: 0.5,  len: [0.75, 1],    at: { drone: [0.3, 4], organ: [1.2, 5], ambient: [10, 22], strings: [18, 34], harmonium: [26, 40], clarinet: [30, 46], bells: [36, 56], telegraph: [45, 70] },
+                 lean: { organ: 0.5, strings: 1.5, harmonium: 1.6, clarinet: 1.5, bells: 1.3, telegraph: 1.4, ambient: 1.5 }, speak: 0.25, chord: 0.35,
+                 // (the organist's manner, drawn: each overrides the lean where it names a layer)
+                 styles: [["walk",    1, { lean: { organ: 0.2 }, organDur: 0.55 }],
+                          ["breath",  1, { lean: { organ: 0.9 }, organDur: 1.3 }],
+                          ["consort", 1, { lean: { organ: 0.55, strings: 0.55 } }]] },
+    ground:    { w: 2,   full: 0.4,  len: [0.9, 1.2],   at: { drone: [0.1, 1], ambient: [4, 12], organ: [10, 18], bells: [20, 34], strings: [24, 40], harmonium: [30, 44], clarinet: [36, 50], telegraph: [40, 66] },
+                 lean: { organ: 1.8, strings: 1.4, harmonium: 1.6, clarinet: 1.5, bells: 0.9, telegraph: 0.7, ambient: 0.5 }, speak: 0.35,
+                 field: { wind: 2, clock: 1.8, fork: 1.8, crickets: 0.6, beacon: 0.6 } },
+    valley:    { w: 2,   full: 0.45, len: [1, 1.3],     at: { ambient: [0.3, 3], bells: [4, 10], drone: [6, 14], telegraph: [12, 30], organ: [16, 28], strings: [26, 40], harmonium: [34, 50], clarinet: [40, 56] },
+                 lean: { organ: 1.9, strings: 1.3, harmonium: 1.7, clarinet: 1.3, bells: 0.45, telegraph: 0.5, ambient: 0.3 },
+                 field: { crickets: 2, bell: 1.8, beacon: 1.6, coyote: 3, clock: 0.5 } },
+    strings:   { w: 1.5, full: 0.35, len: [0.8, 1.1],   at: { strings: [0.3, 2.5], drone: [3, 9], ambient: [8, 20], organ: [14, 26], harmonium: [28, 42], clarinet: [34, 50], bells: [40, 58], telegraph: [46, 72] },
+                 lean: { organ: 1.7, strings: 0.45, harmonium: 1.5, clarinet: 1.2, bells: 1.1, telegraph: 1.1, ambient: 0.9 }, chord: 0.4 },
+    parlor:    { w: 1.5, full: 0.5,  len: [0.75, 1],    at: { harmonium: [0.5, 3], drone: [2, 8], clarinet: [8, 16], ambient: [12, 24], organ: [18, 30], strings: [24, 38], bells: [38, 56], telegraph: [44, 70] },
+                 lean: { organ: 1.8, strings: 1.5, harmonium: 0.4, clarinet: 0.6, bells: 1.2, telegraph: 1.2, ambient: 1.1 }, speak: 0.7, chord: 0.9 },
     arbor:     { w: 1.5, full: 0,    len: [0.9, 1.25],  sits: { organ: true, harmonium: true }, fifths: true,
-                 at: { drone: [0.5, 5], ambient: [2, 10], strings: [6, 16], clarinet: [14, 26], bells: [20, 34], organ: [20, 40], harmonium: [30, 50], telegraph: [30, 60] } },
-    // (anchored: every entrance but the drone's is counted from the guest —
-    // the trombones' last chord and its air, or the steeples' first bell)
-    trombones: { w: 0,   full: 0.5,  anchored: true,
-                 at: { drone: [0.5, 4], organ: [0.5, 4], ambient: [2, 9], strings: [4, 12], harmonium: [8, 18], clarinet: [10, 22], bells: [14, 30], telegraph: [18, 40] } },
-    steeples:  { w: 0,   full: 0.45, anchored: true,
+                 at: { drone: [0.5, 5], ambient: [2, 10], strings: [6, 16], clarinet: [14, 26], bells: [20, 34], organ: [20, 40], harmonium: [30, 50], telegraph: [30, 60] },
+                 lean: { strings: 0.75, clarinet: 0.55, bells: 0.8, ambient: 0.7 }, speak: 0.75,
+                 field: { crickets: 2, wind: 1.5, clock: 0.3 } },
+    // (the hum: its moment is the choir's waking; the organ is counted from
+    // the hum's end — hum: [chords, seconds a chord] — and never writes a
+    // chord of its own under it)
+    humming:   { w: 1.5, full: 0.6,  len: [0.85, 1.15], hum: { n: [2, 4], s: [5, 8] },
+                 at: { choir: [0.4, 3], drone: [2, 9], ambient: [6, 24], organ: [2, 9], strings: [20, 36], harmonium: [30, 46], clarinet: [34, 50], bells: [26, 50], telegraph: [40, 70] },
+                 lean: { organ: 1.3, strings: 1.2, harmonium: 1.4, clarinet: 1.3, ambient: 0.9 } },
+    // (anchored: what is counted from the guest — the trombones' last chord
+    // and its air, or the steeples' first bell)
+    trombones: { w: 0,   full: 0.5,  anchored: HOUSE_WAKERS,
+                 at: { drone: [0.5, 6], organ: [0.5, 4], ambient: [1, 30], strings: [4, 12], harmonium: [8, 18], clarinet: [10, 22], bells: [4, 40], telegraph: [8, 60] } },
+    steeples:  { w: 0,   full: 0.45, anchored: { organ: true, ambient: true, strings: true, harmonium: true, clarinet: true, telegraph: true, bells: true },
                  at: { drone: [0.3, 4], ambient: [6, 14], organ: [10, 20], strings: [16, 30], harmonium: [24, 40], clarinet: [30, 46], telegraph: [30, 60], bells: [40, 60] } },
   };
   var SEATING_ODDS = Object.keys(SEATINGS).filter(function (k) { return SEATINGS[k].w > 0; }).map(function (k) { return [k, SEATINGS[k].w]; });
   var STEEPLES_AT = [1, 6];                        // the steeples calling the valley in, s into the prelude
+  var LEAN_POW = [0.55, 1];                        // how hard a seating leans (an exponent on its factors)
+  var LEAN_LAYERS = ["organ", "strings", "harmonium", "clarinet", "bells", "telegraph", "ambient"];
+  var LEAN_OWN = 1.8, LEAN_BOUNDS = [0.3, 3];      // the Sunday's own hand on each voice's rest, and the lean's bounds
+  var FIELD_KEYS = ["wind", "crickets", "clock", "fork", "rain", "coyote", "bell", "beacon"];
+  var FIELD_OWN = 2.5;                             // the valley's own palette, around the seating's weights
   function seatPrelude() {
     var PR = stream("prelude");
     var pickU = PR.next(), fullU = PR.next(), steeplesU = PR.next(), spreadU = PR.next(), lenU = PR.next();
     var U = {};
     WAKERS.forEach(function (l) { U[l] = PR.next(); });
-    var name = pickWith(pickU, SEATING_ODDS), anchor = 0;
+    // (round 2 of the polish: its dice come after the waking's, so every
+    // entrance above falls where it did)
+    U.choir = PR.next();
+    var leanU = PR.next(), styleU = PR.next(), humNU = PR.next(), humSU = PR.next();
+    // (the Sunday's own hand and palette: after all of the above)
+    var ownU = {}, palU = {};
+    LEAN_LAYERS.forEach(function (l) { ownU[l] = PR.next(); });
+    FIELD_KEYS.forEach(function (k) { palU[k] = PR.next(); });
+    var voiceU = PR.next();
+    var under = pickWith(pickU, SEATING_ODDS), name = under, anchor = 0;
     var tb = visitationOf("trombones"), st = visitationOf("steeples");
     if (tb && tb.section === "prelude") { name = "trombones"; anchor = tb.at + tb.dur + 2; }
     else if (st && st.section === "prelude") {
@@ -448,13 +535,47 @@ window.KOLOB = window.KOLOB || {};
       st.cued = true;                              // it keeps its own time now: cued as the prelude begins
       anchor = st.at;
     }
-    var spec = SEATINGS[name], at = {};
-    WAKERS.forEach(function (l) {
-      var r = spec.at[l], x = r[0] + (r[1] - r[0]) * U[l];
-      at[l] = +((spec.anchored && l !== "drone" ? anchor : 0) + x).toFixed(2);
+    var spec = SEATINGS[name];
+    // the texture leans the way the Sunday was seated — a guest's seating,
+    // the way it would have been without the guest (and never on a hum the
+    // guest took the place of: the lean only)
+    var tex = SEATINGS[spec.w > 0 ? name : under];
+    var style = tex.styles ? pickWith(styleU, tex.styles.map(function (s) { return [s[0], s[1]]; })) : null;
+    var styleSpec = null;
+    if (style) tex.styles.forEach(function (s) { if (s[0] === style) styleSpec = s[2]; });
+    var pow = LEAN_POW[0] + (LEAN_POW[1] - LEAN_POW[0]) * leanU, lean = {};
+    var base = tex.lean || {}, over = (styleSpec && styleSpec.lean) || {};
+    LEAN_LAYERS.forEach(function (l) {
+      var m = over[l] != null ? over[l] : base[l] != null ? base[l] : 1;
+      var own = Math.pow(LEAN_OWN, 2 * ownU[l] - 1);
+      lean[l] = +Math.max(LEAN_BOUNDS[0], Math.min(LEAN_BOUNDS[1], Math.pow(m, pow) * own)).toFixed(3);
     });
+    var field = {};
+    FIELD_KEYS.forEach(function (k) {
+      var m = tex.field && tex.field[k] != null ? tex.field[k] : 1;
+      field[k] = +(m * Math.pow(FIELD_OWN, 2 * palU[k] - 1)).toFixed(3);
+    });
+    var hum = null;
+    if (spec.hum) {
+      var hn = spec.hum.n, hs = spec.hum.s;
+      hum = { n: Math.min(hn[1], hn[0] + Math.floor((hn[1] - hn[0] + 1) * humNU)), s: +(hs[0] + (hs[1] - hs[0]) * humSU).toFixed(2) };
+    }
+    var at = {};
+    WAKERS.concat(["choir"]).forEach(function (l) {
+      var r = spec.at[l] || CHOIR_CALL, x = r[0] + (r[1] - r[0]) * U[l];
+      var from = spec.anchored && spec.anchored[l] ? anchor : 0;
+      at[l] = +(from + x).toFixed(2);
+    });
+    at.voice = +(VOICE_CALL[0] + (VOICE_CALL[1] - VOICE_CALL[0]) * voiceU).toFixed(2);
+    // the hum's end: the organist's first touch is counted from it
+    if (hum) { hum.at = at.choir; hum.until = +(at.choir + hum.n * hum.s + 1.5).toFixed(2); at.organ = +(hum.until + at.organ).toFixed(2); }
     var len = spec.len ? spec.len[0] + (spec.len[1] - spec.len[0]) * lenU : 1;
-    return { name: name, at: at, full: fullU < spec.full, spread: spreadU < 0.5 ? "open" : "close", len: +len.toFixed(3), sits: spec.sits || {}, fifths: !!spec.fifths };
+    return {
+      name: name, under: under, style: style, at: at, full: fullU < spec.full, spread: spreadU < 0.5 ? "open" : "close", len: +len.toFixed(3),
+      sits: spec.sits || {}, fifths: !!spec.fifths, lean: lean, leanPow: +pow.toFixed(3),
+      speak: tex.speak != null ? tex.speak : null, chord: tex.chord != null ? tex.chord : null, field: field,
+      organDur: (styleSpec && styleSpec.organDur) || 1, hum: hum,
+    };
   }
 
   function visitationOf(type) {
@@ -629,8 +750,12 @@ window.KOLOB = window.KOLOB || {};
     // The fuging waits for a verse the choir is still singing (round 2): the
     // same four voices cannot go out one by one while they sing the couplet
     // they wrote half a minute ahead, and v0.32's convergence amen could land
-    // on a chord of that couplet. Its window is unchanged; a hymn whose
-    // window the verses fill is a meadow.
+    // on a chord of that couplet. Its window is unchanged. The choir, for
+    // its part, begins no couplet from x 0.45 while a planned fuging waits
+    // (fugingNear; round 2 of the polish): before, a hymn whose window the
+    // verses happened to fill lost its fuging, so a hymn was a meadow by
+    // collision rather than by its die — seed 1847 went 45 minutes without
+    // one. A meadow is the die's to decide (fugingDie, 40 % of hymns).
     if (C.section === "hymn" && C.fugingPlanned && !C.fugingFired && x > 0.6 && x < 0.8 && !inHush() && !inVisit() && !choirSinging()) {
       C.fugingFired = true;
       var fugDur = fugingEntry(t);
@@ -811,9 +936,16 @@ window.KOLOB = window.KOLOB || {};
       var kind = isLast || C.section === "doxology" ? "plagal" : (C.section === "prelude" || C.section === "hymn" ? R.pickW([["plagal", 3], ["authentic", 2], ["half", 1]]) : "plagal");
       var chords = Desk.cadence(kind, R, t, "joint");
       var chDur = R.rnd(2.6, 3.6);
+      // the brush arbor has no organ (THE PRELUDE'S SEATING): its amen is
+      // bowed — the strings on each chord's bare fifth — and the organist is
+      // first heard in the meeting that follows (round 2 of the polish: the
+      // arbor's organ used to play the prelude's closing amen)
+      var bowed = C.section === "prelude" && !!C.seating && !!C.seating.sits.organ;
       for (var i = 0; i < chords.length; i++) {
         Desk.write(chords[i], t + i * chDur, "joint");
-        organChord(t + i * chDur, chDur * (i === chords.length - 1 ? 1.7 : 1.02), chords[i], 0.6);
+        var cd = chDur * (i === chords.length - 1 ? 1.7 : 1.02);
+        if (bowed) stringsPad(t + i * chDur, cd + 0.6, 0.8, true);
+        else organChord(t + i * chDur, cd, chords[i], 0.6);
       }
       dur = chDur * chords.length + 1.5;
       if (R.chance(MEETINGS[C.meeting.activity].bells)) {
@@ -863,6 +995,10 @@ window.KOLOB = window.KOLOB || {};
   //   hymnId()        the hymn being sung (SCORE §3: h:<meeting>:<i>, the
   //                   i-th singing section of the meeting — hymns and the
   //                   doxology — counted from 1)
+  //   seating()       the prelude's seating (its name, the waking, the
+  //                   rests, the first chord, the hum, the lean); waking()
+  //                   its entrances; lean(layer) the prelude's texture, a
+  //                   factor on that voice's rests (1 outside a prelude)
   //   moment()        THE MOMENT: a plain object, the meeting at the music's
   //                   now — what the composers (Melody, Harmony) are handed
   //                   instead of the house:
@@ -910,6 +1046,20 @@ window.KOLOB = window.KOLOB || {};
     // sits the prelude out, and whether the strings keep to bare fifths
     seating: function () { return C.seating || null; },
     waking: function () { return C.seating ? C.seating.at : null; },
+    // the prelude's texture (THE PRELUDE'S SEATING, its lean): a factor on
+    // the named voice's rest between its turns while a prelude lasts — under
+    // 1 it plays more, over 1 less; 1 in every other section
+    // a planned fuging entry is near and not yet sung: the choir leaves its
+    // window free (x 0.45–0.8 of a hymn)
+    fugingNear: function () {
+      if (C.section !== "hymn" || !C.fugingPlanned || C.fugingFired) return false;
+      var x = localArc();
+      return x >= 0.45 && x < 0.8;
+    },
+    lean: function (layer) {
+      var L = C.section === "prelude" && C.seating ? C.seating.lean[layer] : null;
+      return L > 0 ? L : 1;
+    },
     hymnId: hymnId,
     moment: moment,
   });
@@ -930,7 +1080,9 @@ window.KOLOB = window.KOLOB || {};
   // the last chord of the couplet the choir wrote half a minute ahead.
   //
   //   at(t), chordTones(t)          the chord standing at t (null if none)
-  //   advance(opts, R, t, by)       the next chord by the grammar, written at t
+  //   advance(opts, R, t, by, dur)  the next chord by the grammar, written at t
+  //                                 (a singer's, by choir, names how long it
+  //                                 is sung: dur)
   //   harmonize(line, R, t, beat, by)
   //                                 a line set under its tune, each chord
   //                                 written where it is sung (t + beats × beat)
@@ -972,7 +1124,9 @@ window.KOLOB = window.KOLOB || {};
       });
       return chord;
     }
-    function advance(opts, R, t, by) { return write(Harmony.advance(opts, momentAt(t), R), t, by || "organ"); }
+    // (dur: how long a singer holds it — the humming seating's chords are
+    // the choir's, and the joint and the organist wait for them)
+    function advance(opts, R, t, by, dur) { return write(Harmony.advance(opts, momentAt(t), R), t, by || "organ", dur); }
     function harmonize(lineNotes, R, t, beat, by) {
       var hz = Harmony.harmonize(lineNotes, momentAt(t), R);
       var at = t;

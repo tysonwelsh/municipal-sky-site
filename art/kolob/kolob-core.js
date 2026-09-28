@@ -1067,13 +1067,14 @@ window.KolobAudio = (function () {
       // THE PRELUDE'S SEATING) drew every entrance. (v0.32 woke every visit
       // on one timetable: the drone at 0.1 s, the organ at 2.7, the field at
       // 16, the strings at 24.) The voice and the choir only listen for
-      // their sections, and keep their old calls.
-      var W = S.Meeting.waking() || { drone: 0, organ: 2.5, ambient: 16, strings: 24, harmonium: 30, clarinet: 34, bells: 42, telegraph: 55 };
+      // their sections, each from a drawn first call; on a humming Sunday the
+      // choir is the first awake (round 2 of the polish).
+      var W = S.Meeting.waking() || { drone: 0, organ: 2.5, ambient: 16, strings: 24, harmonium: 30, clarinet: 34, bells: 42, telegraph: 55, choir: 20, voice: 12 };
       cueAt("drone", t0 + W.drone, droneCycle);
       cueAt("organ", t0 + W.organ, organCycle);
-      cueAt("voice", t0 + 12, stillVoicePhrase);
+      cueAt("voice", t0 + (W.voice != null ? W.voice : 12), stillVoicePhrase);
       cueAt("ambient", t0 + W.ambient, ambientEvent);
-      cueAt("choir", t0 + 20, choirVerse);
+      cueAt("choir", t0 + (W.choir != null ? W.choir : 20), choirVerse);
       cueAt("strings", t0 + W.strings, stringsCycle);
       cueAt("harmonium", t0 + W.harmonium, harmoniumCycle);
       cueAt("clarinet", t0 + W.clarinet, clarinetPhrase);

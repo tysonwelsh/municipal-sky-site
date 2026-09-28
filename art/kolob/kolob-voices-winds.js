@@ -132,7 +132,11 @@ window.KOLOB = window.KOLOB || {};
     if (!airFree()) { cueIn("clarinet", wait("clarinet").rnd(5, 11), clarinetPhrase); return; }
     var R = turn("clarinet");
     // in the prelude the deacon only occasionally tries a line over the organ
-    if (s === "prelude" && R.chance(0.55)) { cueIn("clarinet", R.rnd(10, 18), clarinetPhrase); return; }
+    // — more often on a parlor or arbor morning, seldom in an organ
+    // voluntary (the prelude's seating: its speak)
+    var seat = s === "prelude" ? S.Meeting.seating() : null;
+    var speak = seat && seat.speak != null ? seat.speak : 0.45;
+    if (s === "prelude" && R.chance(1 - speak)) { cueIn("clarinet", R.rnd(10, 18) * S.Meeting.lean("clarinet"), clarinetPhrase); return; }
 
     var pace = getLayerParam("clarinet", "pace", 1);
     var beat = R.rnd(1.0, 1.4) / pace;
@@ -190,12 +194,15 @@ window.KOLOB = window.KOLOB || {};
       if (R.chance(0.4) && !lined) Motif.post("clarinet", R.pickW([["choir", 2], ["bells", 2], ["harmonium", 1]]), motif, R.pickW([["imitate", 3], ["invert", 2], ["develop", 2]]), mo, R);
     }
     // the harmonium shadows the deacon a breath behind, in the parlor —
-    // reading the line as actually spoken, not the raw motif
+    // reading the line as actually spoken, not the raw motif (and never in
+    // a prelude that has no harmonium: the brush arbor — round 2 of the
+    // polish; the dice are thrown all the same)
     if (R.chance(getLayerParam("harmonium", "shadow", 0.5)) && s !== "testimony") {
-      harmoniumShadow(t + R.rnd(0.4, 0.9), spoken, beat);
+      var shadowAt = t + R.rnd(0.4, 0.9);
+      if (!(seat && seat.sits.harmonium)) harmoniumShadow(shadowAt, spoken, beat);
     }
     claimAir(total, (s === "testimony" ? R.rnd(10, 22) : R.rnd(4, 10)) * silenceMul());
-    var gap = (s === "testimony" ? R.rnd(18, 40) : R.rnd(9, 20)) * gapMul();
+    var gap = (s === "testimony" ? R.rnd(18, 40) : R.rnd(9, 20)) * gapMul() * S.Meeting.lean("clarinet");
     cueLayer("clarinet", total + gap, clarinetPhrase);
   }
 
@@ -293,7 +300,7 @@ window.KOLOB = window.KOLOB || {};
         var atot = renderHarmonium(t + 0.1, anotes, 0.7);
         reportLine("harmonium", t + 0.1, anotes);
         claimAir(atot, R.rnd(4, 9) * silenceMul());
-        cueLayer("harmonium", atot + R.rnd(14, 26) * gapMul(), harmoniumCycle);
+        cueLayer("harmonium", atot + R.rnd(14, 26) * gapMul() * S.Meeting.lean("harmonium"), harmoniumCycle);
         return;
       }
     }
@@ -305,7 +312,9 @@ window.KOLOB = window.KOLOB || {};
       ch = S.Harmony.advance(seat.full ? { open: false, third: true, spread: seat.spread } : { spread: seat.spread }, R, t + 0.1, "harmonium");
       opening = true;
     }
-    if (ch && (R.chance(0.55) || opening)) {
+    // (the prelude's seating: a parlor morning sets a chord on nearly every
+    // turn, an organ voluntary seldom)
+    if (ch && (R.chance(seat && seat.chord != null ? seat.chord : 0.55) || opening)) {
       var dur = R.rnd(9, 15);
       // the inner voices: tenor + alto, sustained — an occasional warmth,
       // not a constant one; the hymn keeps its sky (the alto's loose entry
@@ -317,7 +326,7 @@ window.KOLOB = window.KOLOB || {};
       emitNote("harmonium", ch.freqs[1], t + 0.1, dur, { part: "T", chord: ch.id });
       emitNote("harmonium", ch.freqs[2], t + 0.1, dur, { part: "A", chord: ch.id });
     }
-    cueLayer("harmonium", R.rnd(14, 26) * gapMul(), harmoniumCycle);
+    cueLayer("harmonium", R.rnd(14, 26) * gapMul() * S.Meeting.lean("harmonium"), harmoniumCycle);
   }
 
   // ==========================================================================

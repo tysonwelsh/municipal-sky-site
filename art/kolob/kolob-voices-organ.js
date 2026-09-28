@@ -128,15 +128,20 @@ window.KOLOB = window.KOLOB || {};
       // organ; and the day's first chord may be full, its third sung
       var seat = s === "prelude" ? S.Meeting.seating() : null;
       if (seat && seat.sits.organ) { cueIn("organ", 6, organCycle); return; }
+      // the ward hums first (the humming seating): the organist waits for
+      // the hum, writes no chord under it, and comes in when it has ended
+      if (seat && ((seat.hum && !seat.hum.sung) || S.Harmony.sungUntil() > t + 0.1)) { cueIn("organ", 3, organCycle); return; }
       var first = {};
       if (seat && !S.Harmony.at(t + 0.1)) {
         first.spread = seat.spread;
         if (seat.full) { first.open = false; first.third = true; }
       }
       var chord = S.Harmony.advance(first, R, t + 0.1, "organ");
-      var dur = R.rnd(6, 11);
+      // the seating's texture: an organ voluntary WALKS in short chords, or
+      // breathes in long ones; a valley morning leaves the organist long rests
+      var dur = R.rnd(6, 11) * (seat ? seat.organDur : 1);
       organChord(t + 0.1, dur, chord, 0.75 * (0.6 + intensity() * 0.4));
-      cueLayer("organ", dur + R.rnd(4, 10) * silenceMul(), organCycle);
+      cueLayer("organ", dur + R.rnd(4, 10) * silenceMul() * S.Meeting.lean("organ"), organCycle);
       return;
     }
     if (R.chance(0.6)) {

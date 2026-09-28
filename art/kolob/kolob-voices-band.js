@@ -187,6 +187,9 @@ window.KOLOB.VoicesBand = (function () {
   };
   // amplitude against the dynamic, relative to mf: pp −14 dB, ff +6 dB
   function tbnAmp(d) { return Math.pow(Math.max(0.05, d) / 0.6, 1.5); }
+  // the air under a held trombone tone, against the tone's own gain (see THE
+  // BREATH in tromboneNote; the trombone lab's hold check measures it)
+  var BREATH = 0.1;
 
   function mulberry(seed) {
     var s = seed >>> 0;
@@ -462,8 +465,8 @@ window.KOLOB.VoicesBand = (function () {
     // one trombone note (see THE TROMBONES in the header). dur is the note's
     // full written length: it lets go at t + dur (its release, nt.rel, is the
     // performer's: quick before a legato-tongued successor, long on a
-    // fermata). 9 nodes on a tongued note (the tone 4, the tongue 3, counted
-    // with the spans), 4 on a breath attack.
+    // fermata). 7 nodes: the tone 4, and the breath 3 (the tongue's "t" and
+    // the air under the tone are one noise path), all for the note's length.
     function tromboneNote(t, f, dur, k, d, nt) {
       var spec = TBN[k];
       var dEnd = nt.dynEnd != null ? dynOf(nt.dynEnd) : d;
@@ -477,6 +480,20 @@ window.KOLOB.VoicesBand = (function () {
       var o = ctx.createOscillator(), lp = ctx.createBiquadFilter(), pk = ctx.createBiquadFilter(), g = ctx.createGain();
       o.setPeriodicWave(waveFor(k, f));
       kRate(o.frequency); kRate(o.detune); kRate(lp.frequency); kRate(pk.gain);
+      // THE HELD TONE LIVES (round 2 of the polish; the critic: a held note
+      // was a perfectly steady wave — 0.08 dB of movement over 2.4 s of a
+      // tenor's fermata, which is what an organ pipe does, and the organ at
+      // least has a tremulant). A player's breath is never still: past the
+      // attack the level wanders, irregularly, by about ±0.5 dB (±0.3 dB of
+      // breath, and the brightness's swing on top of it: the brass band goes
+      // with the breath, a little more air a little brighter), and the pitch
+      // moves by a cent or two around a slow drift.
+      // The wander's points fall every 0.22–0.6 s (synth dice), and the note
+      // still lands exactly on its written dynamic at the release.
+      var tS = Math.min(rel, t + atk + 0.07);          // the spring of the attack has settled
+      var wand = [];
+      for (var wt = tS + R.rnd(0.22, 0.6); wt < rel - 0.08; wt += R.rnd(0.22, 0.6)) wand.push({ t: wt, db: R.rnd(-0.3, 0.3), c: R.rnd(-1.8, 1.8) });
+      function along(a, b, x) { return a + (b - a) * Math.max(0, Math.min(1, x)); }
       // THE LIP: the slide placed by hand, and the lip settling into the
       // slot from below — a real scoop on a tongued note, less on a legato
       // one, and gentle under a breath
@@ -485,11 +502,11 @@ window.KOLOB.VoicesBand = (function () {
       o.frequency.setValueAtTime(f, t);
       o.detune.setValueAtTime(det - sc, t);
       o.detune.setTargetAtTime(det, t + 0.003, legato ? 0.012 : 0.018 + Math.min(0.03, atk * 0.1));
-      if (dur > 1.2) {                                // a long note breathes: a cent or two, slowly
-        var w = R.rnd(-1.6, 1.6);
-        o.detune.setValueAtTime(det, t + Math.min(0.35, dur * 0.3));
-        o.detune.linearRampToValueAtTime(det + w, t + dur * 0.55);
-        o.detune.linearRampToValueAtTime(det - w * 0.5, rel);
+      if (wand.length) {                               // a held note breathes: a slow drift, and the lip's small unrest on it
+        var tP = t + Math.min(0.35, dur * 0.3), w = R.rnd(-1, 1);
+        o.detune.setValueAtTime(det, tP);
+        wand.forEach(function (p) { if (p.t > tP) o.detune.linearRampToValueAtTime(det + w * (p.t - t) / dur + p.c, p.t); });
+        o.detune.linearRampToValueAtTime(det + w, rel);
       }
       // BRIGHTNESS FOLLOWS BREATH: the partials bloom as the note speaks,
       // settle where the dynamic holds them, and follow a swell or a fade
@@ -515,38 +532,58 @@ window.KOLOB.VoicesBand = (function () {
       pk.gain.setValueAtTime(brassDb(d) - (legato || breath ? 0 : 2), t);
       pk.gain.linearRampToValueAtTime(brassDb(d) + (breath ? 0 : 1.5), bloomAt);
       pk.gain.setTargetAtTime(brassDb(d), bloomAt, 0.08);
-      if (mid < rel && Math.abs(dEnd - d) > 0.01) pk.gain.setTargetAtTime(brassDb(dEnd), mid, Math.max(0.05, (rel - mid) / 2.5));
+      var tB = bloomAt + 0.4;                          // (the bloom has settled: five of its time constants)
+      var bright = wand.filter(function (p) { return p.t > tB; });
+      if (bright.length) {
+        // the brightness wanders with the breath (the band swings twice the
+        // breath's dB) along the note's swell or fade
+        pk.gain.setValueAtTime(brassDb(d), tB);
+        bright.forEach(function (p) { pk.gain.linearRampToValueAtTime(brassDb(along(d, dEnd, (p.t - t) / dur)) + 2 * p.db, p.t); });
+        pk.gain.linearRampToValueAtTime(brassDb(dEnd), rel);
+      } else if (mid < rel && Math.abs(dEnd - d) > 0.01) pk.gain.setTargetAtTime(brassDb(dEnd), mid, Math.max(0.05, (rel - mid) / 2.5));
       // the breath: in (a small spring on a tongued note), across the note
-      // (a swell or a fade), and away
+      // (a swell or a fade, and the wander), and away
       var lv = spec.level * tbnAmp(d), lvEnd = spec.level * tbnAmp(dEnd);
       g.gain.setValueAtTime(0, t);
       if (breath) g.gain.linearRampToValueAtTime(lv, t + atk);
       else {
         g.gain.linearRampToValueAtTime(lv * (legato ? 1.04 : 1.12), t + atk);
-        g.gain.linearRampToValueAtTime(lv, Math.min(rel, t + atk + 0.07));
+        g.gain.linearRampToValueAtTime(lv, tS);
       }
+      wand.forEach(function (p) { if (p.t > tS) g.gain.linearRampToValueAtTime(along(lv, lvEnd, (p.t - tS) / (rel - tS)) * Math.pow(10, p.db / 20), p.t); });
       g.gain.linearRampToValueAtTime(lvEnd, rel);
       g.gain.setTargetAtTime(0, rel, tau);
       var bus = tbnBus(k);
       o.connect(lp); lp.connect(pk); pk.connect(g); g.connect(bus);
       o.start(t); o.stop(tEnd);
-      count(4, t, tEnd);
-      // THE TONGUE: a breath of band-limited noise as the tongue lets the air
-      // go — a "t" on a tongued note, a soft "d" on a legato one
-      if (!breath) {
+      // THE BREATH: band-limited noise near the seventh harmonic. On a
+      // tongued note it opens as a "t" (a soft "d" on a legato one) as the
+      // tongue lets the air go; under a breath attack it comes first, the
+      // tone after. Then it stays, faint — the air through the lips under
+      // every held tone, about 30 dB under it at mf and a little nearer
+      // the tone as the player blows harder — and follows the note's
+      // dynamic to its release (round 2 of the polish: it was 90 ms of "t"
+      // and then nothing)
+      var bed = lv * BREATH * (0.45 + 0.9 * d), bedEnd = lvEnd * BREATH * (0.45 + 0.9 * dEnd);
+      var ns = ctx.createBufferSource(); ns.buffer = noiseBuf(ctx); ns.loop = true;
+      var nb = ctx.createBiquadFilter(); nb.type = "bandpass"; nb.frequency.value = Math.min(4000, Math.max(1400, f * 7)); nb.Q.value = 0.9;
+      var ng = ctx.createGain();
+      ng.gain.setValueAtTime(0, t);
+      if (breath) {
+        ng.gain.linearRampToValueAtTime(bed * 2.2, t + atk * 0.6);
+        ng.gain.linearRampToValueAtTime(bed, t + atk + 0.05);
+      } else {
         var tl = lv * (legato ? 0.2 : 0.55) * (0.5 + d);
-        var ns = ctx.createBufferSource(); ns.buffer = noiseBuf(ctx);
-        var nb = ctx.createBiquadFilter(); nb.type = "bandpass"; nb.frequency.value = Math.min(4000, Math.max(1400, f * 7)); nb.Q.value = 1.1;
-        var ng = ctx.createGain();
-        ng.gain.setValueAtTime(0, t);
         ng.gain.linearRampToValueAtTime(tl, t + 0.004);
-        ng.gain.setTargetAtTime(0, t + 0.006, 0.012);
-        ns.connect(nb); nb.connect(ng); ng.connect(bus);
-        ns.start(t, R.rnd(0, 1.7)); ns.stop(t + 0.09);
-        count(3, t, t + 0.09);
-        return 7;
+        ng.gain.setTargetAtTime(bed, t + 0.006, 0.012);
+        ng.gain.setValueAtTime(bed, t + 0.09);
       }
-      return 4;
+      ng.gain.linearRampToValueAtTime(bedEnd, Math.max(rel, t + atk + 0.1));
+      ng.gain.setTargetAtTime(0, Math.max(rel, t + atk + 0.1), tau);
+      ns.connect(nb); nb.connect(ng); ng.connect(bus);
+      ns.start(t, R.rnd(0, 1.7)); ns.stop(tEnd);
+      count(7, t, tEnd);
+      return 7;
     }
 
     function play(t, notes, instrument, dynamics) {

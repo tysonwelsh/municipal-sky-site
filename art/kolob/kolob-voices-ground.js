@@ -197,7 +197,8 @@ window.KOLOB = window.KOLOB || {};
     var overlap = 8;
     var seat = s === "prelude" ? S.Meeting.seating() : null;             // (the brush arbor bows bare fifths)
     stringsPad(t + 0.1, dur, s === "doxology" ? 1 : 0.75, R.chance(0.7) || !!(seat && seat.fifths));
-    cueLayer("strings", (dur - overlap) * (s === "doxology" ? 0.9 : 1.3), stringsCycle);
+    // (the prelude's texture: a strings morning overlaps its pads)
+    cueLayer("strings", (dur - overlap) * (s === "doxology" ? 0.9 : 1.3) * S.Meeting.lean("strings"), stringsCycle);
   }
 
   // ==========================================================================
@@ -297,7 +298,7 @@ window.KOLOB = window.KOLOB || {};
       total += Math.max(0.35, head[i].durBeats * beat * 0.6);
     }
     claimAir(total, R.rnd(3, 7));
-    var gap = R.rnd(20, 45) * gapMul();
+    var gap = R.rnd(20, 45) * gapMul() * S.Meeting.lean("bells");      // (a valley morning taps more)
     cueLayer("bells", total + gap, tineCycle);
   }
 

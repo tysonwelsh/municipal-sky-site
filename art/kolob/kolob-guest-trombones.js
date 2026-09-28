@@ -19,7 +19,7 @@
 // its last chord. The first hymn is heard before anyone sings it.
 //
 // THE SEAT. plan(meetingInfo, stream) decides whether this meeting has the
-// choir: about one meeting in five as the engine stands (a conditional
+// choir: about one meeting in eight as the engine stands (a conditional
 // chance, weighted up on conference and jubilee Sundays — and on the
 // calendar's Easter, Christmas, funerals and dedications when those exist —
 // and down on fast Sundays), and NEVER in a meeting that also has the
@@ -140,11 +140,22 @@ window.KOLOB.GuestTrombones = (function () {
   // ==========================================================================
   // p = base × weight[sunday or kind], capped. The base is conditional: the
   // choir is refused when the bands are seated (≈36 % of meetings) or another
-  // guest holds the prelude (≈11 %), so base 0.34 comes out at about one
-  // meeting in five over the engine's present mix of Sundays (the harness
-  // and the lab's odds card measure it against the real planner).
+  // guest holds the prelude (≈11 %). Round 2's base of 0.34 came out at one
+  // meeting in five over all meetings, but at 17.5 % of FIRST visits, whose
+  // Sunday was then a fast one 36 % of the time (weight 0.35); the calendar
+  // of the pre-v0.34 polish gave every meeting the plan's odds, and first
+  // visits rose to 21 % — the trombones became the second commonest way a
+  // visit wakes (and, once the prelude had nine seatings, the commonest),
+  // before the owner had heard their new sound. Round 2 of the polish sets
+  // the base to 0.21: about one meeting in eight over all meetings (the
+  // harness and the lab's odds card measure it against the real planner),
+  // and one first visit in six or seven (14 % of seeds 1–200, 16.5 % of
+  // 1–400: a shade under round 2's 17.5 %), so no one way of waking stands
+  // out. It is the one number to turn, and the integrator's to rule on once
+  // the owner has heard the new sound: 0.27 is about one meeting in six,
+  // 0.34 round 2's one in five.
   var ODDS = {
-    base: 0.34,
+    base: 0.21,
     weight: {
       ordinary: 1, fast: 0.35, conference: 1.5, jubilee: 1.5,
       // the Sunday calendar (PLAN-COMPOSITION §7.1), when it exists
@@ -154,7 +165,9 @@ window.KOLOB.GuestTrombones = (function () {
     cap: 0.9,
   };
   var EXCLUDES = ["bands"];                       // never with the crossing bands
-  var AT = [4, 14];                                // the moment in the prelude, s
+  // the moment in the prelude, s (round 2 of the polish widened it from
+  // 4–14: some mornings the valley is awake a while before the call)
+  var AT = [4, 22];
   var MAX_DUR = 90;                                // the exchanges shorten to fit
   // the guest's own bus. Round 2's 1.15 left the near choir 4–7 LU under
   // the organ reference in the lab, and in the app 7 dB under the house that
@@ -164,8 +177,15 @@ window.KOLOB.GuestTrombones = (function () {
   // the near choir is heard 4.5–5 dB louder than in round 2 and sits within
   // about 2 LU of the organ reference while it plays (the trombone lab, five
   // chorales: handoff r25-polish-1); the far choir keeps its drawn 6–8 LU
-  // under it.
-  var LEVEL = 1.45;
+  // under it. Round 2 of the polish (the critic: a phrase's crest took the
+  // dawn's loudest 3 s to +2.4–2.7 LU over the organ reference) keeps the
+  // near choir where it sits while it plays and lowers only its peaks: the
+  // bus 0.3 dB down, a gentler arch (swell 0.06–0.12), and the near choir's
+  // drawn nearness (0.16–0.3, 2.2 dB of level between its ends) made half
+  // as loud a difference (NEAR_EVEN), so one Sunday's near choir is not
+  // 3 LU louder than another's by the luck of where it stood.
+  var LEVEL = 1.4;
+  var NEAR_EVEN = { at: 0.23, share: 0.5 };
 
   function oddsFor(info) {
     var w = ODDS.weight;
@@ -195,7 +215,7 @@ window.KOLOB.GuestTrombones = (function () {
       nearDyn: r.rnd(0.5, 0.62),       // mp–mf: close, present, warm (the pre-v0.34 polish: round 2's p–mp sat 7 dB under the house)
       gap: r.rnd(0.5, 1.4),            // how long the answer waits after the call lets go
       fermata: r.rnd(1.7, 2.3),        // the line's last chord, held
-      swell: r.rnd(0.08, 0.16),        // each phrase's arch
+      swell: r.rnd(0.06, 0.12),        // each phrase's arch (round 2 of the polish: 0.08–0.16 crested past the organ)
       farAtk: r.rnd(0.22, 0.4),        // a breath attack on a phrase's first chord
       nearAtk: r.rnd(0.12, 0.22),
       together: r.chance(0.35),        // the far choir joins the last chord
@@ -1080,10 +1100,17 @@ window.KOLOB.GuestTrombones = (function () {
   var INST = { S: "altoTrombone", A: "tenorTrombone", T: "tenorTrombone", B: "bassTrombone" };
   // the far choir's trim (dB, within ±9): near and far as heard — each
   // choir's dynamic plus its distance — set sh.gapLu apart
+  // the near choir's trim (dB): half of what its drawn nearness took from
+  // (or gave to) its level, against a choir standing at 0.23, given back
+  function nearTrimDb(sh) {
+    var VB = window.KOLOB.VoicesBand;
+    if (!VB || !VB.distanceDb) return 0;
+    return NEAR_EVEN.share * (VB.distanceDb(NEAR_EVEN.at) - VB.distanceDb(sh.nearDist));
+  }
   function farTrimDb(sh) {
     var VB = window.KOLOB.VoicesBand;
     if (!VB || !VB.distanceDb) return 0;
-    var near = VB.dynamicDb(sh.nearDyn) + VB.distanceDb(sh.nearDist);
+    var near = VB.dynamicDb(sh.nearDyn) + VB.distanceDb(sh.nearDist) + nearTrimDb(sh);
     var far = VB.dynamicDb(sh.farDyn) + VB.distanceDb(sh.farDist);
     return Math.max(-9, Math.min(9, near - sh.gapLu - far));
   }
@@ -1101,7 +1128,7 @@ window.KOLOB.GuestTrombones = (function () {
     // change the level; left alone, they can nearly cancel)
     var farGain = Math.pow(10, farTrimDb(sh) / 20);
     var far = VB.create(ctx, bus, { rand: synth.fork("far"), distance: sh.farDist, room: town, side: farPan, spread: 0.2, gain: farGain });
-    var near = VB.create(ctx, bus, { rand: synth.fork("near"), distance: sh.nearDist, room: town, side: nearPan, spread: 0.75 });
+    var near = VB.create(ctx, bus, { rand: synth.fork("near"), distance: sh.nearDist, room: town, side: nearPan, spread: 0.75, gain: Math.pow(10, nearTrimDb(sh) / 20) });
     sc.phrases.forEach(function (ph) {
       if (hooks.only && ph.choir !== hooks.only) return;       // (a lab's "far only" / "near only")
       var band = ph.choir === "far" ? far : near;

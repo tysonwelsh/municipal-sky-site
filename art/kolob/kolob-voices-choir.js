@@ -59,13 +59,18 @@ window.KOLOB = window.KOLOB || {};
     oo: [[325, 700, 2530], [370, 630, 2750], [300, 870, 2240], [280, 630, 2340]],
   };
   var CHOIR_PANS = [0.35, -0.35, 0.55, -0.55];   // S A T B — spread wide; the frontier is broad
+  // THE HUM (the humming seating, round 2 of the polish): lips closed, the
+  // sound through the nose — one broad resonance where each voice sits, the
+  // upper formants all but gone (S A T B: centre, Hz; then the faint two)
+  var HUM_FORMANTS = [[500, 1150, 2500], [400, 1050, 2400], [300, 950, 2300], [220, 900, 2200]];
   // (the singer's own detune and breath are sound-level: synth:choir)
-  function choirVoiceLine(t, notes, vi, gainMul) {
+  function choirVoiceLine(t, notes, vi, gainMul, vowel) {
     var Y = synth("choir");
     // one SATB voice walks a line of {f, dur} with scoops between pitches
     var vowelAmt = getLayerParam("choir", "vowel", 0.4);
     var scoop = getLayerParam("choir", "scoop", 0.5);
-    var dest = panAt("choir", CHOIR_PANS[vi]);
+    var hum = vowel === "hum";
+    var dest = panAt("choir", CHOIR_PANS[vi] * (hum ? 0.6 : 1));
     var o = S.ctx.createOscillator();
     o.type = "sawtooth";
     // LESSON (Bardo, hard-won): pre-attenuate before resonant formants — the
@@ -79,10 +84,10 @@ window.KOLOB = window.KOLOB || {};
       bq.type = "bandpass";
       // vowel blend is FIXED per phrase — formant frequencies never chase
       // automation mid-note (setValueAtTime only; biquads stay stable)
-      bq.frequency.setValueAtTime(fAh[fi] * (1 - vowelAmt) + fOo[fi] * vowelAmt, t);
-      bq.Q.setValueAtTime(fi === 0 ? 6 : fi === 1 ? 9 : 5, t);
+      bq.frequency.setValueAtTime(hum ? HUM_FORMANTS[vi][fi] : fAh[fi] * (1 - vowelAmt) + fOo[fi] * vowelAmt, t);
+      bq.Q.setValueAtTime(hum ? (fi === 0 ? 1.6 : 5) : fi === 0 ? 6 : fi === 1 ? 9 : 5, t);
       var bg = S.ctx.createGain();
-      bg.gain.setValueAtTime(fi === 0 ? 1 : fi === 1 ? 0.6 : 0.1, t);
+      bg.gain.setValueAtTime(hum ? (fi === 0 ? 0.8 : fi === 1 ? 0.08 : 0.012) : fi === 0 ? 1 : fi === 1 ? 0.6 : 0.1, t);
       pre.connect(bq); bq.connect(bg); bg.connect(vg);
     }
     vg.connect(dest);
@@ -102,7 +107,7 @@ window.KOLOB = window.KOLOB || {};
       total += n.dur;
     }
     var peak = (gainMul || 1) * 0.5;
-    env(vg, t, [[Y.rnd(0.6, 1.2), peak], [Math.max(0.2, total - 2.4), peak * 0.88], [Y.rnd(1, 1.6), 0]]);
+    env(vg, t, [[Y.rnd(0.6, 1.2) * (hum ? 1.8 : 1), peak], [Math.max(0.2, total - 2.4), peak * 0.88], [Y.rnd(1, 1.6), 0]]);
     o.start(t); o.stop(t + total + 1.8);
     return total;
   }
@@ -117,7 +122,7 @@ window.KOLOB = window.KOLOB || {};
   // voiceIdx order in chord.voicing is [b,t,a,s]; CHOIR vi is [s,a,t,b]=[0..3].
   var VI_TO_CHORDPOS = [3, 2, 1, 0];
   var PART = ["S", "A", "T", "B"];                 // the part each choir voice sings (the note's report)
-  function choirHarmonizedLine(t, harmonized, beat, gainMul) {
+  function choirHarmonizedLine(t, harmonized, beat, gainMul, vowel) {
     var vis = activeVoices();
     var lineNotes = { 0: [], 1: [], 2: [], 3: [] };
     for (var i = 0; i < harmonized.length; i++) {
@@ -132,7 +137,7 @@ window.KOLOB = window.KOLOB || {};
     for (var v2 = 0; v2 < vis.length; v2++) {
       var vi2 = vis[v2];
       var stagger = vi2 === 0 ? 0 : synth("choir").rnd(0.05, 0.25);   // the congregation breathes together, loosely
-      var tot = choirVoiceLine(t + stagger, lineNotes[vi2], vi2, gainMul * (vi2 === 0 ? 1 : 0.8));
+      var tot = choirVoiceLine(t + stagger, lineNotes[vi2], vi2, gainMul * (vi2 === 0 ? 1 : 0.8), vowel);
       if (tot > total) total = tot;
     }
     for (var i2 = 0; i2 < harmonized.length; i2++) {
@@ -148,16 +153,41 @@ window.KOLOB = window.KOLOB || {};
     }
     return total;
   }
+  // THE HUM (the humming seating; round 2 of the polish): the ward hums as
+  // it gathers, before the organist has touched a key — the voices of the
+  // day's choir on "mm", two to four of the day's chords, each written
+  // into the chord book as the choir's (so the organist waits for the hum
+  // to end, and a prelude cannot turn over under it). Once a prelude; its
+  // dice are its own stream's (hum:<n>), so the verses keep theirs.
+  function choirHum(tc, seat) {
+    var R = turn("hum");
+    var t = tc + 0.15, hum = seat.hum, harmonized = [];
+    hum.sung = true;                               // (the seating is this meeting's own: a new meeting, a new hum)
+    // (each chord written where the line will sing it: the same running
+    // sum choirHarmonizedLine takes, to the last bit)
+    for (var i = 0, at = t; i < hum.n; i++, at += 1 * hum.s) {
+      var first = i === 0 && !S.Harmony.at(t) ? (seat.full ? { open: false, third: true, spread: seat.spread } : { spread: seat.spread }) : {};
+      harmonized.push({ chord: S.Harmony.advance(first, R, at, "choir", hum.s), dur: 1 });
+    }
+    var total = choirHarmonizedLine(t, harmonized, hum.s, synth("choir").rnd(0.5, 0.65), "hum");   // (how loud: sound-level)
+    cueLayer("choir", total + 6, choirVerse);
+  }
   // The choir's turn, at scheduled time tc. Waiting for the air draws from
   // the choir's waiting stream; a turn it sings is a fork of its own.
   function choirVerse(tc) {
     if (!S.playing) return;
     var s = S.Meeting.section();
+    if (s === "prelude" && !S.Meeting.jointing()) {
+      var seat = S.Meeting.seating();
+      if (seat && seat.hum && !seat.hum.sung) { choirHum(tc, seat); return; }
+    }
     var sings = s === "hymn" || s === "doxology";
     // no couplet is begun under the joint's amen: the hymn's time is up, and
     // the next line belongs to the next section (round 2 — v0.32 could start
     // a couplet here and sing it half a minute into whatever came next)
-    if (!sings || inFuging() || inQuestion() || S.Meeting.jointing()) { cueIn("choir", 6, choirVerse); return; }
+    // (nor while a planned fuging waits for its window: the verses leave it
+    // free — round 2 of the polish; see the conductor's fuging)
+    if (!sings || inFuging() || inQuestion() || S.Meeting.jointing() || S.Meeting.fugingNear()) { cueIn("choir", 6, choirVerse); return; }
     if (!airFree()) { cueIn("choir", wait("choir").rnd(4, 9), choirVerse); return; }
 
     var R = turn("choir");
