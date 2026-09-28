@@ -103,8 +103,8 @@ window.KOLOB.GuestSingingSchool = (function () {
   };
   var AT = [1.5, 8];                               // s into the prelude: you arrive during the practice
   // the practice's bus: calibrated in the lab so its loudest three seconds
-  // (everyone, the second time, singing out) sit about a loudness unit over
-  // the organ reference — a choir in the chapel, not a choir in the doorway
+  // (everyone, the second time, singing out) sit level with the organ
+  // reference — a choir in the chapel, not a choir in the doorway
   var LEVEL = 0.55;
 
   function oddsFor(info) {
@@ -519,16 +519,23 @@ window.KOLOB.GuestSingingSchool = (function () {
     // (a short line, or a lesson that came out short: through the second
     // line's cadence too, so the rehearsal lasts its 30 s)
     if (M.lines[1] && (againT + lineLen(L) + 1.4 < 31)) lines.push(M.lines[1]);
-    var tl = againT;
+    // (each desk sings the whole pass in one breath group — one throat for
+    // both lines, a rest between them — so a phone builds the desk once)
+    var tl = againT, per = desks.map(function () { return { start: null, notes: [], at: null }; });
     lines.forEach(function (ln, li) {
       var lnOn = tl;
       desks.forEach(function (d, i) {
         var dl = deskLine(d, ln, { spb: passSpb, hold: hold });
         if (!dl.notes.length) return;
-        items.push({ kind: "sing", desk: i, t: lnOn + dl.start, notes: dl.notes, stage: "again", line: li });
+        var p = per[i], on = lnOn + dl.start;
+        if (p.start == null) { p.start = on; p.at = on; }
+        if (on > p.at + 0.01) p.notes.push({ rest: true, dur: on - p.at });
+        dl.notes.forEach(function (n) { p.notes.push(n); });
+        p.at = on + dl.notes.reduce(function (a, n) { return a + n.dur; }, 0);
       });
       tl = lnOn + lineLen(ln) + (li < lines.length - 1 ? 0.35 * passSpb : 0);
     });
+    per.forEach(function (p, i) { if (p.notes.length) items.push({ kind: "sing", desk: i, t: p.start, notes: p.notes, stage: "again" }); });
     stage("again", countT, tl + 0.8, "two raps, and everyone sings it again " + (pickup > 0 ? "from the pickup" : "from the top") + " through the cadence" + (lines.length > 1 ? " (and on through the second line)" : ""));
     var end = tl + 1.4;
     // every sung note, as the engine would report it (a note as written)

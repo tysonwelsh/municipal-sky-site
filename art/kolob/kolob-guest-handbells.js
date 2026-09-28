@@ -169,7 +169,7 @@ window.KOLOB.GuestHandbells = (function () {
       ringers: r.rint(8, 12),
       lowRight: r.chance(0.75),          // the bass bells at the audience's right
       width: r.rnd(0.62, 0.85),          // how far across the field the line stands
-      tempo: r.rnd(0.98, 1.14),          // the hymn's pace × this (the bells like to move)
+      tempo: r.rnd(0.86, 1.04),          // the hymn's pace × this (a little broader: bells ring on)
       roundBeat: r.rnd(0.44, 0.56),      // the round's beat, s
       introU: r.next(),
       verse2U: r.next(),
@@ -638,7 +638,7 @@ window.KOLOB.GuestHandbells = (function () {
 
   // ---- the hymn, arranged ----------------------------------------------------
   function ringHymn(M, sh, dyn, strike, stage) {
-    var H = M.hymn, mp = M.melodyPart, spb = Math.max(0.42, Math.min(0.95, M.beatS / sh.tempo));
+    var H = M.hymn, mp = M.melodyPart, spb = Math.max(0.5, Math.min(0.95, M.beatS / sh.tempo));
     var sacr = M.seat === "sacrament";
     // THE BELLS' OCTAVE: the hymn an octave up (where handbells sing), unless
     // that would take the tune past the set; a part-line still outside the
@@ -818,28 +818,33 @@ window.KOLOB.GuestHandbells = (function () {
       verseDur = 0;
       for (var q = 0; q < nLines; q++) verseDur += lineDur(H.lines[q]) + H.lines[q].breath * spb;
     }
-    var two = sh.twoVerses && t + 2 * verseDur + 9 <= MAX_DUR;
-    var v2 = null;
-    if (two) {
-      var ws = unison ? [["octaves", 1]] : sacr ? [["bass", 1], ["descant", 1]] : [["mart", 4], ["bass", 3], ["descant", 3]];
-      var tot = 0; ws.forEach(function (w) { tot += w[1]; });
-      var u = sh.verse2U * tot; v2 = ws[ws.length - 1][0];
-      for (var i = 0; i < ws.length; i++) { u -= ws[i][1]; if (u <= 0) { v2 = ws[i][0]; break; } }
-    }
-    // (a tune in unison rung once is rung in octaves: the drone and one
-    // octave of the tune would leave half the line with a single bell)
-    var verses = two ? ["plain", v2] : [unison ? "octaves" : "plain"];
+    // (a short hymn is always rung twice; a long one once)
+    var two = (sh.twoVerses || t + verseDur + 9 < 36) && t + 2 * verseDur + 9 <= MAX_DUR;
+    // the second setting is drawn whether or not a second verse is rung: rung
+    // once, the verse changes setting halfway (the arranger's way — the
+    // first couplet plain, the second on the table or in the bass bells), so
+    // every hymn the bells ring shows more than one technique
+    var ws = unison ? [["octaves", 1]] : sacr ? [["bass", 1], ["descant", 1]] : [["mart", 4], ["bass", 3], ["descant", 3]];
+    var tot = 0; ws.forEach(function (w) { tot += w[1]; });
+    var u = sh.verse2U * tot, v2 = ws[ws.length - 1][0];
+    for (var i = 0; i < ws.length; i++) { u -= ws[i][1]; if (u <= 0) { v2 = ws[i][0]; break; } }
+    var half = Math.max(1, Math.ceil(nLines / 2));
+    var parts = two ? [{ set: "plain", from: 0, to: nLines }, { set: v2, from: 0, to: nLines }]
+      : unison ? [{ set: "octaves", from: 0, to: nLines }]
+      : [{ set: "plain", from: 0, to: half }, { set: v2, from: half, to: nLines }];
     var LABELS = { octaves: "the tune in octaves over the open fifth, its long notes shaken",
       plain: unison ? "the tune over the bells' open fifth, do and sol, rung at each line's start" : "the hymn, plain: every part, each note damped as the next begins", mart: "the table: the lower bells martellato on the beat, the tune's long notes shaken", bass: "the tune in the bass bells, the harmony rung above it and let ring", descant: "the hymn again, with a descant in the top bells" };
-    verses.forEach(function (set, vi) {
-      var vStart = t, lastVerse = vi === verses.length - 1;
-      for (var li = 0; li < nLines; li++) {
+    parts.forEach(function (pt, vi) {
+      var vStart = t, lastPart = vi === parts.length - 1;
+      for (var li = pt.from; li < pt.to; li++) {
         var ln = H.lines[li];
         var vv = dyn * (vi === 1 ? 1.1 : 1) * (sacr ? 0.9 : 1);
-        t = ringLine(ln, li, t, set, vv, { lastLine: lastVerse && li === nLines - 1 });
+        t = ringLine(ln, li, t, pt.set, vv, { lastLine: lastPart && li === pt.to - 1 });
       }
-      stage(vi === 0 ? "verse" : "verse2", vStart, t, LABELS[set]);
-      if (!lastVerse) t += 0.5 * spb;
+      var label = LABELS[pt.set];
+      if (!two && parts.length > 1) label = (vi === 0 ? "lines 1–" + pt.to + ": " : "lines " + (pt.from + 1) + "–" + pt.to + ": ") + label.replace("the hymn again, with", "with");
+      stage(vi === 0 ? "verse" : "verse2", vStart, t, label);
+      if (!lastPart && two) t += 0.5 * spb;
     });
     // THE LAST CHORD (let ring; the cascade begins a beat after it)
     return t + (sh.finalShake ? 0.4 : 0.1);

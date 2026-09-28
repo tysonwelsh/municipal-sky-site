@@ -196,7 +196,9 @@ window.GuestsLab = (function () {
   };
   P.school = function (ctx, into, t, o) {
     var st = settings(o), mat = schoolMaterial(st);
+    if (K.VoicesVocal.budget) K.VoicesVocal.budget.reset();
     var end = SS.perform(ctx, into, t, mat, ssStream(st.seed), { onNote: o.onNote || null });
+    var bud = K.VoicesVocal.budget ? K.VoicesVocal.budget.report(t, end) : null;
     var sc = SS.perform.last.score, ex = [];
     // (a sung onset carries its consonant; a rap on the stand is a rap)
     sc.items.forEach(function (it) {
@@ -207,7 +209,7 @@ window.GuestsLab = (function () {
         it.notes.forEach(function (n) { if (!n.rest) ex.push([tt - 0.16, tt + 0.08]); tt += n.dur; });
       }
     });
-    return { dur: end - t + 2.5, score: sc, expect: ex };
+    return { dur: end - t + 2.5, score: sc, expect: ex, stats: bud ? { created: 0, maxRing: 0, peakLive: bud.peak, singers: true, meanLive: Math.round(bud.mean) } : null };
   };
   // ---- the level reference: the v0.30 organChord, line for line (the
   // instruments and trombone labs' P.reference) ------------------------------
@@ -551,7 +553,7 @@ window.GuestsLab = (function () {
   function measLine(r) {
     return "loudness " + r.lufs + " LUFS (loudest 3 s " + r.lufsShortMax + ", " + (r.vsRef > 0 ? "+" : "") + r.vsRef + " LU against the organ reference) · peak " + r.peakDb + " dBFS · clipped " + r.clipped +
       " · strokes " + r.strokes + " · clicks " + r.clicks + (r.clicks ? " (at " + r.clickTimes.join(", ") + " s)" : "") +
-      (r.nodes ? " · nodes: " + r.nodes.created + " made, ≤ " + r.nodes.maxRing + " a ring, ≈" + r.nodes.peakLive + " live at peak" : "");
+      (r.nodes ? (r.nodes.singers ? " · the singers' nodes: ≈" + r.nodes.peakLive + " live at peak, " + r.nodes.meanLive + " on average" : " · nodes: " + r.nodes.created + " made, ≤ " + r.nodes.maxRing + " a ring, ≈" + r.nodes.peakLive + " live at peak") : "");
   }
   function bellName(b, mode) {
     var cl = mod(b.letter - DO_OF[mode], 7), oct = Math.floor((b.letter - DO_OF[mode]) / 7);
