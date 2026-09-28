@@ -823,13 +823,14 @@ window.KOLOB.Cast = (function () {
   //   start before `horizon` (the caller's clock read, plus its lookahead)
   //   to its singer at t0 + cue.at; returns the cues handed. schedule()
   //   hands them all (offline). The glue never reads a clock of its own.
-  //   pace = { max, urgent, arm, now }: hand at most `max` cues a call (a line of
-  //   the full ward is thirty-two graphs; built in one go it is a long task
-  //   on a phone's main thread), except that every cue due before `urgent`
-  //   goes now whatever the count; and with `arm` (the caller's clock plus
-  //   ~1 s) a line is built when handed but joins the room only once it is
-  //   due to sound before `arm`, each of its mouths only around the moments
-  //   it may sound, and parts from it once the caller's `now` has passed
+  //   pace = { max, urgent, arm, now }: hand at most `max` cues a call (a
+  //   line of the full ward is thirty-two graphs; built in one go it is a
+  //   long task on a phone's main thread), except that every cue due before
+  //   `urgent` goes now whatever the count; and with `arm` (the caller's
+  //   clock plus a lead of at least five pump intervals — 0.6 s for a pump
+  //   every 120 ms) a line is built when handed but joins the room only once
+  //   it is due to sound before `arm`, each of its mouths only around the
+  //   moments it may sound, parting once the caller's `now` has passed
   //   (VoicesVocal's ARMING: a built line not yet joined costs the audio
   //   thread nothing). Without `arm`, every line joins the room as handed.
   // ==========================================================================

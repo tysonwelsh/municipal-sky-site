@@ -213,8 +213,8 @@ include '../../includes/header.php';
     phone four times slower would need.</p>
     <div class="kcl-play">
       <button class="kcl-btn" id="kcl-measure" type="button" disabled>Render &amp; measure the joins</button>
-      <button class="kcl-btn" id="kcl-stress" type="button" disabled>Phone test: real time, a meeting underneath (60 s)</button>
-      <button class="kcl-btn" id="kcl-headroom" type="button" disabled>Headroom: the audio thread's share (about 5 min)</button>
+      <button class="kcl-btn" id="kcl-stress" type="button" disabled>Phone test (60&nbsp;s)</button>
+      <button class="kcl-btn" id="kcl-headroom" type="button" disabled>Headroom test (about 5&nbsp;min)</button>
     </div>
     <div class="kcl-wrap" id="kcl-report"></div>
     <canvas id="kcl-spec" width="1000" height="260" hidden></canvas>
