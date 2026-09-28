@@ -124,7 +124,7 @@
   // extrusion, a black outline, gold banded top to bottom, lit edges.
   var LW = 20, LH = 26;
   function glyphMask(ch) {
-    var c = A.makeCanvas(LW, LH), g = c.getContext('2d');
+    var c = A.makeCanvas(LW, LH), g = c.getContext('2d', { willReadFrequently: true });
     g.fillStyle = '#fff';
     function r(x, y, w, h) { g.fillRect(x, y, w, h); }
     function el(cx, cy, rx, ry, cut) {
@@ -289,7 +289,7 @@
   // the mule's silhouette, built from shapes: body, neck, a long head,
   // long ears, four legs, the tail. Shadow boards paint the missing thing solid.
   function muleMask() {
-    var W = 46, H = 22, c = A.makeCanvas(W, H), g = c.getContext('2d');
+    var W = 46, H = 22, c = A.makeCanvas(W, H), g = c.getContext('2d', { willReadFrequently: true });
     ellipse(g, 17, 10, 12, 5, '#fff');                     // barrel
     thick(g, 27, 9, 33, 4, 4, '#fff');                     // neck
     thick(g, 33, 4, 40, 7, 3, '#fff'); px(g, 41, 8, '#fff'); // the long head, nose down

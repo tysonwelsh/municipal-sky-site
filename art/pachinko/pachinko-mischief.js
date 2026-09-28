@@ -563,7 +563,13 @@
       if (steam.length) mis.steam = steam;
       // the curator's cool pin spot on each marble the dark kept (as on every figure in the rock)
       // (the moment it's found: the spot clicks on, bright, and settles)
-      S.lost.forEach(function (q) { var qa = t - q.t; lamps.push({ x: q.x, y: q.y, r: 15, c: '#b8c4ff', k: qa >= 0 && qa < 0.12 ? 0 : qa < 0.5 ? 1.5 : 0.6 }); });
+      // (widened to take in its tag, wherever the art hung it: wave 8)
+      var AR = root.PachinkoArt;
+      S.lost.forEach(function (q, i) {
+        var qa = t - q.t, tg = AR && AR.keptTag ? AR.keptTag(i) : null, cx = q.x, cy = q.y, r = 15;
+        if (tg) { var tx = tg.x + tg.w / 2, ty = tg.y + tg.h / 2, half = Math.hypot(tx - q.x, ty - q.y) / 2; cx = (q.x + tx) / 2; cy = (q.y + ty) / 2; r = Math.max(15, half + 10); }
+        lamps.push({ x: cx, y: cy, r: r, c: '#b8c4ff', k: qa >= 0 && qa < 0.12 ? 0 : qa < 0.5 ? 1.5 : 0.85 });
+      });
       // and a work light on a cave-in's heap, so the bay that's shut reads as shut
       (api.board().caveins || []).forEach(function (cv) { lamps.push({ x: cv.cx, y: cv.top + 4, r: 20, c: '#ffe0a0', k: 0.55 }); });
       fxo.mended = S.mended && (!S.mendAt || t >= S.mendAt);

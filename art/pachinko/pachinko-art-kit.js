@@ -86,6 +86,10 @@
     return (h >>> 0) / 4294967296;
   };
 
+  // the painted moon's seas [dx, dy, rx, ry, colour] (rx 0: one pixel), shared
+  // by the backdrop (pachinko-art-mine.js) and the cut-out on its nail
+  // (pachinko-art-secrets.js), so the moon is the same moon when it swings
+  A.MOON_SEAS = [[-3, -2, 2, 2, '#d8c07a'], [-1, 3, 2, 1, '#e2cc8a'], [3, 1, 1, 2, '#d8c07a'], [4, -4, 0, 0, '#d8c07a'], [1, -1, 0, 0, '#e2cc8a']];
   A.makeCanvas = function (w, h) {
     if (typeof document !== 'undefined') {
       var c = document.createElement('canvas'); c.width = w; c.height = h; return c;

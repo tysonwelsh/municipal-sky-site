@@ -1268,9 +1268,11 @@
   }
   function loop() { tick(false); if (M) root.requestAnimationFrame(loop); }
 
+  var startTries = 0;
   function start() {
     var h = root.__pachinko;
-    if (!h || !h.view) { setTimeout(start, 30); return; }
+    // (the machine never mounted, or is out of order: stop asking after ~12 s)
+    if (!h || !h.view) { if (++startTries < 400) setTimeout(start, 30); return; }
     if (!mount(h)) return;
     if (M.harness && h.harness) {
       // every harness shot includes the room, at the harness's clock

@@ -760,8 +760,22 @@
    * other pins (a marble's width, or it would wedge), the rails, the wheels,
    * the pockets, the galleries, a shaft's mouth and the chute places, the
    * tunnel mouths, the legend card's corner and the bays */
+  // the 13's own guard: the ore knuckles over the bone, the bone, the ore
+  // knobs either side of the cup, and the coal right under the old drift's
+  // exit. The crew never carry these, and never set a pin down in the cup's
+  // mouth (wave 8: one drift moved knuckle.r over the cup and turned the old
+  // drift's route into a lode lane, 35.7 scrip a token)
+  var LODE_GUARD = { 'knuckle.l': 1, 'knuckle.r': 1, 'guard.top': 1, 'guard.l': 1, 'guard.r': 1 };
+  function lodeZone(b, x, y) {
+    var s = null, sl = b.byKind && b.byKind.slot || [];
+    for (var i = 0; i < sl.length; i++) if (sl[i].value >= 13) s = sl[i];
+    if (!s) return false;
+    var cx = (s.x0 + s.x1) / 2;
+    return Math.abs(x - cx) <= 14 && y >= 328 && y <= 384;
+  }
   function pinSpotOk(b, p, x, y) {
     if (x < 6 || x > W - 6 || y < 68 || y > 380) return false;
+    if (LODE_GUARD[p.id] || lodeZone(b, x, y) || lodeZone(b, p.home ? p.home.x : p.x, p.home ? p.home.y : p.y)) return false;
     if (regionAt(x, y) !== regionAt(p.home ? p.home.x : p.x, p.home ? p.home.y : p.y)) return false;
     if (x < 68 && y > 236 && y < 334) return false;                                   // behind the legend card
     var fs = b.fixtures;
@@ -812,7 +826,7 @@
   // draw n candidate edits from the legal set for the game `seed`
   var DIRS = [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]];
   function drawEdits(b, seed, n, salt) {
-    var out = [], pins = b.byKind.pin.filter(function (p) { return p.drift && !p.buried && p.id.indexOf('divcap.') !== 0 && p.id.indexOf('pail.') !== 0 && p.id.indexOf('powder.') !== 0; });
+    var out = [], pins = b.byKind.pin.filter(function (p) { return p.drift && !p.buried && !LODE_GUARD[p.id] && p.id.indexOf('divcap.') !== 0 && p.id.indexOf('pail.') !== 0 && p.id.indexOf('powder.') !== 0; });
     var tunnels = b.byKind.tunnel, shut = tunnels.filter(function (t) { return t.open === false; });
     var chutes = b.chutes || [], setN = chutes.filter(function (c) { return c.set; }).length;
     salt = salt | 0;

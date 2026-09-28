@@ -1218,7 +1218,7 @@
      * takes his cap off to that moon) goes and puts it straight, steps back,
      * and takes his cap off to it. On a night with a real full moon he turns
      * his back on the painted one and doffs his cap toward the window. */
-    var MOON_W = 2 * Math.PI / 1.15, MOON_TAU = 0.85, MOON_CROOK = 0.38;
+    var MOON_W = 2 * Math.PI / 1.15, MOON_TAU = 0.85, MOON_CROOK = 0.48;
     function moonPos() { var b = api.board(), m = null; (b.decor || []).forEach(function (d) { if (d.kind === 'moon') m = d; }); return m || { x: 262, y: 26 }; }
     function moonAngle(t) {
       var m = S.moon; if (!m) return 0;
@@ -1237,7 +1237,7 @@
       yield* goTo(k, 'surface', mo.x + 8);
       k.facing = -1; k.pose = P.lookMoon; yield 8;
       // up on his toes, a hand to the bottom of it, and it swings true
-      var a = moonAngle(now()), tip = { x: mo.x + Math.sin(a) * 5, y: mo.y - 5 + Math.cos(a) * 5 + 8 };
+      var a = moonAngle(now()), tip = { x: mo.x + Math.sin(a) * 6, y: mo.y - 6 + Math.cos(a) * 6 + 8 };
       k.pose = aim(k, P.oil, tip, 'R'); k.dy = -1; yield 3;
       S.moon = { t0: now(), from: moonAngle(now()), to: 0, v: -moonAngle(now()) * 1.4 };
       S.moonCrooked = false;
@@ -1398,7 +1398,8 @@
       k.pose = P.sitFloor; yield 4;
       for (var i = 0; i < 10; i++) {
         k.pose = P.doze; k.lampK = Math.max(0.3, 1 - i * 0.08);
-        if (i % 3 === 2) { emit(k, 'snore'); S.dust.push({ kind: 'zzz', x: k.x + 4, y: k.y - 26, t0: now() }); }
+        // (a Z off his face, the side away from the red fish by his feet)
+        if (i % 3 === 2) { emit(k, 'snore'); S.dust.push({ kind: 'zzz', x: k.x - 10, y: k.y - 25, t0: now() }); }
         yield 5;
       }
       // wakes with a start
@@ -1635,16 +1636,26 @@
       if (!k.hidden) {
         k.hidden = true; k.inDoor = d.id;
       }
-      // the door opens ~0.45 s before the marble arrives
-      var wakeAt = plan.at - 0.55, entry = opts.entry || {};
+      // the telegraph (wave 8): about 0.95 s before the marble arrives the
+      // door comes off its latch, and his lamp shows through the crack, a
+      // warm slot that brightens as he comes to it; at 0.55 s it swings open
+      // and he steps out. (Before, it was ajar for one frame: a hairline.)
+      var crackAt = plan.at - 0.95, wakeAt = plan.at - 0.55, entry = opts.entry || {}, cracked = false;
+      while (now() < crackAt - 1 / FPS) yield 1;
+      if (now() < wakeAt - 1 / FPS && canSteal(plan.m, { door: plan.door, who: k.who, lead: 0.5, horizon: 1.35 })) {
+        cracked = true; k.x = d.x; k.y = d.y;
+        doorOpen(d, 1); emit(k, 'door', { how: 'open' });
+      }
       while (now() < wakeAt - 1 / FPS) yield 1;
       // a last look before he shows himself: if another marble has knocked it
-      // off its line, he stays in the rock (no telegraph for a theft that can't be)
+      // off its line, he stays in the rock (the crack closes again: a door
+      // that opened on nothing) and no theft is counted
       var re = canSteal(plan.m, { door: plan.door, who: k.who, lead: 0.25, horizon: 0.9 });
-      if (!re) { entry.state = 'aborted'; k.busy = null; return; }
+      if (!re) { if (cracked) { doorOpen(d, 0); emit(k, 'door', { how: 'close' }); } entry.state = 'aborted'; k.busy = null; return; }
       re.door = plan.door; plan = re; entry.plan = re; entry.state = 'out';
       k.x = d.x; k.y = d.y;
-      doorOpen(d, 1); emit(k, 'door', { how: 'open' }); yield 1;
+      if (!cracked) { doorOpen(d, 1); emit(k, 'door', { how: 'open' }); }
+      yield 1;
       doorOpen(d, 2);
       var W0 = n.walks[d.w], x0 = clamp(d.x, W0.x0, W0.x1);
       k.at = { w: d.w, x: x0 }; k.x = x0; k.y = walkY(W0, x0);
@@ -1923,9 +1934,12 @@
       // the moon hanging crooked: Absalom goes and puts it straight (in ATTRACT,
       // once they've come round from playing dead, and it has stopped swinging)
       var ab = K[BY_WHO.tall];
+      // (a game, a glass tap or anything else that takes his script off him
+      // mid-repair: he isn't fixing it any more, and he'll go again next ATTRACT)
+      if (S.moonFixing && ab.gen !== S.moonFixGen) { S.moonFixing = false; S.moonFixGen = null; if (ab.act === 'fixMoon') ab.act = null; }
       if (S.moonCrooked && !S.moonFixing && S.mode === 'attract' && S.moon && t - S.moon.t0 > 2.6 && !stillFor(ab, t) && !ab.busy && ab.act !== 'fixMoon' && !ab.hidden) {
         ab.sit = false; ab.capOff = false; ab.tool2 = null; ab.tool = ab.own; ab.onLadder = false;
-        ab.lastAct = ab.act = 'fixMoon'; ab.gen = fixMoon(ab); ab.wait = 0;
+        ab.lastAct = ab.act = 'fixMoon'; ab.gen = S.moonFixGen = fixMoon(ab); ab.wait = 0; S.moonFixing = true;
       }
       if (S.moon && !S.moonCrooked && !S.moonFixing && t - S.moon.t0 > 6) S.moon = null;
       // the invitation cuts in on whatever the lantern man is pottering at
@@ -2249,6 +2263,9 @@
         var d = n.doors[id]; if (d.mouth) continue;
         var ds = S.doorState[id], open = ds ? ds.open : 0;
         props.push({ kind: 'door', x: d.x, y: d.y, open: open, face: d.kind === 'face' });
+        // (a lamp behind a door ajar shows through the crack; an open door
+        // glows warm inside; both are drawn under the figures: wave 8)
+        if (open === 1) props.push({ kind: 'doorcrack', x: d.x, y: d.y, t0: ds.t });
         if (open === 2) props.push({ kind: 'doorglow', x: d.x, y: d.y, k: 0.8 });
       }
       // beyond the working faces the rock has no floor: a plank runs out of
@@ -2282,7 +2299,7 @@
         else if (q.kind === 'crumb') props.push({ kind: 'crumb', x: q.x, y: q.y + Math.floor(age * FPS) * 3 });
         else if (q.kind === 'glint') { if (Math.floor(age * FPS) % 2 === 0) props.push({ kind: 'glint', x: q.x, y: q.y, big: q.big }); }
         else if (q.kind === 'drip') props.push({ kind: 'drip', x: q.x, y: q.y + Math.floor(age * FPS) * 2 });
-        else if (q.kind === 'zzz') props.push({ kind: 'zzz', x: q.x + Math.floor(age * FPS) % 2, y: q.y - Math.floor(age * FPS) });
+        else if (q.kind === 'zzz') props.push({ kind: 'zzz', x: q.x - (Math.floor(age * FPS) >> 2), y: q.y - Math.floor(age * FPS) });
         else if (q.kind === 'flying') {
           var fa = Math.floor(age * FPS) / FPS;
           if (q.plank) props.push({ kind: 'plank', x1: q.x + q.vx * fa - 5, y1: q.y + q.vy * fa + 300 * fa * fa, x2: q.x + q.vx * fa + 5, y2: q.y + q.vy * fa + 300 * fa * fa - 2 });

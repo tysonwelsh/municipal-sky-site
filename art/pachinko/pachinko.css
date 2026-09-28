@@ -41,6 +41,9 @@ html.pachinko-playing body {
 
 .pachinko-canvas {
     display: block;
+    /* (a Tab to the canvas scrolls it into view: clear of the site's fixed
+       banner, not under it) */
+    scroll-margin-top: var(--banner-h, 56px);
     touch-action: none;
     overscroll-behavior: none;
     image-rendering: crisp-edges;

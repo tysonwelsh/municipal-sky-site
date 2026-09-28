@@ -480,21 +480,43 @@
     var dk = view.fx && view.fx.dark, PB = root.PachinkoBoard; if (!dk || !PB) return false;
     return (dk[PB.regionAt(x, y)] || 0) >= 0.85;
   }
-  var keptSeen = {};
+  var keptSeen = {}, keptTags = { key: null, at: [] };
+  // where each kept marble's tag hangs: up and to the right on its thread if
+  // that's clear, otherwise the first place clear of every other number in
+  // the rock and of the other kept marbles and their tags (wave 8: the second
+  // one's 14 once hung right over the trilobite's 4, and read as Fig. 14)
+  function keptTagSpots(lost) {
+    var key = (A.tagGen ? A.tagGen() : 0) + '|' + lost.map(function (q) { return q.x + ',' + q.y; }).join(';');
+    if (keptTags.key === key) return keptTags.at;
+    var extra = lost.map(function (q) { return { x: q.x - 5, y: q.y - 5, w: 11, h: 11 }; }), at = [];
+    lost.forEach(function (q, i) {
+      var tw = A.textW(String(13 + i)) + 4, x = q.x, y = q.y, t = null;
+      var cands = [[5, -15], [-5 - tw, -15], [-(tw >> 1), -18], [7, -8], [-7 - tw, -8], [6, 5], [-6 - tw, 5], [-(tw >> 1), 8]];
+      if (A.tagSpot) t = A.tagSpot(x, y, tw, 7, cands, extra);
+      if (!t) t = { x: x + 5, y: y - 15, w: tw, h: 7 };
+      extra.push({ x: t.x, y: t.y, w: t.w, h: t.h, tag: true });
+      at.push(t);
+    });
+    keptTags = { key: key, at: at };
+    return at;
+  }
+  A.keptTag = function (i) { return keptTags.at[i] || null; };
   function drawKept(g, view, mis, layer) {
-    var t = view.t || 0;
+    var t = view.t || 0, spots = keptTagSpots(mis.lost || []);
     (mis.lost || []).forEach(function (q, i) {
       if (isDark(view, q.x, q.y)) { keptSeen[q.n] = null; return; }
       if (keptSeen[q.n] == null || t < keptSeen[q.n]) keptSeen[q.n] = t;      // (draw-side memory: when the light found it)
       var x = q.x, y = q.y, u = t - keptSeen[q.n];
       // the tag hangs higher than a bay card, on a thread (so "13" is a figure, not the jackpot)
-      var n = 13 + i, s2 = String(n), tw = A.textW(s2) + 4, sw = u < 1.2 ? Math.round(Math.sin(u * 11) * 2 * (1 - u / 1.2)) : 0, tx = x + 5 + sw, ty = y - 15;
+      var n = 13 + i, s2 = String(n), tw = A.textW(s2) + 4, sw = u < 1.2 ? Math.round(Math.sin(u * 11) * 2 * (1 - u / 1.2)) : 0, tx = spots[i].x + sw, ty = spots[i].y;
       if (layer === 'albedo') {
         // half sunk: the rock closed round it a little, a crack or two
         A.disc(g, x + 0.5, y + 0.5, 4.2, P.DEEP0);
         px(g, x + 4, y - 4, P.DEEP0); px(g, x + 5, y - 5, P.DEEP1); px(g, x - 5, y + 2, P.DEEP0);
         // the curator's tag, a card on a thread, in the spot's light
-        A.line(g, x + 2, y - 3, tx + (tw >> 1), ty + 6, '#8a7e68');
+        // (the thread runs from the marble's near side to the card's near edge)
+        var above = ty + 3 < y;
+        A.line(g, x + (tx + (tw >> 1) > x ? 2 : -2), y + (above ? -3 : 3), tx + (tw >> 1), above ? ty + 6 : ty, '#8a7e68');
         rect(g, tx, ty, tw, 7, P.PAPER_D); hline(g, tx, tx + tw - 1, ty + 6, P.PAPER_DD); hline(g, tx, tx + tw - 1, ty, '#cdbd8e');
         A.text(g, s2, tx + 2, ty + 1, P.INK);
       } else {
@@ -516,7 +538,8 @@
       var x = 12 + 84, y = C.lower.y0 + 6 + 3, str = '13 MARBLE, LOST', pen = function (i, col, row) { return A.hash01(505, i * 3 + col, row) < 0.12 ? null : (row + i) % 5 === 0 ? '#8a8a98' : '#5a5a6a'; };
       for (var i = 0; i < str.length; i++) A.text(g, str[i], x + i * 4, y + ((i * 7) % 3 === 0 ? 1 : 0), '#5a5a6a', 1, function (i2, col, row) { return pen(i, col, row); });
       // and a pencil stroke for every one it has kept since
-      var n = mis.lostN - 1, tx = x + str.length * 4 + 2;
+      // (a clear gap after LOST: a stroke tight against the T read as "LOST!": wave 8)
+      var n = mis.lostN - 1, tx = x + str.length * 4 + 4;
       for (var k = 0; k < Math.min(n, 9); k++) {
         if (k % 5 === 4) { for (var q = 0; q < 5; q++) px(g, tx + (k - 4) * 2 - 1 + q * 2, y + 4 - q, '#5a5a6a'); }
         else vline(g, tx + k * 2 + (k >= 5 ? 3 : 0), y + (k % 2), y + 4, '#5a5a6a');

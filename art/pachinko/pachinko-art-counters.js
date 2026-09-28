@@ -452,6 +452,8 @@
     var gl = fx.glows || [];
     for (var gi = 0; gi < gl.length; gi++) {
       var q = gl[gi], k0 = Math.max(0, Math.min(1, q.k)), X = Math.round(q.x), Y = Math.round(q.y), rr = 6;
+      // (a gallery whose lamps are out stays out: no bulb chase through the dark)
+      if (A.darkAt && A.darkAt(q.x, q.y) >= 0.85) continue;
       var halo = q.gold ? 'rgba(255,200,80,0.55)' : 'rgba(255,208,130,0.5)';
       for (var dy = -rr; dy <= rr; dy++) for (var dx = -rr; dx <= rr; dx++) {
         var dd = Math.sqrt(dx * dx + dy * dy) / rr;

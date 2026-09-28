@@ -83,7 +83,8 @@
 
   /* ══ the painter: shapes in his units, rasterised at pixel centres ══ */
   function Painter(W, H, ox, oy, s) {
-    var c = A.makeCanvas(W, H), g = c.getContext('2d');
+    // (read back twice, the light and the ink line: a CPU canvas, and no console noise)
+    var c = A.makeCanvas(W, H), g = c.getContext('2d', { willReadFrequently: true });
     var ang = 0, pvx = 0, pvy = 0, ca = 1, sa = 0, tx = 0, ty = 0;
     function rot(a, x, y) { ang = a || 0; pvx = x || 0; pvy = y || 0; ca = Math.cos(ang); sa = Math.sin(ang); }
     function shift(x, y) { tx = x || 0; ty = y || 0; }
@@ -542,16 +543,16 @@
     var mx = Math.round(mo.x), my = Math.round(mo.y), E = S.ellipse, px = S.px;
     E(g, mx, my, MOON_R, MOON_R, '#8e8470'); E(g, mx, my, MOON_R - 1, MOON_R - 1, '#a89e86');
     for (var i = 0; i < 40; i++) { var q = i / 40 * Math.PI * 2; if (i % 9 === 4) continue; px(g, Math.round(mx + Math.cos(q) * (MOON_R - 0.4)), Math.round(my + Math.sin(q) * (MOON_R - 0.4)), '#6e6656'); }
-    px(g, mx - 1, my - 5, '#6e6656'); px(g, mx + 1, my - 5, '#6e6656'); px(g, mx, my - 6, '#6e6656'); px(g, mx, my - 4, '#6e6656');   // where the nail goes, marked
-    // the disc, turned about the nail
-    var nx = mx, ny = my - 5, ca = Math.cos(a), sa = Math.sin(a);
-    var cx = Math.round(nx + sa * 5), cy = Math.round(ny + ca * 5);
+    px(g, mx - 1, my - 6, '#6e6656'); px(g, mx + 1, my - 6, '#6e6656'); px(g, mx, my - 7, '#6e6656'); px(g, mx, my - 5, '#6e6656');   // where the nail goes, marked
+    // the disc, turned about the nail (near its top edge: a crooked moon hangs well off true)
+    var nx = mx, ny = my - 6, ca = Math.cos(a), sa = Math.sin(a);
+    var cx = Math.round(nx + sa * 6), cy = Math.round(ny + ca * 6);
     function R(dx, dy) { return [Math.round(cx + dx * ca + dy * sa), Math.round(cy - dx * sa + dy * ca)]; }
     E(g, cx + 1, cy + 1, MOON_R, MOON_R, 'rgba(10,6,22,0.55)');             // a card's thickness off the board
     E(g, cx, cy, MOON_R, MOON_R, '#fff6d4'); E(g, cx, cy, MOON_R - 1, MOON_R - 1, P.MOONP);
     var sh = R(1, 1); E(g, sh[0], sh[1], 6, 6, '#eedc9e');
-    var c1 = R(-3, -2), c2 = R(3, 3), c3 = R(4, -4);
-    E(g, c1[0], c1[1], 2, 2, '#e2cc8a'); E(g, c2[0], c2[1], 2, 1, '#e2cc8a'); px(g, c3[0], c3[1], '#e2cc8a');
+    // its seas, turned with it (the same as the painted one's: A.MOON_SEAS)
+    (A.MOON_SEAS || []).forEach(function (q) { var c = R(q[0], q[1]); if (q[2]) E(g, c[0], c[1], q[2], q[3], q[4]); else px(g, c[0], c[1], q[4]); });
     px(g, nx, ny, P.BRASS4); px(g, nx + 1, ny + 1, P.BRASS1);                     // the nail
   }
 

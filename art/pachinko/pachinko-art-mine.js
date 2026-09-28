@@ -129,7 +129,9 @@
     ellipse(g, mx, my, 8, 8, '#fff6d4');
     ellipse(g, mx, my, 7, 7, P.MOONP);
     ellipse(g, mx + 1, my + 1, 6, 6, '#eedc9e');
-    ellipse(g, mx - 3, my - 2, 2, 2, '#e2cc8a'); ellipse(g, mx + 3, my + 3, 2, 1, '#e2cc8a'); px(g, mx + 4, my - 4, '#e2cc8a');
+    // its seas, painted the same on the cut-out (pachinko-art-secrets.js
+    // MOON_SEAS): lopsided on purpose, so a crooked moon looks crooked
+    A.MOON_SEAS.forEach(function (q) { if (q[2]) ellipse(g, mx + q[0], my + q[1], q[2], q[3], q[4]); else px(g, mx + q[0], my + q[1], q[4]); });
     // ridges: the far one blue, fog pooled in the hollows, nearer ones darker
     ridge(g, 46, P.RIDGE4, P.RIDGE3, 0.8, 1, 0.3);
     for (x = 0; x < GW; x++) for (y = 50; y < 58; y++) if (bayer(x, y) < 0.4 - (y - 50) * 0.045) px(g, x, y, P.FOG);
@@ -867,19 +869,6 @@
     // the rest of the wall, the cut face shows bricks in section
     for (var yy = y; yy < y + 18; yy++) px(g, x + 32 + (yy % 3 === 0 ? 1 : 0), yy, '#6e3e30');
   }
-  function plaque(g, x, y) {
-    // the company plaque: THIS SEAM OPENED BY THE ▓▓▓▓ COAL & LAND CO.
-    rect(g, x, y, 40, 11, P.BRASS1); rect(g, x + 1, y + 1, 38, 9, P.BRASS2);
-    hline(g, x + 1, x + 38, y + 1, P.BRASS3);
-    A.text(g, 'COAL&LAND', x + 3, y + 3, P.BRASS0);
-    // ...the name was here: gouged, many times, by different tools
-    for (var i = 0; i < 16; i++) {
-      var sx = x + 2 + ((i * 7) % 36), sy = y + 2 + (i % 3) * 2;
-      line(g, sx, sy, sx + 3 + (i % 3), sy + 1 + (i % 2), i % 2 ? P.BRASS4 : P.BRASS0);
-    }
-    px(g, x + 1, y + 1, P.IRON1); px(g, x + 38, y + 9, P.IRON1); // screws
-    px(g, x + 38, y + 1, P.IRON1); px(g, x + 1, y + 9, P.IRON1);
-  }
   function ratCrack(g, x, y) {
     // a crack at the foot of the rock, black, the kind something lives in
     var pts = [[0, 0], [1, -1], [2, -1], [3, -2], [4, -2], [5, -3], [6, -3], [7, -4]];
@@ -1027,8 +1016,20 @@
     rect(g, x, y, w, h, P.BRASS1); rect(g, x + 1, y + 1, w - 2, h - 2, P.BRASS3);
     hline(g, x + 1, x + w - 2, y + 1, P.BRASS4); vline(g, x + 1, y + 1, y + h - 2, P.BRASS4);
     hline(g, x + 1, x + w - 2, y + h - 2, P.BRASS2); vline(g, x + w - 2, y + 2, y + h - 2, P.BRASS2);
-    // the name: typed in once, then gouged many times by different tools
-    A.text(g, 'HOLLISTER', x + 4, y + 3, P.BRASS1);
+    // the name: cast in once, then gouged many times by different tools.
+    // What's left under the gouges is debris of letters (a stem, a bowl's
+    // shoulder, half a crossbar), seeded strokes in nine letter cells: no name
+    // was ever set here, so there is none to find (WORLD.md: never legible)
+    var STROKES = [[[0, 0], [0, 1], [0, 2], [0, 3], [0, 4]], [[2, 0], [2, 1], [2, 2], [2, 3], [2, 4]], [[0, 0], [1, 0], [2, 0]],
+      [[0, 2], [1, 2], [2, 2]], [[0, 4], [1, 4], [2, 4]], [[0, 0], [1, 1], [1, 2], [2, 3], [2, 4]], [[2, 0], [1, 1], [1, 2], [0, 3], [0, 4]],
+      [[1, 0], [0, 1], [0, 2], [0, 3], [1, 4]], [[1, 0], [2, 1], [2, 2], [1, 2]]];
+    for (var cell = 0; cell < 9; cell++) {
+      var cx0 = x + 4 + cell * 4, cy0 = y + 3, n0 = 1 + (A.hash01(313, cell, 1) < 0.6 ? 1 : 0);
+      for (var sk = 0; sk < n0; sk++) {
+        var st = STROKES[Math.floor(A.hash01(313, cell, 2 + sk) * STROKES.length)];
+        for (var sp = 0; sp < st.length; sp++) if (A.hash01(313, cell * 16 + sk * 5 + sp, 9) > 0.3) px(g, cx0 + st[sp][0], cy0 + st[sp][1], P.BRASS1);
+      }
+    }
     for (var i = 0; i < 22; i++) {
       var sx = x + 3 + ((i * 7) % 36), sy = y + 3 + (i % 3) * 2;
       A.line(g, sx, sy, sx + 2 + (i % 3), sy + 1 + (i % 2), i % 3 ? P.BRASS0 : P.BRASS4);
@@ -1278,8 +1279,9 @@
   function staticLayers(board) {
     var key = staticKey(board);
     if (STATIC.key === key) return STATIC;
+    // (the under layer is read back once, by paintSection; makeLayer made its context already)
     var U = makeLayer(), O = makeLayer();
-    var g = U.c.getContext('2d', { willReadFrequently: true });
+    var g = U.g;
     var gals = galleries(board);
     paintBackdrop(g, board);
     var em = paintTrainAndTown(g);
@@ -1381,9 +1383,16 @@
     });
     specs.forEach(function (s) {
       var b = SPECBOX[s.what] || [10, 10], hw = b[0] >> 1, hh = b[1] >> 1;
-      var w = A.textW(String(s.fig)) + 4, t = placeTag(pins, taken, s.x, s.y, w, 7, tagCands(hw, hh, w));
+      // (the red fish's tag hangs to its left: when it's warmed it stiffens
+      // and swings to point right and a little up, down the back hall, and it
+      // mustn't run into its own number: wave 8)
+      var cands = s.what === 'fish' ? [[-hw - 2 - w, -hh - 4], [-hw - 3 - w, -3], [-hw - 2 - w, hh - 3], [-(w >> 1) - 6, -hh - 9], [-(w >> 1), hh + 2]] : tagCands(hw, hh, w);
+      var w = A.textW(String(s.fig)) + 4, t = placeTag(pins, taken, s.x, s.y, w, 7, cands);
       if (t) { figTag(g, s.fig, t, s.x + Math.max(-hw, Math.min(hw, t.x + (w >> 1) - s.x)), s.y + Math.max(-hh, Math.min(hh, t.y + 3 - s.y))); tagAt[s.fig] = t; }
     });
+    // (what the tags have taken, for anything tagged later: a marble the
+    // dark kept gets its own card, clear of every other number in the rock)
+    TAGS = { gen: TAGS.gen + 1, pins: pins.map(function (p) { return { x: p.x, y: p.y }; }), taken: taken.slice() };
     // pins last, into the foreground layer (lit with a floor: they stand
     // proud of the rock, toward the glass, and must always read)
     var pinOut = pins.map(function (p) { return drawPin(g, fg, p); });
@@ -1405,5 +1414,31 @@
       watch: out.watch, ring: out.ring, moth: out.moth, rat: out.rat
     };
   };
+  // a tag for something tagged after the mine was painted (the kept marbles):
+  // the best of `cands` (offsets from ax, ay) clear of every marker, figure
+  // tag, specimen, the legend card and `extra` rects, and as far from the pins
+  // as it can be. A.tagGen() changes whenever the mine is repainted.
+  var TAGS = { gen: 0, pins: [], taken: [] };
+  // (never over another number: a tag or marker costs far more than a
+  // specimen's footprint when nothing is clear; clear of the pins by up to
+  // 6 px, then the earliest candidate)
+  A.tagSpot = function (ax, ay, w, h, cands, extra) {
+    var tk = TAGS.taken.concat(extra || []), pins = TAGS.pins, best = null, bs = -1e9;
+    for (var i = 0; i < cands.length; i++) {
+      var x = Math.round(ax + cands[i][0]), y = Math.round(ay + cands[i][1]);
+      if (x < 2 || y < 66 || x + w > GW - 2 || y + h > 384) continue;
+      var s = 6;
+      for (var k = 0; k < pins.length; k++) {
+        var dx = Math.max(x - pins[k].x, 0, pins[k].x - (x + w)), dy = Math.max(y - pins[k].y, 0, pins[k].y - (y + h));
+        s = Math.min(s, Math.hypot(dx, dy));
+      }
+      for (k = 0; k < tk.length; k++) { var T = tk[k]; if (x < T.x + T.w + 2 && x + w + 2 > T.x && y < T.y + T.h + 2 && y + h + 2 > T.y) s = Math.min(s, T.h === 7 || T.tag ? -100 : -10); }
+      s -= i * 0.4;
+      if (s > bs) { bs = s; best = { x: x, y: y, w: w, h: h }; }
+    }
+    return best;
+  };
+  A.tagGen = function () { return TAGS.gen; };
+  A.tagsTaken = function () { return TAGS.taken.slice(); };          // (the lab's overlap check)
   A.GW = GW; A.GH = GH; A.SURF = SURF;
 })(typeof window !== 'undefined' ? window : globalThis);

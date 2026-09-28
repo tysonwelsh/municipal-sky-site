@@ -152,8 +152,10 @@
     var e = sprite(fig);
     if (!thin) return e.shd;
     if (!e.thin) {
-      var c = A.makeCanvas(SZ, SZ), g = c.getContext('2d');
-      var im = e.spr.getContext('2d').getImageData(0, 0, SZ, SZ), d = im.data, o = A.rgb(OUT);
+      // (read from a copy: the sprite itself is read back once only, at its outline)
+      var c = A.makeCanvas(SZ, SZ), g = c.getContext('2d', { willReadFrequently: true });
+      g.drawImage(e.spr, 0, 0);
+      var im = g.getImageData(0, 0, SZ, SZ), d = im.data, o = A.rgb(OUT);
       for (var i = 0; i < d.length; i += 4) {
         if (d[i + 3] && !(d[i] === o[0] && d[i + 1] === o[1] && d[i + 2] === o[2])) { d[i] = 58; d[i + 1] = 34; d[i + 2] = 16; d[i + 3] = 255; }
         else d[i + 3] = 0;
@@ -699,12 +701,12 @@
       var q = props[i];
       if ((q.layer || LAYER[q.kind] || 'back') !== layer) continue;
       // lamps out: nothing glows in a dark section (the renderer's soft dark)
-      if (layer === 'glow' && A.darkAt && A.darkAt(q.x, q.y) >= 0.85) continue;
+      if ((layer === 'glow' || layer === 'lit') && A.darkAt && A.darkAt(q.x, q.y) >= 0.85) continue;
       var fn = PROP[q.kind]; if (fn) fn(g, q, t);
     }
   }
   var LAYER = { ladder: 'back', rope: 'back', door: 'back', plank: 'back', pail: 'back', coil: 'back', pin: 'front', dust: 'front', crumb: 'front', glint: 'glow',
-    glow: 'glow', doorglow: 'glow', zzz: 'glow', halo: 'glow', drip: 'front' };
+    glow: 'glow', doorglow: 'lit', doorcrack: 'lit', zzz: 'glow', halo: 'glow', drip: 'front' };
   var PROP = {
     // a wooden ladder (fixed in a raise or propped up): stiles and rungs, its
     // shadow on the rock behind
@@ -760,8 +762,9 @@
         return;
       }
       if (q.open === 1) {
-        // ajar: a black slit, the door swung out on its hinge
-        arch(function (X, Y, xx) { if (xx >= hw - 1) px(g, X, Y, P.VOID0); });
+        // ajar: a 3-px gap on the latch side (lit from behind, doorcrack),
+        // the door swung out on its hinge
+        arch(function (X, Y, xx) { if (xx >= hw - 2) px(g, X, Y, P.VOID0); });
         rect(g, x - hw - 1, y - h, 2, h, P.TIM1); px(g, x - hw - 1, y - h, P.TIM2);
         return;
       }
@@ -774,6 +777,21 @@
       rect(g, x - hw - 1, y, w + 2, 1, P.TIM3); px(g, x - hw - 1, y, P.END);
       // the door itself, swung back flat against the rock
       rect(g, x - hw - 3, y - h + 2, 2, h - 2, P.TIM1); px(g, x - hw - 3, y - h + 2, P.TIM2); px(g, x - hw - 2, y - 5, '#6a4a2a');
+    },
+    // a door ajar with a lamp behind it: the crack on its latch side lit
+    // warm, brightening as the lamp comes up to it (the thief's telegraph)
+    doorcrack: function (g, q, t) {
+      var x = Math.round(q.x), y = Math.round(q.y), w = 7, h = 11, hw = (w - 1) / 2;
+      var u = Math.max(0, Math.min(1, (t - (q.t0 || 0)) / 0.4)), k = 0.35 + 0.65 * u * u;
+      for (var yy = 1; yy < h; yy++) for (var xx = hw - 2; xx <= hw; xx++) {
+        var ay = h - 1 - yy, inside = ay < h - hw - 1 ? true : (xx * xx + (ay - (h - hw - 1)) * (ay - (h - hw - 1)) <= hw * hw + 0.5);
+        if (!inside) continue;
+        // hottest in the middle of the gap at the lamp's height, dimmer at the sill and the arch
+        var mid = 1 - Math.abs(yy - 5) / 6, core = xx === hw - 1 ? 1 : 0.75, v = k * core * (0.55 + 0.45 * mid);
+        px(g, x + xx, y - 1 - yy, v > 0.8 ? P.FLAME1 : v > 0.55 ? P.LAMP : v > 0.35 ? P.FLAME0 : '#5a2e10');
+      }
+      // the light spills out onto the sill
+      if (u > 0.3) { px(g, x + hw - 1, y, P.FLAME0); px(g, x + hw, y, '#5a2e10'); }
     },
     doorglow: function (g, q) {
       var x = Math.round(q.x), y = Math.round(q.y), k = q.k == null ? 1 : q.k;
@@ -838,9 +856,13 @@
     },
     zzz: function (g, q) {
       var x = Math.round(q.x), y = Math.round(q.y);
-      // a small z (3 × 3, never the font's z, which is a 2 on a tag)
-      var zc = 'rgba(216,204,240,0.8)';
-      px(g, x, y, zc); px(g, x + 1, y, zc); px(g, x + 2, y, zc); px(g, x + 1, y + 1, zc); px(g, x, y + 2, zc); px(g, x + 1, y + 2, zc); px(g, x + 2, y + 2, zc);
+      // a cartoon Z, 4 × 4 with its diagonal (never the font's z, which is a
+      // 2 on a tag, nor a 3 × 3 one, which read as an I: wave 8), on a hair
+      // of shadow so it reads on lit rock as well as dark
+      var zc = 'rgba(224,214,248,0.9)', sh = 'rgba(10,8,16,0.55)';
+      var Z = [[0, 0], [1, 0], [2, 0], [3, 0], [2, 1], [1, 2], [0, 3], [1, 3], [2, 3], [3, 3]];
+      for (var i = 0; i < Z.length; i++) px(g, x + Z[i][0] + 1, y + Z[i][1] + 1, sh);
+      for (i = 0; i < Z.length; i++) px(g, x + Z[i][0], y + Z[i][1], zc);
     }
   };
   var PIN_PAL = {

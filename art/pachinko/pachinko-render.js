@@ -336,6 +336,8 @@
     for (i = 0; i < pr.length; i++) {
       var q = pr[i];
       if (q.kind === 'door' && q.open === 2) { L = lampRec(); L.x = q.x; L.y = q.y - 5; L.r = 22; setColour(L, P.LAMP); L.k = 0.95; L.haze = 0.8; L.dark = true; }
+      // a door ajar: his lamp through the crack throws a thin light on the rock, growing
+      if (q.kind === 'doorcrack') { var cu = Math.max(0, Math.min(1, (t - (q.t0 || 0)) / 0.4)); L = lampRec(); L.x = q.x + 2; L.y = q.y - 5; L.r = 10 + 6 * cu; setColour(L, P.LAMP); L.k = 0.3 + 0.45 * cu; L.haze = 0.5; L.dark = true; }
     }
     for (i = 0; i < figs.length; i++) if (figs[i].hold && figs[i].lamp !== false) {
       // the thief with the marble in his hands: his lamp burns full
@@ -957,6 +959,9 @@
     // the lode's fracture opens in the lit rock (under the toys and the pins:
     // a pin is never drawn anywhere but where it is)
     mischief(sg, view, 'crack');
+    // (lights that belong behind the toys: a door's warm inside, a lamp
+    // through a door ajar; emissive, but under the figures: wave 8)
+    if (A.drawProps) A.drawProps(sg, view, 'lit');
     // c. the figures, each lit whole by the light at his chest
     drawFigures(sg, figs);
     // d. the foreground (pins, markers, bay boards, what's in their hands),
@@ -1022,9 +1027,10 @@
     if (A.drawMachine) A.drawMachine(ctx, view);
     mischief(ctx, view, 'cabinet');
     secrets(ctx, view, 'cabinet');
-    // the attendant pencils the crew's alterations on the legend card
-    var nAlt = (view.fx && view.fx.alterations || []).length;
-    if (nAlt > 0 && C.legend) { var LL = C.legend; A.text(ctx, 'ALT ' + nAlt, LL.x + LL.w - 21, LL.y + 4, '#5a5a6a', 1, function (i2, col, row) { return A.hash01(611, i2 * 3 + col, row) < 0.1 ? null : '#5a5a6a'; }); }
+    // (the attendant's "ALT n" pencil mark on the legend card is gone, wave
+    // 8: its worn pencil read "0L7 1"; the chalk spot on every alteration and
+    // the dotted line from a moved pin's old place say it in the museum's own
+    // language)
   }
   // mischief and the mother lode (pachinko-art-mischief.js, wave 4): a
   // failure there costs its layer for the frame, never the whole view

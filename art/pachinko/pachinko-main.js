@@ -153,6 +153,8 @@
   // qualifies has it with KNOCK_P; it waits KNOCK_AFTER for the quiet after the
   // last marble and gives up (for another game) if it isn't quiet by KNOCK_WAIT
   var KNOCK_P = 0.5, KNOCK_AFTER = 0.75, KNOCK_WAIT = 3.0, KNOCK_BEAT = 0.6;
+  // the shift whistle's full show, at most once in this many seconds
+  var WHISTLE_REST = 4.0;
 
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
   function smooth(u) { return u * u * (3 - 2 * u); }
@@ -255,6 +257,7 @@
       lastDropT: null, hintOn: false, credited: 0, owed: null, alts: [], playT0: null, diveDur: DIVE_T, near: {}, drift: {}, outAt: {}
     };
     var hopper = { x: 160, from: 160, to: 160, g0: -1, dur: 0, gliding: false, loaded: true, reloadAt: 0, queue: null, tickX: 160, speed: 0 };
+    var whistleT = -99;       // the last shift whistle's full show
     var tally = { value: 0, shown: 0, nextAt: 0, rollT0: -1, dir: 1, prev: 0 };
     var trails = {};
 
@@ -542,7 +545,13 @@
         bag[e.id] = { t0: simT, value: e.value };
         if (e.type === 'slot' && e.value >= 13) { win(e.value, 'lode', e); startLode(e); }
         else win(e.value, e.type, e);
-        if (e.type === 'pocket') emit({ type: 'whistle', id: e.id, value: e.value });
+        // the shift whistle's full show (the banksman's bells, the cage down
+        // the shaft, the steam, the bulbs chasing down every gallery) at most
+        // once every WHISTLE_REST s, and never over a lode: a catch inside
+        // the window gets its plink, its light and its hop. It's meant to
+        // rhyme with the distant train, and a rhyme heard five times a game
+        // stops rhyming (wave 8)
+        if (e.type === 'pocket' && simT - whistleT >= WHISTLE_REST && !game.lode) { whistleT = simT; emit({ type: 'whistle', id: e.id, value: e.value }); }
       } else if (e.type === 'award') {
         var cb = view.fx.awards || (view.fx.awards = {});
         cb[e.id] = { t0: simT, value: e.value };
@@ -856,6 +865,9 @@
     var MQ = (R && root.PachinkoArt && root.PachinkoArt.CAB && root.PachinkoArt.CAB.marquee) || { y0: 20, y1: 66 };
     var PANEL_Y = 494;                         // the lower panel's top rim (the figures card, the plates below it)
     var FRAC_MIN = 1.35;                       // the least a fractional PLAY scale may be (orchestrator's ruling)
+    var FRAC_MIN_A = 1.2;                      // …and a fractional ATTRACT scale (wave 8: below it, the uneven pixel buys too little)
+    // a fractional nearest-neighbour scale, on a 1/16 grid (so a crop can land on whole device pixels)
+    function frac(f) { return Math.floor(f * 16) / 16; }
     function fit() {
       var dpr = root.devicePixelRatio || 1;
       var w = Math.max(1, Math.round(container.clientWidth * dpr)), h = Math.max(1, Math.round(container.clientHeight * dpr));
@@ -865,14 +877,21 @@
       fitKey = key; devW = w; devH = h;
       canvas.width = devW; canvas.height = devH;
       canvas.style.width = (devW / dpr) + 'px'; canvas.style.height = (devH / dpr) + 'px';
-      sA = Math.max(1, Math.floor(Math.min(devW / G.CAB_W, devH / G.CAB_H)));
+      // Whole scales wherever they're 2 or more. Where the whole scale would
+      // be 1 (most ordinary screens: 1920 × 1080, 1680 × 1050, 1536 × 864 at
+      // 1.25, 1440 × 900, 1366 × 768), the machine would greet you at one
+      // device pixel per cabinet pixel, 376 × 560 in a room several times its
+      // size, its museum type 3 px tall; so there (only) it takes a fractional
+      // nearest-neighbour scale, as big as fits: readability over pixel purity
+      // at 1× (orchestrator's ruling for the owner, wave 5c for PLAY and wave 8
+      // for ATTRACT). The dive still pushes in to PLAY's scale.
+      var fitA = Math.min(devW / G.CAB_W, devH / G.CAB_H);
+      sA = Math.max(1, Math.floor(fitA));
+      if (sA === 1 && fitA >= FRAC_MIN_A) sA = frac(fitA);
       var fitP = Math.min(devW / G.PLAY_RECT.w, devH / G.PLAY_RECT.h);
-      sP = Math.max(sA, Math.floor(fitP));
-      // a common 1× laptop (1366 × 768, 1280 × 720) would never dive: the glass
-      // stays a postage stamp at 1:1. There (only), PLAY takes a fractional
-      // nearest-neighbour scale: a slightly uneven pixel beats no dive
-      // (orchestrator's ruling, wave 5c). Everywhere else, integers.
-      if (sP === 1 && fitP >= FRAC_MIN) sP = Math.floor(fitP * 16) / 16;
+      sP = Math.floor(fitP);
+      if (sP < 2) sP = fitP >= FRAC_MIN ? frac(fitP) : 1;
+      sP = Math.max(sA, sP);
       ctx.imageSmoothingEnabled = false;
       carpetCache = null;
       if (booted) render();
@@ -926,21 +945,51 @@
       if (e === 0 || e === 1) {  // at rest: land the crop on whole device pixels
         c.x = Math.round(c.x * s) / s; c.y = Math.round(c.y * s) / s;
       }
-      // the mother lode: the camera steps back to take in the marquee too
-      // (view.fx.camOut 0..1, eased by the part). It holds its climax for
-      // two seconds, so it lands on a whole scale (a crisp pixel), and eases
-      // between the two whole scales on the way (visual critic, wave 5)
+      // the mother lode: the camera steps back to take in the marquee going
+      // wild (view.fx.camOut 0..1, eased by the part). It holds its climax for
+      // two seconds, so it lands on a crisp scale, and eases between the two
+      // on the way (visual critic, wave 5). Where marquee and glass already
+      // fit at the play scale (1080p, 1536 × 864, 1280 × 800 @2) it pans at
+      // equal scale; it never steps back below the fractional floor (1366:
+      // 1.625 → 1.5, not 1:1); and its crop keeps the rules the dive keeps,
+      // the marquee whole and the figures card whole or none (wave 8: on the
+      // 1440 × 900 Retina it used to end at cabinet y 535, through the type)
       var co = e === 1 && view.fx ? view.fx.camOut || 0 : 0;
       if (co > 0) {
-        var top = MQ.y0 - 3, bot = PR.y + PR.h, s2 = Math.max(1, Math.floor(Math.min(devH / (bot - top), devW / (PR.w + 16))));
-        if (s2 < c.s) {
-          var sC = co >= 1 ? s2 : Math.exp(Math.log(c.s) + (Math.log(s2) - Math.log(c.s)) * co), w2 = devW / sC, h2 = devH / sC;
-          var cyC = c.y + c.h / 2, cy2 = cyC + ((top + bot) / 2 - cyC) * co, cx2 = c.x + c.w / 2;
+        var L = lodeFrame();
+        if (L) {
+          var sC = co >= 1 || L.s === c.s ? L.s : Math.exp(Math.log(c.s) + (Math.log(L.s) - Math.log(c.s)) * co), w2 = devW / sC, h2 = devH / sC;
+          var cyC = c.y + c.h / 2, cy2 = cyC + (L.cy - cyC) * co, cx2 = c.x + c.w / 2;
           c = { k: 1, s: sC, x: cx2 - w2 / 2, y: cy2 - h2 / 2, w: w2, h: h2, out: co };
           if (co >= 1) { c.x = Math.round(c.x * sC) / sC; c.y = Math.round(c.y * sC) / sC; c.rest = true; }
         }
       }
       return c;
+    }
+    // the lode's climax: the scale (whole if it can be 2 or more, else a
+    // fractional one no smaller than FRAC_MIN, never above the play scale)
+    // at which the marquee and the glass both fit, and the crop's centre
+    // (nearest to centring them that keeps the marquee whole and the lower
+    // panel whole or none). Null: too small a screen to show both (it holds
+    // the play framing).
+    function lodeFrame() {
+      var PR = G.PLAY_RECT, top = MQ.y0 - 3, bot = PR.y + PR.h;
+      var fitM = Math.min(devH / (bot - top), devW / (PR.w + 16)), s2 = Math.floor(fitM);
+      if (s2 < 2) s2 = fitM >= FRAC_MIN ? frac(fitM) : 0;
+      s2 = Math.min(s2, sP);
+      if (!s2) return null;
+      var h2 = devH / s2, c0 = (top + bot) / 2 - h2 / 2, best = null;
+      function ok(t) {
+        var b = t + h2;
+        if (t > MQ.y0 - 2 + 0.01 || b < bot - 0.01) return false;                 // the marquee and the glass, whole
+        if (b > PANEL_Y + 0.01 && b < G.CAB_H - 0.01) return false;               // the lower panel, whole or none
+        return true;
+      }
+      [c0, PANEL_Y - h2, G.CAB_H - h2, G.CAB_H / 2 - h2 / 2, MQ.y0 - 2].forEach(function (t) {
+        if (ok(t) && (best == null || Math.abs(t - c0) < Math.abs(best - c0))) best = t;
+      });
+      if (best == null) return null;
+      return { s: s2, cy: best + h2 / 2 };
     }
 
     /* ── input ───────────────────────────────────────────────────── */
@@ -993,7 +1042,7 @@
     function pointerDown(p, kind) {
       if (game.mode === 'attract') {
         if (onCoin(p) || onLedgeTokens(p)) { insertCoin(); return 'coin'; }
-        if (inGlass(p, 0, 0, 0)) { holdStart(p); tapGlass(p); return 'tap'; }
+        if (inGlass(p, 0, 0, 0)) return holdStart(p) ? 'hold' : (tapGlass(p), 'tap');
         return 'none';
       }
       if (game.mode === 'play' || game.mode === 'dive') {
@@ -1009,7 +1058,7 @@
       if (game.mode === 'payout' && game.payout) { game.payout.fast = true; return 'fast'; }
       if (game.mode === 'work') {
         if (onCoin(p)) { insertCoin(); return 'coin'; }
-        if (inGlass(p, 0, 0, 0)) { holdStart(p); tapGlass(p); return 'tap'; }
+        if (inGlass(p, 0, 0, 0)) return holdStart(p) ? 'hold' : (tapGlass(p), 'tap');
       }
       return 'none';
     }
@@ -1055,18 +1104,26 @@
     // EGGS.md #4: a finger held on the glass over the red fish (Fig. 12)
     var FISH = { x: 193, y: 288 };
     function onFish(p) { var gx = p.x - G.GLASS_X, gy = p.y - G.GLASS_Y; return Math.hypot(gx - FISH.x, (gy - FISH.y) * 1.3) <= FISH_R; }
+    // (a press on the fish isn't a tap until it's let go: if it was let go
+    // before the fish warmed, it was a tap after all, and the glass gets its
+    // usual answer; if the fish warmed, nobody plays dead or points across it
+    // while it swings round: wave 8)
     function holdStart(p) {
-      if (!EGGS.fortuneFish || !(game.mode === 'attract' || game.mode === 'work') || !onFish(p)) return;
-      visit.fishHold = { t0: simT };
+      if (!EGGS.fortuneFish || !(game.mode === 'attract' || game.mode === 'work') || !onFish(p)) return false;
+      visit.fishHold = { t0: simT, p: p, warmed: false };
+      return true;
     }
     function holdEnd() {
-      if (!visit.fishHold) return;
+      var h = visit.fishHold;
+      if (!h) return;
       visit.fishHold = null;
-      if (visit.fish && visit.fish.rel == null) { visit.fish.rel = simT; emit({ type: 'fish', what: 'cool' }); }
+      if (h.warmed) { if (visit.fish && visit.fish.rel == null) { visit.fish.rel = simT; emit({ type: 'fish', what: 'cool' }); } }
+      else if (game.mode === 'attract' || game.mode === 'work') tapGlass(h.p);
     }
     function stepFish() {
       var h = visit.fishHold;
       if (h && !visit.fish && simT - h.t0 >= FISH_HOLD) {
+        h.warmed = true;
         visit.fish = { t0: simT, rel: null };
         emit({ type: 'fish', what: 'warm' });
         if (A) A.flags.set('pachinko.the-fish-pointed');
@@ -1149,10 +1206,8 @@
       // drop spent entries
       ['bays', 'pockets', 'awards'].forEach(function (k) { var b = fx[k]; if (b) for (var id in b) if (t - b[id].t0 > 2.5) delete b[id]; });
       var lamps = [], lights = {}, glows = [];
-      // the shift whistle: after a pocket catch the galleries light in sequence
-      var pk = fx.pockets, lastPocket = -10;
-      if (pk) for (var pid in pk) lastPocket = Math.max(lastPocket, pk[pid].t0);
-      var ws = t - lastPocket;
+      // the shift whistle: when it blows, the galleries light in sequence
+      var pk = fx.pockets, ws = t - whistleT;
       if (ws < 1.6) {
         // …as a chase of warm light along each gallery floor, the haulage way
         // first and then on down the mine, like the company's bulbs coming on
