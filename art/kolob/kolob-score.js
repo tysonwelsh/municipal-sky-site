@@ -344,6 +344,11 @@ window.KOLOB.Score = (function () {
     "motif-answer":        { voice: "str", from: "str" },
     "motif-disperse":      { name: "str" },
     "motif-shadow":        { voice: "str", name: "str" },
+    // the pre-v0.34 polish: the house lets go when a guest enters (each note
+    // released, as written and as heard: {layer, freq, startTime, duration,
+    // until}); and the prelude's seating, drawn per Sunday
+    "house-lets-go":       { guest: "str", at: "num", until: "num", layers: "arr", released: "arr", logged: "bool" },
+    "prelude-seating":     { n: "int", seating: "str", at: "obj" },
   };
   var KINDS = {
     int: isInt, num: isNum, str: isStr, bool: isBool, obj: isObj, arr: Array.isArray,

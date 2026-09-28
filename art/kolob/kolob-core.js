@@ -353,6 +353,7 @@ window.KolobAudio = (function () {
   // the page may not show (a visitor's notes name it: guest, logged).
   var noteListeners = [], eventListeners = [];
   function emitNote(layer, freq, startTime, duration, extra) {
+    if (HOUSE[layer] && !auditioning && duration > 0) heldByHouse(layer, freq, startTime, duration);
     for (var i = 0; i < noteListeners.length; i++) {
       var n = { layer: layer, freq: freq, startTime: startTime, duration: duration || 0 };
       if (extra) { for (var ek in extra) n[ek] = extra[ek]; }   // e.g. telegraph { marks:[…] }
@@ -723,17 +724,112 @@ window.KolobAudio = (function () {
   var doors = null;
   var closing = [];                // doors shut at STOP, disconnected after the fade
   var hallRinging = false;         // a meeting was stopped: its echo is still in the rooms
-  function openDoors() { return { pans: {}, field: {}, wide: null }; }
+  function openDoors() { return { pans: {}, field: {}, wide: null, hands: {}, spent: [] }; }
   function liveDoors() { return doors || (doors = openDoors()); }
   function shutDoors(d) {
     var k, i;
     try {
       for (k in d.pans) for (i = 0; i < d.pans[k].length; i++) d.pans[k][i].disconnect();
+      for (k in d.hands) d.hands[k].disconnect();
+      for (i = 0; i < d.spent.length; i++) d.spent[i].disconnect();
       for (k in d.field) d.field[k].disconnect();
       if (d.wide) d.wide.disconnect();
     } catch (e) {}
   }
   function shutClosingDoors() { while (closing.length) shutDoors(closing.pop()); }
+
+  // ==========================================================================
+  // THE HOUSE LETS GO (the pre-v0.34 polish; PLAN-COMPOSITION §15, a guest
+  // rule of the Score). When a guest enters — the trombones at dawn, the old
+  // tune, the bands, the steeples — the house's held notes (the organ's
+  // chord, the strings' pad, the harmonium's and the clarinet's lines, all
+  // of them written seconds ahead) let go over HOUSE_RELEASE_S instead of
+  // ringing on under the visitor or being cut. Round 2 "listened" only by
+  // starting no new turns: in 17 of 24 forced dawns an organ chord was
+  // still sounding 1.6–8.1 s into the far choir's entry, and in three it
+  // beat against it a comma apart.
+  //
+  // How: each house layer enters the hall through HANDS of its own (a gain
+  // in the meeting's doors, between the layer's panners and its volume
+  // slider). At the guest's entrance the hands let go — a 1.5 s ramp to
+  // nothing — and that door is spent: everything already written through
+  // it (the rest of a line, a chord that had not yet begun) goes with it,
+  // and the reverb keeps the tail it was given. The layer's next note comes
+  // in by new hands, and no house turn begins inside the release. The
+  // notes the house had reported are the written ones (SCORE §9.2); the
+  // typed event house-lets-go names each one released and when it was
+  // gone, so a reader of the dump hears what the hall heard.
+  // ==========================================================================
+  var HOUSE = { organ: true, strings: true, harmonium: true, clarinet: true };
+  var HOUSE_RELEASE_S = 1.5;
+  var houseNotes = {};             // layer → its reported notes still to end [{s, e, f}]
+  var houseRest = {};              // layer → no turn of it begins before this (the release)
+  var handsLog = [];               // every pair of hands: its layer, and when it let go (for the harness)
+  function heldByHouse(layer, f, s, dur) {
+    var a = houseNotes[layer] || (houseNotes[layer] = []);
+    a.push({ s: s, e: s + dur, f: f });
+    // (forget what has already ended by the music's now — never by the new
+    // note's start: a voice writes a line ahead, and its later notes arrive
+    // together with its sooner ones)
+    if (a.length > 48) { var tn = now(); houseNotes[layer] = a.filter(function (n) { return n.e > tn - 1; }); }
+  }
+  function handsFor(d, layer) {
+    var h = d.hands[layer];
+    if (!h) {
+      h = d.hands[layer] = ctx.createGain();
+      h.gain.value = 1;
+      h.connect(layerGains[layer]);
+      handsLog.push({ layer: layer, node: h, at: null, until: null });
+      if (handsLog.length > 256) handsLog.shift();
+    }
+    return h;
+  }
+  // at te (the guest's entrance, the cue's scheduled time): who lets go
+  // (logged: false for a guest the minutes may not name — the event says so,
+  // as every event of that guest's does)
+  function houseLetsGo(te, guest, logged) {
+    if (!ctx || !doors) return null;
+    var d = doors, layers = [], released = [], until = te + HOUSE_RELEASE_S;
+    Object.keys(HOUSE).forEach(function (L) {
+      // the house takes its hands off as the visitor comes in, whether or not
+      // they were playing: no turn of it begins inside the release
+      houseRest[L] = Math.max(houseRest[L] || 0, until);
+      var h = d.hands[L];
+      var ns = (houseNotes[L] || []).filter(function (n) { return n.e > te + 0.02; });
+      if (!h || !ns.length) return;                // nothing of this layer is still to sound
+      h.gain.setValueAtTime(1, te);
+      h.gain.linearRampToValueAtTime(0, until);
+      d.spent.push(h);
+      if (d.pans[L]) { d.spent.push.apply(d.spent, d.pans[L]); delete d.pans[L]; }
+      delete d.hands[L];
+      var written = te;
+      ns.forEach(function (n) {
+        var heard = Math.max(n.s, Math.min(n.e, until));
+        released.push({ layer: L, freq: n.f, startTime: n.s, duration: n.e - n.s, until: heard });
+        written = Math.max(written, n.e);
+        n.e = heard;
+      });
+      // the spent hands leave the hall once the last note written through
+      // them has stopped (its oscillators stop up to half a second after
+      // their written end): a long session does not keep a pile of silent
+      // doors open (the panners stay wired to the hands, so what went
+      // through them can still be traced — the harness does)
+      cueAt("conductor", written + 1, function () {
+        try { h.disconnect(); } catch (e) {}
+        var at = d.spent.indexOf(h); if (at >= 0) d.spent.splice(at, 1);
+      });
+      for (var i = handsLog.length - 1; i >= 0; i--) if (handsLog[i].node === h) { handsLog[i].at = te; handsLog[i].until = until; handsLog[i].guest = guest; break; }
+      layers.push(L);
+    });
+    if (!layers.length) return null;
+    emitEvent({
+      type: "house-lets-go", guest: guest, at: te, until: until, layers: layers, released: released, logged: logged !== false,
+      cat: "house", label: "⌒ the house lets go", detail: guest + " · " + layers.join(", "),
+    });
+    return until;
+  }
+  // a house voice asks before it begins a turn: is my release still going?
+  function houseRests(layer) { return !!ctx && now() < (houseRest[layer] || 0); }
 
   function panAt(layer, p) {
     var d = liveDoors();
@@ -741,9 +837,11 @@ window.KolobAudio = (function () {
     if (!pool) {
       // Some width for the open air, but pulled in from the old hard ±0.65
       // slots: voices panned to the far edges read as separate tracks. Closer
-      // in, they share the centre and blend into one ensemble.
+      // in, they share the centre and blend into one ensemble. (A house
+      // layer's panners go through its hands: THE HOUSE LETS GO, above.)
+      var into = HOUSE[layer] ? handsFor(d, layer) : layerGains[layer];
       pool = d.pans[layer] = [-0.42, 0, 0.42].map(function (pp) {
-        var sp = ctx.createStereoPanner(); sp.pan.setValueAtTime(pp, ctx.currentTime); sp.connect(layerGains[layer]); return sp;
+        var sp = ctx.createStereoPanner(); sp.pan.setValueAtTime(pp, ctx.currentTime); sp.connect(into); return sp;
       });
     }
     var cl = p < -1 ? -1 : (p > 1 ? 1 : p);
@@ -946,6 +1044,7 @@ window.KolobAudio = (function () {
     shutClosingDoors();              // the last meeting's written-ahead lines stay outside
     if (hallRinging) { flushRooms(); hallRinging = false; }   // and its echo with them
     liveDoors();
+    houseNotes = {}; houseRest = {};               // the stopped meeting's held notes stay outside with it
     air.busyUntil = 0; air.holders = 0;
     if (voicesBus) {
       voicesBus.gain.cancelScheduledValues(ctx.currentTime);
@@ -963,18 +1062,25 @@ window.KolobAudio = (function () {
     // every time in the meeting is counted from it
     cueAt("conductor", ctx.currentTime + LEAD_S, function (t0) {
       planMeeting(t0);
-      // staggered assembly — the valley wakes the way a Sunday begins
-      droneCycle(t0);
-      cueAt("organ", t0 + 2.5, organCycle);
-      cueAt("voice", t0 + 12, stillVoicePhrase);
-      cueAt("ambient", t0 + 16, ambientEvent);
-      cueAt("choir", t0 + 20, choirVerse);
-      cueAt("strings", t0 + 24, stringsCycle);
-      cueAt("harmonium", t0 + 30, harmoniumCycle);
-      cueAt("clarinet", t0 + 34, clarinetPhrase);
+      // staggered assembly — the valley wakes the way a Sunday begins, and
+      // each Sunday in its own order: the prelude's seating (kolob-meeting.js,
+      // THE PRELUDE'S SEATING) drew every entrance. (v0.32 woke every visit
+      // on one timetable: the drone at 0.1 s, the organ at 2.7, the field at
+      // 16, the strings at 24.) The voice and the choir only listen for
+      // their sections, each from a drawn first call; on a humming Sunday the
+      // choir is the first awake (round 2 of the polish).
+      var W = S.Meeting.waking() || { drone: 0, organ: 2.5, ambient: 16, strings: 24, harmonium: 30, clarinet: 34, bells: 42, telegraph: 55, choir: 20, voice: 12 };
+      cueAt("drone", t0 + W.drone, droneCycle);
+      cueAt("organ", t0 + W.organ, organCycle);
+      cueAt("voice", t0 + (W.voice != null ? W.voice : 12), stillVoicePhrase);
+      cueAt("ambient", t0 + W.ambient, ambientEvent);
+      cueAt("choir", t0 + (W.choir != null ? W.choir : 20), choirVerse);
+      cueAt("strings", t0 + W.strings, stringsCycle);
+      cueAt("harmonium", t0 + W.harmonium, harmoniumCycle);
+      cueAt("clarinet", t0 + W.clarinet, clarinetPhrase);
       if (!SHELVED.bagpipe) cueAt("bagpipe", t0 + 30, bagpipeCycle);
-      cueAt("bells", t0 + 42, tineCycle);
-      cueAt("telegraph", t0 + 55, telegraphCycle);
+      cueAt("bells", t0 + W.bells, tineCycle);
+      cueAt("telegraph", t0 + W.telegraph, telegraphCycle);
       cueAt("conductor", t0 + 1, conductorTick);
     });
     clock.start();                   // the downbeat falls inside the first window: it fires now
@@ -1096,6 +1202,11 @@ window.KolobAudio = (function () {
   S.wideSend = wideSend;
   S.setRoomBalance = setRoomBalance;
   S.panAt = panAt;
+  S.houseLetsGo = houseLetsGo;
+  S.houseRests = houseRests;
+  S.HOUSE = HOUSE;
+  S.HOUSE_RELEASE_S = HOUSE_RELEASE_S;
+  S.handsLog = function () { return handsLog; };
   S.getLayerParam = getLayerParam;
   S.fieldDest = fieldDest;
   S.noiseSource = noiseSource;

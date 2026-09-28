@@ -627,6 +627,26 @@ window.KOLOB = window.KOLOB || {};
   // tail. Not one of the console's instruments; it has no stop. Its notes
   // are {f, dur, restAfter, breath, tell}; a line's end draws a breath (the
   // swell dips and comes back), a rest lets the sound down between lines.
+  //
+  // THE PRE-v0.34 POLISH (the round-2 Listener; PLAN-COMPOSITION §15). The
+  // memory was as loud as the hymn (−25 dB in the 300 Hz–4 kHz band against
+  // the hymn's −28) and could not say a repeated note: it glided into every
+  // note and dipped only at breaths, so MARTYR's "Praise to the" (do–do–do)
+  // was one 1.8 s swell, and 76 of the 367 steps in the tunes' first two
+  // lines are repeated notes. Now:
+  //   · it sits OLD_TUNE_DB (−7 dB) under where it stood — a memory, not a
+  //     second hymn;
+  //   · every note is struck: the level dips for about 50 ms at each onset,
+  //     a light lift between two pitches and a real re-strike (down to a
+  //     fifth of itself) where a note repeats, so the rhythm of the book is
+  //     heard — the dotted pickup, the repeated tones;
+  //   · the glide into a new pitch is short (at most 60 ms, inside the dip),
+  //     a voice placing its note, not a slide;
+  //   · the first note speaks at once (an attack of 0.12 s, not a 1.2 s
+  //     swell that swallowed the pickup), and the memory still fades as it
+  //     goes.
+  var OLD_TUNE_DB = -7;
+  var ONSET_DIP = { lift: 0.62, restrike: 0.2, down: 0.03, up: 0.045 };
   function farVoice(t, notes, gainMul, side) {
     var o = S.ctx.createOscillator(); o.type = "triangle";
     var o2 = S.ctx.createOscillator(); o2.type = "sine";
@@ -637,18 +657,26 @@ window.KOLOB = window.KOLOB || {};
     var pn = S.ctx.createStereoPanner(); pn.pan.setValueAtTime(side, t);
     o.connect(lp); o2.connect(g2); g2.connect(lp);
     lp.connect(g); g.connect(pn); pn.connect(wideSend());                    // the memory, at the field's edge: all tabernacle
-    var tt = t, prevF = 0, dips = [];
+    var tt = t, prevF = 0, dips = [], onsets = [];
     for (var i = 0; i < notes.length; i++) {
       var f = notes[i].f;
       if (i === 0) {
         o.frequency.setValueAtTime(f, t);
         o2.frequency.setValueAtTime(f * 2, t);
       } else {
-        var port = Math.min(0.15, notes[i].dur * 0.2);
-        o.frequency.setValueAtTime(prevF, tt);
-        o.frequency.linearRampToValueAtTime(f, tt + port);
-        o2.frequency.setValueAtTime(prevF * 2, tt);
-        o2.frequency.linearRampToValueAtTime(f * 2, tt + port);
+        // a new pitch is placed inside the onset's dip; a repeated one is
+        // struck again on the same pitch (the glide v0.32 made of it is gone)
+        var same = Math.abs(f / prevF - 1) < 1e-4;
+        if (!same) {
+          var port = Math.min(0.06, notes[i].dur * 0.1);
+          o.frequency.setValueAtTime(prevF, tt);
+          o.frequency.linearRampToValueAtTime(f, tt + port);
+          o2.frequency.setValueAtTime(prevF * 2, tt);
+          o2.frequency.linearRampToValueAtTime(f * 2, tt + port);
+        }
+        // (an onset that follows a breath or a rest is already articulated)
+        var prev = notes[i - 1];
+        if (!(prev.breath || prev.restAfter > 0)) onsets.push({ at: tt, depth: same ? ONSET_DIP.restrike : ONSET_DIP.lift });
       }
       if (notes[i].tell) notes[i].tell(tt);
       prevF = f;
@@ -657,20 +685,31 @@ window.KOLOB = window.KOLOB || {};
       tt += notes[i].restAfter || 0;
     }
     var total = tt - t;
-    // the swell: in over 1.2 s, easing to 0.85 of itself, out over the last
-    // 1.6 s — and a breath at each line's end on the way
-    var peak = 0.14 * (gainMul || 1);
-    var relAt = t + 1.2 + Math.max(0.4, total - 2.6);
-    function level(x) { return peak * (1 - 0.15 * Math.min(1, Math.max(0, (x - t - 1.2) / Math.max(0.4, total - 2.6)))); }
+    // the swell: in at once, easing to 0.85 of itself, out over the last
+    // 1.6 s — a breath at each line's end and a lift at each onset on the way
+    var ATK = 0.12;
+    var peak = 0.14 * Math.pow(10, OLD_TUNE_DB / 20) * (gainMul || 1);
+    var relAt = t + ATK + Math.max(0.4, total - 1.5);
+    function level(x) { return peak * (1 - 0.15 * Math.min(1, Math.max(0, (x - t - ATK) / Math.max(0.4, total - 1.5)))); }
     g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(peak, t + 1.2);
-    dips.forEach(function (d) {
-      var down = d.at - 0.18, up = d.at + d.rest + 0.22;
-      if (down <= t + 1.25 || up >= relAt - 0.05) return;               // no breath inside the swell or the fade
-      g.gain.linearRampToValueAtTime(level(down), down);
-      g.gain.linearRampToValueAtTime(level(d.at) * (d.rest > 0 ? 0.12 : 0.35), d.at + Math.min(0.1, d.rest));
-      if (d.rest > 0.25) g.gain.linearRampToValueAtTime(level(d.at) * 0.12, d.at + d.rest - 0.05);
-      g.gain.linearRampToValueAtTime(level(up), up);
+    g.gain.linearRampToValueAtTime(peak, t + ATK);
+    // the breaths and the onsets, in time order, never overlapping each other
+    var marks = dips.map(function (d) { return { t0: d.at - 0.18, t1: d.at + d.rest + 0.22, breath: d }; })
+      .concat(onsets.map(function (n) { return { t0: n.at - ONSET_DIP.down, t1: n.at + ONSET_DIP.up, onset: n }; }))
+      .sort(function (a, b) { return a.t0 - b.t0; });
+    var cursor = t + ATK;
+    marks.forEach(function (m) {
+      if (m.t0 <= cursor + 0.005 || m.t1 >= relAt - 0.05) return;         // nothing inside the attack, the fade, or another mark
+      g.gain.linearRampToValueAtTime(level(m.t0), m.t0);
+      if (m.breath) {
+        var d = m.breath;
+        g.gain.linearRampToValueAtTime(level(d.at) * (d.rest > 0 ? 0.12 : 0.35), d.at + Math.min(0.1, d.rest));
+        if (d.rest > 0.25) g.gain.linearRampToValueAtTime(level(d.at) * 0.12, d.at + d.rest - 0.05);
+      } else {
+        g.gain.linearRampToValueAtTime(level(m.onset.at) * m.onset.depth, m.onset.at + 0.004);
+      }
+      g.gain.linearRampToValueAtTime(level(m.t1), m.t1);
+      cursor = m.t1;
     });
     g.gain.linearRampToValueAtTime(peak * 0.85, relAt);
     g.gain.linearRampToValueAtTime(0, relAt + 1.6);

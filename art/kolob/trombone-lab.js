@@ -27,7 +27,12 @@
 // the dawn in every mode; "calibrate" sets the choir beside the reference.
 //
 // Dev console: TromboneLab.check(id, o), TromboneLab.render(id, o),
-// TromboneLab.all(), TromboneLab.calibrate(), TromboneLab.odds().
+// TromboneLab.all(), TromboneLab.calibrate(), TromboneLab.odds(),
+// TromboneLab.brass() (the pre-v0.34 polish: is it brass, and not the organ?
+// — the centroid by dynamic, the attack's rise and the legato joins, beside
+// the organ reference, read in windows that follow the pitch; and the held
+// tone: does a long note move, as a player's breath does, or stand still as
+// a pipe does? Returns { rows, held }).
 // Public surface: window.TromboneLab
 // ============================================================================
 window.TromboneLab = (function () {
@@ -428,10 +433,10 @@ window.TromboneLab = (function () {
     function meanL(ls) { var m = 0; ls.forEach(function (l) { m += Math.pow(10, (l + 0.691) / 10); }); return -0.691 + 10 * Math.log10(m / Math.max(1, ls.length) + 1e-20); }
     var gate = meanL(abs) - 10;
     var I = meanL(abs.filter(function (l) { return l > gate; }));
-    var sMax = -Infinity;
-    for (var s3 = 0; s3 + S3 <= n; s3 += H) sMax = Math.max(sMax, L(s3, S3));
+    var sMax = -Infinity, sAt = 0;
+    for (var s3 = 0; s3 + S3 <= n; s3 += H) { var l3 = L(s3, S3); if (l3 > sMax) { sMax = l3; sAt = s3; } }
     if (!isFinite(sMax)) sMax = L(0, n);
-    return { I: abs.length ? I : -Infinity, S: sMax };
+    return { I: abs.length ? I : -Infinity, S: sMax, SAt: (a + sAt) / SR };      // (SAt: where the loudest 3 s begin, s)
   }
   function loudness(chs) { return loudnessOf(chs.map(kWeight)); }
   // brightness of a stretch: spectral centroid 200 Hz – 8 kHz, and its
@@ -502,7 +507,7 @@ window.TromboneLab = (function () {
     }
     var out = {
       id: id, room: o.room || room, seconds: +(n / SR).toFixed(2),
-      lufs: +lu.I.toFixed(1), lufsShortMax: +lu.S.toFixed(1),
+      lufs: +lu.I.toFixed(1), lufsShortMax: +lu.S.toFixed(1), lufsShortAt: +(lu.SAt || 0).toFixed(1),
       peakDb: +db(pk).toFixed(2), rmsDb: +db(rms).toFixed(2), preChainPeakDb: +db(ppk).toFixed(2),
       clippedSamples: clip, transients: spikes.length, transientTimes: spikes.slice(0, 24), worstTransient: worst,
       centroidHz: Math.round(tnum / (tden || 1)), nodes: res.stats,
@@ -593,6 +598,134 @@ window.TromboneLab = (function () {
       }, Promise.resolve());
     }).then(function () { return check("dawn", o); }).then(function (d) { out.dawn = d; return out; });
   }
+  // THE BRASS CHECK (the pre-v0.34 polish; console: TromboneLab.brass()).
+  // Is it brass, and is it not the organ? Each trombone plays one hymn line
+  // (eight notes of 0.9 s, the first tongued, the rest legato-tongued as the
+  // guest plays them) dry, at pp, mp, mf, f and ff; the organ reference's
+  // first chord plays at three levels. For each it reports: the centroid
+  // (200 Hz–8 kHz) while the notes hold, and the share of energy above
+  // 1.5 kHz — brass brightens as it is blown harder, an organ does not; how
+  // long the first note takes to reach 90 % of its held level; and the dip
+  // at each legato join — a tongued line has a pulse, an organ none.
+  // Levels are read in windows that FOLLOW THE PITCH (round 2 of the polish;
+  // the critic: 5 ms frames are shorter than one period of a 116 Hz bass
+  // note, so round 1's table showed the bass trombone's joins 5–7 dB deeper
+  // than they are): each level is the RMS over two periods of the lower of
+  // the two notes at a join (of the note itself, for the attack), slid 1 ms
+  // at a time; a join's dip is the lowest such level within ±60 ms of it,
+  // against the note before (from 300 to 80 ms ahead of the join), and
+  // underHalfMs how long the level stays under half of that.
+  // Then THE HELD TONE (hold): a tenor and a bass trombone hold one note for
+  // 3.5 s at mf, and between 0.8 and 3.2 s it reports the level's movement
+  // (RMS over four periods: its range in dB and its coefficient of
+  // variation), the brightness's (the centroid of 4096-sample windows, its
+  // range), the pitch's (cents, from the autocorrelation of 4096-sample
+  // windows, its range), and the breath under the tone (the energy between
+  // the harmonics, 2–6 kHz, against the whole) — an organ pipe holds all
+  // four still. Returns { rows (the lines and the organ), held }.
+  function brass() {
+    var MAJ7 = [1, 9 / 8, 5 / 4, 4 / 3, 3 / 2, 5 / 3, 15 / 8], BASE = { altoTrombone: 349.2, tenorTrombone: 233.1, bassTrombone: 116.5 };
+    function pw(x, a, N) {
+      var re = new Float32Array(N), im = new Float32Array(N);
+      for (var i = 0; i < N; i++) re[i] = (x[a + i] || 0) * (0.5 - 0.5 * Math.cos(2 * Math.PI * i / N));
+      fft(re, im);
+      var p = new Float64Array(N / 2); for (var k = 0; k < N / 2; k++) p[k] = re[k] * re[k] + im[k] * im[k]; return p;
+    }
+    function spectrum(x, a, b, N) { var acc = new Float64Array(N / 2); for (var s0 = a; s0 + N <= b; s0 += N / 2) { var p = pw(x, s0, N); for (var k = 0; k < N / 2; k++) acc[k] += p[k]; } return acc; }
+    function measures(P, N) {
+      var num = 0, den = 0, hi = 0, all = 0;
+      for (var k = 1; k < N / 2; k++) { var hz = k * SR / N; if (hz >= 200 && hz <= 8000) { num += P[k] * hz; den += P[k]; } if (hz >= 60) { all += P[k]; if (hz >= 1500) hi += P[k]; } }
+      return { centroidHz: Math.round(den ? num / den : 0), above1k5Db: +(10 * Math.log10((hi + 1e-20) / (all + 1e-20))).toFixed(1) };
+    }
+    function mono(buf) { var L = buf.getChannelData(0), R = buf.getChannelData(1), m = new Float32Array(L.length); for (var i = 0; i < L.length; i++) m[i] = (L[i] + R[i]) / 2; return m; }
+    // RMS of x over [a, b)
+    function rms(x, a, b) { a = Math.max(0, Math.round(a)); b = Math.min(x.length, Math.round(b)); var e = 0; for (var i = a; i < b; i++) e += x[i] * x[i]; return Math.sqrt(e / Math.max(1, b - a)); }
+    // the level of x around sample c, over two periods of a note at f Hz
+    function levelAt(x, c, f) { var W = 2 * SR / f; return rms(x, c - W / 2, c + W / 2); }
+    // ms from sample `at` until the pitch-window level first reaches 90 % of the held level (from heldA to heldB)
+    function riseMs(x, at, f, heldA, heldB) {
+      var held = rms(x, heldA, heldB), hop = SR / 1000;
+      for (var j = 0; j < 1500; j++) if (levelAt(x, at + j * hop + SR / f, f) >= 0.9 * held) return j;
+      return null;
+    }
+    function line(inst, dyn) {
+      var degs = [0, 2, 4, 2, 5, 4, 2, 0], spb = 0.9, t0 = 0.3;
+      var off = new OfflineAudioContext(2, Math.ceil(SR * (t0 + degs.length * spb + 1.5)), SR);
+      var band = VB.create(off, off.destination, { seed: 1847 });
+      var notes = degs.map(function (d, i) { var last = i === degs.length - 1; return { f: BASE[inst] * MAJ7[d], at: i * spb, dur: spb - (last ? 0 : 0.022), legato: i > 0, rel: last ? 0.2 : 0.022 }; });
+      band.play(t0, notes, inst, dyn);
+      return off.startRendering().then(function (buf) {
+        var m = mono(buf), on = notes.map(function (n) { return Math.round((t0 + n.at) * SR); });
+        var acc = new Float64Array(1024);
+        on.forEach(function (o) { var P = spectrum(m, o + 0.15 * SR, o + 0.75 * SR, 2048); for (var k = 0; k < 1024; k++) acc[k] += P[k]; });
+        var under = [];
+        var dips = on.slice(1).map(function (o, i) {
+          var f = Math.min(notes[i].f, notes[i + 1].f), before = rms(m, o - 0.3 * SR, o - 0.08 * SR), mn = Infinity, low = 0;
+          for (var c = o - 0.06 * SR; c < o + 0.06 * SR; c += SR / 1000) { var v = levelAt(m, c, f); mn = Math.min(mn, v); if (v < before * 0.5) low++; }
+          under.push(low);
+          return 20 * Math.log10((mn + 1e-12) / (before + 1e-12));
+        });
+        var r = measures(acc, 2048);
+        r.inst = inst; r.dyn = dyn;
+        r.riseMs = riseMs(m, on[0], notes[0].f, on[0] + 0.25 * SR, on[0] + 0.55 * SR);
+        r.joinDipDb = +(dips.reduce(function (a, b) { return a + b; }, 0) / dips.length).toFixed(1);
+        r.deepestJoinDb = +Math.min.apply(null, dips).toFixed(1);
+        r.underHalfMs = Math.round(under.reduce(function (a, b) { return a + b; }, 0) / under.length);
+        r.lufs = +loudness([buf.getChannelData(0), buf.getChannelData(1)]).I.toFixed(1);
+        return r;
+      });
+    }
+    function organ(gainMul) {
+      var off = new OfflineAudioContext(2, SR * 8, SR);
+      P.reference(off, off.destination, 0.1, { gainMul: gainMul });
+      return off.startRendering().then(function (buf) {
+        var m = mono(buf), r = measures(spectrum(m, 2.5 * SR, 5 * SR, 2048), 2048);
+        r.inst = "organ (the v0.30 reference)"; r.gainMul = gainMul;
+        r.riseMs = riseMs(m, Math.round(0.1 * SR), 130.8, 3 * SR, 3.3 * SR);
+        r.joinDipDb = null;
+        return r;
+      });
+    }
+    // THE HELD TONE: one note, 3.5 s at mf (see above)
+    function hold(inst, f) {
+      var off = new OfflineAudioContext(2, SR * 5, SR);
+      var band = VB.create(off, off.destination, { seed: 5 });
+      band.play(0.2, [{ f: f, at: 0, dur: 3.5, rel: 0.2 }], inst, 0.6);
+      return off.startRendering().then(function (buf) {
+        var m = mono(buf), a = Math.round(1.0 * SR), b = Math.round(3.4 * SR), P = Math.round(4 * SR / f), lv = [];
+        for (var s0 = a; s0 + P < b; s0 += P) lv.push(rms(m, s0, s0 + P));
+        var mu = lv.reduce(function (x, y) { return x + y; }, 0) / lv.length;
+        var sd = Math.sqrt(lv.reduce(function (x, y) { return x + (y - mu) * (y - mu); }, 0) / lv.length);
+        var cen = [], cents = [], N = 4096, hi = 0, all = 0;
+        for (var s1 = a; s1 + N <= b; s1 += N / 2) {
+          var p = pw(m, s1, N), mm = measures(p, N);
+          cen.push(mm.centroidHz);
+          // the breath: energy 2–6 kHz away from every harmonic (more than 40 Hz from k·f), against the whole
+          for (var k = 1; k < N / 2; k++) { var hz = k * SR / N; all += p[k]; if (hz >= 2000 && hz <= 6000) { var off2 = Math.abs(hz - Math.round(hz / f) * f); if (off2 > 40) hi += p[k]; } }
+          // the pitch: the autocorrelation's peak near one period, refined by a parabola
+          var T0 = SR / f, best = -1, bi = 0;
+          for (var lag = Math.floor(T0 * 0.97); lag <= Math.ceil(T0 * 1.03); lag++) { var ac = 0; for (var i = 0; i < N - lag; i++) ac += m[s1 + i] * m[s1 + i + lag]; if (ac > best) { best = ac; bi = lag; } }
+          var ac0 = 0, ac2 = 0;
+          for (var i2 = 0; i2 < N - bi - 1; i2++) { ac0 += m[s1 + i2] * m[s1 + i2 + bi - 1]; ac2 += m[s1 + i2] * m[s1 + i2 + bi + 1]; }
+          var den = ac0 - 2 * best + ac2, sh = den ? 0.5 * (ac0 - ac2) / den : 0;
+          cents.push(1200 * Math.log2(T0 / (bi + sh)));
+        }
+        function range(v) { return Math.max.apply(null, v) - Math.min.apply(null, v); }
+        return {
+          inst: inst, f: f, levelRangeDb: +(20 * Math.log10(Math.max.apply(null, lv) / Math.min.apply(null, lv))).toFixed(2),
+          levelCvPct: +(100 * sd / mu).toFixed(2), centroidRangeHz: Math.round(range(cen)), pitchRangeCents: +range(cents).toFixed(1),
+          breathDb: +(10 * Math.log10((hi + 1e-20) / (all + 1e-20))).toFixed(1),
+        };
+      });
+    }
+    var jobs = [];
+    ["altoTrombone", "tenorTrombone", "bassTrombone"].forEach(function (inst) { [0.2, 0.45, 0.6, 0.78, 0.95].forEach(function (d) { jobs.push(function () { return line(inst, d); }); }); });
+    [0.3, REF_GAINMUL, 0.8].forEach(function (g) { jobs.push(function () { return organ(g); }); });
+    var rows = [], held = [];
+    return jobs.reduce(function (p, j) { return p.then(j).then(function (r) { rows.push(r); }); }, Promise.resolve())
+      .then(function () { return hold("tenorTrombone", 233.1); }).then(function (h) { held.push(h); return hold("bassTrombone", 116.5); })
+      .then(function (h) { held.push(h); return { rows: rows, held: held }; });
+  }
   function all(o) {
     o = o || {};
     var rows = [];
@@ -602,14 +735,14 @@ window.TromboneLab = (function () {
       }, Promise.resolve()).then(function () { return { reference: ref, rows: rows }; });
     });
   }
-  // THE ODDS: plan() per Sunday, and a stand-in planner's mix (the engine's
-  // measured shares: ordinary 38 %, fast 28 %, conference 22 %, jubilee 13 %;
-  // bands 35 %; another prelude guest 11 %) — the harness measures the same
-  // against the real planMeeting
+  // THE ODDS: plan() per Sunday, and a stand-in planner's mix (the
+  // calendar's shares since the pre-v0.34 polish: ordinary 52 %, fast 15 %,
+  // conference 19 %, jubilee 14 %; bands 35 %; another prelude guest 11 %) —
+  // the harness measures the same against the real planMeeting
   function odds(N) {
     N = N || 20000;
     var R0 = window.PJ2.Rand.stream(99).fork("lab:odds");
-    var kinds = [["ordinary", 0.38], ["fast", 0.28], ["conference", 0.22], ["jubilee", 0.13]];
+    var kinds = [["ordinary", 0.52], ["fast", 0.15], ["conference", 0.19], ["jubilee", 0.14]];
     var rows = {}, seated = 0, withBands = 0;
     for (var i = 1; i <= N; i++) {
       var kind = R0.pickW(kinds), bands = R0.chance(0.35), pre = R0.chance(0.11);
@@ -813,5 +946,5 @@ window.TromboneLab = (function () {
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", mount);
   else mount();
 
-  return { play: play, stop: stop, check: check, render: render, calibrate: calibrate, all: all, odds: odds, loudness: loudness, setRoom: setRoom, material: function (o) { return material(settings(o)); }, _P: P };
+  return { play: play, stop: stop, check: check, render: render, calibrate: calibrate, all: all, odds: odds, brass: brass, loudness: loudness, setRoom: setRoom, material: function (o) { return material(settings(o)); }, _P: P };
 })();

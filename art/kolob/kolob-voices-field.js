@@ -193,7 +193,7 @@ window.KOLOB = window.KOLOB || {};
     var taps = s === "prelude" || s === "hymn" || s === "testimony" || s === "postlude";
     if (!taps) { cueIn("telegraph", wait("telegraph").rnd(20, 40), telegraphCycle); return; }
     var R = turn("telegraph");
-    if (R.chance(0.4)) { cueIn("telegraph", R.rnd(20, 40), telegraphCycle); return; }
+    if (R.chance(0.4)) { cueIn("telegraph", R.rnd(20, 40) * S.Meeting.lean("telegraph"), telegraphCycle); return; }
     var Y = synth("telegraph");
     var clack = getLayerParam("telegraph", "clack", 0.5);
     var t = tc + 0.1;
@@ -222,7 +222,7 @@ window.KOLOB = window.KOLOB || {};
     // (SCORE §6's wordDs: the wire keys English; the Deseret spelling of the
     // word is the page's to make — the engine has no transliterator)
     emitEvent({ type: "telegraph", word: word, wordDs: null, marks: seq, reply: false, cat: "telegraph", label: "⌁ the wire flashes home", detail: word });
-    cueLayer("telegraph", tt - t + R.rnd(45, 90) * gapMul(), telegraphCycle);
+    cueLayer("telegraph", tt - t + R.rnd(45, 90) * gapMul() * S.Meeting.lean("telegraph"), telegraphCycle);
   }
 
   // ==========================================================================
@@ -397,6 +397,8 @@ window.KOLOB = window.KOLOB || {};
     return FIELD_NAMES.coyote;
   }
   var FIELD_FNS = { wind: evWind, crickets: evCrickets, clock: evClock, fork: evTuningFork, rain: evRain, coyote: evCoyote, bell: evFarBell, beacon: evBeacon };
+  var FIELD_KEY = {};                              // (each event's key, by its function's name: the seating's field weights)
+  Object.keys(FIELD_FNS).forEach(function (k) { FIELD_KEY[FIELD_FNS[k].name] = k; });
   // The valley's turn, at scheduled time t: which event, and when the next.
   function ambientEvent(t) {
     if (!S.playing) return;
@@ -406,6 +408,10 @@ window.KOLOB = window.KOLOB || {};
     var pool = s === "invocation"
       ? [[evWind, 4], [evCrickets, 3], [evTuningFork, 2]]
       : [[evWind, 4], [evCrickets, 3], [evClock, 3], [evTuningFork, 2], [evFarBell, 3], [evBeacon, 2.5], [evRain, 0.3], [evCoyote, 0.3]];
+    // the prelude's seating leans the valley's voice too: a ground morning
+    // is wind and the clock, a valley morning crickets and far bells
+    var seat = s === "prelude" ? S.Meeting.seating() : null;
+    if (seat && seat.field) pool = pool.map(function (p) { var k = FIELD_KEY[p[0].name] || null, m = k && seat.field[k]; return [p[0], p[1] * (m > 0 ? m : 1)]; });
     var fn = R.pickW(pool);
     var name = fn(t + 0.1, R);
     // the field's key for what SOUNDED (the crickets keep still in a full
@@ -413,7 +419,7 @@ window.KOLOB = window.KOLOB || {};
     var field = null;
     for (var k in FIELD_NAMES) if (FIELD_NAMES[k] === name) field = k;
     emitEvent({ type: "field", field: field, name: name, section: s, cat: "ambient", label: "⋆ " + name, detail: s });
-    var gap = R.rnd(25, 70) * (1.15 - intensity() * 0.35) * silenceMul();
+    var gap = R.rnd(25, 70) * (1.15 - intensity() * 0.35) * silenceMul() * S.Meeting.lean("ambient");
     cueLayer("ambient", gap, ambientEvent);
   }
 

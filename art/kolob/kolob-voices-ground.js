@@ -26,6 +26,7 @@ window.KOLOB = window.KOLOB || {};
   // from kolob-meeting.js
   function intensity() { return S.intensity(); }
   function hallListens() { return S.hallListens(); }
+  function houseRests(layer) { return S.houseRests(layer); }
   function inFuging() { return S.inFuging(); }
   function gapMul() { return S.gapMul(); }
   // from kolob-core.js
@@ -190,12 +191,14 @@ window.KOLOB = window.KOLOB || {};
     if (!S.playing) return;
     var s = S.Meeting.section();
     if (s === "invocation" || s === "sacrament" || s === "interlude") { cueIn("strings", 8, stringsCycle); return; }
-    if (hallListens()) { cueIn("strings", 8, stringsCycle); return; }       // (the house listens: the trombones at dawn)
+    if (hallListens() || houseRests("strings")) { cueIn("strings", 8, stringsCycle); return; }       // (the house listens: the trombones at dawn; or it is letting go)
     var R = turn("strings");
     var dur = R.rnd(22, 34);
     var overlap = 8;
-    stringsPad(t + 0.1, dur, s === "doxology" ? 1 : 0.75, R.chance(0.7));
-    cueLayer("strings", (dur - overlap) * (s === "doxology" ? 0.9 : 1.3), stringsCycle);
+    var seat = s === "prelude" ? S.Meeting.seating() : null;             // (the brush arbor bows bare fifths)
+    stringsPad(t + 0.1, dur, s === "doxology" ? 1 : 0.75, R.chance(0.7) || !!(seat && seat.fifths));
+    // (the prelude's texture: a strings morning overlaps its pads)
+    cueLayer("strings", (dur - overlap) * (s === "doxology" ? 0.9 : 1.3) * S.Meeting.lean("strings"), stringsCycle);
   }
 
   // ==========================================================================
@@ -295,7 +298,7 @@ window.KOLOB = window.KOLOB || {};
       total += Math.max(0.35, head[i].durBeats * beat * 0.6);
     }
     claimAir(total, R.rnd(3, 7));
-    var gap = R.rnd(20, 45) * gapMul();
+    var gap = R.rnd(20, 45) * gapMul() * S.Meeting.lean("bells");      // (a valley morning taps more)
     cueLayer("bells", total + gap, tineCycle);
   }
 
