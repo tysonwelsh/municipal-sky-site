@@ -105,6 +105,8 @@
 //   breathe       false → no audible inhale at all (a humming bed)
 //   inhale        0..1, the chance this line's breaths are heard (default:
 //                 a ward's small share, ~0.1; a voice alone breathes more)
+//   defer         true → the line joins the room only when the caller's
+//                 arm(ctx, horizon) reaches it (see ARMING)
 //   pan           this line's place in the field (a performer moving a
 //                 singer between the pews and the hollow square)
 // ============================================================================
@@ -371,6 +373,74 @@ window.KOLOB.VoicesVocal = (function () {
     return c[key];
   }
 
+  // THE SHARED THROAT — for a ward. The mud guard (a highpass) and the tilt
+  // (a lowpass) are fixed filters; a fixed filter after a sum is the sum of
+  // the filtered voices, so the thirty-two need not carry sixty-four of them.
+  // Each singer's mouths pour into one of the throat's pan positions, and
+  // the throat filters them all on the way into the room: one pair of
+  // filters for the women's and children's tract, one for the men's. What a
+  // singer gives up is small and was measured: the mud guard is the tract's,
+  // not the part's (the lowest notes of a part keep a dB or so more of their
+  // fundamental), and the tilt is the ward's (a person's brightness lives on
+  // in their own source's slope and their third formant). The make-up gain
+  // reckons with this throat, so no note honks and no vowel moves.
+  var THROAT = { w: { hp: 170, tilt: 5100 }, m: { hp: 78, tilt: 5100 } };   // (the tilt set so the ward's spectrum above 5 kHz matches its own throats', within 0.3 dB)
+  function sharedThroat(ctx, dest, tract) {
+    var c = dest.__kolobThroats || (dest.__kolobThroats = {});
+    if (c[tract]) return c[tract];
+    var T = THROAT[tract] || THROAT.w, sr = ctx.sampleRate || 48000;
+    var hp = filterNode(ctx, "highpass", T.hp, 0.6), lp = filterNode(ctx, "lowpass", T.tilt, 0.6), pans = {};
+    hp.connect(lp); lp.connect(dest);
+    return (c[tract] = {
+      chain: [biquadCoefs("highpass", T.hp, 0.6, 0, sr), biquadCoefs("lowpass", T.tilt, 0.6, 0, sr)],
+      pan: function (p) {
+        var k = Math.round(clamp(p, -1, 1) * 20) / 20;
+        if (!pans[k]) { var sp = pannerNode(ctx, k); sp.connect(hp); pans[k] = sp; }
+        return pans[k];
+      },
+    });
+  }
+  // ARMING. A line handed over early (so that building its graph is spread
+  // over the main thread's quiet moments) need not join the room early: a
+  // graph that is built but not yet joined costs the audio thread nothing,
+  // and a joined one has every filter visited every 2.7 ms, sounding or
+  // not — the ward's next lines, built three seconds ahead, used to cost
+  // nearly as much as the lines being sung. With opts.defer the line waits
+  // in the context's queue until the caller's arm(ctx, horizon) says it is
+  // about to sound.
+  //   And inside a line the same holds for each mouth: a vowel's bank is
+  // joined shortly before it opens and parted once it has closed and rung
+  // out, so the four or five mouths a line may use are not all listened to
+  // all line long (a closed bank's filters are still visited, and cost
+  // about half what a sounding one does).
+  var RING = 0.12;           // s after a mouth closes before it is parted (its filters ring out in ~30 ms)
+  var MERGE = 0.25;          // a mouth closed for less than this stays joined
+  function queueIn(q, at, go) {
+    var i = q.length;
+    while (i > 0 && q[i - 1].at > at) i--;
+    q.splice(i, 0, { at: at, go: go });
+  }
+  function queueArm(ctx, at, go) { queueIn(ctx.__kolobArm || (ctx.__kolobArm = []), at, go); }
+  function queuePart(ctx, at, go) { queueIn(ctx.__kolobPart || (ctx.__kolobPart = []), at, go); }
+  // arm(ctx, horizon, now): join everything due to sound before `horizon`;
+  // part everything that has rung out before `now` (the caller's clock, read
+  // with the horizon). Returns how many joined.
+  function arm(ctx, horizon, now) {
+    var q = ctx && ctx.__kolobArm, p = ctx && ctx.__kolobPart, n = 0;
+    while (q && q.length && q[0].at <= horizon) { q.shift().go(); n++; }
+    while (now != null && p && p.length && p[0].at <= now) p.shift().go();
+    return n;
+  }
+  // spans [[a, z]…] → sorted, those closer than `gap` s merged
+  function mergeSpans(spans, gap) {
+    var s = spans.slice().sort(function (x, y) { return x[0] - y[0]; }), out = [];
+    s.forEach(function (sp) {
+      var last = out[out.length - 1];
+      if (last && sp[0] - last[1] < gap) last[1] = Math.max(last[1], sp[1]); else out.push([sp[0], sp[1]]);
+    });
+    return out;
+  }
+
   // --------------------------------------------------------------------------
   // THE BUDGET — a ledger of node lifetimes, so a lab (or the core) can ask
   // "how many nodes are alive at second s" without instrumenting Web Audio.
@@ -430,6 +500,7 @@ window.KOLOB.VoicesVocal = (function () {
       tilt: (old ? 1.5 : child ? 1.6 : 1.3) + (0.5 - (spec.brightness != null ? spec.brightness : 0.5)) * 0.5,
       pan: spec.pan != null ? spec.pan : PART[part].pan,
       sharedPan: !!spec.sharedPan,
+      sharedThroat: !!spec.sharedThroat,
       level: spec.level != null ? spec.level : 1,
     };
   }
@@ -497,24 +568,44 @@ window.KOLOB.VoicesVocal = (function () {
     dies = Math.max(soundTo, mEnd + 0.16) + 0.04;
     function mDur(k) { return (k + 1 < ev.length ? ms[k + 1] : mEnd) - ms[k]; }
 
-    // ---- shared chain ----
-    var out = mk(function () { return gainNode(ctx, gain * P.level); });
-    var tail, where = opts.pan != null ? opts.pan : P.pan;
-    if (P.sharedPan) { out.connect(sharedPanner(ctx, dest, where)); tail = out; }
-    else {
-      var pan = mk(function () { return pannerNode(ctx, clamp(where, -1, 1)); });
-      out.connect(pan); pan.connect(dest); tail = pan;
+    // ---- the throat, and the line's ways into the room ----
+    // `links` are the line's connections into the room: made now, or — when
+    // the caller handed the line early and said so (opts.defer) — only as it
+    // is about to sound (arm()); and undone when it has sounded.
+    var where = opts.pan != null ? opts.pan : P.pan, links = [];
+    var shared = !!P.sharedThroat;
+    var voiceIn, sideIn, gOut, sum = null, feed = null, throatChain;
+    if (shared) {
+      // the ward's throat (sharedThroat): the mouths pour into one of its pan
+      // positions; the breath and the consonants go straight to the room.
+      // No out gain: the line's gain and the person's level ride the gates.
+      var th = sharedThroat(ctx, dest, P.tract);
+      voiceIn = th.pan(where); sideIn = sharedPanner(ctx, dest, where); gOut = gain * P.level;
+      throatChain = th.chain;
+      if (!solo) { sum = mk(function () { return gainNode(ctx, 1 / Math.sqrt(people.length)); }); feed = sum; }
+    } else {
+      var out = mk(function () { return gainNode(ctx, gain * P.level); });
+      if (P.sharedPan) links.push([out, sharedPanner(ctx, dest, where)]);
+      else {
+        var pan = mk(function () { return pannerNode(ctx, clamp(where, -1, 1)); });
+        out.connect(pan); links.push([pan, dest]);
+      }
+      voiceIn = sideIn = out; gOut = 1;
+      var hp = mk(function () { return filterNode(ctx, "highpass", P.hp, 0.6); });
+      var tiltF = 3800 + 2200 * P.bright;
+      var tilt = mk(function () { return filterNode(ctx, "lowpass", tiltF, 0.6); });
+      hp.connect(tilt);
+      sum = hp; feed = tilt;
+      if (!solo) {
+        sum = mk(function () { return gainNode(ctx, 1 / Math.sqrt(people.length)); });
+        sum.connect(hp);
+      }
+      throatChain = [biquadCoefs("highpass", P.hp, 0.6, 0, sr), biquadCoefs("lowpass", tiltF, 0.6, 0, sr)];
     }
-    var hp = mk(function () { return filterNode(ctx, "highpass", P.hp, 0.6); });
-    var tiltF = 3800 + 2200 * P.bright;
-    var tilt = mk(function () { return filterNode(ctx, "lowpass", tiltF, 0.6); });
-    hp.connect(tilt);
-    var sum = hp;
-    if (!solo) {
-      sum = mk(function () { return gainNode(ctx, 1 / Math.sqrt(people.length)); });
-      sum.connect(hp);
-    }
-    var throatChain = [biquadCoefs("highpass", P.hp, 0.6, 0, sr), biquadCoefs("lowpass", tiltF, 0.6, 0, sr)];
+    // a node that pours into the room: in the shared throat it waits for the
+    // line to be armed (and, with `spans`, is joined only around the moments
+    // it may sound); through its own out gain it is joined now
+    function toRoom(node, to, spans) { if (shared) links.push([node, to, spans || null]); else node.connect(to); }
 
     // the breath in the tone: one baked noise for the throat, into every
     // person's own envelope (a desk's people share it, so it is scaled for
@@ -526,7 +617,7 @@ window.KOLOB.VoicesVocal = (function () {
     aspSrc.connect(asp);
 
     // ---- the vowel banks: created on first use, fixed for life ----
-    var banks = {};
+    var banks = {}, gates = [];
     function bankEnergy(key, f0) {
       var sp = bankSpec(key, P.tract, P.k, f0, P.bright);
       return mouthEnergy(throatChain.concat(sp.map(function (s) { return biquadCoefs(s.type, s.f, s.q, s.g, sr); })), f0, P.tilt, sr);
@@ -538,7 +629,7 @@ window.KOLOB.VoicesVocal = (function () {
       // holes are evened out); each vowel then sits its intrinsic step under
       // "ah". The closed mouths (hum, m, l) keep their own level at the
       // part's middle, flattened across the register. Worked once a person.
-      var ref = P._mouthRef || (P._mouthRef = {});
+      var refs = P._mouthRef || (P._mouthRef = {}), ref = refs[shared ? "shared" : "own"] || (refs[shared ? "shared" : "own"] = {});
       var base = key === "hum" || key === "m" || key === "l" ? key : "ah";
       if (ref[base] == null) {
         if (base !== "ah") ref[base] = bankEnergy(base, P.mid);
@@ -558,16 +649,18 @@ window.KOLOB.VoicesVocal = (function () {
       if (banks[id]) return banks[id];
       var spec = bankSpec(key, P.tract, P.k, f0, P.bright);
       var gate = mk(function () { return gainNode(ctx, 0); });   // shut, and silent, until its first opening
-      tilt.connect(gate);
+      if (feed) feed.connect(gate);
+      gates.push(gate);
       var prev = gate;
       for (var j = 0; j < spec.length; j++) {
         var sj = spec[j];
         var bq = mk(function () { return filterNode(ctx, sj.type, sj.f, sj.q, sj.g); });   // born with its formant, dies with it
         prev.connect(bq); prev = bq;
       }
-      prev.connect(out);
       var chain = throatChain.concat(spec.map(function (s) { return biquadCoefs(s.type, s.f, s.q, s.g, sr); }));
-      return (banks[id] = { id: id, key: key, gate: gate, chain: chain, val: 0, last: born, mk: {}, used: false });
+      var rec = { id: id, key: key, gate: gate, chain: chain, val: 0, last: born, mk: {}, used: false, spans: [] };
+      toRoom(prev, voiceIn, rec.spans);
+      return (banks[id] = rec);
     }
     // the gate's level for a note: the pre-attenuation (0.11) times the
     // make-up that brings this note to its vowel's level, rising gently
@@ -576,7 +669,7 @@ window.KOLOB.VoicesVocal = (function () {
       var key = Math.round(f0 * 4);
       if (b.mk[key] == null) {
         var e = mouthEnergy(b.chain, f0, P.tilt, sr);
-        b.mk[key] = 0.11 * clamp(refLevel(b.key) / Math.max(e, 1e-9), 0.25, 4) * Math.pow(f0 / P.mid, 0.3);
+        b.mk[key] = gOut * 0.11 * clamp(refLevel(b.key) / Math.max(e, 1e-9), 0.25, 4) * Math.pow(f0 / P.mid, 0.3);
       }
       return b.mk[key];
     }
@@ -587,6 +680,10 @@ window.KOLOB.VoicesVocal = (function () {
       g.setValueAtTime(b.val, a); g.linearRampToValueAtTime(v, z);
       // a closed mouth ends on a set value: its timeline done, its silence true
       if (v === 0) g.setValueAtTime(0, z + 0.01);
+      // (the spans it stands open, for ARMING: a mouth joins the room only
+      // while it may sound)
+      if (b.val === 0 && v > 0) b.spans.push([a, Infinity]);
+      else if (v === 0 && b.spans.length) b.spans[b.spans.length - 1][1] = z + 0.01;
       b.val = v; b.last = z + (v === 0 ? 0.01 : 0);
     }
     // open b while closing the mouth before it, centred on time c, width w
@@ -650,8 +747,8 @@ window.KOLOB.VoicesVocal = (function () {
       var inSrc = mk(function () { return ctx.createBufferSource(); });
       inSrc.buffer = bakedNoise(ctx, "inh"); inSrc.loop = true;
       var inh = mk(function () { return gainNode(ctx, 0); });
-      inSrc.connect(inh); inh.connect(out);
-      var pk = INHALE.peak * (0.5 + br);
+      inSrc.connect(inh); toRoom(inh, sideIn, breaths.map(function (b) { return [b.at, b.at + b.len]; }));
+      var pk = gOut * INHALE.peak * (0.5 + br);
       breaths.forEach(function (b) {
         // a draw of air: a soft rise and a quicker fall, never above a murmur
         inh.gain.setValueAtTime(0, b.at);
@@ -666,10 +763,10 @@ window.KOLOB.VoicesVocal = (function () {
       var fSrc = mk(function () { return ctx.createBufferSource(); });
       fSrc.buffer = bakedNoise(ctx, "fric"); fSrc.loop = true;
       var fric = mk(function () { return gainNode(ctx, 0); });
-      fSrc.connect(fric); fric.connect(out);
+      fSrc.connect(fric); toRoom(fric, sideIn, fr.map(function (C) { return [C.s - 0.01, C.e + 0.03]; }));
       var fT = born;
       fr.forEach(function (C) {
-        var pk2 = FRIC_PEAK[C.c], a = Math.max(C.s, fT + 0.002), len = Math.max(0.03, C.e - a);
+        var pk2 = gOut * FRIC_PEAK[C.c], a = Math.max(C.s, fT + 0.002), len = Math.max(0.03, C.e - a);
         fric.gain.setValueAtTime(0, a);
         fric.gain.linearRampToValueAtTime(pk2, a + len * 0.35);
         fric.gain.linearRampToValueAtTime(pk2 * 0.6, a + len * 0.7);
@@ -687,7 +784,13 @@ window.KOLOB.VoicesVocal = (function () {
       var osc = mk(function () { return ctx.createOscillator(); });
       osc.setPeriodicWave(waveFor(ctx, who.tilt, who.variant));
       var envG = mk(function () { return gainNode(ctx, 0); });
-      osc.connect(envG); asp.connect(envG); envG.connect(sum);
+      osc.connect(envG); asp.connect(envG);
+      if (sum) envG.connect(sum); else gates.forEach(function (gt) { envG.connect(gt); });   // (a lone singer in the shared throat)
+      // the pitch is worked once a render quantum (2.7 ms), not once a
+      // sample: a vibrato or a scoop moves a few cents a step, far under
+      // hearing, and the oscillator keeps to its fast path (a third of the
+      // audio thread's cost of a sample-by-sample pitch)
+      try { osc.frequency.automationRate = "k-rate"; osc.detune.automationRate = "k-rate"; } catch (e) { /* an old browser: sample by sample */ }
       if (!firstOsc) firstOsc = osc;
       var endP = end + late + who.lag;
 
@@ -832,9 +935,36 @@ window.KOLOB.VoicesVocal = (function () {
     }
 
     aspSrc.start(soundFrom, r.rnd(0, 1.9)); aspSrc.stop(soundTo);
-    // let go of the room when the line is done: the whole throat is unhooked
-    // from its destination (or its shared panner) and can be collected
-    if (firstOsc) firstOsc.onended = function () { try { tail.disconnect(); } catch (err) { /* already gone */ } };
+    // (a mouth left open at the end closes after the last release: its span ends there)
+    for (var bk in banks) { var sps = banks[bk].spans; if (sps.length && sps[sps.length - 1][1] === Infinity) sps[sps.length - 1][1] = mEnd + 0.15; }
+    if (!opts.defer) links.forEach(function (l) { l[0].connect(l[1]); });
+    else links.forEach(function (l) {
+      // each way into the room joins shortly before it may sound and parts
+      // once it has rung out (a gap of under MERGE keeps it joined). A span
+      // is joined a second or so ahead, so the next span's joining can come
+      // before the last one's parting: a parting leaves alone a way that a
+      // later span has already claimed.
+      var spans = l[2] ? mergeSpans(l[2], MERGE) : [[soundFrom, Infinity]], st = l.st = { on: false, latest: -1 };
+      spans.forEach(function (sp, i) {
+        queueArm(ctx, sp[0] - 0.05, function () {
+          st.latest = i;
+          if (!st.on) { try { l[0].connect(l[1]); st.on = true; ctx.__kolobJoined = (ctx.__kolobJoined || 0) + 1; } catch (e) { /* gone */ } }
+        });
+        if (sp[1] < Infinity) queuePart(ctx, sp[1] + RING, function () {
+          if (st.latest !== i || !st.on) return;
+          try { l[0].disconnect(l[1]); } catch (e) { /* not joined */ }
+          st.on = false; ctx.__kolobJoined--;
+        });
+      });
+    });
+    // let go of the room when the line is done: the line is unhooked from
+    // its destination (or the shared panners) and can be collected
+    if (firstOsc) firstOsc.onended = function () {
+      links.forEach(function (l) {
+        try { l[0].disconnect(); } catch (err) { /* already gone */ }
+        if (l.st && l.st.on) { l.st.on = false; ctx.__kolobJoined--; }
+      });
+    };
     budget.add(kind, nodes, soundFrom, dies);          // the span it sounds (and costs)
     return end;
   }
@@ -867,7 +997,8 @@ window.KOLOB.VoicesVocal = (function () {
   //            brightness 0..1, pitchHabitCents, timingHabitMs, confidence 0..1,
   //            level (a multiplier, default 1), pan, sharedPan (one of the
   //            destination's shared pan positions instead of a panner of
-  //            their own), seed | rand }
+  //            their own), sharedThroat (the ward's throat: the mud guard
+  //            and tilt shared per tract, see sharedThroat), seed | rand }
   // ==========================================================================
   function singer(spec) {
     spec = spec || {};
@@ -1097,6 +1228,12 @@ window.KOLOB.VoicesVocal = (function () {
     ornament: ornament,
     budget: budget,
     estimateNodes: estimateNodes,
+    arm: arm,
+    pending: function (ctx) { return ctx && ctx.__kolobArm ? ctx.__kolobArm.length : 0; },
+    parting: function (ctx) { return ctx && ctx.__kolobPart ? ctx.__kolobPart.length : 0; },
+    // how many of the deferred lines' ways into the room (a mouth, a breath,
+    // a consonant) are joined right now — what the audio thread is visiting
+    joined: function (ctx) { return ctx && ctx.__kolobJoined || 0; },
     VOWELS: VOWELS,
     SYLLABLES: Object.keys(SYL),
     // for the benches (pure): the make-up gain's arithmetic
