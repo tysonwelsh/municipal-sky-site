@@ -59,13 +59,18 @@ return [
     'kolob-pitch.js', 'kolob-score.js', 'kolob-tunes.js',
     // the composers (pure: handed a moment and the caller's dice)
     'kolob-melody.js', 'kolob-harmony.js',
+    // the hymn composer (round 3, M1): pure, loaded ahead of the performers;
+    // the engine begins singing its hymns in round 3's integration
+    'kolob-dialects.js', 'kolob-hymnists.js', 'kolob-composer.js',
     // the voices
     'kolob-voices-organ.js', 'kolob-voices-choir.js', 'kolob-voices-winds.js',
     'kolob-voices-ground.js', 'kolob-voices-field.js', 'kolob-voices-bagpipe.js',
     'kolob-voices-band.js',
     // the performers (the trombone choir at dawn plans and plays itself;
-    // the guests' room places it, the meeting seats it)
-    'kolob-guest-trombones.js', 'kolob-guests.js', 'kolob-meeting.js',
+    // the guests' room places it, the meeting seats it; the day's hymnal
+    // orders the meeting's hymns from the composer and brings them back —
+    // round 3's integration, when the meeting began to sing them)
+    'kolob-hymnal.js', 'kolob-guest-trombones.js', 'kolob-guests.js', 'kolob-meeting.js',
     // the facade
     'kolob-core.js',
 ];

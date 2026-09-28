@@ -313,7 +313,7 @@ window.KOLOB.Score = (function () {
   var EVENTS = {
     "meeting-start":       { n: "int", sunday: "str?", kind: "str", mode: "mode", keynoteHz: "num", houseDialect: "str?" },
     "section-start":       { section: "str", index: "int" },
-    "hymn-announced":      { hymn: { id: "hymnId", number: "num?", nameDs: "str?", meter: "str", dialect: "dialect?" }, leaderDs: "str?" },
+    "hymn-announced":      { hymn: { id: "hymnId", number: "num?", nameDs: "str?", meter: "str", dialect: "dialect?", authorDs: "str?" }, leaderDs: "str?" },
     "verse-start":         { hymnId: "hymnId", verse: "int", practice: "practice" },
     "cadence":             { kind: "cadence" },
     "guest-start":         { guest: "str", section: "str", logged: "bool" },
@@ -349,6 +349,9 @@ window.KOLOB.Score = (function () {
     // until}); and the prelude's seating, drawn per Sunday
     "house-lets-go":       { guest: "str", at: "num", until: "num", layers: "arr", released: "arr", logged: "bool" },
     "prelude-seating":     { n: "int", seating: "str", at: "obj" },
+    // round 3: the day's hymnal — the house dialect and each singing
+    // section's hymn (its id, dialect, key), drawn with the plan
+    "hymnal":              { house: "dialect", hymns: "arr" },
   };
   var KINDS = {
     int: isInt, num: isNum, str: isStr, bool: isBool, obj: isObj, arr: Array.isArray,

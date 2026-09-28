@@ -71,6 +71,7 @@
     minutes: "𐐗𐐢𐐊𐐡𐐗𐐝 𐐣𐐆𐐤𐐆𐐓𐐝",         // CLERK'S MINUTES
     broadside: "𐐜 𐐒𐐡𐐃𐐔𐐝𐐌𐐔",            // THE BROADSIDE
     hymnBoard: "𐐐𐐆𐐣 𐐒𐐄𐐡𐐔",             // HYMN BOARD
+    hymnNo: "𐐐𐐆𐐣",                        // HYMN (the board's number, and its row)
   };
   var SECTIONS_DS = {
     prelude: "𐐑𐐡𐐇𐐢𐐧𐐔",
@@ -138,6 +139,7 @@
     orderOfService: "ORDER OF SERVICE", theStops: "THE INSTRUMENTS",
     copyParams: "COPY PARAMETERS", copied: "COPIED ✓",
     minutes: "CLERK'S MINUTES", broadside: "THE BROADSIDE", hymnBoard: "HYMN BOARD",
+    hymnNo: "HYMN",
   };
   var SECTIONS_EN = {
     prelude: "PRELUDE", invocation: "INVOCATION", hymn: "HYMN", interlude: "INTERLUDE",
@@ -221,8 +223,16 @@
         return st ? minute(st[0], S[st[1]], "visitation") : null; // a guest the minutes do not know is not named as another
       }
       case "verse-line":                                     // (a line sung back to the deacon is his ☞ row's; it writes none of its own)
+        // (a composed hymn's lines are told by its verses: one row a verse)
+        if (ev.composed) return null;
         return ev.practice === "lined" ? null : minute("¶", S.verse + (ev.speechLine != null ? " " + ev.speechLine : ""), "verse");
-      case "lining-out":    return minute("☞", LAYERS_DS.clarinet + " " + S.linesOut, "verse");
+      case "verse-start":                                    // (round 3: a composed hymn's verse — the motif couplets' stanzas keep their line rows)
+        return ev.composed ? minute("¶", S.verse + " " + (ev.verse + 1), "verse") : null;
+      case "hymn-announced":                                 // (round 3: the number and the Deseret name, as the board gives them)
+        return ev.hymn && ev.hymn.number != null ? minute("№", S.hymnNo + " " + ev.hymn.number + (ev.hymn.nameDs ? " " + ev.hymn.nameDs : ""), "verse") : null;
+      case "lining-out":                                     // (a composed hymn lined out: the deacon's row once a verse, at its first line)
+        if (ev.composed && ev.line > 0) return null;
+        return minute("☞", LAYERS_DS.clarinet + " " + S.linesOut, "verse");
       case "field": {
         var fd = TT(FIELD_DS, FIELD_EN)[ev.field];
         return minute("⋆", fd || TT(LAYERS_DS, LAYERS_EN).ambient, "ambient");
@@ -242,7 +252,7 @@
         if (ev.action === "sample") return minute("◈", S.sample + " " + (TT(LAYERS_DS, LAYERS_EN)[ev.layer] || ""), "transport");
         return null;
     }
-    return null;                                              // chords, cadences, spans, the hymn's announcement: the page stays open
+    return null;                                              // chords, cadences, spans: the page stays open
   }
 
   // ==========================================================================
@@ -370,6 +380,7 @@
     if (l) l.innerHTML = '<div class="kolob-log-empty">' + TT(STR, STR_EN).listening + '</div>';
   }
   function logEvent(ev) {
+    noteHymn(ev);
     var log = document.getElementById("kolob-log"); if (!log) return;
     noteGuest(ev);
     var d = dsEvent(ev);
@@ -392,6 +403,17 @@
   // page keeps its own tally from the typed spans as well, so a guest that
   // says logged: false is never named here, whatever the poll says.
   var unloggedGuests = {};
+  // THE HYMN ON THE BOARD (round 3) — from the typed hymn-announced: its
+  // number, its Deseret name, its meter and its hymnist's name in Deseret
+  // (SCORE §6). The English name is the composer's dev field and is never
+  // shown, in either script; the board keeps the hymn up until the next is
+  // announced, and clears when a meeting begins or the benches empty.
+  var boardHymn = null;
+  function noteHymn(ev) {
+    if (!ev) return;
+    if (ev.type === "hymn-announced" && ev.hymn && ev.hymn.number != null) boardHymn = ev.hymn;
+    else if (ev.type === "meeting-start" || (ev.type === "transport" && ev.action === "stop")) boardHymn = null;
+  }
   function noteGuest(ev) {
     if (!ev || (ev.type !== "guest-start" && ev.type !== "guest-end")) return;
     if (ev.type === "guest-start" && ev.logged === false) unloggedGuests[ev.guest] = true;
@@ -491,12 +513,16 @@
     }
     day.textContent = TT(ACTIVITIES_DS, ACTIVITIES_EN)[c.activity] || "";
     var mode = TT(MODES_DS, MODES_EN)[c.mode] || "";
+    // (the meter: a composed hymn's, as it was announced — typed — while its
+    // section lasts; else the conductor's, during a hymn)
+    var sings = c.section === "hymn" || c.section === "doxology";
+    var meter = sings && boardHymn && boardHymn.meter ? boardHymn.meter : (c.section === "hymn" ? c.meter : null);
     mm.innerHTML = joinParts([
       latinMode ? titleCase(mode) : mode,
-      c.section === "hymn" && c.meter ? metersDots(c.meter) : "",
+      meter ? metersDots(meter) : "",
     ]);
   }
-  var METER_DOTS = { CM: "8.6.8.6", LM: "8.8.8.8", SM: "6.6.8.6", "87.87": "8.7.8.7", CMD: "8.6.8.6 ×2" };
+  var METER_DOTS = { CM: "8.6.8.6", LM: "8.8.8.8", SM: "6.6.8.6", "87.87": "8.7.8.7", CMD: "8.6.8.6 ×2", "87.87D": "8.7.8.7 ×2", "76.76D": "7.6.7.6 ×2", "11s": "11.11.11.11", "10.10R": "10.10 ℟" };
   function metersDots(m) { return METER_DOTS[m] || m; }
 
   // The direction line — the event flag printed as a rubric on the programme
@@ -535,6 +561,18 @@
   function updateBoard(c, playing) {
     var seedEl = document.getElementById("kolob-seed-current");
     if (seedEl && K.getSeed) seedEl.textContent = String(K.getSeed());
+    var hymnEl = document.getElementById("kolob-board-hymn");
+    if (hymnEl) {
+      var hy = playing ? boardHymn : null, html = "";
+      if (hy) {
+        var SS = TT(STR, STR_EN);
+        html = '<span class="kolob-board-n">' + SS.hymnNo + '<b>' + hy.number + '</b></span>' +
+          (hy.nameDs ? '<span class="kolob-board-n kolob-board-name">' + hy.nameDs + '</span>' : '') +
+          (hy.authorDs ? '<span class="kolob-board-n kolob-board-author">' + hy.authorDs + '</span>' : '');
+        // (its meter is printed on the mode line above it, from the same event)
+      }
+      if (hymnEl.getAttribute("data-html") !== html) { hymnEl.innerHTML = html; hymnEl.setAttribute("data-html", html); }
+    }
     var numsEl = document.getElementById("kolob-board-nums");
     if (numsEl) {
       if (playing && K.getMotifStats) {

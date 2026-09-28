@@ -818,35 +818,50 @@ window.KOLOB = window.KOLOB || {};
   // and the strings rest their hands while it sounds (S.hallListens): the
   // first hymn is heard before anyone sings it.
   // ==========================================================================
+  // (a deferred phrase of a guest asks whether its meeting still stands: a
+  // new meeting's plan seats new guests, and the old one's go unplayed)
+  function C_live(V) { var g = S.Meeting.guests(); return V && V.stream && g.some(function (x) { return x.type === V.type && x.fired; }) && S.Meeting.meetingNum() === V.meetingNum; }
   function trombonesAtDawn(V, tc) {
+    V.meetingNum = S.Meeting.meetingNum();
     var G = KOLOB.GuestTrombones;
     if (!G || !V || !V.material || !V.stream) return 4;
-    var calls = [];                               // [stage, t, side] — the rows to tell
-    var end = G.perform(S.ctx, wideSend(), tc, V.material, V.stream, {
-      onNote: function (x) {
-        emitNote("trombones", x.freq, x.t, x.dur, guestNote(V, "trombones", { part: x.part, choir: x.choir, line: x.line, loud: x.loud }));
-      },
-      onPhrase: function (ph) {
-        var side = ph.pan < 0 ? "west" : "east";
-        if (ph.joins) calls.push(["together", ph.t0, side]);
-        else if (ph.choir === "far" && !calls.some(function (c) { return c[0] === "far"; })) calls.push(["far", ph.t0, side]);
-        else if (ph.choir === "near" && !calls.some(function (c) { return c[0] === "answer"; })) calls.push(["answer", ph.t0, side]);
-      },
-    });
-    claimAir(end - tc, 3);
+    var calls = [];                               // [stage, t, side] — the rows told
     var ROWS = {
       far: ["♪ trombones at dawn", function (c) { return "far to the " + c[2]; }],
       answer: ["♪ the near choir answers", function (c) { return "from the " + c[2]; }],
       together: ["♪ the two choirs together", function () { return "the last chord"; }],
     };
-    calls.forEach(function (c) {
+    // a stage's row, told at its phrase's first sound (the far choir's first
+    // call at once: it is now)
+    function call(stage, t0, side) {
+      var c = [stage, t0, side];
+      calls.push(c);
       function say() {
-        tell(V, { type: "guest", guest: "trombones", stage: c[0], side: c[2], section: S.Meeting.section(),
+        tell(V, { type: "guest", guest: "trombones", stage: c[0], side: c[2], section: S.Meeting.section(), hymnId: V.fromHymn || null,
                   cat: "visitation", label: ROWS[c[0]][0], detail: ROWS[c[0]][1](c) });
       }
-      if (c[1] <= tc + 1e-6) say();               // the far choir's first call is now
+      if (c[1] <= S.now() + 1e-6) say();
       else cueAt("guests", c[1], say);
+    }
+    // (the dawn is laid out a phrase at a time, on the guests' lane, each
+    // phrase 2.5 s before it sounds — not the whole dawn in this cue: round
+    // 3, when a composed hymn's dawn cost 390 ms laid out at once; each
+    // phrase's notes are reported, and its row told, as it is laid out)
+    var end = G.perform(S.ctx, wideSend(), tc, V.material, V.stream, {
+      defer: function (at, fn) {
+        cueAt("guests", at, function () { if (S.playing && C_live(V)) fn(); });
+      },
+      onNote: function (x) {
+        emitNote("trombones", x.freq, x.t, x.dur, guestNote(V, "trombones", { part: x.part, choir: x.choir, line: x.line, loud: x.loud, hymnId: V.fromHymn || null }));
+      },
+      onPhrase: function (ph) {
+        var side = ph.pan < 0 ? "west" : "east";
+        if (ph.joins) call("together", ph.t0, side);
+        else if (ph.choir === "far" && !calls.some(function (c) { return c[0] === "far"; })) call("far", ph.t0, side);
+        else if (ph.choir === "near" && !calls.some(function (c) { return c[0] === "answer"; })) call("answer", ph.t0, side);
+      },
     });
+    claimAir(end - tc, 3);
     // the span: the choirs' last chord, and the town's air a moment after it
     return end - tc + 2;
   }

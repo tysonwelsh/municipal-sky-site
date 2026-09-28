@@ -2,7 +2,8 @@
 
 *This is the interface every Kolob 2 crew codes against. It is owned by the
 integrator (branch `kolob-2`). Draft 1, 2026-09-26; round 2's requests
-adopted 2026-09-27 (§9, which wins where it and an earlier section differ).*
+adopted 2026-09-27 (§9, which wins where it and an earlier section differ);
+round 3's composed hymns adopted 2026-09-27 (§10, which wins over both).*
 
 To change this contract, write a request in your handoff note. **Do not edit
 this file from a crew branch.**
@@ -355,3 +356,162 @@ The labels as implemented (`kolob-core.js`, THE DICE):
 - **`KolobAudio.setForceVisitation(name)`** names the guest the Ives switch
   forces: `bands`, `steeples`, `oldtune` or `trombones` (`true` draws one).
   A `logged: false` guest is listed in `KOLOB._s.UNLOGGED_GUESTS`.
+
+---
+
+## 10. Round 3, adopted (the meeting sings composed hymns)
+
+*The integration of the HYMN crew's composer (`handoff/r3-hymn-1.md`, its
+requests to the integrator) into the meeting. Where this section and an
+earlier one disagree, this section wins; the code named is the authority for
+the details. Handoff: `handoff/r3-integrate-1.md`.*
+
+### 10.1 Modules (§1, §9.1)
+
+- **`kolob-hymnal.js` joins the engine**, among the performers, before the
+  trombones (`_engine.php`). It is the day's hymnal — the house dialect and
+  each hymn's dialect and key, drawn with the plan — and the composer's desk:
+  it orders each hymn when the meeting is planned and brings it back, written
+  **off the audio path**:
+  1. in a Web Worker, where the page has one (the composer's own rooms —
+     `pj2-rand`, `kolob-pitch`, `kolob-score`, `kolob-tunes`,
+     `kolob-dialects`, `kolob-hymnists`, `kolob-composer` — loaded into it by
+     the versioned URLs the page itself loaded);
+  2. else in idle slices of the main thread (a timer, one hymn a slice,
+     never a clock cue);
+  3. and if a hymn is asked for before it has come back, it is written there
+     and then, and counted (`KOLOB.Hymnal.stats().late`, `.lateInCue`).
+
+  The hymn is the same by every road: the composer is pure, its stream is
+  `hymn:<n>:<i>` rebuilt from the visit's seed and the label, and the
+  meeting's earlier hymns are handed to it in the same order and the same
+  lightened form (`KOLOB.Hymnal.lighten`: the Score whole, and of the dev
+  report only `frame`, `peak`, `checks` and the fingerprint's `share`).
+- **The composer's rooms** (`kolob-dialects.js`, `kolob-hymnists.js`,
+  `kolob-composer.js`, loaded since the r3-hymn merge) are now called by the
+  engine, through the hymnal only.
+- **The performer** is the choir's room (`kolob-voices-choir.js`,
+  `S.singHymn`), with the organ's part lines (`kolob-voices-organ.js`,
+  `S.organPartLine`).
+
+### 10.2 Streams (§3, §9.2)
+
+| label | draws |
+|---|---|
+| `hymnal:<n>` | the day's hymnal: `house` (the house dialect); `hymn:<k>` per singing section (its dialect, its key, which way away) — thrown for every singing section of the plan, used or not |
+| `hymn:<n>:<i>` | the composer's (as §3 wrote it: n the meeting, i the singing section from 1 — the doxology counts). Its forks are r3-hymn-1's (`dialect`, `hymnist`, `frame`, `skeleton`, `naming:<dialect>`, `tempo`, `harmony`, `harmony:repair:<r>`) and, below them, `performance` |
+| `hymn:<n>:<i>` → `performance` | `tempo`, `verses`, `lead`, `tail`, `vowels:<v>`, `fuging`, `appetite`, `ornament:<v>:<line>:<voice>`, `precentor:<v>:<line>`, `fuging:<v>`, `assembly:<line>` |
+
+`S.hymnStream(n, i)` is the stream; `S.visitSeed()` hands the seed to the
+worker. The composer is given `dialect`, `meter` (the plan's draw; the
+doxology's is the composer's own), `mode` (the section's: a dark Sunday's
+doxology is written in the mode its sunrise will lift it into, read from a
+fresh copy of the section's fork), `keyMonzo`, `id`, `gestures` (the first
+hymn and the doxology are seeded from the day's theme, the others from the
+day's other gestures; on a withheld Sunday only the doxology carries the
+theme) and `others` (the meeting's earlier hymns). The hymnist is the
+composer's own draw.
+
+### 10.3 The Score (§5, §9.4)
+
+Adopted from r3-hymn-1, as the composer writes them:
+
+- **Hymn:** `amen` (a Line, sung after the last verse; the Tabernacle's);
+  `hymnist` `{id, nameDs, nameEn}` (`nameEn` dev-only); `report` and
+  `nameEn` (dev-only, never rendered).
+- **Line:** `plan` (dev), `barStart`, `startBeat`.
+- **Chords:** `name`, `inv`, `fn`, `tones` (`[class, alt]` pairs),
+  `rootAlt`, `dim7`.
+- **Note:** `alt`, `comma` (as §9.4), and `ornament` — the Old Way's
+  ornament places (`turn`, `slide`, `grace`), which the performer decorates
+  by each singer's appetite.
+- **A composed note's `monzo` is relative to its hymn's key:**
+  `Hz = keynoteHz × ratio(keyMonzo) × ratio(monzo)`.
+
+### 10.4 Performance (§5.1)
+
+A composed hymn is sung verse by verse in its dialect's practice:
+
+| dialect | practice | the organ | the close |
+|---|---|---|---|
+| Tabernacle | `sung` every verse | modulates when the hymn is keyed away; gives out the tune (its last line, alone); doubles the four parts under every verse (full on the last of three or four) | the verse's full close; the plagal A-men after the last verse |
+| Sacred Harp | verse 1 `notes` (fa sol la mi), then `sung` | none | the bare fifths the composer wrote; no A-men |
+| Old Way | `lined` every verse: the deacon's clarinet gives each line, the ward answers slowly, everyone on the tune (the men an octave down), ornamenting at the marked places | none | none; no A-men |
+
+- **Verses:** 2–4 in the Tabernacle, 2–3 in the Sacred Harp, 1–2 in the Old
+  Way, 1–2 in a doxology — as many as the section has room for; a verse over
+  100 s is sung once; no hymn runs past 1.5× its section's planned length.
+- **`verse-start`** carries `performance`:
+  `{hymnId, verse, practice, tempoMul, rubato, organ: {registration} | null, singers, beatS}`.
+- **Today's choir** takes the Score's parts as the dialect asks
+  (`S.hymnVoices`): the Sacred Harp's tenor is always sung.
+- **Between verses:** a breath; and, where the section drew them, the
+  fuging (on the hymn's own head; never in the Old Way or a doxology) and a
+  guest seated in the section (in the gap after the middle verse; after the
+  hymn when it has one verse).
+- **A withheld Sunday's doxology is the assembly:** its first verse, the
+  deacon doubling the tune above, told as the assembly's span and its
+  `whole-tune` row.
+
+### 10.5 Events (§6, §9.5)
+
+- **`hymn-announced.hymn`** adds `authorDs` (the hymnist's Deseret name; in
+  the contract, `str?`), and carries as extras `mode`, `key`
+  (`home` | `sub` | `dom`), `keyMonzo`, `form`, `modeOfTime`.
+- **`meeting-start.houseDialect`** is drawn (the hymnal's house).
+- **New type `hymnal`:** `{house, hymns: [{id, section, dialect, key, meter}]}`,
+  once a meeting, with the plan.
+- **A composed hymn's events** say `composed: true`:
+  - `verse-start` once a verse;
+  - `verse-line` once a line, its `score` the composer's Line as written
+    (in the hymn's key), with `keyMonzo`, `dialect`, and `amen` for the A-men;
+  - `lining-out` once a lined line (`verse`, `line`).
+- **`cadence`** (by `hymn`) at each verse's close, of the kind its last line
+  ends on (`none` and `half` are not told), and at the A-men (`plagal`);
+  (by `fuging`) the fuging's close — the Tabernacle's `plagal`, the Sacred
+  Harp's `openfifth`. `fuging` carries `hymnId` and the `head` (degrees).
+- **Notes of a composed hymn:** `part` (the singer's section), `sings` (the
+  Score part sung), `hymnId`, `verse`, `line`, `beat`, `syl`, `deg`, `monzo`,
+  `keyMonzo`, `comma`; `octave` (±1: a part sung an octave off); `amen`;
+  `fuging` for the fuging's entries. The organ's: `part`, `hymnId`, `verse`,
+  `line`, `beat`, `deg`, `monzo`, `keyMonzo`, and `givingOut`, `modulation`
+  or `amen`; its pedal says `part: "pedal"`, its monzo an octave down. A
+  trombone note names the dawn's hymn (`hymnId`).
+- **No row for every line:** the page prints a composed hymn once a verse
+  (`¶ VERSE n`), its number and name when announced (`№ HYMN n …`), and the
+  deacon once a verse when he lines it out.
+
+### 10.6 The house around a hymn (§4, §9.3)
+
+- **A composed hymn owns its section** from its announcement to its last
+  chord (`S.Meeting.hymnSounding()`): the joint waits for it and a breath;
+  the house listens (`hallListens()` — the organist's own chords, the
+  harmonium, the strings and the clarinet begin no turn); the guests wait
+  (the hymn gives a seated guest its gap); the conductor's own fuging and
+  assembly defer to the hymn's. The choir's own turns wait for the next
+  section — except, once the hymn is done, to answer the deacon if he lines
+  out a line of the day's material. The section lasts
+  `max(planned, lead + the performance + tail)`.
+- **The performer's hands on the meeting** are `S.Meeting.hands`
+  (`owns`, `until`, `done`, `fugingPlanned`, `fuging`, `guestWaiting`,
+  `guestInGap`, `assemblyBegins`); the book adds `house()`, `hymnal()`,
+  `hymn()` and `hymnSounding()`.
+- **Joints follow the house dialect** (the organ's amen is the Tabernacle's):
+  a Tabernacle house as before; a Sacred Harp house closes dominant-to-home
+  (`authentic`, or `half`), the meeting too; an Old Way house (whose lined
+  hymns carry no harmony) keeps the organist's amens as ever.
+- **Keys:** the first hymn at home (P 0.7; always when the trombones play it
+  at dawn), a hymn after one sung away pulled home (0.8), the doxology home.
+  A keyed hymn: the organ modulates through the day's own tonic chord (a chord
+  the two keys share) to the new key's dominant seventh; the drone (the day's
+  keynote) steps back to 0.22 under the hymn and returns after it.
+- **The trombones at dawn** play the day's first composed hymn
+  (`KOLOB.GuestTrombones.chorale({hymn})`), taken up at their cue; the prelude
+  then lasts at least until the far choir's last chord has rung out. Without
+  a hymnal (a lab with no composer), round 2's chorale of the poured theme.
+  `KOLOB.GuestTrombones.perform(…, hooks)` takes `defer(at, fn)`: the engine
+  lays the dawn out a phrase at a time on the guests' lane, 2.5 s ahead of
+  each phrase (a whole composed dawn laid out in its cue was 390 ms of main
+  thread), and tells each stage's row as its phrase is laid out.
+- **`KolobAudio`** adds `getHymnal()`, `getHymn(id)`, `hymnalStats()` and
+  `clockHealth()` (cues fired after their time; for the silent checks).

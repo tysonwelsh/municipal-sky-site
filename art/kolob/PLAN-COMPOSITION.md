@@ -1161,3 +1161,29 @@ The source is `critic/enrichment-2.md`, and the owner listened to `handoff/liste
 **A word from the owner to every agent on this build (2026-09-27, verbatim):**
 
 > "Oh, very good. Glad to hear that round three has begun. Go ahead and pass a word to the agents telling them that I'm excited to see what they come up with, that they are some of the most remarkable agents we've had working on this app yet. So I'm very excited to see what they come back with and how they really elevate and take this to the next level in terms of just artistry and richness of aleatoric music and what can be done using large language models to create this kind of rich programmatic music generator."
+
+**THE OWNER'S HISS, diagnosed (for the CAST and ORGANIST crews, 2026-09-28).** The owner hears "a
+brushing s sound… like a breath, or air released out of a tire… in between notes when the hymns
+are being sung" in hymn-lab. The integrate crew's critic rendered hymn-lab's seed-7 Tabernacle
+verse offline (16 singers, pipe organ, the lab's room and compressors) and isolated each noise
+source by zeroing it. All four sources below must be addressed; the fix belongs to the crew that
+owns each file.
+
+1. **The ward's steady aspiration (the loudest; CAST, kolob-voices-vocal.js ~:401,
+   `aspLvl = 0.10 * breath`).** It runs through every note. Above 2 kHz it is −18.5 dB against the
+   tone at joins and −20.2 dB mid-note. Lower it sharply and let it breathe only at phrase
+   breaths.
+2. **The 'h' puff at each line start (CAST, vocal.js ~:413).** It is 2.8× the aspiration, peaks
+   in the line gaps at −24 dB, and falls to −31 dB without it.
+3. **The f/s fricatives when singing "on the notes" (CAST, vocal.js ~:393).** They reach −20 dB
+   median and −12 dB peak at joins. Soften and shorten them so they read as consonants, not hiss.
+4. **The pipe organ's chiff (ORGANIST, kolob-voices-pipeorgan.js).** It is a breath burst at every
+   new note, −27 dB median and −16 dB peak against the tone when the organ plays alone (hymn-lab's
+   giving-out). Under the ward it is about 10 dB below the aspiration. Make it far subtler.
+
+**Latent trap:** the pre-line inhale (vocal.js ~:387) never sounds today because its vowel gates
+are closed. Do NOT "fix" it into audibility; that would add a breath between every line.
+
+**Recommended:** render a short, silent A/B packet for the owner with and without each source,
+so he can confirm by ear which one he heard. The meetings' own hymn voices (the engine choir and
+house organ) are noise-free.

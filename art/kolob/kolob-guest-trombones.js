@@ -119,7 +119,10 @@
 //     an estimate from a nominal Common Meter hymn, and estimated: true)
 //   perform(ctx, dest, t, material, stream, hooks?) → end time (s, absolute)
 //     hooks: { onNote({freq, t, dur, part, choir, line, loud}), onPhrase(ph),
-//              only: "far"|"near" (a lab's solo; the engine never sets it) }
+//              only: "far"|"near" (a lab's solo; the engine never sets it),
+//              defer(at, fn) (round 3's integration: the engine's clock —
+//              every phrase after the first is laid out at `at`, a little
+//              before it sounds, instead of the whole dawn inside one cue) }
 //   decide(meetingInfo, stream) → { seat, why, odds, roll }   (plan, explained)
 //   score(material, stream, t0) → the whole performance as data (pure)
 //   chorale(material) → the material, read, tuned, voiced and placed (pure);
@@ -1131,8 +1134,16 @@ window.KOLOB.GuestTrombones = (function () {
     var farGain = Math.pow(10, farTrimDb(sh) / 20);
     var far = VB.create(ctx, bus, { rand: synth.fork("far"), distance: sh.farDist, room: town, side: farPan, spread: 0.2, gain: farGain });
     var near = VB.create(ctx, bus, { rand: synth.fork("near"), distance: sh.nearDist, room: town, side: nearPan, spread: 0.75, gain: Math.pow(10, nearTrimDb(sh) / 20) });
-    sc.phrases.forEach(function (ph) {
+    // (the engine lays the dawn out a phrase at a time, each a little ahead
+    // of its sound — hooks.defer: a composed hymn's whole dawn laid out in one
+    // cue cost 390 ms of main thread; a lab with no clock lays it all out now)
+    var AHEAD = 2.5;
+    sc.phrases.forEach(function (ph, k) {
       if (hooks.only && ph.choir !== hooks.only) return;       // (a lab's "far only" / "near only")
+      if (hooks.defer && k > 0 && ph.t0 - AHEAD > t) hooks.defer(ph.t0 - AHEAD, function () { layPhrase(ph); });
+      else layPhrase(ph);
+    });
+    function layPhrase(ph) {
       var band = ph.choir === "far" ? far : near;
       PARTS.forEach(function (p) {
         var ns = ph.parts[p];
@@ -1145,7 +1156,7 @@ window.KOLOB.GuestTrombones = (function () {
         });
       });
       if (hooks.onPhrase) hooks.onPhrase({ choir: ph.choir, line: ph.line, t0: ph.t0, t1: ph.t1, pan: ph.pan, repeat: !!ph.repeat, joins: !!ph.joins });
-    });
+    }
     // when the last of the town's air has died, let both choirs go
     var tail = sc.end + 4.5;
     var sent = ctx.createConstantSource ? ctx.createConstantSource() : ctx.createOscillator();
