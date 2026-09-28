@@ -894,13 +894,130 @@
   function pinsOf(board, dress) { return (board.fixtures || []).filter(function (f) { return f.kind === 'pin' && (!dress || f.dress === dress); }); }
 
   // specimen painters by `what`
+  /* ── specimens drawn as sprites: authored at 1:1, a dark outline baked
+   * round them so they separate from any rock under the curator's spot ── */
+  function outlined(c, col) {
+    var w = c.width, h = c.height, g = c.getContext('2d'), im = g.getImageData(0, 0, w, h), d = im.data, o = A.rgb(col || '#0a080c');
+    var mark = new Uint8Array(w * h);
+    for (var y = 0; y < h; y++) for (var x = 0; x < w; x++) {
+      var i = y * w + x; if (d[i * 4 + 3]) continue;
+      if ((x > 0 && d[(i - 1) * 4 + 3]) || (x < w - 1 && d[(i + 1) * 4 + 3]) || (y > 0 && d[(i - w) * 4 + 3]) || (y < h - 1 && d[(i + w) * 4 + 3])) mark[i] = 1;
+    }
+    for (i = 0; i < w * h; i++) if (mark[i]) { d[i * 4] = o[0]; d[i * 4 + 1] = o[1]; d[i * 4 + 2] = o[2]; d[i * 4 + 3] = 230; }
+    g.putImageData(im, 0, 0);
+    return c;
+  }
+  // rows of characters → a sprite (with a 1-px margin for the outline)
+  function ascii(rows, pal) {
+    var h = rows.length, w = 0;
+    for (var j = 0; j < h; j++) w = Math.max(w, rows[j].length);
+    var c = A.makeCanvas(w + 2, h + 2), g = c.getContext('2d');
+    for (j = 0; j < h; j++) for (var i = 0; i < rows[j].length; i++) { var ch = rows[j][i]; if (pal[ch]) px(g, i + 1, j + 1, pal[ch]); }
+    return outlined(c);
+  }
+  function stampAt(g, c, x, y) { g.drawImage(c, Math.round(x - c.width / 2), Math.round(y - c.height / 2)); }
+  // Fig. 1: a split ring and three keys, a brass skeleton key, a steel
+  // house key and a little brass one, and a paper tag, number worn off
+  var KEYS = ascii([
+    '......AAa........',
+    '......A.aaAAAAAa.',
+    '..RRR.aab....bb..',
+    '.R...r.......b.b.',
+    '.R...rSSs........',
+    '.R...rS.sSSSSSSSs',
+    '..rrr.sst..t.tt..',
+    '...k.aAb.........',
+    '...k.A.b.........',
+    '.TTTTabbb........',
+    '.TuuT....ab......',
+    '.TTTT.....aab....',
+    '...........b.....'
+  ], { R: '#d4d8e4', r: '#6a6e7e', A: '#f4e2a0', a: '#caa24a', b: '#7a5a22', S: '#eef2f8', s: '#a0a6b6', t: '#4e5262', T: '#e2d6b0', u: '#9a8a60', k: '#8a7e68' });
+  // Fig. 4: a trilobite, surprised (two round white eyes)
+  var TRILO = ascii([
+    '....ccccc....',
+    '..cCCCCCCCc..',
+    '.cCWWCCCWWCc.',
+    '.cCWKCeCKWCc.',
+    'cCCCCCeCCCCCc',
+    'dddddcecddddd',
+    'd.cCCdedCCc.d',
+    'd.dddcecddd.d',
+    'd..cCdedCc..d',
+    '...ddcecdd...',
+    '...cCdedCc...',
+    '...ddcecdd...',
+    '....cdedc....',
+    '....dcecd....',
+    '.....ccc.....',
+    '......d......'
+  ], { C: '#e6dcc4', c: '#b4aa90', d: '#6e6452', e: '#d0c6ac', W: '#ffffff', K: '#231d1a' });
+  // Fig. 11: the strongbox, a brass lock plate, riveted bands, rusted shut
+  var BOX = ascii([
+    '....kkkkkk.....',
+    '....k....k.....',
+    'IIIIIIIIIIIIIII',
+    'IiiiiiiiiiiiiiD',
+    'BoBBBBBBBBBBBoB',
+    'iiiiiLLLLLiiiiD',
+    'iiiRiLlKlLiiiiD',
+    'BoBBBLlKlLBBBoB',
+    'iiiiiLLLLLiRiiD',
+    'iiiiiiiiiiiiiiD',
+    'DDDDDDDDDDDDDDD'
+  ], { I: '#9a9aae', i: '#5e5e72', D: '#2c2c36', B: '#7a7a92', o: '#c4c4d8', L: '#f0cc6a', l: '#a8843c', K: '#141016', k: '#8a8aa0', R: '#8a4a24' });
+  // Fig. 2: a seed fern (Neuropteris): a pale impression in the dark shale,
+  // an arching midrib, blunt leaflets alternating, smaller to the tip
+  function fernSprite() {
+    var W = 26, H = 21, c = A.makeCanvas(W, H), g = c.getContext('2d');
+    var LEAF = '#aab4ca', TIP = '#7e8aa8', RIB = '#d4dcea';
+    // a frond: a midrib arching over, leaflets (one pixel, a drooping tip)
+    // alternating left and right with a gap between each: pinnate, readable
+    function frond(x0, y0, len, dir, lean, reach) {
+      for (var i = 0; i < len; i++) {
+        var u = i / len, nx = Math.round(x0 + i * dir * 0.55), ny = Math.round(y0 - i + i * i * lean);
+        px(g, nx, ny, RIB);
+        if (i >= 1 && i < len - 1 && i % 2 === 1) {
+          var side = ((i - 1) / 2) % 2 ? 1 : -1, L = Math.max(1, Math.round(reach * (1 - u * 0.8)));
+          for (var k = 1; k <= L; k++) px(g, nx + side * k, ny + (k === L && L > 1 ? 1 : 0), k === L ? TIP : LEAF);
+        }
+      }
+    }
+    frond(10, 20, 19, 1, 0.014, 5);
+    frond(16, 20, 12, -1, 0.03, 4);
+    return outlined(c, '#161a28');
+  }
+  // Fig. 3: the company plaque: THIS SEAM OPENED BY the name, gouged away
+  // (ghost letters under the scratches, never legible), COAL & LAND below
+  function plaqueSprite() {
+    var W = 45, H = 17, c = A.makeCanvas(W, H), g = c.getContext('2d'), x = 1, y = 1, w = 43, h = 15;
+    rect(g, x, y, w, h, P.BRASS1); rect(g, x + 1, y + 1, w - 2, h - 2, P.BRASS3);
+    hline(g, x + 1, x + w - 2, y + 1, P.BRASS4); vline(g, x + 1, y + 1, y + h - 2, P.BRASS4);
+    hline(g, x + 1, x + w - 2, y + h - 2, P.BRASS2); vline(g, x + w - 2, y + 2, y + h - 2, P.BRASS2);
+    // the name: typed in once, then gouged many times by different tools
+    A.text(g, 'HOLLISTER', x + 4, y + 3, P.BRASS1);
+    for (var i = 0; i < 22; i++) {
+      var sx = x + 3 + ((i * 7) % 36), sy = y + 3 + (i % 3) * 2;
+      A.line(g, sx, sy, sx + 2 + (i % 3), sy + 1 + (i % 2), i % 3 ? P.BRASS0 : P.BRASS4);
+    }
+    A.text(g, 'COAL&LAND', x + 4, y + 9, P.BRASS0);
+    px(g, x + 2, y + 2, P.IRON1); px(g, x + w - 3, y + 2, P.IRON1); px(g, x + 2, y + h - 3, P.IRON1); px(g, x + w - 3, y + h - 3, P.IRON1);
+    return outlined(c);
+  }
+  var FERN = null, PLAQUE = null;
   var SPEC = {
-    keys: keys, fern: function (g, x, y) { fern(g, x - 6, y + 4, 13, 1); fern(g, x + 9, y + 5, 9, -1); },
-    plaque: function (g, x, y) { plaque(g, x - 17, y - 5); }, trilobite: function (g, x, y) { trilobite(g, x, y); crinoid(g, x + 11, y + 8, 4); crinoid(g, x - 22, y + 6, 3); },
+    keys: function (g, x, y) { stampAt(g, KEYS, x, y); },
+    fern: function (g, x, y) { stampAt(g, FERN || (FERN = fernSprite()), x, y); },
+    plaque: function (g, x, y) { stampAt(g, PLAQUE || (PLAQUE = plaqueSprite()), x, y); },
+    trilobite: function (g, x, y) { stampAt(g, TRILO, x, y); crinoid(g, x + 11, y + 8, 4); crinoid(g, x - 22, y + 6, 3); },
     payroll: payroll, dollarm: function (g, x, y) { dollArm(g, x - 3, y + 6); }, watch: watch, ring: ring,
-    ribs: function (g, x, y) { paintRibs(g, x, y); }, ledgers: ledgerRoom, strongbox: strongbox,
+    ribs: function (g, x, y) { paintRibs(g, x, y); }, ledgers: ledgerRoom,
+    strongbox: function (g, x, y) { stampAt(g, BOX, x, y - 1); },
     fish: fish
   };
+  // the curator's spot for each (rx, ry): a disc that takes in the specimen and its tag
+  var SPOT = { keys: [13, 11], fern: [16, 13], plaque: [26, 13], trilobite: [12, 13], payroll: [11, 10], dollarm: [11, 12],
+    watch: [11, 10], ring: [9, 8], ribs: [30, 24], ledgers: [18, 13], strongbox: [12, 11], fish: [11, 8] };
 
   // where to put a numbered marker so it sits clear of the pins
   function placeTag(pins, taken, ax, ay, w, h, cands) {
@@ -920,19 +1037,33 @@
     if (best) taken.push(best);
     return best;
   }
+  // a specimen's footprint (for its tag and the markers to keep clear of)
+  var SPECBOX = { keys: [19, 15], fern: [26, 20], plaque: [45, 17], trilobite: [15, 18], payroll: [12, 9], dollarm: [10, 14],
+    watch: [15, 12], ring: [5, 5], ribs: [90, 48], ledgers: [30, 18], strongbox: [17, 13], fish: [13, 6] };
+  // where a figure's tag may hang: just off its edges, close enough to share its spot
+  function tagCands(hw, hh, w) {
+    return [[hw + 2, -hh - 4], [-hw - 2 - w, -hh - 4], [hw + 2, hh - 3], [-hw - 2 - w, hh - 3], [hw + 3, -3], [-hw - 3 - w, -3],
+      [-(w >> 1), -hh - 9], [-(w >> 1), hh + 2], [hw + 6, -hh - 8], [-hw - 6 - w, hh]];
+  }
   var CANDS = [[8, -10], [-16, -10], [8, 5], [-16, 5], [12, -3], [-20, -3], [-4, -14], [-4, 8], [16, -12], [-24, 6]];
-  // a figure tag: bone chip, black numeral
+  // a figure tag: a card chip on a thread, in the rock's own light (the
+  // curator's spot lights it with the specimen, and it stays quieter)
   function figTag(g, n, t, ax, ay) {
-    line(g, ax, ay, t.x + (t.w >> 1), t.y + (ay < t.y ? 0 : t.h - 1), P.BONE_D);
-    rect(g, t.x, t.y, t.w, t.h, P.BONE); hline(g, t.x, t.x + t.w - 1, t.y + t.h - 1, P.BONE_D);
+    line(g, ax, ay, t.x + (t.w >> 1), t.y + (ay < t.y ? 0 : t.h - 1), '#8a7e68');
+    rect(g, t.x, t.y, t.w, t.h, P.PAPER_D); hline(g, t.x, t.x + t.w - 1, t.y + t.h - 1, P.PAPER_DD); hline(g, t.x, t.x + t.w - 1, t.y, '#cdbd8e');
     A.text(g, String(n), t.x + 2, t.y + 1, P.INK);
   }
-  // an exhibit marker: a black enamel roundel, a white numeral
+  // an exhibit marker (the legend's numbers): a round black enamel roundel
+  // with a brass rim and a bone numeral: a different shape from a tag
   function exhibitMarker(g, n, t, scratched) {
-    rect(g, t.x + 1, t.y, t.w - 2, t.h, P.INK); rect(g, t.x, t.y + 1, t.w, t.h - 2, P.INK);
-    hline(g, t.x + 1, t.x + t.w - 2, t.y, '#3a3440');
-    A.text(g, String(n), t.x + 2, t.y + 1, P.BONE);
-    if (scratched) for (var k = 0; k < t.w; k++) { px(g, t.x + k, t.y + 2 + (k % 3), '#8a8278'); px(g, t.x + k, t.y + 4 - (k % 2), '#6a6258'); }
+    var w = t.w, h = t.h, x = t.x, y = t.y;
+    // the rim (a disc for one figure, a pill for two)
+    hline(g, x + 2, x + w - 3, y - 1, P.BRASS2); hline(g, x + 2, x + w - 3, y + h, P.BRASS1);
+    vline(g, x - 1, y + 2, y + h - 3, P.BRASS2); vline(g, x + w, y + 2, y + h - 3, P.BRASS1);
+    px(g, x, y, P.BRASS3); px(g, x + 1, y, P.BRASS2); px(g, x, y + 1, P.BRASS2); px(g, x + w - 1, y, P.BRASS2); px(g, x + w - 1, y + h - 1, P.BRASS1); px(g, x, y + h - 1, P.BRASS1);
+    rect(g, x + 1, y, w - 2, h, P.INK); rect(g, x, y + 1, w, h - 2, P.INK);
+    A.text(g, String(n), x + 2, y + 1, P.BONE);
+    if (scratched) for (var k = 0; k < w; k++) { px(g, x + k, y + 2 + (k % 3), '#8a8278'); px(g, x + k, y + 4 - (k % 2), '#6a6258'); }
   }
 
   /* ══ lamps ═════════════════════════════════════════════════════════ */
@@ -1201,8 +1332,10 @@
     fs.forEach(function (f) { if (f.kind === 'pocket') drawPocket(fg, f, board); });
     var lamps = buildLamps(board, g);
     // markers: exhibits (black roundels) and figures (bone tags)
-    var pins = fs.filter(function (f) { return f.kind === 'pin' && !f.buried; }), taken = [];
+    var pins = fs.filter(function (f) { return f.kind === 'pin' && !f.buried; }), taken = [], tagAt = {};
     var zone = decor(board, 'cardzone'); if (zone) taken.push({ x: zone.x, y: zone.y, w: zone.w, h: zone.h });
+    // the specimens themselves: nothing is pinned over one
+    specs.forEach(function (s) { var b = SPECBOX[s.what] || [10, 10]; taken.push({ x: s.x - (b[0] >> 1), y: s.y - (b[1] >> 1), w: b[0], h: b[1] }); });
     (board.legend || []).forEach(function (e) {
       if (e.slot) return;
       var ref = (board.byId && board.byId[e.ref]) || fs.filter(function (f) { return f.id === e.ref; })[0], ax, ay;
@@ -1212,8 +1345,9 @@
       if (t) exhibitMarker(fg, e.n, t, e.scratched);
     });
     specs.forEach(function (s) {
-      var w = A.textW(String(s.fig)) + 4, t = placeTag(pins, taken, s.x, s.y, w, 7, CANDS);
-      if (t) figTag(fg, s.fig, t, s.x, s.y);
+      var b = SPECBOX[s.what] || [10, 10], hw = b[0] >> 1, hh = b[1] >> 1;
+      var w = A.textW(String(s.fig)) + 4, t = placeTag(pins, taken, s.x, s.y, w, 7, tagCands(hw, hh, w));
+      if (t) { figTag(g, s.fig, t, s.x + Math.max(-hw, Math.min(hw, t.x + (w >> 1) - s.x)), s.y + Math.max(-hh, Math.min(hh, t.y + 3 - s.y))); tagAt[s.fig] = t; }
     });
     // pins last, into the foreground layer (lit with a floor: they stand
     // proud of the rock, toward the glass, and must always read)
@@ -1225,7 +1359,10 @@
     // the curator's pin spots: a small cool light on each figure in the rock
     specs.forEach(function (s, i) {
       var reg = root.PachinkoBoard ? root.PachinkoBoard.regionAt(s.x, s.y) : null;
-      lamps.push({ x: s.x, y: s.y, r: 15, c: '#b8c4ff', k: 0.55, region: reg, kind: 'spot', seed: 300 + i, flame: false });
+      // (widened to take in its tag, which sits at the spot's softer edge)
+      var sp = SPOT[s.what] || [12, 12], rx = sp[0], ry = sp[1], tg = tagAt[s.fig];
+      if (tg) { rx = Math.max(rx, Math.abs(tg.x + tg.w / 2 - s.x) + tg.w / 2 + 1); ry = Math.max(ry, Math.abs(tg.y + 3 - s.y) + 4); }
+      lamps.push({ x: s.x, y: s.y, r: rx, ry: ry / rx, c: '#dfe6ff', k: 1.0, region: reg, kind: 'spot', seed: 300 + i, flame: false });
     });
     return {
       gals: st.gals, fore: fore, albedo: c, lamps: lamps, glints: glints,

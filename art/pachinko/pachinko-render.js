@@ -272,7 +272,7 @@
       if (rk <= 0) continue;
       var L = lampRec();
       L.x = M.x; L.y = M.y; setColour(L, M.c);
-      if (M.kind === 'spot') { L.r = M.r; L.spot = true; L.k = flickerOf(M, t) * Math.min(1.3, rk); }
+      if (M.kind === 'spot') { L.r = M.r; L.ry = M.ry || 1; L.spot = true; L.k = flickerOf(M, t) * Math.min(1.3, rk); }
       else {
         L.r = M.r * boost; L.k = flickerOf(M, t) * rk * (1 + flare * 0.35);
         if (GALLERY[M.region]) { L.ry = 0.62; L.gal = true; }
@@ -294,6 +294,23 @@
         L = lampRec();
         L.x = fl.lantern.x; L.y = fl.lantern.y; L.r = 46 * boost; setColour(L, P.LAMP); L.k = 1.0 * Math.max(lk, 0.5); L.haze = 1; L.dark = true;
       }
+    }
+    // the lode: the flare's light comes FROM the vein and floods up through
+    // the mine; the company's bulbs strung along every gallery flare on with
+    // it; once the ore is settled it keeps a little warm light of its own
+    var MM = root.PachinkoMischief, mis = fx.mis;
+    if (MM && MM.seamOf && mis && mis.crack && board) {
+      var sm = MM.seamOf(board), o = sm && MM.crackOrigin(sm);
+      if (o && LODE.lift > 0) {
+        L = lampRec(); L.x = o.x; L.y = o.y; L.r = 150 + 70 * LODE.boost; L.ry = 0.9; setColour(L, '#ffcf6a'); L.k = 1.35 * LODE.lift; L.haze = 0.35;
+      }
+      if (sm && mis.crack.u > 3) for (var vx = sm.x1 + 10; vx < sm.x2; vx += 24) {
+        L = lampRec(); L.x = vx; L.y = MM.seamY(sm, vx); L.r = 20; L.ry = 0.7; setColour(L, '#ffc860'); L.k = 0.6; L.dark = true;
+      }
+    }
+    if (LODE.lift > 0.12 && mine.gals) for (var gi = 0; gi < mine.gals.length; gi++) {
+      var G = mine.gals[gi];
+      for (var bx = G.x0 + 10; bx < G.x1 - 4; bx += 22) { L = lampRec(); L.x = bx; L.y = G.top + 4; L.r = 18; setColour(L, '#ffe0a0'); L.k = 1.1 * LODE.lift; L.haze = 0.5; }
     }
     var ex = fx.extraLamps || [];
     for (i = 0; i < ex.length; i++) {
@@ -320,7 +337,7 @@
     var hush = LODE.hush, ambK = 1 - 0.7 * hush, caseK = 1 - 0.65 * hush, lift = LODE.lift;
     hushK = hush;
     // ambient + case light (+ the flare's warm lift over everything)
-    var wr = 0.47 * lift, wg = 0.35 * lift, wb = 0.22 * lift;
+    var wr = 0.26 * lift, wg = 0.19 * lift, wb = 0.11 * lift;
     for (var c = 0, c3 = 0; c < NC; c++, c3 += 3) {
       LR[c] = AMB[c3] * ambK + CASE[c3] * caseK + wr;
       LG[c] = AMB[c3 + 1] * ambK + CASE[c3 + 1] * caseK + wg;
@@ -518,6 +535,11 @@
       var h = A.hash01(L.seed, Math.floor(t * 9), 4);
       if (L.kind === 'bulb') { px(g, L.fx, L.fy, P.FLAME2); px(g, L.fx, L.fy + 1, P.FLAME1); px(g, L.fx - 1, L.fy, 'rgba(255,224,160,0.55)'); px(g, L.fx + 1, L.fy, 'rgba(255,224,160,0.55)'); }
       else { px(g, L.fx, L.fy, P.FLAME2); px(g, L.fx, L.fy - 1, h < 0.5 ? P.FLAME1 : P.FLAME0); if (h > 0.8) px(g, L.fx + 1, L.fy - 1, P.FLAME0); }
+    }
+    // at the lode, the bulbs strung along every gallery are lit
+    if (LODE.lift > 0.12 && mine.gals) for (var gi = 0; gi < mine.gals.length; gi++) {
+      var G = mine.gals[gi];
+      for (var bx = G.x0 + 10; bx < G.x1 - 4; bx += 22) { px(g, bx, G.top + 3, P.FLAME2); px(g, bx, G.top + 4, LODE.lift > 0.5 ? '#ffffff' : P.FLAME1); px(g, bx, G.top + 2, P.IRON2); }
     }
     // figurines' candles
     var figs = figuresFor(view);
@@ -824,6 +846,9 @@
     if (anyOver) sg.drawImage(hotC, 0, 0);
     sg.drawImage(hazeC, 0, 0);
     sg.globalCompositeOperation = 'source-over';
+    // the lode's fracture opens in the lit rock (under the toys and the pins:
+    // a pin is never drawn anywhere but where it is)
+    mischief(sg, view, 'crack');
     // c. the figures, each lit whole by the light at his chest
     drawFigures(sg, figs);
     // d. the foreground (pins, markers, bay boards, what's in their hands),
@@ -849,7 +874,6 @@
       var hp = board.byId && board.byId[lid]; if (!hp) continue;
       px(sg, Math.round(hp.x), Math.round(hp.y), P.VOID0); px(sg, Math.round(hp.x) + 1, Math.round(hp.y), 'rgba(0,0,0,0.5)');
     }
-    mischief(sg, view, 'crack');
     // e. emissive
     drawEmissive(sg, view);
     if (A.drawProps) A.drawProps(sg, view, 'glow');

@@ -111,7 +111,8 @@
       var r = H(0x1c0de, x, 1);
       j = clamp(j + (r < 0.3 ? -1 : r > 0.7 ? 1 : 0), -1, 1);
       var yc = Math.round(Mm.seamY(sm, x)) + j, dist = Math.abs(x - o.x);
-      cols.push({ x: x, y: yc, d: dist, wmax: 1 + 5 * Math.pow(Math.max(0, 1 - dist / 170), 1.1), rag: H(0x1c0de, x, 7) });
+      var wm = 3 + 7 * Math.max(0, 1 - dist / 190);
+      cols.push({ x: x, y: yc, d: dist, wmax: wm, ws: Math.max(2, Math.round(wm * 0.5)), rag: H(0x1c0de, x, 7) });
     }
     // forks off the main crack, up and down into the rock
     var forks = [];
@@ -136,51 +137,117 @@
     var L = M().LODE, a = u - L.crack - c.d / 600;
     if (a < 0) return 0;
     var w = c.wmax * ease(a / 0.4);
-    if (u > 3) w = Math.max(1, w * Math.max(0, 1 - (u - 3) / 2.2), 1);
+    if (u > 3) w = w + (c.ws - w) * ease((u - 3) / 0.6);
     return w;
+  }
+  /* the vein's ore, baked once per fracture: a quartz matrix, dark vugs,
+   * and faceted gold (a lit facet up-left, a dark one down-right, a black
+   * seam round each nugget so they read as crystals, not a glowing band) */
+  var VEIN = null, SETTLE = 3.6;
+  function veinOf(F) {
+    if (VEIN && VEIN.key === F.key) return VEIN;
+    var n = F.cols.length, HH = 21, off = 10;
+    var tex = A.makeCanvas(n, HH), tg = tex.getContext('2d');
+    for (var ci = 0; ci < n; ci++) for (var r = 0; r < HH; r++) {
+      var h = H(0x0e1a, ci, r), col = h < 0.1 ? '#141018' : h < 0.32 ? '#5e5a4e' : h < 0.72 ? P.QUARTZ_D : P.QUARTZ;
+      px(tg, ci, r, col);
+    }
+    var R = A.rng(0x60de), nug = [];
+    for (var i = 1; i < n - 1;) {
+      var c = F.cols[i], half = Math.max(1, c.wmax / 2 - 1), rw = 1 + Math.floor(R() * 2.2 + (c.wmax > 7 ? 1 : 0)), rh = 1 + Math.floor(R() * 1.8);
+      var dy = Math.round((R() - 0.5) * 2 * Math.max(0, half - rh * 0.5));
+      for (var yy = -rh - 1; yy <= rh + 1; yy++) for (var xx = -rw - 1; xx <= rw + 1; xx++) {
+        var X = i + xx, Y = off + dy + yy; if (X < 0 || X >= n || Y < 0 || Y >= HH) continue;
+        var e = (xx * xx) / ((rw + 0.5) * (rw + 0.5)) + (yy * yy) / ((rh + 0.5) * (rh + 0.5));
+        if (e > 1.45) continue;
+        var s2 = xx / (rw + 0.5) + yy / (rh + 0.5);
+        px(tg, X, Y, e > 1 ? '#2a1a08' : s2 < -0.7 ? P.GOLD5 : s2 < -0.1 ? P.GOLD4 : s2 < 0.6 ? P.VEIN2 : s2 < 1.1 ? P.VEIN1 : P.VEIN0);
+      }
+      nug.push({ ci: i - Math.round(rw * 0.4), dy: dy - Math.round(rh * 0.5), ph: R() * 6.28, rate: 1.1 + R() * 2.4, big: rw >= 2 });
+      i += 2 + Math.floor(R() * 3) + (c.wmax < 5 ? 2 : 0);
+    }
+    // the settled vein (from +3.6 to the next game): lips and ore at the
+    // width it stays open, painted into the ROCK (the lamps light it)
+    var st = A.makeCanvas(320, 416), sg2 = st.getContext('2d');
+    for (ci = 0; ci < n; ci++) {
+      var C2 = F.cols[ci], w = C2.ws, up = Math.floor(w / 2), dn = w - up - 1;
+      sg2.drawImage(tex, ci, off - up, 1, w, C2.x, C2.y - up, 1, w);
+      px(sg2, C2.x, C2.y - up - 1, P.VOID0); px(sg2, C2.x, C2.y + dn + 1, P.VOID0);
+      if (C2.rag < 0.3) px(sg2, C2.x, C2.y - up - 2, '#1a1216');
+    }
+    VEIN = { key: F.key, tex: tex, off: off, HH: HH, nug: nug, settled: st };
+    return VEIN;
   }
   var band = null, bandG = null;
   function drawCrack(g, view, mis) {
     var cr = mis.crack; if (!cr) return;
     var F = fracture(view.board); if (!F) return;
     var u = cr.u, L = M().LODE, t = view.t || 0;
-    if (u < L.crack) return;
+    if (u < L.crack || u >= SETTLE) return;
+    var V = veinOf(F);
     // the rock either side of the fracture is pushed apart: a snapshot of the
     // lit band, laid back a column at a time, above the crack up and below it down
     var BY0 = 300, BH = 100;
     if (!band) { band = A.makeCanvas(320, BH); bandG = band.getContext('2d'); }
     bandG.clearRect(0, 0, 320, BH); bandG.drawImage(g.canvas, 0, BY0, 320, BH, 0, 0, 320, BH);
-    var hot = u < 3 ? 1 : Math.max(0.35, 1 - (u - 3) / 3);
+    var glow = u < 3 ? 1 : Math.max(0, 1 - (u - 3) / 0.6);
     for (var i = 0; i < F.cols.length; i++) {
       var c = F.cols[i], w = openAt(c, u);
       if (w <= 0) continue;
       var wi = Math.max(1, Math.round(w + (c.rag - 0.5) * Math.min(2, w * 0.5)));   // a ragged edge, not two rails
-      var up = Math.floor(wi / 2), dn = wi - up - 1;
-      var R = 9;
-      if (up > 0) g.drawImage(band, c.x, c.y - R - BY0, 1, R, c.x, c.y - R - up, 1, R);
-      if (dn > 0) g.drawImage(band, c.x, c.y + 1 - BY0, 1, R, c.x, c.y + 1 + dn, 1, R);
-      // the broken lips, dark, catching the light from inside
+      var up = Math.floor(wi / 2), dn = wi - up - 1, R9 = 9;
+      if (up > 0) g.drawImage(band, c.x, c.y - R9 - BY0, 1, R9, c.x, c.y - R9 - up, 1, R9);
+      if (dn > 0) g.drawImage(band, c.x, c.y + 1 - BY0, 1, R9, c.x, c.y + 1 + dn, 1, R9);
+      var age = u - L.crack - c.d / 600;
+      if (age < 0.16) {
+        // the break itself: white-hot for an instant
+        for (var y = c.y - up; y <= c.y + dn; y++) px(g, c.x, y, (y + i) % 3 ? '#fff6d0' : P.GOLD5);
+      } else {
+        // then the ore: quartz and faceted gold, lit from the flare
+        g.drawImage(V.tex, i, V.off - up, 1, wi, c.x, c.y - up, 1, wi);
+        if (age < 0.4) { g.save(); g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.6 * (1 - (age - 0.16) / 0.24); g.fillStyle = '#ffc860'; g.fillRect(c.x, c.y - up, 1, wi); g.restore(); }
+      }
+      // the broken lips, black, the warm light of the ore catching them
       px(g, c.x, c.y - up - 1, P.VOID0); px(g, c.x, c.y + dn + 1, P.VOID0);
-      if (wi >= 3) { px(g, c.x, c.y - up - 2, 'rgba(255,196,90,' + (0.5 * hot).toFixed(2) + ')'); px(g, c.x, c.y + dn + 2, 'rgba(255,170,60,' + (0.3 * hot).toFixed(2) + ')'); }
-      // inside: ore. Hot gold at the heart, quartz and darker gold toward the lips, glitter
-      for (var y = c.y - up; y <= c.y + dn; y++) {
-        var e = Math.abs(y - (c.y + (dn - up) / 2)) / Math.max(0.5, (up + dn + 1) / 2);
-        var r = H(91, c.x, y), run = Math.sin(c.x * 0.4 - u * 9) * 0.5 + 0.5;
-        var col = e < 0.35 ? (run > 0.55 ? P.GOLD5 : P.VEIN3) : e < 0.75 ? (r < 0.15 ? P.QUARTZ : P.GOLD4) : (r < 0.3 ? P.VEIN1 : P.GOLD2);
-        if (hot < 0.6) col = e < 0.5 ? P.GOLD4 : P.VEIN1;
-        if (H(77, c.x * 7 + y, Math.floor(t * 14)) > 0.95) col = '#ffffff';
-        px(g, c.x, y, col);
+      if (wi >= 3 && glow > 0) {
+        px(g, c.x, c.y - up - 2, 'rgba(255,196,90,' + (0.55 * glow).toFixed(2) + ')');
+        px(g, c.x, c.y + dn + 2, 'rgba(255,170,60,' + (0.35 * glow).toFixed(2) + ')');
       }
     }
-    // the forks: hairlines that light as the front passes
+    // the forks: hairlines that light as the front passes, then go dark
     F.forks.forEach(function (f) {
       var a = u - L.crack - f.d / 600;
       if (a < 0) return;
-      var n = Math.min(f.pts.length, Math.floor(a / 0.12 * f.pts.length)), hot2 = u < 3 ? 1 : Math.max(0.3, 1 - (u - 3) / 3);
-      for (var k = 0; k < n; k++) { var q = f.pts[k]; px(g, q[0], q[1], k < 2 ? P.GOLD3 : 'rgba(242,169,58,' + (0.9 * hot2 * (1 - k / f.pts.length)).toFixed(2) + ')'); }
+      var n = Math.min(f.pts.length, Math.floor(a / 0.12 * f.pts.length));
+      for (var k = 0; k < n; k++) { var q = f.pts[k]; px(g, q[0], q[1], a < 0.5 ? (k < 2 ? P.GOLD4 : P.GOLD2) : (k < 2 ? P.VEIN1 : P.VOID0)); }
     });
+    drawVeinGlints(g, F, V, u, t);
   }
-
+  // the settled vein, in the rock (albedo): lit by the lamps like the rest
+  function drawVeinSettled(g, view, mis) {
+    var cr = mis.crack; if (!cr || cr.u < SETTLE) return;
+    var F = fracture(view.board); if (!F) return;
+    var V = veinOf(F);
+    g.drawImage(V.settled, 0, 0);
+    F.forks.forEach(function (f) { for (var k = 0; k < f.pts.length; k++) px(g, f.pts[k][0], f.pts[k][1], k < 2 ? P.VEIN0 : P.VOID0); });
+  }
+  // each nugget glints on its own phase: one white pixel, the big ones a
+  // small cross at the peak (the '+' belongs to gold, not to coal)
+  function drawVeinGlints(g, F, V, u, t) {
+    var L = M().LODE, dk = A.darkAt;
+    for (var i = 0; i < V.nug.length; i++) {
+      var q = V.nug[i], c = F.cols[Math.max(0, Math.min(F.cols.length - 1, q.ci))];
+      var w = u >= SETTLE ? c.ws : openAt(c, u); if (w < 2) continue;
+      var half = w / 2; if (Math.abs(q.dy) > half) continue;
+      if (u - L.crack - c.d / 600 < 0.2) continue;
+      var x = c.x, y = c.y + q.dy, tw = Math.sin(t * q.rate + q.ph);
+      if (dk && dk(x, y) >= 0.85) continue;
+      if (tw > 0.93) {
+        px(g, x, y, '#ffffff');
+        if (q.big && tw > 0.985) { px(g, x - 1, y, P.GOLD5); px(g, x + 1, y, P.GOLD5); px(g, x, y - 1, P.GOLD5); px(g, x, y + 1, P.GOLD5); }
+      }
+    }
+  }
   /* ══ the lode's ore: nuggets and gold dust (pure of seed and time) ═══ */
   var NUG = 96;
   function nuggetAt(seed, i, u, F) {
@@ -504,7 +571,7 @@
       fg.putImageData(im, 0, 0);
     }
     g.save(); g.globalCompositeOperation = 'lighter';
-    g.globalAlpha = 0.9 * Math.pow(1 - a / 0.28, 1.5);
+    g.globalAlpha = 0.6 * Math.pow(1 - a / 0.28, 1.5);
     g.drawImage(flashC, Math.round(o.x - 200), Math.round(o.y - 200));
     g.restore();
   }
@@ -523,12 +590,14 @@
     var mis = view.fx && view.fx.mis; if (!mis) return;
     var t = view.t || 0;
     if (layer === 'albedo') {
+      drawVeinSettled(g, view, mis);
       drawCage(g, mis, 'albedo');
       carts(view, mis, function (p) { drawCartBody(g, p); });
       drawKept(g, view, mis, 'albedo');
     } else if (layer === 'crack') {
       drawCrack(g, view, mis);
     } else if (layer === 'emissive') {
+      if (mis.crack && mis.crack.u >= SETTLE) { var F0 = fracture(view.board); if (F0) drawVeinGlints(g, F0, veinOf(F0), mis.crack.u, t); }
       drawFuse(g, view, mis);
       drawOre(g, view, mis);
       carts(view, mis, function (p, ci, L) { drawCartGold(g, p, ci, L, t); });
