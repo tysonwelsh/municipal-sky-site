@@ -315,11 +315,30 @@ window.KOLOB.VoicesVocal = (function () {
     if (kind !== "fric") { var g = 0.55 / Math.sqrt(ss / len); for (var q = 0; q < len; q++) d[q] *= g; }
     return (cache[kind] = b);
   }
+  // FIXED NODES ARE BORN FIXED. A param given its value in the constructor
+  // has no timeline at all: the browser treats it as a constant (a filter
+  // computes its coefficients once, not per sample), and a gain that is a
+  // constant 0 hands on silence the filters after it can skip. A param set
+  // with setValueAtTime keeps a timeline, and a gate with an opening still
+  // to come is worked sample by sample — zeros, but zeros that cost. (The
+  // fallbacks serve an old browser, or the Node harness's mock.)
+  function gainNode(ctx, v) {
+    if (typeof GainNode === "function") { try { return new GainNode(ctx, { gain: v }); } catch (e) { /* fall through */ } }
+    var g = ctx.createGain(); g.gain.value = v; return g;
+  }
+  function filterNode(ctx, type, f, q, g) {
+    if (typeof BiquadFilterNode === "function") { try { return new BiquadFilterNode(ctx, { type: type, frequency: f, Q: q, gain: g || 0 }); } catch (e) { /* fall through */ } }
+    var b = ctx.createBiquadFilter(); b.type = type; b.frequency.value = f; b.Q.value = q; b.gain.value = g || 0; return b;
+  }
+  function pannerNode(ctx, pan) {
+    if (typeof StereoPannerNode === "function") { try { return new StereoPannerNode(ctx, { pan: pan }); } catch (e) { /* fall through */ } }
+    var p = ctx.createStereoPanner(); p.pan.value = pan; return p;
+  }
   // A ward can share a few pan positions instead of a panner per singer:
   // one StereoPanner per destination per twentieth of the field, made once.
   function sharedPanner(ctx, dest, pan) {
     var c = dest.__kolobPans || (dest.__kolobPans = {}), key = Math.round(clamp(pan, -1, 1) * 20) / 20;
-    if (!c[key]) { var sp = ctx.createStereoPanner(); sp.pan.value = key; sp.connect(dest); c[key] = sp; }
+    if (!c[key]) { var sp = pannerNode(ctx, key); sp.connect(dest); c[key] = sp; }
     return c[key];
   }
 
@@ -450,25 +469,20 @@ window.KOLOB.VoicesVocal = (function () {
     function mDur(k) { return (k + 1 < ev.length ? ms[k + 1] : mEnd) - ms[k]; }
 
     // ---- shared chain ----
-    var out = mk(function () { return ctx.createGain(); });
-    out.gain.setValueAtTime(gain * P.level, born);
+    var out = mk(function () { return gainNode(ctx, gain * P.level); });
     var tail, where = opts.pan != null ? opts.pan : P.pan;
     if (P.sharedPan) { out.connect(sharedPanner(ctx, dest, where)); tail = out; }
     else {
-      var pan = mk(function () { return ctx.createStereoPanner(); });
-      pan.pan.setValueAtTime(clamp(where, -1, 1), born);
+      var pan = mk(function () { return pannerNode(ctx, clamp(where, -1, 1)); });
       out.connect(pan); pan.connect(dest); tail = pan;
     }
-    var hp = mk(function () { return ctx.createBiquadFilter(); });
-    hp.type = "highpass"; hp.frequency.setValueAtTime(P.hp, born); hp.Q.setValueAtTime(0.6, born);
+    var hp = mk(function () { return filterNode(ctx, "highpass", P.hp, 0.6); });
     var tiltF = 3800 + 2200 * P.bright;
-    var tilt = mk(function () { return ctx.createBiquadFilter(); });
-    tilt.type = "lowpass"; tilt.frequency.setValueAtTime(tiltF, born); tilt.Q.setValueAtTime(0.6, born);
+    var tilt = mk(function () { return filterNode(ctx, "lowpass", tiltF, 0.6); });
     hp.connect(tilt);
     var sum = hp;
     if (!solo) {
-      sum = mk(function () { return ctx.createGain(); });
-      sum.gain.setValueAtTime(1 / Math.sqrt(people.length), born);
+      sum = mk(function () { return gainNode(ctx, 1 / Math.sqrt(people.length)); });
       sum.connect(hp);
     }
     var throatChain = [biquadCoefs("highpass", P.hp, 0.6, 0, sr), biquadCoefs("lowpass", tiltF, 0.6, 0, sr)];
@@ -479,8 +493,7 @@ window.KOLOB.VoicesVocal = (function () {
     var br = P.breath;
     var aspSrc = mk(function () { return ctx.createBufferSource(); });
     aspSrc.buffer = bakedNoise(ctx, "asp"); aspSrc.loop = true;
-    var asp = mk(function () { return ctx.createGain(); });
-    asp.gain.setValueAtTime(0.06 * br / Math.sqrt(people.length), born);
+    var asp = mk(function () { return gainNode(ctx, 0.06 * br / Math.sqrt(people.length)); });
     aspSrc.connect(asp);
 
     // ---- the vowel banks: created on first use, fixed for life ----
@@ -515,21 +528,17 @@ window.KOLOB.VoicesVocal = (function () {
       var id = bankKey(key, f0, P);
       if (banks[id]) return banks[id];
       var spec = bankSpec(key, P.tract, P.k, f0, P.bright);
-      var gate = mk(function () { return ctx.createGain(); });
-      gate.gain.setValueAtTime(0, born);
+      var gate = mk(function () { return gainNode(ctx, 0); });   // shut, and silent, until its first opening
       tilt.connect(gate);
       var prev = gate;
       for (var j = 0; j < spec.length; j++) {
-        var bq = mk(function () { return ctx.createBiquadFilter(); });
-        bq.type = spec[j].type;
-        bq.frequency.setValueAtTime(spec[j].f, born);          // born with it…
-        bq.Q.setValueAtTime(spec[j].q, born);
-        bq.gain.setValueAtTime(spec[j].g, born);               // …dies with it
+        var sj = spec[j];
+        var bq = mk(function () { return filterNode(ctx, sj.type, sj.f, sj.q, sj.g); });   // born with its formant, dies with it
         prev.connect(bq); prev = bq;
       }
       prev.connect(out);
       var chain = throatChain.concat(spec.map(function (s) { return biquadCoefs(s.type, s.f, s.q, s.g, sr); }));
-      return (banks[id] = { id: id, key: key, gate: gate, chain: chain, val: 0, last: born, mk: {} });
+      return (banks[id] = { id: id, key: key, gate: gate, chain: chain, val: 0, last: born, mk: {}, used: false });
     }
     // the gate's level for a note: the pre-attenuation (0.11) times the
     // make-up that brings this note to its vowel's level, rising gently
@@ -547,7 +556,9 @@ window.KOLOB.VoicesVocal = (function () {
       var g = b.gate.gain;
       a = Math.max(a, b.last); z = Math.max(z, a + 0.004);
       g.setValueAtTime(b.val, a); g.linearRampToValueAtTime(v, z);
-      b.val = v; b.last = z;
+      // a closed mouth ends on a set value: its timeline done, its silence true
+      if (v === 0) g.setValueAtTime(0, z + 0.01);
+      b.val = v; b.last = z + (v === 0 ? 0.01 : 0);
     }
     // open b while closing the mouth before it, centred on time c, width w
     var cur = null;
@@ -601,8 +612,7 @@ window.KOLOB.VoicesVocal = (function () {
     if (breaths.length) {
       var inSrc = mk(function () { return ctx.createBufferSource(); });
       inSrc.buffer = bakedNoise(ctx, "inh"); inSrc.loop = true;
-      var inh = mk(function () { return ctx.createGain(); });
-      inh.gain.setValueAtTime(0, born);
+      var inh = mk(function () { return gainNode(ctx, 0); });
       inSrc.connect(inh); inh.connect(out);
       breaths.forEach(function (b) {
         // a draw of air: a soft rise and a quicker fall, never above a murmur
@@ -618,8 +628,7 @@ window.KOLOB.VoicesVocal = (function () {
     if (fr.length) {
       var fSrc = mk(function () { return ctx.createBufferSource(); });
       fSrc.buffer = bakedNoise(ctx, "fric"); fSrc.loop = true;
-      var fric = mk(function () { return ctx.createGain(); });
-      fric.gain.setValueAtTime(0, born);
+      var fric = mk(function () { return gainNode(ctx, 0); });
       fSrc.connect(fric); fric.connect(out);
       var fT = born;
       fr.forEach(function (C) {
@@ -640,10 +649,10 @@ window.KOLOB.VoicesVocal = (function () {
     function renderPerson(who, on) {
       var osc = mk(function () { return ctx.createOscillator(); });
       osc.setPeriodicWave(waveFor(ctx, who.tilt, who.variant));
-      var envG = mk(function () { return ctx.createGain(); });
+      var envG = mk(function () { return gainNode(ctx, 0); });
       var lfo = mk(function () { return ctx.createOscillator(); });
       lfo.type = "sine";
-      var lfoG = mk(function () { return ctx.createGain(); });
+      var lfoG = mk(function () { return gainNode(ctx, 0); });
       osc.connect(envG); asp.connect(envG); envG.connect(sum);
       lfo.connect(lfoG); lfoG.connect(osc.detune);
       if (!firstOsc) firstOsc = osc;
