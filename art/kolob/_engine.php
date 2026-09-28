@@ -59,6 +59,9 @@ return [
     'kolob-pitch.js', 'kolob-score.js', 'kolob-tunes.js',
     // the composers (pure: handed a moment and the caller's dice)
     'kolob-melody.js', 'kolob-harmony.js',
+    // the hymn composer (round 3, M1): pure, loaded ahead of the performers;
+    // the engine begins singing its hymns in round 3's integration
+    'kolob-dialects.js', 'kolob-hymnists.js', 'kolob-composer.js',
     // the voices
     'kolob-voices-organ.js', 'kolob-voices-choir.js', 'kolob-voices-winds.js',
     'kolob-voices-ground.js', 'kolob-voices-field.js', 'kolob-voices-bagpipe.js',
