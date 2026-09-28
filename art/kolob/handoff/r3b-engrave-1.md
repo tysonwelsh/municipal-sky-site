@@ -500,3 +500,253 @@ everything scheduled after it, with 0 errors (`stoptest.js`,
   are resolved above. Its notes on gospel's voice order, a single voice's
   stems, solmization, the organ alone and the harness's gospel FAILs still
   stand.
+
+---
+
+## Round 3: the critic's four findings
+
+*Same branch, 2026-09-28. The only file changed is `kolob-viz.js`. VERSION
+is not bumped. Two agents started this round and stalled while writing one
+large edit. A third read their uncommitted work, judged it coherent, kept
+it, and committed it as a checkpoint (`2816486d`). It then measured the
+work over whole meetings, on the real page and in the replay lab, and
+finished this section.*
+
+### For the owner, in plain words
+
+What you will notice:
+
+- **A barline is no longer crowded by ledger lines, dots or sharps.** The
+  page used two different pictures of a note. It used one to work out how
+  much room a bar needed, and another to place the bar. The first left out
+  ledger lines and the stems as the beams draw them, and guessed where
+  dots and sharps were. Where it missed ink, the downbeat did not make
+  room. In seed 34's Sacred Harp hymn in 3/2, the high tenor's ledger
+  lines ran unbroken from the notes before a bar to the note after it,
+  0.05 of a staff space from the bar (three bars). Now there is one
+  picture of each note's ink, the same one the page draws, and both steps
+  use it. The downbeat moves over, and the ledger lines stop either side
+  of the bar.
+- **A note never moves once it is printed.** Where a bar wanted more room
+  than the 2.4-staff-space limit allows, a note was printed as far over as
+  the bar wanted, and a frame later it jumped back to the limit. In the
+  quick 6/8 gospel hymn that happened to 86 notes. Now a note is printed
+  where it stays. **Barlines no longer creep either.** A bar used to shift
+  by a hair as the ink beside it dried (34 bars in seed 7's meeting). Now
+  each bar is placed once, when the engraving point reaches it, and stays
+  there.
+- **The notes after a downbeat make way for it.** When the downbeat's chord
+  moves right to make room for its bar, the notes after it are set clear of
+  it, within the same limit. Notes that arrive together (a slow frame, a
+  hidden tab) are set one at a time, in the order they sound. The two
+  voices of a chord on one staff start from one place, so one voice is
+  never set past the other as if it were in the way.
+- **Two voices a step apart no longer print on top of each other.** In
+  round 2, where the downbeat had moved over to the limit, the soprano's
+  head could land on the alto's a step below it (seed 11, the Tabernacle
+  hymn in 3/4). Now the upper voice's head stands beside the lower one's,
+  as a hymnal prints a second. The chord stays within the limit. Only the
+  upper head goes one head's width past it, and only where the notes after
+  it still have room.
+
+Nothing else has changed: green ink only, no text, 60 px/s, the telegraph's
+holes, the Old Way as one line, Johnston's marks off, and nothing moves but
+the scroll and the drying.
+
+### How to see it
+
+The times are counted from when the hymn is announced. The replay lab shows
+any of them directly (`lab4.html?dump=…&t=…`, below).
+
+| what | seed | when | look for |
+|---|---|---|---|
+| **A second after a bar** (the critic's frame) | 11, the Tabernacle hymn in 3/4 | about 0:43 (5:56 into the meeting) | after the bar, the soprano's half note stands just right of the alto's, a step below it, instead of on it |
+| **A bar with its room** | 34, the Sacred Harp hymn in 3/2 | 0:11 (5:36 into the meeting) | the high tenor on ledger lines above the bass staff: its ledgers stop either side of the bar (in round 2 they ran past it) |
+| **Nothing jumps** | 37, the gospel hymn in 6/8 | from 0:04, through both verses | the quick notes print where they stay; in round 2, 86 of them jumped back a frame after they were printed. (This hymn is still crowded; see "One call for you" below.) |
+
+### The critic's findings, one by one (`kolob-viz.js`)
+
+1. **The push's estimate and the bar's place used different ink. Fixed:
+   one measure.** A note's ink is now measured one way everywhere:
+   `groupBoxes` on `inkLayout`. `inkLayout` lays the group out as
+   `drawPage` does, with a beamed note's stem run to its beam. The boxes
+   cover every stroke `drawGroup` lays: heads at their real width
+   (`headExt`: the diamond's, the tune's rim, a bell's ring), ledger lines,
+   dots (placed once in `layoutGroup`, `L.dots`, and drawn from there),
+   the signs before and over a head (`signsOf`, which `headMarks` now
+   draws from), the stem from its head's edge, an unbeamed note's flag and
+   a grace's slash. `placeColumn` keeps two copies: `col.ink`, the whole
+   measure, which is what a bar weighs, and `col.boxes`, the same without
+   ledger lines, which is what the other voice of a hymn weighs (a
+   second's ledger runs under the first head). The bar's push
+   (`barExtents(m, g, true)` in `barPush`) and its placing (`barPlace`)
+   both read `inkOf`. The replay lab checks this directly. The push's
+   estimate of the ink before each bar equals the ink drawn there
+   (`prMiss`: round 2 missed on up to 34 bars a meeting; now 0), and no
+   pixel of any note lies outside its boxes (round 2: 9 to 145 notes a
+   meeting; now 0).
+2. **`return dx` returned the uncapped offset. Fixed.** `placeColumn`
+   stores `min(need, lim)` and returns that same value, first time and
+   every time after. `drawPage` only reads it. A bar is now placed once
+   too (`barPlace`, `m.at`). Round 2 re-placed it every frame from what
+   that frame drew, so it crept as the ink beside it dried.
+3. **The push stopped at the downbeat. Fixed.** Everything that falls due
+   is set before anything is drawn, in time order (`setDue`). At one
+   time, the hymn's notes come first, then their bar, then a guest's note,
+   which keeps clear of the bar (`clearance`). So a note after a pushed
+   downbeat is set after it and clears it, within the cap. So does a note
+   that arrives in the same frame (a slow frame, a hidden tab: round 2 set
+   those in list order). The voices of a chord on one staff start together
+   from the furthest any of them must go (`chordPlace`), so a voice pushed
+   by its own run does not leave the other behind. `startOf` is the
+   downbeat's push. Rests are not moved; the lab now measures them
+   against the notes' ink too (13 rests print in these meetings; none
+   touches a note).
+4. **Heads overlapping under the cap. Fixed, outside the 6/8 density
+   case.** A chord's second is set the engraver's way even at the cap.
+   The chord stays within `HYMN_DX_MAX` (2.4 sp), and the upper voice
+   steps one head to the right, past it (`clearance`: at most `SIDE_MAX`,
+   2.6 sp, past the other voice). This happens only where the notes after
+   it, set at the cap, would still clear it (`roomAfter`), so nothing
+   after it has to pass the cap for it. Two heads a third apart may meet
+   by `STACK` (0.2 sp), the way a chord stands. The critic's frame (seed
+   11 at 5:55.5): the alto at 1.91 sp, the soprano beside it at 3.54 sp,
+   no overlap.
+
+### One call for you: the 6/8 hymn (as in round 2)
+
+In seed 37's gospel hymn in 6/8, the lead sings dotted-eighth-and-sixteenth
+pairs. At 60 px/s a sixteenth sits 0.8 of a staff space before the next note
+at 860 px (1.0 at 390 px), and a head is 1.3 to 1.4 staff spaces wide.
+Within the 2.4 limit the page cannot set such pairs apart. At 860 px, 26
+pairs of heads still touch and 16 of the hymn's 37 bars touch ink (at 390
+px: 2 and 8). Round 2 had the same at 860 px (27 and 16), plus 86 notes that
+jumped. **This is the page's density, not the placing.** In the lab, with
+the limit removed, keeping the heads apart made the notes fall up to 18.7
+staff spaces behind the sound at 860 px (3.4 seconds, far off the plate's
+right edge), and 23 pairs still touched. At 390 px it took 8.3 staff spaces
+(1.2 seconds). The ways out are the same as in round 2: scroll quick hymns
+faster (for example, scale the rate to the hymn's beat), or accept it.
+
+### Known issues (round 3; the round 2 list stands otherwise)
+
+- **A second's upper head can be struck just past the plate's edge.**
+  When a chord already stands at the limit, the upper voice's head goes one
+  head further. The engraving point is 3.2 staff spaces from the plate's
+  right edge, so a head set more than about 2.5 past its time is partly off
+  the plate for its first fifth of a second, and then scrolls on whole. It
+  does not move on the page. This happens once in the eleven meetings (seed
+  11's critic's frame, at 3.54 sp at 860 px and 3.46 sp at 390 px). The
+  other choice there is a head on a head.
+- **Where the room runs out, a bar keeps its air in proportion.** One bar
+  in seed 12 stands 0.22 sp from the ink before it (0.23 at 390 px), against
+  0.35 wanted. It does not touch.
+- **Rests are not moved** after a pushed note. None touches a note in these
+  meetings, but the lab's sample is small (13 rests; psalm tunes' fuges).
+- Round 2's table labelled three meetings wrongly. From the dumps: seed 11
+  is a psalm tune and a Tabernacle hymn, both 3/4; seed 21 is two psalm
+  tunes in 3/4; seed 5 is Sacred Harp 4/4 and a Shaker song in 3/4. The
+  numbers below use these.
+
+### Before and after (muted headless Chrome)
+
+All paths are in `/private/tmp/claude-501/-Users-tysonwelsh-Sites-municipal-sky-site/9f8f9e47-5fee-4146-97e4-e448a823ca04/scratchpad/r3b-e5/`.
+"Before" is round 2's committed `kolob-viz.js` (`5e2d6235`, `viz-r2.js`)
+in the same lab.
+
+| scene | pictures |
+|---|---|
+| **The critic's second** (seed 11, 5:56.3; round 2 above, round 3 below, 860 px) | `lab-shots/cmp-g11-860-t356.3.png`; singly `lab-shots/r3-{before,after}/g11-{860,390}-t356.3.png` |
+| **The tenor's ledger lines at a bar** (seed 34, 5:36.4; round 2 above, round 3 below) | `lab-shots/cmp-h34-860-t336.4.png`; singly `lab-shots/r3-{before,after}/h34-860-t336.4.png` |
+| **The second at the plate's edge**, the frame it is struck (seed 11, 5:55.51, round 3; right edge enlarged) | `lab-shots/g11edge/crop-g11-860-t355.51.png` |
+| **The real page**, seed 11's Tabernacle hymn, 0:43 and 0:46 after it was announced | `shots/r3-tab11/staff-{860,390}-t{043,046}.png` |
+
+### Numbers: the replay lab over whole meetings
+
+The real `kolob-viz.js` replayed eleven harness dumps (up to seven minutes
+each, at 10×) at 860 and 390 px. An instrumented copy checks every frame
+(`mkinstr.js`, `lab/check4.js`, `labstats.js`, `battery.sh`,
+`mdtable.py`). It checks every bar against the ink either side of it,
+every pair of notes on a staff for heads that overlap, and every note, bar
+and rest for any movement after it is printed. It also draws every note
+alone and looks for ink outside the note's measured boxes. The checker
+measures each build with that build's own boxes, so round 2's bar counts
+are low: its boxes missed some of its ink (the last column). Each entry
+reads round 2 → round 3.
+
+| meeting (its hymns) | bars touching ink, 860 px | 390 px | heads overlapping, 860 px | 390 px |
+|---|---|---|---|---|
+| seed 7 (Tabernacle 4/4, psalm tune 2/2) | 0 → **0** | 0 → **0** | 0 → **0** | 0 → **0** |
+| seed 34 (gospel 4/4, Sacred Harp 3/2) | 0 → **0** | 0 → **0** | 1 → **0** | 0 → **0** |
+| seed 3 (Sacred Harp 4/4 and 2/2) | 0 → **0** | 0 → **0** | 0 → **0** | 0 → **0** |
+| seed 1 (gospel 4/4 and 3/4) | 0 → **0** | 0 → **0** | 0 → **0** | 0 → **0** |
+| seed 11 (psalm tune 3/4, Tabernacle 3/4) | 0 → **0** | 0 → **0** | 1 → **0** | 1 → **0** |
+| seed 12 (Sacred Harp 2/2 and 3/4) | 1 → **0** | 0 → **0** | 1 → **0** | 0 → **0** |
+| seed 21 (two psalm tunes, 3/4) | 0 → **0** | 0 → **0** | 0 → **0** | 0 → **0** |
+| seed 5 (Sacred Harp 4/4, Shaker 3/4) | 0 → **0** | 0 → **0** | 0 → **0** | 0 → **0** |
+| seed 18 (the Old Way) | 0 → **0** | 0 → **0** | 0 → **0** | 0 → **0** |
+| seed 22 (Shaker) | 0 → **0** | 0 → **0** | 0 → **0** | 0 → **0** |
+| seed 37 (gospel 6/8) | 16 → **16** | 10 → **8** | 27 → **26** | 2 → **2** |
+
+| meeting | notes moved after print, 860 px | 390 px | bars moved after print, 860 px | 390 px | notes with ink outside their measure, 860 px | 390 px |
+|---|---|---|---|---|---|---|
+| seed 7 (Tabernacle 4/4, psalm tune 2/2) | 0 → **0** | 0 → **0** | 34 → **0** | 23 → **0** | 145 → **0** | 145 → **0** |
+| seed 34 (gospel 4/4, Sacred Harp 3/2) | 0 → **0** | 0 → **0** | 25 → **0** | 16 → **0** | 72 → **0** | 72 → **0** |
+| seed 3 (Sacred Harp 4/4 and 2/2) | 0 → **0** | 0 → **0** | 4 → **0** | 0 → **0** | 40 → **0** | 46 → **0** |
+| seed 1 (gospel 4/4 and 3/4) | 3 → **0** | 3 → **0** | 10 → **0** | 3 → **0** | 59 → **0** | 59 → **0** |
+| seed 11 (psalm tune 3/4, Tabernacle 3/4) | 5 → **0** | 2 → **0** | 33 → **0** | 25 → **0** | 14 → **0** | 14 → **0** |
+| seed 12 (Sacred Harp 2/2 and 3/4) | 1 → **0** | 2 → **0** | 34 → **0** | 11 → **0** | 9 → **0** | 9 → **0** |
+| seed 21 (two psalm tunes, 3/4) | 3 → **0** | 4 → **0** | 20 → **0** | 16 → **0** | 36 → **0** | 36 → **0** |
+| seed 5 (Sacred Harp 4/4, Shaker 3/4) | 0 → **0** | 0 → **0** | 12 → **0** | 9 → **0** | 48 → **0** | 49 → **0** |
+| seed 18 (the Old Way) | 0 → **0** | 0 → **0** | 0 → **0** | 0 → **0** | 9 → **0** | 9 → **0** |
+| seed 22 (Shaker) | 0 → **0** | 0 → **0** | 0 → **0** | 0 → **0** | 12 → **0** | 12 → **0** |
+| seed 37 (gospel 6/8) | 86 → **0** | 66 → **0** | 32 → **0** | 28 → **0** | 74 → **0** | 80 → **0** |
+
+In the ten meetings other than the 6/8 hymn, at both widths, round 3 has
+no bar touching ink and no two heads overlapping. Nothing moves after it
+is printed. The push's estimate of the ink before a bar always equals the
+ink drawn there (round 2 missed on up to 34 bars a meeting), and no ink
+lies outside its measure. These are also 0: other ink of two notes
+meeting (stems, flags, signs), the tune crossing staves or turning its
+stem, a rest touching a note, and page errors. Every bar keeps at least
+0.29 sp of air, except one in seed 12 (0.22 sp). A chord is set at most
+2.40 sp after its time (the cap). The one head past it is the critic's
+second in seed 11, at 3.54 sp. In the 6/8 hymn, nothing moves any more
+either; for the rest, see "One call for you" above.
+
+### How it was checked (all silent)
+
+- **The real page**, muted headless Chrome over CDP (`--headless=new
+  --mute-audio --autoplay-policy=no-user-gesture-required`, port 9473,
+  profile `/private/tmp/claude-501/kolob-e5-chrome`; `php -S` on 8154
+  serving this worktree), driver `r3b-e5/drv.js`. Seed 11's Tabernacle
+  hymn at 860 and 390 px: **0 console errors, no horizontal scroll**.
+- **Frame budget at 390 px with 4× CPU throttling**, 25 s recorded during a
+  hymn (`shots/r3-fps-*/report.json`; the machine's load was 2.8 to 3.0):
+
+  | run | fps | frame cost mean / p99 / worst | long tasks | console errors |
+  |---|---|---|---|---|
+  | Tabernacle, seed 7 (0:30–0:55) | **60** | 0.87 / 1.6 / 2.3 ms | 0 | 0 |
+  | Sacred Harp, seed 3 (0:42–1:07, through the fuging) | **60** | 0.78 / 1.9 / 4.0 ms | 0 | 0 |
+  | Gospel 6/8, seed 37 (0:10–0:35, the densest placing) | **60** | 1.03 / 2.2 / 3.9 ms | 0 | 0 |
+
+- **The replay lab** (`r3b-e5/lab/lab4.html`, the dumps of round 2):
+  22 whole-meeting replays of round 3 and 22 of round 2, all with
+  **0 page errors**. STOP in the middle of a verse (seed 7, 3:12) and
+  in the middle of the fuging (6:38) lifts everything scheduled after it,
+  with 0 errors (`stoptest.js`).
+- **The 6/8 hymn without the cap:** a lab build with no limit on
+  the offsets (`viz-nocap.js`, never shipped) was run on the 6/8 hymn to
+  see whether its crowding is the placing's fault. It is not (see "One
+  call for you").
+- The harness does not load the page, and no engine file changed.
+
+### Requests (round 3)
+
+Unchanged from round 2: the integrator's `verses: P.verses` on
+`verse-start` (the final bar after a hymn's last verse), the fuging's
+`beat` (its bars and waiting rests), and the owner's calls on the 6/8
+hymn, stems across the gap's middle, Johnston's marks and the organ-alone
+printing. The VERSION suggestion from round 2 stands; round 3 adds to it
+"(bars clear of every note's ledger lines, dots and sharps; nothing moves
+once printed; a second set beside its chord)".
