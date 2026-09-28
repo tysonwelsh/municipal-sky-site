@@ -238,20 +238,22 @@ window.KOLOB.VoicesVocal = (function () {
     else { b0 = 1 + al * A; b1 = -2 * cw; b2 = 1 - al * A; a0 = 1 + al / A; a1 = -2 * cw; a2 = 1 - al / A; }   // peaking
     return [b0 / a0, b1 / a0, b2 / a0, a1 / a0, a2 / a0];
   }
-  function mag2(c, w) {
-    var c1 = Math.cos(w), c2 = Math.cos(2 * w), s1 = Math.sin(w), s2 = Math.sin(2 * w);
+  function mag2(c, c1, c2, s1, s2) {
     var nr = c[0] + c[1] * c1 + c[2] * c2, ni = -(c[1] * s1 + c[2] * s2);
     var dr = 1 + c[3] * c1 + c[4] * c2, di = -(c[3] * s1 + c[4] * s2);
     return (nr * nr + ni * ni) / (dr * dr + di * di);
   }
   // the energy a note of f0 leaves the mouth with, through `chain` (a list of
   // coefficient sets), for a source of tilt `tilt` (the fundamental held to
-  // 0.55, as waveFor builds it)
+  // 0.55, as waveFor builds it). (The harmonic's angle is worked once and
+  // shared by every filter: this runs for every note of every singer, on
+  // the page's main thread.)
   function mouthEnergy(chain, f0, tilt, sr) {
-    var e = 0, hmax = Math.min(40, Math.floor(9000 / f0));
+    var e = 0, hmax = Math.min(32, Math.floor(7000 / f0));   // (above ~7 kHz the tilt has left next to nothing)
     for (var h = 1; h <= hmax; h++) {
       var a = Math.pow(h, -tilt) * (h === 1 ? 0.55 : 1), w = 2 * Math.PI * h * f0 / sr, m = 1;
-      for (var i = 0; i < chain.length; i++) m *= mag2(chain[i], w);
+      var c1 = Math.cos(w), s1 = Math.sin(w), c2 = c1 * c1 - s1 * s1, s2 = 2 * s1 * c1;
+      for (var i = 0; i < chain.length; i++) m *= mag2(chain[i], c1, c2, s1, s2);
       e += a * a * m;
     }
     return Math.sqrt(e);
@@ -290,10 +292,12 @@ window.KOLOB.VoicesVocal = (function () {
   function bakedNoise(ctx, kind) {
     var cache = ctx.__kolobVocalNoise || (ctx.__kolobVocalNoise = {});
     if (cache[kind]) return cache[kind];
-    var sr = ctx.sampleRate, len = Math.floor(sr * 2.5), fade = Math.floor(sr * 0.05), n = len + fade;
-    var r = localStream(0xb4ea7 + (kind === "asp" ? 0 : kind === "fric" ? 17 : 29));
+    var sr = ctx.sampleRate, len = Math.floor(sr * 2.0), fade = Math.floor(sr * 0.05), n = len + fade;
+    // (a plain xorshift, inline: this runs once per context, on the main
+    // thread, and a hundred thousand stream calls are a visible pause)
+    var st = (0xb4ea7 + (kind === "asp" ? 0 : kind === "fric" ? 17 : 29)) >>> 0;
     var x = new Float32Array(n);
-    for (var i = 0; i < n; i++) x[i] = r.rnd(-1, 1);
+    for (var i = 0; i < n; i++) { st ^= st << 13; st ^= st >>> 17; st ^= st << 5; x[i] = (st >>> 0) / 2147483648 - 1; }
     var stages = kind === "asp" ? [["highpass", 1100, 0.5, 0], ["lowpass", 5500, -3, 0]]
       : kind === "fric" ? [["bandpass", 5200, 0.9, 0]]
       : [["highpass", 350, 0, 0], ["lowpass", 2800, 0, 0], ["peaking", 1500, 1.2, 4]];
@@ -515,7 +519,7 @@ window.KOLOB.VoicesVocal = (function () {
         if (base !== "ah") ref[base] = bankEnergy(base, P.mid);
         else {
           var num = 0, den = 0, mix = { ah: 3, oh: 2, ee: 2, oo: 1.5, eh: 1.5 };
-          for (var st = -9; st <= 9; st += 3) {
+          for (var st = -9; st <= 9; st += 6) {
             var f = P.mid * Math.pow(2, st / 12), rise = Math.pow(f / P.mid, 0.3);
             for (var v in mix) { var e = bankEnergy(v, f), sh = INTRINSIC[v] * rise; num += mix[v] * e * e; den += mix[v] * sh * sh; }
           }
@@ -621,7 +625,7 @@ window.KOLOB.VoicesVocal = (function () {
         inh.gain.linearRampToValueAtTime(pk, b.at + b.len * 0.65);
         inh.gain.linearRampToValueAtTime(0, b.at + b.len);
       });
-      inSrc.start(Math.max(born, breaths[0].at - 0.01), r.rnd(0, 2)); inSrc.stop(breaths[breaths.length - 1].at + breaths[breaths.length - 1].len + 0.02);
+      inSrc.start(Math.max(born, breaths[0].at - 0.01), r.rnd(0, 1.9)); inSrc.stop(breaths[breaths.length - 1].at + breaths[breaths.length - 1].len + 0.02);
     }
     // ---- fricatives: only if the line says f or s ----
     var fr = cons.filter(function (C) { return C.c === "f" || C.c === "s"; });
@@ -639,7 +643,7 @@ window.KOLOB.VoicesVocal = (function () {
         fric.gain.linearRampToValueAtTime(0, a + len + 0.012);
         fT = a + len + 0.012;
       });
-      fSrc.start(Math.max(born, fr[0].s - 0.01), r.rnd(0, 2)); fSrc.stop(fT + 0.02);
+      fSrc.start(Math.max(born, fr[0].s - 0.01), r.rnd(0, 1.9)); fSrc.stop(fT + 0.02);
     }
 
     // ---- the people ----
@@ -782,7 +786,7 @@ window.KOLOB.VoicesVocal = (function () {
       lfo.start(startAt + r.rnd(0, 1 / who.vibRate)); lfo.stop(soundTo);
     }
 
-    aspSrc.start(soundFrom, r.rnd(0, 2)); aspSrc.stop(soundTo);
+    aspSrc.start(soundFrom, r.rnd(0, 1.9)); aspSrc.stop(soundTo);
     // let go of the room when the line is done: the whole throat is unhooked
     // from its destination (or its shared panner) and can be collected
     if (firstOsc) firstOsc.onended = function () { try { tail.disconnect(); } catch (err) { /* already gone */ } };

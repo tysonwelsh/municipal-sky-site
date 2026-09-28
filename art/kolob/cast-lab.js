@@ -488,9 +488,10 @@
     try { po = new PerformanceObserver(function (l) { l.getEntries().forEach(function (e) { longTasks.push(e.duration); }); }); po.observe({ entryTypes: ["longtask"] }); } catch (e) { po = null; }
     return room.ready.then(function () {
       return new Promise(function (resolve) {
-        var skipped = false, t0 = ac.currentTime + 2.0, sheet = freshSheet(), org = organFor(ac, room, t0, sheet);
+        // (the meeting brings its own organ: the lab's pipe organ stays silent here)
+        var skipped = false, t0 = ac.currentTime + 2.0, sheet = freshSheet();
         V.budget.reset();
-        var perf = Cast.performer(S.ward, { V: V, synth: PJ2.Rand.stream(S.s.seed).fork("synth:vocal"), organ: org.play });
+        var perf = Cast.performer(S.ward, { V: V, synth: PJ2.Rand.stream(S.s.seed).fork("synth:vocal") });
         var wall0 = performance.now(), ac0 = ac.currentTime, samples = [], handed = 0, late = 0, minMargin = 1e9, pumpMs = [], hymns = 1;
         var under0 = ac.playbackStats ? { events: ac.playbackStats.underrunEvents, seconds: ac.playbackStats.underrunDuration } : null;
         var iv = setInterval(function () {
@@ -587,7 +588,7 @@
       var ac = KA.attachAnalyser().context, room = ward ? chain(ac) : null, skipped = false;
       return (room ? room.ready : Promise.resolve()).then(function () {
         var t0 = ac.currentTime + 2.0, sheet = freshSheet(), perf = null;
-        if (ward) { var org = organFor(ac, room, t0, sheet); perf = Cast.performer(S.ward, { V: V, synth: PJ2.Rand.stream(S.s.seed).fork("synth:vocal"), organ: org.play }); }
+        if (ward) perf = Cast.performer(S.ward, { V: V, synth: PJ2.Rand.stream(S.s.seed).fork("synth:vocal") });
         return capacity(ac, step, hold, function () {
           var now = ac.currentTime;
           if (!skipped && now > 3) skipped = KA.skipToSection("hymn") || true;
