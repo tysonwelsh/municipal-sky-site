@@ -14,14 +14,22 @@
 //      hymn's home note on its shape syllable, and the sections hum their
 //      first notes — the chord the hymn begins on;
 //   2. the choir sings the first line of the day's first hymn, and ONE part
-//      goes plainly wrong: the tenors CLIMB where their line turns down, or
-//      the altos come in a BEAT LATE — a real clash against the others (a
-//      second or a seventh, never a comma off);
+//      goes plainly wrong — one of three slips a section makes while it is
+//      still learning its line: it CLIMBS where the line turns down; it
+//      HOLDS ON where the line turns down (it stays on the note it had,
+//      the commonest slip of all, and in a tune sung in unison the only
+//      wrong note that clashes with the tune a step away); or it comes in
+//      a BEAT LATE — each a real clash against the others (a second or a
+//      seventh, never a comma off);
 //   3. the chorister raps the stand, and the choir stops on a breath —
 //      raggedly, as people do, the part that went wrong a moment after the
 //      others;
 //   4. she gives that part its note, and they sing the passage ALONE,
-//      slowly, ON THE NOTES (fa, sol, la, mi — the four shapes);
+//      slowly, ON THE NOTES (fa, sol, la, mi — the four shapes): she says
+//      the syllables whole, and the section sings them after her with
+//      their l and m but without their f and s (CONSONANTS, below — a
+//      section's f and s, sung at a dozen slightly different moments, are
+//      the brushing the owner heard between the notes);
 //   5. two soft raps set the beat, and everyone sings it again, from the
 //      pickup through the cadence, right.
 // One correction, never two: it is a charming rehearsal, not a glitch. The
@@ -36,8 +44,10 @@
 // THE SEAT. The prelude only, on about one Sunday in ten, in the first
 // seconds (you arrive during the practice), for 30–50 s. Never at a
 // funeral; never beside another guest in the prelude (the trombones, the
-// steeples, the old tune); weighted up a little at Christmas (the choir has
-// a number to learn) and down at conference (they would have it by now).
+// steeples, the old tune), nor with one in the section after it (§8.13 —
+// the handbells in the invocation, say); weighted up a little at Christmas
+// (the choir has a number to learn) and down at conference (they would
+// have it by now).
 //
 // THE MATERIAL. The day's first hymn (a SCORE §5 Hymn — the composer's, or
 // an Earth tune with its parts), and the keynote. With no hymn handed over,
@@ -50,7 +60,9 @@
 // tenors carry the tune, so "the tenors climb where the tune turns down"
 // is literally the tune); a tune sung in unison (the Old Way) is the women
 // on the tune and the men an octave under it — and then it is the men who
-// climb, or the women who come in late.
+// climb or hold on, or the women who come in late. On a phone
+// (material.phone) the choir is one desk a part: twelve singers, half the
+// nodes (the practice peaks at 290–420 singer nodes with its eight desks).
 //
 // PURE PLANNING. plan(), decide(), lesson() and score() touch no
 // AudioContext, DOM, clock or Math.random; every die is the stream's
@@ -73,8 +85,13 @@
 //   score(material, stream, t0) → the whole rehearsal as data (pure)
 //   perform(ctx, dest, t, material, stream, hooks?) → end time (s, absolute)
 //     hooks: { onNote({freq, t, dur, part, stage, wrong, layer}),
-//              onStage({stage, t0, t1, label}) }
-//   ODDS, EXPERIMENT, NAME, LABEL, LEVEL
+//              onStage({stage, t0, t1, label}),
+//              defer(at, fn) (the engine's clock: each sung line is laid out
+//              at `at`, a little before its throat is born, instead of the
+//              whole practice inside one cue — the trombones' round-3 hook;
+//              a lab with no clock lays everything out at once) }
+//     material: prepare()'s, or { hymn, keynoteHz, phone? }
+//   ODDS, EXPERIMENT, NAME, LABEL, LEVEL, CONSONANTS
 // ============================================================================
 
 window.KOLOB = window.KOLOB || {};
@@ -106,6 +123,49 @@ window.KOLOB.GuestSingingSchool = (function () {
   // (everyone, the second time, singing out) sit level with the organ
   // reference — a choir in the chapel, not a choir in the doorway
   var LEVEL = 0.55;
+  // THE CONSONANTS OF THE SHAPES. "fa" and "sol" begin with the only noisy
+  // sounds a voice here makes, f and s. One person saying them is diction;
+  // a section saying them is six small hisses at six slightly different
+  // moments, smeared into a brush at every note change — the owner's
+  // "brushing s sound… like air being released out of a tire… in between
+  // notes". Measured, dry, in the practice's passage alone (noise against
+  // tone at the joins between notes; −38 to −44 dB inside the notes, seven
+  // practices): with the voice as it stands on this branch, −15 to −21 dB
+  // (the worst join −9 to −15); with the cast crew's softer consonants
+  // (kolob-r3-cast, fa427196), −27 to −37 (the worst −24 to −28) — still
+  // eight to twelve dB over the middle of a note as a rule. So by default
+  // the SECTION sings the shapes with their voiced consonants only — la and
+  // mi keep their l and m; fa and sol are
+  // sung on their vowels, ah and oh, re-articulated by the voice's own
+  // attack — and the CHORISTER, one clear voice, says all four whole when
+  // she gives the note or sings them the passage first ("auto": whole with
+  // the cast crew's voice, whose f and s are a third as strong; voiced with
+  // the voice on this branch, whose single s still stands 17–22 dB over the
+  // middle of her notes). Measured so, every stage the choir sings sits at
+  // its joins within about 3 dB of the middle of its notes, with either
+  // voice; the chorister's own f and s, with the cast voice, about 8 dB
+  // over hers — one voice's diction, heard only when she sings a quick
+  // tune's passage to them first (the handoff, round 2, has every number).
+  //   section / chorister: "voiced" (l and m; no f, no s) · "all" (the shapes
+  //   whole) · "vowels" (ah oh ah ee: no consonant at all) · "auto"
+  // Settable (KOLOB.GuestSingingSchool.CONSONANTS = {section, chorister});
+  // once the voice can say a line's f and s lightly (a request to the cast
+  // crew), the section's "all" at a third of the ward's strength is the
+  // better sound. The score says the shapes (each shape-note keeps `shape`);
+  // this decides only what the mouths make of them.
+  var CONSONANTS = { section: "voiced", chorister: "auto" };
+  var SAID = {
+    all: { fa: "fa", sol: "sol", la: "la", mi: "mi" },
+    voiced: { fa: "ah", sol: "oh", la: "la", mi: "mi" },
+    vowels: { fa: "ah", sol: "oh", la: "ah", mi: "ee" },
+  };
+  // (cast: whether the cast crew's voice is the one loaded — perform() knows,
+  // score() does not and writes what the cast voice would say)
+  function said(shape, who, cast) {
+    var w = CONSONANTS[who];
+    if (w === "auto") w = cast === false ? "voiced" : "all";
+    return (SAID[w] || SAID.voiced)[shape] || shape;
+  }
 
   function oddsFor(info) {
     var w = ODDS.weight;
@@ -133,12 +193,18 @@ window.KOLOB.GuestSingingSchool = (function () {
     var secs = info.sections || [], guests = info.guests || [];
     var prelude = null;
     for (var i = 0; i < secs.length; i++) if (secs[i] && secs[i].type === "prelude") { prelude = secs[i]; break; }
-    var taken = null;
+    var taken = null, beside = null;
     guests.forEach(function (g) { if (g && g.section === "prelude" && g.type !== NAME && !taken) taken = g.type; });
+    // (PLAN §8.13: never two guests in adjacent sections — so a guest seated
+    // in the section after the prelude refuses the practice too, whichever
+    // the engine planned first)
+    var pi = secs.indexOf(prelude), next = pi >= 0 && secs[pi + 1] ? secs[pi + 1].type : null;
+    guests.forEach(function (g) { if (g && next && g.section === next && g.type !== NAME && !beside) beside = g.type + " in the " + next; });
     if (!experimentOn(info)) why = "switched off (KOLOB.Experimental." + EXPERIMENT + ")";
-    else if (info.sunday === "funeral") why = "never at a funeral";
+    else if (info.sunday === "funeral" || info.kind === "funeral") why = "never at a funeral";
     else if (!prelude) why = "no prelude";
     else if (taken) why = "the prelude is taken (" + taken + ")";
+    else if (beside) why = "a guest beside the prelude (" + beside + ")";
     else if (!(info.force || roll < p)) why = "not this Sunday";
     if (why) return { seat: null, why: why, odds: p, roll: roll };
     var mat = info.material && info.material.prepared ? info.material : null;
@@ -230,6 +296,7 @@ window.KOLOB.GuestSingingSchool = (function () {
       prepared: true, hymnId: h.id, hymnName: h.nameEn || null, dialect: h.dialect || null, mode: modeName(h.mode),
       melodyPart: h.melodyPart || "S", beatS: num(h.beatS, 0.7), keynoteHz: K, finalHz: K * monzoRatio(h.keyMonzo),
       lines: lines, unison: present.length === 1, source: source + (h.nameEn ? " (" + h.nameEn + ", " + (h.dialect || "?") + ")" : ""),
+      phone: !!M.phone,
     };
   }
 
@@ -239,11 +306,12 @@ window.KOLOB.GuestSingingSchool = (function () {
   // desk: { id, voice (the VoicesVocal part), sings (a Score part), oct, group
   // (who the chorister would name), pan } — the choir faces us: sopranos at
   // the audience's left, then the altos, the tenors, the basses at the right
+  // (on a phone, one desk a part, standing between the two places)
   function choir(M) {
     var L0 = M.lines[0].parts, has = function (p) { return !!L0[p]; }, desks = [];
-    var PAN = { S: [-0.62, -0.42], A: [-0.22, -0.06], T: [0.08, 0.26], B: [0.44, 0.64] };
+    var PAN = M.phone ? { S: [-0.52], A: [-0.14], T: [0.17], B: [0.54] } : { S: [-0.62, -0.42], A: [-0.22, -0.06], T: [0.08, 0.26], B: [0.44, 0.64] };
     ["S", "A", "T", "B"].forEach(function (v) {
-      for (var k = 0; k < 2; k++) {
+      for (var k = 0; k < PAN[v].length; k++) {
         var sings = v, oct = 1, group = v;
         if (M.unison) { sings = M.melodyPart; oct = v === "T" || v === "B" ? 0.5 : 1; group = v === "T" || v === "B" ? "M" : "W"; }
         else if (!has(v)) {
@@ -433,7 +501,7 @@ window.KOLOB.GuestSingingSchool = (function () {
         if (o.wrong) o.wrong.forEach(function (w) { if (w.index === i) { ratio = w.ratio; wrong = true; } });
         if (first == null) { first = a; t = a; }
         if (a > t + 0.01) out.push({ rest: true, dur: a - t });
-        out.push({ f: fz * ratio, dur: Math.max(0.08, e - a), vowel: o.shapes ? shapeOf(mode, n.deg) : vowelOf(n, i), stress: n.stress, _wrong: wrong, _i: i });
+        out.push({ f: fz * ratio, dur: Math.max(0.08, e - a), vowel: o.shapes ? said(shapeOf(mode, n.deg), "section") : vowelOf(n, i), stress: n.stress, _wrong: wrong, _i: i });
         t = e;
       });
       return { start: first, notes: out };
@@ -448,7 +516,7 @@ window.KOLOB.GuestSingingSchool = (function () {
     var homeF = inChorRange(fz);
     var cT = 1.3;
     items.push({ kind: "chorister", t: cT, notes: [{ f: inChorRange(forkF), dur: 1.0, vowel: "hum" }], what: "hums the fork's note" });
-    items.push({ kind: "chorister", t: cT + 1.45, notes: [{ f: homeF, dur: 0.95, vowel: shapeOf(mode, 0) }], what: "sings the home note on its shape (" + shapeOf(mode, 0) + ")" });
+    items.push({ kind: "chorister", t: cT + 1.45, notes: [{ f: homeF, dur: 0.95, vowel: said(shapeOf(mode, 0), "chorister"), shape: shapeOf(mode, 0) }], what: "sings the home note on its shape (" + shapeOf(mode, 0) + ")" });
     var pitchT = cT + 2.75;
     desks.forEach(function (d, i) {
       var ln = deskLine(d, L);
@@ -488,21 +556,21 @@ window.KOLOB.GuestSingingSchool = (function () {
     var demo = giveT + 1.45 + passS0 * 1.15 + 1.5 + 2 * spb + lineS0 + 1.4 < 31;
     var demoLen = 0;
     if (demo) {
-      var dn = pn.map(function (n) { var d0 = Math.max(0.45, n.beats * slow * 0.9); demoLen += d0; return { f: inChorRange(fz * n.ratio), dur: d0, vowel: n.shape }; });
+      var dn = pn.map(function (n) { var d0 = Math.max(0.45, n.beats * slow * 0.9); demoLen += d0; return { f: inChorRange(fz * n.ratio), dur: d0, vowel: said(n.shape, "chorister"), shape: n.shape }; });
       items.push({ kind: "chorister", t: giveT, notes: dn, what: "sings the passage to them first, on the notes" });
       demoLen += 0.6;
-    } else items.push({ kind: "chorister", t: giveT, notes: [{ f: inChorRange(fz * pn[0].ratio), dur: 0.85, vowel: pn[0].shape }], what: "gives the " + PART_NAME[mk.group] + " their note" });
+    } else items.push({ kind: "chorister", t: giveT, notes: [{ f: inChorRange(fz * pn[0].ratio), dur: 0.85, vowel: said(pn[0].shape, "chorister"), shape: pn[0].shape }], what: "gives the " + PART_NAME[mk.group] + " their note" });
     var aloneT = giveT + (demo ? demoLen + 0.3 : 1.45), at = 0, passNotes = [];
     pn.forEach(function (n, i) {
       // (the note they missed is held a little longer: they are listening)
       var isSpot = mk.kind === "climb" ? i === mk.at - ps.from : i === 0;
       var d = Math.max(0.5, n.beats * slow) * (isSpot ? 1.3 : 1) * (i === pn.length - 1 ? 1.35 : 1);
-      passNotes.push({ f: fz * n.ratio, dur: d, vowel: n.shape, stress: 1, _i: ps.from + i });
+      passNotes.push({ f: fz * n.ratio, dur: d, vowel: said(n.shape, "section"), shape: n.shape, stress: 1, _i: ps.from + i });
       at += d;
     });
     desks.forEach(function (d, i) {
       if (d.group !== mk.group) return;
-      items.push({ kind: "sing", desk: i, t: aloneT, notes: passNotes.map(function (x) { return { f: x.f, dur: x.dur, vowel: x.vowel, stress: x.stress, _i: x._i }; }), stage: "alone" });
+      items.push({ kind: "sing", desk: i, t: aloneT, notes: passNotes.map(function (x) { return { f: x.f, dur: x.dur, vowel: x.vowel, shape: x.shape, stress: x.stress, _i: x._i }; }), stage: "alone" });
     });
     stage("alone", giveT, aloneT + at + 0.4, (demo ? "she sings the passage to the " + PART_NAME[mk.group] + " first; then they sing it" : "she gives the " + PART_NAME[mk.group] + " their note; they sing the passage") + " alone, slowly, on the notes (" + pn.map(function (n) { return n.shape; }).join(" ") + ")");
     // ---- 4. EVERYONE, AGAIN ------------------------------------------------------
@@ -540,6 +608,7 @@ window.KOLOB.GuestSingingSchool = (function () {
     var end = tl + 1.4;
     // every sung note, as the engine would report it (a note as written)
     items.forEach(function (it) {
+      it.noteFrom = notesOut.length;
       if (it.kind === "sing" || it.kind === "chorister") {
         var tt = it.t;
         it.notes.forEach(function (n) {
@@ -547,6 +616,7 @@ window.KOLOB.GuestSingingSchool = (function () {
           tt += n.dur;
         });
       } else if (it.kind === "fork") notesOut.push({ freq: it.f, t: t0 + it.t, dur: 4, part: "fork", stage: "fork", wrong: false, layer: "ambient" });
+      it.noteTo = notesOut.length;
     });
     items.forEach(function (it) { it.t += t0; });
     return {
@@ -631,17 +701,23 @@ window.KOLOB.GuestSingingSchool = (function () {
       });
     });
     var chorister = VV.singer({ part: "A", age: "mid", confidence: 0.95, brightness: 0.55, breath: 0.2, rand: synth.fork("chorister"), name: "chorister", pan: 0.02, vibrato: { rate: 5.3, depth: 26, onsetDelay: 0.4 } });
-    var G_DESK = 0.42, G_CHOR = 0.75;
-    // THE DOOR. VoicesVocal (round 3, as it stands) lets one sample of its
-    // breath noise through at the instant each sung line's throat is built,
-    // 0.45 s before the line's first vowel: its noise starts on the same
-    // sample as its gains' first automation, while they still stand at their
-    // default of 1. Thirty-two singers a line make a tick in every breath
-    // between lines (the handoff has the measurement and the one-line fix,
-    // for the voice's owner). Until then each line sings through a door of
-    // its own, shut for the first 4 ms of the throat's life and open well
-    // before the inhale (0.42 s before the vowel): one gain node a line.
+    // (a phone's choir is one desk a part: each desk carries what two did)
+    var G_DESK = 0.42 * (sc.prepared.phone ? Math.SQRT2 : 1), G_CHOR = 0.75;
+    // THE DOOR. The voice on this branch (VoicesVocal before the cast crew's
+    // round 3) lets one sample of its breath noise through at the instant
+    // each sung line's throat is built, 0.45 s before the line's first
+    // vowel: its noise starts on the same sample as its gains' first
+    // automation, while they still stand at their default of 1. Thirty-two
+    // singers a line make a tick in every breath between lines. So each line
+    // sings through a door of its own, shut for the first 4 ms of the
+    // throat's life and open well before the inhale (0.42 s before the
+    // vowel): one gain node a line. The cast crew's voice (kolob-r3-cast,
+    // af8e190c) is born silent — measured, nothing before the sound — and
+    // is the one that exports its mouth (VoicesVocal._mouth); with it the
+    // door is not built at all.
+    var CAST = !!VV._mouth, DOOR = !CAST;
     function door(t) {
+      if (!DOOR) return bus;
       var born = t - 0.45, g = ctx.createGain();
       g.gain.setValueAtTime(0, Math.max(0, born - 0.01));
       g.gain.setValueAtTime(0, Math.max(0, born + 0.004));
@@ -649,25 +725,40 @@ window.KOLOB.GuestSingingSchool = (function () {
       g.connect(bus);
       return g;
     }
+    // LAID OUT A LINE AT A TIME (hooks.defer — the engine's clock): each
+    // sung line is built AHEAD seconds before its throat is born, and the
+    // desks that start together are laid a fifth of a second apart, each in
+    // a tick of the clock of its own — a practice built in one cue cost 120–
+    // 250 ms of main thread (the critic, a live context); a lab with no clock
+    // lays everything out at once
+    var AHEAD = 2.5, BORN = 0.5, STAGGER = 0.2;
+    function lay(it, fn) {
+      var when = it.t - (it.kind === "sing" || it.kind === "chorister" ? BORN : 0.05) - AHEAD - (it.kind === "sing" ? STAGGER * it.desk : 0);
+      if (hooks.defer && when > t + 0.05) hooks.defer(when, fn);
+      else fn();
+    }
     sc.items.forEach(function (it) {
-      if (it.kind === "sing") {
-        var notes = it.notes.map(function (n) { return n.rest ? { rest: true, dur: n.dur } : { f: n.f, dur: n.dur, vowel: n.vowel, stress: n.stress }; });
-        var g = G_DESK * (it.stage === "pitch" ? 0.55 : it.stage === "alone" ? 1.12 : it.stage === "again" ? 1.06 : 1);
-        desks[it.desk].sing(ctx, door(it.t), it.t, notes, g);
-      } else if (it.kind === "chorister") {
-        chorister.sing(ctx, door(it.t), it.t, it.notes, G_CHOR);
-      } else if (it.kind === "fork") {
-        fork(ctx, bus, it.t, it.f);
-      } else if (it.kind === "tap") {
-        var s = ctx.createBufferSource(), g2 = ctx.createGain();
-        s.buffer = tapBuf(ctx); g2.gain.value = 0.16 * it.v;
-        var p = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
-        s.connect(g2);
-        if (p) { p.pan.value = 0.04; g2.connect(p); p.connect(bus); } else g2.connect(bus);
-        s.start(it.t);
-      }
+      lay(it, function () {
+        if (it.kind === "sing") {
+          var notes = it.notes.map(function (n) { return n.rest ? { rest: true, dur: n.dur } : { f: n.f, dur: n.dur, vowel: n.vowel, stress: n.stress }; });
+          var g = G_DESK * (it.stage === "pitch" ? 0.55 : it.stage === "alone" ? 1.12 : it.stage === "again" ? 1.06 : 1);
+          desks[it.desk].sing(ctx, door(it.t), it.t, notes, g);
+        } else if (it.kind === "chorister") {
+          chorister.sing(ctx, door(it.t), it.t, it.notes.map(function (n) { return { f: n.f, dur: n.dur, vowel: n.shape ? said(n.shape, "chorister", CAST) : n.vowel }; }), G_CHOR);
+        } else if (it.kind === "fork") {
+          fork(ctx, bus, it.t, it.f);
+        } else if (it.kind === "tap") {
+          var s = ctx.createBufferSource(), g2 = ctx.createGain();
+          s.buffer = tapBuf(ctx); g2.gain.value = 0.16 * it.v;
+          var p = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+          s.connect(g2);
+          if (p) { p.pan.value = 0.04; g2.connect(p); p.connect(bus); } else g2.connect(bus);
+          s.start(it.t);
+        }
+        // (each line's notes told as it is laid out, as the trombones' are)
+        if (hooks.onNote && it.noteTo > it.noteFrom) sc.notes.slice(it.noteFrom, it.noteTo).forEach(function (n) { hooks.onNote(n); });
+      });
     });
-    if (hooks.onNote) sc.notes.forEach(function (n) { hooks.onNote(n); });
     if (hooks.onStage) sc.stages.forEach(function (st) { hooks.onStage(st); });
     var sent = ctx.createConstantSource ? ctx.createConstantSource() : ctx.createOscillator();
     var sg = ctx.createGain(); sg.gain.value = 0;
@@ -682,6 +773,8 @@ window.KOLOB.GuestSingingSchool = (function () {
     plan: plan, decide: decide, prepare: prepare, lesson: lesson, score: score, perform: perform,
     clashOf: clashOf, ODDS: ODDS, EXPERIMENT: EXPERIMENT, NAME: NAME, LABEL: LABEL,
     get LEVEL() { return LEVEL; }, set LEVEL(v) { LEVEL = +v; },
+    get CONSONANTS() { return { section: CONSONANTS.section, chorister: CONSONANTS.chorister }; },
+    set CONSONANTS(v) { v = v || {}; ["section", "chorister"].forEach(function (k) { if (SAID[v[k]] || v[k] === "auto") CONSONANTS[k] = v[k]; }); },
   };
 })();
 (window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-guest-singingschool.js"] = true;   // the load guard's roll call

@@ -142,7 +142,8 @@ include '../../includes/header.php';
     <label>keynote <input type="number" id="kgl-key" value="260" min="200" max="320" step="1" /></label>
     <label>room
       <select id="kgl-room">
-        <option value="wide" selected>tabernacle (St Margaret's)</option>
+        <option value="seated" selected>as seated (the bells close, the practice where the choir sits)</option>
+        <option value="wide">tabernacle (St Margaret's)</option>
         <option value="close">meetinghouse (short)</option>
         <option value="dry">dry</option>
       </select>
@@ -161,8 +162,13 @@ include '../../includes/header.php';
   loudness (LUFS, integrated and the loudest 3&nbsp;s) against the v0.30 organ reference, peak, clipped samples, and
   clicks — high-frequency bursts that stand 21.6&nbsp;dB clear of the 30&nbsp;ms either side, counted only where no
   clapper, knock, consonant or rap was scheduled (every stroke of a bell is a transient by design; a click is one
-  nothing asked for). The odds run each guest's <code>plan()</code> over 20,000 meetings of a stand-in for the
-  engine's planner — its calendar, sections, and the other guests' own dice and seats.</p>
+  nothing asked for). The organ reference is heard in the same room as the guest (as seated: where the prelude
+  seats the organ). <strong>As seated</strong> plays each guest through both of the app's rooms the way the engine
+  seats a layer — the meetinghouse and the tabernacle crossfaded at the section's balance plus the layer's depth:
+  the bells a step nearer than the choir (the handoff asks the engine for exactly this send), the practice where the
+  choir sits in the prelude. The odds run each guest's <code>plan()</code> over 20,000 meetings of a stand-in for
+  the engine's planner — its calendar, sections, and the other guests' own dice and seats — the practice planned
+  first and its seat shown to the bells.</p>
 </div>
 
 <script src="../prosperos-jukebox-v2/pj2-rand.js?v=<?php echo kgl_v('../prosperos-jukebox-v2/pj2-rand.js'); ?>"></script>

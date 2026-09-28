@@ -4,9 +4,11 @@
 // Handbells were made so that tower ringers could practise their changes
 // indoors, in the warm, without waking the parish. In Boston in 1923
 // Margaret Shurcliff's Beacon Hill ringers turned them into a choir of their
-// own — a row of ringers behind a padded table, each holding two or three
-// bells, the bass bells at one end and the treble at the other, playing hymn
-// tunes by passing the melody down the line from hand to hand. Many wards of
+// own — a row of ringers behind a padded table, each covering two notes of
+// the scale (a bell in each hand, their sharps and flats waiting on the
+// pad in front of them), the bass bells at one end and the treble at the
+// other, playing hymn tunes by passing the melody down the line from hand
+// to hand. Many wards of
 // the Church keep such a choir; so does the Tabernacle Choir (the Bells at
 // Temple Square). At the rim of Kolob's light, so does this one.
 //
@@ -66,11 +68,18 @@
 // harmony leans a note a syntonic comma, the colony's set has the comma bell
 // too, held by the same ringer: "re" at 9/8 and at 10/9). Each bell's twelfth
 // is tuned exactly 3:1 (the voice), so every bell carries its own pure fifth.
-// The ringers take the set in order from the bottom, two or three bells each
-// (a letter and its accidental or comma bell count as one place), and stand
-// in a line across the field: the bass at the audience's right as a rule
-// (the ringers face us with the bells laid out like a keyboard), sometimes
-// the other way round.
+// The ringers take the set in order from the bottom, as real choirs assign
+// one: each covers a stretch of the scale — two places as a rule (a place
+// is a letter: its bell, its sharp or flat, and here its comma bell, which
+// wait on the pad until they are wanted) — and never more than four bells,
+// which is what two hands and a table can manage; a set too big for the
+// ringers drawn brings more ringers (up to twelve). They stand in a line
+// across the field: the bass at the audience's right as a rule (the
+// ringers face us with the bells laid out like a keyboard), sometimes the
+// other way round. Where a ringer would need a third hand (three of their
+// bells struck at once — a close chord inside one ringer's stretch), the
+// neighbour reaches over and rings it: the bell sounds where it lies, and
+// the score says who rang it (reached: true).
 //
 // THE PHONE'S BUDGET. A ring is 11 nodes (the voice; its bell's panner is
 // kept for the piece), however many times it is re-struck or shaken. At most
@@ -99,7 +108,10 @@
 //   score(material, stream, t0) → the whole performance as data (pure)
 //   perform(ctx, dest, t, material, stream, hooks?) → end time (s, absolute)
 //     hooks: { onNote({freq, t, dur, part, role, ringer, bell, tech, pan,
-//              loud}), onStage({stage, t0, t1, label}), maxLive }
+//              loud, reached}), onStage({stage, t0, t1, label}), maxLive,
+//              defer(at, fn) (the engine's clock: the rings of each second
+//              laid out at `at`, 2.5 s before they sound, instead of the
+//              whole piece inside one cue — the trombones' round-3 hook) }
 //   round(mode, stream, opts) → a round (pure)
 //   ODDS, EXCLUDES, BELL_GUESTS, SEATS, MAX_LIVE, NAME, LABEL, LEVEL
 // ============================================================================
@@ -142,11 +154,24 @@ window.KOLOB.GuestHandbells = (function () {
   var AT = { invocation: [4, 16], sacrament: [2, 6], postlude: [2, 8] };
   var MAX_DUR = 78;                               // a longer hymn is rung once, or in part
   var MAX_LIVE = { desktop: 20, phone: 12 };      // rings sounding at once
-  // the choir's bus. Calibrated in the lab: a verse at mf sits within about
-  // a loudness unit of the organ reference (the v0.30 organ as the prelude
-  // plays it), and the loudest three seconds — a shaken final chord and the
-  // cascade — about two over it.
-  var LEVEL = 0.47;
+  // the choir's bus, against the organ reference (the v0.30 organ as the
+  // prelude plays it; the house's organ now plays 2.3 dB under it, v0.34),
+  // the loudest three seconds (a shaken final chord and the cascade), in the
+  // guests lab as the engine will seat the bells (a step nearer than the
+  // choir; "as seated"). Round 1 claimed +1.5 to +2.5 LU and "−3.6" for the
+  // sacrament; the critic measured +3.7 and +3.9, and the reverent seat
+  // LEVEL with the reference (−0.5 to +0.3) — the −3.6 was the gap between
+  // two seats, not to the organ. Now 2.1 dB down (0.47 → 0.37) and the
+  // sacrament's stroke softer (SACRAMENT): the hymns about level with the
+  // reference, the reverent seat about four under it (the handoff's round 2
+  // has every number, in both rooms). The owner took the trombones 4 dB
+  // down after hearing them; the bells begin nearer where the trombones
+  // ended.
+  var LEVEL = 0.37;
+  // the reverent seat: every stroke at this share of the ringers' mf — a
+  // softer stroke is a darker bell (fewer upper partials), as it is in the
+  // bronze (0.78 in round 1: the critic asked for about 0.6)
+  var SACRAMENT = 0.62;
   var RANGE = [165, 2640];                        // the colony's set: E3 to E7
 
   function oddsFor(info) {
@@ -475,17 +500,51 @@ window.KOLOB.GuestHandbells = (function () {
     return bells;
   }
   function line(bells, sh) {
+    // THE PLACES: one a letter, low to high, and how many bells each holds
     var letters = [];
     bells.forEach(function (b) { if (letters.indexOf(b.letter) < 0) letters.push(b.letter); });
     letters.sort(function (a, b) { return a - b; });
-    var R = Math.max(1, Math.min(sh.ringers, letters.length));
+    var w = letters.map(function (L) { return bells.filter(function (b) { return b.letter === L; }).length; });
+    var n = letters.length;
+    var R = Math.max(1, Math.min(sh.ringers, n));
     // (a small set: fewer ringers, two places each where the set allows —
     // but eight still stand in the line, and then some ring a single bell)
-    if (letters.length < 2 * R) R = Math.max(Math.min(8, letters.length), Math.ceil(letters.length / 2));
-    R = Math.min(R, letters.length);
+    if (n < 2 * R) R = Math.max(Math.min(8, n), Math.ceil(n / 2));
+    R = Math.min(R, n);
+    // THE STRETCHES: the places cut into R runs, none heavier than it must
+    // be (the lightest possible heaviest hand), and among those cuts the
+    // most even — the bells spread, and two places a ringer where it can
+    // be. A set whose hands would hold more than four bells brings more
+    // ringers, up to twelve.
+    function cut(R) {
+      var C = 0; w.forEach(function (x) { C = Math.max(C, x); });
+      // the least cap at which R runs suffice (greedy is exact for a cap)
+      function runs(cap) { var k = 1, acc = 0; for (var i = 0; i < n; i++) { if (acc + w[i] > cap) { k++; acc = 0; } acc += w[i]; } return k; }
+      while (runs(C) > R) C++;
+      // exactly R runs, each ≤ C, the most even (additive cost, so a DP)
+      var INF = 1e18, best = [], from = [];
+      for (var r = 0; r <= R; r++) { best.push([]); from.push([]); for (var i = 0; i <= n; i++) { best[r].push(INF); from[r].push(-1); } }
+      best[0][0] = 0;
+      for (r = 1; r <= R; r++) {
+        for (i = 1; i <= n; i++) {
+          var sw = 0;
+          for (var j = i - 1; j >= 0; j--) {
+            sw += w[j];
+            if (sw > C) break;
+            if (best[r - 1][j] >= INF) continue;
+            var places = i - j, c = best[r - 1][j] + sw * sw + 0.5 * (places - 2) * (places - 2);
+            if (c < best[r][i] - 1e-9) { best[r][i] = c; from[r][i] = j; }
+          }
+        }
+      }
+      var bounds = [], at = n;
+      for (r = R; r > 0; r--) { var j0 = from[r][at]; bounds.unshift([j0, at]); at = j0; }
+      return { cap: C, bounds: bounds };
+    }
+    var cu = cut(R);
+    while (cu.cap > 4 && R < Math.min(12, n)) { R++; cu = cut(R); }
     var ringers = [];
-    for (var r = 0; r < R; r++) ringers.push({ i: r, letters: [], bells: [] });
-    letters.forEach(function (L, k) { ringers[Math.min(R - 1, Math.floor(k * R / letters.length))].letters.push(L); });
+    cu.bounds.forEach(function (bd, r) { ringers.push({ i: r, letters: letters.slice(bd[0], bd[1]), bells: [] }); });
     var W = sh.width, side = sh.lowRight ? 1 : -1;
     ringers.forEach(function (rg) { rg.pan = R === 1 ? 0 : side * (W - 2 * W * rg.i / (R - 1)); });
     bells.forEach(function (b) {
@@ -499,6 +558,34 @@ window.KOLOB.GuestHandbells = (function () {
       b.pan = Math.max(-1, Math.min(1, rg.pan + (nPl > 1 ? side * (0.035 - 0.07 * place / (nPl - 1)) : 0)));
     });
     return ringers;
+  }
+  // TWO HANDS: a ringer can strike two bells at once, not three. A stroke
+  // that would be a ringer's third within 30 ms is rung by the neighbour on
+  // the side of the line it lies toward (or the other, if that one's hands
+  // are full): the bell sounds where it lies on the pad; the strike records
+  // who rang it. Returns how many strokes were reached for.
+  function twoHands(strikes, ringers, bells) {
+    var byR = {}, reached = 0;
+    function busy(r, t, bell) {
+      var seen = {};
+      (byR[r] || []).forEach(function (s) { if (Math.abs(s.t - t) < 0.03 && s.bell !== bell) seen[s.bell] = true; });
+      return Object.keys(seen).length;
+    }
+    strikes.forEach(function (s) {
+      var r = s.ringer;
+      if (busy(r, s.t, s.bell) >= 2) {
+        var rg = ringers[r], b = bells[s.bell], high = rg.letters.indexOf(b.letter) >= rg.letters.length / 2;
+        var tries = high ? [r + 1, r - 1] : [r - 1, r + 1];
+        for (var k = 0; k < tries.length; k++) {
+          var q = tries[k];
+          if (q < 0 || q >= ringers.length || busy(q, s.t, s.bell) >= 2) continue;
+          s.ringer = q; s.reached = true; reached++;
+          break;
+        }
+      }
+      (byR[s.ringer] = byR[s.ringer] || []).push(s);
+    });
+    return reached;
   }
 
   // ==========================================================================
@@ -514,7 +601,7 @@ window.KOLOB.GuestHandbells = (function () {
     var sh = shapeOf(stream);
     var M = prepare(material, stream);
     var strikes = [], stages = [];
-    var dyn = sh.dyn * (M.seat === "sacrament" ? 0.78 : 1);
+    var dyn = sh.dyn * (M.seat === "sacrament" ? SACRAMENT : 1);
     var finalHz = M.finalHz, mode = M.mode;
     // (every stroke lands on a bell the set holds: a note past either end of
     // the set is rung an octave in)
@@ -568,6 +655,7 @@ window.KOLOB.GuestHandbells = (function () {
       s.bell = b.i; s.ringer = b.ringer; s.pan = b.pan;
     });
     strikes.sort(function (a, b) { return a.t - b.t || a.f - b.f; });
+    var reached = twoHands(strikes, ringers, bells);
     // THE RINGS: a bell struck while it rings is the same ring, struck again
     var rings = [], current = {};
     strikes.forEach(function (s) {
@@ -616,14 +704,15 @@ window.KOLOB.GuestHandbells = (function () {
     });
     var notes = strikes.map(function (s) {
       var rgEnd = s.damp != null ? s.damp : s.t + lifeOf(s.f, s.tech);
-      return { freq: s.f, t: t0 + s.t, dur: Math.max(0.05, Math.min(rgEnd, s.until != null ? s.until : Infinity) - s.t), part: s.part, role: s.role, ringer: s.ringer, bell: s.bell, tech: s.tech, pan: s.pan, v: s.v };
+      return { freq: s.f, t: t0 + s.t, dur: Math.max(0.05, Math.min(rgEnd, s.until != null ? s.until : Infinity) - s.t), part: s.part, role: s.role, ringer: s.ringer, bell: s.bell, tech: s.tech, pan: s.pan, v: s.v, reached: !!s.reached };
     });
     var stopMax = 0;
     outRings.forEach(function (rg) { stopMax = Math.max(stopMax, rg.stop); });
     return {
       prepared: M, shape: sh, piece: M.piece, seat: M.seat, source: M.source, mode: mode,
       bells: bells.map(function (b) { return { i: b.i, f: b.f, letter: b.letter, alt: b.alt, spare: !!b.spare, ringer: b.ringer, pan: b.pan }; }),
-      ringers: ringers.map(function (r) { return { i: r.i, pan: r.pan, bells: r.bells.slice() }; }),
+      ringers: ringers.map(function (r) { return { i: r.i, pan: r.pan, bells: r.bells.slice(), places: r.letters.length }; }),
+      reached: reached,
       strikes: notes, rings: outRings, stages: stages,
       t0: t0, end: t0 + fin, until: Math.max(stopMax, t0 + fin),
       live: { cap: cap, peak: peak, stolen: stolen, nodesPerRing: 11, peakNodes: peak * 11 + bells.length + 3 },
@@ -745,7 +834,10 @@ window.KOLOB.GuestHandbells = (function () {
       });
       if (set === "bass") {
         // THE HARMONY AS CHORDS: at each change, the parts' tones above the
-        // tune (an octave up), rung together and let ring to the next change
+        // tune, rung together and let ring to the next change — every tone
+        // over the highest note the tune reaches while the chord rings (a
+        // tone that would fall under it goes up an octave, or, past the top
+        // of the set, is left out): the tune is the bass, always
         var onsets = {};
         PARTS.forEach(function (p) { if (p === mp || !ln.parts[p]) return; ln.parts[p].forEach(function (n) { onsets[n.beat.toFixed(3)] = true; }); });
         var times = Object.keys(onsets).map(Number).sort(function (a, b) { return a - b; });
@@ -753,13 +845,20 @@ window.KOLOB.GuestHandbells = (function () {
         var chordAt = times.filter(function (b, i) { return i === 0 || b - times[i - 1] >= 1 - 1e-6 || b % 1 === 0; });
         chordAt.forEach(function (b, i) {
           var b2 = i + 1 < chordAt.length ? chordAt[i + 1] : ln.beats, a = t0 + T(ln, b), e = t0 + T(ln, b2), last = i === chordAt.length - 1;
+          var tuneTop = 0;
+          (ln.parts[mp] || []).forEach(function (x) { if (x.beat < b2 - 1e-6 && x.beat + x.beats > b + 1e-6) tuneTop = Math.max(tuneTop, fOf(x, li, mp, bassShift)); });
+          var rung = {};
           PARTS.forEach(function (p) {
             if (p === mp || !ln.parts[p]) return;
             var n = null;
             ln.parts[p].forEach(function (x) { if (x.beat <= b + 1e-6 && x.beat + x.beats > b + 1e-6) n = x; });
             if (!n) return;
             var extra = p === "B" ? 1 : 0;
-            strike({ t: a, f: fOf(n, li, p, extra), letter: letterOf(n, li, p, extra), alt: n.alt, v: Math.min(1, v * 0.7), tech: "ring", damp: last ? (opts2.lastLine ? null : nextStart) : e, shake: 0, part: p, role: "harmony (chords)" });
+            while (fOf(n, li, p, extra) <= tuneTop * 1.015) extra++;
+            var f = fOf(n, li, p, extra);
+            if (f > RANGE[1] * 1.015 || rung[f.toFixed(2)]) return;
+            rung[f.toFixed(2)] = true;
+            strike({ t: a, f: f, letter: letterOf(n, li, p, extra), alt: n.alt, v: Math.min(1, v * 0.7), tech: "ring", damp: last ? (opts2.lastLine ? null : nextStart) : e, shake: 0, part: p, role: "harmony (chords)" });
           });
         });
       }
@@ -955,19 +1054,50 @@ window.KOLOB.GuestHandbells = (function () {
       return (pans[b] = sp);
     }
     // where each ringer's hand actually lands (sound-level: a few ms, a
-    // little harder or softer — never reported)
+    // little harder or softer — never reported), drawn for every ring now,
+    // in order, so a performance laid out in slices is the same performance
     var hand = synth.fork("hands");
-    sc.rings.forEach(function (rg) {
-      var dt = hand.rnd(-0.006, 0.006), dv = hand.rnd(0.94, 1.06);
-      var t1 = Math.max(t, rg.t + dt);
+    var lands = sc.rings.map(function (rg) {
+      return { dt: hand.rnd(-0.006, 0.006), dv: hand.rnd(0.94, 1.06), hv: rg.hits.map(function () { return hand.rnd(0.94, 1.06); }) };
+    });
+    function ringIt(k) {
+      var rg = sc.rings[k], L = lands[k], t1 = Math.max(t, rg.t + L.dt);
       folk.ring(t1, {
-        f: rg.f, v: Math.min(1, rg.v * dv), tech: rg.tech,
-        hits: rg.hits.map(function (h) { return { at: h.at, v: Math.min(1, h.v * hand.rnd(0.94, 1.06)) }; }),
+        f: rg.f, v: Math.min(1, rg.v * L.dv), tech: rg.tech,
+        hits: rg.hits.map(function (h, j) { return { at: h.at, v: Math.min(1, h.v * L.hv[j]) }; }),
         damp: rg.damp, until: rg.until, shake: rg.shake, dest: panOf(rg.bell, rg.pan, t1),
       });
+    }
+    function tellStrike(s) {
+      hooks.onNote({ freq: s.freq, t: s.t, dur: s.dur, part: s.part, role: s.role, ringer: s.ringer, bell: s.bell, tech: s.tech, pan: s.pan, loud: s.v, reached: s.reached });
+    }
+    // LAID OUT A SLICE AT A TIME (hooks.defer — the engine's clock): the
+    // rings that begin within each SLICE seconds are built AHEAD seconds
+    // before the first of them sounds, each slice in a tick of the clock of
+    // its own, and their strokes told then (as the trombones' phrases are).
+    // Built in one cue, a hymn's bells cost 200–530 ms of main thread (the
+    // critic, a live context: every ring's partials, automation and, for a
+    // shake, its train of clapper knocks); a lab with no clock lays it all
+    // out at once.
+    var AHEAD = 2.5, SLICE = 1.0, slices = [];
+    sc.rings.forEach(function (rg, k) {
+      var cur = slices[slices.length - 1];
+      if (!cur || rg.t >= cur.t0 + SLICE) slices.push(cur = { t0: rg.t, rings: [], strikes: [] });
+      cur.rings.push(k);
     });
-    if (hooks.onNote) sc.strikes.forEach(function (s) {
-      hooks.onNote({ freq: s.freq, t: s.t, dur: s.dur, part: s.part, role: s.role, ringer: s.ringer, bell: s.bell, tech: s.tech, pan: s.pan, loud: s.v });
+    sc.strikes.forEach(function (st) {
+      var home = slices[0];
+      for (var q = 0; q < slices.length && slices[q].t0 <= st.t + 1e-9; q++) home = slices[q];
+      if (home) home.strikes.push(st);
+    });
+    slices.forEach(function (sl) {
+      function layIt() {
+        sl.rings.forEach(ringIt);
+        if (hooks.onNote) sl.strikes.forEach(tellStrike);
+      }
+      var when = sl.t0 - AHEAD;
+      if (hooks.defer && when > t + 0.05) hooks.defer(when, layIt);
+      else layIt();
     });
     if (hooks.onStage) sc.stages.forEach(function (st) { hooks.onStage(st); });
     // when the last bell has gone, let the line go

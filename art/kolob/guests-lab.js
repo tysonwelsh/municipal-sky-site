@@ -33,7 +33,16 @@ window.GuestsLab = (function () {
   // THE CHAIN — the trombone lab's (kolob-core.js init()'s): rooms →
   // voicesBus → glue → master 0.6 → tanh(1.15) → compressor(−18/3:1) — then
   // a brick-wall guard at −1 dBFS
+  // THE ROOMS: the tabernacle (St Margaret's, wet 0.40), the meetinghouse
+  // (short, wet 0.28), dry — or, the default, AS SEATED: both rooms, the way
+  // kolob-core.js seats every layer (PJ2.Fx.roomBlend: cos/sin sends into
+  // the two rooms at the section's balance plus the layer's depth bias,
+  // each room its own dry and wet). The bells as this crew asks the engine
+  // to seat them (BELLS_DEPTH, the still small voice's nearness: close,
+  // bright and dry); the practice where the choir sits in the prelude.
   // ==========================================================================
+  var ROOM_BALANCE = { prelude: 0.55, invocation: 0.45, sacrament: 0.60, postlude: 0.55 };
+  var BELLS_DEPTH = -0.35, CHOIR_DEPTH = 0.05, ORGAN_DEPTH = 0.10;
   function fetchIR(ctx) {
     var url = "../prosperos-jukebox-v2/ir/rooms/library-wide-st-margarets.wav";
     return fetch(url).then(function (r) { if (!r.ok) throw new Error("ir " + r.status); return r.arrayBuffer(); })
@@ -57,19 +66,28 @@ window.GuestsLab = (function () {
     }
     return buf;
   }
-  function buildChain(ctx, room, irBuf, dest) {
+  function buildChain(ctx, room, irBuf, dest, balance) {
     var t = 0;
-    var session = ctx.createGain(), voicesBus = ctx.createGain(), dry = ctx.createGain();
-    dry.gain.value = 1;
-    session.connect(dry); dry.connect(voicesBus);
-    if (room !== "dry") {
-      var spec = room === "close" ? { pre: 0.012, wet: 0.28 } : { pre: 0.063, wet: 0.40 };
+    var session = ctx.createGain(), voicesBus = ctx.createGain();
+    // one room: a send → its dry (1) and its wet (pre-delay → convolver)
+    function roomUnit(src, which) {
+      var dry = ctx.createGain(); dry.gain.value = 1;
+      src.connect(dry); dry.connect(voicesBus);
+      if (which === "dry") return;
+      var spec = which === "close" ? { pre: 0.012, wet: 0.28 } : { pre: 0.063, wet: 0.40 };
       var pre = ctx.createDelay(0.25); pre.delayTime.value = spec.pre;
       var conv = ctx.createConvolver();
-      conv.buffer = room === "close" ? pour(ctx, 1.4, 1.2) : (irBuf || pour(ctx, 5.5, 0.8));
+      conv.buffer = which === "close" ? pour(ctx, 1.4, 1.2) : (irBuf || pour(ctx, 5.5, 0.8));
       var wet = ctx.createGain(); wet.gain.value = spec.wet;
-      session.connect(pre); pre.connect(conv); conv.connect(wet); wet.connect(voicesBus);
+      src.connect(pre); pre.connect(conv); conv.connect(wet); wet.connect(voicesBus);
     }
+    if (room === "seated") {
+      var th = Math.max(0, Math.min(1, balance != null ? balance : 0.5)) * Math.PI / 2;
+      var gc = ctx.createGain(), gw = ctx.createGain();
+      gc.gain.value = Math.cos(th); gw.gain.value = Math.sin(th);
+      session.connect(gc); session.connect(gw);
+      roomUnit(gc, "close"); roomUnit(gw, "wide");
+    } else roomUnit(session, room);
     var glue = ctx.createDynamicsCompressor();
     glue.threshold.setValueAtTime(-20, t); glue.knee.setValueAtTime(22, t); glue.ratio.setValueAtTime(1.7, t);
     glue.attack.setValueAtTime(0.025, t); glue.release.setValueAtTime(0.22, t);
@@ -86,7 +104,15 @@ window.GuestsLab = (function () {
     var fade = ctx.createGain(); fade.gain.value = 1;
     voicesBus.connect(glue); glue.connect(master); master.connect(sat); sat.connect(comp); comp.connect(guard);
     guard.connect(fade); fade.connect(dest);
-    return { input: session, out: fade };
+    return { input: session, out: fade, room: room, balance: balance };
+  }
+  // where a phrase sits, as seated (0 = all meetinghouse … 1 = all tabernacle)
+  function balanceFor(id, o) {
+    o = o || {};
+    var cl = function (x) { return Math.max(0, Math.min(1, x)); };
+    if (id === "school") return cl(ROOM_BALANCE.prelude + CHOIR_DEPTH);
+    if (id === "reference") return cl(ROOM_BALANCE.prelude + ORGAN_DEPTH);
+    return cl(ROOM_BALANCE[o.seat || seatNow()] + BELLS_DEPTH);
   }
 
   // ==========================================================================
@@ -119,7 +145,11 @@ window.GuestsLab = (function () {
   function bellMaterial(st, o) {
     return HB.prepare({ hymn: composeHymn(st), keynoteHz: st.keynote, seat: o.seat || seatNow(), piece: o.piece || null, phone: o.phone != null ? o.phone : phoneNow() }, hbStream(st.seed));
   }
-  function schoolMaterial(st) { return SS.prepare({ hymn: composeHymn(st), keynoteHz: st.keynote }, ssStream(st.seed)); }
+  function schoolMaterial(st, o) {
+    o = o || {};
+    var ph = o.phone != null ? o.phone : (function () { var e = document.getElementById("kgl-ssphone"); return !!(e && e.checked); })();
+    return SS.prepare({ hymn: composeHymn(st), keynoteHz: st.keynote, phone: ph }, ssStream(st.seed));
+  }
   function seatNow() { return val("kgl-seat", "invocation"); }
   function pieceNow() { var v = val("kgl-piece", "auto"); return v === "auto" ? null : v; }
   function phoneNow() { var e = document.getElementById("kgl-phone"); return !!(e && e.checked); }
@@ -140,7 +170,7 @@ window.GuestsLab = (function () {
   }
   P.bells = function (ctx, into, t, o) {
     var st = settings(o), mat = bellMaterial(st, { seat: o.seat, piece: o.piece !== undefined ? o.piece : pieceNow(), phone: o.phone });
-    var hooks = { onNote: o.onNote || null, maxLive: o.maxLive };
+    var hooks = { onNote: o.onNote || null, maxLive: o.maxLive, defer: o.defer || null };
     var end = HB.perform(ctx, into, t, mat, hbStream(st.seed), hooks);
     var last = HB.perform.last, s = last.folk.stats();
     return { dur: Math.max(end, last.score.until) - t + 1.5, stats: s, score: last.score, expect: bellExpect(last.score, t) };
@@ -195,9 +225,9 @@ window.GuestsLab = (function () {
     return { dur: 8, stats: folk.stats(), expect: [[0, 0.03], [1.9, 1.93], [3.8, 3.83]], pair: pair };
   };
   P.school = function (ctx, into, t, o) {
-    var st = settings(o), mat = schoolMaterial(st);
+    var st = settings(o), mat = schoolMaterial(st, o);
     if (K.VoicesVocal.budget) K.VoicesVocal.budget.reset();
-    var end = SS.perform(ctx, into, t, mat, ssStream(st.seed), { onNote: o.onNote || null });
+    var end = SS.perform(ctx, into, t, mat, ssStream(st.seed), { onNote: o.onNote || null, defer: o.defer || null });
     var bud = K.VoicesVocal.budget ? K.VoicesVocal.budget.report(t, end) : null;
     var sc = SS.perform.last.score, ex = [];
     // (a sung onset carries its consonant; a rap on the stand is a rap)
@@ -259,7 +289,7 @@ window.GuestsLab = (function () {
   // LIVE PLAYBACK — one context; phrases play into `labIn`, which feeds the
   // current room chain; the meter sits after it. A room change crossfades.
   // ==========================================================================
-  var actx = null, chain = null, irBuf = null, room = "wide", current = null, analyser = null, labIn = null, lights = [], lightTimer = null;
+  var actx = null, chain = null, irBuf = null, room = "seated", current = null, analyser = null, labIn = null, lights = [], lightTimer = null;
   function ensure() {
     if (actx) return Promise.resolve();
     actx = new (window.AudioContext || window.webkitAudioContext)();
@@ -267,9 +297,9 @@ window.GuestsLab = (function () {
     labIn = actx.createGain();
     return fetchIR(actx).then(function (b) { irBuf = b; rebuild(); });
   }
-  function rebuild() {
+  function rebuild(balance) {
     var old = chain, t = actx.currentTime, XF = 0.25;
-    chain = buildChain(actx, room, irBuf, analyser);
+    chain = buildChain(actx, room, irBuf, analyser, balance != null ? balance : old ? old.balance : 0.5);
     labIn.connect(chain.input);
     if (!old) return;
     chain.out.gain.setValueAtTime(0, t); chain.out.gain.linearRampToValueAtTime(1, t + XF);
@@ -280,6 +310,7 @@ window.GuestsLab = (function () {
     lights = [];
     if (!current) return;
     var c = current;
+    c.timers.forEach(function (x) { clearTimeout(x); });
     c.gain.gain.setTargetAtTime(0, actx.currentTime, 0.03);
     setTimeout(function () { try { c.gain.disconnect(); } catch (e) {} }, 400);
     current = null;
@@ -289,15 +320,41 @@ window.GuestsLab = (function () {
     return ensure().then(function () {
       if (actx.state === "suspended") actx.resume();
       stop();
+      // (as seated: the room moves to where this guest sits)
+      if (room === "seated" && Math.abs((chain.balance || 0) - balanceFor(id, o)) > 1e-6) rebuild(balanceFor(id, o));
       var g = actx.createGain(); g.connect(labIn);
       lights = [];
-      var oo = Object.assign({}, o, { onNote: function (n) { lights.push(n); } });
+      // THE LAB'S CLOCK: the guests lay themselves out a slice at a time
+      // (hooks.defer), as the engine's clock will have them — each slice on
+      // a timer of its own, a little before it sounds; what each costs the
+      // main thread is kept (cost())
+      var me = { gain: g, id: id, timers: [], cost: { press: 0, slices: [] } };
+      var oo = Object.assign({}, o, {
+        onNote: function (n) { lights.push(n); },
+        defer: function (at, fn) {
+          me.timers.push(setTimeout(function () {
+            if (current !== me) return;
+            var c0 = performance.now(); fn(); me.cost.slices.push(performance.now() - c0);
+          }, Math.max(0, (at - actx.currentTime) * 1000)));
+        },
+      });
+      current = me;
+      var c1 = performance.now();
       var res = P[id](actx, g, actx.currentTime + 0.15, oo);
-      current = { gain: g, id: id, until: actx.currentTime + res.dur };
+      me.cost.press = performance.now() - c1;
+      me.until = actx.currentTime + res.dur;
+      res.cost = me.cost;
       return res;
     });
   }
   function setRoom(r) { room = r; if (actx) rebuild(); }
+  // the main thread each live performance cost: at the press, and each slice
+  function cost() {
+    if (!current) return null;
+    var c = current.cost, mx = 0;
+    c.slices.forEach(function (x) { mx = Math.max(mx, x); });
+    return { id: current.id, press: +c.press.toFixed(1), slices: c.slices.length, largest: +mx.toFixed(1) };
+  }
   function meter() {
     if (!analyser) return null;
     var a = new Float32Array(analyser.fftSize); analyser.getFloatTimeDomainData(a);
@@ -319,7 +376,7 @@ window.GuestsLab = (function () {
       var rm = o.room || room;
       var len = Math.ceil((est.dur + 1.2 + (rm === "dry" ? 0 : 3)) * SR);
       var off = new OfflineAudioContext(2, len, SR);
-      var ch = buildChain(off, rm, ir, off.destination);
+      var ch = buildChain(off, rm, ir, off.destination, balanceFor(id, o));
       var res = P[id](off, ch.input, 0.1, o);
       return off.startRendering().then(function (buf) { return { buf: buf, res: res }; });
     });
@@ -440,14 +497,15 @@ window.GuestsLab = (function () {
       }
     }
   }
-  var refLufs = null;
-  function reference() {
-    if (refLufs != null) return Promise.resolve(refLufs);
-    return render("reference", { room: room }).then(function (r) { refLufs = analyse(r.buf, r.res, "reference").lufsShortMax; return refLufs; });
+  var refLufs = {};                                // the reference's loudest 3 s, by room
+  function reference(rm) {
+    rm = rm || room;
+    if (refLufs[rm] != null) return Promise.resolve(refLufs[rm]);
+    return render("reference", { room: rm }).then(function (r) { refLufs[rm] = analyse(r.buf, r.res, "reference").lufsShortMax; return refLufs[rm]; });
   }
   function check(id, o) {
     o = o || {};
-    return reference().then(function (ref) {
+    return reference(o.room).then(function (ref) {
       return render(id, o).then(function (r) {
         var out = analyse(r.buf, r.res, id);
         out.refShortMax = ref; out.vsRef = +(out.lufsShortMax - ref).toFixed(1);
@@ -500,19 +558,29 @@ window.GuestsLab = (function () {
   function odds(N, opts) {
     N = N || 20000; opts = opts || {};
     var R0 = window.PJ2.Rand.stream(99).fork("lab:odds");
-    var res = { n: N, handbells: { seated: 0, byKind: {}, seats: {}, pieces: {}, why: {} }, school: { seated: 0, byKind: {}, why: {} }, both: 0 };
+    var res = { n: N, handbells: { seated: 0, byKind: {}, seats: {}, pieces: {}, why: {} }, school: { seated: 0, byKind: {}, why: {} }, both: 0, adjacent: 0 };
     var exp = opts.experimental || { singingSchool: true };
     for (var i = 1; i <= N; i++) {
       var m = standIn(R0);
-      var hbd = HB.decide({ n: i, kind: m.kind, sections: m.sections, guests: m.guests }, window.PJ2.Rand.stream(i).fork(HB.LABEL + i));
+      // the order the engine is asked to plan them in (handoff r3-guests-1,
+      // round 2): the practice first, its seat pushed among the guests, then
+      // the bells — so the bells can see it (PLAN §8.13)
       var ssd = SS.decide({ n: i, kind: m.kind, sections: m.sections, guests: m.guests, experimental: exp }, window.PJ2.Rand.stream(i).fork(SS.LABEL + i));
+      var guests = m.guests.slice();
+      if (ssd.seat) guests.push({ type: SS.NAME, section: "prelude" });
+      var hbd = HB.decide({ n: i, kind: m.kind, sections: m.sections, guests: guests }, window.PJ2.Rand.stream(i).fork(HB.LABEL + i));
       var hk = res.handbells.byKind[m.kind] = res.handbells.byKind[m.kind] || { n: 0, seated: 0 };
       var sk = res.school.byKind[m.kind] = res.school.byKind[m.kind] || { n: 0, seated: 0 };
       hk.n++; sk.n++;
       if (hbd.seat) { res.handbells.seated++; hk.seated++; res.handbells.seats[hbd.seat.seat] = (res.handbells.seats[hbd.seat.seat] || 0) + 1; res.handbells.pieces[hbd.seat.piece] = (res.handbells.pieces[hbd.seat.piece] || 0) + 1; }
       else { var w = hbd.why.replace(/ \(.*/, ""); res.handbells.why[w] = (res.handbells.why[w] || 0) + 1; }
       if (ssd.seat) { res.school.seated++; sk.seated++; } else { var w2 = ssd.why.replace(/ \(.*/, ""); res.school.why[w2] = (res.school.why[w2] || 0) + 1; }
-      if (hbd.seat && ssd.seat) res.both++;
+      if (hbd.seat && ssd.seat) {
+        res.both++;
+        // (two guests in adjacent sections: the bells' seat against the prelude's neighbour)
+        var pi = -1; m.sections.forEach(function (x, k) { if (x.type === "prelude" && pi < 0) pi = k; });
+        if (m.sections[pi + 1] && m.sections[pi + 1].type === hbd.seat.seat) res.adjacent++;
+      }
     }
     res.handbells.rate = res.handbells.seated / N; res.school.rate = res.school.seated / N;
     return res;
@@ -533,9 +601,10 @@ window.GuestsLab = (function () {
       d = JSON.stringify([SS.plan(Object.assign({ experimental: { singingSchool: true } }, info), ssStream(st.seed)), SS.score(SS.prepare({ hymn: h, keynoteHz: st.keynote }, ssStream(st.seed)), ssStream(st.seed), 0).items]);
     } finally { Math.random = real; }
     var off = SS.plan(Object.assign({ experimental: { singingSchool: false } }, info), ssStream(st.seed));
+    var funeral = SS.plan(Object.assign({}, info, { kind: "funeral", experimental: { singingSchool: true } }), ssStream(st.seed)) || SS.plan(Object.assign({}, info, { sunday: "funeral", experimental: { singingSchool: true } }), ssStream(st.seed));
     // the folk voice's decay law and the guest's copy of it
     var agree = [165, 260, 523, 1047, 2093, 2640].every(function (f) { return Math.abs(K.VoicesFolk.bell.tau(f) - HB.bellTau(f)) < 1e-12; });
-    return { handbellsRepeat: a === b, schoolRepeat: c === d, mathRandomCalls: calls, schoolOffSeats: off, decayLawAgrees: agree };
+    return { handbellsRepeat: a === b, schoolRepeat: c === d, mathRandomCalls: calls, schoolOffSeats: off, schoolFuneralSeats: funeral, decayLawAgrees: agree };
   }
 
   // ==========================================================================
@@ -591,7 +660,7 @@ window.GuestsLab = (function () {
     row.appendChild(lp); row.appendChild(ls); row.appendChild(lph);
     card.appendChild(row);
     var row2 = el("div", "kgl-row");
-    var bPlay = button("▶ ring", "kgl-play", function () { play("bells"); });
+    var bPlay = button("▶ ring", "kgl-play", function () { play("bells").then(function () { if (current) current.costEl = hbView.cost; }); });
     var bCheck = button("check", "kgl-check", function () { busy(bCheck, check("bells").then(function (r) { hbView.meas.textContent = measLine(r); techRow(r.score); })).catch(showErr(hbView.meas)); });
     row2.appendChild(bPlay); row2.appendChild(bCheck);
     card.appendChild(row2);
@@ -601,6 +670,7 @@ window.GuestsLab = (function () {
     hbView.plan = el("ol", "kgl-plan"); card.appendChild(hbView.plan);
     hbView.tech = el("p", "kgl-stat"); card.appendChild(hbView.tech);
     hbView.meas = el("p", "kgl-meas"); card.appendChild(hbView.meas);
+    hbView.cost = el("p", "kgl-stat"); card.appendChild(hbView.cost);
     var row3 = el("div", "kgl-row");
     var bTech = button("one bell, every technique", null, function () { play("tech"); });
     var bTechC = button("check it", "kgl-check", function () { busy(bTechC, check("tech").then(function (r) { hbView.meas2.textContent = measLine(r) + (r.twelfth ? " · the twelfth " + r.twelfth.twelfthHz + " Hz over " + r.twelfth.fundamentalHz + " Hz: ×" + r.twelfth.ratio + " (" + (r.twelfth.centsFromPure >= 0 ? "+" : "") + r.twelfth.centsFromPure + " cents from a pure 3:1)" : ""); })).catch(showErr(hbView.meas2)); });
@@ -680,8 +750,21 @@ window.GuestsLab = (function () {
     ssView.gate = el("p", "kgl-stat"); card.appendChild(ssView.gate);
     cb.addEventListener("change", function () { X.set("singingSchool", cb.checked); });
     X.onChange(flagView);
+    var rowC = el("div", "kgl-row");
+    var cons = el("select"); cons.id = "kgl-cons";
+    [["default", "no f or s from the section"], ["all", "every consonant"], ["vowels", "vowels only"]].forEach(function (x) { var op = el("option", null, x[1]); op.value = x[0]; cons.appendChild(op); });
+    var lc = el("label", null, "the shapes' consonants "); lc.appendChild(cons);
+    cons.addEventListener("change", function () {
+      SS.CONSONANTS = cons.value === "all" ? { section: "all", chorister: "all" } : cons.value === "vowels" ? { section: "vowels", chorister: "vowels" } : { section: "voiced", chorister: "auto" };
+      schoolPlan();
+    });
+    var sph = el("input"); sph.type = "checkbox"; sph.id = "kgl-ssphone";
+    var lsph = el("label"); lsph.appendChild(sph); lsph.appendChild(document.createTextNode(" a phone's choir (one desk a part)"));
+    sph.addEventListener("change", schoolPlan);
+    rowC.appendChild(lc); rowC.appendChild(lsph);
+    card.appendChild(rowC);
     var row = el("div", "kgl-row");
-    var bPlay = button("▶ the practice", "kgl-play", function () { play("school"); });
+    var bPlay = button("▶ the practice", "kgl-play", function () { play("school").then(function () { if (current) current.costEl = ssView.cost; }); });
     var bCheck = button("check", "kgl-check", function () { busy(bCheck, check("school").then(function (r) { ssView.meas.textContent = measLine(r); })).catch(showErr(ssView.meas)); });
     row.appendChild(bPlay); row.appendChild(bCheck);
     card.appendChild(row);
@@ -689,6 +772,7 @@ window.GuestsLab = (function () {
     ssView.notes = el("div"); card.appendChild(ssView.notes);
     ssView.plan = el("ol", "kgl-plan"); card.appendChild(ssView.plan);
     ssView.meas = el("p", "kgl-meas"); card.appendChild(ssView.meas);
+    ssView.cost = el("p", "kgl-stat"); card.appendChild(ssView.cost);
     flagView();
     return card;
   }
@@ -721,7 +805,15 @@ window.GuestsLab = (function () {
         return [w.index + 1, nm(w.rightDeg), nm(w.deg), (c >= 0 ? "+" : "") + c.toFixed(0) + " cents"];
       })));
     }
-    ssView.notes.appendChild(el("p", "kgl-stat", "the passage alone, on the notes: " + mk.passage.notes.map(function (n) { return n.shape; }).join(" · ") + " (notes " + (mk.passage.from + 1) + "–" + (mk.passage.to + 1) + " of the " + ({ S: "sopranos'", A: "altos'", T: "tenors'", B: "basses'", W: "women's", M: "men's" }[mk.group]) + " line)"));
+    var sung = [];
+    sc.items.forEach(function (it) { if (it.kind === "sing" && it.stage === "alone" && !sung.length) sung = it.notes.map(function (n) { return n.vowel; }); });
+    var shapes = mk.passage.notes.map(function (n) { return n.shape; });
+    ssView.notes.appendChild(el("p", "kgl-stat", "the passage alone, on the notes: " + shapes.join(" · ") + " (notes " + (mk.passage.from + 1) + "–" + (mk.passage.to + 1) + " of the " + ({ S: "sopranos'", A: "altos'", T: "tenors'", B: "basses'", W: "women's", M: "men's" }[mk.group]) + " line)" +
+      (sung.join() !== shapes.join() ? "; the section sings it " + sung.join(" · ") + " — " + (function () {
+        var c = SS.CONSONANTS.chorister, cast = !!(K.VoicesVocal && K.VoicesVocal._mouth);
+        return c === "all" || (c === "auto" && cast) ? "the chorister says the f and the s whole, the section leaves them out" :
+          c === "auto" ? "the section leaves out the f and the s, and so does the chorister with this voice (she says them with the cast crew's softer one)" : "no one says the f or the s";
+      })() : "")));
     ssView.plan.textContent = "";
     sc.stages.forEach(function (sg) { ssView.plan.appendChild(el("li", null, mmss(sg.t0) + " — " + sg.label)); });
   }
@@ -746,13 +838,13 @@ window.GuestsLab = (function () {
         var seats = Object.keys(r.handbells.seats).map(function (s) { return s + " " + (100 * r.handbells.seats[s] / r.handbells.seated).toFixed(0) + " %"; }).join(" · ");
         var pieces = Object.keys(r.handbells.pieces).map(function (s) { return s + " " + (100 * r.handbells.pieces[s] / r.handbells.seated).toFixed(0) + " %"; }).join(" · ");
         out.appendChild(el("p", "kgl-stat", "the handbells' seats: " + seats + " · pieces: " + pieces + " · refused: " + Object.keys(r.handbells.why).map(function (w) { return w + " " + r.handbells.why[w]; }).join(" · ")));
-        out.appendChild(el("p", "kgl-stat", "the singing school refused: " + Object.keys(r.school.why).map(function (w) { return w + " " + r.school.why[w]; }).join(" · ") + " · both in one meeting: " + r.both));
+        out.appendChild(el("p", "kgl-stat", "the singing school refused: " + Object.keys(r.school.why).map(function (w) { return w + " " + r.school.why[w]; }).join(" · ") + " · both in one meeting: " + r.both + " (the bells beside the practice: " + r.adjacent + ")"));
         out.appendChild(el("p", "kgl-stat", "per Sunday (plan()'s own chance, before refusals) — handbells: " + Object.keys(HB.ODDS.weight).map(function (k) { return k + " " + (100 * Math.min(HB.ODDS.cap, HB.ODDS.base * HB.ODDS.weight[k])).toFixed(0) + "%"; }).join(", ") + "; the school: " + Object.keys(SS.ODDS.weight).map(function (k) { return k + " " + (100 * Math.min(SS.ODDS.cap, SS.ODDS.base * SS.ODDS.weight[k])).toFixed(0) + "%"; }).join(", ")));
       });
     });
     var bPure = button("check purity", null, function () {
       var r = purity();
-      pOut.textContent = "the handbells: same stream, same plan and score — " + (r.handbellsRepeat ? "yes" : "NO") + " · the school: " + (r.schoolRepeat ? "yes" : "NO") + " · Math.random calls while planning and scoring: " + r.mathRandomCalls + " · the school switched off seats: " + (r.schoolOffSeats ? "YES (wrong)" : "nothing") + " · the voice's decay law and the score's copy agree: " + (r.decayLawAgrees ? "yes" : "NO");
+      pOut.textContent = "the handbells: same stream, same plan and score — " + (r.handbellsRepeat ? "yes" : "NO") + " · the school: " + (r.schoolRepeat ? "yes" : "NO") + " · Math.random calls while planning and scoring: " + r.mathRandomCalls + " · the school switched off seats: " + (r.schoolOffSeats ? "YES (wrong)" : "nothing") + " · at a funeral: " + (r.schoolFuneralSeats ? "YES (wrong)" : "nothing") + " · the voice's decay law and the score's copy agree: " + (r.decayLawAgrees ? "yes" : "NO");
     });
     row.appendChild(bOdds); row.appendChild(bPure);
     card.appendChild(row); card.appendChild(out); card.appendChild(pOut);
@@ -767,6 +859,10 @@ window.GuestsLab = (function () {
       var m = meter();
       var me = document.getElementById("kgl-meter");
       if (me) me.textContent = m ? "out " + (m.peak < -90 ? "—" : m.peak.toFixed(1) + " dBFS") : "out —";
+      if (current && current.costEl) {
+        var c = cost();
+        current.costEl.textContent = "laid out as the engine's clock will lay it: " + c.press + " ms of main thread at the press, then " + c.slices + " slice" + (c.slices === 1 ? "" : "s") + " a little ahead of the sound, the largest " + c.largest + " ms";
+      }
       if (!actx || !hbView.line) return;
       var now = actx.currentTime, lit = {};
       lights.forEach(function (n) { if (n.ringer != null && n.t <= now && now < n.t + 0.16) lit[n.bell] = true; });
@@ -784,7 +880,7 @@ window.GuestsLab = (function () {
     cards.appendChild(schoolCard());
     cards.appendChild(oddsCard());
     ["kgl-seed", "kgl-dialect", "kgl-mode", "kgl-key"].forEach(function (id) { document.getElementById(id).addEventListener("change", function () { stop(); refresh(); }); });
-    document.getElementById("kgl-room").addEventListener("change", function (e) { setRoom(e.target.value); refLufs = null; });
+    document.getElementById("kgl-room").addEventListener("change", function (e) { setRoom(e.target.value); });
     document.getElementById("kgl-stop").addEventListener("click", stop);
     document.getElementById("kgl-compose").addEventListener("click", function () { var s = document.getElementById("kgl-seed"); s.value = Math.round(num("kgl-seed", 4)) + 1; stop(); refresh(); });
     // a link can carry the settings: ?seed=4&dialect=sacredharp&mode=aeolian&piece=round&seat=postlude
