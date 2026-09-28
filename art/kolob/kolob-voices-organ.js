@@ -262,9 +262,26 @@ window.KOLOB = window.KOLOB || {};
   // ==========================================================================
   var desk = [], deskTicking = false;
   var ORGANIST_PUMP_S = 0.2, ORGANIST_REACH_S = 3;
+  // THE ORGAN UNDER THE WARD (the level in a hymn). The organist's plans are
+  // balanced (organist-lab) against v0.34's organChord — the organ the owner
+  // found "pretty loud" and set at the 0.40 layer — and the prelude, the
+  // chorale prelude and the house's chords sit there still. Under a hymn,
+  // though, the meeting has played since v0.35 the old organ's part lines
+  // (organPartLine: each voice doubled, the giving-out at 1.7), and the ward
+  // was set level with THAT organ (r3b-ward-1). Measured in the meeting,
+  // the organ layer alone through the rooms and the glue, the loudest 3 s:
+  // the organist's hymn sat 5.3–5.7 LU under it (seed 7, the Victorian:
+  // the giving-out 5.6, the verses 5.3, 6.4 and 5.7 — the quiet middle verse
+  // his own). So everything the organist plays in a hymn — the walk into its
+  // key, the giving-out, the verses, the fills, the interludes, the amen — is
+  // lifted by UNDER_WARD_DB, back to where the owner's organ sat under the
+  // singing (handoff r3b-organ-1: ±2 LU, seed by seed). The knob, for the
+  // owner's ear: 0 is the organist lab's level, some 5 dB softer.
+  var UNDER_WARD_DB = 5.0;
   function organistPlays(plan, t0, tag) {
     if (!pipeOn() || !plan || !plan.phrases) return null;
     tag = tag || {};
+    if (tag.hymnId && !tag.prelude && !plan._underWard) { plan.liftDb = (plan.liftDb || 0) + UNDER_WARD_DB; plan._underWard = true; }
     // the organist's hands always find the case the organ's hands are on now
     var hands = {
       play: function (t, notes, reg, o) { return caseAt(t).play(t, notes, reg, o); },
@@ -530,6 +547,6 @@ window.KOLOB = window.KOLOB || {};
   S.organStats = organStats;
   S.pipeChordOn = pipeChordOn;                   // (a lab's: the house's chord on an organ of its own)
   S.houseReg = houseReg;
-  S.HOUSE_ORGAN = { ref: HOUSE_REF, trim: HOUSE_TRIM, swell: HOUSE_SWELL };
+  S.HOUSE_ORGAN = { ref: HOUSE_REF, trim: HOUSE_TRIM, swell: HOUSE_SWELL, underWardDb: UNDER_WARD_DB };
   (KOLOB._rooms = KOLOB._rooms || {})["kolob-voices-organ.js"] = true;   // the load guard's roll call
 })();

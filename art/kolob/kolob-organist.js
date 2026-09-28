@@ -80,7 +80,11 @@
 // organ layer (0.40, v0.34); organist-lab measures every style's prelude and
 // accompaniment against the engine's own organChord through the same layer,
 // and they sit within ±2 LU of it (the owner found the organ "pretty loud";
-// nothing here is louder than the organ he has now).
+// nothing here is louder than the organ he has now). In the meeting (round
+// 3b, step 2) the organ under the ward is lifted by kolob-voices-organ.js's
+// UNDER_WARD_DB to where the meeting's organ sat under its hymns since v0.35
+// (the old organ's part lines, some 5 dB over organChord); the preludes are
+// played as planned here.
 // ============================================================================
 
 window.KOLOB = window.KOLOB || {};
