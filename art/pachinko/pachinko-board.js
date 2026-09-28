@@ -172,7 +172,7 @@
         else pts.push([a, yc - 1.5]);
         if (cx < b - 0.5) { rail(pid + '.r', cx, yc, b, y0, mat, dr); pts.push([b, y0 - 1.5]); }
         else pts.push([b, yc - 1.5]);
-        pieces.push({ id: pid, x0: a, x1: b, crestX: cx, top: pts, dress: dr, material: mat });
+        pieces.push({ id: pid, x0: a, x1: b, crestX: cx, crest0: cx, top: pts, dress: dr, material: mat, grade: ov.grade || opts.grade || 0.2, drop: dropPx });
       }
       floors.push({ id: id, y: y, x0: x0, x1: x1, openings: openings, pieces: pieces, region: regionAt((x0 + x1) / 2, y - 2) });
     }
@@ -329,11 +329,18 @@
     ], { dress: 'floor', material: 'plank', pieces: { 0: { crestX: 40 }, 3: { crestX: 226 } } });
     face('faceB', 263, 224, 237);
     field('coalB', [{ y: 220, x0: 284, x1: 309, dx: 20 }, { y: 236, x0: 294, x1: 309, dx: 20 }], function () { return 'coal'; });
-    F.push({ id: 'tunnel.drift', kind: 'tunnel', a: { x: 9, y: 231, r: 7 }, b: { x: T_.driftX, y: 324, vx: T_.driftVx, vy: 40, spread: T_.driftSpread }, delay: 1.0, open: true,
+    // (wave 5c: its route through the rock, for the light that crawls along it:
+    // down behind the legend card, under the old workings' floor, out over the
+    // lode; and a transit slow enough to follow, 1.4 s)
+    F.push({ id: 'tunnel.drift', kind: 'tunnel', a: { x: 9, y: 231, r: 7 }, b: { x: T_.driftX, y: 324, vx: T_.driftVx, vy: 40, spread: T_.driftSpread }, delay: 1.4, open: true,
+      path: [[9, 231], [12, 244], [22, 262], [34, 282], [46, 300], [58, 315], [80, 326], [110, 330], [140, 329], [168, 326], [T_.driftX, 324]],
+      floor: { id: 'floorB', piece: 0, shut: 0 },
       region: 'ventilation', material: 'rock', dress: 'adit', legend: 5 });
     // (its exit sits just under the legend card, never behind it: integration, wave 2)
     // and it throws them out sideways, into the GOB or the SLATE: the company's waste either way
-    F.push({ id: 'tunnel.office', kind: 'tunnel', a: { x: 256, y: 231, r: 7 }, b: { x: 9, y: 341, vx: 45, vy: 30, spread: 45 }, delay: 1.1, open: true,
+    F.push({ id: 'tunnel.office', kind: 'tunnel', a: { x: 256, y: 231, r: 7 }, b: { x: 9, y: 341, vx: 45, vy: 30, spread: 45 }, delay: 1.5, open: true,
+      path: [[256, 231], [250, 246], [228, 251], [190, 249], [150, 247], [110, 246], [72, 247], [40, 262], [22, 290], [12, 320], [9, 341]],
+      floor: { id: 'floorB', piece: 3, shut: 262 },
       region: 'ventilation', material: 'rock', dress: 'door', legend: 4 });
 
     /* ── the barren measures ──────────────────────────────────────── */
@@ -476,10 +483,16 @@
         return fl.openings.some(function (o) { return Math.abs(f.x - o.x) < o.w / 2 + 5 && f.y > fl.y && f.y < fl.y + 14; });
       });
     });
+    // the chute boards' places: under a floor opening with no ladder through
+    // it, where the crew can set a board slanting left or right (wave 5c)
+    var chutes = [
+      { id: 'A.raise', floor: 'floorA', x: 196 }, { id: 'B.winze', floor: 'floorB', x: 78 }, { id: 'B.manway', floor: 'floorB', x: 204 },
+      { id: 'C.chute', floor: 'floorC', x: 142 }, { id: 'C.chute2', floor: 'floorC', x: 226 }
+    ].map(function (c) { var fl = floors.filter(function (f) { return f.id === c.floor; })[0], o = fl.openings.filter(function (q) { return q.x === c.x; })[0]; c.fy = fl.y; c.w = o.w; return c; });
     return finish({ W: W, H: H, SLOT_Y: SLOT_Y, MARBLE_R: MARBLE_R, drop: { y: 16, x0: 10, x1: W - 10 },
-      strata: STRATA, regions: REGIONS, fixtures: F, floors: floors, decor: decor, legend: legend, edits: [], gen: 0 });
+      strata: STRATA, regions: REGIONS, fixtures: F, floors: floors, decor: decor, legend: legend, chutes: chutes, edits: [], gen: 0 });
   }
-  var MAT = { coal: 'rock', spike: 'steel', powderbox: 'timber', hook: 'steel', lamphook: 'steel', rivet: 'steel', bolt: 'steel', nail: 'steel', prop: 'timber', fencepost: 'timber', root: 'timber', ore: 'ore', coal: 'rock', rib: 'bone', bone: 'bone' };
+  var MAT = { coal: 'rock', spike: 'steel', powderbox: 'timber', hook: 'steel', lamphook: 'steel', rivet: 'steel', bolt: 'steel', nail: 'steel', prop: 'timber', fencepost: 'timber', root: 'timber', ore: 'ore', rib: 'bone', bone: 'bone' };
 
   // index the fixtures by id and by kind (not serialised; rebuilt after edits)
   function finish(b) {
@@ -561,8 +574,25 @@
 
   /* ── drift: the knockers' edits ──────────────────────────────────── */
 
-  var EDITS = ['nudge', 'dress', 'rail', 'mouth', 'pocket'];
-  var PIN_DRESS_SWAP = { spike: 'hook', hook: 'spike', prop: 'spike', ore: 'spike', bone: 'prop', fencepost: 'root', root: 'fencepost', bolt: 'spike', nail: 'bolt' };
+  /* ── drift, wave 5c: fewer, bigger, legible edits ──────────────────
+   * The crew used to nudge pins 1–3 px (78 edits in 131), which no player
+   * could see. Now a WORK carries out one or two (now and then three) of:
+   *   move    a pin carried a whole cell (9–13 px), sometimes a new one put
+   *           in its place (a spike for a hook); within 16 px of home
+   *   mouth   the old drift or the office door boarded up (and the floor
+   *           beside it re-laid to run away from it, so nothing stalls in a
+   *           dead end), or prised open again; a shut mouth is usually
+   *           reopened the next shift
+   *   chute   a board set under a floor opening, slanting the stream left or
+   *           right, flipped, or taken up (two at most at once)
+   *   pocket  the dinner pail or the powder box shoved ~10 px along
+   *           (lips, base and petals together; within 12 of home)
+   *   rail    the headframe's back-leg brace, a timber longer or shorter
+   *           (each end within 6 px of home, never into the sheave)
+   * nudge and dress still apply (old saves, the lab) but aren't drawn. */
+  var EDITS = ['move', 'mouth', 'chute', 'pocket', 'rail'];
+  var PIN_DRESS_SWAP = { spike: 'hook', hook: 'spike', prop: 'spike', ore: 'spike', bone: 'prop', fencepost: 'root', root: 'fencepost', bolt: 'spike', nail: 'bolt', coal: 'ore', rivet: 'bolt' };
+  var MOVE_HOME = 16, POCKET_HOME = 12, RAIL_HOME = 6, CHUTES_MAX = 2;
 
   function clone(b) {
     var c = JSON.parse(JSON.stringify(b));
@@ -616,70 +646,224 @@
     return finish(c);
   }
 
-  // edit: {type:'nudge', id, dx, dy} | {type:'dress', id, dress} |
-  //       {type:'rail', id, end:1|2, d} | {type:'mouth', id, open} | {type:'pocket', id, dx}
+  // edit: {type:'move', id, dx, dy, dress?} | {type:'mouth', id, open} |
+  //       {type:'chute', id: site, set: 'L'|'R'|null} | {type:'pocket', id, dx} |
+  //       {type:'rail', id, end:1|2, d} | {type:'nudge', id, dx, dy} | {type:'dress', id, dress}
   //       | {type:'clear', id} (a cave-in dug out: not drift, never drawn by drawEdits)
   function applyEdit(b, e) {
     if (e.type === 'clear') return clearCave(b, e.id);
-    var c = clone(b), f = c.byId[e.id];
-    if (!f) return c;
-    var home = f.home || (f.home = { x: f.x, y: f.y, x1: f.x1, y1: f.y1, x2: f.x2, y2: f.y2 });
-    if (e.type === 'nudge' && f.kind === 'pin') {
-      f.x = clampTo(f.x + e.dx, home.x - 3, home.x + 3);
-      f.y = clampTo(f.y + e.dy, home.y - 3, home.y + 3);
-    } else if (e.type === 'dress' && f.kind === 'pin') {
-      f.dress = e.dress; f.material = MAT[e.dress] || f.material;
-    } else if (e.type === 'rail' && f.kind === 'rail') {
-      // lengthen or shorten by d px along the rail at one end, within ±6 of home
-      var dx = f.x2 - f.x1, dy = f.y2 - f.y1, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L;
-      if (e.end === 1) { f.x1 -= ux * e.d; f.y1 -= uy * e.d; } else { f.x2 += ux * e.d; f.y2 += uy * e.d; }
-    } else if (e.type === 'mouth' && f.kind === 'tunnel') {
-      f.open = !!e.open;
-    } else if (e.type === 'pocket' && f.kind === 'pocket') {
-      f.x = clampTo(f.x + e.dx, home.x - 4, home.x + 4);
-      var L2 = c.byId[f.id + '.lipL'], R2 = c.byId[f.id + '.lipR'], B2 = c.byId[f.id + '.base'];
-      if (L2) L2.x = f.x - 8; if (R2) R2.x = f.x + 8;
-      if (B2) { B2.x1 = f.x - 7; B2.x2 = f.x + 7; }
+    var c = clone(b);
+    if (e.type === 'chute') {
+      setChute(c, e.id, e.set || null);
+    } else {
+      var f = c.byId[e.id];
+      if (!f) return c;
+      var home = f.home || (f.home = { x: f.x, y: f.y, x1: f.x1, y1: f.y1, x2: f.x2, y2: f.y2 });
+      if (e.type === 'move' && f.kind === 'pin') {
+        var nx = f.x + e.dx, ny = f.y + e.dy, dh = Math.hypot(nx - home.x, ny - home.y);
+        if (dh > MOVE_HOME) { nx = home.x + (nx - home.x) * MOVE_HOME / dh; ny = home.y + (ny - home.y) * MOVE_HOME / dh; }
+        e = copyEdit(e, { from: { x: f.x, y: f.y } });
+        f.x = Math.round(nx * 2) / 2; f.y = Math.round(ny * 2) / 2; f.region = regionAt(f.x, f.y);
+        if (e.dress) { f.dress = e.dress; f.material = MAT[e.dress] || f.material; }
+        e.to = { x: f.x, y: f.y };
+      } else if (e.type === 'nudge' && f.kind === 'pin') {
+        f.x = clampTo(f.x + e.dx, home.x - 3, home.x + 3);
+        f.y = clampTo(f.y + e.dy, home.y - 3, home.y + 3);
+      } else if (e.type === 'dress' && f.kind === 'pin') {
+        f.dress = e.dress; f.material = MAT[e.dress] || f.material;
+      } else if (e.type === 'rail' && f.kind === 'rail') {
+        // lengthen or shorten by d px along the rail at one end, each end
+        // within ±RAIL_HOME of home along the rail (wave 5c: it random-walked
+        // to 58 px and through the sheave's spokes)
+        var hdx = home.x2 - home.x1, hdy = home.y2 - home.y1, HL = Math.hypot(hdx, hdy) || 1, ux = hdx / HL, uy = hdy / HL;
+        var s1 = (f.x1 - home.x1) * ux + (f.y1 - home.y1) * uy, s2 = (f.x2 - home.x2) * ux + (f.y2 - home.y2) * uy;
+        if (e.end === 1) s1 = clampTo(s1 - e.d, -RAIL_HOME, RAIL_HOME); else s2 = clampTo(s2 + e.d, -RAIL_HOME, RAIL_HOME);
+        f.x1 = home.x1 + ux * s1; f.y1 = home.y1 + uy * s1; f.x2 = home.x2 + ux * s2; f.y2 = home.y2 + uy * s2;
+      } else if (e.type === 'mouth' && f.kind === 'tunnel') {
+        f.open = !!e.open;
+        // the floor beside it: re-laid to run away from a shut mouth (a dead
+        // end the marbles would sit in), back as it was when it's opened
+        if (f.floor) reslope(c, f.floor.id, f.floor.piece, f.open ? null : f.floor.shut);
+      } else if (e.type === 'pocket' && f.kind === 'pocket') {
+        f.x = clampTo(f.x + e.dx, home.x - POCKET_HOME, home.x + POCKET_HOME);
+        placePocket(c, f);
+      }
     }
     c.edits = (c.edits || []).concat([e]);
     c.gen = (c.gen | 0) + 1;
     return c;
   }
+  function copyEdit(e, extra) { var o = {}; for (var k in e) o[k] = e[k]; for (var q in extra) o[q] = extra[q]; return o; }
   function clampTo(v, a, b) { return v < a ? a : v > b ? b : v; }
+  // a pocket's lips, base and petals follow it (the shape it was built with)
+  function placePocket(c, f) {
+    var L = c.byId[f.id + '.lipL'], R = c.byId[f.id + '.lipR'], B = c.byId[f.id + '.base'], PL = c.byId[f.id + '.petalL'], PR = c.byId[f.id + '.petalR'];
+    if (L) L.x = f.x - 9; if (R) R.x = f.x + 9;
+    if (B) { B.x1 = f.x - 8; B.x2 = f.x + 8; }
+    if (PL) PL.x = f.x - 15; if (PR) PR.x = f.x + 15;
+  }
+  // re-lay a floor piece with its crest at crestX (null: as it was built)
+  function reslope(c, floorId, pi, crestX) {
+    var fl = (c.floors || []).filter(function (q) { return q.id === floorId; })[0]; if (!fl) return;
+    var pc = fl.pieces[pi]; if (!pc) return;
+    var a = pc.x0, b = pc.x1, cx = crestX == null ? pc.crest0 : clampTo(crestX, a, b), y0 = fl.y + 1.5;
+    var run = Math.max(cx - a, b - cx), rise = Math.max(2, Math.min(pc.drop || 8, run * (pc.grade || 0.2))), yc = y0 - rise, pts = [];
+    c.fixtures = c.fixtures.filter(function (q) { return q.id !== pc.id + '.l' && q.id !== pc.id + '.r'; });
+    function rl(id, x1, y1, x2, y2) { c.fixtures.push({ id: id, kind: 'rail', x1: x1, y1: y1, x2: x2, y2: y2, r: 1.5, region: regionAt((x1 + x2) / 2, (y1 + y2) / 2), material: pc.material, dress: pc.dress }); }
+    if (cx > a + 0.5) { rl(pc.id + '.l', a, y0, cx, yc); pts.push([a, y0 - 1.5], [cx, yc - 1.5]); } else pts.push([a, yc - 1.5]);
+    if (cx < b - 0.5) { rl(pc.id + '.r', cx, yc, b, y0); pts.push([b, y0 - 1.5]); } else pts.push([b, yc - 1.5]);
+    pc.crestX = cx; pc.top = pts;
+    finish(c);
+  }
+  // a chute board under a floor opening: set 'L' (it runs the marbles off to
+  // the left) or 'R', or null (taken up)
+  function chuteBoard(site, set) {
+    var x = site.x, fy = site.fy, k = set === 'L' ? -1 : 1;
+    // from the high end under the opening's far lip to the low end well past
+    // its near one, hung low enough that a marble rolls out under the floor's
+    // end (13 px under the lip: a marble and two timbers need 11)
+    return { x1: x - k * 9, y1: fy + 9, x2: x + k * 13, y2: fy + 19 };
+  }
+  // a board may go in only where its run-out is clear: nothing within a
+  // marble's width of where it drops off the low end (a pin there makes a
+  // pocket the marble sits in)
+  function chuteOk(b, site, set) {
+    var g = chuteBoard(site, set), k = set === 'L' ? -1 : 1, ex = g.x2 + k * 5, ey = g.y2 + 5, fs = b.fixtures;
+    for (var i = 0; i < fs.length; i++) {
+      var f = fs[i];
+      if (f.buried || f.chute === site.id) continue;
+      if (f.kind === 'pin' || f.kind === 'rubble') { if (Math.hypot(g.x2 - f.x, g.y2 - f.y) < 11) return false; }
+      else if (f.kind === 'rail' && !(f.y1 < site.fy + 4 && f.y2 < site.fy + 4)) {
+        var dx = f.x2 - f.x1, dy = f.y2 - f.y1, L2 = dx * dx + dy * dy, u = L2 ? clampTo(((ex - f.x1) * dx + (ey - f.y1) * dy) / L2, 0, 1) : 0;
+        if (Math.hypot(ex - (f.x1 + dx * u), ey - (f.y1 + dy * u)) < 12) return false;
+      }
+    }
+    return true;
+  }
+  function setChute(c, id, set) {
+    var site = (c.chutes || []).filter(function (q) { return q.id === id; })[0]; if (!site) return;
+    c.fixtures = c.fixtures.filter(function (q) { return q.id !== 'chute.' + id; });
+    site.set = set || null;
+    if (set) { var g = chuteBoard(site, set); c.fixtures.push({ id: 'chute.' + id, kind: 'rail', x1: g.x1, y1: g.y1, x2: g.x2, y2: g.y2, r: 1.5, region: regionAt(site.x, site.fy + 8), material: 'timber', dress: 'chute', chute: id }); }
+    finish(c);
+  }
 
   // the rails the knockers may lengthen or shorten (never the floors or walls)
   var EDITABLE_RAILS = ['headframe.brace'];
 
+  /* where a pin may be carried to: in the rock it came from, clear of the
+   * other pins (a marble's width, or it would wedge), the rails, the wheels,
+   * the pockets, the galleries, a shaft's mouth and the chute places, the
+   * tunnel mouths, the legend card's corner and the bays */
+  function pinSpotOk(b, p, x, y) {
+    if (x < 6 || x > W - 6 || y < 68 || y > 380) return false;
+    if (regionAt(x, y) !== regionAt(p.home ? p.home.x : p.x, p.home ? p.home.y : p.y)) return false;
+    if (x < 68 && y > 236 && y < 334) return false;                                   // behind the legend card
+    var fs = b.fixtures;
+    for (var i = 0; i < fs.length; i++) {
+      var f = fs[i];
+      if (f === p || f.buried) continue;
+      if (f.kind === 'pin' || f.kind === 'rubble') { if (Math.hypot(x - f.x, y - f.y) < 11.5) return false; }
+      else if (f.kind === 'rail') {
+        var dx = f.x2 - f.x1, dy = f.y2 - f.y1, L2 = dx * dx + dy * dy, u = L2 ? clampTo(((x - f.x1) * dx + (y - f.y1) * dy) / L2, 0, 1) : 0;
+        if (Math.hypot(x - (f.x1 + dx * u), y - (f.y1 + dy * u)) < 11.5) return false;
+      } else if (f.kind === 'wheel') { if (Math.hypot(x - f.x, y - f.y) < f.r + 11) return false; }
+      else if (f.kind === 'pocket') { if (Math.abs(x - f.x) < 27 && y > f.y - 20 && y < f.y + 16) return false; }
+      else if (f.kind === 'tunnel') { if (Math.hypot(x - f.a.x, y - f.a.y) < f.a.r + 9 || Math.hypot(x - f.b.x, y - f.b.y) < 11) return false; }
+      else if (f.kind === 'cart') { if (x > f.x1 - 18 && x < f.x2 + 18 && y > f.y - 20 && y < f.y + 6) return false; }
+    }
+    var fl = b.floors || [];
+    for (var j = 0; j < fl.length; j++) {
+      var F = fl[j];
+      if (x >= F.x0 - 2 && x <= F.x1 + 2 && y > F.y - 20 && y < F.y + 4) return false;  // in a gallery
+      for (var k = 0; k < F.openings.length; k++) { var o = F.openings[k]; if (Math.abs(x - o.x) < o.w / 2 + 7 && y > F.y && y < F.y + 18) return false; }
+    }
+    return true;
+  }
+  // a candidate place for a pocket: its lips and petals clear of other pins
+  function pocketOk(b, pk, nx) {
+    var ids = [pk.id + '.lipL', pk.id + '.lipR', pk.id + '.petalL', pk.id + '.petalR'], offs = [-9, 9, -15, 15], ys = [pk.y - 2, pk.y - 2, pk.y - 10, pk.y - 10];
+    for (var i = 0; i < 4; i++) {
+      if (!b.byId[ids[i]]) continue;
+      var x = nx + offs[i], y = ys[i];
+      if (x < 6 || x > W - 6) return false;
+      for (var j = 0; j < b.fixtures.length; j++) {
+        var f = b.fixtures[j];
+        if (f.buried || f.id.indexOf(pk.id + '.') === 0) continue;
+        if (f.kind === 'pin' && Math.hypot(x - f.x, y - f.y) < 10) return false;
+      }
+    }
+    return true;
+  }
+  // may this brace end go d px along? (inside its envelope, clear of the sheave)
+  function railOk(b, r, end, d) {
+    var h = r.home || { x1: r.x1, y1: r.y1, x2: r.x2, y2: r.y2 }, hdx = h.x2 - h.x1, hdy = h.y2 - h.y1, HL = Math.hypot(hdx, hdy) || 1, ux = hdx / HL, uy = hdy / HL;
+    var s = end === 1 ? (r.x1 - h.x1) * ux + (r.y1 - h.y1) * uy - d : (r.x2 - h.x2) * ux + (r.y2 - h.y2) * uy + d;
+    if (s < -RAIL_HOME - 0.01 || s > RAIL_HOME + 0.01) return false;
+    var ex = (end === 1 ? h.x1 : h.x2) + ux * s, ey = (end === 1 ? h.y1 : h.y2) + uy * s;
+    return !b.byKind.wheel.some(function (w) { return Math.hypot(ex - w.x, ey - w.y) < w.r + 6; });
+  }
+
   // draw n candidate edits from the legal set for the game `seed`
+  var DIRS = [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]];
   function drawEdits(b, seed, n, salt) {
-    var out = [], pins = b.byKind.pin.filter(function (p) { return p.drift; });
+    var out = [], pins = b.byKind.pin.filter(function (p) { return p.drift && !p.buried && p.id.indexOf('divcap.') !== 0 && p.id.indexOf('pail.') !== 0 && p.id.indexOf('powder.') !== 0; });
+    var tunnels = b.byKind.tunnel, shut = tunnels.filter(function (t) { return t.open === false; });
+    var chutes = b.chutes || [], setN = chutes.filter(function (c) { return c.set; }).length;
     salt = salt | 0;
     for (var k = 0; k < n; k++) {
-      var i = k * 7 + salt * 131;
-      var r = hash01(seed, i);
-      var e;
-      if (r < 0.62) {
-        // the favourite job: nudge a pin. Every other game they fuss over the vein.
-        var pool = hash01(seed, i + 1) < 0.45 ? pins.filter(function (p) { return p.region === 'vein' || p.region === 'payout'; }) : pins;
-        var p = pool[Math.floor(hash01(seed, i + 2) * pool.length)];
-        var dx = Math.round(hash01(seed, i + 3) * 6 - 3), dy = Math.round(hash01(seed, i + 4) * 4 - 2);
-        if (!dx && !dy) dx = hash01(seed, i + 5) < 0.5 ? -2 : 2;
-        e = { type: 'nudge', id: p.id, dx: dx, dy: dy };
-      } else if (r < 0.74) {
-        var q = pins[Math.floor(hash01(seed, i + 2) * pins.length)];
-        e = { type: 'dress', id: q.id, dress: PIN_DRESS_SWAP[q.dress] || 'spike' };
-      } else if (r < 0.88) {
-        var rid = EDITABLE_RAILS[Math.floor(hash01(seed, i + 2) * EDITABLE_RAILS.length)];
-        e = { type: 'rail', id: rid, end: hash01(seed, i + 3) < 0.5 ? 1 : 2, d: hash01(seed, i + 4) < 0.5 ? -6 : 6 };
-      } else if (r < 0.94) {
-        var tn = b.byKind.tunnel[Math.floor(hash01(seed, i + 2) * b.byKind.tunnel.length)];
-        e = { type: 'mouth', id: tn.id, open: !tn.open };
+      var i = k * 7 + salt * 131, r = hash01(seed, i), e = null;
+      // a shut mouth is the first job on the next shift, most times: CLOSED FOR REPAIRS lasts a game
+      if (k === 0 && shut.length && hash01(seed, i + 9) < 0.75) e = { type: 'mouth', id: shut[0].id, open: true };
+      else if (r < 0.46) e = drawMove(b, pins, seed, i);
+      else if (r < 0.68) {
+        var site = chutes[Math.floor(hash01(seed, i + 2) * chutes.length)];
+        if (site) {
+          var sets = (site.set ? [null, site.set === 'L' ? 'R' : 'L'] : setN < CHUTES_MAX ? ['L', 'R'] : [])
+            .filter(function (q) { return q === null || chuteOk(b, site, q); });
+          if (sets.length) e = { type: 'chute', id: site.id, set: sets[Math.floor(hash01(seed, i + 3) * sets.length)] };
+        }
+      } else if (r < 0.78) {
+        var tn = tunnels[Math.floor(hash01(seed, i + 2) * tunnels.length)];
+        if (tn) e = { type: 'mouth', id: tn.id, open: !tn.open };
+      } else if (r < 0.92) {
+        var pks = b.byKind.pocket, pk = pks[Math.floor(hash01(seed, i + 2) * pks.length)];
+        if (pk) {
+          var home = pk.home ? pk.home.x : pk.x, opts = [-10, -8, 8, 10].filter(function (d) { return Math.abs(pk.x + d - home) <= POCKET_HOME && pocketOk(b, pk, pk.x + d); });
+          if (opts.length) e = { type: 'pocket', id: pk.id, dx: opts[Math.floor(hash01(seed, i + 3) * opts.length)] };
+        }
       } else {
-        e = { type: 'pocket', id: 'pail', dx: hash01(seed, i + 3) < 0.5 ? -3 : 3 };
+        var rid = EDITABLE_RAILS[Math.floor(hash01(seed, i + 2) * EDITABLE_RAILS.length)], rf = b.byId[rid];
+        if (rf) {
+          var ro = [];
+          [1, 2].forEach(function (end) { [-6, 6].forEach(function (d) { if (railOk(b, rf, end, d)) ro.push({ end: end, d: d }); }); });
+          if (ro.length) { var q = ro[Math.floor(hash01(seed, i + 3) * ro.length)]; e = { type: 'rail', id: rid, end: q.end, d: q.d }; }
+        }
       }
-      out.push(e);
+      if (!e) e = drawMove(b, pins, seed, i + 1);
+      if (e) out.push(e);
     }
     return out;
+  }
+  // a pin carried a whole cell: every other game they fuss over the vein
+  function drawMove(b, pins, seed, i) {
+    for (var tries = 0; tries < 12; tries++) {
+      var j = i + tries * 17;
+      var pool = hash01(seed, j + 1) < 0.45 ? pins.filter(function (p) { return p.region === 'vein' || p.region === 'payout'; }) : pins;
+      if (!pool.length) pool = pins;
+      var p = pool[Math.floor(hash01(seed, j + 2) * pool.length)];
+      var d0 = Math.floor(hash01(seed, j + 3) * 8), dist = 9 + Math.round(hash01(seed, j + 4) * 4);
+      for (var q = 0; q < 8; q++) {
+        var D = DIRS[(d0 + q) % 8], len = D[0] && D[1] ? dist * 0.75 : dist;
+        var dx = Math.round(D[0] * len * 2) / 2, dy = Math.round(D[1] * len * 2) / 2, h = p.home || p;
+        if (Math.hypot(p.x + dx - h.x, p.y + dy - h.y) > MOVE_HOME) continue;
+        if (!pinSpotOk(b, p, p.x + dx, p.y + dy)) continue;
+        var e = { type: 'move', id: p.id, dx: dx, dy: dy };
+        if (hash01(seed, j + 6) < 0.3 && PIN_DRESS_SWAP[p.dress]) e.dress = PIN_DRESS_SWAP[p.dress];
+        return e;
+      }
+    }
+    return null;
   }
 
   /* validate(board, physics, opts) → {ok, reasons[], stats}
@@ -736,7 +920,7 @@
     pose: pose, cartPose: cartPose, cartLoading: cartLoading, cartVel: cartVel, cartSegments: cartSegments,
     wheelAngle: wheelAngle, wheelOmega: wheelOmega, wheelSegments: wheelSegments,
     slotAt: slotAt,
-    EDITS: EDITS, drawEdits: drawEdits, applyEdit: applyEdit,
+    EDITS: EDITS, drawEdits: drawEdits, applyEdit: applyEdit, pinSpotOk: pinSpotOk, chuteBoard: chuteBoard, chuteOk: chuteOk,
     CAVE_BAYS: CAVE_BAYS, caveIn: caveIn, clearCave: clearCave,
     validate: validate, validator: validator,
     hash01: hash01, strSeed: strSeed

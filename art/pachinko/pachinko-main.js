@@ -115,7 +115,7 @@
   var GLIDE_MIN = 0.09, GLIDE_MAX = 0.24, GLIDE_FULL = 200, RATCHET_PX = 7;
   var END_BEAT = 0.9;        // the 13th resolves … the machine thinks … the camera pulls back
   var TICKET_T = 0.11, TICKET_ALL = 3.4, TEAR_HOLD = 0.55, AFTER_TEAR = 0.7;
-  var WORK_MIN = 3.4, WORK_MAX = 9, EDIT_EVERY = 0.85, VAL_PER_STEP = 6, VAL_DROPS = 300;
+  var WORK_MIN = 3.4, WORK_MAX = 9, EDIT_EVERY = 0.85, VAL_PER_STEP = 4, VAL_PAYOUT = 2, VAL_DROPS = 300;
   var FEED_EVERY = 0.07;     // the tube refilling, marble by marble
   var TALLY_T = 0.085, TALLY_FAST = 0.04, TALLY_ROLL = 0.07;
   var REFILL = 5, FIND_T = 1.6;
@@ -178,6 +178,11 @@
     var emitQ = [], emitting = false;
     function emit(ev) {
       if (ev.t == null) ev.t = simT;
+      // (an edit landed: whoever carried it out, main knows it's set)
+      if (ev.type === 'edit' && game && game.work) {
+        if (ev.i != null && !ev.hurried) game.work.landed[ev.i] = true;
+        if (ev.edit && ev.edit.type !== 'clear') game.alts.push({ edit: ev.edit, t0: simT });
+      }
       emitQ.push(ev);
       if (emitting) return;
       emitting = true;
@@ -202,7 +207,7 @@
       mode: 'attract', modeT0: 0, seed: FIXED_SEED != null ? FIXED_SEED : SEED0, games: 0,
       dropped: 0, resolved: 0, score: 0, lodes: 0, wins: 0, mine: {}, endAt: null,
       findAt: null, payout: null, work: null, lode: null, taps: [], lastWin: null,
-      lastDropT: null, hintOn: false, credited: 0, owed: null
+      lastDropT: null, hintOn: false, credited: 0, owed: null, alts: [], playT0: null, diveDur: DIVE_T, near: {}, drift: {}, outAt: {}
     };
     var hopper = { x: 160, from: 160, to: 160, g0: -1, dur: 0, gliding: false, loaded: true, reloadAt: 0, queue: null, tickX: 160, speed: 0 };
     var tally = { value: 0, shown: 0, nextAt: 0, rollT0: -1, dir: 1, prev: 0 };
@@ -261,7 +266,8 @@
     function toAttract() {
       setMode('attract');
       view.figures = [];
-      view.ui.sign = { side: game.owed ? 'credit' : 'insert', t0: simT };
+      view.ui.sign = { side: game.owed ? 'credit' : 'insert', t0: view.ui.sign && view.ui.sign.side === 'insert' && !game.owed ? view.ui.sign.t0 : simT };
+      view.ui.coinOpen = true; view.ui.work = false;
       view.marblesLeft = game.owed ? MARBLES - game.owed.dropped : MARBLES;
       hopper.loaded = true; hopper.queue = null;
       game.payout = null; game.work = null;
@@ -291,7 +297,12 @@
 
     /* ── the start ───────────────────────────────────────────────── */
     function insertCoin() {
-      if (game.mode === 'work') finishWork();          // a player who wants the next game doesn't wait on the crew
+      if (game.mode === 'work') {
+        // a player who wants the next game doesn't wait on the crew (but an
+        // empty pocket doesn't stop them either: the door just rattles)
+        if (!game.owed && !FREE && A.tokens.get() <= 0) { noTokens(); emit({ type: 'nocoin' }); return false; }
+        finishWork();
+      }
       if (game.mode !== 'attract') return false;
       if (game.owed) { resumeGame(game.owed); return true; }
       if (!FREE && !A.tokens.spend(1, 'pachinko')) { noTokens(); emit({ type: 'nocoin' }); return false; }
@@ -325,7 +336,7 @@
       game.seed = resume ? resume.seed | 0 : newGameSeed();
       world = PP.createWorld(board, game.seed);
       world.t = simT;
-      game.dropped = 0; game.resolved = 0; game.score = 0; game.lodes = 0; game.wins = 0; game.mine = {}; game.credited = 0;
+      game.dropped = 0; game.resolved = 0; game.score = 0; game.lodes = 0; game.wins = 0; game.mine = {}; game.credited = 0; game.near = {}; game.drift = {}; game.outAt = {};
       game.endAt = null; game.lode = null; game.lastWin = null; game.lastDropT = null; game.tallyHold = 0;
       tally.value = 0; tally.shown = 0; tally.prev = 0; tally.rollT0 = -1;
       trails = {};
@@ -341,10 +352,14 @@
       }
       game.owed = null;
       view.ui.sign = { side: 'inuse', t0: simT + 0.12 };
+      view.ui.coinOpen = false; view.ui.work = false;
+      // (a coin during WORK: the camera is in already; no second push)
+      var inAlready = camK() >= 0.999;
       setMode('dive');
       game.modeT0 = simT + COIN_T;           // the camera waits for the clunk
+      game.diveDur = inAlready ? 0.2 : DIVE_T;
       camGo(1, simT + COIN_T);
-      game.diveOut = false;
+      game.diveOut = inAlready;
       partsCall('gameStart', game.seed, { resumed: resume ? game.dropped : 0 });
       saveOpen();
     }
@@ -464,8 +479,17 @@
 
     /* ── physics events → the game ───────────────────────────────── */
     var LIT_BY = { slot: 'bays', pocket: 'pockets' };
+    // the ore knobs either side of the 13's cup: a marble that rattles them
+    // and doesn't go in is a near miss (the crew groan, the tallyman marks it)
+    var NEAR_IDS = { 'guard.l': 1, 'guard.r': 1, 'guard.top': 1 };
     function onPhysics(e) {
       if (e.type === 'pin' || e.type === 'rail' || e.type === 'wheel') view.hits.push({ id: e.id, t: e.t, speed: e.speed, x: e.x, y: e.y });
+      if (e.m != null && game.mine[e.m]) {
+        if ((e.type === 'pin' || e.type === 'teeter') && NEAR_IDS[e.id]) game.near[e.m] = true;
+        if (e.type === 'tunnel' && e.what === 'out' && e.id === 'tunnel.drift') game.drift[e.m] = true;
+        if (e.type === 'tunnel' && e.what === 'out') game.outAt[e.m] = e.t;
+        if (e.type === 'slot' && !(e.value >= 13) && game.near[e.m]) emit({ type: 'nearmiss', m: e.m, slot: e.id, x: e.x, value: e.value, drift: !!game.drift[e.m] });
+      }
       if (e.type === 'slot' || e.type === 'pocket') {
         var bag = view.fx[LIT_BY[e.type]] || (view.fx[LIT_BY[e.type]] = {});
         bag[e.id] = { t0: simT, value: e.value };
@@ -513,9 +537,20 @@
       view.ui.tongue = n ? { n: 0, t0: simT + 0.25, torn: null } : { n: 0, nil: true, t0: simT + 0.35, torn: null };
       if (best) { view.ui.bestPrev = prevBest | 0; view.ui.bestT0 = simT + 0.6; }
       view.ui.best = stats().best | 0;
+      // the crew's plan for the next shift starts now, while the scrip is
+      // counted out (the board can't change in PAYOUT): WORK opens with it
+      // done or nearly (wave 5c: its first 1.5 s used to stutter)
+      game.plan = beginPlan();
+    }
+    function beginPlan() {
+      // a cave-in this game: the crew dig it out first, and the drift is planned on the cleared board
+      var b0 = board, pre = [];
+      (board.caveins || []).forEach(function (cv) { b0 = PB.clearCave(b0, cv.id); pre.push({ edit: { type: 'clear', id: cv.id }, board: b0 }); });
+      return { board: board, plan: planDrift(b0, hashSeed(game.seed, 77), pre) };
     }
     function stepPayout() {
       var p = game.payout; if (!p) return;
+      if (game.plan && !game.plan.plan.done) game.plan.plan.step(VAL_PAYOUT);
       if (p.paid < p.n && simT >= p.nextAt) {
         p.paid++;
         tally.value = p.n - p.paid;
@@ -532,12 +567,9 @@
         emit({ type: 'tear', n: p.n, nil: !p.n });
         p.backAt = simT + AFTER_TEAR;
       }
-      if (p.backAt != null && simT >= p.backAt && tally.shown === tally.value) {
-        p.backAt = null; p.backT0 = simT; p.doneAt = simT + DIVE_T + 0.25;
-        camGo(0, simT);
-        emit({ type: 'dive', dir: -1 });
-      }
-      if (p.doneAt != null && simT >= p.doneAt) startWork();
+      // (the crew's WORK is watched from here, dived in: you see what they
+      // change. The camera pulls back when they're done: wave 5c)
+      if (p.backAt != null && simT >= p.backAt && tally.shown === tally.value) { p.backAt = null; startWork(); }
     }
 
     /* ── WORK: the crew rebuild the board ────────────────────────── */
@@ -547,8 +579,10 @@
     // `b` is the board as it will be after them
     function planDrift(b, seed, pre) {
       pre = pre || [];
-      var want = 2 + Math.floor(PB.hash01(seed, 4242) * 3);
-      var cands = PB.drawEdits(b, seed, want * 3, 0);
+      // one or two a shift, now and then three: fewer and bigger, so you can
+      // see what they changed (wave 5c; it was two to four 1–3 px nudges)
+      var hw = PB.hash01(seed, 4242), want = hw < 0.45 ? 1 : hw < 0.9 ? 2 : 3;
+      var cands = PB.drawEdits(b, seed, want * 4, 0);
       var plan = { want: want + pre.length, cands: cands, ci: 0, cur: b, accepted: pre.slice(), rejected: [], v: null, cand: null, done: false };
       plan.step = function (k) {
         while (k > 0 && !plan.done) {
@@ -574,10 +608,12 @@
       game.payout = null;
       setMode('work');
       view.ui.tongue = null;
-      // a cave-in this game: the crew dig it out first, and the drift is planned on the cleared board
-      var b0 = board, pre = [];
-      (board.caveins || []).forEach(function (cv) { b0 = PB.clearCave(b0, cv.id); pre.push({ edit: { type: 'clear', id: cv.id }, board: b0 }); });
-      var w = game.work = { t0: simT, plan: planDrift(b0, hashSeed(game.seed, 77), pre), applied: 0, nextEditAt: simT + 1.0, feedAt: simT + 0.6, fed: 0, performer: null, emitted: false };
+      game.alts = [];
+      // the card flips back: the machine takes a token while the crew work
+      view.ui.sign = { side: 'insert', t0: simT }; view.ui.coinOpen = true; view.ui.work = true;
+      if (!game.plan || game.plan.board !== board) game.plan = beginPlan();
+      var w = game.work = { t0: simT, plan: game.plan.plan, applied: 0, landed: {}, nextEditAt: simT + 1.0, feedAt: simT + 0.6, fed: 0, performer: null, emitted: false };
+      game.plan = null;
       view.marblesLeft = 0;
       var ctxW = {
         t0: simT, seed: game.seed, board: board, plan: w.plan, emit: emit, view: view,
@@ -591,8 +627,10 @@
     function finishWork() {
       var w = game.work; if (!w) return;
       if (w.performer && w.performer.finish) { try { w.performer.finish(); } catch (e) { warn('work.finish', e); } }
-      var acc = w.plan.accepted;
-      if (acc.length > w.applied) { var last = acc[acc.length - 1]; for (var i = w.applied; i < acc.length; i++) emit({ type: 'edit', edit: acc[i].edit, i: i, hurried: true }); setBoard(last.board); w.applied = acc.length; }
+      var acc = w.plan.accepted, rest = 0;
+      // (only the ones not already set: the knockers land theirs in any order)
+      for (var i = 0; i < acc.length; i++) if (!w.landed[i]) { rest++; emit({ type: 'edit', edit: acc[i].edit, i: i, hurried: true }); }
+      if (rest) { setBoard(acc[acc.length - 1].board); w.applied = acc.length; }
       view.marblesLeft = MARBLES;
       toAttract();
     }
@@ -643,6 +681,9 @@
         // whatever passed validation but wasn't carried out is dropped
         view.marblesLeft = MARBLES;
         toAttract();
+        // …and the camera pulls back to the whole cabinet
+        camGo(0, simT);
+        emit({ type: 'dive', dir: -1 });
       }
     }
     // the placeholder: the still-life crew at work in stop motion (the
@@ -673,8 +714,9 @@
     /* ── the fixed step ──────────────────────────────────────────── */
     function stepGame() {
       if (game.mode === 'dive' && !game.diveOut && simT >= game.modeT0) { game.diveOut = true; emit({ type: 'dive', dir: 1 }); }
-      if (game.mode === 'dive' && simT - game.modeT0 >= DIVE_T) {
+      if (game.mode === 'dive' && simT - game.modeT0 >= game.diveDur) {
         setMode('play');
+        game.playT0 = simT;
         // a click (or Space) held from the dive: the hopper sets off at once
         if (hopper.queue != null && hopper.loaded && !hopper.gliding) { var q0 = hopper.queue; hopper.queue = null; startGlide(q0); }
       }
@@ -999,6 +1041,46 @@
         }
         if (flare > 0) board.regions.forEach(function (rg) { if (rg.id !== 'payout' && rg.id !== 'legend') lights[rg.id] = Math.max(lights[rg.id] || 1, 1 + 0.9 * flare); });
       }
+      // what the crew changed: a bone-white spot on each alteration, from its
+      // TOCK through the push into the glass and the first seconds of the
+      // next game, then a faint one for the rest of it (wave 5c: drift you can see)
+      var altOut = [];
+      if (game.alts.length) {
+        var fade = 1;
+        if (game.mode === 'play' && game.playT0 != null) { var pu = t - game.playT0; fade = pu < 6 ? 1 : pu < 14 ? 1 - 0.7 * (pu - 6) / 8 : 0.3; }
+        else if (game.mode === 'payout') fade = 0;
+        for (var ai = 0; ai < game.alts.length; ai++) {
+          var al = game.alts[ai], ap = altPlace(al.edit); if (!ap) continue;
+          var au = t - al.t0, flash = game.mode === 'work' && au < 0.3 ? 1.4 : 1;
+          if (fade > 0) lamps.push({ x: ap.x, y: ap.y, r: 14, c: '#fff2dc', k: 0.95 * fade * flash });
+          altOut.push({ x: ap.x, y: ap.y, type: al.edit.type, id: al.edit.id, t0: al.t0, from: ap.from || null, k: fade });
+        }
+      }
+      fx.alterations = altOut;
+      // the route made visible (wave 5c): a marble in the old drift (or any
+      // tunnel) is a lamp crawling through the rock along the tunnel's route;
+      // its mouth flashes as it goes in; the exit brightens just before it
+      // comes out; behind the legend card, the paper glows as it passes
+      var transits = [], card = null;
+      for (var wi = 0; wi < world.marbles.length; wi++) {
+        var wm = world.marbles[wi];
+        if (wm.phase === 'tunnel' && wm.tunnel) {
+          var tr = transitOf(wm), fix = board.byId[tr.id];
+          // (a short comet: the marble's glint at the head, the light fading behind it)
+          var gl = [{ x: tr.x, y: tr.y, k: 2.2, marble: true }];
+          if (tr.path) for (var gi = 1; gi <= 4; gi++) { var pq = pathAt(tr.path, tr.k - gi * 0.03); if (tr.k - gi * 0.03 > 0) gl.push({ x: pq.x, y: pq.y, k: 1.8 - gi * 0.35 }); }
+          transits.push({ id: tr.id, m: wm.id, x: tr.x, y: tr.y, u: tr.k, exitIn: tr.exitIn, path: tr.path, glows: gl });
+          lamps.push({ x: tr.x, y: tr.y, r: 24, c: '#ffcf80', k: 1.35 });
+          var since = t - wm.tunnel.tIn;
+          if (since < 0.3 && fix) lamps.push({ x: fix.a.x, y: fix.a.y, r: 16, c: '#ffd890', k: 1.2 * (1 - since / 0.3) });
+          if (tr.exitIn < 0.45) lamps.push({ x: tr.exit.x, y: tr.exit.y, r: 16, c: '#ffe0a0', k: 1.3 * (1 - Math.max(0, tr.exitIn) / 0.45) });
+          if (tr.x < 64 && tr.y > 247 && tr.y < 333) card = { x: tr.x, y: tr.y, k: 1, r: 26 };
+        } else if (!wm.done && wm.phase === 'board' && game.outAt[wm.id] != null && t - game.outAt[wm.id] < 0.3) {
+          lamps.push({ x: wm.x, y: wm.y, r: 16, c: '#ffe0a0', k: 1.2 * (1 - (t - game.outAt[wm.id]) / 0.3) });
+        }
+      }
+      fx.transits = transits;
+      fx.transitCard = card;
       // a hit strikes a little light off the pin (the clatter lights the mine)
       for (var i = Math.max(0, view.hits.length - 24); i < view.hits.length; i++) {
         var h = view.hits[i], a = t - h.t;
@@ -1041,12 +1123,39 @@
       }
       partsCall('fx', view);
     }
+    // a marble in a tunnel: where it is along the tunnel's own route through
+    // the rock (board tunnel.path), how far (u), and how long until it comes
+    // out. from/to are both the point itself, lifted by the renderer's own
+    // arch, so its light sits on the route (the renderer can read x/y/path)
+    function pathAt(path, u) {
+      var L = 0, i, seg = [];
+      for (i = 1; i < path.length; i++) { var d = Math.hypot(path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1]); seg.push(d); L += d; }
+      var a = clamp(u, 0, 1) * L;
+      for (i = 0; i < seg.length; i++) { if (a <= seg[i] || i === seg.length - 1) { var q = seg[i] ? a / seg[i] : 0; return { x: path[i][0] + (path[i + 1][0] - path[i][0]) * q, y: path[i][1] + (path[i + 1][1] - path[i][1]) * q }; } a -= seg[i]; }
+      return { x: path[0][0], y: path[0][1] };
+    }
+    function transitOf(m) {
+      var tu = m.tunnel, fix = board.byId[tu.id], k = clamp((view.t - tu.tIn) / Math.max(0.01, tu.tOut - tu.tIn), 0, 1);
+      var pt = fix && fix.path ? pathAt(fix.path, k) : { x: tu.from.x + (tu.to.x - tu.from.x) * k, y: tu.from.y + (tu.to.y - tu.from.y) * k };
+      var lift = Math.sin(k * Math.PI) * 10, at = { x: pt.x, y: pt.y - lift };
+      return { id: tu.id, from: at, to: at, k: k, x: pt.x, y: pt.y, path: fix && fix.path, exitIn: tu.tOut - view.t, exit: tu.to };
+    }
+    // where an alteration is on the board as it stands (for its spot)
+    function altPlace(e) {
+      var f = board.byId[e.id];
+      if (e.type === 'move' || e.type === 'nudge' || e.type === 'dress') return f ? { x: f.x, y: f.y, from: e.dx != null ? { x: f.x - e.dx, y: f.y - e.dy } : null } : null;
+      if (e.type === 'chute') { var st = (board.chutes || []).filter(function (q) { return q.id === e.id; })[0]; return st ? { x: st.x, y: st.fy + 14 } : null; }
+      if (e.type === 'mouth') return f ? { x: f.a.x, y: f.a.y } : null;
+      if (e.type === 'pocket') return f ? { x: f.x, y: f.y + 2 } : null;
+      if (e.type === 'rail') return f ? (e.end === 1 ? { x: f.x1, y: f.y1 } : { x: f.x2, y: f.y2 }) : null;
+      return null;
+    }
     function prepView() {
       var cam = camera(camK());
       view.cam.k = cam.k; view.cam.s = cam.s; view.cam.x = cam.x; view.cam.y = cam.y; view.cam.w = cam.w; view.cam.h = cam.h;
       view.marbles = world.marbles.filter(function (m) { return !m.done || (m.phase === 'pocket' && view.t - m.tDone < 0.6); }).map(function (m) {
         var o = { x: m.x, y: m.y, r: m.r, spin: m.spin, id: m.id, phase: m.phase };
-        if (m.phase === 'tunnel') { var tu = m.tunnel; o.tunnel = { from: tu.from, to: tu.to, k: Math.min(1, (view.t - tu.tIn) / (tu.tOut - tu.tIn)) }; }
+        if (m.phase === 'tunnel') o.tunnel = transitOf(m);
         if (trails[m.id]) o.trail = trails[m.id];
         return o;
       });
@@ -1306,7 +1415,7 @@
       advance(simT + COIN_T + DIVE_T + STEP * 2);
       if (m === 'play') return true;
       if (m === 'payout') { game.score = FORCE.scrip != null ? FORCE.scrip : 17; tally.value = tally.shown = game.score; gameOver(); return true; }
-      if (m === 'work') { game.score = 0; gameOver(); startWork(); camT = { from: 0, to: 0, t0: simT, dur: DIVE_T }; return true; }
+      if (m === 'work') { game.score = 0; gameOver(); startWork(); return true; }
       return true;
     }
 

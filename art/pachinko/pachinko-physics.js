@@ -15,7 +15,7 @@
  *
  * Integration: semi-implicit Euler, 240 Hz. Gravity down-screen, a small
  * linear drag (the glass front), a speed cap (so nothing tunnels: at the cap
- * a step is 1.4 px against a pin+marble reach of 5.5 px).
+ * a step is 2.3 px against a pin+marble reach of 5.5 px).
  *
  * CONTACTS: the marble (r 4) against pins (circles), rails (capsules),
  * moving paddles and cart walls (segments with a surface velocity), and the
@@ -129,14 +129,25 @@
     };
   }
 
+  // one grid per layout: a board is never changed once made (every edit
+  // returns a new one), so the validator's 300 drops share one hash instead
+  // of building it 300 times (wave 5c: the WORK-start stutter)
+  var GRIDS = typeof WeakMap !== 'undefined' ? new WeakMap() : null;
+  function gridOf(board) {
+    if (!GRIDS) return buildGrid(board);
+    var g = GRIDS.get(board);
+    if (!g) { g = buildGrid(board); GRIDS.set(board, g); }
+    return g;
+  }
+
   /* ── world ───────────────────────────────────────────────────────── */
   function createWorld(board, seed, tune) {
     var T = {}; for (var k in TUNE) T[k] = TUNE[k];
     if (tune) for (var k2 in tune) T[k2] = tune[k2];
     return {
       board: board, seed: seed | 0, T: T, t: 0, acc: 0, nextId: 1,
-      marbles: [], events: [], grid: buildGrid(board), contactN: 0,
-      cartLoad: {}, _near: []
+      marbles: [], events: [], grid: gridOf(board), contactN: 0,
+      cartLoad: {}
     };
   }
 
@@ -542,7 +553,7 @@
 
   // a new layout under a live world (a cave-in mid-game): the marbles stay
   // where they are, the static hash is rebuilt so the new rubble collides
-  function setBoard(w, board) { w.board = board; w.grid = buildGrid(board); return w; }
+  function setBoard(w, board) { w.board = board; w.grid = gridOf(board); return w; }
 
   var api = {
     TUNE: TUNE, configure: configure, setBoard: setBoard,

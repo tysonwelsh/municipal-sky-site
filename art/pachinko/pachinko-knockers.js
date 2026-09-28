@@ -196,6 +196,7 @@
     run2:    { lean: 25, head: 0, armL: 75, armR: 75, legL: -30, legR: 45 },
     set:     { lean: 40, head: 25, armL: 45, armR: 45, legL: 15, legR: -15 },
     shrug:   { lean: -5, head: 10, armL: 45, armR: 45, legL: -6, legR: 6 },
+    groan:   { lean: 20, head: 40, armL: 10, armR: -10, legL: -6, legR: 6 },           // a near miss: shoulders down, head in hands nearly
     // at rest, each his own way (the tools planted, not through the floor)
     restTall:  { lean: 0, head: 5, armL: -30, armR: -30, legL: -6, legR: 6 },        // hands behind his back
     restPick:  { lean: -5, head: 0, armL: 30, armR: 45, legL: -6, legR: 6, toolA: -45 }, // leaning on the pick
@@ -848,6 +849,10 @@
         var cv = (b.caveins || []).filter(function (q) { return q.id === e.id; })[0];
         return cv ? { x: cv.cx, y: cv.top + 3 } : null;
       }
+      if (e.type === 'chute') {   // the board's middle, in the shaft mouth under the opening
+        var site = (b.chutes || []).filter(function (q) { return q.id === e.id; })[0];
+        return site ? { x: site.x, y: site.fy + 14 } : null;
+      }
       var f = b.byId[e.id] || j.board.byId[e.id];
       if (!f) return null;
       if (f.kind === 'pin') return { x: f.x, y: f.y };
@@ -899,15 +904,16 @@
       var e = j.edit, T = target(j), n = nav();
       if (!T) { j.state = 'done'; k.busy = null; return; }
       var st = bestStance(k, T, j);
-      if (!st) { yield* waitTurn(k, j, W); apply(j, W); j.state = 'done'; k.busy = null; return; }
+      if (!st) { apply(j, W); j.state = 'done'; k.busy = null; return; }
       yield* toStance(k, st, T);
       var f = api.board().byId[e.id];
-      if (e.type === 'nudge' || e.type === 'dress') yield* pinWork(k, j, W, f, T, st);
+      if (e.type === 'nudge' || e.type === 'dress' || e.type === 'move') yield* pinWork(k, j, W, f, T, st);
+      else if (e.type === 'chute') yield* chuteWork(k, j, W, T, st);
       else if (e.type === 'rail') yield* railWork(k, j, W, f, T, st);
       else if (e.type === 'mouth') yield* mouthWork(k, j, W, f, T);
       else if (e.type === 'pocket') yield* pailWork(k, j, W, f, T);
       else if (e.type === 'clear') yield* clearWork(k, j, W, T, st);
-      else { yield* waitTurn(k, j, W); apply(j, W); }
+      else apply(j, W);
       j.state = 'done';
       markTally();
       k.pose = P.admire; yield 3;
@@ -925,7 +931,6 @@
       W.applied++;
       j.state = 'set';
     }
-    function* waitTurn(k, j, W) { if (false) yield 1; }
     function toolFor(k) { return k.who === 'pick' ? 'pick' : k.who === 'little' ? 'shovel' : 'mallet'; }
     // pull a pin, carry it, tap it into its new place: tick, tick, TOCK
     function* pinWork(k, j, W, f, T, st) {
@@ -953,7 +958,7 @@
       k.carry = { spr: spr, dress: f.dress, lifted: e.id, inHand: true };
       k.pose = ladder ? P.inspect : P.pop; yield 2;
       k.pose = P.inspect; yield 2;
-      if (e.type === 'dress') {
+      if (e.type === 'dress' || (e.type === 'move' && e.dress)) {
         // the old one goes over his shoulder; a new one out of the apron
         k.pose = P.toss1; yield 1;
         k.pose = P.toss2; emit(k, 'toss');
@@ -965,8 +970,14 @@
         k.carry = { spr: ns, dress: e.dress, lifted: e.id, inHand: true };
         k.pose = P.inspect; yield 2;
       }
-      // to the new place (a nudge is a step at most) and hold it to the rock
-      if (!ladder && Math.abs(NP.x - T.x) >= 2) {
+      // to the new place: a pin moved a whole cell is carried there (off his
+      // ladder, along, and up another if it's out of reach), a small one is a step
+      if (!inReach(k, NP)) {
+        var st2 = null;
+        yield* leaveStance(k);
+        st2 = bestStance(k, NP, j);
+        if (st2) { yield* toStance(k, st2, NP); st = st2; ladder = st2.kind !== 'stand'; }
+      } else if (!ladder && Math.abs(NP.x - T.x) >= 2) {
         var nx = clamp(k.x + (NP.x - T.x), n0(k).x0, n0(k).x1);
         k.x = nx; k.at.x = nx; k.y = walkY(nav().walks[k.at.w], nx); k.pose = gaitPose(k, 0); emit(k, 'step'); yield 1;
       }
@@ -978,8 +989,6 @@
       var up = copy(hold); up.armR = 165; up.lean -= 5;
       var hit = aim(k, hold, { x: NP.x - k.facing * 2, y: NP.y + 2 }, 'R', -30);
       for (var tp = 0; tp < 2; tp++) { k.pose = up; yield 1; k.pose = hit; emit(k, 'tap'); S.dust.push({ kind: 'dust', x: NP.x, y: NP.y, n: 2, t0: now() }); yield 1; }
-      // …wait your turn (the TOCKs go in order)…
-      yield* waitTurn(k, j, W);
       if (W.cancelled) return;
       // TOCK
       var big = copy(hold); big.armR = 195; big.lean -= 15; big.head -= 10;
@@ -997,6 +1006,44 @@
       k.tool = k.own;
     }
     function n0(k) { return nav().walks[k.at.w]; }
+    // can he reach P from where he is (his shoulder, an arm and a bit)?
+    function inReach(k, P0) {
+      if (k.at && k.at.w != null && P0.y > k.y + 1) return false;
+      return Math.hypot(P0.x - k.x, P0.y - (k.y - (SHOULDER[k.who] || 16))) <= (ARM[k.who] || 13) + 4;
+    }
+    // a chute board in a shaft's mouth: the old one prised off (over his
+    // shoulder it goes), a new one laid slanting the other way and knocked
+    // home: tick, tick, TOCK (wave 5c)
+    function* chuteWork(k, j, W, T, st) {
+      var e = j.edit, b = api.board(), site = (b.chutes || []).filter(function (q) { return q.id === e.id; })[0];
+      var had = !!(site && site.set);
+      k.facing = sgn(T.x - k.x) || 1;
+      if (had) {
+        k.tool = toolFor(k);
+        var pry = aim(k, P.bend, T, 'R');
+        for (var t2 = 0; t2 < 2; t2++) { k.pose = pry; yield 1; var b2 = copy(pry); b2.lean -= 25; k.pose = b2; emit(k, 'pull'); yield 1; }
+        if (W.cancelled) return;
+        if (!e.set) {
+          k.pose = P.pop; apply(j, W); emit(k, 'toss'); emit(k, 'set');
+          S.dust.push({ kind: 'flying', x: T.x, y: T.y - 3, vx: -k.facing * 34, vy: -55, t0: now(), plank: true });
+          yield 3; k.tool = k.own; return;
+        }
+        k.pose = P.pop; emit(k, 'toss');
+        S.dust.push({ kind: 'flying', x: T.x, y: T.y - 3, vx: -k.facing * 34, vy: -55, t0: now(), plank: true });
+        yield 2;
+      }
+      k.tool = 'plank'; k.pose = P.carry; yield 2;
+      k.pose = aim(k, st && st.low ? P.bend : P.holdPin, T, 'L'); yield 2; emit(k, 'lay');
+      k.tool = 'mallet';
+      var hold = aim(k, st && st.low ? P.bend : P.holdPin, T, 'L'), hit = aim(k, hold, T, 'R', -30), up = copy(hold); up.armR = 165;
+      for (var i = 0; i < 2; i++) { k.pose = up; yield 1; k.pose = hit; emit(k, 'tap'); S.dust.push({ kind: 'dust', x: T.x, y: T.y, n: 2, t0: now() }); yield 1; }
+      if (W.cancelled) return;
+      var big = copy(hold); big.armR = 195; big.lean -= 15;
+      k.pose = big; yield 3; k.pose = hit; apply(j, W); emit(k, 'set');
+      S.dust.push({ kind: 'dust', x: T.x, y: T.y, n: 5, t0: now() }); S.dust.push({ kind: 'glint', x: T.x, y: T.y - 2, t0: now(), big: true });
+      yield 2;
+      k.tool = k.own;
+    }
     // the headframe's back-leg brace: a timber knocked along, or a length added
     function* railWork(k, j, W, f, T, st) {
       var e = j.edit, B1 = st && st.low ? P.bend : P.holdPin;
@@ -1005,7 +1052,6 @@
       k.tool = 'mallet';
       var hold = aim(k, B1, T, 'L'), hit = aim(k, hold, T, 'R', -30), up = copy(hold); up.armR = 165;
       for (var i = 0; i < 2; i++) { k.pose = up; yield 1; k.pose = hit; emit(k, 'tap'); yield 1; }
-      yield* waitTurn(k, j, W);
       if (W.cancelled) return;
       var big = copy(hold); big.armR = 195; big.lean -= 15;
       k.pose = big; yield 3; k.pose = hit; apply(j, W); emit(k, 'set'); S.dust.push({ kind: 'dust', x: T.x, y: T.y, n: 5, t0: now() }); yield 2;
@@ -1021,13 +1067,13 @@
         k.tool = 'mallet';
         var up = copy(P.bend); up.armR = 150; var hit = aim(k, P.bend, T, 'R', -30);
         for (var i = 0; i < 2; i++) { k.pose = up; yield 1; k.pose = hit; emit(k, 'tap'); yield 1; }
-        yield* waitTurn(k, j, W); if (W.cancelled) return;
+        if (W.cancelled) return;
         k.pose = up; yield 3; k.pose = hit; apply(j, W); emit(k, 'set'); yield 2;
       } else {
         k.tool = toolFor(k);
         var pry = aim(k, P.bend, T, 'R');
         for (var t2 = 0; t2 < 3; t2++) { k.pose = pry; yield 1; var b2 = copy(pry); b2.lean -= 25; k.pose = b2; emit(k, 'pull'); yield 1; }
-        yield* waitTurn(k, j, W); if (W.cancelled) return;
+        if (W.cancelled) return;
         k.pose = P.pop; apply(j, W); emit(k, 'toss');
         S.dust.push({ kind: 'flying', x: T.x, y: T.y - 4, vx: -k.facing * 30, vy: -50, t0: now(), plank: true });
         yield 3;
@@ -1053,7 +1099,6 @@
         if (i % 2 === 0) S.dust.push({ kind: 'flying', x: T.x, y: T.y - 2, vx: -k.facing * (26 + 9 * i), vy: -58 - 6 * i, t0: now(), spr: spr, dress: 'coal' });
         yield 2;
       }
-      yield* waitTurn(k, j, W);
       if (W.cancelled) return;
       // the last of it: the heap goes, the bay's clear
       k.pose = P.pop; apply(j, W); emit(k, 'set');
@@ -1069,7 +1114,7 @@
       k.tool = null;
       k.pose = P.push; yield 2;
       for (var i = 0; i < 2; i++) { k.pose = P.shove; emit(k, 'push'); yield 1; k.pose = P.push; yield 2; }
-      yield* waitTurn(k, j, W); if (W.cancelled) return;
+      if (W.cancelled) return;
       k.pose = P.shove; apply(j, W); emit(k, 'push'); emit(k, 'set'); yield 3;
       k.tool = k.own;
     }
@@ -1406,7 +1451,7 @@
     function predict(m, T) {
       var w = api.world(); if (!w || !PP) return [];
       var c = JSON.parse(JSON.stringify(m));
-      var w2 = { board: w.board, seed: w.seed, T: w.T, t: w.t, acc: 0, nextId: w.nextId, marbles: [c], events: [], grid: w.grid, contactN: 0, cartLoad: JSON.parse(JSON.stringify(w.cartLoad || {})), _near: [] };
+      var w2 = { board: w.board, seed: w.seed, T: w.T, t: w.t, acc: 0, nextId: w.nextId, marbles: [c], events: [], grid: w.grid, contactN: 0, cartLoad: JSON.parse(JSON.stringify(w.cartLoad || {})) };
       var out = [], dt = 1 / 60;
       for (var s = 0; s < T / dt; s++) {
         PP.stepWorld(w2, dt);
@@ -1720,6 +1765,15 @@
         case 'win':
           if (S.mode === 'play') { var pg = K[BY_WHO.tally]; if (!pg.hidden) pg.over = { pose: P.write, until: S.tick + 3, tool2: 'pencil' }; }
           break;
+        case 'nearmiss':
+          // it rattled the 13's cup and didn't go in: every head turns to the
+          // cup; the first time in a game they all groan (a toy's slump); the
+          // tallyman pencils it on his card either way (NEARLY)
+          S.lookUp = { t0: t, x: e.x != null ? e.x : 177, down: true };
+          if (!S.groaned) { S.groaned = true; K.forEach(function (k) { if (!k.hidden && !k.busy) k.react.groan = t + 1.1; }); }
+          var pg2 = K[BY_WHO.tally];
+          if (!pg2.hidden) { pg2.nearly = (pg2.nearly | 0) + 1; pg2.over = { pose: P.write, until: S.tick + 5, tool2: 'pencil' }; emit(pg2, 'mark', { nearly: pg2.nearly }); }
+          break;
         case 'knock':
           // the anti-stall knock: it's one of them, in the rock, right there
           if (e.m != null && S.nightShift != null) { var nk2 = K[S.nightShift]; if (nk2.hidden && !nk2.glow) S.glows.push({ x: e.x + 5, y: e.y + 3, t0: t }); }
@@ -1744,7 +1798,7 @@
         if (S.forced.theftAt && t >= S.forced.theftAt && S.mode === 'play') forcedTheft(t);
         if (S.forced.knockAt && t >= S.forced.knockAt && S.mode === 'play') { S.forced.knockAt = null; knockListen({ x: 184, y: 306, alarm: true }); }
       },
-      gameStart: function (seed) { S.seed = seed | 0; S.games++; },
+      gameStart: function (seed) { S.seed = seed | 0; S.games++; S.groaned = false; K[BY_WHO.tally].nearly = 0; },
       gameEnd: function () { },
       work: function (ctx) { return startWork(ctx); },
       figures: function (view) { return figures(view); },
@@ -1821,11 +1875,12 @@
         return [P.crouch, P.air, P.air, P.land][Math.min(3, hu)];
       }
       if (rc.duck > t && free) return k.who === 'lamp' ? P.duckLamp : P.duck;
+      if (rc.groan > t && free) return P.groan;
       if (rc.flinch > t && free) return P.flinch;
       q = base;
       if ((S.mode === 'play' || S.mode === 'dive') && free) {
         // looking up at the hopper when a marble is let go
-        if (S.lookUp && t - S.lookUp.t0 < 0.7) { q = copy(base); q.head = -45; q.lean = Math.min(q.lean || 0, -10); return q; }
+        if (S.lookUp && t - S.lookUp.t0 < 0.7) { q = copy(base); q.head = S.lookUp.down ? 35 : -45; q.lean = S.lookUp.down ? 10 : Math.min(q.lean || 0, -10); return q; }
         if (k.look) {
           q = copy(base);
           var dy = k.look.y - (k.y - 22), dx = Math.abs(k.look.x - k.x);
@@ -1866,7 +1921,7 @@
           x: Math.round(k.x), y: Math.round(k.y + k.dy + hopUp), facing: k.shownFacing || k.facing, who: k.who,
           pose: quant(pose), tool: k.tool, tool2: (k.over && k.over.until > S.tick && k.over.tool2) || k.tool2, lamp: k.lamp,
           lampK: k.lampK, back: k.back, liftL: k.liftL, liftR: k.liftR, capOff: k.capOff || (S.lode && k.who === 'old' && t - S.lode.t0 >= 1.0 && t - S.lode.t0 < 3.0),
-          tallyN: k.tallyN, shadow: true
+          tallyN: k.tallyN, nearly: k.nearly | 0, shadow: true
         };
         if (fig.capOff && !k.capOff) fig.tool2 = 'cap';
         // a flicker when he ducks
@@ -1950,6 +2005,8 @@
           lamps.push({ x: k.glow.x, y: k.glow.y, r: 16, c: '#ffc46a', k: 0.35 });
         }
       });
+      // a marble going through the old drift (or any tunnel): its light behind the rock (main's route)
+      (fx0.transits || []).forEach(function (tr) { (tr.glows || []).forEach(function (q) { props.push({ kind: 'glow', x: q.x, y: q.y, k: q.k, marble: q.marble }); }); });
       S.glows = S.glows.filter(function (g) { return t - g.t0 < 0.7; });
       S.glows.forEach(function (g) { props.push({ kind: 'glow', x: g.x, y: g.y, k: 1 - (t - g.t0) / 0.7 }); lamps.push({ x: g.x, y: g.y, r: 14, c: '#ffc46a', k: 0.3 }); });
       // the moth leaves its lamp for Tobias's lantern
@@ -1961,7 +2018,7 @@
       if (S.cardLamp != null) {
         var ck = K[S.cardLamp], cf = ck.fig;
         if (cf && ART) { var cl = ART.figureLamp(cf), lx = cl.lantern || cl; fx0.cardLamp = { x: lx.x, y: lx.y, k: 1, r: 36, fig: cf }; }
-      } else fx0.cardLamp = null;
+      } else fx0.cardLamp = fx0.transitCard || null;     // (a marble in the old drift, passing behind the card: main's)
       fx0.lifted = S.lifted;
       view.props = props;
       // a stolen marble is in his hands (drawn there) or in the rock with him: not loose
