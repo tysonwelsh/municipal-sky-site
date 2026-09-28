@@ -304,7 +304,8 @@ window.KOLOB.VoicesOrgan = (function () {
     swellGain.gain.value = swellLevel(swellNow);
     // (cancel, round 3b: the moves already written from t on are taken
     // back first — the meeting's house chords shape the box chord by chord,
-    // and a chord that comes while the last still sounds keeps it open)
+    // and a chord that comes while the last still sounds opens it again
+    // from wherever it has got to)
     function setSwell(e, t, rampS, cancel) {
       e = Math.max(0, Math.min(1, e)); swellNow = e;
       if (cancel) { swellLP.frequency.cancelScheduledValues(t); swellGain.gain.cancelScheduledValues(t); }

@@ -203,15 +203,20 @@ window.KOLOB = window.KOLOB || {};
   // goes: shut as the keys go down, opening over the old organ's attack,
   // shutting over its release before the hands lift; as far as the Sunday's
   // organist moves it (the plain organist hardly at all, the Victorian from
-  // nearly shut). The chords of one phrase (a joint's amen, the raspberry)
-  // keep the box open between them.
+  // nearly shut). In the chords of one phrase (a joint's amen, the
+  // raspberry) the box, closing on one chord, opens again over the next.
   // THE LEVEL: at gainMul HOUSE_REF (the prelude's middle, 0.513) the house
   // registration sits where organChord sat at the same gainMul, through the
-  // same organ layer (0.40, the owner's), the loudest 3 s within ±2 LU —
-  // HOUSE_TRIM is that measurement (handoff r3b-organ-1); any other gainMul
-  // scales from it as organChord's did.
+  // same organ layer (0.40, the owner's), the loudest 3 s within ±2 LU; any
+  // other gainMul scales from it as organChord's did. HOUSE_TRIM is that
+  // measurement, taken IN THE MEETING, the organ layer alone, against the
+  // old organ on the same Sunday (handoff r3b-organ-1). (Rendered offline
+  // through a stand-in room it had come out at +2.2 dB; the meeting's own
+  // rooms and glue then put the pipes' chords 2.8–2.9 LU over the old
+  // organ's at a joint's amen and a voluntary's — seeds 8 and 7 — and
+  // 0.5 over in seed 25's postlude. At 0 they sit either side of it.)
   // ==========================================================================
-  var HOUSE_REF = 0.513, HOUSE_TRIM = 2.2, HOUSE_SWELL = 0.62;
+  var HOUSE_REF = 0.513, HOUSE_TRIM = 0, HOUSE_SWELL = 0.62;
   var houseSwell = { until: -1e9 };
   function houseReg() {
     var stops = getLayerParam("organ", "stops", 0.5), trem = getLayerParam("organ", "tremulant", 0.15), pedal = getLayerParam("organ", "pedal", 0.6);
@@ -220,14 +225,19 @@ window.KOLOB = window.KOLOB || {};
   }
   // the chord on an organ (the meeting's case, or a lab's): freqs as the
   // desk voices them (bass first); o = { reg, depth (how far the box moves,
-  // 0–1), phrase: {until} (a chord still sounding keeps the box open) }
+  // 0–1), phrase: {until} (a chord still sounding: the box opens again from
+  // where its closing has got to) }
   function pipeChordOn(organ, t, dur, freqs, gainMul, o) {
     o = o || {};
     var reg = o.reg || houseReg(), n = freqs.length, ph = o.phrase || { until: -1e9 };
     var G = (gainMul || 1) / HOUSE_REF * Math.pow(10, HOUSE_TRIM / 20);
     var depth = o.depth != null ? o.depth : 0.6, eOpen = HOUSE_SWELL, eShut = Math.max(0, eOpen - 0.4 * depth);
     var atk = Math.min(2.2, dur * 0.3), rel = dur * 0.28;
-    if (t < ph.until - 0.05) organ.setSwell(eOpen, t, 0.3, true);
+    // (a chord that comes while the last still sounds finds the box already
+    // closing on it: it opens again over this chord's own attack, from
+    // wherever it has got to — the old organ's cross-fade between the
+    // chords of an amen, not a box held open over them)
+    if (t < ph.until - 0.05) organ.setSwell(eOpen, t, atk, true);
     else { organ.setSwell(eShut, t - 0.03, 0.03, true); organ.setSwell(eOpen, t + 0.02, atk); }
     organ.setSwell(eShut, t + dur - rel, rel);
     ph.until = Math.max(ph.until, t + dur);
@@ -281,8 +291,8 @@ window.KOLOB = window.KOLOB || {};
   // organist.js — the Victorian's half a decibel under the plain
   // organist's, as the lab centres them): the loudest 3 s of the
   // Victorian's hymns 1.1 LU under the old organ's, the plain organist's
-  // 0.9 — a shade soft of it, as the owner's "pretty loud" asks rather than
-  // over. The knob, for the owner's ear: 0 is the organist lab's level, some
+  // 0.9, the improviser's 0.2 — a shade soft of it, as the owner's "pretty
+  // loud" asks rather than over. The knob, for the owner's ear: 0 is the organist lab's level, some
   // 5 dB softer.
   var UNDER_WARD_DB = 5.0;
   function organistPlays(plan, t0, tag) {
