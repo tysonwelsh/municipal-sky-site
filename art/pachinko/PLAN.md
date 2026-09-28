@@ -983,3 +983,94 @@ the marble unless holding it, and no page scroll at any size.
     | a stolen marble's 13 | 1.68% → 3.26% | 2.76% → 3.08% |
 
     Base metrics unchanged: NaN 0, timeouts 0, median 3.67 s.
+- 2026-09-28 — **Gameplay and correctness fixes (wave 5c, rc.23–rc.34;
+  report: `local-dev/pachinko-lab/reports/wave5c-gameplay-fixes.md`).**
+  - **Keys** belong to the machine only when the canvas has the focus or the
+    pointer is over the stage, the stage is ≥ 50 % on screen, no modifier is
+    held, and the target isn't a link/button/field (`keysAreOurs`, HOLLER
+    ROLLER's plus the focus-or-pointer rule). The focus ring shows only after
+    a Tab (`.pachinko-kbd`).
+  - **Clicks and Space during the coin and the dive are queued** and fire as
+    PLAY starts (a held Space from the coin isn't a drop).
+  - **The camera is a tween** (`camGo`). WORK is watched **dived in** (the
+    crew change the board at play scale); the pull-back comes at the end of
+    WORK. A coin during WORK keeps the camera in (a 0.2 s beat, no second
+    dive); an empty pocket doesn't cut the crew off. The lode's step back
+    lands on a whole scale. When the integer PLAY scale would be 1 (1366 ×
+    768, 1280 × 720), PLAY takes a fractional nearest-neighbour scale ≥ 1.35
+    (orchestrator's ruling). The dived-in crop keeps the glass whole and the
+    marquee and the lower panel whole-or-none (`playTop`); on a short screen
+    it shows the marquee's bulb row rather than cut the figures card's type.
+  - **A reload keeps the game.** Every win is credited to the pocket as it
+    lands (the drum and the ledge still count it out); the open game is
+    saved (`stats.open {v, seed, dropped, score, credited, lodes}`) at coin,
+    release, win and resolve. The next page starts in ATTRACT (HOLLER
+    ROLLER's owner rule), the tube shows the marbles owed, the card's side is
+    `credit`, and the coin door takes the game up without a token; marbles
+    still on the glass come back. Event `resume`.
+  - **Mischief is occasional** (a per-game plan by seed): a theft in about
+    one game in two (from a marble 2–9 on, one at most), a dark 26 % (half
+    keep a marble), a cave-in 20 %; a visit's first game has no theft and no
+    vanish. `sim.js mischief 1500`: **0.85–0.87 events a game**, thefts
+    0.39–0.41 a game, the dark keeps a marble in 1 game in 11–15. Fairness
+    (a stolen marble, left alone → after): novice 0.70 → 0.75 scrip, 13
+    2.4 % → 2.6 %; competent 0.86 → 0.87, 3.3 % → 3.4 %.
+  - **The theft's throw has one source of truth**: the knockers'
+    `core.releasePoint(nav, exit, board, u)` (with a clearance search: never
+    released inside a fixture), used by the live thief and by the lab's
+    `releaseOf`. The c1 lob starts over his head (y −24; it started inside
+    pillar.0) with a seeded toy's throw, 120 ± 40 across, 80 ± 40 up.
+    **Live** (`?force=theft`, 76 stolen marbles): c1 finds the lode 2 in 19
+    (lab 9.2 %), a stolen marble pays 0.91 with 3.9 % lodes (was 0.43 and
+    0.9 %; the old PLAN table was the lab's model of a throw nobody made).
+    0 of 44 releases inside a fixture (was 10 of 42).
+  - **Determinism:** the lode's state ends in its sim step, not in `fx()`; a
+    deep dark is relit only if it was out when the flare fired and inside
+    the lode's hold; main's fallback lode clears in the sim; the glass-tap
+    toppler is chosen on the shutter. `critic/det.js` seeds 32, 56, 146:
+    identical with and without rendering.
+  - **The drift you can see** (supersedes the nudge/dress drift): 1–2 edits
+    a shift, now and then 3, each bounded around home:
+    - `move` a pin carried 9–13 px (≤ 16 from home; clear of pins/rails by
+      11.5, of galleries, shaft mouths, pockets, tunnels, the card; the same
+      rock), 30 % with a new dressing;
+    - `mouth` the old drift or the office door boarded/prised (the floor
+      piece beside a shut mouth is re-laid to run away from it: the old dead
+      end stalled every marble, which is why no mouth edit ever validated);
+      a shut mouth is reopened first thing next shift three times in four;
+    - `chute` a board under a floor opening (five places; only directions
+      whose run-out is clear: A.raise L, B.winze R, B.manway R, C.chute R,
+      C.chute2 L/R), set/flipped/taken up, two at most;
+    - `pocket` the pail or the powder box shoved 8–10 px (±12 of home) with
+      lips, base and petals together;
+    - `rail` the brace, each end ±6 of home and clear of the sheave.
+    The knockers carry a moved pin to a new stance, lay or prise chute
+    boards from a rope ladder in the shaft mouth. Each alteration gets a
+    bone-white spot (`fx.alterations`) through the dive and the next game's
+    first 6 s, fading to 0.3. Lab (24 shifts): 20 moves, 7 chutes, 10 mouths,
+    3 pockets, 1 brace; ~650 validation drops a WORK. `sim.js drift 30`: 0
+    layouts with an unreachable paying bay, the 13 out of band 4/30, its
+    best x moved ≥ 6 px within 3 games in 6/6 chains.
+  - **The route to the 13:** tunnels carry a `path` through the rock (the old
+    drift down behind the legend card and under the old workings to the
+    lode; the office tunnel across the barren measures). Transits are 1.4 s
+    (drift) and 1.5 s (office). A marble in a tunnel is a lamp and a comet of
+    glow props on its route, the mouth flashes going in, the exit brightens
+    in the last 0.45 s, and behind the legend card the paper glows from
+    behind (`fx.cardLamp`). `nearmiss {m, slot, drift}`: a marble that rattles
+    the 13's guard knobs and misses (≈ 0.74 a game for a random dropper):
+    the crew turn to the cup, groan once a game, Pengelly marks it.
+  - **The first ten seconds:** 2.5 s after the page opens (then 25 s of no
+    input in ATTRACT) Tobias drops what he's doing, hurries through the rock
+    to his door by the coin door (rB2) and holds his lantern up to it,
+    pointing. A glass tap: they play dead, then every free knocker points at
+    the coin door. The card flips to INSERT TOKEN at the start of WORK
+    (`ui.coinOpen`, `ui.work`).
+  - **Footholds:** a plank runs out of a knockers' door beyond a working face
+    when it opens or someone stands there.
+  - **Performance:** one physics grid per board (WeakMap); the drift plan
+    starts at game over and runs through PAYOUT (2 drops a step), then 4 a
+    step in WORK: WORK's first 2.5 s cost 3.3 ms a frame (was 12–27).
+  - **Sim metrics after** (`sim.js metrics 6000`): NaN 0, timeouts 0, median
+    3.82 s (the slower tunnels), max 8.00; the 13 2.1 % uniform, 7.8 % at its
+    best x; scrip per token novice 10.3, competent 13.6 (unchanged).
