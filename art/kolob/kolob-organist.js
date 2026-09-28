@@ -179,9 +179,11 @@ window.KOLOB.Organist = (function () {
   // held back — so that every Sunday's organ sits at the level of the organ
   // the meeting has now (±2 LU), whichever stops are drawn. Measured in
   // organist-lab (OrganistLab.registrations(true): the same two lines on
-  // every registration at swell 0.62); each trim closes most, not all, of
-  // the gap, so a flute is still a little softer than the full organ.
-  var REG_TRIM = {"soft flutes": 3.8, "quiet flute": 3.2, "flutes 8 & 4": 2.8, "hymn principal": 0.0, "principal & 4": 2.2, "vox humana": 2.9, 
+  // every registration at swell 0.62); each trim closes 80 % of the gap to
+  // the hymn principal, so a flute is still a little softer than the full
+  // organ — the three the plain organist lives on nearly all of it (the
+  // plain organist has no louder stops to reach for).
+  var REG_TRIM = {"soft flutes": 4.5, "quiet flute": 3.9, "flutes 8 & 4": 3.3, "hymn principal": 0.0, "principal & 4": 2.2, "vox humana": 2.9, 
     "vox & flutes": 2.3, "vox solo": 4.9, "flutes, trembling": 4.3, "echo flute": 5.9, "trumpet": 2.8, "trumpet solo": 3.8, "full organ": -1.5, 
     "principal & mixture": 1.2, "sixteen & four": 5.7, "glass": 6.5, "pedal tune": 2.6, "figures": 5.8 };
   function trimOf(reg) { return typeof reg === "string" && REG_TRIM[reg] != null ? REG_TRIM[reg] : 0; }
@@ -786,7 +788,7 @@ window.KOLOB.Organist = (function () {
     var under = manner === "vox solo" ? "flutes, trembling" : manner === "trumpet tune" ? "soft flutes" : manner === "swell voluntary" ? "hymn principal" : manner;
     var peakLine = -1; laid.lines.forEach(function (L, k) { if (L.line.peak && !L.again) peakLine = k; });
     if (peakLine < 0) peakLine = Math.max(0, laid.lines.length - 2);
-    var base = vic ? (manner === "swell voluntary" ? 0.32 : 0.5) : 0.52 + 0.14 * sw0;
+    var base = vic ? (manner === "swell voluntary" ? 0.32 : 0.5) : 0.6 + 0.1 * sw0;
     if (!intro) swell(plan, 0, base, 0.05);
     laid.lines.forEach(function (L, k) {
       var keys = handsOn(h, L.line, L.next, L.t, L.bs, STYLES[vic ? "victorian" : "plain"].touch);
