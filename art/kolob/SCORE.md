@@ -4,7 +4,8 @@
 integrator (branch `kolob-2`). Draft 1, 2026-09-26; round 2's requests
 adopted 2026-09-27 (§9, which wins where it and an earlier section differ);
 round 3's composed hymns adopted 2026-09-27 (§10, which wins over both);
-round 3b's ward adopted 2026-09-28 (§11, which wins over all three).*
+round 3b's ward adopted 2026-09-28 (§11, which wins over all three; its
+second step, the organist, §11.6).*
 
 To change this contract, write a request in your handoff note. **Do not edit
 this file from a crew branch.**
@@ -647,3 +648,81 @@ Handoff: `handoff/r3b-ward-1.md`.*
   `getChoir()` (`"ward"` | `"house"`) and `setChoir(which)` (dev, before
   PLAY; `?choir=house` sets it).
 
+
+### 11.6 The organist (round 3b, step 2)
+
+*The organist crew's requests (`handoff/r3-organist-1.md`: R1–R4), adopted as
+the Sunday's organist takes the bench in the meeting. Handoff:
+`handoff/r3b-organ-1.md`.*
+
+- **Modules.** `kolob-organist.js` (pure planning) joins the engine after the
+  composer, and `kolob-voices-pipeorgan.js` (the registrable pipe organ) among
+  the voices (`_engine.php`). `kolob-voices-organ.js` plays the pipe organ
+  for everything the organ does — the organist's plans and the house's own
+  chords (`S.organChord`: the voluntaries, the joints' amens, a soft chord in
+  the testimony, a guest's) — **one organ throughout**. The old additive
+  organ (`houseOrganChord`, R1 applied: the tremulant on a gain after the
+  envelope, its depth scaled to the chord) is the A/B and the fallback: dev
+  switch `?organ=house`, or a page without the pipe organ and the organist.
+- **`KOLOB.Organist`** adds `hymnHands(organist, h, stream, opts)` — the hymn
+  written in pieces, each from the time it is handed, with the same dice as
+  the whole (`accompany` lays them end to end): `giveOut(at)`, `verse(v, at,
+  {bs, clock(i), rest})` (`piece.waits[i]`: the seconds the ward waits after
+  line i for a fill), `interlude(v, at)`, `amen(at, {bs, ck})`,
+  `modulation(next, at)`; a piece is a finished plan plus `next`. The
+  organist's clock may be the CHORISTER's: `lineEvents(…, ck)`,
+  `lineDur(…, ck)`, `breathOf(…, ck)` with `ck = {rit, hold}` —
+  kolob-cast.js's arithmetic, operation for operation (`null`: the
+  organist's own). `preludeDraw` refuses as well for `unison` (the first
+  hymn one line, sung in unison), `guest` and `hum`. A report carries
+  `pedal` (and `pedalOnly`) where the 16′ sounds.
+- **`Cast.segment(…, {organist})`**: `{giveOut, waits}` — the sheet carries no
+  organ lines; the intro waits the organist's giving-out; a verse's line
+  waits where the organist plays a fill. `Cast.seat(stream, {organist:
+  style})`: the ward's organist is an archetype of the style seated.
+  `Cast.actionKey`, and `ACTION_DS` holds the organist's actions.
+- **Streams** (R4): `cast:<n>` → `organist` (the seat), `organist:prelude`
+  (the chorale prelude's die), `prelude:<style>` (the prelude, its lines and
+  figures below it); `hymn:<n>:<i>` → `organist:<style>` (`regs`,
+  `giveout`, `join:<v>:<i>`, `interlude:<v>`, `modulation`) and
+  `organist:modulation` (the walk into a keyed hymn's key, from the day's own
+  tonic). Sound-level: `synth:organ` → `case:<k>` (each pipe organ built).
+- **The meeting.** The organist is seated with the ward (`S.Meeting.organist()`:
+  style, habits, name — the ward's organist's — and the meeting's ledger:
+  hymns, fills, the one strange fill). Every accompanied hymn (the dialect's
+  own `organ` flag; today the Tabernacle) is the organist's: the walk into a
+  keyed hymn's key, the giving-out, the Score's four parts under each verse
+  on the chorister's clock (a hummed verse: the organ rests), fills between
+  the lines (the style's rate; at most two a hymn; never two joins running;
+  the ward waits), the interlude before each verse after the first (not
+  after the fuging), the amen. **The chorale prelude** is a seating
+  (`prelude-seating.seating: "chorale"`, over the drawn one, `under`),
+  seated when the organist's own die says so; the organist's first touch is
+  the day's first hymn (`KOLOB.Organist.prelude`); the house listens while it
+  sounds (`hallListens`), a guest and the joint wait for it, and a later
+  meeting's awake house lets go as it begins.
+- **The organ's case.** One `VoicesOrgan` per pair of the organ's hands
+  (THE HOUSE LETS GO); a case whose hands let go is disposed after its last
+  pipe; STOP disposes them all (`S.organStop`).
+- **Events.** `cast` from the organist: `memberId: "organist"`, `role:
+  "organist"`, `nameDs`, `action` (English, dev), `actionDs`, `style`,
+  `hymnId`, `verse`, `registration`, `manner`; the minutes give a row to the
+  chorale prelude, the walk to a new key, a fill, the strange key and a line
+  left to the ward. `prelude-seating.organist`: `{style, nameDs, prelude:
+  {play, why, odds}}`. New type **`chorale-prelude`**: `{hymnId, t0, until,
+  style, manner}` (`kolob-score.js` EVENTS). `verse-start.performance.organ`:
+  `{registration: [the organist's], organist: style}`.
+- **Notes** (R3): the organist's written notes on layer `organ`, with `part`
+  (S/A/T/B, `fig` for the improviser's running figures, `pedal` for the
+  16′), `organist` (the style), `orn` for an ornament (`susp`, `app`,
+  `pass`, `link`, `echo`, `fig`, `seq`, `quote`, `arabesque`, `strange`,
+  `intro`, `close`, `added`, `mod`, `pedalpoint`); under a hymn `hymnId`,
+  `verse`, `line`, `beat`, `deg`, `monzo` relative to `keyMonzo` (the hymn's
+  key), and one of `givingOut`, `interlude`, `amen`, `modulation` (the walk
+  into a key: `keyMonzo` [0,0,0,0], the monzo the keynote's), `prelude` (the
+  chorale prelude). The house's chords on the pipes are told as ever (each
+  voice an octave down, the chord's id), their pedal where the 16′ sounds
+  (an octave under the bass's key, or at it below 38 Hz).
+- **`KolobAudio`** adds `getOrganist()`, `organStats()` (cases, nodes built,
+  the most alive at once, plans on the desk), `getOrgan()` (`"pipe"` |
+  `"house"`) and `setOrgan(which)` (dev, before PLAY; `?organ=house`).
