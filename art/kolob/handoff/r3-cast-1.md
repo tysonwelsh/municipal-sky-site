@@ -543,3 +543,368 @@ the same AudioContext; 60 s; load average 7–10):
 - **More vowel banks than before** for a high voice on "ee" or "oo" (a
   tuned bank per 60 Hz once the note passes the first formant). They cost
   nodes (built, then idle and silent), not sound or audio time.
+
+---
+
+# Round 2 — the critic's eleven findings
+
+*CAST crew, round 3, second pass. 2026-09-28. Commits: `78ba43c` (the
+breath between the lines), `18fd2d6` (the cast's dice), `5941310` (a
+lighter ward), `5fa0f2d` (the performer and the lab), and this section.
+Nothing pushed or published; VERSION not bumped; every check silent
+(Node mocks, OfflineAudioContext, headless Chrome with `--mute-audio`).*
+
+Where this section disagrees with the first half of this note, this
+section is the one to believe.
+
+## For the owner, in plain words — corrected
+
+**First, a correction.** The first half of this note told you the breath
+between the lines was gone. It was not. I measured only the first moment
+of each new line, never the silent pause before it, and in that pause the
+first pass had moved the breath rather than removed it: before every line,
+about fifteen of the thirty-two singers drew an audible breath within a
+tenth of a second of each other — a collective "hhh" filling every pause,
+6 to 15 dB louder there than the old code below 3 kHz in every hymn
+measured (and 8 dB louder in the hiss band too, in the Tabernacle), close
+to the voices' own fading tails in loudness. Had you listened to that
+build, that group inhale is the likeliest thing you would still have heard
+as "almost like a breath". The critic caught it; it is fixed now, and
+measured where it lives.
+
+What you should hear now, by size:
+
+1. **A clean pause between the lines. (The one you asked about.)** Now only
+   about three of the thirty-two are heard to breathe before a line, each at
+   their own moment, softly, and low: a steep filter keeps the breath below
+   about 2 kHz, where it cannot hiss. In the silent pause itself the breath is
+   now as quiet as the old code's or quieter in the hiss band (3–12 kHz) in
+   every hymn measured, 4 to 14 dB quieter than the first pass, and far
+   under the voices' own dying tails. Below 3 kHz it is within about a dB of
+   the old code in the Tabernacle and the Sacred Harp, and 2–3 dB over it in
+   the Old Way's long, slow pauses — a soft, low intake from a person or two,
+   which is what a congregation sounds like.
+   - **The knob, if you still hear a breath before the lines:** `INHALE`, near
+     the top of `kolob-voices-vocal.js`. `peak` is how loud a breath is (halve
+     it to hear less); `share` and `perBreath` set how many of the ward are
+     heard to breathe (`share + perBreath × breath` is each singer's chance,
+     about 0.1: three in thirty-two). Set `peak` to 0 and the pauses are silent.
+2. **Between the notes: as in the first pass** — the breath rides inside each
+   voice and dips with it; in a Sacred Harp verse sung on the notes the *s* of
+   "sol" and the *f* of "fa" are still there (they are the syllables), softer
+   and shorter than before (knob: `FRIC_PEAK`).
+3. **A shade brighter, not noisier. (Small; so you are not surprised.)** The
+   voices themselves are about 1 dB brighter in the 3–12 kHz band than the
+   old code (1.1–1.8 dB inside held notes, 0.8–1.2 dB at the joins between
+   notes, nothing in the Old Way). It is the honk fix: every note is now
+   brought to its vowel's level, which lifts the bright vowels ("ee", "eh")
+   that the old honking notes used to bury. It is tone — a chord's harmonics
+   — not hiss: the noise at the joins is 3–11 dB *lower* than the old code's.
+   If the choir sounds a touch brighter, that is why; the knobs are the tilt
+   (`tiltF` in `renderLine`) and the vowel levels (`INTRINSIC`).
+4. **The ward on a phone: about twice as light, and not there yet.** The
+   thirty-two singers now take less than half the audio processing they did
+   in the first pass, with no difference you could hear (measured: the
+   spectrum within a third of a dB in every band). A phone four times slower
+   than this Mac could not yet be counted on to carry them *and* a whole
+   meeting; one two or three times slower is at the edge. No real phone has
+   played it. Details, and the next step, in §3 below.
+5. **The cast, tidied.** No two of the people you come to know share a name
+   any more; the two or three who will bear testimony are never two of a
+   kind; the chorister, the precentor and the soloist keep time (they lead);
+   the child who loses the words can lose any line but the last.
+
+### Where to hear it (this branch; `php -S 127.0.0.1:8133 -t /Users/tysonwelsh/Sites/municipal-sky-site-kolob-r3-cast`)
+
+- **The pauses between lines:** `http://127.0.0.1:8133/art/kolob/hymn-lab.php?seed=4&dialect=tabernacle`
+  (BETHEL: listen to the breath before each line of the ward — a person or two,
+  low, or nothing), `?seed=7&dialect=sacredharp` (WINTER QUARTERS: verse 1 on the
+  notes, and the pause after its first line, some fifteen seconds in),
+  `?seed=2&dialect=oldway`.
+- **The cast lab:** `http://127.0.0.1:8133/art/kolob/cast-lab.php` — the same
+  links as above, with these changes: `?seed=3&dialect=tabernacle` — the child
+  now loses the words on her first line (0:07, she hums) and finds them on the
+  next (0:14); `?seed=7&dialect=sacredharp` — the newcomer is now 𐐙𐐨𐐺𐐨 (Phebe)
+  Rigby, not a second Temperance; `?seed=1&dialect=tabernacle` — the child
+  loses the words at 1:35 and finds them at 1:40 (was 0:57–1:04);
+  `?seed=2&dialect=oldway` — at 2:49 and 3:20. The bench has a new
+  **Headroom** button (about five minutes).
+
+## 1. The breath between the lines (findings 1, 2 and 6)
+
+**What changed** (`78ba43c`, `kolob-voices-vocal.js`, `INHALE`):
+
+| | first pass | now |
+|---|---|---|
+| who is heard to breathe | 0.25 + 0.6 × breath of each singer: ~15 of 32 | 0.04 + 0.14 × breath: ~3 of 32 (a voice heard alone: `opts.inhale`, 0.55 from the cast's performer) |
+| when | all ending 40 ms before the written onset, 0.28 s long | each their own: ending 20–130 ms before their own onset, 0.12–0.26 s long, and only inside the gap the caller left |
+| how loud | 0.011 × (0.5 + breath) | 0.0055 × (0.5 + breath) (−6 dB) |
+| how low | 350 Hz – 2.8 kHz, second-order top (real energy at 3–6 kHz) | 350 Hz – 1.9 kHz, a sixth-order Butterworth top (three sections, baked into the noise) |
+| the default gap before a line (finding 6) | 0.36 s: the hymn lab's real gaps are 0.18–0.25 s, so the inhale began before the last line had released | 0.22 s, a hymn's breath; the cast's cue sheet now carries each singer's real silence since their own last note |
+
+**How it was measured.** The same bench as the first half (the hymn lab's own
+full-ward code rendered offline, the ward alone, dry, two verses, two stems:
+the full ward, and the folds silenced — the breath and the consonants alone),
+with a new window: **the gap**, from the last written release of every part of
+the line before to the next line's written onset (the late singers' tails fall
+in its first part), every gap of the two verses. "Against the voices" is the
+breath stem against the full stem minus it, per gap, the median. "A whole line
+break" is the gap and the first 90 ms after the onset (the critic's second
+window). HEAD is `5b59c23`, the first pass `ff24d2c`, now `5fa0f2d`.
+
+**In the gap: the breath and the consonants alone (dB), HEAD / first pass / now:**
+
+| hymn | gap (median) | 3–12 kHz | 1–3 kHz | < 1 kHz | against the voices, 3–12 kHz | against the voices, 0.1–12 kHz | a whole line break, 0.1–12 kHz |
+|---|---|---|---|---|---|---|---|
+| seed 4 Tabernacle, BETHEL | 0.37 s | −75.3 / −67.3 / **−81.7** | −74.5 / −60.5 / **−76.1** | −81.6 / −67.0 / **−80.5** | −10.8 / −4.2 / **−18.2** | −27.7 / −16.0 / **−31.4** | −60.7 / −60.3 / **−73.2** |
+| seed 7 Sacred Harp, WINTER QUARTERS | 0.23 s | −58.4 / −67.2 / **−74.7** | −67.5 / −61.4 / **−75.1** | −79.7 / −67.6 / **−79.9** | −10.1 / −6.2 / **−18.8** | −25.4 / −16.3 / **−28.8** | −57.1 / −60.6 / **−69.0** |
+| seed 1 Sacred Harp, RIMLIGHT | 0.30 s | −56.2 / −67.1 / **−75.1** | −66.7 / −61.0 / **−76.2** | −78.7 / −67.3 / **−80.2** | −7.7 / −2.8 / **−20.9** | −22.9 / −12.5 / **−25.2** | −55.8 / −60.0 / **−68.7** |
+| seed 4 Sacred Harp, SABBATH SPRING | 0.15 s | −58.3 / −65.5 / **−75.2** | −67.4 / −59.2 / **−72.3** | −77.7 / −65.7 / **−76.9** | −10.4 / −5.5 / **−16.5** | −26.4 / −17.5 / **−30.3** | −57.5 / −59.3 / **−68.9** |
+| seed 2 Old Way, SEGO | 0.81 s | −78.9 / −75.0 / **−79.2** | −77.7 / −69.1 / **−75.6** | −87.7 / −75.9 / **−84.7** | +0.8 / +4.0 / **−16.1** | −21.2 / −9.4 / **−32.3** | −71.0 / −66.5 / **−73.6** |
+
+**Reading it.**
+- The first pass's group inhale is plain in the middle columns: 6–15 dB over
+  HEAD below 3 kHz in every gap, up to +4 dB *over the voices* in the Old
+  Way's pauses. The critic's figures (+10 / +16.6 / +15.6 dB in BETHEL's gap)
+  were taken with a different window; mine read +8 / +14 / +15.
+- Now, in the hiss band (3–12 kHz), the gap is quieter than HEAD in every
+  hymn (0.3 to 19 dB) and 4 to 14 dB quieter than the first pass; the
+  breath sits 16–21 dB under the voices' tails there (HEAD: 8–11 dB under,
+  and over them in the Old Way).
+- Below 3 kHz, where the inhale now lives, it is within 1.1 dB of HEAD in the
+  Tabernacle and the Sacred Harp (over by up to 1.1 dB only below 1 kHz) and
+  2.1–3.0 dB over HEAD in the Old Way's 0.8-second pauses. It is never louder
+  against the voices than HEAD was: 25–32 dB under them, broadband.
+- Across a whole line break the breath is now 11–13 dB quieter than HEAD
+  in the Tabernacle and the Sacred Harp, 2.6 dB in the Old Way (the
+  critic's "unchanged, −54.4 → −54.6" for the first pass is reproduced here
+  as −60.7 → −60.3).
+- **The first half's claims, corrected.** "Between lines, the breath alone
+  is 11.5–12.3 dB quieter" and "what is left in the gap sounds like the
+  voices' own tails, not like noise" (in the plain-words list and the reading
+  of the first table) were measured only at the line's onset. In the gap they
+  were false for the first pass; for the code now, the table above is the
+  claim.
+
+**At the joins between notes** (the first half's measure, 3–12 kHz, dry),
+HEAD → now: the breath and consonants alone −64.3 → −67.2 (BETHEL), −56.0 →
+−65.4 (WINTER QUARTERS), −54.4 → −65.0 (RIMLIGHT), −55.9 → −65.3 (SABBATH
+SPRING), −64.8 → −68.3 (SEGO); the ward as heard −48.4 → −47.3, −48.1 →
+−47.3, −47.6 → −46.4, −48.3 → −47.3, −51.3 → −51.4 (finding 5, below).
+**Clicks:** none in any of the five (HEAD: 1, 1, 2, 1, 0). Loudness within
+1.2 dB of HEAD, peaks within 1.8 dB.
+
+**Through the cast's path** (the cast lab's own *Render & measure*, as heard
+through its chain with the organ and the room, the first 40 s, the shared
+throat and the arming): 0 clicks in seed 3 Tabernacle, seed 7 Sacred Harp and
+seed 2 Old Way; the breath and consonants alone at the line starts −76.2,
+−68.7, −80.6 dB and at the note joins −65.4, −64.4, −69.9 dB.
+
+**Spectrograms** (0–12 kHz; the magenta brackets are the silent gaps between
+lines; top to bottom: the ward now, then the breath and consonants alone in
+HEAD, the first pass and now):
+- `handoff/r3-cast-2-gap-tabernacle-4.png` — BETHEL, 6.2–10.6 s: HEAD's "h"
+  puff at the line start, the first pass's inhale filling the gap below 3 kHz,
+  now a faint low breath from a singer or two at the end of the gap.
+- `handoff/r3-cast-2-gap-sacredharp-7.png` — WINTER QUARTERS, 14.6–18.2 s:
+  HEAD's exhale after the line (the "tire") and its dark *s*/*f* columns, the
+  first pass's group inhale, now a small low breath before the second line.
+
+**Finding 6 (the hymn lab's gap).** The default is now 0.22 s, so the hymn
+lab's inhale fits its 0.18–0.25 s gaps without a change there; the request to
+pass the real gap stands (below).
+
+## 2. A shade brighter (finding 5)
+
+Agreed, and not changed: the voices are +1.1 to +1.8 dB in 3–12 kHz inside
+held notes (+0.3 in the Old Way) and +0.8 to +1.2 dB at the joins as heard;
+the noise component at the joins is 2.9–10.6 dB lower. It is the make-up
+gain (the honk fix) lifting "ee" and "eh". I tried a darker tilt (3400 +
+2000 × brightness): it took only 0.4 dB off in that band (the extra lives at
+3–4 kHz, in the third formant, below the tilt) while dulling everything above
+5 kHz, so I put it back. It is flagged for the owner in the plain words above.
+
+## 3. The full ward on a phone (findings 3 and 4)
+
+**The critic was right**, and the lab's own instrument said so: the first
+pass's "40–70 % of a phone's audio thread" was taken from offline cost, and
+the headroom test (which the first pass built and did not report) read the
+ward at about a third of this Mac's real-time audio thread and the ward plus
+the meeting at twice what a phone four times slower could carry.
+
+**What was done** (`5941310`, `5fa0f2d`), all without an audible difference
+(measured below):
+
+1. **The pitch is worked once a render quantum** (`automationRate = "k-rate"`
+   on each singer's oscillator frequency and detune). A vibrato or a scoop
+   moves a few cents a step every 2.7 ms — far under hearing — and the
+   oscillator keeps to its fast path: offline, 555 → 221 µs of audio thread
+   per second, per singer.
+2. **The ward's throat is shared.** The mud guard (highpass) and the tilt
+   (lowpass) are fixed filters, and a fixed filter after a sum is the sum of
+   the filtered voices: thirty-two singers pour their mouths into one pair of
+   filters per tract (women and children; men) instead of carrying sixty-four
+   between them. No `out` gain either: the line's gain rides the gates. The
+   make-up gain reckons with the shared throat, so no note honks.
+3. **ARMING: a mouth is listened to only when it may sound.** A line handed
+   early (so that building it is spread over the main thread) joins the room
+   only as it is about to sound, and each of its vowels' mouths joins only
+   around the moments it may open and parts once it has closed and rung out.
+   A built mouth not joined to the room costs the audio thread nothing; a
+   joined one has its three filters visited every 2.7 ms, sounding or not
+   (a closed mouth still cost half of an open one), and the first pass kept
+   every mouth of every line joined from the moment it was handed — three
+   seconds ahead. The performer arms when the caller passes `pace.arm` (and
+   `pace.now`, for the partings); the lab arms 0.6 s ahead.
+4. **The phone test's clocks** (finding 4): the audio clock and the wall clock
+   are now read together, before the pump; a long pump read between them had
+   shaved the ratio (the critic's worst 5 s, × 0.963, was read that way; the
+   same test on a calm machine now reads × 0.999).
+
+**Is it the same ward?** (the cast lab's hymn, seed 3 Tabernacle, 20 s, the
+ward alone, dry, rendered four ways through the performer):
+
+| change | level | every third-octave, 100 Hz – 10 kHz | the difference signal |
+|---|---|---|---|
+| k-rate pitch (against sample-by-sample) | +0.03 dB | within 0.27 dB | (the phases drift apart, as two takes do; the spectrum is the same) |
+| the shared throat (against their own throats) | −0.11 dB | within 0.34 dB | −15.9 dB (a different filter per voice → different phases) |
+| armed (against joined as handed) | 0.00 dB | 0.00 dB | **−144 dB: the same samples** |
+
+(Seed 7 Sacred Harp: k-rate within 0.28 dB, the shared throat within 0.52 dB
+at 159 Hz; armed differs only where a parted *s* resumes its noise from
+another stretch, −51.5 dB overall. The honk test through the shared throat:
+worst note +0.53 dB over its neighbours, as through their own throats, +0.52.
+The late man's mouth through the shared throat: fricatives, gates and pitch
+all 95 ms late, as before.)
+
+**The audio thread, offline** (the cast lab's seed 3 hymn, first 20 s, the
+ward alone, eight pumps a second, best of three; the pumps' main-thread time
+subtracted):
+
+| | ms of audio thread per second of music | plain probe voices' worth | nodes built and alive at once, peak |
+|---|---|---|---|
+| the first pass | 150.5 | 149 | 1,005 |
+| now (armed 0.6 s ahead) | **66.2** | **65** | 890 (built; far fewer are joined to the room — see the phone test) |
+
+**The audio thread, in real time — the headroom test** (the lab's own:
+plain probe voices, a sawtooth through three filters, added 25 at a time
+until the audio clock falls behind; alone, under the meeting skipped to its
+hymn, under the meeting and the ward; muted headless Chrome on this M3 Pro,
+load average 2.2–3.9 while other crews worked; each run about five minutes):
+
+| run | the code | alone | under the meeting | under the meeting and the ward | the ward's share | the lab's phone figure (4 × the meeting and the ward) |
+|---|---|---|---|---|---|---|
+| the critic's | first pass | 600 | 500 | 300 | 33 % | 2.0 |
+| 1 | first pass | 850 | 725 | 400 | 38 % | 2.12 |
+| 2 | first pass | 900 | 775 | 500 | 30 % | 1.76 |
+| 3 | now (an earlier build: armed 1.2 s ahead, the throat's tilt 4.85 kHz) | 775 | 750 | 625 | 16 % | 0.76 |
+| 4 | now | 700 | 675 | 500 | 25 % | 1.16 |
+| 5 | now | 625 | 650 | 525 | 20 % | 0.64 |
+| 6 | now | 775 | 500 | 475 | 4 % | 1.56 |
+
+(The ward's share is what it took off the meeting's reading, over what the
+thread carried alone. Its cost in probe voices: the first pass 275–325, now
+25–175, median 125.)
+
+**The phone test at 4×** (the lab's `stress(60)`, DevTools' CPU throttle at
+4×, the ward singing seed 3's hymn over the whole meeting in one audio
+context, muted):
+
+| run | audio clock (worst 5 s) | underruns | lines handed · late · tightest | main thread | the ward's nodes |
+|---|---|---|---|---|---|
+| now: the ward over the meeting | × 1.000 (× 0.999) | 0 | 258 · 0 · 3.34 s ahead | 1 long task, 60 ms | 1,456 built and alive at the peak; 46 mouths, breaths and consonants joined on average (99 at most) |
+| the meeting alone (control) | × 0.999 (× 0.999) | 0 | — | none | — |
+| the first pass, the same test | × 1.000 (× 0.999) | 0 | 258 · 0 · 3.35 s ahead | 1 long task, 63 ms | 1,645 built, all joined |
+
+**Honestly, what this proves and does not.**
+- DevTools' throttle slows the page's main thread, not the audio thread: the
+  4× phone test shows the pump and the page keep up (258 lines, none late, the
+  longest task 60 ms); it cannot show whether a phone's audio thread keeps
+  up — on this Mac even the first pass kept the clock.
+- The headroom test is the audio thread's measure, and it is noisy (the Mac
+  is shared; "alone" read 625–850 from run to run). Read across the runs: the
+  ward now takes **4–25 % (median about 18 %)** of this Mac's audio thread (the first pass
+  30–38 %; the critic read 33 %); the lab's phone figure (4 × the meeting and the ward) reads
+  **0.64–1.56, median about 1.0** (the first pass 1.76–2.12; the critic read 2.0). The meeting's own share read
+  anywhere from about 0 to 35 % between runs (the first pass's runs and the
+  critic's: 14–17 %); with the meeting at that usual 15 % and the ward at its
+  median, a phone four times slower needs about 1.3 of its audio thread, three
+  times slower about 1.0, twice as slow about 0.7.
+- **Verdict: about twice as light — and, for a phone four times slower than
+  this Mac, not yet.** Such a phone would carry the ward and the meeting in
+  some readings and not in others, and at the usual reading of the meeting
+  not (about 1.3). A phone two or three times slower (roughly where current
+  mid-range phones sit against this Mac on single-core benchmarks) is at or
+  under the edge. No real phone has played it. The desks remain the
+  documented fallback, and nothing switches to them.
+- **The next cuts, in order of what they would save:** (1) an AudioWorklet
+  ward — thirty-two voices in one node, with no per-node cost; it is the real
+  answer for a phone and a project of its own (the synthesis moves from node
+  graphs into a DSP loop, and the scheduled calls become messages);
+  (2) the inner parts' third formant moved into the shared throat (a third
+  fewer filters in the alto and tenor mouths; a small change of colour the
+  owner should hear before it is made); (3) the breath's level baked into its
+  noise (one node a singer).
+
+## 4. The cast (findings 7–11, `18fd2d6`)
+
+Checked in Node over 500 wards (and the first half's 12 seeds × 3 dialects:
+still 0 problems — pure, reproducible, every Performance and event valid):
+
+| finding | was | now |
+|---|---|---|
+| 7. the child's lost line | `loses` and `lostLine` were the first draws of two identical forks — one number; over 4,000 seeds she lost line 3 of 4 only 4.6 % of the time | one fork `child:<v>`, two draws: of 2,770 losses on a four-line hymn, 924 / 931 / 915 on lines 1–3 (never the last: she must find them again) |
+| 8. testimony-bearers of a kind | drawn independently: 103 of 500 wards seated two of the same | drawn without replacement (the same single die on `role:testimony:<k>`, a smaller pool): 0 of 500 |
+| 9. individuals sharing a name | 27 of 500 wards seated two individuals of one name; 162 had an individual sharing a name with someone in the pews | a clash re-draws the later individual's given name on its own fork, `rename:<id>`: 0 and 0 of 500 |
+| 10. the chorister's timing | the pew's habit (median 44 ms late, up to 93) | the chorister −4…6 ms, the precentor −5…8, the soloist −5…5, and their pitch habits within ±4–5 cents — drawn after every other die of their role, so nothing else moves (500 wards: chorister median 1.2 ms, 5.9 at most; soloist 0.1, 5.0) |
+| 11. the keying's first note | `first.S \|\| first.T \|\| first.melody` | `first.melody \|\| first.S \|\| first.T` |
+
+Also: every cue's `breathBefore` is now the singer's real silence since their
+own last note (the first line of the hymn keeps the planned figure), and the
+performer gives a forward voice `inhale: 0.55` — a person heard alone
+breathes where a person would.
+
+## Requests (updated; the first half's 1–7 stand)
+
+8. **For the HYMN crew (`hymn-lab.js`), two small things, neither required:**
+   (a) pass the real gap before each line, `sing(ctx, dest, t, notes, gain,
+   { breathBefore: gap })` — the voices' new default (0.22 s) already fits the
+   lab's 0.18–0.25 s gaps; (b) to make the lab's full ward as light as the
+   cast's, give its thirty-two singers `sharedThroat: true, sharedPan: true`
+   and hand lines with `defer: true`, calling `KOLOB.VoicesVocal.arm(ac,
+   ac.currentTime + 0.6, ac.currentTime)` from the lab's pump (see ARMING in
+   `kolob-voices-vocal.js`).
+9. **For the integrator (the engine's pump):** `performer.pump(ctx, buses, t0,
+   sheet, now + lookahead, { max: 12, urgent: now + 1.2, arm: now + lead, now:
+   now })`, with `lead` at least five of the pump's own intervals (0.6 s for a
+   120 ms pump): a pump that stalls longer than the lead lets a line (or a
+   mouth) join the room late — heard as a late entry, never as a click.
+10. **SCORE §1 addendum (voices):** `sing(…, { breathBefore, breathe, pan,
+    inhale, defer })`; `spec.sharedThroat`; `VoicesVocal.arm(ctx, horizon,
+    now)`, `.joined(ctx)`, `.pending(ctx)`, `.parting(ctx)`.
+
+## Known issues, and what is not done (updated)
+
+- **Tuned by measurement, not by ear.** The owner's knobs are named in the
+  plain words: `INHALE`, `FRIC_PEAK`, `tiltF`, `INTRINSIC`.
+- **The phone: not yet** (see §3). About half the ward's cost is gone, but a
+  phone four times slower than this Mac would need about 1.3 of its audio
+  thread for the ward and the meeting (at the meeting's usual reading); two
+  to three times slower is at the edge. No phone has played it. The next
+  step is an AudioWorklet ward.
+- **Arming asks for a steady pump.** A pump stalled longer than the lead lets
+  a mouth join late: the vowel comes in late. The lab leads by 0.6 s.
+- **A parted mouth resumes its noise where it paused.** When a mouth's breath
+  or consonant is parted and later rejoined, its noise continues from the
+  stretch where it stopped: an armed render differs from an unarmed one there
+  (seed 7 Sacred Harp: −51.5 dB overall, only at three *s* of "sol"), the same
+  noise, a different stretch. Otherwise armed and unarmed renders are
+  identical (seed 3 Tabernacle: −144 dB).
+- **The shared throat's two small differences**, for the record: the mud
+  guard is the tract's, not the part's (170 Hz for women and children, 78 Hz
+  for men), and the tilt is the ward's (5.1 kHz). Measured over the cast
+  lab's hymn: every third-octave from 100 Hz to 10 kHz within 0.34 dB of the
+  singers' own throats, level −0.1 dB; the honk test's worst note +0.53 dB (own
+  throats +0.52). The hymn lab keeps its own throats.
+- The testimony-bearers and the organist are still seated but not performing
+  (the first half's list stands).
