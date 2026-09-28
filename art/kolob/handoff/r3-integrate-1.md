@@ -48,16 +48,17 @@ line is under Requests.
 
 Open the meeting with the seed and listen at the times given. The times are
 the minutes' own clock: mm:ss from pressing play. They were read from the
-harness and confirmed in muted Chrome.
+harness. The browser plays the same meeting: the same hymns by both roads,
+and seed 7's muted capture followed the harness event for event.
 
 | what | seed | when | listen for |
 |---|---|---|---|
-| **The trombones play the day's first hymn** | **7** | **0:06–1:09** | The far choir from the west, the near choir answering. This is hymn 263, which the ward then sings at 2:54 |
+| **The trombones play the day's first hymn** | **7** | **0:06–1:09** | The far choir, then the near choir answering. This is hymn 263, which the ward then sings at 2:54 |
 | **A Tabernacle hymn with its A-men** | **7** | **2:54–5:25** | The organ gives out the last line alone (≈2:57), then four verses (3:08, 3:42, 4:15, 4:48) with the organ under the four parts, then the *A-men* at 5:18 |
 | **A Sacred Harp hymn on the notes** | **7** | **5:53–7:10** | Hymn 50, in 3/4, the tune in the tenor. Verse 1 at 5:58 is on the notes: you should hear the vowels change syllable by syllable (fa-ah, sol-oh, mi-ee). Verses 2 and 3 are on vowels. The *fuging* at 6:36 starts on the hymn's own first notes, voice by voice, and closes on a bare fifth. No organ, no amen |
-| **An Old Way hymn, lined out** | **38** | **2:32–5:55** | The clarinet gives a line quickly, then the ward answers it slowly and unevenly, the men an octave down. Two verses of a Long Meter hymn. (The trombones at 0:08 play this hymn's tune, harmonized by the brass) |
+| **An Old Way hymn, lined out** | **22** | **3:06–5:34** | The clarinet gives each line quickly (3:06, 3:44, 4:12, 4:56), then the ward answers it slowly and unevenly, the men an octave down, each ornamenting in their own way. One verse of a Short Meter hymn: 2½ minutes. The trombones at 0:07 play this hymn's tune (a lone melody, harmonized by the brass) |
 | **A hymn keyed away from home** | **14** | **2:17–4:45** | An aeolian conference Sunday. The organ turns through the day's own chord to the new key's dominant seventh (≈2:20) before giving out the tune a fourth higher. The drone steps back while it is sung and returns after the *A-men* (4:42) |
-| **A Sacred Harp Sunday** | **3** | **2:33–4:00** | A Sacred Harp house: every hymn in that style, and the organ's joints close dominant to home rather than with the amen. Almost no plagal cadence all meeting (the plan's "~0 in Sacred Harp") |
+| **A Sacred Harp Sunday** | **8** | **2:20–3:26** | A Sacred Harp house: hymn 201 with verse 1 on the notes (2:25), then 2:48 and 3:08. The organ's joints close dominant to home (0:56, 2:12) and never with the amen: no plagal cadence all meeting (the plan's "~0 in Sacred Harp"). After the hymn the deacon lines out a line of the day's material (4:08) and the ward answers it: the old conversation, around the hymn |
 
 **What is big here:**
 
@@ -101,10 +102,10 @@ dialect, from the kind of Sunday:
 
 | Sunday | Tabernacle | Sacred Harp | Old Way |
 |---|---|---|---|
-| ordinary | 4.2 | 3.0 | 1.5 |
+| ordinary | 5.0 | 2.4 | 1.5 |
 | fast | 0.7 | 4.2 | 3.4 |
 | conference | 7.0 | 1.0 | 0.3 |
-| jubilee | 5.0 | 1.4 | — |
+| jubilee | 5.0 | 1.0 | — |
 
 A brush-arbor morning leans the house to the Sacred Harp. Psalmody, gospel
 and Shaker already have weights in the table; they enter the draw the day
@@ -143,7 +144,8 @@ length), and the house's own voices come back for the rest of it.
 
 ### The harness (`_harness.js`, untracked; changes listed below)
 
-**The final battery: 32 of 32 pass**, on the final code:
+**The battery: 32 of 32 pass.** It ran on the code before the last change,
+the house odds (see "Plagal share"):
 
 | set | runs |
 |---|---|
@@ -162,6 +164,15 @@ length), and the house's own voices come back for the rest of it.
 
 Before the final code, REPRO also passed on 1200 10 and on 1500 5 ives
 razz cumulative, and TRANSPORT on 1847, while a composed hymn was being sung.
+
+**After the odds change:**
+
+- **40 seeds × 1200 s:** 40 of 40 pass. Seed 19 first failed on a harness
+  check: a Tabernacle hymn announced 2.5 s before the run ended, which had
+  not yet given out its tune. The check now waits for a hymn the run cut
+  off.
+- **REPRO passes** on seeds 8 and 22 (1200 s).
+- **tally A/B:** as below.
 
 In the whole battery, one hymn (h:2:2 of a 2700 s run) was sung with one of
 the composer's hard checks still failing after its repairs ("not a boring
@@ -225,38 +236,51 @@ for the integrator-of-record to copy into kolob-2):
 ### Plagal share (the plan's §12)
 
 **A/B against kolob-2's engine** (`tools/tally.js --a git:kolob-2 --b
-worktree`, seeds 1–60 × 1200 s): **82.4 % → 34.3 %** (plan 30–55 %).
+worktree`, seeds 1–60 × 1200 s, the final code): **82.4 % → 41.2 %**
+(plan 30–55 %; the task's band 30–60 %).
 
-By house dialect, over 40 seeds × 1000 s (63 meetings):
+By house dialect, over 40 seeds × 1200 s (78 meetings), on the final odds:
 
 | house | meetings | plagal | notes |
 |---|---|---|---|
-| Tabernacle | 37 | **41.7 %** of 468 cadences | |
-| Sacred Harp | 21 | **2.2 %** of 180 | the four plagal closes are a Tabernacle hymn's amen and fuging inside a Sacred Harp house |
-| Old Way | 5 | 30.3 % of 33 | |
-| overall | 63 | 30.7 % | |
+| Tabernacle | 57 | **44.7 %** of 701 cadences | the joints' amens, each hymn's A-men and the Tabernacle's fuging amens, against every verse's own full close |
+| Sacred Harp | 14 | **0.0 %** of 91 | bare-fifth verse closes and fugings; the organ's joints close dominant to home |
+| Old Way | 7 | 60.0 % of 40 | the lined hymns have no harmony, so the organ's amens between sections are most of the closes |
+| **overall** | 78 | **40.5 %** | seeds 1–20: 38.7 %; seeds 21–40: 42.4 % |
 
-The share sits at the low end of the band because every verse's own full
-close is counted as a cadence: a four-verse Tabernacle hymn sings four
-V–I closes and one amen. That is the true count of what is heard. To bring
-back more amens, the dial is the Tabernacle's joint odds
-(`runJoint`, `kindDie`) or fewer verses.
+**A first draft sat too low.** It had these odds:
+
+- an ordinary Sunday's house at Tabernacle 4.2, Sacred Harp 3.0, Old Way 1.5;
+- a jubilee's Sacred Harp at 1.4;
+- the Old Way's houses trading half their amens for authentic closes.
+
+That draft measured 34.3 % on the 60-seed tally, but 27.2 % on seeds 1–20.
+The reason is that every verse's own full close counts as a cadence: a
+four-verse Tabernacle hymn sings four V–I closes and one A-men, which is the
+true count of what is heard.
+
+The final odds are Tabernacle 5.0, Sacred Harp 2.4, Old Way 1.5 on an
+ordinary Sunday (the Tabernacle is the home dialect, PLAN §3.C), a
+jubilee's Sacred Harp at 1.0, and the Old Way's houses keeping their amens.
+That put the share near the band's middle. The dials, if the owner wants
+more amens or fewer, are those odds, the Tabernacle's joint odds
+(`runJoint`, `kindDie`) and the number of verses.
 
 ### Still Kolob: what the A/B moved, and why
 
-The same tally, 60 seeds × 1200 s.
+The same tally, 60 seeds × 1200 s, on the final code.
 
 **Unchanged:**
 
 | measure | kolob-2 | this build |
 |---|---|---|
 | meeting length | 15.8 min | 15.8 min |
-| sections | 7.97 | 7.93 |
+| sections | 7.97 | 7.95 |
 | hymn section length | 171 s | 170 s |
-| doxology | 104 s | 113 s |
+| doxology | 104 s | 112 s |
 | guests per meeting | 0.86 | 0.86 |
-| meetings with a guest | 60 % | 59 % |
-| meetings with the trombones | 15.5 % | 14.3 % |
+| meetings with a guest | 60.3 % | 59.6 % |
+| meetings with the trombones | 15.5 % | 15.8 % |
 
 Modes and kinds of Sunday are unchanged too.
 
@@ -264,28 +288,38 @@ Modes and kinds of Sunday are unchanged too.
 
 | measure | kolob-2 → this build | why |
 |---|---|---|
-| choir notes per minute | 15.7 → 52.7 | whole verses, not couplets with gaps |
-| choir note length | 2.07 → 0.70 s | a hymn's notes, not motif notes poured long |
-| organ notes per minute | 12.6 → 70.6 | the organ plays the parts note by note under the Tabernacle |
-| organ note length | 7.8 → 0.74 s | as above, instead of 7–12 s chords |
-| clarinet | −25 % | the house listens while a hymn is sung; the motif engine works around the hymns (PLAN §1.1) |
+| choir notes per minute | 15.7 → 53.4 | whole verses, not couplets with gaps |
+| choir note length | 2.07 → 0.71 s | a hymn's notes, not motif notes poured long |
+| organ notes per minute | 12.6 → 79.3 | the organ plays the parts note by note under the Tabernacle |
+| organ note length | 7.8 → 0.73 s | as above, instead of 7–12 s chords |
+| clarinet | −27 % | the house listens while a hymn is sung; the motif engine works around the hymns (PLAN §1.1) |
 | harmonium | −50 % | as above |
 | strings | −50 % | as above |
-| bells | −16 % | as above |
-| motif events | −46 % | as above |
+| bells | −27 % | as above; a composed hymn also holds the air alone |
+| motif events | −48 % | as above |
 | chord-book events | −61 % | a composed hymn carries its own harmony and writes nothing into the book |
-| cadences per meeting | 8.9 → 16.3 | every verse ends on a close |
-| authentic cadences | 10 % → 46 % | as above |
-| open-fifth cadences | 0 → 15 % | the Sacred Harp's closes |
+| cadences per meeting | 8.9 → 16.6 | every verse ends on a close |
+| authentic cadences | 10 % → 44 % | as above |
+| half cadences | 7 % → 4 % | as above |
+| open-fifth cadences | 0 → 10 % | the Sacred Harp's closes |
+
+**Counting artefacts, not changes in sound:**
+
+- `verse` events −77 % and `verse-line` +2465 %: a composed line is told
+  typed-only, once per line, where the legacy couplet rows were counted
+  under `verse`.
+- `verse-start` +152 %: one per composed verse.
+- `house` +198 %: the house lets go at each composed hymn.
+- `hymnal` is new.
 
 ### Distinctness (`tools/distinctness.js`, the first 180 s of seeds 1–20)
 
 | | kolob-2 | this build |
 |---|---|---|
-| median pair distance | 0.591 | 0.587 |
-| p10–p90 | 0.480–0.681 | 0.471–0.697 |
-| spread (median against the planted twin) | 7.3× | 7.2× |
-| near-twins | none | **1 of 190: seeds 12 and 19**, 0.264 (the line is 0.293; kolob-2 had them at 0.382) |
+| median pair distance | 0.591 | 0.580 |
+| p10–p90 | 0.480–0.681 | 0.454–0.692 |
+| spread (median against the planted twin) | 7.3× | 6.8× |
+| near-twins | none | **1 of 190: seeds 12 and 19**, 0.264 (the line is 0.290; kolob-2 had them at 0.382) |
 
 **Why 12 and 19 moved closer.** Both are ordinary pentatonic Sundays, 16 ¢
 apart in keynote, and both have a Tabernacle house. Their first hymns begin
@@ -403,7 +437,8 @@ received the same report. The fixes I suggest are under Requests (4–5).
    - Is the Old Way's pace right for the meeting? One verse lined out takes
      over a minute. It is the composer's 0.4× tempo, as in the lab.
    - Should the Tabernacle sing fewer verses, or more amens? The plagal share
-     is 34 %.
+     is 41 % overall, 45 % on Tabernacle Sundays and 0 % on Sacred Harp
+     ones.
 2. **To the integrator-of-record, at publish:**
    - VERSION: a suggested line is `v0.35 — the meeting sings composed
      hymns: each Sunday a house style (Tabernacle, Sacred Harp, Old Way) and

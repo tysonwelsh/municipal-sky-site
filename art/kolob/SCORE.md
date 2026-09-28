@@ -498,8 +498,8 @@ A composed hymn is sung verse by verse in its dialect's practice:
   `hymn()` and `hymnSounding()`.
 - **Joints follow the house dialect** (the organ's amen is the Tabernacle's):
   a Tabernacle house as before; a Sacred Harp house closes dominant-to-home
-  (`authentic`, or `half`), the meeting too; an Old Way house trades half its
-  amens for `authentic` closes and ends the meeting on the amen.
+  (`authentic`, or `half`), the meeting too; an Old Way house (whose lined
+  hymns carry no harmony) keeps the organist's amens as ever.
 - **Keys:** the first hymn at home (P 0.7; always when the trombones play it
   at dawn), a hymn after one sung away pulled home (0.8), the doxology home.
   A keyed hymn: the organ modulates through the day's own tonic chord (a chord
