@@ -40,10 +40,23 @@
 //
 // Public surface: KOLOB.Composer = {
 //   compose(stream, opts) → Hymn   (+ dev fields: report, plan, nameEn, hymnist, amen)
+//     opts.dialect: any of the six (the draw when none is named keeps to the
+//     first three, so every earlier seed keeps its dialect); opts.kind for E
 //   fingerprint(hymn) → the measured habits of a Score (the Earth tunes' too)
 //   references() → the Earth tunes' fingerprints per dialect, and the tolerances
 //   spread(streamOf, n, opts) → how varied n hymns are (endings, contours, …)
+//   round(stream, opts) → a Hymn with .round {segments, entries, ground, pairs, delayBeats}
+//   partner(stream, firstHymn, opts) → {hymn, combined, fit}: the closing hymn on the first's chords
+//   fitTogether(h1, h2) → the strict fit report of two hymns sung together
+//   wanderingRefrain(stream, {keys, dialect, mode}) → {hymn, keys, fits, compass}
+//   refrainIn(stream, refrain, {dialect, keyMonzo}) / setTune(stream, hymn, …) → the tune set anew
 //   METERS, FORMS, TIMES, MODES }
+//
+// ROUND 3 (the rest of the composer): dialects B, D and E live in
+// kolob-dialects.js; here are what they need of the desk — E's kinds and D's
+// refrain in the frame, the fuge's longer line and the septimal tuning in
+// the Score, their own checks — and the three new kinds of piece at the
+// foot: the round, the partner hymn, the wandering refrain.
 // ============================================================================
 
 window.KOLOB = window.KOLOB || {};
@@ -2267,6 +2280,9 @@ window.KOLOB.Composer = (function () {
       var h2 = compose(t ? stream.fork("partner:" + t) : stream, { dialect: dialect, meter: first.meter, modeOfTime: first.modeOfTime, mode: first.mode, keyMonzo: first.keyMonzo,
                                                                      hymnist: opts.hymnist, id: opts.id, others: [first], _partner: first, _partnerRhythm: t >= Math.ceil(tries / 2) });
       var fit = fitTogether(first, h2);
+      // (a partner is also a hymn: one that fails its own editor's checks is not combined either)
+      var own = h2.report.checks.filter(function (c) { return c.hard && !c.ok; }).map(function (c) { return c.name; });
+      if (own.length) { fit.pass = false; fit.score += 20 * own.length; fit.where = fit.where.concat(own.map(function (n) { return "the closing hymn fails its own check: " + n; })); }
       if (!bestTry || fit.score < bestTry.fit.score) bestTry = { h: h2, fit: fit, t: t };
       if (fit.pass) break;
     }
@@ -2296,8 +2312,8 @@ window.KOLOB.Composer = (function () {
     // (a compass that sits round its final — sol below to la above — so that
     // it lies well in every key of the day: a key a fourth up or down only
     // moves where in the singers' voices the same shape sits)
-    refrains: 0, alwaysRefrain: false, tag: false, amen: false, range: [6, 7], maxSpan: 7, floorMin: -4, floorMax: -2, peakTo: { 4: 1.6, 5: 1.4, 3: 0.5 },
-    fermata: 0, figureRepair: true,
+    refrains: 0, alwaysRefrain: false, tag: false, amen: false, range: [6, 6], maxSpan: 6, floorMin: -3, floorMax: -2, peakTo: { 4: 1.6, 5: 1.2, 3: 0.6 },
+    fermata: 0, figureRepair: true, kinds: null, kindMeters: null, kindForms: null, droneRate: null,
     // (and it comes home from below — ti–do, la–ti–do, sol–do — the camp
     // meeting's shout, which also keeps its compass round its final)
     figures: { rise: 2, climb: 1.6, fifth: 1.6, turn: 1.4, fall: 0.8, three: 0.8, again: 0.3 },

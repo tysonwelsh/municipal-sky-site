@@ -489,7 +489,7 @@ window.KOLOB.Dialects = (function () {
         if (!cc.length && root) cc = voicer(slots[k], chords[k], vx({ mode: mode, bounds: wide, tess: ctx.tess, H: ctx.H, k: k }));
       }
       if (!cc.length) cc = [(ctx.fallback || fallbackVoicing)(slots[k], chords[k], ctx)];     // never: but a line always sounds
-      if (cc.length > 36) { cc.sort(function (a, b) { return a.cost - b.cost; }); cc = cc.slice(0, 36); }   // the likeliest spacings only
+      if (cc.length > (ctx.cap || 36)) { cc.sort(function (a, b) { return a.cost - b.cost; }); cc = cc.slice(0, ctx.cap || 36); }   // the likeliest spacings only
       cands.push(cc); cost.push([]); back.push([]);
       for (var j = 0; j < cc.length; j++) {
         if (k === 0) { cost[k].push(cc[j].cost + (prevV ? moveCost(prevV, cc[j], mode, parW) * 0.6 : 0)); back[k].push(-1); continue; }
@@ -1298,7 +1298,7 @@ window.KOLOB.Dialects = (function () {
              mk("VI7", 5, "A", { a3: 1, seventh: true, cost: 0.2, to: ["II7", "ii", "ii7"] }),
              mk("III7", 2, "A", { a3: 1, seventh: true, cost: 0.32, to: ["VI7", "vi"] }),
              mk("iv", 3, "P", { a3: -1, cost: 1.1 }));
-      if (mixo) V.push(mk("♭VII", 6, "D", { cost: 0.4 }));
+      if (mixo) V.push(mk("♭VII", 6, "D", { cost: 0.4 }), mk("v", 4, "D", { cost: 0.3 }));
     } else {
       V.push(mk("i", 0, "T"), mk("iv", 3, "P"), mk("VI", 5, "T", { cost: 0.2 }), mk("III", 2, "T", { cost: 0.3 }), mk("VII", 6, "D", { cost: 0.5 }),
              mk("V", 4, "D", { a3: 1, cost: 0.2 }), mk("V7", 4, "D", { a3: 1, seventh: true, cost: 0 }),
@@ -1336,8 +1336,8 @@ window.KOLOB.Dialects = (function () {
     var names = function (arr) { return arr.filter(function (n) { return vocab.some(function (c) { return c.name === n; }); }); };
     if (plan === "tonicize") return { fin: ["V"], pen: names(["II7"]), ante: null };
     switch (kind) {
-      case "authentic": return { fin: [I], pen: names(["V7", "V"]), ante: null };
-      case "half": return { fin: names(["V", "V7"]), pen: null, ante: null };
+      case "authentic": return { fin: [I], pen: names(mode === "mixolydian" ? ["V7", "V", "♭VII", "v"] : ["V7", "V"]), ante: null };
+      case "half": return { fin: names(mode === "mixolydian" ? ["V", "V7", "v", "♭VII"] : ["V", "V7"]), pen: null, ante: null };
       case "imperfect": return { fin: [I], pen: null, ante: null };
       case "deceptive": return { fin: names(minor ? ["VI"] : ["vi"]), pen: names(["V7"]), ante: null };
       case "plagal": return { fin: [I], pen: names(minor ? ["iv"] : ["IV", "iv"]), ante: null };
@@ -1451,7 +1451,7 @@ window.KOLOB.Dialects = (function () {
       var chords = pc.chords;
       var full = line.role === "home" || line.cadence === "authentic";
       var rootAt = slots.map(function (s) { return full && (s.final || s.trail); });
-      var vl = voiceLine(slots, chords, prevV, { mode: mode, bounds: VB, tess: { S: ctx.tess.S, A: ctx.tess.A, B: ctx.tess.B }, H: H, parW: 30, rootAt: rootAt,
+      var vl = voiceLine(slots, chords, prevV, { mode: mode, bounds: VB, tess: { S: ctx.tess.S, A: ctx.tess.A, B: ctx.tess.B }, H: H, parW: 60, rootAt: rootAt, cap: 90,
                                                  voicer: voicingsGospel, fallback: fallbackGospel });
       // (a seventh chord the voices could not sing complete is sung — and so
       // named — as its triad: a chord is only called ringing when it rings)
@@ -1490,17 +1490,30 @@ window.KOLOB.Dialects = (function () {
         var finCh = chords[fin], gap = u, room = fs.beats - gap, each = Math.max(u, Math.floor(room / mel.length / u) * u);
         var okE = mel.length === k3 && each * mel.length <= room + EPS;
         // the echo's strong notes are chord tones of the held chord; the others step
-        mel.forEach(function (s, j) { var inCh = toneOf(finCh, cls(s.deg)); if (!inCh && (j === 0 || j === mel.length - 1)) okE = false; if (inCh && inCh.alt) okE = false; });
+        // (the first may be a step into the next: re–do, a passing note against the held chord)
+        mel.forEach(function (s, j) {
+          var inCh = toneOf(finCh, cls(s.deg));
+          if (!inCh && (j === mel.length - 1 || (j === 0 && Math.abs(mel[1].deg - s.deg) !== 1))) okE = false;
+          if (inCh && inCh.alt) okE = false;
+        });
         if (okE) {
           var aBase = parts.A.pop(), bBase = parts.B.pop(), t0 = fs.beat;
-          var aRoot = degsOfClass(finCh.tones[0].c, VB.B).filter(function (d) { return d <= bBase.deg + 4 && d >= bBase.deg - 4; });
-          var bd = aRoot.length ? aRoot[0] : bBase.deg;
           parts.A.push({ beat: t0, beats: gap, deg: aBase.deg, alt: aBase.alt, nct: null, syl: aBase.syl, stress: 1, tie: false });
           parts.B.push({ beat: t0, beats: gap, deg: bBase.deg, alt: bBase.alt, nct: null, syl: bBase.syl, stress: 1, tie: false });
           // (the echo an octave down — or two — whichever sits under the held note, within an octave of it)
-          var sHeld = semi(mode, fs.deg, 0), shiftE = -7;
-          if (mel.some(function (s) { return sHeld - semi(mode, s.deg - 7, 0) > 12; })) shiftE = mel.every(function (s) { return semi(mode, s.deg, 0) < sHeld; }) ? 0 : -7;
-          var okR = true, en = [];
+          // (the echo an octave down, or at pitch — whichever lies in the baritone's compass, under the held note and within an octave of it)
+          var sHeld = semi(mode, fs.deg, 0), shiftE = null;
+          [-7, 0, -14].forEach(function (sh) {
+            if (shiftE != null) return;
+            if (mel.every(function (s) { var d = s.deg + sh, sd = semi(mode, d, 0); return d >= VB.A[0] && d <= VB.A[1] && sd < sHeld && sHeld - sd <= 12; })) shiftE = sh;
+          });
+          if (shiftE == null) shiftE = -7;
+          // (the bass under the echo: home's root, below every echoed note, nearest where it stood)
+          var lowE = Math.min.apply(null, mel.map(function (s) { return s.deg + shiftE; }));
+          var roots = degsOfClass(finCh.tones[0].c, VB.B).filter(function (d) { return d < lowE; });
+          roots.sort(function (x, y) { return Math.abs(x - bBase.deg) - Math.abs(y - bBase.deg); });
+          var bd = roots.length ? roots[0] : null;
+          var okR = bd != null, en = [];
           mel.forEach(function (s, j) {
             var d = s.deg + shiftE; if (d < VB.A[0] || d > VB.A[1] || sHeld - semi(mode, d, 0) > 12) okR = false;
             var last = j === mel.length - 1, bt = t0 + gap + j * each, bl = last ? fs.beat + fs.beats - bt : each;
@@ -1791,13 +1804,13 @@ window.KOLOB.Dialects = (function () {
     figures: { fall: 2.5, three: 2.5, rise: 1.2, turn: 1, again: 0.8, triad: 0.8, four: 0.6, climb: 0.4 },
     figureFits: gospelFits,
     cadences: {
-      open: [["half", 1, 1.6, ALL], ["half", 4, 1.2, ALL], ["half", 6, 0.5, ALL], ["imperfect", 2, 1.2, ALL], ["imperfect", 4, 0.6, ALL]],
+      open: [["half", 1, 1.6, ALL], ["half", 4, 1.2, ALL], ["half", 6, 0.5, MAJOR], ["imperfect", 2, 1.2, ALL], ["imperfect", 4, 0.6, ALL]],
       arrive: [["half:tonicize", 4, 1.4, MAJOR.concat(MIXO)], ["half:tonicize", 1, 0.8, MAJOR.concat(MIXO)], ["half", 4, 1.2, MINORS], ["authentic", 0, 1, ALL], ["imperfect", 2, 0.8, ALL], ["half", 1, 0.6, ALL]],
-      depart: [["deceptive", 0, 0.9, ALL], ["half", 1, 1.2, ALL], ["half", 4, 1, ALL], ["imperfect", 2, 0.8, ALL]],
+      depart: [["deceptive", 0, 0.9, MAJOR.concat(MINORS)], ["half", 1, 1.2, ALL], ["half", 4, 1, ALL], ["imperfect", 2, 0.8, ALL]],
       home: [["authentic", 0, 1, ALL]],
     },
     // S the tenor harmony (over the lead), T the lead (the tune), A the baritone (under it), B the bass
-    ranges: { S: [-2, 17], T: [-8, 12], A: [-12, 5], B: [-20, -1] }, tess: { S: [3, 14], T: [-3, 8], A: [-8, 2], B: [-17, -5] },
+    ranges: { S: [-2, 19], T: [-5, 12], A: [-12, 9], B: [-20, -1] }, tess: { S: [4, 15], T: [0, 9], A: [-6, 4], B: [-17, -5] },
     tempo: 0.95, fermata: 0.3, amen: false, refrains: 1, alwaysRefrain: true, search: 140, organ: false,
     swipeRate: 0.42, echoRate: 1, tag: true, ring: true,
     weights: w({ leapAppetite: 0.9, repeat: 0.08, threeSame: 1.2, stressTense: 0.15, sameAsOther: 1.1 }),
