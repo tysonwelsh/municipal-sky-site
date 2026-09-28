@@ -506,7 +506,7 @@
 
     var S = {
       nav: null, boardRef: null, tick: Math.floor(api.now() * FPS), mode: 'attract', seed: 1913, games: 0,
-      lifted: {}, props: [], ropes: {}, doorState: {}, glows: [], dust: [], marks: 0, work: null,
+      lifted: {}, props: [], ropes: {}, doorState: {}, glows: [], dust: [], marks: 0, work: null, lastInput: -1e9, invited: null, attractT0: 0, pointAt: null,
       freeze: null, lode: null, lookUp: null, cardLamp: null, moth: null, thefts: [], nightShift: null, forced: {}
     };
     function nav() {
@@ -555,7 +555,7 @@
       api.emit(e);
     }
     function now() { return api.now(); }
-    function hurry() { return S.mode === 'work'; }
+    function hurry(k) { return S.mode === 'work' || !!(k && k.rush); }
     function seedN(a, b) { return h3(S.seed + S.games * 131, a, b); }
 
     /* ── moves (generators: `yield n` holds the pose n frames) ─────── */
@@ -565,7 +565,7 @@
       x = clamp(x, W.x0, W.x1);
       var ph = 0;
       while (Math.abs(k.x - x) > 0.5) {
-        var dir = sgn(x - k.x), st = Math.min(stepOf(k.c, hurry()), Math.abs(x - k.x));
+        var dir = sgn(x - k.x), st = Math.min(stepOf(k.c, hurry(k)), Math.abs(x - k.x));
         k.facing = dir; k.back = false;
         k.x += dir * st; k.at.x = k.x; k.y = walkY(W, k.x);
         ph = (ph + 1) % 4;
@@ -612,7 +612,7 @@
       k.back = true; k.x = lad.x; k.at = { ladder: lad.id, y: k.y };
       var n = 0;
       while (Math.abs(k.y - yTo) > 0.5) {
-        var st = Math.min(RUNG * (hurry() ? 2 : 1), Math.abs(yTo - k.y));
+        var st = Math.min(RUNG * (hurry(k) ? 2 : 1), Math.abs(yTo - k.y));
         k.y += st * sgn(yTo - k.y); k.at.y = k.y;
         n++;
         k.pose = n % 2 ? P.climbA : P.climbB; k.liftL = n % 2 ? 3 : 0; k.liftR = n % 2 ? 0 : 3;
@@ -634,7 +634,7 @@
     function* rockMove(k, from, to) {
       var n = nav(), d1 = n.doors[from], d2 = n.doors[to];
       yield* enterDoor(k, d1);
-      var dist = Math.abs(d1.x - d2.x) + Math.abs(d1.y - d2.y), frames = Math.max(4, Math.round(dist / (hurry() ? 150 : 80) * FPS));
+      var dist = Math.abs(d1.x - d2.x) + Math.abs(d1.y - d2.y), frames = Math.max(4, Math.round(dist / (hurry(k) ? 150 : 80) * FPS));
       for (var f = 0; f < frames; f++) {
         var u = (f + 1) / frames;
         k.glow = { x: d1.x + (d2.x - d1.x) * u, y: d1.y - 8 + (d2.y - d1.y) * u + Math.sin(u * Math.PI) * 6 };
@@ -690,7 +690,7 @@
         // already in the rock: along it to the door that serves best, and out
         var n1 = nav(), bestD = null, bc = Infinity;
         for (var id in n1.doors) {
-          var d = n1.doors[id], r0 = route(n1, { w: d.w, x: d.x }, { w: w, x: x }, k.c, { hurry: hurry(), noRock: true });
+          var d = n1.doors[id], r0 = route(n1, { w: d.w, x: d.x }, { w: w, x: x }, k.c, { hurry: hurry(k), noRock: true });
           var c0 = (r0 ? r0.cost : 99) + (Math.abs(d.x - n1.doors[k.inDoor].x) + Math.abs(d.y - n1.doors[k.inDoor].y)) / 150;
           if (c0 < bc) { bc = c0; bestD = d; }
         }
@@ -702,7 +702,7 @@
       }
       yield* getOff(k);
       if (!k.at || k.at.w == null) { place(k, { w: w, x: x }); return; }
-      var moves = route(nav(), { w: k.at.w, x: k.x }, { w: w, x: x }, k.c, { hurry: hurry() });
+      var moves = route(nav(), { w: k.at.w, x: k.x }, { w: w, x: x }, k.c, { hurry: hurry(k) });
       if (!moves) { yield* teleportVia(k, w, x); return; }
       for (var i = 0; i < moves.length; i++) {
         var m = moves[i];
@@ -726,7 +726,7 @@
         // the coil goes over the lip and unrolls, a few rungs a frame
         var rp = S.ropes[k.i] = { kind: 'rope', x: st.x, y0: st.y, y1: st.y + 2, full: st.feet + 6 };
         k.tool = saved; emit(k, 'rope', { how: 'down' });
-        while (rp.y1 < rp.full) { rp.y1 = Math.min(rp.full, rp.y1 + (hurry() ? 24 : 12)); k.pose = rp.y1 < rp.full ? P.bend : P.stand; yield 1; }
+        while (rp.y1 < rp.full) { rp.y1 = Math.min(rp.full, rp.y1 + (hurry(k) ? 24 : 12)); k.pose = rp.y1 < rp.full ? P.bend : P.stand; yield 1; }
         k.at = { rope: k.i, y: k.y };
         k.pose = P.hang; k.back = true; k.x = st.x; yield 1;
         yield* climb(k, { id: 'rope' + k.i, x: st.x }, st.feet, true);
@@ -1146,7 +1146,16 @@
     }
 
     /* ══ ATTRACT: pottering ═══════════════════════════════════════════ */
+    // nobody has touched the machine for a while (2.5 s after the page opens,
+    // then 25 s): the lantern man drops what he's doing and goes and shows
+    // them where the token goes
+    function inviteDue() {
+      if (S.mode !== 'attract' || FORCE.noinvite) return false;
+      var idleFor = now() - Math.max(S.lastInput, S.attractT0 || 0), gap = S.invited == null ? 2.5 : 25;
+      return idleFor > gap && (S.invited == null || now() - S.invited > gap);
+    }
     function nextActivity(k) {
+      if (k.who === 'lamp' && inviteDue()) { k.lastAct = k.act = 'invite'; return invite(k); }
       var name = pickActivity(k);
       // never the same thing twice running
       if (name === k.lastAct && name !== 'homeward') name = pickActivity(k);
@@ -1406,10 +1415,39 @@
       k.facing = 1; k.pose = P.read; yield 10; k.pose = P.pointUp; yield 6;
     }
 
+    /* ── the invitation (wave 5c: the first ten seconds) ─────────────
+     * The coin door is just outside the glass, level with seam B, and the
+     * knockers have a door of their own on the far side of the face there
+     * (rB2). When nobody has touched the machine for a while, Tobias comes out
+     * onto that ledge, holds his lantern up to the coin door, and points at
+     * it: that's where it starts. (A glass tap gets the whole crew pointing.) */
+    function coinAt() {
+      var cr = R && R.coinRect ? R.coinRect() : { x: 350, y: 300, w: 20, h: 44 }, gx = R && R.GLASS_X != null ? R.GLASS_X : 28, gy = R && R.GLASS_Y != null ? R.GLASS_Y : 72;
+      return { x: cr.x + cr.w / 2 - gx, y: cr.y + cr.h / 2 - gy };
+    }
+    function* invite(k) {
+      S.invited = now();
+      var n = nav(), sill = n.walks['sill.rB2'];
+      if (!sill) { yield 4; return; }
+      k.rush = true;
+      yield* goTo(k, sill.id, sill.x1);
+      k.rush = false;
+      k.facing = 1;
+      var C = coinAt();
+      emit(k, 'point', { at: 'coin' });
+      k.pose = P.lanternOut; yield 4;
+      for (var i = 0; i < 3; i++) {
+        k.pose = aim(k, P.lanternOut, C, 'L'); yield 5;
+        var q = aim(k, P.lanternUp, C, 'L', 15); k.pose = q; yield 3;
+      }
+      k.pose = aim(k, P.lanternOut, C, 'L'); yield 10;
+      k.pose = P.lanternLow; yield 4;
+    }
+
     var ACTS = { moon: moon, oilSheave: oilSheave, scaleMan: scaleMan, fence: fence, pickFace: pickFace, pushCart: pushCart,
       polishHook: polishHook, readCard: readCard, mothWalk: mothWalk, ventDoor: ventDoor, lunch: lunch, doze: doze, amble: amble,
       knockPillar: knockPillar, knockRib: knockRib, dig: dig, sweep: sweep, hopHole: hopHole, sumpVisit: sumpVisit,
-      countFence: countFence, surveyHouses: surveyHouses, homeward: homeward };
+      countFence: countFence, surveyHouses: surveyHouses, homeward: homeward, invite: invite };
 
     /* ══ PLAY: at their posts, reacting ═══════════════════════════════ */
     function* playIdle(k) {
@@ -1690,6 +1728,14 @@
       if (fz && fz.topple && fz.toppler == null) fz.toppler = pickToppler();
       if (fz && fz.topple && fz.toppler >= 0 && !fz.fell && t < fz.until) { fz.fell = true; emit(K[fz.toppler], 'topple'); }
       if (fz && fz.fell && !fz.up && t >= fz.until) { fz.up = true; emit(K[fz.toppler], 'upright'); }
+      // the invitation cuts in on whatever the lantern man is pottering at
+      var tb = K[BY_WHO.lamp];
+      if (tb.act !== 'invite' && !tb.busy && tb.gen && inviteDue()) {
+        if (S.cardLamp === tb.i) S.cardLamp = null;
+        if (S.moth === tb.i) S.moth = null;
+        tb.sit = false; tb.capOff = false; tb.tool2 = null; tb.tool = tb.own; tb.onLadder = false;
+        tb.lastAct = tb.act = 'invite'; tb.gen = invite(tb); tb.wait = 0;
+      }
       K.forEach(function (k) {
         if (S.freeze && S.freeze.until > t && !(k.busy === 'theft')) return;   // playing dead: nothing moves
         if (S.lode && t - S.lode.t0 < 1.0 && k.busy !== 'theft') return;        // the held breath
@@ -1725,9 +1771,13 @@
     var unsub = api.on(function (e) {
       var t = e.t != null ? e.t : now();
       switch (e.type) {
+        case 'input':
+          S.lastInput = t;
+          break;
         case 'mode':
           S.mode = e.mode;
           if (e.mode === 'attract') {
+            S.attractT0 = t;
             if (S.work) endWork(false);
             S.lode = null;
             // the night shift comes back out
@@ -1781,6 +1831,9 @@
         case 'glasstap':
           if (!S.freeze || S.freeze.until < t) S.freeze = { t0: t, until: t + 1.6 + 0.3 * (e.n || 1), topple: e.n >= 3 ? 1 : 0 };
           else { S.freeze.until = Math.max(S.freeze.until, t + 1.4); if (e.n >= 3 && !S.freeze.topple) S.freeze.topple = 1; }
+          // …and when they come round, every one of them points at the coin door
+          // (a tap on the glass is someone who wants to play and doesn't know how)
+          if (S.mode === 'attract' || S.mode === 'work') S.pointAt = { t0: S.freeze.until + 0.12, until: S.freeze.until + 1.9 };
           break;
       }
     });
@@ -1870,6 +1923,11 @@
           return (Math.floor(lu * FPS) + k.i) % 2 ? P.cheer2 : P.cheer;
         }
       }
+      if (S.pointAt && t >= S.pointAt.t0 && t < S.pointAt.until && !k.back && !k.sit && !k.onLadder && k.busy !== 'theft' && k.busy !== 'work') {
+        var fq = figOf(k, P.point); fq.facing = 1; var sv = k.facing; k.facing = 1;
+        var pq = aim(k, (Math.floor((t - S.pointAt.t0) * FPS) + k.i) % 6 < 4 ? P.point : P.pointUp, coinAt(), 'R');
+        k.facing = sv; return pq;
+      }
       if (rc.hop != null && t - rc.hop < 0.5 && free) {
         var hu = Math.floor((t - rc.hop) * FPS);
         return [P.crouch, P.air, P.air, P.land][Math.min(3, hu)];
@@ -1892,6 +1950,7 @@
     }
     function lookFacing(k, t) {
       if (S.freeze && S.freeze.until > t) return k.freezeFacing || k.facing;
+      if (S.pointAt && t >= S.pointAt.t0 && t < S.pointAt.until && !k.back && !k.sit && !k.onLadder && k.busy !== 'theft' && k.busy !== 'work') return 1;
       if ((S.mode === 'play' || S.mode === 'dive') && !k.busy && !k.back && !k.sit && !k.onLadder) {
         if (S.lookUp && t - S.lookUp.t0 < 0.7 && S.lookUp.x != null && Math.abs(S.lookUp.x - k.x) > 8) return sgn(S.lookUp.x - k.x);
         if (k.look && Math.abs(k.look.x - k.x) > 5) return sgn(k.look.x - k.x);
@@ -1965,6 +2024,13 @@
         var ds = S.doorState[id], open = ds ? ds.open : 0;
         props.push({ kind: 'door', x: d.x, y: d.y, open: open, face: d.kind === 'face' });
         if (open === 2) props.push({ kind: 'doorglow', x: d.x, y: d.y, k: 0.8 });
+      }
+      // beyond the working faces the rock has no floor: a plank runs out of
+      // the knockers' door when it opens, and is theirs to stand on
+      for (id in n.walks) {
+        var sw = n.walks[id]; if (sw.kind !== 'sill') continue;
+        var did = id.slice(5), dst = S.doorState[did], occ = K.some(function (k) { return !k.hidden && k.at && k.at.w === id; });
+        if (occ || (dst && dst.open)) { var sy = sw.pts[0][1] + 1; props.push({ kind: 'plank', x1: sw.x0 - 3, y1: sy, x2: sw.x1 + 3, y2: sy, nails: true }); }
       }
       // rope ladders and propped ladders
       for (var ri in S.ropes) {
