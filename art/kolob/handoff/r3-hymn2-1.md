@@ -4,6 +4,12 @@
 Nothing pushed or published; VERSION not bumped. Lab only: the meeting
 does not sing any of this yet.*
 
+> **Read "Round 2" at the foot first.** The critic's round changed the
+> fuging tunes (B), the gospel harmony and tuning (D) and the unison songs
+> (E), so the B, D and E seeds in the table below now compose different
+> hymns; Round 2 has a new table. Four claims below were wrong; each is
+> corrected where it stands, marked **[corrected]**.
+
 **What is new to hear.** The composer now writes in all six of the ward's
 harmonic languages, not three. The three new ones:
 
@@ -80,9 +86,9 @@ The names, meters and hymnists below are what you will see.
 | seed | dialect | what it is | listen for |
 |---|---|---|---|
 | 2 | **B** psalmody | FAR WEST, CM, aeolian, 4/4, by Zina Carrow | the fuge in line 3: bass at beat 0, tenor at 2, counter at 4, treble at 6, all meeting on one chord; then the fuge again |
-| 6 | **B** psalmody | JUBILEE, 8.7.8.7, ionian, by Ammon Stroud | a major fuging tune, four entries half a bar apart |
+| 6 | **B** psalmody | JUBILEE, 8.7.8.7, ionian, by Ammon Stroud | a major fuging tune, four entries half a bar apart. **[corrected]** Its head was two notes, one note sung twice: the entries imitated only the rhythm and the words. Now a head of five notes (Round 2). |
 | 8 | **B** psalmody | MERIDIAN, SM, aeolian, 3/2, by Abner Hale | the slow triple time; the entries a bar apart; the counter and treble come in together |
-| 3 | **D** gospel | WINTER QUARTERS, 11s, 6/8, by Ammon Stroud | the whole barbershop chain III7 → VI7 → II7 → V7 → I (33 ringing chords); 5 swipes; the tag I–I7–IV–iv–I |
+| 3 | **D** gospel | WINTER QUARTERS, 11s, 6/8, by Ammon Stroud | **[corrected]** not the whole chain: line 6 was III7 → VI7 → ii7 → V7. The ii7 is a minor seventh, so the ring broke at the third link. (In 40 hymns a chain of three dominant sevenths came in 17, the whole four-link chain in about 1.) 5 swipes; the tag I–I7–IV–iv–I. Round 2 has a seed with the whole chain. |
 | 5 | **D** gospel | LEHI, 8.7.8.7, 4/4, by Jerusha Welling | the men's echo, twice; the tag IV–iv–I |
 | 10 | **D** gospel | FAR KIRTLAND, 7.7.7.7, AABA, by Ephraim Cutler (the new quartet man) | III7 → VI7 chains, swipes, the tag I–I7–IV–I |
 | 2 | **E** Shaker | ENSIGN, a gift song, 6/8, over a drone | wordless ("vol lo vol lo … lum"), two strains each sung twice |
@@ -160,6 +166,12 @@ Chrome).
   the singing than in the steady parts. That is small but real. The likely
   cause is the room's reverberation (and the compressor lifting it) showing
   through while the ward re-articulates.
+
+**[corrected, Round 2]** The critic's silent renders point elsewhere:
+not at the breath or the room but at the eight singers of a part changing
+pitch at slightly different moments, each with a short slide. Round 2
+adds a third switch, **together**, for that, and it is the one to try
+first. The two below stay.
 
 **To find it by ear, I added two switches to the lab's play bar:**
 
@@ -317,6 +329,11 @@ the modes of time:
   does. See request 1.
 - **With the day's theme** (as the lab composes), 40 seeds each: B 0, D 0,
   E 0 failing.
+- **[corrected]** Not every mode: gospel in aeolian and dorian failed
+  "voice-leading" now and then (seed 4: parallel octaves in the tenor
+  harmony and the baritone, in three lines), and no minor gospel hymn had
+  a tag. The battery above rotated modes by meter and missed it. Fixed in
+  Round 2.
 - **The old dialects:** unchanged except for the listed fixes (the table
   above).
 
@@ -423,6 +440,10 @@ The hard checks, every hymn:
 - **The wandering refrain:** 16 of 16 fit every key (the lab's key, a
   fourth up, a fifth down) in gospel, 16 of 16 in the Shaker dialect and 16
   of 16 in the Tabernacle.
+  - **[corrected]** A fourth up and a fifth down are the same note an
+    octave apart, so that was two keys, not three. On a real day (home, a
+    fourth up, a fifth up) the gospel refrain fit only 19 of 30. Fixed in
+    Round 2.
   - Compass 8–10 semitones.
   - Set anew in the Sacred Harp, the Tabernacle and the Shaker dialect:
     every setting valid.
@@ -522,3 +543,496 @@ Settings: `--headless=new --mute-audio`, port 9452, the profile
   partner up to about 13 s (six tries). On an idle machine, expect about a
   third of that.
 
+
+---
+
+# Round 2: the critic's ten
+
+*Same branch, same day. Nothing pushed or published; VERSION not bumped.
+The Tabernacle, the Sacred Harp and the Old Way compose exactly as they
+did (160 of 160 hymns identical). What changed is in B, D and E, the
+round, the partner and the refrain.*
+
+## What is new to hear, in plain words
+
+- **The brushing sound between notes: a third switch, "together".** The
+  critic's silent measurements point at the ward itself. Eight people sing
+  each part. Each changes pitch a little early or late (up to about a
+  tenth of a second), and each slides into the new note. At every note
+  change the high end turns briefly to hiss. **together** makes the
+  singers change notes at once, with short slides. Try it first; the
+  **breath** and **room** switches are still there beside it.
+- **The fuging tunes (B) now fuge properly.**
+  - The fuge usually runs through the last two lines, as Billings's and
+    Read's do.
+  - The bass starts it alone with the opening five to eight notes and their
+    words. The tenor, the counter and the treble come in one after another,
+    a bar or half a bar apart, each singing **those same notes**, so you
+    can hear the tune being passed round. They alternate between two
+    pitches, a fifth apart, where the harmony allows.
+  - All four land together on the last chord of the verse, and the fuge is
+    sung again.
+  - Before, the "head" they passed round was two or three notes (sometimes
+    one note sung twice), and it did not sound like imitation.
+  - Voices that have not come in yet now show rests on the staff.
+- **Gospel (D) rings more often and slides less.**
+  - The chords that ring now come in longer chains more often, and the
+    whole barbershop chain (III7 → VI7 → II7 → V7 → I) can be heard.
+  - A singer who repeats a note into the next chord no longer slides a
+    quarter-tone. Before, this happened about once a hymn (42 times in 40
+    hymns); now it happens once in 40. The smaller slides that remain are
+    the ringing seventh settling onto its harmonic, which is what makes it
+    ring.
+  - Minor-key gospel hymns now always end with a tag. The one minor hymn
+    in twenty that broke a rule no longer does.
+- **The Shaker hymns (E) walk.** They move by step much more, as SIMPLE
+  GIFTS does. They also slur fewer notes in the dancing six-eight. Gift
+  songs and Primary songs still skip about the chord a little.
+- **Rounds change chord only on the bar's strong beats.** Before, a chord
+  could change in the middle of a bar.
+- **The wandering refrain now truly fits all three keys of a day.** Those
+  keys are home, a fourth up and a fifth up. Before, it was tested in two.
+- **A closing hymn never takes the first hymn's name.**
+
+## How to hear it
+
+1. Serve the worktree:
+   `php -S 127.0.0.1:8132 -t /Users/tysonwelsh/Sites/municipal-sky-site-kolob-r3-hymn2`
+2. Open **http://127.0.0.1:8132/art/kolob/hymn-lab.php**.
+3. Use the settings below.
+
+A link now carries the three switches too, for example
+`hymn-lab.php?seed=3&dialect=gospel&together=1&breath=0`. Throwing a
+switch updates the link, and the switch takes effect at the next **▶ Play**.
+
+### The brushing sound: what to try
+
+1. Play any hymn as it is, for example
+   `hymn-lab.php?seed=12&dialect=psalmody`.
+2. Tick **together** and play the same hymn again.
+3. Then untick **breath** as well, and play it again.
+
+What each result means:
+
+| if the sound… | then it is… | and the fix is in… |
+|---|---|---|
+| goes with **together** | the ward's staggered, sliding note changes (the likeliest) | the voices or the meeting's cast (request A below) |
+| goes only with **together** *and* **breath** off | both: the smear plus the breath noise under it | request A and the old request 6 |
+| goes with **room** off | the church's echo showing through | the old request 7 |
+| goes with none of them | something I have not found | tell me which hymn and where |
+
+The numbers behind this (the critic's measurement, repeated here) are in
+"How it was checked" below.
+
+### Seeds to try (the lab composes them with the day's theme, home key)
+
+| seed | settings | what it is | listen for |
+|---|---|---|---|
+| 12 | **B** psalmody | ORCHARD, CM, 3/4, by Abner Hale | the fuge in lines 3–4. The bass starts on the dominant, then the tenor on home's note, then the counter on the dominant, then the treble on home's note, each **a bar apart**, each with the same seven-note head. |
+| 13 | **B** psalmody | DAWN SPRING, CM, minor, 2/2, by Tirzah Quayle | the same, an eight-note head; a minor fuge |
+| 20 | **B** psalmody | NAUVOO, 8.7.8.7, 3/4, by Ammon Stroud | a six-note head, a bar apart, the alternation strict |
+| 6 | **B** psalmody | JUBILEE (the first pass's two-note head) | now five notes, half a bar apart, across lines 3–4 |
+| 16 | **D** gospel | NEW WASATCH, 7.6.7.6 D, by Hosea Lund | line 2 is **the whole chain**, III7 → VI7 → II7 → V7 → I, every link ringing (✦). VI7 → II7 → V7 → I comes three more times. Tag I–I7–IV–I. |
+| 12 | **D** gospel | WASATCH, 8.7.8.7, 3/4 | VI7 → II7 → V7 → I in lines 1, 2 and 4; 3 swipes; tag vi–II7–IV–I |
+| 18 | **D** gospel | OLD MERIDIAN, 11s, 3/4 | the men's echo, three times |
+| 4 | **D** gospel, mode aeolian | RIMLIGHT (the critic's failing hymn) | passes now; its minor tag i–i7–iv–i, with the tonic's own ringing seventh falling to iv |
+| 9 | **D** gospel | BETHEL HILL, LM, minor (by draw) | the minor tag i–i7–iv–VI–i |
+| 3 | **D** gospel | WINTER QUARTERS (the first pass's pick) | line 6: III7 → VI7 → ii → V7. The tune sings fa there, so the third link must be minor. Later in the line VI7 → II7 → V7 → I rings. Tag I–I7–IV–iv–I. |
+| 12 | **E**, kind Shaker hymn | KIRTLAND, CM, 4/4, AABA | a Shaker hymn that walks: leaps one step in twelve |
+| 13 | **E**, kind Shaker hymn | BETHEL, CM, 6/8, over a drone | walks, dances, a hummed floor |
+| 2 | **E**, kind gift song | ENSIGN, 6/8, over a drone | wordless, two strains each sung twice |
+| 5 | **E**, kind Primary song | MORNING STAR, 2/4 | short verse and chorus |
+| 1 | **a round** (any dialect but psalmody) | DAWN, 4 segments over I–IV–I–V | four entries, every chord change on a strong beat |
+| 5 | **a round** | WINTER QUARTERS, 6/8, I–IV–I–V | four entries in the dance time |
+| 8 | Tabernacle → **the partner** | COTTONWOOD, then LAMPLIGHT | combined (unchanged) |
+| 11 | Tabernacle → **the partner** | CUMORAH, then **FAR WATER** | the closing hymn used to be named CUMORAH too; not combined |
+| 1 | gospel → **the refrain** | HANDCART, 7.7, AA′, 6/8 | a seven-semitone refrain that comes home ti–do and sits in all three keys |
+| 8 | Tabernacle → **the refrain** | HANDCART, 8.8, AA′, 6/8 | an octave's refrain, home do–do |
+
+## The critic's ten, one by one
+
+**1. The wandering refrain in the real keys of a day.**
+
+- **The lab now tests the three keys a day actually has:** its own, a
+  fourth up (4/3) and a fifth up (3/2). The final lands on three different
+  notes.
+- **The composer measures the room before drawing.** Before any note, it
+  finds which compasses sit well in every key given, for the part that
+  sings the tune. A compass is how far below the final the tune may go
+  (sol, la or ti) and how far above (mi to la).
+  - "Sits well" means that in each key some octave puts the final where the
+    part sings comfortably, with the whole tune inside the part's compass.
+  - Where every key leaves the lilt its whole compass (seldom, with three
+    keys), the draw is exactly as before. Otherwise each try draws a
+    compass that fits.
+  - Gospel's lead sings only G below the keynote to C above. In the key a
+    fifth up that leaves a fourth above the final, so a gospel refrain now
+    stays inside it.
+- **A bug fixed along the way.** `keyFit` measured every key relative to
+  the first key. It was right only when the first key was the day's
+  keynote (the lab's default). It now places each key on its own pitch.
+- **Measured.** 30 seeds per dialect, on each of five key sets: home, up 4,
+  up 5; home, down 5, down 4; either set led by a fourth up; and the old
+  lab set.
+  - Every dialect fits 30 of 30 on every set, with 0 hard checks failing.
+  - Before, the gospel refrain fit 19 of 30 on the real set.
+  - Set anew in each of the other keys with `refrainIn`: 60 of 60 valid in
+    every dialect.
+  - Compass: 6–10 semitones in gospel, 6–12 in the Tabernacle.
+
+**2. Minor gospel.**
+
+- **The parallel octaves.** A minor tune whose lead walks down to mi below
+  the keynote left the tenor harmony one note above the lead and the
+  baritone one note below it, an octave apart. A chord change then moved
+  both up a step together, which no voicing could avoid.
+  - Now, when a line's voicing is forced into parallels, the hymn is voiced
+    again with the tenor harmony's and baritone's ranges drawn round the
+    lead's own compass (same dice).
+  - Hymns that never met this are untouched by it.
+- **The tag.** Minor gospel now has its own tag chains, all turning round
+  la, the minor final: i–i7–iv–i, VI–iv–i, i–VI–iv–i, i–i7–iv–VI–i. The
+  i7 is the tonic's own ringing seventh, falling to iv.
+- **Measured.** Aeolian and dorian, 40 seeds each with the theme: 0 hard
+  checks failing (before: 1 in 20 each), and a tag on 40 of 40 each
+  (before: 0 of 24). Mixolydian and ionian: 0 failing, 40 of 40 tagged.
+- **The check itself.** The check's line "swipes, echoes and the tag" had
+  always said "no tag", because it read the tag before the Hymn had it.
+  It now reads it from the harmony.
+
+**3. The breath or brushing sound.**
+
+- **The new switch.** **together** sets every singer's timing habit to none
+  and their confidence to 0.95, as the critic tested. That makes the scoop
+  into each new pitch short.
+- **Nothing else moves.** The same dice are thrown, so the ward is
+  otherwise identical. With the switch off, the lab sounds as before.
+- **The handoff's framing is corrected** above.
+- **What I re-measured.** One alto section of eight lab-style singers, dry,
+  OfflineAudioContext in the muted lab page, the 2.5–8 kHz band. The
+  spectral flatness is noise-likeness: 0 is a pure tone, 1 is hiss.
+
+| condition | flatness at the joins | mid-note | ratio |
+|---|---|---|---|
+| as the lab sings | 0.155 | 0.098 | 1.59× |
+| breath off | 0.142 | 0.063 | 2.27× |
+| **together** on | 0.127 | 0.101 | **1.26×** |
+| together on, breath off | **0.098** | 0.070 | 1.41× |
+| together on, no slide at all (the voices' code, a test copy only) | 0.112 | 0.101 | 1.11× |
+| every note the same pitch (control) | 0.104 | 0.091 | 1.14× |
+
+- **Reading the table.** The smear at the joins follows the ward changing
+  pitch out of step. **together** takes most of it away. With breath off
+  as well, the joins are the least noisy of all. The breath does not make
+  the smear, but it is the noise floor under it.
+- **I cannot hear.** This is the strongest measured candidate, not a
+  verdict.
+
+**4. The four wrong claims.** Each is corrected in place above, marked
+**[corrected]**:
+
+- (a) seed 3's "whole chain";
+- (b) seed 6's two-note head;
+- (c) the refrain's "every key";
+- (d) "every mode, 0 failing".
+
+Separately, D's chains were made to ring more often:
+
+- **The change.** A seventh falling a fifth into another *ringing* seventh
+  is now preferred. Falling into the minor ii7 is taken only where the
+  tune asks for it (where the tune sings fa, II7's fi would contradict it).
+- **Measured** (40 hymns):
+
+| | before | now |
+|---|---|---|
+| ringing links (a dominant seventh a fifth above the next) | 165 | 219 |
+| VI7 → ii7, where the ring breaks | 40 | 3 |
+| hymns with a chain of three or more | 20 | 23 |
+| hymns with a chain of four | 2 | 5 |
+| the whole III7 → VI7 → II7 → V7 → I, lab seeds 1–60 | — | 2 (seeds 16 and 47) |
+
+**5. Repeated notes that slid a comma, in D.**
+
+- **The line's chords are now tuned together.** A small search over each
+  chord's three possible roots (its spelling, or a syntonic comma either
+  side) weighs three things:
+  - how far the chord's own notes stand off their spelling;
+  - every note a voice sings again into the next chord that does not stay
+    put. This is squared, and a quarter-tone is surcharged, so one
+    49-cent slide costs more than two 21-cent ones. The lead counts three
+    times over, being the tune;
+  - a bass moving by an impure fourth or fifth.
+- **The minor seventh chord** is sung as its own harmonics, 10:12:15:18
+  (its seventh 9/5). So ii7 may stand on the "grave re", 10/9, with fa, la
+  and do where the scale has them.
+- **Swipes.** At a swipe into a ringing seventh where the lead holds the
+  fifth (or the seventh), the other voices would rather move than strike
+  the other of the two again. Those two notes, a 6:5 minor third in the
+  chord before, are 7:6 in the ring, and the held lead cannot move. This
+  was where most of the quarter-tone slides came from: I → VI7 over a held
+  mi, ii7 → V7 over a held re, the tag's vi → II7 over the post.
+- **Every septimal note is still spelled within one comma** under
+  Johnston's 7, so V7 and II7 never stand a comma high.
+- **Measured** (40 hymns):
+
+| | before | now |
+|---|---|---|
+| re-struck notes that move | 189 | 145 |
+| moves of 48.8 c | 42 | 1 |
+| moves in the lead | 16 | 12 |
+| impure bass fourths and fifths (of about 715) | 69 | 56 |
+
+- **What remains.** 102 moves of 27.3 c. These are the prepared seventh
+  settling onto the seventh partial (the septimal comma): the critic's
+  suggested cap, and the ring's price. There are also 40 of 21.5 c. Ties
+  still never move.
+
+**6. The fuge.**
+
+- **Two lines, when they fit.** The fuge now runs across the tune's last two
+  lines when the words fit. Otherwise it takes one line, as before.
+- **The head** is the first line's opening, to its third stress: 5–9 notes.
+  The entries are a bar apart where that fits, else half a bar.
+- **The heads are chosen together, first**, as a fugue's exposition is
+  written.
+  - Each is transposed by an octave, a fifth, a fourth or not at all. It
+    must lie in its part's compass, sing no tritone, and enter consonant
+    against every head already sounding.
+  - The alternation is preferred: the bass at the dominant, the tenor at
+    home's pitch (it is the tune), the counter at the dominant, the treble
+    at home's.
+  - Only then are the free parts walked against the heads. The first pass
+    wrote the bass whole before the counter's head was placed, so a
+    dominant entry often landed on a second and moved up a fourth.
+- **Imitation past the head** is encouraged for three notes, where it sounds.
+- **The bar.** The fuge's strong beats are now read on the tune's own bar.
+  The first pass read them half a bar out wherever the entries were half a
+  bar apart. The line's `barStart` is corrected too, so the engraving's
+  barlines fall right.
+- **The engraving.** Rests where a voice has not come in, and a tie drawn
+  out to the edge where a note is sung across the join.
+- **Measured** (60 lab seeds, with the theme):
+
+| | before | now |
+|---|---|---|
+| hymns with a fuge | 49 | 54 |
+| fuges across two lines | 0 | 42 |
+| head, in notes | 3 in 40, 2 in 7, 4 in 2 | 6 or more in 38; 4–5 in 7; 3 in 7; 2 in 2 |
+| the treble entering on its own (four entries, not three) | 5 | 39 |
+| entries (bass, counter, treble) at home's pitch or the dominant | 86 of 147 (59 %) | 116 of 162 (72 %) |
+| entries at the subdominant | 36 | 33 |
+| the full alternation (dominant, home, dominant, home) | 1 | 6 |
+| imitation running past the head | 0 | 3 |
+| hard checks failing | 0 | 0 |
+
+- **Where it falls short.**
+  - The strict alternation is rare. With heads this long the entries
+    overlap (a stretto), and at most distances only some intervals are
+    consonant against the head already sounding; the search keeps the
+    consonance.
+  - The continuation past the head seldom survives the consonance costs.
+  - The one-line fuges (SM, whose last two lines will not take four
+    entries) keep three-note heads.
+
+**7. Rounds on the strong beats.**
+
+- **The rule.** A ground's chords now change only on the bar's strong
+  beats: the downbeat, and in 4/4 and 6/8 the half bar.
+- **How.** A ground that will not divide its segment so is drawn again from
+  those that will (its own die). A round whose ground already fit is
+  exactly as before.
+- **Measured** (88 rounds across five dialects):
+  - Chord changes off the strong beats: 28 (1.5 beats in 3/4, 13; a crotchet
+    in 2/4, 11; others 4) → 0.
+  - Entries carried: 51 rounds of four and 37 of three, as before.
+  - Clashes on the beat between sounding segments: 0.
+  - Single-chord grounds are a little commoner (17 → 21). In 3/4 only I or
+    I–V can change on the downbeat within two bars.
+
+**8. E's leaps and slurs.** Each kind now has its own leap target and its
+own weights. A Shaker hymn walks most, and it draws fewer leaping endings
+(sol–mi–do, sol–do). In 6/8 and 3/4, the dotted foot (which slurs a
+syllable over two notes) and the slurred cells are rarer.
+
+| 40 seeds each | before | now | SIMPLE GIFTS |
+|---|---|---|---|
+| Shaker hymn, melody leaps | 30.5 % | 19.6 % | 14.9 % |
+| gift song | 33.1 % | 25.9 % | |
+| Primary song | 30.6 % | 25.9 % | |
+| slurred notes over the tolerance (Shaker / gift / Primary) | 10 / 11 / 6 | 1 / 1 / 0 | |
+| idiom check missed, default draw with the theme | 8 of 40 | 0 of 40 | |
+
+The gift and Primary songs still skip about the triad more than SIMPLE
+GIFTS. I left them so: children's songs and the dancing gift songs do.
+
+**9. The psalmody's idiom.**
+
+- **The crossing was the counter over the treble,** mostly, where nothing
+  held it under: 236 chords outside the fuge. Now:
+  - the counter keeps under the treble, as a rule;
+  - the treble and the counter cross the tenor less often;
+  - inside the fuge a crossing costs a little, and is let stand where the
+    entries need it.
+- **Crossing**, as a share of chords: outside the fuge 21 % → 1 %
+  (CORONATION 2 %); the whole hymn 22.5 % → 9.5 %.
+- **The tolerance, loosened where the idiom is not the tunes':**
+  - crossing may reach 35 %, since a fuge across two of four lines is half
+    the hymn;
+  - the "silent entries" measure no longer asks every tune for a fuge. A
+    plain psalm tune is a psalm tune, and the fuge's own check says
+    whether one was written.
+- **The tenor's passing notes are slurred** now and then (the Tabernacle's
+  mechanism; CORONATION slurs 13 %): the mean rose 8 % → 12 %.
+- **Idiom check missed:** 26 of 40 → 6 of 40. What remains: 3 tunes with
+  no slur at all, 2 with thirds just under the floor, 1 with no parallel
+  fifth.
+
+**10. The partner's name.**
+
+- **The rule.** A hymn never takes the name of another hymn of the meeting
+  (`opts.others`, which the partner already passes, or `opts.avoidNames`).
+  The name alone is drawn again, from its own die.
+- **Measured.** Seed 11 is now CUMORAH → FAR WATER. In 30 seeds, 0 share a
+  name. Combined partners are unchanged: 7 of 20.
+
+**And item 7 of the task** (the first pass's idiom notes), re-measured on
+the critic's seeds 300–359:
+
+- the Tabernacle closes on the dominant 26.6 % (the book 29.2 %; the
+  critic's 41 %);
+- the Sacred Harp closes on a bare unison or octave 15.8 % (the book 15 %;
+  the critic's 1 %);
+- the Tabernacle slurs 11.5 % of its tune (the book 13.3 %; the critic's
+  7 %).
+
+These three dialects are byte-identical to the first pass.
+
+## What changed in the hymns you know
+
+- **The Tabernacle, the Sacred Harp, the Old Way, and a compose() with no
+  dialect named:** identical, 160 of 160 checked (seeds 1–40, all five
+  keys).
+- **B, D and E:** these are changed by the listed fixes.
+  - B: all 40 checked change. The fuge, the ordered parts and the slurred
+    passing notes; the tune itself changes where passing notes are
+    slurred.
+  - D: 37 of 40 change. The harmony changes in 32 (the chain preference,
+    the swipe voicing, the minor re-voicing); the tuning alone in 4; one
+    keeps a different repair round.
+  - E: all change, walking more.
+  - Every name, meter, form, mode, hymnist and key stays as it was.
+- **Rounds:** only those whose ground broke the meter (10 of 20 checked).
+- **Refrains:** nearly all. With three keys a day, the lilt's whole
+  compass seldom fits every one, so the compass is now drawn to fit before
+  the notes (in gospel, the lead's narrow compass shapes every refrain).
+- **Partners:** only where a name collided.
+
+## What shipped (this round), and the API
+
+The API changes are additive:
+
+- **`Hymn.fuge.lines`**: the Score lines the fuge runs across (one or two);
+  `fuge.line` is still the first. **`Hymn.fuge.headNotes`**: the head in
+  notes. `repeatFrom` is unchanged.
+- **The first line of a two-line fuge:**
+  - `cadence.kind` is `"none"`, and `plan.elided: true` (dev), because the
+    fuge runs on through that close;
+  - `breathAfter: false`;
+  - no fermata;
+  - `barStart` is read on the tune's own bar, moved back by the fuge's lead.
+- **A note sung across the join:** `tie: true` on the first line's last note
+  of that part, continued by the next line's first note (`syl: null`). A
+  performer should hold it over.
+- **`compose(…, {avoidNames})`**: names a hymn may not take (with
+  `others`' names).
+- **`wanderingRefrain`** keeps its signature; its compass now depends on
+  `keys`. `keyFit` places each key on its own pitch.
+- **Dialect profiles** (internal): `kindLeap`, `kindWeights`, `kindFigures`
+  and `timeCells` for E; `melismaAdd` for B. A `moveExtra` hook in the
+  shared voice search, used only by D.
+
+## How it was checked (all silent)
+
+- **Acceptance** (every mode × every meter × 2 seeds, keys and modes of
+  time rotating):
+
+  | dialect | hymns | invalid | thrown | not deterministic | round-trip fails | hard failing |
+  |---|---|---|---|---|---|---|
+  | B | 84 | 0 | 0 | 0 | 0 | 0 |
+  | D | 96 | 0 | 0 | 0 | 0 | 0 |
+  | E | 96 | 0 | 0 | 0 | 0 | 0 |
+
+  D's septimal notes still need request 1 for kolob-score.js's own
+  proofreader.
+- **With the day's theme**, 40 seeds each, 0 hard checks failing in:
+  - B;
+  - D, in its drawn modes, in aeolian and in dorian;
+  - E, in each of its three kinds;
+  - the Tabernacle and the Sacred Harp.
+
+  The Old Way failed 1 of 40, "not an Earth tune". That dialect is
+  unchanged, so the failure predates this round.
+- **Fingerprints** (40 per dialect, leave-one-out nearest centroid):
+  - 230 of 240 (95.8 %), as before.
+  - The confusions are between B and the Sacred Harp (7), B and the
+    Tabernacle (2), and the Old Way and E (1).
+  - The nearest pair of centroids is the Sacred Harp and B, 3.1 spreads
+    apart (3.4 before). With its crossing reined in, B leans a little
+    toward its sister, and the fuge keeps it apart.
+- **The lab**, in muted headless Chrome (`--mute-audio`, port 9452, PHP on
+  :8132):
+  - Every dialect composed and played at 860 and at 390 px, with the round,
+    partner and refrain demos.
+  - 0 console errors, no horizontal scroll, notes lit.
+  - Output −11 to −27 dBFS RMS.
+  - A two-line fuge (seed 13) played through with all four rows lit.
+  - The switches ride in the link.
+- **Timing** under this machine's load: about 30 ms per E hymn, 55 ms per
+  B, 90 ms per D, 35 ms per refrain, and about 0.8 s per partner (up to
+  six tries).
+
+## Requests (new and changed)
+
+- **A. The brushing sound: VOICES (`kolob-voices-vocal.js`) and CAST.** If
+  the owner hears it go with **together**, the smear is the section's
+  staggered, sliding pitch changes. The critic's measurements:
+  - a section in step with short slides: 1.26×;
+  - with no slide on a re-articulated note (a test copy, not shipped):
+    1.11×.
+
+  The places to look are the slide on a re-articulated note (`port` in the
+  singer's pitch schedule), and how far each singer's timing habit spreads
+  a part.
+  - **In the meeting**, the choir is `kolob-voices-choir.js`, and the same
+    question applies there.
+  - **Requests 6 and 7** above still stand for the breath and the room.
+- **B. SCORE §5 (integrator).** Adopt:
+  - `Hymn.fuge.lines` and `Hymn.fuge.headNotes`;
+  - a tie across a line's end, held into the next line;
+  - the elided first line of a two-line fuge (sung straight on, no breath,
+    no fermata).
+- **C. The refrain's keys (FORM).** Pass `wanderingRefrain` the keys the
+  day's hymns actually take. Its compass is fitted to those keys, and
+  `keys[0]` need not be the keynote any more.
+- **Requests 1–5 above stand.**
+
+## Known issues
+
+- **D:** one quarter-tone slide in forty hymns remains, a swipe with no
+  other voicing. The 27-cent settling of a prepared seventh is left on
+  purpose.
+- **B:**
+  - the strict dominant–home alternation is rare (6 in 54);
+  - imitation past the head is rare;
+  - the one-line fuges keep short heads;
+  - with heads this long the entries overlap, so the fuge is busier than
+    the first pass's.
+
+  Is it a joyful tangle or a mess? That is the listening question.
+- **E:** gift and Primary songs leap about 26 % against SIMPLE GIFTS'
+  15 %, by design (see 8). Kolob's book has no Primary or gift-song tune to
+  measure against.
+- **Gospel refrains are small** (6–10 semitones), because the lead's
+  compass is small and the day's keys are three.
+- **The brushing sound is not fixed.** It is only made findable. The fix
+  lives in files I do not own.
