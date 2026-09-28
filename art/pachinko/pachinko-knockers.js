@@ -508,7 +508,7 @@
       nav: null, boardRef: null, tick: Math.floor(api.now() * FPS), mode: 'attract', seed: 1913, games: 0,
       lifted: {}, props: [], ropes: {}, doorState: {}, glows: [], dust: [], marks: 0, work: null, lastInput: -1e9, invited: null, attractT0: 0, pointAt: null,
       freeze: null, lode: null, lookUp: null, cardLamp: null, moth: null, thefts: [], nightShift: null, forced: {},
-      glass: null, hush: null, glassMarks: []
+      glass: null, hush: null, glassMarks: [], moon: null, moonCrooked: false, moonFixing: false, twoBits: null, welcomed: false
     };
     function nav() {
       var b = api.board();
@@ -1169,7 +1169,7 @@
       var far = !k.at || !k.at.w || (k.at.w !== p.w) || Math.abs(k.x - p.x) > 60;
       var name = far ? 'homeward' : null;
       if (!name) switch (k.who) {
-        case 'tall': name = r < 0.22 ? 'moon' : r < 0.42 ? 'oilSheave' : r < 0.58 ? 'scaleMan' : r < 0.76 ? 'fence' : 'idle'; break;
+        case 'tall': name = r < (api.visit && api.visit.moonNight ? 0.4 : 0.22) ? 'moon' : r < 0.42 ? 'oilSheave' : r < 0.58 ? 'scaleMan' : r < 0.76 ? 'fence' : 'idle'; break;
         case 'pick': name = r < 0.38 ? 'pickFace' : r < 0.62 ? 'pushCart' : r < 0.86 ? 'polishHook' : 'idle'; break;
         case 'lamp': name = r < 0.34 ? 'readCard' : r < 0.6 ? 'mothWalk' : r < 0.86 ? 'ventDoor' : 'idle'; break;
         case 'old': name = r < 0.35 ? 'lunch' : r < 0.6 ? 'doze' : r < 0.8 ? 'amble' : 'knockPillar'; break;
@@ -1196,10 +1196,61 @@
     }
     // Absalom looks at the painted moon a while, and takes his cap off to it
     function* moon(k) {
+      if (api.visit && api.visit.moonNight) { yield* moonReal(k); return; }
       yield* goTo(k, 'surface', 196 + ((seedN(k.i, 5) * 30) | 0));
       k.facing = 1; k.pose = P.lookMoon; yield 14;
       k.capOff = true; k.tool2 = 'cap'; k.pose = P.capoff; emit(k, 'capoff'); yield 20;
       k.pose = P.lookMoon; yield 6;
+      k.capOff = false; k.tool2 = null; k.pose = P.stand; yield 3;
+    }
+    /* ── THE PAINTED MOON (EGGS.md #2) and THE REAL ONE (#9) ──────────
+     * The moon in the painted sky is a cut-out on a nail near its top. Tap it
+     * and it swings, and settles crooked (a damped swing, smooth: it's a prop,
+     * not a toy). When they've come round from playing dead, Absalom (who
+     * takes his cap off to that moon) goes and puts it straight, steps back,
+     * and takes his cap off to it. On a night with a real full moon he turns
+     * his back on the painted one and doffs his cap toward the window. */
+    var MOON_W = 2 * Math.PI / 1.15, MOON_TAU = 0.85, MOON_CROOK = 0.38;
+    function moonPos() { var b = api.board(), m = null; (b.decor || []).forEach(function (d) { if (d.kind === 'moon') m = d; }); return m || { x: 262, y: 26 }; }
+    function moonAngle(t) {
+      var m = S.moon; if (!m) return 0;
+      var u = Math.max(0, t - m.t0), e = Math.exp(-u / MOON_TAU);
+      return m.to + e * ((m.from - m.to) * Math.cos(MOON_W * u) + (m.v / MOON_W) * Math.sin(MOON_W * u));
+    }
+    function moonKnock(t, side) {
+      S.moon = { t0: t, from: moonAngle(t), to: side * MOON_CROOK, v: side * 3.6 };
+      S.moonCrooked = true;
+      api.emit({ type: 'moon', what: 'swing', side: side });
+    }
+    function* fixMoon(k) {
+      S.moonFixing = true;
+      var mo = moonPos();
+      // (from the far side of it: the tallyman's post is under it on this side)
+      yield* goTo(k, 'surface', mo.x + 8);
+      k.facing = -1; k.pose = P.lookMoon; yield 8;
+      // up on his toes, a hand to the bottom of it, and it swings true
+      var a = moonAngle(now()), tip = { x: mo.x + Math.sin(a) * 5, y: mo.y - 5 + Math.cos(a) * 5 + 8 };
+      k.pose = aim(k, P.oil, tip, 'R'); k.dy = -1; yield 3;
+      S.moon = { t0: now(), from: moonAngle(now()), to: 0, v: -moonAngle(now()) * 1.4 };
+      S.moonCrooked = false;
+      api.emit({ type: 'moon', what: 'straight' }); emit(k, 'tap');
+      if (api.flags && api.flags.set) try { api.flags.set('pachinko.hung-the-moon'); } catch (x) { }
+      k.pose = aim(k, P.oil, { x: tip.x, y: tip.y - 2 }, 'R'); yield 2;
+      k.dy = 0; k.pose = P.stand; yield 4;
+      // a step back to see it, and his cap off to it
+      yield* walkTo(k, 'surface', mo.x + 20);
+      k.facing = -1; k.pose = P.lookMoon; yield 10;
+      k.capOff = true; k.tool2 = 'cap'; k.pose = P.capoff; emit(k, 'capoff'); yield 18;
+      k.capOff = false; k.tool2 = null; k.pose = P.stand; yield 3;
+      S.moonFixing = false;
+    }
+    // a real full moon tonight: out of the window, not in the painted sky
+    function* moonReal(k) {
+      yield* goTo(k, 'surface', 26 + ((seedN(k.i, 6) * 16) | 0));
+      k.facing = -1; k.pose = P.lookMoon; yield 16;
+      k.capOff = true; k.tool2 = 'cap'; k.pose = P.capoff; emit(k, 'capoff', { real: true }); yield 26;
+      if (api.flags && api.flags.set) try { api.flags.set('pachinko.moon-night'); } catch (x) { }
+      k.pose = P.lookMoon; yield 8;
       k.capOff = false; k.tool2 = null; k.pose = P.stand; yield 3;
     }
     function* oilSheave(k) {
@@ -1428,6 +1479,21 @@
     }
     function* invite(k) {
       S.invited = now();
+      // (EGGS.md #6: someone who has played this machine before, on another
+      // night: he doesn't show them the door. He lifts his lantern to them,
+      // up and down twice, the railroad's "go ahead")
+      if (api.eggs && api.eggs.welcomeBack && api.visit && api.visit.returning && !S.welcomed) {
+        S.welcomed = true;
+        k.facing = 1; k.pose = P.lanternLow; yield 3;
+        for (var w = 0; w < 2; w++) {
+          k.pose = P.lanternUp; if (w === 0) emit(k, 'greet'); yield 4;
+          k.pose = P.lanternOut; yield 3;
+        }
+        k.pose = P.lanternUp; yield 8;
+        if (api.flags && api.flags.set) try { api.flags.set('pachinko.welcomed-back'); } catch (x) { }
+        k.pose = P.lanternLow; yield 4;
+        return;
+      }
       var n = nav(), sill = n.walks['sill.rB2'];
       if (!sill) { yield 4; return; }
       k.rush = true;
@@ -1845,6 +1911,14 @@
       if (fz && fz.topple && fz.toppler == null) fz.toppler = pickToppler();
       if (fz && fz.topple && fz.toppler >= 0 && !fz.fell && t < fz.until) { fz.fell = true; emit(K[fz.toppler], 'topple'); }
       if (fz && fz.fell && !fz.up && t >= fz.until) { fz.up = true; emit(K[fz.toppler], 'upright'); }
+      // the moon hanging crooked: Absalom goes and puts it straight (in ATTRACT,
+      // once they've come round from playing dead, and it has stopped swinging)
+      var ab = K[BY_WHO.tall];
+      if (S.moonCrooked && !S.moonFixing && S.mode === 'attract' && S.moon && t - S.moon.t0 > 2.6 && !stillFor(ab, t) && !ab.busy && ab.act !== 'fixMoon' && !ab.hidden) {
+        ab.sit = false; ab.capOff = false; ab.tool2 = null; ab.tool = ab.own; ab.onLadder = false;
+        ab.lastAct = ab.act = 'fixMoon'; ab.gen = fixMoon(ab); ab.wait = 0;
+      }
+      if (S.moon && !S.moonCrooked && !S.moonFixing && t - S.moon.t0 > 6) S.moon = null;
       // the invitation cuts in on whatever the lantern man is pottering at
       var tb = K[BY_WHO.lamp];
       if (tb.act !== 'invite' && !tb.busy && tb.gen && inviteDue()) {
@@ -1951,7 +2025,15 @@
           // someone at the glass knocking back while he waits for an answer
           if (S.glass && S.glass.listen) S.glass.answered = true;
           break;
+        case 'twobits':
+          // (EGGS.md #3) someone in the rock can't help himself: two bits
+          if (e.at1 != null) {
+            var spots = [[152, 126], [214, 192], [58, 266], [236, 352], [118, 350]], sp = spots[Math.floor(h3(Math.round(e.at1 * 8), 9, 3) * spots.length)];
+            S.twoBits = { at1: e.at1, at2: e.at2, x: sp[0], y: sp[1], n: 0 };
+          }
+          break;
         case 'glasstap':
+          if (e.at === 'moon' && api.eggs && api.eggs.hungTheMoon) moonKnock(t, e.side || 1);
           if (!S.freeze || S.freeze.until < t) S.freeze = { t0: t, until: t + 1.6 + 0.3 * (e.n || 1), topple: e.n >= 3 ? 1 : 0 };
           else { S.freeze.until = Math.max(S.freeze.until, t + 1.4); if (e.n >= 3 && !S.freeze.topple) S.freeze.topple = 1; }
           // …and when they come round, every one of them points at the coin door
@@ -1969,6 +2051,14 @@
         stepThief(t);
         var tn = Math.floor(t * FPS);
         while (S.tick < tn) { S.tick++; frame(); }
+        // two bits, out of the rock
+        var tb2 = S.twoBits;
+        if (tb2 && tb2.n < 2 && t >= (tb2.n === 0 ? tb2.at1 : tb2.at2)) {
+          tb2.n++;
+          S.glows.push({ x: tb2.x, y: tb2.y, t0: t, big: true });
+          api.emit({ type: 'figure', what: 'knock', n: tb2.n, x: tb2.x, y: tb2.y, tx: tb2.x, ty: tb2.y, who: 'little', twobits: true });
+          if (tb2.n === 2) { S.twoBits = null; if (api.flags && api.flags.set) try { api.flags.set('pachinko.two-bits'); } catch (x) { } }
+        }
         // forced harness demos
         if (S.forced.theftAt && t >= S.forced.theftAt && S.mode === 'play') forcedTheft(t);
         if (S.forced.knockAt && t >= S.forced.knockAt && S.mode === 'play') { S.forced.knockAt = null; knockListen({ x: 184, y: 306, alarm: true }); }
@@ -2201,7 +2291,7 @@
       // a marble going through the old drift (or any tunnel): its light behind the rock (main's route)
       (fx0.transits || []).forEach(function (tr) { (tr.glows || []).forEach(function (q) { props.push({ kind: 'glow', x: q.x, y: q.y, k: q.k, marble: q.marble }); }); });
       S.glows = S.glows.filter(function (g) { return t - g.t0 < 0.7; });
-      S.glows.forEach(function (g) { props.push({ kind: 'glow', x: g.x, y: g.y, k: 1 - (t - g.t0) / 0.7 }); lamps.push({ x: g.x, y: g.y, r: 14, c: '#ffc46a', k: 0.3 }); });
+      S.glows.forEach(function (g) { props.push({ kind: 'glow', x: g.x, y: g.y, k: 1 - (t - g.t0) / 0.7 }); lamps.push({ x: g.x, y: g.y, r: g.big ? 22 : 14, c: '#ffc46a', k: (g.big ? 0.75 : 0.3) * (1 - (t - g.t0) / 0.7) }); });
       // the moth leaves its lamp for Tobias's lantern
       if (S.moth != null) {
         var mk = K[S.moth], mf = mk.fig;
@@ -2231,6 +2321,7 @@
         fx0.glassHush = Math.min(1, (G.s - 1) / 1.5) * (G.view === 'back' ? 0.8 : 1);
       } else { fx0.glassKnock = null; fx0.glassHush = 0; }
       fx0.glassMarks = S.glassMarks.length ? S.glassMarks : null;
+      fx0.moon = S.moon ? { a: moonAngle(t), x: moonPos().x, y: moonPos().y } : null;
       // a stolen marble is in his hands (drawn there) or in the rock with him: not loose
       var held = {};
       K.forEach(function (k) { if (k.hold) held[k.hold.id] = 1; });

@@ -26,6 +26,7 @@
   'use strict';
   var A = root.PachinkoArt; if (!A) return;
   var S = A.S, P = A.PAL;
+  A.liveFish = true;          // (pachinko-art-mine.js leaves Fig. 12 to us: it can be warmed)
   var D2R = Math.PI / 180;
   var OUT = [10, 8, 12];
   var PEG = '#d8bc8a', PEG_D = '#a88a5a', GLOSS = '#fff4e0', APRON = '#4e2e1c', APRON2 = '#6e4428';
@@ -520,10 +521,170 @@
     }
   }
 
+  /* ══ THE PAINTED MOON (EGGS.md #2) ═══════════════════════════════
+   * A cut-out on a nail near its top edge. When it swings, the board behind
+   * it shows: the painters painted the sky round it and left the moon's
+   * place in primer, with the pencil line they drew it by. */
+  var MOON_R = 8;
+  function drawMoon(g, mo) {
+    var a = mo.a; if (!(Math.abs(a) >= 0.01)) return;
+    var mx = Math.round(mo.x), my = Math.round(mo.y), E = S.ellipse, px = S.px;
+    E(g, mx, my, MOON_R, MOON_R, '#8e8470'); E(g, mx, my, MOON_R - 1, MOON_R - 1, '#a89e86');
+    for (var i = 0; i < 40; i++) { var q = i / 40 * Math.PI * 2; if (i % 9 === 4) continue; px(g, Math.round(mx + Math.cos(q) * (MOON_R - 0.4)), Math.round(my + Math.sin(q) * (MOON_R - 0.4)), '#6e6656'); }
+    px(g, mx - 1, my - 5, '#6e6656'); px(g, mx + 1, my - 5, '#6e6656'); px(g, mx, my - 6, '#6e6656'); px(g, mx, my - 4, '#6e6656');   // where the nail goes, marked
+    // the disc, turned about the nail
+    var nx = mx, ny = my - 5, ca = Math.cos(a), sa = Math.sin(a);
+    var cx = Math.round(nx + sa * 5), cy = Math.round(ny + ca * 5);
+    function R(dx, dy) { return [Math.round(cx + dx * ca + dy * sa), Math.round(cy - dx * sa + dy * ca)]; }
+    E(g, cx + 1, cy + 1, MOON_R, MOON_R, 'rgba(10,6,22,0.55)');             // a card's thickness off the board
+    E(g, cx, cy, MOON_R, MOON_R, '#fff6d4'); E(g, cx, cy, MOON_R - 1, MOON_R - 1, P.MOONP);
+    var sh = R(1, 1); E(g, sh[0], sh[1], 6, 6, '#eedc9e');
+    var c1 = R(-3, -2), c2 = R(3, 3), c3 = R(4, -4);
+    E(g, c1[0], c1[1], 2, 2, '#e2cc8a'); E(g, c2[0], c2[1], 2, 1, '#e2cc8a'); px(g, c3[0], c3[1], '#e2cc8a');
+    px(g, nx, ny, P.BRASS4); px(g, nx + 1, ny + 1, P.BRASS1);                     // the nail
+  }
+
+  /* ══ THE FORTUNE FISH (Fig. 12; EGGS.md #4) ═══════════════════════
+   * The red cellophane fish, curled at both ends. Hold a finger on the glass
+   * over it and it warms: it quivers, lies out stiff as a needle, and swings
+   * round like one, to point out of the case and down the hall, where the
+   * one machine is still lit. It tells no fortune. When the warmth goes it
+   * curls again where it lies, and later it's as it was. */
+  var FISHC = { F: P.FISH, f: P.FISH2, d: P.FISH_D, e: P.INK, s: '#ffd0d0' };
+  var FISH_REST = ['..........F', 'f...s....F.', 'Fe.FFfF..dF', '.FfddddFfd.', '.dd....dd..'];
+  var FISH_Q1 = ['...........', 'f...s......', 'Fe.FFfFFfdF', '.FfdddddddF', '.dd.....d..'];
+  var FISH_Q2 = ['..........F', 'Ff..s....F.', '.eFFFfF..dF', '.FfddddFfd.', '.dd....dd..'];
+  function fishRows(g, rows, x, y) {
+    for (var j = 0; j < rows.length; j++) for (var i = 0; i < rows[j].length; i++) { var c = FISHC[rows[j][i]]; if (c) S.px(g, x - 1 + i, y - 3 + j, c); }
+  }
+  // stiff as a needle, its head along phi (degrees; 0 right, 90 up), curled: its ends lift
+  function fishNeedle(g, cx, cy, phi, curled) {
+    var a = phi * D2R, dx = Math.cos(a), dy = -Math.sin(a), nx = -dy, ny = dx;   // n: the underside
+    if (ny < 0 || (ny === 0 && nx < 0)) { nx = -nx; ny = -ny; }
+    for (var sd = -5; sd <= 5; sd++) {
+      var lift = curled && (sd >= 4 || sd <= -4) ? -1 : 0;
+      var x = Math.round(cx + dx * sd + nx * lift), y = Math.round(cy + dy * sd + ny * lift);
+      S.px(g, x, y, sd % 3 === 1 ? P.FISH2 : P.FISH);
+      if (sd > -4 && sd < 5) S.px(g, Math.round(x + nx), Math.round(y + ny), P.FISH_D);
+    }
+    // the head (a pixel thicker) and its eye; the forked tail; the cellophane's shine
+    var hx = cx + dx * 5, hy = cy + dy * 5 + (curled ? -ny : 0);
+    S.px(g, Math.round(hx + dx - nx * 0), Math.round(hy + dy), P.FISH);
+    S.px(g, Math.round(cx + dx * 4 - nx), Math.round(cy + dy * 4 - ny + (curled ? -1 : 0)), P.INK);
+    S.px(g, Math.round(cx - dx * 6 - nx), Math.round(cy - dy * 6 - ny + (curled ? -1 : 0)), P.FISH);
+    S.px(g, Math.round(cx - dx * 6 + nx), Math.round(cy - dy * 6 + ny + (curled ? -1 : 0)), P.FISH);
+    S.px(g, Math.round(cx + dx * 1 - nx), Math.round(cy + dy * 1 - ny), '#ffd0d0');
+  }
+  var FISH_AT = { x: 188, y: 289 }, FISH_MID = { x: 190, y: 288 }, FISH_POINT = 15;
+  function drawFish(g, f, t) {
+    if (!f) { fishRows(g, FISH_REST, FISH_AT.x, FISH_AT.y); return; }
+    var fr = Math.floor((t - f.t0) * 8);
+    if (f.rel != null && t - f.rel > 1.0) { fishNeedle(g, FISH_MID.x, FISH_MID.y, FISH_POINT, true); return; }
+    if (fr < 4) { fishRows(g, fr % 2 ? FISH_Q2 : FISH_Q1, FISH_AT.x, FISH_AT.y); return; }
+    var SW = [180, 180, 135, 90, 55, 25];
+    var phi = fr - 4 < SW.length ? SW[fr - 4] : FISH_POINT + ((fr >> 3) % 5 === 2 ? 3 : 0);
+    fishNeedle(g, FISH_MID.x, FISH_MID.y, phi, false);
+  }
+
+  /* ══ THE BACK OF THE CARD (EGGS.md #5) ════════════════════════════
+   * The legend card is cut from something that was a child's drawing
+   * first. Lit from behind (the lantern man reading it; a marble going down
+   * the old drift behind it), the crayon shows through, the wrong way
+   * round: a big figure with a light on his cap, holding a small one's
+   * hand, and a sun. Nobody says whose. */
+  var CRAYON = null;
+  function crayonStrokes() {
+    if (CRAYON) return CRAYON;
+    var st = [];
+    function pl(pts, c) { st.push({ pts: pts, c: c }); }
+    function circ(cx, cy, r, c, n) { var p = []; for (var i = 0; i <= (n || 14); i++) { var q = i / (n || 14) * Math.PI * 2 + 0.4; p.push([cx + Math.cos(q) * r, cy + Math.sin(q) * r * 1.08]); } pl(p, c); }
+    var K = 'k', Y = 'y', R = 'r', G = 'g';
+    // the ground, pressed hard, twice
+    pl([[10, 71], [24, 70], [40, 71], [58, 69], [76, 70]], G); pl([[12, 72], [30, 72], [52, 71], [74, 72]], G);
+    // him: a big round head, a cap, the lamp on it (rays), stick body, arms out
+    circ(30, 30, 4.2, K); pl([[25, 26], [27, 24], [30, 23], [33, 24], [35, 26]], K); pl([[25, 27], [35, 27]], K);
+    pl([[30, 22], [30, 17]], Y); pl([[30, 22], [26, 18]], Y); pl([[30, 22], [34, 18]], Y); pl([[30, 22], [24, 21]], Y); pl([[30, 22], [36, 21]], Y);
+    pl([[30, 34], [30, 51]], K); pl([[30, 39], [21, 45]], K); pl([[30, 39], [41, 44]], K);
+    pl([[30, 51], [25, 63], [23, 63]], K); pl([[30, 51], [35, 63], [37, 63]], K);
+    // the small one, holding his hand
+    circ(47, 43, 3, K); pl([[47, 46], [47, 56]], K); pl([[47, 49], [41, 44]], K); pl([[47, 49], [53, 53]], K);
+    pl([[47, 56], [44, 64]], K); pl([[47, 56], [50, 64]], K);
+    pl([[46, 42], [46, 42]], K); pl([[48, 42], [48, 42]], K); pl([[46, 44.5], [48, 44.5]], R);   // a face on this one
+    // a sun in the corner, coloured in hard
+    circ(69, 14, 5, Y, 16); for (var r = 1; r < 5; r++) circ(69, 14, r, Y, 10);
+    for (var k = 0; k < 8; k++) { var q = k / 8 * Math.PI * 2; pl([[69 + Math.cos(q) * 7, 14 + Math.sin(q) * 7], [69 + Math.cos(q) * 10, 14 + Math.sin(q) * 10]], Y); }
+    return (CRAYON = st);
+  }
+  var CRAYON_C = { k: [40, 22, 30], y: [214, 110, 10], r: [170, 34, 30], g: [60, 84, 26] };
+  function drawCrayon(g, cl) {
+    var L = A.CAB && A.CAB.legend; if (!L || !cl) return;
+    var lx = cl.x + A.CAB.GX, ly = cl.y + A.CAB.GY, r = (cl.r || 34) * 1.05, k = Math.max(0, Math.min(1, cl.k == null ? 1 : cl.k)), seen = {};
+    crayonStrokes().forEach(function (stk, si) {
+      var col = CRAYON_C[stk.c];
+      for (var i = 0; i < stk.pts.length - 1; i++) {
+        var a = stk.pts[i], b = stk.pts[i + 1], n = Math.max(1, Math.ceil(Math.max(Math.abs(b[0] - a[0]), Math.abs(b[1] - a[1]))));
+        for (var j = 0; j <= n; j++) {
+          var cx = a[0] + (b[0] - a[0]) * j / n, cy = a[1] + (b[1] - a[1]) * j / n;
+          // (seen through the paper from the front: the wrong way round)
+          // a child pressing hard: a crayon's width is two pixels here
+          for (var w2 = 0; w2 < 4; w2++) {
+            var X = Math.round(L.x + L.w - 1 - cx) + (w2 & 1), Y = Math.round(L.y + cy) + (w2 >> 1), key = X + ',' + Y;
+            if (seen[key] || X <= L.x || X >= L.x + L.w - 1 || Y <= L.y || Y >= L.y + L.h - 1) continue;
+            seen[key] = 1;
+            if (A.hash01(si * 131 + i, X, Y) < (w2 ? 0.45 : 0.12)) continue;       // the wax skips on the paper's tooth
+            var d = Math.hypot(X - lx, Y - ly) / r; if (d >= 1) continue;
+            var al = Math.min(0.85, Math.pow(1 - d, 0.55) * 0.95 * k);
+            g.fillStyle = 'rgba(' + col[0] + ',' + col[1] + ',' + col[2] + ',' + al.toFixed(2) + ')';
+            g.fillRect(X, Y, 1, 1);
+          }
+        }
+      }
+    });
+  }
+
+  /* ══ FOR SCALE (EGGS.md #7) ═══════════════════════════════════════
+   * The thirteenth game on this machine: someone has pencilled a second
+   * little man beside the one for scale, and corrected the note. */
+  function drawForScale(g) {
+    var L = A.CAB && A.CAB.legend; if (!L) return;
+    var pk = A.paperK != null ? A.paperK : 0.78, c = 'rgba(' + Math.round(96 * pk) + ',' + Math.round(96 * pk) + ',' + Math.round(112 * pk) + ',0.95)';
+    var x = L.x, sy = L.y + L.h - 5;
+    g.fillStyle = c;
+    g.fillRect(x + 47, sy - 2, 1, 3);                                    // the second man, in pencil
+    g.fillRect(x + 59, sy - 2, 5, 1);                                    // MAN struck through at the A…
+    A.text(g, 'E', x + 60, sy - 10, c);                                  // …and E above it: MEN
+  }
+
+  /* ══ WAVE AT THE TRAIN (EGGS.md #8) ═══════════════════════════════
+   * The little train painted on the middle ridge, going left. Tap it (the
+   * way you'd wave at one from a porch) and its headlamp blinks twice with
+   * two short puffs of steam: two short toots, the railroad's "acknowledged". */
+  function ridgeY(base, amp, seed, ph, x) {
+    return Math.round(base - amp * (3 * Math.sin(x * 0.021 + ph) + 1.6 * Math.sin(x * 0.057 + ph * 2) + 0.8 * Math.sin(x * 0.13 + seed)));
+  }
+  var ENGINE = { x: 176, y: ridgeY(53, 1.0, 2, 1.7, 179) - 3 };
+  function drawTrain(g, tr, t) {
+    var u = t - tr.t0, hx = ENGINE.x - 1, hy = ENGINE.y + 1;
+    [0.7, 1.1].forEach(function (at, i) {
+      var v = u - at; if (v < 0 || v > 0.9) return;
+      // the headlamp blinks
+      if (v < 0.2) {
+        S.px(g, hx, hy, '#ffffff'); S.px(g, hx - 1, hy, P.FLAME2); S.px(g, hx, hy - 1, 'rgba(255,246,208,0.7)'); S.px(g, hx, hy + 1, 'rgba(255,246,208,0.7)');
+        S.px(g, hx - 2, hy, 'rgba(255,220,140,0.45)'); S.px(g, hx - 3, hy, 'rgba(255,220,140,0.25)');
+      }
+      // a short puff of white out of the stack, drifting back along the train
+      var f = Math.floor(v * 8), sx = ENGINE.x + 2 + f, sy = ENGINE.y - 4 - Math.min(2, f >> 1), rr = 1 + (f > 2 ? 1 : 0);
+      for (var dy = -rr; dy <= rr; dy++) for (var dx = -rr; dx <= rr; dx++) if (dx * dx + dy * dy <= rr * rr + 0.5 && A.bayer(sx + dx, sy + dy) < 0.9 - f * 0.1) S.px(g, sx + dx, sy + dy, 'rgba(236,232,240,0.8)');
+    });
+  }
+
   /* ══ the layers ═══════════════════════════════════════════════════ */
   A.drawSecrets = function (g, view, layer) {
     var fx = view.fx || {}, gk = fx.glassKnock;
+    var eg = view.eggs || {};
     if (layer === 'albedo') {
+      if (fx.moon) drawMoon(g, fx.moon);
+      drawFish(g, eg.fortuneFish === false ? null : fx.fish, view.t || 0);
       if (gk) drawCloseShadow(g, gk);
     } else if (layer === 'glass') {
       if (gk) {
@@ -540,6 +701,10 @@
         }
       }
       if (fx.glassMarks) { drawMarks(g, fx.glassMarks); drawDust(g, fx.glassMarks, view.t || 0); }
+      if (fx.train) drawTrain(g, fx.train, view.t || 0);
+    } else if (layer === 'cabinet') {
+      if (eg.crayon !== false && fx.cardLamp) drawCrayon(g, fx.cardLamp);
+      if (eg.forScale && view.ui && view.ui.gamesEver >= 13) drawForScale(g);
     }
   };
 })(typeof window !== 'undefined' ? window : globalThis);

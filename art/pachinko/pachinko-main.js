@@ -127,8 +127,25 @@
    *    announced anywhere; each is harmless; each is one switch here. The
    *    parts read them as api.eggs. ─────────────────────────────────── */
   var EGGS = {
-    glassKnock: true      // 1. once a visit, in the quiet after a game's last marble, one of them walks up to the glass and knocks
+    glassKnock: true,     // 1. once a visit, in the quiet after a game's last marble, one of them walks up to the glass and knocks
+    hungTheMoon: true,    // 2. tap the painted moon: it swings crooked on its nail, and Absalom goes and puts it straight
+    twoBits: true,        // 3. tap "shave and a haircut" on the glass: something in the rock knocks "two bits"
+    fortuneFish: true,    // 4. hold a finger on the glass over the red fish (Fig. 12): it warms, flips, and points down the hall
+    crayon: true,         // 5. the legend card lit from behind shows a child's drawing on its back
+    welcomeBack: true,    // 6. come back another night: the lantern man lifts his lamp to you instead of pointing at the door
+    forScale: true,       // 7. your 13th game on this machine: the man for scale on the legend card gets company
+    trainWave: true,      // 8. tap the little painted train on the ridge: it toots twice back, the railroad's "acknowledged"
+    moonNight: true       // 9. a real full moon tonight (read once, at mount): Absalom doffs his cap to that one, not the painted one
   };
+  // within ±12 h of a full moon (HOLLER ROLLER's own reckoning: the mean synodic
+  // month from the 2000-01-06 18:14 UTC new moon). Read once, at mount; never in the sim
+  function fullMoonTonight(ms) {
+    var SYN = 29.530588853, day = 86400000, epoch = Date.UTC(2000, 0, 6, 18, 14);
+    var age = ((ms - epoch) / day) % SYN; if (age < 0) age += SYN;
+    return Math.abs(age - SYN / 2) <= 0.5;
+  }
+  // the fish's hold, the two bits' rhythm, the powder box's count
+  var FISH_HOLD = 0.8, FISH_R = 9, TWO_BITS_TOL = 0.2, TRAIN_REST = 12;
   // the knock: never in a visit's first game, never after a lode; a game that
   // qualifies has it with KNOCK_P; it waits KNOCK_AFTER for the quiet after the
   // last marble and gives up (for another game) if it isn't quiet by KNOCK_WAIT
@@ -223,7 +240,10 @@
     /* ── state ───────────────────────────────────────────────────── */
     var simT = 0;
     // this visit (a page load): what has happened in it that happens once
-    var visit = { knocked: false };
+    var visit = { knocked: false, returning: false, moonNight: false, fish: null, rhythm: [], twoBitsT: -99, sawDrawing: false, train: null };
+    // (the one read of the real clock, at mount: is there a full moon out there tonight?
+    // The harness never sees it; ?moon=1 pretends there is)
+    visit.moonNight = EGGS.moonNight && (HARNESS ? /[?&]moon=1/.test(search) : fullMoonTonight(Date.now()));
     var world = PP.createWorld(board, FIXED_SEED != null ? FIXED_SEED : SEED0);
     var game = {
       mode: 'attract', modeT0: 0, seed: FIXED_SEED != null ? FIXED_SEED : SEED0, games: 0,
@@ -583,6 +603,10 @@
       view.ui.scripHeld = n;        // on the tongue, not yet on the ledge
       view.ui.scrip = scripNow();
       emit({ type: 'gameover', scrip: n, lodes: game.lodes, best: best, dropped: game.dropped });
+      // (EGGS.md #7: the thirteenth game on this machine, ever)
+      var ever = stats().games | 0;
+      if (EGGS.forScale && view.ui.gamesEver < 13 && ever >= 13 && A) { A.flags.set('pachinko.for-scale'); emit({ type: 'forscale', games: ever }); }
+      view.ui.gamesEver = ever;
       partsCall('gameEnd', { scrip: n, lodes: game.lodes });
       var reward = partsFirst('rare', { scrip: n, lodes: game.lodes, seed: game.seed });
       if (reward) emit({ type: 'rare', reward: reward });
@@ -788,6 +812,8 @@
       if (game.mode === 'payout') stepPayout();
       if (game.mode === 'work') stepWork();
       if (game.findAt != null && simT >= game.findAt) findNickel();
+      stepFish();
+      stepTrain();
       if (game.lode && game.lode.part && game.lode.part.step(simT)) { game.lode.part = null; if (game.lode.taken) game.lode = null; }
       // (main's own fallback lode, when no part takes the 13: over after 4.2 s, in the sim)
       if (game.lode && !game.lode.part && !game.lode.taken && simT - game.lode.t0 > 4.2) game.lode = null;
@@ -951,7 +977,8 @@
         canvas.style.cursor = hc ? 'pointer' : 'default';
       }
     }
-    function onLeave() { pointerIn = false; view.hopper.ghostX = null; view.ui.hoverCoin = false; }
+    function onLeave() { pointerIn = false; view.hopper.ghostX = null; view.ui.hoverCoin = false; holdEnd(); }
+    function onUp() { holdEnd(); }
     function onDown(ev) {
       if (ev.button != null && ev.button > 0) return;
       container.classList.remove('pachinko-kbd');       // a mouse or a finger: no focus ring
@@ -963,7 +990,7 @@
     function pointerDown(p, kind) {
       if (game.mode === 'attract') {
         if (onCoin(p) || onLedgeTokens(p)) { insertCoin(); return 'coin'; }
-        if (inGlass(p, 0, 0, 0)) { tapGlass(); return 'tap'; }
+        if (inGlass(p, 0, 0, 0)) { holdStart(p); tapGlass(p); return 'tap'; }
         return 'none';
       }
       if (game.mode === 'play' || game.mode === 'dive') {
@@ -979,17 +1006,72 @@
       if (game.mode === 'payout' && game.payout) { game.payout.fast = true; return 'fast'; }
       if (game.mode === 'work') {
         if (onCoin(p)) { insertCoin(); return 'coin'; }
-        if (inGlass(p, 0, 0, 0)) { tapGlass(); return 'tap'; }
+        if (inGlass(p, 0, 0, 0)) { holdStart(p); tapGlass(p); return 'tap'; }
       }
       return 'none';
     }
     // PLEASE DO NOT TAP GLASS. The sticker shivers; the coin door's lamp
     // flares (that's where the game starts)
-    function tapGlass() {
+    function tapGlass(p) {
       view.ui.tap = simT;
       game.taps.push(simT);
       game.taps = game.taps.filter(function (t) { return simT - t < 3; });
-      emit({ type: 'glasstap', n: game.taps.length });
+      var gx = p ? p.x - G.GLASS_X : null, gy = p ? p.y - G.GLASS_Y : null, at = null;
+      // (EGGS.md #2: the painted moon, nailed up in the sky)
+      var mo = (board.decor || []).filter(function (d) { return d.kind === 'moon'; })[0];
+      if (EGGS.hungTheMoon && mo && gx != null && Math.hypot(gx - mo.x, gy - mo.y) <= 10) at = 'moon';
+      // (EGGS.md #8: the little painted train on the middle ridge, going left)
+      if (EGGS.trainWave && !at && gx != null && gx >= 170 && gx <= 222 && gy >= 40 && gy <= 58) at = 'train';
+      emit({ type: 'glasstap', n: game.taps.length, gx: gx, gy: gy, at: at, side: mo && gx != null ? (gx < mo.x ? 1 : -1) : 1 });
+      twoBits();
+      // somebody waving at the train: the engineer answers, two short toots
+      if (at === 'train' && (!visit.train || simT - visit.train.t0 > TRAIN_REST)) {
+        visit.train = { t0: simT };
+        emit({ type: 'trainwave', what: 'wave' });
+      }
+    }
+    function stepTrain() {
+      var tr = visit.train; if (!tr) return;
+      var u = simT - tr.t0;
+      if (!tr.n && u >= 0.7) { tr.n = 1; emit({ type: 'trainwave', what: 'toot', n: 1 }); }
+      if (tr.n === 1 && u >= 1.1) { tr.n = 2; emit({ type: 'trainwave', what: 'toot', n: 2 }); if (A) A.flags.set('pachinko.waved-at-the-train'); }
+    }
+    // EGGS.md #3: shave-and-a-hair-cut on the glass (onsets 1, ½, ½, 1 beats
+    // apart); two knocks answer out of the rock, two beats after the last tap
+    function twoBits() {
+      var r = visit.rhythm; r.push(simT);
+      while (r.length > 5) r.shift();
+      if (!EGGS.twoBits || r.length < 5 || simT - visit.twoBitsT < 6) return;
+      var d = [r[1] - r[0], r[2] - r[1], r[3] - r[2], r[4] - r[3]], beat = (d[0] + d[3]) / 2, T = TWO_BITS_TOL;
+      if (beat < 0.14 || beat > 0.9) return;
+      if (Math.abs(d[0] / beat - 1) > T * 1.5 || Math.abs(d[3] / beat - 1) > T * 1.5) return;
+      if (Math.abs(d[1] / beat - 0.5) > T || Math.abs(d[2] / beat - 0.5) > T) return;
+      visit.twoBitsT = simT; r.length = 0;
+      emit({ type: 'twobits', beat: beat, at1: simT + 2 * beat, at2: simT + 3 * beat });
+    }
+    // EGGS.md #4: a finger held on the glass over the red fish (Fig. 12)
+    var FISH = { x: 193, y: 288 };
+    function onFish(p) { var gx = p.x - G.GLASS_X, gy = p.y - G.GLASS_Y; return Math.hypot(gx - FISH.x, (gy - FISH.y) * 1.3) <= FISH_R; }
+    function holdStart(p) {
+      if (!EGGS.fortuneFish || !(game.mode === 'attract' || game.mode === 'work') || !onFish(p)) return;
+      visit.fishHold = { t0: simT };
+    }
+    function holdEnd() {
+      if (!visit.fishHold) return;
+      visit.fishHold = null;
+      if (visit.fish && visit.fish.rel == null) { visit.fish.rel = simT; emit({ type: 'fish', what: 'cool' }); }
+    }
+    function stepFish() {
+      var h = visit.fishHold;
+      if (h && !visit.fish && simT - h.t0 >= FISH_HOLD) {
+        visit.fish = { t0: simT, rel: null };
+        emit({ type: 'fish', what: 'warm' });
+        if (A) A.flags.set('pachinko.the-fish-pointed');
+      }
+      if (h && (game.mode !== 'attract' && game.mode !== 'work')) holdEnd();
+      // …and when it has cooled back to its curl, it can be warmed again
+      var f = visit.fish;
+      if (f && f.rel != null && simT - f.rel > 4.2) visit.fish = null;
     }
     // The keys belong to the machine only while it's the thing you're using:
     // the canvas has the focus (a click on it, or a Tab to it) or the pointer
@@ -1038,6 +1120,8 @@
     canvas.addEventListener('pointermove', onMove);
     canvas.addEventListener('pointerdown', onDown);
     canvas.addEventListener('pointerleave', onLeave);
+    canvas.addEventListener('pointerup', onUp);
+    canvas.addEventListener('pointercancel', onUp);
     root.addEventListener('keydown', onKey);
 
     /* ── mute (M), remembered ────────────────────────────────────── */
@@ -1136,7 +1220,12 @@
           var gl = [{ x: tr.x, y: tr.y, k: 2.2, marble: true }];
           if (tr.path) for (var gi = 1; gi <= 4; gi++) { var pq = pathAt(tr.path, tr.k - gi * 0.03); if (tr.k - gi * 0.03 > 0) gl.push({ x: pq.x, y: pq.y, k: 1.8 - gi * 0.35 }); }
           transits.push({ id: tr.id, m: wm.id, x: tr.x, y: tr.y, u: tr.k, exitIn: tr.exitIn, path: tr.path, glows: gl });
-          lamps.push({ x: tr.x, y: tr.y, r: 24, c: '#ffcf80', k: 1.35 });
+          // (under the old workings the drift runs through the deep rock, the darkest
+          // on the machine: its light is bigger there, and the rock it has just
+          // passed keeps a little of it, so the route reads as a route: wave 6b)
+          var deep = tr.y > 300 ? 1 : 0;
+          lamps.push({ x: tr.x, y: tr.y, r: 24 + 8 * deep, c: '#ffcf80', k: 1.35 + 0.35 * deep });
+          if (tr.path && tr.k > 0.12) { var tb = pathAt(tr.path, tr.k - 0.12); lamps.push({ x: tb.x, y: tb.y, r: 20, c: '#ffb860', k: 0.45 + 0.3 * deep }); }
           var since = t - wm.tunnel.tIn;
           if (since < 0.3 && fix) lamps.push({ x: fix.a.x, y: fix.a.y, r: 16, c: '#ffd890', k: 1.2 * (1 - since / 0.3) });
           if (tr.exitIn < 0.45) lamps.push({ x: tr.exit.x, y: tr.exit.y, r: 16, c: '#ffe0a0', k: 1.3 * (1 - Math.max(0, tr.exitIn) / 0.45) });
@@ -1188,6 +1277,10 @@
         } else if (game.mode !== 'work') view.figures = [];
       }
       partsCall('fx', view);
+      // the secrets the art draws (pachinko-art-secrets.js)
+      fx.fish = visit.fish;
+      fx.train = visit.train && simT - visit.train.t0 < 3 ? { t0: visit.train.t0 } : null;
+      if (EGGS.crayon && fx.cardLamp && !visit.sawDrawing) { visit.sawDrawing = true; if (A) A.flags.set('pachinko.saw-the-drawing'); }
     }
     // a marble in a tunnel: where it is along the tunnel's own route through
     // the rock (board tunnel.path), how far (u), and how long until it comes
@@ -1463,6 +1556,12 @@
     watchDpr();
 
     view.ui.best = stats().best | 0;
+    view.eggs = EGGS;
+    view.ui.gamesEver = stats().games | 0;
+    if (HARNESS && /[?&]ever=(\d+)/.test(search)) view.ui.gamesEver = +/[?&]ever=(\d+)/.exec(search)[1];
+    if (EGGS.forScale && view.ui.gamesEver >= 13 && A) A.flags.set('pachinko.for-scale');
+    // (a visitor who has played this machine before, on another night)
+    visit.returning = (stats().games | 0) > 0 || /[?&]returning=1/.test(search) && HARNESS;
     // a game the last page left open: owed, waiting behind the coin door
     try {
       var open0 = A ? stats().open : null;
@@ -1523,6 +1622,8 @@
         canvas.removeEventListener('pointermove', onMove);
         canvas.removeEventListener('pointerdown', onDown);
         canvas.removeEventListener('pointerleave', onLeave);
+        canvas.removeEventListener('pointerup', onUp);
+        canvas.removeEventListener('pointercancel', onUp);
         document.documentElement.classList.remove('pachinko-playing');
         canvas.remove();
         listeners = [];
@@ -1544,6 +1645,7 @@
         drop: function (x) { x = clamp(x, board.drop.x0, board.drop.x1); hopper.x = x; return PP.addMarble(world, x).id; },
         // a pointer press at cabinet px (the same path as a click)
         press: function (cx, cy, kind) { return pointerDown({ x: cx, y: cy }, kind || 'mouse'); },
+        release: function () { holdEnd(); },
         hover: function (gx) { view.hopper.ghostX = gx; },
         key: function (key, shift) { onKey({ key: key, shiftKey: !!shift, preventDefault: function () { }, target: null }); },
         // a whole game: coin, a drop at each x (queued as fast as the hopper

@@ -1311,7 +1311,8 @@
       ratCrack(og, rx - 7, ry + 1); out.rat = { x: rx - 7, y: ry + 1 };
     }
     specs.forEach(function (s) {
-      var fn = SPEC[s.what]; if (fn) fn(og, s.x, s.y);
+      // (the red fish is painted live by pachinko-art-secrets.js when it's loaded: it can be warmed)
+      var fn = SPEC[s.what]; if (fn && !(s.what === 'fish' && A.liveFish)) fn(og, s.x, s.y);
       if (s.what === 'watch') out.watch = { x: s.x, y: s.y, a0: 0.7 };
       if (s.what === 'ring') out.ring = { x: s.x, y: s.y };
     });

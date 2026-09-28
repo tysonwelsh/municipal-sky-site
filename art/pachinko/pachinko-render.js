@@ -1019,6 +1019,7 @@
     // the coin door's card and lamp, your pocket, the ticket mouth
     if (A.drawMachine) A.drawMachine(ctx, view);
     mischief(ctx, view, 'cabinet');
+    secrets(ctx, view, 'cabinet');
     // the attendant pencils the crew's alterations on the legend card
     var nAlt = (view.fx && view.fx.alterations || []).length;
     if (nAlt > 0 && C.legend) { var LL = C.legend; A.text(ctx, 'ALT ' + nAlt, LL.x + LL.w - 21, LL.y + 4, '#5a5a6a', 1, function (i2, col, row) { return A.hash01(611, i2 * 3 + col, row) < 0.1 ? null : '#5a5a6a'; }); }

@@ -154,7 +154,8 @@
     var cv = force.cavein ? true : h3(seed, 12, 1) < R.cave.p;
     if (cv) {
       var fs = typeof force.cavein === 'number' && PBk().CAVE_BAYS.indexOf(force.cavein) >= 0 ? force.cavein : null;
-      var bays = PBk().CAVE_BAYS;
+      // (never bay 12: it sits under the PLEASE DO NOT TAP GLASS sticker, and its heap did too)
+      var bays = PBk().CAVE_BAYS.filter(function (j) { return j !== 12; });
       p.cave = {
         n: force.cavein ? 1 : R.cave.from + Math.floor(h3(seed, 12, 2) * (R.cave.to - R.cave.from + 1)),
         slot: fs != null ? fs : bays[Math.floor(h3(seed, 12, 3) * bays.length)]

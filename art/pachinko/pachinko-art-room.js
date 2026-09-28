@@ -1033,6 +1033,19 @@
   function glowLevel(t, calm) { if (calm) return 2; var v = Math.sin(t * 2 * Math.PI / 4.6) + 0.35 * Math.sin(t * 2 * Math.PI / 17); return v > 0.5 ? 2 : v > -0.55 ? 1 : 0; }
 
   var wake = { t0: null };
+  // a dead troffer (two ceiling tiles deep, world tiles ix, iz..iz+1) lit, in
+  // the ceiling's own perspective: the diffuser's grid over the tubes' white
+  function troffer(g, ix, iz) {
+    var X0 = ix * 64, X1 = X0 + 64, Z0 = iz * 64, Z1 = Z0 + 128;
+    var y0 = Math.ceil(HOR - (ZW / Z0) * (HOR - CEIL_Y)), y1 = Math.floor(HOR - (ZW / Z1) * (HOR - CEIL_Y));
+    for (var y = y0; y <= y1; y++) {
+      var fz = (HOR - y - 0.5) / (HOR - CEIL_Y), xa = Math.ceil(screenX(X0, fz)), xb = Math.floor(screenX(X1, fz)), cZ = ZW / fz;
+      for (var x = xa; x <= xb; x++) {
+        var cX = worldX(x + 0.5, fz), grid = (Math.floor(cX / 8) + Math.floor(cZ / 16)) & 1;
+        px(g, x, y, x === xa || x === xb || y === y0 || y === y1 ? '#8a90a4' : grid ? '#eef4ff' : '#c4ccde');
+      }
+    }
+  }
   function drawLive(g, t, calm, rb, flare) {
     // the cigarette in the stand: the ember breathes, the smoke climbs and leans toward the hall
     var ex = ASH.x + 8, ey = ASH.foot - 63;
@@ -1066,6 +1079,10 @@
       }
       var on2 = wu > 0.1 && wu < 1.3 && h01(Math.floor(t * 30), 8, 522) > 0.25;
       if (on2) { var nm = 'SCRIP CREEK'; text(g, nm, SCF.x + Math.round(108 - textW(nm, 2) / 2), SCF.y + 20, P.PINK, 2); }
+      // …and the dead troffers in the drop ceiling try: two false starts, then
+      // on, buzzing, for half a second, then dead again (wave 6b)
+      var on3 = (wu > 0.22 && wu < 0.3) || (wu > 0.5 && wu < 0.6) || (wu > 0.72 && wu < 1.25 && h01(Math.floor(t * 24), 9, 523) > 0.2);
+      if (on3) { troffer(g, -2, 8); troffer(g, 7, 8); }
     }
     // the moth at the EXIT sign
     var mt = calm ? 0 : Math.floor(t * 8) / 8;
