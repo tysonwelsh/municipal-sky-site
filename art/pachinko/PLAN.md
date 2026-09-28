@@ -1136,3 +1136,31 @@ the marble unless holding it, and no page scroll at any size.
     TOCK frames 5.4–12 ms (were 54–71), none over 16.7 ms but the first.
   - **Crispness:** 14,873 blocks at ×4 in PLAY, 0 non-uniform, 0 different
     from the 1:1 cabinet.
+- 2026-09-28 — **Sound, round 3: the new events (audio; adds to the
+  wave-4 sound entry; the full contract is the header of
+  `pachinko-audio.js`).** Every event main, mischief and the knockers emit
+  (rc.37) now either sounds or is silent on purpose.
+  **`nearmiss`**: the room holds its breath (0.3 for 0.5 s, 0.8 s on the
+  drift route), then the crew's voice boxes say "ohh", a falling minor
+  third: four boxes the first time in a game (≈ −20 dBFS), one old box
+  after that; never during a lode. **`resume`**: no coin; the door's latch
+  lifts and catches, the hopper re-arms, the tube settles, the case light's
+  starter ticks once. **`kept`**: Fig. 13, a bakelite switch and the
+  marble's own glass note, once. **`dark {regions}`**: every region of the
+  section goes dry and close. **`whistle`**: the banksman's three bell raps
+  ("men riding"), the cage down the shaft from +0.3 (the winding engine's
+  steam, the rope, the cage in its guides), the shift whistle at +0.38.
+  **`tear {nil}`**: stamped NIL (ka-THUNK) before it tears. **`gameover
+  {best}`**: the HI tag rubbed out and pencilled again. **`edit` by type**
+  (at the TOCK; the hammering is the figures' own taps): mouth boarded (the
+  last board over a hollow adit) / prised (boards clatter, the old drift
+  breathes out); chute set (a lid on a shaft) / off (the board falls down
+  the shaft, knocking the lining); pocket (the pail's tin, the powder box);
+  rail (the brace groans); clear (the heap slumps into the bay); move /
+  nudge / dress (the pin rings in its new place); `hurried` (a coin
+  mid-WORK) is one triple click. **`figure point`** a peg arm snaps out
+  (the whole crew after a glass tap is a ripple of six), **`dig {tx, ty}`**
+  in rubble at the cave-in. `mischief` stays silent. Measured on the real
+  page (a natural game and `force=theft,vanish,cavein`): −26.6 / −26.7
+  LUFS (unchanged), true peak −6.6, no clipping; the pile-up of cave-in,
+  whistle and near miss peaks −8.4, a theft in the lode −6.7.
