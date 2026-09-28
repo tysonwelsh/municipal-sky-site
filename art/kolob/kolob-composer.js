@@ -354,8 +354,8 @@ window.KOLOB.Composer = (function () {
     var lines = (h.lines || []).concat(h.refrain || []);
     var fp = { parts: parts.join(""), moves: 0, par5: 0, par8: 0, sonor: 0, thirdless: 0, crossing: 0, notes: 0, chromatic: 0,
                chords: 0, sevenths: 0, inversions: 0, susp: 0, melNotes: 0, melIntervals: 0, leaps: 0, bigLeaps: 0, steps: 0, repeats: 0, melisma: 0,
-               cadences: {}, range: {}, lines: lines.length };
-    var lo = {}, hi = {};
+               cadences: {}, range: {}, rangeSemi: {}, lines: lines.length, closes: 0, closeThird: 0, closeHome: 0, closeDom: 0 };
+    var lo = {}, hi = {}, loS = {}, hiS = {};
     lines.forEach(function (l) {
       var S = sonorities(h, l), prev = null;
       S.forEach(function (s) {
@@ -400,9 +400,11 @@ window.KOLOB.Composer = (function () {
           fp.notes++;
           if (n.alt) fp.chromatic++;
           if (n.nct === "susp") fp.susp++;
-          var d = n.deg;
+          var d = n.deg, sd = semi(mode, n.deg, n.alt || 0);
           lo[p] = lo[p] == null ? d : Math.min(lo[p], d);
           hi[p] = hi[p] == null ? d : Math.max(hi[p], d);
+          loS[p] = loS[p] == null ? sd : Math.min(loS[p], sd);
+          hiS[p] = hiS[p] == null ? sd : Math.max(hiS[p], sd);
         });
       });
       var m = l.notes[mel] || [];
@@ -416,13 +418,29 @@ window.KOLOB.Composer = (function () {
       });
       var ck = (l.cadence && l.cadence.kind) || "none";
       fp.cadences[ck] = (fp.cadences[ck] || 0) + 1;
+      // THE CLOSE, READ FROM THE NOTES (the cadence mix on one ruler for Earth
+      // and colony): the sonority sounding at the line's cadence — on home's
+      // chord, on the dominant's, or elsewhere; with its third or bare
+      if (parts.length >= 2 && K.Dialects && K.Dialects.chordAt) {
+        var cb = l.cadence && l.cadence.beat != null ? l.cadence.beat : null;
+        if (cb == null) { var mm = l.notes[mel] || []; for (var q = mm.length - 1; q >= 0; q--) if (mm[q].stress) { cb = mm[q].beat; break; } }
+        var at = [];
+        parts.forEach(function (p) { (l.notes[p] || []).forEach(function (n) { if (n.beat <= cb + EPS && cb < n.beat + n.beats - EPS) at.push(n); }); });
+        if (at.length >= 2) {
+          at.sort(function (a, b) { return semi(mode, a.deg, a.alt || 0) - semi(mode, b.deg, b.alt || 0); });
+          var cc = K.Dialects.chordAt(mode, at.map(function (n) { return { deg: n.deg, alt: n.alt || 0 }; }));
+          fp.closes++;
+          if (cc.third) fp.closeThird++;
+          if (cc.root === 0) fp.closeHome++; else if (cc.root === 4) fp.closeDom++;
+        }
+      }
       (l.chords || []).forEach(function (c) {
         fp.chords++;
         if (/7/.test(c.quality) || c.dim7 || /7/.test(c.roman || "")) fp.sevenths++;
         if (c.inv === 1 || /6$/.test(c.roman || "")) fp.inversions++;
       });
     });
-    parts.forEach(function (p) { fp.range[p] = hi[p] - lo[p]; });
+    parts.forEach(function (p) { fp.range[p] = hi[p] - lo[p]; fp.rangeSemi[p] = hiS[p] - loS[p]; });
     // the shares a reader compares
     function sh(a, b) { return b ? r3(a / b) : 0; }
     fp.share = {
@@ -430,6 +448,7 @@ window.KOLOB.Composer = (function () {
       crossing: sh(fp.crossing, fp.sonor), chromatic: sh(fp.chromatic, fp.notes), sevenths: sh(fp.sevenths, fp.chords),
       inversions: sh(fp.inversions, fp.chords), leap: sh(fp.leaps, fp.melIntervals), bigLeap: sh(fp.bigLeaps, fp.melIntervals),
       repeat: sh(fp.repeats, fp.melIntervals), melisma: sh(fp.melisma, fp.melNotes),
+      closeThird: sh(fp.closeThird, fp.closes), closeHome: sh(fp.closeHome, fp.closes), closeDom: sh(fp.closeDom, fp.closes),
     };
     var cadN = 0; for (var ck in fp.cadences) cadN += fp.cadences[ck];
     fp.cadenceShare = {}; for (ck in fp.cadences) fp.cadenceShare[ck] = sh(fp.cadences[ck], cadN);
@@ -475,6 +494,11 @@ window.KOLOB.Composer = (function () {
     return null;
   }
 
+  // does a run of degrees sing a tritone between neighbours?
+  function tritoneIn(mode, degs) {
+    for (var i = 1; i < degs.length; i++) if (Math.abs(semi(mode, degs[i], 0) - semi(mode, degs[i - 1], 0)) % 12 === 6) return true;
+    return false;
+  }
   function drawFrame(R, opts, D, H) {
     // one die per choice, thrown whether or not the caller named the answer
     var mDraw = pickW(R.fork("meter"), weightsOf(D.meters, H && H.meters));
@@ -543,6 +567,7 @@ window.KOLOB.Composer = (function () {
     var fPool = [], fMin = D.floorMin != null ? D.floorMin : -5;
     for (var f = Math.max(fMin, peakTo - (D.maxSpan || 10)); f <= 0; f++) {
       if (classes.indexOf(cls(f)) < 0) continue;
+      if (semi(fr.mode, peakTo, 0) - semi(fr.mode, f, 0) > 17) continue;     // an octave and a fourth, in semitones
       var under = rng[0] - (keySemi + semi(fr.mode, f + 7 * best));
       var fw = Math.exp(-Math.pow((peakTo - f) - span, 2) / 3) * (f === -3 ? 1.6 : f === 0 ? 1.2 : f < -3 ? 0.35 : 1) * (under > 0 ? Math.exp(-under) * 0.05 : 1);
       fPool.push([f, fw]);
@@ -554,26 +579,36 @@ window.KOLOB.Composer = (function () {
     // whose middle is nearest the hymnist's (or the plan's) 60–75 %
     // (the tune's syllables are counted through the verse only: the peak is the verse's)
     var totalSyl = sum(fr.lines), acc = 0, span0 = [];
-    fr.lines.forEach(function (c) { span0.push([(acc + 1) / (totalSyl - 1), (acc + c - 3) / (totalSyl - 1)]); acc += c; });
+    var sylAt = [];
+    fr.lines.forEach(function (c) { sylAt.push(acc); span0.push([(acc + 1) / (totalSyl - 1), (acc + c - 3) / (totalSyl - 1)]); acc += c; });
     var wantAt = clamp((H ? H.peakAt : 0.68) + R.fork("peak:line").rnd(-0.04, 0.04), 0.6, 0.75);
+    // how well a line can hold the peak: how far its middle lies from the
+    // wanted place, and whether it has room for the high note INSIDE the
+    // band (the syllables of its middle that fall in 60–75 %)
+    function offAt(k) { var sp2 = span0[k]; return wantAt < sp2[0] ? sp2[0] - wantAt : wantAt > sp2[1] ? wantAt - sp2[1] : 0; }
+    function fitAt(k) {
+      var inb = 0;
+      for (var y = sylAt[k] + 1; y <= sylAt[k] + fr.lines[k] - 3; y++) { var gy = y / (totalSyl - 1); if (gy >= 0.6 - EPS && gy <= 0.75 + EPS) inb++; }
+      return offAt(k) * 3 + (inb >= 2 ? 0 : inb === 1 ? 0.15 : 0.5);
+    }
     var peakLine = -1, pBest = 1e9;
     for (var i = 0; i < n; i++) {
       var L = letters[i], firstOf = letters.findIndex(function (x) { return x.letter === L.letter; }) === i;
       var copies = letters.filter(function (x) { return x.letter === L.letter; }).length;
       var own = copies === 1 || L.prime;
       if (!own && !firstOf) continue;
-      var sp = span0[i], off = wantAt < sp[0] ? sp[0] - wantAt : wantAt > sp[1] ? wantAt - sp[1] : 0;
-      var cost = off * 3 + (own ? 0 : 0.3) + (i === n - 1 ? 0.1 : 0);
+      var cost = fitAt(i) + (own ? 0 : 0.3) + (i === n - 1 ? 0.1 : 0);
       if (cost < pBest) { pBest = cost; peakLine = i; }
     }
     // a form that repeats the line where the peak belongs (ABAC) turns that
     // line elsewhere instead: it begins as its model did and climbs (ABA'C)
-    function offAt(k) { var sp2 = span0[k]; return wantAt < sp2[0] ? sp2[0] - wantAt : wantAt > sp2[1] ? wantAt - sp2[1] : 0; }
-    if (offAt(peakLine) > 0.04) {
+    if (fitAt(peakLine) > 0.12) {
+      var conv = -1, cBest = fitAt(peakLine) - 0.1;
       for (i = 0; i < n; i++) {
         var Li = letters[i], isFirst = letters.findIndex(function (x) { return x.letter === Li.letter; }) === i;
-        if (!isFirst && !Li.prime && offAt(i) < offAt(peakLine) - 0.01) { Li.prime = true; peakLine = i; break; }
+        if (!isFirst && !Li.prime && fitAt(i) < cBest) { cBest = fitAt(i); conv = i; }
       }
+      if (conv >= 0) { letters[conv].prime = true; peakLine = conv; }
       fr.form = letters.map(function (x) { return x.letter + (x.prime ? "'" : ""); }).join("");
     }
     // the cadence of every line, its ending figure, its contour and first note
@@ -588,25 +623,52 @@ window.KOLOB.Composer = (function () {
       var reach = cadPool.filter(function (c) { for (var t = floor; t <= peakTo - 1; t++) if (cls(t) === cls(c[1])) return true; return c[1] === 0; });
       if (reach.length) cadPool = reach;
       var cad = pickW(Ri.fork("cadence"), cadPool.map(function (c) { return [c, c[2]]; }));
-      // the ending: the dialect's appetite, the hymnist's signature on the last line
+      // (the Sacred Harp closes an inner line FULL now and then — its third
+      // kept — more in the major modes than the minor, less for a hymnist who
+      // loves the open fifth; an open close that keeps its third is imperfect)
+      var fullDie = u01(Ri.fork("close:full")), kind = cad[0], full = false;
+      if (D.fullClose && role !== "home" && (kind === "openfifth" || kind === "half")) {
+        var pf = (MINOR[fr.mode] ? D.fullClose.minor : D.fullClose.major) * (1.25 - 0.5 * (H && H.open != null ? H.open : 0.7));
+        if (fullDie < pf) { full = true; if (kind === "openfifth") kind = "imperfect"; }
+      }
+      // the ending: the dialect's appetite (its last line's own, where it has
+      // one), the hymnist's signature on the last line
       var figPool = [];
       for (var fnm in D.figures) if (has(D.figures, fnm)) {
         var steps = FIGURES[fnm], okF = D.figureFits ? D.figureFits(cad[0], cad[1], steps, fr.mode, cad[4]) : true;
         if (!okF) continue;
         var degs = steps.map(function (s) { return cad[1] + s; });
         if (!degs.every(function (d) { return classes.indexOf(cls(d)) >= 0; })) continue;
+        if (tritoneIn(fr.mode, degs)) continue;                    // (sol–do is a tritone in some modes' places)
         var fw = D.figures[fnm];
+        var hf = D.homeFigures ? D.homeFigures[MINOR[fr.mode] ? "minor" : "major"] : null;
+        if (role === "home" && hf && hf[fnm] != null) fw *= hf[fnm];
         if (H && role === "home") (H.ending || []).forEach(function (e) { if (figureName(e[0]) === fnm) fw *= 1 + 0.6 * e[1]; });
         figPool.push([fnm, fw]);
       }
       if (!figPool.length) figPool.push(["fall", 1]);
       var fig = pickW(Ri.fork("figure"), figPool);
       var contour = pickW(Ri.fork("contour"), weightsOf(D.contours, H && H.contours));
-      lines.push({ i: i, refrain: inRefrain, role: role, syl: allLines[i], cadence: cad[0], targetClass: cad[1], plan: cad[4] || null, figure: fig,
+      lines.push({ i: i, refrain: inRefrain, role: role, syl: allLines[i], cadence: kind, full: full, targetClass: cad[1], plan: cad[4] || null, figure: fig, figPool: figPool,
                    figSteps: FIGURES[fig].slice(), contour: contour, peak: i === peakLine,
                    letter: inRefrain ? String.fromCharCode(72 + ri) : letters[i].letter, prime: inRefrain ? false : letters[i].prime,
                    cellDie: Ri.fork("cell"), startDie: Ri.fork("start"), fermDie: u01(Ri.fork("fermata")), die: Ri });
     }
+    // THE FLOOR MAKES ROOM FOR THE LAST LINE'S ENDING. A tune that never goes
+    // below its final cannot end ti–do, and a drawn ending that cannot be sung
+    // falls back to the commonest one — which is how the endings collapsed
+    // onto re–do (the round-2 critic). So when the last line's figure dips
+    // under the final (ti–do, la–ti–do, sol–do, do–ti–do), the floor comes
+    // down to meet it, if the compass, the key and an octave and a fourth allow.
+    lines.forEach(function (L) {
+      if (L.role !== "home") return;
+      var need = Math.min.apply(null, L.figSteps);
+      if (need >= floor) return;
+      var fits = peakTo - need <= (D.maxSpan || 10) && semi(fr.mode, peakTo, 0) - semi(fr.mode, need, 0) <= 17 &&
+                 rng[0] - (keySemi + semi(fr.mode, need + 7 * best, 0)) <= 1;
+      if (fits) floor = need;
+    });
+    span = peakTo - floor;
     var sylBefore = [], a2 = 0;
     allLines.forEach(function (c, k) { sylBefore.push(k < n ? a2 : 0); if (k < n) a2 += c; });
     return { base: base, floor: floor + base, peak: peakTo + base, peakTo: peakTo, span: span, peakLine: peakLine, lines: lines, classes: classes,
@@ -848,9 +910,9 @@ window.KOLOB.Composer = (function () {
       }
       // (a last line that repeats an earlier letter keeps its head and comes home)
       if (first && !L.prime && first.n === n && first.syl === L.syl && !(L.role === "home" && first.role !== "home")) {
-        L.cadence = first.cadence; L.targetClass = first.targetClass; L.figure = first.figure; L.figSteps = first.figSteps.slice(); L.plan = first.plan;
+        L.cadence = first.cadence; L.full = first.full; L.targetClass = first.targetClass; L.figure = first.figure; L.figSteps = first.figSteps.slice(); L.plan = first.plan;
         L.copyOf = first.i;
-        var cp = { i: i, letter: L.letter, role: first.role, plan: first.plan, degs: first.degs.slice(), n: n, syl: L.syl, cadence: L.cadence, targetClass: L.targetClass, figure: L.figure, figSteps: L.figSteps, cost: first.cost, topSpread: 0, copied: true };
+        var cp = { i: i, letter: L.letter, role: first.role, plan: first.plan, full: first.full, degs: first.degs.slice(), n: n, syl: L.syl, cadence: L.cadence, targetClass: L.targetClass, figure: L.figure, figSteps: L.figSteps, cost: first.cost, topSpread: 0, copied: true };
         done.push(cp); out.push(cp); return;
       }
       var lo = sk.floor, hi = sk.peak - 1;
@@ -871,46 +933,113 @@ window.KOLOB.Composer = (function () {
       // left to the search, as a passing note)
       var onsets = [];
       for (k = 0; k <= longIdx; k++) if (!notes[k].cont) onsets.push(k);
+      var fits = function (st) {
+        return st.every(function (s2) { return target + s2 >= lo && target + s2 <= hi && classes.indexOf(cls(target + s2)) >= 0; }) && onsets.length - st.length >= 1 &&
+               !tritoneIn(mode, st.map(function (s2) { return target + s2; }));
+      };
       var steps = L.figSteps;
-      var figOk = steps.every(function (s) { return target + s >= lo && target + s <= hi; }) && onsets.length - steps.length >= 1;
-      if (!figOk) {
-        // the drawn figure does not fit here: the likeliest one that does
-        var alt = Object.keys(D.figures).sort(function (x, y) { return D.figures[y] - D.figures[x]; }).filter(function (nm) {
-          var st = FIGURES[nm];
-          return st.every(function (s2) { return target + s2 >= lo && target + s2 <= hi && classes.indexOf(cls(target + s2)) >= 0; }) &&
-                 onsets.length - st.length >= 1 && (!D.figureFits || D.figureFits(L.cadence, L.targetClass, st, mode, L.plan));
+      if (!fits(steps)) {
+        // the drawn figure does not fit here: another, DRAWN again from the
+        // same table among the ones that do (never simply the heaviest — that
+        // is how every hymn came to end re–do)
+        var alt = (L.figPool || []).filter(function (fw) {
+          return fw[0] !== L.figure && fits(FIGURES[fw[0]]) && (!D.figureFits || D.figureFits(L.cadence, L.targetClass, FIGURES[fw[0]], mode, L.plan));
         });
-        L.figure = alt.length ? alt[0] : "fall"; steps = FIGURES[L.figure].slice(); L.figSteps = steps;
+        L.figure = alt.length ? pickW(L.die.fork("figure:refit"), alt) : "fall"; steps = FIGURES[L.figure].slice(); L.figSteps = steps;
       }
-      var figStart = onsets[onsets.length - steps.length];
-      for (k = 0; k < steps.length; k++) fixed[onsets[onsets.length - steps.length + k]] = target + steps[k];
+      // the fixed notes: the ending figure on the last syllables (a slur
+      // between them is left to the search, as a passing note), a feminine
+      // ending's syllables after the long note, and a varied line's head (a
+      // late repair lets the head go, when it is what echoes another tune)
+      var figStart, headN, trailW = [];
       var trailDie = L.die.fork("trail");
-      for (k = longIdx + 1; k < n; k++) {
-        var tw = pickW(trailDie, [[0, 3], [-1, 1]]);
-        var tv = fixed[k - 1] + tw;
-        fixed[k] = tv >= lo && tv <= hi && classes.indexOf(cls(tv)) >= 0 ? tv : fixed[k - 1];
-      }
-      // a varied line keeps its model's head (a late repair lets it go, when
-      // the head itself is what echoes another tune)
-      var headN = 0;
-      if (first && !(repairRound >= 2 && avoid && avoid.length)) {
-        headN = Math.max(2, Math.floor(Math.min(n, first.n) * 0.45));
-        for (k = 0; k < headN && k < figStart; k++) fixed[k] = first.degs[k];
-      }
+      for (k = longIdx + 1; k < n; k++) trailW.push(pickW(trailDie, [[0, 3], [-1, 1]]));
+      var lay = function (st) {
+        for (var k1 = 0; k1 < n; k1++) fixed[k1] = null;
+        figStart = onsets[onsets.length - st.length];
+        for (k1 = 0; k1 < st.length; k1++) fixed[onsets[onsets.length - st.length + k1]] = target + st[k1];
+        for (k1 = longIdx + 1; k1 < n; k1++) {
+          var tv = fixed[k1 - 1] + trailW[k1 - longIdx - 1];
+          fixed[k1] = tv >= lo && tv <= hi && classes.indexOf(cls(tv)) >= 0 ? tv : fixed[k1 - 1];
+        }
+        headN = 0;
+        if (first && !(repairRound >= 2 && avoid && avoid.length)) {
+          headN = Math.max(2, Math.floor(Math.min(n, first.n) * 0.45));
+          for (k1 = 0; k1 < headN && k1 < figStart; k1++) fixed[k1] = first.degs[k1];
+          // (a head that runs straight into the ending would leave the singers a
+          // tritone or a seventh between two fixed notes: it lets go of its last)
+          while (headN > 1 && headN <= figStart && fixed[headN] != null && fixed[headN - 1] != null && !singable(fixed[headN - 1], fixed[headN])) { headN--; fixed[headN] = null; }
+        }
+      };
+      var singable = function (a, b) { var st = Math.abs(a - b); return st !== 6 && st <= 7 && semiDiff(mode, a, b) % 12 !== 6; };
+      lay(steps);
       // the peak, on a strong syllable a third to three quarters in
       var peakIdx = -1;
       if (L.peak) {
-        // on a strong syllable, as near the planned 60–75 % of the tune as the line allows
-        var cands = [];
-        for (k = 1; k < figStart; k++) if (fixed[k] == null && !notes[k].cont) {
-          var g = (sk.sylBefore[i] + notes[k].syl) / Math.max(1, sk.totalSyl - 1);
-          var wg = Math.exp(-Math.pow((g - sk.wantAt) / 0.05, 2)) + 0.02;
-          cands.push([k, wg * (notes[k].stress ? 1 + notes[k].beats : 0.25)]);
+        // on a strong syllable, inside the planned 60–75 % of the tune (give
+        // or take one syllable), and never where a note already fixed beside
+        // it would make the singers leap a sixth or more, or a tritone, to or
+        // from the high note: the search cannot mend a leap between two fixed
+        // notes (the round-2 critic found sung sevenths there)
+        var tot1 = Math.max(1, sk.totalSyl - 1), grace = 1 / tot1;
+        var posOf = function (k2) { return (sk.sylBefore[i] + notes[k2].syl) / tot1; };
+        var inBand = function (k2) { var g2 = posOf(k2); return g2 >= 0.6 - grace - EPS && g2 <= 0.75 + grace + EPS; };
+        var leapOk = function (a, b) { return Math.abs(a - b) <= 4 && semiDiff(mode, a, b) !== 6; };
+        var nearOk = function (k2) {
+          for (var s2 = -1; s2 <= 1; s2 += 2) {
+            var j2 = k2 + s2;
+            if (j2 < 0 || j2 >= n) continue;
+            if (fixed[j2] != null && !leapOk(sk.peak, fixed[j2])) return false;
+            // one free note between the peak and a fixed one: the two leaps must be bridgeable
+            if (fixed[j2] == null && j2 + s2 >= 0 && j2 + s2 < n && fixed[j2 + s2] != null && Math.abs(sk.peak - fixed[j2 + s2]) > 5) return false;
+          }
+          return true;
+        };
+        var cands, clear, both;
+        var gather = function () {
+          cands = [];
+          for (var k2 = 1; k2 < figStart; k2++) if (fixed[k2] == null && !notes[k2].cont) {
+            var wg = Math.exp(-Math.pow((posOf(k2) - sk.wantAt) / 0.05, 2)) + 0.02;
+            cands.push([k2, wg * (notes[k2].stress ? 1 + notes[k2].beats : 0.25)]);
+          }
+          clear = cands.filter(function (c2) { return nearOk(c2[0]); });
+          both = clear.filter(function (c2) { return inBand(c2[0]); });
+          // (a varied line's head is memory; the peak is the tune's moment:
+          // when the head leaves the high note no singable place in the band,
+          // the head lets go of its last notes, one at a time, down to two)
+          while (!both.length && headN > 2) {
+            headN--; if (headN < figStart) fixed[headN] = null;
+            cands = cands.concat(headN < figStart && !notes[headN].cont ? [[headN, (Math.exp(-Math.pow((posOf(headN) - sk.wantAt) / 0.05, 2)) + 0.02) * (notes[headN].stress ? 1 + notes[headN].beats : 0.25)]] : []);
+            clear = cands.filter(function (c2) { return nearOk(c2[0]); });
+            both = clear.filter(function (c2) { return inBand(c2[0]); });
+          }
+        };
+        gather();
+        // THE PEAK LINE'S ENDING MAY BE DRAWN AGAIN. When the drawn figure
+        // leaves the high note no singable place inside the band (a low
+        // ending, a short line), the other endings the cadence allows are
+        // tried in a drawn order, and the first that makes room is kept: the
+        // peak is the plan's promise, the figure one of several good closes.
+        if (!both.length && L.figPool) {
+          var others = L.figPool.filter(function (fw) {
+            return fw[0] !== L.figure && fits(FIGURES[fw[0]]) && (!D.figureFits || D.figureFits(L.cadence, L.targetClass, FIGURES[fw[0]], mode, L.plan));
+          }), order = [], od = L.die.fork("figure:peak");
+          while (others.length) { var pk2 = pickW(od, others); order.push(pk2); others = others.filter(function (fw) { return fw[0] !== pk2; }); }
+          for (var oi = 0; oi < order.length && !both.length; oi++) {
+            lay(FIGURES[order[oi]]); gather();
+            if (both.length) { L.figure = order[oi]; steps = FIGURES[L.figure].slice(); L.figSteps = steps; }
+          }
+          if (!both.length) { lay(steps); gather(); }
         }
+        // the best of what the line offers: in the band and clear of its neighbours;
+        // else clear of its neighbours; else in the band; else anything
+        var inb = cands.filter(function (c2) { return inBand(c2[0]); });
+        cands = both.length ? both : clear.length ? clear : inb.length ? inb : cands;
+        if (!cands.length) for (k = 1; k < longIdx; k++) if (fixed[k] == null && nearOk(k)) cands.push([k, 1]);
         if (!cands.length) for (k = 1; k < longIdx; k++) if (fixed[k] == null) cands.push([k, 1]);
         // (a short varied line whose head and ending leave no room: the peak displaces the head)
         if (!cands.length) for (k = 1; k < figStart; k++) if (!notes[k].cont) cands.push([k, 1 + (notes[k].stress ? 1 : 0)]);
-        peakIdx = cands.length ? pickW(L.die.fork("peakAt"), cands) : -1;
+        peakIdx = cands.length ? pickW(L.die.fork(repairRound ? "peakAt:repair:" + repairRound : "peakAt"), cands) : -1;
         if (peakIdx >= 0) fixed[peakIdx] = sk.peak;
       }
       // the first note: home's chord to open the hymn, near the last line's end after
@@ -928,6 +1057,8 @@ window.KOLOB.Composer = (function () {
             if (!notes[0].stress && s - sk.base === -3) w *= 2.5;
           }
           else { var dj = Math.abs(s - prevEnd); w *= dj <= 2 ? 2 : dj <= 4 ? 1 : 0.15; }
+          // (and within a singable leap of a note already fixed after it — the peak, a head)
+          if (n > 1 && fixed[1] != null && (Math.abs(s - fixed[1]) > 4 || semiDiff(mode, s, fixed[1]) === 6)) w *= 0.01;
           sPool.push([s, w]);
         }
         start = pickW(repairRound ? L.startDie.fork("repair:" + repairRound) : L.startDie, sPool);
@@ -940,7 +1071,7 @@ window.KOLOB.Composer = (function () {
                 avoid: (avoid || []).map(function (a) { return a.map(function (x) { return x + sk.base; }); }),
                 prevTail: done.length ? done[done.length - 1].degs.slice(-5) : [] };
       var res = searchLine(P, W, mode, classes, done, i === 0 ? gesture : null, R, tries);
-      var rec = { i: i, letter: L.letter, role: L.role, plan: L.plan, degs: res.degs, n: n, syl: L.syl, cadence: L.cadence, targetClass: L.targetClass, figure: L.figure,
+      var rec = { i: i, letter: L.letter, role: L.role, plan: L.plan, full: L.full, degs: res.degs, n: n, syl: L.syl, cadence: L.cadence, targetClass: L.targetClass, figure: L.figure,
                   figSteps: L.figSteps.slice(), target: target, peakIdx: peakIdx, headN: headN, cost: r3(res.cost), topSpread: res.topSpread };
       done.push(rec); out.push(rec);
     });
@@ -1138,8 +1269,10 @@ window.KOLOB.Composer = (function () {
     // 2. the peak, where the plan put it
     var lines = h.lines.concat(h.refrain || []), top = -1e9, topLines = [];
     lines.forEach(function (l, i) { (l.notes[h.melodyPart] || []).forEach(function (n) { if (n.deg > top) { top = n.deg; topLines = [i]; } else if (n.deg === top && topLines.indexOf(i) < 0) topLines.push(i); }); });
-    var planned = ctx.sk.peakLine, pos = ctx.peakPos;
-    add("a planned peak", topLines.indexOf(planned) >= 0 && top === ctx.sk.peak, "the high note (" + (top - ctx.sk.base) + " steps over the final) in line " + (planned + 1) + " at " + Math.round(pos * 100) + "% of the tune" + (topLines.length > 1 ? " (also touched in line " + topLines.filter(function (x) { return x !== planned; }).map(function (x) { return x + 1; }).join(", ") + ")" : ""));
+    var planned = ctx.sk.peakLine, pos = ctx.peakPos, grace = 1 / Math.max(1, ctx.sk.totalSyl - 1);
+    var posOk = pos >= 0.6 - grace - EPS && pos <= 0.75 + grace + EPS;
+    add("a planned peak", topLines.indexOf(planned) >= 0 && top === ctx.sk.peak && posOk, "the high note (" + (top - ctx.sk.base) + " steps over the final) in line " + (planned + 1) + " at " + Math.round(pos * 100) + "% of the tune" +
+        (posOk ? " (planned 60–75 %)" : " — OUTSIDE the planned 60–75 % (± one syllable)") + (topLines.length > 1 ? " (also touched in line " + topLines.filter(function (x) { return x !== planned; }).map(function (x) { return x + 1; }).join(", ") + ")" : ""));
     // 3. the cadence plan, met
     var missed = [];
     lines.forEach(function (l, i) {
@@ -1150,9 +1283,39 @@ window.KOLOB.Composer = (function () {
       if (!targetOk || !kindOk) missed.push("line " + (i + 1) + ": planned " + pl.cadence + " on " + pl.targetClass + ", got " + l.cadence.kind + (targetOk ? "" : " (wrong last note)"));
     });
     add("cadence plan met", !missed.length, missed.length ? missed.join("; ") : lines.map(function (l) { return l.cadence.kind; }).join(" · "));
-    // 4. singable ranges: no part wider than an octave and a fourth
-    var wide = []; for (var p in fp.range) if (fp.range[p] > 10) wide.push(p + " " + fp.range[p]);
-    add("singable range", !wide.length, wide.length ? wide.join(", ") + " steps" : Object.keys(fp.range).map(function (q) { return q + " " + fp.range[q]; }).join(", ") + " steps (≤ 10)");
+    // 3b. the full closes stand on their roots (the Tabernacle): the last
+    // chord of every authentic or plagal close, of a tonicized arrival and
+    // of the amen in root position, and the dominant before the last
+    if (D.id === "tabernacle") {
+      var inv = [];
+      lines.forEach(function (l, i) {
+        var k = l.cadence.kind, cb = l.cadence.beat, at = null, before = null;
+        l.chords.forEach(function (c) { if (c.beat <= cb + EPS) { if (at) before = at; at = c; } });
+        var fullClose = k === "authentic" || k === "plagal" || l.plan.role === "home";
+        if (fullClose && at && at.inv) inv.push("line " + (i + 1) + " ends on " + at.roman);
+        var bass = l.notes.B || [], bn = null;
+        for (var q = bass.length - 1; q >= 0; q--) if (bass[q].beat <= cb + EPS) { bn = bass[q]; break; }
+        if (fullClose && at && bn && cls(bn.deg) !== cls(at.rootDeg) && !at.dim7) inv.push("line " + (i + 1) + ": the bass is not on the root");
+        if (l.plan.role === "home" && before && (before.name === "V" || before.name === "V7") && before.inv) inv.push("line " + (i + 1) + ": " + before.roman + " before the close");
+      });
+      if (h.amen && h.amen.chords.some(function (c) { return c.inv; })) inv.push("the amen is inverted");
+      add("the closes stand on their roots", !inv.length, inv.length ? inv.join("; ") : "every full close, and the amen, with the root in the bass (" + lines.filter(function (l) { return l.cadence.kind === "authentic" || l.cadence.kind === "plagal"; }).length + " full closes)");
+    }
+    // 4. singable ranges: no part wider than an octave and a fourth — counted
+    // in semitones (ten steps can be eighteen)
+    var wide = []; for (var p in fp.rangeSemi) if (fp.rangeSemi[p] > 17) wide.push(p + " " + fp.rangeSemi[p]);
+    add("singable range", !wide.length, wide.length ? wide.join(", ") + " semitones (more than 17)" : Object.keys(fp.rangeSemi).map(function (q) { return q + " " + fp.rangeSemi[q]; }).join(", ") + " semitones (≤ 17, an octave and a fourth)");
+    // 4b. singable leaps in the tune: inside a line, no tritone, no seventh,
+    // nothing wider than an octave
+    var badLeaps = [];
+    lines.forEach(function (l, i) {
+      var m = l.notes[h.melodyPart] || [];
+      for (var k = 1; k < m.length; k++) {
+        var st = Math.abs(m[k].deg - m[k - 1].deg), se = Math.abs(semi(h.mode, m[k].deg, m[k].alt || 0) - semi(h.mode, m[k - 1].deg, m[k - 1].alt || 0));
+        if (se === 6 || st === 6 || st > 7) badLeaps.push("line " + (i + 1) + ": " + (se === 6 ? "a tritone" : st === 6 ? "a seventh" : "wider than an octave"));
+      }
+    });
+    add("singable leaps", !badLeaps.length, badLeaps.length ? badLeaps.slice(0, 3).join("; ") : "no tritone, no seventh, nothing past the octave in the tune");
     // 5. voice-leading, by the dialect's own law
     var vl = voiceLeading(h), vlBad = [];
     if (!D.rules.parallels && (vl.par5 || vl.par8)) vlBad.push(vl.par5 + " parallel fifths, " + vl.par8 + " octaves");
@@ -1176,7 +1339,7 @@ window.KOLOB.Composer = (function () {
     // one short hymn can stray where thirty cannot — the lab's spread panel measures the thirty)
     var tol = D.tolerance, idiom = [];
     if (MINOR[h.mode] && tol.minor) { var t2 = {}; for (var kk in tol) t2[kk] = tol[kk]; for (kk in tol.minor) t2[kk] = tol.minor[kk]; tol = t2; }
-    ["par5", "thirdless", "crossing", "chromatic", "sevenths", "leap", "melisma"].forEach(function (k) {
+    ["par5", "thirdless", "crossing", "chromatic", "sevenths", "leap", "melisma", "closeThird"].forEach(function (k) {
       var v = fp.share[k]; if (tol[k] && (v < tol[k][0] - EPS || v > tol[k][1] + EPS)) idiom.push(k + " " + v + " (want " + tol[k][0] + "–" + tol[k][1] + ")");
     });
     add("idiom (" + D.id + " fingerprint)", !idiom.length, idiom.length ? idiom.join("; ") : "within the Earth tunes' tolerances", false);
@@ -1193,7 +1356,7 @@ window.KOLOB.Composer = (function () {
       var notes = rh[i].notes.map(function (n, k) { return { beat: n.beat, beats: n.beats, deg: mel[i].degs[k], syl: n.cont ? null : n.syl, stress: n.stress, cont: n.cont }; });
       var plan = null;
       var pool = [];
-      return { notes: notes, cadence: L.cadence, plan: L.plan || null, role: L.role, targetClass: L.targetClass, peakIdx: L.peak ? mel[i].peakIdx : -1 };
+      return { notes: notes, cadence: L.cadence, plan: L.plan || null, role: L.role, full: !!L.full, targetClass: L.targetClass, peakIdx: L.peak ? mel[i].peakIdx : -1 };
     });
     var altoDie = u01(R.fork("alto"));
     var altoOn = D.altoRate != null && altoDie < D.altoRate * (H ? 0.4 + H.alto : 1);
@@ -1230,7 +1393,7 @@ window.KOLOB.Composer = (function () {
         chords: hl.chords.map(function (c) { var o = {}; for (var k in c) if (c[k] !== undefined) o[k] = c[k]; o.beat = r3(o.beat); o.len = r3(o.len); return o; }),
         peak: !!L.peak, breathAfter: true, fermataBeats: fermata ? [r3(hl.cadBeat)] : [],
         startBeat: r3(beatAt), barStart: lay.barStart,
-        plan: { letter: L.letter + (L.prime ? "'" : ""), role: L.role, cadence: L.cadence, targetClass: L.targetClass, figure: L.figure, contour: L.contour,
+        plan: { letter: L.letter + (L.prime ? "'" : ""), role: L.role, cadence: L.cadence, via: L.plan || null, full: !!L.full, targetClass: L.targetClass, figure: L.figure, contour: L.contour,
                 cell: lay.cell, copyOf: L.copyOf != null ? L.copyOf : null, refrain: L.refrain },
       };
       beatAt += lay.len;
@@ -1273,7 +1436,7 @@ window.KOLOB.Composer = (function () {
         var failed = best.result.checks.filter(function (c) { return c.hard && !c.ok; }).map(function (c) { return c.name; });
         repairs.push({ round: round, failed: failed });
         // (a setting that will not come right with this tune is given another tune, from round two)
-        var melodyFail = failed.some(function (f) { return /peak|boring|Earth|another hymn|range/.test(f) || (round >= 2 && /voice-leading|cadence/.test(f)); });
+        var melodyFail = failed.some(function (f) { return /peak|boring|Earth|another hymn|range|leaps/.test(f) || (round >= 2 && /voice-leading|cadence|roots/.test(f)); });
         var avoid = [];
         if (best.result.earthNearest && best.result.earthNearest.quote) earthMelodies().forEach(function (e) { if (e.id === best.result.earthNearest.id) avoid.push(e.degs); });
         (opts.others || []).forEach(function (o) { avoid.push(melodyOf(o)); });
@@ -1294,7 +1457,7 @@ window.KOLOB.Composer = (function () {
       h.lines.forEach(function (l) { (l.notes[h.melodyPart] || []).forEach(function (n) { if (n.syl !== null) { if (l.peak && n.deg === sk.peak && peakSyl == null) peakSyl = sylTotal; sylTotal++; } }); });
       var result = checkHymn(h, { D: D, sk: sk, peakPos: peakSyl != null ? peakSyl / Math.max(1, sylTotal - 1) : -1, others: opts.others });
       var bad = result.checks.filter(function (c) { return c.hard && !c.ok; }).length;
-      if (!best || bad < best.bad) best = { h: h, result: result, bad: bad, harm: harm, commas: built.commas, round: round };
+      if (!best || bad < best.bad) best = { h: h, result: result, bad: bad, harm: harm, commas: built.commas, round: round, mel: mel };
       if (!bad) break;
     }
     h = best.h;
@@ -1304,7 +1467,9 @@ window.KOLOB.Composer = (function () {
     h.report = {
       frame: { dialect: D.id, meter: fr.meter, form: fr.form, modeOfTime: fr.time, mode: fr.mode, refrain: !!fr.refrain, keySemi: keySemi, alto: best.harm.alto },
       peak: { line: sk.peakLine + 1, stepsOverFinal: sk.peakTo, span: sk.span, at: r3(best.result.checks.length ? (function () { var s = 0, pk = null; h.lines.forEach(function (l) { (l.notes[h.melodyPart] || []).forEach(function (n) { if (n.syl !== null) { if (l.peak && n.deg === sk.peak && pk == null) pk = s; s++; } }); }); return pk != null ? pk / Math.max(1, s - 1) : -1; })() : -1) },
-      lines: sk.lines.map(function (L, i) { var m = mel[i]; return { letter: L.letter + (L.prime ? "'" : ""), role: L.role, cadence: L.cadence + (L.plan ? " (" + L.plan + ")" : ""), target: L.targetClass, figure: L.figure, contour: L.contour, cell: rh[i].cell, copyOf: L.copyOf != null ? L.copyOf + 1 : null, searchCost: m.cost, topSpread: m.topSpread }; }),
+      // (the plan as the KEPT round wrote it — the Score's own line plans and
+      // that round's search — never a later round's that did worse)
+      lines: h.lines.concat(h.refrain || []).map(function (l, i) { var P = l.plan, m = best.mel[i]; return { letter: P.letter, role: P.role, cadence: P.cadence + (P.via ? " (" + P.via + ")" : ""), full: P.full, target: P.targetClass, figure: P.figure, contour: P.contour, cell: P.cell, copyOf: P.copyOf != null ? P.copyOf + 1 : null, searchCost: m.cost, topSpread: m.topSpread }; }),
       harmony: best.harm.lines.map(function (x) { return { cadence: x.cadenceKind, nct: x.nct || {}, chordCost: x.chordCost != null ? x.chordCost : null, voiceCost: x.voiceCost != null ? x.voiceCost : null, relaxed: !!x.relaxed }; }),
       checks: best.result.checks, fingerprint: best.result.fingerprint, earthNearest: best.result.earthNearest,
       repairs: repairs.slice(0, best.round), commas: best.commas,
@@ -1324,7 +1489,9 @@ window.KOLOB.Composer = (function () {
   // THE REFERENCES AND THE SPREAD — what the checks are held to, and whether
   // the search has converged on one hymn
   // ==========================================================================
-  var FP_KEYS = ["par5", "thirdless", "crossing", "chromatic", "sevenths", "leap", "melisma"];
+  // (the cadence mix is read from the notes: the share of line closes that
+  // keep their third, that come to rest on home's chord, on the dominant's)
+  var FP_KEYS = ["par5", "thirdless", "crossing", "chromatic", "sevenths", "leap", "melisma", "closeThird", "closeHome", "closeDom"];
   // the Earth tunes' fingerprints per dialect: each tune's, their mean, and
   // the dialect's stated tolerance (kolob-dialects.js)
   function references() {
@@ -1358,8 +1525,19 @@ window.KOLOB.Composer = (function () {
   // n hymns from n streams: how spread are their endings, contours, peaks,
   // meters — and their fingerprints, against the tolerance
   //   streamOf(i) → a stream; opts as compose's (a dialect fixed, say)
+  // THE ENDING AS SUNG — the last two or three notes of the hymn's last line
+  // (a tied note counted once), named from the final as if it were do: a
+  // comma marks a note below the final (ti, is the leading tone under it).
+  // The figure's NAME is not enough: 'fall' and 'three' both end re–do.
+  var SOLF = ["do", "re", "mi", "fa", "sol", "la", "ti"];
+  function sungEnding(h, k) {
+    var all = h.lines.concat(h.refrain || []), last = all[all.length - 1], m = last.notes[h.melodyPart] || [], d = [];
+    m.forEach(function (x, i) { if (i > 0 && m[i - 1].tie && m[i - 1].deg === x.deg) return; d.push(x.deg); });
+    var fin = d[d.length - 1];
+    return d.slice(-k).map(function (x) { return SOLF[cls(x - fin)] + (x < fin ? "," : x >= fin + 7 ? "'" : ""); }).join("–");
+  }
   function spread(streamOf, n, opts) {
-    var tally = { finalFigure: {}, lineEnd: {}, contour: {}, meter: {}, form: {}, time: {}, cadence: {}, peakLine: {}, firstLine: {} };
+    var tally = { finalFigure: {}, lastTwo: {}, lastThree: {}, lineEnd: {}, contour: {}, meter: {}, form: {}, time: {}, cadence: {}, peakLine: {}, firstLine: {} };
     var fps = [], failures = {}, peaks = [];
     for (var i = 0; i < n; i++) {
       var h = compose(streamOf(i), opts);
@@ -1371,6 +1549,7 @@ window.KOLOB.Composer = (function () {
         inc("lineEnd", L.target + ":" + L.figure);
         if (L.role === "home") inc("finalFigure", L.figure);
       });
+      inc("lastTwo", sungEnding(h, 2)); inc("lastThree", sungEnding(h, 3));
       // the first line's actual notes, as a shape: does every hymn begin alike?
       var m = h.lines[0].notes[h.melodyPart].filter(function (x) { return x.syl !== null; }).map(function (x) { return x.deg; });
       inc("firstLine", intervals(m).slice(0, 4).join(","));
@@ -1397,7 +1576,7 @@ window.KOLOB.Composer = (function () {
     compose: compose, fingerprint: fingerprint, references: references, spread: spread, voiceLeading: voiceLeading,
     METERS: METERS, FORMS: FORMS, TIMES: TIMES, MODES: MODES, FIGURES: FIGURES, CELLS: CELLS,
     // for the lab and the harness (pure helpers)
-    semi: semi, spelledMonzo: spelledMonzo, doOf: function (mode) { return DO_OF[mode]; }, sharedRun: sharedRun,
+    semi: semi, spelledMonzo: spelledMonzo, doOf: function (mode) { return DO_OF[mode]; }, sharedRun: sharedRun, sungEnding: sungEnding, FP_KEYS: FP_KEYS,
   };
 })();
 (window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-composer.js"] = true;   // the load guard's roll call

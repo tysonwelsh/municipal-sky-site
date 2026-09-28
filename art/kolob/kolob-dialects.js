@@ -214,6 +214,25 @@ window.KOLOB.Dialects = (function () {
     // the dice: a little noise on every (slot, chord), thrown in full
     var noise = [];
     for (var k = 0; k < n; k++) { var row = []; for (var v = 0; v < vocab.length; v++) row.push(u01(R) * 0.45); noise.push(row); }
+    // THE TUNE'S SEVENTH FALLS. A chord whose seventh the tune is singing may
+    // stand only where the tune steps down from it, or holds it into a chord
+    // that keeps the note (the Victorian rule: the seventh is prepared or
+    // passed, and it resolves downward — never up, never by leap).
+    //   → false (forbidden here), "hold" (allowed if the next chord keeps it), true
+    var holdAt = [];                                               // [k][v]: the next chord must keep the tune's note
+    function seventhOk(k, ch) {
+      if (!ch.sev) return true;
+      var s = slots[k], sc = ch.tones[ch.tones.length - 1], res = true;
+      for (var j = 0; j < s.notes.length; j++) {
+        var nd = s.notes[j];
+        if (cls(nd.deg) !== sc.c || sc.alt !== 0) continue;
+        var nx = j + 1 < s.notes.length ? s.notes[j + 1].deg : k + 1 < n ? slots[k + 1].deg : null;
+        if (nx === nd.deg - 1) continue;                            // it steps down: resolved
+        if (nx === nd.deg && j === s.notes.length - 1 && k + 1 < n) { res = "hold"; continue; }   // held over: the next chord decides
+        return false;                                              // up, by leap, or at the line's end
+      }
+      return res;
+    }
     function emit(k, ch) {
       var s = slots[k], m = cls(s.deg), t = toneOf(ch, m), c = standing(ch) + noise[k][vocab.indexOf(ch)];
       if (ch.only === "approach") {
@@ -237,6 +256,9 @@ window.KOLOB.Dialects = (function () {
         else return INF;
       }
       if (ch.sev && t && t.c === ch.tones[ch.tones.length - 1].c && s.stress) c += 0.4;   // the seventh itself, on the strong beat
+      var sOk = seventhOk(k, ch);
+      if (!sOk) return INF;
+      holdAt[k][vocab.indexOf(ch)] = sOk === "hold";
       if (k === 0 && ctx.first) c += (ch.name === "I" || ch.name === "i") ? 0 : (ch.fn === "D" && !s.stress ? 0.3 : 1.6);
       if (s.final && line.role === "home" && ch.fn !== "T") c += INF;
       // a line's last chords belong to its cadence
@@ -250,6 +272,7 @@ window.KOLOB.Dialects = (function () {
       return c;
     }
     var cost = [], back = [];
+    for (k = 0; k < n; k++) holdAt.push([]);
     for (k = 0; k < n; k++) {
       cost.push([]); back.push([]);
       for (v = 0; v < vocab.length; v++) {
@@ -264,6 +287,7 @@ window.KOLOB.Dialects = (function () {
         var best = INF, arg = -1;
         for (var u = 0; u < vocab.length; u++) {
           if (cost[k - 1][u] >= INF) continue;
+          if (holdAt[k - 1][u] && !toneOf(ch, cls(slots[k].deg))) continue;   // a held seventh needs a chord that keeps it
           var x = cost[k - 1][u] + chordTrans(vocab[u], ch, slots[k].stress);
           if (x < best) { best = x; arg = u; }
         }
@@ -299,10 +323,11 @@ window.KOLOB.Dialects = (function () {
     var bassTones = [];
     if (ch.bassOnly != null) bassTones.push([ch.bassOnly, 0]);
     else if (ch.dim7) ch.tones.forEach(function (t, i) { bassTones.push([i, 0.25]); });
+    else if (ctx.rootOnly) bassTones.push([0, 0]);                // a close stands on its root (the bass sings sol–do, fa–do)
     else {
       bassTones.push([0, 0]);
-      bassTones.push([1, ch.fn === "D" && !ch.sev && ctx.cadenceSlot ? 1.2 : 0.62 - 0.35 * color]);
-      if (ch.sev) { bassTones.push([2, 0.8]); bassTones.push([ch.tones.length - 1, 1.1]); }
+      bassTones.push([1, (ch.fn === "D" && !ch.sev && ctx.cadenceSlot ? 1.2 : 0.62 - 0.35 * color) + (ctx.rootPref || 0)]);
+      if (ch.sev) { bassTones.push([2, 0.8 + (ctx.rootPref || 0)]); bassTones.push([ch.tones.length - 1, 1.1 + (ctx.rootPref || 0)]); }
     }
     function tess(p, s) { var lo = semi(mode, T[p][0], 0), hi = semi(mode, T[p][1], 0); return s < lo ? (lo - s) * 0.15 : s > hi ? (s - hi) * 0.15 : 0; }
     var classes = ch.tones.map(function (t) { return t.c; });
@@ -374,8 +399,9 @@ window.KOLOB.Dialects = (function () {
       else if ((i1 === 7 && i2 === 7) || (i1 === 0 && i2 === 0 && sa[p] !== sa[q])) c += 2;
     }
     // direct fifths and octaves between the outer voices, the soprano leaping
+    // into them: the Victorian editors strike them out with the parallels
     var ms = sb[0] - sa[0], mb = sb[3] - sa[3], io = Math.abs(sb[0] - sb[3]) % 12;
-    if (ms && mb && (ms > 0) === (mb > 0) && (io === 7 || io === 0) && Math.abs(ms) > 2) c += 1.5;
+    if (ms && mb && (ms > 0) === (mb > 0) && (io === 7 || io === 0) && Math.abs(ms) > 2) c += parW * 0.4;
     if (ms && mb && (ms > 0) !== (mb > 0)) c -= 0.2;
     // the inner voices move as little as they can; the bass may walk
     for (var v = 1; v <= 3; v++) {
@@ -406,8 +432,13 @@ window.KOLOB.Dialects = (function () {
         if (isLeading(mode, a.ch, t) && b.ch.fn === "T" && !(mv === 1 || mv === 2)) c += outer ? 4 : 0.8;
         else if (t.alt > 0 && !(mv === 1 || mv === 2)) c += 3;
         if (t.alt < 0 && !(mv === -1 || mv === -2)) c += 3;
-        if (a.ch.sev && t.c === a.ch.tones[a.ch.tones.length - 1].c && !(mv === -1 || mv === -2 || (mv === 0 && toneOf(b.ch, t.c)))) c += 5;
+        if (a.ch.sev && t.c === a.ch.tones[a.ch.tones.length - 1].c && !(mv === -1 || mv === -2 || (mv === 0 && toneOf(b.ch, t.c)))) c += 8;
       }
+    } else if (a.ch.sev) {
+      // the same seventh chord again: the voice on the seventh holds it or
+      // lets it fall; it does not leap off to another of the chord's notes
+      var sc = a.ch.tones[a.ch.tones.length - 1], vA = [a.S, a.A, a.T, a.B];
+      for (v = 1; v < 4; v++) if (cls(vA[v].d) === sc.c && vA[v].a === sc.alt) { var mv2 = sb[v] - sa[v]; if (mv2 && mv2 !== -1 && mv2 !== -2) c += 4; }
     }
     return c;
   }
@@ -416,10 +447,12 @@ window.KOLOB.Dialects = (function () {
     var n = slots.length, mode = ctx.mode, INF = 1e9, parW = ctx.parW != null ? ctx.parW : 30;
     var cands = [], cost = [], back = [];
     for (var k = 0; k < n; k++) {
-      var cc = voicingsFor(slots[k], chords[k], { mode: mode, bounds: ctx.bounds, tess: ctx.tess, H: ctx.H, cadenceSlot: slots[k].final });
+      var root = !!(ctx.rootAt && ctx.rootAt[k]), pref = ctx.rootPref ? ctx.rootPref[k] || 0 : 0;
+      var cc = voicingsFor(slots[k], chords[k], { mode: mode, bounds: ctx.bounds, tess: ctx.tess, H: ctx.H, cadenceSlot: slots[k].final, rootOnly: root, rootPref: pref });
       if (!cc.length) {                                                // widen the compass rather than fail
         var wide = {}; for (var p in ctx.bounds) wide[p] = [ctx.bounds[p][0] - 2, ctx.bounds[p][1] + 2];
-        cc = voicingsFor(slots[k], chords[k], { mode: mode, bounds: wide, tess: ctx.tess, H: ctx.H });
+        cc = voicingsFor(slots[k], chords[k], { mode: mode, bounds: wide, tess: ctx.tess, H: ctx.H, rootOnly: root, rootPref: pref });
+        if (!cc.length && root) cc = voicingsFor(slots[k], chords[k], { mode: mode, bounds: wide, tess: ctx.tess, H: ctx.H });
       }
       if (!cc.length) cc = [fallbackVoicing(slots[k], chords[k], ctx)];     // never: but a line always sounds
       if (cc.length > 36) { cc.sort(function (a, b) { return a.cost - b.cost; }); cc = cc.slice(0, 36); }   // the likeliest spacings only
@@ -549,7 +582,26 @@ window.KOLOB.Dialects = (function () {
       var relaxed = false;
       if (!pc) { relaxed = true; pc = planChords({ cadence: "none", plan: null, role: line.role === "home" ? "home" : "open", notes: line.notes }, slots, vocab, prevCh, { mode: mode, H: ctx.H, first: li === 0, approach: [], shortBeat: 9, loose: true }, Rl.fork("chords:relaxed")); }
       var chords = pc.chords;
-      var vl = voiceLine(slots, chords, prevV, { mode: mode, bounds: ctx.bounds, tess: ctx.tess, H: ctx.H, parW: 30 });
+      // THE CLOSE STANDS ON ITS ROOT. A full close (authentic or plagal, the
+      // tonicized arrival in the dominant or the relative, and whatever
+      // comes home) ends with the root in the bass — the hymnal's bass sings
+      // sol–do (or fa–do) under every full close; a first-inversion tonic is
+      // an open door, not an arrival. Under the last line the dominant before
+      // it is in root position too; under an inner authentic close the bass
+      // leans that way.
+      var kindNow = relaxed ? realizedKind(chords, slots, mode) : line.cadence;
+      var full = line.role === "home" || line.plan === "tonicize" || line.plan === "relative" || kindNow === "authentic" || kindNow === "plagal";
+      var rootAt = [], rootPref = [];
+      slots.forEach(function (s, k) {
+        var dom = k === slots.fin - 1 && chords[k].fn === "D";
+        // (the dominant proper — V, V7 — is held to it; a modal VII or v before
+        // home only leans, since a tune on the subtonic over VII's root would
+        // walk up to the final in octaves with the bass)
+        var trueV = dom && (chords[k].name === "V" || chords[k].name === "V7");
+        rootAt.push(full && (s.final || s.trail) || (line.role === "home" && trueV));
+        rootPref.push(dom && full ? 1.2 : 0);
+      });
+      var vl = voiceLine(slots, chords, prevV, { mode: mode, bounds: ctx.bounds, tess: ctx.tess, H: ctx.H, parW: 30, rootAt: rootAt, rootPref: rootPref });
       var parts = { S: line.notes.map(function (n) { return { beat: n.beat, beats: n.beats, deg: n.deg, alt: 0, nct: null, syl: n.syl, stress: n.stress, tie: false, cont: n.cont }; }), A: [], T: [], B: [] };
       slots.forEach(function (s, k) {
         var v = vl.voicings[k];
@@ -583,7 +635,8 @@ window.KOLOB.Dialects = (function () {
       var an = [{ beat: 0, beats: a, deg: fd, stress: 1, syl: 0, cont: false }, { beat: a, beats: a, deg: fd, stress: 1, syl: 1, cont: false }];
       var as = slotsOf({ notes: an });
       if (IV && I && toneOf(IV, cls(fd)) && toneOf(I, cls(fd))) {
-        var av = voiceLine(as, [IV, I], prevV, { mode: mode, bounds: ctx.bounds, tess: ctx.tess, H: ctx.H, parW: 30 });
+        // (both chords of the amen on their roots: the bass sings fa–do)
+        var av = voiceLine(as, [IV, I], prevV, { mode: mode, bounds: ctx.bounds, tess: ctx.tess, H: ctx.H, parW: 30, rootAt: [true, true] });
         var ap = { S: an.map(function (n) { return { beat: n.beat, beats: n.beats, deg: n.deg, alt: 0, nct: null, syl: n.syl, stress: 1, tie: false }; }), A: [], T: [], B: [] };
         as.forEach(function (sl, k) { ["A", "T", "B"].forEach(function (p) { var v = av.voicings[k][p]; ap[p].push({ beat: sl.beat, beats: sl.beats, deg: v.d, alt: v.a, nct: null, syl: k, stress: 1, tie: false }); }); });
         out.amen = { parts: ap, cadenceKind: "plagal", cadBeat: a,
@@ -763,7 +816,10 @@ window.KOLOB.Dialects = (function () {
     ctx.win = {};
     ["S", "A", "B"].forEach(function (p) {
       var b = ctx.bounds[p], t = ctx.tess[p], mid = Math.round((t[0] + t[1]) / 2);
-      ctx.win[p] = [Math.max(b[0], mid - 5), Math.min(b[1], mid + 5)];
+      var lo = Math.max(b[0], mid - 5), hi = Math.min(b[1], mid + 5);
+      // counted in semitones, not steps: ten steps can be eighteen semitones
+      while (semi(mode, hi, 0) - semi(mode, lo, 0) > 17) { if (hi - mid >= mid - lo) hi--; else lo++; }
+      ctx.win[p] = [lo, hi];
     });
     ctx.lines.forEach(function (line, li) {
       var slots = slotsOf(line), Rl = R.fork("line:" + li), n = slots.length, B = ctx.win;
@@ -779,7 +835,14 @@ window.KOLOB.Dialects = (function () {
       }
       function reqUpper(k, d, third) {
         var s = slots[k], c = 0;
-        if ((s.final || s.trail) && third) c += line.role === "home" ? 30 : kind === "imperfect" ? 0 : 10;
+        // most closes are bare; a line the plan closes FULL (line.full: in
+        // the major modes about one inner close in four, as the book has it)
+        // keeps its third, and the hymn's last chord never does
+        if (s.final || s.trail) {
+          if (line.role === "home") c += third ? 30 : 0;
+          else if (line.full) c += third ? 0 : 6;
+          else if (third) c += kind === "imperfect" ? 0 : 10;
+        }
         // the last chord of a line is the chord its cadence names: home's, or the dominant's
         if (s.final || s.trail) { var r = cls(d - finRoot); if (r !== 0 && r !== 2 && r !== 4) c += 12; }
         return c;
@@ -891,11 +954,20 @@ window.KOLOB.Dialects = (function () {
       home: [["authentic", 0, 1, ALL]],
     },
     ranges: { S: [-1, 19], A: [-5, 12], T: [-12, 7], B: [-20, 0] }, tess: { S: [2, 14], A: [-3, 9], T: [-9, 4], B: [-17, -3] },
+    // the last line's ending leans to the leading tone more than an inner
+    // line's: the Psalmody's tunes come home ti–do as often as re–do. (Not in
+    // minor: a tune there rises on the unraised subtonic, which only VII can
+    // carry — a modal close; the Victorian minor hymn comes home re–do over
+    // V with the leading tone raised in an inner voice.)
+    homeFigures: { major: { rise: 1.7, turn: 1.3, climb: 1.4, fifth: 1.2, three: 0.75, fall: 0.9, sigh: 0.6 },
+                   minor: { rise: 0.6, turn: 0.7, climb: 0.6, fall: 1.1 } },
     tempo: 1.0, fermata: 0.35, amen: true, refrains: 0.6, search: 140, organ: true,
     weights: w({}),
     rules: { parallels: false, crossing: false, spacing: true },
     refs: ["earth:all-is-well", "earth:assembly", "earth:deseret", "earth:new-salem", "earth:martyr", "earth:fowler", "earth:bethany"],
     tolerance: { par5: [0, 0.02], thirdless: [0, 0.15], crossing: [0, 0], chromatic: [0, 0.07], sevenths: [0.03, 0.4], leap: [0.08, 0.45], melisma: [0, 0.25], melodyRange: [5, 10],
+                 // the cadence mix, read from the notes (Earth: 98 % of closes keep their third, 53 % home, 29 % dominant)
+                 closeThird: [0.75, 1], closeHome: [0.25, 0.8], closeDom: [0, 0.67],
                  // the Psalmody's tunes are all major; a minor hymn raises its leading tone at every dominant
                  minor: { chromatic: [0, 0.13] } },
     harmonize: harmonizeTabernacle,
@@ -920,10 +992,15 @@ window.KOLOB.Dialects = (function () {
     },
     ranges: { S: [-1, 19], A: [-5, 12], T: [-12, 9], B: [-20, 2] }, tess: { S: [5, 16], A: [-2, 9], T: [-9, 5], B: [-17, -3] },
     tempo: 0.86, fermata: 0.1, amen: false, refrains: 0.3, search: 140, organ: false, altoRate: 0.55,
+    // an inner line that closes FULL, its third kept (the 1844 tunes: about
+    // a quarter of the inner closes in the major modes, one in eight in minor)
+    fullClose: { major: 0.3, minor: 0.04 },
     weights: w({ leapAppetite: 1.3, repeat: 0.18, stressTense: 0.1, leadingTone: 0.4, octave: 1.2, sixth: 0.8, fifth: 0.1, contour: 0.28 }),
     rules: { parallels: true, crossing: true, spacing: false },
     refs: ["earth:new-britain", "earth:kedron", "earth:idumea", "earth:pisgah", "earth:holy-manna", "earth:coronation", "earth:wondrous-love", "earth:beach-spring", "earth:promised-land", "earth:foundation"],
-    tolerance: { par5: [0.03, 0.45], thirdless: [0.25, 0.8], crossing: [0, 0.2], chromatic: [0, 0.01], sevenths: [0, 0.1], leap: [0.12, 0.62], melisma: [0.02, 0.35], melodyRange: [5, 10] },
+    tolerance: { par5: [0.03, 0.45], thirdless: [0.25, 0.8], crossing: [0, 0.2], chromatic: [0, 0.01], sevenths: [0, 0.1], leap: [0.12, 0.62], melisma: [0.02, 0.35], melodyRange: [5, 10],
+                 // (Earth: a quarter of the closes keep their third, 56 % home, 28 % dominant)
+                 closeThird: [0, 0.5], closeHome: [0.25, 0.85], closeDom: [0, 0.6] },
     harmonize: harmonizeSacredHarp,
   };
   var OLDWAY = {
@@ -949,7 +1026,7 @@ window.KOLOB.Dialects = (function () {
     weights: w({ leapAppetite: 0.7, repeat: 0.25, threeSame: 2, unrecovered: 2, octave: 6, sixth: 3, fifth: 0.6, contour: 0.4 }),
     rules: { parallels: true, crossing: true, spacing: false },
     refs: ["earth:new-britain", "earth:idumea", "earth:kedron", "earth:pisgah", "earth:coronation"],
-    tolerance: { leap: [0.05, 0.42], melisma: [0.05, 0.5], melodyRange: [4, 9], par5: [0, 0], thirdless: [0, 1], crossing: [0, 0], chromatic: [0, 0], sevenths: [0, 0] },
+    tolerance: { leap: [0.05, 0.42], melisma: [0.05, 0.5], melodyRange: [4, 9], par5: [0, 0], thirdless: [0, 1], crossing: [0, 0], chromatic: [0, 0], sevenths: [0, 0], closeThird: [0, 0], closeHome: [0, 0], closeDom: [0, 0] },
     harmonize: harmonizeOldWay,
   };
   // the cadence entries' "kind:plan" → kind and plan
