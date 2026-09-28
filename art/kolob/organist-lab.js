@@ -16,15 +16,24 @@
 // gives it in the prelude and under the singing — plays into the same layer.
 // CHECK measures the two against each other (BS.1770, the loudest 3 s).
 //
-// THE BREATH. The owner heard "a breath, or a brushing sound, in between the
-// notes when the hymns are being sung". In the lab's hymns that was the pipe
-// organ's chiff, full-strength on every key of every chord. CHECK renders the
-// hymn three ways, dry — as the organ plays it now, with the old full chiff
-// on every key, and with no chiff at all — and reports how loud the breath is
-// against the tone, both ways.
+// THE BREATH. The owner hears "a breath, or a brushing sound, in between the
+// notes when the hymns are being sung". Two things in this lab's hymns make
+// a sound like that at the joins, and the larger is NOT the organ's: it is
+// the ward's own breath (kolob-voices-vocal.js — the aspiration each singer
+// lets out as a line ends and the "h" puffed into the next), 17–25 dB over
+// the organ's chiff at the same joins now, and louder than the chiff was
+// even before round 3 mended it. The CAST crew has mended the voice on its
+// branch (kolob-r3-cast, af8e190c, "the hiss between the notes is gone");
+// until that merges, the lab's ward still breathes it. The checkbox "the
+// ward's breath" takes it out, to hear the difference (a diagnostic: the
+// voice loses its breathiness with it). The organ's part was its chiff, full
+// on every key of every chord; CHECK renders the hymn three ways, dry — as
+// the organ plays it now, with the old full chiff, and with none — and
+// OrganistLab.joins() measures both breaths at the joins, the ward's and the
+// organ's, in the 60 ms after each onset above 1.5 kHz.
 //
 // For silent checks: window.OrganistLab = { compose, play, stop, check,
-// compare, meeting, findStrange, level, plans }.
+// compare, meeting, findStrange, level, plans, registrations, joins }.
 // ============================================================================
 (function () {
   "use strict";
@@ -59,6 +68,7 @@
   if (Q.get("seed")) $("kol-seed").value = Q.get("seed");
   ["style", "dialect", "verses", "index", "next"].forEach(function (k) { if (Q.get(k) != null && $("kol-" + k)) $("kol-" + k).value = Q.get(k); });
   if (Q.get("ward") === "0") $("kol-ward").checked = false;
+  if (Q.get("breath") === "0") $("kol-breath").checked = false;
 
   // ==========================================================================
   // THE HYMN AND THE ORGANIST
@@ -188,10 +198,16 @@
   function deg(key, d) { var i = d - 1, o = Math.floor(i / 7), k = ((i % 7) + 7) % 7; return key * MAJ[k] * Math.pow(2, o); }
   var REF_CHORDS = [[-6, -2, 3, 8], [-3, 1, 6, 8], [-2, 0, 5, 9], [-6, -2, 3, 8]];   // I IV V I as [B, T, A, S]
   function env(g, t, pts) { g.gain.setValueAtTime(0, t); var tt = t; for (var i = 0; i < pts.length; i++) { tt += pts[i][0]; g.gain.linearRampToValueAtTime(pts[i][1], tt); } return tt; }
-  // fixed: the round-3 request — the tremulant on a gain of its own AFTER the
-  // envelope (1 ± 0.015), so it can never sound a chord the envelope has let go
+  // fixed: the round-3 request (R1) — the tremulant on a gain of its own
+  // AFTER the envelope, so it can never sound a chord the envelope has let
+  // go. Its depth is scaled to the chord's own level (round 2, after the
+  // critic): the old ±0.015 rode master.gain ABSOLUTELY, so against a
+  // sustain of 0.92 × peak it was ±4.5–5.6 %; moved after the envelope as a
+  // bare 1 ± 0.015 it would have been ±1.5 %, the tremulant three times
+  // shallower. trem × 0.1 / (0.92 × peak) keeps the depth the sustain had.
   function organChord(ctx, dest, t, dur, freqs, gainMul, fixed) {
     var stops = 0.5, trem = 0.15, pedal = 0.6;
+    var peak = (gainMul || 1) * 0.7;                   // computed first: the fixed tremulant's depth needs it
     var master = ctx.createGain(), tremG = null;
     if (fixed) { tremG = ctx.createGain(); tremG.gain.value = 1; master.connect(tremG); tremG.connect(dest); }
     else master.connect(dest);
@@ -213,8 +229,9 @@
     var sub = ctx.createOscillator(); sub.type = "sine"; sub.frequency.setValueAtTime(freqs[0] * 0.25, t);
     var sg = ctx.createGain(); sg.gain.setValueAtTime(pedal * 0.15, t); sub.connect(sg); sg.connect(master); sub.start(t); sub.stop(t + dur + 0.3);
     var lfo = ctx.createOscillator(); lfo.frequency.setValueAtTime(5.5, t);
-    var lg = ctx.createGain(); lg.gain.setValueAtTime(trem * 0.1, t); lfo.connect(lg); lg.connect(fixed ? tremG.gain : master.gain); lfo.start(t); lfo.stop(t + dur + 0.3);
-    var peak = (gainMul || 1) * 0.7, atk = Math.min(2.2, dur * 0.3);
+    var lg = ctx.createGain(); lg.gain.setValueAtTime(fixed ? Math.min(0.3, trem * 0.1 / (0.92 * peak)) : trem * 0.1, t);
+    lfo.connect(lg); lg.connect(fixed ? tremG.gain : master.gain); lfo.start(t); lfo.stop(t + dur + 0.3);
+    var atk = Math.min(2.2, dur * 0.3);
     env(master, t, [[atk, peak], [Math.max(0.1, dur - atk - dur * 0.28), peak * 0.92], [dur * 0.28, 0]]);
   }
   function playReference(ctx, dest, t, which, fixed) {
@@ -228,14 +245,17 @@
   // choice), singing each line by the organist's clock
   // ==========================================================================
   function ratio(m) { return Math.pow(2, m[0]) * Math.pow(3, m[1]) * Math.pow(5, m[2]) * Math.pow(7, m[3] || 0); }
-  function fullWard(seed) {
+  // noBreath: the diagnostic — every singer's breath at 0 (the die still
+  // thrown, so everything else about them is the same)
+  function fullWard(seed, noBreath) {
     var root = PJ2.Rand.stream(seed).fork("fullward"), people = [];
     ["S", "A", "T", "B"].forEach(function (part) {
       for (var k = 0; k < 8; k++) {
         var r = root.fork(part + ":" + k), base = { S: 0.30, A: -0.30, T: 0.45, B: -0.45 }[part] * 0.9;
+        var age = r.pick(["young", "mid", "mid", "old"]), conf = r.rnd(0.45, 0.9), bright = r.rnd(0.3, 0.65), br = r.rnd(0.2, 0.55);
         people.push({ part: part, k: k, singer: V.singer({
-          seed: seed, name: "ward-" + part + k, part: part, age: r.pick(["young", "mid", "mid", "old"]),
-          confidence: r.rnd(0.45, 0.9), brightness: r.rnd(0.3, 0.65), breath: r.rnd(0.2, 0.55),
+          seed: seed, name: "ward-" + part + k, part: part, age: age,
+          confidence: conf, brightness: bright, breath: noBreath ? 0 : br,
           pitchHabitCents: r.rnd(-12, 12), timingHabitMs: r.rnd(0, 70) + r.rnd(-10, 25), tractScale: r.rnd(0.95, 1.05),
           pan: Math.max(-0.9, Math.min(0.9, base + r.rnd(-0.3, 0.3))) }) });
       }
@@ -322,7 +342,7 @@
         perf = O.perform(organ, plan, T0, { keynoteHz: KEYNOTE_HZ });
         endAt = T0 + plan.dur + 1.5;
         if (kind === "hymn" && $("kol-ward").checked) {
-          var ward = fullWard(S.seed);
+          var ward = fullWard(S.seed, !$("kol-breath").checked);
           plan.ward.forEach(function (e) { jobs.push({ at: T0 + e.t, fn: function () { singEntry(ac, room.ward, S.hymn, ward, e, T0, S.seed); } }); });
         }
       }
@@ -449,6 +469,37 @@
     return { lufs: +lu.I.toFixed(1), loud3: +lu.S.toFixed(1), peakDb: +db(pk).toFixed(1), clicks: clicks, centroid: Math.round(cn / (cd || 1)),
              bands: bands.map(function (b) { return +(100 * b / tot).toFixed(1); }), seconds: +(n / SR).toFixed(1), spec: spec, N: N };
   }
+  // THE VERSES, one by one: the loudest 3 s inside each verse of the hymn
+  // (organ alone, through the layer and the room) — the organist's arc.
+  // t0: where the plan's zero sits in the render (renderOffline: 0.2 s)
+  function verseLevels(buf, plan, t0) {
+    var k = [kWeight(buf.getChannelData(0)), kWeight(buf.getChannelData(1))], n = k[0].length, sq = new Float64Array(n + 1);
+    for (var i = 0; i < n; i++) sq[i + 1] = sq[i] + k[0][i] * k[0][i] + k[1][i] * k[1][i];
+    function L(a, len) { return -0.691 + 10 * Math.log10((sq[a + len] - sq[a]) / len + 1e-20); }
+    var out = [];
+    (plan.verseDyn || []).forEach(function (vd) {
+      var re = new RegExp("^verse " + (vd.verse + 1) + ", line "), a = Infinity, b = -Infinity;
+      plan.sections.forEach(function (sx) { if (re.test(sx.what)) { a = Math.min(a, sx.t); b = Math.max(b, sx.end); } });
+      if (!isFinite(a)) return;
+      var s0 = Math.round((a + t0) * SR), s1 = Math.min(n, Math.round((b + t0) * SR)), W = Math.min(Math.round(3 * SR), s1 - s0), H = Math.round(0.1 * SR), best = -Infinity;
+      for (var q = s0; q + W <= s1; q += H) best = Math.max(best, L(q, W));
+      out.push({ verse: vd.verse + 1, reg: vd.reg, dyn: vd.dyn, loud3: +best.toFixed(1) });
+    });
+    return out;
+  }
+  // THE TREMULANT'S DEPTH, in the sustain of a dry chord: the envelope's
+  // component at the LFO's own rate (5.5 Hz), against its mean → ±dB
+  function tremDepth(buf, a, b) {
+    var Lc = buf.getChannelData(0), Rc = buf.getChannelData(1), B = Math.round(0.005 * SR), env = [];
+    for (var i = Math.round(a * SR); i + B <= Math.round(b * SR); i += B) {
+      var e = 0; for (var j = i; j < i + B; j++) { var m = (Lc[j] + Rc[j]) * 0.5; e += m * m; }
+      env.push(Math.sqrt(e / B));
+    }
+    var cyc = Math.floor(env.length * 0.005 * 5.5), N = Math.round(cyc / 5.5 / 0.005), re = 0, im = 0, mean = 0;
+    for (var q = 0; q < N; q++) { var ph = 2 * Math.PI * 5.5 * q * 0.005; re += env[q] * Math.cos(ph); im += env[q] * Math.sin(ph); mean += env[q]; }
+    var depth = 2 * Math.sqrt(re * re + im * im) / N / (mean / N);
+    return { pct: +(100 * depth).toFixed(2), db: +(20 * Math.log10(1 + depth)).toFixed(2) };
+  }
   // THE BREATH: the organ dry, three ways; the chiff is what the first two
   // have that the third lacks (the dice are thrown alike, so the difference
   // is exact). → breath against tone (dB), overall and above 1.5 kHz
@@ -468,6 +519,49 @@
     });
   }
 
+  // THE TWO BREATHS AT THE JOINS (the critic's measure, round 2): the first
+  // `secs` of the hymn — the giving out and what follows — the organ dry at
+  // its layer's gain and the ward dry at its own, rendered apart (they sum),
+  // each twice so the breath is an exact difference: the organ with its
+  // chiff and with none (and with the round-2 chiff), the ward with its
+  // breath as drawn and with none. Then, in the 60 ms after every onset of
+  // the Score, the energy above 1.5 kHz of each: dBFS, the power mean.
+  function joins(o) {
+    o = o || {};
+    if (!S.plan) compose();
+    var secs = o.secs || 26, plan = S.plan, cut = {};
+    for (var k in plan) cut[k] = plan[k];
+    cut.dur = secs; cut.phrases = plan.phrases.filter(function (p) { return p.t < secs; });
+    var old = K.VoicesOrgan.CHIFF ? 1 / K.VoicesOrgan.CHIFF.level : 1;
+    function wardRender(noBreath) {
+      var off = new OfflineAudioContext(2, Math.ceil((secs + 1) * SR), SR), g = off.createGain();
+      g.gain.value = WARD_LAYER; g.connect(off.destination);
+      var ward = fullWard(S.seed, noBreath);
+      plan.ward.forEach(function (e) { if (e.t < secs) singEntry(off, g, S.hymn, ward, e, 0.2, S.seed); });
+      return off.startRendering();
+    }
+    var t0 = Date.now();
+    return Promise.all([renderOffline(cut, { dry: true }), renderOffline(cut, { dry: true, chiff: old, legatoChiff: 1 }), renderOffline(cut, { dry: true, chiff: 0 })])
+      .then(function (org) { return wardRender(false).then(function (w1) { return wardRender(true).then(function (w0) { return org.concat([w1, w0]); }); }); })
+      .then(function (b) {
+        function mono(buf) { var L = buf.getChannelData(0), R = buf.getChannelData(1), m = new Float32Array(L.length); for (var i = 0; i < L.length; i++) m[i] = (L[i] + R[i]) * 0.5; return m; }
+        var n = Math.min.apply(null, b.map(function (x) { return x.length; })), M = b.map(function (x) { return mono(x).subarray(0, n); });
+        function minus(x, y) { var d = new Float32Array(n); for (var i = 0; i < n; i++) d[i] = x[i] - y[i]; return d; }
+        var parts = { chiffNow: minus(M[0], M[2]), chiffRound2: minus(M[1], M[2]), organTone: M[2], wardBreath: minus(M[3], M[4]), wardVoice: M[4] };
+        var ons = [];
+        plan.phrases.forEach(function (p) { p.report.forEach(function (r) { var t = p.t + r.at; if (t < secs - 0.1 && !ons.some(function (x) { return Math.abs(x - t) < 0.02; })) ons.push(t); }); });
+        ons.sort(function (a, c) { return a - c; });
+        var W = Math.round(0.06 * SR), out = { seed: S.seed, style: plan.style, secs: secs, onsets: ons.length, ms: 0 };
+        Object.keys(parts).forEach(function (name) {
+          var hp = highpass(parts[name], 1500), e = 0;
+          ons.forEach(function (t) { var a = Math.round((t + 0.2) * SR); for (var i = a; i < a + W && i < n; i++) e += hp[i] * hp[i]; });
+          out[name] = +(10 * Math.log10(e / (ons.length * W) + 1e-20)).toFixed(1);
+        });
+        out.ms = Date.now() - t0;
+        return out;
+      });
+  }
+
   // ==========================================================================
   // CHECK
   // ==========================================================================
@@ -475,11 +569,19 @@
   function check() {
     if (!S.plan) compose();
     var out = $("kol-checkout"); out.innerHTML = '<p class="kol-cap">rendering the organ alone, and the engine\'s organ…</p>';
-    var jobs = [renderOffline(S.pre), renderOffline("ref:prelude"), renderOffline("ref:hymn"), renderOffline("ref:prelude:fixed")];
+    var jobs = [renderOffline(S.pre), renderOffline("ref:prelude"), renderOffline("ref:hymn"), renderOffline("ref:prelude:fixed"),
+                renderOffline("ref:prelude", { dry: true }), renderOffline("ref:prelude:fixed", { dry: true })];
     if (S.plan.accompanied) jobs.push(renderOffline(S.plan));
     return Promise.all(jobs).then(function (bufs) {
-      var a = bufs.map(function (b, i) { return analyse(b, i === 4); });
+      var a = bufs.slice(0, 4).concat(bufs.slice(6)).map(function (b, i) { return analyse(b, i === 4); });
       var res = { prelude: a[0], refPrelude: a[1], refHymn: a[2], refFixed: a[3], hymn: a[4] || null };
+      // the engine organ's tremulant, as it is and with R1 (the first chord's sustain)
+      var s0 = 0.2 + Math.min(2.2, REF.prelude.dur * 0.3) + 0.3, s1 = 0.2 + REF.prelude.dur * 0.72 - 0.2;
+      res.trem = { now: tremDepth(bufs[4], s0, s1), fixed: tremDepth(bufs[5], s0, s1) };
+      if (a[4]) {
+        res.verses = verseLevels(bufs[6], S.plan, 0.2);
+        res.verses.forEach(function (v) { v.vsEngine = +(v.loud3 - a[2].loud3).toFixed(1); });
+      }
       res.deltaPrelude = +(a[0].loud3 - a[1].loud3).toFixed(1);
       res.deltaHymn = a[4] ? +(a[4].loud3 - a[2].loud3).toFixed(1) : null;
       return (S.plan.accompanied ? breath(S.plan) : Promise.resolve(null)).then(function (br) {
@@ -511,9 +613,16 @@
           (x[2] == null ? "—" : (x[2] > 0 ? "+" : "") + f1(x[2]) + " LU vs " + esc(x[3])) + '</td><td class="num">' + f1(a.lufs) + '</td><td class="num">' + f1(a.peakDb) + " dBFS</td>" +
           '<td class="num ' + (a.clicks.length ? "out" : "in") + '">' + a.clicks.length + '</td><td class="num">' + a.centroid + ' Hz</td><td class="num">' + a.bands.join(" / ") + "</td></tr>";
       }).join("") + "</table>";
-    if (r.breath) html += '<p class="kol-note" style="margin-top:0.6rem">The breath between the notes (the chiff, against the tone, the hymn dry): <b>' + f1(r.breath.now) + " dB</b> overall and <b>" +
-      f1(r.breath.nowHi) + " dB</b> above 1.5 kHz, now. With the chiff as the round-2 organ spoke it (its old level, full on every key): " + f1(r.breath.was) + " dB and " + f1(r.breath.wasHi) + " dB.</p>" +
-      (r.refPrelude.clicks.length ? '<p class="kol-cap">The engine\'s organ clicks at its chords\' ends (' + r.refPrelude.clicks.map(function (c) { return c.t + " s"; }).join(", ") + '): its tremulant rides the chord after the envelope has let go, then the pipes stop dead. With the one-line fix: ' + r.refFixed.clicks.length + " clicks.</p>" : "");
+    if (r.verses && r.verses.length > 1) html += '<p class="kol-note" style="margin-top:0.6rem">The verses, organ alone (loudest 3 s of each): ' + r.verses.map(function (v) {
+        return "<b>" + v.verse + "</b> " + esc(v.reg) + (v.dyn ? " (" + (v.dyn > 0 ? "+" : "") + f1(v.dyn) + " dB)" : "") + " " + f1(v.loud3);
+      }).join(" · ") + " LUFS. The loudest verse sits " + (function (m) { return (m > 0 ? "+" : "") + f1(m); })(Math.max.apply(null, r.verses.map(function (v) { return v.vsEngine; }))) +
+      " LU against the engine's organ under the singing.</p>";
+    if (r.breath) html += '<p class="kol-note">The organ\'s own breath at the joins (its chiff, against its tone, the hymn dry): <b>' + f1(r.breath.now) + " dB</b> overall and <b>" +
+      f1(r.breath.nowHi) + " dB</b> above 1.5 kHz, now. With the chiff as the round-2 organ spoke it (its old level, full on every key): " + f1(r.breath.was) + " dB and " + f1(r.breath.wasHi) + " dB. " +
+      "The larger breath between the notes in this lab's hymns is the ward's own (the singers' breath, which the CAST crew has mended on its branch): untick <i>the ward's breath</i> to hear the hymn without it.</p>";
+    html += '<p class="kol-cap">The engine\'s organ, as it is: ' + r.refPrelude.clicks.length + " faint clicks in the prelude reference" + (r.refPrelude.clicks.length ? " (" + r.refPrelude.clicks.map(function (c) { return c.t + " s, " + f1(c.db) + " dBFS"; }).join("; ") + ")" : "") +
+      ", " + r.refHymn.clicks.length + " under the singing — at a chord's end, where the tremulant outlives the envelope; not the brushing between sung notes. With R1: " + r.refFixed.clicks.length +
+      " clicks, and its tremulant ±" + f1(r.trem.fixed.db) + " dB against ±" + f1(r.trem.now.db) + " dB as it is.</p>";
     if (!r.hymn) html += '<p class="kol-cap">This dialect is sung without the organ: there is no hymn for the organ to measure.</p>';
     $("kol-checkout").innerHTML = html;
     if (r.hymn) drawSpec($("kol-spec"), r.hymn);
@@ -618,13 +727,14 @@
   // ==========================================================================
   var LISTEN = {
     plain: "<b>The plain organist.</b> In the prelude: the hymn played straight through on soft flutes (a short hymn twice, the second time softer), a small hold on the last chord. In the hymn: the last line given out on the flutes, then the four parts under the ward exactly as printed, every repeated note struck again; nothing at all between the lines; between verses a single breath.",
-    victorian: "<b>The Victorian.</b> In the prelude: the tune on the vox humana (it trembles) over flutes, or on the trumpet, or the swell opening and closing on the principal; at every line's close an inner voice hangs on over the new chord and falls a step late (a suspension), and passing notes walk the tenor. In the hymn: the tune given out broadly, the swell breathing with each line, a quiet contemplative verse on the vox, the last verse on the full organ; now and then, between lines, the tenor walks into the next line or the line's end echoes high on the echo flute; between verses the close again, softly.",
-    improviser: "<b>The improviser.</b> In the prelude: flutes running in steady notes; then the hymn tune enters deep in the pedals in long notes, under the figures, line by line (on some Sundays the flutes run in a different key the whole time the tune walks home in its own); an open chord with an added note to end. In the hymn: the interludes take the first line's opening and climb it in steps over a held bass; between lines, now and then, a quick quote of the next line or a little turn; and once a meeting, at most, a fill that lands in the wrong key — a chord and a figure somewhere strange — until the ward comes in and the organ is back with them.",
+    victorian: "<b>The Victorian.</b> In the prelude: the tune on the vox humana (it trembles) over flutes, or on the trumpet, or the swell opening and closing on the principal; at every line's close an inner voice hangs on over the new chord and falls a step late (a suspension), and passing notes walk the tenor. In the hymn: the tune given out broadly (its close suspended), the swell breathing with each line; of three verses, the middle one quieter (the vox over the flutes, or the flutes alone: 2–3 LU under the first) and, on seven Sundays in ten, the last on the full organ with the shutters open — plainly louder than the first (by 1.5–3.5 LU on the Sundays measured; he holds the first verse back a little so the hymn can build) and much brighter; now and then, between lines, the tenor walks into the next line or the line's end echoes high on the echo flute; between verses the close again, softly. The amen he plays as the ward sings it — his suspensions are for the organ alone.",
+    improviser: "<b>The improviser.</b> In the prelude: flutes running in steady notes; then the hymn tune enters deep in the pedals in long notes, under the figures, line by line (on some Sundays the flutes run in a different key the whole time the tune walks home in its own); an open chord with an added note to end. In the hymn: the interludes take the first line's opening and climb it in steps over a held bass; between lines, now and then, a quick quote of the next line or a little turn; the thin registrations of a middle verse a little under, the mixture or the full organ of a last verse over. And now and then — in about three of his longer meetings in five, never twice in one, and never early in the meeting — a fill that lands in the wrong key, a chord and a figure somewhere strange, until the ward comes in and the organ is back with them.",
   };
   function listenNote() {
     var st = S.org.style;
     $("kol-listen").innerHTML = '<h2 class="kol-sec">What to listen for</h2><p>' + LISTEN[st] + "</p>" +
-      "<p>Try the three organists on the same seed (the organist menu): the same hymn, three Sundays. The engine's organ button plays the organ the meeting has now, at the level it has now; the organist sits at that level (Check measures it).</p>" +
+      "<p>Try the three organists on the same seed (the organist menu): the same hymn, three Sundays. The engine's organ button plays the organ the meeting has now, at the level it has now; the organist sits at that level (Check measures it, verse by verse too).</p>" +
+      "<p><b>A breath, or a brushing, between the sung notes?</b> In this lab that is mostly the ward's own breath (the singers' voices, not the organ): untick <i>the ward's breath</i> and play the hymn again to hear it gone. The CAST crew has mended the voices on its branch; until that joins, the lab's ward still breathes it. The organ's own breath at the joins (its chiff) was cut 13–17 dB in round 3 and now sits some 17–25 dB under the ward's.</p>" +
       (S.plan.accompanied ? "" : "<p><b>This hymn's dialect is sung without the organ</b>: the organist sits, there is no giving out and nothing between the lines; the ward sings alone.</p>");
   }
 
@@ -658,7 +768,7 @@
 
   // the page's handles, for the silent checks (tools, the critic)
   window.OrganistLab = {
-    compose: compose, play: play, stop: stop, check: check, compare: compare, meeting: meeting, findStrange: findStrange, level: level, registrations: registrations,
+    compose: compose, play: play, stop: stop, check: check, compare: compare, meeting: meeting, findStrange: findStrange, level: level, registrations: registrations, joins: joins,
     plans: function () { return { prelude: S.pre, hymn: S.plan, organist: S.org, hymn_: S.hymn }; },
     measure: function () { return { prelude: O.measure(S.pre), hymn: O.measure(S.plan) }; },
     lastCheck: function () { return lastCheck ? strip(lastCheck) : null; },

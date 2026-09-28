@@ -41,13 +41,18 @@
 //    tone: heard as the pipe's consonant, never as a hiss. Flutes chiff more
 //    than principals; reeds do not chiff at all. And only a pipe that speaks
 //    out of silence is heard to spit: played legato, its breath is masked
-//    (round 3 — see CHIFF_LEGATO; the owner heard the old chiff, full on
-//    every key of every chord, as "a breath, or a brushing sound, in between
-//    the notes when the hymns are being sung").
+//    (round 3 — see CHIFF_LEGATO. The old chiff, full on every key of every
+//    chord, was one of the things under the owner's "breath, or brushing
+//    sound, in between the notes when the hymns are being sung"; the larger
+//    one, in the labs, was the ward's own breath — VoicesVocal's, the CAST
+//    crew's to mend, and mended on their branch).
 //  · THE TOUCH (round 3): one pipe per key. A note that lands on a key
-//    already down (a unison between parts, a note written twice, a repeat
-//    not lifted) holds that key on; it never speaks a second pipe over the
-//    first. To strike again, lift first.
+//    already down — truly down, well past the new note's start (a unison
+//    between parts, a common tone held across a chord) — holds that key on;
+//    it never speaks a second pipe over the first. A repeated note that only
+//    ABUTS the one before it (a part handed over note by note, onset to
+//    onset) is struck again, after a short lift the organ takes for the
+//    player (AUTO_LIFT): a ward's repeated notes are re-struck.
 //  · C and C♯ SIDES: pipes stand on two chests, left and right, alternating
 //    by semitone — so a line walks gently across the case. Two panners for
 //    the whole organ, not one per note.
@@ -75,10 +80,12 @@
 //   opts: { gain (1), swell (0.8), wind (0–1, 1 = the default sag; 0 steady),
 //           rand (a PJ2.Rand stream, "synth:organ") | seed, t0,
 //           chiff (1: the breath's size; 0 none — a lab's A/B), legatoChiff }
-//   organ.play(t, notes, registration, {texture})
+//   organ.play(t, notes, registration, {texture, trem})
 //                                    notes: [{f, dur, at?, v?, pedal?, pedalOnly?}]
 //     texture: the voices the music carries — fixes the level law for the
 //     call, so a voice moving alone is no louder than its chord
+//     trem: false leaves the tremulant as it stands (a phrase laid in
+//     pieces: only its first piece draws the tremulant, at the phrase's t)
 //   organ.chord(t, freqs, dur, registration, {pedal: true, v})
 //   organ.setSwell(expression 0..1, t, rampS)
 //   organ.dispose(t)                 the tremulant's motor and the wind stop at t
@@ -91,7 +98,11 @@
 // anchor that cut a blooming trumpet down 3–13 % in one sample on short
 // notes is gone); the touch; the legato chiff; dispose(); stats kept as they
 // go; the misspelt-stop warning; texture. The organist (kolob-organist.js)
-// plays this organ; organist-lab.php hears and measures it.
+// plays this organ; organist-lab.php hears and measures it. Its round 2: an
+// abutting repeat is re-struck (the auto-lift), not tied — hymn-lab hands
+// its parts over onset to onset, and the first touch had quietly tied a
+// tenth of the tunes' notes and more than a quarter of the inner voices';
+// and play(…, {trem: false}), so a long phrase can be laid in pieces.
 // ============================================================================
 
 window.KOLOB = window.KOLOB || {};
@@ -202,20 +213,32 @@ window.KOLOB.VoicesOrgan = (function () {
   var KEY_LEVEL = 0.0695;
   // the chiff's level against a key, and its time constants (s): a flue
   // pipe's consonant is 20–50 ms long and ~25 dB under the tone it starts
-  // (round 3: 1.0 → 0.55, −5 dB — the owner's "breath between the notes")
+  // (round 3: 1.0 → 0.55, −5 dB — one part of the owner's "breath between
+  // the notes"; the ward's own breath was the larger, in the labs)
   var CHIFF_LEVEL = 0.55;
   // …but only a pipe that speaks OUT OF SILENCE is heard to spit. Played
   // legato — another key still down, or let go a moment ago — the wind is
   // already moving in the chest and the new pipe's breath is masked by the
   // ones sounding; it speaks almost clean. Round 3: under a hymn, every
-  // moving part used to cough at full strength on every beat, and the owner
-  // heard it as "a breath, or a brushing sound, in between the notes when
-  // the hymns are being sung". The legato attack keeps a fifth of it
+  // moving part used to cough at full strength on every beat — at the joins
+  // about 1 dB over the flutes' own treble, one of the things under the
+  // owner's "breath, or a brushing sound, in between the notes when the
+  // hymns are being sung" (the ward's breath, 4–12 dB louder still, was the
+  // other, and the larger: see handoff/r3-organist-1.md, round 2). The
+  // legato attack keeps a fifth of it
   // (−14 dB); the first chord out of real silence keeps it all. A quarter
   // second of lift — the ward's breath at a line's end — is not silence:
   // the wind is still up in the chest, and the next chord speaks legato.
   var CHIFF_LEGATO = 0.2;
   var LEGATO_S = 0.25;                 // a key let go this recently still counts as "down"
+  // THE AUTO-LIFT (round 3, round 2). A key already sounding counts as held
+  // for a new note on it only if it stays down more than OVERLAP_S past the
+  // new note's start (a true overlap: a unison, a tone common to two
+  // chords). One that merely abuts — let go at the new note's start, give or
+  // take — is lifted AUTO_LIFT early (never more than a third of its
+  // length) and struck again, its release quickened to LIFT_TAU so the new
+  // pipe speaks into near-silence rather than over its own tail.
+  var OVERLAP_S = 0.02, AUTO_LIFT = 0.05, LIFT_TAU = 0.018;
 
   // ---- create -------------------------------------------------------------
   function create(ctx, destination, opts) {
@@ -417,7 +440,7 @@ window.KOLOB.VoicesOrgan = (function () {
       } else g.gain.linearRampToValueAtTime(lv, t + atk);
       var r = Math.max(t + atk + 0.01, rel);
       g.gain.setTargetAtTime(0, r, tau);
-      return { g: g, rel: r, tau: tau };
+      return { g: g, rel: r, tau: tau, min: t + atk + 0.01 };
     }
     // a key held longer than first written (the same key struck again while
     // it is still down: the finger simply stays): the release moves, the
@@ -430,6 +453,19 @@ window.KOLOB.VoicesOrgan = (function () {
       });
       k.oscs.forEach(function (o) { try { o.stop(rel + 0.4); } catch (x) {} });
       k.rel = rel;
+    }
+    // …and the other way: a key let go a little EARLIER than written (the
+    // auto-lift before a re-strike). Its release is moved up, never into its
+    // own speech, and quickened; the oscillators run out as they were.
+    function liftEarlier(k, rel) {
+      k.envs.forEach(function (e) {
+        var r = Math.max(e.min, rel);
+        if (r >= e.rel) return;
+        e.g.gain.cancelScheduledValues(r);
+        e.g.gain.setTargetAtTime(0, r, LIFT_TAU);
+        e.rel = r; e.tau = LIFT_TAU;
+      });
+      k.rel = Math.min(k.rel, rel);
     }
 
     // one key at 8′ pitch f — every drawn stop on it. → the key's record
@@ -534,8 +570,14 @@ window.KOLOB.VoicesOrgan = (function () {
     // played without lifting — sounds nothing new: the key is held on to the
     // later of the two releases. (Before, the pipe spoke twice over itself:
     // two oscillators on one pitch with unrelated phases, a flutter and a
-    // second chiff at every such join.) To re-strike, a player lifts first:
-    // a note that begins more than 5 ms after the key's release speaks again.
+    // second chiff at every such join.) A note that begins after the key's
+    // release speaks again. A note that begins just as the key is let go —
+    // within OVERLAP_S either side, the way a part handed over onset to
+    // onset writes a repeated note — is a repeat, and a player lifts for it:
+    // the organ lifts the old key AUTO_LIFT early and strikes the new one
+    // (round 3, round 2 — it used to tie them, and hymn-lab's ward lost the
+    // re-attack on its repeated notes). Only a key that stays down past that
+    // (a unison, a common tone) is held on.
     // A key that speaks while the hands are already down speaks legato, its
     // breath masked (CHIFF_LEGATO); the first chord out of silence chiffs.
     var held = [];                                  // {sig, f, t, k}: keys sounding
@@ -546,6 +588,16 @@ window.KOLOB.VoicesOrgan = (function () {
         if (h.sig === sig && h.t <= tt + 1e-6 && h.k.rel >= tt - 0.005 && Math.abs(h.f / f - 1) < 0.002) return h;
       }
       return null;
+    }
+    // the key h, met by a new note at tt ending at `end`: held on (true), or
+    // lifted for a re-strike (false: the caller speaks a new key)
+    function holdOrLift(h, tt, end) {
+      if (h.k.rel > tt + OVERLAP_S || h.t >= tt - 1e-6) {        // truly down, or struck together (a unison)
+        if (end > h.k.rel) holdLonger(h.k, end);
+        return true;
+      }
+      liftEarlier(h.k, tt - Math.min(AUTO_LIFT, (tt - h.t) / 3));
+      return false;
     }
     function handsDown(pedal, tt) {
       for (var i = held.length - 1; i >= 0; i--) {
@@ -570,7 +622,7 @@ window.KOLOB.VoicesOrgan = (function () {
       var regScale = 1 / Math.sqrt(Math.max(1, S / 1.1));
       // only a registration that can draw the wind down is wired to it
       var windOn = !!wind && load(reg, 4) > 1.6;
-      tremTo(reg.trem || 0, t);
+      if (o.trem !== false) tremTo(reg.trem || 0, t);
       var sig = sigOf(reg, Object.keys(STOPS).concat(["trem"])), psig = "P" + (reg.bourdon16 || 0).toFixed(2);
       var fixedV = o.texture ? Math.pow(Math.max(1, o.texture), -0.3) : 0;
       var groups = {}, n = 0;
@@ -585,11 +637,11 @@ window.KOLOB.VoicesOrgan = (function () {
         g.forEach(function (nt) {
           var v = (nt.v != null ? nt.v : 1) * vScale, end = tt + nt.dur, h, kr;
           if (!nt.pedalOnly) {
-            if ((h = heldAt(sig, nt.f, tt))) { if (end > h.k.rel) holdLonger(h.k, end); }
+            if ((h = heldAt(sig, nt.f, tt)) && holdOrLift(h, tt, end)) { /* the finger stays */ }
             else if ((kr = key(tt, nt.f, nt.dur, reg, v * regScale, false, windOn, legM))) { n += kr.n; held.push({ sig: sig, f: nt.f, t: tt, k: kr }); }
           }
           if (nt.pedal) {
-            if ((h = heldAt(psig, nt.f, tt))) { if (end > h.k.rel) holdLonger(h.k, end); }
+            if ((h = heldAt(psig, nt.f, tt)) && holdOrLift(h, tt, end)) { /* the foot stays */ }
             else if ((kr = key(tt, nt.f, nt.dur, reg, (nt.v != null ? nt.v : 1), true, windOn, legP))) { n += kr.n; held.push({ sig: psig, f: nt.f, t: tt, k: kr, pedal: true }); }
           }
           down.push({ f: nt.f, until: end });

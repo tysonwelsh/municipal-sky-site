@@ -15,7 +15,10 @@
 // (0.40), so the two can be heard, and measured, at the same level.
 //
 // CHECK renders offline (silent) and measures: loudness against the engine's
-// organ, clicks, the spectrum, and the breath between the notes. COMPARE
+// organ (the whole hymn, and verse by verse), clicks, the spectrum, the
+// organ's chiff, and the engine organ's tremulant as it is and as R1 would
+// fix it. OrganistLab.joins() weighs the two breaths at the joins — the
+// ward's own and the organ's chiff (the ward's is the larger). COMPARE
 // renders all three organists on the same hymn. A MEETING'S WORTH plans four
 // hymns with one organist and counts the fills (at most one strange).
 //
@@ -152,6 +155,7 @@ include '../../includes/header.php';
     <button class="kol-btn" id="kol-play-ref" type="button" disabled>▶ The engine's organ</button>
     <button class="kol-btn" id="kol-stop" type="button" disabled>■ Stop</button>
     <label><input type="checkbox" id="kol-ward" checked /> the ward sings</label>
+    <label title="A diagnostic: the ward's own breath between the notes (VoicesVocal's), which the CAST crew has mended on its branch. Unticked, every singer's breath is 0."><input type="checkbox" id="kol-breath" checked /> the ward's breath</label>
     <span class="kol-now" id="kol-now"></span>
   </div>
 
@@ -173,8 +177,8 @@ include '../../includes/header.php';
   <section class="kol-card">
     <h2 class="kol-sec">Check (rendered offline, silent)</h2>
     <p class="kol-note">Renders the organ alone — this organist's prelude and hymn, and the engine's organ as the meeting plays it
-    in the prelude and under the singing, all through the same organ layer (0.40) and room — and measures loudness, clicks,
-    the spectrum, and the breath between the notes. <button class="kol-btn" id="kol-check" type="button" disabled>Check</button></p>
+    in the prelude and under the singing, all through the same organ layer (0.40) and room — and measures loudness (the
+    whole hymn, and verse by verse), clicks, the spectrum, and the organ's own breath (its chiff). <button class="kol-btn" id="kol-check" type="button" disabled>Check</button></p>
     <div class="kol-wrap" id="kol-checkout"></div>
     <canvas class="kol-spec" id="kol-spec" width="960" height="120" hidden></canvas>
   </section>

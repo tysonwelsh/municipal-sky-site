@@ -51,8 +51,10 @@
 //       info: { trombones, withheld, organSits, hymn }    (a draw; refusals are listed)
 //   prelude(organist, hymn, stream, opts) → Plan   (30–50 s on the day's first hymn)
 //   accompany(organist, hymn, stream, opts) → Plan (giving out, the verses under
-//       the ward, fills between the lines, interludes between verses, the amen,
-//       and a modulation by a common-tone pivot when opts.next's key differs)
+//       the ward — each on its registration, at its place in the organist's
+//       arc (VERSE_DYN) — fills between the lines, interludes between verses,
+//       the amen, and a modulation by a common-tone pivot when opts.next's key
+//       differs)
 //       opts: { verses (2), beatS (hymn.beatS), hymnIndex (0), next: {keyMonzo, mode} | null,
 //               giveOut (true), accompanied (the dialect's own), amen (true) }
 //   modulate(organist, from, to, stream, opts) → Plan (the pivot alone, for a joint)
@@ -84,8 +86,17 @@ window.KOLOB.Organist = (function () {
   // the gain an organist's organ is built with (VoicesOrgan.create opts.gain),
   // into the organ layer — calibrated in organist-lab against organChord
   var ORGAN_GAIN = 1.15;
-  // the organ alone in the prelude plays a little forward (dB)
-  var PRELUDE_LIFT = 1.3;
+  // the organ alone in the prelude plays a little forward (dB) — by style
+  // (round 2: measured over twenty Sundays in organist-lab, the Victorian's
+  // preludes sat about 0.8 LU over the engine's organ, the swell voluntary
+  // up to +2.2, and the improviser's — running flutes over a pedal tune —
+  // about 1.3 LU under it, down to −2.6; each is centred here)
+  var PRELUDE_LIFT = { plain: 1.3, victorian: 0.5, improviser: 2.4 };
+  // …and a hymn's, by style (dB): the Victorian's swell breathing at the
+  // high line and his last verse on the full organ, and the improviser's
+  // brighter stops, sat their hymns about 0.6–0.7 LU over the plain
+  // organist's; each is brought to the band's middle, the arc inside it kept
+  var HYMN_LIFT = { plain: 0, victorian: -0.5, improviser: -0.4 };
 
   // ==========================================================================
   // PITCH — exact, as monzos [2, 3, 5, 7] (SCORE §2), relative to the keynote
@@ -183,10 +194,43 @@ window.KOLOB.Organist = (function () {
   // the hymn principal, so a flute is still a little softer than the full
   // organ — the three the plain organist lives on nearly all of it (the
   // plain organist has no louder stops to reach for).
+  // The balance is only where each registration SITS. What the organist
+  // then does with it — a quiet middle verse, the last on the full organ —
+  // is VERSE_DYN below, on top of it. (Round 2, after the critic: with the
+  // balance alone, the Victorian's three verses of seed 1840 read −31.4,
+  // −31.6 and −31.8 LUFS — the full organ 0.4 dB QUIETER than the first
+  // verse, only brighter — while the note promised a quiet verse and a
+  // full last one. Loosening the balance instead would have taken the plain
+  // organist's flutes, which have nothing louder to reach for, 2–3 LU under
+  // the engine's organ.)
   var REG_TRIM = {"soft flutes": 4.5, "quiet flute": 3.9, "flutes 8 & 4": 3.3, "hymn principal": 0.0, "principal & 4": 2.2, "vox humana": 2.9, 
     "vox & flutes": 2.3, "vox solo": 4.9, "flutes, trembling": 4.3, "echo flute": 5.9, "trumpet": 2.8, "trumpet solo": 3.8, "full organ": -1.5, 
     "principal & mixture": 1.2, "sixteen & four": 5.7, "glass": 6.5, "pedal tune": 2.6, "figures": 5.8 };
   function trimOf(reg) { return typeof reg === "string" && REG_TRIM[reg] != null ? REG_TRIM[reg] : 0; }
+  // THE VERSE'S DYNAMIC (dB, over the balance): the arc of a hymn, verse by
+  // verse, as each organist draws it. The plain organist has none: the
+  // flutes all the way, a principal at most for the last verse, at one
+  // level. The Victorian takes a middle verse down (the vox over the
+  // flutes, or the flutes alone) and the last of three up, on the full
+  // organ with the shutters open. The improviser's arc is his registrations'
+  // own: the thin middle verses a little under, the mixture or the full
+  // organ over. The loudest verse is held within +2 LU of the engine's
+  // organ under the singing (organist-lab, Check: "the verses"); so that
+  // the arc can still rise to it, an organist who means to end on the full
+  // organ or the mixture begins the first verse a little held back
+  // (VERSE_RESERVE) — the hymn builds, it does not only get brighter.
+  var VERSE_DYN = {
+    plain: {},
+    victorian: { "vox & flutes": -3.5, "flutes 8 & 4": -3, "full organ": 1.2 },
+    improviser: { "sixteen & four": -2.5, "flutes 8 & 4": -2, "principal & mixture": 0.8, "full organ": 1.2 },
+  };
+  function dynOf(style, reg) { var d = VERSE_DYN[style] || {}; return d[reg] != null ? d[reg] : 0; }
+  var VERSE_RESERVE = -0.8;
+  // how a verse's registration is named in the plan's words
+  var SAYS = { "soft flutes": "on soft flutes", "flutes 8 & 4": "on the flutes, 8′ and 4′", "hymn principal": "on the principal",
+               "principal & 4": "on the principal and the 4′", "vox & flutes": "on the vox humana over the flutes",
+               "full organ": "on the full organ", "principal & mixture": "on the principal and the mixture",
+               "sixteen & four": "on a 16′ and a 4′, nothing between" };
   function regOf(name) {
     var r = REG[name] || name, o = {};
     for (var k in r) if (Object.prototype.hasOwnProperty.call(r, k)) o[k] = r[k];
@@ -246,6 +290,9 @@ window.KOLOB.Organist = (function () {
     ["6/5", "a minor third up", 0.8], ["9/8", "a whole step up", 0.9], ["16/15", "a half step up", 0.6],
   ];
   var UNACCOMPANIED = { sacredharp: true, psalmody: true, oldway: true, shaker: true };
+  // the chance that a fill of the wandering improviser's is the strange one
+  // (once he has strayed far enough, and only the first; see accompany)
+  var STRANGE_ODDS = 0.3;
   function accompaniedDialect(dialect) {
     var D = K.Dialects && K.Dialects.get ? K.Dialects.get(dialect) : null;
     if (D && D.organ != null) return !!D.organ;
@@ -359,7 +406,7 @@ window.KOLOB.Organist = (function () {
   function newPlan(kind, organist, h) {
     return {
       kind: kind, style: organist.style, organist: { nameDs: organist.nameDs, nameEn: organist.nameEn },
-      hymnId: h ? h.id : null, dur: 0, phrases: [], swell: [], events: [], ward: [], fills: [], sections: [],
+      hymnId: h ? h.id : null, dur: 0, phrases: [], swell: [], events: [], ward: [], fills: [], sections: [], verseDyn: [],
       counts: { lines: 0, joins: 0, fills: 0, strange: 0, susp: 0, app: 0, pass: 0, echo: 0, link: 0, fig: 0, arabesque: 0, quote: 0, seq: 0, keys: 0, regs: 0, swells: 0 },
     };
   }
@@ -403,6 +450,8 @@ window.KOLOB.Organist = (function () {
     plan.phrases.sort(function (a, b) { return a.t - b.t; });
     plan.swell.sort(function (a, b) { return a.t - b.t; });
     plan.events.sort(function (a, b) { return a.t - b.t; });
+    // in time order (a stable sort: at one moment, the order they were planned)
+    plan.sections.sort(function (a, b) { return a.t - b.t; });
     plan.phrases.forEach(function (p) { plan.counts.keys += p.notes.length; });
     return plan;
   }
@@ -627,6 +676,7 @@ window.KOLOB.Organist = (function () {
   // voice a chord in four parts near `prev` ({S,A,T,B} monzos, or null):
   // the root in the bass (or `bass` if given), every class sounded, no
   // crossing, no gap over an octave above the tenor, common tones kept
+  // (o.keep: how much a kept tone is worth — a pivot holds its own)
   function voiceChord(ch, prev, o) {
     o = o || {};
     var tones = tonesOf(ch), root = cls(o.bass || ch.root);
@@ -651,7 +701,7 @@ window.KOLOB.Organist = (function () {
           tones.forEach(function (c, ti) { if (!have.some(function (hc) { return eq(hc, c); })) { missing++; if (ti === 2) lostFifth = true; } });
           if (missing > (tones.length === 4 && lostFifth ? 1 : 0)) return;
           var cost = (Math.abs(cs - tgt.S) + Math.abs(ca - tgt.A) + Math.abs(ct - tgt.T)) / 100 + missing * 3;
-          if (prev) [["S", s], ["A", a], ["T", tn]].forEach(function (q) { if (eq(prev[q[0]], q[1])) cost -= 1.5; });
+          if (prev) [["S", s], ["A", a], ["T", tn]].forEach(function (q) { if (eq(prev[q[0]], q[1])) cost -= o.keep || 1.5; });
           if (tones.length >= 3 && eq(cls(s), tones[1]) && eq(cls(B), tones[1])) cost += 2;     // no doubled third on the outside
           if (cost < bestCost) { bestCost = cost; best = { S: s, A: a, T: tn, B: B }; }
         });
@@ -659,23 +709,41 @@ window.KOLOB.Organist = (function () {
     });
     return best || { S: near(tones[0], 700), A: near(tones[tones.length > 2 ? 2 : 0], 300), T: near(tones[1] || tones[0], -200), B: B };
   }
-  // chords → keys on a phrase: each part held while it keeps its pitch
+  // chords → keys on a phrase: a key stays down while its pitch goes on —
+  // in the same part, or handed to another (the finger does not care which
+  // voice the page gives a held common tone to: round 2, so a pivot's
+  // common tone is held, not struck again). The bass is the pedal's too: a
+  // manual key the bass takes over gets its pedal note beside it, and the
+  // bass's own key (pedal and all) is never handed up to a manual voice.
   function layChords(p, list, t, prev, o) {
     o = o || {};
-    var parts = ["S", "A", "T", "B"], open = {}, into = o.into || [];
-    list.forEach(function (c, i) {
-      var v = c.voicing, tt = t;
+    var parts = ["S", "A", "T", "B"].filter(function (q) { return !(o.only && o.only.indexOf(q) < 0); }), open = {}, into = o.into || [];
+    list.forEach(function (c) {
+      var v = c.voicing, next = {}, taken = [];
+      function keep(q, x) { x.dur += c.dur; if (q === "B" && x.mate) x.mate.dur += c.dur; next[q] = x; taken.push(x); }
+      if (c.tie !== false) {
+        parts.forEach(function (q) { var x = open[q]; if (x && eq(x.m, v[q])) keep(q, x); });
+        parts.forEach(function (q) {
+          if (next[q]) return;
+          parts.some(function (r) {
+            var x = open[r];
+            if (!x || r === "B" || taken.indexOf(x) >= 0 || !eq(x.m, v[q])) return false;
+            if (q === "B" && !o.noPedal) { x.mate = { t: t, dur: 0, m: v[q], part: "B", pedalOnly: true }; into.push(x.mate); }
+            keep(q, x);
+            return true;
+          });
+        });
+      }
       parts.forEach(function (q) {
-        if (o.only && o.only.indexOf(q) < 0) return;
-        var hold = open[q];
-        if (hold && eq(hold.m, v[q]) && c.tie !== false) { hold.dur += c.dur; return; }
-        open[q] = { t: tt, dur: c.dur, m: v[q], part: q };
-        into.push(open[q]);
+        if (next[q]) return;
+        next[q] = { t: t, dur: c.dur, m: v[q], part: q };
+        into.push(next[q]);
       });
+      open = next;
       t += c.dur;
     });
     into.forEach(function (x) {
-      key(p, x.t, x.dur * (o.legato || 0.98), x.m, x.part, { v: (VPART[x.part] || 0.8) * (o.v || 1), pedal: x.part === "B" && !o.noPedal, orn: o.orn });
+      key(p, x.t, x.dur * (o.legato || 0.98), x.m, x.part, { v: (VPART[x.part] || 0.8) * (o.v || 1), pedal: (x.part === "B" || x.pedalOnly) && !o.noPedal, pedalOnly: x.pedalOnly, orn: o.orn });
     });
     return t;
   }
@@ -838,7 +906,7 @@ window.KOLOB.Organist = (function () {
     extendLast(plan, holdB * beatS);
     if (vic) swell(plan, end - 1.2 * beatS, 0.2, 2.2 * beatS);
     say(plan, organist, 0, "plays the day's first hymn as a prelude", { manner: manner });
-    plan.liftDb = PRELUDE_LIFT;
+    plan.liftDb = PRELUDE_LIFT[style];
     plan.manner = manner + (fit.name === "once" ? "" : " (" + ({ echo: "with an echo", twice: "twice through", head4: "four lines", head3: "three lines", head2: "first and last lines" })[fit.name] + ")");
     plan.beatS = r3(beatS); plan.lineIdx = idx;
     return finish(plan, end + holdB * beatS);
@@ -949,7 +1017,7 @@ window.KOLOB.Organist = (function () {
     section(plan, tuneEnd, codaEnd + hold, "the figures slow, and an open chord");
     say(plan, organist, introB * pb, "puts the tune in the pedals");
     delete plan._saidBit;
-    plan.liftDb = PRELUDE_LIFT;
+    plan.liftDb = PRELUDE_LIFT.improviser;
     plan.manner = "the tune in the pedals" + (bit ? " (bitonal)" : ""); plan.bitonal = bit; plan.beatS = r3(pb); plan.lineIdx = idx;
     return finish(plan, codaEnd + hold);
   }
@@ -976,8 +1044,10 @@ window.KOLOB.Organist = (function () {
     }
     return out;
   }
+  // where the shutters stand for a verse on each registration (the full
+  // organ's last verse is played with them open, not held back: round 2)
   var SWELL_OF = { "soft flutes": 0.66, "quiet flute": 0.7, "flutes 8 & 4": 0.66, "hymn principal": 0.62, "principal & 4": 0.62,
-                   "vox & flutes": 0.66, "full organ": 0.56, "principal & mixture": 0.58, "sixteen & four": 0.68, "trumpet": 0.62 };
+                   "vox & flutes": 0.66, "full organ": 0.64, "principal & mixture": 0.62, "sixteen & four": 0.68, "trumpet": 0.62 };
 
   function accompany(organist, h, stream, opts) {
     opts = opts || {};
@@ -986,7 +1056,7 @@ window.KOLOB.Organist = (function () {
     var verses = Math.max(1, opts.verses || 2), beatS = opts.beatS || h.beatS, lines = verseLinesOf(h);
     var hymnIndex = opts.hymnIndex || 0, scale = scaleOf(h.mode, h.keyMonzo);
     var withOrgan = opts.accompanied != null ? !!opts.accompanied : accompaniedDialect(h.dialect);
-    plan.accompanied = withOrgan; plan.verses = verses; plan.beatS = r3(beatS);
+    plan.accompanied = withOrgan; plan.verses = verses; plan.beatS = r3(beatS); plan.liftDb = HYMN_LIFT[style] || 0;
     var regs = verseRegs(style, verses, R.fork("regs"));
     var giveReg = style === "plain" ? "flutes 8 & 4" : style === "victorian" ? R.pickW([["trumpet", 0.45], ["hymn principal", 0.55]]) : R.pickW([["trumpet solo", 0.5], ["principal & 4", 0.5]]);
     var tacetDie = R.rnd(0, 1), tacetAt = R.rnd(0, 1);
@@ -1010,7 +1080,10 @@ window.KOLOB.Organist = (function () {
       var li = h.lines.length - 1, gL = h.lines[li], gbs = beatS * (style === "victorian" ? 1.06 : 1);
       var gk = handsOn(h, gL, null, 0, gbs, S.touch);
       draws(plan, organist, 0, giveReg);
-      swell(plan, 0, style === "plain" ? 0.74 : 0.82, 0.05);
+      // the shutters a little open for the organ alone (round 2: at 0.82 the
+      // Victorian's and the improviser's giving out was often the loudest
+      // moment of the hymn, up to +2 LU over the engine's organ)
+      swell(plan, 0, style === "victorian" ? 0.76 : 0.74, 0.05);
       if (giveReg === "trumpet solo") {
         var gs = phrase(plan, 0, "trumpet solo", "giving out: the tune on the trumpet", 1.6), gu = phrase(plan, 0, "soft flutes", "giving out", 3);
         lay(gs, gk, { only: ["S"], line: li }); lay(gu, gk, { only: ["A", "T", "B"], line: li });
@@ -1028,7 +1101,9 @@ window.KOLOB.Organist = (function () {
     var fillsInHymn = 0, lastFillJoin = -9, joinNo = 0, strangeUsed = organist.ledger.strange >= 1, carry = null;
     for (var v = 0; v < verses; v++) {
       var reg = regs[v], stray = clamp(0.3 * v + 0.25 * hymnIndex + (verses === 1 ? 0.3 : 0), 0, 1);
-      var baseSw = SWELL_OF[reg] != null ? SWELL_OF[reg] : 0.62;
+      var baseSw = SWELL_OF[reg] != null ? SWELL_OF[reg] : 0.62, dynV = dynOf(style, reg);
+      if (v === 0 && verses > 1 && !dynV && dynOf(style, regs[verses - 1]) > 0) dynV = VERSE_RESERVE;
+      plan.verseDyn.push({ verse: v, reg: reg, dyn: dynV });
       if (v === 0 || reg !== regs[v - 1]) draws(plan, organist, t, reg);
       swell(plan, t - 0.3, baseSw, 0.8);
       // the improviser now and then lifts both hands for a line of a middle
@@ -1061,12 +1136,18 @@ window.KOLOB.Organist = (function () {
           var die = R.fork("join:" + v + ":" + i), roll = die.rnd(0, 1), kindRoll = die.rnd(0, 1), lenRoll = die.rnd(0, 1), strRoll = die.rnd(0, 1);
           var rate = S.fill.rate * organist.habits.fill * (style === "improviser" ? 0.8 + 0.6 * stray : 1);
           if (rate > 0 && roll < rate && fillsInHymn < S.fill.cap && joinNo - lastFillJoin > 1) {
-            var strange = S.strange && !strangeUsed && stray >= 0.45 && strRoll < 0.55;
-            var fs = t - breathOf(h, L, beatS, nx);
+            // the strange fill: at most one a meeting, and then only a
+            // chance at a fill once he has wandered far enough (round 2: at
+            // 0.55 it came in four improviser meetings in five, the
+            // commonest fill of a late hymn; at 0.3 it is a surprise)
+            var strange = S.strange && !strangeUsed && stray >= 0.45 && strRoll < STRANGE_ODDS;
+            var fs = t - breathOf(h, L, beatS, nx), np0 = plan.phrases.length;
             fill = style === "victorian"
               ? fillVictorian(plan, organist, h, L, nx, tacet ? [] : keys, fs, t, beatS, scale, kindRoll, lenRoll, reg, i, die)
               : fillImproviser(plan, organist, h, L, nx, tacet ? [] : keys, fs, t, beatS, scale, kindRoll, lenRoll, strange, stray, i, die);
             fill.verse = v; fill.after = i;
+            // a fill is played as softly as the verse it is in, never louder
+            for (var fp = np0; fp < plan.phrases.length; fp++) plan.phrases[fp].dyn = Math.min(0, dynV);
             if (fill.carry) { carry = fill.carry; carry.phrase = fill.phrase; }
             delete fill.carry; delete fill.phrase;
             plan.fills.push(fill);
@@ -1080,11 +1161,15 @@ window.KOLOB.Organist = (function () {
           section(plan, tL, tL + ld, "verse " + (v + 1) + ", line " + (i + 1) + " — the ward alone");
         } else {
           var p = phrase(plan, tL, reg, "verse " + (v + 1) + ", line " + (i + 1), 4);
+          p.dyn = dynV;
           lay(p, keys, { line: i, v: v === verses - 1 && reg === "full organ" ? 0.95 : 1 });
-          section(plan, tL, tL + ld, "verse " + (v + 1) + ", line " + (i + 1));
+          section(plan, tL, tL + ld, "verse " + (v + 1) + ", line " + (i + 1) +
+            (i === 0 && (v === 0 || reg !== regs[v - 1] || dynV) ? " — " + (SAYS[reg] || reg) +
+              (v === 0 && dynV === VERSE_RESERVE ? ", held back (the last verse will be fuller)" : dynV < 0 ? ", quieter" : dynV > 0 ? ", fuller" : "") : ""));
           // the Victorian's swell breathes with the line
           if (style === "victorian" && organist.habits.swell > 0.1) {
-            var lift = i === peakLine ? 0.16 : 0.05 * (i + 1) / lines.length;
+            // (on the full organ the box is already open; he leans on it less)
+            var lift = (i === peakLine ? 0.16 : 0.05 * (i + 1) / lines.length) * (reg === "full organ" ? 0.5 : 1);
             swell(plan, tL + 0.2, baseSw + lift * organist.habits.swell, ld * 0.45);
             swell(plan, tL + ld * 0.62, baseSw - 0.03, ld * 0.3);
           }
@@ -1106,9 +1191,13 @@ window.KOLOB.Organist = (function () {
       t += 0.3 * beatS;
       var aL = h.amen, ad = lineDur(aL, beatS, null);
       plan.ward.push({ kind: "amen", verse: verses - 1, i: -1, t: r3(t), beatS: beatS });
-      var ak = handsOn(h, aL, null, t, beatS, S.touch);
-      if (style === "victorian") cadenceSusp(h, aL, ak, t, beatS, R.fork("amen"), scale, plan);
-      lay(phrase(plan, t, regs[verses - 1], "the amen", 4), ak, { line: "amen" });
+      // the amen is the ward's: the organ plays it as written, under them —
+      // the Victorian's cadence suspensions are for the organ alone (the
+      // prelude, the giving out, the interlude), never held over singers
+      // resolving away from the note (round 2: it was 20 amens in 20)
+      var ak = handsOn(h, aL, null, t, beatS, S.touch), pa = phrase(plan, t, regs[verses - 1], "the amen", 4);
+      pa.dyn = dynOf(style, regs[verses - 1]);
+      lay(pa, ak, { line: "amen" });
       section(plan, t, t + ad, "the amen");
       t += ad;
     }
@@ -1341,10 +1430,15 @@ window.KOLOB.Organist = (function () {
     var prev = fromV, out = [], tt = t, common = null;
     // the old tonic, re-sounded softly so the pivot has something to hold
     out.push({ voicing: fromV, dur: 1 * beatS });
-    seq.forEach(function (s) {
-      var vc = voiceChord(s.c, prev);
+    seq.forEach(function (s, k) {
+      var vc = voiceChord(s.c, prev, k === 0 ? { keep: 6 } : null);
       out.push({ voicing: vc, dur: s.beats * beatS, roman: s.c.roman });
-      if (!common) ["S", "A", "T", "B"].forEach(function (q) { if (!common && eq(vc[q], prev[q])) common = { part: q, m: vc[q] }; });
+      // the common tone is the PIVOT's: a pitch of the first new chord held
+      // over from the old tonic, in whichever voice now has it (layChords
+      // keeps its key down); a tone two later chords share is no pivot
+      if (k === 0) ["S", "A", "T", "B"].forEach(function (q) {
+        if (!common && ["S", "A", "T", "B"].some(function (r) { return eq(vc[q], prev[r]); })) common = { part: q, m: vc[q] };
+      });
       prev = vc;
     });
     var keysOut = [];
@@ -1366,7 +1460,15 @@ window.KOLOB.Organist = (function () {
     var dur = out.reduce(function (a, c) { return a + c.dur; }, 0);
     swell(plan, t, 0.58, 0.8); swell(plan, t + dur - 1.5 * beatS, 0.5, 1.2);
     say(plan, organist, t, "modulates to the next hymn's key");
-    var words = "a modulation: " + (pivot ? "the pivot " + pivot.roman + " of the new key" + (common ? ", its common tone held in the " + { S: "soprano", A: "alto", T: "tenor", B: "bass" }[common.part] : commaOnly ? ", its common tone re-struck a comma off" : "") : "straight to the new dominant") + ", then V7 and I";
+    // the words follow the chords as they sound, from the old tonic: each
+    // new chord named once, in order, the first with its common tone
+    var held = common ? ", its common tone held in the " + { S: "soprano", A: "alto", T: "tenor", B: "bass" }[common.part]
+             : commaOnly && seq[0].c === pivot ? ", its common tone re-struck a comma off" : "";
+    var names = seq.map(function (s, k) {
+      var r = s.c.roman, w = r === "♮III" ? "a chromatic mediant (♮III)" : r === "V7" && s.c === pivot ? "the new key's V7, as the pivot" : s.c === pivot ? "the pivot " + r + " of the new key" : r;
+      return k === 0 ? w + held : w;
+    });
+    var words = "a modulation: " + names.slice(0, -1).join(", then ") + ", then " + names[names.length - 1];
     plan.modulation = { pivot: pivot ? pivot.roman : null, common: common ? common.part : null, commaOnly: commaOnly, chords: out.map(function (c) { return c.roman || "old I"; }) };
     return { dur: dur + 0.4 * beatS, what: words };
   }
@@ -1402,6 +1504,7 @@ window.KOLOB.Organist = (function () {
       ornamentKeys: orn, ornamentShare: keys ? r3(orn / keys) : 0, ornamentsPerLine: c.lines ? r3(orn / c.lines) : 0, byOrnament: byOrn,
       suspensions: c.susp, appoggiaturas: c.app, passing: c.pass, keys: keys, keysPerMinute: Math.round(keys / mins),
       registrations: regs, regChanges: c.regs, swellMoves: c.swells, fillKinds: plan.fills.map(function (f) { return f.kind + (f.strange ? "!" : ""); }),
+      verseDyn: (plan.verseDyn || []).map(function (v) { return v.reg + (v.dyn ? " " + (v.dyn > 0 ? "+" : "") + v.dyn + " dB" : ""); }),
     };
   }
   function describe(plan) {
@@ -1417,43 +1520,72 @@ window.KOLOB.Organist = (function () {
   // perform(organ, plan, t0, o) → { pump(now, ahead), until, done() }
   //   organ: a KOLOB.VoicesOrgan instance (one per meeting is enough)
   //   o: { keynoteHz, onNote(layer, freq, startTime, dur, extra), onEvent(e), hymnId, layer }
-  // pump(now) schedules every phrase, swell move and log line that begins
+  // pump(now) schedules every key, swell move and log line that begins
   // before now + ahead (default 3 s) — call it from the clock's lane or a
   // timer; it returns true when the plan is all laid. Nothing is read from
   // the audio clock here: `now` is the caller's scheduled time.
+  // A PHRASE IS LAID IN PIECES (round 2, after the critic): each pump puts
+  // down only the keys that speak before the horizon, so a long phrase — the
+  // improviser's running figures, 181–231 keys, and the tune under them in
+  // the pedals — reaches the organ a few seconds at a time, not a thousand
+  // nodes in one pump at its first note (the phones). A phrase's first piece
+  // draws its stops and its tremulant, at the phrase's own time, exactly as
+  // a whole phrase did; its later pieces leave the tremulant be. Its written
+  // notes are reported piece by piece with its keys.
   function perform(organ, plan, t0, o) {
     o = o || {};
     var K0 = o.keynoteHz || 261.63, layer = o.layer || "organ";
-    var ph = plan.phrases.slice(), sw = plan.swell.slice(), ev = plan.events.slice(), i = 0, j = 0, k = 0;
+    var ph = plan.phrases.slice(), sw = plan.swell.slice(), ev = plan.events.slice(), i = 0, j = 0, k = 0, open = [];
     function hz(m) { return K0 * ratio(m); }
+    function byAt(a, b) { return a.at - b.at; }                  // stable: a chord keeps its order
+    function tell(P, r) {
+      var x = { part: r.part, monzo: r.m };
+      if (plan.hymnId || o.hymnId) x.hymnId = o.hymnId || plan.hymnId;
+      if (r.line != null) x.line = r.line;
+      if (r.beat != null) x.beat = r.beat;
+      if (r.deg != null) x.deg = r.deg;
+      if (r.orn) x.orn = r.orn;
+      x.organist = plan.style;
+      o.onNote(layer, hz(r.m), P.tp + r.at, r.dur, x);
+    }
+    function lay(P, lim) {
+      var a0 = P.a;
+      while (P.a < P.notes.length && P.notes[P.a].at <= lim) P.a++;
+      if (P.a > a0) {
+        var g = P.g;
+        organ.play(P.tp, P.notes.slice(a0, P.a).map(function (n) {
+          return { f: hz(n.m), dur: n.dur, at: n.at, v: n.v * g, pedal: !!n.pedal, pedalOnly: !!n.pedalOnly };
+        }), P.reg, { texture: P.p.texture, trem: P.first });
+        P.first = false;
+      }
+      while (P.b < P.rep.length && P.rep[P.b].at <= lim) { if (o.onNote) tell(P, P.rep[P.b]); P.b++; }
+    }
+    function done() { return i >= ph.length && !open.length && j >= sw.length && k >= ev.length; }
     function pump(now, ahead) {
       var horizon = now + (ahead == null ? 3 : ahead);
       while (j < sw.length && t0 + sw[j].t <= horizon) { organ.setSwell(sw[j].e, t0 + sw[j].t, sw[j].ramp); j++; }
+      // the phrases already sounding first (keys go down in time order, so
+      // the organ's touch finds every key that is down), then those that
+      // begin: their first piece at once, at least its first chord — the
+      // stops and the tremulant are drawn in the order the phrases begin
+      open.forEach(function (Q) { lay(Q, horizon - Q.tp); });
       while (i < ph.length && t0 + ph[i].t <= horizon) {
-        var p = ph[i++], tp = t0 + p.t, g = Math.pow(10, ((p.trim != null ? p.trim : trimOf(p.reg)) + (plan.liftDb || 0)) / 20);
-        organ.play(tp, p.notes.map(function (n) {
-          return { f: hz(n.m), dur: n.dur, at: n.at, v: n.v * g, pedal: !!n.pedal, pedalOnly: !!n.pedalOnly };
-        }), regOf(p.reg), { texture: p.texture });
-        if (o.onNote) p.report.forEach(function (r) {
-          var x = { part: r.part, monzo: r.m };
-          if (plan.hymnId || o.hymnId) x.hymnId = o.hymnId || plan.hymnId;
-          if (r.line != null) x.line = r.line;
-          if (r.beat != null) x.beat = r.beat;
-          if (r.deg != null) x.deg = r.deg;
-          if (r.orn) x.orn = r.orn;
-          x.organist = plan.style;
-          o.onNote(layer, hz(r.m), tp + r.at, r.dur, x);
-        });
+        var p = ph[i++], tp = t0 + p.t;
+        var P = { p: p, tp: tp, reg: regOf(p.reg), a: 0, b: 0, first: true, notes: p.notes.slice().sort(byAt), rep: p.report.slice().sort(byAt),
+                  g: Math.pow(10, ((p.trim != null ? p.trim : trimOf(p.reg)) + (p.dyn || 0) + (plan.liftDb || 0)) / 20) };
+        lay(P, Math.max(horizon - tp, P.notes.length ? P.notes[0].at : 0));
+        open.push(P);
       }
+      open = open.filter(function (Q) { return Q.a < Q.notes.length || Q.b < Q.rep.length; });
       while (k < ev.length && t0 + ev[k].t <= horizon) {
         var e = {}, src = ev[k++];
         for (var q in src) e[q] = src[q];
         e.t = t0 + src.t;
         if (o.onEvent) o.onEvent(e);
       }
-      return i >= ph.length && j >= sw.length && k >= ev.length;
+      return done();
     }
-    return { pump: pump, until: t0 + plan.dur, done: function () { return i >= ph.length && j >= sw.length && k >= ev.length; } };
+    return { pump: pump, until: t0 + plan.dur, done: done };
   }
 
   return {
