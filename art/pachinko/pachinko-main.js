@@ -123,6 +123,17 @@
   var MUTE_KEY = 'mother-lode.muted';
   var MODES = { attract: 1, dive: 1, play: 1, payout: 1, work: 1 };
 
+  /* ── THE EGGS (art/pachinko/EGGS.md): the machine's secrets. None is
+   *    announced anywhere; each is harmless; each is one switch here. The
+   *    parts read them as api.eggs. ─────────────────────────────────── */
+  var EGGS = {
+    glassKnock: true      // 1. once a visit, in the quiet after a game's last marble, one of them walks up to the glass and knocks
+  };
+  // the knock: never in a visit's first game, never after a lode; a game that
+  // qualifies has it with KNOCK_P; it waits KNOCK_AFTER for the quiet after the
+  // last marble and gives up (for another game) if it isn't quiet by KNOCK_WAIT
+  var KNOCK_P = 0.5, KNOCK_AFTER = 0.75, KNOCK_WAIT = 3.0, KNOCK_BEAT = 0.6;
+
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
   function smooth(u) { return u * u * (3 - 2 * u); }
   function hashSeed(a, b) {
@@ -211,6 +222,8 @@
 
     /* ── state ───────────────────────────────────────────────────── */
     var simT = 0;
+    // this visit (a page load): what has happened in it that happens once
+    var visit = { knocked: false };
     var world = PP.createWorld(board, FIXED_SEED != null ? FIXED_SEED : SEED0);
     var game = {
       mode: 'attract', modeT0: 0, seed: FIXED_SEED != null ? FIXED_SEED : SEED0, games: 0,
@@ -246,7 +259,8 @@
     var partApi = {
       view: view, emit: emit, on: subscribe, now: function () { return simT; },
       board: function () { return board; }, world: function () { return world; },
-      setBoard: function (b) { setBoard(b); }, stats: stats, flags: A ? A.flags : null, game: game
+      setBoard: function (b) { setBoard(b); }, stats: stats, flags: A ? A.flags : null, game: game,
+      eggs: EGGS, force: FORCE, visit: visit
     };
     ['PachinkoKnockers', 'PachinkoMischief', 'PachinkoSpectacle'].forEach(function (name) {
       var M = root[name];
@@ -347,6 +361,7 @@
       world.t = simT;
       game.dropped = 0; game.resolved = 0; game.score = 0; game.lodes = 0; game.wins = 0; game.mine = {}; game.credited = 0; game.near = {}; game.drift = {}; game.outAt = {};
       game.endAt = null; game.lode = null; game.lastWin = null; game.lastDropT = null; game.tallyHold = 0;
+      game.knock = null; game.knockTry = null;
       tally.value = 0; tally.shown = 0; tally.prev = 0; tally.rollT0 = -1;
       trails = {};
       view.score = 0; view.marblesLeft = MARBLES; view.fx = {};
@@ -513,8 +528,42 @@
         game.resolved++;
         saveOpen();
         delete trails[e.m];
-        if (game.resolved >= MARBLES && game.mode === 'play' && game.endAt == null) game.endAt = simT + END_BEAT;
+        if (game.resolved >= MARBLES && game.mode === 'play' && game.endAt == null) {
+          game.endAt = simT + END_BEAT;
+          game.knockTry = knockWanted() ? { from: simT + KNOCK_AFTER, until: simT + KNOCK_AFTER + KNOCK_WAIT } : null;
+        }
       }
+    }
+
+    /* ── the knock on the glass (EGGS.md #1) ─────────────────────────
+     *    Once a visit, in the quiet after a game's last marble, one of the
+     *    crew walks up to the glass, lifts his lamp, looks out, and knocks
+     *    three times from the inside (pachinko-knockers.js glassKnock). Never
+     *    in a visit's first game, never after a lode, never over mischief.
+     *    The payout waits for him. Unannounced, unexplained. ─────────── */
+    function knockWanted() {
+      if (!EGGS.glassKnock || visit.knocked || !partApi.knockers || !partApi.knockers.glassKnock) return false;
+      if (FORCE.glassknock) return true;
+      if (game.games < 2 || game.lodes > 0) return false;
+      return PB.hash01(hashSeed(game.seed, 1313), 7) < KNOCK_P;
+    }
+    function quietNow() {
+      for (var i = 0; i < parts.length; i++) if (typeof parts[i].quiet === 'function') { try { if (!parts[i].quiet(simT)) return false; } catch (e) { return false; } }
+      return world.marbles.every(function (m) { return m.done; });
+    }
+    function stepKnock() {
+      var kp = partApi.knockers;
+      if (game.knock) {
+        if (!kp || !kp.glassBusy()) { game.knock = null; if (game.endAt != null) game.endAt = Math.max(game.endAt, simT + KNOCK_BEAT); }
+        return;
+      }
+      var tr = game.knockTry;
+      if (!tr || simT < tr.from) return;
+      if (game.mode !== 'play' || simT > tr.until || !kp) { game.knockTry = null; return; }
+      if (!quietNow() || !kp.glassReady()) return;
+      var r = kp.glassKnock({ seed: game.seed });
+      game.knockTry = null;
+      if (r && r.ok) { game.knock = r; visit.knocked = true; }
     }
 
     /* ── the end, the payout ─────────────────────────────────────── */
@@ -732,8 +781,10 @@
       if (game.mode === 'play') stepHopper();
       stepHint();
       stepTally();
-      // (the mother lode plays out before the machine counts up: the game ends after it)
-      if (game.endAt != null && simT >= game.endAt && !(game.lode && game.lode.part && game.lode.part.busy && game.lode.part.busy(simT))) gameOver();
+      stepKnock();
+      // (the mother lode plays out before the machine counts up: the game ends after it;
+      // and so does the knock on the glass)
+      if (game.endAt != null && simT >= game.endAt && !(game.lode && game.lode.part && game.lode.part.busy && game.lode.part.busy(simT)) && !game.knock && !game.knockTry) gameOver();
       if (game.mode === 'payout') stepPayout();
       if (game.mode === 'work') stepWork();
       if (game.findAt != null && simT >= game.findAt) findNickel();
@@ -1517,6 +1568,9 @@
             tPlay: tEnd - t0, t: simT, state: handle.getState() };
         },
         lode: function () { var s = board.byKind.slot.filter(function (q) { return q.value >= 13; })[0]; onPhysics({ type: 'slot', id: s.id, value: 13, legend: s.legend, x: (s.x0 + s.x1) / 2, y: 400, m: -1 }); },
+        // the knock on the glass, now (a film; it holds the game's end like the real one)
+        glassKnock: function () { var kp = partApi.knockers; if (!kp) return false; var r = kp.glassKnock({ seed: game.seed }); if (r && r.ok) { game.knock = r; visit.knocked = true; } return r; },
+        eggs: EGGS, visit: visit,
         setMode: forceMode,
         setBoard: function (b) { setBoard(b); },
         setMuted: setMuted,

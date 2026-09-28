@@ -231,7 +231,7 @@
     var L = LAMPS[nLamps];
     if (!L) L = LAMPS[nLamps] = { x: 0, y: 0, r: 0, ry: 1, k: 0, cr: 0, cg: 0, cb: 0, spot: false, haze: 0, dark: false };
     nLamps++;
-    L.ry = 1; L.spot = false; L.haze = 0; L.dark = false; L.gal = false;
+    L.ry = 1; L.spot = false; L.haze = 0; L.dark = false; L.gal = false; L.own = false;
     return L;
   }
   var RGBC = {};
@@ -349,6 +349,7 @@
       // (the held breath hushes every light but the cup's glow and the fuse down in the deep)
       L.x = e.x; L.y = e.y; L.r = e.r || 30; L.k = (e.k == null ? 1 : e.k) * (e.y > 355 ? 1 : 1 - 0.8 * LODE.hush); setColour(L, e.c || P.LAMP);
       L.dark = true;                               // (an extra lamp in a dark section is snuffed with it)
+      if (e.glass) L.own = true;                   // (his lantern, at the glass: the hush doesn't touch it)
     }
   }
   // the pool's falloff (shared by the drawn light and every CPU question):
@@ -365,7 +366,10 @@
     var fx = view.fx || {}, t = view.t || 0;
     lodeState(view);
     gatherLamps(view);
-    var hush = LODE.hush, ambK = 1 - 0.7 * hush, caseK = 1 - 0.65 * hush, lift = LODE.lift;
+    // (the knock on the glass: while one of them is out of his place, the mine
+    // holds its breath a little, and his lantern is the light: fx.glassHush 0..1)
+    var gh = Math.max(0, Math.min(1, fx.glassHush || 0));
+    var hush = LODE.hush, ambK = (1 - 0.7 * hush) * (1 - 0.3 * gh), caseK = (1 - 0.65 * hush) * (1 - 0.25 * gh), lift = LODE.lift;
     hushK = hush;
     // ambient + case light (+ the flare's warm lift over everything)
     var wr = 0.26 * lift, wg = 0.19 * lift, wb = 0.11 * lift;
@@ -390,6 +394,7 @@
       var L = LAMPS[i];
       var k = L.k;
       if (anyDark && L.dark) { var dk = sampleD(L.x, L.y); if (dk >= 0.85) continue; k *= 1 - dk; }
+      if (gh > 0 && !L.own) k *= 1 - 0.42 * gh;
       if (k <= 0.01) continue;
       var rx = L.r, ry = L.r * L.ry, spot = L.spot;
       var c0 = Math.max(0, Math.floor((L.x - rx) / CELL)), c1 = Math.min(NX - 1, Math.ceil((L.x + rx) / CELL));
@@ -934,6 +939,7 @@
     // …and the figures' shadows on the rock (the toys themselves come after the light)
     for (i = 0; i < figs.length; i++) A.drawFigureShadow(sg, figs[i]);
     mischief(sg, view, 'albedo');
+    secrets(sg, view, 'albedo');
     // b. × light (+ the over-exposed hearts of the pools), + the haze
     if (anyOver) {
       htg.globalCompositeOperation = 'copy'; htg.drawImage(scene, 0, 0);
@@ -991,11 +997,15 @@
     for (i = 0; i < figs.length; i++) if (figs[i].hold) drawMarble(sg, { x: figs[i].hold.x, y: figs[i].hold.y, r: 4, spin: figs[i].hold.spin != null ? figs[i].hold.spin : 0, id: figs[i].hold.id != null ? figs[i].hold.id : 7 }, t);
     mischief(sg, view, 'over');
     drawHopper(sg, view);
-    // g. the glass
+    // the secrets inside the glass (pachinko-art-secrets.js): the one who comes
+    // up to it, close; the coal dust his knuckles left on it
+    secrets(sg, view, 'glass');
+    // g. the glass (it shivers, a pixel, when it's knocked on from inside)
     sg.globalCompositeOperation = 'multiply';
     sg.drawImage(tint, 0, 0);
     sg.globalCompositeOperation = 'source-over';
-    sg.drawImage(sheen, 0, 0);
+    var shv = view.fx && view.fx.glassKnock && view.fx.glassKnock.shiver ? 1 : 0;
+    sg.drawImage(sheen, shv, 0);
 
     ctx.drawImage(scene, C.GX, C.GY);
     // 3. the paper taped outside the glass, in the room's light
@@ -1015,6 +1025,10 @@
   }
   // mischief and the mother lode (pachinko-art-mischief.js, wave 4): a
   // failure there costs its layer for the frame, never the whole view
+  function secrets(g, view, layer) {
+    if (!A.drawSecrets) return;
+    try { A.drawSecrets(g, view, layer); } catch (e) { if (!secrets.warned && root.console) { secrets.warned = true; console.warn('MOTHER LODE: drawSecrets ' + layer, e); } }
+  }
   function mischief(g, view, layer) {
     if (!A.drawMischief) return;
     try { A.drawMischief(g, view, layer); } catch (e) { if (!mischief.warned && root.console) { mischief.warned = true; console.warn('MOTHER LODE: drawMischief ' + layer, e); } }

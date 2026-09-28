@@ -589,6 +589,8 @@
       lode: function (ctx) { return startLode(ctx); },
       fx: fx,
       rare: function (ctx) { return rare(ctx) ? REWARD.rare : false; },
+      // nothing of the machine's is going on (main asks before the knock on the glass)
+      quiet: function (t) { return !S.dark && !lodeOn(t) && !(S.cave && !S.caveDone); },
       destroy: function () { if (unsub) unsub(); },
       state: S, plan: function () { return S.plan; }
     };

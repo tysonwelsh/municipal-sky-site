@@ -507,7 +507,8 @@
     var S = {
       nav: null, boardRef: null, tick: Math.floor(api.now() * FPS), mode: 'attract', seed: 1913, games: 0,
       lifted: {}, props: [], ropes: {}, doorState: {}, glows: [], dust: [], marks: 0, work: null, lastInput: -1e9, invited: null, attractT0: 0, pointAt: null,
-      freeze: null, lode: null, lookUp: null, cardLamp: null, moth: null, thefts: [], nightShift: null, forced: {}
+      freeze: null, lode: null, lookUp: null, cardLamp: null, moth: null, thefts: [], nightShift: null, forced: {},
+      glass: null, hush: null, glassMarks: []
     };
     function nav() {
       var b = api.board();
@@ -1712,6 +1713,122 @@
       k.wait = 0;
       return { ok: true, who: k.who, tKnock: now() + best.cost };
     }
+    /* ══ THE KNOCK ON THE GLASS (wave 6b; EGGS.md #1) ══════════════════
+     * Once a visit, in a quiet moment, one of them stops, turns round to face
+     * the glass (the only time any of them ever faces you), and walks up to
+     * it: he grows as he comes, in the room's own perspective (its eye level
+     * is the glass's middle). He lifts his lamp, looks out at you, and knocks
+     * three times on the glass from the inside. Then he turns his back and
+     * goes to his post as if nothing happened. The rest of the crew hold
+     * still the whole time, playing dead, the way they do when you tap the
+     * glass: this time the tap comes from their side. His knuckles leave three
+     * smudges of coal dust on the inside of the glass, for the visit.
+     * main decides when (pachinko-main.js, EGGS.glassKnock); this is how.
+     * The close-up of him is painted by pachinko-art-secrets.js from
+     * view.fx.glassKnock. Events: glassknock {what, n, s, x, y}. */
+    // the room's eye level and vanishing point in glass px (pachinko-art-room.js:
+    // HOR 300, VPX 188, less the glass's own offset), the size he grows to at
+    // the glass, steps in (each held IN_HOLD frames) and out, and where his
+    // knocking fist meets the glass (in his own units: × s from his feet)
+    var GK = { HOR: 228, VPX: 160, S_END: 4, IN: 12, IN_HOLD: 2, OUT: 10, FIST: [5.2, -21.4] };
+    function glassWho() {
+      // the lantern man (he's the one who has been looking after the
+      // outsider since the first ten seconds); old Jory if he can't
+      var order = ['lamp', 'old'];
+      for (var i = 0; i < order.length; i++) {
+        var k = K[BY_WHO[order[i]]], p = post(k);
+        if (k.hidden || k.busy || k.onLadder || k.sit || k.back || !k.at || k.at.w !== p.w || Math.abs(k.x - p.x) > 3) continue;
+        return k;
+      }
+      return null;
+    }
+    function glassKnock(opts) {
+      opts = opts || {};
+      if (S.glass) return { ok: false, reason: 'already' };
+      var k = glassWho();
+      if (!k) return { ok: false, reason: 'nobody free' };
+      clearKnocker(k);
+      k.busy = 'glass'; k.wait = 0;
+      var G = S.glass = { i: k.i, who: k.who, t0: now(), view: 'side', s: 1, x0: k.x, y0: k.y, pose: 'stand', lamp: 0, fist: 0, tilt: 0, step: 0, done: false, face0: k.facing };
+      k.gen = glassScript(k, G);
+      return { ok: true, who: k.who, busy: function () { return !!S.glass; } };
+    }
+    function gkAt(G, s) { return { x: GK.VPX + (G.x0 - GK.VPX) * s, y: GK.HOR + (G.y0 - GK.HOR) * s }; }
+    function gkEmit(G, what, extra) {
+      var p = gkAt(G, G.s), e = { type: 'glassknock', what: what, who: G.who, s: Math.round(G.s * 100) / 100, x: Math.round(p.x), y: Math.round(p.y) };
+      if (extra) for (var q in extra) e[q] = extra[q];
+      api.emit(e);
+    }
+    function* glassScript(k, G) {
+      // he stops what he's doing: the lantern comes down, a beat
+      k.pose = P.lanternLow; yield 2;
+      k.pose = copy(P.lanternLow); k.pose.head = -10; yield 2;
+      // he turns round to face the glass, and everyone else holds still
+      G.view = 'front'; G.pose = 'stand'; S.hush = { t0: now() };
+      gkEmit(G, 'turn');
+      yield 5;
+      // the walk up to the glass: on twos, a toy's waddle, growing as he comes
+      for (var i = 1; i <= GK.IN; i++) {
+        var u = i / GK.IN, e = 1 - Math.pow(1 - u, 1.5), z = 1 - (1 - 1 / GK.S_END) * e;
+        G.s = 1 / z; G.step = i; G.pose = i % 2 ? 'walkA' : 'walkB';
+        gkEmit(G, 'step', { n: i, of: GK.IN });
+        yield 1;
+        G.pose = 'walkMid'; yield GK.IN_HOLD - 1;
+      }
+      G.s = GK.S_END; G.pose = 'stand';
+      gkEmit(G, 'arrive'); yield 3;
+      // the lamp comes up beside his face: he's in the light, you're in the dark
+      G.lamp = 0.5; G.pose = 'liftHalf'; yield 1;
+      G.lamp = 1; G.pose = 'lift'; gkEmit(G, 'lift'); yield 6;
+      // three knocks on the glass, from the inside
+      G.fist = 1; G.pose = 'knockUp'; yield 2;
+      for (var n = 1; n <= 3; n++) {
+        G.fist = 2; G.pose = 'knock';
+        var ft = gkAt(G, G.s), fr = ART && ART.closeRig ? ART.closeRig(G).fist : GK.FIST, fp = { x: ft.x + fr[0] * G.s, y: ft.y + fr[1] * G.s };
+        S.glassMarks.push({ x: fp.x + (n - 2) * 1.4 + 0.5, y: fp.y - 2.5 + (n === 2 ? -1.2 : 0.4), n: n, t0: now(), seed: n * 97 + (G.t0 * 8 | 0) });
+        if (S.glassMarks.length > 9) S.glassMarks.shift();
+        G.shiver = now();
+        if (n === 1 && api.flags && api.flags.set) try { api.flags.set('pachinko.knocked-on-the-glass'); } catch (x) { }
+        gkEmit(G, 'knock', { n: n, fx: Math.round(fp.x), fy: Math.round(fp.y) });
+        yield 1;
+        if (n < 3) { G.fist = 1; G.pose = 'knockUp'; yield 2; }
+      }
+      // …and his hand stays against the glass a moment, and he looks at you,
+      // and waits, his head on one side, as if for an answer
+      G.listen = true;
+      G.fist = 3; yield 4;
+      G.fist = 0; G.pose = 'lift'; gkEmit(G, 'hold'); yield 5;
+      G.tilt = 5; yield 5;
+      G.tilt = 0; yield 4;
+      // (if someone knocked back while he waited: one small nod)
+      G.listen = false;
+      if (G.answered) { G.tilt = 0; G.nod = 1; gkEmit(G, 'nod'); yield 2; G.nod = 0; yield 3; }
+      // the lamp comes down
+      G.lamp = 0.5; G.pose = 'liftHalf'; yield 1;
+      G.lamp = 0; G.pose = 'stand'; gkEmit(G, 'lower'); yield 3;
+      // he turns his back and goes back to work
+      G.view = 'back'; gkEmit(G, 'away'); yield 2;
+      var s0 = G.s;
+      for (i = 1; i <= GK.OUT; i++) {
+        var z0 = 1 / s0, zz = z0 + (1 - z0) * (i / GK.OUT);
+        G.s = 1 / zz; G.step = i; G.pose = i % 2 ? 'walkA' : 'walkB';
+        gkEmit(G, 'step', { n: i, of: GK.OUT, away: true });
+        yield 1;
+      }
+      // at his post, side on again, as if nothing had happened
+      G.s = 1; G.view = 'side';
+      k.facing = G.face0; k.pose = restPose(k); k.tool = k.own;
+      gkEmit(G, 'home'); yield 1;
+      S.hush = null; S.glass = null;
+      k.busy = null;
+      k.pose = restPose(k); yield 4;
+    }
+    // is he being held still by the knock (everyone but the one at the glass)?
+    function stillFor(k, t) {
+      if (S.freeze && S.freeze.until > t && k.busy !== 'theft') return true;
+      return !!(S.hush && k.busy !== 'glass' && k.busy !== 'theft');
+    }
+
     function nearestDoor(k) {
       var n = nav(), best = null, bd = 1e9;
       for (var id in n.doors) { var d = n.doors[id]; if (k.at && k.at.w === d.w) { var q = Math.abs(d.x - k.x); if (q < bd) { bd = q; best = d; } } }
@@ -1737,7 +1854,7 @@
         tb.lastAct = tb.act = 'invite'; tb.gen = invite(tb); tb.wait = 0;
       }
       K.forEach(function (k) {
-        if (S.freeze && S.freeze.until > t && !(k.busy === 'theft')) return;   // playing dead: nothing moves
+        if (stillFor(k, t)) return;   // playing dead: nothing moves
         if (S.lode && t - S.lode.t0 < 1.0 && k.busy !== 'theft') return;        // the held breath
         if (k.wait > 0) { k.wait--; return; }
         if (!k.gen) k.gen = schedule(k);
@@ -1776,6 +1893,8 @@
           break;
         case 'mode':
           S.mode = e.mode;
+          // (the knock belongs to the game it happened in: anything else and he's simply home)
+          if (S.glass && e.mode !== 'play') { var gk0 = K[S.glass.i]; S.glass = null; S.hush = null; if (gk0.busy === 'glass') snapHome(gk0); }
           if (e.mode === 'attract') {
             S.attractT0 = t;
             if (S.work) endWork(false);
@@ -1828,6 +1947,10 @@
           // the anti-stall knock: it's one of them, in the rock, right there
           if (e.m != null && S.nightShift != null) { var nk2 = K[S.nightShift]; if (nk2.hidden && !nk2.glow) S.glows.push({ x: e.x + 5, y: e.y + 3, t0: t }); }
           break;
+        case 'empty':
+          // someone at the glass knocking back while he waits for an answer
+          if (S.glass && S.glass.listen) S.glass.answered = true;
+          break;
         case 'glasstap':
           if (!S.freeze || S.freeze.until < t) S.freeze = { t0: t, until: t + 1.6 + 0.3 * (e.n || 1), topple: e.n >= 3 ? 1 : 0 };
           else { S.freeze.until = Math.max(S.freeze.until, t + 1.4); if (e.n >= 3 && !S.freeze.topple) S.freeze.topple = 1; }
@@ -1861,6 +1984,9 @@
       canSteal: canSteal,
       theft: theft,
       knockListen: knockListen,
+      glassKnock: glassKnock,
+      glassBusy: function () { return !!S.glass; },
+      glassReady: function () { return !S.glass && !!glassWho(); },
       nightShift: function () { return S.nightShift != null ? K[S.nightShift].who : null; },
       // any of the pottering routines, by name, now (the lab; the spectacle phase)
       perform: function (who, name) {
@@ -1913,7 +2039,7 @@
       if (k.over && k.over.until > S.tick) base = k.over.pose;
       var free = !k.back && !k.sit && !k.busy && !k.onLadder;
       // playing dead: stiff as the toys they are
-      if (S.freeze && S.freeze.until > t && k.busy !== 'theft') return k.freezePose || base;
+      if (stillFor(k, t)) return k.freezePose || base;
       if (S.lode && k.busy !== 'theft') {
         var lu = t - S.lode.t0;
         if (lu < 1.0) return k.freezePose || base;
@@ -1948,7 +2074,7 @@
       return q;
     }
     function lookFacing(k, t) {
-      if (S.freeze && S.freeze.until > t) return k.freezeFacing || k.facing;
+      if (stillFor(k, t)) return k.freezeFacing || k.facing;
       if (S.pointAt && t >= S.pointAt.t0 && t < S.pointAt.until && !k.back && !k.sit && !k.onLadder && k.busy !== 'theft' && k.busy !== 'work') return 1;
       if ((S.mode === 'play' || S.mode === 'dive') && !k.busy && !k.back && !k.sit && !k.onLadder) {
         if (S.lookUp && t - S.lookUp.t0 < 0.7 && S.lookUp.x != null && Math.abs(S.lookUp.x - k.x) > 8) return sgn(S.lookUp.x - k.x);
@@ -1963,9 +2089,11 @@
       var tickNow = Math.floor(t * FPS);
       K.forEach(function (k) {
         if (k.hidden) return;
+        // the one at the glass is painted close up (pachinko-art-secrets.js), not here
+        if (S.glass && S.glass.i === k.i && S.glass.view !== 'side') return;
         if (tickNow !== k.shownTick) {
           k.shownTick = tickNow;
-          if (S.freeze && S.freeze.until > t) { if (!k.frozen) { k.frozen = true; k.freezePose = k.shown || k.pose; k.freezeFacing = k.shownFacing || k.facing; } }
+          if (stillFor(k, t)) { if (!k.frozen) { k.frozen = true; k.freezePose = k.shown || k.pose; k.freezeFacing = k.shownFacing || k.facing; } }
           else if (S.lode && t - S.lode.t0 < 1.0) { if (!k.frozen) { k.frozen = true; k.freezePose = k.shown || k.pose; k.freezeFacing = k.shownFacing || k.facing; } }
           else k.frozen = false;
           k.shown = shownPose(k, t);
@@ -2086,6 +2214,23 @@
       } else fx0.cardLamp = fx0.transitCard || null;     // (a marble in the old drift, passing behind the card: main's)
       fx0.lifted = S.lifted;
       view.props = props;
+      // the knock on the glass: where he is and how he stands, for the close-up,
+      // and his lamps (the further he comes from the rock, the wider and
+      // softer the pool they throw on it)
+      var G = S.glass;
+      if (G && G.view !== 'side') {
+        var ft = gkAt(G, G.s), cr = ART && ART.closeRig ? ART.closeRig(G) : null;
+        var gk = fx0.glassKnock = { who: G.who, view: G.view, s: G.s, x: ft.x, y: ft.y, pose: G.pose, lamp: G.lamp, fist: G.fist, tilt: G.tilt,
+          shiver: G.shiver != null && t - G.shiver < 0.07, t0: G.t0, step: G.step, nod: G.nod | 0 };
+        var far = 1 + 0.55 * (G.s - 1), lu = cr ? cr.lantern : [-5.6, -5];
+        gk.lantern = { x: ft.x + lu[0] * G.s, y: ft.y + lu[1] * G.s };
+        lamps.push({ x: gk.lantern.x, y: gk.lantern.y, r: Math.round(46 * far), c: '#ffc46a', k: (G.lamp > 0 ? 1.15 : 0.95) / far, glass: true });
+        var cp = cr ? cr.capLamp : [0, -28];
+        lamps.push({ x: ft.x + cp[0] * G.s * (G.view === 'back' ? -1 : 1), y: ft.y + cp[1] * G.s, r: Math.round(26 * far), c: '#ffc46a', k: 0.7 / far, glass: true });
+        // the mine holds its breath while he's out of his place: in as he comes, out as he goes
+        fx0.glassHush = Math.min(1, (G.s - 1) / 1.5) * (G.view === 'back' ? 0.8 : 1);
+      } else { fx0.glassKnock = null; fx0.glassHush = 0; }
+      fx0.glassMarks = S.glassMarks.length ? S.glassMarks : null;
       // a stolen marble is in his hands (drawn there) or in the rock with him: not loose
       var held = {};
       K.forEach(function (k) { if (k.hold) held[k.hold.id] = 1; });
