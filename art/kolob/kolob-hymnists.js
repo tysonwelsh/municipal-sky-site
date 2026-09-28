@@ -1,7 +1,7 @@
 // ============================================================================
 // KOLOB — kolob-hymnists.js: the colony's hymnists
 //
-// Twelve people of the settlement who write the ward's new hymns
+// Fifteen people of the settlement who write the ward's new hymns
 // (PLAN-COMPOSITION §14, item 1: COLONY COMPOSERS, approved). None of them
 // is a template. Each is a set of HABITS that lean on the composer's dice
 // and its search: the meters they reach for, how high and how wide they let
@@ -29,7 +29,9 @@
 //   cells     rhythm-cell appetites, by cell id (see the composer's CELLS)
 //   ending    their signature approaches to the last note: [figure, weight],
 //             a figure being the last notes as steps above the final
-//   refrain   fondness for a refrain; fuge, for a fuge (dialect B, later)
+//   refrain   fondness for a refrain; fuge, for a fuge (dialect B)
+//   kinds     (dialect E) which unison song they write: a Shaker hymn, a
+//             gift song on wordless syllables, a Primary song
 //   repeat    fondness for returning lines (ABAC, AABA against ABCD)
 //   sequence  fondness for a figure repeated a step higher or lower
 //   color     Tabernacle: secondary dominants and the approach diminished
@@ -53,7 +55,7 @@ window.KOLOB.Hymnists = (function () {
     {
       id: "beeson", nameEn: "Thankful Beeson", nameDs: "𐐛𐐰𐑍𐐿𐑁𐐳𐑊 𐐒𐐨𐑅𐐲𐑌",
       about: "a Victorian of the choir loft: warm tunes, the organ's suspensions, a secondary dominant where the words lift",
-      lean: { tabernacle: 3, sacredharp: 0.4, oldway: 0.3 },
+      lean: { tabernacle: 3, sacredharp: 0.4, oldway: 0.3, psalmody: 0.4, gospel: 1.5, shaker: 0.3 },
       meters: { CM: 3, LM: 2, "87.87": 2, SM: 1, CMD: 0.8, "76.76D": 0.6, "11s": 0.4, "10.10R": 0.3 },
       forms: { ABAC: 2, ABCD: 1.5, AABA: 0.8, "ABA'C": 1.2 },
       times: { "4/4": 1.4, "3/4": 1, "6/8": 0.5, "2/2": 0.6, "3/2": 0.3 },
@@ -69,7 +71,7 @@ window.KOLOB.Hymnists = (function () {
     {
       id: "hale", nameEn: "Abner Hale", nameDs: "𐐈𐐺𐑌𐐲𐑉 𐐐𐐩𐑊",
       about: "a singing-school master of the old square: minor tunes in the tenor, wide leaps, bare fifths to end on",
-      lean: { tabernacle: 0.3, sacredharp: 3, oldway: 0.8 },
+      lean: { tabernacle: 0.3, sacredharp: 3, oldway: 0.8, psalmody: 3, gospel: 0.2, shaker: 0.3 },
       meters: { CM: 2, SM: 2, LM: 1.5, "87.87": 0.6, CMD: 0.6, "11s": 0.5 },
       forms: { ABCD: 2.5, ABAC: 0.8, "ABA'C": 0.6 },
       times: { "4/4": 1, "3/2": 1.6, "3/4": 1, "2/2": 1.2, "6/8": 0.3 },
@@ -85,7 +87,7 @@ window.KOLOB.Hymnists = (function () {
     {
       id: "carrow", nameEn: "Zina Carrow", nameDs: "𐐞𐐨𐑌𐐲 𐐗𐐰𐑉𐐬",
       about: "who leads the lined hymns on fast Sundays: narrow, slow, stepping tunes with room between the notes for the ward to decorate",
-      lean: { tabernacle: 0.2, sacredharp: 0.9, oldway: 3 },
+      lean: { tabernacle: 0.2, sacredharp: 0.9, oldway: 3, psalmody: 0.6, gospel: 0.1, shaker: 1.2 },
       meters: { CM: 3, SM: 2, LM: 1.5, "87.87": 0.3 },
       forms: { ABCD: 2, ABAC: 1 },
       times: { "3/2": 2, "2/2": 1.2, "4/4": 1, "3/4": 0.6 },
@@ -101,7 +103,7 @@ window.KOLOB.Hymnists = (function () {
     {
       id: "lund", nameEn: "Hosea Lund", nameDs: "𐐐𐐬𐑆𐐩𐐲 𐐢𐐲𐑌𐐼",
       about: "a bright lilting hand: six-eight and three-four, dotted figures, and a refrain he can never resist",
-      lean: { tabernacle: 3, sacredharp: 0.8, oldway: 0.1 },
+      lean: { tabernacle: 3, sacredharp: 0.8, oldway: 0.1, psalmody: 0.4, gospel: 3, shaker: 1.2 },
       meters: { "76.76D": 2, "87.87": 2, CM: 1, "11s": 1.2, "10.10R": 1, LM: 0.6 },
       forms: { ABAC: 2, "ABA'C": 1.5, ABCD: 1 },
       times: { "6/8": 2.2, "3/4": 1.6, "4/4": 0.8, "2/2": 0.3 },
@@ -117,7 +119,7 @@ window.KOLOB.Hymnists = (function () {
     {
       id: "oakes", nameEn: "Mercy Oakes", nameDs: "𐐣𐐲𐑉𐑅𐐨 𐐄𐐿𐑅",
       about: "the ward's fiercest tenor: minor tunes with a wide compass that climb the modal subtonic home",
-      lean: { tabernacle: 0.4, sacredharp: 3, oldway: 1 },
+      lean: { tabernacle: 0.4, sacredharp: 3, oldway: 1, psalmody: 2.5, gospel: 0.3, shaker: 0.4 },
       meters: { LM: 2, CM: 1.5, "87.87": 1.5, "87.87D": 1, SM: 1, "11s": 0.6 },
       forms: { ABCD: 2, ABAC: 1, "ABA'C": 1 },
       times: { "4/4": 1.4, "3/4": 1.2, "3/2": 0.8, "2/2": 1, "6/8": 0.5 },
@@ -133,7 +135,7 @@ window.KOLOB.Hymnists = (function () {
     {
       id: "tebbs", nameEn: "Orson Tebbs", nameDs: "𐐃𐑉𐑅𐐲𐑌 𐐓𐐯𐐺𐑆",
       about: "plain and four-square: even notes, a narrow compass, ii–V–I and no fuss",
-      lean: { tabernacle: 3, sacredharp: 0.6, oldway: 0.4 },
+      lean: { tabernacle: 3, sacredharp: 0.6, oldway: 0.4, psalmody: 0.8, gospel: 0.8, shaker: 0.8 },
       meters: { LM: 2.5, CM: 2, SM: 1.2, "87.87": 1, CMD: 0.5 },
       forms: { AABA: 1.6, ABAC: 1.4, ABCD: 1 },
       times: { "4/4": 2, "2/2": 1.4, "3/4": 0.6, "3/2": 0.4 },
@@ -149,7 +151,7 @@ window.KOLOB.Hymnists = (function () {
     {
       id: "fife", nameEn: "Lovina Fife", nameDs: "𐐢𐐬𐑂𐐴𐑌𐐲 𐐙𐐴𐑁",
       about: "lyrical and early to its height: a rising sixth she loves, a waltz lilt, a turn back up to the tonic",
-      lean: { tabernacle: 2.5, sacredharp: 0.5, oldway: 0.8 },
+      lean: { tabernacle: 2.5, sacredharp: 0.5, oldway: 0.8, psalmody: 0.3, gospel: 1.2, shaker: 1.5 },
       meters: { "87.87": 2, "11s": 2, CM: 1, "76.76D": 1, LM: 0.6 },
       forms: { ABAC: 1.5, "ABA'C": 1.5, ABCD: 1.2 },
       times: { "3/4": 2.2, "6/8": 1.2, "4/4": 0.8, "3/2": 0.5 },
@@ -166,7 +168,7 @@ window.KOLOB.Hymnists = (function () {
     {
       id: "stroud", nameEn: "Ammon Stroud", nameDs: "𐐈𐑋𐐲𐑌 𐐝𐐻𐑉𐐵𐐼",
       about: "camp-meeting blood: major Sacred Harp tunes in a dancing six-eight, choruses, the re–do close over a bare fifth",
-      lean: { tabernacle: 0.8, sacredharp: 3, oldway: 0.2 },
+      lean: { tabernacle: 0.8, sacredharp: 3, oldway: 0.2, psalmody: 1.2, gospel: 2.5, shaker: 0.8 },
       meters: { "87.87D": 1.5, "87.87": 1.5, "11s": 1.5, CM: 1, "10.10R": 1 },
       forms: { ABAC: 1.5, ABCD: 1.2, AABA: 1 },
       times: { "6/8": 2, "3/4": 1.6, "4/4": 1, "2/2": 0.4 },
@@ -182,7 +184,7 @@ window.KOLOB.Hymnists = (function () {
     {
       id: "vail", nameEn: "Emmeline Vail", nameDs: "𐐇𐑋𐐲𐑊𐐴𐑌 𐐚𐐩𐑊",
       about: "stately minims and a late climax: the diminished seventh just before the height, and the cadential six-four",
-      lean: { tabernacle: 3, sacredharp: 0.3, oldway: 0.6 },
+      lean: { tabernacle: 3, sacredharp: 0.3, oldway: 0.6, psalmody: 1, gospel: 0.4, shaker: 0.3 },
       meters: { SM: 2, CM: 2, LM: 1.5, CMD: 1, "76.76D": 0.6 },
       forms: { ABCD: 1.6, ABAC: 1.4, "ABA'C": 1 },
       times: { "2/2": 2, "4/4": 1.4, "3/2": 1, "3/4": 0.5 },
@@ -198,7 +200,7 @@ window.KOLOB.Hymnists = (function () {
     {
       id: "quayle", nameEn: "Tirzah Quayle", nameDs: "𐐓𐐮𐑉𐑆𐐲 𐐗𐐶𐐩𐑊",
       about: "a gapped, pentatonic ear from the far wards: tunes that skip where others step, lined or in the square",
-      lean: { tabernacle: 0.4, sacredharp: 2, oldway: 2.5 },
+      lean: { tabernacle: 0.4, sacredharp: 2, oldway: 2.5, psalmody: 0.8, gospel: 0.3, shaker: 2.5 },
       meters: { CM: 2.5, LM: 1.5, SM: 1, "87.87": 0.8, "11s": 0.5 },
       forms: { ABCD: 1.6, ABAC: 1.2, AABA: 0.8 },
       times: { "3/4": 1.5, "3/2": 1.4, "4/4": 1, "2/2": 0.8, "6/8": 0.5 },
@@ -214,7 +216,7 @@ window.KOLOB.Hymnists = (function () {
     {
       id: "arbogast", nameEn: "Nephi Arbogast", nameDs: "𐐤𐐨𐑁𐐴 𐐂𐑉𐐺𐐬𐑀𐐰𐑅𐐻",
       about: "long lines and sequences, a refrain after the verse, and a last do struck twice",
-      lean: { tabernacle: 2, sacredharp: 1.5, oldway: 0.4 },
+      lean: { tabernacle: 2, sacredharp: 1.5, oldway: 0.4, psalmody: 1.5, gospel: 2, shaker: 0.6 },
       meters: { "10.10R": 2, "11s": 2, "87.87D": 1, LM: 1, CM: 0.8, "76.76D": 1 },
       forms: { ABAC: 1.2, ABCD: 1.2, "ABA'C": 1.2, AABA: 0.8 },
       times: { "4/4": 1.2, "3/4": 1.2, "6/8": 1, "2/2": 0.6 },
@@ -230,7 +232,7 @@ window.KOLOB.Hymnists = (function () {
     {
       id: "welling", nameEn: "Jerusha Welling", nameDs: "𐐖𐐲𐑉𐐭𐑇𐐲 𐐎𐐯𐑊𐐮𐑍",
       about: "gentle and close: short meters, steps more than leaps, the mi–re–do that everyone can sing",
-      lean: { tabernacle: 2, sacredharp: 0.5, oldway: 2 },
+      lean: { tabernacle: 2, sacredharp: 0.5, oldway: 2, psalmody: 0.3, gospel: 1, shaker: 2.5 },
       meters: { SM: 2.5, "76.76D": 1.5, CM: 1.5, "87.87": 1, LM: 0.6 },
       forms: { ABAC: 1.5, AABA: 1.2, ABCD: 1 },
       times: { "3/4": 1.4, "4/4": 1.2, "3/2": 1, "6/8": 0.6, "2/2": 0.6 },
@@ -242,6 +244,58 @@ window.KOLOB.Hymnists = (function () {
       color: 0.2, sevenths: 0.4, susp: 0.5, passing: 0.4,
       open: 0.5, alto: 0.6, ornament: 0.6, melisma: 0.35, fermata: 0.4, tempo: 1.04,
       contours: { arch: 2, descent: 1.2, wave: 1, climb: 0.6 },
+    },
+    // ---- round 3: three who write in the new dialects, and in nothing else
+    // (their leans toward the first three are nought, so no earlier draw moves)
+    {
+      id: "lowe", nameEn: "Sariah Lowe", nameDs: "𐐝𐐲𐑉𐐴𐐲 𐐢𐐬",
+      about: "the Primary's president: short songs for the children, a chorus they can shout, a narrow compass and a skip of joy in it",
+      lean: { tabernacle: 0, sacredharp: 0, oldway: 0, psalmody: 0, gospel: 0.6, shaker: 3.5 },
+      kinds: { primary: 3, shaker: 0.6, gift: 0.4 },
+      meters: { "66.66": 3, "65.65": 2, "77.77": 1.5, SM: 1, CM: 0.6 },
+      forms: { ABAC: 2, AABA: 2, "AA'BA": 1 },
+      times: { "6/8": 2, "2/4": 1.6, "3/4": 1.2, "4/4": 1 },
+      modes: { ionian: 4, penta: 2, hexa: 1.5, mixolydian: 0.6, dorian: 0.2, aeolian: 0.2 },
+      range: [6, 7], peakAt: 0.66, peakTo: { 5: 1.5, 7: 1.5, 4: 1 }, leap: 0.28,
+      cells: { dotted: 2, even: 1.2, dotS: 1.2, long: 0.6 },
+      ending: [[[4, 2, 0], 2], [[2, 1, 0], 2]],
+      refrain: 0.8, fuge: 0, repeat: 0.8, sequence: 0.6,
+      color: 0.2, sevenths: 0.4, susp: 0.1, passing: 0.3,
+      open: 0.4, alto: 0.4, ornament: 0.1, melisma: 0.1, fermata: 0.1, tempo: 0.92,
+      contours: { arch: 1.5, climb: 1.5, wave: 1.2, descent: 0.6 },
+    },
+    {
+      id: "cutler", nameEn: "Ephraim Cutler", nameDs: "𐐀𐑁𐑉𐐨𐐲𐑋 𐐗𐐲𐐻𐑊𐐲𐑉",
+      about: "the Social Hall's quartet man: a lead who holds his note long enough for the chord to turn under it, sevenths all the way down the circle, and a tag to finish",
+      lean: { tabernacle: 0, sacredharp: 0, oldway: 0, psalmody: 0.2, gospel: 3.5, shaker: 0.2 },
+      meters: { "87.87": 2, "11s": 1.5, CM: 1.2, "10.10R": 1.2, "77.77": 1 },
+      forms: { AABA: 2, ABAC: 1.5, "AA'BA": 1 },
+      times: { "4/4": 2, "6/8": 1.2, "3/4": 1.2 },
+      modes: { ionian: 5, mixolydian: 0.8, hexa: 0.5, penta: 0.3 },
+      range: [8, 9], peakAt: 0.7, peakTo: { 7: 2, 8: 1.5 }, leap: 0.22,
+      cells: { long: 2, dotted: 1.6, even: 1 },
+      ending: [[[2, 1, 0], 2], [[0, -1, 0], 1]],
+      refrain: 0.9, fuge: 0, repeat: 0.7, sequence: 0.5,
+      color: 0.95, sevenths: 1, susp: 0.2, passing: 0.4,
+      open: 0.1, alto: 0.8, ornament: 0.1, melisma: 0.2, fermata: 0.5, tempo: 1.05,
+      contours: { arch: 1.5, wave: 1.2, climb: 1, descent: 1 },
+    },
+    {
+      id: "eddy", nameEn: "Tamar Eddy", nameDs: "𐐓𐐩𐑋𐐪𐑉 𐐇𐐼𐐨",
+      about: "a sister who receives songs: wordless dancing tunes that come to her whole, two strains and each sung twice, often over a drone",
+      lean: { tabernacle: 0, sacredharp: 0, oldway: 0, psalmody: 0.3, gospel: 0.2, shaker: 3.5 },
+      kinds: { gift: 3, shaker: 1, primary: 0.2 },
+      meters: { "88.88": 3, "77.77": 2, "66.66": 1 },
+      forms: { "AA'BB'": 3, AABA: 1 },
+      times: { "2/4": 2, "6/8": 2, "3/4": 0.8 },
+      modes: { penta: 2.5, ionian: 2, mixolydian: 1.5, dorian: 1.2, hexa: 1.2, aeolian: 0.6 },
+      range: [7, 8], peakAt: 0.66, peakTo: { 7: 2, 5: 1.2, 8: 1 }, leap: 0.3,
+      cells: { even: 1.6, dotted: 1.4, dotS: 1.4 },
+      ending: [[[4, 2, 0], 2], [[1, 0], 1.5]],
+      refrain: 0.1, fuge: 0, repeat: 0.9, sequence: 0.7,
+      color: 0, sevenths: 0, susp: 0, passing: 0.2,
+      open: 0.6, alto: 0.2, ornament: 0.3, melisma: 0.15, fermata: 0.05, tempo: 0.9,
+      contours: { wave: 2, arch: 1.4, climb: 1, descent: 0.8 },
     },
   ];
 
@@ -259,7 +313,10 @@ window.KOLOB.Hymnists = (function () {
   // named). One die, always thrown.
   function draw(R, dialect) {
     return R.pickW(LIST.map(function (h) {
-      var w = dialect ? (h.lean[dialect] || 0.05) : (h.lean.tabernacle + h.lean.sacredharp + h.lean.oldway);
+      // (a lean written as nought is nought: the round-3 hymnists never write
+      // in the first three dialects, so the draws there are as they were)
+      var lw = dialect ? h.lean[dialect] : null;
+      var w = dialect ? (lw != null ? lw : 0.05) : (h.lean.tabernacle + h.lean.sacredharp + h.lean.oldway);
       return [h, w];
     }));
   }
