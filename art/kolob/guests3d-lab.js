@@ -176,11 +176,103 @@ window.GuestsLab3c = (function () {
              stats: { fiddle: last && last.folk ? last.folk.stats() : null, floorNodes: last ? last.floorNodes() : 0, slices: last ? last.slices : 0, voicesPeak: bud ? bud.peak : null, voicesMean: bud ? Math.round(bud.mean) : null } };
   };
 
-  // (the testimony's card: written with kolob-testimony.js)
+  // ==========================================================================
+  // THE TESTIMONY — the Sunday's bearers (the ward seated above), in the
+  // day's mode on the keynote (the engine hands the testimony's own key)
+  // ==========================================================================
   var tmNowHost = null;
-  function tmMaterial() { return null; }
-  function tmCard() { var c = el("section", "kg3-card"); c.appendChild(el("h2", "kg3-name", "The testimony")); c.appendChild(el("p", "kg3-phrase", "kolob-testimony.js is not loaded.")); return c; }
-  function tmPlan() {}
+  function tmMaterial(o) {
+    o = o || {};
+    var D = day(o), sun = CAL && CAL.SUNDAYS[D.sunday];
+    return TM.prepare({ ward: D.ward, keynoteHz: D.st.keynote, mode: D.st.mode || D.dox.mode, sunday: D.sunday,
+                        silenceMul: sun && sun.plan && sun.plan.silenceMul || 1 }, tmStream(D.st.seed));
+  }
+  P.testimony = function (ctx, into, t, o) {
+    o = o || {};
+    var D = day(o), M = tmMaterial(o), sc = TM.score(M, tmStream(D.st.seed), t);
+    if (K.VoicesVocal && K.VoicesVocal.budget) K.VoicesVocal.budget.reset();
+    var end = TM.perform(ctx, into, t, M, tmStream(D.st.seed), { onNote: o.onNote, defer: o.defer, onStage: o.onStage, onCast: o.onCast, onAnswer: o.onAnswer });
+    var ex = [];
+    sc.creaks.forEach(function (c) { ex.push([c.t - t, c.t - t + 0.55]); });
+    sc.speakers.forEach(function (sp) { var tt = sp.t - t; sp.notes.forEach(function (n) { ex.push([tt - 0.1, tt + 0.06]); tt += n.dur; }); });
+    sc.reeds.forEach(function (r) { var tt = r.t - t; r.notes.forEach(function (n) { ex.push([tt - 0.02, tt + 0.05]); tt += n.dur; }); });
+    var last = TM.perform.last, bud = K.VoicesVocal.budget.report(t, end + 2);
+    return { dur: end - t + 3, score: sc, material: M, expect: ex,
+             stats: { reeds: last.nodes.reeds, room: last.nodes.room, slices: last.slices, voicesPeak: bud.peak, voicesMean: Math.round(bud.mean) } };
+  };
+  function tmCard() {
+    var c = el("section", "kg3-card");
+    c.appendChild(el("h2", "kg3-name", "The testimony"));
+    c.appendChild(el("p", "kg3-phrase", "Two or three of the ward rise, one at a time, and speak — a speech-melody on their own voice, vowels and soft consonants, no English — and the parlor's harmonium or the deacon's clarinet takes it up: the first sentence played back, the next doubled as it is spoken, the last made into a tune. Each speaker's pace, compass and shape are their own (after Steve Reich's Different Trains)."));
+    if (!TM) { c.appendChild(el("p", "kg3-stat", "kolob-testimony.js is not loaded.")); return c; }
+    var r = el("div", "kg3-row"), meas = el("p", "kg3-meas", ""), stat = el("p", "kg3-stat", "");
+    var play = button("▶ the testimony", "kg3-play", function () { busy(play, GuestsLab3c.play("testimony").then(function (res) { stat.textContent = res.dur.toFixed(1) + " s · laid out at the press in " + res.cost.press.toFixed(1) + " ms, then slice by slice"; })).catch(showErr(stat)); });
+    var chk = button("check", "kg3-check", function () { meas.textContent = "rendering…"; busy(chk, check("testimony").then(function (x) { meas.textContent = measLine(x); var s = x.nodes || {}; stat.textContent = "the reeds: " + s.reeds + " nodes built (a line is one voice) · the pews: " + s.room + " · the voices: " + s.voicesPeak + " alive at most, " + s.voicesMean + " on average · " + s.slices + " slices"; })).catch(showErr(meas)); });
+    r.appendChild(play); r.appendChild(chk); c.appendChild(r);
+    tmNowHost = el("p", "kg3-now", ""); c.appendChild(tmNowHost);
+    c.appendChild(meas); c.appendChild(stat);
+    var host = el("div"); host.id = "kg3-tm-plan"; c.appendChild(host);
+    return c;
+  }
+  var PART_NAME = { S: "treble", A: "alto", T: "tenor", B: "bass" };
+  function tmPlan() {
+    var host = document.getElementById("kg3-tm-plan");
+    if (!host) return;
+    host.textContent = "";
+    var M, sc;
+    try { M = tmMaterial(); sc = TM.score(M, tmStream(settings().seed), 0); } catch (e) { host.textContent = "error: " + e.message; return; }
+    host.appendChild(el("p", "kg3-stat", "the key: " + M.mode + " on " + M.finalHz.toFixed(1) + " Hz · " + M.bearers.length + " rise · " + mmss(sc.end) + " in all · the tunes handed to the motif engine: " + sc.answers.length));
+    M.bearers.forEach(function (b) {
+      var h = el("p", "kg3-bearer");
+      h.appendChild(el("b", null, b.nameEn || "one of the ward"));
+      h.appendChild(document.createTextNode(" " + (b.nameDs || "") + " — " + (b.archetypeEn || b.archetype) + " · " + (PART_NAME[b.part] || b.part) + ", " + b.voice.age + " · " + (+b.habit.rate).toFixed(1) + " syllables a second, a compass of " + (+b.habit.range).toFixed(1) + " semitones, " + b.habit.contour + ", pauses of " + (+b.habit.pauses).toFixed(2) + " s · " + b.sentences.length + " sentences (" + b.sentences.map(function (s) { return s.move; }).join(", ") + ") · the " + b.reed));
+      host.appendChild(h);
+      host.appendChild(plotBearer(M, sc, b));
+    });
+    host.appendChild(el("p", "kg3-legend", "Each drawing is one bearer's testimony, left to right in time: the thin line is the speech's pitch (carried by whole octaves into the reed's register, so the two can be seen together), the thick marks the reed's notes on the day's just scale (the faint lines) — played back after the first sentence, with the next, and at last as a tune."));
+  }
+  function plotBearer(M, sc, b) {
+    var NS = "http://www.w3.org/2000/svg", W = 900, H = 150, pad = 6;
+    var sps = sc.speakers.filter(function (sp) { return sp.k === b.k; }), rds = sc.reeds.filter(function (r) { return r.k === b.k; });
+    function stOf(f) { return 12 * Math.log(f / M.finalHz) / Math.LN2; }
+    var speech = [], reed = [];
+    sps.forEach(function (sp) {
+      var tt = sp.t, seg = [];
+      sp.notes.forEach(function (n) {
+        if (n.rest) { if (seg.length) speech.push(seg); seg = []; tt += n.dur; return; }
+        n.glide.forEach(function (g) { seg.push([tt + g[0] * n.dur, stOf(n.f * g[1])]); });
+        tt += n.dur;
+      });
+      if (seg.length) speech.push(seg);
+    });
+    rds.forEach(function (r) { var tt = r.t; r.notes.forEach(function (n) { reed.push([tt, tt + n.dur, stOf(n.f), r.move]); tt += n.dur; }); });
+    function median(a) { a = a.slice().sort(function (x, y) { return x - y; }); return a.length ? a[a.length >> 1] : 0; }
+    var off = 12 * Math.round((median(reed.map(function (x) { return x[2]; })) - median([].concat.apply([], speech).map(function (p) { return p[1]; }))) / 12);
+    var all = reed.map(function (x) { return x[2]; }).concat([].concat.apply([], speech).map(function (p) { return p[1] + off; }));
+    var lo = Math.min.apply(null, all) - 2, hi = Math.max.apply(null, all) + 2;
+    var t0 = Math.min.apply(null, sps.map(function (s) { return s.t; }).concat(rds.map(function (r) { return r.t; }))), t1 = Math.max.apply(null, reed.map(function (x) { return x[1]; }).concat([].concat.apply([], speech).map(function (p) { return p[0]; })));
+    function X(t) { return pad + (W - 2 * pad) * (t - t0) / Math.max(1e-6, t1 - t0); }
+    function Yy(s) { return H - pad - (H - 2 * pad) * (s - lo) / Math.max(1e-6, hi - lo); }
+    var svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H); svg.setAttribute("class", "kg3-plot"); svg.setAttribute("role", "img");
+    svg.setAttribute("aria-label", (b.nameEn || "a bearer") + ": the speech's pitch and the reed's notes");
+    function line(x1, y1, x2, y2, stroke, w, op) { var l = document.createElementNS(NS, "line"); l.setAttribute("x1", x1); l.setAttribute("y1", y1); l.setAttribute("x2", x2); l.setAttribute("y2", y2); l.setAttribute("stroke", stroke); l.setAttribute("stroke-width", w); if (op) l.setAttribute("opacity", op); svg.appendChild(l); }
+    var PF = { ionian: ["1/1", "9/8", "5/4", "4/3", "3/2", "5/3", "15/8"], mixolydian: ["1/1", "9/8", "5/4", "4/3", "3/2", "5/3", "16/9"], dorian: ["1/1", "9/8", "6/5", "4/3", "3/2", "5/3", "16/9"], aeolian: ["1/1", "9/8", "6/5", "4/3", "3/2", "8/5", "16/9"] };
+    var tbl = PF[M.mode] || PF.ionian, cls = { penta: [0, 1, 2, 4, 5], hexa: [0, 1, 2, 3, 4, 5] }[M.mode] || [0, 1, 2, 3, 4, 5, 6];
+    for (var d = -21; d <= 35; d++) {
+      if (cls.indexOf(mod(d, 7)) < 0) continue;
+      var fr = tbl[mod(d, 7)].split("/"), s = 12 * Math.log(fr[0] / fr[1]) / Math.LN2 + 12 * Math.floor(d / 7);
+      if (s >= lo && s <= hi) line(pad, Yy(s), W - pad, Yy(s), mod(d, 7) === 0 ? "#8a7a45" : "#1e4d3b", mod(d, 7) === 0 ? 0.8 : 0.4, 0.35);
+    }
+    speech.forEach(function (seg) {
+      var pl = document.createElementNS(NS, "polyline");
+      pl.setAttribute("points", seg.map(function (p) { return X(p[0]).toFixed(1) + "," + Yy(p[1] + off).toFixed(1); }).join(" "));
+      pl.setAttribute("fill", "none"); pl.setAttribute("stroke", "#1e4d3b"); pl.setAttribute("stroke-width", "1.4");
+      svg.appendChild(pl);
+    });
+    reed.forEach(function (x) { line(X(x[0]), Yy(x[2]), Math.max(X(x[0]) + 2, X(x[1]) - 1.5), Yy(x[2]), x[3] === "tune" ? "#9a4a2a" : "#b8743f", 4, x[3] === "double" ? 0.75 : 0.95); });
+    return svg;
+  }
   var MAJ = [1, 9 / 8, 5 / 4, 4 / 3, 3 / 2, 5 / 3, 15 / 8];
   function deg(key, d) { var i = d - 1, oct = Math.floor(i / 7), k = ((i % 7) + 7) % 7; return key * MAJ[k] * Math.pow(2, oct); }
   var REF_GAINMUL = 0.75 * (0.6 + 0.4 * 0.21), REF_DUR = 6, REF_STEP = 6.4;

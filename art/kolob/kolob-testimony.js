@@ -186,9 +186,14 @@ window.KOLOB.Testimony = (function () {
     // THE LINE: a declination across the sentence; the accents on the
     // stressed syllables, placed by the speaker's shape; the weak syllables
     // near the line, leaning toward the next accent
-    var decl = R.rnd(1.2, 2.8), accents = [];
-    syl.forEach(function (s, i) { if (s.stressed) accents.push(i); });
-    if (!accents.length) { syl[0].stressed = true; accents.push(0); }
+    // (a phrase carries a few pitch accents, not one on every stress: the
+    // first stressed syllable and the last — the nucleus — always, the
+    // others two times in five; a stress left unaccented is longer and
+    // louder, and only a little higher. Every stress accented is a chant.)
+    var decl = R.rnd(1.2, 2.8), accents = [], stressed = [];
+    syl.forEach(function (s, i) { if (s.stressed) stressed.push(i); });
+    if (!stressed.length) { syl[0].stressed = true; stressed.push(0); }
+    stressed.forEach(function (i, k) { var keep = R.chance(0.4); if (k === 0 || k === stressed.length - 1 || keep) accents.push(i); });
     var hts = accents.map(function (ai, k) {
       var x = accents.length > 1 ? k / (accents.length - 1) : 0.5, h;
       if (shape === "falling") h = range * (0.95 - 0.45 * x);
@@ -203,25 +208,30 @@ window.KOLOB.Testimony = (function () {
       // semitones over it in a speaker of middling compass, as emphatic
       // speech does; the one before an accent leans up toward it)
       var nx = accents.filter(function (a) { return a > i; })[0], lean = nx != null && nx - i === 1 ? 0.12 : 0;
-      return line + range * (lean + R.rnd(0, 0.08));
+      return line + range * (lean + (s.stressed ? 0.12 : 0) + R.rnd(0, 0.08));
     });
     // THE ENDS: a phrase that goes on lifts a little; the sentence falls to
     // rest — or, from a speaker who lifts every end, rises (never the last)
     var endKind = opts.last ? "fall" : shape === "rising" ? "rise" : shape === "arch" && R.chance(0.3) ? "level" : "fall";
     var out = [], t = 0, dFall = R.rnd(2.5, 4.5), dRise = R.rnd(3, 6), pausesIn = (habit.pauses || 0.4) * R.rnd(0.35, 0.6);
+    // (a voice carries on from where the last syllable left it: a syllable
+    // begins at the pitch the one before ended on — after a breath, fresh —
+    // and an accent rises out of it; only the breath resets the line)
+    var prevEnd = null;
     syl.forEach(function (s, i) {
       var last = i === n - 1, phraseEnd = last || i === cut, p = pitch[i], nextP = i + 1 < n ? pitch[i + 1] : p;
       var d = (1 / rate) * (s.stressed ? 1.25 : 0.8) * R.rnd(0.88, 1.12) * (phraseEnd ? R.rnd(1.5, 1.9) : 1);
-      var p0, pk = null, p1;
-      if (s.stressed) { p0 = p - R.rnd(1, 2.2); pk = p; p1 = p - R.rnd(0.8, 1.8); }
-      else { p0 = p; p1 = p + (nextP - p) * 0.45; }
+      var p0, pk = null, p1, rise = R.rnd(1, 2.2), fall = R.rnd(0.8, 1.8), acc = accents.indexOf(i) >= 0;
+      if (acc) { p0 = prevEnd == null ? p - rise : Math.min(prevEnd, p - 0.5 * rise); pk = p; p1 = p - fall; }
+      else { p0 = prevEnd == null ? p : prevEnd; p1 = p + (nextP - p) * 0.45; }
       if (last) { if (endKind === "fall") p1 = Math.min(p1, p) - dFall; else if (endKind === "rise") p1 = Math.max(p1, p) + dRise; else p1 = p - 0.5; }
       else if (i === cut) p1 = Math.max(p1, p) + R.rnd(0.8, 2);
       var glide = pk != null ? [[0, st(p0 - p0)], [R.rnd(0.35, 0.55), st(pk - p0)], [1, st(p1 - p0)]] : [[0, 1], [1, st(p1 - p0)]];
       var v = pickV(s.stressed ? STRESSED_V : WEAK_V, R, out.length ? out[out.length - 1].vowel : null);
-      out.push({ vowel: v, dur: +d.toFixed(4), f: base * st(p0), glide: glide, stress: s.stressed ? 1 : i === 0 ? 0.75 : R.rnd(0.4, 0.6), accent: s.stressed, p: pk != null ? pk : (p0 + p1) / 2, pStart: p0, pEnd: p1, last: last });
+      out.push({ vowel: v, dur: +d.toFixed(4), f: base * st(p0), glide: glide, stress: acc ? 1 : s.stressed ? 0.85 : i === 0 ? 0.75 : R.rnd(0.4, 0.6), accent: acc, p: pk != null ? pk : (p0 + p1) / 2, pStart: p0, pEnd: p1, last: last });
       t += d;
-      if (i === cut) { out.push({ rest: true, dur: +pausesIn.toFixed(4) }); t += pausesIn; }
+      prevEnd = p1;
+      if (i === cut) { out.push({ rest: true, dur: +pausesIn.toFixed(4) }); t += pausesIn; prevEnd = null; }
     });
     return { syllables: out, dur: t, base: base, end: endKind };
   }
@@ -273,7 +283,7 @@ window.KOLOB.Testimony = (function () {
   }
   // the reeds' registers: the middle each melody is carried to
   var REEDS = { harmonium: { mid: 330, lo: 175, hi: 760 }, clarinet: { mid: 440, lo: 190, hi: 1050 } };
-  function transcribe(sent, M, reed) {
+  function transcribe(sent, M, reed, kFixed) {
     var mode = M.mode, F = M.finalHz, raw = [], acc = 0;
     sent.syllables.forEach(function (s) {
       if (s.rest) { if (raw.length) raw[raw.length - 1].dur += s.dur; else acc += s.dur; return; }
@@ -288,9 +298,9 @@ window.KOLOB.Testimony = (function () {
     });
     // into the reed's register, by whole octaves (the melody's middle nearest the reed's)
     var ds = raw.map(function (x) { return x.d; }).sort(function (a, b) { return a - b; }), mid = ds[ds.length >> 1];
-    var R = REEDS[reed], k = Math.round(Math.log(R.mid / (F * mRatio(monzoOf(mode, mid)))) / Math.LN2);
+    var R = REEDS[reed], k = kFixed != null ? kFixed : Math.round(Math.log(R.mid / (F * mRatio(monzoOf(mode, mid)))) / Math.LN2);
     var lo = ds[0] + 7 * k, hi = ds[ds.length - 1] + 7 * k;
-    if (F * mRatio(monzoOf(mode, lo)) < R.lo) k++; else if (F * mRatio(monzoOf(mode, hi)) > R.hi) k--;
+    if (kFixed == null) { if (F * mRatio(monzoOf(mode, lo)) < R.lo) k++; else if (F * mRatio(monzoOf(mode, hi)) > R.hi) k--; }
     var notes = [];
     raw.forEach(function (x) {
       var d = x.d + 7 * k, prev = notes[notes.length - 1];
@@ -378,13 +388,21 @@ window.KOLOB.Testimony = (function () {
       if (reed === lastReed && streak >= 2) reed = reed === "harmonium" ? "clarinet" : "harmonium";   // (never three on one reed)
       streak = reed === lastReed ? streak + 1 : 1; lastReed = reed;
       var hab = b.habit, n = sentencesFor(hab, nU), moves = MOVES[n];
-      var sents = [];
+      var sents = [], said = [];
+      for (var i0 = 0; i0 < n; i0++) said.push(speech(hab, b.voice, r, { last: i0 === n - 1 }));
+      // ONE REGISTER A BEARER: the octave that carries the middle of all
+      // they say to the middle of the reed's compass (a sentence at a time,
+      // one sentence's echo and the next one's doubling could sit an octave apart)
+      var heard = [];
+      said.forEach(function (sp0) { sp0.syllables.forEach(function (y) { if (!y.rest) heard.push(sp0.base * st(y.p)); }); });
+      heard.sort(function (a, c2) { return a - c2; });
+      var kOct = Math.round(Math.log(REEDS[reed].mid / heard[heard.length >> 1]) / Math.LN2);
       for (var i = 0; i < n; i++) {
-        var sp = speech(hab, b.voice, r, { last: i === n - 1 }), notes = transcribe(sp, { mode: mode, finalHz: F }, reed);
+        var sp = said[i], notes = transcribe(sp, { mode: mode, finalHz: F }, reed, kOct);
         sents.push({ speech: sp, move: moves[i], notes: notes, tune: moves[i] === "tune" ? tuneOf(notes, hab.rate || 3, mode, rr) : null,
                      lag: rr.rnd(0.04, 0.07), gap: rr.rnd(0.45, 0.8), after: (hab.pauses || 0.4) * rr.rnd(1.6, 2.6) });
       }
-      return { id: b.id, nameDs: b.nameDs, nameEn: b.nameEn || null, archetype: b.archetype, archetypeEn: b.archetypeEn || null, part: b.voice.part, pew: b.pew ? b.pew.x : null,
+      return { k: k, id: b.id, nameDs: b.nameDs, nameEn: b.nameEn || null, archetype: b.archetype, archetypeEn: b.archetypeEn || null, part: b.voice.part, pew: b.pew ? b.pew.x : null,
                voice: speakingVoice(b.voice), habit: hab, reed: reed, sentences: sents, walk: rr.rnd(1.4, 2.2) };
     });
     var stills = bearers.map(function () { return rs.rnd(3.5, 6.5) * silence; });
@@ -408,7 +426,7 @@ window.KOLOB.Testimony = (function () {
     function reedLine(at, b, notes, move, s) {
       var tt = at, list = notes.map(function (n) { return { f: n.f, dur: n.dur, stress: n.stress }; }), rep = [];
       notes.forEach(function (n) { var r = { layer: b.reed, freq: n.f, t: t0 + tt, dur: n.dur, part: "testimony", member: b.id, deg: n.d, monzo: n.m, keyMonzo: M.keyMonzo, move: move }; rep.push(r); out.notes.push(r); tt += n.dur; });
-      out.reeds.push({ t: t0 + at, reed: b.reed, notes: list, move: move, member: b.id, vib: move === "tune", report: rep });
+      out.reeds.push({ t: t0 + at, reed: b.reed, notes: list, move: move, member: b.id, k: b.k, vib: move === "tune", report: rep });
       return tt - at;
     }
     M.bearers.forEach(function (b, k) {
