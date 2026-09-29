@@ -14,8 +14,8 @@ this yet: everything below was measured silently.*
   from the band, every guest comes in about one to five meetings in a
   hundred (the table below). A 15-minute meeting will usually have one
   guest or none, and most often it is the band. So the seeds below take you
-  straight to each guest. The owner's own 36 % for the band was kept, so the
-  band is about half of all the guests you'll hear.
+  straight to each guest. Your 36 % for the band was kept, so the band is
+  about half of all the guests you'll hear.
 - **The biggest new sounds:** the Social Hall (a fiddle dance instead of
   the postlude, about 90 seconds), the Hosanna (Easter and dedications: a
   shouted "Hosanna" three times, then "The Spirit of God" by the full ward
@@ -25,6 +25,9 @@ this yet: everything below was measured silently.*
   people in it. In about six meetings in ten, two or three of the ward rise
   in turn and "speak". It's a speaking voice with no words, and the
   harmonium or the clarinet plays their phrases back as a tune.
+- **Medium:** the Nauvoo band as it marches now (a real march in strains,
+  crossing the ward's hymn, about a minute; sometimes two bands), and the
+  handcart company (far off across the fields, about a minute and a half).
 - **Small ones:** the gulls (about ten seconds), the far ward (a second
   congregation across the valley, quiet, a line behind ours), and change
   ringing (a far tower's bells, about a minute).
@@ -123,3 +126,37 @@ in the meeting.
   person bearing testimony.
 - **Levels.** Every level was set by measurement against the organ, not by
   ear.
+
+## What it costs (measured, nothing cut)
+
+Measured in the real page, muted, on this Mac. The number is how busy the
+audio engine is: its share of each second, typical and then at the busiest
+five seconds. For comparison, **the ward singing a hymn with the organ and
+no guest runs about 30 % (35 % at its busiest).**
+
+| while this plays | typical | busiest 5 s | audio nodes at peak |
+|---|---|---|---|
+| **the Hosanna** (40 singers and the full organ) | 34 % | 43 % | 5,800 |
+| **the far ward** with our hymn (24 throats of its own) | — | 48 % (about 10 points over the hymn alone) | 2,900 |
+| the band, and a second band, over the ward's hymn | 33 % | 41 % | 2,150 |
+| the handcart company | 32 % | 38 % | 950 |
+| change ringing | 24 % | 27 % | 470 |
+| the Social Hall | 20 % | 23 % | 280 |
+| the variations | 19 % | 22 % | 1,040 |
+| the gulls | 19 % | 22 % | 360 |
+| the gift of tongues | 17 % | 28 % | 460 |
+| the testimony-bearers | 16 % | 19 % | 220 |
+@@WHOLE-PLAIN@@
+
+- **The clock kept time everywhere.** No cue was late, and there were no
+  errors in any run. The pages at 860 and 390 pixels wide had no sideways
+  scroll.
+- **Two places run a hair over the sound card's time budget.** The Hosanna
+  had 18 of about 41,000 render slices go over (the longest 5.9 ms against
+  5.33), and the far ward had one (6.4 ms). Nothing shows a dropout, but
+  listen at the Hosanna's shouts and the far ward's first verse for a click.
+- **Pressing PLAY** takes about a tenth of a second of the page's time, as
+  before; the new guests warm up then, not while the music plays.
+- **Where to save, if you want to:** the far ward in eight "pews" instead of
+  24 throats; the Hosanna without the Primary's children, or on a smaller
+  organ registration; fewer second bands. None of this has been done.

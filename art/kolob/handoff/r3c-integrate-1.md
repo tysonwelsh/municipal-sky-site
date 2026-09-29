@@ -15,7 +15,7 @@ guest budget, and performs there:
 
 | guest | where it sits | how it comes |
 |---|---|---|
-| **the Nauvoo band** (replaces the looping fife) | the doxology 7 in 10, else a hymn | cued: it strikes up while the ward sings and crosses the verse; a second band now and then (14 % of the bands) |
+| **the Nauvoo band** (replaces the looping fife) | a hymn 7 times in 10, the doxology 3 (seated in the doxology first 7 in 10, it leaves whenever the doxology's payoff is another's or the Hosanna comes) | cued: it strikes up while the ward sings and crosses the verse; a second band now and then (14 % of the bands) |
 | **the handcart company** | a quiet rite (prelude, testimony, interlude, postlude…) | cued; ALL IS WELL far across the fields, the carts' wheels |
 | **the gulls** | a quiet rite | cued; the flock's cries trace the first hymn's head |
 | **variations on a hymn** | the prelude (the day's first hymn) or the postlude | cued; the Sunday's organist on the pipes, three to five characters |
@@ -26,11 +26,15 @@ guest budget, and performs there:
 | **the Social Hall** | **replaces the postlude** | cued after the benediction; fiddle, caller, the dancers' floor |
 | **the testimony-bearers** (not a guest) | the testimony, most Sundays | cued as the testimony begins; speech the reed plays back and makes a tune of |
 
-Commits, oldest first: the four merges (`…` to `2ac7fb5d`); `235a9870` the
-modules loaded and the odds made one table; `633a4d39` the planner and the
-budget; `9f884a8b` the performances, the minutes, the staff patch, the
-switch; `0e334b4b` the budget calibrated; `2507c0ad`, `…` what the whole
-meetings found; `530e1790` SCORE §12; and this handoff.
+Commits, oldest first (`git log --oneline kolob-2..kolob-r3c`): the four
+merges `04cc5c42` (bands), `59e86730` (organ), `a5fda45e` (voices),
+`2ac7fb5d` (hall); `235a9870` the modules loaded, the odds one table;
+`633a4d39` the planner and the budget; `9f884a8b` the performances, the
+minutes, the staff patch, the switch; `0e334b4b` the budget calibrated;
+`2507c0ad` and `f5a5e2db` what the whole meetings found; `530e1790` SCORE
+§12; `211b120a`, `5d485c66`, `426f58f0` the Book's dev fields, the crews'
+handoffs corrected, the switch's reservation; `6228b1ff` and after, this
+handoff and the owner's packet.
 
 ### Files
 
@@ -72,6 +76,18 @@ meetings found; `530e1790` SCORE §12; and this handoff.
 - **SCORE.md §12**, **_engine.php**, and the harness (`_harness.js`,
   gitignored: the census, the checks' exemptions, `soundlog=`, TRANSPORT's
   `pause=`/`stops=`, the mock's `playbackRate`).
+
+## How to hear and see it
+
+The owner's packet, [`listen-r3c.md`](listen-r3c.md), gives a natural seed
+and the minute for every new guest (the band 22 at 3:21 and the Social Hall
+at 16:01 in the same visit; the company 41 at 14:15; the gulls 50 at 8:58;
+the variations 55 at 14:24; change ringing 53 at 0:03; the gift 5 at 6:25;
+the far ward 44 at 4:31; the Hosanna 37 at 17:55; the bearers 3 at 8:00),
+the budget's table, the costs and what is left for the ear. The server is
+left running: `http://127.0.0.1:8175/art/kolob/index.php?seed=22`. The
+switch `&guest=<name>` asks for any guest in every meeting of a visit (dev);
+the harness's `force=<name>` is the same.
 
 ## The guest budget
 
@@ -172,7 +188,7 @@ profile `kolob-r3c-integrate-chrome`), the page on :8175.
 | the switch, every new guest forced (seeds 9, 69, 3, 5) | each seated where its plan puts it, PASS (a switch cannot add a rite: seed 9's meeting has no testimony, so the gift and the bearers were forced on seeds 3 and 5) |
 | the Hosanna, unlogged (seed 37, `unlogged=hosanna`) | 415 notes and its span all `logged: false`, 0 leaks, no `hymn-announced`, never in `guests-drawn`; the conductor polled 58 times while it sounded and never named it; in the page the direction line stayed empty and nothing reached the minutes |
 | **REPRO** (the same seed twice, jittered timers, re-salted sound) | **PASS** on seeds 55, 37, 10, 5, 41, 50, 53, 1, 1847, 7 (1,100–1,250 s) and 22 at 1,200 s: the score identical every time, the sound identical under jittered timers (the variations, made ready in idle time, included). At 1,250 s seed 22's jittered run wrote three organ chords of meeting 2 a pump earlier at the run's cut-off (the organist's desk lays its next pump by the audio clock); the scores were identical, and at 1,200 s all four runs are |
-| **TRANSPORT**, paused and stopped *inside* each new guest (`pause=`, `stops=`) | **PASS** in the band (22, 230/240 s), the Social Hall (22, 990 s), the Hosanna (37, 1,100–1,160 s), the far ward (10, 420/430 s), the variations (55, 880/900 s), the gift (5, 395/405 s), the bearers (1, 530/540 s), the company (41, 870/880 s), the gulls (50, 540/542 s) and the far tower (53, 30/40 s): the same meeting after a 30 s hold, silent while held; after every stop 0 stale sources and 0 rooms still ringing reach the hall |
+| **TRANSPORT**, paused and stopped *inside* each new guest (`pause=`, `stops=`) | **PASS** in the band (22, 230/240 s), the Social Hall (22, 990 s), the Hosanna (37, 1,100–1,160 s), the far ward (10, 420/430 s), the variations (55, 880/900 s), the gift (5, 395/405 s), the bearers (1, 530/540 s), the company (41, 870/880 s), the gulls (50, 540/542 s) and the far tower (53, 30/40 s): the same meeting after a 30 s hold, silent while held; after every stop 0 stale sources and 0 rooms still ringing reach the hall; and at its own defaults (seed 1847, 100 s, 150 and 330 s) |
 | the page, muted Chrome, 860 and 390 px | 0 console errors or warnings in every trace (below); no sideways scroll (scroll width = the viewport); the direction line names the band, the Social Hall, the gift, the company… and never the Hosanna |
 | the staff (critic A, note 5) | the band's march drawn over the ward's hymn with the tuba's oom and its barlines (screenshot, seed 22, 860 px) |
 | the gift's words (critic C, note 1) | 400 tongues, 3,200 words: 0 name-shaped (Lila, Lola, Lana, Mila, Nola, Leah, Noah), 0 fallbacks |
@@ -197,7 +213,10 @@ the ward's own hymn with the organ and no guest.
 | the Social Hall (22, postlude, 110) | 19.5 · 22.0 · 22.7 | 0.94 · 2.12 · 3.10 (0) | 275 | 0 |
 | the gift of tongues (5, testimony, 90) | 16.8 · 25.5 · 27.8 | 0.80 · 2.63 · 3.92 (0) | 459 | 0 |
 | the testimony-bearers (2, testimony, 110) | 16.4 · 18.7 · 19.4 | 0.78 · 1.92 · 2.84 (0) | 216 | 0 |
-@@MORE-COSTS@@
+| the handcart company (41, postlude, 100; at 390 px) | 31.6 · 36.7 · 37.6 | 1.45 · 4.21 · 5.05 (0) | 949 | 0 |
+| change ringing from a far tower (53, from the press, 90) | 23.7 · 26.2 · 27.3 | 1.02 · 2.69 · 3.48 (0) | 474 | 0 |
+| the gulls (50, testimony, 110, about 9 s of them; at 390 px) | 18.9 · 21.4 · 22.2 | 1.02 · 1.92 · 3.02 (0) | 361 | 0 |
+@@WHOLE@@
 
 - **The audio clock kept time in every window**: no late cue (0 of 324 to
   3,061 cues each), the audio clock's ratio to the wall at a median of 1.00
@@ -288,5 +307,11 @@ the ward's own hymn with the organ and no guest.
   and at 1,200 s all four runs are.
 - **The dev jump and the far ward.** `skipToSection("hymn")` lands on the
   first hymn; a far ward seated in a later hymn is heard only by playing on.
+- **The staff is nearly blank under several new guests.** The dance (only
+  a few of the caller's notes show), the handcarts, the gulls, the far
+  tower and the far ward play on layers the staff does not draw yet
+  (Requests, 1). The owner asked, for the trombones and the old tune, that
+  the staff never sit blank while a guest plays; that is ENGRAVE's next
+  step here. The Hosanna's blank staff is the ruling.
 - **The seed-37 trombone fix** (the tenor part's top C5) changes the dawn's
   voicing only where a tenor line would have stood strained above B-flat4.
