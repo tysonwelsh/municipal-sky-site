@@ -741,7 +741,10 @@ window.KOLOB.GuestSocialHall = (function () {
         else if (long && main && u < 0.2) nt.orn = "slide";
         // DOUBLE STOPS: the dominant's harmonic seventh over sol at a half
         // cadence (4:7); else the hymn's own chord tone a third to a sixth under
-        if (e.kind === "cad" && ln.cadence === "half" && Math.abs(r - 1.5) < 1e-9 && u2 < 0.7) { also = f * 7 / 4; alsoM = mAdd(e.m, [-2, 0, 0, 1]); sept = true; }
+        // (round 3c, the critic of crew D: never above the fiddler's first
+        // position — the 7/4 over a high sol went past TOP in 41 % of the
+        // dances; there the chord tone under it is taken, below)
+        if (e.kind === "cad" && ln.cadence === "half" && Math.abs(r - 1.5) < 1e-9 && u2 < 0.7 && f * 7 / 4 <= TOP) { also = f * 7 / 4; alsoM = mAdd(e.m, [-2, 0, 0, 1]); sept = true; }
         else if ((e.kind === "cad" && u2 < 0.8) || (long && main && u2 < sh.stops)) {
           var cls = e.cls || [0, 2, 4], d2 = chordNear(mode, cls, e.d, -1);
           if (e.d - d2 < 2) d2 = chordNear(mode, cls, d2, -1);
@@ -827,7 +830,8 @@ window.KOLOB.GuestSocialHall = (function () {
     out.cast.push({ memberId: ppl.caller && ppl.caller.id, nameDs: ppl.caller && ppl.caller.nameDs, action: "calls the dance", t: t0 + tHon });
     strainStarts.forEach(function (ss) {
       var u = callR.next(), w = callR.next();
-      if (!(u < sh.callRate || ss.last)) return;
+      // (a quadrille is called every figure — the critic of crew D)
+      if (!(u < sh.callRate || ss.last || M.piece === "quadrille")) return;
       var names = FIGURES.filter(function (n) { return n !== lastCall; }), name = ss.last ? "home" : names[Math.floor(w * names.length)];
       lastCall = name;
       out.calls.push(callLine(name, ss.t, false));

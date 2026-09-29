@@ -192,6 +192,18 @@ window.KOLOB.Cast = (function () {
    // one of the ward takes up the fiddle, another calls the dance
    ["rises to bear testimony", "r-ie-z-i-z t-oo b-e-r t-e-s-t-i-m-oh-n-ee"], ["sits down", "s-i-t-s d-ow-n"],
    ["takes up the fiddle", "t-ay-k-s u-p dh-u f-i-d-u-l"], ["calls the dance", "k-aw-l-z dh-u d-a-n-s"],
+   // (round 3c) THE ORGANIST'S VARIATIONS ON A HYMN (kolob-guest-variations.js
+   // ACTIONS, spelled as there), and THE GIFT OF TONGUES: one of the ward rises
+   ["plays variations on the hymn", "p-l-ay-z v-e-r-ee-ay-sh-u-n-z o-n dh-u h-i-m"],
+   ["plays the hymn as a plain chorale", "p-l-ay-z dh-u h-i-m a-z u p-l-ay-n k-u-r-a-l"],
+   ["turns the tune into a minuet", "t-u-r-n-z dh-u t-oo-n i-n-t-oo u m-i-n-y-oo-e-t"],
+   ["turns the tune into a polonaise", "t-u-r-n-z dh-u t-oo-n i-n-t-oo u p-o-l-u-n-ay-z"],
+   ["turns the tune into a march", "t-u-r-n-z dh-u t-oo-n i-n-t-oo u m-ah-r-ch"],
+   ["sets the tune in canon", "s-e-t-s dh-u t-oo-n i-n k-a-n-u-n"],
+   ["plays the tune in two keys at once", "p-l-ay-z dh-u t-oo-n i-n t-oo k-ee-z a-t w-u-n-s"],
+   ["gives the hymn on the full organ", "g-i-v-z dh-u h-i-m o-n dh-u f-uu-l aw-r-g-u-n"],
+   ["closes with the amen", "k-l-oh-z-i-z w-i-dh dh-ee ah-m-e-n"],
+   ["rises and sings in tongues", "r-ie-z-i-z a-n-d s-i-ng-z i-n t-u-ng-z"],
   ].forEach(function (a) { ACTION_DS[a[0]] = deseretCaps(a[1]); });
   // (an action's key: its words without the dev tools' parenthesis)
   function actionKey(action) { return String(action || "").replace(/ \(.*\)$/, ""); }
@@ -202,7 +214,7 @@ window.KOLOB.Cast = (function () {
                          "starts the refrain": 1, "leads the quartet": 1, "leads the Primary": 1, "sets the round going": 1, "plays the first hymn on the cornet": 1,
                          "gives the verse to the men": 1, "gives the verse to the women": 1,
                          // (round 3c: the testimony's and the Social Hall's people come forward)
-                         "rises to bear testimony": 1, "takes up the fiddle": 1, "calls the dance": 1 };
+                         "rises to bear testimony": 1, "takes up the fiddle": 1, "calls the dance": 1, "rises and sings in tongues": 1 };
   var ROSTER = {
     chorister: [
       { id: "brisk", en: "the brisk one: quick tempo, short holds, cuts off clean", parts: ["S", "A", "T"], voice: { confidence: [0.9, 0.97] }, habit: { tempoMul: [1.03, 1.08], rubato: [0.02, 0.06], holdMul: [1.2, 1.5], keying: "hum" } },

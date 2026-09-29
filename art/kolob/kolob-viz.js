@@ -1851,20 +1851,26 @@ window.KolobViz = (function () {
   // at the band's own (quicker) rate; ink follows its approach and recession.
   function takeBand(ns) {
     ns.sort(function (a, b) { return a.startTime - b.startTime; });
+    // (round 3c: the tune and the tuba are written; the after-beats, the
+    // second cornet and the doublings are heard, not printed — and a march
+    // laid out a bar at a time is one visit, per band, while it plays)
+    ns = ns.filter(function (n) { return n.part !== "alto" && n.part !== "cornet2" && !n.doubling; });
+    if (!ns.length) return;
     var beat = ns[0].beat || 0.46;
     var r = clamp(1.1 / beat, 1.6, 2.6);
-    var bd = { tp0: ns[0].startTime, beat: beat, r: r, tp1: ns[ns.length - 1].startTime + ns[ns.length - 1].duration, bass: [] };
+    var bd = null;
+    for (var vi = visits.length - 1; vi >= 0 && !bd; vi--) if (visits[vi].band === (ns[0].band || 0) && ns[0].startTime - visits[vi].tp1 < 4) bd = visits[vi];
+    if (!bd) { bd = { tp0: ns[0].startTime, beat: beat, r: r, tp1: 0, bass: [], band: ns[0].band || 0 }; visits.push(bd); if (visits.length > 4) visits.shift(); }
     ns.forEach(function (n) {
       var mel = n.part !== "bass", q = bandQ(n.freq);
-      if (mel) { q -= 7; while (q > 26) q -= 7; while (q < 11) q += 7; }   // the fife is written an octave under its sound
+      if (mel) { q -= 7; while (q > 26) q -= 7; while (q < 11) q += 7; }
       else { while (q > 9) q -= 7; while (q < -2) q += 7; }
       var v = valueOf(n.duration / beat, "band");
       var nb = { tp: n.startTime, dur: n.duration, q: q, loud: n.loud == null ? 0.6 : n.loud, mel: mel, v: v, bd: bd };
-      if (!mel) bd.bass.push({ tp: nb.tp });              // its barlines fall on the oom
+      if (!mel && n.downbeat !== false) bd.bass.push({ tp: nb.tp });   // its barlines fall on each bar's oom
+      bd.tp1 = Math.max(bd.tp1, n.startTime + n.duration);
       bandNotes.push(nb);
     });
-    visits.push(bd);
-    if (visits.length > 3) visits.shift();
   }
 
   // ---- drawing helpers ------------------------------------------------------------

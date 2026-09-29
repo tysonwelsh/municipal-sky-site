@@ -742,6 +742,10 @@ window.KOLOB = window.KOLOB || {};
                               odds: oddsOf("socialhall", null), force: forcedType === "socialhall" }, shStream);
       if (shSeat && admit({ type: "socialhall", section: "postlude", at: shSeat.at, dur: shSeat.dur, fired: false, cued: true, stream: shStream, replaces: "postlude" })) {
         holdSection("postlude", shSeat.holdUntil);
+        // (the room's own sounds — the floor, the claps, the benches — baked
+        // once for the page's context in its idle time, off the clock: about
+        // 45 ms, which the dance's first ticks would otherwise pay)
+        if (SHg.bake && S.ctx && S.playing && typeof setTimeout !== "undefined") setTimeout(function () { try { if (S.ctx) SHg.bake(S.ctx); } catch (e) { /* baked when first wanted, as before */ } }, 2500);
       }
     }
     // THE HANDCART COMPANY and THE GULLS (round 3c; PLAN §8.11, §8.10):
@@ -1494,6 +1498,14 @@ window.KOLOB = window.KOLOB || {};
     // organ's cadence waits until its last chord has been sung and the
     // congregation has drawn a breath — v0.32 laid the joint's amen, and the
     // next section's first chords, under a line still being sung.
+    // THE HOSANNA (round 3c; PLAN §8.12, the owner's ruling): at the close of
+    // the last doxology — its hymn sung to its last chord, a band that
+    // crossed it gone — the ward rises. Unlogged; it holds the section, so
+    // the meeting's last joint waits for it.
+    if (C.hosanna && C.hosanna.seat && !C.hosanna.fired && C.section === "doxology" && C.si === C.hosanna.seat.sectionIndex &&
+        !C.jointing && !hymnSounding() && !guestSounding() && !choirSinging() && !inHush() && (C.hymn || x > 0.5)) {
+      hosannaBegins(t);
+    }
     if (!C.jointing && x >= 1 && !jointHeld()) {
       C.jointing = true;
       var last = C.si >= C.plan.length - 1;
@@ -1597,6 +1609,83 @@ window.KOLOB = window.KOLOB || {};
     if (V.type === "variations") variationsMaterial(V);
     arrive(V, t);
   }
+  // THE FAR WARD IN OUR HYMN (round 3c; PLAN §8.8; handoff r3c-voices-1):
+  // the ward's hymn (kolob-voices-choir.js, singHymnWard) asks as it begins
+  // whether a far ward sings it with us. If so, it is made ready then (pure,
+  // 0–5 ms) and staged on the wide send — twenty-four throats of its own,
+  // across the valley — and the ward's desk tells it each verse as it writes
+  // it (PREP_S ahead), the A-men, and the end. Its span is told from its
+  // first verse to its last note (one minutes row), and the hymn is held for
+  // its last line and a breath. It never plays with the organ: another
+  // ward, unaccompanied.
+  function farWardFor(h, nVerses) {
+    var FW = KOLOB.GuestFarWard, V = null;
+    for (var i = 0; i < C.visitations.length; i++) { var x = C.visitations[i]; if (x.type === "farward" && x.hymnId === h.id && !x.fired) V = x; }
+    if (!FW || !V || C.si !== V.index || !S.ctx || !S.playing) return null;
+    V.fired = true; V.meetingNum = C.meetingNum; V.logged = !UNLOGGED.farward;
+    var n = C.meetingNum, sec = C.section;
+    function live() { return !!S.playing && C.meetingNum === n && C.visitations.indexOf(V) >= 0; }
+    try {
+      V.prepared = FW.prepare({ hymn: h, keynoteHz: S.F0 * S.ROOT_MULT }, V.stream);
+      V.stage = FW.stage(S.ctx, S.wideSend(), V.prepared, V.stream, {
+        defer: function (at, fn) { cueAt("guests", at, function () { if (live()) fn(); }); },
+        onNote: function (nt) { emitNote("farward", nt.freq, nt.t, nt.dur, { part: nt.part, deg: nt.deg, cents: nt.cents, verse: nt.verse, line: nt.line, hymnId: h.id, guest: "farward", logged: V.logged }); },
+      });
+    } catch (e) { if (window.console) console.warn("Kolob: the far ward could not be made ready:", e); return null; }
+    V.joined = FW.versesJoined(V.seat.from, nVerses);
+    var last = 0, told = false;
+    function hold(t1) { last = Math.max(last, t1); return last + 2; }
+    return {
+      verse: function (v, tv, beatS) {
+        if (V.joined.indexOf(v) < 0) return 0;
+        var r = V.stage.verse(v, tv, beatS, V.joined.length);
+        if (!told) {
+          told = true;
+          emitEvent({ type: "guest-start", guest: "farward", section: sec, until: r.t1, logged: V.logged });
+          emitEvent({ type: "guest", guest: "farward", stage: "verse", section: sec, hymnId: h.id, logged: V.logged, cat: "visitation",
+                      label: "♪ the far ward", detail: "a line behind, from across the valley" });
+        }
+        return hold(r.t1);
+      },
+      amen: function (ta, beatS) { return told ? hold(V.stage.amen(ta, beatS)) : 0; },
+      close: function (te) {
+        if (!told) return 0;
+        V.stage.close(te);
+        cueAt("conductor", Math.max(te, last + 0.5), function () { emitEvent({ type: "guest-end", guest: "farward", section: sec, logged: V.logged }); });
+        return last + 2;
+      },
+    };
+  }
+  // THE HOSANNA'S PERFORMANCE (round 3c; handoff r3c-voices-1): the shout
+  // three times as a crowd of raised voices, the amens, then ASSEMBLY — "The
+  // Spirit of God" — by the full ward and the full organ, the chorus's
+  // Hosanna on the shout's syllables. AUDIO-ONLY AND UNLOGGED: every note
+  // and the span say logged: false and name the Hosanna, so the minutes
+  // write no row, the board no word, the staff no note (ENGRAVE_HYMN false);
+  // no hymn-announced, no verse-start (it sings ASSEMBLY itself, not through
+  // the hymn board). The house lets go and listens; the drone stays home.
+  function hosannaBegins(t) {
+    var H = C.hosanna, G = KOLOB.GuestHosanna;
+    H.fired = true;
+    if (!G || !S.ctx || !C.hosannaStream) return;
+    var n = C.meetingNum, end;
+    S.houseLetsGo(t, "hosanna", false);
+    try {
+      end = G.perform(S.ctx, S.seatedSend("choir"), t, { keynoteHz: S.F0 * S.ROOT_MULT, ward: C.ward, sunday: C.meeting ? C.meeting.sunday : null }, C.hosannaStream, {
+        defer: function (at, fn) { cueAt("guests", at, function () { if (S.playing && C.meetingNum === n) fn(); }); },
+        organDest: S.seatedSend("organ"),
+        onStage: function () { /* nothing is told */ },
+        onNote: function (x) {
+          emitNote(x.layer, x.freq, x.t, x.dur, { part: x.part, hymnId: x.hymnId, line: x.line, beat: x.beat, deg: x.deg, monzo: x.monzo, hosanna: true,
+                                                  engrave: !!x.engrave, guest: "hosanna", logged: false });
+        },
+      });
+    } catch (e) { if (window.console) console.warn("Kolob: the Hosanna could not be sung:", e); return; }
+    guestSpan("hosanna", t, end - t, false);
+    C.visitType = "hosanna"; C.visitLogged = false; C.visitUntil = end;
+    C.sectionDur = Math.max(C.sectionDur, end - C.sectionStart + 3);
+    H.until = end;
+  }
   // THE TESTIMONY-BEARERS SPEAK (round 3c; handoff r3c-hall-1, amended by
   // its critic): as the first bearer rises the house lets go (its strings
   // and organ had rung on under the first speaker for up to 30 s), and it
@@ -1641,6 +1730,9 @@ window.KOLOB = window.KOLOB || {};
     T.until = end;
   }
   function testimonySounding() { return !!C.testimony && C.testimony.fired && !!S.ctx && now() < C.testimony.until; }
+  // (the testimony is the bearers' from its start until the last sits down:
+  // the still small voice keeps its peace through it — kolob-voices-field.js)
+  function testimonyHolds() { return !!C.testimony && C.section === "testimony" && (!C.testimony.fired || testimonySounding()); }
   // THE BELLS' AND THE PRACTICE'S MATERIAL (round 3b, step 3): the day's
   // hymn as the composer wrote it (the first hymn; the doxology's, for the
   // bells in the postlude) — waiting since the plan, or written now and
@@ -1982,7 +2074,7 @@ window.KOLOB = window.KOLOB || {};
   function waitingGuest() {
     for (var i = 0; i < C.visitations.length; i++) {
       var V = C.visitations[i];
-      if (!V.fired && !(CUED[V.type] || V.cued) && V.section === C.section) return V;
+      if (!V.fired && !(CUED[V.type] || V.cued) && !V.ofHymn && V.section === C.section) return V;
     }
     return null;
   }
@@ -2294,6 +2386,8 @@ window.KOLOB = window.KOLOB || {};
   S.inQuestion = inQuestion;
   S.hallListens = hallListens;
   S.testimonySounding = testimonySounding;
+  S.testimonyHolds = testimonyHolds;
+  S.farWardFor = farWardFor;
   S.silenceMul = silenceMul;
   S.gapMul = gapMul;
   S.conductorTick = conductorTick;

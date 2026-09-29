@@ -88,7 +88,10 @@ window.KOLOB.GuestHosanna = (function () {
   var NAME = "hosanna";
   var LABEL = "guest:hosanna:";
   var LOGGED = false;                              // the owner's ruling: never told
-  var ENGRAVE_HYMN = true;                         // PLAN §8.12: the hymn engraved, the shout not (the staff's switch only; never the minutes')
+  // (the staff's switch only; never the minutes'. PLAN §8.12 asked for the
+  // hymn engraved and the shout not; the owner ruled it audio-only, round
+  // 3c: nothing of the Hosanna on the staff either)
+  var ENGRAVE_HYMN = false;
 
   // ==========================================================================
   // THE ODDS — only two Sundays; everywhere else, never

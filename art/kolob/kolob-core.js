@@ -299,7 +299,14 @@ window.KolobAudio = (function () {
                      // (round 3b, step 3: the handbell choir stands at the front of the
                      // chapel, as near as the still small voice; the cornet of the ward's
                      // band plays the first hymn against the partner from the front pew)
-                     handbells: -0.35, cornet: -0.12 };
+                     handbells: -0.35, cornet: -0.12,
+                     // (round 3c: the Social Hall is in the room with us, a step nearer
+                     // than the ward — the fiddle and the dancers' floor; the testimony-
+                     // bearers speak where the still small voice is, and the reed that
+                     // plays their words back sits where the harmonium does. Each is a
+                     // guest's own seat at unity, not a house layer's slider — the lab
+                     // measured them so: handoff r3c-hall-1)
+                     fiddle: -0.2, floor: -0.25, speaker: -0.35, reed: -0.15 };
 
   var layerGains = {};
   var choirNear = null;            // (round 3b) the ward's nearer way into the rooms, under the choir's slider
@@ -508,6 +515,17 @@ window.KolobAudio = (function () {
     if (KOLOB.VoicesBand && KOLOB.VoicesBand.warm) {
       try { KOLOB.VoicesBand.warm(ctx); } catch (e) { if (window.console) console.warn("Kolob: the town's air could not be built:", e); }
     }
+    // (round 3c) and the new guests' own, all at the press, never in a cue:
+    // the handcart company's throat, sung once and silently (a voice's first
+    // line bakes its breath and compiles it — 5–7 ms — which must not land in
+    // the clock's wake of a company passing in the prelude), with the folk
+    // voices' noise; change ringing's true touches searched (15 ms, once);
+    // the far ward's valley poured (as the town's air is)
+    [["GuestHandcart", "the company's throat could not be warmed"], ["GuestChanges", "the ringers' touches could not be found"],
+     ["GuestFarWard", "the far ward's valley could not be poured"]].forEach(function (w) {
+      var G = KOLOB[w[0]];
+      if (G && G.warm) { try { G.warm(ctx); } catch (e) { if (window.console) console.warn("Kolob: " + w[1] + ":", e); } }
+    });
   }
   // Every layer sings in both rooms; its depth bias seats it.
   function seatLayer(name, src) {

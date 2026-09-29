@@ -1294,6 +1294,10 @@ window.KOLOB = window.KOLOB || {};
     // A/B, ?organ=house; a lab without them), the house organ as round 3b's
     // first step had it.
     var org = organistAt(h, row, P, plan), who = org ? S.Meeting.organist() : null, V = plan.verses.length;
+    // (round 3c: THE FAR WARD — another congregation across the valley may
+    // sing this hymn with us, a line behind, verse by verse; the meeting
+    // makes it ready and the desk tells it each verse as it writes it)
+    var far = S.farWardFor ? S.farWardFor(h, V) : null;
     function tagFor(extra) {
       var o = { hymnId: id, key: h.keyMonzo, style: who ? who.style : null, alive: function () { return hands.owns(id); } };
       for (var k in extra) o[k] = extra[k];
@@ -1406,6 +1410,7 @@ window.KOLOB = window.KOLOB || {};
         S.organistPlays(op, tv, tagFor({ verse: v }));
       }
       var sg = piece({ verse: v }, tv, op ? { waits: op.waits } : null), ends = tv + sg.end;
+      if (far) { var fu = far.verse(v, tv, sg.lines.length ? sg.lines[0].beatS : verseBeat(v)); if (fu) hands.until(id, fu); }
       var assembly = cumulative && v === 0;
       // THE PARTNER HYMN'S LAST VERSE (round 3b, step 3): the first hymn
       // played against it — the two tunes turn out to be one piece
@@ -1507,6 +1512,7 @@ window.KOLOB = window.KOLOB || {};
         // the organ under the ward's amen, as written (the organist's)
         if (org) S.organistPlays(org.amen(0, { bs: beatS, ck: { rit: (plan.rubato || 0) * 1.5, hold: plan.holdMul } }), ta, tagFor({ verse: V - 1, amen: true, amenLine: vl.length }));
         var am = piece("amen", ta), alen = am.end;
+        if (far) { var fa = far.amen(ta, beatS); if (fa) hands.until(id, fa); }
         cueAt("choir", ta + alen, function (tc2) {
           if (!hands.owns(id)) return;
           emitEvent({ type: "cadence", kind: "plagal", by: "hymn", at: tc2, hymnId: id, amen: true,
@@ -1526,6 +1532,7 @@ window.KOLOB = window.KOLOB || {};
         endAt = tt + tlen + 0.8;
       }
       var fin = function (te2) {
+        if (far) { var fc = far.close(te2); if (fc) hands.until(id, fc); }
         if (keyed && S.droneDuck) {
           S.droneDuck.gain.cancelScheduledValues(te2);
           S.droneDuck.gain.setValueAtTime(0.22, te2);

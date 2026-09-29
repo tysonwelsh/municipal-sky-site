@@ -322,7 +322,9 @@ window.KOLOB = window.KOLOB || {};
   function organistPlays(plan, t0, tag) {
     if (!pipeOn() || !plan || !plan.phrases) return null;
     tag = tag || {};
-    if (tag.hymnId && !tag.prelude && !plan._underWard) { plan.liftDb = (plan.liftDb || 0) + UNDER_WARD_DB; plan._underWard = true; }
+    // (round 3c: the organist's variations are a recital, not a hymn under
+    // the ward — played at the prelude's level, as the chorale prelude is)
+    if (tag.hymnId && !tag.prelude && !tag.variations && !plan._underWard) { plan.liftDb = (plan.liftDb || 0) + UNDER_WARD_DB; plan._underWard = true; }
     // the organist's hands always find the case the organ's hands are on now
     var hands = {
       play: function (t, notes, reg, o) { return caseAt(t).play(t, notes, reg, o); },
@@ -359,7 +361,7 @@ window.KOLOB = window.KOLOB || {};
     if (x.deg != null) n.deg = x.deg;
     if (x.orn) n.orn = x.orn;
     if (tag.verse != null) n.verse = tag.verse;
-    ["givingOut", "modulation", "interlude", "amen", "prelude", "partner"].forEach(function (k) { if (tag[k]) n[k] = true; });
+    ["givingOut", "modulation", "interlude", "amen", "prelude", "partner", "variations"].forEach(function (k) { if (tag[k]) n[k] = true; });
     if (!x.pedalOnly) emitNote("organ", f, st, dur, n);
     if (x.pedal) {
       var p = {}; for (var k in n) p[k] = n[k];

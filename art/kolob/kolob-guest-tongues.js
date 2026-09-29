@@ -370,7 +370,12 @@ window.KOLOB.GuestTongues = (function () {
         // too; and a word refused is refused with a closing sound — Lena's
         // Lenan, manna's mannan)
         var same = syls.every(function (x) { return said(x) === said(syls[0]); });
-        if (BLOCK[key] || BLOCK[bare] || seen[key] || same || (ds && avoid[ds])) continue;
+        // (round 3c, the critic of crew C: a first name's shape — two
+        // syllables, l, n or m and a vowel, then l, n, r or nothing, and
+        // "ah": Lila, Lola, Lana, Mila, Nola, and Leah and Noah — about one
+        // song in five carried one. Refused as a pattern, not name by name)
+        var namelike = syls.length === 2 && /^[lnm]$/.test(syls[0].c || "") && (!syls[1].c || /^[lnr]$/.test(syls[1].c)) && syls[1].v === "ah";
+        if (BLOCK[key] || BLOCK[bare] || seen[key] || same || namelike || (ds && avoid[ds])) continue;
         got = { syl: syls.map(sounds), sounds: key, ds: ds, tries: tries };
         seen[key] = 1;
       }

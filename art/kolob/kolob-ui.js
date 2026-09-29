@@ -88,6 +88,29 @@
     broadside: "𐐜 𐐒𐐡𐐃𐐔𐐝𐐌𐐔",            // THE BROADSIDE
     hymnBoard: "𐐐𐐆𐐣 𐐒𐐄𐐡𐐔",             // HYMN BOARD
     hymnNo: "𐐐𐐆𐐣",                        // HYMN (the board's number, and its row)
+    // (round 3c: the new guests' rows and the direction line — spelled by
+    // kolob-cast.js's deseretCaps, as the clerk spells)
+    bandGoesBy: "𐐜𐐊 𐐒𐐈𐐤𐐔 𐐘𐐄𐐞 𐐒𐐌",        // THE BAND GOES BY
+    secondBand: "𐐊 𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐈𐐤𐐔 𐐊𐐑𐐡𐐄𐐕𐐆𐐞", // A SECOND BAND APPROACHES
+    handcartCo: "𐐊 𐐐𐐈𐐤𐐔𐐗𐐂𐐡𐐓 𐐗𐐊𐐣𐐑𐐊𐐤𐐀",  // A HANDCART COMPANY
+    allIsWell: "𐐃𐐢 𐐆𐐞 𐐎𐐇𐐢",               // ALL IS WELL
+    handcartsPass: "𐐜𐐊 𐐐𐐈𐐤𐐔𐐗𐐂𐐡𐐓𐐝 𐐑𐐈𐐝",   // THE HANDCARTS PASS
+    handcartFlag: "𐐜𐐊 𐐐𐐈𐐤𐐔𐐗𐐂𐐡𐐓𐐝",         // THE HANDCARTS
+    gulls: "𐐘𐐊𐐢𐐞",                          // GULLS
+    farTower: "𐐊 𐐙𐐂𐐡 𐐓𐐍𐐊𐐡 𐐡𐐆𐐥𐐞",          // A FAR TOWER RINGS
+    thatsAll: "𐐜𐐈𐐓𐐝 𐐃𐐢",                   // THAT'S ALL (the ringers' call: rounds)
+    variationsFlag: "𐐚𐐇𐐡𐐀𐐁𐐟𐐊𐐤𐐞",           // VARIATIONS
+    tonguesFlag: "𐐜𐐊 𐐘𐐆𐐙𐐓 𐐊𐐚 𐐓𐐊𐐥𐐞",        // THE GIFT OF TONGUES
+    wardHums: "𐐜𐐊 𐐎𐐃𐐡𐐔 𐐐𐐊𐐣𐐞",             // THE WARD HUMS
+    harmoniumAnswers: "𐐜𐐊 𐐐𐐂𐐡𐐣𐐄𐐤𐐀𐐊𐐣 𐐈𐐤𐐝𐐊𐐡𐐞", // THE HARMONIUM ANSWERS
+    farWard: "𐐜𐐊 𐐙𐐂𐐡 𐐎𐐃𐐡𐐔",               // THE FAR WARD
+    socialHall: "𐐜𐐊 𐐝𐐄𐐟𐐊𐐢 𐐐𐐃𐐢",            // THE SOCIAL HALL
+    benches: "𐐜𐐊 𐐒𐐇𐐤𐐕𐐆𐐞 𐐂𐐡 𐐑𐐋𐐟𐐓 𐐒𐐈𐐗",    // THE BENCHES ARE PUSHED BACK
+    honour: "𐐉𐐤𐐊𐐡 𐐏𐐃𐐡 𐐑𐐂𐐡𐐓𐐤𐐊𐐡",          // HONOUR YOUR PARTNER
+    theDance: "𐐜𐐊 𐐔𐐈𐐤𐐝",                  // THE DANCE
+    homeAgain: "𐐃𐐢 𐐜𐐊 𐐎𐐁 𐐐𐐄𐐣",             // ALL THE WAY HOME
+    applause: "𐐊𐐑𐐢𐐃𐐞",                     // APPLAUSE
+    wordsTune: "𐐜𐐊 𐐎𐐊𐐡𐐔𐐞 𐐣𐐁𐐔 𐐊 𐐓𐐅𐐤",       // THE WORDS MADE A TUNE (the testimony's reed)
   };
   var SECTIONS_DS = {
     prelude: "𐐑𐐡𐐇𐐢𐐧𐐔",
@@ -163,6 +186,12 @@
     copyParams: "COPY PARAMETERS", copied: "COPIED ✓",
     minutes: "CLERK'S MINUTES", broadside: "THE BROADSIDE", hymnBoard: "HYMN BOARD",
     hymnNo: "HYMN",
+    bandGoesBy: "THE BAND GOES BY", secondBand: "A SECOND BAND APPROACHES",
+    handcartCo: "A HANDCART COMPANY", allIsWell: "ALL IS WELL", handcartsPass: "THE HANDCARTS PASS", handcartFlag: "THE HANDCARTS",
+    gulls: "GULLS", farTower: "A FAR TOWER RINGS", thatsAll: "THAT'S ALL", variationsFlag: "VARIATIONS",
+    tonguesFlag: "THE GIFT OF TONGUES", wardHums: "THE WARD HUMS", harmoniumAnswers: "THE HARMONIUM ANSWERS", farWard: "THE FAR WARD",
+    socialHall: "THE SOCIAL HALL", benches: "THE BENCHES ARE PUSHED BACK", honour: "HONOUR YOUR PARTNER", theDance: "THE DANCE",
+    homeAgain: "ALL THE WAY HOME", applause: "APPLAUSE", wordsTune: "THE WORDS MADE A TUNE",
   };
   var SECTIONS_EN = {
     prelude: "PRELUDE", invocation: "INVOCATION", hymn: "HYMN", interlude: "INTERLUDE",
@@ -226,7 +255,21 @@
     handbells: { ring: ["♫", "handbells"], cascade: ["♫", "cascade"] },
     singingschool: { fork: ["♪", "singingSchool"], cut: ["♪", "stopsThem"], alone: ["♪", "onTheNotes"], again: ["♪", "again"] },
     raspberry: { blat: ["∴", "raspberry"], amen: ["∴", "amenDash"] },
+    // (round 3c) the Nauvoo band (a second band; "cross" is the band going by,
+    // or the bands crossing — dsEvent reads which); the handcart company; the
+    // gulls; change ringing from a far tower (the steeples' variant); the gift
+    // of tongues (the rise is the singer's own ✦ row, by name); the far ward;
+    // the Social Hall. The organist's variations speak through the organist's
+    // own rows (ORGANIST_ROW); the Hosanna writes nothing
+    handcart:  { approaches: ["⇋", "handcartCo"], sings: ["♪", "allIsWell"], passes: ["⇋", "handcartsPass"] },
+    gulls:     { gulls: ["∿", "gulls"] },
+    tongues:   { "the ward hums": ["✦", "wardHums"], "the harmonium": ["✦", "harmoniumAnswers"] },
+    farward:   { verse: ["♪", "farWard"] },
+    socialhall: { benches: ["✦", "benches"], honour: ["✦", "honour"], A: ["✦", "theDance"], final: ["✦", "homeAgain"], applause: ["✦", "applause"] },
   };
+  GUEST_ROWS.bands.second = ["⇋", "secondBand"];
+  GUEST_ROWS.steeples["changes:rounds"] = ["◎", "farTower"];
+  GUEST_ROWS.steeples["changes:round"] = ["◎", "thatsAll"];
   var ROMAN_MOTIF = { "Ⅰ": 1, "Ⅱ": 1, "Ⅲ": 1 };
   function minute(glyph, text, cls) { return { glyph: glyph, text: text, cls: cls }; }
   // (round 3b) the ward's people in the minutes: a name set in the clerk's
@@ -241,7 +284,9 @@
                       // (round 3b, step 3: the refrain begun, the quartet, the Primary, a round set going, the cornet against the partner)
                       "starts the refrain": 1, "leads the quartet": 1, "leads the Primary": 1, "sets the round going": 1, "plays the first hymn on the cornet": 1,
                       // (round 3b, step 4: a verse given to the men, or to the women)
-                      "gives the verse to the men": 1, "gives the verse to the women": 1 };
+                      "gives the verse to the men": 1, "gives the verse to the women": 1,
+                      // (round 3c: a testimony-bearer rises; the Social Hall's fiddler and caller; one rises and sings in tongues)
+                      "rises to bear testimony": 1, "takes up the fiddle": 1, "calls the dance": 1, "rises and sings in tongues": 1 };
   // (round 3b, step 4) a rite's seating in the minutes — the plain house
   // gives none
   var SCENE_ROW = { lined: "linedOut", arbor: "brushArbor", voluntary: "organVoluntary", choir: "choirAlone" };
@@ -252,7 +297,10 @@
   var ORGANIST_ROW = { "plays the day's first hymn as a prelude": 1, "puts the tune in the pedals": 1, "lets the flutes run in another key": 1,
                        "modulates to the next hymn's key": 1, "links the lines": 1, "holds a note over into the next line": 1, "echoes the line on the echo flute": 1,
                        "quotes the next line between the lines": 1, "turns an arabesque between the lines": 1, "runs a sequence between the lines": 1,
-                       "strays into a strange key": 1, "lifts both hands; the ward sings a line alone": 1, "plays the first hymn against it": 1 };
+                       "strays into a strange key": 1, "lifts both hands; the ward sings a line alone": 1, "plays the first hymn against it": 1,
+                       // (round 3c: the organist's variations on a hymn, character by character)
+                       "plays variations on the hymn": 1, "plays the hymn as a plain chorale": 1, "turns the tune into a minuet": 1, "turns the tune into a polonaise": 1,
+                       "turns the tune into a march": 1, "sets the tune in canon": 1, "plays the tune in two keys at once": 1, "gives the hymn on the full organ": 1 };
   function actionKey(a) { return String(a || "").replace(/ \(.*\)$/, ""); }
   function layerName(l) { return TT(LAYERS_DS, LAYERS_EN)[l] || l; }
   function dsEvent(ev) {
@@ -274,6 +322,8 @@
       case "phrase":        return minute("♮", layerName(ev.layer) + " " + S.speaks, "phrase");
       case "guest": {
         var g = GUEST_ROWS[ev.guest], st = g && g[ev.stage];
+        // (round 3c: a lone band goes by; two bands cross — the band's own label says which)
+        if (ev.guest === "bands" && ev.stage === "cross" && !/bands cross/.test(ev.label || "")) return minute("⇋", S.bandGoesBy, "visitation");
         return st ? minute(st[0], S[st[1]], "visitation") : null; // a guest the minutes do not know is not named as another
       }
       case "verse-line":                                     // (a line sung back to the deacon is his ☞ row's; it writes none of its own)
@@ -305,6 +355,8 @@
         }
         if (!FORWARD_ROW[ev.action]) return null;
         return minute("✦", capsDs(ev.nameDs) + " " + (latinMode ? String(ev.action).toUpperCase() : ev.actionDs), "verse");
+      case "testimony":                                      // (round 3c: a bearer's words made a tune by the reed; the rise is the bearer's own ✦ row)
+        return ev.stage === "tune" ? minute("♪", S.wordsTune, "motif") : null;
       case "field": {
         var fd = TT(FIELD_DS, FIELD_EN)[ev.field];
         return minute("⋆", fd || TT(LAYERS_DS, LAYERS_EN).ambient, "ambient");
@@ -605,7 +657,9 @@
   // steeples answer, an old tune, trombones at dawn, the whole tune. Empty
   // when nothing fires — and for a guest this table does not name (v0.32
   // called the old tune "two bands").
-  var VISIT_FLAG = { bands: "twoBands", steeples: "theSteeples", oldtune: "oldTuneFlag", trombones: "trombonesDawn", assembly: "wholeFlag", handbells: "handbells", singingschool: "singingSchool" };
+  var VISIT_FLAG = { bands: "twoBands", steeples: "theSteeples", oldtune: "oldTuneFlag", trombones: "trombonesDawn", assembly: "wholeFlag", handbells: "handbells", singingschool: "singingSchool",
+                     // (round 3c; the far ward sings inside a hymn, whose own line the board keeps; the Hosanna is never named)
+                     handcart: "handcartFlag", gulls: "gulls", variations: "variationsFlag", tongues: "tonguesFlag", socialhall: "socialHall" };
   function directionFor(c, playing) {
     if (!playing) return "";
     var S = TT(STR, STR_EN);
@@ -874,14 +928,23 @@
   // Arming it mid-meeting
   // restarts the meeting so the guarantee begins counting immediately.
   // ==========================================================================
+  // (round 3c, dev — the owner's listening packet: ?guest=<name> asks for
+  // that guest in every meeting of the visit, as the harness's force=<name>
+  // does — bands, handcart, gulls, variations, changes, tongues, farward,
+  // hosanna (on Easter or a dedication only), socialhall, testimony,
+  // steeples, oldtune, trombones, handbells, singingschool. It wins over
+  // the switch; the switch's own light is untouched.)
+  var urlGuest = null;
+  try { var gm = /[?&]guest=([a-z]+)/.exec(location.search || ""); urlGuest = gm ? gm[1] : null; } catch (e) {}
   function wireIvesToggle() {
-    var btn = document.getElementById("kolob-ives"); if (!btn) return;
+    var btn = document.getElementById("kolob-ives");
+    if (!btn) { if (urlGuest && K.setForceVisitation) K.setForceVisitation(urlGuest); return; }
     var on = false;
     try { on = localStorage.getItem("kolobIves") === "1"; } catch (e) {}
     function apply() {
       btn.classList.toggle("is-on", on);
       btn.setAttribute("aria-pressed", on ? "true" : "false");
-      if (K.setForceVisitation) K.setForceVisitation(on);
+      if (K.setForceVisitation) K.setForceVisitation(urlGuest || on);
     }
     apply();
     btn.addEventListener("click", function () {
