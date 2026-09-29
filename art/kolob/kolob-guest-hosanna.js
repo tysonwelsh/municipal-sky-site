@@ -71,7 +71,8 @@
 //   decide(meetingInfo, stream) → { seat, why, odds, roll, beside }
 //   score(material, stream, t0) → the shout and the hymn as data (pure)
 //     material: { keynoteHz, ward? (KOLOB.Cast's), tune? (default
-//                 KOLOB.Tunes.byId("earth:assembly")) }
+//                 KOLOB.Tunes.byId("earth:assembly")), only?: "shout" (the
+//                 shout and its amens alone: a lab's solo, never the engine) }
 //   perform(ctx, dest, t, material, stream, hooks?) → end time (s, absolute)
 //     hooks: { defer(at, fn), onStage(st) (every one logged: false),
 //              onNote(n) (the hymn's notes only), organDest (the organ's
@@ -114,6 +115,13 @@ window.KOLOB.GuestHosanna = (function () {
   // into their vowels — about a third fewer nodes a singer), "none" (vowels,
   // as the ward sings every other hymn). The owner's to choose by ear and cost.
   var HYMN_CONSONANTS = "all";
+  // THE SHOUT'S AIR (round 2: the critic heard it about 6 dB brighter above
+  // 4 kHz than the hymn — PLAN §15's hiss was the ward's breath). Three
+  // levers, the owner's to turn by ear: SHOUT_FRIC, how much of the s is
+  // said (0..1); SHOUT_H_SWELL, how much the breath swells through each h
+  // (×; null is the voices' own, 4; 1 is none); SHOUT_EFFORT, how raised
+  // each voice is (× each person's drawn 0.6–0.95; 0 is a sung voice)
+  var SHOUT_FRIC = 0.35, SHOUT_H_SWELL = null, SHOUT_EFFORT = 1;
   function sounded(syl) {
     if (HYMN_CONSONANTS === "all") return syl;
     var x = String(syl).split("-"), keep = HYMN_CONSONANTS === "liquids" ? { l: 1, m: 1, n: 1, h: 1 } : {};
@@ -316,7 +324,7 @@ window.KOLOB.GuestHosanna = (function () {
       var F = r.rnd(rg[0], rg[1]), lag = clamp(0.09 + (r.rnd(0, 1) + r.rnd(0, 1) + r.rnd(0, 1) - 1.5) * 0.06, 0.01, 0.24), lvl = r.rnd(0.8, 1.05), eff = r.rnd(0.6, 0.95);
       var jit = []; for (var q = 0; q < 24; q++) jit.push(r.next());
       var spec = {}; for (var k in m.voice) spec[k] = m.voice[k];
-      spec.effort = eff; spec.brightness = clamp((spec.brightness || 0.5) + 0.2, 0, 1); spec.vibrato = { depth: 0, rate: 5, onsetDelay: 1 };
+      spec.effort = eff * SHOUT_EFFORT; spec.brightness = clamp((spec.brightness || 0.5) + 0.2, 0, 1); spec.vibrato = { depth: 0, rate: 5, onsetDelay: 1 };
       spec.confidence = Math.max(0.8, spec.confidence || 0); spec.pitchHabitCents = 0; spec.timingHabitMs = 0; spec.level = lvl;
       var lines = tl.cries.map(function (c) { return { t: r4(t0 + c.t0 + lag + (jit[c.k] - 0.5) * 0.04), notes: cryLine(CRY, F, Math.pow(2, c.k * sh.rise / 12), sh.pace, jit) }; });
       lines.push({ t: r4(t0 + tl.amen.t0 + lag + (jit[3] - 0.5) * 0.04), notes: cryLine(AMEN, F, Math.pow(2, 2.4 * sh.rise / 12), sh.pace, jit.slice(5)) });
@@ -403,18 +411,21 @@ window.KOLOB.GuestHosanna = (function () {
     hooks = hooks || {};
     material = material || {};
     var sc = score(material, stream, t), synth = stream.fork("synth");
+    // (material.only "shout": the shout and its amens alone — a lab's solo,
+    // for the ear and the air's A/B; never the engine)
+    var shoutOnly = material.only === "shout", endAt = shoutOnly ? r4(t + sc.timeline.giving.t0) : sc.end;
     var bus = ctx.createGain(); bus.gain.value = LEVEL; bus.connect(dest);
     var obus = ctx.createGain(); obus.gain.value = LEVEL; obus.connect(hooks.organDest || dest);
     // (with a clock, every slice is a cue of its own — even one due now — so
     // the moment the Hosanna is cued costs only its score)
     function later(at, fn) { if (hooks.defer) hooks.defer(Math.max(t, at - AHEAD), fn); else fn(); }
     function laterBy(at, lead, fn) { if (hooks.defer) hooks.defer(Math.max(t, at - lead), fn); else fn(); }
-    sc.stages.forEach(function (st) { if (hooks.onStage) later(st.t, function () { hooks.onStage({ stage: st.stage, t: st.t, t0: st.t, label: st.stage, guest: NAME, logged: LOGGED }); }); });
+    sc.stages.forEach(function (st) { if (hooks.onStage && !(shoutOnly && st.t >= endAt)) later(st.t, function () { hooks.onStage({ stage: st.stage, t: st.t, t0: st.t, label: st.stage, guest: NAME, logged: LOGGED }); }); });
     // ARMING (VoicesVocal's): with the engine's clock, every line is built a
     // little ahead but joins the room only just before it sounds, and each of
     // its mouths only around its own moments — forty voices' consonants and
     // vowels cost the audio thread only while they speak
-    var armed = armTicker(V, ctx, hooks, t, sc.end);
+    var armed = armTicker(V, ctx, hooks, t, endAt);
     // THE SHOUT
     var shouters = {};
     function shouter(p) {
@@ -429,7 +440,7 @@ window.KOLOB.GuestHosanna = (function () {
       later(first, function () {
         grp.forEach(function (p) {
           var ln = p.lines[c];
-          shouter(p).sing(ctx, bus, ln.t, ln.notes, SHOUT_GAIN, { breathBefore: c ? 0.8 : 1.2, inhale: 0.25, fric: 0.35, defer: armed });
+          shouter(p).sing(ctx, bus, ln.t, ln.notes, SHOUT_GAIN, { breathBefore: c ? 0.8 : 1.2, inhale: 0.25, fric: SHOUT_FRIC, hSwell: SHOUT_H_SWELL, defer: armed });
         });
       });
     })(c, sc.people.slice(g0, g0 + 5));
@@ -465,8 +476,8 @@ window.KOLOB.GuestHosanna = (function () {
         laterBy(at0, ORGAN_AHEAD, function () { org().play(at0, ns, H.registration, { trem: first && i === 0 ? undefined : false, texture: 4 }); });
       });
     }
-    organLine(H.giving.t0, H.giving.notes, true);
-    H.lines.forEach(function (ln) {
+    if (!shoutOnly) organLine(H.giving.t0, H.giving.notes, true);
+    if (!shoutOnly) H.lines.forEach(function (ln) {
       organLine(ln.t0, ln.organ, false);
       later(ln.t0, function () { report(ln); });
       // the ward a handful at a time (four singers a slice)
@@ -484,9 +495,9 @@ window.KOLOB.GuestHosanna = (function () {
     var sent = ctx.createConstantSource ? ctx.createConstantSource() : ctx.createOscillator(), sg = ctx.createGain();
     sg.gain.value = 0; sent.connect(sg); sg.connect(bus);
     sent.onended = function () { if (organ && organ.dispose) organ.dispose(sc.end + 5); try { sg.disconnect(); sent.disconnect(); bus.disconnect(); obus.disconnect(); } catch (e) { /* gone */ } };
-    sent.start(Math.max(0, t)); sent.stop(sc.end + 5);
+    sent.start(Math.max(0, t)); sent.stop(endAt + 5);
     perform.last = { score: sc, organ: function () { return organ; } };
-    return sc.end;
+    return endAt;
   }
 
   return {
@@ -494,6 +505,9 @@ window.KOLOB.GuestHosanna = (function () {
     ODDS: ODDS, NAME: NAME, LABEL: LABEL, LOGGED: LOGGED, CRY: CRY, AMEN: AMEN,
     get ENGRAVE_HYMN() { return ENGRAVE_HYMN; }, set ENGRAVE_HYMN(v) { ENGRAVE_HYMN = !!v; },
     get YIELD() { return YIELD; }, set YIELD(v) { YIELD = !!v; },
+    get SHOUT_FRIC() { return SHOUT_FRIC; }, set SHOUT_FRIC(v) { SHOUT_FRIC = clamp(+v, 0, 1); },
+    get SHOUT_H_SWELL() { return SHOUT_H_SWELL; }, set SHOUT_H_SWELL(v) { SHOUT_H_SWELL = v == null ? null : Math.max(1, +v); },
+    get SHOUT_EFFORT() { return SHOUT_EFFORT; }, set SHOUT_EFFORT(v) { SHOUT_EFFORT = clamp(+v, 0, 1.2); },
     get HYMN_CONSONANTS() { return HYMN_CONSONANTS; }, set HYMN_CONSONANTS(v) { HYMN_CONSONANTS = v === "liquids" || v === "none" ? v : "all"; },
     get LEVEL() { return LEVEL; }, set LEVEL(v) { LEVEL = +v; },
   };

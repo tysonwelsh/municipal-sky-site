@@ -114,6 +114,10 @@
 //                 singer between the pews and the hollow square)
 //   fric          0..1, how much of the f and the s is said (default 1;
 //                 round 3c: a crowd shouting "san" says a little of it)
+//   hSwell        how much stronger the breath is through this line's h's
+//                 (×, default H_SWELL, 4; 1 is no swell: the h then only
+//                 its softer, slower onset). Round 3c, round 2: a lever for
+//                 a crowd's breath, which the ear may hear as hiss
 // ============================================================================
 window.KOLOB = window.KOLOB || {};
 window.KOLOB.VoicesVocal = (function () {
@@ -823,12 +827,12 @@ window.KOLOB.VoicesVocal = (function () {
     // — heard only through the person's own envelope (it is the same breath
     // as ever, never a noise of its own, so it cannot hiss between the notes)
     if (hBreaths.length) {
-      var aspBase = asp.gain.value, hT = born;
+      var aspBase = asp.gain.value, hT = born, hSwell = opts.hSwell != null ? Math.max(1, +opts.hSwell) : H_SWELL;
       hBreaths.forEach(function (w) {
         var a = Math.max(w[0], hT + 0.005);
         if (w[1] <= a + 0.03) return;
         asp.gain.setValueAtTime(aspBase, a);
-        asp.gain.linearRampToValueAtTime(aspBase * H_SWELL, a + (w[1] - a) * 0.55);
+        asp.gain.linearRampToValueAtTime(aspBase * hSwell, a + (w[1] - a) * 0.55);
         asp.gain.linearRampToValueAtTime(aspBase, w[1]);
         hT = w[1];
       });

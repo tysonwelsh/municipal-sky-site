@@ -227,7 +227,8 @@ window.Guests3c = (function () {
     return { dur: Math.max(a.dur, b.dur), expect: [], stats: budgetStats(t, t + Math.max(a.dur, b.dur)), last: b.last, ws: a.ws };
   };
   P.canon.est = P.far.est;
-  // THE HOSANNA: the shout, then ASSEMBLY with the full organ. Everything it
+  // THE HOSANNA: the shout, then ASSEMBLY with the full organ (o.shoutOnly:
+  // the shout and its amens alone — P.shout). Everything it
   // tells is kept (told), and every note it offers is put through the page's
   // own gates — the minutes' (kolob-ui.js onNoteForLog: a layer the minutes
   // name, not one they skip, not logged: false) and today's staff's
@@ -246,15 +247,18 @@ window.Guests3c = (function () {
         if (n.layer && !MINUTES_SKIP[n.layer] && n.logged !== false) notes.minutes++;
         if (n.logged !== false) notes.staff++;
       } };
-    var end = HO.perform(ctx, into.input, t, { keynoteHz: st.keynote, ward: ward, sunday: sun }, s, hooks), sc = HO.perform.last.score, tl = sc.timeline;
-    var windows = [{ name: "the shout (three Hosannas and the amens)", a: tl.cries[0].t0 - 0.2, b: tl.amen.t1 + 1.5 }, { name: "the organ gives out the hymn", a: tl.giving.t0, b: tl.giving.t1 },
-                   { name: "The Spirit of God (the verse)", a: tl.lines[0].t0, b: tl.lines[4].t0 }, { name: "the chorus", a: tl.lines[4].t0, b: end - t }];
+    var end = HO.perform(ctx, into.input, t, { keynoteHz: st.keynote, ward: ward, sunday: sun, only: o.shoutOnly ? "shout" : null }, s, hooks), sc = HO.perform.last.score, tl = sc.timeline;
+    var windows = [{ name: "the shout (three Hosannas and the amens)", a: tl.cries[0].t0 - 0.2, b: tl.amen.t1 + 1.5 }];
+    if (!o.shoutOnly) windows.push({ name: "the organ gives out the hymn", a: tl.giving.t0, b: tl.giving.t1 },
+                   { name: "The Spirit of God (the verse)", a: tl.lines[0].t0, b: tl.lines[4].t0 }, { name: "the chorus", a: tl.lines[4].t0, b: end - t });
     var ex = [];
     sc.people.forEach(function (p) { p.lines.forEach(function (ln) { var tt = ln.t - t; ln.notes.forEach(function (n) { if (!n.rest && !n.slur) ex.push([tt - 0.16, tt + 0.08]); tt += n.dur; }); }); });
-    sc.hymn.lines.forEach(function (ln) { ["S", "A", "T", "B"].forEach(function (p) { ln.parts[p].forEach(function (n) { if (!n.slur) ex.push([n.t - t - 0.16, n.t - t + 0.08]); }); }); });
+    if (!o.shoutOnly) sc.hymn.lines.forEach(function (ln) { ["S", "A", "T", "B"].forEach(function (p) { ln.parts[p].forEach(function (n) { if (!n.slur) ex.push([n.t - t - 0.16, n.t - t + 0.08]); }); }); });
     return { dur: end - t + 1.5, score: sc, expect: ex, stats: budgetStats(t, end), windows: windows, stages: stages, told: function () { return { stages: stages, notes: notes }; } };
   };
-  P.hosanna.est = function (o) { var st = settings(o); return HO.timeline(stream("hosanna", st.seed), st.sunday).end + 1.5; };
+  P.hosanna.est = function (o) { var st = settings(o), tl = HO.timeline(stream("hosanna", st.seed), st.sunday); return (o && o.shoutOnly ? tl.giving.t0 : tl.end) + 1.5; };
+  P.shout = function (ctx, into, t, o) { return P.hosanna(ctx, into, t, Object.assign({}, o, { shoutOnly: true })); };
+  P.shout.est = function (o) { return P.hosanna.est(Object.assign({}, o, { shoutOnly: true })); };
   // (for the cost's baseline: the lab's rooms alone, nothing sounding)
   P.silence = function (ctx, into, t, o) { return { dur: (o && o.secs) || 30, expect: [] }; };
   // ---- the level reference: the v0.30 organChord, line for line (the
@@ -564,7 +568,7 @@ window.Guests3c = (function () {
   }
 
   // ---- the far ward -------------------------------------------------------------
-  function farOpts() { var f = val("kg3-far", "auto"), vo = val("kg3-voices", "desks"); return { far: f === "auto" ? null : f, voices: vo }; }
+  function farOpts() { var f = val("kg3-far", "auto"), vo = val("kg3-voices", "people"); return { far: f === "auto" ? null : f, voices: vo }; }
   function farwardCard() {
     var v = views.farward = {}, card = el("section", "kg3-card");
     card.appendChild(el("h2", "kg3-name", "The far ward"));
@@ -572,7 +576,7 @@ window.Guests3c = (function () {
     var row = el("div", "kg3-row"), fs = el("select"), vs = el("select");
     fs.id = "kg3-far"; vs.id = "kg3-voices";
     [["auto", "as the seed draws it"], ["same", "our harmonization"], ["sacredharp", "Sacred Harp"], ["tabernacle", "Tabernacle"], ["shaker", "in unison (Shaker)"]].forEach(function (x) { var op = el("option", null, x[1]); op.value = x[0]; fs.appendChild(op); });
-    [["desks", "eight pews of three (as built)"], ["people", "twenty-four throats (the A/B)"]].forEach(function (x) { var op = el("option", null, x[1]); op.value = x[0]; vs.appendChild(op); });
+    [["people", "twenty-four throats (as built)"], ["desks", "eight pews of three (the A/B)"]].forEach(function (x) { var op = el("option", null, x[1]); op.value = x[0]; vs.appendChild(op); });
     var l1 = el("label", null, "their harmony "); l1.appendChild(fs);
     var l2 = el("label", null, "their voices "); l2.appendChild(vs);
     row.appendChild(l1); row.appendChild(l2);
@@ -659,6 +663,7 @@ window.Guests3c = (function () {
     card.appendChild(el("p", "kg3-phrase", "At the close of the doxology the ward stands and shouts, together, “Hosanna, Hosanna, Hosanna, to God and the Lamb” three times, and “Amen, Amen, and Amen” — a massed crowd on the voices' own vowels, the room ringing between — and then sings “The Spirit of God” (ASSEMBLY) with the full organ. Nothing is written in the minutes or on the board: every stage it tells and every note it offers is logged: false."));
     var row = el("div", "kg3-row");
     row.appendChild(button("▶ the Hosanna", "kg3-play", function () { play("hosanna"); }));
+    row.appendChild(button("▶ the shout alone", "kg3-play", function () { play("shout"); }));
     var bC = button("check", "kg3-check", function () { busy(bC, check("hosanna").then(function (r) { hosannaMeas(r); })).catch(showErr(v.meas)); });
     row.appendChild(bC);
     card.appendChild(row);
