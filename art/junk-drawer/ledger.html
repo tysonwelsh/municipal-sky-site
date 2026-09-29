@@ -20,10 +20,26 @@
   seed, the visitor's), its rank, its notes; and the acts — HIDE / SHOW,
   open the report card in admin mode, open the item on the bench.
 
+  THE EDITOR IN THE TABLE (owner ask, 2026-09-29: "edit the ratings for each
+  model right there"). In the opened row the grade and every live axis are a
+  column each, and every cell is a small select holding the value on file
+  (the bench's word, else the seed's, else the entry file's — the same
+  precedence the drawer reads). Change any cell and that response's SAVE
+  lights; it files ONLY the cells you changed through api/jd-item-rate.php,
+  the same endpoint and contract the admin card uses (a curated response by
+  entry id + rid, a turn's by submission + generation), under the bench
+  identity — so a value you did not touch keeps its provenance. SAVE ALL
+  files every edited response on the item in one batch. Edits survive a
+  re-sort or a filter change until saved or reloaded. Ranks and sizes stay
+  the bench's business. A drawing enlarges when clicked (Esc or a click puts
+  it back). The toolbar's second line filters by rating: "at least one
+  response graded X" and "at least one response with axis A = V", combined
+  with the standing filters and the search.
+
   Reads api/jd-ledger.php, which applies data.php's and the bench's own rules
-  server-side, so this page states them and never re-derives them. Writes go
-  through api/jd-curate.php, the same switch the admin card and the bench
-  use. The key is the bench key, remembered per device in the same
+  server-side, so this page states them and never re-derives them. Hide /
+  show goes through api/jd-curate.php, the same switch the admin card and
+  the bench use. The key is the bench key, remembered per device in the same
   localStorage slot the drawer's JD_admin uses (jd-admin-key), so signing in
   on either signs in on both. Not linked from anywhere public; noindex; the
   admin strip carries the one link.
@@ -47,15 +63,19 @@
   .sub a { color: inherit; }
   .gate { max-width: 420px; margin: 40px auto; background: var(--card); border: 1px solid var(--line); padding: 16px; }
   .gate input { width: 100%; font: inherit; padding: 6px 8px; margin: 8px 0; border: 1px solid var(--line); background: #fff; }
-  .gate button, .acts button, .acts a, .chip, .row-acts button, .row-acts a {
+  .gate button, .acts button, .acts a, .chip, .row-acts button, .row-acts a, .savebtn {
     font: inherit; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer;
     background: none; color: var(--ink); border: 1px solid var(--line); border-radius: 2px; padding: 3px 9px;
     text-decoration: none; display: inline-block; white-space: nowrap;
   }
-  .gate button:hover, .chip:hover, .row-acts button:hover, .row-acts a:hover { border-color: var(--ink); }
+  .gate button:hover, .chip:hover, .row-acts button:hover, .row-acts a:hover, .savebtn:not(:disabled):hover { border-color: var(--ink); }
   .chip.is-on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
   .toolbar { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; margin: 0 0 10px; position: sticky; top: 0; background: var(--paper); padding: 6px 0; z-index: 3; border-bottom: 1px solid var(--line); }
   .toolbar input[type=search] { font: inherit; padding: 4px 8px; border: 1px solid var(--line); background: #fff; min-width: 200px; flex: 1 1 200px; }
+  .toolbar .rf { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; flex-basis: 100%; color: var(--dim); font-size: 11px; }
+  .toolbar .rf select { font: inherit; font-size: 11px; padding: 2px 4px; border: 1px solid var(--line); background: #fff; color: var(--ink); max-width: 220px; }
+  .toolbar .rf select.is-on { border-color: var(--ink); background: #fff8e6; }
+  .toolbar .rf .sep { color: var(--faint); }
   .counts { color: var(--dim); font-size: 11px; white-space: nowrap; }
   .counts b { color: var(--ink); }
   .msg { color: var(--red); margin: 8px 0; }
@@ -97,20 +117,40 @@
   .row-acts { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .row-acts .note { color: var(--dim); font-size: 11px; }
   table.rt { min-width: 0; background: none; margin-top: 4px; }
-  table.rt th { position: static; background: none; cursor: default; }
+  table.rt th { position: static; background: none; cursor: default; white-space: nowrap; }
+  table.rt th small { display: block; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--faint); }
   table.rt td { font-size: 11px; }
+  table.rt tr.retired td { opacity: 0.55; }
+  table.rt tr.is-dirty td { background: rgba(201, 168, 76, 0.12); }
   .thumb { width: 84px; height: 84px; border: 1px solid var(--line); background:
     repeating-linear-gradient(0deg, rgba(74,98,138,.14) 0 1px, transparent 1px 12px),
     repeating-linear-gradient(90deg, rgba(74,98,138,.14) 0 1px, transparent 1px 12px), #f8f3e2;
     display: flex; align-items: center; justify-content: center; overflow: hidden; }
   .thumb img, .thumb svg { max-width: 100%; max-height: 100%; display: block; }
   .thumb.none { color: var(--faint); font-size: 10px; }
+  .thumb.loaded { cursor: zoom-in; }
+  .thumb.loaded:hover { border-color: var(--ink); }
   .who { color: var(--dim); font-size: 10px; }
-  .axes { margin: 0; padding: 0; list-style: none; }
-  .axes li { white-space: nowrap; }
-  .axes .l { color: var(--dim); }
   .notes { color: var(--dim); font-size: 10px; max-width: 34em; white-space: pre-wrap; }
   .hint { color: var(--dim); font-size: 11px; margin: 10px 0 0; }
+  /* the editor's cells */
+  td.ed { white-space: nowrap; }
+  select.ed { font: inherit; font-size: 11px; padding: 2px 3px; border: 1px solid var(--line); background: #fff; color: var(--ink); max-width: 15em; }
+  select.ed.is-dirty { border-color: var(--gold); background: #fff8e6; }
+  select.ed.is-empty { color: var(--dim); }
+  .src { color: var(--faint); font-size: 9px; display: block; margin-top: 1px; }
+  .savebtn:disabled { color: var(--faint); border-color: var(--faint); cursor: default; }
+  .savebtn.is-dirty { border-color: var(--ink); color: var(--paper); background: var(--ink); }
+  .savebtn.is-ok { border-color: var(--green); color: var(--green); }
+  .savebtn.is-err { border-color: var(--red); color: var(--red); }
+  /* the enlarged drawing */
+  .lightbox { position: fixed; inset: 0; z-index: 20; background: rgba(58, 42, 18, 0.82); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: zoom-out; padding: 24px; }
+  .lightbox .sheet { width: min(88vmin, 900px); height: min(88vmin, 900px); background:
+    repeating-linear-gradient(0deg, rgba(74,98,138,.14) 0 1px, transparent 1px 24px),
+    repeating-linear-gradient(90deg, rgba(74,98,138,.14) 0 1px, transparent 1px 24px), #f8f3e2;
+    border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .lightbox .sheet svg { width: 100%; height: 100%; display: block; }
+  .lightbox .cap { color: var(--paper); font-size: 12px; margin-top: 10px; letter-spacing: 0.04em; }
   @media (max-width: 700px) { body { font-size: 11px; } }
 </style>
 </head>
@@ -123,12 +163,17 @@
 (function () {
   'use strict';
   var KEY_SLOT = 'jd-admin-key';           /* shared with JD_admin (jd-core.js) */
-  var API = '/api/jd-ledger.php', API_CURATE = '/api/jd-curate.php', API_CHECK = '/api/jd-admin-check.php';
+  var API = '/api/jd-ledger.php', API_CURATE = '/api/jd-curate.php', API_RATE = '/api/jd-item-rate.php';
   var app = document.getElementById('app');
   var D = null;                            /* the ledger payload */
   var filter = 'all', query = '', sortKey = 'created', sortAsc = false;
+  var rf = { grade: '', axis: '', value: '' };   /* the rating filters: "at least one response …" */
   var openKey = null;
   var svgCache = {};
+  /* unsaved edits, item key + '/' + rid => { grade: <value|undefined>, axes: { axisId: value } };
+     kept outside the DOM so a re-sort or a filter change does not lose them */
+  var dirty = {};
+  var saving = {};
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function key() { try { return localStorage.getItem(KEY_SLOT) || ''; } catch (e) { return ''; } }
@@ -146,9 +191,12 @@
     document.getElementById('keygo').addEventListener('click', go);
     input.addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
   }
-  function load() {
-    app.innerHTML = '<p class="hint">reading the ledger…</p>';
-    fetch(API + '?t=' + Date.now(), { headers: headers() }).then(function (r) {
+  /* quiet = re-read after a save: keep the table on screen and the scroll
+     where it was, then repaint from the server's word */
+  function load(quiet) {
+    var y = window.scrollY;
+    if (!quiet) app.innerHTML = '<p class="hint">reading the ledger…</p>';
+    return fetch(API + '?t=' + Date.now(), { headers: headers() }).then(function (r) {
       return r.json().then(function (j) { return { status: r.status, j: j }; });
     }).then(function (res) {
       if (res.status === 403 || res.status === 429 || !res.j.ok) {
@@ -160,8 +208,27 @@
       D = res.j;
       document.getElementById('build').textContent = '· ' + (D.build.version || '') + ' · ' + D.build.build + ' · tax v' + D.taxonomy_version;
       render();
-    }, function () { gate('network error'); });
+      if (quiet) { window.scrollTo(0, y); var d = app.querySelector('tr.detail'); if (d) loadThumbs(d); }
+    }, function () { if (!quiet) gate('network error'); });
   }
+
+  /* ---------- values: what the drawer reads, in its order ---------- */
+  /* the effective value of a response's cell — the standing (bench, else
+     seed, else visitor: the server folded that), else the entry file's */
+  function effGrade(r) {
+    if (r.standing && r.standing.grade != null) return { v: Number(r.standing.grade), src: 'db' };
+    if (r.entry && r.entry.grade != null) return { v: Number(r.entry.grade), src: 'entry' };
+    return { v: null, src: null };
+  }
+  function effAxis(r, axisId) {
+    if (r.standing && r.standing.axes && r.standing.axes[axisId] != null) return { v: Number(r.standing.axes[axisId]), src: 'db' };
+    if (r.entry && r.entry.axes && r.entry.axes[axisId] != null) return { v: Number(r.entry.axes[axisId]), src: 'entry' };
+    return { v: null, src: null };
+  }
+  function ranksDesc(map) { return Object.keys(map).map(Number).sort(function (a, b) { return b - a; }); }
+  function gradeLabel(v) { return v == null ? '—' : (D.grades[String(Number(v))] || v); }
+  function axisById(id) { for (var i = 0; i < D.axes.length; i++) if (D.axes[i].id === id) return D.axes[i]; return null; }
+  function served(it) { return it.responses.filter(function (r) { return !r.retired; }); }
 
   /* ---------- the table ---------- */
   var FILTERS = [
@@ -173,6 +240,15 @@
     else if (filter === 'bench') { if (it.bench.state !== 'open') return false; }
     else if (filter === 'blocked') { if (it.bench.state !== 'blocked') return false; }
     else if (filter === 'curated' || filter === 'turn') { if (it.kind !== filter) return false; }
+    /* the rating filters: at least one served response meets each one set */
+    if (rf.grade !== '') {
+      var g = Number(rf.grade);
+      if (!served(it).some(function (r) { return effGrade(r).v === g; })) return false;
+    }
+    if (rf.axis !== '' && rf.value !== '') {
+      var a = rf.axis, v = Number(rf.value);
+      if (!served(it).some(function (r) { return effAxis(r, a).v === v; })) return false;
+    }
     if (query) {
       var q = query.toLowerCase();
       var hay = (it.title + ' ' + it.prompt + ' ' + it.key + ' ' + (it.flags.device || '') + ' ' + it.responses.map(function (r) { return r.model_label + ' ' + r.model; }).join(' ')).toLowerCase();
@@ -214,7 +290,6 @@
     });
     return out;
   }
-  function gradeLabel(v) { return v == null ? '—' : (D.grades[String(Number(v))] || v); }
   function respChip(it, r) {
     var cls = r.retired ? 'retired' : (r.complete ? 'ok' : (r.standing && (r.standing.axes_n || r.standing.grade != null) ? 'part' : 'none'));
     if (it.drawer.shows === r.rid) cls += ' shows';
@@ -223,20 +298,39 @@
       ' · ' + (st ? st.axes_n : 0) + '/' + D.axes.length + (r.rank ? ' · #' + r.rank : '');
     return '<span class="' + cls + '" title="' + esc(r.rid + ' · ' + r.model_label + (r.retired ? ' · retired' : '') + (st ? '' : ' · no database row')) + '">' + esc(txt) + '</span>';
   }
+  function ratingFilterHTML() {
+    var h = '<div class="rf"><span>at least one response</span>';
+    h += '<span>graded</span><select id="rf-grade" class="' + (rf.grade !== '' ? 'is-on' : '') + '"><option value="">any grade</option>';
+    ranksDesc(D.grades).forEach(function (v) { h += '<option value="' + v + '"' + (rf.grade === String(v) ? ' selected' : '') + '>' + esc(D.grades[String(v)]) + '</option>'; });
+    h += '</select><span class="sep">·</span><span>with</span><select id="rf-axis" class="' + (rf.axis !== '' ? 'is-on' : '') + '"><option value="">any axis</option>';
+    D.axes.forEach(function (a) { h += '<option value="' + esc(a.id) + '"' + (rf.axis === a.id ? ' selected' : '') + '>' + esc(a.label) + '</option>'; });
+    h += '</select><span>=</span><select id="rf-value" class="' + (rf.value !== '' ? 'is-on' : '') + '"' + (rf.axis === '' ? ' disabled' : '') + '><option value="">any value</option>';
+    var ax = axisById(rf.axis);
+    if (ax) ranksDesc(ax.values).forEach(function (v) { h += '<option value="' + v + '"' + (rf.value === String(v) ? ' selected' : '') + '>' + esc(ax.values[String(v)]) + ' (' + v + ')</option>'; });
+    h += '</select>';
+    if (rf.grade !== '' || rf.axis !== '') h += '<button type="button" class="chip" id="rf-clear">clear rating filters</button>';
+    h += '</div>';
+    return h;
+  }
   function render() {
     var c = D.counts;
     var h = '<div class="toolbar">';
     FILTERS.forEach(function (f) { h += '<button type="button" class="chip' + (filter === f[0] ? ' is-on' : '') + '" data-filter="' + f[0] + '">' + f[1] + '</button>'; });
     h += '<input type="search" id="q" placeholder="search title, prompt, id, model" value="' + esc(query) + '">';
     h += '<span class="counts"><b>' + c.curated + '</b> curated · <b>' + c.turns + '</b> turns · <b>' + c.shown + '</b> in the drawer · <b>' + c.hidden + '</b> hidden · <b>' + c.absent + '</b> not in it · <b>' + c.bench_open + '</b> the bench would offer</span>';
-    h += '<button type="button" class="chip" id="reload">reload</button><button type="button" class="chip" id="signout">sign out</button></div>';
+    h += '<button type="button" class="chip" id="reload">reload</button><button type="button" class="chip" id="signout">sign out</button>';
+    h += ratingFilterHTML();
+    h += '</div>';
     var list = ordered();
+    var pending = Object.keys(dirty).length;
+    if (pending) h += '<p class="msg">' + pending + ' unsaved edit' + (pending === 1 ? '' : 's') + ' — open the row and press SAVE, or RELOAD to discard.</p>';
     h += '<div class="wrap"><table><thead><tr>';
     [['title', 'item'], ['kind', 'kind'], ['created', 'created'], ['size', 'size'], ['n', 'responses'], ['drawer', 'in the drawer?'], ['bench', 'the bench']].forEach(function (col) {
       h += '<th data-sort="' + col[0] + '" class="' + (sortKey === col[0] ? 'sorted' + (sortAsc ? ' asc' : '') : '') + '">' + col[1] + '</th>';
     });
     h += '</tr></thead><tbody>';
-    if (!list.length) h += '<tr><td colspan="7" class="hint">nothing matches</td></tr>';
+    if (!list.length) h += '<tr><td colspan="7" class="hint">nothing matches' + ((rf.grade !== '' || rf.axis !== '') ? ' the rating filters' : '') + '</td></tr>';
+    else if (rf.grade !== '' || (rf.axis !== '' && rf.value !== '')) h += '<tr><td colspan="7" class="hint">' + list.length + ' item' + (list.length === 1 ? '' : 's') + ' match the rating filters</td></tr>';
     list.forEach(function (it) {
       var open = openKey === it.key;
       h += '<tr class="item' + (open ? ' is-open' : '') + (it._groupStart ? ' group-start' : '') + '" data-key="' + esc(it.key) + '">';
@@ -256,13 +350,17 @@
       if (open) h += '<tr class="detail"><td colspan="7">' + detailHTML(it) + '</td></tr>';
     });
     h += '</tbody></table></div>';
-    h += '<p class="hint">A chip per response: rid, model, grade (an asterisk = the entry\'s grade, no database row yet), axes answered / live axes, and #rank. Green = fully rated; gold = partly; struck = retired. The boxed chip is the one the drawer shows. Ratings the bench filed outrank an entry\'s seed, which outranks a visitor\'s.</p>';
+    h += '<p class="hint">A chip per response: rid, model, grade (an asterisk = the entry\'s grade, no database row yet), axes answered / live axes, and #rank. Green = fully rated; gold = partly; struck = retired. The boxed chip is the one the drawer shows. Ratings the bench filed outrank an entry\'s seed, which outranks a visitor\'s. In an open row every grade and axis is a select: change a cell and SAVE files just what you changed, under the bench\'s name. Click a drawing to enlarge it.</p>';
     app.innerHTML = h;
     app.querySelectorAll('[data-filter]').forEach(function (b) { b.addEventListener('click', function () { filter = b.getAttribute('data-filter'); render(); }); });
     var q = document.getElementById('q');
     q.addEventListener('input', function () { query = q.value; render(); document.getElementById('q').focus(); var qq = document.getElementById('q'); qq.setSelectionRange(qq.value.length, qq.value.length); });
-    document.getElementById('reload').addEventListener('click', load);
+    document.getElementById('reload').addEventListener('click', function () { dirty = {}; load(); });
     document.getElementById('signout').addEventListener('click', function () { setKey(''); gate(''); });
+    document.getElementById('rf-grade').addEventListener('change', function (e) { rf.grade = e.target.value; render(); });
+    document.getElementById('rf-axis').addEventListener('change', function (e) { rf.axis = e.target.value; rf.value = ''; render(); });
+    document.getElementById('rf-value').addEventListener('change', function (e) { rf.value = e.target.value; render(); });
+    var clr = document.getElementById('rf-clear'); if (clr) clr.addEventListener('click', function () { rf = { grade: '', axis: '', value: '' }; render(); });
     app.querySelectorAll('th[data-sort]').forEach(function (th) {
       th.addEventListener('click', function () {
         var k = th.getAttribute('data-sort');
@@ -281,9 +379,42 @@
     });
     app.querySelectorAll('[data-act]').forEach(function (b) { b.addEventListener('click', function () { act(b); }); });
     app.querySelectorAll('[data-q]').forEach(function (b) { b.addEventListener('click', function () { query = b.getAttribute('data-q'); filter = 'all'; render(); }); });
+    wireEditor();
   }
 
-  /* ---------- the detail ---------- */
+  /* ---------- the detail: one column per axis, every cell a select ---------- */
+  function dkey(it, r) { return it.key + '/' + r.rid; }
+  function selectHTML(it, r, what, cur) {
+    /* what: 'grade' or an axis id; cur: { v, src } — the value on file */
+    var d = dirty[dkey(it, r)] || {};
+    var pending = what === 'grade' ? d.grade : (d.axes ? d.axes[what] : undefined);
+    var shown = pending !== undefined ? pending : cur.v;
+    var map = what === 'grade' ? D.grades : axisById(what).values;
+    var canEdit = !!(r.gen_id || it.kind === 'curated');   /* a curated response with no row is filed by rid */
+    var h = '<select class="ed' + (pending !== undefined ? ' is-dirty' : '') + (shown == null ? ' is-empty' : '') + '" data-key="' + esc(it.key) + '" data-rid="' + esc(r.rid) + '" data-what="' + esc(what) + '"' + (canEdit ? '' : ' disabled') + '>';
+    h += '<option value=""' + (shown == null ? ' selected' : '') + '>—</option>';
+    ranksDesc(map).forEach(function (v) {
+      h += '<option value="' + v + '"' + (shown === v ? ' selected' : '') + '>' + esc(map[String(v)]) + (what === 'grade' ? '' : ' (' + v + ')') + '</option>';
+    });
+    h += '</select>';
+    if (cur.v != null) h += '<span class="src">' + (cur.src === 'entry' ? 'entry file*' : whoCell(r, what)) + '</span>';
+    else h += '<span class="src">—</span>';
+    return h;
+  }
+  /* whose word a database cell is: bench / seed / visitor */
+  function whoCell(r, what) {
+    var st = r.standing; if (!st || !st.by) return 'db';
+    var order = ['bench', 'seed', 'visitor'];
+    for (var i = 0; i < order.length; i++) {
+      var b = st.by[order[i]]; if (!b) continue;
+      if (what === 'grade' ? b.grade != null : b.axes_n > 0) {
+        /* by[c] carries counts only; the pick already prefers bench > seed
+           > visitor, so the first client with anything on file is the word */
+        return order[i];
+      }
+    }
+    return 'db';
+  }
   function detailHTML(it) {
     var h = '<div class="detail-grid">';
     h += '<p class="prompt">' + esc(it.prompt) + '</p>';
@@ -301,44 +432,55 @@
     if (it.kind === 'curated' && !it.flags.retired_file) h += '<a href="index.php?admin&item=' + encodeURIComponent(it.drawer_id) + '" target="_blank" rel="noopener">report card (admin)</a>';
     if (it.kind === 'turn' && it.drawer.state === 'shown' && it.drawer_id) h += '<a href="index.php?admin&item=' + encodeURIComponent(it.drawer_id) + '" target="_blank" rel="noopener">report card (admin)</a>';
     if (it.bench.state === 'open' || it.bench.state === 'done') h += '<a href="index.php?bench&item=' + encodeURIComponent(it.item_id) + '" target="_blank" rel="noopener">open on the bench</a>';
+    var nDirty = it.responses.filter(function (r) { return !!dirty[dkey(it, r)]; }).length;
+    if (nDirty > 1) h += '<button type="button" class="savebtn is-dirty" data-saveall="' + esc(it.key) + '">save all ' + nDirty + ' edited</button>';
     h += '<span class="note" data-note></span></div>';
-    h += '<table class="rt"><thead><tr><th>drawing</th><th>response</th><th>grade</th><th>axes</th><th>rank</th><th>notes</th></tr></thead><tbody>';
+    h += '<table class="rt"><thead><tr><th>drawing</th><th>response</th><th>grade</th>';
+    D.axes.forEach(function (a) { h += '<th title="' + esc(a.id) + '">' + esc(a.label) + '</th>'; });
+    h += '<th>rank</th><th>save</th></tr></thead><tbody>';
     it.responses.forEach(function (r) {
-      var st = r.standing;
-      h += '<tr' + (r.retired ? ' style="opacity:.55"' : '') + '>';
-      h += '<td>' + (r.url ? '<div class="thumb" data-url="' + esc(r.url) + '" data-kind="' + it.kind + '"></div>' : '<div class="thumb none">no drawing' + (r.reject ? '<br>' + esc(r.reject) : '') + '</div>') + '</td>';
+      var dk = dkey(it, r), isDirty = !!dirty[dk];
+      h += '<tr class="' + (r.retired ? 'retired' : '') + (isDirty ? ' is-dirty' : '') + '">';
+      h += '<td>' + (r.url ? '<div class="thumb" data-url="' + esc(r.url) + '" data-cap="' + esc(r.rid + ' · ' + r.model_label + ' · ' + it.title) + '"></div>' : '<div class="thumb none">no drawing' + (r.reject ? '<br>' + esc(r.reject) : '') + '</div>') + '</td>';
       h += '<td><b>' + esc(r.rid) + '</b> ' + esc(r.model_label) + '<div class="who">' + esc(r.model) + (r.slot ? ' · slot ' + esc(r.slot) : ' · no database row') + (r.date ? ' · ' + esc(r.date) : '') +
-        (r.retired ? (it.kind === 'turn' ? ' · ' + esc(r.status) : ' · retired in the entry') : '') + (it.drawer.shows === r.rid ? ' · <b>the drawer shows this one</b>' : '') + '</div></td>';
-      h += '<td>' + (st && st.grade != null ? esc(gradeLabel(st.grade)) : '—') + '<div class="who">' + who(r, 'grade') + '</div></td>';
-      h += '<td><ul class="axes">' + D.axes.map(function (a) {
-        var v = st && st.axes && st.axes[a.id] != null ? st.axes[a.id] : (r.entry && r.entry.axes && r.entry.axes[a.id] != null ? r.entry.axes[a.id] : null);
-        var fromEntryOnly = !(st && st.axes && st.axes[a.id] != null) && v != null;
-        return '<li><span class="l">' + esc(a.label) + ':</span> ' + (v == null ? '—' : esc(a.values[String(Number(v))] || v) + (fromEntryOnly ? '*' : '')) +
-          (st && st.notes && st.notes[a.id] ? ' <span class="who">' + esc(st.notes[a.id]) + '</span>' : '') + '</li>';
-      }).join('') + '</ul><div class="who">' + who(r, 'axes') + '</div></td>';
+        (r.retired ? (it.kind === 'turn' ? ' · ' + esc(r.status) : ' · retired in the entry') : '') + (it.drawer.shows === r.rid ? ' · <b>the drawer shows this one</b>' : '') + '</div>' +
+        '<div class="who">' + who(r, 'grade') + ' · ' + who(r, 'axes') + '</div>' +
+        ((r.standing && r.standing.note) || (r.entry && r.entry.notes) ? '<div class="notes">' + esc((r.standing && r.standing.note) || '') + (r.entry && r.entry.notes ? (r.standing && r.standing.note ? '\n' : '') + esc(r.entry.notes) : '') + '</div>' : '') + '</td>';
+      h += '<td class="ed">' + selectHTML(it, r, 'grade', effGrade(r)) + '</td>';
+      D.axes.forEach(function (a) {
+        var cur = effAxis(r, a.id);
+        h += '<td class="ed">' + selectHTML(it, r, a.id, cur) + (r.standing && r.standing.notes && r.standing.notes[a.id] ? '<span class="src" title="' + esc(r.standing.notes[a.id]) + '">note</span>' : '') + '</td>';
+      });
       h += '<td>' + (r.rank ? '#' + r.rank + '<div class="who">' + esc(r.rank_by) + '</div>' : '—') + '</td>';
-      h += '<td class="notes">' + esc((st && st.note) || '') + (r.entry && r.entry.notes ? (st && st.note ? '\n' : '') + esc(r.entry.notes) : '') + '</td>';
+      var sv = saving[dk];
+      h += '<td><button type="button" class="savebtn' + (isDirty ? ' is-dirty' : '') + (sv === 'ok' ? ' is-ok' : sv === 'err' ? ' is-err' : '') + '" data-save="' + esc(it.key) + '" data-rid="' + esc(r.rid) + '"' + (isDirty && sv !== 'busy' ? '' : ' disabled') + '>' +
+        (sv === 'busy' ? 'saving…' : sv === 'ok' ? 'saved ✓' : sv === 'err' ? '⚠ retry' : isDirty ? 'save' : 'saved') + '</button></td>';
       h += '</tr>';
     });
     h += '</tbody></table>';
-    if (it.kind === 'curated') h += '<p class="hint">* = the entry file\'s word, not yet in the database (a re-run of the backfill seeds it).</p>';
+    if (it.kind === 'curated') h += '<p class="hint">* = the entry file\'s word, not yet in the database (a re-run of the backfill seeds it; a SAVE here files the bench\'s word over it).</p>';
     h += '</div>';
     return h;
   }
   function who(r, what) {
-    var st = r.standing; if (!st) return 'entry only';
+    var st = r.standing; if (!st) return what === 'grade' ? 'grade: entry only' : 'axes: entry only';
     var parts = [];
     ['bench', 'seed', 'visitor'].forEach(function (c) {
       var b = st.by[c]; if (!b) return;
       if (what === 'grade' && b.grade != null) parts.push(c + ' ' + gradeLabel(b.grade));
       if (what === 'axes' && b.axes_n) parts.push(c + ' ' + b.axes_n + '/' + D.axes.length);
     });
-    return parts.length ? parts.join(' · ') : (what === 'grade' ? 'no grade filed' : 'no axes filed');
+    return (what === 'grade' ? 'grade: ' : 'axes: ') + (parts.length ? parts.join(', ') : 'none filed');
   }
   function loadThumbs(root) {
     root.querySelectorAll('.thumb[data-url]').forEach(function (el) {
       var url = el.getAttribute('data-url');
-      if (svgCache[url]) { el.innerHTML = svgCache[url]; return; }
+      function place(t) {
+        el.innerHTML = t;
+        el.classList.add('loaded');
+        var s = el.querySelector('svg'); if (s) { s.removeAttribute('width'); s.removeAttribute('height'); s.setAttribute('preserveAspectRatio', 'xMidYMid meet'); s.style.width = '100%'; s.style.height = '100%'; }
+      }
+      if (svgCache[url]) { place(svgCache[url]); return; }
       /* a turn's drawing may be off display (unrated) — only the keyed
          request gets it, so every drawing is fetched with the key and
          inlined rather than pointed at with an <img> */
@@ -346,16 +488,117 @@
         if (!/<svg/i.test(t)) { el.className = 'thumb none'; el.textContent = 'not available'; return; }
         t = t.replace(/<script[\s\S]*?<\/script>/gi, '').replace(/\son[a-z]+="[^"]*"/gi, '');
         svgCache[url] = t;
-        el.innerHTML = t;
-        var s = el.querySelector('svg'); if (s) { s.removeAttribute('width'); s.removeAttribute('height'); s.setAttribute('preserveAspectRatio', 'xMidYMid meet'); s.style.width = '100%'; s.style.height = '100%'; }
+        place(t);
       }, function () { el.className = 'thumb none'; el.textContent = 'not available'; });
     });
+  }
+
+  /* ---------- the enlarged drawing ---------- */
+  function enlarge(url, cap) {
+    var t = svgCache[url]; if (!t) return;
+    closeLightbox();
+    var box = document.createElement('div');
+    box.className = 'lightbox'; box.id = 'lightbox';
+    box.innerHTML = '<div class="sheet">' + t + '</div><div class="cap">' + esc(cap) + ' · click or Esc to close</div>';
+    var s = box.querySelector('svg'); if (s) { s.removeAttribute('width'); s.removeAttribute('height'); s.setAttribute('preserveAspectRatio', 'xMidYMid meet'); }
+    box.addEventListener('click', closeLightbox);
+    document.body.appendChild(box);
+  }
+  function closeLightbox() { var b = document.getElementById('lightbox'); if (b) b.parentNode.removeChild(b); }
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeLightbox(); });
+
+  /* ---------- the editor: edits, saves ---------- */
+  function wireEditor() {
+    app.querySelectorAll('select.ed').forEach(function (sel) {
+      sel.addEventListener('change', function () {
+        var k = sel.getAttribute('data-key'), rid = sel.getAttribute('data-rid'), what = sel.getAttribute('data-what');
+        var it = itemByKey(k); if (!it) return;
+        var r = it.responses.filter(function (x) { return x.rid === rid; })[0]; if (!r) return;
+        var dk = dkey(it, r);
+        var val = sel.value === '' ? null : Number(sel.value);
+        var cur = what === 'grade' ? effGrade(r).v : effAxis(r, what).v;
+        var d = dirty[dk] || { axes: {} };
+        if (val === null || val === cur) {
+          /* back to the value on file (or cleared): that cell is no longer an edit */
+          if (what === 'grade') delete d.grade; else delete d.axes[what];
+        } else {
+          if (what === 'grade') d.grade = val; else d.axes[what] = val;
+        }
+        if (d.grade === undefined && !Object.keys(d.axes).length) delete dirty[dk]; else dirty[dk] = d;
+        delete saving[dk];
+        render();
+        var d2 = app.querySelector('tr.detail'); if (d2) loadThumbs(d2);
+      });
+    });
+    app.querySelectorAll('[data-save]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var it = itemByKey(b.getAttribute('data-save')); if (!it) return;
+        var r = it.responses.filter(function (x) { return x.rid === b.getAttribute('data-rid'); })[0]; if (!r) return;
+        save(it, [r]);
+      });
+    });
+    app.querySelectorAll('[data-saveall]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var it = itemByKey(b.getAttribute('data-saveall')); if (!it) return;
+        save(it, it.responses.filter(function (r) { return !!dirty[dkey(it, r)]; }));
+      });
+    });
+    app.querySelectorAll('.thumb[data-url]').forEach(function (el) {
+      el.addEventListener('click', function () { if (el.classList.contains('loaded')) enlarge(el.getAttribute('data-url'), el.getAttribute('data-cap')); });
+    });
+  }
+  function itemByKey(k) { return D.items.filter(function (i) { return i.key === k; })[0]; }
+  /* file the edited cells of the given responses — one request, one
+     transaction on the server. Only what changed is sent: a grade left as
+     it was is omitted (null = leave alone), an axis left as it was is not
+     in `axes` (only the axes sent are replaced). */
+  function save(it, rs) {
+    /* a curated item is addressed by entry id + rid (the server brings its
+       rows level with entry.json first, so a response with no row yet is
+       fine); a turn by submission + generation — the admin card's two shapes */
+    var curated = it.kind === 'curated';
+    var responses = [], keys = [];
+    rs.forEach(function (r) {
+      var d = dirty[dkey(it, r)]; if (!d) return;
+      if (!curated && !r.gen_id) return;
+      var one = { axes: d.axes || {} };
+      if (d.grade !== undefined) one.grade = d.grade;
+      if (curated) one.rid = r.rid; else one.generation_id = r.gen_id;
+      responses.push(one); keys.push(dkey(it, r));
+    });
+    if (!responses.length) return;
+    var body = curated ? { item_id: it.item_id, responses: responses } : { submission_id: it.submission_id, responses: responses };
+    keys.forEach(function (k) { saving[k] = 'busy'; });
+    render();
+    var d0 = app.querySelector('tr.detail'); if (d0) loadThumbs(d0);
+    var note = app.querySelector('[data-note]'); if (note) note.textContent = 'saving ' + responses.length + ' response' + (responses.length === 1 ? '' : 's') + '…';
+    fetch(API_RATE, { method: 'POST', headers: headers({ 'Content-Type': 'application/json' }), body: JSON.stringify(body) })
+      .then(function (r) { return r.json().catch(function () { return { ok: false, error: { code: 'server_error' } }; }).then(function (j) { return { ok: r.ok && j.ok, j: j }; }); })
+      .then(function (res) {
+        if (!res.ok) {
+          keys.forEach(function (k) { saving[k] = 'err'; });
+          render();
+          var d1 = app.querySelector('tr.detail'); if (d1) loadThumbs(d1);
+          var n1 = app.querySelector('[data-note]'); if (n1) n1.textContent = '⚠ not saved (' + (((res.j || {}).error || {}).code || 'failed') + (((res.j || {}).error || {}).message ? ': ' + res.j.error.message : '') + ')';
+          return;
+        }
+        keys.forEach(function (k) { delete dirty[k]; saving[k] = 'ok'; });
+        /* the ledger re-reads: the server's word, standing and chips alike */
+        load(true).then(function () {
+          var n2 = app.querySelector('[data-note]'); if (n2) n2.textContent = 'saved · ' + (res.j.written || 0) + ' row' + (res.j.written === 1 ? '' : 's') + ' written';
+        });
+      }, function () {
+        keys.forEach(function (k) { saving[k] = 'err'; });
+        render();
+        var d3 = app.querySelector('tr.detail'); if (d3) loadThumbs(d3);
+        var n3 = app.querySelector('[data-note]'); if (n3) n3.textContent = '⚠ network';
+      });
   }
 
   /* ---------- the acts ---------- */
   function act(btn) {
     var k = btn.getAttribute('data-key'), what = btn.getAttribute('data-act');
-    var it = D.items.filter(function (i) { return i.key === k; })[0];
+    var it = itemByKey(k);
     if (!it) return;
     var body = it.submission_id ? { submission_id: it.submission_id } : { item_id: it.item_id };
     body.retire = what === 'hide';
@@ -364,7 +607,7 @@
       .then(function (r) { return r.json().then(function (j) { return { ok: r.ok && j.ok, j: j }; }); })
       .then(function (res) {
         if (!res.ok) { btn.disabled = false; btn.textContent = '⚠ ' + ((res.j.error && res.j.error.code) || 'failed'); return; }
-        load();                                  /* the ledger re-reads: the server's word */
+        load(true);                              /* the ledger re-reads: the server's word */
       }, function () { btn.disabled = false; btn.textContent = '⚠ network'; });
   }
 

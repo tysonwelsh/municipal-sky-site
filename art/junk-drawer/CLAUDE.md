@@ -42,11 +42,22 @@ data files are `.json`, art is `.svg`.
   each response's rating has got (whose word: bench / seed / visitor), and
   whether the bench would offer it (and why not). A row opens into the
   prompt, every drawing, the ratings, and HIDE / SHOW plus links to the
-  admin report card and the bench. Reads `api/jd-ledger.php` (bench-key
-  gated; it applies `data.php`'s and the bench's own rules server-side, so
-  the page never re-derives them) and writes through `api/jd-curate.php`.
-  Same key slot as admin mode (`jd-admin-key`); linked from the `?admin`
-  strip only; noindex.
+  admin report card and the bench. **The editor is in the table (owner
+  ask, 2026-09-29):** in an open row the grade and each live axis are a
+  column each, every cell a small select holding the value the drawer
+  reads (bench, else seed, else the entry file), and each response's SAVE
+  files ONLY the cells that changed through `api/jd-item-rate.php` — the
+  admin card's own contract (curated: entry id + rid; turn: submission +
+  generation) — so untouched values keep their provenance; SAVE ALL batches
+  an item's edited responses in one request. Clicking a drawing enlarges
+  it. The toolbar's second line filters by rating: "at least one response
+  graded X" and "at least one response with axis A = V" (AND-ed with the
+  standing chips and the search). Ranks and sizes stay the bench's.
+  Reads `api/jd-ledger.php` (bench-key gated; it applies `data.php`'s and
+  the bench's own rules server-side, so the page never re-derives them);
+  hide/show goes through `api/jd-curate.php`, ratings through
+  `api/jd-item-rate.php`. Same key slot as admin mode (`jd-admin-key`);
+  linked from the `?admin` strip only; noindex.
 - `sizing-desk.html` — owner-only curatorial harness (unlinked, noindex):it
   steps through the items previewing size tiers with the live pile math and
   exports decisions as JSON (`{sizingDesk: 1, changes: {id: {sizeClass,
