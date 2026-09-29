@@ -129,6 +129,8 @@ window.KOLOB.GuestBands = (function () {
   var AT = { hymn: [0.12, 0.4], doxology: [0.1, 0.35], postlude: [0.05, 0.25] };
   var AT_MIN = 8;
   var MAX_DUR = 110;                                // the strains shorten to fit (s)
+  var CAD_S = 16;                                   // the drums' street beat after the stinger (s, about)
+  var AWAY_DB = -30;                                // …over which the band goes out of hearing
   // the band's bus into the tabernacle's wide send (calibrated in the lab
   // against the organ reference: see LEVEL's note in the handoff)
   var LEVEL = 0.43;
@@ -494,6 +496,29 @@ window.KOLOB.GuestBands = (function () {
   }
   // role: "plain" (the tune on top), "bass" (the tune in the low brass),
   // "trio" (soft, held), "grand" (full)
+  // THE PAH KEEPS OFF THE TUNE'S SEMITONE (round 2, after the critic): an
+  // after-beat chord tone within a semitone of a tune note sounding with it,
+  // in any octave — the tune's passing fa against the alto horns' mi, 112
+  // cents — is left out, the bandmaster's courtesy (the chord's other tones
+  // still speak). Read over the whole march at once, so the next strain's
+  // pickup in the last bar of this one, or the first strain's under the
+  // introduction's vamp, is heard too. A held chord (the trio's) keeps off
+  // only the note it begins with; a passing note across it is the tune's.
+  function offTheTune(ev) {
+    var tune = ev.filter(function (e) { return e.part === "melody" && !e.doubling; }).sort(function (x, y) { return x.m - y.m; });
+    var longest = 0; tune.forEach(function (n) { longest = Math.max(longest, n.len); });
+    function semi(a, b) { var c = ((1200 * Math.log(a / b) / Math.LN2) % 1200 + 1200) % 1200; c = Math.min(c, 1200 - c); return c > 60 && c < 150; }
+    function from(m) { var lo = 0, hi = tune.length; while (lo < hi) { var mid = (lo + hi) >> 1; if (tune[mid].m < m) lo = mid + 1; else hi = mid; } return lo; }
+    return ev.filter(function (e) {
+      if (e.part !== "alto" || e.strain === "stinger") return true;
+      var until = e.len > 0.5 ? e.m + 1e-6 : e.m + e.len;
+      for (var i = from(e.m - longest - 1e-6); i < tune.length && tune[i].m < until; i++) {
+        var n = tune[i];
+        if (n.m + n.len > e.m + 1e-6 && semi(e.f, n.f)) return false;
+      }
+      return true;
+    });
+  }
   function partsOf(st, o) {
     var ev = [], mode = o.mode, tHz = o.tHz, dyn = o.dyn, role = o.role, beats = o.bars * 2;
     var AFTER = o.meter === "6/8" ? (o.pahPah ? [1 / 3, 2 / 3] : [2 / 3]) : [0.5];
@@ -546,6 +571,26 @@ window.KOLOB.GuestBands = (function () {
       }
     }
     if (o.rollOut) ev.push({ m: beats, kind: "rollTo", dyn: d * 0.85 });
+    return ev;
+  }
+  // THE STREET BEAT — after the stinger the band marches on to its drums
+  // alone, as a band on parade does between marches: a four-bar phrase over
+  // and over (the bass drum on every step; the snare's taps, a roll landing
+  // on the second beat of the second bar, a flam on each beat of the fourth),
+  // `phrases` times from m0 — { m, kind, dyn }
+  function cadenceOf(m0, phrases, meter, d) {
+    var ev = [], six = meter === "6/8", taps = six ? [2 / 3, 1, 1 + 2 / 3] : [0.5, 1, 1.5];
+    for (var p = 0; p < phrases; p++) for (var bar = 0; bar < 4; bar++) {
+      var m = m0 + (p * 4 + bar) * 2;
+      ev.push({ m: m, kind: "bass", dyn: d });
+      if (bar === 3) { ev.push({ m: m, kind: "flam", dyn: d * 0.8 }, { m: m + 1, kind: "flam", dyn: d * 0.7 }); continue; }
+      if (bar === 1) {
+        ev.push({ m: m + (six ? 1 / 3 : 0.5), kind: "snare", dyn: d * 0.5 }, { m: m + 1, kind: "rollTo", dyn: d * 0.7 }, { m: m + (six ? 1 + 2 / 3 : 1.5), kind: "snare", dyn: d * 0.45 });
+        continue;
+      }
+      if (bar === 0) ev.push({ m: m, kind: "flam", dyn: d * 0.75 });
+      taps.forEach(function (x, j) { ev.push({ m: m + x, kind: "snare", dyn: d * (j === 1 ? 0.55 : 0.45) }); });
+    }
     return ev;
   }
   // THE INTRODUCTION, four bars: the tune's head in octaves by the whole
@@ -654,18 +699,26 @@ window.KOLOB.GuestBands = (function () {
     ev.push({ m: mS, len: 0.3, part: "melody", inst: "cornet", f: nearOct(tk * oct, TUNE_AT), dyn: 0.95, acc: true, stacc: true, strain: "stinger" });
     drums.push({ m: mS, kind: "bass", dyn: drum * 1.2, strain: "stinger" }, { m: mS, kind: "flam", dyn: drum, strain: "stinger" });
     var endM = mS + 1;
+    // …and the drums carry it off: the street beat from the next bar, for
+    // about CAD_S seconds (whole phrases), while the road carries the band
+    // round the far end of the colony (score, perform: out of hearing). The
+    // march ends at the stinger — the meeting waits for no drum.
+    var cadM = Math.ceil(endM / 2 - 1e-9) * 2, phrases = Math.max(2, Math.ceil(CAD_S / (8 * beatS)));
+    cadenceOf(cadM, phrases, meter, drum * 0.9).forEach(function (e) { e.strain = "cadence"; drums.push(e); });
+    var goneM = cadM + phrases * 8;
     function sec(e) {
       var x = Object.assign({}, e);
       x.t = e.m * beatS; x.dur = e.len != null ? e.len * beatS : 0;
       x.bar = Math.floor(e.m / 2 + 1e-9); x.beat = +(e.m - x.bar * 2).toFixed(4); x.downbeat = !!e.downbeat;
       return x;
     }
-    var events = ev.map(sec).sort(function (x, y) { return x.t - y.t; });
+    var events = offTheTune(ev).map(sec).sort(function (x, y) { return x.t - y.t; });
     var drumEv = drums.map(sec).sort(function (x, y) { return x.t - y.t; });
     return {
       meter: meter, beatS: beatS, tHz: tHz, key: key, mode: mode, events: events, drums: drumEv,
       sections: sections.map(function (s) { return { name: s.name, t0: s.m0 * beatS, t1: s.m1 * beatS, gain: s.gain, role: s.role || null }; }),
-      end: endM * beatS, hymnId: tune.id, name: tune.name, strains: steps.map(function (s) { return s.name; }), intro: a.intro,
+      end: endM * beatS, cadence: { t0: cadM * beatS, t1: goneM * beatS }, gone: goneM * beatS,
+      hymnId: tune.id, name: tune.name, strains: steps.map(function (s) { return s.name; }), intro: a.intro,
     };
   }
 
@@ -699,8 +752,11 @@ window.KOLOB.GuestBands = (function () {
   var R0 = 6, RSPAN = 80;
   function dOfR(r) { return Math.max(0, Math.min(1, Math.log(r / R0) / Math.log(RSPAN))); }
   function rOfD(d) { return R0 * Math.pow(RSPAN, d); }
-  function roadOf(len, a, fromWest, still) {
+  // (len: the march, to its stinger; tail: the drums after it — the road
+  // goes on under them, at the same pace)
+  function roadOf(len, a, fromWest, still, tail) {
     var tc = a.crossAt * len, pts = [];
+    len += tail || 0;
     if (still) return { tc: tc, points: [{ t: 0, d: a.nearD, side: 0 }, { t: len + 6, d: a.nearD, side: 0 }] };
     var D = rOfD(a.nearD), v = Math.sqrt(Math.max(1, rOfD(a.farD) * rOfD(a.farD) - D * D)) / Math.max(1, tc);
     var sign = fromWest ? 1 : -1;
@@ -725,13 +781,14 @@ window.KOLOB.GuestBands = (function () {
     var P = prepare(material, stream), sh = P.shape, out = { bands: [], stages: [], end: t0, prepared: P };
     P.bands.forEach(function (bd, k) {
       var a = k ? sh.b : sh.a, fromWest = k ? !sh.a.fromWest : a.fromWest;
-      var start = t0 + (k ? P.enter2 * P.bands[0].end : 0), rd = roadOf(bd.end, a, fromWest, !!opts.still);
+      var start = t0 + (k ? P.enter2 * P.bands[0].end : 0), rd = roadOf(bd.end, a, fromWest, !!opts.still, bd.gone - bd.end);
       var pts = rd.points.map(function (p) { return { t: +(start + p.t).toFixed(3), d: p.d, side: p.side }; });
       function loud(t) { return +Math.max(0, Math.min(1, (0.97 - dAt(pts, t)) / (0.97 - a.nearD))).toFixed(3); }
       var ev = bd.events.map(function (e) { var x = Object.assign({}, e); x.t = +(start + e.t).toFixed(4); x.loud = loud(x.t); return x; });
       var dr = bd.drums.map(function (e) { var x = Object.assign({}, e); x.t = +(start + e.t).toFixed(4); return x; });
       var side = fromWest ? "west" : "east", other = fromWest ? "east" : "west";
-      out.bands.push({ k: k, start: start, end: start + bd.end, events: ev, drums: dr, path: pts, tc: start + rd.tc, nearD: a.nearD,
+      out.bands.push({ k: k, start: start, end: start + bd.end, gone: start + bd.gone, cadence: { t0: start + bd.cadence.t0, t1: start + bd.cadence.t1 },
+                       events: ev, drums: dr, path: pts, tc: start + rd.tc, nearD: a.nearD,
                        sections: bd.sections.map(function (s) { return { name: s.name, t0: start + s.t0, t1: start + s.t1, gain: s.gain, role: s.role }; }),
                        meter: bd.meter, beatS: bd.beatS, key: bd.key, tHz: bd.tHz, hymnId: bd.hymnId, name: bd.name, strains: bd.strains, intro: bd.intro, from: side });
       var what = (bd.meter === "6/8" ? "a quickstep" : "a march") + " · " + KEY_WORD[bd.key];
@@ -744,6 +801,7 @@ window.KOLOB.GuestBands = (function () {
                         detail: both ? "two times at once" : "its own key, its own time" });
       out.stages.push({ stage: "passes", band: k, t0: start + bd.end, side: other, label: "⇋ passes on", detail: k ? "the second band" : "" });
       out.end = Math.max(out.end, start + bd.end);
+      out.gone = Math.max(out.gone || 0, start + bd.gone);
     });
     out.stages.sort(function (x, y) { return x.t0 - y.t0; });
     return out;
@@ -797,6 +855,14 @@ window.KOLOB.GuestBands = (function () {
           og.setValueAtTime(0.8 * bd.sections[i - 1].gain, Math.max(bd.start, s.t0 - 0.35));
           og.linearRampToValueAtTime(0.8 * s.gain, s.t0 + 0.05);
         });
+        // over the rise: past the colony's last houses the drums go out of
+        // hearing — the band's gain falls AWAY_DB across the street beat, on
+        // top of what the road's distance takes (whose scale ends at the
+        // colony's far end, 13.5 dB down: no road alone reaches silence)
+        var lastG = 0.8 * bd.sections[bd.sections.length - 1].gain;
+        og.setValueAtTime(lastG, bd.cadence.t0);
+        og.exponentialRampToValueAtTime(lastG * Math.pow(10, AWAY_DB / 20), bd.cadence.t1);
+        og.setTargetAtTime(0, bd.cadence.t1, 0.3);
         me.band = band; me.road = rd;
         return band;
       }
@@ -831,7 +897,7 @@ window.KOLOB.GuestBands = (function () {
     }
     if (hooks.onStage) sc.stages.forEach(function (st) { hooks.onStage(st); });
     // when the last of the town's air has died, let every band and its road go
-    var tail = sc.end + 5;
+    var tail = sc.gone + 5;
     var sent = ctx.createConstantSource ? ctx.createConstantSource() : ctx.createOscillator();
     var sg = ctx.createGain(); sg.gain.value = 0;
     sent.connect(sg); sg.connect(bus);

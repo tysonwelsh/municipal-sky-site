@@ -98,6 +98,7 @@ window.KOLOB.GuestHandcart = (function () {
   // against the organ reference: the handoff's table)
   var LEVEL = 0.74;
   var NEAR_EVEN = 0.54;
+  var RISE_DB = -14;                              // over the rise, by the time the wheels are gone
 
   function need(stream) {
     if (!stream || typeof stream.fork !== "function") throw new Error("KOLOB.GuestHandcart: a PJ2.Rand stream is required (label " + LABEL + "<n>)");
@@ -261,6 +262,12 @@ window.KOLOB.GuestHandcart = (function () {
     function at(tt) { var x = vel * (tt - tc), r = Math.sqrt(D * D + x * x); return { t: +(t0 + tt).toFixed(3), d: +dOfR(r).toFixed(4), side: +(sign * 0.85 * x / r).toFixed(4) }; }
     for (var tt = 0; tt < len + 1; tt += 1) path.push(at(tt));
     function dAt(x) { var i = Math.max(0, Math.min(path.length - 2, Math.floor(x - t0))), a = path[i], b = path[i + 1]; return a.d + (b.d - a.d) * Math.max(0, Math.min(1, (x - a.t) / (b.t - a.t))); }
+    // OVER THE RISE: past its nearest point the road takes the company over
+    // the rise beyond the fields — RISE_DB more by the time the wheels are
+    // gone, deepening with the square of the way gone (the distance stage's
+    // scale ends at the colony's far end, 13.5 dB down: no road alone
+    // carries a song out of hearing) → dB at x (absolute)
+    function riseDb(x) { var u = Math.max(0, Math.min(1, (x - t0 - tc) / Math.max(1, len - tc))); return RISE_DB * u * u; }
     // who sings: the leader alone on the first line (when he strikes up),
     // then everyone; the child from the second line, a hair behind
     var parts = [];
@@ -268,7 +275,9 @@ window.KOLOB.GuestHandcart = (function () {
       var first = L.verse === 0 && L.line === 0;
       function put(voice, mul, late) {
         parts.push({ voice: voice, verse: L.verse, line: L.line, t0: sing0 + L.t0 + late, notes: L.notes.map(function (n) {
-          return { t: sing0 + n.t + late, dur: n.dur, f: n.f * mul, vowel: n.vowel, slur: n.slur, beat: n.beat, syl: n.syl, loud: +Math.max(0, Math.min(1, (0.99 - dAt(sing0 + n.t)) / (0.99 - sh.nearD))).toFixed(3) };
+          var x = sing0 + n.t;
+          return { t: x + late, dur: n.dur, f: n.f * mul, vowel: n.vowel, slur: n.slur, beat: n.beat, syl: n.syl,
+                   loud: +(Math.max(0, Math.min(1, (0.99 - dAt(x)) / (0.99 - sh.nearD))) * Math.pow(10, riseDb(x) / 20)).toFixed(3) };
         }) });
       }
       // (the captain, a bass or a tenor, sings the tune where the men do, an
@@ -288,7 +297,10 @@ window.KOLOB.GuestHandcart = (function () {
       { stage: "passes", t0: t0 + tc, side: side, label: "⇋ the handcarts pass", detail: "far across the fields" },
       { stage: "gone", t0: end, side: sh.fromWest ? "east" : "west", label: "⇋ out of hearing", detail: "" },
     ];
-    return { start: t0, end: end, sing0: sing0, path: path, parts: parts, stages: stages, prepared: P, tc: t0 + tc, beatS: sh.beatS };
+    // (the rise as points a second apart, for perform's gain)
+    var rise = [];
+    for (var rt = tc; rt < len + 1; rt += 1) rise.push({ t: +(t0 + Math.min(rt, len)).toFixed(3), db: +riseDb(t0 + Math.min(rt, len)).toFixed(2) });
+    return { start: t0, end: end, sing0: sing0, path: path, rise: rise, parts: parts, stages: stages, prepared: P, tc: t0 + tc, beatS: sh.beatS };
   }
 
   // ==========================================================================
@@ -317,7 +329,12 @@ window.KOLOB.GuestHandcart = (function () {
     var full = 4 * G_DESK * G_DESK + G_LEAD * G_LEAD + G_CHILD * G_CHILD;
     var here = 4 * G_DESK * G_DESK + (sh.leader ? G_LEAD * G_LEAD : 0) + (sh.child ? G_CHILD * G_CHILD : 0);
     if (hooks.only !== "carts") trim += 0.5 * 10 * Math.log10(full / here);
-    var bus = ctx.createGain(); bus.gain.value = LEVEL * Math.pow(10, trim / 20); bus.connect(dest);
+    var bus = ctx.createGain(), lvl = LEVEL * Math.pow(10, trim / 20); bus.gain.value = lvl; bus.connect(dest);
+    // (over the rise: the company's gain follows the score's rise, a point a second)
+    sc.rise.forEach(function (p, i) {
+      var g = lvl * Math.pow(10, p.db / 20);
+      if (i === 0) bus.gain.setValueAtTime(g, Math.max(t, p.t)); else bus.gain.linearRampToValueAtTime(g, p.t);
+    });
     // (the town's air borrowed: made ahead by VoicesBand.warm, never in a callback)
     var town = VB.lendTown ? VB.lendTown(ctx, bus, { seconds: 2.6 }) : VB.townRoom(ctx, bus, { seconds: 2.6 });
     var rd = VB.road(ctx, bus, { room: town, echoDelay: synth.rnd(0.19, 0.31) });

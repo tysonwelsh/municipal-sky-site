@@ -143,7 +143,9 @@ window.Guests3a = (function () {
     last.score.bands.forEach(function (bd) { bd.drums.forEach(function (d) { ex.push(d.kind === "rollTo" ? [d.t - t - 0.22, d.t - t + 0.05] : [d.t - t - 0.005, d.t - t + (d.kind === "flam" ? 0.08 : 0.05)]); }); });
     last.made.forEach(function (m) { if (!m.band) return; var s = m.band.stats(); created += s.created; peak += s.peakLive + m.road.nodes; });
     if ((o.meeting != null ? o.meeting : checked("kg3-meeting")) && !o.noMeeting) hymnOrgan(ctx, into, t, composed(st)[0], st.keynote);
-    return { dur: end - t + 5, score: last.score, expect: ex, stats: { created: created, peakLive: peak, bands: last.made.length } };
+    // (the march ends at its stinger — what the meeting waits for; the drums
+    // carry the band out of hearing after it, and the lab hears them out)
+    return { dur: Math.max(end, last.score.gone || end) - t + 5, end: end - t, score: last.score, expect: ex, stats: { created: created, peakLive: peak, bands: last.made.length } };
   };
   // THE MEETING CARRIES ON: the day's first hymn on a plain organ (three
   // partials a pipe, the four parts as written, the hymn's own tempo and the
@@ -467,8 +469,14 @@ window.Guests3a = (function () {
     var n = Math.max(1, b - a);
     return { db: +(10 * Math.log10((eL + eR) / (2 * n) + 1e-12)).toFixed(1), side: +(10 * Math.log10((eR + 1e-12) / (eL + 1e-12))).toFixed(1) };
   }
-  function crossing(L, R, start, tc, end) {
-    return { first: windowDb(L, R, start + 2, start + 5), nearest: windowDb(L, R, tc - 1.5, tc + 1.5), last: windowDb(L, R, end - 5, end - 2) };
+  // (and, since round 2, how it goes out of hearing: the band's last 3 s
+  // before its stinger and the last 3 s of its drums; the company's last
+  // sung line and the last of its wheels)
+  function crossing(L, R, start, tc, end, gone, sung) {
+    var c = { first: windowDb(L, R, start + 2, start + 5), nearest: windowDb(L, R, tc - 1.5, tc + 1.5), last: windowDb(L, R, end - 3.5, end - 0.5) };
+    if (sung) c.sung = windowDb(L, R, sung - 3.5, sung - 0.5);
+    if (gone) c.gone = windowDb(L, R, gone - 4, gone - 1);
+    return c;
   }
   // THE TRACE (the gulls): each of the lead bird's held cries pitch-tracked
   // (an FFT peak near the expected pitch, ±250 cents, interpolated), and each
@@ -487,8 +495,8 @@ window.Guests3a = (function () {
   }
   function extras(out, res, L, R, id) {
     var sc = res.score;
-    if (sc.bands) out.crossing = sc.bands.map(function (bd) { return crossing(L, R, bd.start, bd.tc, bd.end); });
-    else if (sc.path && sc.tc) out.crossing = [crossing(L, R, sc.start, sc.tc, sc.end)];
+    if (sc.bands) out.crossing = sc.bands.map(function (bd) { return crossing(L, R, bd.start, bd.tc, bd.end, bd.gone); });
+    else if (sc.path && sc.tc) out.crossing = [crossing(L, R, sc.start, sc.tc, sc.end, sc.end, sc.sing0 + sc.prepared.singS)];
     if (sc.cries && id === "lead") {
       var mono = new Float32Array(L.length);
       for (var i = 0; i < L.length; i++) mono[i] = (L[i] + R[i]) * 0.5;
@@ -598,7 +606,7 @@ window.Guests3a = (function () {
       " · strokes " + r.strokes + " · clicks " + r.clicks + (r.clicks ? " (at " + r.clickTimes.join(", ") + " s)" : "");
     if (r.nodes) s += " · nodes: " + r.nodes.created + " made, ≈" + r.nodes.peakLive + " live at the peak" + (r.nodes.singers ? " (the singers' " + r.nodes.singers + ")" : "");
     if (r.crossing) s += " · the crossing: " + r.crossing.map(function (c, k) {
-      return (r.crossing.length > 1 ? "band " + (k + 1) + " " : "") + "first heard " + c.first.db + " dB (side " + sgn(c.first.side) + "), nearest " + c.nearest.db + " dB (" + sgn(c.nearest.side) + "), going " + c.last.db + " dB (" + sgn(c.last.side) + ")";
+      return (r.crossing.length > 1 ? "band " + (k + 1) + " " : "") + "first heard " + c.first.db + " dB (side " + sgn(c.first.side) + "), nearest " + c.nearest.db + " dB (" + sgn(c.nearest.side) + "), going " + c.last.db + " dB (" + sgn(c.last.side) + ")" + (c.sung ? ", its last line " + c.sung.db + " dB" : "") + (c.gone ? ", " + (c.sung ? "the last of the wheels " : "the drums' last ") + c.gone.db + " dB" : "");
     }).join("; ");
     if (r.trace) s += " · the trace: " + r.trace.kept + " of " + r.trace.of + " intervals as the head has them (worst " + r.trace.worstCents + " cents) — heard " + r.trace.heard.join(" ") + " Hz for " + r.trace.meant.join(" ");
     return s;
