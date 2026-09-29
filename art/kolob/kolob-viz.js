@@ -1104,10 +1104,11 @@ window.KolobViz = (function () {
     while (q > 44) q -= 7;
     return { q: q, shape: shapeOfDeg(mode || cond.mode, st) };
   }
-  // (the groups one takeLayer call made, and a guest's own cap on them)
-  function madeSince(g0, cap) {
+  // (the groups one takeLayer call made, and a guest's own cap on them; line:
+  // the one line they make, which reads in the order it is sung — orderAt)
+  function madeSince(g0, cap, line) {
     var out = groups.slice(g0);
-    if (cap != null) out.forEach(function (gr) { gr.cap = cap; gr.tight = true; });
+    if (cap != null) out.forEach(function (gr) { gr.cap = cap; gr.tight = true; if (line) gr.line = line; });
     return out;
   }
   // "free" notes — a cry, a syllable, a bell's stroke: heads with no stem
@@ -1273,7 +1274,7 @@ window.KolobViz = (function () {
     var g0 = groups.length;
     takeLayer("handcart", mine, beat, null, { strict: true, fineBeat: !!company.beat, ink: clamp(0.14 + 0.42 * loud / mine.length, 0.18, 0.56),
       qOf: function (n) { return n.nq; } });
-    madeSince(g0, 1.5);
+    madeSince(g0, 1.5, "company");
   }
 
   // ---- the Social Hall ---------------------------------------------------------
@@ -1317,11 +1318,11 @@ window.KolobViz = (function () {
     var g0 = groups.length;
     if (line.length) takeLayer("fiddle", line, beat, null, { staff: "T", scale: FIDDLE_SCALE, fineBeat: true, qOf: qOf,
       head: function (n, hd) { if (FIDDLE_TUNE[n.part]) hd.heavy = true; if (FIDDLE_ORN[n.orn]) hd.orn = FIDDLE_ORN[n.orn]; } });
-    var made = madeSince(g0, FIDDLE_CAP);
+    var made = madeSince(g0, FIDDLE_CAP, "fiddle");
     if (drones.length) {
       var d0 = groups.length;
       takeLayer("fiddle", drones, beat, null, { scale: FIDDLE_SCALE, qOf: qOf });
-      madeSince(d0, FIDDLE_CAP).forEach(function (gr) { gr.drone = true; });   // (a voice of its own, held: orderAt)
+      madeSince(d0, FIDDLE_CAP);
     }
     fiddleBars(made, line);
     fiddleBeams(made);
@@ -1391,7 +1392,7 @@ window.KolobViz = (function () {
     var g0 = groups.length;
     takeLayer(layer === "voice" ? "voice" : "caller", ns, 1, null, { shape: "x",
       head: function (n, hd) { if (n.accent) hd.heavy = true; } });
-    var gs = madeSince(g0, 3), tl = 0;             // (a call on a strain's downbeat stands clear of its double bar)
+    var gs = madeSince(g0, 3, "speech"), tl = 0;             // (a call on a strain's downbeat stands clear of its double bar)
     unstemmed(gs, false);
     gs.forEach(function (gr) { tl = Math.max(tl, gr.tp); gr.heads.forEach(function (h) { spoken.push({ tp: gr.tp, q: h.q }); }); });
     while (spoken.length && spoken[0].tp < tl - 40) spoken.shift();
@@ -1434,7 +1435,7 @@ window.KolobViz = (function () {
     var st = cT <= cB ? "T" : "B", g0 = groups.length;
     takeLayer("choir", line, beat, null, { staff: st, qOf: function (n) { return n.nq; } });
     var at = {};
-    madeSince(g0, 1.5).forEach(function (gr) { at[Math.round(gr.tp * 1000)] = gr; });
+    madeSince(g0, 1.5, "tongues").forEach(function (gr) { at[Math.round(gr.tp * 1000)] = gr; });
     var first = null, last = null, run = [];
     function slur() {
       if (first && last && last.grp !== first.grp) marks.push({ kind: "slur", tp: first.grp.tp, tp2: last.grp.tp, g1: first.grp, g2: last.grp, q1: first.q, q2: last.q, st: st });
@@ -1553,7 +1554,7 @@ window.KolobViz = (function () {
   function varFigures(made, beatS) {
     made.forEach(function (gr) {
       if (!gr.heads.every(function (h) { return h.fig; })) return;
-      gr.scale = VAR_FIG_SCALE;
+      gr.scale = VAR_FIG_SCALE; gr.line = "fig";
       var run = varSet.run, ref = varSet.ref;
       if (!(gr.flags >= 1) || gr.noStem || !(beatS > 0) || !ref) { varSet.run = null; return; }
       var key = gr.st + ":" + (ref.b + Math.floor((gr.tp - ref.t) / beatS + 0.02));
@@ -3017,6 +3018,22 @@ window.KolobViz = (function () {
   // a tie, or the slur over a melisma: a crescent from head to head, on the
   // side away from the stem, drawn as far as the engraving point has reached
   function drawTieOrSlur(c, g, m) {
+    var sh = tieShape(g, m);
+    if (!sh) return;
+    var x1 = sh.x1, x2 = sh.x2, y1 = sh.y1, y2 = sh.y2, h = sh.h, th = sh.th, dx = x2 - x1;
+    c.save();
+    c.beginPath(); c.rect(0, 0, g.xE + 0.3 * g.sp, H); c.clip();
+    c.beginPath();
+    c.moveTo(x1, y1);
+    c.bezierCurveTo(x1 + dx * 0.25, y1 + h, x2 - dx * 0.25, y2 + h, x2, y2);
+    c.bezierCurveTo(x2 - dx * 0.25, y2 + h - th, x1 + dx * 0.25, y1 + h - th, x1, y1);
+    c.closePath(); c.fill();
+    c.restore();
+  }
+  // (the crescent drawTieOrSlur lays, or null where it is too short to
+  // draw: its geometry in one place, so the silent checks measure what is
+  // drawn — probe("ink"). Round 3c, round 2)
+  function tieShape(g, m) {
     var sp = g.sp, s = sp;
     function at(gr, q) {
       var x = gr.drawnAt === FRAME ? gr.lastX : X(gr.tp) + (gr.col && gr.col.sp === sp ? gr.col.dx : 0);
@@ -3028,16 +3045,44 @@ window.KolobViz = (function () {
     if (m.kind === "slur" && B.dir !== A.dir) side = -1;
     var tie = m.kind === "tie", dy = (tie ? 0.55 : 0.9) * s * side, gx = tie ? 0.6 * s : 0.1 * s;
     var x1 = A.x + gx, x2 = B.x - gx, y1 = A.y + dy, y2 = B.y + dy;
-    if (x2 - x1 < 0.6 * s) return;
-    var h = side * clamp(0.12 * (x2 - x1), 0.4 * s, 1.3 * s), th = side * Math.max(0.9 / dpr, 0.14 * s), dx = x2 - x1;
-    c.save();
-    c.beginPath(); c.rect(0, 0, g.xE + 0.3 * sp, H); c.clip();
-    c.beginPath();
-    c.moveTo(x1, y1);
-    c.bezierCurveTo(x1 + dx * 0.25, y1 + h, x2 - dx * 0.25, y2 + h, x2, y2);
-    c.bezierCurveTo(x2 - dx * 0.25, y2 + h - th, x1 + dx * 0.25, y1 + h - th, x1, y1);
-    c.closePath(); c.fill();
-    c.restore();
+    if (x2 - x1 < 0.6 * s) return null;
+    var sh = { x1: x1, y1: y1, x2: x2, y2: y2, side: side,
+               h: side * clamp(0.12 * (x2 - x1), 0.4 * s, 1.3 * s), th: side * Math.max(0.9 / dpr, 0.14 * s) };
+    if (m.kind === "slur") slurFit(g, m, sh);
+    return sh;
+  }
+  // (round 3c, round 2) A slur passes over every head between its ends. The
+  // hymn's melismas are two or three notes, but the gift of tongues' runs
+  // dip and climb under one slur, and a crescent struck from the first head
+  // to the last cut through the heads between — a second stroke across a
+  // head, which the owner ruled out. So the slur looks along its span at
+  // every head drawn there on its staff (its own and any other's) and curves
+  // deeper, as far as 2.2 spaces, to pass them all with a quarter space's
+  // air; where even that is not enough, both its ends stand further off
+  // their heads, alike. (Heads only: a slur may cross a stem, as in any score.)
+  var SLUR_DEEP = 2.2, SLUR_AIR = 0.25, SLUR_N = 24;
+  function slurFit(g, m, sh) {
+    var s = g.sp, sd = sh.side, tt = Math.abs(sh.th), dx = sh.x2 - sh.x1, E = [], pts = [], i;
+    groups.forEach(function (gr) {
+      if (gr.drawnAt !== FRAME || gr.st !== m.st || !gr.lastL) return;
+      gr.lastL.placed.forEach(function (p) {
+        if (p.h.ghost) return;
+        var e = headExt(p, gr.lastO || {}, gr.lastL.s);
+        if (p.x + e[0] < sh.x1 || p.x - e[0] > sh.x2) return;
+        E.push([p.x - e[0] - tt, p.x + e[0] + tt, sd > 0 ? p.y + e[1] : -(p.y - e[1])]);   // (its span, and its edge toward the slur, in the slur's sense)
+      });
+    });
+    if (!E.length) return;
+    for (i = 1; i < SLUR_N; i++) {                 // (the curve's inner edge, sampled: where it is, and how much a deeper curve moves it)
+      var t = i / SLUR_N, u = 1 - t;
+      pts.push({ x: sh.x1 + dx * (0.75 * t * u * u + 2.25 * t * t * u + t * t * t), L: sd * (sh.y1 * u * u * (1 + 2 * t) + sh.y2 * t * t * (3 - 2 * t)), c: 3 * t * u });
+    }
+    var need = Math.abs(sh.h), rest = 0;
+    pts.forEach(function (p) { E.forEach(function (e) { if (p.x >= e[0] && p.x <= e[1]) need = Math.max(need, (e[2] + SLUR_AIR * s - p.L) / p.c + tt); }); });
+    var hh = Math.min(need, SLUR_DEEP * s);
+    pts.forEach(function (p) { E.forEach(function (e) { if (p.x >= e[0] && p.x <= e[1]) rest = Math.max(rest, e[2] + SLUR_AIR * s - p.L - (hh - tt) * p.c); }); });
+    sh.h = sd * hh;
+    if (rest > 0) { sh.y1 += sd * rest; sh.y2 += sd * rest; }
   }
   function drawBarline(c, g, x, kind, st) {
     var sp = g.sp, top = st === "T" ? g.T : g.B, bot = top + 4 * sp;
@@ -3250,24 +3295,28 @@ window.KolobViz = (function () {
     return false;
   }
   // (round 3c, round 2) A guest's line reads left to right in the order it
-  // is sung: a note never prints left of an earlier note of its own layer on
+  // is sung: a note never prints left of an earlier note of its own line on
   // its staff (the organist's running figure, pushed along by the chords
   // under it, read backwards and lost its beams). Where an earlier note has
-  // been set past its time, this one follows it — as far after it as its
-  // own time would put it, but never more than two half-heads (so a note
-  // whose neighbour kept its place is not touched). The least offset that
-  // keeps the order; -1e9 where nothing asks. (The open string under the
-  // fiddle's tune is a voice of its own, held: it asks nothing.)
+  // been set past its time, this one follows it — two half-heads after it,
+  // or less where its own time is nearer, and always at least a third of
+  // the way closer than its time would put it, so an offset dies away along
+  // the line (a note whose neighbour kept its place is not touched). The
+  // least offset that keeps the order; -1e9 where nothing asks. Only a
+  // guest's one line asks it (madeSince's line): the fiddle's tune (its open
+  // string is a voice of its own, held), the organist's figure, the gift's
+  // song, the company's unison, the spoken words — not the organ's chords
+  // and pedal, nor the far ward's parts, whose voices cross in time.
   function orderAt(gr, g) {
     var sp = g.sp, out = -1e9;
-    if (gr.drone) return out;
+    if (!gr.line) return out;
     for (var i = 0; i < groups.length; i++) {
       var A = groups[i];
-      if (A === gr || A.layer !== gr.layer || A.st !== gr.st || A.drone || A.noCol || !(A.col && A.col.sp === sp) || !(A.lastA > 0.05)) continue;
+      if (A === gr || A.line !== gr.line || A.st !== gr.st || A.noCol || !(A.col && A.col.sp === sp) || !(A.lastA > 0.05)) continue;
       var d0 = (gr.tp - A.tp) * SCROLL_PX_S;
       if (d0 < 1e-3 || d0 > 12 * sp) continue;
-      var adv = 0.64 * ((A.scale || 1) + (gr.scale || 1)) * sp;
-      out = Math.max(out, A.col.dx - d0 + Math.min(d0, adv));
+      var adv = Math.min(0.64 * ((A.scale || 1) + (gr.scale || 1)) * sp, 0.7 * d0);
+      out = Math.max(out, A.col.dx - d0 + adv);
     }
     return out;
   }
@@ -4033,6 +4082,22 @@ window.KolobViz = (function () {
         segs.push([x, y1 + Math.min(0, ext), x2, y2 + Math.max(0, ext)]);
       }
       out.beams.push({ layer: gr.layer, st: gr.st, tps: bm.members.map(function (m) { return m.tp; }), a: gr.lastA, guest: gr.cap != null, segs: segs, rev: xb <= xa });
+    });
+    // (round 3c, round 2: each drawn slur and tie, as tieShape lays it, in
+    // slices a twenty-fourth of its span wide, each the crescent's full depth)
+    out.slurs = [];
+    marks.forEach(function (m) {
+      if ((m.kind !== "slur" && m.kind !== "tie") || m.tp > PT || dryA(m) < 0.02) return;
+      var sh = tieShape(g, m);
+      if (!sh) return;
+      var dx = sh.x2 - sh.x1, segs = [], pv = null;
+      for (var i = 0; i <= 24; i++) {
+        var t = i / 24, u = 1 - t, c3 = 3 * t * u, x = sh.x1 + dx * (0.75 * t * u * u + 2.25 * t * t * u + t * t * t);
+        var yl = sh.y1 * u * u * (1 + 2 * t) + sh.y2 * t * t * (3 - 2 * t), ya = yl + sh.h * c3, yb = yl + (sh.h - sh.th) * c3;
+        if (pv && x <= g.xE + 0.3 * g.sp) segs.push([pv[0], Math.min(pv[1], pv[2], ya, yb), x, Math.max(pv[1], pv[2], ya, yb)]);
+        pv = [x, ya, yb];
+      }
+      out.slurs.push({ kind: m.kind, st: m.st, tp: m.tp, tp2: m.tp2, segs: segs });
     });
     marks.forEach(function (m) {
       if (m.kind !== "bar" || !(m.at && m.at.sp === g.sp) || m.tp > PT) return;
