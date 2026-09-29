@@ -94,7 +94,7 @@ before the hymnal, holds everything guest-specific, one function per guest:
 - `keyedQ(freq, keyM, deg, monzo, mode)` — a note's staff place and shape in
   a key of its own, from its degree, else its interval, else its sound (the
   octave from where it sounds).
-- `takeTower` (ringed heads, scale 0.55, ink 0.5 / 0.32 muffled),
+- `takeTower` (ringed heads, scale 0.45, ink 0.5 / 0.32 muffled),
   `takeGulls` (stemless, 0.6 lead in the hymn's shapes / 0.5 chatter round,
   ink by `loud`), `takeFarWard` (closed score, strict parts, grace size 0.6,
   ink 0.42, the verse's beat, placed by `deg` in the hymn's key),
@@ -114,8 +114,8 @@ before the hymnal, holds everything guest-specific, one function per guest:
   `(beat + line.barStart) % bar == 0`; the pedal printed where no `B` note
   doubles it — the bitonal bass; the running figure at 0.75, beamed within
   the beat across calls, only while no member has been set).
-- **The glyph atlas:** `SH.x` (the spoken cross: one filled 12-point path),
-  its `ANCH` and `HEAD_EXT`.
+- **The glyph atlas:** `SH.x` (the spoken cross: one filled 12-point path,
+  struck once like every head), its `ANCH` and `HEAD_EXT`.
 
 Small hooks elsewhere (each a line or two, kept apart for the drone
 waveform's merge):
@@ -158,20 +158,30 @@ Dumps (the harness, `dump=`): seeds 22 (the bands, the Social Hall), 53
 (the variations), 5 (the gift), 3 (the bearers), 37 (the Hosanna), 9 with
 `force=socialhall` (a second dance). All harness runs PASS, 0 errors.
 
-**Bars touching ink** (`barcheck.js`, the whole of each guest):
+**Bars touching ink, and heads printed over heads** (`barcheck.js` and
+`headcheck.js`, every frame of the whole of each guest, at 860 / 390 px; a
+head over a head is two heads overlapping by more than 0.12 sp both ways):
 
-| guest (seed) | 860 px | 390 px | largest offset past a note's time |
+| guest (seed) | bars touching ink | heads over heads | largest offset past a note's time |
 |---|---|---|---|
-| the Social Hall (22) | 0 of 66 | 0 of 66 | fiddle 3 sp / 2.6 sp |
-| the Social Hall (9, forced) | 0 of 98 | 0 of 98 | fiddle 4.9 sp / 3 sp |
-| the variations (55) | 0 of 72 | 0 of 72 | organ 4.9 sp / 2 sp |
-| the far ward over our hymn (44) | 0 of 30 | 0 of 30 | far ward 5.2 sp; our hymn 2.3 sp (its own cap) |
-| the far ward over our hymn (10) | 0 of 37 | 0 of 33 | far ward 6.6 sp; our hymn 2.2 sp |
-| the gift (5), the company (41), the bearers (3) | no bars; 0 | no bars; 0 | 1.5 sp |
+| the Social Hall (22) | 0 of 66 / 0 of 66 | 0 / 0 | fiddle 3 / 2.6 sp, the caller's crosses 3 / 2.4 |
+| the Social Hall (9, forced) | 0 of 98 / 0 of 98 | 0 / 0 | fiddle 4.9 / 3 sp, crosses 3.9 / 3.4 |
+| the variations (55) | 0 of 72 / 0 of 72 | 0 / 0 | organ 4.9 / 2.5 sp |
+| the far ward over our hymn (44) | 0 of 30 / 0 of 30 | 0 / 0 new (our hymn's own 6 stacked thirds, as before: 6) | far ward 5.5 / 6.3 sp; our hymn 2.3 (2.3 without it) |
+| the far ward over our hymn (10) | 0 of 37 / 0 of 33 | 0 / 0 new (ours: 12 / 10, as before: 12 / 10) | far ward 6.6 / 6.1 sp; our hymn 3.5 (2.2 without it) |
+| the band and a second band, the ward's page (22) | 0 of 34 / 0 of 34 | 0 / 0 | (the bands are on their own layer) |
+| the far tower (53) | no bars | 0 / 0 | rings 2.7 / 2.2 sp; the house's harmonium 3.4 / 2.4 |
+| the handcart company (41) | no bars | 0 / 0 | 1.5 / 1.2 sp |
+| the gulls (50) | no bars | 0 / 0 | 2.0 / 1.8 sp |
+| the testimony-bearers (3) | no bars | 0 / 0 | crosses 2.5 / 0.5 sp |
+| the gift of tongues (5) | no bars | 0 / 0 | 1.9 / 1.0 sp |
+| the Hosanna (37) | — | — | nothing drawn at all, 18:30–19:20 |
 
-(Before this round's fixes, with full-size fiddle heads, 25 of the dance's
-66 bars stood on a downbeat head; the far ward's pale notes, pushed along by
-ours, crowded 6 of 30 of our bars.)
+0 console errors in every one of these runs. (Before this round's fixes,
+with full-size fiddle heads, 25 of the dance's 66 bars stood on a downbeat
+head; the far ward's pale notes, pushed along by ours, crowded 6 of 30 of
+our bars; and the far tower's rings, the far ward and the trio printed 14,
+21 and 7 heads over other heads.)
 
 **The frame, CPU throttled 4×, in the page** (`screens3c.js`, the dev jump,
 30 s of frames after the second capture; the machine's load average 3–4):
@@ -210,7 +220,27 @@ and into the final one (**after**, `shots/final/`), at the same audio time:
 `<dump>-<width>-t<seconds>.png`. The page frames (`real/<tag>/`) are the page
 itself, the listening seed, after the dev jump.
 
-SHOTS_PLACEHOLDER
+| guest (seed) | before (lab) | after (lab) | the page (after) |
+|---|---|---|---|
+| the far tower (53) | `shots/before/changes53-{860,390}-t{20,45}.png` | `shots/final/changes53-{860,390}-t{20,45}.png` | `real/tower53f/staff-{860,390}-t{020,045}.png` |
+| the far ward (44) | `shots/before/farward44-{860,390}-t{292,312}.png` | `shots/final/farward44-{860,390}-t{292,312}.png` | `real/far44f/staff-{860,390}-t{075,095}.png` |
+| the gulls (50) | `shots/before/gulls50-{860,390}-t545.png` | `shots/final/gulls50-{860,390}-t545.png` | `real/gulls50/staff-{860,390}-t088.png` |
+| the Social Hall (22) | `shots/before/hall22-{860,390}-t{990,1025}.png` | `shots/final/hall22-{860,390}-t{990,1025,1050}.png` | `real/dance22f/staff-{860,390}-t{020,045}.png` |
+| the handcart company (41) | `shots/before/handcart41-{860,390}-t{880,900}.png` | `shots/final/handcart41-{860,390}-t{880,900}.png` | `real/cart41/staff-{860,390}-t{030,050}.png` |
+| the testimony-bearers (3) | `shots/before/testimony3-{860,390}-t{492,510}.png`, `shots/before2/testimony3-{860,390}-t545.png` | `shots/final/testimony3-{860,390}-t{492,510,545}.png` | `real/bear3/staff-{860,390}-t{020,040}.png` |
+| the gift of tongues (5) | `shots/before2/tongues5-{860,390}-t{400,425,433}.png` | `shots/final/tongues5-{860,390}-t{400,425,433}.png` | `real/gift5/staff-{860,390}-t{040,062}.png` |
+| the variations (55) | `shots/before2/variations55-{860,390}-t{880,910,945,960}.png` | `shots/final/variations55-{860,390}-t{880,910,945,960}.png` | `real/var55/staff-{860,390}-t{045,085}.png` |
+| the Hosanna (37): nothing, before and after | `shots/before/hosanna37-{860,390}-t{1135,1155}.png` | `shots/final/hosanna37-{860,390}-t{1135,1155}.png` | `real/hos37/staff-{860,390}-t{150,175}.png` |
+| the bands (22), unchanged | `shots/before/bands22-{860,390}-t{215,250}.png` | `shots/final/bands22-{860,390}-t{215,250}.png` | `real/bands22f/staff-{860,390}-t{030,050}.png` |
+
+What to look for: the tower's stair of small pale rings (rounds at 20 s,
+the changes at 45 s); the far ward's small pale chords just after ours; the
+gull heads above the staff among the testimony's clarinet; the dance's
+beamed threes and double bars; the company's two lines in octaves; the
+bearers' crosses on the bass staff and the harmonium's small stemless heads;
+the gift's line with its slurred runs and the hum's four heads (at 433 s);
+the variations' bars through both staves and the trio's small beamed figure;
+an empty staff under the Hosanna.
 
 ## Requests
 
@@ -250,15 +280,18 @@ SHOTS_PLACEHOLDER
   about one more. Each new guest's note keeps within its own cap (the fiddle
   3 sp, the variations 2, the far ward 1.5), and only goes past it rather
   than stand on a bar: measured, the fiddle up to 3 sp at 860 px (4.9 in the
-  second dance), the trio's figure up to 4.9 sp at 860 (2 at 390), the far
+  second dance), the trio's figure up to 4.9 sp at 860 (2.5 at 390), the far
   ward up to 6.6 sp. The far ward's note may print after one of our bars
   though it sang just before it (it waits for the bar, then keeps clear).
 - **A far-ward note that falls just before one of our bars appears up to
   0.7 s behind the burin** (it waits for the bar to be placed, then prints;
   it never moves after).
 - **Under the far tower the house's clarinet and harmonium step aside from
-  the bells' rings** (up to 3.4 sp at 860, seed 53) instead of overprinting
-  them. Our hymn, by contrast, never gives way to the far ward.
+  the bells' rings** (up to 3.4 sp at 860, seed 53) rather than print over
+  them; and **our hymn steps aside for a far-ward note** set just before its
+  own (seed 10: our largest offset 3.5 sp against 2.2 without the far ward;
+  seed 44: 2.3 either way). The alternative, each ignoring the other, printed
+  heads over heads (14 in seed 44), which is the blur the owner ruled out.
 - **The bands' barlines slide over the ward's ink as they cross.** A band's
   layer scrolls at its own quicker rate (round 2's design, kept), so its
   pale bars pass over the ward's page and the other band's notes; within its

@@ -304,8 +304,8 @@ window.KolobViz = (function () {
     mi: { poly: [[0, -0.54], [0.66, 0], [0, 0.54], [-0.66, 0]] },
     sol: { ell: [0.60, 0.43, -0.26] },
     round: { ell: [0.59, 0.42, -0.36] },
-    // (round 3c) a spoken syllable's cross: one filled path, two strokes
-    // meeting in the middle — speech's head, as music has long written it
+    // (round 3c) a spoken syllable's cross: one filled mark, struck once —
+    // speech's head, as music has long written a spoken syllable
     x: { poly: [[0, -0.12], [0.36, -0.48], [0.48, -0.36], [0.12, 0], [0.48, 0.36], [0.36, 0.48],
                 [0, 0.12], [-0.36, 0.48], [-0.48, 0.36], [-0.12, 0], [-0.48, -0.36], [-0.36, -0.48]] }
   };
@@ -1064,7 +1064,7 @@ window.KolobViz = (function () {
   //    first hymn's own shapes — the head of the hymn, cried — and the
   //    flock's chatter round, not ours (takeGulls);
   //  · THE FAR WARD: the same hymn a line behind, in closed score, pale, as
-  //    the far choir prints (takeFarWard);
+  //    the far choir prints, and small, stepping aside for ours (takeFarWard);
   //  · THE SOCIAL HALL: the fiddle's reel (or jig, or quadrille) in small heads,
   //    the hymn's own notes in it a heavier head, its running eighths beamed
   //    by the beat, a bar at each bar, a double bar where a strain goes
