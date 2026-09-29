@@ -69,6 +69,8 @@
 //              gainMul) (the engine's own reed, if it would rather),
 //              only: "singer" | "hum" | "reed" (a lab's solo; never the engine) }
 //   gesture(score) → [[deg, …]] the song's opening for the composer
+//   singerOf(seat, ward) → who rises (a testimony-bearer of the seat's part),
+//     once the meeting has seated its ward
 //   tongue(stream) → the syllables and words of one song (pure)
 //   ODDS, EXCLUDES, NAME, LABEL, LEVEL
 // ============================================================================
@@ -156,13 +158,26 @@ window.KOLOB.GuestTongues = (function () {
     return {
       seat: {
         guest: NAME, seat: "testimony", section: "testimony", at: +at.toFixed(2), dur: +tl.end.toFixed(2),
-        holdUntil: +(at + tl.end + 4).toFixed(2), singer: singer, part: part, seeds: seedDie < seedP,
+        holdUntil: +(at + tl.end + 4).toFixed(2), singer: singer, part: part, pick: +whoDie.toFixed(6), seeds: seedDie < seedP,
         phrases: tl.phrases.length, odds: +p.toFixed(3), logged: true,
       },
       why: "seated", odds: p, roll: roll,
     };
   }
   function plan(info, stream) { return decide(info, stream).seat; }
+  // singerOf(seat, ward) → a member id: who rises, once the ward is seated
+  // (the meeting seats its ward after its guests). One of the day's
+  // testimony-bearers of the seat's part, by the seat's own die; else anyone
+  // of that part — so the song (its pitches, its length, the gesture that may
+  // seed a hymn) is the one the seat was planned with, whoever sings it
+  function singerOf(seat, ward) {
+    if (!seat || !ward || !ward.byId) return null;
+    if (seat.singer && ward.byId[seat.singer]) return seat.singer;
+    var u = seat.pick || 0, bearers = [].concat(ward.roles && ward.roles.testimony || []).filter(function (id) { return ward.byId[id] && ward.byId[id].part === seat.part; });
+    if (bearers.length) return bearers[Math.min(bearers.length - 1, Math.floor(u * bearers.length))];
+    var same = (ward.members || []).filter(function (m) { return m.part === seat.part && m.k != null; });
+    return same.length ? same[Math.min(same.length - 1, Math.floor(u * same.length))].id : null;
+  }
   function pickWith(u, pool) { return pickW({ rnd: function (a, b) { return a + u * (b - a); } }, pool); }   // (a die already thrown)
   function pickPart(u) { return u < 0.34 ? "S" : u < 0.56 ? "A" : u < 0.8 ? "T" : "B"; }
 
@@ -731,7 +746,7 @@ window.KOLOB.GuestTongues = (function () {
   }
 
   return {
-    plan: plan, decide: decide, score: score, perform: perform, gesture: gesture, tongue: tongue, timeline: function (stream, house) { return timeline(shapeOf(stream, house)); },
+    plan: plan, decide: decide, score: score, perform: perform, gesture: gesture, tongue: tongue, singerOf: singerOf, timeline: function (stream, house) { return timeline(shapeOf(stream, house)); },
     ODDS: ODDS, EXCLUDES: EXCLUDES, NAME: NAME, LABEL: LABEL, BLOCK: BLOCK,
     get LEVEL() { return LEVEL; }, set LEVEL(v) { LEVEL = +v; },
   };
