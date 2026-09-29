@@ -1554,8 +1554,12 @@ window.KolobViz = (function () {
   }
   // The organist's running figure (the trio's right hand, a dance's
   // accompaniment: its notes say no line) runs a staff space apart at the
-  // page's rate: it prints at cue size, the tune and its parts full, and its
-  // quick notes are beamed within the beat. The organist lays them a note at
+  // page's rate: it prints small, the tune and its parts full, and its
+  // quick notes are beamed within the beat. (Round 2: 0.6, near the fiddle's
+  // reel. At cue size a head and its air all but filled the time between two
+  // of its notes at 860 px, so a note pushed once could never catch up, and
+  // the figure and the bars after it drifted a dozen spaces from their
+  // time.) The organist lays them a note at
   // a time, seconds ahead, so a beam is joined across the calls — only while
   // none of its notes has yet been set on the page (nothing printed moves).
   // (Round 2: while the figure runs over them on the treble — the trio's
@@ -1564,7 +1568,7 @@ window.KolobViz = (function () {
   // chords' down. Else a figure's head fell on a chord's stem at the same
   // beat, and the two leapfrogged each other along the page. Only notes not
   // yet set are turned: nothing printed moves.)
-  var VAR_FIG_SCALE = 0.75, VAR_UNDER_S = 1.5;
+  var VAR_FIG_SCALE = 0.6, VAR_UNDER_S = 1.5;
   function figOnly(gr) { return gr.heads.every(function (h) { return h.fig; }); }
   function varUnder(t) {
     groups.forEach(function (A) {
@@ -3277,7 +3281,7 @@ window.KolobViz = (function () {
           }
         }
         if (!hit) continue;
-        var req = aR + (hy ? 0.08 * sp : gap) - bL;
+        var req = aR + (hy ? 0.08 * sp : Math.max(gap, air)) - bL;   // (round 2: a spoken cross's air is kept, not only asked)
         need = Math.max(need, req);
         if (!hy) continue;
         if (chord) {                                         // its own chord: a side-step, past the cap only where there is room after it
