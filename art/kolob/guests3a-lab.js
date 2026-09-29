@@ -246,6 +246,9 @@ window.Guests3a = (function () {
     labIn = actx.createGain();
     // (the town's air built now, as the engine builds it at start-up: tens of ms, never in a cue)
     if (K.VoicesBand && K.VoicesBand.warm) K.VoicesBand.warm(actx);
+    // (…and the company's throat sung once, silently, as the recipe has the
+    // engine do at start-up — so a company's first line is not a cold one)
+    if (GH.warm) GH.warm(actx);
     return fetchIR(actx).then(function (b) { irBuf = b; rebuild(); });
   }
   function rebuild(balance) {
