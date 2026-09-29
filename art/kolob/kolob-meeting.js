@@ -723,7 +723,9 @@ window.KOLOB = window.KOLOB || {};
     var FWg = KOLOB.GuestFarWard || null;
     if (FWg && C.hymnal && C.hymnal.length) {
       var fwStream = stream("guest:farward");
-      var fwSeat = FWg.plan({ n: C.meetingNum, kind: activity, sunday: sunday, sections: plan, hymnal: C.hymnal, guests: seatedFor("farward"),
+      // (its rows name the rite by its place in the plan: the hymnal's index)
+      var fwRows = C.hymnal.filter(function (r) { return r.index != null; }).map(function (r) { return { id: r.id, section: r.index, dialect: r.dialect, piece: r.piece || (r.partnerOf ? "partner" : null), kind: r.kind || null }; });
+      var fwSeat = FWg.plan({ n: C.meetingNum, kind: activity, sunday: sunday, sections: plan, hymnal: fwRows, guests: seatedFor("farward"),
                               odds: oddsOf("farward", null), force: forcedType === "farward" }, fwStream);
       if (fwSeat) admit({ type: "farward", section: fwSeat.section, index: fwSeat.sectionIndex, hymnId: fwSeat.hymnId, fired: false, stream: fwStream, seat: fwSeat, ofHymn: true });
     }

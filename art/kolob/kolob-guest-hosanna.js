@@ -259,8 +259,8 @@ window.KOLOB.GuestHosanna = (function () {
   // (seconds from the seat; pure: the shape and the tune)
   // ==========================================================================
   function lineLen(line) {
-    var S = window.KOLOB.Score;
-    if (S && S.lineLength) return S.lineLength(line);
+    var Sc = window.KOLOB.Score;
+    if (Sc && Sc.lineLength) return Sc.lineLength(line);
     var end = 0; for (var p in line.notes) (line.notes[p] || []).forEach(function (n) { end = Math.max(end, n.beat + n.beats); });
     return end;
   }

@@ -237,30 +237,33 @@ window.KOLOB.Calendar = (function () {
   // Sunday of its own colour, the Social Hall never at a funeral…), so what
   // is heard is a little under the table (the census, handoff r3c-integrate).
   // The band's row is the owner's own 36 % and the Sundays' old welcome; every
-  // other guest began at about four-tenths of its crew's own starting odds, so
-  // that some sixty meetings in a hundred carry a guest (PLAN §8: about 55 %)
-  // and every guest is heard. The owner tunes them by ear.
+  // other guest began at about a third of its crew's own starting odds —
+  // and the guests heard since rounds 2 and 3b (the old tune, the trombones,
+  // the singing school, the handbells) at a fifth less again, leaving their
+  // share to this round's — so that some sixty meetings in a hundred carry a
+  // guest (PLAN §8: about 55 %; the census, 1,000 first meetings) and every
+  // guest is heard. The owner tunes them by ear.
   //   changes  — not a guest of its own: of the Sundays the steeples ring,
   //              how often the far bells are a band ringing changes
   //   hosanna  — Easter and a dedication only (the rite of those Sundays,
   //              unlogged); nowhere else, whatever the table says
   var GUEST_COLUMNS = ORDER;
   var GUEST_ODDS = {
-    //             ordinary fast  confer pioneer xmas  easter wedding funeral dedic
-    bands:         [0.36,   0.18, 0.36,  0.76,   0.18, 0.25,  0.22,   0.05,   0.36],
-    steeples:      [0.03,   0.02, 0.03,  0.02,   0.07, 0.05,  0.05,   0.02,   0.05],
-    changes:       [0.5,    0.3,  0.55,  0.55,   0.75, 0.7,   0.85,   0.65,   0.75],
-    oldtune:       [0.06,   0.07, 0.06,  0.08,   0.07, 0.06,  0.08,   0.1,    0.06],
-    trombones:     [0.08,   0.03, 0.13,  0.08,   0.18, 0.22,  0.08,   0.18,   0.22],
-    singingschool: [0.06,   0.05, 0.03,  0.06,   0.08, 0.06,  0.04,   0,      0.03],
-    handbells:     [0.06,   0.02, 0.06,  0.06,   0.16, 0.13,  0.13,   0.03,   0.08],
-    variations:    [0.05,   0.02, 0.09,  0.09,   0.06, 0.07,  0.06,   0,      0.09],
-    tongues:       [0.03,   0.11, 0.01,  0.01,   0.01, 0.03,  0.01,   0.03,   0.1],
-    farward:       [0.04,   0.07, 0.08,  0.03,   0.05, 0.04,  0.02,   0.03,   0.06],
-    socialhall:    [0.03,   0,    0.01,  0.2,    0.07, 0.05,  0.15,   0,      0.03],
-    handcart:      [0.03,   0.02, 0.03,  0.24,   0.01, 0.03,  0.02,   0.07,   0.02],
-    gulls:         [0.03,   0.02, 0.03,  0.08,   0.01, 0.04,  0.04,   0,      0.02],
-    hosanna:       [0,      0,    0,     0,      0,    0.5,   0,      0,      0.95],
+    //              ordin   fast    confer  pioneer xmas    easter  wedding funeral dedic
+    bands:         [0.36,   0.18,   0.36,   0.76,   0.18,   0.25,   0.22,   0.05,   0.36],
+    steeples:      [0.025,  0.015,  0.025,  0.015,  0.06,   0.04,   0.04,   0.015,  0.04],
+    changes:       [0.5,    0.3,    0.55,   0.55,   0.75,   0.7,    0.85,   0.65,   0.75],
+    oldtune:       [0.04,   0.05,   0.04,   0.05,   0.05,   0.04,   0.05,   0.07,   0.04],
+    trombones:     [0.05,   0.015,  0.085,  0.05,   0.12,   0.155,  0.05,   0.12,   0.155],
+    singingschool: [0.04,   0.035,  0.015,  0.04,   0.05,   0.04,   0.025,  0,      0.015],
+    handbells:     [0.04,   0.015,  0.04,   0.04,   0.11,   0.085,  0.085,  0.015,  0.05],
+    variations:    [0.04,   0.015,  0.075,  0.075,  0.05,   0.06,   0.05,   0,      0.075],
+    tongues:       [0.025,  0.095,  0.01,   0.01,   0.01,   0.025,  0.01,   0.025,  0.085],
+    farward:       [0.035,  0.06,   0.07,   0.025,  0.04,   0.035,  0.015,  0.025,  0.05],
+    socialhall:    [0.025,  0,      0.01,   0.17,   0.06,   0.04,   0.13,   0,      0.025],
+    handcart:      [0.025,  0.015,  0.025,  0.205,  0.01,   0.025,  0.015,  0.06,   0.015],
+    gulls:         [0.025,  0.015,  0.025,  0.07,   0.01,   0.035,  0.035,  0,      0.015],
+    hosanna:       [0,      0,      0,      0,      0,      0.5,    0,      0,      0.95],
   };
   // THE BUDGET — what the meeting will seat, whoever is asked:
   //   max         guests a meeting, at most (PLAN §8: 0–2; the Hosanna counts)

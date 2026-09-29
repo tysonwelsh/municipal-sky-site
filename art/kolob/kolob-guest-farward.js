@@ -194,8 +194,8 @@ window.KOLOB.GuestFarWard = (function () {
   function ratio(m) { return Math.pow(2, m[0]) * Math.pow(3, m[1]) * Math.pow(5, m[2]) * Math.pow(7, m[3] || 0); }
   function lineLen(line, next) {
     if (next && next.startBeat != null && line.startBeat != null && next.startBeat > line.startBeat) return next.startBeat - line.startBeat;
-    var S = window.KOLOB.Score;
-    if (S && S.lineLength) return S.lineLength(line);
+    var Sc = window.KOLOB.Score;
+    if (Sc && Sc.lineLength) return Sc.lineLength(line);
     var end = 0; for (var p in line.notes) (line.notes[p] || []).forEach(function (n) { end = Math.max(end, n.beat + n.beats); });
     return end;
   }
