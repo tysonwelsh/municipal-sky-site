@@ -1067,3 +1067,35 @@ so either way).
   know which section's it is.
 - **The lab's live cost display overstates** on an idle page (above). Its
   offline **check** is unaffected.
+
+### How to hear round 2
+
+Serve the worktree and open the lab as round 1 says
+(`http://127.0.0.1:8171/art/kolob/guests3a-lab.php`). None of this plays in
+a meeting until the integration step applies the recipe.
+
+| lab settings | listen for |
+|---|---|
+| seed 2, Tabernacle, **▶ the band goes by**, heard to the end (about 80 s) | after the stinger, the drums alone go on (bass drum on every step, the snare's taps and a roll) and fade round the last houses. There is no dead stop. With headphones: the first drum and cornet come from one side, and the drums leave by the other |
+| the same, **a second band** ticked | the minutes say "the bands cross" once, when the second band is nearest while the first plays. Each band leaves on its own drums |
+| seed 3, **▶ the company passes**, its last verse | "All is well! All is well!" is already going over the rise: quieter and further off than at the middle of the song, and the wheels after it into nothing |
+| seed 1, Shaker, ▶ the band | DAYBREAK was the critic's worst for after-beat clashes (42). The horns now leave out the chord tone that would rub against the tune's passing note. This is subtle |
+
+### The honest listening note (round 2)
+
+What is new to hear, by size. Every item is an edge, not a new sound:
+
+1. **The band's exit on its drums.** Every band has it, so it is the most
+   often heard. Listen for whether the street beat reads as a band on
+   parade walking on, or as a drum solo nobody asked for; 16–21 s is a
+   starting point (`CAD_S`).
+2. **The lean.** Every band and every company has it, far off. It is a
+   modest image, not a hard pan: 5–10 dB toward one end at first hearing.
+3. **The company's last verse over the rise.** One company in twenty
+   meetings will carry it.
+4. **The after-beats' courtesy.** Probably inaudible to most listeners, and
+   that is the aim.
+
+Nothing else changed: the march, its strains and its level, the company's
+singing and the gulls. The cost work (the stagger, the warm, the priming,
+the second band's building) is inaudible by design.
