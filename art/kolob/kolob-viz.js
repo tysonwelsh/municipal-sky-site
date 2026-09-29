@@ -3324,11 +3324,6 @@ window.KolobViz = (function () {
     // asks — past that it goes on only for a bar, a head or a beam, as before)
     if (!gr.hymn && gr.cap != null && dx > lim && ord > lim) lim = ord;
     if (!gr.hymn && gr.cap != null && dx > lim && (onBar(gr, g, bx, lim) || onHead(gr, g, bx, lim) || beamHit(gr, g, bx, lim) != null)) lim = dx;
-    // (round 2: nor does our hymn's note, held at its cap, stand struck
-    // through by a guest's ink — a far-ward note sung a beat before it and
-    // carried on to where ours falls: there ours goes on past it, as a
-    // guest's does; among our own notes the cap holds, as ever)
-    if (gr.hymn && dx > lim && onHead(gr, g, bx, lim, true)) lim = dx;
     return { need: dx, lim: lim, bx: bx, ink: ink };
   }
   // (on a bar, or within a pixel or two of it: the page's pixels round each
@@ -3346,11 +3341,11 @@ window.KolobViz = (function () {
   // (a head struck through: one note's head under another's ink — its stem,
   // a ledger, a flag, a sign, its head — either way round. Every head is
   // one clean strike, the owner's rule: a stem across it is a second stroke)
-  function onHead(gr, g, bx, x, guests) {         // (guests: only a new guest's ink — round 2, our hymn's note)
+  function onHead(gr, g, bx, x) {
     var sp = g.sp, tol = 0.05 * sp;
     for (var i = 0; i < groups.length; i++) {
       var A = groups[i];
-      if (A === gr || !A.col || A.col.sp !== sp || A.st !== gr.st || !(A.lastA > 0.05) || (guests && A.cap == null)) continue;
+      if (A === gr || !A.col || A.col.sp !== sp || A.st !== gr.st || !(A.lastA > 0.05)) continue;
       var off = (A.tp - gr.tp) * SCROLL_PX_S + A.col.dx, ab = A.col.ink || A.col.boxes;   // (all its ink: a hymn's ledgers too)
       if (off < x - 5 * sp || off > x + 5 * sp) continue;
       for (var m = 0; m < ab.length; m++) {
