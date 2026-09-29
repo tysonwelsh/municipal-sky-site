@@ -420,7 +420,7 @@ window.KOLOB.GuestFarWard = (function () {
         armed = armTo(ourAt - 0.5, sc.t1 + pr.delayS);
         lay(sc, ourAt - 0.5);
         lastEnd = sc.t1; told.push({ v: v, ourAt: ourAt, t0: sc.t0, t1: sc.t1, sc: sc });
-        if (hooks.onStage) hooks.onStage({ stage: "verse", v: v, t: sc.t0, guest: NAME });
+        if (hooks.onStage) hooks.onStage({ stage: "verse", v: v, t: sc.t0 + pr.delayS, t0: sc.t0 + pr.delayS, label: "verse " + (v + 1), guest: NAME });
         return { t0: sc.t0 + pr.delayS, t1: sc.t1 + pr.delayS };
       },
       amen: function (ourAt, ourBeatS) {

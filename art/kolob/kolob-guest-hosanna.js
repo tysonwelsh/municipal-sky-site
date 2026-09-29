@@ -379,7 +379,7 @@ window.KOLOB.GuestHosanna = (function () {
     // the moment the Hosanna is cued costs only its score)
     function later(at, fn) { if (hooks.defer) hooks.defer(Math.max(t, at - AHEAD), fn); else fn(); }
     function laterBy(at, lead, fn) { if (hooks.defer) hooks.defer(Math.max(t, at - lead), fn); else fn(); }
-    sc.stages.forEach(function (st) { if (hooks.onStage) later(st.t, function () { hooks.onStage({ stage: st.stage, t: st.t, guest: NAME, logged: LOGGED }); }); });
+    sc.stages.forEach(function (st) { if (hooks.onStage) later(st.t, function () { hooks.onStage({ stage: st.stage, t: st.t, t0: st.t, label: st.stage, guest: NAME, logged: LOGGED }); }); });
     // ARMING (VoicesVocal's): with the engine's clock, every line is built a
     // little ahead but joins the room only just before it sounds, and each of
     // its mouths only around its own moments — forty voices' consonants and

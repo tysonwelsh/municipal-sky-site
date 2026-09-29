@@ -446,6 +446,10 @@ C.hosanna = SUN && SUN.hosanna ? { possible: true, built: !!HOg, seat: hoSeat, s
     name (a CAST request below);
   - `the ward hums` and `the harmonium` → quiet guest rows;
   - `sings` and `the height` → no row.
+- **The glue's label.** `standingGuest`'s `say()` names every guest that
+  is not the handbells "♪ the singing school". Give the gift its own
+  ("⁂ the gift of tongues"). Each stage carries `t0` (when it sounds)
+  and `label`, as the handbells' do.
 - **Timing.** `standingGuest`'s `defer` is exactly what the gift wants.
   Its arm-tick rides the same lane (`cueAt("guests", …)`), gated by
   `C_live(V)`.

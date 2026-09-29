@@ -699,7 +699,7 @@ window.KOLOB.GuestTongues = (function () {
     var bus = ctx.createGain(); bus.gain.value = LEVEL; bus.connect(dest);
     // (with a clock, every slice is a cue of its own — even one due now)
     function later(at, fn) { if (hooks.defer) hooks.defer(Math.max(t, at - AHEAD), fn); else fn(); }
-    function stage(st) { if (hooks.onStage) later(st.t, function () { hooks.onStage({ stage: st.stage, t: st.t, guest: NAME }); }); }
+    function stage(st) { if (hooks.onStage) later(st.t, function () { hooks.onStage({ stage: st.stage, t: st.t, t0: st.t, label: st.stage, guest: NAME }); }); }   // (t0: the meeting's glue cues its row then)
     sc.stages.forEach(function (st, i) { if (i < 4 || material.harmonium !== false) stage(st); });
     var armed = armTicker(V, ctx, hooks, t, sc.end);
     // the singer
