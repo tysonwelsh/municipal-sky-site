@@ -861,6 +861,7 @@ window.KolobViz = (function () {
         var meanQ = {};
         keys.forEach(function (dk) { var sq = 0; byDur[dk].forEach(function (p) { sq += p.q; }); meanQ[dk] = sq / byDur[dk].length; });
         keys.sort(function (a, b) { return meanQ[a] - meanQ[b] || a - b; });
+        var atOnce = [];
         keys.forEach(function (dk, gi) {
           var ps = byDur[dk], dur = ps[0].n.duration;
           var v = valueOf(dur / beat, layer, opt.fineBeat);
@@ -896,7 +897,18 @@ window.KolobViz = (function () {
             else grp.dir = pd;
           }
           groups.push(grp);
+          if (!grp.noStem) atOnce.push(grp);
         });
+        // (r3c-engrave2: two voices at once on a staff whose parts would stem
+        // them alike — the organist's canon, both voices the tune, one of them
+        // an octave down on the bass staff — are set as two voices share a
+        // staff: the lower's stem down, the upper's up. Stemmed alike, the
+        // lower's stem ran up through the upper's head, the page set it aside,
+        // and the canon drifted from its time)
+        if (atOnce.length > 1 && atOnce.every(function (gp) { return gp.dir === atOnce[0].dir; })) {
+          atOnce[0].dir = -1; atOnce[0].alt = 0;
+          atOnce[atOnce.length - 1].dir = 1; atOnce[atOnce.length - 1].alt = 0;
+        }
       });
     });
   }
@@ -1193,7 +1205,7 @@ window.KolobViz = (function () {
           if (lead) return keyedQ(m.freq, h && h.keyMonzo, m.deg, null, h && h.mode);
           return { q: noteQ(m.freq).q, shape: "round" };
         } });
-      unstemmed(madeSince(g0, 1), false);
+      unstemmed(madeSince(g0, 1, "gulls"), false);   // (r3c-engrave2: the flock's cries print in the order they are cried, a hair apart where they come together)
     });
   }
 
@@ -1827,6 +1839,7 @@ window.KolobViz = (function () {
 
   // One composed line, taken in whole: its notes (and the organ under
   // them), and its verse-line when it came. → true when it is engraved
+  var givenOut = [];                               // (the lines the organ has given out, engraved: r3c-engrave2)
   function takeHymnLine(entries, ev) {
     var first = ev || (entries[0] && entries[0].n);
     if (!first || !first.hymnId) return false;
@@ -1860,6 +1873,19 @@ window.KolobViz = (function () {
     var parts = Object.keys(sounding), multi = np > 1, plan = staffPlan(dialect), ks = keySteps(keyM);
     var layer = giving ? "organ" : "choir";
     var span = spanBeats(line, next), tEnd = T(span) + ((line.fermataBeats || []).length ? 0.3 * bs : 0);
+    // (r3c-engrave2: the organist gives the line out a chord at a time, and
+    // each chord came here alone and engraved the whole line again from the
+    // Score, its clock fitted from that one chord — two or three copies of
+    // every chord, a hair or a beat apart, one over another: the doubled,
+    // smeared notes at the head of every accompanied hymn. A line given out
+    // is engraved once, from its first chord; the rest of its chords find it
+    // already on the page)
+    if (giving) {
+      var gk = lineKey(first);
+      if (givenOut.some(function (e) { return e.k === gk && t0 < e.t1 && T(span) > e.t0; })) return true;
+      givenOut.push({ k: gk, t0: t0, t1: tEnd });
+      if (givenOut.length > 40) givenOut.shift();
+    }
     // a unison sits on the one staff it needs the fewest ledger lines on
     var single = null;
     if (!multi) {
@@ -2614,10 +2640,15 @@ window.KolobViz = (function () {
     // them to clear that head — the trio's tune two ledgers under the bass
     // staff — it turns up, and its flags hang beside the head instead)
     if (stem && !o.beamY && !o.tune && o.flags > 0 && dir < 0 && reach(-1) < flagClear(o.flags, s) && reach(1) > reach(-1)) dir = 1;
+    // (r3c-engrave2: and the same the other way: a stem up held short under
+    // the plate's top edge hangs its flag down beside its head — the organ's
+    // high eighths at 390 px — so it turns down where that stem is longer;
+    // a voice of a closed score keeps its stem, and its flag is shortened)
+    else if (stem && !o.beamY && !o.tune && !o.keep && o.flags > 0 && dir > 0 && reach(1) < flagClear(o.flags, s) && reach(-1) > reach(1)) dir = -1;
     // (and where neither way is long enough — a high note under the plate's
     // top edge, its stem down stopped at the gap — its flags are drawn a
     // little shorter, to clear the head by the same hair: fk)
-    var fk = stem && !o.beamY && o.flags > 0 && dir < 0 ? clamp((reach(-1) - flagClear(o.flags, s) + 2.8 * s) / (2.8 * s), 0.5, 1) : 1;
+    var fk = stem && !o.beamY && o.flags > 0 ? clamp((reach(dir < 0 ? -1 : 1) - flagClear(o.flags, s) + 2.8 * s) / (2.8 * s), 0.5, 1) : 1;
     var sx = X + dir * (0.57 * s - sw / 2);
     // (a heavy head — the tune's — is drawn HEAVY times the size: its stem
     // meets its own edge, hs2)
@@ -3388,6 +3419,7 @@ window.KolobViz = (function () {
       }
       // (round 3c: a guest's note keeps its heads out from under a guest's laid beam)
       if (gr.cap != null) { var be = beamHit(gr, g, bx, dx); if (be != null) need = Math.max(need, be + gap - bL); }
+      var su = slurHit(gr, g, bx, dx); if (su != null) need = Math.max(need, su + SLUR_AIR * sp - bL);   // (r3c-engrave2: and out from under a slur)
       if (need <= dx) break;
       dx = need;
     }
@@ -3398,7 +3430,7 @@ window.KolobViz = (function () {
     // (round 2: the order of its line lifts its cap only as far as the order
     // asks — past that it goes on only for a bar, a head or a beam, as before)
     if (!gr.hymn && dx > lim && ord > lim) lim = ord;
-    if (!gr.hymn && gr.cap != null && dx > lim && (onBar(gr, g, bx, lim) || onHead(gr, g, bx, lim) || beamHit(gr, g, bx, lim) != null)) lim = dx;
+    if (!gr.hymn && gr.cap != null && dx > lim && (onBar(gr, g, bx, lim) || onHead(gr, g, bx, lim) || beamHit(gr, g, bx, lim) != null || slurHit(gr, g, bx, lim) != null)) lim = dx;
     return { need: dx, lim: lim, bx: bx, ink: ink };
   }
   // (r3c-engrave2) A note after a bar in time prints after it on the page.
@@ -3577,6 +3609,32 @@ window.KolobViz = (function () {
         if (h1 <= h0) continue;
         var lo = Math.min(yAt(h0), yAt(h1)) + Math.min(0, ext) - pad, hi = Math.max(yAt(h0), yAt(h1)) + Math.max(0, ext) + pad;
         if (bx[n][3] > lo && bx[n][1] < hi) { end = Math.max(end == null ? -1e9 : end, xb - x0g); break; }
+      }
+    }
+    return end;
+  }
+  // (r3c-engrave2) A slur is settled when its last note is set, and a note
+  // that comes after it — the next of the singer's notes, close behind the
+  // run's last — keeps its heads out from under it, as from under a beam:
+  // where one of its heads at x would lie under a settled slur or tie on
+  // its staff, the curve's right end (from its own time's place) — it goes
+  // on past; else null.
+  function slurHit(gr, g, bx, x) {
+    var sp = g.sp, tol = 0.05 * sp, end = null;
+    for (var k = 0; k < marks.length; k++) {
+      var m = marks[k], z = m.set;
+      if ((m.kind !== "slur" && m.kind !== "tie") || !z || !z.ok || z.sp !== sp || m.st !== gr.st || m.g1 === gr || m.g2 === gr || Math.abs(m.tp - gr.tp) > 6) continue;
+      var o = (m.tp - gr.tp) * SCROLL_PX_S, x1 = o + z.x1, x2 = o + z.x2, dx = x2 - x1, pv = null, sl = [];
+      for (var i = 0; i <= 12; i++) {             // (the crescent in twelfths, as probe("ink") slices it)
+        var t = i / 12, u = 1 - t, c3 = 3 * t * u, xx = x1 + dx * (0.75 * t * u * u + 2.25 * t * t * u + t * t * t);
+        var yl = z.y1 * u * u * (1 + 2 * t) + z.y2 * t * t * (3 - 2 * t), ya = yl + z.h * c3, yb = yl + (z.h - z.th) * c3;
+        if (pv) sl.push([pv[0], Math.min(pv[1], pv[2], ya, yb), xx, Math.max(pv[1], pv[2], ya, yb)]);
+        pv = [xx, ya, yb];
+      }
+      for (var n = 0; n < bx.length; n++) {
+        var b = bx[n];
+        if (!b[5]) continue;
+        for (var q = 0; q < sl.length; q++) if (b[0] + x < sl[q][2] - tol && sl[q][0] < b[2] + x - tol && b[1] < sl[q][3] - tol && sl[q][1] < b[3] - tol) { end = Math.max(end == null ? -1e9 : end, x2); break; }
       }
     }
     return end;
