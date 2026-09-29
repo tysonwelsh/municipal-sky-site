@@ -100,8 +100,10 @@ window.KOLOB.GuestTongues = (function () {
   // the song's bus. Calibrated in guests3c-lab against the organ reference
   // (loudest 3 s): the singer alone about 2–3 LU under it — one voice in the
   // room, heard — and the ward's hum softer still
+  // (a person of the hum at 0.046 is the engine's own ward's level, a
+  // singer's WARD_GAIN × WARD_LEVEL ≈ 0.057, a shade under for a closed mouth)
   var LEVEL = 1.0;
-  var SING_GAIN = 0.62, HUM_GAIN = 0.2, REED_GAIN = 0.34;
+  var SING_GAIN = 0.44, HUM_GAIN = 0.046, REED_GAIN = 0.07;
 
   function need(stream) {
     if (!stream || typeof stream.fork !== "function") throw new Error("KOLOB.GuestTongues: a PJ2.Rand stream is required (label " + LABEL + "<n>)");
@@ -342,7 +344,9 @@ window.KOLOB.GuestTongues = (function () {
     }
     // how often each word comes (the first words are the song's own; a few
     // come back again and again, as words do)
-    var weights = words.map(function (x, i) { return [i, 1 / (i + 1.6)]; });
+    // (the first word is the song's name: it opens the song and the phrases
+    // that call it back, and is not drawn among the others)
+    var weights = words.map(function (x, i) { return [i, i === 0 ? 0 : 1 / (i + 1)]; });
     return { consonants: cons, vowels: vows, words: words, weights: weights };
   }
 
@@ -400,9 +404,13 @@ window.KOLOB.GuestTongues = (function () {
       else if (fig === "shake") x = a + (j % 2 ? 0 : 1);
       else if (fig === "leap") x = j === 0 ? a + 3 : x - 1;
       else x = a + [1, 2, 1, 0, -1, 0][j % 6];
-      out.push(clamp(x, lo, hi));
+      out.push(x);
     }
-    return out;
+    // (a figure that would leave the voice turns the other way about its
+    // note — a shake at the top of the compass shakes below it)
+    var over = out.some(function (y) { return y > hi; }), under = out.some(function (y) { return y < lo; });
+    if (over !== under) out = out.map(function (y) { return fig === "run" ? y : 2 * a - y; });
+    return out.map(function (y) { return clamp(y, lo, hi); });
   }
 
   // ==========================================================================
@@ -530,13 +538,14 @@ window.KOLOB.GuestTongues = (function () {
     }
     var lines = [], notes = [];
     tl.phrases.forEach(function (p, k) {
-      var a = anchors[k], line = [], word = null, wi = 0, fresh = true;
+      var a = anchors[k], line = [], word = null, wi = 0, fresh = true, said = {};
       p.syl.forEach(function (s, j) {
         var pickDie = Rw.next();
         if (!word || wi >= word.syl.length) {
           var wix = fresh && (k === 0 || p.echo) ? 0 : pickWith(pickDie, tg.weights);
-          if (word && tg.words[wix] === word) wix = (wix + 1) % tg.words.length;   // (never the same word twice running)
-          word = tg.words[wix];
+          // (a word once in a phrase, while the tongue has others to give)
+          for (var tr = 0; tr < tg.words.length && (said[wix] || (word && tg.words[wix] === word)); tr++) wix = 1 + (wix % (tg.words.length - 1));
+          word = tg.words[wix]; said[wix] = 1;
           wi = 0; fresh = false;
         }
         var nm = word.syl[wi], first = wi === 0; wi++;

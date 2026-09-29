@@ -1,0 +1,508 @@
+// ============================================================================
+// GUESTS LAB, ROUND 3C — audition bench for the gift of tongues, the far
+// ward and the Hosanna (dev, unlinked).
+//
+// The seed seats the Sunday's ward (KOLOB.Cast, cast:1) and composes the
+// hymn (KOLOB.Composer, hymn:1:1) in the dialect on the controls. THE GIFT
+// is sung by one of that ward's testimony-bearers and hummed by the rest.
+// THE FAR WARD sings that hymn a line late, across the colony, against the
+// ward singing it here — the Cast's own performer, cue sheet and organ, as
+// the meeting has them — so the canon can be heard as the meeting will
+// make it. THE HOSANNA shouts and then sings ASSEMBLY with the full organ,
+// and the lab shows what it told (nothing: every stage logged:false).
+//
+// Everything plays through the app's own master chain (glue → master 0.6 →
+// tanh → compressor, as kolob-core.js builds it) plus a brick-wall guard at
+// −1 dBFS, in the app's rooms (guests-lab's chain, line for line). CHECK
+// renders offline and measures loudness against the v0.30 organ reference,
+// peak, clipping and clicks; the far ward's lag, tuning and distance; the
+// Hosanna's shout and hymn apart.
+//
+// Dev console: Guests3c.play(id, o), .check(id, o), .odds(N), .purity(),
+// .hymn(), .ward(), .score(id), .stop(). Public surface: window.Guests3c
+// ============================================================================
+window.Guests3c = (function () {
+  "use strict";
+
+  var SR = 48000;
+  var K = window.KOLOB, TG = K.GuestTongues, FW = K.GuestFarWard, HO = K.GuestHosanna, Cast = K.Cast, V = K.VoicesVocal;
+  function $(id) { return document.getElementById(id); }
+  function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+  function val(id, d) { var e = $(id); return e && e.value ? e.value : d; }
+  function num(id, d) { var e = $(id); var v = e ? parseFloat(e.value) : NaN; return isFinite(v) ? v : d; }
+  function R(seed) { return window.PJ2.Rand.stream(seed >>> 0); }
+  function settings(o) {
+    o = o || {};
+    return {
+      seed: o.seed != null ? o.seed : Math.round(num("kg3-seed", 7)),
+      sunday: o.sunday || val("kg3-sunday", "fast"),
+      dialect: o.dialect || val("kg3-dialect", "tabernacle"),
+      mode: o.mode != null ? o.mode : val("kg3-mode", ""),
+      keynote: Math.max(200, Math.min(320, o.keynote != null ? o.keynote : num("kg3-key", 260))),
+    };
+  }
+  var KIND = { ordinary: "ordinary", wedding: "ordinary", funeral: "ordinary", fast: "fast", conference: "conference", dedication: "conference", pioneer: "jubilee", christmas: "jubilee", easter: "jubilee" };
+
+  // ==========================================================================
+  // THE WARD AND THE HYMN — seated and composed here, from the controls
+  // ==========================================================================
+  var cache = {};
+  function wardOf(st) {
+    var k = "w:" + st.seed;
+    return cache[k] || (cache[k] = Cast.seat(R(st.seed).fork("cast:1"), {}));
+  }
+  function hymnOf(st) {
+    var k = "h:" + st.seed + ":" + st.dialect + ":" + st.mode;
+    if (cache[k]) return cache[k];
+    var opts = { dialect: st.dialect, id: "h:1:1" };
+    if (st.mode) opts.mode = st.mode;
+    return (cache[k] = K.Composer.compose(R(st.seed).fork("hymn:1:1"), opts));
+  }
+  function stream(id, seed) { return R(seed).fork({ tongues: TG, farward: FW, hosanna: HO }[id].LABEL + 1); }
+
+  // ==========================================================================
+  // THE CHAIN — guests-lab's (kolob-core.js init()'s): rooms → voicesBus →
+  // glue → master 0.6 → tanh(1.15) → compressor(−18/3:1) → a brick-wall guard
+  // THE ROOMS: the tabernacle (St Margaret's, wet 0.40), the meetinghouse
+  // (short, wet 0.28), dry — or, the default, AS SEATED: both rooms, the way
+  // kolob-core.js seats every layer, at the section's balance plus the
+  // layer's depth. The gift and the Hosanna where the choir sits (the
+  // testimony's balance, the doxology's); the ward in the hymn; the far ward
+  // through the tabernacle's wide send (a guest outside the windows: all wide)
+  // ==========================================================================
+  var ROOM_BALANCE = { testimony: 0.5, hymn: 0.5, doxology: 0.62 };
+  var CHOIR_DEPTH = 0.05, ORGAN_DEPTH = 0.10;
+  function fetchIR(ctx) {
+    var url = "../prosperos-jukebox-v2/ir/rooms/library-wide-st-margarets.wav";
+    return fetch(url).then(function (r) { if (!r.ok) throw new Error("ir " + r.status); return r.arrayBuffer(); })
+      .then(function (ab) { return new Promise(function (res, rej) { ctx.decodeAudioData(ab, res, rej); }); })
+      .catch(function () { return null; });
+  }
+  var TAPS = [[0.008, 0.9], [0.013, 0.7], [0.019, 0.62], [0.026, 0.5], [0.033, 0.42], [0.041, 0.34], [0.052, 0.27], [0.064, 0.2]];
+  function pour(ctx, decayS, bright) {
+    var len = Math.floor(ctx.sampleRate * decayS), buf = ctx.createBuffer(2, len, ctx.sampleRate), s = 12345;
+    function r() { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff * 2 - 1; }
+    for (var ch = 0; ch < 2; ch++) {
+      var d = buf.getChannelData(ch), lp = 0, a = Math.min(0.95, 0.35 * bright);
+      for (var i = 0; i < len; i++) {
+        var tt = i / ctx.sampleRate, env = Math.pow(1 - i / len, 2.2) * Math.min(1, tt / 0.06);
+        lp += a * (r() - lp); d[i] = lp * env * 0.5;
+      }
+      TAPS.forEach(function (tp, k) { var ix = Math.floor((tp[0] + (ch ? 0.0013 * (k % 3) : 0)) * ctx.sampleRate); if (ix < len) d[ix] += tp[1] * 0.5 * (k % 2 ? -1 : 1); });
+    }
+    return buf;
+  }
+  function buildChain(ctx, room, irBuf, dest, balance) {
+    var t = 0, session = ctx.createGain(), voicesBus = ctx.createGain();
+    function roomUnit(src, which) {
+      var dry = ctx.createGain(); dry.gain.value = 1;
+      src.connect(dry); dry.connect(voicesBus);
+      if (which === "dry") return;
+      var spec = which === "close" ? { pre: 0.012, wet: 0.28 } : { pre: 0.063, wet: 0.40 };
+      var pre = ctx.createDelay(0.25); pre.delayTime.value = spec.pre;
+      var conv = ctx.createConvolver();
+      conv.buffer = which === "close" ? pour(ctx, 1.4, 1.2) : (irBuf || pour(ctx, 5.5, 0.8));
+      var wet = ctx.createGain(); wet.gain.value = spec.wet;
+      src.connect(pre); pre.connect(conv); conv.connect(wet); wet.connect(voicesBus);
+    }
+    if (room === "seated") {
+      var th = Math.max(0, Math.min(1, balance != null ? balance : 0.5)) * Math.PI / 2;
+      var gc = ctx.createGain(), gw = ctx.createGain();
+      gc.gain.value = Math.cos(th); gw.gain.value = Math.sin(th);
+      session.connect(gc); session.connect(gw);
+      roomUnit(gc, "close"); roomUnit(gw, "wide");
+    } else roomUnit(session, room);
+    var glue = ctx.createDynamicsCompressor();
+    glue.threshold.setValueAtTime(-20, t); glue.knee.setValueAtTime(22, t); glue.ratio.setValueAtTime(1.7, t);
+    glue.attack.setValueAtTime(0.025, t); glue.release.setValueAtTime(0.22, t);
+    var master = ctx.createGain(); master.gain.value = 0.6;
+    var sat = ctx.createWaveShaper(), c = new Float32Array(1024);
+    for (var i = 0; i < 1024; i++) { var x = (i / 1023) * 2 - 1; c[i] = Math.tanh(x * 1.15) / Math.tanh(1.15); }
+    sat.curve = c; sat.oversample = "2x";
+    var comp = ctx.createDynamicsCompressor();
+    comp.threshold.setValueAtTime(-18, t); comp.knee.setValueAtTime(16, t); comp.ratio.setValueAtTime(3, t);
+    comp.attack.setValueAtTime(0.015, t); comp.release.setValueAtTime(0.25, t);
+    var guard = ctx.createDynamicsCompressor();
+    guard.threshold.setValueAtTime(-1, t); guard.knee.setValueAtTime(0, t); guard.ratio.setValueAtTime(20, t);
+    guard.attack.setValueAtTime(0.002, t); guard.release.setValueAtTime(0.1, t);
+    var fade = ctx.createGain(); fade.gain.value = 1;
+    voicesBus.connect(glue); glue.connect(master); master.connect(sat); sat.connect(comp); comp.connect(guard);
+    guard.connect(fade); fade.connect(dest);
+    // the tabernacle's wide send for a guest outside the windows (the far ward)
+    var wideIn = ctx.createGain(); roomUnit(wideIn, room === "dry" ? "dry" : "wide");
+    return { input: session, wide: wideIn, out: fade, room: room, balance: balance };
+  }
+  function balanceFor(id) {
+    var cl = function (x) { return Math.max(0, Math.min(1, x)); };
+    if (id === "tongues") return cl(ROOM_BALANCE.testimony + CHOIR_DEPTH);
+    if (id === "hosanna" || id === "shout") return cl(ROOM_BALANCE.doxology + CHOIR_DEPTH);
+    if (id === "reference") return cl(ROOM_BALANCE.testimony + ORGAN_DEPTH);
+    return cl(ROOM_BALANCE.hymn + CHOIR_DEPTH);
+  }
+
+  // ==========================================================================
+  // THE PHRASES — each: (ctx, into, t, o) → { dur, score?, stats?, expect }
+  //   into: { input (the section's rooms), wide (the tabernacle's send) }
+  //   expect: the times (s, from t) at which a transient is asked for
+  // ==========================================================================
+  var P = {};
+  function budgetStats(t, end) {
+    var b = V.budget ? V.budget.report(t, end) : null;
+    return b ? { peakLive: b.peak, meanLive: Math.round(b.mean) } : null;
+  }
+  function sungExpect(lines, t) {
+    var ex = [];
+    lines.forEach(function (x) { if (!x.slur) ex.push([x.t - t - 0.16, x.t - t + 0.08]); });
+    return ex;
+  }
+  // THE GIFT: one of the ward's testimony-bearers sings; the ward hums; the reed
+  P.tongues = function (ctx, into, t, o) {
+    var st = settings(o), ward = wardOf(st), s = stream("tongues", st.seed);
+    var info = { n: 1, kind: KIND[st.sunday], sunday: st.sunday, house: st.dialect, sections: [{ type: "testimony" }], guests: [], ward: ward, force: true };
+    var seat = TG.plan(info, s), h = hymnOf(st);
+    var mat = { mode: h.mode, keynoteHz: st.keynote, house: st.dialect, ward: ward, singer: seat ? seat.singer : null, harmonium: o.noReed ? false : undefined };
+    if (V.budget) V.budget.reset();
+    var end = TG.perform(ctx, into.input, t, mat, s, { defer: o.defer || null, onNote: o.onNote || null, onStage: o.onStage || null });
+    var sc = TG.perform.last.score;
+    var hum0 = sc.stages[3].t - t, reed0 = sc.reed.notes.length ? sc.reed.notes[0].t - t : null;
+    var windows = [{ name: "the song", a: 0.3, b: hum0 }, { name: "the ward's hum", a: hum0, b: reed0 != null && !o.noReed ? reed0 + 3 : end - t }];
+    if (reed0 != null && !o.noReed) windows.push({ name: "the harmonium (with the hum's tail)", a: reed0, b: end - t });
+    return { dur: end - t + 1.5, score: sc, seat: seat, expect: sungExpect(sc.notes, t), stats: budgetStats(t, end), windows: windows };
+  };
+  // ---- the level reference: the v0.30 organChord, line for line (the
+  // instruments, trombone and guests labs' P.reference) ------------------------
+  var MAJ = [1, 9 / 8, 5 / 4, 4 / 3, 3 / 2, 5 / 3, 15 / 8];
+  function deg(key, d) { var i = d - 1, oct = Math.floor(i / 7), k = ((i % 7) + 7) % 7; return key * MAJ[k] * Math.pow(2, oct); }
+  var REF_GAINMUL = 0.75 * (0.6 + 0.4 * 0.21), REF_DUR = 6, REF_STEP = 6.4;
+  function env(g, t, pts) { g.gain.setValueAtTime(0, t); var tt = t; for (var i = 0; i < pts.length; i++) { tt += pts[i][0]; g.gain.linearRampToValueAtTime(pts[i][1], tt); } return tt; }
+  P.reference = function (ctx, into, t) {
+    var chords = [[-6, -2, 3, 8], [-3, 1, 6, 8], [-2, 0, 5, 9], [-6, -2, 3, 8]];
+    chords.forEach(function (c, i) {
+      var freqs = c.map(function (d) { return deg(260, d); });
+      var tt = t + i * REF_STEP, dur = REF_DUR, stops = 0.5, trem = 0.15, pedal = 0.6;
+      var master = ctx.createGain(); master.connect(into.input);
+      var RANKS = [1, 2, 3, 4], PP = [1, 0.48, 0.22, 0.1], FL = [1, 0.65, 0.09, 0.32];
+      for (var v = 0; v < freqs.length; v++) {
+        var f0 = freqs[v] * 0.5;
+        for (var r = 0; r < RANKS.length; r++) {
+          var g = PP[r] * (1 - stops) + FL[r] * stops;
+          if (g < 0.05) continue;
+          var pair = r === 0 ? 2 : 1;
+          for (var d = 0; d < pair; d++) {
+            var osc = ctx.createOscillator(); osc.type = "sine";
+            osc.frequency.setValueAtTime(f0 * RANKS[r] * (pair === 2 ? (d ? 1.0015 : 0.9985) : 1), tt);
+            var og = ctx.createGain(); og.gain.setValueAtTime(g * 0.16 / Math.sqrt(freqs.length) / pair, tt);
+            osc.connect(og); og.connect(master); osc.start(tt); osc.stop(tt + dur + 0.3);
+          }
+        }
+      }
+      var sub = ctx.createOscillator(); sub.type = "sine"; sub.frequency.setValueAtTime(freqs[0] * 0.25, tt);
+      var sg = ctx.createGain(); sg.gain.setValueAtTime(pedal * 0.15, tt);
+      sub.connect(sg); sg.connect(master); sub.start(tt); sub.stop(tt + dur + 0.3);
+      var lfo = ctx.createOscillator(); lfo.frequency.setValueAtTime(5.5, tt);
+      var lg = ctx.createGain(); lg.gain.setValueAtTime(trem * 0.1, tt);
+      lfo.connect(lg); lg.connect(master.gain); lfo.start(tt); lfo.stop(tt + dur + 0.3);
+      var peak = REF_GAINMUL * 0.7, atk = Math.min(2.2, dur * 0.3);
+      env(master, tt, [[atk, peak], [Math.max(0.1, dur - atk - dur * 0.28), peak * 0.92], [dur * 0.28, 0]]);
+    });
+    return { dur: (chords.length - 1) * REF_STEP + REF_DUR + 0.5, expect: [] };
+  };
+
+  // ==========================================================================
+  // LIVE PLAYBACK — one context; phrases play into the current room chain;
+  // the meter sits after it. The guests lay themselves out a slice at a time
+  // (hooks.defer), as the engine's clock will have them: each slice on a
+  // timer of its own, a little before it sounds, its main-thread cost kept
+  // ==========================================================================
+  var actx = null, chain = null, irBuf = null, room = "seated", current = null, analyser = null, told = [];
+  function ensure() {
+    if (actx) return Promise.resolve();
+    actx = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = actx.createAnalyser(); analyser.fftSize = 2048; analyser.connect(actx.destination);
+    return fetchIR(actx).then(function (b) { irBuf = b; });
+  }
+  function stop() {
+    if (!current) return;
+    var c = current;
+    c.timers.forEach(function (x) { clearTimeout(x); });
+    c.chain.out.gain.setTargetAtTime(0, actx.currentTime, 0.03);
+    setTimeout(function () { try { c.chain.out.disconnect(); } catch (e) { /* gone */ } }, 400);
+    if (V.forget) V.forget(actx);
+    current = null;
+    $("kg3-now").textContent = "";
+  }
+  function play(id, o) {
+    o = o || {};
+    return ensure().then(function () {
+      if (actx.state === "suspended") actx.resume();
+      stop();
+      var ch = buildChain(actx, room, irBuf, analyser, balanceFor(id));
+      var me = { id: id, timers: [], chain: ch, cost: { press: 0, slices: [] } };
+      told = [];
+      var oo = Object.assign({}, o, {
+        onStage: function (s) { told.push(s); $("kg3-now").textContent = s.stage + (s.logged === false ? "  (logged: false)" : ""); },
+        defer: function (at, fn) {
+          me.timers.push(setTimeout(function () {
+            if (current !== me) return;
+            var c0 = performance.now(); fn(); me.cost.slices.push(performance.now() - c0);
+          }, Math.max(0, (at - actx.currentTime) * 1000)));
+        },
+      });
+      current = me;
+      var c1 = performance.now();
+      var res = P[id](actx, { input: ch.input, wide: ch.wide }, actx.currentTime + 0.3, oo);
+      me.cost.press = performance.now() - c1;
+      me.until = actx.currentTime + res.dur;
+      me.timers.push(setTimeout(function () { if (current === me) stop(); }, (res.dur + 4) * 1000));
+      res.cost = me.cost;
+      return res;
+    });
+  }
+  function cost() {
+    if (!current) return null;
+    var c = current.cost, mx = 0;
+    c.slices.forEach(function (x) { mx = Math.max(mx, x); });
+    return { id: current.id, press: +c.press.toFixed(1), slices: c.slices.length, largest: +mx.toFixed(1) };
+  }
+  function meter() {
+    if (!analyser) return null;
+    var a = new Float32Array(analyser.fftSize); analyser.getFloatTimeDomainData(a);
+    var pk = 0; for (var i = 0; i < a.length; i++) { var x = Math.abs(a[i]); if (x > pk) pk = x; }
+    return { peak: 20 * Math.log10(pk + 1e-9) };
+  }
+
+  // ==========================================================================
+  // CHECK — offline render, and the measures
+  // ==========================================================================
+  var offlineIR = null;
+  function render(id, o) {
+    o = o || {};
+    var probe = new OfflineAudioContext(2, SR, SR);
+    var irP = offlineIR ? Promise.resolve(offlineIR) : fetchIR(probe).then(function (b) { offlineIR = b; return b; });
+    return irP.then(function (ir) {
+      var dummy = new OfflineAudioContext(2, SR, SR), dch = buildChain(dummy, "dry", null, dummy.destination, 0.5);
+      var est = P[id](dummy, { input: dch.input, wide: dch.wide }, 0.1, o);
+      if (V.forget) V.forget(dummy);
+      var rm = o.room || room, len = Math.ceil((est.dur + 1.2 + (rm === "dry" ? 0 : 3)) * SR);
+      var off = new OfflineAudioContext(2, len, SR);
+      var ch = buildChain(off, rm, ir, off.destination, balanceFor(id));
+      var res = P[id](off, { input: ch.input, wide: ch.wide }, 0.1, o);
+      return off.startRendering().then(function (buf) { return { buf: buf, res: res }; });
+    });
+  }
+  function db(x) { return 20 * Math.log10(x + 1e-12); }
+  function biquad(x, b, a) {
+    var y = new Float32Array(x.length), x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+    for (var i = 0; i < x.length; i++) { var v = b[0] * x[i] + b[1] * x1 + b[2] * x2 - a[1] * y1 - a[2] * y2; x2 = x1; x1 = x[i]; y2 = y1; y1 = v; y[i] = v; }
+    return y;
+  }
+  function kWeight(x) {
+    var s1 = biquad(x, [1.53512485958697, -2.69169618940638, 1.19839281085285], [1, -1.69065929318241, 0.73248077421585]);
+    return biquad(s1, [1, -2, 1], [1, -1.99004745483398, 0.99007225036621]);
+  }
+  function highpass(x, fc) {
+    var w = Math.tan(Math.PI * fc / SR), q = Math.SQRT1_2, nn = 1 / (1 + w / q + w * w);
+    var bb = [nn, -2 * nn, nn], aa = [1, 2 * (w * w - 1) * nn, (1 - w / q + w * w) * nn];
+    return biquad(biquad(x, bb, aa), bb, aa);
+  }
+  // BS.1770-4 over [a, b) samples: integrated (gated) and the loudest 3 s
+  function loudnessOf(k, a, b) {
+    a = a || 0; b = b || k[0].length;
+    var n = b - a, sq = new Float64Array(n + 1);
+    for (var i = 0; i < n; i++) { var e = 0; for (var c = 0; c < k.length; c++) e += k[c][a + i] * k[c][a + i]; sq[i + 1] = sq[i] + e; }
+    function L(s, len) { return -0.691 + 10 * Math.log10((sq[s + len] - sq[s]) / len + 1e-20); }
+    var B = Math.round(0.4 * SR), H = Math.round(0.1 * SR), S3 = Math.round(3 * SR), blocks = [];
+    for (var s = 0; s + B <= n; s += H) blocks.push(L(s, B));
+    var abs = blocks.filter(function (l) { return l > -70; });
+    function meanL(ls) { var m = 0; ls.forEach(function (l) { m += Math.pow(10, (l + 0.691) / 10); }); return -0.691 + 10 * Math.log10(m / Math.max(1, ls.length) + 1e-20); }
+    var gate = meanL(abs) - 10, I = meanL(abs.filter(function (l) { return l > gate; })), sMax = -Infinity;
+    for (var s3 = 0; s3 + S3 <= n; s3 += H) { var l3 = L(s3, S3); if (l3 > sMax) sMax = l3; }
+    if (!isFinite(sMax)) sMax = L(0, n);
+    return { I: abs.length ? +I.toFixed(1) : -Infinity, S: +sMax.toFixed(1) };
+  }
+  // the spectral centroid (Hz) of [a, b) s, from 8192-point frames: how
+  // bright, or how far away, a sound is heard
+  function centroid(mono, a, b) {
+    var N = 8192, num = 0, den = 0;
+    for (var s = Math.floor(a * SR); s + N <= Math.min(mono.length, b * SR); s += N) {
+      var re = new Float32Array(N), im = new Float32Array(N);
+      for (var u = 0; u < N; u++) re[u] = mono[s + u] * (0.5 - 0.5 * Math.cos(2 * Math.PI * u / N));
+      fft(re, im);
+      for (var j = 1; j < N / 2; j++) { var p = re[j] * re[j] + im[j] * im[j], f = j * SR / N; if (f < 60) continue; num += p * f; den += p; }
+    }
+    return den ? Math.round(num / den) : null;
+  }
+  function fft(re, im) {
+    var n = re.length, i, j = 0, k, len, tr, ti;
+    for (i = 1; i < n; i++) { var bit = n >> 1; for (; j & bit; bit >>= 1) j ^= bit; j ^= bit; if (i < j) { tr = re[i]; re[i] = re[j]; re[j] = tr; tr = im[i]; im[i] = im[j]; im[j] = tr; } }
+    for (len = 2; len <= n; len <<= 1) {
+      var ang = -2 * Math.PI / len, wr = Math.cos(ang), wi = Math.sin(ang);
+      for (i = 0; i < n; i += len) {
+        var cr = 1, ci = 0;
+        for (k = 0; k < len / 2; k++) {
+          var ar = re[i + k + len / 2], ai = im[i + k + len / 2];
+          tr = ar * cr - ai * ci; ti = ar * ci + ai * cr;
+          re[i + k + len / 2] = re[i + k] - tr; im[i + k + len / 2] = im[i + k] - ti; re[i + k] += tr; im[i + k] += ti;
+          var ncr = cr * wr - ci * wi; ci = cr * wi + ci * wr; cr = ncr;
+        }
+      }
+    }
+  }
+  function analyse(buf, res, id, windows) {
+    var L = buf.getChannelData(0), Rr = buf.getChannelData(1), n = L.length, pk = 0, clip = 0, mono = new Float32Array(n);
+    for (var i = 0; i < n; i++) { mono[i] = (L[i] + Rr[i]) * 0.5; var a = Math.max(Math.abs(L[i]), Math.abs(Rr[i])); if (a > pk) pk = a; if (a > 0.989) clip++; }
+    var kw = [kWeight(L), kWeight(Rr)], lu = loudnessOf(kw);
+    // CLICKS: 1 ms blocks above 4 kHz standing 12× (21.6 dB) over the loudest
+    // block of the 30 ms either side — sorted: inside a window the phrase
+    // asked for (a consonant) it is speech; any other is a click
+    var hp = highpass(mono, 4000), H = 48, hf = [];
+    for (var k = 0; k + H <= n; k += H) { var e2 = 0; for (var q = k; q < k + H; q++) e2 += hp[q] * hp[q]; hf.push(Math.sqrt(e2 / H)); }
+    function maxOf(arr) { var mx = 0; for (var z0 = 0; z0 < arr.length; z0++) if (arr[z0] > mx) mx = arr[z0]; return mx; }
+    var ex = (res.expect || []).map(function (w) { return [w[0] + 0.1 - 0.012, w[1] + 0.1 + 0.012]; });
+    var strokes = 0, clicks = [];
+    for (var z = 30; z < hf.length - 30; z++) {
+      if (hf[z] < 1e-5) continue;
+      var ref = Math.max(maxOf(hf.slice(z - 30, z - 2)), maxOf(hf.slice(z + 3, z + 30)));
+      if (hf[z] > ref * 12) { var tz = z * H / SR, asked = ex.some(function (w) { return tz >= w[0] && tz <= w[1]; }); if (asked) strokes++; else clicks.push(+(tz - 0.1).toFixed(3)); }
+    }
+    var out = { id: id, seconds: +(n / SR).toFixed(1), lufs: lu.I, lufsShortMax: lu.S, peakDb: +db(pk).toFixed(2), clipped: clip, consonants: strokes, clicks: clicks.length, clickTimes: clicks.slice(0, 12) };
+    if (res.stats) out.nodes = res.stats;
+    if (windows) out.windows = windows.map(function (w) {
+      var a0 = Math.max(0, Math.floor((w.a + 0.1) * SR)), b0 = Math.min(n, Math.floor((w.b + 0.1) * SR));
+      var lw = b0 - a0 > SR * 3.2 ? loudnessOf(kw, a0, b0) : { I: null, S: null };
+      return { name: w.name, from: +w.a.toFixed(1), to: +w.b.toFixed(1), lufs: lw.I, lufsShortMax: lw.S, centroidHz: centroid(mono, w.a + 0.1, w.b + 0.1) };
+    });
+    return out;
+  }
+  var refLufs = {};                                // the reference's loudest 3 s, by room
+  function reference(rm) {
+    rm = rm || room;
+    if (refLufs[rm] != null) return Promise.resolve(refLufs[rm]);
+    return render("reference", { room: rm }).then(function (r) { refLufs[rm] = analyse(r.buf, r.res, "reference").lufsShortMax; return refLufs[rm]; });
+  }
+  function check(id, o) {
+    o = o || {};
+    return reference(o.room).then(function (ref) {
+      return render(id, o).then(function (r) {
+        var out = analyse(r.buf, r.res, id, r.res.windows);
+        out.refShortMax = ref; out.vsRef = +(out.lufsShortMax - ref).toFixed(1);
+        if (out.windows) out.windows.forEach(function (w) { if (w.lufsShortMax != null) w.vsRef = +(w.lufsShortMax - ref).toFixed(1); });
+        out.res = r.res;
+        return out;
+      });
+    });
+  }
+
+  // ==========================================================================
+  // THE PAGE
+  // ==========================================================================
+  function mmss(s) { var m = Math.floor(s / 60), x = s - m * 60; return m + ":" + (x < 10 ? "0" : "") + x.toFixed(1); }
+  function table(head, rows) {
+    var wrap = el("div", "kg3-scroll"), t = el("table", "kg3-table"), tr = el("tr");
+    head.forEach(function (h) { tr.appendChild(el("th", null, h)); });
+    t.appendChild(tr);
+    rows.forEach(function (r) { var row = el("tr"); r.forEach(function (c) { row.appendChild(el("td", null, c == null ? "—" : String(c))); }); t.appendChild(row); });
+    wrap.appendChild(t);
+    return wrap;
+  }
+  function button(txt, cls, fn) { var b = el("button", cls || null, txt); b.type = "button"; b.addEventListener("click", fn); return b; }
+  function busy(btn, p) { btn.disabled = true; return p.then(function (x) { btn.disabled = false; return x; }, function (e) { btn.disabled = false; throw e; }); }
+  function showErr(host) { return function (e) { host.textContent = "error: " + (e && e.message ? e.message : e); if (window.console) console.warn(e); }; }
+  function sign(x) { return (x > 0 ? "+" : "") + x; }
+  function measLine(r) {
+    return "loudness " + r.lufs + " LUFS (loudest 3 s " + r.lufsShortMax + ", " + sign(r.vsRef) + " LU against the organ reference) · peak " + r.peakDb + " dBFS · clipped " + r.clipped +
+      " · consonants " + r.consonants + " · clicks " + r.clicks + (r.clicks ? " (at " + r.clickTimes.join(", ") + " s)" : "") +
+      (r.nodes ? " · the voices' nodes ≈" + r.nodes.peakLive + " live at the peak, " + r.nodes.meanLive + " on average" : "");
+  }
+  function costLine(host) {
+    var c = cost();
+    if (c) host.textContent = "laid out as the engine's clock will lay it: " + c.press + " ms of main thread at the press, then " + c.slices + " slice" + (c.slices === 1 ? "" : "s") + " a little ahead of the sound, the largest " + c.largest + " ms";
+  }
+  var views = {};
+  function hymnLine() {
+    var st = settings(), h = hymnOf(st), hy = h.hymnist || {}, w = wardOf(st);
+    var e = $("kg3-hymn"); e.textContent = "";
+    e.appendChild(el("b", null, h.nameEn || h.id));
+    e.appendChild(document.createTextNode(" · " + h.meter + " · " + h.dialect + " · " + h.mode + " · " + h.modeOfTime + " · " + (hy.nameEn ? "by " + hy.nameEn + " · " : "") +
+      h.beatS.toFixed(2) + " s a beat · the ward: " + w.members.filter(function (m) { return m.k != null; }).length + " in the pews, the testimony-bearers " + [].concat(w.roles.testimony || []).map(function (id) { return w.byId[id].nameEn; }).join(", ")));
+  }
+
+  // ---- the gift of tongues ----------------------------------------------------
+  function tonguesCard() {
+    var v = views.tongues = {}, card = el("section", "kg3-card");
+    card.appendChild(el("h2", "kg3-name", "The gift of tongues"));
+    card.appendChild(el("p", "kg3-phrase", "In the testimony one of the ward rises and sings, unbidden: a free, melismatic song in syllables no one knows — Deseret sounds from a small tongue of the song's own — rising to a height and coming down to rest. The ward, moved, hums its last note as a chord; the harmonium softly takes up its opening."));
+    var row = el("div", "kg3-row");
+    row.appendChild(button("▶ the gift", "kg3-play", function () { play("tongues").then(function () { v.costHost = v.cost; }); }));
+    row.appendChild(button("▶ in a brush arbor (no harmonium)", null, function () { play("tongues", { noReed: true }); }));
+    var bC = button("check", "kg3-check", function () { busy(bC, check("tongues").then(function (r) { v.meas.textContent = measLine(r); })).catch(showErr(v.meas)); });
+    row.appendChild(bC);
+    card.appendChild(row);
+    v.who = el("p", "kg3-stat"); card.appendChild(v.who);
+    v.words = el("div", "kg3-words"); card.appendChild(v.words);
+    v.song = el("div"); card.appendChild(v.song);
+    v.plan = el("ol", "kg3-plan"); card.appendChild(v.plan);
+    v.meas = el("p", "kg3-meas"); card.appendChild(v.meas);
+    v.cost = el("p", "kg3-stat"); card.appendChild(v.cost);
+    return card;
+  }
+  var SOLF = ["do", "re", "mi", "fa", "sol", "la", "ti"];
+  function tonguesPlan() {
+    var v = views.tongues, st = settings(), ward = wardOf(st), s = stream("tongues", st.seed), h = hymnOf(st), sc, seat;
+    try {
+      seat = TG.plan({ n: 1, kind: KIND[st.sunday], sunday: st.sunday, house: st.dialect, sections: [{ type: "testimony" }], guests: [], ward: ward, force: true }, s);
+      sc = TG.score({ mode: h.mode, keynoteHz: st.keynote, house: st.dialect, ward: ward, singer: seat.singer }, s, 0);
+    } catch (e) { v.who.textContent = "score: " + e.message; return; }
+    var m = sc.singer ? ward.byId[sc.singer] : null;
+    v.who.textContent = (m ? m.nameEn + " (" + m.nameDs + "), a " + ({ S: "treble", A: "alto", T: "tenor", B: "bass" }[m.part]) + " and one of the day's testimony-bearers" : "a voice of the ward") +
+      " · " + sc.style + " style · " + sc.mode + " · the tongue: " + sc.tongue.consonants.join(" ") + " / " + sc.tongue.vowels.join(" ") +
+      " · " + sc.shape.phrases + " phrases, " + sc.notes.filter(function (x) { return !x.slur; }).length + " syllables, " + sc.shape.melismas + " melisma notes · ends on " + sc.final.name +
+      " · " + (seat.seeds ? "SEEDS the next hymn (gesture " + sc.gesture.join(" ") + ")" : "does not seed the next hymn") + " · " + mmss(sc.end);
+    v.words.textContent = "";
+    sc.tongue.words.forEach(function (w) { var sp = el("span", null, w.ds || w.sounds); sp.appendChild(el("br")); sp.appendChild(el("small", null, w.sounds)); v.words.appendChild(sp); });
+    v.song.textContent = "";
+    sc.lines.forEach(function (ln) {
+      var syl = ln.notes.filter(function (x) { return !x.slur; }).map(function (x) { return x.vowel; }).join(" ");
+      var mel = ln.notes.filter(function (x) { return x.slur; }).length;
+      v.song.appendChild(el("p", "kg3-song", mmss(ln.t0) + " — " + syl + (mel ? "  (" + mel + " notes of melisma)" : "") + (ln.echo ? " · the name again" : "") + (ln.peak ? " · the height" : "")));
+    });
+    v.plan.textContent = "";
+    sc.stages.forEach(function (sg) { v.plan.appendChild(el("li", null, mmss(sg.t) + " — " + sg.stage)); });
+    v.plan.appendChild(el("li", null, "the chord the ward hums: " + ["S", "A", "T", "B"].map(function (p) { return p + " " + sc.chord[p].f.toFixed(1) + " Hz"; }).join(" · ")));
+  }
+
+  // ---- INIT ---------------------------------------------------------------------
+  var CARDS = [["tongues", tonguesCard, tonguesPlan]];
+  function refresh() {
+    try { hymnLine(); } catch (e) { $("kg3-hymn").textContent = "compose: " + e.message; return; }
+    CARDS.forEach(function (c) { if (views[c[0]] || c[0] === "odds") try { c[2](); } catch (e) { if (window.console) console.warn(c[0], e); } });
+  }
+  function init() {
+    var host = $("kg3-cards");
+    CARDS.forEach(function (c) { if (c[0] === "tongues" && !TG) return; if (c[0] === "farward" && !FW) return; if (c[0] === "hosanna" && !HO) return; host.appendChild(c[1]()); });
+    ["kg3-seed", "kg3-sunday", "kg3-dialect", "kg3-mode", "kg3-key"].forEach(function (id) { $(id).addEventListener("change", function () { stop(); refresh(); }); });
+    $("kg3-room").addEventListener("change", function (e) { room = e.target.value; });
+    $("kg3-stop").addEventListener("click", stop);
+    $("kg3-compose").addEventListener("click", function () { $("kg3-seed").value = Math.round(num("kg3-seed", 7)) + 1; stop(); refresh(); });
+    // a link can carry the settings: ?seed=7&sunday=easter&dialect=sacredharp&mode=dorian&key=260
+    var q = window.location.search;
+    [["seed", "kg3-seed"], ["sunday", "kg3-sunday"], ["dialect", "kg3-dialect"], ["mode", "kg3-mode"], ["key", "kg3-key"], ["room", "kg3-room"]].forEach(function (p) {
+      var m = new RegExp("[?&]" + p[0] + "=([^&#]*)").exec(q);
+      if (m) { var e = $(p[1]); if (e) e.value = decodeURIComponent(m[1]); }
+    });
+    room = val("kg3-room", "seated");
+    refresh();
+    setInterval(function () {
+      var m = meter(), me = $("kg3-meter");
+      if (me) me.textContent = m ? "out " + (m.peak < -90 ? "—" : m.peak.toFixed(1) + " dBFS") : "out —";
+      if (current) { var v = views[current.id === "shout" ? "hosanna" : current.id === "near" || current.id === "far" || current.id === "canon" ? "farward" : current.id]; if (v && v.cost) costLine(v.cost); }
+    }, 200);
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
+
+  return {
+    play: play, stop: stop, check: check, render: render, refresh: refresh, cost: cost,
+    hymn: function () { return hymnOf(settings()); }, ward: function () { return wardOf(settings()); }, told: function () { return told.slice(); },
+    _P: P, _settings: settings,
+  };
+})();
