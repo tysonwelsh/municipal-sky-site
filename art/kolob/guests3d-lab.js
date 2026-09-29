@@ -504,7 +504,7 @@ window.GuestsLab3c = (function () {
   // ==========================================================================
   // THE CARDS
   // ==========================================================================
-  function mmss(s) { var m = Math.floor(s / 60), x = s - m * 60; return m + ":" + (x < 10 ? "0" : "") + x.toFixed(1); }
+  function mmss(s) { s = Math.round(s * 10) / 10; var m = Math.floor(s / 60), x = s - m * 60; return m + ":" + (x < 10 ? "0" : "") + x.toFixed(1); }
   function button(txt, cls, fn) { var b = el("button", cls || null, txt); b.type = "button"; b.addEventListener("click", fn); return b; }
   function busy(btn, p) { btn.disabled = true; return p.then(function (x) { btn.disabled = false; return x; }, function (e) { btn.disabled = false; throw e; }); }
   function select(id, label, opts, dflt) {
