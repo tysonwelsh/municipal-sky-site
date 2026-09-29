@@ -179,7 +179,7 @@ heads only, and beams are in no note's ink boxes). A new check,
 `strokecheck.js` (scratchpad `r3c-engrave/`): every animation frame, from
 `probe("ink")`, any head of one note crossed by more than 0.1 sp both ways
 by any ink of another on its staff — its head, stem, ledger, flag, sign, or
-a beam (in half-space slices) — counted once per pair of notes, where a new
+a beam (in quarter-space slices) — counted once per pair of notes, where a new
 guest is on at least one side:
 
 | guest (seed), each whole passage | heads struck through, before (860 / 390 px) | after |
@@ -203,8 +203,9 @@ head, either way round (`onHead`), and beams (`beamHit`); a guest's note
 keeps its heads out from under a guest's laid beam; a guest's beam is
 looked along before it is laid and, where it would cross a head, goes to
 the other side of its notes, or, where both sides are crossed, is not laid
-and its notes keep their flags (`beamLay`: in the final code every guest beam is laid, some turned — see below — and none is left unlaid); and a far-ward note
-sung up to 0.45 s before one of ours waits for ours to be set.
+and its notes keep their flags (`beamLay`: in the final code every guest
+beam is laid, some turned — see below — and none is left unlaid); and a
+far-ward note sung up to 0.45 s before one of ours waits for ours to be set.
 
 Tried, measured and dropped: a far note waiting for every note of ours it
 might reach, and a far note keeping clear of where our notes not yet set
