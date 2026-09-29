@@ -162,6 +162,7 @@ include '../../includes/header.php';
 </div>
 
 <script src="../prosperos-jukebox-v2/pj2-rand.js?v=<?php echo kg3_v('../prosperos-jukebox-v2/pj2-rand.js'); ?>"></script>
+<script src="../prosperos-jukebox-v2/pj2-clock.js?v=<?php echo kg3_v('../prosperos-jukebox-v2/pj2-clock.js'); ?>"></script>
 <script src="kolob-pitch.js?v=<?php echo kg3_v('kolob-pitch.js'); ?>"></script>
 <script src="kolob-score.js?v=<?php echo kg3_v('kolob-score.js'); ?>"></script>
 <script src="kolob-tunes.js?v=<?php echo kg3_v('kolob-tunes.js'); ?>"></script>

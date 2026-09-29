@@ -259,10 +259,29 @@ window.Guests3a = (function () {
     lights = [];
     if (!current) return;
     var c = current;
-    c.timers.forEach(function (x) { clearTimeout(x); });
+    if (clock) clock.lane(c.lane).cancelAll();
     c.gain.gain.setTargetAtTime(0, actx.currentTime, 0.03);
     setTimeout(function () { try { c.gain.disconnect(); } catch (e) {} }, 400);
     current = null;
+  }
+  // the engine's clock, made once for the lab's context; its wake-up timed
+  // whole (every callback due in it), for the wakes that did any work
+  var clock = null, plays = 0, woke = null;
+  function clockOf() {
+    if (clock) return clock;
+    clock = window.PJ2.Clock.create(actx, {
+      tickMs: 25, aheadS: 0.25,
+      setInterval: function (fn, ms) {
+        return setInterval(function () {
+          woke = null;
+          var a = performance.now(); fn(); var d = performance.now() - a;
+          if (woke) woke.cost.wakes.push(d);
+        }, ms);
+      },
+      clearInterval: function (x) { clearInterval(x); },
+    });
+    clock.start();
+    return clock;
   }
   function play(id, o) {
     o = o || {};
@@ -272,17 +291,19 @@ window.Guests3a = (function () {
       var g = actx.createGain(); g.connect(labIn);
       lights = [];
       // THE LAB'S CLOCK: the guests lay themselves out a slice at a time
-      // (hooks.defer), as the engine's clock will have them — each slice on
-      // a timer of its own, a little before it sounds; what each costs the
-      // main thread is kept (cost())
-      var me = { gain: g, id: id, timers: [], cost: { press: 0, slices: [] } };
+      // (hooks.defer) on the engine's own clock (clockOf: PJ2.Clock, a wake
+      // every 25 ms firing every cue inside its quarter-second look-ahead at
+      // once); what each callback costs the main thread is kept, and what
+      // each WAKE costs — the number the engine feels (cost())
+      var me = { gain: g, id: id, lane: "guest" + (++plays), cost: { press: 0, slices: [], wakes: [] } };
       var oo = Object.assign({}, o, {
         onNote: function (n) { lights.push(n); },
         defer: function (at, fn) {
-          me.timers.push(setTimeout(function () {
+          clockOf().lane(me.lane).at(at, function () {
             if (current !== me) return;
+            woke = me;
             var c0 = performance.now(); fn(); me.cost.slices.push(performance.now() - c0);
-          }, Math.max(0, (at - actx.currentTime) * 1000)));
+          });
         },
       });
       current = me;
@@ -299,9 +320,10 @@ window.Guests3a = (function () {
   // the main thread each live performance cost: at the press, and each slice
   function cost() {
     if (!current) return null;
-    var c = current.cost, mx = 0;
+    var c = current.cost, mx = 0, mw = 0;
     c.slices.forEach(function (x) { mx = Math.max(mx, x); });
-    return { id: current.id, press: +c.press.toFixed(1), slices: c.slices.length, largest: +mx.toFixed(1) };
+    c.wakes.forEach(function (x) { mw = Math.max(mw, x); });
+    return { id: current.id, press: +c.press.toFixed(1), slices: c.slices.length, largest: +mx.toFixed(1), wakes: c.wakes.length, largestWake: +mw.toFixed(1) };
   }
   function meter() {
     if (!analyser) return null;
@@ -744,7 +766,7 @@ window.Guests3a = (function () {
       if (me) me.textContent = m ? "out " + (m.peak < -90 ? "—" : m.peak.toFixed(1) + " dBFS") : "out —";
       if (current && current.costEl) {
         var c = cost();
-        current.costEl.textContent = "laid out as the engine's clock will lay it: " + c.press + " ms of main thread at the press, then " + c.slices + " slice" + (c.slices === 1 ? "" : "s") + " a little ahead of the sound, the largest " + c.largest + " ms";
+        current.costEl.textContent = "laid out on the engine's clock: " + c.press + " ms of main thread at the press, then " + c.slices + " slice" + (c.slices === 1 ? "" : "s") + " a little ahead of the sound in " + c.wakes + " wake" + (c.wakes === 1 ? "" : "s") + " of the clock, the largest wake " + c.largestWake + " ms";
       }
       if (!actx || !current || current.id !== "band" || !current.score) return;
       var now = actx.currentTime, sc = current.score;
@@ -792,7 +814,7 @@ window.Guests3a = (function () {
 
   return {
     play: play, stop: stop, check: check, render: render, odds: odds, purity: purity, setRoom: setRoom,
-    cost: function () { return current ? { id: current.id, press: current.cost.press, slices: current.cost.slices.slice(), until: current.until, now: actx.currentTime } : null; },
+    cost: function () { return current ? { id: current.id, press: current.cost.press, slices: current.cost.slices.slice(), wakes: current.cost.wakes.slice(), until: current.until, now: actx.currentTime } : null; },
     hymns: function () { return composed(settings()); },
     score: function (id) { var st = settings(); return id === "handcart" ? GH.score({ homeHz: st.keynote }, streamOf(GH, st.seed), 0) : id === "gulls" ? GG.score({ hymn: composed(st)[0], keynoteHz: st.keynote }, streamOf(GG, st.seed), 0) : bandScore(); },
     refresh: refresh, _P: P,

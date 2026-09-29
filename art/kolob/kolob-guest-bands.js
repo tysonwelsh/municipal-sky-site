@@ -737,7 +737,11 @@ window.KOLOB.GuestBands = (function () {
       var what = (bd.meter === "6/8" ? "a quickstep" : "a march") + " · " + KEY_WORD[bd.key];
       out.stages.push({ stage: k ? "second" : "approaches", band: k, t0: start, side: side, label: k ? "⇋ a second band approaches" : "⇋ a band approaches",
                         detail: "from the " + side + " · " + (k ? "another key" : "its own key"), what: what, hymnId: bd.hymnId, meter: bd.meter, strains: bd.strains });
-      out.stages.push({ stage: "cross", band: k, t0: start + rd.tc, side: side, label: "⇋ the bands cross", detail: "two times at once" });
+      // (its nearest: a band going by, in its own key and its own time; the
+      // bands CROSS only when a second is nearest while the first still plays)
+      var both = k > 0 && start + rd.tc < out.bands[0].end;
+      out.stages.push({ stage: "cross", band: k, t0: start + rd.tc, side: side, label: both ? "⇋ the bands cross" : k ? "⇋ the second band goes by" : "⇋ the band goes by",
+                        detail: both ? "two times at once" : "its own key, its own time" });
       out.stages.push({ stage: "passes", band: k, t0: start + bd.end, side: other, label: "⇋ passes on", detail: k ? "the second band" : "" });
       out.end = Math.max(out.end, start + bd.end);
     });
@@ -765,6 +769,18 @@ window.KOLOB.GuestBands = (function () {
     // convolver is built in this callback; a second band is built in a
     // callback of its own, just before it strikes up)
     var town = VB.lendTown ? VB.lendTown(ctx, bus, { seconds: 2.6 }) : VB.townRoom(ctx, bus, { seconds: 2.6 }), made = [];
+    // (every callback of the passage at a moment of its own: the engine's
+    // clock fires every cue inside its quarter-second look-ahead in one
+    // wake, so two callbacks within GAP of each other would share one)
+    var taken = [], GAP = 0.05;
+    function slot(at) {
+      for (var moved = true; moved;) {
+        moved = false;
+        for (var q = 0; q < taken.length; q++) if (Math.abs(taken[q] - at) < GAP) { at = taken[q] + GAP + 0.01; moved = true; }
+      }
+      taken.push(at);
+      return at;
+    }
     sc.bands.forEach(function (bd) {
       var echo = synth.rnd(0.19, 0.31), me = { bd: bd, band: null, road: null };
       made.push(me);
@@ -788,14 +804,17 @@ window.KOLOB.GuestBands = (function () {
       bd.events.forEach(function (e) { var i = Math.max(0, Math.floor((e.t - bd.start) / sliceS)); (slices[i] = slices[i] || { ev: [], dr: [] }).ev.push(e); });
       bd.drums.forEach(function (e) { var i = Math.max(0, Math.floor((e.t - bd.start) / sliceS)); (slices[i] = slices[i] || { ev: [], dr: [] }).dr.push(e); });
       var setUpAt = bd.start - AHEAD - 0.4;
-      if (hooks.defer && setUpAt > t) hooks.defer(setUpAt, build); else build();
-      // (only the first bar at the press; each bar after it a callback of its
-      // own, AHEAD of its sound — and never two in one tick of the clock: a
-      // bar already inside the look-ahead waits SPACE seconds after the last)
+      if (hooks.defer && setUpAt > t) hooks.defer(slot(setUpAt), build); else build();
+      // (only the first band's first bar at the press; each bar after it a
+      // callback of its own, AHEAD of its sound — and never two in one tick
+      // of the clock: a bar already inside the look-ahead waits SPACE seconds
+      // after the last. A second band's first bar is a callback too: the
+      // press builds one band, never two; and its bars, and its building,
+      // take a moment no other callback of the passage has taken — slot().)
       slices.forEach(function (sl, i) {
         if (!sl) return;
         var at = Math.max(bd.start + i * sliceS - AHEAD, t + SPACE * i);
-        if (hooks.defer && i > 0) hooks.defer(at, function () { lay(build(), bd, sl); });
+        if (hooks.defer && (i > 0 || bd.k > 0)) hooks.defer(slot(at), function () { lay(build(), bd, sl); });
         else lay(build(), bd, sl);
       });
     });
