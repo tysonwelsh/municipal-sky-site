@@ -41,14 +41,20 @@
 // force, seats it on another Sunday); on nearly every dedication and about
 // half of Easters; at the close of the (last) doxology. Its die is the one
 // the meeting already throws for the hook: stream guest:hosanna:<n>, fork
-// "seat", its first next() — so building it moves nothing else.
+// "seat", its first next() — so building it moves nothing else. A guest in
+// or beside that doxology does not keep it away (it names them); YIELD
+// makes it give way to them instead (PLAN §8.13; see THE OTHER GUESTS).
 //
-// UNLOGGED. `logged: false` on the seat and on every stage it tells
-// (hooks.onStage); it emits nothing of its own. The hymn's written notes are
-// offered to hooks.onNote with `hosanna: true` (PLAN §8.12: "the hymn is
-// engraved normally; the shout is not engraved" — the shout offers none),
-// marked logged: true while ENGRAVE_HYMN stands (the owner's switch: false
-// hides the hymn from the staff too, the Hosanna then wholly audio-only).
+// UNLOGGED. `logged: false` on the seat, on every stage it tells
+// (hooks.onStage) and on every note it offers; it emits nothing of its own.
+// The hymn's written notes are offered to hooks.onNote with `guest:
+// "hosanna"`, `hosanna: true` and `logged: false`, so the minutes never print
+// a row for them (kolob-ui.js onNoteForLog passes over logged: false) — and
+// `engrave: ENGRAVE_HYMN`, the staff's own switch (PLAN §8.12: "the hymn is
+// engraved normally; the shout is not engraved" — the shout offers none).
+// Today's staff passes over every logged: false note, so until it is taught
+// to read `engrave` the whole Hosanna is audio-only; ENGRAVE_HYMN false keeps
+// it so even then.
 //
 // PURE PLANNING. plan(), decide(), score() and words() touch no
 // AudioContext, DOM, clock or Math.random; the dice live on forks of the
@@ -59,9 +65,10 @@
 // Public surface: window.KOLOB.GuestHosanna
 //   plan(meetingInfo, stream) → { guest: "hosanna", seat: "doxology",
 //        section: "doxology", sectionIndex, at: "close", dur, verses, odds,
-//        logged: false } | null
-//     meetingInfo: { n, kind, sunday, sections: [{type}], force? }
-//   decide(meetingInfo, stream) → { seat, why, odds, roll }
+//        logged: false, beside: ["type@section", …] } | null
+//     meetingInfo: { n, kind, sunday, sections: [{type}], guests?:
+//                    [{type, section, index?}], force? }
+//   decide(meetingInfo, stream) → { seat, why, odds, roll, beside }
 //   score(material, stream, t0) → the shout and the hymn as data (pure)
 //     material: { keynoteHz, ward? (KOLOB.Cast's), tune? (default
 //                 KOLOB.Tunes.byId("earth:assembly")) }
@@ -70,7 +77,7 @@
 //              onNote(n) (the hymn's notes only), organDest (the organ's
 //              own way into the rooms; else dest) }
 //   words() → the syllables the ward sings ASSEMBLY's verse and chorus on
-//   ODDS, NAME, LABEL, LOGGED (false), ENGRAVE_HYMN, LEVEL
+//   ODDS, NAME, LABEL, LOGGED (false), ENGRAVE_HYMN, YIELD (false), LEVEL
 // ============================================================================
 
 window.KOLOB = window.KOLOB || {};
@@ -80,7 +87,7 @@ window.KOLOB.GuestHosanna = (function () {
   var NAME = "hosanna";
   var LABEL = "guest:hosanna:";
   var LOGGED = false;                              // the owner's ruling: never told
-  var ENGRAVE_HYMN = true;                         // PLAN §8.12: the hymn engraved, the shout not
+  var ENGRAVE_HYMN = true;                         // PLAN §8.12: the hymn engraved, the shout not (the staff's switch only; never the minutes')
 
   // ==========================================================================
   // THE ODDS — only two Sundays; everywhere else, never
@@ -143,23 +150,46 @@ window.KOLOB.GuestHosanna = (function () {
   // ==========================================================================
   // THE SEAT
   // ==========================================================================
+  // THE OTHER GUESTS (PLAN §8.13: never two guests in adjacent sections).
+  // The Hosanna is not a visitor drawn by the meeting's budget but the rite
+  // of its two Sundays, as the doxology's payoff is — and §8.13 itself leans
+  // those Sundays to the Hosanna AND the steeples, whose seat is the
+  // postlude, beside it. So by default it OVERRIDES the rule: a guest in or
+  // beside the (last) doxology does not keep it away — the band that crosses
+  // the doxology crosses first, and the Hosanna follows at its close; the
+  // bells ring the valley home after it. It names them (`beside`), for the
+  // integrator and the lab. YIELD true makes it give way instead: no
+  // Hosanna when a guest is in or beside that doxology. The owner's to rule.
+  var YIELD = false;
+  function besideOf(guests, secs, di) {
+    var out = [];
+    (guests || []).forEach(function (g) {
+      if (!g || g.type === NAME || !g.section) return;
+      var near = typeof g.index === "number" ? Math.abs(g.index - di) <= 1
+        : secs.some(function (s, j) { return s && s.type === g.section && Math.abs(j - di) <= 1; });   // (a section named by its type: any of that type beside it)
+      if (near && out.indexOf(g.type + "@" + g.section) < 0) out.push(g.type + "@" + g.section);
+    });
+    return out;
+  }
   function decide(info, stream) {
     info = info || {};
     var rs = need(stream).fork("seat");
     var roll = rs.next();                          // (the hook's die: kolob-meeting.js throws exactly this)
     var p = oddsFor(info), why = null, secs = info.sections || [], di = -1;
     for (var i = 0; i < secs.length; i++) if (secs[i] && secs[i].type === "doxology") di = i;
+    var beside = di >= 0 ? besideOf(info.guests, secs, di) : [];
     if (!mayCome(info)) why = "not Easter or a dedication";
     else if (di < 0) why = "no doxology";
+    else if (YIELD && beside.length) why = "a guest is in or beside the doxology (" + beside.join(", ") + ")";
     else if (!(info.force || roll < p)) why = "not this Sunday";
-    if (why) return { seat: null, why: why, odds: p, roll: roll };
+    if (why) return { seat: null, why: why, odds: p, roll: roll, beside: beside };
     var tl = timeline(shapeOf(stream, info.sunday), tuneOf(info.material));
     return {
       seat: {
         guest: NAME, seat: "doxology", section: "doxology", sectionIndex: di, at: "close",
-        dur: +tl.end.toFixed(2), holdUntil: +(tl.end + 3).toFixed(2), verses: 1, odds: +p.toFixed(3), logged: LOGGED,
+        dur: +tl.end.toFixed(2), holdUntil: +(tl.end + 3).toFixed(2), verses: 1, odds: +p.toFixed(3), logged: LOGGED, beside: beside,
       },
-      why: "seated", odds: p, roll: roll,
+      why: "seated", odds: p, roll: roll, beside: beside,
     };
   }
   function plan(info, stream) { return decide(info, stream).seat; }
@@ -414,9 +444,13 @@ window.KOLOB.GuestHosanna = (function () {
       spec.rand = synth.fork("sing:" + s.memberId); spec.sharedThroat = true; spec.sharedPan = true; spec.pan = s.pan; spec.name = "hosanna-hymn:" + s.memberId; spec.kind = "hosanna-hymn";
       return (ward[s.memberId] = V.singer(spec));
     }
+    // (every note says logged: false — the minutes and today's staff take
+    // none of it, SCORE §6 — and names its guest; `engrave` is the staff's
+    // own switch, read only by a staff taught to engrave the Hosanna's hymn
+    // though it is unlogged, as PLAN §8.12 asks: a request to ENGRAVE)
     function report(ln) {
       if (!hooks.onNote) return;
-      ["S", "A", "T", "B"].forEach(function (p) { ln.parts[p].forEach(function (n) { hooks.onNote({ layer: "choir", freq: n.f, t: n.t, dur: n.dur, part: p, hymnId: sc.tune.id, line: ln.i, beat: n.beat, deg: n.deg, monzo: n.monzo, hosanna: true, engrave: ENGRAVE_HYMN, logged: ENGRAVE_HYMN }); }); });   // (logged: the engine's word for "the staff may show it")
+      ["S", "A", "T", "B"].forEach(function (p) { ln.parts[p].forEach(function (n) { hooks.onNote({ layer: "choir", freq: n.f, t: n.t, dur: n.dur, part: p, hymnId: sc.tune.id, line: ln.i, beat: n.beat, deg: n.deg, monzo: n.monzo, guest: NAME, hosanna: true, logged: false, engrave: ENGRAVE_HYMN }); }); });
     }
     // the organ a bar at a time, each piece handed ORGAN_AHEAD before it
     // sounds (a whole line of full organ laid at once kept some four hundred
@@ -459,6 +493,7 @@ window.KOLOB.GuestHosanna = (function () {
     plan: plan, decide: decide, score: score, perform: perform, words: words, mayCome: mayCome, timeline: function (stream, sunday) { return timeline(shapeOf(stream, sunday), tuneOf(null)); },
     ODDS: ODDS, NAME: NAME, LABEL: LABEL, LOGGED: LOGGED, CRY: CRY, AMEN: AMEN,
     get ENGRAVE_HYMN() { return ENGRAVE_HYMN; }, set ENGRAVE_HYMN(v) { ENGRAVE_HYMN = !!v; },
+    get YIELD() { return YIELD; }, set YIELD(v) { YIELD = !!v; },
     get HYMN_CONSONANTS() { return HYMN_CONSONANTS; }, set HYMN_CONSONANTS(v) { HYMN_CONSONANTS = v === "liquids" || v === "none" ? v : "all"; },
     get LEVEL() { return LEVEL; }, set LEVEL(v) { LEVEL = +v; },
   };
