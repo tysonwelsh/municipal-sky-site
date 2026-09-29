@@ -131,7 +131,7 @@ window.KOLOB.GuestBands = (function () {
   var MAX_DUR = 110;                                // the strains shorten to fit (s)
   // the band's bus into the tabernacle's wide send (calibrated in the lab
   // against the organ reference: see LEVEL's note in the handoff)
-  var LEVEL = 0.5;
+  var LEVEL = 0.4;
 
   function need(stream) {
     if (!stream || typeof stream.fork !== "function") throw new Error("KOLOB.GuestBands: a PJ2.Rand stream is required (label " + LABEL + "<n>)");

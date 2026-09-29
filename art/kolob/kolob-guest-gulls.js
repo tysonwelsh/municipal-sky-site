@@ -77,6 +77,7 @@ window.KOLOB.GuestGulls = (function () {
   var SEATS = [["prelude", 1], ["invocation", 0.7], ["testimony", 1], ["interlude", 0.9], ["postlude", 1.1]];
   var AT = [0.15, 0.6], AT_MIN = 5;
   var CENTRE = 954;                                 // Hz: where the head's middle is moved to
+  var REGISTER = [600, 1500];                        // Hz: where a gull's cry lives
   var LEVEL = 0.5;                                  // the flock's bus (calibrated in the lab)
 
   function need(stream) {
@@ -166,8 +167,16 @@ window.KOLOB.GuestGulls = (function () {
     var base = material.homeHz || (material.keynoteHz || 260) * (h && h.keyMonzo ? ratio(h.keyMonzo) : 1);
     var fs = hd.map(function (n) { return base * ratio(n.monzo); });
     var lo = Math.min.apply(null, fs), hi = Math.max.apply(null, fs);
-    // ONE shift for the whole head: its shape survives, last rise and all
-    var shift = Math.pow(2, Math.round(Math.log(CENTRE / Math.sqrt(lo * hi)) / Math.LN2));
+    // ONE shift for the whole head: its shape survives, last rise and all —
+    // the octave that leaves least of it outside the gulls' own register
+    // (REGISTER), and of two that fit alike, the one nearer CENTRE
+    var shift = 1, best = Infinity, k0 = Math.round(Math.log(CENTRE / Math.sqrt(lo * hi)) / Math.LN2);
+    [k0 - 1, k0, k0 + 1].forEach(function (k) {
+      var m = Math.pow(2, k), c = 0;
+      fs.forEach(function (f) { c += Math.max(0, Math.log(REGISTER[0] / (f * m)) / Math.LN2) + Math.max(0, Math.log(f * m / REGISTER[1]) / Math.LN2); });
+      c += 0.05 * Math.abs(Math.log(CENTRE / (Math.sqrt(lo * hi) * m)) / Math.LN2);
+      if (c < best - 1e-9) { best = c; shift = m; }
+    });
     return { prepared: true, shape: sh, head: hd, base: base, shift: shift, notes: fs.map(function (f) { return f * shift; }), hymnId: h ? h.id || null : null };
   }
   function score(material, stream, t0) {
