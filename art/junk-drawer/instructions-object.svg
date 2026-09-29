@@ -103,8 +103,11 @@
        (pointer-events: visiblePainted) catches the whole button, not just
        the two strokes. -->
   <g class="ins-close">
-    <circle cx="298.1" cy="33.3" r="14.1" fill="#e6d8ad" stroke="#33240f" stroke-width="1.5"/>
-    <path d="M292.1 27.0 L304.2 39.7 M304.2 27.0 L292.1 39.7" fill="none" stroke="#33240f" stroke-width="2.2" stroke-linecap="round"/>
+    <!-- (owner, 2026-09-29) a small bare ✕, no ring: the disc stays as an
+         invisible hit area (fill-opacity 0 still counts as painted for
+         pointer-events: visiblePainted), the mark is 8 units across -->
+    <circle cx="298.1" cy="33.3" r="12" fill="#e6d8ad" fill-opacity="0"/>
+    <path d="M294.1 29.3 L302.1 37.3 M302.1 29.3 L294.1 37.3" fill="none" stroke="#33240f" stroke-width="2" stroke-linecap="round"/>
   </g>
   <line x1="37.4" y1="89.7" x2="292.6" y2="89.7" stroke="#33240f" stroke-width="1.6"/>
   <line x1="37.4" y1="94.3" x2="292.6" y2="94.3" stroke="#33240f" stroke-width="0.7"/>

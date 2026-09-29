@@ -1085,8 +1085,11 @@
      ever piling, and twice running the owner took them for a broken word
      drift. One letters animation in the pool, the one that piles; the mesh's
      darkWell branch, its CSS and mini.php all stay, and the full piece
-     lives on at /art/kimis-take/. */
-  var DARK_POOL = ['stray', 'scatter', 'watch', 'drift'];
+     lives on at /art/kimis-take/.
+     BACK IN THE SHUFFLE (owner, 2026-09-29): the word mesh returns, so the
+     pool is five for four slots again — one indicator sits each turn out.
+  */
+  var DARK_POOL = ['stray', 'scatter', 'watch', 'drift', 'words'];
   function darkDeal(seed) {
     var rnd = JD_xorshift(JD_fnv1a(seed + ':rota')), i;
     var deck = DARK_POOL.slice(), j, t;
@@ -1232,9 +1235,8 @@
       return '<span class="jd-drift"></span>';
     }
     if (anim === 'words') {
-      /* BENCHED from the rotation (owner call 2026-08-30, see DARK_POOL):
-         kept whole on the bar/plot terms — put 'words' back in the array
-         and this branch serves it again unchanged. */
+      /* benched 2026-08-30, back in the rotation 2026-09-29 (owner) — see
+         DARK_POOL */
       /* the word mesh (owner directive 2026-08-23, mockup-34's tuning):
          Kimi's Take (art/kimis-take/) run small in word mode — every
          string is one of the office's sixteen wait-words, all of them

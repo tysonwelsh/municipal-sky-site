@@ -614,7 +614,7 @@
      grid areas live in junk-drawer.css; under 700px the column wrappers go
      display:contents and this same DOM reads as the portrait flow (which is
      why the source order below IS the portrait order). */
-  function cardHTML(entry, resp, curIdx) {
+  function cardHTML(entry, resp, curIdx, live) {
     var m = modelOf(resp.model);
     var h = '';
     h += '<header class="rc-block rc-masthead">' +
@@ -651,11 +651,35 @@
       '<div class="rc-plate-art" data-fit="' + esc(fitKey(entry, resp)) + '">' +
       svgInst(artSrc, 'jr' + curIdx + '_') +
       '</div>' +
+      (live ? plateNavHTML(entry, curIdx) : '') +
       '<div class="rc-notes">' + notes + '</div>' +
       plateBtnsHTML(entry, resp, false) +
       fileNoHTML(entry) +
       '</div></div>';
     return h + paperworkHTML(entry, resp, curIdx);
+  }
+
+  /* THE PLATE'S ARROWS (owner, 2026-09-29): on a phone, a second way through
+     the responses besides the swipe — a tall, skinny, quiet arrow in each of
+     the plate's side margins (the artwork is inset 8% each side, so the
+     arrows lie on the graph paper beside it and take nothing from its
+     width). Each appears only when there IS a response that way: no ←
+     on the first, no → on the last. Shown by CSS at the record's phone
+     breakpoint only; live cards only (the about page's static cards turn
+     by the walkthrough, not by hand). */
+  function plateNavHTML(entry, i) {
+    var n = (entry.responses || []).length;
+    var chev = function (d) {
+      return '<svg viewBox="0 0 10 40" aria-hidden="true" focusable="false"><path d="' +
+        d + '" fill="none" stroke="currentColor" stroke-width="1.6" ' +
+        'stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    };
+    return (i > 0
+        ? '<button type="button" class="rc-nav rc-nav--prev" data-nav="-1" ' +
+          'aria-label="previous drawing">' + chev('M8 4 2 20 8 36') + '</button>' : '') +
+      (i < n - 1
+        ? '<button type="button" class="rc-nav rc-nav--next" data-nav="1" ' +
+          'aria-label="next drawing">' + chev('M2 4 8 20 2 36') + '</button>' : '');
   }
 
   /* the margin notes: MODEL and DATE always; TOKENS and COST when the
@@ -854,6 +878,12 @@
         togglePaper();
         return;
       }
+      /* the plate's arrows turn the response; they never zoom */
+      var nav = e.target.closest ? e.target.closest('.rc-nav') : null;
+      if (nav) {
+        stepResp(parseInt(nav.getAttribute('data-nav'), 10) || 1);
+        return;
+      }
       /* the DOWNLOAD button rides ON the plate: it must never also zoom */
       if (e.target.closest && e.target.closest('.rc-dl')) return;
       /* REPLAY rides the plate too: it redraws, never zooms. An explicit
@@ -926,7 +956,8 @@
       sw = null;
       if (e.pointerType === 'mouse') return;
       var p = e.target.closest ? e.target.closest('.rc-plate') : null;
-      if (!p || e.target.closest('.rc-plate-btns') || e.target.closest('.rc-paper')) return;
+      if (!p || e.target.closest('.rc-plate-btns') || e.target.closest('.rc-paper') ||
+          e.target.closest('.rc-nav')) return;
       sw = { x: e.clientX, y: e.clientY, id: e.pointerId };
     });
     scrollEl.addEventListener('pointerup', function (e) {
@@ -949,6 +980,7 @@
       if (e.target.closest && e.target.closest('.rc-dl')) return;
       if (e.target.closest && e.target.closest('.rc-draw')) return;
       if (e.target.closest && e.target.closest('.rc-paper')) return;   /* a real <button>: its own click */
+      if (e.target.closest && e.target.closest('.rc-nav')) return;     /* ditto: the arrows */
       var p = e.target.closest ? e.target.closest('.rc-plate') : null;
       if (!p) return;
       e.preventDefault();
@@ -1073,7 +1105,7 @@
   function render(animate) {
     markSeq = 0;
     var resp = curEntry.responses[curResp] || curEntry.responses[0];
-    scrollEl.innerHTML = cardHTML(curEntry, resp, curResp);
+    scrollEl.innerHTML = cardHTML(curEntry, resp, curResp, true);
     /* the prompt renders foldable, then earns it: measured here, after
        layout, because "three lines" depends on the column's real width —
        a character count lies in one orientation or the other. A prompt

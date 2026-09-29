@@ -558,8 +558,8 @@ html { scroll-behavior: smooth; }
    take the hit — so this only says "button" with the cursor and a little
    darkening under the pointer. jd-furniture.js does the removing. */
 .jd-item--sheet .ins-close { cursor: pointer; }
-.jd-item--sheet .ins-close circle { transition: fill 0.12s ease-out; }
-.jd-item--sheet .ins-close:hover circle { fill: #d6c48f; }
+.jd-item--sheet .ins-close path { transition: stroke 0.12s ease-out; }
+.jd-item--sheet .ins-close:hover path { stroke: #a8332a; }
 
 /* THE INSTRUCTIONS SHEET, FOLDED IN HALF (owner ask, 2026-09-29). The
    wrapper holds .jd-sheet — two copies of the asset, .jd-sheet-top and
@@ -1991,6 +1991,31 @@ tr.rc-axdesc td {
   /* still vh-clamped — a landscape phone can't blow the card out */
   .rc-plate { width: min(100%, 52dvh, 420px); margin: 0 auto 0.55rem; }
   .rc-head { margin-top: 0.55rem; }
+}
+/* THE PLATE'S ARROWS (owner, 2026-09-29; jd-record.js plateNavHTML): phone
+   only. Tall and skinny, laid over the graph paper in the plate's side
+   margins — the artwork's own inset (8% each side), so the drawing keeps
+   its full width — and quiet: faint ink on a faint wash, a little darker
+   under the finger. */
+.rc-nav { display: none; }
+@media (max-width: 700px) {
+  .rc-nav {
+    display: flex; align-items: center; justify-content: center;
+    position: absolute; z-index: 3;
+    top: 12%; bottom: 26%;                  /* the artwork's band, less a little */
+    width: 22px; padding: 0;
+    background: rgba(248, 243, 226, 0.55);
+    border: 1px solid rgba(55, 65, 79, 0.16); border-radius: 11px;
+    color: rgba(51, 36, 15, 0.5);
+    cursor: pointer; touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .rc-nav--prev { left: max(2px, calc(4% - 11px)); }
+  .rc-nav--next { right: max(2px, calc(4% - 11px)); }
+  .rc-nav svg { width: 8px; height: 34px; display: block; }
+  .rc-nav:active { color: rgba(51, 36, 15, 0.85); background: rgba(248, 243, 226, 0.85); }
+  .rc-nav:focus { outline: none; }
+  .rc-nav:focus-visible { box-shadow: 0 0 0 2px rgba(51, 36, 15, 0.35); }
 }
 /* the compact register: a short landscape viewport gives up ~30px of air
    instead of growing a scrollbar — the same form, set solid. Landscape
@@ -4666,20 +4691,24 @@ html.jd-folder-open { overflow: hidden; }
   letter-spacing: 0.32em; line-height: 1;
   margin-right: -0.32em;                      /* the tracking after the S */
 }
+/* a small bare ✕ (owner, 2026-09-29: smaller, and no red ring). The button
+   keeps a 26px hit area; the mark inside it is 12px. */
 .jd-folder-close {
   flex: 0 0 auto;
-  width: 30px; height: 30px; padding: 6px;
+  width: 26px; height: 26px; padding: 7px;
   display: flex; align-items: center; justify-content: center;
-  background: none; border: 0; border-radius: 50%;
+  background: none; border: 0; border-radius: 3px;
   color: var(--fink); cursor: pointer;
 }
 .jd-folder-close .jd-x-mark { width: 100%; height: 100%; }
-.jd-folder-close:hover { color: var(--fred, #a8332a); background: rgba(255, 248, 226, 0.5); }
-/* focus moves here programmatically when the folder opens, and the UA's own
-   ring drew a large blue rectangle — keep :focus quiet and ring only
-   keyboard focus */
-.jd-folder-close:focus { outline: none; }
-.jd-folder-close:focus-visible { outline: 2px solid var(--fred); outline-offset: 0; }
+.jd-folder-close:hover { color: var(--fred, #a8332a); }
+/* focus moves here programmatically when the folder opens, and browsers
+   may treat that as keyboard focus — the red circle the owner saw was this
+   ring, and a tint drew a box. So no ring and no box: focus just turns the
+   ✕ red, the same as hover. */
+.jd-folder-close:focus,
+.jd-folder-close:focus-visible { outline: none; }
+.jd-folder-close:focus-visible { color: var(--fred, #a8332a); }
 @media (max-width: 560px) {
   .jd-folder-tab { left: 18px; gap: 8px; }
   .jd-folder-tab-word { font-size: 0.9rem; }

@@ -578,10 +578,13 @@
       var openHH = hh * (parseFloat(cs.getPropertyValue('--pick-tall')) || 1) *
         (parseFloat(cs.getPropertyValue('--pick-scale')) || 1);
       var loY = Math.max(hh, Math.min(0.45, openHH)) + INSET;
-      var hiY = Math.max(loY, 2 / 3 - hh);
+      /* A THIRD OF THE WAY DOWN (owner, 2026-09-29: "1/3 the way down
+         instead of 1/2"): the centre deals at 1/3 of the well with a
+         whisper of jitter, never above loY — the room the open sheet
+         needs — so on a short well it simply sits as high as it can. */
       p = {
         x: +(0.5 + (Math.random() * 2 - 1) * 0.05).toFixed(4),
-        y: +(loY + Math.random() * (hiY - loY)).toFixed(4),
+        y: +Math.max(loY, 1 / 3 + (Math.random() * 2 - 1) * 0.02).toFixed(4),
         rot: +((Math.random() * 2 - 1) * ROT).toFixed(1)
       };
       map[ID] = p;
