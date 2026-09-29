@@ -108,7 +108,10 @@ window.KOLOB.GuestBands = (function () {
   // SUNDAYS[·].guests.bands), so that the band that now marches comes as
   // often as the band that looped did: about one ordinary Sunday in three,
   // three Pioneer Days in four, almost never a funeral. The kinds (a meeting
-  // with no calendar) stand at 1, as the plan had them. One number to turn.
+  // with no calendar) stand at 1, as the plan had them. (Round 3c: in the
+  // meeting these are the calendar's GUEST_ODDS row "bands", handed in as
+  // info.odds — the same numbers; this table is the labs' and a page's
+  // without the calendar. Change the calendar's row to change the meeting.)
   var ODDS = {
     base: 0.36,
     weight: {
