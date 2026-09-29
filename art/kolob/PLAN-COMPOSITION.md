@@ -1217,3 +1217,15 @@ handoff/r3b-engrave-1.md. kolob-viz.js already reads these fields.
   tune), not the principal.
 - **Two-key proxy.** It miscounts gospel's 7-limit sevenths as a second key. The interlude still
   separates.
+
+**For the round-3c integrator, from crew D's critic (the Social Hall and the testimony):**
+1. **The testimony.** In testimonyBegins, call `S.houseLetsGo(tc, 'testimony', true)`. Today the
+   strings and organ ring on for up to 30 s under the first bearer. Gate the still small voice
+   ("voice" layer, kolob-voices-field.js stillVoicePhrase) with `testimonySounding()`, so two
+   talkers never overlap.
+2. **The fiddle's 7/4 stop** goes above its 1100 Hz ceiling in 41 % of dances. Skip it (or use the
+   chord tone below) when `f*7/4 > TOP`.
+3. **Quadrilles** should call every strain (add `|| M.piece === 'quadrille'` at the call gate).
+4. **The funeral rule** depends on `sunday` being passed: always pass it.
+5. **Pioneer Day.** The adjacency rule refuses the dance in 19 % of meetings, mostly because the
+   bands cross the doxology. The integrator may let the bands and the dance share on Pioneer Day.
