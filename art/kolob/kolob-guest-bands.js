@@ -86,7 +86,7 @@
 //              beat, downbeat, beatS, loud, hymnId (that band's own)}), onStage({stage, t0, band,
 //              side, label, detail}), still (a lab's: no road — the band
 //              stands in the street and plays) }
-//   ODDS, EXCLUDES, SEATS, LEVEL, LABEL, NAME, MAX_DUR
+//   ODDS, EXCLUDES, SEATS, AT, LEVEL, LABEL, NAME, MAX_DUR
 // ============================================================================
 
 window.KOLOB = window.KOLOB || {};
@@ -914,7 +914,7 @@ window.KOLOB.GuestBands = (function () {
   return {
     plan: plan, decide: decide, prepare: prepare, score: score, perform: perform,
     readTune: readTune, arrange: arrange, shape: shapeOf,
-    ODDS: ODDS, EXCLUDES: EXCLUDES, SEATS: SEATS, NAME: NAME, LABEL: LABEL, MAX_DUR: MAX_DUR,
+    ODDS: ODDS, EXCLUDES: EXCLUDES, SEATS: SEATS, AT: AT, NAME: NAME, LABEL: LABEL, MAX_DUR: MAX_DUR,
     get LEVEL() { return LEVEL; }, set LEVEL(v) { LEVEL = +v; },
   };
 })();

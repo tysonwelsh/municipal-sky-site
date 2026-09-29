@@ -2,6 +2,12 @@
 
 *GUEST crew, round 3c (guests A). Branch `kolob-r3c-bands`. 2026-09-29.*
 
+> **Round 2 (at the end of this note) amends the integration recipe:** the
+> band's material leaves the doxology's hymn out until a doxology has been
+> sung, a start-up line warms the company's throat, and ENGRAVE's staff
+> patch is now a **required** block of the recipe. Apply the recipe as
+> Round 2 gives it.
+
 **What is new to hear:** three guests from outside the windows, each built as
 a module the engine can seat, and a lab to hear them in. None plays in a
 meeting yet: the integration step wires them in (the exact recipe is below,
@@ -729,3 +735,257 @@ What is genuinely new to hear, by size:
 Nothing else changes: the three voices they use (band, folk, vocal) sound
 as before, except that the lab's own flock (`gulls()`) keeps its chatter in
 the lead's span.
+
+---
+
+## Round 2 — the critic's findings, answered
+
+*Same branch, `kolob-r3c-bands`, 2026-09-29. VERSION not bumped; nothing
+pushed or published. Every check was made with the sound muted.*
+
+**What is new to hear (small, and honest about it).** Everything round 1
+promised still sounds as it did; round 2 changes the edges:
+
+- **The band leaves on its drums.** After the stinger the drums alone play
+  a street beat (four-bar phrases, 16–21 s) while the road carries the band
+  round the last houses and out of hearing. It no longer stops dead in
+  earshot. The meeting still waits only for the stinger.
+- **The band and the company come from one side.** Far off they are now
+  8–10 dB toward their end of the colony (it was about 3). The town's air
+  leans toward the traveller instead of standing all around it.
+- **The company's last verse goes over the rise.** Its song ends 5–14 dB
+  under its nearest point (in round 1 it ended about level with it), and
+  its wheels fade out after it.
+- **The alto horns' after-beats no longer rub against the tune.** A chord
+  tone within a semitone of the tune's note is left out of that pah (the
+  tune's passing fa against the horns' mi). Few listeners will notice this.
+- **The minutes** say "⇋ the band goes by" for a lone band. They say "⇋ the
+  bands cross · two times at once" only when a second band is nearest while
+  the first still plays.
+
+Everything else is the same: the march, the company's singing and the gulls.
+The rest of round 2 is plumbing the ear won't hear. It fixes the cost of
+the company's and the second band's callbacks, stops the band from giving
+away the doxology's tune, and makes the staff patch part of the recipe.
+
+### The findings, one by one
+
+| # | the critic found | done | evidence |
+|---|---|---|---|
+| 1 | the company breaks 5 ms in a prelude seat: (a) a cold first line, (b) three throats in one clock wake | (b) each throat of a line is laid `STAGGER` 0.06 s after the last, so each gets a wake of its own. (a) `GuestHandcart.warm(ctx)` runs at start-up (a new **required** recipe block): it sings one silent line **with a breath in it** and bakes the carts' noise (`VoicesFolk.warm`, new). Then each throat sings one silent note in a callback of its own, a second after the press, before the company strikes up. The prelude seat stays. The round-1 claim that "the ward has already been singing" was false for a prelude seat and is withdrawn | live in the engine, below: the company's worst callback went from 5.1–16.1 ms to **3.6–4.2 ms**, with no wake over 5 ms holding a company callback |
+| 2 | the second band is built at the press | `if (hooks.defer && (i > 0 \|\| bd.k > 0))`, as the critic wrote. Every callback of a passage (both bands' bars and the second band's building) now takes a moment none of its others has (`slot()`, at least 0.05 s apart) | the press wake for two bands (their material, then `perform`) is 3.8 ms in the engine, and `perform` alone 2.2 ms. The band's callbacks are at most 3.1 ms |
+| 3 | the recipe gives away the withheld tune | the recipe's `outsideMaterial` leaves out every doxology row until a doxology section has been sung (any section of `C.plan` before `C.si`). This is the critic's "better still": it keeps both the withheld Sunday and the doxology's payoff | harness, recipe copy, band forced: seeds 12, 20 and 7 on withheld Sundays march **h:1:2** (the critic saw h:1:3 for 12 and 20); seed 12 not withheld marches h:1:2 (it marched h:1:3 in round 1's own run) |
+| 4 | the staff patch is required | it is now block D of the recipe (kolob-viz.js, ENGRAVE's file), applied with the rest | the critic's two screenshots (without and with the patch) are the verification; I did not re-shoot them |
+| 5 | meetings of 3–4 guests | `MAX_GUESTS = 2`: the company and the gulls are never seated as a third guest unless asked for by name | census below: 3-guest meetings at 2.0 % either way, 0 with 4 |
+| 6 | "the bands cross" for a lone band | fixed (above) | seed 4's minutes in the lab at 390 px: "⇋ the band goes by · its own key, its own time" |
+| 7 | the march stops dead in earshot; the company ends its song at about −28 dB | the band's street beat, with the road going on and the band's gain falling 30 dB (`AWAY_DB`) past the last houses. The company goes over the rise: up to 14 dB more past its nearest point (`RISE_DB`, deepening with the square of the way gone) | below: the drums' last 3 s at −72 to −77 dB; the company's last line 5–14 dB under its nearest |
+| 8 | the dead ternary | gone. The captain, bass or tenor, sings in the men's octave. ALL IS WELL spans 131–330 Hz there, and an octave lower its foot would sit near 65 Hz. A bass captain is told by his darker throat, not by his octave (said in the code) | — |
+| 9 | after-beat semitone clashes | `offTheTune()` reads the whole march at once, so it also catches the next strain's pickup in this strain's last bar and the first strain's pickup under the introduction's vamp. A pah's chord tone within 60–150 cents of a tune note sounding with it, in any octave, is dropped. A held trio chord is checked only at its onset | 120 marches in six dialects: **636 → 0** such chord tones (my count is per chord tone; the critic counted differently, 1.7 % of tune onsets). `prepare` costs 0.1–0.2 ms more |
+| 10 | listening questions | (1) the band crossing the doxology's verse: kept for the owner's ear, with the lever below. (2) the level: kept (the dial is `GuestBands.LEVEL`). (3) the subtle lean: fixed. The road's town-air send now leans toward the traveller (`AIR_LEAN` 0.5), and gives back the coherent gain the panner adds, so it moves the air without making it louder | first heard 8.3–9.8 dB toward its side (round 1: 1.8–5.4); going 8.6–9.2 dB toward the other; levels unchanged (seed 2 +1.8 LU, seed 1 −0.7, as in round 1) |
+
+Also: each band's notes now carry **their own** `hymnId`. In round 1 a second
+band's notes were tagged with the first band's hymn. The recipe's glue line
+changes with it (block A).
+
+### The cost on the main thread, measured again (live, in the engine)
+
+**How.** A throwaway copy of this branch with the amended recipe applied,
+served on its own port, in muted headless Chrome. The page's
+`setInterval(…, 25)` was wrapped, so every wake of the engine's clock is
+timed whole: every callback due in it, the guest's and the meeting's. Each
+guest's `perform` and its deferred callbacks are timed too, so a slow wake
+can be traced to whoever caused it. **Chrome must be started with timer
+throttling off** (`--disable-background-timer-throttling
+--disable-renderer-backgrounding --disable-backgrounding-occluded-windows
+--disable-features=IntensiveWakeUpThrottling`). Without those flags a
+long-lived headless page's 25 ms interval was stretched past two seconds
+(40 wakes took more than two minutes), and cues bunch into wakes the real
+page never has.
+
+| what | round 1 (the critic's runs) | round 2, final |
+|---|---|---|
+| **the company**, seed 2, forced, seated in the prelude (before any hymn) | 6 and 5 wakes over 5 ms (5.1–11.2 ms); steady wakes 3.1–4.8 ms (three lines to a wake) | press 1.8–2.3 ms; 54 callbacks, one to a wake; the company's worst callback **4.2** and **3.6** ms in two runs; the 99th percentile of all wakes in the passage 1.9–2.0 ms; **no wake over 5 ms holds a company callback** |
+| the other wakes over 5 ms in the company's window | — | two, both the meeting's own. One is the prelude's first chord of the day at 24.1 s (11–16.5 ms, 2.3 s before the company's press): **15.5 ms with no guest at all**. The other is the house's first chord after the company leaves (8.3–9.8 ms), where the house's ordinary chords stay under 3 ms. See Request 7 |
+| **two bands**, seed 33, forced, jumped to the hymn | the press 3.8–5.8 ms; `VoicesBand.create` twice at the press | the press wake (both marches' material, then `perform`) **3.8 ms**; `perform` alone 2.2 ms (`lendTown` 0.1, `road` 0.2, `create` 0.3); 68 callbacks, the largest 3.1 ms |
+| the ward in that hymn window | — | **15 wakes over 5 ms with no guest at all** (up to 13 ms), at the ward's verse lines; 14 with the two bands there. The band adds none of its own over 5 ms |
+
+How the company got there, run by run (all seed 2, prelude), since each
+step found something:
+
+1. Stagger and a warm line with no breath: the worst callback was 5.1, 9.4,
+   15.4 and 16.1 ms in four runs, **every time the second line's first
+   desk**. It allocated 1.87 MB where a throat's line allocates 0.1–0.6: the
+   first line that breathes bakes the voice's inhale noise (five filter
+   stages over two seconds of noise). The first cart's roll baked the folk
+   voice's noise the same way (+1.86 MB).
+2. With the inhale and the carts' noise warmed, the worst was 4.9–6.3 ms:
+   the first line's four desks, each singing for the first time. Primed, a
+   desk's first line costs 0.5–1.0 ms (0.8–2.2 cold).
+3. With every throat primed: 3.6–4.2 ms, the figures in the table.
+
+**The lab** now lays its guests out on `PJ2.Clock` itself (25 ms, 0.25 s
+look-ahead, each wake timed whole). The critic was right that round 1's lab,
+with a timer for each callback, hid the batching. One caution: on an idle
+lab page the same callbacks run 2–5× slower than they do back to back (the
+company's, paced a few seconds apart on an offline context: 4–8 ms; run
+back to back: 0.3–2.9 ms). A mostly idle page seems to run on a slower
+core. **Read the engine's numbers, not the lab's live ones.**
+
+**The press, broken down (lab, back to back, warm):** a march's `prepare`
+0.4–1.0 ms (two bands 0.7–1.0), `score` 0.1–0.4 ms. Warm in Node, `prepare`
+for two bands is 2.2 ms (median; 3.9 at most). `lendTown` is 0.1 ms when the
+pooled town room is free and 5.6–6.1 ms when it is out and a new one must be
+built. In a meeting that happens only if two borrowers overlap, and the
+band and the company never do.
+
+**The audio thread and nodes** changed little. The road is 12 nodes (was
+11: the air's panner). The company adds one silent gain and six one-note
+priming lines into it; nothing is connected, so the audio thread never
+visits them. The band's nodes live 16–21 s longer while its drums play
+(drums only).
+
+### The guest census (the real planner, the harness)
+
+400 first meetings (seeds 1–400, 2 s each, the `guests-drawn` event), on
+this branch as it stands and on the recipe copy with the two-guest rule:
+
+| | 0 guests | 1 | 2 | 3 | 4 | with a guest |
+|---|---|---|---|---|---|---|
+| unpatched (the critic: 103 / 212 / 77 / 8) | 105 | 208 | 79 | 8 | 0 | 73.8 % |
+| the recipe, round 1 (the critic's count) | 87 | 201 | 93 | 18 | 1 | 78.3 % |
+| **the recipe, round 2** | 90 | 196 | 106 | **8** | **0** | 77.5 % |
+
+The eight three-guest meetings that remain are the older planner's own (a
+band with the singing school and the handbells, and the like). None has the
+company or the gulls, and they are there unpatched too. Over the 400: the
+band 132 times, the handcart company 16, the gulls 20.
+
+### The integration recipe, amended (exact)
+
+Apply round 1's recipe (above) with these four changes. All of them were
+applied, with the rest, to the throwaway copy the checks above ran on. Each
+find text occurs exactly once.
+
+**A. `kolob-guests.js`, round 1's glue (`nauvooBand`'s `onNote`)**: each
+band's notes carry their own hymn. In the glue block round 1 inserts, find:
+
+```js
+meter: x.meter, loud: x.loud, hymnId: V.material.hymnId || null }));
+```
+
+replace with:
+
+```js
+meter: x.meter, loud: x.loud, hymnId: x.hymnId || V.material.hymnId || null }));
+```
+
+**B. `kolob-meeting.js`, round 1's `outsideMaterial`**: the band never
+marches the doxology's hymn before a doxology has been sung (critic 3). In
+the function round 1 inserts, find:
+
+```js
+      var own = C.hymn ? C.hymn.id : null, others = rows.filter(function (r) { return r.id !== own; });
+      var pool = (others.length ? others : rows).filter(ready);
+      if (!pool.length) pool = others.length ? others : rows;
+```
+
+replace with:
+
+```js
+      // (the band never marches the doxology's hymn before a doxology has
+      // been sung: on a withheld Sunday it is the day's tune assembled at
+      // last — even a stranger's quickstep must not give it away — and on
+      // any Sunday the theme's coming home is the doxology's to make)
+      var sungDox = false;
+      for (var di = 0; di < C.si && di < C.plan.length; di++) if (C.plan[di].type === "doxology") sungDox = true;
+      var marchable = rows.filter(function (r) { return sungDox || r.section !== "doxology"; });
+      var own = C.hymn ? C.hymn.id : null, others = marchable.filter(function (r) { return r.id !== own; });
+      var pool = (others.length ? others : marchable).filter(ready);
+      if (!pool.length) pool = others.length ? others : marchable;
+```
+
+**C. `kolob-core.js` (new; REQUIRED):** the company's throat and the carts'
+noise are warmed at start-up, beside the town's air. Without this block a
+company passing in the prelude pays a cold first line and a cold first
+breath inside one wake of the clock, and the prelude seat must then be
+dropped (`GuestHandcart.SEATS`, remove `["prelude", 1]`). Find:
+
+```js
+      try { KOLOB.VoicesBand.warm(ctx); } catch (e) { if (window.console) console.warn("Kolob: the town's air could not be built:", e); }
+    }
+```
+
+replace with:
+
+```js
+      try { KOLOB.VoicesBand.warm(ctx); } catch (e) { if (window.console) console.warn("Kolob: the town's air could not be built:", e); }
+    }
+    // (the handcart company's throat, sung once and silently, now: the first
+    // line a voice sings bakes its breath and compiles it — 5–7 ms — which
+    // must not land in the clock's wake of a company passing in the prelude)
+    if (KOLOB.GuestHandcart && KOLOB.GuestHandcart.warm) {
+      try { KOLOB.GuestHandcart.warm(ctx); } catch (e) { if (window.console) console.warn("Kolob: the company's throat could not be warmed:", e); }
+    }
+```
+
+**D. `kolob-viz.js`, ENGRAVE's file (REQUIRED with the band; critic 4):**
+`takeBand`, as round 1's Request 2 gave it, now applied by the recipe.
+Find today's function:
+
+```js
+  function takeBand(ns) {
+    ns.sort(function (a, b) { return a.startTime - b.startTime; });
+    var beat = ns[0].beat || 0.46;
+    var r = clamp(1.1 / beat, 1.6, 2.6);
+    var bd = { tp0: ns[0].startTime, beat: beat, r: r, tp1: ns[ns.length - 1].startTime + ns[ns.length - 1].duration, bass: [] };
+    ns.forEach(function (n) {
+      var mel = n.part !== "bass", q = bandQ(n.freq);
+      if (mel) { q -= 7; while (q > 26) q -= 7; while (q < 11) q += 7; }   // the fife is written an octave under its sound
+      else { while (q > 9) q -= 7; while (q < -2) q += 7; }
+      var v = valueOf(n.duration / beat, "band");
+      var nb = { tp: n.startTime, dur: n.duration, q: q, loud: n.loud == null ? 0.6 : n.loud, mel: mel, v: v, bd: bd };
+      if (!mel) bd.bass.push({ tp: nb.tp });              // its barlines fall on the oom
+      bandNotes.push(nb);
+    });
+    visits.push(bd);
+    if (visits.length > 3) visits.shift();
+  }
+```
+
+replace with:
+
+```js
+  function takeBand(ns) {
+    ns.sort(function (a, b) { return a.startTime - b.startTime; });
+    // (round 3c: the tune and the tuba are written; the after-beats, the
+    // second cornet and the doublings are heard, not printed — and a march
+    // laid out a bar at a time is one visit, per band, while it plays)
+    ns = ns.filter(function (n) { return n.part !== "alto" && n.part !== "cornet2" && !n.doubling; });
+    if (!ns.length) return;
+    var beat = ns[0].beat || 0.46;
+    var r = clamp(1.1 / beat, 1.6, 2.6);
+    var bd = null;
+    for (var vi = visits.length - 1; vi >= 0 && !bd; vi--) if (visits[vi].band === (ns[0].band || 0) && ns[0].startTime - visits[vi].tp1 < 4) bd = visits[vi];
+    if (!bd) { bd = { tp0: ns[0].startTime, beat: beat, r: r, tp1: 0, bass: [], band: ns[0].band || 0 }; visits.push(bd); if (visits.length > 4) visits.shift(); }
+    ns.forEach(function (n) {
+      var mel = n.part !== "bass", q = bandQ(n.freq);
+      if (mel) { q -= 7; while (q > 26) q -= 7; while (q < 11) q += 7; }
+      else { while (q > 9) q -= 7; while (q < -2) q += 7; }
+      var v = valueOf(n.duration / beat, "band");
+      var nb = { tp: n.startTime, dur: n.duration, q: q, loud: n.loud == null ? 0.6 : n.loud, mel: mel, v: v, bd: bd };
+      if (!mel && n.downbeat !== false) bd.bass.push({ tp: nb.tp });   // its barlines fall on each bar's oom
+      bd.tp1 = Math.max(bd.tp1, n.startTime + n.duration);
+      bandNotes.push(nb);
+    });
+  }
+```
+
+**The lever for the doxology (critic 10, question 1).** Seven times in ten
+the band is seated in the doxology and crosses its verse, at about the
+level of the organ, where the reckoning's recognition lands. If the owner
+would rather the doxology were left alone, set `GuestBands.SEATS.usual =
+["hymn", "postlude", "doxology"]` (the plan's odds are unchanged; only the
+seat moves). If he would rather keep the doxology seat but have the band
+arrive after the verse's recognition, raise `GuestBands.AT.doxology` (for
+example `[0.5, 0.75]`; the band is far off for its first twenty seconds or
+so either way).
