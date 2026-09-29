@@ -2,6 +2,12 @@
 
 *Round 3b, step 4. Branch `kolob-r3b`. 2026-09-28.*
 
+> **Read [Round 2](#round-2-the-critics-findings) at the end first.** It
+> answers the critic's review and corrects several statements in this note:
+> what `?exp=-reckoning` does, the still sacrament's "any note", the number
+> of candidates, the distinctness comparison, the drone's "quiet" glides,
+> and the costs. Where the two differ, Round 2 stands.
+
 Each visit now draws **a Sunday of the colony year**: one of nine Sundays,
 each with its own character. The meeting **rises** from dawn to full light.
 The rites between the hymns are **seated**, never two plain ones in a row.
@@ -584,3 +590,460 @@ Nothing was thinned.
   - `repro-*.log`, `transport9c.log`;
   - `idx-b5.txt`: every seed's listening index;
   - `tr-17-new.json`, `tr-17-v035.json`: the traces.
+
+---
+
+## Round 2: the critic's findings
+
+*The critic's review of step 4, answered. Every finding is fixed or
+restated; none is disputed. Three things beyond the list came up while
+fixing it and are in too (the cantus must move, each Sunday's own dawn, the
+arbor's bowed amen). The listening packet
+([`listen-r3b.md`](listen-r3b.md)) is revised to match.*
+
+Commits on `kolob-r3b` (after `fbd173ca`):
+
+| commit | what |
+|---|---|
+| `316303fb` | the switch holds only the drone; the still sacrament keeps the rule; 24 candidates; the men's verse's basses under the tune; the arc's harmonic leg; each Sunday's dawn; a seated rite's sat-out voices let go; the rule's die read afresh; comments made true |
+| `85073768` | the cantus must move (three pitches at least) |
+| `9ebbca24` | a rite seated in the brush arbor bows its amen |
+| (this) | this section, and the revised listening packet |
+
+The measurements below are on `9ebbca24` unless a line says otherwise:
+44 seeds × 1,200 s (1–30, 37, 181, 209, 236, 41–50) with the reckoning on
+and with `exp=-reckoning`, the planner's census over seeds 1–2,000 and
+1–600, and seeds 1–30 at 180 s for distinctness. All silent: the Node
+harness, and headless Chrome launched with `--headless=new --mute-audio`.
+
+### 1. MUST FIX — the reckoning's A/B switch changed the doxology (fixed)
+
+The critic was right: with the switch off, `reckoningInfo` returned null,
+so the desk never wrote the candidates and the composer's first doxology
+was sung. On 10 of 14 seeds that was another hymn, often in another meter.
+
+- **Now** the switch does not reach the desk. The doxology is ordered and
+  written the same way either way, and the switch only holds the drone at
+  home (`C.reckoning.held`): no turns, no glides, and the house's chords do
+  not lean on the drone. This is §7.2's own fallback, "the cantus only for
+  the key plan, with no audible glide".
+- The `reckoning` event carries `held`, and so does the `calendar` event's
+  reckoning. The page prints no ∿ THE DRONE'S TUNE row when the drone is
+  held (it prints on the drone's turn home, and there is none).
+- **Checked:** 44 of 44 seeds sing the same hymns with and without the
+  switch, with the same section times in the first meeting. The critic's 14
+  seeds are among them. With the switch off, 80 of 80 reckonings are
+  `held` and the drone makes 0 turns. REPRO passes on seed 17 with
+  `exp=-reckoning`.
+- The consonance table below is re-measured with this clean A/B, so the
+  doxology row is no longer confounded.
+
+### 2. MUST FIX — the packet's claims about the reckoning (restated, and one fixed in code)
+
+**(a) The per-rite claims did not replicate.** I measured the drone against
+the harmony on 44 seeds, reckoned and held, and split them into three
+samples (the builder's 1–20, the critic's 14, and 13 others). The method is
+the builder's `reckon-measure.js`: every half second with two or more
+pitch classes sounding in the house and the ward, is the drone's class in
+the chord, and is anything a second against it.
+
+| | in the chord: reckoned · keynote | a second against it: reckoned · keynote |
+|---|---|---|
+| **all 44 seeds** | **64.5 % · 69.4 %** | **37.6 % · 38.4 %** |
+| seeds 1–20 | 62.3 · 69.1 | 39.1 · 38.4 |
+| the critic's 14 | 65.2 · 68.0 | 37.2 · 38.5 |
+| 13 others | 64.0 · 71.9 | 37.7 · 37.5 |
+| by the drone's note (all 44): the keynote · the third · the fifth | 69.5 · 38.5 · 73.8 | 39.4 · 34.7 · 33.4 |
+
+- **What holds in all three samples:** the moving drone is a chord tone
+  3 to 8 points less often than the keynote drone, and it clashes about as
+  often. The hymns are less consonant in all three (58–61 % against
+  65–66 % in the chord; the clash equal). The testimony clashes less in all
+  three (6–17 % against 13–29 %) but is in the chord less too. The third is
+  the weak note: in the chord 39 % of the time against 70–74 % for the
+  keynote and the fifth.
+- **What flips between samples, and is no longer claimed:** the invocation
+  (reckoned better in one sample, worse in two) and the sacrament.
+- **One more, found while measuring:** in the doxology, where the drone is
+  home either way, the reckoned meetings are a little less consonant (68
+  against 72 % in the chord, a second 40 against 35 %, in all three
+  samples). The drone and the hymns are the same there, so it is the
+  house's own chords (the strings, the harmonium) carrying the choices they
+  made leaning on the drone in the rites before. I have not isolated it.
+- The packet now says only the overall figure and the third.
+
+**(b) The still sacrament's "any note" (fixed in code).** The critic was
+right: the "alone" role let the cantus hold re, fa, la or ti for two minutes
+in a still sacrament, where the strings still bow the day's chord. That is
+where the clash rose (61.5 % against 37.0 %).
+
+- `kolob-calendar.js` `STILL_ANY_NOTE` is now `false`, so the sacrament
+  keeps the rule every rite keeps. The harness now accepts only a tonic,
+  third or fifth (or home) for a drone turn.
+- **Checked:** 176 turns in 44 seeds are tonic 60, third 63, fifth 53, and
+  0 "alone". The packet's sentence ("each drone note is the tonic, third
+  or fifth…") is now true.
+- **The cost:** fewer Sundays reckon. So I raised `RECKON_CANDIDATES` from
+  12 to 24 (the owner's ruling: build it, measure it).
+
+| seeds 1–600, the desk writing and reading every doxology | reckoned | by the tune's own notes | by its strong notes | the desk's time (Node, median · max) |
+|---|---|---|---|---|
+| step 4 as built (12 candidates, "alone" allowed) | 70.7 % | 249 | 175 | 69 ms · 1.35 s |
+| the sacrament held to the rule, 12 candidates | 62.7 % | 150 | 226 | 82 ms · 1.31 s |
+| the rule, 24 candidates | 70.5 % | 211 | 212 | 130 ms · 1.33 s |
+| **now** (the rule, 24 candidates, the cantus must move; the arc's new leans) | **66.0 %** | **208** | **188** | 177 ms · 2.56 s (a loaded machine) |
+
+- In the browser's worker the reckoned doxology took 156 ms (seed 17: 22
+  candidates), 402–414 ms (seed 9) and 436 ms (seed 14: all 24, then the
+  fallback). The other hymns took 5–58 ms. Every hymn was back long before
+  the first joint, and none was late. (Measured on `316303fb`.)
+
+**(c) "Under the joint's quiet" was wrong (restated; one lever proposed).**
+The glide begins as the joint's amen does, so it runs under the amen.
+
+- 125 of 176 glides overlap an organ note. The other joints lead into the
+  sacrament, whose joint has no chord, or run under a bowed amen or the
+  strings.
+- **The landing** (the half second after the glide ends): a second sounds
+  against the new note in 53.1 % of 145 landings, against 39.3 % for the
+  keynote at the same moments. The three samples give 46 · 37, 50 · 40 and
+  67 · 43.
+- **What rubs:** the amen's last chord (the organ, in 44 of the 77
+  clashing landings), a chord the strings began in the rite before and
+  still hold (42), and the harmonium (16).
+- **When it rubs most:** turns into a hymn sung in another key (77 % of
+  30), because the drone arrives at the new key's note while the amen is
+  still in the old key. Turns into a rite at home rub 46 % of the time.
+- The packet now says this plainly. The lever I would try, if the owner
+  hears it as wrong: land the glide as the next rite begins, on its first
+  chord (47 % at that moment today, the held strings being most of it),
+  and let a turn into a new key wait for the organist's walk into it. That
+  is a timing change to the joint, so it is left for the owner's ear.
+
+**(d) Seed 3's 1:14 (fixed).** The cantus begins on the keynote in the
+invocation, so the first audible turn is at 2:25. The packet says so.
+
+### 3. MUST FIX — the distinctness claim was overstated (restated; a small audible change)
+
+The critic was right on both counts: the feature sets differed, and a
+wedding and an ordinary Sunday sat on the near-twin line.
+
+- **Restated honestly.** All three builds were read by the same path
+  (`tools/distinctness.js --dumps`, seeds 1–30, the first 180 s), with the
+  three features the build before round 3b could not feed dropped from every
+  build (the Sunday, the cast and the registration). The path reproduces the
+  critic's figures.
+
+| build | median pair D | p10 | p90 | closest pair | near-twins |
+|---|---|---|---|---|---|
+| before round 3b (`3fc476ae`) | 0.589 | 0.477 | 0.697 | 0.360 (8 / 12) | none |
+| step 4 as built (`7831e841`) | 0.614 | 0.484 | 0.724 | **0.307 (7 / 25)** | **1 of 435** |
+| **now** (`9ebbca24`) | **0.613** | 0.484 | 0.719 | 0.323 (19 / 24) | none |
+| now, with every feature | 0.624 | 0.492 | 0.729 | 0.337 | none |
+
+  **Reading it:** the median is modestly up (+0.024 on the build before
+  round 3b), and so is the p90. The closest pair is closer than before
+  round 3b (0.323 against 0.360): the tail is slightly worse. It is two
+  ordinary Tabernacle Sundays (19 and 24). No pair is on the near-twin line
+  now. The planted twin's ratio (7.2× against 9.9×) cannot be compared
+  across builds, because seed 1 became a funeral whose slow pulse moves more
+  under the plant's 4 % slowdown.
+- **Something of the Sunday in the first three minutes** (the critic's
+  suggestion). Each Sunday now has its own dawn (the `arc.dawn` of each
+  Sunday in `kolob-calendar.js`), which sets how dense and how soft the
+  prelude and the invocation are:
+  - a fast Sunday: grey and sparse (0.09–0.15);
+  - Christmas: a winter dawn (0.09–0.15);
+  - a wedding: late and already awake (0.20–0.30), and its morning leaning
+    harder to the parlor organ and the strings (parlor ×2.4, strings ×2.0,
+    the valley and the ground ×0.6);
+  - a funeral: the darkest, as before;
+  - the feasts: lifted, as before.
+
+  Seeds 7 and 25 (the wedding and the ordinary Sunday) moved from 0.307 to
+  0.349. This is a small change; a Sunday still shows most in its hymns and
+  guests.
+- The `sunday` label feeds the distinctness report's identity group, as
+  before. It is a label, not a sound, which is why it is dropped above.
+
+### 4. The men's verse: the basses above the tune (fixed)
+
+- **`menBassFor`** (`kolob-cast.js`), line by line, in a men's verse:
+  - the basses keep their own part where every note of it lies under the
+    tune note sounding with it (by more than 30 cents);
+  - else their part an octave lower, where that stays above 73 Hz (the
+    ward's basses sing down to 75 Hz at their 1st percentile);
+  - else the tune, with the tenors.
+- **The harness now holds the men's verse** (THE SHAPE OF A VISIT): no bass
+  note above the tune, and none meeting it in unison on the basses' own
+  part. (The basses on the tune with the tenors are a unison by design.)
+  Run on the build before this fix, it finds 8 notes above and 10 unisons
+  in seed 9's gospel verse.
+- **Measured** (44 seeds, 14 men's verses): 453 bass-and-tune pairs, 0
+  above, 0 meeting. The basses sang 233 notes on their own part, 17 an
+  octave down and 246 on the tune.
+- **Honestly:** the Tabernacle's bass part mostly lies above the tune an
+  octave down, so its men's verses are mostly in unison. Seed 9's gospel
+  verse keeps the harmony (32 notes on their part, 17 an octave down, 14 on
+  the tune).
+- The comment on `ONE_PART_RATE` now says "two verses or more", as the code
+  does.
+
+### 5. The arc's harmonic leg (strengthened, and measured honestly)
+
+What changed:
+
+- **`LIGHT_ANCHORS` at full light:** the Tabernacle ×1.9 and gospel ×4.6
+  (were 2.2 and 2.2).
+- **The doxology's table** gives the gospel ring a place (+0.8) beside the
+  Tabernacle's +2, on every house but the Sacred Harp's and the Old Way's.
+- **A Tabernacle hymn in full light** (0.9 and up: the doxologies) is
+  written by a hymnist chosen for their appetite for sevenths and secondary
+  dominants: `Calendar.richHymnist`, each hymnist weighted by their lean to
+  the dialect × (0.3 + sevenths + color)², on the hymn's own fork. The
+  composer's own hymnist die is still thrown.
+
+The planner's census (seeds 1–2,000), each hymn's style by the light of its
+rite:
+
+| light | Tabernacle | gospel | Sacred Harp | Shaker | psalmody | Old Way |
+|---|---|---|---|---|---|---|
+| early (below 0.45) | 33 % | 8 % | 25 % | 8 % | 11 % | 15 % |
+| morning | 39 % | 19 % | 18 % | 9 % | 8 % | 7 % |
+| full (0.9 and up) | 48 % | **24 %** | 11 % | 10 % | 4 % | 3 % |
+
+Gospel at full light is now above the morning's (24 against 19 %; it was 14
+against 18).
+
+Heard in 44 seeds' first meetings (`arc-measure.js`, the composed hymns'
+chords):
+
+| rite | sevenths | open fifths |
+|---|---|---|
+| hymn 1 | 6.9 % | 14.7 % |
+| hymn 2 | 8.0 % | 15.6 % |
+| hymn 3 (13 Sundays) | 12.0 % | 14.8 % |
+| doxology | 11.0 % | 7.2 % |
+
+- A Tabernacle doxology now carries sevenths in 8.3 % of its chords,
+  against 6.2 % in the Tabernacle's other hymns (6.8 % and 6.0 % in step
+  4's 24 seeds).
+  Gospel carries them in about a third of its chords wherever it is sung.
+- **Reading it:** the doxology is the least open of the rites, and richer
+  than the first two hymns. It is not richer than a third hymn, and
+  nothing grows steadily from hymn to hymn. The styles move clearly with
+  the light; the harmony only a little. The packet says "a slow
+  brightening, not a sunrise".
+- A partner doxology keeps the first hymn's style (a quarter of Sundays),
+  which is why the heard doxologies carry less gospel than the census.
+- **The organ at full light, restated** (the critic's item 9):
+  - The "house organ full in 88 % of doxologies" of step 4 is the lean
+    itself: `kolob-voices-organ.js` labels the house's chord "full" when
+    the lean is 0.5 or more, and the doxology's lean is 0.8.
+  - The audible fact is the organist's. It drew the full organ in 12 of the
+    29 doxologies it accompanied (41 %), against 12 of 34 other hymns
+    (35 %), usually on the last verse.
+
+### 6. The cost, as a range
+
+Three whole first meetings traced in muted Chrome (`trace.js`, as steps
+1 to 3 did): the builder's seed 17 (`7831e841`, load 4), and this round's
+seed 17 and seed 9 played at the same time in two Chromes (`316303fb`,
+load 5; the later commits change which doxology is kept and the arbor's
+amen, not the cost). The critic's node count of a fourth run is included.
+
+| whole first meeting | seed 17 (builder) | seed 17 (this round) | seed 9 (this round) | v0.35, seed 17 |
+|---|---|---|---|---|
+| the audio thread's share of each second: median · p90 · worst 5 s · worst second | 20.3 · 31.6 · 35.7 · 38.0 % | 15.7 · 28.6 · 36.4 · 37.3 % | 17.5 · 29.5 · 34.6 · 38.6 % | 14.7 · 20.6 · 27.1 · 28.2 % |
+| render capacity: median · p90 · max | 20.1 · 35.2 · 67.4 % | 15.1 · 30.7 · 61.1 % | 17.4 · 31.5 · 64.7 % | 14.4 · 25.8 · 50.5 % |
+| one callback (5.33 ms): median · p99 · max | 1.05 · 2.54 · 5.14 ms | 0.79 · 2.29 · 4.60 ms | 0.92 · 2.40 · 4.31 ms | 0.76 · 2.01 · 3.72 ms |
+| nodes at the most (created) | 2,863 (40,718) | 2,893 (39,288) | 2,757 (45,938) | 455 (8,028) |
+| the ward's ledger: peak · mean | 2,010 · 263 | 2,014 · 226 | 1,752 · 252 | — |
+| cues late · the ward's lines late | 0 / 7,677 · 0 / 1,523 | 0 / 7,025 · 0 / 1,523 | 0 / 7,455 · 0 / 1,882 | 0 |
+
+- **The range for the owner:** round 3b's median audio thread is 16–20 %
+  of each second (1.1 to 1.4 times v0.35's one sample), its busy seconds
+  29–32 % (1.4 to 1.5 times), and its worst callback 4.3–5.1 ms of 5.33.
+- **The nodes, as the critic said:** the WebAudio domain counts a node from
+  its creation until it is collected, so the peak rides on the garbage
+  collector's timing and the machine's load. Hymn 2 of seed 17 (the Sacred
+  Harp pitched by the whole ward) peaked at 2,095 in this round's run and
+  2,616 in the builder's. Its first 30 s peaked at 1,847 and 2,020, where
+  the critic's run (sampled every 5 s) saw 4,330. The packet gives
+  "2,760–2,890 at the most over a whole meeting, once 4,330 in a hymn".
+- **By rite** (seed 17, both runs; render capacity median · max; nodes):
+  - the prelude: 15–21 % · 52 %; 409
+  - the invocation: 11–20 % · 28–38 %; 232
+  - hymn 1: 20–23 % · 40–66 %; 1,899
+  - hymn 2: 22–27 % · 43–67 %; 2,095–2,616
+  - hymn 3: 14–22 % · 49–61 %; 2,863
+  - the testimony: 12–17 % · 33–62 %; 758–795
+  - the sacrament: 12–13 % · 18–36 %; 477
+  - the doxology: 29 % · 45–49 %; 2,669–2,731
+  - the postlude: 15–18 % · 46–48 %; 750–1,074
+- **Seed 9, by rite:** render capacity median 11–28 %. The first meeting's
+  worst second was 62.5 %, in the doxology. Nodes peaked at 2,452 in the
+  first gospel hymn and 2,757 in the doxology. The singing school's prelude
+  peaked at 490 nodes and 21 %. The trace's worst second overall (64.7 %)
+  came in the next meeting's first minutes, with about 1,000 nodes alive,
+  which points at the machine's load rather than the meeting's work.
+- The v0.35 column is still one sample. I did not trace it again: this
+  round changed the new build, not the old one.
+- Nothing was thinned.
+
+### 7. TRANSPORT's 0 of 0 (fixed in the harness)
+
+- A stop with nothing written ahead (0 of 0 sources) is now reported as
+  untested, not as a failure.
+- **Checked:**
+  - seeds 17 and 45 each have one untested stop (17 at 150 s, 45 at 330 s,
+    each after a 25 s gap). Every other line is ✓, and both PASS;
+  - seeds 9 and 23 PASS with all six stops tested.
+
+### 8. The choir alone was not alone; the choir alone as a habit (both fixed)
+
+- **A seated rite lets its sat-out voices go** (`S.houseLetsGo(t, …, only)`,
+  `kolob-core.js`). As a rite seated lined, arbor or choir begins, the
+  voices it sits out release whatever they wrote before it, over the house's
+  1.5 s, as for a guest.
+  - In seed 17's testimony, the clarinet phrase written in the joint (13
+    notes, 1 to 32 s into the rite) is gone by 1.5 s.
+  - Across the 44 seeds, every sat-out note that would have rung past a
+    seated rite's first 1.5 s was let go.
+  - The harness's THE HOUSE LETS GO now honours every release up to a
+    guest's entrance. It had flagged a string chord let go by a lined rite
+    as "rang on" past a later guest (seed 23).
+- **The rule's die is read afresh** (`Calendar.scenes`, `again()`). When the
+  rule seats a rite, the die is read within the plain house's share of it,
+  not as it fell. As it fell, a die low enough to land on the plain house
+  landed again on the first seating after it.
+  - Of the testimonies (1,564 in 2,000 first meetings): the choir alone
+    30 % (was 44 %), lined out 24 %, the brush arbor 22 %, an organ
+    voluntary 15 %, plain 10 %.
+  - It is still seated nine times in ten, because the sacrament after it
+    keeps its stillness. That is the rule as written, so it stays.
+- **The arbor's amen is bowed.** A rite seated in the brush arbor had its
+  organ sit the rite out, then play the amen. Its amen is now bowed on the
+  strings' bare fifths, as the prelude's arbor has been since the polish.
+
+### 9. Comments and the packet's small claims (fixed)
+
+- `kolob-hymnal.js`'s header gives the candidates as `RECKON_CANDIDATES − 1`
+  more (23), and says what happens when the strong notes fit.
+- `kolob-calendar.js` says why the cantus is four to seven notes and not
+  seven to nine: one note a rite, and the order of service has only so many
+  rites before the doxology.
+- The packet explains the "strong notes" reading (about half the reckoned
+  Sundays: the tune's outline, not its opening), and restates the full
+  organ (item 5 above).
+
+### Beyond the list: the cantus must move
+
+While re-reading seeds for the packet, one reckoning turned out to spell
+nothing: seed 37's doxology, read by its strong notes, was sol, sol, sol,
+sol, sol, sol. The drone turned once and held sol for fourteen minutes.
+
+- `reckon()` now refuses a reading with fewer than three pitches
+  (`CANTUS_MOVES`, counting the keynote it starts from), and the desk tries
+  the next candidate.
+- Seed 37 now spells mi, mi, sol, mi, sol, mi.
+
+### Checks (all silent)
+
+- **The harness, 44 seeds × 1,200 s, reckoning on** (`9ebbca24`):
+  42 pass. Seeds 17 and 37 fail only on the trombone
+  choir's compass (the known GUEST issue). 0 runtime errors in 44. THE SHAPE
+  OF A VISIT reports 0 problems in all 44, including the men's verses (14:
+  0 above the tune, 0 meeting it) and 176 drone turns (0 under a sung line,
+  all tonic, third or fifth). THE HOUSE LETS GO ✓ in all 44. Across the 95
+  seated rites, 299 of 299 sat-out notes that would have rung on were let
+  go.
+- **The same 44 with `exp=-reckoning`:** the same 42 pass (17 and 37 on the trombones' compass),
+  0 errors, 80 of 80 reckonings held, 0 drone turns, and 44 of 44 seeds
+  sing the same hymns as with the reckoning on.
+- **REPRO** (the same seed twice, jittered timers, re-salted sound streams:
+  the score identical byte for byte) passes on:
+  - seeds 3, 7, 9 and 236 (`316303fb`);
+  - seeds 3 and 37, and 17 with `exp=-reckoning` (`85073768`);
+  - seeds 8 and 26, whose rites are seated in the brush arbor
+    (`9ebbca24`).
+- **TRANSPORT** passes on seeds 9, 17, 23 and 45.
+- **The census:**
+  - seeds 1–200 (the acceptance tally): ordinary 47.5 %, fast 15.5, General
+    Conference 11.5, Pioneer Day 6.5, Christmas 8.5, Easter 4.5, a wedding
+    2.5, a funeral 2.5, a dedication 1.0. The calendar's draw is unchanged
+    from step 4.
+  - seeds 1–2,000: 46.4, 13.8, 12.7, 7.1, 6.0, 5.8, 4.1, 3.1, 1.1 %. Every
+    Sunday is within three standard errors; the harness checks it.
+  - Two empty rites running: 0. The step-3 rules still hold.
+- **The browser** (muted headless Chrome, PHP on :8141): 
+  - Seed 17: the drone's first turn at 1:16.7 and the invocation at 1:24.6,
+    as the harness has them. With `&exp=-reckoning`: the reckoning is read
+    at 1:16.7 and held, no turn, and the invocation at 1:24.6. 0 errors and
+    0 late cues in either.
+  - Jumps to seed 17's testimony (seated: the choir alone) and to seed 3's
+    doxology: 0 errors, 0 late cues.
+  - `index.php` (seeds 17; 236 with `&latin=1`; 7 with
+    `&exp=-reckoning`) and all twelve labs at 860 and 390 px: 0 console
+    errors, no horizontal scroll.
+  - The programme card names the Sunday: seed 7 at 390 px reads A WEDDING
+    in Deseret; seed 9 in Latin reads CHRISTMAS.
+  - The composer's desk in the worker, 24 candidates: 156 ms (seed 17),
+    402–414 ms (seed 9), 436 ms (seed 14, the fallback). None late.
+  - The whole-meeting traces above: 0 errors, 0 late cues, 0 late lines.
+
+### Requests (additions to step 4's)
+
+1. **Integrator:**
+   - SCORE §11.8 as built, plus these:
+     - `reckoning.held` and `calendar.reckoning.held`;
+     - the switch's meaning (the drone only);
+     - `Calendar.richHymnist`, and the hymnal row's `hymnist`;
+     - `S.houseLetsGo(t, guest, logged, only)` and the rite's-seating
+       release (a `house-lets-go` whose `guest` is "the rite's seating: …");
+     - `reckoning.why` may be "the tune hardly moves".
+   - Copy the harness from `…/scratchpad/_harness.r3b-form.js` (updated
+     this round).
+2. **HYMN crew:**
+   - Request 3 of step 4 (the `incipit`) stands, and matters more now. A
+     third of Sundays still fall back, and half the reckoned ones spell
+     only the stressed notes.
+   - Request 4 (a Tabernacle doxology that reaches for its V7s) stands. The
+     rich hymnist helps a little (6.2 → 8.3 %).
+3. **FORM (a later step), for the owner's ear first:** the drone's landing
+   (item 2c). Land the glide on the next rite's first chord, and let a turn
+   into a new key wait for the organist's walk.
+
+### Known issues (this round)
+
+- The drone's landing rubs in about half the turns (item 2c).
+- The Tabernacle's men's verses are mostly in unison (item 4).
+- The arc's harmony rises only a little (item 5).
+- The distinctness tail: the closest pair is closer than before round 3b
+  (item 3).
+- The trombone choir's compass (seeds 17, 37) is unchanged: the GUEST crew's.
+- The costs were measured on a machine carrying other crews' work (the load
+  is given with each figure).
+
+### Where the round-2 measurements live
+
+`/private/tmp/claude-501/-Users-tysonwelsh-Sites-municipal-sky-site/9f8f9e47-5fee-4146-97e4-e448a823ca04/scratchpad/r3b-form/r2/`:
+
+- the tools:
+  - `reckon2.js`: the drone against the harmony, per seed and per sample,
+    by the drone's note, the glides against the amen, the landings;
+  - `landing.js`: what rubs at a landing, by layer, role and rite;
+  - `doxcmp.js`: the hymns with and without the switch;
+  - `sev.js`: sevenths by style, hymn and doxology;
+  - `scene-ring.js`: the sat-out voices at a seated rite's start;
+  - `tools/distinctness.js`: the tool with a `DROP=` list;
+  - `listen-index.js`, `show.sh`: the listening index.
+- the results:
+  - `on/`, `off/`: the 44 seeds;
+  - `census600r.log`, `census2000.log` (with gospel ×3.4) and
+    `census2000-g46.log` (the final ×4.6), `census200.log`;
+  - `d30-base-drop/`, `d30-builder-drop/`, `d30-new-drop/`,
+    `d30-new-all/`;
+  - `repro-*.log`, `transport-*.log`;
+  - `tr-*.json`: the traces;
+  - `idx.txt`: the listening index.
