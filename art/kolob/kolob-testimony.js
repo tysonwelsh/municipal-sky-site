@@ -97,11 +97,12 @@ window.KOLOB.Testimony = (function () {
     cap: 1,
   };
   var AT = [3, 7];                                // s into the testimony: the rite settles first
-  // THE LEVEL (the testimony's bus), against the organ reference as the lab
-  // measures it (the loudest 3 s, as seated): the stillest rite of the
-  // morning, and a person speaking — set well under the organ (the handoff's
-  // table)
-  var LEVEL = 0.5;
+  // THE LEVEL (the testimony's bus), against the v0.30 organ reference as
+  // the guests lab 3c measures it (the loudest 3 s, as seated): the
+  // stillest rite of the morning, and a person speaking — the speaker's
+  // loudest near −3.5 LU, the reed a little under the voice, the whole
+  // about −2 at its fullest (the handoff's table)
+  var LEVEL = 0.6;
 
   function oddsFor(info) {
     var w = ODDS.weight;
@@ -557,7 +558,10 @@ window.KOLOB.Testimony = (function () {
   // PERFORM — the testimonies, placed at t (synthesis; reads no clock)
   // ==========================================================================
   // the parts' balance under LEVEL: the speaker, the reeds, the pews
-  var MIX = { speaker: 1, harmonium: 0.8, clarinet: 0.8, room: 0.5 };
+  // (soloed at LEVEL 0.5, MIX 0.8 for the reeds: the speaker's loudest 3 s
+  // −5.1 LU, the reeds' +3.5 — the reed drowning the voice it follows — and
+  // the pews' −22: the reeds 10 dB down, to sit a little under the speaker)
+  var MIX = { speaker: 1, harmonium: 0.25, clarinet: 0.25, room: 0.66 };
   function perform(ctx, dest, t, material, stream, hooks) {
     var VV = window.KOLOB.VoicesVocal;
     if (!VV || !VV.singer) throw new Error("KOLOB.Testimony: load kolob-voices-vocal.js first");
