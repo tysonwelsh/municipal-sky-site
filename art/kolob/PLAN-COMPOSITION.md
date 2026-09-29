@@ -1229,3 +1229,26 @@ handoff/r3b-engrave-1.md. kolob-viz.js already reads these fields.
 4. **The funeral rule** depends on `sunday` being passed: always pass it.
 5. **Pioneer Day.** The adjacency rule refuses the dance in 19 % of meetings, mostly because the
    bands cross the doxology. The integrator may let the bands and the dance share on Pioneer Day.
+
+**For the round-3c integrator, from crew C's critic (tongues, the far ward, the Hosanna):**
+1. **The gift's invented words** still make common first names ("Lila", "Lola", "Lana", "Mila",
+   "Nola") and two scriptural ones ("Leah", "Noah"): about 20 % of songs, and 4 % carry Noah or Leah.
+   Refuse the pattern, not name by name: two syllables of l/n/m + vowel + l/n/r + ah (or at least
+   add these to BLOCK, kolob-guest-tongues.js:302–314).
+2. **The Hosanna's `beside`** over-reports when the guests carry no index. Push `index` with each
+   visitation (the far ward's seat already has sectionIndex), so a far ward in the opening hymn
+   isn't counted as a neighbour of the last doxology.
+3. **Recipe placement.** Plan the Hosanna at the existing hook (kolob-meeting.js ≈554), and reset
+   C.payoff if it was 'bands'. Ignore the handoff's line "plan the Hosanna before the payoff is
+   settled"; it contradicts the recipe's code.
+4. **Seat the ward before planning guests**, so the gift's singer is always a testimony-bearer (today
+   only about half the time), and correct the owner summary in r3c-voices-1.md:23 to match.
+5. **The Hosanna overrides §8.13's no-adjacent-guests rule by default** (crew C's own call; one line,
+   `YIELD = true`, reverses it). Move a band out of the doxology when the Hosanna takes it.
+6. **Seeding.** The gift seeds the next hymn when one follows the testimony, and the doxology only
+   when the doxology has no other payoff.
+7. **The Hosanna's hymn is audio-only** until the staff engraves unlogged notes marked
+   `engrave: true`. Wire that in the page (PLAN §8.12), or leave it audio-only, per the owner's ruling.
+8. **Cost, reported and not cut.** The Hosanna runs about 1.3× the ward's hymn, with its longest
+   render callbacks at 5.2–6.1 ms against a 5.33 ms budget. The far ward's 24 throats add about
+   1,250 nodes. Measure these again in the integrated meeting.
