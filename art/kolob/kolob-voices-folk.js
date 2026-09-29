@@ -752,6 +752,10 @@ window.KOLOB.VoicesFolk = (function () {
     };
   }
 
-  return { create: create, bell: { tau: bellTau, life: bellLife, casting: casting } };
+  // warm(ctx) (round 3c): the voice's noise — the carts' gravel and axles,
+  // the gulls' breath — baked now, at start-up, not in the clock callback
+  // of the first cart to roll (2 s of it: a visible pause on a slow core)
+  function warm(ctx) { if (ctx) noiseBuf(ctx); return !!ctx; }
+  return { create: create, warm: warm, bell: { tau: bellTau, life: bellLife, casting: casting } };
 })();
 (window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-voices-folk.js"] = true;   // the load guard's roll call (round 3b, step 3: the handbells ring in the meeting)

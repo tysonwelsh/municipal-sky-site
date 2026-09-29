@@ -363,6 +363,18 @@ window.KOLOB.GuestHandcart = (function () {
         leader: [[VV.singer({ part: sh.leaderLow ? "B" : "T", age: "mid", confidence: 0.95, brightness: 0.55, breath: 0.2, rand: who.fork("leader"), name: "handcart-captain", pan: 0 }), G_LEAD]],
         child: [[VV.singer({ part: "child", age: "young", confidence: 0.7, brightness: 0.6, breath: 0.2, rand: who.fork("child"), name: "handcart-child", pan: 0.12 }), G_CHILD]],
       };
+      // (a throat's first line costs it about twice what its next does —
+      // its people's waves made, its mouth's first shapes — so each sings
+      // one note into nothing first, in a callback of its own, a second in,
+      // long before the company strikes up: measured, a first line primed
+      // costs 0.5–1.0 ms where a cold one cost 0.8–2.2)
+      var hush = ctx.createGain(); hush.gain.value = 0;
+      Object.keys(throats).forEach(function (v, i) {
+        throats[v].forEach(function (th, k) {
+          var j = i * 2 + k;
+          later(t + 1 + STAGGER * j, function () { th[0].sing(ctx, hush, t + 2 + 0.1 * j, [{ f: 220, dur: 0.1, vowel: "ah" }], 0); });
+        });
+      });
       // (each throat's line a callback of its own, and each at a moment of
       // its own: the engine's clock fires every cue inside its quarter-second
       // look-ahead in one wake, so the throats of a line — the women's two
@@ -398,19 +410,25 @@ window.KOLOB.GuestHandcart = (function () {
   // can pass (at the engine's start-up, beside VoicesBand.warm)
   // ==========================================================================
   // The first line any voice of KOLOB.VoicesVocal sings in a context bakes
-  // the breath's noises and compiles the voice: 5–7 ms of main thread,
-  // measured, where a warm line costs under 2. In a meeting that has not yet
-  // sung — a company passing in the prelude — that first line would land in
-  // one wake of the clock. So one short line is sung here, at the button
-  // press, into a gain of nothing, and the company finds the throat warm.
-  // (Its own stream, not the meeting's: no die of the meeting is drawn.)
+  // the breath's noise and compiles the voice (5–7 ms of main thread,
+  // measured, where a warm line costs under 2), and the first line that
+  // BREATHES bakes the inhale (1.9 MB, and 5–16 ms in a live page: it was
+  // the company's second line, every time). The carts' first roll bakes the
+  // folk voice's noise the same way. In a meeting that has not yet sung — a
+  // company passing in the prelude — each would land in one wake of the
+  // clock. So here, at the button press: one short line with a breath in
+  // it, sung into a gain of nothing, and the carts' noise; the company
+  // finds its throats warm and its wheels greased. (Its own stream, not the
+  // meeting's: no die of the meeting is drawn.)
   function warm(ctx) {
-    var VV = window.KOLOB.VoicesVocal, R = window.PJ2 && window.PJ2.Rand;
+    var K = window.KOLOB, VV = K.VoicesVocal, R = window.PJ2 && window.PJ2.Rand;
     if (!ctx || !VV || !VV.singer || !R || ctx.__kolobHandcartWarm) return false;
     ctx.__kolobHandcartWarm = true;
+    if (K.VoicesFolk && K.VoicesFolk.warm) K.VoicesFolk.warm(ctx);
     var hush = ctx.createGain(); hush.gain.value = 0;
     var s = VV.singer({ part: "T", age: "mid", confidence: 0.9, brightness: 0.5, breath: 0.2, rand: R.stream(0x5a17).fork("handcart:warm"), name: "handcart-warm", pan: 0 });
-    s.sing(ctx, hush, ctx.currentTime + 0.05, [{ f: 220, dur: 0.25, vowel: "ah" }, { f: 247, dur: 0.25, vowel: "ee" }], 0);
+    s.sing(ctx, hush, ctx.currentTime + 0.6, [{ f: 220, dur: 0.25, vowel: "ah" }, { rest: true, dur: 0.45 }, { f: 247, dur: 0.25, vowel: "ee" }], 0,
+           { breathBefore: 0.45, inhale: 1 });
     return true;
   }
 
