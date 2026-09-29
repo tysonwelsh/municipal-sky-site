@@ -95,22 +95,43 @@
 
   root.classList.add('jd-about--live');
 
+  /* NO BLUEPRINT HERE (owner, 2026-09-29): the graph/blueprint paper swap
+     stays on the drawer proper, but this page shows every drawing on graph
+     paper and offers no switch (about.css hides the buttons). The shared
+     preference is read through window.JD_paper at render time, so pinning
+     get() here keeps a viewer's blueprint choice from the drawer from
+     showing up on this page, and set() does nothing. */
+  if (window.JD_paper) {
+    window.JD_paper = { get: function () { return 'graph'; },
+      set: function () {}, icon: window.JD_paper.icon };
+  }
+
+  /* THE INSTRUMENT'S BUTTON SAYS "NEXT" (owner, 2026-09-29). The card's own
+     label names the drawing it leads to ("next — drawing B →"); on this
+     page the rail sits beside the button and already says where it goes, so
+     the button reads just "next". Relabelled as the card renders — the turn
+     card re-renders on every step, so an observer on the pane catches each
+     new button (and the check keeps the observer from firing on its own
+     write). */
+  function nextOnly() {
+    var bs = pane.querySelectorAll('[data-scene-pane="instrument"] .jd-turn-go[data-act="next"]');
+    for (var i = 0; i < bs.length; i++) {
+      if (bs[i].textContent !== 'next') bs[i].textContent = 'next';
+    }
+  }
+  if (window.MutationObserver) {
+    new MutationObserver(nextOnly).observe(pane, { childList: true, subtree: true });
+  }
+
   /* ---- the poster (see index.php / about.css "THE POSTER") ----------------
-     Scene 1 shows a picture of the pile with the specimen live on top. The
-     page is not the place to dig, so the drawer gets a way in: a button to
-     the real one. And the specimen is seated on the spot the capture recorded
+     Scene 1 shows a picture of the pile with the specimen live on top. (The
+     OPEN THE DRAWER button that sat on its floor went 2026-09-29, owner: the
+     prose links to the full drawer already.) The specimen is seated on the
+     spot the capture recorded
      — the stored scatter usually does that already, but a drawing filed since
      the capture makes the drawer scatter fresh, and the live object must
      never land on top of a picture of something else. */
   if (window.JD_POSTER) {
-    var posterStage = pane.querySelector('.jd-stage');
-    if (posterStage) {
-      var openA = document.createElement('a');
-      openA.className = 'jd-open-drawer';
-      openA.href = BASE;
-      openA.textContent = 'Open the drawer →';
-      posterStage.appendChild(openA);
-    }
     var seat = window.JD_POSTER.place;
     if (seat) {
       poll(function () {
@@ -1762,7 +1783,7 @@
           order.map(function (m) {
             var c = hist[m][g - 1];
             var tip = (name[m] || m) + ': ' + c + ' graded ' + (gradeName[g] || g);
-            return '<span class="jdc-hrow-cell" data-model="' + esc(m) + '" title="' + esc(tip) + '">' +
+            return '<span class="jdc-hrow-cell" data-model="' + esc(m) + '" data-grade="' + g + '" title="' + esc(tip) + '">' +
               '<b class="jdc-hrow-bar" style="width:' + (hmax ? (c / hmax * 78).toFixed(1) : 0) + '%;background:' + GRADE_RAMP[g - 1] + '"></b>' +
               '<span class="jdc-hrow-n">' + c + '</span></span>';
           }).join('');

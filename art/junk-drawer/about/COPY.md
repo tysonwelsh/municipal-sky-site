@@ -12,7 +12,7 @@ This file is a working draft only: the page does not read it, and `.md` files ar
 
 # About the SVG Junk Drawer
 
-_(the page title: "About the" small and italic on its own line over "SVG Junk Drawer", a double rule — at the head of this step, so it scrolls away with the opening paragraphs)_
+_(the page title: "About the" on one line and "SVG Junk Drawer" on the next, both in the same type, a double rule — at the head of this step, so it scrolls away with the opening paragraphs)_
 
 ### My personal SVG benchmark
 

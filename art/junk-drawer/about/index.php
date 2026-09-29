@@ -174,7 +174,7 @@ include __DIR__ . '/../../../includes/header.php';
         <div class="jd-step-body">
         <!-- THE PAGE'S TITLE (owner, 2026-09-28): the head of the opening
              step, so it arrives and leaves with the opening paragraphs.
-             "About the" is part of the title, set small in italic on its
+             "About the" is part of the title, set like the name on its
              own line above the name. -->
         <header class="jd-about-head">
           <h1 class="jd-about-title"><span class="jd-about-kicker">About the</span>
@@ -340,7 +340,7 @@ include __DIR__ . '/../../../includes/header.php';
       </div>
 
 
-      <div class="jd-step" data-scene="analytics" data-step="distribution" data-view="grades" data-focus="spread-top2">
+      <div class="jd-step" data-scene="analytics" data-step="distribution" data-view="grades" data-focus="spread-lead">
         <div class="jd-step-body">
         <h2>Similar averages, different distributions</h2>
         <p>Despite similar averages, Gemini generated more drawings graded

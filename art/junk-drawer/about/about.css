@@ -1130,25 +1130,6 @@ html.jd-poster-on:not(.jd-drawer-awake) .jd-about .jd-well::before {
 }
 html.jd-poster-on:not(.jd-drawer-awake) .jd-about .jd-well.jd-has-pick::before { opacity: 1; }
 
-/* the way into the real thing: a manila button on the drawer's floor, in the
-   corner the Take-a-Turn plate leaves free. Above the vignette (62). */
-.jd-about .jd-open-drawer {
-  position: absolute; z-index: 64;
-  right: calc(var(--wall) + 12px);
-  bottom: calc(var(--wall) + 12px);
-  font-family: var(--font-mono);
-  font-size: 0.62rem; letter-spacing: 0.14em; line-height: 1;
-  text-transform: uppercase; text-decoration: none; white-space: nowrap;
-  color: #3a2a12;
-  background:
-    linear-gradient(178deg, rgba(255, 250, 228, 0.55) 0%, rgba(255, 250, 228, 0) 40%),
-    #e8d9a8;
-  border: 1px solid rgba(74, 53, 18, 0.55); border-radius: 3px;
-  padding: 0.62rem 0.8rem 0.56rem;
-  box-shadow: 2px 3px 7px rgba(22, 11, 4, 0.5);
-}
-.jd-about .jd-open-drawer:hover { background: #f1e6c0; }
-.jd-about .jd-open-drawer:active { transform: translateY(1px); box-shadow: 1px 1px 3px rgba(22, 11, 4, 0.5); }
 
 /* a phone gives the drawer the full width and 62vh, which is taller than 4:5;
    the picture is 4:5, so the stage keeps that shape here and the picture is
@@ -1160,7 +1141,6 @@ html.jd-poster-on:not(.jd-drawer-awake) .jd-about .jd-well.jd-has-pick::before {
     width: min(100%, calc(62vh * 0.8));
     min-height: 0;
   }
-  .jd-about .jd-open-drawer { font-size: 0.54rem; padding: 0.55rem 0.65rem 0.5rem; }
 }
 
 /* the craquelure is the floor's aging and lies UNDER the objects. Over the
@@ -1220,7 +1200,7 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
 .jd-about .jd-axes--list .jd-axis-label::after {
   content: "\00a0\2014\0020"; white-space: pre-wrap; font-weight: 400;
 }
-.jd-about .jd-axes--list .jd-axis-desc { color: inherit; }
+.jd-about .jd-axes--list .jd-axis-desc { color: inherit; font-style: italic; }   /* italic: owner, 2026-09-29 */
 
 
 /* ============================================================================
@@ -1391,22 +1371,17 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
 
 /* THE PAGE TITLE (owner, 2026-09-28, third pass). A title block at the
    head of the opening step, so it scrolls away with the opening paragraphs.
-   "About the" is part of the title — small italic on its own line — over
+   "About the" is part of the title — on its own line, in the same type — over
    the name in the page's heading face at display size (sentence case; the
    site's h1 caps are for section labels), closed by a double rule, heavy
    over hairline. On desktop the block reaches from 17vh down to the focus
    line: the title sits high in the column, near the top of the drawer,
    and the opening heading still lands where every later step is read. */
 .jd-about .jd-about-head { margin: 0 0 var(--s-4); }
-.jd-about .jd-about-kicker {
-  display: block;
-  margin: 0 0 0.2rem;
-  font-style: italic;
-  font-weight: 400;
-  font-size: 0.5em;
-  letter-spacing: 0.01em;
-  color: var(--ink-soft);
-}
+/* (owner, 2026-09-29) "About the" is set exactly like the name — same
+   face, size, weight and ink — on its own line, so the title reads as one
+   phrase across two lines */
+.jd-about .jd-about-kicker { display: block; }
 .jd-about .jd-about-title {
   margin: 0;
   font-family: var(--font-body);
@@ -1639,17 +1614,64 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
 .jd-about .jd-step-list li { margin: 0 0 2px; padding-left: 0.2em; }
 .jd-about .jd-step-list li::marker { font-family: var(--font-mono); font-size: 0.86em; color: var(--ink-soft); }
 
-/* FOCUS (owner, 2026-09-27): a step can dim part of its card to point at
-   the rest. "spread-top2": the averages recede, and in the spread only the
-   two leaders stay at full strength. Opacity eases, so the emphasis moves
-   rather than blinks. */
+/* FOCUS (owner, 2026-09-27; widened 2026-09-29): a step can dim part of its
+   card to point at the rest. "spread-lead": the averages recede, and in the
+   spread only the top three grades (Prime, Choice, Select) of the three
+   leading models (Opus, Gemini, Kimi) stay at full strength — every other
+   bar, and GPT-5.1's column head, fade back. Opacity eases, so the emphasis
+   moves rather than blinks. */
 .jd-about .jdc-sec-avg,
 .jd-about .jdc-hrow-t,
 .jd-about .jdc-hrow-cell { transition: opacity 0.35s ease; }
-.jd-about [data-scene-pane="analytics"][data-focus="spread-top2"] .jdc-sec-avg { opacity: 0.28; }
-.jd-about [data-scene-pane="analytics"][data-focus="spread-top2"] .jdc-hrow-t:not([data-model="claude-opus-5"]):not([data-model="gemini-3-1-pro"]),
-.jd-about [data-scene-pane="analytics"][data-focus="spread-top2"] .jdc-hrow-cell:not([data-model="claude-opus-5"]):not([data-model="gemini-3-1-pro"]) { opacity: 0.22; }
+.jd-about [data-scene-pane="analytics"][data-focus="spread-lead"] .jdc-sec-avg { opacity: 0.28; }
+.jd-about [data-scene-pane="analytics"][data-focus="spread-lead"] .jdc-hrow-t[data-model="gpt-5-1"],
+.jd-about [data-scene-pane="analytics"][data-focus="spread-lead"] .jdc-hrow-cell { opacity: 0.22; }
+.jd-about [data-scene-pane="analytics"][data-focus="spread-lead"] .jdc-hrow-cell:is([data-model="claude-opus-5"], [data-model="gemini-3-1-pro"], [data-model="kimi-k3"]):is([data-grade="5"], [data-grade="4"], [data-grade="3"]) { opacity: 1; }
 @media (prefers-reduced-motion: reduce) {
   .jd-about .jdc-sec-avg, .jd-about .jdc-hrow-t, .jd-about .jdc-hrow-cell { transition: none; }
+}
+
+/* NO BLUEPRINT SWITCH ON THIS PAGE (owner, 2026-09-29) — about-scenes.js
+   pins the paper to graph; the drawer proper keeps the switch */
+.jd-about .rc-paper,
+.jd-about .jd-turn-paper { display: none !important; }
+
+/* THE INSTRUMENT, RE-LAID (owner, 2026-09-29): the prompt ABOVE the drawing,
+   the drawing and its filmstrip centred and a size larger, the ratings under
+   them, and the rail (DRAWING A … RANKING) moved from the top of the card
+   down to the last row, to the left of the button, which reads just "next"
+   (about-scenes.js). The scroller becomes the one grid: the bench and its two
+   column wrappers go display:contents so every piece is an item of it, and
+   `order` puts the prompt first and the rail with the actions last — auto
+   placement then sets the rail in column 1 and the button in column 2 of the
+   same final row. Bench view only: the ranking keeps its own layout. */
+.jd-about [data-scene-pane="instrument"] .jd-inline-card .jd-turn[data-view="bench"] {
+  --plate: 440px;
+}
+.jd-about [data-scene-pane="instrument"] .jd-inline-card .jd-turn[data-view="bench"] .jd-turn-scroll {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--ab-gap-col);
+  row-gap: 0;
+  align-items: start;
+}
+.jd-about [data-scene-pane="instrument"] .jd-inline-card .jd-turn[data-view="bench"] .jd-bench { display: contents; }
+.jd-about [data-scene-pane="instrument"] .jd-inline-card .jd-turn[data-view="bench"] .jd-bench-l > *,
+.jd-about [data-scene-pane="instrument"] .jd-inline-card .jd-turn[data-view="bench"] .jd-bench-r > * {
+  grid-column: 1 / -1; grid-row: auto; order: 3;
+}
+.jd-about [data-scene-pane="instrument"] .jd-inline-card .jd-turn[data-view="bench"] .jd-bench-r > .jd-turn-assign {
+  order: 1; align-self: stretch; margin: 0 0 var(--ab-gap-row);
+}
+.jd-about [data-scene-pane="instrument"] .jd-inline-card .jd-turn[data-view="bench"] .jd-bench-l > .jd-turn-pin {
+  order: 2; width: var(--plate); max-width: 100%; justify-self: center;
+}
+.jd-about [data-scene-pane="instrument"] .jd-inline-card .jd-turn[data-view="bench"] .jd-rail {
+  order: 4; grid-column: 1; align-self: center; justify-content: flex-start;
+  margin: var(--ab-gap-band) 0 0;
+}
+.jd-about [data-scene-pane="instrument"] .jd-inline-card .jd-turn[data-view="bench"] .jd-bench-r > .jd-turn-actions {
+  order: 4; grid-column: 2; align-self: center;
+  margin: var(--ab-gap-band) 0 0; padding-top: 0;
 }
 
