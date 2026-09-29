@@ -1864,6 +1864,11 @@ window.KOLOB.Organist = (function () {
   function scoreLines(C, idx, t, bs, reg, o) {
     o = o || {};
     var h = C.h, lines = C.lines, touch = STYLES[C.style].touch, vic = C.style === "victorian", regs = [];
+    // (the tune doubled an octave up only where its top stays under two
+    // octaves above the keynote: a whole statement doubled, or none of it)
+    var top = -1e9;
+    idx.forEach(function (i) { (lines[i].notes[h.melodyPart] || []).forEach(function (n) { top = Math.max(top, cents(mz(h.keyMonzo, n.monzo))); }); });
+    var dbl = !!o.octave && top + 1200 <= 2450;
     idx.forEach(function (i, k) {
       var last = k === idx.length - 1, L = lines[i], nx = lines[i + 1], b = bs * (last && o.rit ? o.rit : 1);
       var keys = handsOn(h, L, nx, t, b, touch), rg = o.regOf ? o.regOf(k) : reg;
@@ -1872,7 +1877,7 @@ window.KOLOB.Organist = (function () {
         if (die.chance(0.8)) cadenceSusp(h, L, keys, t, b, die, C.scale, C.plan);
         passing(keys, b, die, 0.35, C.scale, C.plan, 2, h.melodyPart);
       }
-      if (o.octave) keys.filter(function (x) { return x.part === h.melodyPart && !x.orn; }).forEach(function (x) {
+      if (dbl) keys.filter(function (x) { return x.part === h.melodyPart && !x.orn; }).forEach(function (x) {
         keys.push({ t: x.t, dur: x.dur, m: oct(x.m, 1), part: "S", orn: "octave", pedal: false, written: [] });
       });
       var label = o.tag + ", line " + (i + 1);
@@ -2057,61 +2062,118 @@ window.KOLOB.Organist = (function () {
     key(pP, t, end - t, near(cls(h.keyMonzo), -1500), "B", { v: 0.8, pedal: true, pedalOnly: true, orn: "pedalpoint" });
     return { end: end + 0.3 * bs, regs: [regA, regB, "soft flutes"], keys: [h.keyMonzo], beatS: bs, meter: h.modeOfTime, lag: pick.d, interval: iv[0], harsh: +pick.harsh.toFixed(2) };
   };
-  // THE INTERLUDE IN TWO KEYS (Ives's joke): above, the tune and its alto in
-  // the hymn's own key, on a bright stop; below, the tune again in ANOTHER
-  // key, a beat or two behind (a canon in two keys, as Ives set it), with its
-  // own bass in that key under it in the pedal — two keys, each whole in
-  // itself, sounding together. The second key is Ives's own for the plain
-  // organist and the Victorian (a major third down, most often: his F
-  // against D♭), and the improviser's own stray key for him; the improviser
-  // puts the second key's tune in the pedals. One line or two, then both
-  // keys' last chords held together, and the next variation comes home.
+  // TWO KEYS HEARD: a set of pitches (cents) that no one just major scale
+  // holds (every tone within 25 c of a degree, re at 9/8 or 10/9) is heard
+  // in two keys; → the share of the sampled moments with two or more tones
+  // sounding that are so (A, B: [{t, dur, m}])
+  var MAJ_CENTS = ["1/1", "9/8", "10/9", "5/4", "4/3", "3/2", "5/3", "15/8"].map(function (f) { return cents(frac(f)); });
+  function pcOf(c) { return ((c % 1200) + 1200) % 1200; }
+  function inMajor(c, tonic) { var d = pcOf(c - tonic); return MAJ_CENTS.some(function (x) { var e = Math.abs(d - x); return e < 25 || e > 1175; }); }
+  function oneKey(cs) {
+    for (var i = 0; i < cs.length; i++) for (var j = 0; j < MAJ_CENTS.length; j++) {
+      var tn = cs[i] - MAJ_CENTS[j];
+      if (cs.every(function (c) { return inMajor(c, tn); })) return true;
+    }
+    return false;
+  }
+  function twoKeyShare(A, B, t0, t1, step) {
+    var on = 0, bi = 0;
+    for (var tt = t0; tt < t1; tt += step) {
+      var cs = [];
+      [A, B].forEach(function (L) { L.forEach(function (x) { if (x.t <= tt && x.t + x.dur > tt) cs.push(cents(x.m)); }); });
+      if (cs.length < 2) continue;
+      on++;
+      if (!oneKey(cs)) bi++;
+    }
+    return on ? bi / on : 0;
+  }
+
+  // THE INTERLUDE IN TWO KEYS (Ives's joke): above, the hymn in its own key
+  // — the tune and the two parts under it — on a bright stop; below, the
+  // tune again in ANOTHER key, a beat or three behind (a canon in two keys,
+  // as Ives set it), with that key's own bass under it in the pedal: two
+  // keys, each whole in itself, sounding together. The second key is Ives's
+  // own for the plain organist and the Victorian (a major third down, most
+  // often: his F against D♭), and the improviser's own stray key for him.
+  // The lag is the one that grates MOST (the canon's search, turned round:
+  // the joke must be heard); the plain organist plays it as printed, two
+  // beats. One line or two, then both keys' last chords together, and the
+  // next variation comes home.
   VAR_PLAY.bitonal = function (C, idx, t) {
     var h = C.h, R = C.R.fork("var:bitonal"), st = C.style, lines = C.lines, touch = STYLES[st].touch;
     idx = idx.slice(0, 2);
-    var bs = h.beatS * C.tempo * R.rnd(1.0, 1.12), dly = R.pickW([[1, 1], [2, 2], [3, 1]]);
+    var bs = h.beatS * C.tempo * R.rnd(1.0, 1.12);
     var ivesKey = R.pickW([["4/5", 3], ["5/4", 1], ["16/15", 0.6], ["45/32", 0.6]]);
     var kx = st === "improviser" ? C.organist.habits.strayKey : frac(ivesKey), keyB = mz(h.keyMonzo, kx);
-    var inPedal = st === "improviser", lag = dly * bs;
-    var upper = [h.melodyPart].concat(["S", "A", "T"].filter(function (p) { return p !== h.melodyPart && lines[idx[0]].notes[p] && lines[idx[0]].notes[p].length; }).slice(0, 1));
-    var bassP = lines[idx[0]].notes.B && lines[idx[0]].notes.B.length ? "B" : null;
-    var run = tuneRun(C, idx, t, bs), um = 0;
-    run.notes.forEach(function (x) { um += cents(x.m); }); um /= Math.max(1, run.notes.length);
-    var sT = Math.round((-1400 - cents(kx)) / 1200) + (inPedal ? -1 : 0);
-    var regU = st === "improviser" ? "glass" : "flutes 8 & 4", regL = st === "plain" ? "hymn principal" : st === "victorian" ? "trumpet" : "pedal tune";
-    var pU = phrase(C.plan, t, regU, "the interlude: the tune in its own key", 2), pL = phrase(C.plan, t + lag, regL, "the interlude: the tune in another key", 1.6);
+    var upper = [h.melodyPart].concat(["S", "A", "T"].filter(function (p) { return p !== h.melodyPart && lines[idx[0]].notes[p] && lines[idx[0]].notes[p].length; }).slice(0, 2));
+    var bassP = lines[idx[0]].notes.B && lines[idx[0]].notes.B.length && upper.indexOf("B") < 0 ? "B" : null;
+    var run = tuneRun(C, idx, t, bs);
+    // the hymn's own key, as it will sound (for the search below)
+    var upEv = [], bev0 = [], mid = [], tq = t, midP = upper[1] || null;
+    idx.forEach(function (i, k) {
+      var L = lines[i], nx = lines[i + 1];
+      upper.forEach(function (p) { lineEvents(h, L, p, tq, bs, nx).ev.forEach(function (e) { upEv.push({ t: e.t, dur: e.dur, m: mz(h.keyMonzo, e.n.monzo) }); }); });
+      if (midP) lineEvents(h, L, midP, tq, bs, nx).ev.forEach(function (e) { mid.push({ t: e.t, dur: e.dur, m: mz(h.keyMonzo, e.n.monzo), i: i, n: e.n }); });
+      if (bassP) lineEvents(h, L, bassP, tq, bs, nx).ev.forEach(function (e) { bev0.push({ e: e, i: i }); });
+      tq += lineDur(L, bs, nx) + (k < idx.length - 1 ? C.lift * bs : 0);
+    });
+    // THE SEARCH: the style's own second key and lag, kept if the two keys
+    // are heard (at least 30 % of the moments with two tones sounding);
+    // else the other keys, and the most bitonal of them
+    // (the other key's tune, and the part under it in that key too, so that
+    // each key sounds a whole chord of its own)
+    function lowerOf(k) {
+      var s2 = Math.round((-1300 - cents(k)) / 1200);
+      return run.notes.concat(mid).map(function (x, j) { return { t: x.t, dur: x.dur, m: oct(mz(x.m, k), s2), i: x.i, n: x.n, mid: j >= run.notes.length }; });
+    }
+    function trial(k, d) {
+      var f = lowerOf(k).map(function (x) { return { t: x.t + d * bs, dur: x.dur, m: x.m }; });
+      bev0.forEach(function (b) { f.push({ t: b.e.t + d * bs, dur: b.e.dur, m: mz(mz(h.keyMonzo, b.e.n.monzo), k) }); });
+      return { k: k, d: d, two: twoKeyShare(upEv, f, t, run.end + d * bs, bs / 2) };
+    }
+    var dLags = st === "plain" ? [2] : [1, 2, 3], pref = dLags.map(function (d) { return trial(kx, d); }).sort(function (a, b) { return b.two - a.two || a.d - b.d; })[0];
+    if (pref.two < 0.3) {
+      ["4/5", "5/4", "16/15", "45/32", "6/5"].forEach(function (f) {
+        dLags.forEach(function (d) { var x = trial(frac(f), d); if (x.two > pref.two + 0.05) pref = x; });
+      });
+    }
+    kx = pref.k; keyB = mz(h.keyMonzo, kx);
+    var sT = Math.round((-1300 - cents(kx)) / 1200), lower = lowerOf(kx);
+    var dly = pref.d, lag = dly * bs;
+    var regU = st === "improviser" ? "glass" : "flutes 8 & 4", regL = st === "plain" ? "hymn principal" : st === "victorian" ? "trumpet" : "principal & 4";
+    var pU = phrase(C.plan, t, regU, "the interlude: the hymn in its own key", 2.5), pL = phrase(C.plan, t + lag, regL, "the interlude: the tune in another key", 1.6);
     var pB = phrase(C.plan, t + lag, "soft flutes", "the interlude: the other key's bass", 1);
     draws(C.plan, C.organist, t, regU);
     say(C.plan, C.organist, t + lag, "plays the tune in two keys at once", { second: kx });
     swell(C.plan, t, 0.45, 0.05);
-    var tt = t, bm = 0, bn = 0;
+    var tt = t, bm = 0, bn = 0, bev = [];
     idx.forEach(function (i, k) {
       var L = lines[i], nx = lines[i + 1], keys = handsOn(h, L, nx, tt, bs, touch);
       lay(pU, keys.filter(function (x) { return upper.indexOf(x.part) >= 0; }).map(function (x) { x.pedal = false; return x; }), { line: i });
-      if (bassP) keys.filter(function (x) { return x.part === bassP; }).forEach(function (x) { bm += cents(x.m); bn++; });
+      if (bassP) lineEvents(h, L, bassP, tt, bs, nx).ev.forEach(function (e) { bev.push({ e: e, i: i }); bm += cents(mz(h.keyMonzo, e.n.monzo)); bn++; });
       tt += lineDur(L, bs, nx) + (k < idx.length - 1 ? C.lift * bs : 0);
     });
-    var lastT = run.notes[run.notes.length - 1];
-    run.notes.forEach(function (x) {
-      key(pL, x.t + lag, x === lastT ? x.dur + 1.5 * bs : x.dur, oct(mz(x.m, kx), sT), inPedal ? "B" : "T", { v: 0.95, pedal: inPedal, line: x.i, beat: x.n.beat, deg: x.n.deg, orn: "bitonal" });
+    var hold = 1.5 * bs;
+    var lastTune = run.notes.length - 1, lastMid = lower.length - 1;
+    lower.forEach(function (x, j) {
+      key(pL, x.t + lag, j === lastTune || (x.mid && j === lastMid) ? x.dur + hold : x.dur, x.m, x.mid ? "A" : "T", { v: x.mid ? 0.75 : 0.95, line: x.i, beat: x.n.beat, deg: x.n.deg, orn: "bitonal" });
     });
-    if (bassP && !inPedal) {
-      var sB = Math.floor((um + cents(kx) + 1200 * sT - 900 - (bm / Math.max(1, bn) + cents(kx))) / 1200);
-      tt = t;
-      idx.forEach(function (i, k) {
-        var L = lines[i], nx = lines[i + 1];
-        var ev = lineEvents(h, L, bassP, tt, bs, nx).ev;
-        ev.forEach(function (e, j) {
-          var last = k === idx.length - 1 && j === ev.length - 1;
-          key(pB, e.t + lag, last ? e.dur + 1.5 * bs : e.dur, oct(mz(mz(h.keyMonzo, e.n.monzo), kx), sB), "B", { v: 0.85, pedal: true, pedalOnly: true, line: i, beat: e.n.beat, deg: e.n.deg, orn: "bitonal" });
-        });
-        tt += lineDur(L, bs, nx) + (k < idx.length - 1 ? C.lift * bs : 0);
-      });
-    }
-    // the hymn's key holds its last chord while the other key catches up
-    pU.notes.forEach(function (n) { if (Math.abs(pU.t + n.at + n.dur - run.end) < 0.4) n.dur = r3(n.dur + lag + 1.5 * bs); });
-    var end = run.end + lag + 1.5 * bs;
-    return { end: end + 0.4 * bs, regs: [regU, regL].concat(bassP && !inPedal ? ["soft flutes"] : []), keys: [h.keyMonzo, keyB], beatS: bs, meter: h.modeOfTime, lag: dly, second: kx };
+    var sB = Math.round((-1700 - (bm / Math.max(1, bn) + cents(kx))) / 1200);
+    bev.forEach(function (b, j) {
+      key(pB, b.e.t + lag, j === bev.length - 1 ? b.e.dur + hold : b.e.dur, oct(mz(mz(h.keyMonzo, b.e.n.monzo), kx), sB), "B",
+          { v: 0.85, pedal: true, pedalOnly: true, line: b.i, beat: b.e.n.beat, deg: b.e.n.deg, orn: "bitonal" });
+    });
+    // the hymn's key holds its last chord while the other key catches up —
+    // and each key's last chord is a whole one, its third sounded (a bare
+    // fifth in each key, a third apart, would be heard as one key's chord)
+    pU.notes.forEach(function (n) { if (Math.abs(pU.t + n.at + n.dur - run.end) < 0.4) n.dur = r3(n.dur + lag + 0.5 * bs); });
+    var third = frac(MINOR[h.mode] ? "6/5" : "5/4"), lastU = run.notes[run.notes.length - 1];
+    key(pU, lastU.t, run.end - lastU.t + lag + 0.5 * bs, near(cls(mz(h.keyMonzo, third)), cents(lastU.m) - 250), "A", { v: 0.7, orn: "bitonal" });
+    var lastL = lower[run.notes.length - 1];
+    key(pL, lastL.t + lag, run.end - lastL.t + hold, near(cls(mz(keyB, third)), cents(lastL.m) + 250), "A", { v: 0.7, orn: "bitonal" });
+    var end = run.end + lag + hold;
+    return { end: end + 0.4 * bs, regs: [regU, regL].concat(bassP ? ["soft flutes"] : []), keys: [h.keyMonzo, keyB], beatS: bs, meter: h.modeOfTime,
+             lag: dly, second: kx, lines: idx, twoKeys: +pref.two.toFixed(3) };
   };
   // A DANCE: the tune re-barred (rebar), the bass in the pedal and the left
   // hand's chords in the dance's own pattern — per bar, [beat, length,
@@ -2288,8 +2350,8 @@ window.KOLOB.Organist = (function () {
       var what = name + ": " + VAR_CHARS[c].en + " (" + r.regs.join("; ") + ")" + (c === "bitonal" ? " — the tune in two keys" : "");
       section(plan, t, r.end, what);
       if (VAR_SAYS[c]) say(plan, organist, t, VAR_SAYS[c]);
-      var rec = { id: c, name: name, en: VAR_CHARS[c].en, t: r3(t), end: r3(r.end), regs: r.regs, keys: r.keys, lines: best.idx, beatS: r3(r.beatS), meter: r.meter };
-      ["lag", "interval", "harsh", "second", "minor"].forEach(function (x) { if (r[x] != null) rec[x] = r[x]; });
+      var rec = { id: c, name: name, en: VAR_CHARS[c].en, t: r3(t), end: r3(r.end), regs: r.regs, keys: r.keys, lines: r.lines || best.idx, beatS: r3(r.beatS), meter: r.meter };
+      ["lag", "interval", "harsh", "second", "minor", "twoKeys"].forEach(function (x) { if (r[x] != null) rec[x] = r[x]; });
       plan.variations.push(rec);
       t = r.end + (ci < chars.length - 1 ? gaps[ci] * h.beatS : 0);
     });
