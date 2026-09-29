@@ -59,7 +59,8 @@
 // on a fast Sunday; never with a guest in the postlude or in the doxology
 // beside it (PLAN §8.13: no two guests in adjacent sections); weighted to
 // Pioneer Day, the jubilees and weddings (ODDS). About one meeting in
-// fifteen overall (the lab's odds card measures it).
+// sixteen overall, a fifth of Pioneer Days and of weddings (the lab's odds
+// card measures it).
 //
 // PURE PLANNING. plan(), decide(), prepare(), tune() and score() touch no
 // AudioContext, DOM, clock or Math.random; every die comes from the stream
@@ -104,10 +105,13 @@ window.KOLOB.GuestSocialHall = (function () {
   // p = base × weight[sunday, else kind], capped. Never at a funeral, never
   // on a fast Sunday (the fast is kept until the evening). The base is
   // conditional: the dance is refused when the postlude or the doxology
-  // holds another guest. Over the calendar's shares (PLAN §7.1) this is about
-  // one meeting in fifteen before the refusals (the lab measures after).
+  // holds another guest — on Pioneer Day the bands cross the doxology often,
+  // and that refusal halves the day's odds. The lab's odds card (20,000
+  // meetings of a stand-in planner) measured 4.3 % of meetings at a base of
+  // 0.05; at 0.07, about one meeting in sixteen, a fifth of Pioneer Days and
+  // of weddings (the handoff has the table).
   var ODDS = {
-    base: 0.05,
+    base: 0.07,
     weight: {
       ordinary: 1, conference: 0.5, jubilee: 2.4, fast: 0,
       // the calendar's Sundays (kolob-calendar.js), when the engine names them
@@ -213,7 +217,7 @@ window.KOLOB.GuestSocialHall = (function () {
     var last = order.lastIndexOf("postlude"), before = last > 0 ? order[last - 1] : null;
     if (barred(info)) why = info.sunday === "funeral" || info.kind === "funeral" ? "never at a funeral" : "never on a fast Sunday";
     else if (last < 0) why = "no postlude";
-    else if (held.postlude) why = "the postlude is the " + held.postlude + "'s";
+    else if (held.postlude) why = "a guest holds the postlude (" + held.postlude + ")";
     else if (before && held[before]) why = "beside a guest (the " + held[before] + " in the " + before + ")";
     else if (!(info.force || roll < p)) why = "not this Sunday";
     if (why) return { seat: null, why: why, odds: p, roll: roll };
