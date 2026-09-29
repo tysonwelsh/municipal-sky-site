@@ -1447,17 +1447,17 @@ window.KolobViz = (function () {
     takeLayer("choir", line, beat, null, { staff: st, qOf: function (n) { return n.nq; } });
     var at = {};
     madeSince(g0, 1.5, "tongues").forEach(function (gr) { at[Math.round(gr.tp * 1000)] = gr; });
-    var first = null, last = null, run = [];
+    var first = null, last = null, run = [], seg = [];
     function slur() {
-      if (first && last && last.grp !== first.grp) marks.push({ kind: "slur", tp: first.grp.tp, tp2: last.grp.tp, g1: first.grp, g2: last.grp, q1: first.q, q2: last.q, st: st });
-      first = last = null;
+      if (first && last && last.grp !== first.grp) marks.push({ kind: "slur", tp: first.grp.tp, tp2: last.grp.tp, g1: first.grp, g2: last.grp, q1: first.q, q2: last.q, st: st, line: seg.slice() });
+      first = last = null; seg = [];
     }
     function beamRun() { if (run.length > 1) { makeBeam(run, st); run[0].beam.fixed = 0; } run = []; }
     line.forEach(function (x) {
       var grp = at[Math.round(x.startTime * 1000)];
       if (!grp) return;
-      if (!x.slur) { beamRun(); slur(); first = { grp: grp, q: x.nq.q }; }
-      else if (first) last = { grp: grp, q: x.nq.q };
+      if (!x.slur) { beamRun(); slur(); first = { grp: grp, q: x.nq.q }; seg = [grp]; }
+      else if (first) { last = { grp: grp, q: x.nq.q }; if (seg.indexOf(grp) < 0) seg.push(grp); }
       // (a melisma's quick notes, quicker than the page can print full
       // heads, are the singer's run: small notes, beamed, under the slur)
       if (x.slur && x.duration < 0.6 * beat) { grp.scale = TONGUES_RUN; if (grp.flags >= 1 && !grp.noStem) run.push(grp); else beamRun(); }
@@ -1534,23 +1534,57 @@ window.KolobViz = (function () {
     varFigures(made, fine ? beat : 0);
     if (!sc || !sc.lines) return;
     var vl = sc.lines.concat(sc.refrain || []), ts = timeSig(h.modeOfTime), downs = [];
+    // (r3c-engrave2: in the canon, and in the two keys' interlude, a voice
+    // follows the leader a beat or two behind, counting the tune's beats as
+    // its own — and its downbeats are not the bar's. Barred at both, the
+    // canon had a bar every half bar, and each pushed the notes after it
+    // further from their time, until they stood 14 spaces late. A canon is
+    // barred by its leader: a note names a downbeat only where its line's
+    // count began with the earliest voice's — lead)
+    varSet.lead = varSet.lead || {};
+    function lead(n) {
+      var o = n.startTime - n.beat * beat, ls = varSet.lead[n.line] || (varSet.lead[n.line] = []);
+      var win = 2 * ts.bar * beat, tol = 0.25 * beat;
+      for (var i = ls.length - 1; i >= 0; i--) {
+        var d = o - ls[i];
+        if (d <= -win || d >= win) continue;
+        if (d < -tol) { ls[i] = o; return true; }  // (an earlier voice: the leader after all)
+        return d < tol;
+      }
+      ls.push(o);
+      if (ls.length > 8) ls.shift();
+      return true;
+    }
     ns.forEach(function (n) {
       var ln = typeof n.beat === "number" && n.line != null ? vl[n.line] : null;
-      if (!ln) return;
+      if (!ln || !lead(n)) return;
       var pos = ((n.beat + (ln.barStart || 0)) % ts.bar + ts.bar) % ts.bar;
       if (pos > 1e-6 && ts.bar - pos > 1e-6) return;
       if (!downs.some(function (t) { return Math.abs(t - n.startTime) < 0.03; })) downs.push(n.startTime);
     });
+    // (r3c-engrave2: every note on a bar's downbeat stands after it, whichever
+    // call brought it — the organist lays a chord at a time, and the pedal or
+    // the figure on the downbeat may come a call before the bar or after it.
+    // Only notes not yet set: nothing printed moves)
+    function onDown(gr, bm) { return gr.layer === "organ" && !gr.col && !gr.noCol && gr.drawnAt == null && Math.abs(gr.tp - bm.tp) < 0.03; }
+    made.forEach(function (gr) {
+      for (var i = 0; i < varBars.length; i++) {
+        var vb = varBars[i];
+        if (vb.at || !onDown(gr, vb) || vb.nx.indexOf(gr) >= 0) continue;
+        if (!vb.nx.some(function (m) { return m.col; })) vb.push = null;   // (its room worked out again, while none of its notes is set)
+        vb.nx.push(gr); gr.barIn = vb;
+      }
+    });
     downs.sort(function (a, b) { return a - b; }).forEach(function (tb) {
-      if (varBars.some(function (t) { return Math.abs(t - tb) < 0.03; })) return;
+      if (varBars.some(function (vb) { return Math.abs(vb.tp - tb) < 0.03; })) return;
       var before = groups.some(function (gr) { return gr.layer === "organ" && gr.tp < tb - 0.03 && gr.tp > tb - 6; });
       if (!before) return;                         // (no bar before the set's first note)
-      varBars.push(tb);
       // (through both staves, as an organ's bars run: a figure laid in a
       // call of its own keeps clear of the bar where it falls — clearance)
-      var nx = made.filter(function (gr) { return Math.abs(gr.tp - tb) < 0.03; });
-      var bm = { kind: "bar", type: "single", tp: tb, sts: ["T", "B"], off: -1, pv: [], pvRests: [], nx: nx, sys: { hymnId: null } };
-      nx.forEach(function (gp) { gp.barIn = bm; });
+      var bm = { kind: "bar", type: "single", tp: tb, sts: ["T", "B"], off: -1, pv: [], pvRests: [], nx: [], sys: { hymnId: null } };
+      groups.forEach(function (gr) { if (onDown(gr, bm)) bm.nx.push(gr); });
+      bm.nx.forEach(function (gp) { gp.barIn = bm; });
+      varBars.push(bm);
       marks.push(bm);
     });
     while (varBars.length > 64) varBars.shift();
@@ -1905,6 +1939,7 @@ window.KolobViz = (function () {
       var upper = null, lower = null;
       Object.keys(voiceOf).forEach(function (p) { if (voiceOf[p] > 0) upper = p; else lower = p; });
       var two = !!(upper && lower), together = {};
+      xs.forEach(function (x) { x.two = two; });   // (r3c-engrave2: a tie or slur of a voice that shares its staff keeps to the voice's side)
       if (two) {                                        // a beat through which the two voices move alike
         var on = {};
         xs.forEach(function (x) { if (x.hop) return; var k = winOf(x.b); (on[k] = on[k] || { U: [], L: [] })[x.p === upper ? "U" : "L"].push(x); });
@@ -2074,11 +2109,15 @@ window.KolobViz = (function () {
       });
     });
     // ties, and the slur over a melisma of the tune
+    // (r3c-engrave2: where two voices share the staff, the upper voice's
+    // curve lies above and the lower's below — each on its own side, as an
+    // engraver sets them; alone on its staff, its stems decide: settleCurve)
+    function vside(x) { return x.two && !x.hop && x.dir ? (x.dir > 0 ? -1 : 1) : 0; }
     parts.forEach(function (p) {
       var xs = W.filter(function (x) { return x.p === p; }).sort(function (a, b) { return a.b - b.b; });
       xs.forEach(function (x, i) {
         var y = xs[i + 1];
-        if (x.tieOn && y && x.grp && y.grp && x.st === y.st) marks.push({ kind: "tie", tp: x.tp, tp2: y.tp, g1: x.grp, g2: y.grp, q1: x.q, q2: y.q, st: x.st, sys: sys });
+        if (x.tieOn && y && x.grp && y.grp && x.st === y.st) marks.push({ kind: "tie", tp: x.tp, tp2: y.tp, g1: x.grp, g2: y.grp, q1: x.q, q2: y.q, st: x.st, sys: sys, vside: vside(x) });
       });
       if (p !== melody) return;
       function cont(x) { return x.n.syl == null || x.seg > 0; }   // (a melisma's later notes; a tied note's continuation)
@@ -2088,7 +2127,8 @@ window.KolobViz = (function () {
         while (j + 1 < xs.length && cont(xs[j + 1])) j++;
         var allTied = true;
         for (var k2 = i; k2 < j; k2++) if (!xs[k2].tieOn) allTied = false;
-        if (j > i && !allTied && xs[i].st === xs[j].st) marks.push({ kind: "slur", tp: xs[i].tp, tp2: xs[j].tp, g1: xs[i].grp, g2: xs[j].grp, q1: xs[i].q, q2: xs[j].q, st: xs[i].st, sys: sys });
+        if (j > i && !allTied && xs[i].st === xs[j].st) marks.push({ kind: "slur", tp: xs[i].tp, tp2: xs[j].tp, g1: xs[i].grp, g2: xs[j].grp, q1: xs[i].q, q2: xs[j].q, st: xs[i].st, sys: sys,
+          vside: vside(xs[i]), line: xs.slice(i, j + 1).map(function (x) { return x.grp; }).filter(function (gp, k, a) { return gp && a.indexOf(gp) === k; }) });
         i = j;
       }
     });
@@ -2472,10 +2512,10 @@ window.KolobViz = (function () {
   var KO = [], koY0 = 0, koY1 = -1, KO_PAD = 0.3;
   function koHit(y0, y1) { return y1 > koY0 && y0 < koY1; }
   function koRect(c, x0, y0, x1, y1) {
-    if (koHit(y0, y1)) KO.push({ x: x0, y: y0, w: x1 - x0, h: y1 - y0, a: c.globalAlpha });
+    if (koHit(y0, y1)) KO.push({ x: x0, y: y0, w: x1 - x0, h: y1 - y0, a: koA != null ? koA : c.globalAlpha });   // (koA: a note struck on the proof sheet, at its own strength)
   }
   function koEllipse(c, x, y, rx, ry) {
-    if (koHit(y - ry, y + ry)) KO.push({ e: 1, x: x, y: y, rx: rx, ry: ry, a: c.globalAlpha });
+    if (koHit(y - ry, y + ry)) KO.push({ e: 1, x: x, y: y, rx: rx, ry: ry, a: koA != null ? koA : c.globalAlpha });
   }
   function koCovers(x0, y0, x1, y1) {              // does any visible note's clearance touch this box?
     for (var i = 0; i < KO.length; i++) {
@@ -2865,10 +2905,16 @@ window.KolobViz = (function () {
     var xa = xs[i0] - sw / 2, xb = xs[i1] + sw / 2;
     if (i1 < ms.length - 1 && xs[i1 + 1] === null) xb = Math.max(xb, Math.min(X(ms[i1 + 1].tp) + dir * (0.57 * s - sw / 2), g.xE + 0.3 * sp));
     var th = 0.5 * s * dir;                        // (inward, toward the heads)
-    c.globalAlpha = a;
+    // (r3c-engrave2: struck at full strength with its notes on the proof
+    // sheet, and laid on the page with them once, at their one alpha —
+    // impress; the ink it covers is returned for the patch)
     c.fillStyle = rgba(C_INK);
+    var bb = [xa, 1e9, xb, -1e9];
     function band(x1, x2, off) {
       if (x2 <= x1) return;
+      bb[0] = Math.min(bb[0], x1); bb[2] = Math.max(bb[2], x2);
+      bb[1] = Math.min(bb[1], yAt(x1) + Math.min(off, off + th), yAt(x2) + Math.min(off, off + th));
+      bb[3] = Math.max(bb[3], yAt(x1) + Math.max(off, off + th), yAt(x2) + Math.max(off, off + th));
       c.beginPath();
       c.moveTo(x1, yAt(x1) + off); c.lineTo(x2, yAt(x2) + off); c.lineTo(x2, yAt(x2) + off + th); c.lineTo(x1, yAt(x1) + off + th);
       c.closePath(); c.fill();
@@ -2887,6 +2933,7 @@ window.KolobViz = (function () {
         else band(xs[i] - 1.0 * s, xs[i] + sw / 2, off2);
       }
     }
+    return bb[3] > bb[1] ? bb : null;
   }
   // the hymn's marks, each reached like a note and drying like one
   function drawMarks(c) {
@@ -2962,6 +3009,7 @@ window.KolobViz = (function () {
     for (var i = 0; i < groups.length; i++) {
       var gr = groups[i];
       if (gr.hymn || gr.tp >= m.tp || gr.tp < m.tp - 2 || m.sts.indexOf(gr.st) < 0 || !(gr.col && gr.col.sp === sp) || !(gr.lastA >= 0.02) || (gr.alone && !gr.aloneOk)) continue;
+      if (m.nx && m.nx.indexOf(gr) >= 0) continue;   // (a downbeat's note a hair early is after its bar, not before it: r3c-engrave2)
       before(gr);
     }
     (m.nx || []).forEach(function (gr) {
@@ -3056,14 +3104,14 @@ window.KolobViz = (function () {
     if (m.up) drawGlyph(c, "fermU", hx, clamp(Math.min(yInk - 0.45 * sp, top - 0.7 * sp), g.top + 1.2 * sp, 1e9), sp, C_INK);
     else drawGlyph(c, "fermD", hx, clamp(Math.max(yInk + 0.45 * sp, bot + 0.7 * sp), -1e9, g.bot - 1.2 * sp), sp, C_INK);
   }
-  // a tie, or the slur over a melisma: a crescent from head to head, on the
-  // side away from the stem, drawn as far as the engraving point has reached
+  // a tie, or the slur over a melisma: a crescent from head to head, drawn
+  // as far as the engraving point has reached (and no further: the burin)
   function drawTieOrSlur(c, g, m) {
     var sh = tieShape(g, m);
     if (!sh) return;
     var x1 = sh.x1, x2 = sh.x2, y1 = sh.y1, y2 = sh.y2, h = sh.h, th = sh.th, dx = x2 - x1;
     c.save();
-    c.beginPath(); c.rect(0, 0, g.xE + 0.3 * g.sp, H); c.clip();
+    c.beginPath(); c.rect(0, 0, g.xE, H); c.clip();
     c.beginPath();
     c.moveTo(x1, y1);
     c.bezierCurveTo(x1 + dx * 0.25, y1 + h, x2 - dx * 0.25, y2 + h, x2, y2);
@@ -3071,62 +3119,93 @@ window.KolobViz = (function () {
     c.closePath(); c.fill();
     c.restore();
   }
-  // (the crescent drawTieOrSlur lays, or null where it is too short to
-  // draw: its geometry in one place, so the silent checks measure what is
+  // (the crescent drawTieOrSlur lays, or null while it is not yet to be
+  // drawn: its geometry in one place, so the silent checks measure what is
   // drawn — probe("ink"). Round 3c, round 2)
+  // (r3c-engrave2) SETTLED ONCE. A slur or a tie is laid out once, whole,
+  // when the last of its notes is set — its side, its ends, its depth — and
+  // never again: from then on it only travels with the page. Laid out stroke
+  // by stroke before, it read its side from a note not yet set (a slur drawn
+  // over a run jumped under it when the run's last note printed), and its
+  // tail followed its last note to wherever that note was set. Now nothing
+  // of it is drawn until both its notes stand where they will stay; the
+  // burin then cuts it as far as it has reached. Its side: on a staff two
+  // voices share, the upper voice's above and the lower's below (a tie of
+  // the soprano no longer dips into the alto); alone on its staff, away from
+  // its notes' stems, or above where they point both ways. An end whose
+  // stem stands on the curve's side begins past that stem, or ends before it.
   function tieShape(g, m) {
-    var sp = g.sp, s = sp;
-    function at(gr, q) {
-      var x = gr.drawnAt === FRAME ? gr.lastX : X(gr.tp) + (gr.col && gr.col.sp === sp ? gr.col.dx : 0);
-      var f = gr.fold && gr.fold.sp === sp ? gr.fold : null, dq = f && f.oct ? (m.st === "T" ? -7 : 7) * f.oct : 0;
-      return { x: x, y: g.y(m.st, q + dq), dir: gr.drawnAt === FRAME && gr.lastL ? gr.lastL.dir : gr.dir };
+    var sp = g.sp;
+    if (!(m.set && m.set.sp === sp)) {
+      if (!setNow(m.g1, g) || !setNow(m.g2, g) || !prints(m.g1) || !prints(m.g2)) return null;
+      m.set = settleCurve(g, m);
     }
-    var A = at(m.g1, m.q1), B = at(m.g2, m.q2);
-    var side = A.dir > 0 ? 1 : -1;                 // (+1: below the heads)
-    if (m.kind === "slur" && B.dir !== A.dir) side = -1;
-    var tie = m.kind === "tie", dy = (tie ? 0.55 : 0.9) * s * side, gx = tie ? 0.6 * s : 0.1 * s;
-    var x1 = A.x + gx, x2 = B.x - gx, y1 = A.y + dy, y2 = B.y + dy;
-    if (x2 - x1 < 0.6 * s) return null;
+    var z = m.set, x0 = X(m.tp);
+    if (!z.ok) return null;
+    return { x1: x0 + z.x1, y1: z.y1, x2: x0 + z.x2, y2: z.y2, side: z.side, h: z.h, th: z.th };
+  }
+  function setNow(gr, g) { return gr.noCol ? gr.dueSp === g.sp : !!(gr.col && gr.col.sp === g.sp); }
+  function prints(gr) { return gr.lastA >= 0.02 && !(gr.alone && gr.aloneOk === false); }
+  // (a set note as it is struck: its layout about x 0, and its x)
+  function struck(gr, g) {
+    var pg = prepGroup(gr, g);
+    return { L: inkLayout(gr, g, pg.heads, pg.o), o: pg.o, x: X(gr.tp) + (gr.noCol ? coDx(gr, g) : gr.col.dx) };
+  }
+  // (the curve's one layout: its ends and side about its first note's own
+  // time's x, its depth; ok false where it is too short to draw)
+  function settleCurve(g, m) {
+    var s = g.sp, tie = m.kind === "tie", A = struck(m.g1, g), B = struck(m.g2, g);
+    function fq(gr) { var f = gr.fold && gr.fold.sp === s ? gr.fold : null; return f && f.oct ? (m.st === "T" ? -7 : 7) * f.oct : 0; }
+    var side = m.vside || 0;                       // (+1: below the heads; the voice's own side, where two share the staff)
+    if (!side) {
+      if (tie) side = A.L.dir > 0 ? 1 : -1;
+      else {
+        var up = A.L.dir > 0 && B.L.dir > 0;       // (a slur under stems that all point up; else over)
+        (m.line || []).forEach(function (gr) { if (gr !== m.g1 && gr !== m.g2 && setNow(gr, g) && prints(gr) && struck(gr, g).L.dir <= 0) up = false; });
+        side = up ? 1 : -1;
+      }
+    }
+    var sw = A.L.sw, over = side < 0, dy0 = tie ? 0.55 : 0.9, x1, x2, d1 = dy0, d2 = dy0;
+    // (a stem up on the curve's side stands right of its head: the curve
+    // begins past it; a stem down on its side stands left: it ends before it)
+    if (A.L.stem && over && A.L.dir > 0) { x1 = A.x + A.L.sx + sw / 2 + 0.25 * s; d1 = tie ? 0.55 : 0.6; }
+    else x1 = A.x + (tie ? 0.6 : 0.1) * s;
+    if (B.L.stem && !over && B.L.dir < 0) { x2 = B.x + B.L.sx - sw / 2 - 0.25 * s; d2 = tie ? 0.55 : 0.6; }
+    else x2 = B.x - (tie ? 0.6 : 0.1) * s;
+    var y1 = g.y(m.st, m.q1 + fq(m.g1)) + side * d1 * s, y2 = g.y(m.st, m.q2 + fq(m.g2)) + side * d2 * s;
+    if (x2 - x1 < 0.6 * s) return { sp: s, ok: false };
     var sh = { x1: x1, y1: y1, x2: x2, y2: y2, side: side,
                h: side * clamp(0.12 * (x2 - x1), 0.4 * s, 1.3 * s), th: side * Math.max(0.9 / dpr, 0.14 * s) };
-    if (m.kind === "slur") slurFit(g, m, sh);
-    return sh;
+    if (!tie) slurFit(g, m, sh);
+    var x0 = X(m.tp);
+    return { sp: s, ok: true, side: side, x1: sh.x1 - x0, y1: sh.y1, x2: sh.x2 - x0, y2: sh.y2, h: sh.h, th: sh.th };
   }
   // (round 3c, round 2) A slur passes over every head between its ends. The
   // hymn's melismas are two or three notes, but the gift of tongues' runs
   // dip and climb under one slur, and a crescent struck from the first head
   // to the last cut through the heads between — a second stroke across a
-  // head, which the owner ruled out. So the slur looks along its span at
-  // every head drawn there on its staff (its own and any other's) and curves
-  // deeper, as far as 2.2 spaces, to pass them all with a quarter space's
-  // air; where even that is not enough, both its ends stand further off
-  // their heads, alike. (Heads only: a slur may cross a stem, as in any score.)
-  // It is fitted to the whole melisma from its first stroke — the notes
-  // still to be engraved under it stand where their time puts them, their
-  // heights already known — so what is drawn of it does not deepen as the
-  // burin reaches them; once the burin is past its end (and past the far
-  // ward's wait), when no note can come under it, the fit is kept (m.fit).
-  var SLUR_DEEP = 2.2, SLUR_AIR = 0.25, SLUR_N = 24;
+  // head, which the owner ruled out. So the slur curves deeper, as far as
+  // 2.2 spaces, to pass them with a quarter space's air; where even that is
+  // not enough, both its ends stand further off their heads, alike — but
+  // never more than a space further (SLUR_END): a slur keeps beside its own
+  // notes. (Heads only: a slur may cross a stem, as in any score.)
+  // (r3c-engrave2: only the heads of its own line — the melisma's notes, the
+  // singer's run. Fitted to every head on the staff, the tenor's slur went
+  // looking for the bass's heads under it and hung three spaces below its
+  // own notes; the other voice keeps to its own side now. And it is fitted
+  // once, when it is settled, to its notes where they stand: settleCurve)
+  var SLUR_DEEP = 2.2, SLUR_AIR = 0.25, SLUR_N = 24, SLUR_END = 1;
   function slurFit(g, m, sh) {
     var s = g.sp, sd = sh.side, tt = Math.abs(sh.th), dx = sh.x2 - sh.x1, E = [], pts = [], i;
-    if (m.fit && m.fit.sp === s && m.fit.done) { sh.h = m.fit.h; sh.y1 += m.fit.e; sh.y2 += m.fit.e; return; }
-    var done = !!(m.g2.col && m.g2.col.sp === s) && g.xE - sh.x2 > (BAR_WAIT_S + 0.1) * SCROLL_PX_S;
-    function edge(x0, x1, y0, y1) {
-      if (x1 < sh.x1 || x0 > sh.x2) return;
-      E.push([x0 - tt, x1 + tt, sd > 0 ? y1 : -y0]);                 // (its span, and its edge toward the slur, in the slur's sense)
-    }
-    groups.forEach(function (gr) {
-      if (gr.st !== m.st) return;
-      if (gr.drawnAt === FRAME && gr.lastL) {
-        gr.lastL.placed.forEach(function (p) {
-          if (p.h.ghost) return;
-          var e = headExt(p, gr.lastO || {}, gr.lastL.s);
-          edge(p.x - e[0], p.x + e[0], p.y - e[1], p.y + e[1]);
-        });
-      } else if (gr.tp > m.tp && !(gr.col && gr.col.sp === s && gr.drawnAt !== FRAME && gr.tp <= PT)) {   // (a note still to come: at its time, or a little after)
-        var x = X(gr.tp) + (gr.col && gr.col.sp === s ? gr.col.dx : 0), hs = (gr.scale || 1) * s;
-        drawnHeads(gr, g).forEach(function (hd) { var y = g.y(m.st, hd.q); edge(x - 0.7 * hs, x + 0.7 * hs + 0.5 * s, y - 0.56 * hs, y + 0.56 * hs); });
-      }
+    (m.line || [m.g1, m.g2]).forEach(function (gr) {
+      if (gr.st !== m.st || !setNow(gr, g) || !prints(gr)) return;
+      var k = struck(gr, g);
+      k.L.placed.forEach(function (p) {
+        if (p.h.ghost) return;
+        var e = headExt(p, k.o, k.L.s), x0 = k.x + p.x - e[0], x1 = k.x + p.x + e[0];
+        if (x1 < sh.x1 || x0 > sh.x2) return;
+        E.push([x0 - tt, x1 + tt, sd > 0 ? p.y + e[1] : -(p.y - e[1])]);   // (its span, and its edge toward the slur, in the slur's sense)
+      });
     });
     for (i = 1; i < SLUR_N; i++) {                 // (the curve's inner edge, sampled: where it is, and how much a deeper curve moves it)
       var t = i / SLUR_N, u = 1 - t;
@@ -3136,12 +3215,7 @@ window.KolobViz = (function () {
     pts.forEach(function (p) { E.forEach(function (e) { if (p.x >= e[0] && p.x <= e[1]) need = Math.max(need, (e[2] + SLUR_AIR * s - p.L) / p.c + tt); }); });
     var hh = Math.min(need, SLUR_DEEP * s);
     pts.forEach(function (p) { E.forEach(function (e) { if (p.x >= e[0] && p.x <= e[1]) rest = Math.max(rest, e[2] + SLUR_AIR * s - p.L - (hh - tt) * p.c); }); });
-    // (and what is drawn of it only ever deepens, never relaxes: a note it
-    // made room for that then does not print — the organ under a singer —
-    // leaves it as it was)
-    if (m.fit && m.fit.sp === s) { hh = Math.max(hh, Math.abs(m.fit.h)); rest = Math.max(rest, Math.abs(m.fit.e)); }
-    var e = sd * Math.max(0, rest);
-    m.fit = { sp: s, done: done, h: sd * hh, e: e };
+    var e = sd * clamp(rest, 0, SLUR_END * s);
     sh.h = sd * hh; sh.y1 += e; sh.y2 += e;
   }
   function drawBarline(c, g, x, kind, st) {
@@ -3269,6 +3343,7 @@ window.KolobViz = (function () {
     // does, so a quick guest — the fiddle's reel — never drifts from its sound)
     var lim = gr.hymn ? HYMN_DX_MAX * sp : gr.cap != null ? gr.cap * sp : 1e9, dx = dx0;
     var ord = gr.cap != null ? orderAt(gr, g) : -1e9;   // (round 3c, round 2: a guest's line in the order it is sung)
+    if (!gr.hymn) ord = Math.max(ord, barAfter(gr, g, bx));   // (r3c-engrave2: and after the bars before it)
     if (ord > dx) dx = ord;
     for (var pass = 0; pass < (gr.hymn ? 4 : 8); pass++) {      // (round 3c: a guest's note, with beams to clear as well, may need more; round 2: so may the house's reeds, stepping round a peal)
       var need = dx;
@@ -3322,9 +3397,28 @@ window.KolobViz = (function () {
     // ledger, a flag, a beam, another head: there it goes on past)
     // (round 2: the order of its line lifts its cap only as far as the order
     // asks — past that it goes on only for a bar, a head or a beam, as before)
-    if (!gr.hymn && gr.cap != null && dx > lim && ord > lim) lim = ord;
+    if (!gr.hymn && dx > lim && ord > lim) lim = ord;
     if (!gr.hymn && gr.cap != null && dx > lim && (onBar(gr, g, bx, lim) || onHead(gr, g, bx, lim) || beamHit(gr, g, bx, lim) != null)) lim = dx;
     return { need: dx, lim: lim, bx: bx, ink: ink };
+  }
+  // (r3c-engrave2) A note after a bar in time prints after it on the page.
+  // A guest's note is set after the bars placed before it, and it kept clear
+  // of one only where it would stand on it: where the bar had been set far
+  // along (after notes pushed late), a downbeat's note held at its cap
+  // printed before its own bar. The least offset that puts its ink in the
+  // staff after every bar placed at or before its time, with the bar's air;
+  // -1e9 where none asks.
+  function barAfter(gr, g, bx) {
+    var sp = g.sp, out = -1e9, bL = 1e9;
+    for (var n = 0; n < bx.length; n++) if (inBand(g, gr.st, bx[n])) bL = Math.min(bL, bx[n][0]);
+    if (bL > 1e8) return out;
+    for (var k = 0; k < marks.length; k++) {
+      var mb = marks[k];
+      if (mb.kind !== "bar" || !(mb.at && mb.at.sp === sp) || mb.sts.indexOf(gr.st) < 0 || mb.tp > gr.tp + 0.03 || mb.tp < gr.tp - 3) continue;
+      var bi = barInk(mb, g), xb = (mb.tp - gr.tp) * SCROLL_PX_S + mb.at.rel;
+      out = Math.max(out, xb + bi.wr + BAR_AIR * sp - bL);
+    }
+    return out;
   }
   // (on a bar, or within a pixel or two of it: the page's pixels round each
   // item's place on its own, so a hair's breadth is not clear)
@@ -3551,8 +3645,12 @@ window.KolobViz = (function () {
   function drawPage(c) {
     var g = G, sp = g.sp, xR = g.xE + 3 * sp;
     setDue(g);
-    // the groups — heads on their stems, in the one ink
-    var keep = 0, beamsNow = [];
+    // the groups — heads on their stems, in the one ink: each note (a beam
+    // with its notes) one impression, laid once at its alpha (impress)
+    var keep = 0, units = [];
+    proofC.setTransform(1, 0, 0, 1, 0, 0); proofC.globalAlpha = 1;
+    proofC.clearRect(0, 0, proofLayer.width, proofLayer.height);
+    proofC.setTransform(dpr, 0, 0, dpr, 0, 0);
     for (var i = 0; i < groups.length; i++) {
       var gr = groups[i], x = X(gr.tp);
       if (x < -6 * sp) continue;                               // gone past the clefs
@@ -3568,20 +3666,75 @@ window.KolobViz = (function () {
       if (a < 0.02) continue;
       var pg = prepGroup(gr, g), heads = pg.heads, o = pg.o;
       x += gr.noCol ? coDx(gr, g) : placeColumn(gr, g, heads, o);
-      if (gr.beam && gr.beam.geo) {
-        o.beamY = beamYAt(gr.beam, gr.beam.geo);
-        if (beamsNow.indexOf(gr.beam) < 0) beamsNow.push(gr.beam);
-      }
-      c.globalAlpha = a;
-      var r = drawGroup(c, g, x, heads, gr.st, gr.dir, o);
-      gr.drawnAt = FRAME; gr.lastX = x; gr.lastSx = r.sx; gr.lastL = r.L; gr.lastO = o;
-      if (gr.ring) drawBellRing(c, g, x, g.y(gr.st, heads[0].q), gr.scale, gr.ringK);
+      // (r3c-engrave2: nothing prints ahead of the burin. A note set past
+      // its time — stepping aside, making room for a bar — waits where it
+      // was set until the burin reaches it, and is struck there, once)
+      if (x > g.xE + BURIN_EPS * sp) continue;
+      var u, bm = gr.beam && gr.beam.geo ? gr.beam : null;
+      if (bm) {
+        o.beamY = beamYAt(bm, bm.geo);
+        if (bm.uF !== FRAME) { bm.uF = FRAME; bm.u = { a: 0, its: [], bm: bm }; units.push(bm.u); }
+        u = bm.u;
+      } else units.push(u = { a: 0, its: [], bm: null });
+      u.a = Math.max(u.a, a);
+      u.its.push({ gr: gr, x: x, heads: heads, o: o });
+      gr.drawnAt = FRAME; gr.lastX = x; gr.lastO = o;
     }
     groups.length = keep;
-    beamsNow.forEach(function (bm) { drawBeam(c, g, bm); });
+    for (i = 0; i < units.length; i++) impress(c, g, units[i]);
     drawMarks(c);
     c.globalAlpha = 1;
     drawQuestions(c);
+  }
+  // ---- one even tone (r3c-engrave2) ------------------------------------------
+  // The owner, close to a pale note: "as though there's two strokes for each
+  // note". There were. A note is several strokes — its head, its stem (whose
+  // root lies inside the head), its flags (a sixteenth's two, one over the
+  // other), the ledger its head sits on — and each was laid at the note's
+  // own alpha, so wherever two met the ink lay twice and printed darker: a
+  // dark seam where the stem crosses the head, a darker tongue where the
+  // flags meet. Now a note is struck whole, at full strength, on a proof
+  // sheet (a scratch layer the page's size), and that patch of the sheet is
+  // laid on the page once, at the note's alpha: one even tone however its
+  // strokes meet, fresh or drying, near or far. A beam and the notes it joins
+  // are one impression (their stems run into it), a bell and its ring
+  // another. (The paper's own lines still show through pale ink, as they
+  // would through any thin ink.)
+  var BURIN_EPS = 0.05;                            // (sp: the burin's own hair)
+  var proofLayer = null, proofC = null, koA = null;
+  function impress(c, g, u) {
+    var pc = proofC, sp = g.sp, bb = [1e9, 1e9, -1e9, -1e9];
+    function grow(b) { bb[0] = Math.min(bb[0], b[0]); bb[1] = Math.min(bb[1], b[1]); bb[2] = Math.max(bb[2], b[2]); bb[3] = Math.max(bb[3], b[3]); }
+    koA = u.a;                                     // (the telegraph weighs the ink at its own strength)
+    for (var i = 0; i < u.its.length; i++) {
+      var it = u.its[i], gr = it.gr, r = drawGroup(pc, g, it.x, it.heads, gr.st, gr.dir, it.o);
+      gr.lastSx = r.sx; gr.lastL = r.L;
+      groupBoxes(r.L, it.o).forEach(grow);
+      if (gr.ring) {
+        var y = g.y(gr.st, it.heads[0].q), rr = ((gr.ringK || 0.98) * (gr.scale || 1) + 0.1) * sp;
+        drawBellRing(pc, g, it.x, y, gr.scale, gr.ringK);
+        grow([it.x - rr, y - rr, it.x + rr, y + rr]);
+      }
+    }
+    if (u.bm) { var bb2 = drawBeam(pc, g, u.bm); if (bb2) grow(bb2); }
+    koA = null;
+    stamp(c, g, u.a, bb);
+  }
+  // (the patch bb of the proof sheet — every stroke of one impression, and a
+  // margin for their soft edges — laid on the page at alpha a; the sheet
+  // then wiped there for the next)
+  function stamp(c, g, a, bb) {
+    if (!(bb[2] > bb[0])) return;
+    var pc = proofC, pad = 0.35 * g.sp, d = dpr;
+    var x0 = Math.max(0, Math.floor((bb[0] - pad) * d)), y0 = Math.max(0, Math.floor((bb[1] - pad) * d));
+    var x1 = Math.min(proofLayer.width, Math.ceil((bb[2] + pad) * d)), y1 = Math.min(proofLayer.height, Math.ceil((bb[3] + pad) * d));
+    if (x1 <= x0 || y1 <= y0) return;
+    c.save();
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    c.globalAlpha = a;
+    c.drawImage(proofLayer, x0, y0, x1 - x0, y1 - y0, x0, y0, x1 - x0, y1 - y0);
+    c.restore();
+    pc.save(); pc.setTransform(1, 0, 0, 1, 0, 0); pc.clearRect(x0, y0, x1 - x0, y1 - y0); pc.restore();
   }
   // a group's heads and how it is engraved, this frame (a beamed note's stem is the beam's)
   function prepGroup(gr, g) {
@@ -3740,18 +3893,24 @@ window.KolobViz = (function () {
       if (x < -6 * sp) continue;
       bandNotes[keep++] = n;
       if (n.tp > PT) continue;
-      c.globalAlpha = (0.12 + 0.68 * n.loud) * dryA(n);
+      // (each note struck whole on the proof sheet and laid once at its
+      // alpha, as the ward's are: one even tone — impress, r3c-engrave2)
+      var ba = (0.12 + 0.68 * n.loud) * dryA(n), bo, rb, bb = [1e9, 1e9, -1e9, -1e9];
       if (n.mel) {
         var q = n.q;
         while (q > g.qMaxT) q -= 7;                              // folded in silently, like the ward's
-        drawGroup(c, g, x, [{ q: q, shape: "round", open: n.v.open, dots: n.v.dots }], "T", q >= 16 ? -1 : 1,
-          { rgb: C_INK, noStem: !n.v.stem, flags: n.v.flags });
+        bo = { rgb: C_INK, noStem: !n.v.stem, flags: n.v.flags };
+        rb = drawGroup(proofC, g, x, [{ q: q, shape: "round", open: n.v.open, dots: n.v.dots }], "T", q >= 16 ? -1 : 1, bo);
       } else {
         // the oom-pah, written the bandsman's way — a staccato quarter
-        var rb = drawGroup(c, g, x, [{ q: n.q, shape: "round", open: false }], "B", -1, { rgb: C_INK });
-        var dq = n.q % 2 === 0 ? n.q + 1.5 : n.q + 2;
-        c.beginPath(); c.arc(rb.topX, g.yB(dq), 0.17 * sp, 0, Math.PI * 2); c.fill();
+        bo = { rgb: C_INK };
+        rb = drawGroup(proofC, g, x, [{ q: n.q, shape: "round", open: false }], "B", -1, bo);
+        var dq = n.q % 2 === 0 ? n.q + 1.5 : n.q + 2, dy = g.yB(dq);
+        proofC.beginPath(); proofC.arc(rb.topX, dy, 0.17 * sp, 0, Math.PI * 2); proofC.fill();
+        bb = [rb.topX - 0.2 * sp, dy - 0.2 * sp, rb.topX + 0.2 * sp, dy + 0.2 * sp];
       }
+      groupBoxes(rb.L, bo).forEach(function (b) { bb[0] = Math.min(bb[0], b[0]); bb[1] = Math.min(bb[1], b[1]); bb[2] = Math.max(bb[2], b[2]); bb[3] = Math.max(bb[3], b[3]); });
+      stamp(c, g, ba, bb);
     }
     bandNotes.length = keep;
     // the band's barlines, every two of its beats
@@ -4052,6 +4211,7 @@ window.KolobViz = (function () {
     sctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     buildStaffLayer(sctx);
     inkLayer = layer(); bandLayer = layer(); tapeLayer = layer();
+    proofLayer = layer(); proofC = proofLayer.getContext("2d");   // (the proof sheet each note is struck on, whole: impress)
     if (wheel) {
       var xr = wheel.getBoundingClientRect();
       XW = Math.max(60, Math.round(xr.width));
@@ -4160,7 +4320,7 @@ window.KolobViz = (function () {
       for (var i = 0; i <= 24; i++) {
         var t = i / 24, u = 1 - t, c3 = 3 * t * u, x = sh.x1 + dx * (0.75 * t * u * u + 2.25 * t * t * u + t * t * t);
         var yl = sh.y1 * u * u * (1 + 2 * t) + sh.y2 * t * t * (3 - 2 * t), ya = yl + sh.h * c3, yb = yl + (sh.h - sh.th) * c3;
-        if (pv && x <= g.xE + 0.3 * g.sp) segs.push([pv[0], Math.min(pv[1], pv[2], ya, yb), x, Math.max(pv[1], pv[2], ya, yb)]);
+        if (pv && x <= g.xE) segs.push([pv[0], Math.min(pv[1], pv[2], ya, yb), x, Math.max(pv[1], pv[2], ya, yb)]);
         pv = [x, ya, yb];
       }
       out.slurs.push({ kind: m.kind, st: m.st, tp: m.tp, tp2: m.tp2, segs: segs });
