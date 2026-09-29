@@ -84,6 +84,8 @@ include __DIR__ . '/../../../includes/header.php';
     'place' => $jd_poster['place'] ?? null,
   ], JSON_UNESCAPED_SLASHES); ?>;
   var scatter = <?php echo json_encode($jd_poster['scatter'] ?? new stdClass, JSON_UNESCAPED_SLASHES); ?>;
+  /* kept for the phone's wake (about-scenes.js, posterReseat) */
+  window.JD_POSTER.scatter = scatter;
   try {
     var KEY = 'jd-scatter-v2';
     var held = JSON.parse(sessionStorage.getItem(KEY) || 'null') || {};

@@ -62,6 +62,40 @@
   var pane = document.getElementById('jd-about-pane');
   if (!root || !pane) return;
 
+  /* THE PHONE (owner, 2026-09-29: "sticky sections"). ONE test, used
+     everywhere, and the same query about.css writes for its phone rules, so
+     the two can never disagree: a narrow screen, or a landscape phone (short,
+     however wide). On a phone none of the pinned pane's machinery runs — no
+     handoff, no relay, no fitting, no ghosts: each scene's graphic is laid
+     into the page above its own steps, at its own phone size, by phoneInit()
+     at the foot of this file. The desktop path below is untouched; every
+     guard added to it is `if (PHONE)`, false on a desktop. Decided once, at
+     load: crossing the breakpoint (a rotation) reloads the page. */
+  var PHONE_Q = '(max-width: 768px), (max-height: 500px)';
+  function isPhone() {
+    return !!(window.matchMedia && window.matchMedia(PHONE_Q).matches);
+  }
+  var PHONE = isPhone();
+  /* CROSSING THE BREAKPOINT (a rotation, a split view, a window made
+     narrower or shorter) rebuilds the page the other way: the step being
+     read is kept for the reload and returned to (restoreStep, at the foot).
+     Listened for on BOTH sides — a desktop turning into a phone had no
+     listener, and dropped every figure but the drawer (round 1, P1-4). */
+  (function () {
+    if (!window.matchMedia) return;
+    var mq = window.matchMedia(PHONE_Q);
+    var onFlip = function () {
+      if (isPhone() === PHONE) return;
+      try {
+        sessionStorage.setItem('jd-about-restore', JSON.stringify({ step: curStep, t: Date.now() }));
+        if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+      } catch (e) {}
+      window.location.reload();
+    };
+    if (mq.addEventListener) mq.addEventListener('change', onFlip);
+    else if (mq.addListener) mq.addListener(onFlip);
+  })();
+
   var stepEls = [].slice.call(root.querySelectorAll('.jd-step[data-scene]'));
   /* every step gets an anchor of its own, built from the two data attributes
      it already carries — #step-record-cost, #step-instrument-ranking. The
@@ -114,13 +148,14 @@
      new button (and the check keeps the observer from firing on its own
      write). */
   function nextOnly() {
-    var bs = pane.querySelectorAll('[data-scene-pane="instrument"] .jd-turn-go[data-act="next"]');
+    /* (on a phone the instrument has left the pane for its own section) */
+    var bs = (PHONE ? root : pane).querySelectorAll('[data-scene-pane="instrument"] .jd-turn-go[data-act="next"]');
     for (var i = 0; i < bs.length; i++) {
       if (bs[i].textContent !== 'next') bs[i].textContent = 'next';
     }
   }
   if (window.MutationObserver) {
-    new MutationObserver(nextOnly).observe(pane, { childList: true, subtree: true });
+    new MutationObserver(nextOnly).observe(PHONE ? root : pane, { childList: true, subtree: true });
   }
 
   /* ---- the poster (see index.php / about.css "THE POSTER") ----------------
@@ -132,10 +167,25 @@
      the capture makes the drawer scatter fresh, and the live object must
      never land on top of a picture of something else. */
   if (window.JD_POSTER) {
+    /* THE PHONE'S OPEN THE DRAWER is off with the desktop's (owner,
+       2026-09-29: the prose links to the full drawer already). One switch
+       brings it back on phones: about.css keeps its phone rule (44px, 13px
+       type, two lines clear of the turn plate). */
+    var PHONE_OPEN_DRAWER = false;
+    var posterStage = PHONE && PHONE_OPEN_DRAWER ? pane.querySelector('.jd-stage') : null;
+    if (posterStage) {
+      var openA = document.createElement('a');
+      openA.className = 'jd-open-drawer';
+      openA.href = BASE;
+      openA.target = '_blank'; openA.rel = 'noopener';
+      openA.textContent = 'Open the drawer →';
+      posterStage.appendChild(openA);
+    }
     var seat = window.JD_POSTER.place;
     if (seat) {
       poll(function () {
-        var it = pane.querySelector('.jd-pile [data-id="' + window.JD_POSTER.specimen + '"]');
+        /* (on a phone the drawer has left the pane for its own section) */
+        var it = (PHONE ? root : pane).querySelector('.jd-pile [data-id="' + window.JD_POSTER.specimen + '"]');
         if (!it || !it.style.left) return false;
         it.style.left = seat.left;
         it.style.top = seat.top;
@@ -192,7 +242,11 @@
   var curScene = null, curStep = null;
   var prerender = null;          /* the scene being rendered off-screen, if any */
 
-  function wanted(name) { return curScene === name || prerender === name; }
+  function wanted(name) {
+    /* on a phone the instrument is the one live card, open for good */
+    if (PHONE) return name === 'instrument';
+    return curScene === name || prerender === name;
+  }
 
   var reduceMotion = window.matchMedia &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -331,6 +385,7 @@
   }
 
   function layout() {
+    if (PHONE) return;                  /* no pane to lay out on a phone */
     var h = reduceMotion ? null : handoff();
     Object.keys(sceneEls).forEach(function (name) {
       var el = sceneEls[name];
@@ -443,7 +498,11 @@
   var origFocus = window.HTMLElement && HTMLElement.prototype.focus;
   if (origFocus) {
     HTMLElement.prototype.focus = function (opts) {
-      if (noFocusScroll > 0) {
+      /* on a phone every card is in the page's own flow, so a card's
+         focus-on-render would drag the page to it — at load, from a screen
+         away, and after NEXT to a heading left mid-screen. The page places
+         the card itself instead (phoneInit, "the card turns a page"). */
+      if (noFocusScroll > 0 || PHONE) {
         var o = { preventScroll: true };
         for (var k in (opts || {})) { if (k !== 'preventScroll') o[k] = opts[k]; }
         return origFocus.call(this, o);
@@ -629,7 +688,7 @@
   }
 
   function fitCard(host) {
-    if (!host) return false;
+    if (PHONE || !host) return false;   /* phone cards stand at 1:1 */
     var card = realCard(host);
     if (!card || !hasContent(card)) return false;
     ensureAside(host);
@@ -705,6 +764,7 @@
      the size its host was cut for, it is re-cut. A partial card cannot
      survive the next thing the reader does with the wheel. */
   function guardFit() {
+    if (PHONE) return;
     if (pane.scrollTop) pane.scrollTop = 0;
     var host = curScene && sceneEls[curScene];
     if (!host) return;
@@ -763,7 +823,9 @@
   function inline(selector, host) {
     var el = document.querySelector(selector + ':not(.jd-scene-ghost)');
     if (!el || !host) return null;
-    el.classList.add('jd-inline-card');
+    /* a phone card keeps its OWN phone layout: jd-inline-card is what
+       re-lays it out at 740px for the pinned pane (about.css) */
+    el.classList.add(PHONE ? 'jd-ph-card' : 'jd-inline-card');
     if (el.parentNode !== host) host.appendChild(el);
     return el;
   }
@@ -816,13 +878,98 @@
     }
     awake = true;
     document.documentElement.classList.add('jd-drawer-awake');
+    if (PHONE) { posterReseat(); phoneSwipeScrolls(); }
     if (pt && window.JD_pick) {
       var hit = document.elementFromPoint(pt.x, pt.y);
       var it = hit && hit.closest && hit.closest('.jd-pile > .jd-item');
       if (it && !it.dataset.turn) window.JD_pick(it);
     }
   }
-  if (drawerHost && !awake) {
+  /* THE WAKE KEEPS THE PICTURE'S LAYOUT (audit P1-5), phone only. The
+     drawer reuses the poster's stored scatter only if it covers EVERY item
+     on the page (jd-core's layoutFor); a drawing filed since the capture
+     makes it scatter the whole pile fresh, so waking swapped the picture for
+     a different pile. Here, in the same task as the wake (before a paint),
+     every item the picture holds is put back where the picture has it, with
+     the drawer's own turn-plate clearance; only items newer than the picture
+     keep their fresh places. */
+  function posterReseat() {
+    var sc = window.JD_POSTER && window.JD_POSTER.scatter;
+    var pileEl = drawerHost && drawerHost.querySelector('.jd-pile');
+    if (!sc || !pileEl) return;
+    var wr = pileEl.getBoundingClientRect();
+    if (!wr.width || !wr.height) return;
+    [].forEach.call(pileEl.querySelectorAll(':scope > .jd-item'), function (el) {
+      var p = sc[el.dataset.id];
+      if (!p || el.dataset.turn || el.dataset.id === window.JD_POSTER.specimen) return;
+      el.style.setProperty('--rot', p.rot + 'deg');
+      el.style.left = (p.x * 100) + '%';
+      el.style.top = (p.y * 100) + '%';
+      if (window.JD_zBase && p.z != null) el.style.zIndex = window.JD_zBase(el) + p.z;
+      if (window.JD_avoidTurn) {
+        var r = el.getBoundingClientRect();
+        var a = window.JD_avoidTurn(p.x, p.y, Math.min(0.5, r.width / 2 / wr.width),
+                                    Math.min(0.5, r.height / 2 / wr.height));
+        el.style.left = (a.x * 100) + '%';
+        el.style.top = (a.y * 100) + '%';
+      }
+    });
+  }
+  /* A SWIPE THAT STARTS ON A WOKEN DRAWING SCROLLS THE PAGE (phone only).
+     touch-action: pan-y (about.css) lets the browser pan vertically, but
+     the drawer's own non-passive touchmove calls preventDefault on a held
+     item, which cancels the pan. So, on a phone and once the pile is awake,
+     the drawer host catches each touchmove on the way down (capture) and
+     keeps it from the drawer while the gesture is undecided or mostly
+     vertical; a mostly sideways drag is let through, and digging works as
+     it does in the drawer. The pointer events that move an item are not
+     touched: a vertical pan simply cancels them, and the item settles. */
+  var swipeWired = false;
+  function phoneSwipeScrolls() {
+    if (swipeWired || !drawerHost) return;
+    swipeWired = true;
+    var g = null;                      /* the touch gesture: start, direction */
+    function onItem(e) { return e.target.closest && e.target.closest('.jd-pile > .jd-item'); }
+    drawerHost.addEventListener('pointerdown', function (e) {
+      g = (e.pointerType === 'touch' && onItem(e)) ? { id: e.pointerId, x: e.clientX, y: e.clientY, dir: null } : null;
+    }, true);
+    /* the drawer drags on pointermove and stops the pan on touchmove: both
+       are held back until the gesture shows itself sideways */
+    drawerHost.addEventListener('pointermove', function (e) {
+      if (!g || e.pointerId !== g.id) return;
+      if (!g.dir) {
+        var dx = Math.abs(e.clientX - g.x), dy = Math.abs(e.clientY - g.y);
+        if (dx > 8 || dy > 8) g.dir = dy > dx ? 'v' : 'h';
+      }
+      if (g.dir !== 'h') e.stopPropagation();
+    }, true);
+    drawerHost.addEventListener('touchmove', function (e) {
+      if (g && g.dir !== 'h') e.stopPropagation();
+    }, { capture: true, passive: true });
+    ['pointerup', 'pointercancel'].forEach(function (t) {
+      drawerHost.addEventListener(t, function (e) { if (g && e.pointerId === g.id) g = null; }, true);
+    });
+  }
+  if (drawerHost && !awake && PHONE) {
+    /* A PHONE WAKES ON A TAP, never on the touch that starts a scroll
+       (audit P0-1): a swipe across the poster used to wake the pile, and a
+       woken pile's drawings take the next swipe as a drag. A tap is a press
+       and release within a finger's slop. */
+    var tapAt = null;
+    drawerHost.addEventListener('pointerdown', function (e) {
+      if (awake || tagNudging) return;
+      tapAt = { x: e.clientX, y: e.clientY, id: e.pointerId, t: e.target };
+    }, true);
+    drawerHost.addEventListener('pointercancel', function () { tapAt = null; }, true);
+    drawerHost.addEventListener('pointerup', function (e) {
+      var a = tapAt; tapAt = null;
+      if (awake || !a || a.id !== e.pointerId) return;
+      if (Math.abs(e.clientX - a.x) > 10 || Math.abs(e.clientY - a.y) > 10) return;
+      if (a.t.closest && a.t.closest('.jd-itemtag, a[href], .jd-pile > .jd-item')) { wake(); return; }
+      wake({ x: e.clientX, y: e.clientY });
+    }, true);
+    drawerHost.addEventListener('focusin', function () { wake(); });
+  } else if (drawerHost && !awake) {
     drawerHost.addEventListener('pointerenter', function (e) {
       if (e.pointerType === 'mouse') wake();
     });
@@ -871,7 +1018,7 @@
   }
   document.addEventListener('keydown', function (e) {
     var t = e.target;
-    if (!t.closest || !t.closest('#jd-about-pane .jd-item--turn')) return;
+    if (!t.closest || !t.closest('#jd-about-pane .jd-item--turn, .jd-ph-sec .jd-item--turn')) return;
     if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
     e.preventDefault();
     e.stopPropagation();
@@ -887,7 +1034,7 @@
           if (n.nodeType !== 1 || n.classList.contains('jd-scene-ghost')) return;
           for (var cls in SCRIM_SCENE) {
             if (n.classList.contains(cls) && wanted(SCRIM_SCENE[cls])) {
-              n.classList.add('jd-inline-card');
+              n.classList.add(PHONE ? 'jd-ph-card' : 'jd-inline-card');
               sceneEls[SCRIM_SCENE[cls]].appendChild(n);
               return;
             }
@@ -1084,7 +1231,7 @@
        nothing to mount. Step 3 lifts one item out of the pile the same way a
        visitor does — by pressing it — so the tag and its grade appear. */
     step: function (step) {
-      var stage = pane || document;
+      var stage = (PHONE ? sceneEls.drawer : pane) || document;
       var item = stage.querySelector('[data-id="' + SPECIMEN + '"]');
       /* a synthetic .click() never reaches pick(): the pile arms on a
          pointerdown/pointerup PAIR against the same element, so a dispatched
@@ -1533,7 +1680,8 @@
 
   /* the card's own controls, on this page's cards (the modal's listeners
      live on the modal's own node, which this page never builds) */
-  sceneEls.record.addEventListener('click', function (e) {
+  sceneEls.record.addEventListener('click', recordControls);
+  function recordControls(e) {
     var t = e.target;
     if (!t.closest) return;
     var ax = t.closest('.rc-axbtn');
@@ -1577,9 +1725,11 @@
          same finished-card markup — and the page does not move. The step
          beside it keeps its text; the next step puts its own card back. */
       e.preventDefault();
-      turnInPlace(parseInt(alt.getAttribute('data-resp'), 10));
+      /* (a phone card turns inside its own figure: see phoneInit) */
+      if (PHONE) phoneTurn(alt);
+      else turnInPlace(parseInt(alt.getAttribute('data-resp'), 10));
     }
-  });
+  }
 
   /* ========================= SCENE 4 — ANALYTICS ========================== */
   /* THE CHARTS, WITHOUT THE FOLDER (owner, 2026-09-27: "we won't need the
@@ -2039,8 +2189,10 @@
     setTimeout(run, 48);
   }
 
-  window.addEventListener('scroll', onScroll, { passive: true });
-  window.addEventListener('resize', onScroll);
+  if (!PHONE) {
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+  }
 
   /* ---- THE TIMELINE ------------------------------------------------------
      Built from the steps themselves so it cannot disagree with them: one
@@ -2114,6 +2266,429 @@
     });
   }
 
+  /* ============================ THE PHONE ===================================
+     OPTION C, "STICKY SECTIONS" (owner, 2026-09-29). The pinned pane, the
+     handoff, the relay, the fitting and the ghosts are a desktop design: a
+     graphic BESIDE its prose. On a phone the page is an article instead,
+     and each scene's graphic stands in the flow, above its own steps, as the
+     real component in its own phone layout at 1:1 — the drawer's report
+     card and turn card already have one. Three graphics are HELD (position:
+     sticky, about.css) while the words beneath them point at them: the
+     drawer through its three steps, and Gemini's and Kimi's drawings through
+     theirs. Everything else scrolls like a page.
+
+     This builds that page once, at load: every step is gathered into a
+     section behind its graphic, the drawer and the instrument hosts move out
+     of the pane into their sections, the report cards and the charts are
+     built straight into theirs. The only thing the scroll still drives is
+     scene 1's lift (the succulent's tag at "Every item has a grade") and a
+     2px progress line under the banner. */
+  var phoneAlt = {};
+  function phoneEl(tag, cls) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    return e;
+  }
+  /* a card built for a phone figure: its own ids, its own class (NOT
+     jd-inline-card, which would re-lay it out for the pinned pane) */
+  function phoneCard(el) {
+    el.classList.remove('jd-inline-card');
+    el.classList.add('jd-ph-card');
+    rewriteIds(el, 'rc' + (++cardSeq) + '-');
+    return el;
+  }
+  /* framed once, as landCard does for the pane: the drawings' frames and
+     the prompt's fold are earned after layout */
+  function phoneFrame(node) {
+    var sc = node.querySelector('.rc-scroll');
+    if (!node.__jdFramed && sc) {
+      if (window.JD_fitAll) window.JD_fitAll(sc);
+      var fold = sc.querySelector('.rc-assign.rc-can-fold');
+      var fp = fold && fold.querySelector('p');
+      if (fp && fp.scrollHeight <= fp.clientHeight + 2) fold.classList.remove('rc-can-fold');
+      node.__jdFramed = true;
+    }
+  }
+  /* the replay control, under the plate, where the drawer's own card has it */
+  function phoneFilmstrip(node) {
+    var plate = node.querySelector('.rc-col-l > .rc-plate');
+    var svg = plate && plate.querySelector('.rc-plate-art > svg');
+    if (window.JD_filmstrip && svg && !svg.__jdFilmstrip) {
+      try {
+        window.JD_filmstrip(svg, plate, {
+          autoplay: false, pfx: 'fsp' + (++sbSeq) + '_', label: 'Replay the drawing'
+        });
+      } catch (e) {}
+    }
+    finishDrawings(node);
+  }
+  /* the Fable card's sibling strip turns THAT card in place, as on the
+     desktop; nothing else on the page moves */
+  function phoneTurn(alt) {
+    var card = alt.closest('.jd-ph-card');
+    var fig = card && card.parentNode;
+    if (!fig) return;
+    var idx = parseInt(alt.getAttribute('data-resp'), 10);
+    itemData(SPECIMEN).then(function (d) {
+      var item = d && d.item;
+      var r = item && item.responses[idx];
+      if (!r || !window.JD_record || !window.JD_record.card) return;
+      var ready = phoneAlt[r.rid] || (phoneAlt[r.rid] =
+        window.JD_record.card(item, r.rid, d).then(function (el) {
+          return el ? phoneCard(el) : null;
+        }));
+      ready.then(function (el) {
+        if (!el || el === card || card.parentNode !== fig) return;
+        keepScroll(function () {
+          unmountFilmstrip(card);
+          if (el.parentNode) el.parentNode.removeChild(el);
+          fig.replaceChild(el, card);
+          phoneFrame(el);
+          phoneFilmstrip(el);
+        });
+      });
+    });
+  }
+
+  /* THE TAG STAYS IN THE WELL (round 1, P1-2). The drawer seats a tag above
+     its item when there is no room below, and on a phone's small well that
+     put it up to 35px above the well, under the banner. It is moved back
+     the way a visitor would move it — a drag of the tag itself, which the
+     drawer clamps inside the well and re-strings the elastic for — as a
+     synthetic press, marked so the wake-on-tap does not take it for one. */
+  var tagNudging = false;
+  function keepTagInWell() {
+    var tag = sceneEls.drawer && sceneEls.drawer.querySelector('.jd-itemtag.is-on');
+    var well = tag && tag.parentNode;
+    if (!tag || !well || !window.PointerEvent) return;
+    var t = parseFloat(tag.style.top) || 0;
+    var want = Math.max(8, Math.min(well.clientHeight - tag.offsetHeight - 8, t));
+    /* a drawer standing in the flow (short and landscape screens) is wide
+       enough that a tag seated below its item lands on OPEN THE DRAWER in
+       the corner: there the tag hangs at the top of the well */
+    var pin = sceneEls.drawer.closest('.jd-ph-pin');
+    if (pin && getComputedStyle(pin).position !== 'sticky') want = 8;
+    if (Math.abs(want - t) < 4) return;
+    var r = tag.getBoundingClientRect();
+    var o = { pointerId: 7919, pointerType: 'touch', isPrimary: true, bubbles: true,
+              cancelable: true, clientX: r.left + 40, clientY: r.top + r.height / 2 };
+    tagNudging = true;
+    try {
+      tag.dispatchEvent(new PointerEvent('pointerdown', o));
+      o.clientY += want - t;
+      tag.dispatchEvent(new PointerEvent('pointermove', o));
+      tag.dispatchEvent(new PointerEvent('pointerup', o));
+    } catch (e) {}
+    tagNudging = false;
+  }
+
+  function phoneInit() {
+    root.classList.add('jd-about--phone');
+
+    var grid = root.querySelector('.jd-about-grid');
+    /* the cards now stand among the steps, and .jd-notes is the drawer's
+       field-notes voice (mono 13px, uppercase ruled h2s) — which every card
+       would inherit. The steps carry their own type (about.css, THE STEP
+       TYPE), so on a phone the column drops the class. */
+    var notesEl = root.querySelector('.jd-about-notes');
+    if (notesEl) notesEl.classList.remove('jd-notes');
+    /* THE TITLE LEADS (audit P1-6): it moves out of the opening step to the
+       head of the page, above the drawer (about.css holds its place there
+       from the first paint, before this script has run) */
+    var head = root.querySelector('.jd-about-head');
+    if (head && grid) grid.insertBefore(head, grid.firstChild);
+
+    function stepEl(id) { return root.querySelector('.jd-step[data-step="' + id + '"]'); }
+    var PLAN = [
+      { name: 'drawer', steps: ['hook', 'premise', 'graded'], pin: true },
+      { name: 'instrument', steps: ['try', 'taxonomy'] },
+      { name: 'fable', steps: ['claude-fable-5'] },
+      { name: 'gemini', steps: ['gemini-3-1-pro', 'gemini-answer', 'gemini-structure'], pin: true, under: true },
+      { name: 'kimi', steps: ['kimi-k3'], pin: true, under: true },
+      { name: 'turns', steps: ['stack'] },
+      { name: 'grades', steps: ['grades'] },
+      { name: 'distribution', steps: ['distribution'] },
+      { name: 'axes', steps: ['multiples'] },
+      { name: 'cost', steps: ['spend'] },
+      { name: 'outro', steps: ['outro'], bare: true }
+    ];
+    var sec = {};
+    PLAN.forEach(function (p) {
+      var first = stepEl(p.steps[0]);
+      if (!first) return;
+      var s = phoneEl('section', 'jd-ph-sec' + (p.pin ? ' jd-ph-sec--pin' : ''));
+      s.setAttribute('data-ph', p.name);
+      first.parentNode.insertBefore(s, first);
+      var f = null, u = null;
+      if (!p.bare) { f = phoneEl('div', 'jd-ph-fig' + (p.pin ? ' jd-ph-pin' : '')); s.appendChild(f); }
+      if (p.under) { u = phoneEl('div', 'jd-ph-fig jd-ph-under'); s.appendChild(u); }
+      p.steps.forEach(function (id) { var st = stepEl(id); if (st) s.appendChild(st); });
+      sec[p.name] = { sec: s, fig: f, under: u };
+    });
+
+    /* scene 1: the drawer itself, poster and live specimen, held */
+    if (sec.drawer && sceneEls.drawer) sec.drawer.fig.appendChild(sceneEls.drawer);
+
+    /* scene 2: the real turn card, in its own phone layout, open for good
+       (it is the page's one live card: nothing else opens a modal here) */
+    var ihost = sceneEls.instrument;
+    if (sec.instrument && ihost) {
+      sec.instrument.fig.appendChild(ihost);
+      ihost.classList.add('is-on');
+      var ins = scenes.instrument;
+      ins._mounted = true;
+      var t0 = Date.now();
+      Promise.resolve(ins.mount()).then(function () { ins._open('blank'); }, function () {});
+      /* THE CARD TURNS A PAGE (round 1, P1-5). A press that moves the card
+         on (NEXT, BACK, a rail stop) re-renders it; once its heading has
+         changed, the card's top is brought to just under the banner — only
+         when it is above that line, so a reader looking at the card from
+         above it is never pulled down. */
+      ihost.addEventListener('click', function (e) {
+        var b = e.target.closest && e.target.closest('[data-act]');
+        if (!b) return;
+        var t0 = ihost.querySelector('.jd-turn-title');
+        var before = t0 ? t0.textContent : '';
+        poll(function () {
+          var t = ihost.querySelector('.jd-turn-title');
+          if (!t || t.textContent === before) return false;
+          var card = ihost.querySelector('.jd-turn');
+          if (!card) return true;
+          var ban = document.querySelector('.site-banner');
+          var line = (ban ? ban.getBoundingClientRect().bottom : 48) + 8;
+          var top = card.getBoundingClientRect().top;
+          if (top < line) {
+            window.scrollTo({ top: Math.round(window.pageYOffset + top - line),
+                              behavior: reduceMotion ? 'auto' : 'smooth' });
+          }
+          return true;
+        }, 60, 30);
+      }, true);   /* capture: the card re-renders inside its own click */
+      /* the honest fallback, only if the card never stands up inline */
+      poll(function () {
+        if (ihost.querySelector('.jd-turn-scroll > *')) return true;
+        if (Date.now() - t0 < 15000) return false;
+        var note = phoneEl('p', 'jd-ph-fallback');
+        note.innerHTML = 'The grading card is built for a larger screen &mdash; try it on a ' +
+          'laptop or in the <a href="' + BASE + '" target="_blank" rel="noopener">full drawer</a>.';
+        sec.instrument.fig.appendChild(note);
+        return true;
+      }, 250, 80);
+    }
+
+    /* scene 3: finished report cards, one per figure. Fable's is the whole
+       card (it introduces the card); Gemini and Kimi each get the drawing
+       HELD (masthead, plate, replay) and, under it in the flow, the same
+       card's grades — two copies of one card() render, so they cannot
+       disagree. */
+    if (window.JD_record && window.JD_record.card) {
+      itemData(SPECIMEN).then(function (d) {
+        var item = d && d.item;
+        if (!item) throw new Error('data.php?item=' + SPECIMEN + ' did not answer');
+        function ridOf(model) {
+          for (var i = 0; i < item.responses.length; i++) {
+            if (item.responses[i].model === model) return item.responses[i].rid;
+          }
+          return null;
+        }
+        var want = [['fable', 'claude-fable-5', 'full'],
+                    ['gemini', 'gemini-3-1-pro', 'pin'], ['gemini', 'gemini-3-1-pro', 'under'],
+                    ['kimi', 'kimi-k3', 'pin'], ['kimi', 'kimi-k3', 'under']];
+        return Promise.all(want.map(function (w) {
+          return window.JD_record.card(item, ridOf(w[1]), d).then(function (el) {
+            return { w: w, el: el, rid: ridOf(w[1]) };
+          });
+        }));
+      }).then(function (built) {
+        built.forEach(function (b) {
+          var s = sec[b.w[0]];
+          var target = s && (b.w[2] === 'under' ? s.under : s.fig);
+          if (!b.el || !target) return;
+          phoneCard(b.el);
+          b.el.classList.add('jd-ph-card--' + b.w[2]);
+          target.appendChild(b.el);
+          phoneFrame(b.el);
+          if (b.w[2] !== 'under') phoneFilmstrip(b.el);
+          if (b.w[2] === 'full') phoneAlt[b.rid] = Promise.resolve(b.el);
+        });
+      }).catch(function (err) {
+        if (window.console) console.warn('about: report cards failed to build (' + (err && err.message) + ')');
+      });
+    }
+    ['fable', 'gemini', 'kimi'].forEach(function (k) {
+      if (sec[k]) sec[k].sec.addEventListener('click', recordControls);
+    });
+
+    /* scene 4: the table and the charts, each above its own step. The
+       spread is drawn twice: with the averages above "Insights", and alone,
+       its two leaders picked out, above "Same averages…" (the desktop's
+       in-place focus, made a figure of its own) */
+    var an = scenes.analytics;
+    an._mounted = true;
+    Promise.resolve(an.mount()).then(function () {
+      var v = sceneEls.analytics.__views || {};
+      function take(key, target) {
+        var x = v[key];
+        if (!x || !target) return null;
+        target.appendChild(phoneCard(x.node));
+        return x.node;
+      }
+      var t = sec.turns && take('analytics:turns', sec.turns.fig);
+      if (t) phoneTable(t);
+      var g = sec.grades && take('analytics:grades', sec.grades.fig);
+      if (g && sec.distribution) {
+        var c = g.cloneNode(true);
+        rewriteIds(c, 'ds-');
+        sec.distribution.fig.appendChild(c);
+      }
+      if (sec.axes) take('analytics:axes', sec.axes.fig);
+      if (sec.cost) take('analytics:cost', sec.cost.fig);
+    });
+
+    phoneScroll();
+  }
+
+  /* THE RECORDS TABLE ON A PHONE (audit P0-1, P2-4): no window of its own
+     to scroll vertically — the page scrolls, the table only sideways. Ten
+     rows, then a button for the rest; a line that says it scrolls sideways,
+     and a fade at the edge while there is more to the right. */
+  function phoneTable(card) {
+    var fig = card.querySelector('figure.jdc-turns') || card;
+    var wrap = card.querySelector('.jdc-tablewrap');
+    var n = card.querySelectorAll('.jdc-sheet tbody tr').length;
+    if (!wrap) return;
+    var hint = phoneEl('p', 'jd-ph-hint');
+    hint.textContent = 'Scroll for all four models →';
+    fig.insertBefore(hint, fig.firstChild);
+    var fade = phoneEl('span', 'jd-ph-fade');
+    fade.setAttribute('aria-hidden', 'true');
+    fig.appendChild(fade);
+    var edge = function () {
+      fig.classList.toggle('is-end', wrap.scrollLeft + wrap.clientWidth >= wrap.scrollWidth - 2);
+    };
+    wrap.addEventListener('scroll', edge, { passive: true });
+    setTimeout(edge, 0);
+    if (n > 10) {
+      card.classList.add('jd-ph-clip');
+      var more = phoneEl('button', 'jd-ph-more');
+      more.type = 'button';
+      more.textContent = 'Show all ' + n + ' prompts';
+      more.addEventListener('click', function () {
+        card.classList.remove('jd-ph-clip');
+        if (more.parentNode) more.parentNode.removeChild(more);
+      });
+      card.appendChild(more);
+    }
+  }
+
+  /* what the scroll still drives on a phone: the progress line, and scene
+     1's lift — the step current once its top passes 62% of the screen, so
+     "Every item has a grade" is well into view under the held drawer */
+  function phoneScroll() {
+    var prog = phoneEl('div', 'jd-ph-progress');
+    prog.setAttribute('aria-hidden', 'true');
+    root.appendChild(prog);
+    var cur = null, ticking = false;
+    /* a static drawer (short and landscape screens) is out of view by the
+       time "Every item has a grade" is read: there the lift comes early,
+       while the drawer is in view and the reader has started down the
+       opening step, and the tag then stays up */
+    var dpin = sceneEls.drawer && sceneEls.drawer.closest('.jd-ph-pin');
+    function drawerStatic() { return !!dpin && getComputedStyle(dpin).position !== 'sticky'; }
+    var earlyLift = false;
+    function lift(step) {
+      if (step !== 'graded') {
+        if (drawerStatic() && earlyLift) return;
+        scenes.drawer.step(step);
+        return;
+      }
+      /* the pile may still be loading: keep asking while the step stands,
+         and never take the reader's own pick away from them */
+      poll(function () {
+        if (curStep !== 'graded' && !earlyLift) return true;
+        if (sceneEls.drawer.querySelector('.jd-pile > .jd-item.is-picked')) return true;
+        if (!window.JD_pick || !sceneEls.drawer.querySelector('[data-id="' + SPECIMEN + '"]')) return false;
+        scenes.drawer.step('graded');
+        setTimeout(keepTagInWell, 60);
+        setTimeout(keepTagInWell, 450);
+        return true;
+      }, 150, 200);
+    }
+    sceneEls.drawer.addEventListener('pointerup', function () {
+      setTimeout(keepTagInWell, 80);
+      setTimeout(keepTagInWell, 450);
+    });
+    function tick() {
+      ticking = false;
+      var max = document.documentElement.scrollHeight - window.innerHeight;
+      var f = max > 0 ? Math.min(1, Math.max(0, window.pageYOffset / max)) : 0;
+      prog.style.transform = 'scaleX(' + f.toFixed(4) + ')';
+      var line = window.innerHeight * 0.62, chosen = stepEls[0];
+      for (var i = 0; i < stepEls.length; i++) {
+        if (stepEls[i].getBoundingClientRect().top <= line) chosen = stepEls[i];
+        else break;
+      }
+      if (!earlyLift && drawerStatic() && window.pageYOffset >= 120) {
+        var fr = dpin.getBoundingClientRect();
+        var seen = Math.min(fr.bottom, window.innerHeight) - Math.max(fr.top, 0);
+        if (fr.height && seen / fr.height >= 0.7) { earlyLift = true; curStep = 'graded'; lift('graded'); }
+      }
+      if (chosen === cur) return;
+      cur = chosen;
+      curStep = chosen.getAttribute('data-step');
+      if (chosen.getAttribute('data-scene') === 'drawer') lift(curStep);
+    }
+    function onTick() {
+      if (ticking) return;
+      ticking = true;
+      var done = false;
+      function run() { if (done) return; done = true; tick(); }
+      if (window.requestAnimationFrame) window.requestAnimationFrame(run);
+      setTimeout(run, 48);
+    }
+    window.addEventListener('scroll', onTick, { passive: true });
+    /* a phone's toolbar resizes the window mid-scroll, and the pile drops
+       its tag on a resize: put the lift back */
+    window.addEventListener('resize', function () {
+      onTick();
+      if (curStep === 'graded') setTimeout(function () { lift('graded'); }, 0);
+    });
+    tick();
+  }
+
+  /* back to the step that was being read before a breakpoint reload
+     (see the listener at the top); re-placed for a couple of seconds while
+     the page's figures build, unless the reader moves first */
+  function restoreStep() {
+    var r = null;
+    try {
+      r = JSON.parse(sessionStorage.getItem('jd-about-restore') || 'null');
+      sessionStorage.removeItem('jd-about-restore');
+      if ('scrollRestoration' in history) history.scrollRestoration = 'auto';
+    } catch (e) {}
+    if (!r || !r.step || Date.now() - r.t > 60000) return;
+    var el = root.querySelector('.jd-step[data-step="' + r.step + '"]');
+    if (!el) return;
+    var moved = false;
+    var mark = function () { moved = true; };
+    ['wheel', 'touchstart', 'keydown'].forEach(function (t) {
+      window.addEventListener(t, mark, { passive: true, once: true });
+    });
+    var n = 0;
+    (function place() {
+      if (moved) return;
+      var line = PHONE ? window.innerHeight * 0.45 : focusLine();
+      window.scrollTo({ top: Math.max(0, Math.round(el.getBoundingClientRect().top +
+        window.pageYOffset - line + 4)), behavior: 'instant' });
+      if (++n < 12) setTimeout(place, 250);
+    })();
+  }
+
+  if (PHONE) {
+    phoneInit();
+    restoreStep();
+  } else {
+  restoreStep();
   buildTimeline();
 
   /* open on whatever step the scroll position already names — a deep link or
@@ -2127,6 +2702,7 @@
     setTimeout(function () { if (curScene === 'drawer') prerenderAll(); }, 400);
     return true;
   }, 150, 200);
+  }
 
   /* exposed for the harness only: read-only state */
   window.JD_about = {

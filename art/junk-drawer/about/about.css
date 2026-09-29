@@ -725,7 +725,7 @@ html.jd-about-page.jd-record-open,
 html.jd-about-page.jd-folder-open { overflow: visible; }
 
 /* ---------------- desktop: pane left, steps right ----------------------- */
-@media (min-width: 769px) {
+@media (min-width: 769px) and (min-height: 501px) {
   .jd-about .jd-about-grid {
     display: grid;
     /* graphic | prose | timeline. The graphic takes the larger share because
@@ -836,75 +836,7 @@ html.jd-about-page.jd-folder-open { overflow: visible; }
    3. junk-drawer.css's phone scroll-snap put a 250px dead band over scene 1
       that a fling could not cross. Neutralised below.
    ------------------------------------------------------------------------ */
-@media (max-width: 768px) {
-  .jd-about .jd-about-grid { display: block; padding: 0 var(--s-3); }
-
-  .jd-about--live .jd-about-pane {
-    position: sticky;
-    top: var(--banner-h);
-    z-index: 2;
-    /* ONE height, every scene. See note 1 above. 66vh rather than 55vh buys
-       the report card ~90px and the turn card ~95px of the height they were
-       losing, without starving the prose below. */
-    height: 66vh;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    justify-content: safe center;
-    /* the pinned graphic needs its own ground: the steps scroll UNDER it.
-       --paper is #ffffff site-wide, which is not the warm ground the drawer
-       sits on, so the colour is stated here rather than inherited. */
-    background: #f4efe2;
-    box-shadow: 0 8px 18px -10px rgba(0, 0, 0, 0.45);
-  }
-  /* the card is scaled to fit by about-scenes.js, so it no longer needs its
-     own scroller here — which also retires the three-stacked-scroll-contexts
-     problem the phone audit found (a scrub that ran off the end of the card
-     used to chain into the page and move the story on) */
-  .jd-about--live .jd-about-pane .jd-inline-card { overscroll-behavior: contain; }
-
-  /* THE TIMELINE ON A PHONE: the grid is display:block here, so the rail
-     would otherwise stack at the foot of the page where it can say nothing
-     about progress. Fixed against the right edge, tighter than on a desktop. */
-  .jd-about--live .jd-timeline {
-    position: fixed;
-    right: 6px;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 3;
-    width: 18px;
-    padding: 6px 0;
-    border-radius: 9px;
-    background: rgba(244, 239, 226, 0.78);
-    backdrop-filter: blur(3px);
-  }
-  .jd-about--live .jd-tl-scene { margin-bottom: 11px; }
-  .jd-about--live .jd-tl-stop { height: 13px; }
-  .jd-about--live .jd-tl-dot { width: 6px; height: 6px; margin: -3px 0 0 -3px; }
-  .jd-about--live .jd-stage { height: 62vh; margin: 0 auto; }
-
-  .jd-about--live .jd-step {
-    min-height: 42vh;
-    display: flex; flex-direction: column; justify-content: center;
-    margin-bottom: var(--s-5);
-  }
-  .jd-about--live .jd-step:last-of-type { margin-bottom: 30vh; }
-  /* THE HANDOFF'S RUNWAY, PHONE (2026-09-27). With the report card turned
-     per drawing, a view can be a single 42vh step — shorter than the pinned
-     pane's own height, which is how much scroll a handoff takes — so the
-     card never came to rest. A pane's height of room before each new view
-     gives the change its scroll and the card its still moment. */
-  .jd-about--live .jd-step--scene-head { margin-top: calc(66vh + 28px); }
-
-  /* the drawer's own phone page-snap is written for the art page, where the
-     stage IS the viewport and the notes are a second landing. Here the stage
-     lives inside a sticky pane, so its snap point sat mid-page and pinned a
-     250px band no fling could cross. */
-  html.jd-about-page { scroll-snap-type: none; }
-  .jd-about .jd-stage,
-  .jd-about #notes { scroll-snap-align: none; scroll-snap-stop: normal; }
-}
+/* (the phone's rules are at the foot of this file: "THE PHONE") */
 
 /* ---- reduced motion ----------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
@@ -1006,7 +938,7 @@ html.jd-about-page.jd-folder-open { overflow: visible; }
    less the paragraph's between them. Desktop only; the phone layout pins
    the pane across the top and is untouched.
    ========================================================================== */
-@media (min-width: 769px) {
+@media (min-width: 769px) and (min-height: 501px) {
   /* EVERY STEP CLEARS THE SCREEN BEFORE THE NEXT ARRIVES (owner, 2026-09-27:
      "by the time [the next step] scrolls in, I can still see the bottom of
      the list"). A fixed 66vh step only works for prose shorter than ~21vh;
@@ -1131,18 +1063,6 @@ html.jd-poster-on:not(.jd-drawer-awake) .jd-about .jd-well::before {
 html.jd-poster-on:not(.jd-drawer-awake) .jd-about .jd-well.jd-has-pick::before { opacity: 1; }
 
 
-/* a phone gives the drawer the full width and 62vh, which is taller than 4:5;
-   the picture is 4:5, so the stage keeps that shape here and the picture is
-   never stretched */
-@media (max-width: 768px) {
-  html.jd-poster-on .jd-about--live .jd-stage {
-    height: auto;
-    aspect-ratio: 4 / 5;
-    width: min(100%, calc(62vh * 0.8));
-    min-height: 0;
-  }
-}
-
 /* the craquelure is the floor's aging and lies UNDER the objects. Over the
    floor it is baked into the picture beneath them; left live across the whole
    stage it would crack the pictured objects too. So the live layer keeps only
@@ -1170,7 +1090,7 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
    landed and the page jumped up under it (owner, 2026-09-26: first-load
    flashing), and the reader was left without the site's navigation until
    they scrolled. The banner simply stays. */
-@media (max-width: 768px) {
+@media (max-width: 768px), (max-height: 500px) {
   html.jd-about-page body { padding-top: var(--banner-h); }
   html.jd-about-page .site-banner { transform: none; transition: none; }
 }
@@ -1400,7 +1320,7 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
   margin-top: 1.1rem;
   background: linear-gradient(var(--ink) 0 3px, transparent 3px 6px, var(--ink) 6px 7px);
 }
-@media (min-width: 769px) {
+@media (min-width: 769px) and (min-height: 501px) {
   .jd-about--live .jd-about-head {
     --jd-head: max(10rem, 28vh);
     min-height: var(--jd-head); box-sizing: border-box; margin: 0;
@@ -1492,8 +1412,7 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
 .jd-about .jdc-sheet th.jdc-c-date { background: var(--jdc-headfill); }
 .jd-about .jdc-sheet .jdc-c-num { width: 6.2rem; min-width: 6.2rem; max-width: 6.2rem; text-align: right; }
 .jd-about .jdc-sheet th.jdc-c-num { text-align: right; }
-@media (max-width: 768px) {
-  .jd-about .jdc-tablewrap { max-height: 380px; }
+@media (max-width: 768px), (max-height: 500px) {
   .jd-about .jdc-sheet .jdc-c-prompt { width: 8.5rem; min-width: 8.5rem; max-width: 8.5rem; }
 }
 
@@ -1567,10 +1486,6 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
 .jd-about .jd-sheet-card .jdc-gauge { width: 41px; height: 9px; vertical-align: -1px; margin-left: 4px; }
 .jd-about .jd-sheet-card .jdc-seg { stroke: var(--jdc-paper, #efe4c6); stroke-width: 1.4; }
 .jd-about .jd-sheet-card .jdc-seg-out { stroke: rgba(74, 53, 18, 0.18); stroke-width: 1; }
-@media (max-width: 768px) {
-  .jd-about [data-scene-pane="analytics"] .jd-inline-card.jd-sheet-card { width: 100%; }
-  .jd-about .jd-sheet-card .jdc-tablewrap { max-height: 60vh; }
-}
 
 /* the prompt card beside an Item cell (about-scenes.js, "the prompt card"):
    the report card's prompt box in miniature — cream paper, a slate hairline,
@@ -1726,3 +1641,410 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
   margin: var(--ab-gap-band) 0 0; padding-top: 0;
 }
 
+
+/* ============================================================================
+   THE PHONE — "STICKY SECTIONS" (owner, 2026-09-29; Option C of the phone
+   study). A phone is (max-width: 768px) OR (max-height: 500px): the second
+   brings landscape phones in, and about-scenes.js asks the same question
+   (PHONE_Q), so the two can never disagree. Desktop rules above are all
+   under (min-width: 769px) and (min-height: 501px) — every real desktop.
+
+   The page is an article: the title, then each scene's graphic above its own
+   steps, every card the real component in its OWN phone layout at 1:1 (no
+   jd-inline-card, no scale). Three graphics are held while their words
+   point at them — the drawer, Gemini's drawing, Kimi's drawing — by plain
+   position: sticky inside their own section, never more than 44svh, so the
+   words always keep most of the screen. Nothing moves but under the thumb.
+
+   Two states. Before about-scenes.js has run (the drawer modules are large
+   and load first), the markup's own order is laid out to look the same at
+   the top: the title held in its place above the drawer, the drawer still
+   in the pane. Once the script has built the sections, .jd-about--phone.
+   ========================================================================== */
+@media (max-width: 768px), (max-height: 500px) {
+  .jd-about {
+    --ph-gut: 16px;
+    --ph-head: 142px;            /* the title block's height, both states */
+    --ph-pin: 44svh;             /* a held graphic's ceiling */
+    --ph-paper: var(--paper, #fff);
+  }
+
+  /* ---- the column ------------------------------------------------------- */
+  .jd-about .jd-about-grid {
+    display: block;
+    position: relative;
+    width: 100%; min-width: 0;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 var(--ph-gut);
+    box-sizing: border-box;
+  }
+  .jd-about .jd-about-notes {
+    max-width: none; margin: 0; padding: 0;
+  }
+  .jd-about--live .jd-timeline { display: none; }
+  /* the drawer page's own phone page-snap (junk-drawer.css) is written for
+     a drawer that IS the screen; here it would snap the page to the stage */
+  html.jd-about-page { scroll-snap-type: none; }
+  .jd-about .jd-stage,
+  .jd-about #notes,
+  html.jd-about-page .site-footer { scroll-snap-align: none; scroll-snap-stop: normal; }
+
+  /* ---- the title leads -------------------------------------------------- */
+  .jd-about--live .jd-about-head {
+    box-sizing: border-box;
+    height: var(--ph-head);
+    margin: 0;
+    padding: 22px 0 0;
+  }
+  .jd-about .jd-about-title { font-size: min(2.35rem, 10.4vw); }
+  /* before the script: the title sits in its own place above the pane */
+  .jd-about--live:not(.jd-about--phone) .jd-about-grid { padding-top: var(--ph-head); }
+  .jd-about--live:not(.jd-about--phone) .jd-about-head {
+    position: absolute; top: 0; left: var(--ph-gut); right: var(--ph-gut);
+  }
+  .jd-about--live:not(.jd-about--phone) .jd-about-pane {
+    position: static; height: auto; overflow: visible;
+    padding: 8px 0 30px;         /* = the held figure's 10px + its 20px margin */
+  }
+  .jd-about--phone .jd-about-pane { display: none; }
+
+  /* ---- the steps: a long read, nothing dimmed --------------------------- */
+  .jd-about--live .jd-step,
+  .jd-about--live .jd-step.is-on {
+    opacity: 1;
+    min-height: 0;
+    margin: 0 0 40px;
+  }
+  .jd-about .jd-step-body { max-width: 38rem; margin: 0 auto; }
+  .jd-about .jd-step-body p,
+  .jd-about .jd-step-body li { font-size: 17px; line-height: 1.6; }
+  .jd-about .jd-step h2 {
+    font-size: 1.5rem; line-height: 1.2; font-weight: 600;
+    margin: 0 0 0.6rem;
+  }
+  .jd-about .jd-demo-note { font-size: 13px; }
+
+  /* ---- sections --------------------------------------------------------- */
+  .jd-about .jd-ph-sec { position: relative; }
+  /* a scene break: air and a hairline (the drawer opens the page, and the
+     report card's and the charts' later figures follow on without one) */
+  .jd-about .jd-about-notes > .jd-ph-sec[data-ph="instrument"],
+  .jd-about .jd-about-notes > .jd-ph-sec[data-ph="fable"],
+  .jd-about .jd-about-notes > .jd-ph-sec[data-ph="turns"],
+  .jd-about .jd-about-notes > .jd-ph-sec[data-ph="outro"] {
+    margin-top: 36px;             /* space round: 56 + 28 -> 36 + 20 */
+    padding-top: 20px;
+    border-top: 1px solid var(--rule-soft, rgba(0, 0, 0, 0.12));
+  }
+  .jd-about .jd-ph-fig { margin: 0 0 20px; }
+  /* in-flow figures take half the gutter back (8px a side; the words keep
+     16): cards 361 -> 377px on a 393px phone, no dead margin around them */
+  .jd-about .jd-ph-fig:not(.jd-ph-pin) { margin-left: -8px; margin-right: -8px; }
+  .jd-about--live .jd-ph-sec > .jd-step:last-child { margin-bottom: 0; }
+  /* one section after another within a scene: the step gap, not a break */
+  .jd-about .jd-ph-sec + .jd-ph-sec { margin-top: 40px; }
+  .jd-about .jd-ph-sec[data-ph="outro"] .jd-step { margin-bottom: 0; padding-bottom: 8px; }
+
+  /* ---- held figures ----------------------------------------------------- */
+  .jd-about .jd-ph-pin {
+    position: sticky;
+    top: var(--banner-h);
+    z-index: 10;
+    box-sizing: border-box;
+    /* the band spans the gutters too, so nothing passing under it shows at
+       the screen's edges */
+    margin-left: calc(-1 * var(--ph-gut)); margin-right: calc(-1 * var(--ph-gut));
+    padding: 8px var(--ph-gut) 10px;
+    display: flex; justify-content: center;
+    background: var(--ph-paper);
+  }
+  /* the words slide under the held band into a short fade, not under the
+     edge of a floating slab (round 2: no side shadows) */
+  .jd-about .jd-ph-pin::after {
+    content: ""; position: absolute; left: 0; right: 0; top: 100%;
+    height: 14px; pointer-events: none;
+    background: linear-gradient(var(--ph-paper), rgba(255, 255, 255, 0));
+  }
+
+  /* ---- scene 1: the drawer (the poster keeps its 4:5 shape and frame) ---- */
+  .jd-about--live .jd-scene[data-scene-pane="drawer"] {
+    display: block; overflow: visible; will-change: auto;
+    width: 100%;
+  }
+  html.jd-poster-on .jd-about--live .jd-stage,
+  .jd-about--live .jd-stage {
+    height: auto;
+    aspect-ratio: 4 / 5;
+    width: min(100%, calc((var(--ph-pin) - 18px - var(--jd-pull-drop, 0px)) * 0.8));
+    min-height: 0; max-width: none;
+    margin: 0 auto calc(var(--jd-pull-drop, 0px));
+    box-shadow: none;
+  }
+  /* OPEN THE DRAWER — DORMANT (owner, 2026-09-29, main 0.9.165+: the
+     button is gone; the prose links to the full drawer). Kept whole so the
+     phone can have it back with one switch (PHONE_OPEN_DRAWER in
+     about-scenes.js): a real button (44px, 13px type) opening a new tab. */
+  .jd-about .jd-open-drawer {
+    position: absolute; z-index: 64;
+    font-family: var(--font-mono); text-transform: uppercase; text-decoration: none;
+    color: #3a2a12;
+    background:
+      linear-gradient(178deg, rgba(255, 250, 228, 0.55) 0%, rgba(255, 250, 228, 0) 40%),
+      #e8d9a8;
+    border: 1px solid rgba(74, 53, 18, 0.55); border-radius: 3px;
+    box-shadow: 2px 3px 7px rgba(22, 11, 4, 0.5);
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 44px; box-sizing: border-box;
+    /* two lines, so it clears the Take-a-Turn plate in the corner beside it */
+    width: 6.4rem;
+    white-space: normal; text-align: center; line-height: 1.2;
+    font-size: 13px; letter-spacing: 0.08em;
+    padding: 5px 8px;
+    right: calc(var(--wall) + 8px);
+    bottom: calc(var(--wall) + 8px);
+  }
+  /* the pile keeps the picture's sizes: the drawer's phone band (x1.2,
+     junk-drawer.css) is for a drawer that fills the screen, and the poster
+     was captured at the base size — a woken pile must match it */
+  .jd-about .jd-pile > .jd-item { width: calc(var(--w) * 1cqmin); }
+  /* and a swipe that starts on a woken drawing scrolls the page (a
+     sideways drag still moves it) — the page is for reading first */
+  .jd-about .jd-pile > .jd-item { touch-action: pan-y; }
+  /* THE SPECIMEN'S TAG ON A PHONE (round 2, P1-2): readable (labels 11px,
+     buttons 44px tall, their words on two lines), no wider than the well it
+     hangs in (the well is a size container: 100cqw is its width), and one
+     line for the name. about-scenes.js keeps it inside the well. */
+  .jd-about .jd-itemtag {
+    --jd-tag-w: min(17rem, calc(100cqw - 12px));
+    padding: 0.5rem 0.6rem 0.55rem 1.6rem;
+  }
+  .jd-about .jd-itemtag .name {
+    font-size: 12px; min-height: 0; -webkit-line-clamp: 2;
+    padding-bottom: 0.3rem; margin-bottom: 0.35rem;
+  }
+  .jd-about .jd-itemtag .lab { font-size: 11px; letter-spacing: 0.06em; flex-basis: 3.3rem; }
+  .jd-about .jd-itemtag .val,
+  .jd-about .jd-itemtag .val.g { font-size: 11px; }
+  .jd-about .jd-itemtag .btns { margin-top: 0.4rem; padding-top: 0.4rem; gap: 0.35rem; }
+  .jd-about .jd-itemtag .btn {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 44px; box-sizing: border-box;
+    font-size: 11px; letter-spacing: 0.06em; line-height: 1.15;
+    white-space: normal; padding: 3px 4px;
+  }
+  /* the tag lets a vertical swipe through to the page (audit P0-1) */
+  .jd-about .jd-itemtag { touch-action: pan-y; }
+
+  /* ---- the cards, in their own phone layouts ---------------------------- */
+  .jd-about .jd-ph-card {
+    /* its own stacking context: the card's paper layers (z 3–5) must never
+       paint over a held figure the card scrolls under */
+    position: relative; inset: auto; z-index: 0; isolation: isolate;
+    display: block;
+    width: 100%;
+    padding: 0; margin: 0;
+    background: none;
+  }
+  .jd-about .jd-ph-card .jd-record,
+  .jd-about .jd-ph-card .jd-turn {
+    max-height: none; height: auto;
+    width: 100%; margin: 0;
+  }
+  .jd-about .jd-ph-card .rc-scroll,
+  .jd-about .jd-ph-card .jd-turn-scroll {
+    flex: 0 0 auto; min-height: 0; max-height: none; overflow: visible;
+  }
+  .jd-about .jd-ph-card .jd-record.is-enter,
+  .jd-about .jd-ph-card .jd-turn.is-enter { animation: none; }
+  .jd-about .jd-ph-card .jd-record-close,
+  .jd-about .jd-ph-card .jd-turn-close { display: none; }
+  .jd-about--live .jd-scene[data-scene-pane="instrument"] {
+    overflow: visible; will-change: auto;
+  }
+  /* the card's small print, brought up to 11px where a reader is meant to
+     read it (the grade table's subjects and head, the plate's notes, the
+     sibling captions) — the one liberty taken with the drawer's own card */
+  .jd-about .jd-ph-card .rc-subj-name,
+  .jd-about .jd-ph-card table.rc-subj th,
+  .jd-about .jd-ph-card .rc-avg-l,
+  .jd-about .jd-ph-card .rc-block.rc-head,
+  .jd-about .jd-ph-card .rc-note-v,
+  .jd-about .jd-ph-card .rc-note-l,
+  .jd-about .jd-ph-card .rc-alt-cap,
+  .jd-about .jd-ph-card .rc-assign p { font-size: 11px; }
+  /* the table's type, in the folder's style since 0.9.170, at 11px (its
+     heads and values run 8-10.5px there) */
+  .jd-about .jd-sheet-card .jdc-sheet { font-size: 11px; }
+  .jd-about .jd-sheet-card .jdc-sheet th,
+  .jd-about .jd-sheet-card .jdc-sheet tr.jdc-h1 th,
+  .jd-about .jd-sheet-card .jdc-sheet tr.jdc-h2 th { font-size: 11px; }
+  /* the report cards' replay button: a thumb's size (the grading card has
+     its own 44px hit pad since 0.9.171, junk-drawer.css) */
+  .jd-about .jd-ph-card.jd-record-scrim .jd-filmstrip .fs-play { min-width: 44px; min-height: 44px; }
+  /* a vertical swipe that starts on a scrubber scrolls the page; the
+     horizontal scrub still gets its pointer moves */
+  .jd-about .fs-strip { touch-action: pan-y; }
+  /* the rail's letters, the in-flow card's download and file number */
+  .jd-about .jd-ph-card .jd-rail-ring { font-size: 11px; }
+  /* the grading card's prompt and its category definitions are content,
+     not chrome: at a reading size (the card sets them at 10.2-10.6px) */
+  .jd-about .jd-ph-card .jd-turn-assign p,
+  .jd-about .jd-ph-card .jd-def span { font-size: 12px; }
+  .jd-about .jd-ph-card .jd-turn-assign-tag,
+  .jd-about .jd-ph-card .jd-turn-go { font-size: 11px; }
+  .jd-about .jd-ph-card .rc-dl { font-size: 11px; }
+  .jd-about .jd-ph-card .rc-note-no { display: none; }
+  /* the frozen columns' sticky grounds covered some row rules */
+  .jd-about .jd-ph-card .jdc-sheet td.jdc-rn,
+  .jd-about .jd-ph-card .jdc-sheet td.jdc-c-prompt { box-shadow: inset 0 -1px 0 rgba(55, 65, 79, 0.22); }
+
+  /* Gemini and Kimi: the drawing is held — masthead, plate, replay — and
+     the card is sized so all three fit the held band at 1:1 */
+  /* the held card is the drawing: no masthead (the name is in the words and
+     on the plate), a trimmed margin, and as wide as the band allows — a
+     ~270px drawing on a 393x852 phone (space round, 2026-09-29) */
+  .jd-about .jd-ph-card--pin {
+    width: min(100%, calc(var(--ph-pin) - 78px));
+  }
+  /* both copies always take the card's portrait flow (the drawer gives it
+     at 700px and under; a tablet or a landscape phone is wider) */
+  .jd-about .jd-ph-card--pin .rc-scroll,
+  .jd-about .jd-ph-card--under .rc-scroll {
+    display: flex; flex-direction: column; padding: 12px 14px 11px;
+  }
+  .jd-about .jd-ph-card--pin .rc-col-l,
+  .jd-about .jd-ph-card--pin .rc-col-r,
+  .jd-about .jd-ph-card--under .rc-col-r { display: contents; }
+  .jd-about .jd-ph-card--pin .rc-plate { width: 100%; margin: 0 auto 0.55rem; }
+  .jd-about .jd-ph-card--pin .rc-masthead { display: none !important; }
+  .jd-about .jd-ph-card--pin .rc-scroll { padding: 8px 10px 6px; }
+  /* the grades copy: its GRADES label stays, the paper above it trims */
+  .jd-about .jd-ph-card--under .rc-scroll { padding-top: 8px; }
+  .jd-about .jd-ph-card--pin .rc-scroll > :not(.rc-masthead):not(.rc-col-l):not(.rc-col-r),
+  .jd-about .jd-ph-card--pin .rc-col-r > * { display: none !important; }
+  /* the plate's download button and file number are chrome the held band
+     has no room for (they collided with the date at this width) */
+  .jd-about .jd-ph-card--pin .rc-plate-btns,
+  .jd-about .jd-ph-card--pin .rc-note-no { display: none; }
+  /* and of the plate's notes only the model stays: four lines at a
+     readable size covered the foot of the drawing — Gemini's stand, the
+     very thing the words ask the reader to find */
+  .jd-about .jd-ph-card--pin .rc-note-line:not(:first-child) { display: none; }
+  /* a held card sits on the page, not above it: its own deep drop shadow
+     read as a slab floating over the words */
+  .jd-about .jd-ph-card--pin .jd-record,
+  .jd-about .jd-ph-card--under .jd-record { box-shadow: 0 1px 3px rgba(6, 3, 0, 0.28); }
+  /* ... and the model's name alone, so it never truncates */
+  .jd-about .jd-ph-card--pin .rc-note-l { display: none; }
+  /* under it, in the flow: the same card's grades, and nothing else */
+  .jd-about .jd-ph-card--under .rc-scroll > :not(.rc-col-r),
+  .jd-about .jd-ph-card--under .rc-col-r > :not(:has(> .rc-subj)):not(:has(+ .rc-block > .rc-subj)) { display: none !important; }
+  /* (important: the card's own landscape rules, 701px and up, set display
+     on the prompt with more specificity than a crop can carry) */
+
+  /* ---- scene 4: the table --------------------------------------------- */
+  .jd-about .jd-sheet-card .jdc-tablewrap { max-height: none; overflow-y: visible; }
+  .jd-about .jd-ph-card.jd-ph-clip .jdc-sheet tbody tr:nth-child(n + 11) { display: none; }
+  .jd-about .jd-ph-card .jdc-turns { position: relative; }
+  .jd-about .jd-ph-hint {
+    margin: 0 0 6px; text-align: right;
+    font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.04em;
+    color: var(--ink-soft, #555);
+  }
+  .jd-about .jd-ph-fade {
+    position: absolute; right: 0; top: 24px; bottom: 0; width: 28px;
+    pointer-events: none;
+    background: linear-gradient(to right, rgba(255, 255, 255, 0), var(--ph-paper));
+  }
+  .jd-about .jdc-turns.is-end .jd-ph-fade { display: none; }
+  .jd-about .jd-ph-more {
+    display: block; width: 100%; min-height: 44px; margin: 10px 0 0;
+    font-family: var(--font-mono); font-size: 13px; letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #37414f; background: #efe4c6;
+    border: 1px solid rgba(55, 65, 79, 0.45); border-radius: 3px;
+    cursor: pointer;
+  }
+  .jd-about .jdc-sheet .jdc-hint::after { font-size: 12px; }
+
+  /* the item names wrap to two lines rather than cut at fourteen letters */
+  .jd-about .jd-ph-card .jdc-sheet td.jdc-c-prompt {
+    white-space: normal; text-overflow: clip;
+    line-height: 1.25; padding-top: 5px; padding-bottom: 5px;
+  }
+  /* the charts' small print, at or over 11px; the value column wide enough
+     for "3.1 n 104" on one line (audit P2-5) */
+  .jd-about .jd-charts { --jdc-val: 4.6rem; padding: 12px 10px; }
+  .jd-about .jdc-n { font-size: 0.7rem; white-space: nowrap; }
+  .jd-about .jdc-val { white-space: nowrap; }
+  .jd-about .jdc-hrow-lab { font-size: 0.72rem; }
+  .jd-about .jdc-hrow-n { font-size: 11.5px; }
+  .jd-about .jdc-hrow-t { font-size: 0.8rem; }
+  .jd-about .jdc-tl { font-size: 0.7rem; }
+
+  /* ---- scene 4: the spread, alone, its leaders picked out ------------------ */
+  .jd-about [data-ph="distribution"] .jdc-sec-avg { display: none; }
+  .jd-about [data-ph="distribution"] .jdc-sec + .jdc-sec { margin-top: 0; padding-top: 0; border-top: 0; }
+  /* main's "spread-lead" (owner, 2026-09-29): the top three grades of the
+     three leading models at full strength; GPT-5.1's head and every other
+     bar recede */
+  .jd-about [data-ph="distribution"] .jdc-hrow-t[data-model="gpt-5-1"],
+  .jd-about [data-ph="distribution"] .jdc-hrow-cell { opacity: 0.22; }
+  .jd-about [data-ph="distribution"] .jdc-hrow-cell:is([data-model="claude-opus-5"], [data-model="gemini-3-1-pro"], [data-model="kimi-k3"]):is([data-grade="5"], [data-grade="4"], [data-grade="3"]) { opacity: 1; }
+
+  /* ---- the instrument's honest fallback (only if the card cannot stand) - */
+  .jd-about .jd-ph-fallback { font-size: 15px; font-style: italic; color: var(--ink-soft, #555); }
+
+  /* ---- progress: a 2px hairline under the banner, set by the scroll ------ */
+  .jd-about .jd-ph-progress {
+    position: fixed; left: 0; right: 0; top: var(--banner-h);
+    height: 2px; z-index: 50;
+    background: var(--ink, #111);
+    transform: scaleX(0); transform-origin: 0 50%;
+    pointer-events: none;
+  }
+}
+
+/* TALL PHONES, THE HELD DRAWER: no brass pull under it (32px of band a
+   reader has no use for); the poster keeps its size, so the band ends 32px
+   higher on every scene-1 step. Also before the script runs, so the first
+   screen is the same either side of it. */
+@media (max-width: 768px) and (min-height: 701px) {
+  .jd-about .jd-ph-sec[data-ph="drawer"] .jd-pull,
+  .jd-about--live:not(.jd-about--phone) .jd-about-pane .jd-pull { display: none; }
+  html.jd-poster-on .jd-about--live .jd-ph-sec[data-ph="drawer"] .jd-stage,
+  html.jd-poster-on .jd-about--live:not(.jd-about--phone) .jd-about-pane .jd-stage,
+  .jd-about--live .jd-ph-sec[data-ph="drawer"] .jd-stage,
+  .jd-about--live:not(.jd-about--phone) .jd-about-pane .jd-stage { margin-bottom: 0; }
+}
+/* SHORT SCREENS (under 700px tall: an SE; iPhone Safari with its toolbars)
+   AND LANDSCAPE PHONES. The drawer stands in the flow at full width — a
+   poster held in 38svh would be narrower than its own tag. */
+@media (max-width: 768px) and (max-height: 700px), (max-height: 500px) {
+  .jd-about { --ph-pin: 86svh; }
+  .jd-about .jd-ph-sec[data-ph="drawer"] > .jd-ph-pin { position: static; }
+  .jd-about .jd-ph-sec[data-ph="drawer"] > .jd-ph-pin::after { content: none; }
+}
+/* SHORT PORTRAIT SCREENS: Gemini's and Kimi's DRAWINGS are still held — the
+   words point at them — but without the card's masthead (the name is in the
+   words), at a card width of 46svh - 70px: a ~211px drawing and its 44px
+   replay under it, the band ending near y=348 of 659, eleven lines of text
+   below. (Round 2, P1-1; no crop — every crop cut Gemini's stand.) */
+@media (max-width: 768px) and (max-height: 700px) and (min-height: 501px) {
+  .jd-about .jd-ph-pin:has(.jd-ph-card--pin) { padding: 6px var(--ph-gut); }
+  .jd-about .jd-ph-sec .jd-ph-card.jd-ph-card--pin { width: min(100%, calc(46svh - 70px)); }
+}
+/* LANDSCAPE PHONES: nothing is held — the article, plain (Option A). The
+   wall follows the STAGE here, not the viewport's width (junk-drawer.css
+   sizes it by vw: 45px on an 852px-wide phone, leaving a 131px well), and
+   the whole drawer fits one screen. */
+@media (max-height: 500px) {
+  .jd-about .jd-ph-pin { position: static; }
+  .jd-about .jd-ph-pin::after { content: none; }
+  html.jd-poster-on .jd-about--live .jd-stage,
+  .jd-about--live .jd-stage {
+    --wall: clamp(12px, calc((100svh - var(--banner-h) - 24px) * 0.035), 20px);
+    width: min(100%, calc((100svh - var(--banner-h) - 24px - var(--jd-pull-drop, 0px)) * 0.8));
+  }
+}
