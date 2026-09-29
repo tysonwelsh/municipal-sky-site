@@ -232,7 +232,10 @@ Two instruments, both muted headless Chrome over CDP:
    audio times — for before/after frames at 860 and 390 px, and for
    `barcheck.js`: every animation frame, each placed bar's ink against every
    drawn note's ink boxes on its staves (between the staff's lines and half
-   a space beyond), over the whole of each guest.
+   a space beyond), over the whole of each guest; and (second look)
+   `strokecheck.js`, every head struck through by another note's ink,
+   beams included. The lab runs a dump faster than life (2× for the final
+   tables, 4× for the first pass's); the page runs at 1×.
 2. **The page itself** (`tools/screens.js` with a `--query` option, scratch
    copy `screens3c.js`): the listening seeds with the wheel's dev jump,
    frames at 860 and 390 px, and the frame cost with the CPU throttled 4×.
@@ -289,7 +292,9 @@ wheel); the worst frame at 390 px is under a tenth of a 30 fps frame's 33 ms.
 
 **Nothing moves once printed.** Every placement is made once, when a note
 falls due (`setDue`), and kept; the new rules only choose where a note is
-first set (its cap, a bar's room, a far note waiting for our bar). A beam
+first set (its cap, a bar's room, a far note waiting for our bar or our
+note). A guest's beam is looked along, and turned or left unlaid, before
+any of its notes is set, and once looked along takes no new member; a beam
 joined across the organist's calls takes a new member only while none of
 its notes has been set. The only motion is the scroll and the drying.
 
@@ -304,34 +309,48 @@ and every page run.
 
 ## Before and after (muted headless Chrome)
 
-All under `/private/tmp/claude-501/-Users-tysonwelsh-Sites-municipal-sky-site/9f8f9e47-5fee-4146-97e4-e448a823ca04/scratchpad/r3c-engrave/`.
-The lab frames (`shots/`) replay each seed's own dump into this branch's
-starting `kolob-viz.js` (**before**, `shots/before/` and `shots/before2/`)
-and into the final one (**after**, `shots/final/`), at the same audio time:
-`<dump>-<width>-t<seconds>.png`. The page frames (`real/<tag>/`) are the page
-itself, the listening seed, after the dev jump.
+**On the page, every guest, before and after** (the final code). Each
+listening seed was run in the page itself twice: once as this branch serves
+it (**after**), and once from a scratch tree of links to this worktree in
+which only `kolob-viz.js` is put back to the branch's start, `13ac495`
+(**before**) — the same engine, seed and dev jump; only the page differs.
+Two contact sheets are committed beside this note, a row per guest, before
+on the left and after on the right:
 
-| guest (seed) | before (lab) | after (lab) | the page (after) |
-|---|---|---|---|
-| the far tower (53) | `shots/before/changes53-{860,390}-t{20,45}.png` | `shots/final/changes53-{860,390}-t{20,45}.png` | `real/tower53f/staff-{860,390}-t{020,045}.png` |
-| the far ward (44) | `shots/before/farward44-{860,390}-t{292,312}.png` | `shots/final/farward44-{860,390}-t{292,312}.png` | `real/far44f/staff-{860,390}-t{075,095}.png` |
-| the gulls (50) | `shots/before/gulls50-{860,390}-t545.png` | `shots/final/gulls50-{860,390}-t545.png` | `real/gulls50/staff-{860,390}-t088.png` |
-| the Social Hall (22) | `shots/before/hall22-{860,390}-t{990,1025}.png` | `shots/final/hall22-{860,390}-t{990,1025,1050}.png` | `real/dance22f/staff-{860,390}-t{020,045}.png` |
-| the handcart company (41) | `shots/before/handcart41-{860,390}-t{880,900}.png` | `shots/final/handcart41-{860,390}-t{880,900}.png` | `real/cart41/staff-{860,390}-t{030,050}.png` |
-| the testimony-bearers (3) | `shots/before/testimony3-{860,390}-t{492,510}.png`, `shots/before2/testimony3-{860,390}-t545.png` | `shots/final/testimony3-{860,390}-t{492,510,545}.png` | `real/bear3/staff-{860,390}-t{020,040}.png` |
-| the gift of tongues (5) | `shots/before2/tongues5-{860,390}-t{400,425,433}.png` | `shots/final/tongues5-{860,390}-t{400,425,433}.png` | `real/gift5/staff-{860,390}-t{040,062}.png` |
-| the variations (55) | `shots/before2/variations55-{860,390}-t{880,910,945,960}.png` | `shots/final/variations55-{860,390}-t{880,910,945,960}.png` | `real/var55/staff-{860,390}-t{045,085}.png` |
-| the Hosanna (37): nothing, before and after | `shots/before/hosanna37-{860,390}-t{1135,1155}.png` | `shots/final/hosanna37-{860,390}-t{1135,1155}.png` | `real/hos37/staff-{860,390}-t{150,175}.png` |
-| the bands (22), unchanged | `shots/before/bands22-{860,390}-t{215,250}.png` | `shots/final/bands22-{860,390}-t{215,250}.png` | `real/bands22f/staff-{860,390}-t{030,050}.png` |
+- `handoff/r3c-engrave-1-sheet-860.png`
+- `handoff/r3c-engrave-1-sheet-390.png` (the phone)
 
-What to look for: the tower's stair of small pale rings (rounds at 20 s,
-the changes at 45 s); the far ward's small pale chords just after ours; the
-gull heads above the staff among the testimony's clarinet; the dance's
-beamed threes and double bars; the company's two lines in octaves; the
-bearers' crosses on the bass staff and the harmonium's small stemless heads;
-the gift's line with its slurred runs and the hum's four heads (at 433 s);
-the variations' bars through both staves and the trio's small beamed figure;
-an empty staff under the Hosanna.
+The frames themselves, each run with its `report.md` (console: no errors or
+warnings, before and after, in every run), are under the scratchpad
+`/private/tmp/claude-501/-Users-tysonwelsh-Sites-municipal-sky-site/9f8f9e47-5fee-4146-97e4-e448a823ca04/scratchpad/r3c-engrave/v2/`,
+as `{before,after}/<tag>/staff-<width>-t<seconds>.png`:
+
+| guest | tag | seed, jump | seconds after the jump (the tower: after PLAY) | before → after |
+|---|---|---|---|---|
+| the far tower | `tower53` | 53, none | 20, 45 | nothing above the house's notes → the rounds' stair of small pale ringed heads (20), the changes (45) |
+| the testimony-bearers | `bear3` | 3, testimony | 20, 40 | no speech, the reed's echo as a false tune → the words as crosses on the bass staff, the reed's words small and stemless above; the reed's own tune (40) as before |
+| the handcart company | `cart41` | 41, postlude | 30, 50 | blank → two pale lines in octaves, palest on the approach |
+| the gift of tongues | `gift5` | 5, testimony | 40, 62 | a row of flagged full heads and the hum a head per throat → one line, slurred melismas, small beamed runs; the hum a head a part (62) |
+| the Social Hall | `dance22` | 22, postlude | 20, 45 | nearly blank → the reel: small heads, beamed runs, bars and double bars, the caller's crosses |
+| the band and a second band | `bands22` | 22, hymn | 30, 50 | the same, before and after (the bands' own layer) |
+| the gulls | `gulls50` | 50, testimony | 88 | nothing → small stemless heads above the staff |
+| the far ward | `far44` | 44, hymn | 75, 95 | our hymn alone → small pale chords set just after ours |
+| the organist's variations | `var55` | 55, postlude | 45, 85, 110 | unbarred flagged notes, the other key's bass missing → bars through both staves, the figure small and beamed, the bitonal bass |
+| the Hosanna | `hos37` | 37, doxology | 150, 175 | an empty staff, before and after |
+
+**The second look, in the replay lab** (the first pass's code against the
+final code, at the moments the second look is about; lab frames under the
+same scratchpad, `shots/look2-first/` and `shots/look2-final/`,
+`<dump>-<width>-t<seconds>.png`, 860 and 390 px): the far ward over our
+hymn (`farward44` at 292 and 312 s, `farward10` at 428.5), the far tower
+(`changes53` at 45), the dances (`hall22` at 1025, `hall9` at 936 and 991),
+the variations' figure (`variations55` at 910 and 945).
+
+**The first pass's lab frames** (every guest, its own dump replayed into
+the branch's starting `kolob-viz.js` and into the first pass's) stay under
+`shots/before/`, `shots/before2/` and `shots/final/`, as listed in that
+pass: `changes53`, `farward44`, `gulls50`, `hall22`, `handcart41`,
+`testimony3`, `tongues5`, `variations55`, `hosanna37`, `bands22`.
 
 ## Requests
 
