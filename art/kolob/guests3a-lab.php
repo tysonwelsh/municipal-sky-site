@@ -42,7 +42,10 @@ include '../../includes/header.php';
   margin: 0 auto;
   padding: 1.5rem 1rem 4rem;
   overflow-wrap: anywhere;
+  min-width: 0;                 /* a wide table never widens the column (the site's layout is a flex) */
 }
+.kg3-card, #kg3-cards { min-width: 0; max-width: 100%; }
+.kg3-table th { white-space: normal; }
 .kg3 * { box-sizing: border-box; }
 .kg3-head { border-bottom: 2px solid var(--ink); padding-bottom: 0.75rem; margin-bottom: 1.1rem; }
 .kg3-kicker { text-transform: uppercase; letter-spacing: 0.22em; font-size: 0.72rem; color: var(--gilt); margin: 0 0 0.35rem; }

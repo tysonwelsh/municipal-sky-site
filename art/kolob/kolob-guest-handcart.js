@@ -71,8 +71,10 @@ window.KOLOB.GuestHandcart = (function () {
   // ==========================================================================
   // THE ODDS — a starting point, for the owner's ear
   // ==========================================================================
-  // About one meeting in twelve over the calendar; one Pioneer Day in four
-  // (the handcarts remembered: kolob-calendar.js's own words for the day);
+  // About one meeting in twenty over the calendar; on Pioneer Day (the
+  // handcarts remembered: kolob-calendar.js's own words for the day) the odds
+  // are 0.6 — the band marches on three Pioneer Days in four and the company
+  // never comes with it, so about one Pioneer Day in seven hears the carts;
   // a funeral now and then ("all is well" is a funeral's hymn); seldom at
   // Christmas (no one walks the plains in the snow). It is refused whenever
   // the band is seated (the band is planned first).
@@ -80,7 +82,7 @@ window.KOLOB.GuestHandcart = (function () {
     base: 0.07,
     weight: {
       ordinary: 1, fast: 0.7, conference: 1, jubilee: 1.5,
-      pioneer: 3.8, funeral: 2.4, christmas: 0.3, easter: 1, wedding: 0.7, dedication: 0.6,
+      pioneer: 8.5, funeral: 2.4, christmas: 0.3, easter: 1, wedding: 0.7, dedication: 0.6,
     },
     cap: 0.6,
   };
@@ -315,9 +317,11 @@ window.KOLOB.GuestHandcart = (function () {
     function later(at, fn) { if (hooks.defer && at > t) hooks.defer(at, fn); else fn(); }
     if (hooks.only !== "singers") {
       folk = VF.create(ctx, rd.input, { rand: synth.fork("carts"), gain: G_CARTS });
-      // (the carts roll from 0.8 s in — far off, no one hears them start — laid
-      // out in a callback of their own, before any line is)
-      later(t + 0.3, function () { folk.wheels(t + 0.8, sc.end - t - 0.8, { beat: 1.5 * sh.beatS, carts: sh.carts, creak: sh.creak, still: true, spread: 0.3 }); });
+      // (the carts roll from 0.8 s in — far off, no one hears them start — each
+      // laid out in a callback of its own, before any line is)
+      for (var c = 0; c < sh.carts; c++) (function (c) {
+        later(t + 0.3 + 0.15 * c, function () { folk.wheels(t + 0.8, sc.end - t - 0.8, { beat: 1.5 * sh.beatS, carts: sh.carts, creak: sh.creak, still: true, spread: 0.3, only: c }); });
+      })(c);
     }
     var throats = null;
     if (hooks.only !== "carts") {

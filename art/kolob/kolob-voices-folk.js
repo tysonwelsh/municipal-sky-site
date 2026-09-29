@@ -64,7 +64,7 @@
 //   folk.gull(t, f, {hold, up, fall, v, pan, dist, kind: "long"|"ha"})
 //   folk.gulls(t, {notes: [f… | {f, dur}…], beat, birds, from, to, dist, v})
 //       birds: the flock around the lead bird (default 5; 0 = the lead alone)
-//   folk.wheels(t, dur, {beat, carts, from, to, creak, v, still, spread, dest})
+//   folk.wheels(t, dur, {beat, carts, from, to, creak, v, still, spread, dest, only})
 //       still: no travel of its own (a road carries it); dest: where the carts roll
 //   folk.out · folk.stats() → { standing, created, peakLive, until, maxRing }
 // ============================================================================
@@ -729,7 +729,9 @@ window.KOLOB.VoicesFolk = (function () {
     function wheels(t, dur, o) {
       o = o || {};
       var n = 0;
-      for (var c = 0; c < (o.carts || 2); c++) n += cart(t + c * (o.beat || 0.6) * 1.3, dur, o, c);
+      // (o.only: one cart of the company, the others left to their own calls —
+      // each rolls from its own clock callback, round 3c)
+      for (var c = 0; c < (o.carts || 2); c++) if (o.only == null || o.only === c) n += cart(t + c * (o.beat || 0.6) * 1.3, dur, o, c);
       return n;
     }
 

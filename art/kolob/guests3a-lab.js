@@ -523,11 +523,12 @@ window.Guests3a = (function () {
   }
   function odds(N) {
     N = N || 20000;
-    var R = window.PJ2.Rand.stream(99).fork("lab:odds3a"), res = { n: N, bySunday: {}, seats: { bands: {}, handcart: {}, gulls: {} }, second: 0, any: 0, broken: { bandsHandcart: 0, bandsTrombones: 0, besideAGuest: 0, gullsFuneral: 0 } };
+    var R = window.PJ2.Rand.stream(99).fork("lab:odds3a"), res = { n: N, bySunday: {}, seats: { bands: {}, handcart: {}, gulls: {} }, second: 0, any: 0, anyBefore: 0, broken: { bandsHandcart: 0, bandsTrombones: 0, besideAGuest: 0, gullsFuneral: 0 } };
     for (var i = 1; i <= N; i++) {
       var m = standIn(i, R), G = m.guests, row = res.bySunday[m.sunday] = res.bySunday[m.sunday] || { n: 0, bands: 0, handcart: 0, gulls: 0 };
       row.n++;
       if (G.length) res.any++;
+      if (G.some(function (g) { return g.type !== "handcart" && g.type !== "gulls"; })) res.anyBefore++;
       function has(t) { return G.some(function (g) { return g.type === t; }); }
       ["bands", "handcart", "gulls"].forEach(function (t) { G.forEach(function (g) { if (g.type === t) { row[t]++; res.seats[t][g.section] = (res.seats[t][g.section] || 0) + 1; if (g.second) res.second++; } }); });
       if (has("bands") && has("handcart")) res.broken.bandsHandcart++;
@@ -723,7 +724,7 @@ window.Guests3a = (function () {
         out.appendChild(table(["Sunday", "meetings", "the band", "the handcarts", "the gulls"], [["all", all.n, pc(all.bands, all.n), pc(all.handcart, all.n), pc(all.gulls, all.n)]].concat(ids.map(function (k) { var x = r.bySunday[k]; return [k, x.n, pc(x.bands, x.n), pc(x.handcart, x.n), pc(x.gulls, x.n)]; }))));
         function seats(t) { var s = r.seats[t], n = 0; Object.keys(s).forEach(function (k) { n += s[k]; }); return Object.keys(s).map(function (k) { return k + " " + pc(s[k], n); }).join(" · "); }
         out.appendChild(el("p", "kg3-stat", "the band's sections: " + seats("bands") + " · a second band: " + pc(r.second, all.bands) + " of the bands · the handcarts': " + seats("handcart") + " · the gulls': " + seats("gulls")));
-        out.appendChild(el("p", "kg3-stat", "meetings with any guest: " + pc(r.any, r.n) + " · the rules broken — the band with the handcarts: " + r.broken.bandsHandcart + ", the band with the trombones: " + r.broken.bandsTrombones + ", the handcarts or the gulls in or beside another guest's section: " + r.broken.besideAGuest + ", the gulls at a funeral: " + r.broken.gullsFuneral));
+        out.appendChild(el("p", "kg3-stat", "meetings with any guest: " + pc(r.any, r.n) + " (without the handcarts and the gulls: " + pc(r.anyBefore, r.n) + ") · the rules broken — the band with the handcarts: " + r.broken.bandsHandcart + ", the band with the trombones: " + r.broken.bandsTrombones + ", the handcarts or the gulls in or beside another guest's section: " + r.broken.besideAGuest + ", the gulls at a funeral: " + r.broken.gullsFuneral));
       });
     });
     var bPure = button("check purity", null, function () {
