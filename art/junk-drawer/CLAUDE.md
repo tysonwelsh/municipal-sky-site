@@ -51,8 +51,9 @@ data files are `.json`, art is `.svg`.
   generation) — so untouched values keep their provenance; SAVE ALL batches
   an item's edited responses in one request. Clicking a drawing enlarges
   it. The toolbar's second line filters by rating: "at least one response
-  graded X" and "at least one response with axis A = V" (AND-ed with the
-  standing chips and the search). Ranks and sizes stay the bench's.
+  by MODEL graded X with axis A = V" — every part set must hold on ONE
+  response (AND-ed with the standing chips and the search). Ranks and
+  sizes stay the bench's.
   Reads `api/jd-ledger.php` (bench-key gated; it applies `data.php`'s and
   the bench's own rules server-side, so the page never re-derives them);
   hide/show goes through `api/jd-curate.php`, ratings through

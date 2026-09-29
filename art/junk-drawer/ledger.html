@@ -33,8 +33,8 @@
   re-sort or a filter change until saved or reloaded. Ranks and sizes stay
   the bench's business. A drawing enlarges when clicked (Esc or a click puts
   it back). The toolbar's second line filters by rating: "at least one
-  response graded X" and "at least one response with axis A = V", combined
-  with the standing filters and the search.
+  response by MODEL graded X with axis A = V" — every part set must hold
+  on ONE response — combined with the standing filters and the search.
 
   Reads api/jd-ledger.php, which applies data.php's and the bench's own rules
   server-side, so this page states them and never re-derives them. Hide /
@@ -167,7 +167,7 @@
   var app = document.getElementById('app');
   var D = null;                            /* the ledger payload */
   var filter = 'all', query = '', sortKey = 'created', sortAsc = false;
-  var rf = { grade: '', axis: '', value: '' };   /* the rating filters: "at least one response …" */
+  var rf = { model: '', grade: '', axis: '', value: '' };   /* the rating filters: "at least one response by M graded G with A = V" — one response meeting every part set */
   var openKey = null;
   var svgCache = {};
   /* unsaved edits, item key + '/' + rid => { grade: <value|undefined>, axes: { axisId: value } };
@@ -240,14 +240,18 @@
     else if (filter === 'bench') { if (it.bench.state !== 'open') return false; }
     else if (filter === 'blocked') { if (it.bench.state !== 'blocked') return false; }
     else if (filter === 'curated' || filter === 'turn') { if (it.kind !== filter) return false; }
-    /* the rating filters: at least one served response meets each one set */
-    if (rf.grade !== '') {
-      var g = Number(rf.grade);
-      if (!served(it).some(function (r) { return effGrade(r).v === g; })) return false;
-    }
-    if (rf.axis !== '' && rf.value !== '') {
-      var a = rf.axis, v = Number(rf.value);
-      if (!served(it).some(function (r) { return effAxis(r, a).v === v; })) return false;
+    /* the rating filters: ONE served response must meet every part that is
+       set — model, grade, axis value — so "Gemini graded Prime with JNSQ =
+       Ain't got it" means that one drawing, not three different ones */
+    if (rf.model !== '' || rf.grade !== '' || (rf.axis !== '' && rf.value !== '')) {
+      var g = rf.grade !== '' ? Number(rf.grade) : null;
+      var a = rf.axis !== '' && rf.value !== '' ? rf.axis : null, v = a ? Number(rf.value) : null;
+      if (!served(it).some(function (r) {
+        if (rf.model !== '' && r.model !== rf.model) return false;
+        if (g !== null && effGrade(r).v !== g) return false;
+        if (a !== null && effAxis(r, a).v !== v) return false;
+        return true;
+      })) return false;
     }
     if (query) {
       var q = query.toLowerCase();
@@ -298,9 +302,17 @@
       ' · ' + (st ? st.axes_n : 0) + '/' + D.axes.length + (r.rank ? ' · #' + r.rank : '');
     return '<span class="' + cls + '" title="' + esc(r.rid + ' · ' + r.model_label + (r.retired ? ' · retired' : '') + (st ? '' : ' · no database row')) + '">' + esc(txt) + '</span>';
   }
+  /* every model that has a response anywhere in the ledger, by label */
+  function modelsSeen() {
+    var seen = {};
+    D.items.forEach(function (it) { it.responses.forEach(function (r) { if (r.model) seen[r.model] = r.model_label || r.model; }); });
+    return Object.keys(seen).sort(function (a, b) { return seen[a].localeCompare(seen[b]); }).map(function (id) { return { id: id, label: seen[id] }; });
+  }
   function ratingFilterHTML() {
     var h = '<div class="rf"><span>at least one response</span>';
-    h += '<span>graded</span><select id="rf-grade" class="' + (rf.grade !== '' ? 'is-on' : '') + '"><option value="">any grade</option>';
+    h += '<span>by</span><select id="rf-model" class="' + (rf.model !== '' ? 'is-on' : '') + '"><option value="">any model</option>';
+    modelsSeen().forEach(function (m) { h += '<option value="' + esc(m.id) + '"' + (rf.model === m.id ? ' selected' : '') + '>' + esc(m.label) + '</option>'; });
+    h += '</select><span class="sep">·</span><span>graded</span><select id="rf-grade" class="' + (rf.grade !== '' ? 'is-on' : '') + '"><option value="">any grade</option>';
     ranksDesc(D.grades).forEach(function (v) { h += '<option value="' + v + '"' + (rf.grade === String(v) ? ' selected' : '') + '>' + esc(D.grades[String(v)]) + '</option>'; });
     h += '</select><span class="sep">·</span><span>with</span><select id="rf-axis" class="' + (rf.axis !== '' ? 'is-on' : '') + '"><option value="">any axis</option>';
     D.axes.forEach(function (a) { h += '<option value="' + esc(a.id) + '"' + (rf.axis === a.id ? ' selected' : '') + '>' + esc(a.label) + '</option>'; });
@@ -308,7 +320,7 @@
     var ax = axisById(rf.axis);
     if (ax) ranksDesc(ax.values).forEach(function (v) { h += '<option value="' + v + '"' + (rf.value === String(v) ? ' selected' : '') + '>' + esc(ax.values[String(v)]) + ' (' + v + ')</option>'; });
     h += '</select>';
-    if (rf.grade !== '' || rf.axis !== '') h += '<button type="button" class="chip" id="rf-clear">clear rating filters</button>';
+    if (rf.model !== '' || rf.grade !== '' || rf.axis !== '') h += '<button type="button" class="chip" id="rf-clear">clear rating filters</button>';
     h += '</div>';
     return h;
   }
@@ -329,8 +341,9 @@
       h += '<th data-sort="' + col[0] + '" class="' + (sortKey === col[0] ? 'sorted' + (sortAsc ? ' asc' : '') : '') + '">' + col[1] + '</th>';
     });
     h += '</tr></thead><tbody>';
-    if (!list.length) h += '<tr><td colspan="7" class="hint">nothing matches' + ((rf.grade !== '' || rf.axis !== '') ? ' the rating filters' : '') + '</td></tr>';
-    else if (rf.grade !== '' || (rf.axis !== '' && rf.value !== '')) h += '<tr><td colspan="7" class="hint">' + list.length + ' item' + (list.length === 1 ? '' : 's') + ' match the rating filters</td></tr>';
+    var rfOn = rf.model !== '' || rf.grade !== '' || (rf.axis !== '' && rf.value !== '');
+    if (!list.length) h += '<tr><td colspan="7" class="hint">nothing matches' + (rfOn ? ' the rating filters' : '') + '</td></tr>';
+    else if (rfOn) h += '<tr><td colspan="7" class="hint">' + list.length + ' item' + (list.length === 1 ? '' : 's') + ' match the rating filters</td></tr>';
     list.forEach(function (it) {
       var open = openKey === it.key;
       h += '<tr class="item' + (open ? ' is-open' : '') + (it._groupStart ? ' group-start' : '') + '" data-key="' + esc(it.key) + '">';
@@ -357,10 +370,11 @@
     q.addEventListener('input', function () { query = q.value; render(); document.getElementById('q').focus(); var qq = document.getElementById('q'); qq.setSelectionRange(qq.value.length, qq.value.length); });
     document.getElementById('reload').addEventListener('click', function () { dirty = {}; load(); });
     document.getElementById('signout').addEventListener('click', function () { setKey(''); gate(''); });
+    document.getElementById('rf-model').addEventListener('change', function (e) { rf.model = e.target.value; render(); });
     document.getElementById('rf-grade').addEventListener('change', function (e) { rf.grade = e.target.value; render(); });
     document.getElementById('rf-axis').addEventListener('change', function (e) { rf.axis = e.target.value; rf.value = ''; render(); });
     document.getElementById('rf-value').addEventListener('change', function (e) { rf.value = e.target.value; render(); });
-    var clr = document.getElementById('rf-clear'); if (clr) clr.addEventListener('click', function () { rf = { grade: '', axis: '', value: '' }; render(); });
+    var clr = document.getElementById('rf-clear'); if (clr) clr.addEventListener('click', function () { rf = { model: '', grade: '', axis: '', value: '' }; render(); });
     app.querySelectorAll('th[data-sort]').forEach(function (th) {
       th.addEventListener('click', function () {
         var k = th.getAttribute('data-sort');
