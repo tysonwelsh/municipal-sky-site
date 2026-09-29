@@ -1141,6 +1141,8 @@ window.KolobViz = (function () {
     if (calls.length) takeSpoken(calls, "choir");
     var gift = pull("choir", function (n) { return n.guest === "tongues" && n.role === "tongues"; });
     if (gift.length) takeTongues(gift);
+    var hum = pull("choir", function (n) { return n.guest === "tongues" && n.role === "hum"; });
+    if (hum.length) takeHum(hum);
     ["harmonium", "clarinet"].forEach(function (ly) {
       var words = pull(ly, function (n) { return n.testimony && (n.move === "echo" || n.move === "double"); });
       if (words.length) takeReedWords(words, ly);
@@ -1191,10 +1193,11 @@ window.KolobViz = (function () {
   // us in its own tuning: printed as the far trombone choir is, in closed
   // score and pale, each part on its own staff with its own stem, placed by
   // the degree it sings in the hymn's key and written in our verse's beat —
-  // a little smaller than ours, as it is further off, and it gives way to our
-  // hymn: our notes stand where they would without it, its notes keep clear
-  // of them, and a bar keeps clear of both.
-  var FARWARD_INK = 0.42, FARWARD_SCALE = 0.75;
+  // at grace size (it is across the valley, and it sings on our beats: four
+  // voices to a staff, where full heads would crowd our bars), and it gives
+  // way to our hymn: our notes stand where they would without it, its notes
+  // keep clear of them, and a bar keeps clear of both.
+  var FARWARD_INK = 0.42, FARWARD_SCALE = 0.6;
   function takeFarWard(ns) {
     var h = hymnOf(ns[0].hymnId), mode = h.mode || cond.mode;
     var beat = h.bs || estimateBeat(ns.map(function (n) { return n.duration; }), lastBeat.farward || lastBeat.choir || 1.15);
@@ -1416,7 +1419,7 @@ window.KolobViz = (function () {
   // sits best on (as the old tune is set), at its values in the beat it is
   // sung to, its stems by where its heads lie; a slur over each melisma, from
   // the syllable's first note to its last. The ward's hummed chord at the end
-  // is the choir's, and prints in its four parts as the choir's does.
+  // prints in its four parts, a head a part (takeHum, below).
   var TONGUES_RUN = 0.55;
   function takeTongues(ns) {
     ns = ns.slice().sort(function (a, b) { return a.startTime - b.startTime; });
@@ -1449,6 +1452,24 @@ window.KolobViz = (function () {
     });
     beamRun();
     slur();
+  }
+  // The ward hums the song's last note: every throat of a part on one note,
+  // each entering a moment after the last, over a second or two and across
+  // the engine's calls. A part prints once, one head however many throats
+  // hum it (as the whole ward's unison does), from its first throat's entry.
+  var hummed = [];
+  function takeHum(ns) {
+    var mode = cond.mode, fresh = ns.slice().sort(function (a, b) { return a.startTime - b.startTime; }).filter(function (n) {
+      var q = keyedQ(n.freq, null, n.deg, n.monzo, mode).q;
+      for (var i = 0; i < hummed.length; i++) if (hummed[i].part === n.part && hummed[i].q === q && Math.abs(n.startTime - hummed[i].t) < 3) return false;
+      hummed.push({ part: n.part, q: q, t: n.startTime });
+      return true;
+    });
+    while (hummed.length > 32) hummed.shift();
+    if (!fresh.length) return;
+    var g0 = groups.length;
+    takeLayer("choir", fresh, lastBeat.tongues || lastBeat.choir || 1.15, null, { qOf: function (n) { return keyedQ(n.freq, null, n.deg, n.monzo, mode); } });
+    madeSince(g0, 1.5);
   }
 
   // ---- the organist's variations ------------------------------------------------
@@ -3175,12 +3196,30 @@ window.KolobViz = (function () {
     if (!gr.hymn && gr.cap != null && dx > lim && onBar(gr, g, bx, lim)) lim = dx;
     return { need: dx, lim: lim, bx: bx, ink: ink };
   }
+  // (on a bar, or within a pixel or two of it: the page's pixels round each
+  // item's place on its own, so a hair's breadth is not clear)
   function onBar(gr, g, bx, x) {
+    var pad = 0.2 * g.sp;
     for (var k = 0; k < marks.length; k++) {
       var mb = marks[k];
       if (mb.kind !== "bar" || !(mb.at && mb.at.sp === g.sp) || mb.sts.indexOf(gr.st) < 0 || Math.abs(mb.tp - gr.tp) > 3) continue;
       var bi = barInk(mb, g), xb = (mb.tp - gr.tp) * SCROLL_PX_S + mb.at.rel;
-      for (var n = 0; n < bx.length; n++) if (inBand(g, gr.st, bx[n]) && bx[n][0] + x < xb + bi.wr && bx[n][2] + x > xb - bi.wl) return true;
+      for (var n = 0; n < bx.length; n++) if (inBand(g, gr.st, bx[n]) && bx[n][0] + x < xb + bi.wr + pad && bx[n][2] + x > xb - bi.wl - pad) return true;
+    }
+    return false;
+  }
+  // The far ward sings on our beats, a line behind, and its notes can fall
+  // where one of our bars must stand (a double bar in our breath between two
+  // lines, a bar squeezed before a quick downbeat). A bar keeps clear of the
+  // ink before it, and a note keeps clear of a bar placed before it — so a
+  // far note that falls just before a bar of ours waits until that bar has
+  // been placed, and then keeps clear of it. It prints a moment behind the
+  // burin; once printed it never moves.
+  var BAR_WAIT_S = 0.7;
+  function barWaits(gr, g) {
+    for (var k = 0; k < marks.length; k++) {
+      var mb = marks[k];
+      if (mb.kind === "bar" && !(mb.at && mb.at.sp === g.sp) && mb.sts.indexOf(gr.st) >= 0 && mb.tp >= gr.tp - 1e-6 && mb.tp - gr.tp <= BAR_WAIT_S) return true;
     }
     return false;
   }
@@ -3232,6 +3271,7 @@ window.KolobViz = (function () {
     due.sort(function (a, b) { return a.tp - b.tp || rank(a) - rank(b); });
     due.forEach(function (it) {
       if (it.kind === "bar") { barPlace(it, g); return; }
+      if (it.yields && barWaits(it, g)) return;                // (round 3c: the far ward's note just before a bar of ours waits for it)
       if (it.alone) {                                          // the organ: only where no one sings over it
         if (it.aloneOk == null) it.aloneOk = organAlone(it);
         if (!it.aloneOk) return;
@@ -3253,6 +3293,7 @@ window.KolobViz = (function () {
       if (x < -6 * sp) continue;                               // gone past the clefs
       groups[keep++] = gr;
       if (gr.tp > PT || x > xR) continue;                      // not yet sung
+      if (gr.yields && !(gr.col && gr.col.sp === sp) && barWaits(gr, g)) continue;
       if (gr.alone) {                                          // the organ: only where no one sings over it
         if (gr.aloneOk == null) gr.aloneOk = organAlone(gr);
         if (!gr.aloneOk) continue;
