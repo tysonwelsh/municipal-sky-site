@@ -602,7 +602,10 @@ window.Guests3c = (function () {
     return reference().then(function (ref) {
       return render("near", o).then(function (rn) {
         var an = analyse(rn.buf, rn.res, "near");
-        return render("far", o).then(function (rf) {
+        return render("far", Object.assign({}, o, { nearby: true })).then(function (rn2) {
+          var nearMeas = { high: highShare(rn2.buf), centroid: centroid2(rn2.buf), lu: analyse(rn2.buf, rn2.res, "far-nearby").lufsShortMax };
+          return render("far", o).then(function (rf) { rf.near = nearMeas; return rf; });
+        }).then(function (rf) {
           var af = analyse(rf.buf, rf.res, "far"), last = rf.res.last, ws = rf.res.ws, pr = last.prepared, lags = [], cents = [];
           last.told.forEach(function (x) {
             var ours = ws.verses[x.v]; if (!ours) return;
@@ -616,11 +619,23 @@ window.Guests3c = (function () {
             sign(+(af.lufsShortMax - an.lufsShortMax).toFixed(1)) + " LU under ours; integrated " + sign(+(af.lufs - an.lufs).toFixed(1)) + "), centroid " + centroid2(rf.buf) + " Hz · clicks: ours " + an.clicks + ", theirs " + af.clicks + " · peak " + Math.max(an.peakDb, af.peakDb) + " dBFS" +
             (af.nodes ? " · their voices' nodes ≈" + af.nodes.peakLive + " live at the peak" : "");
           v.meas2.textContent = "";
+          if (rf.near) v.meas2.appendChild(el("p", "kg3-stat", "what the valley takes (the same pews with no distance between, against them across it): the high band (2.5–8 kHz against 250 Hz–2.5 kHz) " + rf.near.high + " dB nearby → " + highShare(rf.buf) + " dB across the valley; centroid " + rf.near.centroid + " → " + centroid2(rf.buf) + " Hz; loudest 3 s " + rf.near.lu + " → " + af.lufsShortMax + " LUFS; heard " + Math.round(pr.delayS * 1000) + " ms late, from " + (pr.side < 0 ? "the left" : "the right") + " (" + pr.side.toFixed(2) + ")"));
           v.meas2.appendChild(table(["verse", "they begin after us", "in our first line's length", "their tuning against ours (cents)"], lags.map(function (x, i) { return [x.v, x.s + " s", x.lines, i === 0 ? cMin.toFixed(1) + " … " + cMax.toFixed(1) + " over the whole" : ""]; })));
-          return { near: an, far: af, lags: lags, cents: [cMin, cMax], ref: ref };
+          return { near: an, far: af, lags: lags, cents: [cMin, cMax], ref: ref, valley: rf.near ? { highNearby: rf.near.high, highFar: highShare(rf.buf), centroidNearby: rf.near.centroid, centroidFar: centroid2(rf.buf), luNearby: rf.near.lu, luFar: af.lufsShortMax } : null, prepared: { far: pr.far, setting: pr.setting.dialect, lagLines: pr.lagLines, lagBeats: pr.lagBeats, cents: pr.cents, drift: pr.drift, distance: pr.distance, side: pr.side, from: pr.from } };
         });
       });
     });
+  }
+  // the high band's share: energy 2.5–8 kHz against 250 Hz–2.5 kHz (dB)
+  function highShare(buf) {
+    var L = buf.getChannelData(0), Rr = buf.getChannelData(1), N = 8192, lo = 0, hi = 0;
+    for (var s0 = 0; s0 + N <= L.length; s0 += N) {
+      var re = new Float32Array(N), im = new Float32Array(N);
+      for (var u = 0; u < N; u++) re[u] = (L[s0 + u] + Rr[s0 + u]) * 0.5 * (0.5 - 0.5 * Math.cos(2 * Math.PI * u / N));
+      fft(re, im);
+      for (var j = 1; j < N / 2; j++) { var f = j * SR / N, pw = re[j] * re[j] + im[j] * im[j]; if (f >= 250 && f < 2500) lo += pw; else if (f >= 2500 && f < 8000) hi += pw; }
+    }
+    return +(10 * Math.log10((hi + 1e-20) / (lo + 1e-20))).toFixed(1);
   }
   function centroid2(buf) { var L = buf.getChannelData(0), Rr = buf.getChannelData(1), m = new Float32Array(L.length); for (var i = 0; i < L.length; i++) m[i] = (L[i] + Rr[i]) * 0.5; return centroid(m, 0, L.length / SR); }
 

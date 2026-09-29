@@ -103,7 +103,7 @@ window.KOLOB.GuestFarWard = (function () {
   // its bus. Calibrated in guests3c-lab against the ward singing the same
   // hymn in the same room: the far ward heard about 11 LU under ours
   var LEVEL = 1.0;
-  var DESK_GAIN = 0.1;
+  var DESK_GAIN = 0.08;
 
   function need(stream) {
     if (!stream || typeof stream.fork !== "function") throw new Error("KOLOB.GuestFarWard: a PJ2.Rand stream is required (label " + LABEL + "<n>)");
@@ -133,7 +133,7 @@ window.KOLOB.GuestFarWard = (function () {
       lagLines: pickW(r, [[0.5, 3], [0.75, 1.2], [1, 3]]),
       dialectDie: r.next(),
       side: (r.chance(0.5) ? -1 : 1) * r.rnd(0.45, 0.85),
-      distance: r.rnd(0, 1),                      // how far across the valley: the air, the level, the delay
+      distance: r.rnd(0.35, 1),                   // how far across the valley: the air, the level, the delay (never next door)
       cents: (r.chance(0.5) ? -1 : 1) * r.rnd(8, 20),   // their pitch against ours
       drift: r.rnd(-3, 12),                       // and where it goes over their singing (sharp as they warm, mostly)
       tempo: r.rnd(0.985, 1.015),                 // their chorister's pace against ours
@@ -239,7 +239,9 @@ window.KOLOB.GuestFarWard = (function () {
       hymn: h, setting: setting, far: far, order: order, lineBeats: lens, keynoteHz: material.keynoteHz || 260,
       lagLines: sh.lagLines, lagBeats: Math.max(2, Math.round(sh.lagLines * lens[0])), from: sh.from,
       tempo: sh.tempo, holdMul: sh.holdMul, breath: sh.breath, cents: sh.cents, drift: sh.drift,
-      side: sh.side, distance: d, lpHz: Math.round(3200 - 1800 * d), delayS: r4(0.12 + 0.3 * d), direct: r4(0.55 - 0.25 * d), wet: r4(0.6 + 0.3 * d), trimDb: r4(-(2 + 4 * d)),
+      // (the air takes the highs, steeply, from 2.1 kHz at the nearest to 1.2 at the farthest; what arrives
+      // is mostly the valley's answer, the direct sound a third of it or less)
+      side: sh.side, distance: d, lpHz: Math.round(2600 - 1400 * d), delayS: r4(0.12 + 0.3 * d), direct: r4(0.34 - 0.2 * d), wet: r4(0.85 + 0.15 * d), trimDb: r4(-(1 + 3 * d)),
       desks: desks, voices: material.voices === "people" ? "people" : "desks", amen: !!(h.amen && (far === "same" || far === "tabernacle")),
       nearby: !!material.nearby,                  // (a lab's A/B: the same ward with no valley between — what the distance takes)
     };
@@ -370,7 +372,7 @@ window.KOLOB.GuestFarWard = (function () {
     function F(type, f, q) { var b = ctx.createBiquadFilter(); b.type = type; b.frequency.value = f; b.Q.value = q; return b; }
     // the distance: sound takes its time across the valley; the air takes the
     // highs; most of what arrives is the valley's answer; it comes from one side
-    var input = G(1), delay = ctx.createDelay(1), hp = F("highpass", 140, 0.6), lp = F("lowpass", pr.lpHz, 0.5), lp2 = F("lowpass", pr.lpHz * 1.4, 0.5);
+    var input = G(1), delay = ctx.createDelay(1), hp = F("highpass", 140, 0.6), lp = F("lowpass", pr.lpHz, 0.7), lp2 = F("lowpass", pr.lpHz * 1.25, 0.7);
     var direct = G(pr.direct), conv = ctx.createConvolver(), wet = G(pr.wet), pan = ctx.createStereoPanner ? ctx.createStereoPanner() : G(1);
     var out = G(LEVEL * Math.pow(10, pr.trimDb / 20));
     delay.delayTime.value = pr.delayS; conv.buffer = valley(ctx);
