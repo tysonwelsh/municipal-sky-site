@@ -357,7 +357,7 @@ window.KOLOB.GuestHosanna = (function () {
   // out (VoicesVocal.arm; the ward's own pump may call it too — it is the
   // same queue). With no clock (an offline render), every line joins at once.
   function armTicker(V, ctx, hooks, t, end) {
-    if (!hooks.defer || !V.arm) return false;
+    if (!hooks.defer || !V.arm || hooks.arm === false) return false;
     (function tick(at) {
       hooks.defer(at, function () {
         V.arm(ctx, at + ARM_LEAD, at);

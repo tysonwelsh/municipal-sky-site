@@ -681,7 +681,7 @@ window.KOLOB.GuestTongues = (function () {
   // offline render), every line joins at once.
   var ARM_STEP = 0.1, ARM_LEAD = 0.8;
   function armTicker(V, ctx, hooks, t, end) {
-    if (!hooks.defer || !V.arm) return false;
+    if (!hooks.defer || !V.arm || hooks.arm === false) return false;
     (function tick(at) {
       hooks.defer(at, function () {
         V.arm(ctx, at + ARM_LEAD, at);

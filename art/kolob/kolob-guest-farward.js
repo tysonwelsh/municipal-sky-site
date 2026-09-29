@@ -391,7 +391,7 @@ window.KOLOB.GuestFarWard = (function () {
     // (the arm-tick runs over each verse as it is handed; a verse handed while
     // an earlier one's tick still runs just extends it)
     function armTo(from, to) {
-      if (!hooks.defer || !V.arm) return false;
+      if (!hooks.defer || !V.arm || hooks.arm === false) return false;
       if (armUntil >= from) { armUntil = Math.max(armUntil, to); return true; }
       armUntil = to;
       (function tick(at) { hooks.defer(at, function () { V.arm(ctx, at + ARM_LEAD, at); if (at < armUntil + 1.5) tick(at + ARM_STEP); else armUntil = -1; }); })(from);

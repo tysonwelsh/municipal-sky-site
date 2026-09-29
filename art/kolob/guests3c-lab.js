@@ -162,7 +162,7 @@ window.Guests3c = (function () {
     var seat = TG.plan(info, s), h = hymnOf(st);
     var mat = { mode: h.mode, keynoteHz: st.keynote, house: st.dialect, ward: ward, singer: seat ? seat.singer : null, harmonium: o.noReed ? false : undefined };
     if (V.budget) V.budget.reset();
-    var end = TG.perform(ctx, into.input, t, mat, s, { defer: o.defer || null, onNote: o.onNote || null, onStage: o.onStage || null, only: o.only || null });
+    var end = TG.perform(ctx, into.input, t, mat, s, { defer: o.defer || null, onNote: o.onNote || null, onStage: o.onStage || null, only: o.only || null, arm: o.arm });
     var sc = TG.perform.last.score;
     var hum0 = sc.stages[3].t - t, reed0 = sc.reed.notes.length ? sc.reed.notes[0].t - t : null;
     var windows = [{ name: "the song", a: 0.3, b: hum0 }, { name: "the ward's hum", a: hum0, b: reed0 != null && !o.noReed ? reed0 + 3 : end - t }];
@@ -216,7 +216,7 @@ window.Guests3c = (function () {
     if (o.far) mat.far = o.far;
     if (o.nearby) mat.nearby = true;
     if (V.budget && !o.keepBudget) V.budget.reset();
-    var end = FW.perform(ctx, into.wide, t, mat, s, { defer: o.defer || null, onNote: o.onNote || null, onStage: o.onStage || null });
+    var end = FW.perform(ctx, into.wide, t, mat, s, { defer: o.defer || null, onNote: o.onNote || null, onStage: o.onStage || null, arm: o.arm });
     return { dur: end - t + 1, expect: [], stats: budgetStats(t, end), last: FW.perform.last, ws: wardSheet(st) };
   };
   // (how long each runs, without building it: the sheet's end, the far ward's lag and tail)
@@ -233,7 +233,7 @@ window.Guests3c = (function () {
   P.hosanna = function (ctx, into, t, o) {
     var st = settings(o), s = stream("hosanna", st.seed), ward = wardOf(st), sun = st.sunday === "easter" || st.sunday === "dedication" ? st.sunday : "dedication";
     if (V.budget) V.budget.reset();
-    var stages = [], notes = 0, hooks = { defer: o.defer || null, onStage: function (x) { stages.push(x); if (o.onStage) o.onStage(x); }, onNote: function () { notes++; } };
+    var stages = [], notes = 0, hooks = { defer: o.defer || null, arm: o.arm, onStage: function (x) { stages.push(x); if (o.onStage) o.onStage(x); }, onNote: function () { notes++; } };
     var end = HO.perform(ctx, into.input, t, { keynoteHz: st.keynote, ward: ward, sunday: sun }, s, hooks), sc = HO.perform.last.score, tl = sc.timeline;
     var windows = [{ name: "the shout (three Hosannas and the amens)", a: tl.cries[0].t0 - 0.2, b: tl.amen.t1 + 1.5 }, { name: "the organ gives out the hymn", a: tl.giving.t0, b: tl.giving.t1 },
                    { name: "The Spirit of God (the verse)", a: tl.lines[0].t0, b: tl.lines[4].t0 }, { name: "the chorus", a: tl.lines[4].t0, b: end - t }];
@@ -315,7 +315,7 @@ window.Guests3c = (function () {
       var ch = buildChain(actx, room, irBuf, analyser, balanceFor(id));
       var me = { id: id, timers: [], chain: ch, cost: { press: 0, slices: [] } };
       told = [];
-      var oo = Object.assign({}, o, {
+      var oo = Object.assign({}, o, { arm: o.noArm ? false : undefined,
         onStage: function (s) { told.push(s); $("kg3-now").textContent = s.stage + (s.logged === false ? "  (logged: false)" : ""); },
         defer: function (at, fn) {
           me.timers.push(setTimeout(function () {
