@@ -87,7 +87,9 @@
 //     hooks: { defer(at, fn), onNote({freq, t, dur, bell, place, row, hand,
 //              muffled}), onStage({stage, t0, t1, label}), onCall({call, t}) }
 //   rows(stage, notation, leads, calls) · verify(rows, opts) ·
-//   touches(method, stage) · METHODS · ODDS · NAME · LABEL · LEVEL
+//   touches(method, stage) · warm() (the touches found, at the press) ·
+//   tower(ctx, dest, bells, o) (the bells alone, struck on demand) ·
+//   METHODS · PARTIALS · MUFFLE · ODDS · NAME · LABEL · LEVEL
 // ============================================================================
 
 window.KOLOB = window.KOLOB || {};
@@ -199,16 +201,20 @@ window.KOLOB.GuestChanges = (function () {
   }
 
   // THE TOUCHES of Plain Bob a band may ring on a stage: every pattern of
-  // plain leads and bobs up to eight leads that comes round at its last lead
-  // end (and not before) and is true — found by ringing them (pure; kept
-  // once found) → [{ calls ("-b-b"), leads, changes, bobs }], shortest first
-  var touchCache = {};
+  // plain leads and bobs up to six leads (the band rings none longer than
+  // the plain course: Minor's 60 is five leads, Doubles' longest six) that
+  // comes round at its last lead end (and not before) and is true — found by
+  // ringing them (pure; kept once found; 126 patterns a stage, some 15 ms
+  // for both — warm() runs them at the press, not in a clock cue)
+  // → [{ calls ("-b-b"), leads, changes, bobs }], shortest first
+  var touchCache = {}, MAX_LEADS = 6;
+  function warm() { touches("plainBob", 5); touches("plainBob", 6); return true; }
   function touches(method, stage) {
     var key = method + ":" + stage;
     if (touchCache[key]) return touchCache[key];
     var out = [], M = METHODS[method][stage];
     if (!M.plain) { touchCache[key] = [{ calls: "", leads: 1, changes: parse(M.lead).length, bobs: 0 }]; return touchCache[key]; }
-    for (var L = 1; L <= 8; L++) {
+    for (var L = 1; L <= MAX_LEADS; L++) {
       for (var mask = 0; mask < (1 << L); mask++) {
         var calls = "";
         for (var b = 0; b < L; b++) calls += mask & (1 << b) ? "b" : "-";
@@ -531,7 +537,7 @@ window.KOLOB.GuestChanges = (function () {
 
   return {
     NAME: NAME, LABEL: LABEL, ODDS: ODDS, LEVEL: LEVEL, METHODS: METHODS, PARTIALS: PARTIALS, STAGE_NAME: STAGE_NAME,
-    plan: plan, decide: decide, prepare: prepare, score: score, perform: perform, tower: tower, MUFFLE: MUFFLE,
+    plan: plan, decide: decide, prepare: prepare, score: score, perform: perform, tower: tower, MUFFLE: MUFFLE, warm: warm,
     rows: function (stage, method, leads, calls) { return rowsOf(stage, method, leads, calls); }, verify: verify, touches: touches, parse: parse, apply: apply,
   };
 })();
