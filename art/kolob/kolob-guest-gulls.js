@@ -63,6 +63,7 @@ window.KOLOB.GuestGulls = (function () {
   // About one meeting in twelve; Pioneer Day's more (the gulls are the
   // pioneers' own story), a wedding's a little more; never at a funeral (it
   // is a joke), seldom at Christmas (the gulls have gone to the coast).
+  var MAX_GUESTS = 2;                             // a meeting's guests, at most (PLAN §8: 0–2)
   var ODDS = {
     base: 0.08,
     weight: {
@@ -123,7 +124,11 @@ window.KOLOB.GuestGulls = (function () {
     for (var k = 0; k < pool.length && pick == null; k++) { x -= pool[k][1]; if (x <= 1e-12) pick = pool[k][0]; }
     if (pick == null && pool.length) pick = pool[pool.length - 1][0];
     var funeral = info.sunday === "funeral" || info.kind === "funeral";
+    // (a meeting carries two guests at most, PLAN §8: planned after every
+    // other guest, the flock never makes a third — unless it was asked for)
+    var others = guests.filter(function (g) { return g && g.type !== NAME; }).length;
     if (funeral) why = "not at a funeral";
+    else if (others >= MAX_GUESTS && !info.force) why = "two guests already";
     else if (pick == null) why = "no quiet rite free";
     else if (!(info.force || roll < p)) why = "not this Sunday";
     if (why) return { seat: null, why: why, odds: p, roll: roll };
@@ -274,7 +279,7 @@ window.KOLOB.GuestGulls = (function () {
 
   return {
     plan: plan, decide: decide, prepare: prepare, score: score, perform: perform, head: head, shape: shapeOf,
-    ODDS: ODDS, SEATS: SEATS, NAME: NAME, LABEL: LABEL, CENTRE: CENTRE,
+    ODDS: ODDS, MAX_GUESTS: MAX_GUESTS, SEATS: SEATS, NAME: NAME, LABEL: LABEL, CENTRE: CENTRE,
     get LEVEL() { return LEVEL; }, set LEVEL(v) { LEVEL = +v; },
   };
 })();

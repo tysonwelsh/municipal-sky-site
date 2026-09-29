@@ -87,6 +87,7 @@ window.KOLOB.GuestHandcart = (function () {
     cap: 0.6,
   };
   var EXCLUDES = ["bands"];                       // one procession a Sunday
+  var MAX_GUESTS = 2;                             // a meeting's guests, at most (PLAN §8: 0–2)
   // where it passes: the gathering, a quiet rite, or as the room empties;
   // the sacrament only at a funeral. A section a guest holds, or one next to
   // it, is passed over (PLAN §8.13).
@@ -155,7 +156,11 @@ window.KOLOB.GuestHandcart = (function () {
     var pick = null, x = seatDie * tot;
     for (var k = 0; k < pool.length && pick == null; k++) { x -= pool[k][1]; if (x <= 1e-12) pick = pool[k][0]; }
     if (pick == null && pool.length) pick = pool[pool.length - 1][0];
+    // (a meeting carries two guests at most, PLAN §8: planned after every
+    // other guest, the company never makes a third — unless it was asked for)
+    var others = guests.filter(function (g) { return g && g.type !== NAME; }).length;
     if (has(function (g) { return EXCLUDES.indexOf(g.type) >= 0; })) why = "the band is marching";
+    else if (others >= MAX_GUESTS && !info.force) why = "two guests already";
     else if (pick == null) why = "no quiet rite free";
     else if (!(info.force || roll < p)) why = "not this Sunday";
     if (why) return { seat: null, why: why, odds: p, roll: roll };
@@ -266,7 +271,11 @@ window.KOLOB.GuestHandcart = (function () {
           return { t: sing0 + n.t + late, dur: n.dur, f: n.f * mul, vowel: n.vowel, slur: n.slur, beat: n.beat, syl: n.syl, loud: +Math.max(0, Math.min(1, (0.99 - dAt(sing0 + n.t)) / (0.99 - sh.nearD))).toFixed(3) };
         }) });
       }
-      if (sh.leader && first) { put("leader", sh.leaderLow ? 0.5 : 0.5, 0); return; }
+      // (the captain, a bass or a tenor, sings the tune where the men do, an
+      // octave under the women: an octave lower still, the tune's foot would
+      // lie near 65 Hz, under any bass's walking voice — a bass captain is
+      // told by his throat, darker and heavier, not by his octave)
+      if (sh.leader && first) { put("leader", 0.5, 0); return; }
       put("women", 1, 0);
       put("men", 0.5, 0);
       if (sh.leader) put("leader", 0.5, 0);
@@ -289,10 +298,10 @@ window.KOLOB.GuestHandcart = (function () {
   // of women on the tune, a pew of tenors and one of basses an octave under
   // it), the captain, and a child; the carts are KOLOB.VoicesFolk's wheels,
   // standing still in the company while the road carries them all. Each
-  // group's line is laid out AHEAD seconds before it is sung, a tenth of a
-  // second apart, one throat to a callback (hooks.defer); the carts' whole
-  // roll in one callback of its own.
-  var AHEAD = 2.5, G_DESK = 0.42, G_LEAD = 0.7, G_CHILD = 0.5, G_CARTS = 0.55;
+  // group's line is laid out AHEAD seconds before it is sung, one throat to
+  // a callback (hooks.defer), STAGGER apart; each cart's whole roll in one
+  // callback of its own.
+  var AHEAD = 2.5, STAGGER = 0.06, G_DESK = 0.42, G_LEAD = 0.7, G_CHILD = 0.5, G_CARTS = 0.55;
   function perform(ctx, dest, t, material, stream, hooks) {
     var K = window.KOLOB, VB = K.VoicesBand, VV = K.VoicesVocal, VF = K.VoicesFolk;
     if (!VB || !VB.road) throw new Error("KOLOB.GuestHandcart: load kolob-voices-band.js first");
@@ -337,9 +346,17 @@ window.KOLOB.GuestHandcart = (function () {
         leader: [[VV.singer({ part: sh.leaderLow ? "B" : "T", age: "mid", confidence: 0.95, brightness: 0.55, breath: 0.2, rand: who.fork("leader"), name: "handcart-captain", pan: 0 }), G_LEAD]],
         child: [[VV.singer({ part: "child", age: "young", confidence: 0.7, brightness: 0.6, breath: 0.2, rand: who.fork("child"), name: "handcart-child", pan: 0.12 }), G_CHILD]],
       };
+      // (each throat's line a callback of its own, and each at a moment of
+      // its own: the engine's clock fires every cue inside its quarter-second
+      // look-ahead in one wake, so the throats of a line — the women's two
+      // pews, the men's two, the captain, the child — are laid STAGGER
+      // apart, the first AHEAD seconds before the line is sung)
+      var nth = {}, lineAt = {};
       sc.parts.forEach(function (p) {
+        var key = p.verse + ":" + p.line;
+        if (lineAt[key] == null) { lineAt[key] = p.t0; nth[key] = 0; }
         (throats[p.voice] || []).forEach(function (th, k) {
-          later(p.t0 - AHEAD - 0.1 * k, function () {
+          later(lineAt[key] - AHEAD + STAGGER * nth[key]++, function () {
             th[0].sing(ctx, rd.input, p.notes[0].t, p.notes.map(function (n) { return { f: n.f, dur: n.dur, vowel: n.vowel, slur: n.slur }; }), th[1]);
             if (k === 0 && hooks.onNote) p.notes.forEach(function (n) {
               hooks.onNote({ freq: n.f, t: n.t, dur: n.dur, part: "tune", voice: p.voice, verse: p.verse, line: p.line, beat: n.beat, syl: n.syl, loud: n.loud, octave: p.voice === "men" || p.voice === "leader" ? -1 : 0 });
@@ -359,9 +376,30 @@ window.KOLOB.GuestHandcart = (function () {
     return sc.end;
   }
 
+  // ==========================================================================
+  // WARM — the company's throat, sung once and silently, before any company
+  // can pass (at the engine's start-up, beside VoicesBand.warm)
+  // ==========================================================================
+  // The first line any voice of KOLOB.VoicesVocal sings in a context bakes
+  // the breath's noises and compiles the voice: 5–7 ms of main thread,
+  // measured, where a warm line costs under 2. In a meeting that has not yet
+  // sung — a company passing in the prelude — that first line would land in
+  // one wake of the clock. So one short line is sung here, at the button
+  // press, into a gain of nothing, and the company finds the throat warm.
+  // (Its own stream, not the meeting's: no die of the meeting is drawn.)
+  function warm(ctx) {
+    var VV = window.KOLOB.VoicesVocal, R = window.PJ2 && window.PJ2.Rand;
+    if (!ctx || !VV || !VV.singer || !R || ctx.__kolobHandcartWarm) return false;
+    ctx.__kolobHandcartWarm = true;
+    var hush = ctx.createGain(); hush.gain.value = 0;
+    var s = VV.singer({ part: "T", age: "mid", confidence: 0.9, brightness: 0.5, breath: 0.2, rand: R.stream(0x5a17).fork("handcart:warm"), name: "handcart-warm", pan: 0 });
+    s.sing(ctx, hush, ctx.currentTime + 0.05, [{ f: 220, dur: 0.25, vowel: "ah" }, { f: 247, dur: 0.25, vowel: "ee" }], 0);
+    return true;
+  }
+
   return {
-    plan: plan, decide: decide, prepare: prepare, score: score, perform: perform, shape: shapeOf,
-    ODDS: ODDS, EXCLUDES: EXCLUDES, SEATS: SEATS, NAME: NAME, LABEL: LABEL, VOWELS: VOWELS,
+    plan: plan, decide: decide, prepare: prepare, score: score, perform: perform, shape: shapeOf, warm: warm,
+    ODDS: ODDS, EXCLUDES: EXCLUDES, MAX_GUESTS: MAX_GUESTS, SEATS: SEATS, NAME: NAME, LABEL: LABEL, VOWELS: VOWELS,
     get LEVEL() { return LEVEL; }, set LEVEL(v) { LEVEL = +v; },
   };
 })();
