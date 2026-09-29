@@ -1,5 +1,17 @@
 # r3c-bands-1: the Nauvoo band marches past, the handcart company, the gulls
 
+> **Corrected at the round-3c integration** (the critic of crew A, PLAN §15).
+> Under recipe amendment B a band seated in a hymn before any doxology has
+> been sung could find a single hymn to march, and its second band was then
+> silently dropped (`h2` null). The claims about second bands below — "a
+> second band in 13 % of the bands" (the odds row of *How it was checked*),
+> the two-band press (*The cost on the main thread*) and "Two bands, seed 33:
+> PASS" (*How round 2 was checked*) — held only where two hymns were left to
+> march. The integrator's `outsideMaterial` (kolob-meeting.js) now gives the
+> second band the next hymn of the pool, else the section's own hymn in the
+> stranger's key, else the same march in the other key at its own pace, so a
+> second band that is drawn always comes. See `r3c-integrate-1.md`.
+
 *GUEST crew, round 3c (guests A). Branch `kolob-r3c-bands`. 2026-09-29.*
 
 > **Round 2 (at the end of this note) amends the integration recipe:** the

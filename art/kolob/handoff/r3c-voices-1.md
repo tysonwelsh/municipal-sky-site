@@ -20,7 +20,9 @@ still to come.
    sings, unbidden, in syllables no one knows. It is a free song with no
    beat, full of runs and turns (melismas). It climbs in arches to a
    height about two-thirds of the way through and comes down to rest.
-   - **The singer** is one of the day's testimony-bearers.
+   - **The singer** is one of the day's testimony-bearers (always, since
+     the round-3c integration seats the ward before the guests; before it,
+     about half the time).
    - **The language** is Deseret sounds, one sound per letter, from a
      small "tongue" drawn fresh for each song: three to five soft,
      voiced consonants and three to five vowels. They make a handful of

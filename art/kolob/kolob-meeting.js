@@ -2170,7 +2170,7 @@ window.KOLOB = window.KOLOB || {};
     visitLogged: function () { return C.visitLogged !== false; },
     guests: function () {
       return C.visitations.map(function (v) { return { type: v.type, section: v.section, at: v.at != null ? v.at : null, dur: v.dur != null ? v.dur : null, fired: !!v.fired,
-        index: typeof v.index === "number" ? v.index : C.plan.map(function (p) { return p.type; }).indexOf(v.section), changes: v.changes ? v.changes.method || true : null, hymnId: v.hymnId || null }; });
+        index: typeof v.index === "number" ? v.index : C.plan.map(function (p) { return p.type; }).indexOf(v.section), changes: v.changes ? v.changes.method || true : null, hymnId: v.hymnId || null, seeded: v.seeded || null, second: v.type === "bands" ? !!v.second : null }; });
     },
     // the prelude's seating (THE PRELUDE'S SEATING): its name, the waking's
     // entrances (s after the downbeat), whether the first chord is full, who
