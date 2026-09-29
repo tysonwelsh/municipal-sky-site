@@ -2260,7 +2260,7 @@ window.KOLOB.Organist = (function () {
     var regM = st === "plain" ? "hymn principal" : st === "victorian" ? "trumpet" : "principal & mixture", regA = st === "victorian" ? "principal & 4" : "flutes 8 & 4";
     var minor = !MINOR[C.h.mode];
     swell(C.plan, t, 0.62, 0.05);
-    say(C.plan, C.organist, t, "turns the tune into a polonaise" + (minor ? ", in the minor" : ""));
+    say(C.plan, C.organist, t, "turns the tune into a polonaise" + (minor ? " (in the minor)" : ""));
     var P = 3;
     var end = dance(C, idx, t, {
       dance: "polonaise", q: q, regM: regM, regA: regA, minor: minor,
