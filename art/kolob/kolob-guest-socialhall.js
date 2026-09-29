@@ -693,6 +693,7 @@ window.KOLOB.GuestSocialHall = (function () {
     }
     // THE CALLER: honour your partners
     var tHon = t;
+    stage("honour", t, t + INTRO.honour, "the caller: honour your partners");
     t += INTRO.honour;
     // THE POTATOES: two bars of the home chord chopped on the open strings
     // (or the fiddler's foot, four times), so the floor finds the tempo

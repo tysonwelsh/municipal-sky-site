@@ -62,7 +62,8 @@
 //   decide(meetingInfo, stream) → { seat, why, odds, roll }
 //   prepare(material, stream) → the testimonies, ready (pure; itself material)
 //     material = { ward (KOLOB.Cast's), keynoteHz, keyMonzo?, mode?, sunday?,
-//                  silenceMul? }
+//                  silenceMul?, droneMonzo? (the drone's note, relative to the
+//                  keynote: the reed's scale takes its pitch for that letter) }
 //   speech(habit, voice, stream, opts) → one sentence's syllables (pure)
 //   score(material, stream, t0) → the whole as data (pure)
 //   perform(ctx, dest, t, material, stream, hooks?) → end time (s, absolute)
@@ -271,13 +272,27 @@ window.KOLOB.Testimony = (function () {
   }
   function mRatio(m) { m = m || [0, 0, 0, 0]; return Math.pow(2, m[0] || 0) * Math.pow(3, m[1] || 0) * Math.pow(5, m[2] || 0) * Math.pow(7, m[3] || 0); }
   function modeName(m) { return PARENT_FR[m] ? m : "ionian"; }
-  function monzoOf(mode, d) { var m = fromFraction(PARENT_FR[mode][mod(d, 7)]); m[0] += Math.floor(d / 7); return m; }
+  // the scale the reed plays: the mode's just tones in the key — with the
+  // drone's own pitch for its letter, where the drone stands a comma or a
+  // semitone off the mode's (the reckoning's cantus can: a note of a
+  // doxology keyed a fifth away), so the reed never rubs a second against it
+  function tableFor(mode, droneRel) {
+    var tbl = PARENT_FR[mode].map(fromFraction);
+    if (droneRel) {
+      var dm = droneRel.slice(0, 4), r = mRatio(dm); while (r >= 2) { dm[0]--; r /= 2; } while (r < 1) { dm[0]++; r *= 2; }
+      var best = -1, bc = Infinity;
+      tbl.forEach(function (m, c) { var x = Math.abs(1200 * Math.log(r / mRatio(m)) / Math.LN2); if (x < bc) { bc = x; best = c; } });
+      if (bc > 1 && bc < 120 && CLASSES[mode].indexOf(best) >= 0) tbl[best] = dm;
+    }
+    return tbl;
+  }
+  function monzoOf(tbl, d) { var m = tbl[mod(d, 7)].slice(); m[0] += Math.floor(d / 7); return m; }
   // the nearest tone of the mode to hz (degrees from the key's final, any octave)
-  function nearest(hz, finalHz, mode) {
+  function nearest(hz, finalHz, mode, tbl) {
     var best = null, bc = Infinity, d0 = Math.round(7 * Math.log(hz / finalHz) / Math.LN2);
     for (var d = d0 - 4; d <= d0 + 4; d++) {
       if (CLASSES[mode].indexOf(mod(d, 7)) < 0) continue;
-      var c = Math.abs(1200 * Math.log(hz / (finalHz * mRatio(monzoOf(mode, d)))) / Math.LN2);
+      var c = Math.abs(1200 * Math.log(hz / (finalHz * mRatio(monzoOf(tbl, d)))) / Math.LN2);
       if (c < bc) { bc = c; best = d; }
     }
     return best;
@@ -285,29 +300,29 @@ window.KOLOB.Testimony = (function () {
   // the reeds' registers: the middle each melody is carried to
   var REEDS = { harmonium: { mid: 330, lo: 175, hi: 760 }, clarinet: { mid: 440, lo: 190, hi: 1050 } };
   function transcribe(sent, M, reed, kFixed) {
-    var mode = M.mode, F = M.finalHz, raw = [], acc = 0;
+    var mode = M.mode, F = M.finalHz, tbl = M.table || tableFor(mode), raw = [], acc = 0;
     sent.syllables.forEach(function (s) {
       if (s.rest) { if (raw.length) raw[raw.length - 1].dur += s.dur; else acc += s.dur; return; }
       // (the sentence's last syllable, where it falls or lifts far — a third
       // or more — is written as the two notes it moves between: the ending
       // IS the speaker's gesture)
       if (s.last && Math.abs(s.pEnd - s.pStart) >= 2.5) {
-        raw.push({ d: nearest(sent.base * st(s.pStart), F, mode), dur: s.dur * 0.4 + acc, stress: s.stress, accent: true });
-        raw.push({ d: nearest(sent.base * st(s.pEnd), F, mode), dur: s.dur * 0.6, stress: s.stress, accent: false });
-      } else raw.push({ d: nearest(sent.base * st(s.p), F, mode), dur: s.dur + acc, stress: s.stress, accent: !!s.accent });
+        raw.push({ d: nearest(sent.base * st(s.pStart), F, mode, tbl), dur: s.dur * 0.4 + acc, stress: s.stress, accent: true });
+        raw.push({ d: nearest(sent.base * st(s.pEnd), F, mode, tbl), dur: s.dur * 0.6, stress: s.stress, accent: false });
+      } else raw.push({ d: nearest(sent.base * st(s.p), F, mode, tbl), dur: s.dur + acc, stress: s.stress, accent: !!s.accent });
       acc = 0;
     });
     // into the reed's register, by whole octaves (the melody's middle nearest the reed's)
     var ds = raw.map(function (x) { return x.d; }).sort(function (a, b) { return a - b; }), mid = ds[ds.length >> 1];
-    var R = REEDS[reed], k = kFixed != null ? kFixed : Math.round(Math.log(R.mid / (F * mRatio(monzoOf(mode, mid)))) / Math.LN2);
+    var R = REEDS[reed], k = kFixed != null ? kFixed : Math.round(Math.log(R.mid / (F * mRatio(monzoOf(tbl, mid)))) / Math.LN2);
     var lo = ds[0] + 7 * k, hi = ds[ds.length - 1] + 7 * k;
-    if (kFixed == null) { if (F * mRatio(monzoOf(mode, lo)) < R.lo) k++; else if (F * mRatio(monzoOf(mode, hi)) > R.hi) k--; }
+    if (kFixed == null) { if (F * mRatio(monzoOf(tbl, lo)) < R.lo) k++; else if (F * mRatio(monzoOf(tbl, hi)) > R.hi) k--; }
     var notes = [];
     raw.forEach(function (x) {
       var d = x.d + 7 * k, prev = notes[notes.length - 1];
       // (a repeated tone is held on, unless a stressed syllable strikes it again)
       if (prev && prev.d === d && !x.accent) { prev.dur += x.dur; prev.stress = Math.max(prev.stress, x.stress); return; }
-      var m = monzoOf(mode, d);
+      var m = monzoOf(tbl, d);
       notes.push({ d: d, m: m, f: F * mRatio(m), dur: x.dur, stress: x.stress, accent: x.accent });
     });
     return notes;
@@ -317,7 +332,8 @@ window.KOLOB.Testimony = (function () {
   // number of them, a stressed note moved onto the beat, the last held to the
   // bar's end — and closing on the key's own chord (do, mi or sol, whichever
   // is nearest), where the speech had stopped anywhere
-  function tuneOf(notes, rate, mode, R) {
+  function tuneOf(notes, rate, mode, R, tbl) {
+    tbl = tbl || tableFor(mode);
     var unit = Math.max(0.2, Math.min(0.36, (1 / rate) * R.rnd(1.05, 1.25))), out = [], q = 0;
     notes.forEach(function (n, i) {
       var n8 = Math.max(1, Math.round(n.dur / unit));
@@ -329,7 +345,7 @@ window.KOLOB.Testimony = (function () {
     if (home.indexOf(mod(last.d, 7)) < 0) {
       var best = null;
       for (var dd = 1; dd <= 3 && best == null; dd++) [last.d - dd, last.d + dd].forEach(function (x) { if (best == null && home.indexOf(mod(x, 7)) >= 0) best = x; });
-      var m = monzoOf(mode, best), F = last.f / mRatio(last.m);
+      var m = monzoOf(tbl, best), F = last.f / mRatio(last.m);
       out.push({ d: best, m: m, f: F * mRatio(m), n8: 2, stress: 1, close: true });
       q += 2;
     }
@@ -381,6 +397,8 @@ window.KOLOB.Testimony = (function () {
     // the order they rise: the cast's, or (a third of Sundays) the last first
     if (rs.next() < 0.33 && people.length > 1) people = people.slice(1).concat(people.slice(0, 1));
     var F = K * mRatio(keyM), lastReed = null, streak = 0, silence = num(M.silenceMul, 1);
+    // (the drone's note, relative to the key: material.droneMonzo is relative to the keynote)
+    var tbl = tableFor(mode, M.droneMonzo ? [0, 1, 2, 3].map(function (i) { return (M.droneMonzo[i] || 0) - (keyM[i] || 0); }) : null);
     var bearers = people.map(function (b, k) {
       var r = need(stream).fork("speech:" + k), rr = need(stream).fork("reed:" + k);
       var reedU = rs.next(), nU = rs.next();                               // every die, drawn
@@ -399,15 +417,15 @@ window.KOLOB.Testimony = (function () {
       heard.sort(function (a, c2) { return a - c2; });
       var kOct = Math.round(Math.log(REEDS[reed].mid / heard[heard.length >> 1]) / Math.LN2);
       for (var i = 0; i < n; i++) {
-        var sp = said[i], notes = transcribe(sp, { mode: mode, finalHz: F }, reed, kOct);
-        sents.push({ speech: sp, move: moves[i], notes: notes, tune: moves[i] === "tune" ? tuneOf(notes, hab.rate || 3, mode, rr) : null,
+        var sp = said[i], notes = transcribe(sp, { mode: mode, finalHz: F, table: tbl }, reed, kOct);
+        sents.push({ speech: sp, move: moves[i], notes: notes, tune: moves[i] === "tune" ? tuneOf(notes, hab.rate || 3, mode, rr, tbl) : null,
                      lag: rr.rnd(0.04, 0.07), gap: rr.rnd(0.45, 0.8), after: (hab.pauses || 0.4) * rr.rnd(1.6, 2.6) });
       }
       return { k: k, id: b.id, nameDs: b.nameDs, nameEn: b.nameEn || null, archetype: b.archetype, archetypeEn: b.archetypeEn || null, part: b.voice.part, pew: b.pew ? b.pew.x : null,
                voice: speakingVoice(b.voice), habit: hab, reed: reed, sentences: sents, walk: rr.rnd(1.4, 2.2) };
     });
     var stills = bearers.map(function () { return rs.rnd(3.5, 6.5) * silence; });
-    return { prepared: true, keynoteHz: K, keyMonzo: keyM, finalHz: F, mode: mode, bearers: bearers, stills: stills, sunday: M.sunday || null };
+    return { prepared: true, keynoteHz: K, keyMonzo: keyM, finalHz: F, mode: mode, table: tbl, droneMonzo: M.droneMonzo || null, bearers: bearers, stills: stills, sunday: M.sunday || null };
   }
 
   // ==========================================================================
@@ -458,7 +476,7 @@ window.KOLOB.Testimony = (function () {
             var d2 = reedLine(t, b, s.tune.notes, "tune", s);
             stage("tune", t, t + d2, WHO[b.reed] + " makes a tune of the words", b.id);
             out.answers.push({ t: t0 + t + d2, memberId: b.id, instrument: b.reed,
-                               motif: { name: "testimony:" + (b.id || k), notes: s.tune.notes.map(function (n) { return { deg: n.d, durBeats: n.n8 / 2 }; }), unit: s.tune.unit } });
+                               motif: { name: "testimony:" + (b.id || k), gesture: "testimony", gen: 0, chain: [], notes: s.tune.notes.map(function (n) { return { deg: n.d, durBeats: n.n8 / 2 }; }), unit: s.tune.unit } });
             t += d2 + 0.4;
           }
         }
