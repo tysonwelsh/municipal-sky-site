@@ -203,8 +203,18 @@ window.KOLOB.VoicesFolk = (function () {
       steps.forEach(function (s, i) {
         var t = s.t;
         if (s.rest) {
-          // the bow lifts: the string rings down in a few hundredths
-          if (!off) { g.gain.setTargetAtTime(0, t, 0.02); vd.gain.setTargetAtTime(0, t, 0.02); }
+          // the bow lifts: the string rings down in a few hundredths, and
+          // then it is STILL. (Round 3c, the Social Hall: a note shorter
+          // than its own settling — a reel's grace, a 40 ms flick — had its
+          // settle land after the bow had lifted, and the rest sounded at
+          // the note's full level, −0.8 dB. Whatever the note before still
+          // had coming is cancelled at the lift; a rest long enough to hear
+          // ends in true zero, 150 ms in, 65 dB down already.)
+          if (!off) {
+            g.gain.cancelScheduledValues(t); vd.gain.cancelScheduledValues(t);
+            g.gain.setTargetAtTime(0, t, 0.02); vd.gain.setTargetAtTime(0, t, 0.02);
+            if (s.dur >= 0.17) g.gain.setValueAtTime(0, t + 0.15);
+          }
           off = true;
           return;
         }
@@ -277,9 +287,18 @@ window.KOLOB.VoicesFolk = (function () {
       }
       // drones: open strings bowed alongside, the fiddler leaning on them —
       // and lifted with the bow at every rest
+      // (round 3c: a note may lift the drone alone — droneV 0 — while the
+      // melody string goes on, or lean on it harder or softer: the reel's
+      // fiddler rocks the bow onto the open string on the long notes and
+      // off it through the runs; a lifted drone rings down and waits, and
+      // the bow lands on it again, biting, where the next note asks)
       (o.drone || []).forEach(function (df) {
         var dl = (o.droneLevel != null ? o.droneLevel : 0.45);
-        var dsteps = steps.map(function (s) { return { t: s.t, dur: s.dur, f: df, slur: s.slur, newBow: s.newBow, acc: s.acc, v: dl, rest: s.rest }; });
+        var dsteps = steps.map(function (s, i) {
+          var dv = notes[i].droneV != null ? notes[i].droneV : 1;
+          return { t: s.t, dur: s.dur, f: df, slur: s.slur && dv > 0 && !(i > 0 && notes[i - 1].droneV === 0), newBow: s.newBow, acc: s.acc, v: dl * dv, rest: s.rest || !(dv > 0) };
+        });
+        if (!fillRests(dsteps)) return;
         n += bowedString(t0, tEnd, dsteps, lv, into);
       });
       // rosin: bow noise, a band of hiss that follows the bow's pressure
@@ -288,7 +307,10 @@ window.KOLOB.VoicesFolk = (function () {
       noise(t0, tEnd - t0 + 0.2, bn); bn.connect(bg); bg.connect(into);
       var lifted = true;
       steps.forEach(function (s) {
-        if (s.rest) { if (!lifted) bg.gain.setTargetAtTime(0, s.t, 0.02); lifted = true; return; }
+        if (s.rest) {
+          if (!lifted) { bg.gain.cancelScheduledValues(s.t); bg.gain.setTargetAtTime(0, s.t, 0.02); if (s.dur >= 0.17) bg.gain.setValueAtTime(0, s.t + 0.15); }
+          lifted = true; return;
+        }
         if (s.newBow || lifted) {
           bg.gain.setTargetAtTime(lv * (s.acc ? 0.34 : 0.22), s.t, 0.004);
           bg.gain.setTargetAtTime(lv * 0.06, s.t + 0.03, 0.03);
