@@ -131,7 +131,7 @@ window.KOLOB.GuestBands = (function () {
   var MAX_DUR = 110;                                // the strains shorten to fit (s)
   // the band's bus into the tabernacle's wide send (calibrated in the lab
   // against the organ reference: see LEVEL's note in the handoff)
-  var LEVEL = 0.4;
+  var LEVEL = 0.43;
 
   function need(stream) {
     if (!stream || typeof stream.fork !== "function") throw new Error("KOLOB.GuestBands: a PJ2.Rand stream is required (label " + LABEL + "<n>)");
@@ -735,7 +735,7 @@ window.KOLOB.GuestBands = (function () {
                        sections: bd.sections.map(function (s) { return { name: s.name, t0: start + s.t0, t1: start + s.t1, gain: s.gain, role: s.role }; }),
                        meter: bd.meter, beatS: bd.beatS, key: bd.key, tHz: bd.tHz, hymnId: bd.hymnId, name: bd.name, strains: bd.strains, intro: bd.intro, from: side });
       var what = (bd.meter === "6/8" ? "a quickstep" : "a march") + " · " + KEY_WORD[bd.key];
-      out.stages.push({ stage: k ? "second" : "approaches", band: k, t0: start, side: side, label: k ? "⇋ a second band" : "⇋ a band approaches",
+      out.stages.push({ stage: k ? "second" : "approaches", band: k, t0: start, side: side, label: k ? "⇋ a second band approaches" : "⇋ a band approaches",
                         detail: "from the " + side + " · " + (k ? "another key" : "its own key"), what: what, hymnId: bd.hymnId, meter: bd.meter, strains: bd.strains });
       out.stages.push({ stage: "cross", band: k, t0: start + rd.tc, side: side, label: "⇋ the bands cross", detail: "two times at once" });
       out.stages.push({ stage: "passes", band: k, t0: start + bd.end, side: other, label: "⇋ passes on", detail: k ? "the second band" : "" });
@@ -760,7 +760,7 @@ window.KOLOB.GuestBands = (function () {
     if (!VB || !VB.road) throw new Error("KOLOB.GuestBands: load kolob-voices-band.js first");
     hooks = hooks || {};
     var sc = score(material, stream, t, { still: !!hooks.still }), synth = need(stream).fork("synth");
-    var bus = ctx.createGain(); bus.gain.value = LEVEL * (sc.bands.length > 1 ? 0.8 : 1); bus.connect(dest);
+    var bus = ctx.createGain(); bus.gain.value = LEVEL * (sc.bands.length > 1 ? 0.85 : 1); bus.connect(dest);
     // (the town's air is borrowed — made ahead by VoicesBand.warm — so no
     // convolver is built in this callback; a second band is built in a
     // callback of its own, just before it strikes up)
