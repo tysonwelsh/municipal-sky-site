@@ -1393,13 +1393,16 @@ window.KolobViz = (function () {
   // beat. A stressed syllable is a heavier cross. The caller's calls are the
   // same (chanted on the tune's fifth, but spoken, not sung).
   var spoken = [];                                 // (the syllables just printed: a reed that plays with the speaker shares them)
+  // (round 2: two crosses side by side keep a fifth of a space between them —
+  // closer, their arms met tip to tip and read as one mark, XX)
+  var SPOKEN_AIR = 0.2;
   function takeSpoken(ns, layer) {
     var g0 = groups.length;
     takeLayer(layer === "voice" ? "voice" : "caller", ns, 1, null, { shape: "x",
       head: function (n, hd) { if (n.accent) hd.heavy = true; } });
     var gs = madeSince(g0, 3, "speech"), tl = 0;             // (a call on a strain's downbeat stands clear of its double bar)
     unstemmed(gs, false);
-    gs.forEach(function (gr) { tl = Math.max(tl, gr.tp); gr.heads.forEach(function (h) { spoken.push({ tp: gr.tp, q: h.q }); }); });
+    gs.forEach(function (gr) { tl = Math.max(tl, gr.tp); gr.air = SPOKEN_AIR; gr.heads.forEach(function (h) { spoken.push({ tp: gr.tp, q: h.q }); }); });
     while (spoken.length && spoken[0].tp < tl - 40) spoken.shift();
   }
   // The reed that answers a testimony: where it plays the words back, or
@@ -2777,6 +2780,12 @@ window.KolobViz = (function () {
       });
       var a = pts[0], b = pts[pts.length - 1];
       var m = clamp(b.ideal - a.ideal, -0.9 * s, 0.9 * s) / ((b.x - a.x) || 1), y0 = a.ideal;
+      // (round 3c, round 2: a guest's beam lies level. Its notes may be set
+      // well after their time — the organist's figure pushed on by the chords
+      // under it — and a slope laid where they were expected, followed out to
+      // where they stand, ran the beam off the plate and left its stems bare
+      // to the edge; level, it meets every stem wherever the note is set)
+      if (ms[0].cap != null) m = 0;
       pts.forEach(function (p) {
         var by = y0 + m * (p.x - a.x);
         if (dir > 0 ? by > p.need : by < p.need) y0 += p.need - by;
@@ -3237,6 +3246,7 @@ window.KolobViz = (function () {
         var off = (A.tp - gr.tp) * SCROLL_PX_S + A.col.dx;     // A's origin, from ours
         if (off < dx - 8 * sp || off > dx + 8 * sp) continue;
         var ab = A.col.boxes, hit = false, aR = -1e9, air = o.flags || A.flags ? gap : 0, hy = gr.hymn && A.hymn;
+        if (gr.air || A.air) air = Math.max(air, Math.max(gr.air || 0, A.air || 0) * sp);   // (round 3c, round 2: a spoken cross's own air)
         var chord = hy && Math.abs(A.tp - gr.tp) < 1e-6;     // (two voices of one chord: an accidental stands before both heads)
         for (var m = 0; m < ab.length; m++) {
           if (hy && ab[m][4]) continue;
@@ -3282,6 +3292,11 @@ window.KolobViz = (function () {
     // asks — past that it goes on only for a bar, a head or a beam, as before)
     if (!gr.hymn && gr.cap != null && dx > lim && ord > lim) lim = ord;
     if (!gr.hymn && gr.cap != null && dx > lim && (onBar(gr, g, bx, lim) || onHead(gr, g, bx, lim) || beamHit(gr, g, bx, lim) != null)) lim = dx;
+    // (round 2: nor does our hymn's note, held at its cap, stand struck
+    // through by a guest's ink — a far-ward note sung a beat before it and
+    // carried on to where ours falls: there ours goes on past it, as a
+    // guest's does; among our own notes the cap holds, as ever)
+    if (gr.hymn && dx > lim && onHead(gr, g, bx, lim, true)) lim = dx;
     return { need: dx, lim: lim, bx: bx, ink: ink };
   }
   // (on a bar, or within a pixel or two of it: the page's pixels round each
@@ -3299,11 +3314,11 @@ window.KolobViz = (function () {
   // (a head struck through: one note's head under another's ink — its stem,
   // a ledger, a flag, a sign, its head — either way round. Every head is
   // one clean strike, the owner's rule: a stem across it is a second stroke)
-  function onHead(gr, g, bx, x) {
+  function onHead(gr, g, bx, x, guests) {         // (guests: only a new guest's ink — round 2, our hymn's note)
     var sp = g.sp, tol = 0.05 * sp;
     for (var i = 0; i < groups.length; i++) {
       var A = groups[i];
-      if (A === gr || !A.col || A.col.sp !== sp || A.st !== gr.st || !(A.lastA > 0.05)) continue;
+      if (A === gr || !A.col || A.col.sp !== sp || A.st !== gr.st || !(A.lastA > 0.05) || (guests && A.cap == null)) continue;
       var off = (A.tp - gr.tp) * SCROLL_PX_S + A.col.dx, ab = A.col.ink || A.col.boxes;   // (all its ink: a hymn's ledgers too)
       if (off < x - 5 * sp || off > x + 5 * sp) continue;
       for (var m = 0; m < ab.length; m++) {
@@ -3320,10 +3335,12 @@ window.KolobViz = (function () {
   // is sung: a note never prints left of an earlier note of its own line on
   // its staff (the organist's running figure, pushed along by the chords
   // under it, read backwards and lost its beams). Where an earlier note has
-  // been set past its time, this one follows it — two half-heads after it,
-  // or less where its own time is nearer, and always at least a third of
-  // the way closer than its time would put it, so an offset dies away along
-  // the line (a note whose neighbour kept its place is not touched). The
+  // been set past its time, this one follows it — enough after it to read
+  // as after it (0.6 sp, or less where its own time is nearer: two heads
+  // that would touch are kept apart by the clearance as ever), and always
+  // more than half the way closer than its time would put it, so an offset
+  // dies away along the line within a few notes (a note whose neighbour
+  // kept its place is not touched). The
   // least offset that keeps the order; -1e9 where nothing asks. Only a
   // guest's one line asks it (madeSince's line): the fiddle's tune (its open
   // string is a voice of its own, held), the organist's figure, the gift's
@@ -3337,7 +3354,7 @@ window.KolobViz = (function () {
       if (A === gr || A.line !== gr.line || A.st !== gr.st || A.noCol || !(A.col && A.col.sp === sp) || !(A.lastA > 0.05)) continue;
       var d0 = (gr.tp - A.tp) * SCROLL_PX_S;
       if (d0 < 1e-3 || d0 > 12 * sp) continue;
-      var adv = Math.min(0.64 * ((A.scale || 1) + (gr.scale || 1)) * sp, 0.7 * d0);
+      var adv = Math.min(0.6 * sp, 0.45 * d0);
       out = Math.max(out, A.col.dx - d0 + adv);
     }
     return out;
