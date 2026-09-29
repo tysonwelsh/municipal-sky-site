@@ -502,8 +502,8 @@ window.KOLOB.Testimony = (function () {
   // made to follow a voice: a reed speaks in a few hundredths, not in a
   // second, and a new syllable is a new reed — the pitch steps, the air dips
   // an instant and speaks again. Only the tune gets the clarinet's vibrato.
-  // One line is one voice (7 nodes the harmonium, 6 the clarinet, 8 with
-  // the vibrato), however many notes.
+  // One line is one voice (9 nodes the harmonium, 5 the clarinet, 7 with
+  // its vibrato), however many notes.
   // ==========================================================================
   function kRate(p) { try { p.automationRate = "k-rate"; } catch (e) { /* an old browser */ } }
   function playReed(ctx, dest, t, notes, reed, o, Y) {
