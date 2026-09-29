@@ -37,13 +37,14 @@
 // when ours does. Its harmony is its own dialect's (Composer.setTune: the
 // tune kept, set again) or ours.
 //
-// THE VOICES. A second congregation, heard as one: eight pews of three
-// (KOLOB.VoicesVocal.desk — twenty-four people, each pew one shared mouth
-// with its own people's pitches, vibratos and lateness), which is how a
-// congregation a valley away is heard. (The home ward is thirty-two throats
-// by the owner's ruling; this is a different ward, at a distance where a pew
-// is a voice. `material.voices: "people"` seats twenty-four throats instead,
-// for the owner's A/B: the lab measures both.)
+// THE VOICES. A second congregation of twenty-four, each in a throat of
+// their own (the owner's ruling, 2026-09-28: the full ward, nothing cut to
+// a budget — and the round-3c critic measured the throats against pews and
+// found no audio-thread cost, only nodes). They sit in eight pews of three,
+// each pew's people on their own pitches and lateness about the pew's.
+// `material.voices: "desks"` is the A/B, and the saving if one is wanted:
+// each pew one shared mouth (KOLOB.VoicesVocal.desk), as a congregation a
+// valley away may well be heard. The lab measures both.
 //
 // PURE PLANNING. plan(), decide(), prepare() and score() touch no
 // AudioContext, DOM, clock or Math.random; their dice come from the guest's
@@ -104,6 +105,9 @@ window.KOLOB.GuestFarWard = (function () {
   // hymn in the same room: the far ward heard about 11 LU under ours
   var LEVEL = 1.0;
   var DESK_GAIN = 0.08;
+  // (three throats sing a pew's line at DESK_GAIN / √3 each — and measured
+  // 0.9 LU louder than the pew's one mouth, seeds 7, 12 and 17: so trimmed)
+  var PEOPLE_TRIM = 0.9;
 
   function need(stream) {
     if (!stream || typeof stream.fork !== "function") throw new Error("KOLOB.GuestFarWard: a PJ2.Rand stream is required (label " + LABEL + "<n>)");
@@ -242,7 +246,7 @@ window.KOLOB.GuestFarWard = (function () {
       // (the air takes the highs, steeply, from 2.1 kHz at the nearest to 1.2 at the farthest; what arrives
       // is mostly the valley's answer, the direct sound a third of it or less)
       side: sh.side, distance: d, lpHz: Math.round(2600 - 1400 * d), delayS: r4(0.12 + 0.3 * d), direct: r4(0.34 - 0.2 * d), wet: r4(0.85 + 0.15 * d), trimDb: r4(-(1 + 3 * d)),
-      desks: desks, voices: material.voices === "people" ? "people" : "desks", amen: !!(h.amen && (far === "same" || far === "tabernacle")),
+      desks: desks, voices: material.voices === "desks" ? "desks" : "people", amen: !!(h.amen && (far === "same" || far === "tabernacle")),
       nearby: !!material.nearby,                  // (a lab's A/B: the same ward with no valley between — what the distance takes)
     };
   }
@@ -385,7 +389,7 @@ window.KOLOB.GuestFarWard = (function () {
       spec.rand = synth.fork("desk:" + k); spec.name = "farward:" + k;
       if (pr.voices !== "people") return { sing: V.desk(spec).sing, n: 1 };
       var ppl = [0, 1, 2].map(function (i) { var s2 = {}; for (var y in spec) s2[y] = spec[y]; s2.rand = synth.fork("desk:" + k + ":" + i); s2.pitchHabitCents = (i - 1) * spec.detuneCents * 0.8; s2.timingHabitMs = (spec.lag + (i - 1) * spec.spreadMs / 1000) * 1000; return V.singer(s2); });
-      return { sing: function (c, dd, t, notes, g, o) { ppl.forEach(function (p) { p.sing(c, dd, t, notes, g / Math.sqrt(3), o); }); }, n: 3 };
+      return { sing: function (c, dd, t, notes, g, o) { ppl.forEach(function (p) { p.sing(c, dd, t, notes, g * PEOPLE_TRIM / Math.sqrt(3), o); }); }, n: 3 };
     });
     var origin = null, span = null, lastEnd = -1e9, told = [], armed = false, armUntil = -1;
     // (the arm-tick runs over each verse as it is handed; a verse handed while
