@@ -1159,7 +1159,7 @@ window.KolobViz = (function () {
   // time, so the method can be read from the heads alone (the ringers' blue
   // line is the path one bell's head takes through the rows; the page leaves
   // it to the eye, as it leaves the words). A muffled touch is paler still.
-  var TOWER_INK = 0.5, TOWER_MUFFLED = 0.32, TOWER_SCALE = 0.55;
+  var TOWER_INK = 0.5, TOWER_MUFFLED = 0.32, TOWER_SCALE = 0.45;   // (small: a peal's strokes come a staff space apart at the page's rate)
   function takeTower(ns) {
     var g0 = groups.length;
     takeLayer("tower", ns, 1, null, { scale: TOWER_SCALE, ink: ns[0].muffled ? TOWER_MUFFLED : TOWER_INK,
@@ -1195,8 +1195,9 @@ window.KolobViz = (function () {
   // the degree it sings in the hymn's key and written in our verse's beat —
   // at grace size (it is across the valley, and it sings on our beats: four
   // voices to a staff, where full heads would crowd our bars), and it gives
-  // way to our hymn: our notes stand where they would without it, its notes
-  // keep clear of them, and a bar keeps clear of both.
+  // way to our hymn: on a beat it shares with us our notes are set first and
+  // its notes step aside for them, and it waits for a bar of ours just after
+  // it (barWaits). Nothing of either is printed over the other.
   var FARWARD_INK = 0.42, FARWARD_SCALE = 0.6;
   function takeFarWard(ns) {
     var h = hymnOf(ns[0].hymnId), mode = h.mode || cond.mode;
@@ -3151,7 +3152,6 @@ window.KolobViz = (function () {
       for (var i = 0; i < groups.length; i++) {
         var A = groups[i];
         if (A === gr || !A.col || A.col.sp !== sp || A.st !== gr.st || !(A.lastA > 0.05) || (skip && skip.indexOf(A) >= 0)) continue;
-        if (gr.hymn && A.yields) continue;                   // (round 3c: the far ward gives way to our hymn, never ours to it)
         var off = (A.tp - gr.tp) * SCROLL_PX_S + A.col.dx;     // A's origin, from ours
         if (off < dx - 8 * sp || off > dx + 8 * sp) continue;
         var ab = A.col.boxes, hit = false, aR = -1e9, air = o.flags || A.flags ? gap : 0, hy = gr.hymn && A.hymn;
@@ -3191,9 +3191,9 @@ window.KolobViz = (function () {
       dx = need;
     }
     // (round 3c: past its cap a new guest's note may come close to the ink
-    // before it, as a hymn's does, but it never stands on a bar: there it
-    // goes on past the bar)
-    if (!gr.hymn && gr.cap != null && dx > lim && onBar(gr, g, bx, lim)) lim = dx;
+    // before it, as a hymn's does, but it never stands on a bar or on
+    // another note's head: there it goes on past)
+    if (!gr.hymn && gr.cap != null && dx > lim && (onBar(gr, g, bx, lim) || onHead(gr, g, bx, lim))) lim = dx;
     return { need: dx, lim: lim, bx: bx, ink: ink };
   }
   // (on a bar, or within a pixel or two of it: the page's pixels round each
@@ -3208,6 +3208,23 @@ window.KolobViz = (function () {
     }
     return false;
   }
+  function onHead(gr, g, bx, x) {
+    var sp = g.sp, tol = 0.05 * sp;
+    for (var i = 0; i < groups.length; i++) {
+      var A = groups[i];
+      if (A === gr || !A.col || A.col.sp !== sp || A.st !== gr.st || !(A.lastA > 0.05)) continue;
+      var off = (A.tp - gr.tp) * SCROLL_PX_S + A.col.dx, ab = A.col.boxes;
+      if (off < x - 5 * sp || off > x + 5 * sp) continue;
+      for (var m = 0; m < ab.length; m++) {
+        if (!ab[m][5]) continue;
+        for (var n = 0; n < bx.length; n++) {
+          var b = bx[n];
+          if (b[5] && ab[m][0] + off < b[2] + x - tol && b[0] + x < ab[m][2] + off - tol && ab[m][1] < b[3] - tol && b[1] < ab[m][3] - tol) return true;
+        }
+      }
+    }
+    return false;
+  }
   // The far ward sings on our beats, a line behind, and its notes can fall
   // where one of our bars must stand (a double bar in our breath between two
   // lines, a bar squeezed before a quick downbeat). A bar keeps clear of the
@@ -3215,8 +3232,11 @@ window.KolobViz = (function () {
   // far note that falls just before a bar of ours waits until that bar has
   // been placed, and then keeps clear of it. It prints a moment behind the
   // burin; once printed it never moves.
-  var BAR_WAIT_S = 0.7;
+  // (and on each beat it shares with us, our notes are set first, a
+  // moment before it, so it is the far ward's that steps aside)
+  var BAR_WAIT_S = 0.7, YIELD_LAG = 0.08;
   function barWaits(gr, g) {
+    if (PT < gr.tp + YIELD_LAG) return true;
     for (var k = 0; k < marks.length; k++) {
       var mb = marks[k];
       if (mb.kind === "bar" && !(mb.at && mb.at.sp === g.sp) && mb.sts.indexOf(gr.st) >= 0 && mb.tp >= gr.tp - 1e-6 && mb.tp - gr.tp <= BAR_WAIT_S) return true;
@@ -3268,7 +3288,8 @@ window.KolobViz = (function () {
     // (at one time: the hymn's notes, then their bar, then a guest's note,
     // which keeps clear of the bar placed before it)
     function rank(it) { return it.kind === "bar" ? 1 : it.hymn ? 0 : 2; }
-    due.sort(function (a, b) { return a.tp - b.tp || rank(a) - rank(b); });
+    function at(it) { return it.tp + (it.yields ? YIELD_LAG : 0); }   // (round 3c: the far ward after our notes of its beat)
+    due.sort(function (a, b) { return at(a) - at(b) || rank(a) - rank(b); });
     due.forEach(function (it) {
       if (it.kind === "bar") { barPlace(it, g); return; }
       if (it.yields && barWaits(it, g)) return;                // (round 3c: the far ward's note just before a bar of ours waits for it)
@@ -3857,7 +3878,7 @@ window.KolobViz = (function () {
     groups.forEach(function (gr) {
       if (gr.drawnAt !== FRAME) return;
       var bx = gr.noCol ? (gr.inkBx && gr.inkBx.boxes) : (gr.col && gr.col.ink);
-      if (bx) out.notes.push({ layer: gr.layer, st: gr.st, tp: gr.tp, boxes: bx.map(function (b) { return [b[0] + gr.lastX, b[1], b[2] + gr.lastX, b[3]]; }) });
+      if (bx) out.notes.push({ layer: gr.layer, st: gr.st, tp: gr.tp, a: gr.lastA, boxes: bx.map(function (b) { return [b[0] + gr.lastX, b[1], b[2] + gr.lastX, b[3], b[5] ? 1 : 0]; }) });
     });
     marks.forEach(function (m) {
       if (m.kind !== "bar" || !(m.at && m.at.sp === g.sp) || m.tp > PT) return;
