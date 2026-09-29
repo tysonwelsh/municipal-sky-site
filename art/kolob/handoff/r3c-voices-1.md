@@ -49,7 +49,8 @@ still to come.
      About one meeting in ten, most at a conference.
 3. **The Hosanna.** Only on Easter (about half of them) and at a
    dedication (nearly always), at the close of the doxology. Nothing is
-   written anywhere, and every event it sends says `logged: false`.
+   written anywhere: every event and every note it sends says
+   `logged: false` (corrected in round 2).
    - **The shout.** The whole ward stands and shouts "Hosanna, Hosanna,
      Hosanna, to God and the Lamb" three times, then "Amen, Amen, and
      Amen". It is a crowd of forty (the thirty-two and the Primary's
@@ -115,12 +116,20 @@ halves.
 | `?seed=13&sunday=conference&dialect=gospel` | DAWN | The farthest far ward (distance 0.97), half a line behind in the last verse (0:52) |
 
 **Their harmony** and **their voices** menus force the far ward's setting
-(ours, Sacred Harp, Tabernacle, unison) and the A/B of its voices: eight
-pews of three, as built, against twenty-four separate throats.
+(ours, Sacred Harp, Tabernacle, unison) and the A/B of its voices:
+twenty-four throats, as built since round 2, against eight pews of three.
 
 #### The Hosanna: set the Sunday to Easter or a dedication, press ▶ the Hosanna
 
 `?seed=7&sunday=dedication&dialect=tabernacle`
+
+**Listen first for hiss or harshness in the shout, 0:02–0:20** (round 2,
+the critic's). Above 4 kHz the shout is about 6 dB brighter than the
+hymn that follows it. Measured, that brightness is the raised voice
+itself, forty voices' upper harmonics (`SHOUT_EFFORT`), not breath: the
+s and the h's are about a thousandth of the high band. **▶ the shout
+alone** plays just this part. If it sounds like hiss, the levers are in
+Round 2, item 6.
 
 - **0:00** the ward rises.
 - **0:02** the first Hosanna; **0:07** the second; **0:14** the third,
@@ -240,9 +249,10 @@ as a dedication's).
     verse when ours does (only in our own Tabernacle harmony).
 - **Its tuning:** ±8–20 cents from ours, drifting −3 to +12 cents over
   what it sings.
-- **Its voices:** eight pews of three (`VoicesVocal.desk`), so
-  twenty-four people, as a ward a valley away is heard. `voices:
-  "people"` is the A/B: twenty-four throats.
+- **Its voices** (round 2): twenty-four throats, each person their own
+  voice, seated in eight pews of three, trimmed 0.9 dB to the pews'
+  calibrated level. `voices: "desks"` is the A/B, eight pews each one
+  shared mouth (`VoicesVocal.desk`), and the saving if one is wanted.
 - **Its distance**, drawn 0.35–1:
   - the sound crosses in 0.12–0.42 s;
   - the air takes the highs above 2.1–1.2 kHz, steeply (two 12 dB
@@ -259,7 +269,9 @@ as a dedication's).
 - **Interface:** `plan`, `decide`, `score(material, stream, t0)` (pure),
   `perform(ctx, dest, t, material, stream, hooks)`, `words()`,
   `mayCome(info)`, `timeline(stream, sunday)`. Also `LOGGED` (false),
-  `ENGRAVE_HYMN` (true) and `HYMN_CONSONANTS`.
+  `ENGRAVE_HYMN` (true, the staff's switch only), `YIELD` (false),
+  `HYMN_CONSONANTS`, and the shout's air: `SHOUT_FRIC`, `SHOUT_H_SWELL`,
+  `SHOUT_EFFORT` (round 2).
 - **Stream:** `guest:hosanna:<n>`. Its `seat` fork's first die **is** the
   hook's die the meeting already throws (checked: equal), then `shape`,
   `crowd`, `ward` and `synth`.
@@ -282,12 +294,13 @@ as a dedication's).
   - Full organ; the last line broadens by 18–32 %.
   - The words: `WORDS` (Phelps, verse 1 and the chorus). Each inner part
     takes the tune's syllable at its onset.
-- **Unlogged.** `seat.logged` is false; every stage it tells is
-  `logged: false`; it emits nothing of its own. The hymn's notes are
-  offered to `hooks.onNote` with `hosanna: true`, and with `logged: true`
-  while `ENGRAVE_HYMN` stands (the staff engraves them, PLAN §8.12); set it
-  false and they say `logged: false`, the whole Hosanna then audio-only.
-  The shout offers none.
+- **Unlogged** (corrected in round 2). `seat.logged` is false; every
+  stage it tells is `logged: false`; it emits nothing of its own. The
+  hymn's notes are offered to `hooks.onNote` with `guest: "hosanna"`,
+  `hosanna: true`, **`logged: false` always**, and `engrave:
+  ENGRAVE_HYMN`, the staff's own switch (PLAN §8.12). The shout offers
+  none. (The first version sent `logged: true` while `ENGRAVE_HYMN`
+  stood, which would have printed a minutes row.)
 
 ### Laid out ahead, and armed
 
@@ -323,13 +336,13 @@ for the pure parts.
 | lab at 860 and 390 px | 0 console errors after pressing every play (and stop), check (the gift's), odds and purity, and every menu; no sideways scroll at either width |
 | purity | each guest's plan and score (the far ward's prepare and verse) identical when run twice on the same stream; **0 `Math.random` calls** |
 | the Hosanna only on Easter and a dedication | 2,000 meetings a Sunday: dedication 94.7 %, Easter 49.3 %, **every other Sunday 0 %, even forced**; the plan's first die equals the meeting's hook die |
-| the Hosanna unlogged | 8 of 8 stages `logged: false`; the seat `logged: false`; nothing else emitted; the hymn's 415 notes offered with `hosanna: true`, the shout's none |
+| the Hosanna unlogged (re-checked in round 2) | 8 of 8 stages `logged: false`; the seat `logged: false`; nothing else emitted; the hymn's 415 notes all `logged: false` and `guest: "hosanna"` (the shout offers none). Through the page's own gates: **0** minutes rows, **0** notes today's staff takes |
 | the odds (stand-in planner, 20,000 meetings) | the gift 6.8 % (fast 22.2, dedication 17.1, funeral 6.5, easter 4.9, ordinary 4.6, conference 3.3, pioneer 2.6, wedding 2.3, christmas 1.8); the far ward 9.8 % (conference 18.9, dedication 11.2, christmas 11.1, easter 9.4, fast 9.0, ordinary 8.7, funeral 7.2, pioneer 5.8, wedding 5.6); the Hosanna 4.0 % (dedication 91.7, Easter 50.9, else 0); at least one of the three in 19.7 % of meetings, two in 0.95 %; **0** seated in or beside another guest's section |
 | the gift: levels, clicks (six seeds, one in each of the six houses) | the whole −1.7 to +0.7 LU against the organ reference (loudest 3 s); the song −1.8 to +0.3, the hum −2.5 to +0.6, the reed with the hum's tail −1.9 to −1.3; **0 clicks**, 0 clipped, peak −4.6 to −10.7 dBFS |
 | the gift sung as written (the singer alone, dry, a YIN pitch track against the score; three seeds) | syllables on their written pitch in 100 % of frames; **every melisma note identified** (71/71, 62/62, 85/86: nearer its own pitch than either neighbour's, within 60 cents), median 1.5–3.9 cents off |
 | the gift's words | 300 seeds: the gesture that may seed a hymn identical before and after the ward is seated (300/300); the singer one of the day's testimony-bearers in 157 of 300 (else one of the same part) |
-| the far ward: the canon (seeds 7 and 12) | it begins 0.78 and 0.83 of our first line late (drawn 0.75: whole beats plus the valley's delay); verse after verse the same (0.83, 0.83, 0.83) |
-| the far ward: tuning | −11.5 → −3.8 cents (seed 7), +13.8 → +14.2 (seed 12) against ours |
+| the far ward: the canon (seeds 7 and 12; **read from its score**, not the audio: see Round 2, item 9) | it begins 0.78 and 0.83 of our first line late (drawn 0.75: whole beats plus the valley's delay); verse after verse the same (0.83, 0.83, 0.83) |
+| the far ward: tuning (**from its score**) | −11.5 → −3.8 cents (seed 7), +13.8 → +14.2 (seed 12) against ours |
 | the far ward: distant | against the same pews with nothing between: the high band (2.5–8 kHz over 250 Hz–2.5 kHz) **−9.6 dB** (seed 7) and **−14.7 dB** (seed 12), centroid 587 → 488 Hz and 668 → 542 Hz |
 | the far ward: level | **10.7 LU under** our ward with the organ (seed 7, loudest 3 s; 10.3 integrated); **7.3 LU under** our unaccompanied Sacred Harp ward (seed 12). 0 clicks either side |
 | the Hosanna: levels, clicks (seed 7, a dedication) | the shout −1.7 LU against the organ reference; the organ's giving-out −0.6; the verse +1.2; the chorus +1.5; **0 clicks**, 0 clipped, peak −5.7 dBFS |
@@ -398,7 +411,7 @@ if (FWg && C.hymnal) {
 }
 // THE HOSANNA (PLAN §8.12): replaces the hook — its plan's first die IS the hook's die
 var HOg = KOLOB.GuestHosanna, hoStream = stream("guest:hosanna");
-var hoSeat = HOg ? HOg.plan({ n: C.meetingNum, kind: activity, sunday: sunday, sections: plan, force: forcedType === "hosanna" }, hoStream)
+var hoSeat = HOg ? HOg.plan({ n: C.meetingNum, kind: activity, sunday: sunday, sections: plan, guests: C.visitations, force: forcedType === "hosanna" }, hoStream)   // (round 2: guests → seat.beside; it overrides §8.13 unless GuestHosanna.YIELD)
                  : (hoStream.fork("seat").next(), null);
 C.hosanna = SUN && SUN.hosanna ? { possible: true, built: !!HOg, seat: hoSeat, stream: hoStream } : null;
 // (never pushed into C.visitations: "guests-drawn" and the minutes must not name it)
@@ -441,15 +454,34 @@ C.hosanna = SUN && SUN.hosanna ? { possible: true, built: !!HOg, seat: hoSeat, s
 - **The section.** Held until `seat.at + seat.dur + 3`.
   `LISTENED.tongues = true`: the house's own voices rest while one person
   sings.
-- **The stages and their minutes rows:**
+- **The stages and their minutes rows** (`GuestTongues.ROWS`, round 2):
   - `rises` → a ✦ row, "rises and sings in tongues", with the singer's
     name (a CAST request below);
   - `the ward hums` and `the harmonium` → quiet guest rows;
-  - `sings` and `the height` → no row.
-- **The glue's label.** `standingGuest`'s `say()` names every guest that
-  is not the handbells "♪ the singing school". Give the gift its own
-  ("⁂ the gift of tongues"). Each stage carries `t0` (when it sounds)
-  and `label`, as the handbells' do.
+  - `sings` and `the height` → no row, and no `guest` event either.
+- **The glue needs two changes (round 2, the critic's).** Today
+  `standingGuest`'s `onStage` calls `say()` for every stage of any guest
+  that is not the handbells, and `say()` labels every such guest "♪ the
+  singing school". In `kolob-guests.js`:
+
+  ```js
+  // in say(): the guest's own label
+  label: (G.ROW_LABEL || (name === "handbells" ? "♫ the handbells" : "♪ the singing school")) + (stage === "ring" || stage === "fork" ? "" : " · " + stage),
+  // in onStage: a guest that names its rows tells only those
+  if (name === "handbells") { … as now … }
+  else if (G.ROWS) { if (G.ROWS[st.stage]) say(st.stage, st); }
+  else say(st.stage, st);
+  ```
+
+  and in `kolob-ui.js` `GUEST_ROWS` (the minutes print only the stages it
+  names), with three new `S` strings (their Deseret from CAST):
+
+  ```js
+  tongues: { rises: ["✦", "risesInTongues"], "the ward hums": ["✦", "wardHums"], "the harmonium": ["✦", "harmoniumAnswers"] },
+  ```
+
+  Each stage carries `t0` (when it sounds) and `label`, as the handbells'
+  do.
 - **Timing.** `standingGuest`'s `defer` is exactly what the gift wants.
   Its arm-tick rides the same lane (`cueAt("guests", …)`), gated by
   `C_live(V)`.
@@ -481,7 +513,8 @@ C.hosanna = SUN && SUN.hosanna ? { possible: true, built: !!HOg, seat: hoSeat, s
 - **Holding the hymn.** Its section is held until the far ward's last
   verse has ended (`r.t1 + 2`): up to a line after ours, and the valley's
   tail.
-- **Voices.** Twenty-four, in eight pews, on the wide send.
+- **Voices.** Twenty-four throats (round 2; in eight pews), on the wide
+  send.
 - **Nothing else.** The house already listens during a hymn, so there is
   no `LISTENED` entry. It never plays with the organ; it is another
   ward, unaccompanied.
@@ -490,6 +523,11 @@ C.hosanna = SUN && SUN.hosanna ? { possible: true, built: !!HOg, seat: hoSeat, s
 or tag) and after any band crossing it.
 
 ```js
+// (round 2) the last doxology is the seat's own: plan() found it in the plan
+// it was given (`sections: plan`, which is C.plan, final before any guest
+// is planned — planMeeting's order of service is settled by line ≈288, the
+// hook at ≈554), and C.si is the section the meeting is in (enterSection)
+var isLastDoxology = C.hosanna && C.hosanna.seat && C.si === C.hosanna.seat.sectionIndex;
 if (C.hosanna && C.hosanna.seat && C.section === "doxology" && isLastDoxology) {
   var V = { type: "hosanna", logged: false, stream: C.hosanna.stream, fired: true };
   S.houseLetsGo(t, "hosanna", false);
@@ -498,7 +536,7 @@ if (C.hosanna && C.hosanna.seat && C.section === "doxology" && isLastDoxology) {
       defer: function (at, fn) { cueAt("guests", at, function () { if (S.playing) fn(); }); },
       organDest: S.seatedSend("organ"),
       onStage: function () { /* nothing is told */ },
-      onNote: function (n) { emitNote(n.layer, n.freq, n.t, n.dur, { part: n.part, hymnId: n.hymnId, line: n.line, beat: n.beat, deg: n.deg, monzo: n.monzo, hosanna: true, logged: n.logged }); },
+      onNote: function (n) { emitNote(n.layer, n.freq, n.t, n.dur, guestNote(V, "hosanna", { part: n.part, hymnId: n.hymnId, line: n.line, beat: n.beat, deg: n.deg, monzo: n.monzo, hosanna: true, engrave: n.engrave })); },   // (guestNote: guest "hosanna", logged: false, as V.logged is false)
     });
   guestSpan("hosanna", t, end - t, false);        // guest-start / guest-end, logged: false (UNLOGGED.hosanna)
   C.visitType = "hosanna"; C.visitLogged = false; C.visitUntil = end;
@@ -513,9 +551,23 @@ if (C.hosanna && C.hosanna.seat && C.section === "doxology" && isLastDoxology) {
     itself, not through `singHymn`.
   - No `guests-drawn`: it is not in `C.visitations`.
   - No ✦ row.
-- **The staff.** The hymn's notes are engraved normally (PLAN §8.12).
-  Each note says `logged: true` while `GuestHosanna.ENGRAVE_HYMN` stands.
-  Set it false and they say `logged: false`, so the staff hides them too.
+- **No phrase row either (round 2; the first version got this wrong).**
+  Every note the Hosanna offers says `logged: false` and `guest:
+  "hosanna"`. `kolob-ui.js` `onNoteForLog` passes over `logged: false`, so
+  the first hymn note after the shout's twenty silent seconds does not
+  queue a "♮ choir speaks" row.
+- **The staff.** PLAN §8.12 asks for the hymn to be engraved, the shout
+  not. Each hymn note carries `engrave: GuestHosanna.ENGRAVE_HYMN` (true),
+  but today's staff (`kolob-viz.js` `onNote`) passes over every
+  `logged: false` note. **Until ENGRAVE teaches it to read `engrave`
+  (Requests), the Hosanna is wholly audio-only: nothing in the minutes,
+  nothing on the staff.** `ENGRAVE_HYMN = false` keeps it so afterwards.
+- **The band in the doxology.** The Hosanna overrides PLAN §8.13 (see
+  Round 2, item 8). A band seated in the doxology crosses first; the
+  Hosanna follows at the close. **Recommended:** when `C.hosanna.seat` is
+  set, move the band out, as the cumulative assembly does
+  (`bandsLeaveTheDoxology()`, and reset `C.payoff` if it was `"bands"`).
+  Plan the Hosanna before the payoff is settled to do so.
 
 ### 4. SCORE, to adopt
 
@@ -532,7 +584,11 @@ if (C.hosanna && C.hosanna.seat && C.section === "doxology" && isLastDoxology) {
   - The gift's notes go on `choir` (role `tongues`, `hum`) and
     `harmonium` (role `tongues-reed`). The song's note carries the
     Deseret word, `wordDs`, on each word's first syllable.
-  - The Hosanna's hymn goes on `choir` with `hosanna: true`.
+  - The Hosanna's hymn goes on `choir` with `guest: "hosanna"`,
+    `hosanna: true`, `logged: false` and `engrave` (round 2). SCORE §6
+    today says a `logged: false` note is neither printed nor engraved;
+    adopt `engrave: true` as the one exception, for the staff alone,
+    when ENGRAVE lands it.
 - **`guest` stages:**
   - tongues: `rises`, `sings`, `the height`, `the ward hums`,
     `the harmonium`;
@@ -542,7 +598,7 @@ if (C.hosanna && C.hosanna.seat && C.section === "doxology" && isLastDoxology) {
     `the organ gives out the hymn`, `The Spirit of God`, `the chorus`.
 - **`VoicesVocal`** (this branch, additive):
   - a note's `vowel` may be a syllable spelled by its sounds;
-  - `spec.effort`, `opts.fric`;
+  - `spec.effort`, `opts.fric`, `opts.hSwell` (round 2);
   - `VoicesVocal.syllable(name)`, `VoicesVocal.CONSONANTS`.
 
 ## What it costs (measured, not cut)
@@ -599,12 +655,13 @@ ahead).
     27.7 / 38.3 % with every consonant. They only enlarge the ledger of
     nodes built (2,242 against 4,226), not the audio thread's work.
 - **The far ward** adds about **10 points** of the audio thread while it
-  sings, for its twenty-four voices in eight pews (p90 46.9 % against
-  35.3 %). As offline ledgers: 374–504 voice nodes at its peak (69–238 on
-  average).
+  sings (p90 46.9 % against 35.3 %; measured with eight pews, the first
+  version's default). As offline ledgers: 374–504 voice nodes at its peak
+  (69–238 on average).
   - `prepare()` (with `setTune`) takes 0–5 ms, off the audio path.
-  - The twenty-four-throats A/B (`voices: "people"`) was not traced
-    live. By construction it builds about three times the throats.
+  - **Twenty-four throats against eight pews, traced live by the
+    critic** (round 2; the table there). The throats cost no measurable
+    share of the audio thread, only nodes. They are the default now.
 - **The gift** is a single voice, a hum and a reed: 7–15 % median,
   depending on the machine's moment (the same gift read 21.5 % armed and
   21.9 % unarmed in a slower hour). About 290 voice nodes at the hum's
@@ -667,14 +724,32 @@ ahead).
    - **The gift's notes** are on `choir` (role `tongues`), with the
      Deseret word on each word's first syllable (`wordDs`): the staff
      could underlay the song's own words.
-   - **The Hosanna's hymn notes** say `logged: true` while
-     `ENGRAVE_HYMN` stands (PLAN §8.12). The shout sends none.
+   - **The Hosanna's hymn (round 2, corrected).** Its notes say
+     `logged: false` always, with `guest: "hosanna"` and `engrave: true`
+     (`ENGRAVE_HYMN`). PLAN §8.12 asks for the hymn to be engraved, but
+     `kolob-viz.js` `onNote` (≈:637) passes over every `logged: false`
+     note. **Request:** engrave a note marked `engrave: true` even when
+     it is `logged: false`, and take nothing else from an unlogged guest.
+     - The notes carry `hymnId: "earth:assembly"`, `line` (0–7) and
+       `beat`, but no `verse`, and there is no `hymn-announced` or
+       `verse-line` for them (none may be sent). `scoreRoute` would send
+       them down the Score's path, find no Score, and print them as
+       heard.
+     - The shout sends no notes.
+     - Until this lands, the Hosanna is wholly audio-only, the safe side
+       of the ruling.
 5. **The owner's rulings, when heard:**
    - whether the Hosanna's hymn is engraved (`ENGRAVE_HYMN`);
+   - whether the Hosanna gives way to a guest beside its doxology
+     (`YIELD`; round 2, item 8), and whether a band leaves the doxology
+     for it;
+   - how bright the shout is (`SHOUT_EFFORT`; round 2, item 6);
    - whether the Primary's children shout;
    - how often each guest comes (the `ODDS` tables);
    - how far the far ward stands (`distance` 0.35–1), and its level
-     (`DESK_GAIN`).
+     (`DESK_GAIN`);
+   - the far ward's voices: twenty-four throats (as built since round 2)
+     or eight pews (`voices: "desks"`).
 
 ## Known issues
 
@@ -707,8 +782,8 @@ ahead).
   drawn lag.
   - It sings our line order: the fuge twice, the refrain.
   - It sings the A-men only in our own Tabernacle harmony.
-- **The far ward's voices** are pews (a shared mouth for three), not
-  twenty-four throats. It is another ward, far off; the A/B is in the lab.
+- **The far ward's voices** (round 2) are twenty-four throats; pews are
+  the A/B in the lab.
 - **The longest render callbacks** of the Hosanna run up to 5.2–6.1 ms
   against 5.33 ms on this loaded machine. The audio clock kept time, and
   no dropout was measured, but it is the moment to listen for.
