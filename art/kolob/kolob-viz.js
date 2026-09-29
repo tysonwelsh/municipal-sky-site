@@ -1165,14 +1165,14 @@ window.KolobViz = (function () {
   // inside the other: the second stroke the owner ruled out. The ring is the
   // bell's one outline, 0.45 sp round about a smaller head, its ink's box
   // the width round 1's was: two strokes a step apart (1.15 sp at the
-  // page's rate) stand clear of each other, and the peal prints in the
-  // order it is rung without being made to.)
+  // page's rate) stand clear of each other. The peal is one line, printed
+  // in the order it is rung — the method is read from that order.)
   var TOWER_INK = 0.5, TOWER_MUFFLED = 0.32, TOWER_SCALE = 0.35, TOWER_RING = 1.28;   // (small: a peal's strokes come a staff space apart at the page's rate; the ring, in the head's own size: 0.45 sp)
   function takeTower(ns) {
     var g0 = groups.length;
     takeLayer("tower", ns, 1, null, { scale: TOWER_SCALE, ink: ns[0].muffled ? TOWER_MUFFLED : TOWER_INK,
       qOf: function (n) { return keyedQ(n.freq, null, null, n.monzo, cond.mode); } });
-    var gs = madeSince(g0, 1);
+    var gs = madeSince(g0, 1, "peal");
     unstemmed(gs, false);
     gs.forEach(function (gr) { gr.ring = true; gr.ringK = TOWER_RING; });
   }
@@ -3268,7 +3268,7 @@ window.KolobViz = (function () {
     var lim = gr.hymn ? HYMN_DX_MAX * sp : gr.cap != null ? gr.cap * sp : 1e9, dx = dx0;
     var ord = gr.cap != null ? orderAt(gr, g) : -1e9;   // (round 3c, round 2: a guest's line in the order it is sung)
     if (ord > dx) dx = ord;
-    for (var pass = 0; pass < (gr.cap != null ? 8 : 4); pass++) {      // (round 3c: a guest's note, with beams to clear as well, may need more)
+    for (var pass = 0; pass < (gr.hymn ? 4 : 8); pass++) {      // (round 3c: a guest's note, with beams to clear as well, may need more; round 2: so may the house's reeds, stepping round a peal)
       var need = dx;
       for (var i = 0; i < groups.length; i++) {
         var A = groups[i];
