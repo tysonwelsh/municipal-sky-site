@@ -1321,7 +1321,7 @@ window.KolobViz = (function () {
     if (drones.length) {
       var d0 = groups.length;
       takeLayer("fiddle", drones, beat, null, { scale: FIDDLE_SCALE, qOf: qOf });
-      madeSince(d0, FIDDLE_CAP);
+      madeSince(d0, FIDDLE_CAP).forEach(function (gr) { gr.drone = true; });   // (a voice of its own, held: orderAt)
     }
     fiddleBars(made, line);
     fiddleBeams(made);
@@ -3163,6 +3163,8 @@ window.KolobViz = (function () {
     // (round 3c: a new guest's note keeps within its own cap, as a hymn's
     // does, so a quick guest — the fiddle's reel — never drifts from its sound)
     var lim = gr.hymn ? HYMN_DX_MAX * sp : gr.cap != null ? gr.cap * sp : 1e9, dx = dx0;
+    var ord = gr.cap != null ? orderAt(gr, g) : -1e9;   // (round 3c, round 2: a guest's line in the order it is sung)
+    if (ord > dx) dx = ord;
     for (var pass = 0; pass < (gr.cap != null ? 8 : 4); pass++) {      // (round 3c: a guest's note, with beams to clear as well, may need more)
       var need = dx;
       for (var i = 0; i < groups.length; i++) {
@@ -3212,7 +3214,7 @@ window.KolobViz = (function () {
     // before it, as a hymn's does, but it never stands on a bar, and no
     // head of either is struck through by the other's ink — a stem, a
     // ledger, a flag, a beam, another head: there it goes on past)
-    if (!gr.hymn && gr.cap != null && dx > lim && (onBar(gr, g, bx, lim) || onHead(gr, g, bx, lim) || beamHit(gr, g, bx, lim) != null)) lim = dx;
+    if (!gr.hymn && gr.cap != null && dx > lim && (ord > lim + 0.01 || onBar(gr, g, bx, lim) || onHead(gr, g, bx, lim) || beamHit(gr, g, bx, lim) != null)) lim = dx;
     return { need: dx, lim: lim, bx: bx, ink: ink };
   }
   // (on a bar, or within a pixel or two of it: the page's pixels round each
@@ -3246,6 +3248,28 @@ window.KolobViz = (function () {
       }
     }
     return false;
+  }
+  // (round 3c, round 2) A guest's line reads left to right in the order it
+  // is sung: a note never prints left of an earlier note of its own layer on
+  // its staff (the organist's running figure, pushed along by the chords
+  // under it, read backwards and lost its beams). Where an earlier note has
+  // been set past its time, this one follows it — as far after it as its
+  // own time would put it, but never more than two half-heads (so a note
+  // whose neighbour kept its place is not touched). The least offset that
+  // keeps the order; -1e9 where nothing asks. (The open string under the
+  // fiddle's tune is a voice of its own, held: it asks nothing.)
+  function orderAt(gr, g) {
+    var sp = g.sp, out = -1e9;
+    if (gr.drone) return out;
+    for (var i = 0; i < groups.length; i++) {
+      var A = groups[i];
+      if (A === gr || A.layer !== gr.layer || A.st !== gr.st || A.drone || A.noCol || !(A.col && A.col.sp === sp) || !(A.lastA > 0.05)) continue;
+      var d0 = (gr.tp - A.tp) * SCROLL_PX_S;
+      if (d0 < 1e-3 || d0 > 12 * sp) continue;
+      var adv = 0.64 * ((A.scale || 1) + (gr.scale || 1)) * sp;
+      out = Math.max(out, A.col.dx - d0 + Math.min(d0, adv));
+    }
+    return out;
   }
   // The far ward sings on our beats, a line behind, and its notes can fall
   // where one of our bars must stand (a double bar in our breath between two
@@ -4001,12 +4025,14 @@ window.KolobViz = (function () {
       bm.members.forEach(function (m) { if (m.drawnAt === FRAME) xs.push(m.lastSx); });
       if (xs.length < 1) return;
       var two = bm.members.some(function (m) { return (m.flags || 1) >= 2; }), ext = (two ? 1.25 : 0.5) * s * dir;
-      var xa = Math.min.apply(null, xs) - sw / 2, xb = Math.max.apply(null, xs) + sw / 2, segs = [];
+      // (round 3c, round 2: from its first stem to its last, as drawBeam lays
+      // it — a beam whose notes print out of order draws nothing, and says so)
+      var xa = xs[0] - sw / 2, xb = xs[xs.length - 1] + sw / 2, segs = [];
       for (var x = xa; x < xb - 0.01; x += 0.25 * s) {
         var x2 = Math.min(xb, x + 0.25 * s), y1 = Math.min(yAt(x), yAt(x2)), y2 = Math.max(yAt(x), yAt(x2));
         segs.push([x, y1 + Math.min(0, ext), x2, y2 + Math.max(0, ext)]);
       }
-      out.beams.push({ layer: gr.layer, st: gr.st, tps: bm.members.map(function (m) { return m.tp; }), a: gr.lastA, guest: gr.cap != null, segs: segs });
+      out.beams.push({ layer: gr.layer, st: gr.st, tps: bm.members.map(function (m) { return m.tp; }), a: gr.lastA, guest: gr.cap != null, segs: segs, rev: xb <= xa });
     });
     marks.forEach(function (m) {
       if (m.kind !== "bar" || !(m.at && m.at.sp === g.sp) || m.tp > PT) return;
