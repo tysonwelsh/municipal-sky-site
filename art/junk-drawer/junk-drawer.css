@@ -1033,6 +1033,8 @@ html { scroll-behavior: smooth; }
 }
 .jd-notes--drawer .jd-build,
 .jd-notes--drawer .jd-back { font-family: var(--font-mono); font-size: var(--fs-xs); }
+/* the manila button sits centred under the paragraphs (owner, 2026-09-29) */
+.jd-notes--drawer .jd-about-cta { text-align: center; }
 
 /* the ↑ twin of the manila tag */
 .jd-back {

@@ -46,12 +46,13 @@ include '../../includes/header.php';
       <p>Every object in it is an SVG drawn by a large language model. Each
       prompt goes to four leading models at once, and every drawing gets
       graded, without knowing which model made it.</p>
-      <p>Dig around: drag things, or tap one to see its tag. Press the blue
-      button to give the four models a prompt of your own.</p>
+      <p>It's interactive! Rummage around and select an item for more
+      details. Or press the glowing blue button to get your very own AI
+      generated SVGs.</p>
     </div>
 
     <p class="jd-about-cta"><a href="/art/junk-drawer/about/">Click here to learn
-    more about the SVG junk drawer &rarr;</a></p>
+    more &rarr;</a></p>
 
     <!-- The COLOPHON section and its paragraph went 2026-09-10 (owner call);
          the "generative art series" link and the deploy date/time went
