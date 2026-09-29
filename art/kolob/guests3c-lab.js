@@ -162,7 +162,7 @@ window.Guests3c = (function () {
     var seat = TG.plan(info, s), h = hymnOf(st);
     var mat = { mode: h.mode, keynoteHz: st.keynote, house: st.dialect, ward: ward, singer: seat ? seat.singer : null, harmonium: o.noReed ? false : undefined };
     if (V.budget) V.budget.reset();
-    var end = TG.perform(ctx, into.input, t, mat, s, { defer: o.defer || null, onNote: o.onNote || null, onStage: o.onStage || null });
+    var end = TG.perform(ctx, into.input, t, mat, s, { defer: o.defer || null, onNote: o.onNote || null, onStage: o.onStage || null, only: o.only || null });
     var sc = TG.perform.last.score;
     var hum0 = sc.stages[3].t - t, reed0 = sc.reed.notes.length ? sc.reed.notes[0].t - t : null;
     var windows = [{ name: "the song", a: 0.3, b: hum0 }, { name: "the ward's hum", a: hum0, b: reed0 != null && !o.noReed ? reed0 + 3 : end - t }];
@@ -191,8 +191,18 @@ window.Guests3c = (function () {
     var ob = ctx.createGain(); ob.gain.value = ORGAN_LAB; ob.connect(into.input);
     var org = ws.organ && K.VoicesOrgan ? K.VoicesOrgan.create(ctx, ob, { gain: 1, seed: st.seed, t0: t }) : null;
     var perf = Cast.performer(ws.ward, { V: V, synth: R(st.seed).fork("synth:vocal"), organ: org ? function (at, oc) { org.play(at, oc.notes, oc.registration); } : null });
-    if (V.budget) V.budget.reset();
-    perf.schedule(ctx, { hall: bus, near: bus }, t, freshSheet(ws.sheet));
+    if (V.budget && !o.keepBudget) V.budget.reset();
+    var sheet = freshSheet(ws.sheet), buses = { hall: bus, near: bus };
+    // live, the engine's own way: a pump every 0.12 s of the clock, at most
+    // twelve lines a call, each joined 0.6 s before it sounds (the ward's
+    // desk, kolob-voices-choir.js); offline, every line at once
+    if (o.defer) (function tick(at) {
+      o.defer(at, function () {
+        perf.pump(ctx, buses, t, sheet, at + 3.0, { max: 12, urgent: at + 1.2, arm: at + 0.6, now: at });
+        if (at < t + ws.sheet.end + 2) tick(at + 0.12);
+      });
+    })(t);
+    else perf.schedule(ctx, buses, t, sheet);
     return { dur: ws.sheet.end + 3, expect: [], stats: budgetStats(t, t + ws.sheet.end), ws: ws };
   };
   function farMaterial(st, t, o) {
@@ -748,6 +758,67 @@ window.Guests3c = (function () {
     return card;
   }
 
+  // ---- the gift's pitch, tracked ---------------------------------------------------
+  // The singer alone, dry, rendered; a YIN pitch track (12 kHz, 40 ms
+  // windows, 20 ms hops) against the score: how many frames sound the note
+  // written for them (within 60 cents), for the syllables and for the
+  // melismas apart — the first 70 ms of each note left out (the voice's scoop)
+  function yin(x, sr, fmin, fmax, win, hop) {
+    var W = Math.round((win || 0.04) * sr), H = Math.round((hop || 0.02) * sr), tmin = Math.floor(sr / fmax), tmax = Math.ceil(sr / fmin), out = [];
+    for (var s0 = 0; s0 + W + tmax < x.length; s0 += H) {
+      var e = 0; for (var i = 0; i < W; i++) e += x[s0 + i] * x[s0 + i];
+      if (e / W < 1e-7) { out.push(null); continue; }
+      var d = new Float32Array(tmax + 1), run = 0, best = -1;
+      for (var tau = 1; tau <= tmax; tau++) {
+        var sum = 0; for (var j = 0; j < W; j++) { var df = x[s0 + j] - x[s0 + j + tau]; sum += df * df; }
+        run += sum; d[tau] = sum * tau / (run || 1);
+      }
+      for (var t2 = tmin; t2 < tmax; t2++) if (d[t2] < 0.15 && d[t2] <= d[t2 + 1]) { best = t2; break; }
+      if (best < 0) { out.push(null); continue; }
+      var a = d[best - 1], b = d[best], c = d[best + 1], sh = (a - c) / (2 * (a - 2 * b + c) || 1);
+      out.push(sr / (best + (isFinite(sh) ? sh : 0)));
+    }
+    return { f: out, hop: H / sr, win: W / sr };
+  }
+  function pitchCheck() {
+    return render("tongues", { only: "singer", room: "dry" }).then(function (r) {
+      var sc = r.res.score, L = r.buf.getChannelData(0), Rr = r.buf.getChannelData(1), ds = 4, n = Math.floor(L.length / ds), x = new Float32Array(n);
+      for (var i = 0; i < n; i++) { var acc = 0; for (var k = 0; k < ds; k++) acc += L[i * ds + k] + Rr[i * ds + k]; x[i] = acc / (2 * ds); }
+      var fs = sc.notes.map(function (m) { return m.f; }), tr = yin(x, SR / ds, Math.min.apply(null, fs) / 1.5, Math.max.apply(null, fs) * 1.5);
+      var tally = { syl: [0, 0], mel: [0, 0], octave: 0, unvoiced: 0 };
+      sc.notes.forEach(function (m) {
+        var a = m.t + 0.07, b = m.t + m.dur - 0.02;
+        for (var q = Math.ceil((a - tr.win / 2) / tr.hop); q * tr.hop + tr.win / 2 < b; q++) {          // (the score's times are the render's own)
+          var f = tr.f[q], key = m.slur ? "mel" : "syl";
+          if (f == null) { tally.unvoiced++; continue; }
+          var c = 1200 * Math.log(f / m.f) / Math.LN2;
+          tally[key][1]++;
+          if (Math.abs(c) <= 60) tally[key][0]++; else if (Math.abs(Math.abs(c) - 1200) <= 60) tally.octave++;
+        }
+      });
+      // EACH NOTE HEARD: a fine track (20 ms windows, 5 ms hops); a note's
+      // median pitch over the second half of its length, against the
+      // pitch written for it and its neighbours' — identified when it is
+      // nearer its own than either neighbour's, and within 60 cents
+      var fine = yin(x, SR / ds, Math.min.apply(null, fs) / 1.5, Math.max.apply(null, fs) * 1.5, 0.02, 0.005), ident = { syl: [0, 0], mel: [0, 0] }, dev = [];
+      sc.notes.forEach(function (m, i) {
+        var a = m.t + 0.5 * m.dur, b = m.t + 0.97 * m.dur, got = [];
+        for (var q = Math.ceil((a - fine.win / 2) / fine.hop); q * fine.hop + fine.win / 2 < b; q++) if (fine.f[q]) got.push(fine.f[q]);
+        if (!got.length) return;
+        got.sort(function (u, v) { return u - v; });
+        var f = got[Math.floor(got.length / 2)], key = m.slur ? "mel" : "syl", c = 1200 * Math.log(f / m.f) / Math.LN2;
+        var near = function (g) { return g ? Math.abs(1200 * Math.log(f / g) / Math.LN2) : 1e9; };
+        var prev = sc.notes[i - 1] && Math.abs(sc.notes[i - 1].f / m.f - 1) > 0.01 ? sc.notes[i - 1].f : null, next = sc.notes[i + 1] && Math.abs(sc.notes[i + 1].f / m.f - 1) > 0.01 ? sc.notes[i + 1].f : null;
+        ident[key][1]++;
+        if (Math.abs(c) <= 60 && Math.abs(c) < near(prev) && Math.abs(c) < near(next)) ident[key][0]++;
+        if (m.slur) dev.push(Math.abs(c));
+      });
+      dev.sort(function (u, v) { return u - v; });
+      return { syllables: tally.syl, melisma: tally.mel, octave: tally.octave, unvoiced: tally.unvoiced, identified: ident, melismaMedianCents: dev.length ? +dev[Math.floor(dev.length / 2)].toFixed(1) : null, melismaNotes: sc.notes.filter(function (m) { return m.slur; }).length,
+               meanMelismaNoteS: +(sc.notes.filter(function (m) { return m.slur; }).reduce(function (a2, m) { return a2 + m.dur; }, 0) / Math.max(1, sc.notes.filter(function (m) { return m.slur; }).length)).toFixed(3) };
+    });
+  }
+
   // ---- INIT ---------------------------------------------------------------------
   var CARDS = [["tongues", tonguesCard, tonguesPlan], ["farward", farwardCard, farwardPlan], ["hosanna", hosannaCard, hosannaPlan], ["odds", oddsCard, function () {}]];
   function refresh() {
@@ -779,7 +850,7 @@ window.Guests3c = (function () {
 
   return {
     play: play, stop: stop, check: check, render: render, refresh: refresh, cost: cost, farCheck: function () { return farCheck(); },
-    now: function () { return actx ? actx.currentTime : 0; }, ctx: function () { return actx; }, odds: odds, purity: purity, standIn: standIn,
+    now: function () { return actx ? actx.currentTime : 0; }, ctx: function () { return actx; }, odds: odds, purity: purity, standIn: standIn, pitchCheck: pitchCheck,
     hymn: function () { return hymnOf(settings()); }, ward: function () { return wardOf(settings()); }, told: function () { return told.slice(); },
     _P: P, _settings: settings,
   };

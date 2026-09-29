@@ -66,7 +66,8 @@
 //                 seating has none — the hum ends it) }
 //   perform(ctx, dest, t, material, stream, hooks?) → end time (s, absolute)
 //     hooks: { defer(at, fn), onNote(n), onStage(st), harmonium(t, notes,
-//              gainMul) (the engine's own reed, if it would rather) }
+//              gainMul) (the engine's own reed, if it would rather),
+//              only: "singer" | "hum" | "reed" (a lab's solo; never the engine) }
 //   gesture(score) → [[deg, …]] the song's opening for the composer
 //   tongue(stream) → the syllables and words of one song (pure)
 //   ODDS, EXCLUDES, NAME, LABEL, LEVEL
@@ -332,7 +333,10 @@ window.KOLOB.GuestTongues = (function () {
         var cdD = wr.next(), cdW = wr.next();
         if (codas.length && cdD < 0.18) syls[syls.length - 1].coda = codas[Math.floor(cdW * codas.length)];
         var key = syls.map(sounds).join("."), ds = dsOf(syls);
-        if (BLOCK[key] || seen[key] || (ds && avoid[ds])) continue;
+        // (and a word of one syllable said over and over — la-la, na-na-na,
+        // ga-ga — is the nursery's and the chorus's, not a tongue's)
+        var same = syls.every(function (x) { return sounds(x) === sounds(syls[0]); });
+        if (BLOCK[key] || seen[key] || same || (ds && avoid[ds])) continue;
         got = { syl: syls.map(sounds), sounds: key, ds: ds, tries: tries };
         seen[key] = 1;
       }
@@ -678,7 +682,8 @@ window.KOLOB.GuestTongues = (function () {
     material = material || {};
     var sc = score(material, stream, t), synth = stream.fork("synth");
     var bus = ctx.createGain(); bus.gain.value = LEVEL; bus.connect(dest);
-    function later(at, fn) { if (hooks.defer && at - AHEAD > t) hooks.defer(at - AHEAD, fn); else fn(); }
+    // (with a clock, every slice is a cue of its own — even one due now)
+    function later(at, fn) { if (hooks.defer) hooks.defer(Math.max(t, at - AHEAD), fn); else fn(); }
     function stage(st) { if (hooks.onStage) later(st.t, function () { hooks.onStage({ stage: st.stage, t: st.t, guest: NAME }); }); }
     sc.stages.forEach(function (st, i) { if (i < 4 || material.harmonium !== false) stage(st); });
     var armed = armTicker(V, ctx, hooks, t, sc.end);
@@ -686,7 +691,8 @@ window.KOLOB.GuestTongues = (function () {
     var spec = {}; for (var k in sc.singerSpec) spec[k] = sc.singerSpec[k];
     spec.rand = synth.fork("singer"); spec.pan = sc.pan; spec.kind = "tongues"; spec.name = "tongues";
     var voice = V.singer(spec);
-    sc.lines.forEach(function (ln) {
+    var only = hooks.only || null;                  // (a lab's solo: "singer" | "hum" | "reed"; the engine never sets it)
+    if (!only || only === "singer") sc.lines.forEach(function (ln) {
       later(ln.t0, function () {
         voice.sing(ctx, bus, ln.notes[0].t, ln.notes.map(function (x) { return { f: x.f, dur: x.dur, vowel: x.vowel, stress: x.stress, slur: !!x.slur }; }),
                    SING_GAIN, { breathBefore: ln.breathBefore, inhale: 0.9, pan: sc.pan, defer: armed });
@@ -697,7 +703,7 @@ window.KOLOB.GuestTongues = (function () {
     });
     // the ward's hum: eight at a time
     var hum = sc.hum.slice().sort(function (a, b) { return a.at - b.at; });
-    for (var g0 = 0; g0 < hum.length; g0 += 8) (function (grp) {
+    if (!only || only === "hum") for (var g0 = 0; g0 < hum.length; g0 += 8) (function (grp) {
       later(grp[0].at, function () {
         grp.forEach(function (h) {
           var hs = {}; for (var kk in h.voice) hs[kk] = h.voice[kk];
@@ -709,7 +715,7 @@ window.KOLOB.GuestTongues = (function () {
     })(hum.slice(g0, g0 + 8));
     // the harmonium
     var reedR = synth.fork("reed"), end = sc.end;
-    if (material.harmonium === false || !sc.reed.notes.length) end = sc.endNoReed;
+    if (material.harmonium === false || !sc.reed.notes.length || (only && only !== "reed")) end = only === "singer" ? sc.singerEnd + 1 : sc.endNoReed;
     else later(sc.reed.notes[0].t, function () {
       if (hooks.harmonium) { hooks.harmonium(sc.reed.notes[0].t, sc.reed.notes.map(function (x) { return { f: x.f, dur: x.dur }; }), REED_GAIN); if (sc.reed.drone) hooks.harmonium(sc.reed.drone.t, [{ f: sc.reed.drone.f, dur: sc.reed.drone.dur }], REED_GAIN * 0.5); }
       else { reedLine(ctx, bus, sc.reed.notes, REED_GAIN, reedR.fork("line"), false); if (sc.reed.drone) reedLine(ctx, bus, [sc.reed.drone], REED_GAIN, reedR.fork("drone"), true); }

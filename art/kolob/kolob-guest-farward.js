@@ -404,7 +404,7 @@ window.KOLOB.GuestFarWard = (function () {
           });
           if (hooks.onNote) ln.desks.forEach(function (dk) { if (dk.k % 2) return; dk.notes.forEach(function (n) { hooks.onNote({ layer: "farward", freq: n.f, t: n.t + pr.delayS, dur: n.dur, part: dk.part, guest: NAME, deg: n.deg, cents: n.cents, verse: sc.v, line: ln.li }); }); });
         }
-        if (hooks.defer && ln.t0 - AHEAD > now) hooks.defer(ln.t0 - AHEAD, go); else go();
+        if (hooks.defer) hooks.defer(Math.max(now, ln.t0 - AHEAD), go); else go();
       });
     }
     return {

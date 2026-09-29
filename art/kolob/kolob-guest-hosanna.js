@@ -374,8 +374,10 @@ window.KOLOB.GuestHosanna = (function () {
     var sc = score(material, stream, t), synth = stream.fork("synth");
     var bus = ctx.createGain(); bus.gain.value = LEVEL; bus.connect(dest);
     var obus = ctx.createGain(); obus.gain.value = LEVEL; obus.connect(hooks.organDest || dest);
-    function later(at, fn) { if (hooks.defer && at - AHEAD > t) hooks.defer(at - AHEAD, fn); else fn(); }
-    function laterBy(at, lead, fn) { if (hooks.defer && at - lead > t) hooks.defer(at - lead, fn); else fn(); }
+    // (with a clock, every slice is a cue of its own — even one due now — so
+    // the moment the Hosanna is cued costs only its score)
+    function later(at, fn) { if (hooks.defer) hooks.defer(Math.max(t, at - AHEAD), fn); else fn(); }
+    function laterBy(at, lead, fn) { if (hooks.defer) hooks.defer(Math.max(t, at - lead), fn); else fn(); }
     sc.stages.forEach(function (st) { if (hooks.onStage) later(st.t, function () { hooks.onStage({ stage: st.stage, t: st.t, guest: NAME, logged: LOGGED }); }); });
     // ARMING (VoicesVocal's): with the engine's clock, every line is built a
     // little ahead but joins the room only just before it sounds, and each of
@@ -401,7 +403,9 @@ window.KOLOB.GuestHosanna = (function () {
       });
     })(c, sc.people.slice(g0, g0 + 5));
     // THE HYMN: the organ on its own way into the rooms, full; the ward
-    var organ = VO && VO.create ? VO.create(ctx, obus, { gain: ORGAN_GAIN, rand: synth.fork("organ"), t0: sc.hymn.giving.t0 - 0.5 }) : null;
+    // (the organ is built in its first slice, not in the cue)
+    var organ = null, orgR = synth.fork("organ");
+    function org() { return organ || (organ = VO && VO.create ? VO.create(ctx, obus, { gain: ORGAN_GAIN, rand: orgR, t0: sc.hymn.giving.t0 - 0.5 }) : null); }
     var H = sc.hymn, ward = {};
     function voice(s) {
       if (ward[s.memberId]) return ward[s.memberId];
@@ -418,12 +422,12 @@ window.KOLOB.GuestHosanna = (function () {
     // keys' nodes waiting on the audio thread): the tremulant set by the
     // first piece of a line, the level law fixed for four voices throughout
     function organLine(t0, notes, first) {
-      if (!organ) return;
+      if (!VO || !VO.create) return;
       var bar = 4 * H.beatS, pieces = {};
       notes.forEach(function (nt) { var k = Math.floor((nt.at + 1e-6) / bar); (pieces[k] = pieces[k] || []).push(nt); });
       Object.keys(pieces).map(Number).sort(function (a, b) { return a - b; }).forEach(function (k, i) {
         var at0 = t0 + k * bar, ns = pieces[k].map(function (nt) { return { f: nt.f, dur: nt.dur, at: +(t0 + nt.at - at0).toFixed(4), pedal: nt.pedal, v: nt.v }; });
-        laterBy(at0, ORGAN_AHEAD, function () { organ.play(at0, ns, H.registration, { trem: first && i === 0 ? undefined : false, texture: 4 }); });
+        laterBy(at0, ORGAN_AHEAD, function () { org().play(at0, ns, H.registration, { trem: first && i === 0 ? undefined : false, texture: 4 }); });
       });
     }
     organLine(H.giving.t0, H.giving.notes, true);
@@ -446,7 +450,7 @@ window.KOLOB.GuestHosanna = (function () {
     sg.gain.value = 0; sent.connect(sg); sg.connect(bus);
     sent.onended = function () { if (organ && organ.dispose) organ.dispose(sc.end + 5); try { sg.disconnect(); sent.disconnect(); bus.disconnect(); obus.disconnect(); } catch (e) { /* gone */ } };
     sent.start(Math.max(0, t)); sent.stop(sc.end + 5);
-    perform.last = { score: sc, organ: organ };
+    perform.last = { score: sc, organ: function () { return organ; } };
     return sc.end;
   }
 
