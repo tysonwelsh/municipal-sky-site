@@ -61,8 +61,8 @@
 //   folk.ring(t, {f, v, tech, hits, damp, until, shake, pan | dest}) → nodes
 //       tech: "ring" | "damp" | "mart" | "thumb" | "shake" (see HANDBELLS)
 //   KOLOB.VoicesFolk.bell.{tau, life, casting}(f)  the bronze's own laws (pure)
-//   folk.gull(t, f, {hold, v, pan, dist, kind: "long"|"ha"})
-//   folk.gulls(t, {notes: [f…], beat, birds, from, to, dist, v})
+//   folk.gull(t, f, {hold, up, fall, v, pan, dist, kind: "long"|"ha"})
+//   folk.gulls(t, {notes: [f… | {f, dur}…], beat, birds, from, to, dist, v})
 //       birds: the flock around the lead bird (default 5; 0 = the lead alone)
 //   folk.wheels(t, dur, {beat, carts, from, to, creak, v, still, spread, dest})
 //       still: no travel of its own (a road carries it); dest: where the carts roll
@@ -542,9 +542,13 @@ window.KOLOB.VoicesFolk = (function () {
       var dist = o.dist != null ? o.dist : 0.3;            // 0 close … 1 far
       var v = (o.v != null ? o.v : 1) * 0.1 * (1 - 0.6 * dist);
       var kind = o.kind || "long";
-      var hold = kind === "ha" ? R.rnd(0.05, 0.08) : (o.hold != null ? o.hold : R.rnd(0.18, 0.32));
-      var up = kind === "ha" ? 0.025 : R.rnd(0.05, 0.09);
-      var fall = kind === "ha" ? 0.07 : R.rnd(0.14, 0.24);
+      // (the dice are thrown whatever the caller hands over — a gull's throat
+      // is its own; a tune's bird, round 3c, may set its scoop and fall
+      // shorter, so a quick phrase keeps each held pitch clear of the next)
+      var hold0 = R.rnd(0.18, 0.32), up0 = R.rnd(0.05, 0.09), fall0 = R.rnd(0.14, 0.24);
+      var hold = kind === "ha" ? 0.05 + 0.03 * (hold0 - 0.18) / 0.14 : (o.hold != null ? o.hold : hold0);
+      var up = kind === "ha" ? 0.025 : (o.up != null ? o.up : up0);
+      var fall = kind === "ha" ? 0.07 : (o.fall != null ? o.fall : fall0);
       var tEnd = t + up + hold + fall + 0.05;
       var os = ctx.createOscillator(); os.setPeriodicWave(gullW);
       // kee — the scoop up to the pitch — hold — ow, the fall away
@@ -575,14 +579,18 @@ window.KOLOB.VoicesFolk = (function () {
       count(8, t, tEnd);
       return 8;
     }
-    // a flock crossing: the lead bird traces the notes; the others chatter
+    // a flock crossing: the lead bird traces the notes; the others chatter.
+    // notes: frequencies, or {f, dur} (the tune's own rhythm: a note's cry is
+    // held for about half its length). (The guest, kolob-guest-gulls.js,
+    // lays out each cry itself and calls gull(); this is the lab's flock.)
     function gulls(t, o) {
       o = o || {};
-      var notes = (o.notes || []).filter(function (f) { return f > 0; });
+      var notes = (o.notes || []).map(function (x) { return typeof x === "number" ? { f: x } : x; }).filter(function (x) { return x && x.f > 0; });
       var beat = o.beat || 0.42, birds = o.birds != null ? Math.max(0, o.birds) : 5;
       var from = o.from != null ? o.from : -0.8, to = o.to != null ? o.to : 0.8;
       var dist = o.dist != null ? o.dist : 0.3, v = o.v != null ? o.v : 1;
-      var span = Math.max(notes.length * beat, 2.5) + 1.5, n = 0;
+      var len = 0; notes.forEach(function (x) { len += x.dur || beat; });
+      var span = Math.max(len, 2.5) + 1.5, n = 0;
       function panAt(tt) { var x = Math.max(0, Math.min(1, (tt - t) / span)); return from + (to - from) * x; }
       function distAt(tt) { var x = Math.max(0, Math.min(1, (tt - t) / span)); return dist + (1 - dist) * 0.55 * Math.pow(2 * x - 1, 2); }
       // the gulls' register is ~650–1400 Hz. The TUNE moves there by one
@@ -590,29 +598,29 @@ window.KOLOB.VoicesFolk = (function () {
       // geometric mean of its lowest and highest notes) nearest 954 Hz — so
       // every step and leap keeps its direction. (Folding note by note would
       // send a tune's last rise down a seventh.) The chatter is only pitches
-      // drawn from the tune, so each of those folds on its own.
-      var shift = 1;
-      if (notes.length) {
-        var mid = Math.sqrt(Math.min.apply(null, notes) * Math.max.apply(null, notes));
-        shift = Math.pow(2, Math.round(Math.log(954 / mid) / Math.LN2));
-      }
-      function fold(f) { while (f < 650) f *= 2; while (f > 1400) f /= 2; return f; }
+      // drawn from the tune, kept within the lead's own span (an octave from
+      // just under its lowest note), so the flock never contradicts it.
+      var shift = 1, fs = notes.map(function (x) { return x.f; });
+      if (fs.length) shift = Math.pow(2, Math.round(Math.log(954 / Math.sqrt(Math.min.apply(null, fs) * Math.max.apply(null, fs))) / Math.LN2));
+      var lo = fs.length ? Math.min.apply(null, fs) * shift * 0.94 : 650;
+      function fold(f) { while (f < lo) f *= 2; while (f >= lo * 2) f /= 2; return f; }
       var tt = t + 0.6;
-      notes.forEach(function (f, i) {
-        var at = tt + i * beat + R.rnd(-0.03, 0.03);
-        n += gull(at, f * shift, { hold: beat * 0.55, pan: panAt(at), dist: distAt(at), v: v });
+      notes.forEach(function (x) {
+        var d = x.dur || beat, at = tt + R.rnd(-0.03, 0.03);
+        n += gull(at, x.f * shift, { hold: d * 0.55, pan: panAt(at), dist: distAt(at), v: v });
+        tt += d;
       });
       // the chatter: short cries and laughs from the rest of the flock
       var chatter = Math.round(birds * span * 0.55);
       for (var c = 0; c < chatter; c++) {
         var ct = t + R.rnd(0, span);
-        var base = fold(notes.length ? R.pick(notes) * R.pick([1, 1.5, 0.75]) : R.rnd(700, 1200));
+        var base = fold(fs.length ? R.pick(fs) * shift * R.pick([1, 1.5, 0.75]) : R.rnd(700, 1200));
         var kind = R.chance(0.45) ? "ha" : "long";
-        var d = Math.min(1, distAt(ct) + R.rnd(0.1, 0.35));
+        var d2 = Math.min(1, distAt(ct) + R.rnd(0.1, 0.35));
         if (kind === "ha") {
           var k = Math.floor(R.rnd(2, 5));
-          for (var j = 0; j < k; j++) n += gull(ct + j * R.rnd(0.12, 0.16), base * (1 - j * 0.03), { kind: "ha", pan: panAt(ct) + R.rnd(-0.25, 0.25), dist: d, v: v * 0.8 });
-        } else n += gull(ct, base * R.rnd(0.97, 1.03), { pan: panAt(ct) + R.rnd(-0.25, 0.25), dist: d, v: v * 0.75 });
+          for (var j = 0; j < k; j++) n += gull(ct + j * R.rnd(0.12, 0.16), base * (1 - j * 0.03), { kind: "ha", pan: panAt(ct) + R.rnd(-0.25, 0.25), dist: d2, v: v * 0.8 });
+        } else n += gull(ct, base * R.rnd(0.97, 1.03), { pan: panAt(ct) + R.rnd(-0.25, 0.25), dist: d2, v: v * 0.75 });
       }
       return n;
     }
