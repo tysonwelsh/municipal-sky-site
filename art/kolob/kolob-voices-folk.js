@@ -64,7 +64,8 @@
 //   folk.gull(t, f, {hold, v, pan, dist, kind: "long"|"ha"})
 //   folk.gulls(t, {notes: [f…], beat, birds, from, to, dist, v})
 //       birds: the flock around the lead bird (default 5; 0 = the lead alone)
-//   folk.wheels(t, dur, {beat, carts, from, to, creak, v})
+//   folk.wheels(t, dur, {beat, carts, from, to, creak, v, still, spread, dest})
+//       still: no travel of its own (a road carries it); dest: where the carts roll
 //   folk.out · folk.stats() → { standing, created, peakLive, until, maxRing }
 // ============================================================================
 
@@ -624,18 +625,30 @@ window.KOLOB.VoicesFolk = (function () {
       var creakAmt = o.creak != null ? o.creak : 0.7, v = (o.v != null ? o.v : 1) * 3;
       var from = (o.from != null ? o.from : -0.7) + ci * 0.18, to = (o.to != null ? o.to : 0.7) + ci * 0.18;
       var tEnd = t + dur, n = 0;
-      // the whole cart travels: one panner, one approach-and-recede gain
+      // the whole cart travels: one panner, one approach-and-recede gain —
+      // or (o.still, round 3c) it stands in the company and the company's
+      // road carries it (KOLOB.VoicesBand.road: the handcart guest): a level
+      // held (in and out over half a second), the carts a little apart
       var pn = ctx.createStereoPanner ? ctx.createStereoPanner() : ctx.createGain();
-      if (pn.pan) { pn.pan.setValueAtTime(from, t); pn.pan.linearRampToValueAtTime(to, tEnd); }
       var near = ctx.createGain();
-      near.gain.setValueAtTime(0, t);
-      near.gain.linearRampToValueAtTime(v, t + dur * 0.4);
-      near.gain.setValueAtTime(v, t + dur * 0.6);
-      near.gain.linearRampToValueAtTime(0, tEnd);
       var air = ctx.createBiquadFilter(); air.type = "lowpass"; air.Q.value = 0.5;   // distance darkens
-      air.frequency.setValueAtTime(1800, t); air.frequency.linearRampToValueAtTime(6500, t + dur * 0.45);
-      air.frequency.setValueAtTime(6500, t + dur * 0.55); air.frequency.linearRampToValueAtTime(1800, tEnd);
-      near.connect(air); air.connect(pn); pn.connect(out);
+      if (o.still) {
+        if (pn.pan) pn.pan.setValueAtTime(Math.max(-1, Math.min(1, (o.spread != null ? o.spread : 0.25) * (ci % 2 ? 1 : -1) * (1 + ci) / 2)), t);
+        near.gain.setValueAtTime(0, t);
+        near.gain.linearRampToValueAtTime(v, t + 0.5);
+        near.gain.setValueAtTime(v, tEnd - 0.5);
+        near.gain.linearRampToValueAtTime(0, tEnd);
+        air.frequency.setValueAtTime(6500, t);
+      } else {
+        if (pn.pan) { pn.pan.setValueAtTime(from, t); pn.pan.linearRampToValueAtTime(to, tEnd); }
+        near.gain.setValueAtTime(0, t);
+        near.gain.linearRampToValueAtTime(v, t + dur * 0.4);
+        near.gain.setValueAtTime(v, t + dur * 0.6);
+        near.gain.linearRampToValueAtTime(0, tEnd);
+        air.frequency.setValueAtTime(1800, t); air.frequency.linearRampToValueAtTime(6500, t + dur * 0.45);
+        air.frequency.setValueAtTime(6500, t + dur * 0.55); air.frequency.linearRampToValueAtTime(1800, tEnd);
+      }
+      near.connect(air); air.connect(pn); pn.connect(o.dest || out);
       n += 3;
       // iron tire on gravel: a continuous low crunch, lumpy with the ground
       var cr = ctx.createBiquadFilter(); cr.type = "bandpass"; cr.frequency.value = R.rnd(380, 520); cr.Q.value = 0.9;
