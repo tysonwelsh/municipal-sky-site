@@ -1691,8 +1691,11 @@ window.KOLOB.Organist = (function () {
   // chorale prelude on the same hymn (up to 4.7 over the engine's organ) and
   // the Victorian's minuet on the vox humana 3.6–4.6 under it; the finale is
   // held back and the minuet brought forward, so the set's loudest moment
-  // is within ±2 LU of the organ the owner has set
+  // is within ±2 LU of the organ the owner has set. (The plain organist's
+  // finale is held back less: at −3 dB it sat under his own trio — the
+  // finale must still be the set's climax)
   var VAR_DYN = { finale: -3.0, minuet: 1.5 };
+  var VAR_DYN_STYLE = { plain: { finale: -1.5 } };
 
   // the tune of a line, its tied notes joined: [{ b, beats, m (from the
   // keynote), n }]
@@ -1919,13 +1922,16 @@ window.KOLOB.Organist = (function () {
     return v;
   }
   // THE THEME: the hymn as written, a plain chorale — the plain organist on
-  // the principal or the flutes, the Victorian on the principal with his
+  // the principal, the Victorian on the principal with his
   // suspensions and his swell, the improviser on the principal and the 4′;
   // a tenor tune (the Sacred Harp's) on the trumpet in the tenor
   VAR_PLAY.chorale = function (C, idx, t) {
     var h = C.h, R = C.R.fork("var:chorale"), st = C.style;
     var bs = h.beatS * C.tempo * (st === "plain" ? R.rnd(1.05, 1.15) : st === "victorian" ? R.rnd(1.1, 1.22) : R.rnd(1.0, 1.1));
-    var reg = st === "plain" ? R.pickW([["hymn principal", 0.6], ["flutes 8 & 4", 0.4]]) : st === "victorian" ? "hymn principal" : "principal & 4";
+    // (the plain organist's theme is the principal, as printed — his flutes
+    // are his dances'; the die is thrown all the same)
+    var regDie = R.rnd(0, 1), reg = st === "improviser" ? "principal & 4" : "hymn principal";
+    void regDie;
     var rit = R.rnd(1.08, 1.2);
     swell(C.plan, t, st === "plain" ? 0.62 : 0.55, 0.05);
     var tenor = h.melodyPart !== "S";
@@ -2354,7 +2360,8 @@ window.KOLOB.Organist = (function () {
         if (d <= budget * 1.25) { best = { d: d, idx: sets[si] }; break; }
       }
       var p0 = plan.phrases.length, r = VAR_PLAY[c](C, best.idx, t);
-      if (VAR_DYN[c]) plan.phrases.slice(p0).forEach(function (p) { p.dyn = (p.dyn || 0) + VAR_DYN[c]; });
+      var vd = VAR_DYN_STYLE[style] && VAR_DYN_STYLE[style][c] != null ? VAR_DYN_STYLE[style][c] : VAR_DYN[c];
+      if (vd) plan.phrases.slice(p0).forEach(function (p) { p.dyn = (p.dyn || 0) + vd; });
       var name = c === "chorale" ? "the theme" : c === "finale" ? "the finale" : c === "bitonal" ? "an interlude" : "variation " + (++nVar);
       var what = name + ": " + VAR_CHARS[c].en + " (" + r.regs.join("; ") + ")" + (c === "bitonal" ? " — the tune in two keys" : "");
       section(plan, t, r.end, what);
