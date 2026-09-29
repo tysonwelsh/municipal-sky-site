@@ -398,14 +398,17 @@ window.KOLOB.VoicesBand = (function () {
   // ear follows it by the same four facts, now moving: the direct sound
   // rises and falls (dirDbAt), the air takes less of its top as it nears
   // (veilAt, shelfDbAt), the town's reverberance stands against it and
-  // then under it (airDbAt, through one shared townRoom: the air is all
-  // around, so it is not panned), and the echo off the facing houses fades
+  // then under it (airDbAt, through one shared townRoom — and leaning
+  // toward the traveller, AIR_LEAN of its own side: the street it is
+  // walking rings nearest it, so a band far off at one end of the colony
+  // is heard at that end, not all around), and the echo off the facing houses fades
   // in as it goes far (echoAt, from the other side). Its place in the field
   // (side, −1 … 1) turns with it. road(ctx, destination, {room, echoDelay})
   // → { input, path(points), nodes, dispose() }: path([{t, d, side}, …])
   // lays every one of those curves along the points (a straight ramp between
   // two, so a point a second or so apart draws a smooth passage). Built
-  // once per traveller: 11 nodes (15 with a town room of its own).
+  // once per traveller: 12 nodes (16 with a town room of its own).
+  var AIR_LEAN = 0.5;
   function road(ctx, destination, o) {
     o = o || {};
     var nodes = [];
@@ -420,7 +423,8 @@ window.KOLOB.VoicesBand = (function () {
     if (!room) { own = townRoom(ctx, destination, {}); room = own; }
     var pre = mk(ctx.createDelay(0.2)); pre.delayTime.value = 0.03;
     var send = mk(ctx.createGain()); send.gain.value = 0;
-    shelf.connect(pre); pre.connect(send); send.connect(room.input);
+    var airPan = mk(ctx.createStereoPanner ? ctx.createStereoPanner() : ctx.createGain());
+    shelf.connect(pre); pre.connect(send); send.connect(airPan); airPan.connect(room.input);
     var ed = mk(ctx.createDelay(0.6)); ed.delayTime.value = o.echoDelay != null ? o.echoDelay : 0.25;
     var elp = mk(ctx.createBiquadFilter()); elp.type = "lowpass"; elp.frequency.value = 2500; elp.Q.value = 0.5;
     var eg = mk(ctx.createGain()); eg.gain.value = 0;
@@ -444,6 +448,7 @@ window.KOLOB.VoicesBand = (function () {
       lay(eg.gain, pts, function (p) { return echoAt(dd(p)) * Math.pow(10, dirDbAt(dd(p)) / 20); });
       if (pan.pan) lay(pan.pan, pts, sd);
       if (ep.pan) lay(ep.pan, pts, function (p) { return -sd(p) * 0.5; });
+      if (airPan.pan) lay(airPan.pan, pts, function (p) { return sd(p) * AIR_LEAN; });
     }
     return {
       input: input, path: path, nodes: nodes.length + (own ? own.nodes : 0),
