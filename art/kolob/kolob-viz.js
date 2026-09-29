@@ -1163,14 +1163,15 @@ window.KolobViz = (function () {
   // (Round 2: the head is filled, and its ring stands a fifth of a space off
   // it — a hollow head in a ring that hugged it read as two outlines, one
   // inside the other: the second stroke the owner ruled out. The ring is the
-  // bell's one outline, half a space round; the rings of two strokes a
-  // space and a quarter apart still keep clear of each other.)
-  var TOWER_INK = 0.5, TOWER_MUFFLED = 0.32, TOWER_SCALE = 0.4, TOWER_RING = 1.25;   // (small: a peal's strokes come a staff space apart at the page's rate; the ring, in the head's own size: 0.5 sp)
+  // bell's one outline, 0.46 sp round, so that two strokes a step apart
+  // (1.15 sp at the page's rate) stand clear of each other without pushing;
+  // and the peal is one line, printed in the order it is rung.)
+  var TOWER_INK = 0.5, TOWER_MUFFLED = 0.32, TOWER_SCALE = 0.35, TOWER_RING = 1.32;   // (small: a peal's strokes come a staff space apart at the page's rate; the ring, in the head's own size: 0.46 sp)
   function takeTower(ns) {
     var g0 = groups.length;
     takeLayer("tower", ns, 1, null, { scale: TOWER_SCALE, ink: ns[0].muffled ? TOWER_MUFFLED : TOWER_INK,
       qOf: function (n) { return keyedQ(n.freq, null, null, n.monzo, cond.mode); } });
-    var gs = madeSince(g0, 1);
+    var gs = madeSince(g0, 1, "peal");
     unstemmed(gs, false);
     gs.forEach(function (gr) { gr.ring = true; gr.ringK = TOWER_RING; });
   }
@@ -3098,15 +3099,16 @@ window.KolobViz = (function () {
   // deeper, as far as 2.2 spaces, to pass them all with a quarter space's
   // air; where even that is not enough, both its ends stand further off
   // their heads, alike. (Heads only: a slur may cross a stem, as in any score.)
-  // It is fitted to the whole melisma from its first stroke — the notes of
-  // its run still to be engraved stand where their time puts them, their
+  // It is fitted to the whole melisma from its first stroke — the notes
+  // still to be engraved under it stand where their time puts them, their
   // heights already known — so what is drawn of it does not deepen as the
-  // burin reaches them; once its last note is set, the fit is kept (m.fit).
+  // burin reaches them; once the burin is past its end (and past the far
+  // ward's wait), when no note can come under it, the fit is kept (m.fit).
   var SLUR_DEEP = 2.2, SLUR_AIR = 0.25, SLUR_N = 24;
   function slurFit(g, m, sh) {
     var s = g.sp, sd = sh.side, tt = Math.abs(sh.th), dx = sh.x2 - sh.x1, E = [], pts = [], i;
     if (m.fit && m.fit.sp === s && m.fit.done) { sh.h = m.fit.h; sh.y1 += m.fit.e; sh.y2 += m.fit.e; return; }
-    var done = !!(m.g2.col && m.g2.col.sp === s && PT > m.tp2);
+    var done = !!(m.g2.col && m.g2.col.sp === s) && g.xE - sh.x2 > (BAR_WAIT_S + 0.1) * SCROLL_PX_S;
     function edge(x0, x1, y0, y1) {
       if (x1 < sh.x1 || x0 > sh.x2) return;
       E.push([x0 - tt, x1 + tt, sd > 0 ? y1 : -y0]);                 // (its span, and its edge toward the slur, in the slur's sense)
@@ -3119,7 +3121,7 @@ window.KolobViz = (function () {
           var e = headExt(p, gr.lastO || {}, gr.lastL.s);
           edge(p.x - e[0], p.x + e[0], p.y - e[1], p.y + e[1]);
         });
-      } else if (gr.tp > m.tp && gr.tp < m.tp2 + 1e-6 && gr.layer === m.g1.layer) {   // (its own run, still to come: at its time, or a little after)
+      } else if (gr.tp > m.tp && !(gr.col && gr.col.sp === s && gr.drawnAt !== FRAME && gr.tp <= PT)) {   // (a note still to come: at its time, or a little after)
         var x = X(gr.tp) + (gr.col && gr.col.sp === s ? gr.col.dx : 0), hs = (gr.scale || 1) * s;
         drawnHeads(gr, g).forEach(function (hd) { var y = g.y(m.st, hd.q); edge(x - 0.7 * hs, x + 0.7 * hs + 0.5 * s, y - 0.56 * hs, y + 0.56 * hs); });
       }
