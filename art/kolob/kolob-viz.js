@@ -1160,14 +1160,19 @@ window.KolobViz = (function () {
   // time, so the method can be read from the heads alone (the ringers' blue
   // line is the path one bell's head takes through the rows; the page leaves
   // it to the eye, as it leaves the words). A muffled touch is paler still.
-  var TOWER_INK = 0.5, TOWER_MUFFLED = 0.32, TOWER_SCALE = 0.45;   // (small: a peal's strokes come a staff space apart at the page's rate)
+  // (Round 2: the head is filled, and its ring stands a fifth of a space off
+  // it — a hollow head in a ring that hugged it read as two outlines, one
+  // inside the other: the second stroke the owner ruled out. The ring is the
+  // bell's one outline, half a space round; the rings of two strokes a
+  // space and a quarter apart still keep clear of each other.)
+  var TOWER_INK = 0.5, TOWER_MUFFLED = 0.32, TOWER_SCALE = 0.4, TOWER_RING = 1.25;   // (small: a peal's strokes come a staff space apart at the page's rate; the ring, in the head's own size: 0.5 sp)
   function takeTower(ns) {
     var g0 = groups.length;
     takeLayer("tower", ns, 1, null, { scale: TOWER_SCALE, ink: ns[0].muffled ? TOWER_MUFFLED : TOWER_INK,
       qOf: function (n) { return keyedQ(n.freq, null, null, n.monzo, cond.mode); } });
     var gs = madeSince(g0, 1);
-    unstemmed(gs, true);
-    gs.forEach(function (gr) { gr.ring = true; });
+    unstemmed(gs, false);
+    gs.forEach(function (gr) { gr.ring = true; gr.ringK = TOWER_RING; });
   }
 
   // ---- the gulls ---------------------------------------------------------------
@@ -2597,7 +2602,7 @@ window.KolobViz = (function () {
   var HEAD_EXT = { mi: [0.66, 0.54], x: [0.5, 0.5] };           // (a head's half-width and half-height, in its own size: the diamond is the widest)
   function headExt(p, o, s) {
     var he = HEAD_EXT[p.k] || [0.64, 0.52], rim = p.h.heavy ? 0.07 * s : 0;   // (the tune's head: its rim struck once more)
-    return [o.breve ? 1.1 * s : o.ring ? 1.05 * s : he[0] * p.hs + rim, o.ring ? 1.05 * s : he[1] * p.hs + rim];   // (a bell's ring is part of its head)
+    return [o.breve ? 1.1 * s : o.ring ? ((o.ringK || 0.98) + 0.07) * s : he[0] * p.hs + rim, o.ring ? ((o.ringK || 0.98) + 0.07) * s : he[1] * p.hs + rim];   // (a bell's ring is part of its head)
   }
   function groupBoxes(L, o) {
     var s = L.s, out = [], lh = 0.1 * s;
@@ -3060,19 +3065,32 @@ window.KolobViz = (function () {
   // deeper, as far as 2.2 spaces, to pass them all with a quarter space's
   // air; where even that is not enough, both its ends stand further off
   // their heads, alike. (Heads only: a slur may cross a stem, as in any score.)
+  // It is fitted to the whole melisma from its first stroke — the notes of
+  // its run still to be engraved stand where their time puts them, their
+  // heights already known — so what is drawn of it does not deepen as the
+  // burin reaches them; once its last note is set, the fit is kept (m.fit).
   var SLUR_DEEP = 2.2, SLUR_AIR = 0.25, SLUR_N = 24;
   function slurFit(g, m, sh) {
     var s = g.sp, sd = sh.side, tt = Math.abs(sh.th), dx = sh.x2 - sh.x1, E = [], pts = [], i;
+    if (m.fit && m.fit.sp === s && m.fit.done) { sh.h = m.fit.h; sh.y1 += m.fit.e; sh.y2 += m.fit.e; return; }
+    var done = !!(m.g2.col && m.g2.col.sp === s && PT > m.tp2);
+    function edge(x0, x1, y0, y1) {
+      if (x1 < sh.x1 || x0 > sh.x2) return;
+      E.push([x0 - tt, x1 + tt, sd > 0 ? y1 : -y0]);                 // (its span, and its edge toward the slur, in the slur's sense)
+    }
     groups.forEach(function (gr) {
-      if (gr.drawnAt !== FRAME || gr.st !== m.st || !gr.lastL) return;
-      gr.lastL.placed.forEach(function (p) {
-        if (p.h.ghost) return;
-        var e = headExt(p, gr.lastO || {}, gr.lastL.s);
-        if (p.x + e[0] < sh.x1 || p.x - e[0] > sh.x2) return;
-        E.push([p.x - e[0] - tt, p.x + e[0] + tt, sd > 0 ? p.y + e[1] : -(p.y - e[1])]);   // (its span, and its edge toward the slur, in the slur's sense)
-      });
+      if (gr.st !== m.st) return;
+      if (gr.drawnAt === FRAME && gr.lastL) {
+        gr.lastL.placed.forEach(function (p) {
+          if (p.h.ghost) return;
+          var e = headExt(p, gr.lastO || {}, gr.lastL.s);
+          edge(p.x - e[0], p.x + e[0], p.y - e[1], p.y + e[1]);
+        });
+      } else if (gr.tp > m.tp && gr.tp < m.tp2 + 1e-6 && gr.layer === m.g1.layer) {   // (its own run, still to come: at its time, or a little after)
+        var x = X(gr.tp) + (gr.col && gr.col.sp === s ? gr.col.dx : 0), hs = (gr.scale || 1) * s;
+        drawnHeads(gr, g).forEach(function (hd) { var y = g.y(m.st, hd.q); edge(x - 0.7 * hs, x + 0.7 * hs + 0.5 * s, y - 0.56 * hs, y + 0.56 * hs); });
+      }
     });
-    if (!E.length) return;
     for (i = 1; i < SLUR_N; i++) {                 // (the curve's inner edge, sampled: where it is, and how much a deeper curve moves it)
       var t = i / SLUR_N, u = 1 - t;
       pts.push({ x: sh.x1 + dx * (0.75 * t * u * u + 2.25 * t * t * u + t * t * t), L: sd * (sh.y1 * u * u * (1 + 2 * t) + sh.y2 * t * t * (3 - 2 * t)), c: 3 * t * u });
@@ -3081,8 +3099,9 @@ window.KolobViz = (function () {
     pts.forEach(function (p) { E.forEach(function (e) { if (p.x >= e[0] && p.x <= e[1]) need = Math.max(need, (e[2] + SLUR_AIR * s - p.L) / p.c + tt); }); });
     var hh = Math.min(need, SLUR_DEEP * s);
     pts.forEach(function (p) { E.forEach(function (e) { if (p.x >= e[0] && p.x <= e[1]) rest = Math.max(rest, e[2] + SLUR_AIR * s - p.L - (hh - tt) * p.c); }); });
-    sh.h = sd * hh;
-    if (rest > 0) { sh.y1 += sd * rest; sh.y2 += sd * rest; }
+    var e = sd * Math.max(0, rest);
+    m.fit = { sp: s, done: done, h: sd * hh, e: e };
+    sh.h = sd * hh; sh.y1 += e; sh.y2 += e;
   }
   function drawBarline(c, g, x, kind, st) {
     var sp = g.sp, top = st === "T" ? g.T : g.B, bot = top + 4 * sp;
@@ -3259,7 +3278,10 @@ window.KolobViz = (function () {
     // before it, as a hymn's does, but it never stands on a bar, and no
     // head of either is struck through by the other's ink — a stem, a
     // ledger, a flag, a beam, another head: there it goes on past)
-    if (!gr.hymn && gr.cap != null && dx > lim && (ord > lim + 0.01 || onBar(gr, g, bx, lim) || onHead(gr, g, bx, lim) || beamHit(gr, g, bx, lim) != null)) lim = dx;
+    // (round 2: the order of its line lifts its cap only as far as the order
+    // asks — past that it goes on only for a bar, a head or a beam, as before)
+    if (!gr.hymn && gr.cap != null && dx > lim && ord > lim) lim = ord;
+    if (!gr.hymn && gr.cap != null && dx > lim && (onBar(gr, g, bx, lim) || onHead(gr, g, bx, lim) || beamHit(gr, g, bx, lim) != null)) lim = dx;
     return { need: dx, lim: lim, bx: bx, ink: ink };
   }
   // (on a bar, or within a pixel or two of it: the page's pixels round each
@@ -3509,7 +3531,7 @@ window.KolobViz = (function () {
       c.globalAlpha = a;
       var r = drawGroup(c, g, x, heads, gr.st, gr.dir, o);
       gr.drawnAt = FRAME; gr.lastX = x; gr.lastSx = r.sx; gr.lastL = r.L; gr.lastO = o;
-      if (gr.ring) drawBellRing(c, g, x, g.y(gr.st, heads[0].q), gr.scale);
+      if (gr.ring) drawBellRing(c, g, x, g.y(gr.st, heads[0].q), gr.scale, gr.ringK);
     }
     groups.length = keep;
     beamsNow.forEach(function (bm) { drawBeam(c, g, bm); });
@@ -3562,14 +3584,14 @@ window.KolobViz = (function () {
   }
   // how a group is engraved (alt: the stem it takes if its voice's own would be stubby)
   function inkOpts(gr) {
-    return { scale: gr.scale, rgb: C_INK, noStem: gr.noStem, flags: gr.flags, slash: gr.slash, breve: gr.v && gr.v.breve, ring: gr.ring, thin: gr.thin, alt: gr.alt,
+    return { scale: gr.scale, rgb: C_INK, noStem: gr.noStem, flags: gr.flags, slash: gr.slash, breve: gr.v && gr.v.breve, ring: gr.ring, ringK: gr.ringK, thin: gr.thin, alt: gr.alt,
              keep: gr.hymn && (gr.voice === "both" || (gr.voice !== "one" && gr.voice !== "hop")), room: gr.room, ferm: gr.ferm || 0,
              tune: !!(gr.hymn && gr.tune && gr.voice !== "one" && gr.voice !== "hop" && gr.voice !== "both") };
   }
   // a bell: a ringed head — one thin ring, drawn with the head, that dries
   // with it (no spreading rings: nothing on the page moves but the scroll)
-  function drawBellRing(c, g, x, y, sc) {
-    var r = 0.98 * g.sp * (sc || 1), lw = Math.max(1 / dpr, 0.07 * g.sp);
+  function drawBellRing(c, g, x, y, sc, k) {       // (k: the ring's radius in the head's own size — the far tower's, round 3c)
+    var r = (k || 0.98) * g.sp * (sc || 1), lw = Math.max(1 / dpr, 0.07 * g.sp);
     c.save();
     c.strokeStyle = rgba(C_INK); c.lineWidth = lw;
     c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.stroke();
