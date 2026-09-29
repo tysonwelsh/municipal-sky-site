@@ -755,12 +755,14 @@ window.KOLOB.GuestSocialHall = (function () {
         // THE DRONE: leaned on under the long notes and the strong ones, lifted through the runs
         nt.droneV = long || e.kind === "cad" || (main && e.stress >= 1 && i8 === 0) ? (u3 < dA ? 1 : 0.55) : (u3 < dA * 0.4 ? 0.6 : 0);
         notes.push(nt); prev = nt;
-        prevRep = { layer: "fiddle", freq: f, t: tl + at, dur: dur, part: e.kind, strain: p.strain, time: p.time, line: p.li, bar: Math.floor(q / (2 * per)) + 1, deg: e.d, monzo: e.m, septimal: sept, orn: nt.orn || null, hymnId: M.hymnId };
+        prevRep = { layer: "fiddle", freq: f, t: t0 + tl + at, dur: dur, part: e.kind, strain: p.strain, time: p.time, line: p.li, bar: Math.floor(q / (2 * per)) + 1, deg: e.d, monzo: e.m, septimal: sept, orn: nt.orn || null, hymnId: M.hymnId };
         report.push(prevRep);
-        if (also) report.push({ layer: "fiddle", freq: also, t: tl + at, dur: dur, part: "stop", strain: p.strain, time: p.time, line: p.li, monzo: alsoM, septimal: !!alsoM && alsoM[3] !== 0, hymnId: M.hymnId });
+        if (also) report.push({ layer: "fiddle", freq: also, t: t0 + tl + at, dur: dur, part: "stop", strain: p.strain, time: p.time, line: p.li, monzo: alsoM, septimal: !!alsoM && alsoM[3] !== 0, hymnId: M.hymnId });
         q += e.n8;
       });
-      report.push({ layer: "fiddle", freq: dr, t: tl, dur: tq(q), part: "drone", strain: p.strain, time: p.time, line: p.li, hymnId: M.hymnId });
+      // (round 3c: every phrase's report on the clock — t0 + its own time; the
+      // lab, playing from 0, never saw that it was left out)
+      report.push({ layer: "fiddle", freq: dr, t: t0 + tl, dur: tq(q), part: "drone", strain: p.strain, time: p.time, line: p.li, hymnId: M.hymnId });
       return { t: t0 + tl, stage: p.strain, notes: notes, drone: [dr], droneLevel: 0.36, dyn: dyn, report: report, strain: p.strain, time: p.time, line: p.li };
     }
     var played = [];

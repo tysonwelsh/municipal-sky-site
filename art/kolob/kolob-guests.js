@@ -1099,7 +1099,11 @@ window.KOLOB = window.KOLOB || {};
       defer: function (at, fn) { cueAt("guests", at, function () { if (S.playing && C_live(V)) fn(); }); },
       onNote: function (x) {
         emitNote(x.layer, x.freq, x.t, x.dur, guestNote(V, "socialhall", { part: x.part, strain: x.strain, time: x.time, line: x.line, bar: x.bar,
-          deg: x.deg, monzo: x.monzo, septimal: !!x.septimal, orn: x.orn || null, member: x.member || null, call: x.call || null, hymnId: V.material.hymnId }));
+          deg: x.deg, monzo: x.monzo, septimal: !!x.septimal, orn: x.orn || null, member: x.member || null, call: x.call || null,
+          // (the hymn danced is named `dances`, not hymnId: the caller's calls are on
+          // the choir's layer, and a hymnId there is the ward singing that hymn — as
+          // the singing school's notes say `rehearses`)
+          dances: V.material.hymnId || null }));
       },
       onStage: function (st) {
         if (!HALL_ROWS[st.stage] || told[st.stage]) return;

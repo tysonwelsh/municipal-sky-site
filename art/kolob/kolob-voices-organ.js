@@ -381,6 +381,7 @@ window.KOLOB = window.KOLOB || {};
                cat: "cast", label: "✦ the organist " + e.action, detail: e.nameDs };
     if (tag.hymnId) ev.hymnId = tag.hymnId;
     if (tag.verse != null) ev.verse = tag.verse;
+    if (tag.variations) ev.variations = true;              // (round 3c: a recital's doings, not the hymn's service)
     if (e.registration) ev.registration = e.registration;
     if (e.manner) ev.manner = e.manner;
     var alive = tag.alive;

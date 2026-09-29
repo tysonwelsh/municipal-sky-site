@@ -55,6 +55,9 @@ window.KOLOB = window.KOLOB || {};
   function now() { return S.now(); }
   function cueAt(lane, t, fn) { return S.cueAt(lane, t, fn); }
   function emitEvent(ev) { return S.emitEvent(ev); }
+  // (round 3c: the guests the meeting performs itself — the far ward inside
+  // our hymn, the Hosanna, the testimony-bearers — report their notes too)
+  function emitNote(layer, freq, startTime, duration, extra) { return S.emitNote(layer, freq, startTime, duration, extra); }
   function setRoomBalance(x, rampS, hold) { return S.setRoomBalance(x, rampS, hold); }
   // (the other rooms' state, read and written through S: S.ctx, S.droneDuck,
   // S.roomBalanceHeld, S.roomRampNext, S.playing, S.F0, S.mode, S.ROOM_BALANCE,
