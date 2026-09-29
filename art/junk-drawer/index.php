@@ -23,9 +23,13 @@ include '../../includes/header.php';
   <!-- ============ FIELD NOTES ============
        The wall label, a one-paragraph intro, the taxonomy legend, and the
        bare foot (the colophon was pared down 2026-08-28 and removed
-       2026-09-10, owner calls — the series link and build stamp remain). The legend renders from
-       data.php's payload (junk-drawer.js); everything else is static copy. -->
-  <section class="jd-notes" id="notes">
+       2026-09-10, owner calls; the series link and the deploy time went
+       2026-09-29 — the version and fingerprint remain). The legend renders from
+       data.php's payload (junk-drawer.js); everything else is static copy.
+       jd-notes--drawer: this page's notes read in the about page's
+       typography (owner, 2026-09-29) — the modifier keeps the change off
+       the about page, which shares .jd-notes for its steps. -->
+  <section class="jd-notes jd-notes--drawer" id="notes">
 
     <!-- THE NOTES, SHORT (owner, 2026-09-28): a quick introduction in the
          about page's voice, and the way to it. The grade legend, the axes and
@@ -46,18 +50,18 @@ include '../../includes/header.php';
       button to give the four models a prompt of your own.</p>
     </div>
 
-    <p class="jd-about-cta"><a href="/art/junk-drawer/about/">How the drawer
-    works, and what it shows &rarr;</a></p>
+    <p class="jd-about-cta"><a href="/art/junk-drawer/about/">Click here to learn
+    more about the SVG junk drawer &rarr;</a></p>
 
-    <!-- The COLOPHON section and its paragraph went 2026-09-10 (owner call).
-         What stays is the bare foot of the notes: the series link and the
-         build stamp — version · content fingerprint · deploy time, the quiet
-         way to confirm which build is actually live (the same stamp the
-         bench strip shows). Same class, so the foot keeps its tailoring. -->
-    <footer class="jd-colophon" aria-label="build and series">
-      <p><a href="/art/" aria-label="the generative art series">the generative art series</a></p>
+    <!-- The COLOPHON section and its paragraph went 2026-09-10 (owner call);
+         the "generative art series" link and the deploy date/time went
+         2026-09-29 (owner: there is no series, and no timestamp on the
+         drawer). What stays is the build stamp — version · content
+         fingerprint — the quiet way to confirm which build is actually
+         live (the bench strip still shows the deploy time). -->
+    <footer class="jd-colophon" aria-label="build">
       <p class="jd-build" aria-label="build version">
-        <?php echo htmlspecialchars($jd_version); ?><span class="jd-build-sep">·</span><?php echo $jd_build; ?><?php if ($jd_deployed): ?><span class="jd-build-sep">·</span><?php echo $jd_deployed; ?><?php endif; ?>
+        <?php echo htmlspecialchars($jd_version); ?><span class="jd-build-sep">·</span><?php echo $jd_build; ?>
       </p>
     </footer>
 

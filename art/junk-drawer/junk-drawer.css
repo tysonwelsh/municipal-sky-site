@@ -1009,6 +1009,30 @@ html { scroll-behavior: smooth; }
 }
 .jd-build-sep { margin: 0 0.5em; opacity: 0.5; }
 
+/* THE DRAWER PAGE'S NOTES READ LIKE THE ABOUT PAGE (owner, 2026-09-29): the
+   mono field-notes voice in a 600px column read as cramped next to /about/,
+   so this page's notes take the about page's typography — Spectral body at
+   --fs-md/--lh-base in the site's content width, a Spectral semibold title
+   in sentence case. Scoped by the jd-notes--drawer modifier (index.php)
+   because /about/ shares .jd-notes for its steps and sets its own type.
+   The build stamp and the ↑ link stay mono: they are chrome, not prose. */
+.jd-notes--drawer {
+  max-width: var(--max-content);
+  font-family: var(--font-body);
+  font-size: var(--fs-md);
+  line-height: var(--lh-base);
+}
+.jd-notes--drawer .jd-title {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--fs-2xl);
+  line-height: var(--lh-tight);
+  letter-spacing: 0;
+  text-transform: none;
+}
+.jd-notes--drawer .jd-build,
+.jd-notes--drawer .jd-back { font-family: var(--font-mono); font-size: var(--fs-xs); }
+
 /* the ↑ twin of the manila tag */
 .jd-back {
   margin: var(--s-4) 0 0;
