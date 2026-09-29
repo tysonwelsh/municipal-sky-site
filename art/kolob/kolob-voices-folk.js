@@ -731,3 +731,4 @@ window.KOLOB.VoicesFolk = (function () {
 
   return { create: create, bell: { tau: bellTau, life: bellLife, casting: casting } };
 })();
+(window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-voices-folk.js"] = true;   // the load guard's roll call (round 3b, step 3: the handbells ring in the meeting)

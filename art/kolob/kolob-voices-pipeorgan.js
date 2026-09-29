@@ -87,7 +87,7 @@
 //     trem: false leaves the tremulant as it stands (a phrase laid in
 //     pieces: only its first piece draws the tremulant, at the phrase's t)
 //   organ.chord(t, freqs, dur, registration, {pedal: true, v})
-//   organ.setSwell(expression 0..1, t, rampS)
+//   organ.setSwell(expression 0..1, t, rampS, cancel)   cancel: take back the moves written from t on
 //   organ.dispose(t)                 the tremulant's motor and the wind stop at t
 //   organ.stats() → { standing, created, peakLive, until }   (kept as it goes)
 //   KOLOB.VoicesOrgan.REGISTRATIONS (frozen) / STOPS / resolve(registration) / CHIFF
@@ -302,8 +302,13 @@ window.KOLOB.VoicesOrgan = (function () {
     function swellLevel(e) { return 0.32 + 0.68 * Math.pow(e, 1.3); }
     swellLP.frequency.value = swellCut(swellNow);
     swellGain.gain.value = swellLevel(swellNow);
-    function setSwell(e, t, rampS) {
+    // (cancel, round 3b: the moves already written from t on are taken
+    // back first — the meeting's house chords shape the box chord by chord,
+    // and a chord that comes while the last still sounds opens it again
+    // from wherever it has got to)
+    function setSwell(e, t, rampS, cancel) {
       e = Math.max(0, Math.min(1, e)); swellNow = e;
+      if (cancel) { swellLP.frequency.cancelScheduledValues(t); swellGain.gain.cancelScheduledValues(t); }
       var tau = Math.max(0.02, (rampS == null ? 0.4 : rampS) / 3);
       swellLP.frequency.setTargetAtTime(swellCut(e), t, tau);
       swellGain.gain.setTargetAtTime(swellLevel(e), t, tau);
@@ -417,7 +422,7 @@ window.KOLOB.VoicesOrgan = (function () {
       var src = ctx.createBufferSource(); src.buffer = noiseBuf(ctx);
       var bp = ctx.createBiquadFilter(); bp.type = "bandpass";
       bp.frequency.value = fc; bp.Q.value = 1.4;
-      var g = ctx.createGain();
+      var g = ctx.createGain(); g.gain.value = 0;      // (silent at birth: SPEECH OUT OF NOTHING, below)
       g.gain.setValueAtTime(0, t);
       g.gain.linearRampToValueAtTime(amt, t + 0.006);
       g.gain.setTargetAtTime(0, t + 0.014, tau);
@@ -432,7 +437,22 @@ window.KOLOB.VoicesOrgan = (function () {
     // its level, 3–13 % in one sample, on every note shorter than ~0.12 s —
     // up to 27 dB of spray above 4 kHz on the trumpet. The bloom's own
     // setTarget now runs on until the release takes over from its value.)
+    // SPEECH OUT OF NOTHING (round 3b, step 2). A gain is 1 until its first
+    // event, and the browser forgives a source's start a hair it does not
+    // forgive the event: a key put down a hair past a sample (t × rate some
+    // 3·10⁻⁷ of a sample over a whole one: the float arithmetic of a
+    // joint's amen) starts its pipes AT that sample, where setValueAtTime(0,
+    // t) has not yet happened. For that one sample the gain is 1. A pipe's
+    // own wave starts at nought (sine phase) and says nothing there; the
+    // chiff's noise starts wherever its offset falls, and one sample of it
+    // went out at full size, through the pedal, which has no shutters to
+    // round it: a lone spike 25 dB over the chord's own treble (seed 32,
+    // 7:59.7, the joint's amen after the Old Way hymn, out of silence).
+    // Reproduced in an OfflineAudioContext with t a hair past a frame, and
+    // gone with the gain made nought first. So every gain a key makes is
+    // silent at birth.
     function envelope(g, t, atk, lv, rel, tau, over) {
+      g.gain.value = 0;
       g.gain.setValueAtTime(0, t);
       if (over) {                                   // reeds speak with a small bloom
         g.gain.linearRampToValueAtTime(lv * over, t + atk);
@@ -689,4 +709,4 @@ window.KOLOB.VoicesOrgan = (function () {
   return { create: create, STOPS: STOPS, REGISTRATIONS: REGISTRATIONS, resolve: resolve,
            CHIFF: { level: CHIFF_LEVEL, legato: CHIFF_LEGATO, legatoS: LEGATO_S } };
 })();
-(window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-voices-pipeorgan.js"] = true;   // the load guard's roll call (for the day it joins the engine)
+(window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-voices-pipeorgan.js"] = true;   // the load guard's roll call (round 3b: the engine's organ)

@@ -867,6 +867,66 @@ window.KOLOB = window.KOLOB || {};
   }
 
   // ==========================================================================
+  // THE GUESTS WHO STAND IN THE ROOM (round 3b, step 3; PLAN-COMPOSITION §15
+  // items 3 and 5; handoff r3-guests-1): the ward's HANDBELL CHOIR and the
+  // SINGING SCHOOL (experimental). Each plans and plays itself (kolob-guest-
+  // handbells.js, kolob-guest-singingschool.js: pure plans, their own
+  // streams guest:<name>:<n>); the meeting seats them (kolob-meeting.js) and
+  // cues them at their moment, with their material made ready (the day's
+  // hymn, as the composer wrote it). This is the glue: their sound laid out
+  // a slice at a time on the guests' lane of the engine's clock (hooks.defer
+  // — never the whole piece inside one cue), their notes reported as they
+  // are laid out, their moments told as they come. Unlike every guest
+  // before them they are IN the chapel: the bells stand a step nearer than
+  // the ward, in both rooms (S.seatedSend("handbells")), and the practice is
+  // the ward's own choir, into the choir's layer (S.seatedSend("choir")) —
+  // not the tabernacle's wide send the visitors from outside take.
+  // ==========================================================================
+  var BELL_ROWS = { ring: 1, "verse2": 1, "round-entry": 1, cascade: 1 };
+  function standingGuest(V, tc, G, name, layer, noteOf) {
+    V.meetingNum = S.Meeting.meetingNum();
+    if (!G || !V || !V.material || !V.stream) return 4;
+    var told = {}, first = true;
+    function say(stage, st) {
+      if (told[stage]) return;
+      told[stage] = true;
+      var ev = { type: "guest", guest: name, stage: stage, section: S.Meeting.section(), hymnId: V.material.hymnId || null,
+                 cat: "visitation", label: (name === "handbells" ? "♫ the handbells" : "♪ the singing school") + (stage === "ring" || stage === "fork" ? "" : " · " + stage), detail: st.label || "" };
+      if (V.experimental) ev.experimental = true;
+      if (st.t0 <= S.now() + 1e-6) tell(V, ev);
+      else cueAt("guests", st.t0, function () { if (S.playing && C_live(V)) tell(V, ev); });
+    }
+    var end = G.perform(S.ctx, S.seatedSend(layer), tc, V.material, V.stream, {
+      defer: function (at, fn) { cueAt("guests", at, function () { if (S.playing && C_live(V)) fn(); }); },
+      onNote: noteOf,
+      onStage: function (st) {
+        // (the bells: their first sound, whatever it rings, is their row;
+        // then the second setting, a round's first entry, the cascade)
+        if (name === "handbells") {
+          if (first) { first = false; say("ring", st); }
+          if (BELL_ROWS[st.stage] && st.stage !== "ring") say(st.stage, st);
+        } else say(st.stage, st);
+      },
+    });
+    claimAir(end - tc, 3);
+    return end - tc + 2;
+  }
+  function handbellsRing(V, tc) {
+    var G = KOLOB.GuestHandbells;
+    if (!KOLOB.VoicesFolk) return 4;
+    return standingGuest(V, tc, G, "handbells", "handbells", function (x) {
+      emitNote("handbells", x.freq, x.t, x.dur, guestNote(V, "handbells", { part: x.part, role: x.role, ringer: x.ringer, bell: x.bell, tech: x.tech, pan: x.pan, loud: x.loud, reached: !!x.reached, rings: V.material.hymnId || null }));
+    });
+  }
+  function singingSchool(V, tc) {
+    var G = KOLOB.GuestSingingSchool;
+    if (!KOLOB.VoicesVocal) return 4;
+    return standingGuest(V, tc, G, "singingschool", "choir", function (x) {
+      emitNote(x.layer || "choir", x.freq, x.t, x.dur, guestNote(V, "singingschool", { part: x.part, stage: x.stage, wrong: !!x.wrong, rehearses: V.material.hymnId || null }));
+    });
+  }
+
+  // ==========================================================================
   // LENT — what this room shares with the rest of the house (KOLOB._s)
   // ==========================================================================
   S.razzCluster = razzCluster;
@@ -878,6 +938,8 @@ window.KOLOB = window.KOLOB || {};
   S.oldTuneCandidates = oldTuneCandidates;
   S.oldTuneRemembered = oldTuneRemembered;
   S.trombonesAtDawn = trombonesAtDawn;
+  S.handbellsRing = handbellsRing;
+  S.singingSchool = singingSchool;
   // the room's public face on the KOLOB namespace (the old tune's law and
   // excerpt are here for the harness and the labs: linesHeld(tune, mode),
   // linesAdmitted(tune, mode), excerpt(tune, k), octaveFor(notes),
@@ -885,6 +947,7 @@ window.KOLOB = window.KOLOB || {};
   KOLOB.Guests = {
     cumulativeAssembly: cumulativeAssembly, unansweredQuestion: unansweredQuestion, twoBandsCross: twoBandsCross, steeplesAnswer: steeplesAnswer,
     oldTuneRemembered: oldTuneRemembered, oldTuneCandidates: oldTuneCandidates, oldTunePool: oldTunePool, trombonesAtDawn: trombonesAtDawn,
+    handbellsRing: handbellsRing, singingSchool: singingSchool,
     linesHeld: linesHeld, linesAdmitted: linesAdmitted, excerpt: excerpt, octaveFor: octaveFor, leapLeans: leapLeans, wolfLeap: wolfLeap,
     MIN_MEMORY_S: MIN_MEMORY_S, TEMPO_MIN: TEMPO_MIN,
   };

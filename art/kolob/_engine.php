@@ -15,12 +15,18 @@
 // Jukebox v2 substrate first (read-only, by relative path — never modified
 // from Kolob), then pitch, the score and the Earth tunes, the composers,
 // the voices, the performers, and last the core that raises the KolobAudio
-// facade over them. (The lab modules — kolob-question.js, kolob-voices-vocal/
-// -pipeorgan/-folk.js — join this list on the day the engine first uses
-// them; kolob-tunes.js joined in round 2, milestone 3, when the old tune
-// began to sing the Earth tunes; kolob-voices-band.js and
-// kolob-guest-trombones.js joined at round 2's integration, when the
-// trombone choir began to play at dawn.)
+// facade over them. (The lab modules — kolob-question.js, kolob-voices-
+// folk.js — join this list on the day the engine first uses them;
+// kolob-tunes.js joined in round 2, milestone 3, when the old tune began to
+// sing the Earth tunes; kolob-voices-band.js and kolob-guest-trombones.js
+// joined at round 2's integration, when the trombone choir began to play at
+// dawn; kolob-voices-vocal.js and kolob-cast.js at round 3b, when the ward
+// began to sing the meeting; kolob-organist.js and kolob-voices-pipeorgan.js
+// at round 3b's second step, when the Sunday's organist took the bench;
+// kolob-experimental.js, kolob-voices-folk.js, kolob-guest-handbells.js and
+// kolob-guest-singingschool.js at its third, when the handbell choir and the
+// singing school came into the meeting; kolob-calendar.js at its fourth, when
+// every visit began to draw a Sunday of the colony year.)
 //
 // THE LOAD GUARD. Each kolob-*.js room answers a roll call as its last act
 // (KOLOB._rooms["kolob-organ.js"] = true), and the substrate — and the Earth
@@ -62,15 +68,38 @@ return [
     // the hymn composer (round 3, M1): pure, loaded ahead of the performers;
     // the engine begins singing its hymns in round 3's integration
     'kolob-dialects.js', 'kolob-hymnists.js', 'kolob-composer.js',
-    // the voices
+    // the Sunday's organist (round 3b, step 2): pure planning — the chorale
+    // prelude, the hymn in pieces, the walk into a new key — played on the
+    // pipe organ among the voices
+    'kolob-organist.js',
+    // the experiments' switch (round 3b, step 3): the engine asks it once a
+    // meeting before seating an experimental feature (the singing school);
+    // ?exp=-singingSchool turns one off for a visit
+    'kolob-experimental.js',
+    // the Sunday of the colony year, the arc of light, the rites' seatings
+    // and the Kolob reckoning (round 3b, step 4): pure; the meeting draws
+    // the Sunday from it, and the composer's desk reads the reckoning in it
+    'kolob-calendar.js',
+    // the voices (the registrable pipe organ, round 3b, step 2: the meeting's
+    // one organ — kolob-voices-organ.js keeps the old one as the A/B)
+    'kolob-voices-pipeorgan.js',
     'kolob-voices-organ.js', 'kolob-voices-choir.js', 'kolob-voices-winds.js',
     'kolob-voices-ground.js', 'kolob-voices-field.js', 'kolob-voices-bagpipe.js',
     'kolob-voices-band.js',
+    // the folk instruments: the ward's handbells (round 3b, step 3)
+    'kolob-voices-folk.js',
+    // the ward's thirty-two voices (round 3b: a throat each; the meeting's
+    // one congregation)
+    'kolob-voices-vocal.js',
     // the performers (the trombone choir at dawn plans and plays itself;
     // the guests' room places it, the meeting seats it; the day's hymnal
     // orders the meeting's hymns from the composer and brings them back —
     // round 3's integration, when the meeting began to sing them)
-    'kolob-hymnal.js', 'kolob-guest-trombones.js', 'kolob-guests.js', 'kolob-meeting.js',
+    // the Sunday's ward and its people, the performer of every hymn (round 3b)
+    'kolob-cast.js',
+    // (and the guests who stand in the room — the ward's handbell choir and
+    // the singing school — plan and play themselves, round 3b, step 3)
+    'kolob-hymnal.js', 'kolob-guest-trombones.js', 'kolob-guest-handbells.js', 'kolob-guest-singingschool.js', 'kolob-guests.js', 'kolob-meeting.js',
     // the facade
     'kolob-core.js',
 ];

@@ -1234,9 +1234,14 @@ window.KOLOB.VoicesVocal = (function () {
     // how many of the deferred lines' ways into the room (a mouth, a breath,
     // a consonant) are joined right now — what the audio thread is visiting
     joined: function (ctx) { return ctx && ctx.__kolobJoined || 0; },
+    // a meeting stopped (round 3b): the lines still waiting to be joined or
+    // parted are forgotten — their room is closed behind them, and the next
+    // meeting's arm() must not wake them
+    forget: function (ctx) { if (ctx) { ctx.__kolobArm = []; ctx.__kolobPart = []; ctx.__kolobJoined = 0; } },
     VOWELS: VOWELS,
     SYLLABLES: Object.keys(SYL),
     // for the benches (pure): the make-up gain's arithmetic
     _mouth: { bankSpec: bankSpec, biquadCoefs: biquadCoefs, mouthEnergy: mouthEnergy, INTRINSIC: INTRINSIC, PART: PART },
   };
 })();
+(window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-voices-vocal.js"] = true;   // the load guard's roll call (round 3b: the ward joins the engine)

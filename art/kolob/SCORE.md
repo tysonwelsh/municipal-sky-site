@@ -3,7 +3,9 @@
 *This is the interface every Kolob 2 crew codes against. It is owned by the
 integrator (branch `kolob-2`). Draft 1, 2026-09-26; round 2's requests
 adopted 2026-09-27 (§9, which wins where it and an earlier section differ);
-round 3's composed hymns adopted 2026-09-27 (§10, which wins over both).*
+round 3's composed hymns adopted 2026-09-27 (§10, which wins over both);
+round 3b's ward adopted 2026-09-28 (§11, which wins over all three; its
+second step, the organist, §11.6).*
 
 To change this contract, write a request in your handoff note. **Do not edit
 this file from a crew branch.**
@@ -515,3 +517,338 @@ A composed hymn is sung verse by verse in its dialect's practice:
   thread), and tells each stage's row as its phrase is laid out.
 - **`KolobAudio`** adds `getHymnal()`, `getHymn(id)`, `hymnalStats()` and
   `clockHealth()` (cues fired after their time; for the silent checks).
+
+---
+
+## 11. Round 3b, adopted (the ward sings the meeting)
+
+*The CAST crew's requests (`handoff/r3-cast-1.md`, both halves) and the HYMN
+crew's performance requests (`handoff/r3-hymn2-1.md`, 2–3), adopted as round
+3b wires the ward into the meeting. Where this section and an earlier one
+disagree, this section wins; the code named is the authority for the details.
+Handoff: `handoff/r3b-ward-1.md`.*
+
+### 11.1 Modules (§1, §9.1, §10.1)
+
+- **`kolob-voices-vocal.js`** (the ward's voices: a throat each, the shared
+  throat, ARMING) joins the engine among the voices, and **`kolob-cast.js`**
+  (the ward and its people, the plan of each hymn, its cue sheet, the
+  performer's desk) among the performers, before the hymnal
+  (`_engine.php`). Neither is lab-only any more.
+- **The performer of every composed hymn is the ward** (`S.singHymn` →
+  `singHymnWard`, `kolob-voices-choir.js`), and so is every line the house's
+  choir sang around the hymns: `S.choirVoiceLine` gives each old SATB voice's
+  line to that section of the ward, its eight people each in their own voice
+  (`wardSectionLine`). Round 3's four formant voices remain whole as the
+  fallback (`singHymnHouse`, `houseVoiceLine`), used when the cast is not
+  loaded or the dev switch `?choir=house` is set.
+- **`VoicesVocal`** (voices-1 request 2, r3-cast requests 6 and 10):
+  `singer(spec).sing(ctx, dest, t, notes, gain, { breathBefore, breathe, pan,
+  inhale, defer })`; `spec.sharedPan`, `spec.sharedThroat`, `spec.level`;
+  `arm(ctx, horizon, now)`, `joined(ctx)`, `pending(ctx)`, `parting(ctx)`,
+  `forget(ctx)` (a stopped meeting's queue is let go); `budget` (the ledger of
+  nodes alive).
+- **`Cast`**: `seat`, `planHymn`, `score` (the whole sheet, the cast lab's),
+  `segment(ward, hymn, plan, piece, opts)` (the meeting's: `"intro"`,
+  `{verse: v}`, `"amen"`, `"tag"`, each from its own start, the same dice and
+  arithmetic as the whole; `opts.carry` carries each singer's last note across
+  pieces for the breath), `performer(ward, {V, synth, organ})` with the desk
+  (`enqueue(t0, sheet)`, `tick(ctx, buses, horizon, pace)`, `clear()`,
+  `pending()`, `stats()`), `ACTION_DS`, `ACTION_FORWARD`, `WARD_GAIN`.
+
+### 11.2 Streams (§3, §9.2, §10.2)
+
+| label | draws |
+|---|---|
+| `cast:<n>` | the ward seated for meeting n (with its plan): `families`, `member:<id>` (`S0`…`B7`), `roles`, `role:<role>`, `role:testimony:<k>`, `rename:<id>`. Meeting 0 is the rail's audition |
+| `hymn:<n>:<i>` → `performance` | round 3's forks (§10.2), and now the cast's plan: its dice thrown on the fork's own sequence (verses, hummed, unison, descant, treble verse, the enthusiast, the child's, the alto's and the old bass's verses, the keying under the organ, every verse on the notes, the order they come forward), then `vowels:<v>`, `precentor:<v>:<li>`, `orn:<id>:<v>:<li>`, `child:<v>`, `descant:<li>`, `pitching`, and `fuging:<v>` (the ward's fuging) |
+| `synth:vocal` → `meeting:<n>` → `member:<id>` | sound-level: each person's own throat, breath and jitter |
+
+### 11.3 The Score and the Performance (§5.1, §10.3, §10.4)
+
+- **Hymn** (r3-hymn2): `voiceOrder`, `kind`, `drone`, `fuge`
+  (`{line, lines, gap, head, headNotes, entries, repeatFrom}`), `tag` (a Line,
+  like `amen`), `round`, `partner` and `wandering` (dev); `Note.septimal`;
+  `Chord.ring`, `Chord.swipe`. The performer sings the lines from
+  `fuge.repeatFrom` a second time before any refrain, the `refrain` after
+  every stanza, and the `tag` after the last verse.
+- **Performance** adds `forward: [{memberId, role, action, lines, gainDb}]`;
+  the plan adds `keying: {kind: "keying" | "pitching", by, habit, under?}`,
+  `layout` (`pews` | `square`) and `chorister`.
+- **The practices** (every built dialect):
+
+  | dialect | before the first verse | the verses | the close |
+  |---|---|---|---|
+  | Tabernacle | the organ modulates (keyed away) and gives out the tune; now and then (~20 %) the chorister hums the first note under its last chord | `sung`; one middle verse now and then `hummed` (the organ rests) or in `unison`; the last of three or four the soloist's `descant`, or now and then her treble verse alone over the organ | the plagal A-men |
+  | Sacred Harp | the pitching | verse 1 `notes`, then `sung` (now and then every verse on the notes); the hollow square | the bare fifths written |
+  | psalmody | the pitching | `sung`, the fuge sung twice; the hollow square | the written close |
+  | Old Way | the chorister keys it | `lined`: the precentor gives each line, the ward answers | none |
+  | gospel | the chorister keys it | `sung` (now and then a middle verse in `unison`), the quartet in the ward, the refrain after each verse | the tag |
+  | Shaker and Primary | the chorister keys it | `unison`, a few men humming the drone under it where the tune has one | none |
+
+- **The ward's parts** (`Cast.assignment`): eight a part; the Sacred Harp and
+  the psalmody double the treble and the tenor in octaves; gospel seats the
+  quartet (the tenor harmony with five trebles, the lead with the altos and
+  three trebles, the baritone with the tenors, the bass); unison, lined and
+  the Old Way put everyone on the tune (the men an octave down); a child
+  sings the tune.
+- **Who comes forward**: one or two on a line, never more; never the same
+  person two verses running (the precentor excepted); the treble verse is
+  the soloist's alone; the newcomer is silent in the day's first hymn until
+  the line they join on.
+
+### 11.4 Events (§6, §9.5, §10.5)
+
+- **`cast`** is emitted: `{memberId, nameDs, action, actionDs, role, hymnId,
+  verse?, line?}` — `action` in English (dev), `actionDs` the minutes'
+  Deseret capitals. The actions: `keys the hymn`, `hums the first note`,
+  `pitches the tune`, `lines out`, `comes forward`, `sings the descant`,
+  `sings the treble verse`, `sings the tune`, `loses the words`, `finds them
+  again`, `joins in`, `sings out` (a person comes forward: the minutes give
+  these a ✦ row, the precentor's lining-out its ☞ row), and `blends back into
+  the ward`, `falls silent` (their moment ends: no row).
+- **`hymn-announced`**: `leaderDs` is the chorister; `ward` (an extra) is
+  `{chorister, keying: {kind, habit, under, by, byDs} | null, practices: [..],
+  forward: [{memberId, nameDs, role, verse, action, actionDs}], layout}` —
+  who will come forward, named before they do.
+- **`lining-out`** of a composed Old Way line names the precentor: `by`,
+  `nameDs`.
+- **`verse-start.performance`** is the cast's Performance (with `forward`),
+  plus `tempoMul` and `beatS`.
+- **`prelude-seating`** carries `ward: {seated: 32, people: [{memberId,
+  role, nameDs, part}]}`.
+- **Notes of the ward** (`onNote`, layer `choir`): a section's written notes
+  once for each section singing a Score part in an octave (not once for each
+  of its eight people), as §10.5; and a person's own line once for that
+  person — `member`, `role`, and `sings: "key"` (the keying or the pitching's
+  tonic), `"descant"`, or `"drone"` (the Shakers'), with the section in
+  `part`; `pitching` (the pitching's notes), `liningOut` (the precentor's
+  line), `tag`, `repeat` (a fuge sung again).
+
+### 11.5 Time and the house (§4, §9.3, §10.6)
+
+- **The ward's desk.** Every piece the ward sings (a hymn's intro, each
+  verse, the amen, the tag, the fuging, a section's line) is written as a cue
+  sheet when the meeting decides it (a verse `PREP_S` = 4.5 s before it
+  begins) and put on the desk at its start on the audio clock. One pump, a cue
+  on the `ward` lane every 0.12 s of the music's time, hands the lines to the
+  voices 3 s ahead (at most 12 a call unless due within 1.2 s) and joins each
+  to the room 0.6 s before it sounds (ARMING). The pump reads the music's now,
+  never the audio clock. STOP clears the desk and `VoicesVocal.forget`s the
+  queue; a piece whose hymn no longer owns its section (a dev jump) hands
+  nothing more.
+- **Levels.** The ward pours into the choir layer (its slider, its seat in
+  the rooms) at `WARD_LEVEL` (0.16, `kolob-core.js`); a person come forward
+  into a nearer seat beside it (`ROOM_DEPTH["choir-near"]`, under the same
+  slider). A section of eight standing in for a house voice sings at
+  `HOUSE_SECTION_GAIN` (0.68, `kolob-voices-choir.js`).
+- **`KolobAudio`** adds `getWard()` (who is seated: the people, by role, in
+  Deseret; `nameEn` and the archetype dev-only), `wardStats()` (lines handed,
+  tight, late, the tightest margin, the most in one pump, mouths joined),
+  `getChoir()` (`"ward"` | `"house"`) and `setChoir(which)` (dev, before
+  PLAY; `?choir=house` sets it).
+
+
+### 11.6 The organist (round 3b, step 2)
+
+*The organist crew's requests (`handoff/r3-organist-1.md`: R1–R4), adopted as
+the Sunday's organist takes the bench in the meeting. Handoff:
+`handoff/r3b-organ-1.md`.*
+
+- **Modules.** `kolob-organist.js` (pure planning) joins the engine after the
+  composer, and `kolob-voices-pipeorgan.js` (the registrable pipe organ) among
+  the voices (`_engine.php`). `kolob-voices-organ.js` plays the pipe organ
+  for everything the organ does — the organist's plans and the house's own
+  chords (`S.organChord`: the voluntaries, the joints' amens, a soft chord in
+  the testimony, a guest's) — **one organ throughout**. The old additive
+  organ (`houseOrganChord`, R1 applied: the tremulant on a gain after the
+  envelope, its depth scaled to the chord) is the A/B and the fallback: dev
+  switch `?organ=house`, or a page without the pipe organ and the organist.
+- **`KOLOB.Organist`** adds `hymnHands(organist, h, stream, opts)` — the hymn
+  written in pieces, each from the time it is handed, with the same dice as
+  the whole (`accompany` lays them end to end): `giveOut(at)`, `verse(v, at,
+  {bs, clock(i), rest})` (`piece.waits[i]`: the seconds the ward waits after
+  line i for a fill), `interlude(v, at)`, `amen(at, {bs, ck})`,
+  `modulation(next, at)`; a piece is a finished plan plus `next`. The
+  organist's clock may be the CHORISTER's: `lineEvents(…, ck)`,
+  `lineDur(…, ck)`, `breathOf(…, ck)` with `ck = {rit, hold}` —
+  kolob-cast.js's arithmetic, operation for operation (`null`: the
+  organist's own). `preludeDraw` refuses as well for `unison` (the first
+  hymn one line, sung in unison), `guest` and `hum`. A report carries
+  `pedal` (and `pedalOnly`) where the 16′ sounds.
+- **`Cast.segment(…, {organist})`**: `{giveOut, waits}` — the sheet carries no
+  organ lines; the intro waits the organist's giving-out; a verse's line
+  waits where the organist plays a fill. `Cast.seat(stream, {organist:
+  style})`: the ward's organist is an archetype of the style seated.
+  `Cast.actionKey`, and `ACTION_DS` holds the organist's actions.
+- **Streams** (R4): `cast:<n>` → `organist` (the seat), `organist:prelude`
+  (the chorale prelude's die), `prelude:<style>` (the prelude, its lines and
+  figures below it); `hymn:<n>:<i>` → `organist:<style>` (`regs`,
+  `giveout`, `join:<v>:<i>`, `interlude:<v>`, `modulation`) and
+  `organist:modulation` (the walk into a keyed hymn's key, from the day's own
+  tonic). Sound-level: `synth:organ` → `case:<k>` (each pipe organ built).
+- **The meeting.** The organist is seated with the ward (`S.Meeting.organist()`:
+  style, habits, name — the ward's organist's — and the meeting's ledger:
+  hymns, fills, the one strange fill). Every accompanied hymn (the dialect's
+  own `organ` flag; today the Tabernacle) is the organist's: the walk into a
+  keyed hymn's key, the giving-out, the Score's four parts under each verse
+  on the chorister's clock (a hummed verse: the organ rests), fills between
+  the lines (the style's rate; at most two a hymn; never two joins running;
+  the ward waits), the interlude before each verse after the first (not
+  after the fuging), the amen. **The chorale prelude** is a seating
+  (`prelude-seating.seating: "chorale"`, over the drawn one, `under`),
+  seated when the organist's own die says so; the organist's first touch is
+  the day's first hymn (`KOLOB.Organist.prelude`); the house listens while it
+  sounds (`hallListens`), a guest and the joint wait for it, and a later
+  meeting's awake house lets go as it begins.
+- **The organ's case.** One `VoicesOrgan` per pair of the organ's hands
+  (THE HOUSE LETS GO); a case whose hands let go is disposed after its last
+  pipe; STOP disposes them all (`S.organStop`).
+- **Events.** `cast` from the organist: `memberId: "organist"`, `role:
+  "organist"`, `nameDs`, `action` (English, dev), `actionDs`, `style`,
+  `hymnId`, `verse`, `registration`, `manner`; the minutes give a row to the
+  chorale prelude, the walk to a new key, a fill, the strange key and a line
+  left to the ward. `prelude-seating.organist`: `{style, nameDs, prelude:
+  {play, why, odds}}`. New type **`chorale-prelude`**: `{hymnId, t0, until,
+  style, manner}` (`kolob-score.js` EVENTS). `verse-start.performance.organ`:
+  `{registration: [the organist's], organist: style}`.
+- **Notes** (R3): the organist's written notes on layer `organ`, with `part`
+  (S/A/T/B, `fig` for the improviser's running figures, `pedal` for the
+  16′), `organist` (the style), `orn` for an ornament (`susp`, `app`,
+  `pass`, `link`, `echo`, `fig`, `seq`, `quote`, `arabesque`, `strange`,
+  `intro`, `close`, `added`, `mod`, `pedalpoint`); under a hymn `hymnId`,
+  `verse`, `line`, `beat`, `deg`, `monzo` relative to `keyMonzo` (the hymn's
+  key), and one of `givingOut`, `interlude`, `amen`, `modulation` (the walk
+  into a key: `keyMonzo` [0,0,0,0], the monzo the keynote's), `prelude` (the
+  chorale prelude). The house's chords on the pipes are told as ever (each
+  voice an octave down, the chord's id), their pedal where the 16′ sounds
+  (an octave under the bass's key, or at it below 38 Hz).
+- **`KolobAudio`** adds `getOrganist()`, `organStats()` (cases, nodes built,
+  the most alive at once, plans on the desk), `getOrgan()` (`"pipe"` |
+  `"house"`) and `setOrgan(which)` (dev, before PLAY; `?organ=house`).
+
+### 11.7 The styles in the meeting, the forms, the new guests (round 3b, step 3)
+
+*The HYMN crew's remaining requests (`handoff/r3-hymn2-1.md`: 1, 2, 4, 5, B,
+C) and the GUEST crew's (`handoff/r3-guests-1.md`: loading, seating, the near
+send, the clock, SCORE), adopted as every style, the round, the partner hymn,
+the wandering refrain, the handbell choir and the singing school come into the
+meeting. Handoff: `handoff/r3b-styles-1.md`.*
+
+- **Modules.** `kolob-experimental.js` joins the engine after the organist
+  (before the voices), `kolob-voices-folk.js` among the voices (the handbells:
+  it now answers the roll call), and `kolob-guest-handbells.js` and
+  `kolob-guest-singingschool.js` beside the trombones (`_engine.php`).
+- **The proofreader (request 1).** `validateNote` allows a note one Johnston
+  "7" (36/35, 48.77 c) further from its spelling for every factor of 7 in
+  its monzo — gospel's ringing sevenths, sung on the seventh harmonic. The
+  5-limit's slack is unchanged.
+- **Ids.** `r:<n>:<k>` joins `h:<n>:<i>`: the meeting's wandering refrain —
+  `k` 0 as the composer wrote it, `k` ≥ 1 each statement of it (§5, `ID`).
+- **The house dialect** is drawn from all six (`kolob-hymnal.js`
+  `HOUSE_ODDS`, per kind; the arbor leans to the psalmody too). The
+  calendar's Sundays (step 4) lean the draw through `SUNDAY_LEAN` and the
+  unison song's kind through `KIND_LEAN` (a row's `kind`, handed to the
+  composer), read only when `info.sunday` names the day.
+- **The day's forms** (`Hymnal.forms(info, rows, R)`, pure, on
+  `forms:<n>`): `{round, partner, refrain, payoff}`.
+  - *A round* — a hymn row after the first (never the doxology) written by
+    the composer's `round()` (`row.piece: "round"`; an Old Way row takes the
+    Shakers' dialect): about one meeting in five.
+  - *The partner hymn* — the first doxology written by `partner()` on the
+    first hymn (`row.partnerOf`), 14 tries, in the dialect the fit check can
+    pass (`PARTNER_DIALECTS`: the Tabernacle on the Tabernacle; the Shakers'
+    unison on a Shaker or an Old Way tune); only when the first hymn is at
+    home and the doxology keeps the day's mode; never with the cumulative
+    assembly. About one meeting in four composes one; the composer combines
+    about half of them.
+  - *The wandering refrain* — `wanderingRefrain()` fitted to the keys of the
+    hymns it follows, and a statement of it after the first hymn, after one
+    later hymn, and in the doxology (`refrainIn()` into each one's key and
+    dialect, `REFRAIN_SET`): at most three; never on a fast Sunday or at a
+    funeral; about one meeting in four.
+  - *The doxology's one payoff* (the rule): the cumulative assembly, else
+    the partner hymn (the payoff die's bottom), else the refrain (its top) —
+    the two never both — else, on a Sunday with none, the bands crossing it.
+    A band seated in the doxology leaves it (for a hymn, or the postlude)
+    whenever the payoff is another's.
+  - The desk writes them as hymns (`prepare(seed, n, rows, forms)`; an order
+    carries `piece`: `compose`, `round`, `partner` (on its first hymn),
+    `refrain`, `refrainIn` (on the refrain)); the refrain's orders stand
+    aside (no hymn is written knowing them, no board number).
+- **Streams.**
+
+  | label | draws |
+  |---|---|
+  | `forms:<n>` | forks `round`, `round:which`, `payoff`, `refrain:later` |
+  | `refrain:<n>` | the composer's refrain as written; `refrain:<n>:<k>` each statement (`k` 0–2), and → `performance` the ward's singing of it (`tempo`, `vowels:<v>`, …) |
+  | `hymn:<n>:<i>` → `performance` | adds the forks `round` (by the parts or the pews, two or three times round, once through first, which side of the chapel first) and `quartet` (whether, and which of the surest three of each section) |
+  | `cast:<n>` | adds `primary` (how many) and `primary:<k>` (each child: the family they sit with, the name, the voice) |
+  | `guest:handbells:<n>`, `guest:singingschool:<n>` | the guests' own (their handoff: `seat`, `shape`, `material`, `synth`; `seat`, `lesson`, `vowels`, `material`, `synth`) |
+  | `synth:band` → `partner:<id>` | sound-level: the cornet against the partner |
+
+- **The ward's practices** (§11.3's table, extended):
+  - gospel: now and then (`QUARTET_RATE`, 45 %) the verses are `quartet`:
+    four of the ward (`plan.quartet`: the Score's part → member) sing the
+    stanza on the near bus, each at the Score's exact pitch and on the beat
+    (their own habits taken back out), and the ward comes in on the refrain
+    and the tag; the enthusiast may sing out on the refrain;
+  - the Primary song (`hymn.kind: "primary"`): the Primary (`ward.primary`,
+    `plan.primary`: the children, the child among them) sings every line at
+    the front, `unison`; the ward joins the chorus after the first verse; the
+    chorister `leads the Primary`;
+  - a round (`hymn.round`): unaccompanied, keyed; `plan.round = {by: "parts"
+    | "pews", entries, times, side, segments, delayBeats, groups}`; verses
+    `["unison", "round"]` or `["round"]`; in the `round` verse each group
+    enters `delayBeats` after the last and goes round `times` times; no
+    A-men; the chorister `sets the round going`;
+  - a statement of the refrain (`Cast.planRefrain`): no keying, no organ;
+    the first: a verse by the enthusiast alone (`forward.alone`) then the
+    ward's; after a later hymn the ward's, the enthusiast singing out; in the
+    doxology the ward's, nobody forward. It is sung after the hymn's last
+    verse, before its A-men or tag;
+  - the partner's last verse: when `hymn.partner.combined`, the first tune
+    (`hymn.partner.firstTune`) played against it on the chorister's clock
+    (`Cast.clock`) — by the organist on `trumpet solo` (`PARTNER_ORGAN`, 60 %
+    where there is an organ) or by a cornet of the ward's band (a man of the
+    pews, `S.seatedSend("cornet")`).
+- **Performance.** Practices add `quartet` and `round` (`PRACTICES`); a
+  forward entry may carry `alone` (the rest of the ward is silent under it).
+- **Events** (`kolob-score.js` EVENTS): `round-entry {hymnId, entry, group,
+  verse, singers}`; `partner {hymnId, of, by: "organ" | "cornet" | "none",
+  combined, verse, player}`; `refrain {refrainId, statement, after, dox, by,
+  key, dialect}`; `payoff {kind: "assembly" | "partner" | "refrain" |
+  "bands", section, hymnId}` — told once, as the payoff sounds. `cast` adds
+  the actions `starts the refrain`, `leads the quartet`, `leads the Primary`,
+  `sets the round going`, `plays the first hymn on the cornet` (a ✦ row), and
+  the organist's `plays the first hymn against it` (a ✦ row). `hymnal`
+  carries each row's `piece` and `forms: {round, partner, refrain: {id,
+  dialect, after}, payoff, why}`. A statement's `verse-start` and
+  `verse-line` carry `refrain: true`; a round's `verse-line` its `group` and
+  `pass`. `guest` from the new guests: `handbells` stages `ring` (the first
+  sound), `verse2`, `round-entry`, `cascade`; `singingschool` stages `fork`,
+  `try`, `cut`, `alone`, `again` (and `experimental: true`).
+- **Notes.** A round's: `group`, `pass`; the Primary's: `primary`, the part
+  of the tune they sing; a statement's: `refrain`, `hymnId` `r:<n>:<k>`; the
+  partner's first tune: on layer `organ` (`part: "partner"`, `partner`) or
+  layer `cornet` (`part: "partner"`, `partner`, `of`, `line`, `beat`, `deg`,
+  `monzo`, `octave`, `keyMonzo`). The bells: layer `handbells` (`part`,
+  `role`, `ringer`, `bell`, `tech`, `pan`, `loud`, `reached`, `rings` — the
+  hymn rung); the practice: layer `choir` (the fork on `ambient`) with
+  `stage`, `wrong`, `rehearses`; both guest-tagged (`guest`, `logged`).
+- **The guests seated** (`planMeeting`): the singing school after the
+  trombones (the prelude; the switch `KOLOB.Experimental.snapshot()` handed
+  down; its morning is the seating `school`, the house waking after the
+  practice), the handbell choir after the forms (the bands' final section
+  known): both keep their own time (`cued`), their material made ready at
+  their cue (`standingMaterial`: the day's first hymn — the doxology's, for
+  the bells in the postlude — `prepare()`d and scored, the section held for
+  it), laid out through `hooks.defer` on the guests' lane, and the house
+  listens while they sound (`LISTENED`). Forcing: `handbells` and
+  `singingschool` join `FORCEABLE` (the school's switch still rules); the
+  Ives switch's own pick may bring the handbells.
+- **The rooms.** `S.seatedSend(layer)`: a guest who stands in the chapel is
+  seated as a layer (`ROOM_DEPTH.handbells` −0.35, `cornet` −0.12), or into
+  the layer's own gain where there is one (the practice into `choir`), through
+  the meeting's doors (`doors.seats`; STOP closes them).
+- **`S.Meeting`** adds `forms()`, `payoff()`, `refrainAfter(hymnId)`.

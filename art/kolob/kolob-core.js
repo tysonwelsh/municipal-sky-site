@@ -214,6 +214,20 @@ window.KolobAudio = (function () {
     } catch (e) {}
     return (Date.now() % 0xffffffff) >>> 0;     // no seed asked for: the hour chooses the visit
   })();
+  // THE CHOIR SWITCH (round 3b, dev): ?choir=house sings the meeting with
+  // the house's four formant voices, as round 3 did — the owner's A/B
+  // against the ward (the ward is the meeting's choir otherwise)
+  S.houseChoir = (function () {
+    try { return typeof location !== "undefined" && /[?&]choir=house\b/.test(location.search || ""); } catch (e) { return false; }
+  })();
+  // THE ORGAN SWITCH (round 3b, step 2, dev): ?organ=house plays the meeting
+  // on the house's old additive organ, as round 3b's first step did (the
+  // organist is still seated and named, and plays nothing: no chorale
+  // prelude, no fills) — the owner's A/B against the pipe organ and the
+  // Sunday's organist (the meeting's organ otherwise)
+  S.houseOrgan = (function () {
+    try { return typeof location !== "undefined" && /[?&]organ=house\b/.test(location.search || ""); } catch (e) { return false; }
+  })();
   var root = null;                 // the visit's stream: every fork is born of it
   var dice = { n: -1, streams: {}, turns: {} };   // this meeting's streams, by label
   var synths = {};                 // synth:<voice>, one per voice for the whole visit
@@ -251,6 +265,10 @@ window.KolobAudio = (function () {
   // The day's hymnal hands the seed and the label to the composer's desk,
   // which may be another thread: the same fork is born there.
   function hymnStream(n, i) { return visitRoot().fork("hymn:" + n + ":" + i); }
+  // castStream(n): the ward seated for meeting n (SCORE §3: cast:<n>; each
+  // member's dice are member:<id> below it, the people's role:<role>). Pure
+  // seating (kolob-cast.js); meeting 0 is the rail's audition.
+  function castStream(n) { return visitRoot().fork("cast:" + n); }
   // synth(voice): sound-level detail for a voice, the whole visit long.
   function synth(voice) {
     if (auditioning) return audition();
@@ -274,9 +292,17 @@ window.KolobAudio = (function () {
   // in the room now; the wire is on the table; the deacon's parlor organ is
   // in the same building as the choir; the landscape and the field are at
   // the back, under the windows.
-  var ROOM_DEPTH = { voice: -0.35, telegraph: -0.25, harmonium: -0.15, clarinet: -0.08, bells: 0, choir: 0.05, organ: 0.10, strings: 0.15, drone: 0.15, tuba: 0, bagpipe: 0.05, ambient: 0.20 };
+  var ROOM_DEPTH = { voice: -0.35, telegraph: -0.25, harmonium: -0.15, clarinet: -0.08, bells: 0, choir: 0.05, organ: 0.10, strings: 0.15, drone: 0.15, tuba: 0, bagpipe: 0.05, ambient: 0.20,
+                     // (round 3b: a person of the ward come forward — the alto's verse, the
+                     // precentor's line, the descant — is heard a step nearer than the ward)
+                     "choir-near": -0.2,
+                     // (round 3b, step 3: the handbell choir stands at the front of the
+                     // chapel, as near as the still small voice; the cornet of the ward's
+                     // band plays the first hymn against the partner from the front pew)
+                     handbells: -0.35, cornet: -0.12 };
 
   var layerGains = {};
+  var choirNear = null;            // (round 3b) the ward's nearer way into the rooms, under the choir's slider
   // organ 0.52 → 0.40 (about 2.3 dB down): the owner found the organ "pretty
   // loud" in the v0.34 preview (2026-09-28)
   var layerVolumes = { organ: 0.40, drone: 0.55, choir: 0.8, clarinet: 0.38, bagpipe: 0.18, harmonium: 0.45, strings: 0.5, bells: 0.5, voice: 0.35, telegraph: 0.25, tuba: 0.5, ambient: 0.5 };
@@ -463,6 +489,12 @@ window.KolobAudio = (function () {
       layerGains[layer] = node;
       applyLayerGain(layer);
     }
+    // THE WARD'S NEAR WAY (round 3b): a person come forward sings into the
+    // rooms a step nearer than the ward (ROOM_DEPTH["choir-near"]), under the
+    // choir's own slider (applyLayerGain keeps the two together)
+    choirNear = ctx.createGain();
+    seatLayer("choir-near", choirNear);
+    applyLayerGain("choir");
     makeClock();
     // the composer's desk is opened now — at the button press, not in a
     // cue — so its rooms are loaded long before the first hymn is ordered
@@ -482,6 +514,29 @@ window.KolobAudio = (function () {
     if (roomBlend) roomBlend.register(name, src, ROOM_DEPTH[name] || 0);
     else if (roomWide) src.connect(roomWide.send);
     else src.connect(voicesBus);
+  }
+  // THE STANDING GUESTS' WAY INTO THE ROOM (round 3b, step 3; the guest
+  // crew's request 2): a guest who stands IN the chapel — the handbell choir,
+  // the cornet of the ward's band — is seated as a layer is, into both rooms
+  // at a depth of its own (ROOM_DEPTH), a step nearer than the ward, and not
+  // through the tabernacle's wide send the visitors from outside take; the
+  // singing school, the ward's own choir practising, goes into the choir's
+  // own layer (its slider, its seat). One seat for each (the room blend has
+  // no unregister), and the meeting's own door in front of it, so STOP
+  // closes it as it closes the wide send.
+  var guestSeats = {};
+  function seatedSend(layer) {
+    var d = liveDoors();
+    if (d.seats[layer]) return d.seats[layer];
+    var into = layerGains[layer];
+    if (!into) {
+      if (!guestSeats[layer]) { guestSeats[layer] = ctx.createGain(); guestSeats[layer].gain.setValueAtTime(1, ctx.currentTime); seatLayer(layer, guestSeats[layer]); }
+      into = guestSeats[layer];
+    }
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(1, ctx.currentTime);
+    g.connect(into);
+    return (d.seats[layer] = g);
   }
   // the tabernacle's send for the guests outside the windows — through the
   // meeting's doors, like every other voice
@@ -743,7 +798,7 @@ window.KolobAudio = (function () {
   var doors = null;
   var closing = [];                // doors shut at STOP, disconnected after the fade
   var hallRinging = false;         // a meeting was stopped: its echo is still in the rooms
-  function openDoors() { return { pans: {}, field: {}, wide: null, hands: {}, spent: [] }; }
+  function openDoors() { return { pans: {}, field: {}, wide: null, hands: {}, spent: [], ward: null, seats: {} }; }
   function liveDoors() { return doors || (doors = openDoors()); }
   function shutDoors(d) {
     var k, i;
@@ -753,6 +808,8 @@ window.KolobAudio = (function () {
       for (i = 0; i < d.spent.length; i++) d.spent[i].disconnect();
       for (k in d.field) d.field[k].disconnect();
       if (d.wide) d.wide.disconnect();
+      for (k in d.seats) d.seats[k].disconnect();
+      if (d.ward) { d.ward.hall.disconnect(); d.ward.near.disconnect(); }
     } catch (e) {}
   }
   function shutClosingDoors() { while (closing.length) shutDoors(closing.pop()); }
@@ -806,10 +863,14 @@ window.KolobAudio = (function () {
   // at te (the guest's entrance, the cue's scheduled time): who lets go
   // (logged: false for a guest the minutes may not name — the event says so,
   // as every event of that guest's does)
-  function houseLetsGo(te, guest, logged) {
+  // (only: round 3b, step 4 — a rite whose seating sits some of the house
+  // out lets those alone go as it begins: a clarinet phrase the deacon
+  // wrote during the joint does not ring half a minute into THE CHOIR ALONE)
+  function houseLetsGo(te, guest, logged, only) {
     if (!ctx || !doors) return null;
     var d = doors, layers = [], released = [], until = te + HOUSE_RELEASE_S;
     Object.keys(HOUSE).forEach(function (L) {
+      if (only && !only[L]) return;
       // the house takes its hands off as the visitor comes in, whether or not
       // they were playing: no turn of it begins inside the release
       houseRest[L] = Math.max(houseRest[L] || 0, until);
@@ -848,7 +909,9 @@ window.KolobAudio = (function () {
     return until;
   }
   // a house voice asks before it begins a turn: is my release still going?
-  function houseRests(layer) { return !!ctx && now() < (houseRest[layer] || 0); }
+  // (round 3b, step 4: or does the rite's seating sit me out — the brush
+  // arbor's organ, the lined-out rite's strings, the choir alone's deacon)
+  function houseRests(layer) { return !!ctx && (now() < (houseRest[layer] || 0) || !!(S.Meeting && S.Meeting.sits && S.Meeting.sits(layer))); }
 
   function panAt(layer, p) {
     var d = liveDoors();
@@ -866,6 +929,24 @@ window.KolobAudio = (function () {
     var cl = p < -1 ? -1 : (p > 1 ? 1 : p);
     return pool[cl < -0.2 ? 0 : cl > 0.2 ? 2 : 1];
   }
+  // THE WARD'S WAYS INTO THE ROOM (round 3b): the thirty-two pour into the
+  // choir's own layer (its slider, its seat in the rooms); a person come
+  // forward, into the nearer way beside it. Both belong to the meeting's
+  // doors: a STOP closes them on everything the ward had written ahead.
+  // WARD_LEVEL sets the ward in the house's mix (each singer's line is the
+  // cast's 1/√8 a part): measured against the house voices it replaces
+  // (handoff r3b-ward-1)
+  var WARD_LEVEL = 0.16;
+  function wardBuses() {
+    var d = liveDoors();
+    if (!d.ward) {
+      var hall = ctx.createGain(), near = ctx.createGain();
+      hall.gain.setValueAtTime(WARD_LEVEL, ctx.currentTime); near.gain.setValueAtTime(WARD_LEVEL, ctx.currentTime);
+      hall.connect(layerGains.choir); near.connect(choirNear || layerGains.choir);
+      d.ward = { hall: hall, near: near };
+    }
+    return d.ward;
+  }
   function getRate(layer) {
     var base = (layerRate[layer] != null ? layerRate[layer] : 1);
     var trim = LAYER_RATE_TRIM[layer] != null ? LAYER_RATE_TRIM[layer] : 1;
@@ -882,7 +963,9 @@ window.KolobAudio = (function () {
     var node = layerGains[layer];
     if (!node) return;
     var trim = LAYER_VOL_TRIM[layer] != null ? LAYER_VOL_TRIM[layer] : 1;
-    node.gain.setValueAtTime((layerMuted[layer] || SHELVED[layer]) ? 0 : layerVolumes[layer] * trim, ctx.currentTime);
+    var v = (layerMuted[layer] || SHELVED[layer]) ? 0 : layerVolumes[layer] * trim;
+    node.gain.setValueAtTime(v, ctx.currentTime);
+    if (layer === "choir" && choirNear) choirNear.gain.setValueAtTime(v, ctx.currentTime);
   }
   function applyFieldGain(key) {
     var fg = doors && doors.field[key];
@@ -1159,6 +1242,8 @@ window.KolobAudio = (function () {
   function stop() {
     playing = false;
     if (clock) clock.stop();         // every pending cue is cancelled: nothing of this meeting is called again
+    if (S.wardStop) S.wardStop();    // and nothing more of the ward's is handed to the voices, or joined
+    if (S.organStop && ctx) S.organStop(ctx.currentTime + 0.7);   // nor of the organist's; the organ's case is shut after the fade
     if (doors) { closing.push(doors); doors = null; }
     hallRinging = true;
     if (bg) bg.stopped();
@@ -1193,6 +1278,7 @@ window.KolobAudio = (function () {
         LAYERS.forEach(function (l) {
           if (layerGains[l]) layerGains[l].gain.setValueAtTime(0, ctx.currentTime);
         });
+        if (choirNear) choirNear.gain.setValueAtTime(0, ctx.currentTime);
       }
     }, 800);
   }
@@ -1218,6 +1304,10 @@ window.KolobAudio = (function () {
   S.cueIn = cueIn;
   S.cueLayer = cueLayer;
   S.hymnStream = hymnStream;
+  S.seatedSend = seatedSend;
+  S.formStream = function (label) { return visitRoot().fork(label); };
+  S.castStream = castStream;
+  S.wardBuses = wardBuses;
   S.visitSeed = function () { return seed; };
   // is the music's now a cue's? (the hymnal counts a hymn written inside one)
   S.inCue = function () { return musicNow != null; };
@@ -1283,6 +1373,9 @@ window.KolobAudio = (function () {
       var M = S.Meeting, plan = M.plan();
       return {
         meeting: M.meetingNum(), activity: M.activity(),
+        // (round 3b, step 4: the calendar's Sunday, for the programme card;
+        // the rite's light and its seating)
+        sunday: M.day ? M.day() : null, light: M.light ? M.light() : null, scene: M.scene && M.scene() ? M.scene().name : null,
         section: M.section(), meter: M.meter(), mode: S.mode,
         local: localArc(), intensity: intensity(),
         hush: inHush(), fuging: inFuging(),
@@ -1308,6 +1401,35 @@ window.KolobAudio = (function () {
     getHymn: function (id) { return KOLOB.Hymnal ? KOLOB.Hymnal.hymnOf(id) : null; },
     hymnalStats: function () { return KOLOB.Hymnal ? KOLOB.Hymnal.stats() : null; },
     clockHealth: function () { return { cues: clockHealth.cues, late: clockHealth.late, maxLate: +clockHealth.maxLate.toFixed(4) }; },
+    // the ward (round 3b): who is seated this Sunday — the people you come
+    // to know, by role, in Deseret (nameEn and the archetype are dev-only) —
+    // and the desk's account of itself (lines handed, how many late, the
+    // tightest margin, the most in one pump, the mouths joined to the room);
+    // setChoir("house" | "ward") is the dev switch ?choir=house sets
+    getWard: function () {
+      var W = S.theWard ? S.theWard() : null;
+      if (!W) return null;
+      return { seated: W.members.filter(function (m) { return m.k != null; }).length,
+               people: W.individuals.map(function (id) { var m = W.byId[id]; return { memberId: id, role: m.role, nameDs: m.nameDs, part: m.part, archetype: m.archetype, archetypeEn: m.archetypeEn, nameEn: m.nameEn }; }) };
+    },
+    wardStats: function () { return S.wardStats ? S.wardStats() : null; },
+    getChoir: function () { return !S.houseChoir && KOLOB.Cast && KOLOB.VoicesVocal && S.wardOn ? "ward" : "house"; },
+    setChoir: function (which) { if (!playing) S.houseChoir = which === "house"; },
+    // the organ (round 3b, step 2): who is on the bench this Sunday (their
+    // style and habits; the name in Deseret, nameEn dev-only; whether the
+    // morning was seated for the chorale prelude, and the meeting's ledger —
+    // hymns, fills, the one strange fill), what the pipes cost (the cases,
+    // the nodes built, the most alive at once, plans still on the desk);
+    // setOrgan("house" | "pipe") is the dev switch ?organ=house sets
+    getOrganist: function () {
+      var o = S.Meeting && S.Meeting.organist ? S.Meeting.organist() : null;
+      if (!o) return null;
+      return { style: o.style, nameDs: o.nameDs, nameEn: o.nameEn, habits: JSON.parse(JSON.stringify(o.habits)), ledger: { hymns: o.ledger.hymns, fills: o.ledger.fills, strange: o.ledger.strange },
+               prelude: o.preludeDraw || null, chorale: S.Meeting.chorale ? S.Meeting.chorale() : null };
+    },
+    organStats: function () { return S.organStats ? S.organStats() : null; },
+    getOrgan: function () { return S.pipeOn && !S.houseOrgan && KOLOB.VoicesOrgan && KOLOB.Organist ? "pipe" : "house"; },
+    setOrgan: function (which) { if (!playing) S.houseOrgan = which === "house"; },
     setNoteListener: function (fn) { noteListeners.push(fn); },
     setEventListener: function (fn) { eventListeners.push(fn); },
     // on: true (a guest, drawn as the switch draws it), false, or — dev, the
