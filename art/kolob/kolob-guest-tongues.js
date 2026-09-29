@@ -654,6 +654,23 @@ window.KOLOB.GuestTongues = (function () {
   // its clock (hooks.defer), never a whole gift inside one callback
   // ==========================================================================
   var AHEAD = 2.5;
+  // ARMING (VoicesVocal's): with the engine's clock, each line is built a
+  // little ahead and joins the room only just before it sounds, each mouth
+  // only around its own moments; one arm-tick cue at a time from t to the
+  // end joins what is due and parts what has rung out (the ward's own pump
+  // may call VoicesVocal.arm too: it is one queue). With no clock (an
+  // offline render), every line joins at once.
+  var ARM_STEP = 0.1, ARM_LEAD = 0.8;
+  function armTicker(V, ctx, hooks, t, end) {
+    if (!hooks.defer || !V.arm) return false;
+    (function tick(at) {
+      hooks.defer(at, function () {
+        V.arm(ctx, at + ARM_LEAD, at);
+        if (at < end + 1.5) tick(at + ARM_STEP);
+      });
+    })(t);
+    return true;
+  }
   function perform(ctx, dest, t, material, stream, hooks) {
     var V = window.KOLOB.VoicesVocal;
     if (!V || !V.singer) throw new Error("KOLOB.GuestTongues: load kolob-voices-vocal.js first");
@@ -664,6 +681,7 @@ window.KOLOB.GuestTongues = (function () {
     function later(at, fn) { if (hooks.defer && at - AHEAD > t) hooks.defer(at - AHEAD, fn); else fn(); }
     function stage(st) { if (hooks.onStage) later(st.t, function () { hooks.onStage({ stage: st.stage, t: st.t, guest: NAME }); }); }
     sc.stages.forEach(function (st, i) { if (i < 4 || material.harmonium !== false) stage(st); });
+    var armed = armTicker(V, ctx, hooks, t, sc.end);
     // the singer
     var spec = {}; for (var k in sc.singerSpec) spec[k] = sc.singerSpec[k];
     spec.rand = synth.fork("singer"); spec.pan = sc.pan; spec.kind = "tongues"; spec.name = "tongues";
@@ -671,7 +689,7 @@ window.KOLOB.GuestTongues = (function () {
     sc.lines.forEach(function (ln) {
       later(ln.t0, function () {
         voice.sing(ctx, bus, ln.notes[0].t, ln.notes.map(function (x) { return { f: x.f, dur: x.dur, vowel: x.vowel, stress: x.stress, slur: !!x.slur }; }),
-                   SING_GAIN, { breathBefore: ln.breathBefore, inhale: 0.9, pan: sc.pan });
+                   SING_GAIN, { breathBefore: ln.breathBefore, inhale: 0.9, pan: sc.pan, defer: armed });
         if (hooks.onNote) ln.notes.forEach(function (x) {
           hooks.onNote({ layer: "choir", freq: x.f, t: x.t, dur: x.dur, part: sc.part, member: sc.singer, role: "tongues", guest: NAME, deg: x.deg, monzo: x.monzo, syl: x.vowel, wordDs: x.wordDs, slur: !!x.slur });
         });
@@ -684,7 +702,7 @@ window.KOLOB.GuestTongues = (function () {
         grp.forEach(function (h) {
           var hs = {}; for (var kk in h.voice) hs[kk] = h.voice[kk];
           hs.rand = synth.fork("hum:" + h.memberId); hs.sharedThroat = true; hs.sharedPan = true; hs.pan = h.pan; hs.name = "hum:" + h.memberId; hs.kind = "tongues-hum";
-          V.singer(hs).sing(ctx, bus, h.at, [{ f: h.f, dur: h.dur, vowel: "hum", stress: 1 }], HUM_GAIN, { breathBefore: 0.6, breathe: false });
+          V.singer(hs).sing(ctx, bus, h.at, [{ f: h.f, dur: h.dur, vowel: "hum", stress: 1 }], HUM_GAIN, { breathBefore: 0.6, breathe: false, defer: armed });
           if (hooks.onNote) hooks.onNote({ layer: "choir", freq: h.f, t: h.at, dur: h.dur, part: h.part, member: h.memberId, role: "hum", guest: NAME });
         });
       });

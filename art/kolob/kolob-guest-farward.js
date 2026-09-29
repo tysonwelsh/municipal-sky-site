@@ -241,6 +241,7 @@ window.KOLOB.GuestFarWard = (function () {
       tempo: sh.tempo, holdMul: sh.holdMul, breath: sh.breath, cents: sh.cents, drift: sh.drift,
       side: sh.side, distance: d, lpHz: Math.round(3200 - 1800 * d), delayS: r4(0.12 + 0.3 * d), direct: r4(0.55 - 0.25 * d), wet: r4(0.6 + 0.3 * d), trimDb: r4(-(2 + 4 * d)),
       desks: desks, voices: material.voices === "people" ? "people" : "desks", amen: !!(h.amen && (far === "same" || far === "tabernacle")),
+      nearby: !!material.nearby,                  // (a lab's A/B: the same ward with no valley between — what the distance takes)
     };
   }
 
@@ -334,6 +335,23 @@ window.KOLOB.GuestFarWard = (function () {
   // (the engine's way: each verse is handed as our ward's verse is written)
   // ==========================================================================
   var AHEAD = 2.5, TAIL = 5;
+  // ARMING (VoicesVocal's): with the engine's clock, each line is built a
+  // little ahead and joins the room only just before it sounds, each mouth
+  // only around its own moments; one arm-tick cue at a time from t to the
+  // end joins what is due and parts what has rung out (the ward's own pump
+  // may call VoicesVocal.arm too: it is one queue). With no clock (an
+  // offline render), every line joins at once.
+  var ARM_STEP = 0.1, ARM_LEAD = 0.8;
+  function armTicker(V, ctx, hooks, t, end) {
+    if (!hooks.defer || !V.arm) return false;
+    (function tick(at) {
+      hooks.defer(at, function () {
+        V.arm(ctx, at + ARM_LEAD, at);
+        if (at < end + 1.5) tick(at + ARM_STEP);
+      });
+    })(t);
+    return true;
+  }
   function toSung(notes) {
     var out = [], t = notes.length ? notes[0].t : 0;
     notes.forEach(function (x) {
@@ -357,8 +375,8 @@ window.KOLOB.GuestFarWard = (function () {
     var out = G(LEVEL * Math.pow(10, pr.trimDb / 20));
     delay.delayTime.value = pr.delayS; conv.buffer = valley(ctx);
     if (pan.pan) pan.pan.value = clamp(pr.side, -0.9, 0.9);
-    input.connect(delay); delay.connect(hp); hp.connect(lp); lp.connect(lp2);
-    lp2.connect(direct); lp2.connect(conv); conv.connect(wet);
+    if (pr.nearby) { input.connect(direct); direct.gain.value = 1; }
+    else { input.connect(delay); delay.connect(hp); hp.connect(lp); lp.connect(lp2); lp2.connect(direct); lp2.connect(conv); conv.connect(wet); }
     direct.connect(pan); wet.connect(pan); pan.connect(out); out.connect(dest);
     var pewsV = pr.desks.map(function (d, k) {
       var spec = {}; for (var x in d.spec) spec[x] = d.spec[x];
@@ -367,13 +385,22 @@ window.KOLOB.GuestFarWard = (function () {
       var ppl = [0, 1, 2].map(function (i) { var s2 = {}; for (var y in spec) s2[y] = spec[y]; s2.rand = synth.fork("desk:" + k + ":" + i); s2.pitchHabitCents = (i - 1) * spec.detuneCents * 0.8; s2.timingHabitMs = (spec.lag + (i - 1) * spec.spreadMs / 1000) * 1000; return V.singer(s2); });
       return { sing: function (c, dd, t, notes, g, o) { ppl.forEach(function (p) { p.sing(c, dd, t, notes, g / Math.sqrt(3), o); }); }, n: 3 };
     });
-    var origin = null, span = null, lastEnd = -1e9, told = [];
+    var origin = null, span = null, lastEnd = -1e9, told = [], armed = false, armUntil = -1;
+    // (the arm-tick runs over each verse as it is handed; a verse handed while
+    // an earlier one's tick still runs just extends it)
+    function armTo(from, to) {
+      if (!hooks.defer || !V.arm) return false;
+      if (armUntil >= from) { armUntil = Math.max(armUntil, to); return true; }
+      armUntil = to;
+      (function tick(at) { hooks.defer(at, function () { V.arm(ctx, at + ARM_LEAD, at); if (at < armUntil + 1.5) tick(at + ARM_STEP); else armUntil = -1; }); })(from);
+      return true;
+    }
     function lay(sc, now) {
       sc.lines.forEach(function (ln, j) {
         function go() {
           ln.desks.forEach(function (dk) {
             if (!dk.notes.length) return;
-            pewsV[dk.k].sing(ctx, input, dk.notes[0].t, toSung(dk.notes), DESK_GAIN, { breathBefore: j ? pr.breath : 0.5, breathe: false });
+            pewsV[dk.k].sing(ctx, input, dk.notes[0].t, toSung(dk.notes), DESK_GAIN, { breathBefore: j ? pr.breath : 0.5, breathe: false, defer: armed });
           });
           if (hooks.onNote) ln.desks.forEach(function (dk) { if (dk.k % 2) return; dk.notes.forEach(function (n) { hooks.onNote({ layer: "farward", freq: n.f, t: n.t + pr.delayS, dur: n.dur, part: dk.part, guest: NAME, deg: n.deg, cents: n.cents, verse: sc.v, line: ln.li }); }); });
         }
@@ -388,6 +415,7 @@ window.KOLOB.GuestFarWard = (function () {
         var bs = ourBeatS || pr.hymn.beatS, at = Math.max(ourAt + pr.lagBeats * bs, lastEnd + pr.breath);
         if (origin === null) { origin = at; span = Math.max(20, (verses || 2) * pr.lineBeats.reduce(function (a, b) { return a + b; }, 0) * bs); }
         var sc = score(pr, v, at, bs, { origin: origin, span: span }, stream);
+        armed = armTo(ourAt - 0.5, sc.t1 + pr.delayS);
         lay(sc, ourAt - 0.5);
         lastEnd = sc.t1; told.push({ v: v, ourAt: ourAt, t0: sc.t0, t1: sc.t1, sc: sc });
         if (hooks.onStage) hooks.onStage({ stage: "verse", v: v, t: sc.t0, guest: NAME });
@@ -397,6 +425,7 @@ window.KOLOB.GuestFarWard = (function () {
         if (!pr.amen) return lastEnd + pr.delayS;
         var at = Math.max(lastEnd + 0.3 * (ourBeatS || pr.hymn.beatS), ourAt), sc = amenScore(pr, at, ourBeatS, { origin: origin == null ? at : origin, span: span || 20 });
         if (!sc) return lastEnd + pr.delayS;
+        armed = armTo(ourAt - 0.5, sc.t1 + pr.delayS);
         lay({ v: -1, lines: [{ li: -1, t0: sc.t0, t1: sc.t1, desks: sc.desks }] }, ourAt - 0.5);
         lastEnd = sc.t1;
         return sc.t1 + pr.delayS;

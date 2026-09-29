@@ -204,6 +204,7 @@ window.Guests3c = (function () {
   P.far = function (ctx, into, t, o) {
     var st = settings(o), s = stream("farward", st.seed), mat = farMaterial(st, t, o);
     if (o.far) mat.far = o.far;
+    if (o.nearby) mat.nearby = true;
     if (V.budget && !o.keepBudget) V.budget.reset();
     var end = FW.perform(ctx, into.wide, t, mat, s, { defer: o.defer || null, onNote: o.onNote || null, onStage: o.onStage || null });
     return { dur: end - t + 1, expect: [], stats: budgetStats(t, end), last: FW.perform.last, ws: wardSheet(st) };
@@ -232,6 +233,8 @@ window.Guests3c = (function () {
     return { dur: end - t + 1.5, score: sc, expect: ex, stats: budgetStats(t, end), windows: windows, stages: stages, told: function () { return { stages: stages, notes: notes }; } };
   };
   P.hosanna.est = function (o) { var st = settings(o); return HO.timeline(stream("hosanna", st.seed), st.sunday).end + 1.5; };
+  // (for the cost's baseline: the lab's rooms alone, nothing sounding)
+  P.silence = function (ctx, into, t, o) { return { dur: (o && o.secs) || 30, expect: [] }; };
   // ---- the level reference: the v0.30 organChord, line for line (the
   // instruments, trombone and guests labs' P.reference) ------------------------
   var MAJ = [1, 9 / 8, 5 / 4, 4 / 3, 3 / 2, 5 / 3, 15 / 8];
@@ -657,8 +660,96 @@ window.Guests3c = (function () {
     v.meas2.appendChild(table(["Sunday", "seated", "even when forced?"], hosannaRule()));
   }
 
+  // ---- the odds and purity ------------------------------------------------------
+  // THE STAND-IN: the dice kolob-meeting.js planMeeting throws, in its order,
+  // for what matters to a seat — the calendar's Sunday and its kind; the
+  // order of service (hymns by kind, the testimony cut, an interlude, the
+  // second doxology); the hymnal's rows (a dialect each, a round after the
+  // first hymn now and then); and the other guests' dice and seats (the
+  // bands, the steeples, the old tune, the trombones, the singing school,
+  // the handbells). The harness measures the same against the real planner
+  // once the engine seats these guests.
+  var HYMNS = { ordinary: 2, fast: 1, conference: 3, jubilee: 3 };
+  var DIALECT_W = [["tabernacle", 4], ["sacredharp", 1.5], ["psalmody", 1], ["gospel", 1.2], ["shaker", 0.8], ["oldway", 1.5]];
+  function standIn(Rs) {
+    var sunday = K.Calendar.draw(Rs.next()), kind = K.Calendar.kindOf(sunday), pl = K.Calendar.SUNDAYS[sunday].plan || {};
+    var cutT = Rs.chance(pl.cutTestimony != null ? pl.cutTestimony : 0.25), inter = Rs.chance(0.15), dox2 = Rs.chance(pl.secondDox != null ? pl.secondDox : kind === "jubilee" ? 0.5 : 0);
+    var nH = pl.hymns || HYMNS[kind], secs = [{ type: "prelude" }, { type: "invocation" }];
+    for (var h = 0; h < nH; h++) secs.push({ type: "hymn" });
+    secs.push({ type: "testimony" }, { type: "sacrament" }, { type: "doxology" }, { type: "postlude" });
+    if (cutT) secs = secs.filter(function (x) { return x.type !== "testimony"; });
+    if (nH >= 2 && inter) for (var i = 0; i < secs.length; i++) if (secs[i].type === "hymn") { secs.splice(i + 1, 0, { type: "interlude" }); break; }
+    if (dox2) secs.splice(secs.length - 1, 0, { type: "doxology" });
+    var rows = [], first = true;
+    secs.forEach(function (x, k) { if (x.type === "hymn" || x.type === "doxology") { var d = Rs.pickW(DIALECT_W), rd = Rs.next(); rows.push({ id: "h:" + k, section: k, dialect: d, piece: !first && x.type === "hymn" && rd < 0.2 ? "round" : null }); first = false; } });
+    var house = rows.length ? rows[0].dialect : "tabernacle", guests = [];
+    function idx(type) { for (var j = 0; j < secs.length; j++) if (secs[j].type === type) return j; return -1; }
+    function add(type, sec) { var j = idx(sec); if (j >= 0) guests.push({ type: type, section: sec, index: j }); }
+    var bD = Rs.chance(0.36), bS = Rs.chance(0.7), stD = Rs.chance(0.075), stS = Rs.chance(0.55), oD = Rs.chance(0.12), oS = Rs.chance(0.65), tD = Rs.next(), ssD = Rs.chance(0.1), hbD = Rs.chance(0.125), hbS = Rs.next();
+    if (bD) add("bands", bS ? "doxology" : "hymn");
+    if (stD) add("steeples", stS ? "prelude" : "postlude");
+    if (oD) add("oldtune", oS ? "prelude" : "testimony");
+    var pre = guests.some(function (g) { return g.section === "prelude"; });
+    if (!bD && !pre && tD < 0.21) add("trombones", "prelude");
+    if (!guests.some(function (g) { return g.section === "prelude"; }) && ssD) add("singingschool", "prelude");
+    if (hbD) add("handbells", hbS < 0.38 ? "invocation" : hbS < 0.64 ? "sacrament" : "postlude");
+    return { sunday: sunday, kind: kind, house: house, sections: secs, hymnal: rows, guests: guests };
+  }
+  function odds(N) {
+    N = N || 20000;
+    var R0 = R(99).fork("lab:odds"), res = { n: N, tongues: {}, farward: {}, hosanna: {}, any: 0, two: 0, beside: 0, byGuest: { tongues: 0, farward: 0, hosanna: 0 } };
+    for (var i = 1; i <= N; i++) {
+      var m = standIn(R0), seated = [];
+      ["tongues", "farward", "hosanna"].forEach(function (g) {
+        var G = { tongues: TG, farward: FW, hosanna: HO }[g], info = { n: i, kind: m.kind, sunday: m.sunday, house: m.house, sections: m.sections, hymnal: m.hymnal, guests: m.guests.concat(seated) };
+        var seat = G.plan(info, R(i).fork(G.LABEL + i)), row = res[g][m.sunday] = res[g][m.sunday] || { n: 0, seated: 0 };
+        row.n++;
+        if (seat) { row.seated++; res.byGuest[g]++; seated.push({ type: g, section: seat.section, index: seat.sectionIndex != null ? seat.sectionIndex : m.sections.map(function (x) { return x.type; }).indexOf(seat.section) }); }
+      });
+      if (seated.length) res.any++;
+      if (seated.length > 1) res.two++;
+      seated.forEach(function (a) { m.guests.forEach(function (b) { if (a.type !== "hosanna" && Math.abs(a.index - b.index) <= 1) res.beside++; }); });
+    }
+    return res;
+  }
+  // PURITY: every plan and score twice on the same stream, alike; no Math.random
+  function purity() {
+    var st = settings(), ward = wardOf(st), h = hymnOf(st), secs = [{ type: "prelude" }, { type: "hymn" }, { type: "testimony" }, { type: "sacrament" }, { type: "doxology" }, { type: "postlude" }];
+    var real = Math.random, calls = 0, out = {};
+    Math.random = function () { calls++; return real(); };
+    try {
+      function twice(fn) { return JSON.stringify(fn()) === JSON.stringify(fn()); }
+      out.tongues = twice(function () { var s = stream("tongues", st.seed), seat = TG.plan({ sunday: "fast", kind: "fast", sections: secs, guests: [], ward: ward, force: true }, s); return [seat, TG.score({ mode: h.mode, keynoteHz: st.keynote, ward: ward, singer: seat.singer, house: st.dialect }, s, 0)]; });
+      out.farward = twice(function () { var s = stream("farward", st.seed), pr = FW.prepare({ hymn: h, keynoteHz: st.keynote }, s); return [FW.plan({ sunday: "conference", kind: "conference", sections: secs, hymnal: [{ id: h.id, section: 1, dialect: h.dialect }], guests: [], force: true }, s), pr.far, pr.lagBeats, FW.score(pr, 1, 10, h.beatS, { origin: 10, span: 60 }, s)]; });
+      out.hosanna = twice(function () { var s = stream("hosanna", st.seed); return [HO.plan({ sunday: "easter", sections: secs, force: true }, s), HO.score({ keynoteHz: st.keynote, ward: ward, sunday: "easter" }, s, 0)]; });
+    } finally { Math.random = real; }
+    out.mathRandomCalls = calls;
+    out.hosannaElsewhere = Object.keys(K.Calendar.SUNDAYS).filter(function (sun) { return sun !== "easter" && sun !== "dedication" && HO.plan({ sunday: sun, sections: secs, force: true }, stream("hosanna", st.seed)); });
+    return out;
+  }
+  function oddsCard() {
+    var v = views.odds = {}, card = el("section", "kg3-card");
+    card.appendChild(el("h2", "kg3-name", "The odds, and purity"));
+    card.appendChild(el("p", "kg3-phrase", "Each guest's plan() over 20,000 meetings of a stand-in for the engine's planner (the calendar's Sundays, the order of service, the hymnal's dialects, the other guests' own dice and seats); and every plan and score run twice on the same stream, with Math.random watched."));
+    var row = el("div", "kg3-row"), out = el("div"), pOut = el("p", "kg3-meas");
+    var bO = button("run the odds", null, function () {
+      busy(bO, new Promise(function (res) { setTimeout(function () { res(odds(20000)); }, 20); })).then(function (r) {
+        out.textContent = "";
+        var suns = Object.keys(K.Calendar.SUNDAYS);
+        out.appendChild(table(["guest", "all"].concat(suns), ["tongues", "farward", "hosanna"].map(function (g) {
+          return [g === "farward" ? "the far ward" : g === "tongues" ? "the gift of tongues" : "the Hosanna", (100 * r.byGuest[g] / r.n).toFixed(1) + " %"].concat(suns.map(function (sn) { var x = r[g][sn]; return x ? (100 * x.seated / x.n).toFixed(1) + " %" : "—"; }));
+        })));
+        out.appendChild(el("p", "kg3-stat", "meetings with at least one of the three: " + (100 * r.any / r.n).toFixed(1) + " % · with two or three: " + (100 * r.two / r.n).toFixed(1) + " % · seated in or beside another guest's section (the gift and the far ward): " + r.beside));
+      });
+    });
+    var bP = button("check purity", null, function () { var r = purity(); pOut.textContent = "same stream, same plan and score — the gift: " + (r.tongues ? "yes" : "NO") + " · the far ward: " + (r.farward ? "yes" : "NO") + " · the Hosanna: " + (r.hosanna ? "yes" : "NO") + " · Math.random calls: " + r.mathRandomCalls + " · the Hosanna seated, even forced, on any Sunday but Easter and a dedication: " + (r.hosannaElsewhere.length ? "YES " + r.hosannaElsewhere.join(", ") : "never"); });
+    row.appendChild(bO); row.appendChild(bP);
+    card.appendChild(row); card.appendChild(out); card.appendChild(pOut);
+    return card;
+  }
+
   // ---- INIT ---------------------------------------------------------------------
-  var CARDS = [["tongues", tonguesCard, tonguesPlan], ["farward", farwardCard, farwardPlan], ["hosanna", hosannaCard, hosannaPlan]];
+  var CARDS = [["tongues", tonguesCard, tonguesPlan], ["farward", farwardCard, farwardPlan], ["hosanna", hosannaCard, hosannaPlan], ["odds", oddsCard, function () {}]];
   function refresh() {
     try { hymnLine(); } catch (e) { $("kg3-hymn").textContent = "compose: " + e.message; return; }
     CARDS.forEach(function (c) { if (views[c[0]] || c[0] === "odds") try { c[2](); } catch (e) { if (window.console) console.warn(c[0], e); } });
@@ -688,6 +779,7 @@ window.Guests3c = (function () {
 
   return {
     play: play, stop: stop, check: check, render: render, refresh: refresh, cost: cost, farCheck: function () { return farCheck(); },
+    now: function () { return actx ? actx.currentTime : 0; }, ctx: function () { return actx; }, odds: odds, purity: purity, standIn: standIn,
     hymn: function () { return hymnOf(settings()); }, ward: function () { return wardOf(settings()); }, told: function () { return told.slice(); },
     _P: P, _settings: settings,
   };

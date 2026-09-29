@@ -351,7 +351,21 @@ window.KOLOB.GuestHosanna = (function () {
   // the ward line by line; each laid out a little before it sounds. It
   // tells nothing but its stages, each logged: false
   // ==========================================================================
-  var AHEAD = 2.5;
+  var AHEAD = 2.5, ORGAN_AHEAD = 1.2, ARM_STEP = 0.1, ARM_LEAD = 0.8;
+  // the arm-tick: one cue on the engine's clock at a time, from t to the
+  // end, each joining what is due within ARM_LEAD and parting what has rung
+  // out (VoicesVocal.arm; the ward's own pump may call it too — it is the
+  // same queue). With no clock (an offline render), every line joins at once.
+  function armTicker(V, ctx, hooks, t, end) {
+    if (!hooks.defer || !V.arm) return false;
+    (function tick(at) {
+      hooks.defer(at, function () {
+        V.arm(ctx, at + ARM_LEAD, at);
+        if (at < end + 1.5) tick(at + ARM_STEP);
+      });
+    })(t);
+    return true;
+  }
   function perform(ctx, dest, t, material, stream, hooks) {
     var V = window.KOLOB.VoicesVocal, VO = window.KOLOB.VoicesOrgan;
     if (!V || !V.singer) throw new Error("KOLOB.GuestHosanna: load kolob-voices-vocal.js first");
@@ -361,7 +375,13 @@ window.KOLOB.GuestHosanna = (function () {
     var bus = ctx.createGain(); bus.gain.value = LEVEL; bus.connect(dest);
     var obus = ctx.createGain(); obus.gain.value = LEVEL; obus.connect(hooks.organDest || dest);
     function later(at, fn) { if (hooks.defer && at - AHEAD > t) hooks.defer(at - AHEAD, fn); else fn(); }
+    function laterBy(at, lead, fn) { if (hooks.defer && at - lead > t) hooks.defer(at - lead, fn); else fn(); }
     sc.stages.forEach(function (st) { if (hooks.onStage) later(st.t, function () { hooks.onStage({ stage: st.stage, t: st.t, guest: NAME, logged: LOGGED }); }); });
+    // ARMING (VoicesVocal's): with the engine's clock, every line is built a
+    // little ahead but joins the room only just before it sounds, and each of
+    // its mouths only around its own moments — forty voices' consonants and
+    // vowels cost the audio thread only while they speak
+    var armed = armTicker(V, ctx, hooks, t, sc.end);
     // THE SHOUT
     var shouters = {};
     function shouter(p) {
@@ -371,15 +391,15 @@ window.KOLOB.GuestHosanna = (function () {
       return (shouters[p.memberId] = V.singer(spec));
     }
     var nCries = sc.people.length ? sc.people[0].lines.length : 0;
-    for (var c = 0; c < nCries; c++) for (var g0 = 0; g0 < sc.people.length; g0 += 10) (function (c, grp) {
+    for (var c = 0; c < nCries; c++) for (var g0 = 0; g0 < sc.people.length; g0 += 5) (function (c, grp) {
       var first = Math.min.apply(null, grp.map(function (p) { return p.lines[c].t; }));
       later(first, function () {
         grp.forEach(function (p) {
           var ln = p.lines[c];
-          shouter(p).sing(ctx, bus, ln.t, ln.notes, SHOUT_GAIN, { breathBefore: c ? 0.8 : 1.2, inhale: 0.25, fric: 0.35 });
+          shouter(p).sing(ctx, bus, ln.t, ln.notes, SHOUT_GAIN, { breathBefore: c ? 0.8 : 1.2, inhale: 0.25, fric: 0.35, defer: armed });
         });
       });
-    })(c, sc.people.slice(g0, g0 + 10));
+    })(c, sc.people.slice(g0, g0 + 5));
     // THE HYMN: the organ on its own way into the rooms, full; the ward
     var organ = VO && VO.create ? VO.create(ctx, obus, { gain: ORGAN_GAIN, rand: synth.fork("organ"), t0: sc.hymn.giving.t0 - 0.5 }) : null;
     var H = sc.hymn, ward = {};
@@ -393,16 +413,32 @@ window.KOLOB.GuestHosanna = (function () {
       if (!hooks.onNote) return;
       ["S", "A", "T", "B"].forEach(function (p) { ln.parts[p].forEach(function (n) { hooks.onNote({ layer: "choir", freq: n.f, t: n.t, dur: n.dur, part: p, hymnId: sc.tune.id, line: ln.i, beat: n.beat, deg: n.deg, monzo: n.monzo, hosanna: true, engrave: ENGRAVE_HYMN, logged: LOGGED }); }); });
     }
-    if (organ) later(H.giving.t0, function () { organ.play(H.giving.t0, H.giving.notes, H.registration); });
+    // the organ a bar at a time, each piece handed ORGAN_AHEAD before it
+    // sounds (a whole line of full organ laid at once kept some four hundred
+    // keys' nodes waiting on the audio thread): the tremulant set by the
+    // first piece of a line, the level law fixed for four voices throughout
+    function organLine(t0, notes, first) {
+      if (!organ) return;
+      var bar = 4 * H.beatS, pieces = {};
+      notes.forEach(function (nt) { var k = Math.floor((nt.at + 1e-6) / bar); (pieces[k] = pieces[k] || []).push(nt); });
+      Object.keys(pieces).map(Number).sort(function (a, b) { return a - b; }).forEach(function (k, i) {
+        var at0 = t0 + k * bar, ns = pieces[k].map(function (nt) { return { f: nt.f, dur: nt.dur, at: +(t0 + nt.at - at0).toFixed(4), pedal: nt.pedal, v: nt.v }; });
+        laterBy(at0, ORGAN_AHEAD, function () { organ.play(at0, ns, H.registration, { trem: first && i === 0 ? undefined : false, texture: 4 }); });
+      });
+    }
+    organLine(H.giving.t0, H.giving.notes, true);
     H.lines.forEach(function (ln) {
-      later(ln.t0, function () { if (organ) organ.play(ln.t0, ln.organ, H.registration); report(ln); });
-      ["S", "A", "T", "B"].forEach(function (p) {
-        later(ln.t0 + 0.02, function () {
-          var notes = ln.parts[p]; if (!notes.length) return;
-          var sung = [], tt = notes[0].t;
-          notes.forEach(function (n) { if (n.t > tt + 0.004) sung.push({ rest: true, dur: n.t - tt }); sung.push({ f: n.f, dur: n.dur, vowel: n.vowel, stress: n.stress, slur: !!n.slur }); tt = n.t + n.dur; });
-          H.singers.forEach(function (s) { if (s.sings === p) voice(s).sing(ctx, bus, notes[0].t, sung, WARD_GAIN, { breathBefore: ln.i ? 0.3 : 0.9 }); });
-        });
+      organLine(ln.t0, ln.organ, false);
+      later(ln.t0, function () { report(ln); });
+      // the ward a handful at a time (four singers a slice)
+      ["S", "A", "T", "B"].forEach(function (p, pi) {
+        var notes = ln.parts[p]; if (!notes.length) return;
+        var sung = [], tt = notes[0].t;
+        notes.forEach(function (n) { if (n.t > tt + 0.004) sung.push({ rest: true, dur: n.t - tt }); sung.push({ f: n.f, dur: n.dur, vowel: n.vowel, stress: n.stress, slur: !!n.slur }); tt = n.t + n.dur; });
+        var who = H.singers.filter(function (s) { return s.sings === p; });
+        for (var h0 = 0; h0 < who.length; h0 += 4) (function (grp, k) {
+          later(ln.t0 + 0.02 + k * 0.03, function () { grp.forEach(function (s) { voice(s).sing(ctx, bus, notes[0].t, sung, WARD_GAIN, { breathBefore: ln.i ? 0.3 : 0.9, defer: armed }); }); });
+        })(who.slice(h0, h0 + 4), pi * 3 + h0 / 4);
       });
     });
     // when the room has let the last chord go, let the buses and the organ go
