@@ -807,7 +807,7 @@ window.KOLOB = window.KOLOB || {};
       if (tmSeat) { C.testimony = { seat: tmSeat, stream: tmStream, material: null, fired: false, until: 0 }; holdSection("testimony", tmSeat.holdUntil); }
     }
     if (C.visitations.length) emitEvent({
-      type: "guests-drawn", guests: C.visitations.map(function (v) { return { guest: v.type, section: v.section }; }),
+      type: "guests-drawn", guests: C.visitations.map(function (v) { return { guest: v.type, section: v.section, index: seatIndex(v) }; }),
       cat: "visitation-draw", label: C.visitations.map(function (v) { return v.type + "@" + v.section; }).join(","),
     });
     // THE SEATINGS OF THE OTHER RITES (round 3b, step 4; PLAN §7.4): the
