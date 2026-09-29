@@ -65,7 +65,7 @@ The local server is running. Open a seed and press PLAY:
 | 4 | **The gulls** | `?seed=50` | **8:58** to 9:07 | Short. A flock crosses during the testimony. Listen closely: the lead gull's cries trace the head of the first hymn. |
 | 5 | **Variations on a hymn** | `?seed=55` | **14:24** to 16:36 | The postlude is the organist's recital on one of the day's hymns: a plain chorale (14:26), a trio with the tune in the pedals (14:55), **the tune in two keys at once** (15:35, Ives's joke), and a grand finale on the full organ (15:50). |
 | 6 | **Change ringing** | `?seed=53` (Christmas) | **0:03** to 1:15 | The meetinghouse bell first. At 0:07 a far tower begins in rounds, then from 0:14 it rings Plain Bob Doubles. At 1:00 it comes back to rounds ("that's all") and stands, and the meetinghouse bell has the last word. |
-| 7 | **The gift of tongues** | `?seed=5` (fast Sunday) | **6:25** to 7:23 | In the testimony, one of the ward rises (named in the minutes) and sings a free song in syllables no one knows. At 7:09 the ward hums its last note, and the harmonium takes it up. |
+| 7 | **The gift of tongues** | `?seed=5` (fast Sunday) | **6:25** to 7:23 | In the testimony, one of the ward rises (named in the minutes) and sings a free song in syllables no one knows. At 7:09 the ward hums its last note. (On other Sundays the harmonium then takes up the song's opening; on this one it sits the rite out.) |
 | 8 | **The far ward** | `?seed=44` (fast Sunday) | **4:31** to 5:18 | During the first hymn, a second congregation far across the valley joins in with the same hymn, a line behind ours, in its own slightly different tuning. It's quiet and distant; listen for the echo that isn't an echo. |
 | 9 | **The Hosanna** | `?seed=37` (Easter) | **17:55** to 19:50 | After the doxology, the ward rises. First the shout, "Hosanna" three times, with the amens. Then from about 18:32, "The Spirit of God" on the full organ and the full ward. **Nothing appears in the minutes, on the hymn board or on the staff.** That's by design: it just happens. It comes at the very end of the meeting; to hear it sooner, use the wheel's dev jump to the doxology, and the Hosanna follows the doxology's hymn. |
 | 10 | **The testimony-bearers** | `?seed=3` | **8:00** to about 9:40 | Three of the ward rise in turn (8:00, 8:38, 9:14), each named in the minutes. Each "speaks" in speech-melody with no words, and the harmonium or the clarinet plays their phrases back (8:22, 8:59, 9:35). A funeral's bearers: `?seed=1`, from 8:37. |
@@ -146,7 +146,7 @@ no guest runs about 30 % (35 % at its busiest).**
 | the gulls | 19 % | 22 % | 360 |
 | the gift of tongues | 17 % | 28 % | 460 |
 | the testimony-bearers | 16 % | 19 % | 220 |
-@@WHOLE-PLAIN@@
+| **a whole meeting** (seed 22: the band, a second band, the Social Hall) | 17 % | 41 % | 2,540 |
 
 - **The clock kept time everywhere.** No cue was late, and there were no
   errors in any run. The pages at 860 and 390 pixels wide had no sideways
@@ -155,8 +155,10 @@ no guest runs about 30 % (35 % at its busiest).**
   had 18 of about 41,000 render slices go over (the longest 5.9 ms against
   5.33), and the far ward had one (6.4 ms). Nothing shows a dropout, but
   listen at the Hosanna's shouts and the far ward's first verse for a click.
-- **Pressing PLAY** takes about a tenth of a second of the page's time, as
-  before; the new guests warm up then, not while the music plays.
+- **Pressing PLAY** now takes about an eighth of a second of the page's
+  time (122–125 ms, against 70–82 ms before this round, same seed): the new
+  guests warm up then — the company's voices, the ringers' touches, the far
+  ward's valley — so that nothing of it happens while the music plays.
 - **Where to save, if you want to:** the far ward in eight "pews" instead of
   24 throats; the Hosanna without the Primary's children, or on a smaller
   organ registration; fewer second bands. None of this has been done.

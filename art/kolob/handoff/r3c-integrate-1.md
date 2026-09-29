@@ -190,6 +190,9 @@ profile `kolob-r3c-integrate-chrome`), the page on :8175.
 | **REPRO** (the same seed twice, jittered timers, re-salted sound) | **PASS** on seeds 55, 37, 10, 5, 41, 50, 53, 1, 1847, 7 (1,100–1,250 s) and 22 at 1,200 s: the score identical every time, the sound identical under jittered timers (the variations, made ready in idle time, included). At 1,250 s seed 22's jittered run wrote three organ chords of meeting 2 a pump earlier at the run's cut-off (the organist's desk lays its next pump by the audio clock); the scores were identical, and at 1,200 s all four runs are |
 | **TRANSPORT**, paused and stopped *inside* each new guest (`pause=`, `stops=`) | **PASS** in the band (22, 230/240 s), the Social Hall (22, 990 s), the Hosanna (37, 1,100–1,160 s), the far ward (10, 420/430 s), the variations (55, 880/900 s), the gift (5, 395/405 s), the bearers (1, 530/540 s), the company (41, 870/880 s), the gulls (50, 540/542 s) and the far tower (53, 30/40 s): the same meeting after a 30 s hold, silent while held; after every stop 0 stale sources and 0 rooms still ringing reach the hall; and at its own defaults (seed 1847, 100 s, 150 and 330 s) |
 | the page, muted Chrome, 860 and 390 px | 0 console errors or warnings in every trace (below); no sideways scroll (scroll width = the viewport); the direction line names the band, the Social Hall, the gift, the company… and never the Hosanna |
+| the clerk's minutes in the page (`&latin=1`, each guest's seed, jumped to its rite) | every row written: A BAND APPROACHES, A SECOND BAND APPROACHES, THE BAND GOES BY, THE BANDS CROSS, PASSES ON (22); THE BENCHES ARE PUSHED BACK, … TAKES UP THE FIDDLE, … CALLS THE DANCE, HONOUR YOUR PARTNER, THE DANCE, ALL THE WAY HOME (22); … RISES AND SINGS IN TONGUES, THE WARD HUMS (5); … RISES TO BEAR TESTIMONY, THE WORDS MADE A TUNE (3); … PLAYS VARIATIONS ON THE HYMN (55); A HANDCART COMPANY, ALL IS WELL (41); and **nothing** of the Hosanna (37) |
+| the page's switch, `&guest=<name>` | the gulls, the variations, the Social Hall, the company, the far ward (seed 9), the gift (3), change ringing beside a band (22) and the Hosanna (69, Easter) each seated in the first meeting, 0 errors |
+| the lab pages that load the changed rooms | guests3a/3b/3c/3d-lab, guests-lab, organist-lab and cast-lab load with 0 console errors |
 | the staff (critic A, note 5) | the band's march drawn over the ward's hymn with the tuba's oom and its barlines (screenshot, seed 22, 860 px) |
 | the gift's words (critic C, note 1) | 400 tongues, 3,200 words: 0 name-shaped (Lila, Lola, Lana, Mila, Nola, Leah, Noah), 0 fallbacks |
 
@@ -216,8 +219,11 @@ the ward's own hymn with the organ and no guest.
 | the handcart company (41, postlude, 100; at 390 px) | 31.6 · 36.7 · 37.6 | 1.45 · 4.21 · 5.05 (0) | 949 | 0 |
 | change ringing from a far tower (53, from the press, 90) | 23.7 · 26.2 · 27.3 | 1.02 · 2.69 · 3.48 (0) | 474 | 0 |
 | the gulls (50, testimony, 110, about 9 s of them; at 390 px) | 18.9 · 21.4 · 22.2 | 1.02 · 1.92 · 3.02 (0) | 361 | 0 |
-@@WHOLE@@
+| **a whole meeting**, the band and a second band, then the Social Hall (22, from the press, 1,085; at 390 px) | 17.3 · 30.2 · 41.3 | 0.76 · 2.82 · 5.24 (0 of 204,083) | 2,539 | 0 |
 
+- **The page keeps the harness's time.** In the whole meeting the band was
+  heard from 3:21 to 4:34 and the Social Hall from 16:01 to 17:32, as the
+  harness has them; the packet's times are the harness's.
 - **The audio clock kept time in every window**: no late cue (0 of 324 to
   3,061 cues each), the audio clock's ratio to the wall at a median of 1.00
   (its lowest second 0.92–0.99, each answered by the next).
@@ -292,10 +298,13 @@ the ward's own hymn with the organ and no guest.
 - **Rare by design.** With the band's 36 % kept and six in ten meetings
   carrying a guest, each new guest comes in one to five meetings in a
   hundred. The packet gives a seed for each.
-- **The press.** The PLAY press is one long task of 110–126 ms in every
+- **The press.** The PLAY press is one long task of 105–129 ms in every
   trace (the yardstick without a guest too): the graph, the first meeting's
   plan, the composer's desk opened, and now the new guests' warm-ups (the
   company's silent line, the ringers' touches, the far ward's valley).
+  Against kolob-2's build (`git archive`, served on :8176, seed 3, three
+  presses each, alternating): 122–125 ms now, 70–82 ms before. Nothing of
+  it lands in a cue of the clock.
 - **Callbacks over the budget.** The Hosanna: 18 of 40,849 render callbacks
   over 5.33 ms (the longest 5.9 ms), as crew C measured; the far ward: 1 of
   28,798 (6.4 ms). The audio clock kept time in both (no late cues, the
