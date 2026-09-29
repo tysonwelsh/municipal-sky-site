@@ -750,9 +750,10 @@ promised still sounds as it did; round 2 changes the edges:
   a street beat (four-bar phrases, 16–21 s) while the road carries the band
   round the last houses and out of hearing. It no longer stops dead in
   earshot. The meeting still waits only for the stinger.
-- **The band and the company come from one side.** Far off they are now
-  8–10 dB toward their end of the colony (it was about 3). The town's air
-  leans toward the traveller instead of standing all around it.
+- **The band and the company come from one side.** Far off, a band is now
+  7–10 dB toward its end of the colony and the company 5–8 dB (in round 1,
+  2–5 and 0–3). The town's air leans toward the traveller instead of
+  standing all around it.
 - **The company's last verse goes over the rise.** Its song ends 5–14 dB
   under its nearest point (in round 1 it ended about level with it), and
   its wheels fade out after it.
@@ -772,16 +773,16 @@ away the doxology's tune, and makes the staff patch part of the recipe.
 
 | # | the critic found | done | evidence |
 |---|---|---|---|
-| 1 | the company breaks 5 ms in a prelude seat: (a) a cold first line, (b) three throats in one clock wake | (b) each throat of a line is laid `STAGGER` 0.06 s after the last, so each gets a wake of its own. (a) `GuestHandcart.warm(ctx)` runs at start-up (a new **required** recipe block): it sings one silent line **with a breath in it** and bakes the carts' noise (`VoicesFolk.warm`, new). Then each throat sings one silent note in a callback of its own, a second after the press, before the company strikes up. The prelude seat stays. The round-1 claim that "the ward has already been singing" was false for a prelude seat and is withdrawn | live in the engine, below: the company's worst callback went from 5.1–16.1 ms to **3.6–4.2 ms**, with no wake over 5 ms holding a company callback |
+| 1 | the company breaks 5 ms in a prelude seat: (a) a cold first line, (b) three throats in one clock wake | (b) each throat of a line is laid `STAGGER` 0.06 s after the last, so each gets a wake of its own. (a) `GuestHandcart.warm(ctx)` runs at start-up (a new **required** recipe block): it sings one silent line **with a breath in it** and bakes the carts' noise (`VoicesFolk.warm`, new). Then each throat sings one silent note in a callback of its own, a second after the press, before the company strikes up. The prelude seat stays. The round-1 claim that "the ward has already been singing" was false for a prelude seat and is withdrawn | live in the engine, below: the company's worst callback is **3.6–4.2 ms**, and no wake over 5 ms holds a company callback. The critic's wakes were 5.1–11.2 ms; after the stagger alone the worst callback was still 5.1–16.1 ms (the inhale, below) |
 | 2 | the second band is built at the press | `if (hooks.defer && (i > 0 \|\| bd.k > 0))`, as the critic wrote. Every callback of a passage (both bands' bars and the second band's building) now takes a moment none of its others has (`slot()`, at least 0.05 s apart) | the press wake for two bands (their material, then `perform`) is 3.8 ms in the engine, and `perform` alone 2.2 ms. The band's callbacks are at most 3.1 ms |
 | 3 | the recipe gives away the withheld tune | the recipe's `outsideMaterial` leaves out every doxology row until a doxology section has been sung (any section of `C.plan` before `C.si`). This is the critic's "better still": it keeps both the withheld Sunday and the doxology's payoff | harness, recipe copy, band forced: seeds 12, 20 and 7 on withheld Sundays march **h:1:2** (the critic saw h:1:3 for 12 and 20); seed 12 not withheld marches h:1:2 (it marched h:1:3 in round 1's own run) |
 | 4 | the staff patch is required | it is now block D of the recipe (kolob-viz.js, ENGRAVE's file), applied with the rest | the critic's two screenshots (without and with the patch) are the verification; I did not re-shoot them |
 | 5 | meetings of 3–4 guests | `MAX_GUESTS = 2`: the company and the gulls are never seated as a third guest unless asked for by name | census below: 3-guest meetings at 2.0 % either way, 0 with 4 |
 | 6 | "the bands cross" for a lone band | fixed (above) | seed 4's minutes in the lab at 390 px: "⇋ the band goes by · its own key, its own time" |
-| 7 | the march stops dead in earshot; the company ends its song at about −28 dB | the band's street beat, with the road going on and the band's gain falling 30 dB (`AWAY_DB`) past the last houses. The company goes over the rise: up to 14 dB more past its nearest point (`RISE_DB`, deepening with the square of the way gone) | below: the drums' last 3 s at −72 to −77 dB; the company's last line 5–14 dB under its nearest |
+| 7 | the march stops dead in earshot; the company ends its song at about −28 dB | the band's street beat, with the road going on and the band's gain falling 30 dB (`AWAY_DB`) past the last houses. The company goes over the rise: up to 14 dB more past its nearest point (`RISE_DB`, deepening with the square of the way gone) | below: the drums' last 3 s at −73 to −78 dB; the company's last line 5–14 dB under its nearest |
 | 8 | the dead ternary | gone. The captain, bass or tenor, sings in the men's octave. ALL IS WELL spans 131–330 Hz there, and an octave lower its foot would sit near 65 Hz. A bass captain is told by his darker throat, not by his octave (said in the code) | — |
 | 9 | after-beat semitone clashes | `offTheTune()` reads the whole march at once, so it also catches the next strain's pickup in this strain's last bar and the first strain's pickup under the introduction's vamp. A pah's chord tone within 60–150 cents of a tune note sounding with it, in any octave, is dropped. A held trio chord is checked only at its onset | 120 marches in six dialects: **636 → 0** such chord tones (my count is per chord tone; the critic counted differently, 1.7 % of tune onsets). `prepare` costs 0.1–0.2 ms more |
-| 10 | listening questions | (1) the band crossing the doxology's verse: kept for the owner's ear, with the lever below. (2) the level: kept (the dial is `GuestBands.LEVEL`). (3) the subtle lean: fixed. The road's town-air send now leans toward the traveller (`AIR_LEAN` 0.5), and gives back the coherent gain the panner adds, so it moves the air without making it louder | first heard 8.3–9.8 dB toward its side (round 1: 1.8–5.4); going 8.6–9.2 dB toward the other; levels unchanged (seed 2 +1.8 LU, seed 1 −0.7, as in round 1) |
+| 10 | listening questions | (1) the band crossing the doxology's verse: kept for the owner's ear, with the lever below. (2) the level: kept (the dial is `GuestBands.LEVEL`). (3) the subtle lean: fixed. The road's town-air send now leans toward the traveller (`AIR_LEAN` 0.5), and gives back the coherent gain the panner adds, so it moves the air without making it louder | first heard 8.3–9.8 dB toward its side for a lone band, 7.3 for a second band (round 1: 1.8–5.4); a lone band going, 8.0–9.2 dB toward the other; levels unchanged (seed 2 +1.8 LU as in round 1, seed 1 −0.7) |
 
 Also: each band's notes now carry **their own** `hymnId`. In round 1 a second
 band's notes were tagged with the first band's hymn. The recipe's glue line
@@ -1018,13 +1019,13 @@ so either way).
 | purity (Node) | `plan` and `score` repeat exactly for all three guests, 40 seeds each (a Pioneer Day in five), two bands; **0** `Math.random` calls; the lab's own purity check agrees |
 | the band's forms (Node) | 240 hymns in six dialects: 0 errors; every note 20 Hz–3 kHz and inside its march; every drum inside `[start, gone]`; the street beat always after the stinger, 16.3–20.7 s (median 18.2); the road drawn to the end of the drums |
 | the band's level (the lab's offline check, as seated) | seed 2 +1.8 LU (as round 1), seed 1 −0.7, seed 4 −0.2, seed 6 +0.6, seed 2 with a second band +0.8: every one within ±2 LU of the organ reference |
-| the band's going | 3 s before the stinger: −28.8 to −38.7 dB; the drums' last 3 s: **−72 to −78 dB** |
-| the lean, first heard | the band 8.3–9.8 dB toward its side (round 1: 1.8–5.4); the company 5.5–8.3 dB (round 1: 0.2–3.3) |
+| the band's going | 3 s before the stinger: −28.8 to −38.7 dB; the drums' last 3 s: **−73 to −78 dB** |
+| the lean, first heard | a lone band 8.3–9.8 dB toward its side, a second band 7.3 (round 1: 1.8–5.4); the company 5.5 and 8.3 dB (seeds 4 and 3; round 1: 0.2–3.3) |
 | the company's level and going | +0.2, −1.7 and +0.2 LU (seeds 3, 1, 4); first heard about −41 dB; nearest −26.5 to −31.5; **its last line −35.4 to −40.4** (5–14 dB under its nearest; round 1 ended about level with it, −28.8 on seed 3); the wheels' last 3 s about −54 |
-| clicks and clipping | 0 and 0 in every render of round 2 (9 bands, 5 companies) |
+| clicks and clipping | 0 and 0 in every render of round 2 (10 bands, 6 companies) |
 | the after-beats against the tune (Node) | 636 → 0 chord tones within a semitone of a sounding tune note, 120 marches |
 | the lab at 860 and 390 px | 0 console errors after every play (a band with a second, the company, the flock, the lead bird), the stop, every menu and box, the odds and purity; no sideways scroll at either width (scroll width = viewport) |
-| the harness, recipe copy (900 s unless noted) | the band forced, withheld: seeds 12 and 7 PASS; seed 20 fails one check only, the organist's wind round the hands that let go (round 1's Request 4, unchanged). Seed 12 not withheld: PASS. Two bands, seed 33: PASS. The company forced: seed 2 (the prelude, 600 s) PASS, seed 7 (the testimony) PASS. The gulls forced, seed 7 (600 s): only that meeting's band fails the same organist check, as in round 1. **0 runtime errors** in all ten runs. None marches the doxology's hymn before the doxology |
+| the harness, recipe copy (900 s unless noted) | the band forced, withheld: seeds 12 and 7 PASS; seed 20 fails one check only, the organist's wind round the hands that let go (round 1's Request 4, unchanged). Seed 12 not withheld: PASS. Two bands, seed 33: PASS. The company forced: seed 2 (the prelude, 600 s) PASS, seed 7 (the testimony) PASS. The gulls forced, seed 7 (600 s): only that meeting's band fails the same organist check, as in round 1. **0 runtime errors** in all nine runs. None marches the doxology's hymn before the doxology |
 
 ### Requests (new; round 1's 1–6 stand, and its 2 is now recipe block D)
 
@@ -1054,8 +1055,8 @@ so either way).
   (3.1 ms for the band, 4.2 for the company, at their worst). It is not met
   by every wake in their windows: those belong to the meeting (Request 7),
   and a garbage collection can land in any callback. Headroom is thin: the
-  company's worst live callback varied from 2.2 to 6.8 ms before the
-  priming, run to run, on the same seed.
+  company's live callbacks varied from 2.2 to 6.8 ms before the
+  priming (its first line's desks), run to run, on the same seed.
 - **The band's drums outlast the march** by 16–21 s. The meeting does not
   wait for them. If a band is seated late in its section, its drums fade
   under the next section's first seconds. That is by design (the meeting
