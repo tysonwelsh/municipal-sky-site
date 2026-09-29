@@ -295,28 +295,44 @@ window.KOLOB.GuestBands = (function () {
     return { root: [root[0] - Math.floor(Math.log(ratio(root)) / Math.LN2), root[1], root[2], root[3]], third: third, fifth: fifth, seventh: sev, name: ch.name || ch.roman || null };
   }
   // the hymn with no harmony (the Old Way, the Shakers: one line in unison)
-  // harmonized the bandmaster's way: I, V and IV (and vi, ii), the chord
-  // held while the tune stays in it, V before a line's last note, I on it
-  var BANDMASTER = [[0, 1], [4, 0.9], [3, 0.8], [5, 0.45], [1, 0.35]];
+  // harmonized the bandmaster's way. At each bar the chord moves if the tune
+  // lets it — up a fourth by preference (I→IV, V→I, ii→V), else up a fifth —
+  // among the triads that hold the tune's note there; within the bar it holds
+  // while the tune stays in it; a line's second-to-last bar leans to V (or
+  // IV), its last note to I. The triads are the mode's own (a dorian IV is
+  // major, an aeolian v minor), tuned justly on their roots.
+  var BANDMASTER = { major: [[0, 1], [4, 0.9], [3, 0.85], [5, 0.4], [1, 0.35]], minor: [[0, 1], [3, 0.85], [4, 0.75], [6, 0.7], [2, 0.6]] };
   function harmonizeLine(mode, notes, bar, kind) {
-    var slot = kind === "duple" ? 1 : bar, out = [], cur = null;
+    var out = [], cur = null, pool = SEMIS[mode][2] === 3 ? BANDMASTER.minor : BANDMASTER.major;
     if (!notes.length) return out;
     var p0 = notes[0].p, pEnd = notes[notes.length - 1].p + notes[notes.length - 1].len;
+    var beat = kind === "compound" ? 3 : 1;
     function noteAt(p) { var hit = null; notes.forEach(function (n) { if (n.p <= p + 1e-6 && p < n.p + n.len - 1e-6) hit = n; }); return hit; }
-    function holds(rootDeg, cls) { return [0, 2, 4].some(function (k) { return mod(rootDeg + k, 7) === cls; }); }
-    for (var p = Math.floor(p0 / slot) * slot; p < pEnd - 1e-6; p += slot) {
-      var n = noteAt(Math.max(p, p0)) || notes[0], cls = mod(n.deg, 7);
-      var last = p + slot >= pEnd - 1e-6, penult = !last && p + 2 * slot >= pEnd - 1e-6, want = null;
-      if (last && holds(0, cls)) want = 0;
-      else if (penult && holds(4, cls)) want = 4;
-      else if (cur != null && holds(cur, cls)) want = cur;
-      else for (var k = 0; k < BANDMASTER.length && want == null; k++) if (holds(BANDMASTER[k][0], cls)) want = BANDMASTER[k][0];
-      if (want == null) want = 0;
-      if (want !== cur || !out.length) out.push({ p: Math.max(p, p0), len: slot, rootDeg: want, tones: [[want, 0], [want + 2, 0], [want + 4, 0]] });
-      else out[out.length - 1].len += slot;
+    function holds(root, cls) { return [0, 2, 4].some(function (k) { return mod(root + k, 7) === cls; }); }
+    var lastBar = Math.floor((pEnd - 1e-6) / bar) * bar;
+    for (var p = Math.floor(p0 / beat) * beat; p < pEnd - 1e-6; p += beat) {
+      var n = noteAt(Math.max(p, p0)) || notes[0], cls = mod(n.deg, 7), want = null;
+      // (the chord moves at a bar, at the middle of a bar of four, or under a
+      // long note; a short note between is a passing note, over the chord it passes)
+      var atBar = mod(p, bar) < 1e-6 || (bar === 4 && mod(p, bar) === 2), strong = atBar || n.len >= 1.5 * beat - 1e-6;
+      var lastNote = n === notes[notes.length - 1], penult = !lastNote && p >= lastBar - bar - 1e-6 && p < lastBar - 1e-6;
+      if (lastNote && holds(0, cls)) want = 0;
+      else if (penult && atBar && holds(4, cls)) want = 4;
+      else if (cur != null && (holds(cur, cls) || !strong) && !atBar) want = cur;
+      else {
+        var best = -1;
+        pool.forEach(function (c) {
+          if (!holds(c[0], cls)) return;
+          var sc = c[1] + (cur == null ? 0 : mod(c[0] - cur, 7) === 3 ? 0.9 : mod(c[0] - cur, 7) === 4 ? 0.5 : c[0] === cur ? 0.2 : 0);
+          if (sc > best) { best = sc; want = c[0]; }
+        });
+      }
+      if (want == null) want = cur != null ? cur : 0;
+      if (want !== cur || !out.length) out.push({ p: Math.max(p, p0), len: beat, rootDeg: want });
+      else out[out.length - 1].len += beat;
       cur = want;
     }
-    return out.map(function (c) { return { p: c.p, len: c.len, chord: chordOf(mode, { rootDeg: c.rootDeg, tones: c.tones.map(function (t) { return [mod(t[0], 7), 0]; }) }) }; });
+    return out.map(function (c) { return { p: c.p, len: c.len, chord: chordOf(mode, { rootDeg: c.rootDeg, tones: [[c.rootDeg, 0], [mod(c.rootDeg + 2, 7), 0], [mod(c.rootDeg + 4, 7), 0]] }) }; });
   }
   // readTune(hymn) → { mode, bar, kind, lines: [{start, end, notes, chords,
   // refrain}] }: every line laid end to end on the hymn's own bar grid, in
@@ -501,7 +517,10 @@ window.KOLOB.GuestBands = (function () {
         chordTones(tHz, chordAt(st, b), ALTO_LO).forEach(function (g) { ev.push({ m: b, len: 0.92, part: "alto", inst: "alto", f: g, dyn: dyn * 0.8 }); });
         continue;
       }
-      if (role !== "bass") ev.push({ m: b, len: 0.5, part: "bass", inst: "tuba", f: down ? tubaRoot(tHz, ch) : tubaFifth(tHz, ch), dyn: dyn, acc: down, stacc: true, downbeat: down });
+      // (the oom on the root, the pah on the fifth below — the root again
+      // wherever the chord has just changed)
+      var fresh = b > 0 && chordAt(st, b - 1) !== ch;
+      if (role !== "bass") ev.push({ m: b, len: 0.5, part: "bass", inst: "tuba", f: down || fresh ? tubaRoot(tHz, ch) : tubaFifth(tHz, ch), dyn: dyn, acc: down, stacc: true, downbeat: down });
       AFTER.forEach(function (x) {
         var c2 = chordAt(st, b + x), lo = role === "bass" ? CORNET_PAH_LO : ALTO_LO, inst = role === "bass" ? "cornet" : "alto";
         chordTones(tHz, c2, lo).forEach(function (g) { ev.push({ m: b + x, len: 0.28, part: "alto", inst: inst, f: g, dyn: dyn * (role === "bass" ? 0.7 : 0.85), stacc: true }); });
@@ -584,6 +603,9 @@ window.KOLOB.GuestBands = (function () {
     var hv = halves(tune), mode = tune.mode, key = o.key || a.up;
     var tHz = o.homeHz * KEY_UP[key];
     var A = strainOf(tune, hv.A, meter, false), B = strainOf(tune, hv.B, meter, a.dotted), T = A;
+    // (a tune too short to halve — a strain under six bars — gives each
+    // strain the whole tune; the bass strain and the dotting tell them apart)
+    if (!hv.same && barsOf(A, B.pk) < 6) { A = T = strainOf(tune, tune.lines, meter, false); B = strainOf(tune, tune.lines, meter, a.dotted); hv.same = true; }
     [A, B].forEach(function (st) { st.chords.sort(function (x, y) { return x.m - y.m; }); });
     var octTune = octaveFor(tHz, A.notes.concat(B.notes), TUNE_AT), octLow = octaveFor(tHz, B.notes, LOW_TUNE_AT);
     var tT = tHz * 4 / 3, octTrio = octaveFor(tT, T.notes, TRIO_AT);
