@@ -48,8 +48,8 @@ include '../includes/header.php';
                 <div class="entry">
                     <div class="entry-content">
                         <a href="/art/skeeball/" class="entry-title">HOLLER ROLLER</a>
-                        <span class="entry-description">A deranged skee ball machine from a nickel arcade
-                            deep in the Appalachian fog. Nine balls a nickel. The possum is watching.</span>
+                        <span class="entry-description">A skee-ball game set in a haunted nickel arcade
+                            deep in the Appalachian mountains. WARNING: It&rsquo;s addictive!</span>
                     </div>
                 </div>
                 <!-- HIDDEN (temporarily commented out — un-comment to restore) -->
