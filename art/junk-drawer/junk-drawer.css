@@ -4416,82 +4416,58 @@ html.jd-folder-open { overflow: hidden; }
   .jd-folder-card.is-enter { animation: none; }
 }
 
-/* ---- the head: a SLIM BAND — the tab and the ✕, nothing else -------------
-   Two owner rounds, 2026-08-28: the title ("The drawer, by the numbers")
-   and its dek were unnecessary and are gone for good, but cutting the whole
-   band left the ✕ floating over the ledger's figures — so the band returned
-   at tab height. The tab keeps the folder's identity on the open card; the
-   fold-edge border keeps it reading as the folder's cut edge. */
-/* min-height (owner, 2026-09-10): the band used to measure ~29px — the tab
-   and its 9px of air — while the ✕ pinned to it insisted on a 44px touch
-   target, so the target hung out of the bottom of its own head and over the
-   ledger's first figures. The band now holds the target it carries, which
-   is the same first-line-band contract the turn card's head keeps. */
-.jd-folder-head {
-  position: relative; flex: 0 0 auto;
-  box-sizing: border-box; min-height: var(--jd-x-band);
-  display: flex; align-items: flex-end;
-  background: linear-gradient(180deg, var(--fmanila-hi), var(--fmanila) 70%);
-  border-bottom: 1px solid var(--frule);
+/* ---- the tabs on the folder's top edge -----------------------------------
+   THE TAB IS A TAB (owner, 2026-09-29). Until now ANALYTICS sat as a small
+   flag inside a slim head band (two 2026-08-28 rounds: the title and dek
+   went, the band stayed to hold the ✕) — and a tab with a band behind it
+   reads as a label on a box, not as a file folder. Now there is no band:
+   the card is the folder, and the tab rides its top edge, cut from the same
+   manila, larger, its bottom edge open into the folder (it overlaps the
+   card's top border by a pixel). The ✕ that shared the band is a second,
+   smaller tab at the right end of the same edge, so it belongs to the
+   folder too. Both are absolutely positioned children of the card, hung
+   from its top (bottom: 100%); the card wears a top margin the tab's
+   height so the tab stays inside the scrim's padding. */
+.jd-folder-scrim { --ftab-h: 44px; }
+.jd-folder-card {
+  margin-top: var(--ftab-h);
+  max-height: calc(100% - var(--ftab-h));
+  border-radius: 0 3px 6px 6px;
 }
-/* bottom padding closes the band under the tab now that no title row
-   follows; the tab still sits flush on the band's bottom edge. The right
-   padding is the shared ✕ reservation, so a longer tab word (or a second
-   tab, should the folder ever grow one) wraps clear of the glyph instead
-   of running under it. */
-.jd-folder-tabrow {
-  flex: 1 1 auto; min-width: 0;
-  /* the ✕ is a flex SIBLING here, not an overlay (see .jd-folder-close), so
-     the row reserves only the GAP — the target's own width is already out of
-     this box and double-reserving it would cost the tab 48px of measure */
-  padding: 9px var(--jd-x-gap) 0 15px;
-}
-/* the tab reproduced from the artwork: a raised manila flag, house mono,
-   heavily letterspaced. text-indent cancels the trailing letter-space so the
-   word still reads optically centred in its box. */
-/* the tab holds two lines at most, then the ellipsis — the report card's
-   own title rule, kept here so all four dialogs behave alike (the -webkit-box
-   display still lays out as an inline-block flag; only its overflow changes) */
-.jd-folder-tab {
-  display: -webkit-inline-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
-  overflow: hidden; max-width: 100%; text-wrap: balance;
-  padding: 4px 13px 3px;
-  background: var(--fmanila-hi);
-  border: 1px solid var(--frule);
-  border-bottom: 0;
-  border-radius: 4px 4px 0 0;
-  font-family: var(--fmono); font-size: 0.6rem; font-weight: 700;
-  letter-spacing: 0.32em; text-indent: 0.32em;
-  color: var(--fink);
-  box-shadow: 0 -1px 0 rgba(255, 248, 226, 0.55) inset;
-}
-/* the boxed ✕ — the record/turn control language: a 26px printed box centred
-   in a 44px target, pinned to the band's top-right corner so the box lands
-   9px in from the card's edges (the record card's exact seat) */
-/* the bare-✕ idiom (owner, 2026-08-29 — see the note at .jd-turn-close) */
-/* THE FOLDER IS THE ONE EXCEPTION to "the ✕ centres on the first line"
-   (owner, 2026-09-10, second pass), and it earns it: the other three heads
-   hold loose type, but this one holds a PLATE — a bordered manila tab you
-   can see the edges of — and a ✕ that ignores it reads as misaligned even
-   when it is square with the first line. So here the ✕ is a flex sibling of
-   the tab row rather than an overlay pinned to the corner, and align-self
-   centres it on the band the tab row makes: within ~2px of the tab's own
-   centre on one line, within half a pixel on two (it used to miss by six).
-   Being in the flow is also what lets the row reserve just the gap. */
+.jd-folder-tab,
 .jd-folder-close {
-  position: relative; z-index: 3;
-  flex: 0 0 auto; align-self: center;
-  width: var(--jd-x-w); height: var(--jd-x-band);
+  position: absolute; bottom: 100%; z-index: 2;
+  margin-bottom: -1px;                       /* over the card's top border */
+  box-sizing: border-box;
   display: flex; align-items: center; justify-content: center;
-  border: 0; background: none; cursor: pointer; padding: 0;
+  background: var(--fmanila) var(--fgrain);
+  border: 1px solid rgba(48, 38, 20, 0.6); border-bottom: 0;
+  border-radius: 8px 8px 0 0;
   color: var(--fink);
+  box-shadow: 0 2px 0 rgba(255, 248, 226, 0.35) inset,
+              2px -2px 6px -3px rgba(6, 3, 0, 0.35);
 }
-.jd-folder-close:hover { color: var(--fred, #a8332a); }
+.jd-folder-tab {
+  left: 0; height: var(--ftab-h);
+  padding: 0 26px 0 28px;
+  font-family: var(--fmono); font-size: 1.1rem; font-weight: 700;
+  letter-spacing: 0.32em; text-indent: 0.32em; line-height: 1;
+  background: var(--fmanila-hi) var(--fgrain);
+}
+.jd-folder-close {
+  right: 12px; width: 54px; height: 34px;
+  padding: 0; cursor: pointer;
+  background: var(--fmanila-lo) var(--fgrain);
+}
+.jd-folder-close:hover { color: var(--fred, #a8332a); background: var(--fmanila-hi) var(--fgrain); }
 /* focus moves here programmatically when the folder opens, and the UA's own
-   ring drew a large blue rectangle over the head — keep :focus quiet and
-   ring only keyboard focus, drawn inset now that the printed box is gone */
+   ring drew a large blue rectangle — keep :focus quiet and ring only
+   keyboard focus */
 .jd-folder-close:focus { outline: none; }
-.jd-folder-close:focus-visible { outline: 2px solid var(--fred); outline-offset: -8px; }
+.jd-folder-close:focus-visible { outline: 2px solid var(--fred); outline-offset: -5px; }
+@media (max-width: 560px) {
+  .jd-folder-tab { font-size: 0.9rem; padding: 0 18px 0 20px; }
+}
 
 /* ---- the contents: paper cards laid in the folder ------------------------
    Two columns on desktop, read as a 2×2 of chart cards between two
@@ -4533,9 +4509,17 @@ html.jd-folder-open { overflow: hidden; }
   box-shadow: 2px 3px 8px -3px rgba(40, 24, 4, 0.42);
 }
 .fx-cost, .fx-firsts, .fx-grades, .fx-spend { grid-column: span 1; }
+/* JUST THE TABLE (owner, 2026-09-29): the turn table lies in the folder
+   with no card and no title — the sheet itself carries the card's paper,
+   hairline and shadow, and takes the card's padding as extra width */
+.fx-bare { padding: 0; background: none; border: 0; box-shadow: none; }
+.fx-bare .fx-turns-wrap {
+  background: var(--fpaper); border: 1px solid var(--frule-2);
+  box-shadow: 2px 3px 8px -3px rgba(40, 24, 4, 0.42);
+}
 @media (max-width: 700px) {
   .jd-folder-scroll { grid-template-columns: 1fr; padding: 11px; }
-  .fx-card, .fx-cost, .fx-firsts, .fx-grades, .fx-spend { grid-column: span 1; }
+  .fx-card, .fx-cost, .fx-firsts, .fx-grades, .fx-spend, .fx-bare { grid-column: span 1; }
 }
 
 .fx-title {
@@ -4664,10 +4648,18 @@ html.jd-folder-open { overflow: hidden; }
   gap: 12px 8px;
 }
 .fx-panel { min-width: 0; }
+/* THE CATEGORY NAMES ARE SUBHEADINGS (owner, 2026-09-29): set in the same
+   face and weight as the card's title they read as four more titles, so
+   they take a quieter register — the house mono, regular weight, sentence
+   case, the second ink, ruled underneath — and both the title and these
+   heads get air below them. */
+.fx-axes .fx-title { margin-bottom: 12px; }
 .fx-panel h4 {
-  margin: 0 0 3px;
-  font-family: var(--fform); font-weight: 700; font-size: 0.56rem;
-  letter-spacing: 0.1em; text-transform: uppercase; color: var(--fink);
+  margin: 0 0 10px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--frule-2);
+  font-family: var(--fmono); font-weight: 400; font-size: 0.64rem;
+  letter-spacing: 0.03em; text-transform: none; color: var(--fink-2);
   line-height: 1.35;
 }
 .fx-of {

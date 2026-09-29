@@ -656,11 +656,17 @@
   var API = '/api/jd-analytics.php';
   var SCATTER_KEY = 'jd-scatter-v2';   /* the shared seat map — see layoutFor */
   var FALLBACK_BOX = 22;               /* = BASE.l, if the drawer never loaded */
-  var ROT = 34;                        /* the pile's own scatter range, ± deg */
-  var Z_FOLDER = JD_Z_BAND.l + 50;     /* above nothing in particular: it is
-                                          ordinary junk, and it says so — LARGE
-                                          junk, so it lies in the large layer
-                                          (bands: 2026-09-10) */
+  var ROT = 8;                         /* a small tilt: jammed in the corner
+                                          (below), the pile's full ±34° would
+                                          poke it out past the walls */
+  var Z_FOLDER = 0;                    /* THE BOTTOM OF THE DRAWER (owner,
+                                          2026-09-29): under every scattered
+                                          item — their z runs from 1 in the
+                                          lowest band — and it STAYS there:
+                                          data-z-pinned tells settle() in
+                                          jd-core.js not to raise it after a
+                                          drag. (Was JD_Z_BAND.l + 50, "large
+                                          junk in the large layer".) */
   var INSET = 0.012;                   /* same wall clearance as the scatter */
 
   var art = null, box = null, armed = false, el = null;
@@ -706,6 +712,7 @@
     el.className = 'jd-item jd-item--folder';
     el.dataset.id = ID;
     el.dataset.folder = 'analytics';   /* the one flag the tap path branches on */
+    el.dataset.zPinned = String(Z_FOLDER);   /* settle() keeps it on the floor */
     el.setAttribute('role', 'button');
     el.setAttribute('tabindex', '0');
     el.setAttribute('aria-label', 'Analytics — press to open the folder');
@@ -756,9 +763,17 @@
     }
     var map = JD_store.get(SCATTER_KEY) || {};
     var p = map[ID];
+    /* THE CORNER (owner, 2026-09-29: "more down, in the bottom and the
+       right, almost as far as it will go"): the band was 58–92% on both
+       axes, which put the folder anywhere in the lower-right quadrant —
+       just right of centre on some loads, mid-height on others. Now both
+       bands start at 88% and zone() clamps them to the wall, so the folder
+       deals tucked into the corner with a whisper of jitter. A seat stored
+       under the old band is stale and re-dealt. */
+    if (p && (p.x < 0.8 || p.y < 0.8)) p = null;
     if (!p) {
       p = {
-        x: zone(hw, 0.58, 0.92), y: zone(hh, 0.58, 0.92),
+        x: zone(hw, 0.88, 1), y: zone(hh, 0.88, 1),
         rot: +((Math.random() * 2 - 1) * ROT).toFixed(1)
       };
       map[ID] = p;
@@ -1167,7 +1182,7 @@
       /* stays up with the shortfall stated (2026-09-10, the folder's
          return) — four bare rulers would read as a failure, no card at all
          reads as a missing chart; a sentence reads as the truth */
-      return cardHTML('fx-axes', 'The four axes',
+      return cardHTML('fx-axes', 'The four categories',
         'no model has ' + MIN_N + ' axis ratings on four-model turns under ' +
         'the current rubric yet' + notPlotted(dropped), '');
     }
@@ -1223,7 +1238,7 @@
         esc(ax.label + ', 1 to ' + pts + '. ' + alt.join('. ')) + '">' +
         '<g class="fx-key">' + key + '</g>' + s + '</svg></div>';
     }).join('');
-    return cardHTML('fx-axes', 'The four axes',
+    return cardHTML('fx-axes', 'The four categories',
       'average per axis on four-model turns, every rating filed under the ' +
       'current rubric, live axes only, n ' + MIN_N +
       ' and up — each panel is its own ruler and the scales are never ' +
@@ -1283,7 +1298,10 @@
       h += '</tr>';
     });
     h += '</tbody></table></div>';
-    return cardHTML('fx-turns', 'Turn by turn', '', h);
+    /* JUST THE TABLE (owner, 2026-09-29): no "Turn by turn" title and no
+       card around it — the sheet lies in the folder on its own, and gains
+       the card's padding as width */
+    return '<section class="fx-card fx-turns fx-bare" aria-label="turn by turn">' + h + '</section>';
   }
 
   /* THE METER RUNS — one ink line, cumulative, x spaced by real DATE (not by
@@ -1354,13 +1372,16 @@
     scrim.innerHTML =
       '<div class="jd-folder-card" role="dialog" aria-modal="true" ' +
       'aria-label="analytics">' +
-        '<div class="jd-folder-head">' +
-          '<div class="jd-folder-tabrow">' +
-            '<span class="jd-folder-tab">ANALYTICS</span></div>' +
-          '<button type="button" class="jd-folder-close" aria-label="close">' +
-          '<svg class="jd-x-mark" viewBox="0 0 18 18" aria-hidden="true" focusable="false">' +
-          '<path d="M1 1 17 17M17 1 1 17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>' +
-        '</div>' +
+        /* THE TAB IS A TAB (owner, 2026-09-29): ANALYTICS rides the folder's
+           top edge as a real file-folder tab — larger, cut from the same
+           manila, opening straight into the folder with no head band behind
+           it. The ✕ that used to share the band is a second, smaller tab at
+           the right end of the same edge. Both are positioned children of
+           the card (junk-drawer.css); the card itself is just the folder. */
+        '<span class="jd-folder-tab" aria-hidden="true">ANALYTICS</span>' +
+        '<button type="button" class="jd-folder-close" aria-label="close">' +
+        '<svg class="jd-x-mark" viewBox="0 0 18 18" aria-hidden="true" focusable="false">' +
+        '<path d="M1 1 17 17M17 1 1 17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>' +
         '<div class="jd-folder-scroll"></div>' +
       '</div>';
     document.body.appendChild(scrim);

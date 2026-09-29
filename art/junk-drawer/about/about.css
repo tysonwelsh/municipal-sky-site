@@ -1516,6 +1516,57 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
 .jd-about .jd-sheet-card .jdc-sheet td { background: var(--jdc-paper); }
 .jd-about .jd-sheet-card .jdc-sheet td.jdc-rn { background: var(--jdc-headfill); }
 .jd-about .jd-sheet-card .jdc-tablewrap { background: var(--jdc-paper, #efe4c6); }
+/* IN THE FOLDER'S STYLE (owner, 2026-09-29: "make it look more like the
+   table in the analytics folder"): the spreadsheet grid goes — no vertical
+   rules, no row-number gutter — for the folder's turn table's grammar:
+   small tracked serif heads on a deeper cream, mono values on hairline
+   rows, and the segmented gauge beside every number (about-scenes.js). The
+   frozen prompt column and the sticky heads stay, because this sheet
+   scrolls both ways and the folder's does not. */
+.jd-about .jd-sheet-card .jdc-sheet {
+  --jdc-ink: #33240f;
+  --jdc-grid: transparent;
+  --jdc-group: rgba(74, 53, 18, 0.28);
+  color: var(--jdc-ink);
+  font-size: 0.66rem;
+}
+.jd-about .jd-sheet-card .jdc-sheet th,
+.jd-about .jd-sheet-card .jdc-sheet td {
+  border-right: 0;
+  border-bottom: 1px solid rgba(74, 53, 18, 0.18);
+  padding: 4px 9px 4px 8px;
+  line-height: 1.45;
+}
+.jd-about .jd-sheet-card .jdc-sheet th {
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  font-weight: 700; font-size: 0.56rem;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: rgba(51, 36, 15, 0.64);
+  vertical-align: bottom;
+}
+.jd-about .jd-sheet-card .jdc-sheet tr.jdc-h1 th { color: var(--jdc-ink); font-size: 0.6rem; }
+.jd-about .jd-sheet-card .jdc-sheet tr.jdc-h2 th {
+  font-weight: 700; font-size: 0.52rem; line-height: 1.3;
+  border-bottom: 1px solid rgba(74, 53, 18, 0.38);
+}
+.jd-about .jd-sheet-card .jdc-sheet th[rowspan] { border-bottom: 1px solid rgba(74, 53, 18, 0.38); }
+.jd-about .jd-sheet-card .jdc-sheet .jdc-hint {
+  font-family: var(--font-body); font-style: italic; font-weight: 400;
+  letter-spacing: 0; text-transform: none; color: rgba(51, 36, 15, 0.55);
+}
+/* the row numbers go, and the prompt column takes the left wall */
+.jd-about .jd-sheet-card .jdc-sheet .jdc-rn { display: none; }
+.jd-about .jd-sheet-card .jdc-sheet .jdc-c-prompt { left: 0; border-right: 1px solid rgba(74, 53, 18, 0.28); }
+.jd-about .jd-sheet-card .jdc-sheet .jdc-g-head,
+.jd-about .jd-sheet-card .jdc-sheet .jdc-g-start { border-left: 1px solid var(--jdc-group); }
+.jd-about .jd-sheet-card .jdc-sheet .jdc-c-num,
+.jd-about .jd-sheet-card .jdc-sheet th.jdc-c-num { text-align: left; width: 6.6rem; min-width: 6.6rem; max-width: 6.6rem; }
+.jd-about .jd-sheet-card .jdc-sheet th.jdc-c-num { white-space: normal; }
+.jd-about .jd-sheet-card .jdc-num { display: inline-block; width: 1.1em; font-weight: 700; }
+.jd-about .jd-sheet-card .jdc-none { color: rgba(51, 36, 15, 0.5); }
+.jd-about .jd-sheet-card .jdc-gauge { width: 41px; height: 9px; vertical-align: -1px; margin-left: 4px; }
+.jd-about .jd-sheet-card .jdc-seg { stroke: var(--jdc-paper, #efe4c6); stroke-width: 1.4; }
+.jd-about .jd-sheet-card .jdc-seg-out { stroke: rgba(74, 53, 18, 0.18); stroke-width: 1; }
 @media (max-width: 768px) {
   .jd-about [data-scene-pane="analytics"] .jd-inline-card.jd-sheet-card { width: 100%; }
   .jd-about .jd-sheet-card .jdc-tablewrap { max-height: 60vh; }

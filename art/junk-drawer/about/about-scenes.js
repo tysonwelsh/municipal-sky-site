@@ -1677,12 +1677,41 @@
       return mcols.every(function (m) { return row.byM[m]; });
     });
     var sub = ['Overall Grade'].concat(liveAx.map(function (x) { return x.label; }));
+    /* the scale each column is read on: 5 for the grade, an axis's own
+       point count for its category */
+    var pts = [5].concat(liveAx.map(function (x) { return (x.values || []).length || 3; }));
+    /* SPARKLINES IN THE CELLS (owner, 2026-09-29): every value carries the
+       folder's segmented gauge beside its number — the grade book's meter
+       at cell size, exactly as the analytics folder's turn table draws it —
+       so the sheet reads like that table. A category on a 3- or 4-point
+       scale gets a gauge of as many segments, inked where its value falls
+       on the five-step ramp. */
+    function gauge(v, n) {
+      var TW = 40, TH = 8;
+      v = Math.max(1, Math.min(n, +v || 1));
+      var ink = GRADE_RAMP[n === 5 ? Math.min(4, Math.max(0, Math.floor(v) - 1))
+                                    : Math.round((v - 1) / (n - 1) * 4)];
+      var w = TW * v / n, g = '';
+      g += '<rect x="0.5" y="0.5" width="' + w.toFixed(1) + '" height="' + TH + '" fill="' + ink + '"/>';
+      for (var t = 1; t < n; t++) {
+        var tx = 0.5 + TW * t / n;
+        g += '<line x1="' + tx.toFixed(1) + '" y1="0.5" x2="' + tx.toFixed(1) + '" y2="' + (TH + 0.5) +
+             '" class="' + (tx <= 0.5 + w ? 'jdc-seg' : 'jdc-seg-out') + '"/>';
+      }
+      g += '<rect x="0.5" y="0.5" width="' + TW + '" height="' + TH +
+           '" fill="none" stroke="rgba(74,53,18,0.28)" stroke-width="1"/>';
+      return '<svg class="jdc-gauge" viewBox="0 0 ' + (TW + 1) + ' ' + (TH + 1) + '" aria-hidden="true">' + g + '</svg>';
+    }
     function cell(r, k) {
       if (!r) return '';
-      if (k === 0) return r.grade == null ? '' : String(+r.grade);
-      var v = r.annotations && r.annotations[liveAx[k - 1].id];
-      if (v && typeof v === 'object') v = v.value;
-      return v == null ? '' : String(+v);
+      var v;
+      if (k === 0) v = r.grade;
+      else {
+        v = r.annotations && r.annotations[liveAx[k - 1].id];
+        if (v && typeof v === 'object') v = v.value;
+      }
+      if (v == null) return '<span class="jdc-none">&mdash;</span>';
+      return '<span class="jdc-num">' + String(+v) + '</span>' + gauge(+v, pts[k]);
     }
     /* THE TABLE IS THE WHOLE VISUAL (owner, 2026-09-27): no card, no title,
        no subtitle — the sheet itself, on the page, as wide as a report card */

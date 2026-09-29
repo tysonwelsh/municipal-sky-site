@@ -103,6 +103,31 @@
      (≈ stray's 0.4px at the sizes the swatch runs) keeps antialiased edges
      off the clipped wall. On any failure this returns null and the
      scatterword falls back to the old constant roam box — never a clip. */
+  /* THE MEASURING HOST (owner report, 2026-09-29: the scatterword's
+     letters ran past the left wall and turned early at the right). Both ink
+     rulers clone their word into a hidden host to measure it — and the host
+     was appended bare to <body>, OUTSIDE .jd-turn-scrim, where the card's
+     font tokens (--tmono, --thand) do not resolve. A font-family whose var()
+     is undefined falls back to the inherited face, so the clones were
+     measured in the page's serif body type: Spectral's L is narrower than
+     Courier's, its dots sit elsewhere, and every glyph centre and every ink
+     reach came back a few tenths of an em off — one-sided, because the word
+     is anchored at its centre and the error grows outward from it. The
+     scatterword anchored each flight to the wrong home, so the real ink
+     landed 4 units (letters) to 10 units (dots) LEFT of where the flight
+     believed it was: past the left wall, short of the right one — exactly
+     the owner's report. The host now wears the scrim's class, so the tokens
+     resolve and the clone is set in the real face; its own inline styles
+     keep it hidden, off-screen and out of layout, overriding the scrim's
+     fixed full-screen rules. */
+  function darkMeasureHost() {
+    var host = document.createElement('div');
+    host.className = 'jd-turn-scrim';
+    host.style.cssText = 'position:absolute;inset:auto;left:-9999px;top:0;' +
+      'display:block;width:auto;height:auto;padding:0;background:none;' +
+      'visibility:hidden;pointer-events:none';
+    return host;
+  }
   function darkScatterInkReach() {
     if (darkScatterInkReach.v !== undefined) return darkScatterInkReach.v;
     darkScatterInkReach.v = null;
@@ -128,9 +153,7 @@
         mkA += open2 + '</span>';
         mkB += open2 + PROBE + '</span>';
       }
-      var host = document.createElement('div');
-      host.style.cssText = 'position:absolute;left:-9999px;top:0;' +
-        'visibility:hidden;pointer-events:none';
+      var host = darkMeasureHost();   /* in the token scope — see above */
       host.innerHTML =
         '<span class="jd-dark-word" style="animation:none;left:0;top:0;' +
         'transform:none;font-size:44.2px">' + mkA + '</span>' +
@@ -388,7 +411,15 @@
        ~8px at the live width, still a fraction of the 7-26px of dead air
        the ink ruler was built to remove. ONE NUMBER TO TUNE if the sides
        now turn a shade early. */
-    var WPADX = 5;
+    /* …AND THAT REPORT WAS THIS BUG (2026-09-29, see darkMeasureHost): the
+       ruler was measuring the word in the wrong face, so the flights were
+       anchored a few units right of the real glyphs — the ink crossed the
+       LEFT frame and turned early at the RIGHT, and the side padding only
+       papered over the left half of it. With the ruler set in the real face
+       the ink meets both walls flush, as it does top and bottom, so the pad
+       drops to a hair (one field unit, ~2px at the live width) against the
+       clip. The owner's ask: the letters bounce off the frame itself. */
+    var WPADX = 1;
     var WX0 = WPADX, WX1 = 140 - WPADX;
     var WY0 = -YEXT, WY1 = 110 + YEXT;
     var inkEm = darkScatterInkReach();
@@ -1097,9 +1128,7 @@
     try {
       var SAFE = 0.4, S = 2;
       var PROBE = '<span data-p style="display:inline-block;width:0;height:0"></span>';
-      var host = document.createElement('div');
-      host.style.cssText = 'position:absolute;left:-9999px;top:0;' +
-        'visibility:hidden;pointer-events:none';
+      var host = darkMeasureHost();   /* in the token scope — see darkMeasureHost */
       host.innerHTML =
         '<span class="jd-dark-stray" style="animation:none;position:relative;' +
         'left:0;top:0;transform:none;display:inline-block">' +

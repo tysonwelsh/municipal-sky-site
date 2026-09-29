@@ -2123,7 +2123,11 @@ var JD_admin = (function () {
     /* the picked item keeps its place in the z-sandwich (tag 70 < rope 71 <
        item 72) instead of riding the raise counter — it is still selected and
        the elastic must still pass under it */
-    item.style.zIndex = item === picked ? 72 : zRaise(item);
+    /* data-z-pinned (the analytics folder, 2026-09-29): an item that lives
+       at a fixed depth — the folder on the drawer's floor — settles back to
+       it instead of riding the raise counter to the top */
+    item.style.zIndex = item === picked ? 72
+      : (item.dataset.zPinned != null ? item.dataset.zPinned : zRaise(item));
     if (moved) {                                 /* bake position, then rest */
       var w = well.getBoundingClientRect();
       item.style.left = (dropX / w.width * 100).toFixed(2) + '%';
