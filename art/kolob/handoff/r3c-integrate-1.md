@@ -176,3 +176,117 @@ profile `kolob-r3c-integrate-chrome`), the page on :8175.
 | the page, muted Chrome, 860 and 390 px | 0 console errors or warnings in every trace (below); no sideways scroll (scroll width = the viewport); the direction line names the band, the Social Hall, the gift, the company… and never the Hosanna |
 | the staff (critic A, note 5) | the band's march drawn over the ward's hymn with the tuba's oom and its barlines (screenshot, seed 22, 860 px) |
 | the gift's words (critic C, note 1) | 400 tongues, 3,200 words: 0 name-shaped (Lila, Lola, Lana, Mila, Nola, Leah, Noah), 0 fallbacks |
+
+## The cost, measured in the page (not cut: the owner's ruling)
+
+Each guest played in the real page (index.php on :8175, muted headless
+Chrome on this M3 Pro, load average 2.4–4.3; the dev jump to its section),
+read three ways at once, after the round-3b ward critic's tracer: the audio
+thread's render callbacks (Chrome's trace, `AudioDestination::Render`,
+summed per second), the WebAudio domain's nodes alive, and the page's
+clock (late cues) and long tasks. Beside a yardstick taken the same way:
+the ward's own hymn with the organ and no guest.
+
+| window (seed, section, seconds traced) | audio thread, % of each second: median · p90 · worst 5 s | one render callback (5.33 ms of audio), ms: median · p99 · max (over 5.33) | nodes alive, peak | errors |
+|---|---|---|---|---|
+| **yardstick**: the ward's hymn, organ, no guest (3, hymn, 100) | 29.5 · 35.0 · 35.4 | 1.38 · 4.08 · 5.45 (1 of 19,365) | 2,212 | 0 |
+| the band, and a second band, crossing the ward's hymn (22, hymn, 100) | 32.6 · 39.7 · 41.0 | 1.68 · 3.69 · 5.01 (0) | 2,149 | 0 |
+| **the Hosanna**: the doxology, then the shout and ASSEMBLY (37, doxology, 215) | 34.0 · 43.8 · 43.4 | 1.74 · 4.08 · **5.86 (18 of 40,849)** | **5,801** | 0 |
+| the far ward with our first hymn (44, hymn, 150; it sings about 47 s of it) | 23.1 · **46.0 · 47.7** | 1.31 · 3.57 · **6.42 (1 of 28,798)** | 2,928 | 0 |
+| the variations (55, postlude, 150) | 19.4 · 21.9 · 22.1 | 0.78 · 2.40 · 3.19 (0) | 1,044 | 0 |
+| the Social Hall (22, postlude, 110) | 19.5 · 22.0 · 22.7 | 0.94 · 2.12 · 3.10 (0) | 275 | 0 |
+| the gift of tongues (5, testimony, 90) | 16.8 · 25.5 · 27.8 | 0.80 · 2.63 · 3.92 (0) | 459 | 0 |
+| the testimony-bearers (2, testimony, 110) | 16.4 · 18.7 · 19.4 | 0.78 · 1.92 · 2.84 (0) | 216 | 0 |
+@@MORE-COSTS@@
+
+- **The audio clock kept time in every window**: no late cue (0 of 324 to
+  3,061 cues each), the audio clock's ratio to the wall at a median of 1.00
+  (its lowest second 0.92–0.99, each answered by the next).
+- **The heaviest are the Hosanna and the far ward.** The Hosanna runs about
+  1.2× the ward's hymn at its worst five seconds (43 % against 35 %), forty
+  singers and the full organ, and its longest callbacks run a little past
+  the budget (18 of 40,849), as crew C measured. The far ward adds about
+  ten points while it sings (46–48 % against 35 %), with twenty-four throats
+  of its own; eight pews would save nodes, not audio time (crew C's critic).
+- **The band** adds about five points over the ward's hymn it crosses; the
+  guests of the quiet rites (the dance, the variations, the gift, the
+  bearers) cost less than a hymn.
+- **Where to save, if the owner wants to** (none of it done): the far ward
+  in pews; the Hosanna without the Primary's children (32 voices, not 40)
+  or on "hymn principal" instead of the full organ; the band's second band.
+
+## The critics' notes (PLAN-COMPOSITION §15), and what was done
+
+- **Crew A's critic.** (1) The second band no longer vanishes: with one
+  hymn left to march it takes the section's own hymn in its stranger's key,
+  or the same march in the other key at its own pace (seeds 22 and 47 play
+  both cases); the band crew's handoff is corrected at its head. (2) The
+  march is made a cue ahead (`PRE_MADE`), never in the wake that lays its
+  first bar. (3) The harness exempts the organist under the ward when a band
+  crosses a verse (the house-lets-go check, audio graph). (4) The band's 36 %
+  is kept; the other guests carry the budget. (5) The warm block and the
+  staff patch are applied, and the staff was looked at. (6) *Not done* (it
+  was optional): the trombones borrowing the band's reverb. (7) Left for the
+  ear, with the measured figure (the band crosses the doxology 3 times in
+  10 in the real meeting, not 7).
+- **Crew B's critic.** The variations' set is made ready off the clock (an
+  idle timer once its hymn is written; its cue only holds the section).
+  The plain organist's theme on a non-Tabernacle hymn (trumpet solo and soft
+  flutes on the tenor tune) and the two-key proxy counting gospel's sevenths
+  are left as the critic described them: neither is a fault in the meeting;
+  both are corrections to the organ crew's claims.
+- **Crew C's critic.** (1) Name-shaped words refused as a pattern. (2)
+  Every guest a room is told of carries its rite's `index`. (3) The Hosanna
+  is planned at the hook, and a band leaves its doxology (the payoff reset).
+  (4) The ward is seated before the guests; the gift's singer is always a
+  bearer (the voices handoff's summary corrected). (5) The Hosanna does not
+  give way (`YIELD` false) — but it is asked before the other guests, so the
+  budget keeps it a place. (6) The gift seeds the next hymn, the doxology
+  only without a payoff. (7) `ENGRAVE_HYMN = false`. (8) The cost is
+  measured again in the page (below).
+- **Crew D's critic.** (1) The house lets go as the first bearer rises; the
+  still small voice keeps its peace through the testimony. (2) The 7/4 stop
+  stays under the fiddle's ceiling. (3) Every quadrille figure is called. (4)
+  The Sunday is always handed in. (5) On Pioneer Day the band crossing the
+  doxology and the dance after it may sit side by side.
+
+## Requests
+
+1. **ENGRAVE.** `kolob-viz.js` was patched here with the bands crew's
+   block D (`takeBand`) because critic A's note required it; please own it
+   from here. New layers the staff does not yet draw: `handcart`, `gulls`,
+   `farward` (a faint second staff?), `tower` (the ringers' blue line can be
+   drawn from `bell`, `place`, `row`), `fiddle` (AABB with repeats; the
+   dance's notes name their hymn `dances`), and the testimony's speech
+   (`voice`, `speech: true`) and reeds. The Hosanna stays off the staff.
+2. **CAST.** `VoicesVocal.warm(ctx)` (the bands crew's request 8) would let
+   the ward's first breathing line stop baking its inhale in a cue, as the
+   company's warm does now.
+3. **The owner** (in the packet): the band's share of the budget; where it
+   crosses; `SHOUT_EFFORT` and `YIELD`; the far ward's throats or pews; the
+   testimony's speech; the levels.
+4. **The next integrator.** The owner's VERSION bump waits for the merge to
+   `kolob-2` (the house rule for this branch was not to bump).
+
+## Known issues
+
+- **Rare by design.** With the band's 36 % kept and six in ten meetings
+  carrying a guest, each new guest comes in one to five meetings in a
+  hundred. The packet gives a seed for each.
+- **The press.** The PLAY press is one long task of 110–126 ms in every
+  trace (the yardstick without a guest too): the graph, the first meeting's
+  plan, the composer's desk opened, and now the new guests' warm-ups (the
+  company's silent line, the ringers' touches, the far ward's valley).
+- **Callbacks over the budget.** The Hosanna: 18 of 40,849 render callbacks
+  over 5.33 ms (the longest 5.9 ms), as crew C measured; the far ward: 1 of
+  28,798 (6.4 ms). The audio clock kept time in both (no late cues, the
+  clock ratio's median 1.00); nothing measured shows a dropout, but the ear
+  should listen at the shout's entries and the far ward's first verse.
+- **REPRO at a run's cut-off.** Seed 22 at exactly 1,250 s: the jittered
+  run laid three organ chords of the next meeting a pump earlier (the
+  organist's desk lays ahead by the audio clock); the scores are identical,
+  and at 1,200 s all four runs are.
+- **The dev jump and the far ward.** `skipToSection("hymn")` lands on the
+  first hymn; a far ward seated in a later hymn is heard only by playing on.
+- **The seed-37 trombone fix** (the tenor part's top C5) changes the dawn's
+  voicing only where a tenor line would have stood strained above B-flat4.

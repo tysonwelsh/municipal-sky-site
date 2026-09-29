@@ -366,12 +366,16 @@ window.KOLOB = window.KOLOB || {};
     C.budget = { refused: [], reserved: null };
     function indexOfSec(type) { for (var q = 0; q < plan.length; q++) if (plan[q].type === type) return q; return -1; }
     function seatIndex(V) { return typeof V.index === "number" ? V.index : indexOfSec(V.section); }
+    // (the switch's guest keeps its place until it is seated: change ringing
+    // is the steeples'; the Hosanna's place is kept by its own reservation;
+    // the testimony-bearers are no guest and keep none)
+    var forcedSeat = forcedType === "changes" ? "steeples" : forcedType === "hosanna" || forcedType === "testimony" ? null : forcedType;
     function budgetRefuses(type, section, index, skip) {
-      if (forcedType === type) return null;
+      if (forcedSeat === type) return null;
       var others = C.visitations.filter(function (v) { return v !== skip; });
-      var n = others.length + (C.budget.reserved && C.budget.reserved !== type ? 1 : 0) + (forcedType && !visitationOf(forcedType) && !(forcedType === "changes" && visitationOf("steeples")) ? 1 : 0);
+      var n = others.length + (C.budget.reserved && C.budget.reserved !== type ? 1 : 0) + (forcedSeat && !visitationOf(forcedSeat) ? 1 : 0);
       if (n >= BUD.max) return "the budget is full";
-      if (BUD.showpieces[type] && (others.some(function (v) { return BUD.showpieces[v.type]; }) || (C.budget.reserved && BUD.showpieces[C.budget.reserved]) || (forcedType && BUD.showpieces[forcedType]))) return "the meeting has its showpiece";
+      if (BUD.showpieces[type] && (others.some(function (v) { return BUD.showpieces[v.type]; }) || (C.budget.reserved && BUD.showpieces[C.budget.reserved]) || (forcedSeat && BUD.showpieces[forcedSeat]))) return "the meeting has its showpiece";
       var at = typeof index === "number" ? index : indexOfSec(section);
       for (var q = 0; q < others.length; q++) {
         var vi = seatIndex(others[q]);
