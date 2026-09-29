@@ -374,6 +374,7 @@ window.KOLOB = window.KOLOB || {};
     if (!S.playing) return;
     var s = S.Meeting.section();
     if (s === "invocation" || s === "sacrament" || inFuging()) { cueIn("bells", 9, tineCycle); return; }
+    if (S.inVisit() && S.Meeting.visitType() === "hosanna") { cueIn("bells", 9, tineCycle); return; }   // (the tines keep still under the Hosanna: the day's theme is not rung over "The Spirit of God")
     if (!airFree()) { cueIn("bells", wait("bells").rnd(6, 12), tineCycle); return; }
     var R = turn("bells");
     var tineAmt = getLayerParam("bells", "tine", 0.5);

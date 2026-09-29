@@ -47,6 +47,7 @@
     raspberry: "𐐡𐐈𐐞𐐒𐐇𐐡𐐆",              // RASPBERRY
     amenDash: "𐐁𐐣𐐇𐐤—",                  // AMEN—
     twoBands: "𐐓𐐅 𐐒𐐈𐐤𐐔𐐞",              // TWO BANDS
+    bandFlag: "𐐜𐐊 𐐒𐐈𐐤𐐔",                // THE BAND (one band; "two bands" only when a second comes)
     bandNears: "𐐊 𐐒𐐈𐐤𐐔 𐐊𐐑𐐡𐐄𐐕𐐇𐐞",     // A BAND APPROACHES
     bandsCross: "𐐜 𐐒𐐈𐐤𐐔𐐞 𐐗𐐡𐐉𐐝",       // THE BANDS CROSS
     bandPasses: "𐐑𐐈𐐝𐐇𐐞 𐐉𐐤",            // PASSES ON
@@ -173,7 +174,9 @@
     theme: "THEME", hymnsOfDay: "THE DAY'S HYMNS", amen: "AMEN",
     verse: "VERSE", speaks: "SPEAKS", liahona: "LIAHONA", sample: "SAMPLE",
     raspberry: "RASPBERRY", amenDash: "AMEN—",
-    twoBands: "TWO BANDS", bandNears: "A BAND APPROACHES",
+    twoBands: "TWO BANDS", bandFlag: "THE BAND", bandNears: "A BAND APPROACHES",
+    linedOut: "LINED OUT ONLY", brushArbor: "BRUSH ARBOR", organVoluntary: "ORGAN VOLUNTARY", choirAlone: "THE CHOIR ALONE",
+    dronesTune: "THE DRONE'S TUNE",
     bandsCross: "THE BANDS CROSS", bandPasses: "PASSES ON",
     theSteeples: "THE STEEPLES ANSWER", lastBell: "THE LAST BELL", steeplesFlag: "STEEPLES",
     oldTune: "AN OLD TUNE REMEMBERED", oldTuneFlag: "AN OLD TUNE", memoryOut: "THE MEMORY GIVES OUT",
@@ -665,6 +668,7 @@
     var S = TT(STR, STR_EN);
     if (c.hush) return S.stillness;
     if (c.fuging) return S.fuging;
+    if (c.visit === "bands" && !c.twoBands) return S.bandFlag;   // (one band goes by; the flag was "two bands" for every band)
     if (c.visit) return VISIT_FLAG[c.visit] && !unloggedGuests[c.visit] ? S[VISIT_FLAG[c.visit]] : "";
     return "";
   }

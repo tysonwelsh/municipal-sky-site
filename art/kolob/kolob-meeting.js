@@ -431,9 +431,13 @@ window.KOLOB = window.KOLOB || {};
     // up while the ward sings and crosses the verse — the hymn gives it no
     // gap; the collision is the piece. (bDie and bSeatDie above are still
     // thrown, unused.) A handcart company asked for by name keeps the band
-    // away, as the trombones asked for do: one procession a Sunday.
+    // away, as the trombones asked for do: one procession a Sunday. So does
+    // any guest the switch names that keeps a seat (the critic of round 3c:
+    // the band, asked first, took the forced guest's rite or the one beside
+    // it); the Hosanna and the bearers keep none, and let it march.
     var GBg = KOLOB.GuestBands || null;
-    if (GBg && !dawnAsked && forcedType !== "handcart") {
+    var bandYields = !!forcedSeat && forcedSeat !== "bands";
+    if (GBg && !dawnAsked && !bandYields) {
       var bStream = stream("guest:bands");
       var bSeat = GBg.plan({ n: C.meetingNum, kind: activity, sunday: sunday, sections: plan, guests: C.visitations, odds: oddsOf("bands", null), force: forcedType === "bands" }, bStream);
       if (bSeat) admit({ type: "bands", section: bSeat.section, at: bSeat.at, dur: bSeat.dur, fired: false, cued: true, stream: bStream, pick: bSeat.pick, second: bSeat.second });
@@ -1593,6 +1597,7 @@ window.KOLOB = window.KOLOB || {};
     if (V.type === "bands" && C.section === "doxology") emitEvent({ type: "payoff", kind: "bands", section: "doxology", hymnId: C.hymn ? C.hymn.id : null });
     C.visitType = V.type;
     C.visitLogged = V.logged;
+    C.visitSecond = V.type === "bands" && !!V.second;   // (the page says "two bands" only when a second one comes)
     C.visitUntil = t + vdur;
     guestSpan(V.type, t, vdur, V.logged);
   }
@@ -2172,6 +2177,7 @@ window.KOLOB = window.KOLOB || {};
     assemblyUntil: function () { return C.assemblyUntil; },
     visitType: function () { return C.visitType; },
     visitLogged: function () { return C.visitLogged !== false; },
+    visitSecond: function () { return !!C.visitSecond; },
     guests: function () {
       return C.visitations.map(function (v) { return { type: v.type, section: v.section, at: v.at != null ? v.at : null, dur: v.dur != null ? v.dur : null, fired: !!v.fired,
         index: typeof v.index === "number" ? v.index : C.plan.map(function (p) { return p.type; }).indexOf(v.section), changes: v.changes ? v.changes.method || true : null, hymnId: v.hymnId || null, seeded: v.seeded || null, second: v.type === "bands" ? !!v.second : null }; });

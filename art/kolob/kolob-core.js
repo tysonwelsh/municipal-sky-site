@@ -1401,6 +1401,7 @@ window.KolobAudio = (function () {
         // (a guest the minutes may not name — logged: false, the Hosanna —
         // is not told to the page at all)
         visit: (ctx && ctx.currentTime < M.assemblyUntil()) ? "assembly" : (inVisit() && M.visitLogged() ? M.visitType() : null),
+        twoBands: M.visitSecond ? M.visitSecond() : false,
         f0: S.F0, season: S.seasonPos,
         sectionIndex: M.sectionIndex(), planLength: plan.length,
         plan: plan,                                            // the wheel folds hymns onto one seat
