@@ -852,3 +852,182 @@ meeting. Handoff: `handoff/r3b-styles-1.md`.*
   the layer's own gain where there is one (the practice into `choir`), through
   the meeting's doors (`doors.seats`; STOP closes them).
 - **`S.Meeting`** adds `forms()`, `payoff()`, `refrainAfter(hymnId)`.
+
+## 12. Round 3c, adopted (the new guests in the meeting)
+
+*The four round-3c guest crews' recipes (`handoff/r3c-bands-1.md`,
+`r3c-organ-1.md`, `r3c-voices-1.md`, `r3c-hall-1.md`) as amended by the four
+"For the round-3c integrator" notes of PLAN-COMPOSITION §15, adopted as the
+Nauvoo band, the handcart company, the gulls, the organist's variations,
+change ringing, the gift of tongues, the far ward, the Hosanna, the Social
+Hall and the testimony-bearers come into the meeting under one guest budget.
+Handoff: `handoff/r3c-integrate-1.md`.*
+
+### 12.1 Modules (§1, §11.1)
+
+- `kolob-guest-bands.js`, `kolob-guest-handcart.js`, `kolob-guest-gulls.js`,
+  `kolob-guest-variations.js`, `kolob-guest-changes.js`,
+  `kolob-guest-tongues.js`, `kolob-guest-farward.js`,
+  `kolob-guest-hosanna.js`, `kolob-guest-socialhall.js` and
+  `kolob-testimony.js` join the engine after the singing school, before
+  `kolob-guests.js` (`_engine.php`). Each answers the roll call; each plans
+  purely on its own stream and performs through `hooks.defer`.
+- **At the PLAY press** (`kolob-core.js`, beside the town's air):
+  `GuestHandcart.warm(ctx)` (the company's throat sung once silently, and
+  `VoicesFolk.warm`), `GuestChanges.warm()` (the true touches searched),
+  `GuestFarWard.warm(ctx)` (the valley poured). Never in a clock cue.
+- **The Nauvoo band replaces `twoBandsCross`** (`VISIT_FN.bands`) whenever
+  its room is loaded; the fife remains for a page without it.
+
+### 12.2 The guest budget (PLAN §8, §8.13)
+
+- **One table of odds** — `KOLOB.Calendar.GUEST_ODDS[guest][column]`, the
+  columns `GUEST_COLUMNS` (the nine Sundays in `ORDER`), read by
+  `Calendar.guestOdds(guest, sunday)`. It replaces the Sundays' `guests`
+  factors (removed from `SUNDAYS`) and every guest room's own `ODDS` in the
+  meeting: the meeting hands each room `info.odds`, and every room's
+  `oddsFor` reads it first (a lab without it reads the room's own `ODDS`).
+  The variations keep the organist's lean (`ODDS.style`) on top; the
+  Hosanna comes only on its two Sundays whatever it is handed. `changes` is
+  the chance, of the Sundays the steeples ring, that the far bells ring
+  changes; `testimony` is not in the table (not a guest).
+- **The rules** (`Calendar.GUEST_BUDGET`, enforced in `planMeeting` by
+  `budgetRefuses`): at most `max` (2) guests a meeting, the Hosanna
+  counted; one of the `showpieces` (the variations, the Social Hall, the
+  Hosanna) at most; never two guests in the same rite, nor in neighbouring
+  rites unless the Sunday's `neighbours` allow the pair (Pioneer Day: the
+  band and the Social Hall). A guest's rite is its `index` in the plan (the
+  far ward's hymn), else the first rite of its `section`. Each room's own
+  rules come first; the budget is asked last, and a guest it refuses is not
+  seated (its dice were thrown). `C.budget.refused` keeps who and why
+  (`S.Meeting.budget()`, dev and harness only).
+- **Who asks first** (`GUEST_BUDGET.order`): the band, the steeples, the old
+  tune, the trombones, the singing school, the handbells, the variations,
+  the gift, the far ward, the Social Hall, the handcarts, the gulls — the
+  last asked yields when the budget is full. **The Hosanna is asked before
+  all of them** (its plan is pure: asked with no guests, planned again at
+  its hook with them) and keeps its place and the showpiece.
+- **A guest named by the switch** (`forcedType`) is seated past the budget;
+  the others leave it its place and its showpiece.
+- **The testimony-bearers are not guests**: never in `C.visitations`, never
+  counted, never a neighbour; a guest seated in the testimony keeps it.
+
+### 12.3 Streams (§3, §11.2)
+
+| label | draws |
+|---|---|
+| `guest:bands:<n>` | `seat`, `shape`, `synth` → `band:<k>` (the old fife's draws are gone with it) |
+| `guest:handcart:<n>` | `seat`, `shape`, `synth` → `carts`, `company` → `women-1` … `leader`, `child` (its priming notes included) |
+| `guest:gulls:<n>` | `seat`, `shape`, `flock`, `synth` |
+| `guest:variations:<n>` | `seat`, `shape` (→ `variations:<style>` → `var:<character>`, `hands:<tag>:<line>`, `pass:<line>`, `fig:<k>`, `intro`), `organist`, `synth` |
+| `guest:changes:<n>` | `seat` (the variant's die, the moment), `shape`, `synth` |
+| `guest:tongues:<n>` | `seat`, `shape`, `tongue`, `melody`, `words`, `figures`, `hum`, `ward`, `synth` |
+| `guest:farward:<n>` | `seat`, `shape`, `material` (→ `setTune`, `pews`), `vowels`, `synth` |
+| `guest:hosanna:<n>` | `seat` (its first die the round-3b hook's), `shape`, `crowd`, `ward`, `synth` |
+| `guest:socialhall:<n>` | `seat`, `shape`, `tune`, `people`, `arrange`, `calls`, `room`, `material`, `synth` |
+| `guest:testimony:<n>` | `seat`, `shape`, `speech:<k>`, `reed:<k>`, `synth`, `answer:<memberId>` |
+
+`meeting:<n>`'s own dice are thrown as before: `bDie` and `bSeatDie` still
+fall (unused), and the steeples' and the old tune's chances are read against
+the table (one draw each, whatever the number).
+
+### 12.4 Notes and layers (§5, §11.3)
+
+- `band` — `part` (`melody` `cornet2` `alto` `bass`), `beat` (seconds),
+  `bar`, `beatInBar`, `downbeat`, `doubling`, `band` (0, 1), `strain`,
+  `meter`, `loud`, `hymnId` (each band's own). The staff writes the tune and
+  the tuba, a visit per band (`kolob-viz.js` `takeBand`, round 3c).
+- `handcart` (new) — `part: "tune"`, `voice`, `verse`, `line`, `beat`, `syl`,
+  `octave`, `loud`, `hymnId: "earth:all-is-well"`. `gulls` (new) — `part`,
+  `index`, `deg`, `monzo`, `loud`, `hymnId`.
+- `organ` — the variations' notes carry `variations: true` (and the
+  Score's `line`, `beat`, `deg` where the theme is written; a dance's tune
+  `line` and `deg`, re-barred, no `beat`); `orn` adds `acc`, `canon`,
+  `bitonal`, `octave`. The organist's `cast` events of a recital say
+  `variations: true`. `tower` (new) — the far tower's strokes: `bell`,
+  `place`, `row`, `hand`, `muffled`, `monzo`, `changes: true`.
+- `choir` — the gift (`role: "tongues"`, `hum`; the Deseret word `wordDs`
+  on each word's first syllable) and its reed on `harmonium`
+  (`tongues-reed`); the Hosanna's hymn (`guest: "hosanna"`, `hosanna:
+  true`, `logged: false`, `engrave: false`, `hymnId: "earth:assembly"`); the
+  Social Hall's calls (`part: "caller" | "whoop"`, `member`, `call`).
+- `farward` (new) — `part`, `deg`, `cents`, `verse`, `line`, `hymnId`.
+- `fiddle` (new) — the Social Hall: `part` (`tune` `fig` `pick` `cad`
+  `stop` `drone` `final`), `strain`, `time`, `line`, `bar`, `deg`, `monzo`,
+  `septimal`, `orn`. **A guest's note names the hymn it dances as
+  `dances`, not `hymnId`** (a `hymnId` on the choir's layer is the ward
+  singing that hymn), as the singing school's say `rehearses`.
+- `voice`, `harmonium`, `clarinet` — the testimony-bearers: `testimony:
+  true`, `speech`, `member`, `part`, `accent`; the reed's `move` (`echo`,
+  `double`, `tune`), `deg`, `monzo`, `keyMonzo`.
+- `VoicesVocal` (additive, both crews): a syllable spelled by its sounds
+  (`sylOf`), `spec.effort`, `opts.fric`, `opts.hSwell`, `syllable(name)`,
+  `CONSONANTS`; and a note's `glide` (a spoken syllable), `SPOKEN`.
+
+### 12.5 Events (§6, §11.4)
+
+- **`guest` stages.** bands: `approaches`, `second`, `cross` (labelled "the
+  band goes by", or "the bands cross" when two are near at once), `passes`;
+  handcart: `approaches`, `sings`, `passes`; gulls: `gulls`; variations: a
+  stage per character (`chorale` `trio` `canon` `minuet` `bitonal`
+  `polonaise` `march` `finale`, with `keys`, `regs`); steeples:
+  `changes:rounds`, `changes:go`, `changes:round`, `changes:stand` (with
+  `method`, `touch`, `muffled`); tongues: `rises`, `the ward hums`, `the
+  harmonium` (its `ROWS`; `sings` and `the height` send none); farward:
+  `verse` (once, as it joins); socialhall: `benches`, `honour`, `A`, `B`,
+  `final`, `applause` (each once).
+- **`testimony`** (new typed event, `kolob-score.js` EVENTS: `{stage: "str"}`)
+  — `rise`, `bearer`, `speaks`, `echo`, `double`, `tune`, `stillness`, with
+  `memberId`, `label`.
+- **`cast`** — new actions (Deseret in `kolob-cast.js` `ACTION_DS`): *rises
+  to bear testimony*, *sits down*, *takes up the fiddle*, *calls the dance*,
+  *rises and sings in tongues* (forward rows), and the organist's nine for
+  the variations (*plays variations on the hymn*, *turns the tune into a
+  minuet*, …).
+- **The Hosanna** sends `guest-start` / `guest-end` and `house-lets-go` with
+  `logged: false` and nothing else: no `guest` stage, no `hymn-announced`,
+  no `verse-start`, never in `guests-drawn`. `S.UNLOGGED_GUESTS.hosanna`.
+  The conductor's `visit` is null while it sounds; `ENGRAVE_HYMN` is false
+  (the owner's ruling: audio-only), so SCORE §6's rule stands whole — a
+  `logged: false` note is neither printed nor engraved.
+
+### 12.6 Time and the house (§4, §11.5)
+
+- **Cued, and made ready a cue ahead.** Every new guest but the far ward and
+  the Hosanna is cued at its section's start plus `at`. The band's march,
+  the company, the gulls and the dance are made ready by a cue of their own
+  a second before (`PRE_MADE`, the critic of crew A: no wake both makes a
+  march and lays its first bar). The variations' set is made ready in the
+  page's idle time once its hymn is written (`readyAhead`: a timer, never a
+  clock cue — the critic of crew B), and its cue holds the section, so the
+  meeting is the same whenever the set was made.
+- **The far ward** is hooked to the ward's own hymn (`kolob-voices-choir.js`
+  `singHymnWard` → `S.farWardFor(h, verses)`): made ready as the hymn
+  begins, told each verse as the desk writes it, the A-men, the end; its
+  span from its first verse to its last note; the hymn held for it. It is
+  never a `waitingGuest` and never polled.
+- **The Hosanna** comes at the last doxology's close (`C.si ===
+  seat.sectionIndex`), once its hymn and any guest have gone, and holds the
+  section. A band seated in its doxology leaves for a hymn or the postlude
+  (or stays home), and the payoff is no longer the band's.
+- **The testimony-bearers** are cued at the testimony's start plus their
+  `at`; the house lets go as the first rises (`houseLetsGo(t, "testimony",
+  true)`) and listens until the last sits (`hallListens` ←
+  `testimonySounding`); the still small voice keeps its peace from the
+  testimony's start to the last bearer's end (`S.testimonyHolds`).
+- **The house listens** (`LISTENED`) to the company, the variations, the
+  gift, the Social Hall and the Hosanna; the band and the gulls take no air.
+- **Seats** (`ROOM_DEPTH`, unity-gain guest seats): `fiddle` −0.2, `floor`
+  −0.25, `speaker` −0.35, `reed` −0.15; the caller at `choir-near`.
+- **The Social Hall replaces the postlude**: the house lets go at its
+  benches and the drone steps back (to 0.18) until the applause; its room's
+  sounds are baked in idle time once it is seated.
+
+### 12.7 The switch
+
+`FORCEABLE` names every guest: `handcart`, `gulls`, `variations`,
+`changes` (seats the steeples in the prelude), `tongues`, `farward`,
+`hosanna` (its Sundays only), `socialhall`, `testimony`, beside the round-3b
+ones. The Ives switch's own pick gains the Ivesian ones (the handcarts, the
+gulls, the variations, change ringing, the far ward). The page takes
+`?guest=<name>` (dev: `kolob-ui.js`), as the harness takes `force=<name>`.
