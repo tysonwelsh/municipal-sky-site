@@ -41,7 +41,10 @@
 //     half again, softly, legato, the alto horns holding the chords and the
 //     snare silent — and, when there is room, once more as the GRANDIOSO,
 //     the whole band full, the drums rolling into it;
-//   · and the STINGER: one short tonic chord on the last after-beat.
+//   · and the STINGER: one short tonic chord on the last after-beat —
+//     after which the band marches on to its drums alone, the STREET BEAT,
+//     and they carry it round the last houses and out of hearing (the
+//     march ends at the stinger; the meeting waits for no drum).
 // Hymns in 3/4 or 3/2 are turned into a 6/8 quickstep (the first beat of
 // the bar held, the other two a lilting quarter and eighth) or a 2/4 march
 // (long, short, short); hymns in 4/4 or 2/2 march in 2/4, now and then in
