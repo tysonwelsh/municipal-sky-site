@@ -1106,7 +1106,7 @@ window.KolobViz = (function () {
   // (the groups one takeLayer call made, and a guest's own cap on them)
   function madeSince(g0, cap) {
     var out = groups.slice(g0);
-    if (cap != null) out.forEach(function (gr) { gr.cap = cap; });
+    if (cap != null) out.forEach(function (gr) { gr.cap = cap; gr.tight = true; });
     return out;
   }
   // "free" notes — a cry, a syllable, a bell's stroke: heads with no stem
@@ -1240,14 +1240,25 @@ window.KolobViz = (function () {
     rs.sort(function (x, y) { return x - y; });
     if (rs.length >= 2) company.beat = clamp(rs[rs.length >> 1], 0.3, 3);
     var beat = company.beat || estimateBeat(ns.map(function (n) { return n.duration; }), lastBeat.choir || 1.15);
+    // (a walking company sings its notes short of their length, and breathes:
+    // each note is written for as long as the tune gives it, to the next
+    // note's beat in its line — the last of a line as it is sung)
+    var written = {};
+    if (company.beat) ns.forEach(function (n, i) {
+      for (var j = i + 1; j < ns.length; j++) {
+        var m = ns[j];
+        if (m.voice !== n.voice || m.verse !== n.verse || m.line !== n.line || typeof m.beat !== "number" || typeof n.beat !== "number") continue;
+        if (m.beat > n.beat) { written[i] = (m.beat - n.beat) * beat; break; }
+      }
+    });
     var key = company.key, mine = [];
-    ns.forEach(function (n) {
+    ns.forEach(function (n, i) {
       var nq = keyedQ(n.freq, key, null, null, "ionian"), at = company.seen[nq.q] = company.seen[nq.q] || [];
       company.t1 = Math.max(company.t1, n.startTime + n.duration);
       for (var j = 0; j < at.length; j++) if (Math.abs(at[j] - n.startTime) < 0.12) return;
       at.push(n.startTime);
       loud += n.loud == null ? 0.5 : n.loud;
-      mine.push({ freq: n.freq, startTime: n.startTime, duration: n.duration, part: n.octave < 0 ? "B" : "S", nq: nq });
+      mine.push({ freq: n.freq, startTime: n.startTime, duration: written[i] || n.duration, part: n.octave < 0 ? "B" : "S", nq: nq });
     });
     Object.keys(company.seen).forEach(function (q) { company.seen[q] = company.seen[q].filter(function (t) { return t > t0 - 30; }); });
     if (!mine.length) return;
@@ -1270,7 +1281,7 @@ window.KolobViz = (function () {
   // grace, a slide). The open string it leans on is a whole note, where it
   // sounds. The notes are placed in the danced hymn's key, by their degree.
   // The fiddle is in the room with us, a step nearer than the ward: full ink.
-  var FIDDLE_SCALE = 0.66, FIDDLE_CAP = 2;
+  var FIDDLE_SCALE = 0.55, FIDDLE_CAP = 3;
   var FIDDLE_TUNE = { tune: 1, cad: 1 }, FIDDLE_ORN = { cut: "grace", slide: "slide" };
   var hall = null;                                 // the dance being printed: its hymn, its eighth, where its bars fall
   function fiddleEighth(ns) {                      // the running note: the shortest length the fiddle keeps to
@@ -1371,7 +1382,7 @@ window.KolobViz = (function () {
     var g0 = groups.length;
     takeLayer(layer === "voice" ? "voice" : "caller", ns, 1, null, { shape: "x",
       head: function (n, hd) { if (n.accent) hd.heavy = true; } });
-    var gs = madeSince(g0, 1), tl = 0;
+    var gs = madeSince(g0, 3), tl = 0;             // (a call on a strain's downbeat stands clear of its double bar)
     unstemmed(gs, false);
     gs.forEach(function (gr) { tl = Math.max(tl, gr.tp); gr.heads.forEach(function (h) { spoken.push({ tp: gr.tp, q: h.q }); }); });
     while (spoken.length && spoken[0].tp < tl - 40) spoken.shift();
@@ -1401,6 +1412,7 @@ window.KolobViz = (function () {
   // sung to, its stems by where its heads lie; a slur over each melisma, from
   // the syllable's first note to its last. The ward's hummed chord at the end
   // is the choir's, and prints in its four parts as the choir's does.
+  var TONGUES_RUN = 0.55;
   function takeTongues(ns) {
     ns = ns.slice().sort(function (a, b) { return a.startTime - b.startTime; });
     var beat = estimateBeat(ns.map(function (n) { return n.duration; }), lastBeat.tongues || lastBeat.choir || 1.15);
@@ -1414,17 +1426,23 @@ window.KolobViz = (function () {
     takeLayer("choir", line, beat, null, { staff: st, qOf: function (n) { return n.nq; } });
     var at = {};
     madeSince(g0, 1.5).forEach(function (gr) { at[Math.round(gr.tp * 1000)] = gr; });
-    var first = null, last = null;
+    var first = null, last = null, run = [];
     function slur() {
       if (first && last && last.grp !== first.grp) marks.push({ kind: "slur", tp: first.grp.tp, tp2: last.grp.tp, g1: first.grp, g2: last.grp, q1: first.q, q2: last.q, st: st });
       first = last = null;
     }
+    function beamRun() { if (run.length > 1) { makeBeam(run, st); run[0].beam.fixed = 0; } run = []; }
     line.forEach(function (x) {
       var grp = at[Math.round(x.startTime * 1000)];
       if (!grp) return;
-      if (!x.slur) { slur(); first = { grp: grp, q: x.nq.q }; }
+      if (!x.slur) { beamRun(); slur(); first = { grp: grp, q: x.nq.q }; }
       else if (first) last = { grp: grp, q: x.nq.q };
+      // (a melisma's quick notes, quicker than the page can print full
+      // heads, are the singer's run: small notes, beamed, under the slur)
+      if (x.slur && x.duration < 0.6 * beat) { grp.scale = TONGUES_RUN; if (grp.flags >= 1 && !grp.noStem) run.push(grp); else beamRun(); }
+      else if (x.slur) beamRun();
     });
+    beamRun();
     slur();
   }
 
@@ -1441,6 +1459,7 @@ window.KolobViz = (function () {
   // bitonal interlude, where it plays the other key's bass alone: that line
   // is written.
   var varBars = [];                                // (the downbeats already barred: a phrase's notes may come in two calls)
+  var varSet = null;                               // (the set being printed: its hymn, each part's last note, the beats read)
   function takeVariations(ns) {
     ns = ns.filter(function (n) {
       if (n.part !== "pedal" && !n.pedal) return true;
@@ -1451,19 +1470,25 @@ window.KolobViz = (function () {
       return true;
     });
     if (!ns.length) return;
-    var rs = [], byLine = {};
-    ns.forEach(function (n) { if (typeof n.beat === "number" && n.line != null) (byLine[n.part + "|" + n.line] = byLine[n.part + "|" + n.line] || []).push(n); });
-    Object.keys(byLine).forEach(function (k) {
-      var xs = byLine[k].sort(function (a, b) { return a.startTime - b.startTime; });
-      for (var i = 1; i < xs.length; i++) if (xs[i].beat > xs[i - 1].beat) rs.push((xs[i].startTime - xs[i - 1].startTime) / (xs[i].beat - xs[i - 1].beat));
+    // (the organist lays the set a chord at a time, so the beat is read
+    // across the calls: each part's note against its last in the same line)
+    ns = ns.slice().sort(function (a, b) { return a.startTime - b.startTime; });
+    var h = ns[0].hymnId ? hymnOf(ns[0].hymnId) : null, sc = h && h.score;
+    if (!varSet || varSet.id !== (h && h.id) || ns[0].startTime - varSet.t1 > 12) varSet = { id: h && h.id, prev: {}, rs: [], t1: 0 };
+    ns.forEach(function (n) {
+      varSet.t1 = Math.max(varSet.t1, n.startTime + n.duration);
+      if (typeof n.beat !== "number" || n.line == null) return;
+      var k = n.part + "|" + n.line, p = varSet.prev[k];
+      if (p && n.beat > p.beat && n.startTime > p.t + 0.02) varSet.rs.push((n.startTime - p.t) / (n.beat - p.beat));
+      varSet.prev[k] = { t: n.startTime, beat: n.beat };
     });
-    rs.sort(function (a, b) { return a - b; });
+    while (varSet.rs.length > 24) varSet.rs.shift();
+    var rs = varSet.rs.slice().sort(function (a, b) { return a - b; });
     var fine = rs.length >= 2, beat = fine ? clamp(rs[rs.length >> 1], 0.3, 2.4)
       : estimateBeat(ns.map(function (n) { return n.duration; }), lastBeat.organ || lastBeat.choir || 1.15);
     var g0 = groups.length;
     takeLayer("organ", ns, beat, null, { fineBeat: fine });
     var made = madeSince(g0, 2);
-    var h = ns[0].hymnId ? hymnOf(ns[0].hymnId) : null, sc = h && h.score;
     if (!sc || !sc.lines) return;
     var vl = sc.lines.concat(sc.refrain || []), ts = timeSig(h.modeOfTime), downs = [];
     ns.forEach(function (n) {
@@ -1478,9 +1503,10 @@ window.KolobViz = (function () {
       var before = groups.some(function (gr) { return gr.layer === "organ" && gr.tp < tb - 0.03 && gr.tp > tb - 6; });
       if (!before) return;                         // (no bar before the set's first note)
       varBars.push(tb);
-      var nx = made.filter(function (gr) { return Math.abs(gr.tp - tb) < 0.03; }), sts = {};
-      made.forEach(function (gr) { if (Math.abs(gr.tp - tb) < 4) sts[gr.st] = 1; });
-      var bm = { kind: "bar", type: "single", tp: tb, sts: ["T", "B"].filter(function (s) { return sts[s]; }), off: -1, pv: [], pvRests: [], nx: nx, sys: { hymnId: null } };
+      // (through both staves, as an organ's bars run: a figure laid in a
+      // call of its own keeps clear of the bar where it falls — clearance)
+      var nx = made.filter(function (gr) { return Math.abs(gr.tp - tb) < 0.03; });
+      var bm = { kind: "bar", type: "single", tp: tb, sts: ["T", "B"], off: -1, pv: [], pvRests: [], nx: nx, sys: { hymnId: null } };
       nx.forEach(function (gp) { gp.barIn = bm; });
       marks.push(bm);
     });
@@ -3057,7 +3083,7 @@ window.KolobViz = (function () {
   // place). skip: the groups not reckoned with (its own chord, while the
   // chord's place is being found).
   function clearance(gr, g, heads, o, dx0, skip) {
-    var sp = g.sp, tol = 0.05 * sp, gap = 0.3 * sp;
+    var sp = g.sp, tol = 0.05 * sp, gap = (gr.tight ? 0.08 : 0.3) * sp;   // (round 3c: a new guest's quick notes keep the hymn's close air)
     var ink = groupBoxes(inkLayout(gr, g, heads, o), o), bx = ink;
     // (a hymn's two voices a second apart are set the engraver's way: the
     // second head one head's width over, its ledger running under the
@@ -3728,12 +3754,31 @@ window.KolobViz = (function () {
   function setTuningMarks(on) { TUNING_MARKS = !!on; }
 
   // (for the silent checks: what is on the page now — never used by the app)
-  function probe() {
+  // (a dev's view of the page; probe("ink") adds each drawn note's ink and
+  // each placed bar's, in page px, for the bars-touch-no-ink check)
+  function probe(what) {
+    if (what === "ink") return probeInk();
     return {
       PT: PT, sp: G ? G.sp : null, xE: G ? G.xE : null,
-      groups: groups.map(function (gr) { return { layer: gr.layer, tp: gr.tp, st: gr.st, dir: gr.dir, x: gr.drawnAt === FRAME ? gr.lastX : null, voice: gr.voice || null, beam: gr.beam ? gr.beam.members.indexOf(gr) : null, heads: gr.heads.map(function (h) { return h.q + (h.heavy ? "H" : "") + (h.ghost ? "G" : "") + (h.acc || "") + (h.jm ? "j" : "") + (h.orn ? "o" : ""); }).join(","), flags: gr.flags, alone: gr.alone ? !!gr.aloneOk : null }; }),
-      marks: marks.map(function (m) { return { kind: m.kind, type: m.type || null, tp: m.tp, x: X(m.tp) + (m.rel != null && G && m.relSp === G.sp ? m.rel : (m.off || 0) * (G ? G.sp : 0)), st: m.st || (m.sts || []).join(""), v: m.v, voice: m.voice, push: m.push ? m.push.dx : null }; }),
+      groups: groups.map(function (gr) { return { layer: gr.layer, tp: gr.tp, st: gr.st, dir: gr.dir, x: gr.drawnAt === FRAME ? gr.lastX : null, voice: gr.voice || null, beam: gr.beam ? gr.beam.members.indexOf(gr) : null, heads: gr.heads.map(function (h) { return h.q + (h.heavy ? "H" : "") + (h.ghost ? "G" : "") + (h.acc || "") + (h.jm ? "j" : "") + (h.orn ? "o" : ""); }).join(","), flags: gr.flags, alone: gr.alone ? !!gr.aloneOk : null, dx: gr.col ? gr.col.dx : null, barIn: gr.barIn ? gr.barIn.tp : null }; }),
+      marks: marks.map(function (m) { return { kind: m.kind, type: m.type || null, tp: m.tp, x: X(m.tp) + (m.rel != null && G && m.relSp === G.sp ? m.rel : (m.off || 0) * (G ? G.sp : 0)), st: m.st || (m.sts || []).join(""), v: m.v, voice: m.voice, push: m.push ? m.push.dx : null, rel: m.at ? m.at.rel : null, nx: m.nx ? m.nx.length : null }; }),
     };
+  }
+
+  function probeInk() {
+    var g = G, out = { sp: g ? g.sp : null, T: g ? g.T : null, B: g ? g.B : null, notes: [], bars: [] };
+    if (!g) return out;
+    groups.forEach(function (gr) {
+      if (gr.drawnAt !== FRAME) return;
+      var bx = gr.noCol ? (gr.inkBx && gr.inkBx.boxes) : (gr.col && gr.col.ink);
+      if (bx) out.notes.push({ layer: gr.layer, st: gr.st, tp: gr.tp, boxes: bx.map(function (b) { return [b[0] + gr.lastX, b[1], b[2] + gr.lastX, b[3]]; }) });
+    });
+    marks.forEach(function (m) {
+      if (m.kind !== "bar" || !(m.at && m.at.sp === g.sp) || m.tp > PT) return;
+      var bi = barInk(m, g), xb = X(m.tp) + m.at.rel;
+      out.bars.push({ tp: m.tp, type: m.type, sts: m.sts, x0: xb - bi.wl, x1: xb + bi.wr });
+    });
+    return out;
   }
 
   return { init: init, setConductor: setConductor, setWheelLabels: setWheelLabels, wheelSeatAt: wheelSeatAt, setTuningMarks: setTuningMarks, probe: probe };
