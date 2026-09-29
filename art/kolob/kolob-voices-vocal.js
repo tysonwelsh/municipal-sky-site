@@ -90,7 +90,10 @@
 // Notes in:  [{ f, dur, vowel, stress?, slur?, rest?, slide? }]
 //   f      Hz (the caller owns pitch; exact ratios live upstream)
 //   dur    seconds, onset to next onset
-//   vowel  ah oh oo ee eh · fa sol la mi · hum   (default "ah")
+//   vowel  ah oh oo ee eh · fa sol la mi · hum   (default "ah"); or (round 3c)
+//          a syllable spelled by its sounds, hyphened: [consonant-]vowel[-coda],
+//          the consonant one of f s l m n r y w d b g h, the coda l m n —
+//          "n-ah", "l-oh-m", "h-oh", "eh-n" (see sylOf)
 //   slur   true → melisma continuation: no new consonant, no re-articulation
 //   rest   true → silence (a breath) for dur
 //   slide  true → a long, deliberate portamento into this note (precentor)
@@ -109,6 +112,12 @@
 //                 arm(ctx, horizon) reaches it (see ARMING)
 //   pan           this line's place in the field (a performer moving a
 //                 singer between the pews and the hollow square)
+//   fric          0..1, how much of the f and the s is said (default 1;
+//                 round 3c: a crowd shouting "san" says a little of it)
+//   hSwell        how much stronger the breath is through this line's h's
+//                 (×, default H_SWELL, 4; 1 is no swell: the h then only
+//                 its softer, slower onset). Round 3c, round 2: a lever for
+//                 a crowd's breath, which the ear may hear as hiss
 // ============================================================================
 window.KOLOB = window.KOLOB || {};
 window.KOLOB.VoicesVocal = (function () {
@@ -184,6 +193,46 @@ window.KOLOB.VoicesVocal = (function () {
     hum: { v: "hum" }, mm: { v: "hum" },
   };
   var CONS_DUR = { f: 0.07, s: 0.08, l: 0.06, m: 0.075 };
+  // ROUND 3C (the guests: the gift of tongues, the Hosanna) — MORE MOUTHS,
+  // added beside the old ones and never instead of them. A syllable may now
+  // be written as its sounds, joined by hyphens — "n-ah", "l-oh-m", "y-ee",
+  // "h-oh", "d-oo", "eh-n" — consonant, vowel, and a closing nasal or l —
+  // for a song in syllables no one knows and a shout of "Ho-san-na". Every
+  // new consonant is VOICED and quiet: the nasal n; the liquids r (its third
+  // formant pulled low) and l; the glides y and w (the mouth passing
+  // through ee or oo on the way to the vowel); the voiced stops d, b and g
+  // (a closed-mouth murmur for a few hundredths of a second and a deep dip
+  // in the voice, then the vowel — no burst of noise, so no hiss and no
+  // click); and h, which is no new noise at all but a breathy, slower
+  // onset (the voice's own breath, a moment stronger, through the vowel's
+  // mouth). The old syllables (ah … hum, fa sol la mi) are read exactly as
+  // before: a name without a hyphen goes straight to SYL.
+  CONS_DUR.n = 0.07; CONS_DUR.r = 0.06; CONS_DUR.y = 0.05; CONS_DUR.w = 0.055;
+  CONS_DUR.d = 0.045; CONS_DUR.b = 0.05; CONS_DUR.g = 0.05; CONS_DUR.h = 0.075;
+  // the consonants that are mouths of their own (a bank opened before the
+  // vowel, as m and l always were), and how fast the vowel takes over
+  var CONS_BANK = { m: 1, l: 1, n: 1, r: 1, y: 1, w: 1, d: 1, b: 1, g: 1 };
+  var CONS_XF = { m: 0.05, l: 0.05, n: 0.05, r: 0.05, y: 0.06, w: 0.06, d: 0.02, b: 0.02, g: 0.022 };
+  // how far the voice dips into each new consonant at a join (the old ones
+  // keep their own numbers in the envelope, below)
+  var CONS_DIP = { n: 0.55, r: 0.66, y: 0.72, w: 0.64, d: 0.3, b: 0.28, g: 0.3, h: 0.42 };
+  var H_SWELL = 4;           // how much stronger the breath is through an h (×; the breath's own level is small)
+  var SYL_VOWELS = { ah: 1, oh: 1, oo: 1, ee: 1, eh: 1, hum: 1 };
+  var SYL_CODAS = { l: 1, m: 1, n: 1 };
+  var sylCache = {};
+  function sylOf(name) {
+    if (SYL[name]) return SYL[name];
+    if (sylCache[name] !== undefined) return sylCache[name];
+    var parts = String(name).split("-"), out = null;
+    if (parts.length >= 1 && parts.length <= 3) {
+      var c = null, v = null, coda = null, i = 0;
+      if (CONS_DUR[parts[i]] && !SYL_VOWELS[parts[i]]) c = parts[i++];
+      if (SYL_VOWELS[parts[i]]) v = parts[i++];
+      if (i < parts.length && SYL_CODAS[parts[i]]) coda = parts[i++];
+      if (v && i === parts.length) { out = { v: v }; if (c) out.c = c; if (coda) out.coda = coda; }
+    }
+    return (sylCache[name] = out);
+  }
   // the fricatives' strength, per singer. A ward's s is thirty-two small
   // ones, each at its own moment, so it smears into a brush a tenth of a
   // second long: each must be small (the owner heard the brush as a hiss)
@@ -225,6 +274,44 @@ window.KOLOB.VoicesVocal = (function () {
         { type: "peaking", f: 2800 * k, q: 8, g: 4 },
       ];
     }
+    // (round 3c) the new mouths — each fixed for its life, like the vowels
+    var wmn = tract === "w";
+    if (key === "n") {
+      // the tongue at the ridge, the nose open: m's murmur, with the ridge's
+      // faint second resonance higher up
+      return [
+        { type: "lowpass", f: 700 * k, q: 0.8, g: 0 },
+        { type: "peaking", f: 260 * k, q: 2.4, g: 11 },
+        { type: "peaking", f: (wmn ? 1750 : 1500) * k, q: 6, g: 5 },
+      ];
+    }
+    if (key === "r") {
+      // the tongue drawn back: the third formant pulled low, toward the second
+      return [
+        { type: "peaking", f: (wmn ? 450 : 420) * k, q: 5, g: 13 },
+        { type: "peaking", f: (wmn ? 1300 : 1150) * k, q: 7, g: 10 },
+        { type: "peaking", f: (wmn ? 1850 : 1600) * k, q: 9, g: 8 },
+      ];
+    }
+    if (key === "y" || key === "w") {
+      // a glide: the mouth of ee (y) or of a rounder oo (w), passed through
+      var G = key === "y" ? (wmn ? [320, 2700, 3250] : [280, 2250, 2890]) : (wmn ? [370, 800, 2600] : [320, 700, 2200]);
+      return [
+        { type: "peaking", f: G[0] * k, q: 4.5, g: 15 },
+        { type: "peaking", f: G[1] * k, q: key === "y" ? 12 : 6, g: key === "y" ? 13 : 11 },
+        { type: "peaking", f: G[2] * k, q: 14, g: key === "y" ? 7 : 5 },
+      ];
+    }
+    if (key === "d" || key === "b" || key === "g") {
+      // a voiced stop: the mouth shut and the voice still sounding behind it
+      // (a murmur, all low), with a faint pinch where the tongue closes it —
+      // the ridge (d), the velum (g); the lips (b) leave none
+      return [
+        { type: "lowpass", f: 480 * k, q: 0.7, g: 0 },
+        { type: "peaking", f: 220 * k, q: 2.2, g: 10 },
+        { type: "peaking", f: (key === "g" ? 1900 : key === "d" ? 1650 : 900) * k, q: 5, g: key === "b" ? 1 : 4 },
+      ];
+    }
     var F = VOWELS[key][tract].map(function (x) { return x * k; });
     // Formant tuning, the thing every soprano learns without being told: when
     // the pitch climbs past the first formant the jaw drops and F1 rides just
@@ -242,6 +329,7 @@ window.KOLOB.VoicesVocal = (function () {
   // round: a note just over F1 must never reuse the untuned bank (the honk).
   function bankKey(key, f0, P) {
     if (key === "hum" || key === "m" || key === "l") return key;
+    if (CONS_BANK[key]) return key;                              // (round 3c: the new mouths, one bank each)
     var over = f0 * 1.08 - VOWELS[key][P.tract][0] * P.k;
     return key + "|" + (over > 0 ? Math.ceil(over / 60) : 0);
   }
@@ -497,7 +585,10 @@ window.KOLOB.VoicesVocal = (function () {
       // the old voice wanders a lot and sags on long notes
       drift: spec.drift != null ? spec.drift : (old ? 9 : young || child ? 2.5 : 4),
       sag: old ? 10 : 0,
-      tilt: (old ? 1.5 : child ? 1.6 : 1.3) + (0.5 - (spec.brightness != null ? spec.brightness : 0.5)) * 0.5,
+      tilt: (old ? 1.5 : child ? 1.6 : 1.3) + (0.5 - (spec.brightness != null ? spec.brightness : 0.5)) * 0.5
+            // (round 3c) effort, 0..1: a raised voice, a shout — the glottis
+            // pressed, the upper harmonics stronger (0, the default, as ever)
+            - clamp(spec.effort || 0, 0, 1) * 0.45,
       pan: spec.pan != null ? spec.pan : PART[part].pan,
       sharedPan: !!spec.sharedPan,
       sharedThroat: !!spec.sharedThroat,
@@ -532,7 +623,7 @@ window.KOLOB.VoicesVocal = (function () {
     var ev = [], tt = t;
     for (var i = 0; i < notes.length; i++) {
       var n = notes[i];
-      var syl = n.rest ? null : (SYL[n.vowel || "ah"] || SYL.ah);
+      var syl = n.rest ? null : (sylOf(n.vowel || "ah") || SYL.ah);      // (round 3c: "c-v-coda" names too)
       ev.push({ s: tt, d: n.dur, f: n.f, rest: !!n.rest || !n.f, syl: syl, slur: !!n.slur, slide: !!n.slide, stress: n.stress != null ? n.stress : 1 });
       tt += n.dur;
     }
@@ -630,7 +721,7 @@ window.KOLOB.VoicesVocal = (function () {
       // "ah". The closed mouths (hum, m, l) keep their own level at the
       // part's middle, flattened across the register. Worked once a person.
       var refs = P._mouthRef || (P._mouthRef = {}), ref = refs[shared ? "shared" : "own"] || (refs[shared ? "shared" : "own"] = {});
-      var base = key === "hum" || key === "m" || key === "l" ? key : "ah";
+      var base = key === "hum" || key === "m" || key === "l" || CONS_BANK[key] ? key : "ah";
       if (ref[base] == null) {
         if (base !== "ah") ref[base] = bankEnergy(base, P.mid);
         else {
@@ -698,6 +789,7 @@ window.KOLOB.VoicesVocal = (function () {
 
     // ---- walk the syllables: which mouth, when, how open; consonants ----
     var cons = [];           // {s, e, c} consonant windows (the mouth's time)
+    var hBreaths = [];       // (round 3c) [from, to]: the h's, where the breath swells
     for (var k = 0; k < ev.length; k++) {
       var e = ev[k];
       if (e.rest) continue;
@@ -706,7 +798,11 @@ window.KOLOB.VoicesVocal = (function () {
         var cd = CONS_DUR[sy.c], cs = s0 - cd * 0.8;
         cons.push({ s: cs, e: s0 + cd * 0.2, c: sy.c });
         if (sy.c === "m" || sy.c === "l") { var cb = bank(sy.c, e.f); switchTo(cb, cs, 0.03, level(cb, e.f)); }
-        switchTo(vb, s0 + cd * 0.2, sy.c === "m" || sy.c === "l" ? 0.05 : 0.03, lv);
+        else if (CONS_BANK[sy.c]) { var cb2 = bank(sy.c, e.f); switchTo(cb2, cs, 0.03, level(cb2, e.f)); }   // (round 3c: n r y w d b g)
+        // h: no mouth of its own — the vowel's mouth opens early, and the
+        // voice's own breath, a moment stronger, comes through it (hBreaths)
+        if (sy.c === "h") { switchTo(vb, cs + cd * 0.35, 0.05, lv); hBreaths.push([cs, s0 + 0.06]); }
+        else switchTo(vb, s0 + cd * 0.2, CONS_XF[sy.c] || 0.03, lv);
       } else if (vb === cur) {
         // the same mouth on a new pitch: only its make-up moves, across the join
         gateRamp(vb, s0 - 0.02, s0 + 0.04, lv);
@@ -717,8 +813,29 @@ window.KOLOB.VoicesVocal = (function () {
       if (sy.coda && !(ev[k + 1] && ev[k + 1].slur)) {
         // "sol": the l closes the syllable in its last 12 %
         var dk = mDur(k), ce = s0 + dk, cl = Math.min(0.09, dk * 0.12), nxt = ev[k + 1];
-        if (nxt && !nxt.rest) { var lb = bank("l", e.f); switchTo(lb, ce - cl - 0.02, 0.04, level(lb, e.f)); }
+        if (nxt && !nxt.rest) { var lb = bank(sy.coda, e.f); switchTo(lb, ce - cl - 0.02, 0.04, level(lb, e.f)); }
+        else if (sy.coda !== "l") {
+          // (round 3c) a closing m or n at a breath or the line's end — "Lamb",
+          // "A-men": the fading voice passes into the nose as it goes (sol's l,
+          // as ever, only before another note)
+          var cl2 = Math.min(0.2, dk * 0.28), nb2 = bank(sy.coda, e.f);
+          switchTo(nb2, ce - cl2, 0.05, level(nb2, e.f));
+        }
       }
+    }
+    // (round 3c) h: the breath in the tone swells for a moment and falls back
+    // — heard only through the person's own envelope (it is the same breath
+    // as ever, never a noise of its own, so it cannot hiss between the notes)
+    if (hBreaths.length) {
+      var aspBase = asp.gain.value, hT = born, hSwell = opts.hSwell != null ? Math.max(1, +opts.hSwell) : H_SWELL;
+      hBreaths.forEach(function (w) {
+        var a = Math.max(w[0], hT + 0.005);
+        if (w[1] <= a + 0.03) return;
+        asp.gain.setValueAtTime(aspBase, a);
+        asp.gain.linearRampToValueAtTime(aspBase * hSwell, a + (w[1] - a) * 0.55);
+        asp.gain.linearRampToValueAtTime(aspBase, w[1]);
+        hT = w[1];
+      });
     }
     // the mouth closes after the last release (its banks fall silent)
     if (cur) gateRamp(cur, mEnd + 0.08, mEnd + 0.14, 0);
@@ -766,7 +883,7 @@ window.KOLOB.VoicesVocal = (function () {
       fSrc.connect(fric); toRoom(fric, sideIn, fr.map(function (C) { return [C.s - 0.01, C.e + 0.03]; }));
       var fT = born;
       fr.forEach(function (C) {
-        var pk2 = gOut * FRIC_PEAK[C.c], a = Math.max(C.s, fT + 0.002), len = Math.max(0.03, C.e - a);
+        var pk2 = gOut * FRIC_PEAK[C.c] * (opts.fric != null ? clamp(opts.fric, 0, 1) : 1), a = Math.max(C.s, fT + 0.002), len = Math.max(0.03, C.e - a);
         fric.gain.setValueAtTime(0, a);
         fric.gain.linearRampToValueAtTime(pk2, a + len * 0.35);
         fric.gain.linearRampToValueAtTime(pk2 * 0.6, a + len * 0.7);
@@ -900,7 +1017,7 @@ window.KOLOB.VoicesVocal = (function () {
         var sc = e5.syl.c && !e5.slur ? e5.syl.c : null, fricative = sc === "f" || sc === "s";
         var starting = j5 === 0 || ev[j5 - 1].rest;
         if (starting) {
-          var att = Math.min(0.05 + (1 - who.conf) * 0.12 + (fricative ? 0 : 0.03), len * 0.45);
+          var att = Math.min(0.05 + (1 - who.conf) * 0.12 + (fricative ? 0 : 0.03) + (sc === "h" ? 0.05 : 0), len * 0.45);   // (an h: a breathier, slower onset)
           var from0 = s5 - (sc ? 0.02 : 0.04);
           if (fits(from0)) pt(from0, 0);
           pt(s5 + att, L);
@@ -908,7 +1025,7 @@ window.KOLOB.VoicesVocal = (function () {
           // melisma: no re-attack, just the new pitch
         } else {
           // the dip was reached at the end of the note before; rise out of it
-          pt(s5 + Math.min(0.05 + (fricative ? 0.02 : 0), len * 0.4), L);
+          pt(s5 + Math.min(0.05 + (fricative ? 0.02 : 0) + (sc === "h" ? 0.03 : 0), len * 0.4), L);
         }
         // long notes breathe: a small swell and a relaxation (messa di voce)
         if (len > 0.9) { pt(s5 + len * 0.45, L * 1.1); pt(eEnd - 0.12, L * 0.92); }
@@ -922,7 +1039,7 @@ window.KOLOB.VoicesVocal = (function () {
           var nsc = nx.syl && nx.syl.c ? nx.syl.c : null;
           var cd2 = nsc ? CONS_DUR[nsc] : 0.05;
           // (a sung s or f all but stops the voice; in a legato ward, not quite)
-          var dip = nsc === "f" || nsc === "s" ? 0.25 : nsc === "m" ? 0.55 : nsc === "l" ? 0.62 : 0.72;
+          var dip = nsc === "f" || nsc === "s" ? 0.25 : nsc === "m" ? 0.55 : nsc === "l" ? 0.62 : CONS_DIP[nsc] != null ? CONS_DIP[nsc] : 0.72;
           var nL = lvl * (0.8 + 0.2 * nx.stress);
           var dipAt = eEnd - cd2 * 0.8;
           if (len <= 0.9 && fits(dipAt - 0.04) && dipAt - 0.04 > s5 + 0.06) pt(dipAt - 0.04, L * 0.97);
@@ -998,7 +1115,9 @@ window.KOLOB.VoicesVocal = (function () {
   //            level (a multiplier, default 1), pan, sharedPan (one of the
   //            destination's shared pan positions instead of a panner of
   //            their own), sharedThroat (the ward's throat: the mud guard
-  //            and tilt shared per tract, see sharedThroat), seed | rand }
+  //            and tilt shared per tract, see sharedThroat), seed | rand,
+  //            effort 0..1 (round 3c: a raised voice — a shout's pressed,
+  //            brighter source; default 0) }
   // ==========================================================================
   function singer(spec) {
     spec = spec || {};
@@ -1240,6 +1359,10 @@ window.KOLOB.VoicesVocal = (function () {
     forget: function (ctx) { if (ctx) { ctx.__kolobArm = []; ctx.__kolobPart = []; ctx.__kolobJoined = 0; } },
     VOWELS: VOWELS,
     SYLLABLES: Object.keys(SYL),
+    // (round 3c) a syllable read as the renderer reads it: {c?, v, coda?} or
+    // null — for a guest writing syllables no one knows, to check them
+    syllable: function (name) { var x = sylOf(name); return x ? { c: x.c || null, v: x.v, coda: x.coda || null } : null; },
+    CONSONANTS: Object.keys(CONS_DUR),
     // for the benches (pure): the make-up gain's arithmetic
     _mouth: { bankSpec: bankSpec, biquadCoefs: biquadCoefs, mouthEnergy: mouthEnergy, INTRINSIC: INTRINSIC, PART: PART },
   };
