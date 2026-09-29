@@ -747,6 +747,8 @@ The Social Hall's refusals, as a share of all meetings:
 | purity | 12 Sundays: each `prepare`, `score` and `plan` of both, made twice on the same stream, identical; 0 `Math.random` calls while they ran; the Social Hall asked for (forced) at a funeral and on a fast Sunday: refused |
 | the planners' refusals (Node) | the hall: forced at Pioneer Day, seated; a funeral: "never at a funeral"; `kind: "fast"` without a Sunday: "never on a fast Sunday"; the steeples in the postlude, and the bands in the doxology: refused. The testimony: a meeting without one, and the old tune in it: refused |
 | the tune | 150 hymns × reel and jig (1,200 dance lines): 9,984 of 9,990 hymn notes kept, in order, at their exact pitches; 0 errors; the six dropped in six gospel lines of more than twelve notes |
+| robustness (Node) | 60 Sundays (every mode, dialect and Sunday, a ward each, a third with the drone off the mode): both guests prepared and scored, 0 errors, every time, length, pitch and glide finite; the dances 76–128 s, the fiddle 191–1107 Hz; the testimonies 49–104 s, the speech 92–307 Hz |
+| the tag | 120 dances, 102 with a tag: none begins in silence (a tag that begins on a held note bows it afresh) |
 | the fiddle's rests | the table above |
 | the voice's contour | a rendered spoken line's F0 (autocorrelation) followed its written contour, 130 → 185 → 112 Hz |
 | the reed's scale by the drone | with `droneMonzo` 45/32 (the drone on a raised fourth) the reed's fourths became 45/32; with the drone on sol (a tone of the mode), the scale unchanged |
