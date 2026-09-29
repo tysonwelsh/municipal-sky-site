@@ -94,6 +94,15 @@
 //   slur   true → melisma continuation: no new consonant, no re-articulation
 //   rest   true → silence (a breath) for dur
 //   slide  true → a long, deliberate portamento into this note (precentor)
+//   glide  (round 3c) [[u, r], …] → a SPOKEN syllable: the pitch walks the
+//          contour f·r, reaching each point a fraction u through the note
+//          (u 0: where it begins); the syllable before hands it on in 60 ms,
+//          with no scoop and no overshoot, and the next begins where this
+//          one left off — a testimony-bearer's speech-melody, the caller's
+//          chant. Spoken syllables (SPOKEN): the vowels, and m or l before
+//          them (ma meh mi mo moo · la leh lee lo loo); a speaker's spec
+//          gives vibrato {depth: 0} (speech has none; an old voice may keep
+//          its tremor), and stress 0..1 shapes each syllable's weight
 // t is the VOWEL onset of the first note, as written: the singer lands it
 // there plus their own lateness. A leading consonant anticipates it by up to
 // ~0.09 s and an inhale by up to ~0.4 s, so give sing() that much lead.
@@ -182,7 +191,14 @@ window.KOLOB.VoicesVocal = (function () {
     ah: { v: "ah" }, oh: { v: "oh" }, oo: { v: "oo" }, ee: { v: "ee" }, eh: { v: "eh" },
     fa: { c: "f", v: "ah" }, sol: { c: "s", v: "oh", coda: "l" }, la: { c: "l", v: "ah" }, mi: { c: "m", v: "ee" },
     hum: { v: "hum" }, mm: { v: "hum" },
+    // (round 3c: THE SPOKEN SYLLABLES — a testimony-bearer's speech, the
+    // Social Hall's caller: the soft consonants the mouth already has, the
+    // lips' m and the tongue's l, before every vowel; no hiss, no stop, no
+    // word. Speech heard as speech, never as English.)
+    ma: { c: "m", v: "ah" }, meh: { c: "m", v: "eh" }, mo: { c: "m", v: "oh" }, moo: { c: "m", v: "oo" },
+    leh: { c: "l", v: "eh" }, lee: { c: "l", v: "ee" }, lo: { c: "l", v: "oh" }, loo: { c: "l", v: "oo" },
   };
+  var SPOKEN = ["ah", "oh", "oo", "ee", "eh", "ma", "meh", "mi", "mo", "moo", "la", "leh", "lee", "lo", "loo"];
   var CONS_DUR = { f: 0.07, s: 0.08, l: 0.06, m: 0.075 };
   // the fricatives' strength, per singer. A ward's s is thirty-two small
   // ones, each at its own moment, so it smears into a brush a tenth of a
@@ -533,7 +549,8 @@ window.KOLOB.VoicesVocal = (function () {
     for (var i = 0; i < notes.length; i++) {
       var n = notes[i];
       var syl = n.rest ? null : (SYL[n.vowel || "ah"] || SYL.ah);
-      ev.push({ s: tt, d: n.dur, f: n.f, rest: !!n.rest || !n.f, syl: syl, slur: !!n.slur, slide: !!n.slide, stress: n.stress != null ? n.stress : 1 });
+      ev.push({ s: tt, d: n.dur, f: n.f, rest: !!n.rest || !n.f, syl: syl, slur: !!n.slur, slide: !!n.slide, stress: n.stress != null ? n.stress : 1,
+                glide: n.glide && n.glide.length && !n.rest && n.f ? n.glide : null });
       tt += n.dur;
     }
     var end = tt;
@@ -804,6 +821,28 @@ window.KOLOB.VoicesVocal = (function () {
         var e2 = ev[j2];
         if (e2.rest) { prevF = null; continue; }
         var target = e2.f, s0 = on[j2];
+        // (round 3c) A SPOKEN SYLLABLE (a note with a glide — the speech
+        // contour: [[u, r], …], the pitch at f·r a fraction u through the
+        // syllable). Speech never lands on a pitch and holds it: the voice
+        // arrives where its contour begins, joins the syllable before in
+        // 60 ms with no scoop and no overshoot, walks the contour, and hands
+        // the next syllable the pitch where it left off.
+        var gl = e2.glide;
+        if (gl) {
+          target = e2.f * (gl[0][0] <= 0 ? gl[0][1] : 1);
+          if (prevF == null) {
+            if (!firstSet) { fq.setValueAtTime(target, born); firstSet = true; }
+            fset(target, s0 - 0.03);
+          } else if (target !== prevF) { fset(prevF, s0 - 0.02); framp(target, s0 + 0.04); }
+          var endJ = j2 + 1 < ev.length ? on[j2 + 1] : endP, lastR = gl[0][0] <= 0 ? gl[0][1] : 1;
+          for (var gk = 0; gk < gl.length; gk++) {
+            if (gl[gk][0] <= 0) continue;
+            framp(e2.f * gl[gk][1], s0 + Math.min(1, gl[gk][0]) * (endJ - s0));
+            lastR = gl[gk][1];
+          }
+          prevF = e2.f * lastR;
+          continue;
+        }
         if (prevF == null) {
           // a fresh entry: from below, by how unsure this person is (and the
           // very first pitch is set from the start, so the oscillator never
@@ -1221,6 +1260,8 @@ window.KOLOB.VoicesVocal = (function () {
   }
 
   return {
+    // (round 3c: the spoken syllables — speech on the voice, no English)
+    SPOKEN: SPOKEN.slice(),
     singer: singer,
     desk: desk,
     congregation: congregation,
