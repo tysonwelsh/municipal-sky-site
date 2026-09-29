@@ -340,12 +340,32 @@
    own rule — and a reload deals the sheet back on top. Its load rotation
    is capped at a small tilt — a sheet you are meant to read arrives
    readable, not at the pile's full ±34°. */
+/* STEP 5 ("and it's all free of charge") removed at the owner's ask,
+   2026-09-29 — four steps again. */
 /* REWRITTEN FOR A FIRST VISIT (owner, 2026-09-10): four steps, one sentence
    each, none assuming the reader knows what a specimen tag or a report card
    is. And a CLOSE MARK in the paper's corner (.ins-close in the asset): a
    press takes the sheet out of the drawer until the next load, so it stops
    taking up room once it has been read. Nothing persists — every refresh
    deals the sheet back. */
+/* FOLDED IN HALF (owner ask, 2026-09-29): the sheet was taking too much of
+   the floor and covering the other items, so it now lies in the pile FOLDED,
+   bottom half back behind the top — the heading and the first steps
+   showing, the fold along the bottom edge of what you see — and a press
+   UNFOLDS it: the same lift as before (upright, ×--pick-scale, pile dimmed)
+   while the bottom half swings down around the crease. Put back, it folds
+   again. The mechanism: the asset is inlined TWICE, each copy cropped to
+   one side of the fold line (data-fold on the asset's root, exactly half
+   by the owner's call) by its viewBox; the bottom copy is absolutely
+   positioned below the top and hinged on rotateX in the stylesheet
+   (.jd-sheet-bot). The element's box is therefore the FOLDED size — seat,
+   drag clamps and the button clearance all see half the height, which is
+   the point — and two custom properties tell the pile how the open sheet
+   differs: --sheet-bot (bottom height ÷ top height, the translate that
+   keeps the open sheet centred on its seat) and --pick-tall (open height ÷
+   folded height, read by nudgeIntoWell in jd-core.js so the enlarged sheet
+   still clears the walls). The fold state IS the picked state: no second
+   state machine, and every dismissal that puts the sheet back folds it. */
 (function () {
   var ID = 'jd-instructions';
   var ASSET = '/art/junk-drawer/instructions-object.svg';
@@ -367,8 +387,7 @@
     'stuff. click an item for a closer look. 2: if you want something new ' +
     'just press the big blue button. help yourself. 3: each prompt returns ' +
     'four drawing from different large language models. 4: you\'re ' +
-    'not done until you leave a grade and rank them! 5: and it\'s ' +
-    'all free of charge (you are the product!)';
+    'not done until you leave a grade and rank them!';
 
   /* fetched like the turn object's artwork, but with NO inline fallback: a
      drawer without its instructions still works — the sheet is furniture,
@@ -403,11 +422,41 @@
     el.dataset.sheet = 'instructions';   /* the one flag the tap path branches on */
     el.setAttribute('role', 'button');
     el.setAttribute('tabindex', '0');
-    el.setAttribute('aria-label', 'Instructions — press to enlarge; Delete removes the sheet');
-    el.innerHTML = window.JD_svgInst(art, 'jio_') +
+    el.setAttribute('aria-label', 'Instructions, folded — press to unfold and enlarge; Delete removes the sheet');
+    el.setAttribute('aria-expanded', 'false');
+    /* sized on the WHOLE sheet first: applySize reads the first svg's
+       viewBox for the aspect, and the width must be the unfolded sheet's
+       (the fold halves the height, never the width) */
+    el.innerHTML = window.JD_svgInst(art, 'jio_');
+    window.JD_applySize(el, box, ID, 1);
+    /* then rebuilt as the two halves — see the banner */
+    var vb = viewBoxOf(art), fold = foldOf(art, vb);
+    el.innerHTML =
+      '<div class="jd-sheet">' +
+        '<div class="jd-sheet-half jd-sheet-top">' +
+          window.JD_svgInst(cropTo(art, vb, vb.y, fold), 'jit_') + '</div>' +
+        '<div class="jd-sheet-half jd-sheet-bot">' +
+          window.JD_svgInst(cropTo(art, vb, fold, vb.y + vb.h), 'jib_') + '</div>' +
+      '</div>' +
       '<span class="jd-vh">' + SHEET_TEXT + '</span>';
-    var svg = el.querySelector('svg');
-    if (svg) svg.setAttribute('aria-hidden', 'true');
+    el.querySelectorAll('svg').forEach(function (svg) {
+      svg.setAttribute('aria-hidden', 'true');
+    });
+    var topH = fold - vb.y, botH = vb.y + vb.h - fold;
+    el.style.setProperty('--sheet-bot', (botH / topH).toFixed(4));
+    el.style.setProperty('--pick-tall', ((topH + botH) / topH).toFixed(4));
+    /* aria-expanded follows the fold, which follows .is-picked — toggled by
+       pick()/hideTag() in jd-core.js, which know nothing of this attribute.
+       Bound to the node, not the module's `el`: dismiss() nulls that, and
+       the observer runs one microtask later. */
+    if (window.MutationObserver) {
+      (function (node) {
+        new MutationObserver(function () {
+          node.setAttribute('aria-expanded',
+            node.classList.contains('is-picked') ? 'true' : 'false');
+        }).observe(node, { attributes: true, attributeFilter: ['class'] });
+      })(el);
+    }
     /* THE CLOSE MARK (owner, 2026-09-10): the × drawn in the paper's top
        corner takes the sheet out of the drawer for the rest of this load —
        nothing is remembered, a refresh deals it back. The mark is part of
@@ -429,8 +478,8 @@
     }
     pile.appendChild(el);
     /* NO fitView: controlled repo art, frame honest by construction (the
-       turn object's rule) — sized on the shared ruler like everything else */
-    window.JD_applySize(el, box, ID, 1);
+       turn object's rule) — sized on the shared ruler like everything else
+       (applied above, before the halves were cut) */
     seat(el, pile);
     el.addEventListener('keydown', function (e) {
       if (e.key === 'Delete' || e.key === 'Backspace') {
@@ -448,11 +497,37 @@
         } else if (window.JD_pick) {
           window.JD_pick(el);
         }
+        /* both paths MOVE the node (pick hoists it into the well, the
+           dismissal returns it to the pile), and a moved node drops focus —
+           so the second Enter, or the Delete after it, went nowhere. The
+           keyboard keeps its place on the sheet. */
+        if (el && el.focus) el.focus({ preventScroll: true });
       }
     });
     /* ordinary pile plumbing — drag, twist, settle; the tap branch in
        wireItem is what routes a press here instead of pick() */
     if (window.JD_wirePile) window.JD_wirePile();
+  }
+
+  /* the asset's frame, and the fold line inside it (data-fold on the root,
+     exactly half when the attribute is missing) */
+  function viewBoxOf(text) {
+    var m = /<svg[^>]*\sviewBox=["']([^"']+)["']/i.exec(text);
+    var n = m ? m[1].trim().split(/[\s,]+/).map(Number) : [];
+    return n.length === 4 && n[2] > 0 && n[3] > 0
+      ? { x: n[0], y: n[1], w: n[2], h: n[3] } : { x: 0, y: 0, w: 330, h: 460 };
+  }
+  function foldOf(text, vb) {
+    var m = /<svg[^>]*\sdata-fold=["']([\d.]+)["']/i.exec(text);
+    var f = m ? parseFloat(m[1]) : NaN;
+    return f > vb.y && f < vb.y + vb.h ? f : vb.y + vb.h / 2;
+  }
+  /* one copy of the asset cropped to the band y0..y1: the root's viewBox is
+     rewritten, and an outer <svg> clips to its viewport, so everything past
+     the band simply isn't painted (or hit) */
+  function cropTo(text, vb, y0, y1) {
+    return text.replace(/(<svg[^>]*\sviewBox=["'])[^"']+(["'])/i,
+      '$1' + vb.x + ' ' + y0 + ' ' + vb.w + ' ' + (y1 - y0) + '$2');
   }
 
   /* out of the drawer until the next load. An enlarged sheet is put down
@@ -480,8 +555,17 @@
          deals centred on the x-axis (a whisper of jitter so it never reads
          machine-placed) and inside the well's upper two-thirds — the whole
          sheet, so its centre stays above 2/3 minus its own half-height.
-         A sheet too tall for that band just centres in what room there is. */
-      var loY = hh + INSET, hiY = Math.max(loY, 2 / 3 - hh);
+         A sheet too tall for that band just centres in what room there is.
+         FOLDED (2026-09-29), the box is half a sheet, but the seat must
+         still leave room for the sheet it UNFOLDS into — --pick-tall × the
+         pick zoom, centred on this same spot — because nudgeIntoWell's
+         slide is capped and a high seat left the heading behind the top
+         rail. So the floor of the band is the open sheet's half-height. */
+      var cs = getComputedStyle(node);
+      var openHH = hh * (parseFloat(cs.getPropertyValue('--pick-tall')) || 1) *
+        (parseFloat(cs.getPropertyValue('--pick-scale')) || 1);
+      var loY = Math.max(hh, Math.min(0.45, openHH)) + INSET;
+      var hiY = Math.max(loY, 2 / 3 - hh);
       p = {
         x: +(0.5 + (Math.random() * 2 - 1) * 0.05).toFixed(4),
         y: +(loY + Math.random() * (hiY - loY)).toFixed(4),

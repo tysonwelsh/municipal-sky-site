@@ -1902,9 +1902,15 @@ var JD_admin = (function () {
   var NUDGE_MAX = 48;
   function nudgeIntoWell(item) {
     var w = well.getBoundingClientRect(), r = item.getBoundingClientRect();
-    var zoom = parseFloat(getComputedStyle(item)
-      .getPropertyValue('--pick-scale')) || 1;
-    var hw = zoom * r.width / 2 + 2, hh = zoom * r.height / 2 + 2;
+    var cs = getComputedStyle(item);
+    var zoom = parseFloat(cs.getPropertyValue('--pick-scale')) || 1;
+    /* --pick-tall: how much TALLER than its box the picked item stands —
+       the folded instructions sheet unfolds to twice its height when picked
+       (jd-furniture.js sets it; centred on the seat by its own translate),
+       and a nudge that only knew the folded box would leave the open sheet
+       hanging past the top wall. 1 for everything else. */
+    var tall = parseFloat(cs.getPropertyValue('--pick-tall')) || 1;
+    var hw = zoom * r.width / 2 + 2, hh = zoom * tall * r.height / 2 + 2;
     var cx = r.left + r.width / 2 - w.left, cy = r.top + r.height / 2 - w.top;
     var dx = hw * 2 > w.width ? 0
       : Math.max(hw, Math.min(w.width - hw, cx)) - cx;
@@ -1937,7 +1943,10 @@ var JD_admin = (function () {
        no elastic, because the words on it ARE the paperwork. Nudged into
        the well like every pick so the enlarged sheet can't hang past the
        wall; every standard dismissal (tap away, Esc, resize, hideTag)
-       puts it back exactly as it puts back a specimen. */
+       puts it back exactly as it puts back a specimen. Since 2026-09-29 the
+       sheet lies FOLDED in the pile and .is-picked is also what unfolds it
+       (the hinge is in the stylesheet, the halves in jd-furniture.js), so
+       the same dismissals fold it again — nothing extra to do here. */
     if (item.dataset.sheet) { nudgeIntoWell(item); return; }
     if (!tag) buildTag();
 

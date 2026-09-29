@@ -561,6 +561,97 @@ html { scroll-behavior: smooth; }
 .jd-item--sheet .ins-close circle { transition: fill 0.12s ease-out; }
 .jd-item--sheet .ins-close:hover circle { fill: #d6c48f; }
 
+/* THE INSTRUCTIONS SHEET, FOLDED IN HALF (owner ask, 2026-09-29). The
+   wrapper holds .jd-sheet — two copies of the asset, .jd-sheet-top and
+   .jd-sheet-bot, each cropped to one side of the fold line (see the sheet
+   module in jd-furniture.js). The top copy is the element's whole box; the
+   bottom copy hangs off it, absolutely positioned, and swings on a hinge at
+   the crease. FOLDED = .jd-sheet-bot at rotateX(-180deg): turned back
+   behind the top half, its back toward the viewer, and backface-visibility
+   hides it (visibility follows, one transition late, so the folded half
+   takes no hits and paints no shadow). OPEN = .is-picked, the pick's own
+   class: the hinge comes down to 0deg while the pick's lift and zoom run.
+   Each half carries its OWN perspective() in its transform, so no parent
+   needs transform-style: preserve-3d (which a filter on an ancestor would
+   flatten anyway). THE SHADOWS LIVE ON THE HALVES, not the wrapper: WebKit
+   clips a 3D-transformed descendant to its filtered ancestor's box, so
+   with the shared .jd-item drop-shadow left in place Safari showed the open
+   sheet cut off halfway down the bottom half (Chrome was fine). The wrapper
+   therefore goes filter: none, the turn button's precedent, and the four
+   shadow states — resting, lift on hover / held / picked, and the dim when
+   another item is picked — are restated on .jd-sheet-half below. The bottom
+   half paints after the top, so its paper covers the top half's shadow
+   along the crease and the two shadows read as one sheet's.
+   The rotation and the pick zoom that every other item takes on its
+   svg move to .jd-sheet here (both svgs stay untransformed, below), so the
+   halves turn and grow as one sheet. The picked transform also translates
+   UP by the bottom half's height (--sheet-bot, set by the module) so the
+   open sheet is centred on the seat exactly as the whole sheet used to be —
+   nudgeIntoWell's --pick-tall completes the same bookkeeping. The crease,
+   the folded rim and the underside shade are ink in the asset (.ins-crease,
+   .ins-foldedge, .ins-shade), cross-faded here with the state. */
+.jd-item--sheet { filter: none !important; }   /* see the banner: the halves cast */
+.jd-item--sheet .jd-sheet {
+  position: relative;
+  transform: rotate(var(--rot));
+  transition: transform 0.15s ease-out;
+}
+.jd-item--sheet .jd-sheet-half {
+  filter: drop-shadow(3px 4px 3px rgba(22, 11, 4, 0.62));
+  transition: filter 0.15s ease-out;
+}
+@media (hover: hover) {
+  .jd-item--sheet:hover .jd-sheet-half { filter: drop-shadow(16px 22px 8px rgba(22, 11, 4, 0.45)); }
+}
+.jd-item--sheet.is-held .jd-sheet-half,
+.jd-item--sheet.is-picked .jd-sheet-half { filter: drop-shadow(16px 22px 8px rgba(22, 11, 4, 0.45)); }
+.jd-well.jd-has-pick .jd-item--sheet:not(.is-picked):not(.is-held):not(:hover) .jd-sheet-half {
+  filter: drop-shadow(3px 4px 3px rgba(22, 11, 4, 0.62)) brightness(0.68) saturate(0.8);
+}
+.jd-item--sheet .jd-sheet-half svg { display: block; width: 100%; height: auto; }
+.jd-item--sheet .jd-sheet-bot {
+  position: absolute; left: 0; width: 100%;
+  top: calc(100% - 0.4px);          /* a hair of overlap: no seam hairline */
+  transform-origin: 50% 0;          /* the crease */
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform: perspective(900px) rotateX(-180deg);
+  visibility: hidden;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s 0.5s;
+}
+.jd-item--sheet.is-picked .jd-sheet-bot {
+  transform: perspective(900px) rotateX(0deg);
+  visibility: visible;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s;
+}
+.jd-item--sheet .ins-crease   { opacity: 0;    transition: opacity 0.3s ease-out; }
+.jd-item--sheet .ins-foldedge { opacity: 1;    transition: opacity 0.3s ease-out; }
+.jd-item--sheet .ins-shade    { opacity: 0.38; transition: opacity 0.5s ease-out; }
+.jd-item--sheet.is-picked .ins-crease   { opacity: 1; }
+.jd-item--sheet.is-picked .ins-foldedge { opacity: 0; }
+.jd-item--sheet.is-picked .ins-shade    { opacity: 0; }
+/* the item-wide svg transforms (rotate / hover grow / held grow / picked
+   zoom, all above) restated on .jd-sheet, and stood down on the halves.
+   The stand-down selector carries four classes so it outscores the
+   :not():not():hover svg rule (0,4,1) by order. */
+@media (hover: hover) {
+  .jd-item--sheet:not(.is-picked):hover .jd-sheet {
+    transform: rotate(calc(var(--rot) * 0.94)) scale(1.06);
+  }
+}
+.jd-item--sheet.is-held .jd-sheet { transform: rotate(calc(var(--rot) * 0.94)) scale(1.06); }
+.jd-item--sheet.is-picked .jd-sheet {
+  transform: translateY(calc(var(--sheet-bot, 1) * -100%)) rotate(0deg) scale(var(--pick-scale));
+}
+.jd-item.jd-item--sheet .jd-sheet .jd-sheet-half svg { transform: none; transition: none; }
+@media (prefers-reduced-motion: reduce) {
+  /* no swing: the sheet is simply open or folded */
+  .jd-item--sheet .jd-sheet, .jd-item--sheet .jd-sheet-bot,
+  .jd-item--sheet .ins-crease, .jd-item--sheet .ins-foldedge, .jd-item--sheet .ins-shade {
+    transition: none !important;
+  }
+}
+
 /* NO WRAPPER SHADOW ON LIT HARDWARE (owner glow boost, 2026-08-11). The
    shared .jd-item drop-shadow filter reads the WHOLE alpha, halo included —
    at the boosted halo opacities it re-cast the pool of light as a dark
