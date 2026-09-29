@@ -3138,6 +3138,10 @@ window.KolobViz = (function () {
     pts.forEach(function (p) { E.forEach(function (e) { if (p.x >= e[0] && p.x <= e[1]) need = Math.max(need, (e[2] + SLUR_AIR * s - p.L) / p.c + tt); }); });
     var hh = Math.min(need, SLUR_DEEP * s);
     pts.forEach(function (p) { E.forEach(function (e) { if (p.x >= e[0] && p.x <= e[1]) rest = Math.max(rest, e[2] + SLUR_AIR * s - p.L - (hh - tt) * p.c); }); });
+    // (and what is drawn of it only ever deepens, never relaxes: a note it
+    // made room for that then does not print — the organ under a singer —
+    // leaves it as it was)
+    if (m.fit && m.fit.sp === s) { hh = Math.max(hh, Math.abs(m.fit.h)); rest = Math.max(rest, Math.abs(m.fit.e)); }
     var e = sd * Math.max(0, rest);
     m.fit = { sp: s, done: done, h: sd * hh, e: e };
     sh.h = sd * hh; sh.y1 += e; sh.y2 += e;
@@ -3370,12 +3374,12 @@ window.KolobViz = (function () {
   // that would touch are kept apart by the clearance as ever), and always
   // more than half the way closer than its time would put it, so an offset
   // dies away along the line within a few notes (a note whose neighbour
-  // kept its place is not touched). The
-  // least offset that keeps the order; -1e9 where nothing asks. Only a
-  // guest's one line asks it (madeSince's line): the fiddle's tune (its open
-  // string is a voice of its own, held), the organist's figure, the gift's
-  // song, the company's unison, the spoken words — not the organ's chords
-  // and pedal, nor the far ward's parts, whose voices cross in time.
+  // kept its place is not touched). The least offset that keeps the order;
+  // -1e9 where nothing asks. Only a guest's one line asks it (madeSince's
+  // line): the fiddle's tune (its open string is a voice of its own, held),
+  // the organist's figure, the gift's song, the company's unison, the
+  // spoken words, the far tower's peal — not the organ's chords and pedal,
+  // nor the far ward's parts, whose voices cross in time.
   function orderAt(gr, g) {
     var sp = g.sp, out = -1e9;
     if (!gr.line) return out;
