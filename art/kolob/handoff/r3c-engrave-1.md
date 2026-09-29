@@ -277,18 +277,27 @@ head; the far ward's pale notes, pushed along by ours, crowded 6 of 30 of
 our bars; and the far tower's rings, the far ward and the trio printed 14,
 21 and 7 heads over other heads.)
 
-**The frame, CPU throttled 4×, in the page** (`screens3c.js`, the dev jump,
-30 s of frames after the second capture; the machine's load average 3–4):
+**The frame, CPU throttled 4×, in the page** — the final code
+(`screens3c.js`, the dev jump, 30 s of frames after the capture; the
+machine's load average 3–4; the runs' reports under the scratchpad
+`r3c-engrave/v2/fps/<tag>/report.md`):
 
-| the busiest guests | width | frames | rAF interval | p50 | p90 | p99 | max | long tasks | console |
+| the busiest guests | width | frames in 30 s | rAF interval | p50 | p90 | p99 | max | long tasks | console |
 |---|---|---|---|---|---|---|---|---|---|
-| two bands crossing (seed 22, hymn +50–80 s) | 390 px | 1,801 | 16.7 ms (60 fps) | 0.9 ms | 1.4 ms | 1.9 ms | 3.1 ms | 0 | 0 errors |
-| | 860 px | 1,800 | 16.7 ms | 1.2 ms | 1.7 ms | 2.4 ms | 6.6 ms | 0 | 0 errors |
-| the Social Hall's dance (seed 22, postlude +45–75 s) | 390 px | 1,800 | 16.7 ms (60 fps) | 0.9 ms | 1.4 ms | 1.9 ms | 2.6 ms | 0 | 0 errors |
-| | 860 px | 1,800 | 16.7 ms | 1.2 ms | 1.9 ms | 2.5 ms | 6.2 ms | 0 | 0 errors |
+| two bands crossing (seed 22, hymn +50–80 s) | 390 px | 900 | 33.3 ms (30 fps) | 1.1 ms | 1.5 ms | 1.9 ms | 2.4 ms | 0 | 0 errors |
+| | 860 px | 900 | 33.3 ms | 1.5 ms | 1.9 ms | 2.4 ms | 4.1 ms | 0 | 0 errors |
+| the Social Hall's dance (seed 22, postlude +45–75 s) | 390 px | 900 | 33.3 ms (30 fps) | 1.4 ms | 1.8 ms | 2.4 ms | 3.0 ms | 0 | 0 errors |
+| | 860 px | 900 | 33.3 ms | 1.4 ms | 1.8 ms | 2.3 ms | 3.5 ms | 0 | 0 errors |
+| the variations (seed 55, postlude +40–70 s) | 390 px | 901 | 33.3 ms (30 fps) | 1.1 ms | 1.5 ms | 2.0 ms | 2.6 ms | 0 | 0 errors |
 
 A frame's cost is its requestAnimationFrame callbacks (the staff and the
-wheel); the worst frame at 390 px is under a tenth of a 30 fps frame's 33 ms.
+wheel); the worst frame at 390 px is 3 ms, under a tenth of a 30 fps
+frame's 33 ms. The pace is the browser's, not the page's: this afternoon
+headless Chrome gave even an empty page a frame every 33.3 ms (measured
+beside these runs, `rafbase.js`: 120 frames in 4 s, median 33.3 ms), and
+the page took every frame it was given; in the first pass, when the browser
+paced at 16.7 ms, the same guests ran at 60 fps (1,800 frames in 30 s, p99
+1.9–2.5 ms).
 
 **Nothing moves once printed.** Every placement is made once, when a note
 falls due (`setDue`), and kept; the new rules only choose where a note is
@@ -304,8 +313,10 @@ both widths; `onNote` now refuses `n.hosanna` too, so it stays off the page
 even if its `logged` or `ENGRAVE_HYMN` ever changed. In the page (seed 37,
 the doxology jump): see the frames below.
 
-**Console:** 0 errors or warnings in every lab frame (48 after, 16 before)
-and every page run.
+**Console:** 0 errors or warnings in every lab frame (the first pass: 48
+after, 16 before; the second look: 36) and every lab check (the final
+code: 46 runs), and in every page run (the second look: 20 before/after
+runs, 40 widths, and 3 frame-cost runs).
 
 ## Before and after (muted headless Chrome)
 
