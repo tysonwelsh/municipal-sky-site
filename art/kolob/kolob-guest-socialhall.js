@@ -782,6 +782,9 @@ window.KOLOB.GuestSocialHall = (function () {
     if (sh.tag) {
       var tagEvs = [];
       [4, 5].forEach(function (k2) { lastLn.beats[k2].forEach(function (e) { var c = {}; for (var x in e) c[x] = e[x]; tagEvs.push(c); }); });
+      // (a tag that begins on a held note has nothing before it to tie to:
+      // the note is bowed afresh)
+      if (tagEvs[0].tie) { tagEvs[0] = ev(tagEvs[0].d, tagEvs[0].n8, "fig", 0.5, mOf(tagEvs[0].d)); }
       var tp = phrase(played[lastI], tagEvs, t); tp.stage = "tag"; tp.tag = true;
       out.fiddle.push(tp);
       stage("tag", t, t + bar, "the last phrase again");
