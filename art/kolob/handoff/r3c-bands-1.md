@@ -112,3 +112,620 @@ holdUntil, …, odds, logged}` or null; `decide()` (the plan, explained);
 `guest:handcart:<n>` (`seat`, `shape`, `synth` → `carts`, `company`),
 `guest:gulls:<n>` (`seat`, `shape`, `flock`, `synth`). Every die is thrown
 before any refusal.
+
+---
+
+## How it was checked (all silent)
+
+Muted headless Chrome over CDP (`--headless=new --mute-audio`, port 9491,
+profile `kolob-r3c-bands-chrome`), the lab's own offline **check** (the app's
+master chain; BS.1770 loudness; the organ reference is the v0.30 organChord,
+rendered in the same room), Node for the pure parts, and the harness run on a
+throwaway copy of the engine with the recipe applied.
+
+| check | result |
+|---|---|
+| the lab at 860 and 390 px | 0 console errors after every play, the stop, every menu and box, each of the six dialects, compose another, a check, the odds and purity; no sideways scroll at either width (scroll width = viewport throughout) |
+| purity | plan and score repeat exactly on the same stream for all three; 0 `Math.random` calls while planning and scoring |
+| **the band's level** (loudest 3 s against the organ reference, as seated) | see the table after this one: −1.8 to +1.8 LU over nine marches (seven hymns in six dialects, two with a second band) |
+| **the company's level** | −1.7 to +0.6 LU over eight Sundays (seeds 1–8; one or two verses) |
+| **the gulls' level** | −1.0 to −1.9 LU over four flocks (Tabernacle, Sacred Harp, gospel, the Old Way) |
+| clicks (bursts nothing scheduled, the guests lab's ruler) and clipping | 0 and 0 in every render (more than 30 marches, 25 companies, the carts alone, the singers alone, 4 flocks, 4 lead birds); at the final levels the peaks are ≤ −7.4 dBFS (band), ≤ −9.2 (company), ≤ −11 (gulls) |
+| **the band crosses** (3 s of the render: first heard / nearest / going) | first heard 36–41 dB down on its own side (balance 1.8–5.4 dB toward it), nearest 22–27 dB down in the middle (within ±1.1 dB), going 30–42 dB down on the other side — in every march; the swell from first heard to nearest is 11–15 dB |
+| **the company passes** | first heard about 38–40 dB down (the carts), nearest 22–26 dB down, going about 38 dB down; the carts alone sit 8 LU under the singing |
+| **the gulls' trace** (the lead bird alone, dry, each held cry pitch-tracked) | every interval heard as the head has it: 7/7, 9/9, 7/7, 7/7 (worst 1.3 cents); in Node over 240 hymns in six dialects, 1,805 of 1,805 intervals exact |
+| the band's forms (Node) | 240 hymns in six dialects, every march built, 0 errors; 72 of them checked note by note (every note 20 Hz–3 kHz, every time ≥ its start); 33–109 s, median 59 s; 2/4 and 6/8 each about half; all three introductions |
+| the odds (a stand-in planner on the calendar, 20,000 meetings) | the band 33.0 % (ordinary 36.7, fast 17.2, conference 34.8, **Pioneer Day 75.0**, Christmas 16.2, Easter 24.3, wedding 20.4, funeral 6.0, dedication 33.8); a second band in 13 % of the bands. The handcarts 5.3 % (Pioneer Day 14.1 — the band takes three Pioneer Days in four, and the company never comes with it — funeral 18.5, Christmas 2.3). The gulls 7.6 % (Pioneer Day 20.5, wedding 10.5, funeral 0). Meetings with any guest: 72.3 % (67.8 % without the handcarts and the gulls; PLAN §13's starting point was about 55 %). **Rules broken: 0** (the band with the handcarts, the band with the trombones, the handcarts or the gulls in or beside another guest's section, the gulls at a funeral) |
+| **the recipe in the engine** (the harness, 900 s, on a copy with the recipe applied) | 0 runtime errors in all eleven runs. The band forced: seeds 7, 12, 3 and 33 (33 with a second band) PASS — the band arrives in its hymn section, crosses the verse, holds the joint (0 turnovers during a guest), 535–1,107 notes on the band layer; seeds 20 and 41 fail one check only (the organist under the ward plays on — see Requests, 4). The handcarts forced (seed 7): PASS — seated in the testimony, 498 notes, the captain strikes up. The gulls forced (seed 7): seated in the prelude, 77 notes (the run's one failure is that meeting's band, as in seeds 20 and 41); seed 9 unforced: its 96.9 % pitch adherence is the same on the unpatched engine (that meeting's singing school and handbells: not this step's) |
+
+The band's loudness, measured at the final level (`LEVEL` 0.43; a pair of
+bands 0.85 of it each):
+
+| seed, dialect | the march | loudest 3 s against the organ | integrated | peak | nearest: level, side |
+|---|---|---|---|---|---|
+| 1, Tabernacle | NAUVOO, 2/4 | −0.7 LU | −26.6 LUFS | −9.8 dBFS | −25.5 dB, −0.2 |
+| 2, Tabernacle | NEW HANDCART, 2/4 | +1.8 | −26.0 | −7.4 | −22.4, −0.1 |
+| 3, Sacred Harp | EVENING, 6/8 | +0.5 | −26.4 | −8.6 | −23.8, +0.3 |
+| 4, gospel | EMIGRATION, 6/8 (a refrain) | −1.8 | −27.6 | −9.3 | −26.3, −1.0 |
+| 5, the Old Way | NAUVOO CROSSING, 6/8 | −1.1 | −25.5 | −8.7 | −25.4, +0.8 |
+| 6, Shaker | EMIGRATION CROSS, 6/8 | −1.2 | −26.4 | −10.1 | −25.6, +0.8 |
+| 7, psalmody | OLD COTTONWOOD (2/2), 6/8 | +0.7 | −25.7 | −7.7 | −24.5, −0.3 |
+| 2, Tabernacle, two bands | NEW HANDCART and DAYBREAK | +0.8 | −26.1 | −7.5 | −23.4 / −25.8 |
+| 4, gospel, two bands | two marches | −1.6 | −27.2 | −10.0 | −27.1 / −25.7 |
+
+The meeting's own organ now plays about 2.3 dB under this reference (the
+owner lowered it), so a band at its nearest sits about level with the organ
+as it is heard today, and well under it far off. The trombones, turned down
+4 dB by the owner, end about 2 LU under the reference; the band's crossing is
+louder than the trombones at its nearest and much quieter for most of its
+length. If it is too much, the one number is `KOLOB.GuestBands.LEVEL`.
+
+
+---
+
+## The integration recipe (exact, and tried)
+
+This is the text of a script that was applied to a copy of this branch's
+engine and run through the harness (the results are in the checks above).
+Apply it in the round-3c integration step; nothing here edits a file this
+crew owns.
+
+**What it does, in words.**
+
+- **Load order** (`_engine.php`): `kolob-guest-bands.js`,
+  `kolob-guest-handcart.js`, `kolob-guest-gulls.js` after
+  `kolob-guest-singingschool.js`, before `kolob-guests.js`. (The voices they
+  play — band, folk, vocal — are already loaded.) Until this is done the
+  harness fails its module-list check on this branch ("on disk but not in
+  _engine.php"): expected.
+- **The band replaces `twoBandsCross`** (the looping fife) in `VISIT_FN`, and
+  its seat replaces the old band's seat in `planMeeting`, in the same place
+  (planned first among the guests, so the trombones still see it and refuse).
+  `bDie` and `bSeatDie` are still thrown, unused, so every later die of the
+  meeting falls where it did. `GuestBands.plan` keeps the owner's 36 % and the
+  calendar's `guests.bands` welcome exactly (its `ODDS.weight` mirrors
+  `kolob-calendar.js`; if the calendar's numbers change, change both), and the
+  old seats (the doxology seven times in ten, else a hymn; a band asked for by
+  name in a hymn). `bandsLeaveTheDoxology()` and the payoff rule are
+  unchanged: they move a band's `section`, and its `at` still applies.
+- **The band is cued** (`cued: true`, `at` seconds into its section): it
+  strikes up while the ward sings and **crosses the verse** — the hymn gives
+  it no gap (a cued guest is not a `waitingGuest`). The joint waits for it
+  (its span, `guest-start … guest-end`). This is the one change of behaviour
+  a listener will notice besides the march: the old band came in the gap
+  between two verses while the hymn waited; now the collision is with the
+  ward's own hymn, as PLAN §8.2 asks ("the meeting carries on regardless").
+- **The house lets go** as the band enters (as for every guest: the owner's
+  rule before v0.34). The ward and the organist under the hymn sing on — the
+  organist's hands are not the house's (see Requests, 4).
+- **The handcarts and the gulls** are planned last of all the guests (after
+  the handbells), so each sees every seat taken; each is cued. The company's
+  passage is exact at plan time (ALL IS WELL needs no composer) and its
+  section is held for it (`holdUntil`); the gulls' length is an estimate until
+  their cue (8–14 s; their section is held for 16 + 2 s).
+- **A handcart company asked for by name** (`force: "handcart"`) keeps the
+  band away, as the trombones asked for do. `FORCEABLE` gains `handcart` and
+  `gulls`.
+- **The material** is made at each guest's cue (`outsideMaterial`): the
+  band's march from the day's hymns (the plan's `pick` among the hymns
+  written so far — leaving out the one its own section sings when there is
+  another, and preferring hymns already back from the composer's desk; a
+  second band takes the next), in its own key against the key sounding now
+  (the section's hymn's `keyMonzo`); the company's ALL IS WELL on the day's
+  keynote; the gulls' head of the day's first hymn. Pure; 0.3–0.8 ms warm (a
+  march), measured in the page.
+- **The house listens** to the company (`LISTENED.handcart`: the melodic
+  voices find the air taken; the drone and the valley stay). The band and the
+  gulls take no air.
+- **The rooms:** all three are outside the windows — `wideSend()`, as the
+  trombones and the old band. The town's air they share is `VoicesBand`'s,
+  lent (below, Cost).
+
+**The recipe, block by block** (each find text occurs exactly once):
+
+**`_engine.php`** — find:
+
+```js
+'kolob-guest-handbells.js', 'kolob-guest-singingschool.js', 'kolob-guests.js',
+```
+
+replace with:
+
+```js
+'kolob-guest-handbells.js', 'kolob-guest-singingschool.js',
+    // (round 3c: the Nauvoo band, reworked; the handcart company; the gulls)
+    'kolob-guest-bands.js', 'kolob-guest-handcart.js', 'kolob-guest-gulls.js', 'kolob-guests.js',
+```
+
+**`kolob-guests.js`** — find:
+
+```js
+  // ==========================================================================
+  // LENT — what this room shares with the rest of the house (KOLOB._s)
+```
+
+replace with:
+
+```js
+  // ==========================================================================
+  // THE GUESTS FROM OUTSIDE THE WINDOWS (round 3c; PLAN-COMPOSITION §8.2,
+  // §8.10, §8.11; handoff r3c-bands-1): the NAUVOO BRASS BAND marching past
+  // with one of the day's hymns as a march (it replaces twoBandsCross, the
+  // looping fife), the HANDCART COMPANY singing ALL IS WELL far across the
+  // fields, and the GULLS quoting the first hymn. Each plans and plays
+  // itself (kolob-guest-bands.js, kolob-guest-handcart.js,
+  // kolob-guest-gulls.js: pure plans, their own streams guest:<type>:<n>);
+  // the meeting seats and cues them with their material; this is the glue:
+  // their sound laid out a bar, a line or a few seconds at a time on the
+  // guests' lane (hooks.defer), their notes reported as they are laid out,
+  // their moments told when they come. They are OUTSIDE: into the
+  // tabernacle's wide send, as every visitor from the town is.
+  // ==========================================================================
+  function outdoorGuest(V, tc, G, rows, noteOf, claim) {
+    V.meetingNum = S.Meeting.meetingNum();
+    if (!G || !V || !V.material || !V.stream) return 4;
+    var end = G.perform(S.ctx, wideSend(), tc, V.material, V.stream, {
+      defer: function (at, fn) { cueAt("guests", at, function () { if (S.playing && C_live(V)) fn(); }); },
+      onNote: noteOf,
+      onStage: function (st) {
+        if (st.dev || !rows[st.stage]) return;
+        var ev = { type: "guest", guest: V.type, stage: st.stage, side: st.side || null, section: S.Meeting.section(),
+                   cat: "visitation", label: st.label, detail: st.detail || "" };
+        if (st.band != null) ev.band = st.band;
+        if (st.t0 <= S.now() + 1e-6) tell(V, ev);
+        else cueAt("guests", st.t0, function () { if (S.playing && C_live(V)) tell(V, ev); });
+      },
+    });
+    // (the company is listened to: the melodic voices find the air taken;
+    // the band and the gulls take no air — the meeting carries on)
+    if (claim) claimAir(end - tc, 3);
+    return end - tc + 1;
+  }
+  function nauvooBand(V, tc) {
+    return outdoorGuest(V, tc, KOLOB.GuestBands, { approaches: 1, second: 1, cross: 1, passes: 1 }, function (x) {
+      // (beat: the march's beat in seconds, as the page has always read a
+      // band's note; beatInBar and bar, and downbeat on each bar's oom)
+      emitNote("band", x.freq, x.t, x.dur, guestNote(V, "bands", { part: x.part, beat: x.beatS, bar: x.bar, beatInBar: x.beat, downbeat: x.downbeat,
+        doubling: x.doubling, band: x.band, strain: x.strain, meter: x.meter, loud: x.loud, hymnId: V.material.hymnId || null }));
+    }, false);
+  }
+  function handcartCompany(V, tc) {
+    return outdoorGuest(V, tc, KOLOB.GuestHandcart, { approaches: 1, sings: 1, passes: 1 }, function (x) {
+      emitNote("handcart", x.freq, x.t, x.dur, guestNote(V, "handcart", { part: x.part, voice: x.voice, verse: x.verse, line: x.line, beat: x.beat, syl: x.syl, octave: x.octave, loud: x.loud, hymnId: "earth:all-is-well" }));
+    }, true);
+  }
+  function gullsOver(V, tc) {
+    return outdoorGuest(V, tc, KOLOB.GuestGulls, { gulls: 1 }, function (x) {
+      emitNote("gulls", x.freq, x.t, x.dur, guestNote(V, "gulls", { part: x.part, index: x.index, deg: x.deg, monzo: x.monzo, loud: x.loud, hymnId: V.material.hymnId || null }));
+    }, false);
+  }
+
+  // ==========================================================================
+  // LENT — what this room shares with the rest of the house (KOLOB._s)
+```
+
+**`kolob-guests.js`** — find:
+
+```js
+  S.singingSchool = singingSchool;
+```
+
+replace with:
+
+```js
+  S.singingSchool = singingSchool;
+  S.nauvooBand = nauvooBand;
+  S.handcartCompany = handcartCompany;
+  S.gullsOver = gullsOver;
+```
+
+**`kolob-guests.js`** — find:
+
+```js
+    handbellsRing: handbellsRing, singingSchool: singingSchool,
+```
+
+replace with:
+
+```js
+    handbellsRing: handbellsRing, singingSchool: singingSchool, nauvooBand: nauvooBand, handcartCompany: handcartCompany, gullsOver: gullsOver,
+```
+
+**`kolob-meeting.js`** — find:
+
+```js
+  function singingSchool(V, t) { return S.singingSchool(V, t); }
+```
+
+replace with:
+
+```js
+  function singingSchool(V, t) { return S.singingSchool(V, t); }
+  function nauvooBand(V, t) { return S.nauvooBand(V, t); }
+  function handcartCompany(V, t) { return S.handcartCompany(V, t); }
+  function gullsOver(V, t) { return S.gullsOver(V, t); }
+```
+
+**`kolob-meeting.js`** — find:
+
+```js
+    var FORCEABLE = { bands: true, steeples: true, oldtune: true, trombones: true, handbells: true, singingschool: true };
+```
+
+replace with:
+
+```js
+    var FORCEABLE = { bands: true, steeples: true, oldtune: true, trombones: true, handbells: true, singingschool: true, handcart: true, gulls: true };
+```
+
+**`kolob-meeting.js`** — find:
+
+```js
+    if ((forcedType === "bands" || bDie) && !dawnAsked) {
+      var bSeat = forcedType === "bands"
+        ? seatIn(["hymn", "doxology", "postlude"])
+        : (bSeatDie ? seatIn(["doxology", "hymn", "postlude"]) : seatIn(["hymn", "postlude", "doxology"]));
+      if (bSeat) C.visitations.push({ type: "bands", section: bSeat, fired: false });
+    }
+```
+
+replace with:
+
+```js
+    // THE NAUVOO BRASS BAND (round 3c; PLAN §8.2): kolob-guest-bands.js
+    // decides, on guest:bands:<n> — the owner's 36 % and the Sunday's welcome,
+    // the section (the doxology seven times in ten, else a hymn), the moment,
+    // which of the day's hymns it marches, and whether a second band comes.
+    // It keeps its own time (cued): it strikes up while the ward sings and
+    // crosses the verse — the hymn gives it no gap; the collision is the
+    // piece. (bDie and bSeatDie above are still thrown, unused.)
+    // (a handcart company asked for by name keeps the band away, as the
+    // trombones asked for do: one procession a Sunday)
+    var GBg = KOLOB.GuestBands || null;
+    if (GBg && !dawnAsked && forcedType !== "handcart") {
+      var bStream = stream("guest:bands");
+      var bSeat = GBg.plan({ n: C.meetingNum, kind: activity, sunday: sunday, sections: plan, guests: C.visitations, force: forcedType === "bands" }, bStream);
+      if (bSeat) C.visitations.push({ type: "bands", section: bSeat.section, at: bSeat.at, dur: bSeat.dur, fired: false, cued: true, stream: bStream, pick: bSeat.pick, second: bSeat.second });
+    }
+```
+
+**`kolob-meeting.js`** — find:
+
+```js
+    // THE HOSANNA (PLAN §8.12: Easter and a dedication only; audio-only,
+```
+
+replace with:
+
+```js
+    // THE HANDCART COMPANY and THE GULLS (round 3c; PLAN §8.11, §8.10):
+    // planned last, so each sees every guest already seated (never with the
+    // band, the handcarts; never in or beside another guest's section, both;
+    // never at a funeral, the gulls). Both keep their own time (cued); the
+    // company's passage is exact at plan time (ALL IS WELL needs no composer),
+    // and its section is held for it.
+    var GHc = KOLOB.GuestHandcart || null, GGu = KOLOB.GuestGulls || null;
+    function holdSection(type, until) {
+      for (var hs = 0; hs < plan.length; hs++) if (plan[hs].type === type) { plan[hs].dur = Math.max(plan[hs].dur, until); break; }
+    }
+    if (GHc) {
+      var hcStream = stream("guest:handcart");
+      var hcSeat = GHc.plan({ n: C.meetingNum, kind: activity, sunday: sunday, sections: plan, guests: C.visitations, force: forcedType === "handcart" }, hcStream);
+      if (hcSeat) { C.visitations.push({ type: "handcart", section: hcSeat.section, at: hcSeat.at, dur: hcSeat.dur, fired: false, cued: true, stream: hcStream }); holdSection(hcSeat.section, hcSeat.holdUntil); }
+    }
+    if (GGu) {
+      var gStream = stream("guest:gulls");
+      var gSeat = GGu.plan({ n: C.meetingNum, kind: activity, sunday: sunday, sections: plan, guests: C.visitations, force: forcedType === "gulls" }, gStream);
+      if (gSeat) { C.visitations.push({ type: "gulls", section: gSeat.section, at: gSeat.at, dur: gSeat.dur, fired: false, cued: true, stream: gStream }); holdSection(gSeat.section, gSeat.holdUntil); }
+    }
+    // THE HOSANNA (PLAN §8.12: Easter and a dedication only; audio-only,
+```
+
+**`kolob-meeting.js`** — find:
+
+```js
+                   handbells: handbellsRing, singingschool: singingSchool };
+```
+
+replace with:
+
+```js
+                   handbells: handbellsRing, singingschool: singingSchool, handcart: handcartCompany, gulls: gullsOver };
+  // (the band that marches replaces the band that looped, when its room is loaded)
+  if (KOLOB.GuestBands) VISIT_FN.bands = nauvooBand;
+```
+
+**`kolob-meeting.js`** — find:
+
+```js
+  var LISTENED = { trombones: true, handbells: true, singingschool: true };
+```
+
+replace with:
+
+```js
+  var LISTENED = { trombones: true, handbells: true, singingschool: true, handcart: true };
+```
+
+**`kolob-meeting.js`** — find:
+
+```js
+    if ((V.type === "handbells" || V.type === "singingschool") && !V.material) standingMaterial(V);
+```
+
+replace with:
+
+```js
+    if ((V.type === "handbells" || V.type === "singingschool") && !V.material) standingMaterial(V);
+    if ((V.type === "bands" || V.type === "handcart" || V.type === "gulls") && !V.material) outsideMaterial(V);
+```
+
+**`kolob-meeting.js`** — find:
+
+```js
+  // THE DAWN PLAYS THE FIRST HYMN (round 3): the trombones take up the
+```
+
+replace with:
+
+```js
+  // THE GUESTS OUTSIDE: THEIR MATERIAL (round 3c) — made ready at their cue
+  // (pure, a millisecond or two): the band's march from one of the day's
+  // hymns (its plan's pick among the hymns written so far, the one its own
+  // section sings left out when there is another; a second band the next),
+  // in its own key against the key sounding now; the company's ALL IS WELL
+  // on the day's keynote; the gulls' head of the day's first hymn. A hymn not
+  // yet back from the composer's desk is not asked for when another is.
+  function outsideMaterial(V) {
+    var HY = Hymnal(), keynote = S.F0 * S.ROOT_MULT;
+    function ready(r) { return HY && (!HY.ready || HY.ready(r.id)); }
+    try {
+      if (V.type === "handcart") { V.material = { homeHz: keynote }; return; }
+      var rows = (C.hymnal || []).filter(function (r) { return r.piece !== "round"; });
+      if (V.type === "gulls") {
+        var first = rows[0] && HY ? HY.get(rows[0].id) : null;
+        V.material = KOLOB.GuestGulls.prepare({ hymn: first, keynoteHz: keynote }, V.stream);
+        return;
+      }
+      var own = C.hymn ? C.hymn.id : null, others = rows.filter(function (r) { return r.id !== own; });
+      var pool = (others.length ? others : rows).filter(ready);
+      if (!pool.length) pool = others.length ? others : rows;
+      if (!pool.length || !HY) { V.material = null; return; }
+      var i = Math.min(pool.length - 1, Math.floor((V.pick || 0) * pool.length));
+      var h = HY.get(pool[i].id), h2 = V.second && pool.length > 1 ? HY.get(pool[(i + 1) % pool.length].id) : null;
+      var here = own ? HY.get(own) : null;
+      var home = keynote * (here && here.keyMonzo ? KOLOB.Pitch.ratio(here.keyMonzo) : 1);
+      V.material = KOLOB.GuestBands.prepare({ hymn: h, homeHz: home, second: h2 ? { hymn: h2 } : null }, V.stream);
+    } catch (e) { V.material = null; if (window.console) console.warn("Kolob: the " + V.type + " could not be made ready:", e); }
+  }
+  // THE DAWN PLAYS THE FIRST HYMN (round 3): the trombones take up the
+```
+
+**The staff (`kolob-viz.js`, ENGRAVE's; a request, not yet tried).** The band's
+notes now come a bar at a time, with more parts than the fife's two. Today's
+`takeBand` would make each bar a "visit" of its own (and keep only three), put
+a barline on every tuba note (the oom *and* the pah), and print the after-beats
+and the doublings as tune. The smallest patch that keeps its look — the tune in
+round heads, the oom under it, a barline every bar:
+
+```js
+  function takeBand(ns) {
+    ns.sort(function (a, b) { return a.startTime - b.startTime; });
+    // (round 3c: the tune and the tuba are written; the after-beats, the
+    // second cornet and the doublings are heard, not printed — and a march
+    // laid out a bar at a time is one visit, per band, while it plays)
+    ns = ns.filter(function (n) { return n.part !== "alto" && n.part !== "cornet2" && !n.doubling; });
+    if (!ns.length) return;
+    var beat = ns[0].beat || 0.46;
+    var r = clamp(1.1 / beat, 1.6, 2.6);
+    var bd = null;
+    for (var vi = visits.length - 1; vi >= 0 && !bd; vi--) if (visits[vi].band === (ns[0].band || 0) && ns[0].startTime - visits[vi].tp1 < 4) bd = visits[vi];
+    if (!bd) { bd = { tp0: ns[0].startTime, beat: beat, r: r, tp1: 0, bass: [], band: ns[0].band || 0 }; visits.push(bd); if (visits.length > 4) visits.shift(); }
+    ns.forEach(function (n) {
+      var mel = n.part !== "bass", q = bandQ(n.freq);
+      if (mel) { q -= 7; while (q > 26) q -= 7; while (q < 11) q += 7; }
+      else { while (q > 9) q -= 7; while (q < -2) q += 7; }
+      var v = valueOf(n.duration / beat, "band");
+      var nb = { tp: n.startTime, dur: n.duration, q: q, loud: n.loud == null ? 0.6 : n.loud, mel: mel, v: v, bd: bd };
+      if (!mel && n.downbeat !== false) bd.bass.push({ tp: nb.tp });   // its barlines fall on each bar's oom
+      bd.tp1 = Math.max(bd.tp1, n.startTime + n.duration);
+      bandNotes.push(nb);
+    });
+  }
+```
+
+(`n.downbeat` is on every tuba note the band sends; the old band's notes,
+which have none, keep their barline on every oom.) Two bands at once are two
+visits, one each.
+
+**SCORE.md, to adopt.**
+
+- **Modules:** `kolob-guest-bands.js`, `kolob-guest-handcart.js`,
+  `kolob-guest-gulls.js` beside the other guests (`_engine.php`).
+  `KOLOB.VoicesBand` adds `road(ctx, dest, {room, echoDelay})` and
+  `lendTown(ctx, dest, {seconds})`; `warm(ctx)` now also makes a town room to
+  lend, the noise and the saxhorns' waves.
+- **Streams:** `guest:bands:<n>` (forks `seat`, `shape`, `synth` →
+  `band:<k>`), `guest:handcart:<n>` (`seat`, `shape`, `synth` → `carts`,
+  `company` → `women-1` … `leader`, `child`), `guest:gulls:<n>` (`seat`,
+  `shape`, `flock`, `synth`). The old band's `guest:bands:<n>` draws (the
+  fife's tempo, key, side) are gone with it.
+- **Layers:** `band` — `part` (`melody` | `cornet2` | `alto` | `bass`), `beat`
+  (the march's beat in seconds, as the page has always read it), `bar`,
+  `beatInBar`, `downbeat`, `doubling`, `band` (0, or 1 for a second band),
+  `strain` (`intro` `A` `A2` `B` `B2` `trio` `grandioso` `stinger`), `meter`,
+  `loud`, `hymnId`. New `handcart` — `part: "tune"`, `voice` (`women` `men`
+  `leader` `child`), `verse`, `line`, `beat`, `syl`, `octave` (−1 for the men
+  and the captain), `loud`, `hymnId: "earth:all-is-well"`. New `gulls` —
+  `part` (`lead` `echo` `wheel` `chatter`), `index` (the head's note), `deg`,
+  `monzo`, `loud`, `hymnId`. All guest-tagged (`guest`, `logged`). None of the
+  three layers is in the harness's `PITCHED` (the band is in its own key; the
+  company in a key of its own choosing; the gulls' cries scoop and fall).
+- **`guest` event stages:** `bands` — `approaches` (label "⇋ a band
+  approaches", `side`), `second` ("⇋ a second band approaches"), `cross`
+  ("⇋ the bands cross", once a band), `passes` ("⇋ passes on"), each with
+  `band`; `handcart` — `approaches`, `sings` ("♪ all is well"), `passes`
+  (`gone` is told only in the span's end); `gulls` — `gulls` ("∿ gulls"; the
+  `head` stage is dev-only and not told). The harness counts band starts and
+  ends by "approaches" and "passes" in the label: both bands say both.
+- **Forcing:** `handcart` and `gulls` join `FORCEABLE`.
+
+
+---
+
+## The cost, measured (not cut)
+
+The owner's ruling stands: build as though there were no phone; measure and
+report. Nothing was cut to a budget.
+
+**The main thread** (measured in the page: a live context in muted Chrome,
+the lab's clock laying each guest out as the engine's will, `hooks.defer`):
+
+| guest | at the press (the cue) | then | largest callback |
+|---|---|---|---|
+| the band (two bands, seed 2) | 4.4 ms (2.4–4.5 over repeated presses) | 106 callbacks, one a bar (a second band built in a callback of its own) | **0.8 ms** (mean 0.48) |
+| the handcart company | 1.0–1.5 ms | about 92: one a throat's line, one a cart's roll | 0.5 ms median, 1.2 ms the largest when the voice is warm (timed line by line); in the lab page, the first line any throat sings costs 5.8–7.6 ms (compiling the voice — in a meeting the ward has been singing since the prelude), and in two of three live runs one callback took 6.4–11.3 ms (a garbage collection landing in it: the same line timed alone is under 1.2 ms) |
+| the gulls | 2.4 ms | 3 (a few seconds of cries each) | 1.7 ms |
+
+What it took to get there: the first press cost 13–17 ms. A convolver takes
+its impulse when it is made (5.4 ms for the 2.6 s town), the band's noise
+buffer (3.6 ms) and its periodic waves (about 4 ms) were built on first use
+per context, and two bars were laid at the press. Now `VoicesBand.warm(ctx)`
+— which the engine already calls at start-up — builds one town room to lend,
+the noise and the saxhorns' waves (33–42 ms, once per context, at start-up),
+the waves are kept per context, the march is laid out a bar at a time with
+only the first at the press, a second band is built in its own callback, and
+each cart rolls from its own. The march's material is made at the cue in
+0.3–0.8 ms (warm).
+
+**The audio thread** (offline render time per second of sound, in muted
+Chrome on a loaded machine — load average about 4.4 — so the absolute numbers
+overstate a live audio thread; the ratios are the thing):
+
+| what | ms of render per second of sound | against the organ reference |
+|---|---|---|
+| the organ reference (the v0.30 organChord) | 7.9–8.3 | 1× |
+| the trombones at dawn (already in the meeting, for scale) | 69.5 | ×8.6 |
+| **one band** | 120–138 (its players about 100, the town's air about 27) | ×16 |
+| two bands | 267 | ×33 |
+| **the handcart company** | about 240 (the six throats about 170, the carts about 40, the air about 27) | ×29 |
+| the gulls | 12.9–13.2 | ×1.6 |
+
+So a band passing costs about twice what the trombones at dawn cost, while
+it plays (one to two minutes); the company about three and a half times. The
+r3b round measured a whole meeting at 16–20 % of the audio thread at the
+median with the live tools; these guests should be measured the same way once
+they are in the meeting (tools/capture, `KolobAudio.clockHealth()`).
+
+**Nodes** (created per passage; alive at the peak): one band 1,500–5,700
+made, 72–82 alive (+11 its road, +4 the lent town, shared); two bands up to
+5,700 made, 154–160 alive. The company 355–434 alive at the peak (its singers
+312–386 of them, the VoicesVocal budget's count). The gulls 41–57 alive.
+
+**Levers, if the owner wants them later** (none applied): the saxhorns'
+cornet and tuba buses run a WaveShaper with 2× oversampling (their "grain");
+the company could sing in fewer pews (two, the women and the men); the
+trombones could borrow the town room too (Requests, 5).
+
+---
+
+## Requests
+
+1. **To the integrator: the recipe above**, in the round-3c integration
+   step. `twoBandsCross` in kolob-guests.js is then unused (the recipe
+   seats no band at all if `KOLOB.GuestBands` is missing); retire it, or keep
+   it for an A/B.
+2. **To ENGRAVE: the staff patch above** (`takeBand`). The two new layers,
+   `handcart` and `gulls`, are not engraved today; whether the page should
+   show the company's tune (far off, small) or the lead gull's quotation (the
+   joke made visible) is ENGRAVE's call. Every note carries what it needs
+   (the head's `index`, `deg` and `monzo` on the gulls'; `verse`, `line`,
+   `beat`, `syl` on the company's).
+3. **To the integrator: SCORE.md**, the adoptions above.
+4. **To the integrator (and the harness): "the house lets go" when a guest
+   crosses a hymn.** The band is the first guest to arrive mid-verse. The
+   house does let go (the engine logs "the house lets go bands · organ"), but
+   the organist's own case under the ward's hymn plays on — which is right:
+   the ward and its organ are the meeting that carries on (PLAN §8.2). The
+   harness's graph check counts every organ-layer source as the house's, so
+   when the organist's case has a long-lived source (its wind) born before the
+   entrance, it reports "a source … goes round the hands that let go" (seeds
+   20 and 41, and 7 with the gulls forced, where that meeting's band entered
+   the same way; the organ notes sounding there are the organist's, `h:1:1`,
+   under verses 0 and 1). Suggested: the check leaves out sources that reach
+   only the organist's hymn hands (or the hands registered by a performance
+   whose hymn owns the section). The alternative — the band waiting for the
+   gap between verses, as the old band did — would stall the hymn for a
+   minute or more and lose the collision.
+5. **To the GUEST crew's trombones (one line, their file):** they make a
+   town room at their cue (5.4 ms of convolver in one callback). With
+   `var town = VB.lendTown ? VB.lendTown(ctx, bus, { seconds: 2.6 }) :
+   VB.townRoom(ctx, bus, { seconds: 2.6 });` their press loses it; their
+   existing `town.dispose()` gives it back.
+6. **To the integrator: `VoicesBand.warm(ctx)`** is already called at
+   start-up (kolob-core.js); it now takes 33–42 ms there (it was the
+   impulse alone). Keep it at start-up, never in a cue.
+
+## Known issues
+
+- **Nobody has listened.** The questions for the ear: does the saxhorn band
+  sound like a brass band, at its nearest and far off (its voice is wave 1's,
+  unchanged but for the per-context waves); is the march recognisably the
+  hymn (a 3/4 hymn's 6/8 lilt especially); is the collision with the ward
+  delightful or merely busy; is the trio's softness (the whole band 4 dB down, and
+  playing piano) and the drums' lightness right; does the company read as people walking far off;
+  do the gulls read as gulls, and is the quotation findable.
+- **The band's arrangement is plain.** Tune, second cornet, three alto horns
+  on the after-beats, the tuba's oom-pah, two drums. No euphonium
+  countermelody in the trio, no breakstrain, no dynamic hairpins inside a
+  strain. The harmony is the composer's where the hymn has one (with its
+  sevenths and secondary dominants, tuned justly on each root); a unison
+  tune gets I, IV, V (vi, ii) or, in a minor mode, i, iv, v, VII, III — the
+  mode's own v, no raised leading tone.
+- **The march re-bars the hymn.** Fermatas are not held; where a line of the
+  hymn starts on a different beat than the last one ended, the band holds
+  the last note over to keep each line's own accent. A hymn in 4/4 marches
+  beat for beat, so its long notes stay long (the oom-pah keeps the step).
+- **A head wider than the gulls' register overhangs it.** The one shift is
+  fitted to 600–1500 Hz, but a head spanning more than about 1.3 octaves
+  cannot fit; over 240 hymns the lead bird cries between 446 Hz and 1.9 kHz.
+  No note is ever folded.
+- **The company sings vowels.** Clayton's words as their vowels (verse 1,
+  and 4 for a second verse); it is too far off for words. Its singers are the
+  ward's voice in four pews and two singers, not the Sunday's cast. Its key is
+  chosen by pitch (the tune's middle near A-flat, 415 Hz) among the day's
+  key, its dominant's and its subdominant's.
+- **Guests at 72 % of meetings** (the stand-in planner; 68 % without these
+  two). PLAN §13's starting point was about 55 %. The numbers to turn are
+  `GuestHandcart.ODDS.base` (0.07) and `GuestGulls.ODDS.base` (0.08); the
+  band's are the owner's (0.36).
+- **The odds are a stand-in's.** The real planner's other guests are
+  approximated (the singing school, the handbells); the harness should
+  re-count once the engine seats these three.
+- **This branch fails the harness's module-list check** until the recipe's
+  first step ("kolob-guest-bands.js is on disk but not in _engine.php", and
+  the other two). Expected; the integrator adds them.
+- **The render cost is real** (the table above): while it plays, a band
+  costs about twice the trombones at dawn and the company about three and a
+  half times. Measured, not cut.
+- **The lab's first press of a page** pays the voices' compile once (the
+  company's first line 5.8–7.6 ms); a collection pause can land in any
+  callback (6–11 ms, twice in three live runs of the company).
+
+## The honest listening note
+
+What is genuinely new to hear, by size:
+
+1. **The band** — the biggest. A march in strains instead of a fife on a
+   loop, from a hymn the ward sings that day, crossing the ward's own verse.
+   It is also the commonest guest (a third of Sundays), so it is the one to
+   listen to first: seed 2 Tabernacle, then the same with *the meeting
+   carries on* ticked, then *a second band*.
+2. **The handcart company** — new, gentle, rare (one meeting in twenty; one
+   Pioneer Day in seven; one funeral in five). Seed 3.
+3. **The gulls** — ten seconds, whimsical; the quotation is the point, and
+   it is best heard with *▶ the lead bird alone* first, then the flock.
+
+Nothing else changes: the three voices they use (band, folk, vocal) sound
+as before, except that the lab's own flock (`gulls()`) keeps its chatter in
+the lead's span.
