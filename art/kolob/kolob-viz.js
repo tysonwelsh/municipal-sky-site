@@ -2571,6 +2571,10 @@ window.KolobViz = (function () {
     // them to clear that head — the trio's tune two ledgers under the bass
     // staff — it turns up, and its flags hang beside the head instead)
     if (stem && !o.beamY && !o.tune && o.flags > 0 && dir < 0 && reach(-1) < flagClear(o.flags, s) && reach(1) > reach(-1)) dir = 1;
+    // (and where neither way is long enough — a high note under the plate's
+    // top edge, its stem down stopped at the gap — its flags are drawn a
+    // little shorter, to clear the head by the same hair: fk)
+    var fk = stem && !o.beamY && o.flags > 0 && dir < 0 ? clamp((reach(-1) - flagClear(o.flags, s) + 2.8 * s) / (2.8 * s), 0.5, 1) : 1;
     var sx = X + dir * (0.57 * s - sw / 2);
     // (a heavy head — the tune's — is drawn HEAVY times the size: its stem
     // meets its own edge, hs2)
@@ -2613,7 +2617,7 @@ window.KolobViz = (function () {
       used[dq] = 1;
       dots.push([right + 0.5 * s, g.y(st, dq)]);
     });
-    return { s: s, sw: sw, sx: sx, stem: stem, dir: dir, placed: placed, top: top, bot: bot, y0: y0, yEnd: yEnd, right: right, ledgers: ledgers, dots: dots, st: st, g: g };
+    return { s: s, sw: sw, sx: sx, stem: stem, dir: dir, placed: placed, top: top, bot: bot, y0: y0, yEnd: yEnd, right: right, ledgers: ledgers, dots: dots, st: st, g: g, fk: fk };
   }
   // The ink a laid-out group covers, as boxes — every stroke drawGroup lays
   // for it: its heads (a bell's ring, a breve's strokes), its ledgers, its
@@ -2650,7 +2654,7 @@ window.KolobViz = (function () {
       }
       out.push([L.sx - L.sw / 2 - 0.08 * s, ya, L.sx + L.sw / 2 + 0.08 * s, yb, 0, 0, 0, 1]);
       if (o.flags && !o.beamY) {
-        var fy = L.yEnd, fl = (0.8 * (o.flags - 1) + 2.8) * s;
+        var fy = L.yEnd, fl = (0.8 * (o.flags - 1) + 2.8 * L.fk) * s;
         out.push([L.sx, Math.min(fy, fy + dn * fl), L.sx + 1.05 * s, Math.max(fy, fy + dn * fl)]);
       }
       if (o.slash) out.push([L.sx - 0.75 * s, Math.min(L.yEnd + dn * 2.15 * s, L.yEnd + dn * 0.85 * s), L.sx + 0.85 * s, Math.max(L.yEnd + dn * 2.15 * s, L.yEnd + dn * 0.85 * s)]);
@@ -2671,7 +2675,7 @@ window.KolobViz = (function () {
     if (L.stem) {
       vLine(c, sx, L.y0, yEnd, sw);
       koRect(c, sx - sw / 2 - pad, Math.min(L.y0, yEnd), sx + sw / 2 + pad, Math.max(L.y0, yEnd));
-      if (!o.beamY) for (var f = 0; f < (o.flags || 0); f++) drawFlag(c, sx, yEnd + dir * f * 0.8 * s, dir, s, sw);   // (a beamed note's flags are its beams)
+      if (!o.beamY) for (var f = 0; f < (o.flags || 0); f++) drawFlag(c, sx, yEnd + dir * f * 0.8 * s, dir, s, sw, L.fk);   // (a beamed note's flags are its beams)
       if (o.slash) {
         c.save(); c.strokeStyle = rgba(o.rgb); c.lineWidth = Math.max(1 / dpr, 0.1 * sp); c.lineCap = "round";
         c.beginPath(); c.moveTo(sx - 0.7 * s, yEnd + dir * 2.1 * s); c.lineTo(sx + 0.8 * s, yEnd + dir * 0.9 * s); c.stroke(); c.restore();
@@ -2704,8 +2708,8 @@ window.KolobViz = (function () {
   // half-height, and a hair of air — so the flag and the head are two marks,
   // each struck once, and never one over the other
   function flagClear(n, s) { return (0.8 * (n - 1) + 3.4) * s; }
-  function drawFlag(c, sx, y, dir, s, sw) {
-    c.save(); c.translate(sx - sw / 2, y); c.scale(s, dir > 0 ? s : -s);
+  function drawFlag(c, sx, y, dir, s, sw, fk) {       // (fk: its length, where a stem too short for it must keep it off its head)
+    c.save(); c.translate(sx - sw / 2, y); c.scale(s, (dir > 0 ? s : -s) * (fk || 1));
     c.beginPath();
     c.moveTo(0, 0); c.lineTo(0.13, 0);
     c.bezierCurveTo(0.2, 0.55, 0.58, 0.82, 0.82, 1.22);
