@@ -72,6 +72,8 @@
 //   singerOf(seat, ward) → who rises (a testimony-bearer of the seat's part),
 //     once the meeting has seated its ward
 //   tongue(stream) → the syllables and words of one song (pure)
+//   ROWS, ROW_LABEL — the stages that earn a row in the minutes, and the
+//     guest's name in the meeting's glue (kolob-guests.js standingGuest)
 //   ODDS, EXCLUDES, NAME, LABEL, LEVEL
 // ============================================================================
 
@@ -81,6 +83,12 @@ window.KOLOB.GuestTongues = (function () {
 
   var NAME = "tongues";
   var LABEL = "guest:tongues:";                   // the stream's label: + the meeting number
+  // THE MINUTES. The gift tells five stages (onStage); three earn a row —
+  // someone rising to sing, the ward's hum, the harmonium's answer. The song
+  // itself and its height are heard, not written: the glue passes them over
+  // (a request to the integrator: kolob-guests.js standingGuest reads ROWS)
+  var ROWS = { rises: 1, "the ward hums": 1, "the harmonium": 1 };
+  var ROW_LABEL = "✦ the gift of tongues";
 
   // ==========================================================================
   // THE ODDS — a starting point, for the owner's ear
@@ -300,7 +308,10 @@ window.KOLOB.GuestTongues = (function () {
    "h-ah.b-ee h-oo.r-ah b-oo.b-oo n-oo.d-ee b-oo.d-ee m-ee.l-oh b-eh.r-ee m-eh.r-ee w-eh.r-ee h-ah.r-ee l-ah.r-ee y-eh.r-ee " +
    "b-oh.n-ee d-oh.n-ah l-oh.n-ee m-oh.n-ee h-oh.n-ee r-oh.b-ee ah.l-ee oh.l-ee w-ee.l-ee l-ee.l-ee eh.l-ee eh.n-ee m-ee.n-ee " +
    "d-oh.m-ee h-ee.l-ee w-oo.l-ee b-ee.l-ee r-ee.l-ee n-oh.m-ah d-ee.l-ah l-oo.n-ah d-ah.n-ah g-oh.l-ee g-ah.l-ah l-ah.l-ah-l " +
-   "d-oh.r-ee m-ee.m-oh l-ee.m-oh m-eh.m-oh d-eh.m-oh r-ee.m-oh h-eh.m-oh b-eh.l-ee m-oh.l-ah l-ah.w-ah h-ah.w-ah").split(" ").forEach(function (w) { if (w) BLOCK[w] = 1; });
+   "d-oh.r-ee m-ee.m-oh l-ee.m-oh m-eh.m-oh d-eh.m-oh r-ee.m-oh h-eh.m-oh b-eh.l-ee m-oh.l-ah l-ah.w-ah h-ah.w-ah " +
+   // (round 2, the critic's: names the tongue kept landing on — Lara, Nora,
+   // Lena, Mona, Hana, Yoda)
+   "l-ah.r-ah n-oh.r-ah l-eh.n-ah m-oh.n-ah h-ah.n-ah y-oh.d-ah").split(" ").forEach(function (w) { if (w) BLOCK[w] = 1; });
   function drawSet(r, pool, n) {
     var left = pool.slice(), out = [];
     for (var i = 0; i < n && left.length; i++) {
@@ -311,6 +322,7 @@ window.KOLOB.GuestTongues = (function () {
     return out;
   }
   function sounds(s) { return (s.c ? s.c + "-" : "") + s.v + (s.coda ? "-" + s.coda : ""); }
+  function said(s) { return (s.c ? s.c + "-" : "") + s.v; }        // (its consonant and vowel: the closing sound aside)
   function dsOf(syls) {
     var C = window.KOLOB.Cast;
     if (!C || !C.deseret) return null;
@@ -347,11 +359,14 @@ window.KOLOB.GuestTongues = (function () {
         }
         var cdD = wr.next(), cdW = wr.next();
         if (codas.length && cdD < 0.18) syls[syls.length - 1].coda = codas[Math.floor(cdW * codas.length)];
-        var key = syls.map(sounds).join("."), ds = dsOf(syls);
+        var key = syls.map(sounds).join("."), bare = syls.map(said).join("."), ds = dsOf(syls);
         // (and a word of one syllable said over and over — la-la, na-na-na,
-        // ga-ga — is the nursery's and the chorus's, not a tongue's)
-        var same = syls.every(function (x) { return sounds(x) === sounds(syls[0]); });
-        if (BLOCK[key] || seen[key] || same || (ds && avoid[ds])) continue;
+        // ga-ga — is the nursery's and the chorus's, not a tongue's: heard by
+        // its consonants and vowels, so na-nan and la-la-lal are that word
+        // too; and a word refused is refused with a closing sound — Lena's
+        // Lenan, manna's mannan)
+        var same = syls.every(function (x) { return said(x) === said(syls[0]); });
+        if (BLOCK[key] || BLOCK[bare] || seen[key] || same || (ds && avoid[ds])) continue;
         got = { syl: syls.map(sounds), sounds: key, ds: ds, tries: tries };
         seen[key] = 1;
       }
@@ -747,7 +762,7 @@ window.KOLOB.GuestTongues = (function () {
 
   return {
     plan: plan, decide: decide, score: score, perform: perform, gesture: gesture, tongue: tongue, singerOf: singerOf, timeline: function (stream, house) { return timeline(shapeOf(stream, house)); },
-    ODDS: ODDS, EXCLUDES: EXCLUDES, NAME: NAME, LABEL: LABEL, BLOCK: BLOCK,
+    ODDS: ODDS, EXCLUDES: EXCLUDES, NAME: NAME, LABEL: LABEL, BLOCK: BLOCK, ROWS: ROWS, ROW_LABEL: ROW_LABEL,
     get LEVEL() { return LEVEL; }, set LEVEL(v) { LEVEL = +v; },
   };
 })();
