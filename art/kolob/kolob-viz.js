@@ -2508,17 +2508,21 @@ window.KolobViz = (function () {
     // Harp tenor high over the bass staff keeps its stem up, as short as the
     // gap leaves it, down to 1 sp)
     var minS = o.tune ? 1.0 : o.keep ? 1.3 : 2.2, gapY = gapLimit(g, st, o.room);
+    // (round 3c, round 2: each flag past the first lengthens its stem by the
+    // flags' own step, so a sixteenth's second flag clears its head as an
+    // eighth's one flag does)
+    var sL = 3.5 + (o.flags > 1 && !o.beamY ? 0.8 * (o.flags - 1) : 0);
     function stemEnd(d) {                          // where a stem turned d ends
       var ye;
       // (o.ferm: a fermata stands beyond this stem — over the treble, under
       // the bass — and the plate's edge must hold both)
       var edgeT = g.top + (o.ferm > 0 ? 1.65 : 0.3) * sp, edgeB = g.bot - (o.ferm < 0 ? 1.65 : 0.3) * sp;
       if (d > 0) {
-        ye = Math.min(yHi - 3.5 * s, mid);
+        ye = Math.min(yHi - sL * s, mid);
         ye = Math.max(ye, Math.min(edgeT, yHi - 2.2 * s));   // a stem stays on the plate
         if (st === "B") ye = Math.max(ye, Math.min(gapY, yHi - minS * s));   // …and on its side of the gap
       } else {
-        ye = Math.max(yLo + 3.5 * s, mid);
+        ye = Math.max(yLo + sL * s, mid);
         ye = Math.min(ye, Math.max(edgeB, yLo + 2.2 * s));
         if (st === "T") ye = Math.min(ye, Math.max(gapY, yLo + minS * s));
       }
@@ -2532,6 +2536,12 @@ window.KolobViz = (function () {
       if (stem && st === "B" && dir > 0 && yHi - gapY < minS * s) dir = -1;
       else if (stem && st === "T" && dir < 0 && gapY - yLo < minS * s) dir = 1;
     }
+    // (round 3c, round 2: a flag is one clean strike, clear of its own head —
+    // the owner's rule. A stem turned down hangs its flags back up over its
+    // lowest head; where the plate's edge or the gap cuts it too short for
+    // them to clear that head — the trio's tune two ledgers under the bass
+    // staff — it turns up, and its flags hang beside the head instead)
+    if (stem && !o.beamY && !o.tune && o.flags > 0 && dir < 0 && reach(-1) < flagClear(o.flags, s) && reach(1) > reach(-1)) dir = 1;
     var sx = X + dir * (0.57 * s - sw / 2);
     // (a heavy head — the tune's — is drawn HEAVY times the size: its stem
     // meets its own edge, hs2)
@@ -2659,6 +2669,12 @@ window.KolobViz = (function () {
     });
     return { sx: sx, yEnd: yEnd, topY: top.y, botY: bot.y, topX: top.x, botX: bot.x, sw: sw, L: L };
   }
+  // (round 3c, round 2) how far past its lowest head a stem turned down must
+  // reach for n flags to clear that head: the flags' own run back up the
+  // stem (2.8 for the first, 0.8 for each after it — drawGroup), the head's
+  // half-height, and a hair of air — so the flag and the head are two marks,
+  // each struck once, and never one over the other
+  function flagClear(n, s) { return (0.8 * (n - 1) + 3.4) * s; }
   function drawFlag(c, sx, y, dir, s, sw) {
     c.save(); c.translate(sx - sw / 2, y); c.scale(s, dir > 0 ? s : -s);
     c.beginPath();
