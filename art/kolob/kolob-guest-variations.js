@@ -147,6 +147,10 @@ window.KOLOB.GuestVariations = (function () {
   function oddsFor(info) {
     var w = ODDS.weight, k = info.sunday && w[info.sunday] != null ? info.sunday : info.kind;
     var st = info.organist && ODDS.style[info.organist.style] != null ? ODDS.style[info.organist.style] : 1;
+    // (round 3c: a meeting hands the Sunday's odds in, info.odds, from the
+    // calendar's one table — KOLOB.Calendar.GUEST_ODDS; the organist's own
+    // lean, ODDS.style, stays on top of it)
+    if (info.odds != null) return Math.max(0, Math.min(1, +info.odds * st));
     return Math.min(ODDS.cap, ODDS.base * (w[k] != null ? w[k] : 1) * st);
   }
   // a Score in three or four parts

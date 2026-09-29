@@ -146,7 +146,10 @@ window.KOLOB.GuestBands = (function () {
     var w = tbl.weight, k = info.sunday && w[info.sunday] != null ? info.sunday : info.kind;
     return w[k] != null ? w[k] : 1;
   }
-  function oddsFor(info) { return Math.min(ODDS.cap, ODDS.base * weightOf(ODDS, info)); }
+  // (round 3c: a meeting hands its odds in, info.odds, from the calendar's
+  // one table — KOLOB.Calendar.GUEST_ODDS, whose band row is this room's own
+  // 36 % and Sundays; a lab without it reads ODDS)
+  function oddsFor(info) { return info && info.odds != null ? Math.max(0, Math.min(1, +info.odds)) : Math.min(ODDS.cap, ODDS.base * weightOf(ODDS, info)); }
   function secondOdds(info) { return Math.min(ODDS.second.cap, ODDS.second.base * weightOf(ODDS.second, info)); }
 
   // ==========================================================================

@@ -101,7 +101,9 @@ window.KOLOB.GuestHosanna = (function () {
     if (Cal && Cal.SUNDAYS && Cal.SUNDAYS[sun]) return !!Cal.SUNDAYS[sun].hosanna;
     return sun === "easter" || sun === "dedication";
   }
-  function oddsFor(info) { return mayCome(info) ? Math.min(ODDS.cap, ODDS.weight[info.sunday] != null ? ODDS.weight[info.sunday] : 0.5) : 0; }
+  // (round 3c: a meeting hands its odds in, info.odds, from the calendar's
+  // one table; still only on its two Sundays, whatever it is handed)
+  function oddsFor(info) { return !mayCome(info) ? 0 : info.odds != null ? Math.max(0, Math.min(1, +info.odds)) : Math.min(ODDS.cap, ODDS.weight[info.sunday] != null ? ODDS.weight[info.sunday] : 0.5); }
   // the bus: the shout and the ward calibrated in guests3c-lab against the
   // organ reference (the shout's loudest 3 s about level with it; the hymn,
   // full organ and full ward, 2–3 LU over it, as a doxology on full organ is)

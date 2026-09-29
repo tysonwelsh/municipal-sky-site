@@ -193,6 +193,10 @@ window.KOLOB.GuestTrombones = (function () {
   var NEAR_EVEN = { at: 0.23, share: 0.5 };
 
   function oddsFor(info) {
+    // (round 3c: a meeting hands its odds in, info.odds, from the calendar's
+    // one table — KOLOB.Calendar.GUEST_ODDS; a lab without it reads this
+    // room's own, below)
+    if (info && info.odds != null) return Math.max(0, Math.min(1, +info.odds));
     var w = ODDS.weight;
     var k = info.sunday && w[info.sunday] != null ? info.sunday : info.kind;
     return Math.min(ODDS.cap, ODDS.base * (w[k] != null ? w[k] : 1));

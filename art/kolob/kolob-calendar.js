@@ -110,10 +110,9 @@ window.KOLOB.Calendar = (function () {
   //               lens: a factor on a rite's drawn length
   //   season    where the Sunday's warmth sits (0 the fast-day trough … 1 the
   //             festival): the day's temper, the piper
-  //   guests    factors on the odds of the guests whose dice the plan throws
-  //             itself (the bands, the steeples, the old tune); the trombones,
-  //             the handbells and the singing school read the Sunday in their
-  //             own rooms (their ODDS.weight tables)
+  //   (guests   round 3c: the guests' odds by Sunday are no longer spread
+  //             over the Sundays and the guests' own rooms — they are one
+  //             table, GUEST_ODDS, below the Sundays)
   //   cast      how many of the ward you come to know: opt (the optional
   //             roles, beside the chorister, the precentor and the soloist)
   //             and testimony (how many rise)
@@ -135,7 +134,7 @@ window.KOLOB.Calendar = (function () {
     ordinary: {
       share: 0.45, kind: "ordinary", ds: "𐐃𐐡𐐔𐐆𐐤𐐇𐐡𐐆 𐐝𐐊𐐤𐐔𐐁", en: "AN ORDINARY SUNDAY",
       about: "the house style varies",
-      plan: {}, season: [0.2, 0.7], guests: {}, cast: { opt: [3, 5], testimony: [2, 3] },
+      plan: {}, season: [0.2, 0.7], cast: { opt: [3, 5], testimony: [2, 3] },
       organist: {}, reg: 0, morning: {}, scenes: {}, arc: {},
     },
     fast: {
@@ -143,7 +142,7 @@ window.KOLOB.Calendar = (function () {
       about: "testimony-heavy and sparse; the Sacred Harp and the Old Way; the precentor",
       // (the testimony is the meeting's centre: never cut, and longer)
       plan: { cutTestimony: 0, lens: { testimony: 1.35, invocation: 1.1 } }, season: [0, 0.35],
-      guests: { bands: 0.5, steeples: 0.6, oldtune: 1.2 }, cast: { opt: [3, 4], testimony: [3, 3] },
+      cast: { opt: [3, 4], testimony: [3, 3] },
       organist: { plain: 1.3 }, reg: -0.45,
       morning: { arbor: 1.8, ground: 1.4, humming: 1.3, voluntary: 0.6, parlor: 0.8 },
       scenes: { lined: 2.2, arbor: 1.6, voluntary: 0.6, choir: 0.9 },
@@ -152,7 +151,7 @@ window.KOLOB.Calendar = (function () {
     conference: {
       share: 0.12, kind: "conference", ds: "𐐖𐐇𐐤𐐊𐐡𐐊𐐢 𐐗𐐉𐐤𐐙𐐡𐐇𐐤𐐝", en: "GENERAL CONFERENCE",
       about: "three hymns, the choir, the full organ, the Tabernacle",
-      plan: { hymns: 3 }, season: [0.5, 0.9], guests: {}, cast: { opt: [4, 5], testimony: [2, 3] },
+      plan: { hymns: 3 }, season: [0.5, 0.9], cast: { opt: [4, 5], testimony: [2, 3] },
       organist: { victorian: 1.3 }, reg: 0.4,
       morning: { voluntary: 1.9, humming: 1.2, arbor: 0.5, valley: 0.8 },
       scenes: { voluntary: 1.8, choir: 1.5, lined: 0.5, arbor: 0.5 },
@@ -162,7 +161,7 @@ window.KOLOB.Calendar = (function () {
       share: 0.08, kind: "jubilee", ds: "𐐑𐐌𐐊𐐤𐐀𐐡 𐐔𐐁", en: "PIONEER DAY",
       about: "the brass bands, the gospel ring; the handcarts remembered",
       plan: { hymns: 3, secondDox: 0.5 }, season: [0.75, 1],
-      guests: { bands: 2.1, steeples: 0.8, oldtune: 1.3 }, cast: { opt: [4, 5], testimony: [2, 3] },
+      cast: { opt: [4, 5], testimony: [2, 3] },
       organist: { improviser: 1.2 }, reg: 0.25,
       morning: { parlor: 1.6, voluntary: 1.2, valley: 1.2 },
       scenes: { arbor: 1.3, voluntary: 1.2 },
@@ -172,7 +171,7 @@ window.KOLOB.Calendar = (function () {
       share: 0.06, kind: "jubilee", ds: "𐐗𐐡𐐆𐐝𐐣𐐊𐐝", en: "CHRISTMAS",
       about: "shape-note carols, the bells, the Primary",
       plan: { hymns: 3, secondDox: 0.3 }, season: [0.6, 0.9],
-      guests: { bands: 0.5, steeples: 2.4, oldtune: 1.2 }, cast: { opt: [4, 5], testimony: [2, 2] },
+      cast: { opt: [4, 5], testimony: [2, 2] },
       organist: {}, reg: 0.1,
       morning: { humming: 2, valley: 1.4, strings: 1.2 },
       scenes: { choir: 1.8, voluntary: 1.2 },
@@ -182,7 +181,7 @@ window.KOLOB.Calendar = (function () {
       share: 0.06, kind: "jubilee", ds: "𐐀𐐝𐐓𐐊𐐡", en: "EASTER",
       about: "the brightest light, the Tabernacle in full; the Hosanna possible",
       plan: { hymns: 3, secondDox: 0.5, bright: 0.95 }, season: [0.85, 1],
-      guests: { bands: 0.7, steeples: 1.8 }, cast: { opt: [4, 5], testimony: [2, 3] },
+      cast: { opt: [4, 5], testimony: [2, 3] },
       organist: { victorian: 1.3 }, reg: 0.5,
       morning: { voluntary: 1.7, strings: 1.3 },
       scenes: { voluntary: 1.5, choir: 1.3 },
@@ -192,7 +191,7 @@ window.KOLOB.Calendar = (function () {
       share: 0.04, kind: "ordinary", ds: "𐐊 𐐎𐐇𐐔𐐆𐐥", en: "A WEDDING",
       about: "gentle; a love song; the soloist",
       plan: { hymns: 2, cutTestimony: 0.6, bright: 0.7, silenceMul: 0.9 }, season: [0.5, 0.8],
-      guests: { bands: 0.6, steeples: 1.5, oldtune: 1.3 }, cast: { opt: [3, 5], testimony: [2, 2] },
+      cast: { opt: [3, 5], testimony: [2, 2] },
       organist: { victorian: 1.4 }, reg: -0.1,
       morning: { parlor: 2.4, strings: 2.0, voluntary: 1.4, arbor: 0.4, ground: 0.6, valley: 0.6 },
       scenes: { voluntary: 1.5, choir: 1.1, lined: 0.5 },
@@ -205,7 +204,7 @@ window.KOLOB.Calendar = (function () {
       // the guests' own rooms refuse them at a funeral)
       plan: { hymns: 2, silenceMul: 1.35, bright: 0.4, bells: 0.3, cutTestimony: 0.1, lens: { invocation: 1.2, sacrament: 1.2 },
               meterW: [["LM", 3], ["CM", 3], ["SM", 2], ["87.87", 1]] },
-      season: [0.1, 0.45], guests: { bands: 0.15, steeples: 0.8, oldtune: 1.6 }, cast: { opt: [2, 4], testimony: [2, 3] },
+      season: [0.1, 0.45], cast: { opt: [2, 4], testimony: [2, 3] },
       organist: { plain: 1.4, victorian: 1.2, improviser: 0.6 }, reg: -0.5,
       morning: { ground: 1.8, strings: 1.7, humming: 1.4, voluntary: 0.7, parlor: 0.6, valley: 0.8 },
       scenes: { choir: 1.6, voluntary: 1.3, lined: 0.6, arbor: 0.8 },
@@ -216,7 +215,7 @@ window.KOLOB.Calendar = (function () {
     dedication: {
       share: 0.01, kind: "conference", ds: "𐐊 𐐔𐐇𐐔𐐆𐐗𐐁𐐟𐐊𐐤", en: "A DEDICATION",
       about: "the Hosanna, the full organ, conference forces",
-      plan: { hymns: 3, bright: 0.9 }, season: [0.8, 1], guests: { steeples: 1.6 }, cast: { opt: [5, 5], testimony: [2, 3] },
+      plan: { hymns: 3, bright: 0.9 }, season: [0.8, 1], cast: { opt: [5, 5], testimony: [2, 3] },
       organist: { victorian: 1.6 }, reg: 0.6,
       morning: { voluntary: 2.4, humming: 1.2 },
       scenes: { voluntary: 1.8, choir: 1.6, arbor: 0.4, lined: 0.4 },
@@ -224,6 +223,78 @@ window.KOLOB.Calendar = (function () {
     },
   };
   var ORDER = ["ordinary", "fast", "conference", "pioneer", "christmas", "easter", "wedding", "funeral", "dedication"];
+
+  // ==========================================================================
+  // THE GUESTS' ODDS — ONE TABLE (round 3c: the guest budget; PLAN §8, §8.13)
+  // ==========================================================================
+  // How likely each guest is to be asked to a meeting, Sunday by Sunday: the
+  // die each guest throws on its own stream (guest:<name>:<n>, or the
+  // meeting's own for the steeples and the old tune) is read against this
+  // number — change a cell and that guest comes more or less often on that
+  // Sunday, and nothing else moves. Asked is not seated: the meeting then
+  // seats it only where the budget has room (GUEST_BUDGET, below) and its
+  // own rules allow (a band never with the trombones, the old tune only on a
+  // Sunday of its own colour, the Social Hall never at a funeral…), so what
+  // is heard is a little under the table (the census, handoff r3c-integrate).
+  // The band's row is the owner's own 36 % and the Sundays' old welcome; every
+  // other guest began at about four-tenths of its crew's own starting odds, so
+  // that some sixty meetings in a hundred carry a guest (PLAN §8: about 55 %)
+  // and every guest is heard. The owner tunes them by ear.
+  //   changes  — not a guest of its own: of the Sundays the steeples ring,
+  //              how often the far bells are a band ringing changes
+  //   hosanna  — Easter and a dedication only (the rite of those Sundays,
+  //              unlogged); nowhere else, whatever the table says
+  var GUEST_COLUMNS = ORDER;
+  var GUEST_ODDS = {
+    //             ordinary fast  confer pioneer xmas  easter wedding funeral dedic
+    bands:         [0.36,   0.18, 0.36,  0.76,   0.18, 0.25,  0.22,   0.05,   0.36],
+    steeples:      [0.03,   0.02, 0.03,  0.02,   0.07, 0.05,  0.05,   0.02,   0.05],
+    changes:       [0.5,    0.3,  0.55,  0.55,   0.75, 0.7,   0.85,   0.65,   0.75],
+    oldtune:       [0.06,   0.07, 0.06,  0.08,   0.07, 0.06,  0.08,   0.1,    0.06],
+    trombones:     [0.08,   0.03, 0.13,  0.08,   0.18, 0.22,  0.08,   0.18,   0.22],
+    singingschool: [0.06,   0.05, 0.03,  0.06,   0.08, 0.06,  0.04,   0,      0.03],
+    handbells:     [0.06,   0.02, 0.06,  0.06,   0.16, 0.13,  0.13,   0.03,   0.08],
+    variations:    [0.05,   0.02, 0.09,  0.09,   0.06, 0.07,  0.06,   0,      0.09],
+    tongues:       [0.03,   0.11, 0.01,  0.01,   0.01, 0.03,  0.01,   0.03,   0.1],
+    farward:       [0.04,   0.07, 0.08,  0.03,   0.05, 0.04,  0.02,   0.03,   0.06],
+    socialhall:    [0.03,   0,    0.01,  0.2,    0.07, 0.05,  0.15,   0,      0.03],
+    handcart:      [0.03,   0.02, 0.03,  0.24,   0.01, 0.03,  0.02,   0.07,   0.02],
+    gulls:         [0.03,   0.02, 0.03,  0.08,   0.01, 0.04,  0.04,   0,      0.02],
+    hosanna:       [0,      0,    0,     0,      0,    0.5,   0,      0,      0.95],
+  };
+  // THE BUDGET — what the meeting will seat, whoever is asked:
+  //   max         guests a meeting, at most (PLAN §8: 0–2; the Hosanna counts)
+  //   showpieces  the big guests, one a meeting at most: the organist's
+  //               variations, the Social Hall, the Hosanna — each the
+  //               meeting's showpiece when it comes
+  //   neighbours  guests that may sit in neighbouring rites on a Sunday
+  //               (PLAN §8.13: never two guests in the same or neighbouring
+  //               rites — but on Pioneer Day the band crossing the doxology
+  //               and the dance after it are one day's joy; the round-3c
+  //               critic of the Social Hall). The Hosanna keeps its own rule
+  //               (GuestHosanna.YIELD: false, it does not give way)
+  //   order       the order the meeting asks them in, which is also who
+  //               yields when the budget is full (the last asked)
+  var GUEST_BUDGET = {
+    max: 2,
+    showpieces: { variations: true, socialhall: true, hosanna: true },
+    neighbours: { pioneer: [["bands", "socialhall"]] },
+    order: ["bands", "steeples", "oldtune", "trombones", "singingschool", "handbells", "variations",
+            "tongues", "farward", "socialhall", "handcart", "gulls"],
+  };
+  // guestOdds(guest, sunday) → the table's number, or null for a guest the
+  // table does not name (its own room's odds then stand)
+  function guestOdds(guest, id) {
+    var row = GUEST_ODDS[guest], k = ORDER.indexOf(id);
+    if (!row) return null;
+    return row[k >= 0 ? k : 0];
+  }
+  // may these two sit side by side on this Sunday?
+  function neighboursMay(a, b, id) {
+    var ok = GUEST_BUDGET.neighbours[id] || [];
+    for (var i = 0; i < ok.length; i++) if ((ok[i][0] === a && ok[i][1] === b) || (ok[i][0] === b && ok[i][1] === a)) return true;
+    return false;
+  }
   var KINDS = ["ordinary", "fast", "conference", "jubilee"];
   if (Object.freeze) ORDER.forEach(function (k) { Object.freeze(SUNDAYS[k]); });
 
@@ -581,6 +652,7 @@ window.KOLOB.Calendar = (function () {
 
   return {
     SUNDAYS: SUNDAYS, ORDER: ORDER, KINDS: KINDS,
+    GUEST_ODDS: GUEST_ODDS, GUEST_COLUMNS: GUEST_COLUMNS, GUEST_BUDGET: GUEST_BUDGET, guestOdds: guestOdds, neighboursMay: neighboursMay,
     draw: draw, kindOf: kindOf, sunday: sunday, meetingRow: meetingRow,
     ARC: ARC, phaseOf: phaseOf, light: light, lights: lights, dialectLean: dialectLean, regLean: regLean, richHymnist: richHymnist,
     SCENES: SCENES, SCENE_ODDS: SCENE_ODDS, scenes: scenes,

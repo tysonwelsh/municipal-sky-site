@@ -26,7 +26,9 @@
 // kolob-experimental.js, kolob-voices-folk.js, kolob-guest-handbells.js and
 // kolob-guest-singingschool.js at its third, when the handbell choir and the
 // singing school came into the meeting; kolob-calendar.js at its fourth, when
-// every visit began to draw a Sunday of the colony year.)
+// every visit began to draw a Sunday of the colony year; the nine round-3c
+// guests and kolob-testimony.js at round 3c's integration, when the guest
+// budget began to seat them.)
 //
 // THE LOAD GUARD. Each kolob-*.js room answers a roll call as its last act
 // (KOLOB._rooms["kolob-organ.js"] = true), and the substrate — and the Earth
@@ -99,7 +101,18 @@ return [
     'kolob-cast.js',
     // (and the guests who stand in the room — the ward's handbell choir and
     // the singing school — plan and play themselves, round 3b, step 3)
-    'kolob-hymnal.js', 'kolob-guest-trombones.js', 'kolob-guest-handbells.js', 'kolob-guest-singingschool.js', 'kolob-guests.js', 'kolob-meeting.js',
+    'kolob-hymnal.js', 'kolob-guest-trombones.js', 'kolob-guest-handbells.js', 'kolob-guest-singingschool.js',
+    // (round 3c: the new guests, each planning and playing itself — the
+    // Nauvoo band that marches (it replaces the looping fife), the handcart
+    // company, the gulls; the organist's variations on a hymn and change
+    // ringing from a far tower; the gift of tongues, the far ward and the
+    // Hosanna; the Social Hall; and the testimony-bearers, who are not
+    // guests but the testimony's own people)
+    'kolob-guest-bands.js', 'kolob-guest-handcart.js', 'kolob-guest-gulls.js',
+    'kolob-guest-variations.js', 'kolob-guest-changes.js',
+    'kolob-guest-tongues.js', 'kolob-guest-farward.js', 'kolob-guest-hosanna.js',
+    'kolob-guest-socialhall.js', 'kolob-testimony.js',
+    'kolob-guests.js', 'kolob-meeting.js',
     // the facade
     'kolob-core.js',
 ];
