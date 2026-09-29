@@ -1030,6 +1030,7 @@ html { scroll-behavior: smooth; }
   line-height: var(--lh-tight);
   letter-spacing: 0;
   text-transform: none;
+  margin: 0 0 var(--s-2);      /* the site's title-to-divider step (.section-title) */
 }
 .jd-notes--drawer .jd-build,
 .jd-notes--drawer .jd-back { font-family: var(--font-mono); font-size: var(--fs-xs); }
@@ -4628,41 +4629,60 @@ html.jd-folder-open { overflow: hidden; }
 .jd-folder-card {
   margin-top: var(--ftab-h);
   max-height: calc(100% - var(--ftab-h));
-  border-radius: 0 3px 6px 6px;
+  border-radius: 3px 3px 6px 6px;         /* the tab is inset now: both top corners are the folder's */
 }
-.jd-folder-tab,
-.jd-folder-close {
-  position: absolute; bottom: 100%; z-index: 2;
-  margin-bottom: -1px;                       /* over the card's top border */
-  box-sizing: border-box;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--fmanila) var(--fgrain);
-  border: 1px solid rgba(48, 38, 20, 0.6); border-bottom: 0;
-  border-radius: 8px 8px 0 0;
-  color: var(--fink);
-  box-shadow: 0 2px 0 rgba(255, 248, 226, 0.35) inset,
-              2px -2px 6px -3px rgba(6, 3, 0, 0.35);
-}
+/* THE TAB, CUT LIKE THE FOLDER IN THE DRAWER (owner, 2026-09-29, second
+   pass: "it needs to look like a file folder … similar to how the folder
+   appears in the drawer", and the ✕ "to the left of the title … part of the
+   tab"). analytics-folder.svg's tab is inset from the left edge and cut as
+   a trapezoid — slanted sides, open at the bottom into the folder. Borders
+   do not follow a clip-path, so the outline is the classic two-layer cut:
+   the tab itself is filled with the rule colour and clipped to the
+   trapezoid, and ::before, 1px in from the top and sides, carries the
+   manila and grain clipped to the same shape. The drop shadow is a filter,
+   which applies after the clip. The ✕ is the first thing in the tab. */
 .jd-folder-tab {
-  left: 0; height: var(--ftab-h);
-  padding: 0 26px 0 28px;
-  font-family: var(--fmono); font-size: 1.1rem; font-weight: 700;
-  letter-spacing: 0.32em; text-indent: 0.32em; line-height: 1;
+  --slant: calc(var(--ftab-h) * 0.62);
+  position: absolute; bottom: 100%; left: 36px; z-index: 2;
+  margin-bottom: -1px;                        /* over the card's top border */
+  height: var(--ftab-h);
+  box-sizing: border-box;
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 calc(var(--slant) + 14px) 0 calc(var(--slant) + 6px);
+  background: rgba(48, 38, 20, 0.6);
+  clip-path: polygon(0 100%, var(--slant) 0, calc(100% - var(--slant)) 0, 100% 100%);
+  filter: drop-shadow(1px -2px 3px rgba(6, 3, 0, 0.3));
+  color: var(--fink);
+}
+.jd-folder-tab::before {
+  content: ''; position: absolute; z-index: -1;
+  top: 1px; left: 1px; right: 1px; bottom: 0;
   background: var(--fmanila-hi) var(--fgrain);
+  clip-path: polygon(0 100%, calc(var(--slant) - 0.4px) 0, calc(100% - var(--slant) + 0.4px) 0, 100% 100%);
+}
+.jd-folder-tab { isolation: isolate; }
+.jd-folder-tab-word {
+  font-family: var(--fmono); font-size: 1.1rem; font-weight: 700;
+  letter-spacing: 0.32em; line-height: 1;
+  margin-right: -0.32em;                      /* the tracking after the S */
 }
 .jd-folder-close {
-  right: 12px; width: 54px; height: 34px;
-  padding: 0; cursor: pointer;
-  background: var(--fmanila-lo) var(--fgrain);
+  flex: 0 0 auto;
+  width: 30px; height: 30px; padding: 6px;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: 0; border-radius: 50%;
+  color: var(--fink); cursor: pointer;
 }
-.jd-folder-close:hover { color: var(--fred, #a8332a); background: var(--fmanila-hi) var(--fgrain); }
+.jd-folder-close .jd-x-mark { width: 100%; height: 100%; }
+.jd-folder-close:hover { color: var(--fred, #a8332a); background: rgba(255, 248, 226, 0.5); }
 /* focus moves here programmatically when the folder opens, and the UA's own
    ring drew a large blue rectangle — keep :focus quiet and ring only
    keyboard focus */
 .jd-folder-close:focus { outline: none; }
-.jd-folder-close:focus-visible { outline: 2px solid var(--fred); outline-offset: -5px; }
+.jd-folder-close:focus-visible { outline: 2px solid var(--fred); outline-offset: 0; }
 @media (max-width: 560px) {
-  .jd-folder-tab { font-size: 0.9rem; padding: 0 18px 0 20px; }
+  .jd-folder-tab { left: 18px; gap: 8px; }
+  .jd-folder-tab-word { font-size: 0.9rem; }
 }
 
 /* ---- the contents: paper cards laid in the folder ------------------------
@@ -4780,7 +4800,13 @@ html.jd-folder-open { overflow: hidden; }
 .fx-td-none { color: var(--fink-3); }
 .fx-gauge { width: 41px; height: 9px; vertical-align: -1px; margin-left: 4px; }
 @media (max-width: 700px) {
-  .fx-turns-t { table-layout: auto; min-width: 560px; }
+  /* FIXED, NOT AUTO (owner bug, 2026-09-29: two models' gauges "weren't
+     rendering" on a phone). With table-layout:auto the grade columns sized
+     to their HEADS, so GPT-5.1 and KIMI K3 — the short names — got ~58px,
+     too narrow for number + gauge, and the cell's ellipsis swallowed the
+     gauge whole. Fixed layout honours the 108px every grade column asks
+     for; the prompt takes what is left, and the sheet scrolls sideways. */
+  .fx-turns-t { table-layout: fixed; min-width: 700px; }
   .fx-turns-wrap { overflow-x: auto; }
 }
 .fx-t-val  { font-family: var(--fmono); font-size: 9.5px; fill: var(--fink); font-weight: 700; }
@@ -4849,11 +4875,15 @@ html.jd-folder-open { overflow: hidden; }
    they take a quieter register — the house mono, regular weight, sentence
    case, the second ink, ruled underneath — and both the title and these
    heads get air below them. */
-.fx-axes .fx-title { margin-bottom: 12px; }
+.fx-axes .fx-title { margin-bottom: 14px; }
+/* NO RULE, AND CLOSE TO ITS PLOT (owner, 2026-09-29): with the rule and 10px
+   under it, a head sat further from its own plot than from the card's
+   title — the grouping read backwards. The rule is gone and the head sits
+   right on its plot (the svg's own top pad is 2 units, jd-furniture.js). */
 .fx-panel h4 {
-  margin: 0 0 10px;
-  padding-bottom: 4px;
-  border-bottom: 1px solid var(--frule-2);
+  margin: 0 0 2px;
+  padding-bottom: 0;
+  border-bottom: 0;
   font-family: var(--fmono); font-weight: 400; font-size: 0.64rem;
   letter-spacing: 0.03em; text-transform: none; color: var(--fink-2);
   line-height: 1.35;

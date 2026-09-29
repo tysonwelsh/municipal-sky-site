@@ -36,9 +36,11 @@ include '../../includes/header.php';
          the item count went: the about page explains the taxonomy with the
          real instrument beside it, so this page only has to say what the
          drawer is and where to learn more. -->
-    <header class="jd-wall-label">
-      <h1 class="jd-title">The SVG Junk Drawer</h1>
-    </header>
+    <!-- the site's own title + divider (css/style.css .section-divider, as on
+         /art/ and /information-graphics/): the rule and the space under it
+         come from the house style, not from this page (owner, 2026-09-29) -->
+    <h1 class="jd-title">The SVG Junk Drawer</h1>
+    <div class="section-divider"></div>
 
     <div class="jd-intro">
       <p>This is the virtual junk drawer where I stash my collection of
@@ -65,8 +67,6 @@ include '../../includes/header.php';
         <?php echo htmlspecialchars($jd_version); ?><span class="jd-build-sep">·</span><?php echo $jd_build; ?>
       </p>
     </footer>
-
-    <p class="jd-back"><a href="#drawer">THE DRAWER &#8593;</a></p>
 
   </section>
 

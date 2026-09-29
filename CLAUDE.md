@@ -29,3 +29,14 @@ Dev-only changes (`_harness.js`, `_probe.js`, `bodies-lab.php`, docs) do
 not bump. The Jukebox v2 substrate (`art/prosperos-jukebox-v2/pj2-*.js`)
 is shared by relative path and is never modified from ZANKYŌ; ZANKYŌ's
 own extensions live in `art/zankyo/`.
+
+## Page titles and basic spacing — use the house style (owner rule, 2026-09-29)
+
+A page title followed by a horizontal rule uses the site's own pattern from
+`css/style.css`: the `h1` (as `.section-title`, or the page's own title class
+with the site's `margin: 0 0 var(--s-2)`), then `<div class="section-divider"></div>`
+(1px ink rule, `var(--s-4)` of space under it) — as on `/art/` and
+`/information-graphics/`. Don't hand-roll a border-bottom and padding on a
+header for this, and don't invent per-page spacing for titles, rules and the
+first paragraph: use the `--s-*` scale and the shared classes, so pages stay
+consistent and the owner doesn't have to fix one-off spacing page by page.

@@ -385,9 +385,9 @@
      aria-hidden with the rest of the svg, and this one string is what the
      wrapper actually says */
   var SHEET_TEXT = 'Instructions. 1: feel free to dig around and look at ' +
-    'stuff. click an item for a closer look. 2: if you want something new ' +
-    'just press the big blue button. help yourself. 3: each prompt returns ' +
-    'four drawing from different large language models. 4: you\'re ' +
+    'stuff. click an item for a closer look. 2: help yourself to something ' +
+    'new by pressing the big blue button. 3: each prompt returns ' +
+    'four drawings from different large language models. 4: you\'re ' +
     'not done until you leave a grade and rank them!';
 
   /* fetched like the turn object's artwork, but with NO inline fallback: a
@@ -1209,9 +1209,9 @@
          (owner, 2026-09-10): the dots and their printed values are the
          reading, so the box ends 4 units under the last row instead of
          leaving 14 for a line of type */
-      var h = 8 + rows.length * PROWH + 4, s = '', key = '', alt = [];
+      var h = 2 + rows.length * PROWH + 4, s = '', key = '', alt = [];   /* top pad 8 → 2 (owner, 2026-09-29: the plot sits under its head) */
       rows.forEach(function (r, i) {
-        var y = 8 + i * PROWH + PROWH / 2;
+        var y = 2 + i * PROWH + PROWH / 2;
         var v = Math.max(1, Math.min(pts, +r.avg || 1));
         var x = PX0 + PXW * (pts > 1 ? (v - 1) / (pts - 1) : 1);
         s += '<line x1="' + PX0 + '" y1="' + y + '" x2="' + (PX0 + PXW) +
@@ -1378,10 +1378,16 @@
            it. The ✕ that used to share the band is a second, smaller tab at
            the right end of the same edge. Both are positioned children of
            the card (junk-drawer.css); the card itself is just the folder. */
-        '<span class="jd-folder-tab" aria-hidden="true">ANALYTICS</span>' +
+        /* (owner, 2026-09-29, second pass) ONE TAB, cut like the folder in
+           the drawer (analytics-folder.svg): inset from the left edge, a
+           trapezoid with slanted sides, and the ✕ riding inside it to the
+           left of the word — no second tab at the far end. */
+        '<div class="jd-folder-tab">' +
         '<button type="button" class="jd-folder-close" aria-label="close">' +
         '<svg class="jd-x-mark" viewBox="0 0 18 18" aria-hidden="true" focusable="false">' +
         '<path d="M1 1 17 17M17 1 1 17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>' +
+        '<span class="jd-folder-tab-word" aria-hidden="true">ANALYTICS</span>' +
+        '</div>' +
         '<div class="jd-folder-scroll"></div>' +
       '</div>';
     document.body.appendChild(scrim);
