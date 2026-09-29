@@ -142,13 +142,13 @@ The only thing missing is actual users (other than me!)
 
 Here’s how the four models compare on overall grade, across roughly 100 drawings each. It’s a small sample, I know, but humor me.
 
-On average, Claude Opus 5 and Gemini 3.1 Pro are about even. 
+On average, Claude Opus 5 has a *slight* lead over Gemini 3.1 Pro. 
 
 Kimi K3 isn’t far behind in third, with GPT-5.1 a distant fourth.
 
 `step: distribution` · _Pane: the same card (no card change)_
 
-### Same averages, but different distributions
+### Similar averages, different distributions
 
 Despite similar averages, Gemini generated more drawings graded Choice, while Opus had more graded Prime.
 
@@ -160,13 +160,13 @@ In other words, while Gemini is reliably good, Opus is slightly more likely to p
 
 How did Opus end up with more drawings graded Prime?
 
-Gemini and Opus are tied on Structural Coherence, and Gemini even leads slightly on Understanding Assignment.
+Gemini and Opus are nearly tied on Structural Coherence, and Gemini even leads slightly on Understanding Assignment.
 
-But in Je ne sais quoi, Opus has the advantage, which suggests that spark is what separates a good drawing from a great one.
+However, in the Je ne sais quoi category Opus has the advantage. This suggests that the gap between good and great comes down to that special something you can't quite put your finger on.
 
 `step: spend` · _Pane: bars — average cost per drawing, per model, with n_
 
-### Style ain’t cheap
+### Prime cuts ain't cheap
 
 But that special something has a price. Opus’s drawings cost roughly twice as much as Gemini’s.
 
@@ -189,7 +189,7 @@ I built it as a portfolio piece to showcase the sort of work I do in product ope
 
 If you’d like to talk about evaluation and the art of data collection, email me at [tysonwelsh@gmail.com](mailto:tysonwelsh@gmail.com) or [find me on LinkedIn](https://www.linkedin.com/in/tysonwelsh). 
 
-_(then the colophon: the drawer on its own page · the generative art series · the build stamp)_
+_(nothing below this: no colophon, build stamp or back link — the page ends on the last paragraph, then the site footer; owner, 2026-09-28)_
 
 ---
 

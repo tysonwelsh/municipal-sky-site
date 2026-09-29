@@ -1057,6 +1057,19 @@ html.jd-about-page.jd-folder-open { overflow: visible; }
      hold on it, and no hold spacer. */
   .jd-about--live .jd-step:first-of-type .jd-step-body { position: static; }
   .jd-about--live .jd-step:first-of-type::after { content: none; }
+  /* THE LAST STEP ENDS THE PAGE (owner, 2026-09-28: the outro's text should
+     still be on screen when the page bottoms out, with the site footer
+     below it — not scroll away into a gap). No clearance below it and no
+     hold spacer; its height is set so that, at the very bottom of the page,
+     its top has passed the focus line (so it lights) and its prose sits in
+     the upper half of the screen above the footer. */
+  .jd-about--live .jd-step[data-step="outro"] {
+    min-height: 58vh;
+    padding-bottom: var(--s-4);
+    margin-bottom: 0;           /* was 30vh of runway below the last step */
+  }
+  .jd-about--live .jd-about-notes { padding-bottom: var(--s-4); }
+  .jd-about--live .jd-step[data-step="outro"]::after { content: none; }
   /* THE HANDOFF'S RUNWAY. A scene change runs over the pane's height of
      scroll (D = 100vh - banner - s-3 + the strip's 28px GAP) that ENDS as
      the new scene's first step reaches the focus line (about-scenes.js,

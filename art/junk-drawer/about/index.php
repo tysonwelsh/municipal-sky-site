@@ -333,7 +333,7 @@ include __DIR__ . '/../../../includes/header.php';
         <p>Here&rsquo;s how the four models compare on overall grade, across
         roughly 100 drawings each. It&rsquo;s a small sample, I know, but humor
         me.</p>
-        <p>On average, Claude Opus 5 and Gemini 3.1 Pro are about even.</p>
+        <p>On average, Claude Opus 5 has a <em>slight</em> lead over Gemini 3.1 Pro.</p>
         <p>Kimi K3 isn&rsquo;t far behind in third, with GPT-5.1 a distant
         fourth.</p>
         </div>
@@ -342,7 +342,7 @@ include __DIR__ . '/../../../includes/header.php';
 
       <div class="jd-step" data-scene="analytics" data-step="distribution" data-view="grades" data-focus="spread-top2">
         <div class="jd-step-body">
-        <h2>Same averages, but different distributions</h2>
+        <h2>Similar averages, different distributions</h2>
         <p>Despite similar averages, Gemini generated more drawings graded
         Choice, while Opus had more graded Prime.</p>
         <p>In other words, while Gemini is reliably good, Opus is slightly more
@@ -354,16 +354,14 @@ include __DIR__ . '/../../../includes/header.php';
         <div class="jd-step-body">
         <h2>The je ne sais quoi factor</h2>
         <p>How did Opus end up with more drawings graded Prime?</p>
-        <p>Gemini and Opus are tied on Structural Coherence, and Gemini even
-        leads slightly on Understanding Assignment.</p>
-        <p>But in Je ne sais quoi, Opus has the advantage, which suggests that
-        spark is what separates a good drawing from a great one.</p>
+        <p>Gemini and Opus are nearly tied on Structural Coherence, and Gemini even leads slightly on Understanding Assignment.</p>
+        <p>However, in the Je ne sais quoi category Opus has the advantage. This suggests that the gap between good and great comes down to that special something you can&rsquo;t quite put your finger on.</p>
         </div>
       </div>
 
       <div class="jd-step" data-scene="analytics" data-step="spend" data-view="cost">
         <div class="jd-step-body">
-        <h2>Style ain&rsquo;t cheap</h2>
+        <h2>Prime cuts ain&rsquo;t cheap</h2>
         <p>But that special something has a price. Opus&rsquo;s drawings cost
         roughly twice as much as Gemini&rsquo;s.</p>
         <p>Kimi K3&rsquo;s drawings are the cheapest of the four, yet it still
@@ -394,15 +392,8 @@ include __DIR__ . '/../../../includes/header.php';
         </div>
       </div>
 
-      <!-- outro -->
-      <footer class="jd-colophon" aria-label="build and series">
-        <p><a href="/art/junk-drawer/">the drawer on its own page</a><span class="jd-about-sep">&middot;</span><a href="/art/" aria-label="the generative art series">the generative art series</a></p>
-        <p class="jd-build" aria-label="build version">
-          <?php echo htmlspecialchars($jd_version); ?><span class="jd-build-sep">&middot;</span><?php echo $jd_build; ?><?php if ($jd_deployed): ?><span class="jd-build-sep">&middot;</span><?php echo $jd_deployed; ?><?php endif; ?>
-        </p>
-      </footer>
-
-      <p class="jd-back"><a href="#drawer">THE DRAWER &#8593;</a></p>
+      <!-- (owner, 2026-09-28) no colophon, build stamp or back link under the
+           outro: the page ends on its last paragraph, then the site footer -->
 
     </section>
 
