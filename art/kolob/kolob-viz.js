@@ -1163,11 +1163,12 @@ window.KolobViz = (function () {
   // (Round 2: the head is filled, and its ring stands a fifth of a space off
   // it — a hollow head in a ring that hugged it read as two outlines, one
   // inside the other: the second stroke the owner ruled out. The ring is the
-  // bell's one outline, 0.45 sp round about a smaller head, its ink's box
-  // the width round 1's was: two strokes a step apart (1.15 sp at the
-  // page's rate) stand clear of each other. The peal is one line, printed
-  // in the order it is rung — the method is read from that order.)
-  var TOWER_INK = 0.5, TOWER_MUFFLED = 0.32, TOWER_SCALE = 0.35, TOWER_RING = 1.28;   // (small: a peal's strokes come a staff space apart at the page's rate; the ring, in the head's own size: 0.45 sp)
+  // bell's one outline, 0.4 sp round about a smaller head: two strokes a
+  // step apart (1.15 sp at the page's rate) stand clear of each other with
+  // room to spare, so a stroke pushed aside catches up within a few. The
+  // peal is one line, printed in the order it is rung — the method is read
+  // from that order.)
+  var TOWER_INK = 0.5, TOWER_MUFFLED = 0.32, TOWER_SCALE = 0.3, TOWER_RING = 1.333;   // (small: a peal's strokes come a staff space apart at the page's rate; the ring, in the head's own size: 0.4 sp)
   function takeTower(ns) {
     var g0 = groups.length;
     takeLayer("tower", ns, 1, null, { scale: TOWER_SCALE, ink: ns[0].muffled ? TOWER_MUFFLED : TOWER_INK,
