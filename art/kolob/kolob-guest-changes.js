@@ -416,43 +416,66 @@ window.KOLOB.GuestChanges = (function () {
   // a muffled stroke (the leather on the clapper): the upper partials all
   // but gone, the rest softer, the stroke slower to speak
   var MUFFLE = { hum: 0.5, prime: 0.42, tierce: 0.28, quint: 0.2, nominal: 0.1, deciem: 0.04, superquint: 0.04, octave: 0.03 };
-  var AHEAD = 2.5, SLICE = 1.0;
-  function perform(ctx, dest, t, material, stream, hooks) {
-    hooks = hooks || {};
-    var m = prepare(material, stream), sc = score(m, stream, t), Y = need(stream).fork("synth"), N = m.bells.length;
-    var tEnd = sc.end + 0.5, born = Math.max(0, t - 0.05);
-    function G(v) { var g = ctx.createGain(); g.gain.setValueAtTime(v, born); return g; }
-    // THE AIR: the valley between (a lowpass, the wind moving the level),
-    // and the far hillside's echo, from the other side
-    var bus = G(LEVEL), air = ctx.createBiquadFilter(), wind = G(1), out = ctx.createStereoPanner ? ctx.createStereoPanner() : G(1);
-    air.type = "lowpass"; air.frequency.setValueAtTime(2700 - 1300 * m.distance, born); air.Q.setValueAtTime(0.6, born);
-    if (out.pan) out.pan.setValueAtTime(0, born);
-    bus.connect(air); air.connect(wind); wind.connect(out); out.connect(dest);
-    var ed = ctx.createDelay(1), el = ctx.createBiquadFilter(), eg = G(0.1 + 0.08 * m.distance), ep = ctx.createStereoPanner ? ctx.createStereoPanner() : G(1);
-    ed.delayTime.setValueAtTime(0.22 + 0.25 * m.distance, born); el.type = "lowpass"; el.frequency.setValueAtTime(1300, born);
-    if (ep.pan) ep.pan.setValueAtTime(-m.side * m.where * 0.55, born);
-    air.connect(ed); ed.connect(el); el.connect(eg); eg.connect(ep); ep.connect(dest);
-    var wv = 1; wind.gain.setValueAtTime(1, born);
-    for (var wt = born + Y.rnd(2, 5); wt < tEnd; wt += Y.rnd(3, 7)) { wv = Math.pow(10, Y.rnd(-1.2, 1.2) / 20); wind.gain.linearRampToValueAtTime(wv, wt); }
-    // THE BELLS: each its partials, running silent from the first stroke to
-    // the last, re-excited at every stroke
+  // THE TOWER: its bells (each its partials, running silent from its birth
+  // to its end, re-excited at every stroke) and the valley's air between
+  // (a lowpass, the wind moving the level, the far hillside's echo from the
+  // other side). o = { born, end, Y (the synth stream), side, where,
+  // distance, level, air (false: the bells alone, dry — a lab's) }
+  // → { stroke(i, ts, v, muffled), voices, bus, close() }
+  function tower(ctx, dest, bells, o) {
+    var born = o.born, tEnd = o.end, Y = o.Y, N = bells.length, nodes = [];
+    function G(v) { var g = ctx.createGain(); g.gain.setValueAtTime(v, born); nodes.push(g); return g; }
+    function panner(p) { var x = ctx.createStereoPanner ? ctx.createStereoPanner() : ctx.createGain(); if (x.pan) x.pan.setValueAtTime(Math.max(-1, Math.min(1, p)), born); nodes.push(x); return x; }
+    var bus = G(o.level != null ? o.level : LEVEL);
+    if (o.air === false) bus.connect(dest);
+    else {
+      var air = ctx.createBiquadFilter(), wind = G(1), out = panner(0);
+      air.type = "lowpass"; air.frequency.setValueAtTime(2700 - 1300 * o.distance, born); air.Q.setValueAtTime(0.6, born); nodes.push(air);
+      bus.connect(air); air.connect(wind); wind.connect(out); out.connect(dest);
+      var ed = ctx.createDelay(1), el = ctx.createBiquadFilter(), eg = G(0.1 + 0.08 * o.distance), ep = panner(-o.side * o.where * 0.55);
+      ed.delayTime.setValueAtTime(0.22 + 0.25 * o.distance, born); el.type = "lowpass"; el.frequency.setValueAtTime(1300, born); nodes.push(ed, el);
+      air.connect(ed); ed.connect(el); el.connect(eg); eg.connect(ep); ep.connect(dest);
+      for (var wt = born + Y.rnd(2, 5); wt < tEnd; wt += Y.rnd(3, 7)) wind.gain.linearRampToValueAtTime(Math.pow(10, Y.rnd(-1.2, 1.2) / 20), wt);
+    }
     var noise = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.06), ctx.sampleRate), nd = noise.getChannelData(0);
     for (var ni = 0; ni < nd.length; ni++) nd[ni] = Y.rnd(-1, 1);
-    var voices = m.bells.map(function (b) {
-      var pan = ctx.createStereoPanner ? ctx.createStereoPanner() : G(1);
-      if (pan.pan) pan.pan.setValueAtTime(Math.max(-1, Math.min(1, m.side * m.where + (b.bell - (N + 1) / 2) * 0.03)), born);
-      var bg = G(Math.pow(m.bells[N - 1].f / b.f, 0.3)), parts = {};
+    var voices = bells.map(function (b, i) {
+      var pan = panner(o.air === false ? 0 : o.side * o.where + (i + 1 - (N + 1) / 2) * 0.03);
+      var bg = G(Math.pow(bells[N - 1].f / b.f, 0.3)), parts = {}, down = Math.pow(300 / b.f, 0.5);
       bg.connect(pan); pan.connect(bus);
-      var down = Math.pow(300 / b.f, 0.5);
       PARTIALS.forEach(function (P) {
         var g = G(0), cents = (P[0] === "hum" ? -4 : 0) + Y.rnd(-5, 5), f = b.f * P[1] * Math.pow(2, cents / 1200), oscs = [f];
         if (P[4]) oscs.push(f + Y.rnd(0.35, 1.3));
-        oscs.forEach(function (fr) { var o = ctx.createOscillator(); o.type = "sine"; o.frequency.setValueAtTime(fr, born); o.connect(g); o.start(born); o.stop(tEnd); });
+        oscs.forEach(function (fr) { var x = ctx.createOscillator(); x.type = "sine"; x.frequency.setValueAtTime(fr, born); x.connect(g); x.start(born); x.stop(tEnd); nodes.push(x); });
         g.connect(bg);
         parts[P[0]] = { g: g, amp: P[2] / oscs.length, tau: P[3] * down };
       });
       return { bell: b, parts: parts, bg: bg };
     });
+    function stroke(i, ts, v, muffled) {
+      var V = voices[i], atk = muffled ? 0.005 : 0.0015;
+      PARTIALS.forEach(function (P) {
+        var p = V.parts[P[0]], peak = p.amp * v * (muffled ? MUFFLE[P[0]] : 1);
+        p.g.gain.setTargetAtTime(peak, ts, atk);
+        p.g.gain.setTargetAtTime(0, ts + 4 * atk, p.tau * (muffled ? 0.6 : 1));
+      });
+      // the clapper's knock: a short bright burst (a dull thud, muffled)
+      var src = ctx.createBufferSource(), bp = ctx.createBiquadFilter(), kg = ctx.createGain();
+      src.buffer = noise; bp.type = "bandpass"; bp.frequency.setValueAtTime(muffled ? 380 : Math.min(5200, V.bell.f * 4.4), ts); bp.Q.setValueAtTime(1.3, ts);
+      kg.gain.setValueAtTime(0, ts); kg.gain.linearRampToValueAtTime((muffled ? 0.05 : 0.12) * v, ts + 0.001); kg.gain.setTargetAtTime(0, ts + 0.002, muffled ? 0.012 : 0.006);
+      src.connect(bp); bp.connect(kg); kg.connect(V.bg);
+      src.start(ts); src.stop(ts + 0.05);
+    }
+    function close() { nodes.forEach(function (x) { try { x.disconnect(); } catch (e) { /* gone already */ } }); }
+    return { stroke: stroke, voices: voices, bus: bus, close: close, standing: nodes.length };
+  }
+
+  var AHEAD = 2.5, SLICE = 1.0;
+  function perform(ctx, dest, t, material, stream, hooks) {
+    hooks = hooks || {};
+    var m = prepare(material, stream), sc = score(m, stream, t), Y = need(stream).fork("synth");
+    var tEnd = sc.end + 0.5, born = Math.max(0, t - 0.05);
+    var T = tower(ctx, dest, m.bells, { born: born, end: tEnd, Y: Y, side: m.side, where: m.where, distance: m.distance, level: hooks.level });
     // where each ringer's stroke actually lands, and how hard (sound-level:
     // a steady band within a few milliseconds, a fair one looser, now and
     // then a bell a shade late), drawn for every stroke now, in order, so
@@ -460,19 +483,8 @@ window.KOLOB.GuestChanges = (function () {
     var spread = m.band === "steady" ? 0.007 : 0.016;
     var lands = sc.strikes.map(function () { return { dt: Y.rnd(-spread, spread) + (Y.chance(m.band === "fair" ? 0.05 : 0.015) ? Y.rnd(0.015, 0.03) : 0), dv: Y.rnd(0.9, 1.08) }; });
     function stroke(k) {
-      var s = sc.strikes[k], L = lands[k], V = voices[s.bell - 1], ts = Math.max(born + 0.01, s.t + L.dt), v = L.dv * (s.hand === "H" ? 1 : 0.94);
-      var atk = s.muffled ? 0.005 : 0.0015;
-      PARTIALS.forEach(function (P) {
-        var p = V.parts[P[0]], peak = p.amp * v * (s.muffled ? MUFFLE[P[0]] : 1);
-        p.g.gain.setTargetAtTime(peak, ts, atk);
-        p.g.gain.setTargetAtTime(0, ts + 4 * atk, p.tau * (s.muffled ? 0.6 : 1));
-      });
-      // the clapper's knock: a short bright burst (a dull thud, muffled)
-      var src = ctx.createBufferSource(), bp = ctx.createBiquadFilter(), kg = ctx.createGain();
-      src.buffer = noise; bp.type = "bandpass"; bp.frequency.setValueAtTime(s.muffled ? 380 : Math.min(5200, s.f * 4.4), ts); bp.Q.setValueAtTime(1.3, ts);
-      kg.gain.setValueAtTime(0, ts); kg.gain.linearRampToValueAtTime((s.muffled ? 0.05 : 0.12) * v, ts + 0.001); kg.gain.setTargetAtTime(0, ts + 0.002, s.muffled ? 0.012 : 0.006);
-      src.connect(bp); bp.connect(kg); kg.connect(V.bg);
-      src.start(ts); src.stop(ts + 0.05);
+      var s = sc.strikes[k], L = lands[k];
+      T.stroke(s.bell - 1, Math.max(born + 0.01, s.t + L.dt), L.dv * (s.hand === "H" ? 1 : 0.94), s.muffled);
     }
     function tell(k) {
       var s = sc.strikes[k];
@@ -496,20 +508,17 @@ window.KOLOB.GuestChanges = (function () {
     if (hooks.onStage) sc.stages.forEach(function (st) { hooks.onStage(st); });
     if (hooks.onCall) sc.calls.forEach(function (c) { hooks.onCall(c); });
     // when the last hum has gone, let the tower go
-    var sent = ctx.createConstantSource ? ctx.createConstantSource() : ctx.createOscillator(), sg = G(0);
-    sent.connect(sg); sg.connect(bus);
-    sent.onended = function () {
-      try { voices.forEach(function (V) { V.bg.disconnect(); }); bus.disconnect(); air.disconnect(); wind.disconnect(); out.disconnect(); ed.disconnect(); el.disconnect(); eg.disconnect(); ep.disconnect(); sg.disconnect(); sent.disconnect(); }
-      catch (e) { /* gone already */ }
-    };
+    var sent = ctx.createConstantSource ? ctx.createConstantSource() : ctx.createOscillator(), sg = ctx.createGain();
+    sg.gain.setValueAtTime(0, born); sent.connect(sg); sg.connect(T.bus);
+    sent.onended = function () { T.close(); try { sg.disconnect(); sent.disconnect(); } catch (e) { /* gone already */ } };
     sent.start(born); sent.stop(tEnd + 0.2);
-    perform.last = { score: sc, voices: voices.length, nodesStanding: 12 + voices.length * (2 + PARTIALS.length * 2 + 3) };
+    perform.last = { score: sc, voices: T.voices.length, nodesStanding: T.standing };
     return sc.end;
   }
 
   return {
     NAME: NAME, LABEL: LABEL, ODDS: ODDS, LEVEL: LEVEL, METHODS: METHODS, PARTIALS: PARTIALS, STAGE_NAME: STAGE_NAME,
-    plan: plan, decide: decide, prepare: prepare, score: score, perform: perform,
+    plan: plan, decide: decide, prepare: prepare, score: score, perform: perform, tower: tower, MUFFLE: MUFFLE,
     rows: function (stage, method, leads, calls) { return rowsOf(stage, method, leads, calls); }, verify: verify, touches: touches, parse: parse, apply: apply,
   };
 })();

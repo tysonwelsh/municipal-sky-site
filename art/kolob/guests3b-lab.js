@@ -418,6 +418,41 @@ window.Guests3bLab = (function () {
     });
   }
 
+  // ONE BELL, ITS PARTIALS: the ring's tenor struck once open and once
+  // muffled, dry (the tower's own voice, KOLOB.GuestChanges.tower, the air
+  // left out), and each partial read off the spectrum 0.25 s after the
+  // stroke — a tower bell's hum (½) and minor-third tierce (1.2) against a
+  // handbell's fundamental and twelfth (3) — with how long each rings
+  function fft(re, im) {
+    var n = re.length;
+    for (var i = 1, j = 0; i < n; i++) { var bit = n >> 1; for (; j & bit; bit >>= 1) j ^= bit; j ^= bit; if (i < j) { var tr = re[i]; re[i] = re[j]; re[j] = tr; var ti = im[i]; im[i] = im[j]; im[j] = ti; } }
+    for (var len = 2; len <= n; len <<= 1) {
+      var ang = -2 * Math.PI / len, wr = Math.cos(ang), wi = Math.sin(ang);
+      for (var k = 0; k < n; k += len) { var cr = 1, ci = 0; for (var m = 0; m < len / 2; m++) {
+        var ar = re[k + m + len / 2] * cr - im[k + m + len / 2] * ci, ai = re[k + m + len / 2] * ci + im[k + m + len / 2] * cr;
+        re[k + m + len / 2] = re[k + m] - ar; im[k + m + len / 2] = im[k + m] - ai; re[k + m] += ar; im[k + m] += ai;
+        var nr = cr * wr - ci * wi; ci = cr * wi + ci * wr; cr = nr; } }
+    }
+  }
+  function bellPartials() {
+    var st = settings(), m = ringMaterial(st), b = m.bells[m.bells.length - 1], off = new OfflineAudioContext(1, SR * 9, SR);
+    var T = GC.tower(off, off.destination, [b], { born: 0, end: 9, Y: stream(st.seed, GC.LABEL + 1).fork("synth"), air: false, level: 1 });
+    T.stroke(0, 0.1, 1, false); T.stroke(0, 4.6, 1, true);
+    return off.startRendering().then(function (buf) {
+      var x = buf.getChannelData(0), N = 32768;
+      function spectrum(at) {
+        var re = new Float32Array(N), im = new Float32Array(N), a0 = Math.floor(at * SR);
+        for (var u = 0; u < N; u++) re[u] = (x[a0 + u] || 0) * (0.5 - 0.5 * Math.cos(2 * Math.PI * u / N));
+        fft(re, im);
+        return function (fq) { var lo = Math.floor(fq * 0.985 * N / SR), hi = Math.ceil(fq * 1.015 * N / SR), bv = 0; for (var j = lo; j <= hi; j++) bv = Math.max(bv, re[j] * re[j] + im[j] * im[j]); return 10 * Math.log10(bv + 1e-30); };
+      }
+      var open = spectrum(0.35), late = spectrum(2.6), muf = spectrum(4.85);
+      var names = GC.PARTIALS.map(function (P) { return [P[0], P[1]]; });
+      var top = Math.max.apply(null, names.map(function (n) { return open(b.f * n[1]); })), mtop = top;
+      return { f: +b.f.toFixed(1), rows: names.map(function (n) { return { partial: n[0], ratio: n[1], open: +(open(b.f * n[1]) - top).toFixed(1), after2s: +(late(b.f * n[1]) - top).toFixed(1), muffled: +(muf(b.f * n[1]) - mtop).toFixed(1) }; }) };
+    });
+  }
+
   // ==========================================================================
   // THE PLAN, READ — each character's own marks, from the plan alone (pure):
   // its metre, its beat, how many keys a second, where it sits (the mean
@@ -588,6 +623,12 @@ window.Guests3bLab = (function () {
     r4.appendChild(button("▶ the tower alone", null, function () { playChanges(false); }));
     var bk = button("check", "k3b-check", function () { busy(bk, checkChanges()).then(showRingCheck); });
     r4.appendChild(bk);
+    var bp = button("one bell, its partials", null, function () { busy(bp, bellPartials()).then(function (o) {
+      var box = $("k3b-cres"); box.innerHTML = "";
+      box.appendChild(el("p", "k3b-stat", "The tenor (" + o.f + " Hz) struck once open and once muffled, dry; each partial in dB under the loudest, 0.25 s after the stroke (and 2.5 s after it)."));
+      box.appendChild(table(["partial", "× the note", "open", "2.5 s on", "muffled"], o.rows.map(function (r) { return [r.partial, r.ratio, r.open, r.after2s, r.muffled]; })));
+    }); });
+    r4.appendChild(bp);
     cc.appendChild(r4);
     cc.appendChild(el("p", "k3b-stat")).id = "k3b-method";
     cc.appendChild(el("p", "k3b-stat")).id = "k3b-rownow";
@@ -698,6 +739,6 @@ window.Guests3bLab = (function () {
   init();
   return {
     compose: compose, playVariations: playVariations, playChanges: playChanges, stop: stop, checkVariations: checkVariations, checkChanges: checkChanges,
-    readPlan: function () { return readPlan(varMaterial(settings()).plan); }, odds: odds, purity: purity, cost: cost, state: S, settings: settings,
+    readPlan: function () { return readPlan(varMaterial(settings()).plan); }, odds: odds, bellPartials: bellPartials, purity: purity, cost: cost, state: S, settings: settings,
   };
 })();
