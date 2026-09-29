@@ -444,7 +444,10 @@ window.KOLOB.VoicesBand = (function () {
       lay(veil.frequency, pts, function (p) { return veilAt(dd(p)); });
       lay(shelf.gain, pts, function (p) { return shelfDbAt(dd(p)); });
       lay(direct.gain, pts, function (p) { return Math.pow(10, dirDbAt(dd(p)) / 20); });
-      lay(send.gain, pts, function (p) { return Math.pow(10, airDbAt(dd(p)) / 20); });
+      // (a stereo panner sums a band's near-alike channels into one side:
+      // up to 1 + sin(πp/2) in power. The send gives that back, so the lean
+      // moves the air and adds nothing to it)
+      lay(send.gain, pts, function (p) { return Math.pow(10, airDbAt(dd(p)) / 20) / (airPan.pan ? Math.sqrt(1 + Math.sin(Math.abs(sd(p) * AIR_LEAN) * Math.PI / 2)) : 1); });
       lay(eg.gain, pts, function (p) { return echoAt(dd(p)) * Math.pow(10, dirDbAt(dd(p)) / 20); });
       if (pan.pan) lay(pan.pan, pts, sd);
       if (ep.pan) lay(ep.pan, pts, function (p) { return -sd(p) * 0.5; });

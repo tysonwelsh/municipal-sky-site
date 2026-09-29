@@ -83,7 +83,7 @@
 //   score(material, stream, t0) → the whole passage as data (pure)
 //   perform(ctx, dest, t, material, stream, hooks?) → end time (s, absolute)
 //     hooks: { defer(at, fn), onNote({freq, t, dur, part, band, strain, bar,
-//              beat, downbeat, beatS, loud}), onStage({stage, t0, band,
+//              beat, downbeat, beatS, loud, hymnId (that band's own)}), onStage({stage, t0, band,
 //              side, label, detail}), still (a lab's: no road — the band
 //              stands in the street and plays) }
 //   ODDS, EXCLUDES, SEATS, LEVEL, LABEL, NAME, MAX_DUR
@@ -888,7 +888,7 @@ window.KOLOB.GuestBands = (function () {
       sl.ev.forEach(function (e) {
         band.play(e.t, [{ f: e.f, dur: e.dur, acc: !!e.acc, stacc: !!e.stacc, dyn: e.dyn }], e.inst);
         if (hooks.onNote) hooks.onNote({ freq: e.f, t: e.t, dur: e.dur, part: e.part, inst: e.inst, band: bd.k, strain: e.strain, bar: e.bar, beat: e.beat,
-                                          downbeat: !!e.downbeat, doubling: !!e.doubling, beatS: bd.beatS, meter: bd.meter, loud: e.loud });
+                                          downbeat: !!e.downbeat, doubling: !!e.doubling, beatS: bd.beatS, meter: bd.meter, loud: e.loud, hymnId: bd.hymnId });
       });
       sl.dr.forEach(function (e) {
         if (e.kind === "rollTo") band.drum(Math.max(bd.start, e.t - VB.LEAD.roll), "roll", e.dyn);
