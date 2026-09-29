@@ -47,7 +47,8 @@
 // (hooks.onStage); it emits nothing of its own. The hymn's written notes are
 // offered to hooks.onNote with `hosanna: true` (PLAN §8.12: "the hymn is
 // engraved normally; the shout is not engraved" — the shout offers none),
-// for the engine to engrave or not (ENGRAVE_HYMN).
+// marked logged: true while ENGRAVE_HYMN stands (the owner's switch: false
+// hides the hymn from the staff too, the Hosanna then wholly audio-only).
 //
 // PURE PLANNING. plan(), decide(), score() and words() touch no
 // AudioContext, DOM, clock or Math.random; the dice live on forks of the
@@ -415,7 +416,7 @@ window.KOLOB.GuestHosanna = (function () {
     }
     function report(ln) {
       if (!hooks.onNote) return;
-      ["S", "A", "T", "B"].forEach(function (p) { ln.parts[p].forEach(function (n) { hooks.onNote({ layer: "choir", freq: n.f, t: n.t, dur: n.dur, part: p, hymnId: sc.tune.id, line: ln.i, beat: n.beat, deg: n.deg, monzo: n.monzo, hosanna: true, engrave: ENGRAVE_HYMN, logged: LOGGED }); }); });
+      ["S", "A", "T", "B"].forEach(function (p) { ln.parts[p].forEach(function (n) { hooks.onNote({ layer: "choir", freq: n.f, t: n.t, dur: n.dur, part: p, hymnId: sc.tune.id, line: ln.i, beat: n.beat, deg: n.deg, monzo: n.monzo, hosanna: true, engrave: ENGRAVE_HYMN, logged: ENGRAVE_HYMN }); }); });   // (logged: the engine's word for "the staff may show it")
     }
     // the organ a bar at a time, each piece handed ORGAN_AHEAD before it
     // sounds (a whole line of full organ laid at once kept some four hundred
