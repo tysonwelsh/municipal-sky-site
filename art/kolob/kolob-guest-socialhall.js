@@ -896,22 +896,30 @@ window.KOLOB.GuestSocialHall = (function () {
   // dragged is stick–slip: the leg catching and letting go forty to eighty
   // times a second, each catch ringing the bench's wood.
   // ==========================================================================
+  // BAKED A KIND AT A TIME, when first wanted (the benches at the press, the
+  // floor as the dance nears, the applause at the end — each in the clock's
+  // tick that first needs it: all at once cost 54 ms of main thread in the
+  // lab), each kind on a seed of its own, so the order they are first wanted
+  // in never changes how they sound
   var BAKED = typeof WeakMap !== "undefined" ? new WeakMap() : null;
+  var KINDS = ["step", "light", "heavy", "stamp", "clap", "applause", "scrape"];
   function mulberry(seed) {
     var s = seed >>> 0;
     return function () { s = (s + 0x6D2B79F5) | 0; var t = Math.imul(s ^ (s >>> 15), 1 | s); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
   }
-  function bake(ctx) {
-    if (BAKED && BAKED.get(ctx)) return BAKED.get(ctx);
-    var SR = ctx.sampleRate, rnd = mulberry(1847);
-    function buf(sec, fill) { var n = Math.ceil(sec * SR), b = ctx.createBuffer(1, n, SR), d = b.getChannelData(0); fill(d, n); return b; }
-    function ring(d, at, f, tau, amp) {              // a damped resonance struck at `at` (samples)
-      var w = 2 * Math.PI * f / SR, n = Math.min(d.length - at, Math.ceil(tau * 7 * SR));
+  function bakeKind(ctx, kind) {
+    var shelf = BAKED ? BAKED.get(ctx) : null;
+    if (!shelf) { shelf = {}; if (BAKED) BAKED.set(ctx, shelf); }
+    if (shelf[kind]) return shelf[kind];
+    var SR = ctx.sampleRate, rnd = mulberry(1847 + 7919 * KINDS.indexOf(kind));
+    function buf(sec, fill) { var n = Math.ceil(sec * SR), bb = ctx.createBuffer(1, n, SR), d = bb.getChannelData(0); fill(d, n); return bb; }
+    function ring(d, at, f, tau, amp) {              // a damped resonance struck at `at` (samples), cut 48 dB down
+      var w = 2 * Math.PI * f / SR, n = Math.min(d.length - at, Math.ceil(tau * 5.5 * SR));
       for (var i = 0; i < n; i++) d[at + i] += amp * Math.exp(-i / (tau * SR)) * Math.sin(w * i);
     }
     function burst(d, at, tau, amp, lp) {            // a noise burst through a one-pole lowpass
-      var y = 0, a = Math.min(0.99, lp), n = Math.min(d.length - at, Math.ceil(tau * 6 * SR));
-      for (var i = 0; i < n; i++) { y += a * ((rnd() * 2 - 1) - y); d[at + i] += amp * Math.exp(-i / (tau * SR)) * y; }
+      var y = 0, a2 = Math.min(0.99, lp), n = Math.min(d.length - at, Math.ceil(tau * 5.5 * SR));
+      for (var i = 0; i < n; i++) { y += a2 * ((rnd() * 2 - 1) - y); d[at + i] += amp * Math.exp(-i / (tau * SR)) * y; }
     }
     function foot(d, at, amp) {
       ring(d, at, 70 + rnd() * 40, 0.04 + rnd() * 0.015, amp);
@@ -920,7 +928,7 @@ window.KOLOB.GuestSocialHall = (function () {
     }
     function clap(d, at, amp) {
       var f = 1200 + rnd() * 1000, tau = 0.008 + rnd() * 0.006, w = 2 * Math.PI * f / SR, r = Math.exp(-Math.PI * f / 3 / SR);
-      var y1 = 0, y2 = 0, n = Math.min(d.length - at, Math.ceil(tau * 6 * SR));
+      var y1 = 0, y2 = 0, n = Math.min(d.length - at, Math.ceil(tau * 5.5 * SR));
       for (var i = 0; i < n; i++) { var x = (rnd() * 2 - 1) * Math.exp(-i / (tau * SR)), y = x + 2 * r * Math.cos(w) * y1 - r * r * y2; y2 = y1; y1 = y; d[at + i] += amp * 0.25 * y; }
       ring(d, at, 280 + rnd() * 80, 0.01, amp * 0.15);
     }
@@ -928,31 +936,36 @@ window.KOLOB.GuestSocialHall = (function () {
     function cluster(sec, n, spread, fn, peak) {
       return buf(sec, function (d) { for (var k = 0; k < n; k++) fn(d, Math.floor((0.03 + Math.max(0, (rnd() + rnd() - 1) * spread + spread)) * SR), 0.55 + rnd() * 0.45); norm(d, peak); });
     }
-    var B = {
-      step: [0, 1, 2, 3].map(function () { return buf(0.3, function (d) { foot(d, 10, 1); norm(d, 0.5); }); }),
-      light: [0, 1, 2].map(function () { return cluster(0.35, 8, 0.03, foot, 0.55); }),
-      heavy: [0, 1, 2].map(function () { return cluster(0.38, 12, 0.025, foot, 0.8); }),
-      stamp: [0, 1].map(function () { return cluster(0.4, 14, 0.012, foot, 1); }),
-      clap: [0, 1, 2].map(function () { return cluster(0.25, 8, 0.015, clap, 0.6); }),
-      applause: [buf(2.6, function (d, n) {
-        for (var p = 0; p < 16; p++) { var rate = 4.5 + rnd() * 2.5, tt = rnd() * 0.2; while (tt < 2.45) { var at = Math.floor(tt * SR), env = Math.min(1, tt / 0.18) * Math.min(1, (2.5 - tt) / 0.9); clap(d, at, env * (0.6 + rnd() * 0.4)); tt += (1 / rate) * (0.8 + rnd() * 0.4); } }
-        norm(d, 0.7);
-      })],
-      scrape: [0, 1, 2].map(function () {
-        return buf(1.1, function (d, n) {
-          var tt = 0.02, len = 0.95, base = 40 + rnd() * 40;
-          while (tt < len) {
-            var at = Math.floor(tt * SR), x = tt / len, env = Math.min(1, x / 0.08) * Math.min(1, (1 - x) / 0.15) * (0.7 + 0.3 * Math.sin(tt * 9 + rnd()));
-            ring(d, at, 160 + rnd() * 50, 0.008, env); ring(d, at, 650 + rnd() * 200, 0.004, env * 0.5); burst(d, at, 0.003, env * 0.3, 0.5);
-            tt += 1 / (base * (0.75 + rnd() * 0.5));
-          }
-          norm(d, 0.5);
+    var MAKE = {
+      step: function () { return [0, 1, 2, 3].map(function () { return buf(0.3, function (d) { foot(d, 10, 1); norm(d, 0.5); }); }); },
+      light: function () { return [0, 1, 2].map(function () { return cluster(0.35, 8, 0.03, foot, 0.55); }); },
+      heavy: function () { return [0, 1, 2].map(function () { return cluster(0.38, 12, 0.025, foot, 0.8); }); },
+      stamp: function () { return [0, 1].map(function () { return cluster(0.4, 14, 0.012, foot, 1); }); },
+      clap: function () { return [0, 1, 2].map(function () { return cluster(0.25, 8, 0.015, clap, 0.6); }); },
+      applause: function () {
+        return [buf(2.6, function (d) {
+          for (var q = 0; q < 12; q++) { var rate = 4.5 + rnd() * 2.5, tt = rnd() * 0.2; while (tt < 2.45) { var env = Math.min(1, tt / 0.18) * Math.min(1, (2.5 - tt) / 0.9); clap(d, Math.floor(tt * SR), env * (0.6 + rnd() * 0.4)); tt += (1 / rate) * (0.8 + rnd() * 0.4); } }
+          norm(d, 0.7);
+        })];
+      },
+      scrape: function () {
+        return [0, 1, 2].map(function () {
+          return buf(1.1, function (d) {
+            var tt = 0.02, len = 0.95, base = 40 + rnd() * 40;
+            while (tt < len) {
+              var at = Math.floor(tt * SR), x = tt / len, env = Math.min(1, x / 0.08) * Math.min(1, (1 - x) / 0.15) * (0.7 + 0.3 * Math.sin(tt * 9 + rnd()));
+              ring(d, at, 160 + rnd() * 50, 0.008, env); ring(d, at, 650 + rnd() * 200, 0.004, env * 0.5); burst(d, at, 0.003, env * 0.3, 0.5);
+              tt += 1 / (base * (0.75 + rnd() * 0.5));
+            }
+            norm(d, 0.5);
+          });
         });
-      }),
+      },
     };
-    if (BAKED) BAKED.set(ctx, B);
-    return B;
+    return (shelf[kind] = MAKE[kind]());
   }
+  // every kind at once (a lab, or an engine with an idle moment to spend)
+  function bake(ctx) { var B = {}; KINDS.forEach(function (k) { B[k] = bakeKind(ctx, k); }); return B; }
 
   // ==========================================================================
   // PERFORM — the hall, placed at t (synthesis; reads no clock)
@@ -977,7 +990,6 @@ window.KOLOB.GuestSocialHall = (function () {
     d1.delayTime.value = 0.013; d2.delayTime.value = 0.029; ag.gain.value = 0.25;
     floorBus.connect(d1); floorBus.connect(d2); d1.connect(lp); d2.connect(lp); lp.connect(ag); ag.connect(ds.floor || dest);
     made.push(lp, d1, d2, ag);
-    var B = bake(ctx);
     var pans = [-0.6, -0.3, 0, 0.3, 0.6].map(function (p) {
       var sp = ctx.createStereoPanner ? ctx.createStereoPanner() : ctx.createGain();
       if (sp.pan) sp.pan.value = p;
@@ -993,6 +1005,7 @@ window.KOLOB.GuestSocialHall = (function () {
     var LF = lands(sc.floor.length), LC = lands(sc.claps.length), LS = lands(sc.scrapes.length);
     function sound(arr, L, at, v, pan, dur) {
       var src = ctx.createBufferSource(), g = ctx.createGain();
+      arr = bakeKind(ctx, arr);
       src.buffer = arr[Math.floor(L.u * arr.length)]; src.playbackRate.value = L.rate;
       g.gain.value = v; src.connect(g); g.connect(pans[panIx(pan)]);
       src.start(Math.max(0, at));
@@ -1009,9 +1022,9 @@ window.KOLOB.GuestSocialHall = (function () {
       return singers[key];
     }
     var items = [];
-    sc.scrapes.forEach(function (s, i) { items.push({ t: s.t, go: function () { sound(B.scrape, LS[i], s.t, 0.7 * s.v, s.pan, s.dur); } }); });
-    sc.floor.forEach(function (f, i) { items.push({ t: f.t, go: function () { sound(B[f.kind] || B.light, LF[i], f.t, (FLOOR_V[f.kind] || 0.6) * f.v, f.pan); } }); });
-    sc.claps.forEach(function (c, i) { items.push({ t: c.t, go: function () { sound(c.kind === "applause" ? B.applause : B.clap, LC[i], c.t, 0.55 * c.v, c.pan, c.dur || 0); } }); });
+    sc.scrapes.forEach(function (s, i) { items.push({ t: s.t, go: function () { sound("scrape", LS[i], s.t, 0.7 * s.v, s.pan, s.dur); } }); });
+    sc.floor.forEach(function (f, i) { items.push({ t: f.t, go: function () { sound(FLOOR_V[f.kind] ? f.kind : "light", LF[i], f.t, (FLOOR_V[f.kind] || 0.6) * f.v, f.pan); } }); });
+    sc.claps.forEach(function (c, i) { items.push({ t: c.t, go: function () { sound(c.kind === "applause" ? "applause" : "clap", LC[i], c.t, 0.55 * c.v, c.pan, c.dur || 0); } }); });
     sc.fiddle.forEach(function (ph) { items.push({ t: ph.t, notes: ph.report, go: function () { folk.fiddle(ph.t, ph.notes, { drone: ph.drone, droneLevel: ph.droneLevel, dyn: ph.dyn }); } }); });
     if (VV) sc.calls.forEach(function (c) { items.push({ t: c.t - 0.45, notes: c.report, go: function () { singerOf(c).sing(ctx, callBus, c.t, c.notes, c.level, { breathBefore: 0.35, inhale: 0.5, pan: c.pan }); } }); });
     items.sort(function (a, b) { return a.t - b.t; });
@@ -1039,7 +1052,7 @@ window.KOLOB.GuestSocialHall = (function () {
 
 
   return {
-    plan: plan, decide: decide, prepare: prepare, tune: tune, score: score, perform: perform, bake: bake, MIX: MIX, CALLS: CALLS, FIGURES: FIGURES, PIECES: PIECES,
+    plan: plan, decide: decide, prepare: prepare, tune: tune, score: score, perform: perform, bake: bake, bakeKind: bakeKind, KINDS: KINDS, MIX: MIX, CALLS: CALLS, FIGURES: FIGURES, PIECES: PIECES,
     NAME: NAME, LABEL: LABEL, ODDS: ODDS, NEVER: NEVER, SEATS: SEATS,
     get LEVEL() { return LEVEL; }, set LEVEL(v) { LEVEL = +v; },
   };
