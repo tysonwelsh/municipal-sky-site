@@ -538,6 +538,18 @@ window.KOLOB.Calendar = (function () {
     }
     return { cantus: cantus, bad: bad };
   }
+  // THE CANTUS MUST MOVE: a reading whose notes are fewer than CANTUS_MOVES
+  // pitches (the prelude's keynote counted where the cantus begins after
+  // it) is no cantus — a tune whose stressed notes are all sol turned the
+  // drone once and held it fourteen minutes (seed 37, round 3b), and spelled
+  // nothing the doxology could be recognised by — so the desk tries the
+  // next way of writing it instead
+  var CANTUS_MOVES = 3;
+  function moves(cantus, from) {
+    var seen = from === 1 ? [[0, 0, 0, 0]] : [];
+    cantus.forEach(function (c) { if (!seen.some(function (m) { return pcDist(m, c.monzo) < 1; })) seen.push(c.monzo); });
+    return seen.length >= Math.min(CANTUS_MOVES, cantus.length + (from === 1 ? 1 : 0));
+  }
   // reckon(h, info, by): by "notes" (every syllable's note, the plan's own
   // reading) or "strong" (the skeleton); either way, in order, one a section
   function reckon(h, info, by) {
@@ -549,11 +561,12 @@ window.KOLOB.Calendar = (function () {
     // drone already sounds at dawn
     var A = fitFrom(notes, secs, 0);
     var firstHome = pcDist(notes[0].monzo, [0, 0, 0, 0]) <= TOLERANCE_C;
-    if (!A.bad.length && firstHome) return { ok: true, from: 0, n: A.cantus.length, cantus: A.cantus, by: strong ? "strong" : "notes", why: null };
+    if (!A.bad.length && firstHome && moves(A.cantus, 0)) return { ok: true, from: 0, n: A.cantus.length, cantus: A.cantus, by: strong ? "strong" : "notes", why: null };
     // B: the prelude is dawn on the keynote; the cantus begins in the invocation
     if (secs.length > 1) {
       var B = fitFrom(notes, secs, 1);
-      if (!B.bad.length) return { ok: true, from: 1, n: B.cantus.length, cantus: B.cantus, by: strong ? "strong" : "notes", why: null };
+      if (!B.bad.length && moves(B.cantus, 1)) return { ok: true, from: 1, n: B.cantus.length, cantus: B.cantus, by: strong ? "strong" : "notes", why: null };
+      if (!B.bad.length) return { ok: false, from: null, n: 0, cantus: [], by: strong ? "strong" : "notes", why: "the tune hardly moves (fewer than " + CANTUS_MOVES + " notes of it)" };
       return { ok: false, from: null, n: 0, cantus: [], by: strong ? "strong" : "notes", why: (B.bad.length) + " of " + (secs.length - 1) + " notes stand off their section's key", bad: B.bad };
     }
     return { ok: false, from: null, n: 0, cantus: [], by: strong ? "strong" : "notes", why: "one section before the doxology" };
