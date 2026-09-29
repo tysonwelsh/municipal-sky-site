@@ -157,3 +157,22 @@ the bands, 50 of 348 bring a second band. The gift's song seeded the next
 hymn twice in 24 (it seeds only a hymn after the testimony, or a doxology
 with no payoff — critic C's note 6 — and the doxology nearly always has
 one).
+
+## How it was checked (all silent)
+
+The harness (Node, the mocked audio graph and the engine's own clock) and
+muted headless Chrome over CDP (`--headless=new --mute-audio`, port 9495,
+profile `kolob-r3c-integrate-chrome`), the page on :8175.
+
+| check | result |
+|---|---|
+| the census, 1,000 first meetings × 2 samples | 60.5 % and 59.3 % with a guest; 0, 1, 2 guests: 395 · 455 · 150 and 407 · 447 · 146; **no third guest; 0 rules broken**; every guest seated (the rarest, the handcart company, 15 and 16 times; change ringing 21 and 7) — the tables above |
+| whole first meetings, seeds 1–24 (1,050 s each) | **24 of 24 PASS**, 0 runtime errors |
+| each new guest where it falls naturally (1,100–1,250 s) | the band and a second band, then the Social Hall (seed 22); the Hosanna (37, Easter); the far ward (10, 44, 65, 130); the gift (5); the variations (55); the company (41); the gulls (50); change ringing (53); the bearers (1, 2, 3); a lone hymn marched by two bands (47): **all PASS**, 0 runtime errors |
+| the switch, every new guest forced (seeds 9, 69, 3, 5) | each seated where its plan puts it, PASS (a switch cannot add a rite: seed 9's meeting has no testimony, so the gift and the bearers were forced on seeds 3 and 5) |
+| the Hosanna, unlogged (seed 37, `unlogged=hosanna`) | 415 notes and its span all `logged: false`, 0 leaks, no `hymn-announced`, never in `guests-drawn`; the conductor polled 58 times while it sounded and never named it; in the page the direction line stayed empty and nothing reached the minutes |
+| **REPRO** (the same seed twice, jittered timers, re-salted sound) | **PASS** on seeds 55, 37, 10, 5, 41, 50, 53, 1, 1847, 7 (1,100–1,250 s) and 22 at 1,200 s: the score identical every time, the sound identical under jittered timers (the variations, made ready in idle time, included). At 1,250 s seed 22's jittered run wrote three organ chords of meeting 2 a pump earlier at the run's cut-off (the organist's desk lays its next pump by the audio clock); the scores were identical, and at 1,200 s all four runs are |
+| **TRANSPORT**, paused and stopped *inside* each new guest (`pause=`, `stops=`) | **PASS** in the band (22, 230/240 s), the Social Hall (22, 990 s), the Hosanna (37, 1,100–1,160 s), the far ward (10, 420/430 s), the variations (55, 880/900 s), the gift (5, 395/405 s), the bearers (1, 530/540 s), the company (41, 870/880 s), the gulls (50, 540/542 s) and the far tower (53, 30/40 s): the same meeting after a 30 s hold, silent while held; after every stop 0 stale sources and 0 rooms still ringing reach the hall |
+| the page, muted Chrome, 860 and 390 px | 0 console errors or warnings in every trace (below); no sideways scroll (scroll width = the viewport); the direction line names the band, the Social Hall, the gift, the company… and never the Hosanna |
+| the staff (critic A, note 5) | the band's march drawn over the ward's hymn with the tuba's oom and its barlines (screenshot, seed 22, 860 px) |
+| the gift's words (critic C, note 1) | 400 tongues, 3,200 words: 0 name-shaped (Lila, Lola, Lana, Mila, Nola, Leah, Noah), 0 fallbacks |
