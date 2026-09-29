@@ -1163,15 +1163,16 @@ window.KolobViz = (function () {
   // (Round 2: the head is filled, and its ring stands a fifth of a space off
   // it — a hollow head in a ring that hugged it read as two outlines, one
   // inside the other: the second stroke the owner ruled out. The ring is the
-  // bell's one outline, 0.46 sp round, so that two strokes a step apart
-  // (1.15 sp at the page's rate) stand clear of each other without pushing;
-  // and the peal is one line, printed in the order it is rung.)
-  var TOWER_INK = 0.5, TOWER_MUFFLED = 0.32, TOWER_SCALE = 0.35, TOWER_RING = 1.32;   // (small: a peal's strokes come a staff space apart at the page's rate; the ring, in the head's own size: 0.46 sp)
+  // bell's one outline, 0.45 sp round about a smaller head, its ink's box
+  // the width round 1's was: two strokes a step apart (1.15 sp at the
+  // page's rate) stand clear of each other, and the peal prints in the
+  // order it is rung without being made to.)
+  var TOWER_INK = 0.5, TOWER_MUFFLED = 0.32, TOWER_SCALE = 0.35, TOWER_RING = 1.28;   // (small: a peal's strokes come a staff space apart at the page's rate; the ring, in the head's own size: 0.45 sp)
   function takeTower(ns) {
     var g0 = groups.length;
     takeLayer("tower", ns, 1, null, { scale: TOWER_SCALE, ink: ns[0].muffled ? TOWER_MUFFLED : TOWER_INK,
       qOf: function (n) { return keyedQ(n.freq, null, null, n.monzo, cond.mode); } });
-    var gs = madeSince(g0, 1, "peal");
+    var gs = madeSince(g0, 1);
     unstemmed(gs, false);
     gs.forEach(function (gr) { gr.ring = true; gr.ringK = TOWER_RING; });
   }
