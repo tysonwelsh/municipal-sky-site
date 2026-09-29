@@ -4022,7 +4022,11 @@ body.jd-pod-drag, body.jd-pod-drag * {
      specificity as the line above and would otherwise lose to it purely on
      source order, taking the names' (and the cost line's) room with it */
   .jd-pod--said { --pbase: 76px; }
-  .jd-pod--said .jd-pod-who b { font-size: 0.6rem; }
+  /* balanced, so a two-word maker that must wrap in a 74px pedestal
+     breaks as "Claude / Sonnet 5", never "Claude Sonnet / 5" (critic/coder
+     mobile round, owner report, 2026-09-29 — the size is unchanged;
+     where text-wrap is unsupported the break is simply the greedy one) */
+  .jd-pod--said .jd-pod-who b { font-size: 0.6rem; text-wrap: balance; }
   .jd-pod-row, .jd-pod-tray { gap: 4px; }
   .jd-pod-block { font-size: 0.74rem; }
   .jd-pod-print .jd-turn-corner { width: 13px; height: 13px; }
@@ -4183,19 +4187,37 @@ body.jd-pod-drag, body.jd-pod-drag * {
        section. */
     box-shadow: 0 8px 10px -9px rgba(20, 10, 3, 0.55);
   }
-  /* the plate is sized by the HEIGHT the flex exhibit hands it (see the
-     flex-exhibit note above — this replaces the 30dvh→26dvh clamp era):
-     square via its own aspect-ratio, capped so an outlandishly tall
-     viewport doesn't turn the survey into a poster with a footnote */
+  /* THE PLATE IS ART + STRIP, IN FLOW (critic/coder mobile round, owner
+     report, 2026-09-29). The plate used to carry its own aspect-ratio: 1/1
+     — a leftover of the flex-exhibit era, when the plate WAS the square.
+     Since the filmstrip moved inside the figure (2026-09-16) the plate is
+     the square artwork (.jd-turn-art, square of its own width) PLUS the
+     strip under it, so a square plate is a contradiction the engine has to
+     settle: current Chrome/WebKit let the ratio's automatic minimum size
+     grow the box to its content (348×384 at 390 wide), but an engine that
+     honours the ratio strictly — older iOS Safari, the owner's phone —
+     keeps it 348×348 and lays the strip 27px over the prompt box beneath.
+     No ratio here now: the art keeps the square, the plate is simply its
+     content's height in every engine, and there is no minimum-size rule
+     left for an engine to disagree about. (Was `aspect-ratio: 1 / 1`.) */
   .jd-turn-pin .jd-turn-plate {
     flex: 0 0 auto; width: 100%; height: auto;
     max-height: none; max-width: 100%;
-    aspect-ratio: 1 / 1;
   }
   .jd-turn-pin .jd-turn-corner { width: 15px; height: 15px; }
   /* portrait rhythm tightens one step with the one-screen goal: the gap
      ahead of the buttons drops from a section break to a row break */
   .jd-bench-r .jd-turn-actions { margin-top: var(--sp-3); }
+  /* THE EMPTIED TRAY GIVES ITS AIR BACK (critic/coder mobile round, owner
+     report, 2026-09-29). Once every drawing stands on a step, the bare
+     tray's 16px margin plus its 46px floor left a ~62px band of blank
+     paper between the podium and the buttons — read as a gap in the
+     sheet, not as a place. It stays a real press target (tapping it arms
+     the tray, so a print can come back down), but it is a strip the whole
+     width of the sheet, so 32px is an easy landing — the same full-width
+     argument the owner accepted for the 40px selects. Only the BARE tray
+     changes; a tray still holding prints keeps its print-sized floor. */
+  .jd-pod-tray.is-bare { margin-top: 6px; min-height: 32px; }
 }
 @media (max-width: 600px) {
   /* the heading steps down on a phone by moving --t-title, NOT by setting
@@ -4279,6 +4301,45 @@ body.jd-pod-drag, body.jd-pod-drag * {
   .jd-turn-go, .jd-turn-alt { min-height: 44px; }
   .jd-turn-select { min-height: 40px; }
   .jd-rail-ring { width: 34px; height: 34px; }
+  /* THE SMALL MARKS GET A FINGER'S BAND (critic/coder mobile round, owner
+     report, 2026-09-29). Five presses on the bench measured under the
+     floor on a phone: the row label (348×15), its boxed plus (15×15), the
+     filmstrip's play (28×28), the paper swap (20×20) and the docket's
+     rings (34×34). None of them may LOOK any different — the owner drew
+     every one of those sizes — so each grows an invisible ::before hit
+     pad instead: a pseudo-element is part of its button, a press on it is
+     a press on the button, and it paints nothing. Each pad is sized to the
+     free paper around its mark, measured with elementFromPoint at 390×844
+     in Chrome and WebKit, so no pad reaches over another control:
+     — the play button: 8px all round → 44×44. Its right edge meets the
+       strip exactly (the strip sits 8px off, behind its own ::before
+       band); above and beside it is the plate's enlarge target, which
+       simply yields those 8px to the button that sits in it.
+     — the paper swap: 12px all round → 44×44, entirely inside the
+       drawing it sits on (it is seated 15px in from the corner).
+     — the rail rings: 5px all round → 44×44 — the rail's own 5px gap on
+       either side, so a pad meets the connector and never the next ring.
+     — the row label: 6px up (the row's top padding and rule) and 2px down
+       (the label-to-select gap) → 23px tall across the full 348px strip.
+       That is as far as it can go: 6px up is the previous row's select,
+       2px down is this row's, and a pad over a select would steal its
+       press. The full 44 would need the rows re-spaced, which is the
+       owner's one-screen rhythm (the 4px × 5 rows above), not a hit-area
+       fix. The boxed plus rides inside the label and its press bubbles to
+       the label's data-act, so the label's band is the plus's band too.
+     Scoped to the turn's scrim: the filmstrip is shared with the report
+     card and the about page, whose neighbours were not measured. */
+  .jd-turn-scrim .fs-play,
+  .jd-turn-scrim .jd-rowhead,
+  .jd-turn-scrim .jd-rail-step { position: relative; }
+  .jd-turn-scrim .fs-play::before,
+  .jd-turn-scrim .jd-turn-paper::before,
+  .jd-turn-scrim .jd-rail-step::before,
+  .jd-turn-scrim .jd-rowhead::before { content: ""; position: absolute; }
+  .jd-turn-scrim .fs-play::before { inset: -8px; }
+  .jd-turn-scrim .jd-turn-paper::before { inset: -12px; }
+  .jd-turn-scrim .jd-rail-step::before { inset: -5px; }
+  .jd-turn-scrim .jd-rowhead::before { inset: -6px 0 -2px; }
   /* immersive mode has slid the banner off the top (see .site-banner above),
      so the reserved band comes back as ordinary padding — and returns only
      while the chrome is actually showing */
@@ -4291,6 +4352,141 @@ body.jd-pod-drag, body.jd-pod-drag * {
   .jd-turn-scrim { padding: 10px 8px; align-items: flex-start; }
   html.jd-chrome .jd-turn-scrim { padding-top: calc(var(--banner-h) + 8px); }
   .jd-turn-actions .jd-turn-go, .jd-turn-actions .jd-turn-alt { flex: 1 1 auto; }
+}
+
+/* ============================================================================
+   THE SHORT LANDSCAPE PHONE (critic/coder mobile round, owner report,
+   2026-09-29). A phone on its side — 844×390, 932×430, 667×375 — is wide
+   enough to be served the desktop cards (everything above 700px is the
+   landscape layout) but gives them a third of a desktop's height: after
+   the site banner's reserved band the card has ~314px to stand in. Every
+   card that measured wrong there is re-cut here, and only here.
+   THE GUARD: max-height 500px AND landscape AND max-width 1000px. No
+   portrait tablet is 500px tall; no desktop window narrower than 1000px
+   and shorter than 500px is anything but a phone-shaped window, where
+   this is the right cut anyway. Portrait phones never match (portrait),
+   so every portrait rule above stands exactly as it was.
+   ========================================================================== */
+@media (max-width: 1000px) and (max-height: 500px) and (orientation: landscape) {
+  /* THE BRIEF: the textarea runs three lines instead of five. With the
+     rate-limit notice above it the card was 20px taller than its window
+     and the privacy line was cut in half along the sheet's bottom edge,
+     reading as clipped rather than as a scroll. Three lines of the field's
+     own line-height plus its own padding (the 1.35rem bottom band still
+     seats the counter); the field still resizes by hand. (Was rows=5 with
+     no min-height at this width.) */
+  .jd-turn-input { min-height: 0; height: calc(4.5em + 1.9rem + 2px); }
+
+  /* THE DARKROOM GIVES UP ITS SQUARE (mirroring the ≤600px phone band).
+     The square card was 280×280 here — the width clamp to 100vh − 110px
+     had nothing else to hold it — so PLEASE STAND BY wrapped to two lines
+     over the swatches and the margin line printed over the Model C/D
+     labels. Now the card takes the darkroom's own 560px measure (so the
+     announcement is one line again), the PILE keeps its square — sized by
+     the height actually left: the viewport less the banner band, the
+     scrim's insets, the card's border and the foot's band beneath (~70px
+     in all) — and the foot flows under it in a band of its own, exactly
+     as it does in portrait. The vh line is the fallback for engines
+     without dvh. */
+  .jd-turn[data-view="darkroom"] { width: min(560px, 100%); aspect-ratio: auto; }
+  .jd-dark {
+    height: auto; aspect-ratio: 1 / 1; margin: 0 auto;
+    width: min(100%, calc(100vh - var(--banner-h) - 70px));
+    width: min(100%, calc(100dvh - var(--banner-h) - 70px));
+  }
+  .jd-turn[data-view="darkroom"] .jd-turn-scroll { padding-bottom: 8px; }
+  .jd-dark-foot { position: static; margin: 4px 8% 0; }
+
+  /* THE RESULTS HEAD IS PAPER HERE. The reveal's head is an overlay band
+     with no ground (background: none) because on every other viewport the
+     2×2 pile fits under it and nothing ever passes beneath. Here the pile
+     is two screens tall and scrolls, and the drawings slid under a
+     transparent THE RESULTS and ✕. The band gets the sheet's own paper on
+     a ::before — the head's full box, edge to edge, since the drawings
+     also scroll through the 5px margin outside the printed double border
+     — with grain and mottle at their own origin (the head's containing
+     block is the card's padding box, the same box the card paints them
+     from), so the patch registers with the paper around it. The ::after
+     re-draws the double border's top and side segments over that patch
+     (the card's own rule is its ::before at inset 5px, 1px, z 6 — under
+     this band), so the rule still reads unbroken. Both sit at z -1 in the
+     head's own stacking context (it is positioned at z 20): under the
+     heading and the ✕, over everything that scrolls. The soft shadow is
+     the pin's, saying the same thing — this band lies over what moves. */
+  .jd-turn[data-view="plates"] .jd-turn-head::before,
+  .jd-turn[data-view="plates"] .jd-turn-head::after {
+    content: ""; position: absolute; z-index: -1; pointer-events: none;
+  }
+  .jd-turn[data-view="plates"] .jd-turn-head::before {
+    inset: 0;
+    background:
+      var(--tmottle) 0 0 / 420px 420px,
+      var(--tgrain) 0 0,
+      var(--tpaper);
+    box-shadow: 0 8px 10px -9px rgba(20, 10, 3, 0.55);
+  }
+  .jd-turn[data-view="plates"] .jd-turn-head::after {
+    inset: 5px 5px 0;
+    border: 1px solid var(--trule); border-bottom: 0;
+  }
+
+  /* THE BENCH ARRIVES TOP-FIRST. The exhibit rode the vertical centre of
+     a stretched column (owner, 2026-08-28) and the paperwork column held
+     min-height: 100% — on a 390px viewport that parked the drawing at
+     y 220 (Chrome) / y 247 (WebKit), half of it below the fold, and let
+     the two engines disagree by 53px of scroll. Top-anchored and with no
+     forced height, both columns start under the rail in every engine. The
+     plate keeps the report card's ruler (52dvh / 42vw) but its 240px
+     floor stands down to 180px, so the whole drawing is on screen when
+     the bench opens (≈203px at 390 tall, ≈224px at 430). */
+  .jd-turn[data-view="bench"] { --plate: clamp(180px, min(52dvh, 42vw), 420px); }
+  .jd-bench-l { justify-content: flex-start; }
+  .jd-bench-r { min-height: 0; }
+
+  /* THE PODIUM STEPS DOWN as it does at ≤430px. The landscape call and
+     unveil wear the desktop tiers (140 / 120px prints), which ran the
+     call to 2.2 screens with 3RD cut at the fold and the unveil's names
+     below it. The same step-down tokens as the podium's own breakpoint,
+     restated at the specificity of the landscape rules they replace; the
+     podium's cap follows the prints at the desktop proportion (840 = 6 ×
+     140, 720 = 6 × 120), so the blocks stay steps and not slabs. */
+  .jd-turn[data-view="call"] .jd-pod,
+  .jd-turn[data-view="said"] .jd-pod {
+    --pw: 74px; --pstep: 13px; --pbase: 40px;
+    max-width: calc(6 * var(--pw));
+  }
+  .jd-turn[data-view="said"] .jd-pod--said,
+  .jd-turn[data-view="said"] .jd-pod.jd-pod--said { --pbase: 76px; }
+  .jd-pod--said .jd-pod-who b { font-size: 0.6rem; text-wrap: balance; }
+  .jd-turn[data-view="call"] .jd-pod-row,
+  .jd-turn[data-view="said"] .jd-pod-row,
+  .jd-turn[data-view="call"] .jd-pod-tray,
+  .jd-turn[data-view="said"] .jd-pod-tray { gap: 4px; }
+  .jd-pod-block { font-size: 0.74rem; }
+  .jd-pod-print .jd-turn-corner { width: 13px; height: 13px; }
+  /* THE UNVEIL FITS ITS WINDOW (critic verification, same round,
+     2026-09-29). With the call's tokens alone the four-way unveil still
+     ran 14px past the scroller (281 vs 267 at 844×390), so DONE and TAKE
+     ANOTHER TURN sat across the sheet's bottom double border, and the
+     three-way one — which adds the "didn't survive" line — opened with its
+     buttons below the fold (312). The unveil is a filed answer, not a
+     working surface, so it gives the height back and the call does not:
+     — the prints stand at 64px (the unveil already holds its own, smaller
+       measure than the call on desktop: 120 against 140);
+     — the raised base drops 76 → 56px: at this width the tiers are ~108px
+       wide (the cap stays 444px, the call's, stated literally so the
+       smaller print doesn't narrow the tiers), every maker's name sets on
+       one line, and ordinal + name + cost need ~53px of the shortest
+       block, not the two-line allowance 76 was cut for;
+     — the scroller's air and the gaps around the lost line tighten a step.
+     Measured at 844×390, both engines: three-way 312 → 262, four-way
+     281 → 234 (scroller 267). */
+  .jd-turn[data-view="said"] .jd-pod { --pw: 64px; max-width: 444px; }
+  .jd-turn[data-view="said"] .jd-pod--said,
+  .jd-turn[data-view="said"] .jd-pod.jd-pod--said { --pbase: 56px; }
+  .jd-turn[data-view="said"] .jd-turn-scroll { padding-top: 6px; padding-bottom: 8px; }
+  .jd-turn[data-view="said"] .jd-pod-lost { margin-top: 4px; }
+  .jd-turn[data-view="said"] .jd-turn-actions { margin-top: 8px; }
 }
 /* ---- the visitor's own item, in the pile --------------------------------
    A standard .jd-item in every respect that the gesture code can see — the
