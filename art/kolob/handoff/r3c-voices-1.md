@@ -791,3 +791,282 @@ ahead).
   the Hosanna, into the organ's layer. It is not the Sunday's organist.
 - **`hooks.harmonium`** (the house's reed for the gift) is offered but
   uncalibrated. The gift's own reed is the measured one.
+
+---
+
+## Round 2: the critic's findings, answered (2026-09-29)
+
+**What is new to hear:** very little. The far ward now sings in
+twenty-four throats of its own instead of eight pews, at the same level.
+About one word in fifty of the gift's songs is drawn differently; none of
+the five seeds in the listening table changed. The Hosanna sounds exactly
+as before. Every other change is in what the guests *tell* the page, in
+the recipe, and in the lab. Still nobody has listened; every check below
+was silent (muted headless Chrome, or offline renders).
+
+**The one thing to listen for:** the Hosanna's shout, 0:02–0:20, for hiss
+or harshness (item 6).
+
+| commit | what |
+|---|---|
+| `42376ca9` | the Hosanna: notes `logged: false` always, `guest: "hosanna"`, `engrave` as the staff's own switch; `decide()` names the guests beside its doxology; `YIELD` |
+| `507b46ff` | the lab: every Hosanna note through the page's own gates; the offline warning; the stand-in's testimony–sacrament trade; the odds count the Hosanna's neighbours |
+| `b75cbdc7` | the gift: words compared by consonant and vowel; six names blocked; `ROWS`, `ROW_LABEL` |
+| `b7dcd17c` | the far ward: twenty-four throats by default, trimmed 0.9 dB |
+| `24788cbf` | `VoicesVocal` `opts.hSwell` (additive); the shout's three air levers; `material.only: "shout"`; ▶ the shout alone |
+| `8c7f6c38` and this | the handoff corrected in place (each place marked "round 2"), and this section |
+
+### 1. BLOCKING: the Hosanna's hymn would have printed a minutes row. Fixed.
+
+- **What was wrong.** `report()` sent `logged: ENGRAVE_HYMN`, which was
+  true. The minutes (`kolob-ui.js` `onNoteForLog`) skip only
+  `logged: false`, so the first hymn note after the shout's twenty silent
+  seconds would have queued "♮ 𐐗𐐎𐐌𐐊𐐡 speaks". The handoff said the
+  opposite in three places.
+- **Now.** Every note says `logged: false` and `guest: "hosanna"`, and
+  carries `engrave: ENGRAVE_HYMN`, the staff's own switch.
+  `ENGRAVE_HYMN` stays true because PLAN §8.12 asks for the hymn
+  engraved. It is inert today: `kolob-viz.js` `onNote` passes over every
+  `logged: false` note. So **the Hosanna is wholly audio-only until the
+  ENGRAVE request lands** (Requests, 4). It then engraves the hymn and
+  never the shout. `ENGRAVE_HYMN = false` keeps it audio-only for good.
+- **Verified.** The whole Hosanna was built on an offline context (seed 7,
+  a dedication) and every note it offered was put through the page's own
+  gates:
+  - 415 of 415 notes `logged: false`, 415 naming the Hosanna;
+  - **0** rows the minutes would write, **0** notes today's staff takes;
+  - 8 of 8 stages `logged: false`.
+
+  The lab's check prints the same tally.
+- **The handoff** is corrected in place: the plain summary, the module's
+  description, the recipe's staff paragraph, the check table, the SCORE
+  lines and the ENGRAVE request.
+
+### 2. `guest` on every note: done.
+
+The Hosanna's `report()` now sends `guest: "hosanna"`. The recipe's
+`onNote` goes through `guestNote(V, "hosanna", …)`, which sets `guest` and,
+as `V.logged` is false, `logged: false`.
+
+### 3. The recipe's gaps
+
+- **(a) The gift in `standingGuest`.** The glue calls `say()` for every
+  stage and labels any guest but the handbells "♪ the singing school". The
+  gift now exports `ROWS` (`rises`, `the ward hums`, `the harmonium`) and
+  `ROW_LABEL` ("✦ the gift of tongues"). The recipe gives the exact
+  three-line change to the glue (read `G.ROWS` and `G.ROW_LABEL`) and the
+  `GUEST_ROWS` entry `kolob-ui.js` needs, since the minutes print only the
+  stages that table names. `sings` and `the height` send no event at all.
+- **(b) `isLastDoxology`** is `C.si === C.hosanna.seat.sectionIndex`.
+  - `plan()` finds the last doxology in the plan it is handed
+    (`sections: plan`, which is `C.plan`). The order of service is final
+    before any guest is planned (`planMeeting` settles it by line ≈288;
+    the hook is at ≈554).
+  - `C.si` is the section the meeting is in (`enterSection`).
+  - A dev skip to "doxology" lands on the first of two (`skipToSection`
+    takes the first of a type). The Hosanna then waits for the second,
+    as it should.
+
+### 4. The far ward's voices: twenty-four throats, now the default
+
+The critic traced both, live, with this crew's tracer: seed 17, a
+conference, Tabernacle, the canon, 100 s each, back to back, load average
+8.6–10.3.
+
+| | audio thread: median · p90 · worst 5 s | longest callback | context nodes, peak | voice ledger, peak | mouths joined, max |
+|---|---|---|---|---|---|
+| eight pews of three | 39.9 · 48.0 · 48.0 % | 6.2 ms | 4,440 | 1,306 | 112 |
+| twenty-four throats | 34.2 · 45.8 · 49.6 % | 5.1 ms | 5,689 | 1,764 | 144 |
+
+- The clock kept time in both.
+- The throats cost no measurable share of the audio thread (within the
+  run's swing either way), only nodes: about **+1,250 at the context's
+  peak** and +458 in the ledger.
+- Under the owner's ruling, with nothing cut to a budget, **the throats
+  are the default now** (`voices: "people"`). The pews stay as the A/B
+  and the saving (`voices: "desks"`).
+
+**Their level.** Three throats sing a pew's line at `DESK_GAIN / √3` each.
+Rendered offline, the far ward alone, pews against throats:
+
+| seed | pews: integrated · loudest 3 s | throats | throats − pews | voice nodes at the peak (offline ledger) |
+|---|---|---|---|---|
+| 7, conference, Tabernacle | −30.2 · −28.6 LUFS | −29.5 · −27.5 | +0.7 · +1.1 LU | 374 → 792 |
+| 12, fast, Sacred Harp | −31.5 · −29.5 | −30.4 · −28.3 | +1.1 · +1.2 | 504 → 1,164 |
+| 17, conference, Tabernacle | −31.3 · −28.9 | −30.5 · −28.4 | +0.8 · +0.5 | 612 → 1,564 |
+
+- They measured about 0.9 dB louder, so the throats are trimmed 0.9 dB
+  (`PEOPLE_TRIM`).
+- Seed 7 now reads −30.4 · −28.4 against the pews' −30.2 · −28.6: the
+  calibrated level (about 10 LU under our ward) holds.
+- 0 clicks in every render.
+- **Not re-traced live after the trim.** It is a gain, not a structure,
+  so the critic's trace stands for it.
+
+### 5. An offline Hosanna renders 2.2 times slower than real time
+
+- **Why.** With no clock, nothing is armed, so every line of forty voices
+  and the organ is built at once. The critic's check took 263 s for
+  119.5 s of audio. Live play is unaffected (arming is what makes it
+  real-time).
+- **Anyone rendering a listening packet offline:** allow **4–5 minutes
+  for one Hosanna**. The lab's card now says so beside its check button.
+- The shout alone (`material.only: "shout"`, ▶ the shout alone) renders
+  offline in about 12 s for its 20 s.
+
+### 6. Hiss in the shout: measured, and its levers named
+
+The critic found the shout about 6 dB brighter above 4 kHz than the
+hymn. They named three possible sources: `effort`, the s said at 35 %,
+and each h swelling the breath fourfold (`H_SWELL`). Aspiration was the
+owner's hiss source #1 (PLAN §15). Each lever was turned on its own.
+
+- **Method.** Seed 7, a dedication, the shout alone, rendered offline in
+  the lab's room. The measure is the high band (4–10 kHz) against the
+  core (200 Hz–3 kHz), in 4096-sample frames within 25 dB of the loudest,
+  from 0.2 s before the first Hosanna to 1.5 s after the last amen. The
+  critic's method reproduces: −17.3 dB as built against their −17.5.
+
+| the shout | high band against core: median · p90 | total high-band energy |
+|---|---|---|
+| **as built** (s 0.35, h-swell ×4, effort ×1) | **−17.3 · −15.9 dB** | (reference) |
+| no s | −17.3 · −15.9 | — |
+| no h-swell | −17.3 · −15.9 | — |
+| no s and no h-swell | −17.3 · −15.9 | −0.004 dB |
+| s ×1 and h-swell ×12 (to prove the levers reach) | −17.2 · −15.7 | +0.03 dB |
+| effort ×0.75 | −18.6 · −17.2 | −1.1 dB |
+| effort ×0.5 | −20.2 · −18.8 | −2.7 dB |
+| **effort ×0** (a sung voice) | **−23.3 · −21.9** | −5.8 dB |
+| *(the hymn after it, the critic's)* | *−23.2* | |
+
+- **What it means.** The brightness is the raised voice itself: forty
+  voices' stronger upper harmonics (`effort` tilts the glottal source).
+  A real shout is brighter in the same way. The s and the h's are about a
+  thousandth of the high band's energy, too small to move even the p90.
+  In the quiet frames between the shouts (the room ringing), the high
+  band follows `effort` too (−57.3 dB under the loudest core as built,
+  −64.5 without effort).
+- **So the default is unchanged, and the owner's ear decides.** If the
+  shout sounds like hiss or harshness at 0:02–0:20:
+  - **`KOLOB.GuestHosanna.SHOUT_EFFORT`** is the lever for brightness.
+    At 0.5 it takes half the extra brightness away (−2.9 dB above 4 kHz)
+    at the same loudness: −1.8 against −1.7 LU vs the organ reference,
+    0 clicks.
+  - **`SHOUT_FRIC`** (the s, 0.35) and **`SHOUT_H_SWELL`** (null, so the
+    voices' ×4; 1 is none) do not change the level, but they are the
+    texture of the s and the h's, short bursts the ear may catch.
+  - `VoicesVocal` `opts.hSwell` is the per-line form (additive: a line
+    that does not pass it swells ×4 as before).
+- The Hosanna's hymn passes neither `fric` nor `hSwell` and is unchanged.
+
+### 7. The gift's words: fixed
+
+- **Repetition.** "One syllable said over and over" is now judged by
+  each syllable's consonant and vowel, its closing sound aside. So
+  *n-ah.n-ah-n* and *l-ah.l-ah.l-ah-l* are refused as na-na-na is.
+- **Names.** Lara, Nora, Lena, Mona, Hana and Yoda are in `BLOCK`. A
+  blocked word is also refused with a closing sound (*Lenan*, *mannan*).
+- **Measured over 2,000 tongues (16,000 words):**
+  - repeated syllables: 332 before, **0** now;
+  - the six names, with or without a closing sound: 47 before, **0** now;
+  - no word fell back to the emergency spelling.
+- **Unchanged:** the tongues of seeds 3, 7, 12, 21 and 40, so the
+  listening table stands.
+
+### 8. Guests beside the Hosanna (PLAN §8.13): it overrides, and says so
+
+- **The ruling I took** (the owner may reverse it). The Hosanna is not a
+  visitor drawn by the meeting's budget. It is the rite of its two
+  Sundays, as the doxology's payoff is. PLAN §8.13 itself leans those
+  Sundays to "Hosanna, steeples", and the steeples' seat is the
+  postlude, beside it. At Kirtland in 1836 the gift of tongues and the
+  shout came on the same day. So by default **a guest in or beside the
+  (last) doxology does not keep the Hosanna away.**
+- **It names them.** `decide()` now reads `info.guests`. The seat and
+  the decision carry `beside: ["type@section", …]`.
+- **`GuestHosanna.YIELD = true`** makes it give way instead: no Hosanna
+  when any guest is in or beside that doxology.
+- **How often, in the stand-in** (20,000 meetings; 792 Hosannas): 258
+  have a neighbour:
+  - a band in the doxology itself, 200;
+  - the handbells in the postlude, 29;
+  - the steeples in the postlude, 21;
+  - the handbells in the sacrament, 19;
+  - the gift in a traded testimony, 1;
+  - the old tune in a traded testimony, 1.
+- **The band is the one real clash**, two guests in one section.
+  - The stand-in over-counts it: it does not move a band out of the
+    doxology when the payoff is another's, as the engine does.
+  - **Recommended to the integrator:** when the Hosanna is seated, move
+    the band out as the cumulative assembly does
+    (`bandsLeaveTheDoxology()`, and `C.payoff` reset if it was
+    `"bands"`). The recipe says so.
+- The stand-in now trades testimony and sacrament (10 %), as
+  `planMeeting` does, so its odds moved slightly: the gift 6.9 %, the
+  far ward 10.0 %, the Hosanna 4.0 %; at least one 19.6 %, two 1.17 %.
+  The gift and the far ward are still seated in or beside another
+  guest's section **0** times.
+
+### 9. The far ward's lag and tuning come from its score
+
+The canon's lag and tuning figures in the check table are read from the
+far ward's score (the lab reads each verse's `t0` and each note's
+`cents`), not from the audio. The table now says so. They hold for the
+audio because `Cast.score` builds our ward's pitch from the same base
+(`kolob-cast.js` ≈:944) with no drift of its own. The audio's own evidence
+of distance is the band and loudness measures, which were measured from
+the audio.
+
+### 10. The stale `o.shoutOnly` comment: made true
+
+`P.hosanna` now reads `o.shoutOnly`, through the module's lab-only
+`material.only: "shout"` (the gift's `only` pattern; never the engine).
+The lab gained `P.shout` and **▶ the shout alone**.
+
+### Checked this round (all silent)
+
+- **The lab at 860 and 390 px:** every play (and stop), the gift's
+  check, the odds, purity and every menu; **0 console errors**, no
+  sideways scroll at either width.
+- **Purity:** each guest's plan and score the same when run twice;
+  **0 `Math.random` calls**. The Hosanna is never seated, even forced,
+  on any Sunday but Easter and a dedication.
+- **The Hosanna's plan:** its first die still equals the hook's; `beside`
+  and `YIELD` as described.
+- **Not re-run this round:** the whole Hosanna's offline check (4–5
+  minutes; its sound is unchanged) and the live cost traces (item 4).
+
+### Requests, round 2 (in addition to those above)
+
+1. **Integrator.**
+   - `standingGuest` reads `G.ROWS` and `G.ROW_LABEL` (the recipe's
+     three lines).
+   - `isLastDoxology` as in item 3.
+   - Pass `guests: C.visitations` to the Hosanna's `plan()`.
+   - Move a band out of the doxology when the Hosanna is seated
+     (item 8).
+   - The far ward's throats add nodes, about +1,250 at the context's
+     peak in the critic's trace. A dedication traced whole (request 1
+     above) should include them.
+2. **UI (`kolob-ui.js`).** `GUEST_ROWS.tongues` and its three `S`
+   strings (`risesInTongues`, `wardHums`, `harmoniumAnswers`), with their
+   Deseret from CAST (request 3 above).
+3. **ENGRAVE, and SCORE §6.** A note marked `engrave: true` is engraved
+   even when `logged: false`, and nothing else of an unlogged guest is
+   (request 4 above). Until then the Hosanna is wholly audio-only.
+4. **The owner, when heard:** the shout's brightness (`SHOUT_EFFORT`),
+   `YIELD`, and the far ward's throats or pews (added to request 5
+   above).
+
+### Known issues, round 2
+
+- **The shout's s and h's are short bursts.** The median and p90 cannot
+  see them, which is why they measure as nothing. The ear may still hear
+  them as texture; `SHOUT_FRIC` and `SHOUT_H_SWELL` are there for it.
+- **The Hosanna overriding PLAN §8.13 is this crew's ruling,** not the
+  owner's. `YIELD` reverses it in one line.
+- **The stand-in over-counts a band beside the Hosanna** (item 8). The
+  real planner's number comes after wiring.
+- **The throats' cost** is the critic's single back-to-back trace on a
+  loaded machine (load 8.6–10.3). It was not re-traced after the 0.9 dB
+  trim.
