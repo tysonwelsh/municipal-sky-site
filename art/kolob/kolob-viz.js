@@ -1065,7 +1065,7 @@ window.KolobViz = (function () {
   //    flock's chatter round, not ours (takeGulls);
   //  · THE FAR WARD: the same hymn a line behind, in closed score, pale, as
   //    the far choir prints (takeFarWard);
-  //  · THE SOCIAL HALL: the fiddle's reel (or jig, or quadrille) at cue size,
+  //  · THE SOCIAL HALL: the fiddle's reel (or jig, or quadrille) in small heads,
   //    the hymn's own notes in it a heavier head, its running eighths beamed
   //    by the beat, a bar at each bar, a double bar where a strain goes
   //    round or the next begins, the final bar after its last double stop;
@@ -1079,7 +1079,8 @@ window.KolobViz = (function () {
   //    with the speaker shares the speaker's head; the tune it makes of them
   //    prints as any tune (takeSpoken, takeReedWords);
   //  · THE GIFT OF TONGUES: one line on the staff that suits it, a slur over
-  //    each melisma; the ward's hummed chord in its four parts (takeTongues);
+  //    each melisma, its quick notes a singer's run (small, beamed); the
+  //    ward's hummed chord in its four parts (takeTongues);
   //  · THE ORGANIST'S VARIATIONS: the organ alone, as it prints, with a bar
   //    where the Score has one (the theme, the trio's tune in the pedals,
   //    the finale; the re-barred dances keep none), and the bitonal
@@ -1189,16 +1190,19 @@ window.KolobViz = (function () {
   // Another congregation across the valley, singing our hymn a line behind
   // us in its own tuning: printed as the far trombone choir is, in closed
   // score and pale, each part on its own staff with its own stem, placed by
-  // the degree it sings in the hymn's key and written in our verse's beat.
-  var FARWARD_INK = 0.42;
+  // the degree it sings in the hymn's key and written in our verse's beat —
+  // a little smaller than ours, as it is further off, and it gives way to our
+  // hymn: our notes stand where they would without it, its notes keep clear
+  // of them, and a bar keeps clear of both.
+  var FARWARD_INK = 0.42, FARWARD_SCALE = 0.75;
   function takeFarWard(ns) {
     var h = hymnOf(ns[0].hymnId), mode = h.mode || cond.mode;
     var beat = h.bs || estimateBeat(ns.map(function (n) { return n.duration; }), lastBeat.farward || lastBeat.choir || 1.15);
     if (!h.bs && ns.length >= 3) lastBeat.farward = beat;
     var g0 = groups.length;
-    takeLayer("farward", ns, beat, null, { strict: true, ink: FARWARD_INK, fineBeat: !!h.bs,
+    takeLayer("farward", ns, beat, null, { strict: true, ink: FARWARD_INK, fineBeat: !!h.bs, scale: FARWARD_SCALE,
       qOf: function (n) { return typeof n.deg === "number" ? keyedQ(n.freq, h.keyMonzo, n.deg, null, mode) : null; } });
-    madeSince(g0, 1.5);
+    madeSince(g0, 1.5).forEach(function (gr) { gr.yields = true; });
   }
 
   // ---- the handcart company ----------------------------------------------------
@@ -1270,12 +1274,13 @@ window.KolobViz = (function () {
 
   // ---- the Social Hall ---------------------------------------------------------
   // The fiddle's dance, made of one of the day's hymns, printed as a fiddler's
-  // tunebook prints a reel: on the treble at cue size (it runs in eighths,
-  // faster than the page can print full heads), the hymn's own notes in it a
-  // heavier head — the tune marked, as in the hymns — and the fiddler's
-  // figures between them plain; a double stop two heads on one stem; the
-  // running eighths beamed within the beat (in pairs in 2/4, in threes in
-  // 6/8); a bar at each bar; a double bar where a strain goes round again or
+  // tunebook prints a reel: on the treble in small heads (it runs in eighths
+  // a staff space apart at the page's rate, and each bar must find its room
+  // between them: at full size the bars would stand on the ink), the hymn's
+  // own notes in it a heavier head — the tune marked, as in the hymns — and
+  // the fiddler's figures between them plain; a double stop two heads on one
+  // stem; the running eighths beamed within the beat (in pairs in 2/4, in
+  // threes in 6/8); a bar at each bar; a double bar where a strain goes round again or
   // the next begins; the final bar after its last double stop. Its cuts and
   // slides are marked where the fiddler plays them (the Old Way's signs: a
   // grace, a slide). The open string it leans on is a whole note, where it
@@ -1486,9 +1491,13 @@ window.KolobViz = (function () {
     var rs = varSet.rs.slice().sort(function (a, b) { return a - b; });
     var fine = rs.length >= 2, beat = fine ? clamp(rs[rs.length >> 1], 0.3, 2.4)
       : estimateBeat(ns.map(function (n) { return n.duration; }), lastBeat.organ || lastBeat.choir || 1.15);
+    ns.forEach(function (n) {                      // (where the beat falls: the last note that names its beat)
+      if (typeof n.beat === "number" && Math.abs(n.beat - Math.round(n.beat)) < 1e-6) varSet.ref = { t: n.startTime, b: n.beat };
+    });
     var g0 = groups.length;
-    takeLayer("organ", ns, beat, null, { fineBeat: fine });
+    takeLayer("organ", ns, beat, null, { fineBeat: fine, head: function (n, hd) { if (n.part === "fig") hd.fig = true; } });
     var made = madeSince(g0, 2);
+    varFigures(made, fine ? beat : 0);
     if (!sc || !sc.lines) return;
     var vl = sc.lines.concat(sc.refrain || []), ts = timeSig(h.modeOfTime), downs = [];
     ns.forEach(function (n) {
@@ -1511,6 +1520,28 @@ window.KolobViz = (function () {
       marks.push(bm);
     });
     while (varBars.length > 64) varBars.shift();
+  }
+  // The organist's running figure (the trio's right hand, a dance's
+  // accompaniment: its notes say no line) runs a staff space apart at the
+  // page's rate: it prints at cue size, the tune and its parts full, and its
+  // quick notes are beamed within the beat. The organist lays them a note at
+  // a time, seconds ahead, so a beam is joined across the calls — only while
+  // none of its notes has yet been set on the page (nothing printed moves).
+  var VAR_FIG_SCALE = 0.75;
+  function varFigures(made, beatS) {
+    made.forEach(function (gr) {
+      if (!gr.heads.every(function (h) { return h.fig; })) return;
+      gr.scale = VAR_FIG_SCALE;
+      var run = varSet.run, ref = varSet.ref;
+      if (!(gr.flags >= 1) || gr.noStem || !(beatS > 0) || !ref) { varSet.run = null; return; }
+      var key = gr.st + ":" + (ref.b + Math.floor((gr.tp - ref.t) / beatS + 0.02));
+      var open = run && run.key === key && run.gs[run.gs.length - 1].tp < gr.tp - 1e-6 &&
+        run.gs.every(function (m) { return !m.col && m.drawnAt == null; });
+      if (!open) { varSet.run = { key: key, gs: [gr] }; return; }
+      run.gs.push(gr);
+      if (run.gs[0].beam) { run.gs[0].beam.members.push(gr); gr.beam = run.gs[0].beam; gr.beam.geo = null; }
+      else { makeBeam(run.gs, gr.st); gr.beam.fixed = 0; }
+    });
   }
   // ==========================================================================
   // THE HYMNAL ON THE STAFF (round 3b; PLAN-ENGRAVING §4.3–§4.4)
@@ -3099,6 +3130,7 @@ window.KolobViz = (function () {
       for (var i = 0; i < groups.length; i++) {
         var A = groups[i];
         if (A === gr || !A.col || A.col.sp !== sp || A.st !== gr.st || !(A.lastA > 0.05) || (skip && skip.indexOf(A) >= 0)) continue;
+        if (gr.hymn && A.yields) continue;                   // (round 3c: the far ward gives way to our hymn, never ours to it)
         var off = (A.tp - gr.tp) * SCROLL_PX_S + A.col.dx;     // A's origin, from ours
         if (off < dx - 8 * sp || off > dx + 8 * sp) continue;
         var ab = A.col.boxes, hit = false, aR = -1e9, air = o.flags || A.flags ? gap : 0, hy = gr.hymn && A.hymn;
@@ -3137,7 +3169,20 @@ window.KolobViz = (function () {
       if (need <= dx) break;
       dx = need;
     }
+    // (round 3c: past its cap a new guest's note may come close to the ink
+    // before it, as a hymn's does, but it never stands on a bar: there it
+    // goes on past the bar)
+    if (!gr.hymn && gr.cap != null && dx > lim && onBar(gr, g, bx, lim)) lim = dx;
     return { need: dx, lim: lim, bx: bx, ink: ink };
+  }
+  function onBar(gr, g, bx, x) {
+    for (var k = 0; k < marks.length; k++) {
+      var mb = marks[k];
+      if (mb.kind !== "bar" || !(mb.at && mb.at.sp === g.sp) || mb.sts.indexOf(gr.st) < 0 || Math.abs(mb.tp - gr.tp) > 3) continue;
+      var bi = barInk(mb, g), xb = (mb.tp - gr.tp) * SCROLL_PX_S + mb.at.rel;
+      for (var n = 0; n < bx.length; n++) if (inBand(g, gr.st, bx[n]) && bx[n][0] + x < xb + bi.wr && bx[n][2] + x > xb - bi.wl) return true;
+    }
+    return false;
   }
   // May a voice step aside past the cap, to x (its ink bx)? Only where the
   // hymn's notes after it on its staff, set at the cap, would still clear
