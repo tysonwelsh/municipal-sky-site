@@ -1558,7 +1558,7 @@ window.KolobViz = (function () {
       if (!(gr.flags >= 1) || gr.noStem || !(beatS > 0) || !ref) { varSet.run = null; return; }
       var key = gr.st + ":" + (ref.b + Math.floor((gr.tp - ref.t) / beatS + 0.02));
       var open = run && run.key === key && run.gs[run.gs.length - 1].tp < gr.tp - 1e-6 &&
-        run.gs.every(function (m) { return !m.col && m.drawnAt == null; });
+        run.gs.every(function (m) { return !m.col && m.drawnAt == null; }) && !(run.gs[0].beam && run.gs[0].beam.laid);   // (nor once its line has been looked along: beamLay)
       if (!open) { varSet.run = { key: key, gs: [gr] }; return; }
       run.gs.push(gr);
       if (run.gs[0].beam) { run.gs[0].beam.members.push(gr); gr.beam = run.gs[0].beam; gr.beam.geo = null; }
@@ -3147,7 +3147,7 @@ window.KolobViz = (function () {
     // (round 3c: a new guest's note keeps within its own cap, as a hymn's
     // does, so a quick guest — the fiddle's reel — never drifts from its sound)
     var lim = gr.hymn ? HYMN_DX_MAX * sp : gr.cap != null ? gr.cap * sp : 1e9, dx = dx0;
-    for (var pass = 0; pass < 4; pass++) {
+    for (var pass = 0; pass < (gr.cap != null ? 8 : 4); pass++) {      // (round 3c: a guest's note, with beams to clear as well, may need more)
       var need = dx;
       for (var i = 0; i < groups.length; i++) {
         var A = groups[i];
@@ -3262,9 +3262,13 @@ window.KolobViz = (function () {
   // would run across whatever lies between its stems: a caller's cross, the
   // open string under the tune. So before it is laid it looks along its
   // line; where it would cross another note's head (one set, or one coming
-  // in its span, where it will stand) it is not laid, and its notes keep
-  // their own flags — which the page steps aside for, as for any ink.
-  var beamTally = { laid: 0, cut: 0, by: {} };        // (for the silent checks: probe().beams)
+  // in its span, where it will stand: an organ's chord under its figure,
+  // the fiddle's open string — the notes of its own line before and after
+  // it keep out from under it themselves) it is laid on the other side of
+  // its notes, the stems turned; and where that side is crossed too it is
+  // not laid, and its notes keep their own flags — which the page steps
+  // aside for, as for any ink.
+  var beamTally = { laid: 0, turned: 0, cut: 0, by: {} };   // (for the silent checks: probe().beams)
   function beamLay(bm, g) {
     if (bm.laid) return;
     bm.laid = true;
@@ -3272,9 +3276,21 @@ window.KolobViz = (function () {
     if (ms.some(function (m) { return m.col; })) return;
     var geo = beamGeo(bm, g);
     if (!geo) return;
-    var sp = g.sp, yAt = beamYAt(bm, geo), dir = geo.dir, pad = 0.15 * sp;
+    var why = beamBlocked(bm, geo, g);
+    if (!why) { beamTally.laid++; return; }
+    bm.fixed = -geo.dir; bm.geo = null;            // (the other side of its notes: the organist's figure over the chord, not through it)
+    var alt = beamGeo(bm, g);
+    if (alt && alt.dir !== geo.dir && !beamBlocked(bm, alt, g)) { beamTally.laid++; beamTally.turned++; return; }
+    beamTally.cut++; beamTally.by[why] = (beamTally.by[why] || 0) + 1;
+    ms.forEach(function (m) { m.beam = null; });
+    bm.geo = null;
+  }
+  // (what its line, geo, would cross — the crossed note's layer, "~" if it
+  // is still to come — or null)
+  function beamBlocked(bm, geo, g) {
+    var ms = bm.members, sp = g.sp, yAt = beamYAt(bm, geo), dir = geo.dir, pad = 0.3 * sp;
     var two = ms.some(function (m) { return (m.flags || 1) >= 2; }), ext = (two ? 1.25 : 0.5) * sp * dir;
-    var xa = X(ms[0].tp) + geo.x0 - pad, xb = X(ms[ms.length - 1].tp) + geo.x0 + 1.3 * sp + pad;   // (its last note may be set a little after its time)
+    var xa = X(ms[0].tp) + geo.x0 - pad, xb = X(ms[ms.length - 1].tp) + geo.x0 + 0.5 * sp + pad;   // (its last note may be set a little after its time)
     function crosses(b) {                          // (a head's box against the band where the head stands)
       var x0 = Math.max(b[0], xa), x1 = Math.min(b[2], xb);
       if (x1 <= x0) return false;
@@ -3284,26 +3300,21 @@ window.KolobViz = (function () {
     for (var i = 0; i < groups.length; i++) {
       var A = groups[i];
       if (A.beam === bm || A.st !== bm.st || A.noCol || A.tp < ms[0].tp - 3 || A.tp > ms[ms.length - 1].tp + 1) continue;
+      if (!(A.col && A.col.sp === sp) && A.layer === ms[0].layer &&          // (its own line's notes still to come, before or after it, keep
+          (A.tp < ms[0].tp - 1e-6 || A.tp > ms[ms.length - 1].tp + 1e-6)) continue;   // out from under it themselves: beamHit)
       var set = A.col && A.col.sp === sp, x0 = X(A.tp) + (set ? A.col.dx : 0), reach = set ? 0 : (A.cap != null ? A.cap : HYMN_DX_MAX) * sp;
       var hb = set ? A.col.ink.filter(function (b) { return b[5]; }).map(function (b) { return [b[0] + x0, b[1], b[2] + x0 + reach, b[3]]; })
         : drawnHeads(A, g).map(function (h) { var y = g.y(A.st, h.q), s = (A.scale || 1) * sp; return [x0 - 0.7 * s, y - 0.55 * s, x0 + 0.7 * s + reach, y + 0.55 * s]; });
-      for (var k = 0; k < hb.length; k++) {
-        if (crosses(hb[k])) {
-          beamTally.cut++; var why = A.layer + (set ? "" : "~"); beamTally.by[why] = (beamTally.by[why] || 0) + 1;
-          ms.forEach(function (m) { m.beam = null; });
-          bm.geo = null;
-          return;
-        }
-      }
+      for (var k = 0; k < hb.length; k++) if (crosses(hb[k])) return A.layer + (set ? "" : "~");
     }
-    beamTally.laid++;
+    return null;
   }
   // (and a guest's note that comes after such a beam is laid keeps its head
   // out from under it: where one of its heads at x, from its own time's
   // place, would lie under a laid guest beam of another's, the beam's right
   // end, from the same place — the note goes on past it; else null)
   function beamHit(gr, g, bx, x) {
-    var sp = g.sp, x0g = X(gr.tp), sw = Math.max(1.4 / dpr, 0.12 * sp), pad = 0.15 * sp, end = null;
+    var sp = g.sp, x0g = X(gr.tp), sw = Math.max(1.4 / dpr, 0.12 * sp), pad = 0.3 * sp, end = null;
     for (var i = 0; i < groups.length; i++) {
       var A = groups[i], bm = A.beam;
       if (!bm || bm === gr.beam || A !== bm.members[0] || !bm.laid || !bm.geo || bm.geo.sp !== sp || bm.st !== gr.st || Math.abs(A.tp - gr.tp) > 4) continue;
@@ -3378,7 +3389,6 @@ window.KolobViz = (function () {
       it.lastA = dryA(it) * (it.ink || 1);
       if (it.lastA < 0.02) return;
       if (it.noCol) { it.dueSp = sp; return; }
-      if (it.beam && it.cap != null) beamLay(it.beam, g);      // (round 3c: a guest's beam is not laid across a head)
       var pg = prepGroup(it, g);
       placeColumn(it, g, pg.heads, pg.o);
     });
@@ -3420,6 +3430,7 @@ window.KolobViz = (function () {
   }
   // a group's heads and how it is engraved, this frame (a beamed note's stem is the beam's)
   function prepGroup(gr, g) {
+    if (gr.beam && gr.cap != null && !gr.beam.laid) beamLay(gr.beam, g);   // (round 3c: a guest's beam is not laid across a head)
     var heads = drawnHeads(gr, g), o = inkOpts(gr);
     if (gr.beam) {
       var bg = beamGeo(gr.beam, g);
@@ -3962,7 +3973,7 @@ window.KolobViz = (function () {
       if (bx) out.notes.push({ layer: gr.layer, st: gr.st, tp: gr.tp, a: gr.lastA, guest: gr.cap != null, hymn: !!gr.hymn,
         boxes: bx.map(function (b) { return [b[0] + gr.lastX, b[1], b[2] + gr.lastX, b[3], b[5] ? 1 : 0, b[5] ? "h" : b[4] ? "l" : b[7] ? "s" : b[6] ? "g" : ""]; }) });
     });
-    // (each drawn beam, as drawBeam lays it, in slices half a space wide:
+    // (each drawn beam, as drawBeam lays it, in slices a quarter space wide:
     // its members' own heads lie at their stems' other ends)
     out.beams = [];
     var seenB = [];
@@ -3975,8 +3986,8 @@ window.KolobViz = (function () {
       if (xs.length < 1) return;
       var two = bm.members.some(function (m) { return (m.flags || 1) >= 2; }), ext = (two ? 1.25 : 0.5) * s * dir;
       var xa = Math.min.apply(null, xs) - sw / 2, xb = Math.max.apply(null, xs) + sw / 2, segs = [];
-      for (var x = xa; x < xb - 0.01; x += 0.5 * s) {
-        var x2 = Math.min(xb, x + 0.5 * s), y1 = Math.min(yAt(x), yAt(x2)), y2 = Math.max(yAt(x), yAt(x2));
+      for (var x = xa; x < xb - 0.01; x += 0.25 * s) {
+        var x2 = Math.min(xb, x + 0.25 * s), y1 = Math.min(yAt(x), yAt(x2)), y2 = Math.max(yAt(x), yAt(x2));
         segs.push([x, y1 + Math.min(0, ext), x2, y2 + Math.max(0, ext)]);
       }
       out.beams.push({ layer: gr.layer, st: gr.st, tps: bm.members.map(function (m) { return m.tp; }), a: gr.lastA, guest: gr.cap != null, segs: segs });
