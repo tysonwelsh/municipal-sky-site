@@ -1558,11 +1558,27 @@ window.KolobViz = (function () {
   // quick notes are beamed within the beat. The organist lays them a note at
   // a time, seconds ahead, so a beam is joined across the calls — only while
   // none of its notes has yet been set on the page (nothing printed moves).
-  var VAR_FIG_SCALE = 0.75;
+  // (Round 2: while the figure runs over them on the treble — the trio's
+  // flutes over the hymn's chords, the alto held under them — the staff is
+  // two voices, set as two voices share a staff: the figure's stems up, the
+  // chords' down. Else a figure's head fell on a chord's stem at the same
+  // beat, and the two leapfrogged each other along the page. Only notes not
+  // yet set are turned: nothing printed moves.)
+  var VAR_FIG_SCALE = 0.75, VAR_UNDER_S = 1.5;
+  function figOnly(gr) { return gr.heads.every(function (h) { return h.fig; }); }
+  function varUnder(t) {
+    groups.forEach(function (A) {
+      if (A.layer === "organ" && A.st === "T" && !A.col && A.drawnAt == null && !A.beam && Math.abs(A.tp - t) < VAR_UNDER_S && !figOnly(A)) { A.dir = -1; A.alt = 0; }
+    });
+  }
   function varFigures(made, beatS) {
     made.forEach(function (gr) {
-      if (!gr.heads.every(function (h) { return h.fig; })) return;
+      if (!figOnly(gr)) {
+        if (gr.st === "T" && varSet.figT != null && Math.abs(gr.tp - varSet.figT) < VAR_UNDER_S) { gr.dir = -1; gr.alt = 0; }
+        return;
+      }
       gr.scale = VAR_FIG_SCALE; gr.line = "fig";
+      if (gr.st === "T") { gr.dir = 1; gr.alt = 0; varSet.figT = gr.tp; varUnder(gr.tp); }
       var run = varSet.run, ref = varSet.ref;
       if (!(gr.flags >= 1) || gr.noStem || !(beatS > 0) || !ref) { varSet.run = null; return; }
       var key = gr.st + ":" + (ref.b + Math.floor((gr.tp - ref.t) / beatS + 0.02));
@@ -3351,7 +3367,7 @@ window.KolobViz = (function () {
     if (!gr.line) return out;
     for (var i = 0; i < groups.length; i++) {
       var A = groups[i];
-      if (A === gr || A.line !== gr.line || A.st !== gr.st || A.noCol || !(A.col && A.col.sp === sp) || !(A.lastA > 0.05)) continue;
+      if (A === gr || A.line !== gr.line || A.layer !== gr.layer || A.st !== gr.st || A.noCol || !(A.col && A.col.sp === sp) || !(A.lastA > 0.05)) continue;
       var d0 = (gr.tp - A.tp) * SCROLL_PX_S;
       if (d0 < 1e-3 || d0 > 12 * sp) continue;
       var adv = Math.min(0.6 * sp, 0.45 * d0);
