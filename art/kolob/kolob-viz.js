@@ -219,9 +219,10 @@ window.KolobViz = (function () {
   // plainer in v0.32). A grand staff engraved the way a tunebook is
   // engraved: four shapes with their stems grown from the shape's own
   // corner, open and filled heads, flags and augmentation dots read from
-  // each note's length, broad-nib contrast on the open heads and a
-  // letterpress impression on every head, pre-rendered once per size at
-  // device resolution (the sprite atlas). One ink, hymnbook green, from the
+  // each note's length and broad-nib contrast on the open heads, each head
+  // one clean strike (its halo and pale letterpress edge read as a blurred
+  // second stroke, and were taken off in v0.35.1), pre-rendered once per size
+  // at device resolution (the sprite atlas). One ink, hymnbook green, from the
   // moment a note sounds; the ink dries as the page turns. Just the notes:
   // no signs or words on the staff. Nothing prints outside the plate: a
   // note beyond the ledger room folds silently by octaves until it fits.
@@ -353,15 +354,7 @@ window.KolobViz = (function () {
     c.translate(o, o);
     var full = headPaths(k, s, open);
     c.fillStyle = rgba(rgb);
-    c.shadowColor = rgba(rgb, 0.3); c.shadowBlur = 0.7 * dpr;           // a hair of ink spread
-    c.fill(full, "evenodd");
-    c.shadowColor = "transparent";
-    // letterpress impression: a pale inner edge low-right, as if pressed into the cream
-    c.save(); c.clip(full, "evenodd");
-    c.translate(-0.6 * dpr, -0.6 * dpr);
-    c.strokeStyle = "rgba(255, 250, 236, 0.34)"; c.lineWidth = 1.0 * dpr;
-    c.stroke(full);
-    c.restore();
+    c.fill(full, "evenodd");                       // one clean strike: no ink spread, no second edge (the owner, v0.35.1)
     sp = { cv: cv, o: o };
     sprites.set(key, sp);
     return sp;
