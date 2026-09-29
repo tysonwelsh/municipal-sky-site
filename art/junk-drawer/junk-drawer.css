@@ -611,8 +611,9 @@ html { scroll-behavior: smooth; }
 .jd-item--sheet .jd-sheet-half svg { display: block; width: 100%; height: auto; }
 .jd-item--sheet .jd-sheet-bot {
   position: absolute; left: 0; width: 100%;
-  top: calc(100% - 0.4px);          /* a hair of overlap: no seam hairline */
-  transform-origin: 50% 0;          /* the crease */
+  top: var(--sheet-seam, 100%);                 /* a few units up the top copy — the
+                                                   overlap the module cuts at the seam */
+  transform-origin: 50% var(--sheet-hinge, 0);  /* the crease itself */
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
   transform: perspective(900px) rotateX(-180deg);

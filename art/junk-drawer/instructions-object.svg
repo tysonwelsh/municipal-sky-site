@@ -26,17 +26,29 @@
       <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="9" stitchTiles="stitch"/>
       <feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 0.99  0 0 0 0 0.93  0 0 0 0.24 -0.11"/>
     </filter>
-    <!-- THE CREASE (open): the two halves catch the light differently —
-         a soft shadow gathers above the fold, a soft light falls below -->
+    <!-- THE CREASE (open) — reworked 2026-09-29 after the owner saw two
+         sheets overlapping instead of one creased sheet: the bottom half
+         folds BACK, so opened it leaves a mountain ridge toward the viewer;
+         with the drawer's light from the upper left, the face rising to the
+         ridge catches a little light and the face falling away from it
+         drops into a little shade. Soft gradients only, one faint crease
+         line, no hard rim — and painted UNDER the ink, so a line of text
+         the fold runs through stays legible on top of it. -->
+    <!-- a real crease is not ruler-straight: the shading and the line are
+         nudged by a slow noise so the fold wavers by about a unit -->
+    <filter id="ins_waver" x="-2%" y="-10%" width="104%" height="120%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012 0.05" numOctaves="2" seed="3" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
     <linearGradient id="ins_crease_a" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#5a4218" stop-opacity="0"/>
-      <stop offset="0.75" stop-color="#5a4218" stop-opacity="0.10"/>
-      <stop offset="1" stop-color="#5a4218" stop-opacity="0.26"/>
+      <stop offset="0" stop-color="#fff9e0" stop-opacity="0"/>
+      <stop offset="0.6" stop-color="#fff9e0" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#fff9e0" stop-opacity="0.28"/>
     </linearGradient>
     <linearGradient id="ins_crease_b" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#fffbe8" stop-opacity="0.7"/>
-      <stop offset="0.2" stop-color="#fffbe8" stop-opacity="0.18"/>
-      <stop offset="1" stop-color="#fffbe8" stop-opacity="0"/>
+      <stop offset="0" stop-color="#5a4218" stop-opacity="0.14"/>
+      <stop offset="0.35" stop-color="#5a4218" stop-opacity="0.07"/>
+      <stop offset="1" stop-color="#5a4218" stop-opacity="0"/>
     </linearGradient>
     <!-- THE FOLD EDGE (folded): the paper rolls over the fold — a shadow
          gathers toward the edge and a rounded highlight rides the rim -->
@@ -61,6 +73,26 @@
   </g>
 <ellipse cx="261.8" cy="80.5" rx="79.2" ry="59.8" fill="url(#ins_stain1)"/>
   <ellipse cx="79.2" cy="393.3" rx="96.8" ry="69.0" fill="url(#ins_stain1)"/>
+  <!-- THE FOLD (owner ask, 2026-09-29): the sheet lies in the pile folded in
+       half, bottom half back behind the top, and a press unfolds it. The fold
+       line is y=230 (data-fold on the root) — EXACTLY half, by the owner's
+       call, even though it runs through step 2's last line ("I kinda like
+       that it cuts a line of text"; the copy is theirs to edit). jd-furniture.js
+       renders this file twice, each copy cropped to one side of the line by
+       its viewBox. .ins-crease shows on the open sheet, .ins-foldedge on the
+       folded one; junk-drawer.css cross-fades them with the wrapper's state.
+       Both sit HERE, under the ink: they are light on the paper, and the
+       words are printed on top of it. -->
+  <g class="ins-crease" clip-path="url(#ins_clip)">
+    <g filter="url(#ins_waver)">
+      <rect x="-4" y="186" width="338" height="44" fill="url(#ins_crease_a)"/>
+      <rect x="-4" y="230" width="338" height="44" fill="url(#ins_crease_b)"/>
+      <line x1="-4" y1="230.2" x2="334" y2="230.2" stroke="#4a3416" stroke-opacity="0.13" stroke-width="0.7"/>
+    </g>
+  </g>
+  <g class="ins-foldedge" clip-path="url(#ins_clip)">
+    <rect x="0" y="208" width="330" height="22" fill="url(#ins_fold_a)"/>
+  </g>
   <text x="160.6" y="69.0" text-anchor="middle" font-family="'Courier Prime','Courier New',Courier,monospace"
     font-size="30" font-weight="700" letter-spacing="3"
     fill="#33240f">INSTRUCTIONS</text>
@@ -88,23 +120,6 @@
 <text x="30" y="336" font-family="'Courier Prime','Courier New',Courier,monospace" font-size="14" fill="#3a2a12" xml:space="preserve">4.  you're not done until you</text>
 <text x="30" y="355" font-family="'Courier Prime','Courier New',Courier,monospace" font-size="14" fill="#3a2a12" xml:space="preserve">    leave a grade and rank them!</text>
 
-  <!-- THE FOLD (owner ask, 2026-09-29): the sheet lies in the pile folded in
-       half, bottom half back behind the top, and a press unfolds it. The fold
-       line is y=230 (data-fold on the root) — EXACTLY half, by the owner's
-       call, even though it runs through step 2's last line ("I kinda like
-       that it cuts a line of text"; the copy is theirs to edit). jd-furniture.js
-       renders this file twice, each copy cropped to one side of the line by
-       its viewBox. .ins-crease shows on the open sheet, .ins-foldedge on the
-       folded one; junk-drawer.css cross-fades them with the wrapper's state. -->
-  <g class="ins-crease" clip-path="url(#ins_clip)">
-    <rect x="0" y="196" width="330" height="34" fill="url(#ins_crease_a)"/>
-    <rect x="0" y="230" width="330" height="14" fill="url(#ins_crease_b)"/>
-    <line x1="0" y1="229.5" x2="330" y2="229.5" stroke="#4a3416" stroke-opacity="0.42" stroke-width="0.9"/>
-    <line x1="0" y1="230.6" x2="330" y2="230.6" stroke="#fffdf0" stroke-opacity="0.9" stroke-width="0.9"/>
-  </g>
-  <g class="ins-foldedge" clip-path="url(#ins_clip)">
-    <rect x="0" y="208" width="330" height="22" fill="url(#ins_fold_a)"/>
-  </g>
   <!-- the underside shade of the swinging half: only ever visible below the
        fold, so only the bottom copy paints it; fades out as the sheet opens -->
   <rect class="ins-shade" x="0" y="230" width="330" height="230" fill="#3a2a12" clip-path="url(#ins_clip)"/>

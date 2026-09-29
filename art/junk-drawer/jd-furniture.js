@@ -376,6 +376,7 @@
                                           and restored wins (+100) even if the
                                           pile reads empty (bands: 2026-09-10) */
   var ROT = 7;                         /* load tilt, ± degrees */
+  var SEAM_OVERLAP = 3;                /* viewBox units the two copies share at the fold */
   var INSET = 0.012;                   /* same wall clearance as the scatter */
 
   var art = null, box = null, armed = false, el = null;
@@ -431,12 +432,20 @@
     window.JD_applySize(el, box, ID, 1);
     /* then rebuilt as the two halves — see the banner */
     var vb = viewBoxOf(art), fold = foldOf(art, vb);
+    /* THE SEAM (2026-09-29): the bottom copy starts SEAM_OVERLAP units ABOVE
+       the fold and is seated that far up the top copy, so the two crops
+       overlap. Cut exactly at the fold, the top copy lost its last pixel or
+       two to layout rounding and the ascenders of the line the fold runs
+       through came out sliced flat; with the overlap, the bottom copy
+       repaints that strip (same paper, same ink, same user space) and the
+       words read whole. The hinge is moved down the same amount so the
+       swing still turns on the crease. */
     el.innerHTML =
       '<div class="jd-sheet">' +
         '<div class="jd-sheet-half jd-sheet-top">' +
           window.JD_svgInst(cropTo(art, vb, vb.y, fold), 'jit_') + '</div>' +
         '<div class="jd-sheet-half jd-sheet-bot">' +
-          window.JD_svgInst(cropTo(art, vb, fold, vb.y + vb.h), 'jib_') + '</div>' +
+          window.JD_svgInst(cropTo(art, vb, fold - SEAM_OVERLAP, vb.y + vb.h), 'jib_') + '</div>' +
       '</div>' +
       '<span class="jd-vh">' + SHEET_TEXT + '</span>';
     el.querySelectorAll('svg').forEach(function (svg) {
@@ -445,6 +454,10 @@
     var topH = fold - vb.y, botH = vb.y + vb.h - fold;
     el.style.setProperty('--sheet-bot', (botH / topH).toFixed(4));
     el.style.setProperty('--pick-tall', ((topH + botH) / topH).toFixed(4));
+    /* where the bottom copy sits (a fraction of the top copy's height) and
+       where its hinge is (a fraction of its own height) — see THE SEAM */
+    el.style.setProperty('--sheet-seam', ((topH - SEAM_OVERLAP) / topH * 100).toFixed(3) + '%');
+    el.style.setProperty('--sheet-hinge', (SEAM_OVERLAP / (botH + SEAM_OVERLAP) * 100).toFixed(3) + '%');
     /* aria-expanded follows the fold, which follows .is-picked — toggled by
        pick()/hideTag() in jd-core.js, which know nothing of this attribute.
        Bound to the node, not the module's `el`: dismiss() nulls that, and
