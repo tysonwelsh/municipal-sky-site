@@ -238,10 +238,21 @@ window.KOLOB.GuestChanges = (function () {
     },
     cap: 0.85,
   };
-  // the far tower's bus, against the organ reference (guests3b-lab: the
-  // loudest 3 s, as seated — all tabernacle, as the steeples' visitors)
-  var LEVEL = 0.2;
-  var RING_TAIL = 6;                               // s: the tenor's hum after the last stroke
+  // the far tower's bus (guests3b-lab, as seated — all tabernacle, as the
+  // steeples' visitors): at 0.2 the ringing's loudest 3 s stood 5 LU OVER
+  // the steeples as the meeting rings them (their meetinghouse bell near,
+  // two far steeples) and 15 over the engine's organ — a far tower must sit
+  // under the near bell, and the guests are kept modest (the owner took the
+  // organ and the trombones down). At 0.05 (the chain's compressors give
+  // back some of the cut) it stood 3–6 LU under the steeples and still 4–7
+  // over the organ; at 0.03, about the engine's organ at its loudest 3 s,
+  // and well under the meetinghouse bell — far off, where the handbells and
+  // the trombones sit
+  var LEVEL = 0.03;
+  // s: the tenor's hum after the last stroke — every partial is faded out
+  // over its last 2 s (RING_FADE) before its oscillators stop: stopped while
+  // the hum still sang (its τ is 7 s on a low tenor), each stop was a click
+  var RING_TAIL = 7, RING_FADE = 2;
 
   function need(stream) {
     if (!stream || typeof stream.fork !== "function") throw new Error("KOLOB.GuestChanges: a PJ2.Rand stream is required (label " + LABEL + "<n>)");
@@ -466,8 +477,10 @@ window.KOLOB.GuestChanges = (function () {
       src.connect(bp); bp.connect(kg); kg.connect(V.bg);
       src.start(ts); src.stop(ts + 0.05);
     }
+    // the last word: every partial let go from t (laid after the last stroke)
+    function fade(t) { voices.forEach(function (V) { PARTIALS.forEach(function (P) { V.parts[P[0]].g.gain.setTargetAtTime(0, t, 0.3); }); }); }
     function close() { nodes.forEach(function (x) { try { x.disconnect(); } catch (e) { /* gone already */ } }); }
-    return { stroke: stroke, voices: voices, bus: bus, close: close, standing: nodes.length };
+    return { stroke: stroke, fade: fade, voices: voices, bus: bus, close: close, standing: nodes.length };
   }
 
   var AHEAD = 2.5, SLICE = 1.0;
@@ -500,8 +513,8 @@ window.KOLOB.GuestChanges = (function () {
       if (!cur || s.t >= cur.t0 + SLICE) slices.push(cur = { t0: s.t, ks: [] });
       cur.ks.push(k);
     });
-    slices.forEach(function (sl) {
-      function lay() { sl.ks.forEach(function (k) { stroke(k); tell(k); }); }
+    slices.forEach(function (sl, si) {
+      function lay() { sl.ks.forEach(function (k) { stroke(k); tell(k); }); if (si === slices.length - 1) T.fade(sc.end - RING_FADE); }
       var when = sl.t0 - AHEAD;
       if (hooks.defer && when > t + 0.05) hooks.defer(when, lay); else lay();
     });

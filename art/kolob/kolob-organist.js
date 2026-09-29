@@ -1685,6 +1685,14 @@ window.KOLOB.Organist = (function () {
   // the level of the set, as the prelude's (dB; set in guests3b-lab against
   // the organist's own chorale prelude on the same hymn and the engine's organ)
   var VAR_LIFT = { plain: 1.3, victorian: 0.5, improviser: 2.4 };
+  // …and each character's own, over its stops' balance (dB): measured in
+  // guests3b-lab over nine sets (the three organists, three dialects), the
+  // finale on the full organ stood 2.6–5.1 LU over the organist's own
+  // chorale prelude on the same hymn (up to 4.7 over the engine's organ) and
+  // the Victorian's minuet on the vox humana 3.6–4.6 under it; the finale is
+  // held back and the minuet brought forward, so the set's loudest moment
+  // is within ±2 LU of the organ the owner has set
+  var VAR_DYN = { finale: -3.0, minuet: 1.5 };
 
   // the tune of a line, its tied notes joined: [{ b, beats, m (from the
   // keynote), n }]
@@ -2345,7 +2353,8 @@ window.KOLOB.Organist = (function () {
         if (!best || d < best.d) best = { d: d, idx: sets[si] };
         if (d <= budget * 1.25) { best = { d: d, idx: sets[si] }; break; }
       }
-      var r = VAR_PLAY[c](C, best.idx, t);
+      var p0 = plan.phrases.length, r = VAR_PLAY[c](C, best.idx, t);
+      if (VAR_DYN[c]) plan.phrases.slice(p0).forEach(function (p) { p.dyn = (p.dyn || 0) + VAR_DYN[c]; });
       var name = c === "chorale" ? "the theme" : c === "finale" ? "the finale" : c === "bitonal" ? "an interlude" : "variation " + (++nVar);
       var what = name + ": " + VAR_CHARS[c].en + " (" + r.regs.join("; ") + ")" + (c === "bitonal" ? " — the tune in two keys" : "");
       section(plan, t, r.end, what);
@@ -2474,7 +2483,7 @@ window.KOLOB.Organist = (function () {
     ORGAN_GAIN: ORGAN_GAIN, STYLES: STYLES, REG: REG, REG_TRIM: REG_TRIM, ROSTER: ROSTER, STRAY_KEYS: STRAY_KEYS,
     seat: seat, preludeDraw: preludeDraw, prelude: prelude, accompany: accompany, modulate: modulate, hymnHands: hymnHands,
     // (round 3c) the organist's variations on a hymn, the guest's (kolob-guest-variations.js)
-    variations: variations, VAR_CHARS: VAR_CHARS, VAR_POOL: VAR_POOL, VAR_LIFT: VAR_LIFT, rebar: rebar,
+    variations: variations, VAR_CHARS: VAR_CHARS, VAR_POOL: VAR_POOL, VAR_LIFT: VAR_LIFT, VAR_DYN: VAR_DYN, rebar: rebar,
     measure: measure, describe: describe, perform: perform, regOf: regOf,
     lineEvents: lineEvents, lineDur: lineDur, breathOf: breathOf, verseLines: verseLinesOf, accompanied: accompaniedDialect,
     // pure hands, for the lab and the harness

@@ -437,7 +437,7 @@ window.Guests3bLab = (function () {
   function bellPartials() {
     var st = settings(), m = ringMaterial(st), b = m.bells[m.bells.length - 1], off = new OfflineAudioContext(1, SR * 9, SR);
     var T = GC.tower(off, off.destination, [b], { born: 0, end: 9, Y: stream(st.seed, GC.LABEL + 1).fork("synth"), air: false, level: 1 });
-    T.stroke(0, 0.1, 1, false); T.stroke(0, 4.6, 1, true);
+    T.stroke(0, 0.1, 1, false); T.stroke(0, 4.6, 1, true); T.fade(7.2);
     return off.startRendering().then(function (buf) {
       var x = buf.getChannelData(0), N = 32768;
       function spectrum(at) {
