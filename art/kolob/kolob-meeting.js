@@ -149,11 +149,16 @@ window.KOLOB = window.KOLOB || {};
   // to write the doxology for the drone — the first doxology's row, and
   // every section before it with the key and the mode it is sung in (a
   // hymn's own; the other rites the day's keynote and the day's mode).
-  // null when the switch is off (read once, here, and handed down), when
-  // the plan has no doxology, or on a page without the calendar.
+  // null when the plan has no doxology, or on a page without the calendar.
+  // The switch does not reach the desk: with it off the doxology is written
+  // and kept exactly as with it on, and only the drone stays home (§7.2's
+  // own fallback, "the cantus only for the key plan, with no audible
+  // glide") — so the owner's A/B changes the drone and nothing else. (The
+  // round-3b critic heard 10 of 14 Sundays sing another closing hymn when
+  // the switch also kept the desk from the reckoning.)
   function reckoningOn() { return !(KOLOB.Experimental && KOLOB.Experimental.isOn && !KOLOB.Experimental.isOn("reckoning")); }
   function reckoningInfo(plan, rows, CAL) {
-    if (!CAL || !CAL.reckon || !reckoningOn()) return null;
+    if (!CAL || !CAL.reckon) return null;
     var dox = null, byIndex = {};
     for (var i = 0; i < rows.length; i++) { if (rows[i].index != null) byIndex[rows[i].index] = rows[i]; if (!dox && rows[i].section === "doxology") dox = rows[i]; }
     if (!dox || dox.index == null || dox.index < 1) return null;
@@ -574,7 +579,8 @@ window.KOLOB = window.KOLOB || {};
     // path), with the reckoning's order laid on the doxology's
     if (prep) {
       var rk = reckoningInfo(plan, prep.rows, CAL);
-      if (rk) C.reckoning = { planned: true, doxId: rk.doxId, sections: rk.sections.map(function (x) { return x.index; }), result: null };
+      // (held: the switch is off — the same doxology, the drone at home)
+      if (rk) C.reckoning = { planned: true, held: !reckoningOn(), doxId: rk.doxId, sections: rk.sections.map(function (x) { return x.index; }), result: null };
       HY.prepare(S.visitSeed(), C.meetingNum, prep.rows, prep.fm, rk);
     }
     // THE WARD (round 3b; PLAN-COMPOSITION §5): the Sunday's thirty-two and
@@ -631,7 +637,7 @@ window.KOLOB = window.KOLOB || {};
       type: "calendar", n: C.meetingNum, sunday: sunday, kind: activity, nameDs: SUN ? SUN.ds : null,
       hymns: A.hymns, lights: plan.map(function (ps) { return ps.light; }), rites: plan.map(function (ps) { return ps.type; }),
       scenes: C.scenes ? C.scenes.map(function (x) { return x ? { scene: x.name, empty: x.empty, forced: x.forced } : null; }) : null,
-      reckoning: C.reckoning ? { doxId: C.reckoning.doxId, sections: C.reckoning.sections.length } : null,
+      reckoning: C.reckoning ? { doxId: C.reckoning.doxId, sections: C.reckoning.sections.length, held: !!C.reckoning.held } : null,
     });
     enterSection(0, t);
     // The Liahona: the load-bearing draws, surfaced as the oracle's pointing.
@@ -984,6 +990,11 @@ window.KOLOB = window.KOLOB || {};
     // the rite's seating, when it is not the plain house (typed only; the
     // minutes give it a row)
     if (scn && scn.name !== "plain") emitEvent({ type: "scene", section: s.type, index: i, scene: scn.name, forced: !!scn.forced, sits: Object.keys(scn.sits || {}), light: s.light != null ? s.light : null });
+    // (and the voices it sits out let go of whatever they wrote before it
+    // began — the joint's clarinet phrase, a chord of the strings — over
+    // the house's release, as for a guest; the round-3b critic heard a
+    // phrase written in the joint ring thirty seconds into the choir alone)
+    if (scn && scn.sits && Object.keys(scn.sits).length && S.houseLetsGo) S.houseLetsGo(t, "the rite's seating: " + scn.name, true, scn.sits);
     // a singing section announces its hymn (SCORE §6): its number and its
     // Deseret name for the board, its meter, its dialect, and (round 3) its
     // hymnist's name in Deseret — the composer's hymn, sung verse by verse
@@ -1204,14 +1215,15 @@ window.KOLOB = window.KOLOB || {};
     var h = Hymnal() ? Hymnal().get(rk.doxId) : null, r = h && h.reckoning ? h.reckoning : null;
     rk.ok = !!(r && r.ok); rk.from = r ? r.from : null; rk.k = r ? r.k : null; rk.tries = r ? r.tries : null; rk.by = r && r.ok ? r.by || "notes" : null;
     rk.cantus = rk.ok ? r.cantus : []; rk.why = r && !r.ok ? (r.why || "no candidate fit") : (!h ? "the doxology was not written" : !r ? "the doxology was not ordered for it" : null);
-    emitEvent({ type: "reckoning", ok: rk.ok, doxId: rk.doxId, from: rk.from, k: rk.k, tries: rk.tries, by: rk.by, n: rk.cantus.length, why: rk.why,
+    emitEvent({ type: "reckoning", ok: rk.ok, held: !!rk.held, doxId: rk.doxId, from: rk.from, k: rk.k, tries: rk.tries, by: rk.by, n: rk.cantus.length, why: rk.why,
                 cantus: rk.cantus.map(function (c) { return { index: c.index, type: c.type, deg: c.deg, role: c.role, monzo: c.monzo.slice() }; }) });
     return rk;
   }
   function reckonTurn(t, jointDur, next) {
     if (!C.reckoning || !S.droneTurn) return;
     var rk = readReckoning();
-    if (!rk || !rk.ok || !C.plan[next]) return;
+    // (held: the switch is off, and the drone keeps the keynote all meeting)
+    if (!rk || !rk.ok || rk.held || !C.plan[next]) return;
     var R = stream("reckoning").fork("glide:" + next);
     var g = Math.min(R.rnd(4, 6), Math.max(1.5, jointDur + 0.3));
     var note = null, k = null;
@@ -1365,7 +1377,7 @@ window.KOLOB = window.KOLOB || {};
     // (the reckoning: the drone jumps to the rite's own note, quickly)
     if (C.reckoning && S.droneTurn) {
       var rk = readReckoning(), note = null;
-      if (rk && rk.ok) { rk.cantus.forEach(function (c, j) { if (c.index === idx) note = { c: c, k: j }; }); S.droneTurn(t, note ? note.c.monzo : [0, 0, 0, 0], 2, note ? note.c.role : "tonic", note ? note.k : null); }
+      if (rk && rk.ok && !rk.held) { rk.cantus.forEach(function (c, j) { if (c.index === idx) note = { c: c, k: j }; }); S.droneTurn(t, note ? note.c.monzo : [0, 0, 0, 0], 2, note ? note.c.role : "tonic", note ? note.k : null); }
     }
     emitEvent({ type: "skip", to: type, cat: "conductor", label: "↷ skipped", detail: "to " + type + " (dev)" });
     return true;
@@ -1597,8 +1609,8 @@ window.KOLOB = window.KOLOB || {};
     scene: function () { return sceneNow(); },
     scenes: function () { return C.scenes ? C.scenes.map(function (x) { return x ? { name: x.name, empty: x.empty, forced: x.forced } : null; }) : null; },
     sits: function (layer) { var sc = sceneNow(); return !!(sc && sc.sits && sc.sits[layer]); },
-    // the reckoning (round 3b, step 4): {planned, doxId, ok, from, cantus,
-    // why} once read, or null
+    // the reckoning (round 3b, step 4): {planned, held (the switch off: the
+    // drone at home), doxId, ok, from, cantus, why} once read, or null
     reckoning: function () { return C.reckoning ? JSON.parse(JSON.stringify(C.reckoning)) : null; },
     // (dev) the Hosanna's hook: {possible, built: false, die} on Easter and a dedication, else null
     hosanna: function () { return C.hosanna ? JSON.parse(JSON.stringify(C.hosanna)) : null; },
@@ -1761,7 +1773,7 @@ window.KOLOB = window.KOLOB || {};
     // keynote, no reckoning, a note the day's mode does not hold, or a hymn
     // sounding — its harmony is its own)
     function dronePedalClass(t) {
-      if (!S.droneNote || !C.reckoning || !C.reckoning.ok || hymnSounding()) return null;
+      if (!S.droneNote || !C.reckoning || !C.reckoning.ok || C.reckoning.held || hymnSounding()) return null;
       var dn = S.droneNote();
       if (!dn || dn.role === "tonic" || t < dn.until) return null;
       var P = KOLOB.Pitch.tuning(S.mode, S.F0), c = ((1200 * Math.log2(dn.mul)) % 1200 + 1200) % 1200;

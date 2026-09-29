@@ -38,9 +38,10 @@
 // THE RECKONING (round 3b, step 4; PLAN §7.2). On a Sunday the drone reckons
 // (kolob-calendar.js), the doxology's order carries the sections before it:
 // the desk writes the doxology — the composer's first, and then up to
-// seven more on the stream's reckoning:<k> forks — and keeps the first whose
-// opening notes stand, one a section, on each section's key (the tonic, the
-// third or the fifth), marking it hymn.reckoning = {ok, k, from, cantus}. If
+// RECKON_CANDIDATES − 1 more (23) on the stream's reckoning:<k> forks — and
+// keeps the first whose opening notes stand, one a section, on each
+// section's key (the tonic, the third or the fifth; else the first whose
+// strong notes do), marking it hymn.reckoning = {ok, k, from, cantus}. If
 // none does, it keeps the first as written, marked {ok: false}: the meeting
 // falls back to the drone on the keynote. The same by every road (the worker
 // loads kolob-calendar.js too).
@@ -181,11 +182,13 @@ window.KOLOB = window.KOLOB || {};
       var dox = s.type === "doxology";
       // the hymn's dialect: the house's, or a neighbour now and then; the
       // doxology leans to the Tabernacle's brightness on a Tabernacle or an
-      // ordinary Sunday, and keeps the house's voice on a fast one
+      // ordinary Sunday — and (round 3b, step 4, after the critic) to the
+      // gospel ring's, its sevenths — and keeps the house's voice on a
+      // fast one
       var nb = NEIGHBOURS[house] || {}, table = {};
       table[house] = HOUSE_W;
       for (var d in nb) if (d !== house) table[d] = nb[d];
-      if (dox && house !== "sacredharp" && house !== "oldway") table.tabernacle = (table.tabernacle || 0) + 2;
+      if (dox && house !== "sacredharp" && house !== "oldway") { table.tabernacle = (table.tabernacle || 0) + 2; table.gospel = (table.gospel || 0) + 0.8; }
       // (the light of the hymn's section leans it: plain early, the
       // Tabernacle and the gospel ring at full light — round 3b, step 4)
       var litLean = s.light != null && KOLOB.Calendar && KOLOB.Calendar.dialectLean ? KOLOB.Calendar.dialectLean(s.light) : null;
@@ -218,6 +221,12 @@ window.KOLOB = window.KOLOB || {};
       });
       // (the calendar's lean on the unison song's kind: step 4's hook)
       if (dialect === "shaker" && info.sunday && KIND_LEAN[info.sunday]) rows[rows.length - 1].kind = KIND_LEAN[info.sunday];
+      // (and a Tabernacle hymn in full light is written by a hymnist who
+      // leans to the sevenths and the secondary dominants — the calendar's
+      // richHymnist, on this hymn's own fork; the composer's own hymnist die
+      // is thrown all the same)
+      var rich = KOLOB.Calendar && KOLOB.Calendar.richHymnist && KOLOB.Hymnists ? KOLOB.Calendar.richHymnist(Rh.fork("hymnist:light").next(), dialect, s.light, KOLOB.Hymnists.list) : null;
+      if (rich) rows[rows.length - 1].hymnist = rich;
     });
     return { house: house, rows: rows };
   }
@@ -596,6 +605,7 @@ window.KOLOB = window.KOLOB || {};
       var key = keyOf(seed, r.id);
       if (jobs[key]) { earlier.push(key); return; }
       var opts = { dialect: r.dialect, meter: r.meter || undefined, mode: r.mode, keyMonzo: r.keyMonzo, id: r.id, gestures: r.gestures }, how = "compose", dep = null;
+      if (r.hymnist) opts.hymnist = r.hymnist;
       if (r.kind) opts.kind = r.kind;
       if (r.piece === "round") { how = "round"; opts = { dialect: r.dialect, mode: r.mode, keyMonzo: r.keyMonzo, id: r.id }; }
       else if (r.partnerOf) { how = "partner"; dep = keyOf(seed, r.partnerOf); opts = { dialect: r.dialect, id: r.id, tries: PARTNER_TRIES }; }

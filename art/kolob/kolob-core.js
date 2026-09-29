@@ -863,10 +863,14 @@ window.KolobAudio = (function () {
   // at te (the guest's entrance, the cue's scheduled time): who lets go
   // (logged: false for a guest the minutes may not name — the event says so,
   // as every event of that guest's does)
-  function houseLetsGo(te, guest, logged) {
+  // (only: round 3b, step 4 — a rite whose seating sits some of the house
+  // out lets those alone go as it begins: a clarinet phrase the deacon
+  // wrote during the joint does not ring half a minute into THE CHOIR ALONE)
+  function houseLetsGo(te, guest, logged, only) {
     if (!ctx || !doors) return null;
     var d = doors, layers = [], released = [], until = te + HOUSE_RELEASE_S;
     Object.keys(HOUSE).forEach(function (L) {
+      if (only && !only[L]) return;
       // the house takes its hands off as the visitor comes in, whether or not
       // they were playing: no turn of it begins inside the release
       houseRest[L] = Math.max(houseRest[L] || 0, until);

@@ -23,8 +23,11 @@
 //                          section, spelling the doxology's opening, and
 //                          glides to the next only under a joint's hush; the
 //                          doxology then sings that tune. Off: the drone on
-//                          the day's keynote all meeting, as before, and the
-//                          doxology the composer's first (kolob-calendar.js,
+//                          the day's keynote all meeting, as before — and
+//                          the same doxology, the same keys, the same meeting
+//                          otherwise, so the A/B is the drone alone (PLAN
+//                          §7.2's fallback: the cantus only for the key
+//                          plan, no audible glide) (kolob-calendar.js,
 //                          kolob-hymnal.js, kolob-voices-ground.js; round 3b,
 //                          step 4)
 //
@@ -72,7 +75,7 @@ window.KOLOB.Experimental = (function () {
   });
   var ABOUT = Object.freeze({
     singingSchool: "the singing school: the choir still practising the first hymn in the prelude — one part goes wrong, the chorister stops them, that part sings it alone on the notes, and everyone sings it again (about one Sunday in ten)",
-    reckoning: "the Kolob reckoning: the drone moves one note a section, spelling the opening of the tune the doxology will sing, and glides only under the joints (off: the drone on the day's keynote, as before)",
+    reckoning: "the Kolob reckoning: the drone moves one note a section, spelling the opening of the tune the doxology will sing, and glides only under the joints (off: the drone on the day's keynote all meeting; the doxology and everything else the same)",
   });
   var STORE_KEY = "kolob:experimental";
 

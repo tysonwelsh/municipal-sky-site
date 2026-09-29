@@ -495,6 +495,31 @@ window.KOLOB.Cast = (function () {
     return out;
   }
 
+  // THE BASSES IN THE MEN'S VERSE (round 3b, step 4): [part, octave] for a
+  // line whose tune the tenors carry an octave down (tunePart at 0.5) —
+  // the basses' own part where every note of it lies below the tune note
+  // sounding with it (by more than MEN_MEET_C), else their part an octave
+  // lower where that keeps above MEN_BASS_FLOOR_HZ, else the tune itself,
+  // with the tenors. hz(monzo, oct) is the hymn's own.
+  var MEN_MEET_C = 30, MEN_BASS_FLOOR_HZ = 73;
+  function menBassFor(line, next, tunePart, beatS, rit, holdMul, hz) {
+    var tn = partNotes(line, next, tunePart, beatS, rit, holdMul), bn = partNotes(line, next, "B", beatS, rit, holdMul);
+    if (!bn.length || !tn.length) return [tunePart, 0.5];
+    function under(oct) {
+      return bn.every(function (b) {
+        var bh = hz(b.n.monzo, oct);
+        return tn.every(function (x) {
+          if (x.t >= b.t + b.dur - 1e-3 || x.t + x.dur <= b.t + 1e-3) return true;
+          return 1200 * Math.log2(hz(x.n.monzo, 0.5) / bh) > MEN_MEET_C;
+        });
+      });
+    }
+    if (under(1)) return ["B", 1];
+    var low = Math.min.apply(null, bn.map(function (b) { return hz(b.n.monzo, 0.5); }));
+    if (low >= MEN_BASS_FLOOR_HZ && under(0.5)) return ["B", 0.5];
+    return [tunePart, 0.5];
+  }
+
   // who sings what, by dialect and practice: [the Score's part, octave factor]
   // (the gospel's tune — the lead — is its second voice, written where the
   // women sing it: they take it at pitch, the men an octave down, and the
@@ -683,8 +708,9 @@ window.KOLOB.Cast = (function () {
     if (!solo && who(ward, "enthusiast") && dEnth < 0.75) add(verses - 1, "enthusiast", "sings out", all, 3);
     // ---- a verse by one part (round 3b, step 4; PLAN §7.4's sub-scenes) ----
     // Now and then a middle verse of a hymn (the first of a hymn of two) is the
-    // men's alone (the tenors on the tune an octave down, the basses on
-    // their own part) or the women's (the trebles on theirs, the altos on
+    // men's alone (the tenors on the tune an octave down, the basses under
+    // it: their own part, or an octave lower, or with the tenors on the
+    // tune — menBassFor, line by line) or the women's (the trebles on theirs, the altos on
     // theirs) — the chorister's call, in the Tabernacle and in gospel sung
     // by the ward, on a verse that is plainly sung (not the soloist's treble
     // verse); whoever would have come forward in it from the other side of
@@ -729,7 +755,7 @@ window.KOLOB.Cast = (function () {
     };
   }
   var QUARTET_RATE = 0.45;                         // the quartet sings a gospel hymn's verses about this often
-  var ONE_PART_RATE = 0.3;                         // a hymn of three verses or more gives one to the men or the women (round 3b, step 4)
+  var ONE_PART_RATE = 0.3;                         // a hymn of two verses or more gives one to the men or the women (round 3b, step 4)
   // a refrain sung again rises (round 3b, step 4; PLAN §7.4): the ward sings
   // it out a little more each time — REFRAIN_RISE_DB a statement, the
   // refrain after each verse (gospel's), and each statement of the
@@ -1060,6 +1086,14 @@ window.KOLOB.Cast = (function () {
         // the stanza (the refrain is everyone's)
         var onePartOf = stanza && (P.part === "men" || P.part === "women") ? (P.part === "men" ? { T: 1, B: 1 } : { S: 1, A: 1 }) : null;
         if (onePartOf) singers = singers.filter(function (m) { return onePartOf[m.part]; });
+        // (the men's verse: the tenors carry the tune an octave down, and
+        // the basses stay under it — their own part where it lies below
+        // the tune the whole line, else the whole line an octave lower
+        // where that stays in a bass's compass, else the tune with the
+        // tenors: never meeting it, never above it. The round-3b critic
+        // heard gospel's bass part, written where the men sing it, cross
+        // the lead brought down an octave — 7 of 60 notes above the tune)
+        var menBass = onePartOf && P.part === "men" ? menBassFor(line, next, hymn.dialect === "gospel" ? "T" : hymn.melodyPart, bs, rit, plan.holdMul, hz) : null;
         // (and a refrain sung again rises: a little more each verse, and each
         // statement of the wandering refrain — plan.rise, its own)
         var riseDb = Math.min(REFRAIN_RISE_MAX, (!stanza ? REFRAIN_RISE_DB * vi : 0) + (plan.rise || 0));
@@ -1086,8 +1120,9 @@ window.KOLOB.Cast = (function () {
           var asg = assignment(hymn, m, P.practice === "descant" && role === "soloist" ? "sung" : P.practice), part = asg[0], oct = asg[1];
           // (the men's verse: the tenors take the tune an octave under where
           // it is written — the Tabernacle's soprano, gospel's lead — and the
-          // basses keep their own part)
+          // basses stay under it, menBassFor's way)
           if (onePartOf && P.part === "men" && m.part === "T") { part = hymn.dialect === "gospel" ? "T" : hymn.melodyPart; oct = 0.5; }
+          if (menBass && m.part === "B") { part = menBass[0]; oct = menBass[1]; }
           if (f && (f.action === "sings the treble verse" || f.alone)) { part = hymn.melodyPart; oct = hymn.melodyPart === "S" && (m.part === "T" || m.part === "B") ? 0.5 : 1; }
           var inQuartet = qOf[m.id] && stanza;
           if (inQuartet) { part = qOf[m.id]; oct = 1; }

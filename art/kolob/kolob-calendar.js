@@ -57,12 +57,19 @@
 // fifth of the key the section is sung in). In the doxology the ward sings
 // the tune at its own pace: the melody the drone has been spelling all
 // meeting. Here: reckon(hymn, info) reads a written doxology against the
-// sections before it (pure); the hymnal's desk writes the doxology a few
-// ways and keeps the first whose opening stands on every section's key
+// sections before it (pure); the hymnal's desk writes the doxology up to
+// RECKON_CANDIDATES ways and keeps the first whose opening stands on every
+// section's key (else the first whose strong notes — the tune's stressed
+// skeleton — do). The cantus is as long as the meeting has sections before
+// its doxology (four to seven notes), not the plan's seven to nine: one
+// note a section, and no more sections than the order of service has
 // (kolob-hymnal.js, the errand "reckon"). If none does, the meeting FALLS
 // BACK cleanly: the doxology as the composer first wrote it, and the drone
 // on the day's keynote as ever (no glide). The switch
-// KOLOB.Experimental.reckoning (?exp=-reckoning) turns it off.
+// KOLOB.Experimental.reckoning (?exp=-reckoning) turns the drone's part of
+// it off: the doxology the desk kept is written and sung all the same, and
+// the drone stays home (§7.2's fallback, "the cantus only for the key plan,
+// with no audible glide") — the owner's A/B is the drone, nothing else.
 //
 // PURE (SCORE §1): no AudioContext, no DOM, no Math.random, no clock. Every
 // die is the caller's (a PJ2.Rand stream, or a die already thrown); it loads
@@ -79,6 +86,7 @@
 //   light(plan, i, id)      → the section's light, 0–1;  lights(plan, id) → every section's
 //   dialectLean(light)      → { dialect: factor } (the hymnal's per-hymn lean)
 //   regLean(light, id)      → −1 … +1 (softer … fuller stops)
+//   richHymnist(u, dialect, light, hymnists) → a hymnist's id at full light (or null)
 //   scenes(plan, id, guests, R) → [{ scene, empty, forced }] a seating per section
 //   SCENES, SCENE_ODDS
 //   reckon(hymn, info)      → { ok, from, cantus: [...], why }   (pure; the desk's)
@@ -114,7 +122,12 @@ window.KOLOB.Calendar = (function () {
   //             organ), on top of the light
   //   morning   factors on the prelude's seatings (seatPrelude)
   //   scenes    factors on the other rites' seatings (scenes)
-  //   arc       the Sunday's own light: offsets and overrides (ARC below)
+  //   arc       the Sunday's own light: offsets and overrides (ARC below) —
+  //             and its own dawn, so that the Sunday is heard in the first
+  //             minutes (after the round-3b critic, who found a wedding and
+  //             an ordinary Sunday near-twins there): a fast Sunday's and
+  //             Christmas's grey and sparse, a wedding's late and awake,
+  //             a funeral's darkest, the feasts' lifted
   //   dox       factors on the doxology's own dialect (a funeral rises into
   //             the Tabernacle's "all is well"; Easter's full Tabernacle)
   //   hosanna   the Hosanna may come (§8.12; not built yet — a hook, unlogged)
@@ -134,7 +147,7 @@ window.KOLOB.Calendar = (function () {
       organist: { plain: 1.3 }, reg: -0.45,
       morning: { arbor: 1.8, ground: 1.4, humming: 1.3, voluntary: 0.6, parlor: 0.8 },
       scenes: { lined: 2.2, arbor: 1.6, voluntary: 0.6, choir: 0.9 },
-      arc: { morning: [0.32, 0.5], full: 0.8, stillness: 0.06 },
+      arc: { dawn: [0.09, 0.15], morning: [0.32, 0.5], full: 0.8, stillness: 0.06 },
     },
     conference: {
       share: 0.12, kind: "conference", ds: "𐐖𐐇𐐤𐐊𐐡𐐊𐐢 𐐗𐐉𐐤𐐙𐐡𐐇𐐤𐐝", en: "GENERAL CONFERENCE",
@@ -163,7 +176,7 @@ window.KOLOB.Calendar = (function () {
       organist: {}, reg: 0.1,
       morning: { humming: 2, valley: 1.4, strings: 1.2 },
       scenes: { choir: 1.8, voluntary: 1.2 },
-      arc: { evening: 0.5 },
+      arc: { dawn: [0.09, 0.15], evening: 0.5 },
     },
     easter: {
       share: 0.06, kind: "jubilee", ds: "𐐀𐐝𐐓𐐊𐐡", en: "EASTER",
@@ -181,9 +194,9 @@ window.KOLOB.Calendar = (function () {
       plan: { hymns: 2, cutTestimony: 0.6, bright: 0.7, silenceMul: 0.9 }, season: [0.5, 0.8],
       guests: { bands: 0.6, steeples: 1.5, oldtune: 1.3 }, cast: { opt: [3, 5], testimony: [2, 2] },
       organist: { victorian: 1.4 }, reg: -0.1,
-      morning: { parlor: 1.8, strings: 1.5, voluntary: 1.2, arbor: 0.5 },
+      morning: { parlor: 2.4, strings: 2.0, voluntary: 1.4, arbor: 0.4, ground: 0.6, valley: 0.6 },
       scenes: { voluntary: 1.5, choir: 1.1, lined: 0.5 },
-      arc: { morning: [0.45, 0.62], evening: 0.5 },
+      arc: { dawn: [0.2, 0.3], morning: [0.45, 0.62], evening: 0.5 },
     },
     funeral: {
       share: 0.03, kind: "ordinary", ds: "𐐊 𐐙𐐧𐐤𐐊𐐡𐐊𐐢", en: "A FUNERAL",
@@ -312,11 +325,29 @@ window.KOLOB.Calendar = (function () {
   // single line, the Shakers' unison; at full light the Tabernacle and the
   // gospel ring, the sevenths; the morning between leaves the house's
   // weights nearly as they are. Interpolated in the log between the anchors.
+  // (Full light leans harder to the gospel ring than to the Tabernacle: the
+  // doxology's table already gives the Tabernacle its brightness, and at an
+  // even lean the ring was rarer at full light than in the morning — 14 %
+  // against 18 % of hymns — so the sevenths never rose; the round-3b critic)
   var LIGHT_ANCHORS = [
     [0.1,  { sacredharp: 1.55, oldway: 1.6, shaker: 1.45, psalmody: 1.15, tabernacle: 0.72, gospel: 0.5 }],
     [0.5,  { sacredharp: 1.05, oldway: 1.0, shaker: 1.0, psalmody: 1.1, tabernacle: 1.0, gospel: 0.95 }],
-    [1.0,  { sacredharp: 0.42, oldway: 0.28, shaker: 0.6, psalmody: 0.65, tabernacle: 2.2, gospel: 2.2 }],
+    [1.0,  { sacredharp: 0.42, oldway: 0.28, shaker: 0.6, psalmody: 0.65, tabernacle: 1.9, gospel: 4.6 }],
   ];
+  // THE HARMONISTS AT FULL LIGHT: a Tabernacle hymn sung in full light is
+  // written by one of the colony's hymnists leaning to their appetite for
+  // the sevenths and the secondary dominants (kolob-hymnists.js: sevenths,
+  // color) — richHymnist() weights each by their lean to the dialect times
+  // (RICH_BASE + sevenths + color)², on the caller's own die; below
+  // RICH_FROM the composer draws its hymnist as ever
+  var RICH_FROM = 0.9, RICH_BASE = 0.3, RICH_DIALECTS = { tabernacle: true };
+  function richHymnist(u, dialect, L, list) {
+    if (!RICH_DIALECTS[dialect] || L == null || L < RICH_FROM || !list || !list.length) return null;
+    return pickWith(u, list.map(function (h) {
+      var lw = h.lean && h.lean[dialect] != null ? h.lean[dialect] : 0.05, x = RICH_BASE + (h.sevenths || 0) + (h.color || 0);
+      return [h.id, lw * x * x];
+    }));
+  }
   var DIALECTS = ["tabernacle", "sacredharp", "oldway", "psalmody", "gospel", "shaker"];
   function dialectLean(L) {
     L = clamp(L == null ? 0.5 : L, 0, 1);
@@ -366,6 +397,18 @@ window.KOLOB.Calendar = (function () {
     postlude:   { voluntary: 1.6, plain: 1.0, arbor: 0.6, choir: 0.6 },
   };
   var NEVER_EMPTY = { prelude: true, hymn: true, doxology: true };
+  // again(u, pool, key): a die u that fell on `key` in `pool`, read afresh —
+  // where it lay inside key's share, stretched to [0, 1) (u as it was when
+  // key is not in the pool, or its share is nothing)
+  function again(u, pool, key) {
+    var total = 0, a = null, w = 0, i;
+    for (i = 0; i < pool.length; i++) total += pool[i][1];
+    if (!(total > 0)) return u;
+    var at = 0;
+    for (i = 0; i < pool.length; i++) { if (pool[i][0] === key) { a = at / total; w = pool[i][1] / total; break; } at += pool[i][1]; }
+    if (a == null || !(w > 0)) return u;
+    return clamp((u - a) / w, 0, 0.999999);
+  }
   // the stillest rite keeps its stillness: when the rule would seat it, the
   // rite before it is seated instead, where that one may be
   var KEEPS_STILL = { sacrament: true };
@@ -386,14 +429,20 @@ window.KOLOB.Calendar = (function () {
       var empty = SCENES[sc].empty && !guested && !NEVER_EMPTY[type];
       // THE RULE: never two empty sections running — the die read again
       // from the seatings that are not the plain house (the sacrament's
-      // stillness kept: the rite before it takes the seating instead)
+      // stillness kept: the rite before it takes the seating instead). The
+      // die is read again WITHIN the plain house's share of it (again(), a
+      // fresh die given that it fell there): read as it fell, a die low
+      // enough to land on the plain house — first in the testimony's pool —
+      // landed again on the first seating after it, and the choir alone
+      // took 44 % of the testimonies the rule seated (the round-3b critic)
       if (empty && prevEmpty) {
         var back = out[i - 1], bOdds = back && SCENE_ODDS[plan[i - 1].type];
         if (KEEPS_STILL[type] && bOdds) {
-          var bPool = Object.keys(bOdds).filter(function (k) { return !SCENES[k].empty; }).map(function (k) { return [k, bOdds[k] * (lean[k] != null ? lean[k] : 1)]; });
-          out[i - 1] = { scene: pickWith(dice[i - 1], bPool), empty: false, forced: true };
+          var bAll = Object.keys(bOdds).map(function (k) { return [k, bOdds[k] * (lean[k] != null ? lean[k] : 1)]; });
+          var bPool = bAll.filter(function (p) { return !SCENES[p[0]].empty; });
+          out[i - 1] = { scene: pickWith(again(dice[i - 1], bAll, "plain"), bPool), empty: false, forced: true };
         } else {
-          sc = pickWith(dice[i], pool.filter(function (p) { return !SCENES[p[0]].empty; }));
+          sc = pickWith(again(dice[i], pool, "plain"), pool.filter(function (p) { return !SCENES[p[0]].empty; }));
           empty = false; forced = true;
         }
       }
@@ -420,6 +469,7 @@ window.KOLOB.Calendar = (function () {
   // at most — the harmony's tuning, never the melody's, so it never beats
   // against the chord it stands under).
   var TOLERANCE_C = 25;
+  var STILL_ANY_NOTE = false;
   var MINOR = { dorian: true, aeolian: true };
   function cents(m) { return 1200 * (m[0] + m[1] * Math.log2(3) + m[2] * Math.log2(5) + (m[3] || 0) * Math.log2(7)); }
   function mz(a, b) { return [a[0] + b[0], a[1] + b[1], a[2] + b[2], (a[3] || 0) + (b[3] || 0)]; }
@@ -466,10 +516,15 @@ window.KOLOB.Calendar = (function () {
     for (var j = from; j < secs.length; j++) {
       var s = secs[j], nt = notes[j - from];
       if (!nt) { bad.push(j); continue; }
-      // (a still rite — the sacrament seated plain, no guest in it — has
-      // nothing sounding for the drone to stand against: in it the drone is
-      // all there is, and any note of the tune is heard as itself)
-      if (s.still && s.mode && inScale(nt.monzo, s.mode)) {
+      // (a still rite — the sacrament seated plain, no guest in it — was
+      // let stand on any note of the tune, the drone being all there is in
+      // it. It is not: the strings bow the day's chord there, twice or so,
+      // and a drone on re, fa, la or ti held two minutes under a do–sol
+      // dyad clashed a second in 61 % of the sacrament's harmonies against
+      // the keynote's 37 % (the round-3b critic's 14 seeds). So the
+      // sacrament keeps the rule every rite keeps — the tonic, the third or
+      // the fifth — and STILL_ANY_NOTE is off; true lets it stand again)
+      if (STILL_ANY_NOTE && s.still && s.mode && inScale(nt.monzo, s.mode)) {
         cantus.push({ index: s.index, type: s.type, deg: nt.deg, tuneMonzo: cls(nt.monzo), monzo: cls(nt.monzo), role: "alone", off: 0 });
         continue;
       }
@@ -504,13 +559,17 @@ window.KOLOB.Calendar = (function () {
     return { ok: false, from: null, n: 0, cantus: [], by: strong ? "strong" : "notes", why: "one section before the doxology" };
   }
   // how many ways the desk writes a doxology before it falls back (the first
-  // is the doxology the composer would have written anyway)
-  var RECKON_CANDIDATES = 12;
+  // is the doxology the composer would have written anyway). 24, after the
+  // critic: with the still sacrament held to the rule, 12 reckoned 62.7 %
+  // of 600 doxologies (the tune's own notes on 150 of them); 24 reckon
+  // 70.5 % (211 by its own notes), for twice the desk's time in the
+  // composer's worker, off the audio path (Node: 82 → 130 ms at the median)
+  var RECKON_CANDIDATES = 24;
 
   return {
     SUNDAYS: SUNDAYS, ORDER: ORDER, KINDS: KINDS,
     draw: draw, kindOf: kindOf, sunday: sunday, meetingRow: meetingRow,
-    ARC: ARC, phaseOf: phaseOf, light: light, lights: lights, dialectLean: dialectLean, regLean: regLean,
+    ARC: ARC, phaseOf: phaseOf, light: light, lights: lights, dialectLean: dialectLean, regLean: regLean, richHymnist: richHymnist,
     SCENES: SCENES, SCENE_ODDS: SCENE_ODDS, scenes: scenes,
     reckon: reckon, tuneOnsets: tuneOnsets, RECKON_CANDIDATES: RECKON_CANDIDATES, TOLERANCE_C: TOLERANCE_C,
   };
