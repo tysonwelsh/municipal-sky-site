@@ -639,7 +639,7 @@ window.Guests3a = (function () {
   function bandCard() {
     var card = el("section", "kg3-card");
     card.appendChild(el("h2", "kg3-name", "The Nauvoo Brass Band goes by"));
-    card.appendChild(el("p", "kg3-phrase", "A saxhorn band comes up the road playing one of the day's hymns as a march — its own key, its own pace — in real strains: an introduction, the first strain twice, the second strain twice (half the time the first of them down in the tuba), the trio in the subdominant, softly, sometimes once more full, and the stinger. It is heard far off at one end of the colony, passes the meetinghouse partway through the second strain, and goes on out the other end."));
+    card.appendChild(el("p", "kg3-phrase", "A saxhorn band comes up the road playing one of the day's hymns as a march — its own key, its own pace — in real strains: an introduction, the first strain twice, the second strain twice (half the time the first of them down in the tuba), the trio in the subdominant, softly, sometimes once more full, and the stinger. It is heard far off at one end of the colony, passes the meetinghouse partway through the second strain, and goes on toward the other end; after the stinger its drums alone carry it round the last houses and out of hearing."));
     var row = el("div", "kg3-row");
     row.appendChild(select("kg3-which", [["0", "the first hymn"], ["1", "the second hymn"]], "the march made from"));
     row.appendChild(checkbox("kg3-second", "a second band, the other way"));
@@ -688,7 +688,7 @@ window.Guests3a = (function () {
   function hcCard() {
     var card = el("section", "kg3-card");
     card.appendChild(el("h2", "kg3-name", "The handcart company"));
-    card.appendChild(el("p", "kg3-phrase", "Far across the fields: first the carts — a dry axle creaking once a turn of the wheel, iron on gravel — then the captain strikes up and the company sings ALL IS WELL in unison as it walks, the men an octave under the women, a child a hair behind; a verse or two, and on out of hearing. The meeting hushes to listen."));
+    card.appendChild(el("p", "kg3-phrase", "Far across the fields: first the carts — a dry axle creaking once a turn of the wheel, iron on gravel — then the captain strikes up and the company sings ALL IS WELL in unison as it walks, the men an octave under the women, a child a hair behind; a verse or two, the last of it already over the rise, and the wheels after it out of hearing. The meeting hushes to listen."));
     var row = el("div", "kg3-row");
     row.appendChild(select("kg3-hc-only", [["", "the whole company"], ["carts", "the carts alone"], ["singers", "the singers alone"]], "hear"));
     var bPlay = button("▶ the company passes", "kg3-play", function () { play("handcart").then(function () { if (current) current.costEl = hcView.cost; }); });
