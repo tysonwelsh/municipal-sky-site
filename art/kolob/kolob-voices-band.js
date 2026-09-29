@@ -131,6 +131,12 @@
 //   band.dispose()  — disconnect the band (and its distance stage) at once
 //   KOLOB.VoicesBand.townRoom(ctx, destination, {seconds, gain}) → room
 //      { input, out, dispose() } — one shared outdoor tail for several bands
+//   KOLOB.VoicesBand.road(ctx, destination, {room, echoDelay}) → road
+//      { input, path([{t, d, side}, …]), nodes, dispose() } — a traveller
+//      (round 3c: the Nauvoo band marching past, the handcart company):
+//      the distance stage's four curves and the side, laid along a path
+//      (see A ROAD THROUGH THE TOWN). Make the band with no distance and
+//      play it into road.input.
 //   KOLOB.VoicesBand.warm(ctx) — build the town's tail ahead of time (a few
 //      tens of ms, once per context: do it at start-up, not in a callback)
 //   KOLOB.VoicesBand.distanceDb(d), .dynamicDb(dyn) — pure: how much quieter
@@ -347,6 +353,69 @@ window.KOLOB.VoicesBand = (function () {
     }
     return {
       input: input, nodes: nodes.length + (own ? own.nodes : 0),
+      dispose: function () {
+        nodes.forEach(function (n) { try { n.disconnect(); } catch (e) {} });
+        if (own) own.dispose();
+      },
+    };
+  }
+
+  // ---- A ROAD THROUGH THE TOWN (round 3c): a source that TRAVELS ------------
+  // The distance stage above stands still: a choir placed once, far or near.
+  // A marching band does not. It comes up the road from one end of the
+  // colony, passes the meetinghouse and goes on out of the other, and the
+  // ear follows it by the same four facts, now moving: the direct sound
+  // rises and falls (dirDbAt), the air takes less of its top as it nears
+  // (veilAt, shelfDbAt), the town's reverberance stands against it and
+  // then under it (airDbAt, through one shared townRoom: the air is all
+  // around, so it is not panned), and the echo off the facing houses fades
+  // in as it goes far (echoAt, from the other side). Its place in the field
+  // (side, −1 … 1) turns with it. road(ctx, destination, {room, echoDelay})
+  // → { input, path(points), nodes, dispose() }: path([{t, d, side}, …])
+  // lays every one of those curves along the points (a straight ramp between
+  // two, so a point a second or so apart draws a smooth passage). Built
+  // once per traveller: 11 nodes (15 with a town room of its own).
+  function road(ctx, destination, o) {
+    o = o || {};
+    var nodes = [];
+    function mk(n) { nodes.push(n); return n; }
+    var input = mk(ctx.createGain());
+    var veil = mk(ctx.createBiquadFilter()); veil.type = "lowpass"; veil.Q.value = 0.5; veil.frequency.value = veilAt(1);
+    var shelf = mk(ctx.createBiquadFilter()); shelf.type = "highshelf"; shelf.frequency.value = 2500; shelf.gain.value = shelfDbAt(1);
+    var direct = mk(ctx.createGain()); direct.gain.value = 0;
+    var pan = mk(ctx.createStereoPanner ? ctx.createStereoPanner() : ctx.createGain());
+    input.connect(veil); veil.connect(shelf); shelf.connect(direct); direct.connect(pan); pan.connect(destination);
+    var own = null, room = o.room || null;
+    if (!room) { own = townRoom(ctx, destination, {}); room = own; }
+    var pre = mk(ctx.createDelay(0.2)); pre.delayTime.value = 0.03;
+    var send = mk(ctx.createGain()); send.gain.value = 0;
+    shelf.connect(pre); pre.connect(send); send.connect(room.input);
+    var ed = mk(ctx.createDelay(0.6)); ed.delayTime.value = o.echoDelay != null ? o.echoDelay : 0.25;
+    var elp = mk(ctx.createBiquadFilter()); elp.type = "lowpass"; elp.frequency.value = 2500; elp.Q.value = 0.5;
+    var eg = mk(ctx.createGain()); eg.gain.value = 0;
+    var ep = mk(ctx.createStereoPanner ? ctx.createStereoPanner() : ctx.createGain());
+    shelf.connect(ed); ed.connect(elp); elp.connect(eg); eg.connect(ep); ep.connect(destination);
+    function lay(param, pts, fn) {
+      pts.forEach(function (p, i) {
+        var v = fn(p);
+        if (i === 0) param.setValueAtTime(v, p.t); else param.linearRampToValueAtTime(v, p.t);
+      });
+    }
+    function path(points) {
+      var pts = (points || []).filter(function (p) { return p && isFinite(p.t) && isFinite(p.d); });
+      if (!pts.length) return;
+      function dd(p) { return Math.max(0, Math.min(1, p.d)); }
+      function sd(p) { return Math.max(-1, Math.min(1, p.side || 0)); }
+      lay(veil.frequency, pts, function (p) { return veilAt(dd(p)); });
+      lay(shelf.gain, pts, function (p) { return shelfDbAt(dd(p)); });
+      lay(direct.gain, pts, function (p) { return Math.pow(10, dirDbAt(dd(p)) / 20); });
+      lay(send.gain, pts, function (p) { return Math.pow(10, airDbAt(dd(p)) / 20); });
+      lay(eg.gain, pts, function (p) { return echoAt(dd(p)) * Math.pow(10, dirDbAt(dd(p)) / 20); });
+      if (pan.pan) lay(pan.pan, pts, sd);
+      if (ep.pan) lay(ep.pan, pts, function (p) { return -sd(p) * 0.5; });
+    }
+    return {
+      input: input, path: path, nodes: nodes.length + (own ? own.nodes : 0),
       dispose: function () {
         nodes.forEach(function (n) { try { n.disconnect(); } catch (e) {} });
         if (own) own.dispose();
@@ -673,7 +742,7 @@ window.KOLOB.VoicesBand = (function () {
   }
 
   return {
-    create: create, townRoom: townRoom,
+    create: create, townRoom: townRoom, road: road,
     warm: function (ctx, seconds) { townIR(ctx, seconds || 2.6); },
     // pure level curves, for a performer placing bands against each other
     distanceDb: distanceDb, dynamicDb: function (dyn) { return 20 * Math.log10(tbnAmp(dynOf(dyn))); },
