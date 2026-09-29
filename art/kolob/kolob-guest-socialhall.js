@@ -121,11 +121,14 @@ window.KOLOB.GuestSocialHall = (function () {
   // the stereo seats (the dance fills the room): the fiddler on a chair by
   // the wall, the caller beside him, the floor across the whole width
   var FIDDLE_PAN = -0.22, CALLER_PAN = 0.18;
-  // THE LEVEL (the whole hall's bus), against the organ reference as the
-  // guests lab measures it (the loudest 3 s, as seated): set in round 3c's
-  // check so the dance sits about level with the organ at its loudest (the
-  // owner lowered the organ and the trombones; the bells sit near level)
-  var LEVEL = 0.5;
+  // THE LEVEL (the whole hall's bus), against the v0.30 organ reference as
+  // the guests lab 3c measures it (the loudest 3 s, as seated): the owner
+  // took the organ 2.3 dB and the trombones 4 dB down after hearing them (the
+  // trombones ended about 2 LU under the reference), and the handbells sit
+  // at −1.3 to +1.0; the dance is set to about −1.5 LU at its loudest (the
+  // lab's first render, at 0.5, measured +1.8 LU). Round 3c's table in the
+  // handoff has every number.
+  var LEVEL = 0.36;
 
   function oddsFor(info) {
     var w = ODDS.weight;
@@ -591,10 +594,13 @@ window.KOLOB.GuestSocialHall = (function () {
     var W = offers.map(function (o, i) { return o.section === "doxology" || (o.section == null && i === offers.length - 1) ? 5 : i === 0 ? 3 : 2; });
     var pick = offers[0], tot = W.reduce(function (a, b) { return a + b; }, 0), u = sh.hymnU * tot;
     for (var i = 0; i < offers.length; i++) { u -= W[i]; if (u < 0) { pick = offers[i]; break; } }
+    // (a dev may name the dance and how many times through: the lab's menus;
+    // the dice are drawn all the same)
+    if (M.piece && PIECES[M.piece]) { var sh2 = {}; for (var x in sh) sh2[x] = sh[x]; sh2.piece = M.piece; sh = sh2; }
     var h = pick.hymn, P = pieceSpec(sh);
     var T = tune(h, sh.piece, stream, { per: P.per, refrainB: sh.refrainB });
     return {
-      prepared: true, piece: sh.piece, meter: P.meter, per: P.per, beat: beatOf(sh), times: timesFor(sh, M),
+      prepared: true, piece: sh.piece, meter: P.meter, per: P.per, beat: beatOf(sh), times: M.times === 2 || M.times === 3 ? M.times : timesFor(sh, M),
       swing: P.per === 2 ? (sh.piece === "quadrille" ? 1 + (sh.swing - 1) * 0.5 : sh.swing) : 1,
       tune: T, keynoteHz: K, finalHz: K * mRatio(h.keyMonzo), mode: T.mode,
       hymnId: h.id || null, hymnName: h.nameEn || null, hymnDs: h.nameDs || null, dialect: h.dialect || null, section: pick.section || null,
@@ -948,7 +954,10 @@ window.KOLOB.GuestSocialHall = (function () {
   // PERFORM — the hall, placed at t (synthesis; reads no clock)
   // ==========================================================================
   // the parts' balance within the hall (under LEVEL)
-  var MIX = { fiddle: 1, floor: 0.5, caller: 0.55 };
+  // (soloed at LEVEL 0.5, seed 4: the fiddle's loudest 3 s +0.3 LU, the
+  // caller −1.4, the floor −6.4 — the caller too forward for a dance heard
+  // across the room: 2.4 dB down; the floor 0.8 up, a rhythm under the tune)
+  var MIX = { fiddle: 1, floor: 0.55, caller: 0.42 };
   function perform(ctx, dest, t, material, stream, hooks) {
     var VF = window.KOLOB.VoicesFolk, VV = window.KOLOB.VoicesVocal;
     if (!VF || !VF.create) throw new Error("KOLOB.GuestSocialHall: load kolob-voices-folk.js first");
