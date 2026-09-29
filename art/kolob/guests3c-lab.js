@@ -169,6 +169,53 @@ window.Guests3c = (function () {
     if (reed0 != null && !o.noReed) windows.push({ name: "the harmonium (with the hum's tail)", a: reed0, b: end - t });
     return { dur: end - t + 1.5, score: sc, seat: seat, expect: sungExpect(sc.notes, t), stats: budgetStats(t, end), windows: windows };
   };
+  // OUR WARD SINGS THE HYMN — the Cast's plan and cue sheet, as the meeting
+  // writes them (the organ's lines on the pipe organ where the dialect has
+  // one); the sheet's verses are the far ward's cue
+  var WARD_LAB = 0.16, ORGAN_LAB = 0.9;               // (the engine's WARD_LEVEL; the organ as cast-lab has it)
+  function wardSheet(st) {
+    var k = "s:" + st.seed + ":" + st.dialect + ":" + st.mode + ":" + st.keynote;
+    if (cache[k]) return cache[k];
+    var ward = wardOf(st), h = hymnOf(st), organ = !!(K.Dialects && K.Dialects.get(h.dialect) && K.Dialects.get(h.dialect).organ);
+    var plan = Cast.planHymn(ward, h, R(st.seed).fork("hymn:1:1").fork("performance"), { organ: organ, first: false });
+    var sheet = Cast.score(ward, h, plan, { stream: R(st.seed).fork("hymn:1:1").fork("performance"), keynoteHz: st.keynote });
+    var verses = [];
+    sheet.lines.forEach(function (ln) { if (ln.verse >= 0 && !ln.amen && !ln.tag && (!verses[ln.verse] || ln.at < verses[ln.verse].at)) verses[ln.verse] = { at: ln.at, beatS: ln.beatS }; });
+    var amen = sheet.lines.filter(function (ln) { return ln.amen; })[0] || null;
+    return (cache[k] = { ward: ward, hymn: h, plan: plan, sheet: sheet, organ: organ, verses: verses.filter(Boolean), amenAt: amen ? amen.at : null });
+  }
+  function freshSheet(sh) { var o = {}; for (var k in sh) o[k] = sh[k]; o._ci = 0; o._oi = 0; return o; }
+  P.near = function (ctx, into, t, o) {
+    var st = settings(o), ws = wardSheet(st), bus = ctx.createGain();
+    bus.gain.value = WARD_LAB; bus.connect(into.input);
+    var ob = ctx.createGain(); ob.gain.value = ORGAN_LAB; ob.connect(into.input);
+    var org = ws.organ && K.VoicesOrgan ? K.VoicesOrgan.create(ctx, ob, { gain: 1, seed: st.seed, t0: t }) : null;
+    var perf = Cast.performer(ws.ward, { V: V, synth: R(st.seed).fork("synth:vocal"), organ: org ? function (at, oc) { org.play(at, oc.notes, oc.registration); } : null });
+    if (V.budget) V.budget.reset();
+    perf.schedule(ctx, { hall: bus, near: bus }, t, freshSheet(ws.sheet));
+    return { dur: ws.sheet.end + 3, expect: [], stats: budgetStats(t, t + ws.sheet.end), ws: ws };
+  };
+  function farMaterial(st, t, o) {
+    var ws = wardSheet(st), h = ws.hymn;
+    return { hymn: h, keynoteHz: st.keynote, voices: o.voices || null, verses: ws.verses.length, beatS: ws.verses[0] ? ws.verses[0].beatS : h.beatS,
+             timing: ws.verses.map(function (v) { return { at: t + v.at, beatS: v.beatS }; }), amen: ws.amenAt != null, amenAt: ws.amenAt != null ? t + ws.amenAt : null,
+             from: o.from || null };
+  }
+  P.far = function (ctx, into, t, o) {
+    var st = settings(o), s = stream("farward", st.seed), mat = farMaterial(st, t, o);
+    if (o.far) mat.far = o.far;
+    if (V.budget && !o.keepBudget) V.budget.reset();
+    var end = FW.perform(ctx, into.wide, t, mat, s, { defer: o.defer || null, onNote: o.onNote || null, onStage: o.onStage || null });
+    return { dur: end - t + 1, expect: [], stats: budgetStats(t, end), last: FW.perform.last, ws: wardSheet(st) };
+  };
+  // (how long each runs, without building it: the sheet's end, the far ward's lag and tail)
+  P.near.est = function (o) { return wardSheet(settings(o)).sheet.end + 3; };
+  P.far.est = function (o) { var ws = wardSheet(settings(o)); return ws.sheet.end + ws.hymn.beatS * 20 + 9; };
+  P.canon = function (ctx, into, t, o) {
+    var a = P.near(ctx, into, t, o), b = P.far(ctx, into, t, Object.assign({}, o, { keepBudget: true }));
+    return { dur: Math.max(a.dur, b.dur), expect: [], stats: budgetStats(t, t + Math.max(a.dur, b.dur)), last: b.last, ws: a.ws };
+  };
+  P.canon.est = P.far.est;
   // ---- the level reference: the v0.30 organChord, line for line (the
   // instruments, trombone and guests labs' P.reference) ------------------------
   var MAJ = [1, 9 / 8, 5 / 4, 4 / 3, 3 / 2, 5 / 3, 15 / 8];
@@ -280,9 +327,13 @@ window.Guests3c = (function () {
     var probe = new OfflineAudioContext(2, SR, SR);
     var irP = offlineIR ? Promise.resolve(offlineIR) : fetchIR(probe).then(function (b) { offlineIR = b; return b; });
     return irP.then(function (ir) {
-      var dummy = new OfflineAudioContext(2, SR, SR), dch = buildChain(dummy, "dry", null, dummy.destination, 0.5);
-      var est = P[id](dummy, { input: dch.input, wide: dch.wide }, 0.1, o);
-      if (V.forget) V.forget(dummy);
+      var est;
+      if (P[id].est) est = { dur: P[id].est(o) };
+      else {
+        var dummy = new OfflineAudioContext(2, SR, SR), dch = buildChain(dummy, "dry", null, dummy.destination, 0.5);
+        est = P[id](dummy, { input: dch.input, wide: dch.wide }, 0.1, o);
+        if (V.forget) V.forget(dummy);
+      }
       var rm = o.room || room, len = Math.ceil((est.dur + 1.2 + (rm === "dry" ? 0 : 3)) * SR);
       var off = new OfflineAudioContext(2, len, SR);
       var ch = buildChain(off, rm, ir, off.destination, balanceFor(id));
@@ -471,8 +522,81 @@ window.Guests3c = (function () {
     v.plan.appendChild(el("li", null, "the chord the ward hums: " + ["S", "A", "T", "B"].map(function (p) { return p + " " + sc.chord[p].f.toFixed(1) + " Hz"; }).join(" · ")));
   }
 
+  // ---- the far ward -------------------------------------------------------------
+  function farOpts() { var f = val("kg3-far", "auto"), vo = val("kg3-voices", "desks"); return { far: f === "auto" ? null : f, voices: vo }; }
+  function farwardCard() {
+    var v = views.farward = {}, card = el("section", "kg3-card");
+    card.appendChild(el("h2", "kg3-name", "The far ward"));
+    card.appendChild(el("p", "kg3-phrase", "Through the open windows, another ward elsewhere in the colony sings the same hymn a line late — heard across the valley, a little sharp or flat of ours and drifting, sometimes in another harmonization, on its own chorister's time: a canon at a distance."));
+    var row = el("div", "kg3-row"), fs = el("select"), vs = el("select");
+    fs.id = "kg3-far"; vs.id = "kg3-voices";
+    [["auto", "as the seed draws it"], ["same", "our harmonization"], ["sacredharp", "Sacred Harp"], ["tabernacle", "Tabernacle"], ["shaker", "in unison (Shaker)"]].forEach(function (x) { var op = el("option", null, x[1]); op.value = x[0]; fs.appendChild(op); });
+    [["desks", "eight pews of three (as built)"], ["people", "twenty-four throats (the A/B)"]].forEach(function (x) { var op = el("option", null, x[1]); op.value = x[0]; vs.appendChild(op); });
+    var l1 = el("label", null, "their harmony "); l1.appendChild(fs);
+    var l2 = el("label", null, "their voices "); l2.appendChild(vs);
+    row.appendChild(l1); row.appendChild(l2);
+    card.appendChild(row);
+    var row2 = el("div", "kg3-row");
+    row2.appendChild(button("▶ the canon", "kg3-play", function () { play("canon", farOpts()); }));
+    row2.appendChild(button("▶ the far ward alone", null, function () { play("far", farOpts()); }));
+    row2.appendChild(button("▶ our ward alone", null, function () { play("near", farOpts()); }));
+    var bC = button("check", "kg3-check", function () { busy(bC, farCheck()).catch(showErr(v.meas)); });
+    row2.appendChild(bC);
+    card.appendChild(row2);
+    v.stat = el("p", "kg3-stat"); card.appendChild(v.stat);
+    v.plan = el("ol", "kg3-plan"); card.appendChild(v.plan);
+    v.meas = el("p", "kg3-meas"); card.appendChild(v.meas);
+    v.meas2 = el("div"); card.appendChild(v.meas2);
+    v.cost = el("p", "kg3-stat"); card.appendChild(v.cost);
+    [fs, vs].forEach(function (x) { x.addEventListener("change", farwardPlan); });
+    return card;
+  }
+  function farPrepared(st) { var ws = wardSheet(st), fo = farOpts(); return FW.prepare({ hymn: ws.hymn, keynoteHz: st.keynote, far: fo.far, voices: fo.voices }, stream("farward", st.seed)); }
+  function farwardPlan() {
+    var v = views.farward, st = settings(), ws, pr, seat;
+    try {
+      ws = wardSheet(st); pr = farPrepared(st);
+      seat = FW.plan({ n: 1, kind: KIND[st.sunday], sunday: st.sunday, sections: [{ type: "prelude" }, { type: "invocation" }, { type: "hymn" }, { type: "testimony" }, { type: "sacrament" }, { type: "doxology" }, { type: "postlude" }],
+                       hymnal: [{ id: ws.hymn.id, section: 2, dialect: ws.hymn.dialect }], guests: [], force: true }, stream("farward", st.seed));
+    } catch (e) { v.stat.textContent = "prepare: " + e.message; return; }
+    var joined = FW.versesJoined(pr.from, ws.verses.length);
+    v.stat.textContent = (seat ? "seated on the hymn (" + seat.section + "), " : "refused (" + (st.dialect === "oldway" ? "a lined hymn is the ward's alone" : "—") + "), ") +
+      "their harmony: " + (pr.far === "same" ? "ours (" + ws.hymn.dialect + ")" : pr.setting.dialect + ", set again from our tune") + " · a " + pr.lagLines + "-line lag (" + pr.lagBeats + " beats) · " +
+      (pr.side < 0 ? "from the left" : "from the right") + " (" + pr.side.toFixed(2) + ") · distance " + pr.distance.toFixed(2) + " (air above " + pr.lpHz + " Hz gone, " + Math.round(pr.delayS * 1000) + " ms across) · tuned " +
+      sign(+pr.cents.toFixed(1)) + " cents, drifting " + sign(+pr.drift.toFixed(1)) + " more · their tempo ×" + pr.tempo.toFixed(3) + ", fermatas ×" + pr.holdMul.toFixed(2) + " · joins verse" + (joined.length > 1 ? "s " : " ") + joined.map(function (x) { return x + 1; }).join(", ") + " of our " + ws.verses.length + (pr.amen ? ", and the A-men" : "");
+    v.plan.textContent = "";
+    v.plan.appendChild(el("li", null, "our ward: " + ws.plan.verses.map(function (P2) { return P2.practice; }).join(", ") + (ws.organ ? " — with the organ" : " — unaccompanied") + " · verses begin at " + ws.verses.map(function (x) { return mmss(x.at); }).join(", ")));
+    v.plan.appendChild(el("li", null, "their pews: " + pr.desks.map(function (d) { return d.voicePart + " on " + d.sings + (d.oct !== 1 ? (d.oct > 1 ? " (8va)" : " (8vb)") : ""); }).join(" · ")));
+  }
+  function farCheck() {
+    var v = views.farward, o = farOpts();
+    return reference().then(function (ref) {
+      return render("near", o).then(function (rn) {
+        var an = analyse(rn.buf, rn.res, "near");
+        return render("far", o).then(function (rf) {
+          var af = analyse(rf.buf, rf.res, "far"), last = rf.res.last, ws = rf.res.ws, pr = last.prepared, lags = [], cents = [];
+          last.told.forEach(function (x) {
+            var ours = ws.verses[x.v]; if (!ours) return;
+            // the lag: their first line against our first line's length, and in seconds
+            var ourLine = ws.sheet.lines.filter(function (ln) { return ln.verse === x.v && ln.line === 0; })[0];
+            lags.push({ v: x.v + 1, s: +(x.t0 + pr.delayS - (0.1 + ours.at)).toFixed(2), lines: ourLine ? +((x.t0 + pr.delayS - (0.1 + ours.at)) / ourLine.len).toFixed(2) : null });
+            x.sc.lines.forEach(function (ln) { ln.desks.forEach(function (dk) { dk.notes.forEach(function (n) { cents.push(n.cents); }); }); });
+          });
+          var cMin = Math.min.apply(null, cents), cMax = Math.max.apply(null, cents);
+          v.meas.textContent = "our ward: loudest 3 s " + an.lufsShortMax + " LUFS (" + sign(+(an.lufsShortMax - ref).toFixed(1)) + " LU against the organ reference), centroid " + centroid2(rn.buf) + " Hz · the far ward: loudest 3 s " + af.lufsShortMax + " LUFS (" +
+            sign(+(af.lufsShortMax - an.lufsShortMax).toFixed(1)) + " LU under ours; integrated " + sign(+(af.lufs - an.lufs).toFixed(1)) + "), centroid " + centroid2(rf.buf) + " Hz · clicks: ours " + an.clicks + ", theirs " + af.clicks + " · peak " + Math.max(an.peakDb, af.peakDb) + " dBFS" +
+            (af.nodes ? " · their voices' nodes ≈" + af.nodes.peakLive + " live at the peak" : "");
+          v.meas2.textContent = "";
+          v.meas2.appendChild(table(["verse", "they begin after us", "in our first line's length", "their tuning against ours (cents)"], lags.map(function (x, i) { return [x.v, x.s + " s", x.lines, i === 0 ? cMin.toFixed(1) + " … " + cMax.toFixed(1) + " over the whole" : ""]; })));
+          return { near: an, far: af, lags: lags, cents: [cMin, cMax], ref: ref };
+        });
+      });
+    });
+  }
+  function centroid2(buf) { var L = buf.getChannelData(0), Rr = buf.getChannelData(1), m = new Float32Array(L.length); for (var i = 0; i < L.length; i++) m[i] = (L[i] + Rr[i]) * 0.5; return centroid(m, 0, L.length / SR); }
+
   // ---- INIT ---------------------------------------------------------------------
-  var CARDS = [["tongues", tonguesCard, tonguesPlan]];
+  var CARDS = [["tongues", tonguesCard, tonguesPlan], ["farward", farwardCard, farwardPlan]];
   function refresh() {
     try { hymnLine(); } catch (e) { $("kg3-hymn").textContent = "compose: " + e.message; return; }
     CARDS.forEach(function (c) { if (views[c[0]] || c[0] === "odds") try { c[2](); } catch (e) { if (window.console) console.warn(c[0], e); } });
@@ -501,7 +625,7 @@ window.Guests3c = (function () {
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
 
   return {
-    play: play, stop: stop, check: check, render: render, refresh: refresh, cost: cost,
+    play: play, stop: stop, check: check, render: render, refresh: refresh, cost: cost, farCheck: function () { return farCheck(); },
     hymn: function () { return hymnOf(settings()); }, ward: function () { return wardOf(settings()); }, told: function () { return told.slice(); },
     _P: P, _settings: settings,
   };
