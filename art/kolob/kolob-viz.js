@@ -3083,10 +3083,7 @@ window.KolobViz = (function () {
     var A = at(m.g1, m.q1), B = at(m.g2, m.q2);
     var side = A.dir > 0 ? 1 : -1;                 // (+1: below the heads)
     if (m.kind === "slur" && B.dir !== A.dir) side = -1;
-    // (round 2: a tie stands off its heads by their own size — the tune's
-    // heavier head is taller, and a tie 0.55 sp off grazed it)
-    var heavy = [[m.g1, m.q1], [m.g2, m.q2]].some(function (e) { return e[0].heads.some(function (h) { return h.q === e[1] && h.heavy; }); });
-    var tie = m.kind === "tie", dy = (tie ? (heavy ? 0.72 : 0.6) : 0.9) * s * side, gx = tie ? 0.6 * s : 0.1 * s;
+    var tie = m.kind === "tie", dy = (tie ? 0.55 : 0.9) * s * side, gx = tie ? 0.6 * s : 0.1 * s;
     var x1 = A.x + gx, x2 = B.x - gx, y1 = A.y + dy, y2 = B.y + dy;
     if (x2 - x1 < 0.6 * s) return null;
     var sh = { x1: x1, y1: y1, x2: x2, y2: y2, side: side,
