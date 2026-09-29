@@ -479,17 +479,19 @@ window.KOLOB.GuestSocialHall = (function () {
       var hymnBeat = unit.length ? unit[0].beat : span * k / NS;
       var run = 0;
       for (var q = beats.length - 1, stop = false; q >= 0 && !stop; q--) for (var q2 = beats[q].length - 1; q2 >= 0; q2--) { var e0 = beats[q][q2]; if (e0.tie) continue; if (e0.d === held) run++; else { stop = true; break; } }
-      var evs = figure(mode, chordAt(L, hymnBeat, mode), unit, held, nextD, per, u1, u2, run);
-      evs.forEach(function (e) { e.hb = hymnBeat; });
+      var cls = chordAt(L, hymnBeat, mode);
+      var evs = figure(mode, cls, unit, held, nextD, per, u1, u2, run);
+      evs.forEach(function (e) { e.hb = hymnBeat; e.cls = cls; });
       beats.push(evs);
       held = evs[evs.length - 1].d;
     }
     var cad = cadence(last, per, R.next());
-    cad.forEach(function (e) { e.hb = last.beat; });
+    var cadCls = chordAt(L, last.beat, mode);
+    cad.forEach(function (e) { e.hb = last.beat; e.cls = cadCls; });
     beats.push(cad);
     return {
       beats: beats, firstD: mel[0].d, firstM: mel[0].m, cadD: last.d, cadM: last.m, pickU: R.next(),
-      cadence: L.cadence, cadCls: chordAt(L, last.beat, mode), hymnNotes: mel.length, kept: slots.reduce(function (a, s) { return a + s.length; }, 0) + 1,
+      cadence: L.cadence, cadCls: cadCls, hymnNotes: mel.length, kept: slots.reduce(function (a, s) { return a + s.length; }, 0) + 1,
     };
   }
 
@@ -526,10 +528,505 @@ window.KOLOB.GuestSocialHall = (function () {
     };
   }
 
-  // @@MORE
+  // ==========================================================================
+  // THE PEOPLE (pure) — from the Sunday's ward, when the engine hands it
+  // (KOLOB.Cast's): the CALLER is the enthusiast if the Sunday seated him
+  // (too loud, a little sharp, joyful: born to call a dance), else the
+  // surest man in the pews; the FIDDLER the old bass if he is there (the
+  // patriarch fiddled on the trail), else one of the ward; three of the
+  // young whoop. Without a ward, voices of no one in particular.
+  // ==========================================================================
+  function peopleOf(ward, stream) {
+    var r = need(stream).fork("people");
+    var callerU = r.next(), fidU = r.next(), wU = [r.next(), r.next(), r.next()];      // every die, first
+    var anon = { caller: { id: null, nameDs: null, voice: { part: "T", age: "mid", confidence: 0.95, brightness: 0.6, breath: 0.3 } },
+                 fiddler: { id: null, nameDs: null }, whoopers: [{ id: null, voice: { part: "S", age: "young", confidence: 0.9, brightness: 0.7 } }, { id: null, voice: { part: "T", age: "young", confidence: 0.9 } }] };
+    if (!ward || !ward.members || !ward.byId) return anon;
+    var pews = ward.members.filter(function (m) { return m.k != null && m.voice; });
+    var roles = ward.roles || {};
+    var caller = roles.enthusiast ? ward.byId[roles.enthusiast] : null;
+    if (!caller || !caller.voice) {
+      var men = pews.filter(function (m) { return m.part === "T" || m.part === "B"; });
+      men.sort(function (a, b) { return (b.voice.confidence || 0) - (a.voice.confidence || 0) || (a.id < b.id ? -1 : 1); });
+      men = men.slice(0, 4);
+      caller = men.length ? men[Math.floor(callerU * men.length)] : null;
+    }
+    var fiddler = roles.oldbass ? ward.byId[roles.oldbass] : null;
+    if (!fiddler || fiddler === caller) {
+      var cand = pews.filter(function (m) { return m !== caller; });
+      fiddler = cand.length ? cand[Math.floor(fidU * cand.length)] : null;
+    }
+    var young = pews.filter(function (m) { return m !== caller && m !== fiddler && m.voice.age === "young"; });
+    if (young.length < 2) young = pews.filter(function (m) { return m !== caller && m !== fiddler; });
+    var whoopers = [];
+    wU.forEach(function (u) {
+      var left = young.filter(function (m) { return whoopers.indexOf(m) < 0; });
+      if (left.length) whoopers.push(left[Math.floor(u * left.length)]);
+    });
+    function who(m) { return m ? { id: m.id, nameDs: m.nameDs, nameEn: m.nameEn, part: m.part, voice: m.voice, role: m.role || null } : null; }
+    return { caller: who(caller) || anon.caller, fiddler: who(fiddler) || anon.fiddler, whoopers: whoopers.length ? whoopers.map(who) : anon.whoopers };
+  }
+
+  // ==========================================================================
+  // PREPARE (pure) — which of the meeting's hymns becomes the dance, the
+  // dance itself, and the people. material = { hymns: [Hymn | {hymn,
+  // section}] | hymn, keynoteHz, ward?, sunday?, kind?, phone? }. The hymn
+  // the ward has just sung (the doxology: the last on offer) likeliest; the
+  // day's first next; the rest after.
+  // ==========================================================================
+  function prepare(material, stream) {
+    if (material && material.prepared) return material;
+    var M = material || {}, sh = shapeOf(stream);
+    var K = num(M.keynoteHz, 260);
+    var offers = (M.hymns || (M.hymn ? [M.hymn] : [])).map(function (x) { return x && x.lines ? { hymn: x, section: null } : x; })
+      .filter(function (x) { return x && x.hymn && x.hymn.lines && x.hymn.lines.length; });
+    var composed = false;
+    if (!offers.length && window.KOLOB.Composer && window.PJ2) {
+      // no hymn handed over (a lab, a page without the hymnal): a hymn of the
+      // colony's, written here on the guest's own stream (pure)
+      offers = [{ hymn: window.KOLOB.Composer.compose(need(stream).fork("material").fork("hymn"), { dialect: "tabernacle" }), section: null }];
+      composed = true;
+    }
+    if (!offers.length) throw new Error("KOLOB.GuestSocialHall: no hymn to dance to");
+    var W = offers.map(function (o, i) { return o.section === "doxology" || (o.section == null && i === offers.length - 1) ? 5 : i === 0 ? 3 : 2; });
+    var pick = offers[0], tot = W.reduce(function (a, b) { return a + b; }, 0), u = sh.hymnU * tot;
+    for (var i = 0; i < offers.length; i++) { u -= W[i]; if (u < 0) { pick = offers[i]; break; } }
+    var h = pick.hymn, P = pieceSpec(sh);
+    var T = tune(h, sh.piece, stream, { per: P.per, refrainB: sh.refrainB });
+    return {
+      prepared: true, piece: sh.piece, meter: P.meter, per: P.per, beat: beatOf(sh), times: timesFor(sh, M),
+      swing: P.per === 2 ? (sh.piece === "quadrille" ? 1 + (sh.swing - 1) * 0.5 : sh.swing) : 1,
+      tune: T, keynoteHz: K, finalHz: K * mRatio(h.keyMonzo), mode: T.mode,
+      hymnId: h.id || null, hymnName: h.nameEn || null, hymnDs: h.nameDs || null, dialect: h.dialect || null, section: pick.section || null,
+      people: peopleOf(M.ward, stream), phone: !!M.phone, sunday: M.sunday || null, kind: M.kind || null,
+      source: (composed ? "a hymn composed for the dance" : pick.section === "doxology" ? "the doxology's hymn" : pick.section === "hymn" ? "a hymn of the day" : pick.section ? "the " + pick.section + "'s hymn" : "the day's hymn") + (h.nameEn ? " (" + h.nameEn + ", " + (h.dialect || "?") + ")" : "") + ", B from " + T.source.B,
+    };
+  }
+
+  // ==========================================================================
+  // THE CALLS — each figure's call as a dancer hears it before the words:
+  // its vowels, its stresses, its rhythm (in half-beats), and whether its
+  // last syllable lifts or falls. [syllable, half-beats, stress]; every
+  // syllable one the voice speaks (kolob-voices-vocal.js SPOKEN): vowels,
+  // and the soft m and l — the call's shape, never its English.
+  // ==========================================================================
+  var CALLS = {
+    honour:    { en: "honour your partners",  end: "fall", syl: [["ah", 2, 1], ["meh", 1, 0.3], ["moo", 1, 0.3], ["ah", 2, 1], ["meh", 2, 0.4]] },
+    swing:     { en: "swing your partner",    end: "fall", syl: [["ee", 2, 1], ["loo", 1, 0.3], ["ah", 2, 1], ["meh", 3, 0.4]] },
+    promenade: { en: "promenade",             end: "lift", syl: [["ah", 2, 1], ["meh", 1, 0.3], ["ah", 5, 1]] },
+    dosido:    { en: "do-si-do",              end: "lift", syl: [["oh", 2, 1], ["lee", 2, 0.4], ["oh", 4, 1]] },
+    allemande: { en: "allemande left",        end: "fall", syl: [["ah", 2, 1], ["leh", 1, 0.3], ["ma", 2, 0.6], ["leh", 3, 1]] },
+    balance:   { en: "balance all",           end: "lift", syl: [["ah", 2, 1], ["leh", 1, 0.3], ["ah", 1, 0.4], ["ah", 4, 1]] },
+    grand:     { en: "grand right and left",  end: "fall", syl: [["ah", 2, 1], ["ee", 2, 0.8], ["meh", 1, 0.3], ["leh", 3, 1]] },
+    chain:     { en: "ladies' chain",         end: "lift", syl: [["eh", 2, 1], ["lee", 1, 0.3], ["eh", 5, 1]] },
+    circle:    { en: "circle left",           end: "fall", syl: [["eh", 2, 1], ["loo", 1, 0.3], ["leh", 5, 1]] },
+    home:      { en: "all the way home",      end: "lift", syl: [["ah", 2, 0.6], ["meh", 1, 0.3], ["eh", 2, 1], ["oh", 4, 1]] },
+  };
+  var FIGURES = ["swing", "promenade", "dosido", "allemande", "balance", "grand", "chain", "circle"];
+
+  // ==========================================================================
+  // THE SCORE (pure) — the whole evening as data, seconds from t0
+  // ==========================================================================
+  //   fiddle: [{t, stage, notes (VoicesFolk.fiddle's, `at` from t), drone,
+  //            droneLevel, dyn, report: [onNote rows]}]
+  //   floor:  [{t, kind: step | light | heavy | stamp, v, pan}]
+  //   claps:  [{t, v, pan, kind: clap | applause}]
+  //   calls:  [{t, call, who: caller | whoop, notes (VoicesVocal's), pan}]
+  //   scrapes:[{t, dur, pan, v, variant}]
+  //   stages, cast, end (the last sound), until (the last ring)
+  var TOP = 1100;
+  function registers(M) {
+    var T = M.tune;
+    function ratios(S) { var rs = []; S.forEach(function (ln) { ln.beats.forEach(function (bt) { bt.forEach(function (e) { if (!e.rest && !e.tie) rs.push(mRatio(e.m)); }); }); }); rs.sort(function (a, b) { return a - b; }); return rs; }
+    var ra = ratios(T.A), rb = ratios(T.B), F = M.finalHz;
+    // (the old-time fiddler's first position: G3 to about C6 — TOP)
+    var octA = Math.round(Math.log(520 / (F * ra[ra.length >> 1])) / Math.LN2);
+    while (F * ra[0] * Math.pow(2, octA) < 190 && F * ra[ra.length - 1] * Math.pow(2, octA + 1) <= TOP) octA++;
+    while (F * ra[ra.length - 1] * Math.pow(2, octA) > TOP && F * ra[0] * Math.pow(2, octA - 1) >= 190) octA--;
+    var octB = Math.round(Math.log(520 / (F * rb[rb.length >> 1])) / Math.LN2);
+    // THE HIGH PART: a B strain whose lines lie no higher than the A's goes up
+    // an octave, as a fiddle tune's second strain so often does
+    if (M.highB !== false && rb[rb.length >> 1] * Math.pow(2, octB) <= ra[ra.length >> 1] * Math.pow(2, octA) * 1.12 && F * rb[rb.length - 1] * Math.pow(2, octB + 1) <= TOP) octB++;
+    while (F * rb[0] * Math.pow(2, octB) < 190 && F * rb[rb.length - 1] * Math.pow(2, octB + 1) <= TOP) octB++;
+    while (F * rb[rb.length - 1] * Math.pow(2, octB) > TOP && F * rb[0] * Math.pow(2, octB - 1) >= 190) octB--;
+    // THE DRONE: the tune's tonic, cross-tuned onto an open string, 175–350 Hz
+    var drone = F; while (drone < 175) drone *= 2; while (drone >= 350) drone /= 2;
+    return { A: octA, B: octB, drone: drone };
+  }
+  function score(material, stream, t0) {
+    var M = material && material.prepared ? material : prepare(material, stream);
+    var sh = shapeOf(stream);                                   // the same dice as the plan's
+    var T = M.tune, per = M.per, beat = M.beat, e8 = beat / per, bar = 2 * beat;
+    t0 = t0 || 0;
+    var reg = registers({ tune: T, finalHz: M.finalHz, highB: sh.highB }), dr = reg.drone;
+    var arr = need(stream).fork("arrange"), room = need(stream).fork("room");   // the arrangement's own dice; the room's (sound-level) scatter
+    var out = { fiddle: [], floor: [], claps: [], calls: [], scrapes: [], stages: [], cast: [], notes: [] };
+    function stage(name, a, b, label) { out.stages.push({ stage: name, t0: t0 + a, t1: t0 + b, label: label }); }
+    var t = 0, ppl = M.people || {};
+    // THE BENCHES pushed back to the walls, across the room, and the feet
+    for (var b = 0; b < sh.benches; b++) out.scrapes.push({ t: t0 + 0.2 + b * (3.3 / sh.benches) + room.rnd(0, 0.3), dur: room.rnd(0.45, 0.85), pan: room.rnd(-0.85, 0.85), v: room.rnd(0.6, 1), variant: room.rint(0, 2) });
+    for (var s0 = 0; s0 < 9; s0++) out.floor.push({ t: t0 + 0.3 + room.rnd(0, 3.8), kind: "step", v: room.rnd(0.35, 0.6), pan: room.rnd(-0.8, 0.8) });
+    stage("benches", 0, INTRO.benches, "the benches pushed back");
+    t = INTRO.benches;
+    if (ppl.fiddler && ppl.fiddler.id) out.cast.push({ memberId: ppl.fiddler.id, nameDs: ppl.fiddler.nameDs, action: "takes up the fiddle", t: t0 + t - 0.5 });
+    // THE FIDDLER TUNES: the two low strings together, the upper a little
+    // flat and pulled up in small steps until the fifth stands pure (you
+    // hear its beating slow, and stop); then the next pair
+    if (sh.tuneUp) {
+      var tf = dr * 3 / 2, flat = room.rnd(18, 30), tn = [];
+      [1, 0.62, 0.3, 0.1, 0].forEach(function (x, i) { tn.push({ f: tf * Math.pow(2, -flat * x / 1200), dur: i === 4 ? 0.55 : 0.17, at: i ? 0.33 + (i - 1) * 0.17 : 0, slur: i > 0, also: [dr], v: 0.75 }); });
+      tn[0].dur = 0.33;
+      tn.push({ f: 0, dur: 0.3, at: 1.39 }, { f: tf * 3 / 2, dur: 0.9, at: 1.69, also: [tf], v: 0.7 });
+      out.fiddle.push({ t: t0 + t, stage: "tuning", notes: tn, drone: [], dyn: 0.5, report: [] });
+      stage("tuning", t, t + INTRO.tuning, "the fiddler tunes");
+      t += INTRO.tuning;
+    }
+    // THE CALLER: honour your partners
+    var tHon = t;
+    t += INTRO.honour;
+    // THE POTATOES: two bars of the home chord chopped on the open strings
+    // (or the fiddler's foot, four times), so the floor finds the tempo
+    var tPot = t;
+    if (sh.potatoes === "chop") {
+      var pn = [], q8 = 0;
+      for (var pb = 0; pb < 2; pb++) (per === 2 ? [2, 1, 1] : [2, 1, 2, 1]).forEach(function (n8, i) {
+        pn.push({ f: dr * 3 / 2, also: [dr], dur: n8 * e8 * 0.92, at: q8 * e8, acc: i === 0, v: i === 0 ? 0.9 : 0.7 }); pn.push({ f: 0, dur: n8 * e8 * 0.08, at: (q8 + n8 * 0.92) * e8 }); q8 += n8;
+      });
+      out.fiddle.push({ t: t0 + t, stage: "potatoes", notes: pn, drone: [], dyn: sh.dyn, report: [] });
+    } else for (var ps = 0; ps < 4; ps++) out.floor.push({ t: t0 + t + ps * beat, kind: "step", v: 0.85, pan: FIDDLE_PAN });
+    stage("potatoes", t, t + 2 * bar, sh.potatoes === "chop" ? "the potatoes: the fiddle chops the home chord" : "the fiddler's foot, four times");
+    t += 2 * bar;
+
+    // THE DANCE: AABB, two or three times through. Each played line is one
+    // bowed phrase of four bars, the pickup into what follows inside it.
+    var tbl = T.table, mode = T.mode, dAmt = { A: sh.droneA, B: sh.droneB };
+    function mOf(d) { return mOct(tbl[mod(d, 7)], Math.floor(d / 7)); }
+    function fOf(m, oct) { return M.finalHz * mRatio(m) * Math.pow(2, oct); }
+    function red(r) { while (r >= 2 - 1e-12) r /= 2; while (r < 1 - 1e-12) r *= 2; return r; }
+    // the eighth q of a line, in seconds from its start (a reel's pairs lilt)
+    function tq(q) { var bi = Math.floor(q / per), w = q - bi * per; return bi * beat + (per === 2 ? (w ? e8 * M.swing : 0) : w * e8); }
+    function phrase(p, evs, tl) {
+      var notes = [], report = [], q = 0, prev = null, prevRep = null, lastTime = p.time === M.times;
+      var dyn = Math.min(0.86, sh.dyn + (p.strain === "B" ? 0.05 : 0) + (lastTime ? 0.04 : 0)), dA = dAmt[p.strain], ln = p.ln;
+      evs.forEach(function (e) {
+        var at = tq(q), dur = tq(q + e.n8) - at;
+        if (e.tie && prev) { prev.dur += dur; if (prevRep) prevRep.dur += dur; q += e.n8; return; }
+        if (e.rest || e.tie) { notes.push({ f: 0, dur: dur, at: at }); prev = prevRep = null; q += e.n8; return; }
+        var f = fOf(e.m, p.oct), long = e.n8 >= 2, main = e.kind === "tune" || e.kind === "cad", i8 = q % (2 * per), r = red(mRatio(e.m));
+        var nt = { f: f, dur: dur, at: at, v: e.kind === "cad" ? 1.05 : main && e.stress >= 1 ? 1 : e.kind === "pick" ? 0.9 : 0.86 };
+        // the bowing: a reel's shuffle (the bar's first two eighths in one bow,
+        // the back-beat dug in); a jig's long–short in one bow, the bar's start leaned on
+        if ((per === 2 ? i8 % 4 === 1 : i8 % 3 === 1) && prev && !e.cut) nt.slur = true;
+        if (per === 2 ? i8 % 4 === 2 : i8 === 0) nt.acc = true;
+        if (e.cut) nt.orn = "cut";
+        var u = arr.next(), u2 = arr.next(), u3 = arr.next(), sept = false, also = null, alsoM = null;
+        // THE BLUE SLIDE: the tune's major third, long and strong, reached from
+        // the septimal minor third under it (7/6 → 5/4)
+        if (sh.blue && long && main && Math.abs(r - 1.25) < 1e-9 && u < 0.65) { nt.orn = "slide"; nt.from = f * 14 / 15; sept = true; }
+        else if (long && main && u < 0.2) nt.orn = "slide";
+        // DOUBLE STOPS: the dominant's harmonic seventh over sol at a half
+        // cadence (4:7); else the hymn's own chord tone a third to a sixth under
+        if (e.kind === "cad" && ln.cadence === "half" && Math.abs(r - 1.5) < 1e-9 && u2 < 0.7) { also = f * 7 / 4; alsoM = mAdd(e.m, [-2, 0, 0, 1]); sept = true; }
+        else if ((e.kind === "cad" && u2 < 0.8) || (long && main && u2 < sh.stops)) {
+          var cls = e.cls || [0, 2, 4], d2 = chordNear(mode, cls, e.d, -1);
+          if (e.d - d2 < 2) d2 = chordNear(mode, cls, d2, -1);
+          var f2 = fOf(mOf(d2), p.oct);
+          if (e.d - d2 <= 5 && f2 >= 190) { also = f2; alsoM = mOf(d2); }
+        }
+        if (also) nt.also = [also];
+        // THE DRONE: leaned on under the long notes and the strong ones, lifted through the runs
+        nt.droneV = long || e.kind === "cad" || (main && e.stress >= 1 && i8 === 0) ? (u3 < dA ? 1 : 0.55) : (u3 < dA * 0.4 ? 0.6 : 0);
+        notes.push(nt); prev = nt;
+        prevRep = { layer: "fiddle", freq: f, t: tl + at, dur: dur, part: e.kind, strain: p.strain, time: p.time, line: p.li, bar: Math.floor(q / (2 * per)) + 1, deg: e.d, monzo: e.m, septimal: sept, orn: nt.orn || null, hymnId: M.hymnId };
+        report.push(prevRep);
+        if (also) report.push({ layer: "fiddle", freq: also, t: tl + at, dur: dur, part: "stop", strain: p.strain, time: p.time, line: p.li, monzo: alsoM, septimal: !!alsoM && alsoM[3] !== 0, hymnId: M.hymnId });
+        q += e.n8;
+      });
+      report.push({ layer: "fiddle", freq: dr, t: tl, dur: tq(q), part: "drone", strain: p.strain, time: p.time, line: p.li, hymnId: M.hymnId });
+      return { t: t0 + tl, stage: p.strain, notes: notes, drone: [dr], droneLevel: 0.36, dyn: dyn, report: report, strain: p.strain, time: p.time, line: p.li };
+    }
+    var played = [];
+    for (var k = 1; k <= M.times; k++) ["A", "A", "B", "B"].forEach(function (S, i) {
+      T[S].forEach(function (ln, li) { played.push({ strain: S, time: k, rep: i % 2, li: li, ln: ln, oct: S === "A" ? reg.A : reg.B }); });
+    });
+    var tDance = t, lastI = played.length - 1, lineStarts = [];
+    played.forEach(function (p, pi) {
+      var nx = pi < lastI ? played[pi + 1] : null, ln = p.ln;
+      // the pickup leads into the next line's first note (in its own register),
+      // the tag's first (the last line's third bar), or nothing
+      var target = nx ? nx.ln.firstD + 7 * (nx.oct - p.oct) : sh.tag ? ln.beats[4][0].d : null;
+      var evs = [];
+      ln.beats.forEach(function (bt, k2) { bt.forEach(function (e) { var c = {}; for (var x in e) c[x] = e[x]; c.slot = k2; evs.push(c); }); });
+      pickup(mode, ln.cadD, target, per, ln.pickU).forEach(function (e) { e.slot = 7; if (!e.rest) e.m = mOf(e.d); evs.push(e); });
+      lineStarts.push(t);
+      out.fiddle.push(phrase(p, evs, t));
+      if (p.li === 0) stage(p.strain, t, t + 8 * bar, "the " + p.strain + " strain" + (p.rep ? " again" : "") + (M.times > 1 ? " (" + ["", "first", "second", "third"][p.time] + " time through)" : ""));
+      t += 4 * bar;
+    });
+
+    // THE TAG: the last line's third bar played again, and THE FINAL on the
+    // next downbeat — the octave of the drone's tonic with its harmonic
+    // seventh (4:7:8, the ring), then with its fifth (2:3:4), the bow lifted
+    var lastLn = played[lastI].ln, tFinal;
+    if (sh.tag) {
+      var tagEvs = [];
+      [4, 5].forEach(function (k2) { lastLn.beats[k2].forEach(function (e) { var c = {}; for (var x in e) c[x] = e[x]; tagEvs.push(c); }); });
+      var tp = phrase(played[lastI], tagEvs, t); tp.stage = "tag"; tp.tag = true;
+      out.fiddle.push(tp);
+      stage("tag", t, t + bar, "the last phrase again");
+      t += bar;
+    }
+    tFinal = t;
+    var fin = [{ f: dr * 2, dur: 1.25, at: 0, also: [dr * 7 / 4], acc: true, v: 1.05, droneV: 1 },
+               { f: dr * 2, dur: 1.65, at: 1.25, also: [dr * 3 / 2], slur: true, v: 0.92, droneV: 1 }];
+    var finRep = [{ layer: "fiddle", freq: dr * 2, t: t0 + t, dur: 2.9, part: "final", septimal: false, hymnId: M.hymnId },
+                  { layer: "fiddle", freq: dr * 7 / 4, t: t0 + t, dur: 1.25, part: "stop", septimal: true, hymnId: M.hymnId },
+                  { layer: "fiddle", freq: dr * 3 / 2, t: t0 + t + 1.25, dur: 1.65, part: "stop", septimal: false, hymnId: M.hymnId },
+                  { layer: "fiddle", freq: dr, t: t0 + t, dur: 2.9, part: "drone", hymnId: M.hymnId }];
+    out.fiddle.push({ t: t0 + t, stage: "final", notes: fin, drone: [dr], droneLevel: 0.4, dyn: Math.min(0.86, sh.dyn + 0.08), report: finRep });
+    stage("final", t, t + OUTRO.final, "the final: the tonic's seventh, then its fifth");
+    // THE FLOOR: every beat of the dance, the bar's first the heaviest; the
+    // hands on the back-beat once the dance is going (the B strains, and all
+    // of the last time through); a stamp to end the last B, and the final
+    var clapsFrom = Math.min(sh.clapFrom, M.times);
+    played.forEach(function (p, pi) {
+      var ls = lineStarts[pi], lastLine = pi === lastI;
+      for (var bt = 0; bt < 8; bt++) {
+        var tb = ls + bt * beat, down = bt % 2 === 0, stampIt = lastLine && bt >= 6;
+        out.floor.push({ t: t0 + tb, kind: stampIt ? "stamp" : down ? "heavy" : "light", v: room.rnd(0.8, 1) * (p.time === M.times ? 1.08 : 1), pan: room.rnd(-0.5, 0.5) });
+        var clapping = p.time > clapsFrom || (p.time === clapsFrom && (p.strain === "B" || p.time === M.times));
+        if (!down && clapping) out.claps.push({ t: t0 + tb, v: room.rnd(0.8, 1), pan: room.rnd(-0.4, 0.4), kind: "clap" });
+      }
+    });
+    if (sh.tag) for (var tb2 = 0; tb2 < 2; tb2++) out.floor.push({ t: t0 + tFinal - bar + tb2 * beat, kind: tb2 ? "light" : "heavy", v: 1, pan: room.rnd(-0.5, 0.5) });
+    out.floor.push({ t: t0 + tFinal, kind: "stamp", v: 1.15, pan: 0 });
+    // THE CALLS: honour your partners, before the potatoes; then a call ending
+    // on the downbeat of each strain as the figure changes (not every one);
+    // the last, "all the way home"
+    var callR = need(stream).fork("calls"), lastCall = null, strainStarts = [];
+    played.forEach(function (p, pi) { if (p.li === 0 && pi > 0) strainStarts.push({ t: lineStarts[pi], last: pi === lastI - 1 }); });
+    out.calls.push(callLine("honour", tHon + 0.15, true));
+    out.cast.push({ memberId: ppl.caller && ppl.caller.id, nameDs: ppl.caller && ppl.caller.nameDs, action: "calls the dance", t: t0 + tHon });
+    strainStarts.forEach(function (ss) {
+      var u = callR.next(), w = callR.next();
+      if (!(u < sh.callRate || ss.last)) return;
+      var names = FIGURES.filter(function (n) { return n !== lastCall; }), name = ss.last ? "home" : names[Math.floor(w * names.length)];
+      lastCall = name;
+      out.calls.push(callLine(name, ss.t, false));
+    });
+    // a dancer's whoop (the last time through, as it starts and as its B
+    // strain starts; at the end), and the caller's shout over the final
+    var wAt = [lineStarts[played.length - 8], lineStarts[played.length - 4], tFinal + 0.45];
+    for (var wi = 0; wi < sh.whoops; wi++) out.calls.push(whoop(wAt[wi] + 0.05, (ppl.whoopers || [])[wi % Math.max(1, (ppl.whoopers || []).length)], wi));
+    out.calls.push(shout(tFinal + 0.2));
+    if (sh.applause) {
+      out.claps.push({ t: t0 + tFinal + 1.5, v: 1, pan: 0, kind: "applause", dur: OUTRO.applause });
+      stage("applause", tFinal + 1.5, tFinal + 1.5 + OUTRO.applause, "applause");
+    }
+    // (the voices: the caller chants on the tune's fifth, a stressed syllable
+    // a step up on its sixth — both as the hymn spells them — in his own
+    // register; a call is half-sung, so a little vibrato; a whoop is free)
+    function callPitch() {
+      var who = ppl.caller || {}, part = (who.voice && who.voice.part) || who.part || "T";
+      var mid = { S: 349, A: 262, T: 196, B: 147, child: 440 }[part] || 196;
+      var sol = M.finalHz * mRatio(mOf(4)), la = M.finalHz * mRatio(mOf(5)), k = Math.round(Math.log(mid / sol) / Math.LN2);
+      return { sol: sol * Math.pow(2, k), la: la * Math.pow(2, k) };
+    }
+    function voiceOf(who, over) {
+      var v = {}, src = (who && who.voice) || { part: "T", age: "mid" };
+      for (var x in src) v[x] = src[x];
+      for (var y in over) v[y] = over[y];
+      return v;
+    }
+    function tell(c) {
+      var tt = c.t;
+      c.report = c.notes.map(function (n) { var r = { layer: "choir", freq: n.f, t: tt, dur: n.dur, part: c.who, member: c.member || null, call: c.call, hymnId: null }; tt += n.dur; out.notes.push(r); return r; });
+      return c;
+    }
+    function callLine(name, at, fromStart) {
+      var C = CALLS[name], half = beat / 2, P = callPitch(), pre = 0;
+      C.syl.forEach(function (sy, i) { if (i < C.syl.length - 1) pre += sy[1]; });
+      var notes = C.syl.map(function (sy, i) {
+        var lastS = i === C.syl.length - 1;
+        return { f: sy[2] >= 1 && !lastS ? P.la : P.sol, dur: sy[1] * half * (lastS ? 1.1 : 1), vowel: sy[0], stress: sy[2],
+                 glide: lastS ? (C.end === "lift" ? [[0, 1], [0.35, 1], [1, 1.12]] : [[0, 1.02], [1, 0.84]]) : [[0, 1], [1, 0.985]] };
+      });
+      return tell({ t: t0 + (fromStart ? at : at - pre * half), call: name, en: C.en, who: "caller", member: ppl.caller && ppl.caller.id, pan: CALLER_PAN, level: 1.15,
+                    voice: voiceOf(ppl.caller, { vibrato: { rate: 5.2, depth: 9, onsetDelay: 0.22 }, confidence: 0.96, breath: 0.3 }), notes: notes });
+    }
+    function whoop(at, who, i) {
+      var part = (who && who.voice && who.voice.part) || "S", base = part === "S" || part === "A" ? 440 : 262;
+      return tell({ t: t0 + at, call: "whoop", who: "whoop", member: who && who.id, pan: [0.45, -0.5, 0.2][i % 3], level: 0.8,
+                    voice: voiceOf(who, { vibrato: { depth: 0 }, confidence: 0.9 }),
+                    notes: [{ f: base, dur: 0.1, vowel: "ee", stress: 0.6, glide: [[0, 1], [1, 1.15]] }, { f: base, dur: 0.46, vowel: "oo", stress: 1, glide: [[0, 1.28], [0.3, 1.55], [1, 1.15]] }] });
+    }
+    function shout(at) {
+      var P = callPitch();
+      return tell({ t: t0 + at, call: "hoo", who: "caller", member: ppl.caller && ppl.caller.id, pan: CALLER_PAN, level: 1.1,
+                    voice: voiceOf(ppl.caller, { vibrato: { depth: 0 }, confidence: 0.96 }),
+                    notes: [{ f: P.sol, dur: 0.55, vowel: "oo", stress: 1, glide: [[0, 1], [0.3, 1.2], [1, 0.9]] }] });
+    }
+    var end = tFinal + OUTRO.final + (sh.applause ? OUTRO.applause - 0.6 : 0);
+    out.fiddle.forEach(function (ph) { ph.report.forEach(function (r) { out.notes.push(r); }); });
+    out.notes.sort(function (a, b) { return a.t - b.t; });
+    out.end = t0 + end; out.until = t0 + end + 0.8;
+    out.tDance = t0 + tDance; out.tFinal = t0 + tFinal; out.bar = bar; out.beat = beat;
+    out.registers = reg; out.piece = M.piece; out.meter = M.meter; out.times = M.times;
+    return out;
+  }
+
+  // ==========================================================================
+  // THE ROOM'S OWN SOUNDS — baked once per context (sound-level; a fixed
+  // seed: every social hall's boards are the same boards). A footfall is a
+  // heel on a sprung wooden floor: a low thump (the joists, 70–110 Hz, dying
+  // in 40–55 ms), the board's knock (250–400 Hz, 15 ms) and the scuff of a
+  // sole (a breath of noise); the floor on a beat is ten or twelve of them
+  // within a few hundredths, a stamp all of them at once. A clap is a burst
+  // of noise ringing in the cupped hands (1.2–2.2 kHz, ~10 ms). A bench
+  // dragged is stick–slip: the leg catching and letting go forty to eighty
+  // times a second, each catch ringing the bench's wood.
+  // ==========================================================================
+  var BAKED = typeof WeakMap !== "undefined" ? new WeakMap() : null;
+  function mulberry(seed) {
+    var s = seed >>> 0;
+    return function () { s = (s + 0x6D2B79F5) | 0; var t = Math.imul(s ^ (s >>> 15), 1 | s); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  }
+  function bake(ctx) {
+    if (BAKED && BAKED.get(ctx)) return BAKED.get(ctx);
+    var SR = ctx.sampleRate, rnd = mulberry(1847);
+    function buf(sec, fill) { var n = Math.ceil(sec * SR), b = ctx.createBuffer(1, n, SR), d = b.getChannelData(0); fill(d, n); return b; }
+    function ring(d, at, f, tau, amp) {              // a damped resonance struck at `at` (samples)
+      var w = 2 * Math.PI * f / SR, n = Math.min(d.length - at, Math.ceil(tau * 7 * SR));
+      for (var i = 0; i < n; i++) d[at + i] += amp * Math.exp(-i / (tau * SR)) * Math.sin(w * i);
+    }
+    function burst(d, at, tau, amp, lp) {            // a noise burst through a one-pole lowpass
+      var y = 0, a = Math.min(0.99, lp), n = Math.min(d.length - at, Math.ceil(tau * 6 * SR));
+      for (var i = 0; i < n; i++) { y += a * ((rnd() * 2 - 1) - y); d[at + i] += amp * Math.exp(-i / (tau * SR)) * y; }
+    }
+    function foot(d, at, amp) {
+      ring(d, at, 70 + rnd() * 40, 0.04 + rnd() * 0.015, amp);
+      ring(d, at + 2, 250 + rnd() * 150, 0.015, amp * 0.35);
+      burst(d, at, 0.006, amp * 0.25, 0.35);
+    }
+    function clap(d, at, amp) {
+      var f = 1200 + rnd() * 1000, tau = 0.008 + rnd() * 0.006, w = 2 * Math.PI * f / SR, r = Math.exp(-Math.PI * f / 3 / SR);
+      var y1 = 0, y2 = 0, n = Math.min(d.length - at, Math.ceil(tau * 6 * SR));
+      for (var i = 0; i < n; i++) { var x = (rnd() * 2 - 1) * Math.exp(-i / (tau * SR)), y = x + 2 * r * Math.cos(w) * y1 - r * r * y2; y2 = y1; y1 = y; d[at + i] += amp * 0.25 * y; }
+      ring(d, at, 280 + rnd() * 80, 0.01, amp * 0.15);
+    }
+    function norm(d, peak) { var m = 0; for (var i = 0; i < d.length; i++) m = Math.max(m, Math.abs(d[i])); if (m > 0) for (var j = 0; j < d.length; j++) d[j] *= peak / m; }
+    function cluster(sec, n, spread, fn, peak) {
+      return buf(sec, function (d) { for (var k = 0; k < n; k++) fn(d, Math.floor((0.03 + Math.max(0, (rnd() + rnd() - 1) * spread + spread)) * SR), 0.55 + rnd() * 0.45); norm(d, peak); });
+    }
+    var B = {
+      step: [0, 1, 2, 3].map(function () { return buf(0.3, function (d) { foot(d, 10, 1); norm(d, 0.5); }); }),
+      light: [0, 1, 2].map(function () { return cluster(0.35, 8, 0.03, foot, 0.55); }),
+      heavy: [0, 1, 2].map(function () { return cluster(0.38, 12, 0.025, foot, 0.8); }),
+      stamp: [0, 1].map(function () { return cluster(0.4, 14, 0.012, foot, 1); }),
+      clap: [0, 1, 2].map(function () { return cluster(0.25, 8, 0.015, clap, 0.6); }),
+      applause: [buf(2.6, function (d, n) {
+        for (var p = 0; p < 16; p++) { var rate = 4.5 + rnd() * 2.5, tt = rnd() * 0.2; while (tt < 2.45) { var at = Math.floor(tt * SR), env = Math.min(1, tt / 0.18) * Math.min(1, (2.5 - tt) / 0.9); clap(d, at, env * (0.6 + rnd() * 0.4)); tt += (1 / rate) * (0.8 + rnd() * 0.4); } }
+        norm(d, 0.7);
+      })],
+      scrape: [0, 1, 2].map(function () {
+        return buf(1.1, function (d, n) {
+          var tt = 0.02, len = 0.95, base = 40 + rnd() * 40;
+          while (tt < len) {
+            var at = Math.floor(tt * SR), x = tt / len, env = Math.min(1, x / 0.08) * Math.min(1, (1 - x) / 0.15) * (0.7 + 0.3 * Math.sin(tt * 9 + rnd()));
+            ring(d, at, 160 + rnd() * 50, 0.008, env); ring(d, at, 650 + rnd() * 200, 0.004, env * 0.5); burst(d, at, 0.003, env * 0.3, 0.5);
+            tt += 1 / (base * (0.75 + rnd() * 0.5));
+          }
+          norm(d, 0.5);
+        });
+      }),
+    };
+    if (BAKED) BAKED.set(ctx, B);
+    return B;
+  }
+
+  // ==========================================================================
+  // PERFORM — the hall, placed at t (synthesis; reads no clock)
+  // ==========================================================================
+  // the parts' balance within the hall (under LEVEL)
+  var MIX = { fiddle: 1, floor: 0.5, caller: 0.55 };
+  function perform(ctx, dest, t, material, stream, hooks) {
+    var VF = window.KOLOB.VoicesFolk, VV = window.KOLOB.VoicesVocal;
+    if (!VF || !VF.create) throw new Error("KOLOB.GuestSocialHall: load kolob-voices-folk.js first");
+    hooks = hooks || {};
+    var M = material && material.prepared ? material : prepare(material, stream);
+    var sc = score(M, stream, t), synth = need(stream).fork("synth"), ds = hooks.dests || {}, made = [];
+    function bus(key) { var g = ctx.createGain(); g.gain.value = LEVEL * MIX[key]; g.connect(ds[key] || dest); made.push(g); return g; }
+    var fidBus = bus("fiddle"), floorBus = bus("floor"), callBus = bus("caller");
+    // THE FLOOR'S NEAR WALLS: two early reflections, dark (the feet are in the
+    // room with us; the hall does the rest)
+    var lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 2400; lp.Q.value = 0.5;
+    var d1 = ctx.createDelay(0.1), d2 = ctx.createDelay(0.1), ag = ctx.createGain();
+    d1.delayTime.value = 0.013; d2.delayTime.value = 0.029; ag.gain.value = 0.25;
+    floorBus.connect(d1); floorBus.connect(d2); d1.connect(lp); d2.connect(lp); lp.connect(ag); ag.connect(ds.floor || dest);
+    made.push(lp, d1, d2, ag);
+    var B = bake(ctx);
+    var pans = [-0.6, -0.3, 0, 0.3, 0.6].map(function (p) {
+      var sp = ctx.createStereoPanner ? ctx.createStereoPanner() : ctx.createGain();
+      if (sp.pan) sp.pan.value = p;
+      sp.connect(floorBus); made.push(sp); return sp;
+    });
+    function panIx(p) { return Math.max(0, Math.min(4, Math.round(((p || 0) + 0.6) / 0.3))); }
+    var folk = VF.create(ctx, fidBus, { rand: synth.fork("folk"), fiddlePan: FIDDLE_PAN, gain: 1 });
+    // which of the baked sounds each event takes, and a hair of its speed
+    // (sound-level, never reported): drawn for every event now, in order, so a
+    // performance laid out in slices is the same performance
+    var hand = synth.fork("hands"), floorNodes = 0;
+    function lands(n) { var a = []; for (var i = 0; i < n; i++) a.push({ u: hand.next(), rate: hand.rnd(0.94, 1.06) }); return a; }
+    var LF = lands(sc.floor.length), LC = lands(sc.claps.length), LS = lands(sc.scrapes.length);
+    function sound(arr, L, at, v, pan, dur) {
+      var src = ctx.createBufferSource(), g = ctx.createGain();
+      src.buffer = arr[Math.floor(L.u * arr.length)]; src.playbackRate.value = L.rate;
+      g.gain.value = v; src.connect(g); g.connect(pans[panIx(pan)]);
+      src.start(Math.max(0, at));
+      if (dur) { g.gain.setValueAtTime(v, at + Math.max(0.05, dur - 0.14)); g.gain.linearRampToValueAtTime(0, at + dur); src.stop(at + dur + 0.02); }
+      src.onended = function () { try { g.disconnect(); } catch (e) { /* gone */ } };
+      floorNodes += 2;
+    }
+    var FLOOR_V = { step: 0.5, light: 0.55, heavy: 0.8, stamp: 1 };
+    // the people's voices: one singer each, the same throat for all their calls
+    var singers = {};
+    function singerOf(c) {
+      var key = c.member || c.who + ":" + c.call;
+      if (!singers[key]) { var sp = {}; for (var x in c.voice) sp[x] = c.voice[x]; sp.rand = synth.fork("voice:" + key); sp.pan = c.pan; singers[key] = VV.singer(sp); }
+      return singers[key];
+    }
+    var items = [];
+    sc.scrapes.forEach(function (s, i) { items.push({ t: s.t, go: function () { sound(B.scrape, LS[i], s.t, 0.7 * s.v, s.pan, s.dur); } }); });
+    sc.floor.forEach(function (f, i) { items.push({ t: f.t, go: function () { sound(B[f.kind] || B.light, LF[i], f.t, (FLOOR_V[f.kind] || 0.6) * f.v, f.pan); } }); });
+    sc.claps.forEach(function (c, i) { items.push({ t: c.t, go: function () { sound(c.kind === "applause" ? B.applause : B.clap, LC[i], c.t, 0.55 * c.v, c.pan, c.dur || 0); } }); });
+    sc.fiddle.forEach(function (ph) { items.push({ t: ph.t, notes: ph.report, go: function () { folk.fiddle(ph.t, ph.notes, { drone: ph.drone, droneLevel: ph.droneLevel, dyn: ph.dyn }); } }); });
+    if (VV) sc.calls.forEach(function (c) { items.push({ t: c.t - 0.45, notes: c.report, go: function () { singerOf(c).sing(ctx, callBus, c.t, c.notes, c.level, { breathBefore: 0.35, inhale: 0.5, pan: c.pan }); } }); });
+    items.sort(function (a, b) { return a.t - b.t; });
+    // LAID OUT A SLICE AT A TIME (hooks.defer — the engine's clock): what
+    // begins within each SLICE seconds is built AHEAD seconds before the
+    // first of it sounds, each slice in a tick of the clock of its own, and
+    // its notes told then; a lab with no clock lays it all out at once
+    var AHEAD = 2.5, SLICE = 1.5, slices = [];
+    items.forEach(function (it) { var cur = slices[slices.length - 1]; if (!cur || it.t >= cur.t0 + SLICE) slices.push(cur = { t0: it.t, items: [] }); cur.items.push(it); });
+    slices.forEach(function (sl) {
+      function lay() { sl.items.forEach(function (it) { it.go(); if (hooks.onNote && it.notes) it.notes.forEach(hooks.onNote); }); }
+      var when = sl.t0 - AHEAD;
+      if (hooks.defer && when > t + 0.05) hooks.defer(when, lay); else lay();
+    });
+    if (hooks.onStage) sc.stages.forEach(function (st) { hooks.onStage(st); });
+    if (hooks.onCast) sc.cast.forEach(function (c) { if (c.memberId) hooks.onCast(c); });
+    // when the last sound has gone, let the hall go
+    var sent = ctx.createConstantSource ? ctx.createConstantSource() : ctx.createOscillator(), sg = ctx.createGain();
+    sg.gain.value = 0; sent.connect(sg); sg.connect(dest);
+    sent.onended = function () { try { made.forEach(function (n) { n.disconnect(); }); folk.out.disconnect(); sg.disconnect(); sent.disconnect(); } catch (e) { /* gone already */ } };
+    sent.start(Math.max(0, t)); sent.stop(sc.until + 1.5);
+    perform.last = { folk: folk, score: sc, slices: slices.length, floorNodes: function () { return floorNodes; } };
+    return sc.end;
+  }
+
 
   return {
-    plan: plan, decide: decide, tune: tune,
+    plan: plan, decide: decide, prepare: prepare, tune: tune, score: score, perform: perform, bake: bake, MIX: MIX, CALLS: CALLS, FIGURES: FIGURES, PIECES: PIECES,
     NAME: NAME, LABEL: LABEL, ODDS: ODDS, NEVER: NEVER, SEATS: SEATS,
     get LEVEL() { return LEVEL; }, set LEVEL(v) { LEVEL = +v; },
   };
