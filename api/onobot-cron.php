@@ -7,7 +7,9 @@
 // /api/ URL can't be used to trigger emails.
 //
 // Covers: onobot feedback (with model preference), page-view analytics for the
-// pronoun article / jukebox / underworld, and new email signups.
+// pronoun article / jukebox / underworld, the Junk Drawer (drawer + about-page
+// visits, items opened, turns, and every new visitor prompt), and new email
+// signups.
 
 if (php_sapi_name() !== 'cli') {
     http_response_code(403);
@@ -169,7 +171,67 @@ $L[] = sprintf("  %-26s %d views (%d unique)   [all-time: %d views, %d unique]",
     $i($uwA,'v'), $i($uwA,'u'));
 
 // ─────────────────────────────────────────────────────────────
-// 3. EMAIL SIGNUPS
+// 3. JUNK DRAWER  (visits · items opened · turns · new prompts)
+// ─────────────────────────────────────────────────────────────
+// The drawer logs to page_events under page='junk-drawer' (jd-core.js JD_track):
+// page_view with label NULL for the drawer itself and 'about' for /about/,
+// item_open, and turn_open / turn_submit / turn_complete / turn_error. The
+// prompts visitors file are jd_submissions rows with item_id IS NULL (curated
+// items carry an item_id and are not visits). jd_* timestamps are UTC, so the
+// window there is UTC_TIMESTAMP(), not NOW().
+$jdSel = "SELECT
+            SUM(event_type='page_view' AND (label IS NULL OR label <> 'about')) v,
+            COUNT(DISTINCT CASE WHEN event_type='page_view' AND (label IS NULL OR label <> 'about') THEN visitor_hash END) u,
+            SUM(event_type='page_view' AND label = 'about') av,
+            COUNT(DISTINCT CASE WHEN event_type='page_view' AND label = 'about' THEN visitor_hash END) au,
+            SUM(event_type='item_open') io,
+            SUM(event_type='turn_open') topen,
+            SUM(event_type='turn_submit') tsub,
+            SUM(event_type='turn_complete') tdone,
+            SUM(event_type='turn_error') terr
+          FROM page_events WHERE page = 'junk-drawer'";
+$jd24  = $q1("$jdSel AND created_at >= NOW() - INTERVAL $H HOUR") ?: [];
+$jdAll = $q1($jdSel) ?: [];
+
+$jdCount = 0;
+$L[] = $rule;
+$L[] = "JUNK DRAWER";
+$L[] = sprintf("  %-26s %d views (%d unique)   [all-time: %d views, %d unique]",
+    "The drawer", $i($jd24,'v'), $i($jd24,'u'), $i($jdAll,'v'), $i($jdAll,'u'));
+$L[] = sprintf("  %-26s %d views (%d unique)   [all-time: %d views, %d unique]",
+    "About page", $i($jd24,'av'), $i($jd24,'au'), $i($jdAll,'av'), $i($jdAll,'au'));
+$L[] = sprintf("  %-26s %d   [all-time: %d]", "Items opened", $i($jd24,'io'), $i($jdAll,'io'));
+$L[] = sprintf("  %-26s %d opened · %d submitted · %d completed · %d errors   [all-time: %d / %d / %d / %d]",
+    "Turns", $i($jd24,'topen'), $i($jd24,'tsub'), $i($jd24,'tdone'), $i($jd24,'terr'),
+    $i($jdAll,'topen'), $i($jdAll,'tsub'), $i($jdAll,'tdone'), $i($jdAll,'terr'));
+try {
+    $jdTotal = $q1("SELECT COUNT(*) n, SUM(status='rated') rated FROM jd_submissions WHERE item_id IS NULL") ?: [];
+    $prompts = $q("SELECT s.created, s.status, s.title, s.prompt, g.model_id AS winner
+                   FROM jd_submissions s
+                   LEFT JOIN jd_ranks r ON r.submission_id = s.id AND r.rank_pos = 1 AND r.client = 'web'
+                   LEFT JOIN jd_generations g ON g.id = r.generation_id
+                   WHERE s.item_id IS NULL AND s.created >= UTC_TIMESTAMP() - INTERVAL $H HOUR
+                   ORDER BY s.created DESC");
+    $jdCount = count($prompts);
+    $L[] = sprintf("  %-26s %d new in %dh   [all-time: %d prompts, %d rated]",
+        "Prompts collected", $jdCount, $H, $i($jdTotal,'n'), $i($jdTotal,'rated'));
+    if ($jdCount > 0) {
+        $L[] = "";
+        foreach ($prompts as $p) {
+            $when = substr($p['created'], 5, 11) . ' UTC';
+            $tail = $p['status'] === 'rated'
+                ? ('rated' . ($p['winner'] ? ' · 1st: ' . $p['winner'] : ''))
+                : $p['status'];
+            $L[] = "  • {$when} · " . ($p['title'] !== null && $p['title'] !== '' ? $p['title'] : '(untitled)') . " · {$tail}";
+            $L[] = "      prompt: " . trunc($p['prompt'], 220);
+        }
+    }
+} catch (PDOException $e) {
+    $L[] = "  Prompts collected: unavailable (" . $e->getMessage() . ")";
+}
+
+// ─────────────────────────────────────────────────────────────
+// 4. EMAIL SIGNUPS
 // ─────────────────────────────────────────────────────────────
 $L[] = $rule;
 $L[] = "EMAIL SIGNUPS";
@@ -193,9 +255,9 @@ $L[] = $rule;
 
 $body = implode("\n", $L) . "\n";
 
-$views24 = $i($hp,'v') + $i($pr24,'v') + $i($jk,'v') + $i($uw,'v');
-$subject = sprintf("Municipal Sky digest %s — %d onobot, %d views, %d new emails",
-    date('Y-m-d'), $onoCount, $views24, $subCount);
+$views24 = $i($hp,'v') + $i($pr24,'v') + $i($jk,'v') + $i($j2,'v') + $i($zk,'v') + $i($kb,'v') + $i($uw,'v') + $i($jd24,'v') + $i($jd24,'av');
+$subject = sprintf("Municipal Sky digest %s — %d onobot, %d drawer prompts, %d views, %d new emails",
+    date('Y-m-d'), $onoCount, $jdCount, $views24, $subCount);
 
 $headers = "From: Municipal Sky <{$FROM}>\r\n"
          . "Reply-To: {$FROM}\r\n"
