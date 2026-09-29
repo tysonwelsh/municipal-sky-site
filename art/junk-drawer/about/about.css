@@ -42,11 +42,12 @@
 /* no eyebrow (owner, 2026-09-26): a step is its heading and its prose. The
    scene a step belongs to is on the timeline, and the pane shows it. */
 /* the demo notice — under the drawing, beside the controls, stated plainly */
+/* (owner, 2026-09-28) italic fine print under the prose — no box */
 .jd-about .jd-demo-note {
-  margin: var(--s-2) 0 0;
-  padding: var(--s-2);
-  border: 1px dashed currentColor;
-  font-size: var(--fs-xs); line-height: 1.5; opacity: 0.85;
+  margin: var(--s-3) 0 0;
+  font-style: italic;
+  font-size: var(--fs-xs); line-height: 1.5;
+  color: var(--ink-soft);
 }
 
 /* ---- the pane and its scenes -------------------------------------------- */
@@ -961,7 +962,6 @@ html.jd-about-page.jd-folder-open { overflow: visible; }
   padding-bottom: 0;
   margin: 0 0 var(--s-2);
 }
-.jd-about .jd-demo-note { font-family: var(--font-mono); font-size: var(--fs-sm); line-height: var(--lh-base); }
 .jd-about .jd-step em { font-family: var(--font-voice); font-style: italic; }
 
 /* b — the drawer's label style for headings */
@@ -1398,10 +1398,9 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
   content: "";
   display: block;
   width: 4.5rem;
-  height: 3px;
+  height: 7px;
   margin-top: 1.1rem;
-  background: var(--ink);
-  box-shadow: 0 6px 0 -2px var(--ink);
+  background: linear-gradient(var(--ink) 0 3px, transparent 3px 6px, var(--ink) 6px 7px);
 }
 @media (min-width: 769px) {
   .jd-about--live .jd-about-head {

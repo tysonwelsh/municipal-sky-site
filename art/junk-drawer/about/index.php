@@ -173,9 +173,9 @@ include __DIR__ . '/../../../includes/header.php';
       <div class="jd-step is-on" data-scene="drawer" data-step="hook">
         <div class="jd-step-body">
         <!-- THE PAGE'S TITLE (owner, 2026-09-28): the head of the opening
-             step, so it arrives and leaves with the opening paragraphs. A
-             small mono kicker names the page (this is the ABOUT page; the
-             drawer itself is elsewhere), the title names the thing. -->
+             step, so it arrives and leaves with the opening paragraphs.
+             "About the" is part of the title, set small in italic on its
+             own line above the name. -->
         <header class="jd-about-head">
           <h1 class="jd-about-title"><span class="jd-about-kicker">About the</span>
           SVG Junk Drawer</h1>
@@ -183,12 +183,13 @@ include __DIR__ . '/../../../includes/header.php';
         <h2>My personal SVG benchmark</h2>
         <p>This is the virtual junk drawer where I stash my collection of
         AI-generated vector art.</p>
-        <p>It is also where I&rsquo;m building my own personal benchmark for
-        evaluating how well large language models generate SVG images.</p>
-        <p>Feel free to click through or rearrange the items. You can
-        <a href="/art/junk-drawer/" target="_blank" rel="noopener">open the
-        full drawer</a> to see everything it can do, or just keep scrolling
-        to learn more.</p>
+        <p>It&rsquo;s also an experiment in benchmarking how well large
+        language models generate SVG images.</p>
+        <p>Everything in the drawer is interactive. Click an item to view its
+        details, or drag it aside to see what&rsquo;s underneath.</p>
+        <p><a href="/art/junk-drawer/" target="_blank" rel="noopener">Visit
+        the full drawer</a> to try a prompt yourself, or keep scrolling to
+        learn more.</p>
         </div>
       </div>
 
@@ -196,10 +197,11 @@ include __DIR__ . '/../../../includes/header.php';
         <div class="jd-step-body">
         <h2>What are SVG images?</h2>
         <p>An SVG is a drawing written in code: a list of shapes, coordinates,
-        and colors. Unlike most AI-generated art, SVGs are vector images, so
+        and colors.</p>
+        <p>Unlike most AI-generated art, SVGs are vector images. This means
         they can be edited in programs like Adobe Illustrator or scaled to any
         size without losing sharpness.</p>
-        <p>They also make for a fun way to test the coding skills of a model,
+        <p>They are also a fun way to test a model&rsquo;s coding skills,
         because mistakes in the code show up in the drawing.</p>
         </div>
       </div>
@@ -207,14 +209,10 @@ include __DIR__ . '/../../../includes/header.php';
       <div class="jd-step" data-scene="drawer" data-step="graded">
         <div class="jd-step-body">
         <h2>Every item has a grade</h2>
-        <p>Every item in this drawer began as a prompt sent to four leading
+        <p>Each item in the drawer began as a prompt sent to four leading
         models.</p>
-        <p>Once the four drawings come back, the person who wrote the prompt
-        grades each one without knowing which model made it. Those grades are
-        stored as data, with the aim of building a running comparison of how
-        well each model draws.</p>
-        <p>Keep scrolling to learn more, or dig around in the drawer
-        yourself.</p>
+        <p>When the four drawings come back, whoever wrote the prompt grades
+        each one without knowing which model made it.</p>
         </div>
       </div>
 
@@ -222,20 +220,22 @@ include __DIR__ . '/../../../includes/header.php';
       <div class="jd-step" data-scene="instrument" data-step="try">
         <div class="jd-step-body">
         <h2>The instrument</h2>
-        <p>This is the interface used to collect the grades. Graders evaluate
-        each drawing one at a time before ranking the four drawings from best
-        to worst.</p>
-        <p>Go ahead and try it out.</p>
-        <p class="jd-demo-note"><b>This is a demo.</b> Nothing you enter here
-        is saved or recorded.</p>
+        <p>This is the interface I use to grade the drawings.</p>
+        <p>Each one is rated in four categories and given an overall grade, on
+        the same five-point scale the USDA uses for beef: Prime, Choice, Select,
+        Standard, and Utility. After that, all four are ranked from best to
+        worst.</p>
+        <p>Feel free to try it out!</p>
+        <p class="jd-demo-note">For demonstration purposes only. Nothing
+        entered here is saved or recorded.</p>
         </div>
       </div>
 
       <div class="jd-step" data-scene="instrument" data-step="taxonomy">
         <div class="jd-step-body">
         <h2>The taxonomy</h2>
-        <p>Images are graded in four distinct categories, each designed to
-        isolate a single kind of failure. They are:</p>
+        <p>Images are rated in four categories, each designed to isolate a
+        single type of failure. They are:</p>
         <!-- the four live categories only, from taxonomy.json (jd-core's
              renderLegend fills #jd-axes, one-line summaries). The grade tiers are left off this
              page (owner, 2026-09-27): the categories are the design worth
@@ -254,21 +254,21 @@ include __DIR__ . '/../../../includes/header.php';
            in COPY.md. -->
       <div class="jd-step" data-scene="record" data-step="claude-fable-5" data-view="claude-fable-5">
         <div class="jd-step-body">
-        <h2>This is a great SVG!</h2>
-        <p>Here&rsquo;s an example of a primo SVG drawn by Claude Fable 5.</p>
-        <p>The individual parts are well connected, the layers stack
-        correctly, and the pot has the tasteful, Scandinavian influence I was
-        hoping for when I wrote the prompt.</p>
+        <h2>A gold standard</h2>
+        <p>Here&rsquo;s a top-notch SVG drawn by Claude Fable 5.</p>
+        <p>It&rsquo;s clearly a desktop succulent, the individual parts fit
+        together, the layers stack correctly, and the pot has the tasteful
+        Scandinavian style I had in mind when I wrote the prompt.</p>
         <p>It earned top marks in every category.</p>
         </div>
       </div>
 
       <div class="jd-step" data-scene="record" data-step="gemini-3-1-pro" data-view="gemini-3-1-pro">
         <div class="jd-step-body">
-        <h2>This one has problems. But which <em>kind</em> of problems?</h2>
-        <p>Here&rsquo;s an example of an image with problems in both the
-        Understanding Assignment and Structural Coherence categories.</p>
-        <p>Can you spot the problem with Understanding Assignment?</p>
+        <h2>This one has problems. But which <em>kind</em>?</h2>
+        <p>This drawing from Gemini 3.1 Pro has issues in the Understanding
+        Assignment and Structural Coherence categories.</p>
+        <p>Can you spot the Understanding Assignment problem?</p>
         </div>
       </div>
 
@@ -276,12 +276,12 @@ include __DIR__ . '/../../../includes/header.php';
       <div class="jd-step" data-scene="record" data-step="gemini-answer" data-view="gemini-3-1-pro">
         <div class="jd-step-body">
         <h2>Problems with Understanding Assignment</h2>
-        <p>The prompt asked for a <em>desktop</em> succulent, but this model
-        drew a pot that is resting on a stand with wooden legs. That&rsquo;s
-        the sort of stand you&rsquo;d see holding a large floor plant, not a
-        smaller pot that sits on a desk.</p>
-        <p>This is an issue with Understanding Assignment because the model
-        attempted to draw something other than what was asked for in the
+        <p>The prompt asked for a <em>desktop</em> succulent, but Gemini drew a
+        pot on a stand with wooden legs. That&rsquo;s the kind of stand
+        you&rsquo;d see holding a large floor plant, not a small pot on a
+        desk.</p>
+        <p>This is considered an Understanding Assignment problem because the
+        model tried to draw something other than what was asked for in the
         prompt.</p>
         </div>
       </div>
@@ -289,25 +289,22 @@ include __DIR__ . '/../../../includes/header.php';
       <div class="jd-step" data-scene="record" data-step="gemini-structure" data-view="gemini-3-1-pro">
         <div class="jd-step-body">
         <h2>Problems with Structural Coherence</h2>
-        <p>There are other problems with this image: the succulent&rsquo;s
-        leaves are oddly proportioned and float in midair.</p>
-        <p>These issues belong in the Structural Coherence category, because
-        they have to do with how well the individual parts fit together.</p>
+        <p>This drawing has other obvious issues: the succulent&rsquo;s leaves
+        are distorted and float in midair.</p>
+        <p>These fall under Structural Coherence because they relate to the
+        plant&rsquo;s anatomy and how the individual parts fit together.</p>
         </div>
       </div>
 
       <div class="jd-step" data-scene="record" data-step="kimi-k3" data-view="kimi-k3">
         <div class="jd-step-body">
         <h2>Problems with Layering</h2>
-        <p>Here&rsquo;s an example of an image with big problems in the
-        Layering category.</p>
-        <p>Notice how the leaves of the plant are hidden on the bottom layer
-        of the image, behind the pot, when they should be sitting on top,
-        emerging from the mouth of the pot.</p>
-        <p>Press &#9654; under the drawing to see what I mean. It shows how
-        the model did a pretty good job drawing the leaves, but then made the
-        mistake of drawing the mouth of the pot over them. Textbook layering
-        issue.</p>
+        <p>This drawing from Kimi K3 has a big Layering problem.</p>
+        <p>Notice how the leaves are hidden behind the pot, when they should be
+        sprouting from its mouth.</p>
+        <p>Press &#9654; under the drawing to see what I mean. The replay shows
+        the model drawing the leaves just fine, but then covering them with the
+        pot&rsquo;s mouth. Textbook layering issue.</p>
         </div>
       </div>
 
@@ -316,84 +313,61 @@ include __DIR__ . '/../../../includes/header.php';
       <div class="jd-step" data-scene="analytics" data-step="stack" data-view="turns">
         <div class="jd-step-body">
         <h2>A real application, front to back</h2>
-        <p>The SVG Junk Drawer is more than just a pretty interface &mdash; it
-        also has a functional back end.</p>
-        <p>Behind the drawer, a server-side pipeline sends the user&rsquo;s
-        prompt to all four models at once, with the same system prompt and
-        limits. The ratings are rows in a SQL database, written through
-        authenticated endpoints into a schema for submissions, generations,
-        ratings, and ranks.</p>
-        <p>The only thing it doesn&rsquo;t have is actual users (other than
-        myself!)</p>
+        <p>The SVG Junk Drawer isn&rsquo;t just a pretty interface. It also has
+        a working back end.</p>
+        <p>Behind the drawer, a server-side pipeline sends each prompt to all
+        four models with the same system instructions, and everything is stored
+        in a SQL database.</p>
+        <p>The only thing missing is actual users (other than me!)</p>
         </div>
       </div>
 
-      <!-- THE STORY THE CHARTS TELL (owner, 2026-09-27): neck and neck on
-           average; the spread shows Opus's edge is its Primes; the categories
-           point at Je ne sais quoi; and the edge costs money. The first two
-           steps share one card (the average and the spread together). -->
+      <!-- THE STORY THE CHARTS TELL (owner, 2026-09-27; final copy 2026-09-28):
+           about even on average; the spread shows Opus's edge is its Primes;
+           the categories point at Je ne sais quoi; and the edge costs money.
+           The first two steps share one card (the average and the spread
+           together). -->
       <div class="jd-step" data-scene="analytics" data-step="grades" data-view="grades">
         <div class="jd-step-body">
-        <h2>Insights into overall quality</h2>
-        <p>Let&rsquo;s look at how the models compare across all of their
-        drawings.</p>
-        <p>Besides the four category ratings, every drawing gets one overall
-        grade on a five-point scale:</p>
-        <!-- counted down, Prime at the top, the order of the spread chart -->
-        <ol class="jd-step-list" reversed>
-          <li>Prime</li>
-          <li>Choice</li>
-          <li>Select</li>
-          <li>Standard</li>
-          <li>Utility</li>
-        </ol>
-        <p>(The same scale the USDA uses for beef!)</p>
-        </div>
-      </div>
-
-      <div class="jd-step" data-scene="analytics" data-step="grades-analysis" data-view="grades">
-        <div class="jd-step-body">
-        <h2>By the averages</h2>
-        <p>The sample is small, about 95 drawings per model, all graded by
-        one rater, so treat these as early results.</p>
-        <p>On average overall grade, Claude Opus 5 and Gemini 3.1 Pro finish
-        neck and neck.</p>
-        <p>Kimi K3 is not far behind in third, with GPT-5.1 a distant
+        <h2>Insights</h2>
+        <p>Here&rsquo;s how the four models compare on overall grade, across
+        roughly 100 drawings each. It&rsquo;s a small sample, I know, but humor
+        me.</p>
+        <p>On average, Claude Opus 5 and Gemini 3.1 Pro are about even.</p>
+        <p>Kimi K3 isn&rsquo;t far behind in third, with GPT-5.1 a distant
         fourth.</p>
         </div>
       </div>
 
+
       <div class="jd-step" data-scene="analytics" data-step="distribution" data-view="grades" data-focus="spread-top2">
         <div class="jd-step-body">
         <h2>Same averages, but different distributions</h2>
-        <p>The shape of the distributions tells them apart.</p>
-        <p>Despite the similar averages, Gemini generated more drawings with a
-        Choice grade.</p>
-        <p>Meanwhile Opus had a few more Prime quality SVGs, and that tail
-        lifted its average.</p>
+        <p>Despite similar averages, Gemini generated more drawings graded
+        Choice, while Opus had more graded Prime.</p>
+        <p>In other words, while Gemini is reliably good, Opus is slightly more
+        likely to produce something special.</p>
         </div>
       </div>
 
       <div class="jd-step" data-scene="analytics" data-step="multiples" data-view="axes">
         <div class="jd-step-body">
         <h2>The je ne sais quoi factor</h2>
-        <p>How did Opus end up with more Prime grade drawings?</p>
-        <p>Category by category, Opus and Gemini are close. Gemini even edges
-        ahead on Understanding Assignment.</p>
-        <p>But Opus&rsquo;s clearest lead is in Je ne sais quoi, which
-        suggests it&rsquo;s the spark that turns a good drawing into a great
-        one.</p>
-        <p>(Though again &hellip; the sample size is small!)</p>
+        <p>How did Opus end up with more drawings graded Prime?</p>
+        <p>Gemini and Opus are tied on Structural Coherence, and Gemini even
+        leads slightly on Understanding Assignment.</p>
+        <p>But in Je ne sais quoi, Opus has the advantage, which suggests that
+        spark is what separates a good drawing from a great one.</p>
         </div>
       </div>
 
       <div class="jd-step" data-scene="analytics" data-step="spend" data-view="cost">
         <div class="jd-step-body">
-        <h2>Style doesn&rsquo;t come cheap</h2>
-        <p>But je ne sais quoi isn&rsquo;t free! Opus&rsquo;s drawings cost
+        <h2>Style ain&rsquo;t cheap</h2>
+        <p>But that special something has a price. Opus&rsquo;s drawings cost
         roughly twice as much as Gemini&rsquo;s.</p>
-        <p>Notably, Kimi K3&rsquo;s drawings are the cheapest of the four,
-        even though it outperforms GPT-5.1 on overall quality.</p>
+        <p>Kimi K3&rsquo;s drawings are the cheapest of the four, yet it still
+        beats GPT-5.1 on overall quality.</p>
         </div>
       </div>
 
@@ -404,13 +378,17 @@ include __DIR__ . '/../../../includes/header.php';
       <div class="jd-step" data-scene="drawer" data-step="outro">
         <div class="jd-step-body">
         <h2>Thanks for digging through the drawer</h2>
-        <p>The SVG Junk Drawer is a personal side project built to show my
-        approach to data collection and evaluation: a clear taxonomy, an
-        instrument people can actually use, a clean record, and analysis that
-        doesn&rsquo;t overstate what the data can show.</p>
-        <p>You can <a href="/art/junk-drawer/" target="_blank" rel="noopener">open
-        the full drawer</a> to explore or take a turn yourself.</p>
-        <p>If you&rsquo;d like to talk about evaluation and data work,
+        <p>Of course, this is not meant to be a scientific study.</p>
+        <p>I built it as a portfolio piece to showcase the sort of work I do in
+        product operations for AI evaluation, including developing taxonomies,
+        designing grading instruments, working with SQL databases, and telling
+        stories with data.</p>
+        <p><a href="/art/junk-drawer/" target="_blank" rel="noopener">Visit the
+        full drawer</a> to explore my SVG collection or try a prompt
+        yourself.</p>
+        <p>If you&rsquo;d like to talk about evaluation and the art of data
+        collection, email me at
+        <a href="mailto:tysonwelsh@gmail.com">tysonwelsh@gmail.com</a> or
         <a href="https://www.linkedin.com/in/tysonwelsh" rel="noopener">find me
         on LinkedIn</a>.</p>
         </div>
