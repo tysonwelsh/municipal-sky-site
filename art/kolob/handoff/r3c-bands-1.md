@@ -989,3 +989,80 @@ seat moves). If he would rather keep the doxology seat but have the band
 arrive after the verse's recognition, raise `GuestBands.AT.doxology` (for
 example `[0.5, 0.75]`; the band is far off for its first twenty seconds or
 so either way).
+
+### SCORE.md, to adopt (amending round 1's list)
+
+- **`guest` stages, the band:** `cross` is labelled "⇋ the band goes by"
+  ("its own key, its own time"), or "⇋ the second band goes by". It reads
+  "⇋ the bands cross" ("two times at once") only when a second band is
+  nearest while the first still plays. Neither label says "approaches" or
+  "passes", so the harness's count of starts and ends is unchanged.
+- **The band's layer:** each note's `hymnId` is its own band's. The street
+  beat after the stinger is drums only (no notes; `strain: "cadence"` in the
+  score). The score gains `gone` and `cadence {t0, t1}` per band and `gone`
+  overall. `end` is still the stinger's, and it is what `perform` returns and
+  the meeting waits for.
+- **New surface:** `GuestHandcart.warm(ctx)` (start-up only),
+  `GuestHandcart.MAX_GUESTS` and `GuestGulls.MAX_GUESTS` (2), `GuestBands.AT`
+  (exported, for the lever), `VoicesFolk.warm(ctx)` (the folk voice's noise).
+  `VoicesBand.road` is 12 nodes, and its town air leans toward the
+  traveller (`AIR_LEAN` 0.5, inside the voice).
+- **Streams:** unchanged labels. The company's `synth` draws now include its
+  priming notes, so its throats' small dice differ from round 1's; `plan`
+  and `score` are unchanged by it.
+
+### How round 2 was checked (all silent)
+
+| check | result |
+|---|---|
+| purity (Node) | `plan` and `score` repeat exactly for all three guests, 40 seeds each (a Pioneer Day in five), two bands; **0** `Math.random` calls; the lab's own purity check agrees |
+| the band's forms (Node) | 240 hymns in six dialects: 0 errors; every note 20 Hz–3 kHz and inside its march; every drum inside `[start, gone]`; the street beat always after the stinger, 16.3–20.7 s (median 18.2); the road drawn to the end of the drums |
+| the band's level (the lab's offline check, as seated) | seed 2 +1.8 LU (as round 1), seed 1 −0.7, seed 4 −0.2, seed 6 +0.6, seed 2 with a second band +0.8: every one within ±2 LU of the organ reference |
+| the band's going | 3 s before the stinger: −28.8 to −38.7 dB; the drums' last 3 s: **−72 to −78 dB** |
+| the lean, first heard | the band 8.3–9.8 dB toward its side (round 1: 1.8–5.4); the company 5.5–8.3 dB (round 1: 0.2–3.3) |
+| the company's level and going | +0.2, −1.7 and +0.2 LU (seeds 3, 1, 4); first heard about −41 dB; nearest −26.5 to −31.5; **its last line −35.4 to −40.4** (5–14 dB under its nearest; round 1 ended about level with it, −28.8 on seed 3); the wheels' last 3 s about −54 |
+| clicks and clipping | 0 and 0 in every render of round 2 (9 bands, 5 companies) |
+| the after-beats against the tune (Node) | 636 → 0 chord tones within a semitone of a sounding tune note, 120 marches |
+| the lab at 860 and 390 px | 0 console errors after every play (a band with a second, the company, the flock, the lead bird), the stop, every menu and box, the odds and purity; no sideways scroll at either width (scroll width = viewport) |
+| the harness, recipe copy (900 s unless noted) | the band forced, withheld: seeds 12 and 7 PASS; seed 20 fails one check only, the organist's wind round the hands that let go (round 1's Request 4, unchanged). Seed 12 not withheld: PASS. Two bands, seed 33: PASS. The company forced: seed 2 (the prelude, 600 s) PASS, seed 7 (the testimony) PASS. The gulls forced, seed 7 (600 s): only that meeting's band fails the same organist check, as in round 1. **0 runtime errors** in all ten runs. None marches the doxology's hymn before the doxology |
+
+### Requests (new; round 1's 1–6 stand, and its 2 is now recipe block D)
+
+7. **To the integrator (and whoever keeps the 5 ms bound meeting-wide):**
+   in these measurements the slow wakes near a guest were the meeting's own.
+   The prelude's first chord of the day takes 15.5 ms in one wake with no
+   guest at all. The house's first chord after a guest leaves takes
+   8.3–9.8 ms (its ordinary chords stay under 3). The ward's verse lines in
+   a hymn produced 15 wakes over 5 ms in 78 s, up to 13 ms, with no guest at
+   all. All of these were on this machine, muted. Nothing in the guests
+   causes them. They are reported here because anyone timing a guest's
+   window will see them.
+8. **To CAST:** `VoicesVocal.warm(ctx)` would be the natural home for what
+   `GuestHandcart.warm` does: bake the breath's noise and the inhale, and
+   compile the voice once. When it exists, the company's warm should call
+   it. The ward would gain the same way: its first breathing line bakes the
+   inhale today, inside the meeting.
+
+### Known issues (round 2)
+
+- **Nobody has listened.** The new questions for the ear: is the street
+  beat right (a band on parade between marches, 16–21 s, fading past the
+  last houses), or should the band simply stop; is the company's rise too
+  steep (`RISE_DB` −14) or not steep enough; does the lean read as "from one
+  end of the colony".
+- **The 5 ms bound** is met by the guests' own callbacks in the runs above
+  (3.1 ms for the band, 4.2 for the company, at their worst). It is not met
+  by every wake in their windows: those belong to the meeting (Request 7),
+  and a garbage collection can land in any callback. Headroom is thin: the
+  company's worst live callback varied from 2.2 to 6.8 ms before the
+  priming, run to run, on the same seed.
+- **The band's drums outlast the march** by 16–21 s. The meeting does not
+  wait for them. If a band is seated late in its section, its drums fade
+  under the next section's first seconds. That is by design (the meeting
+  carries on). If the owner prefers the meeting to wait, `perform` would
+  return `sc.gone` instead of `sc.end`.
+- **The withheld-tune rule lives in the recipe** (the meeting's
+  `outsideMaterial`), not in the module: a march is given a hymn and cannot
+  know which section's it is.
+- **The lab's live cost display overstates** on an idle page (above). Its
+  offline **check** is unaffected.
