@@ -1072,7 +1072,7 @@ window.KOLOB = window.KOLOB || {};
     // (the singer rises: their own row in the minutes, by name — a cast event
     // at the score's moment, as the testimony-bearers' are)
     var who = V.material.singer, w = V.material.ward, m = who && w && w.byId ? w.byId[who] : null, rise = null;
-    try { (G.score(V.material, V.stream, tc).stages || []).forEach(function (st) { if (st.stage === "rises" && rise == null) rise = st.t0; }); } catch (e) { rise = null; }
+    try { (G.score(V.material, V.stream, tc).stages || []).forEach(function (st) { if (st.stage === "rises" && rise == null) rise = st.t0 != null ? st.t0 : st.t; }); } catch (e) { rise = null; }
     if (m && rise != null) cueAt("guests", Math.max(rise, S.now()), function () {
       if (!S.playing || !C_live(V)) return;
       tell(V, { type: "cast", memberId: who, nameDs: m.nameDs || "", action: "rises and sings in tongues", role: m.role || null,
