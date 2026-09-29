@@ -1070,6 +1070,16 @@ html.jd-about-page.jd-folder-open { overflow: visible; }
   }
   .jd-about--live .jd-about-notes { padding-bottom: var(--s-4); }
   .jd-about--live .jd-step[data-step="outro"]::after { content: none; }
+  /* THE LAST STEP LEAVES WITH THE DRAWER (owner, 2026-09-29: "once it gets
+     in position … it should still move up with the drawer"). In the final
+     stretch the pane's sticky run is over — the steps column has run out —
+     so the drawer is already scrolling away with the page; prose still
+     pinned at the focus line then hangs while the drawer rises, which reads
+     as the text moving DOWN against it. So, like the opening step, the
+     outro's prose is not sticky at all: it arrives at the page's speed and
+     keeps that speed, and the step's height above is what puts its arrival
+     at the moment the drawer starts to leave. */
+  .jd-about--live .jd-step[data-step="outro"] .jd-step-body { position: static; }
   /* THE HANDOFF'S RUNWAY. A scene change runs over the pane's height of
      scroll (D = 100vh - banner - s-3 + the strip's 28px GAP) that ENDS as
      the new scene's first step reaches the focus line (about-scenes.js,
