@@ -386,6 +386,10 @@ window.KOLOB.Score = (function () {
     "scene":               { section: "str", index: "int", scene: "str" },
     "reckoning":           { ok: "bool", doxId: "hymnId?" },
     "drone-turn":          { index: "int", to: "arr", glide: "num" },
+    // round 3c: the testimony-bearers (kolob-testimony.js) — a bearer rises,
+    // speaks, the reed plays the words back (echo), doubles them, makes a
+    // tune of them, the stillness between two bearers; not a guest's stage
+    "testimony":           { stage: "str" },
   };
   var KINDS = {
     int: isInt, num: isNum, str: isStr, bool: isBool, obj: isObj, arr: Array.isArray,
