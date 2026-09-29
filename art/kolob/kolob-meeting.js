@@ -1457,7 +1457,11 @@ window.KOLOB = window.KOLOB || {};
       // bowed — the strings on each chord's bare fifth — and the organist is
       // first heard in the meeting that follows (round 2 of the polish: the
       // arbor's organ used to play the prelude's closing amen)
-      var bowed = C.section === "prelude" && !!C.seating && !!C.seating.sits.organ;
+      // (and so is the amen of a rite seated in the brush arbor — round 3b,
+      // step 4, after the critic's round: the arbor's organ sat the rite
+      // out and then played its amen)
+      var scA = sceneNow();
+      var bowed = (C.section === "prelude" && !!C.seating && !!C.seating.sits.organ) || !!(scA && scA.name === "arbor");
       for (var i = 0; i < chords.length; i++) {
         Desk.write(chords[i], t + i * chDur, "joint");
         var cd = chDur * (i === chords.length - 1 ? 1.7 : 1.02);
