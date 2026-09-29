@@ -1247,8 +1247,8 @@ handoff/r3b-engrave-1.md. kolob-viz.js already reads these fields.
    `YIELD = true`, reverses it). Move a band out of the doxology when the Hosanna takes it.
 6. **Seeding.** The gift seeds the next hymn when one follows the testimony, and the doxology only
    when the doxology has no other payoff.
-7. **The Hosanna's hymn is audio-only** until the staff engraves unlogged notes marked
-   `engrave: true`. Wire that in the page (PLAN §8.12), or leave it audio-only, per the owner's ruling.
+7. **The Hosanna is audio-only and unlogged (the owner's ruling, which overrides §8.12).** Set
+   `ENGRAVE_HYMN = false`; the staff does not print it.
 8. **Cost, reported and not cut.** The Hosanna runs about 1.3× the ward's hymn, with its longest
    render callbacks at 5.2–6.1 ms against a 5.33 ms budget. The far ward's 24 throats add about
    1,250 nodes. Measure these again in the integrated meeting.
