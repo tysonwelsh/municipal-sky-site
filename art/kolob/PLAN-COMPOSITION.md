@@ -1206,3 +1206,14 @@ handoff/r3b-engrave-1.md. kolob-viz.js already reads these fields.
    knows what to print and what not to.
 4. Put the handbells on their own layer. Give the dawn trombones' notes a beat, so they can print
    with bars.
+
+**For the round-3c integrator, from crew B's critic (variations and change ringing):**
+- **Timing.** `GuestVariations.prepare` really costs a median of 12 ms, 36 ms at p95 and 77 ms at
+  worst, not the 2–11 ms the handoff states. The interlude's key/lag search, the polonaise and the
+  trio are the costly parts. Prepare the set OFF the clock: at plan time, beside the hymnal's desk
+  once the hymn is written, or in a deferred cue before the seat. Never run it inside one clock
+  cue, as the handoff's recipe section 3 does.
+- **Plain organist on non-Tabernacle hymns.** The theme is "trumpet solo + soft flutes" (the tenor
+  tune), not the principal.
+- **Two-key proxy.** It miscounts gospel's 7-limit sevenths as a second key. The interlude still
+  separates.
