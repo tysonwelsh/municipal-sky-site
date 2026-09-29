@@ -1252,3 +1252,24 @@ handoff/r3b-engrave-1.md. kolob-viz.js already reads these fields.
 8. **Cost, reported and not cut.** The Hosanna runs about 1.3× the ward's hymn, with its longest
    render callbacks at 5.2–6.1 ms against a 5.33 ms budget. The far ward's 24 throats add about
    1,250 nodes. Measure these again in the integrated meeting.
+
+**For the round-3c integrator, from crew A's critic (the band, the handcart company, the gulls):**
+1. **MUST FIX: the second band vanishes in a hymn seat.** Recipe amendment B (keep the doxology's
+   tune out of the band's choices until a doxology has been sung) leaves one hymn in the pool, so
+   `h2` is null and no second band sounds. When the pool holds one hymn, the second band marches the
+   section's own hymn in its stranger's key (the sharpest Ives collision), or an Earth tune. Then
+   correct handoff r3c-bands-1.md's claims at lines 144, 810 and 1028.
+2. **The band's press.** Make the material (outsideMaterial → GuestBands.prepare) one cue earlier,
+   about a second before the press, or give the first bar its own slot(), so no clock wake does both
+   (it reached 7.4 ms in the ward's hymn).
+3. **Harness exemption (Request 4).** The organist accompanying the ward sounds on when the band
+   arrives mid-verse; this collision is intended. Exempt it in the house-lets-go check.
+4. **Guest budget.** Round 1 measured 72 % of meetings with a guest; the target is ≈55–65 %. The dials
+   are the handcart and gulls base odds. Leave the band's 36 % as the owner set it.
+5. **Apply the start-up warm block** (GuestHandcart.warm, VoicesFolk.warm), or the company may not take
+   a prelude seat. Apply the staff patch (kolob-viz.js, the band's bar-by-bar notes) and check it
+   with screenshots.
+6. **Optional:** the trombones borrow the band's pre-built reverb (−5.4 ms at their start).
+7. **Left for the owner's ear:** the band crosses the doxology's verse 7 times in 10
+   (`GuestBands.SEATS`/`AT`). The meeting's own slow wakes (Request 7: the prelude's first chord at
+   15–18 ms, the ward's verse lines at 8–23 ms) are pre-existing; fix them if cheap.
