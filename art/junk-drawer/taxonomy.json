@@ -7,31 +7,31 @@
       "id": "prime",
       "rank": 5,
       "label": "Prime",
-      "description": "Exceptional. Faithful to the prompt, technically clean, aesthetically strong. Would ship as-is."
+      "description": "Usable as is, with no fixes or only trivial ones. It also has real style, the kind of drawing that’s a delight to look at."
     },
     {
       "id": "choice",
       "rank": 4,
       "label": "Choice",
-      "description": "Strong result with minor blemishes a careful eye can find."
+      "description": "Needs a few fixes, but you could make it usable in Illustrator or Inkscape in under fifteen minutes."
     },
     {
       "id": "select",
       "rank": 3,
       "label": "Select",
-      "description": "Competent and recognizable; noticeable flaws on one or more axes."
+      "description": "Usable with more editing, over fifteen minutes of work. It might be worth fixing, or it might not."
     },
     {
       "id": "standard",
       "rank": 2,
       "label": "Standard",
-      "description": "Gets the idea across despite significant defects."
+      "description": "Recognizable, but fixing it would take a lot of work. It isn’t worth the effort, either because the fixes are too involved or because the drawing isn’t interesting enough."
     },
     {
       "id": "utility",
       "rank": 1,
       "label": "Utility",
-      "description": "The lowest tier. Barely fit for purpose; kept for the record (and the comedy)."
+      "description": "Barely recognizable. Not just unusable but unsalvageable: you wouldn’t know where to begin fixing it."
     }
   ],
   "axes": [

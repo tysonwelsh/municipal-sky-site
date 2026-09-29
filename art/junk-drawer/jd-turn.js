@@ -1516,8 +1516,23 @@
   function scaleRow(slot, kind, ax, chosen) {
     var axisId = ax ? ax.id : null;
     var label = ax ? (ax.label || ax.id) : 'overall grade';
-    var desc = ax ? (ax.description || '') : 'The drawer’s own five-tier scale, best to worst.';
     var levels = byRankDesc(ax ? ax.values : tax().grades);
+    /* THE OVERALL GRADE'S GUIDANCE (owner, 2026-09-29): unfolding the row
+       gives the rater the question the grade answers, then every tier's own
+       description from taxonomy.json, best to worst — one tier a line.
+       descHTML is the sighted disclosure; desc (plain text) is what a screen
+       reader hears at the select. */
+    var GRADE_LEAD = 'Judge the drawing as a whole: could you use it, and ' +
+      'how much work would it take to get there?';
+    var desc = ax ? (ax.description || '') : GRADE_LEAD + ' ' +
+      levels.map(function (l) {
+        return window.JD_labelText(l.label || l.id) + ': ' + (l.description || '');
+      }).join(' ');
+    var descHTML = ax ? esc(desc) : esc(GRADE_LEAD) +
+      levels.map(function (l) {
+        return '<br><b>' + esc(window.JD_labelText(l.label || l.id)) + '</b> &mdash; ' +
+          esc(l.description || '');
+      }).join('');
     var descId = 'jd-d-' + slot + '-' + (axisId || 'grade');
     /* THE DISCLOSURE (owner, 2026-08-28, replacing OVERRIDE 1's hover/focus
        tooltip): the definition now opens by PRESS, not hover — a caret
@@ -1566,7 +1581,7 @@
          was; open it auto-places on the next grid row spanning both
          columns — and the stacked narrow-band folds inherit it with no
          extra rules */
-      '<div class="jd-row-exp" hidden>' + esc(desc) + '</div>';
+      '<div class="jd-row-exp" hidden>' + descHTML + '</div>';
     return h + '</div>';
   }
   /* the column head above the rows, mirroring the report card's <thead>
