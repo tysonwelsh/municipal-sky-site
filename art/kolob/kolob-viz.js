@@ -2934,7 +2934,7 @@ window.KolobViz = (function () {
     for (var i = 0; i < xs.length; i++) if (typeof xs[i] === "number") { if (i0 < 0) i0 = i; i1 = i; }
     if (i0 < 0 || a < 0.02) return;
     var xa = xs[i0] - sw / 2, xb = xs[i1] + sw / 2;
-    if (i1 < ms.length - 1 && xs[i1 + 1] === null) xb = Math.max(xb, Math.min(X(ms[i1 + 1].tp) + dir * (0.57 * s - sw / 2), g.xE + 0.3 * sp));
+    if (i1 < ms.length - 1 && xs[i1 + 1] === null) xb = Math.max(xb, Math.min(X(ms[i1 + 1].tp) + dir * (0.57 * s - sw / 2), g.xE));   // (r3c-engrave2: as far as the burin, and no further)
     var th = 0.5 * s * dir;                        // (inward, toward the heads)
     // (r3c-engrave2: struck at full strength with its notes on the proof
     // sheet, and laid on the page with them once, at their one alpha —
@@ -3180,7 +3180,7 @@ window.KolobViz = (function () {
   // (a set note as it is struck: its layout about x 0, and its x)
   function struck(gr, g) {
     var pg = prepGroup(gr, g);
-    return { L: inkLayout(gr, g, pg.heads, pg.o), o: pg.o, x: X(gr.tp) + (gr.noCol ? coDx(gr, g) : gr.col.dx) };
+    return { L: inkLayout(gr, g, pg.heads, pg.o), o: pg.o, x: X(gr.tp) + (gr.noCol ? coDx(gr, g) : gr.col && gr.col.sp === g.sp ? gr.col.dx : 0) };   // (a note not yet set: at its time — slurHit's forecast)
   }
   // (the curve's one layout: its ends and side about its first note's own
   // time's x, its depth; ok false where it is too short to draw)
@@ -3220,15 +3220,20 @@ window.KolobViz = (function () {
   // not enough, both its ends stand further off their heads, alike — but
   // never more than a space further (SLUR_END): a slur keeps beside its own
   // notes. (Heads only: a slur may cross a stem, as in any score.)
-  // (r3c-engrave2: only the heads of its own line — the melisma's notes, the
-  // singer's run. Fitted to every head on the staff, the tenor's slur went
-  // looking for the bass's heads under it and hung three spaces below its
-  // own notes; the other voice keeps to its own side now. And it is fitted
-  // once, when it is settled, to its notes where they stand: settleCurve)
+  // (r3c-engrave2: fitted once, when it is settled, to its notes where they
+  // stand — its own line's, and any other head set by then within its span,
+  // a far choir's pale note — settleCurve. Fitted before to every head on
+  // the staff wherever it might come, and free to move its ends without
+  // limit, the tenor's slur, set under its notes, went looking for the
+  // bass's heads under it and hung three spaces below its own notes. Now it
+  // lies on its voice's own side, where the other voice is not, and its
+  // ends move a space at most: it stays beside its notes. A note set after
+  // it keeps out from under it: slurHit)
   var SLUR_DEEP = 2.2, SLUR_AIR = 0.25, SLUR_N = 24, SLUR_END = 1;
   function slurFit(g, m, sh) {
     var s = g.sp, sd = sh.side, tt = Math.abs(sh.th), dx = sh.x2 - sh.x1, E = [], pts = [], i;
-    (m.line || [m.g1, m.g2]).forEach(function (gr) {
+    var own = m.line || [m.g1, m.g2], near = groups.filter(function (gr) { return own.indexOf(gr) < 0 && gr.tp > m.tp - 2 && gr.tp < m.tp2 + 1; });
+    own.concat(near).forEach(function (gr) {
       if (gr.st !== m.st || !setNow(gr, g) || !prints(gr)) return;
       var k = struck(gr, g);
       k.L.placed.forEach(function (p) {
@@ -3619,11 +3624,20 @@ window.KolobViz = (function () {
   // where one of its heads at x would lie under a settled slur or tie on
   // its staff, the curve's right end (from its own time's place) — it goes
   // on past; else null.
+  // (and a guest's note set while one of ours is still open — its first
+  // note set, its last not yet — keeps out from under where it will lie,
+  // forecast with its last note at its time: the far ward's chord a line
+  // behind, set under our slur before the slur was settled)
   function slurHit(gr, g, bx, x) {
     var sp = g.sp, tol = 0.05 * sp, end = null;
     for (var k = 0; k < marks.length; k++) {
-      var m = marks[k], z = m.set;
-      if ((m.kind !== "slur" && m.kind !== "tie") || !z || !z.ok || z.sp !== sp || m.st !== gr.st || m.g1 === gr || m.g2 === gr || Math.abs(m.tp - gr.tp) > 6) continue;
+      var m = marks[k], z = m.set && m.set.sp === sp ? m.set : null;
+      if ((m.kind !== "slur" && m.kind !== "tie") || m.st !== gr.st || m.g1 === gr || m.g2 === gr || Math.abs(m.tp - gr.tp) > 6) continue;
+      if (!z && gr.cap != null && setNow(m.g1, g) && prints(m.g1) && !setNow(m.g2, g)) {
+        if (!(m.fc && m.fc.F === FRAME && m.fc.sp === sp)) m.fc = { F: FRAME, sp: sp, z: settleCurve(g, m) };
+        z = m.fc.z;
+      }
+      if (!z || !z.ok) continue;
       var o = (m.tp - gr.tp) * SCROLL_PX_S, x1 = o + z.x1, x2 = o + z.x2, dx = x2 - x1, pv = null, sl = [];
       for (var i = 0; i <= 12; i++) {             // (the crescent in twelfths, as probe("ink") slices it)
         var t = i / 12, u = 1 - t, c3 = 3 * t * u, xx = x1 + dx * (0.75 * t * u * u + 2.25 * t * t * u + t * t * t);
@@ -4381,7 +4395,7 @@ window.KolobViz = (function () {
         if (pv && x <= g.xE) segs.push([pv[0], Math.min(pv[1], pv[2], ya, yb), x, Math.max(pv[1], pv[2], ya, yb)]);
         pv = [x, ya, yb];
       }
-      out.slurs.push({ kind: m.kind, st: m.st, tp: m.tp, tp2: m.tp2, segs: segs });
+      out.slurs.push({ kind: m.kind, st: m.st, tp: m.tp, tp2: m.tp2, q1: m.q1, side: sh.side, segs: segs });   // (r3c-engrave2: its head and side — two voices' ties may start together)
     });
     marks.forEach(function (m) {
       if (m.kind !== "bar" || !(m.at && m.at.sp === g.sp) || m.tp > PT) return;
