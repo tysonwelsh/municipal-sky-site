@@ -303,7 +303,11 @@ window.KolobViz = (function () {
     la: { poly: [[-0.55, -0.42], [0.55, -0.42], [0.55, 0.42], [-0.55, 0.42]] },
     mi: { poly: [[0, -0.54], [0.66, 0], [0, 0.54], [-0.66, 0]] },
     sol: { ell: [0.60, 0.43, -0.26] },
-    round: { ell: [0.59, 0.42, -0.36] }
+    round: { ell: [0.59, 0.42, -0.36] },
+    // (round 3c) a spoken syllable's cross: one filled path, two strokes
+    // meeting in the middle — speech's head, as music has long written it
+    x: { poly: [[0, -0.12], [0.36, -0.48], [0.48, -0.36], [0.12, 0], [0.48, 0.36], [0.36, 0.48],
+                [0, 0.12], [-0.36, 0.48], [-0.48, 0.36], [-0.12, 0], [-0.48, -0.36], [-0.36, -0.48]] }
   };
   // stem attach points (the head's own edge on the stem side), in sp
   var ANCH = {
@@ -311,7 +315,8 @@ window.KolobViz = (function () {
     la: { u: [0.55, 0.2], d: [-0.55, -0.2] },
     mi: { u: [0.66, 0.02], d: [-0.66, -0.02] },
     sol: { u: [0.58, -0.08], d: [-0.58, 0.08] },
-    round: { u: [0.57, -0.1], d: [-0.57, 0.1] }
+    round: { u: [0.57, -0.1], d: [-0.57, 0.1] },
+    x: { u: [0.36, -0.36], d: [-0.36, 0.36] }
   };
   function shapeKey(shape, dir) { return shape === "fa" ? (dir < 0 ? "fa_d" : "fa_u") : shape; }
   function anchorOf(k, dir) { var a = ANCH[k]; return (dir < 0 ? a.d : a.u) || a.u || a.d; }
@@ -626,12 +631,14 @@ window.KolobViz = (function () {
   }
   // (a note or event that says logged: false — an unlogged guest's, the
   // Hosanna's shout — is never engraved: SCORE §6, PLAN §8.12)
+  // (the Hosanna is audio-only whatever it says: the owner's ruling, round 3c)
   function onNote(n) {
-    if (!n || n.logged === false) return;
+    if (!n || n.logged === false || n.hosanna) return;
     if (n.layer === "telegraph") { if (n.marks && n.marks.length) queueIntake({ note: n }); return; }
     if (n.layer === "band") { if (n.freq > 20) queueIntake({ note: n }); return; }
+    if (NEW_GUEST_LAYERS[n.layer] || (n.layer === "voice" && n.speech)) { if (n.freq > 20) queueIntake({ note: n }); return; }   // (round 3c: THE NEW GUESTS)
     if (!n.freq || n.freq < 20 || !MELODIC[n.layer]) return;
-    if (n.layer === "organ" && (n.part === "pedal" || n.pedal)) return;   // the 16′ under the bass: a stop drawn, not a note written
+    if (n.layer === "organ" && (n.part === "pedal" || n.pedal) && !n.variations) return;   // the 16′ under the bass: a stop drawn, not a note written (the variations' own pedal line: takeVariations)
     queueIntake({ note: n });
   }
   // the typed bus (SCORE.md §6; round 2): the page reads the event's type,
@@ -722,6 +729,7 @@ window.KolobViz = (function () {
     if (byLayer.band) takeBand(byLayer.band);
     if (byLayer.trombones) takeTrombones(byLayer.trombones);
     if (byLayer.oldtune) takeOldTune(byLayer.oldtune);
+    takeNewGuests(byLayer);                          // (round 3c: it takes its own out of byLayer)
     Object.keys(byLayer).forEach(function (layer) {
       if (layer === "band" || layer === "trombones" || layer === "oldtune") return;
       var ns = byLayer[layer];
@@ -805,12 +813,14 @@ window.KolobViz = (function () {
   // the telegraph's line); shift — a written octave per staff ({T, B}, in
   // steps of the staff); shape — one head for every note; ink, thin, dry —
   // its ink, its line weight and how fast it dries, against the ward's (1
-  // each); fineBeat — the beat is the tune's own (valueOf)
+  // each); fineBeat — the beat is the tune's own (valueOf); (round 3c) qOf —
+  // a note's place and shape where it names them in a key of its own
+  // (keyedQ); head — a guest's own mark on a head; scale — its size
   function takeLayer(layer, ns, beat, question, opt) {
     opt = opt || {};
     var byT = {}, voices = { T: {}, B: {} };
     ns.forEach(function (n) {
-      var nq = taggedQ(n) || noteQ(n.freq), st = opt.staff || staffOf(n, nq.q, opt.strict);
+      var nq = (opt.qOf && opt.qOf(n)) || taggedQ(n) || noteQ(n.freq), st = opt.staff || staffOf(n, nq.q, opt.strict);
       var p = { n: n, q: nq.q + (opt.shift ? opt.shift[st] || 0 : 0), shape: opt.shape || nq.shape, st: st };
       if (PART_DIR[n.part]) voices[st][n.part] = 1;
       var k = Math.round(n.startTime * 50);
@@ -857,11 +867,13 @@ window.KolobViz = (function () {
           var seen = {}, heads = [];
           ps.forEach(function (p) {
             if (seen[p.q]) return; seen[p.q] = 1;               // unison parts share a head
-            heads.push({ q: p.q, shape: p.shape, open: v.open, dots: v.dots });
+            var hd = { q: p.q, shape: p.shape, open: v.open, dots: v.dots };
+            if (opt.head) opt.head(p.n, hd);                     // (a guest's own mark on its head: the fiddle's tune, a stressed syllable)
+            heads.push(hd);
           });
           var grp = {
             layer: layer, tp: t0, dur: dur, st: st, heads: heads, v: v,
-            scale: SCALE[layer] || 1, dir: 0, noStem: !v.stem, flags: v.flags
+            scale: opt.scale || SCALE[layer] || 1, dir: 0, noStem: !v.stem, flags: v.flags
           };
           if (opt.ink != null && opt.ink !== 1) grp.ink = opt.ink;
           if (opt.thin) grp.thin = opt.thin;
@@ -1031,6 +1043,448 @@ window.KolobViz = (function () {
       var mine = ns.filter(function (n) { return (n.tryNo === 2 ? 2 : 1) === tryNo; });
       if (mine.length) takeLayer("oldtune", mine, beat, null, { staff: st, shape: "round", ink: OLDTUNE_INK[tryNo], thin: 0.7, dry: 2, fineBeat: rs.length >= 2 });
     });
+  }
+  // ==========================================================================
+  // THE NEW GUESTS ON THE STAFF (round 3c; handoff r3c-engrave-1)
+  //
+  // Nine guests came into the meeting in round 3c, and the staff sat nearly
+  // blank under most of them. Each now prints in the page's own vocabulary,
+  // as plainly as it can be written truly, in the one green ink; the far
+  // ones paler, as the far choir and the old tune are:
+  //
+  //  · THE FAR TOWER's change ringing: every stroke a bell's ringed head,
+  //    small and pale across the valley — rounds a stair of heads down the
+  //    scale, the changes the same stair with its steps changed a pair at a
+  //    time (takeTower);
+  //  · THE HANDCART COMPANY's unison in octaves: the women's line (and the
+  //    child's, the same heads) on the treble, the men's and the captain's
+  //    an octave under it on the bass, in the key the company chose, pale as
+  //    the road is far and fullest where it passes nearest (takeHandcart);
+  //  · THE GULLS: each cry a small head with no stem, the lead gull's in the
+  //    first hymn's own shapes — the head of the hymn, cried — and the
+  //    flock's chatter round, not ours (takeGulls);
+  //  · THE FAR WARD: the same hymn a line behind, in closed score, pale, as
+  //    the far choir prints (takeFarWard);
+  //  · THE SOCIAL HALL: the fiddle's reel (or jig, or quadrille) at cue size,
+  //    the hymn's own notes in it a heavier head, its running eighths beamed
+  //    by the beat, a bar at each bar, a double bar where a strain goes
+  //    round or the next begins, the final bar after its last double stop;
+  //    its cuts and slides marked; the open string it leans on a whole note
+  //    under the tune; the caller's calls as spoken heads (takeFiddle,
+  //    takeSpoken);
+  //  · THE TESTIMONY-BEARERS: speech written as speech — a cross for each
+  //    syllable at its pitch, no stem (it keeps no beat), the stressed ones
+  //    heavier; the reed that plays the words back does so in the words'
+  //    own rhythm, so its heads have no stems either, and a note it plays
+  //    with the speaker shares the speaker's head; the tune it makes of them
+  //    prints as any tune (takeSpoken, takeReedWords);
+  //  · THE GIFT OF TONGUES: one line on the staff that suits it, a slur over
+  //    each melisma; the ward's hummed chord in its four parts (takeTongues);
+  //  · THE ORGANIST'S VARIATIONS: the organ alone, as it prints, with a bar
+  //    where the Score has one (the theme, the trio's tune in the pedals,
+  //    the finale; the re-barred dances keep none), and the bitonal
+  //    interlude's own bass (takeVariations).
+  //
+  // The Hosanna never prints (the owner's ruling: audio-only; onNote).
+  // Nothing here is text, and nothing moves but the scroll and the drying.
+  // ==========================================================================
+  var NEW_GUEST_LAYERS = { fiddle: 1, handcart: 1, gulls: 1, tower: 1, farward: 1 };
+  // A note's place and shape in a key of its own, as the note names it: its
+  // degree (deg), else its interval (monzo), else its sound — counted from
+  // the key's tonic (keyM, from the day's keynote), in the octave it sounds
+  // in; its shape the syllable it is sung on in that key's mode.
+  function keyedQ(freq, keyM, deg, monzo, mode) {
+    var tonic = (cond.f0 || 65) * 4 * Math.pow(2, (keyM ? monzoCents(keyM) : 0) / 1200);
+    var c = typeof deg === "number" ? null : monzo ? monzoCents(monzo) : 1200 * Math.log2(freq / tonic);
+    var st = c == null ? deg : Math.round(c * 7 / 1200);
+    st += 7 * Math.round(Math.log2(freq / tonic) - (c == null ? deg / 7 : c / 1200));
+    var q = Q_MID + keySteps(keyM) + st;
+    while (q < -24) q += 7;                        // (a guard only: the page folds at draw time)
+    while (q > 44) q -= 7;
+    return { q: q, shape: shapeOfDeg(mode || cond.mode, st) };
+  }
+  // (the groups one takeLayer call made, and a guest's own cap on them)
+  function madeSince(g0, cap) {
+    var out = groups.slice(g0);
+    if (cap != null) out.forEach(function (gr) { gr.cap = cap; });
+    return out;
+  }
+  // "free" notes — a cry, a syllable, a bell's stroke: heads with no stem
+  function unstemmed(gs, open) {
+    gs.forEach(function (gr) {
+      gr.noStem = true; gr.flags = 0;
+      gr.heads.forEach(function (h) { h.open = !!open; h.dots = 0; });
+    });
+  }
+  // One call's notes, read by guest. The guests with layers of their own
+  // come whole; those on the house's layers (the gift and the caller on the
+  // choir's, the reeds that answer a testimony, the organist's variations)
+  // are taken out of theirs by what their notes say, and the rest of the
+  // house's notes print as they always have.
+  function takeNewGuests(byLayer) {
+    function pull(layer, test) {
+      var ns = byLayer[layer];
+      if (!ns) return [];
+      var mine = ns.filter(test), rest = ns.filter(function (n) { return !test(n); });
+      if (rest.length) byLayer[layer] = rest; else delete byLayer[layer];
+      return mine;
+    }
+    function own(layer, fn) { if (byLayer[layer]) { fn(byLayer[layer]); delete byLayer[layer]; } }
+    own("tower", takeTower);
+    own("handcart", takeHandcart);
+    own("gulls", takeGulls);
+    own("farward", takeFarWard);
+    own("fiddle", takeFiddle);
+    own("voice", function (ns) { takeSpoken(ns, "voice"); });
+    var calls = pull("choir", function (n) { return n.guest === "socialhall"; });
+    if (calls.length) takeSpoken(calls, "choir");
+    var gift = pull("choir", function (n) { return n.guest === "tongues" && n.role === "tongues"; });
+    if (gift.length) takeTongues(gift);
+    ["harmonium", "clarinet"].forEach(function (ly) {
+      var words = pull(ly, function (n) { return n.testimony && (n.move === "echo" || n.move === "double"); });
+      if (words.length) takeReedWords(words, ly);
+    });
+    var vars = pull("organ", function (n) { return n.variations; });
+    if (vars.length) takeVariations(vars);
+  }
+
+  // ---- change ringing from a far tower ----------------------------------------
+  // Each stroke a bell's head, ringed as the steeples' bells are, small and
+  // pale: the tower is across the valley. Rounds print as a stair of heads
+  // down the scale, row after row, the handstroke's pause the page's own
+  // time; the changes as the same stair with its steps swapped a pair at a
+  // time, so the method can be read from the heads alone (the ringers' blue
+  // line is the path one bell's head takes through the rows; the page leaves
+  // it to the eye, as it leaves the words). A muffled touch is paler still.
+  var TOWER_INK = 0.5, TOWER_MUFFLED = 0.32, TOWER_SCALE = 0.55;
+  function takeTower(ns) {
+    var g0 = groups.length;
+    takeLayer("tower", ns, 1, null, { scale: TOWER_SCALE, ink: ns[0].muffled ? TOWER_MUFFLED : TOWER_INK,
+      qOf: function (n) { return keyedQ(n.freq, null, null, n.monzo, cond.mode); } });
+    var gs = madeSince(g0, 1);
+    unstemmed(gs, true);
+    gs.forEach(function (gr) { gr.ring = true; });
+  }
+
+  // ---- the gulls ---------------------------------------------------------------
+  // A cry is not a note of a tune, and keeps no beat: each prints as a small
+  // head with no stem, where it is cried and as loud as it carries. The lead
+  // gull's cries trace the head of the day's first hymn, so its heads are the
+  // hymn's own shapes on the hymn's own degrees (the joke, made visible); the
+  // flock's chatter prints round, as a stranger's notes do.
+  var GULL_SCALE = 0.6, CHATTER_SCALE = 0.5;
+  function takeGulls(ns) {
+    ns.forEach(function (n) {
+      var h = n.hymnId ? hymnOf(n.hymnId) : null, lead = typeof n.deg === "number", g0 = groups.length;
+      takeLayer("gulls", [n], 1, null, { scale: lead ? GULL_SCALE : CHATTER_SCALE, ink: clamp(0.2 + 0.8 * (n.loud == null ? 0.5 : n.loud), 0.25, 0.9),
+        qOf: function (m) {
+          if (lead) return keyedQ(m.freq, h && h.keyMonzo, m.deg, null, h && h.mode);
+          return { q: noteQ(m.freq).q, shape: "round" };
+        } });
+      unstemmed(madeSince(g0, 1), false);
+    });
+  }
+
+  // ---- the far ward ------------------------------------------------------------
+  // Another congregation across the valley, singing our hymn a line behind
+  // us in its own tuning: printed as the far trombone choir is, in closed
+  // score and pale, each part on its own staff with its own stem, placed by
+  // the degree it sings in the hymn's key and written in our verse's beat.
+  var FARWARD_INK = 0.42;
+  function takeFarWard(ns) {
+    var h = hymnOf(ns[0].hymnId), mode = h.mode || cond.mode;
+    var beat = h.bs || estimateBeat(ns.map(function (n) { return n.duration; }), lastBeat.farward || lastBeat.choir || 1.15);
+    if (!h.bs && ns.length >= 3) lastBeat.farward = beat;
+    var g0 = groups.length;
+    takeLayer("farward", ns, beat, null, { strict: true, ink: FARWARD_INK, fineBeat: !!h.bs,
+      qOf: function (n) { return typeof n.deg === "number" ? keyedQ(n.freq, h.keyMonzo, n.deg, null, mode) : null; } });
+    madeSince(g0, 1.5);
+  }
+
+  // ---- the handcart company ----------------------------------------------------
+  // ALL IS WELL in unison as the company walks: the women (and the child
+  // among them) on the treble, the men and the captain an octave under them
+  // on the bass — one line in octaves, each voice its own stem. The company
+  // sings in a key of its own choosing (the day's, its dominant's or its
+  // subdominant's), read from its notes, and the heads are that key's shapes.
+  // Its beat is the tune's own (each note says where it falls in its line).
+  // It is always far off: pale, and palest at either end of the road. Each
+  // throat's line comes on its own, so a head another voice has already
+  // printed at that place is not printed again (the unison shares a head).
+  var COMPANY_KEYS = [[0, 0, 0, 0], [-1, 1, 0, 0], [2, -1, 0, 0]];
+  var company = null;
+  function companyKey(ns) {
+    var K0 = (cond.f0 || 65) * 4, best = null, bc = 1e9, R = COLLECTIONS.ionian.concat([2]);
+    COMPANY_KEYS.forEach(function (k) {
+      var tonic = K0 * Math.pow(2, monzoCents(k) / 1200), cost = 0;
+      ns.forEach(function (n) {
+        var r = Math.log2(n.freq / tonic); r -= Math.floor(r);
+        var e = 1;
+        for (var i = 0; i < R.length; i++) e = Math.min(e, Math.abs(r - Math.log2(R[i])));
+        cost += e;
+      });
+      if (cost < bc - 1e-9) { bc = cost; best = k; }
+    });
+    return best;
+  }
+  function takeHandcart(ns) {
+    ns = ns.slice().sort(function (a, b) { return a.startTime - b.startTime; });
+    var t0 = ns[0].startTime;
+    if (!company || t0 - company.t1 > 40) company = { key: companyKey(ns), t1: t0, seen: {}, beat: 0 };
+    var rs = [], loud = 0;
+    for (var i = 1; i < ns.length; i++) {
+      var a = ns[i - 1], b = ns[i];
+      if (a.line === b.line && a.verse === b.verse && typeof a.beat === "number" && typeof b.beat === "number" && b.beat > a.beat)
+        rs.push((b.startTime - a.startTime) / (b.beat - a.beat));
+    }
+    rs.sort(function (x, y) { return x - y; });
+    if (rs.length >= 2) company.beat = clamp(rs[rs.length >> 1], 0.3, 3);
+    var beat = company.beat || estimateBeat(ns.map(function (n) { return n.duration; }), lastBeat.choir || 1.15);
+    var key = company.key, mine = [];
+    ns.forEach(function (n) {
+      var nq = keyedQ(n.freq, key, null, null, "ionian"), at = company.seen[nq.q] = company.seen[nq.q] || [];
+      company.t1 = Math.max(company.t1, n.startTime + n.duration);
+      for (var j = 0; j < at.length; j++) if (Math.abs(at[j] - n.startTime) < 0.12) return;
+      at.push(n.startTime);
+      loud += n.loud == null ? 0.5 : n.loud;
+      mine.push({ freq: n.freq, startTime: n.startTime, duration: n.duration, part: n.octave < 0 ? "B" : "S", nq: nq });
+    });
+    Object.keys(company.seen).forEach(function (q) { company.seen[q] = company.seen[q].filter(function (t) { return t > t0 - 30; }); });
+    if (!mine.length) return;
+    var g0 = groups.length;
+    takeLayer("handcart", mine, beat, null, { strict: true, fineBeat: !!company.beat, ink: clamp(0.14 + 0.42 * loud / mine.length, 0.18, 0.56),
+      qOf: function (n) { return n.nq; } });
+    madeSince(g0, 1.5);
+  }
+
+  // ---- the Social Hall ---------------------------------------------------------
+  // The fiddle's dance, made of one of the day's hymns, printed as a fiddler's
+  // tunebook prints a reel: on the treble at cue size (it runs in eighths,
+  // faster than the page can print full heads), the hymn's own notes in it a
+  // heavier head — the tune marked, as in the hymns — and the fiddler's
+  // figures between them plain; a double stop two heads on one stem; the
+  // running eighths beamed within the beat (in pairs in 2/4, in threes in
+  // 6/8); a bar at each bar; a double bar where a strain goes round again or
+  // the next begins; the final bar after its last double stop. Its cuts and
+  // slides are marked where the fiddler plays them (the Old Way's signs: a
+  // grace, a slide). The open string it leans on is a whole note, where it
+  // sounds. The notes are placed in the danced hymn's key, by their degree.
+  // The fiddle is in the room with us, a step nearer than the ward: full ink.
+  var FIDDLE_SCALE = 0.66, FIDDLE_CAP = 2;
+  var FIDDLE_TUNE = { tune: 1, cad: 1 }, FIDDLE_ORN = { cut: "grace", slide: "slide" };
+  var hall = null;                                 // the dance being printed: its hymn, its eighth, where its bars fall
+  function fiddleEighth(ns) {                      // the running note: the shortest length the fiddle keeps to
+    var bins = {}, mx = 0;
+    ns.forEach(function (n) {
+      if (n.part === "drone" || n.part === "stop" || !(n.duration > 0.08 && n.duration < 0.6)) return;
+      var k = Math.round(Math.log2(n.duration) * 25);
+      bins[k] = (bins[k] || 0) + 1; mx = Math.max(mx, bins[k]);
+    });
+    var ks = Object.keys(bins).map(Number).sort(function (a, b) { return a - b; });
+    for (var i = 0; i < ks.length; i++) if (bins[ks[i]] >= 0.25 * mx && bins[ks[i]] >= 2) return Math.pow(2, ks[i] / 25);
+    return 0;
+  }
+  function takeFiddle(ns) {
+    ns = ns.slice().sort(function (a, b) { return a.startTime - b.startTime; });
+    var id = ns[0].dances || null, t0 = ns[0].startTime;
+    if (!hall || hall.id !== id || t0 - hall.t1 > 20) hall = { id: id, e: 0, last: null, bars: [], lens: [], finalAt: 0, finalBar: null, t1: t0 };
+    var h = id ? hymnOf(id) : {}, keyM = h.keyMonzo || null, mode = h.mode || cond.mode;
+    if (!hall.e) hall.e = fiddleEighth(ns);
+    var beat = 2 * (hall.e || 0.19);
+    ns.forEach(function (n) { hall.t1 = Math.max(hall.t1, n.startTime + n.duration); });
+    var line = ns.filter(function (n) { return n.part !== "drone"; }), drones = ns.filter(function (n) { return n.part === "drone"; });
+    var qOf = function (n) { return keyedQ(n.freq, keyM, n.deg, n.monzo, mode); };
+    var g0 = groups.length;
+    if (line.length) takeLayer("fiddle", line, beat, null, { staff: "T", scale: FIDDLE_SCALE, fineBeat: true, qOf: qOf,
+      head: function (n, hd) { if (FIDDLE_TUNE[n.part]) hd.heavy = true; if (FIDDLE_ORN[n.orn]) hd.orn = FIDDLE_ORN[n.orn]; } });
+    var made = madeSince(g0, FIDDLE_CAP);
+    if (drones.length) {
+      var d0 = groups.length;
+      takeLayer("fiddle", drones, beat, null, { scale: FIDDLE_SCALE, qOf: qOf });
+      madeSince(d0, FIDDLE_CAP);
+    }
+    fiddleBars(made, line);
+    fiddleBeams(made);
+  }
+  // Where the dance's bars fall: each note names its strain, the time
+  // through, its line and its bar, and a bar begins wherever that changes.
+  // A double bar where a strain begins, or goes round again (its line or its
+  // bar going back: the AA, the BB, the tag), the final bar where the last
+  // double stop ends. Each bar is set as the hymn's are (barPlace): clear of
+  // the ink either side, its downbeat's notes making room for it if they must.
+  function fiddleBars(made, ns) {
+    var at = {};
+    made.forEach(function (gr) { if (gr.st === "T") { var k = Math.round(gr.tp * 1000); (at[k] = at[k] || []).push(gr); } });
+    ns.forEach(function (n) {
+      if (n.part === "stop") return;
+      var fin = n.part === "final" || n.strain == null, L = hall.last;
+      var cur = fin ? { strain: "final" } : { strain: n.strain + "|" + n.time, line: n.line, bar: n.bar };
+      if (fin) hall.finalAt = Math.max(hall.finalAt || 0, n.startTime + n.duration);
+      if (L && L.strain === cur.strain && L.line === cur.line && L.bar === cur.bar) return;
+      hall.last = cur;
+      var prev = hall.bars.length ? hall.bars[hall.bars.length - 1] : null;
+      hall.bars.push(n.startTime);                  // (the dance's first note begins its first bar: no bar before it)
+      if (!L || prev == null || n.startTime <= prev + 1e-6) return;
+      var round = L.strain === cur.strain && (cur.line < L.line || (cur.line === L.line && cur.bar < L.bar));
+      var type = !fin && (L.strain !== cur.strain || round) ? "double" : "single";
+      fiddleBar(type, n.startTime, at[Math.round(n.startTime * 1000)] || []);
+      hall.lens.push(Math.round((n.startTime - prev) / (hall.e || 0.19)));
+    });
+    if (hall.bars.length > 64) hall.bars.splice(0, hall.bars.length - 64);
+    if (hall.lens.length > 64) hall.lens.splice(0, hall.lens.length - 64);
+    if (hall.finalAt && !hall.finalBar) hall.finalBar = fiddleBar("final", hall.finalAt, []);
+  }
+  function fiddleBar(type, tp, nx) {
+    var bm = { kind: "bar", type: type, tp: tp, sts: ["T"], off: type === "final" ? 0 : -1, pv: [], pvRests: [], nx: nx, sys: { hymnId: null } };
+    nx.forEach(function (gp) { gp.barIn = bm; });
+    marks.push(bm);
+    return bm;
+  }
+  // The running eighths beamed within the beat: in threes where the bar
+  // holds six of them (a jig, a 6/8 quadrille), else in pairs; a longer note
+  // or a bar breaks the beam. The beam takes the position rule over its notes.
+  function fiddleBeams(made) {
+    var six = 0;
+    hall.lens.forEach(function (k) { if (k === 6 || k === 3) six++; });
+    var win = (six * 2 > hall.lens.length ? 3 : 2) * (hall.e || 0.19);
+    var run = [], key = null;
+    function close() { if (run.length > 1) { makeBeam(run, "T"); run[0].beam.fixed = 0; } run = []; key = null; }
+    made.filter(function (gr) { return gr.st === "T" && !gr.noStem; }).sort(function (a, b) { return a.tp - b.tp; }).forEach(function (gr) {
+      if (gr.barIn || !(gr.flags >= 1) || (run.length && Math.abs(run[run.length - 1].tp - gr.tp) < 1e-6)) close();
+      if (!(gr.flags >= 1)) return;
+      var ref = gr.tp;                             // (the bar it lies in)
+      for (var i = 0; i < hall.bars.length; i++) if (hall.bars[i] <= gr.tp + 1e-6) ref = hall.bars[i];
+      var k = ref + ":" + Math.floor((gr.tp - ref) / win + 0.02);
+      if (key != null && k !== key) close();
+      key = k; run.push(gr);
+    });
+    close();
+  }
+
+  // ---- speech: the testimony-bearers, and the caller ------------------------------
+  // Speech is written as speech has long been written in music: a cross for
+  // each syllable, at the pitch it is spoken on, and no stem — it keeps no
+  // beat. A stressed syllable is a heavier cross. The caller's calls are the
+  // same (chanted on the tune's fifth, but spoken, not sung).
+  var spoken = [];                                 // (the syllables just printed: a reed that plays with the speaker shares them)
+  function takeSpoken(ns, layer) {
+    var g0 = groups.length;
+    takeLayer(layer === "voice" ? "voice" : "caller", ns, 1, null, { shape: "x",
+      head: function (n, hd) { if (n.accent) hd.heavy = true; } });
+    var gs = madeSince(g0, 1), tl = 0;
+    unstemmed(gs, false);
+    gs.forEach(function (gr) { tl = Math.max(tl, gr.tp); gr.heads.forEach(function (h) { spoken.push({ tp: gr.tp, q: h.q }); }); });
+    while (spoken.length && spoken[0].tp < tl - 40) spoken.shift();
+  }
+  // The reed that answers a testimony: where it plays the words back, or
+  // with the speaker, it keeps the words' own rhythm, so its heads have no
+  // stems either (its size the reed's own: the harmonium's grace, the
+  // clarinet's cue); a note it plays with the speaker, on the speaker's
+  // place, is the speaker's head already. The tune it makes of the words
+  // prints as a tune (it is left to the house's own reading).
+  function takeReedWords(ns, layer) {
+    var mine = ns.filter(function (n) {
+      if (n.move !== "double") return true;
+      var q = noteQ(n.freq).q;
+      for (var i = spoken.length - 1; i >= 0; i--) if (spoken[i].q === q && Math.abs(spoken[i].tp - n.startTime) < 0.06) return false;
+      return true;
+    });
+    if (!mine.length) return;
+    var g0 = groups.length;
+    takeLayer(layer, mine, 1, null, {});
+    unstemmed(madeSince(g0, 1), false);
+  }
+
+  // ---- the gift of tongues -----------------------------------------------------
+  // One of the ward rises and sings a free song: one line on the staff it
+  // sits best on (as the old tune is set), at its values in the beat it is
+  // sung to, its stems by where its heads lie; a slur over each melisma, from
+  // the syllable's first note to its last. The ward's hummed chord at the end
+  // is the choir's, and prints in its four parts as the choir's does.
+  function takeTongues(ns) {
+    ns = ns.slice().sort(function (a, b) { return a.startTime - b.startTime; });
+    var beat = estimateBeat(ns.map(function (n) { return n.duration; }), lastBeat.tongues || lastBeat.choir || 1.15);
+    if (ns.length >= 3) lastBeat.tongues = beat;
+    var cT = 0, cB = 0, line = ns.map(function (n) {
+      var nq = keyedQ(n.freq, null, n.deg, n.monzo, cond.mode);
+      cT += ledgerCost("T", nq.q); cB += ledgerCost("B", nq.q);
+      return { freq: n.freq, startTime: n.startTime, duration: n.duration, nq: nq, slur: !!n.slur };
+    });
+    var st = cT <= cB ? "T" : "B", g0 = groups.length;
+    takeLayer("choir", line, beat, null, { staff: st, qOf: function (n) { return n.nq; } });
+    var at = {};
+    madeSince(g0, 1.5).forEach(function (gr) { at[Math.round(gr.tp * 1000)] = gr; });
+    var first = null, last = null;
+    function slur() {
+      if (first && last && last.grp !== first.grp) marks.push({ kind: "slur", tp: first.grp.tp, tp2: last.grp.tp, g1: first.grp, g2: last.grp, q1: first.q, q2: last.q, st: st });
+      first = last = null;
+    }
+    line.forEach(function (x) {
+      var grp = at[Math.round(x.startTime * 1000)];
+      if (!grp) return;
+      if (!x.slur) { slur(); first = { grp: grp, q: x.nq.q }; }
+      else if (first) last = { grp: grp, q: x.nq.q };
+    });
+    slur();
+  }
+
+  // ---- the organist's variations ------------------------------------------------
+  // The organ alone, printed as the organ alone prints (chords on shared
+  // stems, only where no one sings over it), in the beat the set is played
+  // to — the theme's notes say where they fall in their line, so the beat is
+  // read from them, as the old tune's is — with a bar wherever the Score has
+  // one: at each note that falls on a downbeat of the hymn's mode of time,
+  // counted from its line's place in the bar. The dances are re-barred (a
+  // minuet in 3/4, a march in 2/4) and their notes say no beat: they keep no
+  // bars rather than the wrong ones. The pedal doubles the manuals' bass
+  // through the set (a 16′ under it, not written, as ever) — except in the
+  // bitonal interlude, where it plays the other key's bass alone: that line
+  // is written.
+  var varBars = [];                                // (the downbeats already barred: a phrase's notes may come in two calls)
+  function takeVariations(ns) {
+    ns = ns.filter(function (n) {
+      if (n.part !== "pedal" && !n.pedal) return true;
+      for (var i = 0; i < ns.length; i++) {
+        var m = ns[i], d = Math.log2(m.freq / n.freq);
+        if (m.part === "B" && Math.abs(m.startTime - n.startTime) < 0.03 && Math.abs(d - Math.round(d)) < 0.02) return false;
+      }
+      return true;
+    });
+    if (!ns.length) return;
+    var rs = [], byLine = {};
+    ns.forEach(function (n) { if (typeof n.beat === "number" && n.line != null) (byLine[n.part + "|" + n.line] = byLine[n.part + "|" + n.line] || []).push(n); });
+    Object.keys(byLine).forEach(function (k) {
+      var xs = byLine[k].sort(function (a, b) { return a.startTime - b.startTime; });
+      for (var i = 1; i < xs.length; i++) if (xs[i].beat > xs[i - 1].beat) rs.push((xs[i].startTime - xs[i - 1].startTime) / (xs[i].beat - xs[i - 1].beat));
+    });
+    rs.sort(function (a, b) { return a - b; });
+    var fine = rs.length >= 2, beat = fine ? clamp(rs[rs.length >> 1], 0.3, 2.4)
+      : estimateBeat(ns.map(function (n) { return n.duration; }), lastBeat.organ || lastBeat.choir || 1.15);
+    var g0 = groups.length;
+    takeLayer("organ", ns, beat, null, { fineBeat: fine });
+    var made = madeSince(g0, 2);
+    var h = ns[0].hymnId ? hymnOf(ns[0].hymnId) : null, sc = h && h.score;
+    if (!sc || !sc.lines) return;
+    var vl = sc.lines.concat(sc.refrain || []), ts = timeSig(h.modeOfTime), downs = [];
+    ns.forEach(function (n) {
+      var ln = typeof n.beat === "number" && n.line != null ? vl[n.line] : null;
+      if (!ln) return;
+      var pos = ((n.beat + (ln.barStart || 0)) % ts.bar + ts.bar) % ts.bar;
+      if (pos > 1e-6 && ts.bar - pos > 1e-6) return;
+      if (!downs.some(function (t) { return Math.abs(t - n.startTime) < 0.03; })) downs.push(n.startTime);
+    });
+    downs.sort(function (a, b) { return a - b; }).forEach(function (tb) {
+      if (varBars.some(function (t) { return Math.abs(t - tb) < 0.03; })) return;
+      var before = groups.some(function (gr) { return gr.layer === "organ" && gr.tp < tb - 0.03 && gr.tp > tb - 6; });
+      if (!before) return;                         // (no bar before the set's first note)
+      varBars.push(tb);
+      var nx = made.filter(function (gr) { return Math.abs(gr.tp - tb) < 0.03; }), sts = {};
+      made.forEach(function (gr) { if (Math.abs(gr.tp - tb) < 4) sts[gr.st] = 1; });
+      var bm = { kind: "bar", type: "single", tp: tb, sts: ["T", "B"].filter(function (s) { return sts[s]; }), off: -1, pv: [], pvRests: [], nx: nx, sys: { hymnId: null } };
+      nx.forEach(function (gp) { gp.barIn = bm; });
+      marks.push(bm);
+    });
+    while (varBars.length > 64) varBars.shift();
   }
   // ==========================================================================
   // THE HYMNAL ON THE STAFF (round 3b; PLAN-ENGRAVING §4.3–§4.4)
@@ -2050,7 +2504,7 @@ window.KolobViz = (function () {
   // of a note's ink (round 3b, round 3): it keeps two voices at one x out of
   // each other's way, and it is what a bar stands clear of. [4]: a ledger,
   // [5]: a head, [6]: a sign, [7]: a stem.
-  var HEAD_EXT = { mi: [0.66, 0.54] };             // (a head's half-width and half-height, in its own size: the diamond is the widest)
+  var HEAD_EXT = { mi: [0.66, 0.54], x: [0.5, 0.5] };           // (a head's half-width and half-height, in its own size: the diamond is the widest)
   function headExt(p, o, s) {
     var he = HEAD_EXT[p.k] || [0.64, 0.52], rim = p.h.heavy ? 0.07 * s : 0;   // (the tune's head: its rim struck once more)
     return [o.breve ? 1.1 * s : o.ring ? 1.05 * s : he[0] * p.hs + rim, o.ring ? 1.05 * s : he[1] * p.hs + rim];   // (a bell's ring is part of its head)
@@ -2611,7 +3065,9 @@ window.KolobViz = (function () {
     if (gr.hymn) bx = bx.filter(function (b0) { return !b0[4]; });
     var bL = 1e9;
     for (var q = 0; q < bx.length; q++) bL = Math.min(bL, bx[q][0]);
-    var lim = gr.hymn ? HYMN_DX_MAX * sp : 1e9, dx = dx0;
+    // (round 3c: a new guest's note keeps within its own cap, as a hymn's
+    // does, so a quick guest — the fiddle's reel — never drifts from its sound)
+    var lim = gr.hymn ? HYMN_DX_MAX * sp : gr.cap != null ? gr.cap * sp : 1e9, dx = dx0;
     for (var pass = 0; pass < 4; pass++) {
       var need = dx;
       for (var i = 0; i < groups.length; i++) {
