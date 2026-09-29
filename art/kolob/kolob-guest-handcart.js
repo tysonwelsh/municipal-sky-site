@@ -93,7 +93,8 @@ window.KOLOB.GuestHandcart = (function () {
   var AT = [0.1, 0.35], AT_MIN = 6;
   // the company's bus into the tabernacle's wide send (calibrated in the lab
   // against the organ reference: the handoff's table)
-  var LEVEL = 1.0;
+  var LEVEL = 0.74;
+  var NEAR_EVEN = 0.54;
 
   function need(stream) {
     if (!stream || typeof stream.fork !== "function") throw new Error("KOLOB.GuestHandcart: a PJ2.Rand stream is required (label " + LABEL + "<n>)");
@@ -296,15 +297,27 @@ window.KOLOB.GuestHandcart = (function () {
     if (!VV || !VV.desk || !VF) throw new Error("KOLOB.GuestHandcart: load kolob-voices-vocal.js and kolob-voices-folk.js first");
     hooks = hooks || {};
     var sc = score(material, stream, t), sh = sc.prepared.shape, synth = need(stream).fork("synth");
-    var bus = ctx.createGain(); bus.gain.value = LEVEL; bus.connect(dest);
-    var town = VB.townRoom(ctx, bus, { seconds: 2.6 });
+    // (the company is heard at about the same level whichever road it took:
+    // half of what its nearest point gave or took, against a road at 0.54,
+    // given back — the trombones' NEAR_EVEN)
+    var trim = VB.distanceDb ? 0.5 * (VB.distanceDb(NEAR_EVEN) - VB.distanceDb(sh.nearD)) : 0;
+    // (…and whoever is in it: a company with no captain or no child is a
+    // throat or two fewer, and half of what they would have added is given back)
+    var full = 4 * G_DESK * G_DESK + G_LEAD * G_LEAD + G_CHILD * G_CHILD;
+    var here = 4 * G_DESK * G_DESK + (sh.leader ? G_LEAD * G_LEAD : 0) + (sh.child ? G_CHILD * G_CHILD : 0);
+    if (hooks.only !== "carts") trim += 0.5 * 10 * Math.log10(full / here);
+    var bus = ctx.createGain(); bus.gain.value = LEVEL * Math.pow(10, trim / 20); bus.connect(dest);
+    // (the town's air borrowed: made ahead by VoicesBand.warm, never in a callback)
+    var town = VB.lendTown ? VB.lendTown(ctx, bus, { seconds: 2.6 }) : VB.townRoom(ctx, bus, { seconds: 2.6 });
     var rd = VB.road(ctx, bus, { room: town, echoDelay: synth.rnd(0.19, 0.31) });
     rd.path(sc.path);
     var folk = null;
     function later(at, fn) { if (hooks.defer && at > t) hooks.defer(at, fn); else fn(); }
     if (hooks.only !== "singers") {
       folk = VF.create(ctx, rd.input, { rand: synth.fork("carts"), gain: G_CARTS });
-      later(t - 1, function () { folk.wheels(t, sc.end - t, { beat: 1.5 * sh.beatS, carts: sh.carts, creak: sh.creak, still: true, spread: 0.3 }); });
+      // (the carts roll from 0.8 s in — far off, no one hears them start — laid
+      // out in a callback of their own, before any line is)
+      later(t + 0.3, function () { folk.wheels(t + 0.8, sc.end - t - 0.8, { beat: 1.5 * sh.beatS, carts: sh.carts, creak: sh.creak, still: true, spread: 0.3 }); });
     }
     var throats = null;
     if (hooks.only !== "carts") {

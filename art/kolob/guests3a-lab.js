@@ -141,7 +141,7 @@ window.Guests3a = (function () {
     var end = GB.perform(ctx, into, t, bandMaterial(st, o), streamOf(GB, st.seed), hooks);
     var last = GB.perform.last, ex = [], created = 0, peak = 0;
     last.score.bands.forEach(function (bd) { bd.drums.forEach(function (d) { ex.push(d.kind === "rollTo" ? [d.t - t - 0.22, d.t - t + 0.05] : [d.t - t - 0.005, d.t - t + (d.kind === "flam" ? 0.08 : 0.05)]); }); });
-    last.made.forEach(function (m) { var s = m.band.stats(); created += s.created; peak += s.peakLive + m.road.nodes; });
+    last.made.forEach(function (m) { if (!m.band) return; var s = m.band.stats(); created += s.created; peak += s.peakLive + m.road.nodes; });
     if ((o.meeting != null ? o.meeting : checked("kg3-meeting")) && !o.noMeeting) hymnOrgan(ctx, into, t, composed(st)[0], st.keynote);
     return { dur: end - t + 5, score: last.score, expect: ex, stats: { created: created, peakLive: peak, bands: last.made.length } };
   };
@@ -791,6 +791,7 @@ window.Guests3a = (function () {
 
   return {
     play: play, stop: stop, check: check, render: render, odds: odds, purity: purity, setRoom: setRoom,
+    cost: function () { return current ? { id: current.id, press: current.cost.press, slices: current.cost.slices.slice(), until: current.until, now: actx.currentTime } : null; },
     hymns: function () { return composed(settings()); },
     score: function (id) { var st = settings(); return id === "handcart" ? GH.score({ homeHz: st.keynote }, streamOf(GH, st.seed), 0) : id === "gulls" ? GG.score({ hymn: composed(st)[0], keynoteHz: st.keynote }, streamOf(GG, st.seed), 0) : bandScore(); },
     refresh: refresh, _P: P,

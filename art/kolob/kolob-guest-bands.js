@@ -750,39 +750,53 @@ window.KOLOB.GuestBands = (function () {
   // ==========================================================================
   // Each band is a KOLOB.VoicesBand made with no distance of its own, played
   // into a road (VoicesBand.road) that carries it past; both roads share one
-  // town's air. Its march is laid out two bars at a time, each slice AHEAD
+  // town's air. Its march is laid out a bar at a time, each bar AHEAD
   // seconds before it sounds (hooks.defer, on the engine's clock), so no one
-  // callback builds more than a couple of bars of nodes; a lab with no clock
-  // lays it all out at once.
-  var AHEAD = 2.5, SLICE_BARS = 2;
+  // callback builds more than a bar of nodes; a lab with no clock lays it
+  // all out at once.
+  var AHEAD = 2.5, SLICE_BARS = 1, SPACE = 0.12;
   function perform(ctx, dest, t, material, stream, hooks) {
     var VB = window.KOLOB.VoicesBand;
     if (!VB || !VB.road) throw new Error("KOLOB.GuestBands: load kolob-voices-band.js first");
     hooks = hooks || {};
     var sc = score(material, stream, t, { still: !!hooks.still }), synth = need(stream).fork("synth");
     var bus = ctx.createGain(); bus.gain.value = LEVEL * (sc.bands.length > 1 ? 0.8 : 1); bus.connect(dest);
-    var town = VB.townRoom(ctx, bus, { seconds: 2.6 }), made = [];
+    // (the town's air is borrowed — made ahead by VoicesBand.warm — so no
+    // convolver is built in this callback; a second band is built in a
+    // callback of its own, just before it strikes up)
+    var town = VB.lendTown ? VB.lendTown(ctx, bus, { seconds: 2.6 }) : VB.townRoom(ctx, bus, { seconds: 2.6 }), made = [];
     sc.bands.forEach(function (bd) {
-      var rd = VB.road(ctx, bus, { room: town, echoDelay: synth.rnd(0.19, 0.31) });
-      rd.path(bd.path);
-      var band = VB.create(ctx, rd.input, { rand: synth.fork("band:" + bd.k), side: 0, spread: 0.3, gain: 1 });
-      // the conductor's dynamics: the trio played softer by the whole band
-      var og = band.out.gain;
-      og.setValueAtTime(0.8 * bd.sections[0].gain, bd.start);
-      bd.sections.forEach(function (s, i) {
-        if (i === 0) return;
-        og.setValueAtTime(0.8 * bd.sections[i - 1].gain, Math.max(bd.start, s.t0 - 0.35));
-        og.linearRampToValueAtTime(0.8 * s.gain, s.t0 + 0.05);
-      });
-      made.push({ band: band, road: rd });
+      var echo = synth.rnd(0.19, 0.31), me = { bd: bd, band: null, road: null };
+      made.push(me);
+      function build() {
+        if (me.band) return me.band;
+        var rd = VB.road(ctx, bus, { room: town, echoDelay: echo });
+        rd.path(bd.path);
+        var band = VB.create(ctx, rd.input, { rand: synth.fork("band:" + bd.k), side: 0, spread: 0.3, gain: 1 });
+        // the conductor's dynamics: the trio played softer by the whole band
+        var og = band.out.gain;
+        og.setValueAtTime(0.8 * bd.sections[0].gain, bd.start);
+        bd.sections.forEach(function (s, i) {
+          if (i === 0) return;
+          og.setValueAtTime(0.8 * bd.sections[i - 1].gain, Math.max(bd.start, s.t0 - 0.35));
+          og.linearRampToValueAtTime(0.8 * s.gain, s.t0 + 0.05);
+        });
+        me.band = band; me.road = rd;
+        return band;
+      }
       var sliceS = SLICE_BARS * 2 * bd.beatS, slices = [];
       bd.events.forEach(function (e) { var i = Math.max(0, Math.floor((e.t - bd.start) / sliceS)); (slices[i] = slices[i] || { ev: [], dr: [] }).ev.push(e); });
       bd.drums.forEach(function (e) { var i = Math.max(0, Math.floor((e.t - bd.start) / sliceS)); (slices[i] = slices[i] || { ev: [], dr: [] }).dr.push(e); });
+      var setUpAt = bd.start - AHEAD - 0.4;
+      if (hooks.defer && setUpAt > t) hooks.defer(setUpAt, build); else build();
+      // (only the first bar at the press; each bar after it a callback of its
+      // own, AHEAD of its sound — and never two in one tick of the clock: a
+      // bar already inside the look-ahead waits SPACE seconds after the last)
       slices.forEach(function (sl, i) {
         if (!sl) return;
-        var at = bd.start + i * sliceS - AHEAD;
-        if (hooks.defer && at > t) hooks.defer(at, function () { lay(band, bd, sl); });
-        else lay(band, bd, sl);
+        var at = Math.max(bd.start + i * sliceS - AHEAD, t + SPACE * i);
+        if (hooks.defer && i > 0) hooks.defer(at, function () { lay(build(), bd, sl); });
+        else lay(build(), bd, sl);
       });
     });
     function lay(band, bd, sl) {
@@ -803,7 +817,7 @@ window.KOLOB.GuestBands = (function () {
     var sg = ctx.createGain(); sg.gain.value = 0;
     sent.connect(sg); sg.connect(bus);
     sent.onended = function () {
-      made.forEach(function (m) { m.band.dispose(); m.road.dispose(); });
+      made.forEach(function (m) { if (m.band) { m.band.dispose(); m.road.dispose(); } });
       town.dispose();
       try { sg.disconnect(); sent.disconnect(); bus.disconnect(); } catch (e) {}
     };
