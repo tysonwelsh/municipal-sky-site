@@ -299,6 +299,12 @@ foreach ($rates as $r) {
         }
         $axisByModel[$axisId][$modelId]['sum'] += $value;
         $axisByModel[$axisId][$modelId]['n']++;
+        // the same rows, counted by rank (2026-09-30): the folder and /about/
+        // draw each category as issue rates (how often a small or big
+        // problem was filed), which a sum cannot give back
+        $bin = (int) round($value);
+        $axisByModel[$axisId][$modelId]['hist'][$bin] =
+            ($axisByModel[$axisId][$modelId]['hist'][$bin] ?? 0) + 1;
     }
 }
 
@@ -443,10 +449,17 @@ foreach ($axisDefs as $axisId => $def) {
         if ($cell === null) {
             continue;                  // no rating on this axis: no dot, not a zero
         }
+        // hist: axis rank (as a string key, "1".."points") => how many ratings
+        $hist = [];
+        foreach (($cell['hist'] ?? []) as $bin => $count) {
+            $hist[(string) $bin] = $count;
+        }
+        ksort($hist);
         $rows[] = [
             'model_id' => $id,
             'avg'      => round($cell['sum'] / $cell['n'], 3),
             'n'        => $cell['n'],
+            'hist'     => (object) $hist,
         ];
     }
     $axes[] = [

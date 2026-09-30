@@ -1968,23 +1968,73 @@
           }).join('');
       }).join('') + '</div></div></figure>';
 
-    /* 2 — the four categories as small multiples, each on its own ruler */
+    /* 2 — THE FOUR CATEGORIES AS ISSUE RATES (owner, 2026-09-30, from
+       mockup-47; the analytics folder draws the same thing). Each panel is
+       one 0–100% ruler: how often each model's drawings had a problem in
+       that category, the dark segment the big problems, the pale one the
+       small, and the value the whole bar. Je ne sais quoi measures what goes
+       right, so it is the hit rate in green: Has it (dark) plus Just a hint.
+       The whisker is a 95% Wilson interval on the whole bar; overlapping
+       whiskers are not a difference. The split and the interval come from
+       jd-furniture's JD_axisRates, so the folder and this page cannot
+       disagree. Counted from jd-analytics.php's per-axis 'hist'; until that
+       endpoint is live, from the drawer record (the table's prompts), as the
+       grade spread does. */
     var axDef = {};
     (tax.axes || []).forEach(function (x) { axDef[x.id] = x; });
-    figs.axes = '<figure class="jdc" data-chart="axes">' +
-      '<figcaption><span class="jdc-title">Average rating in each category</span>' +
-      '<span class="jdc-sub">Each panel keeps its own scale: a three-point and a four-point category are different rulers</span></figcaption>' +
-      '<div class="jdc-multiples">' +
+    var ISSUE = [GRADE_RAMP[0], '#cf6e56'], HIT = [GRADE_RAMP[4], '#6ea456'];
+    var rates = window.JD_axisRates;
+    var axHasHist = (a.axes || []).some(function (ax) {
+      return (ax.models || []).some(function (r) { return r.hist; });
+    });
+    function sheetHist(axisId) {
+      var out = {};
+      order.forEach(function (m) {
+        var h = {};
+        sheet.forEach(function (row) {
+          var r = row.byM[m], v = r && r.annotations && r.annotations[axisId];
+          if (v && typeof v === 'object') v = v.value;
+          if (v == null) return;
+          var k = String(Math.round(+v));
+          h[k] = (h[k] || 0) + 1;
+        });
+        out[m] = { model_id: m, hist: h };
+      });
+      return order.map(function (m) { return out[m]; });
+    }
+    function pc(x) { return Math.round(x * 100) + '%'; }
+    function sw(c, t) { return '<span class="jdc-key"><i style="background:' + c + '"></i>' + t + '</span>'; }
+    figs.axes = !rates ? '' : '<figure class="jdc" data-chart="axes">' +
+      '<figcaption><span class="jdc-title">Issue rate in each category</span>' +
+      '<span class="jdc-sub">How often each model&rsquo;s drawings had a problem; for Je ne sais quoi, how often they had it</span></figcaption>' +
+      '<div class="jdc-legend">' + sw(ISSUE[0], 'big problem') + sw(ISSUE[1], 'small problem') +
+        sw(HIT[0], 'has it') + sw(HIT[1], 'just a hint') +
+        '<span class="jdc-key"><i class="jdc-key-ci"></i>95% interval</span></div>' +
+      '<div class="jdc-multiples jdc-rates">' +
       (a.axes || []).map(function (ax, pi) {
         var def = axDef[ax.axis_id] || {};
         var pts = ax.points || (def.values ? def.values.length : 3);
-        /* the rows run in the same order in every panel, so the names are
-           printed once, down the left of the grid */
+        var src = axHasHist ? byOrder(ax.models || []) : sheetHist(ax.axis_id);
         var right = pi % 2 === 1;
+        var rows = src.map(function (r) {
+          var q = rates(r.hist, pts, ax.axis_id);
+          if (!q.n) return '';
+          var ink = q.hit ? HIT : ISSUE;
+          var ps = q.strong / q.n * 100, pt = q.total / q.n * 100;
+          var tip = (name[r.model_id] || r.model_id) + ': ' + pc(q.rate) + ' (95% ' + pc(q.lo) + '–' + pc(q.hi) + '); ' +
+            (q.hit ? 'has it ' + q.strong + ', a hint ' + q.light + ', missed '
+                   : 'big ' + q.strong + ', small ' + q.light + ', clean ') + (q.n - q.total) + ', n ' + q.n;
+          return '<div class="jdc-row" title="' + esc(tip) + '">' +
+            '<span class="jdc-name">' + esc(name[r.model_id] || r.model_id) + '</span>' +
+            '<span class="jdc-track"><i class="jdc-rtrack"></i><i class="jdc-mid"></i>' +
+            (ps > 0 ? '<b class="jdc-seg" style="left:0;width:' + ps.toFixed(2) + '%;background:' + ink[0] + '"></b>' : '') +
+            (pt - ps > 0 ? '<b class="jdc-seg jdc-seg-end" style="left:calc(' + ps.toFixed(2) + '% + ' + (ps > 0 ? 1 : 0) +
+              'px);width:calc(' + (pt - ps).toFixed(2) + '% - ' + (ps > 0 ? 1 : 0) + 'px);background:' + ink[1] + '"></b>' : '') +
+            '<i class="jdc-ci" style="left:' + (q.lo * 100).toFixed(2) + '%;width:' + ((q.hi - q.lo) * 100).toFixed(2) + '%"></i></span>' +
+            '<span class="jdc-val">' + pc(q.rate) + '</span></div>';
+        }).join('');
         return '<div class="jdc-panel' + (right ? ' is-right' : '') + '"><div class="jdc-ptitle">' + esc(ax.label) + '</div>' +
-          /* no n here (owner, 2026-09-27): the overall grade states it once,
-             and four panels repeating it read as clutter */
-          dotRows(byOrder(ax.models || []), 1, pts, one, right, true) + '</div>';
+          rows + '</div>';
       }).join('') + '</div></figure>';
 
     /* 3 — cost per drawing: a length, so a bar, from zero */
