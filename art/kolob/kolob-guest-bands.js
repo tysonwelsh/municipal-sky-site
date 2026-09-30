@@ -126,15 +126,17 @@ window.KOLOB.GuestBands = (function () {
   // crosses; this says it from the band's side too) or the handcart company
   // (the band's pastoral cousin: one procession a Sunday)
   var EXCLUDES = ["trombones", "handcart"];
-  // the seats, as the plan had them: the doxology first seven times in ten
-  // (the payoff, when nothing else is), else a hymn; a band asked for by
-  // name comes in a hymn. A section another guest holds is passed over.
-  var SEATS = { usual: ["doxology", "hymn", "postlude"], other: ["hymn", "postlude", "doxology"], forced: ["hymn", "doxology", "postlude"] };
+  // the seats (the owner, v0.36.1: never while the ward sings — a band over
+  // the full ward's hymn is too much): the gathering before the meeting
+  // seven times in ten, else the going-out after it; a band asked for by
+  // name comes to the gathering, so it is heard soon. A section another
+  // guest holds is passed over.
+  var SEATS = { usual: ["prelude", "postlude"], other: ["postlude", "prelude"], forced: ["prelude", "postlude"] };
   // the moment it strikes up, as a share of its section's planned length
   // (it is far off for its first twenty seconds or so)
-  var AT = { hymn: [0.12, 0.4], doxology: [0.1, 0.35], postlude: [0.05, 0.25] };
+  var AT = { prelude: [0.05, 0.3], postlude: [0.05, 0.25] };
   var AT_MIN = 8;
-  var MAX_DUR = 110;                                // the strains shorten to fit (s)
+  var MAX_DUR = 55;                                 // the strains shorten to fit (s; 110 until v0.36.1 — the owner: it goes on a bit long)
   var CAD_S = 16;                                   // the drums' street beat after the stinger (s, about)
   var AWAY_DB = -30;                                // …over which the band goes out of hearing
   // the band's bus into the tabernacle's wide send (calibrated in the lab
@@ -211,7 +213,7 @@ window.KOLOB.GuestBands = (function () {
       for (var i = 0; i < secs.length; i++) if (secs[i] && secs[i].type === prefs[k] && !taken(prefs[k])) { seat = prefs[k]; sec = secs[i]; break; }
     }
     if (has(function (g) { return EXCLUDES.indexOf(g.type) >= 0; })) why = "the " + (has(function (g) { return g.type === "trombones"; }) ? "trombones hold the dawn" : "handcarts are on the road");
-    else if (!seat) why = "no hymn, doxology or postlude free";
+    else if (!seat) why = "no prelude or postlude free";
     else if (!(info.force || roll < p)) why = "not this Sunday";
     if (why) return { seat: null, why: why, odds: p, roll: roll };
     var span = AT[seat], secDur = sec && sec.dur > 0 ? sec.dur : 120;
@@ -676,10 +678,10 @@ window.KOLOB.GuestBands = (function () {
       list.forEach(function (s, k) { b += barsOf(s.st, list[k + 1] ? list[k + 1].st.pk : 0) * 2; });
       return b + 2;
     }
-    // (the strains shorten to fit: the grandioso goes first, then the
-    // second B, then the second A — a march is still a march without them)
+    // (the strains shorten to fit: the second B goes first, then the second
+    // A, then the grandioso — a march is still a march without its repeats)
     var maxS = o.maxS || MAX_DUR;
-    ["grandioso", "B2", "A2"].forEach(function (nm) {
+    ["B2", "A2", "grandioso"].forEach(function (nm) {
       if (beatsOf(steps) * beatS > maxS) steps = steps.filter(function (s) { return s.name !== nm; });
     });
     var drum = a.snare, ev = [], drums = [], sections = [];
