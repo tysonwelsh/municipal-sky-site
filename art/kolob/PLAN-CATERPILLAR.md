@@ -114,3 +114,39 @@
   - the contact sheet paths;
   - the choices made (the feet or none, the thumb shape, the crawl timing) and the knobs to change
     them.
+
+## 7. The owner's first look (2026-09-30), binding for pass 2
+
+> That's the right idea in terms of how the crawling works, so I'd like it to be a little bit
+> slower and maybe just a little more scrunched up in the arc to look more like a normal
+> distribution curve when it is scrunched up, if that makes sense. However, I don't like the body
+> of them. I don't like there's just a bunch of connected ovals. It should just be a line with the
+> thumb. And the thumb in this case should just be a circle. Should just be like a green circle
+> with the white circle inside of it and not the hexagram. But it shouldn't have like a body other
+> than the line. I do like that his body gets scrunched up when you change the volume though,
+> that's fun. … it should just be a line and then like a track. So like a dark line and then the
+> track and the thumb for a head. And then if you scrunch him a lot the dark line curves up. …
+> But pretty good animation though. So let's give it a few more passes.
+
+What this means:
+- **The body is a line, not rings.** Drop the ring segments entirely, and the feet variant with
+  them. The caterpillar is:
+  - a **dark ink line**: the filled part of the slider, from its tail to the head;
+  - the **pale track** ahead of the head: the "room to turn up", as the master slider has;
+  - **the head:** the thumb.
+- **The thumb is a circle:** a green ink disc with a white (paper-coloured) circle inside it, a
+  ring-in-disc. No hexagon.
+- **The crawl keeps its gait, slower.** Keep the inchworm rhythm the owner liked, but slow it down
+  noticeably: roughly 1.5× the current durations, both in and off. The dark line itself arches up
+  as the body bunches.
+- **The arch is a bell curve.** When the body bunches (mid-crawl, and when the volume is turned
+  down), the line arches up like a normal-distribution curve: smooth, symmetric, and higher. Make
+  the arch a little more pronounced than now: a gaussian hump rising from flat ends, not a
+  circular arc or a sharp tent.
+- **Keep:** the volume scrunch (turning the band down bunches the body into that bell-shaped
+  arch; turning it up stretches it flat) and the turn-and-crawl-off.
+- **Everything else in §1–§6 still holds:**
+  - the audio, the timing from the band's last drum;
+  - pause, stop, reduced motion, the hidden tab;
+  - the phone placement on the rule;
+  - accessibility and silent testing.
