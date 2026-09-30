@@ -2981,8 +2981,10 @@ window.KolobViz = (function () {
       if (a < 0.02) continue;
       c.globalAlpha = a;
       c.fillStyle = rgba(C_INK);
-      if (m.kind === "bar") drawHymnBar(c, g, m, x);
-      else if (m.kind === "rest") drawRest(c, g, m, x);
+      // (r3c-engrave2: a bar or a rest set a little after its time waits,
+      // like a note, until the burin reaches it: nothing prints ahead of it)
+      if (m.kind === "bar") { if (x + barPlace(m, g) > g.xE + BURIN_EPS * sp) continue; drawHymnBar(c, g, m, x); }
+      else if (m.kind === "rest") { if (x + restPlace(m, g).rx > g.xE + BURIN_EPS * sp) continue; drawRest(c, g, m, x); }
       else if (m.kind === "ferm") drawFermata(c, g, m, x);
       else drawTieOrSlur(c, g, m);
     }
