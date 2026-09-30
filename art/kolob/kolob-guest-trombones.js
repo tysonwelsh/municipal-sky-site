@@ -193,6 +193,10 @@ window.KOLOB.GuestTrombones = (function () {
   var NEAR_EVEN = { at: 0.23, share: 0.5 };
 
   function oddsFor(info) {
+    // (round 3c: a meeting hands its odds in, info.odds, from the calendar's
+    // one table — KOLOB.Calendar.GUEST_ODDS; a lab without it reads this
+    // room's own, below)
+    if (info && info.odds != null) return Math.max(0, Math.min(1, +info.odds));
     var w = ODDS.weight;
     var k = info.sunday && w[info.sunday] != null ? info.sunday : info.kind;
     return Math.min(ODDS.cap, ODDS.base * (w[k] != null ? w[k] : 1));
@@ -593,7 +597,10 @@ window.KOLOB.GuestTrombones = (function () {
   var RANGE = {
     S: { inst: "altoTrombone",  comf: [196, 660], ext: [147, 784] },   // (to G5: the keynote's wider window, the pre-v0.34 polish, sets a high hymn's top there)
     A: { inst: "tenorTrombone", comf: [147, 440], ext: [104, 587] },
-    T: { inst: "tenorTrombone", comf: [98, 370],  ext: [70, 466] },   // the F attachment reaches C2
+    // (the F attachment reaches C2; round 3c: its top to C5 — the same tenor
+    // trombone the alto part plays to D5; at B-flat4 a high first hymn left a
+    // tenor line strained past it that could not fold without crossing)
+    T: { inst: "tenorTrombone", comf: [98, 370],  ext: [70, 523] },
     B: { inst: "bassTrombone",  comf: [55, 262],  ext: [41, 330] },
   };
 

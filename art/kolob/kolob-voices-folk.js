@@ -24,6 +24,10 @@
 //             the leather-padded clapper gives a soft knock. Children damp
 //             them against their shoulders, or forget to — and a forgotten
 //             bell rings until it has all but gone before it lets go.
+//             (Round 3, for the ward's handbell choir: a bell is a RING
+//             that can be struck again while it sounds, and every ringer's
+//             technique — let ring, damped, martellato on the padded table,
+//             the thumb damp, the shake.)
 //  GULLS    — a gull's cry is a nasal, harsh, harmonic tone that scoops up
 //             to a pitch and falls off it ("kee-ow"), with a rasp of
 //             irregular amplitude. Heard closely, the lead bird's held
@@ -40,8 +44,9 @@
 // fiddle's body is 7 standing nodes (5 filters, a panner, and the out gain
 // every folk instance has); a bowed line is 4 per string (oscillator, gain,
 // vibrato LFO and its depth) + 3 for the rosin — 7 for a plain line, 4 more
-// for each double-stop string or drone. A handbell strike is 12; a gull cry
-// 8; a cart 13 for the whole roll, + 2 per knock (5 when the bed rattles).
+// for each double-stop string or drone. A handbell ring is 11 nodes however
+// often it is struck (12 when it makes its own panner); a gull cry 8; a
+// cart 13 for the whole roll, + 2 per knock (5 when the bed rattles).
 // Pitch automation (glides, slides, vibrato, the axle's rate) is read once
 // per 128-sample block (k-rate); amplitude stays sample-accurate.
 //
@@ -53,11 +58,15 @@
 //                orn?: "cut" | "slide", from?: f}]      f 0/null = a rest
 //   folk.handbell(t, f, {dur?, v, pan})           dur omitted: let it ring
 //   folk.handbells(t, notes)                      notes: [{f, at, dur?, v?, pan?}]
-//   folk.gull(t, f, {hold, v, pan, dist, kind: "long"|"ha"})
-//   folk.gulls(t, {notes: [f…], beat, birds, from, to, dist, v})
+//   folk.ring(t, {f, v, tech, hits, damp, until, shake, pan | dest}) → nodes
+//       tech: "ring" | "damp" | "mart" | "thumb" | "shake" (see HANDBELLS)
+//   KOLOB.VoicesFolk.bell.{tau, life, casting}(f)  the bronze's own laws (pure)
+//   folk.gull(t, f, {hold, up, fall, v, pan, dist, kind: "long"|"ha"})
+//   folk.gulls(t, {notes: [f… | {f, dur}…], beat, birds, from, to, dist, v})
 //       birds: the flock around the lead bird (default 5; 0 = the lead alone)
-//   folk.wheels(t, dur, {beat, carts, from, to, creak, v})
-//   folk.out · folk.stats() → { standing, created, peakLive, until }
+//   folk.wheels(t, dur, {beat, carts, from, to, creak, v, still, spread, dest, only})
+//       still: no travel of its own (a road carries it); dest: where the carts roll
+//   folk.out · folk.stats() → { standing, created, peakLive, until, maxRing }
 // ============================================================================
 
 window.KOLOB = window.KOLOB || {};
@@ -93,6 +102,18 @@ window.KOLOB.VoicesFolk = (function () {
     if (NOISE) NOISE.set(ctx, b);
     return b;
   }
+
+  // THE HANDBELL'S CASTING (pure; the guest's score reads it too): the bell's own casting, fixed by its pitch: where its untuned partials
+  // lie, and how fast its doublet warbles (a property of the bronze, not
+  // of the stroke — so the same bell is the same bell all afternoon)
+  function casting(f) {
+    var h = Math.round(f * 100) >>> 0;
+    h = Math.imul(h ^ (h >>> 13), 0x5bd1e995) >>> 0;
+    var u1 = (h & 1023) / 1023, u2 = ((h >>> 10) & 1023) / 1023, u3 = ((h >>> 20) & 1023) / 1023;
+    return { r1: 5.2 + 0.6 * u1, r2: 8.2 + 0.7 * u2, beat: 0.35 + 0.75 * u3 };
+  }
+  function bellTau(f) { return Math.max(0.35, Math.min(3.6, 1.2 * Math.pow(523 / f, 0.62))); }
+  function bellLife(f) { return 6.9 * bellTau(f); }       // the fundamental 60 dB down
 
   function create(ctx, destination, opts) {
     opts = opts || {};
@@ -183,8 +204,18 @@ window.KOLOB.VoicesFolk = (function () {
       steps.forEach(function (s, i) {
         var t = s.t;
         if (s.rest) {
-          // the bow lifts: the string rings down in a few hundredths
-          if (!off) { g.gain.setTargetAtTime(0, t, 0.02); vd.gain.setTargetAtTime(0, t, 0.02); }
+          // the bow lifts: the string rings down in a few hundredths, and
+          // then it is STILL. (Round 3c, the Social Hall: a note shorter
+          // than its own settling — a reel's grace, a 40 ms flick — had its
+          // settle land after the bow had lifted, and the rest sounded at
+          // the note's full level, −0.8 dB. Whatever the note before still
+          // had coming is cancelled at the lift; a rest long enough to hear
+          // ends in true zero, 150 ms in, 65 dB down already.)
+          if (!off) {
+            g.gain.cancelScheduledValues(t); vd.gain.cancelScheduledValues(t);
+            g.gain.setTargetAtTime(0, t, 0.02); vd.gain.setTargetAtTime(0, t, 0.02);
+            if (s.dur >= 0.17) g.gain.setValueAtTime(0, t + 0.15);
+          }
           off = true;
           return;
         }
@@ -257,9 +288,18 @@ window.KOLOB.VoicesFolk = (function () {
       }
       // drones: open strings bowed alongside, the fiddler leaning on them —
       // and lifted with the bow at every rest
+      // (round 3c: a note may lift the drone alone — droneV 0 — while the
+      // melody string goes on, or lean on it harder or softer: the reel's
+      // fiddler rocks the bow onto the open string on the long notes and
+      // off it through the runs; a lifted drone rings down and waits, and
+      // the bow lands on it again, biting, where the next note asks)
       (o.drone || []).forEach(function (df) {
         var dl = (o.droneLevel != null ? o.droneLevel : 0.45);
-        var dsteps = steps.map(function (s) { return { t: s.t, dur: s.dur, f: df, slur: s.slur, newBow: s.newBow, acc: s.acc, v: dl, rest: s.rest }; });
+        var dsteps = steps.map(function (s, i) {
+          var dv = notes[i].droneV != null ? notes[i].droneV : 1;
+          return { t: s.t, dur: s.dur, f: df, slur: s.slur && dv > 0 && !(i > 0 && notes[i - 1].droneV === 0), newBow: s.newBow, acc: s.acc, v: dl * dv, rest: s.rest || !(dv > 0) };
+        });
+        if (!fillRests(dsteps)) return;
         n += bowedString(t0, tEnd, dsteps, lv, into);
       });
       // rosin: bow noise, a band of hiss that follows the bow's pressure
@@ -268,7 +308,10 @@ window.KOLOB.VoicesFolk = (function () {
       noise(t0, tEnd - t0 + 0.2, bn); bn.connect(bg); bg.connect(into);
       var lifted = true;
       steps.forEach(function (s) {
-        if (s.rest) { if (!lifted) bg.gain.setTargetAtTime(0, s.t, 0.02); lifted = true; return; }
+        if (s.rest) {
+          if (!lifted) { bg.gain.cancelScheduledValues(s.t); bg.gain.setTargetAtTime(0, s.t, 0.02); if (s.dur >= 0.17) bg.gain.setValueAtTime(0, s.t + 0.15); }
+          lifted = true; return;
+        }
         if (s.newBow || lifted) {
           bg.gain.setTargetAtTime(lv * (s.acc ? 0.34 : 0.22), s.t, 0.004);
           bg.gain.setTargetAtTime(lv * 0.06, s.t + 0.03, 0.03);
@@ -281,51 +324,225 @@ window.KOLOB.VoicesFolk = (function () {
     }
 
     // ======================================================================
-    // HANDBELLS
+    // HANDBELLS (round 3: the ward's handbell choir — every technique a
+    // ringer has, and a bell that can be struck again while it rings)
     // ======================================================================
-    var bellW = null, bellHi = null;
-    function handbell(t, f, o) {
+    // THE CASTING. An English handbell is a thin bronze bell turned on a
+    // lathe until its second mode — the (3,0), which rings a twelfth over
+    // the fundamental — sits at exactly three times it (Rossing & Sathoff,
+    // "Modes of vibration and sound radiation from tuned handbells", 1980).
+    // That tuned twelfth is why a handbell choir sounds bright and never
+    // sour: a bell carries its own pure fifth an octave up, and in Kolob's
+    // tuning the twelfth of do lands exactly on the octave of the choir's
+    // sol, the twelfth of fa on do. So here the fundamental and the twelfth
+    // are exact (1 and 3 — no detune, ever), and what is left of the casting
+    // is a little untuned: a pair of upper partials near 5.4× and 8.6× that
+    // die in a tenth of a second (their exact places a property of each bell,
+    // fixed by its pitch — every G5 in the colony is the same G5), and a
+    // faint doublet under the fundamental, the slow warble of a bell whose
+    // bronze is a hair thicker on one side.
+    //
+    // THE STRIKE. A padded clapper knocks the inside of the lip: a short,
+    // soft knock (lower for the big bells, whose clappers are bigger), and
+    // the harder the stroke the more of the upper partials and the twelfth.
+    // A bell rings a long time — a C5 about eight seconds before it has gone
+    // 60 dB down, the bass bells longer, the treble shorter — unless the
+    // ringer stops it.
+    //
+    // THE TECHNIQUES (tech):
+    //   "ring"   rung, and let vibrate (LV): it rings to its natural end, or
+    //            until damp (the director's hand at a phrase's end)
+    //   "damp"   rung, and damped at the shoulder at `damp` (R: the ordinary
+    //            way — each note stopped when the next begins)
+    //   "mart"   martellato: the bell's lip struck down onto the padded
+    //            table — a bright stroke and a dull thump, stopped at once
+    //   "thumb"  thumb damp: rung with a thumb on the casting — a short,
+    //            clear plink
+    //   "shake"  shaken: the clapper rattled against both walls, ~9–11
+    //            strokes a second, for `shake.dur` seconds — a trembling,
+    //            sustained bell; then damped, or let ring
+    // A bell struck again while it still rings is ONE ring re-struck (hits):
+    // the bronze takes the new stroke on top of what is still sounding —
+    // never a second set of partials beating against the first.
+    //
+    // THE BUDGET. One ring is 11 nodes — a gain for the bell, four partials
+    // (an oscillator and a gain each) and the clapper (a buffer and a gain)
+    // — however many times it is struck; 12 when it makes its own panner
+    // (give it `dest`, a panner the ringer's bell keeps for the whole piece,
+    // and it makes none). The shake's strokes and a re-strike are automation,
+    // not nodes: a phone pays per ring, never per stroke.
+    //
+    // ring(t, o) → nodes
+    //   o: { f, v (0–1, the first stroke), tech, hits: [{at, v}] (more
+    //        strokes, s after t), damp (s after t | null), until (s after t:
+    //        a hard stop, faded — a natural end or a steal), shake: {rate,
+    //        dur, at (s after t: a shake begun on a later stroke)}, pan | dest }
+    // handbell(t, f, {dur?, v, pan}) — the round-2 call: dur given, damped
+    //   then; omitted, let ring
+    var BELL_KNOCKS = typeof WeakMap !== "undefined" ? new WeakMap() : null;
+    function knockBuf(kind, reg) {
+      var cache = BELL_KNOCKS && BELL_KNOCKS.get(ctx);
+      if (!cache) { cache = {}; if (BELL_KNOCKS) BELL_KNOCKS.set(ctx, cache); }
+      var key = kind + reg;
+      if (cache[key]) return cache[key];
+      // (a fixed recipe: the knock is a texture, the same every stroke)
+      var r = mulberry(0x6e11 + key.length * 131 + reg * 977 + (kind === "pad" ? 7 : kind === "thumb" ? 13 : 0));
+      var sr = ctx.sampleRate, len = Math.floor(sr * (kind === "pad" ? 0.07 : 0.03));
+      var b = ctx.createBuffer(1, len, sr), d = b.getChannelData(0);
+      // the knock's colour: a padded clapper low for the bass bells, higher
+      // in the treble; the table's pad a dull thump under a small click
+      var fc = [900, 1500, 2400][reg], lp = 0, lp2 = 0, a = 1 - Math.exp(-2 * Math.PI * fc / sr), aT = 1 - Math.exp(-2 * Math.PI * 240 / sr);
+      var peak = 0;
+      for (var i = 0; i < len; i++) {
+        var t = i / sr, w = r() * 2 - 1;
+        lp += a * (w - lp); lp2 += aT * (w - lp2);
+        var click = lp * Math.exp(-t / (kind === "thumb" ? 0.0018 : 0.0025));
+        var v = kind === "pad" ? 0.35 * click + 2.6 * lp2 * Math.exp(-t / 0.016) : click;
+        // the first samples rise over 0.4 ms (a knock, not a step)
+        v *= Math.min(1, i / (0.0004 * sr));
+        d[i] = v; peak = Math.max(peak, Math.abs(v));
+      }
+      // …and the last 3 ms fall away, so a knock buffer ends at zero
+      var tailN = Math.floor(0.003 * sr);
+      for (var j = 0; j < tailN; j++) d[len - 1 - j] *= j / tailN;
+      for (var k = 0; k < len; k++) d[k] /= peak || 1;
+      return (cache[key] = b);
+    }
+    // a train of knocks — every stroke of a re-struck or shaken ring, in one
+    // buffer (one source, however many strokes)
+    function knockTrain(base, hits) {
+      var sr = ctx.sampleRate, src = base.getChannelData(0), lastAt = hits[hits.length - 1].at;
+      var len = Math.floor((lastAt + base.duration) * sr) + 2;
+      var b = ctx.createBuffer(1, len, sr), d = b.getChannelData(0);
+      hits.forEach(function (h) {
+        var o = Math.floor(h.at * sr), g = h.k;
+        for (var i = 0; i < src.length && o + i < len; i++) d[o + i] += src[i] * g;
+      });
+      return b;
+    }
+    var upperWaves = {};
+    function upperWave(r1, r2) {
+      var key = r1 + ":" + r2;
+      if (upperWaves[key]) return upperWaves[key];
+      return (upperWaves[key] = r2 ? wave([[r1, 1], [r2, 0.45]]) : wave([[r1, 1]]));
+    }
+    var maxRingNodes = 0;
+    function ring(t, o) {
       o = o || {};
-      var v = (o.v != null ? o.v : 1) * 0.16;
-      var dest = panner(o.pan || 0, t); var n = 1;
-      if (!bellW) {
-        bellW = wave([[2, 0.12], [3, 0.55]]);                       // octave (weak), twelfth (sung)
-        bellHi = wave([[21, 0.2], [27, 0.26], [34, 0.1]]);         // 4.2×, 5.4×, 6.8× over a fifth-of-f base
+      var f = o.f, tech = o.tech || (o.damp != null ? "damp" : "ring");
+      if (!(f > 0)) return 0;
+      var v0 = Math.max(0.02, Math.min(1, o.v != null ? o.v : 0.7));
+      var cast = casting(f), sr = ctx.sampleRate;
+      var n = 0;
+      // the strokes: the first, then any re-strikes, then a shake's clapper
+      var hits = [{ at: 0, v: v0 }];
+      (o.hits || []).forEach(function (h) { if (h && h.at > 0.02) hits.push({ at: h.at, v: Math.max(0.02, Math.min(1, h.v != null ? h.v : v0)) }); });
+      if (tech === "shake") {
+        // (the shake may begin on a later stroke of the same ring: shake.at)
+        var sk = o.shake || {}, rate = sk.rate || R.rnd(9, 11), sdur = sk.dur != null ? sk.dur : 1, sat = sk.at || 0;
+        for (var a = sat + 1 / rate; a < sat + sdur; a += (1 / rate) * R.rnd(0.88, 1.12)) hits.push({ at: a, v: v0 * R.rnd(0.42, 0.55), shake: true });
       }
-      var ring = o.dur != null ? o.dur : 3.4 * Math.pow(523 / f, 0.45);   // lower bells ring longer
-      var damp = o.dur != null;
-      // A damped bell is stopped at the shoulder (60 ms) and let go 0.45 s
-      // later, 65 dB down. A bell left to ring rings until its longest
-      // partial (the fundamental, τ = 0.45 × ring) is 40 dB under the strike,
-      // then fades over 70 ms and is let go half a second later — some 100 dB
-      // down. It never stops while it can still be heard.
-      var tFade = t + (damp ? o.dur : ring * 2.1);
-      var tEnd = tFade + (damp ? 0.45 : 0.5);
-      function part(type, fr, pw, amp, tau, atk) {
-        var os = ctx.createOscillator(), g = ctx.createGain();
-        if (pw) os.setPeriodicWave(pw); else os.type = type;
+      hits.sort(function (x, y) { return x.at - y.at; });
+      // (strokes closer than 12 ms are one stroke to the ear, and to the
+      // automation — each stroke's attack must end before the next begins)
+      hits = hits.filter(function (h, i) { return i === 0 || h.at - hits[i - 1].at >= 0.012; });
+      // how the bronze decays under this technique (s): the pad and the
+      // thumb take the ring away at once
+      var tau1 = bellTau(f), tau3 = tau1 * 0.45, tauU = 0.07 + 0.08 * Math.pow(523 / f, 0.5), tauD = tau1 * 0.85;
+      if (tech === "mart") { tau1 = Math.min(tau1, 0.085); tau3 = 0.045; tauU = 0.022; tauD = 0.06; }
+      if (tech === "thumb") { tau1 = Math.min(tau1, 0.15); tau3 = 0.07; tauU = 0.03; tauD = 0.12; }
+      // when it stops: damped, a hard stop (faded), or its natural end —
+      // and no stroke after it (a stroke the hand never makes)
+      var stopAt = 0, natural = 0, damped = false;
+      for (var pass = 0; pass < 2; pass++) {
+        natural = hits[hits.length - 1].at + 6.9 * tau1;
+        stopAt = natural; damped = false;
+        if (o.damp != null && o.damp < stopAt) { stopAt = o.damp; damped = true; }
+        if (o.until != null && o.until < stopAt) { stopAt = o.until; damped = false; }
+        stopAt = Math.max(stopAt, 0.02);
+        hits = hits.filter(function (h, i) { return i === 0 || h.at < stopAt - 0.012; });
+      }
+      var cut = stopAt < natural - 1e-6;
+      var dampTau = tech === "mart" ? 0.03 : damped ? 0.022 : 0.05;
+      var tEnd = t + stopAt + 8 * dampTau + 0.02;
+
+      // the bell's bus: damping and a shake's tremble live here
+      var bus = ctx.createGain(); n++;
+      bus.gain.setValueAtTime(1, t);
+      if (o.dest) bus.connect(o.dest);
+      else { var pn = panner(o.pan || 0, t); bus.connect(pn); n++; }
+      if (tech === "shake") {
+        // the bell swings back and forth in the hand: each stroke lifts it,
+        // the swing away lowers it (linear ramps: a trembling, never a step;
+        // every ramp ends before the damp begins)
+        hits.forEach(function (h) {
+          if (!h.shake || h.at + 0.055 > stopAt - 0.004) return;
+          bus.gain.linearRampToValueAtTime(1, t + h.at + 0.006);
+          bus.gain.linearRampToValueAtTime(0.8, t + h.at + 0.055);
+        });
+      }
+      // the stop begins from wherever the bus stands (a target, never a
+      // step): the shoulder's damp, a steal's quick fade, or — at the
+      // natural end — a last fade under the silence
+      if (cut) bus.gain.setTargetAtTime(0, t + Math.max(0.004, stopAt), dampTau);
+      else bus.gain.setTargetAtTime(0, t + Math.max(0.01, stopAt - 0.25), 0.05);
+
+      var A1 = 0.16 * Math.pow(v0, 1.1);
+      function amp(kind, v) {
+        var a1 = 0.16 * Math.pow(v, 1.1);
+        if (kind === "f") return a1;
+        if (kind === "d") return tech === "mart" ? 0 : a1 * 0.2;
+        if (kind === "3") return a1 * (0.3 + 0.3 * v);
+        return a1 * (0.04 + 0.22 * v * v) * (tech === "mart" ? 1.6 : tech === "thumb" ? 0.5 : 1);
+      }
+      // one partial: every stroke adds to what is still ringing (energy
+      // adds; the phases are the bronze's business)
+      function partial(kind, fr, pw, tau) {
+        if (!(fr > 0) || fr > sr * 0.45) return;
+        var os = ctx.createOscillator(), g = ctx.createGain(); n += 2;
+        g.gain.value = 0;                     // (silent from birth, not from its first event)
+        if (pw) os.setPeriodicWave(pw); else os.type = "sine";
         os.frequency.setValueAtTime(fr, t);
+        var peak = 0, tp = t, atk = kind === "u" ? 0.0015 : 0.0025;
         g.gain.setValueAtTime(0, t);
-        g.gain.linearRampToValueAtTime(amp, t + atk);
-        g.gain.setTargetAtTime(0, t + atk, tau);
-        g.gain.setTargetAtTime(0, tFade, damp ? 0.06 : 0.07);
-        os.connect(g); g.connect(dest);
+        hits.forEach(function (h) {
+          var at = t + h.at, add = amp(kind, h.v);
+          if (!(add > 0)) return;
+          var cur = peak * Math.exp(-Math.max(0, at - tp) / tau);
+          var next = Math.sqrt(cur * cur + add * add);
+          if (h.at > 0) g.gain.setValueAtTime(cur, at);
+          g.gain.linearRampToValueAtTime(next, at + atk);
+          g.gain.setTargetAtTime(0, at + atk, tau);
+          peak = next; tp = at + atk;
+        });
+        os.connect(g); g.connect(bus);
         os.start(t); os.stop(tEnd);
-        n += 2;
       }
-      part("sine", f, null, v, ring * 0.45, 0.004);
-      part("sine", f + R.rnd(0.4, 1.1), null, v * 0.5, ring * 0.4, 0.004);   // the shimmer
-      part(null, f, bellW, v, ring * 0.22, 0.004);
-      part(null, f / 5, bellHi, v * 0.8, 0.09, 0.004);
-      // the clapper's padded knock
-      var bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = Math.min(2400, f * 1.5); bp.Q.value = 1.5;
-      var kg = ctx.createGain();
-      kg.gain.setValueAtTime(0, t); kg.gain.linearRampToValueAtTime(v * 0.3, t + 0.003);
-      kg.gain.setTargetAtTime(0, t + 0.004, 0.01);
-      noise(t, 0.1, bp); bp.connect(kg); kg.connect(dest);
-      n += 3;
+      partial("f", f, null, tau1);
+      partial("d", f + cast.beat, null, tauD);
+      partial("3", 3 * f, null, tau3);
+      var h1 = Math.round(cast.r1 * 10), h2 = Math.round(cast.r2 * 10);
+      if (f * h1 / 10 < sr * 0.45) partial("u", f / 10, upperWave(h1, f * h2 / 10 < sr * 0.45 ? h2 : 0), tauU);
+
+      // the clapper (and, for a martellato, the table's pad)
+      var reg = f < 400 ? 0 : f < 900 ? 1 : 2;
+      var kind = tech === "mart" ? "pad" : tech === "thumb" ? "thumb" : "clapper";
+      var base = knockBuf(kind, reg);
+      var kLvl = A1 * (tech === "mart" ? 1.1 : tech === "thumb" ? 0.2 : 0.18 + 0.22 * v0);
+      var src = ctx.createBufferSource(), kg = ctx.createGain(); n += 2;
+      if (hits.length > 1) {
+        src.buffer = knockTrain(base, hits.map(function (h) { return { at: h.at, k: Math.pow(h.v / v0, 1.1) * (h.shake ? 0.55 : 1) }; }));
+      } else src.buffer = base;
+      kg.gain.value = kLvl;
+      src.connect(kg); kg.connect(bus);
+      src.start(t);
+      if (n > maxRingNodes) maxRingNodes = n;
       count(n, t, tEnd);
       return n;
+    }
+    function handbell(t, f, o) {
+      o = o || {};
+      return ring(t, { f: f, v: o.v != null ? Math.min(1, o.v) : 1, tech: o.tech || (o.dur != null ? "damp" : "ring"), damp: o.dur != null ? o.dur : null, pan: o.pan || 0, dest: o.dest, hits: o.hits, shake: o.shake, until: o.until });
     }
     function handbells(t, notes) {
       var n = 0;
@@ -347,9 +564,13 @@ window.KOLOB.VoicesFolk = (function () {
       var dist = o.dist != null ? o.dist : 0.3;            // 0 close … 1 far
       var v = (o.v != null ? o.v : 1) * 0.1 * (1 - 0.6 * dist);
       var kind = o.kind || "long";
-      var hold = kind === "ha" ? R.rnd(0.05, 0.08) : (o.hold != null ? o.hold : R.rnd(0.18, 0.32));
-      var up = kind === "ha" ? 0.025 : R.rnd(0.05, 0.09);
-      var fall = kind === "ha" ? 0.07 : R.rnd(0.14, 0.24);
+      // (the dice are thrown whatever the caller hands over — a gull's throat
+      // is its own; a tune's bird, round 3c, may set its scoop and fall
+      // shorter, so a quick phrase keeps each held pitch clear of the next)
+      var hold0 = R.rnd(0.18, 0.32), up0 = R.rnd(0.05, 0.09), fall0 = R.rnd(0.14, 0.24);
+      var hold = kind === "ha" ? 0.05 + 0.03 * (hold0 - 0.18) / 0.14 : (o.hold != null ? o.hold : hold0);
+      var up = kind === "ha" ? 0.025 : (o.up != null ? o.up : up0);
+      var fall = kind === "ha" ? 0.07 : (o.fall != null ? o.fall : fall0);
       var tEnd = t + up + hold + fall + 0.05;
       var os = ctx.createOscillator(); os.setPeriodicWave(gullW);
       // kee — the scoop up to the pitch — hold — ow, the fall away
@@ -380,14 +601,18 @@ window.KOLOB.VoicesFolk = (function () {
       count(8, t, tEnd);
       return 8;
     }
-    // a flock crossing: the lead bird traces the notes; the others chatter
+    // a flock crossing: the lead bird traces the notes; the others chatter.
+    // notes: frequencies, or {f, dur} (the tune's own rhythm: a note's cry is
+    // held for about half its length). (The guest, kolob-guest-gulls.js,
+    // lays out each cry itself and calls gull(); this is the lab's flock.)
     function gulls(t, o) {
       o = o || {};
-      var notes = (o.notes || []).filter(function (f) { return f > 0; });
+      var notes = (o.notes || []).map(function (x) { return typeof x === "number" ? { f: x } : x; }).filter(function (x) { return x && x.f > 0; });
       var beat = o.beat || 0.42, birds = o.birds != null ? Math.max(0, o.birds) : 5;
       var from = o.from != null ? o.from : -0.8, to = o.to != null ? o.to : 0.8;
       var dist = o.dist != null ? o.dist : 0.3, v = o.v != null ? o.v : 1;
-      var span = Math.max(notes.length * beat, 2.5) + 1.5, n = 0;
+      var len = 0; notes.forEach(function (x) { len += x.dur || beat; });
+      var span = Math.max(len, 2.5) + 1.5, n = 0;
       function panAt(tt) { var x = Math.max(0, Math.min(1, (tt - t) / span)); return from + (to - from) * x; }
       function distAt(tt) { var x = Math.max(0, Math.min(1, (tt - t) / span)); return dist + (1 - dist) * 0.55 * Math.pow(2 * x - 1, 2); }
       // the gulls' register is ~650–1400 Hz. The TUNE moves there by one
@@ -395,29 +620,29 @@ window.KOLOB.VoicesFolk = (function () {
       // geometric mean of its lowest and highest notes) nearest 954 Hz — so
       // every step and leap keeps its direction. (Folding note by note would
       // send a tune's last rise down a seventh.) The chatter is only pitches
-      // drawn from the tune, so each of those folds on its own.
-      var shift = 1;
-      if (notes.length) {
-        var mid = Math.sqrt(Math.min.apply(null, notes) * Math.max.apply(null, notes));
-        shift = Math.pow(2, Math.round(Math.log(954 / mid) / Math.LN2));
-      }
-      function fold(f) { while (f < 650) f *= 2; while (f > 1400) f /= 2; return f; }
+      // drawn from the tune, kept within the lead's own span (an octave from
+      // just under its lowest note), so the flock never contradicts it.
+      var shift = 1, fs = notes.map(function (x) { return x.f; });
+      if (fs.length) shift = Math.pow(2, Math.round(Math.log(954 / Math.sqrt(Math.min.apply(null, fs) * Math.max.apply(null, fs))) / Math.LN2));
+      var lo = fs.length ? Math.min.apply(null, fs) * shift * 0.94 : 650;
+      function fold(f) { while (f < lo) f *= 2; while (f >= lo * 2) f /= 2; return f; }
       var tt = t + 0.6;
-      notes.forEach(function (f, i) {
-        var at = tt + i * beat + R.rnd(-0.03, 0.03);
-        n += gull(at, f * shift, { hold: beat * 0.55, pan: panAt(at), dist: distAt(at), v: v });
+      notes.forEach(function (x) {
+        var d = x.dur || beat, at = tt + R.rnd(-0.03, 0.03);
+        n += gull(at, x.f * shift, { hold: d * 0.55, pan: panAt(at), dist: distAt(at), v: v });
+        tt += d;
       });
       // the chatter: short cries and laughs from the rest of the flock
       var chatter = Math.round(birds * span * 0.55);
       for (var c = 0; c < chatter; c++) {
         var ct = t + R.rnd(0, span);
-        var base = fold(notes.length ? R.pick(notes) * R.pick([1, 1.5, 0.75]) : R.rnd(700, 1200));
+        var base = fold(fs.length ? R.pick(fs) * shift * R.pick([1, 1.5, 0.75]) : R.rnd(700, 1200));
         var kind = R.chance(0.45) ? "ha" : "long";
-        var d = Math.min(1, distAt(ct) + R.rnd(0.1, 0.35));
+        var d2 = Math.min(1, distAt(ct) + R.rnd(0.1, 0.35));
         if (kind === "ha") {
           var k = Math.floor(R.rnd(2, 5));
-          for (var j = 0; j < k; j++) n += gull(ct + j * R.rnd(0.12, 0.16), base * (1 - j * 0.03), { kind: "ha", pan: panAt(ct) + R.rnd(-0.25, 0.25), dist: d, v: v * 0.8 });
-        } else n += gull(ct, base * R.rnd(0.97, 1.03), { pan: panAt(ct) + R.rnd(-0.25, 0.25), dist: d, v: v * 0.75 });
+          for (var j = 0; j < k; j++) n += gull(ct + j * R.rnd(0.12, 0.16), base * (1 - j * 0.03), { kind: "ha", pan: panAt(ct) + R.rnd(-0.25, 0.25), dist: d2, v: v * 0.8 });
+        } else n += gull(ct, base * R.rnd(0.97, 1.03), { pan: panAt(ct) + R.rnd(-0.25, 0.25), dist: d2, v: v * 0.75 });
       }
       return n;
     }
@@ -430,18 +655,30 @@ window.KOLOB.VoicesFolk = (function () {
       var creakAmt = o.creak != null ? o.creak : 0.7, v = (o.v != null ? o.v : 1) * 3;
       var from = (o.from != null ? o.from : -0.7) + ci * 0.18, to = (o.to != null ? o.to : 0.7) + ci * 0.18;
       var tEnd = t + dur, n = 0;
-      // the whole cart travels: one panner, one approach-and-recede gain
+      // the whole cart travels: one panner, one approach-and-recede gain —
+      // or (o.still, round 3c) it stands in the company and the company's
+      // road carries it (KOLOB.VoicesBand.road: the handcart guest): a level
+      // held (in and out over half a second), the carts a little apart
       var pn = ctx.createStereoPanner ? ctx.createStereoPanner() : ctx.createGain();
-      if (pn.pan) { pn.pan.setValueAtTime(from, t); pn.pan.linearRampToValueAtTime(to, tEnd); }
       var near = ctx.createGain();
-      near.gain.setValueAtTime(0, t);
-      near.gain.linearRampToValueAtTime(v, t + dur * 0.4);
-      near.gain.setValueAtTime(v, t + dur * 0.6);
-      near.gain.linearRampToValueAtTime(0, tEnd);
       var air = ctx.createBiquadFilter(); air.type = "lowpass"; air.Q.value = 0.5;   // distance darkens
-      air.frequency.setValueAtTime(1800, t); air.frequency.linearRampToValueAtTime(6500, t + dur * 0.45);
-      air.frequency.setValueAtTime(6500, t + dur * 0.55); air.frequency.linearRampToValueAtTime(1800, tEnd);
-      near.connect(air); air.connect(pn); pn.connect(out);
+      if (o.still) {
+        if (pn.pan) pn.pan.setValueAtTime(Math.max(-1, Math.min(1, (o.spread != null ? o.spread : 0.25) * (ci % 2 ? 1 : -1) * (1 + ci) / 2)), t);
+        near.gain.setValueAtTime(0, t);
+        near.gain.linearRampToValueAtTime(v, t + 0.5);
+        near.gain.setValueAtTime(v, tEnd - 0.5);
+        near.gain.linearRampToValueAtTime(0, tEnd);
+        air.frequency.setValueAtTime(6500, t);
+      } else {
+        if (pn.pan) { pn.pan.setValueAtTime(from, t); pn.pan.linearRampToValueAtTime(to, tEnd); }
+        near.gain.setValueAtTime(0, t);
+        near.gain.linearRampToValueAtTime(v, t + dur * 0.4);
+        near.gain.setValueAtTime(v, t + dur * 0.6);
+        near.gain.linearRampToValueAtTime(0, tEnd);
+        air.frequency.setValueAtTime(1800, t); air.frequency.linearRampToValueAtTime(6500, t + dur * 0.45);
+        air.frequency.setValueAtTime(6500, t + dur * 0.55); air.frequency.linearRampToValueAtTime(1800, tEnd);
+      }
+      near.connect(air); air.connect(pn); pn.connect(o.dest || out);
       n += 3;
       // iron tire on gravel: a continuous low crunch, lumpy with the ground
       var cr = ctx.createBiquadFilter(); cr.type = "bandpass"; cr.frequency.value = R.rnd(380, 520); cr.Q.value = 0.9;
@@ -514,7 +751,9 @@ window.KOLOB.VoicesFolk = (function () {
     function wheels(t, dur, o) {
       o = o || {};
       var n = 0;
-      for (var c = 0; c < (o.carts || 2); c++) n += cart(t + c * (o.beat || 0.6) * 1.3, dur, o, c);
+      // (o.only: one cart of the company, the others left to their own calls —
+      // each rolls from its own clock callback, round 3c)
+      for (var c = 0; c < (o.carts || 2); c++) if (o.only == null || o.only === c) n += cart(t + c * (o.beat || 0.6) * 1.3, dur, o, c);
       return n;
     }
 
@@ -524,16 +763,21 @@ window.KOLOB.VoicesFolk = (function () {
       ev.sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; });
       var live = 0, peak = 0, until = 0;
       ev.forEach(function (e) { live += e[1]; if (live > peak) peak = live; if (e[1] < 0 && e[0] > until) until = e[0]; });
-      return { standing: standing, created: created, peakLive: peak + standing, until: until };
+      return { standing: standing, created: created, peakLive: peak + standing, until: until, maxRing: maxRingNodes };
     }
 
     return {
       out: out,
-      fiddle: fiddle, handbell: handbell, handbells: handbells,
+      fiddle: fiddle, handbell: handbell, handbells: handbells, ring: ring,
       gull: gull, gulls: gulls, wheels: wheels,
       stats: report,
     };
   }
 
-  return { create: create };
+  // warm(ctx) (round 3c): the voice's noise — the carts' gravel and axles,
+  // the gulls' breath — baked now, at start-up, not in the clock callback
+  // of the first cart to roll (2 s of it: a visible pause on a slow core)
+  function warm(ctx) { if (ctx) noiseBuf(ctx); return !!ctx; }
+  return { create: create, warm: warm, bell: { tau: bellTau, life: bellLife, casting: casting } };
 })();
+(window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-voices-folk.js"] = true;   // the load guard's roll call (round 3b, step 3: the handbells ring in the meeting)

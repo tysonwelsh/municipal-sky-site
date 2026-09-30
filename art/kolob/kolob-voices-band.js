@@ -131,8 +131,18 @@
 //   band.dispose()  — disconnect the band (and its distance stage) at once
 //   KOLOB.VoicesBand.townRoom(ctx, destination, {seconds, gain}) → room
 //      { input, out, dispose() } — one shared outdoor tail for several bands
-//   KOLOB.VoicesBand.warm(ctx) — build the town's tail ahead of time (a few
-//      tens of ms, once per context: do it at start-up, not in a callback)
+//   KOLOB.VoicesBand.road(ctx, destination, {room, echoDelay}) → road
+//      { input, path([{t, d, side}, …]), nodes, dispose() } — a traveller
+//      (round 3c: the Nauvoo band marching past, the handcart company):
+//      the distance stage's four curves and the side, laid along a path
+//      (see A ROAD THROUGH THE TOWN). Make the band with no distance and
+//      play it into road.input.
+//   KOLOB.VoicesBand.lendTown(ctx, destination, {seconds}) → a town room made
+//      ahead by warm(), joined to destination; its dispose() gives it back
+//      (round 3c: no guest makes a convolver inside a clock callback)
+//   KOLOB.VoicesBand.warm(ctx) — build the town's tail, one town room to lend,
+//      the noise and the saxhorns' waves, ahead of time (a few tens of ms,
+//      once per context: do it at start-up, not in a callback)
 //   KOLOB.VoicesBand.distanceDb(d), .dynamicDb(dyn) — pure: how much quieter
 //      a band sounds at distance d than in the doorway, and a trombone's
 //      level at a dynamic against mf (dB)
@@ -284,10 +294,37 @@ window.KOLOB.VoicesBand = (function () {
     conv.buffer = townIR(ctx, o.seconds || 2.6);
     var lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 3800; lp.Q.value = 0.5;
     var g = ctx.createGain(); g.gain.value = o.gain != null ? o.gain : 1;
-    input.connect(conv); conv.connect(lp); lp.connect(g); g.connect(destination);
+    input.connect(conv); conv.connect(lp); lp.connect(g);
+    if (destination) g.connect(destination);
     return {
       input: input, out: g, nodes: 4,
       dispose: function () { [input, conv, lp, g].forEach(function (n) { try { n.disconnect(); } catch (e) {} }); },
+    };
+  }
+
+  // ---- the town's air, LENT (round 3c) -------------------------------------------
+  // A convolver takes its impulse when it is made — 5–6 ms of main thread for
+  // the 2.6 s town, too much for one clock callback. So warm(ctx) makes one
+  // town room ahead (at start-up, with the impulse), unconnected, and
+  // lendTown(ctx, destination) lends it to a performer at its press: joined
+  // to that performer's bus, and given back (unjoined) by the performer's
+  // dispose(). A second performer at the same time gets a room made there
+  // and then (and it joins the pool when given back).
+  var POOL = typeof WeakMap !== "undefined" ? new WeakMap() : null;
+  function pooled(ctx, seconds) {
+    var list = POOL ? POOL.get(ctx) : null;
+    if (!list) { list = []; if (POOL) POOL.set(ctx, list); }
+    for (var i = 0; i < list.length; i++) if (!list[i].busy && list[i].seconds === seconds) return list[i];
+    var r = townRoom(ctx, null, { seconds: seconds });
+    r.seconds = seconds; r.busy = false; list.push(r);
+    return r;
+  }
+  function lendTown(ctx, destination, o) {
+    var r = pooled(ctx, (o && o.seconds) || 2.6), given = false;
+    r.busy = true; r.out.connect(destination);
+    return {
+      input: r.input, out: r.out, nodes: 0, lent: true,
+      dispose: function () { if (given) return; given = true; try { r.out.disconnect(destination); } catch (e) {} r.busy = false; },
     };
   }
 
@@ -354,6 +391,110 @@ window.KOLOB.VoicesBand = (function () {
     };
   }
 
+  // ---- A ROAD THROUGH THE TOWN (round 3c): a source that TRAVELS ------------
+  // The distance stage above stands still: a choir placed once, far or near.
+  // A marching band does not. It comes up the road from one end of the
+  // colony, passes the meetinghouse and goes on out of the other, and the
+  // ear follows it by the same four facts, now moving: the direct sound
+  // rises and falls (dirDbAt), the air takes less of its top as it nears
+  // (veilAt, shelfDbAt), the town's reverberance stands against it and
+  // then under it (airDbAt, through one shared townRoom — and leaning
+  // toward the traveller, AIR_LEAN of its own side: the street it is
+  // walking rings nearest it, so a band far off at one end of the colony
+  // is heard at that end, not all around), and the echo off the facing houses fades
+  // in as it goes far (echoAt, from the other side). Its place in the field
+  // (side, −1 … 1) turns with it. road(ctx, destination, {room, echoDelay})
+  // → { input, path(points), nodes, dispose() }: path([{t, d, side}, …])
+  // lays every one of those curves along the points (a straight ramp between
+  // two, so a point a second or so apart draws a smooth passage). Built
+  // once per traveller: 12 nodes (16 with a town room of its own).
+  var AIR_LEAN = 0.5;
+  function road(ctx, destination, o) {
+    o = o || {};
+    var nodes = [];
+    function mk(n) { nodes.push(n); return n; }
+    var input = mk(ctx.createGain());
+    var veil = mk(ctx.createBiquadFilter()); veil.type = "lowpass"; veil.Q.value = 0.5; veil.frequency.value = veilAt(1);
+    var shelf = mk(ctx.createBiquadFilter()); shelf.type = "highshelf"; shelf.frequency.value = 2500; shelf.gain.value = shelfDbAt(1);
+    var direct = mk(ctx.createGain()); direct.gain.value = 0;
+    var pan = mk(ctx.createStereoPanner ? ctx.createStereoPanner() : ctx.createGain());
+    input.connect(veil); veil.connect(shelf); shelf.connect(direct); direct.connect(pan); pan.connect(destination);
+    var own = null, room = o.room || null;
+    if (!room) { own = townRoom(ctx, destination, {}); room = own; }
+    var pre = mk(ctx.createDelay(0.2)); pre.delayTime.value = 0.03;
+    var send = mk(ctx.createGain()); send.gain.value = 0;
+    var airPan = mk(ctx.createStereoPanner ? ctx.createStereoPanner() : ctx.createGain());
+    shelf.connect(pre); pre.connect(send); send.connect(airPan); airPan.connect(room.input);
+    var ed = mk(ctx.createDelay(0.6)); ed.delayTime.value = o.echoDelay != null ? o.echoDelay : 0.25;
+    var elp = mk(ctx.createBiquadFilter()); elp.type = "lowpass"; elp.frequency.value = 2500; elp.Q.value = 0.5;
+    var eg = mk(ctx.createGain()); eg.gain.value = 0;
+    var ep = mk(ctx.createStereoPanner ? ctx.createStereoPanner() : ctx.createGain());
+    shelf.connect(ed); ed.connect(elp); elp.connect(eg); eg.connect(ep); ep.connect(destination);
+    function lay(param, pts, fn) {
+      pts.forEach(function (p, i) {
+        var v = fn(p);
+        if (i === 0) param.setValueAtTime(v, p.t); else param.linearRampToValueAtTime(v, p.t);
+      });
+    }
+    function path(points) {
+      var pts = (points || []).filter(function (p) { return p && isFinite(p.t) && isFinite(p.d); });
+      if (!pts.length) return;
+      function dd(p) { return Math.max(0, Math.min(1, p.d)); }
+      function sd(p) { return Math.max(-1, Math.min(1, p.side || 0)); }
+      lay(veil.frequency, pts, function (p) { return veilAt(dd(p)); });
+      lay(shelf.gain, pts, function (p) { return shelfDbAt(dd(p)); });
+      lay(direct.gain, pts, function (p) { return Math.pow(10, dirDbAt(dd(p)) / 20); });
+      // (a stereo panner sums a band's near-alike channels into one side:
+      // up to 1 + sin(πp/2) in power. The send gives that back, so the lean
+      // moves the air and adds nothing to it)
+      lay(send.gain, pts, function (p) { return Math.pow(10, airDbAt(dd(p)) / 20) / (airPan.pan ? Math.sqrt(1 + Math.sin(Math.abs(sd(p) * AIR_LEAN) * Math.PI / 2)) : 1); });
+      lay(eg.gain, pts, function (p) { return echoAt(dd(p)) * Math.pow(10, dirDbAt(dd(p)) / 20); });
+      if (pan.pan) lay(pan.pan, pts, sd);
+      if (ep.pan) lay(ep.pan, pts, function (p) { return -sd(p) * 0.5; });
+      if (airPan.pan) lay(airPan.pan, pts, function (p) { return sd(p) * AIR_LEAN; });
+    }
+    return {
+      input: input, path: path, nodes: nodes.length + (own ? own.nodes : 0),
+      dispose: function () {
+        nodes.forEach(function (n) { try { n.disconnect(); } catch (e) {} });
+        if (own) own.dispose();
+      },
+    };
+  }
+
+  // THE WAVES (round 3c): one PeriodicWave per section and quarter-octave
+  // band, kept per context (they were kept per band, and a band's first bars
+  // built a dozen of them inside a clock callback); warm() builds the
+  // saxhorns' ahead, across their compass
+  var WAVES = typeof WeakMap !== "undefined" ? new WeakMap() : null;
+  function waveOf(ctx, k, f) {
+    var waves = WAVES ? WAVES.get(ctx) : null;
+    if (!waves) { waves = {}; if (WAVES) WAVES.set(ctx, waves); }
+    var band = Math.round(Math.log(f) / Math.LN2 * 4), key = k + band;
+    if (waves[key]) return waves[key];
+    var spec = INSTR[k] || TBN[k], fb = Math.pow(2, band / 4);
+    var n = Math.min(48, Math.floor(10000 / fb)), real = new Float32Array(n + 1), imag = new Float32Array(n + 1), ss = 0;
+    for (var h = 1; h <= n; h++) {
+      var hz = h * fb;
+      var a = Math.pow(h, -spec.tilt) * ((spec.rad ? 0.35 : 0.55) + Math.exp(-Math.pow((hz - spec.formant) / spec.fw, 2)));
+      if (spec.rad) a *= hz * hz / (hz * hz + spec.rad * spec.rad);   // the bell's radiation (trombones)
+      imag[h] = a; ss += a * a;
+    }
+    var nrm = 0.8 / Math.sqrt(ss / 2 + 1e-9);
+    for (var j = 1; j <= n; j++) imag[j] *= nrm;
+    try { waves[key] = ctx.createPeriodicWave(real, imag, { disableNormalization: true }); }
+    catch (e) { waves[key] = ctx.createPeriodicWave(real, imag); }
+    return waves[key];
+  }
+  // the saxhorns' compass, for warm(): [lo, hi] Hz
+  var COMPASS = { cornet: [220, 1100], alto: [180, 1000], tuba: [38, 240] };
+  function warmAll(ctx, seconds) {
+    townIR(ctx, seconds || 2.6); pooled(ctx, seconds || 2.6); noiseBuf(ctx);
+    Object.keys(COMPASS).forEach(function (k) {
+      for (var b = Math.round(Math.log(COMPASS[k][0]) / Math.LN2 * 4); b <= Math.round(Math.log(COMPASS[k][1]) / Math.LN2 * 4); b++) waveOf(ctx, k, Math.pow(2, b / 4));
+    });
+  }
+
   function create(ctx, destination, opts) {
     opts = opts || {};
     var R = streamOf(opts);
@@ -397,25 +538,9 @@ window.KOLOB.VoicesBand = (function () {
       return buses[k];
     }
 
-    // one wave per section and register (cached by quarter-octave band)
-    var waves = {};
-    function waveFor(k, f) {
-      var band = Math.round(Math.log(f) / Math.LN2 * 4), key = k + band;
-      if (waves[key]) return waves[key];
-      var spec = INSTR[k] || TBN[k], fb = Math.pow(2, band / 4);
-      var n = Math.min(48, Math.floor(10000 / fb)), real = new Float32Array(n + 1), imag = new Float32Array(n + 1), ss = 0;
-      for (var h = 1; h <= n; h++) {
-        var hz = h * fb;
-        var a = Math.pow(h, -spec.tilt) * ((spec.rad ? 0.35 : 0.55) + Math.exp(-Math.pow((hz - spec.formant) / spec.fw, 2)));
-        if (spec.rad) a *= hz * hz / (hz * hz + spec.rad * spec.rad);   // the bell's radiation (trombones)
-        imag[h] = a; ss += a * a;
-      }
-      var nrm = 0.8 / Math.sqrt(ss / 2 + 1e-9);
-      for (var j = 1; j <= n; j++) imag[j] *= nrm;
-      try { waves[key] = ctx.createPeriodicWave(real, imag, { disableNormalization: true }); }
-      catch (e) { waves[key] = ctx.createPeriodicWave(real, imag); }
-      return waves[key];
-    }
+    // one wave per section and register (cached by quarter-octave band, per
+    // context: every band on the context shares them — see WAVES)
+    function waveFor(k, f) { return waveOf(ctx, k, f); }
 
     // pitch and brightness automation is read once a block (see the header)
     function kRate(p) { try { p.automationRate = "k-rate"; } catch (e) {} }
@@ -673,8 +798,9 @@ window.KOLOB.VoicesBand = (function () {
   }
 
   return {
-    create: create, townRoom: townRoom,
-    warm: function (ctx, seconds) { townIR(ctx, seconds || 2.6); },
+    create: create, townRoom: townRoom, road: road,
+    warm: warmAll,
+    lendTown: lendTown,
     // pure level curves, for a performer placing bands against each other
     distanceDb: distanceDb, dynamicDb: function (dyn) { return 20 * Math.log10(tbnAmp(dynOf(dyn))); },
     INSTRUMENTS: Object.keys(INSTR), TROMBONES: Object.keys(TBN),

@@ -114,6 +114,10 @@ window.KOLOB = window.KOLOB || {};
     var R = turn("voice");
     if (s === "testimony" && !R.chance(0.3)) { cueIn("voice", 7, stillVoicePhrase); return; }
     var dur = R.rnd(7, 15);
+    // (round 3c: never over a testimony-bearer speaking, nor over one who
+    // sings in tongues — two talkers never overlap; the critic of crew D.
+    // The turn's dice are thrown first, as ever)
+    if ((S.testimonyHolds && S.testimonyHolds()) || (S.inVisit && S.inVisit() && S.Meeting.visitType() === "tongues")) { cueIn("voice", 7, stillVoicePhrase); return; }
     stillVoiceRender(t + 0.05, dur);
     cueLayer("voice", dur + R.rnd(6, 16) * silenceMul(), stillVoicePhrase);
   }

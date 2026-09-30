@@ -158,6 +158,51 @@ window.KOLOB = window.KOLOB || {};
   }
 
   // ==========================================================================
+  // THE SEVENTH HARMONIC — 7-limit helpers (round 3, additive). The only
+  // place Kolob's lattice reaches past 5 is dialect D, gospel and barbershop
+  // (PLAN-COMPOSITION §3.D, §3.4): the dominant seventh sung justly is not
+  // 16/9 or 9/5 above its root but 7/4, the seventh partial — the chord is
+  // then 4:5:6:7, a slice of one harmonic series, and it RINGS: the
+  // overtones of the four notes land on one another and a phantom fifth
+  // voice sings over the quartet. Everything here is exact (monzos); the
+  // floats are echoes.
+  // ==========================================================================
+  var SEPTIMAL_SEVENTH = [-2, 0, 0, 1];                  // 7/4, the harmonic seventh (968.8 c)
+  var SEPTIMAL_COMMA = [6, -2, 0, -1];                   // 64/63, 7/4 against the Pythagorean 16/9 (27.3 c)
+  var JOHNSTON_SEVEN = [2, 2, -1, -1];                   // 36/35, what Johnston's "7" lowers (48.8 c: 7/4 against 9/5)
+  var BARBERSHOP = [[0, 0, 0, 0], [-2, 0, 1, 0], [-1, 1, 0, 0], [-2, 0, 0, 1]];   // 1/1 5/4 3/2 7/4 — the 4:5:6:7
+  // the highest prime a monzo leans on (1 for 1/1)
+  function limitOf(m) { for (var i = 3; i >= 0; i--) if (m[i]) return PRIMES[i]; return 1; }
+  // a monzo's septimal exponent (how many 7s it carries, signed)
+  function septimalOf(m) { return m[3] || 0; }
+  // the barbershop seventh on a root: four exact pitches, 4:5:6:7 above it
+  function harmonicSeventh(root) { return BARBERSHOP.map(function (iv) { return mul(root, iv); }); }
+  // the proportion of some pitches read as a CHORD: every note a harmonic of
+  // one fundamental, octaves and inversions set aside. Each pitch is taken
+  // against the first, its twos struck out (an octave changes nothing), and
+  // the odd parts brought to whole numbers; then each odd harmonic is set in
+  // the octave of the highest. So a dominant seventh sung justly reads
+  // "4:5:6:7" in any voicing (odd harmonics 1, 3, 5, 7), a just major triad
+  // "4:5:6", a just minor one "10:12:15" (3, 5 and 15 over a fundamental two
+  // octaves and a third below) and a bare fifth "2:3". Exact throughout.
+  function oddParts(monzos) {
+    if (!monzos.length) return [];
+    var ref = monzos[0], rel = monzos.map(function (m) { var r = div(m, ref); r[0] = 0; return r; });
+    var lo = [0, 0, 0, 0];
+    rel.forEach(function (r) { for (var i = 1; i < 4; i++) lo[i] = Math.min(lo[i], r[i]); });
+    var odd = [];
+    rel.forEach(function (r) { var x = Math.round(ratio(div(r, lo))); if (odd.indexOf(x) < 0) odd.push(x); });
+    var g = odd.reduce(function (a, b) { while (b) { var t = b; b = a % b; a = t; } return a; });
+    return odd.map(function (x) { return x / g; }).sort(function (a, b) { return a - b; });
+  }
+  function proportion(monzos) {
+    var odd = oddParts(monzos);
+    if (!odd.length) return "";
+    var top = odd[odd.length - 1], L = Math.pow(2, Math.floor(Math.log2(top) + 1e-9));
+    return odd.map(function (o) { while (o < L) o *= 2; return o; }).sort(function (a, b) { return a - b; }).join(":");
+  }
+
+  // ==========================================================================
   // LENT — what this room shares with the rest of the house (KOLOB._s)
   // ==========================================================================
   // (configurable, so the room can be loaded twice without "Cannot redefine")
@@ -177,6 +222,9 @@ window.KOLOB = window.KOLOB || {};
     colN: colN, projDeg: projDeg, degFreq: degFreq, tuning: tuning,
     ratio: ratio, mul: mul, div: div, fromFraction: fromFraction, cents: cents,
     octaveReduce: octaveReduce, degMonzo: degMonzo, commaOf: commaOf,
+    // the seventh harmonic (round 3, additive)
+    SEPTIMAL_SEVENTH: SEPTIMAL_SEVENTH, SEPTIMAL_COMMA: SEPTIMAL_COMMA, JOHNSTON_SEVEN: JOHNSTON_SEVEN, BARBERSHOP: BARBERSHOP,
+    limitOf: limitOf, septimalOf: septimalOf, harmonicSeventh: harmonicSeventh, proportion: proportion, oddParts: oddParts,
   };
   (KOLOB._rooms = KOLOB._rooms || {})["kolob-pitch.js"] = true;   // the load guard's roll call
 })();

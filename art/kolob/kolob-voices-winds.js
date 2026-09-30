@@ -127,7 +127,10 @@ window.KOLOB = window.KOLOB || {};
   function clarinetPhrase(tc) {
     if (!S.playing) return;
     var s = S.Meeting.section();
-    var speaks = s === "prelude" || s === "hymn" || s === "testimony" || s === "doxology" || s === "postlude";
+    // (round 3b, step 4: a rite seated LINED OUT ONLY — the deacon gives its
+    // lines and the ward answers, the invocation or an interlude too)
+    var scene = S.Meeting.scene ? S.Meeting.scene() : null, linedRite = !!(scene && scene.lined);
+    var speaks = s === "prelude" || s === "hymn" || s === "testimony" || s === "doxology" || s === "postlude" || linedRite;
     if (!speaks || inFuging() || inQuestion() || hallListens() || houseRests("clarinet")) { cueIn("clarinet", 6, clarinetPhrase); return; }
     if (!airFree()) { cueIn("clarinet", wait("clarinet").rnd(5, 11), clarinetPhrase); return; }
     var R = turn("clarinet");
@@ -148,7 +151,7 @@ window.KOLOB = window.KOLOB || {};
     var total;
     var lined = false;
     var spoken = motif;                                        // what actually sounded (the shadow reads this)
-    if (s === "hymn" && R.chance(0.5)) {
+    if ((s === "hymn" || linedRite) && R.chance(linedRite ? 0.85 : 0.5)) {
       // LINING-OUT: state the first line of the hymn plainly, then post it to
       // the choir, which sings it back harmonized and slower.
       var nSyl = (METERS[S.Meeting.meter()] || METERS.CM)[0];
@@ -199,7 +202,7 @@ window.KOLOB = window.KOLOB || {};
     // polish; the dice are thrown all the same)
     if (R.chance(getLayerParam("harmonium", "shadow", 0.5)) && s !== "testimony") {
       var shadowAt = t + R.rnd(0.4, 0.9);
-      if (!(seat && seat.sits.harmonium)) harmoniumShadow(shadowAt, spoken, beat);
+      if (!(seat && seat.sits.harmonium) && !houseRests("harmonium")) harmoniumShadow(shadowAt, spoken, beat);
     }
     claimAir(total, (s === "testimony" ? R.rnd(10, 22) : R.rnd(4, 10)) * silenceMul());
     var gap = (s === "testimony" ? R.rnd(18, 40) : R.rnd(9, 20)) * gapMul() * S.Meeting.lean("clarinet");

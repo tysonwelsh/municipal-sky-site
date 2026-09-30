@@ -1187,3 +1187,89 @@ are closed. Do NOT "fix" it into audibility; that would add a breath between eve
 **Recommended:** render a short, silent A/B packet for the owner with and without each source,
 so he can confirm by ear which one he heard. The meetings' own hymn voices (the engine choir and
 house organ) are noise-free.
+
+**Owner ruling (2026-09-28): build without the phone constraint, then scale back by ear.** Defer
+the technical scaling decisions (the full ward's cost on phones and similar). Build round 3b "as
+though there were no technical constraints": the full 32-voice ward, the organist, every guest and
+style in the real meeting. The owner will hear it in practice and then decide how to scale back,
+"either for technical or aesthetic reasons". Crews should still MEASURE the cost (CPU, audio
+thread, nodes) and report it honestly, but do not cut features or voices to meet a phone budget
+in this round.
+
+**For the round-3b engine crews (the ward, organ, styles and form steps): the staff's requests.** From
+handoff/r3b-engrave-1.md. kolob-viz.js already reads these fields.
+1. Add `verses: P.verses` to `verse-start`'s `performance` in kolob-voices-choir.js, so that hymns
+   without an A-men end on a final bar.
+2. Tag the ward's notes with part, hymnId, beat and syllable, as the house choir's are, so the page
+   prints four parts rather than 32 heads.
+3. Tag the organ's giving-out and accompaniment (and the organist's prelude and fills), so the page
+   knows what to print and what not to.
+4. Put the handbells on their own layer. Give the dawn trombones' notes a beat, so they can print
+   with bars.
+
+**For the round-3c integrator, from crew B's critic (variations and change ringing):**
+- **Timing.** `GuestVariations.prepare` really costs a median of 12 ms, 36 ms at p95 and 77 ms at
+  worst, not the 2–11 ms the handoff states. The interlude's key/lag search, the polonaise and the
+  trio are the costly parts. Prepare the set OFF the clock: at plan time, beside the hymnal's desk
+  once the hymn is written, or in a deferred cue before the seat. Never run it inside one clock
+  cue, as the handoff's recipe section 3 does.
+- **Plain organist on non-Tabernacle hymns.** The theme is "trumpet solo + soft flutes" (the tenor
+  tune), not the principal.
+- **Two-key proxy.** It miscounts gospel's 7-limit sevenths as a second key. The interlude still
+  separates.
+
+**For the round-3c integrator, from crew D's critic (the Social Hall and the testimony):**
+1. **The testimony.** In testimonyBegins, call `S.houseLetsGo(tc, 'testimony', true)`. Today the
+   strings and organ ring on for up to 30 s under the first bearer. Gate the still small voice
+   ("voice" layer, kolob-voices-field.js stillVoicePhrase) with `testimonySounding()`, so two
+   talkers never overlap.
+2. **The fiddle's 7/4 stop** goes above its 1100 Hz ceiling in 41 % of dances. Skip it (or use the
+   chord tone below) when `f*7/4 > TOP`.
+3. **Quadrilles** should call every strain (add `|| M.piece === 'quadrille'` at the call gate).
+4. **The funeral rule** depends on `sunday` being passed: always pass it.
+5. **Pioneer Day.** The adjacency rule refuses the dance in 19 % of meetings, mostly because the
+   bands cross the doxology. The integrator may let the bands and the dance share on Pioneer Day.
+
+**For the round-3c integrator, from crew C's critic (tongues, the far ward, the Hosanna):**
+1. **The gift's invented words** still make common first names ("Lila", "Lola", "Lana", "Mila",
+   "Nola") and two scriptural ones ("Leah", "Noah"): about 20 % of songs, and 4 % carry Noah or Leah.
+   Refuse the pattern, not name by name: two syllables of l/n/m + vowel + l/n/r + ah (or at least
+   add these to BLOCK, kolob-guest-tongues.js:302–314).
+2. **The Hosanna's `beside`** over-reports when the guests carry no index. Push `index` with each
+   visitation (the far ward's seat already has sectionIndex), so a far ward in the opening hymn
+   isn't counted as a neighbour of the last doxology.
+3. **Recipe placement.** Plan the Hosanna at the existing hook (kolob-meeting.js ≈554), and reset
+   C.payoff if it was 'bands'. Ignore the handoff's line "plan the Hosanna before the payoff is
+   settled"; it contradicts the recipe's code.
+4. **Seat the ward before planning guests**, so the gift's singer is always a testimony-bearer (today
+   only about half the time), and correct the owner summary in r3c-voices-1.md:23 to match.
+5. **The Hosanna overrides §8.13's no-adjacent-guests rule by default** (crew C's own call; one line,
+   `YIELD = true`, reverses it). Move a band out of the doxology when the Hosanna takes it.
+6. **Seeding.** The gift seeds the next hymn when one follows the testimony, and the doxology only
+   when the doxology has no other payoff.
+7. **The Hosanna is audio-only and unlogged (the owner's ruling, which overrides §8.12).** Set
+   `ENGRAVE_HYMN = false`; the staff does not print it.
+8. **Cost, reported and not cut.** The Hosanna runs about 1.3× the ward's hymn, with its longest
+   render callbacks at 5.2–6.1 ms against a 5.33 ms budget. The far ward's 24 throats add about
+   1,250 nodes. Measure these again in the integrated meeting.
+
+**For the round-3c integrator, from crew A's critic (the band, the handcart company, the gulls):**
+1. **MUST FIX: the second band vanishes in a hymn seat.** Recipe amendment B (keep the doxology's
+   tune out of the band's choices until a doxology has been sung) leaves one hymn in the pool, so
+   `h2` is null and no second band sounds. When the pool holds one hymn, the second band marches the
+   section's own hymn in its stranger's key (the sharpest Ives collision), or an Earth tune. Then
+   correct handoff r3c-bands-1.md's claims at lines 144, 810 and 1028.
+2. **The band's press.** Make the material (outsideMaterial → GuestBands.prepare) one cue earlier,
+   about a second before the press, or give the first bar its own slot(), so no clock wake does both
+   (it reached 7.4 ms in the ward's hymn).
+3. **Harness exemption (Request 4).** The organist accompanying the ward sounds on when the band
+   arrives mid-verse; this collision is intended. Exempt it in the house-lets-go check.
+4. **Guest budget.** Round 1 measured 72 % of meetings with a guest; the target is ≈55–65 %. The dials
+   are the handcart and gulls base odds. Leave the band's 36 % as the owner set it.
+5. **Apply the start-up warm block** (GuestHandcart.warm, VoicesFolk.warm), or the company may not take
+   a prelude seat. Apply the staff patch (kolob-viz.js, the band's bar-by-bar notes) and check it
+   with screenshots.
+6. **Optional:** the trombones borrow the band's pre-built reverb (−5.4 ms at their start).
+7. **Left for the owner's ear:** the band crosses the doxology's verse 7 times in 10
+   (`GuestBands.SEATS`/`AT`). The meeting's own slow wakes (Request 7: the prelude's first chord at
+   15–18 ms, the ward's verse lines at 8–23 ms) are pre-existing; fix them if cheap.

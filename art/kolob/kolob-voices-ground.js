@@ -85,7 +85,40 @@ window.KOLOB = window.KOLOB || {};
   // VOICE: DRONE — the La Monte Young register. Pure sines on the harmonic
   // series of F0, in very long crossfading cycles. It never stops — in the
   // sacrament it is all there is. The stillness is the point.
+  //
+  // THE KOLOB RECKONING (round 3b, step 4; PLAN §7.2). On a Sunday the
+  // reckoning holds, the drone MOVES: one note a section, the opening of the
+  // tune the doxology will sing, each note the tonic, the third or the fifth
+  // of the key its section is sung in. It turns only at a joint — S.droneTurn
+  // (kolob-meeting.js calls it as a joint begins) glides every sine that is
+  // sounding, and every one begun after, to the new note over four to six
+  // seconds, under the joint's hush — and in the doxology it is home again,
+  // under the tune it has been spelling. Each partial is a harmonic of the
+  // drone's own fundamental, so the whole glides as one; when the note is
+  // the section's third or fifth and not its tonic, the drone's own twelfth
+  // (its third harmonic) and the fifth above step back, so the drone stands
+  // as a pure octave-doubled tone and does not sound its own fifth against
+  // the key (a third's twelfth is the key's seventh).
   // ==========================================================================
+  // the drone's note: a multiplier on F0 (1 at the keynote), gliding from
+  // `from` at `at` to `mul` at `until`; its role in the section's chord; its
+  // monzo over the keynote (for the notes told)
+  var droneNow = { mul: 1, from: 1, at: -1, until: -1, role: "tonic", monzo: [0, 0, 0, 0], k: null };
+  var droneLive = [];                               // the sines sounding: { o, base, gains: [{g, h, oct}], stopAt }
+  // (a note ALONE — the still sacrament's, where nothing else sounds — keeps
+  // its whole series, as the tonic does)
+  var ROLE_GAINS = {
+    tonic: function (h, oct, g) { return g; },
+    third: function (h, oct, g) { return oct ? 0 : h === 3 ? g * 0.25 : g; },
+    fifth: function (h, oct, g) { return oct ? 0 : h === 3 ? g * 0.5 : g; },
+  };
+  function roleGain(role, h, oct, g) { return (ROLE_GAINS[role] || ROLE_GAINS.tonic)(h, oct, g); }
+  function droneMulAt(t) {
+    var d = droneNow;
+    if (t >= d.until) return d.mul;
+    if (t <= d.at) return d.from;
+    return d.from * Math.pow(d.mul / d.from, (t - d.at) / (d.until - d.at));
+  }
   // at scheduled time t — the downbeat, then each overlap
   function droneCycle(t) {
     if (!S.playing) return;
@@ -103,22 +136,84 @@ window.KOLOB = window.KOLOB || {};
     var dest = panAt("drone", 0);
     var master = S.ctx.createGain();
     master.connect(dest);
+    // (the reckoning: the note the drone stands on at t, and a glide already
+    // written that this cycle begins inside or before)
+    var m0 = droneMulAt(t), gl = droneNow.until > t ? droneNow : null;
+    var live = { o: [], stopAt: t + dur + 0.5 };
     for (var i = 0; i < partials.length; i++) {
       var o = S.ctx.createOscillator();
       o.type = "sine";
-      o.frequency.setValueAtTime(harm(partials[i].h) * (partials[i].oct ? 2 : 1), t);
+      var base = harm(partials[i].h) * (partials[i].oct ? 2 : 1);
+      o.frequency.setValueAtTime(base * m0, t);
+      if (gl) { o.frequency.setValueAtTime(base * m0, Math.max(t, gl.at)); o.frequency.exponentialRampToValueAtTime(base * gl.mul, gl.until); }
       var og = S.ctx.createGain();
-      og.gain.setValueAtTime(partials[i].g, t);
+      var g0 = roleGain(droneNow.role, partials[i].h, partials[i].oct, partials[i].g);
+      og.gain.setValueAtTime(g0, t);
       o.connect(og); og.connect(master);
       o.start(t); o.stop(t + dur + 0.5);
+      live.o.push({ o: o, base: base, og: og, h: partials[i].h, oct: partials[i].oct, g: partials[i].g });
     }
+    droneLive = droneLive.filter(function (x) { return x.stopAt > t; });
+    droneLive.push(live);
     var peak = 0.5 * (0.5 + presence * 0.8);
     // the drone holds through everything, even the sacrament — softer, never gone
     if (S.Meeting.section() === "sacrament") peak *= 0.8;
     env(master, t, [[overlap * 0.7, peak], [dur - overlap * 1.4, peak * 0.95], [overlap * 0.7, 0]]);
-    emitNote("drone", S.F0, t, dur);
+    // (told as the note it stands on — a cycle begun inside a glide is told
+    // as the note the glide arrives at, from its arrival)
+    var inGlide = !!gl && t < droneNow.until, mTold = inGlide ? droneNow.mul : m0;
+    emitNote("drone", S.F0 * mTold, inGlide ? droneNow.until : t, inGlide ? dur - (droneNow.until - t) : dur, droneNow.k != null || mTold !== 1 ? droneTag() : undefined);
     cueLayer("drone", dur - overlap, droneCycle);
   }
+  // the drone's note as a written note: its monzo over the keynote (the
+  // drone sounds two octaves under it), the cantus's place
+  function droneTag(extra) {
+    var o = { monzo: droneNow.monzo.slice(), keyMonzo: [0, 0, 0, 0], role: droneNow.role, cantus: droneNow.k };
+    if (extra) for (var k in extra) o[k] = extra[k];
+    return o;
+  }
+  // S.droneTurn(t, toMonzo, glideS, role, k): the drone turns to a new note
+  // at t, gliding over glideS — every sine sounding, and every cycle begun
+  // after. toMonzo: the note's class over the keynote (from the calendar's
+  // reckoning); the drone takes the octave nearest where it stands, within a
+  // fifth below and a sixth above the keynote's own. → the note turned to
+  // (null when it is already there)
+  var DRONE_WINDOW = [Math.pow(2, -7 / 12), Math.pow(2, 9 / 12)];
+  function ratioOf(m) { return Math.pow(2, m[0]) * Math.pow(3, m[1]) * Math.pow(5, m[2]) * Math.pow(7, m[3] || 0); }
+  function droneTurn(t, toMonzo, glideS, role, k) {
+    if (!S.ctx) return null;
+    var from = droneMulAt(t), r = ratioOf(toMonzo), best = null;
+    for (var oc = -2; oc <= 2; oc++) {
+      var x = r * Math.pow(2, oc);
+      if (x < DRONE_WINDOW[0] || x > DRONE_WINDOW[1]) continue;
+      if (!best || Math.abs(Math.log(x / from)) < Math.abs(Math.log(best.x / from))) best = { x: x, oc: oc };
+    }
+    if (!best) return null;
+    var same = Math.abs(1200 * Math.log2(best.x / from)) < 0.5;
+    var roleNow = role || "tonic", g = Math.max(0.5, glideS || 4);
+    // the drone's monzo over the keynote: two octaves below it, times the note
+    var monzo = [toMonzo[0] + best.oc - 2, toMonzo[1], toMonzo[2], toMonzo[3] || 0];
+    if (same && roleNow === droneNow.role) { droneNow.k = k != null ? k : droneNow.k; return null; }
+    droneNow = { mul: best.x, from: from, at: t, until: same ? t : t + g, role: roleNow, monzo: monzo, k: k != null ? k : null };
+    droneLive = droneLive.filter(function (x) { return x.stopAt > t; });
+    droneLive.forEach(function (lv) {
+      lv.o.forEach(function (p) {
+        if (!same) {
+          p.o.frequency.setValueAtTime(p.base * from, t);
+          p.o.frequency.exponentialRampToValueAtTime(p.base * best.x, t + g);
+        }
+        p.og.gain.setTargetAtTime(roleGain(roleNow, p.h, p.oct, p.g), t, g / 3);
+      });
+    });
+    // told as the note it arrives at (the harness holds it to its monzo)
+    emitNote("drone", S.F0 * best.x, t + (same ? 0 : g), Math.max(4, lv0Until(t) - t - g), droneTag({ glide: same ? 0 : +g.toFixed(3), from: +(S.F0 * from).toFixed(3) }));
+    return { fromHz: S.F0 * from, toHz: S.F0 * best.x, monzo: monzo, glide: same ? 0 : g };
+  }
+  function lv0Until(t) { var u = t + 30; droneLive.forEach(function (lv) { if (lv.stopAt > u) u = lv.stopAt; }); return u; }
+  // a new meeting's drone begins on its keynote (a meeting ends home: the
+  // doxology and the postlude are the keynote's)
+  function droneReset() { droneNow = { mul: 1, from: 1, at: -1, until: -1, role: "tonic", monzo: [0, 0, 0, 0], k: null }; }
+  function droneNote() { return { mul: droneNow.mul, role: droneNow.role, monzo: droneNow.monzo.slice(), k: droneNow.k, until: droneNow.until }; }
 
   // ==========================================================================
   // VOICE: STRINGS — the prairie. Open fifths of the sounding chord in long
@@ -190,12 +285,16 @@ window.KOLOB = window.KOLOB || {};
   function stringsCycle(t) {
     if (!S.playing) return;
     var s = S.Meeting.section();
-    if (s === "invocation" || s === "sacrament" || s === "interlude") { cueIn("strings", 8, stringsCycle); return; }
+    // (a rite seated as the brush arbor — round 3b, step 4 — is the strings'
+    // own: they bow its bare fifths, even in the invocation or an interlude,
+    // where they are otherwise silent; the sacrament keeps its stillness)
+    var arborRite = s !== "prelude" && S.Meeting.scene && S.Meeting.scene() && S.Meeting.scene().fifths;
+    if ((s === "invocation" || s === "sacrament" || s === "interlude") && !(arborRite && s !== "sacrament")) { cueIn("strings", 8, stringsCycle); return; }
     if (hallListens() || houseRests("strings")) { cueIn("strings", 8, stringsCycle); return; }       // (the house listens: the trombones at dawn; or it is letting go)
     var R = turn("strings");
     var dur = R.rnd(22, 34);
     var overlap = 8;
-    var seat = s === "prelude" ? S.Meeting.seating() : null;             // (the brush arbor bows bare fifths)
+    var seat = s === "prelude" ? S.Meeting.seating() : (S.Meeting.scene ? S.Meeting.scene() : null);   // (the brush arbor bows bare fifths — the prelude's, or a rite's: round 3b, step 4)
     stringsPad(t + 0.1, dur, s === "doxology" ? 1 : 0.75, R.chance(0.7) || !!(seat && seat.fifths));
     // (the prelude's texture: a strings morning overlaps its pads)
     cueLayer("strings", (dur - overlap) * (s === "doxology" ? 0.9 : 1.3) * S.Meeting.lean("strings"), stringsCycle);
@@ -275,6 +374,7 @@ window.KOLOB = window.KOLOB || {};
     if (!S.playing) return;
     var s = S.Meeting.section();
     if (s === "invocation" || s === "sacrament" || inFuging()) { cueIn("bells", 9, tineCycle); return; }
+    if (S.inVisit() && S.Meeting.visitType() === "hosanna") { cueIn("bells", 9, tineCycle); return; }   // (the tines keep still under the Hosanna: the day's theme is not rung over "The Spirit of God")
     if (!airFree()) { cueIn("bells", wait("bells").rnd(6, 12), tineCycle); return; }
     var R = turn("bells");
     var tineAmt = getLayerParam("bells", "tine", 0.5);
@@ -307,6 +407,9 @@ window.KOLOB = window.KOLOB || {};
   // ==========================================================================
   S.tubaBlat = tubaBlat;
   S.droneCycle = droneCycle;
+  S.droneTurn = droneTurn;
+  S.droneReset = droneReset;
+  S.droneNote = droneNote;
   S.stringsPad = stringsPad;
   S.stringsCycle = stringsCycle;
   S.bellStrike = bellStrike;
