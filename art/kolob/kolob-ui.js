@@ -1006,58 +1006,52 @@
 
   // ==========================================================================
   // THE BAND'S CATERPILLAR (2026-09-29; PLAN-CATERPILLAR.md, the owner's
-  // idea). While the Nauvoo band is in the street the listener is lent a
-  // volume for the band alone. It comes as the band comes: a row of ink
-  // segments with a small beehive for its head inches in from the paper's
-  // left edge, behind the dots, the rear bunching up behind the head and
-  // the head reaching on, and lies down between STOP and VOL as a slider.
-  // Its body is the track and its head the thumb. Drag the head (or use the
-  // keys) and the band follows, from silent to half again its own level:
-  // the body bunches up as the band is turned down and stretches out as it
-  // is turned up. When the band has gone out of hearing (its last drum, as
-  // the engine reports it) it lets go, turns, and crawls back off the way it
-  // came. The setting is kept for the visit, so the next band arrives
-  // already set. Everything is read off the audio clock: the caterpillar
-  // arrives when the band is heard, holds still when the meeting is held,
-  // and a page that comes back from a hidden tab shows it where it would be
-  // by now, never a crawl replayed late.
+  // idea; pass 2, 2026-09-30, after the owner's first look: "just a line
+  // with the thumb", slower, and a bell when it bunches). While the Nauvoo
+  // band is in the street the listener is lent a volume for the band alone.
+  // It comes as the band comes: a dark ink line with a round head inches in
+  // from the paper's left edge, behind the dots, the rear drawing up behind
+  // the head so that the line arches like a bell curve, then the head
+  // reaching on and the line lying flat after it, and lies down between
+  // STOP and VOL as a slider. The line is its filled part, the pale track
+  // ahead is the room to turn it up, and the head is the thumb. Drag the
+  // head (or use the keys) and the band follows, from silent to half again
+  // its own level: the line bunches up into its bell as the band is turned
+  // down and stretches flat as it is turned up. When the band has gone out
+  // of hearing (its last drum, as the engine reports it) it lets go, turns,
+  // and crawls back off the way it came. The setting is kept for the visit,
+  // so the next band arrives already set. Everything is read off the audio
+  // clock: the caterpillar arrives when the band is heard, holds still when
+  // the meeting is held, and a page that comes back from a hidden tab shows
+  // it where it would be by now, never a crawl replayed late.
   // ==========================================================================
   function wireCaterpillar() {
     var el = document.getElementById("kolob-cat");
     if (!el || !K.setBandVolume || !el.animate) return null;
     var range = el.querySelector(".kolob-cat-range"), track = el.querySelector(".kolob-cat-track");
-    var body = el.querySelector(".kolob-cat-body"), head = el.querySelector(".kolob-cat-head");
+    var draw = el.querySelector(".kolob-cat-draw"), line = el.querySelector(".kolob-cat-line");
+    var head = el.querySelector(".kolob-cat-head"), disc = el.querySelector(".kolob-cat-disc"), ring = el.querySelector(".kolob-cat-ring");
     var transport = el.parentNode;
     // ---- the knobs ----
-    var N = 12;                      // body segments (the head is the thirteenth)
-    var SPEED = 130;                 // px a second the crawl covers; each crawl is held to 2.5 … 3.6 s
-    var CRAWL_MIN_S = 2.5, CRAWL_MAX_S = 3.6;
-    var BUNCH = 0.42;                // of each pulse, the share the rear takes to bunch up (the head reaches in the rest)
-    var SETTLE_S = 0.4;              // lying down at the listener's setting, once arrived
-    var LETGO_S = 0.3, TURN_S = 0.36; // leaving: the head draws back to the tail, then it turns round
-    var QUICK = 0.35;                // STOP or a jump: the same crawl off, this much of the time
+    var PACE = 1.5;                  // how much more slowly than pass 1 it goes, in and off (the owner: "a little bit slower")
+    var SPEED = 130 / PACE;          // px a second the crawl covers; each crawl is held to 3.75 … 5.4 s
+    var CRAWL_MIN_S = 2.5 * PACE, CRAWL_MAX_S = 3.6 * PACE;
+    var BUNCH = 0.42;                // of each pulse, the share the rear takes to draw up (the head reaches in the rest)
+    var SETTLE_S = 0.4 * PACE;       // lying down at the listener's setting, once arrived
+    var LETGO_S = 0.3 * PACE, TURN_S = 0.36 * PACE, REACH_S = 0.35 * PACE; // leaving: the head draws back, it turns round, it reaches away
+    var QUICK = 0.35 / PACE;         // STOP or a jump: the same crawl off in this share of the time (as brisk as pass 1's)
     var LINGER_S = 1.5;              // the town's air after the last drum, before it goes
-    var HUMP = { row: 7, rule: 5 };  // how high the body arches when fully bunched (px)
+    var HUMP = { row: 13, rule: 9 }; // the bell's height when the line is fully bunched (px; pass 1 arched 7 and 5)
+    var SIGMA = 0.15;                // the bell's width: its standard deviation, as a share of the line's span
+    var PTS = 48;                    // the line is drawn through this many points
     var TRACK_MAX = 170, TRACK_MIN = 96, GAP = 22;   // the slider's length, and its room each side (row)
     var LANE_H = 48;                 // the lane's height; its line runs through the middle
-    var DT = 0.02;                   // a move that bends on the way (the turn) is sampled every 20 ms
-    var FEET = /[?&]catfeet=1/.test(location.search || "");
     var level = 100;                 // the listener's setting (0 … 150 %), kept for the visit
     var spans = [];                  // the bands heard: { t0, until } on the audio clock
     var state = "away";              // away · arriving · here · leaving
     var G = null, anims = [], run = null, held = false;
     var reduced = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : { matches: false };
     function clamp(x, a, b) { return Math.max(a, Math.min(b, x)); }
-
-    // ---- the body ----
-    var segs = [];
-    for (var i = 0; i < N; i++) {
-      var s = document.createElement("span");
-      s.className = "kolob-cat-seg" + (i % 2 === 1 && i < N - 1 ? " has-feet" : "");
-      body.appendChild(s); segs.push(s);
-    }
-    var parts = segs.concat([head]);
-    el.classList.toggle("is-footed", FEET);
 
     // ---- where it lies: measured from the row as it stands ----
     // x is measured from the paper's left edge (the lane begins there, so
@@ -1074,9 +1068,8 @@
       var lb = label ? label.getBoundingClientRect() : null, lv = lever.getBoundingClientRect();
       var right = lb && lb.width > 0 ? lb.left : lv.left, free = right - stop.right;
       var cs = getComputedStyle(el);
-      var g = { seg: parseFloat(cs.getPropertyValue("--seg")) || 9, segH: parseFloat(cs.getPropertyValue("--seg-h")) || 8,
-                headW: parseFloat(cs.getPropertyValue("--head")) || 13 };
-      g.headH = g.headW * 1.1;
+      var g = { headW: parseFloat(cs.getPropertyValue("--head")) || 14,
+                stroke: parseFloat(getComputedStyle(line).strokeWidth) || 2 };
       g.laneLeft = F.left - R.left;
       if (free - 2 * GAP >= TRACK_MIN) {
         g.mode = "row";
@@ -1092,7 +1085,8 @@
       g.hump = HUMP[g.mode];
       // the body's lengths: fully bunched (0 %), as the band is seated (100 %),
       // and the head's travel from 0 to 150 %; the tail stays at the start
-      g.T = g.x0 + g.seg / 2;
+      // (the line's round end just inside the track's)
+      g.T = g.x0 + g.stroke / 2;
       g.Lmin = Math.max(26, 0.2 * (g.x1 - g.x0));
       g.travel = (g.x1 - g.headW / 2) - (g.T + g.Lmin);
       g.Ln = g.Lmin + g.travel * (100 / 150);
@@ -1106,6 +1100,10 @@
       el.style.width = (G.x1 + G.headW) + "px";
       el.style.height = LANE_H + "px";
       el.setAttribute("data-mode", G.mode);
+      draw.setAttribute("width", String(G.x1 + G.headW));
+      draw.setAttribute("height", String(LANE_H));
+      disc.setAttribute("r", (G.headW / 2).toFixed(2));    // the head: a disc of the thumb's width …
+      ring.setAttribute("r", (G.headW * 0.24).toFixed(2)); // … and the paper ring inside it, half its radius
       track.style.left = G.T + "px";
       track.style.width = (G.x1 - G.T) + "px";
       track.style.top = (LANE_H / 2 - 1) + "px";
@@ -1116,30 +1114,38 @@
     }
 
     // ---- the body in a pose ----
-    // A pose is where the tail (t) and the head (h) stand on the line; the
-    // segments lie evenly between them. Bunched shorter than the band's own
-    // length, the middle arches up (an inchworm's loop, kept low: it never
-    // reaches the staff); stretched longer, the segments part. A turn (th,
-    // 0 … π) is the body seen side-on as it turns round: foreshortened
-    // about its middle (c) and back again, the head now at the other end.
+    // A pose is where the tail (t) and the head (h) stand on the line. At
+    // the band's own length or longer, the body is a straight line on the
+    // track. Bunched shorter, it lifts in the middle into a bell: a normal
+    // curve (SIGMA of its span to a side) rising from flat ends, symmetric
+    // about the middle of its span, the tail and the head on the ground. The
+    // bell rises quickly as the body first draws up and steadies as it closes
+    // (a quarter sine of how bunched it is), to HUMP when fully bunched; it
+    // never reaches the staff, nor the dots on a phone. A turn (th, 0 … π) is
+    // the body seen side-on as it turns round: foreshortened about its middle
+    // (c) and opened again the other way, the bell standing on end halfway.
+    var E0 = Math.exp(-1 / (8 * SIGMA * SIGMA));   // (the curve's height at the ends, taken off so they rest on the line)
+    function bell(u) { var z = (u - 0.5) / SIGMA; return (Math.exp(-0.5 * z * z) - E0) / (1 - E0); }
     function lay(p) {
       var len = p.th != null ? p.len : Math.abs(p.h - p.t);
-      var comp = clamp((G.Ln - len) / Math.max(1, G.Ln - G.Lmin), 0, 1), arch = G.hump * comp;
-      var out = [];
-      for (var k = 0; k <= N; k++) {
-        var u = k / N;
+      var comp = clamp((G.Ln - len) / Math.max(1, G.Ln - G.Lmin), 0, 1);
+      var arch = G.hump * Math.sin(0.5 * Math.PI * comp), out = [];
+      for (var k = 0; k <= PTS; k++) {
+        var u = k / PTS;
         var x = p.th != null ? p.c + (u - 0.5) * p.len * Math.cos(p.th) : p.t + (p.h - p.t) * u;
-        out.push({ x: x, y: -arch * Math.sin(Math.PI * u) });
+        out.push({ x: x, y: -arch * bell(u) });
       }
-      return out;
+      return { q: out, arch: arch };
     }
-    // the tail's end tapers; the head is its own size
-    function taper(k) { var u = k / N; return u >= 0.45 ? 1 : 0.72 + 0.28 * (u / 0.45); }
-    function tf(k, q) {
-      var w = k < N ? G.seg : G.headW, hh = k < N ? G.segH : G.headH, sc = k < N ? taper(k) : 1;
-      return "translate(" + (q.x - w / 2).toFixed(2) + "px," + (LANE_H / 2 - hh / 2 + q.y).toFixed(2) + "px)" + (sc < 1 ? " scale(" + sc.toFixed(3) + ")" : "");
+    // the line through the points (two, lying flat), and the head on its end
+    function xy(q) { return q.x.toFixed(2) + " " + (LANE_H / 2 + q.y).toFixed(2); }
+    function pose(p) {
+      var L = lay(p), q = L.q, d = "M" + xy(q[0]);
+      if (L.arch < 0.01) d += "L" + xy(q[PTS]);
+      else for (var k = 1; k <= PTS; k++) d += "L" + xy(q[k]);
+      line.setAttribute("d", d);
+      head.setAttribute("transform", "translate(" + xy(q[PTS]) + ")");
     }
-    function pose(p) { var q = lay(p); parts.forEach(function (e, k) { e.style.transform = tf(k, q[k]); }); }
     function settled() { return { t: G.T, h: headAt(level) }; }
 
     // ---- the gait ----
@@ -1175,25 +1181,24 @@
         moves.push({ dur: TURN_S * k, turn: true });
         at = { t: from.t + lb, h: from.t };
       }
-      moves.push({ dur: 0.35 * k, t: at.t, h: at.t - G.Ln }); // it reaches away first
+      moves.push({ dur: REACH_S * k, t: at.t, h: at.t - G.Ln }); // it reaches away first
       at = { t: at.t, h: at.t - G.Ln };
-      var dist = Math.max(1, at.t + G.seg);                 // until its tail has passed the edge
+      var dist = Math.max(1, at.t + G.stroke);              // until its tail has passed the edge
       pulses(moves, at, dist, -1, crawlTime(dist) * k);
       return { from: from, moves: moves };
     }
 
-    // ---- a crawl, as keyframes, and played ----
-    // Each move knows where it starts and ends, and is played by the Web
-    // Animations API: transforms only, on the compositor, one keyframe list
-    // per segment. Within a move the tail and the head ease together, so every
-    // segment goes straight from its first place to its last, and the arch
-    // (which rises with how bunched the body is) goes with it: the move is
-    // two keyframes and the easing between them (EASE, the cosine ease as a
-    // curve the compositor draws). A turn, and a letting-go that passes the
-    // band's own length, bend on the way, and are sampled every DT. The crawl
-    // can start part-way (a page that was away is shown where the caterpillar
-    // would be by now) and is held while the meeting is held.
-    var EASE = "cubic-bezier(0.37, 0, 0.63, 1)";
+    // ---- a crawl, on one clock, and drawn ----
+    // Each move knows where it starts and ends, and the tail and the head
+    // ease together through it (the cosine ease). The crawl is played on one
+    // clock: an animation of the drawing with no keyframes of its own, from
+    // the Web Animations API, which keeps the crawl's time on the page's
+    // timeline, holds when the meeting is held, can start part-way (a page
+    // that was away is shown where the caterpillar would be by now), and
+    // says when it is done. At each frame the line is drawn and the head set
+    // on its end at the clock's time, the two together, so the head never
+    // parts from its body. (The staff is painted every frame while the
+    // meeting runs; this is one small path beside it.)
     function ease(x) { return 0.5 - 0.5 * Math.cos(Math.PI * clamp(x, 0, 1)); }
     function steps(r) {
       var list = [], cur = r.from, t0 = 0;
@@ -1213,36 +1218,32 @@
       if (m.turn) return { th: Math.PI * x, c: m.turn.c, len: m.turn.len };
       return { t: m.a.t + (m.b.t - m.a.t) * x, h: m.a.h + (m.b.h - m.a.h) * x };
     }
-    function keys(S) {
-      var out = [], T = S.total;
-      S.list.forEach(function (m) {
-        var la = Math.abs(m.a.h - m.a.t) - G.Ln, lb = Math.abs(m.b.h - m.b.t) - G.Ln;
-        if (!m.turn && la * lb >= 0) out.push({ o: m.t0 / T, q: lay(poseAt(S, m.t0)), e: EASE });
-        else for (var j = 0, n = Math.max(2, Math.ceil(m.dur / DT)); j < n; j++) {
-          var tau = m.t0 + m.dur * j / n;
-          out.push({ o: tau / T, q: lay(poseAt(S, tau)), e: "linear" });
-        }
-      });
-      out.push({ o: 1, q: lay(poseAt(S, T)), e: "linear" });
-      return out;
+    // the clock: an animation with no keyframes, on the element; each frame
+    // the drawing is set from its time (a seek, a pause, a hidden page, all
+    // read straight off it)
+    var raf = 0;
+    function frame() {
+      raf = 0;
+      if (!run || !run.S || !anims.length) return;
+      pose(poseAt(run.S, Math.min(run.S.total, (anims[0].currentTime || 0) / 1000)));
+      raf = requestAnimationFrame(frame);
     }
     function play(r, since, then) {
       cancel();
       var S = steps(r), dur = S.total * 1000, at = Math.max(0, (since || 0) * 1000);
-      run = { S: S, frames: [lay(poseAt(S, S.total))], then: then };
+      run = { S: S, end: poseAt(S, S.total), then: then };
       if (at >= dur || document.hidden) { done(); return; }   // (it would be there by now)
-      var ks = keys(S);
-      anims = parts.map(function (e, k) {
-        return e.animate(ks.map(function (f) { return { offset: f.o, easing: f.e, transform: tf(k, f.q[k]) }; }), { duration: dur, fill: "both" });
-      });
-      anims.forEach(function (a) { a.currentTime = at; if (held) a.pause(); });
-      var a0 = anims[0];
+      var a0 = el.animate([], { duration: dur, fill: "both" });
+      a0.currentTime = at; if (held) a0.pause();
+      anims = [a0];
+      pose(poseAt(S, at / 1000));
+      raf = requestAnimationFrame(frame);
       a0.onfinish = function () { if (anims[0] === a0) done(); };
     }
     // (reduced motion: no crawl; it fades in and out where it lies)
     function fade(a, b, since, then) {
       cancel();
-      run = { S: null, frames: null, then: then };
+      run = { S: null, end: null, then: then };
       var at = Math.max(0, (since || 0) * 1000);
       if (at >= 600 || document.hidden) { done(); return; }
       var an = el.animate([{ opacity: a }, { opacity: b }], { duration: 600, easing: "ease", fill: "both" });
@@ -1254,13 +1255,14 @@
     function done() {
       var r = run;
       if (!r) return;
-      if (r.frames) { var last = r.frames[r.frames.length - 1]; parts.forEach(function (e, k) { e.style.transform = tf(k, last[k]); }); }
+      if (r.end) pose(r.end);
       cancel();
       if (r.then) r.then();
     }
     function cancel() {
       anims.forEach(function (a) { try { a.onfinish = null; a.cancel(); } catch (e) {} });
       anims = []; run = null;
+      if (raf) { cancelAnimationFrame(raf); raf = 0; }
     }
     function hold(on) {
       if (on === held) return;
