@@ -1227,7 +1227,10 @@ window.KolobViz = (function () {
     var g0 = groups.length;
     takeLayer("farward", ns, beat, null, { strict: true, ink: FARWARD_INK, fineBeat: !!h.bs, scale: FARWARD_SCALE,
       qOf: function (n) { return typeof n.deg === "number" ? keyedQ(n.freq, h.keyMonzo, n.deg, null, mode) : null; } });
-    madeSince(g0, 1.5).forEach(function (gr) { gr.yields = true; });
+    // (r3c-engrave2: and on each staff its notes read left to right in the
+    // order they are sung, whichever part sings them — a part's note set
+    // late no longer prints after a later note of the other part: orderAt)
+    madeSince(g0, 1.5, "farward").forEach(function (gr) { gr.yields = true; });
   }
 
   // ---- the handcart company ----------------------------------------------------
@@ -3537,8 +3540,9 @@ window.KolobViz = (function () {
   // -1e9 where nothing asks. Only a guest's one line asks it (madeSince's
   // line): the fiddle's tune (its open string is a voice of its own, held),
   // the organist's figure, the gift's song, the company's unison, the
-  // spoken words, the far tower's peal — not the organ's chords and pedal,
-  // nor the far ward's parts, whose voices cross in time.
+  // spoken words, the far tower's peal, the gulls' cries, and (r3c-engrave2)
+  // the far ward's notes on each staff, whichever part sings them — not the
+  // organ's chords and pedal, whose voices ran away when held to one order.
   function orderAt(gr, g) {
     var sp = g.sp, out = -1e9;
     if (!gr.line) return out;
