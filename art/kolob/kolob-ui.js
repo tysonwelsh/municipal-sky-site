@@ -1281,7 +1281,10 @@
       el.setAttribute("data-state", s);
       el.classList.toggle("is-settled", s === "here");
       var live = s === "here";
-      if (!live && document.activeElement === range) range.blur();
+      if (!live && document.activeElement === range) {       // (hand the keys on to the master slider, the next stop, not to the page)
+        var nextStop = document.getElementById("kolob-master-vol");
+        if (nextStop) nextStop.focus(); else range.blur();
+      }
       el.inert = !live; range.disabled = !live; range.tabIndex = live ? 0 : -1;
     }
     function ariaText() { range.setAttribute("aria-valuetext", level + " percent"); }
