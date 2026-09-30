@@ -92,24 +92,28 @@ include '../../includes/header.php';
         <button type="button" class="kolob-knob pause-btn" id="kolob-pause" aria-label="pause" aria-pressed="false"><svg class="kolob-knob-glyph" viewBox="0 0 16 16" aria-hidden="true"><rect x="3.4" y="2.8" width="3.4" height="10.4" fill="currentColor"/><rect x="9.2" y="2.8" width="3.4" height="10.4" fill="currentColor"/></svg></button>
         <button type="button" class="kolob-knob stop-btn" id="kolob-stop" aria-label="stop"><svg class="kolob-knob-glyph" viewBox="0 0 16 16" aria-hidden="true"><rect x="3.6" y="3.6" width="8.8" height="8.8" fill="currentColor"/></svg></button>
         <div class="kolob-transport-spacer"></div>
-        <!-- The band's caterpillar (2026-09-29): a volume for the Nauvoo band
-             alone, there only while the band is in the street. A row of ink
-             segments with a small beehive hexagon for its head inches in
-             from the paper's left edge, behind the dots, and lies down
-             between STOP and VOL. Its body is the track and its head the
-             thumb, and when the band has gone out of hearing it turns and
-             crawls back off. On a phone, where the master slider takes the
-             row, it walks the console's rule beneath the dots. The segments
-             are laid by kolob-ui.js. The range beneath them is a real
-             slider with an invisible thumb, as the master's is, and it is
-             out of the tab order while the caterpillar is away. -->
+        <!-- The band's caterpillar (2026-09-29; pass 2, 2026-09-30): a volume
+             for the Nauvoo band alone, there only while the band is in the
+             street. It is a slider and nothing more: a dark ink line for
+             its body, the pale track ahead of it, and a round head, a green
+             ink disc with a paper ring inside. It inches in from the
+             paper's left edge, behind the dots, the line arching up like a
+             bell as it bunches, and lies down between STOP and VOL. When
+             the band has gone out of hearing it turns and crawls back off.
+             On a phone, where the master slider takes the row, it walks the
+             console's rule beneath the dots. kolob-ui.js draws the line and
+             places the head. The range beneath them is a real slider with an
+             invisible thumb, as the master's is, and it is out of the tab
+             order while the caterpillar is away. -->
         <div class="kolob-cat" id="kolob-cat" hidden inert>
           <input type="range" min="0" max="150" step="1" value="100" class="kolob-cat-range" id="kolob-band-vol" aria-label="band volume" tabindex="-1" disabled />
           <span class="kolob-cat-track" aria-hidden="true"></span>
-          <span class="kolob-cat-body" aria-hidden="true"></span>
-          <svg class="kolob-cat-head" viewBox="0 0 20 22" aria-hidden="true">
-            <polygon points="10,0.8 18.9,5.9 18.9,16.1 10,21.2 1.1,16.1 1.1,5.9" fill="currentColor" stroke="currentColor" stroke-width="1"/>
-            <polygon points="10,5.2 15.1,8.1 15.1,13.9 10,16.8 4.9,13.9 4.9,8.1" fill="none" stroke="#f5f0e4" stroke-opacity="0.5" stroke-width="1"/>
+          <svg class="kolob-cat-draw" aria-hidden="true" focusable="false">
+            <path class="kolob-cat-line" d="M0 0"/>
+            <g class="kolob-cat-head">
+              <circle class="kolob-cat-disc" r="7"/>
+              <circle class="kolob-cat-ring" r="3.4"/>
+            </g>
           </svg>
         </div>
         <span class="kolob-ctl-label">𐐚𐐉𐐢</span>
