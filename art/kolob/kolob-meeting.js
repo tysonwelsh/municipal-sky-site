@@ -524,7 +524,7 @@ window.KOLOB = window.KOLOB || {};
       for (var cvi = C.visitations.length - 1; cvi >= 0; cvi--) {
         var bV = C.visitations[cvi];
         if (bV.type !== "bands" || bV.section !== "doxology") continue;
-        var to = null, tries = haveSec.hymn ? ["hymn", "postlude"] : ["postlude"];
+        var to = null, tries = ["prelude", "postlude"];   // (never a hymn: the owner, v0.36.1)
         for (var tj = 0; tj < tries.length && !to; tj++) if (forcedType === "bands" || !budgetRefuses("bands", tries[tj], null, bV)) to = tries[tj];
         if (to) bV.section = to;
         else { C.visitations.splice(cvi, 1); C.budget.refused.push({ guest: "bands", section: "doxology", why: "left the doxology, and no seat was free" }); }
