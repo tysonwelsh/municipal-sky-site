@@ -40,3 +40,34 @@ with the site's `margin: 0 0 var(--s-2)`), then `<div class="section-divider"></
 header for this, and don't invent per-page spacing for titles, rules and the
 first paragraph: use the `--s-*` scale and the shared classes, so pages stay
 consistent and the owner doesn't have to fix one-off spacing page by page.
+
+## Worktrees — where parallel work lives (owner rule, 2026-09-30)
+
+`~/Sites/municipal-sky-site` (this checkout, branch `main`) is for **merging and
+publishing only**. Any session or crew that will edit files for more than a
+quick fix works in a git worktree, never in this checkout, because
+`scripts/publish.sh` runs `git add -A` and auto-deploys whatever is here.
+
+- **One home:** every worktree lives under `~/Sites/municipal-sky-site-worktrees/<branch>`
+  and the folder is named exactly after its branch. Never create a sibling folder
+  in `~/Sites` (the old `municipal-sky-site-<name>` pattern is retired; it left
+  44 stray checkouts and 18 GB behind).
+- **Use the helper:** `scripts/worktree.sh new <branch> [base]` creates one (and
+  copies the gitignored `_harness.js` files); `scripts/worktree.sh done <branch>`
+  removes it once the branch is merged, and `scripts/worktree.sh list` shows what
+  exists. Plain `git worktree add ../municipal-sky-site-<x>` is not allowed.
+- **Retire on merge.** The session that merges a branch into `main` removes its
+  worktree in the same step and deletes the branch. A worktree is disposable; the
+  history is in `.git`.
+- **Back up by pushing.** Push long-running branches to `origin` (`git push -u
+  origin <branch>`) — only pushes to `main` deploy, so branch pushes are free
+  backups. Pushing `main` is a publish decision for the owner.
+- **Gitignored work is not in the worktree's branch.** `local-dev/`, `_harness.js`
+  and `*/tools/out/` vanish with the folder. Keep durable lab material in
+  `~/Sites/municipal-sky-site/local-dev/<project>-lab/` (skeeball-lab, reels5 and
+  pachinko-lab live there or will), and raw media in `~/Media/`.
+- **Memories and agent files name worktrees by branch**, e.g. "worktree
+  `municipal-sky-site-worktrees/pachinko-1`", so the path is derivable.
+- In this checkout: stage specific paths, never `git add -A` outside
+  `publish.sh`; never `--amend`, rebase or reset without `git log -3` first
+  (another session may have committed in between).
