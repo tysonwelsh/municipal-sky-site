@@ -421,8 +421,8 @@
    Web Animations API. The lane clips at the paper's edge, lies behind the
    dots, and takes no pointer; only its slider does, once it has lain down. */
 .kolob-cat {
-  --seg: 9px;                       /* a segment: wide … */
-  --seg-h: 8px;                     /* … and tall */
+  --seg: 11px;                      /* a segment: wide … */
+  --seg-h: 9px;                     /* … and tall (at the band's own level they overlap a little) */
   --head: 13px;                     /* the head's hexagon, and the invisible thumb under it */
   position: absolute;
   left: 0; top: 0; width: 0; height: 48px;

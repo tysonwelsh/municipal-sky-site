@@ -1337,8 +1337,13 @@
       if (state === "here" && !anims.length) pose(settled());
     });
     // a new width: a crawl under way is finished where it was going, and
-    // one lying down is measured and laid again
+    // one lying down is measured and laid again. (Only the width: a phone's
+    // address bar coming and going resizes the height alone, and must not
+    // cut a crawl short.)
+    var lastW = window.innerWidth;
     window.addEventListener("resize", function () {
+      if (window.innerWidth === lastW) return;
+      lastW = window.innerWidth;
       if (anims.length) done();
       if (state === "here") { layout(); pose(settled()); }
     });
