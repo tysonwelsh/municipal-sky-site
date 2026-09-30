@@ -1040,7 +1040,7 @@
     var HUMP = { row: 7, rule: 5 };  // how high the body arches when fully bunched (px)
     var TRACK_MAX = 170, TRACK_MIN = 96, GAP = 22;   // the slider's length, and its room each side (row)
     var LANE_H = 48;                 // the lane's height; its line runs through the middle
-    var DT = 0.02;                   // the crawl is sampled every 20 ms into keyframes
+    var DT = 0.02;                   // a move that bends on the way (the turn) is sampled every 20 ms
     var FEET = /[?&]catfeet=1/.test(location.search || "");
     var level = 100;                 // the listener's setting (0 … 150 %), kept for the visit
     var spans = [];                  // the bands heard: { t0, until } on the audio clock
@@ -1124,7 +1124,7 @@
     // about its middle (c) and back again, the head now at the other end.
     function lay(p) {
       var len = p.th != null ? p.len : Math.abs(p.h - p.t);
-      var comp = clamp((G.Ln - len) / Math.max(1, G.Ln - G.Lmin), 0, 1), arch = G.hump * Math.pow(comp, 0.8);
+      var comp = clamp((G.Ln - len) / Math.max(1, G.Ln - G.Lmin), 0, 1), arch = G.hump * comp;
       var out = [];
       for (var k = 0; k <= N; k++) {
         var u = k / N;
@@ -1182,12 +1182,18 @@
       return { from: from, moves: moves };
     }
 
-    // ---- a crawl, sampled and played ----
-    // Each move knows where it starts and ends; the crawl is sampled every
-    // DT into one keyframe list per segment and played by the Web Animations
-    // API (transforms only, off the main thread). It can start part-way (a
-    // page that was away is shown where the caterpillar would be by now) and
-    // is held while the meeting is held.
+    // ---- a crawl, as keyframes, and played ----
+    // Each move knows where it starts and ends, and is played by the Web
+    // Animations API: transforms only, on the compositor, one keyframe list
+    // per segment. Within a move the tail and the head ease together, so every
+    // segment goes straight from its first place to its last, and the arch
+    // (which rises with how bunched the body is) goes with it: the move is
+    // two keyframes and the easing between them (EASE, the cosine ease as a
+    // curve the compositor draws). A turn, and a letting-go that passes the
+    // band's own length, bend on the way, and are sampled every DT. The crawl
+    // can start part-way (a page that was away is shown where the caterpillar
+    // would be by now) and is held while the meeting is held.
+    var EASE = "cubic-bezier(0.37, 0, 0.63, 1)";
     function ease(x) { return 0.5 - 0.5 * Math.cos(Math.PI * clamp(x, 0, 1)); }
     function steps(r) {
       var list = [], cur = r.from, t0 = 0;
@@ -1207,15 +1213,27 @@
       if (m.turn) return { th: Math.PI * x, c: m.turn.c, len: m.turn.len };
       return { t: m.a.t + (m.b.t - m.a.t) * x, h: m.a.h + (m.b.h - m.a.h) * x };
     }
+    function keys(S) {
+      var out = [], T = S.total;
+      S.list.forEach(function (m) {
+        var la = Math.abs(m.a.h - m.a.t) - G.Ln, lb = Math.abs(m.b.h - m.b.t) - G.Ln;
+        if (!m.turn && la * lb >= 0) out.push({ o: m.t0 / T, q: lay(poseAt(S, m.t0)), e: EASE });
+        else for (var j = 0, n = Math.max(2, Math.ceil(m.dur / DT)); j < n; j++) {
+          var tau = m.t0 + m.dur * j / n;
+          out.push({ o: tau / T, q: lay(poseAt(S, tau)), e: "linear" });
+        }
+      });
+      out.push({ o: 1, q: lay(poseAt(S, T)), e: "linear" });
+      return out;
+    }
     function play(r, since, then) {
       cancel();
-      var S = steps(r), n = Math.max(2, Math.ceil(S.total / DT) + 1), frames = [];
-      for (var j = 0; j < n; j++) frames.push(lay(poseAt(S, Math.min(S.total, j * DT))));
-      var dur = (n - 1) * DT * 1000, at = Math.max(0, (since || 0) * 1000);
-      run = { S: S, frames: frames, then: then };
+      var S = steps(r), dur = S.total * 1000, at = Math.max(0, (since || 0) * 1000);
+      run = { S: S, frames: [lay(poseAt(S, S.total))], then: then };
       if (at >= dur || document.hidden) { done(); return; }   // (it would be there by now)
+      var ks = keys(S);
       anims = parts.map(function (e, k) {
-        return e.animate(frames.map(function (q) { return { transform: tf(k, q[k]) }; }), { duration: dur, easing: "linear", fill: "both" });
+        return e.animate(ks.map(function (f) { return { offset: f.o, easing: f.e, transform: tf(k, f.q[k]) }; }), { duration: dur, fill: "both" });
       });
       anims.forEach(function (a) { a.currentTime = at; if (held) a.pause(); });
       var a0 = anims[0];
