@@ -1366,6 +1366,17 @@ window.KolobAudio = (function () {
     isPaused: function () { return playing && paused; },
     sample: sample,
     setMasterVolume: function (v) { masterVolume = v; if (masterGain && ctx && playing) masterGain.gain.setTargetAtTime(v, ctx.currentTime, 0.1); },
+    // THE BAND'S OWN VOLUME (the caterpillar on the console): the listener's
+    // hand on the Nauvoo band alone, both bands and their drums, 0 … 1.5
+    // (linear; 1 is the band as the meeting seats it), gliding over 50 ms.
+    // It multiplies whatever the band is given (the instruments drawer has
+    // no band stop) and changes nothing of the meeting but loudness: the
+    // band keeps its time, its notes still print, the minutes still name it.
+    // getBandHeardUntil() is when the last note or drum of the band now in
+    // the street stops sounding, on the audio clock (0 if none).
+    setBandVolume: function (v) { var VB = KOLOB.VoicesBand; return VB && VB.setHand ? VB.setHand(v) : 1; },
+    getBandVolume: function () { var VB = KOLOB.VoicesBand; return VB && VB.hand ? VB.hand() : 1; },
+    getBandHeardUntil: function () { var VB = KOLOB.VoicesBand; return ctx && VB && VB.heardUntil ? VB.heardUntil(ctx) : 0; },
     setLayerVolume: function (layer, v) { layerVolumes[layer] = v; if (ctx) applyLayerGain(layer); },
     toggleLayer: function (layer) { layerMuted[layer] = !layerMuted[layer]; if (ctx) applyLayerGain(layer); return !layerMuted[layer]; },
     // the rate slider is the layer's lane rate: the cues already waiting bend with it

@@ -414,6 +414,7 @@ window.KOLOB.VoicesBand = (function () {
     var nodes = [];
     function mk(n) { nodes.push(n); return n; }
     var input = mk(ctx.createGain());
+    if (ROADS) ROADS.add(input);                   // (a band played into a road is a band that marches: see THE LISTENER'S HAND)
     var veil = mk(ctx.createBiquadFilter()); veil.type = "lowpass"; veil.Q.value = 0.5; veil.frequency.value = veilAt(1);
     var shelf = mk(ctx.createBiquadFilter()); shelf.type = "highshelf"; shelf.frequency.value = 2500; shelf.gain.value = shelfDbAt(1);
     var direct = mk(ctx.createGain()); direct.gain.value = 0;
@@ -495,11 +496,59 @@ window.KOLOB.VoicesBand = (function () {
     });
   }
 
+  // ---- THE LISTENER'S HAND (the band's caterpillar, 2026-09-29) -----------------
+  // While the Nauvoo band is in the street the page lends the listener a
+  // volume for the band alone: a small slider that crawls onto the console
+  // with it and crawls off when it has gone (kolob-ui.js). Its gain stage is
+  // here. Every band that MARCHES (a band made into a road: road() marks its
+  // input; the dawn trombones stand in a distance of their own, and the
+  // choir's partner cornet sits in the house, so neither is one) sends its
+  // out through a hand of its own, ahead of the road, so the street, the
+  // town's air and the echo off the houses all follow it, and both bands
+  // and their drums with them. The conductor's dynamics stay on the band's
+  // out, and this multiplies them. setHand(v) moves every hand in the street
+  // to v (0 … 1.5, linear) with a short glide, so a drag never clicks or
+  // zippers, and a band made later starts at the hand's last word.
+  // heardUntil(ctx) is when the last note or stroke of any marching band yet
+  // laid out stops sounding. The page reads it to know when the band has gone
+  // out of hearing, which the drums decide, 16 to 21 s past the stinger.
+  var ROADS = typeof WeakSet !== "undefined" ? new WeakSet() : null;
+  var HAND = { v: 1, live: [] }, HAND_GLIDE_S = 0.05;
+  function handFor(ctx) {
+    var g = ctx.createGain(); g.gain.value = HAND.v;
+    var h = { ctx: ctx, gain: g, until: 0 };
+    HAND.live.push(h);
+    return h;
+  }
+  function letGo(h) {
+    var i = HAND.live.indexOf(h);
+    if (i >= 0) HAND.live.splice(i, 1);
+    try { h.gain.disconnect(); } catch (e) {}
+  }
+  function setHand(v, glideS) {
+    v = Math.max(0, Math.min(1.5, isFinite(+v) ? +v : 1));
+    HAND.v = v;
+    // (a glide that settles about 95 % of the way in glideS: three time constants)
+    var tau = Math.max(0.002, (glideS != null ? glideS : HAND_GLIDE_S) / 3);
+    HAND.live.forEach(function (h) {
+      var p = h.gain.gain, t = h.ctx.currentTime;
+      try { p.cancelScheduledValues(t); p.setTargetAtTime(v, t, tau); } catch (e) { p.value = v; }
+    });
+    return v;
+  }
+  function heardUntil(ctx) {
+    var u = 0;
+    HAND.live.forEach(function (h) { if ((!ctx || h.ctx === ctx) && h.until > u) u = h.until; });
+    return u;
+  }
+
   function create(ctx, destination, opts) {
     opts = opts || {};
     var R = streamOf(opts);
     var created = 0, spans = [];
-    function count(n, t0, t1) { created += n; spans.push([t0, t1, n]); }
+    // (a marching band's hand: see THE LISTENER'S HAND)
+    var hand = opts.distance == null && ROADS && destination && ROADS.has(destination) ? handFor(ctx) : null;
+    function count(n, t0, t1) { created += n; spans.push([t0, t1, n]); if (hand && t1 > hand.until) hand.until = t1; }
 
     var side = Math.max(-1, Math.min(1, +opts.side || 0));
     var spread = opts.spread != null ? Math.max(0, +opts.spread) : 1;
@@ -508,7 +557,8 @@ window.KOLOB.VoicesBand = (function () {
     if (opts.distance != null) {
       stage = distanceStage(ctx, destination, Math.max(0, Math.min(1, +opts.distance)), opts.room || null, side, R);
       out.connect(stage.input);
-    } else out.connect(destination);
+    } else if (hand) { out.connect(hand.gain); hand.gain.connect(destination); }
+    else out.connect(destination);
     function panner(p) {
       var sp = ctx.createStereoPanner ? ctx.createStereoPanner() : ctx.createGain();
       if (sp.pan) sp.pan.value = Math.max(-1, Math.min(1, side + p * spread));
@@ -531,6 +581,7 @@ window.KOLOB.VoicesBand = (function () {
     var drums = panner(0.08); standing += 1;
     var drumLP = ctx.createBiquadFilter(); drumLP.type = "lowpass"; drumLP.frequency.value = 7500; drumLP.connect(drums); standing += 1;
     if (stage) standing += stage.nodes;
+    if (hand) standing += 1;
     // a trombone section's seat is built on its first note (a saxhorn band
     // that never plays a chorale pays nothing for it)
     function tbnBus(k) {
@@ -792,6 +843,7 @@ window.KOLOB.VoicesBand = (function () {
       Object.keys(buses).forEach(function (k) { try { buses[k].disconnect(); } catch (e) {} });
       try { drumLP.disconnect(); drums.disconnect(); } catch (e) {}
       if (stage) stage.dispose();
+      if (hand) letGo(hand);
     }
 
     return { out: out, play: play, drum: drum, stats: report, dispose: dispose };
@@ -801,6 +853,8 @@ window.KOLOB.VoicesBand = (function () {
     create: create, townRoom: townRoom, road: road,
     warm: warmAll,
     lendTown: lendTown,
+    // the listener's hand on the marching band (the page's caterpillar)
+    setHand: setHand, hand: function () { return HAND.v; }, heardUntil: heardUntil,
     // pure level curves, for a performer placing bands against each other
     distanceDb: distanceDb, dynamicDb: function (dyn) { return 20 * Math.log10(tbnAmp(dynOf(dyn))); },
     INSTRUMENTS: Object.keys(INSTR), TROMBONES: Object.keys(TBN),
