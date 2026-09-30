@@ -252,6 +252,7 @@
   border-bottom: 1px solid var(--rule);
 }
 .kolob-transport {
+  position: relative;               /* the band's caterpillar is laid out from here (kolob-ui.js) */
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -273,6 +274,8 @@
   background: var(--paper);
   cursor: pointer;
   transition: background 250ms, color 250ms, border-color 250ms, transform 120ms;
+  position: relative;               /* the dots stand in front: the band's caterpillar crawls behind them */
+  z-index: 1;
 }
 .kolob-knob.play-btn { background: var(--ink); color: var(--paper); }
 .kolob-knob:hover { transform: translateY(-1px); }
@@ -406,6 +409,103 @@
 }
 .kolob-lever:focus-visible + .kolob-lever-thumb { filter: drop-shadow(0 0 2px var(--gilt)); }
 
+/* the band's caterpillar (2026-09-29): a volume for the Nauvoo band alone,
+   on the console only while the band is in the street. It is drawn in the
+   page's own ink: a row of small ringed segments on the paper (the dots'
+   ring, small) and, for its head, a little ink beehive, the master's
+   hexagon in miniature. There is no face, no legs and no shadow: what makes
+   it a caterpillar is its segments and the way it moves. kolob-ui.js places
+   the lane (its left edge at the paper's edge, so the caterpillar comes
+   from beyond it; its line mid-row, or on the console's rule on a phone),
+   lays each segment and the head by transform, and crawls them with the
+   Web Animations API. The lane clips at the paper's edge, lies behind the
+   dots, and takes no pointer; only its slider does, once it has lain down. */
+.kolob-cat {
+  --seg: 9px;                       /* a segment: wide … */
+  --seg-h: 8px;                     /* … and tall */
+  --head: 13px;                     /* the head's hexagon, and the invisible thumb under it */
+  position: absolute;
+  left: 0; top: 0; width: 0; height: 48px;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+  color: var(--ink);
+}
+.kolob-cat[hidden] { display: none; }
+.kolob-cat-body { position: absolute; left: 0; top: 0; }
+.kolob-cat-seg,
+.kolob-cat-head { position: absolute; left: 0; top: 0; will-change: transform; }
+.kolob-cat-seg {
+  box-sizing: border-box;
+  width: var(--seg);
+  height: var(--seg-h);
+  border: 1.2px solid var(--ink);
+  border-radius: 50%;
+  background: var(--paper);
+}
+.kolob-cat-head { width: var(--head); height: calc(var(--head) * 1.1); overflow: visible; }
+/* feet (a knob, off by default: ?catfeet=1): a pair of ink points under
+   every other segment, read as the prolegs' marks, not drawn legs */
+.kolob-cat.is-footed .kolob-cat-seg.has-feet::before,
+.kolob-cat.is-footed .kolob-cat-seg.has-feet::after {
+  content: "";
+  position: absolute;
+  bottom: -3px;
+  width: 1.6px; height: 1.6px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+.kolob-cat.is-footed .kolob-cat-seg.has-feet::before { left: 18%; }
+.kolob-cat.is-footed .kolob-cat-seg.has-feet::after { right: 18%; }
+/* the reach left to it: a faint line to the end of its travel (150 %), as
+   the master's line runs faint beyond its thumb; shown once it has lain down */
+.kolob-cat-track {
+  position: absolute;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ink-faint);
+  opacity: 0;
+  transition: opacity 450ms ease;
+}
+.kolob-cat.is-settled .kolob-cat-track { opacity: 1; }
+/* the slider itself: a real range laid over the body, its native thumb
+   invisible under the head (the master lever's way), taking the pointer
+   only once the caterpillar has lain down */
+.kolob-cat-range {
+  -webkit-appearance: none;
+  appearance: none;
+  position: absolute;
+  z-index: 2;
+  margin: 0;
+  padding: 0;
+  height: 32px;
+  background: transparent;
+  cursor: pointer;
+  touch-action: pan-y;
+  pointer-events: none;
+}
+.kolob-cat.is-settled .kolob-cat-range { pointer-events: auto; }
+.kolob-cat-range:focus { outline: none; }
+.kolob-cat-range::-webkit-slider-runnable-track { height: 2px; background: transparent; }
+.kolob-cat-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: var(--head); height: 22px;
+  margin-top: -10px;
+  border: 0; border-radius: 0;
+  background: transparent;
+  opacity: 0;
+}
+.kolob-cat-range::-moz-range-track { height: 2px; background: transparent; }
+.kolob-cat-range::-moz-range-thumb {
+  width: var(--head); height: 22px;
+  border: 0; border-radius: 0;
+  background: transparent;
+  opacity: 0;
+}
+/* focus: the head turns gilt, the page's colour for what moves */
+.kolob-cat-range:focus-visible ~ .kolob-cat-head { color: var(--gilt); }
+
 /* On touch (coarse pointers) the hairline-and-bead is too small to hit: the
    thumb is 11px and the input only 18px tall, so a fingertip lands beside it.
    Keep the desktop look, but give touch a full-height target and a bigger bead.
@@ -420,6 +520,11 @@
   .kolob-lever::-webkit-slider-thumb { height: 26px; margin-top: -12px; }
   .kolob-lever::-moz-range-thumb { height: 26px; }
   .kolob-lever-thumb { height: 26px; margin-top: -13px; }
+  /* (the band's caterpillar: a bigger head, and a fingertip's height of slider) */
+  .kolob-cat { --head: 15px; }
+  .kolob-cat-range { height: 44px; }
+  .kolob-cat-range::-webkit-slider-thumb { height: 30px; margin-top: -14px; }
+  .kolob-cat-range::-moz-range-thumb { height: 30px; }
 }
 
 /* ============================== the wheel ================================ */
