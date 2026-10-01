@@ -29,7 +29,7 @@ plays the same meeting every time, in the browser and in the headless harness.
 | the labs | `*-lab.php` + `*-lab.js` — unlinked dev benches, one per subsystem (`hymn-lab` is the owner's listening checkpoint for the composer; `room-lab` the impulse responses; `voices-lab` v0.30's four voices, its own copy, against the ward) |
 | shelved | `shelved/` — the Question (`kolob-question.js`, `kolob-question-setpiece.js`, its lab), the bagpipe (`kolob-voices-bagpipe.js`, its lab) and the tune lab (v0.30's old-tune incipits): the owner's rulings of 2026-09-27 and 2026-09-13; code kept, not loaded |
 | the harness | `_harness.js` — plays a meeting headless in Node (mock Web Audio, a virtual clock) and writes the dump the tools read; tracked since 2026-10-01 |
-| the tools | `tools/` — `loadcheck.js` (the engine loads), `lends.js` (the shared bag), `samecode.js` (an edit touched only comments), `selftest.js`, `distinctness.js`, `repetition.js`, `tally.js` (A/B: did the music move), `screens.js`, `capture.js`; `tools/README.md` explains each |
+| the tools | `tools/` — `loadcheck.js` (the engine loads), `lends.js` (the shared bag), `samecode.js` (an edit touched only comments), `golden.js` (the pure core composes what it composed, against `tools/golden/`), `selftest.js`, `distinctness.js`, `repetition.js`, `tally.js` (A/B: did the music move), `screens.js`, `capture.js`; `tools/README.md` explains each |
 | the contract | `SCORE.md` — the interface every module codes against, one layer, one section a topic (modules, pitch, streams, time, the Score, events, performance, guests, versions); **the code each section names is the authority**. The layered original it was consolidated from is `archive/SCORE-layered.md` |
 | the owner's rulings | `OWNER-RULINGS.md` — every level, seat, look and shelved idea the owner has decided on, dated, each naming the code that implements it. Do not reverse one without asking |
 | open work | `OPEN-WORK.md` — ideas approved and not built, the crews' requests not done, known issues, the decisions waiting on the owner's ear, cost |
@@ -83,16 +83,20 @@ npm run lint                             # no undefined names, no unused variabl
 node art/kolob/tools/loadcheck.js        # the engine loads headless; the roll call and the page's guard; the desk's files; one hymn proofread
 node art/kolob/tools/lends.js            # every S.x read has a lend
 node art/kolob/tools/samecode.js         # a comment pass changed no code token (against HEAD; --ref <ref>)
+node art/kolob/tools/golden.js           # the pure core (plan, hymns, guests, organist, ward) on seeds 1–40, in seconds
 node art/kolob/_harness.js 300 7         # a meeting plays headless, no errors, no late cue
 node art/kolob/tools/selftest.js         # the measurement tools read true
 node art/kolob/tools/tally.js --a git:main --b worktree --seeds 1-20   # did my change move the music?
 node art/kolob/tools/screens.js --seed 22                               # the staff at 860 and 390 px, muted
 ```
 
-CI (`.github/workflows/kolob-check.yml`) runs the first six on every push that
-touches the engine. `tally.js --a git:<ref> --b worktree` is the honest answer to
-"did I change the music": a housekeeping change must leave every seed byte for
-byte the same; a musical change should move only what it meant to.
+CI (`.github/workflows/kolob-check.yml`) runs lint, loadcheck, lends, golden,
+the harness and selftest on every push that touches the engine. `tally.js --a
+git:<ref> --b worktree` is the honest answer to "did I change the music": a
+housekeeping change must leave every seed byte for byte the same; a musical
+change should move only what it meant to. `golden.js` is the same answer for
+the pure core alone, in seconds; a change that moves it on purpose writes the
+baseline again (`--write`) in the same commit.
 
 ## Dev switches on the page
 

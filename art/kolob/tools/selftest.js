@@ -77,6 +77,15 @@
 //    composer's rooms swapped on the list, the worker follows the list; and
 //    a hymnal that names a room the list does not have is found unable to
 //    start its worker.
+// 14. The pure core composes what it composed (PLAN-REFACTOR §3.6):
+//    tools/golden.js on seeds 3, 7 and 22 against tools/golden/ — every kind
+//    matches and the trap (Math.random, Date.now) is never sprung; the
+//    meeting it plans headless, with the pipes on, emits the harness's own
+//    events at the downbeat, in order (seed 3's morning is the organist's
+//    chorale prelude, which the planner draws only with the pipes on); a
+//    scratch copy with the Sacred Harp's tempo moved is found in the hymns
+//    of seed 3, the one of the three that sings it, and nowhere else; and a
+//    copy with a comment added is found unmoved, under another fingerprint.
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -464,6 +473,70 @@ function check(name, ok, detail) {
     check("a hymnal that names a room the list does not have: its worker is found unable to start",
       misnamed.code === 1 && line(misnamed, "desk") === "the worker would not start" && failed(misnamed).some((f) => /^the composer's desk: the hymnal's worker would not start/.test(f)),
       failed(misnamed).join("; "));
+  }
+
+  console.log("14. the pure core composes what it composed (PLAN-REFACTOR §3.6)");
+  {
+    const { spawn } = require("child_process");
+    // (seed 3 sings the Sacred Harp and its morning is the organist's chorale
+    // prelude, which the planner draws only with the pipes on; 7 and 22 neither)
+    const GOLDEN = path.join(__dirname, "golden.js"), SEEDS = [3, 7, 22];
+    const golden = (args) => new Promise((resolve) => {
+      const p = spawn(process.execPath, [GOLDEN].concat(args), { stdio: ["ignore", "pipe", "pipe"] });
+      let out = "", err = "";
+      p.stdout.on("data", (d) => (out += d)); p.stderr.on("data", (d) => (err += d));
+      p.on("close", (code) => resolve({ code, out, err }));
+    });
+    // a scratch copy of this build — the list's files, _engine.php and the
+    // substrate beside it — with one edit to kolob-dialects.js
+    const copy = (name, from, to) => {
+      const dir = path.join(tmp, "golden-" + name, "art", "kolob");
+      engine.list.files.concat([path.join(engine.dir, "_engine.php")]).forEach((f) => {
+        const at = path.join(dir, path.relative(engine.dir, f));
+        fs.mkdirSync(path.dirname(at), { recursive: true });
+        fs.copyFileSync(f, at);
+      });
+      const p = path.join(dir, "kolob-dialects.js"), t = fs.readFileSync(p, "utf8");
+      if (t.indexOf(from) < 0) throw new Error("kolob-dialects.js has no " + from);
+      fs.writeFileSync(p, t.replace(from, to));
+      return dir;
+    };
+    const SH = "    tempo: 0.86, fermata: 0.1, amen: false,";                 // (the Sacred Harp's profile)
+    const line = (r, k) => { const m = new RegExp("^ {2}" + k + " +(.*)$", "m").exec(r.out); return m ? m[1] : "no " + k + " line"; };
+    const KINDS = ["meeting", "hymns", "guests", "organist", "ward"];
+    const [base, planted, comment, renders] = await Promise.all([
+      golden(["--seeds", SEEDS.join(",")]),
+      golden(["--seeds", SEEDS.join(","), "--engine", copy("planted", SH, SH.replace("0.86", "0.87"))]),
+      golden(["--seeds", SEEDS.join(","), "--engine", copy("comment", SH, "    // (a scratch comment: nothing else changes)\n" + SH)]),
+      R.renderSet({ engine, seeds: SEEDS, secs: 1, dir: path.join(tmp, "golden-harness"), quiet: true }),
+    ]);
+    check("seeds " + SEEDS.join(", ") + " against the baseline (tools/golden/): every kind matches, and the trap is never sprung",
+      base.code === 0 && KINDS.every((k) => line(base, k) === "3 of 3 seeds match") && /^ {2}ALL MATCH$/m.test(base.out) && /^ {2}the trap: Math\.random and Date\.now never called; every pure planner the meeting called gave the same on a fresh stream$/m.test(base.out),
+      KINDS.map((k) => k + " " + line(base, k).replace(" seeds match", "")).join(" · "));
+    // the meeting planned headless is the meeting the harness plays: the
+    // events planMeeting emits, as the golden hashes them, are the harness's
+    // at the downbeat, in order
+    const keysSorted = (x) => (Array.isArray(x) ? x.map(keysSorted) : x && typeof x === "object" ? Object.keys(x).sort().reduce((a, k) => { a[k] = keysSorted(x[k]); return a; }, {}) : x);
+    const said = [];
+    for (const s of SEEDS) {
+      const show = await golden(["--show", "meeting", String(s)]);
+      let ev = null;
+      try { ev = JSON.parse(show.out).events; } catch (e) { ev = null; }
+      const recs = fs.readFileSync(renders.results.find((r) => r.seed === s).dump, "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l));
+      const ms = recs.find((x) => x[0] === "E" && x[2].type === "meeting-start");
+      const theirs = recs.filter((x) => ms && x[0] === "E" && x[1] === ms[1] && x[2].type !== "transport").map((x) => { const o = Object.assign({}, x[2]); delete o.t; return JSON.stringify(keysSorted(o)); });
+      const mine = (ev || []).map((o) => JSON.stringify(keysSorted(o)));
+      said.push({ s, same: mine.length > 0 && mine.join("\n") === theirs.join("\n"), n: mine.length, types: (ev || []).map((o) => o.type) });
+    }
+    check("the meeting the golden plans headless (the pipes on, as the page has them: seed 3's chorale prelude) emits the harness's events at the downbeat, in order",
+      said.every((x) => x.same), said.map((x) => "seed " + x.s + ": " + (x.same ? x.n + " events the same" : "NOT the same")).join(" · ") + " (" + said[0].types.join(", ") + ")");
+    check("a copy with the Sacred Harp's tempo moved (0.86 → 0.87, kolob-dialects.js): the hymns differ on seed 3 alone, the one of the three with a Sacred Harp hymn, and nothing else moves",
+      planted.code === 1 && line(planted, "hymns") === "2 of 3 seeds match — differ: 3 (node art/kolob/tools/golden.js --show hymns 3)" && KINDS.filter((k) => k !== "hymns").every((k) => line(planted, k) === "3 of 3 seeds match"),
+      KINDS.map((k) => k + " " + line(planted, k).replace(/ \(node .*\)$/, "")).join(" · "));
+    const fp = (r) => { const m = /· modules (\w+) \(the baseline's (\w+),/.exec(r.out); return m ? { now: m[1], was: m[2] } : null; };
+    check("a copy with a comment added to kolob-dialects.js: every kind matches, under a fingerprint that is not the baseline's",
+      comment.code === 0 && KINDS.every((k) => line(comment, k) === "3 of 3 seeds match") && !!fp(comment) && fp(comment).now !== fp(comment).was,
+      fp(comment) ? "modules " + fp(comment).now + " (the baseline's " + fp(comment).was + ")" : "no modules line");
   }
 
   fs.rmSync(tmp, { recursive: true, force: true });

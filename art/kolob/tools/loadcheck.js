@@ -28,49 +28,15 @@
 const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
+const E = require("./lib/engine.js");     // the list, the page's mock, the rooms evaluated (shared with tools/golden.js)
 
 const DIR = path.resolve(process.env.KOLOB_DIR || process.env.KOLOB_BASE || path.join(__dirname, ".."));
 
-function engineList(dir) {
-  const src = fs.readFileSync(path.join(dir, "_engine.php"), "utf8");
-  const body = src.slice(src.indexOf("return [")).replace(/\/\/[^\n]*/g, "");
-  const out = []; const re = /'([^']+\.js)'/g; let m;
-  while ((m = re.exec(body))) out.push(m[1]);
-  return out;
-}
-
-// the page, as little of it as the rooms touch at load
-global.window = global;
-global.document = {
-  hidden: false, visibilityState: "visible", readyState: "complete",
-  addEventListener() {}, removeEventListener() {},
-  getElementById() { return null; }, querySelector() { return null; }, querySelectorAll() { return []; },
-  createElement() { return { style: {}, setAttribute() {}, appendChild() {}, addEventListener() {} }; },
-  body: { appendChild() {}, classList: { add() {}, remove() {}, toggle() {} } },
-  documentElement: { classList: { add() {}, remove() {}, toggle() {} } },
-};
-global.location = { search: "", href: "http://localhost/art/kolob/", hash: "", pathname: "/art/kolob/" };
-global.localStorage = (function () { const m = {}; return { getItem: (k) => (k in m ? m[k] : null), setItem: (k, v) => { m[k] = String(v); }, removeItem: (k) => { delete m[k]; } }; })();
-global.requestAnimationFrame = (fn) => setTimeout(() => fn(Date.now()), 16);
-global.cancelAnimationFrame = (id) => clearTimeout(id);
-global.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} });
-if (typeof global.navigator === "undefined") global.navigator = { userAgent: "node", hardwareConcurrency: 4 };
-
-const list = engineList(DIR);
-const failures = [];
-let loaded = 0;
-for (const rel of list) {
-  const file = path.resolve(DIR, rel);
-  let src;
-  try { src = fs.readFileSync(file, "utf8"); }
-  catch (e) { failures.push(rel + ": cannot read (" + e.message + ")"); continue; }
-  // (the meeting requires the calendar: KOLOB.Calendar stands before its room)
-  if (path.basename(rel) === "kolob-meeting.js" && !(global.KOLOB && global.KOLOB.Calendar)) {
-    failures.push(rel + ": evaluated before KOLOB.Calendar stands — the meeting requires the calendar (kolob-calendar.js, ahead of it on the list)");
-  }
-  try { vm.runInThisContext(src, { filename: file }); loaded++; }
-  catch (e) { failures.push(rel + ": threw at load — " + (e && e.stack ? e.stack.split("\n").slice(0, 3).join(" | ") : e)); }
-}
+E.mockPage();
+const list = E.engineList(DIR);
+// (the meeting requires the calendar: KOLOB.Calendar stands before its room)
+const { loaded, failures } = E.evaluate(DIR, list, (rel) => (path.basename(rel) === "kolob-meeting.js" && !(global.KOLOB && global.KOLOB.Calendar)
+  ? rel + ": evaluated before KOLOB.Calendar stands — the meeting requires the calendar (kolob-calendar.js, ahead of it on the list)" : null));
 
 // the roll call, as _engine.php's guard takes it
 const K = global.KOLOB || {}, rooms = K._rooms || {}, P = global.PJ2 || {};

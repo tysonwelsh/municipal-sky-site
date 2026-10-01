@@ -11,10 +11,14 @@
 #      files in its order, and the composer writes a hymn that proofreads
 #      (tools/loadcheck.js);
 #   4. no room reads a name off the shared bag that no room lends (tools/lends.js);
-#   5. the headless harness plays a meeting without an error or a late cue, and
+#   5. the pure core composes what it composed: the first meeting's plan, its
+#      hymns, the guests' decisions, the organist's and the ward's plans for
+#      seeds 1–40 hash as tools/golden/*.json says (tools/golden.js; a change
+#      that moves them on purpose rewrites the baseline in the same commit);
+#   6. the headless harness plays a meeting without an error or a late cue, and
 #      the same seed with the same flags renders byte for byte the same dump
 #      twice — the determinism the whole design rests on (SCORE.md §3–§4);
-#   6. the measurement tools' self-test passes (tools/selftest.js).
+#   7. the measurement tools' self-test passes (tools/selftest.js).
 #
 # Nothing here hears the music. The listening packets (art/kolob/handoff/listen-*.md)
 # and the owner's ear are still what decide whether a change is good.
@@ -70,6 +74,9 @@ jobs:
 
       - name: The shared bag's lends and reads agree
         run: node art/kolob/tools/lends.js
+
+      - name: The pure core composes what it composed
+        run: node art/kolob/tools/golden.js
 
       - name: The harness plays a meeting, and the same seed twice is byte for byte the same
         run: |

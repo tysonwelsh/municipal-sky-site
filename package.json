@@ -5,6 +5,7 @@
   "scripts": {
     "lint": "eslint art/kolob",
     "kolob:check": "node art/kolob/tools/loadcheck.js && node art/kolob/tools/lends.js",
+    "kolob:golden": "node art/kolob/tools/golden.js",
     "kolob:selftest": "node art/kolob/tools/selftest.js"
   },
   "devDependencies": {
