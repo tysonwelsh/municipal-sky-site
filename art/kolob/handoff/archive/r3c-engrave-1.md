@@ -329,8 +329,8 @@ which only `kolob-viz.js` is put back to the branch's start, `13ac495`
 Two contact sheets are committed beside this note, a row per guest, before
 on the left and after on the right:
 
-- `handoff/r3c-engrave-1-sheet-860.png`
-- `handoff/r3c-engrave-1-sheet-390.png` (the phone)
+- `handoff/archive/r3c-engrave-1-sheet-860.png`
+- `handoff/archive/r3c-engrave-1-sheet-390.png` (the phone)
 
 The frames themselves, each run with its `report.md` (console: no errors or
 warnings, before and after, in every run), are under the scratchpad
@@ -759,9 +759,9 @@ and the far ward unchanged (2.0 / 1.2, 2.1 / 1.0, 1.3 / 1.1, 5.3 / 5.5).
 and seconds, the same muted page). **After** is this code. Three sheets
 are committed beside this note:
 
-- `handoff/r3c-engrave-2-sheet-860.png`: a row per guest, round 1 on the
+- `handoff/archive/r3c-engrave-2-sheet-860.png`: a row per guest, round 1 on the
   left, round 2 on the right, 860 px;
-- `handoff/r3c-engrave-2-sheet-390.png`: the same at 390 px (the phone);
+- `handoff/archive/r3c-engrave-2-sheet-390.png`: the same at 390 px (the phone);
 - `handoff/r3c-engrave-2-details.png`: close pairs, round 1 above round 2,
   one per finding: the company's sixteenths, the gift's slurs, the trio,
   the pedal's flag, the tower's bells and the speech crosses.

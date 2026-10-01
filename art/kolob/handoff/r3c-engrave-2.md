@@ -368,7 +368,7 @@ checks, the placement log, the console). Three sheets beside this note:
   slurs and ties by voice, a singer's run under its slur, the canon.
 
 (Round 2's own sheets, `r3c-engrave-2-sheet-*.png` and
-`r3c-engrave-2-details.png`, belong to `r3c-engrave-1.md` and are left as
+`r3c-engrave-2-details.png`, belong to `archive/r3c-engrave-1.md` and are left as
 they were.)
 
 ## Requests

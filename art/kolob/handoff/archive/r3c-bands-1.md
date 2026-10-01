@@ -117,7 +117,7 @@ east (brighter as it nears). A link can carry the settings:
 | `kolob-voices-band.js` | `road()` (a traveller: the distance stage's curves laid along a path); `lendTown()` and a fuller `warm()` (a town room made ahead and lent, the noise and the saxhorns' waves built per context at start-up — so no convolver, noise buffer or wave is built in a clock callback); the waves are now kept per context, not per band |
 | `kolob-voices-folk.js` (the gulls and the carts only) | `gull()` takes `up` and `fall`; `gulls()` takes a rhythm and keeps its chatter in the lead's span; `wheels()` takes `still`, `spread`, `dest` and `only` (a cart standing in a company that a road carries; one cart a call) |
 | `guests3a-lab.php`, `guests3a-lab.js` (new) | the lab |
-| `handoff/r3c-bands-1.md` | this note |
+| `handoff/archive/r3c-bands-1.md` | this note |
 
 The three modules follow the trombones' and the handbells' interface:
 `plan(meetingInfo, stream)` → a seat `{guest, seat, section, at, dur,

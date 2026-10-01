@@ -95,7 +95,7 @@ in the table.
 | `kolob-guest-changes.js` (new) | **`KOLOB.GuestChanges`**: place notation (`parse`, `apply`), `METHODS` (Plain Hunt, Plain Bob; Doubles and Minor), `rows`, `verify`, `touches`; `plan`, `decide`, `prepare`, `score`, `perform`; the tower bell (`tower`, `PARTIALS`, `MUFFLE`); `ODDS`, `LEVEL` |
 | `guests3b-lab.php`, `guests3b-lab.js` (new) | the bench: both guests live and offline, checks against their references, the plan read character by character, the ringers' rows with the red and blue lines, one bell's partials, purity, the odds |
 | `kolob-voices-pipeorgan.js` | **unchanged** — the organ's seven stops and the organist's eighteen registrations were enough for every character |
-| `handoff/r3c-organ-1.md` | this note |
+| `handoff/archive/r3c-organ-1.md` | this note |
 
 Commits on `kolob-r3c-organ` (after `39c9b3b9`): `d8944d95` the variations
 planner · `2087b7ac` the interlude made audible · `eb9048a1` the variations

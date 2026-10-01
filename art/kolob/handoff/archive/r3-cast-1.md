@@ -379,9 +379,9 @@ at the line starts).
 **Spectrograms** (0–12 kHz, linear; the top pair is the full ward before
 and after, the bottom pair the breath and consonants alone; blue ticks mark
 note joins, green ones line starts):
-- `handoff/r3-cast-1-hiss-tabernacle-4.png` — seed 4, BETHEL, 6.2–10.6 s
+- `handoff/archive/r3-cast-1-hiss-tabernacle-4.png` — seed 4, BETHEL, 6.2–10.6 s
   (a line break at 8.3 s).
-- `handoff/r3-cast-1-hiss-sacredharp-7.png` — seed 7, WINTER QUARTERS,
+- `handoff/archive/r3-cast-1-hiss-sacredharp-7.png` — seed 7, WINTER QUARTERS,
   2.5–6.9 s (verse 1 on the notes: the dark columns in HEAD's are the
   ward's *s* of "sol" and *f* of "fa").
 
@@ -703,10 +703,10 @@ seed 2 Old Way; the breath and consonants alone at the line starts −76.2,
 **Spectrograms** (0–12 kHz; the magenta brackets are the silent gaps between
 lines; top to bottom: the ward now, then the breath and consonants alone in
 HEAD, the first pass and now):
-- `handoff/r3-cast-2-gap-tabernacle-4.png` — BETHEL, 6.2–10.6 s: HEAD's "h"
+- `handoff/archive/r3-cast-2-gap-tabernacle-4.png` — BETHEL, 6.2–10.6 s: HEAD's "h"
   puff at the line start, the first pass's inhale filling the gap below 3 kHz,
   now a faint low breath from a singer or two at the end of the gap.
-- `handoff/r3-cast-2-gap-sacredharp-7.png` — WINTER QUARTERS, 14.6–18.2 s:
+- `handoff/archive/r3-cast-2-gap-sacredharp-7.png` — WINTER QUARTERS, 14.6–18.2 s:
   HEAD's exhale after the line (the "tire") and its dark *s*/*f* columns, the
   first pass's group inhale, now a small low breath before the second line.
 

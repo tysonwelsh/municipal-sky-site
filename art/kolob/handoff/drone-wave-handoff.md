@@ -175,7 +175,7 @@ anything, and match its literary comment voice.
 - `art/kolob/PLAN-ENGRAVING.md`: the top section holds the owner's decisions.
 - `art/kolob/PLAN-COMPOSITION.md`: the whole plan. §15 has the latest owner rulings.
 - `art/kolob/SCORE.md`: the contract between the engine and the page, including the typed events.
-- `art/kolob/handoff/r3b-engrave-1.md`: the latest staff work, with its replay-lab tools for
+- `art/kolob/handoff/archive/r3b-engrave-1.md`: the latest staff work, with its replay-lab tools for
   testing the page without the audio engine.
-- `art/kolob/handoff/r3b-form-1.md`: the Kolob reckoning (the moving drone).
+- `art/kolob/handoff/archive/r3b-form-1.md`: the Kolob reckoning (the moving drone).
 - `art/kolob/handoff/listen-r3b.md`: what the current build sounds like, with seeds and times.

@@ -326,6 +326,6 @@ The v0.31 comparisons ran against a `git archive` of `c54aca0`, served on its ow
 - `art/kolob/kolob-audio.js`: the fuging entry's per-note emits (view-only).
 - `art/kolob/kolob.css`: the geometry comment only.
 - `art/kolob/VERSION`: v0.32.
-- `art/kolob/handoff/engrave-now.md`: this section.
+- `art/kolob/handoff/archive/engrave-now.md`: this section.
 
 `index.php`'s fingerprint list already covers every changed asset (`kolob-audio.js`, `kolob-viz.js`, `kolob.css`, plus `index.php` itself), and it reads `VERSION` for the footer.

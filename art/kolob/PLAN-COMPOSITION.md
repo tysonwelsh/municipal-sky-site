@@ -1197,7 +1197,7 @@ thread, nodes) and report it honestly, but do not cut features or voices to meet
 in this round.
 
 **For the round-3b engine crews (the ward, organ, styles and form steps): the staff's requests.** From
-handoff/r3b-engrave-1.md. kolob-viz.js already reads these fields.
+handoff/archive/r3b-engrave-1.md. kolob-viz.js already reads these fields.
 1. Add `verses: P.verses` to `verse-start`'s `performance` in kolob-voices-choir.js, so that hymns
    without an A-men end on a final bar.
 2. Tag the ward's notes with part, hymnId, beat and syllable, as the house choir's are, so the page

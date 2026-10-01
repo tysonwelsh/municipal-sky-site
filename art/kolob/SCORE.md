@@ -363,10 +363,10 @@ The labels as implemented (`kolob-core.js`, THE DICE):
 
 ## 10. Round 3, adopted (the meeting sings composed hymns)
 
-*The integration of the HYMN crew's composer (`handoff/r3-hymn-1.md`, its
+*The integration of the HYMN crew's composer (`handoff/archive/r3-hymn-1.md`, its
 requests to the integrator) into the meeting. Where this section and an
 earlier one disagree, this section wins; the code named is the authority for
-the details. Handoff: `handoff/r3-integrate-1.md`.*
+the details. Handoff: `handoff/archive/r3-integrate-1.md`.*
 
 ### 10.1 Modules (§1, §9.1)
 
@@ -522,11 +522,11 @@ A composed hymn is sung verse by verse in its dialect's practice:
 
 ## 11. Round 3b, adopted (the ward sings the meeting)
 
-*The CAST crew's requests (`handoff/r3-cast-1.md`, both halves) and the HYMN
-crew's performance requests (`handoff/r3-hymn2-1.md`, 2–3), adopted as round
+*The CAST crew's requests (`handoff/archive/r3-cast-1.md`, both halves) and the HYMN
+crew's performance requests (`handoff/archive/r3-hymn2-1.md`, 2–3), adopted as round
 3b wires the ward into the meeting. Where this section and an earlier one
 disagree, this section wins; the code named is the authority for the details.
-Handoff: `handoff/r3b-ward-1.md`.*
+Handoff: `handoff/archive/r3b-ward-1.md`.*
 
 ### 11.1 Modules (§1, §9.1, §10.1)
 
@@ -651,9 +651,9 @@ Handoff: `handoff/r3b-ward-1.md`.*
 
 ### 11.6 The organist (round 3b, step 2)
 
-*The organist crew's requests (`handoff/r3-organist-1.md`: R1–R4), adopted as
+*The organist crew's requests (`handoff/archive/r3-organist-1.md`: R1–R4), adopted as
 the Sunday's organist takes the bench in the meeting. Handoff:
-`handoff/r3b-organ-1.md`.*
+`handoff/archive/r3b-organ-1.md`.*
 
 - **Modules.** `kolob-organist.js` (pure planning) joins the engine after the
   composer, and `kolob-voices-pipeorgan.js` (the registrable pipe organ) among
@@ -729,11 +729,11 @@ the Sunday's organist takes the bench in the meeting. Handoff:
 
 ### 11.7 The styles in the meeting, the forms, the new guests (round 3b, step 3)
 
-*The HYMN crew's remaining requests (`handoff/r3-hymn2-1.md`: 1, 2, 4, 5, B,
-C) and the GUEST crew's (`handoff/r3-guests-1.md`: loading, seating, the near
+*The HYMN crew's remaining requests (`handoff/archive/r3-hymn2-1.md`: 1, 2, 4, 5, B,
+C) and the GUEST crew's (`handoff/archive/r3-guests-1.md`: loading, seating, the near
 send, the clock, SCORE), adopted as every style, the round, the partner hymn,
 the wandering refrain, the handbell choir and the singing school come into the
-meeting. Handoff: `handoff/r3b-styles-1.md`.*
+meeting. Handoff: `handoff/archive/r3b-styles-1.md`.*
 
 - **Modules.** `kolob-experimental.js` joins the engine after the organist
   (before the voices), `kolob-voices-folk.js` among the voices (the handbells:
@@ -855,7 +855,7 @@ meeting. Handoff: `handoff/r3b-styles-1.md`.*
 
 ## 12. Round 3c, adopted (the new guests in the meeting)
 
-*The four round-3c guest crews' recipes (`handoff/r3c-bands-1.md`,
+*The four round-3c guest crews' recipes (`handoff/archive/r3c-bands-1.md`,
 `r3c-organ-1.md`, `r3c-voices-1.md`, `r3c-hall-1.md`) as amended by the four
 "For the round-3c integrator" notes of PLAN-COMPOSITION §15, adopted as the
 Nauvoo band, the handcart company, the gulls, the organist's variations,
@@ -1031,3 +1031,34 @@ the table (one draw each, whatever the number).
 ones. The Ives switch's own pick gains the Ivesian ones (the handcarts, the
 gulls, the variations, change ringing, the far ward). The page takes
 `?guest=<name>` (dev: `kolob-ui.js`), as the harness takes `force=<name>`.
+
+---
+
+## 13. Housekeeping, 2026-10-01 (v0.36.2)
+
+*Not a round: the state of the tree made verifiable and the drift taken out, at
+the owner's request. Nothing musical moved (tally A/B against v0.36.1, every seed
+byte for byte). `README.md` is now the map of the folder; read it first.*
+
+- **The harness is tracked.** `_harness.js` was never committed; it is rebuilt
+  and in the tree, excluded from deploy. CI (`.github/workflows/kolob-check.yml`)
+  parses every file, lints, loads the engine headless (`tools/loadcheck.js`),
+  checks the bag (`tools/lends.js`), plays a meeting twice byte for byte, and
+  runs `tools/selftest.js`.
+- **The bagpipe left the engine** (§1, §9.1): shelved by the owner on
+  2026-09-13, it is no longer in `_engine.php` nor a layer in `kolob-core.js`;
+  its room and lab are in `shelved/`, with the Question's (§14 of the
+  composition plan). `SHELVED` in core remains the mechanism, empty.
+- **One number for the Whole switch:** `kolob-meeting.js` `CUMULATIVE_ODDS`
+  (0.08), lent as `S.CUMULATIVE_ODDS`, read by the page through
+  `KolobAudio.getCumulativeOdds()`.
+- **Load-time throws are gone from the cast:** a misspelt phoneme in
+  `ACTION_DS` warns and prints "?" rather than stopping the engine.
+- **The hymnal's worker forgets refrains too** (`r:<n>:*` with `h:<n>:*`).
+- **Comments that stated superseded rules** (the band's seats, the Hosanna "not
+  built") were corrected; `handoff/archive/` holds every handoff a later round
+  superseded, and the paths in these documents follow.
+- **ESLint** (`eslint.config.js` at the repo root) is the baseline: no undefined
+  names, no unused variables. `no-use-before-define` is off: the rooms declare
+  their constants at the foot and read them at call time, which `var` hoisting
+  makes safe.

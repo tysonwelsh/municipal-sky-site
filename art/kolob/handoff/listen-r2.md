@@ -154,6 +154,6 @@ The local server is already running. Open a seed like this and press PLAY:
 - The footer on this build reads `v0.32 — … · e508d4 · 2026-09-27 21:35
   UTC`. The letters **e508d4** are this build's.
 - The integrator's notes, with every measurement, are in
-  `handoff/r2-integrate-1.md`.
+  `handoff/archive/r2-integrate-1.md`.
 - Every check behind this page was silent: the Node harness, and a muted
   headless browser.

@@ -40,3 +40,19 @@ with the site's `margin: 0 0 var(--s-2)`), then `<div class="section-divider"></
 header for this, and don't invent per-page spacing for titles, rules and the
 first paragraph: use the `--s-*` scale and the shared classes, so pages stay
 consistent and the owner doesn't have to fix one-off spacing page by page.
+
+## KOLOB — read `art/kolob/README.md` first (owner rule, 2026-10-01)
+
+The same VERSION rule as the Jukebox and ZANKYŌ: every commit that changes what
+the owner hears or sees in `art/kolob/` bumps `art/kolob/VERSION` in the same
+commit — one line, `v0.36.N — short human summary of what changed` (semver);
+`index.php` prints it under the page with a fingerprint of the served assets.
+Dev-only changes (tools, labs, docs, the harness) do not bump.
+
+Before pushing a Kolob change run, from the repo root: `npm run lint`,
+`node art/kolob/tools/loadcheck.js`, `node art/kolob/tools/lends.js` and
+`node art/kolob/_harness.js 300 7` (CI runs the same). For anything that could
+move the music, `node art/kolob/tools/tally.js --a git:main --b worktree
+--seeds 1-20` says whether it did. Every browser an agent launches is muted.
+The comments in this code base state its rules; when a rule changes, fix every
+comment that states the old one.

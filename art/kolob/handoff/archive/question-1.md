@@ -10,7 +10,7 @@
 |---|---|
 | `art/kolob/kolob-question.js` | `KOLOB.Question`, a pure module that follows SCORE §1 and §3. It uses no AudioContext, DOM, `Math.random` or clock. It loads headless in Node with either `window = {}` or `window = global`. |
 | `art/kolob/question-lab.php` + `question-lab.js` | The audition bench. It is unlinked and dev-only. |
-| `art/kolob/handoff/question-1.md` | This note. |
+| `art/kolob/handoff/archive/question-1.md` | This note. |
 
 ### The API
 
