@@ -16,10 +16,12 @@
 //   · every tracked page, ranked by the day's views, with 7d and all-time
 //   · the rhythm — views by hour of day (7d) and by weekday (8 weeks)
 //   · onobot — uses vs ratings, provider failures, the Claude/GPT tug-of-war,
-//     each rated pair, and the prompts nobody rated
+//     and every prompt of the day (the prompt only: no responses, no rating —
+//     owner's call, 2026-10-01)
 //   · the junk drawer — the turn funnel, errors, devices, first-place share
 //     per model, exact spend per model (api/jd-usage.php + jd-prices.json),
-//     drawing health, median latency, items opened, each new prompt
+//     drawing health, median latency, items opened, and every prompt of the
+//     day (again the prompt and its title only, never the drawings or grades)
 //   · signups — the list, where people sign up from, signups per view
 //   · the plant — live VERSION strings, a self-ping, records, table sizes
 //
@@ -221,6 +223,24 @@ function wrap_out(callable $out, $label, array $items, $sep, $width) {
     }
     $out(rtrim($line));
 }
+// Word-wrap $text after $prefix; continuation lines hang at the prefix width.
+function wrap_text(callable $out, $prefix, $text, $width) {
+    $indent = str_repeat(' ', mbw($prefix));
+    $avail = max(10, $width - mbw($prefix));
+    $words = preg_split('/\s+/', trim((string) $text)) ?: [];
+    $line = '';
+    foreach ($words as $w) {
+        if (mbw($w) > $avail) $w = mb_substr($w, 0, $avail - 1, 'UTF-8') . '…';
+        if ($line !== '' && mbw($line) + 1 + mbw($w) > $avail) {
+            $out($prefix . $line);
+            $prefix = $indent;
+            $line = $w;
+        } else {
+            $line = $line === '' ? $w : $line . ' ' . $w;
+        }
+    }
+    $out($prefix . $line);
+}
 // "Claude Opus 5" → "Claude", "GPT-5.1" → "GPT": one word per model, unless
 // two models in the set would collide, in which case the full labels stay.
 function model_shorts(array $ids) {
@@ -271,7 +291,7 @@ $D = [
     'records'  => ['best_v' => 0, 'best_d' => null, 'streak' => 0],
     'onobot'   => ['c24' => 0, 'cprev' => 0, 'c7' => 0, 'call' => 0, 'cf24' => 0, 'of24' => 0, 'cfall' => 0, 'ofall' => 0,
                    'f24' => 0, 'fall' => 0, 'p24' => ['a' => 0, 'b' => 0, 'n' => 0], 'pall' => ['a' => 0, 'b' => 0, 'n' => 0],
-                   'rows' => [], 'unrated' => [], 'models' => ['a' => '', 'b' => '']],
+                   'prompts' => [], 'models' => ['a' => '', 'b' => '']],
     'jd'       => ['v24' => 0, 'u24' => 0, 'av24' => 0, 'io24' => 0, 'vall' => 0, 'uall' => 0, 'ioall' => 0,
                    'funnel' => ['open' => 0, 'submit' => 0, 'done' => 0, 'err' => 0], 'funnel_all' => ['open' => 0, 'submit' => 0, 'done' => 0, 'err' => 0],
                    'errors7' => [], 'turns' => ['t24' => 0, 'tprev' => 0, 't7' => 0, 'tall' => 0, 'rated' => 0, 'rated24' => 0, 'failed' => 0],
@@ -324,9 +344,9 @@ if ($DEMO) {
     $D['onobot'] = array_merge($D['onobot'], ['c24' => 3, 'cprev' => 1, 'c7' => 9, 'call' => 420, 'cf24' => 0, 'of24' => 1, 'cfall' => 6, 'ofall' => 11,
         'f24' => 1, 'fall' => 233, 'p24' => ['a' => 1, 'b' => 0, 'n' => 0], 'pall' => ['a' => 121, 'b' => 88, 'n' => 24],
         'models' => ['a' => 'claude-haiku-4-5-20251001', 'b' => 'gpt-4o-mini'],
-        'rows' => [['timestamp' => date('Y-m-d') . ' 08:12:00', 'preference_rating' => 2, 'geo' => 'Provo, Utah', 'user_message' => 'a cat sneezing', 'response_a' => 'Mrkgnao-tchh', 'response_b' => 'Achoo-tchk']],
-        'unrated' => [['timestamp' => date('Y-m-d') . ' 07:40:00', 'user_message' => 'a modem connecting', 'claude_response' => 'Kshhhhbeedeebeeep', 'openai_response' => null],
-                      ['timestamp' => date('Y-m-d') . ' 01:02:00', 'user_message' => 'printing press', 'claude_response' => 'Sllt', 'openai_response' => 'Clack-clack']]]);
+        'prompts' => [['timestamp' => date('Y-m-d') . ' 08:12:00', 'geo' => 'Provo, Utah', 'user_message' => 'a cat sneezing'],
+                      ['timestamp' => date('Y-m-d') . ' 07:40:00', 'geo' => '', 'user_message' => 'a modem connecting'],
+                      ['timestamp' => date('Y-m-d') . ' 01:02:00', 'geo' => 'Lyon, Auvergne-Rhône-Alpes', 'user_message' => 'the printing press in the basement of the Freeman\'s Journal, as Bloom hears it']]]);
     $D['jd'] = array_merge($D['jd'], ['v24' => 18, 'u24' => 12, 'av24' => 1, 'io24' => 41, 'vall' => 1204, 'uall' => 900, 'ioall' => 3310,
         'funnel' => ['open' => 9, 'submit' => 4, 'done' => 3, 'err' => 1], 'funnel_all' => ['open' => 402, 'submit' => 171, 'done' => 148, 'err' => 23],
         'errors7' => ['provider_timeout' => 2, 'daily_limit' => 1],
@@ -340,8 +360,8 @@ if ($DEMO) {
         'health7' => ['ok' => 42, 'failed' => 1, 'rejected' => 1, 'disobeyed' => 2, 'n' => 44],
         'latency7' => ['claude-opus-5' => 14200, 'gpt-5-1' => 22000, 'kimi-k3' => 9800, 'gemini-3-1-pro' => 17100],
         'items24' => [['title' => 'Shirt button', 'n' => 3], ['title' => 'Paperclip', 'n' => 2], ['title' => 'Pencil stub', 'n' => 1]],
-        'prompts' => [['created' => gmdate('Y-m-d') . ' 21:04:00', 'status' => 'rated', 'title' => 'Teapot', 'prompt' => 'a blue ceramic teapot with a chipped spout', 'winner' => 'claude-opus-5'],
-                      ['created' => gmdate('Y-m-d') . ' 09:31:00', 'status' => 'generated', 'title' => null, 'prompt' => 'a lighthouse at dusk', 'winner' => null]]]);
+        'prompts' => [['created' => gmdate('Y-m-d') . ' 21:04:00', 'title' => 'Teapot', 'prompt' => 'a blue ceramic teapot with a chipped spout, steam curling from it, seen slightly from above on a bare wooden table'],
+                      ['created' => gmdate('Y-m-d') . ' 09:31:00', 'title' => null, 'prompt' => 'a lighthouse at dusk']]]);
     $D['subs'] = ['n24' => 1, 'n7' => 1, 'total' => 23, 'active' => 21, 'rows' => [['created_at' => date('Y-m-d') . ' 19:40:12', 'email' => 'fresh.signup@example.com', 'source' => '/art/junk-drawer/']],
         'sources' => ['/art/junk-drawer/' => 9, '/' => 6, '/art/skeeball/' => 4]];
     $D['builds'] = ['jukebox' => '2.0.0-rc.41', 'zankyo' => '2.0.0-rc.17', 'kolob' => 'v0.36.1', 'drawer' => '1.9.2', 'holler' => '0.5.0', 'babel' => '1.2.0', 'kimi' => '0.3.0'];
@@ -467,11 +487,12 @@ if ($DEMO) {
                   FROM conversations");
         foreach (['c24', 'cprev', 'c7', 'call', 'cf24', 'of24', 'cfall', 'ofall'] as $k) $D['onobot'][$k] = $i($r, $k);
         $D['pulse']['onobot uses'] = ['w24' => $i($r, 'c24'), 'prev' => $i($r, 'cprev'), 'w7' => $i($r, 'c7'), 'all' => $i($r, 'call')];
-        $D['onobot']['unrated'] = $q("SELECT c.timestamp, c.user_message, c.claude_response, c.openai_response
-                                      FROM conversations c
-                                      WHERE {$wo['w24']} AND NOT EXISTS (SELECT 1 FROM onomatopoeia_feedback f
-                                            WHERE f.user_message = c.user_message AND f.timestamp >= c.timestamp - INTERVAL 1 HOUR)
-                                      ORDER BY c.timestamp DESC LIMIT 12");
+        // Every prompt of the day, from the conversations table (so unrated
+        // uses are included). The prompt only — no responses, no rating.
+        $rows = $q("SELECT timestamp, session_id, user_message FROM conversations WHERE {$wo['w24']} ORDER BY timestamp DESC");
+        foreach ($rows as &$row) { $row['geo'] = geo($row['session_id']); unset($row['session_id']); }
+        unset($row);
+        $D['onobot']['prompts'] = $rows;
     } catch (PDOException $e) { $note('onobot conversations', $e); }
     try {
         $r = $q1("SELECT SUM({$wo['w24']}) f24, COUNT(*) fall,
@@ -481,11 +502,6 @@ if ($DEMO) {
         $D['onobot']['f24'] = $i($r, 'f24'); $D['onobot']['fall'] = $i($r, 'fall');
         $D['onobot']['p24'] = ['a' => $i($r, 'a24'), 'b' => $i($r, 'b24'), 'n' => $i($r, 'n24')];
         $D['onobot']['pall'] = ['a' => $i($r, 'aall'), 'b' => $i($r, 'ball'), 'n' => $i($r, 'nall')];
-        $rows = $q("SELECT timestamp, preference_rating, session_id, user_message, model_a, response_a, model_b, response_b
-                    FROM onomatopoeia_feedback WHERE {$wo['w24']} ORDER BY timestamp DESC");
-        foreach ($rows as &$row) { $row['geo'] = geo($row['session_id']); unset($row['session_id']); }
-        unset($row);
-        $D['onobot']['rows'] = $rows;
         $m = $q1("SELECT model_a, model_b FROM onomatopoeia_feedback ORDER BY timestamp DESC LIMIT 1");
         $D['onobot']['models'] = ['a' => (string) ($m['model_a'] ?? ''), 'b' => (string) ($m['model_b'] ?? '')];
     } catch (PDOException $e) { $note('onobot feedback', $e); }
@@ -528,12 +544,9 @@ if ($DEMO) {
                   FROM jd_submissions WHERE item_id IS NULL");
         foreach (['t24', 'tprev', 't7', 'tall', 'rated', 'rated24', 'failed'] as $k) $D['jd']['turns'][$k] = $i($r, $k);
         $D['pulse']['drawer turns'] = ['w24' => $i($r, 't24'), 'prev' => $i($r, 'tprev'), 'w7' => $i($r, 't7'), 'all' => $i($r, 'tall')];
-        $D['jd']['prompts'] = $q("SELECT s.created, s.status, s.title, s.prompt, g.model_id AS winner
-                                  FROM jd_submissions s
-                                  LEFT JOIN jd_ranks r ON r.submission_id = s.id AND r.rank_pos = 1 AND r.client = 'web'
-                                  LEFT JOIN jd_generations g ON g.id = r.generation_id
-                                  WHERE s.item_id IS NULL AND {$wjs['w24']}
-                                  ORDER BY s.created DESC");
+        // Every prompt of the day — the words and the accepted title only.
+        $D['jd']['prompts'] = $q("SELECT s.created, s.title, s.prompt FROM jd_submissions s
+                                  WHERE s.item_id IS NULL AND {$wjs['w24']} ORDER BY s.created DESC");
     } catch (PDOException $e) { $note('drawer turns', $e); }
     try {
         $devs = $q("SELECT device_ref, COUNT(DISTINCT DATE(created)) days FROM jd_submissions
@@ -792,22 +805,11 @@ if ($tot > 0) {
     $out(sprintf(' %-12s %s Claude %s %s GPT %s %s neutral %s', '', $D['hours'] . 'h', num($o['p24']['a']), $G['dot'], num($o['p24']['b']), $G['dot'], num($o['p24']['n'])));
 }
 if ($o['models']['a'] !== '') $out(' pair: A ' . model_label($o['models']['a']) . ' ' . $G['dot'] . ' B ' . model_label($o['models']['b']));
-foreach ($o['rows'] as $r) {
-    $rating = (int) $r['preference_rating'];
-    $pref = $rating <= 3 ? "A {$rating}/7 (Claude)" : ($rating >= 5 ? "B {$rating}/7 (GPT)" : "neutral {$rating}/7");
-    $where = ($r['geo'] ?? '') !== '' ? ' ' . $G['dot'] . ' ' . $r['geo'] : '';
-    $out(' ' . $G['bullet'] . ' ' . substr($r['timestamp'], 5, 11) . $where . ' ' . $G['dot'] . ' ' . $pref);
-    $out('     ' . trunc($r['user_message'], $W - 6));
-    $out('     A: ' . trunc($r['response_a'], $W - 9));
-    $out('     B: ' . trunc($r['response_b'], $W - 9));
-}
-if ($o['unrated']) {
-    $out(' prompts nobody rated (' . count($o['unrated']) . '):');
-    foreach ($o['unrated'] as $u) {
-        $a = $u['claude_response'] === null ? '[failed]' : $u['claude_response'];
-        $b = $u['openai_response'] === null ? '[failed]' : $u['openai_response'];
-        $out('   ' . substr($u['timestamp'], 11, 5) . '  ' . trunc($u['user_message'], $W - 10));
-        $out('          A ' . trunc($a, 22) . ' ' . $G['dot'] . ' B ' . trunc($b, 22));
+if ($o['prompts']) {
+    $out(' prompts ' . $D['hours'] . 'h (' . count($o['prompts']) . ')');
+    foreach ($o['prompts'] as $r) {
+        $where = ($r['geo'] ?? '') !== '' ? ' ' . $G['dot'] . ' ' . $r['geo'] : '';
+        wrap_text($out, ' ' . $G['bullet'] . ' ' . substr($r['timestamp'], 5, 11) . '  ', $r['user_message'] . $where, $W);
     }
 }
 
@@ -850,7 +852,7 @@ if ($j['spend']) {
     }
     $st = $j['spend_total'];
     $out($srow('total', money($st['w24']), money($st['w7']), money($st['all']), ''));
-    if ($j['unpriced'] > 0) $out('   (' . num($j['unpriced']) . ' of ' . num($j['unpriced'] + $j['priced']) . ' generations unpriced: no usage or no rate; left out)');
+    if ($j['unpriced'] > 0) $out('   (' . num($j['unpriced']) . ' of ' . num($j['unpriced'] + $j['priced']) . ' generations unpriced, left out)');
 }
 $h = $j['health7'];
 if ($h['n'] > 0) {
@@ -868,11 +870,13 @@ if ($j['items24']) {
     foreach ($j['items24'] as $x) $it[] = $x['title'] . ' ' . $G['times'] . num($x['n']);
     wrap_out($out, ' opened most ', $it, ', ', $W);
 }
-foreach ($j['prompts'] as $p) {
-    $when = substr($p['created'], 5, 11) . ' UTC';
-    $tail = $p['status'] === 'rated' ? ('rated' . ($p['winner'] ? ' ' . $G['dot'] . ' 1st ' . model_label($p['winner']) : '')) : $p['status'];
-    $out(' ' . $G['bullet'] . ' ' . $when . ' ' . $G['dot'] . ' ' . trunc(($p['title'] !== null && $p['title'] !== '') ? $p['title'] : '(untitled)', 22) . ' ' . $G['dot'] . ' ' . $tail);
-    $out('     ' . trunc($p['prompt'], $W - 6));
+if ($j['prompts']) {
+    $out(' prompts ' . $D['hours'] . 'h (' . count($j['prompts']) . ')');
+    foreach ($j['prompts'] as $p) {
+        $title = ($p['title'] !== null && $p['title'] !== '') ? ' ' . $G['dot'] . ' ' . trunc($p['title'], 40) : '';
+        $out(' ' . $G['bullet'] . ' ' . substr($p['created'], 5, 11) . ' UTC' . $title);
+        wrap_text($out, '     ', $p['prompt'], $W);
+    }
 }
 
 // ── signups ──
