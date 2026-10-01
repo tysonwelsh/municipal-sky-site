@@ -234,7 +234,11 @@ try {
     $rankByGen = jd_rank_by_generation(jd_db()->query(
         "SELECT r.generation_id, r.rank_pos, r.client FROM jd_ranks r"
     ));
-} catch (PDOException $e) { /* no ranks table: no re-pointing, no ranked turns */ }
+} catch (Throwable $e) {
+    /* no ranks table — or no database at all (the overlay's own try used to
+       swallow a failed jd_db() the same way, as Throwable): no re-pointing,
+       no ranked turns; the files still serve */
+}
 
 try {
     $db = jd_db();
