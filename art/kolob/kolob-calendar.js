@@ -129,7 +129,7 @@ window.KOLOB.Calendar = (function () {
   //             a funeral's darkest, the feasts' lifted
   //   dox       factors on the doxology's own dialect (a funeral rises into
   //             the Tabernacle's "all is well"; Easter's full Tabernacle)
-  //   hosanna   the Hosanna may come (§8.12; not built yet — a hook, unlogged)
+  //   hosanna   the Hosanna may come (§8.12; round 3c: audio-only, unlogged)
   var SUNDAYS = {
     ordinary: {
       share: 0.45, kind: "ordinary", ds: "𐐃𐐡𐐔𐐆𐐤𐐇𐐡𐐆 𐐝𐐊𐐤𐐔𐐁", en: "AN ORDINARY SUNDAY",

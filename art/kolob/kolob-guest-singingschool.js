@@ -395,7 +395,7 @@ window.KOLOB.GuestSingingSchool = (function () {
       if (!cands.length) return null;
       cands.sort(function (a, b) { return b.score - a.score || a.k - b.k; });
       // the best few are all good lessons: the die picks among them
-      var top = cands.filter(function (c) { return c.score >= cands[0].score - 1; });
+      top = cands.filter(function (c) { return c.score >= cands[0].score - 1; });
       var c0 = top[Math.floor(spotU * top.length)];
       var off = c0.w - ns[c0.k].deg;
       var wrong = [];
@@ -551,7 +551,6 @@ window.KOLOB.GuestSingingSchool = (function () {
     // ---- 3. THE PART ALONE, ON THE NOTES ---------------------------------------
     var giveT = tCut + 1.6;
     var ps = mk.passage, pn = ps.notes;
-    var gOct = 1; desks.forEach(function (d) { if (d.group === mk.group) gOct = d.oct; });
     // (a quick tune whose rehearsal would come out under half a minute: the
     // chorister first sings them the passage herself, on the notes — "listen"
     // — as a singing master does; otherwise she gives them their first note)

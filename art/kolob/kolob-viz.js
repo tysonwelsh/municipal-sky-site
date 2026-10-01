@@ -594,7 +594,7 @@ window.KolobViz = (function () {
   // (round 3b: the organ when it plays alone — the giving-out, the organist's
   // prelude and fills, the house's own chords where no one sings over them;
   // the ward's handbells; the full ward, whatever layer it sings on)
-  var MELODIC = { clarinet: 1, bagpipe: 1, choir: 1, bells: 1, harmonium: 1, strings: 1, trombones: 1, oldtune: 1,
+  var MELODIC = { clarinet: 1, choir: 1, bells: 1, harmonium: 1, strings: 1, trombones: 1, oldtune: 1,
                   organ: 1, handbells: 1, ward: 1, cast: 1 };
   var CHOIR_LAYERS = { choir: 1, ward: 1, cast: 1 };
   var lastBeat = { choir: 1.15 };
@@ -689,7 +689,7 @@ window.KolobViz = (function () {
     if (beats >= 0.36) return { open: false, stem: true, dots: 0, flags: 1 };
     return { open: false, stem: true, dots: 0, flags: 2 };
   }
-  var SCALE = { choir: 1, bagpipe: 1, strings: 1, bells: 1, clarinet: 0.75, harmonium: 0.6, trombones: 1, oldtune: 1,
+  var SCALE = { choir: 1, strings: 1, bells: 1, clarinet: 0.75, harmonium: 0.6, trombones: 1, oldtune: 1,
                 organ: 1, handbells: 1, ward: 1, cast: 1 };
 
   function flushIntake() {
@@ -2600,7 +2600,7 @@ window.KolobViz = (function () {
     // stem into the gap at once, the line has divided it between them —
     // shareGap — at the telegraph's line when both fit, else nearer the
     // voice with room to give, the tune's stem first.)
-    var gapPad = 0.3 * sp, mid = g.mid(st);
+    var mid = g.mid(st);
     var yHi = g.y(st, hs[hs.length - 1].q), yLo = g.y(st, hs[0].q);
     // (o.keep: a voice of a closed score — the alto under a soprano, the
     // tenor over a bass — keeps its own stem even near the gap: shortened
@@ -4056,9 +4056,11 @@ window.KolobViz = (function () {
     c.fillStyle = gr; c.fillRect(0, 0, G.fade1 + 1, H);
     c.globalCompositeOperation = "source-over";
   }
+  var IDLE_FRAME_MS = 80;                          // with no meeting playing or held, the page repaints at about 12 fps, not the display's rate
   function frame(ts) {
     if (!running) return;
-    requestAnimationFrame(frame);
+    if (!playing && !paused && FRAME > 0) setTimeout(function () { requestAnimationFrame(frame); }, IDLE_FRAME_MS);
+    else requestAnimationFrame(frame);
     if (!ctx2d || !G) return;
     var raw = lastFrame ? Math.max(0, (ts - lastFrame) / 1000) : 0.016;
     var dt = Math.min(0.1, raw);                     // for the wheel's easing

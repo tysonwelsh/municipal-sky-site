@@ -352,16 +352,6 @@ window.KOLOB.GuestFarWard = (function () {
   // may call VoicesVocal.arm too: it is one queue). With no clock (an
   // offline render), every line joins at once.
   var ARM_STEP = 0.1, ARM_LEAD = 0.8;
-  function armTicker(V, ctx, hooks, t, end) {
-    if (!hooks.defer || !V.arm) return false;
-    (function tick(at) {
-      hooks.defer(at, function () {
-        V.arm(ctx, at + ARM_LEAD, at);
-        if (at < end + 1.5) tick(at + ARM_STEP);
-      });
-    })(t);
-    return true;
-  }
   function toSung(notes) {
     var out = [], t = notes.length ? notes[0].t : 0;
     notes.forEach(function (x) {

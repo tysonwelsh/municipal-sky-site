@@ -19,7 +19,7 @@ function bpl_v($file)
     $path = __DIR__ . '/' . $file;
     return file_exists($path) ? substr(md5_file($path), 0, 8) : '00000000';
 }
-include '../../includes/header.php';
+include '../../../includes/header.php';
 ?>
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -212,4 +212,4 @@ include '../../includes/header.php';
 <script src="bagpipe-lab.js?v=<?php echo bpl_v('bagpipe-lab.js'); ?>"></script>
 <script>if(!window.BagpipeLab)console.error("BAGPIPE LAB FAILED TO LOAD");</script>
 
-<?php include '../../includes/footer.php'; ?>
+<?php include '../../../includes/footer.php'; ?>

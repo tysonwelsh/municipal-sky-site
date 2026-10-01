@@ -701,7 +701,6 @@ window.KOLOB.GuestSocialHall = (function () {
     t += INTRO.honour;
     // THE POTATOES: two bars of the home chord chopped on the open strings
     // (or the fiddler's foot, four times), so the floor finds the tempo
-    var tPot = t;
     if (sh.potatoes === "chop") {
       var pn = [], q8 = 0;
       for (var pb = 0; pb < 2; pb++) (per === 2 ? [2, 1, 1] : [2, 1, 2, 1]).forEach(function (n8, i) {

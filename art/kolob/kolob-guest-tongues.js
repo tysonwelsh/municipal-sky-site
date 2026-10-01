@@ -105,7 +105,7 @@ window.KOLOB.GuestTongues = (function () {
     },
     cap: 0.5,
   };
-  var EXCLUDES = ["question"];                    // (the Question is shelved; were it asked in the testimony, the song would wait)
+  var EXCLUDES = [];                              // (nothing, since the Question was shelved; the contract's slot stays for a lab)
   var AT = [4, 24];                               // s into the testimony: between speakers
   var SEEDS = { base: 0.3, fast: 0.45 };          // how often the song seeds the next hymn
   // the song's bus. Calibrated in guests3c-lab against the organ reference
@@ -363,7 +363,8 @@ window.KOLOB.GuestTongues = (function () {
         }
         var cdD = wr.next(), cdW = wr.next();
         if (codas.length && cdD < 0.18) syls[syls.length - 1].coda = codas[Math.floor(cdW * codas.length)];
-        var key = syls.map(sounds).join("."), bare = syls.map(said).join("."), ds = dsOf(syls);
+        var key = syls.map(sounds).join("."), ds = dsOf(syls);
+        bare = syls.map(said).join(".");
         // (and a word of one syllable said over and over — la-la, na-na-na,
         // ga-ga — is the nursery's and the chorus's, not a tongue's: heard by
         // its consonants and vowels, so na-nan and la-la-lal are that word

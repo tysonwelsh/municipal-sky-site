@@ -18,7 +18,7 @@ function oql_v($file)
     $path = __DIR__ . '/' . $file;
     return file_exists($path) ? substr(md5_file($path), 0, 8) : '00000000';
 }
-include '../../includes/header.php';
+include '../../../includes/header.php';
 ?>
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -200,8 +200,8 @@ include '../../includes/header.php';
   ▶ play sounds one question alone over the drone at the asker's own pace.</p>
 </div>
 
-<script src="../prosperos-jukebox-v2/pj2-rand.js?v=<?php echo oql_v('../prosperos-jukebox-v2/pj2-rand.js'); ?>"></script>
+<script src="../../prosperos-jukebox-v2/pj2-rand.js?v=<?php echo oql_v('../../prosperos-jukebox-v2/pj2-rand.js'); ?>"></script>
 <script src="kolob-question.js?v=<?php echo oql_v('kolob-question.js'); ?>"></script>
 <script src="question-lab.js?v=<?php echo oql_v('question-lab.js'); ?>"></script>
 
-<?php include '../../includes/footer.php'; ?>
+<?php include '../../../includes/footer.php'; ?>

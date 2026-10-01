@@ -142,7 +142,7 @@
 }
 
 /* the Whole switch — three states, read at a glance: solid gilt = every
-   meeting withholds the tune; plain outline = the natural 4%; struck = never */
+   meeting withholds the tune; plain outline = the natural draw (kolob-meeting.js CUMULATIVE_ODDS, 8 %); struck = never */
 .kolob-cumulative-toggle.is-always {
   opacity: 1;
   background: var(--gilt);
@@ -945,4 +945,17 @@
   .kolob-console .kolob-lever-wrap { flex: 1 1 auto; width: auto; min-width: 0; }
   .kolob-wheel-wrap { height: 185px; }
   .kolob-viz-wrap { height: 196px; }
+}
+
+/* Reduced motion (the OS setting). The page's own motion already honours it in
+   script — the wheel turns at once and the band's caterpillar fades instead of
+   crawling (kolob-viz.js, kolob-ui.js) — and here the stylesheet's motion stands
+   still too: the broadside's ink-set blur and the slow opacity fades of the
+   wheel, the sacrament's dim and the caterpillar's fade all land at once. */
+@media (prefers-reduced-motion: reduce) {
+  .kolob-scene *, .kolob-scene *::before, .kolob-scene *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

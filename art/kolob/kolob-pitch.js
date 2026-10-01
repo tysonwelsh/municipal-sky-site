@@ -60,10 +60,6 @@ window.KOLOB = window.KOLOB || {};
     var n = colN();
     for (var i = -2 * n; i <= 2 * n + 3; i++) SCALE.push({ deg: ((i % n) + n) % n, idx: i, freq: degFreq(i) });
   }
-  function scaleIndexOf(i) {
-    for (var k = 0; k < SCALE.length; k++) if (SCALE[k].idx === i) return k;
-    return Math.floor(SCALE.length / 2);
-  }
   function harm(h) { return F0 * h; }            // harmonic h of the fundamental
   // A TUNING, spelled out (round 2) — the same projection and the same
   // degree → frequency as above, but for a mode and an F0 the caller names,
@@ -84,9 +80,6 @@ window.KOLOB = window.KOLOB || {};
       degFreq: function (i) { return f0 * ROOT_MULT * col.ratios[classOf(i)] * Math.pow(2, Math.floor(i / n)); },
     };
   }
-  // Gravity: do and sol. Phrases rest on do / mi / sol (collection-degree classes).
-  function gravityDegs() { var n = colN(); return n === 5 ? { 0: true, 3: true } : { 0: true, 4: true }; }
-  function restDegs() { var n = colN(); return n === 5 ? { 0: true, 2: true, 3: true } : { 0: true, 2: true, 4: true }; }
 
   // ==========================================================================
   // EXACT RATIOS — the monzo helpers (SCORE.md §2). New in Kolob 2 and pure:

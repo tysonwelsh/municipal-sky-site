@@ -78,7 +78,6 @@ window.KOLOB = window.KOLOB || {};
   // A meeting is a seeded plan of sections. Sections are unmetered inside;
   // their joints are organ cadences and a single bell — not percussion.
   // Every layer reads C (the conductor state) when it fires.
-  var SECTION_TYPES = ["prelude", "invocation", "hymn", "testimony", "sacrament", "doxology", "postlude"];
   // The meeting-activity axis: what kind of Sunday is it?
   var MEETINGS = {
     ordinary:   { silenceMul: 1.0, hymns: 2, bells: 0.5, choirSize: 3, bright: 0.5,  meterW: [["CM", 3], ["LM", 2], ["SM", 2], ["87.87", 2], ["CMD", 1]] },
@@ -118,6 +117,9 @@ window.KOLOB = window.KOLOB || {};
   var forceRaspberry = false;    // dev/test hook only — never part of the 𐐌𐐚𐐞 pool
   // CUMULATIVE FORM's governor — the 𐐐𐐄𐐢 pill: "always" | "natural" | "never"
   var cumulativeMode = "natural";
+  // the natural draw's odds — the ONE number; the page reads it through
+  // KolobAudio.getCumulativeOdds() for the switch's text
+  var CUMULATIVE_ODDS = 0.08;
   // THE CALENDAR (PLAN-COMPOSITION §7.1; the pre-v0.34 polish). Each meeting
   // draws a Sunday of the colony year at the calendar's own odds — there is
   // no journey across meetings, and the first visit is no longer the trough
@@ -308,7 +310,7 @@ window.KOLOB = window.KOLOB || {};
     var bDie = R.chance(oddsOf("bands", 0.36)), bSeatDie = R.chance(0.7);
     var stDie = R.chance(oddsOf("steeples", 0.075)), stSeatDie = R.chance(0.55);
     var oDie = R.chance(oddsOf("oldtune", 0.15)), oSeatDie = R.chance(0.65), oTuneDie = R.rnd(0, 1);
-    var cumDie = R.chance(0.08);
+    var cumDie = R.chance(CUMULATIVE_ODDS);
     var razzDie = R.chance(0.05);
     // IVES VISITATIONS — guests in the meeting. Each rolls its OWN dice
     // (bands 36%, question 29%, per the owner's taste — roughly half of
@@ -425,11 +427,12 @@ window.KOLOB = window.KOLOB || {};
     }
     // THE NAUVOO BRASS BAND (round 3c; PLAN §8.2): kolob-guest-bands.js
     // decides, on guest:bands:<n> — the owner's 36 % and the Sunday's welcome
-    // (the calendar's table), the section (the doxology seven times in ten,
-    // else a hymn), the moment, which of the day's hymns it marches, and
-    // whether a second band comes. It keeps its own time (cued): it strikes
-    // up while the ward sings and crosses the verse — the hymn gives it no
-    // gap; the collision is the piece. (bDie and bSeatDie above are still
+    // (the calendar's table), the section (the prelude or the postlude —
+    // never while the ward sings, the owner's rule from v0.36.1), the moment,
+    // which of the day's hymns it marches, and whether a second band comes.
+    // It keeps its own time (cued): it strikes up over the gathering or the
+    // going-out, and the house carries on — the collision is the piece.
+    // (bDie and bSeatDie above are still
     // thrown, unused.) A handcart company asked for by name keeps the band
     // away, as the trombones asked for do: one procession a Sunday. So does
     // any guest the switch names that keeps a seat (the critic of round 3c:
@@ -517,9 +520,11 @@ window.KOLOB = window.KOLOB || {};
     // (the doxology's payoff — the assembly, the partner hymn, the refrain or
     // the bands — is settled with the day's hymnal, below: a band seated in
     // the doxology moves out whenever the payoff is another's)
-    // (round 3c: to a hymn, or else the postlude — the first the budget
-    // admits it to beside the guests already seated; with neither free, the
-    // band stays in the town this Sunday, and the payoff is the other's)
+    // (v0.36.1: to the prelude or the postlude, never a hymn — the first the
+    // budget admits it to beside the guests already seated; with neither free,
+    // the band stays in the town this Sunday, and the payoff is the other's.
+    // With kolob-guest-bands.js loaded a band is never seated in the doxology
+    // in the first place, so this is reached only through the fife fallback.)
     function bandsLeaveTheDoxology() {
       for (var cvi = C.visitations.length - 1; cvi >= 0; cvi--) {
         var bV = C.visitations[cvi];
@@ -845,7 +850,8 @@ window.KOLOB = window.KOLOB || {};
       // doxology only when it has no other payoff (it carries the day's theme
       // home otherwise). Pure: the song's score on the gift's own stream.
       if (tgV && tgV.seat && tgV.seat.seeds && TGg.gesture && TGg.score) {
-        var tIdx = indexOfSec("testimony"), nextRow = null;
+        tIdx = indexOfSec("testimony");
+        var nextRow = null;
         for (var nr = 0; nr < prep.rows.length && !nextRow; nr++) if (prep.rows[nr].index != null && prep.rows[nr].index > tIdx) nextRow = prep.rows[nr];
         if (nextRow && nextRow.piece !== "round" && !nextRow.partnerOf && (nextRow.section === "hymn" || (nextRow.section === "doxology" && !C.payoff))) {
           var gest = TGg.gesture(TGg.score({ mode: S.mode, keynoteHz: S.F0 * S.ROOT_MULT, house: C.house, part: tgV.seat.part }, tgV.stream, 0));
@@ -1887,9 +1893,8 @@ window.KOLOB = window.KOLOB || {};
   // THE UNLOGGED GUESTS — a guest that "just happens, low-key" (PLAN §8.12,
   // the Hosanna): it sends logged: false on every event and on every note the
   // page may not show, the minutes print none of them, the staff engraves
-  // none of those notes, and the hymn board's direction line never names it. The
-  // Hosanna is not built yet; the table is read when a guest arrives, so a
-  // test may add any guest to it (KOLOB._s.UNLOGGED_GUESTS.oldtune = true).
+  // none of those notes, and the hymn board's direction line never names it.
+  // The table is read when a guest arrives, so a test may add any guest to it (KOLOB._s.UNLOGGED_GUESTS.oldtune = true).
   var UNLOGGED = { hosanna: true };
 
   // Dev aid: jump the meeting to a section of the plan. Voices notice on
@@ -2392,6 +2397,7 @@ window.KOLOB = window.KOLOB || {};
   Object.defineProperty(S, "cumulativeMode", { enumerable: true, configurable: true, get: function () { return cumulativeMode; }, set: function (v) { cumulativeMode = v; } });
   Object.defineProperty(S, "seasonPos", { enumerable: true, configurable: true, get: function () { return seasonPos; }, set: function (v) { seasonPos = v; } });
   S.planMeeting = planMeeting;
+  S.CUMULATIVE_ODDS = CUMULATIVE_ODDS;
   S.resetVisit = resetVisit;
   S.localArc = localArc;
   S.intensity = intensity;

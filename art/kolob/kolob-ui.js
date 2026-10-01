@@ -147,7 +147,6 @@
     drone: "𐐔𐐡𐐄𐐤",
     choir: "𐐗𐐎𐐌𐐊𐐡",
     clarinet: "𐐗𐐢𐐇𐐡𐐆𐐤𐐇𐐓",
-    bagpipe: "𐐒𐐈𐐘𐐑𐐌𐐑",
     harmonium: "𐐐𐐂𐐡𐐣𐐄𐐤𐐆𐐊𐐣",
     strings: "𐐝𐐓𐐡𐐆𐐥𐐞",
     bells: "𐐒𐐇𐐢𐐞",
@@ -204,7 +203,7 @@
   var MODES_EN = { ionian: "IONIAN", mixolydian: "MIXOLYDIAN", dorian: "DORIAN", aeolian: "AEOLIAN", penta: "PENTATONIC", hexa: "HEXATONIC" };
   var LAYERS_EN = {
     organ: "ORGAN", drone: "DRONE", choir: "CHOIR", clarinet: "CLARINET",
-    bagpipe: "BAGPIPE", harmonium: "HARMONIUM", strings: "STRINGS", bells: "BELLS",
+    harmonium: "HARMONIUM", strings: "STRINGS", bells: "BELLS",
     voice: "VOICE", telegraph: "TELEGRAPH", tuba: "TUBA", ambient: "FIELD",
   };
   var MOTIF_EN = { "Ⅰ": "I", "Ⅱ": "II", "Ⅲ": "III" };   // roman numerals in both scripts; ASCII in latin mode
@@ -321,7 +320,7 @@
       case "joint":
       case "room-empties":  return minute("∴", S.amen, "cadence");
       case "fuging":        return minute("⁂", S.fuging, "fuging");
-      case "telegraph":     return minute("⌁", LAYERS_DS.telegraph, "telegraph");
+      case "telegraph":     return minute("⌁", TT(LAYERS_DS, LAYERS_EN).telegraph, "telegraph");
       case "phrase":        return minute("♮", layerName(ev.layer) + " " + S.speaks, "phrase");
       case "guest": {
         var g = GUEST_ROWS[ev.guest], st = g && g[ev.stage];
@@ -349,7 +348,7 @@
         // (round 3b: the ward's precentor lines out — his name, in the
         // minutes' capitals; the deacon's clarinet still lines out the
         // day's material around the hymns)
-        return minute("☞", (ev.nameDs ? capsDs(ev.nameDs) : LAYERS_DS.clarinet) + " " + S.linesOut, "verse");
+        return minute("☞", (ev.nameDs ? capsDs(ev.nameDs) : TT(LAYERS_DS, LAYERS_EN).clarinet) + " " + S.linesOut, "verse");
       case "cast":                                           // (round 3b: a person of the ward comes forward — their name and what they do)
         if (!ev.actionDs) return null;
         if (ev.memberId === "organist") {                    // (round 3b, step 2: the organist at the bench)
@@ -366,7 +365,7 @@
       }
       case "motif-reprise": return minute("✸", S.reprise + " " + motifName(ev.name), "motif");
       case "motif-answer":  return minute("⇄", layerName(ev.voice) + " " + S.answers + " " + layerName(ev.from), "motif");
-      case "motif-shadow":  return minute("〰", LAYERS_DS.harmonium + " " + S.shadows, "motif");
+      case "motif-shadow":  return minute("〰", TT(LAYERS_DS, LAYERS_EN).harmonium + " " + S.shadows, "motif");
       case "motif-disperse": return minute("࿙", S.disperses, "motif");
       case "hymns-of-the-day": return minute("❁", S.hymnsOfDay, "motif");
       case "motif-develop":
@@ -968,7 +967,7 @@
 
   // ==========================================================================
   // The Whole switch — the cumulative-form governor. Cycles on click:
-  // guaranteed (solid gilt) → natural 4% (outline) → never (struck) → …
+  // guaranteed (solid gilt) → natural (outline; the engine's CUMULATIVE_ODDS, 8 %) → never (struck) → …
   // Switching TO guaranteed restarts the meeting (the Ives-switch pattern);
   // the other states take effect at the next meeting without a restart.
   // ==========================================================================
@@ -980,9 +979,10 @@
       else mode = localStorage.getItem("kolobCumulative") || "natural";
     } catch (e) {}
     if (mode !== "always" && mode !== "natural" && mode !== "never") mode = "natural";
+    var odds = K.getCumulativeOdds ? K.getCumulativeOdds() : 0.08;   // the one number: kolob-meeting.js CUMULATIVE_ODDS
     var LABELS = {
       always: "the tune withheld until the doxology — every meeting (restarts the meeting)",
-      natural: "the tune withheld until the doxology — about one meeting in twelve",
+      natural: "the tune withheld until the doxology — about " + Math.round(odds * 100) + " % of meetings",
       never: "the tune withheld until the doxology — off",
     };
     function apply() {
@@ -1032,6 +1032,8 @@
     var draw = el.querySelector(".kolob-cat-draw"), line = el.querySelector(".kolob-cat-line");
     var head = el.querySelector(".kolob-cat-head"), disc = el.querySelector(".kolob-cat-disc"), ring = el.querySelector(".kolob-cat-ring");
     var transport = el.parentNode;
+    // (the lane is measured against STOP and the master lever: without them there is no lane)
+    if (!document.getElementById("kolob-stop") || !transport.querySelector(".kolob-lever-wrap")) return null;
     // ---- the knobs ----
     var PACE = 1.5;                  // how much more slowly than pass 1 it goes, in and off (the owner: "a little bit slower")
     var SPEED = 130 / PACE;          // px a second the crawl covers; each crawl is held to 3.75 … 5.4 s

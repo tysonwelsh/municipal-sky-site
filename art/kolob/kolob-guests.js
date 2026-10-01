@@ -52,7 +52,6 @@ window.KOLOB = window.KOLOB || {};
   function cueAt(lane, t, fn) { return S.cueAt(lane, t, fn); }
   function panAt(layer, p) { return S.panAt(layer, p); }
   function getLayerParam(layer, key, fallback) { return S.getLayerParam(layer, key, fallback); }
-  function env(g, t, pts) { return S.env(g, t, pts); }
   function claimAir(durS, marginS) { return S.claimAir(durS, marginS); }
   // (the other rooms' state, read and written through S: S.ctx, S.mode,
   // S.Harmony (the chord desk), S.Meeting (the chorister's book), S.moment,

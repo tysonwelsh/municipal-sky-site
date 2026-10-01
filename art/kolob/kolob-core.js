@@ -38,10 +38,10 @@
 //    browser's timers run.
 //
 // Layers: organ, drone, choir, clarinet, harmonium, strings, bells, voice,
-// telegraph, ambient — and the bagpipe, SHELVED (owner, 2026-09-13: "just
-// kind of obnoxious"): its voice, params and cycle stay in the file, but it
-// is never scheduled, never shown on the desk, and its layer gain is pinned
-// at zero. See SHELVED below.   Public surface: window.KolobAudio
+// telegraph, tuba, ambient. (The bagpipe, SHELVED by the owner on 2026-09-13
+// — "just kind of obnoxious" — left the engine on 2026-10-01: its room and
+// its lab are kept in shelved/. SHELVED below is the mechanism, empty today.)
+// Public surface: window.KolobAudio
 //
 // THE HOUSE, ROOM BY ROOM (Kolob 2, phase 0a — split from the one-file
 // kolob-audio.js of v0.30 without changing a note; SCORE.md §1 is the plan):
@@ -51,8 +51,8 @@
 //   kolob-harmony.js   the four-part engine (pure: handed a moment and dice)
 //   kolob-voices-*.js  the instruments: organ, choir, winds (clarinet and
 //                      harmonium), ground (drone, strings, bells, tuba), field
-//                      (still small voice, telegraph, the valley), bagpipe
-//                      (shelved), band (the brass: the trombones at dawn)
+//                      (still small voice, telegraph, the valley), band
+//                      (the brass: the trombones at dawn)
 //   kolob-guest-trombones.js  the trombone choir at dawn: its seat, its
 //                      chorale and its two choirs (pure planning; it plays
 //                      when the guests' room places it)
@@ -119,9 +119,6 @@ window.KolobAudio = (function () {
   function telegraphCycle(t) { return S.telegraphCycle(t); }
   function evFarBell(t, R) { return S.evFarBell(t, R); }
   function ambientEvent(t) { return S.ambientEvent(t); }
-  // from kolob-voices-bagpipe.js
-  function bagpipeLine(t, notes, gainMul, pan) { return S.bagpipeLine(t, notes, gainMul, pan); }
-  function bagpipeCycle(t) { return S.bagpipeCycle(t); }
   // from kolob-meeting.js
   function planMeeting(t) { return S.planMeeting(t); }
   function localArc() { return S.localArc(); }
@@ -280,19 +277,19 @@ window.KolobAudio = (function () {
   // LAYERS + STATE
   // ==========================================================================
   // NOTE: "tuba" is RESERVED FOR THE RASPBERRY AMEN ONLY — see tubaBlat().
-  var LAYERS = ["organ", "drone", "choir", "clarinet", "bagpipe", "harmonium", "strings", "bells", "voice", "telegraph", "tuba", "ambient"];
+  var LAYERS = ["organ", "drone", "choir", "clarinet", "harmonium", "strings", "bells", "voice", "telegraph", "tuba", "ambient"];
   // SHELVED layers keep their code, their graph node and their defaults so a
   // change of heart is one line here — but they never sound: their cycle is
   // not scheduled, the desk does not list them (getLayers/getVolumes filter
   // them out), and applyLayerGain pins their gain at zero, so even an
   // audition or a stray Motif hand-off comes out silent.
-  var SHELVED = { bagpipe: true };
+  var SHELVED = {};   // (none today: the bagpipe, shelved 2026-09-13, moved to shelved/ on 2026-10-01)
   // Depth bias per layer — added to the room balance before the equal-power
   // law (negative = nearer the ear). The still small voice stays close, but
   // in the room now; the wire is on the table; the deacon's parlor organ is
   // in the same building as the choir; the landscape and the field are at
   // the back, under the windows.
-  var ROOM_DEPTH = { voice: -0.35, telegraph: -0.25, harmonium: -0.15, clarinet: -0.08, bells: 0, choir: 0.05, organ: 0.10, strings: 0.15, drone: 0.15, tuba: 0, bagpipe: 0.05, ambient: 0.20,
+  var ROOM_DEPTH = { voice: -0.35, telegraph: -0.25, harmonium: -0.15, clarinet: -0.08, bells: 0, choir: 0.05, organ: 0.10, strings: 0.15, drone: 0.15, tuba: 0, ambient: 0.20,
                      // (round 3b: a person of the ward come forward — the alto's verse, the
                      // precentor's line, the descant — is heard a step nearer than the ward)
                      "choir-near": -0.2,
@@ -312,7 +309,7 @@ window.KolobAudio = (function () {
   var choirNear = null;            // (round 3b) the ward's nearer way into the rooms, under the choir's slider
   // organ 0.52 → 0.40 (about 2.3 dB down): the owner found the organ "pretty
   // loud" in the v0.34 preview (2026-09-28)
-  var layerVolumes = { organ: 0.40, drone: 0.55, choir: 0.8, clarinet: 0.38, bagpipe: 0.18, harmonium: 0.45, strings: 0.5, bells: 0.5, voice: 0.35, telegraph: 0.25, tuba: 0.5, ambient: 0.5 };
+  var layerVolumes = { organ: 0.40, drone: 0.55, choir: 0.8, clarinet: 0.38, harmonium: 0.45, strings: 0.5, bells: 0.5, voice: 0.35, telegraph: 0.25, tuba: 0.5, ambient: 0.5 };
   var layerMuted = {}; LAYERS.forEach(function (l) { layerMuted[l] = false; });
   var layerRate = {}; LAYERS.forEach(function (l) { layerRate[l] = 1; });
 
@@ -328,7 +325,6 @@ window.KolobAudio = (function () {
     drone:     { presence: 0.5, fifth: 0.4 },
     choir:     { size: 3, vowel: 0.4, scoop: 0.5 },
     clarinet:  { vibrato: 0.4, pace: 1.0, grace: 0.5 },
-    bagpipe:   { grit: 0.42, reed: 0.5, breath: 0.32, pace: 1.0 },
     harmonium: { bellows: 0.5, reed: 0.5, shadow: 0.5 },
     strings:   { warmth: 0.5, lonesome: 0.4 },
     bells:     { ring: 0.55, tine: 0.5 },
@@ -349,7 +345,7 @@ window.KolobAudio = (function () {
   // top of that source lift. bells 0.8: pulled down 20% by owner request.
   // telegraph 1.5: the wire lifted 50% so its taps carry. The trims seat each
   // while the sliders still read their usual positions.
-  var LAYER_VOL_TRIM = { choir: 1.1, voice: 9.0, bagpipe: 0.44, clarinet: 0.72, bells: 0.8, telegraph: 1.5 };
+  var LAYER_VOL_TRIM = { choir: 1.1, voice: 9.0, clarinet: 0.72, bells: 0.8, telegraph: 1.5 };
 
   // The rooms. CLOSE: the meetinghouse — a plain plastered hall, quick and a
   // little bright, its early reflections doing the seating. WIDE: the
@@ -1131,13 +1127,6 @@ window.KolobAudio = (function () {
         emitNote("harmonium", degFreq(projDeg(2)), t, 5);
         break;
       }
-      case "bagpipe": {
-        var bnotes = [[-3, 1], [0, 1.4], [2, 1], [0, 2.4]].map(function (n) {
-          return { f: degFreq(projDeg(n[0]) + colN()), dur: n[1] };
-        });
-        bagpipeLine(t, bnotes, 0.95, 0);
-        break;
-      }
       case "strings": stringsPad(t, 9, 0.9, false); break;
       case "bells":
         meetinghouseBell(t, 0.8, A);
@@ -1204,7 +1193,6 @@ window.KolobAudio = (function () {
       cueAt("strings", t0 + W.strings, stringsCycle);
       cueAt("harmonium", t0 + W.harmonium, harmoniumCycle);
       cueAt("clarinet", t0 + W.clarinet, clarinetPhrase);
-      if (!SHELVED.bagpipe) cueAt("bagpipe", t0 + 30, bagpipeCycle);
       cueAt("bells", t0 + W.bells, tineCycle);
       cueAt("telegraph", t0 + W.telegraph, telegraphCycle);
       cueAt("conductor", t0 + 1, conductorTick);
@@ -1468,6 +1456,8 @@ window.KolobAudio = (function () {
     setForceRaspberry: function (on) { S.forceRaspberry = !!on; },
     setCumulativeMode: function (s) { if (s === "always" || s === "natural" || s === "never") S.cumulativeMode = s; },
     getCumulativeMode: function () { return S.cumulativeMode; },
+    // the natural draw's odds (kolob-meeting.js CUMULATIVE_ODDS): the page's one source for the Whole switch's text
+    getCumulativeOdds: function () { return S.CUMULATIVE_ODDS != null ? S.CUMULATIVE_ODDS : 0.08; },
     // dev accessor for the tune lab — the pool is the Earth tunes
     // (kolob-tunes.js), read through the old-tune guest's own law, so lab and
     // engine can never drift apart (v0.30's shape, plus id and modes)

@@ -41,7 +41,6 @@ window.InstrumentsLab = (function () {
   // masterGain(0.6) → tanh(1.15) → compressor(−18/3:1) — then a brick-wall
   // guard at −1 dBFS (the lab's promise never to exceed the app).
   // ==========================================================================
-  var irBufCache = {};
   function fetchIR(ctx) {
     var url = "../prosperos-jukebox-v2/ir/rooms/library-wide-st-margarets.wav";
     return fetch(url).then(function (r) { if (!r.ok) throw new Error("ir " + r.status); return r.arrayBuffer(); })
@@ -623,7 +622,7 @@ window.InstrumentsLab = (function () {
     // spectrum: average power in five bands + centroid (Welch, 4096)
     var N = 4096, bands = [0, 0, 0, 0, 0], cnum = 0, cden = 0, tnum = 0, tden = 0;
     var win = new Float32Array(N); for (var w = 0; w < N; w++) win[w] = 0.5 - 0.5 * Math.cos(2 * Math.PI * w / N);
-    var re = new Float32Array(N), im = new Float32Array(N), frames = 0;
+    var re = new Float32Array(N), im = new Float32Array(N);
     var spec = [];
     for (var st = 0; st + N <= n; st += N / 2) {
       for (var u = 0; u < N; u++) { re[u] = mono[st + u] * win[u]; im[u] = 0; }
@@ -636,7 +635,7 @@ window.InstrumentsLab = (function () {
         bands[bi] += pw; cnum += pw * hz; cden += pw;
         if (hz >= 200 && hz <= 8000) { tnum += pw * hz; tden += pw; }
       }
-      spec.push(col); frames++;
+      spec.push(col);
     }
     var tot = bands.reduce(function (a3, b3) { return a3 + b3; }, 0);
     var out = {
@@ -709,7 +708,6 @@ window.InstrumentsLab = (function () {
       card.appendChild(el("h2", "kil-name", ph.name));
       card.appendChild(el("p", "kil-phrase", ph.phrase));
       var row = el("div", "kil-row");
-      var opts = {};
       if (ph.id === "organ") {
         regSel = el("select"); regSel.id = "kil-reg";
         Object.keys(KOLOB.VoicesOrgan.REGISTRATIONS).forEach(function (r) { var op = el("option", null, r); op.value = r; regSel.appendChild(op); });

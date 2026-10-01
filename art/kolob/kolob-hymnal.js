@@ -476,7 +476,12 @@ window.KOLOB = window.KOLOB || {};
         catch (err) { self.postMessage({ type: "loaded", ok: false, error: String(err && err.message || err) }); }
         return;
       }
-      if (m.type === "forget") { for (var k in cache) if (k.indexOf(m.prefix) === 0) delete cache[k]; return; }
+      if (m.type === "forget") {
+        // (the hymns AND the refrain statements of the meeting let go: h:<n>:* and r:<n>:*)
+        var fp = m.prefixes || [m.prefix];
+        for (var k in cache) for (var q = 0; q < fp.length; q++) if (k.indexOf(fp[q]) === 0) { delete cache[k]; break; }
+        return;
+      }
       if (m.type !== "compose") return;
       var t0 = self.performance && self.performance.now ? self.performance.now() : 0, h = null, err = null;
       try {
@@ -592,7 +597,7 @@ window.KOLOB = window.KOLOB || {};
       if (!keep) { if (jobs[k] && jobs[k].hymn) shelve(jobs[k]); delete jobs[k]; }
       return keep;
     });
-    if (worker) worker.postMessage({ type: "forget", prefix: seed + "|h:" + (n - 2) + ":" });
+    if (worker) worker.postMessage({ type: "forget", prefixes: [seed + "|h:" + (n - 2) + ":", seed + "|r:" + (n - 2) + ":"] });
     var earlier = [];
     function post(j) {
       jobs[j.key] = j;

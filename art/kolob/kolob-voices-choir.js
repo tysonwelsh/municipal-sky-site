@@ -593,7 +593,7 @@ window.KOLOB = window.KOLOB || {};
     var vowels = [];
     for (var v = 0; v < 4; v++) {
       var Rv = R.fork("vowels:" + v), per = [];
-      for (var k = 0; k < 160; k++) per.push(Rv.pickW(VERSE_VOWELS));
+      for (k = 0; k < 160; k++) per.push(Rv.pickW(VERSE_VOWELS));
       vowels.push(per);
     }
     var fugDie = R.fork("fuging").next();

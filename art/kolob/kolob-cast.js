@@ -144,7 +144,12 @@ window.KOLOB.Cast = (function () {
     return spelling.split(" ").map(function (word) {
       return word.split("-").map(function (ph) {
         var at = DS_CODES.indexOf(ph);
-        if (at < 0) throw new Error("kolob-cast: no Deseret letter for '" + ph + "' in " + spelling);
+        if (at < 0) {
+          // (a misspelt phoneme must not take the whole engine down at load: the
+          // clerk writes "?" for that letter and the console says which it was)
+          if (typeof console !== "undefined" && console.warn) console.warn("kolob-cast: no Deseret letter for '" + ph + "' in " + spelling);
+          return "?";
+        }
         return String.fromCodePoint(0x10400 + at);
       }).join("");
     }).join(" ");

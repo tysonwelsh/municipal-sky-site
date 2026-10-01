@@ -116,7 +116,6 @@ window.KOLOB.Organist = (function () {
   function cents(m) { return 1200 * Math.log(ratio(m)) / Math.LN2; }
   function eq(a, b) { return a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && (a[3] || 0) === (b[3] || 0); }
   function cls(m) { return oct(m, -Math.floor(cents(m) / 1200 + 1e-9)); }       // the octave-free class, [1, 2)
-  function sameCls(a, b) { return eq(cls(a), cls(b)); }
   function near(m, c) { var k = cls(m); return oct(k, Math.round((c - cents(k)) / 1200)); }
   var COMMA = [-4, 4, -1, 0];                                                    // 81/80
   function commaNear(a, b) { var x = cls(a), y = cls(b); return eq(cls(mz(x, COMMA)), y) || eq(cls(mz(y, COMMA)), x); }
@@ -1567,7 +1566,7 @@ window.KOLOB.Organist = (function () {
     var reg = style === "plain" ? "soft flutes" : style === "victorian" ? "vox & flutes" : "flutes 8 & 4";
     var p = phrase(plan, t, reg, "modulation to the next hymn's key", 4);
     draws(plan, organist, t, reg);
-    var prev = fromV, out = [], tt = t, common = null;
+    var prev = fromV, out = [], common = null;
     // the old tonic, re-sounded softly so the pivot has something to hold
     out.push({ voicing: fromV, dur: 1 * beatS });
     seq.forEach(function (s, k) {
@@ -2152,7 +2151,7 @@ window.KOLOB.Organist = (function () {
       });
     }
     kx = pref.k; keyB = mz(h.keyMonzo, kx);
-    var sT = Math.round((-1300 - cents(kx)) / 1200), lower = lowerOf(kx);
+    var lower = lowerOf(kx);
     var dly = pref.d, lag = dly * bs;
     var regU = st === "improviser" ? "glass" : "flutes 8 & 4", regL = st === "plain" ? "hymn principal" : st === "victorian" ? "trumpet" : "principal & 4";
     var pU = phrase(C.plan, t, regU, "the interlude: the hymn in its own key", 2.5), pL = phrase(C.plan, t + lag, regL, "the interlude: the tune in another key", 1.6);

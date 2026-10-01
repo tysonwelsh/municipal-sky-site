@@ -66,7 +66,6 @@ window.KOLOB.Dialects = (function () {
   };
   SEMIS.penta = SEMIS.hexa = SEMIS.ionian;
   var MINOR = { aeolian: true, dorian: true };
-  var DO_OF = { ionian: 0, penta: 0, hexa: 0, mixolydian: 3, dorian: 6, aeolian: 2 };
   function cls(d) { return ((d % 7) + 7) % 7; }
   function semi(mode, d, alt) { return 12 * Math.floor(d / 7) + SEMIS[mode][cls(d)] + (alt || 0); }
   function u01(R) { return R.next ? R.next() : R.rnd(0, 1); }
@@ -107,13 +106,6 @@ window.KOLOB.Dialects = (function () {
     if (third === 4 && fifth === 8) return "aug";
     return "other";
   }
-  function romanOf(mode, ch) {
-    if (ch.label) return ch.label;
-    var q = qualityOf(mode, ch), r = ROMAN_UP[ch.root];
-    var flat = (mode === "mixolydian" || MINOR[mode]) && (SEMIS.ionian[ch.root] !== SEMIS[mode][ch.root]) ? "♭" : "";
-    if (q === "min" || q === "min7" || q === "dim" || q === "hdim7") r = r.toLowerCase();
-    return flat + r + (q === "dim" ? "°" : "") + (ch.sev ? "7" : "");
-  }
 
   // the Tabernacle's vocabulary, per mode family. cost: its standing price in
   // the grammar; only: where it may stand ("cad" before a cadence, "approach"
@@ -145,7 +137,6 @@ window.KOLOB.Dialects = (function () {
     V.forEach(function (c) { c.q = qualityOf(mode, c); c.roman = c.name; });
     return V;
   }
-  function chordHas(ch, c, alt) { for (var i = 0; i < ch.tones.length; i++) if (ch.tones[i].c === c && (alt == null || ch.tones[i].alt === alt)) return true; return false; }
   function toneOf(ch, c) { for (var i = 0; i < ch.tones.length; i++) if (ch.tones[i].c === c) return ch.tones[i]; return null; }
 
   // ==========================================================================
@@ -363,7 +354,6 @@ window.KOLOB.Dialects = (function () {
       if (ch.sev) { bassTones.push([2, 0.8 + (ctx.rootPref || 0)]); bassTones.push([ch.tones.length - 1, 1.1 + (ctx.rootPref || 0)]); }
     }
     function tess(p, s) { var lo = semi(mode, T[p][0], 0), hi = semi(mode, T[p][1], 0); return s < lo ? (lo - s) * 0.15 : s > hi ? (s - hi) * 0.15 : 0; }
-    var classes = ch.tones.map(function (t) { return t.c; });
     bassTones.forEach(function (bt) {
       var tb = ch.tones[bt[0]];
       degsOfClass(tb.c, B.B).forEach(function (bd) {
@@ -660,7 +650,7 @@ window.KOLOB.Dialects = (function () {
       slots.forEach(function (s, k) {
         var ch = chords[k], inv = vl.voicings[k].inv, last = list[list.length - 1];
         if (last && last.name === ch.name && last.inv === inv) { last.len = s.beat + s.beats - last.beat; return; }
-        var root = ch.dim7 ? ch.tones[0] : ch.tones[0];
+        var root = ch.tones[0];
         list.push({ beat: s.beat, len: s.beats, roman: figured(ch, inv), rootDeg: root.c, rootAlt: root.alt || 0,
                     quality: ch.dim7 ? "dim" : ch.q, name: ch.name, inv: inv, fn: ch.fn, dim7: !!ch.dim7,
                     tones: ch.tones.map(function (t) { return [t.c, t.alt]; }) });
@@ -1082,7 +1072,7 @@ window.KOLOB.Dialects = (function () {
   // tenor at home's pitch (it is the tune), the counter at the dominant, the
   // treble at home's; and the strong beats are read on the tune's own bar.)
   function fugeLine(line, li, ctx, openW, pair) {
-    var mode = ctx.mode, H = ctx.H || {}, R = ctx.R.fork("fuge:" + li), W = ctx.win, u = ctx.split, bar = ctx.bar;
+    var mode = ctx.mode, R = ctx.R.fork("fuge:" + li), W = ctx.win, u = ctx.split, bar = ctx.bar;
     var ten = line.notes, bs0 = line.barStart || 0;
     // the syllables, and where each begins in the tune
     var sylStart = [], sylNotes = [];
@@ -1141,7 +1131,7 @@ window.KOLOB.Dialects = (function () {
     // the tenor: the tune, a gap late
     var T = ten.map(function (x) { return { beat: x.beat + E, beats: x.beats, deg: x.deg, alt: 0, nct: null, syl: x.syl, stress: x.stress, tie: false, cont: x.cont }; });
     var parts = { T: T };
-    var kind = line.cadence, finRoot = kind === "half" ? 4 : 0, tuneFin = ten[sylNotes[cs][0]].deg;
+    var kind = line.cadence, finRoot = kind === "half" ? 4 : 0;
     // what a written part sounds at a beat (or null)
     function soundAt(p, b) { var n = noteAt(parts[p], b); return n ? semi(mode, n.deg, n.alt || 0) : null; }
     // (the fuge's beat b is the tune's beat b − E: its place in the bar is read on the tune's own bar)
@@ -1208,7 +1198,6 @@ window.KOLOB.Dialects = (function () {
     }
     // two heads against each other, wherever both sound: the square's table
     // (the bass's with the bass); an entry that lands on a dissonance is no entry
-    var RANK = { S: 1, A: 2, T: 3, B: 4 };
     function pairCost(h1, b1, h2, b2, o1, o2) {
       var c = 0, bass = b1 || b2, onsets = {}, same = 0;
       h1.concat(h2).forEach(function (x) { onsets[Math.round(x.beat * 1000)] = true; });
@@ -1604,7 +1593,7 @@ window.KOLOB.Dialects = (function () {
   }
   function harmonizeGospelIn(ctx, VB) {
     var mode = ctx.mode, H = ctx.H || {}, R = ctx.R, vocab = gospelVocab(mode), out = [], prevCh = null, prevV = null;
-    var bounds = ctx.bounds, sev = H.sevenths != null ? H.sevenths : 0.5, u = ctx.split;
+    var sev = H.sevenths != null ? H.sevenths : 0.5, u = ctx.split;
     var swipes = 0, echoes = 0, parallels = 0;
     ctx.lines.forEach(function (line, li) {
       var Rl = R.fork("line:" + li), base = slotsOf(line), slots = [];

@@ -132,7 +132,6 @@ window.KOLOB.Composer = (function () {
   function mzCents(m) { return 1200 * (m[0] + m[1] * Math.log2(3) + m[2] * Math.log2(5) + m[3] * Math.log2(7)); }
   var SCALE_MZ = {};
   MODES.forEach(function (k) { SCALE_MZ[k] = FRACTIONS[k].map(fromFraction); });
-  var OCT = [1, 0, 0, 0];
   var COMMA = [-4, 4, -1, 0];                  // 81/80, the syntonic comma
   var CHROMA_UP = [-4, 1, 1, 0];               // 15/16: a sharp is the leading tone to the degree above
   var CHROMA_DN = [4, -1, -1, 0];              // 16/15: a flat leans on the degree below
@@ -697,7 +696,7 @@ window.KOLOB.Composer = (function () {
         var degs = steps.map(function (s) { return cad[1] + s; });
         if (!degs.every(function (d) { return classes.indexOf(cls(d)) >= 0; })) continue;
         if (tritoneIn(fr.mode, degs)) continue;                    // (sol–do is a tritone in some modes' places)
-        var fw = D.figures[fnm] * (fr.kind && D.kindFigures && D.kindFigures[fr.kind] && D.kindFigures[fr.kind][fnm] != null ? D.kindFigures[fr.kind][fnm] : 1);
+        fw = D.figures[fnm] * (fr.kind && D.kindFigures && D.kindFigures[fr.kind] && D.kindFigures[fr.kind][fnm] != null ? D.kindFigures[fr.kind][fnm] : 1);
         var hf = D.homeFigures ? D.homeFigures[MINOR[fr.mode] ? "minor" : "major"] : null;
         if (role === "home" && hf && hf[fnm] != null) fw *= hf[fnm];
         if (H && role === "home") (H.ending || []).forEach(function (e) { if (figureName(e[0]) === fnm) fw *= 1 + 0.6 * e[1]; });
@@ -872,11 +871,11 @@ window.KOLOB.Composer = (function () {
   // score a candidate line: lower is better. W: the dialect's weights; ctx:
   // the tune so far (the lines already written) and the line's plan.
   function lineCost(d, P, W, mode, done, gesture) {
-    var n = d.length, c = 0, iv = intervals(d), leaps = 0, big = 0;
+    var n = d.length, c = 0, iv = intervals(d), leaps = 0;
     for (var i = 0; i < iv.length; i++) {
       var a = Math.abs(iv[i]);
       if (a >= 2) leaps++;
-      if (a >= 5) { big++; c += a === 7 ? W.octave : a === 5 && iv[i] > 0 ? W.sixth : 9; }
+      if (a >= 5) { c += a === 7 ? W.octave : a === 5 && iv[i] > 0 ? W.sixth : 9; }
       if (a >= 1 && semiDiff(mode, d[i], d[i + 1]) === 6) c += 8;             // the tritone, sung
       if (a === 4) c += W.fifth;
       // a leap of a fourth or more is recovered by a step back
@@ -1107,7 +1106,7 @@ window.KOLOB.Composer = (function () {
       var figStart, headN, trailW = [];
       var trailDie = L.die.fork("trail");
       for (k = longIdx + 1; k < n; k++) trailW.push(pickW(trailDie, [[0, 3], [-1, 1]]));
-      var lay = function (st) {
+      lay = function (st) {
         for (var k1 = 0; k1 < n; k1++) fixed[k1] = null;
         figStart = onsets[onsets.length - st.length];
         for (k1 = 0; k1 < st.length; k1++) fixed[onsets[onsets.length - st.length + k1]] = target + st[k1];
@@ -1513,12 +1512,12 @@ window.KOLOB.Composer = (function () {
   }
   function tuneLineParts(mode, parts, chords, ring, lead) {
     if (ring) return tuneLinePartsHeld(mode, parts, chords, lead);
-    var wolves = 0;
+    // (a ringing line went to tuneLinePartsHeld above, so every chord here is
+    // tuned 5-limit: tuneChordTones)
     for (var p in parts) parts[p].forEach(function (n) {
       var ch = null;
       for (var i = chords.length - 1; i >= 0; i--) if (chords[i].beat <= n.beat + EPS) { ch = chords[i]; break; }
-      var seven = ring && ch && ch.ring && ch.tones && ch.tones.length === 4;
-      var tt = ch && ch.tones ? (ch._tuning || (ch._tuning = (seven && tuneChordTones7(mode, ch.tones)) || tuneChordTones(mode, ch.tones))) : null;
+      var tt = ch && ch.tones ? (ch._tuning || (ch._tuning = tuneChordTones(mode, ch.tones))) : null;
       var r = tuneNote(mode, n, tt);
       n.monzo = r.monzo; n.comma = r.comma;
       if (r.sept) {
@@ -1529,7 +1528,7 @@ window.KOLOB.Composer = (function () {
       }
     });
     chords.forEach(function (c) { delete c._tuning; });
-    return wolves;
+    return 0;
   }
   // a tune alone: each note may lean a comma so that its leaps of a fourth
   // or a fifth ring pure (do, sol and the final never move)
@@ -1762,7 +1761,7 @@ window.KOLOB.Composer = (function () {
         });
       }
       if (fl) {
-        var probs = [], head = fg.entries.filter(function (e) { return e.part === "T"; })[0];
+        var probs = [];
         var tuneOn = (fl.notes.T || []).filter(function (n) { return n.syl !== null; }), hs = Math.max(2, fg.head || 3);
         var tuneIv = intervals(tuneOn.slice(0, hs).map(function (n) { return n.deg; }));
         var at = fg.entries.map(function (e) { return e.at; });
@@ -2188,7 +2187,8 @@ window.KOLOB.Composer = (function () {
           degs.push(pickW(Rsi, pool));
         });
         // the cost: singability, the ground, the segments already written, the joins
-        var c = ok ? 0 : 50, notes = rh.map(function (n, i) { return { beat: n.beat, beats: n.beats, deg: degs[i] }; });
+        c = ok ? 0 : 50;
+        var notes = rh.map(function (n, i) { return { beat: n.beat, beats: n.beats, deg: degs[i] }; });
         for (var i = 1; i < degs.length; i++) {
           var a = Math.abs(degs[i] - degs[i - 1]);
           if (a >= 4) c += 1.5 * (a - 3);
@@ -2285,7 +2285,7 @@ window.KOLOB.Composer = (function () {
       var c = Math.max(0, rng[0] - lo) * 2 + Math.max(0, hi - rng[1]) * 2 + Math.abs((lo + hi) / 2 - (D.tess[mp][0] + D.tess[mp][1]) / 2) * 0.1;
       if (c < bc) { bc = c; shift = 7 * o; }
     }
-    var baseSrc = 0, top = -1e9, topLine = 0;
+    var top = -1e9, topLine = 0;
     all.forEach(function (l, i) { l.notes[smp].forEach(function (n) { if (n.deg > top) { top = n.deg; topLine = i; } }); });
     var foot = METERS[src.meter] ? METERS[src.meter].foot : "iamb";
     var fr = { meter: src.meter, time: time, mode: mode, form: String(src.form || "").replace(/R$/, ""), refrain: src.refrain ? src.refrain.map(function (l) { return l.notes[smp].filter(function (n) { return n.syl !== null; }).length; }) : null,
@@ -2360,7 +2360,7 @@ window.KOLOB.Composer = (function () {
     });
   }
   function fitTogether(h1, h2) {
-    var L1 = h1.lines.concat(h1.refrain || []), L2 = h2.lines.concat(h2.refrain || []), mode = h1.mode;
+    var L1 = h1.lines.concat(h1.refrain || []), L2 = h2.lines.concat(h2.refrain || []);
     var re = retuneTo(h1, h2);
     var r = { lines: L1.length, onsets: 0, strong: 0, weak: 0, parallels: 0, unisons: 0, nonChord: 0, sour: 0, misaligned: 0, where: [] };
     if (L1.length !== L2.length || h1.modeOfTime !== h2.modeOfTime || h1.mode !== h2.mode || String(h1.keyMonzo) !== String(h2.keyMonzo)) { r.misaligned = 99; r.where.push("the two hymns are not in one meter, mode of time, mode and key"); }

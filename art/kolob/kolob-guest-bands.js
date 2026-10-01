@@ -11,16 +11,18 @@
 // the colony kept both the band and the habit of marching it through town
 // on a Sunday.
 //
-// So, some Sundays, while the ward is singing, a band comes up the road.
+// So, some Sundays, as the ward gathers or goes out (the prelude or the
+// postlude; never over the ward's singing — the owner, v0.36.1), a band
+// comes up the road.
 // It is playing a MARCH, and the march is one of the day's own hymns — the
 // band's arranger has turned it into a quickstep, as the bandmasters of
 // the 1850s turned every tune they knew — in its own key (a fifth or a
 // fourth from the meeting's), at its own marching pace, with nothing to do
 // with the meeting's time. It is first heard far off at one end of the
 // colony (a drum, a cornet), swells as it comes, passes the meetinghouse,
-// and goes on out the other end, and the meeting carries on regardless.
-// The collision is the piece. It plays its march through and is gone: it
-// does not loop. Now and then (one visit in ten; one in four on Pioneer
+// and goes on out the other end, and the house carries on regardless.
+// The collision is the piece. It plays its march through (a short march:
+// 55 s at most, repeats dropped first) and is gone: it does not loop. Now and then (one visit in ten; one in four on Pioneer
 // Day) a SECOND band comes the other way with a march of its own.
 //
 // THE MARCH, in real strains, as the 1850s quickstep had them:

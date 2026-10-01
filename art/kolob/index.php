@@ -195,7 +195,7 @@ include '../../includes/header.php';
         <!-- The Whole switch: cycles the cumulative-form governor — guaranteed
              (solid gilt) / natural 8% (outline) / never (struck). A cumulative
              meeting withholds the tune until the doxology sings it whole. -->
-        <button type="button" class="kolob-latin-toggle kolob-cumulative-toggle is-deseret" id="kolob-cumulative" aria-label="the tune withheld until the doxology — about one meeting in twelve" aria-pressed="false">𐐐𐐄𐐢</button>
+        <button type="button" class="kolob-latin-toggle kolob-cumulative-toggle is-deseret" id="kolob-cumulative" aria-label="the tune withheld until the doxology — about 8 % of meetings" aria-pressed="false">𐐐𐐄𐐢</button>
         <!-- The Ives switch: while on, every meeting is guaranteed a visitation
              (the two bands, the steeples, the old tune or the trombones at
              dawn). Checking it restarts the meeting so the guarantee begins
