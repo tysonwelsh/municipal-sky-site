@@ -49,6 +49,8 @@ window.KOLOB = window.KOLOB || {};
 
   // ---- BORROWED — the other rooms' functions, bound late through S (every
   // room is loaded before the first note, so the call always finds its owner) ----
+  // from kolob-pitch.js
+  function isHome(m) { return KOLOB.Pitch.isHome(m); }
   // from kolob-meeting.js
   function intensity() { return S.intensity(); }
   function silenceMul() { return S.silenceMul(); }
@@ -365,15 +367,8 @@ window.KOLOB = window.KOLOB || {};
     // begins, as it does for a guest — THE HOUSE LETS GO, kolob-core.js)
     if (S.houseLetsGo) S.houseLetsGo(t, "chorale", true);
     // a first hymn keyed away from home: the drone steps back under it, as
-    // it does under the hymn
-    var home = !h.keyMonzo || (h.keyMonzo[0] === 0 && h.keyMonzo[1] === 0 && h.keyMonzo[2] === 0 && !(h.keyMonzo[3] || 0));
-    if (!home && S.droneDuck) {
-      S.droneDuck.gain.cancelScheduledValues(t0);
-      S.droneDuck.gain.setValueAtTime(1, t0);
-      S.droneDuck.gain.linearRampToValueAtTime(0.22, t0 + 3);
-      S.droneDuck.gain.setValueAtTime(0.22, until);
-      S.droneDuck.gain.linearRampToValueAtTime(1, until + 6);
-    }
+    // it does under the hymn (THE DRONE STEPS BACK, kolob-core.js)
+    if (!isHome(h.keyMonzo)) S.droneStepBack(t0, until, 0.22, 3, 6);
     organistPlays(plan, t0, { hymnId: h.id, key: h.keyMonzo, prelude: true, style: org.style,
                               alive: function () { return !!S.playing && M.meetingNum() === n && M.section() === "prelude"; } });
     return until - t;

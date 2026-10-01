@@ -230,9 +230,10 @@ window.KOLOB.GuestSingingSchool = (function () {
   // kolob-pitch.js's)
   // ==========================================================================
   var PARENT = window.KOLOB.Pitch.PARENT_RATIOS;
-  // where do sits, counted from the final (the composer's DO_OF): the four
-  // shapes are read from do
-  var DO_OF = { ionian: 0, penta: 0, hexa: 0, mixolydian: 3, dorian: 6, aeolian: 2 };
+  // where do sits, counted from the final, is the composer's
+  // (KOLOB.Composer.doOf: every list that loads this room loads the
+  // composer before it): the four shapes are read from do
+  function doOf(mode) { return window.KOLOB.Composer.doOf(mode); }
   var SHAPES = ["fa", "sol", "la", "fa", "sol", "la", "mi"];      // do re mi fa sol la ti
   function modeName(m) { return window.KOLOB.Pitch.modeName(m); }
   function mod(a, n) { return window.KOLOB.Num.mod(a, n); }
@@ -241,7 +242,7 @@ window.KOLOB.GuestSingingSchool = (function () {
   // (Math.log over LN2, where KOLOB.Pitch.centsOf takes Math.log2: the two
   // can differ in the last bit, so the room's cents stay its own)
   function cents(r) { return 1200 * Math.log(r) / Math.LN2; }
-  function shapeOf(mode, deg) { return SHAPES[mod(deg - DO_OF[modeName(mode)], 7)]; }
+  function shapeOf(mode, deg) { return SHAPES[mod(deg - doOf(modeName(mode)), 7)]; }
   function num(x, d) { return window.KOLOB.Num.positive(x, d); }
   // A REAL CLASH: a second or a seventh, or the tritone — never a comma, never
   // a consonance (interval classes in cents, octaves folded)
@@ -274,10 +275,10 @@ window.KOLOB.GuestSingingSchool = (function () {
     });
     return { parts: parts, beats: lineLength(ln), barStart: ln.barStart || 0, fermata: (ln.fermataBeats || []).length ? Math.max.apply(null, ln.fermataBeats) : null };
   }
-  // a fault is told, never hidden (kolob-core.js, THE FAULTS): through the
-  // house's confess, once per what, where the house is loaded; plainly on a
-  // bench without it
-  function confess(what, err) { var S = window.KOLOB._s; if (S && S.confess) S.confess(what, err); else if (typeof console !== "undefined") console.error("Kolob: " + what, err); }
+  // a fault is told, never hidden (THE FAULTS): through the house's one
+  // confess, KOLOB.Fault (kolob-pitch.js, which every list that loads this
+  // room loads first), on a bench without the core as in the house
+  function confess(what, err) { return window.KOLOB.Fault.confess(what, err); }
   function prepare(material, stream) {
     if (material && material.prepared) return material;
     var M = material || {};

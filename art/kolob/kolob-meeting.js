@@ -46,6 +46,7 @@ window.KOLOB = window.KOLOB || {};
   function trombonesAtDawn(V, t) { return S.trombonesAtDawn(V, t); }
   function handbellsRing(V, t) { return S.handbellsRing(V, t); }
   function singingSchool(V, t) { return S.singingSchool(V, t); }
+  function castEvent(c, ward) { return S.castEvent(c, ward); }
   // from kolob-core.js
   function stream(label) { return S.stream(label); }
   function turn(label) { return S.turn(label); }
@@ -1461,10 +1462,7 @@ window.KOLOB = window.KOLOB || {};
     if (C.cumulative && !C.assemblyFired && C.section === "doxology" && !choirSinging() && !C.hymn &&
         ((x > 0.35 && !C.jointing && !inHush() && !inFuging() && !inVisit()) ||
          (x > 0.7 && !C.jointing))) {
-      C.assemblyFired = true;
-      var adur = cumulativeAssembly(t);
-      C.assemblyUntil = t + adur;
-      guestSpan("assembly", t, adur);
+      assemblyArrives(t, cumulativeAssembly);
     }
     // The fuging waits for a verse the choir is still singing: the same four
     // voices cannot go out one by one while they sing the couplet they
@@ -1726,10 +1724,7 @@ window.KOLOB = window.KOLOB || {};
       },
       onCast: function (c) {
         cueAt("guests", Math.max(c.t, now()), function () {
-          if (!live()) return;
-          var m = C.ward && C.ward.byId[c.memberId];
-          emitEvent({ type: "cast", memberId: c.memberId, nameDs: c.nameDs || (m ? m.nameDs : "") || "", action: c.action,
-                      actionDs: KOLOB.Cast && KOLOB.Cast.ACTION_DS ? KOLOB.Cast.ACTION_DS[c.action] || null : null, role: m ? m.role || null : null });
+          if (live()) emitEvent(castEvent(c, C.ward));
         });
       },
       onAnswer: function (a) { Motif.post(a.instrument, "clarinet", a.motif, "imitate", S.moment(), T.stream.fork("answer:" + a.memberId)); },
@@ -1868,6 +1863,18 @@ window.KOLOB = window.KOLOB || {};
   function hymnSounding() { return !!C.hymn && (C.hymn.active || (!!S.ctx && now() < C.hymn.until)); }
   function choirSinging() { return !!S.ctx && (now() < Desk.sungUntil() || hymnSounding()); }
   function jointHeld() { return guestSounding() || choraleSounding() || (!!S.ctx && (now() < Desk.sungUntil() + CHOIR_BREATH_S || (!!C.hymn && (C.hymn.active || now() < C.hymn.until + CHOIR_BREATH_S)))); }
+  // THE WHOLE TUNE AT LAST (the cumulative form): the withheld tune is
+  // marked sung before a note of it sounds, and its span — play(t) lays the
+  // assembly out from t and returns how long it sounds — is held and told
+  // as a guest's: the conductor's own assembly (cumulativeAssembly,
+  // kolob-guests.js), or a composed doxology's first verse, already laid
+  // out by the ward (hands.assemblyBegins)
+  function assemblyArrives(t, play) {
+    C.assemblyFired = true;
+    var dur = play(t);
+    C.assemblyUntil = t + dur;
+    guestSpan("assembly", t, dur);
+  }
   // A guest's span, told as SCORE.md §6's typed events (the page's minutes
   // keep their own rows; the direction line and the tools read these)
   function guestSpan(type, t, dur, logged) {
@@ -1920,12 +1927,11 @@ window.KOLOB = window.KOLOB || {};
     var holdS = R.rnd(6, 14) * silenceMul();
     var forkDie = R.chance(0.5), forkAt = R.rnd(2, holdS * 0.5);
     C.hushUntil = t + holdS + 2.5;
-    S.droneDuck.gain.cancelScheduledValues(t);
-    S.droneDuck.gain.setValueAtTime(S.droneDuck.gain.value || 1, t);
-    S.droneDuck.gain.linearRampToValueAtTime(0.12, t + 1.4);
+    // (from where the drone stands: a stillness can fall inside another
+    // step back — THE DRONE STEPS BACK, kolob-core.js)
+    S.droneStepBack(t, null, 0.12, 1.4, null, true);
     if (forkDie) evTuningFork(t + forkAt);
-    S.droneDuck.gain.setValueAtTime(0.12, t + 1.4 + holdS);
-    S.droneDuck.gain.linearRampToValueAtTime(1, t + 1.4 + holdS + 3);
+    S.droneComesBack(t + 1.4 + holdS, 0.12, 3);
     emitEvent({ type: "stillness", why: why, holdS: holdS });
   }
 
@@ -2108,12 +2114,11 @@ window.KOLOB = window.KOLOB || {};
       return Math.max(0, C.visitUntil - t);
     },
     // the whole tune at last (the cumulative form): a composed doxology is
-    // the assembly — its span told as the conductor's own assembly's was
+    // the assembly — its span told as the conductor's own assembly's is
+    // (assemblyArrives)
     assemblyBegins: function (t, dur) {
       if (!C.cumulative || C.assemblyFired) return false;
-      C.assemblyFired = true;
-      C.assemblyUntil = t + dur;
-      guestSpan("assembly", t, dur);
+      assemblyArrives(t, function () { return dur; });
       return true;
     },
   };
@@ -2355,7 +2360,11 @@ window.KOLOB = window.KOLOB || {};
       var chords = Harmony.cadence(kind, momentAt(t), R);
       kind = kind || "plagal";
       // (SCORE §6's cadence: its kind, who closes with it, when; the hymn's
-      // id while a hymn is sung)
+      // id while a hymn is sung. The desk tells it at t, the cadence's FIRST
+      // chord, as it writes the close; the ward's own fuging tells its close
+      // at its SECOND chord, as it lands — wardFuging, kolob-voices-choir.js.
+      // Two moments on purpose, not a copy to fold: the dumps and the tools
+      // that count cadences have always read each where it is)
       var sec = C.section;
       emitEvent({ type: "cadence", kind: kind, by: by || "", at: t, hymnId: sec === "hymn" || sec === "doxology" ? hymnId() : null });
       return chords;

@@ -118,10 +118,10 @@ window.KOLOB.Experimental = (function () {
   try { address = parse(window.location && window.location.search); } catch (e) { address = {}; }
 
   var listeners = [];
-  // a fault is told, never hidden (kolob-core.js, THE FAULTS): through the
-  // house's confess, once per what, where the house is loaded; plainly on a
-  // bench without it
-  function confess(what, err) { var S = window.KOLOB._s; if (S && S.confess) S.confess(what, err); else if (typeof console !== "undefined") console.error("Kolob: " + what, err); }
+  // a fault is told, never hidden (THE FAULTS): through the house's one
+  // confess, KOLOB.Fault (kolob-pitch.js, which every list that loads this
+  // room loads first), on a bench without the core as in the house
+  function confess(what, err) { return window.KOLOB.Fault.confess(what, err); }
   // (a listener that throws is passed over, and the rest still hear of the
   // change; its fault is told)
   function changed() {

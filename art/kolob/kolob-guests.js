@@ -43,11 +43,11 @@ window.KOLOB = window.KOLOB || {};
   function projDeg(d7) { return S.projDeg(d7); }
   function degFreq(i) { return S.degFreq(i); }
   function harm(h) { return S.harm(h); }
+  function isHome(m) { return KOLOB.Pitch.isHome(m); }
   // from kolob-voices-organ.js
   function organChord(t, dur, chord, gainMul) { return S.organChord(t, dur, chord, gainMul); }
   // from kolob-voices-choir.js
-  function choirVoiceLine(t, notes, vi, gainMul) { return S.choirVoiceLine(t, notes, vi, gainMul); }
-  function activeVoices() { return S.activeVoices(); }
+  function plagalAmen(chords, at, chordS, by, gainMul, holdMul) { return S.plagalAmen(chords, at, chordS, by, gainMul, holdMul); }
   function choirHarmonizedLine(t, harmonized, beat, gainMul) { return S.choirHarmonizedLine(t, harmonized, beat, gainMul); }
   // from kolob-voices-winds.js
   function renderClarinetLine(t, notes, gainMul, R) { return S.renderClarinetLine(t, notes, gainMul, R); }
@@ -68,7 +68,7 @@ window.KOLOB = window.KOLOB || {};
   function claimAir(durS, marginS) { return S.claimAir(durS, marginS); }
   // (the other rooms' state, read and written through S: S.ctx, S.mode,
   // S.Harmony (the chord desk), S.Meeting (the chorister's book), S.moment,
-  // S.VI_TO_CHORDPOS, S.CHOIR_PART, S.reportLine)
+  // S.reportLine)
   var Motif = KOLOB.Melody.Motif;
   // A guest's word to the minutes (SCORE §6): typed, and carrying whether the
   // page may name the guest at all — a guest the meeting marked unlogged
@@ -87,6 +87,17 @@ window.KOLOB = window.KOLOB || {};
     o.guest = guest;
     o.logged = !(V && V.logged === false);
     return o;
+  }
+  // …and one of the ward who comes forward in a piece (its hooks' onCast:
+  // the Social Hall's fiddler and caller, and the testimony-bearers, whom
+  // kolob-meeting.js hears): their row, a cast event (SCORE §6) named in
+  // Deseret — c is the piece's word {memberId, nameDs?, action}, `ward` the
+  // meeting's, where they are found. The caller sends it (tell, or the
+  // meeting's emitEvent) if its own piece is still live.
+  function castEvent(c, ward) {
+    var m = ward && ward.byId ? ward.byId[c.memberId] : null;
+    return { type: "cast", memberId: c.memberId, nameDs: c.nameDs || (m ? m.nameDs : "") || "", action: c.action,
+             actionDs: KOLOB.Cast && KOLOB.Cast.ACTION_DS ? KOLOB.Cast.ACTION_DS[c.action] || null : null, role: m ? m.role || null : null };
   }
 
   // THE RASPBERRY AMEN's cluster — two hands of neighboring seconds, every
@@ -127,24 +138,12 @@ window.KOLOB = window.KOLOB || {};
     if (hz.length) organChord(at, Math.max(6, total * 0.55), hz[0].chord, 0.5);
     var chDur = R.rnd(2.8, 3.4);
     stringsPad(at, total + chDur * 2 + 2, 0.85, true);
-    // the plagal amen — every voice lands together
+    // the plagal amen — every voice lands together, the organ following
+    // and ending where it always did (THE PLAGAL AMEN, kolob-voices-choir.js:
+    // here at 0.9, the organ's last chord held ×1.2)
     var cadAt = at + total + R.rnd(0.4, 0.9);
     var chords = S.Harmony.cadence("plagal", R, cadAt, "assembly");
-    var avs = activeVoices();
-    for (var ci = 0; ci < chords.length; ci++) {
-      var amenDur = chDur * (ci ? 1.7 : 1.02);
-      S.Harmony.write(chords[ci], cadAt + ci * chDur, "assembly", amenDur);
-      for (var v = 0; v < avs.length; v++) {
-        var vi = avs[v];
-        var cf = chords[ci].freqs[S.VI_TO_CHORDPOS[vi]];
-        choirVoiceLine(cadAt + ci * chDur, [{ f: cf, dur: amenDur }], vi, 0.9);
-        emitNote("choir", cf, cadAt + ci * chDur, amenDur, { part: S.CHOIR_PART[vi], chord: chords[ci].id });   // every voice of the amen
-      }
-    }
-    // the organ follows the amen as it is sung (else it sounded the final
-    // chord under the first), ending where it always did
-    organChord(cadAt, chDur * 1.02, chords[0], 0.55);
-    organChord(cadAt + chDur, chDur * 1.2, chords[chords.length - 1], 0.55);
+    plagalAmen(chords, cadAt, chDur, "assembly", 0.9, 1.2);
     var dur = (cadAt + chDur * 2.2) - t;
     claimAir(dur, 6);
     tell(null, { type: "guest", guest: "assembly", stage: "whole-tune", theme: theme.name, gesture: theme.gesture || null, dur: dur });
@@ -832,11 +831,7 @@ window.KOLOB = window.KOLOB || {};
     var G = KOLOB.GuestVariations, org = S.Meeting.organist();
     if (!G || !V.material || !org || !S.organistPlays) return 4;
     var t0 = tc + 0.1, M = V.material, until = t0 + M.dur;
-    var home = !M.keyMonzo || (M.keyMonzo[0] === 0 && M.keyMonzo[1] === 0 && M.keyMonzo[2] === 0 && !(M.keyMonzo[3] || 0));
-    if (!home && S.droneDuck) {
-      S.droneDuck.gain.cancelScheduledValues(t0); S.droneDuck.gain.setValueAtTime(1, t0); S.droneDuck.gain.linearRampToValueAtTime(0.22, t0 + 3);
-      S.droneDuck.gain.setValueAtTime(0.22, until); S.droneDuck.gain.linearRampToValueAtTime(1, until + 6);
-    }
+    if (!isHome(M.keyMonzo)) S.droneStepBack(t0, until, 0.22, 3, 6);
     var end = G.perform(S.ctx, null, t0, M, V.stream, {
       organist: function (plan, at) {
         S.organistPlays(plan, at, { hymnId: M.hymnId, key: M.keyMonzo, variations: true, style: org.style,
@@ -947,18 +942,12 @@ window.KOLOB = window.KOLOB || {};
       onCast: function (c) {
         cueAt("guests", Math.max(c.t, S.now()), function () {
           if (!S.playing || !C_live(V)) return;
-          var w = S.Meeting.ward ? S.Meeting.ward() : null, m = w && w.byId ? w.byId[c.memberId] : null;
-          tell(V, { type: "cast", memberId: c.memberId, nameDs: c.nameDs || (m ? m.nameDs : "") || "", action: c.action,
-                    actionDs: KOLOB.Cast && KOLOB.Cast.ACTION_DS ? KOLOB.Cast.ACTION_DS[c.action] || null : null, role: m ? m.role || null : null });
+          tell(V, castEvent(c, S.Meeting.ward ? S.Meeting.ward() : null));
         });
       },
     });
     // (the drone steps back from the benches to the applause, and returns under it)
-    if (S.droneDuck) {
-      var back = clap != null ? clap : end - 4;
-      S.droneDuck.gain.cancelScheduledValues(tc); S.droneDuck.gain.setValueAtTime(1, tc); S.droneDuck.gain.linearRampToValueAtTime(0.18, tc + 3);
-      S.droneDuck.gain.setValueAtTime(0.18, back); S.droneDuck.gain.linearRampToValueAtTime(1, back + 4);
-    }
+    S.droneStepBack(tc, clap != null ? clap : end - 4, 0.18, 3, 4);
     claimAir(end - tc, 3);
     return end - tc + 2;
   }
@@ -966,6 +955,7 @@ window.KOLOB = window.KOLOB || {};
   // ==========================================================================
   // LENT — what this room shares with the rest of the house (KOLOB._s)
   // ==========================================================================
+  S.castEvent = castEvent;
   S.razzCluster = razzCluster;
   S.cumulativeAssembly = cumulativeAssembly;
   S.steeplesAnswer = steeplesAnswer;

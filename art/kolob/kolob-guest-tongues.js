@@ -325,10 +325,10 @@ window.KOLOB.GuestTongues = (function () {
   }
   function sounds(s) { return (s.c ? s.c + "-" : "") + s.v + (s.coda ? "-" + s.coda : ""); }
   function said(s) { return (s.c ? s.c + "-" : "") + s.v; }        // (its consonant and vowel: the closing sound aside)
-  // a fault is told, never hidden (kolob-core.js, THE FAULTS): through the
-  // house's confess, once per what, where the house is loaded; plainly on a
-  // bench without it
-  function confess(what, err) { var S = window.KOLOB._s; if (S && S.confess) S.confess(what, err); else if (typeof console !== "undefined") console.error("Kolob: " + what, err); }
+  // a fault is told, never hidden (THE FAULTS): through the house's one
+  // confess, KOLOB.Fault (kolob-pitch.js, which every list that loads this
+  // room loads first), on a bench without the core as in the house
+  function confess(what, err) { return window.KOLOB.Fault.confess(what, err); }
   function dsOf(syls) {
     var C = window.KOLOB.Cast;
     if (!C || !C.deseret) return null;

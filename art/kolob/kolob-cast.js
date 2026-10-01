@@ -81,15 +81,32 @@ window.KOLOB.Cast = (function () {
   // --------------------------------------------------------------------------
   var DS_CODES = ["ee", "ay", "ah", "aw", "oh", "oo", "i", "e", "a", "o", "u", "uu", "ie", "ow", "w", "y",
     "h", "p", "b", "t", "d", "ch", "j", "k", "g", "f", "v", "th", "dh", "s", "z", "sh", "zh", "r", "l", "m", "n", "ng", "oi", "ew"];
-  function deseret(spelling) {
+  // One speller, in two modes:
+  //   deseret(spelling), a name: each word's first letter a capital and the
+  //     rest small. A phoneme with no letter throws — a misspelt name is a
+  //     bug to be seen at once (the gift of tongues, which spells its words
+  //     here too, catches it, tells it, and leaves that word without its
+  //     Deseret).
+  //   deseretCaps(spelling), the clerk's capitals (WHAT THEY DO, below):
+  //     every letter a capital. A phoneme with no letter is written "?" and
+  //     the console says which it was: the actions are spelt as this room
+  //     loads, and a misspelt phoneme must not take the whole engine down.
+  function spell(spelling, caps) {
     return spelling.split(" ").map(function (word) {
       return word.split("-").map(function (ph, i) {
         var at = DS_CODES.indexOf(ph);
-        if (at < 0) throw new Error("kolob-cast: no Deseret letter for '" + ph + "' in " + spelling);
-        return String.fromCodePoint(0x10400 + at + (i ? 0x28 : 0));
+        if (at < 0) {
+          var says = "kolob-cast: no Deseret letter for '" + ph + "' in " + spelling;
+          if (!caps) throw new Error(says);
+          if (typeof console !== "undefined" && console.warn) console.warn(says);
+          return "?";
+        }
+        return String.fromCodePoint(0x10400 + at + (i && !caps ? 0x28 : 0));
       }).join("");
     }).join(" ");
   }
+  function deseret(spelling) { return spell(spelling, false); }
+  function deseretCaps(spelling) { return spell(spelling, true); }
 
   // THE NAMES: [English (dev only; never rendered in the app), phonemes].
   // Pioneer names, the Book of Mormon's, and a few the colony made its own.
@@ -138,22 +155,8 @@ window.KOLOB.Cast = (function () {
     enthusiast: "the enthusiast", child: "the child", newcomer: "the newcomer", testimony: "a testimony-bearer", organist: "the organist",
   };
   // WHAT THEY DO, in the minutes' own letters (the clerk writes in capitals:
-  // "𐐢𐐌𐐤𐐞 𐐍𐐓", LINES OUT). The English words stay the event's `action`,
-  // for the dev tools; the page prints these.
-  function deseretCaps(spelling) {
-    return spelling.split(" ").map(function (word) {
-      return word.split("-").map(function (ph) {
-        var at = DS_CODES.indexOf(ph);
-        if (at < 0) {
-          // (a misspelt phoneme must not take the whole engine down at load: the
-          // clerk writes "?" for that letter and the console says which it was)
-          if (typeof console !== "undefined" && console.warn) console.warn("kolob-cast: no Deseret letter for '" + ph + "' in " + spelling);
-          return "?";
-        }
-        return String.fromCodePoint(0x10400 + at);
-      }).join("");
-    }).join(" ");
-  }
+  // "𐐢𐐌𐐤𐐞 𐐍𐐓", LINES OUT — deseretCaps, above). The English words stay
+  // the event's `action`, for the dev tools; the page prints these.
   var ACTION_DS = {};
   [["keys the hymn", "k-ee-z dh-u h-i-m"], ["hums the first note", "h-u-m-z dh-u f-u-r-s-t n-oh-t"], ["pitches the tune", "p-i-ch-i-z dh-u t-oo-n"],
    ["lines out", "l-ie-n-z ow-t"], ["comes forward", "k-u-m-z f-aw-r-w-u-r-d"], ["sings the descant", "s-i-ng-z dh-u d-e-s-k-a-n-t"],

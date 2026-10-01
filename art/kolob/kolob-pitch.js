@@ -10,13 +10,15 @@
 //
 // Public surface: KOLOB.Pitch = { COLLECTIONS, MODE_NAMES, MODE_MONZOS,
 //   ROOT_MULT, colN, projDeg, degFreq, tuning(mode, f0), ratio, mul, div,
-//   fromFraction, cents, centsOf, octaveReduce, degMonzo, commaOf, the
+//   fromFraction, cents, centsOf, isHome, octaveReduce, degMonzo, commaOf, the
 //   parent scales (PARENT_FRACTIONS, PARENT_RATIOS, CLASSES, modeName), the
 //   7-limit constants, limitOf, septimalOf, harmonicSeventh, proportion,
-//   oddParts }; and KOLOB.Num = { clamp, mod, r3, r4, positive, pickWith },
-//   the small arithmetic every room uses (NUMBERS, at the foot). A room
-//   borrows these rather than typing its own; where a room keeps a copy, a
-//   comment beside it says why it is not this one (SCORE.md §2).
+//   oddParts }; KOLOB.Num = { clamp, mod, r3, r4, positive, pickWith },
+//   the small arithmetic every room uses (NUMBERS, at the foot); and
+//   KOLOB.Fault = { confess }, a fault told the house's way (THE FAULTS,
+//   at the foot). A room borrows these rather than typing its own; where a
+//   room keeps a copy, a comment beside it says why it is not this one
+//   (SCORE.md §2).
 // ============================================================================
 
 window.KOLOB = window.KOLOB || {};
@@ -120,6 +122,9 @@ window.KOLOB = window.KOLOB || {};
     return m;
   }
   function cents(m) { return centsOf(ratio(m)); }
+  // a key at home: no key monzo, or the unison 1/1 (a hymn or a set keyed
+  // away from home is any other: the drone steps back under it)
+  function isHome(m) { return !m || (m[0] === 0 && m[1] === 0 && m[2] === 0 && !(m[3] || 0)); }
   // a ratio's size in cents
   function centsOf(r) { return 1200 * Math.log2(r); }
   // Fold into the octave [1/1, 2/1) by adjusting the power of two.
@@ -254,6 +259,36 @@ window.KOLOB = window.KOLOB || {};
   }
 
   // ==========================================================================
+  // THE FAULTS — KOLOB.Fault: a fault the house lives through is told, never
+  // hidden (kolob-core.js, THE FAULTS, says why, and what stays quiet). It
+  // is not pitch either; it is raised here for the reason KOLOB.Num is, so
+  // that a room standing on a bench without the core (a guest's material,
+  // the switches) tells its faults the house's way and under the house's
+  // one count. The core lends this confess as S.confess and on the facade.
+  // confess(what, fn) runs fn and returns what it returns; if fn throws,
+  // confess tells it on the console — console.error("Kolob: " + what, err)
+  // — and returns undefined, so the caller's fallback stands. Handed the
+  // fault instead of a function (a catch that keeps its own fallback, a
+  // promise's refusal, a worker's word), confess(what, err) tells it the
+  // same way. `about` rides on the line but not on the count: a listener's
+  // faults are counted per listener, whatever note it threw on. A fault
+  // that repeats is told the first time and then at every FAULT_EVERY-th,
+  // with its count, per `what`; the harness fails a run on any
+  // console.error, so a fault told on a clean run fails CI.
+  // ==========================================================================
+  var FAULT_EVERY = 1000;          // told the first time, then every thousandth: a page bug at every note (3,000 a meeting) says so three times a meeting, with its count, not 3,000
+  var faults = {};                 // what → how often it has been confessed
+  function confess(what, fn, about) {
+    if (typeof fn !== "function") return told(what, fn, about);
+    try { return fn(); } catch (err) { told(what, err, about); }
+  }
+  function told(what, err, about) {
+    var k = faults[what] = (faults[what] || 0) + 1;
+    if (k > 1 && k % FAULT_EVERY) return;
+    if (typeof console !== "undefined" && console.error) console.error("Kolob: " + what + (about ? " (" + about + ")" : "") + (k > 1 ? " — " + k + " times now" : ""), err);
+  }
+
+  // ==========================================================================
   // LENT — what this room shares with the rest of the house (KOLOB._s)
   // ==========================================================================
   // (configurable, so the room can be loaded twice without "Cannot redefine")
@@ -271,7 +306,7 @@ window.KOLOB = window.KOLOB || {};
   KOLOB.Pitch = {
     COLLECTIONS: COLLECTIONS, MODE_NAMES: MODE_NAMES, MODE_MONZOS: MODE_MONZOS, ROOT_MULT: ROOT_MULT,
     colN: colN, projDeg: projDeg, degFreq: degFreq, tuning: tuning,
-    ratio: ratio, mul: mul, div: div, fromFraction: fromFraction, cents: cents, centsOf: centsOf,
+    ratio: ratio, mul: mul, div: div, fromFraction: fromFraction, cents: cents, centsOf: centsOf, isHome: isHome,
     octaveReduce: octaveReduce, degMonzo: degMonzo, commaOf: commaOf,
     // the parent scales
     PARENT_FRACTIONS: PARENT_FRACTIONS, PARENT_RATIOS: PARENT_RATIOS, CLASSES: CLASSES, modeName: modeName,
@@ -280,5 +315,6 @@ window.KOLOB = window.KOLOB || {};
     limitOf: limitOf, septimalOf: septimalOf, harmonicSeventh: harmonicSeventh, proportion: proportion, oddParts: oddParts,
   };
   KOLOB.Num = { clamp: clamp, mod: mod, r3: r3, r4: r4, positive: positive, pickWith: pickWith };
+  KOLOB.Fault = { confess: confess };
   (KOLOB._rooms = KOLOB._rooms || {})["kolob-pitch.js"] = true;   // the load guard's roll call
 })();

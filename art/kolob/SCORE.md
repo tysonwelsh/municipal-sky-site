@@ -139,7 +139,8 @@ stored as a *monzo*: the exponents of 2, 3, 5 and 7, `[a, b, c, d]` =
 
 **Helpers** (`KOLOB.Pitch`): `ratio(m) → Number`, `mul(m1, m2)`, `div(m1,
 m2)`, `fromFraction("10/9")` (throws past the 7-limit), `cents(m)`,
-`centsOf(r)` (a ratio's cents), `octaveReduce(m)`, `degMonzo(mode, i)` (a
+`centsOf(r)` (a ratio's cents), `isHome(m)` (a key at home: no monzo, or
+1/1), `octaveReduce(m)`, `degMonzo(mode, i)` (a
 collection-degree index → its exact monzo), `MODE_MONZOS`, `commaOf(m,
 spelled) → {syntonic: -1|0|1, septimal: 0|1}` (Johnston's marks: `+`/`−` the
 syntonic comma 81/80, `7` lowers by 36/35). The parent scales: each mode's
@@ -158,7 +159,8 @@ which `kolob-pitch.js` raises because it stands first among the house's rooms
 on every list (the page's, the composer's desk, every lab's): `clamp`, `mod`
 (never negative), `r3`, `r4`, `positive(x, d)` (a positive number, else d),
 `pickWith(u, pool)` (a weighted pick by a die already thrown; it throws
-none), and with the Score's helps (§5). `ratio` multiplies 2^a · 3^b · 5^c ·
+none), with a fault told the house's way on `KOLOB.Fault` (`confess`, §6),
+and with the Score's helps (§5). `ratio` multiplies 2^a · 3^b · 5^c ·
 7^d in that order, each exponent `|| 0`; a copy whose float result could
 differ in the last bit (cents by `Math.log` over `LN2`, the calendar's sum of
 logs that reads a key without its seventh) or that must load alone (the
@@ -566,7 +568,9 @@ arrives.
 and the other listeners go on — and its fault is told:
 `console.error("Kolob: the note listener 2 threw (on a note of the organ)", err)`,
 the first time and then at every thousandth, with its count (`kolob-core.js`,
-THE FAULTS: `confess`, lent as `S.confess` and on the facade). Every fault the
+THE FAULTS: `confess`, lent as `S.confess` and on the facade; the telling and
+its one count are `KOLOB.Fault.confess`, `kolob-pitch.js`, which the rooms
+that stand on benches without the core borrow). Every fault the
 house lives through is told so — a guest's material fallen back, a voice that
 would not join the room, a context that would not resume, a hymn the worker
 could not write (a worker that fails altogether says so once, by
