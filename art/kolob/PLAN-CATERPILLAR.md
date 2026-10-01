@@ -1,5 +1,7 @@
 # Plan: the band's caterpillar (a volume control that crawls in with the band)
 
+> **Status 2026-10-01:** built (handoff/caterpillar-1.md, caterpillar-2.md). §7, the owner's first look, is binding and overrides §1–§6 where they differ (a line, not segments; a disc, not a hexagon). The owner asked for "a few more passes" — see `OPEN-WORK.md`.
+
 *Owner request, 2026-09-29, in their words:*
 
 > Would be kind of fun to have as a separate volume control just when the two bands come in,

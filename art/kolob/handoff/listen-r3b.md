@@ -23,7 +23,7 @@ The local server is running. Open a seed and press PLAY:
 - The times below (mm:ss) are the page's own clock, shown beside each line of
   the clerk's minutes. They count from when you press PLAY. They were read
   from the test harness, and the browser keeps them: seed 17 in the browser
-  turns the drone at 1:16 and begins the invocation at 1:24, as the harness
+  turns the drone at 1:16 and begins the invocation at 1:19, as the harness
   does.
 - **The programme card names the Sunday** (in Deseret, where it used to say
   ORDINARY, FAST DAY, CONFERENCE or JUBILEE). `&latin=1` shows it in

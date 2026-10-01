@@ -2,7 +2,10 @@
 
 *Read this first. It says what is live, what is shelved, which documents govern,
 and how to check a change. Written 2026-10-01 at v0.36.2; keep it true when the
-app changes. The long documents it points to are the record; this page is the map.*
+app changes. This page is the map; `OWNER-RULINGS.md` holds every ruling the
+owner has made, `OPEN-WORK.md` what is planned or asked for and not done,
+`SCORE.md` the contract, `STAFF.md` the rules of the staff. `archive/` is the
+build's record and governs nothing.*
 
 **What it is.** A browser generative-music piece at `/art/kolob/`: an endless,
 aleatoric hymn meeting of a far-future colony of Latter-day Saints "at the rim of
@@ -23,15 +26,18 @@ plays the same meeting every time, in the browser and in the headless harness.
 | the performers | `kolob-cast.js` (the ward and its people), `kolob-hymnal.js` (the day's hymnal and the composer's desk, a Web Worker), `kolob-guest-*.js` (every guest), `kolob-testimony.js`, `kolob-guests.js` (the set pieces), `kolob-meeting.js` (the order of service, the joints, the seating) |
 | the facade | `kolob-core.js` — raises `window.KolobAudio`; the only thing the page calls |
 | the version | `VERSION` — one line, `v0.36.N — what the owner would notice`; bumped in the same commit as any audible or visible change (SCORE §8); `index.php` prints it with a fingerprint of the served bytes |
-| the labs | `*-lab.php` + `*-lab.js` — unlinked dev benches, one per subsystem (`hymn-lab` is the owner's listening checkpoint for the composer) |
-| shelved | `shelved/` — the Question (`kolob-question.js`, its lab) and the bagpipe (`kolob-voices-bagpipe.js`, its lab): the owner's rulings of 2026-09-27 and 2026-09-13; code kept, not loaded |
+| the labs | `*-lab.php` + `*-lab.js` — unlinked dev benches, one per subsystem (`hymn-lab` is the owner's listening checkpoint for the composer; `room-lab` the impulse responses; `voices-lab` the house choir against the ward) |
+| shelved | `shelved/` — the Question (`kolob-question.js`, its lab), the bagpipe (`kolob-voices-bagpipe.js`, its lab) and the tune lab (v0.30's old-tune incipits): the owner's rulings of 2026-09-27 and 2026-09-13; code kept, not loaded |
 | the harness | `_harness.js` — plays a meeting headless in Node (mock Web Audio, a virtual clock) and writes the dump the tools read; tracked since 2026-10-01 |
-| the tools | `tools/` — `loadcheck.js`, `lends.js`, `selftest.js`, `distinctness.js`, `repetition.js`, `tally.js` (A/B), `screens.js`, `capture.js`; `tools/README.md` explains each |
-| the contract | `SCORE.md` — the interface every module codes against. It is layered: §1–§8 the base, then §9 (round 2), §10 (round 3), §11 (round 3b), §12 (round 3c), §13 (housekeeping); **a later section wins where it differs from an earlier one, and the code it names is the authority** |
-| the plans | `PLAN-COMPOSITION.md` (the music; §14–§15 hold the owner's rulings), `PLAN-ENGRAVING.md` (the staff), `PLAN-EXECUTION.md` (crews, critics, handoffs), `PLAN-ONE-ROOM.md` (the room), `PLAN-CATERPILLAR.md` (the band's volume control) |
-| the handoffs | `handoff/` — what is current: the listening packets (`listen-*.md`), the last integration (`r3c-integrate-1.md`), the last engraving pass (`r3c-engrave-2.md`), the caterpillar (`caterpillar-1.md`, `-2.md`) and one open brief (`drone-wave-handoff.md`). Everything a later round superseded is in `handoff/archive/` |
-| the critics | `critic/` — the enrichment briefs and the panel reports; `handoff-second-look.md` an independent re-review |
-| mockups | `mockups/` — the engraving directions the owner chose from (Direction A shipped) |
+| the tools | `tools/` — `loadcheck.js` (the engine loads), `lends.js` (the shared bag), `samecode.js` (an edit touched only comments), `selftest.js`, `distinctness.js`, `repetition.js`, `tally.js` (A/B: did the music move), `screens.js`, `capture.js`; `tools/README.md` explains each |
+| the contract | `SCORE.md` — the interface every module codes against, one layer, one section a topic (modules, pitch, streams, time, the Score, events, performance, guests, versions); **the code each section names is the authority**. The layered original it was consolidated from is `archive/SCORE-layered.md` |
+| the owner's rulings | `OWNER-RULINGS.md` — every level, seat, look and shelved idea the owner has decided on, dated, each naming the code that implements it. Do not reverse one without asking |
+| open work | `OPEN-WORK.md` — ideas approved and not built, the crews' requests not done, known issues, the decisions waiting on the owner's ear, cost |
+| the staff's rules | `STAFF.md` — what the shape-note staff prints and never prints, the layers and their sizes, the look, the collision rules, the checks |
+| the plans | `PLAN-ONE-ROOM.md` (the room; phases C–E open) and `PLAN-CATERPILLAR.md` (the band's volume control), each with a status banner. The build's plans — composition, engraving, execution — are in `archive/plans/`; what they proposed is built, declined (`OWNER-RULINGS.md`) or open (`OPEN-WORK.md`) |
+| the handoffs | `handoff/` — what is current: the listening packets (`listen-*.md`), the last integration (`r3c-integrate-1.md`), the last engraving pass (`r3c-engrave-2.md`), the caterpillar (`caterpillar-1.md`, `-2.md`) and one open brief (`drone-wave-handoff.md`). Everything a later round superseded is in `archive/handoff/` |
+| the archive | `archive/` — the layered contract, the build's plans, every superseded handoff and listening packet, the critics' briefs and panels, the second look, the old page mockups; `archive/README.md` says what each was. Nothing there governs |
+| mockups | `mockups/` — the three engraving directions the owner chose from (A, "The Colony Tunebook", shipped) |
 
 ## How a meeting works, in one breath
 
@@ -54,8 +60,10 @@ whether or not its result is used, and no musical decision reads the audio clock
 - **VERSION moves with the owner's experience.** Any change the owner could hear
   or see bumps `VERSION` in the same commit. Dev-only work (tools, labs, docs)
   does not.
-- **The Hosanna is audio-only and unlogged** (owner): nothing in the minutes,
-  on the board or on the staff.
+- **The owner's rulings stand.** `OWNER-RULINGS.md` lists them with their dates
+  and the code that implements them: the Hosanna audio-only and unlogged, the
+  bands never over the ward's singing, the Question and the bagpipe shelved, the
+  staff's look, every level set by the owner's ear. Ask before reversing one.
 - **The ward is the full 32**, and phones get no fewer voices (owner). Measure
   cost, report it, do not cut.
 - **The comments carry the rules.** This code base explains itself in its
@@ -74,6 +82,7 @@ npm install                              # once: ESLint (package.json at the rep
 npm run lint                             # no undefined names, no unused variables
 node art/kolob/tools/loadcheck.js        # the engine loads headless; the roll call; one hymn proofread
 node art/kolob/tools/lends.js            # every S.x read has a lend
+node art/kolob/tools/samecode.js         # a comment pass changed no code token (against HEAD; --ref <ref>)
 node art/kolob/_harness.js 300 7         # a meeting plays headless, no errors, no late cue
 node art/kolob/tools/selftest.js         # the measurement tools read true
 node art/kolob/tools/tally.js --a git:main --b worktree --seeds 1-20   # did my change move the music?
@@ -90,28 +99,25 @@ byte the same; a musical change should move only what it meant to.
 `?seed=N` · `&guest=<name>` (one of `bands handcart gulls variations changes
 tongues farward hosanna socialhall testimony trombones handbells singingschool
 steeples oldtune`) · `&exp=-reckoning` / `-singingSchool` · `&choir=house` ·
-`&organ=house` · `&latin=1` · `&kolobPreview=1`. The Ives switch forces a guest;
+`&organ=house` · `&latin=1` · `&kolobPreview=1` · `&kolobCumulative=1`. The Ives switch forces a guest;
 the Whole switch governs the withheld tune; Latin reveals the dev labels.
 
 ## Where to hear things
 
 `handoff/listen-r3c.md` gives a seed and a time for every guest (the band on
-seed 22 at 3:21, the Social Hall at 16:01; the Hosanna on seed 37 at 17:55…);
-`listen-r3b.md` the ward, the organist and the reckoning; `listen-v034.md` the
-trombones and the old tune. `index.php?seed=22&guest=bands` brings the band and
-its caterpillar within half a minute.
+seed 22 at 0:08, in the prelude; the Social Hall at 16:01; the Hosanna on seed 37
+at 17:55…); `listen-r3b.md` the ward, the organist and the reckoning (its times
+were re-checked against the harness on 2026-10-01). The older packets in
+`archive/handoff/` name seeds that no longer play those meetings.
+`index.php?seed=22&guest=bands` brings the band and its caterpillar within half
+a minute.
 
-## Open threads (2026-10-01)
+## Open threads
 
-- Nobody has listened to rounds 3b and 3c: every level was set by measurement.
-- Planned, not built: Deseret phoneme singing (words), the visions and the far
-  tail, the drone as a waveform on the staff (`handoff/drone-wave-handoff.md`),
-  the one-room plan's later phases.
-- The house choir, the house organ and the desks remain as A/B fallbacks
-  (`?choir=house`, `?organ=house`); once the owner's ear has chosen, retire the
-  loser (`kolob-voices-choir.js` carries two near-twin performers).
-- The fife (`twoBandsCross`) remains as the band's fallback for a page without
-  `kolob-guest-bands.js`.
-- The caterpillar has not been watched at full frame rate; the owner asked for
-  "a few more passes".
-- Cost: the Hosanna near 6,000 nodes; the far ward's 24 throats; no phone tested.
+`OPEN-WORK.md` is the list. The headlines: nobody has listened to rounds 3b and
+3c (every level was set by measurement); the drone as a waveform on the staff,
+Deseret phoneme singing and the visions are approved and unbuilt; the house
+choir and the house organ remain as A/B fallbacks (`?choir=house`,
+`?organ=house`) until the owner's ear chooses; the caterpillar wants "a few more
+passes"; the Hosanna and the far ward are the costly guests and no phone has
+played the app.

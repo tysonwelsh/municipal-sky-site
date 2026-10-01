@@ -1,3 +1,5 @@
+> **Archived 2026-10-01.** A page plan from before the engraving; the page was reshaped since. Seeds, odds, versions, file names and line numbers in this document may no longer match the code. The current map is `README.md`; the owner's rulings are `OWNER-RULINGS.md`; what is not done is `OPEN-WORK.md`; the contract is `SCORE.md`.
+
 # KOLOB — a cohesive page (layout plan, v0.12)
 
 > **Built** — landed in v0.12 after three coder/designer rounds (final score 8/10,

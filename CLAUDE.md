@@ -43,6 +43,12 @@ consistent and the owner doesn't have to fix one-off spacing page by page.
 
 ## KOLOB — read `art/kolob/README.md` first (owner rule, 2026-10-01)
 
+The owner's rulings — every level, seat, look and shelved idea they have decided on —
+are in `art/kolob/OWNER-RULINGS.md`; do not reverse one without asking. What is planned
+or asked for and not done is `art/kolob/OPEN-WORK.md`; the contract is `art/kolob/SCORE.md`;
+the staff's rules are `art/kolob/STAFF.md`. Superseded plans and handoffs are in
+`art/kolob/archive/` and govern nothing.
+
 The same VERSION rule as the Jukebox and ZANKYŌ: every commit that changes what
 the owner hears or sees in `art/kolob/` bumps `art/kolob/VERSION` in the same
 commit — one line, `v0.36.N — short human summary of what changed` (semver);

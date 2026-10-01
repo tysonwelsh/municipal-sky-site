@@ -26,52 +26,29 @@ eye.
 
 ## 2. Where the code is, and where you work
 
-- **Integration branch:** `kolob-2`, in the worktree `/Users/tysonwelsh/Sites/municipal-sky-site-kolob2`
-  (head `92697e5`, "Merge branch 'kolob-r3b' into kolob-2"). It holds everything built so far,
-  including work that is **not live yet**: the live site is v0.35, and this branch will become
-  v0.36.
-- **Make your own worktree and branch from `kolob-2`.** Don't work in the kolob2 worktree or the
-  main checkout. Other sessions share this machine and this repo.
-  ```
-  cd /Users/tysonwelsh/Sites/municipal-sky-site-kolob2
-  git worktree add -b kolob-drone ../municipal-sky-site-kolob-drone kolob-2
-  cp art/kolob/_harness.js ../municipal-sky-site-kolob-drone/art/kolob/   # gitignored test harness
-  ```
-- **Serve it:**
-  `php -S 127.0.0.1:8161 -t /Users/tysonwelsh/Sites/municipal-sky-site-kolob-drone`, then open
-  http://127.0.0.1:8161/art/kolob/index.php?seed=17. Seeds are reproducible.
-- **Ports:** 8047, 8077, 8100–8107, 8114, 8123 and 8141 are in use by other things. Pick
-  8161–8169 for anything you start.
-- **Commits:** commit on `kolob-drone` only, staging named paths (never `git add -A`). End each
-  message with a blank line and `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
-- **Never** push, publish, run `scripts/publish.sh` or `scripts/push-files.sh`, or bump
-  `art/kolob/VERSION`. The coordinating session merges your branch into `kolob-2` and publishes
-  only when the owner says so.
-- **Never edit** `art/prosperos-jukebox-v2/*`. It's a shared substrate, loaded by relative path.
+*(Rewritten 2026-10-01: the worktrees, ports and branch names this section once listed belonged
+to the build's crews and are gone.)* The app is `art/kolob/` on the branch you are given;
+`README.md` there is the map, `SCORE.md` the contract, `STAFF.md` the rules of the staff this
+brief changes. Serve the site with `php -S 127.0.0.1:<port>` from the repo root and open
+`/art/kolob/index.php?seed=17`; seeds are reproducible. Never edit `art/prosperos-jukebox-v2/*`.
+Run the checks `README.md` names before pushing (lint, loadcheck, lends, the harness, and
+`tools/tally.js --a git:main --b worktree` to prove the music did not move — this brief must not
+move it). A visible change bumps `art/kolob/VERSION` in the same commit.
 
 ## 3. House rules (the owner's standing rulings)
 
-- **Silent testing.** Any browser you launch for testing must use `--mute-audio`, or render
-  offline with an `OfflineAudioContext`. The owner hears unmuted headless runs through their
-  speakers.
-  - Headless Chrome over CDP:
-    `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --mute-audio --autoplay-policy=no-user-gesture-required --remote-debugging-port=9481 --user-data-dir=/private/tmp/claude-501/kolob-drone-chrome`
-  - A small driver to copy from:
-    `/private/tmp/claude-501/-Users-tysonwelsh-Sites-municipal-sky-site/9f8f9e47-5fee-4146-97e4-e448a823ca04/scratchpad/shot.js`
-- **Headless timing.** Headless rAF runs at about 1 fps, so judge animation by polling on the clock.
-- **Other sessions.** Kill only the processes you started; other sessions run their own servers
-  and browsers.
-- **Checks, not batteries.** Short sanity checks, not long test batteries. Run the harness briefly:
-  `node art/kolob/_harness.js 300 7` (it should end with `VERDICT: PASS ✓`).
-- **Plain language.** Explain things to the owner without internal jargon.
-- **Design approval first.** Show a mockup or screenshots and get a yes before building the
-  final version.
+The rulings are collected in `OWNER-RULINGS.md`; the ones this task meets most are: **silent
+testing** (every browser muted — `tools/lib/chrome.js` and `tools/screens.js` do this for you;
+headless rAF runs at about one frame a second, so judge animation by polling on the clock);
+**checks, not batteries** (`node art/kolob/_harness.js 300 7` should end `VERDICT: PASS ✓`);
+**plain language** to the owner; **design approval first** — show a mockup or screenshots and get
+a yes before building the final version.
 
 ## 4. The staff: what it is now, and its binding rules
 
 The staff is `art/kolob/kolob-viz.js`, which draws a scrolling grand staff on a canvas. The owner
 chose the look ("Direction A, the Colony Tunebook") and then simplified it. These rules are
-binding (see the top of `art/kolob/PLAN-ENGRAVING.md`):
+binding (see the top of `art/kolob/archive/plans/PLAN-ENGRAVING.md`):
 
 - **Speed:** the page scrolls right to left at **60 px/s**. Notes are engraved at a point near the
   right edge when they sound, then travel left, "dry" (fade) and dissolve before the clefs.
@@ -111,7 +88,7 @@ anything, and match its literary comment voice.
     a fifth an octave up.
   - The gains come from `roleGain(...)`, and the level follows the "presence" parameter and the
     section (softer in the sacrament).
-- **Pitch:** the fundamental is `S.F0` (58–74 Hz, drawn per Sunday), two octaves under the
+- **Pitch:** the fundamental is `S.F0` (52–78 Hz, drawn per Sunday), two octaves under the
   keynote. It's very low, below the bass staff.
 - **The Kolob reckoning (new in round 3b):** on about two Sundays in three the drone **moves**.
   - At each section joint it glides over 4–6 s to a new note (`droneTurn`, ≈ line 183). The notes
@@ -143,7 +120,7 @@ anything, and match its literary comment voice.
 > depicting the sound wave of the drone.
 
 **Design questions to settle with the owner, with a mockup or screenshots, before finishing:**
-1. **Register.** The drone's fundamental sits below the bass staff (F0 ≈ 58–74 Hz). Options:
+1. **Register.** The drone's fundamental sits below the bass staff (F0 ≈ 52–78 Hz). Options:
    - draw it at its true pitch on ledger space below the bass staff (clip to the plate);
    - fold it up an octave or two onto the bass staff at its pitch class, as the page folds other
      out-of-range notes silently;
@@ -172,10 +149,10 @@ anything, and match its literary comment voice.
 
 ## 7. Background reading (optional, but it will help)
 
-- `art/kolob/PLAN-ENGRAVING.md`: the top section holds the owner's decisions.
-- `art/kolob/PLAN-COMPOSITION.md`: the whole plan. §15 has the latest owner rulings.
+- `art/kolob/archive/plans/PLAN-ENGRAVING.md`: the top section holds the owner's decisions.
+- `art/kolob/archive/plans/PLAN-COMPOSITION.md`: the whole plan. §15 has the latest owner rulings.
 - `art/kolob/SCORE.md`: the contract between the engine and the page, including the typed events.
-- `art/kolob/handoff/archive/r3b-engrave-1.md`: the latest staff work, with its replay-lab tools for
+- `art/kolob/archive/handoff/r3b-engrave-1.md`: the latest staff work, with its replay-lab tools for
   testing the page without the audio engine.
-- `art/kolob/handoff/archive/r3b-form-1.md`: the Kolob reckoning (the moving drone).
+- `art/kolob/archive/handoff/r3b-form-1.md`: the Kolob reckoning (the moving drone).
 - `art/kolob/handoff/listen-r3b.md`: what the current build sounds like, with seeds and times.
