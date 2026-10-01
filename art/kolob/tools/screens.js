@@ -15,7 +15,7 @@
 // Headless Chrome may pace requestAnimationFrame slowly (~1 fps on some
 // machines), so frames are judged by what each one costs, not by how many came.
 // What a frame costs also rises with what else the machine is doing (other
-// crews' Chromes, harness batteries): the report prints the load average
+// Chromes, harness batteries): the report prints the load average
 // beside the frame times, and says when it was too high to trust p99 and max.
 "use strict";
 const fs = require("fs");
@@ -35,7 +35,7 @@ const HELP = `screens.js — muted headless screenshots of the staff + frame tim
   --ives / --latin       arm the Ives switch / show Latin letters
   --port 8113            the local PHP server (started if nothing serves this tree there)
   --chrome-port 9423     Chrome's debugging port (another port brings its own profile)
-  --profile <dir>        Chrome profile (default /private/tmp/claude-501/kolob-r2-tools-chrome[-<port>])
+  --profile <dir>        Chrome profile (default <tmpdir>/kolob-r2-tools-chrome[-<port>])
   --out <dir>            (default tools/out/screens-<seed>-<stamp>)`;
 
 const INSTRUMENT = (o) => `(function(){

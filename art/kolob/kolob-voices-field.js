@@ -2,8 +2,8 @@
 // KOLOB — kolob-voices-field.js: the still small voice, the wire, the valley
 //
 // The near-threshold murmur, the Deseret telegraph, and the far-field
-// events of the valley. Split from kolob-audio.js (v0.30); see the room list
-// in kolob-core.js.
+// events of the valley. Lends their cycles, the Morse keyer and the field
+// events the stillness calls (the LENT block at the foot).
 // ============================================================================
 
 window.KOLOB = window.KOLOB || {};
@@ -33,6 +33,7 @@ window.KOLOB = window.KOLOB || {};
   function emitEvent(ev) { return S.emitEvent(ev); }
   function cueIn(lane, dtS, fn) { return S.cueIn(lane, dtS, fn); }
   function cueLayer(layer, baseS, fn) { return S.cueLayer(layer, baseS, fn); }
+  function cycle(lane, self, turn, t, fallbackS) { return S.cycle(lane, self, turn, t, fallbackS); }
   function panAt(layer, p) { return S.panAt(layer, p); }
   function getLayerParam(layer, key, fallback) { return S.getLayerParam(layer, key, fallback); }
   function fieldDest(key, pan) { return S.fieldDest(key, pan); }
@@ -64,7 +65,7 @@ window.KOLOB = window.KOLOB || {};
     o.frequency.setValueAtTime(S.F0 * 2, t);
     o.frequency.linearRampToValueAtTime(S.F0 * 2 * Y.rnd(0.985, 1.02), t + dur * 0.5);
     o.frequency.linearRampToValueAtTime(S.F0 * 2 * 0.985, t + dur);
-    // LESSON: pre-attenuate before high-Q formants (they boost ~9x).
+    // pre-attenuate before high-Q formants (they boost ~9x)
     var pre = S.ctx.createGain(); pre.gain.setValueAtTime(0.16, t);
     o.connect(pre);
     var f1 = S.ctx.createBiquadFilter(); f1.type = "bandpass"; f1.Q.setValueAtTime(5, t);
@@ -107,16 +108,20 @@ window.KOLOB = window.KOLOB || {};
   }
   // The voice's turn, at scheduled time t. In testimony it speaks only
   // sometimes, and that choice is its own turn's die.
-  function stillVoicePhrase(t) {
+  // (under the core's net, S.cycle: a turn that throws before it has
+  // re-armed is re-armed by the core CYCLE_FALLBACK_S = 5 s later, and the
+  // throw is reported)
+  function stillVoicePhrase(t) { return cycle("voice", stillVoicePhrase, stillVoicePhraseTurn, t); }
+  function stillVoicePhraseTurn(t) {
     if (!S.playing) return;
     var s = S.Meeting.section();
     if (s !== "invocation" && s !== "sacrament" && s !== "testimony") { cueIn("voice", 7, stillVoicePhrase); return; }
     var R = turn("voice");
     if (s === "testimony" && !R.chance(0.3)) { cueIn("voice", 7, stillVoicePhrase); return; }
     var dur = R.rnd(7, 15);
-    // (round 3c: never over a testimony-bearer speaking, nor over one who
-    // sings in tongues — two talkers never overlap; the critic of crew D.
-    // The turn's dice are thrown first, as ever)
+    // (never over a testimony-bearer speaking, nor over one who sings in
+    // tongues — two talkers never overlap. DICE: the turn's dice are thrown
+    // first, before this check)
     if ((S.testimonyHolds && S.testimonyHolds()) || (S.inVisit && S.inVisit() && S.Meeting.visitType() === "tongues")) { cueIn("voice", 7, stillVoicePhrase); return; }
     stillVoiceRender(t + 0.05, dur);
     cueLayer("voice", dur + R.rnd(6, 16) * silenceMul(), stillVoicePhrase);
@@ -191,7 +196,11 @@ window.KOLOB = window.KOLOB || {};
   // The wire's turn, at scheduled time tc. The word, and whether home
   // replies, are the wire's musical dice; which side of the sky it sits on
   // and the relay's clack are synth:telegraph.
-  function telegraphCycle(tc) {
+  // (under the core's net, S.cycle: a turn that throws before it has
+  // re-armed is re-armed by the core CYCLE_FALLBACK_S = 5 s later, and the
+  // throw is reported)
+  function telegraphCycle(tc) { return cycle("telegraph", telegraphCycle, telegraphCycleTurn, tc); }
+  function telegraphCycleTurn(tc) {
     if (!S.playing) return;
     var s = S.Meeting.section();
     var taps = s === "prelude" || s === "hymn" || s === "testimony" || s === "postlude";
@@ -220,12 +229,12 @@ window.KOLOB = window.KOLOB || {};
     // from the other side of the sky
     if (R.chance(0.1)) {
       tt = keyMorse(tt + R.rnd(1.5, 2.5), seq, -side, 0.033);
-      emitEvent({ type: "telegraph", word: word, wordDs: null, marks: seq, reply: true, cat: "telegraph", label: "⌁ a reply from home", detail: word });
+      emitEvent({ type: "telegraph", word: word, wordDs: null, marks: seq, reply: true });
     }
     emitNote("telegraph", 0, t, tt - t, { marks: seq });
     // (SCORE §6's wordDs: the wire keys English; the Deseret spelling of the
     // word is the page's to make — the engine has no transliterator)
-    emitEvent({ type: "telegraph", word: word, wordDs: null, marks: seq, reply: false, cat: "telegraph", label: "⌁ the wire flashes home", detail: word });
+    emitEvent({ type: "telegraph", word: word, wordDs: null, marks: seq, reply: false });
     cueLayer("telegraph", tt - t + R.rnd(45, 90) * gapMul() * S.Meeting.lean("telegraph"), telegraphCycle);
   }
 
@@ -404,7 +413,11 @@ window.KOLOB = window.KOLOB || {};
   var FIELD_KEY = {};                              // (each event's key, by its function's name: the seating's field weights)
   Object.keys(FIELD_FNS).forEach(function (k) { FIELD_KEY[FIELD_FNS[k].name] = k; });
   // The valley's turn, at scheduled time t: which event, and when the next.
-  function ambientEvent(t) {
+  // (under the core's net, S.cycle: a turn that throws before it has
+  // re-armed is re-armed by the core CYCLE_FALLBACK_S = 5 s later, and the
+  // throw is reported)
+  function ambientEvent(t) { return cycle("ambient", ambientEvent, ambientEventTurn, t); }
+  function ambientEventTurn(t) {
     if (!S.playing) return;
     var s = S.Meeting.section();
     if (s === "sacrament") { cueIn("ambient", 9, ambientEvent); return; }
@@ -422,7 +435,7 @@ window.KOLOB = window.KOLOB || {};
     // hall and the wind speaks for them: the name tells which)
     var field = null;
     for (var k in FIELD_NAMES) if (FIELD_NAMES[k] === name) field = k;
-    emitEvent({ type: "field", field: field, name: name, section: s, cat: "ambient", label: "⋆ " + name, detail: s });
+    emitEvent({ type: "field", field: field, name: name, section: s });
     var gap = R.rnd(25, 70) * (1.15 - intensity() * 0.35) * silenceMul() * S.Meeting.lean("ambient");
     cueLayer("ambient", gap, ambientEvent);
   }

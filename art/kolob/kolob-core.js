@@ -1,5 +1,5 @@
 // ============================================================================
-// KOLOB 𐐗𐐄𐐢𐐉𐐒 — an American-utopian aleatoric hymn-engine (audio)
+// KOLOB 𐐗𐐄𐐢𐐉𐐒 — kolob-core.js: the facade (window.KolobAudio)
 //
 // A generative jukebox in the lineage of Prospero's Jukebox, Antariksh, ZANKYŌ
 // and BARDO — but this one is close to home: the meetinghouse of a functioning
@@ -20,7 +20,7 @@
 //  · La Monte Young (Bern, Idaho) — 5-limit just intonation over a fixed
 //    tonic; pure sine drones that never stop. The ambient anchor.
 //
-// Architecture (what makes this one different from its siblings):
+// What makes this one different from its siblings:
 //  · A real FOUR-PART HARMONY engine: SATB voice-leading (common tones kept,
 //    parallel octaves rejected, parallel fifths rewarded — the tradition).
 //  · A hymn-meter PROSODY engine: melodic phrases are poured into metrical
@@ -30,49 +30,36 @@
 //    as expansive as the frontier. If a motif never gets its turn in a
 //    session, that is the piece working.
 //  · Sections: prelude → invocation → hymn×n → testimony → sacrament →
-//    doxology → postlude, conducted by THE CHORISTER; meetings drift across
-//    META-SEASONS (ordinary / fast day / conference / jubilee).
+//    doxology → postlude, conducted by THE CHORISTER (kolob-meeting.js);
+//    every visit draws a Sunday of the colony year (kolob-calendar.js), and
+//    the four kinds of meeting the house has always known (ordinary / fast
+//    day / conference / jubilee) stand under the nine Sundays.
 //  · Everything seeded (PJ2.Rand streams, one per voice and purpose) and
 //    kept on the audio clock (PJ2.Clock): a meeting is reproducible and
 //    shareable, and the same seed plays the same meeting however late the
 //    browser's timers run.
 //
+// THIS FILE is the house's foundation and its one public face:
+//  · the audio graph — the layers, the two rooms and their blend, the glue
+//    and the master chain (INIT — signal chain, below);
+//  · THE FAULTS — a fault the house lives through is told, never hidden;
+//  · THE DICE — the visit's seed, and every stream forked from it by name;
+//  · THE CLOCK — PJ2.Clock: every cue on the audio clock, at its own time;
+//  · THE DOORS — what a meeting connects into the hall, shut at STOP;
+//  · THE HOUSE LETS GO, THE AIR, the audition rail (SAMPLE), the TRANSPORT;
+//  · the LENT block (what this room shares on KOLOB._s) and the PUBLIC API,
+//    the only thing the page (kolob-ui.js, kolob-viz.js) calls.
 // Layers: organ, drone, choir, clarinet, harmonium, strings, bells, voice,
-// telegraph, ambient — and the bagpipe, SHELVED (owner, 2026-09-13: "just
-// kind of obnoxious"): its voice, params and cycle stay in the file, but it
-// is never scheduled, never shown on the desk, and its layer gain is pinned
-// at zero. See SHELVED below.   Public surface: window.KolobAudio
+// telegraph, tuba, ambient. A guest's seat (the band, the handbells, the
+// fiddle…) is not a layer: see seatedSend and wideSend. SHELVED below is
+// the mechanism for a layer kept but silenced; it is empty (the bagpipe,
+// shelved by the owner on 2026-09-13, is kept in shelved/ with its lab).
 //
-// THE HOUSE, ROOM BY ROOM (Kolob 2, phase 0a — split from the one-file
-// kolob-audio.js of v0.30 without changing a note; SCORE.md §1 is the plan):
-//   kolob-pitch.js     the tuning: collections, degrees, frequencies, monzos
-//   kolob-score.js     the score as it is written: the chord book
-//   kolob-melody.js    meters, prosody, the motif engine and its gestures
-//   kolob-harmony.js   the four-part engine (pure: handed a moment and dice)
-//   kolob-voices-*.js  the instruments: organ, choir, winds (clarinet and
-//                      harmonium), ground (drone, strings, bells, tuba), field
-//                      (still small voice, telegraph, the valley), bagpipe
-//                      (shelved), band (the brass: the trombones at dawn)
-//   kolob-guest-trombones.js  the trombone choir at dawn: its seat, its
-//                      chorale and its two choirs (pure planning; it plays
-//                      when the guests' room places it)
-//   kolob-guests.js    the visitations: the question, the bands, the steeples,
-//                      the old tune, the trombones, the cumulative assembly,
-//                      the raspberry
-//   kolob-meeting.js   the chorister: meetings, sections, joints, the arc;
-//                      the chorister's book (S.Meeting, C's only door) and
-//                      the chord desk (S.Harmony)
-//   kolob-core.js      this file: the context, the rooms, the layers, the
-//                      clock, the dice, and the KolobAudio facade
 // The rooms share one state object, KOLOB._s (S); see the note at the top of
 // each file. The house is loaded in the order _engine.php gives (the one
 // list), after the Jukebox v2 substrate it borrows: pj2-rand.js (the dice),
-// pj2-clock.js (the clock) and pj2-fx.js (the rooms' crossfade), all read-only.
-//
-// ROUND 2 (the one-time re-base, owner-approved): the single mulberry32 die
-// became labelled PJ2.Rand streams (THE DICE, below), and the setTimeout
-// chains became cues on PJ2.Clock (THE CLOCK). Seeds play differently from
-// v0.32 from here on; the music is the same music.
+// pj2-clock.js (the clock) and pj2-fx.js (the rooms' crossfade), all
+// read-only. README.md's folder table says what every file is.
 // ============================================================================
 
 window.KOLOB = window.KOLOB || {};
@@ -119,9 +106,6 @@ window.KolobAudio = (function () {
   function telegraphCycle(t) { return S.telegraphCycle(t); }
   function evFarBell(t, R) { return S.evFarBell(t, R); }
   function ambientEvent(t) { return S.ambientEvent(t); }
-  // from kolob-voices-bagpipe.js
-  function bagpipeLine(t, notes, gainMul, pan) { return S.bagpipeLine(t, notes, gainMul, pan); }
-  function bagpipeCycle(t) { return S.bagpipeCycle(t); }
   // from kolob-meeting.js
   function planMeeting(t) { return S.planMeeting(t); }
   function localArc() { return S.localArc(); }
@@ -132,10 +116,15 @@ window.KolobAudio = (function () {
   function conductorTick(t) { return S.conductorTick(t); }
   function skipToSection(type) { return S.skipToSection(type); }
   function resetVisit() { return S.resetVisit(); }
-  // (the other rooms' state, read and written through S: S.F0, S.mode, S.SCALE,
-  // S.Harmony (the chord desk), S.Meeting (the chorister's book),
-  // S.forceVisitation, S.forceRaspberry, S.cumulativeMode, S.seasonPos,
-  // S.VI_TO_CHORDPOS, S.CHOIR_PART, S.TELEGRAPH_WORDS, S.FIELD_FNS)
+  // (the other rooms' state is read and written through S as well — the
+  // tuning's S.F0, S.mode, S.SCALE; S.Harmony and S.Meeting, the chord desk
+  // and the chorister's book; the meeting's switches S.forceVisitation,
+  // S.forceRaspberry, S.cumulativeMode, S.seasonPos, S.CUMULATIVE_ODDS; the
+  // voices' tables S.VI_TO_CHORDPOS, S.CHOIR_PART, S.TELEGRAPH_WORDS,
+  // S.FIELD_FNS; the ward's and the organist's S.theWard, S.wardStats,
+  // S.wardStop, S.wardForgetAudition, S.pipeOn, S.organStats, S.organStop;
+  // the drone's S.droneForget; the meeting's S.meetingStop; the old
+  // tune's S.oldTunePool. tools/lends.js checks that every read has a lend.)
 
   // ----- Core audio graph -----
   var ctx = null;
@@ -150,7 +139,7 @@ window.KolobAudio = (function () {
   // for up to 90s after a stop, and the siblings' pattern of restoring the
   // master gain after the fade let them come back from the dead. Not here.
   var voicesBus = null;
-  // ROOMS — one space, staged in depth (PLAN-ONE-ROOM phases A/B, v0.27).
+  // ROOMS — one space, staged in depth (PLAN-ONE-ROOM phases A/B).
   // Two rooms, and EVERY layer sings in both: the CLOSE room is the
   // meetinghouse itself (short; early reflections you can almost see), the
   // WIDE room is the tabernacle (long, breathing). A per-layer depth bias
@@ -158,10 +147,10 @@ window.KolobAudio = (function () {
   // balance knob — set by the section, ramped — moves the whole gathering
   // deeper into the hall or closer to the ear. The equal-power crossfade is
   // Jukebox v2's PJ2.Fx.roomBlend, loaded by relative path (the ZANKYŌ
-  // pattern: shared substrate, never modified from here). Before v0.27 each
-  // layer was hard-assigned to ONE of two rooms — a parlor for the harmonium
-  // and the wire, the tabernacle for the rest, the voice nearly dry — which
-  // is exactly what "separate recordings layered on each other" sounds like.
+  // pattern: shared substrate, never modified from here). A layer
+  // hard-assigned to ONE of two rooms — a parlor for the harmonium and the
+  // wire, the tabernacle for the rest, the voice nearly dry — is exactly
+  // what "separate recordings layered on each other" sounds like.
   var roomClose = null, roomWide = null, roomBlend = null;
   var roomBalance = 0.45;          // where the gathering sits now (0 = all close … 1 = all wide)
   var roomBalanceHeld = false;     // dev (room lab): the sections stop moving it
@@ -173,17 +162,62 @@ window.KolobAudio = (function () {
   var masterVolume = 0.6;
 
   // ==========================================================================
+  // THE FAULTS — a fault is logged once, never hidden; cleanup after a node
+  // that may be gone is quiet.
+  // ==========================================================================
+  // A catch that swallows a throw hides a bug where nobody can hear it: a
+  // listener of the page's that throws at every note, a guest's material
+  // fallen back to a sample, a mouth left out of the room. So a fault the
+  // house can live through is still told. confess(what, fn) runs fn and
+  // returns what it returns; if fn throws, confess tells it on the console —
+  // console.error("Kolob: " + what, err) — and returns undefined, so the
+  // caller's fallback stands. Handed the fault instead of a function (a
+  // catch that keeps its own fallback, a promise's refusal, a worker's
+  // word), confess(what, err) tells it the same way. `about` rides on the
+  // line but not on the count: a listener's faults are counted per
+  // listener, whatever note it threw on. A fault that repeats is told the
+  // first time and then at every FAULT_EVERY-th, with its count, per
+  // `what`; the harness fails a run on any console.error, so a fault told
+  // on a clean run fails CI. Lent as S.confess, and on the facade for the
+  // page; a room that may stand on a bench without this one (a guest's
+  // material, the ward's voices, the switches) tells its fault through
+  // S.confess where it finds it, and plainly where it does not.
+  // What stays quiet: cleanup after a node that may already be gone (an
+  // onended disconnect, a chain of the rooms let go) — cleanup(fn),
+  // disconnectEach(nodes) — and a feature test's fallback (an old browser
+  // without a constructor's options), which is not a fault at all.
+  var FAULT_EVERY = 1000;          // told the first time, then every thousandth: a page bug at every note (3,000 a meeting) says so three times a meeting, with its count, not 3,000
+  var faults = {};                 // what → how often it has been confessed
+  function confess(what, fn, about) {
+    if (typeof fn !== "function") return told(what, fn, about);
+    try { return fn(); } catch (err) { told(what, err, about); }
+  }
+  function told(what, err, about) {
+    var k = faults[what] = (faults[what] || 0) + 1;
+    if (k > 1 && k % FAULT_EVERY) return;
+    if (typeof console !== "undefined" && console.error) console.error("Kolob: " + what + (about ? " (" + about + ")" : "") + (k > 1 ? " — " + k + " times now" : ""), err);
+  }
+  // cleanup(fn): fn run, and a throw from it let pass unspoken — for the
+  // cleanup after a node that may already be gone, never for a fault
+  function cleanup(fn) { try { fn(); } catch (e) { /* gone already */ } }
+  // disconnectEach(nodes): each node disconnected on its own, so one that
+  // throws (gone already, or never a node) leaves none of the others connected
+  function disconnectEach(nodes) {
+    for (var i = 0; i < nodes.length; i++) { try { nodes[i].disconnect(); } catch (e) { /* gone already */ } }
+  }
+
+  // ==========================================================================
   // THE DICE — seeded streams (PJ2.Rand; SCORE.md §3). The seed is the visit.
   // ==========================================================================
-  // v0.30 threw one die for the whole house, so a new envelope jitter in the
-  // clarinet re-rolled every hymn sung after it. Now each purpose forks its
-  // own stream off the visit's seed, by name, and a fork is born of its
-  // parent's birth seed, so the order the forks are asked for never matters:
+  // One die for the whole house would let a new envelope jitter in the
+  // clarinet re-roll every hymn sung after it. So each purpose forks its own
+  // stream off the visit's seed, by name, and a fork is born of its parent's
+  // birth seed, so the order the forks are asked for never matters:
   //
   //   meeting:<n>          the meeting's plan — its sections, guests, sunrise
   //   <voice>:<n>          what a voice plays in meeting n (organ, drone, choir,
   //                        clarinet, harmonium, strings, bells, voice,
-  //                        telegraph, bagpipe, field, fuging, stillness):
+  //                        telegraph, field, fuging, stillness):
   //                        every TURN a voice takes is a fork of its own
   //                        (turn:<k>), so a turn that throws more dice or fewer
   //                        never shifts the next one
@@ -194,9 +228,7 @@ window.KolobAudio = (function () {
   //   synth:<voice>        SOUND-LEVEL detail only — detune, envelopes, onset
   //                        stagger, pan, vibrato and tremolo rates: how a note
   //                        sounds, never what is played. Musical dice never
-  //                        come from these, and these never move the music:
-  //                        the harness re-salts them and the score stands
-  //                        still, note for note
+  //                        come from these, and these never move the music
   //   audition             everything sample() throws, so touching a stop on
   //                        the rail never disturbs the meeting
   //
@@ -211,29 +243,14 @@ window.KolobAudio = (function () {
         var m = location.search.match(/[?&]seed=(\d+)/);
         if (m) return (parseInt(m[1], 10) >>> 0) || 1847;
       }
-    } catch (e) {}
+    } catch (e) { confess("the address's ?seed= could not be read (the hour chooses the visit)", e); }
     return (Date.now() % 0xffffffff) >>> 0;     // no seed asked for: the hour chooses the visit
-  })();
-  // THE CHOIR SWITCH (round 3b, dev): ?choir=house sings the meeting with
-  // the house's four formant voices, as round 3 did — the owner's A/B
-  // against the ward (the ward is the meeting's choir otherwise)
-  S.houseChoir = (function () {
-    try { return typeof location !== "undefined" && /[?&]choir=house\b/.test(location.search || ""); } catch (e) { return false; }
-  })();
-  // THE ORGAN SWITCH (round 3b, step 2, dev): ?organ=house plays the meeting
-  // on the house's old additive organ, as round 3b's first step did (the
-  // organist is still seated and named, and plays nothing: no chorale
-  // prelude, no fills) — the owner's A/B against the pipe organ and the
-  // Sunday's organist (the meeting's organ otherwise)
-  S.houseOrgan = (function () {
-    try { return typeof location !== "undefined" && /[?&]organ=house\b/.test(location.search || ""); } catch (e) { return false; }
   })();
   var root = null;                 // the visit's stream: every fork is born of it
   var dice = { n: -1, streams: {}, turns: {} };   // this meeting's streams, by label
   var synths = {};                 // synth:<voice>, one per voice for the whole visit
   var auditionStream = null;
   var auditioning = false;         // true for the length of one sample() call
-  var synthSalt = "";              // harness only: re-salt the sound-level streams
   function visitRoot() {
     if (!root) {
       var Rand = window.PJ2 && window.PJ2.Rand;
@@ -272,7 +289,7 @@ window.KolobAudio = (function () {
   // synth(voice): sound-level detail for a voice, the whole visit long.
   function synth(voice) {
     if (auditioning) return audition();
-    return synths[voice] || (synths[voice] = visitRoot().fork(synthSalt + "synth:" + voice));
+    return synths[voice] || (synths[voice] = visitRoot().fork("synth:" + voice));
   }
   function reseedDice() { root = null; dice = { n: -1, streams: {}, turns: {} }; synths = {}; auditionStream = null; }
 
@@ -280,41 +297,40 @@ window.KolobAudio = (function () {
   // LAYERS + STATE
   // ==========================================================================
   // NOTE: "tuba" is RESERVED FOR THE RASPBERRY AMEN ONLY — see tubaBlat().
-  var LAYERS = ["organ", "drone", "choir", "clarinet", "bagpipe", "harmonium", "strings", "bells", "voice", "telegraph", "tuba", "ambient"];
+  var LAYERS = ["organ", "drone", "choir", "clarinet", "harmonium", "strings", "bells", "voice", "telegraph", "tuba", "ambient"];
   // SHELVED layers keep their code, their graph node and their defaults so a
   // change of heart is one line here — but they never sound: their cycle is
   // not scheduled, the desk does not list them (getLayers/getVolumes filter
   // them out), and applyLayerGain pins their gain at zero, so even an
   // audition or a stray Motif hand-off comes out silent.
-  var SHELVED = { bagpipe: true };
+  var SHELVED = {};   // (none today: the bagpipe, shelved by the owner on 2026-09-13, is in shelved/)
   // Depth bias per layer — added to the room balance before the equal-power
   // law (negative = nearer the ear). The still small voice stays close, but
   // in the room now; the wire is on the table; the deacon's parlor organ is
   // in the same building as the choir; the landscape and the field are at
   // the back, under the windows.
-  var ROOM_DEPTH = { voice: -0.35, telegraph: -0.25, harmonium: -0.15, clarinet: -0.08, bells: 0, choir: 0.05, organ: 0.10, strings: 0.15, drone: 0.15, tuba: 0, bagpipe: 0.05, ambient: 0.20,
-                     // (round 3b: a person of the ward come forward — the alto's verse, the
+  var ROOM_DEPTH = { voice: -0.35, telegraph: -0.25, harmonium: -0.15, clarinet: -0.08, bells: 0, choir: 0.05, organ: 0.10, strings: 0.15, drone: 0.15, tuba: 0, ambient: 0.20,
+                     // (a person of the ward come forward — the alto's verse, the
                      // precentor's line, the descant — is heard a step nearer than the ward)
                      "choir-near": -0.2,
-                     // (round 3b, step 3: the handbell choir stands at the front of the
-                     // chapel, as near as the still small voice; the cornet of the ward's
-                     // band plays the first hymn against the partner from the front pew)
+                     // (the handbell choir stands at the front of the chapel, as near as
+                     // the still small voice; the cornet of the ward's band plays the
+                     // first hymn against the partner from the front pew)
                      handbells: -0.35, cornet: -0.12,
-                     // (round 3c: the Social Hall is in the room with us, a step nearer
-                     // than the ward — the fiddle and the dancers' floor; the testimony-
-                     // bearers speak where the still small voice is, and the reed that
-                     // plays their words back sits where the harmonium does. Each is a
-                     // guest's own seat at unity, not a house layer's slider — the lab
-                     // measured them so: handoff r3c-hall-1)
+                     // (the Social Hall is in the room with us, a step nearer than the
+                     // ward — the fiddle and the dancers' floor; the testimony-bearers
+                     // speak where the still small voice is, and the reed that plays
+                     // their words back sits where the harmonium does. Each is a guest's
+                     // own seat at unity, not a house layer's slider; the depths were
+                     // measured in the lab)
                      fiddle: -0.2, floor: -0.25, speaker: -0.35, reed: -0.15 };
 
   var layerGains = {};
-  var choirNear = null;            // (round 3b) the ward's nearer way into the rooms, under the choir's slider
+  var choirNear = null;            // the ward's nearer way into the rooms, under the choir's slider
   // organ 0.52 → 0.40 (about 2.3 dB down): the owner found the organ "pretty
   // loud" in the v0.34 preview (2026-09-28)
-  var layerVolumes = { organ: 0.40, drone: 0.55, choir: 0.8, clarinet: 0.38, bagpipe: 0.18, harmonium: 0.45, strings: 0.5, bells: 0.5, voice: 0.35, telegraph: 0.25, tuba: 0.5, ambient: 0.5 };
+  var layerVolumes = { organ: 0.40, drone: 0.55, choir: 0.8, clarinet: 0.38, harmonium: 0.45, strings: 0.5, bells: 0.5, voice: 0.35, telegraph: 0.25, tuba: 0.5, ambient: 0.5 };
   var layerMuted = {}; LAYERS.forEach(function (l) { layerMuted[l] = false; });
-  var layerRate = {}; LAYERS.forEach(function (l) { layerRate[l] = 1; });
 
   // FIELD — the ambient layer is one bus, but each of its events (wind, crickets,
   // …) now rides its own gain so they can be balanced individually. The event's
@@ -323,12 +339,16 @@ window.KolobAudio = (function () {
   var fieldVolumes = { wind: 2, crickets: 1.52, clock: 1, fork: 1, rain: 2, coyote: 2, bell: 1.56, beacon: 1.38 };
   var fieldMuted = {};
 
-  var LAYER_PARAM_DEFAULTS = {
+  // THE PARAMS: each voice reads its own (getLayerParam) at these values.
+  // The console has no parameter drawers (volume and mute only), and the
+  // setters a lab once moved them with (setLayerParam, getLayerDefaults)
+  // were retired on 2026-10-01 — nothing called them — so these are the
+  // values, not defaults.
+  var LAYER_PARAMS = {
     organ:     { stops: 0.5, tremulant: 0.15, pedal: 0.6 },
     drone:     { presence: 0.5, fifth: 0.4 },
     choir:     { size: 3, vowel: 0.4, scoop: 0.5 },
     clarinet:  { vibrato: 0.4, pace: 1.0, grace: 0.5 },
-    bagpipe:   { grit: 0.42, reed: 0.5, breath: 0.32, pace: 1.0 },
     harmonium: { bellows: 0.5, reed: 0.5, shadow: 0.5 },
     strings:   { warmth: 0.5, lonesome: 0.4 },
     bells:     { ring: 0.55, tine: 0.5 },
@@ -336,20 +356,21 @@ window.KolobAudio = (function () {
     telegraph: { clack: 0.5 },
     ambient:   {},
   };
-  var layerParams = JSON.parse(JSON.stringify(LAYER_PARAM_DEFAULTS));
-  // telegraph 0.5: the wire should be an occasional visitor, not a speaker —
-  // half the event density while its RATE slider still reads a clean 1.00x.
+  // THE RATE: a layer's lane runs at its trim (rateOf), 1 where none is set.
+  // The console exposes volume and mute only, and the per-layer rate a lab
+  // once set (setLayerRate) was retired on 2026-10-01 — nothing called it.
+  // telegraph 0.5: the wire should be an occasional visitor, not a speaker
+  // — half the event density.
   var LAYER_RATE_TRIM = { telegraph: 0.5, bells: 0.7 };
-  // voice 1.35: the still small voice sat too low in the mix — lift it ~50%
-  // in the room without moving its slider (the slider reads layerVolumes, this
-  // trim rides on top).
-  // clarinet 0.72 / bagpipe 0.49: both sat too loud in the mix. voice 9.0:
-  // lifted further by owner request — but the trim was never the reason the
-  // voice stayed faint (see the source peak in stillVoiceRender); this rides on
-  // top of that source lift. bells 0.8: pulled down 20% by owner request.
-  // telegraph 1.5: the wire lifted 50% so its taps carry. The trims seat each
-  // while the sliders still read their usual positions.
-  var LAYER_VOL_TRIM = { choir: 1.1, voice: 9.0, bagpipe: 0.44, clarinet: 0.72, bells: 0.8, telegraph: 1.5 };
+  // THE VOLUME TRIMS ride on top of the sliders (the slider reads
+  // layerVolumes; a trim seats the layer without moving the slider's
+  // position). voice 9.0: the still small voice sat too low in the mix and
+  // was lifted by owner request — but the trim was never the reason the
+  // voice stayed faint (see the source peak in stillVoiceRender); this rides
+  // on top of that source lift. clarinet 0.72: it sat too loud in the mix.
+  // bells 0.8: pulled down 20% by owner request. telegraph 1.5: the wire
+  // lifted 50% so its taps carry.
+  var LAYER_VOL_TRIM = { choir: 1.1, voice: 9.0, clarinet: 0.72, bells: 0.8, telegraph: 1.5 };
 
   // The rooms. CLOSE: the meetinghouse — a plain plastered hall, quick and a
   // little bright, its early reflections doing the seating. WIDE: the
@@ -383,27 +404,32 @@ window.KolobAudio = (function () {
   // ==========================================================================
   // LISTENERS / LOG
   // ==========================================================================
-  // THE BUS (SCORE.md §6; round 2, milestone 3). Every event the page or the
-  // harness reads is TYPED — { type, t, …payload }, its words in
-  // KOLOB.Score.EVENTS — and the page reads the type and the payload, never
-  // the label. The legacy { cat, label, detail } still ride on the same
-  // object (one event, both vocabularies), for the dev tools and the
-  // harness's older tallies. A guest the minutes must not name (the
+  // THE BUS (SCORE.md §6). Every event the page or the harness reads is
+  // TYPED — { type, t, …payload }, its words in KOLOB.Score.EVENTS — and the
+  // page reads the type and the payload, nothing else. (The log words
+  // { cat, label, detail } that rode on every event beside its type were
+  // retired on 2026-10-01; tools/lib/dump.js still reads them out of dumps
+  // of builds older than 2026-09-27.) A guest the minutes must not name (the
   // Hosanna) says logged: false on every event it sends, and on every note
   // the page may not show (a visitor's notes name it: guest, logged).
+  // A listener that throws is passed over for that note or event — the
+  // music and the other listeners go on — and its fault is told (THE
+  // FAULTS: once per listener, then every thousandth, with the layer or the
+  // type it threw on): a bug in the staff or the minutes is seen in the
+  // console, not hidden at every note.
   var noteListeners = [], eventListeners = [];
   function emitNote(layer, freq, startTime, duration, extra) {
     if (HOUSE[layer] && !auditioning && duration > 0) heldByHouse(layer, freq, startTime, duration);
     for (var i = 0; i < noteListeners.length; i++) {
       var n = { layer: layer, freq: freq, startTime: startTime, duration: duration || 0 };
       if (extra) { for (var ek in extra) n[ek] = extra[ek]; }   // e.g. telegraph { marks:[…] }
-      try { noteListeners[i](n); } catch (e) {}
+      try { noteListeners[i](n); } catch (e) { confess("the note listener " + (i + 1) + " threw", e, "on a note of the " + layer); }
     }
   }
   function emitEvent(ev) {
     ev.t = ctx ? now() : 0;                                  // the moment it happens in the music
     for (var i = 0; i < eventListeners.length; i++) {
-      try { eventListeners[i](ev); } catch (e) {}
+      try { eventListeners[i](ev); } catch (e) { confess("the event listener " + (i + 1) + " threw", e, "on a " + (ev.type || "typeless") + " event"); }
     }
   }
 
@@ -414,9 +440,27 @@ window.KolobAudio = (function () {
   //   → voicesBus → glue → master → masterSat (gentle tanh) → compressor → out.
   //   NO grit bus in Zion: brightness comes from voicing and the hall, not
   //   saturation. (The one dangerous component of the siblings, deleted.)
+  // A HOUSE HALF-BUILT is not kept: init() builds once (`if (ctx) return`),
+  // so a throw after the context existed left every later press skipping
+  // the rest of the build and failing on what it never built (the clock,
+  // at PLAY). Now a build that throws lets go of all it made — the context
+  // closed, every handle cleared — and the throw goes on to the press that
+  // asked, so the next press builds the house again from the start. A build
+  // that does not throw is the same build, node for node, in the same order.
   // ==========================================================================
   function init() {
     if (ctx) return;
+    try { build(); }
+    catch (err) {
+      var dead = ctx;
+      ctx = sharedNoiseBuf = masterGain = voicesBus = glueComp = compressorNode = masterSat = bg = null;
+      roomClose = roomWide = roomBlend = droneDuck = choirNear = clock = null;
+      layerGains = {};
+      if (dead) cleanup(function () { var p = dead.close(); if (p && p.then) p.then(null, function () { /* gone already */ }); });
+      throw err;
+    }
+  }
+  function build() {
     ctx = new (window.AudioContext || window.webkitAudioContext)();
 
     var noiseSamples = Math.floor(ctx.sampleRate * NOISE_BUF_DURATION);
@@ -496,7 +540,7 @@ window.KolobAudio = (function () {
       layerGains[layer] = node;
       applyLayerGain(layer);
     }
-    // THE WARD'S NEAR WAY (round 3b): a person come forward sings into the
+    // THE WARD'S NEAR WAY: a person come forward sings into the
     // rooms a step nearer than the ward (ROOM_DEPTH["choir-near"]), under the
     // choir's own slider (applyLayerGain keeps the two together)
     choirNear = ctx.createGain();
@@ -515,7 +559,7 @@ window.KolobAudio = (function () {
     if (KOLOB.VoicesBand && KOLOB.VoicesBand.warm) {
       try { KOLOB.VoicesBand.warm(ctx); } catch (e) { if (window.console) console.warn("Kolob: the town's air could not be built:", e); }
     }
-    // (round 3c) and the new guests' own, all at the press, never in a cue:
+    // and the guests' own, all at the press, never in a cue:
     // the handcart company's throat, sung once and silently (a voice's first
     // line bakes its breath and compiles it — 5–7 ms — which must not land in
     // the clock's wake of a company passing in the prelude), with the folk
@@ -533,9 +577,10 @@ window.KolobAudio = (function () {
     else if (roomWide) src.connect(roomWide.send);
     else src.connect(voicesBus);
   }
-  // THE STANDING GUESTS' WAY INTO THE ROOM (round 3b, step 3; the guest
-  // crew's request 2): a guest who stands IN the chapel — the handbell choir,
-  // the cornet of the ward's band — is seated as a layer is, into both rooms
+  // THE STANDING GUESTS' WAY INTO THE ROOM: a guest who stands IN the chapel
+  // — the handbell choir, the cornet of the ward's band, the Social Hall's
+  // fiddle and floor, the testimony's speaker and reed — is seated as a
+  // layer is, into both rooms
   // at a depth of its own (ROOM_DEPTH), a step nearer than the ward, and not
   // through the tabernacle's wide send the visitors from outside take; the
   // singing school, the ward's own choir practising, goes into the choir's
@@ -605,7 +650,8 @@ window.KolobAudio = (function () {
     old.wet.gain.setValueAtTime(old.wet.gain.value != null ? old.wet.gain.value : r.spec.wet, t);
     old.wet.gain.linearRampToValueAtTime(0, t + 0.6);
     setTimeout(function () {
-      try { r.send.disconnect(old.pre); old.pre.disconnect(); old.conv.disconnect(); old.wet.disconnect(); } catch (e) {}
+      cleanup(function () { r.send.disconnect(old.pre); });
+      disconnectEach([old.pre, old.conv, old.wet]);
     }, 800);
   }
   // FLUSH THE HALL — a new meeting called after a STOP begins in a silent
@@ -618,15 +664,16 @@ window.KolobAudio = (function () {
       if (!r || !r.chain) return;
       var old = r.chain;
       r.chain = wetChain(r, old.conv.buffer, 0);
-      try { r.send.disconnect(old.pre); old.pre.disconnect(); old.conv.disconnect(); old.wet.disconnect(); } catch (e) {}
+      cleanup(function () { r.send.disconnect(old.pre); });
+      disconnectEach([old.pre, old.conv, old.wet]);
     });
   }
 
   // The pour: decaying noise under eight discrete EARLY TAPS. The taps are
   // the seating — the first 8–60 ms after a note is where the ear decides an
   // instrument stands IN a room rather than wearing reverb on a send; a bare
-  // noise tail (the pre-v0.27 pour) has no such moment, so it read as a wash
-  // behind close-miked tracks. The diffuse tail rises over 60 ms beneath the
+  // noise tail has no such moment, and reads as a wash behind close-miked
+  // tracks. The diffuse tail rises over 60 ms beneath the
   // taps, the way a real hall's does. Unseeded Math.random on purpose: this
   // is texture, not music (the zankyo rule) — the meeting replays from its
   // seed even though every room is a fresh pour.
@@ -760,7 +807,9 @@ window.KolobAudio = (function () {
   // HOLD: pause() fades the master and suspends the AudioContext, and the
   // clock stands still with it (nothing falls due while the audio clock is
   // frozen); resume() lets it run on from where it stood. STOP cancels every
-  // pending cue (clock.stop()), and closes the meeting's doors (below).
+  // pending cue (clock.stop()), and closes the meeting's doors (below). A
+  // layer's turn that throws is reported and its cycle armed again (THE NET
+  // UNDER EVERY TURN, below).
   var clock = null;
   var pump = null;                 // the clock's own wake-up (kept, to pump it once at a resume)
   var musicNow = null;             // the scheduled time of the cue now firing
@@ -776,9 +825,7 @@ window.KolobAudio = (function () {
       // tab may have slowed
       setInterval: function (fn, ms) { pump = fn; return setInterval(fn, ms); },
       clearInterval: function (id) { clearInterval(id); },
-      onError: function (err, info) {
-        if (typeof console !== "undefined" && console.error) console.error("Kolob: a cue on '" + (info && info.lane) + "' threw at t=" + (info && info.t), err);
-      },
+      onError: function (err, info) { cueThrew(err, info && info.lane, info && info.t); },
     });
     LAYERS.forEach(function (l) { clock.lane(l).rate = rateOf(l); });
     return clock;
@@ -790,58 +837,106 @@ window.KolobAudio = (function () {
   var clockHealth = { cues: 0, late: 0, maxLate: 0 };
   function cueAt(lane, t, fn) {
     if (!clock) return null;
-    return clock.lane(lane).at(t, function (tt) {
+    var id = clock.lane(lane).at(t, function (tt) {
       var was = musicNow;
       musicNow = tt;
       clockHealth.cues++;
       if (ctx && ctx.currentTime > tt + 0.003) { clockHealth.late++; if (ctx.currentTime - tt > clockHealth.maxLate) clockHealth.maxLate = ctx.currentTime - tt; }
       try { fn(tt); } finally { musicNow = was; }
     });
+    // (the net's question, below — has the turn now running re-armed its
+    // own cycle? — answered only once the clock has taken the cue)
+    if (turning && turning.self === fn && turning.lane === lane) turning.armed = true;
+    return id;
   }
   // cueIn: dtS seconds after the music's now, at the clock's own speed —
   // a retry, a timed announcement, the next section.
   function cueIn(lane, dtS, fn) { return cueAt(lane, now() + dtS, fn); }
-  // cueLayer: a layer's own pace — baseS scaled by its rate (the rate slider
-  // and its trim are the lane's rate; moving the slider bends the cues
-  // already waiting, around the present moment).
+  // cueLayer: a layer's own pace — baseS scaled by its lane's rate (its
+  // trim, rateOf).
   function cueLayer(layer, baseS, fn) { return cueAt(layer, now() + baseS / rateOf(layer), fn); }
+  // a cue that threw, reported: by the clock (onError, above), or by the net
+  function cueThrew(err, lane, t, more) {
+    if (typeof console !== "undefined" && console.error) console.error("Kolob: a cue on '" + lane + "' threw at t=" + t + (more || ""), err);
+  }
+
+  // THE NET UNDER EVERY TURN. Each layer's turn — the drone's, the
+  // strings', the tines', the organist's, the deacon's, the harmonium's, the
+  // choir's verse, the still voice's, the wire's, the valley's — the
+  // conductor's tick, and the two pumps (the ward's desk, the organist's)
+  // re-arm their own lane as the last thing they do: the next turn is the
+  // last thing a turn writes. The clock catches a cue that throws, reports
+  // it and arms nothing, so a turn that threw before it had re-armed was the
+  // end of its layer for the rest of the visit, a tick that threw was the end
+  // of the meeting's sections, and a pump that threw at its re-arm left its
+  // flag up with no tick behind it, so nothing woke it again. So the cue the
+  // clock runs for a layer is its room's cycle — droneCycle, organCycle, …,
+  // conductorTick, wardTick, organistTick — and the cycle is one line,
+  // cycle(lane, self, turn, t, fallbackS): its turn runs, and if the turn
+  // throws before it has re-armed its own cycle (self, on its lane), the
+  // throw is reported and the cycle is armed again fallbackS later —
+  // CYCLE_FALLBACK_S, unless the cycle names its own (the tick and the pumps
+  // keep their own pace) — where it takes up its turns. Whether it re-armed
+  // is asked of cueAt after the clock has taken the cue, so a re-arm the
+  // clock refused is not mistaken for one. On a throw, cycle() says whether
+  // the cycle now stands armed (the turn's re-arm or its own), so a pump
+  // sets its flag by that word, once; otherwise it says nothing. A turn that
+  // returns without re-arming (it found the meeting stopped) is left alone,
+  // and where nothing throws the net does nothing at all: no die, no cue,
+  // no flag and no cue's order is moved. (A composed hymn is a chain of
+  // cues, not a cycle: a link of it that throws lets the hymn go —
+  // kolob-voices-choir.js, A LINK THAT THROWS.)
+  var CYCLE_FALLBACK_S = 5;        // a turn that threw is tried again this long after: soon enough that the layer comes back, slow enough that a fault that repeats is told a few times a minute, not at every turn
+  var turning = null;              // the turn running under the net: { lane, self, armed }
+  function cycle(lane, self, turn, t, fallbackS) {
+    var was = turning, me = turning = { lane: lane, self: self, armed: false };
+    try { turn(t); }
+    catch (err) {
+      var again = !me.armed && playing, dt = fallbackS || CYCLE_FALLBACK_S;
+      cueThrew(err, lane, t, again ? " (its cycle is armed again " + dt + " s later)" : "");
+      if (again) cueIn(lane, dt, self);
+      return me.armed || again;
+    } finally { turning = was; }
+  }
 
   // THE DOORS — each meeting enters the hall through doors of its own: the
   // panners, field gains and the tabernacle send its voices connect to. The
   // choir writes its lines up to half a minute ahead and the drone holds for
   // a minute and a half, all of it already in the audio graph, so STOP closes
   // the meeting's doors (disconnects them once the fade is done) and PLAY
-  // opens new ones. Before round 2 the old meeting's lines came back through
-  // the same doors when PLAY reopened the bus within ~30 s of a STOP.
+  // opens new ones. Without them the old meeting's lines came back through
+  // the bus when PLAY reopened it within ~30 s of a STOP.
   var doors = null;
   var closing = [];                // doors shut at STOP, disconnected after the fade
   var hallRinging = false;         // a meeting was stopped: its echo is still in the rooms
   function openDoors() { return { pans: {}, field: {}, wide: null, hands: {}, spent: [], ward: null, seats: {} }; }
   function liveDoors() { return doors || (doors = openDoors()); }
+  // (each door is shut on its own, in this order — one that throws, gone
+  // already or never a node, leaves none of the others open: shut in one
+  // try, the first throw left every door after it connected)
   function shutDoors(d) {
-    var k, i;
-    try {
-      for (k in d.pans) for (i = 0; i < d.pans[k].length; i++) d.pans[k][i].disconnect();
-      for (k in d.hands) d.hands[k].disconnect();
-      for (i = 0; i < d.spent.length; i++) d.spent[i].disconnect();
-      for (k in d.field) d.field[k].disconnect();
-      if (d.wide) d.wide.disconnect();
-      for (k in d.seats) d.seats[k].disconnect();
-      if (d.ward) { d.ward.hall.disconnect(); d.ward.near.disconnect(); }
-    } catch (e) {}
+    var k, all = [];
+    for (k in d.pans) all.push.apply(all, d.pans[k]);
+    for (k in d.hands) all.push(d.hands[k]);
+    all.push.apply(all, d.spent);
+    for (k in d.field) all.push(d.field[k]);
+    if (d.wide) all.push(d.wide);
+    for (k in d.seats) all.push(d.seats[k]);
+    if (d.ward) all.push(d.ward.hall, d.ward.near);
+    disconnectEach(all);
   }
   function shutClosingDoors() { while (closing.length) shutDoors(closing.pop()); }
 
   // ==========================================================================
-  // THE HOUSE LETS GO (the pre-v0.34 polish; PLAN-COMPOSITION §15, a guest
-  // rule of the Score). When a guest enters — the trombones at dawn, the old
-  // tune, the bands, the steeples — the house's held notes (the organ's
-  // chord, the strings' pad, the harmonium's and the clarinet's lines, all
-  // of them written seconds ahead) let go over HOUSE_RELEASE_S instead of
-  // ringing on under the visitor or being cut. Round 2 "listened" only by
-  // starting no new turns: in 17 of 24 forced dawns an organ chord was
-  // still sounding 1.6–8.1 s into the far choir's entry, and in three it
-  // beat against it a comma apart.
+  // THE HOUSE LETS GO (PLAN-COMPOSITION §15, a guest rule of the Score).
+  // When a guest enters — the trombones at dawn, the old tune, the bands,
+  // the steeples — the house's held notes (the organ's chord, the strings'
+  // pad, the harmonium's and the clarinet's lines, all of them written
+  // seconds ahead) let go over HOUSE_RELEASE_S instead of ringing on under
+  // the visitor or being cut. Listening only by starting no new turns is not
+  // enough: measured so, in 17 of 24 forced dawns an organ chord was still
+  // sounding 1.6–8.1 s into the far choir's entry, and in three it beat
+  // against it a comma apart.
   //
   // How: each house layer enters the hall through HANDS of its own (a gain
   // in the meeting's doors, between the layer's panners and its volume
@@ -858,7 +953,6 @@ window.KolobAudio = (function () {
   var HOUSE_RELEASE_S = 1.5;
   var houseNotes = {};             // layer → its reported notes still to end [{s, e, f}]
   var houseRest = {};              // layer → no turn of it begins before this (the release)
-  var handsLog = [];               // every pair of hands: its layer, and when it let go (for the harness)
   function heldByHouse(layer, f, s, dur) {
     var a = houseNotes[layer] || (houseNotes[layer] = []);
     a.push({ s: s, e: s + dur, f: f });
@@ -873,16 +967,14 @@ window.KolobAudio = (function () {
       h = d.hands[layer] = ctx.createGain();
       h.gain.value = 1;
       h.connect(layerGains[layer]);
-      handsLog.push({ layer: layer, node: h, at: null, until: null });
-      if (handsLog.length > 256) handsLog.shift();
     }
     return h;
   }
   // at te (the guest's entrance, the cue's scheduled time): who lets go
   // (logged: false for a guest the minutes may not name — the event says so,
   // as every event of that guest's does)
-  // (only: round 3b, step 4 — a rite whose seating sits some of the house
-  // out lets those alone go as it begins: a clarinet phrase the deacon
+  // (only: a rite whose seating sits some of the house out lets those alone
+  // go as it begins: a clarinet phrase the deacon
   // wrote during the joint does not ring half a minute into THE CHOIR ALONE)
   function houseLetsGo(te, guest, logged, only) {
     if (!ctx || !doors) return null;
@@ -911,24 +1003,22 @@ window.KolobAudio = (function () {
       // them has stopped (its oscillators stop up to half a second after
       // their written end): a long session does not keep a pile of silent
       // doors open (the panners stay wired to the hands, so what went
-      // through them can still be traced — the harness does)
+      // through them can still be traced)
       cueAt("conductor", written + 1, function () {
-        try { h.disconnect(); } catch (e) {}
+        disconnectEach([h]);
         var at = d.spent.indexOf(h); if (at >= 0) d.spent.splice(at, 1);
       });
-      for (var i = handsLog.length - 1; i >= 0; i--) if (handsLog[i].node === h) { handsLog[i].at = te; handsLog[i].until = until; handsLog[i].guest = guest; break; }
       layers.push(L);
     });
     if (!layers.length) return null;
     emitEvent({
       type: "house-lets-go", guest: guest, at: te, until: until, layers: layers, released: released, logged: logged !== false,
-      cat: "house", label: "⌒ the house lets go", detail: guest + " · " + layers.join(", "),
     });
     return until;
   }
   // a house voice asks before it begins a turn: is my release still going?
-  // (round 3b, step 4: or does the rite's seating sit me out — the brush
-  // arbor's organ, the lined-out rite's strings, the choir alone's deacon)
+  // (or does the rite's seating sit me out — the brush arbor's organ, the
+  // lined-out rite's strings, the choir alone's deacon)
   function houseRests(layer) { return !!ctx && (now() < (houseRest[layer] || 0) || !!(S.Meeting && S.Meeting.sits && S.Meeting.sits(layer))); }
 
   function panAt(layer, p) {
@@ -947,13 +1037,12 @@ window.KolobAudio = (function () {
     var cl = p < -1 ? -1 : (p > 1 ? 1 : p);
     return pool[cl < -0.2 ? 0 : cl > 0.2 ? 2 : 1];
   }
-  // THE WARD'S WAYS INTO THE ROOM (round 3b): the thirty-two pour into the
+  // THE WARD'S WAYS INTO THE ROOM: the thirty-two pour into the
   // choir's own layer (its slider, its seat in the rooms); a person come
   // forward, into the nearer way beside it. Both belong to the meeting's
   // doors: a STOP closes them on everything the ward had written ahead.
   // WARD_LEVEL sets the ward in the house's mix (each singer's line is the
   // cast's 1/√8 a part): measured against the house voices it replaces
-  // (handoff r3b-ward-1)
   var WARD_LEVEL = 0.16;
   function wardBuses() {
     var d = liveDoors();
@@ -965,16 +1054,10 @@ window.KolobAudio = (function () {
     }
     return d.ward;
   }
-  function getRate(layer) {
-    var base = (layerRate[layer] != null ? layerRate[layer] : 1);
-    var trim = LAYER_RATE_TRIM[layer] != null ? LAYER_RATE_TRIM[layer] : 1;
-    return base * trim;
-  }
-  // the lane's rate: a zero slider reads as 1 (as v0.30 did), and the clock
-  // will not run a lane slower than 0.05
-  function rateOf(layer) { var r = getRate(layer) || 1; return r < 0.05 ? 0.05 : r; }
+  // the lane's rate: the layer's trim (LAYER_RATE_TRIM), 1 where none is set
+  function rateOf(layer) { return LAYER_RATE_TRIM[layer] != null ? LAYER_RATE_TRIM[layer] : 1; }
   function getLayerParam(layer, key, fallback) {
-    if (layerParams[layer] && layerParams[layer][key] != null) return layerParams[layer][key];
+    if (LAYER_PARAMS[layer] && LAYER_PARAMS[layer][key] != null) return LAYER_PARAMS[layer][key];
     return fallback;
   }
   function applyLayerGain(layer) {
@@ -1031,8 +1114,8 @@ window.KolobAudio = (function () {
   // The landscape voices (organ, drone, strings) never claim it — they are
   // the prairie the speeches happen in.
   var air = { busyUntil: 0, holders: 0 };
-  // (a composed hymn holds the air alone: the ward is the whole speech —
-  // round 3; two voices share it in a singing section otherwise)
+  // (a composed hymn holds the air alone: the ward is the whole speech; two
+  // voices share it in a singing section otherwise)
   function airLimit() {
     var s = S.Meeting.section();
     if (S.Meeting.hymnSounding && S.Meeting.hymnSounding()) return 1;
@@ -1067,7 +1150,7 @@ window.KolobAudio = (function () {
   }
   function audit(layer) {
     if (!S.SCALE.length) rebuildScale();
-    if (ctx.state !== "running") { try { ctx.resume(); } catch (e) {} }
+    if (ctx.state !== "running") askContext("resume", "for an audition");
     if (bg) bg.poke();               // audition while stopped: the <audio> route must be live
     var A = audition();
     var isField = layer.indexOf("field:") === 0;
@@ -1131,13 +1214,6 @@ window.KolobAudio = (function () {
         emitNote("harmonium", degFreq(projDeg(2)), t, 5);
         break;
       }
-      case "bagpipe": {
-        var bnotes = [[-3, 1], [0, 1.4], [2, 1], [0, 2.4]].map(function (n) {
-          return { f: degFreq(projDeg(n[0]) + colN()), dur: n[1] };
-        });
-        bagpipeLine(t, bnotes, 0.95, 0);
-        break;
-      }
       case "strings": stringsPad(t, 9, 0.9, false); break;
       case "bells":
         meetinghouseBell(t, 0.8, A);
@@ -1155,18 +1231,38 @@ window.KolobAudio = (function () {
       case "ambient": evFarBell(t, A); break;
       default: return;
     }
-    emitEvent({ type: "transport", action: "sample", layer: layer, cat: "transport", label: "◈ sample " + layer, detail: "" });
+    emitEvent({ type: "transport", action: "sample", layer: layer });
   }
 
   // ==========================================================================
   // TRANSPORT
   // ==========================================================================
+  // askContext(verb, why): the context asked to resume or to suspend. Both
+  // answer with a promise, and a refusal — a context closed under the page,
+  // a browser that will not wake it without a gesture — is told (THE
+  // FAULTS), never left an unhandled rejection; so is a call that throws.
+  // Returns the promise (null if the call threw), for a caller that waits on
+  // the answer; nothing else waits on it.
+  function askContext(verb, why) {
+    var what = "the audio context would not " + verb + " " + why;
+    var p = confess(what, function () { return ctx[verb](); });
+    if (p && p.then) p.then(null, function (err) { confess(what, err); });
+    return p || null;
+  }
   function play() {
     init();
     if (playing) { if (paused) resume(); return; }   // PLAY on a held meeting lets it go on
-    if (ctx.state !== "running") { try { ctx.resume(); } catch (e) {} }
+    // (a context that will not wake is told, and PLAY goes on all the same:
+    // the answer comes after the press, and a context refused now is often
+    // woken soon — background-audio.js kicks it at the next touch, focus or
+    // return to the page. Until then the clock pumps against the frozen
+    // audio clock: the downbeat's first window is written, nothing more
+    // falls due and nothing sounds; once it wakes, the meeting plays on from
+    // its downbeat. Aborted here, PLAY would leave that wake no meeting)
+    if (ctx.state !== "running") askContext("resume", "at PLAY");
     playing = true;
     if (bg) bg.started();
+    clearStopTimer();                // the last STOP's timer is this press's to cancel: its doors are shut here, now
     shutClosingDoors();              // the last meeting's written-ahead lines stay outside
     if (hallRinging) { flushRooms(); hallRinging = false; }   // and its echo with them
     liveDoors();
@@ -1179,6 +1275,7 @@ window.KolobAudio = (function () {
     masterGain.gain.setValueAtTime(masterVolume, ctx.currentTime);
     if (droneDuck) {
       // a stop mid-stillness must not strand the next meeting on a low drone
+      // (nor hushed: its hold ended at STOP, S.meetingStop)
       droneDuck.gain.cancelScheduledValues(ctx.currentTime);
       droneDuck.gain.setValueAtTime(1, ctx.currentTime);
     }
@@ -1190,11 +1287,12 @@ window.KolobAudio = (function () {
       planMeeting(t0);
       // staggered assembly — the valley wakes the way a Sunday begins, and
       // each Sunday in its own order: the prelude's seating (kolob-meeting.js,
-      // THE PRELUDE'S SEATING) drew every entrance. (v0.32 woke every visit
-      // on one timetable: the drone at 0.1 s, the organ at 2.7, the field at
-      // 16, the strings at 24.) The voice and the choir only listen for
-      // their sections, each from a drawn first call; on a humming Sunday the
-      // choir is the first awake (round 2 of the polish).
+      // THE PRELUDE'S SEATING) drew every entrance (one timetable for every
+      // visit — the drone at 0.1 s, the organ at 2.7, the field at 16, the
+      // strings at 24 — made every first minute the same; the fallback below
+      // is that timetable, for a plan without a seating). The voice and the
+      // choir only listen for their sections, each from a drawn first call;
+      // on a humming Sunday the choir is the first awake.
       var W = S.Meeting.waking() || { drone: 0, organ: 2.5, ambient: 16, strings: 24, harmonium: 30, clarinet: 34, bells: 42, telegraph: 55, choir: 20, voice: 12 };
       cueAt("drone", t0 + W.drone, droneCycle);
       cueAt("organ", t0 + W.organ, organCycle);
@@ -1204,13 +1302,12 @@ window.KolobAudio = (function () {
       cueAt("strings", t0 + W.strings, stringsCycle);
       cueAt("harmonium", t0 + W.harmonium, harmoniumCycle);
       cueAt("clarinet", t0 + W.clarinet, clarinetPhrase);
-      if (!SHELVED.bagpipe) cueAt("bagpipe", t0 + 30, bagpipeCycle);
       cueAt("bells", t0 + W.bells, tineCycle);
       cueAt("telegraph", t0 + W.telegraph, telegraphCycle);
       cueAt("conductor", t0 + 1, conductorTick);
     });
     clock.start();                   // the downbeat falls inside the first window: it fires now
-    emitEvent({ type: "transport", action: "play", seed: seed, cat: "transport", label: "▶ the meeting is called", detail: "seed " + seed });
+    emitEvent({ type: "transport", action: "play", seed: seed });
   }
   // HOLD the meeting where it stands — see the clock's notes above. The
   // page's transport and the lock-screen pause both come here; PLAY, the
@@ -1223,7 +1320,7 @@ window.KolobAudio = (function () {
   // the element rests, then the clock stops — and every cue stops with it,
   // because every cue waits on that clock. Resume runs the same in reverse.
   var PAUSE_FADE = 0.16;                           // seconds
-  var pauseTimer = null;
+  var pauseTimer = null;           // the hold's own timer: resume() and STOP clear it (a transport press cancels the one before it)
   function pause() {
     if (!playing || paused) return;
     paused = true;
@@ -1235,7 +1332,7 @@ window.KolobAudio = (function () {
       pauseTimer = null;
       if (!paused) return;                         // resumed during the fade
       if (bg) { if (bg.hold) bg.hold(); else bg.stopped(); }   // the element rests, the lock screen shows paused
-      try { if (ctx.state === "running") ctx.suspend(); } catch (e) {}
+      if (ctx.state === "running") askContext("suspend", "at a hold");
     }, PAUSE_FADE * 1000 + 40);
   }
   function resume() {
@@ -1251,9 +1348,10 @@ window.KolobAudio = (function () {
       masterGain.gain.linearRampToValueAtTime(masterVolume, t + PAUSE_FADE);
       if (pump) pump();                            // the clock looks ahead at once
     };
+    // (go runs once the context has answered, yes or no: a refusal is told
+    // by askContext, and the meeting goes on as PLAY's does)
     if (ctx.state !== "running") {
-      var p = null;
-      try { p = ctx.resume(); } catch (e) {}
+      var p = askContext("resume", "at the end of a hold");
       if (p && p.then) p.then(go, go); else go();
     } else go();
   }
@@ -1262,13 +1360,14 @@ window.KolobAudio = (function () {
     if (clock) clock.stop();         // every pending cue is cancelled: nothing of this meeting is called again
     if (S.wardStop) S.wardStop();    // and nothing more of the ward's is handed to the voices, or joined
     if (S.organStop && ctx) S.organStop(ctx.currentTime + 0.7);   // nor of the organist's; the organ's case is shut after the fade
+    if (S.meetingStop) S.meetingStop();   // and a stillness the meeting was holding ends with it (the drone's duck is lifted at PLAY)
     if (doors) { closing.push(doors); doors = null; }
     hallRinging = true;
     if (bg) bg.stopped();
     if (pauseTimer) { clearTimeout(pauseTimer); pauseTimer = null; }
     if (paused) {                                    // a stop from a hold: let the clock run so the fade can
       paused = false;
-      try { if (ctx && ctx.state !== "running") ctx.resume(); } catch (e) {}
+      if (ctx && ctx.state !== "running") askContext("resume", "to let a held meeting's fade run at STOP");
     }
     if (voicesBus && ctx) {
       var t = ctx.currentTime;
@@ -1283,12 +1382,25 @@ window.KolobAudio = (function () {
       masterGain.gain.setValueAtTime(masterVolume, t + 0.7);
       scheduleForStop();
     }
-    emitEvent({ type: "transport", action: "stop", cat: "transport", label: "■ the benches empty", detail: "" });
+    emitEvent({ type: "transport", action: "stop" });
   }
+  // THE STOP'S OWN TIMER. 800 ms after a STOP, the fade done, the stopped
+  // meeting's doors are disconnected and the layer gains zeroed. Its handle
+  // is kept, and a transport press cancels the one before it: STOP clears
+  // the handle the STOP before it armed, before arming its own, and PLAY
+  // clears it before it opens new doors (it shuts the closed ones itself,
+  // at once). Untracked, a STOP, a PLAY 0.3 s later and a STOP 0.2 s after
+  // that let the first STOP's timer disconnect the second STOP's doors, and
+  // zero the gains, 0.3 s into its 0.6 s fade: a cut, not a fade. On a
+  // single STOP nothing moves: the same fade, the same 800 ms.
+  var stopTimer = null;
+  function clearStopTimer() { if (stopTimer) { clearTimeout(stopTimer); stopTimer = null; } }
   function scheduleForStop() {
-    setTimeout(function () {
+    clearStopTimer();
+    stopTimer = setTimeout(function () {
+      stopTimer = null;
       // the fade is done: the stopped meeting's doors are disconnected (a PLAY
-      // inside these 800 ms has already shut them)
+      // inside these 800 ms has already shut them, and cleared this timer)
       shutClosingDoors();
       if (!playing && ctx) {
         // belt and braces: zero the layer gains too, so a later sample() of
@@ -1305,22 +1417,24 @@ window.KolobAudio = (function () {
   // LENT — what this room shares with the rest of the house (KOLOB._s)
   // ==========================================================================
   // (accessor lends are configurable, so a room can be loaded again — a lab,
-  // a hot reload, the harness's reload check — without "Cannot redefine")
+  // a hot reload — without "Cannot redefine")
   Object.defineProperty(S, "ctx", { enumerable: true, configurable: true, get: function () { return ctx; }, set: function (v) { ctx = v; } });
   Object.defineProperty(S, "droneDuck", { enumerable: true, configurable: true, get: function () { return droneDuck; }, set: function (v) { droneDuck = v; } });
   Object.defineProperty(S, "roomBalanceHeld", { enumerable: true, configurable: true, get: function () { return roomBalanceHeld; }, set: function (v) { roomBalanceHeld = v; } });
   Object.defineProperty(S, "roomRampNext", { enumerable: true, configurable: true, get: function () { return roomRampNext; }, set: function (v) { roomRampNext = v; } });
   Object.defineProperty(S, "playing", { enumerable: true, configurable: true, get: function () { return playing; }, set: function (v) { playing = v; } });
+  // a fault told, never hidden (THE FAULTS)
+  S.confess = confess;
   // the dice and the clock
   S.stream = stream;
   S.turn = turn;
   S.wait = wait;
   S.synth = synth;
-  S.audition = audition;
   S.now = now;
   S.cueAt = cueAt;
   S.cueIn = cueIn;
   S.cueLayer = cueLayer;
+  S.cycle = cycle;
   S.hymnStream = hymnStream;
   S.seatedSend = seatedSend;
   S.formStream = function (label) { return visitRoot().fork(label); };
@@ -1329,8 +1443,6 @@ window.KolobAudio = (function () {
   S.visitSeed = function () { return seed; };
   // is the music's now a cue's? (the hymnal counts a hymn written inside one)
   S.inCue = function () { return musicNow != null; };
-  // harness only: re-salt the sound-level streams (the score must not move)
-  S.setSynthSalt = function (salt) { synthSalt = salt ? String(salt) + ":" : ""; synths = {}; };
   S.SHELVED = SHELVED;
   S.ROOM_BALANCE = ROOM_BALANCE;
   S.ROOM_RAMP_S = ROOM_RAMP_S;
@@ -1341,9 +1453,6 @@ window.KolobAudio = (function () {
   S.panAt = panAt;
   S.houseLetsGo = houseLetsGo;
   S.houseRests = houseRests;
-  S.HOUSE = HOUSE;
-  S.HOUSE_RELEASE_S = HOUSE_RELEASE_S;
-  S.handsLog = function () { return handsLog; };
   S.getLayerParam = getLayerParam;
   S.fieldDest = fieldDest;
   S.noiseSource = noiseSource;
@@ -1369,8 +1478,8 @@ window.KolobAudio = (function () {
     // THE BAND'S OWN VOLUME (the caterpillar on the console): the listener's
     // hand on the Nauvoo band alone, both bands and their drums, 0 … 1.5
     // (linear; 1 is the band as the meeting seats it), gliding over 50 ms.
-    // It multiplies whatever the band is given (the instruments drawer has
-    // no band stop) and changes nothing of the meeting but loudness: the
+    // It multiplies whatever the band is given (the instruments panel has
+    // no band slider) and changes nothing of the meeting but loudness: the
     // band keeps its time, its notes still print, the minutes still name it.
     // getBandHeardUntil() is when the last note or drum of the band now in
     // the street stops sounding, on the audio clock (0 if none).
@@ -1379,11 +1488,7 @@ window.KolobAudio = (function () {
     getBandHeardUntil: function () { var VB = KOLOB.VoicesBand; return ctx && VB && VB.heardUntil ? VB.heardUntil(ctx) : 0; },
     setLayerVolume: function (layer, v) { layerVolumes[layer] = v; if (ctx) applyLayerGain(layer); },
     toggleLayer: function (layer) { layerMuted[layer] = !layerMuted[layer]; if (ctx) applyLayerGain(layer); return !layerMuted[layer]; },
-    // the rate slider is the layer's lane rate: the cues already waiting bend with it
-    setLayerRate: function (layer, r) { layerRate[layer] = r; if (clock) clock.lane(layer).rate = rateOf(layer); },
-    setLayerParam: function (layer, key, v) { if (!layerParams[layer]) layerParams[layer] = {}; layerParams[layer][key] = v; },
     getLayerParam: getLayerParam,
-    getLayerDefaults: function () { return JSON.parse(JSON.stringify(LAYER_PARAM_DEFAULTS)); },
     getLayers: function () { return LAYERS.filter(function (l) { return !SHELVED[l]; }); },
     getVolumes: function () {
       var out = {};
@@ -1396,14 +1501,22 @@ window.KolobAudio = (function () {
     toggleField: function (key) { fieldMuted[key] = !fieldMuted[key]; applyFieldGain(key); return !fieldMuted[key]; },
     getSeed: function () { return seed; },
     // a new seed is a new visit: fresh dice, and (while stopped) the meeting
-    // count starts again, so ?seed=X and GATHER X call the same first meeting
-    reseed: function (s) { seed = (s >>> 0) || 1847; reseedDice(); if (!playing) resetVisit(); },
+    // count starts again, so ?seed=X and GATHER X call the same first meeting;
+    // and what the old visit seated is let go — the rail's own ward (seated
+    // on the old seed's cast:0) and, while stopped, the drone's note (else
+    // the new visit's first meeting began with its drone gliding home from
+    // the interval the old one's stood on when it was stopped)
+    reseed: function (s) {
+      seed = (s >>> 0) || 1847; reseedDice();
+      if (S.wardForgetAudition) S.wardForgetAudition();
+      if (!playing) { resetVisit(); if (S.droneForget) S.droneForget(); }
+    },
     getConductor: function () {
       var M = S.Meeting, plan = M.plan();
       return {
         meeting: M.meetingNum(), activity: M.activity(),
-        // (round 3b, step 4: the calendar's Sunday, for the programme card;
-        // the rite's light and its seating)
+        // (the calendar's Sunday, for the programme card; the rite's light
+        // and its seating)
         sunday: M.day ? M.day() : null, light: M.light ? M.light() : null, scene: M.scene && M.scene() ? M.scene().name : null,
         section: M.section(), meter: M.meter(), mode: S.mode,
         local: localArc(), intensity: intensity(),
@@ -1424,18 +1537,17 @@ window.KolobAudio = (function () {
     getAudioTime: function () { return ctx ? ctx.currentTime : 0; },
     skipToSection: skipToSection,
     getMotifStats: function () { return KOLOB.Melody.Motif.stats(); },
-    // the day's hymnal (round 3): the house dialect and the day's hymns, the
+    // the day's hymnal: the house dialect and the day's hymns, the
     // hymn being sung, and the composer's desk's account of itself (how many
     // were written, where, how long they took; late ones written in a cue)
     getHymnal: function () { return { house: S.Meeting.house(), hymns: S.Meeting.hymnal(), singing: S.Meeting.hymn() }; },
     getHymn: function (id) { return KOLOB.Hymnal ? KOLOB.Hymnal.hymnOf(id) : null; },
     hymnalStats: function () { return KOLOB.Hymnal ? KOLOB.Hymnal.stats() : null; },
     clockHealth: function () { return { cues: clockHealth.cues, late: clockHealth.late, maxLate: +clockHealth.maxLate.toFixed(4) }; },
-    // the ward (round 3b): who is seated this Sunday — the people you come
+    // the ward: who is seated this Sunday — the people you come
     // to know, by role, in Deseret (nameEn and the archetype are dev-only) —
     // and the desk's account of itself (lines handed, how many late, the
-    // tightest margin, the most in one pump, the mouths joined to the room);
-    // setChoir("house" | "ward") is the dev switch ?choir=house sets
+    // tightest margin, the most in one pump, the mouths joined to the room)
     getWard: function () {
       var W = S.theWard ? S.theWard() : null;
       if (!W) return null;
@@ -1443,14 +1555,11 @@ window.KolobAudio = (function () {
                people: W.individuals.map(function (id) { var m = W.byId[id]; return { memberId: id, role: m.role, nameDs: m.nameDs, part: m.part, archetype: m.archetype, archetypeEn: m.archetypeEn, nameEn: m.nameEn }; }) };
     },
     wardStats: function () { return S.wardStats ? S.wardStats() : null; },
-    getChoir: function () { return !S.houseChoir && KOLOB.Cast && KOLOB.VoicesVocal && S.wardOn ? "ward" : "house"; },
-    setChoir: function (which) { if (!playing) S.houseChoir = which === "house"; },
-    // the organ (round 3b, step 2): who is on the bench this Sunday (their
+    // the organ: who is on the bench this Sunday (their
     // style and habits; the name in Deseret, nameEn dev-only; whether the
     // morning was seated for the chorale prelude, and the meeting's ledger —
     // hymns, fills, the one strange fill), what the pipes cost (the cases,
-    // the nodes built, the most alive at once, plans still on the desk);
-    // setOrgan("house" | "pipe") is the dev switch ?organ=house sets
+    // the nodes built, the most alive at once, plans still on the desk)
     getOrganist: function () {
       var o = S.Meeting && S.Meeting.organist ? S.Meeting.organist() : null;
       if (!o) return null;
@@ -1458,19 +1567,22 @@ window.KolobAudio = (function () {
                prelude: o.preludeDraw || null, chorale: S.Meeting.chorale ? S.Meeting.chorale() : null };
     },
     organStats: function () { return S.organStats ? S.organStats() : null; },
-    getOrgan: function () { return S.pipeOn && !S.houseOrgan && KOLOB.VoicesOrgan && KOLOB.Organist ? "pipe" : "house"; },
-    setOrgan: function (which) { if (!playing) S.houseOrgan = which === "house"; },
     setNoteListener: function (fn) { noteListeners.push(fn); },
     setEventListener: function (fn) { eventListeners.push(fn); },
+    // the page's own faults, told the house's way (THE FAULTS): confess(what,
+    // fn) runs fn and tells a throw; confess(what, err) tells a fault caught
+    confess: confess,
     // on: true (a guest, drawn as the switch draws it), false, or — dev, the
     // harness and the labs — a guest's name ("bands", "steeples", "oldtune")
     setForceVisitation: function (on) { S.forceVisitation = typeof on === "string" ? on : !!on; },
     setForceRaspberry: function (on) { S.forceRaspberry = !!on; },
     setCumulativeMode: function (s) { if (s === "always" || s === "natural" || s === "never") S.cumulativeMode = s; },
     getCumulativeMode: function () { return S.cumulativeMode; },
-    // dev accessor for the tune lab — the pool is the Earth tunes
-    // (kolob-tunes.js), read through the old-tune guest's own law, so lab and
-    // engine can never drift apart (v0.30's shape, plus id and modes)
+    // the natural draw's odds (kolob-meeting.js CUMULATIVE_ODDS): the page's one source for the Whole switch's text
+    getCumulativeOdds: function () { return S.CUMULATIVE_ODDS != null ? S.CUMULATIVE_ODDS : 0.08; },
+    // dev accessor for the tune lab (shelved/tune-lab.php) — the pool is the
+    // Earth tunes (kolob-tunes.js), read through the old-tune guest's own
+    // law, so lab and engine can never drift apart
     getOldTunes: function () { return S.oldTunePool(); },
     isForceVisitation: function () { return S.forceVisitation; },
     // the rooms (dev — the room lab drives these; the sections drive the balance)

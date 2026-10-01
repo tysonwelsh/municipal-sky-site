@@ -3,7 +3,7 @@
 //
 // Every instrument plays a short musical phrase in just intonation, through
 // the app's own master chain (glue → master 0.6 → tanh → compressor, copied
-// from kolob-audio.js init) plus a safety limiter, in the app's rooms. The
+// from kolob-core.js init) plus a safety limiter, in the app's rooms. The
 // lab never plays louder than the app. Its level reference is the v0.30
 // organChord as the prelude plays it (gainMul 0.75 × (0.6 + 0.4 × 0.21) —
 // mid-prelude intensity — peak gainMul × 0.7, linear ramps through env()),
@@ -37,11 +37,10 @@ window.InstrumentsLab = (function () {
   }
 
   // ==========================================================================
-  // THE CHAIN — copied from kolob-audio.js init(): rooms → voicesBus → glue →
+  // THE CHAIN — copied from kolob-core.js init(): rooms → voicesBus → glue →
   // masterGain(0.6) → tanh(1.15) → compressor(−18/3:1) — then a brick-wall
   // guard at −1 dBFS (the lab's promise never to exceed the app).
   // ==========================================================================
-  var irBufCache = {};
   function fetchIR(ctx) {
     var url = "../prosperos-jukebox-v2/ir/rooms/library-wide-st-margarets.wav";
     return fetch(url).then(function (r) { if (!r.ok) throw new Error("ir " + r.status); return r.arrayBuffer(); })
@@ -370,7 +369,7 @@ window.InstrumentsLab = (function () {
   };
 
   // ---- the reference: the v0.30 organ, as the prelude plays it -------------
-  // kolob-audio.js organChord(t, dur, chord, gainMul), line for line, with the
+  // kolob-voices-organ.js organChord(t, dur, chord, gainMul), line for line, with the
   // organ layer's default params (stops 0.5, tremulant 0.15, pedal 0.6):
   // every rank a sine, the unison rank a detuned pair, the whole chord an
   // octave down, a sine pedal two octaves under the bass, and env()'s LINEAR
@@ -385,7 +384,7 @@ window.InstrumentsLab = (function () {
   // organ layer receives — in the app the layer's volume (0.52) follows.
   var REF_GAINMUL = 0.75 * (0.6 + 0.4 * 0.21);
   var REF_DUR = 6, REF_STEP = 6.4;
-  function env(g, t, pts) {                         // kolob-audio.js env(): from true zero, linear
+  function env(g, t, pts) {                         // kolob-core.js env(): from true zero, linear
     g.gain.setValueAtTime(0, t);
     var tt = t;
     for (var i = 0; i < pts.length; i++) { tt += pts[i][0]; g.gain.linearRampToValueAtTime(pts[i][1], tt); }
@@ -623,7 +622,7 @@ window.InstrumentsLab = (function () {
     // spectrum: average power in five bands + centroid (Welch, 4096)
     var N = 4096, bands = [0, 0, 0, 0, 0], cnum = 0, cden = 0, tnum = 0, tden = 0;
     var win = new Float32Array(N); for (var w = 0; w < N; w++) win[w] = 0.5 - 0.5 * Math.cos(2 * Math.PI * w / N);
-    var re = new Float32Array(N), im = new Float32Array(N), frames = 0;
+    var re = new Float32Array(N), im = new Float32Array(N);
     var spec = [];
     for (var st = 0; st + N <= n; st += N / 2) {
       for (var u = 0; u < N; u++) { re[u] = mono[st + u] * win[u]; im[u] = 0; }
@@ -636,7 +635,7 @@ window.InstrumentsLab = (function () {
         bands[bi] += pw; cnum += pw * hz; cden += pw;
         if (hz >= 200 && hz <= 8000) { tnum += pw * hz; tden += pw; }
       }
-      spec.push(col); frames++;
+      spec.push(col);
     }
     var tot = bands.reduce(function (a3, b3) { return a3 + b3; }, 0);
     var out = {
@@ -709,7 +708,6 @@ window.InstrumentsLab = (function () {
       card.appendChild(el("h2", "kil-name", ph.name));
       card.appendChild(el("p", "kil-phrase", ph.phrase));
       var row = el("div", "kil-row");
-      var opts = {};
       if (ph.id === "organ") {
         regSel = el("select"); regSel.id = "kil-reg";
         Object.keys(KOLOB.VoicesOrgan.REGISTRATIONS).forEach(function (r) { var op = el("option", null, r); op.value = r; regSel.appendChild(op); });

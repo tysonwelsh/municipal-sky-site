@@ -3,10 +3,15 @@
 //
 // 5-limit just intonation over a fixed per-meeting tonic: the collections
 // (the meeting's mode), the projection of 7-degree shapes onto gapped
-// scales, degree → frequency, and the nearest-pitch table. Plus, new for
-// Kolob 2 and not yet consulted by the engine, the exact-ratio monzo
-// helpers of SCORE.md §2. Split from kolob-audio.js (v0.30); see the room
-// list in kolob-core.js.
+// scales, degree → frequency, and the nearest-pitch table. Plus the
+// exact-ratio monzo helpers of SCORE.md §2, which the composer, the
+// harmony, the cast, the guests and the meeting read. The house's rooms are
+// listed in _engine.php.
+//
+// Public surface: KOLOB.Pitch = { COLLECTIONS, MODE_NAMES, MODE_MONZOS,
+//   ROOT_MULT, colN, projDeg, degFreq, tuning(mode, f0), ratio, mul, div,
+//   fromFraction, cents, octaveReduce, degMonzo, commaOf, the 7-limit
+//   constants, limitOf, septimalOf, harmonicSeventh, proportion, oddParts }
 // ============================================================================
 
 window.KOLOB = window.KOLOB || {};
@@ -60,12 +65,8 @@ window.KOLOB = window.KOLOB || {};
     var n = colN();
     for (var i = -2 * n; i <= 2 * n + 3; i++) SCALE.push({ deg: ((i % n) + n) % n, idx: i, freq: degFreq(i) });
   }
-  function scaleIndexOf(i) {
-    for (var k = 0; k < SCALE.length; k++) if (SCALE[k].idx === i) return k;
-    return Math.floor(SCALE.length / 2);
-  }
   function harm(h) { return F0 * h; }            // harmonic h of the fundamental
-  // A TUNING, spelled out (round 2) — the same projection and the same
+  // A TUNING, spelled out — the same projection and the same
   // degree → frequency as above, but for a mode and an F0 the caller names,
   // so the composers can work from a moment in their hands instead of the
   // meeting's current mode. Pure: it reads nothing but its arguments.
@@ -84,14 +85,12 @@ window.KOLOB = window.KOLOB || {};
       degFreq: function (i) { return f0 * ROOT_MULT * col.ratios[classOf(i)] * Math.pow(2, Math.floor(i / n)); },
     };
   }
-  // Gravity: do and sol. Phrases rest on do / mi / sol (collection-degree classes).
-  function gravityDegs() { var n = colN(); return n === 5 ? { 0: true, 3: true } : { 0: true, 4: true }; }
-  function restDegs() { var n = colN(); return n === 5 ? { 0: true, 2: true, 3: true } : { 0: true, 2: true, 4: true }; }
 
   // ==========================================================================
-  // EXACT RATIOS — the monzo helpers (SCORE.md §2). New in Kolob 2 and pure:
-  // nothing in the engine consults them yet; the composer and the engraver
-  // will. A monzo is the exponents of 2, 3, 5, 7: [a, b, c, d] is
+  // EXACT RATIOS — the monzo helpers (SCORE.md §2). Pure: the composer reads
+  // them (commaOf for the marks, oddParts and proportion for the ringing
+  // chords), the harmony (degMonzo, mul), the cast, the guests and the
+  // meeting. A monzo is the exponents of 2, 3, 5, 7: [a, b, c, d] is
   // 2^a · 3^b · 5^c · 7^d, so 3/2 is [-1, 1, 0, 0] and 7/4 is [-2, 0, 0, 1].
   // ==========================================================================
   var PRIMES = [2, 3, 5, 7];
@@ -158,7 +157,7 @@ window.KOLOB = window.KOLOB || {};
   }
 
   // ==========================================================================
-  // THE SEVENTH HARMONIC — 7-limit helpers (round 3, additive). The only
+  // THE SEVENTH HARMONIC — 7-limit helpers. The only
   // place Kolob's lattice reaches past 5 is dialect D, gospel and barbershop
   // (PLAN-COMPOSITION §3.D, §3.4): the dominant seventh sung justly is not
   // 16/9 or 9/5 above its root but 7/4, the seventh partial — the chord is
@@ -222,7 +221,7 @@ window.KOLOB = window.KOLOB || {};
     colN: colN, projDeg: projDeg, degFreq: degFreq, tuning: tuning,
     ratio: ratio, mul: mul, div: div, fromFraction: fromFraction, cents: cents,
     octaveReduce: octaveReduce, degMonzo: degMonzo, commaOf: commaOf,
-    // the seventh harmonic (round 3, additive)
+    // the seventh harmonic
     SEPTIMAL_SEVENTH: SEPTIMAL_SEVENTH, SEPTIMAL_COMMA: SEPTIMAL_COMMA, JOHNSTON_SEVEN: JOHNSTON_SEVEN, BARBERSHOP: BARBERSHOP,
     limitOf: limitOf, septimalOf: septimalOf, harmonicSeventh: harmonicSeventh, proportion: proportion, oddParts: oddParts,
   };

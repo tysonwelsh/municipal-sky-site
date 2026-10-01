@@ -60,6 +60,12 @@ jobs:
             **/*.backup-*
             local-dev/**
             scripts/**
+            **/_harness*.js
+            **/_harness-*.json
+            art/kolob/tools/**
+            package.json
+            package-lock.json
+            eslint.config.js
 
       # The runner and the backfill are both safe to re-run on every deploy
       # (db/junk-drawer-schema.md, Runbook); doing so unconditionally is what

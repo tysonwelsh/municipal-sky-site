@@ -40,7 +40,7 @@ const HELP = `capture.js — record a seeded meeting (muted), with spectrogram, 
   --no-harness-check     skip the comparison with the harness's plan for the seed
   --wav <file> [--events <file.jsonl>]   re-analyse an existing capture instead
   --port 8113 --chrome-port 9423 --out <dir>
-  --profile <dir>        Chrome profile (default /private/tmp/claude-501/kolob-r2-tools-chrome[-<port>])`;
+  --profile <dir>        Chrome profile (default <tmpdir>/kolob-r2-tools-chrome[-<port>])`;
 
 // ---------------------------------------------------------------------------
 // The tap, injected before any page script: every node that connects to an
@@ -278,10 +278,11 @@ async function harnessCheck(seed, secs, browserRun) {
     rows.push([x ? x.section : "—", x ? x.t.toFixed(1) : "—", y ? y.section : "—", y ? y.t.toFixed(1) : "—", x && y ? (x.section === y.section && Math.abs(x.t - y.t) < 2 ? "✓" : "✗ " + (y.t - x.t).toFixed(1) + " s") : "✗"]);
   }
   const same = hm.mode === bm.mode && hm.meetingKind === bm.meetingKind && Math.abs((hm.keynoteHz || 0) - (bm.keynoteHz || 0)) < 0.5;
-  // note for note: where do the two meetings part? (v0.30 draws every choice
-  // from one die in timer order and reads the audio clock at callback time,
-  // so real-time jitter changes the draws — PLAN §2.2; the streams and the
-  // clock of phase 0b are the cure)
+  // note for note: where do the two meetings part? (the engine draws every
+  // decision from named streams and measures it against the cue's scheduled
+  // time — SCORE §3, §4 — so the browser's meeting and the harness's should
+  // agree note for note; where they first part is where something read the
+  // wall clock or threw an unseeded die)
   const hn = h.notes.filter((n) => n.t < secs), bn = browserRun.notes.filter((n) => n.t < secs);
   const used = new Set();
   let matched = 0, firstMiss = null;
@@ -303,9 +304,11 @@ function mmss(t, dp) {
 }
 
 // Where meeting 1 ends (seconds after T0), from the page's records, in
-// either vocabulary, read by the one reader: v0.30's `∴ joint — meeting ends
-// · 8s` or a typed `meeting-end {dur}` (the joint's length and 6 s of the
-// bell's tail after it), or else the next meeting's start. Null until then.
+// either vocabulary, read by the one reader: the last joint's `∴ joint —
+// meeting ends · 8s` (read by its words: dump.js knows no `joint` type) or a
+// typed `meeting-end {dur}` (which no engine emits; the reader accepts one)
+// — the joint's length and 6 s of the bell's tail after it — or else the
+// next meeting's start. Null until then.
 function meetingEnd(lines, T0) {
   const evs = lines.map((l) => (typeof l === "string" ? JSON.parse(l) : l)).filter((r) => r[0] === "E" && r[2]).map((r, i) => Dm.normEvent(r[2], r[1], i));
   const end = evs.find((e) => e.kind === "joint" && e.meetingEnd && e.t > T0);
@@ -420,7 +423,7 @@ function reportFor(r) {
     const nn = r.check.notes;
     L.push("Note for note: " + nn.matched + " of the harness's " + nn.harness + " notes sound in the browser too (" + nn.browser + " there). " +
       (nn.part ? "The two first part at " + mmss(nn.part.t) + " (" + nn.part.layer + (nn.part.freq > 0 ? " " + nn.part.freq.toFixed(1) + " Hz" : "") + ")" +
-        " — after that the browser's meeting keeps its plan but takes its own path. v0.30 draws every choice from one die, in the order its timers fire, and reads the audio clock when they fire, so real-time jitter changes the draws — and two browser runs of one seed part from each other too. The streams and the clock of phase 0b (PLAN §2.2: \"every decision keys off scheduled time\") are the cure; until then the harness tools describe the meetings a seed *would* play, and this capture the one it did." : "They agree throughout ✓."));
+        " — after that the browser's meeting keeps its plan but takes its own path. Every decision is drawn from a labelled stream and placed at a scheduled time (SCORE §3–§4), so the browser and the harness should agree note for note: a parting here is a bug to find, not jitter to expect." : "They agree throughout ✓."));
     L.push("");
   }
   return L.join("\n");
@@ -537,7 +540,8 @@ async function main() {
     const check = a["no-harness-check"] || jumped ? null : await harnessCheck(seed, to, run);
     const timeline = run.events.filter((e) => e.t >= from - 0.01 && e.t <= to && (e.kind === "section" || e.kind === "guest" || e.kind === "meeting" || e.kind === "cadence" || e.kind === "joint" || e.kind === "joint-still" || e.kind === "stillness" || e.kind === "fuging" || e.kind === "lining" || e.kind === "field" || e.kind === "telegraph"))
       .filter((e, i, arr) => !(e.kind === "cadence" && arr[i - 1] && arr[i - 1].kind === "cadence" && e.t - arr[i - 1].t < 1))
-      .slice(0, 80).map((e) => [mmss(e.t), (e.label ? e.label + (e.detail ? " — " + e.detail : "") : e.cat)]);
+      .slice(0, 80).map((e) => [mmss(e.t), (e.label ? e.label + (e.detail ? " — " + e.detail : "")   // (an old dump's log line)
+        : [e.raw.type, e.section, e.guest, e.stage, e.cadence, e.field, e.word, e.raw.toward, e.raw.why].filter((x) => x != null && x !== "").join(" · "))]);
     const meta = "- " + url.replace(server.base, "") + (a.ives ? " · Ives switch armed" : "") + " · " + sr + " Hz · " + (n / sr).toFixed(1) + " s recorded in muted headless Chrome (" + b.args.filter((x) => /mute/.test(x)).join(" ") + ")\n" +
       "- files: `" + base + ".wav`, `" + base + "-spectrogram.png`, `" + base + "-events.jsonl` (the page's notes and events, meeting time)\n" +
       "- tap: " + (covered >= n ? "every sample of the window" : "all but " + (n - covered) + " samples of the window (" + (100 * covered / n).toFixed(3) + " %)") + " · " + (gaps.length ? gaps.length + " discontinuit" + (gaps.length > 1 ? "ies" : "y") + " ✗ (listed below, marked red on the picture)" : "no dropouts ✓") + (asm.jitter ? " · " + asm.jitter + " block start" + (asm.jitter > 1 ? "s" : "") + " read within ±" + asm.jitTol + " samples of contiguous and taken as contiguous" : "") + " · audio clock ran at " + clockRatio.toFixed(3) + "× real time" + (wav.clipped ? " · " + wav.clipped + " samples clipped in the 16-bit file" : "") +

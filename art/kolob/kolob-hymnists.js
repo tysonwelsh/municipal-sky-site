@@ -163,7 +163,7 @@ window.KOLOB.Hymnists = (function () {
       color: 0.6, sevenths: 0.6, susp: 0.6, passing: 0.5,
       open: 0.5, alto: 0.5, ornament: 0.5, melisma: 0.35, fermata: 0.3, tempo: 1,
       contours: { arch: 2, climb: 1.2, wave: 1.2, descent: 0.6 },
-      likes: { sixthUp: 1 },
+      likes: { sixthUp: 1 },     // nothing reads `likes` today; kept as written
     },
     {
       id: "stroud", nameEn: "Ammon Stroud", nameDs: "𐐈𐑋𐐲𐑌 𐐝𐐻𐑉𐐵𐐼",
@@ -245,8 +245,9 @@ window.KOLOB.Hymnists = (function () {
       open: 0.5, alto: 0.6, ornament: 0.6, melisma: 0.35, fermata: 0.4, tempo: 1.04,
       contours: { arch: 2, descent: 1.2, wave: 1, climb: 0.6 },
     },
-    // ---- round 3: three who write in the new dialects, and in nothing else
-    // (their leans toward the first three are nought, so no earlier draw moves)
+    // ---- three who write in dialects B, D and E, and in nothing else
+    // (their leans toward the first three dialects are nought, so the draw
+    // among those dialects is as it was before they were added)
     {
       id: "lowe", nameEn: "Sariah Lowe", nameDs: "𐐝𐐲𐑉𐐴𐐲 𐐢𐐬",
       about: "the Primary's president: short songs for the children, a chorus they can shout, a narrow compass and a skip of joy in it",
@@ -310,11 +311,14 @@ window.KOLOB.Hymnists = (function () {
   }
   // who writes today, when nobody says: weighted by each hymnist's lean
   // toward the dialect (or by the sum of their leans when no dialect is
-  // named). One die, always thrown.
+  // named). DICE: one die, always thrown, even when the caller names the
+  // hymnist (SCORE §3: every die is thrown whether or not its result is
+  // used) — deliberate; must stay.
   function draw(R, dialect) {
     return R.pickW(LIST.map(function (h) {
-      // (a lean written as nought is nought: the round-3 hymnists never write
-      // in the first three dialects, so the draws there are as they were)
+      // (a lean written as nought is nought: the last three hymnists never
+      // write in the first three dialects, so the draws there are as they
+      // were before them)
       var lw = dialect ? h.lean[dialect] : null;
       var w = dialect ? (lw != null ? lw : 0.05) : (h.lean.tabernacle + h.lean.sacredharp + h.lean.oldway);
       return [h, w];

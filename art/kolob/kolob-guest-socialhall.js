@@ -109,7 +109,7 @@ window.KOLOB.GuestSocialHall = (function () {
   // and that refusal halves the day's odds. The lab's odds card (20,000
   // meetings of a stand-in planner) measured 4.3 % of meetings at a base of
   // 0.05; at 0.07, about one meeting in sixteen, a fifth of Pioneer Days and
-  // of weddings (the handoff has the table).
+  // of weddings.
   var ODDS = {
     base: 0.07,
     weight: {
@@ -125,19 +125,17 @@ window.KOLOB.GuestSocialHall = (function () {
   // the stereo seats (the dance fills the room): the fiddler on a chair by
   // the wall, the caller beside him, the floor across the whole width
   var FIDDLE_PAN = -0.22, CALLER_PAN = 0.18;
-  // THE LEVEL (the whole hall's bus), against the v0.30 organ reference as
-  // the guests lab 3c measures it (the loudest 3 s, as seated): the owner
-  // took the organ 2.3 dB and the trombones 4 dB down after hearing them (the
+  // THE LEVEL (the whole hall's bus), against the organ reference as the
+  // guests lab measures it (the loudest 3 s, as seated): the owner took the
+  // organ 2.3 dB and the trombones 4 dB down after hearing them (the
   // trombones ended about 2 LU under the reference), and the handbells sit
-  // at −1.3 to +1.0; the dance is set to about −1.5 LU at its loudest (the
-  // lab's first render, at 0.5, measured +1.8 LU). Round 3c's table in the
-  // handoff has every number.
+  // at −1.3 to +1.0; the dance is set to about −1.5 LU at its loudest (at
+  // 0.5 it measured +1.8 LU).
   var LEVEL = 0.36;
 
   function oddsFor(info) {
-    // (round 3c: a meeting hands its odds in, info.odds, from the calendar's
-    // one table — KOLOB.Calendar.GUEST_ODDS; a lab without it reads this
-    // room's own, below)
+    // (the meeting hands this room its odds from Calendar.GUEST_ODDS,
+    // info.odds; a lab without them reads the room's own ODDS)
     if (info && info.odds != null) return Math.max(0, Math.min(1, +info.odds));
     var w = ODDS.weight;
     var k = info.sunday && w[info.sunday] != null ? info.sunday : info.kind;
@@ -212,7 +210,7 @@ window.KOLOB.GuestSocialHall = (function () {
   function decide(info, stream) {
     info = info || {};
     var rs = need(stream).fork("seat");
-    var roll = rs.next(), atU = rs.next();                           // every die, first
+    var roll = rs.next(), atU = rs.next();                           // DICE: every die, first
     var sh = shapeOf(stream);
     var p = barred(info) ? 0 : oddsFor(info), why = null;
     var order = (info.sections || []).map(function (s) { return s && s.type; });
@@ -394,7 +392,8 @@ window.KOLOB.GuestSocialHall = (function () {
   // ==========================================================================
   // THE FIGURES (pure) — what the fiddle plays in one beat: `per` eighths
   // (two in a reel, three in a jig), the beat's hymn notes, where the tune
-  // goes next, the chord sounding, and two dice drawn whether used or not.
+  // goes next, the chord sounding, and two dice (DICE: drawn for every beat
+  // in danceLine, whether the figure reads them or not).
   // An event: {d, n8 (eighths), kind: tune | fig | cad | pick, stress, m?
   // (the hymn's own monzo, for its own notes), cut?, tie?}
   // ==========================================================================
@@ -476,7 +475,8 @@ window.KOLOB.GuestSocialHall = (function () {
 
   // one line of the dance: six beats of the line's notes and their figures,
   // the cadence, and the pickup's die (the pickup itself is written when
-  // the score knows what follows). Every die is drawn, beat by beat.
+  // the score knows what follows). DICE: every die is drawn, beat by beat —
+  // two a beat, the cadence's, the pickup's — whether or not it is read.
   function danceLine(L, mode, per, R) {
     var mel = L.mel, NS = 6;
     var last = mel[mel.length - 1], body = mel.slice(0, -1);
@@ -549,7 +549,7 @@ window.KOLOB.GuestSocialHall = (function () {
   // ==========================================================================
   function peopleOf(ward, stream) {
     var r = need(stream).fork("people");
-    var callerU = r.next(), fidU = r.next(), wU = [r.next(), r.next(), r.next()];      // every die, first
+    var callerU = r.next(), fidU = r.next(), wU = [r.next(), r.next(), r.next()];      // DICE: every die, first
     var anon = { caller: { id: null, nameDs: null, voice: { part: "T", age: "mid", confidence: 0.95, brightness: 0.6, breath: 0.3 } },
                  fiddler: { id: null, nameDs: null }, whoopers: [{ id: null, voice: { part: "S", age: "young", confidence: 0.9, brightness: 0.7 } }, { id: null, voice: { part: "T", age: "young", confidence: 0.9 } }] };
     if (!ward || !ward.members || !ward.byId) return anon;
@@ -602,8 +602,8 @@ window.KOLOB.GuestSocialHall = (function () {
     var W = offers.map(function (o, i) { return o.section === "doxology" || (o.section == null && i === offers.length - 1) ? 5 : i === 0 ? 3 : 2; });
     var pick = offers[0], tot = W.reduce(function (a, b) { return a + b; }, 0), u = sh.hymnU * tot;
     for (var i = 0; i < offers.length; i++) { u -= W[i]; if (u < 0) { pick = offers[i]; break; } }
-    // (a dev may name the dance and how many times through: the lab's menus;
-    // the dice are drawn all the same)
+    // (a dev may name the dance and how many times through: the lab's menus.
+    // DICE: the shape's dice are drawn all the same)
     if (M.piece && PIECES[M.piece]) { var sh2 = {}; for (var x in sh) sh2[x] = sh[x]; sh2.piece = M.piece; sh = sh2; }
     var h = pick.hymn, P = pieceSpec(sh);
     var T = tune(h, sh.piece, stream, { per: P.per, refrainB: sh.refrainB });
@@ -669,7 +669,7 @@ window.KOLOB.GuestSocialHall = (function () {
   }
   function score(material, stream, t0) {
     var M = material && material.prepared ? material : prepare(material, stream);
-    var sh = shapeOf(stream);                                   // the same dice as the plan's
+    var sh = shapeOf(stream);                                   // DICE: the same dice as the plan's, drawn again from the "shape" fork
     var T = M.tune, per = M.per, beat = M.beat, e8 = beat / per, bar = 2 * beat;
     t0 = t0 || 0;
     var reg = registers({ tune: T, finalHz: M.finalHz, highB: sh.highB }), dr = reg.drone;
@@ -701,7 +701,6 @@ window.KOLOB.GuestSocialHall = (function () {
     t += INTRO.honour;
     // THE POTATOES: two bars of the home chord chopped on the open strings
     // (or the fiddler's foot, four times), so the floor finds the tempo
-    var tPot = t;
     if (sh.potatoes === "chop") {
       var pn = [], q8 = 0;
       for (var pb = 0; pb < 2; pb++) (per === 2 ? [2, 1, 1] : [2, 1, 2, 1]).forEach(function (n8, i) {
@@ -734,16 +733,16 @@ window.KOLOB.GuestSocialHall = (function () {
         if ((per === 2 ? i8 % 4 === 1 : i8 % 3 === 1) && prev && !e.cut) nt.slur = true;
         if (per === 2 ? i8 % 4 === 2 : i8 === 0) nt.acc = true;
         if (e.cut) nt.orn = "cut";
-        var u = arr.next(), u2 = arr.next(), u3 = arr.next(), sept = false, also = null, alsoM = null;
+        var u = arr.next(), u2 = arr.next(), u3 = arr.next(), sept = false, also = null, alsoM = null;   // DICE: three an event, read as the event allows
         // THE BLUE SLIDE: the tune's major third, long and strong, reached from
         // the septimal minor third under it (7/6 → 5/4)
         if (sh.blue && long && main && Math.abs(r - 1.25) < 1e-9 && u < 0.65) { nt.orn = "slide"; nt.from = f * 14 / 15; sept = true; }
         else if (long && main && u < 0.2) nt.orn = "slide";
         // DOUBLE STOPS: the dominant's harmonic seventh over sol at a half
         // cadence (4:7); else the hymn's own chord tone a third to a sixth under
-        // (round 3c, the critic of crew D: never above the fiddler's first
-        // position — the 7/4 over a high sol went past TOP in 41 % of the
-        // dances; there the chord tone under it is taken, below)
+        // (never above the fiddler's first position: a 7/4 over a high sol
+        // would go past TOP — in 41 % of the dances — and there the chord
+        // tone under it is taken, below)
         if (e.kind === "cad" && ln.cadence === "half" && Math.abs(r - 1.5) < 1e-9 && u2 < 0.7 && f * 7 / 4 <= TOP) { also = f * 7 / 4; alsoM = mAdd(e.m, [-2, 0, 0, 1]); sept = true; }
         else if ((e.kind === "cad" && u2 < 0.8) || (long && main && u2 < sh.stops)) {
           var cls = e.cls || [0, 2, 4], d2 = chordNear(mode, cls, e.d, -1);
@@ -760,8 +759,8 @@ window.KOLOB.GuestSocialHall = (function () {
         if (also) report.push({ layer: "fiddle", freq: also, t: t0 + tl + at, dur: dur, part: "stop", strain: p.strain, time: p.time, line: p.li, monzo: alsoM, septimal: !!alsoM && alsoM[3] !== 0, hymnId: M.hymnId });
         q += e.n8;
       });
-      // (round 3c: every phrase's report on the clock — t0 + its own time; the
-      // lab, playing from 0, never saw that it was left out)
+      // (every phrase's report on the clock — t0 + its own time, never the
+      // lab's 0)
       report.push({ layer: "fiddle", freq: dr, t: t0 + tl, dur: tq(q), part: "drone", strain: p.strain, time: p.time, line: p.li, hymnId: M.hymnId });
       return { t: t0 + tl, stage: p.strain, notes: notes, drone: [dr], droneLevel: 0.36, dyn: dyn, report: report, strain: p.strain, time: p.time, line: p.li };
     }
@@ -832,7 +831,7 @@ window.KOLOB.GuestSocialHall = (function () {
     out.cast.push({ memberId: ppl.caller && ppl.caller.id, nameDs: ppl.caller && ppl.caller.nameDs, action: "calls the dance", t: t0 + tHon });
     strainStarts.forEach(function (ss) {
       var u = callR.next(), w = callR.next();
-      // (a quadrille is called every figure — the critic of crew D)
+      // (a quadrille is called every figure)
       if (!(u < sh.callRate || ss.last || M.piece === "quadrille")) return;
       var names = FIGURES.filter(function (n) { return n !== lastCall; }), name = ss.last ? "home" : names[Math.floor(w * names.length)];
       lastCall = name;
@@ -1012,8 +1011,8 @@ window.KOLOB.GuestSocialHall = (function () {
     function panIx(p) { return Math.max(0, Math.min(4, Math.round(((p || 0) + 0.6) / 0.3))); }
     var folk = VF.create(ctx, fidBus, { rand: synth.fork("folk"), fiddlePan: FIDDLE_PAN, gain: 1 });
     // which of the baked sounds each event takes, and a hair of its speed
-    // (sound-level, never reported): drawn for every event now, in order, so a
-    // performance laid out in slices is the same performance
+    // (sound-level, never reported). DICE: drawn for every event now, in
+    // order, so a performance laid out in slices is the same performance
     var hand = synth.fork("hands"), floorNodes = 0;
     function lands(n) { var a = []; for (var i = 0; i < n; i++) a.push({ u: hand.next(), rate: hand.rnd(0.94, 1.06) }); return a; }
     var LF = lands(sc.floor.length), LC = lands(sc.claps.length), LS = lands(sc.scrapes.length);

@@ -1,5 +1,5 @@
 // ============================================================================
-// GUESTS LAB 3a — audition bench for round 3c's guests from outside (dev,
+// GUESTS LAB 3a — audition bench for the guests from outside the windows (dev,
 // unlinked): the Nauvoo Brass Band going by (KOLOB.GuestBands), the handcart
 // company (KOLOB.GuestHandcart) and the gulls (KOLOB.GuestGulls), each with
 // hymns KOLOB.Composer writes here — seed, dialect and keynote on the

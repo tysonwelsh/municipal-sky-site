@@ -1,8 +1,9 @@
 // ============================================================================
 // KOLOB — kolob-voices-winds.js: clarinet and harmonium
 //
-// The deacon's clarinet and the parlor pump organ that shadows it. Split
-// from kolob-audio.js (v0.30); see the room list in kolob-core.js.
+// The deacon's clarinet and the parlor pump organ that shadows it. Lends
+// renderClarinetLine, clarinetPhrase, renderHarmonium, reportLine and
+// harmoniumCycle (the LENT block at the foot).
 // ============================================================================
 
 window.KOLOB = window.KOLOB || {};
@@ -23,7 +24,6 @@ window.KOLOB = window.KOLOB || {};
   // from kolob-meeting.js
   function intensity() { return S.intensity(); }
   function inFuging() { return S.inFuging(); }
-  function inQuestion() { return S.inQuestion(); }
   function hallListens() { return S.hallListens(); }
   function houseRests(layer) { return S.houseRests(layer); }
   function silenceMul() { return S.silenceMul(); }
@@ -36,6 +36,7 @@ window.KOLOB = window.KOLOB || {};
   function emitEvent(ev) { return S.emitEvent(ev); }
   function cueIn(lane, dtS, fn) { return S.cueIn(lane, dtS, fn); }
   function cueLayer(layer, baseS, fn) { return S.cueLayer(layer, baseS, fn); }
+  function cycle(lane, self, turn, t, fallbackS) { return S.cycle(lane, self, turn, t, fallbackS); }
   function panAt(layer, p) { return S.panAt(layer, p); }
   function getLayerParam(layer, key, fallback) { return S.getLayerParam(layer, key, fallback); }
   function env(g, t, pts) { return S.env(g, t, pts); }
@@ -94,9 +95,9 @@ window.KOLOB = window.KOLOB || {};
       tt += n.dur;
       total += n.dur;
     }
-    // delayed vibrato: fades in after 40% of the line, stays shallow.
-    // LESSON (Bardo's conch): keep LFO depth well under the fundamental so
-    // frequency never goes negative — depth here is f*0.004, tiny by design.
+    // delayed vibrato: fades in after 40% of the line, stays shallow. Keep
+    // the LFO's depth well under the fundamental so the frequency never goes
+    // negative — depth here is f*0.004, tiny by design.
     if (vib > 0.05) {
       var lfo = S.ctx.createOscillator();
       lfo.frequency.setValueAtTime(Y.rnd(4.5, 5.5), t);
@@ -124,14 +125,18 @@ window.KOLOB = window.KOLOB || {};
     });
   }
   // The deacon's turn, at scheduled time tc.
-  function clarinetPhrase(tc) {
+  // (under the core's net, S.cycle: a turn that throws before it has
+  // re-armed is re-armed by the core CYCLE_FALLBACK_S = 5 s later, and the
+  // throw is reported)
+  function clarinetPhrase(tc) { return cycle("clarinet", clarinetPhrase, clarinetPhraseTurn, tc); }
+  function clarinetPhraseTurn(tc) {
     if (!S.playing) return;
     var s = S.Meeting.section();
-    // (round 3b, step 4: a rite seated LINED OUT ONLY — the deacon gives its
-    // lines and the ward answers, the invocation or an interlude too)
+    // (a rite seated LINED OUT ONLY — the deacon gives its lines and the
+    // ward answers, the invocation or an interlude too)
     var scene = S.Meeting.scene ? S.Meeting.scene() : null, linedRite = !!(scene && scene.lined);
     var speaks = s === "prelude" || s === "hymn" || s === "testimony" || s === "doxology" || s === "postlude" || linedRite;
-    if (!speaks || inFuging() || inQuestion() || hallListens() || houseRests("clarinet")) { cueIn("clarinet", 6, clarinetPhrase); return; }
+    if (!speaks || inFuging() || hallListens() || houseRests("clarinet")) { cueIn("clarinet", 6, clarinetPhrase); return; }
     if (!airFree()) { cueIn("clarinet", wait("clarinet").rnd(5, 11), clarinetPhrase); return; }
     var R = turn("clarinet");
     // in the prelude the deacon only occasionally tries a line over the organ
@@ -159,8 +164,7 @@ window.KOLOB = window.KOLOB || {};
       var lm = { name: motif.name, gen: motif.gen, chain: motif.chain.slice(), gesture: motif.gesture, notes: line };
       total = renderClarinetLine(t, clarinetToNotes(lm, beat, R), 1, R);
       Motif.post("clarinet", "choir", lm, "line-out", mo, R);
-      emitEvent({ type: "lining-out", meter: S.Meeting.meter(), syllables: nSyl, motif: motif.name, hymnId: S.Meeting.hymnId(),
-                  cat: "verse", label: "☞ the deacon lines out", detail: S.Meeting.meter() + " · " + nSyl + " syllables · " + motif.name });
+      emitEvent({ type: "lining-out", meter: S.Meeting.meter(), syllables: nSyl, motif: motif.name, hymnId: S.Meeting.hymnId() });
       lined = true;
       spoken = lm;
     } else {
@@ -198,8 +202,9 @@ window.KOLOB = window.KOLOB || {};
     }
     // the harmonium shadows the deacon a breath behind, in the parlor —
     // reading the line as actually spoken, not the raw motif (and never in
-    // a prelude that has no harmonium: the brush arbor — round 2 of the
-    // polish; the dice are thrown all the same)
+    // a prelude that has no harmonium: the brush arbor)
+    // DICE: the chance and the shadow's offset are thrown all the same, so
+    // the draws after them never move
     if (R.chance(getLayerParam("harmonium", "shadow", 0.5)) && s !== "testimony") {
       var shadowAt = t + R.rnd(0.4, 0.9);
       if (!(seat && seat.sits.harmonium) && !houseRests("harmonium")) harmoniumShadow(shadowAt, spoken, beat);
@@ -273,21 +278,24 @@ window.KOLOB = window.KOLOB || {};
     });
     renderHarmonium(t, notes, 0.5);
     reportLine("harmonium", t, notes);
-    emitEvent({ type: "motif-shadow", voice: "harmonium", of: "clarinet", name: motif.name, gen: motif.gen,
-                cat: "motif", label: "〰 harmonium shadows the deacon", detail: motif.name + "·g" + motif.gen });
+    emitEvent({ type: "motif-shadow", voice: "harmonium", of: "clarinet", name: motif.name, gen: motif.gen });
   }
-  // every note of a line the harmonium walks, as it walks it (v0.32 told
-  // the page only the first, held for the length of the line)
+  // every note of a line the harmonium walks, as it walks it (not the first
+  // alone, held for the length of the line)
   function reportLine(layer, t, notes, extra) {
     for (var i = 0, tt = t; i < notes.length; tt += notes[i].dur, i++) emitNote(layer, notes[i].f, tt, notes[i].dur, extra);
   }
   // The parlor organ's turn, at scheduled time t.
-  function harmoniumCycle(t) {
+  // (under the core's net, S.cycle: a turn that throws before it has
+  // re-armed is re-armed by the core CYCLE_FALLBACK_S = 5 s later, and the
+  // throw is reported)
+  function harmoniumCycle(t) { return cycle("harmonium", harmoniumCycle, harmoniumCycleTurn, t); }
+  function harmoniumCycleTurn(t) {
     if (!S.playing) return;
     var s = S.Meeting.section();
     var plays = s === "prelude" || s === "hymn" || s === "doxology" || s === "postlude";
     var seat = s === "prelude" ? S.Meeting.seating() : null;             // (the brush arbor has no harmonium)
-    if (!plays || inQuestion() || hallListens() || houseRests("harmonium") || (seat && seat.sits.harmonium)) { cueIn("harmonium", 8, harmoniumCycle); return; }
+    if (!plays || hallListens() || houseRests("harmonium") || (seat && seat.sits.harmonium)) { cueIn("harmonium", 8, harmoniumCycle); return; }
     var R = turn("harmonium");
     // the parlor ANSWERS the deacon when an obligation stands — a fourth
     // conversational timbre, close and warm

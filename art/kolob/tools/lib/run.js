@@ -2,14 +2,15 @@
 //
 // An "engine" is where the modules come from:
 //   (default)        this worktree's art/kolob
-//   <dir>            any directory holding kolob-core.js (or v0.30's kolob-audio.js)
+//   <dir>            any directory holding kolob-core.js (or kolob-audio.js,
+//                    the single file of a build before 2026-09-26)
 //   git:<ref>        a build out of git (`git archive` of art/kolob and the
 //                    substrate's scripts), unpacked into out/_builds/<sha>/
 // The harness that renders it is --harness, else the engine directory's own
 // _harness.js, else this worktree's. The harness is pointed at the build with
-// KOLOB_BASE (the engine crew's name) and KOLOB_DIR (this crew's) alike; a
-// single-file build is loaded with KOLOB_LEGACY. Nothing is ever written
-// into an engine directory.
+// KOLOB_BASE and KOLOB_DIR alike (two names for one thing; a harness reads
+// either); a single-file build is loaded with KOLOB_LEGACY. Nothing is ever
+// written into an engine directory.
 //
 // A harness is not taken at its word. Each render runs with lib/witness.js
 // preloaded, which writes down every engine file the harness actually read;
@@ -37,8 +38,9 @@ function names2(a) { return a.length <= 4 ? a.join(", ") : a.slice(0, 3).join(",
 function refusal(msg) { const e = new Error(msg); e.refusal = true; return e; }
 
 // The build's own list of what it plays, where it says so: _engine.php (the
-// one list, round 2 onward), else index.php's $kolob_engine (the split, v0.31–
-// v0.33), else the single file. Null when the build does not say.
+// one list, since 2026-09-29), else index.php's $kolob_engine (the split
+// builds between 2026-09-26 and 2026-09-29), else the single file (before
+// 2026-09-26). Null when the build does not say.
 function engineList(dir, legacy) {
   if (legacy) return { from: "the single file", files: [legacy] };
   const php = path.join(dir, "_engine.php");
@@ -82,7 +84,7 @@ function resolveEngine(spec, harnessOpt) {
   }
   let harness = harnessOpt && harnessOpt !== true ? path.resolve(String(harnessOpt)) : null;
   if (!harness) harness = fs.existsSync(path.join(dir, "_harness.js")) && !git ? path.join(dir, "_harness.js") : path.join(HERE_ENGINE, "_harness.js");
-  if (!fs.existsSync(harness)) throw refusal("no harness at " + harness + " (art/kolob/_harness.js is untracked: copy it in, or pass --harness)");
+  if (!fs.existsSync(harness)) throw refusal("no harness at " + harness + " (art/kolob/_harness.js is tracked since 2026-10-01: check it out, or pass --harness)");
   let version = null;
   try { version = fs.readFileSync(path.join(dir, "VERSION"), "utf8").trim().split("\n")[0]; } catch (e) {}
   if (!git) { try { git = execFileSync("git", ["-C", dir, "rev-parse", "HEAD"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim(); } catch (e) {} }

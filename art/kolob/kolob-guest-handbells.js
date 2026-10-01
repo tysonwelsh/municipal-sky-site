@@ -111,7 +111,7 @@
 //              loud, reached}), onStage({stage, t0, t1, label}), maxLive,
 //              defer(at, fn) (the engine's clock: the rings of each second
 //              laid out at `at`, 2.5 s before they sound, instead of the
-//              whole piece inside one cue — the trombones' round-3 hook) }
+//              whole piece inside one cue — the hook the trombones take) }
 //   round(mode, stream, opts) → a round (pure)
 //   ODDS, EXCLUDES, BELL_GUESTS, SEATS, MAX_LIVE, NAME, LABEL, LEVEL
 // ============================================================================
@@ -154,30 +154,27 @@ window.KOLOB.GuestHandbells = (function () {
   var AT = { invocation: [4, 16], sacrament: [2, 6], postlude: [2, 8] };
   var MAX_DUR = 78;                               // a longer hymn is rung once, or in part
   var MAX_LIVE = { desktop: 20, phone: 12 };      // rings sounding at once
-  // the choir's bus, against the organ reference (the v0.30 organ as the
-  // prelude plays it; the house's organ now plays 2.3 dB under it, v0.34),
-  // the loudest three seconds (a shaken final chord and the cascade), in the
-  // guests lab as the engine will seat the bells (a step nearer than the
-  // choir; "as seated"). Round 1 claimed +1.5 to +2.5 LU and "−3.6" for the
-  // sacrament; the critic measured +3.7 and +3.9, and the reverent seat
-  // LEVEL with the reference (−0.5 to +0.3) — the −3.6 was the gap between
-  // two seats, not to the organ. Now 2.1 dB down (0.47 → 0.37) and the
-  // sacrament's stroke softer (SACRAMENT): the hymns about level with the
-  // reference, the reverent seat about four under it (the handoff's round 2
-  // has every number, in both rooms). The owner took the trombones 4 dB
-  // down after hearing them; the bells begin nearer where the trombones
-  // ended.
+  // the choir's bus, against the organ reference (the instruments lab's:
+  // the house organ's chord as the prelude plays it; in the meeting the
+  // house organ plays 2.3 dB under it), the loudest three seconds (a shaken
+  // final chord and the cascade), in the guests lab as the engine seats the
+  // bells (a step nearer than the choir; "as seated"). Measured: at 0.47
+  // the hymns sat +3.7 and +3.9 LU over the reference and the reverent seat
+  // level with it (−0.5 to +0.3); at 0.37 (2.1 dB down), with the
+  // sacrament's stroke softer (SACRAMENT), the hymns sit about level with
+  // the reference and the reverent seat about four under it. The owner took
+  // the trombones 4 dB down after hearing them; the bells begin nearer
+  // where the trombones ended.
   var LEVEL = 0.37;
   // the reverent seat: every stroke at this share of the ringers' mf — a
   // softer stroke is a darker bell (fewer upper partials), as it is in the
-  // bronze (0.78 in round 1: the critic asked for about 0.6)
+  // bronze (about 0.6 is right for the seat; 0.78 rang too bright)
   var SACRAMENT = 0.62;
   var RANGE = [165, 2640];                        // the colony's set: E3 to E7
 
   function oddsFor(info) {
-    // (round 3c: a meeting hands its odds in, info.odds, from the calendar's
-    // one table — KOLOB.Calendar.GUEST_ODDS; a lab without it reads this
-    // room's own, below)
+    // (the meeting hands this room its odds from Calendar.GUEST_ODDS,
+    // info.odds; a lab without them reads the room's own ODDS)
     if (info && info.odds != null) return Math.max(0, Math.min(1, +info.odds));
     var w = ODDS.weight;
     var k = info.sunday && w[info.sunday] != null ? info.sunday : info.kind;
@@ -226,7 +223,7 @@ window.KOLOB.GuestHandbells = (function () {
   function decide(info, stream) {
     info = info || {};
     var rs = need(stream).fork("seat");
-    var roll = rs.next(), seatU = rs.next(), atU = rs.next();          // every die, first
+    var roll = rs.next(), seatU = rs.next(), atU = rs.next();          // DICE: every die, first
     var sh = shapeOf(stream);
     var p = oddsFor(info), why = null;
     var secs = info.sections || [], guests = info.guests || [];
@@ -446,6 +443,10 @@ window.KOLOB.GuestHandbells = (function () {
   // ==========================================================================
   // PREPARE — the arrangement, ready to ring (pure; itself material)
   // ==========================================================================
+  // a fault is told, never hidden (kolob-core.js, THE FAULTS): through the
+  // house's confess, once per what, where the house is loaded; plainly on a
+  // bench without it
+  function confess(what, err) { var S = window.KOLOB._s; if (S && S.confess) S.confess(what, err); else if (typeof console !== "undefined") console.error("Kolob: " + what, err); }
   function prepare(material, stream) {
     if (material && material.prepared) return material;
     var M = material || {};
@@ -457,7 +458,7 @@ window.KOLOB.GuestHandbells = (function () {
     if (!h && M.piece !== "round" && !M.round && window.KOLOB.Composer && window.PJ2) {
       // no hymn handed over: the choir rings one of the colony's (pure)
       try { h = window.KOLOB.Composer.compose(need(stream).fork("material").fork("hymn"), { dialect: "tabernacle", mode: M.mode ? modeName(M.mode) : undefined }); source = "a hymn composed for the bells"; }
-      catch (e) { h = null; }
+      catch (e) { h = null; confess("the handbells' hymn could not be composed (they ring without one)", e); }
     }
     var piece = M.piece === "round" || M.round ? "round" : M.piece === "hymn" && h ? "hymn" : pieceOf(sh, seat, !!h);
     var mode = modeName((h && h.mode) || M.mode || "ionian");
@@ -931,8 +932,8 @@ window.KOLOB.GuestHandbells = (function () {
     }
     // (a short hymn is always rung twice; a long one once)
     var two = (sh.twoVerses || t + verseDur + 9 < 36) && t + 2 * verseDur + 9 <= MAX_DUR;
-    // the second setting is drawn whether or not a second verse is rung: rung
-    // once, the verse changes setting halfway (the arranger's way — the
+    // DICE: the second setting (verse2U) is drawn whether or not a second
+    // verse is rung: rung once, the verse changes setting halfway (the arranger's way — the
     // first couplet plain, the second on the table or in the bass bells), so
     // every hymn the bells ring shows more than one technique
     var ws = unison ? [["octaves", 1]] : sacr ? [["bass", 1], ["descant", 1]] : [["mart", 4], ["bass", 3], ["descant", 3]];
@@ -1058,8 +1059,9 @@ window.KOLOB.GuestHandbells = (function () {
       return (pans[b] = sp);
     }
     // where each ringer's hand actually lands (sound-level: a few ms, a
-    // little harder or softer — never reported), drawn for every ring now,
-    // in order, so a performance laid out in slices is the same performance
+    // little harder or softer — never reported). DICE: drawn for every ring
+    // now, in order, so a performance laid out in slices is the same
+    // performance
     var hand = synth.fork("hands");
     var lands = sc.rings.map(function (rg) {
       return { dt: hand.rnd(-0.006, 0.006), dv: hand.rnd(0.94, 1.06), hv: rg.hits.map(function () { return hand.rnd(0.94, 1.06); }) };
@@ -1079,10 +1081,10 @@ window.KOLOB.GuestHandbells = (function () {
     // rings that begin within each SLICE seconds are built AHEAD seconds
     // before the first of them sounds, each slice in a tick of the clock of
     // its own, and their strokes told then (as the trombones' phrases are).
-    // Built in one cue, a hymn's bells cost 200–530 ms of main thread (the
-    // critic, a live context: every ring's partials, automation and, for a
-    // shake, its train of clapper knocks); a lab with no clock lays it all
-    // out at once.
+    // Built in one cue, a hymn's bells cost 200–530 ms of main thread
+    // (measured in a live context: every ring's partials, automation and,
+    // for a shake, its train of clapper knocks); a lab with no clock lays it
+    // all out at once.
     var AHEAD = 2.5, SLICE = 1.0, slices = [];
     sc.rings.forEach(function (rg, k) {
       var cur = slices[slices.length - 1];

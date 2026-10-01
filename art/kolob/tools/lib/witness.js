@@ -1,8 +1,9 @@
 // KOLOB tools — the witness: which engine did the harness actually play?
 //
 // A harness is told where the engine lives (KOLOB_BASE, KOLOB_DIR), but a
-// harness may not listen — the engine crew's reads KOLOB_BASE and _engine.php,
-// an older one reads its own directory whatever it is told — and a harness
+// harness may not listen — this one reads KOLOB_BASE and _engine.php; an
+// older one (before 2026-09-29) reads its own directory whatever it is told
+// — and a harness
 // that plays its own engine while the tools believe it played another reports
 // "nothing moved" when everything did. So the tools do not take its word.
 // This file is preloaded into every harness they run (`node -r witness.js`);

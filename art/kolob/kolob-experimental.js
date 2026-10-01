@@ -17,7 +17,7 @@
 //                          day's first hymn. One part goes wrong, the
 //                          chorister stops them, that part sings the passage
 //                          alone on the notes, and everyone sings it again.
-//                          (kolob-guest-singingschool.js; round 3)
+//                          (kolob-guest-singingschool.js)
 //
 //   reckoning       ON   — the Kolob reckoning: the drone moves one note a
 //                          section, spelling the doxology's opening, and
@@ -28,8 +28,7 @@
 //                          otherwise, so the A/B is the drone alone (PLAN
 //                          §7.2's fallback: the cantus only for the key
 //                          plan, no audible glide) (kolob-calendar.js,
-//                          kolob-hymnal.js, kolob-voices-ground.js; round 3b,
-//                          step 4)
+//                          kolob-hymnal.js, kolob-voices-ground.js)
 //
 // HOW TO SWITCH ONE (dev only; nothing on the page shows these):
 //
@@ -119,9 +118,15 @@ window.KOLOB.Experimental = (function () {
   try { address = parse(window.location && window.location.search); } catch (e) { address = {}; }
 
   var listeners = [];
+  // a fault is told, never hidden (kolob-core.js, THE FAULTS): through the
+  // house's confess, once per what, where the house is loaded; plainly on a
+  // bench without it
+  function confess(what, err) { var S = window.KOLOB._s; if (S && S.confess) S.confess(what, err); else if (typeof console !== "undefined") console.error("Kolob: " + what, err); }
+  // (a listener that throws is passed over, and the rest still hear of the
+  // change; its fault is told)
   function changed() {
     var snap = snapshot();
-    listeners.slice().forEach(function (fn) { try { fn(snap); } catch (e) { /* a listener's fault is its own */ } });
+    listeners.slice().forEach(function (fn) { try { fn(snap); } catch (e) { confess("a listener to the switches threw", e); } });
   }
   function known(name) {
     if (!DEFAULTS.hasOwnProperty(name)) throw new Error("KOLOB.Experimental: no feature called \"" + name + "\" (known: " + Object.keys(DEFAULTS).join(", ") + ")");

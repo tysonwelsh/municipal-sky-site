@@ -1,5 +1,5 @@
 // ============================================================================
-// GUESTS LAB, ROUND 3C — audition bench for the gift of tongues, the far
+// GUESTS LAB 3c — audition bench for the gift of tongues, the far
 // ward and the Hosanna (dev, unlinked).
 //
 // The seed seats the Sunday's ward (KOLOB.Cast, cast:1) and composes the
@@ -306,7 +306,7 @@ window.Guests3c = (function () {
   // (hooks.defer), as the engine's clock will have them: each slice on a
   // timer of its own, a little before it sounds, its main-thread cost kept
   // ==========================================================================
-  var actx = null, chain = null, irBuf = null, room = "seated", current = null, analyser = null, told = [];
+  var actx = null, irBuf = null, room = "seated", current = null, analyser = null, told = [];
   function ensure() {
     if (actx) return Promise.resolve();
     actx = new (window.AudioContext || window.webkitAudioContext)();
@@ -542,7 +542,6 @@ window.Guests3c = (function () {
     v.cost = el("p", "kg3-stat"); card.appendChild(v.cost);
     return card;
   }
-  var SOLF = ["do", "re", "mi", "fa", "sol", "la", "ti"];
   function tonguesPlan() {
     var v = views.tongues, st = settings(), ward = wardOf(st), s = stream("tongues", st.seed), h = hymnOf(st), sc, seat;
     try {
@@ -679,7 +678,7 @@ window.Guests3c = (function () {
     return card;
   }
   function hosannaRule() {
-    var st = settings(), secs = [{ type: "prelude" }, { type: "hymn" }, { type: "testimony" }, { type: "sacrament" }, { type: "doxology" }, { type: "postlude" }], rows = [];
+    var secs = [{ type: "prelude" }, { type: "hymn" }, { type: "testimony" }, { type: "sacrament" }, { type: "doxology" }, { type: "postlude" }], rows = [];
     Object.keys(K.Calendar.SUNDAYS).forEach(function (sun) {
       var n = 0, forced = 0, N = 2000;
       for (var i = 1; i <= N; i++) { var s = R(i).fork(HO.LABEL + 1); if (HO.plan({ n: 1, kind: K.Calendar.SUNDAYS[sun].kind, sunday: sun, sections: secs }, s)) n++; if (HO.plan({ n: 1, sunday: sun, sections: secs, force: true }, s)) forced++; }
@@ -782,7 +781,8 @@ window.Guests3c = (function () {
     return out;
   }
   function oddsCard() {
-    var v = views.odds = {}, card = el("section", "kg3-card");
+    views.odds = {};
+    var card = el("section", "kg3-card");
     card.appendChild(el("h2", "kg3-name", "The odds, and purity"));
     card.appendChild(el("p", "kg3-phrase", "Each guest's plan() over 20,000 meetings of a stand-in for the engine's planner (the calendar's Sundays, the order of service, the hymnal's dialects, the other guests' own dice and seats); and every plan and score run twice on the same stream, with Math.random watched."));
     var row = el("div", "kg3-row"), out = el("div"), pOut = el("p", "kg3-meas");

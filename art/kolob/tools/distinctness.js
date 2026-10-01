@@ -98,8 +98,9 @@ function featuresOf(run, W) {
   put("keynote", "identity", "num", key ? Math.log2(key) : null, JND.keynote);
   put("mode", "identity", "cat", m1.mode || null);
   put("kind", "identity", "cat", m1.meetingKind || null);
-  put("sunday", "identity", "cat", m1.sunday || null);            // hook (typed meeting-start)
-  // hooks: dialect, registration, cast — null until the engine emits them
+  put("sunday", "identity", "cat", m1.sunday || null);            // (typed meeting-start)
+  // dialect, registration, cast — null when the dump carries none (a
+  // registration rides on notes and payloads; no event is typed so)
   const dialects = new Set();
   if (m1.houseDialect) dialects.add(m1.houseDialect);
   events.forEach((e) => { if (e.dialect) dialects.add(e.dialect); if (e.houseDialect) dialects.add(e.houseDialect); });

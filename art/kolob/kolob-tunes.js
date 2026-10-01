@@ -9,11 +9,12 @@
 // every tune taken down again, note by note, from a public-domain printing
 // (or, once, a manuscript) that anyone can open and check.
 //
-// It replaces v0.30's OLD_TUNES incipits (kolob-audio.js), which the owner
-// heard in the tune lab and judged wrong. Those were drafted from hymnary.org
-// incipit digits with guessed rhythms; these are read off the facsimiles,
-// every part the source prints, with the source's own rhythm, meter,
-// fermatas and repeats (written out, since a Hymn has no repeat signs).
+// Every tune here is read off the facsimile, every part the source prints,
+// with the source's own rhythm, meter, fermatas and repeats (written out,
+// since a Hymn has no repeat signs). None is drafted from hymnary.org
+// incipit digits with guessed rhythms: the owner heard such drafts in the
+// tune lab and judged them wrong (a frozen copy of them stays in
+// earth-tunes-lab.js for the A/B).
 //
 // SHAPE OF THE DATA (SCORE.md §5): each tune is a Hymn with provenance
 // "earth", a cited source {book, year, page, url}, keyMonzo [0,0,0,0] (a tune
@@ -45,7 +46,7 @@
 // Degrees: deg 0 is the tune's final (do for the major tunes, la for the
 // minor ones, which are therefore "aeolian" or "dorian"), placed in the
 // octave F3–E4 so that deg 0 sits about where the day's keynote does.
-// Monzos are exact 5-limit ratios from the v0.30 collections (SCORE §2); an
+// Monzos are exact 5-limit ratios from the collections (SCORE §2); an
 // accidental in the source becomes the chromatic neighbour of the next
 // degree (a sharp is 15/16 of the degree above it, a flat 16/15 of the one
 // below: so the raised seventh of a minor tune is 15/8, a sharped fourth
@@ -81,7 +82,7 @@ var KOLOB = window.KOLOB = window.KOLOB || {};   // `var`, so it also loads unde
 KOLOB.Tunes = (function () {
   "use strict";
 
-  // ---- the lattice (5-limit, v0.30's collections, as monzos) ---------------
+  // ---- the lattice (5-limit, the collections of kolob-pitch.js, as monzos) --
   // [a,b,c,d] = 2^a · 3^b · 5^c · 7^d
   var M = {
     "1": [0, 0, 0, 0], "9/8": [-3, 2, 0, 0], "5/4": [-2, 0, 1, 0], "6/5": [1, 1, -1, 0],
@@ -1462,8 +1463,9 @@ KOLOB.Tunes = (function () {
   var index = {};
   list.forEach(function (h) { index[h.id] = h; });
 
-  // v0.30's OLD_TUNES names → the tunes that replace them (for the lab's A/B
-  // and for the integrator's migration).
+  // the old incipit pool's names → the tunes that replace them. Nothing in
+  // the engine reads Tunes.old; kept for a lab that may still want v0.30's
+  // names.
   var OLD = {
     "all is well": "earth:all-is-well", "kingsfold": "earth:kingsfold", "bethany": "earth:bethany",
     "foundation": "earth:foundation", "nettleton": "earth:nettleton", "simple gifts": "earth:simple-gifts",

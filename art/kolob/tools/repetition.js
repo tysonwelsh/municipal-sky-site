@@ -162,7 +162,7 @@ async function main() {
   const pctM = (b) => U.pct(b.meetings / meetings.length);
   L.push("# Repetition — phrase shapes heard before");
   L.push("");
-  L.push("*PLAN-COMPOSITION §2.6: \"Repetition: phrase shapes heard before within a meeting.\" Recurrence inside a meeting is by design (the theme returns, the Question is asked three times); the same shape in every meeting is the rut.*");
+  L.push("*PLAN-COMPOSITION §2.6: \"Repetition: phrase shapes heard before within a meeting.\" Recurrence inside a meeting is by design (the theme returns, a hymn's verses repeat); the same shape in every meeting is the rut.*");
   L.push("");
   L.push("- " + R.describe(set.manifest));
   L.push("- " + meetings.length + " complete meetings from " + runs.length + " seeds" + (a.first ? " (meeting 1 only)" : "") + (partial ? " · " + partial + " partial meetings left out" : "") + " · " + allPh + " phrases of ≥ " + minN + " notes · " + new Date().toISOString().slice(0, 16).replace("T", " "));
