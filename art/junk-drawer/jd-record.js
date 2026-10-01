@@ -531,15 +531,15 @@
     return a.getBoundingClientRect().width + (isFinite(gap) ? gap : 8);
   }
   /* the pagers go dim at the ends of the TRAVEL, not at the ends of a window
-     index — one tolerance for the sub-pixel scrollLeft a snap can leave */
-  function syncAltNav(strip) {
-    var port = strip.querySelector('.rc-alt-port');
-    if (!port) return;
+     index — one tolerance for the sub-pixel scrollLeft a snap can leave.
+     `nav` is the strip's port and its two pagers (either may be null),
+     resolved once by wireAltScrub: the strip is a fresh node per render and
+     nothing swaps its children, so they cannot go stale under a scroll. */
+  function syncAltNav(nav) {
+    var port = nav.port;
     var max = port.scrollWidth - port.clientWidth;
-    var l = strip.querySelector('.rc-alt-nav[data-nav="-1"]');
-    var r = strip.querySelector('.rc-alt-nav[data-nav="1"]');
-    if (l) l.disabled = port.scrollLeft <= 1;
-    if (r) r.disabled = port.scrollLeft >= max - 1;
+    if (nav.l) nav.l.disabled = port.scrollLeft <= 1;
+    if (nav.r) nav.r.disabled = port.scrollLeft >= max - 1;
   }
   /* put the shown response under the visitor's eye. scrollLeft is assigned
      rather than scrollIntoView'd on purpose: scrollIntoView would also walk
@@ -573,11 +573,17 @@
      A drag must not also pick a thumbnail. Past a few pixels of travel the
      gesture is a scrub, and the click that follows pointerup is swallowed by
      a one-shot capture listener — cleared on the next task either way, so a
-     drag that ends without a click can never eat a later one. */
+     drag that ends without a click can never eat a later one.
+     Answers the strip's nav (see syncAltNav), or null when it has no port. */
   function wireAltScrub(strip) {
     var port = strip.querySelector('.rc-alt-port');
-    if (!port) return;
-    port.addEventListener('scroll', function () { syncAltNav(strip); }, { passive: true });
+    if (!port) return null;
+    var nav = {
+      port: port,
+      l: strip.querySelector('.rc-alt-nav[data-nav="-1"]'),
+      r: strip.querySelector('.rc-alt-nav[data-nav="1"]')
+    };
+    port.addEventListener('scroll', function () { syncAltNav(nav); }, { passive: true });
     var down = false, moved = false, x0 = 0, left0 = 0;
     port.addEventListener('pointerdown', function (e) {
       if (e.pointerType === 'touch' || e.button !== 0) return;
@@ -609,6 +615,15 @@
     };
     port.addEventListener('pointerup', end);
     port.addEventListener('pointercancel', end);
+    return nav;
+  }
+  /* a fresh strip's whole wiring, the same three steps wherever one is
+     painted (render(), and the strip-only refresh in open()): the scrub,
+     the shown response brought under the eye, the pagers' ends */
+  function wireStrip(strip) {
+    var nav = wireAltScrub(strip);
+    centerAlt(strip, curResp, false);
+    if (nav) syncAltNav(nav);
   }
 
   /* THE CARD, landscape (round 13, owner pick 2026-08-13: mockup-13a's
@@ -1131,11 +1146,7 @@
        and the shown response is brought under the eye without animating —
        this is a repaint of the card, not a move the visitor made. */
     var strip = scrollEl.querySelector('.rc-alts');
-    if (strip) {
-      wireAltScrub(strip);
-      centerAlt(strip, curResp, false);
-      syncAltNav(strip);
-    }
+    if (strip) wireStrip(strip);
     /* a re-render replaces the plate node, so an open enlargement re-syncs to
        the new response and re-points its way home (the lazy alternative SVGs
        landing is the common case; switching response while enlarged is the
@@ -1197,11 +1208,7 @@
         /* the replaced strip is a fresh node, so it takes the same wiring
            render() gives one — scrub, centring, nav sync */
         var st = scrollEl.querySelector('.rc-alts');
-        if (st) {
-          wireAltScrub(st);
-          centerAlt(st, curResp, false);
-          syncAltNav(st);
-        }
+        if (st) wireStrip(st);
         return;
       }
       drawNext = plateEmpty;

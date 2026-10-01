@@ -174,7 +174,7 @@
     /* area-normalized on the shared ruler, with the SVG's own 240×300 aspect
        — the identical call a specimen gets */
     window.JD_applySize(el, box, ID, FINE);
-    seat(el, pile);
+    seat(el, pile.getBoundingClientRect());
     /* the reserved corner is exactly measurable only now — push any junk
        already lying on the plate clear of the real rect (closes the race
        between the pile's apply pass and this module's artwork fetch) */
@@ -189,7 +189,9 @@
         if (!(pr.width > 0 && pr.height > 0)) return;
         if (Math.abs(pr.width - lastW) < 0.5 && Math.abs(pr.height - lastH) < 0.5) return;
         lastW = pr.width; lastH = pr.height;
-        if (el && el.parentNode && seat(el, el.parentNode) && window.JD_enforceTurnCorner) {
+        /* the button never leaves the pile (it is never picked, so never
+           hoisted into the well), so the rect just read IS its host's */
+        if (el && el.parentNode && seat(el, pr) && window.JD_enforceTurnCorner) {
           window.JD_enforceTurnCorner();
         }
       }).observe(pile);
@@ -226,9 +228,15 @@
      centre sits half the plate plus the inset off each wall, so it never
      lands guillotined at any viewport. Sessions from the draggable era may
      still carry a seat under our id in the pile's layout key; it is swept so
-     the stored map holds only truths. */
-  function seat(node, pile) {
-    var host = pile.getBoundingClientRect(), r = node.getBoundingClientRect();
+     the stored map holds only truths — at the first seat that lands, and
+     not again: nothing writes that id back (the scatter, the sheet, the
+     folder and the won items each store under their own ids), so re-reading
+     the whole map on every resize swept nothing. A write that failed is
+     tried again at the next seat. `host` is the pile's rect, measured by
+     the caller (the size watch has just read it). */
+  var swept = false;
+  function seat(node, host) {
+    var r = node.getBoundingClientRect();
     /* A DRAWER WITH NO SIZE IS NOT SEATED AGAINST (2026-09-27). Measured
        while hidden (the /about/ walkthrough restores mid-page with the
        drawer's scene display:none), host and node both read 0, the half-
@@ -242,8 +250,11 @@
     node.style.top = ((1 - hh - CORNER.inset) * 100).toFixed(2) + '%';
     node.style.setProperty('--rot', CORNER.rot + 'deg');
     node.style.zIndex = Z_FIXED;
-    var map = JD_store.get(SCATTER_KEY);
-    if (map && map[ID]) { delete map[ID]; JD_store.set(SCATTER_KEY, map); }
+    if (!swept) {
+      var map = JD_store.get(SCATTER_KEY);
+      if (map && map[ID]) { delete map[ID]; swept = JD_store.set(SCATTER_KEY, map); }
+      else swept = true;
+    }
     return true;
   }
 
@@ -1469,12 +1480,16 @@
     scrim.querySelector('.jd-folder-close').addEventListener('click', close);
     /* the category panels' readout (2026-09-30): tapping, focusing or
        hovering a row prints its counts under its own panel, and marks the
-       row. Delegated here because render() rebuilds the panels. */
+       row. Delegated here because render() rebuilds the panels. A row
+       already marked is already printed — only this writes is-on and the
+       readout, and render() starts every panel clean — so the mouse moving
+       about inside the marked row costs nothing. */
     function readRow(row) {
+      if (row.classList.contains('is-on')) return;
       var panel = row.closest('.fx-panel');
       if (!panel) return;
       var out = panel.querySelector('.fx-readout');
-      Array.prototype.forEach.call(panel.querySelectorAll('.fx-row.is-on'), function (r) {
+      panel.querySelectorAll('.fx-row.is-on').forEach(function (r) {
         r.classList.remove('is-on');
       });
       row.classList.add('is-on');
