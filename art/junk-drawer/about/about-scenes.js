@@ -10,11 +10,13 @@
      drawer      — the live pile, exactly as the art page mounts it
      instrument  — the real turn card (JD_turn.curate), network sealed
      record      — the real report card, as finished cards (JD_record.card)
-     analytics   — the real analytics folder (JD_folder.open)
+     analytics   — the real record's numbers, from the endpoint the
+                   analytics folder reads (/api/jd-analytics.php), drawn as
+                   this page's own table and charts (scene 4, below)
 
-   The three modal scenes normally mount as full-screen scrims on <body>.
-   Inline mode (see about.css) re-parents each scrim into the pane and flows
-   it in place. Nothing here re-implements a card: if the drawer changes, this
+   The turn card normally mounts as a full-screen scrim on <body>. Inline
+   mode (see about.css) re-parents the scrim into the pane and flows it in
+   place. Nothing here re-implements a card: if the drawer changes, this
    page changes with it, which is the whole reason it is built this way.
 
    PROGRESSIVE ENHANCEMENT: without the engine the page stays as its markup
@@ -97,11 +99,6 @@
   })();
 
   var stepEls = [].slice.call(root.querySelectorAll('.jd-step[data-scene]'));
-  /* every step gets an anchor of its own, built from the two data attributes
-     it already carries — #step-record-cost, #step-instrument-ranking. The
-     walkthrough is long and scroll-driven, so without these there is no way
-     to point anyone (or anything) at one part of it. Set here rather than in
-     the markup so the two never drift apart. */
   /* A VIEW is what the pane shows for a step: its scene, and — where the
      step carries data-view — which face of that scene (the report card
      turned to one model's drawing). Every change of view is a handoff, even
@@ -111,6 +108,11 @@
     var v = el.getAttribute('data-view');
     return el.getAttribute('data-scene') + (v ? ':' + v : '');
   }
+  /* every step gets an anchor of its own, built from the two data attributes
+     it already carries — #step-analytics-spend, #step-instrument-try. The
+     walkthrough is long and scroll-driven, so without these there is no way
+     to point anyone (or anything) at one part of it. Set here rather than in
+     the markup so the two never drift apart. */
   stepEls.forEach(function (el, i) {
     if (!el.id) el.id = 'step-' + el.getAttribute('data-scene') + '-' + el.getAttribute('data-step');
     /* the first step of every view after the first: the handoff's runway */
@@ -364,7 +366,10 @@
      while its headline was still hidden, and every scene change
      opened on a headless mid-paragraph. Under the pane, the line drops to
      just below it. Measured from the pane itself, so it survives any change
-     to the pane's height. */
+     to the pane's height. (Since 2026-09-29 a phone is its own page —
+     phoneInit, at the foot — and runs no stepper, so the narrow branches
+     here and in handoff() only answer in the moment between a window
+     crossing 768px and the reload that crossing sets off.) */
   function litLine() {
     var h = window.innerHeight;
     if (narrow()) return focusLine() + h * 0.12;
@@ -398,8 +403,8 @@
      way. The scroll that buys is the extra top margin on each scene's first
      step (about.css, .jd-step--scene-head), so the outgoing scene's last
      step still gets its still moment before the strip starts to move. The
-     phone keeps the centred handoff: its pane sits above the prose, not
-     beside it.
+     narrow branch keeps the centred handoff the phone's pane had when it sat
+     above the prose (see the focus line's note).
 
      Returns null when the reader is resting inside a scene, else
      { out, inc, yOut, yIn }. */
@@ -955,18 +960,6 @@
     return el;
   }
 
-  /* THE FIRST-OPEN FLASH (owner, 2026-09-26: "things blink and flash on the
-     screen … once I've scrolled down and back up it doesn't happen"). A card
-     module builds its scrim on <body> the first time it opens, and the polls
-     above only carried it into the pane on their next tick — so for a frame
-     or more every card painted as what it is everywhere else, a full-screen
-     modal over a grey backdrop. The warm-up opens all three at load, so the
-     page flashed grey three times before the reader had touched it; after
-     that the scrims live in the pane and are reused, which is why it never
-     happened twice. A MutationObserver runs before the next paint, so a
-     scrim is moved the instant it lands on <body> — when its scene wants it.
-     A card the READER opens outside its scene (the tag's REPORT CARD button
-     in scene 1) is left alone to be the modal it was asked to be. */
   /* (the tag's REPORT CARD button used to scroll to scene 3 here; it now
      opens the item's card in the full drawer — see "the drawer wakes") */
 
@@ -1150,6 +1143,20 @@
     openDrawer();
   }, true);
 
+  /* THE FIRST-OPEN FLASH (owner, 2026-09-26: "things blink and flash on the
+     screen … once I've scrolled down and back up it doesn't happen"). A card
+     module builds its scrim on <body> the first time it opens, and the
+     scenes' polls (inline(), above) only carried it into the pane on their
+     next tick — so for a frame or more every card painted as what it is
+     everywhere else, a full-screen modal over a grey backdrop. The warm-up
+     opened all three at load (today only the turn card is still opened as a
+     modal; the report cards and the charts are built in place), so the page
+     flashed grey three times before the reader had touched it; after that
+     the scrims live in the pane and are reused, which is why it never
+     happened twice. A MutationObserver runs before the next paint, so a
+     scrim is moved the instant it lands on <body> — when its scene wants it
+     (wanted()). A card opened outside its scene is left alone to be the
+     modal it was asked to be. */
   var SCRIM_SCENE = { 'jd-turn-scrim': 'instrument', 'jd-record-scrim': 'record',
                       'jd-folder-scrim': 'analytics' };
   if (window.MutationObserver) {
@@ -1586,7 +1593,7 @@
      host. Nothing is opened, clicked, waited on or photographed, so there is
      nothing to lose. The card's own controls that matter here (a category's
      definition, the prompt's fold, the filmstrip) are wired below; a
-     thumbnail takes the reader to that drawing's step, if it has one. */
+     thumbnail turns the card in place to that drawing (turnInPlace). */
   var cardSeq = 0;
   /* a card this page built (JD_record.card), readied for where it will
      stand — `cls` is jd-inline-card for the pane, jd-ph-card for a phone
@@ -1889,45 +1896,36 @@
          teal stepped up to pass the palette check), with the name beside
          every mark so identity never rests on color alone
        - each chart's subtitle says what the number is and what n counts
-     Each step names one chart (data-fx) and about.css shows it alone. */
+     Each step names its card by data-view (turns, grades, axes, cost — see
+     "ONE CARD PER CHART" below). */
   var INK = ['#b8541f', '#00836a', '#2b5aa3', '#7a3b66'];
   /* the grade inks are the report card's grade meter, worst (1, Utility) to
      best (5, Prime): JD_GRADE_RAMP (jd-core.js), as jd-furniture's grade
      book reads it */
 
-  function chartsHTML(a, tax, full) {
-    var name = {}, ink = {};
+  /* THE CHARTS' SHARED CONTEXT: what more than one figure reads — the
+     models' names and inks, the rows' order, the live axes and the drawer
+     record cut to the table's prompts — worked out once, in the order the
+     figures used to work it out. Each figure is then its own builder below;
+     chartsHTML() runs them in the order the steps show them. */
+  function chartContext(a, tax, full) {
+    var cx = { a: a, tax: tax, name: {}, ink: {} };
+    var name = cx.name, ink = cx.ink;
     (a.models || []).forEach(function (m, i) {
       name[m.model_id] = m.label;
       ink[m.model_id] = INK[i % INK.length];
     });
-    var esc = JD_esc;
     /* rows in the overall-grade order, kept in every panel of the multiples
        so a model sits on the same line wherever the eye finds it */
-    var order = (a.grades || []).slice()
+    var order = cx.order = (a.grades || []).slice()
       .sort(function (x, y) { return y.avg - x.avg; })
       .map(function (g) { return g.model_id; });
-    function pos(v, lo, hi) { return ((v - lo) / (hi - lo) * 100).toFixed(2) + '%'; }
-    function dotRows(rows, lo, hi, fmt) {
-      var ticks = '';
-      for (var t = lo; t <= hi; t++) ticks += '<i class="jdc-tick" style="left:' + pos(t, lo, hi) + '"></i>';
-      return rows.map(function (r) {
-        var tip = name[r.model_id] + ': ' + fmt(r.avg) + ' (n ' + r.n + ')';
-        return '<div class="jdc-row" title="' + esc(tip) + '">' +
-          '<span class="jdc-name">' + esc(name[r.model_id] || r.model_id) + '</span>' +
-          '<span class="jdc-track"><i class="jdc-rule"></i>' + ticks +
-          '<b class="jdc-dot" style="left:' + pos(r.avg, lo, hi) + ';background:' + ink[r.model_id] + '"></b></span>' +
-          '<span class="jdc-val">' + fmt(r.avg) + '<span class="jdc-n">n ' + r.n + '</span></span></div>';
-      }).join('');
-    }
-    function byOrder(list) {
+    cx.byOrder = function (list) {
       return order.map(function (id) {
         for (var i = 0; i < list.length; i++) if (list[i].model_id === id) return list[i];
         return null;
       }).filter(Boolean);
-    }
-    var one = function (v) { return v.toFixed(1); };
-    var figs = {};
+    };
 
     /* 0 — THE RECORD, IN FULL (owner, 2026-09-27: "an actual table that
        shows the ratings for each one in each category … scrollable both
@@ -1939,14 +1937,13 @@
        looking things up: plain values, the scale in each head, nothing
        drawn; the head row and the prompt column hold still while it
        scrolls. */
-    var liveAx = JD_liveAxes(tax);
-    var modelName = {};
+    cx.liveAx = JD_liveAxes(tax);
+    var modelName = cx.modelName = {};
     (tax.models || []).forEach(function (m) { modelName[m.id] = m.label; });
     var items = (full && full.items) || [];
     /* ONE ROW PER PROMPT (owner, 2026-09-27): each prompt once, and each
        model's ratings across the row in a group of columns — Grade, then the
        four categories. */
-    var perModel = {};
     var sheet = [];
     items.forEach(function (it) {
       var byM = {};
@@ -1957,17 +1954,22 @@
       });
       var ms = Object.keys(byM);
       if (!ms.length) return;
-      ms.forEach(function (m) { perModel[m] = (perModel[m] || 0) + 1; });
       sheet.push({ it: it, byM: byM });
     });
     /* THE FOUR-MODEL CAST ONLY (owner, 2026-09-27: "this doesn't have to be
        a comprehensive table … just the shape of the data"): the four models
        every turn is drawn by, in the charts' order, and only the prompts all
        four drew. */
-    var mcols = (a.models || []).map(function (m) { return m.model_id; });
-    sheet = sheet.filter(function (row) {
+    var mcols = cx.mcols = (a.models || []).map(function (m) { return m.model_id; });
+    cx.sheet = sheet.filter(function (row) {
       return mcols.every(function (m) { return row.byM[m]; });
     });
+    return cx;
+  }
+
+  /* the table (data-view turns) */
+  function sheetFig(cx) {
+    var esc = JD_esc, liveAx = cx.liveAx, modelName = cx.modelName, sheet = cx.sheet, mcols = cx.mcols;
     var sub = ['Overall Grade'].concat(liveAx.map(function (x) { return x.label; }));
     /* the scale each column is read on: 5 for the grade, an axis's own
        point count for its category */
@@ -2007,7 +2009,7 @@
     }
     /* THE TABLE IS THE WHOLE VISUAL (owner, 2026-09-27): no card, no title,
        no subtitle — the sheet itself, on the page, as wide as a report card */
-    figs.turns = '<figure class="jdc jdc-turns" data-chart="turns">' +
+    return '<figure class="jdc jdc-turns" data-chart="turns">' +
       '<div class="jdc-tablewrap" tabindex="0" aria-label="the record: ' + sheet.length +
       ' prompts, each model&rsquo;s grade and ratings; scrollable">' +
       '<table class="jdc-sheet"><thead><tr class="jdc-h1">' +
@@ -2034,6 +2036,26 @@
           }).join('') + '</tr>';
       }).join('') +
       '</tbody></table></div></figure>';
+  }
+
+  /* the average and the spread (data-view grades) */
+  function gradesFig(cx) {
+    var a = cx.a, tax = cx.tax, esc = JD_esc, name = cx.name, ink = cx.ink, order = cx.order,
+        sheet = cx.sheet, byOrder = cx.byOrder;
+    function pos(v, lo, hi) { return ((v - lo) / (hi - lo) * 100).toFixed(2) + '%'; }
+    function dotRows(rows, lo, hi, fmt) {
+      var ticks = '';
+      for (var t = lo; t <= hi; t++) ticks += '<i class="jdc-tick" style="left:' + pos(t, lo, hi) + '"></i>';
+      return rows.map(function (r) {
+        var tip = name[r.model_id] + ': ' + fmt(r.avg) + ' (n ' + r.n + ')';
+        return '<div class="jdc-row" title="' + esc(tip) + '">' +
+          '<span class="jdc-name">' + esc(name[r.model_id] || r.model_id) + '</span>' +
+          '<span class="jdc-track"><i class="jdc-rule"></i>' + ticks +
+          '<b class="jdc-dot" style="left:' + pos(r.avg, lo, hi) + ';background:' + ink[r.model_id] + '"></b></span>' +
+          '<span class="jdc-val">' + fmt(r.avg) + '<span class="jdc-n">n ' + r.n + '</span></span></div>';
+      }).join('');
+    }
+    var one = function (v) { return v.toFixed(1); };
 
     /* 1 — the overall grade, on the grade scale itself */
     /* 1b — THE DISTRIBUTION (owner, 2026-09-27: "not just the average, but
@@ -2090,7 +2112,7 @@
        row reads as one grade across all four models; HORIZONTAL, IN ONE ROW —
        the grade names once, down the left, Prime at the top, the four models
        side by side on one shared scale, the count at each bar's end. */
-    figs.grades = '<figure class="jdc jdc-pair" data-chart="grades">' +
+    return '<figure class="jdc jdc-pair" data-chart="grades">' +
       '<figcaption><span class="jdc-title">How the models compare</span></figcaption>' +
       '<div class="jdc-sec jdc-sec-avg"><span class="jdc-sub jdc-sec-sub">Average overall grade, from 1 (' +
         esc(gradeName[1] || 'Utility') + ') to 5 (' + esc(gradeName[5] || 'Prime') + ')</span>' +
@@ -2109,7 +2131,12 @@
               '<span class="jdc-hrow-n">' + c + '</span></span>';
           }).join('');
       }).join('') + '</div></div></figure>';
+  }
 
+  /* the four categories (data-view axes) */
+  function axesFig(cx) {
+    var a = cx.a, tax = cx.tax, esc = JD_esc, name = cx.name, order = cx.order,
+        sheet = cx.sheet, byOrder = cx.byOrder;
     /* 2 — THE FOUR CATEGORIES AS ISSUE RATES (owner, 2026-09-30, from
        mockup-47; the analytics folder draws the same thing). Each panel is
        one 0–100% ruler: how often each model's drawings had a problem in
@@ -2146,7 +2173,7 @@
     }
     function pc(x) { return Math.round(x * 100) + '%'; }
     function sw(c, t) { return '<span class="jdc-key"><i style="background:' + c + '"></i>' + t + '</span>'; }
-    figs.axes = !rates ? '' : '<figure class="jdc" data-chart="axes">' +
+    return !rates ? '' : '<figure class="jdc" data-chart="axes">' +
       '<figcaption><span class="jdc-title">Issue rate in each category</span>' +
       '<span class="jdc-sub">How often each model&rsquo;s drawings had a problem; for Je ne sais quoi, how often they had it</span></figcaption>' +
       '<div class="jdc-legend">' + sw(ISSUE[0], 'big problem') + sw(ISSUE[1], 'small problem') +
@@ -2178,11 +2205,14 @@
         return '<div class="jdc-panel' + (right ? ' is-right' : '') + '"><div class="jdc-ptitle">' + esc(ax.label) + '</div>' +
           rows + '</div>';
       }).join('') + '</div></figure>';
+  }
 
-    /* 3 — cost per drawing: a length, so a bar, from zero */
+  /* 3 — cost per drawing: a length, so a bar, from zero (data-view cost) */
+  function costFig(cx) {
+    var a = cx.a, esc = JD_esc, name = cx.name, ink = cx.ink;
     var cost = (a.cost || []).slice().sort(function (x, y) { return y.avg_usd - x.avg_usd; });
     var cmax = cost.length ? cost[0].avg_usd : 1;
-    figs.cost = '<figure class="jdc" data-chart="cost">' +
+    return '<figure class="jdc" data-chart="cost">' +
       '<figcaption><span class="jdc-title">Average cost per drawing</span>' +
       '<span class="jdc-sub">API price of each call, from its own recorded token counts</span></figcaption>' +
       cost.map(function (c) {
@@ -2194,7 +2224,12 @@
           '<span class="jdc-val jdc-endval" style="left:calc(' + (c.avg_usd / cmax * 72).toFixed(2) + '% + 8px)">$' +
           c.avg_usd.toFixed(3) + '<span class="jdc-n">n ' + c.n + '</span></span></span><span></span></div>';
       }).join('') + '</figure>';
-    return figs;
+  }
+
+  /* every figure, keyed by the data-view its steps name, in step order */
+  function chartsHTML(a, tax, full) {
+    var cx = chartContext(a, tax, full);
+    return { turns: sheetFig(cx), grades: gradesFig(cx), axes: axesFig(cx), cost: costFig(cx) };
   }
 
   /* ONE CARD PER CHART, AND THE CHARTS SCROLL (owner, 2026-09-27: "instead
@@ -2253,10 +2288,11 @@
   };
 
   /* ---- THE PRE-RENDER --------------------------------------------------------
-     Each modal scene is opened once at load, off-screen (its host laid out
-     but invisible), fitted, cloned into its ghost, and closed again — so the
-     FIRST time a card arrives in a handoff there is already a picture of it
-     to bring in. Sequential, because the modules allow one card at a time;
+     Each card scene (the report cards, the charts, the turn card) is built
+     or opened once at load, off-screen (its host laid out but invisible),
+     fitted, cloned into its ghost, and put away again — so the FIRST time
+     a card arrives in a handoff there is already a picture of it to bring
+     in. Sequential, because the modules allow one card at a time;
      abandoned the moment the reader crosses a boundary (showScene clears
      `prerender`), and never started while a card is already up. */
   function prerenderAll() {
