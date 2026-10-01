@@ -286,8 +286,8 @@
        keyboard — handed focus back to an object that then drew its focus
        state unbidden. The visitor pressed a button with a finger and got
        something they never asked for on the way out. `quietRestore` re-arms
-       the flag on the ONE focus the modal returns (see the listener in
-       ready()); a pointer round-trip therefore lights nothing, and a Tab
+       the flag on the ONE focus the modal returns (see the focus listener
+       in build()); a pointer round-trip therefore lights nothing, and a Tab
        after it is a keyboard arrival like any other and lights the lamp.
        Keyboard presses never arm it: Enter opened the card, so focus coming
        back must be visible. */
@@ -372,9 +372,12 @@
   var SCATTER_KEY = 'jd-scatter-v2';   /* the shared seat map — see layoutFor */
   var FALLBACK_BOX = 30;               /* = BASE.xl, if the drawer never loaded */
   var Z_SHEET_MIN = JD_Z_BAND.other + 101;   /* floor: over the top band's
-                                          scatter (1..N), the turn button (+99)
-                                          and restored wins (+100) even if the
-                                          pile reads empty (bands: 2026-09-10) */
+                                          scatter (1..N) and the turn button
+                                          (+99) even if the pile reads empty
+                                          (bands: 2026-09-10). Restored wins
+                                          land on the raise counter (JD_zRaise,
+                                          +1001 up), above this floor; seat()'s
+                                          max + 1 is what clears them */
   var ROT = 7;                         /* load tilt, ± degrees */
   var SEAM_OVERLAP = 3;                /* viewBox units the two copies share at the fold */
   var INSET = 0.012;                   /* same wall clearance as the scatter */
@@ -637,8 +640,9 @@
    broken dashboard.
 
    Charts are inline SVG strings built here from the payload, in the
-   meterSVG/barHTML tradition at the top of this file: no libraries, no
-   build step, everything interpolated through the local esc(). The design
+   tradition of the tag's meterSVG (jd-core.js) and the report card's
+   barHTML (jd-record.js): no libraries, no build step, everything
+   interpolated through the local esc(). The design
    brief is Tufte × the drawer — no chart frames, no graph paper behind the
    marks, no legend where a direct label fits, value labels instead of axis
    ticks, and every chart's subtitle states its population honestly. The
@@ -841,8 +845,8 @@
                  '#9b2d3a',   /* crimson */
                  '#46707a',   /* slate teal */
                  '#8a6a1a'];  /* bronze */
-  /* the report card's worst→best grade ramp, copied from meterSVG at the top
-     of this file — the grade book has to speak the ramp visitors already
+  /* the report card's worst→best grade ramp, copied from meterSVG in
+     jd-core.js — the grade book has to speak the ramp visitors already
      learned on the specimen tag */
   var RAMP = ['#8f1d12', '#b0490f', '#a06200', '#46761a', '#0b6a1f'];
 
@@ -949,6 +953,7 @@
   function num(n) {
     return String(Math.round(+n || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   }
+  /* OWNER-BENCHED: used only by ledgerHTML/spendHTML, kept with them by owner request (2026-09-10). */
   function day(iso) { return String(iso || '').slice(0, 10); }
 
   /* TITLES ONLY (owner, 2026-09-10): the population line under each title
@@ -986,6 +991,7 @@
      re-enter by re-rating). Spend includes the curated bench, because its
      generations cost real money whatever rubric was live. Four figures
      under one honest line beats four figures under a wrong one. */
+  /* OWNER-BENCHED: not rendered, kept by owner request (2026-09-10) — see render(). */
   function ledgerHTML() {
     var t = data.totals || {};
     function fig(v, label) {
@@ -1065,6 +1071,7 @@
      the one thing a bar chart may never do. The count has not gone away and
      must not: a rate off 22 turns and a rate off 31 are not the same claim,
      so it moves to the tail column, in the cost card's "n 86" seat. */
+  /* OWNER-BENCHED: not rendered, kept by owner request (2026-09-10) — see render(). */
   function firstsHTML() {
     var src = data.firsts || [];
     if (!src.length) {
@@ -1378,6 +1385,7 @@
      with a quarter of the paper blank. W2 is exactly what the line needs:
      the x0/x1/y0/y1 constants below are untouched — this widens nothing and
      redraws nothing, it just stops reserving room the chart never used. */
+  /* OWNER-BENCHED: not rendered, kept by owner request (2026-09-10) — see render(). */
   function spendHTML() {
     var rows = data.spend || [];
     if (!rows.length) return '';

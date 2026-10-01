@@ -1,8 +1,8 @@
 /* ============================================================================
    THE JUNK DRAWER — jd-record.js
-   The report card. Loaded after jd-core.js (JD_esc, JD_byId, JD_zoomLayer,
-   JD_drawOn, JD_fitAll, JD_svgInst, JD_barHTML's home). See jd-core.js for
-   the file map.
+   The report card, and JD_barHTML's home (the gauge the bench reuses).
+   Loaded after jd-core.js (JD_esc, JD_byId, JD_zoomLayer, JD_drawOn,
+   JD_fitAll, JD_svgInst). See jd-core.js for the file map.
    ========================================================================== */
 
 /* ---- THE FULL RECORD — the report card (Phase 3, promoted from mockup-7a).
@@ -109,7 +109,7 @@
   }
   /* prefix every id and url(#)/href reference so inlined copies never
      collide (same discipline as the rating instrument). One implementation,
-     shared with the pile — see JD_svgInst at the top of this file. */
+     shared with the pile — see JD_svgInst in jd-core.js. */
   var svgInst = window.JD_svgInst;
   /* (the filed size tier shows nowhere in the UI any more — the specimen
      tag dropped it 2026-08-12, the report card 2026-08-13; the data keeps
@@ -174,6 +174,7 @@
      the gradient ids so the plate and enlargement copies never fought over
      one id. Not called anywhere; to restore it, re-point cardHTML/zoomHTML
      at it and give .rc-plate back a dark ground. */
+  /* OWNER-BENCHED: retired but kept by owner request (2026-08-13) — leave it in place. */
   function floorSVG(pfx) {  /* eslint-disable-line no-unused-vars */
     pfx = pfx || '';
     var W = 600, H = 600, VPX = W / 2, HOR = H / 2;
@@ -285,8 +286,11 @@
   /* RETIRED — kept as a backup on the owner's request (2026-08-12): the mk-I
      floor, a black-and-white checkerboard projected toward a center vanishing
      point, far rows dissolving into the navy horizon. Not called anywhere;
-     to restore it, point the two floorSVG() call sites here (its 600×240
-     viewBox suits the old 224px landscape plate, not the square one). */
+     to restore it, re-point cardHTML/zoomHTML at it as floorSVG's note
+     describes (there are no floorSVG() call sites to swap any more). Its
+     600×240 viewBox suits the old 224px landscape plate, not the square
+     one. */
+  /* OWNER-BENCHED: retired but kept by owner request (2026-08-12) — leave it in place. */
   function checkerFloorSVG(pfx) {  /* eslint-disable-line no-unused-vars */
     pfx = pfx || '';
     var W = 600, H = 240, VPX = W / 2, HOR = 96;
@@ -327,7 +331,7 @@
       '</svg>';
   }
 
-  /* grades are filed as the taxonomy rank number — see JD_gradeOf above */
+  /* grades are filed as the taxonomy rank number — see JD_gradeOf in jd-core.js */
   function gradeOf(value) {
     return window.JD_gradeOf(payload.taxonomy, value) ||
       { label: value == null ? '' : String(value), rank: +value || 0 };
@@ -615,7 +619,6 @@
      display:contents and this same DOM reads as the portrait flow (which is
      why the source order below IS the portrait order). */
   function cardHTML(entry, resp, curIdx, live) {
-    var m = modelOf(resp.model);
     var h = '';
     h += '<header class="rc-block rc-masthead">' +
       '<div class="rc-item">' + esc(entry.title) + '</div></header>';
@@ -633,7 +636,6 @@
        left the card entirely on that call: it now shows nowhere in the UI
        and lives on in the data. */
     var artSrc = svgCache[entry.id + '/' + resp.file] || '';
-    var gen = resp.generation || {};
     /* what the drawing COST (2026-08-15): token counts and provider spend
        ride the reveal payload into the visitor record, so a won item's card
        states them — after a reload too. Only visitor responses carry these
@@ -1034,8 +1036,8 @@
   /* THE DRAW-ON REVEAL (owner, 2026-08-16): when the report card opens, or
      the visitor presses REDRAW — no longer on a flip to another model's
      response (owner, 2026-09-10) — the photograph doesn't just appear: the artwork draws
-     itself onto the plate via window.JD_drawOn (the shared engine at the
-     top of this file; the turn's reveal drinks from the same well). Scope
+     itself onto the plate via window.JD_drawOn (the shared engine in
+     jd-core.js; the turn's reveal drinks from the same well). Scope
      here is the card's plate ONLY — the enlargement is the same photograph
      held closer, not a new drawing; the strip's thumbnails and the pile
      never draw at all. */
