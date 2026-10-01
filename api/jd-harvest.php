@@ -19,10 +19,7 @@ require_once __DIR__ . '/jd-config.php';
 require_once __DIR__ . '/jd-origin.php';
 require_once __DIR__ . '/jd-build.php';
 
-jd_require_allowed_origin();
-jd_no_store();
-jd_require_get();
-jd_require_bench_key();
+jd_curator_get();
 
 $itemId = (string) ($_GET['item'] ?? '');
 if (!preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9-]{1,64}$/', $itemId)) {
@@ -31,7 +28,6 @@ if (!preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9-]{1,64}$/', $itemId)) {
 
 try {
     $db = jd_db();
-    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     $stmt = $db->prepare('SELECT prompt FROM jd_submissions WHERE item_id = ? LIMIT 1');
     $stmt->execute([$itemId]);
@@ -79,16 +75,11 @@ try {
     foreach ($subs as $sub) {
         $genQ->execute([$sub['id']]);
         $rateQ->execute([$sub['id']]);
-        $ranks = [];
-        try {
+        // jd_ranks lands via the manual setup script; absent = no order
+        $ranks = jd_query_or_empty_if_missing(function () use ($rankQ, $sub): array {
             $rankQ->execute([$sub['id']]);
-            $ranks = $rankQ->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            if (!jd_missing_table($e)) {
-                throw $e;
-            }
-            // jd_ranks lands via the manual setup script; absent = no order
-        }
+            return $rankQ->fetchAll(PDO::FETCH_ASSOC);
+        });
         $compQ->execute([$sub['id']]);
         $gens = $genQ->fetchAll(PDO::FETCH_ASSOC);
         foreach ($gens as &$g) {

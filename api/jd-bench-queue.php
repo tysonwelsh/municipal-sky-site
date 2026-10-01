@@ -28,10 +28,7 @@ require_once __DIR__ . '/jd-config.php';
 require_once __DIR__ . '/jd-origin.php';
 require_once __DIR__ . '/jd-build.php';
 
-jd_require_allowed_origin();
-jd_no_store();
-jd_require_get();
-jd_require_bench_key();
+jd_curator_get();
 
 $taxonomy = jd_taxonomy_required('jd-bench-queue');
 $liveAxes = jd_live_axes($taxonomy);
@@ -81,15 +78,11 @@ foreach (jd_size_tiers($taxonomy) as $id => $s) {
 
 // id -> label, for the bench's unveil (the queue is the one payload the
 // bench is guaranteed to hold)
-$models = [];
-foreach (jd_model_registry($taxonomy) as $id => $m) {
-    $models[$id] = (string) ($m['label'] ?? $id);
-}
+$models = jd_model_labels($taxonomy);
 
 // --- the reads, both populations at once ----------------------------------
 try {
     $db = jd_db();
-    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     $subs = $db->query(
         'SELECT id, item_id, prompt, created, status, size_class, suppressed,
@@ -114,16 +107,11 @@ try {
     // The filed rank order, one row per drawing: the bench's own outranks a
     // turn's. jd_ranks lands via the manual setup script, so its absence
     // reads as "no ranks yet", never as a broken queue.
-    $rankRows = [];
-    try {
-        $rankRows = $db->query('SELECT generation_id, rank_pos, client FROM jd_ranks')
-            ->fetchAll(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {
-        if (!jd_missing_table($e)) {
-            throw $e;
-        }
-        error_log('jd-bench-queue: jd_ranks unavailable — serving without ranks');
-    }
+    $rankRows = jd_query_or_empty_if_missing(
+        fn() => $db->query('SELECT generation_id, rank_pos, client FROM jd_ranks')
+            ->fetchAll(PDO::FETCH_ASSOC),
+        'jd-bench-queue: jd_ranks unavailable — serving without ranks'
+    );
 } catch (PDOException $e) {
     error_log('jd-bench-queue: ' . $e->getMessage());
     jd_fail(500, 'server_error', 'The queue could not be read.');
@@ -131,13 +119,7 @@ try {
 
 $fold = jd_fold_ratings($rates, $liveAxes);
 
-$rankByGen = [];   // gen => ['pos' => int, 'client' => string]
-foreach ($rankRows as $r) {
-    $g = (string) $r['generation_id'];
-    if ($r['client'] === 'bench' || !isset($rankByGen[$g])) {
-        $rankByGen[$g] = ['pos' => (int) $r['rank_pos'], 'client' => (string) $r['client']];
-    }
-}
+$rankByGen = jd_rank_by_generation($rankRows);   // gen => ['pos' => int, 'client' => string]
 
 $gensBySub = [];
 foreach ($gens as $g) {

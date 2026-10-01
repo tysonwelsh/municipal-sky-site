@@ -23,18 +23,12 @@ require_once __DIR__ . '/jd-config.php';
 require_once __DIR__ . '/jd-origin.php';
 require_once __DIR__ . '/jd-build.php';
 
-jd_require_allowed_origin();
-jd_no_store();
-jd_require_get();
-jd_require_bench_key();
+jd_curator_get();
 
 $taxonomy = jd_taxonomy_required('jd-ledger');
 $liveAxes = jd_live_axes($taxonomy);
 $axisCount = count($liveAxes);
-$models = [];
-foreach (jd_model_registry($taxonomy) as $id => $m) {
-    $models[$id] = (string) ($m['label'] ?? $id);
-}
+$models = jd_model_labels($taxonomy);
 $gradeLabels = [];
 foreach ($taxonomy['grades'] ?? [] as $g) {
     $gradeLabels[(string) (float) ($g['rank'] ?? 0)] = (string) ($g['label'] ?? '');
@@ -51,13 +45,12 @@ foreach ($liveAxes as $id => $axis) {
 // --- the reads ---------------------------------------------------------------
 try {
     $db = jd_db();
-    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     // device_ref (2026-09-10) may not have reached this table yet
-    $hasDevice = jd_has_column($db, 'jd_submissions', 'device_ref');
+    $deviceCol = jd_submissions_device_col($db);
     $subs = $db->query(
         'SELECT id, item_id, prompt, created, status, client, title, size_class,
                 suppressed, retire_requested_at, rerun_requested_at' .
-                ($hasDevice ? ', device_ref' : ', NULL AS device_ref') . '
+                $deviceCol . '
            FROM jd_submissions ORDER BY created, id'
     )->fetchAll(PDO::FETCH_ASSOC);
     $gens = $db->query(
@@ -70,28 +63,17 @@ try {
         'SELECT generation_id, kind, axis_id, value, note, client, taxonomy_version
            FROM jd_ratings ORDER BY rated_at, id'
     )->fetchAll(PDO::FETCH_ASSOC);
-    $rankRows = [];
-    try {
-        $rankRows = $db->query('SELECT submission_id, generation_id, rank_pos, client FROM jd_ranks')
-            ->fetchAll(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {
-        if (!jd_missing_table($e)) {
-            throw $e;
-        }
-    }
+    $rankRows = jd_query_or_empty_if_missing(
+        fn() => $db->query('SELECT submission_id, generation_id, rank_pos, client FROM jd_ranks')
+            ->fetchAll(PDO::FETCH_ASSOC)
+    );
 } catch (PDOException $e) {
     error_log('jd-ledger: ' . $e->getMessage());
     jd_fail(500, 'server_error', 'The ledger could not be read.');
 }
 
 $fold = jd_fold_ratings($rates, $liveAxes);
-$rankByGen = [];          // gen => ['pos', 'client'] — the bench's outranks
-foreach ($rankRows as $r) {
-    $g = (string) $r['generation_id'];
-    if ($r['client'] === 'bench' || !isset($rankByGen[$g])) {
-        $rankByGen[$g] = ['pos' => (int) $r['rank_pos'], 'client' => (string) $r['client']];
-    }
-}
+$rankByGen = jd_rank_by_generation($rankRows);   // gen => ['pos', 'client'] — the bench's outranks
 $gensBySub = [];
 foreach ($gens as $g) {
     $gensBySub[(string) $g['submission_id']][] = $g;
@@ -435,14 +417,12 @@ foreach ($turns as $s) {
         if ($incomplete || $unranked || !$s['size_class']) { $benchState = 'open'; }
     }
 
-    $title = trim((string) ($s['title'] ?? ''));
     $items[] = [
         'key'            => 'turn:' . $sid,
         'kind'           => 'turn',
         'item_id'        => 'turn:' . $sid,
         'submission_id'  => $sid,
-        'title'          => $title !== '' ? $title
-            : (mb_strlen($prompt) > 42 ? mb_substr($prompt, 0, 41) . '…' : $prompt),
+        'title'          => jd_turn_title($s['title'] ?? null, $prompt),
         'prompt'         => $prompt,
         'created'        => (string) $s['created'],
         'size'           => ['entry' => null, 'filed' => $s['size_class'], 'scale' => null],

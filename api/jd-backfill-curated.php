@@ -50,16 +50,7 @@ if (!$isCli) {
     header('Content-Type: text/plain; charset=utf-8');
     // Production requires the setup key: this writes rows into the live
     // tables and must not be triggerable by a stray GET.
-    if (JD_IS_PRODUCTION) {
-        $secrets  = jd_secrets();
-        $expected = $secrets['jd_setup_key'] ?? null;
-        $supplied = $_GET['key'] ?? '';
-        if (!is_string($expected) || $expected === '' || !hash_equals($expected, (string) $supplied)) {
-            http_response_code(403);
-            echo "Forbidden. Call with ?key=<jd_setup_key>.\n";
-            exit;
-        }
-    }
+    jd_require_setup_key("Forbidden. Call with ?key=<jd_setup_key>.\n");
 }
 
 $args           = $isCli ? array_slice($argv, 1) : [];
@@ -84,7 +75,6 @@ if (!$entries) {
 }
 
 $db = jd_db();
-$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 // The schema is setup-jd-tables.php's job, and only its job: this script
 // refuses to run against a database the setup script has not brought up to

@@ -25,8 +25,7 @@ jd_require_post();
 $body = jd_read_json_body();
 
 $clientRef = $body['client_ref'] ?? null;
-if (!is_string($clientRef)
-    || !preg_match('/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/', $clientRef)) {
+if (!is_string($clientRef) || !preg_match(JD_UUID_RE, $clientRef)) {
     jd_fail(400, 'bad_request', 'A client_ref in UUID form is required.');
 }
 
@@ -34,8 +33,7 @@ if (!is_string($clientRef)
 // browser makes it on its first turn and keeps it (JD_deviceRef); it is
 // what lets the turns and grades from one device be studied together.
 $deviceRef = $body['device_ref'] ?? null;
-if (!is_string($deviceRef)
-    || !preg_match('/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/', $deviceRef)) {
+if (!is_string($deviceRef) || !preg_match(JD_UUID_RE, $deviceRef)) {
     $deviceRef = null;
 }
 

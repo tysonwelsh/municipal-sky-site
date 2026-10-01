@@ -15,10 +15,7 @@ require_once __DIR__ . '/jd-config.php';
 require_once __DIR__ . '/jd-origin.php';
 require_once __DIR__ . '/jd-build.php';
 
-jd_require_allowed_origin();
-jd_no_store();
-jd_require_get();
-jd_require_bench_key();
+jd_curator_get();
 
 $taxonomy = jd_taxonomy();
 $stamp = jd_build_stamp();

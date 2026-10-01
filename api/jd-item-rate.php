@@ -47,9 +47,7 @@ require_once __DIR__ . '/jd-origin.php';
 require_once __DIR__ . '/jd-build.php';
 require_once __DIR__ . '/jd-curated-sync.php';
 
-jd_require_allowed_origin();
-jd_require_post();
-jd_require_bench_key();
+jd_curator_post();
 
 $body = jd_read_json_body();
 
@@ -58,6 +56,7 @@ $taxonomyVersion = jd_taxonomy_version($taxonomy);
 $axisRanks = jd_axis_ranks($taxonomy);   // live axes only: a retired axis is refused
 $gradeRanks = jd_grade_ranks($taxonomy);
 $sizeTiers = jd_size_tiers($taxonomy);
+$slotCap = strlen(JD_SLOT_LETTERS);     // responses per item, and the deepest rank
 
 // --- Parse ----------------------------------------------------------------
 // A curated item may be named by its entry id (admin mode, 2026-09-10). Its
@@ -67,28 +66,20 @@ $sizeTiers = jd_size_tiers($taxonomy);
 $submissionId = $body['submission_id'] ?? null;
 $ridToGen = [];
 if ($submissionId === null && isset($body['item_id'])) {
-    $itemId = is_string($body['item_id']) ? $body['item_id'] : '';
-    $entry = jd_curated_entry($itemId);
-    if ($entry === null) {
-        jd_fail(404, 'not_found', 'No such curated item.');
-    }
-    try {
-        $sdb = jd_db();
-        $sdb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $sync = jd_curated_sync($sdb, $entry, jd_taxonomy_required('jd-item-rate'));
-        if ($sync['status'] === 'overflow' || $sync['submission_id'] === null) {
-            jd_fail(400, 'bad_request', 'That item has more responses than the database can hold.');
-        }
-        $submissionId = $sync['submission_id'];
-        $q = $sdb->prepare('SELECT id, slot FROM jd_generations WHERE submission_id = ? ORDER BY slot');
-        $q->execute([$submissionId]);
-        foreach (jd_curated_positions($entry['responses'] ?? [], $q->fetchAll(PDO::FETCH_ASSOC)) as $p) {
-            $ridToGen[$p['rid']] = (string) $p['gen']['id'];
-        }
-    } catch (PDOException $e) {
-        error_log('jd-item-rate: curated sync failed — ' . $e->getMessage());
-        jd_fail(500, 'server_error', 'The item could not be filed.');
-    }
+    // the rid map is read inside the sync's own failure handling, as part of
+    // resolving the item
+    $sync = jd_curated_submission_for($body['item_id'], 'jd-item-rate', $taxonomy,
+        function (PDO $sdb, array $entry, array $sync) use (&$ridToGen): void {
+            if ($sync['status'] === 'overflow' || $sync['submission_id'] === null) {
+                jd_fail(400, 'bad_request', 'That item has more responses than the database can hold.');
+            }
+            $q = $sdb->prepare('SELECT id, slot FROM jd_generations WHERE submission_id = ? ORDER BY slot');
+            $q->execute([$sync['submission_id']]);
+            foreach (jd_curated_positions($entry['responses'] ?? [], $q->fetchAll(PDO::FETCH_ASSOC)) as $p) {
+                $ridToGen[$p['rid']] = (string) $p['gen']['id'];
+            }
+        });
+    $submissionId = $sync['submission_id'];
 }
 if (!jd_is_ulid($submissionId)) {
     jd_fail(400, 'bad_request', 'A submission_id or item_id is required.');
@@ -103,8 +94,8 @@ $responses = $body['responses'] ?? [];
 if (!is_array($responses) || !array_is_list($responses)) {
     jd_fail(400, 'bad_request', 'responses must be a list.');
 }
-if (count($responses) > strlen(JD_SLOT_LETTERS)) {
-    jd_fail(400, 'bad_request', 'An item carries at most ' . strlen(JD_SLOT_LETTERS) . ' responses.');
+if (count($responses) > $slotCap) {
+    jd_fail(400, 'bad_request', 'An item carries at most ' . $slotCap . ' responses.');
 }
 if (!$responses && $size === null) {
     jd_fail(400, 'bad_request', 'Nothing to file.');
@@ -156,9 +147,8 @@ foreach ($responses as $r) {
     $rank = null;
     if (array_key_exists('rank', $r) && $r['rank'] !== null) {
         $v = $r['rank'];
-        $maxRank = strlen(JD_SLOT_LETTERS);
-        if (is_bool($v) || !is_numeric($v) || (float) $v != (int) $v || (int) $v < 1 || (int) $v > $maxRank) {
-            jd_fail(400, 'rating_invalid', 'A rank must be a whole number from 1 to ' . $maxRank . '.');
+        if (is_bool($v) || !is_numeric($v) || (float) $v != (int) $v || (int) $v < 1 || (int) $v > $slotCap) {
+            jd_fail(400, 'rating_invalid', 'A rank must be a whole number from 1 to ' . $slotCap . '.');
         }
         $rank = (int) $v;
         $ranked++;
@@ -181,12 +171,11 @@ if ($ranked > 0) {
     if ($ranked !== count($clean)) {
         jd_fail(400, 'ranking_invalid', 'Rank every response, or none of them.');
     }
-    if (count(array_keys($ranks, 1, true)) !== 1) {
+    $defect = jd_ranking_defect($ranks);
+    if ($defect === 'first') {
         jd_fail(400, 'ranking_invalid', 'Exactly one response must be ranked first.');
     }
-    $distinct = array_values(array_unique($ranks));
-    sort($distinct);
-    if ($distinct !== range(1, count($distinct))) {
+    if ($defect === 'gap') {
         jd_fail(400, 'ranking_invalid', 'Ranks must run 1, 2, 3 … with no gaps.');
     }
 }
@@ -194,7 +183,6 @@ if ($ranked > 0) {
 // --- Write ----------------------------------------------------------------
 try {
     $db = jd_db();
-    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     $stmt = $db->prepare('SELECT id, item_id FROM jd_submissions WHERE id = ?');
     $stmt->execute([$submissionId]);

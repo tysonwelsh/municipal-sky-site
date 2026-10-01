@@ -81,7 +81,6 @@ foreach (jd_live_axes($taxonomy) as $id => $axis) {
 // raw_response and svg as MEDIUMTEXT, and neither belongs in a report.
 try {
     $db = jd_db();
-    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     // the turn table (2026-09-10) needs the turn's own facts as well
     $subs = $db->query(
@@ -110,18 +109,13 @@ try {
     // too — a dashboard that 500s on a lagging migration would be the only
     // thing in the feature that breaks. No ranks simply means the legacy
     // comparisons carry `firsts` on their own.
-    try {
-        $ranks = $db->query(
+    $ranks = jd_query_or_empty_if_missing(
+        fn() => $db->query(
             'SELECT submission_id, generation_id, rank_pos FROM jd_ranks'
-        )->fetchAll(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {
-        if (!jd_missing_table($e)) {
-            throw $e;
-        }
-        error_log('jd-analytics: jd_ranks is missing — firsts come from '
-            . 'jd_comparisons alone (run setup-jd-tables.php)');
-        $ranks = [];
-    }
+        )->fetchAll(PDO::FETCH_ASSOC),
+        'jd-analytics: jd_ranks is missing — firsts come from '
+            . 'jd_comparisons alone (run setup-jd-tables.php)'
+    );
 } catch (PDOException $e) {
     error_log('jd-analytics: ' . $e->getMessage());
     jd_fail(500, 'server_error', 'The numbers could not be read.');
@@ -169,12 +163,10 @@ foreach ($gens as $g) {
     // jd-generate.php. Null/empty means the slot never reached a provider (or
     // was a mock call) and jd_generation_cost answers null for both that and
     // an unpriced wire string — which is the whole point: neither is $0.
-    $raw   = $g['usage_tokens'] ?? null;
-    $usage = ($raw !== null && $raw !== '') ? json_decode((string) $raw, true) : null;
-    $cost  = jd_generation_cost(
+    $cost  = jd_price_generation_row(
+        $g['usage_tokens'] ?? null,
         (string) ($g['provider'] ?? ''),
-        (string) ($g['model_version'] ?? ''),
-        is_array($usage) ? $usage : null
+        (string) ($g['model_version'] ?? '')
     );
     if ($cost['cost_usd'] === null) {
         continue;

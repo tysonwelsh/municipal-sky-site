@@ -214,8 +214,8 @@ $liveAxes = jd_live_axes($taxonomy);
 
 // jd_ranks, read ONCE for both blocks below (the overlay re-points a curated
 // item by it; a turn with more than one drawing qualifies only when its
-// ranking is filed): generation id => position, the bench's row outranking any
-// other client's. Its own try: a database without the table (a migration
+// ranking is filed): generation id => {pos, client}, the bench's row
+// outranking any other client's (jd_rank_by_generation). Its own try: a database without the table (a migration
 // that lagged a deploy) re-points nothing and lets no multi-drawing turn in.
 // This is the overlay's read as it always was; the turn block used to join
 // the same rows to the rated turns, which picks out exactly a turn drawing's
@@ -224,19 +224,13 @@ $liveAxes = jd_live_axes($taxonomy);
 // none: UNIQUE (submission_id, generation_id) leaves a turn's drawing one row.
 $rankByGen = [];
 try {
-    foreach (jd_db()->query(
+    $rankByGen = jd_rank_by_generation(jd_db()->query(
         "SELECT r.generation_id, r.rank_pos, r.client FROM jd_ranks r"
-    ) as $r) {
-        $gid = (string) $r['generation_id'];
-        if ($r['client'] === 'bench' || !isset($rankByGen[$gid])) {
-            $rankByGen[$gid] = (int) $r['rank_pos'];
-        }
-    }
+    ));
 } catch (PDOException $e) { /* no ranks table: no re-pointing, no ranked turns */ }
 
 try {
     $db = jd_db();
-    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     // the curated submissions the tag block already read (same columns, same
     // ORDER BY id); read here only when that block could not
@@ -307,7 +301,7 @@ try {
                     : $value;
             }
             if (isset($rankByGen[$gid])) {
-                $resp['rank'] = $rankByGen[$gid];
+                $resp['rank'] = $rankByGen[$gid]['pos'];
             } else {
                 $allRanked = false;
             }
@@ -382,7 +376,6 @@ try {
     require_once __DIR__ . '/../../api/jd-usage.php';
     $priced = !isset($_GET['slim']) || isset($_GET['item']);
     $db = jd_db();
-    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     $curatedPrompts = [];
     foreach ($items as $e) {
@@ -441,7 +434,7 @@ try {
                 $gid = (string) $g['id'];
                 $pick = jd_pick_rating($fold[$gid] ?? [], ['bench', '*']);
                 if (count($pick['axes']) !== count($liveAxes) || $pick['grade'] === null) { $ok = false; break; }
-                $rank = $rankByGen[$gid] ?? null;
+                $rank = $rankByGen[$gid]['pos'] ?? null;
                 if (count($gens) > 1 && $rank === null) { $ok = false; break; }
                 $responses[] = [
                     'gen_id' => $gid, 'rank' => $rank ?: 1,
@@ -479,21 +472,15 @@ try {
                     'transcript_url' => null,
                 ];
                 if ($priced) {
-                    $u = $r['usage'] ? json_decode((string) $r['usage'], true) : null;
-                    $c = jd_generation_cost($r['provider'], $r['model_version'],
-                        is_array($u) ? $u : null);
-                    if ($c['tokens']) {
-                        $row['tokens'] = [
-                            'input' => $c['tokens']['input'], 'output' => $c['tokens']['output'],
-                            'total' => $c['tokens']['input'] + $c['tokens']['cache_write']
-                                + $c['tokens']['cache_read'] + $c['tokens']['output'],
-                        ];
-                    }
-                    if ($c['cost_usd'] !== null) { $row['cost_usd'] = round($c['cost_usd'], 6); }
+                    // a key only when there is a number for it (jd-rate's
+                    // reveal states the nulls; a drawer item leaves them out)
+                    $c = jd_cost_summary(jd_price_generation_row(
+                        $r['usage'], $r['provider'], $r['model_version']));
+                    if ($c['tokens'] !== null) { $row['tokens'] = $c['tokens']; }
+                    if ($c['cost_usd'] !== null) { $row['cost_usd'] = $c['cost_usd']; }
                 }
                 $out[] = $row;
             }
-            $title = trim((string) ($sub['title'] ?? ''));
             // the id IS the winning drawing's generation, which is also the id
             // the visitor's own browser gave it the moment they won it — so a
             // freshly-won item and the served one are one item, not two
@@ -501,10 +488,7 @@ try {
                 'schema' => 2,
                 'id' => $out[0]['gen_id'],
                 'submission_id' => $sid,
-                'title' => $title !== ''
-                    ? $title
-                    : (mb_strlen($sub['prompt']) > 42
-                        ? mb_substr($sub['prompt'], 0, 41) . '…' : (string) $sub['prompt']),
+                'title' => jd_turn_title($sub['title'] ?? null, (string) $sub['prompt']),
                 'prompt' => (string) $sub['prompt'],
                 'created' => substr((string) $sub['created'], 0, 10),
                 // the size the visitor chose on the closing card; 'm' is the

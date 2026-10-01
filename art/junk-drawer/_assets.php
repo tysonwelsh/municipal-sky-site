@@ -54,10 +54,10 @@ $jd_assets  = array_merge(['junk-drawer.css'], $jd_scripts,
 // VERSION grew from a one-line marker into an append-only changelog, so the
 // stamp reads the NEWEST (last) line and prints only its leading semver —
 // the prose tail after the em dash is for humans reading git, not for the
-// colophon (which printed the entire changelog until 2026-08-28).
-$jd_vlines  = preg_split('/\R/', trim((string) @file_get_contents(__DIR__ . '/VERSION')), -1, PREG_SPLIT_NO_EMPTY) ?: [];
-$jd_vlast   = $jd_vlines ? (string) end($jd_vlines) : '';
-$jd_version = $jd_vlast !== '' ? preg_split('/\s+—\s+/u', $jd_vlast)[0] : 'dev';
+// colophon (which printed the entire changelog until 2026-08-28). The reading
+// is _version.php's, shared with the tooling stamp (api/jd-build.php).
+require_once __DIR__ . '/_version.php';
+$jd_version = jd_version_marker(__DIR__ . '/VERSION');
 // The fingerprint and the deploy time cover the asset list plus the page's
 // own extras, in that order — computed once, over the merged list.
 $jd_stamped = (!empty($jd_extra_assets) && is_array($jd_extra_assets))

@@ -413,17 +413,15 @@ function jd_validate_ranking(array $ranking, array $okSlots): array
     // count($ranking) === count($okBySlot), every slot was a known ok slot and
     // none repeated, so by now every ok slot is present exactly once.
 
-    if (count(array_keys($rankBySlot, 1, true)) !== 1) {
+    // Exactly one first, then dense: the distinct ranks used, sorted, must be
+    // 1..k (jd_ranking_defect). Dense is what makes a stored order readable
+    // years later without knowing the field size — and it is checked on the
+    // values, so a client cannot smuggle a gap past the rank-1 test.
+    $defect = jd_ranking_defect($rankBySlot);
+    if ($defect === 'first') {
         jd_fail(400, 'ranking_invalid', 'Exactly one drawing must be ranked first.');
     }
-
-    // Dense: the distinct ranks used, sorted, must be 1..k. This is what makes
-    // a stored order readable years later without knowing the field size —
-    // and it is checked on the values, so a client cannot smuggle a gap past
-    // the rank-1 test.
-    $distinct = array_values(array_unique(array_values($rankBySlot)));
-    sort($distinct);
-    if ($distinct !== range(1, count($distinct))) {
+    if ($defect === 'gap') {
         jd_fail(400, 'ranking_invalid', 'Ranks must run 1, 2, 3 … with no gaps.');
     }
 
@@ -488,23 +486,16 @@ function jd_build_reveal(array $generations, array $taxonomy): array
             'status' => $generation['status'],
         ];
         if ($generation['status'] === 'ok') {
-            $usage = !empty($generation['usage_tokens'])
-                ? json_decode((string) $generation['usage_tokens'], true) : null;
-            $cost = jd_generation_cost(
+            $cost = jd_price_generation_row(
+                $generation['usage_tokens'] ?? null,
                 (string) ($generation['provider'] ?? ''),
-                (string) ($generation['model_version'] ?? ''),
-                is_array($usage) ? $usage : null
+                (string) ($generation['model_version'] ?? '')
             );
-            $t = $cost['tokens'];
             // the payload carries the three numbers a person reads; the cache
             // and reasoning buckets stay in the database (jd-spend.php's job)
-            $entry['tokens'] = $t === null ? null : [
-                'input' => $t['input'],
-                'output' => $t['output'],
-                'total' => $t['input'] + $t['cache_write'] + $t['cache_read'] + $t['output'],
-            ];
-            $entry['cost_usd'] = $cost['cost_usd'] === null
-                ? null : round($cost['cost_usd'], 6);
+            $shown = jd_cost_summary($cost);
+            $entry['tokens'] = $shown['tokens'];
+            $entry['cost_usd'] = $shown['cost_usd'];
             $entry['priced'] = $cost['priced'];
         }
         $reveal[] = $entry;

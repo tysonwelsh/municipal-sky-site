@@ -17,6 +17,8 @@
 // a bench page from the right deploy talking to a stale endpoint is exactly the
 // confusion this exists to make impossible.
 
+require_once __DIR__ . '/../art/junk-drawer/_version.php';   // jd_version_marker
+
 function jd_build_files(): array
 {
     $root = __DIR__ . '/..';
@@ -40,15 +42,12 @@ function jd_build_stamp(): array
     if ($memo !== null) {
         return $memo;
     }
-    $version = trim((string) @file_get_contents(__DIR__ . '/../art/junk-drawer/VERSION'));
     // VERSION is an append-only changelog: the NEWEST entry is the LAST line,
     // and its first token is the semver — the prose tail after the em dash is
     // for humans reading git, not for a one-line stamp. (Until 2026-08-28
     // this read the first token of the whole file and reported 0.9.41
-    // forever.)
-    $lines = preg_split('/\R/', $version, -1, PREG_SPLIT_NO_EMPTY) ?: [];
-    $last  = $lines ? (string) end($lines) : '';
-    $short = $last !== '' ? preg_split('/\s+—\s+/u', $last)[0] : 'dev';
+    // forever.) The drawer's colophon reads it the same way (_version.php).
+    $short = jd_version_marker(__DIR__ . '/../art/junk-drawer/VERSION');
 
     $hashes = [];
     $mtime  = 0;
