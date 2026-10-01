@@ -144,9 +144,10 @@
      label names the drawing it leads to ("next — drawing B →"); on this
      page the rail sits beside the button and already says where it goes, so
      the button reads just "next". Relabelled as the card renders — the turn
-     card re-renders on every step, so an observer on the pane catches each
-     new button (and the check keeps the observer from firing on its own
-     write). */
+     card re-renders on every step, so an observer on the instrument's host
+     catches each new button (and the check keeps the observer from firing
+     on its own write). The host, not the pane: the card only ever renders
+     there, and the host goes with it into its section on a phone. */
   function nextOnly() {
     /* (on a phone the instrument has left the pane for its own section) */
     var bs = (PHONE ? root : pane).querySelectorAll('[data-scene-pane="instrument"] .jd-turn-go[data-act="next"]');
@@ -154,8 +155,9 @@
       if (bs[i].textContent !== 'next') bs[i].textContent = 'next';
     }
   }
-  if (window.MutationObserver) {
-    new MutationObserver(nextOnly).observe(PHONE ? root : pane, { childList: true, subtree: true });
+  var nextHost = pane.querySelector('[data-scene-pane="instrument"]');
+  if (window.MutationObserver && nextHost) {
+    new MutationObserver(nextOnly).observe(nextHost, { childList: true, subtree: true });
   }
 
   /* ---- the poster (see index.php / about.css "THE POSTER") ----------------
@@ -255,6 +257,46 @@
      as they pass through the pane in one continuous strip */
   var GAP = 28;
 
+  /* PER-VIEWPORT READS. What the scroll tick and the fits read about the
+     page's own geometry — the pane's height and max-height, a phone's held
+     drawer — cannot change while the viewport keeps its size (the pane is
+     100vh less the banner, and the banner changes only at the 768px
+     breakpoint), so each is read once, and again only once the viewport
+     has changed. Keyed on the size itself rather than on the resize event,
+     so a timer that runs between a resize and its event reads fresh
+     values. */
+  var vp = null;
+  function viewport() {
+    var w = window.innerWidth, h = window.innerHeight;
+    if (!vp || vp.w !== w || vp.h !== h) vp = { w: w, h: h };
+    return vp;
+  }
+  /* the pane's own box, as place() and fitCard() read it */
+  function paneHeight() {
+    var v = viewport();
+    if (v.paneCH == null) v.paneCH = pane.clientHeight;
+    return v.paneCH;
+  }
+  function paneAvailH() {
+    var v = viewport();
+    if (v.availH == null) {
+      var maxH = parseFloat(getComputedStyle(pane).maxHeight);
+      if (!isFinite(maxH) || maxH <= 0) {
+        maxH = parseFloat(getComputedStyle(pane).height);
+      }
+      v.availH = isFinite(maxH) && maxH > 0 ? maxH - 10 : 0;
+    }
+    return v.availH;
+  }
+  /* ONE MediaQueryList for the narrow test, read live (.matches), rather
+     than a fresh one on every call — five of them per scroll tick. Made on
+     first use, where the first matchMedia call used to be. */
+  var narrowMQ = null;
+  function narrow() {
+    if (!narrowMQ) narrowMQ = window.matchMedia('(max-width: 768px)');
+    return narrowMQ.matches;
+  }
+
   /* ---- THE SCENE SPANS -----------------------------------------------------
      Cut on the SAME boundary the stepper uses. A scene runs from its first
      step's top to the NEXT scene's first step's top — not to its own last
@@ -262,11 +304,14 @@
      margin (they do on a phone) and would leave a dead band where the
      outgoing scene had finished travelling and the incoming had not started.
      Document offsets, so they are independent of scroll; the cache is
-     dropped whenever anything that could move them happens. */
+     keyed on everything that could move them — the document's height, the
+     viewport, the pane's own height — and dropped on a resize. (A fit no
+     longer drops it: the pane's height is fixed, and a card fitted inside
+     it moves no step.) */
   var spanCache = null, spanKey = '';
   function spans() {
     var key = document.documentElement.scrollHeight + 'x' +
-      window.innerHeight + 'x' + window.innerWidth;
+      window.innerHeight + 'x' + window.innerWidth + 'x' + pane.clientHeight;
     if (spanCache && spanKey === key) return spanCache;
     /* cut on VIEWS, not scenes: a scene may hold several views in a row
        (the report card turned to four drawings), and each is its own span */
@@ -298,12 +343,12 @@
      to the pane's height. */
   function litLine() {
     var h = window.innerHeight;
-    if (window.matchMedia('(max-width: 768px)').matches) return focusLine() + h * 0.12;
+    if (narrow()) return focusLine() + h * 0.12;
     return focusLine() + h * 0.2;
   }
   function focusLine() {
     var h = window.innerHeight;
-    if (window.matchMedia('(max-width: 768px)').matches) {
+    if (narrow()) {
       var b = pane.getBoundingClientRect().bottom;
       if (b > 0 && b < h) return b + (h - b) * 0.18;
     }
@@ -338,7 +383,7 @@
     var sp = spans();
     var at = window.pageYOffset + focusLine();
     var D = sp.paneH + GAP;
-    var phone = window.matchMedia('(max-width: 768px)').matches;
+    var phone = narrow();
     for (var i = 0; i < sp.order.length - 1; i++) {
       var a = sp.order[i], n = sp.order[i + 1];
       var b = a.bottom;
@@ -362,26 +407,36 @@
      Exactly one scene is CURRENT (in flow, centred by the pane); during a
      handoff one more is ASIDE (absolutely positioned where it would rest,
      then translated). Everything else is display:none. Positions are set
-     from the scroll offset on every scroll tick and nowhere else. */
+     from the scroll offset on every scroll tick and nowhere else — and
+     written only when they change: these inline styles (a scene's top and
+     transform, the relay's height) are written here and in relayShow() and
+     nowhere else, so the value last written is the value standing. */
+  function setOwn(el, prop, v) {
+    var k = '__jdOwn_' + prop;
+    if (el[k] === v) return;
+    el[k] = v;
+    el.style[prop] = v;
+  }
   function place(el, on, aside, y) {
     if (!el) return;
     el.classList.toggle('is-on', on);
     el.classList.toggle('is-out', aside && !on);
     if (!on && !aside) {
-      el.style.transform = '';
-      el.style.top = '';
+      setOwn(el, 'transform', '');
+      setOwn(el, 'top', '');
       return;
     }
     if (aside && !on) {
       /* rest position: centred in the pane, as the current scene is, so the
-         strip reads as one column of graphics passing through */
-      var ph = pane.clientHeight, hh = el.offsetHeight;
-      el.style.top = Math.max(0, Math.round((ph - hh) / 2)) + 'px';
+         strip reads as one column of graphics passing through. (Its height
+         is read AFTER is-out is on: that is the box it travels in.) */
+      var ph = paneHeight(), hh = el.offsetHeight;
+      setOwn(el, 'top', Math.max(0, Math.round((ph - hh) / 2)) + 'px');
     } else {
-      el.style.top = '';
+      setOwn(el, 'top', '');
     }
-    el.style.transform = (reduceMotion || !y) ? '' :
-      'translate3d(0,' + y.toFixed(1) + 'px,0)';
+    setOwn(el, 'transform', (reduceMotion || !y) ? '' :
+      'translate3d(0,' + y.toFixed(1) + 'px,0)');
   }
 
   function layout() {
@@ -428,7 +483,8 @@
        lays out at another width and no longer matches the scale it was cut
        at. (sceneEls was collected before the relay existed, so the name
        adds no scene.) */
-    relay.setAttribute('data-scene-pane', host.getAttribute('data-scene-pane'));
+    var name = host.getAttribute('data-scene-pane');
+    if (relay.getAttribute('data-scene-pane') !== name) relay.setAttribute('data-scene-pane', name);
     if (relay.__key !== key || snap.node.parentNode !== relay) {
       while (relay.firstChild) relay.removeChild(relay.firstChild);
       /* the strip stays (it is part of the card's height); only the marks
@@ -437,7 +493,7 @@
       relay.appendChild(snap.node);
       relay.__key = key;
     }
-    relay.style.height = Math.ceil(snap.h) + 'px';
+    setOwn(relay, 'height', Math.ceil(snap.h) + 'px');
     return true;
   }
 
@@ -713,7 +769,7 @@
     if (PHONE || !host) return false;   /* phone cards stand at 1:1 */
     var card = realCard(host);
     if (!card || !hasContent(card)) return false;
-    ensureAside(host);
+    if (host === sceneEls.record) ensureAside(host);   /* only the report card has the pair */
     ensureFilmstrip(host);
 
     var natW = card.offsetWidth;
@@ -721,11 +777,7 @@
     if (!natW || !natH || natH < 80) return false;
 
     var availW = pane.clientWidth;
-    var maxH = parseFloat(getComputedStyle(pane).maxHeight);
-    if (!isFinite(maxH) || maxH <= 0) {
-      maxH = parseFloat(getComputedStyle(pane).height);
-    }
-    var availH = isFinite(maxH) && maxH > 0 ? maxH - 10 : 0;
+    var availH = paneAvailH();       /* the pane's max-height less 10px */
     if (!availW) return false;
 
     var k = Math.min(1, availW / natW);
@@ -771,7 +823,6 @@
        visible ghost by half the difference for a frame */
     host.style.height = Math.ceil(host.__hold && host.__ghostH ? host.__ghostH : natH * k) + 'px';
     host.__jdFit = { natW: natW, natH: natH, k: k, availW: availW, availH: availH, card: card };
-    spanCache = null;
     /* the real card is whole and sized: its ghost, if one was standing in
        for it, has done its job — but only while this scene is the current
        one. A scene that is aside or off shows its ghost by design (the
@@ -808,6 +859,7 @@
      and identical ladders queued within a few ms of each other only fit
      the same card twice at each rung. The first stands for the rest. */
   function fitSoon(host) {
+    if (PHONE) return;                  /* phone cards are never fitted */
     fitCard(host);
     var now = Date.now();
     if (host.__fitSoonAt != null && now - host.__fitSoonAt < 10) return;
@@ -837,7 +889,7 @@
   }) : null;
 
   function watchCard(host) {
-    if (!ro || !host) return;
+    if (!ro || !host || PHONE) return;  /* (nor watched for it) */
     var card = realCard(host);
     if (!card) return;
     if (!card.__jdWatched) { card.__jdWatched = true; ro.observe(card); }
@@ -2231,11 +2283,10 @@
   var lastGuard = 0;
   function pickStep() {
     ticking = false;
-    /* the self-heal forces a layout read; once every 200ms is plenty for a
-       repair and keeps the per-tick work to the transforms themselves */
-    var now = Date.now();
-    if (now - lastGuard > 200) { lastGuard = now; guardFit(); }
-    layout();
+    /* the steps are read FIRST, off the layout the scroll left, before the
+       self-heal and the layout below write to the pane: the steps stand
+       beside the pane, which is a fixed height, so nothing written there
+       moves them — and reading them afterwards forced a second layout */
     var line = focusLine(), lit = litLine();
     var chosen = stepEls[0], lighted = stepEls[0];
     for (var i = 0; i < stepEls.length; i++) {
@@ -2243,6 +2294,11 @@
       if (t <= line) chosen = stepEls[i];
       if (t <= lit) lighted = stepEls[i]; else break;
     }
+    /* the self-heal forces a layout read; once every 200ms is plenty for a
+       repair and keeps the per-tick work to the transforms themselves */
+    var now = Date.now();
+    if (now - lastGuard > 200) { lastGuard = now; guardFit(); }
+    layout();
     /* THE TEXT LIGHTS AS IT ARRIVES (owner, 2026-09-28: "it's only fully
        opaque when it's just beginning to leave"). A step's prose brightens —
        and a step's focus on its card takes hold — when its top crosses the
@@ -2272,13 +2328,26 @@
     if (host && f) host.setAttribute('data-focus', f);
   }
 
+  /* ON THE FRAME, OR ON A SHORT TIMER WHEN NO FRAME COMES: fn runs once,
+     whichever arrives first. The timer is cleared when the frame wins — it
+     used to stay pending its 48ms after the frame had run. (Shared with the
+     phone's tick.) */
+  function frameOrTimer(fn) {
+    var done = false, timer = null;
+    function run() {
+      if (done) return;
+      done = true;
+      if (timer !== null) clearTimeout(timer);
+      fn();
+    }
+    if (window.requestAnimationFrame) window.requestAnimationFrame(run);
+    timer = setTimeout(run, 48);
+  }
+
   function onScroll() {
     if (ticking) return;
     ticking = true;
-    var done = false;
-    function run() { if (done) return; done = true; pickStep(); }
-    if (window.requestAnimationFrame) window.requestAnimationFrame(run);
-    setTimeout(run, 48);
+    frameOrTimer(pickStep);
   }
 
   if (!PHONE) {
@@ -2293,7 +2362,7 @@
      step — the ordinary page scroll, so the stepper reacts exactly as it
      would to a wheel. */
   var tlEl = document.getElementById('jd-timeline');
-  var tlStops = {};
+  var tlStops = {}, tlGroups = [];
 
   function sceneLabel(id) {
     return { drawer: 'The drawer', instrument: 'The instrument',
@@ -2317,6 +2386,7 @@
         name.textContent = sceneLabel(scene);
         group.appendChild(name);
         frag.appendChild(group);
+        tlGroups.push(group);
       }
       var b = document.createElement('button');
       b.type = 'button';
@@ -2353,7 +2423,7 @@
         b.classList.toggle('is-done', passed);
       }
     });
-    [].slice.call(tlEl.querySelectorAll('.jd-tl-scene')).forEach(function (g) {
+    tlGroups.forEach(function (g) {
       g.classList.toggle('is-on', g.getAttribute('data-tl-scene') === scene);
     });
   }
@@ -2686,7 +2756,13 @@
        while the drawer is in view and the reader has started down the
        opening step, and the tag then stays up */
     var dpin = sceneEls.drawer && sceneEls.drawer.closest('.jd-ph-pin');
-    function drawerStatic() { return !!dpin && getComputedStyle(dpin).position !== 'sticky'; }
+    /* (the pin's position is the stylesheet's, by screen size: read once
+       per viewport, not on every scroll) */
+    function drawerStatic() {
+      var v = viewport();
+      if (v.drawerStatic == null) v.drawerStatic = !!dpin && getComputedStyle(dpin).position !== 'sticky';
+      return v.drawerStatic;
+    }
     var earlyLift = false;
     function lift(step) {
       if (step !== 'graded') {
@@ -2712,19 +2788,22 @@
     });
     function tick() {
       ticking = false;
+      /* every read first (the scroll's own layout), then the one write */
       var max = document.documentElement.scrollHeight - window.innerHeight;
       var f = max > 0 ? Math.min(1, Math.max(0, window.pageYOffset / max)) : 0;
-      prog.style.transform = 'scaleX(' + f.toFixed(4) + ')';
       var line = window.innerHeight * 0.62, chosen = stepEls[0];
       for (var i = 0; i < stepEls.length; i++) {
         if (stepEls[i].getBoundingClientRect().top <= line) chosen = stepEls[i];
         else break;
       }
-      if (!earlyLift && drawerStatic() && window.pageYOffset >= 120) {
+      var early = false;
+      if (!earlyLift && window.pageYOffset >= 120 && drawerStatic()) {
         var fr = dpin.getBoundingClientRect();
         var seen = Math.min(fr.bottom, window.innerHeight) - Math.max(fr.top, 0);
-        if (fr.height && seen / fr.height >= 0.7) { earlyLift = true; curStep = 'graded'; lift('graded'); }
+        early = !!(fr.height && seen / fr.height >= 0.7);
       }
+      prog.style.transform = 'scaleX(' + f.toFixed(4) + ')';
+      if (early) { earlyLift = true; curStep = 'graded'; lift('graded'); }
       if (chosen === cur) return;
       cur = chosen;
       curStep = chosen.getAttribute('data-step');
@@ -2733,10 +2812,7 @@
     function onTick() {
       if (ticking) return;
       ticking = true;
-      var done = false;
-      function run() { if (done) return; done = true; tick(); }
-      if (window.requestAnimationFrame) window.requestAnimationFrame(run);
-      setTimeout(run, 48);
+      frameOrTimer(tick);
     }
     window.addEventListener('scroll', onTick, { passive: true });
     /* a phone's toolbar resizes the window mid-scroll, and the pile drops
