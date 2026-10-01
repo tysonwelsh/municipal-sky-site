@@ -10,6 +10,7 @@
      JD_dark.well(slot, anim, seed) one indicator's markup for a well
      JD_dark.mount(root)            build the word drift(s) in the painted DOM
      JD_dark.stopAll()              stop every drift's metronome
+     JD_dark.stop(host)             stop the drift(s) in one host only
    Seeding is the house fold (JD_fnv1a / JD_xorshift, jd-core.js), so a
    repaint or a restored turn re-derives the identical animation. Loaded
    after jd-core.js and before jd-turn.js. See jd-core.js for the file map.
@@ -1005,6 +1006,23 @@
     });
     jdDriftSheets = [];
   }
+  /* …or only the drift(s) in ONE host: every sheet whose host is `host` or
+     sits inside it. The turn calls this for a landed swatch once its well
+     has faded out — stopping at the landing itself would drop the letters
+     that are still due during the 0.5s fade, and those show. Letters
+     already falling finish their fall where they are (fill: both) and are
+     never landed; the well is at opacity 0 by then. A null or unknown host,
+     or one holding no drift, is a no-op. */
+  function jdDriftStop(host) {
+    if (!host || typeof host.contains !== 'function') return;
+    jdDriftSheets = jdDriftSheets.filter(function (st) {
+      if (!host.contains(st.host)) return true;
+      st.beats.forEach(clearInterval);
+      st.polls.forEach(clearInterval);
+      st.beats = []; st.polls = [];
+      return false;
+    });
+  }
 
   function jdDriftBuild(host) {
     var C = JD_DRIFT.cell;
@@ -1286,6 +1304,7 @@
       '<circle class="w-pin" cx="20" cy="22" r="1.2"/></svg>';
   }
   window.JD_dark = {
-    deal: darkDeal, well: darkWell, mount: jdDriftMount, stopAll: jdDriftStopAll
+    deal: darkDeal, well: darkWell, mount: jdDriftMount, stopAll: jdDriftStopAll,
+    stop: jdDriftStop
   };
 })();
