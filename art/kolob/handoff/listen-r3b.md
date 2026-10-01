@@ -285,7 +285,6 @@ The drone's notes are named from the day's keynote (do), whatever the mode.
 |---|---|
 | `&exp=-reckoning` | the same Sunday, the same hymns and doxology, with the drone on the keynote all meeting |
 | `&choir=house` | round 3's four voices instead of the ward |
-| `&organ=house` | the old organ instead of the pipe organ and the organist |
 | `&exp=-singingSchool` | no singing school |
 | `&latin=1` | the page in English |
 

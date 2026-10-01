@@ -78,8 +78,8 @@ own constants):
   letterpress edge (v0.35.1). A note is struck whole on a proof sheet at
   full strength and laid on the page once at its paleness (`impress`/`stamp`),
   so head, stem, flags, ledgers and beam never print darker where they meet.
-- **No text on the staff.** The one glyph that is not a note is the shelved Question's "?"
-  and cartouche, kept in green pending the owner's word.
+- **No text on the staff.** (The shelved Question's "?" and cartouche, the one glyph that
+  was text, left the live tree on 2026-10-01: `shelved/kolob-question-setpiece.js`.)
 - **No pulse or expanding-ring animations.** A bell is a static ringed head, its ring
   standing off the head so it is one outline . Nothing moves but the
   scroll and the drying — and the band's layer, which slides at its own rate (the owner's

@@ -35,7 +35,6 @@ window.KOLOB = window.KOLOB || {};
   function stringsPad(t, dur, gainMul, fifthOnly) { return S.stringsPad(t, dur, gainMul, fifthOnly); }
   // from kolob-meeting.js
   function inFuging() { return S.inFuging(); }
-  function inQuestion() { return S.inQuestion(); }
   function silenceMul() { return S.silenceMul(); }
   function gapMul() { return S.gapMul(); }
   // from kolob-core.js
@@ -203,7 +202,7 @@ window.KOLOB = window.KOLOB || {};
     // harmonium and the deacon waiting (kolob-calendar.js SCENES); a rite
     // LINED OUT ONLY: the ward answers the deacon's lines, as in a hymn
     var scene = !sings && S.Meeting.scene ? S.Meeting.scene() : null;
-    if (scene && scene.hum && !scene.hum.sung && !S.Meeting.jointing() && !S.hallListens() && !inQuestion() && S.localArc() > 0.06 && S.localArc() < 0.6) {
+    if (scene && scene.hum && !scene.hum.sung && !S.Meeting.jointing() && !S.hallListens() && S.localArc() > 0.06 && S.localArc() < 0.6) {
       choirHum(tc, scene); return;
     }
     var answers = !!(scene && scene.lined);
@@ -218,7 +217,7 @@ window.KOLOB = window.KOLOB || {};
     // sing half a minute into whatever came next)
     // (nor while a planned fuging waits for its window: the verses leave it
     // free — see the conductor's fuging)
-    if ((!sings && !(answers && Motif.pendingLineOut("choir"))) || inFuging() || inQuestion() || S.Meeting.jointing() || S.Meeting.fugingNear()) { cueIn("choir", 6, choirVerse); return; }
+    if ((!sings && !(answers && Motif.pendingLineOut("choir"))) || inFuging() || S.Meeting.jointing() || S.Meeting.fugingNear()) { cueIn("choir", 6, choirVerse); return; }
     if (!airFree()) { cueIn("choir", wait("choir").rnd(4, 9), choirVerse); return; }
 
     var R = turn("choir");
@@ -771,9 +770,10 @@ window.KOLOB = window.KOLOB || {};
   // (S.Meeting.organist — kolob-organist.js's seat), writing the hymn in
   // pieces (hymnHands) on the hymn's own stream (hymn:<n>:<i> →
   // organist:<style>), at the chorister's beat — or null: an unaccompanied
-  // hymn, the house organ asked for (?organ=house), no organist or no pipes
-  // on the page, or a fuge sung twice (the ward's order of lines, which the
-  // organist's writer does not keep: the house organ plays that one)
+  // hymn, no organist or no pipes on the page (no page of ours), or a fuge
+  // sung twice (the ward's order of lines, which the organist's writer does
+  // not keep: the sheet's own organ lines play that one, wardOrgan — and a
+  // Tabernacle hymn, the one dialect with an organ, has no fuge)
   function organistAt(h, row, P, plan) {
     if (!P.organ || !S.pipeOn || !S.pipeOn() || !S.organistPlays) return null;
     var O = KOLOB.Organist, who = S.Meeting.organist ? S.Meeting.organist() : null;
@@ -1171,8 +1171,8 @@ window.KOLOB = window.KOLOB || {};
     return out;
   }
   // the organ's lines on a ward's sheet (the giving-out, under the verses,
-  // under the A-men): the house organ plays each part legato
-  // (organPartLine), on the chorister's clock
+  // under the A-men): each part legato on sines (organPartLine), on the
+  // chorister's clock
   function wardOrgan(t0, o, sheet) {
     if (sheet.hymnId && !S.Meeting.hands.owns(sheet.hymnId)) return;
     var h = sheet.hymn, base = S.F0 * S.ROOT_MULT * mzRatio(h.keyMonzo);
@@ -1303,9 +1303,8 @@ window.KOLOB = window.KOLOB || {};
     // manner, the Score's four parts under every verse on the chorister's
     // clock (the same arithmetic as the ward's, note for note), a fill
     // between two lines now and then (the ward waits for it), an interlude
-    // between the verses, the amen. Without the pipes or the organist (the
-    // A/B, ?organ=house; a lab without them), the house organ's part lines
-    // (wardOrgan, on the sheet).
+    // between the verses, the amen. Without the organist's hands on it
+    // (organistAt: null), the sheet's own organ lines on sines (wardOrgan).
     var org = organistAt(h, row, P, plan), who = org ? S.Meeting.organist() : null, V = plan.verses.length;
     // (THE FAR WARD — another congregation across the valley may sing this
     // hymn with us, a line behind, verse by verse; the meeting

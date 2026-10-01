@@ -51,7 +51,6 @@ window.KOLOB = window.KOLOB || {};
   function choirHarmonizedLine(t, harmonized, beat, gainMul) { return S.choirHarmonizedLine(t, harmonized, beat, gainMul); }
   // from kolob-voices-winds.js
   function renderClarinetLine(t, notes, gainMul, R) { return S.renderClarinetLine(t, notes, gainMul, R); }
-  function renderHarmonium(t, notes, gainMul) { return S.renderHarmonium(t, notes, gainMul); }
   // from kolob-voices-ground.js
   function stringsPad(t, dur, gainMul, fifthOnly) { return S.stringsPad(t, dur, gainMul, fifthOnly); }
   function bellStrike(t, gainMul, base, dest, opts) { return S.bellStrike(t, gainMul, base, dest, opts); }
@@ -158,79 +157,12 @@ window.KOLOB = window.KOLOB || {};
 
   // ==========================================================================
   // IVES VISITATIONS — rare guests, drawn at planMeeting on independent dice.
-  //
-  // THE UNANSWERED QUESTION (after Ives, 1908) — SHELVED (the owner,
-  // 2026-09-27: "one of the less interesting guests"). The code is kept and
-  // never runs on the live page: kolob-meeting.js throws its dice and seats
-  // nothing, and its generator is shelved/kolob-question.js. As written: the
-  // drone is the eternal ground and never changes; the clarinet asks ONE
-  // fixed phrase over and over — it refuses the motif engine's development,
-  // which is the point; the harmonium answers, each time faster, denser,
-  // higher, more scattered. The last asking gets no answer. The air is
-  // claimed, so the meeting holds back and the drone is left alone with it.
-  // Whoever unshelves it: the answers are told as the guest's, but the
-  // clarinet's askings are told inside renderClarinetLine, which takes no
-  // tag — an unlogged Question must pass one there; and the second rank's
-  // PURE fifth above an answer can fall outside the day's tuning (the
-  // harness lists it as off the tuning) — take the collection's own fifth,
-  // as the strings' pureFifth guard does, or rule that the argument may
-  // leave it.
+  // (The Unanswered Question, after Ives, 1908, was the first of them and is
+  // shelved — the owner, 2026-09-27: "one of the less interesting guests";
+  // its set piece left this file on 2026-10-01 for
+  // shelved/kolob-question-setpiece.js, its generator is
+  // shelved/kolob-question.js, and kolob-meeting.js still throws its dice.)
   // ==========================================================================
-  function unansweredQuestion(V, tc) {
-    var R = stream("guest:question");
-    var t = tc + 0.5;
-    var beat = R.rnd(0.8, 0.95);
-    // the perennial question: rising, angular, ending high and unresolved
-    // (a 9th above the root — a step past the octave, asking)
-    var QDEGS = [[4, 1.3], [5, 0.9], [8, 1.0], [6, 0.8], [8, 2.8]];
-    var qNotes = QDEGS.map(function (q) {
-      return { f: degFreq(projDeg(q[0]) + colN()), dur: q[1] * beat };
-    });
-    var qdur = 0;
-    for (var qq = 0; qq < qNotes.length; qq++) qdur += qNotes[qq].dur;
-    var N = R.rint(4, 5);
-    var cursor = t;
-    for (var k = 0; k < N; k++) {
-      renderClarinetLine(cursor, qNotes, 0.9, R);
-      var afterQ = cursor + qdur;
-      if (k < N - 1) {
-        // the answer: more notes, quicker, higher, less patient each time
-        var aAt = afterQ + R.rnd(1.2, 2.2);
-        var count = 3 + k * 2;
-        var abeat = 1.25 * Math.pow(0.75, k);
-        var lift = k >= 2 ? colN() : 0;
-        var adeg = 2, anotes = [];
-        for (var an = 0; an < count; an++) {
-          adeg += R.rint(-(1 + k), 1 + k) || 1;
-          adeg = Math.max(0, Math.min(9 + k, adeg));
-          anotes.push({ f: degFreq(projDeg(adeg) + colN() + lift), dur: Math.max(0.3, abeat * R.rnd(0.7, 1.2)) });
-        }
-        var adur = renderHarmonium(aAt, anotes, 0.5 + k * 0.12);
-        S.reportLine("harmonium", aAt, anotes, guestNote(V, "question"));
-        // from the third answer the answerers argue among themselves (a
-        // pure fifth above each answer: see SHELVED, above)
-        if (k >= 2) {
-          var bnotes = anotes.map(function (n) { return { f: n.f * 1.5, dur: n.dur * R.rnd(0.8, 1) }; });
-          renderHarmonium(aAt + abeat * 0.5, bnotes, 0.3 + k * 0.08);
-          S.reportLine("harmonium", aAt + abeat * 0.5, bnotes, guestNote(V, "question", { part: "doubling" }));
-        }
-        cursor = aAt + adur + R.rnd(2.5, 4.5) * Math.pow(0.85, k);
-      } else {
-        cursor = afterQ;                       // the last asking hangs
-      }
-    }
-    var tail = 10;                             // the drone alone — no answer comes
-    var total = (cursor - t) + tail;
-    claimAir(total - 4, 6);
-    // (SCORE §6: one event for the askings — this question is the old one,
-    // q:old — and one when the drone is left alone)
-    tell(V, { type: "question-asking", k: 0, questionId: "q:old", askings: N, dur: total,
-              cat: "visitation", label: "? the question", detail: "×" + N + " askings · " + Math.round(total) + "s" });
-    cueAt("guests", tc + (cursor - t + 1.5), function () {
-      tell(V, { type: "question-unanswered", cat: "visitation", label: "? unanswered", detail: "the drone alone" });
-    });
-    return total;
-  }
 
   // ==========================================================================
   // FROM THE STEEPLES (after Ives, 'From the Steeples and the Mountains'):
@@ -1049,7 +981,6 @@ window.KOLOB = window.KOLOB || {};
   // ==========================================================================
   S.razzCluster = razzCluster;
   S.cumulativeAssembly = cumulativeAssembly;
-  S.unansweredQuestion = unansweredQuestion;
   S.steeplesAnswer = steeplesAnswer;
   S.oldTunePool = oldTunePool;
   S.oldTuneCandidates = oldTuneCandidates;
@@ -1069,7 +1000,7 @@ window.KOLOB = window.KOLOB || {};
   // them: linesHeld(tune, mode), linesAdmitted(tune, mode), excerpt(tune, k),
   // octaveFor(notes), leapLeans(monzos, joined), wolfLeap(a, b))
   KOLOB.Guests = {
-    cumulativeAssembly: cumulativeAssembly, unansweredQuestion: unansweredQuestion, steeplesAnswer: steeplesAnswer,
+    cumulativeAssembly: cumulativeAssembly, steeplesAnswer: steeplesAnswer,
     oldTuneRemembered: oldTuneRemembered, oldTuneCandidates: oldTuneCandidates, oldTunePool: oldTunePool, trombonesAtDawn: trombonesAtDawn,
     handbellsRing: handbellsRing, singingSchool: singingSchool, nauvooBand: nauvooBand, handcartCompany: handcartCompany, gullsOver: gullsOver,
     organistVariations: organistVariations, changesRing: changesRing, tonguesGift: tonguesGift, socialHall: socialHall,

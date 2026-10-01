@@ -371,7 +371,7 @@ each guest; notes per minute and median note length per layer; events per
 meeting by category (not `transport`); the mix of modes and kinds of Sunday.
 It also runs the **plan checks** a dump can answer: the plagal share of
 cadences, 30–55 % (§12); meetings with a guest, ≈ 55 % ± 15 (§8, §13); mean
-meeting length 13–16 min (§0); the Question never seats (shelved, §14). **The
+meeting length 13–16 min (§0). **The
 report** (`report.md`): the plan checks as a table (check, plan, measured,
 ✓/✗); one table per group (sections, cadences, joints, guests, notes, events,
 modes…) with each metric's value and how many meetings carry it; *Per meeting*

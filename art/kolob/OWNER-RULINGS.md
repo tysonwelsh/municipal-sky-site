@@ -44,8 +44,9 @@ Quotations are the owner's words. The record is `archive/plans/PLAN-COMPOSITION.
   (§14.5). **2026-09-27 — A section may lengthen for a guest: "it's ambient music … if the section needs to
   be a bit longer, that's okay"** (`kolob-meeting.js` `jointHeld`).
 - **2026-09-27 — The Question is shelved: "one of the less interesting guests… there's better stuff we could
-  be focusing on."** Its dice are still thrown (`kolob-meeting.js` `SHELVED_GUESTS`; the code in
-  `shelved/`); the askers and the cornet's 55 % are withdrawn, the cornet stays as the band's lead.
+  be focusing on."** Its dice are still thrown (`kolob-meeting.js` planMeeting, `qDie`/`qSeatDie`); the
+  code is in `shelved/` (the generator; since 2026-10-01 the set piece and the staff's cartouche too);
+  the askers and the cornet's 55 % are withdrawn, the cornet stays as the band's lead.
 - **2026-09-27 — The invocation prays (a chant on the drone): declined** (§15.1). **2026-09-27 — The
   organist's prelude on the day's first hymn: approved, "keep it a draw"** (`kolob-meeting.js`
   `preludeDraw`; §15.2).
@@ -110,8 +111,8 @@ Quotations are the owner's words. The record is `archive/plans/PLAN-COMPOSITION.
 - **2026-09-27 (for v0.32) — Green ink only:** no gilt strike, no cooling, no glow; only the drying fades a
   note (`C_INK`). **2026-09-27 — No text on the staff:** no 8va/15ma, no captions, no time
   figures for the band; out-of-range notes take the ledger room, then fold silently by octaves
-  ("Everything is green; nothing is text"). The Question's cartouche and "?" stay, in
-  green, pending the owner's word (moot while it is shelved).
+  ("Everything is green; nothing is text"). The Question's cartouche and "?" — the one glyph that
+  was text — left the live tree with its set piece on 2026-10-01 (`shelved/kolob-question-setpiece.js`).
 - **2026-09-27 — The telegraph is holes punched straight into the paper** along the middle of the gap, no
   tape, no container. **2026-09-27 — No pulse or expanding-ring animations:** a bell is a
   static ringed head; only the scroll and the drying move .
@@ -157,7 +158,8 @@ Quotations are the owner's words. The record is `archive/plans/PLAN-COMPOSITION.
 ## Shelved and declined
 
 - The bagpipe (2026-09-13) and the Question (2026-09-27), with the Question's askers, the cornet's 55 %,
-  §8.1 and Phase 1 — `shelved/`; `SHELVED_GUESTS`, `kolob-meeting.js`. The pin drop (§14.5) and the
+  §8.1 and Phase 1 — `shelved/` (`kolob-question.js`, `kolob-question-setpiece.js`); its dice still
+  thrown in `kolob-meeting.js`. The pin drop (§14.5) and the
   invocation that prays (§15.1): declined. Engraving directions B and C; on the page, rubrics, words, the
   gilt strike, 8va signs, captions, the band's time figures, the telegraph's tape and word, pulse
   animations, the drone's bar, the running head.
@@ -190,8 +192,9 @@ ear" notes. None has been heard: rounds 3b and 3c were measured, not listened to
   rite's first chord; `RECKON_CANDIDATES` (`kolob-calendar.js`, 24) sets how many Sundays reckon. **The
   Tabernacle's men's verses** come out mostly in unison (listen-r3b).
 - **Johnston's tuning marks** (`kolob-viz.js`); **the sparer staff** (§15, "may come back later").
-  **The A/B fallbacks wait for the owner's choice** before the loser retires: the house choir
-  (`?choir=house`, `kolob-core.js`), the house organ (`?organ=house`).
+  **The house choir A/B waits for the owner's choice** before the loser retires (`?choir=house`,
+  `kolob-core.js`). **The house organ is retired** (2026-10-01, "let's ditch the old organ"): the pipes
+  play every chord; `organPartLine` stays as the house choir's organ.
 - **What to scale back:** the far ward in pews, the Hosanna without the Primary's children or on a smaller
   registration, fewer second bands (listen-r3c "Where to save"). **The caterpillar:** "a few more passes";
   nobody has watched it move at full frame rate (handoff/caterpillar-1.md:287).

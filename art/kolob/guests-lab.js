@@ -146,10 +146,8 @@ window.GuestsLab = (function () {
   function bellMaterial(st, o) {
     return HB.prepare({ hymn: composeHymn(st), keynoteHz: st.keynote, seat: o.seat || seatNow(), piece: o.piece || null, phone: o.phone != null ? o.phone : phoneNow() }, hbStream(st.seed));
   }
-  function schoolMaterial(st, o) {
-    o = o || {};
-    var ph = o.phone != null ? o.phone : (function () { var e = document.getElementById("kgl-ssphone"); return !!(e && e.checked); })();
-    return SS.prepare({ hymn: composeHymn(st), keynoteHz: st.keynote, phone: ph }, ssStream(st.seed));
+  function schoolMaterial(st) {
+    return SS.prepare({ hymn: composeHymn(st), keynoteHz: st.keynote }, ssStream(st.seed));
   }
   function seatNow() { return val("kgl-seat", "invocation"); }
   function pieceNow() { var v = val("kgl-piece", "auto"); return v === "auto" ? null : v; }
@@ -759,10 +757,7 @@ window.GuestsLab = (function () {
       SS.CONSONANTS = cons.value === "all" ? { section: "all", chorister: "all" } : cons.value === "vowels" ? { section: "vowels", chorister: "vowels" } : { section: "voiced", chorister: "auto" };
       schoolPlan();
     });
-    var sph = el("input"); sph.type = "checkbox"; sph.id = "kgl-ssphone";
-    var lsph = el("label"); lsph.appendChild(sph); lsph.appendChild(document.createTextNode(" a phone's choir (one desk a part)"));
-    sph.addEventListener("change", schoolPlan);
-    rowC.appendChild(lc); rowC.appendChild(lsph);
+    rowC.appendChild(lc);
     card.appendChild(rowC);
     var row = el("div", "kgl-row");
     var bPlay = button("▶ the practice", "kgl-play", function () { play("school").then(function () { if (current) current.costEl = ssView.cost; }); });

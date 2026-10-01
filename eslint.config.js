@@ -34,7 +34,9 @@ const browserGlobals = {
 };
 
 module.exports = [
-  { ignores: ["node_modules/**", "art/kolob/tools/out/**", "art/kolob/mockups/**", "**/*.min.js"] },
+  // (shelved/kolob-question-setpiece.js is reference text, not a room: pieces
+  // copied out of four files, with their free names)
+  { ignores: ["node_modules/**", "art/kolob/tools/out/**", "art/kolob/mockups/**", "**/*.min.js", "art/kolob/shelved/kolob-question-setpiece.js"] },
   {
     files: ["art/kolob/**/*.js"],
     languageOptions: { ecmaVersion: 2020, sourceType: "script", globals: browserGlobals },

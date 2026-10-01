@@ -133,13 +133,11 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
 
 - **Rounds 3b and 3c have not been listened to.** Every level since the ward was set by
   measurement against the organ reference (listen-r3b, listen-r3c).
-- **Retire the A/B losers once the ear has chosen** (README): the house choir
-  (`?choir=house`, `kolob-core.js`; `kolob-voices-choir.js` keeps two
-  near-twin performers) and the house organ (`?organ=house`, `kolob-core.js`;
-  `kolob-voices-organ.js`). The fife `twoBandsCross`, the band's old fallback, was
-  retired on 2026-10-01 (commits e14a660 and 192527a: gone from `kolob-guests.js`;
-  `kolob-meeting.js` `VISIT_FN` names `nauvooBand` only), so README's "Open threads"
-  line about the fife is stale.
+- **Retire the house choir once the ear has chosen** (README): `?choir=house`,
+  `kolob-core.js`; `kolob-voices-choir.js` keeps two near-twin performers
+  (`singHymnHouse`; `organPartLine` in `kolob-voices-organ.js` is its organ).
+  The house organ (`?organ=house`) was retired on 2026-10-01, the fife
+  `twoBandsCross` the same day (commits e14a660 and 192527a).
 - **The guests' odds** (`kolob-calendar.js` `GUEST_ODDS`): the band's share against the
   rest; each guest's row "a starting point, for the owner's ear"; the trombones' base 0.21
   "the integrator's to rule on once the owner has heard the new sound."

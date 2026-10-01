@@ -40,7 +40,6 @@ window.KOLOB = window.KOLOB || {};
   // from kolob-guests.js
   function razzCluster() { return S.razzCluster(); }
   function cumulativeAssembly(t) { return S.cumulativeAssembly(t); }
-  function unansweredQuestion(V, t) { return S.unansweredQuestion(V, t); }
   function steeplesAnswer(V, t) { return S.steeplesAnswer(V, t); }
   function oldTuneCandidates() { return S.oldTuneCandidates(); }
   function oldTuneRemembered(V, t) { return S.oldTuneRemembered(V, t); }
@@ -297,6 +296,11 @@ window.KOLOB = window.KOLOB || {};
     function oddsOf(g, dflt) { var o = CAL && CAL.guestOdds ? CAL.guestOdds(g, sunday) : null; return o != null ? o : dflt; }
     var forcedDie = R.rnd(0, 1);
     var qDie = R.chance(0.29), qSeatDie = R.chance(0.7);
+    // DICE: the Question's — shelved (the owner, 2026-09-27: "one of the less
+    // interesting guests… there's better stuff we could be focusing on"; its
+    // set piece is shelved/kolob-question-setpiece.js) — thrown and never
+    // read, so every later draw lands where it did
+    void qDie; void qSeatDie;
     // (the band plans itself, on guest:bands:<n>: these two are thrown, unused)
     var bDie = R.chance(oddsOf("bands", 0.36)), bSeatDie = R.chance(0.7);
     void bDie; void bSeatDie;   // DICE: thrown and never read, so every later draw lands where it did
@@ -316,12 +320,6 @@ window.KOLOB = window.KOLOB || {};
     C.visitType = null;
     C.visitSecond = false;
     C.visitLogged = true;
-    // THE QUESTION IS SHELVED (owner, 2026-09-27: "one of the less interesting
-    // guests… there's better stuff we could be focusing on"). Its code stays
-    // in kolob-guests.js; it simply never seats. Its dice are still thrown
-    // below, so every other draw of the meeting falls exactly where it did.
-    // The forcing switch no longer offers it.
-    var SHELVED_GUESTS = { question: true };
     // (the switch draws its guest; a dev who names one — the harness, a
     // lab — gets that one, and the die is thrown all the same)
     // (every guest may be named — the handcart company, the
@@ -413,17 +411,6 @@ window.KOLOB = window.KOLOB || {};
     var hoOdds = oddsOf("hosanna", null);
     var hoAsk = HOg && SUN && SUN.hosanna ? HOg.plan({ n: C.meetingNum, kind: activity, sunday: sunday, sections: plan, guests: [], odds: hoOdds, force: forcedType === "hosanna" }, hoStream) : null;
     if (hoAsk) C.budget.reserved = "hosanna";
-    // THE QUESTION is shelved (owner, 2026-09-27): SHELVED_GUESTS keeps it from
-    // seating and the switch never names it, so this block seats nothing. qDie
-    // and qSeatDie above are still thrown so every later draw lands where it
-    // did. Its set piece is kolob-guests.js unansweredQuestion, its generator
-    // shelved/kolob-question.js.
-    if (forcedType === "question" || qDie) {
-      var qSeat = (forcedType === "question" || qSeatDie)
-        ? seatIn(["invocation", "testimony", "hymn"])
-        : seatIn(["testimony", "interlude", "invocation"]);
-      if (qSeat && !SHELVED_GUESTS.question) C.visitations.push({ type: "question", section: qSeat, fired: false });
-    }
     // THE NAUVOO BRASS BAND (PLAN §8.2): kolob-guest-bands.js
     // decides, on guest:bands:<n> — the owner's 36 % and the Sunday's welcome
     // (the calendar's table), the section (the prelude or the postlude —
@@ -1404,9 +1391,7 @@ window.KOLOB = window.KOLOB || {};
   function inHush() { return S.ctx && now() < C.hushUntil; }
   function inFuging() { return S.ctx && now() < C.fugingUntil; }
   function inVisit() { return S.ctx && now() < C.visitUntil; }
-  // the question is a scored passage — its performers' free cycles sit out;
-  // the bands are a COLLISION — nobody sits out, that is the piece
-  function inQuestion() { return inVisit() && C.visitType === "question"; }
+  // (the bands are a COLLISION — nobody sits out for them, that is the piece)
   function silenceMul() { return C.meeting && C.meeting.row ? C.meeting.row.silenceMul : 1; }
   // The airy multiplier applied to every phrase gap: wide at rest, still wide
   // at the peaks. The frontier never crowds.
@@ -1546,7 +1531,7 @@ window.KOLOB = window.KOLOB || {};
   // page's direction line names it while it sounds; the joint waits for it).
   // A guest the minutes may not name (UNLOGGED below) carries that on every
   // event and note it sends, and the page is never told it came.
-  var VISIT_FN = { question: unansweredQuestion, bands: function (V, t) { return S.nauvooBand(V, t); }, steeples: steeplesAnswer, oldtune: oldTuneRemembered, trombones: trombonesAtDawn,
+  var VISIT_FN = { bands: function (V, t) { return S.nauvooBand(V, t); }, steeples: steeplesAnswer, oldtune: oldTuneRemembered, trombones: trombonesAtDawn,
                    handbells: handbellsRing, singingschool: singingSchool,
                    // (every set piece is kolob-guests.js's — the far ward is not
                    // here: it sings inside the ward's own hymn; nor the
@@ -2373,7 +2358,6 @@ window.KOLOB = window.KOLOB || {};
   S.inHush = inHush;
   S.inFuging = inFuging;
   S.inVisit = inVisit;
-  S.inQuestion = inQuestion;
   S.hallListens = hallListens;
   S.testimonyHolds = testimonyHolds;
   S.farWardFor = farWardFor;

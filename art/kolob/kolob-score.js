@@ -334,8 +334,6 @@ window.KOLOB.Score = (function () {
     "cadence":             { kind: "cadence" },
     "guest-start":         { guest: "str", section: "str", logged: "bool" },
     "guest-end":           { guest: "str", section: "str", logged: "bool" },
-    "question-asking":     { k: "int", questionId: "str?" },
-    "question-unanswered": {},
     "cast":                { memberId: "str", nameDs: "str", action: "str" },
     "vision":              { name: "str", nameDs: "str", d: "num" },
     "telegraph":           { word: "str", wordDs: "str?", marks: "arr" },

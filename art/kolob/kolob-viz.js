@@ -29,10 +29,9 @@
 //    the far choir pale and the near one full; an old tune remembered prints
 //    faint and fine in round notes; the telegraph punches its holes
 //    straight into the paper down the middle; a visiting band slides
-//    through in round notes on its own layer. (The Question, framed in
-//    cartouches, is SHELVED: it never seats on the live page —
-//    kolob-meeting.js SHELVED_GUESTS — and its path here is kept with the
-//    generator in shelved/: takeQuestion, drawQuestions.) The staves and
+//    through in round notes on its own layer. (The shelved Question's
+//    cartouches left this file on 2026-10-01:
+//    shelved/kolob-question-setpiece.js.) The staves and
 //    clefs are a static layer; the ink is re-engraved from data each frame,
 //    and nothing moves but the scroll and the drying.
 //    In the sacrament the page dries almost blank.
@@ -288,7 +287,6 @@ window.KolobViz = (function () {
   var C_INK = [30, 77, 59];
   function rgba(c, a) { return "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + (a == null ? 1 : +(+a).toFixed(3)) + ")"; }
   function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
-  var FG = '"EB Garamond", Georgia, serif';
 
   // The two clefs, baked as self-contained outlines (traced from a serif music
   // glyph) so they render identically for every visitor — no font dependency.
@@ -590,7 +588,6 @@ window.KolobViz = (function () {
   var intake = [], intakeArmed = false;
   var groups = [];                                 // engraved note groups (heads on one stem)
   var tapes = [];                                  // telegraph messages
-  var questions = [];                              // the question: askings, and the empty measure
   var bandNotes = [], visits = [];                  // the visiting band, on its own layer
   // (the trombone choir at dawn and the old tune are engraved too — the
   // staff never sits blank while a guest of ours is playing; and the organ
@@ -647,12 +644,10 @@ window.KolobViz = (function () {
   // the typed bus (SCORE.md §6): the page reads the event's type, never its
   // label — STOP; the hymn board's announcement, each verse's performance,
   // and each composed line told with its Score, which comes in with its
-  // notes; and the Question's askings and its silence, which never come on
-  // the live page (the Question is shelved: takeQuestion)
+  // notes
   function onEvent(ev) {
     if (!ev || ev.logged === false) return;
-    if (ev.type === "question-asking" || ev.type === "question-unanswered") queueIntake({ ev: ev });
-    else if (ev.type === "transport" && ev.action === "stop") queueIntake({ stop: ev.t != null ? ev.t : audioNow() });
+    if (ev.type === "transport" && ev.action === "stop") queueIntake({ stop: ev.t != null ? ev.t : audioNow() });
     else if (ev.type === "hymn-announced" && ev.hymn && ev.hymn.id) announceHymn(ev.hymn);
     else if (ev.type === "verse-start" && ev.hymnId) verseBegins(ev);
     else if (ev.type === "verse-line" && ev.composed && ev.score && ev.hymnId) queueIntake({ ev: ev });
@@ -699,16 +694,14 @@ window.KolobViz = (function () {
   function flushIntake() {
     intakeArmed = false;
     var batch = intake; intake = [];
-    var byLayer = {}, question = null, unanswered = null, stopAt = null, i;
+    var byLayer = {}, stopAt = null, i;
     var hymnLines = {}, lineEvs = {}, lineOrder = [], fugs = [];
     function lineNotes(k) { if (!hymnLines[k]) { hymnLines[k] = []; if (!lineEvs[k]) lineOrder.push(k); } return hymnLines[k]; }
     for (i = 0; i < batch.length; i++) {
       var it = batch[i];
       if (it.stop != null) { stopAt = stopAt == null ? it.stop : Math.min(stopAt, it.stop); continue; }
       if (it.ev) {
-        if (it.ev.type === "question-asking") question = it.ev;
-        else if (it.ev.type === "question-unanswered") unanswered = it.ev;
-        else if (it.ev.type === "verse-line") {
+        if (it.ev.type === "verse-line") {
           var ek = lineKey(it.ev);
           if (!lineEvs[ek] && !hymnLines[ek]) lineOrder.push(ek);
           lineEvs[ek] = it.ev;
@@ -739,10 +732,8 @@ window.KolobViz = (function () {
       var ns = byLayer[layer];
       var beat = estimateBeat(ns.map(function (n) { return n.duration; }), lastBeat[layer] || lastBeat.choir || 1.15);
       if (ns.length >= 3) lastBeat[layer] = beat;
-      takeLayer(layer, ns, beat, question);
+      takeLayer(layer, ns, beat);
     });
-    if (question) takeQuestion(byLayer.clarinet || [], question);
-    if (unanswered) takeUnanswered(unanswered);
     if (stopAt != null) silence(stopAt);
     // bounded memory: the page shows ~15 s; keep generously more
     if (groups.length > 900) groups.splice(0, groups.length - 900);
@@ -799,16 +790,6 @@ window.KolobViz = (function () {
         T.Tt = lm.at + lm.len;
       }
     }
-    for (i = questions.length - 1; i >= 0; i--) {
-      var qn = questions[i];
-      qn.asks = qn.asks.filter(function (ak) { return ak.tp0 <= cut; });
-      qn.asks.forEach(function (ak) { ak.tp1 = Math.min(ak.tp1, end); });
-      if (qn.na) {
-        if (qn.na.tp0 > cut) qn.na = null;
-        else qn.na.tp1 = Math.min(qn.na.tp1, Math.max(cut, qn.na.tp0 + 1));
-      }
-      if (!qn.asks.length && !qn.na) questions.splice(i, 1);
-    }
   }
 
   // one layer's notes from one call → groups of heads on shared stems.
@@ -820,7 +801,7 @@ window.KolobViz = (function () {
   // each); fineBeat — the beat is the tune's own (valueOf); qOf —
   // a note's place and shape where it names them in a key of its own
   // (keyedQ); head — a guest's own mark on a head; scale — its size
-  function takeLayer(layer, ns, beat, question, opt) {
+  function takeLayer(layer, ns, beat, opt) {
     opt = opt || {};
     var byT = {}, voices = { T: {}, B: {} };
     ns.forEach(function (n) {
@@ -833,12 +814,6 @@ window.KolobViz = (function () {
     // two parts or more on one staff in this call are voices: each keeps
     // its own stem when it moves alone (the alto's passing note stems down)
     var voiced = { T: Object.keys(voices.T).length > 1, B: Object.keys(voices.B).length > 1 };
-    // the Question's askings (shelved: takeQuestion) fold together, if they must, so the phrase keeps its shape
-    var askMax = null;
-    if (question && layer === "clarinet") {
-      askMax = -1e9;
-      ns.forEach(function (n) { askMax = Math.max(askMax, noteQ(n.freq).q); });
-    }
     Object.keys(byT).sort(function (a, b) { return a - b; }).forEach(function (k) {
       var parts = byT[k].slice().sort(function (a, b) { return b.n.freq - a.n.freq; });
       var t0 = parts[0].n.startTime;
@@ -885,11 +860,6 @@ window.KolobViz = (function () {
           if (opt.dry) grp.dry = opt.dry;
           if (layer === "bells" || layer === "handbells") { grp.noStem = true; grp.ring = true; grp.flags = 0; heads.forEach(function (h) { h.open = true; h.dots = 0; }); }
           if (layer === "organ") grp.alone = true;             // printed only where no one sings over it (organAlone)
-          if (layer === "harmonium" && question) {        // the Question's answers (shelved: takeQuestion): slashed grace notes
-            grp.slash = true; grp.noStem = false; grp.flags = 1; grp.dir = 1;
-            heads.forEach(function (h) { h.open = false; h.dots = 0; });
-          }
-          if (askMax != null) grp.askMax = askMax;
           if (!grp.dir) {
             var vd = voiced[st] ? voiceDir(ps) : 0, pd = posDir(heads, st);
             if (vd) {
@@ -1003,7 +973,7 @@ window.KolobViz = (function () {
       var key = "trombones:" + ch;
       var beat = choraleBeat(mine) || estimateBeat(mine.map(function (n) { return n.duration; }), lastBeat[key] || lastBeat.choir || 1.15);
       if (mine.length >= 3) lastBeat[key] = beat;
-      takeLayer("trombones", mine, beat, null, { strict: true, shift: shift, ink: TROMBONE_INK[ch] });
+      takeLayer("trombones", mine, beat, { strict: true, shift: shift, ink: TROMBONE_INK[ch] });
     });
   }
   // A chorale moves in its beat: its commonest length is the quarter, so a
@@ -1057,7 +1027,7 @@ window.KolobViz = (function () {
     var st = cT <= cB ? "T" : "B";
     [1, 2].forEach(function (tryNo) {
       var mine = ns.filter(function (n) { return (n.tryNo === 2 ? 2 : 1) === tryNo; });
-      if (mine.length) takeLayer("oldtune", mine, beat, null, { staff: st, shape: "round", ink: OLDTUNE_INK[tryNo], thin: 0.7, dry: 2, fineBeat: rs.length >= 2 });
+      if (mine.length) takeLayer("oldtune", mine, beat, { staff: st, shape: "round", ink: OLDTUNE_INK[tryNo], thin: 0.7, dry: 2, fineBeat: rs.length >= 2 });
     });
   }
   // ==========================================================================
@@ -1187,7 +1157,7 @@ window.KolobViz = (function () {
   var TOWER_INK = 0.5, TOWER_MUFFLED = 0.32, TOWER_SCALE = 0.3, TOWER_RING = 1.333;   // (small: a peal's strokes come a staff space apart at the page's rate; the ring, in the head's own size: 0.4 sp)
   function takeTower(ns) {
     var g0 = groups.length;
-    takeLayer("tower", ns, 1, null, { scale: TOWER_SCALE, ink: ns[0].muffled ? TOWER_MUFFLED : TOWER_INK,
+    takeLayer("tower", ns, 1, { scale: TOWER_SCALE, ink: ns[0].muffled ? TOWER_MUFFLED : TOWER_INK,
       qOf: function (n) { return keyedQ(n.freq, null, null, n.monzo, cond.mode); } });
     var gs = madeSince(g0, 1, "peal");
     unstemmed(gs, false);
@@ -1204,7 +1174,7 @@ window.KolobViz = (function () {
   function takeGulls(ns) {
     ns.forEach(function (n) {
       var h = n.hymnId ? hymnOf(n.hymnId) : null, lead = typeof n.deg === "number", g0 = groups.length;
-      takeLayer("gulls", [n], 1, null, { scale: lead ? GULL_SCALE : CHATTER_SCALE, ink: clamp(0.2 + 0.8 * (n.loud == null ? 0.5 : n.loud), 0.25, 0.9),
+      takeLayer("gulls", [n], 1, { scale: lead ? GULL_SCALE : CHATTER_SCALE, ink: clamp(0.2 + 0.8 * (n.loud == null ? 0.5 : n.loud), 0.25, 0.9),
         qOf: function (m) {
           if (lead) return keyedQ(m.freq, h && h.keyMonzo, m.deg, null, h && h.mode);
           return { q: noteQ(m.freq).q, shape: "round" };
@@ -1229,7 +1199,7 @@ window.KolobViz = (function () {
     var beat = h.bs || estimateBeat(ns.map(function (n) { return n.duration; }), lastBeat.farward || lastBeat.choir || 1.15);
     if (!h.bs && ns.length >= 3) lastBeat.farward = beat;
     var g0 = groups.length;
-    takeLayer("farward", ns, beat, null, { strict: true, ink: FARWARD_INK, fineBeat: !!h.bs, scale: FARWARD_SCALE,
+    takeLayer("farward", ns, beat, { strict: true, ink: FARWARD_INK, fineBeat: !!h.bs, scale: FARWARD_SCALE,
       qOf: function (n) { return typeof n.deg === "number" ? keyedQ(n.freq, h.keyMonzo, n.deg, null, mode) : null; } });
     // (and on each staff its notes read left to right in the
     // order they are sung, whichever part sings them — a part's note set
@@ -1299,7 +1269,7 @@ window.KolobViz = (function () {
     Object.keys(company.seen).forEach(function (q) { company.seen[q] = company.seen[q].filter(function (t) { return t > t0 - 30; }); });
     if (!mine.length) return;
     var g0 = groups.length;
-    takeLayer("handcart", mine, beat, null, { strict: true, fineBeat: !!company.beat, ink: clamp(0.14 + 0.42 * loud / mine.length, 0.18, 0.56),
+    takeLayer("handcart", mine, beat, { strict: true, fineBeat: !!company.beat, ink: clamp(0.14 + 0.42 * loud / mine.length, 0.18, 0.56),
       qOf: function (n) { return n.nq; } });
     madeSince(g0, 1.5, "company");
   }
@@ -1343,12 +1313,12 @@ window.KolobViz = (function () {
     var line = ns.filter(function (n) { return n.part !== "drone"; }), drones = ns.filter(function (n) { return n.part === "drone"; });
     var qOf = function (n) { return keyedQ(n.freq, keyM, n.deg, n.monzo, mode); };
     var g0 = groups.length;
-    if (line.length) takeLayer("fiddle", line, beat, null, { staff: "T", scale: FIDDLE_SCALE, fineBeat: true, qOf: qOf,
+    if (line.length) takeLayer("fiddle", line, beat, { staff: "T", scale: FIDDLE_SCALE, fineBeat: true, qOf: qOf,
       head: function (n, hd) { if (FIDDLE_TUNE[n.part]) hd.heavy = true; if (FIDDLE_ORN[n.orn]) hd.orn = FIDDLE_ORN[n.orn]; } });
     var made = madeSince(g0, FIDDLE_CAP, "fiddle");
     if (drones.length) {
       var d0 = groups.length;
-      takeLayer("fiddle", drones, beat, null, { scale: FIDDLE_SCALE, qOf: qOf });
+      takeLayer("fiddle", drones, beat, { scale: FIDDLE_SCALE, qOf: qOf });
       madeSince(d0, FIDDLE_CAP);
     }
     fiddleBars(made, line);
@@ -1420,7 +1390,7 @@ window.KolobViz = (function () {
   var SPOKEN_AIR = 0.2;
   function takeSpoken(ns, layer) {
     var g0 = groups.length;
-    takeLayer(layer === "voice" ? "voice" : "caller", ns, 1, null, { shape: "x",
+    takeLayer(layer === "voice" ? "voice" : "caller", ns, 1, { shape: "x",
       head: function (n, hd) { if (n.accent) hd.heavy = true; } });
     var gs = madeSince(g0, 3, "speech"), tl = 0;             // (a call on a strain's downbeat stands clear of its double bar)
     unstemmed(gs, false);
@@ -1442,7 +1412,7 @@ window.KolobViz = (function () {
     });
     if (!mine.length) return;
     var g0 = groups.length;
-    takeLayer(layer, mine, 1, null, {});
+    takeLayer(layer, mine, 1, {});
     unstemmed(madeSince(g0, 1), false);
   }
 
@@ -1463,7 +1433,7 @@ window.KolobViz = (function () {
       return { freq: n.freq, startTime: n.startTime, duration: n.duration, nq: nq, slur: !!n.slur };
     });
     var st = cT <= cB ? "T" : "B", g0 = groups.length;
-    takeLayer("choir", line, beat, null, { staff: st, qOf: function (n) { return n.nq; } });
+    takeLayer("choir", line, beat, { staff: st, qOf: function (n) { return n.nq; } });
     var at = {};
     madeSince(g0, 1.5, "tongues").forEach(function (gr) { at[Math.round(gr.tp * 1000)] = gr; });
     var first = null, last = null, run = [], seg = [];
@@ -1500,7 +1470,7 @@ window.KolobViz = (function () {
     while (hummed.length > 32) hummed.shift();
     if (!fresh.length) return;
     var g0 = groups.length;
-    takeLayer("choir", fresh, lastBeat.tongues || lastBeat.choir || 1.15, null, { qOf: function (n) { return keyedQ(n.freq, null, n.deg, n.monzo, mode); } });
+    takeLayer("choir", fresh, lastBeat.tongues || lastBeat.choir || 1.15, { qOf: function (n) { return keyedQ(n.freq, null, n.deg, n.monzo, mode); } });
     madeSince(g0, 1.5);
   }
 
@@ -1548,7 +1518,7 @@ window.KolobViz = (function () {
       if (typeof n.beat === "number" && Math.abs(n.beat - Math.round(n.beat)) < 1e-6) varSet.ref = { t: n.startTime, b: n.beat };
     });
     var g0 = groups.length;
-    takeLayer("organ", ns, beat, null, { fineBeat: fine, head: function (n, hd) { if (n.part === "fig") hd.fig = true; } });
+    takeLayer("organ", ns, beat, { fineBeat: fine, head: function (n, hd) { if (n.part === "fig") hd.fig = true; } });
     var made = madeSince(g0, 2);
     varFigures(made, fine ? beat : 0);
     if (!sc || !sc.lines) return;
@@ -2401,7 +2371,6 @@ window.KolobViz = (function () {
     // goes a step past the third)
     var gT = grp.hymn ? (grp.tune ? TUNE_T : GAP_T - 1) : GAP_T, gB = grp.hymn ? (grp.tune ? TUNE_B : GAP_B + 1) : GAP_B;
     var deep = tr ? lo < gT : hi > gB;             // a head on the telegraph's line
-    if (grp.askMax != null) hi = Math.max(hi, grp.askMax);
     if (tr) { while (hi - sh > g.qMaxT) sh += 7; }
     else { while (lo + sh < g.qMinB) sh += 7; }
     var key = grp.layer + grp.st, lf = lastFold[key];
@@ -2453,32 +2422,6 @@ window.KolobViz = (function () {
     var marks = n.marks.map(function (m) { return { at: m.at, len: m.len, dah: !!m.dah, tp: n.startTime + m.at + m.len }; });
     tapes.push({ tp: n.startTime, marks: marks, U: U, Tt: last.at + last.len });
     if (tapes.length > 12) tapes.shift();
-  }
-  // ---- the Question (SHELVED) ----------------------------------------------------
-  // SHELVED: the Question never seats on the live page (kolob-meeting.js
-  // SHELVED_GUESTS); this intake and drawQuestions are kept with the
-  // generator in shelved/ and run only if it is unshelved.
-  // The clarinet's askings arrive in the same call that raises "? the
-  // question": each unbroken run of its notes is one asking, framed in a
-  // cartouche. The harmonium's answers (same call) print as grace notes.
-  function takeQuestion(clar, ev) {
-    var ns = clar.slice().sort(function (a, b) { return a.startTime - b.startTime; });
-    var asks = [], cur = null;
-    ns.forEach(function (n) {
-      if (cur && n.startTime - cur.t1 < 0.08) { cur.t1 = n.startTime + n.duration; cur.n++; }
-      else { cur = { t0: n.startTime, t1: n.startTime + n.duration, n: 1 }; asks.push(cur); }
-    });
-    asks = asks.filter(function (a) { return a.n >= 2; });
-    var qn = { asks: asks.map(function (a) { return { tp0: a.t0, tp1: a.t1 }; }), na: null,
-               lastEnd: asks.length ? asks[asks.length - 1].t1 : (ev.t || audioNow()) };
-    questions.push(qn);
-    if (questions.length > 4) questions.shift();
-  }
-  function takeUnanswered(ev) {
-    var tp = ev.t || audioNow(), qn = questions[questions.length - 1];
-    var start = qn && !qn.na && Math.abs(tp - qn.lastEnd) < 40 ? qn.lastEnd + 0.9 : tp - 0.6;
-    if (!qn || qn.na) { qn = { asks: [], lastEnd: start }; questions.push(qn); }
-    qn.na = { tp0: start, tp1: start + 6 };
   }
   // ---- the band -------------------------------------------------------------------
   // Round notes on their own layer, sliding through the ward's page
@@ -2562,12 +2505,6 @@ window.KolobViz = (function () {
       if (kx0 < x1 && x0 < kx1 && ky0 < y1 && y0 < ky1) return true;
     }
     return false;
-  }
-  function text(c, str, x, y, font, rgb, a, align) {
-    c.font = font; c.textAlign = align || "left"; c.textBaseline = "alphabetic";
-    c.fillStyle = rgba(rgb, a == null ? 1 : a);
-    c.fillText(str, x, y);
-    return c.measureText(str).width;
   }
 
   // How far into the gap a stem from staff st may reach (a y): its own half
@@ -2741,7 +2678,6 @@ window.KolobViz = (function () {
         var fy = L.yEnd, fl = (0.8 * (o.flags - 1) + 2.8 * L.fk) * s;
         out.push([L.sx, Math.min(fy, fy + dn * fl), L.sx + 1.05 * s, Math.max(fy, fy + dn * fl)]);
       }
-      if (o.slash) out.push([L.sx - 0.75 * s, Math.min(L.yEnd + dn * 2.15 * s, L.yEnd + dn * 0.85 * s), L.sx + 0.85 * s, Math.max(L.yEnd + dn * 2.15 * s, L.yEnd + dn * 0.85 * s)]);
     }
     return out;
   }
@@ -2760,10 +2696,6 @@ window.KolobViz = (function () {
       vLine(c, sx, L.y0, yEnd, sw);
       koRect(c, sx - sw / 2 - pad, Math.min(L.y0, yEnd), sx + sw / 2 + pad, Math.max(L.y0, yEnd));
       if (!o.beamY) for (var f = 0; f < (o.flags || 0); f++) drawFlag(c, sx, yEnd + dir * f * 0.8 * s, dir, s, sw, L.fk);   // (a beamed note's flags are its beams)
-      if (o.slash) {
-        c.save(); c.strokeStyle = rgba(o.rgb); c.lineWidth = Math.max(1 / dpr, 0.1 * sp); c.lineCap = "round";
-        c.beginPath(); c.moveTo(sx - 0.7 * s, yEnd + dir * 2.1 * s); c.lineTo(sx + 0.8 * s, yEnd + dir * 0.9 * s); c.stroke(); c.restore();
-      }
     }
     placed.forEach(function (p) {
       if (p.h.ghost) return;
@@ -3301,15 +3233,8 @@ window.KolobViz = (function () {
     }
     return false;
   }
-  function drawBarline(c, g, x, kind, st) {
+  function drawBarline(c, g, x, st) {
     var sp = g.sp, top = st === "T" ? g.T : g.B, bot = top + 4 * sp;
-    if (kind === "dotted") {
-      for (var q = 0; q < 4; q++) {
-        var yy = top + (q + 0.5) * sp;
-        c.beginPath(); c.arc(x, yy - 0.18 * sp, 0.11 * sp, 0, Math.PI * 2); c.arc(x, yy + 0.2 * sp, 0.11 * sp, 0, Math.PI * 2); c.fill();
-      }
-      return;
-    }
     vLine(c, x, top, bot, Math.max(1.2 / dpr, 0.16 * sp));
   }
   // ---- the static staff layer: two staves, a brace, and the two clefs --------
@@ -3795,7 +3720,6 @@ window.KolobViz = (function () {
     for (i = 0; i < units.length; i++) impress(c, g, units[i]);
     drawMarks(c);
     c.globalAlpha = 1;
-    drawQuestions(c);
   }
   // ---- one even tone ---------------------------------------------------------
   // The owner, close to a pale note: "as though there's two strokes for each
@@ -3892,7 +3816,7 @@ window.KolobViz = (function () {
   }
   // how a group is engraved (alt: the stem it takes if its voice's own would be stubby)
   function inkOpts(gr) {
-    return { scale: gr.scale, rgb: C_INK, noStem: gr.noStem, flags: gr.flags, slash: gr.slash, breve: gr.v && gr.v.breve, ring: gr.ring, ringK: gr.ringK, thin: gr.thin, alt: gr.alt,
+    return { scale: gr.scale, rgb: C_INK, noStem: gr.noStem, flags: gr.flags, breve: gr.v && gr.v.breve, ring: gr.ring, ringK: gr.ringK, thin: gr.thin, alt: gr.alt,
              keep: gr.hymn && (gr.voice === "both" || (gr.voice !== "one" && gr.voice !== "hop")), room: gr.room, ferm: gr.ferm || 0,
              tune: !!(gr.hymn && gr.tune && gr.voice !== "one" && gr.voice !== "hop" && gr.voice !== "both") };
   }
@@ -3952,45 +3876,6 @@ window.KolobViz = (function () {
     c.globalAlpha = 1;
   }
 
-  // the Question (shelved: takeQuestion): each asking in a slender double-ruled cartouche with its
-  // "?" at the head, in the one green ink; then, after the last, an empty
-  // measure between dotted barlines — the answer that does not come
-  function drawQuestions(c) {
-    var g = G, sp = g.sp;
-    for (var qi = questions.length - 1; qi >= 0; qi--) {
-      var qn = questions[qi], alive = false;
-      qn.asks.forEach(function (ak) {
-        if (ak.tp0 > PT) { alive = true; return; }
-        var x0 = X(ak.tp0) - 3.0 * sp, x1 = X(ak.tp1) + 0.6 * sp;
-        if (x1 > -2 * sp) alive = true; else return;
-        var y0 = g.T - 2.55 * sp, y1 = g.Tb + 1.25 * sp, r = 1.15 * sp;
-        c.save();
-        c.beginPath(); c.rect(0, 0, g.xE + 0.5 * sp, H); c.clip();          // pulled by the burin only as far as the engraving point
-        c.globalAlpha = dryA(ak);
-        c.strokeStyle = rgba(C_INK); c.lineWidth = Math.max(1.1 / dpr, 0.13 * sp);
-        c.beginPath(); rrect(c, x0, y0, x1 - x0, y1 - y0, r); c.stroke();
-        c.lineWidth = Math.max(0.8 / dpr, 0.05 * sp); c.strokeStyle = rgba(C_INK, 0.7);
-        c.beginPath(); rrect(c, x0 + 0.28 * sp, y0 + 0.28 * sp, x1 - x0 - 0.56 * sp, y1 - y0 - 0.56 * sp, r - 0.28 * sp); c.stroke();
-        c.lineWidth = Math.max(1.1 / dpr, 0.13 * sp); c.strokeStyle = rgba(C_INK);
-        c.beginPath(); c.moveTo(x1 + 0.35 * sp, y0 + 0.9 * sp); c.lineTo(x1 + 0.35 * sp, y1 - 0.9 * sp); c.stroke();
-        text(c, "?", x0 + 1.2 * sp, g.yT(16) + 0.95 * sp, "italic 500 " + (2.7 * sp).toFixed(1) + "px " + FG, C_INK, 1, "center");
-        c.restore();
-      });
-      if (qn.na) {
-        var na = qn.na;
-        if (na.tp0 <= PT) {
-          var xa = X(na.tp0), xb = X(na.tp1);
-          if (xb > -2 * sp) alive = true;
-          c.globalAlpha = dryA(na); c.fillStyle = rgba(C_INK);
-          if (xa > -sp) { drawBarline(c, g, xa, "dotted", "T"); drawBarline(c, g, xa, "dotted", "B"); }
-          if (na.tp1 <= PT && xb > -sp) { drawBarline(c, g, xb, "dotted", "T"); drawBarline(c, g, xb, "dotted", "B"); }
-          c.globalAlpha = 1;
-        } else alive = true;
-      }
-      if (!alive && !qn.asks.some(function (ak) { return ak.tp0 > PT; })) questions.splice(qi, 1);
-    }
-  }
-
   // ---- the band's own layer ---------------------------------------------------
   // Round notes in the same green, on their own layer under the ward's ink,
   // sliding through at the band's own (quicker) rate; each note's ink follows
@@ -4038,7 +3923,7 @@ window.KolobViz = (function () {
         var life = clamp((tb - bd2.tp0) / Math.max(1, bd2.tp1 - bd2.tp0), 0, 1);
         c.globalAlpha = (0.1 + 0.4 * Math.sin(Math.PI * life)) * dryA(bd2.bass[k]);
         c.fillStyle = rgba(C_INK);
-        drawBarline(c, g, xb, "single", "T"); drawBarline(c, g, xb, "single", "B");
+        drawBarline(c, g, xb, "T"); drawBarline(c, g, xb, "B");
       }
     }
     c.globalAlpha = 1;

@@ -44,14 +44,14 @@ destination and a scheduled time, and never read `ctx.currentTime` to decide
 **The facade.** `window.KolobAudio` (`kolob-core.js`) is the only thing the
 page, the labs and the harness call: transport (`init play pause resume stop
 sample isPlaying isPaused`), the desk (`setMasterVolume setLayerVolume
-toggleLayer setLayerRate setLayerParam getLayerParam getLayerDefaults
+toggleLayer getLayerParam
 getLayers getVolumes`, the field keys, `setBandVolume getBandVolume
 getBandHeardUntil`), the visit (`getSeed reseed getConductor getHarmony
 getAudioTime skipToSection getMotifStats getCumulativeOdds getCumulativeMode
 setCumulativeMode setForceVisitation isForceVisitation setForceRaspberry
 getOldTunes`), the hymnal (`getHymnal getHymn hymnalStats clockHealth`), the
 ward (`getWard wardStats getChoir setChoir`), the organ (`getOrganist
-organStats getOrgan setOrgan`), the bus (`setNoteListener setEventListener`),
+organStats`), the bus (`setNoteListener setEventListener`),
 the rooms (`getRooms setRoom preloadRoomIR setRoomBalance setLayerDepth
 attachAnalyser`). One number lives in one place: a rate the page shows is
 read from the engine (`getCumulativeOdds` → `kolob-meeting.js`
@@ -81,14 +81,14 @@ composer's desk is opened (`KOLOB.Hymnal.warm`), the town's air poured
 (`GuestHandcart.warm`), change ringing's touches searched (`GuestChanges.warm`),
 the far ward's valley poured (`GuestFarWard.warm`).
 
-**Shelved.** `shelved/` holds the Question (`kolob-question.js`,
-`question-lab.*`; the owner's ruling of 2026-09-27) and the bagpipe
-(`kolob-voices-bagpipe.js`, `bagpipe-lab.*`; 2026-09-13): code kept, not
-loaded. The Question's dice are still drawn so no later draw moves: `qDie =
-R.chance(0.29)` and `qSeatDie = R.chance(0.7)` on `meeting:<n>`
-(`kolob-meeting.js` planMeeting; `SHELVED_GUESTS.question` keeps it from
-seating, the switch never names it, its set piece `unansweredQuestion` still
-stands in `kolob-guests.js`). The bagpipe left no die behind: it is no layer,
+**Shelved.** `shelved/` holds the Question (`kolob-question.js`, the
+generator; `kolob-question-setpiece.js`, the set piece, the seating and the
+staff's cartouche as they stood until 2026-10-01; `question-lab.*`; the
+owner's ruling of 2026-09-27) and the bagpipe (`kolob-voices-bagpipe.js`,
+`bagpipe-lab.*`; 2026-09-13): code kept, not loaded. The Question's dice are
+still drawn so no later draw moves: `qDie = R.chance(0.29)` and `qSeatDie =
+R.chance(0.7)` on `meeting:<n>` (`kolob-meeting.js` planMeeting, `void`ed;
+the switch never names it). The bagpipe left no die behind: it is no layer,
 and `SHELVED` in `kolob-core.js` (the mechanism for a muted layer) is empty.
 
 **Labs.** Each is `<name>-lab.php` + `<name>-lab.js`, unlinked, dev-only:
@@ -106,7 +106,7 @@ without it; taps still capture the signal.
 
 **Dev switches** on the page: `?seed=N`, `&guest=<name>` (§8),
 `&exp=-reckoning` / `-singingSchool` (`KOLOB.Experimental`), `&choir=house`,
-`&organ=house`, `&latin=1`, `&kolobPreview=1`. The harness takes `ives`,
+`&latin=1`, `&kolobPreview=1`. The harness takes `ives`,
 `razz`, `cumulative` and `force=<name>`.
 
 Authority: `_engine.php`, `kolob-core.js`, `tools/loadcheck.js`,
@@ -254,7 +254,7 @@ pump's `currentTime`; it is sound-level.
 | `guest:gulls:<n>` | `seat`, `shape`, `flock`, `synth` |
 | `guest:testimony:<n>` | `seat`, `shape`, `speech:<k>`, `reed:<k>`, `answer:<memberId>`, `synth` → `reeds`, `room`, `voice:<key>`, `line:<i>` |
 | `guest:cumulative:<n>` | the conductor's own assembly (a Sunday without a composed doxology) |
-| `guest:question:<n>` | the Question's set piece; forked only when it performs, which it never does |
+| `guest:question:<n>` | the shelved Question's set piece (`shelved/kolob-question-setpiece.js`); no live room forks it |
 | `<voice>:<n>` → `turn:<k>` | a turn each of `organ`, `drone`, `choir`, `clarinet`, `harmonium`, `strings`, `bells`, `voice`, `telegraph`, `field`, `fuging`, `hum` |
 | `<voice>:wait:<n>` | `choir`, `clarinet`, `bells`, `telegraph` |
 | `synth:<voice>` | sound-level, the whole visit: `organ` (→ `case:<k>`, each pipe organ built), `vocal` (→ `meeting:<n>` → `member:<id>`, each throat), `band` (→ `partner:<id>`, the cornet), `choir`, `clarinet`, `harmonium`, `strings`, `bells`, `voice`, `telegraph`, `field`, `noise`, `steeples`, `oldtune` |
@@ -502,7 +502,7 @@ hymnId`, `?` nullable; a nested object is a payload of its own);
 | `sunrise`, `reckoning`, `drone-turn` | `{mode, keynoteHz}` a dark Sunday's doxology rises; `{ok, doxId}` the Kolob reckoning read once; `{index, to, glide}` the drone's step at a joint |
 | `joint`, `room-empties`, `stillness`, `liahona`, `field`, `skip`, `telegraph` | `{last, toward, dur}`, `{toward}`, `{why, holdS}`, `{points}`, `{field}`, `{to}` (a dev jump), `{word, wordDs, marks}` |
 | `motif-develop` `-reprise` `-answer` `-disperse` `-shadow` | the day's gestures at work |
-| `question-asking`, `question-unanswered`, `vision` | in the table; nothing emits them today |
+| `vision` | in the table; nothing emits it today (the shelved Question's two rows left the table on 2026-10-01) |
 
 **`logged: false`** on a note or an event means the page must neither print
 it in the minutes nor engrave it on the staff nor name it on the board; the
@@ -636,9 +636,10 @@ one line in unison, another guest wakes the morning, or the ward hums the
 morning in. One `VoicesOrgan` case per pair of hands; a case is disposed after
 its last pipe; STOP disposes them all (`S.organStop`). `S.organChord` plays the
 house's own chords (the voluntaries, the joints' amens, a soft chord in the
-testimony) on the same pipes; the old additive organ (`houseOrganChord`) is
-the A/B (`?organ=house`) and the fallback for a page without the pipes and
-the organist.
+testimony) on the same pipes; the old additive organ (`houseOrganChord`,
+the A/B `?organ=house`) was retired on 2026-10-01 — its level stays the
+pipes' reference (`HOUSE_REF`), and its part line (`organPartLine`) sounds
+only under the house choir.
 
 **The forms** (`Hymnal.forms(info, rows, R)` on `forms:<n>`, `FORM_ODDS`):
 - *A round* (22 %): a hymn row after the first, never the doxology, written by

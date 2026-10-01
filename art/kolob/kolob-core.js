@@ -205,14 +205,6 @@ window.KolobAudio = (function () {
   S.houseChoir = (function () {
     try { return typeof location !== "undefined" && /[?&]choir=house\b/.test(location.search || ""); } catch (e) { return false; }
   })();
-  // THE ORGAN SWITCH (dev): ?organ=house plays the meeting on the house's
-  // old additive organ (kolob-voices-organ.js) instead of the pipe organ
-  // (the organist is still seated and named, and plays nothing: no chorale
-  // prelude, no fills) — the owner's A/B; the pipe organ and the Sunday's
-  // organist are the meeting's otherwise
-  S.houseOrgan = (function () {
-    try { return typeof location !== "undefined" && /[?&]organ=house\b/.test(location.search || ""); } catch (e) { return false; }
-  })();
   var root = null;                 // the visit's stream: every fork is born of it
   var dice = { n: -1, streams: {}, turns: {} };   // this meeting's streams, by label
   var synths = {};                 // synth:<voice>, one per voice for the whole visit
@@ -298,7 +290,6 @@ window.KolobAudio = (function () {
   // loud" in the v0.34 preview (2026-09-28)
   var layerVolumes = { organ: 0.40, drone: 0.55, choir: 0.8, clarinet: 0.38, harmonium: 0.45, strings: 0.5, bells: 0.5, voice: 0.35, telegraph: 0.25, tuba: 0.5, ambient: 0.5 };
   var layerMuted = {}; LAYERS.forEach(function (l) { layerMuted[l] = false; });
-  var layerRate = {}; LAYERS.forEach(function (l) { layerRate[l] = 1; });
 
   // FIELD — the ambient layer is one bus, but each of its events (wind, crickets,
   // …) now rides its own gain so they can be balanced individually. The event's
@@ -307,10 +298,12 @@ window.KolobAudio = (function () {
   var fieldVolumes = { wind: 2, crickets: 1.52, clock: 1, fork: 1, rain: 2, coyote: 2, bell: 1.56, beacon: 1.38 };
   var fieldMuted = {};
 
-  // THE PARAMS: each voice reads its own (getLayerParam) at these defaults;
-  // the console has no parameter drawers (volume and mute only), so they
-  // move only from a lab (setLayerParam).
-  var LAYER_PARAM_DEFAULTS = {
+  // THE PARAMS: each voice reads its own (getLayerParam) at these values.
+  // The console has no parameter drawers (volume and mute only), and the
+  // setters a lab once moved them with (setLayerParam, getLayerDefaults)
+  // were retired on 2026-10-01 — nothing called them — so these are the
+  // values, not defaults.
+  var LAYER_PARAMS = {
     organ:     { stops: 0.5, tremulant: 0.15, pedal: 0.6 },
     drone:     { presence: 0.5, fifth: 0.4 },
     choir:     { size: 3, vowel: 0.4, scoop: 0.5 },
@@ -322,12 +315,11 @@ window.KolobAudio = (function () {
     telegraph: { clack: 0.5 },
     ambient:   {},
   };
-  var layerParams = JSON.parse(JSON.stringify(LAYER_PARAM_DEFAULTS));
-  // THE RATE: the engine keeps a rate per layer (layerRate, setLayerRate — a
-  // lane's speed on the clock) and a trim on it here; the console exposes
-  // volume and mute only, so the rate is 1 unless a lab moves it, and the
-  // trim is what sets a layer's pace. telegraph 0.5: the wire should be an
-  // occasional visitor, not a speaker — half the event density.
+  // THE RATE: a layer's lane runs at its trim (rateOf), 1 where none is set.
+  // The console exposes volume and mute only, and the per-layer rate a lab
+  // once set (setLayerRate) was retired on 2026-10-01 — nothing called it.
+  // telegraph 0.5: the wire should be an occasional visitor, not a speaker
+  // — half the event density.
   var LAYER_RATE_TRIM = { telegraph: 0.5, bells: 0.7 };
   // THE VOLUME TRIMS ride on top of the sliders (the slider reads
   // layerVolumes; a trim seats the layer without moving the slider's
@@ -791,9 +783,8 @@ window.KolobAudio = (function () {
   // cueIn: dtS seconds after the music's now, at the clock's own speed —
   // a retry, a timed announcement, the next section.
   function cueIn(lane, dtS, fn) { return cueAt(lane, now() + dtS, fn); }
-  // cueLayer: a layer's own pace — baseS scaled by its rate (the layer's rate
-  // and its trim are the lane's rate; a change bends the cues already
-  // waiting, around the present moment).
+  // cueLayer: a layer's own pace — baseS scaled by its lane's rate (its
+  // trim, rateOf).
   function cueLayer(layer, baseS, fn) { return cueAt(layer, now() + baseS / rateOf(layer), fn); }
 
   // THE DOORS — each meeting enters the hall through doors of its own: the
@@ -950,16 +941,10 @@ window.KolobAudio = (function () {
     }
     return d.ward;
   }
-  function getRate(layer) {
-    var base = (layerRate[layer] != null ? layerRate[layer] : 1);
-    var trim = LAYER_RATE_TRIM[layer] != null ? LAYER_RATE_TRIM[layer] : 1;
-    return base * trim;
-  }
-  // the lane's rate: a rate of zero reads as 1, and the clock will not run a
-  // lane slower than 0.05
-  function rateOf(layer) { var r = getRate(layer) || 1; return r < 0.05 ? 0.05 : r; }
+  // the lane's rate: the layer's trim (LAYER_RATE_TRIM), 1 where none is set
+  function rateOf(layer) { return LAYER_RATE_TRIM[layer] != null ? LAYER_RATE_TRIM[layer] : 1; }
   function getLayerParam(layer, key, fallback) {
-    if (layerParams[layer] && layerParams[layer][key] != null) return layerParams[layer][key];
+    if (LAYER_PARAMS[layer] && LAYER_PARAMS[layer][key] != null) return LAYER_PARAMS[layer][key];
     return fallback;
   }
   function applyLayerGain(layer) {
@@ -1351,11 +1336,7 @@ window.KolobAudio = (function () {
     getBandHeardUntil: function () { var VB = KOLOB.VoicesBand; return ctx && VB && VB.heardUntil ? VB.heardUntil(ctx) : 0; },
     setLayerVolume: function (layer, v) { layerVolumes[layer] = v; if (ctx) applyLayerGain(layer); },
     toggleLayer: function (layer) { layerMuted[layer] = !layerMuted[layer]; if (ctx) applyLayerGain(layer); return !layerMuted[layer]; },
-    // the layer's rate (not on the console; a lab's) is its lane's rate: the cues already waiting bend with it
-    setLayerRate: function (layer, r) { layerRate[layer] = r; if (clock) clock.lane(layer).rate = rateOf(layer); },
-    setLayerParam: function (layer, key, v) { if (!layerParams[layer]) layerParams[layer] = {}; layerParams[layer][key] = v; },
     getLayerParam: getLayerParam,
-    getLayerDefaults: function () { return JSON.parse(JSON.stringify(LAYER_PARAM_DEFAULTS)); },
     getLayers: function () { return LAYERS.filter(function (l) { return !SHELVED[l]; }); },
     getVolumes: function () {
       var out = {};
@@ -1421,8 +1402,7 @@ window.KolobAudio = (function () {
     // style and habits; the name in Deseret, nameEn dev-only; whether the
     // morning was seated for the chorale prelude, and the meeting's ledger —
     // hymns, fills, the one strange fill), what the pipes cost (the cases,
-    // the nodes built, the most alive at once, plans still on the desk);
-    // setOrgan("house" | "pipe") is the dev switch ?organ=house sets
+    // the nodes built, the most alive at once, plans still on the desk)
     getOrganist: function () {
       var o = S.Meeting && S.Meeting.organist ? S.Meeting.organist() : null;
       if (!o) return null;
@@ -1430,8 +1410,6 @@ window.KolobAudio = (function () {
                prelude: o.preludeDraw || null, chorale: S.Meeting.chorale ? S.Meeting.chorale() : null };
     },
     organStats: function () { return S.organStats ? S.organStats() : null; },
-    getOrgan: function () { return S.pipeOn && !S.houseOrgan && KOLOB.VoicesOrgan && KOLOB.Organist ? "pipe" : "house"; },
-    setOrgan: function (which) { if (!playing) S.houseOrgan = which === "house"; },
     setNoteListener: function (fn) { noteListeners.push(fn); },
     setEventListener: function (fn) { eventListeners.push(fn); },
     // on: true (a guest, drawn as the switch draws it), false, or — dev, the

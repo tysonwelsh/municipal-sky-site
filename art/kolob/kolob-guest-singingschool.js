@@ -60,9 +60,9 @@
 // tenors carry the tune, so "the tenors climb where the tune turns down"
 // is literally the tune); a tune sung in unison (the Old Way) is the women
 // on the tune and the men an octave under it — and then it is the men who
-// climb or hold on, or the women who come in late. On a phone
-// (material.phone) the choir is one desk a part: twelve singers, half the
-// nodes (the practice peaks at 290–420 singer nodes with its eight desks).
+// climb or hold on, or the women who come in late. (The practice peaks at
+// 290–420 singer nodes with its eight desks; a phone's half-size choir,
+// material.phone, was retired on 2026-10-01 — nothing on the page set it.)
 //
 // PURE PLANNING. plan(), decide(), lesson() and score() touch no
 // AudioContext, DOM, clock or Math.random; every die is the stream's
@@ -90,7 +90,7 @@
 //              at `at`, a little before its throat is born, instead of the
 //              whole practice inside one cue — the hook the trombones take;
 //              a lab with no clock lays everything out at once) }
-//     material: prepare()'s, or { hymn, keynoteHz, phone? }
+//     material: prepare()'s, or { hymn, keynoteHz }
 //   ODDS, EXPERIMENT, NAME, LABEL, LEVEL, CONSONANTS
 // ============================================================================
 
@@ -298,7 +298,6 @@ window.KOLOB.GuestSingingSchool = (function () {
       prepared: true, hymnId: h.id, hymnName: h.nameEn || null, dialect: h.dialect || null, mode: modeName(h.mode),
       melodyPart: h.melodyPart || "S", beatS: num(h.beatS, 0.7), keynoteHz: K, finalHz: K * monzoRatio(h.keyMonzo),
       lines: lines, unison: present.length === 1, source: source + (h.nameEn ? " (" + h.nameEn + ", " + (h.dialect || "?") + ")" : ""),
-      phone: !!M.phone,
     };
   }
 
@@ -308,10 +307,9 @@ window.KOLOB.GuestSingingSchool = (function () {
   // desk: { id, voice (the VoicesVocal part), sings (a Score part), oct, group
   // (who the chorister would name), pan } — the choir faces us: sopranos at
   // the audience's left, then the altos, the tenors, the basses at the right
-  // (on a phone, one desk a part, standing between the two places)
   function choir(M) {
     var L0 = M.lines[0].parts, has = function (p) { return !!L0[p]; }, desks = [];
-    var PAN = M.phone ? { S: [-0.52], A: [-0.14], T: [0.17], B: [0.54] } : { S: [-0.62, -0.42], A: [-0.22, -0.06], T: [0.08, 0.26], B: [0.44, 0.64] };
+    var PAN = { S: [-0.62, -0.42], A: [-0.22, -0.06], T: [0.08, 0.26], B: [0.44, 0.64] };
     ["S", "A", "T", "B"].forEach(function (v) {
       for (var k = 0; k < PAN[v].length; k++) {
         var sings = v, oct = 1, group = v;
@@ -589,7 +587,7 @@ window.KOLOB.GuestSingingSchool = (function () {
     // line's cadence too, so the rehearsal lasts its 30 s)
     if (M.lines[1] && (againT + lineLen(L) + 1.4 < 31)) lines.push(M.lines[1]);
     // (each desk sings the whole pass in one breath group — one throat for
-    // both lines, a rest between them — so a phone builds the desk once)
+    // both lines, a rest between them)
     var tl = againT, per = desks.map(function () { return { start: null, notes: [], at: null }; });
     lines.forEach(function (ln, li) {
       var lnOn = tl;
@@ -702,8 +700,7 @@ window.KOLOB.GuestSingingSchool = (function () {
       });
     });
     var chorister = VV.singer({ part: "A", age: "mid", confidence: 0.95, brightness: 0.55, breath: 0.2, rand: synth.fork("chorister"), name: "chorister", pan: 0.02, vibrato: { rate: 5.3, depth: 26, onsetDelay: 0.4 } });
-    // (a phone's choir is one desk a part: each desk carries what two did)
-    var G_DESK = 0.42 * (sc.prepared.phone ? Math.SQRT2 : 1), G_CHOR = 0.75;
+    var G_DESK = 0.42, G_CHOR = 0.75;
     // THE DOOR. A voice that lets one sample of its breath noise through at
     // the instant each sung line's throat is built, 0.45 s before the
     // line's first vowel — its noise starting on the same sample as its

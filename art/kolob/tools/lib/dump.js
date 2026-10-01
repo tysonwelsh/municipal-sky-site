@@ -125,7 +125,7 @@ function typedEvent(e, p) {
       e.logged = p.logged !== false; break;
     case "guest":                // a stage of a guest already begun (the bands cross, the near choir answers): a mark, never a second start
       e.kind = "guest"; e.guest = p.guest || "?"; e.phase = "mark"; e.stage = p.stage || null; e.logged = p.logged !== false; break;
-    case "question-asking": e.kind = "guest"; e.guest = "question"; e.phase = "mark"; break;
+    case "question-asking": e.kind = "guest"; e.guest = "question"; e.phase = "mark"; break;   // (the shelved Question's: a dump older than 2026-10-01 may carry them)
     case "question-unanswered": e.kind = "guest"; e.guest = "question"; e.phase = "end"; break;
     case "cast": e.kind = "cast"; e.member = p.memberId; e.action = p.action || null; break;
     case "vision": e.kind = "vision"; e.vision = p.name; break;

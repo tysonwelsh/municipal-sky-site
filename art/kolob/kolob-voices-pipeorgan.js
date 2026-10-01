@@ -62,11 +62,11 @@
 //    lost, and every pipe stays on the oscillator's fast path.
 //
 // LEVEL. At opts.gain 1, "hymn principal" leaves the organ at the level the
-// house's additive organ (houseOrganChord, kolob-voices-organ.js) leaves it
+// house's old additive organ (houseOrganChord, retired 2026-10-01) left it
 // in the prelude (gainMul ≈ 0.51, before the organ layer's volume): the same
 // loudest-3-seconds loudness through the app's chain, −21.2 LUFS in the
 // lab's tabernacle. So the pipe organ drops into the organ layer where the
-// house organ sits, at gain 1. Against it (loudest 3 s):
+// old organ sat, at gain 1. Against it (loudest 3 s):
 // quiet flute −7 LU, flutes 8 & 4 and vox humana −5, trumpet −2.6, full
 // organ +3 — with the brightness of the mixture and the reed on top.
 //
@@ -200,10 +200,10 @@ window.KOLOB.VoicesOrgan = (function () {
 
   // one key's level at v = 1. Calibrated (lab: instruments-lab.php, "level
   // reference") so that at opts.gain 1 "hymn principal" is as loud as the
-  // house's additive organ (houseOrganChord) in the prelude — gainMul ≈
-  // 0.51, linear envelope, both measured before the organ layer's volume.
-  // The pipe organ is a drop-in for the house organ's layer, not a louder
-  // instrument in its chair.
+  // house's old additive organ (houseOrganChord, retired 2026-10-01) was in
+  // the prelude — gainMul ≈ 0.51, linear envelope, both measured before the
+  // organ layer's volume. The pipe organ is a drop-in for the old organ's
+  // layer, not a louder instrument in its chair.
   var KEY_LEVEL = 0.0695;
   // the chiff's level against a key, and its time constants (s): a flue
   // pipe's consonant is 20–50 ms long and ~25 dB under the tone it starts

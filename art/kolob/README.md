@@ -27,7 +27,7 @@ plays the same meeting every time, in the browser and in the headless harness.
 | the facade | `kolob-core.js` — raises `window.KolobAudio`; the only thing the page calls |
 | the version | `VERSION` — one line, `v0.36.N — what the owner would notice`; bumped in the same commit as any audible or visible change (SCORE §8); `index.php` prints it with a fingerprint of the served bytes |
 | the labs | `*-lab.php` + `*-lab.js` — unlinked dev benches, one per subsystem (`hymn-lab` is the owner's listening checkpoint for the composer; `room-lab` the impulse responses; `voices-lab` the house choir against the ward) |
-| shelved | `shelved/` — the Question (`kolob-question.js`, its lab), the bagpipe (`kolob-voices-bagpipe.js`, its lab) and the tune lab (v0.30's old-tune incipits): the owner's rulings of 2026-09-27 and 2026-09-13; code kept, not loaded |
+| shelved | `shelved/` — the Question (`kolob-question.js`, `kolob-question-setpiece.js`, its lab), the bagpipe (`kolob-voices-bagpipe.js`, its lab) and the tune lab (v0.30's old-tune incipits): the owner's rulings of 2026-09-27 and 2026-09-13; code kept, not loaded |
 | the harness | `_harness.js` — plays a meeting headless in Node (mock Web Audio, a virtual clock) and writes the dump the tools read; tracked since 2026-10-01 |
 | the tools | `tools/` — `loadcheck.js` (the engine loads), `lends.js` (the shared bag), `samecode.js` (an edit touched only comments), `selftest.js`, `distinctness.js`, `repetition.js`, `tally.js` (A/B: did the music move), `screens.js`, `capture.js`; `tools/README.md` explains each |
 | the contract | `SCORE.md` — the interface every module codes against, one layer, one section a topic (modules, pitch, streams, time, the Score, events, performance, guests, versions); **the code each section names is the authority**. The layered original it was consolidated from is `archive/SCORE-layered.md` |
@@ -99,7 +99,7 @@ byte the same; a musical change should move only what it meant to.
 `?seed=N` · `&guest=<name>` (one of `bands handcart gulls variations changes
 tongues farward hosanna socialhall testimony trombones handbells singingschool
 steeples oldtune`) · `&exp=-reckoning` / `-singingSchool` · `&choir=house` ·
-`&organ=house` · `&latin=1` · `&kolobPreview=1` · `&kolobCumulative=1`. The Ives switch forces a guest;
+`&latin=1` · `&kolobPreview=1` · `&kolobCumulative=1`. The Ives switch forces a guest;
 the Whole switch governs the withheld tune; Latin reveals the dev labels.
 
 ## Where to hear things
@@ -117,7 +117,7 @@ a minute.
 `OPEN-WORK.md` is the list. The headlines: nobody has listened to rounds 3b and
 3c (every level was set by measurement); the drone as a waveform on the staff,
 Deseret phoneme singing and the visions are approved and unbuilt; the house
-choir and the house organ remain as A/B fallbacks (`?choir=house`,
-`?organ=house`) until the owner's ear chooses; the caterpillar wants "a few more
+choir remains as an A/B fallback (`?choir=house`) until the owner's ear
+chooses (the house organ was retired on 2026-10-01); the caterpillar wants "a few more
 passes"; the Hosanna and the far ward are the costly guests and no phone has
 played the app.
