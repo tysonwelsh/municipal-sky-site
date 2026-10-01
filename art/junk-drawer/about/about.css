@@ -18,16 +18,6 @@
                       Scene 1 is the exception and runs text-over-graphic.
    ========================================================================== */
 
-/* ---- things that survive from v2 ---------------------------------------- */
-.jd-about .jd-about-steps { margin: 0 0 var(--s-3); padding: 0 0 0 1.6em; }
-.jd-about .jd-about-steps li { margin: 0 0 var(--s-2); }
-.jd-about .jd-about-steps b {
-  font-weight: 400; font-size: var(--fs-xs);
-  letter-spacing: 0.14em; text-transform: uppercase;
-}
-.jd-about .jd-about-tally:empty { display: none; }
-.jd-about .jd-colophon .jd-about-sep { margin: 0 0.5em; opacity: 0.5; }
-
 /* ---- the steps ---------------------------------------------------------- */
 /* Each step is a block of prose tall enough to own a stretch of the scroll.
    Not a full viewport: a step that fills the screen makes the reader scroll
@@ -38,7 +28,6 @@
 }
 .jd-about--live .jd-step { opacity: 0.42; }
 .jd-about--live .jd-step.is-on { opacity: 1; }
-.jd-about .jd-step h2 { margin-top: 0; }
 /* no eyebrow (owner, 2026-09-26): a step is its heading and its prose. The
    scene a step belongs to is on the timeline, and the pane shows it. */
 /* the demo notice — under the drawing, beside the controls, stated plainly */
@@ -178,7 +167,6 @@
 }
 .jd-tl-scene:last-child { margin-bottom: 0; }
 .jd-tl-name { display: none; }
-.jd-tl-label { display: none; }
 
 .jd-tl-stop {
   position: relative;
@@ -220,7 +208,6 @@
   width: 100%;
   max-height: none;
 }
-.jd-about .jd-inline-card.is-on { display: block; }
 /* the cards' own close controls point at a modal that isn't one here */
 .jd-about .jd-inline-card .jd-turn-close,
 .jd-about .jd-inline-card .jd-record-close,
@@ -641,9 +628,7 @@
   padding: 14px;
 }
 .jd-about .jd-inline-card .fx-card { display: none; }
-.jd-about [data-scene-pane="analytics"][data-fx="grades"] .fx-grades,
-.jd-about [data-scene-pane="analytics"][data-fx="cost"] .fx-cost,
-.jd-about [data-scene-pane="analytics"][data-fx="axes"] .fx-axes { display: block; }
+.jd-about [data-scene-pane="analytics"][data-fx="grades"] .fx-grades { display: block; }
 .jd-about .jd-inline-card .fx-turns { display: none; }
 /* one chart, centred in the card, and a little larger than the folder's
    440px cap now that it has the sheet to itself */
@@ -671,13 +656,6 @@
   box-shadow: none;
   max-height: none;
 }
-.jd-about .jd-inline-card .jd-folder-head {
-  min-height: 0;
-  background: none;
-  border-bottom: 0;
-  align-items: flex-end;
-}
-.jd-about .jd-inline-card .jd-folder-tabrow { padding: 0 0 0 30px; }
 /* A REAL TAB (owner, 2026-09-16): bigger, and its word bigger with it, the
    way a manila folder's tab stands proud of the sheet. It reaches DOWN
    INTO the sheet by four pixels — over the sheet's top rule and past it —
@@ -726,6 +704,8 @@ html.jd-about-page.jd-folder-open { overflow: visible; }
 
 /* ---------------- desktop: pane left, steps right ----------------------- */
 @media (min-width: 769px) and (min-height: 501px) {
+  /* the pinned pane's height: the viewport under the banner, less --s-3 */
+  .jd-about { --jd-pane-h: calc(100vh - var(--banner-h) - var(--s-3)); }
   .jd-about .jd-about-grid {
     display: grid;
     /* graphic | prose | timeline. The graphic takes the larger share because
@@ -762,8 +742,12 @@ html.jd-about-page.jd-folder-open { overflow: visible; }
        the top of the column while the prose beside it stayed centred far
        below — the graphic and the words never lined up. Fixed height plus
        safe centring puts the card's middle on the prose's middle. */
-    height: calc(100vh - var(--banner-h) - var(--s-3));
-    max-height: calc(100vh - var(--banner-h) - var(--s-3));
+    height: var(--jd-pane-h);
+    /* the max-height is READ: about-scenes.js fitCard takes the card's
+       available height from it. Its fallback, the computed height, is the
+       used height snapped to 1/64px — under page zoom it differs from this
+       by up to ~0.014px, enough to move a card's 4-decimal scale. Keep it. */
+    max-height: var(--jd-pane-h);
     /* hidden, not auto: a scene mid-travel sits ±52px outside the pane and
        would otherwise arm a scrollbar on the pinned graphic every time the
        scene changed. The card is fitted to the pane, so nothing that belongs
@@ -785,11 +769,12 @@ html.jd-about-page.jd-folder-open { overflow: visible; }
     max-width: 100%;
     /* the stage's MARGIN BOX has to fit the pane's max-height, not just its
        border box: --s-1 above and --s-2 below ride outside the height, and
-       the pane subtracts --s-3 where this subtracted --s-4. That 16px
-       mismatch was constant at every width and turned the pinned graphic
-       into a scroller that ate a wheel notch before the page moved. */
+       the pane's height (--jd-pane-h) subtracts --s-3 where this once
+       subtracted --s-4. That 16px mismatch was constant at every width and
+       turned the pinned graphic into a scroller that ate a wheel notch
+       before the page moved. */
     height: min(
-      calc(100vh - var(--banner-h) - var(--s-3) - var(--s-1) - var(--s-2) - var(--jd-pull-drop)),
+      calc(var(--jd-pane-h) - var(--s-1) - var(--s-2) - var(--jd-pull-drop)),
       1000px,
       calc(100cqw * 1.25));
     margin: var(--s-1) auto calc(var(--jd-pull-drop) + var(--s-2));
@@ -814,7 +799,6 @@ html.jd-about-page.jd-folder-open { overflow: visible; }
      against at both ends of the scroll */
   .jd-about--live .jd-step:first-of-type { margin-top: 6vh; }
   .jd-about--live .jd-step:last-of-type { margin-bottom: 30vh; }
-  .jd-about .jd-back { display: none; }
 }
 
 /* ---------------- phone: pane pinned top, steps beneath -----------------
@@ -1140,9 +1124,10 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
   /* THE PAPER (owner, 2026-09-27: "give them a container … that fits the
      theme"). The report card's stock, so the analysis reads as one more
      document from the same file: the cream card, its grain and mottle
-     (copied from .jd-record-scrim's tokens in junk-drawer.css, which are
-     scoped to that scrim), the double hairline border, the drop shadow,
-     and the card's slate ink. The charts inside keep their plain marks. */
+     (junk-drawer.css's shared :root textures, --jd-grain-url and
+     --jd-mottle-url, the very bytes the report card's scrim aliases), the
+     double hairline border, the drop shadow, and the card's slate ink. The
+     charts inside keep their plain marks. */
   --jdc-card: #efe4c6;
   --jdc-ink: #37414f;
   --jdc-hair: rgba(55, 65, 79, 0.22);
@@ -1151,7 +1136,7 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
   box-sizing: border-box;
   padding: 30px 34px 28px;
   color: var(--jdc-ink);
-  background: var(--jdc-card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+  background: var(--jdc-card) var(--jd-grain-url);
   border: 1px solid rgba(48, 38, 20, 0.55);
   box-shadow: 14px 22px 34px -10px rgba(6, 3, 0, 0.5),
               3px 6px 12px -4px rgba(6, 3, 0, 0.4);
@@ -1163,7 +1148,7 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
 }
 .jd-about .jd-charts::after {
   content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cfilter id='m' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.011 0.016' numOctaves='4' seed='23'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.44 0 0 0 0 0.32 0 0 0 0 0.11 0 0 0 0.14 0'/%3E%3C/filter%3E%3Crect width='420' height='420' filter='url(%23m)'/%3E%3C/svg%3E");
+  background-image: var(--jd-mottle-url);
   background-size: 420px 420px;
 }
 .jd-about .jd-charts > .jdc { position: relative; z-index: 2; }
@@ -1224,19 +1209,6 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
   border-radius: 50%;
   box-shadow: 0 0 0 2px var(--jdc-ground);
 }
-/* the scale's own words under the last row */
-.jd-about .jdc-scale { min-height: 0; margin-top: 4px; }
-.jd-about .jdc-scale .jdc-track { height: 1.2em; }
-.jd-about .jdc-scale .jdc-track { height: auto; min-height: 1.3em; }
-.jd-about .jdc-tl {
-  position: absolute; top: 0; transform: translateX(-50%);
-  font-family: var(--font-mono); font-size: 0.74rem; letter-spacing: 0.02em;
-  line-height: 1.25; color: rgba(55, 65, 79, 0.8); white-space: nowrap;
-}
-/* the end words sit inside the scale, flush to their ends, and may wrap
-   rather than meet in the middle of a narrow panel */
-.jd-about .jdc-tl:first-child { transform: none; white-space: normal; max-width: 48%; text-align: left; }
-.jd-about .jdc-tl:last-child { transform: none; left: auto !important; right: 0; white-space: normal; max-width: 48%; text-align: right; }
 /* the multiples: two by two, each panel titled, the name column narrower */
 .jd-about .jdc-multiples {
   display: grid; grid-template-columns: 1fr 1fr; gap: 26px 30px;
@@ -1245,7 +1217,7 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
 .jd-about .jdc-panel { --jdc-name: 8.6rem; --jdc-val: 2.2rem; }
 .jd-about .jdc-panel.is-right { --jdc-name: 0px; }
 .jd-about .jdc-panel .jdc-row { column-gap: 10px; min-height: 30px; }
-.jd-about .jdc-panel.is-right .jdc-row { column-gap: 0 10px; grid-template-columns: 0 1fr var(--jdc-val); }
+.jd-about .jdc-panel.is-right .jdc-row { grid-template-columns: 0 1fr var(--jdc-val); }
 .jd-about .jdc-panel.is-right .jdc-name { visibility: hidden; overflow: hidden; }
 .jd-about .jdc-panel .jdc-name,
 .jd-about .jdc-panel .jdc-val { font-size: 0.82rem; }
@@ -1319,10 +1291,6 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
   .jd-about .jdc-panel.is-right .jdc-name { visibility: visible; }
   .jd-about .jdc-panel .jdc-row { min-height: 22px; }
   .jd-about .jdc-ptitle { font-size: 0.92rem; margin-bottom: 2px; }
-  /* too narrow for five tier names: the scale keeps its ends, the ticks
-     keep the rest */
-  .jd-about .jdc-tl { font-size: 0.64rem; }
-  .jd-about .jdc-tl:not(:first-child):not(:last-child) { display: none; }
 }
 
 /* THE PAGE TITLE (owner, 2026-09-28, third pass). A title block at the
@@ -1435,8 +1403,8 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
   border-right: 1px solid rgba(55, 65, 79, 0.5);
 }
 .jd-about .jdc-sheet th.jdc-rn { z-index: 4; }
-/* the date comes first and scrolls; the prompt holds still beside the row
-   numbers, so the date slides under it as the table scrolls sideways */
+/* the prompt holds still beside the row numbers as the table scrolls
+   sideways */
 .jd-about .jdc-sheet .jdc-c-prompt {
   position: sticky; left: 2.8rem; z-index: 1;
   width: 12rem; min-width: 12rem; max-width: 12rem;
@@ -1444,8 +1412,6 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
   border-right: 1px solid rgba(55, 65, 79, 0.5);
 }
 .jd-about .jdc-sheet th.jdc-c-prompt { z-index: 4; background: var(--jdc-headfill); }
-.jd-about .jdc-sheet .jdc-c-date { width: 6.4rem; min-width: 6.4rem; max-width: 6.4rem; background: var(--jdc-paper); }
-.jd-about .jdc-sheet th.jdc-c-date { background: var(--jdc-headfill); }
 .jd-about .jdc-sheet .jdc-c-num { width: 6.2rem; min-width: 6.2rem; max-width: 6.2rem; text-align: right; }
 .jd-about .jdc-sheet th.jdc-c-num { text-align: right; }
 @media (max-width: 768px), (max-height: 500px) {
@@ -1493,7 +1459,7 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
   line-height: 1.45;
 }
 .jd-about .jd-sheet-card .jdc-sheet th {
-  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  font-family: var(--jd-font-form);
   font-weight: 700; font-size: 0.56rem;
   letter-spacing: 0.14em; text-transform: uppercase;
   color: rgba(51, 36, 15, 0.64);
@@ -1511,7 +1477,7 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
 }
 /* the row numbers go, and the prompt column takes the left wall */
 .jd-about .jd-sheet-card .jdc-sheet .jdc-rn { display: none; }
-.jd-about .jd-sheet-card .jdc-sheet .jdc-c-prompt { left: 0; border-right: 1px solid rgba(74, 53, 18, 0.28); }
+.jd-about .jd-sheet-card .jdc-sheet .jdc-c-prompt { left: 0; border-right: 1px solid var(--jdc-group); }
 .jd-about .jd-sheet-card .jdc-sheet .jdc-g-head,
 .jd-about .jd-sheet-card .jdc-sheet .jdc-g-start { border-left: 1px solid var(--jdc-group); }
 .jd-about .jd-sheet-card .jdc-sheet .jdc-c-num,
@@ -1609,12 +1575,6 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
 .jd-about .jdc-pair figcaption { margin-bottom: 14px; }
 .jd-about .jdc-sec + .jdc-sec { margin-top: 24px; padding-top: 18px; border-top: 1px solid rgba(55, 65, 79, 0.18); }
 .jd-about .jdc-sec-sub { margin: 0 0 10px; text-align: left; font-size: 0.92rem; }
-
-/* a numbered list in a step (the grade scale): the step's own type, the
-   numbers in the drawer's mono so they read as the scale's values */
-.jd-about .jd-step-list { margin: 0 0 var(--s-2); padding-left: 1.6em; }
-.jd-about .jd-step-list li { margin: 0 0 2px; padding-left: 0.2em; }
-.jd-about .jd-step-list li::marker { font-family: var(--font-mono); font-size: 0.86em; color: var(--ink-soft); }
 
 /* FOCUS (owner, 2026-09-27; widened 2026-09-29): a step can dim part of its
    card to point at the rest. "spread-lead": the averages recede, and in the
@@ -1746,8 +1706,7 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
   .jd-about--phone .jd-about-pane { display: none; }
 
   /* ---- the steps: a long read, nothing dimmed --------------------------- */
-  .jd-about--live .jd-step,
-  .jd-about--live .jd-step.is-on {
+  .jd-about--live .jd-step {
     opacity: 1;
     min-height: 0;
     margin: 0 0 40px;
@@ -1756,7 +1715,7 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
   .jd-about .jd-step-body p,
   .jd-about .jd-step-body li { font-size: 17px; line-height: 1.6; }
   .jd-about .jd-step h2 {
-    font-size: 1.5rem; line-height: 1.2; font-weight: 600;
+    font-size: 1.5rem; line-height: 1.2;
     margin: 0 0 0.6rem;
   }
   .jd-about .jd-demo-note { font-size: 13px; }
@@ -1808,7 +1767,6 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
     display: block; overflow: visible; will-change: auto;
     width: 100%;
   }
-  html.jd-poster-on .jd-about--live .jd-stage,
   .jd-about--live .jd-stage {
     height: auto;
     aspect-ratio: 4 / 5;
@@ -1933,7 +1891,7 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
   .jd-about .jd-ph-card .rc-note-no { display: none; }
   /* the frozen columns' sticky grounds covered some row rules */
   .jd-about .jd-ph-card .jdc-sheet td.jdc-rn,
-  .jd-about .jd-ph-card .jdc-sheet td.jdc-c-prompt { box-shadow: inset 0 -1px 0 rgba(55, 65, 79, 0.22); }
+  .jd-about .jd-ph-card .jdc-sheet td.jdc-c-prompt { box-shadow: inset 0 -1px 0 var(--jdc-hair); }
 
   /* Gemini and Kimi: the drawing is held — masthead, plate, replay — and
      the card is sized so all three fit the held band at 1:1 */
@@ -1998,7 +1956,7 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
     display: block; width: 100%; min-height: 44px; margin: 10px 0 0;
     font-family: var(--font-mono); font-size: 13px; letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: #37414f; background: #efe4c6;
+    color: var(--jdc-ink); background: #efe4c6;
     border: 1px solid rgba(55, 65, 79, 0.45); border-radius: 3px;
     cursor: pointer;
   }
@@ -2017,7 +1975,6 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
   .jd-about .jdc-hrow-lab { font-size: 0.72rem; }
   .jd-about .jdc-hrow-n { font-size: 11.5px; }
   .jd-about .jdc-hrow-t { font-size: 0.8rem; }
-  .jd-about .jdc-tl { font-size: 0.7rem; }
 
   /* ---- scene 4: the spread, alone, its leaders picked out ------------------ */
   .jd-about [data-ph="distribution"] .jdc-sec-avg { display: none; }
@@ -2049,8 +2006,6 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
 @media (max-width: 768px) and (min-height: 701px) {
   .jd-about .jd-ph-sec[data-ph="drawer"] .jd-pull,
   .jd-about--live:not(.jd-about--phone) .jd-about-pane .jd-pull { display: none; }
-  html.jd-poster-on .jd-about--live .jd-ph-sec[data-ph="drawer"] .jd-stage,
-  html.jd-poster-on .jd-about--live:not(.jd-about--phone) .jd-about-pane .jd-stage,
   .jd-about--live .jd-ph-sec[data-ph="drawer"] .jd-stage,
   .jd-about--live:not(.jd-about--phone) .jd-about-pane .jd-stage { margin-bottom: 0; }
 }
@@ -2078,7 +2033,6 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
 @media (max-height: 500px) {
   .jd-about .jd-ph-pin { position: static; }
   .jd-about .jd-ph-pin::after { content: none; }
-  html.jd-poster-on .jd-about--live .jd-stage,
   .jd-about--live .jd-stage {
     --wall: clamp(12px, calc((100svh - var(--banner-h) - 24px) * 0.035), 20px);
     width: min(100%, calc((100svh - var(--banner-h) - 24px - var(--jd-pull-drop, 0px)) * 0.8));
