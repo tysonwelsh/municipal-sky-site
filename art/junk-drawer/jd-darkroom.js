@@ -3,18 +3,43 @@
    The wait indicators the turn's darkroom deals to its four swatches, and
    nothing else: each is a generator that turns a seed (the turn's
    client_ref) into markup — a plotted circuit, the stray "please / wait",
-   the scatterword LOADING…, the wristwatch, the honest bar, the word drift
-   (plus the benched word mesh). The turn module (jd-turn.js) owns the
-   swatches, the slot states and the card; it calls
+   the scatterword LOADING…, the wristwatch, the honest bar, the word drift,
+   the word mesh (the circuit and the bar are benched — see DARK_POOL). The
+   turn module (jd-turn.js) owns the swatches, the slot states and the card;
+   it calls
      JD_dark.deal(seed)             the indicators dealt to slots a..d
      JD_dark.well(slot, anim, seed) one indicator's markup for a well
      JD_dark.mount(root)            build the word drift(s) in the painted DOM
      JD_dark.stopAll()              stop every drift's metronome
+     JD_dark.stop(host)             stop the drift(s) in one host only
    Seeding is the house fold (JD_fnv1a / JD_xorshift, jd-core.js), so a
    repaint or a restored turn re-derives the identical animation. Loaded
    after jd-core.js and before jd-turn.js. See jd-core.js for the file map.
    ========================================================================== */
 (function () {
+  /* PAIRED NUMBERS — values this file computes with that junk-drawer.css
+     states again on its own. Nothing reads one side from the other, so a
+     change to either is a change to both. The CSS is named by selector and
+     declaration (its line numbers move):
+       darkScatterword's 140×110 FIELD and 11.05px glyph (CX/CY/EM, the roam
+         box, the walls) ⇔ .jd-dark-word { font-size: 7.893cqw }, which is
+         100 / (140 / 11.05) — the field's width IS the swatch's
+       YEXT's 33/41 ⇔ .jd-dark-sw { width: 41%; height: 33% }
+       the dots' EM 16.02 (11.05 × 1.45) and their CX/CY ⇔ .jd-dark-gl7,
+         .jd-dark-gl8, .jd-dark-gl9 { font-size: 1.45em; line-height: 0;
+         margin-right: -0.186em }
+       the scatter ruler's tracking (its two clones) ⇔ .jd-dark-word
+         { letter-spacing: 0.08em }
+       darkMeasureHost's 'jd-turn-scrim' ⇔ the .jd-turn-scrim scope that
+         defines --tmono / --thand
+       the watch's 30deg minute ticks (wm * 30, and the hour hand's
+         whr * 30 + wm * 2.5) ⇔ .jd-dark-watch .w-min / .w-hr { animation:
+         … steps(12, end) }
+       JD_DRIFT.cell 9 ⇔ .jd-drift i { width: 9px; height: 9px;
+         line-height: 9px } and the 9px minor ruling in .jd-dark-sw's
+         background
+       the 0.5s fade jdDriftStop is called after (from jd-turn.js) ⇔
+         .jd-dark-well { transition: opacity 0.5s } */
   /* a fresh plotted circuit for slot A (round 18, owner pick 2026-08-17):
      a random spanning tree over a 5×3 grid of cells, then the closed tour
      that walks the fine 10×6 lattice around it — the classic plotter-art
@@ -128,13 +153,43 @@
       'visibility:hidden;pointer-events:none';
     return host;
   }
+  /* what else the two rulers share: the zero-size inline-block probe that
+     pins a baseline in the DOM, the canvas the ink is drawn on, and the
+     alpha scan that reads it back */
+  var DARK_PROBE = '<span data-p style="display:inline-block;width:0;height:0"></span>';
+  function darkInkCanvas() {   /* a 2D context to draw and read back, or null */
+    var cv = document.createElement('canvas');
+    return cv.getContext('2d', { willReadFrequently: true });
+  }
+  /* per canvas row, the first and last pixel whose alpha is over 16 (null
+     on a row without ink) — every hull point and every bbox edge either
+     ruler takes is one of these; null when the canvas holds no ink at all */
+  function darkInkRows(ctx) {
+    var w = ctx.canvas.width, hh = ctx.canvas.height;
+    var img = ctx.getImageData(0, 0, w, hh).data;
+    var rows = [], any = false, x, y, rw;
+    for (y = 0; y < hh; y++) {
+      rw = null;
+      for (x = 0; x < w; x++) {
+        if (img[(y * w + x) * 4 + 3] > 16) {
+          if (!rw) rw = [x, x]; else rw[1] = x;
+          any = true;
+        }
+      }
+      rows.push(rw);
+    }
+    return any ? rows : null;
+  }
+  /* the scatterword's word, one character per flying glyph: the ruler
+     measures exactly these and darkScatterword flies exactly these */
+  var SCATTER_GLYPHS = 'LOADING...';
   function darkScatterInkReach() {
     if (darkScatterInkReach.v !== undefined) return darkScatterInkReach.v;
     darkScatterInkReach.v = null;
     try {
-      var CHARS = 'LOADING...';   /* must match darkScatterword's GLYPHS */
+      var CHARS = SCATTER_GLYPHS;   /* darkScatterword's GLYPHS, the same constant */
       var SAFE = 0.025, S = 2, SN = 72, i;   /* SN: support samples, 5° apart */
-      var PROBE = '<span data-p style="display:inline-block;width:0;height:0"></span>';
+      var PROBE = DARK_PROBE;
       /* TWO clones of the word, because the probes are not free: tracking
          (letter-spacing 0.08em) applies after every character unit — a
          zero-size inline-block probe included — so a probed glyph's box is
@@ -164,8 +219,7 @@
       var baseFs = parseFloat(getComputedStyle(word).fontSize);
       var gsA = word.querySelectorAll('.jd-dark-gl');
       var gsB = host.querySelectorAll('.jd-dark-word + .jd-dark-word .jd-dark-gl');
-      var out = [], cv = document.createElement('canvas');
-      var ctx = cv.getContext('2d', { willReadFrequently: true });
+      var out = [], ctx = darkInkCanvas(), cv = ctx && ctx.canvas;
       if (!ctx) { document.body.removeChild(host); return null; }
       for (i = 0; i < gsA.length; i++) {
         var g = gsA[i], gB = gsB[i], probe = gB.querySelector('[data-p]');
@@ -187,20 +241,9 @@
         ctx.textBaseline = 'alphabetic';
         ctx.fillStyle = '#000';
         ctx.fillText(CHARS.charAt(i), M, M);   /* canvas y=M ⇔ the DOM baseline */
-        var img = ctx.getImageData(0, 0, cv.width, cv.height).data;
         /* per-row ink extents — the only pixels that can sit on the hull */
-        var rows = [], any = false, x, y, rw;
-        for (y = 0; y < cv.height; y++) {
-          rw = null;
-          for (x = 0; x < cv.width; x++) {
-            if (img[(y * cv.width + x) * 4 + 3] > 16) {
-              if (!rw) rw = [x, x]; else rw[1] = x;
-              any = true;
-            }
-          }
-          rows.push(rw);
-        }
-        if (!any) { out = null; break; }
+        var rows = darkInkRows(ctx), y;
+        if (!rows) { out = null; break; }
         /* hull candidate points: the outer corners of each row's extreme
            pixels, as em offsets from the BOX CENTRE — the transform origin
            the flight spins about */
@@ -322,6 +365,7 @@
      the shrink, which is why the roam box below is untouched and the
      explosion still covers as much of the swatch as it did before. */
   function darkScatterword(seed) {
+    var i;                  /* the glyph index, for every per-glyph pass     */
     /* ---- choreography: FIXED for every seed, the 6s "house tempo" the
            owner picked off the variant sheet (2026-08-18) ----------------- */
     var BANG    = 6.0;      /* one bang, seconds                             */
@@ -373,8 +417,8 @@
            the same clone (HCX/HCY below) — these constants are one
            platform's 2026-08-18 reading, and a few tenths of a px of
            stale anchor shows once the ink bounces flush. ------------------ */
-    var GLYPHS = 'LOADING...';
-    var NG = 10;
+    var GLYPHS = SCATTER_GLYPHS;   /* what the ink ruler measured */
+    var NG = GLYPHS.length;
     var CX = [36.16, 43.67, 51.19, 58.70, 66.22, 73.73, 81.25, 90.26, 97.79, 105.32];
     var CY = [55.00, 55.00, 55.00, 55.00, 55.00, 55.00, 55.00, 53.48, 53.48, 53.48];
     var EM = [11.05, 11.05, 11.05, 11.05, 11.05, 11.05, 11.05, 16.02, 16.02, 16.02];
@@ -448,7 +492,7 @@
     var T4 = T3 + ZOOP;                     /* home                          */
 
     /* the house fold: FNV-1a of the seed string, then xorshift32 */
-    var h = JD_fnv1a(seed), i;
+    var h = JD_fnv1a(seed);
     var prefix = 'jdsw' + h.toString(36);   /* scopes classes AND keyframes  */
     var rnd = JD_xorshift(h);
     function span(lo, hi) { return lo + rnd() * (hi - lo); }
@@ -799,11 +843,12 @@
      indicators are a POOL, not a seating chart — dealt fresh every turn so
      two runs of a prompt no longer show the same card and no two swatches
      in a turn ever match. The pool has run six deep; with 'words' benched
-     (2026-08-30) it holds exactly four, so the deal is a full permutation
-     and no indicator sits a turn out any more. The deal is a
-     Fisher–Yates shuffle of the pool, seeded the house way from the turn's
-     client_ref, so a repaint or a restored turn re-derives the same
-     arrangement. The slot letters now mean POSITION only (the pencilled
+     (2026-08-30) it held exactly four, a full permutation with no indicator
+     sitting a turn out; with the word mesh back (2026-09-29) it is five
+     indicators for four slots again, so one sits each turn out. The deal
+     is a Fisher–Yates shuffle of the whole pool, seeded the house way from
+     the turn's client_ref, so a repaint or a restored turn re-derives the
+     same arrangement. The slot letters now mean POSITION only (the pencilled
      corner labels the later cards reference); which indicator a position
      hosts is the turn's own business. Each well wears its indicator's name
      — jd-dark-well--plot/stray/scatter/watch/bar/drift/words — and the
@@ -846,9 +891,12 @@
      darkroom paints while the card is still transitioning, so the height
      jdDriftBuild reads can run tens of px deep — and every letter landed
      below the frame until the heap grew back into view. Re-read the host
-     before each letter is dealt: any bucket still at the virgin floor
-     follows the container's real bottom edge; a bucket already carrying
-     heap keeps its surface, so nothing landed ever moves. */
+     on every beat that deals a letter — once a beat: a beat deals its
+     letters in one go, and the host's height cannot change between them
+     (everything in the drift is absolutely positioned). Any bucket still
+     at the virgin floor follows the container's real bottom edge; a bucket
+     already carrying heap keeps its surface, so nothing landed ever
+     moves. */
   function jdDriftSync(st) {
     var H = st.host.clientHeight;
     if (!H || H === st.H) return;
@@ -934,7 +982,6 @@
      square out and it lands on the one below. */
   function jdDriftEmit(col, delayMs) {
     var st = col.st, C = JD_DRIFT.cell;
-    jdDriftSync(st);              /* the landing floor = the container floor */
     var ch = jdDriftNext(col);
     if (ch === null || ch === ' ') return;              /* the beat still passes */
 
@@ -970,29 +1017,39 @@
         offset: Math.min(1, (fallMs + f * flightMs) / total), easing: 'linear' });
     }
     var anim = g.animate(frames, { duration: total, delay: delayMs || 0, fill: 'both' });
-    var rest = pts[pts.length - 1];
+    /* in flight until the sheet's poll sees the fall finish (jdDriftLand) */
+    st.flight.push({ g: g, anim: anim, lane: lane, rest: pts[pts.length - 1], spin: spin });
+  }
 
-    /* POLLED, not evented: this WebView does not fire animation finish events
-       while the page is hidden, and a wait that starts in a background tab
-       would never land a single letter */
-    var poll = setInterval(function () {
-      if (anim.playState !== 'finished') return;
-      clearInterval(poll);
-      var ix = st.polls.indexOf(poll); if (ix >= 0) st.polls.splice(ix, 1);
-      if (st.lane[lane]) st.lane[lane]--;
-      if (st.n < JD_DRIFT.cap && rest.y > st.floorLimit) {
-        anim.cancel();
-        g.style.left = rest.x.toFixed(1) + 'px';
-        g.style.top = rest.y.toFixed(1) + 'px';
-        g.style.transform = 'rotate(' + ((spin % 360) + (jdDriftRnd(19) - 9)) + 'deg)';
-        st.layer.appendChild(g);              /* the same letter, now at rest */
-        jdDriftDeposit(st, rest.x, rest.y);
+  /* POLLED, not evented: this WebView does not fire animation finish events
+     while the page is hidden, and a wait that starts in a background tab
+     would never land a single letter. ONE poll per sheet, every 40ms — each
+     falling letter used to keep its own, ten to thirty 25Hz timers on a busy
+     sheet. It walks the letters in flight in the order they were dealt and
+     lands each whose fall has finished, so a letter still comes to rest
+     0–40ms after its animation ends. While the tab is hidden it stands down
+     with the metronomes (nothing is painted, and hidden-tab timers are
+     throttled anyway); the first tick back lands whatever has finished. */
+  function jdDriftLand(st) {
+    if (document.hidden) return;
+    var k = 0, f;
+    while (k < st.flight.length) {
+      f = st.flight[k];
+      if (f.anim.playState !== 'finished') { k++; continue; }
+      st.flight.splice(k, 1);
+      if (st.lane[f.lane]) st.lane[f.lane]--;
+      if (st.n < JD_DRIFT.cap && f.rest.y > st.floorLimit) {
+        f.anim.cancel();
+        f.g.style.left = f.rest.x.toFixed(1) + 'px';
+        f.g.style.top = f.rest.y.toFixed(1) + 'px';
+        f.g.style.transform = 'rotate(' + ((f.spin % 360) + (jdDriftRnd(19) - 9)) + 'deg)';
+        st.layer.appendChild(f.g);            /* the same letter, now at rest */
+        jdDriftDeposit(st, f.rest.x, f.rest.y);
         st.n++;
       } else {
-        g.remove();                           /* the heap is full: it is spent */
+        f.g.remove();                         /* the heap is full: it is spent */
       }
-    }, 40);
-    st.polls.push(poll);
+    }
   }
 
   /* every drift on the page, so a repaint or a settle can stop them all */
@@ -1005,6 +1062,23 @@
     });
     jdDriftSheets = [];
   }
+  /* …or only the drift(s) in ONE host: every sheet whose host is `host` or
+     sits inside it. The turn calls this for a landed swatch once its well
+     has faded out — stopping at the landing itself would drop the letters
+     that are still due during the 0.5s fade, and those show. Letters
+     already falling finish their fall where they are (fill: both) and are
+     never landed; the well is at opacity 0 by then. A null or unknown host,
+     or one holding no drift, is a no-op. */
+  function jdDriftStop(host) {
+    if (!host || typeof host.contains !== 'function') return;
+    jdDriftSheets = jdDriftSheets.filter(function (st) {
+      if (!host.contains(st.host)) return true;
+      st.beats.forEach(clearInterval);
+      st.polls.forEach(clearInterval);
+      st.beats = []; st.polls = [];
+      return false;
+    });
+  }
 
   function jdDriftBuild(host) {
     var C = JD_DRIFT.cell;
@@ -1013,7 +1087,8 @@
     host.innerHTML = '';
     var st = { W: W, H: H, host: host, bw: C / 3, cols: Math.floor(W / C), top: [],
                busy: {}, lane: {}, n: 0, words: JD_DRIFT_WORDS, inPlay: {},
-               floorLimit: H - JD_DRIFT.maxDepth * C, beats: [], polls: [] };
+               floorLimit: H - JD_DRIFT.maxDepth * C, beats: [], polls: [],
+               flight: [] };
     for (var b = 0; b < Math.ceil(W / st.bw) + 1; b++) st.top.push(H);
     var layer = document.createElement('span');
     layer.className = 'drift';
@@ -1048,12 +1123,16 @@
         if (document.hidden) { col.next = performance.now(); return; }
         var now = performance.now();
         if (now - col.next > col.beat * 6) col.next = now;   /* woke up behind */
+        /* the landing floor = the container floor (see jdDriftSync) */
+        if (col.next <= now + 4) jdDriftSync(st);
         while (col.next <= now + 4) {
           jdDriftEmit(col, col.next - now);
           col.next += col.beat;
         }
       }, Math.max(24, col.beat / 2)));
     });
+    /* …and one poll for the whole sheet, landing what has finished falling */
+    st.polls.push(setInterval(function () { jdDriftLand(st); }, 40));
     return true;
   }
 
@@ -1130,7 +1209,7 @@
     var zero = { l: 0, r: 0, t: 0, b: 0 };
     try {
       var SAFE = 0.4, S = 2;
-      var PROBE = '<span data-p style="display:inline-block;width:0;height:0"></span>';
+      var PROBE = DARK_PROBE;
       var host = darkMeasureHost();   /* in the token scope — see darkMeasureHost */
       host.innerHTML =
         '<span class="jd-dark-stray" style="animation:none;position:relative;' +
@@ -1151,12 +1230,12 @@
       var M = parseFloat(cs.fontSize) * 1.5;  /* margin catches any overhang */
       document.body.removeChild(host);
       if (!(bw > 0) || !(bh > 0) || !(b2 > b1)) return zero;
-      var cv = document.createElement('canvas');
+      var ctx = darkInkCanvas();
+      if (!ctx) return zero;
+      var cv = ctx.canvas;
       cv.width = Math.ceil((bw + 2 * M) * S);
       cv.height = Math.ceil((bh + 2 * M) * S);
-      var ctx = cv.getContext('2d', { willReadFrequently: true });
-      if (!ctx) return zero;
-      ctx.scale(S, S);
+      ctx.scale(S, S);   /* after the sizing, which resets the context */
       ctx.font = font;
       if ('letterSpacing' in ctx && lsp !== 'normal') ctx.letterSpacing = lsp;
       ctx.textAlign = 'center';        /* .sy centres each line, so does this */
@@ -1164,19 +1243,18 @@
       ctx.fillStyle = '#000';
       ctx.fillText('please', M + bw / 2, M + b1);
       ctx.fillText('wait...', M + bw / 2, M + b2);
-      var img = ctx.getImageData(0, 0, cv.width, cv.height).data;
-      var minx = cv.width, miny = cv.height, maxx = -1, maxy = -1, x, y;
-      for (y = 0; y < cv.height; y++) {
-        for (x = 0; x < cv.width; x++) {
-          if (img[(y * cv.width + x) * 4 + 3] > 16) {
-            if (x < minx) minx = x;
-            if (x > maxx) maxx = x;
-            if (y < miny) miny = y;
-            if (y > maxy) maxy = y;
-          }
-        }
+      /* the ink bbox, off the shared row scan: the outermost row extents
+         are the outermost ink pixels */
+      var rows = darkInkRows(ctx);
+      if (!rows) return zero;
+      var minx = cv.width, miny = cv.height, maxx = -1, maxy = -1, y;
+      for (y = 0; y < rows.length; y++) {
+        if (!rows[y]) continue;
+        if (rows[y][0] < minx) minx = rows[y][0];
+        if (rows[y][1] > maxx) maxx = rows[y][1];
+        if (y < miny) miny = y;
+        if (y > maxy) maxy = y;
       }
-      if (maxx < 0) return zero;
       var side = function (v) {
         return Math.max(0, Math.round((v - SAFE) * 100) / 100);
       };
@@ -1286,6 +1364,7 @@
       '<circle class="w-pin" cx="20" cy="22" r="1.2"/></svg>';
   }
   window.JD_dark = {
-    deal: darkDeal, well: darkWell, mount: jdDriftMount, stopAll: jdDriftStopAll
+    deal: darkDeal, well: darkWell, mount: jdDriftMount, stopAll: jdDriftStopAll,
+    stop: jdDriftStop
   };
 })();
