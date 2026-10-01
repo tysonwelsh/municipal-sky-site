@@ -19,7 +19,9 @@
    object strips its drawing's role; the folder pins its z). */
 (function () {
   /* the tier box the pile loader handed over, or the module's own fallback
-     (ready() is also called with null when the drawer failed to load) */
+     when that is not a usable box. A drawer that failed to load no longer
+     hands over null: the loader's catch passes jd-core's BASE value for the
+     tier — the same number each module keeps as its FALLBACK_BOX */
   function tierOr(tierBox, fallback) {
     return (typeof tierBox === 'number' && tierBox > 0) ? tierBox : fallback;
   }
@@ -106,7 +108,6 @@
   (function () {
     var ID = 'jd-turn-object';       /* reserved: see the collision note above */
     var ASSET = '/art/junk-drawer/turn-object.svg';
-    var SCATTER_KEY = 'jd-scatter-v2';   /* only to sweep a stale seat — see seat() */
     var FALLBACK_BOX = 15.5;         /* = BASE.m, for a drawer that failed to load */
     /* The 9a mockup's measurement note: at m × 1.15 the element lands 58×72px
        on a 375px phone — the same numbers the doorbell measured, because the
@@ -303,8 +304,8 @@
       node.style.setProperty('--rot', CORNER.rot + 'deg');
       node.style.zIndex = Z_FIXED;
       if (!swept) {
-        var map = JD_store.get(SCATTER_KEY);
-        if (map && map[ID]) { delete map[ID]; swept = JD_store.set(SCATTER_KEY, map); }
+        var map = JD_store.get(JD_SCATTER_KEY);
+        if (map && map[ID]) { delete map[ID]; swept = JD_store.set(JD_SCATTER_KEY, map); }
         else swept = true;
       }
       return true;
@@ -328,9 +329,7 @@
          tagged underneath the scrim, and still tagged after the modal closed. */
       if (window.JD_hideTag) window.JD_hideTag();
       JD_haptic('select');
-      el.classList.remove('is-pressed');
-      void el.offsetWidth;                 /* restart the keyframes */
-      el.classList.add('is-pressed');
+      JD_restart(el, 'is-pressed');        /* restart the keyframes */
       window.clearTimeout(pressTimer);
       pressTimer = window.setTimeout(function () {
         el.classList.remove('is-pressed');
@@ -432,7 +431,6 @@
   (function () {
     var ID = 'jd-instructions';
     var ASSET = '/art/junk-drawer/instructions-object.svg';
-    var SCATTER_KEY = 'jd-scatter-v2';   /* the shared seat map — see layoutFor */
     var FALLBACK_BOX = 30;               /* = BASE.xl, if the drawer never loaded */
     var Z_SHEET_MIN = JD_Z_BAND.other + 101;   /* floor: over the top band's
                                             scatter (1..N) and the turn button
@@ -443,7 +441,6 @@
                                             max + 1 is what clears them */
     var ROT = 7;                         /* load tilt, ± degrees */
     var SEAM_OVERLAP = 3;                /* viewBox units the two copies share at the fold */
-    var INSET = 0.012;                   /* same wall clearance as the scatter */
 
     var art = null, box = null, armed = false, el = null;
 
@@ -466,8 +463,9 @@
       onFail: function (err) { warnFail('instructions sheet', err); }
     });
 
-    /* called by the pile loader with the xl tier box (or null when the drawer
-       itself failed to load); `build` runs when both artwork and ruler are in */
+    /* called by the pile loader with the xl tier box (or, when the drawer
+       itself failed to load, with jd-core's BASE.xl — this module's
+       FALLBACK_BOX value); `build` runs when both artwork and ruler are in */
     function ready(tierBox) {
       box = tierOr(tierBox, FALLBACK_BOX);
       armed = true;
@@ -616,7 +614,7 @@
        fresh gently-tilted spot otherwise. z is NEVER stored — pinned per load. */
     function seat(node, pile) {
       var hs = halfSizes(node, pile), hw = hs.hw, hh = hs.hh;
-      var map = JD_store.get(SCATTER_KEY) || {};
+      var map = JD_store.get(JD_SCATTER_KEY) || {};
       var p = map[ID];
       if (!p) {
         /* NOT the pile's anywhere-scatter (owner, 2026-08-28): the sheet
@@ -632,7 +630,7 @@
         var cs = getComputedStyle(node);
         var openHH = hh * (parseFloat(cs.getPropertyValue('--pick-tall')) || 1) *
           (parseFloat(cs.getPropertyValue('--pick-scale')) || 1);
-        var loY = Math.max(hh, Math.min(0.45, openHH)) + INSET;
+        var loY = Math.max(hh, Math.min(0.45, openHH)) + JD_SCATTER_INSET;
         /* A THIRD OF THE WAY DOWN (owner, 2026-09-29: "1/3 the way down
            instead of 1/2"): the centre deals at 1/3 of the well with a
            whisper of jitter, never above loY — the room the open sheet
@@ -643,7 +641,7 @@
           rot: +((Math.random() * 2 - 1) * ROT).toFixed(1)
         };
         map[ID] = p;
-        JD_store.set(SCATTER_KEY, map);
+        JD_store.set(JD_SCATTER_KEY, map);
       }
       applySeat(node, p, hw, hh);   /* clear of the turn button's corner */
       /* one more than whatever is already lying there — see the banner */
@@ -708,7 +706,6 @@
     var ID = 'jd-analytics';
     var ASSET = '/art/junk-drawer/analytics-folder.svg';
     var API = '/api/jd-analytics.php';
-    var SCATTER_KEY = 'jd-scatter-v2';   /* the shared seat map — see layoutFor */
     var FALLBACK_BOX = 22;               /* = BASE.l, if the drawer never loaded */
     var ROT = 8;                         /* a small tilt: jammed in the corner
                                             (below), the pile's full ±34° would
@@ -721,7 +718,6 @@
                                             jd-core.js not to raise it after a
                                             drag. (Was JD_Z_BAND.l + 50, "large
                                             junk in the large layer".) */
-    var INSET = 0.012;                   /* same wall clearance as the scatter */
 
     var art = null, box = null, armed = false, el = null;
     var scrim = null, cardEl = null, bodyEl = null;
@@ -744,8 +740,9 @@
       });
     }
 
-    /* called by the pile loader with the l tier box (or null when the drawer
-       itself failed to load); `build` runs when both artwork and ruler are in */
+    /* called by the pile loader with the l tier box (or, when the drawer
+       itself failed to load, with jd-core's BASE.l — this module's
+       FALLBACK_BOX value); `build` runs when both artwork and ruler are in */
     function ready(tierBox) {
       if (BENCHED) return;
       box = tierOr(tierBox, FALLBACK_BOX);
@@ -795,12 +792,15 @@
          than anywhere in the well. JD_avoidTurn below still has the last
          word if a small well squeezes the bands toward the button. */
       function zone(half, zoneLo, zoneHi) {
-        var lo = Math.max(half + INSET, zoneLo);
-        var hi = Math.min(1 - half - INSET, zoneHi);
-        if (hi < lo) { hi = lo = Math.max(half + INSET, Math.min(1 - half - INSET, (zoneLo + zoneHi) / 2)); }
+        var lo = Math.max(half + JD_SCATTER_INSET, zoneLo);
+        var hi = Math.min(1 - half - JD_SCATTER_INSET, zoneHi);
+        if (hi < lo) {
+          hi = lo = Math.max(half + JD_SCATTER_INSET,
+            Math.min(1 - half - JD_SCATTER_INSET, (zoneLo + zoneHi) / 2));
+        }
         return +(lo + Math.random() * (hi - lo)).toFixed(4);
       }
-      var map = JD_store.get(SCATTER_KEY) || {};
+      var map = JD_store.get(JD_SCATTER_KEY) || {};
       var p = map[ID];
       /* THE CORNER (owner, 2026-09-29: "more down, in the bottom and the
          right, almost as far as it will go"): the band was 58–92% on both
@@ -816,7 +816,7 @@
           rot: +((Math.random() * 2 - 1) * ROT).toFixed(1)
         };
         map[ID] = p;
-        JD_store.set(SCATTER_KEY, map);
+        JD_store.set(JD_SCATTER_KEY, map);
       }
       applySeat(node, p, hw, hh);   /* clear of the turn button's corner */
       node.style.zIndex = Z_FOLDER;
@@ -872,10 +872,9 @@
                    '#9b2d3a',   /* crimson */
                    '#46707a',   /* slate teal */
                    '#8a6a1a'];  /* bronze */
-    /* the report card's worst→best grade ramp, copied from meterSVG in
-       jd-core.js — the grade book has to speak the ramp visitors already
-       learned on the specimen tag */
-    var RAMP = ['#8f1d12', '#b0490f', '#a06200', '#46761a', '#0b6a1f'];
+    /* the grade inks are JD_GRADE_RAMP (jd-core.js), worst→best — the ramp
+       meterSVG prints the specimen tag in: the grade book has to speak the
+       ramp visitors already learned on the specimen tag */
 
     function indexModels() {
       mmap = {};
@@ -1156,7 +1155,7 @@
        rescale-and-round, which put the tier boundaries at 1.5/2.5/… and
        coloured a 3.4 and a 3.6 differently for no reason a reader of the
        1–5 scale could name */
-    function gradeInk(v) { return RAMP[Math.min(4, Math.max(0, Math.floor(v) - 1))]; }
+    function gradeInk(v) { return JD_GRADE_RAMP[Math.min(4, Math.max(0, Math.floor(v) - 1))]; }
     /* one track, its top-left at x, y, w × h user units, filled to the
        (clamped) grade v: the fill, the dividers over it, the outline */
     function trackSVG(x, y, w, h, v) {
@@ -1249,8 +1248,8 @@
 
        MIN_N applies here too: a row whose n is 1 or 2 is dropped, and the
        dropped models are named in the card's subtitle. */
-    var ISSUE_BIG = RAMP[0], ISSUE_SMALL = '#cf6e56';   /* Utility red, and a lighter brick */
-    var HIT_HAS = RAMP[4], HIT_HINT = '#6ea456';        /* Prime green, and a lighter moss */
+    var ISSUE_BIG = JD_GRADE_RAMP[0], ISSUE_SMALL = '#cf6e56';   /* Utility red, and a lighter brick */
+    var HIT_HAS = JD_GRADE_RAMP[4], HIT_HINT = '#6ea456';        /* Prime green, and a lighter moss */
     function pct(x) { return Math.round(x * 100) + '%'; }
     function axesHTML() {
       var axes = data.axes || [];
@@ -1501,8 +1500,7 @@
              left of the word — no second tab at the far end. */
           '<div class="jd-folder-tab">' +
           '<button type="button" class="jd-folder-close" aria-label="close">' +
-          '<svg class="jd-x-mark" viewBox="0 0 18 18" aria-hidden="true" focusable="false">' +
-          '<path d="M1 1 17 17M17 1 1 17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>' +
+          JD_X_MARK + '</button>' +
           '<span class="jd-folder-tab-word" aria-hidden="true">ANALYTICS</span>' +
           '</div>' +
           '<div class="jd-folder-scroll"></div>' +
@@ -1594,9 +1592,7 @@
       isOpen = true;
       scrim.classList.add('is-on');
       document.documentElement.classList.add('jd-folder-open');
-      cardEl.classList.remove('is-enter');
-      void cardEl.offsetWidth;
-      cardEl.classList.add('is-enter');
+      JD_restart(cardEl, 'is-enter');
       if (data || failed) render();
       else {
         bodyEl.innerHTML = '<p class="fx-stuck">pulling the file&hellip;</p>';
