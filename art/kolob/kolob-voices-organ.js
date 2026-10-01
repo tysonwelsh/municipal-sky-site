@@ -27,12 +27,9 @@
 //                                        chorale prelude, the swells under
 //                                        the singing
 //   organPartLine(t, notes, gainMul, o)  a part line on sines: the organ
-//                                        under the house choir's hymn
-//                                        (?choir=house, kolob-voices-choir.js
-//                                        singHymnHouse), and under a ward's
-//                                        sheet that carries organ lines
-//                                        (none does on the live page:
-//                                        organistAt)
+//                                        under a ward's sheet that carries
+//                                        organ lines (none does on the live
+//                                        page: organistAt)
 //
 // The house's additive organ (houseOrganChord: sines an octave down,
 // swelling in like a pad — the owner's A/B, ?organ=house) was retired on
@@ -383,13 +380,13 @@ window.KOLOB = window.KOLOB || {};
   // instant. Every pipe that speaks is reported, with the tag the caller
   // gives each note (its part, its hymn, the beat, its monzo and the hymn's
   // key).
-  // Who calls it: the house choir's hymn (kolob-voices-choir.js
-  // singHymnHouse — the A/B, ?choir=house, still waiting on the owner's
-  // ear), and a ward's sheet that carries organ lines (wardOrgan), which it
-  // does only when the Sunday's organist's hands are not on the hymn
-  // (organistAt). On the live page the organist is always seated and the
-  // ward's hymns are played on the pipes, so this sounds only under the
-  // house choir.
+  // Who calls it: a ward's sheet that carries organ lines (wardOrgan,
+  // kolob-voices-choir.js), which it does only when the Sunday's organist's
+  // hands are not on the hymn (organistAt). On the live page the organist
+  // is always seated and the ward's hymns are played on the pipes, so this
+  // never sounds there (the house choir's hymn, its other caller, was
+  // retired on 2026-10-01); it is the ward's fallback, and the cast writer's
+  // organ lines go with it if it is ever retired.
   //   notes: [{at, dur, f, syl, tag}] (at: s from t); opts: {reg, pedal}
   function organPartLine(t, notes, gainMul, opts) {
     opts = opts || {};

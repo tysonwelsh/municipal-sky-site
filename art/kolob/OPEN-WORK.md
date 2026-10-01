@@ -133,11 +133,13 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
 
 - **Rounds 3b and 3c have not been listened to.** Every level since the ward was set by
   measurement against the organ reference (listen-r3b, listen-r3c).
-- **Retire the house choir once the ear has chosen** (README): `?choir=house`,
-  `kolob-core.js`; `kolob-voices-choir.js` keeps two near-twin performers
-  (`singHymnHouse`; `organPartLine` in `kolob-voices-organ.js` is its organ).
-  The house organ (`?organ=house`) was retired on 2026-10-01, the fife
-  `twoBandsCross` the same day (commits e14a660 and 192527a).
+- **The last path no live page reaches:** a ward's hymn without the organist's hands on
+  it — `organistAt` null — sings over the sheet's own organ lines on sines (`wardOrgan`,
+  `organModulates`, `voiceChord` in `kolob-voices-choir.js`; `organPartLine` in
+  `kolob-voices-organ.js`; the cast writer's organ lines in `kolob-cast.js`). The organist is
+  always seated and a Tabernacle hymn has no fuge, so it never runs; retiring it means the
+  writer stops writing organ lines when it has no organist. The house organ, the house choir
+  and the fife were retired on 2026-10-01.
 - **The guests' odds** (`kolob-calendar.js` `GUEST_ODDS`): the band's share against the
   rest; each guest's row "a starting point, for the owner's ear"; the trombones' base 0.21
   "the integrator's to rule on once the owner has heard the new sound."

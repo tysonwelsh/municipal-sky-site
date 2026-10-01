@@ -50,7 +50,7 @@ getBandHeardUntil`), the visit (`getSeed reseed getConductor getHarmony
 getAudioTime skipToSection getMotifStats getCumulativeOdds getCumulativeMode
 setCumulativeMode setForceVisitation isForceVisitation setForceRaspberry
 getOldTunes`), the hymnal (`getHymnal getHymn hymnalStats clockHealth`), the
-ward (`getWard wardStats getChoir setChoir`), the organ (`getOrganist
+ward (`getWard wardStats`), the organ (`getOrganist
 organStats`), the bus (`setNoteListener setEventListener`),
 the rooms (`getRooms setRoom preloadRoomIR setRoomBalance setLayerDepth
 attachAnalyser`). One number lives in one place: a rate the page shows is
@@ -105,8 +105,8 @@ louder than the app; level checks render with an `OfflineAudioContext`.
 without it; taps still capture the signal.
 
 **Dev switches** on the page: `?seed=N`, `&guest=<name>` (§8),
-`&exp=-reckoning` / `-singingSchool` (`KOLOB.Experimental`), `&choir=house`,
-`&latin=1`, `&kolobPreview=1`. The harness takes `ives`,
+`&exp=-reckoning` / `-singingSchool` (`KOLOB.Experimental`), `&latin=1`,
+`&kolobPreview=1`. The harness takes `ives`,
 `razz`, `cumulative` and `force=<name>`.
 
 Authority: `_engine.php`, `kolob-core.js`, `tools/loadcheck.js`,
@@ -637,8 +637,9 @@ its last pipe; STOP disposes them all (`S.organStop`). `S.organChord` plays the
 house's own chords (the voluntaries, the joints' amens, a soft chord in the
 testimony) on the same pipes; the old additive organ (`houseOrganChord`,
 the A/B `?organ=house`) was retired on 2026-10-01 — its level stays the
-pipes' reference (`HOUSE_REF`), and its part line (`organPartLine`) sounds
-only under the house choir.
+pipes' reference (`HOUSE_REF`), and its part line (`organPartLine`) remains
+only as the ward's fallback for a hymn without the organist's hands on it
+(`wardOrgan`), which no live page reaches.
 
 **The forms** (`Hymnal.forms(info, rows, R)` on `forms:<n>`, `FORM_ODDS`):
 - *A round* (22 %): a hymn row after the first, never the doxology, written by
@@ -666,12 +667,13 @@ leans the unison song's kind; each hymn's dialect leans to the house's
 (`NEIGHBOURS`, `HOUSE_W` 6), the doxology to the Tabernacle's brightness and
 the gospel ring.
 
-**The choir switch.** The ward is the performer of every composed hymn
-(`S.singHymn` → `singHymnWard`) and of every line the house's choir sings
-around them (`S.choirVoiceLine` → `wardSectionLine`: eight people each in
-their own voice). The four formant voices remain whole as the fallback
-(`singHymnHouse`, `houseVoiceLine`): a page without the cast, or
-`?choir=house`.
+**The choir.** The ward is the performer of every composed hymn
+(`S.singHymn` → `singHymnWard`) and of every line the choir sings around
+them (`S.choirVoiceLine` → `wardSectionLine`: eight people each in their
+own voice). The four formant voices that sang before it (`singHymnHouse`,
+`houseVoiceLine`, the `?choir=house` A/B) were retired on 2026-10-01; a page
+without the cast sings no hymn (`hymnPlan` returns null, `singHymnWard`
+nothing).
 
 **Levels and seats.** The ward pours into the `choir` layer (its slider, its
 seat in the rooms) at `WARD_LEVEL` = 0.16 (`kolob-core.js`); a person come

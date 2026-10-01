@@ -1,9 +1,10 @@
 // ============================================================================
 // KOLOB 2 — THE VOCAL VOICES (KOLOB.VoicesVocal)
 //
-// People, not a pad. The house choir (kolob-voices-choir.js, houseVoiceLine)
-// is four sawtooth reeds through three bandpasses, one vowel a phrase: an
-// organ stop that has learned to say "ah". This module is the ward itself:
+// People, not a pad. The house choir that sang before the ward (retired
+// 2026-10-01) was four sawtooth reeds through three bandpasses, one vowel a
+// phrase: an organ stop that had learned to say "ah". This module is the
+// ward itself:
 //
 //  · singer(spec)     one PERSON — a vibrato that blooms late in a long note
 //                     and not before, breath in the tone and between the

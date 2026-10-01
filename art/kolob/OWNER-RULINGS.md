@@ -192,9 +192,9 @@ ear" notes. None has been heard: rounds 3b and 3c were measured, not listened to
   rite's first chord; `RECKON_CANDIDATES` (`kolob-calendar.js`, 24) sets how many Sundays reckon. **The
   Tabernacle's men's verses** come out mostly in unison (listen-r3b).
 - **Johnston's tuning marks** (`kolob-viz.js`); **the sparer staff** (§15, "may come back later").
-  **The house choir A/B waits for the owner's choice** before the loser retires (`?choir=house`,
-  `kolob-core.js`). **The house organ is retired** (2026-10-01, "let's ditch the old organ"): the pipes
-  play every chord; `organPartLine` stays as the house choir's organ.
+  **The house organ is retired** (2026-10-01, "let's ditch the old organ"): the pipes play every
+  chord. **The house choir is retired** (2026-10-01, "Retire the old house choir"): the ward sings
+  everything; `organPartLine` remains only as the ward's fallback for a hymn without the organist.
 - **What to scale back:** the far ward in pews, the Hosanna without the Primary's children or on a smaller
   registration, fewer second bands (listen-r3c "Where to save"). **The caterpillar:** "a few more passes";
   nobody has watched it move at full frame rate (handoff/caterpillar-1.md:287).

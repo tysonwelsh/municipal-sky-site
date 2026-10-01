@@ -121,7 +121,7 @@ window.KolobAudio = (function () {
   // S.forceRaspberry, S.cumulativeMode, S.seasonPos, S.CUMULATIVE_ODDS; the
   // voices' tables S.VI_TO_CHORDPOS, S.CHOIR_PART, S.TELEGRAPH_WORDS,
   // S.FIELD_FNS; the ward's and the organist's S.theWard, S.wardStats,
-  // S.wardOn, S.wardStop, S.pipeOn, S.organStats, S.organStop; the old
+  // S.wardStop, S.pipeOn, S.organStats, S.organStop; the old
   // tune's S.oldTunePool. tools/lends.js checks that every read has a lend.)
 
   // ----- Core audio graph -----
@@ -198,12 +198,6 @@ window.KolobAudio = (function () {
       }
     } catch (e) {}
     return (Date.now() % 0xffffffff) >>> 0;     // no seed asked for: the hour chooses the visit
-  })();
-  // THE CHOIR SWITCH (dev): ?choir=house sings the meeting with the house's
-  // four formant voices (kolob-voices-choir.js) instead of the ward — the
-  // owner's A/B; the ward is the meeting's choir otherwise
-  S.houseChoir = (function () {
-    try { return typeof location !== "undefined" && /[?&]choir=house\b/.test(location.search || ""); } catch (e) { return false; }
   })();
   var root = null;                 // the visit's stream: every fork is born of it
   var dice = { n: -1, streams: {}, turns: {} };   // this meeting's streams, by label
@@ -1385,8 +1379,7 @@ window.KolobAudio = (function () {
     // the ward: who is seated this Sunday — the people you come
     // to know, by role, in Deseret (nameEn and the archetype are dev-only) —
     // and the desk's account of itself (lines handed, how many late, the
-    // tightest margin, the most in one pump, the mouths joined to the room);
-    // setChoir("house" | "ward") is the dev switch ?choir=house sets
+    // tightest margin, the most in one pump, the mouths joined to the room)
     getWard: function () {
       var W = S.theWard ? S.theWard() : null;
       if (!W) return null;
@@ -1394,8 +1387,6 @@ window.KolobAudio = (function () {
                people: W.individuals.map(function (id) { var m = W.byId[id]; return { memberId: id, role: m.role, nameDs: m.nameDs, part: m.part, archetype: m.archetype, archetypeEn: m.archetypeEn, nameEn: m.nameEn }; }) };
     },
     wardStats: function () { return S.wardStats ? S.wardStats() : null; },
-    getChoir: function () { return !S.houseChoir && KOLOB.Cast && KOLOB.VoicesVocal && S.wardOn ? "ward" : "house"; },
-    setChoir: function (which) { if (!playing) S.houseChoir = which === "house"; },
     // the organ: who is on the bench this Sunday (their
     // style and habits; the name in Deseret, nameEn dev-only; whether the
     // morning was seated for the chorale prelude, and the meeting's ledger —
