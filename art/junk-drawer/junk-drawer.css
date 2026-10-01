@@ -1640,7 +1640,6 @@ html.jd-record-open { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .jd-record-zoom.is-on,
   .jd-record-zoom.is-on .rc-zoom-fig { animation: none; }
-  .rc-axcaret::before, .rc-axcaret::after { transition: none; }
 }
 
 /* ---- THE PROMPT (verbatim) -----------------------------------------------
@@ -1776,6 +1775,13 @@ table.rc-subj tfoot .rc-avg-l { padding-top: 0; }
 .rc-axcaret::before { width: 9px; height: 1.5px; transform: translate(-50%, -50%); }
 .rc-axcaret::after { width: 1.5px; height: 9px; transform: translate(-50%, -50%); }
 .rc-axbtn[aria-expanded="true"] .rc-axcaret::after { transform: translate(-50%, -50%) scaleY(0); opacity: 0; }
+/* reduced motion: the bars swap without the morph. This must come AFTER the
+   base rule above (same specificity, so source order decides) — it used to
+   sit in the enlargement's reduce block further up, where it never applied
+   (moved 2026-10-01, the .jd-defx rule's pattern). */
+@media (prefers-reduced-motion: reduce) {
+  .rc-axcaret::before, .rc-axcaret::after { transition: none; }
+}
 .rc-axbtn:hover .rc-subj-name, .rc-axbtn:hover .rc-avg-l { color: var(--red); }
 .rc-axbtn:hover .rc-axcaret { color: var(--red); border-color: var(--red); }
 .rc-axbtn:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
@@ -3916,7 +3922,8 @@ html.jd-turn-open { overflow: hidden; }
 .jd-pod--said .jd-pod-print { cursor: zoom-in; touch-action: auto; }
 .jd-pod-lost {
   margin-top: 0.5rem; color: var(--tink-3);
-  font-size: var(--t-small); line-height: 1.5;
+  font-size: inherit;   /* was var(--t-small), a token never defined: it always inherited */
+  line-height: 1.5;
 }
 /* the floor the whole thing stands on */
 .jd-pod-floor { height: 3px; background: var(--trule); margin: 0 2px; }
