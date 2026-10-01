@@ -858,10 +858,18 @@ var JD_admin = (function () {
   /* the exact pass, run by the turn module once the plate is built and
      seated (and so measurable): push anything already lying in the corner
      clear of the REAL rect. Closes the race between the pile's apply pass
-     and the turn button's async artwork fetch, whichever lands first. */
+     and the turn button's async artwork fetch, whichever lands first.
+     READ, THEN WRITE: the plate's rect (once) and every item's rect are
+     all read before the first position is written, so the pass costs one
+     layout rather than one per item. Nothing a write changes could alter a
+     later read — the items are absolutely placed in a size-contained well,
+     so neither their footprints nor the plate's rect depend on where
+     anything else lies — so the positions are the ones the interleaved
+     pass wrote. */
   window.JD_enforceTurnCorner = function () {
     var host = pile.getBoundingClientRect();
     var W = host.width || 1, H = host.height || 1, MIN = Math.min(W, H);
+    var R = turnRect(W, H, MIN), moves = [];
     pile.querySelectorAll('.jd-item:not([data-turn])').forEach(function (el) {
       var x = parseFloat(el.style.left) / 100, y = parseFloat(el.style.top) / 100;
       if (!isFinite(x) || !isFinite(y)) return;
@@ -871,15 +879,18 @@ var JD_admin = (function () {
       var w = r.width || 40, h = r.height || 40;
       var a = avoidTurn(x, y,
         Math.min(0.5, (w * c + h * s) / 2 / W),
-        Math.min(0.5, (w * s + h * c) / 2 / H), W, H, MIN);
-      if (a.x !== x || a.y !== y) {
-        el.style.left = (a.x * 100) + '%';
-        el.style.top = (a.y * 100) + '%';
-      }
+        Math.min(0.5, (w * s + h * c) / 2 / H), R);
+      if (a.x !== x || a.y !== y) moves.push({ el: el, a: a });
+    });
+    moves.forEach(function (m) {
+      m.el.style.left = (m.a.x * 100) + '%';
+      m.el.style.top = (m.a.y * 100) + '%';
     });
   };
-  function avoidTurn(x, y, hw, hh, W, H, MIN) {
-    var R = turnRect(W, H, MIN);
+  /* `R` is turnRect's answer (null: no reservation), read by the caller —
+     once per pass in the loader's apply pass and JD_enforceTurnCorner, once
+     per call in JD_avoidTurn — so nothing in here touches the DOM */
+  function avoidTurn(x, y, hw, hh, R) {
     if (!R) return { x: x, y: y };
     if (x - hw >= R.x1 || y + hh <= R.y0) return { x: x, y: y };   /* clear */
     var pushX = R.x1 + hw;                       /* rightward, off the plate */
@@ -896,7 +907,7 @@ var JD_admin = (function () {
   window.JD_avoidTurn = function (x, y, hw, hh) {
     var host = pile.getBoundingClientRect();
     var W = host.width || 1, H = host.height || 1;
-    return avoidTurn(x, y, hw, hh, W, H, Math.min(W, H));
+    return avoidTurn(x, y, hw, hh, turnRect(W, H, Math.min(W, H)));
   };
 
   /* stable-per-session: reuse the stored scatter iff it covers exactly the
@@ -1106,6 +1117,12 @@ var JD_admin = (function () {
       var layout = layoutFor(els);
       var hostR = pile.getBoundingClientRect();
       var HW = hostR.width || 1, HH = hostR.height || 1, HM = Math.min(HW, HH);
+      /* the turn plate's corner, read ONCE for the whole pass and before any
+         item is placed: reading it per item, right after the previous item's
+         left/top write, forced a layout per item. The writes below cannot
+         move it (see JD_enforceTurnCorner), so every item sees the rect it
+         always saw. */
+      var turnR = turnRect(HW, HH, HM);
       els.forEach(function (el) {
         var p = layout[el.dataset.id];
         /* pushed clear of the turn button's reserved corner at apply time —
@@ -1119,7 +1136,7 @@ var JD_admin = (function () {
         var c = Math.abs(Math.cos(rad)), s = Math.abs(Math.sin(rad));
         var a = avoidTurn(p.x, p.y,
           Math.min(0.5, (wpx * c + hpx * s) / 2 / HW),
-          Math.min(0.5, (wpx * s + hpx * c) / 2 / HH), HW, HH, HM);
+          Math.min(0.5, (wpx * s + hpx * c) / 2 / HH), turnR);
         el.style.left = (a.x * 100) + '%';
         el.style.top = (a.y * 100) + '%';
         el.style.setProperty('--rot', p.rot + 'deg');
