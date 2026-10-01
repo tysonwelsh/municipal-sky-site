@@ -23,7 +23,9 @@ window.KOLOB = window.KOLOB || {};
   var S = KOLOB._s = KOLOB._s || {};
 
   // ---- BORROWED — the other rooms' functions, bound late through S (every
-  // room is loaded before the first note, so the call always finds its owner) ----
+  // room is loaded before the first note, so the call always finds its owner;
+  // each wrapper is named after the lend it calls and passes its arguments
+  // through in order — tools/lends.js checks) ----
   // from kolob-pitch.js
   function rebuildScale() { return S.rebuildScale(); }
   // from kolob-voices-organ.js
@@ -46,6 +48,12 @@ window.KOLOB = window.KOLOB || {};
   function trombonesAtDawn(V, t) { return S.trombonesAtDawn(V, t); }
   function handbellsRing(V, t) { return S.handbellsRing(V, t); }
   function singingSchool(V, t) { return S.singingSchool(V, t); }
+  function nauvooBand(V, t) { return S.nauvooBand(V, t); }
+  function handcartCompany(V, t) { return S.handcartCompany(V, t); }
+  function gullsOver(V, t) { return S.gullsOver(V, t); }
+  function organistVariations(V, t) { return S.organistVariations(V, t); }
+  function tonguesGift(V, t) { return S.tonguesGift(V, t); }
+  function socialHall(V, t) { return S.socialHall(V, t); }
   function castEvent(c, ward) { return S.castEvent(c, ward); }
   // from kolob-core.js
   function stream(label) { return S.stream(label); }
@@ -1569,14 +1577,13 @@ window.KOLOB = window.KOLOB || {};
   // page's direction line names it while it sounds; the joint waits for it).
   // A guest the minutes may not name (UNLOGGED below) carries that on every
   // event and note it sends, and the page is never told it came.
-  var VISIT_FN = { bands: function (V, t) { return S.nauvooBand(V, t); }, steeples: steeplesAnswer, oldtune: oldTuneRemembered, trombones: trombonesAtDawn,
+  var VISIT_FN = { bands: nauvooBand, steeples: steeplesAnswer, oldtune: oldTuneRemembered, trombones: trombonesAtDawn,
                    handbells: handbellsRing, singingschool: singingSchool,
-                   // (every set piece is kolob-guests.js's — the far ward is not
-                   // here: it sings inside the ward's own hymn; nor the
-                   // Hosanna, which comes at the doxology's close, unlogged)
-                   handcart: function (V, t) { return S.handcartCompany(V, t); }, gulls: function (V, t) { return S.gullsOver(V, t); },
-                   variations: function (V, t) { return S.organistVariations(V, t); }, tongues: function (V, t) { return S.tonguesGift(V, t); },
-                   socialhall: function (V, t) { return S.socialHall(V, t); } };
+                   // (every set piece is kolob-guests.js's, borrowed above — the
+                   // far ward is not here: it sings inside the ward's own hymn;
+                   // nor the Hosanna, which comes at the doxology's close, unlogged)
+                   handcart: handcartCompany, gulls: gullsOver, variations: organistVariations, tongues: tonguesGift,
+                   socialhall: socialHall };
   function arrive(V, t) {
     V.fired = true;
     V.logged = !UNLOGGED[V.type];

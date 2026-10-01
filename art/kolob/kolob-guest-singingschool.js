@@ -287,7 +287,7 @@ window.KOLOB.GuestSingingSchool = (function () {
       try { h = window.KOLOB.Composer.compose(need(stream).fork("material").fork("hymn"), { dialect: "tabernacle", mode: M.mode ? modeName(M.mode) : undefined }); source = "a hymn composed for the practice"; }
       catch (e) { h = null; confess("the singing school's hymn could not be composed", e); }
     }
-    if (!h) throw new Error("KOLOB.GuestSingingSchool: a hymn is required (material.hymn), or KOLOB.Composer loaded");
+    if (!h) throw new Error("KOLOB.GuestSingingSchool: no hymn to practise — none was handed over (material.hymn), and " + (window.KOLOB.Composer ? "the composer could not write one" : "KOLOB.Composer is not loaded (this room needs it in any case: where do sits is its doOf)"));
     var K = num(M.keynoteHz, 260);
     var lines = h.lines.slice(0, 2).map(readLine);
     var present = PARTS.filter(function (p) { return lines[0].parts[p]; });

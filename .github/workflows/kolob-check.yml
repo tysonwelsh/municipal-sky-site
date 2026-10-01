@@ -8,9 +8,11 @@
 #   3. the engine loads headless in _engine.php's order, every room answers the
 #      roll call and the page's own load guard agrees, the facade carries the
 #      methods the page calls, the hymnal's worker would load the list's own
-#      files in its order, and the composer writes a hymn that proofreads
-#      (tools/loadcheck.js);
-#   4. no room reads a name off the shared bag that no room lends (tools/lends.js);
+#      files in its order, the composer writes a hymn that proofreads, and
+#      every lab's list of rooms loads in the lab's own order (tools/loadcheck.js);
+#   4. no room reads a name off the shared bag that no room lends, and every
+#      BORROWED wrapper calls the lend it is named after with its arguments
+#      in order (tools/lends.js);
 #   5. the pure core composes what it composed: the first meeting's plan, its
 #      hymns, the guests' decisions, the organist's and the ward's plans for
 #      seeds 1–40 hash as tools/golden/*.json says (tools/golden.js; a change

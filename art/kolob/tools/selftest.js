@@ -86,6 +86,14 @@
 //    scratch copy with the Sacred Harp's tempo moved is found in the hymns
 //    of seed 3, the one of the three that sings it, and nowhere else; and a
 //    copy with a comment added is found unmoved, under another fingerprint.
+// 15. The wrappers and the labs (PLAN-REFACTOR §3.7): tools/lends.js finds
+//    every BORROWED wrapper of this build exact and used, and fails a scratch
+//    copy with one wrapper that renames (foo calls S.now) and one that
+//    reorders (cueAt's lane and time swapped), naming both; tools/loadcheck.js
+//    finds every lab loading the house's rooms in its own order, and fails a
+//    copy with the singing school moved ahead of kolob-pitch.js on
+//    guests-lab's list, naming the lab and the room's throw while the other
+//    labs load.
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -537,6 +545,58 @@ function check(name, ok, detail) {
     check("a copy with a comment added to kolob-dialects.js: every kind matches, under a fingerprint that is not the baseline's",
       comment.code === 0 && KINDS.every((k) => line(comment, k) === "3 of 3 seeds match") && !!fp(comment) && fp(comment).now !== fp(comment).was,
       fp(comment) ? "modules " + fp(comment).now + " (the baseline's " + fp(comment).was + ")" : "no modules line");
+  }
+
+  console.log("15. the wrappers and the labs (PLAN-REFACTOR §3.7)");
+  {
+    const { execFileSync } = require("child_process");
+    const tool = (name, dir) => {
+      try { return { code: 0, out: execFileSync(process.execPath, [path.join(__dirname, name)], { env: Object.assign({}, process.env, { KOLOB_DIR: dir }), encoding: "utf8" }) }; }
+      catch (e) { return { code: e.status, out: String(e.stdout || "") }; }
+    };
+    // a scratch copy of this build — the list's files, _engine.php and the
+    // labs beside them, the substrate beside it as on the site — with one
+    // file edited
+    const scratch = (name, file, edit) => {
+      const dir = path.join(tmp, "wrap-" + name, "art", "kolob");
+      engine.list.files.concat([path.join(engine.dir, "_engine.php")], fs.readdirSync(engine.dir).filter((f) => /-lab\.php$/.test(f)).map((f) => path.join(engine.dir, f))).forEach((f) => {
+        const to = path.join(dir, path.relative(engine.dir, f));
+        fs.mkdirSync(path.dirname(to), { recursive: true });
+        fs.copyFileSync(f, to);
+      });
+      const p = path.join(dir, file);
+      fs.writeFileSync(p, edit(fs.readFileSync(p, "utf8")));
+      return dir;
+    };
+    const line = (r, re) => (r.out.split("\n").find((l) => re.test(l)) || "no such line").trim();
+    const here = tool("lends.js", engine.dir);
+    check("lends.js on this build: every BORROWED wrapper exact and used in its room, counted room by room",
+      here.code === 0 && /^ {2}wrappers \(function x\(…\) \{ return S\.x\(…\); \}\): \d+ in \d+ rooms — .*; every one exact, every one used in its room$/m.test(here.out) && /^ {2}ALL GREEN$/m.test(here.out),
+      line(here, /^ {2}wrappers/).replace(/ — .*;/, ";"));
+    const CUE = "  function cueAt(lane, t, fn) { return S.cueAt(lane, t, fn); }\n";
+    const bent = tool("lends.js", scratch("lends", "kolob-meeting.js", (s) => {
+      if (s.indexOf(CUE) < 0) throw new Error("kolob-meeting.js has no " + CUE.trim());
+      return s.replace(CUE, "  function cueAt(lane, t, fn) { return S.cueAt(t, lane, fn); }\n  function foo() { return S.now(); }\n");
+    }));
+    check("a copy with a wrapper that renames (function foo() { return S.now(); }) and one that reorders (cueAt's lane and time swapped): lends.js fails, naming both",
+      bent.code === 1 && /^ {3}- foo {2}kolob-meeting\.js:\d+ {2}renames: foo calls S\.now$/m.test(bent.out) && /^ {3}- cueAt {2}kolob-meeting\.js:\d+ {2}does not pass its arguments through: \(lane, t, fn\) → S\.cueAt\(t, lane, fn\)$/m.test(bent.out),
+      bent.out.split("\n").filter((l) => /^ {3}- /.test(l)).map((l) => l.trim().replace(/\s+/g, " ")).join("; "));
+    const labs = tool("loadcheck.js", engine.dir);
+    const lm = /^ {2}labs: (\d+) of (\d+) load/m.exec(labs.out);
+    check("loadcheck.js on this build: every lab loads the house's rooms in its own order",
+      labs.code === 0 && !!lm && lm[1] === lm[2] && +lm[2] > 0, lm ? lm[1] + " of " + lm[2] + " labs" : "no labs line");
+    const moved = tool("loadcheck.js", scratch("labs", "guests-lab.php", (s) => {
+      const ls = s.split("\n"), i = ls.findIndex((l) => /<script src="kolob-guest-singingschool\.js\?/.test(l)), j = ls.findIndex((l) => /<script src="kolob-pitch\.js\?/.test(l));
+      if (i < 0 || j < 0 || j > i) throw new Error("guests-lab.php does not load kolob-pitch.js before the singing school");
+      const tag = ls.splice(i, 1)[0];
+      ls.splice(j, 0, tag);
+      return ls.join("\n");
+    }));
+    const mm = /^ {2}labs: (\d+) of (\d+) load/m.exec(moved.out);
+    const said = moved.out.split("\n").filter((l) => /^ {3}- /.test(l)).map((l) => l.trim().slice(2));
+    check("a copy with the singing school moved ahead of kolob-pitch.js on guests-lab's list: loadcheck.js fails, naming the lab and the room's throw, and the other labs load",
+      moved.code === 1 && !!mm && +mm[1] === +mm[2] - 1 && said.length > 0 && said.every((f) => /^guests-lab\.php \(its rooms in its order\): kolob-guest-singingschool\.js: /.test(f)) && said.some((f) => /threw at load — .*KOLOB\.Pitch|threw at load — .*PARENT_RATIOS/.test(f)),
+      (mm ? mm[1] + " of " + mm[2] + " labs · " : "") + (said[0] || "no failure named"));
   }
 
   fs.rmSync(tmp, { recursive: true, force: true });

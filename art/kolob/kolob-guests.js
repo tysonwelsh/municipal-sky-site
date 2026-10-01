@@ -37,7 +37,9 @@ window.KOLOB = window.KOLOB || {};
   var S = KOLOB._s = KOLOB._s || {};
 
   // ---- BORROWED — the other rooms' functions, bound late through S (every
-  // room is loaded before the first note, so the call always finds its owner) ----
+  // room is loaded before the first note, so the call always finds its owner;
+  // each wrapper is named after the lend it calls and passes its arguments
+  // through in order — tools/lends.js checks) ----
   // from kolob-pitch.js
   function colN() { return S.colN(); }
   function projDeg(d7) { return S.projDeg(d7); }
@@ -66,9 +68,9 @@ window.KOLOB = window.KOLOB || {};
   function panAt(layer, p) { return S.panAt(layer, p); }
   function getLayerParam(layer, key, fallback) { return S.getLayerParam(layer, key, fallback); }
   function claimAir(durS, marginS) { return S.claimAir(durS, marginS); }
-  // (the other rooms' state, read and written through S: S.ctx, S.mode,
-  // S.Harmony (the chord desk), S.Meeting (the chorister's book), S.moment,
-  // S.reportLine)
+  // (the other rooms' state, read through S: S.ctx, S.playing, S.mode,
+  // S.F0, S.ROOT_MULT, S.Harmony (the chord desk), S.Meeting (the
+  // chorister's book))
   var Motif = KOLOB.Melody.Motif;
   // A guest's word to the minutes (SCORE §6): typed, and carrying whether the
   // page may name the guest at all — a guest the meeting marked unlogged

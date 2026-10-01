@@ -34,6 +34,11 @@ inside a room: `S.name = …`) and read each other's lends as `S.name(…)`; a
 name written `S.x` belongs to another room. `tools/lends.js` fails any
 unguarded `S.x` read that no room lends; a lend that may be absent (a lab
 without the room) is read under a guard (`S.x ? … :`, `S.x && …`, `typeof`).
+A room that calls another's function borrows it at its top, in its BORROWED
+block, as a one-line wrapper named after the lend and passing its arguments
+through in order (`function cueAt(lane, t, fn) { return S.cueAt(lane, t, fn); }`):
+the block is the room's manifest of what it borrows, and `tools/lends.js`
+fails a wrapper that calls another name or moves an argument.
 
 **Purity.** A pure module touches no `AudioContext`, no DOM, no
 `Math.random`, no `Date.now`, no `performance.now`; anything random takes a

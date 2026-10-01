@@ -5,16 +5,17 @@ writes. Written 2026-10-01 at v0.36.2; keep it true when the tools change.
 The owner's rules that bind these tools are in `art/kolob/README.md`.*
 
 Eleven tools, all plain Node (22 or later: the browser tools use Node's own
-WebSocket) with no packages, except `samecode.js`, which needs the `acorn` that
-`npm install` at the repo root brings with ESLint. Three read the engine's
+WebSocket) with no packages, except `samecode.js` and the wrapper check of
+`lends.js`, which need the `acorn` that `npm install` at the repo root brings
+with ESLint. Three read the engine's
 source and nothing else; one runs its pure core headless; three read only the
 harness's dump, so they keep working when the engine changes; two drive a
 **muted** headless Chrome.
 
 | tool | answers | reads | time |
 |---|---|---|---|
-| `loadcheck.js` | Does the engine load, does every room answer, does the facade carry what the page calls, does one hymn proofread? | the source, headless | ~1 s |
-| `lends.js` | Does every `S.name` a room reads have a lend somewhere on the shared bag? | the source | <1 s |
+| `loadcheck.js` | Does the engine load, does every room answer, does the facade carry what the page calls, does one hymn proofread? Does every lab load its rooms in its own order? | the source, headless | ~2 s |
+| `lends.js` | Does every `S.name` a room reads have a lend somewhere on the shared bag? Is every BORROWED wrapper exact? | the source | <1 s |
 | `samecode.js` | Did an edit touch only comments and whitespace? | the source, in git and in the worktree | ~1 s |
 | `golden.js` | Does the pure core — the plan of meeting 1, the hymns, the guests' decisions, the organist, the ward — compose what it composed (`tools/golden/*.json`)? | the engine, headless, no audio | ~12 s for 40 seeds on 4 cores |
 | `distinctness.js` | Do two random seeds sound clearly different within three minutes? (design law 2) | the dump | ~2 s for 20 seeds |
@@ -35,8 +36,8 @@ exclude it (`grep -r --exclude-dir=out …`).
 
 ```sh
 cd art/kolob
-node tools/loadcheck.js                          # the engine loads; the roll call; one hymn proofread
-node tools/lends.js                              # every S.x read has a lend
+node tools/loadcheck.js                          # the engine loads; the roll call; one hymn proofread; the labs' lists load
+node tools/lends.js                              # every S.x read has a lend; every BORROWED wrapper exact
 node tools/samecode.js                           # HEAD against the worktree: code unchanged?
 node tools/golden.js                             # the pure core composes what it composed (seeds 1–40, seconds)
 node tools/selftest.js                           # the instruments, checked (seconds)
@@ -334,16 +335,28 @@ requires it). The composer's desk: the files the hymnal's worker would load
 on the page — found by the script tags the page prints from the list, under a
 stub Worker — must be the list's own, in its order. Then one pure smoke: the
 composer writes a hymn from a fixed stream and the Score's proofreader passes
-it. It prints `modules: N of N loaded; rooms answering: M`, the guard, the
-desk, the hymn, and `ALL GREEN` or the failures. No harness, no browser: the
-harness is what plays a meeting, this only proves the doors open. Its loader —
-the list, the page's mock, the rooms evaluated in order — is `lib/engine.js`,
-which `golden.js` loads the engine with too.
+it. Last, **the labs** (PLAN-REFACTOR §3.7): every `*-lab.php`, beside the
+engine and in `shelved/`, has its list of the house's files read from its page
+— its `<script>` tags for `pj2-*.js` and `kolob-*.js`, resolved from the lab's
+folder, and `_engine.php`'s list where it prints `kolob_engine_tags()` — and
+that list is loaded headless in the page's order, each lab in a process of its
+own, so each room sees only what its lab loaded before it: every room must
+evaluate without a throw or a word to `console.error`, and every room of the
+one list must answer the roll call. A room that comes to need another at load
+(`KOLOB.Pitch`, `KOLOB.Score`) is caught on the bench that lacks it; a room that
+reads another only when called is not (the lab finds that when it plays). It
+prints `modules: N of N loaded; rooms answering: M`, the guard, the desk, the
+hymn, the labs (`labs: 16 of 16 load the house's rooms in their own order
+(cast-lab 44, …)`, each with its count of files) and `ALL GREEN` or the
+failures. No harness, no browser: the harness is what plays a meeting, this
+only proves the doors open. Its loader — the list, the page's mock, the rooms
+evaluated in order, the roll call, a lab's list and a list loaded in a process
+of its own — is `lib/engine.js`, which `golden.js` loads the engine with too.
 
 ## lends.js
 
 ```sh
-node tools/lends.js                 # exit 0 = no unguarded unknown read
+node tools/lends.js                 # exit 0 = no unguarded unknown read, every wrapper exact
 KOLOB_DIR=<dir> node tools/lends.js
 ```
 
@@ -356,8 +369,21 @@ fails in another at the first cue that reaches it, minutes into a meeting, as
 name no room lends — an **unguarded** read fails the run, with file and line; a
 read under a guard (`S.x ? … : …`, `S.x && …`, `typeof S.x`, `!S.x`,
 `if (S.x)`) is an **optional** lend, listed, not failed (a lab without the
-room) — and the **dead** lends, lent and never read by any room. `ALL GREEN`
-when nothing is unguarded. CI runs it on every push.
+room) — and the **dead** lends, lent and never read by any room.
+
+**The BORROWED wrappers** (PLAN-REFACTOR §3.7). A room that calls another's
+function keeps a one-line wrapper for it at its top — `function cueAt(lane, t,
+fn) { return S.cueAt(lane, t, fn); }`, in the room's BORROWED block — as its
+manifest of what it borrows, bound late through `S`. The tool parses each room
+with acorn and checks every function of that shape: it must call the lend it is
+named after and pass its arguments through unchanged, in order. One that
+renames (`function foo() { return S.bar(); }`) or drops, adds or reorders an
+argument fails the run, with file and line. It prints the count room by room
+(`wrappers (…): 188 in 8 rooms — voices-organ 15, …, core 36; every one exact,
+every one used in its room`) and names any wrapper its room never uses (ESLint's
+`no-unused-vars` fails those). Without acorn (`npm install` not run) the
+wrappers are not checked, it says so, and it exits 2. `ALL GREEN` when nothing
+is unguarded and every wrapper is exact. CI runs it on every push.
 
 ## samecode.js
 
@@ -785,8 +811,14 @@ against `tools/golden/` — every kind matches and the trap is never sprung; the
 meeting it plans headless emits the harness's own events at the downbeat, in
 order (seed 3's morning is the organist's chorale prelude, which needs the
 pipes on); a scratch copy with the Sacred Harp's tempo moved differs in the
-hymns of seed 3 alone, and one with a comment added in nothing. All fourteen
-pass on `art/kolob/_harness.js`. Run it after any change to the engine's
+hymns of seed 3 alone, and one with a comment added in nothing; (15) **the
+wrappers and the labs** (PLAN-REFACTOR §3.7): `lends.js` finds every BORROWED
+wrapper exact and used, and fails a scratch copy with one wrapper that renames
+(`function foo() { return S.now(); }`) and one that reorders (`cueAt`'s lane and
+time swapped), naming both; `loadcheck.js` finds every lab loading its rooms in
+its own order, and fails a copy with the singing school moved ahead of
+`kolob-pitch.js` on `guests-lab`'s list, naming the lab and the room's throw.
+All fifteen pass on `art/kolob/_harness.js`. Run it after any change to the engine's
 events, to the harness or to these tools. It renders into `out/_selftest/`
 and, like every tool, refuses while the engine is being edited.
 
@@ -795,8 +827,8 @@ and, like every tool, refuses while the engine is being edited.
 ```
 tools/
   README.md          this file
-  loadcheck.js       the engine loads headless; the roll call; one hymn proofread
-  lends.js           the shared bag: every S.x read has a lend
+  loadcheck.js       the engine loads headless; the roll call; one hymn proofread; every lab's list loads
+  lends.js           the shared bag: every S.x read has a lend; every BORROWED wrapper exact (acorn)
   samecode.js        a git ref against the worktree, tokens only (needs acorn: npm install)
   golden.js          the pure core's results on seeds 1–40, hashed, against golden/
   golden/            the baseline: meeting, hymns, guests, organist, ward (.json), each seed's hash
@@ -809,7 +841,7 @@ tools/
   selftest.js        the instruments, checked
   lib/dump.js        the dump reader: both event vocabularies, meetings, sections, voices, phrases
   lib/run.js         rendering through the harness: worktree, directory or git:<ref>; the witness's verdict
-  lib/engine.js      the engine loaded headless: the one list, the page's mock (loadcheck, golden)
+  lib/engine.js      the engine loaded headless: the one list, the page's mock, the roll call, a lab's list (loadcheck, golden)
   lib/witness.js     preloaded into every harness run: which engine files it actually read
   lib/chrome.js      php -S + muted headless Chrome over CDP
   lib/audio.js       WAV, BS.1770 loudness, true peak, FFT, spectrogram

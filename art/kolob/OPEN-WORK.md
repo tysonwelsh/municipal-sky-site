@@ -7,16 +7,18 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
 
 ## The refactor
 
-- **`PLAN-REFACTOR.md`** (2026-10-01; §2 built, v0.36.3; §3.6, §3.1 and §3.3 built): the owner asked for a plan to improve
+- **`PLAN-REFACTOR.md`** (2026-10-01; §2 built, v0.36.3; §3.6, §3.1, §3.3 and §3.7 built): the owner asked for a plan to improve
   efficiency, reliability and maintainability without changing what is heard or seen. Its §2, the
   real faults, is done (commits 3eefffb to a373760: a cue that threw ended its layer for the visit; a
   stillness survived STOP; STOP's own race; errors swallowed silently; a broken page let PLAY be
   pressed; the harness's accounting), §3.6, the golden tests (`tools/golden.js`, commit 22f8bf5), and
   §3.1, one home for the pitch and Score arithmetic (`KOLOB.Pitch`, `KOLOB.Num`, `KOLOB.Score`, commit ea82e61),
   and §3.3, the near-duplicate pairs (the plagal amen, the drone's step back, the cast row, the
-  assembly's span, the ward's telling, one Deseret speller, `KOLOB.Fault`).
+  assembly's span, the ward's telling, one Deseret speller, `KOLOB.Fault`), and §3.7, the BORROWED
+  wrappers kept as each room's manifest and checked exact by `tools/lends.js` (with `VISIT_FN` one list
+  of names), and every lab's list of rooms loaded headless in its order by `tools/loadcheck.js`.
   What remains is §3 (one place for each thing: the guest-room scaffold, the planner out of the
-  conductor, the staff in pieces, the wrappers, the lint) and §4 (the page's load and frame, the minutes' poll, the
+  conductor, the staff in pieces, the lint) and §4 (the page's load and frame, the minutes' poll, the
   audio graph with the owner), in §6's order.
   The §2 builders' follow-ups, not done:
   - the drone stays ducked after a broken hymn's chain is released by the net (§2.1);
@@ -40,14 +42,8 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
     (`kolob-viz.js`, page code) and the guests labs (`guests-lab.js`, `guests3a-lab.js`) — the singing
     school's was folded in §3.3; the far ward's and the tongues' `pickWith` over `pickW` belong to
     the pickW variants; the composer's inline span at its round differs from `Score.spanBeats` (no
-    "stands later" test) and was left;
-  - `tools/loadcheck.js` could load every lab's list of rooms headless, in the lab's order (a scratch
-    check did, 13 of 13), so a room that comes to need `kolob-score.js` is caught where a lab lacks it
-    (`trombone-lab` loads no `kolob-score.js`; `voices-lab`, `instruments-lab` and `earth-tunes-lab`
-    no `kolob-pitch.js`).
+    "stands later" test) and was left.
   The §3.3 builder's follow-ups, not done:
-  - `S.activeVoices` is lent and now read by no other room (the plagal amen it served is the choir's
-    own); `tools/lends.js` lists it among the lends never read;
   - the ward's voices (`kolob-voices-vocal.js`) keep a guarded `confess` (to `KOLOB.Fault` where it is
     loaded, plainly where not) because `voices-lab` loads them with only `PJ2.Rand`, as their `clamp`;
     `kolob-pitch.js` on that lab's list would let both borrow;
@@ -55,13 +51,16 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
     loads it without `kolob-cast.js`);
   - the drone's two releases — STOP's (`kolob-core.js`, the transport) and the dev jump's
     (`skipToSection`, `kolob-meeting.js`): let go, stand at full — still write the duck themselves;
-    they are not step backs, and a `droneLetGo(t)` beside `S.droneStepBack` could take them;
-  - `kolob-guests.js`'s list of the state it reads names `S.moment` and `S.reportLine`, which it does
-    not read (stale before §3.3);
-  - the singing school reads where do sits from the composer (`KOLOB.Composer.doOf`) even when it is
-    handed a hymn: every list that loads it loads the composer, but a bench that did not would fail at
-    its first shape, though `prepare()` still says "a hymn is required (material.hymn), or
-    KOLOB.Composer loaded".
+    they are not step backs, and a `droneLetGo(t)` beside `S.droneStepBack` could take them.
+  The §3.7 builder's follow-ups, not done:
+  - the lab check (`tools/loadcheck.js`) catches a room that needs another *at load*; one that reads
+    another only when called (`KOLOB.Composer.doOf` in the singing school, the §3.1 wrappers onto
+    `KOLOB.Pitch`, `KOLOB.Num` and `KOLOB.Score`) is caught only when its lab plays it — a static
+    check of each room's `KOLOB.<Name>` reads against every list that loads it would close that;
+  - `tools/lends.js` still lists three lends no room reads: `S.SHELVED` (core), `S.forceRaspberry`
+    (meeting) and `S.reportLine` (the winds);
+  - the §3.1 wrappers onto the namespaces (`function mz(a, b) { return K.Pitch.mul(a, b); }`) keep the
+    room's old names by design and are not checked; only the BORROWED wrappers onto `S` are.
 
 ## Ideas approved, not built
 

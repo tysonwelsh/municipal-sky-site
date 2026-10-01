@@ -15,7 +15,14 @@
 // hymnal's worker would load on the page, found by the script tags the page
 // prints from the list, must be the list's own, in its order. Then one pure
 // smoke: the composer writes a hymn from a fixed stream and the Score's
-// proofreader passes it.
+// proofreader passes it. Last, the labs: every *-lab.php (beside the engine
+// and in shelved/) loads the house's rooms its page loads, in its page's
+// order, in a process of its own — each room evaluated with only what the
+// lab put before it, without a throw or a word to console.error, and every
+// room of the one list answering the roll call — so a room that comes to
+// need another at load (kolob-pitch.js, kolob-score.js) is caught on the
+// bench that lacks it, not by the owner opening it. (A room that reads
+// another only when called is not caught here: its lab finds it.)
 //
 //   node art/kolob/tools/loadcheck.js            (exit 0 = loaded, 1 = not)
 //   KOLOB_DIR=<dir> node art/kolob/tools/loadcheck.js   (another build)
@@ -26,6 +33,7 @@
 // ============================================================================
 "use strict";
 const fs = require("fs");
+const os = require("os");
 const path = require("path");
 const vm = require("vm");
 const E = require("./lib/engine.js");     // the list, the page's mock, the rooms evaluated (shared with tools/golden.js)
@@ -40,9 +48,8 @@ const { loaded, failures } = E.evaluate(DIR, list, (rel) => (path.basename(rel) 
 
 // the roll call, as _engine.php's guard takes it
 const K = global.KOLOB || {}, rooms = K._rooms || {}, P = global.PJ2 || {};
-const sub = { "pj2-rand.js": P.Rand, "pj2-clock.js": P.Clock, "pj2-fx.js": P.Fx, "kolob-tunes.js": K.Tunes };
-const missed = [];
-list.map((f) => path.basename(f)).forEach((f) => { if (f in sub ? !sub[f] : !rooms[f]) { missed.push(f); failures.push(f + ": did not answer the roll call"); } });
+const missed = E.rollCall(list);
+missed.forEach((f) => failures.push(f + ": did not answer the roll call"));
 if (!global.KolobAudio) { missed.push("the KolobAudio facade"); failures.push("the KolobAudio facade is not raised"); }
 
 // the page's own guard, run as the page runs it (after every room, with the
@@ -119,10 +126,41 @@ try {
   } else smoke = "composer or score not loaded";
 } catch (e) { failures.push("the composer threw: " + (e && e.stack ? e.stack.split("\n").slice(0, 2).join(" | ") : e)); }
 
-console.log("kolob loadcheck — " + DIR);
-console.log("  modules: " + loaded + " of " + list.length + " loaded; rooms answering: " + Object.keys(rooms).length);
-console.log("  guard: " + guard);
-console.log("  desk: " + desk);
-console.log("  smoke: " + smoke);
-if (failures.length) { console.log("  FAILED:"); failures.forEach((f) => console.log("   - " + f)); process.exit(1); }
-console.log("  ALL GREEN");
+// the labs: each lab's list in a process of its own (a room sees only what
+// its lab loaded before it), a few at a time
+async function labsLoad() {
+  const benches = E.labs(DIR), said = [];
+  if (!benches.length) return "none in this build";
+  const results = new Array(benches.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < benches.length) {
+      const i = next++, lab = benches[i], files = E.labList(DIR, lab);
+      results[i] = { lab, files, r: files.length ? await E.evaluateApart(DIR, files) : null };
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(benches.length, os.cpus().length || 2) }, worker));
+  let whole = 0;
+  results.forEach(({ lab, files, r }) => {
+    const name = lab.replace(/\.php$/, "");
+    if (!r) { said.push(name + " loads no room of the house"); whole++; return; }
+    const bad = r.failures.concat(r.missed.map((f) => f + ": did not answer the roll call"), r.said.map((s) => "said to console.error as its rooms loaded: " + s.split("\n")[0]));
+    if (bad.length) bad.forEach((b) => failures.push(lab + " (its rooms in its order): " + b));
+    else whole++;
+    if (!bad.length) said.push(name + " " + r.loaded);
+    else said.push(name + " FAILED (" + r.loaded + " of " + files.length + " loaded)");
+  });
+  return whole + " of " + benches.length + " load the house's rooms in their own order (" + said.join(", ") + ")";
+}
+
+(async () => {
+  const labLine = await labsLoad();
+  console.log("kolob loadcheck — " + DIR);
+  console.log("  modules: " + loaded + " of " + list.length + " loaded; rooms answering: " + Object.keys(rooms).length);
+  console.log("  guard: " + guard);
+  console.log("  desk: " + desk);
+  console.log("  smoke: " + smoke);
+  console.log("  labs: " + labLine);
+  if (failures.length) { console.log("  FAILED:"); failures.forEach((f) => console.log("   - " + f)); process.exit(1); }
+  console.log("  ALL GREEN");
+})();
