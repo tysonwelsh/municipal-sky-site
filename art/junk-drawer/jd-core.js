@@ -1,12 +1,14 @@
 /* ============================================================================
    THE JUNK DRAWER — jd-core.js
-   The drawer is six scripts, loaded in this order by index.php (each one a
+   The drawer is seven scripts, loaded in this order by index.php (each one a
    set of IIFEs talking through window.JD_* — no build step, no modules):
      jd-core.js       this file: file-scope constants, the shared helpers
                       (JD_esc, JD_byId, the seeded RNG, JD_fetchArt,
-                      JD_zoomLayer), the pile loader + field notes, the
+                      JD_zoomLayer), the pile loader + axis legend, the
                       drag/rotate gesture script, the immersive chrome and
                       the draw-on engine
+     jd-filmstrip.js  the filmstrip — the replay/scrub control under a
+                      drawing (report card, rating bench, /about/)
      jd-furniture.js  the three pieces of furniture in the pile: the turn
                       object (PUSH 4 MORE JUNK), the instructions sheet, the
                       analytics folder
@@ -23,8 +25,8 @@
      1. the pile loader — one request to data.php ({taxonomy, items[]},
         PLAN-BACKEND §7), each item's PRIMARY response SVG inlined into a
         .jd-item wrapper with its entry.json placement applied inline. The
-        same payload also renders the field-notes sections in #notes: the
-        wall-label count line and the taxonomy-driven grade legend — zero
+        same payload also fills the taxonomy-driven axis legend on any page
+        that carries a #jd-axes host (the /about/ walkthrough) — zero
         hardcoded rubric strings anywhere.
      2. the drag/rotate gesture script — Pointer Events, one code path:
         hold-to-grip on touch, transform-only drag motion, wheel / [ ] keys /
@@ -43,6 +45,10 @@
    (APP constraint 1). Item urls arrive from data.php already root-absolute,
    so they are prefixed at their call sites too. */
 var JD_API = '';
+
+/* the collection's one read endpoint ({taxonomy, items[]}), root-absolute
+   like every path here — prefixed with JD_API where it is fetched */
+var JD_DATA_URL = '/art/junk-drawer/data.php';
 
 /* sent in every POST body and validated server-side against a small enum;
    never sniffed from User-Agent, which in a webview reads as web forever */
@@ -70,6 +76,32 @@ var JD_CONSENT = {
   check: 'I understand — send my words to Anthropic, OpenAI, Moonshot AI and Google'
 };
 
+/* a random v4 UUID, lowercase — the device code below is one, and a turn's
+   client_ref is minted the same way. crypto.randomUUID is present at the
+   iOS 16 floor but only in a secure context, so a harness on a bare IP gets
+   the getRandomValues path and Math.random is the last resort; all three
+   print the same 8-4-4-4-12 shape with the version nibble 4 and the
+   variant nibble 8–b (the shape JD_deviceRef's check accepts). */
+function JD_uuid() {
+  try {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    if (window.crypto && crypto.getRandomValues) {
+      var b = new Uint8Array(16);
+      crypto.getRandomValues(b);
+      b[6] = (b[6] & 0x0f) | 0x40; b[8] = (b[8] & 0x3f) | 0x80;
+      var h = [], i;
+      for (i = 0; i < 16; i++) h.push((b[i] + 0x100).toString(16).slice(1));
+      return h.slice(0, 4).join('') + '-' + h.slice(4, 6).join('') + '-' +
+        h.slice(6, 8).join('') + '-' + h.slice(8, 10).join('') + '-' +
+        h.slice(10, 16).join('');
+    }
+  } catch (e) {}
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    var r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+
 /* THE DEVICE CODE (owner, 2026-09-10): one random UUID per browser, made
    the FIRST TIME a turn is sent — never on a page view — and kept in
    localStorage, sent with each turn as device_ref so the turns and grades
@@ -84,12 +116,7 @@ function JD_deviceRef(create) {
   try { v = localStorage.getItem(JD_DEVICE_KEY); } catch (e) {}
   if (v && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(v)) return v;
   if (!create) return null;
-  var b = new Uint8Array(16);
-  if (window.crypto && crypto.getRandomValues) crypto.getRandomValues(b);
-  else for (var i = 0; i < 16; i++) b[i] = Math.floor(Math.random() * 256);
-  b[6] = (b[6] & 0x0f) | 0x40; b[8] = (b[8] & 0x3f) | 0x80;
-  var h = Array.prototype.map.call(b, function (x) { return (x < 16 ? '0' : '') + x.toString(16); }).join('');
-  v = h.slice(0, 8) + '-' + h.slice(8, 12) + '-' + h.slice(12, 16) + '-' + h.slice(16, 20) + '-' + h.slice(20);
+  v = JD_uuid();
   try { localStorage.setItem(JD_DEVICE_KEY, v); } catch (e) {}
   return v;
 }
@@ -163,7 +190,25 @@ function JD_paperIcon() {
     '<path d="M5.5 1.5v13M10.5 1.5v13M1.5 5.5h13M1.5 10.5h13" stroke="currentColor" stroke-opacity="0.38" stroke-width="0.8"/>' +
     '</svg>';
 }
-window.JD_paper = { get: JD_paperGet, set: JD_paperSet, icon: JD_paperIcon };
+window.JD_paper = {
+  get: JD_paperGet, set: JD_paperSet, icon: JD_paperIcon,
+  /* the swatch's class suffix for the current paper: ' is-blueprint' or ''.
+     It asks window.JD_paper.get(), never JD_paperGet directly, so a page
+     that swaps in its own get (the /about/ walkthrough pins graph paper)
+     is obeyed here too — as long as the object it swaps in carries cls
+     along. */
+  cls: function () { return window.JD_paper.get() === 'blueprint' ? ' is-blueprint' : ''; }
+};
+
+/* THE GRADE RAMP, worst → best: the five inks a grade prints in (rank 1 …
+   5), matched to the report card's rc-g1..5 in junk-drawer.css, which keeps
+   its own literals */
+var JD_GRADE_RAMP = ['#8f1d12', '#b0490f', '#a06200', '#46761a', '#0b6a1f'];
+
+/* THE ✕ — the drawn close mark (.jd-x-mark in the stylesheet) inside every
+   dialog's close button and the enlargement's, the same everywhere */
+var JD_X_MARK = '<svg class="jd-x-mark" viewBox="0 0 18 18" aria-hidden="true" focusable="false">' +
+  '<path d="M1 1 17 17M17 1 1 17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
 
 /* the haptics shim (APP constraint 8): one site to route through, silent
    where the API is absent (iOS Safari has no vibrate at all) */
@@ -215,6 +260,27 @@ function JD_byId(list, id) {
   return null;
 }
 
+/* the taxonomy's LIVE axes, in filed order: a defunct axis stays in the
+   taxonomy for the responses graded under it, but no surface asks it */
+function JD_liveAxes(tax) {
+  return ((tax || {}).axes || []).filter(function (a) { return !a.defunct; });
+}
+
+/* a size tier's box (cqmin) by id, from taxonomy.sizeTiers — the first
+   tier with that id, like JD_byId — or null when none is registered */
+function JD_tierBox(tax, id) {
+  var t = JD_byId((tax || {}).sizeTiers, id);
+  return t ? t.box : null;
+}
+
+/* a copy of a taxonomy scale (the grades, an axis's values) best first:
+   higher rank is better (contract guarantee 1), a missing rank sorts as 0 */
+function JD_byRankDesc(list) {
+  return (list || []).slice().sort(function (a, b) {
+    return (b.rank || 0) - (a.rank || 0);
+  });
+}
+
 /* THE HOUSE FOLD: FNV-1a of a string to a uint32, then xorshift32 from it.
    Seeds the darkroom's generated indicators (a plotted circuit, the
    scatterword's flights, the honest bar's climb, the watch's time, the
@@ -238,6 +304,18 @@ function JD_xorshift(seed) {
     return st / 4294967296;
   };
 }
+/* Fisher–Yates, in place; returns `a`. `rnd` is any [0,1) source — a
+   JD_xorshift where a deal has to come out the same every time — and
+   defaults to Math.random. One draw per position, last to second, so the
+   same run of rnd() values always deals the same order. */
+function JD_shuffle(a, rnd) {
+  rnd = rnd || Math.random;
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(rnd() * (i + 1)), t = a[i];
+    a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
 
 /* THE LAYERS AT LOAD (owner, 2026-09-10; clarified the same day): when the
    drawer opens, the extra-large objects lie on the floor, the large ones on
@@ -249,19 +327,48 @@ function JD_xorshift(seed) {
    its own stacking context (z 2 in the well), so these numbers never
    compete with the tag / elastic / picked-item sandwich (70–72). */
 var JD_Z_BAND = { xl: 0, l: 10000, other: 20000 };
+
+/* THE SCATTER MAP'S NUMBERS (see the loader's SCATTER): where everything in
+   the pile lies is one map in JD_store under this key — the scatter, plus
+   the visitor's won items under their gen_id and the furniture's seats.
+   v2: area-normalized sizes — v1 positions were clamped against the old
+   width-only footprints. */
+var JD_SCATTER_KEY = 'jd-scatter-v2';
+/* keep item centres at least this far (a fraction of the well) off the
+   well's edge — the wall clearance every seat in the pile keeps */
+var JD_SCATTER_INSET = 0.012;
+/* the scatter's rotation range, ± degrees */
+var JD_ROT_MAX = 34;
 function JD_zBand(el) {
   var t = el && el.dataset ? el.dataset.tier : '';
   return t === 'xl' || t === 'l' ? t : 'other';
 }
 function JD_zBase(el) { return JD_Z_BAND[JD_zBand(el)]; }
 
-/* has the visitor asked for stillness? (a fresh read every call — the
-   preference can change while the page is open) */
+/* has the visitor asked for stillness? The MediaQueryList is built once and
+   kept: its .matches is LIVE, so the preference can change while the page
+   is open and still be read fresh on every call — without constructing a
+   new list each time (the rope asks on every frame while the elastic
+   swings, and the draw-on engine on every run). */
+var JD_reducedMQ = null;
 function JD_reduced() {
   try {
-    return !!(window.matchMedia &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    if (!JD_reducedMQ) {
+      if (!window.matchMedia) return false;
+      JD_reducedMQ = window.matchMedia('(prefers-reduced-motion: reduce)');
+    }
+    return !!JD_reducedMQ.matches;
   } catch (e) { return false; }
+}
+
+/* replay a class's CSS animation from its first frame: take the class off,
+   read offsetWidth so the browser commits the class-less style (without the
+   read, the remove and the add collapse into no change at all), put it
+   back */
+function JD_restart(el, cls) {
+  el.classList.remove(cls);
+  void el.offsetWidth;
+  el.classList.add(cls);
 }
 
 /* THE FURNITURE'S ARTWORK FETCH — one loader for the turn object, the
@@ -481,8 +588,9 @@ var JD_admin = (function () {
      the ONLY way to take a turn) */
   var turnBox = null;
   /* tier box per sizeClass, in cqmin. Fallback only — the live boxes come
-     from taxonomy.sizeTiers at load (see sizeBoxes), so the scale is
-     data-driven. */
+     from taxonomy.sizeTiers at load (see boxFor), so the scale is
+     data-driven; a load that fails seats the furniture on these (see the
+     .catch at the loader's foot). */
   var BASE = { xs: 6, s: 9, m: 15.5, l: 22, xl: 30 };
   /* THE TIER RULER, and why it is declared all the way out here (2026-08-28,
      found while wiring the analytics folder onto the same line): it is
@@ -534,21 +642,14 @@ var JD_admin = (function () {
      entry.placement blocks and the old MOBILE_POUR table — desktop and mobile
      now share one computed layout, and nobody hand-places items. */
   var SCATTER = {
-    key: 'jd-scatter-v2',   /* v2: area-normalized sizes — v1 positions were
-                               clamped against the old width-only footprints */
+    key: JD_SCATTER_KEY,      /* 'jd-scatter-v2' — see JD_SCATTER_KEY */
     jitter: 0.62,   /* random offset as a fraction of the cell; >0.5 lets
                        neighbours cross and cluster → the looser pile */
-    rotMax: 34,     /* rotation range, ± degrees */
-    inset: 0.012    /* keep item centres at least this far off the well edge */
+    rotMax: JD_ROT_MAX,       /* rotation range, ± degrees */
+    inset: JD_SCATTER_INSET   /* keep item centres at least this far off the
+                                 well edge */
   };
 
-  function shuffle(a) {
-    for (var i = a.length - 1; i > 0; i--) {
-      var j = Math.floor(Math.random() * (i + 1)), t = a[i];
-      a[i] = a[j]; a[j] = t;
-    }
-    return a;
-  }
   function seq(n) { var a = [], i; for (i = 0; i < n; i++) { a.push(i); } return a; }
 
   /* Namespace one inlined copy of an SVG: prefix every id it declares and
@@ -699,10 +800,7 @@ var JD_admin = (function () {
      of the size the owner chose, so it is stated too rather than hidden — an
      item filed as "s" × 0.364 reads "Small ×0.36", not "Small". */
   function sizeLabel(tax, item) {
-    var tiers = (tax || {}).sizeTiers || [], t = null;
-    for (var i = 0; i < tiers.length; i++) {
-      if (tiers[i].id === item.sizeClass) { t = tiers[i]; break; }
-    }
+    var t = JD_byId((tax || {}).sizeTiers, item.sizeClass);
     var label = t ? t.label : (item.sizeClass || '');
     if (!label) return '';
     /* round FIRST, then decide: a scale of 1.003 displays as ×1, which says
@@ -796,8 +894,8 @@ var JD_admin = (function () {
     var N = els.length;
     var cols = Math.max(1, Math.round(Math.sqrt(N * (W / H))));
     var rows = Math.max(1, Math.ceil(N / cols));
-    var cells = shuffle(seq(rows * cols));   /* random item -> cell mapping */
-    var zs = shuffle(seq(N));                /* random, distinct stack order */
+    var cells = JD_shuffle(seq(rows * cols));   /* random item -> cell mapping */
+    var zs = JD_shuffle(seq(N));                /* random, distinct stack order */
     var cellW = 1 / cols, cellH = 1 / rows, out = {};
     els.forEach(function (el, i) {
       var wpx = (parseFloat(el.style.getPropertyValue('--w')) || BASE.m) / 100 * MIN;
@@ -859,10 +957,18 @@ var JD_admin = (function () {
   /* the exact pass, run by the turn module once the plate is built and
      seated (and so measurable): push anything already lying in the corner
      clear of the REAL rect. Closes the race between the pile's apply pass
-     and the turn button's async artwork fetch, whichever lands first. */
+     and the turn button's async artwork fetch, whichever lands first.
+     READ, THEN WRITE: the plate's rect (once) and every item's rect are
+     all read before the first position is written, so the pass costs one
+     layout rather than one per item. Nothing a write changes could alter a
+     later read — the items are absolutely placed in a size-contained well,
+     so neither their footprints nor the plate's rect depend on where
+     anything else lies — so the positions are the ones the interleaved
+     pass wrote. */
   window.JD_enforceTurnCorner = function () {
     var host = pile.getBoundingClientRect();
     var W = host.width || 1, H = host.height || 1, MIN = Math.min(W, H);
+    var R = turnRect(W, H, MIN), moves = [];
     pile.querySelectorAll('.jd-item:not([data-turn])').forEach(function (el) {
       var x = parseFloat(el.style.left) / 100, y = parseFloat(el.style.top) / 100;
       if (!isFinite(x) || !isFinite(y)) return;
@@ -872,15 +978,18 @@ var JD_admin = (function () {
       var w = r.width || 40, h = r.height || 40;
       var a = avoidTurn(x, y,
         Math.min(0.5, (w * c + h * s) / 2 / W),
-        Math.min(0.5, (w * s + h * c) / 2 / H), W, H, MIN);
-      if (a.x !== x || a.y !== y) {
-        el.style.left = (a.x * 100) + '%';
-        el.style.top = (a.y * 100) + '%';
-      }
+        Math.min(0.5, (w * s + h * c) / 2 / H), R);
+      if (a.x !== x || a.y !== y) moves.push({ el: el, a: a });
+    });
+    moves.forEach(function (m) {
+      m.el.style.left = (m.a.x * 100) + '%';
+      m.el.style.top = (m.a.y * 100) + '%';
     });
   };
-  function avoidTurn(x, y, hw, hh, W, H, MIN) {
-    var R = turnRect(W, H, MIN);
+  /* `R` is turnRect's answer (null: no reservation), read by the caller —
+     once per pass in the loader's apply pass and JD_enforceTurnCorner, once
+     per call in JD_avoidTurn — so nothing in here touches the DOM */
+  function avoidTurn(x, y, hw, hh, R) {
     if (!R) return { x: x, y: y };
     if (x - hw >= R.x1 || y + hh <= R.y0) return { x: x, y: y };   /* clear */
     var pushX = R.x1 + hw;                       /* rightward, off the plate */
@@ -897,7 +1006,7 @@ var JD_admin = (function () {
   window.JD_avoidTurn = function (x, y, hw, hh) {
     var host = pile.getBoundingClientRect();
     var W = host.width || 1, H = host.height || 1;
-    return avoidTurn(x, y, hw, hh, W, H, Math.min(W, H));
+    return avoidTurn(x, y, hw, hh, turnRect(W, H, Math.min(W, H)));
   };
 
   /* stable-per-session: reuse the stored scatter iff it covers exactly the
@@ -940,56 +1049,23 @@ var JD_admin = (function () {
     pile.appendChild(note);
   }
 
-  /* ---------- the field notes, rendered from the same payload ------------- */
+  /* ---------- the axis legend, rendered from the same payload ------------- */
 
-  /* the wall label's live line: "10 items · 2026" (year range once it spans) */
-  function renderCount(data) {
-    var el = document.getElementById('jd-count');
-    if (!el) return;
-    var items = data.items || [];
-    var lo = '', hi = '';
-    items.forEach(function (item) {
-      var y = String(item.created || '').slice(0, 4);
-      if (!y) return;
-      if (!lo || y < lo) lo = y;
-      if (!hi || y > hi) hi = y;
-    });
-    var span = lo ? (lo === hi ? lo : lo + '–' + hi) : '';
-    el.textContent = items.length + (items.length === 1 ? ' item' : ' items') +
-      (span ? ' · ' + span : '');
-  }
-
-  /* HOW TO READ THE GRADES — grade scale in rank order (higher = better,
-     contract guarantee 1), then the annotation axes. Labels and descriptions
-     come from the taxonomy block only; a taxonomy edit updates this legend
-     with no frontend change. */
+  /* THE ANNOTATION AXES — labels and descriptions come from the taxonomy
+     block only; a taxonomy edit updates this legend with no frontend change.
+     (The wall label's count line, #jd-count, and the grade scale's legend,
+     #jd-grades, went with the shortened field notes, 2026-09-28: no page
+     carries either host, so their renderers are gone too. #jd-axes is the
+     one host left — the /about/ walkthrough's taxonomy step.) */
   function renderLegend(tax) {
-    var gradesEl = document.getElementById('jd-grades');
     var axesEl = document.getElementById('jd-axes');
-    if (gradesEl) {
-      (tax.grades || []).slice()
-        .sort(function (a, b) { return (b.rank || 0) - (a.rank || 0); })
-        .forEach(function (g) {
-          var row = document.createElement('div');
-          row.className = 'jd-grade-row';
-          var mark = document.createElement('span');
-          mark.className = 'jd-grade-mark';
-          mark.textContent = g.label || g.id;
-          var desc = document.createElement('span');
-          desc.className = 'jd-grade-desc';
-          desc.textContent = g.description || '';
-          row.appendChild(mark);
-          row.appendChild(desc);
-          gradesEl.appendChild(row);
-        });
-    }
     if (axesEl) {
       /* LIVE axes only (owner, 2026-08-11): the dimmed defunct rows are
          gone from the legend — the field notes describe the survey as it
          is asked today. Retired axes still exist in the taxonomy for the
          old responses that carry their grades (the report card is where
          that history surfaces, when it lands). */
-      var axes = (tax.axes || []).filter(function (ax) { return !ax.defunct; });
+      var axes = JD_liveAxes(tax);
       /* a list marked data-summary (the /about/ walkthrough) introduces the
          taxonomy to a reader, so it takes each axis's one-line `summary`;
          everywhere else keeps the full rater-facing description */
@@ -1013,10 +1089,10 @@ var JD_admin = (function () {
   }
 
   /* (the inventory — one mono line per item — left the field notes
-     2026-08-28, owner call: the pile IS the inventory, and the count line
-     above says how many. Every item's paperwork lives on its report card.) */
+     2026-08-28, owner call: the pile IS the inventory. Every item's
+     paperwork lives on its report card. What the payload still renders
+     outside the pile is the axis legend above.) */
   function renderNotes(data) {
-    renderCount(data);
     renderLegend(data.taxonomy || {});
   }
 
@@ -1027,7 +1103,7 @@ var JD_admin = (function () {
      the response it shows, with only what its tag prints — no alternatives,
      no ratings (see _slim.php). Same shape as the full payload, so nothing
      downstream knows the difference. */
-  fetch(JD_API + '/art/junk-drawer/data.php' + (window.JD_SLIM ? '?slim=1' : ''))
+  fetch(JD_API + JD_DATA_URL + (window.JD_SLIM ? '?slim=1' : ''))
     .then(function (r) {
       if (!r.ok) throw new Error('data.php ' + r.status);
       return r.json();
@@ -1043,9 +1119,6 @@ var JD_admin = (function () {
       /* resolve + fetch every primary response SVG (contract: primary
          always resolves; every response has a ready same-origin url) */
       var tax = data.taxonomy || {};
-      function byId(list, id) {
-        return (list || []).filter(function (x) { return x.id === id; })[0];
-      }
       /* tier boxes are data: taxonomy.sizeTiers is the source of truth, with
          the hardcoded BASE as fallback if an id is missing */
       var tiers = {};
@@ -1066,7 +1139,7 @@ var JD_admin = (function () {
         })[0] || item.responses[0];
         /* display labels for the tap pick-chip, resolved while the
            taxonomy is in scope */
-        var model = byId(tax.models, primary.model);
+        var model = JD_byId(tax.models, primary.model);
         var grade = gradeOf(tax, primary.grade);
         item._modelLabel = model ? model.label : (primary.model || '');
         item._gradeLabel = grade ? grade.label
@@ -1143,6 +1216,12 @@ var JD_admin = (function () {
       var layout = layoutFor(els);
       var hostR = pile.getBoundingClientRect();
       var HW = hostR.width || 1, HH = hostR.height || 1, HM = Math.min(HW, HH);
+      /* the turn plate's corner, read ONCE for the whole pass and before any
+         item is placed: reading it per item, right after the previous item's
+         left/top write, forced a layout per item. The writes below cannot
+         move it (see JD_enforceTurnCorner), so every item sees the rect it
+         always saw. */
+      var turnR = turnRect(HW, HH, HM);
       els.forEach(function (el) {
         var p = layout[el.dataset.id];
         /* pushed clear of the turn button's reserved corner at apply time —
@@ -1156,7 +1235,7 @@ var JD_admin = (function () {
         var c = Math.abs(Math.cos(rad)), s = Math.abs(Math.sin(rad));
         var a = avoidTurn(p.x, p.y,
           Math.min(0.5, (wpx * c + hpx * s) / 2 / HW),
-          Math.min(0.5, (wpx * s + hpx * c) / 2 / HH), HW, HH, HM);
+          Math.min(0.5, (wpx * s + hpx * c) / 2 / HH), turnR);
         el.style.left = (a.x * 100) + '%';
         el.style.top = (a.y * 100) + '%';
         el.style.setProperty('--rot', p.rot + 'deg');
@@ -1228,13 +1307,14 @@ var JD_admin = (function () {
       fallbackNote();
       /* the collection is what failed, not the drawer: the turn object is
          frontend-injected and owes data.php nothing, and it is the only
-         trigger there is now — so it still goes in, on the fallback tier box.
+         trigger there is now — so it still goes in, on the fallback tier box
+         (BASE: the same numbers each module keeps as its own FALLBACK_BOX).
          The instructions sheet rides the same rule. */
-      if (window.JD_turnObject) window.JD_turnObject.ready(null);
-      if (window.JD_sheet) window.JD_sheet.ready(null);
+      if (window.JD_turnObject) window.JD_turnObject.ready(BASE.m);
+      if (window.JD_sheet) window.JD_sheet.ready(BASE.xl);
       /* the folder likewise: its numbers come from jd-analytics.php, which
          data.php's failure says nothing about */
-      if (window.JD_folder) window.JD_folder.ready(null);
+      if (window.JD_folder) window.JD_folder.ready(BASE.l);
       if (window.console && console.warn) console.warn('junk drawer: ' + err.message);
     });
 })();
@@ -1314,7 +1394,7 @@ var JD_admin = (function () {
   function meterSVG(rank, steps) {
     var span = 66, x0 = 2, y = 2, h = 9;
     /* worst → best, matched to the report card's rc-g1..5 ramp */
-    var RAMP = ['#8f1d12', '#b0490f', '#a06200', '#46761a', '#0b6a1f'];
+    var RAMP = JD_GRADE_RAMP;
     var graded = rank !== null;
     var color = 'rgba(58,42,18,0.55)', fill = '';
     if (graded) {
@@ -1407,9 +1487,6 @@ var JD_admin = (function () {
      a forced layout per frame on a drop-shadowed element is exactly the
      repaint stall the drag path already goes out of its way to avoid. */
   var ropeTagH = 0;
-  var ropeCalm = window.matchMedia
-    ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
-  function ropeReduced() { return !!(ropeCalm && ropeCalm.matches); }
   function r1(v) { return Math.round(v * 10) / 10; }
 
   /* the item's layout-box CENTRE in well coords. The rotation and the picked
@@ -1650,7 +1727,7 @@ var JD_admin = (function () {
       var x = ax + dx * t + nx * bow, y = ay + dy * t + ny * bow;
       ropePts.push({ x: x, y: y, px: x, py: y });
     }
-    if (ropeReduced()) { ropeSettle(); ropeDraw(); }
+    if (JD_reduced()) { ropeSettle(); ropeDraw(); }
     else { ropeDraw(); ropeWake(); }
   }
   /* endpoint setters — the ONLY things that wake the loop */
@@ -1666,7 +1743,7 @@ var JD_admin = (function () {
      convergence in one synchronous pass and draw the settled shape, so the
      string is still correctly slack or taut — it just never sways there. */
   function ropeKick() {
-    if (ropeReduced()) { ropeSettle(); ropeDraw(); }
+    if (JD_reduced()) { ropeSettle(); ropeDraw(); }
     else ropeWake();
   }
 
@@ -1773,7 +1850,7 @@ var JD_admin = (function () {
     if (moved > ROPE.EPS) ropeWake();     /* still swinging → another frame */
   }
   function ropeWake() {
-    if (!ropeRAF && ropePts && !ropeReduced()) {
+    if (!ropeRAF && ropePts && !JD_reduced()) {
       ropeRAF = requestAnimationFrame(ropeTick);
     }
   }
@@ -2410,16 +2487,19 @@ var JD_admin = (function () {
    mostly down; pre-dashed strokes and unmeasurables (text, use) fall back
    to a fade. Each element's share of the run scales with the square root of
    its length, so one long spine can't starve the small bones.
-   Two customers: the report card's plate (open / response flip / REPLAY)
-   and the turn's reveal, where the fresh drawings' first appearance is the
-   whole point. opts: { force: play even under prefers-reduced-motion — an
+   Three customers: the report card's plate (on open, and the enlargement's
+   REDRAW), the turn's reveal, where the fresh drawings' first appearance is
+   the whole point, and the filmstrip (jd-filmstrip.js), which schedules its
+   frames from this engine's own walk. opts: { force: play even under prefers-reduced-motion — an
    explicit request is not ambient animation; secs: run length — omit it
    and the run is paced by the DRAWING (below) }. Returns the seconds the
    run will take (truthy), or false if it didn't play. The inline
    animation styles are stripped when the run ends, so the DOM goes back
    to exactly what was rendered; overlapping runs on one svg settle by a
    sequence stamp on the element — the newer run owns the artwork.
-   Keyframes live in junk-drawer.css beside .rc-plate-art.
+   Keyframes live in junk-drawer.css beside .rc-plate-art. The engine's
+   element walk and its style strip are exported as JD_drawOn.walk(svg)
+   and JD_drawOn.strip(root) (see below), so nothing has to copy them.
 
    PACING (owner rev, 2026-08-16 — "simple objects drew in slow motion"):
    a fixed run length made every drawing finish in the same time, so a
@@ -2438,22 +2518,18 @@ var JD_admin = (function () {
     'symbol,marker';
   var WORK_RATE = 3, SECS_MIN = 1.2, SECS_MAX = 4.2;
   var seq = 0;
-  function strip(svg) {
-    if (!svg || !document.contains(svg)) return;
+  /* THE WALK — JD_drawOn.walk(svg): every element a run schedules, in
+     document order, each as { el, L (measured length, min 4), stroked,
+     filled, fo (fill-opacity), op (opacity) }. The engine schedules from
+     this list and nothing else, so a control that needs the run's marks
+     (the filmstrip) gets exactly them by calling this walk. Walk the
+     PLAIN drawing: once a run has dressed the elements, the stroked ones
+     carry an inline dasharray (and read as pre-dashed) and the delayed
+     fills and fades hold their opacity at 0, so a walk made then drops
+     most of what was scheduled. */
+  function walk(svg) {
     var els = svg.querySelectorAll(SEL);
-    for (var i = 0; i < els.length; i++) {
-      els[i].style.animation = '';
-      els[i].style.strokeDasharray = '';
-      els[i].style.strokeDashoffset = '';
-      els[i].style.removeProperty('--jdfo');
-      els[i].style.removeProperty('--jdo');
-    }
-  }
-  window.JD_drawOn = function (svg, opts) {
-    opts = opts || {};
-    if (!svg || (JD_reduced() && !opts.force)) return false;
-    var els = svg.querySelectorAll(SEL);
-    var items = [], i, el, cs, L, stroked, filled, ink = 0;
+    var items = [], i, el, cs, L, stroked, filled;
     for (i = 0; i < els.length; i++) {
       el = els[i];
       if (el.closest && el.closest(SKIP)) continue;
@@ -2468,8 +2544,29 @@ var JD_admin = (function () {
       if (!stroked && !filled) continue;
       items.push({ el: el, L: Math.max(L, 4), stroked: stroked,
         filled: filled, fo: cs.fillOpacity, op: cs.opacity });
-      ink += Math.max(L, 4);
     }
+    return items;
+  }
+  /* THE STRIP — JD_drawOn.strip(root): take the engine's inline animation
+     styles back off every element under `root`, attached to the document
+     or not (a detached copy can be cleaned before it is mounted). The
+     engine's own end-of-run strip only touches artwork still in the
+     document; that test sits at its call site below. */
+  function strip(root) {
+    var els = root.querySelectorAll(SEL);
+    for (var i = 0; i < els.length; i++) {
+      els[i].style.animation = '';
+      els[i].style.strokeDasharray = '';
+      els[i].style.strokeDashoffset = '';
+      els[i].style.removeProperty('--jdfo');
+      els[i].style.removeProperty('--jdo');
+    }
+  }
+  window.JD_drawOn = function (svg, opts) {
+    opts = opts || {};
+    if (!svg || (JD_reduced() && !opts.force)) return false;
+    var items = walk(svg), i, ink = 0;
+    for (i = 0; i < items.length; i++) ink += items[i].L;
     var secs = opts.secs;
     if (!secs) {
       /* pace by the drawing, not the clock (see PACING above). The
@@ -2524,10 +2621,13 @@ var JD_admin = (function () {
       }
     }
     /* put the artwork back to plain rendered state once the run is over;
-       a newer run on the same svg owns it instead */
+       a newer run on the same svg owns it instead, and artwork that has
+       left the document is not touched */
     setTimeout(function () {
-      if (svg.__jdDrawSeq === my) strip(svg);
+      if (svg.__jdDrawSeq === my && document.contains(svg)) strip(svg);
     }, (secs + 0.4) * 1000);
     return secs;
   };
+  window.JD_drawOn.walk = walk;
+  window.JD_drawOn.strip = strip;
 })();

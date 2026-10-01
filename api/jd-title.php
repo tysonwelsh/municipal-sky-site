@@ -47,7 +47,6 @@ $prompt = trim($prompt);
 // four leave, so one retry covers the race where none has landed yet.)
 try {
     $db = jd_db();
-    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $stmt = $db->prepare(
         "SELECT id FROM jd_submissions
           WHERE client_ref = ? AND created >= ?
