@@ -136,3 +136,4 @@
 0.9.175 — issue rates: the four categories are no longer averages. In the analytics folder and on /about/, each category shows how often each model's drawings had a problem (dark red = big, light red = small), and je ne sais quoi shows how often they had it (dark green = has it, light green = a hint), all on one 0–100% ruler with a 95% whisker; in the folder, tap a bar for its counts
 0.9.176 — the category charts' 95% whiskers are quieter: grey, with the pale outline around them removed (analytics folder and /about/)
 0.9.177 — the category charts' bars are one piece: the pale line between the dark and light segments is gone (analytics folder and /about/)
+0.9.178 — the turn card now says plainly that a rated turn joins the public drawer unless you keep it out, and the disclosure recorded with each turn (jd-consent-6) says the same — the old one still promised nothing typed was shown to other visitors

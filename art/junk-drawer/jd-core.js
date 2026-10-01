@@ -57,16 +57,22 @@ var JD_CLIENT = 'web';
    because they are still what gets recorded against the visitor's turn. */
 var JD_CONSENT = {
   /* jd-consent-5 (2026-09-10): the device code joins the list of what is
-     stored — see JD_deviceRef below and privacy.php §4 */
-  version: 'jd-consent-5',
+     stored — see JD_deviceRef below and privacy.php §4.
+     jd-consent-6 (2026-10-01, legal audit): -5 still said "Nothing you type
+     here is shown to other visitors", untrue since rated turns joined the
+     drawer for everyone (data.php, 2026-08-30); and the visitor code, made
+     from the IP address, is pseudonymous rather than "anonymous". */
+  version: 'jd-consent-6',
   text: 'When you take a turn, the words you type are sent to four AI ' +
     'providers — Anthropic (Claude), OpenAI (GPT), Moonshot AI (Kimi), and ' +
     'Google (Gemini) — which each draw an object from them. Your prompt, ' +
-    'the drawings that come back, your ratings, an anonymous ' +
-    'daily-rotating visitor code, and a random device code your browser ' +
+    'the drawings that come back, your ratings, a daily-rotating visitor ' +
+    'code made from your IP address, and a random device code your browser ' +
     'keeps (so the turns and grades from one device can be studied ' +
     'together) are stored so the results can be studied and the feature ' +
-    'kept honest. Nothing you type here is shown to other visitors.',
+    'kept honest. Once you have rated every drawing, your prompt and the ' +
+    'drawings join the public drawer, where other visitors can see them, ' +
+    'unless you tick “keep this one out of the drawer” before you finish.',
   check: 'I understand — send my words to Anthropic, OpenAI, Moonshot AI and Google'
 };
 
