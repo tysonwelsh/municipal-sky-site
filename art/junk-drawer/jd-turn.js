@@ -60,11 +60,11 @@
   var token = 0;            /* per-turn token — a settling fetch from an
                                abandoned turn must not touch the live one */
   var lastFocus = null, instSeq = 0, slowTimer = 0;
-  /* the masthead the next paint will print: FORM JD-1 §n and the heading.
-     head() fills it; the view string is built before paint runs, so the two
-     can never disagree. Its title is also the dialog's accessible name
-     (paint sets it), so the name changes with the step instead of naming
-     the whole flow once. */
+  /* the masthead the next paint will print — the heading — and the card's
+     data-view. head() fills it; the view string is built before paint
+     runs, so the two can never disagree. Its title is also the dialog's
+     accessible name (paint sets it), so the name changes with the step
+     instead of naming the whole flow once. */
   var pendingHead = null;
 
   /* ---------- small helpers ---------------------------------------------- */
@@ -923,7 +923,7 @@
          head, so the filing-failure repaint is covered too).
      State lives here, as JD_record's does, because Escape has to know which
      layer it is peeling: enlargement first, then the confirm, then the
-     modal (the window keydown handler below). */
+     modal (the window keydown handler above). */
   var zoom = JD_zoomLayer();
   var zoomWired = false;   /* the layer's kept controls, wired once (openZoom) */
   /* the enlargement's contents: the SAME drawing the plate shows, on the
@@ -2075,10 +2075,11 @@
         '<button type="button" class="jd-turn-alt" data-act="done">close</button>');
   }
 
-  /* THE MASTHEAD. Every card is FORM JD-1; what changes is the heading and
-     the section number on the badge (§1 brief → §6 unveil). head() declares
-     the next paint's masthead and contributes NOTHING to the body string —
-     it returns '' so the views can go on reading as one concatenation.
+  /* THE MASTHEAD. Every card is FORM JD-1; what changes is the heading (the
+     section number, §1 brief → §6 unveil, is still declared at every call
+     but neither printed nor kept — see headHTML). head() declares the next
+     paint's masthead and contributes NOTHING to the body string — it
+     returns '' so the views can go on reading as one concatenation.
 
      The heading is the landing place for every state that has no field of
      its own to fill in (C5.8): moving through the flow should read as the
@@ -2677,7 +2678,7 @@
     pile.appendChild(el);
     /* reframe before sizing: a live-generated drawing can overshoot the
        frame it declares, and applySize's aspect read (svgAspect) must see
-       the expanded viewBox — see fitView at the top of the file. Same
+       the expanded viewBox — see fitView in jd-core.js. Same
        generation key the turn plates used, so the won item lands in the
        drawer framed exactly as it was on the bench. */
     if (window.JD_fitView) window.JD_fitView(el.querySelector('svg'), 'gen:' + rec.gen_id);
@@ -2754,7 +2755,8 @@
   function respFor(rid, src, day) {
     return withCost({
       /* gen_id rides the response so the card frames this drawing under the
-         SAME key the bench and the pile used for it (see fitKey / fitView) */
+         SAME key the bench and the pile used for it (see fitKey in
+         jd-record.js, fitView in jd-core.js) */
       rid: rid, file: src.gen_id + '.svg', gen_id: src.gen_id, model: src.model_id, date: day,
       generation: { mode: 'one-shot', prompt_count: 1 },
       grade: src.grade, annotations: src.annotations || {},
@@ -2890,8 +2892,8 @@
   }
 
   /* ---------- CURATE MODE — the re-rating bench (owner, 2026-08-28) --------
-     The backlog instrument IS this card. JD_bench (the ?bench driver at the
-     foot of this file) hands over one curated item at a time and the card
+     The backlog instrument IS this card. JD_bench (the ?bench driver,
+     jd-bench.js) hands over one curated item at a time and the card
      runs its ordinary rate machinery on it — the same benchPanel, rail and
      podium a visitor gets, so every hour spent re-rating is spent inside the
      real instrument, and every refinement made to it ships to visitors.
