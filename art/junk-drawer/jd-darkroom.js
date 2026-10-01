@@ -846,11 +846,12 @@
      (2026-08-30) it held exactly four, a full permutation with no indicator
      sitting a turn out; with the word mesh back (2026-09-29) it is five
      indicators for four slots again, so one sits each turn out. The deal
-     is a Fisher–Yates shuffle of the whole pool, seeded the house way from
-     the turn's client_ref, so a repaint or a restored turn re-derives the
-     same arrangement. The slot letters now mean POSITION only (the pencilled
-     corner labels the later cards reference); which indicator a position
-     hosts is the turn's own business. Each well wears its indicator's name
+     is a Fisher–Yates shuffle of the whole pool (jd-core's JD_shuffle),
+     seeded the house way from the turn's client_ref, so a repaint or a
+     restored turn re-derives the same arrangement. The slot letters now
+     mean POSITION only (the pencilled corner labels the later cards
+     reference); which indicator a position hosts is the turn's own
+     business. Each well wears its indicator's name
      — jd-dark-well--plot/stray/scatter/watch/bar/drift/words — and the
      CSS keys the full-bleed and overflow tailoring to THAT, not to the slot. */
   /* ---- the word drift (round 27) ------------------------------------------
@@ -1171,12 +1172,8 @@
   */
   var DARK_POOL = ['stray', 'scatter', 'watch', 'drift', 'words'];
   function darkDeal(seed) {
-    var rnd = JD_xorshift(JD_fnv1a(seed + ':rota')), i;
-    var deck = DARK_POOL.slice(), j, t;
-    for (i = deck.length - 1; i > 0; i--) {
-      j = (rnd() * (i + 1)) | 0;
-      t = deck[i]; deck[i] = deck[j]; deck[j] = t;
-    }
+    var rnd = JD_xorshift(JD_fnv1a(seed + ':rota'));
+    var deck = JD_shuffle(DARK_POOL.slice(), rnd);
     return deck;   /* slot a takes deck[0], b deck[1], and so on */
   }
   /* ---- the stray's ink ruler (owner directive, 2026-08-26) ---------------

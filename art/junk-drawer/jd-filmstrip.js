@@ -39,9 +39,6 @@
 (function () {
   'use strict';
 
-  var SEL = 'path,line,polyline,polygon,circle,ellipse,rect,text,use';
-  var SKIP = 'defs,clipPath,mask,pattern,linearGradient,radialGradient,symbol,marker';
-
   /* THE FRACTION IS PARKED (owner, 2026-09-16): "I think it's kind of a
      distraction." The readout — the mark set over the count across a slanted
      solidus — is not drawn on any surface. Everything that makes it is still
@@ -58,9 +55,9 @@
     '<path class="g-pause" d="M5 2.6v10.8M11 2.6v10.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>' +
     '</svg>';
 
-  /* the marks: the engine's element walk (same selector, same skips, same
-     visibility test) so the list is exactly what JD_drawOn schedules, with
-     each mark's measured length for its bar. It has to walk the PLAIN
+  /* the marks: the engine's own element walk (JD_drawOn.walk, jd-core.js),
+     so the list is exactly what JD_drawOn schedules, in the same order,
+     with each mark's measured length for its bar. It has to walk the PLAIN
      drawing — arm() calls it before the engine runs, never after: once
      JD_drawOn has dressed the elements, every stroked one carries an inline
      stroke-dasharray (so it reads as pre-dashed, not stroked) and every
@@ -74,31 +71,9 @@
      on the plate, in the bench and in every cell, while the enlargement,
      which has no filmstrip, drew whole. */
   function marksOf(svg) {
-    var els = svg.querySelectorAll(SEL), out = [], i, el, cs, L, stroked, filled;
-    for (i = 0; i < els.length; i++) {
-      el = els[i];
-      if (el.closest && el.closest(SKIP)) continue;
-      cs = getComputedStyle(el);
-      if (cs.display === 'none' || cs.visibility === 'hidden') continue;
-      L = 0;
-      try { if (el.getTotalLength) L = el.getTotalLength(); } catch (e) {}
-      stroked = cs.stroke !== 'none' && parseFloat(cs.strokeWidth) > 0 &&
-        parseFloat(cs.strokeOpacity) > 0 && cs.strokeDasharray === 'none' && L > 0;
-      filled = cs.fill !== 'none' && parseFloat(cs.fillOpacity) > 0;
-      if (!stroked && !filled) continue;
-      out.push({ el: el, L: Math.max(L, 4), start: 0, end: 0 });
-    }
-    return out;
-  }
-
-  /* strip the engine's inline animation styles off a subtree */
-  function clean(root) {
-    var els = root.querySelectorAll(SEL);
-    for (var i = 0; i < els.length; i++) {
-      els[i].style.animation = ''; els[i].style.strokeDasharray = '';
-      els[i].style.strokeDashoffset = '';
-      els[i].style.removeProperty('--jdfo'); els[i].style.removeProperty('--jdo');
-    }
+    return window.JD_drawOn.walk(svg).map(function (it) {
+      return { el: it.el, L: it.L, start: 0, end: 0 };
+    });
   }
 
   /* hold every animation in `list` paused at `ms` — a seek, a finish, or a
@@ -123,13 +98,14 @@
     }).join('|') + ')(?![\\w-])', 'g');
   }
 
-  /* a cell copy: the plate's drawing cloned, animation styles cleared, and
-     every id (and every reference to one — url(#…), href, aria) rewritten
-     under a prefix so eight copies can share the document with the plate.
+  /* a cell copy: the plate's drawing cloned, animation styles cleared
+     (JD_drawOn.strip, which works on the detached clone), and every id (and
+     every reference to one — url(#…), href, aria) rewritten under a prefix
+     so the twelve cell copies can share the document with the plate.
      `re` is idRefs(svg) — the id under the prefix is prefix + id. */
   function copyOf(svg, prefix, re) {
     var g = svg.cloneNode(true);
-    clean(g);
+    window.JD_drawOn.strip(g);
     g.removeAttribute('id');
     var els = g.querySelectorAll('[id]'), i;
     for (i = 0; i < els.length; i++) {
@@ -219,7 +195,7 @@
        and end off its own animations, and build the cumulative end times
        T[i] the mark axis maps through */
     function arm() {
-      clean(svg);   /* an identical animation string would not restart a cancelled one */
+      window.JD_drawOn.strip(svg);   /* an identical animation string would not restart a cancelled one */
       /* measure BEFORE the engine runs: the walk must see the plain drawing
          (see marksOf) */
       marks = marksOf(svg);
@@ -451,7 +427,7 @@
       destroy: function () {
         dead = true; cancelAnimationFrame(raf);
         anims.forEach(function (a) { try { a.cancel(); } catch (e) {} });
-        if (document.contains(svg)) clean(svg);
+        if (document.contains(svg)) window.JD_drawOn.strip(svg);
         if (bar.parentNode) bar.parentNode.removeChild(bar);
       }
     };
