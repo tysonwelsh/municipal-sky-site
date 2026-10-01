@@ -1,12 +1,14 @@
 /* ============================================================================
    THE JUNK DRAWER — jd-core.js
-   The drawer is six scripts, loaded in this order by index.php (each one a
+   The drawer is seven scripts, loaded in this order by index.php (each one a
    set of IIFEs talking through window.JD_* — no build step, no modules):
      jd-core.js       this file: file-scope constants, the shared helpers
                       (JD_esc, JD_byId, the seeded RNG, JD_fetchArt,
-                      JD_zoomLayer), the pile loader + field notes, the
+                      JD_zoomLayer), the pile loader + axis legend, the
                       drag/rotate gesture script, the immersive chrome and
                       the draw-on engine
+     jd-filmstrip.js  the filmstrip — the replay/scrub control under a
+                      drawing (report card, rating bench, /about/)
      jd-furniture.js  the three pieces of furniture in the pile: the turn
                       object (PUSH 4 MORE JUNK), the instructions sheet, the
                       analytics folder
@@ -23,8 +25,8 @@
      1. the pile loader — one request to data.php ({taxonomy, items[]},
         PLAN-BACKEND §7), each item's PRIMARY response SVG inlined into a
         .jd-item wrapper with its entry.json placement applied inline. The
-        same payload also renders the field-notes sections in #notes: the
-        wall-label count line and the taxonomy-driven grade legend — zero
+        same payload also fills the taxonomy-driven axis legend on any page
+        that carries a #jd-axes host (the /about/ walkthrough) — zero
         hardcoded rubric strings anywhere.
      2. the drag/rotate gesture script — Pointer Events, one code path:
         hold-to-grip on touch, transform-only drag motion, wheel / [ ] keys /
@@ -699,10 +701,7 @@ var JD_admin = (function () {
      of the size the owner chose, so it is stated too rather than hidden — an
      item filed as "s" × 0.364 reads "Small ×0.36", not "Small". */
   function sizeLabel(tax, item) {
-    var tiers = (tax || {}).sizeTiers || [], t = null;
-    for (var i = 0; i < tiers.length; i++) {
-      if (tiers[i].id === item.sizeClass) { t = tiers[i]; break; }
-    }
+    var t = JD_byId((tax || {}).sizeTiers, item.sizeClass);
     var label = t ? t.label : (item.sizeClass || '');
     if (!label) return '';
     /* round FIRST, then decide: a scale of 1.003 displays as ×1, which says
@@ -940,49 +939,16 @@ var JD_admin = (function () {
     pile.appendChild(note);
   }
 
-  /* ---------- the field notes, rendered from the same payload ------------- */
+  /* ---------- the axis legend, rendered from the same payload ------------- */
 
-  /* the wall label's live line: "10 items · 2026" (year range once it spans) */
-  function renderCount(data) {
-    var el = document.getElementById('jd-count');
-    if (!el) return;
-    var items = data.items || [];
-    var lo = '', hi = '';
-    items.forEach(function (item) {
-      var y = String(item.created || '').slice(0, 4);
-      if (!y) return;
-      if (!lo || y < lo) lo = y;
-      if (!hi || y > hi) hi = y;
-    });
-    var span = lo ? (lo === hi ? lo : lo + '–' + hi) : '';
-    el.textContent = items.length + (items.length === 1 ? ' item' : ' items') +
-      (span ? ' · ' + span : '');
-  }
-
-  /* HOW TO READ THE GRADES — grade scale in rank order (higher = better,
-     contract guarantee 1), then the annotation axes. Labels and descriptions
-     come from the taxonomy block only; a taxonomy edit updates this legend
-     with no frontend change. */
+  /* THE ANNOTATION AXES — labels and descriptions come from the taxonomy
+     block only; a taxonomy edit updates this legend with no frontend change.
+     (The wall label's count line, #jd-count, and the grade scale's legend,
+     #jd-grades, went with the shortened field notes, 2026-09-28: no page
+     carries either host, so their renderers are gone too. #jd-axes is the
+     one host left — the /about/ walkthrough's taxonomy step.) */
   function renderLegend(tax) {
-    var gradesEl = document.getElementById('jd-grades');
     var axesEl = document.getElementById('jd-axes');
-    if (gradesEl) {
-      (tax.grades || []).slice()
-        .sort(function (a, b) { return (b.rank || 0) - (a.rank || 0); })
-        .forEach(function (g) {
-          var row = document.createElement('div');
-          row.className = 'jd-grade-row';
-          var mark = document.createElement('span');
-          mark.className = 'jd-grade-mark';
-          mark.textContent = g.label || g.id;
-          var desc = document.createElement('span');
-          desc.className = 'jd-grade-desc';
-          desc.textContent = g.description || '';
-          row.appendChild(mark);
-          row.appendChild(desc);
-          gradesEl.appendChild(row);
-        });
-    }
     if (axesEl) {
       /* LIVE axes only (owner, 2026-08-11): the dimmed defunct rows are
          gone from the legend — the field notes describe the survey as it
@@ -1013,10 +979,10 @@ var JD_admin = (function () {
   }
 
   /* (the inventory — one mono line per item — left the field notes
-     2026-08-28, owner call: the pile IS the inventory, and the count line
-     above says how many. Every item's paperwork lives on its report card.) */
+     2026-08-28, owner call: the pile IS the inventory. Every item's
+     paperwork lives on its report card. What the payload still renders
+     outside the pile is the axis legend above.) */
   function renderNotes(data) {
-    renderCount(data);
     renderLegend(data.taxonomy || {});
   }
 
@@ -1043,9 +1009,6 @@ var JD_admin = (function () {
       /* resolve + fetch every primary response SVG (contract: primary
          always resolves; every response has a ready same-origin url) */
       var tax = data.taxonomy || {};
-      function byId(list, id) {
-        return (list || []).filter(function (x) { return x.id === id; })[0];
-      }
       /* tier boxes are data: taxonomy.sizeTiers is the source of truth, with
          the hardcoded BASE as fallback if an id is missing */
       var tiers = {};
@@ -1066,7 +1029,7 @@ var JD_admin = (function () {
         })[0] || item.responses[0];
         /* display labels for the tap pick-chip, resolved while the
            taxonomy is in scope */
-        var model = byId(tax.models, primary.model);
+        var model = JD_byId(tax.models, primary.model);
         var grade = gradeOf(tax, primary.grade);
         item._modelLabel = model ? model.label : (primary.model || '');
         item._gradeLabel = grade ? grade.label
@@ -1407,9 +1370,6 @@ var JD_admin = (function () {
      a forced layout per frame on a drop-shadowed element is exactly the
      repaint stall the drag path already goes out of its way to avoid. */
   var ropeTagH = 0;
-  var ropeCalm = window.matchMedia
-    ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
-  function ropeReduced() { return !!(ropeCalm && ropeCalm.matches); }
   function r1(v) { return Math.round(v * 10) / 10; }
 
   /* the item's layout-box CENTRE in well coords. The rotation and the picked
@@ -1650,7 +1610,7 @@ var JD_admin = (function () {
       var x = ax + dx * t + nx * bow, y = ay + dy * t + ny * bow;
       ropePts.push({ x: x, y: y, px: x, py: y });
     }
-    if (ropeReduced()) { ropeSettle(); ropeDraw(); }
+    if (JD_reduced()) { ropeSettle(); ropeDraw(); }
     else { ropeDraw(); ropeWake(); }
   }
   /* endpoint setters — the ONLY things that wake the loop */
@@ -1666,7 +1626,7 @@ var JD_admin = (function () {
      convergence in one synchronous pass and draw the settled shape, so the
      string is still correctly slack or taut — it just never sways there. */
   function ropeKick() {
-    if (ropeReduced()) { ropeSettle(); ropeDraw(); }
+    if (JD_reduced()) { ropeSettle(); ropeDraw(); }
     else ropeWake();
   }
 
@@ -1773,7 +1733,7 @@ var JD_admin = (function () {
     if (moved > ROPE.EPS) ropeWake();     /* still swinging → another frame */
   }
   function ropeWake() {
-    if (!ropeRAF && ropePts && !ropeReduced()) {
+    if (!ropeRAF && ropePts && !JD_reduced()) {
       ropeRAF = requestAnimationFrame(ropeTick);
     }
   }
