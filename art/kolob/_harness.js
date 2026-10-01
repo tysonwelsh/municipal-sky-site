@@ -20,13 +20,26 @@
 //
 // Usage:
 //   node _harness.js <secs> <seed> [ives] [razz] [cumulative] [force=<guest>]
-//                    [exp=<spec>] [dump=<file>] [header]
+//                    [exp=<spec>] [stop=<secs>,…] [play=<secs>,…]
+//                    [throw=<lane>@<secs>,…] [dump=<file>] [header]
 //
 //   ives          KolobAudio.setForceVisitation(true)   — the Ives switch
 //   force=<name>  KolobAudio.setForceVisitation(name)   — one named guest
 //   razz          KolobAudio.setForceRaspberry(true)
 //   cumulative    KolobAudio.setCumulativeMode("always")
 //   exp=<spec>    the experiments' switch, as ?exp= takes it (-name,+name,none,all)
+//   stop=<secs>   KolobAudio.stop() at that time on the audio clock (the
+//                 dump's timeline: the harness never holds, so it is the
+//                 music's own); play=<secs> KolobAudio.play() likewise, so
+//                 stop=120 play=121 is a STOP and a quick restart. Either
+//                 takes a comma list or comes again (stop=120,400 play=121,402);
+//                 at one time a stop goes first. A time at or past <secs> is
+//                 not played (the report says so). The run's end still presses
+//                 STOP as below.
+//   throw=<lane>@<secs>  a fault: the first cue on that clock lane (conductor,
+//                 drone, choir, organ, …) at or after that time throws an
+//                 Error, once (THE FAULT INJECTION, below); a comma list for
+//                 several (throw=drone@120,choir@200)
 //   dump=<file>   write the note and event streams, one JSON array per line
 //   header        with dump=: a first line ["H", 0, {...}] naming the run and
 //                 the engine (opt-in, so a plain dump stays byte-identical)
@@ -62,15 +75,28 @@
 // loop advances in order, flushing promise microtasks after every callback;
 // performance.now reads it too. PJ2.Clock's lookahead pump is a setInterval,
 // so every cue fires at or ahead of its own time, and KolobAudio.clockHealth
-// must report no late cue. The run plays until the clock passes <secs> + 3,
-// then STOP is pressed, so the stop fade is exercised too.
+// must report no late cue. The run plays until the clock passes <secs> + 3
+// (pressing any scripted stop= and play= on the way), then STOP is pressed,
+// so the stop fade is exercised too, and runs 1.5 s more for the fade's own
+// timers.
 //
-// The report: seed, seconds, the engine and its fingerprint, meetings and
-// sections, notes by layer, events by type, guests, the clock's health, the
-// hymnal's desk, the graph the mock saw built, console warnings, and every
-// error caught (a timer callback that threw, a cue the clock reported, an
-// unhandled rejection). Exit 1 on any of those, or on a late cue; the last
-// line is VERDICT: PASS ✓ or VERDICT: FAIL ✗, which tools/lib/run.js keeps.
+// The report: seed, seconds, the switches and the script, the engine and its
+// fingerprint, meetings and sections, notes by layer, events by type, guests,
+// the clock's health, the hymnal's desk, the graph the mock saw built,
+// console warnings, and every error caught (a timer callback that threw, a
+// cue the clock reported, an unhandled rejection). Exit 1 on any of those, or
+// on a late cue; the last line is VERDICT: PASS ✓ or VERDICT: FAIL ✗, which
+// tools/lib/run.js keeps. Three counts are told and not judged: the timers
+// the engine left armed after the last STOP (a setTimeout, setInterval,
+// requestAnimationFrame or requestIdleCallback still waiting would be a leak;
+// there is none today); the sources scheduled past the run's end (the mock's
+// onended for a node whose stop() lies beyond it — a drone partial or a
+// voice written ahead, not a leak); and a console.warn other than the refused
+// fetch's (the harness has no network, so a room keeps the impulse response
+// it poured: that warning is expected), each printed on its own line. With
+// throw=, the injected throws: when each fired, who reported it, and how
+// many cues its lane ran after it; an injected throw is not an error of the
+// run.
 // A module that fails to load prints "LOAD <file>: <error>" (run.js reads
 // that line) and no dump is written.
 // ============================================================================
@@ -91,9 +117,10 @@ const argv = process.argv.slice(2);
 let RUN = parseFloat(argv[0] || "300");
 if (!isFinite(RUN) || RUN <= 0) RUN = 300;
 const SEED = (parseInt(argv[1] || "1847", 10) >>> 0) || 1847;
-const OPT = { ives: false, razz: false, cumulative: false, force: null, exp: null, dump: null, header: false };
+const OPT = { ives: false, razz: false, cumulative: false, force: null, exp: null, dump: null, header: false, script: [], throws: [] };
 const FLAGS = [];                                // the switches, as given, for the header
 const unknownFlags = [];
+const notes = [];                                // a switch understood but not played, and why
 for (let i = 2; i < argv.length; i++) {
   const a = argv[i];
   if (a === "header") { OPT.header = true; continue; }
@@ -104,8 +131,25 @@ for (let i = 2; i < argv.length; i++) {
   else if (a === "cumulative") OPT.cumulative = true;
   else if (a.indexOf("force=") === 0) OPT.force = a.slice(6);
   else if (a.indexOf("exp=") === 0) OPT.exp = a.slice(4);
-  else unknownFlags.push(a);
+  else if (a.indexOf("stop=") === 0 || a.indexOf("play=") === 0) {
+    a.slice(5).split(",").forEach((s) => {
+      const t = s.trim() === "" ? NaN : Number(s);
+      if (!(t >= 0 && isFinite(t))) notes.push(a.slice(0, 5) + s + " is not a time in seconds: not played");
+      else if (t >= RUN) notes.push(a.slice(0, 5) + s + " lies at or past the run's end (" + RUN + " s): not played");
+      else OPT.script.push({ act: a.slice(0, 4), t });
+    });
+  } else if (a.indexOf("throw=") === 0) {
+    a.slice(6).split(",").forEach((s) => {
+      const m = /^([A-Za-z][\w-]*)@(\d+(?:\.\d+)?)$/.exec(s.trim());
+      if (m) OPT.throws.push({ lane: m[1], at: +m[2], spec: m[1] + "@" + m[2] });
+      else notes.push("throw=" + s + " is not <lane>@<secs>: not injected");
+    });
+  } else unknownFlags.push(a);
 }
+// the script in time order, a stop before a play at one time (a stop and a
+// restart); the throws in time order, so on one lane the earliest arms first
+OPT.script.sort((x, y) => x.t - y.t || (x.act === "stop" ? 0 : 1) - (y.act === "stop" ? 0 : 1));
+OPT.throws.sort((x, y) => x.at - y.at);
 
 // ----------------------------------------------------------------------------
 // Which engine, and its list (the same reading as tools/lib/run.js)
@@ -151,6 +195,7 @@ function fingerprintOf(files) {
 // ----------------------------------------------------------------------------
 const errors = [];              // { where, t, msg, stack }
 function noteError(where, e) {
+  if (e && e.harnessInjected) { e.harnessInjected.reported = e.harnessInjected.reported || where; return; }   // the fault asked for (throw=), not one of the run's
   errors.push({ where, t: vnow, msg: String(e && e.message || e), stack: e && e.stack ? String(e.stack) : "" });
 }
 process.on("uncaughtException", (e) => noteError("uncaught", e));
@@ -162,11 +207,14 @@ process.on("unhandledRejection", (e) => noteError("unhandled rejection", e));
 let vnow = 0;
 const timers = new Map();
 let timerSeq = 0;
-function addTimer(fn, ms, args, repeat) {
+// kind: who armed it — the engine's setTimeout, setInterval,
+// requestAnimationFrame or requestIdleCallback, or the mock's own onended
+// (a source's end) and decodeAudioData; the report tells them apart
+function addTimer(fn, ms, args, repeat, kind) {
   const id = ++timerSeq;
   if (typeof fn !== "function") return id;
   const delay = Math.max(0, (+ms || 0) / 1000);
-  timers.set(id, { id, fn, args, next: vnow + delay, period: repeat ? Math.max(delay, 0.001) : 0, repeat, seq: id });
+  timers.set(id, { id, fn, args, next: vnow + delay, period: repeat ? Math.max(delay, 0.001) : 0, repeat, seq: id, kind });
   return id;
 }
 function clearTimer(id) { timers.delete(id); }
@@ -193,13 +241,13 @@ async function advance(untilS) {
     await new Promise(realSetImmediate);
   }
 }
-global.setTimeout = function (fn, ms) { return addTimer(fn, ms, Array.prototype.slice.call(arguments, 2), false); };
-global.setInterval = function (fn, ms) { return addTimer(fn, ms, Array.prototype.slice.call(arguments, 2), true); };
+global.setTimeout = function (fn, ms) { return addTimer(fn, ms, Array.prototype.slice.call(arguments, 2), false, "setTimeout"); };
+global.setInterval = function (fn, ms) { return addTimer(fn, ms, Array.prototype.slice.call(arguments, 2), true, "setInterval"); };
 global.clearTimeout = clearTimer;
 global.clearInterval = clearTimer;
-global.requestAnimationFrame = function (fn) { return addTimer(function () { fn(vnow * 1000); }, 1000 / 60, [], false); };
+global.requestAnimationFrame = function (fn) { return addTimer(function () { fn(vnow * 1000); }, 1000 / 60, [], false, "requestAnimationFrame"); };
 global.cancelAnimationFrame = clearTimer;
-global.requestIdleCallback = function (fn) { return addTimer(function () { fn({ didTimeout: false, timeRemaining: () => 50 }); }, 1, [], false); };
+global.requestIdleCallback = function (fn) { return addTimer(function () { fn({ didTimeout: false, timeRemaining: () => 50 }); }, 1, [], false, "requestIdleCallback"); };
 global.cancelIdleCallback = clearTimer;
 global.performance = { now: () => vnow * 1000, timeOrigin: 0, mark() {}, measure() {}, getEntriesByName() { return []; }, clearMarks() {}, clearMeasures() {} };
 
@@ -281,7 +329,7 @@ function mkNode(ctx, kind) {
         const ev = { type: "ended", target: n };
         if (typeof n.onended === "function") n.onended(ev);
         (n._ended || []).forEach((f) => f(ev));
-      }, Math.max(0, at - ctx.currentTime) * 1000, [], false);
+      }, Math.max(0, at - ctx.currentTime) * 1000, [], false, "onended");
     };
     n.start = function (when, offset, dur) {
       if (n._started != null) throw new Error("InvalidStateError: " + kind + ".start() called twice");
@@ -309,7 +357,7 @@ function mkContext(kind, opts) {
   ctx.createPeriodicWave = function (real, imag, o) { return { _kind: "PeriodicWave", real, imag, disableNormalization: !!(o && o.disableNormalization) }; };
   ctx.decodeAudioData = function (ab, ok, bad) {
     const b = mkBuffer(2, ctx.sampleRate * 2, ctx.sampleRate);
-    if (typeof ok === "function") addTimer(() => ok(b), 0, [], false);
+    if (typeof ok === "function") addTimer(() => ok(b), 0, [], false, "decodeAudioData");
     return Promise.resolve(b);
   };
   ctx.resume = function () { if (ctx.state === "suspended") { ctx._lost += vnow - (ctx._suspendedAt + ctx._lost); ctx.state = "running"; } else if (ctx.state === "closed") return Promise.reject(new Error("InvalidStateError: the context is closed")); return Promise.resolve(); };
@@ -400,7 +448,8 @@ try { Object.defineProperty(global, "navigator", { configurable: true, writable:
   try { Object.defineProperty(global, "sessionStorage", { configurable: true, writable: true, value: ls }); } catch (e) {}
 })();
 global.Worker = undefined;                       // the hymnal falls back to its idle slices
-global.fetch = function (url) { return Promise.reject(new Error("the harness has no network (fetch " + url + " refused)")); };
+const NO_NETWORK = "the harness has no network";
+global.fetch = function (url) { return Promise.reject(new Error(NO_NETWORK + " (fetch " + url + " refused)")); };
 global.XMLHttpRequest = undefined;
 global.addEventListener = function () {};
 global.removeEventListener = function () {};
@@ -412,12 +461,98 @@ global.Image = function () { return mkElement("img"); };
 global.Audio = function () { return mkElement("audio"); };
 global.MskyBackgroundAudio = undefined;          // no <audio> route here: the master goes to ctx.destination
 
-// console: the engine's warnings are kept for the report; a cue the clock
-// reports (console.error from PJ2.Clock's onError) is an error of the run
+// ----------------------------------------------------------------------------
+// THE FAULT INJECTION (throw=<lane>@<secs>). The clock the engine makes is
+// watched lane by lane: once the substrate has loaded, PJ2.Clock.create is
+// wrapped here (its file is never touched), and each lane's at/in/every hands
+// the clock a callback of the harness's that counts the cue and runs the
+// engine's own. The first cue on an asked lane whose time is at or after the
+// asked one throws an Error, once, from inside its own callback: the moment
+// it schedules on its own lane — a layer's and the conductor's re-arm, the
+// last thing they do, is refused — or, if it schedules nothing there, as it
+// returns. So the throw lands where a fault in the cue's body would: a
+// try/finally in the engine sees it, and the clock catches it and reports it
+// (onError → console.error), which the report files with its injection, not
+// among the run's errors. Then the report says how many cues the lane ran
+// after it, and how many sections the meeting began: today a cue that throws
+// ends its chain for the rest of the visit (PLAN-REFACTOR §2.1) — the drone's
+// lane and the conductor's run nothing more; the choir's lane carries more
+// than one chain (its verse loop, a hymn's lines), so it runs on with the
+// others while the broken one stays broken. Without throw= nothing is
+// wrapped.
+// ----------------------------------------------------------------------------
+const INJ = OPT.throws.map((x) => ({ lane: x.lane, at: x.at, spec: x.spec, marker: "the harness's injected throw (throw=" + x.spec + ")", t: null, how: null, reported: null, before: 0, after: 0, firstAfter: null }));
+const laneCues = {};            // lane → the cues the clock ran on it (with throw= only)
+let cueNow = null;              // the cue whose callback is running: { lane, t, armed }
+function watchClock() {
+  const C = global.PJ2 && global.PJ2.Clock;
+  if (!INJ.length || !C || typeof C.create !== "function") return;
+  const create = C.create;
+  C.create = function (ctx, opts) {
+    const clock = create(ctx, opts), laneOf = clock.lane, seen = new Set();
+    clock.lane = function (name) {
+      const api = laneOf(name);
+      if (!seen.has(api)) {
+        seen.add(api);
+        const guard = () => { if (cueNow && cueNow.armed && cueNow.lane === name) fire(cueNow, "as it scheduled on its own lane"); };
+        const wrap = (fn) => (typeof fn === "function" ? watched(name, fn) : fn);
+        const at = api.at, inS = api.in, every = api.every;
+        api.at = function (when, fn) { guard(); return at(when, wrap(fn)); };
+        api.in = function (dt, fn) { guard(); return inS(dt, wrap(fn)); };
+        api.every = function (fn) { guard(); return every(wrap(fn)); };
+      }
+      return api;
+    };
+    return clock;
+  };
+}
+function watched(lane, fn) {
+  return function (tt) {
+    laneCues[lane] = (laneCues[lane] || 0) + 1;
+    const c = { lane, t: tt, armed: null };
+    INJ.forEach((j) => {
+      if (j.lane !== lane) return;
+      if (j.t != null) { j.after++; if (j.firstAfter == null) j.firstAfter = tt; }
+      else if (!c.armed && tt >= j.at) c.armed = j;
+    });
+    const was = cueNow;
+    cueNow = c;
+    let r;
+    try { r = fn(tt); } finally { cueNow = was; }
+    if (c.armed) fire(c, "as it returned (it scheduled nothing on its own lane)");
+    return r;                                    // an .every callback's next delay
+  };
+}
+function fire(c, how) {
+  const j = c.armed;
+  c.armed = null;
+  j.t = c.t; j.how = how; j.before = laneCues[c.lane] - 1;
+  const e = new Error(j.marker + " on the " + c.lane + " lane at " + c.t.toFixed(3) + " s");
+  e.harnessInjected = j;
+  throw e;
+}
+
+// console: the engine's warnings are kept for the report, the refused
+// fetch's (NO_NETWORK: a room's impulse response) apart from the rest; a cue
+// the clock reports (console.error from PJ2.Clock's onError) is an error of
+// the run — unless it is the throw the run asked for, filed with its injection
 const warns = [], consoleErrors = [];
 function fmtArgs(args) { return Array.prototype.map.call(args, (a) => (a instanceof Error ? a.message : typeof a === "string" ? a : (() => { try { return JSON.stringify(a); } catch (e) { return String(a); } })())).join(" "); }
-console.warn = function () { warns.push({ t: vnow, msg: fmtArgs(arguments) }); };
+function injectionIn(args) {                     // the injected Error itself, or its message quoted
+  for (const a of args) {
+    if (a && a.harnessInjected) return a.harnessInjected;
+    if (typeof a === "string") { const j = INJ.find((x) => x.t != null && a.indexOf(x.marker) >= 0); if (j) return j; }
+  }
+  return null;
+}
+console.warn = function () {
+  const j = injectionIn(arguments);
+  if (j) { j.reported = j.reported || "console.warn"; return; }
+  warns.push({ t: vnow, msg: fmtArgs(arguments) });
+};
 console.error = function () {
+  const j = injectionIn(arguments);
+  if (j) { j.reported = j.reported || "console.error"; return; }
   const err = Array.prototype.find.call(arguments, (a) => a instanceof Error);
   consoleErrors.push({ t: vnow, msg: fmtArgs(arguments), stack: err && err.stack ? String(err.stack) : "" });
 };
@@ -452,6 +587,7 @@ if (!K || typeof K.play !== "function") {
 }
 const KOLOB = global.KOLOB || {};
 const S = KOLOB._s || null;
+watchClock();                                    // throw=: the clock PLAY makes is watched (above)
 
 // ----------------------------------------------------------------------------
 // The run
@@ -508,6 +644,12 @@ if (typeof K.getSeed === "function" && K.getSeed() !== SEED && typeof K.reseed =
   // downbeat falls LEAD_S = 0.1 s later — the meeting is called at 0.1 s
   try { K.play(); } catch (e) { playError = e; noteError("play()", e); }
   if (!playError) {
+    // the script (stop=, play=): each pressed at its time, in time order
+    for (const s of OPT.script) {
+      await advance(s.t);
+      if (fatal) break;
+      try { K[s.act](); } catch (e) { noteError(s.act + "() at " + s.t + " s", e); }
+    }
     await advance(RUN + 3);
     try { K.stop(); } catch (e) { noteError("stop()", e); }
     if (!fatal) await advance(vnow + 1.5);       // the stop fade's own timers
@@ -539,20 +681,43 @@ if (typeof K.getSeed === "function" && K.getSeed() !== SEED && typeof K.reseed =
   if (lateCues) fails.push(health.late + " late cue(s)");
   if (fatal) fails.push("the run was cut short");
 
-  L("=== KOLOB harness ===  seed " + SEED + " · " + RUN + " s" + (FLAGS.length ? " · flags " + FLAGS.join(",") : "") + (OPT.dump ? " · dump " + path.resolve(OPT.dump) + (OPT.header ? " (header)" : "") : ""));
+  const SWITCHES = FLAGS.filter((f) => !/^(stop|play|throw)=/.test(f));   // the script and the throws have their own say
+  L("=== KOLOB harness ===  seed " + SEED + " · " + RUN + " s" + (SWITCHES.length ? " · flags " + SWITCHES.join(",") : "") +
+    (OPT.script.length ? " · script " + OPT.script.map((s) => s.act + "@" + s.t).join(" ") : "") + (INJ.length ? " · throw " + INJ.map((j) => j.spec).join(",") : "") +
+    (OPT.dump ? " · dump " + path.resolve(OPT.dump) + (OPT.header ? " (header)" : "") : ""));
   L("engine: " + loaded.length + " module" + (loaded.length === 1 ? "" : "s") + " from " + ENGINE_DIR + (LEGACY ? " (single-file " + path.basename(LEGACY) + ")" : " (the list in " + LIST.from + ")") + " · fingerprint " + FINGERPRINT);
   if (unknownFlags.length) L("note: unknown flag(s) " + unknownFlags.join(", ") + " (passed to the header, otherwise ignored)");
+  notes.forEach((m) => L("note: " + m));
   const M = tally.meetings;
   L("meetings: " + M.length + M.map((m) => " · #" + (m.n != null ? m.n : "?") + " at " + m.t.toFixed(1) + " s: " + [m.mode, m.kind, m.sunday, m.keynoteHz ? m.keynoteHz.toFixed(1) + " Hz" : null, m.houseDialect].filter(Boolean).join(" · ") + (m.mode ? "" : " " + (m.label || "") + " " + (m.detail || ""))).join(""));
   L("sections: " + tally.sections.length + (tally.sections.length ? " · " + tally.sections.map((s) => s.section + "@" + s.t.toFixed(1)).join(" ") : ""));
   L("notes: " + tally.notes + " · by layer " + JSON.stringify(sortedCounts(tally.byLayer)));
   L("events: " + tally.events + " · by type " + JSON.stringify(sortedCounts(tally.byType, 16)));
   L("guests: " + (Object.keys(tally.guests).length ? JSON.stringify(tally.guests) : "none") + " · cadences " + (Object.keys(tally.cadences).length ? JSON.stringify(tally.cadences) : "none"));
-  L("clock: " + (health ? health.cues + " cues · " + health.late + " late · max late " + health.maxLate + " s" : "(no clockHealth on this build)") + " · " + timers.size + " timer(s) still armed at the end");
+  // what is still armed at the end: the engine's own timers (a leak, if any)
+  // apart from the mock's onended for a source whose stop() lies past the end
+  const left = {}, ends = [];
+  timers.forEach((tm) => { if (tm.kind === "onended") ends.push(tm.next); else if (tm.kind !== "decodeAudioData") count(left, tm.kind); });
+  const nLeft = Object.keys(left).reduce((a, k) => a + left[k], 0);
+  L("clock: " + (health ? health.cues + " cues · " + health.late + " late · max late " + health.maxLate + " s" : "(no clockHealth on this build)") +
+    " · " + nLeft + " timer(s) still armed after STOP" + (nLeft ? " (" + Object.keys(left).map((k) => k + " " + left[k]).join(", ") + ")" : "") +
+    " · " + ends.length + " source(s) scheduled past the run's end" + (ends.length ? " (due " + ends.reduce((a, x) => Math.min(a, x), Infinity).toFixed(1) + "–" + ends.reduce((a, x) => Math.max(a, x), 0).toFixed(1) + " s)" : ""));
+  if (INJ.length) {
+    const cues = Object.keys(laneCues).reduce((a, k) => a + laneCues[k], 0);
+    L("cues by lane: " + cues + " " + JSON.stringify(sortedCounts(laneCues)) + " · the clock counted " + (health ? health.cues : "?"));
+    INJ.forEach((j) => L("throw " + j.spec + ": " + (j.t == null
+      ? "never thrown — no cue on the " + j.lane + " lane at or after " + j.at + " s" + (laneCues[j.lane] ? "" : " (the lane ran no cue at all)")
+      : "thrown at " + j.t.toFixed(3) + " s, " + j.how + "; reported by " + (j.reported || "nobody") +
+        " · the " + j.lane + " lane ran " + j.after + " cue(s) after it" + (j.after ? ", the first at " + j.firstAfter.toFixed(3) + " s" : "") + " (" + j.before + " before)" +
+        " · the meeting began " + tally.sections.filter((x) => x.t > j.t).length + " section(s) after it")));
+  }
   if (hymnal) L("hymnal: backend " + hymnal.backend + " (worker " + hymnal.worker + ") · posted " + hymnal.posted + " · composed " + hymnal.composed + " (idle " + hymnal.byIdle + ", worker " + hymnal.byWorker + ") · late " + hymnal.late + " (in a cue " + hymnal.lateInCue + ") · failed " + hymnal.failed);
   L("graph: " + graph.contexts + " context(s) · " + graph.total + " nodes " + JSON.stringify(sortedCounts(graph.created, 10)) + " · " + graph.automation + " automation calls");
   if (OPT.dump) L("dump: " + dumpLines.length + " records" + (OPT.header ? " + header" : "") + (tally.unserialisable ? " · " + tally.unserialisable + " NOT serialisable" : ""));
-  L("console.warn: " + warns.length + (warns.length ? " · first: " + warns.slice(0, 3).map((w) => "[" + w.t.toFixed(1) + " s] " + w.msg.slice(0, 160)).join(" | ") : ""));
+  const fetchWarns = warns.filter((w) => w.msg.indexOf(NO_NETWORK) >= 0).length, otherWarns = warns.filter((w) => w.msg.indexOf(NO_NETWORK) < 0);
+  L("console.warn: " + otherWarns.length + (fetchWarns ? " · and " + fetchWarns + " from the refused fetch (expected: no network here, so a room keeps the impulse response it poured)" : ""));
+  otherWarns.slice(0, 5).forEach((w, i) => L("  warn " + (i + 1) + " @ " + w.t.toFixed(3) + " s: " + w.msg.slice(0, 300)));
+  if (otherWarns.length > 5) L("  … and " + (otherWarns.length - 5) + " more");
   L("errors: " + errors.length + " caught · " + consoleErrors.length + " console.error");
   errors.slice(0, 5).forEach((e, i) => L("  error " + (i + 1) + " (" + e.where + " @ " + e.t.toFixed(3) + " s): " + e.msg + (e.stack ? "\n    " + e.stack.split("\n").slice(0, 6).join("\n    ") : "")));
   consoleErrors.slice(0, 5).forEach((e, i) => L("  console.error " + (i + 1) + " @ " + e.t.toFixed(3) + " s: " + e.msg.slice(0, 300) + (e.stack ? "\n    " + e.stack.split("\n").slice(0, 6).join("\n    ") : "")));

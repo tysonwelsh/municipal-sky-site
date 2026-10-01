@@ -21,7 +21,7 @@ working when the engine changes; two drive a **muted** headless Chrome.
 | `screens.js` | What does the staff look like at 860 and 390 px, and what does a frame cost at 4× CPU throttling? | the page, muted | real time: ~2.5 min per width |
 | `capture.js` | What does a seeded meeting sound like, as a WAV, a spectrogram, loudness (LUFS) and peak? | the page, muted | real time: 4 min for a 4-min window |
 | `render.js` | Renders a dump set to keep, or to read twice. | the harness | ~1 s per seed |
-| `selftest.js` | Do the instruments still read true? | the harness plus synthetic dumps and signals | ~5 s |
+| `selftest.js` | Do the instruments still read true? | the harness plus synthetic dumps and signals | ~15 s |
 
 Every report opens with what it measured: the engine, its VERSION, its git
 commit, a fingerprint of the module bytes the harness was *seen* to play (see
@@ -127,7 +127,8 @@ stops with the harness's `LOAD` error.
 ## The harness
 
 ```sh
-node _harness.js <secs> <seed> [ives] [razz] [cumulative] [force=<guest>] [exp=<spec>] [dump=<file>] [header]
+node _harness.js <secs> <seed> [ives] [razz] [cumulative] [force=<guest>] [exp=<spec>]
+                 [stop=<secs>,…] [play=<secs>,…] [throw=<lane>@<secs>,…] [dump=<file>] [header]
 ```
 
 `art/kolob/_harness.js` (tracked since 2026-10-01) mocks `window` and Web Audio
@@ -150,6 +151,46 @@ names the engine directory (default: the harness's own); `KOLOB_LEGACY=<file>`
 loads a single-file build instead, best effort. Every module is read with
 `fs.readFileSync`, so the witness sees exactly which bytes were played; the
 same arguments on the same build give a byte-identical dump (CI checks it).
+
+**The accounting.** The `clock:` line counts, apart, the engine's timers still
+armed after the last STOP (a `setTimeout`, `setInterval`,
+`requestAnimationFrame` or `requestIdleCallback` still waiting would be a
+leak; there is none today) and the sources scheduled past the run's end — the
+mock's `onended` for a node whose `stop()` lies beyond it, the drone partials
+and the voices written ahead (seed 7 at 300 s: 101, due 305–325 s), not a leak.
+`console.warn` counts the warnings other than the refused fetch's (the harness
+has no network, so a room keeps the impulse response it poured — expected) and
+prints each on its own line. None of the three moves the verdict.
+
+**A scripted transport.** `stop=<secs>` presses STOP and `play=<secs>` PLAY at
+that time on the audio clock (the dump's timeline): `stop=120 play=121` is a
+stop and a quick restart. Each takes a comma list or comes again
+(`stop=120,400 play=121,402`); at one time a stop goes first; a time at or past
+`<secs>` is not played, and the report says so. The script is printed on the
+report's first line (`script stop@120 play@121`), the dump's `transport` events
+fall at its times, and the run's end still presses STOP. Through `render.js`,
+whose `--flags` splits on commas, give each time its own switch
+(`--flags stop=120,play=121`).
+
+**A fault injection.** `throw=<lane>@<secs>` makes the first cue on that clock
+lane (`conductor`, `drone`, `choir`, `organ`, `ward`, …) at or after that time
+throw an `Error`, once; a comma list for several (`throw=drone@120,choir@200`).
+The harness wraps `PJ2.Clock.create` after the substrate loads (the substrate
+is not touched) and watches every lane's `at`/`in`/`every`; the cue throws from
+inside its own callback — the moment it schedules on its own lane (a layer's
+and the conductor's re-arm, the last thing they do), or, if it schedules
+nothing there, as it returns — so a `try/finally` in the engine sees the throw.
+The clock reports it (`console.error`), and the report files it with its
+injection, not among the run's errors. The report prints the cues counted lane
+by lane (which add up to the clock's own count) and, for each throw, when it
+fired, who reported it, how many cues its lane ran after it and how many
+sections the meeting began after it — the proof PLAN-REFACTOR §2.1 needs. On
+the current code (seed 7, 600 s): `throw=drone@120` fires at 134.6 s and the
+drone lane runs 0 cues after it; `throw=conductor@300` fires at 300.5 s, the
+conductor runs 0 cues after it and the meeting never changes section again;
+`throw=choir@212.5` breaks a hymn's chain of lines — the choir lane runs on
+(its verse loop, 68 cues) but the hymn never ends, and the meeting stays in it.
+Without `throw=` nothing is wrapped.
 
 ## The dump format (v1)
 
@@ -523,7 +564,7 @@ the cores, at most 8).
 node tools/selftest.js
 ```
 
-About five seconds, no browser. It checks seven things: (1) a real dump from
+About fifteen seconds, no browser. It checks eight things: (1) a real dump from
 this worktree reads as meetings and sections, the witness names the build's own
 list, and the harness names the same engine in the header's `engine` field;
 (2) a synthetic dump in SCORE §6's **typed** vocabulary reads the same way —
@@ -542,9 +583,16 @@ that ignores `KOLOB_BASE`/`KOLOB_DIR` is refused; (6) **the count** (seed 3,
 room empties` marks the joint it tells of, and `transport` is not a metric;
 (7) **the capture**: a tap block read a sample or two off is laid contiguous, a
 hole read as 126 is sized to its 128 and placed at 0:40.9, and `--meeting`
-finds meeting 1's end from a joint, a typed `meeting-end`, or the next meeting.
-All seven pass on `art/kolob/_harness.js`. Run it after any change to the
-engine's events or to these tools. It renders into `out/_selftest/` and, like
+finds meeting 1's end from a joint, a typed `meeting-end`, or the next meeting;
+(8) **the harness's modes** (seed 7): `stop=40 play=41` puts the dump's
+`transport` events at play 0, stop 40, play 41 and the restart calls meeting 2,
+and the `clock:` line counts the timers left armed apart from the sources
+scheduled past the end; `throw=drone@60` fires once, is reported by the clock
+and kept out of the run's errors, and the cues it counts lane by lane add up to
+the clock's own, the drone's to those before, the throw and those after (today
+none after: a cue that throws ends its lane, PLAN-REFACTOR §2.1).
+All eight pass on `art/kolob/_harness.js`. Run it after any change to the
+engine's events, to the harness or to these tools. It renders into `out/_selftest/` and, like
 every tool, refuses while the engine is being edited.
 
 ## Files

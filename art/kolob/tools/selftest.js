@@ -21,6 +21,13 @@
 // 7. The capture: a tap block read a few samples off is laid contiguous; a
 //    hole is found, sized to its render quanta, and placed in time; and
 //    --meeting finds meeting 1's end in either vocabulary.
+// 8. The harness's modes: a scripted STOP and restart (stop=, play=) is told
+//    by the transport events at its times and calls a meeting of its own, and
+//    the clock's accounting names the timers left armed apart from the
+//    sources scheduled past the end; an injected throw (throw=) fires once,
+//    is reported by the clock and kept out of the run's errors, and the cues
+//    it counts lane by lane add up to the clock's own — with the drone's
+//    later cues told (today none: a cue that throws ends its lane).
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -177,6 +184,31 @@ function check(name, ok, detail) {
     const nextEnd = Cap.meetingEnd([["E", T, { type: "meeting-start", n: 1, t: T }], ["E", T + 900, { type: "meeting-start", n: 2, t: T + 900 }]], T);
     check("--meeting finds the end: v0.30 joint, typed meeting-end, or the next meeting", legacyEnd === 815 && typedEnd === 711 && nextEnd === 900, legacyEnd + " / " + typedEnd + " / " + nextEnd + " s");
     check("the rest laid contiguous, and the coverage exact", r.jitter > 0 && r.covered === fB - fA - 128 && Lc.filter((x) => x === 0).length === 128, r.jitter + " block starts read off by 1–2 samples; " + (fB - fA - r.covered) + " samples lost");
+  }
+
+  console.log("8. the harness's modes (seed 7): a scripted stop and restart, an injected throw");
+  {
+    const sp = (await R.renderSet({ engine, seeds: [7], secs: 90, flags: ["stop=40", "play=41"], dir: path.join(tmp, "script"), quiet: true })).results[0];
+    const recs = fs.readFileSync(sp.dump, "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l)).filter((r) => r[0] === "E");
+    const told = recs.filter((r) => r[2].type === "transport").map((r) => r[2].action + "@" + r[1]).join(" ");
+    check("stop=40 play=41: the transport events fall at the scripted times", told === "play@0 stop@40 play@41", told);
+    const m2 = recs.find((r) => r[2].type === "meeting-start" && r[2].n === 2);
+    check("… and the restart calls a meeting of its own, the run clean", !!m2 && m2[1] > 41 && m2[1] < 42 && /PASS/.test(sp.verdict || ""), (m2 ? "meeting 2 at " + m2[1].toFixed(1) + " s" : "no meeting 2") + " · " + sp.verdict);
+    const clock = (/^clock: .*$/m.exec(fs.readFileSync(sp.log, "utf8")) || [""])[0];
+    const acct = / (\d+) timer\(s\) still armed after STOP.* (\d+) source\(s\) scheduled past the run's end/.exec(clock);
+    check("the clock's accounting: timers left armed apart from sources scheduled past the end", !!acct, acct ? acct[1] + " timer(s) · " + acct[2] + " source(s)" : clock || "no clock line");
+
+    const th = (await R.renderSet({ engine, seeds: [7], secs: 200, flags: ["throw=drone@60"], dir: path.join(tmp, "throw"), quiet: true })).results[0];
+    const log = fs.readFileSync(th.log, "utf8");
+    const j = /^throw drone@60: thrown at ([\d.]+) s, [^;]*; reported by (\S+) · the drone lane ran (\d+) cue\(s\) after it[^(]*\((\d+) before\)/m.exec(log);
+    check("throw=drone@60: thrown once, from 60 s on, reported by the clock, and not counted among the run's errors",
+      !!j && +j[1] >= 60 && j[2] === "console.error" && /^errors: 0 caught · 0 console\.error$/m.test(log) && /PASS/.test(th.verdict || ""),
+      j ? "at " + j[1] + " s · " + th.verdict : "no throw line");
+    const lanes = /^cues by lane: (\d+) (\{.*\}) · the clock counted (\d+)$/m.exec(log);
+    const drone = lanes ? JSON.parse(lanes[2]).drone : null;
+    check("… the cues counted lane by lane add up to the clock's own, and the drone's to before + the throw + after",
+      !!lanes && !!j && lanes[1] === lanes[3] && drone === +j[4] + 1 + +j[3],
+      lanes && j ? lanes[1] + " = " + lanes[3] + " cues; drone " + drone + " = " + j[4] + " + 1 + " + j[3] + " — today the drone runs " + j[3] + " cue(s) after its throw (a cue that throws ends its lane: PLAN-REFACTOR §2.1)" : "no count");
   }
 
   fs.rmSync(tmp, { recursive: true, force: true });
