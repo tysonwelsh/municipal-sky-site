@@ -220,12 +220,12 @@ window.KOLOB = window.KOLOB || {};
     // from the other side of the sky
     if (R.chance(0.1)) {
       tt = keyMorse(tt + R.rnd(1.5, 2.5), seq, -side, 0.033);
-      emitEvent({ type: "telegraph", word: word, wordDs: null, marks: seq, reply: true, cat: "telegraph", label: "⌁ a reply from home", detail: word });
+      emitEvent({ type: "telegraph", word: word, wordDs: null, marks: seq, reply: true });
     }
     emitNote("telegraph", 0, t, tt - t, { marks: seq });
     // (SCORE §6's wordDs: the wire keys English; the Deseret spelling of the
     // word is the page's to make — the engine has no transliterator)
-    emitEvent({ type: "telegraph", word: word, wordDs: null, marks: seq, reply: false, cat: "telegraph", label: "⌁ the wire flashes home", detail: word });
+    emitEvent({ type: "telegraph", word: word, wordDs: null, marks: seq, reply: false });
     cueLayer("telegraph", tt - t + R.rnd(45, 90) * gapMul() * S.Meeting.lean("telegraph"), telegraphCycle);
   }
 
@@ -422,7 +422,7 @@ window.KOLOB = window.KOLOB || {};
     // hall and the wind speaks for them: the name tells which)
     var field = null;
     for (var k in FIELD_NAMES) if (FIELD_NAMES[k] === name) field = k;
-    emitEvent({ type: "field", field: field, name: name, section: s, cat: "ambient", label: "⋆ " + name, detail: s });
+    emitEvent({ type: "field", field: field, name: name, section: s });
     var gap = R.rnd(25, 70) * (1.15 - intensity() * 0.35) * silenceMul() * S.Meeting.lean("ambient");
     cueLayer("ambient", gap, ambientEvent);
   }

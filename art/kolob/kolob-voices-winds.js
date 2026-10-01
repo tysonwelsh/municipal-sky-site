@@ -159,8 +159,7 @@ window.KOLOB = window.KOLOB || {};
       var lm = { name: motif.name, gen: motif.gen, chain: motif.chain.slice(), gesture: motif.gesture, notes: line };
       total = renderClarinetLine(t, clarinetToNotes(lm, beat, R), 1, R);
       Motif.post("clarinet", "choir", lm, "line-out", mo, R);
-      emitEvent({ type: "lining-out", meter: S.Meeting.meter(), syllables: nSyl, motif: motif.name, hymnId: S.Meeting.hymnId(),
-                  cat: "verse", label: "☞ the deacon lines out", detail: S.Meeting.meter() + " · " + nSyl + " syllables · " + motif.name });
+      emitEvent({ type: "lining-out", meter: S.Meeting.meter(), syllables: nSyl, motif: motif.name, hymnId: S.Meeting.hymnId() });
       lined = true;
       spoken = lm;
     } else {
@@ -274,8 +273,7 @@ window.KOLOB = window.KOLOB || {};
     });
     renderHarmonium(t, notes, 0.5);
     reportLine("harmonium", t, notes);
-    emitEvent({ type: "motif-shadow", voice: "harmonium", of: "clarinet", name: motif.name, gen: motif.gen,
-                cat: "motif", label: "〰 harmonium shadows the deacon", detail: motif.name + "·g" + motif.gen });
+    emitEvent({ type: "motif-shadow", voice: "harmonium", of: "clarinet", name: motif.name, gen: motif.gen });
   }
   // every note of a line the harmonium walks, as it walks it (not the first
   // alone, held for the length of the line)

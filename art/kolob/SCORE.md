@@ -523,16 +523,15 @@ arrives.
 `handbells`); never the organ's pedal (except the variations'), never a note
 under 20 Hz, never `logged: false` or `hosanna`.
 
-**The legacy fields.** Every event still carries `cat`, `label` and `detail`
-on the same object as its `type` and payload (one event, both vocabularies).
-New code emits typed events and may add the words. Who still reads the
-words: `tools/lib/dump.js` (a type it does not know falls back to
-`legacyEvent`, and `cat`/`label`/`detail` ride on every dumped event),
-`_harness.js` (an event with no `type` is read by `cat` and `label`),
-`tools/tally.js` (counts `e.cat`), `tools/capture.js` (prints `label` and
-`detail`), and one line of `kolob-ui.js`: the bands' `cross` stage reads
-`ev.label` to tell "the band goes by" from "the bands cross". `kolob-viz.js`
-reads none of them.
+**The log words are retired** (2026-10-01). Until then every event carried
+`cat`, `label` and `detail` beside its `type` and payload; an event is now
+its type and payload and nothing else, and new code adds no words. The one
+reading the words had on the page, the bands' `cross` stage ("the band goes
+by" or "the bands cross"), is the stage's typed `both`. `tools/lib/dump.js`
+reads every live type by its fields (`typedEvent`) and keeps `legacyEvent`
+for dumps of builds older than 2026-09-27; `tools/capture.js` prints a type
+and its fields where it printed a label; `_harness.js` keeps its no-`type`
+fallbacks for those old builds. `kolob-viz.js` never read them.
 
 Authority: `kolob-score.js` (`EVENTS`), `kolob-core.js` (`emitNote`,
 `emitEvent`), `kolob-meeting.js` (`UNLOGGED`), `kolob-guests.js`

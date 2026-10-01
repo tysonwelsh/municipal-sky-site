@@ -318,10 +318,11 @@ window.KOLOB.Score = (function () {
   // by field (the hymn a hymn-announced names). The first block is the
   // contract's table; the rest is what the engine has added since, so that
   // nothing the page prints is read off a label. An event may carry more
-  // than this — the legacy {cat, label, detail} ride along on the same
-  // object: kolob-ui.js reads ev.label once (the band's crossing row), and
-  // tools/lib/dump.js reads the words for a type it does not know and for
-  // dumps of builds older than 2026-09-27. Of the contract's table, `vision`
+  // than this. (The log words {cat, label, detail} that rode on every event
+  // beside its type were retired on 2026-10-01: nothing on the page or in
+  // the tools reads them from a live build; tools/lib/dump.js still reads
+  // them out of dumps of builds older than 2026-09-27.) Of the contract's
+  // table, `vision`
   // is never emitted (the visions are unbuilt) and `cast` is (the ward's
   // people rising: kolob-meeting.js, kolob-voices-choir.js,
   // kolob-voices-organ.js, kolob-guests.js).
@@ -350,7 +351,7 @@ window.KOLOB.Score = (function () {
     "fuging":              { entries: "int" },
     "field":               { field: "str" },
     "chord":               { at: "num", chord: "int", by: "str", voicing: "arr", freqs: "arr" },
-    "guest":               { guest: "str", stage: "str", logged: "bool" },
+    "guest":               { guest: "str", stage: "str", logged: "bool" },   // (the bands' cross stage adds both: two bands crossing, or one going by)
     "guests-drawn":        { guests: "arr" },
     "hymns-of-the-day":    { gestures: "arr" },
     "motif-develop":       { name: "str", gen: "int" },

@@ -323,10 +323,9 @@
       case "phrase":        return minute("♮", layerName(ev.layer) + " " + S.speaks, "phrase");
       case "guest": {
         var g = GUEST_ROWS[ev.guest], st = g && g[ev.stage];
-        // (a lone band goes by; two bands cross — only the band's own label
-        // says which: the one English label this file reads, until the
-        // event carries a typed field)
-        if (ev.guest === "bands" && ev.stage === "cross" && !/bands cross/.test(ev.label || "")) return minute("⇋", S.bandGoesBy, "visitation");
+        // (a lone band goes by; two bands cross — the stage's typed `both`
+        // says which)
+        if (ev.guest === "bands" && ev.stage === "cross" && !ev.both) return minute("⇋", S.bandGoesBy, "visitation");
         return st ? minute(st[0], S[st[1]], "visitation") : null; // a guest the minutes do not know is not named as another
       }
       case "verse-line":                                     // (a line sung back to the deacon is his ☞ row's; it writes none of its own)

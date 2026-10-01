@@ -365,11 +365,10 @@ window.KolobAudio = (function () {
   // ==========================================================================
   // THE BUS (SCORE.md §6). Every event the page or the harness reads is
   // TYPED — { type, t, …payload }, its words in KOLOB.Score.EVENTS — and the
-  // page reads the type and the payload. The legacy { cat, label, detail }
-  // still ride on the same object (one event, both vocabularies): kolob-ui.js
-  // reads ev.label once (the band's crossing row), and tools/lib/dump.js
-  // reads the words for a type it does not know and for dumps of builds
-  // older than 2026-09-27. A guest the minutes must not name (the
+  // page reads the type and the payload, nothing else. (The log words
+  // { cat, label, detail } that rode on every event beside its type were
+  // retired on 2026-10-01; tools/lib/dump.js still reads them out of dumps
+  // of builds older than 2026-09-27.) A guest the minutes must not name (the
   // Hosanna) says logged: false on every event it sends, and on every note
   // the page may not show (a visitor's notes name it: guest, logged).
   var noteListeners = [], eventListeners = [];
@@ -899,7 +898,6 @@ window.KolobAudio = (function () {
     if (!layers.length) return null;
     emitEvent({
       type: "house-lets-go", guest: guest, at: te, until: until, layers: layers, released: released, logged: logged !== false,
-      cat: "house", label: "⌒ the house lets go", detail: guest + " · " + layers.join(", "),
     });
     return until;
   }
@@ -1118,7 +1116,7 @@ window.KolobAudio = (function () {
       case "ambient": evFarBell(t, A); break;
       default: return;
     }
-    emitEvent({ type: "transport", action: "sample", layer: layer, cat: "transport", label: "◈ sample " + layer, detail: "" });
+    emitEvent({ type: "transport", action: "sample", layer: layer });
   }
 
   // ==========================================================================
@@ -1173,7 +1171,7 @@ window.KolobAudio = (function () {
       cueAt("conductor", t0 + 1, conductorTick);
     });
     clock.start();                   // the downbeat falls inside the first window: it fires now
-    emitEvent({ type: "transport", action: "play", seed: seed, cat: "transport", label: "▶ the meeting is called", detail: "seed " + seed });
+    emitEvent({ type: "transport", action: "play", seed: seed });
   }
   // HOLD the meeting where it stands — see the clock's notes above. The
   // page's transport and the lock-screen pause both come here; PLAY, the
@@ -1246,7 +1244,7 @@ window.KolobAudio = (function () {
       masterGain.gain.setValueAtTime(masterVolume, t + 0.7);
       scheduleForStop();
     }
-    emitEvent({ type: "transport", action: "stop", cat: "transport", label: "■ the benches empty", detail: "" });
+    emitEvent({ type: "transport", action: "stop" });
   }
   function scheduleForStop() {
     setTimeout(function () {

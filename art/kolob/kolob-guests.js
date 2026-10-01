@@ -147,8 +147,7 @@ window.KOLOB = window.KOLOB || {};
     organChord(cadAt + chDur, chDur * 1.2, chords[chords.length - 1], 0.55);
     var dur = (cadAt + chDur * 2.2) - t;
     claimAir(dur, 6);
-    tell(null, { type: "guest", guest: "assembly", stage: "whole-tune", theme: theme.name, gesture: theme.gesture || null, dur: dur,
-                 cat: "visitation", label: "✶ the whole tune, at last", detail: theme.name + " · " + (theme.gesture || "") + " · " + Math.round(dur) + "s" });
+    tell(null, { type: "guest", guest: "assembly", stage: "whole-tune", theme: theme.name, gesture: theme.gesture || null, dur: dur });
     // the span the conductor holds is the SOUND's, counted from the cue: the
     // held amen (its last chord, ×1.7) and the strings under it both outlast
     // the air claimed above
@@ -255,10 +254,9 @@ window.KOLOB = window.KOLOB || {};
       if (st.at + BELL_RING_S > ringEnd) ringEnd = st.at + BELL_RING_S;
     }
 
-    tell(V, { type: "guest", guest: "steeples", stage: "answer", bells: nVis, dur: dur,
-              cat: "visitation", label: "◎ the steeples answer", detail: nVis + " far bells · " + Math.round(dur) + "s" });
+    tell(V, { type: "guest", guest: "steeples", stage: "answer", bells: nVis, dur: dur });
     cueAt("guests", tc + dur, function () {
-      tell(V, { type: "guest", guest: "steeples", stage: "last-bell", cat: "visitation", label: "◎ the last bell", detail: "" });
+      tell(V, { type: "guest", guest: "steeples", stage: "last-bell" });
     });
     // the span runs until the last bell has rung out, not until it is struck:
     // the prelude or the postlude waits for the ring
@@ -629,9 +627,7 @@ window.KOLOB = window.KOLOB || {};
     }
     var dur1 = farVoice(t, sung(notes, false), 1.0, side);
     var total = dur1;
-    var name = String(h.nameEn || h.id).toLowerCase();
-    tell(V, { type: "guest", guest: "oldtune", stage: "remembered", tune: h.id, nameDs: h.nameDs, section: S.Meeting.section(), lines: nLines, performance: perf,
-              cat: "visitation", label: "✧ an old tune remembered", detail: name + " · " + S.Meeting.section() });
+    tell(V, { type: "guest", guest: "oldtune", stage: "remembered", tune: h.id, nameDs: h.nameDs, section: S.Meeting.section(), lines: nLines, performance: perf });
     if (againDie) {
       // a fainter second try — the head only, trailing off
       var head = notes.slice(0, Math.min(5, notes.length - 1));
@@ -639,7 +635,7 @@ window.KOLOB = window.KOLOB || {};
       var dur2 = farVoice(t2, sung(head, true), 0.6, side);
       total = dur1 + gapS + dur2;
       cueAt("guests", t2 + dur2, function () {
-        tell(V, { type: "guest", guest: "oldtune", stage: "gives-out", tune: h.id, cat: "visitation", label: "✧ the memory gives out", detail: name });
+        tell(V, { type: "guest", guest: "oldtune", stage: "gives-out", tune: h.id });
       });
     }
     return total + 4;
@@ -674,19 +670,13 @@ window.KOLOB = window.KOLOB || {};
     var G = KOLOB.GuestTrombones;
     if (!G || !V || !V.material || !V.stream) return 4;
     var calls = [];                               // [stage, t, side] — the rows told
-    var ROWS = {
-      far: ["♪ trombones at dawn", function (c) { return "far to the " + c[2]; }],
-      answer: ["♪ the near choir answers", function (c) { return "from the " + c[2]; }],
-      together: ["♪ the two choirs together", function () { return "the last chord"; }],
-    };
     // a stage's row, told at its phrase's first sound (the far choir's first
     // call at once: it is now)
     function call(stage, t0, side) {
       var c = [stage, t0, side];
       calls.push(c);
       function say() {
-        tell(V, { type: "guest", guest: "trombones", stage: c[0], side: c[2], section: S.Meeting.section(), hymnId: V.fromHymn || null,
-                  cat: "visitation", label: ROWS[c[0]][0], detail: ROWS[c[0]][1](c) });
+        tell(V, { type: "guest", guest: "trombones", stage: c[0], side: c[2], section: S.Meeting.section(), hymnId: V.fromHymn || null });
       }
       if (c[1] <= S.now() + 1e-6) say();
       else cueAt("guests", c[1], say);
@@ -738,8 +728,7 @@ window.KOLOB = window.KOLOB || {};
     function say(stage, st) {
       if (told[stage]) return;
       told[stage] = true;
-      var ev = { type: "guest", guest: name, stage: stage, section: S.Meeting.section(), hymnId: V.material.hymnId || null,
-                 cat: "visitation", label: (G.ROW_LABEL || (name === "handbells" ? "♫ the handbells" : "♪ the singing school")) + (stage === "ring" || stage === "fork" ? "" : " · " + stage), detail: st.label || "" };
+      var ev = { type: "guest", guest: name, stage: stage, section: S.Meeting.section(), hymnId: V.material.hymnId || null };
       if (V.experimental) ev.experimental = true;
       if (st.t0 <= S.now() + 1e-6) tell(V, ev);
       else cueAt("guests", st.t0, function () { if (S.playing && C_live(V)) tell(V, ev); });
@@ -798,9 +787,9 @@ window.KOLOB = window.KOLOB || {};
       onNote: noteOf,
       onStage: function (st) {
         if (st.dev || !rows[st.stage]) return;
-        var ev = { type: "guest", guest: V.type, stage: st.stage, side: st.side || null, section: S.Meeting.section(),
-                   cat: "visitation", label: st.label, detail: st.detail || "" };
+        var ev = { type: "guest", guest: V.type, stage: st.stage, side: st.side || null, section: S.Meeting.section() };
         if (st.band != null) ev.band = st.band;
+        if (st.stage === "cross") ev.both = !!st.both;   // two bands crossing, or one going by: the minutes' row reads it
         if (st.t0 <= S.now() + 1e-6) tell(V, ev);
         else cueAt("guests", st.t0, function () { if (S.playing && C_live(V)) tell(V, ev); });
       },
@@ -854,8 +843,7 @@ window.KOLOB = window.KOLOB || {};
                                     alive: function () { return !!S.playing && S.Meeting.meetingNum() === V.meetingNum && S.Meeting.section() === V.section; } });
       },
       onStage: function (st) {
-        var ev = { type: "guest", guest: "variations", stage: st.stage, section: S.Meeting.section(), hymnId: M.hymnId, keys: st.keys, regs: st.regs,
-                   cat: "visitation", label: "♪ the organist's variations" + (st.stage === "chorale" ? "" : " · " + st.stage), detail: st.label };
+        var ev = { type: "guest", guest: "variations", stage: st.stage, section: S.Meeting.section(), hymnId: M.hymnId, keys: st.keys, regs: st.regs };
         if (st.t0 <= S.now() + 1e-6) tell(V, ev); else cueAt("guests", st.t0, function () { if (S.playing && C_live(V)) tell(V, ev); });
       },
     });
@@ -883,8 +871,7 @@ window.KOLOB = window.KOLOB || {};
         emitNote("tower", x.freq, x.t, x.dur, guestNote(V, "steeples", { part: "tower", bell: x.bell, place: x.place, row: x.row, hand: x.hand, muffled: x.muffled, monzo: x.monzo, changes: true }));
       },
       onStage: function (st) {
-        var ev = { type: "guest", guest: "steeples", stage: "changes:" + st.stage, method: mat.methodName, touch: mat.touch, muffled: mat.muffled,
-                   cat: "visitation", label: st.stage === "rounds" ? "◎ a far tower rings" : "◎ " + st.label, detail: mat.methodName };
+        var ev = { type: "guest", guest: "steeples", stage: "changes:" + st.stage, method: mat.methodName, touch: mat.touch, muffled: mat.muffled };
         if (st.t0 <= S.now() + 1e-6) tell(V, ev); else cueAt("guests", st.t0, function () { if (S.playing && C_live(V)) tell(V, ev); });
       },
     });
@@ -953,8 +940,7 @@ window.KOLOB = window.KOLOB || {};
       onStage: function (st) {
         if (!HALL_ROWS[st.stage] || told[st.stage]) return;
         told[st.stage] = true;
-        var ev = { type: "guest", guest: "socialhall", stage: st.stage, section: S.Meeting.section(), hymnId: V.material.hymnId || null,
-                   cat: "visitation", label: "✦ the Social Hall" + (st.stage === "benches" ? "" : " · " + st.stage), detail: st.label || "" };
+        var ev = { type: "guest", guest: "socialhall", stage: st.stage, section: S.Meeting.section(), hymnId: V.material.hymnId || null };
         if (st.t0 <= S.now() + 1e-6) tell(V, ev); else cueAt("guests", st.t0, function () { if (S.playing && C_live(V)) tell(V, ev); });
       },
       onCast: function (c) {

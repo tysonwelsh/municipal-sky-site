@@ -807,7 +807,7 @@ window.KOLOB.GuestBands = (function () {
       // (its nearest: a band going by, in its own key and its own time; the
       // bands CROSS only when a second is nearest while the first still plays)
       var both = k > 0 && start + rd.tc < out.bands[0].end;
-      out.stages.push({ stage: "cross", band: k, t0: start + rd.tc, side: side, label: both ? "⇋ the bands cross" : k ? "⇋ the second band goes by" : "⇋ the band goes by",
+      out.stages.push({ stage: "cross", band: k, t0: start + rd.tc, side: side, both: both, label: both ? "⇋ the bands cross" : k ? "⇋ the second band goes by" : "⇋ the band goes by",
                         detail: both ? "two times at once" : "its own key, its own time" });
       out.stages.push({ stage: "passes", band: k, t0: start + bd.end, side: other, label: "⇋ passes on", detail: k ? "the second band" : "" });
       out.end = Math.max(out.end, start + bd.end);

@@ -323,8 +323,7 @@ window.KOLOB = window.KOLOB || {};
   function tellOrganist(e, tag) {
     var C = KOLOB.Cast, key = C && C.actionKey ? C.actionKey(e.action) : e.action;
     var ev = { type: "cast", memberId: "organist", nameDs: e.nameDs, action: e.action, role: "organist",
-               actionDs: C && C.ACTION_DS ? C.ACTION_DS[key] || null : null, style: tag.style || null,
-               cat: "cast", label: "✦ the organist " + e.action, detail: e.nameDs };
+               actionDs: C && C.ACTION_DS ? C.ACTION_DS[key] || null : null, style: tag.style || null };
     if (tag.hymnId) ev.hymnId = tag.hymnId;
     if (tag.verse != null) ev.verse = tag.verse;
     if (tag.variations) ev.variations = true;              // (a recital's doings, not the hymn's service)

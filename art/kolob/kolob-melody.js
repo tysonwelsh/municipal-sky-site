@@ -422,7 +422,7 @@ window.KOLOB = window.KOLOB || {};
       recentre(out);
       stats.developments++;
       remember(out);
-      log({ type: "motif-develop", name: out.name, gen: out.gen, how: [forced], withheld: true, cat: "motif", label: "◆ " + out.name + "·g" + out.gen, detail: forced + " · withheld" });
+      log({ type: "motif-develop", name: out.name, gen: out.gen, how: [forced], withheld: true });
       // occasionally one more free link — but only one, and never verbatim
       if (R.chance(0.4)) out = develop(voice, out, 1, mo, R);
       return out;
@@ -467,7 +467,7 @@ window.KOLOB = window.KOLOB || {};
       recentre(out);
       stats.developments++;
       remember(out);
-      log({ type: "motif-develop", name: out.name, gen: out.gen, how: used.slice(), gesture: out.gesture || null, cat: "motif", label: "◆ " + out.name + "·g" + out.gen, detail: used.join("+") + " · " + (out.gesture || "") });
+      log({ type: "motif-develop", name: out.name, gen: out.gen, how: used.slice(), gesture: out.gesture || null });
       return out;
     }
     // Which motif should a voice work right now? mo: the moment; R: the voice's turn.
@@ -505,15 +505,15 @@ window.KOLOB = window.KOLOB || {};
         var roll = R.rnd(0, 1);
         var deepLine = lineage[working.theme.name];
         if (roll < 0.25 && deepLine && deepLine.gen >= 3) {
-          log({ type: "motif-reprise", name: working.theme.name, how: "transfigured", gen: deepLine.gen, cat: "motif", label: "✸ reprise " + working.theme.name, detail: "the theme returns, transfigured — g" + deepLine.gen });
+          log({ type: "motif-reprise", name: working.theme.name, how: "transfigured", gen: deepLine.gen });
           return clone(deepLine);
         }
         if (roll < 0.4 && working.subs.length) {
           var subRe = R.pick(working.subs);
-          log({ type: "motif-reprise", name: subRe.name, how: "lesser", cat: "motif", label: "✸ reprise " + subRe.name, detail: "the lesser hymn returns — " + (subRe.gesture || "") });
+          log({ type: "motif-reprise", name: subRe.name, how: "lesser" });
           return clone(subRe);
         }
-        log({ type: "motif-reprise", name: working.theme.name, how: "verbatim", cat: "motif", label: "✸ reprise " + working.theme.name, detail: "the theme returns, verbatim — " + (working.theme.gesture || "") });
+        log({ type: "motif-reprise", name: working.theme.name, how: "verbatim" });
         return clone(working.theme);
       }
       if (sec === "postlude") {
@@ -533,7 +533,7 @@ window.KOLOB = window.KOLOB || {};
       out.notes.forEach(function (n) { n.durBeats *= 1 + x; });
       out.gen = m.gen + 1;
       out.chain = m.chain.concat(["dissolve"]);
-      log({ type: "motif-disperse", name: out.name, cat: "motif", label: "࿙ " + out.name + " disperses", detail: "notes let go into the dusk" });
+      log({ type: "motif-disperse", name: out.name });
       return out;
     }
 
@@ -577,7 +577,7 @@ window.KOLOB = window.KOLOB || {};
       }
       else ans = develop(voice, m, 2, mo, R);
       stats.answers++;
-      log({ type: "motif-answer", voice: voice, from: ob.from, how: ob.type, name: ans.name, gen: ans.gen, cat: "motif", label: "⇄ " + voice + " answers " + ob.from, detail: ob.type + " · " + ans.name + "·g" + ans.gen });
+      log({ type: "motif-answer", voice: voice, from: ob.from, how: ob.type, name: ans.name, gen: ans.gen });
       return ans;
     }
     function overdueFor(voice, mo) {
@@ -650,8 +650,6 @@ window.KOLOB = window.KOLOB || {};
       stats.gestures = idxs.map(function (g2) { return GESTURES[g2].name; });
       log({
         type: "hymns-of-the-day", gestures: stats.gestures.slice(), names: NAMES.slice(0, stats.gestures.length), temper: dialectName,
-        cat: "motif", label: "❁ the day's hymns",
-        detail: stats.gestures.map(function (g3, k) { return NAMES[k] + " " + g3; }).join(" · ") + " · temper: " + dialectName,
       });
     }
     function onSection(type) {

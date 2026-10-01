@@ -72,8 +72,8 @@
 //   singerOf(seat, ward) → who rises (a testimony-bearer of the seat's part),
 //     once the meeting has seated its ward
 //   tongue(stream) → the syllables and words of one song (pure)
-//   ROWS, ROW_LABEL — the stages that earn a row in the minutes, and the
-//     guest's name in the meeting's glue (kolob-guests.js standingGuest)
+//   ROWS — the stages that earn a row in the minutes (kolob-guests.js
+//     standingGuest)
 //   ODDS, EXCLUDES, NAME, LABEL, LEVEL
 // ============================================================================
 
@@ -88,7 +88,6 @@ window.KOLOB.GuestTongues = (function () {
   // itself and its height are heard, not written: the glue passes them over
   // (kolob-guests.js standingGuest reads ROWS)
   var ROWS = { rises: 1, "the ward hums": 1, "the harmonium": 1 };
-  var ROW_LABEL = "✦ the gift of tongues";
 
   // ==========================================================================
   // THE ODDS — a starting point, for the owner's ear
@@ -773,7 +772,7 @@ window.KOLOB.GuestTongues = (function () {
 
   return {
     plan: plan, decide: decide, score: score, perform: perform, gesture: gesture, tongue: tongue, singerOf: singerOf, timeline: function (stream, house) { return timeline(shapeOf(stream, house)); },
-    ODDS: ODDS, EXCLUDES: EXCLUDES, NAME: NAME, LABEL: LABEL, BLOCK: BLOCK, ROWS: ROWS, ROW_LABEL: ROW_LABEL,
+    ODDS: ODDS, EXCLUDES: EXCLUDES, NAME: NAME, LABEL: LABEL, BLOCK: BLOCK, ROWS: ROWS,
     get LEVEL() { return LEVEL; }, set LEVEL(v) { LEVEL = +v; },
   };
 })();

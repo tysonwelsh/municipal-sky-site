@@ -508,7 +508,6 @@ window.KOLOB = window.KOLOB || {};
       var wTheme = Motif.theme();
       emitEvent({
         type: "guest", guest: "assembly", stage: "withheld", logged: true, theme: wTheme ? wTheme.name : null,
-        cat: "visitation", label: "◌ the tune is withheld", detail: (wTheme ? wTheme.name + " · " : "") + "until the doxology",
       });
     }
     // The trombones' chorale. With the day's hymnal they play the day's
@@ -775,7 +774,6 @@ window.KOLOB = window.KOLOB || {};
     }
     if (C.visitations.length) emitEvent({
       type: "guests-drawn", guests: C.visitations.map(function (v) { return { guest: v.type, section: v.section, index: seatIndex(v) }; }),
-      cat: "visitation-draw", label: C.visitations.map(function (v) { return v.type + "@" + v.section; }).join(","),
     });
     // THE SEATINGS OF THE OTHER RITES (PLAN §7.4): the
     // invocation, an interlude, the testimony, the sacrament and the
@@ -854,7 +852,6 @@ window.KOLOB = window.KOLOB || {};
     emitEvent({
       type: "prelude-seating", n: C.meetingNum, seating: C.seating.name, under: C.seating.under, style: C.seating.style, at: C.seating.at, full: C.seating.full, spread: C.seating.spread, ward: wardTold, organist: organistTold,
       len: C.seating.len, preludeS: +plan[0].dur.toFixed(2), sits: Object.keys(C.seating.sits), lean: C.seating.lean, hum: C.seating.hum ? { n: C.seating.hum.n, s: C.seating.hum.s, at: C.seating.hum.at, until: C.seating.hum.until } : null,
-      cat: "seating", label: "⌖ the prelude is seated", detail: C.seating.name + (C.seating.style ? " · " + C.seating.style : "") + (C.seating.under !== C.seating.name ? " (the morning after: " + C.seating.under + ")" : ""),
     });
     // THE CALENDAR, told once a meeting, typed only (the
     // tools and the harness read it; the page names the Sunday from
@@ -870,16 +867,12 @@ window.KOLOB = window.KOLOB || {};
     // The Liahona: the load-bearing draws, surfaced as the oracle's pointing.
     emitEvent({
       type: "liahona", points: "day", mode: S.mode, kind: activity, sunday: sunday, f0: S.F0,
-      cat: "liahona", label: "⌖ the Liahona points",
-      detail: S.mode + " · " + (sunday || activity) + " · F0 " + S.F0.toFixed(1) + " Hz",
     });
     // (SCORE §6: the calendar's Sunday and the house dialect, the day's
     // hymnal's, above; sundayDs the programme card's name)
     emitEvent({
       type: "meeting-start", n: C.meetingNum, sunday: sunday, kind: activity, mode: S.mode,
       keynoteHz: S.F0 * S.ROOT_MULT, houseDialect: C.house, f0: S.F0, season: seasonPos, sundayDs: SUN ? SUN.ds : null,
-      cat: "meeting", label: "☀ meeting " + C.meetingNum,
-      detail: "F0 " + S.F0.toFixed(1) + " Hz · " + S.mode + " · " + activity + (sunday && sunday !== activity ? " (" + sunday + ")" : "") + " · season " + seasonPos.toFixed(2),
     });
   }
 
@@ -1246,7 +1239,7 @@ window.KOLOB = window.KOLOB || {};
     if (composed) C.meter = composed.meter;
     if (s.type === "hymn" && s.meter) {
       if (!composed) C.meter = s.meter;
-      emitEvent({ type: "liahona", points: "meter", meter: C.meter, cat: "liahona", label: "⌖ the meter is given", detail: C.meter + " — " + (METERS[C.meter] ? METERS[C.meter].join(".") : String(C.meter)) });   // (a round's "meter" is its segments' lengths)
+      emitEvent({ type: "liahona", points: "meter", meter: C.meter });   // (a round's "meter" is its segments' lengths)
     }
     // the doxology SUNRISE: a dark-mode meeting may lift into major at the
     // last — rare, and the most audible surprise the engine owns
@@ -1256,15 +1249,12 @@ window.KOLOB = window.KOLOB || {};
       Desk.reset();                 // the new mode starts a clean page
       emitEvent({
         type: "sunrise", mode: S.mode, keynoteHz: S.F0 * S.ROOT_MULT, f0: S.F0,
-        cat: "meeting", label: "☀ sunrise",
-        detail: "F0 " + S.F0.toFixed(1) + " Hz · " + S.mode + " · " + (C.meeting ? C.meeting.activity : "") + " · season " + seasonPos.toFixed(2),
       });
     }
     var scn = C.scenes && C.scenes[i] ? C.scenes[i] : null;
     emitEvent({
       type: "section-start", section: s.type, index: i, dur: s.dur, meter: s.type === "hymn" ? C.meter : null,
       light: s.light != null ? s.light : null, scene: scn ? scn.name : null,
-      cat: "section", label: "§ " + s.type.toUpperCase(), detail: (s.type === "hymn" ? C.meter + " · " : "") + Math.round(s.dur) + "s",
     });
     // the rite's seating, when it is not the plain house (typed only; the
     // minutes give it a row)
@@ -1610,8 +1600,7 @@ window.KOLOB = window.KOLOB || {};
         if (!told) {
           told = true;
           emitEvent({ type: "guest-start", guest: "farward", section: sec, until: r.t1, logged: V.logged });
-          emitEvent({ type: "guest", guest: "farward", stage: "verse", section: sec, hymnId: h.id, logged: V.logged, cat: "visitation",
-                      label: "♪ the far ward", detail: "a line behind, from across the valley" });
+          emitEvent({ type: "guest", guest: "farward", stage: "verse", section: sec, hymnId: h.id, logged: V.logged });
         }
         return hold(r.t1);
       },
@@ -1682,7 +1671,7 @@ window.KOLOB = window.KOLOB || {};
         emitNote(x.layer, x.freq, x.t, x.dur, { part: x.part, member: x.member, speech: !!x.speech, deg: x.deg, monzo: x.monzo, keyMonzo: x.keyMonzo, move: x.move || null, accent: x.accent, testimony: true });
       },
       onStage: function (st) {
-        var ev = { type: "testimony", stage: st.stage, memberId: st.member || st.memberId || null, label: st.label || "", section: "testimony" };
+        var ev = { type: "testimony", stage: st.stage, memberId: st.member || st.memberId || null, section: "testimony" };
         if (st.t0 == null || st.t0 <= now() + 1e-6) emitEvent(ev); else cueAt("guests", st.t0, function () { if (live()) emitEvent(ev); });
       },
       onCast: function (c) {
@@ -1868,7 +1857,7 @@ window.KOLOB = window.KOLOB || {};
       var rk = readReckoning(), note = null;
       if (rk && rk.ok && !rk.held) { rk.cantus.forEach(function (c, j) { if (c.index === idx) note = { c: c, k: j }; }); S.droneTurn(t, note ? note.c.monzo : [0, 0, 0, 0], 2, note ? note.c.role : "tonic", note ? note.k : null); }
     }
-    emitEvent({ type: "skip", to: type, cat: "conductor", label: "↷ skipped", detail: "to " + type + " (dev)" });
+    emitEvent({ type: "skip", to: type });
     return true;
   }
 
@@ -1887,7 +1876,7 @@ window.KOLOB = window.KOLOB || {};
     if (forkDie) evTuningFork(t + forkAt);
     S.droneDuck.gain.setValueAtTime(0.12, t + 1.4 + holdS);
     S.droneDuck.gain.linearRampToValueAtTime(1, t + 1.4 + holdS + 3);
-    emitEvent({ type: "stillness", why: why, holdS: holdS, cat: "conductor", label: "◦ the still small voice", detail: why + " · " + holdS.toFixed(1) + "s" });
+    emitEvent({ type: "stillness", why: why, holdS: holdS });
   }
 
   // ==========================================================================
@@ -1903,7 +1892,7 @@ window.KOLOB = window.KOLOB || {};
     if (next === "sacrament" || C.section === "sacrament") {
       // fade into (or out of) the quietest room through pure drone — no chord
       dur = R.rnd(4, 7);
-      emitEvent({ type: "room-empties", toward: next, cat: "cadence", label: "∴ the room empties", detail: "into stillness" });
+      emitEvent({ type: "room-empties", toward: next });
     } else if (isLast && C.raspberry) {
       // THE RASPBERRY AMEN (after the close of Ives's Second Symphony): the
       // cadence sets up in earnest — the IV played perfectly straight — and
@@ -1923,10 +1912,10 @@ window.KOLOB = window.KOLOB || {};
         meetinghouseBell(t + dur * 0.75, 1.0, R);
       }
       cueAt("conductor", t + rDur + 0.15, function () {
-        emitEvent({ type: "guest", guest: "raspberry", stage: "blat", logged: true, cat: "visitation", label: "∴ raspberry", detail: "the tuba's own" });
+        emitEvent({ type: "guest", guest: "raspberry", stage: "blat", logged: true });
       });
       cueAt("conductor", t + rDur + 0.9, function () {
-        emitEvent({ type: "guest", guest: "raspberry", stage: "amen", logged: true, cat: "visitation", label: "∴ amen—", detail: "the organist's own" });
+        emitEvent({ type: "guest", guest: "raspberry", stage: "amen", logged: true });
       });
     } else {
       // the organ's amen is the Tabernacle's (PLAN §3.C: the amen lives there,
@@ -1967,7 +1956,7 @@ window.KOLOB = window.KOLOB || {};
         }
       }
     }
-    emitEvent({ type: "joint", last: !!isLast, toward: next, dur: dur, cat: "cadence", label: "∴ joint", detail: (isLast ? "meeting ends" : "toward " + next) + " · " + Math.round(dur) + "s" });
+    emitEvent({ type: "joint", last: !!isLast, toward: next, dur: dur });
     return dur;
   }
 
@@ -2186,8 +2175,7 @@ window.KOLOB = window.KOLOB || {};
       C.chorale.begun = true; C.chorale.until = until; C.chorale.plan = what || null;
       var need = until - C.sectionStart + CHORALE_AFTER_S;
       if (C.section === "prelude" && need > C.sectionDur) { C.sectionDur = need; if (C.plan[0] && C.plan[0].type === "prelude") C.plan[0].dur = need; }
-      emitEvent({ type: "chorale-prelude", hymnId: C.chorale.hymnId, t0: t0, until: until, style: what ? what.style : null, manner: what ? what.manner : null,
-                  cat: "organist", label: "♫ the chorale prelude", detail: (what ? what.style + " · " + what.manner + " · " : "") + (until - t0).toFixed(1) + " s" });
+      emitEvent({ type: "chorale-prelude", hymnId: C.chorale.hymnId, t0: t0, until: until, style: what ? what.style : null, manner: what ? what.manner : null });
     },
     hymnal: function () { return C.hymnal.map(function (r) { var o = {}; for (var k in r) o[k] = r[k]; return o; }); },
     hymn: function () { return C.hymn ? { id: C.hymn.id, dialect: C.hymn.dialect, key: C.hymn.key, active: C.hymn.active, from: C.hymn.from, until: C.hymn.until } : null; },
@@ -2254,9 +2242,6 @@ window.KOLOB = window.KOLOB || {};
       var v = chord.voicing;
       emitEvent({
         type: "chord",
-        cat: "harmony",
-        label: "♮ " + Harmony.ROMAN[chord.root] + (chord.open ? " open" : ""),
-        detail: "b" + v[0] + " t" + v[1] + " a" + v[2] + " s" + v[3] + (fifths ? " · 5ths " + fifths : ""),
         // for the tools (the minutes print no chord): when it sounds,
         // which chord it is, who wrote it, the voicing as sung
         at: t, chord: chord.id, by: by || "", page: book.page(), n: S.colN(),
@@ -2318,8 +2303,7 @@ window.KOLOB = window.KOLOB || {};
       // (SCORE §6's cadence: its kind, who closes with it, when; the hymn's
       // id while a hymn is sung)
       var sec = C.section;
-      emitEvent({ type: "cadence", kind: kind, by: by || "", at: t, hymnId: sec === "hymn" || sec === "doxology" ? hymnId() : null,
-                  cat: "harmony", label: "∴ " + kind + " cadence", detail: kind === "half" ? "resting on the dominant" : "amen" });
+      emitEvent({ type: "cadence", kind: kind, by: by || "", at: t, hymnId: sec === "hymn" || sec === "doxology" ? hymnId() : null });
       return chords;
     }
     function voice(root7, opts, R, t) { return Harmony.voice(root7, opts, momentAt(t), R); }

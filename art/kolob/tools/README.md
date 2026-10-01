@@ -160,22 +160,22 @@ The tools depend on the dump and nothing else: one JSON array per line,
 |---|---|---|
 | `"H"` | 0 | **header**, first line, written when the harness is given `header`: `{format: "kolob-dump", v: 1, seed, secs, flags: [...], engine: {dir, legacy, list, files, fingerprint}}`. `engine` says where the modules were loaded from and what their bytes hash to, the witness's way. A dump without it still reads: the seed comes from the `transport` event (`seed N`) or the file name, the length from the last record. |
 | `"N"` | the music's own time at emission (`S.now()`: the cue's scheduled time inside a cue, the audio clock outside) | **a note** exactly as `onNote` delivers it: `{layer, freq, startTime, duration, …extra}`. `startTime` is when it sounds, usually ahead of `t`. Extras: `part`, `hymnId`, `beat`, `syl`, `deg`, `monzo`, `marks`, `memberId`, `loud` (SCORE §6). |
-| `"E"` | the music's own time at emission | **an event** exactly as `onEvent` delivers it: `{type, t, …payload}`, carrying the legacy `cat`, `label`, `detail` on the same object. |
+| `"E"` | the music's own time at emission | **an event** exactly as `onEvent` delivers it: `{type, t, …payload}`. (A dump from a build older than 2026-10-01 also carries the log words `cat`, `label`, `detail` on each event; the reader reads them only for a type it does not know.) |
 
 **How the reader (`lib/dump.js`) takes it.** A note's time is its `startTime`;
 an event's is its `t`, or the record's `t` when it has none; events are ordered
-by time, emission order within a tie. An event is read by its `type` where the
-reader knows the type, and by its words (`cat` + `label`) otherwise — so a
-joint, a guest's stage and the day's material, whose types the reader does not
-name, are still read. The words are the only reading of a dump from a build
-before 2026-09-27 (before the typed bus); such a dump may tell one happening
-twice, a log line and a typed event, and the two are merged into one. Whatever
-neither vocabulary knows is still counted in tally's "events per meeting", by
-its `cat` or `type` (all but `transport`, the harness's start-up line); any
-other record kind, and an unparseable line, is skipped. **Meetings** run from
-one meeting-start to the next; the last is complete only if its last joint says
-it ended inside the run (`∴ joint — meeting ends`, read by its words; a typed
-`meeting-end {dur}` is accepted, though no engine emits one). **Sections** run
+by time, emission order within a tie. An event is read by its `type` (the
+reader knows every type a live build sends), and by its words (`cat` +
+`label`) only for a type it does not know. The words are the only reading of a
+dump from a build before 2026-09-27 (before the typed bus); such a dump may
+tell one happening twice, a log line and a typed event, and the two are merged
+into one. Whatever neither vocabulary knows is still counted in tally's "events
+per meeting", by its `type` (its `cat`, in an old dump; all but `transport`,
+the harness's start-up line); any other record kind, and an unparseable line,
+is skipped. **Meetings** run from one meeting-start to the next; the last is
+complete only if its last joint says it ended inside the run (`joint {last:
+true, dur}`; in an old dump `∴ joint — meeting ends`, read by its words; a
+typed `meeting-end {dur}` is accepted, though no engine emits one). **Sections** run
 from one section start to the next, joint included. **Guests** begin and end on
 `guest-start` / `guest-end {guest, section, logged}`; the typed `guest` event
 is a *stage* of a guest already begun (`{guest, stage}`: the band approaches,
@@ -184,17 +184,17 @@ counted as a guest of its own. **Voices** are one line per layer, or per
 `layer:part` when notes carry `part`; a chordal layer without parts is read by
 its top line; unpitched notes (`freq` 0) never make a voice.
 
-**The words the reader knows**, in both vocabularies:
+**The words the reader knows**, in both vocabularies (the log words only in a dump older than 2026-10-01):
 
 | log (`cat` · label) | reads as | typed |
 |---|---|---|
-| `meeting` · `☀ meeting N` (detail `F0 … Hz · mode · kind · season`); `☀ sunrise` | meeting: mode, kind, keynote = F0×4; mode change | `meeting-start {n, sunday, kind, mode, keynoteHz, houseDialect}` |
-| `section` · `§ HYMN` (detail `[meter ·] 87s`) | section, planned length, meter | `section-start {section, index, dur?}` |
-| `harmony` · `∴ plagal cadence` | cadence (plagal, authentic, half, …) | `cadence {kind}` |
-| `cadence` · `∴ joint` (`meeting ends · 8s`); `∴ the room empties` | section joint, the end of a meeting; the joint that follows goes into stillness (marked `still`; not a joint of its own) | (`meeting-end {n, dur?}`, accepted) |
-| `visitation` · `⇋ a band approaches`, `◎ the steeples answer`, `✧ an old tune remembered`, `∴ raspberry`, `◌ the tune is withheld`, … | guest start, stage or end: bands, steeples, oldtune, raspberry, cumulative, … | `guest-start` / `guest` / `guest-end {guest, section, logged}` |
-| `motif` · `❁ the day's hymns` | the day's material | `hymn-announced {hymn: {id, meter, dialect}}` |
-| `verse`, `fuging`, `conductor` (`still small`), `ambient`, `telegraph`, `transport` (`seed N`) | lines, lining out, fuging, stillness, field events, telegraph, seed | `verse-start`, `telegraph`, …; `cast {memberId, action}`, `vision {name}` |
+| `meeting` · `☀ meeting N` (detail `F0 … Hz · mode · kind · season`); `☀ sunrise` | meeting: mode, kind, keynote = F0×4; mode change | `meeting-start {n, sunday, kind, mode, keynoteHz, houseDialect}`; `sunrise {mode, keynoteHz}` |
+| `section` · `§ HYMN` (detail `[meter ·] 87s`) | section, planned length, meter | `section-start {section, index, dur, meter?}` |
+| `harmony` · `∴ plagal cadence` | cadence (plagal, authentic, half, …); a chord written | `cadence {kind}`; `chord {at, chord, by}` |
+| `cadence` · `∴ joint` (`meeting ends · 8s`); `∴ the room empties` | section joint, the end of a meeting; the joint that follows goes into stillness (marked `still`; not a joint of its own) | `joint {last, toward, dur}`; `room-empties {toward}` (`meeting-end {n, dur?}` accepted) |
+| `visitation` · `⇋ a band approaches`, `◎ the steeples answer`, `✧ an old tune remembered`, `∴ raspberry`, `◌ the tune is withheld`, … | guest start, stage or end: bands, steeples, oldtune, raspberry, cumulative, …; the plan's guests | `guest-start` / `guest` / `guest-end {guest, section, logged}`; `guests-drawn {guests}` |
+| `motif` · `❁ the day's hymns`; `◆ …`, `✸ …`, `⇄ …` | the day's material; a motif at work | `hymns-of-the-day {gestures, names, temper}`; `motif-develop` `-reprise` `-answer` `-disperse` `-shadow`; `hymn-announced {hymn: {id, meter, dialect}}` |
+| `verse`, `fuging`, `conductor` (`still small`), `ambient`, `telegraph`, `transport` (`seed N`) | lines, lining out, fuging, stillness, field events, telegraph, seed | `verse-line` (and `round-entry`, `partner`, `refrain`), `lining-out`, `fuging`, `stillness {why, holdS}`, `skip {to}`, `field {field, name}`, `telegraph {word}`, `transport {action, seed}`, `liahona`; `verse-start`, `cast {memberId, action}`, `vision {name}` |
 
 **What distinctness reads from the typed fields:** the **Sunday** from
 `meeting-start.sunday`; the **dialect** from `meeting-start.houseDialect`,

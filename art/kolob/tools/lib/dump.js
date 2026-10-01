@@ -6,19 +6,18 @@
 // cadences, guests and voices the same way. When the engine changes what it
 // says, this file learns the new words and the tools above it do not move.
 //
-// Two vocabularies are understood side by side:
-//   · the SCORE.md §6 typed events  {type, t, …payload} — read by their fields;
-//   · the log events  {cat, label, detail, t}  — read by their words.
-// Every event the engine sends today is typed, and carries the legacy
-// cat/label/detail on the same object. An event is read by its type where
-// this file knows the type (typedEvent), and by its words otherwise
-// (legacyEvent) — so a joint, a guest's stage and the day's material, whose
-// types are not in typedEvent, are still read rather than falling to
-// "other" — and the words are the only reading of a dump from a build older
-// than 2026-09-27 (a git: ref before the typed bus). Whatever neither knows
-// is still counted, by its `cat` or `type`; `cat` stays the log's word where
-// it has one, so an A/B against an old build counts the same categories on
-// both sides.
+// Two vocabularies are understood:
+//   · the SCORE.md §6 typed events  {type, t, …payload} — read by their fields
+//     (typedEvent knows every type a live build sends);
+//   · the log events  {cat, label, detail, t}  — read by their words
+//     (legacyEvent): a dump from a build older than 2026-09-27 (a git: ref
+//     before the typed bus), and a type typedEvent does not know.
+// The log words rode on every typed event beside its type until 2026-10-01,
+// when the engine stopped sending them; a dump from between those dates
+// carries both and is read by its types. Whatever neither knows is still
+// counted, by its `type` (its `cat`, in an old dump); `cat` stays the log's
+// word where a dump has one, so an A/B across the retirement counts the two
+// vocabularies' categories side by side.
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -113,7 +112,8 @@ function typedEvent(e, p) {
       e.kind = "joint"; e.meetingEnd = true; e.jointDur = typeof p.dur === "number" ? p.dur : 0; break;
     case "section-start":
       e.kind = "section"; e.section = String(p.section || "?").toLowerCase();
-      e.plannedDur = typeof p.dur === "number" ? p.dur : null; break;
+      e.plannedDur = typeof p.dur === "number" ? p.dur : null;
+      if (typeof p.meter === "string") e.meter = p.meter; break;
     case "hymn-announced":
       e.kind = "hymn"; e.hymnId = p.hymn ? p.hymn.id : null; e.meter = p.hymn ? p.hymn.meter : null; break;
     case "verse-start":
@@ -131,12 +131,32 @@ function typedEvent(e, p) {
     case "vision": e.kind = "vision"; e.vision = p.name; break;
     case "telegraph": e.kind = "telegraph"; e.word = p.word; break;
     case "registration": e.kind = "registration"; e.registration = p.name || p.stops || p.registration; break;   // (no engine emits this type: a registration reaches the tools on a note or in an event's payload, read in normNote/normEvent)
+    // the types whose log words the tools read until 2026-10-01 (legacyEvent,
+    // below, still reads those words out of an older dump): each gives the
+    // same reading from its fields
+    case "sunrise": e.kind = "mode-change"; e.mode = p.mode; break;
+    case "chord": e.kind = "chord"; break;
+    case "room-empties": e.kind = "joint-still"; break;
+    case "joint":                // (the length in whole seconds, as the log line gave it: the meeting's end is read off it)
+      e.kind = "joint"; e.meetingEnd = !!p.last; e.jointDur = typeof p.dur === "number" ? Math.round(p.dur) : 0; break;
+    case "guests-drawn": e.kind = "guest-plan"; e.plan = (p.guests || []).map((g) => ({ guest: g.guest, section: g.section })); break;
+    case "hymns-of-the-day": e.kind = "material"; e.temper = p.temper || null; e.material = (p.gestures || []).slice(); break;
+    case "motif-develop": case "motif-reprise": case "motif-answer": case "motif-disperse": case "motif-shadow": e.kind = "motif"; break;
+    case "verse-line": case "round-entry": case "partner": case "refrain": e.kind = "line"; break;
+    case "lining-out": e.kind = "lining"; break;
+    case "fuging": e.kind = "fuging"; break;
+    case "stillness": e.kind = "stillness"; break;
+    case "skip": e.kind = "skip"; break;
+    case "field": e.kind = "field"; e.field = p.name || p.field || null; break;
+    case "transport": e.kind = "transport"; if (p.seed != null) e.seed = +p.seed; break;
+    case "liahona": e.kind = "liahona"; break;
     default: e.kind = null;                               // (normEvent reads its words, if it has any)
   }
 }
 
-// The log words — a build older than 2026-09-27, and any type typedEvent does
-// not know — read by their words (the glyphs are decoration and may change).
+// The log words — a dump from a build older than 2026-10-01 carries them (the
+// only vocabulary before 2026-09-27) — read for a type typedEvent does not
+// know (the glyphs are decoration and may change).
 const GUEST_WORDS = [
   [/the question$/, "question", "start"], [/unanswered/, "question", "end"],
   [/band approaches/, "bands", "start"], [/passes on/, "bands", "end"], [/bands cross/, "bands", "mark"],
@@ -206,9 +226,9 @@ function legacyEvent(e, p) {
 
 // A dump from a build between the log and the typed bus may tell one
 // happening twice — a log line and a typed event. Keep the first, fill its
-// gaps from the second, drop the echo. (Every current event is one object
-// carrying both vocabularies, so nothing echoes; this matters only for git:
-// refs older than 2026-09-27, and selftest.js proves it still works.)
+// gaps from the second, drop the echo. (A live build sends one typed object
+// and no log line, so nothing echoes; this matters only for git: refs older
+// than 2026-09-27, and selftest.js proves it still works.)
 const ECHO = {
   meeting: { tol: 0.5, key: (e) => "m" },
   section: { tol: 0.1, key: (e) => e.section },

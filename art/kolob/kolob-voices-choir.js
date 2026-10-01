@@ -279,7 +279,6 @@ window.KOLOB = window.KOLOB || {};
         type: "verse-line", hymnId: hymnId, verse: verse, line: inStanza, speechLine: li + 1, practice: "sung",
         meter: meterName, syllables: nSyl, motif: motif.name, gen: motif.gen, start: lineStart, beatS: beat,
         score: KOLOB.Harmony.toLine(hz2, S.moment(), { trochee: meterName === "87.87" }),
-        cat: "verse", label: "¶ " + meterName + " line " + (li + 1), detail: nSyl + " syllables · " + motif.name + "·g" + motif.gen,
       });
       sungTotal += lt;
       lineStart += lt + R.rnd(1.8, 3.4);                       // the breath between lines
@@ -370,7 +369,7 @@ window.KOLOB = window.KOLOB || {};
     organChord(cadAt + cd, cd * 1.4, chords[chords.length - 1], 0.55);
     var totalDur = (cadAt + cd * 2.4) - t;
     claimAir(totalDur, 4);
-    emitEvent({ type: "fuging", entries: entryCount, stagger: stagger, cat: "fuging", label: "⁂ fuging entry ×" + entryCount, detail: "stagger " + stagger.toFixed(1) + "s · at the fifth · " + (theme.gesture || "") });
+    emitEvent({ type: "fuging", entries: entryCount, stagger: stagger });
     return totalDur;
   }
 
@@ -859,11 +858,9 @@ window.KOLOB = window.KOLOB || {};
         prevF[mv.vi] = best.f;
       });
     });
-    emitEvent({ type: "cadence", kind: kind, by: "fuging", at: cadAt + cd, hymnId: h.id,
-                cat: "harmony", label: "∴ " + kind + " cadence", detail: "the fuging gathers" });
+    emitEvent({ type: "cadence", kind: kind, by: "fuging", at: cadAt + cd, hymnId: h.id });
     var total = cadAt + cd * 2.6 - tc;
-    emitEvent({ type: "fuging", entries: entries, stagger: stagger, hymnId: h.id, head: head.map(function (n) { return n.deg; }),
-                cat: "fuging", label: "⁂ fuging entry ×" + entries, detail: "stagger " + stagger.toFixed(1) + "s · on the hymn's head · " + h.nameEn });
+    emitEvent({ type: "fuging", entries: entries, stagger: stagger, hymnId: h.id, head: head.map(function (n) { return n.deg; }) });
     return total;
   }
 
@@ -875,8 +872,7 @@ window.KOLOB = window.KOLOB || {};
     var pre = Hy().partLine(line, h.melodyPart, bs * 0.42, next);
     var cn = pre.ev.map(function (e) { return { f: base * mzRatio(e.n.monzo), dur: Math.max(0.18, e.dur) }; });
     if (cn.length && S.renderClarinetLine) S.renderClarinetLine(tp, cn, 0.85, R.fork("precentor:" + v + ":" + li));
-    emitEvent({ type: "lining-out", meter: h.meter, syllables: cn.length, hymnId: h.id, verse: v, line: li, composed: true,
-                cat: "verse", label: "☞ the deacon lines out", detail: h.meter + " · line " + (li + 1) + " · " + h.nameEn });
+    emitEvent({ type: "lining-out", meter: h.meter, syllables: cn.length, hymnId: h.id, verse: v, line: li, composed: true });
     var tw = tp + pre.len + 0.35;
     var len = singHymnLine(h, P, R, line, next, tw, v, li, "lined", { noOrgan: true, gain: 0.95 });
     return (tw - tp) + len + 0.5;
@@ -980,8 +976,7 @@ window.KOLOB = window.KOLOB || {};
           if (!hands.owns(id)) return;
           if (hands.assemblyBegins(tv, ends - tv + 1)) {
             var th = KOLOB.Melody.Motif.theme();
-            emitEvent({ type: "guest", guest: "assembly", stage: "whole-tune", logged: true, theme: th ? th.name : null, hymnId: id, dur: ends - tv,
-                        cat: "visitation", label: "✶ the whole tune, at last", detail: (th ? th.name + " · " : "") + h.nameEn });
+            emitEvent({ type: "guest", guest: "assembly", stage: "whole-tune", logged: true, theme: th ? th.name : null, hymnId: id, dur: ends - tv });
             emitEvent({ type: "payoff", kind: "assembly", section: S.Meeting.section(), hymnId: id });
           }
         });
@@ -993,8 +988,7 @@ window.KOLOB = window.KOLOB || {};
     function closeOf(v, te) {
       var lastLine = vl[vl.length - 1], kind = lastLine.cadence ? lastLine.cadence.kind : "none";
       if (kind && kind !== "none" && kind !== "half") {
-        emitEvent({ type: "cadence", kind: kind, by: "hymn", at: te, hymnId: id, verse: v,
-                    cat: "harmony", label: "∴ " + kind + " cadence", detail: "verse " + (v + 1) + " · " + h.nameEn });
+        emitEvent({ type: "cadence", kind: kind, by: "hymn", at: te, hymnId: id, verse: v });
       }
     }
     function afterVerse(v, te) {
@@ -1040,8 +1034,7 @@ window.KOLOB = window.KOLOB || {};
           singHymnLine(h, P, R, h.amen, null, ta, P.verses - 1, vl.length, "sung", { amen: true, reg: P.verses >= 3 ? "full" : "principal" });
         });
         cueAt("choir", ta + alen, function (tc2) {
-          emitEvent({ type: "cadence", kind: "plagal", by: "hymn", at: tc2, hymnId: id, amen: true,
-                      cat: "harmony", label: "∴ plagal cadence", detail: "A-men · " + h.nameEn });
+          emitEvent({ type: "cadence", kind: "plagal", by: "hymn", at: tc2, hymnId: id, amen: true });
         });
         endAt = ta + alen + 0.6;
       }
@@ -1344,16 +1337,14 @@ window.KOLOB = window.KOLOB || {};
           // (a round's groups going in, one after another)
           cueAt("choir", Math.max(S.now(), t0 + e.t), function () {
             if (!hands.owns(id)) return;
-            emitEvent({ type: "round-entry", hymnId: id, verse: e.verse, entry: e.entry, group: e.group, singers: e.singers,
-                        cat: "verse", label: "⟳ the round: " + e.group + " go in", detail: "entry " + e.entry + " · " + h.nameEn });
+            emitEvent({ type: "round-entry", hymnId: id, verse: e.verse, entry: e.entry, group: e.group, singers: e.singers });
           });
           return;
         }
         if (e.type !== "cast") return;
         cueAt("choir", Math.max(S.now(), t0 + e.t), function () {
           if (!hands.owns(id)) return;
-          var o = { type: "cast", memberId: e.memberId, nameDs: e.nameDs, action: e.action, role: e.role, actionDs: e.actionDs, hymnId: id,
-                    cat: "cast", label: "✦ " + (KOLOB.Cast.ROLE_NAME[e.role] || e.memberId) + " " + e.action, detail: e.nameDs + " · " + h.nameEn };
+          var o = { type: "cast", memberId: e.memberId, nameDs: e.nameDs, action: e.action, role: e.role, actionDs: e.actionDs, hymnId: id };
           if (e.verse != null) { o.verse = e.verse; o.line = e.line; }
           emitEvent(o);
         });
@@ -1405,8 +1396,7 @@ window.KOLOB = window.KOLOB || {};
     function tellLining(sg, L, t0) {
       var mine = sg.notes.filter(function (n) { return n.liningOut && n.verse === L.verse && n.line === L.line; });
       mine.forEach(function (n) { tellNote(n, t0); });
-      emitEvent({ type: "lining-out", meter: h.meter, syllables: mine.length, hymnId: id, verse: L.verse, line: L.line, composed: true, by: pre0.id, nameDs: pre0.nameDs, start: t0 + L.lined.at,
-                  cat: "verse", label: "☞ the precentor lines out", detail: h.meter + " · line " + (L.line + 1) + " · " + pre0.nameDs + " · " + h.nameEn });
+      emitEvent({ type: "lining-out", meter: h.meter, syllables: mine.length, hymnId: id, verse: L.verse, line: L.line, composed: true, by: pre0.id, nameDs: pre0.nameDs, start: t0 + L.lined.at });
     }
     // the chorister's clock, as the ward's writer keeps it (kolob-cast.js):
     // the verse's beat (a hummed verse a little broader), each line's
@@ -1441,8 +1431,7 @@ window.KOLOB = window.KOLOB || {};
           if (!hands.owns(id)) return;
           if (hands.assemblyBegins(tv, ends - tv + 1)) {
             var th = KOLOB.Melody.Motif.theme();
-            emitEvent({ type: "guest", guest: "assembly", stage: "whole-tune", logged: true, theme: th ? th.name : null, hymnId: id, dur: ends - tv,
-                        cat: "visitation", label: "✶ the whole tune, at last", detail: (th ? th.name + " · " : "") + h.nameEn });
+            emitEvent({ type: "guest", guest: "assembly", stage: "whole-tune", logged: true, theme: th ? th.name : null, hymnId: id, dur: ends - tv });
             emitEvent({ type: "payoff", kind: "assembly", section: S.Meeting.section(), hymnId: id });
           }
         });
@@ -1456,8 +1445,7 @@ window.KOLOB = window.KOLOB || {};
     function closeOf(v, te) {
       var lastLine = vl[vl.length - 1], kind = lastLine.cadence ? lastLine.cadence.kind : "none";
       if (kind && kind !== "none" && kind !== "half") {
-        emitEvent({ type: "cadence", kind: kind, by: "hymn", at: te, hymnId: id, verse: v,
-                    cat: "harmony", label: "∴ " + kind + " cadence", detail: "verse " + (v + 1) + " · " + h.nameEn });
+        emitEvent({ type: "cadence", kind: kind, by: "hymn", at: te, hymnId: id, verse: v });
       }
     }
     function after(v, te) {
@@ -1527,8 +1515,7 @@ window.KOLOB = window.KOLOB || {};
         if (far) { var fa = far.amen(ta, beatS); if (fa) hands.until(id, fa); }
         cueAt("choir", ta + alen, function (tc2) {
           if (!hands.owns(id)) return;
-          emitEvent({ type: "cadence", kind: "plagal", by: "hymn", at: tc2, hymnId: id, amen: true,
-                      cat: "harmony", label: "∴ plagal cadence", detail: "A-men · " + h.nameEn });
+          emitEvent({ type: "cadence", kind: "plagal", by: "hymn", at: tc2, hymnId: id, amen: true });
         });
         endAt = ta + alen + 0.6;
       }
@@ -1538,8 +1525,7 @@ window.KOLOB = window.KOLOB || {};
         var tt = endAt + 0.4 * beatS, tg = piece("tag", tt), tlen = tg.end, tk = h.tag.cadence ? h.tag.cadence.kind : "authentic";
         cueAt("choir", tt + tlen, function (tc3) {
           if (!hands.owns(id)) return;
-          emitEvent({ type: "cadence", kind: tk, by: "hymn", at: tc3, hymnId: id, tag: true,
-                      cat: "harmony", label: "∴ " + tk + " cadence", detail: "the tag · " + h.nameEn });
+          emitEvent({ type: "cadence", kind: tk, by: "hymn", at: tc3, hymnId: id, tag: true });
         });
         endAt = tt + tlen + 0.8;
       }
@@ -1592,7 +1578,7 @@ window.KOLOB = window.KOLOB || {};
     var id = h.id, hands = S.Meeting.hands, W = theWard();
     if (!h.partner.combined || !h.partner.firstTune) {
       cueAt("choir", Math.max(S.now(), tv - 0.01), function () {
-        if (hands.owns(id)) emitEvent({ type: "partner", hymnId: id, of: h.partner.of, by: "none", combined: false, verse: v, cat: "verse", label: "⚭ the partner hymn (not combined)", detail: h.nameEn });
+        if (hands.owns(id)) emitEvent({ type: "partner", hymnId: id, of: h.partner.of, by: "none", combined: false, verse: v });
       });
       return;
     }
@@ -1625,11 +1611,10 @@ window.KOLOB = window.KOLOB || {};
     }
     cueAt("choir", Math.max(S.now(), tv - 0.01), function () {
       if (!hands.owns(id)) return;
-      emitEvent({ type: "partner", hymnId: id, of: h.partner.of, by: by, combined: true, verse: v, player: player ? player.id : "organist",
-                  cat: "verse", label: "⚭ the first hymn against it", detail: (byOrgan ? "the organ's trumpet" : "a cornet") + " · " + h.nameEn });
+      emitEvent({ type: "partner", hymnId: id, of: h.partner.of, by: by, combined: true, verse: v, player: player ? player.id : "organist" });
       emitEvent({ type: "payoff", kind: "partner", section: S.Meeting.section(), hymnId: id });
       if (player) emitEvent({ type: "cast", memberId: player.id, nameDs: player.nameDs, action: "plays the first hymn on the cornet", role: null, hymnId: id, verse: v, line: 0,
-                              actionDs: Cs().ACTION_DS["plays the first hymn on the cornet"] || null, cat: "cast", label: "✦ a man of the ward plays the first hymn on the cornet", detail: player.nameDs + " · " + h.nameEn });
+                              actionDs: Cs().ACTION_DS["plays the first hymn on the cornet"] || null });
     });
     if (byOrgan) {
       var notes = ev.map(function (e) { return { at: +e.at.toFixed(3), dur: +e.dur.toFixed(3), m: mzOf(e), part: "S", v: 1 }; });
@@ -1682,8 +1667,7 @@ window.KOLOB = window.KOLOB || {};
     var starter = plan2.refrain.starter ? W.byId[plan2.refrain.starter] : null;
     cueAt("choir", Math.max(S.now(), t0 - 0.01), function () {
       if (!alive()) return;
-      emitEvent({ type: "refrain", refrainId: rh.id, statement: stmt.k, after: stmt.after, dox: !!stmt.dox, by: starter ? starter.nameDs : null, key: stmt.key, dialect: rh.dialect,
-                  cat: "verse", label: "↺ the refrain" + (stmt.dox ? ", unprompted" : stmt.k === 0 ? ", begun by one voice" : ", again"), detail: (rh.nameEn || "") + " · " + stmt.key });
+      emitEvent({ type: "refrain", refrainId: rh.id, statement: stmt.k, after: stmt.after, dox: !!stmt.dox, by: starter ? starter.nameDs : null, key: stmt.key, dialect: rh.dialect });
       if (stmt.dox) emitEvent({ type: "payoff", kind: "refrain", section: S.Meeting.section(), hymnId: ownerId });
     });
     plan2.verses.forEach(function (Pv, v) {
@@ -1704,8 +1688,7 @@ window.KOLOB = window.KOLOB || {};
       if (e.type !== "cast") return;
       cueAt("choir", Math.max(S.now(), t0 + e.t), function () {
         if (!alive()) return;
-        emitEvent({ type: "cast", memberId: e.memberId, nameDs: e.nameDs, action: e.action, role: e.role, actionDs: e.actionDs, hymnId: h.id, verse: e.verse, line: e.line,
-                    cat: "cast", label: "✦ " + (KOLOB.Cast.ROLE_NAME[e.role] || e.memberId) + " " + e.action, detail: e.nameDs + " · the refrain" });
+        emitEvent({ type: "cast", memberId: e.memberId, nameDs: e.nameDs, action: e.action, role: e.role, actionDs: e.actionDs, hymnId: h.id, verse: e.verse, line: e.line });
       });
     });
     cueAt("choir", Math.max(S.now(), t0 - AHEAD_S - 0.01), function () {
@@ -1802,13 +1785,11 @@ window.KOLOB = window.KOLOB || {};
     cueAt("choir", Math.max(S.now(), tc - AHEAD_S), function () {
       if (!hands.owns(h.id)) return;
       told.forEach(function (x) { emitNote("choir", x[0], tc + x[1], x[2], x[3]); });
-      emitEvent({ type: "fuging", entries: entries, stagger: stagger, hymnId: h.id, head: head.map(function (n) { return n.deg; }), by: "ward",
-                  cat: "fuging", label: "⁂ fuging entry ×" + entries, detail: "stagger " + stagger.toFixed(1) + "s · on the hymn's head · the ward's sections · " + h.nameEn });
+      emitEvent({ type: "fuging", entries: entries, stagger: stagger, hymnId: h.id, head: head.map(function (n) { return n.deg; }), by: "ward" });
     });
     cueAt("choir", tc + cadAt + cd, function (tq) {
       if (!hands.owns(h.id)) return;
-      emitEvent({ type: "cadence", kind: kind, by: "fuging", at: tq, hymnId: h.id,
-                  cat: "harmony", label: "∴ " + kind + " cadence", detail: "the fuging gathers" });
+      emitEvent({ type: "cadence", kind: kind, by: "fuging", at: tq, hymnId: h.id });
     });
     return cadAt + cd * 2.6;
   }
