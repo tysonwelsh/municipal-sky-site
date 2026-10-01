@@ -7,10 +7,10 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
 
 ## The refactor
 
-- **`PLAN-REFACTOR.md`** (2026-10-01; §2.6 and §2.1 built): the owner asked for a plan to improve
+- **`PLAN-REFACTOR.md`** (2026-10-01; §2.6, §2.1 and §2.2 built): the owner asked for a plan to improve
   efficiency, reliability and maintainability without changing what is heard or seen. Its §2 is
   a list of real faults (a cue that threw ended its layer for the visit — built; a stillness that
-  survives STOP; STOP's own race; errors swallowed silently) and is worth doing first.
+  survived STOP — built; STOP's own race; errors swallowed silently) and is worth doing first.
 
 ## Ideas approved, not built
 
