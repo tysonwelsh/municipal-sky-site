@@ -636,6 +636,7 @@
     }
     if (!svg || !after) return;
     var cur = svg.__jdFilmstrip;
+    var keep = false;
     if (cur && cur.bar.parentNode) {
       /* a control built while its scene was still off has NO marks to show:
          JD_drawOn finds nothing in a display:none subtree, so arm() fails and
@@ -645,8 +646,21 @@
       var armedM = 0;
       try { armedM = cur.get().M; } catch (e) {}
       if (armedM > 0) return;
-      try { cur.destroy(); } catch (e) {}
-      svg.__jdFilmstrip = null;
+      /* ...but only once it IS up. A drawing that is not rendered (its
+         host display:none) or not visible (the pre-render's hidden host, a
+         real card under its ghost) cannot arm, so a fresh control would be
+         just as empty as this one — and the warm-up fits its hidden cards
+         dozens of times in its first seconds, each rebuild twelve deep
+         clones of the drawing. The unarmed control stays: its row is the same fixed
+         height, so no measurement moves, and the first fit that finds the
+         drawing on screen builds it again and arms it, exactly as before.
+         The strays below still go. */
+      if (!svg.getClientRects().length || getComputedStyle(svg).visibility === 'hidden') {
+        keep = true;
+      } else {
+        try { cur.destroy(); } catch (e) {}
+        svg.__jdFilmstrip = null;
+      }
     }
     /* EVERY control in this scene that is not the one for the plate standing
        now goes: a render that replaced the plate, and a ghost still holding
@@ -666,6 +680,7 @@
         b.__svg.__jdFilmstrip = null;
       } else if (b.parentNode) { b.parentNode.removeChild(b); }
     });
+    if (keep) return;
     try {
       window.JD_filmstrip(svg, after, {
         /* autoplay:false, as the cards' own mounts have it — parked at the
@@ -679,11 +694,18 @@
     } catch (e) {}
   }
 
+  /* an UNARMED control (M = 0: built while its card was hidden) is left
+     alone — seeking it would arm it on the spot and park the drawing at
+     mark 0, blank; the fit that builds it afresh parks it finished */
   function finishDrawings(card) {
     [].forEach.call(card.querySelectorAll('svg'), function (svg) {
       var fs = svg.__jdFilmstrip;
       if (!fs) return;
-      try { fs.pause(); fs.seekMark(fs.get().M); } catch (e) {}
+      try {
+        fs.pause();
+        var M = fs.get().M;
+        if (M > 0) fs.seekMark(M);
+      } catch (e) {}
     });
   }
 
@@ -780,14 +802,30 @@
      inlined SVGs, a re-render after the payload lands) can still be settling
      three seconds in */
   var FIT_AT = [60, 140, 260, 420, 640, 900, 1250, 1700, 2300, 3000];
+  /* ONE LADDER PER BURST: a card that lands is asked for its ladder by
+     every hand that touched it in the same moment (the warm-up lands the
+     report card's every view in one loop, then the step lands one again),
+     and identical ladders queued within a few ms of each other only fit
+     the same card twice at each rung. The first stands for the rest. */
   function fitSoon(host) {
     fitCard(host);
+    var now = Date.now();
+    if (host.__fitSoonAt != null && now - host.__fitSoonAt < 10) return;
+    host.__fitSoonAt = now;
     FIT_AT.forEach(function (ms) {
       setTimeout(function () { fitCard(host); }, ms);
     });
   }
 
-  /* and whenever the card itself resizes, however late */
+  /* and whenever the card itself resizes, however late. (Both the card and
+     its inner panel are watched, so one change usually arrives as two
+     entries and fits the host twice. That is load-bearing as it stands: the
+     second fit finds the new height already recorded and re-derives the
+     scale, so fitCard's "a card that grew does not get smaller" hold lasts
+     only until then. Collapsing the pair would let the hold stand — an
+     unfolded definition on the succulent's card would stay at k 1.000
+     instead of 0.960, overflowing the pane — a visible change, and the
+     owner's call.) */
   var ro = window.ResizeObserver ? new ResizeObserver(function (entries) {
     for (var i = 0; i < entries.length; i++) {
       var host = entries[i].target.closest('[data-scene-pane]');
@@ -807,9 +845,13 @@
     if (inner && !inner.__jdWatched) { inner.__jdWatched = true; ro.observe(inner); }
   }
 
+  /* every scene host, fitted again: a resize, and the harness's refit() */
+  function refitAll() {
+    Object.keys(sceneEls).forEach(function (k) { fitCard(sceneEls[k]); });
+  }
   window.addEventListener('resize', function () {
     spanCache = null;
-    Object.keys(sceneEls).forEach(function (k) { fitCard(sceneEls[k]); });
+    refitAll();
   });
 
   /* ---- re-parenting a scrim into the pane --------------------------------
@@ -2759,6 +2801,6 @@
     scene: function () { return curScene; },
     step: function () { return curStep; },
     handoff: handoff,
-    refit: function () { Object.keys(sceneEls).forEach(function (k) { fitCard(sceneEls[k]); }); }
+    refit: function () { refitAll(); }
   };
 })();
