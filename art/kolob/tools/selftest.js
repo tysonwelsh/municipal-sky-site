@@ -62,6 +62,12 @@
 //    GATHER of the same seed between writes them for the meeting it calls
 //    again, which is the fresh run's record for record; and the pacing moves
 //    no record.
+// 12. A listener's fault is told (PLAN-REFACTOR §2.4): a note listener and an
+//    event listener with a bug in them (badlistener=note,event), each
+//    throwing at everything it is handed, are passed over and told — one
+//    console.error the first time, then one at every thousandth, naming the
+//    listener and the layer or the type it threw on — and the music and the
+//    harness's own listeners go on: the dump is the clean run's.
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -206,6 +212,9 @@ function check(name, ok, detail) {
     [22, 130, ["stop=120", "play=120.3", "stop=120.5"]],
     [7, 60, ["desk=0.5", "stop=0.7"]], [7, 110, ["desk=0.5", "stop=0.7", "play=1"]], [7, 110, ["desk=0.5", "stop=0.7", "reseed=7@0.7", "play=1"]], [7, 110, ["desk=0.5"]], [7, 110, []],
   ].map(([seed, secs, flags], i) => R.renderSet({ engine, seeds: [seed], secs, flags, dir: path.join(tmp, "race-" + i), quiet: true }).then((x) => x.results[0])));
+  // …and §12's (PLAN-REFACTOR §2.4): the bad listeners, held against §11's
+  // plain run of the same length
+  const badListener = R.renderSet({ engine, seeds: [7], secs: 110, flags: ["badlistener=note,event"], dir: path.join(tmp, "badlistener"), quiet: true }).then((x) => x.results[0]);
   console.log("6. the count (seed 3, 1200 s)");
   const long = await R.renderSet({ engine, seeds: [3], secs: 1200, dir: path.join(tmp, "long"), quiet: true });
   const L3 = D.readDump(long.results[0].dump);
@@ -385,6 +394,23 @@ function check(name, ok, detail) {
       !!hg && !!hs && hg.whileStopped === 0 && hg.unwritten === 0 && hg.posted === hs.posted && dg.at < 0, said(hg) + " · " + told(dg));
     const same = recs(paced).map((x) => JSON.stringify(x)).join("\n") === F.map((x) => JSON.stringify(x)).join("\n");
     check("… and the pacing moves no record (desk=0.5 against the plain run, 110 s)", same, same ? F.length + " records, identical" : "NOT identical");
+  }
+
+  console.log("12. a listener's fault is told, not swallowed (PLAN-REFACTOR §2.4)");
+  {
+    const bl = await badListener, fresh = (await race)[8];
+    const log = fs.readFileSync(bl.log, "utf8");
+    const line = (k) => { const m = new RegExp("^badlistener=" + k + ": the listener threw at (\\d+) " + k + "\\(s\\); the engine told it (\\d+) time\\(s\\) by console\\.error(?:, the first at ([\\d.]+) s: (.*))?$", "m").exec(log); return m ? { thrown: +m[1], told: +m[2], first: m[4] || null } : null; };
+    const said = (x) => x ? "threw at " + x.thrown + ", told " + x.told + " time(s)" + (x.first ? ": " + x.first : " — swallowed") : "no badlistener line";
+    const clean = /^errors: 0 caught · 0 console\.error$/m.test(log) && /PASS/.test(bl.verdict || "");
+    [["note", /^Kolob: the note listener 2 threw \(on a note of the [\w-]+\)$/], ["event", /^Kolob: the event listener 2 threw \(on a [\w-]+ event\)$/]].forEach(([k, re]) => {
+      const x = line(k);
+      check("badlistener=" + k + ": its fault is told the first time and at every thousandth, naming the listener and the " + (k === "note" ? "layer" : "type") + ", and kept out of the run's errors",
+        !!x && x.thrown > 0 && x.told === 1 + Math.floor(x.thrown / 1000) && re.test(x.first || "") && clean, said(x));
+    });
+    const recs = (r) => fs.readFileSync(r.dump, "utf8").split("\n").filter((l) => l && !l.startsWith('["H"'));
+    const same = recs(bl).join("\n") === recs(fresh).join("\n");
+    check("… and the music and the harness's own listeners go on: the dump is the clean run's, record for record", same, same ? recs(fresh).length + " records, identical" : "NOT identical");
   }
 
   fs.rmSync(tmp, { recursive: true, force: true });

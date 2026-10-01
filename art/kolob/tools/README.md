@@ -129,7 +129,8 @@ stops with the harness's `LOAD` error.
 ```sh
 node _harness.js <secs> <seed> [ives] [razz] [cumulative] [force=<guest>] [exp=<spec>]
                  [stop=<secs>,…] [play=<secs>,…] [reseed=<seed>@<secs>,…]
-                 [throw=<lane>@<secs>,…] [desk=<secs>] [dump=<file>] [header]
+                 [throw=<lane>@<secs>,…] [badlistener=note|event] [desk=<secs>]
+                 [dump=<file>] [header]
 ```
 
 `art/kolob/_harness.js` (tracked since 2026-10-01) mocks `window` and Web Audio
@@ -239,6 +240,18 @@ own pace (0.12 s, 0.2 s), and the dump and the graph are the clean run's
 (before, the ward's pump stopped — the graph 19,989 nodes where the clean run
 builds 29,537, its notes told all the same — and the organist's, 1,963 notes
 for 2,573). Without `throw=` nothing is wrapped.
+
+**A bad listener.** `badlistener=note` (or `event`, or `note,event`) registers,
+after the harness's own, a note (event) listener with a bug in it: it throws at
+every note (event) it is handed, as a fault in the staff or the minutes would.
+The engine passes it over and tells its fault (`kolob-core.js`, THE FAULTS:
+`console.error("Kolob: the note listener 2 threw (on a note of the organ)", err)`
+the first time, then at every thousandth with its count); each `console.error`
+that carries its throw is filed with it, not among the run's errors, and a line
+says how many it threw and how many the engine told, with the first line told.
+The dump is the clean run's. Seed 7, 300 s: 1,755 notes thrown at and 2 told
+(the first and the thousandth), 91 events and 1 told; before PLAN-REFACTOR §2.4
+the engine told none of them — an empty catch around every listener.
 
 ## The dump format (v1)
 
@@ -612,7 +625,7 @@ the cores, at most 8).
 node tools/selftest.js
 ```
 
-About half a minute, no browser. It checks eleven things: (1) a real dump from
+About half a minute, no browser. It checks twelve things: (1) a real dump from
 this worktree reads as meetings and sections, the witness names the build's own
 list, and the harness names the same engine in the header's `engine` field;
 (2) a synthetic dump in SCORE §6's **typed** vocabulary reads the same way —
@@ -659,8 +672,12 @@ second STOP's doors (its meeting's drone) are disconnected by its own timer;
 and the paced desk (`desk=0.5`) writes nothing while stopped (`stop=0.7`),
 passes the stopped meeting's orders over for the next meeting's (`play=1`),
 writes them for a GATHER of the same seed (`reseed=7@0.7`), whose meeting is
-the fresh run's record for record, and the pacing moves no record. All
-eleven pass on `art/kolob/_harness.js`. Run it after any change to the
+the fresh run's record for record, and the pacing moves no record;
+(12) **a listener's fault is told** (seed 7, 110 s, PLAN-REFACTOR §2.4):
+`badlistener=note,event` — each bad listener's fault is told the first time
+and at every thousandth, naming the listener and the layer or the type it
+threw on, and kept out of the run's errors, and the dump is the clean run's,
+record for record. All twelve pass on `art/kolob/_harness.js`. Run it after any change to the
 engine's events, to the harness or to these tools. It renders into `out/_selftest/` and, like
 every tool, refuses while the engine is being edited.
 

@@ -325,12 +325,16 @@ window.KOLOB.GuestTongues = (function () {
   }
   function sounds(s) { return (s.c ? s.c + "-" : "") + s.v + (s.coda ? "-" + s.coda : ""); }
   function said(s) { return (s.c ? s.c + "-" : "") + s.v; }        // (its consonant and vowel: the closing sound aside)
+  // a fault is told, never hidden (kolob-core.js, THE FAULTS): through the
+  // house's confess, once per what, where the house is loaded; plainly on a
+  // bench without it
+  function confess(what, err) { var S = window.KOLOB._s; if (S && S.confess) S.confess(what, err); else if (typeof console !== "undefined") console.error("Kolob: " + what, err); }
   function dsOf(syls) {
     var C = window.KOLOB.Cast;
     if (!C || !C.deseret) return null;
     var codes = [];
     syls.forEach(function (s) { if (s.c) codes.push(s.c); codes.push(DS_VOWEL[s.v] || "ah"); if (s.coda) codes.push(s.coda); });
-    try { return C.deseret(codes.join("-")); } catch (e) { return null; }
+    try { return C.deseret(codes.join("-")); } catch (e) { confess("a word of the tongue could not be spelt in Deseret", e); return null; }
   }
   // tongue(stream, avoid?) — avoid: {deseret word: 1} the ward's names
   function tongue(stream, avoid) {

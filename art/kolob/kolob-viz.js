@@ -1699,7 +1699,7 @@ window.KolobViz = (function () {
     }
     if (!h.score && K && K.getHymn) {
       var sc = null;
-      try { sc = K.getHymn(id); } catch (e) { sc = null; }
+      try { sc = K.getHymn(id); } catch (e) { sc = null; if (K.confess) K.confess("the staff could not read hymn " + id + " from the hymnal", e); }
       if (sc && sc.lines) {
         h.score = sc;
         ["dialect", "mode", "keyMonzo", "modeOfTime", "melodyPart"].forEach(function (k) { if (h[k] == null && sc[k] != null) h[k] = sc[k]; });
@@ -1771,7 +1771,7 @@ window.KolobViz = (function () {
   function spanBeats(line, next) {
     if (next && next.startBeat != null && line.startBeat != null && next.startBeat > line.startBeat) return next.startBeat - line.startBeat;
     var S = window.KOLOB && window.KOLOB.Score;
-    if (S && S.lineLength) { try { var L = S.lineLength(line); if (L > 0) return L; } catch (e) {} }
+    if (S && S.lineLength) { try { var L = S.lineLength(line); if (L > 0) return L; } catch (e) { if (K && K.confess) K.confess("the staff could not measure a line (it measures by its last note)", e); } }
     var e = 0;
     Object.keys(line.notes).forEach(function (p) { (line.notes[p] || []).forEach(function (n) { e = Math.max(e, n.beat + n.beats); }); });
     return e;

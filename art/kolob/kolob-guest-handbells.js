@@ -443,6 +443,10 @@ window.KOLOB.GuestHandbells = (function () {
   // ==========================================================================
   // PREPARE — the arrangement, ready to ring (pure; itself material)
   // ==========================================================================
+  // a fault is told, never hidden (kolob-core.js, THE FAULTS): through the
+  // house's confess, once per what, where the house is loaded; plainly on a
+  // bench without it
+  function confess(what, err) { var S = window.KOLOB._s; if (S && S.confess) S.confess(what, err); else if (typeof console !== "undefined") console.error("Kolob: " + what, err); }
   function prepare(material, stream) {
     if (material && material.prepared) return material;
     var M = material || {};
@@ -454,7 +458,7 @@ window.KOLOB.GuestHandbells = (function () {
     if (!h && M.piece !== "round" && !M.round && window.KOLOB.Composer && window.PJ2) {
       // no hymn handed over: the choir rings one of the colony's (pure)
       try { h = window.KOLOB.Composer.compose(need(stream).fork("material").fork("hymn"), { dialect: "tabernacle", mode: M.mode ? modeName(M.mode) : undefined }); source = "a hymn composed for the bells"; }
-      catch (e) { h = null; }
+      catch (e) { h = null; confess("the handbells' hymn could not be composed (they ring without one)", e); }
     }
     var piece = M.piece === "round" || M.round ? "round" : M.piece === "hymn" && h ? "hymn" : pieceOf(sh, seat, !!h);
     var mode = modeName((h && h.mode) || M.mode || "ionian");

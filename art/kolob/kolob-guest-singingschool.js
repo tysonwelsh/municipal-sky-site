@@ -282,13 +282,17 @@ window.KOLOB.GuestSingingSchool = (function () {
     });
     return { parts: parts, beats: lineLength(ln), barStart: ln.barStart || 0, fermata: (ln.fermataBeats || []).length ? Math.max.apply(null, ln.fermataBeats) : null };
   }
+  // a fault is told, never hidden (kolob-core.js, THE FAULTS): through the
+  // house's confess, once per what, where the house is loaded; plainly on a
+  // bench without it
+  function confess(what, err) { var S = window.KOLOB._s; if (S && S.confess) S.confess(what, err); else if (typeof console !== "undefined") console.error("Kolob: " + what, err); }
   function prepare(material, stream) {
     if (material && material.prepared) return material;
     var M = material || {};
     var h = M.hymn && M.hymn.lines && M.hymn.lines.length ? M.hymn : null, source = h ? (h.provenance === "earth" ? "an Earth tune" : "the day's first hymn") : null;
     if (!h && window.KOLOB.Composer) {
       try { h = window.KOLOB.Composer.compose(need(stream).fork("material").fork("hymn"), { dialect: "tabernacle", mode: M.mode ? modeName(M.mode) : undefined }); source = "a hymn composed for the practice"; }
-      catch (e) { h = null; }
+      catch (e) { h = null; confess("the singing school's hymn could not be composed", e); }
     }
     if (!h) throw new Error("KOLOB.GuestSingingSchool: a hymn is required (material.hymn), or KOLOB.Composer loaded");
     var K = num(M.keynoteHz, 260);

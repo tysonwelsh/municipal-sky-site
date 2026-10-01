@@ -118,9 +118,15 @@ window.KOLOB.Experimental = (function () {
   try { address = parse(window.location && window.location.search); } catch (e) { address = {}; }
 
   var listeners = [];
+  // a fault is told, never hidden (kolob-core.js, THE FAULTS): through the
+  // house's confess, once per what, where the house is loaded; plainly on a
+  // bench without it
+  function confess(what, err) { var S = window.KOLOB._s; if (S && S.confess) S.confess(what, err); else if (typeof console !== "undefined") console.error("Kolob: " + what, err); }
+  // (a listener that throws is passed over, and the rest still hear of the
+  // change; its fault is told)
   function changed() {
     var snap = snapshot();
-    listeners.slice().forEach(function (fn) { try { fn(snap); } catch (e) { /* a listener's fault is its own */ } });
+    listeners.slice().forEach(function (fn) { try { fn(snap); } catch (e) { confess("a listener to the switches threw", e); } });
   }
   function known(name) {
     if (!DEFAULTS.hasOwnProperty(name)) throw new Error("KOLOB.Experimental: no feature called \"" + name + "\" (known: " + Object.keys(DEFAULTS).join(", ") + ")");

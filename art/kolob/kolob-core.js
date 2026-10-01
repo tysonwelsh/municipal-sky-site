@@ -42,6 +42,7 @@
 // THIS FILE is the house's foundation and its one public face:
 //  · the audio graph — the layers, the two rooms and their blend, the glue
 //    and the master chain (INIT — signal chain, below);
+//  · THE FAULTS — a fault the house lives through is told, never hidden;
 //  · THE DICE — the visit's seed, and every stream forked from it by name;
 //  · THE CLOCK — PJ2.Clock: every cue on the audio clock, at its own time;
 //  · THE DOORS — what a meeting connects into the hall, shut at STOP;
@@ -161,6 +162,51 @@ window.KolobAudio = (function () {
   var masterVolume = 0.6;
 
   // ==========================================================================
+  // THE FAULTS — a fault is logged once, never hidden; cleanup after a node
+  // that may be gone is quiet.
+  // ==========================================================================
+  // A catch that swallows a throw hides a bug where nobody can hear it: a
+  // listener of the page's that throws at every note, a guest's material
+  // fallen back to a sample, a mouth left out of the room. So a fault the
+  // house can live through is still told. confess(what, fn) runs fn and
+  // returns what it returns; if fn throws, confess tells it on the console —
+  // console.error("Kolob: " + what, err) — and returns undefined, so the
+  // caller's fallback stands. Handed the fault instead of a function (a
+  // catch that keeps its own fallback, a promise's refusal, a worker's
+  // word), confess(what, err) tells it the same way. `about` rides on the
+  // line but not on the count: a listener's faults are counted per
+  // listener, whatever note it threw on. A fault that repeats is told the
+  // first time and then at every FAULT_EVERY-th, with its count, per
+  // `what`; the harness fails a run on any console.error, so a fault told
+  // on a clean run fails CI. Lent as S.confess, and on the facade for the
+  // page; a room that may stand on a bench without this one (a guest's
+  // material, the ward's voices, the switches) tells its fault through
+  // S.confess where it finds it, and plainly where it does not.
+  // What stays quiet: cleanup after a node that may already be gone (an
+  // onended disconnect, a chain of the rooms let go) — cleanup(fn),
+  // disconnectEach(nodes) — and a feature test's fallback (an old browser
+  // without a constructor's options), which is not a fault at all.
+  var FAULT_EVERY = 1000;          // told the first time, then every thousandth: a page bug at every note (3,000 a meeting) says so three times a meeting, with its count, not 3,000
+  var faults = {};                 // what → how often it has been confessed
+  function confess(what, fn, about) {
+    if (typeof fn !== "function") return told(what, fn, about);
+    try { return fn(); } catch (err) { told(what, err, about); }
+  }
+  function told(what, err, about) {
+    var k = faults[what] = (faults[what] || 0) + 1;
+    if (k > 1 && k % FAULT_EVERY) return;
+    if (typeof console !== "undefined" && console.error) console.error("Kolob: " + what + (about ? " (" + about + ")" : "") + (k > 1 ? " — " + k + " times now" : ""), err);
+  }
+  // cleanup(fn): fn run, and a throw from it let pass unspoken — for the
+  // cleanup after a node that may already be gone, never for a fault
+  function cleanup(fn) { try { fn(); } catch (e) { /* gone already */ } }
+  // disconnectEach(nodes): each node disconnected on its own, so one that
+  // throws (gone already, or never a node) leaves none of the others connected
+  function disconnectEach(nodes) {
+    for (var i = 0; i < nodes.length; i++) { try { nodes[i].disconnect(); } catch (e) { /* gone already */ } }
+  }
+
+  // ==========================================================================
   // THE DICE — seeded streams (PJ2.Rand; SCORE.md §3). The seed is the visit.
   // ==========================================================================
   // One die for the whole house would let a new envelope jitter in the
@@ -197,7 +243,7 @@ window.KolobAudio = (function () {
         var m = location.search.match(/[?&]seed=(\d+)/);
         if (m) return (parseInt(m[1], 10) >>> 0) || 1847;
       }
-    } catch (e) {}
+    } catch (e) { confess("the address's ?seed= could not be read (the hour chooses the visit)", e); }
     return (Date.now() % 0xffffffff) >>> 0;     // no seed asked for: the hour chooses the visit
   })();
   var root = null;                 // the visit's stream: every fork is born of it
@@ -366,19 +412,24 @@ window.KolobAudio = (function () {
   // of builds older than 2026-09-27.) A guest the minutes must not name (the
   // Hosanna) says logged: false on every event it sends, and on every note
   // the page may not show (a visitor's notes name it: guest, logged).
+  // A listener that throws is passed over for that note or event — the
+  // music and the other listeners go on — and its fault is told (THE
+  // FAULTS: once per listener, then every thousandth, with the layer or the
+  // type it threw on): a bug in the staff or the minutes is seen in the
+  // console, not hidden at every note.
   var noteListeners = [], eventListeners = [];
   function emitNote(layer, freq, startTime, duration, extra) {
     if (HOUSE[layer] && !auditioning && duration > 0) heldByHouse(layer, freq, startTime, duration);
     for (var i = 0; i < noteListeners.length; i++) {
       var n = { layer: layer, freq: freq, startTime: startTime, duration: duration || 0 };
       if (extra) { for (var ek in extra) n[ek] = extra[ek]; }   // e.g. telegraph { marks:[…] }
-      try { noteListeners[i](n); } catch (e) {}
+      try { noteListeners[i](n); } catch (e) { confess("the note listener " + (i + 1) + " threw", e, "on a note of the " + layer); }
     }
   }
   function emitEvent(ev) {
     ev.t = ctx ? now() : 0;                                  // the moment it happens in the music
     for (var i = 0; i < eventListeners.length; i++) {
-      try { eventListeners[i](ev); } catch (e) {}
+      try { eventListeners[i](ev); } catch (e) { confess("the event listener " + (i + 1) + " threw", e, "on a " + (ev.type || "typeless") + " event"); }
     }
   }
 
@@ -389,9 +440,27 @@ window.KolobAudio = (function () {
   //   → voicesBus → glue → master → masterSat (gentle tanh) → compressor → out.
   //   NO grit bus in Zion: brightness comes from voicing and the hall, not
   //   saturation. (The one dangerous component of the siblings, deleted.)
+  // A HOUSE HALF-BUILT is not kept: init() builds once (`if (ctx) return`),
+  // so a throw after the context existed left every later press skipping
+  // the rest of the build and failing on what it never built (the clock,
+  // at PLAY). Now a build that throws lets go of all it made — the context
+  // closed, every handle cleared — and the throw goes on to the press that
+  // asked, so the next press builds the house again from the start. A build
+  // that does not throw is the same build, node for node, in the same order.
   // ==========================================================================
   function init() {
     if (ctx) return;
+    try { build(); }
+    catch (err) {
+      var dead = ctx;
+      ctx = sharedNoiseBuf = masterGain = voicesBus = glueComp = compressorNode = masterSat = bg = null;
+      roomClose = roomWide = roomBlend = droneDuck = choirNear = clock = null;
+      layerGains = {};
+      if (dead) cleanup(function () { var p = dead.close(); if (p && p.then) p.then(null, function () { /* gone already */ }); });
+      throw err;
+    }
+  }
+  function build() {
     ctx = new (window.AudioContext || window.webkitAudioContext)();
 
     var noiseSamples = Math.floor(ctx.sampleRate * NOISE_BUF_DURATION);
@@ -581,7 +650,8 @@ window.KolobAudio = (function () {
     old.wet.gain.setValueAtTime(old.wet.gain.value != null ? old.wet.gain.value : r.spec.wet, t);
     old.wet.gain.linearRampToValueAtTime(0, t + 0.6);
     setTimeout(function () {
-      try { r.send.disconnect(old.pre); old.pre.disconnect(); old.conv.disconnect(); old.wet.disconnect(); } catch (e) {}
+      cleanup(function () { r.send.disconnect(old.pre); });
+      disconnectEach([old.pre, old.conv, old.wet]);
     }, 800);
   }
   // FLUSH THE HALL — a new meeting called after a STOP begins in a silent
@@ -594,7 +664,8 @@ window.KolobAudio = (function () {
       if (!r || !r.chain) return;
       var old = r.chain;
       r.chain = wetChain(r, old.conv.buffer, 0);
-      try { r.send.disconnect(old.pre); old.pre.disconnect(); old.conv.disconnect(); old.wet.disconnect(); } catch (e) {}
+      cleanup(function () { r.send.disconnect(old.pre); });
+      disconnectEach([old.pre, old.conv, old.wet]);
     });
   }
 
@@ -840,17 +911,19 @@ window.KolobAudio = (function () {
   var hallRinging = false;         // a meeting was stopped: its echo is still in the rooms
   function openDoors() { return { pans: {}, field: {}, wide: null, hands: {}, spent: [], ward: null, seats: {} }; }
   function liveDoors() { return doors || (doors = openDoors()); }
+  // (each door is shut on its own, in this order — one that throws, gone
+  // already or never a node, leaves none of the others open: shut in one
+  // try, the first throw left every door after it connected)
   function shutDoors(d) {
-    var k, i;
-    try {
-      for (k in d.pans) for (i = 0; i < d.pans[k].length; i++) d.pans[k][i].disconnect();
-      for (k in d.hands) d.hands[k].disconnect();
-      for (i = 0; i < d.spent.length; i++) d.spent[i].disconnect();
-      for (k in d.field) d.field[k].disconnect();
-      if (d.wide) d.wide.disconnect();
-      for (k in d.seats) d.seats[k].disconnect();
-      if (d.ward) { d.ward.hall.disconnect(); d.ward.near.disconnect(); }
-    } catch (e) {}
+    var k, all = [];
+    for (k in d.pans) all.push.apply(all, d.pans[k]);
+    for (k in d.hands) all.push(d.hands[k]);
+    all.push.apply(all, d.spent);
+    for (k in d.field) all.push(d.field[k]);
+    if (d.wide) all.push(d.wide);
+    for (k in d.seats) all.push(d.seats[k]);
+    if (d.ward) all.push(d.ward.hall, d.ward.near);
+    disconnectEach(all);
   }
   function shutClosingDoors() { while (closing.length) shutDoors(closing.pop()); }
 
@@ -932,7 +1005,7 @@ window.KolobAudio = (function () {
       // doors open (the panners stay wired to the hands, so what went
       // through them can still be traced)
       cueAt("conductor", written + 1, function () {
-        try { h.disconnect(); } catch (e) {}
+        disconnectEach([h]);
         var at = d.spent.indexOf(h); if (at >= 0) d.spent.splice(at, 1);
       });
       layers.push(L);
@@ -1077,7 +1150,7 @@ window.KolobAudio = (function () {
   }
   function audit(layer) {
     if (!S.SCALE.length) rebuildScale();
-    if (ctx.state !== "running") { try { ctx.resume(); } catch (e) {} }
+    if (ctx.state !== "running") askContext("resume", "for an audition");
     if (bg) bg.poke();               // audition while stopped: the <audio> route must be live
     var A = audition();
     var isField = layer.indexOf("field:") === 0;
@@ -1164,10 +1237,29 @@ window.KolobAudio = (function () {
   // ==========================================================================
   // TRANSPORT
   // ==========================================================================
+  // askContext(verb, why): the context asked to resume or to suspend. Both
+  // answer with a promise, and a refusal — a context closed under the page,
+  // a browser that will not wake it without a gesture — is told (THE
+  // FAULTS), never left an unhandled rejection; so is a call that throws.
+  // Returns the promise (null if the call threw), for a caller that waits on
+  // the answer; nothing else waits on it.
+  function askContext(verb, why) {
+    var what = "the audio context would not " + verb + " " + why;
+    var p = confess(what, function () { return ctx[verb](); });
+    if (p && p.then) p.then(null, function (err) { confess(what, err); });
+    return p || null;
+  }
   function play() {
     init();
     if (playing) { if (paused) resume(); return; }   // PLAY on a held meeting lets it go on
-    if (ctx.state !== "running") { try { ctx.resume(); } catch (e) {} }
+    // (a context that will not wake is told, and PLAY goes on all the same:
+    // the answer comes after the press, and a context refused now is often
+    // woken soon — background-audio.js kicks it at the next touch, focus or
+    // return to the page. Until then the clock pumps against the frozen
+    // audio clock: the downbeat's first window is written, nothing more
+    // falls due and nothing sounds; once it wakes, the meeting plays on from
+    // its downbeat. Aborted here, PLAY would leave that wake no meeting)
+    if (ctx.state !== "running") askContext("resume", "at PLAY");
     playing = true;
     if (bg) bg.started();
     clearStopTimer();                // the last STOP's timer is this press's to cancel: its doors are shut here, now
@@ -1240,7 +1332,7 @@ window.KolobAudio = (function () {
       pauseTimer = null;
       if (!paused) return;                         // resumed during the fade
       if (bg) { if (bg.hold) bg.hold(); else bg.stopped(); }   // the element rests, the lock screen shows paused
-      try { if (ctx.state === "running") ctx.suspend(); } catch (e) {}
+      if (ctx.state === "running") askContext("suspend", "at a hold");
     }, PAUSE_FADE * 1000 + 40);
   }
   function resume() {
@@ -1256,9 +1348,10 @@ window.KolobAudio = (function () {
       masterGain.gain.linearRampToValueAtTime(masterVolume, t + PAUSE_FADE);
       if (pump) pump();                            // the clock looks ahead at once
     };
+    // (go runs once the context has answered, yes or no: a refusal is told
+    // by askContext, and the meeting goes on as PLAY's does)
     if (ctx.state !== "running") {
-      var p = null;
-      try { p = ctx.resume(); } catch (e) {}
+      var p = askContext("resume", "at the end of a hold");
       if (p && p.then) p.then(go, go); else go();
     } else go();
   }
@@ -1274,7 +1367,7 @@ window.KolobAudio = (function () {
     if (pauseTimer) { clearTimeout(pauseTimer); pauseTimer = null; }
     if (paused) {                                    // a stop from a hold: let the clock run so the fade can
       paused = false;
-      try { if (ctx && ctx.state !== "running") ctx.resume(); } catch (e) {}
+      if (ctx && ctx.state !== "running") askContext("resume", "to let a held meeting's fade run at STOP");
     }
     if (voicesBus && ctx) {
       var t = ctx.currentTime;
@@ -1330,6 +1423,8 @@ window.KolobAudio = (function () {
   Object.defineProperty(S, "roomBalanceHeld", { enumerable: true, configurable: true, get: function () { return roomBalanceHeld; }, set: function (v) { roomBalanceHeld = v; } });
   Object.defineProperty(S, "roomRampNext", { enumerable: true, configurable: true, get: function () { return roomRampNext; }, set: function (v) { roomRampNext = v; } });
   Object.defineProperty(S, "playing", { enumerable: true, configurable: true, get: function () { return playing; }, set: function (v) { playing = v; } });
+  // a fault told, never hidden (THE FAULTS)
+  S.confess = confess;
   // the dice and the clock
   S.stream = stream;
   S.turn = turn;
@@ -1474,6 +1569,9 @@ window.KolobAudio = (function () {
     organStats: function () { return S.organStats ? S.organStats() : null; },
     setNoteListener: function (fn) { noteListeners.push(fn); },
     setEventListener: function (fn) { eventListeners.push(fn); },
+    // the page's own faults, told the house's way (THE FAULTS): confess(what,
+    // fn) runs fn and tells a throw; confess(what, err) tells a fault caught
+    confess: confess,
     // on: true (a guest, drawn as the switch draws it), false, or — dev, the
     // harness and the labs — a guest's name ("bands", "steeples", "oldtune")
     setForceVisitation: function (on) { S.forceVisitation = typeof on === "string" ? on : !!on; },

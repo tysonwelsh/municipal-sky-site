@@ -51,7 +51,8 @@ getAudioTime skipToSection getMotifStats getCumulativeOdds getCumulativeMode
 setCumulativeMode setForceVisitation isForceVisitation setForceRaspberry
 getOldTunes`), the hymnal (`getHymnal getHymn hymnalStats clockHealth`), the
 ward (`getWard wardStats`), the organ (`getOrganist
-organStats`), the bus (`setNoteListener setEventListener`),
+organStats`), the bus (`setNoteListener setEventListener`), the faults
+(`confess`: the page's own, told the house's way, §6),
 the rooms (`getRooms setRoom preloadRoomIR setRoomBalance setLayerDepth
 attachAnalyser`). One number lives in one place: a rate the page shows is
 read from the engine (`getCumulativeOdds` → `kolob-meeting.js`
@@ -522,6 +523,19 @@ false` (`GuestHosanna.ENGRAVE_HYMN` is false: the owner's ruling, audio-only);
 the conductor's `visit` is null while it sounds. The table of unlogged guests
 is `UNLOGGED` in `kolob-meeting.js` (`{hosanna: true}`), read as a guest
 arrives.
+
+**A listener that throws** is passed over for that note or event — the music
+and the other listeners go on — and its fault is told:
+`console.error("Kolob: the note listener 2 threw (on a note of the organ)", err)`,
+the first time and then at every thousandth, with its count (`kolob-core.js`,
+THE FAULTS: `confess`, lent as `S.confess` and on the facade). Every fault the
+house lives through is told so — a guest's material fallen back, a voice that
+would not join the room, a context that would not resume, a hymn the worker
+could not write (a worker that fails altogether says so once, by
+`console.warn`, and its hymns take the idle road) — and only the cleanup after
+a node that may already be gone, and a feature test's fallback, stay quiet.
+The harness fails a run on any `console.error`, so a fault told on a clean run
+fails CI.
 
 **The staff's intake** (`kolob-viz.js onNote`): a note on `band`, `telegraph`
 (with marks), a spoken `voice`, the new guest layers (`fiddle`, `handcart`,

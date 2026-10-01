@@ -611,6 +611,11 @@ window.KOLOB.VoicesVocal = (function () {
     };
   }
 
+  // a fault is told, never hidden (kolob-core.js, THE FAULTS): through the
+  // house's confess, once per what, where the house is loaded; plainly on a
+  // bench without it
+  function confess(what, err) { var S = window.KOLOB._s; if (S && S.confess) S.confess(what, err); else if (typeof console !== "undefined") console.error("Kolob: " + what, err); }
+
   // --------------------------------------------------------------------------
   // renderLine — the one renderer. A "throat" of nVoices people (1 for a
   // singer, 2–4 for a desk) shares one mud guard, one tilt and one set of
@@ -1104,7 +1109,8 @@ window.KOLOB.VoicesVocal = (function () {
       spans.forEach(function (sp, i) {
         queueArm(ctx, sp[0] - 0.05, function () {
           st.latest = i;
-          if (!st.on) { try { l[0].connect(l[1]); st.on = true; ctx.__kolobJoined = (ctx.__kolobJoined || 0) + 1; } catch (e) { /* gone */ } }
+          // (a way that will not join leaves a mouth out of the room: told)
+          if (!st.on) { try { l[0].connect(l[1]); st.on = true; ctx.__kolobJoined = (ctx.__kolobJoined || 0) + 1; } catch (e) { confess("a mouth of the ward could not be joined to the room", e); } }
         });
         if (sp[1] < Infinity) queuePart(ctx, sp[1] + RING, function () {
           if (st.latest !== i || !st.on) return;

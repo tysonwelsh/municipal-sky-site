@@ -545,14 +545,30 @@ window.KOLOB = window.KOLOB || {};
       worker = new Worker(URL.createObjectURL(new Blob([src], { type: "text/javascript" })));
       workerState = "loading";
       worker.onmessage = onWorker;
-      worker.onerror = function (e) { if (e && e.preventDefault) e.preventDefault(); failWorker(); };
+      // (cancelled, so the error is told once — by failWorker's warning,
+      // with its message; left alone, the browser would report it a second
+      // time in the page, as an uncaught error from no line of ours)
+      worker.onerror = function (e) { if (e && e.preventDefault) e.preventDefault(); failWorker("stopped on an error", e && e.message); };
       worker.postMessage({ type: "load", urls: urls });
-    } catch (e) { failWorker(); }
+    } catch (e) { failWorker("could not be started", e && e.message || String(e)); }
     return backend();
   }
-  function failWorker() {
+  // THE WORKER LET GO. A worker that fails — it could not be started (a
+  // page whose policy refuses a worker made from a blob), it could not load
+  // the composer's rooms, or it stopped on an error — hands its waiting
+  // hymns to the idle road, and the page is told: one console.warn for each
+  // way it failed, with the error's own words (a warning, not an error: the
+  // meeting is not harmed, its hymns are written on the main thread). A page
+  // with no Worker at all, or no script tags to find the rooms by (a bench),
+  // takes the idle road from the start and says nothing: that is not a fault.
+  var workerTold = {};
+  function failWorker(how, msg) {
     workerState = "failed";
-    try { if (worker) worker.terminate(); } catch (e) {}
+    if (!workerTold[how] && typeof console !== "undefined" && console.warn) {
+      workerTold[how] = true;
+      console.warn("Kolob: the composer's worker " + how + (msg ? " (" + msg + ")" : "") + " — its hymns are written on the main thread's idle road instead");
+    }
+    try { if (worker) worker.terminate(); } catch (e) { if (S.confess) S.confess("the composer's worker could not be stopped", e); }
     worker = null;
     // whatever was waiting on the worker is written in the idle road instead
     order.forEach(function (k) { var j = jobs[k]; if (j && j.state === "posted") j.state = "queued"; });
@@ -561,7 +577,7 @@ window.KOLOB = window.KOLOB || {};
   function onWorker(e) {
     var m = e.data || {};
     if (m.type === "loaded") {
-      if (!m.ok) { failWorker(); return; }
+      if (!m.ok) { failWorker("could not load the composer's rooms", m.error || "no KOLOB.Composer after the load"); return; }
       workerState = "ready";
       return;
     }
@@ -569,7 +585,12 @@ window.KOLOB = window.KOLOB || {};
     var t0 = clock();
     var j = jobs[m.key];
     if (!j || j.hymn) return;                    // (written here already, while it was on its way)
-    if (m.error || !m.hymn) { j.state = "queued"; j.error = m.error; st.failed++; armIdle(); return; }
+    if (m.error || !m.hymn) {
+      // (counted and written again on the idle road; the fault is told, by its key)
+      j.state = "queued"; j.error = m.error; st.failed++;
+      if (S.confess) S.confess("the composer's worker could not write " + m.key, m.error || "no hymn came back");
+      armIdle(); return;
+    }
     j.hymn = m.hymn; j.state = "done"; j.ms = m.ms; j.how = "worker";
     st.composed++; st.byWorker++; st.workerMs.push(Math.round(m.ms));
     st.receiveMs.push(+(clock() - t0).toFixed(2));

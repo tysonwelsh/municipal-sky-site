@@ -1130,7 +1130,7 @@ window.KOLOB = window.KOLOB || {};
         });
       });
     });
-    cueAt("choir", tv + endAt + 4, function () { try { band.dispose(); } catch (e) {} });
+    cueAt("choir", tv + endAt + 4, function () { S.confess("the cornet could not be let go", function () { band.dispose(); }); });
   }
 
   // ==========================================================================

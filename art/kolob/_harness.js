@@ -22,7 +22,7 @@
 //   node _harness.js <secs> <seed> [ives] [razz] [cumulative] [force=<guest>]
 //                    [exp=<spec>] [stop=<secs>,…] [play=<secs>,…]
 //                    [reseed=<seed>@<secs>,…] [throw=<lane>@<secs>,…]
-//                    [desk=<secs>] [dump=<file>] [header]
+//                    [badlistener=note|event] [desk=<secs>] [dump=<file>] [header]
 //
 //   ives          KolobAudio.setForceVisitation(true)   — the Ives switch
 //   force=<name>  KolobAudio.setForceVisitation(name)   — one named guest
@@ -47,6 +47,11 @@
 //                 drone, choir, organ, …) at or after that time throws an
 //                 Error, once (THE FAULT INJECTION, below); a comma list for
 //                 several (throw=drone@120,choir@200)
+//   badlistener=note|event  a fault in the page: a note (or an event)
+//                 listener, registered after the harness's own, that throws
+//                 at every note (event) it is handed, as a bug in the staff or
+//                 the minutes would (THE BAD LISTENER, below); both with
+//                 badlistener=note,event
 //   desk=<secs>   the hymnal's idle road paced: each of its slices (one hymn
 //                 written on the main thread) comes <secs> after the one
 //                 before, as a browser's comes after the hymn before it took
@@ -112,7 +117,9 @@
 // it poured: that warning is expected), each printed on its own line. With
 // throw=, the injected throws: when each fired, who reported it, and how
 // many cues its lane ran after it; an injected throw is not an error of the
-// run. With a script, the presses' timers (THE PRESSES' TIMERS, below) and,
+// run. With badlistener=, how many notes (events) the bad listener threw at
+// and how many times the engine told it, with the first line told; those
+// console.errors are not the run's errors either. With a script, the presses' timers (THE PRESSES' TIMERS, below) and,
 // on the hymnal's line, the hymns written while the transport stood stopped
 // and the orders never written.
 // A module that fails to load prints "LOAD <file>: <error>" (run.js reads
@@ -135,7 +142,7 @@ const argv = process.argv.slice(2);
 let RUN = parseFloat(argv[0] || "300");
 if (!isFinite(RUN) || RUN <= 0) RUN = 300;
 const SEED = (parseInt(argv[1] || "1847", 10) >>> 0) || 1847;
-const OPT = { ives: false, razz: false, cumulative: false, force: null, exp: null, dump: null, header: false, script: [], throws: [], desk: null };
+const OPT = { ives: false, razz: false, cumulative: false, force: null, exp: null, dump: null, header: false, script: [], throws: [], desk: null, bad: {} };
 const FLAGS = [];                                // the switches, as given, for the header
 const unknownFlags = [];
 const notes = [];                                // a switch understood but not played, and why
@@ -168,6 +175,12 @@ for (let i = 2; i < argv.length; i++) {
       const m = /^([A-Za-z][\w-]*)@(\d+(?:\.\d+)?)$/.exec(s.trim());
       if (m) OPT.throws.push({ lane: m[1], at: +m[2], spec: m[1] + "@" + m[2] });
       else notes.push("throw=" + s + " is not <lane>@<secs>: not injected");
+    });
+  } else if (a.indexOf("badlistener=") === 0) {
+    a.slice(12).split(",").forEach((s) => {
+      const k = s.trim();
+      if (k === "note" || k === "event") OPT.bad[k] = { kind: k, thrown: 0, told: 0, first: null, at: null };
+      else notes.push("badlistener=" + s + " is not note or event: not registered");
     });
   } else if (a.indexOf("desk=") === 0) {
     const d = Number(a.slice(5));
@@ -615,6 +628,8 @@ console.warn = function () {
 console.error = function () {
   const j = injectionIn(arguments);
   if (j) { j.reported = j.reported || "console.error"; return; }
+  const b = Array.prototype.find.call(arguments, (a) => a && a.harnessBadListener);
+  if (b) { const bl = b.harnessBadListener; bl.told++; if (bl.first == null) { bl.first = String(arguments[0]); bl.at = musicNow(); } return; }
   const err = Array.prototype.find.call(arguments, (a) => a instanceof Error);
   consoleErrors.push({ t: vnow, msg: fmtArgs(arguments), stack: err && err.stack ? String(err.stack) : "" });
 };
@@ -706,6 +721,23 @@ K.setEventListener(function (ev) {
   if (ev.type === "cadence") count(tally.cadences, ev.kind || "?");
   record("E", t, ev);
 });
+// THE BAD LISTENER (badlistener=note|event): a listener of the page's with
+// a bug in it — registered after the harness's own, so the dump is the
+// clean run's — that throws at every note (event) it is handed. The engine
+// passes it over and tells its fault (kolob-core.js, THE FAULTS: once per
+// listener, then every thousandth); each console.error that carries its
+// throw is filed with it, as an injected throw is, not among the run's
+// errors, and the report says how many it threw and how many the engine
+// told, with the first line told. Told none: the engine swallowed them all.
+Object.keys(OPT.bad).forEach((k) => {
+  const b = OPT.bad[k];
+  K[k === "note" ? "setNoteListener" : "setEventListener"](function () {
+    b.thrown++;
+    const e = new Error("the harness's bad " + k + " listener (badlistener=" + k + ")");
+    e.harnessBadListener = b;
+    throw e;
+  });
+});
 
 // the switches, before PLAY (the planner reads them when the meeting is called)
 if (OPT.ives && K.setForceVisitation) K.setForceVisitation(true);
@@ -778,9 +810,9 @@ if (typeof K.getSeed === "function" && K.getSeed() !== SEED && typeof K.reseed =
   if (lateCues) fails.push(health.late + " late cue(s)");
   if (fatal) fails.push("the run was cut short");
 
-  const SWITCHES = FLAGS.filter((f) => !/^(stop|play|reseed|throw)=/.test(f));   // the script and the throws have their own say
+  const SWITCHES = FLAGS.filter((f) => !/^(stop|play|reseed|throw|badlistener)=/.test(f));   // the script, the throws and the bad listener have their own say
   L("=== KOLOB harness ===  seed " + SEED + " · " + RUN + " s" + (SWITCHES.length ? " · flags " + SWITCHES.join(",") : "") +
-    (OPT.script.length ? " · script " + OPT.script.map((s) => s.act + (s.act === "reseed" ? " " + s.seed : "") + "@" + s.t).join(" ") : "") + (INJ.length ? " · throw " + INJ.map((j) => j.spec).join(",") : "") +
+    (OPT.script.length ? " · script " + OPT.script.map((s) => s.act + (s.act === "reseed" ? " " + s.seed : "") + "@" + s.t).join(" ") : "") + (INJ.length ? " · throw " + INJ.map((j) => j.spec).join(",") : "") + (Object.keys(OPT.bad).length ? " · badlistener " + Object.keys(OPT.bad).join(",") : "") +
     (OPT.dump ? " · dump " + path.resolve(OPT.dump) + (OPT.header ? " (header)" : "") : ""));
   L("engine: " + loaded.length + " module" + (loaded.length === 1 ? "" : "s") + " from " + ENGINE_DIR + (LEGACY ? " (single-file " + path.basename(LEGACY) + ")" : " (the list in " + LIST.from + ")") + " · fingerprint " + FINGERPRINT);
   if (unknownFlags.length) L("note: unknown flag(s) " + unknownFlags.join(", ") + " (passed to the header, otherwise ignored)");
@@ -809,6 +841,11 @@ if (typeof K.getSeed === "function" && K.getSeed() !== SEED && typeof K.reseed =
         " · the " + j.lane + " lane ran " + j.after + " cue(s) after it" + (j.after ? ", the first at " + j.firstAfter.toFixed(3) + " s" : "") + " (" + j.before + " before)" +
         " · the meeting began " + tally.sections.filter((x) => x.t > j.t).length + " section(s) after it")));
   }
+  Object.keys(OPT.bad).forEach((k) => {
+    const b = OPT.bad[k];
+    L("badlistener=" + k + ": the listener threw at " + b.thrown + " " + k + "(s); the engine told it " + b.told + " time(s) by console.error" +
+      (b.first != null ? ", the first at " + b.at.toFixed(3) + " s: " + b.first : " — it swallowed every one"));
+  });
   if (OPT.script.length) {
     // THE PRESSES' TIMERS: what each press armed, and what became of it
     const pts = [...pressTimers.values()], fired = pts.filter((x) => x.state === "fired");

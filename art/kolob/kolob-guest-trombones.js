@@ -869,6 +869,11 @@ window.KOLOB.GuestTrombones = (function () {
     return best;
   }
 
+  // a fault is told, never hidden (kolob-core.js, THE FAULTS): through the
+  // house's confess, once per what, where the house is loaded; plainly on a
+  // bench without it
+  function confess(what, err) { var S = window.KOLOB._s; if (S && S.confess) S.confess(what, err); else if (typeof console !== "undefined") console.error("Kolob: " + what, err); }
+
   // chorale(material) → { mode, keynoteHz, lines: [{parts:{B,T,A,S}, beats}],
   //   source, octave, voices, prepared: true }
   // What it returns is itself material: handed back (to plan, score or
@@ -915,7 +920,7 @@ window.KOLOB.GuestTrombones = (function () {
         }).filter(function (ln) { return ln.length; });
         if (idxLines.length) { lines = fromChords(mode, K, harmonize(mode, idxLines), { voiced: true }); source = "melody, harmonized here"; }
       }
-    } catch (e) { lines = null; }
+    } catch (e) { lines = null; confess("the trombones' material could not be read (they play the sample)", e); }
     if (!lines || !lines.length || !lines.some(function (l) { return l.beats > 0; })) {
       var smp = sampleMaterial(mode, K);
       var sl = smp.melodyLines.map(function (ln) { return ln.map(function (x) { return { idx: fromD7(mode, x.deg), beats: x.beats }; }); });
