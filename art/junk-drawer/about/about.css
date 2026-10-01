@@ -87,9 +87,9 @@
 .jd-about--live .jd-scene-ghost {
   position: absolute; top: 0; left: 0;
   pointer-events: none;
+  visibility: visible;
 }
 .jd-about--live .jd-scene.has-ghost > .jd-inline-card:not(.jd-scene-ghost) { visibility: hidden; }
-.jd-about--live .jd-scene-ghost { visibility: visible; }
 /* a ghost is a still picture: nothing in it may animate or transition. A
    clone restarts every animation its original had finished (a card's
    entrance, a drawing's draw-on), so without this the stand-in itself moved
@@ -197,7 +197,23 @@
 /* ---- the three cards, flowed inline -------------------------------------
    Each card normally mounts as a fixed, full-screen scrim over a dark
    backdrop. In the pane it becomes an ordinary block: no fixed position, no
-   backdrop, no z-index of its own, no reserved band for the site banner. */
+   backdrop, no z-index of its own, no reserved band for the site banner.
+
+   THE CARDS RENDER AT FULL SIZE, THEN SCALE.
+   First attempt re-armed the cards' PHONE layouts against the pane width
+   (container queries), because the pane was 770px and the report card's
+   two-column grid wants 924px. That fixed the clipping and broke the point
+   of the page: the phone layout is one column with full-width artwork, so
+   the succulent came out enormous, the card grew too tall to see at once,
+   and the survey's labels were cut — none of it looking like the instrument
+   the drawer actually shows.
+
+   Measured on the live drawer: the report card is 924x496 in two columns of
+   420px + 436px, and the turn card's bench is `min(960px, 100%)`. So the
+   card is given its full 960px to lay out in — exactly the desktop layout a
+   visitor sees — and about-scenes.js then scales the whole thing to fit the
+   pane. Same card, same proportions, just smaller. (The hosts below narrow
+   it to 740px, 700px for the charts.) */
 .jd-about .jd-inline-card {
   position: static;
   inset: auto;
@@ -205,8 +221,30 @@
   padding: 0;
   background: none;
   display: block;
-  width: 100%;
   max-height: none;
+  width: 960px;
+  transform-origin: top left;
+  will-change: transform;
+  /* ONE SPACING SCALE FOR BOTH CARDS. The two-column band was arrived at by
+     moving pieces around rather than by designing it, and it showed: the
+     filmstrip sat 8px under the plate, close enough to read as touching the
+     artwork's grid. These are the three gaps the layout actually has —
+     between the columns, between blocks stacked in a column, and between
+     the band and the full-width rows under it — set once and referred to
+     everywhere below, so a change lands in one place. */
+  --ab-gap-col: 22px;
+  /* the step between blocks stacked in a column — and specifically the air
+     ABOVE the filmstrip. At 14px the scrubber's top all but touched the box
+     holding the drawing while 40px of nothing sat under it: the control read
+     as belonging to whatever came next instead of to the picture it scrubs.
+     It wants more room above than it had and less below than the seam gave
+     it, so the two numbers move toward each other. */
+  --ab-gap-row: 15px;
+  /* the seam. Going from two columns to full width is the single biggest
+     structural change on the card, and at 20px it read as just another gap —
+     the eye had no stop before the table. It gets its own, larger step. */
+  --ab-gap-band: 26px;
+  --ab-pad: 18px;
 }
 /* the cards' own close controls point at a modal that isn't one here */
 .jd-about .jd-inline-card .jd-turn-close,
@@ -244,75 +282,33 @@
   overflow: visible;
 }
 
-/* THE CARDS RENDER AT FULL SIZE, THEN SCALE.
-   First attempt re-armed the cards' PHONE layouts against the pane width
-   (container queries), because the pane was 770px and the report card's
-   two-column grid wants 924px. That fixed the clipping and broke the point
-   of the page: the phone layout is one column with full-width artwork, so
-   the succulent came out enormous, the card grew too tall to see at once,
-   and the survey's labels were cut — none of it looking like the instrument
-   the drawer actually shows.
+/* THE INSTRUMENT (owner, 2026-09-15 to 09-29). In the drawer the turn card
+   is landscape at 960px; here it is 740px and laid out as ONE grid — see
+   "THE INSTRUMENT, RE-LAID" further down, which places every piece. Three
+   earlier layouts led there (a portrait stack, 09-15; the drawer's own
+   landscape grid back, 09-17; only the prompt beside the drawing, 09-17);
+   what they leave standing is below: the card's width, the scroller's
+   padding, the seam above the ratings, the filmstrip's step under the
+   drawing, and the two column wrappers flattened to display:contents so
+   that their children are items of that grid.
 
-   Measured on the live drawer: the report card is 924x496 in two columns of
-   420px + 436px, and the turn card's bench is `min(960px, 100%)`. So the
-   card is given its full 960px to lay out in — exactly the desktop layout a
-   visitor sees — and about-scenes.js then scales the whole thing to fit the
-   pane. Same card, same proportions, just smaller. */
-.jd-about .jd-inline-card {
-  width: 960px;
-  transform-origin: top left;
-  will-change: transform;
-}
-
-/* THE INSTRUMENT STANDS UP (owner, 2026-09-15). In the drawer the turn card
-   is landscape — drawing on the left, paperwork on the right — which needs
-   960px and, scaled into this pane, left the questions cramped. Here it is
-   rebuilt PORTRAIT: the drawing, then the prompt, then the questions,
-   stacked down a 660px card. That is the drawer's own phone arrangement,
-   and it is reached the drawer's own way — the three bench wrappers go
-   display:contents and the DOM's source order IS the portrait order — but
-   keyed to this page rather than to a narrow viewport, because the
-   viewport here is wide and only the pane is narrow.
-
-   (A side-by-side band — drawing left, prompt right, half each — was tried
-   the same day and taken back: the owner wanted the drawing larger and the
-   prompt under it, as before, "just a little better positioned". So the
-   plate is a step bigger than the first cut's 330px, centred, and the
-   prompt panel runs the full width beneath it.) */
+   Two things the earlier layouts learned and the drawer's own rules now
+   carry, which must not be undone here: the plate needs a DEFINITE width
+   (junk-drawer.css gives `.jd-turn-pin .jd-turn-plate` 100% of the pin, and
+   RE-LAID gives the pin var(--plate)) — `width: auto` with a max-width makes
+   it content-sized around an svg that sizes off the plate, and the circle
+   collapsed to 2x2px, the artwork gone; and NO aspect-ratio on the plate —
+   .jd-turn-art carries its own 1/1, and the plate also holds the filmstrip
+   under the art, which a forced square left hanging off its bottom edge. */
 .jd-about [data-scene-pane="instrument"] .jd-inline-card { width: 740px; }
-.jd-about .jd-inline-card .jd-turn[data-view="bench"] {
-  width: 100%;
-  height: auto;
-}
-/* SIDE BY SIDE AGAIN (owner, 2026-09-17): "the prompt is to the right of the
-   SVG image … the SVG image and the timeline on the left". The wrappers went
-   display:contents on 2026-09-15 to stack the card into a portrait; taking
-   that off hands the bench back its OWN landscape grid from junk-drawer.css
-   (`grid-template-columns: var(--plate) minmax(280px, 1fr)`), which is this
-   layout already. Only the plate width is set here. */
-.jd-about [data-scene-pane="instrument"] .jd-inline-card .jd-turn { --plate: 330px; }
 .jd-about .jd-inline-card .jd-turn[data-view="bench"] .jd-turn-scroll {
-  display: block;
   padding: var(--ab-pad);
 }
-/* ONLY THE PROMPT RIDES BESIDE THE DRAWING (owner, 2026-09-17). The whole
-   right column beside the plate was the first cut of this; the ratings and
-   the buttons go back under the pair, spanning the card as they did. So the
-   two wrappers flatten to display:contents and every grandchild becomes an
-   item of ONE grid: the plate takes row 2 column 1, the prompt row 2 column
-   2, and everything after them is placed full width, which lands it on row 3
-   and down in source order. */
-.jd-about .jd-inline-card .jd-bench {
-  display: grid;
-  grid-template-columns: var(--plate) minmax(0, 1fr);
-  column-gap: var(--ab-gap-col);
-  /* NO row-gap. Every rating row is a grid row of its own, so a row-gap here
-     is not the band's seam — it is 40px inserted between every pair of rows,
-     which is exactly the "way too tall and awkward" the owner reported. The
-     seam is a margin on the one element that starts the full-width zone. */
-  row-gap: 0;
-  align-items: start;
-}
+/* NO row-gap on the grid. Every rating row is a grid row of its own, so a
+   row-gap is not the band's seam — it is 40px inserted between every pair
+   of rows, which is exactly the "way too tall and awkward" the owner
+   reported. The seam is a margin on the one element that starts the
+   full-width zone: */
 .jd-about .jd-inline-card .jd-bench-r > .jd-row--head { margin-top: var(--ab-gap-band); }
 /* the bench keeps its control INSIDE the plate, under the artwork — same
    step away from the picture as the record card's */
@@ -322,50 +318,6 @@
 }
 .jd-about .jd-inline-card .jd-bench-l,
 .jd-about .jd-inline-card .jd-bench-r { display: contents; }
-.jd-about .jd-inline-card .jd-bench-l > *,
-.jd-about .jd-inline-card .jd-bench-r > * { grid-column: 1 / -1; }
-.jd-about .jd-inline-card .jd-bench-l > .jd-turn-pin {
-  grid-column: 1; grid-row: 1; align-self: start;
-}
-/* the bench carries no specimen block, so there is nothing to close its
-   column with; the prompt is centred on the drawing instead, which spreads
-   the slack above and below it rather than leaving it all at the foot */
-.jd-about .jd-inline-card .jd-bench-r > .jd-turn-assign {
-  grid-column: 2; grid-row: 1; align-self: center; margin-bottom: 0;
-}
-.jd-about .jd-inline-card .jd-turn-pin {
-  position: static;
-  flex: 0 0 auto;
-  width: 100%;
-  padding: 0;
-  margin: 0;
-  justify-content: center;
-}
-/* THE PLATE NEEDS A DEFINITE WIDTH. `width: auto` with `max-width` looks
-   like the same cap and is not: the plate is a flex item of the pin, so
-   auto means CONTENT-sized, and its content is an svg that sizes off the
-   plate. The circle collapses — measured here at 2x2px, the artwork gone
-   from the card altogether, which is the very speck junk-drawer.css's phone
-   note records WebKit producing for the same reason. A definite width
-   breaks the circle; .jd-turn-art's own 1/1 aspect ratio then sets the
-   height, and the pin (display:flex, justify-content:center) centres it. */
-.jd-about .jd-inline-card .jd-turn-pin .jd-turn-plate {
-  flex: 0 0 auto;
-  width: 100%;
-  max-width: 100%;
-  height: auto;
-  max-height: none;
-  /* NO aspect-ratio here. The square used to be forced onto the plate to give
-     it a height; .jd-turn-art carries its own 1/1 and sizes itself, and since
-     2026-09-16 the plate also holds the filmstrip under the art — a forced
-     square left the control hanging off the plate's bottom edge with nowhere
-     to sit. Height comes from the contents now: art, then control. */
-  margin: 0 auto;
-}
-.jd-about .jd-inline-card .jd-turn[data-view="bench"] .jd-turn-assign {
-  flex: 0 0 auto;
-  margin: 0 0 var(--sp-3);
-}
 
 /* THE REPORT CARD TAKES THE SAME PORTRAIT (owner, 2026-09-15). In the
    drawer the record is landscape at 960px — the photograph in a 420px
@@ -375,28 +327,6 @@
    own phone layout is the source of the move (the column wrappers go
    display:contents, source order is the portrait order), keyed to this
    page instead of to a narrow viewport. */
-/* ---- ONE SPACING SCALE FOR BOTH CARDS ----------------------------------
-   The two-column band was arrived at by moving pieces around rather than by
-   designing it, and it showed: the filmstrip sat 8px under the plate, close
-   enough to read as touching the artwork's grid. These are the three gaps
-   the layout actually has — between the columns, between blocks stacked in a
-   column, and between the band and the full-width rows under it — set once
-   and referred to everywhere below, so a change lands in one place. */
-.jd-about .jd-inline-card {
-  --ab-gap-col: 22px;
-  /* the step between blocks stacked in a column — and specifically the air
-     ABOVE the filmstrip. At 14px the scrubber's top all but touched the box
-     holding the drawing while 40px of nothing sat under it: the control read
-     as belonging to whatever came next instead of to the picture it scrubs.
-     It wants more room above than it had and less below than the seam gave
-     it, so the two numbers move toward each other. */
-  --ab-gap-row: 15px;
-  /* the seam. Going from two columns to full width is the single biggest
-     structural change on the card, and at 20px it read as just another gap —
-     the eye had no stop before the table. It gets its own, larger step. */
-  --ab-gap-band: 26px;
-  --ab-pad: 18px;
-}
 .jd-about [data-scene-pane="record"] .jd-inline-card { width: 740px; }
 /* SIDE BY SIDE AGAIN (owner, 2026-09-17) — same move as the bench above: the
    flex column and the display:contents wrappers are dropped, and the record
@@ -559,14 +489,8 @@
   align-items: start;
   column-gap: 10px; row-gap: 4px;
 }
-.jd-about .jd-inline-card .jd-about-specimen .rc-notes { grid-column: 1; grid-row: 1; }
-.jd-about .jd-inline-card .jd-about-specimen .rc-plate-btns {
-  grid-column: 2; grid-row: 1; align-self: start;
-}
-.jd-about .jd-inline-card .jd-about-specimen .rc-note-no {
-  grid-column: 1 / -1; grid-row: 2;
-}
 .jd-about .jd-inline-card .jd-about-specimen .rc-notes {
+  grid-column: 1; grid-row: 1;
   position: static; max-width: none; left: auto; bottom: auto;
   pointer-events: auto; gap: 2px; width: 100%;
 }
@@ -578,6 +502,7 @@
   text-shadow: none;
 }
 .jd-about .jd-inline-card .jd-about-specimen .rc-note-no {
+  grid-column: 1 / -1; grid-row: 2;
   position: static; right: auto; bottom: auto; max-width: none;
   pointer-events: auto; text-shadow: none; opacity: 0.75;
 }
@@ -587,6 +512,7 @@
    reasoning applies wherever the row ends up. */
 .jd-about .jd-inline-card .jd-about-specimen .rc-draw { display: none; }
 .jd-about .jd-inline-card .jd-about-specimen .rc-plate-btns {
+  grid-column: 2; grid-row: 1; align-self: start;
   position: static; right: auto; bottom: auto;
   justify-content: flex-start; flex-wrap: wrap;
   margin-top: 2px;
@@ -622,12 +548,7 @@
    box with its own key (jd-furniture.js treats this page as it treats a
    narrow viewport for that). The turn-by-turn table is left off. */
 .jd-about [data-scene-pane="analytics"] .jd-inline-card { width: 700px; }
-.jd-about .jd-inline-card .jd-folder-card { width: 100%; }
-.jd-about .jd-inline-card .jd-folder-scroll {
-  display: block;
-  padding: 14px;
-}
-.jd-about .jd-inline-card .fx-card { display: none; }
+.jd-about .jd-inline-card .fx-card { display: none; flex: 0 0 auto; }
 .jd-about [data-scene-pane="analytics"][data-fx="grades"] .fx-grades { display: block; }
 .jd-about .jd-inline-card .fx-turns { display: none; }
 /* one chart, centred in the card, and a little larger than the folder's
@@ -654,7 +575,6 @@
   border: 0;
   border-radius: 0;
   box-shadow: none;
-  max-height: none;
 }
 /* A REAL TAB (owner, 2026-09-16): bigger, and its word bigger with it, the
    way a manila folder's tab stands proud of the sheet. It reaches DOWN
@@ -691,7 +611,6 @@
               3px 6px 12px -4px rgba(6, 3, 0, 0.5);
   overflow: hidden;
 }
-.jd-about .jd-inline-card .fx-card { flex: 0 0 auto; }
 
 /* THE SCROLL LOCK. Opening the turn card sets html.jd-turn-open { overflow:
    hidden } so a modal turn cannot be scrolled behind — correct everywhere
@@ -1067,18 +986,6 @@ html.jd-about-page body > .jd-turn-scrim,
 html.jd-about-page body > .jd-record-scrim,
 html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
 
-/* NO IMMERSIVE MODE HERE. On a phone the drawer page hides the site banner
-   while the drawer fills the screen (junk-drawer.css "IMMERSIVE MODE") and
-   brings it back on scroll. This page's drawer is a pinned pane, not the
-   whole screen: the banner painted, then slid away as the stylesheet
-   landed and the page jumped up under it (owner, 2026-09-26: first-load
-   flashing), and the reader was left without the site's navigation until
-   they scrolled. The banner simply stays. */
-@media (max-width: 768px), (max-height: 500px) {
-  html.jd-about-page body { padding-top: var(--banner-h); }
-  html.jd-about-page .site-banner { transform: none; transition: none; }
-}
-
 /* THE CATEGORIES AS A BULLETED LIST (owner, 2026-09-27). On this page the
    taxonomy step introduces the four categories in a sentence ending "They
    are:" — so they read as a plain list in the step's own type: the name,
@@ -1211,9 +1118,8 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
 }
 /* the multiples: two by two, each panel titled, the name column narrower */
 .jd-about .jdc-multiples {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 26px 30px;
+  display: grid; grid-template-columns: 1.45fr 1fr; gap: 30px 26px;
 }
-.jd-about .jdc-multiples { grid-template-columns: 1.45fr 1fr; gap: 30px 26px; }
 .jd-about .jdc-panel { --jdc-name: 8.6rem; --jdc-val: 2.2rem; }
 .jd-about .jdc-panel.is-right { --jdc-name: 0px; }
 .jd-about .jdc-panel .jdc-row { column-gap: 10px; min-height: 30px; }
@@ -1277,7 +1183,7 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
    and the dots' rings match it. */
 @media (max-width: 768px) {
   .jd-about [data-scene-pane="analytics"] .jd-inline-card { width: 100%; }
-  .jd-about .jd-charts { --jdc-name: 7.2rem; --jdc-val: 2.8rem; padding: 20px 16px 18px; }
+  .jd-about .jd-charts { --jdc-name: 7.2rem; }
   .jd-about .jd-charts-wrap { padding: 4px 14px 22px 8px; }
   .jd-about .jdc-row { column-gap: 8px; min-height: 28px; }
   .jd-about .jdc-name, .jd-about .jdc-val { font-size: 0.78rem; }
@@ -1345,78 +1251,47 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
    scrolls both ways (the page's own scroll resumes at its ends); the head,
    the row numbers and the prompt column hold still. Sticky cells need an
    opaque ground, and the card's base cream reads as a pale block against
-   paper its grain has darkened, so they use the paper as it renders. */
+   paper its grain has darkened, so they use the paper as it renders.
+   The sheet only ever stands in .jd-sheet-card, and since 2026-09-29 its
+   look is IN THE FOLDER'S STYLE (below): what this layer still carries is
+   the skeleton — the scrolling window, the sticky heads, the frozen prompt
+   column and the column widths that layer does not restate. */
 .jd-about .jdc-tablewrap {
-  max-height: 540px;
   overflow: auto;
   border: 1px solid rgba(55, 65, 79, 0.45);
 }
 .jd-about .jdc-tablewrap:focus-visible { outline: 2px solid rgba(55, 65, 79, 0.5); outline-offset: 2px; }
 .jd-about .jdc-sheet {
-  --jdc-grid: rgba(55, 65, 79, 0.22);
-  --jdc-group: rgba(55, 65, 79, 0.55);
-  --jdc-paper: #d9ccac;
-  --jdc-headfill: #cfbf98;
   --jdc-h1: 30px;             /* the model row's height: the column row sticks under it */
   border-collapse: separate; border-spacing: 0;
   table-layout: fixed;
   width: max-content;
   font-family: var(--font-mono);
-  font-size: 0.74rem;
-  color: var(--jdc-ink);
   font-variant-numeric: tabular-nums;
 }
 .jd-about .jdc-sheet th,
 .jd-about .jdc-sheet td {
-  padding: 5px 7px;
-  border-right: 1px solid var(--jdc-grid);
-  border-bottom: 1px solid var(--jdc-grid);
   white-space: nowrap;
   overflow: hidden; text-overflow: ellipsis;
-  line-height: 1.3;
 }
 .jd-about .jdc-sheet th {
   position: sticky; top: 0; z-index: 2;
   background: var(--jdc-headfill);
-  font-weight: 600;
   text-align: left;
-  color: #1f2530;
   text-overflow: clip;
 }
 .jd-about .jdc-sheet tr.jdc-h1 th { height: var(--jdc-h1); box-sizing: border-box; }
 .jd-about .jdc-sheet tr.jdc-h2 th {
   top: var(--jdc-h1);
-  border-bottom: 1px solid rgba(55, 65, 79, 0.5);
   white-space: normal; vertical-align: bottom;
-  font-weight: 400; font-size: 0.66rem;
 }
-.jd-about .jdc-sheet th[rowspan] { border-bottom: 1px solid rgba(55, 65, 79, 0.5); vertical-align: bottom; }
-.jd-about .jdc-sheet .jdc-g-head { text-align: left; border-left: 1px solid var(--jdc-group); }
-.jd-about .jdc-sheet .jdc-g-start { border-left: 1px solid var(--jdc-group); }
-/* the row gutter: numbered, shaded like the head, holding still sideways */
-.jd-about .jdc-sheet .jdc-rn {
-  position: sticky; left: 0; z-index: 1;
-  width: 2.8rem; min-width: 2.8rem; max-width: 2.8rem;
-  text-align: right;
-  background: var(--jdc-headfill);
-  color: rgba(55, 65, 79, 0.75);
-  border-right: 1px solid rgba(55, 65, 79, 0.5);
-}
-.jd-about .jdc-sheet th.jdc-rn { z-index: 4; }
-/* the prompt holds still beside the row numbers as the table scrolls
-   sideways */
+/* the prompt holds still as the table scrolls sideways (the row numbers
+   that once stood beside it are hidden, below) */
 .jd-about .jdc-sheet .jdc-c-prompt {
-  position: sticky; left: 2.8rem; z-index: 1;
+  position: sticky; z-index: 1;
   width: 12rem; min-width: 12rem; max-width: 12rem;
-  background: var(--jdc-paper);
-  border-right: 1px solid rgba(55, 65, 79, 0.5);
 }
-.jd-about .jdc-sheet th.jdc-c-prompt { z-index: 4; background: var(--jdc-headfill); }
-.jd-about .jdc-sheet .jdc-c-num { width: 6.2rem; min-width: 6.2rem; max-width: 6.2rem; text-align: right; }
-.jd-about .jdc-sheet th.jdc-c-num { text-align: right; }
-@media (max-width: 768px), (max-height: 500px) {
-  .jd-about .jdc-sheet .jdc-c-prompt { width: 8.5rem; min-width: 8.5rem; max-width: 8.5rem; }
-}
+.jd-about .jdc-sheet th.jdc-c-prompt { z-index: 4; }
 
 /* THE SHEET ON ITS OWN (owner, 2026-09-27): the table is the whole visual —
    no card, title or subtitle — straight on the white page, as wide as a
@@ -1429,14 +1304,12 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
   background: var(--paper);
 }
 .jd-about .jd-sheet-card .jdc { margin: 0; }
-.jd-about .jd-sheet-card .jdc-tablewrap { max-height: 720px; }
+.jd-about .jd-sheet-card .jdc-tablewrap { max-height: 720px; background: var(--jdc-paper, #efe4c6); }
 /* the rows keep the drawer's cream (owner: "the same kind of beige … that
    fits the theme"): every body cell, frozen or not, on the report card's
-   paper tone, under a deeper head */
-.jd-about .jd-sheet-card .jdc-sheet { --jdc-paper: #efe4c6; --jdc-headfill: #ddd0ad; }
+   paper tone, under a deeper head (--jdc-paper / --jdc-headfill, on the
+   sheet below) */
 .jd-about .jd-sheet-card .jdc-sheet td { background: var(--jdc-paper); }
-.jd-about .jd-sheet-card .jdc-sheet td.jdc-rn { background: var(--jdc-headfill); }
-.jd-about .jd-sheet-card .jdc-tablewrap { background: var(--jdc-paper, #efe4c6); }
 /* IN THE FOLDER'S STYLE (owner, 2026-09-29: "make it look more like the
    table in the analytics folder"): the spreadsheet grid goes — no vertical
    rules, no row-number gutter — for the folder's turn table's grammar:
@@ -1445,8 +1318,9 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
    frozen prompt column and the sticky heads stay, because this sheet
    scrolls both ways and the folder's does not. */
 .jd-about .jd-sheet-card .jdc-sheet {
+  --jdc-paper: #efe4c6;
+  --jdc-headfill: #ddd0ad;
   --jdc-ink: #33240f;
-  --jdc-grid: transparent;
   --jdc-group: rgba(74, 53, 18, 0.28);
   color: var(--jdc-ink);
   font-size: 0.66rem;
@@ -1518,12 +1392,13 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
 }
 .jd-about .jdc-sheet td.jdc-c-prompt { cursor: help; }
 
-/* the Item head's hint: quiet, grey, italic, in the page's text voice */
+/* the Item head's hint: quiet, a size under the head. Its face, italic and
+   colour are the folder-style rule's (above); its SIZE stays here, at this
+   weight (0,3,0), on purpose — the touch rule below swaps the words by
+   setting font-size 0 at the same weight, later, and a size moved into the
+   heavier rule would outrank it and print both hints. */
 .jd-about .jdc-sheet .jdc-hint {
-  font-family: var(--font-body);
-  font-style: italic; font-weight: 400;
-  font-size: 0.72rem; letter-spacing: 0; text-transform: none;
-  color: rgba(55, 65, 79, 0.6);
+  font-size: 0.72rem;
   white-space: nowrap;
 }
 @media (hover: none) {
@@ -1563,11 +1438,15 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
   font-family: var(--font-mono); font-size: 0.7rem; line-height: 1;
   color: #1f2530; font-variant-numeric: tabular-nums;
 }
+/* (a second max-width: 768px block, and it must stay one: the column heads
+   here are `.jdc-ptitle.jdc-hrow-t`, so this block has to come AFTER the
+   base .jdc-hrow-t rule — its white-space beats the base's nowrap — while
+   the first block's .jdc-ptitle margin-bottom has to come BEFORE it, so the
+   base's 4px wins over that 2px. One merged block would flip one of them.
+   The type sizes are the phone block's, further down.) */
 @media (max-width: 768px) {
   .jd-about .jdc-hrow { column-gap: 8px; row-gap: 5px; }
-  .jd-about .jdc-hrow-t { font-size: 0.72rem; white-space: normal; }
-  .jd-about .jdc-hrow-lab { font-size: 0.62rem; }
-  .jd-about .jdc-hrow-n { font-size: 0.6rem; }
+  .jd-about .jdc-hrow-t { white-space: normal; }
 }
 
 /* two charts under one title (the average and the spread): each keeps its
@@ -1627,6 +1506,7 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
 }
 .jd-about [data-scene-pane="instrument"] .jd-inline-card .jd-turn[data-view="bench"] .jd-bench-l > .jd-turn-pin {
   order: 2; width: var(--plate); max-width: 100%; justify-self: center;
+  align-self: start;
 }
 .jd-about [data-scene-pane="instrument"] .jd-inline-card .jd-turn[data-view="bench"] .jd-rail {
   order: 4; grid-column: 1; align-self: center; justify-content: flex-start;
@@ -1679,6 +1559,15 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
     max-width: none; margin: 0; padding: 0;
   }
   .jd-about--live .jd-timeline { display: none; }
+  /* NO IMMERSIVE MODE HERE. On a phone the drawer page hides the site
+     banner while the drawer fills the screen (junk-drawer.css "IMMERSIVE
+     MODE") and brings it back on scroll. This page's drawer is a pinned
+     pane, not the whole screen: the banner painted, then slid away as the
+     stylesheet landed and the page jumped up under it (owner, 2026-09-26:
+     first-load flashing), and the reader was left without the site's
+     navigation until they scrolled. The banner simply stays. */
+  html.jd-about-page body { padding-top: var(--banner-h); }
+  html.jd-about-page .site-banner { transform: none; transition: none; }
   /* the drawer page's own phone page-snap (junk-drawer.css) is written for
      a drawer that IS the screen; here it would snap the page to the stage */
   html.jd-about-page { scroll-snap-type: none; }
@@ -1801,17 +1690,18 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
   /* the pile keeps the picture's sizes: the drawer's phone band (x1.2,
      junk-drawer.css) is for a drawer that fills the screen, and the poster
      was captured at the base size — a woken pile must match it */
-  .jd-about .jd-pile > .jd-item { width: calc(var(--w) * 1cqmin); }
-  /* and a swipe that starts on a woken drawing scrolls the page (a
-     sideways drag still moves it) — the page is for reading first */
-  .jd-about .jd-pile > .jd-item { touch-action: pan-y; }
+  /* — and a swipe that starts on a woken drawing scrolls the page (a
+     sideways drag still moves it): the page is for reading first */
+  .jd-about .jd-pile > .jd-item { width: calc(var(--w) * 1cqmin); touch-action: pan-y; }
   /* THE SPECIMEN'S TAG ON A PHONE (round 2, P1-2): readable (labels 11px,
      buttons 44px tall, their words on two lines), no wider than the well it
      hangs in (the well is a size container: 100cqw is its width), and one
-     line for the name. about-scenes.js keeps it inside the well. */
+     line for the name. about-scenes.js keeps it inside the well. And the
+     tag lets a vertical swipe through to the page (audit P0-1). */
   .jd-about .jd-itemtag {
     --jd-tag-w: min(17rem, calc(100cqw - 12px));
     padding: 0.5rem 0.6rem 0.55rem 1.6rem;
+    touch-action: pan-y;
   }
   .jd-about .jd-itemtag .name {
     font-size: 12px; min-height: 0; -webkit-line-clamp: 2;
@@ -1827,8 +1717,6 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
     font-size: 11px; letter-spacing: 0.06em; line-height: 1.15;
     white-space: normal; padding: 3px 4px;
   }
-  /* the tag lets a vertical swipe through to the page (audit P0-1) */
-  .jd-about .jd-itemtag { touch-action: pan-y; }
 
   /* ---- the cards, in their own phone layouts ---------------------------- */
   .jd-about .jd-ph-card {
@@ -1889,9 +1777,6 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
   .jd-about .jd-ph-card .jd-turn-go { font-size: 11px; }
   .jd-about .jd-ph-card .rc-dl { font-size: 11px; }
   .jd-about .jd-ph-card .rc-note-no { display: none; }
-  /* the frozen columns' sticky grounds covered some row rules */
-  .jd-about .jd-ph-card .jdc-sheet td.jdc-rn,
-  .jd-about .jd-ph-card .jdc-sheet td.jdc-c-prompt { box-shadow: inset 0 -1px 0 var(--jdc-hair); }
 
   /* Gemini and Kimi: the drawing is held — masthead, plate, replay — and
      the card is sized so all three fit the held band at 1:1 */
@@ -1938,6 +1823,7 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
      on the prompt with more specificity than a crop can carry) */
 
   /* ---- scene 4: the table --------------------------------------------- */
+  .jd-about .jdc-sheet .jdc-c-prompt { width: 8.5rem; min-width: 8.5rem; max-width: 8.5rem; }
   .jd-about .jd-sheet-card .jdc-tablewrap { max-height: none; overflow-y: visible; }
   .jd-about .jd-ph-card.jd-ph-clip .jdc-sheet tbody tr:nth-child(n + 11) { display: none; }
   .jd-about .jd-ph-card .jdc-turns { position: relative; }
@@ -1962,10 +1848,13 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
   }
   .jd-about .jdc-sheet .jdc-hint::after { font-size: 12px; }
 
-  /* the item names wrap to two lines rather than cut at fourteen letters */
+  /* the item names wrap to two lines rather than cut at fourteen letters;
+     and the frozen column's sticky ground covered some row rules, so its
+     own hairline is drawn on it */
   .jd-about .jd-ph-card .jdc-sheet td.jdc-c-prompt {
     white-space: normal; text-overflow: clip;
     line-height: 1.25; padding-top: 5px; padding-bottom: 5px;
+    box-shadow: inset 0 -1px 0 var(--jdc-hair);
   }
   /* the charts' small print, at or over 11px; the value column wide enough
      for "3.1 n 104" on one line (audit P2-5) */
