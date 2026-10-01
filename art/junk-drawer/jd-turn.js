@@ -37,11 +37,11 @@
   var API_RATE = '/api/jd-rate.php';
   var API_TITLE = '/api/jd-title.php';
   var K_TURN = 'jd-turn-v1', K_CONSENT = 'jd-consent-v1';
-  var K_ITEMS = 'jd-user-items-v1', K_SCATTER = 'jd-scatter-v2';
+  var K_ITEMS = 'jd-user-items-v1';   /* the scatter map's key is jd-core's JD_SCATTER_KEY */
+  /* MAX_PROMPT mirrors JD_PROMPT_MAX_CHARS in api/jd-config.php (500) — change both together */
   var MAX_PROMPT = 500, MAX_NOTE = 500, MAX_ITEMS = 5;
   var SLOW_MS = 60000;      /* past a minute the wait earns its own line */
   var VISITOR_TIER = 'm';   /* every won item is filed "m" (C5.3) */
-  var ROT_MAX = 34;         /* the pile's scatter rotation range, ± degrees */
 
   var payload = null;       /* the data.php payload — the survey renders from it */
   var scrim = null, card = null, headEl = null, bodyEl = null, confirmEl = null;
@@ -152,10 +152,11 @@
   }
   /* the pile loader hands the payload over on success; if the drawer itself
      failed to load, the survey fetches its own copy rather than inventing a
-     rubric (C5.4 step 5) */
+     rubric (C5.4 step 5) — the full payload: no ?slim=1 here, even on a
+     page that set JD_SLIM */
   function ensurePayload() {
     if (payload) return Promise.resolve(payload);
-    return fetch(JD_API + '/art/junk-drawer/data.php')
+    return fetch(JD_API + JD_DATA_URL)
       .then(function (r) {
         if (!r.ok) throw new Error('data.php ' + r.status);
         return r.json();
@@ -211,8 +212,7 @@
          never torn down and never needs rebinding. */
       '<header class="jd-turn-head"><div class="jd-turn-headline"></div>' +
       '<button type="button" class="jd-turn-close" aria-label="close">' +
-      '<svg class="jd-x-mark" viewBox="0 0 18 18" aria-hidden="true" focusable="false">' +
-      '<path d="M1 1 17 17M17 1 1 17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></header>' +
+      JD_X_MARK + '</button></header>' +
       '<div class="jd-turn-scroll"></div></div>';
     document.body.appendChild(scrim);
     card = scrim.querySelector('.jd-turn');
@@ -950,8 +950,7 @@
       window.JD_svgInst(s.svg, 'juz' + slot + (instSeq++) + '_') +
       '</div>' +
       '<button type="button" class="rc-zoom-close rc-zoom-keep" aria-label="close">' +
-      '<svg class="jd-x-mark" viewBox="0 0 18 18" aria-hidden="true" focusable="false">' +
-      '<path d="M1 1 17 17M17 1 1 17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>' +
+      JD_X_MARK + '</button>' +
       '<div class="rc-plate-btns rc-zoom-keep">' +
       '<button type="button" class="rc-draw" title="watch the drawing draw itself again" ' +
       'aria-label="Replay drawing ' + slot.toUpperCase() + '">' +
@@ -2687,7 +2686,7 @@
     }
     /* position: the visitor's own scatter entry, reused across reloads the
        way every other item's is */
-    var map = JD_store.get(K_SCATTER) || {};
+    var map = JD_store.get(JD_SCATTER_KEY) || {};
     var p = map[rec.gen_id];
     /* the pile's rect and the item's, read once for both uses below (a
        fresh spot, the corner push) — nothing between them writes */
@@ -2698,7 +2697,7 @@
     if (!p) {
       p = freshSpot(host_, r_);
       map[rec.gen_id] = p;
-      JD_store.set(K_SCATTER, map);
+      JD_store.set(JD_SCATTER_KEY, map);
     }
     /* pushed clear of the turn button's reserved corner at apply time, same as
        the curated pile — a stored spot can predate the rule or a viewport
@@ -2737,12 +2736,12 @@
     var hw = Math.min(0.45, (r.width || 40) / 2 / (host.width || 1));
     var hh = Math.min(0.45, (r.height || 40) / 2 / (host.height || 1));
     function inside(half) {
-      var lo = half + 0.012, span = Math.max(0, 1 - 2 * lo);
+      var lo = half + JD_SCATTER_INSET, span = Math.max(0, 1 - 2 * lo);
       return +(lo + Math.random() * span).toFixed(4);
     }
     return {
       x: inside(hw), y: inside(hh),
-      rot: +((Math.random() * 2 - 1) * ROT_MAX).toFixed(1),
+      rot: +((Math.random() * 2 - 1) * JD_ROT_MAX).toFixed(1),
       z: 100
     };
   }
