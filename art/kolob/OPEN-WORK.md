@@ -5,6 +5,13 @@ line on what it would take. Written 2026-10-01 at v0.36.2; every "not built" bel
 checked against the code that day (a grep that finds nothing is named). The owner's
 rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
 
+## The refactor
+
+- **`PLAN-REFACTOR.md`** (2026-10-01, nothing built): the owner asked for a plan to improve
+  efficiency, reliability and maintainability without changing what is heard or seen. Its §2 is
+  a list of real faults (a cue that throws ends its layer for the visit; a stillness that
+  survives STOP; STOP's own race; errors swallowed silently) and is worth doing first.
+
 ## Ideas approved, not built
 
 - **The drone as a waveform on the staff** — the owner's own request
