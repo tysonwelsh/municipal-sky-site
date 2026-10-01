@@ -8,6 +8,13 @@
 // or credentials needed here. CLI-only: refuses web requests so the public
 // /api/ URL can't be used to trigger emails.
 //
+// TWO EDITIONS (owner, 2026-10-01: a daily overview should carry only what
+// moves day to day; the slow-moving breakdowns are for asking):
+//   the daily  — skyline, pulse, pages, today's onobot and drawer activity
+//                with every prompt, new signups, and anything broken
+//   the full   — everything below. Sent on $WEEKLY_DAY (Monday) in place of
+//                the daily, or any time with --full; --lean forces the daily.
+//
 // WHAT IT COVERS (all of it aggregate counts the site already keeps, or
 // data the privacy policy says is stored — nothing new is collected here):
 //   · the skyline — 14 days of page views drawn as a city, with the moon
@@ -45,6 +52,7 @@
 //                  block glyphs, flip $ASCII below to make this permanent)
 //   --hours=N      look-back window for the "24h" columns (default 24)
 //   --to=ADDR      send to a different address (a test run)
+//   --full         the long version (every section); --lean the daily
 
 if (php_sapi_name() !== 'cli') {
     http_response_code(403);
@@ -56,7 +64,7 @@ $T0 = microtime(true);
 // ─────────────────────────────────────────────────────────────
 // Settings
 // ─────────────────────────────────────────────────────────────
-$opts  = getopt('', ['no-mail', 'demo', 'html::', 'ascii', 'hours::', 'to::']);
+$opts  = getopt('', ['no-mail', 'demo', 'html::', 'ascii', 'hours::', 'to::', 'full', 'lean']);
 $H     = max(1, (int) ($opts['hours'] ?? 24));     // look-back window, hours
 $TO    = $opts['to'] ?? 'tysonwelsh@gmail.com';
 $FROM  = 'onobot@municipalsky.com';                 // a domain address improves deliverability
@@ -67,6 +75,8 @@ $DEMO  = isset($opts['demo']);
 $SEND  = !isset($opts['no-mail']);
 $SITE  = 'https://municipalsky.com';
 $PING  = ['/', '/art/junk-drawer/', '/api/health.php'];  // self-check targets
+$WEEKLY_DAY = 1;   // ISO weekday that gets the full edition unasked (1 = Monday; 0 = never)
+$FULL  = isset($opts['full']) || (!isset($opts['lean']) && $WEEKLY_DAY > 0 && (int) date('N') === $WEEKLY_DAY);
 
 // Geolocation of onobot session IPs via ip-api.com. NOTE: this sends the
 // visitor's raw IP to a third party the privacy policy does not name (§3
@@ -324,9 +334,10 @@ $D = [
                    'prompts' => [], 'models' => ['a' => '', 'b' => '']],
     'jd'       => ['v24' => 0, 'u24' => 0, 'av24' => 0, 'io24' => 0, 'vall' => 0, 'uall' => 0, 'ioall' => 0,
                    'funnel' => ['open' => 0, 'submit' => 0, 'done' => 0, 'err' => 0], 'funnel_all' => ['open' => 0, 'submit' => 0, 'done' => 0, 'err' => 0],
-                   'errors7' => [], 'turns' => ['t24' => 0, 'tprev' => 0, 't7' => 0, 'tall' => 0, 'rated' => 0, 'rated24' => 0, 'failed' => 0],
+                   'errors24' => [], 'errors7' => [], 'turns' => ['t24' => 0, 'tprev' => 0, 't7' => 0, 'tall' => 0, 'rated' => 0, 'rated24' => 0, 'failed' => 0],
                    'devices' => null, 'returning' => null, 'firsts' => [], 'firsts_n' => 0, 'firsts_n24' => 0,
                    'spend' => [], 'spend_total' => ['w24' => 0.0, 'w7' => 0.0, 'all' => 0.0], 'unpriced' => 0, 'priced' => 0,
+                   'health24' => ['ok' => 0, 'failed' => 0, 'rejected' => 0, 'disobeyed' => 0, 'n' => 0],
                    'health7' => ['ok' => 0, 'failed' => 0, 'rejected' => 0, 'disobeyed' => 0, 'n' => 0],
                    'latency7' => [], 'items24' => [], 'prompts' => []],
     'subs'     => ['n24' => 0, 'n7' => 0, 'total' => 0, 'active' => 0, 'rows' => [], 'sources' => []],
@@ -384,7 +395,7 @@ if ($DEMO) {
                       ['timestamp' => date('Y-m-d') . ' 01:02:00', 'geo' => 'Lyon, Auvergne-Rhône-Alpes', 'user_message' => 'the printing press in the basement of the Freeman\'s Journal, as Bloom hears it']]]);
     $D['jd'] = array_merge($D['jd'], ['v24' => 18, 'u24' => 12, 'av24' => 1, 'io24' => 41, 'vall' => 1204, 'uall' => 900, 'ioall' => 3310,
         'funnel' => ['open' => 9, 'submit' => 4, 'done' => 3, 'err' => 1], 'funnel_all' => ['open' => 402, 'submit' => 171, 'done' => 148, 'err' => 23],
-        'errors7' => ['provider_timeout' => 2, 'daily_limit' => 1],
+        'errors24' => ['provider_timeout' => 1], 'errors7' => ['provider_timeout' => 2, 'daily_limit' => 1],
         'turns' => ['t24' => 3, 'tprev' => 3, 't7' => 11, 'tall' => 148, 'rated' => 112, 'rated24' => 2, 'failed' => 4],
         'devices' => 61, 'returning' => 14,
         'firsts' => ['claude-opus-5' => ['f24' => 2, 'fall' => 37], 'gpt-5-1' => ['f24' => 1, 'fall' => 21], 'gemini-3-1-pro' => ['f24' => 0, 'fall' => 20], 'kimi-k3' => ['f24' => 0, 'fall' => 19]],
@@ -392,6 +403,7 @@ if ($DEMO) {
         'spend' => ['claude-opus-5' => ['w24' => 0.21, 'w7' => 1.02, 'all' => 18.40, 'n' => 150], 'gpt-5-1' => ['w24' => 0.09, 'w7' => 0.51, 'all' => 9.10, 'n' => 150],
                     'gemini-3-1-pro' => ['w24' => 0.07, 'w7' => 0.38, 'all' => 6.90, 'n' => 150], 'kimi-k3' => ['w24' => 0.04, 'w7' => 0.22, 'all' => 3.80, 'n' => 150]],
         'spend_total' => ['w24' => 0.41, 'w7' => 2.13, 'all' => 38.20], 'unpriced' => 3, 'priced' => 597,
+        'health24' => ['ok' => 11, 'failed' => 1, 'rejected' => 0, 'disobeyed' => 1, 'n' => 12],
         'health7' => ['ok' => 42, 'failed' => 1, 'rejected' => 1, 'disobeyed' => 2, 'n' => 44],
         'latency7' => ['claude-opus-5' => 14200, 'gpt-5-1' => 22000, 'kimi-k3' => 9800, 'gemini-3-1-pro' => 17100],
         'items24' => [['title' => 'Shirt button', 'n' => 3], ['title' => 'Paperclip', 'n' => 2], ['title' => 'Pencil stub', 'n' => 1]],
@@ -568,9 +580,11 @@ if ($DEMO) {
         foreach (['v24', 'u24', 'av24', 'io24', 'vall', 'uall', 'ioall'] as $k) $D['jd'][$k] = $i($r, $k);
         $D['jd']['funnel']     = ['open' => $i($r, 'o24'), 'submit' => $i($r, 's24'), 'done' => $i($r, 'd24'), 'err' => $i($r, 'e24')];
         $D['jd']['funnel_all'] = ['open' => $i($r, 'oall'), 'submit' => $i($r, 'sall'), 'done' => $i($r, 'dall'), 'err' => $i($r, 'eall')];
-        foreach ($q("SELECT COALESCE(label, '(unlabelled)') l, COUNT(*) n FROM page_events
-                     WHERE page = 'junk-drawer' AND event_type = 'turn_error' AND {$wv['w7']} GROUP BY l ORDER BY n DESC") as $e) {
-            $D['jd']['errors7'][$e['l']] = (int) $e['n'];
+        foreach (['errors24' => $wv['w24'], 'errors7' => $wv['w7']] as $key => $window) {
+            foreach ($q("SELECT COALESCE(label, '(unlabelled)') l, COUNT(*) n FROM page_events
+                         WHERE page = 'junk-drawer' AND event_type = 'turn_error' AND $window GROUP BY l ORDER BY n DESC") as $e) {
+                $D['jd'][$key][$e['l']] = (int) $e['n'];
+            }
         }
         foreach ($q("SELECT label, COUNT(*) n FROM page_events WHERE page = 'junk-drawer' AND event_type = 'item_open'
                      AND label IS NOT NULL AND {$wv['w24']} GROUP BY label ORDER BY n DESC LIMIT 5") as $e) {
@@ -627,13 +641,14 @@ if ($DEMO) {
                 if ($is7)  { $D['jd']['spend'][$m]['w7']  += $usd; $D['jd']['spend_total']['w7']  += $usd; }
                 if ($is24) { $D['jd']['spend'][$m]['w24'] += $usd; $D['jd']['spend_total']['w24'] += $usd; }
             }
-            if ($is7) {
-                $D['jd']['health7']['n']++;
-                $st = (string) $g['status'];
-                if (isset($D['jd']['health7'][$st])) $D['jd']['health7'][$st]++;
-                if ((int) $g['disobedience'] === 1) $D['jd']['health7']['disobeyed']++;
-                if ($st === 'ok' && $g['latency_ms'] !== null) $lat[$m][] = (int) $g['latency_ms'];
+            $st = (string) $g['status'];
+            foreach (['health7' => $is7, 'health24' => $is24] as $hk => $in) {
+                if (!$in) continue;
+                $D['jd'][$hk]['n']++;
+                if (isset($D['jd'][$hk][$st])) $D['jd'][$hk][$st]++;
+                if ((int) $g['disobedience'] === 1) $D['jd'][$hk]['disobeyed']++;
             }
+            if ($is7 && $st === 'ok' && $g['latency_ms'] !== null) $lat[$m][] = (int) $g['latency_ms'];
         }
         uasort($D['jd']['spend'], function ($a, $b) { return $b['all'] <=> $a['all']; });
         foreach ($lat as $m => $xs) $D['jd']['latency7'][$m] = median($xs);
@@ -679,20 +694,23 @@ if ($DEMO) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Render — every line clipped to $W columns
+// Render — every line clipped to $W columns. $FULL opens the slow-moving
+// blocks; without it only what changed today is printed.
 // ─────────────────────────────────────────────────────────────
 $L = [];
 $out = function ($s = '') use (&$L, $W) { $L[] = clip(rtrim($s), $W); };
 $pulse = $D['pulse'];
 $pv = function ($m, $k) use ($pulse) { return (int) ($pulse[$m][$k] ?? 0); };
+$sep = ' ' . $G['dot'] . ' ';
 
 // ── masthead ──
 $moonIdx = moon_phase_index(time());
 $dateLine = date('D j M Y');
 $inner = $W - 2;
+$edition = $FULL ? (isset($opts['full']) ? 'the long version' : 'the Monday edition') : 'the morning digest';
 $out($G['tl'] . str_repeat($G['h'], $inner) . $G['tr']);
 $out($G['v'] . ' ' . padr('M U N I C I P A L   S K Y', $inner - 2 - mbw($dateLine) - 1) . $dateLine . ' ' . $G['v']);
-$sub = 'the morning digest ' . $G['dot'] . ' ' . $D['hours'] . 'h to ' . $D['now_short'];
+$sub = $edition . $sep . $D['hours'] . 'h to ' . $D['now_short'];
 $moonTxt = $G['moon'][$moonIdx] . ' ' . moon_name($moonIdx);
 $out($G['v'] . ' ' . padr($sub, $inner - 2 - mbw($moonTxt) - 1) . $moonTxt . ' ' . $G['v']);
 $out($G['bl'] . str_repeat($G['h'], $inner) . $G['br']);
@@ -702,7 +720,7 @@ $series = array_map(function ($d) { return (int) $d['v']; }, $D['daily']);
 $n = count($series);
 if ($n > 0) {
     $out();
-    $out(' THE SKYLINE ' . $G['dot'] . ' page views, last ' . $n . ' days (today ' . $G['today'] . ' still rising)');
+    $out(' THE SKYLINE' . $sep . 'page views, last ' . $n . ' days (today ' . $G['today'] . ' still rising)');
     $height = 7; $cw = 3; $gap = 1; $left = 2;
     $max = max(1, max($series));
     $rows = [];
@@ -725,13 +743,13 @@ if ($n > 0) {
     // sky: a few stars and the moon, only where there is no building
     $skyW = $left + $n * ($cw + $gap);
     $seed = crc32(date('Y-m-d'));
-    for ($s = 0; $s < 11; $s++) {
+    for ($st = 0; $st < 11; $st++) {
         $seed = ($seed * 1103515245 + 12345) & 0x7fffffff;
         $rr = $seed % max(1, $height - 2);                  // the upper rows only
         $cc = $left + (($seed >> 8) % max(1, $skyW - $left));
         $row = padr($rows[$rr], $skyW);
         if (mb_substr($row, $cc, 1, 'UTF-8') === ' ' && mb_substr($row, max(0, $cc - 1), 1, 'UTF-8') === ' ') {
-            $rows[$rr] = rtrim(mb_substr($row, 0, $cc, 'UTF-8') . $G['star'][$s % 3] . mb_substr($row, $cc + 1, null, 'UTF-8'));
+            $rows[$rr] = rtrim(mb_substr($row, 0, $cc, 'UTF-8') . $G['star'][$st % 3] . mb_substr($row, $cc + 1, null, 'UTF-8'));
         }
     }
     $mc = $left + ($n - 2) * ($cw + $gap) - 1;              // the gap before the last-but-one tower
@@ -748,9 +766,11 @@ if ($n > 0) {
         $ww .= padr(in_array($wd, ['Sat', 'Sun'], true) ? strtolower(substr($wd, 0, 2)) : substr($wd, 0, 2), $cw + $gap);
     }
     $out($dd); $out($ww); $out($vv);
-    $peak = max($series);
-    $peakDay = $D['daily'][array_search($peak, $series, true)]['d'] ?? '';
-    $out(str_repeat(' ', $left) . 'tallest ' . num($peak) . ' on ' . date('D j M', strtotime($peakDay)) . ' ' . $G['dot'] . ' ' . num(array_sum($series)) . ' views in ' . $n . ' days');
+    if ($FULL) {
+        $peak = max($series);
+        $peakDay = $D['daily'][array_search($peak, $series, true)]['d'] ?? '';
+        $out(str_repeat(' ', $left) . 'tallest ' . num($peak) . ' on ' . date('D j M', strtotime($peakDay)) . $sep . num(array_sum($series)) . ' views in ' . $n . ' days');
+    }
 }
 
 // ── the pulse ──
@@ -763,10 +783,15 @@ foreach (['views', 'visitors', 'plays', 'drawer turns', 'onobot uses', 'signups'
 }
 $rec = $D['records'];
 $bits = [];
-if ($rec['best_v'] > 0) $bits[] = 'best day ' . num($rec['best_v']) . ' (' . date('j M', strtotime($rec['best_d'])) . ')';
+$recent = [date('Y-m-d'), date('Y-m-d', strtotime('-1 day'))];
+if ($rec['best_v'] > 0 && in_array($rec['best_d'], $recent, true)) {
+    $bits[] = $G['star'][0] . ' new best day: ' . num($rec['best_v']) . ' views ' . ($rec['best_d'] === $recent[0] ? 'today, still counting' : 'yesterday');
+} elseif ($FULL && $rec['best_v'] > 0) {
+    $bits[] = 'best day ' . num($rec['best_v']) . ' (' . date('j M', strtotime($rec['best_d'])) . ')';
+}
 if ($rec['streak'] > 0) $bits[] = 'streak ' . num($rec['streak']) . ' day' . ($rec['streak'] === 1 ? '' : 's') . ' with a visitor';
-if ($pv('views', 'all') > 0 && $pv('signups', 'all') > 0) $bits[] = '1 signup per ' . num(round($pv('views', 'all') / $pv('signups', 'all'))) . ' views';
-if ($bits) wrap_out($out, ' ', $bits, ' ' . $G['dot'] . ' ', $W);
+if ($FULL && $pv('views', 'all') > 0 && $pv('signups', 'all') > 0) $bits[] = '1 signup per ' . num(round($pv('views', 'all') / $pv('signups', 'all'))) . ' views';
+if ($bits) wrap_out($out, ' ', $bits, $sep, $W);
 
 // ── pages ──
 $pages = array_filter($D['pages'], function ($k) use ($PUBLIC) { return is_public($k, $PUBLIC); }, ARRAY_FILTER_USE_KEY);
@@ -774,46 +799,43 @@ uasort($pages, function ($a, $b) { return [$b['v24'], $b['v7'], $b['vall']] <=> 
 if ($pages) {
     $out();
     $out(rule('PAGES'));
-    $out(' ' . padr('', 20) . ' ' . padr('views ' . $D['hours'] . 'h', 12) . padl('v', 5) . padl('uniq', 5) . padl('7d', 6) . padl('all', 8));
+    $out(' ' . padr('', 20) . ' ' . padr('views ' . $D['hours'] . 'h', 12) . padl('v', 5) . padl('uniq', 5) . padl('plays', 6) . padl('7d', 6) . padl('all', 8));
     $maxV = max(1, max(array_column($pages, 'v24')));
     $quiet = [];
     foreach ($pages as $k => $p) {
         $name = $PAGE_NAMES[$k] ?? $k;
         if ($p['v24'] === 0 && $p['v7'] === 0) { $quiet[] = $name . ' ' . num($p['vall']); continue; }
-        $out(' ' . padr(trunc($name, 20), 20) . ' ' . hbar($p['v24'], $maxV, 12) . padl(num($p['v24']), 5) . padl(num($p['u24']), 5) . padl(num($p['v7']), 6) . padl(num($p['vall']), 8));
+        $plays = $p['pall'] > 0 ? num($p['p24']) : '';
+        $out(' ' . padr(trunc($name, 20), 20) . ' ' . hbar($p['v24'], $maxV, 12) . padl(num($p['v24']), 5) . padl(num($p['u24']), 5) . padl($plays, 6) . padl(num($p['v7']), 6) . padl(num($p['vall']), 8));
     }
-    if ($quiet) wrap_out($out, ' quiet this week (all-time): ', $quiet, ' ' . $G['dot'] . ' ', $W);
-    if ($D['hidden']) {
-        $hid = array_map(function ($k) use ($PAGE_NAMES) { return $PAGE_NAMES[$k] ?? $k; }, array_unique($D['hidden']));
-        wrap_out($out, ' not listed on an index, not counted: ', $hid, ' ' . $G['dot'] . ' ', $W);
-    }
-    $plays = array_filter($pages, function ($p) { return $p['pall'] > 0 || ($p['dall'] ?? 0) > 0; });
-    if ($plays) {
-        $out(' ' . str_repeat($G['rule'], 22));
-        foreach ($plays as $k => $p) {
-            $name = padr(trunc($PAGE_NAMES[$k] ?? $k, 20), 20);
-            if ($p['pall'] > 0) {
-                $out(' ' . $name . ' plays ' . num($p['p24']) . ' ' . $G['dot'] . ' 7d ' . num($p['p7']) . ' ' . $G['dot'] . ' all ' . num($p['pall']));
-                if (!empty($D['tracks'][$k])) {
-                    $tr = [];
-                    foreach ($D['tracks'][$k] as $label => $t) $tr[] = $label . ' ' . num($t['pall']);
-                    wrap_out($out, ' ' . str_repeat(' ', 20) . ' by track (all) ', $tr, ' ' . $G['dot'] . ' ', $W);
-                }
+    $pr = $pages['pronoun'] ?? null;
+    if ($pr && $pr['d24'] > 0) $out(' ' . padr('Pronoun distribution', 20) . ' ' . num($pr['d24']) . ' chart PNG' . ($pr['d24'] === 1 ? '' : 's') . ' downloaded');
+    if ($FULL) {
+        if ($quiet) wrap_out($out, ' quiet this week (all-time): ', $quiet, $sep, $W);
+        if ($D['hidden']) {
+            $hid = array_map(function ($k) use ($PAGE_NAMES) { return $PAGE_NAMES[$k] ?? $k; }, array_unique($D['hidden']));
+            wrap_out($out, ' not listed on an index, not counted: ', $hid, $sep, $W);
+        }
+        $tracked = array_filter(array_keys($pages), function ($k) use ($D) { return !empty($D['tracks'][$k]); });
+        if ($tracked) {
+            $out(' plays by track, all-time');
+            foreach ($tracked as $k) {
+                $tr = [];
+                foreach ($D['tracks'][$k] as $label => $t) $tr[] = $label . ' ' . num($t['pall']);
+                wrap_out($out, '   ' . padr(trunc($PAGE_NAMES[$k] ?? $k, 20), 20) . ' ', $tr, $sep, $W);
             }
-            if (($p['dall'] ?? 0) > 0) {
-                $out(' ' . $name . ' PNGs  ' . num($p['d24']) . ' ' . $G['dot'] . ' all ' . num($p['dall']));
-                if ($D['charts']) {
-                    $ch = [];
-                    foreach ($D['charts'] as $c => $t) $ch[] = $c . ' ' . num($t['dall']);
-                    wrap_out($out, ' ' . str_repeat(' ', 20) . ' by chart (all) ', $ch, ' ' . $G['dot'] . ' ', $W);
-                }
-            }
+        }
+        if ($pr && $D['charts']) {
+            $ch = [];
+            foreach ($D['charts'] as $c => $t) $ch[] = $c . ' ' . num($t['dall']);
+            $out(' chart PNGs downloaded, all-time');
+            wrap_out($out, '   ', $ch, $sep, $W);
         }
     }
 }
 
-// ── the rhythm ──
-if (array_sum($D['hourly']) > 0 || array_sum($D['weekday']) > 0) {
+// ── the rhythm (full only) ──
+if ($FULL && (array_sum($D['hourly']) > 0 || array_sum($D['weekday']) > 0)) {
     $out();
     $out(rule('THE RHYTHM'));
     $lead = ' views by hour of day, last 7 days (' . $D['tz'] . ')';
@@ -821,37 +843,37 @@ if (array_sum($D['hourly']) > 0 || array_sum($D['weekday']) > 0) {
     $out($lead . padl($peak, $W - mbw($lead)));
     $out(' ' . spark($D['hourly'], 2));
     $out(' ' . padr('0h', 12) . padr('6h', 12) . padr('12h', 12) . padr('18h', 12));
-    $wd = $D['weekday'];
     $out(' views by weekday, last 8 weeks');
-    $out(' ' . spark($wd, 3));
+    $out(' ' . spark($D['weekday'], 3));
     $out(' ' . implode('', array_map(function ($d) { return padr($d, 3); }, ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'])));
 }
 
 // ── onobot ──
 $o = $D['onobot'];
 $out();
-$out(rule('ONOBOT ' . $G['dot'] . ' the onomatopoeia machine'));
-$out(' ' . padr($D['hours'] . 'h', 10) . num($o['c24']) . ' uses ' . $G['dot'] . ' ' . num($o['f24']) . ' rated (' . pct($o['f24'], $o['c24']) . ')');
-$out(' ' . padr('all-time', 10) . num($o['call']) . ' uses ' . $G['dot'] . ' ' . num($o['fall']) . ' rated (' . pct($o['fall'], $o['call']) . ')');
+$out(rule('ONOBOT' . $sep . 'the onomatopoeia machine'));
 $fails = [];
 if ($o['cf24'] > 0) $fails[] = 'Claude ' . num($o['cf24']);
 if ($o['of24'] > 0) $fails[] = 'GPT ' . num($o['of24']);
-$out(' provider failures ' . $D['hours'] . 'h: ' . ($fails ? implode(' ' . $G['dot'] . ' ', $fails) : 'none') . '   (all-time Claude ' . num($o['cfall']) . ' ' . $G['dot'] . ' GPT ' . num($o['ofall']) . ')');
-$pa = $o['pall']['a']; $pb = $o['pall']['b']; $pn = $o['pall']['n'];
-$tot = $pa + $pb;
-if ($tot > 0) {
-    $bw = 24;
-    $na = (int) round($bw * $pa / $tot);
-    $out(' preference  Claude ' . $G['lt'] . str_repeat($G['full'], $na) . $G['pin'] . str_repeat($G['empty'], $bw - $na) . $G['gt'] . ' GPT  '
-        . round(100 * $pa / $tot) . ':' . round(100 * $pb / $tot));
-    $out(sprintf(' %-12s all-time Claude %s %s GPT %s %s neutral %s', '', num($pa), $G['dot'], num($pb), $G['dot'], num($pn)));
-    $out(sprintf(' %-12s %s Claude %s %s GPT %s %s neutral %s', '', $D['hours'] . 'h', num($o['p24']['a']), $G['dot'], num($o['p24']['b']), $G['dot'], num($o['p24']['n'])));
+$out(' ' . padr($D['hours'] . 'h', 10) . num($o['c24']) . ' uses' . $sep . num($o['f24']) . ' rated' . $sep . 'failures ' . ($fails ? implode($sep, $fails) : 'none'));
+if ($FULL) {
+    $out(' ' . padr('all-time', 10) . num($o['call']) . ' uses' . $sep . num($o['fall']) . ' rated (' . pct($o['fall'], $o['call']) . ')' . $sep . 'failures Claude ' . num($o['cfall']) . $sep . 'GPT ' . num($o['ofall']));
+    $pa = $o['pall']['a']; $pb = $o['pall']['b']; $pn = $o['pall']['n'];
+    $tot = $pa + $pb;
+    if ($tot > 0) {
+        $bw = 24;
+        $na = (int) round($bw * $pa / $tot);
+        $out(' preference  Claude ' . $G['lt'] . str_repeat($G['full'], $na) . $G['pin'] . str_repeat($G['empty'], $bw - $na) . $G['gt'] . ' GPT  '
+            . round(100 * $pa / $tot) . ':' . round(100 * $pb / $tot));
+        $out('             all-time Claude ' . num($pa) . $sep . 'GPT ' . num($pb) . $sep . 'neutral ' . num($pn));
+        $out('             ' . $D['hours'] . 'h Claude ' . num($o['p24']['a']) . $sep . 'GPT ' . num($o['p24']['b']) . $sep . 'neutral ' . num($o['p24']['n']));
+    }
+    if ($o['models']['a'] !== '') $out(' pair        A ' . model_label($o['models']['a']) . $sep . 'B ' . model_label($o['models']['b']));
 }
-if ($o['models']['a'] !== '') $out(' pair: A ' . model_label($o['models']['a']) . ' ' . $G['dot'] . ' B ' . model_label($o['models']['b']));
 if ($o['prompts']) {
     $out(' prompts ' . $D['hours'] . 'h (' . count($o['prompts']) . ')');
     foreach ($o['prompts'] as $r) {
-        $where = ($r['geo'] ?? '') !== '' ? ' ' . $G['dot'] . ' ' . $r['geo'] : '';
+        $where = ($r['geo'] ?? '') !== '' ? $sep . $r['geo'] : '';
         wrap_text($out, ' ' . $G['bullet'] . ' ' . substr($r['timestamp'], 5, 11) . '  ', $r['user_message'] . $where, $W);
     }
 }
@@ -860,118 +882,143 @@ if ($o['prompts']) {
 $j = $D['jd'];
 $out();
 $out(rule('THE JUNK DRAWER'));
-$out(' ' . padr($D['hours'] . 'h', 12) . num($j['v24']) . ' views ' . $G['dot'] . ' ' . num($j['u24']) . ' visitors ' . $G['dot'] . ' ' . num($j['av24']) . ' about ' . $G['dot'] . ' ' . num($j['io24']) . ' items opened');
-$out(' ' . padr('all-time', 12) . num($j['vall']) . ' views ' . $G['dot'] . ' ' . num($j['uall']) . ' visitors ' . $G['dot'] . ' ' . num($j['ioall']) . ' items opened');
+$out(' ' . padr($D['hours'] . 'h', 12) . num($j['v24']) . ' views' . $sep . num($j['u24']) . ' visitors' . $sep . num($j['io24']) . ' items opened' . ($FULL ? $sep . num($j['av24']) . ' about' : ''));
+if ($FULL) $out(' ' . padr('all-time', 12) . num($j['vall']) . ' views' . $sep . num($j['uall']) . ' visitors' . $sep . num($j['ioall']) . ' items opened');
 $f = $j['funnel'];
 $fm = max(1, $f['open']);
-$out(' ' . padr('funnel ' . $D['hours'] . 'h', 12) . 'opened ' . num($f['open']) . ' ' . $G['arrow'] . ' submitted ' . num($f['submit']) . ' ' . $G['arrow'] . ' completed ' . num($f['done']) . ' ' . $G['dot'] . ' errors ' . num($f['err']));
+$out(' ' . padr('funnel ' . $D['hours'] . 'h', 12) . 'opened ' . num($f['open']) . ' ' . $G['arrow'] . ' submitted ' . num($f['submit']) . ' ' . $G['arrow'] . ' completed ' . num($f['done']) . $sep . 'errors ' . num($f['err']));
 $out('             ' . hbar($f['open'], $fm, 12) . ' ' . hbar($f['submit'], $fm, 12) . ' ' . hbar($f['done'], $fm, 12));
-$fa = $j['funnel_all'];
-$out(' ' . padr('funnel all', 12) . num($fa['open']) . ' ' . $G['arrow'] . ' ' . num($fa['submit']) . ' (' . pct($fa['submit'], $fa['open']) . ') ' . $G['arrow'] . ' ' . num($fa['done']) . ' (' . pct($fa['done'], $fa['submit']) . ') ' . $G['dot'] . ' ' . num($fa['err']) . ' errors');
-if ($j['errors7']) {
+if ($FULL) {
+    $fa = $j['funnel_all'];
+    $out(' ' . padr('funnel all', 12) . num($fa['open']) . ' ' . $G['arrow'] . ' ' . num($fa['submit']) . ' (' . pct($fa['submit'], $fa['open']) . ') ' . $G['arrow'] . ' ' . num($fa['done']) . ' (' . pct($fa['done'], $fa['submit']) . ')' . $sep . num($fa['err']) . ' errors');
+}
+$errs = $FULL ? $j['errors7'] : $j['errors24'];
+if ($errs) {
     $e = [];
-    foreach ($j['errors7'] as $k => $n) $e[] = $k . ' ' . num($n);
-    wrap_out($out, ' errors 7d   ', $e, ' ' . $G['dot'] . ' ', $W);
+    foreach ($errs as $k => $cnt) $e[] = $k . ' ' . num($cnt);
+    wrap_out($out, ' ' . padr('errors ' . ($FULL ? '7d' : $D['hours'] . 'h'), 12), $e, $sep, $W);
 }
 $t = $j['turns'];
-$out(' turns filed ' . $D['hours'] . 'h ' . num($t['t24']) . ' ' . $G['dot'] . ' 7d ' . num($t['t7']) . ' ' . $G['dot'] . ' all ' . num($t['tall']) . ' (' . num($t['rated']) . ' rated, ' . num($t['failed']) . ' failed)');
-if ($j['devices'] !== null) {
-    $out(' devices     ' . num($j['devices']) . ' have taken a turn ' . $G['dot'] . ' ' . num($j['returning']) . ' came back on another day');
+$out(' ' . padr('turns filed', 12) . $D['hours'] . 'h ' . num($t['t24']) . $sep . '7d ' . num($t['t7']) . ($FULL ? $sep . 'all ' . num($t['tall']) . ' (' . num($t['rated']) . ' rated, ' . num($t['failed']) . ' failed)' : ''));
+if ($FULL && $j['devices'] !== null) {
+    $out(' ' . padr('devices', 12) . num($j['devices']) . ' have taken a turn' . $sep . num($j['returning']) . ' came back on another day');
 }
-if ($j['firsts']) {
-    $lead = ' FIRST PLACE ' . $G['dot'] . ' visitor turns, all-time (n=' . num($j['firsts_n']) . ')';
-    $out($lead . padl($D['hours'] . 'h', $W - mbw($lead) - 2));
-    $fmax = max(1, max(array_column($j['firsts'], 'fall')));
-    foreach ($j['firsts'] as $m => $x) {
-        $out('   ' . padr(trunc(model_label($m), 16), 16) . ' ' . hbar($x['fall'], $fmax, 14) . padl(pct($x['fall'], $j['firsts_n']), 5) . padl(num($x['fall']), 6) . padl(num($x['f24']), 7));
+$st = $j['spend_total'];
+if (!$FULL) {
+    if ($j['spend']) $out(' ' . padr('spend', 12) . $D['hours'] . 'h ' . money($st['w24']) . $sep . '7d ' . money($st['w7']));
+    $h = $j['health24'];
+    if ($h['n'] > 0) {
+        $out(' ' . padr('drawings', 12) . $D['hours'] . 'h ' . num($h['ok']) . ' ok' . $sep . num($h['failed']) . ' failed' . $sep . num($h['rejected']) . ' rejected' . $sep . num($h['disobeyed']) . ' disobeyed');
     }
-}
-if ($j['spend']) {
-    $out(sprintf(' SPEND %s exact, from each provider\'s own token counts', $G['dot']));
-    $srow = function ($a, $b, $c, $d, $e) { return '   ' . padr($a, 16) . padl($b, 9) . padl($c, 9) . padl($d, 10) . padl($e, 10); };
-    $out($srow('', $D['hours'] . 'h', '7d', 'all', 'per gen'));
-    foreach ($j['spend'] as $m => $s) {
-        $out($srow(trunc(model_label($m), 16), money($s['w24']), money($s['w7']), money($s['all']), money($s['n'] > 0 ? $s['all'] / $s['n'] : null)));
+} else {
+    if ($j['firsts']) {
+        $lead = ' FIRST PLACE' . $sep . 'visitor turns, all-time (n=' . num($j['firsts_n']) . ')';
+        $out($lead . padl($D['hours'] . 'h', $W - mbw($lead) - 2));
+        $fmax = max(1, max(array_column($j['firsts'], 'fall')));
+        foreach ($j['firsts'] as $m => $x) {
+            $out('   ' . padr(trunc(model_label($m), 16), 16) . ' ' . hbar($x['fall'], $fmax, 14) . padl(pct($x['fall'], $j['firsts_n']), 5) . padl(num($x['fall']), 6) . padl(num($x['f24']), 7));
+        }
     }
-    $st = $j['spend_total'];
-    $out($srow('total', money($st['w24']), money($st['w7']), money($st['all']), ''));
-    if ($j['unpriced'] > 0) $out('   (' . num($j['unpriced']) . ' of ' . num($j['unpriced'] + $j['priced']) . ' generations unpriced, left out)');
-}
-$h = $j['health7'];
-if ($h['n'] > 0) {
-    $out(' drawings 7d ' . hbar($h['ok'], $h['n'], 14) . ' ' . pct($h['ok'], $h['n']) . ' ok of ' . num($h['n']));
-    $out('             ' . num($h['failed']) . ' failed ' . $G['dot'] . ' ' . num($h['rejected']) . ' rejected ' . $G['dot'] . ' ' . num($h['disobeyed']) . ' disobeyed the format');
-}
-if ($j['latency7']) {
-    $lat = [];
-    $short = model_shorts(array_keys($j['latency7']));
-    foreach ($j['latency7'] as $m => $ms) $lat[] = $short[$m] . ' ' . sprintf('%.1fs', $ms / 1000);
-    wrap_out($out, ' latency p50 ', $lat, ' ' . $G['dot'] . ' ', $W);
-}
-if ($j['items24']) {
-    $it = [];
-    foreach ($j['items24'] as $x) $it[] = $x['title'] . ' ' . $G['times'] . num($x['n']);
-    wrap_out($out, ' opened most ', $it, ', ', $W);
+    if ($j['spend']) {
+        $out(' SPEND' . $sep . "exact, from each provider's own token counts");
+        $srow = function ($a, $b, $c, $d, $e) { return '   ' . padr($a, 16) . padl($b, 9) . padl($c, 9) . padl($d, 10) . padl($e, 10); };
+        $out($srow('', $D['hours'] . 'h', '7d', 'all', 'per gen'));
+        foreach ($j['spend'] as $m => $sp) {
+            $out($srow(trunc(model_label($m), 16), money($sp['w24']), money($sp['w7']), money($sp['all']), money($sp['n'] > 0 ? $sp['all'] / $sp['n'] : null)));
+        }
+        $out($srow('total', money($st['w24']), money($st['w7']), money($st['all']), ''));
+        if ($j['unpriced'] > 0) $out('   (' . num($j['unpriced']) . ' of ' . num($j['unpriced'] + $j['priced']) . ' generations unpriced, left out)');
+    }
+    $h = $j['health7'];
+    if ($h['n'] > 0) {
+        $out(' drawings 7d ' . hbar($h['ok'], $h['n'], 14) . ' ' . pct($h['ok'], $h['n']) . ' ok of ' . num($h['n']));
+        $out('             ' . num($h['failed']) . ' failed' . $sep . num($h['rejected']) . ' rejected' . $sep . num($h['disobeyed']) . ' disobeyed the format');
+    }
+    if ($j['latency7']) {
+        $lat = [];
+        $short = model_shorts(array_keys($j['latency7']));
+        foreach ($j['latency7'] as $m => $ms) $lat[] = $short[$m] . ' ' . sprintf('%.1fs', $ms / 1000);
+        wrap_out($out, ' latency p50 ', $lat, $sep, $W);
+    }
+    if ($j['items24']) {
+        $it = [];
+        foreach ($j['items24'] as $x) $it[] = $x['title'] . ' ' . $G['times'] . num($x['n']);
+        wrap_out($out, ' opened most ', $it, ', ', $W);
+    }
 }
 if ($j['prompts']) {
     $out(' prompts ' . $D['hours'] . 'h (' . count($j['prompts']) . ')');
     foreach ($j['prompts'] as $p) {
-        $title = ($p['title'] !== null && $p['title'] !== '') ? ' ' . $G['dot'] . ' ' . trunc($p['title'], 40) : '';
+        $title = ($p['title'] !== null && $p['title'] !== '') ? $sep . trunc($p['title'], 40) : '';
         $out(' ' . $G['bullet'] . ' ' . substr($p['created'], 5, 11) . ' UTC' . $title);
         wrap_text($out, '     ', $p['prompt'], $W);
     }
 }
 
 // ── signups ──
-$s = $D['subs'];
+$sg = $D['subs'];
 $out();
 $out(rule('SIGNUPS'));
-$out(' ' . num($s['n24']) . ' new in ' . $D['hours'] . 'h ' . $G['dot'] . ' ' . num($s['n7']) . ' this week ' . $G['dot'] . ' ' . num($s['active']) . ' on the list'
-    . ($s['total'] > $s['active'] ? ' (' . num($s['total'] - $s['active']) . ' unsubscribed)' : ''));
-foreach ($s['rows'] as $r) {
+$out(' ' . num($sg['n24']) . ' new in ' . $D['hours'] . 'h' . ($FULL ? $sep . num($sg['n7']) . ' this week' : '') . $sep . num($sg['active']) . ' on the list'
+    . ($sg['total'] > $sg['active'] ? ' (' . num($sg['total'] - $sg['active']) . ' unsubscribed)' : ''));
+foreach ($sg['rows'] as $r) {
     $out(' ' . $G['bullet'] . ' ' . substr($r['created_at'], 5, 11) . '  ' . trunc($r['email'], 36));
     if (($r['source'] ?? '') !== '') $out('                from ' . trunc($r['source'], $W - 21));
 }
-if ($s['sources']) {
+if ($FULL && $sg['sources']) {
     $src = [];
-    foreach ($s['sources'] as $k => $n) $src[] = $k . ' ' . num($n);
-    wrap_out($out, ' signed up from  ', $src, ' ' . $G['dot'] . ' ', $W);
+    foreach ($sg['sources'] as $k => $cnt) $src[] = $k . ' ' . num($cnt);
+    wrap_out($out, ' signed up from  ', $src, $sep, $W);
 }
 
-// ── the plant ──
-$out();
-$out(rule('THE PLANT'));
-if ($D['builds']) {
-    $b = [];
-    foreach ($D['builds'] as $k => $v) $b[] = $k . ' ' . $v;
-    wrap_out($out, ' live builds  ', $b, ' ' . $G['dot'] . ' ', $W);
-}
-foreach ($D['ping'] as $path => $p) {
-    $ok = $p['code'] >= 200 && $p['code'] < 400;
-    $line = sprintf(' ping         %-20s %s %s in %s ms', $path, $ok ? $G['ok'] : $G['bad'], $p['code'] ?: 'no reply', num($p['ms']));
-    $out($line);
-    if (!empty($p['keys'])) {
-        $k = [];
-        foreach ($p['keys'] as $name => $v) $k[] = $name . ' ' . ($v ? $G['ok'] : $G['bad']);
-        $out('              api keys loaded: ' . implode(' ' . $G['dot'] . ' ', $k));
+// ── the plant (full) · the daily keeps only what is wrong ──
+$notes = $D['notes'];
+if (!$FULL) {   // the full edition shows these in THE PLANT itself
+    foreach ($D['ping'] as $path => $pg) {
+        $ok = $pg['code'] >= 200 && $pg['code'] < 400;
+        if (!$ok) $notes[] = 'ping ' . $path . ': ' . ($pg['code'] ? 'HTTP ' . $pg['code'] : 'no reply') . ' after ' . num($pg['ms']) . ' ms';
+        foreach ($pg['keys'] ?? [] as $name => $v) if (!$v) $notes[] = 'health: the ' . $name . ' API key is not loaded';
     }
 }
-if ($D['tables']) {
-    $tb = [];
-    foreach ($D['tables'] as $t => $n) $tb[] = $t . ' ' . num($n);
-    wrap_out($out, ' rows         ', $tb, ' ' . $G['dot'] . ' ', $W);
+if ($FULL) {
+    $out();
+    $out(rule('THE PLANT'));
+    if ($D['builds']) {
+        $b = [];
+        foreach ($D['builds'] as $k => $v) $b[] = $k . ' ' . $v;
+        wrap_out($out, ' live builds  ', $b, $sep, $W);
+    }
+    foreach ($D['ping'] as $path => $pg) {
+        $ok = $pg['code'] >= 200 && $pg['code'] < 400;
+        $out(sprintf(' ping         %-20s ', $path) . ($ok ? $G['ok'] : $G['bad']) . ' ' . ($pg['code'] ?: 'no reply') . ' in ' . num($pg['ms']) . ' ms');
+        if (!empty($pg['keys'])) {
+            $k = [];
+            foreach ($pg['keys'] as $name => $v) $k[] = $name . ' ' . ($v ? $G['ok'] : $G['bad']);
+            $out('              api keys loaded: ' . implode($sep, $k));
+        }
+    }
+    if ($D['tables']) {
+        $tb = [];
+        foreach ($D['tables'] as $tn => $cnt) $tb[] = $tn . ' ' . num($cnt);
+        wrap_out($out, ' rows         ', $tb, $sep, $W);
+    }
 }
-if ($D['notes']) {
+if ($notes) {
     $out();
     $out(rule('NOTES'));
-    foreach ($D['notes'] as $nt) $out(' !! ' . $nt);
+    foreach ($notes as $nt) $out(' !! ' . $nt);
 }
 
 // ── sign-off ──
+$home = $D['ping']['/'] ?? null;
+$site = $home ? (($home['code'] >= 200 && $home['code'] < 400) ? 'site up, ' . num($home['ms']) . ' ms' : 'site did not answer') : null;
 $out();
 $out(' ' . str_repeat($G['dot'] . ' ', intdiv($W - 2, 2)));
-$out(sprintf(' built in %.2f s %s %d queries %s api/onobot-cron.php%s', microtime(true) - $T0, $G['dot'], $D['queries'], $G['dot'], $DEMO ? ' (demo data)' : ''));
-$out(' flags --demo --no-mail --html=FILE --ascii --hours=N --to=ADDR');
+$tail = [sprintf('built in %.1f s', microtime(true) - $T0)];
+if ($site) $tail[] = $site;
+if ($DEMO) $tail[] = 'demo data';
+if (!$FULL) $tail[] = '--full for more';
+$out(' ' . implode($sep, $tail));
 
 $text = implode("\n", $L) . "\n";
 
