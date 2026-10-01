@@ -395,11 +395,10 @@
   function subjectsHTML(resp) {
     var rows = '', di = 0;
     var edit = editable(curEntry);
-    ((payload.taxonomy || {}).axes || []).forEach(function (axis) {
-      /* defunct axes never appear on the report card (owner, 2026-07-29);
-         their filed gradings live on in the data and the legend still
-         lists them dimmed for the record */
-      if (axis.defunct) return;
+    /* defunct axes never appear on the report card (owner, 2026-07-29);
+       their filed gradings live on in the data and the legend still lists
+       them dimmed for the record — JD_liveAxes leaves them out */
+    JD_liveAxes(payload.taxonomy).forEach(function (axis) {
       var a = annOf(resp, axis.id);
       var cell;
       if (edit) {
@@ -827,8 +826,7 @@
       svgInst(svgCache[cacheKey(entry, resp)] || '', 'jz' + curIdx + '_') +
       '</div>' +
       '<button type="button" class="rc-zoom-close rc-zoom-keep" aria-label="close">' +
-      '<svg class="jd-x-mark" viewBox="0 0 18 18" aria-hidden="true" focusable="false">' +
-      '<path d="M1 1 17 17M17 1 1 17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>' +
+      JD_X_MARK + '</button>' +
       plateBtnsHTML(entry, resp, true) +
       '</div>' +
       '<div class="rc-zoom-cap">' +
@@ -943,8 +941,7 @@
     scrim.innerHTML = '<div class="jd-record" role="dialog" aria-modal="true" ' +
       'aria-label="report card">' +
       '<button type="button" class="jd-record-close" aria-label="close">' +
-      '<svg class="jd-x-mark" viewBox="0 0 18 18" aria-hidden="true" focusable="false">' +
-      '<path d="M1 1 17 17M17 1 1 17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>' +
+      JD_X_MARK + '</button>' +
       '<div class="rc-scroll"></div></div>';
     document.body.appendChild(scrim);
     cardEl = scrim.querySelector('.jd-record');
@@ -1178,11 +1175,7 @@
       zoom.fill(zoomBody(), plateEl());
       zoom.setFrom(plateEl());
     }
-    if (animate) {
-      cardEl.classList.remove('is-enter');
-      void cardEl.offsetWidth;
-      cardEl.classList.add('is-enter');
-    }
+    if (animate) JD_restart(cardEl, 'is-enter');
     /* the reveal runs only where a caller asked for it (open, response
        flip) — a plain re-render, like the strip filling in, must never
        restart a drawing */
