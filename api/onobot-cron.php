@@ -22,18 +22,9 @@ $H    = 24;                          // look-back window, hours
 $TO   = 'tysonwelsh@gmail.com';
 $FROM = 'onobot@municipalsky.com';   // a domain address improves deliverability
 
-// Best-effort geolocation of a visitor IP. Never let a slow/failed lookup
-// hold up or break the digest.
-function geo($ip)
-{
-    $ctx = stream_context_create(['http' => ['timeout' => 5]]);
-    $r = @file_get_contents("http://ip-api.com/json/{$ip}?fields=city,region", false, $ctx);
-    $d = $r ? json_decode($r, true) : null;
-    $city = $d['city'] ?? '';
-    $reg  = $d['region'] ?? '';
-    $loc  = trim($city . (($city !== '' && $reg !== '') ? ', ' : '') . $reg);
-    return $loc !== '' ? $loc : 'unknown';
-}
+// No visitor geolocation (2026-10-01): the digest used to send each bot
+// visitor's IP to ip-api.com (plain HTTP, a third party the privacy policy
+// never named) to print a city. Visitor IPs stay on this server.
 
 // Collapse whitespace and truncate to N chars with a ".." marker.
 function trunc($s, $n)
@@ -80,7 +71,7 @@ if ($onoCount > 0) {
     foreach ($rows as $r) {
         $rating = (int) $r['preference_rating'];
         $pref = $rating <= 3 ? "A {$rating}/7 (Claude)" : ($rating >= 5 ? "B {$rating}/7 (GPT)" : "neutral {$rating}/7");
-        $L[] = "  • " . substr($r['timestamp'], 5, 11) . " · " . geo($r['session_id']) . " · preference: " . $pref;
+        $L[] = "  • " . substr($r['timestamp'], 5, 11) . " · preference: " . $pref;
         $L[] = "      prompt    : " . $r['user_message'];
         $L[] = "      A (Claude): " . $r['response_a'];
         $L[] = "      B (GPT)   : " . $r['response_b'];
