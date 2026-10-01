@@ -1027,11 +1027,12 @@
      falling letter used to keep its own, ten to thirty 25Hz timers on a busy
      sheet. It walks the letters in flight in the order they were dealt and
      lands each whose fall has finished, so a letter still comes to rest
-     0–40ms after its animation ends. While the tab is hidden it stands down
-     with the metronomes (nothing is painted, and hidden-tab timers are
-     throttled anyway); the first tick back lands whatever has finished. */
+     0–40ms after its animation ends. It does NOT stand down while the tab
+     is hidden, unlike the metronomes: landing is clean-up, not minting, and
+     the per-letter polls it replaced landed in a hidden tab too (throttled
+     to the background rate), so the heap a visitor comes back to is the
+     settled one, never a frame of letters still waiting to be filed. */
   function jdDriftLand(st) {
-    if (document.hidden) return;
     var k = 0, f;
     while (k < st.flight.length) {
       f = st.flight[k];
