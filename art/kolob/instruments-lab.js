@@ -469,15 +469,15 @@ window.InstrumentsLab = (function () {
     chain.out.gain.setValueAtTime(0, t); chain.out.gain.linearRampToValueAtTime(1, t + X);
     old.out.gain.setValueAtTime(1, t); old.out.gain.linearRampToValueAtTime(0, t + X);
     setTimeout(function () {
-      try { labIn.disconnect(old.input); } catch (e) {}
-      try { old.out.disconnect(); } catch (e2) {}
+      try { labIn.disconnect(old.input); } catch (e) { /* gone already */ }
+      try { old.out.disconnect(); } catch (e2) { /* gone already */ }
     }, (X + 0.15) * 1000);
   }
   function stop() {
     if (!current) return;
     var c = current;
     c.gain.gain.setTargetAtTime(0, actx.currentTime, 0.03);
-    setTimeout(function () { try { c.gain.disconnect(); } catch (e) {} }, 400);
+    setTimeout(function () { try { c.gain.disconnect(); } catch (e) { /* gone already */ } }, 400);
     current = null;
   }
   function play(id, o) {

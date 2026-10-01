@@ -79,7 +79,7 @@ whether or not its result is used, and no musical decision reads the audio clock
 
 ```sh
 npm install                              # once: ESLint (package.json at the repo root)
-npm run lint                             # no undefined names, no unused variables
+npm run lint                             # no undefined names, no unused variables, no silent catch, a default in every switch (warnings: complexity, long functions)
 node art/kolob/tools/loadcheck.js        # the engine loads headless; the roll call and the page's guard; the desk's files; one hymn proofread; every lab's list loads in its order
 node art/kolob/tools/lends.js            # every S.x read has a lend; every BORROWED wrapper calls the lend it is named after
 node art/kolob/tools/samecode.js         # a comment pass changed no code token (against HEAD; --ref <ref>)

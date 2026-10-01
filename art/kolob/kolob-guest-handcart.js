@@ -402,7 +402,7 @@ window.KOLOB.GuestHandcart = (function () {
     var sent = ctx.createConstantSource ? ctx.createConstantSource() : ctx.createOscillator();
     var sg = ctx.createGain(); sg.gain.value = 0;
     sent.connect(sg); sg.connect(bus);
-    sent.onended = function () { rd.dispose(); town.dispose(); try { sg.disconnect(); sent.disconnect(); bus.disconnect(); } catch (e) {} };
+    sent.onended = function () { rd.dispose(); town.dispose(); try { sg.disconnect(); sent.disconnect(); bus.disconnect(); } catch (e) { /* gone already */ } };
     sent.start(Math.max(0, t)); sent.stop(sc.end + 5);
     perform.last = { score: sc, folk: folk, road: rd, throats: throats };
     return sc.end;

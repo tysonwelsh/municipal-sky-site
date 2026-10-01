@@ -445,6 +445,7 @@ window.KOLOB.Score = (function () {
       case "chord": return validateChord(obj);
       case "performance": return validatePerformance(obj, opts && opts.hymn);
       case "event": return validateEvent(obj);
+      default: break;                  // (a kind not named: said below)
     }
     return ["validate: no kind '" + kind + "'"];
   }

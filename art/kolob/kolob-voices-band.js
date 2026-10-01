@@ -297,7 +297,7 @@ window.KOLOB.VoicesBand = (function () {
     if (destination) g.connect(destination);
     return {
       input: input, out: g, nodes: 4,
-      dispose: function () { [input, conv, lp, g].forEach(function (n) { try { n.disconnect(); } catch (e) {} }); },
+      dispose: function () { [input, conv, lp, g].forEach(function (n) { try { n.disconnect(); } catch (e) { /* gone already */ } }); },
     };
   }
 
@@ -323,7 +323,7 @@ window.KOLOB.VoicesBand = (function () {
     r.busy = true; r.out.connect(destination);
     return {
       input: r.input, out: r.out, nodes: 0, lent: true,
-      dispose: function () { if (given) return; given = true; try { r.out.disconnect(destination); } catch (e) {} r.busy = false; },
+      dispose: function () { if (given) return; given = true; try { r.out.disconnect(destination); } catch (e) { /* gone already */ } r.busy = false; },
     };
   }
 
@@ -383,7 +383,7 @@ window.KOLOB.VoicesBand = (function () {
     return {
       input: input, nodes: nodes.length + (own ? own.nodes : 0),
       dispose: function () {
-        nodes.forEach(function (n) { try { n.disconnect(); } catch (e) {} });
+        nodes.forEach(function (n) { try { n.disconnect(); } catch (e) { /* gone already */ } });
         if (own) own.dispose();
       },
     };
@@ -455,7 +455,7 @@ window.KOLOB.VoicesBand = (function () {
     return {
       input: input, path: path, nodes: nodes.length + (own ? own.nodes : 0),
       dispose: function () {
-        nodes.forEach(function (n) { try { n.disconnect(); } catch (e) {} });
+        nodes.forEach(function (n) { try { n.disconnect(); } catch (e) { /* gone already */ } });
         if (own) own.dispose();
       },
     };
@@ -521,7 +521,7 @@ window.KOLOB.VoicesBand = (function () {
   function letGo(h) {
     var i = HAND.live.indexOf(h);
     if (i >= 0) HAND.live.splice(i, 1);
-    try { h.gain.disconnect(); } catch (e) {}
+    try { h.gain.disconnect(); } catch (e) { /* gone already */ }
   }
   function setHand(v, glideS) {
     v = Math.max(0, Math.min(1.5, isFinite(+v) ? +v : 1));
@@ -592,7 +592,7 @@ window.KOLOB.VoicesBand = (function () {
     function waveFor(k, f) { return waveOf(ctx, k, f); }
 
     // pitch and brightness automation is read once a block (see the header)
-    function kRate(p) { try { p.automationRate = "k-rate"; } catch (e) {} }
+    function kRate(p) { try { p.automationRate = "k-rate"; } catch (e) { /* an old browser */ } }
     // one tongued brass note
     function note(t, f, dur, k, dyn, acc, stacc) {
       var spec = INSTR[k];
@@ -834,9 +834,9 @@ window.KOLOB.VoicesBand = (function () {
     // let the band go at once: every standing node and the distance stage
     // (a performer calls this once the last note has rung out)
     function dispose() {
-      try { out.disconnect(); } catch (e) {}
-      Object.keys(buses).forEach(function (k) { try { buses[k].disconnect(); } catch (e) {} });
-      try { drumLP.disconnect(); drums.disconnect(); } catch (e) {}
+      try { out.disconnect(); } catch (e) { /* gone already */ }
+      Object.keys(buses).forEach(function (k) { try { buses[k].disconnect(); } catch (e) { /* gone already */ } });
+      try { drumLP.disconnect(); drums.disconnect(); } catch (e) { /* gone already */ }
       if (stage) stage.dispose();
       if (hand) letGo(hand);
     }

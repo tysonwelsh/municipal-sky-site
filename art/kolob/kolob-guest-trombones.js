@@ -1169,7 +1169,7 @@ window.KOLOB.GuestTrombones = (function () {
     sent.connect(sg); sg.connect(bus);
     sent.onended = function () {
       far.dispose(); near.dispose(); town.dispose();
-      try { sg.disconnect(); sent.disconnect(); bus.disconnect(); } catch (e) {}
+      try { sg.disconnect(); sent.disconnect(); bus.disconnect(); } catch (e) { /* gone already */ }
     };
     sent.start(Math.max(0, t)); sent.stop(tail);      // (a lab may place t before the context's birth: a solo choir heard from its first phrase)
     perform.last = { far: far, near: near, score: sc };

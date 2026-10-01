@@ -86,8 +86,8 @@ function resolveEngine(spec, harnessOpt) {
   if (!harness) harness = fs.existsSync(path.join(dir, "_harness.js")) && !git ? path.join(dir, "_harness.js") : path.join(HERE_ENGINE, "_harness.js");
   if (!fs.existsSync(harness)) throw refusal("no harness at " + harness + " (art/kolob/_harness.js is tracked since 2026-10-01: check it out, or pass --harness)");
   let version = null;
-  try { version = fs.readFileSync(path.join(dir, "VERSION"), "utf8").trim().split("\n")[0]; } catch (e) {}
-  if (!git) { try { git = execFileSync("git", ["-C", dir, "rev-parse", "HEAD"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim(); } catch (e) {} }
+  try { version = fs.readFileSync(path.join(dir, "VERSION"), "utf8").trim().split("\n")[0]; } catch (e) { /* no VERSION: the build names none */ }
+  if (!git) { try { git = execFileSync("git", ["-C", dir, "rev-parse", "HEAD"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim(); } catch (e) { /* not a git tree: no commit to name */ } }
   const list = engineList(dir, legacy);
   const missing = list.files ? list.files.filter((f) => !fs.existsSync(f)) : [];
   if (missing.length) throw refusal("the build in " + dir + " lists " + missing.map((f) => path.relative(dir, f)).join(", ") + " (" + list.from + "), which it does not hold");
@@ -103,7 +103,7 @@ function resolveEngine(spec, harnessOpt) {
 function verify(engine, witnessFile, header, harness) {
   const why = [];
   let w = null;
-  try { w = JSON.parse(fs.readFileSync(witnessFile, "utf8")); } catch (e) {}
+  try { w = JSON.parse(fs.readFileSync(witnessFile, "utf8")); } catch (e) { /* no witness: refused below */ }
   const H = shortPath(harness);
   if (!w || !w.files || !w.files.length) {
     throw refusal("could not see which engine " + H + " played: it read no kolob-*.js through fs.readFileSync. The tools will not measure an engine they cannot name.");
@@ -144,7 +144,7 @@ function verify(engine, witnessFile, header, harness) {
 function runOne(engine, seed, secs, flags, dumpFile, name) {
   return new Promise((resolve) => {
     const witness = dumpFile.replace(/\.jsonl$/, ".witness.json");
-    [dumpFile, witness].forEach((f) => { try { fs.unlinkSync(f); } catch (e) {} });   // never read a stale one
+    [dumpFile, witness].forEach((f) => { try { fs.unlinkSync(f); } catch (e) { /* none to remove */ } });   // never read a stale one
     const args = ["-r", WITNESS, engine.harness, String(secs), String(seed)].concat(flags || []).concat(["dump=" + dumpFile, "header"]);
     const env = Object.assign({}, process.env, { KOLOB_BASE: engine.dir, KOLOB_DIR: engine.dir, KOLOB_WITNESS: witness });
     if (engine.legacy) env.KOLOB_LEGACY = engine.legacy; else delete env.KOLOB_LEGACY;
@@ -159,7 +159,7 @@ function runOne(engine, seed, secs, flags, dumpFile, name) {
       const loadErr = /LOAD [^\n]*/.exec(out) || /FAIL: KolobAudio not defined[^\n]*/.exec(err);
       const ok = fs.existsSync(dumpFile);
       let header = null, loaded = null, verifyError = null;
-      if (ok) { try { const first = fs.readFileSync(dumpFile, "utf8").split("\n", 1)[0]; if (first.startsWith('["H"')) header = JSON.parse(first)[2]; } catch (e) {} }
+      if (ok) { try { const first = fs.readFileSync(dumpFile, "utf8").split("\n", 1)[0]; if (first.startsWith('["H"')) header = JSON.parse(first)[2]; } catch (e) { /* no header line: the witness speaks alone */ } }
       if (ok && !loadErr) { try { loaded = verify(engine, witness, header, engine.harness); } catch (e) { verifyError = e.message; } }
       resolve({ seed, name: name || "seed-" + seed, dump: dumpFile, log: logFile, code, verdict, ok, loadError: loadErr ? loadErr[0] : null, verifyError, loaded });
     });

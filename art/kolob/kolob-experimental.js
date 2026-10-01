@@ -85,7 +85,7 @@ window.KOLOB.Experimental = (function () {
       var raw = window.localStorage && window.localStorage.getItem(STORE_KEY);
       var o = raw ? JSON.parse(raw) : {};
       browser = {};
-      Object.keys(o || {}).forEach(function (k) { if (DEFAULTS.hasOwnProperty(k) && typeof o[k] === "boolean") browser[k] = o[k]; });
+      Object.keys(o || {}).forEach(function (k) { if (Object.prototype.hasOwnProperty.call(DEFAULTS, k) && typeof o[k] === "boolean") browser[k] = o[k]; });
     } catch (e) { browser = {}; }
   }
   function writeBrowser() {
@@ -109,7 +109,7 @@ window.KOLOB.Experimental = (function () {
       var on = true, name = tok;
       if (tok[0] === "-" || tok[0] === "!") { on = false; name = tok.slice(1); }
       else if (tok[0] === "+") name = tok.slice(1);
-      if (DEFAULTS.hasOwnProperty(name)) out[name] = on;
+      if (Object.prototype.hasOwnProperty.call(DEFAULTS, name)) out[name] = on;
       else if (window.console && console.warn) console.warn("KOLOB.Experimental: no feature called \"" + name + "\" (known: " + Object.keys(DEFAULTS).join(", ") + ")");
     });
     return out;
@@ -129,13 +129,13 @@ window.KOLOB.Experimental = (function () {
     listeners.slice().forEach(function (fn) { try { fn(snap); } catch (e) { confess("a listener to the switches threw", e); } });
   }
   function known(name) {
-    if (!DEFAULTS.hasOwnProperty(name)) throw new Error("KOLOB.Experimental: no feature called \"" + name + "\" (known: " + Object.keys(DEFAULTS).join(", ") + ")");
+    if (!Object.prototype.hasOwnProperty.call(DEFAULTS, name)) throw new Error("KOLOB.Experimental: no feature called \"" + name + "\" (known: " + Object.keys(DEFAULTS).join(", ") + ")");
   }
 
   function isOn(name) {
-    if (!DEFAULTS.hasOwnProperty(name)) return false;
-    if (address.hasOwnProperty(name)) return address[name];
-    if (browser.hasOwnProperty(name)) return browser[name];
+    if (!Object.prototype.hasOwnProperty.call(DEFAULTS, name)) return false;
+    if (Object.prototype.hasOwnProperty.call(address, name)) return address[name];
+    if (Object.prototype.hasOwnProperty.call(browser, name)) return browser[name];
     return DEFAULTS[name];
   }
   // the console's switch: remembered by this browser; it also takes over
@@ -164,7 +164,7 @@ window.KOLOB.Experimental = (function () {
     return Object.keys(DEFAULTS).map(function (k) {
       return {
         name: k, on: isOn(k), byDefault: DEFAULTS[k],
-        from: address.hasOwnProperty(k) ? "address" : browser.hasOwnProperty(k) ? "browser" : "default",
+        from: Object.prototype.hasOwnProperty.call(address, k) ? "address" : Object.prototype.hasOwnProperty.call(browser, k) ? "browser" : "default",
         about: ABOUT[k] || "",
       };
     });

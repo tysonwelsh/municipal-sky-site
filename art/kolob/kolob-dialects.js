@@ -204,6 +204,7 @@ window.KOLOB.Dialects = (function () {
         var pool = names(minor ? ["iv", "VI", "III"] : mode === "mixolydian" ? ["IV", "vi", "ii"] : ["IV", "vi", "iii", "ii"]);
         return { fin: pool.filter(function (nm) { var c = vocab.filter(function (x) { return x.name === nm; })[0]; return toneOf(c, t) && toneOf(c, t).alt === 0; }), pen: null, ante: null };
       }
+      default: break;                  // (any other plan: the kind's chords, below)
     }
     switch (kind) {
       case "authentic": return { fin: [I], pen: names(mode === "mixolydian" ? ["V", "V7", "♭VII", "v"] : minor ? ["V", "V7", "v", "VII"] : ["V", "V7"]), ante: "cad64" };
@@ -211,6 +212,7 @@ window.KOLOB.Dialects = (function () {
       case "imperfect": return { fin: [I], pen: null, ante: null };
       case "deceptive": return { fin: names(minor ? ["VI"] : ["vi"]), pen: names(minor ? ["V", "V7"] : ["V", "V7"]), ante: null };
       case "plagal": return { fin: [I], pen: names(minor ? ["iv", "IV"] : ["IV"]), ante: null };
+      default: break;                  // (a kind not named: no chords asked for, below)
     }
     return { fin: null, pen: null, ante: null };
   }
@@ -1463,6 +1465,7 @@ window.KOLOB.Dialects = (function () {
       case "imperfect": return { fin: [I], pen: null, ante: null };
       case "deceptive": return { fin: names(minor ? ["VI"] : ["vi"]), pen: names(["V7"]), ante: null };
       case "plagal": return { fin: [I], pen: names(minor ? ["iv"] : ["IV", "iv"]), ante: null };
+      default: break;                  // (a kind not named: no chords asked for, below)
     }
     return { fin: null, pen: null, ante: null };
   }

@@ -581,8 +581,10 @@ would not join the room, a context that would not resume, a hymn the worker
 could not write (a worker that fails altogether says so once, by
 `console.warn`, and its hymns take the idle road) — and only the cleanup after
 a node that may already be gone, and a feature test's fallback, stay quiet.
-The harness fails a run on any `console.error`, so a fault told on a clean run
-fails CI.
+A quiet catch says which inside it (`/* gone already */`, `/* an old
+browser */`, the page's `/* a private window: … */`); ESLint's `no-empty`
+fails one that says nothing. The harness fails a run on any `console.error`,
+so a fault told on a clean run fails CI.
 
 **The staff's intake** (`kolob-viz.js onNote`): a note on `band`, `telegraph`
 (with marks), a spoken `voice`, the new guest layers (`fiddle`, `handcart`,

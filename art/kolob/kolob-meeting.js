@@ -1399,6 +1399,7 @@ window.KOLOB = window.KOLOB || {};
         return Math.min(0.8, d0 + dp * smooth(x < 0.8 ? x / 0.8 : 1 - 0.4 * smooth((x - 0.8) / 0.2)));
       }
       case "postlude": return (0.1 + 0.45 * L) * (1 - x);
+      default: break;                  // (a section not named: the level below)
     }
     return 0.25;
   }

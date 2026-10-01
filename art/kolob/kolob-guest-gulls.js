@@ -274,7 +274,7 @@ window.KOLOB.GuestGulls = (function () {
     var sent = ctx.createConstantSource ? ctx.createConstantSource() : ctx.createOscillator();
     var sg = ctx.createGain(); sg.gain.value = 0;
     sent.connect(sg); sg.connect(bus);
-    sent.onended = function () { try { folk.out.disconnect(); sg.disconnect(); sent.disconnect(); bus.disconnect(); } catch (e) {} };
+    sent.onended = function () { try { folk.out.disconnect(); sg.disconnect(); sent.disconnect(); bus.disconnect(); } catch (e) { /* gone already */ } };
     sent.start(Math.max(0, t)); sent.stop(sc.end + 1.5);
     perform.last = { score: sc, folk: folk };
     return sc.end;

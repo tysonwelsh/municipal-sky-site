@@ -333,7 +333,7 @@ window.GuestsLab3c = (function () {
     if (!old) return;
     chain.out.gain.setValueAtTime(0, t); chain.out.gain.linearRampToValueAtTime(1, t + XF);
     old.out.gain.setValueAtTime(1, t); old.out.gain.linearRampToValueAtTime(0, t + XF);
-    setTimeout(function () { try { labIn.disconnect(old.input); } catch (e) {} try { old.out.disconnect(); } catch (e2) {} }, (XF + 0.15) * 1000);
+    setTimeout(function () { try { labIn.disconnect(old.input); } catch (e) { /* gone already */ } try { old.out.disconnect(); } catch (e2) { /* gone already */ } }, (XF + 0.15) * 1000);
   }
   function stop() {
     lights = []; stagesNow = [];
@@ -341,7 +341,7 @@ window.GuestsLab3c = (function () {
     var c = current;
     c.timers.forEach(function (x) { clearTimeout(x); });
     c.gain.gain.setTargetAtTime(0, actx.currentTime, 0.03);
-    setTimeout(function () { try { c.gain.disconnect(); } catch (e) {} }, 400);
+    setTimeout(function () { try { c.gain.disconnect(); } catch (e) { /* gone already */ } }, 400);
     current = null;
   }
   function play(id, o) {

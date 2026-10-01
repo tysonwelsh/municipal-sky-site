@@ -509,7 +509,7 @@ global.document = {
 const SEARCH = "?seed=" + SEED + (OPT.exp ? "&exp=" + encodeURIComponent(OPT.exp).replace(/%2C/g, ",") : "");
 global.location = { search: SEARCH, href: "http://localhost/art/kolob/index.php" + SEARCH, pathname: "/art/kolob/index.php", hash: "", host: "localhost", hostname: "localhost", port: "", protocol: "http:", origin: "http://localhost", reload() {}, replace() {}, assign() {}, toString() { return this.href; } };
 global.history = { pushState() {}, replaceState() {}, back() {}, state: null };
-try { Object.defineProperty(global, "navigator", { configurable: true, writable: true, value: { userAgent: "kolob-harness (node " + process.version + ")", language: "en", languages: ["en"], platform: process.platform, hardwareConcurrency: 4, onLine: true, mediaSession: undefined, vibrate() { return false; } } }); } catch (e) {}
+try { Object.defineProperty(global, "navigator", { configurable: true, writable: true, value: { userAgent: "kolob-harness (node " + process.version + ")", language: "en", languages: ["en"], platform: process.platform, hardwareConcurrency: 4, onLine: true, mediaSession: undefined, vibrate() { return false; } } }); } catch (e) { /* a Node whose navigator cannot be replaced: its own serves */ }
 (function () {
   const store = new Map();
   const ls = {
@@ -517,8 +517,8 @@ try { Object.defineProperty(global, "navigator", { configurable: true, writable:
     setItem(k, v) { store.set(String(k), String(v)); }, removeItem(k) { store.delete(String(k)); }, clear() { store.clear(); },
     key(i) { return [...store.keys()][i] || null; }, get length() { return store.size; },
   };
-  try { Object.defineProperty(global, "localStorage", { configurable: true, writable: true, value: ls }); } catch (e) {}
-  try { Object.defineProperty(global, "sessionStorage", { configurable: true, writable: true, value: ls }); } catch (e) {}
+  try { Object.defineProperty(global, "localStorage", { configurable: true, writable: true, value: ls }); } catch (e) { /* a Node whose storage cannot be replaced: its own serves */ }
+  try { Object.defineProperty(global, "sessionStorage", { configurable: true, writable: true, value: ls }); } catch (e) { /* a Node whose storage cannot be replaced: its own serves */ }
 })();
 global.Worker = undefined;                       // the hymnal falls back to its idle slices
 const NO_NETWORK = "the harness has no network";
@@ -794,7 +794,7 @@ if (typeof K.getSeed === "function" && K.getSeed() !== SEED && typeof K.reseed =
       }]));
     }
     const file = path.resolve(OPT.dump);
-    try { fs.mkdirSync(path.dirname(file), { recursive: true }); } catch (e) {}
+    try { fs.mkdirSync(path.dirname(file), { recursive: true }); } catch (e) { /* the folder stands, or the write below says why not */ }
     fs.writeFileSync(file, out.concat(dumpLines).join("\n") + "\n");
   }
 

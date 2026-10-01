@@ -191,7 +191,9 @@ window.KolobAudio = (function () {
   // What stays quiet: cleanup after a node that may already be gone (an
   // onended disconnect, a chain of the rooms let go) — cleanup(fn),
   // disconnectEach(nodes) — and a feature test's fallback (an old browser
-  // without a constructor's options), which is not a fault at all.
+  // without a constructor's options), which is not a fault at all. A quiet
+  // catch says which inside it (`/* gone already */`, `/* an old browser */`):
+  // ESLint's no-empty (eslint.config.js) fails one that says nothing.
   function confess(what, fn, about) { return KOLOB.Fault.confess(what, fn, about); }
   // cleanup(fn): fn run, and a throw from it let pass unspoken — for the
   // cleanup after a node that may already be gone, never for a fault

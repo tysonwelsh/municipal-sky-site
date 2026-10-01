@@ -258,7 +258,7 @@ window.Guests3a = (function () {
     if (!old) return;
     chain.out.gain.setValueAtTime(0, t); chain.out.gain.linearRampToValueAtTime(1, t + XF);
     old.out.gain.setValueAtTime(1, t); old.out.gain.linearRampToValueAtTime(0, t + XF);
-    setTimeout(function () { try { labIn.disconnect(old.input); } catch (e) {} try { old.out.disconnect(); } catch (e2) {} }, (XF + 0.15) * 1000);
+    setTimeout(function () { try { labIn.disconnect(old.input); } catch (e) { /* gone already */ } try { old.out.disconnect(); } catch (e2) { /* gone already */ } }, (XF + 0.15) * 1000);
   }
   function stop() {
     lights = [];
@@ -266,7 +266,7 @@ window.Guests3a = (function () {
     var c = current;
     if (clock) clock.lane(c.lane).cancelAll();
     c.gain.gain.setTargetAtTime(0, actx.currentTime, 0.03);
-    setTimeout(function () { try { c.gain.disconnect(); } catch (e) {} }, 400);
+    setTimeout(function () { try { c.gain.disconnect(); } catch (e) { /* gone already */ } }, 400);
     current = null;
   }
   // the engine's clock, made once for the lab's context; its wake-up timed

@@ -208,6 +208,7 @@ function rawDist(f, a, b) {
     case "cat": return a === b ? 0 : 1;
     case "set": return jaccard(a, b);
     case "vec": return jsDist(a, b);
+    default: break;                    // (a kind not named: no distance, below)
   }
   return null;
 }

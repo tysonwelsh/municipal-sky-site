@@ -3,8 +3,10 @@
 #
 # What a green run proves, in order:
 #   1. every JavaScript file parses (node --check);
-#   2. ESLint's baseline passes (eslint.config.js: no undefined names, no unused
-#      variables, no variable read before it is declared);
+#   2. ESLint passes (eslint.config.js: no undefined names, no unused variables,
+#      no empty catch without a word saying why, every switch with a default,
+#      hasOwnProperty from Object.prototype; complexity and long functions are
+#      reported as warnings, which do not fail the run — no --max-warnings);
 #   3. the engine loads headless in _engine.php's order, every room answers the
 #      roll call and the page's own load guard agrees, the facade carries the
 #      methods the page calls, the hymnal's worker would load the list's own

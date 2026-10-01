@@ -7,7 +7,7 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
 
 ## The refactor
 
-- **`PLAN-REFACTOR.md`** (2026-10-01; §2 built, v0.36.3; §3.6, §3.1, §3.3 and §3.7 built): the owner asked for a plan to improve
+- **`PLAN-REFACTOR.md`** (2026-10-01; §2 built, v0.36.3; §3.6, §3.1, §3.3, §3.7 and §3.8 built): the owner asked for a plan to improve
   efficiency, reliability and maintainability without changing what is heard or seen. Its §2, the
   real faults, is done (commits 3eefffb to a373760: a cue that threw ended its layer for the visit; a
   stillness survived STOP; STOP's own race; errors swallowed silently; a broken page let PLAY be
@@ -16,16 +16,17 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
   and §3.3, the near-duplicate pairs (the plagal amen, the drone's step back, the cast row, the
   assembly's span, the ward's telling, one Deseret speller, `KOLOB.Fault`), and §3.7, the BORROWED
   wrappers kept as each room's manifest and checked exact by `tools/lends.js` (with `VISIT_FN` one list
-  of names), and every lab's list of rooms loaded headless in its order by `tools/loadcheck.js`.
+  of names), and every lab's list of rooms loaded headless in its order by `tools/loadcheck.js`, and
+  §3.8, the lint a notch tighter (`no-empty` with every quiet catch saying why, `default-case`,
+  `no-prototype-builtins`; `complexity` and `max-lines-per-function` as warnings).
   What remains is §3 (one place for each thing: the guest-room scaffold, the planner out of the
-  conductor, the staff in pieces, the lint) and §4 (the page's load and frame, the minutes' poll, the
+  conductor, the staff in pieces) and §4 (the page's load and frame, the minutes' poll, the
   audio graph with the owner), in §6's order.
   The §2 builders' follow-ups, not done:
   - the drone stays ducked after a broken hymn's chain is released by the net (§2.1);
   - a cue's fault that repeats is now logged at each of the net's retries (every 5 s for a layer), not once (§2.1);
   - `C.ward` and `C.organist` survive a reseed while stopped, so the rail sings the old ward until the next meeting is planned;
   - the chord book's ids count for the page's life, not per visit;
-  - `no-empty` could now be added to the lint (§3.8), with `allowEmptyCatch` or a comment in each empty catch;
   - a hymn the idle road fails to write warns, while a worker's failure to write one errors.
   The §3.6 builder's follow-ups, not done:
   - `S.pipeOn()` reads `S.ctx`, so a meeting's plan depends on whether an AudioContext exists (no
@@ -61,6 +62,12 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
     (meeting) and `S.reportLine` (the winds);
   - the §3.1 wrappers onto the namespaces (`function mz(a, b) { return K.Pitch.mul(a, b); }`) keep the
     room's old names by design and are not checked; only the BORROWED wrappers onto `S` are.
+  The §3.8 builder's follow-ups, not done:
+  - `no-shadow` waits for §3.2 (182 sites under `art/kolob` today, 116 in the engine and the page);
+  - the warnings to watch, as `npm run lint` prints them on 2026-10-01: `complexity` over 25 in 96
+    functions (72 in the engine and the page, 13 in the labs, 11 in the harness and the tools) and
+    `max-lines-per-function` over 150 in 20 (18 and 2: `kolob-voices-folk.js create` 503 lines,
+    `kolob-voices-vocal.js renderLine` 398, `planMeeting` 368, the pipe organ's `create` 348).
 
 ## Ideas approved, not built
 

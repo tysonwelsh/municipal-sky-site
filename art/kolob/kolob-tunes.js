@@ -421,6 +421,7 @@ KOLOB.Tunes = (function () {
       case 8: return (t3 === 0 && f5 === -1) ? 0 : 6;                   // 8/5, else 128/81
       case 3: return (t3 === 1 && f5 === -1) ? 0 : 6;                   // 6/5, else 32/27
       case 9: return (t3 === -1 && f5 === 1) ? 0 : 6;                   // 5/3, else 27/16
+      default: break;                                                   // (the rest: below)
     }
     return 0;                                          // seconds, sevenths, the tritone: no verdict
   }

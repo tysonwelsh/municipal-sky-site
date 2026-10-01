@@ -905,7 +905,7 @@ window.KOLOB.GuestBands = (function () {
     sent.onended = function () {
       made.forEach(function (m) { if (m.band) { m.band.dispose(); m.road.dispose(); } });
       town.dispose();
-      try { sg.disconnect(); sent.disconnect(); bus.disconnect(); } catch (e) {}
+      try { sg.disconnect(); sent.disconnect(); bus.disconnect(); } catch (e) { /* gone already */ }
     };
     sent.start(Math.max(0, t)); sent.stop(tail);
     perform.last = { made: made, score: sc, bus: bus };
