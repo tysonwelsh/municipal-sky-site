@@ -23,7 +23,7 @@ plays the same meeting every time, in the browser and in the headless harness.
 | the tuning and the score | `kolob-pitch.js`, `kolob-score.js`, `kolob-tunes.js` (the Earth tunes, cited) |
 | the composers (pure) | `kolob-melody.js`, `kolob-harmony.js` (the day's theme), `kolob-dialects.js`, `kolob-hymnists.js`, `kolob-composer.js` (the hymn composer), `kolob-organist.js`, `kolob-calendar.js` (the Sunday, the arc of light, the guest budget), `kolob-experimental.js` |
 | the voices | `kolob-voices-*.js` — the pipe organ, the old additive organ (the A/B), the choir rooms, the ward's 32 throats (`vocal`), winds, ground, field, the brass (`band`), the folk instruments |
-| the performers | `kolob-cast.js` (the ward and its people), `kolob-hymnal.js` (the day's hymnal and the composer's desk, a Web Worker), `kolob-guest-room.js` (the scaffold every guest room stands on: its stream, plan, odds and decision, its slices on the clock, its stages, its teardown), `kolob-guest-*.js` (every guest), `kolob-testimony.js`, `kolob-guests.js` (the set pieces), `kolob-meeting.js` (the order of service, the joints, the seating) |
+| the performers | `kolob-cast.js` (the ward and its people), `kolob-hymnal.js` (the day's hymnal and the composer's desk, a Web Worker), `kolob-guest-room.js` (the scaffold every guest room stands on: its stream, plan, odds and decision, its slices on the clock, its stages, its teardown), `kolob-guest-*.js` (every guest), `kolob-testimony.js`, `kolob-guests.js` (the set pieces), `kolob-plan.js` (the meeting's plan, pure: the Sunday, the order of service, the guests against the budget, the seatings, the day's hymnal and its orders), `kolob-meeting.js` (the meeting conducted: the sections entered, the conductor's tick, the joints, the chorister's book, the chord desk) |
 | the facade | `kolob-core.js` — raises `window.KolobAudio`; the only thing the page calls |
 | the version | `VERSION` — one line, `v0.36.N — what the owner would notice`; bumped in the same commit as any audible or visible change (SCORE §8); `index.php` prints it with a fingerprint of the served bytes |
 | the labs | `*-lab.php` + `*-lab.js` — unlinked dev benches, one per subsystem (`hymn-lab` is the owner's listening checkpoint for the composer; `room-lab` the impulse responses; `voices-lab` v0.30's four voices, its own copy, against the ward) |
@@ -41,12 +41,14 @@ plays the same meeting every time, in the browser and in the headless harness.
 
 ## How a meeting works, in one breath
 
-`KolobAudio.play()` cues `planMeeting` on the audio clock. The planner draws a
+`KolobAudio.play()` cues `planMeeting` on the audio clock. The plan
+(`kolob-plan.js`, pure: handed the streams and what the house knows) draws a
 Sunday of the colony year, the keynote, the mode and the order of service
 (prelude, invocation, hymns, testimony, sacrament, doxology, postlude), seats the
 guests against one budget, draws the day's hymnal (a house dialect, a key per
-hymn, the forms) and orders the hymns from the composer off the audio thread,
-seats the ward and its organist, and enters the first section. A conductor tick
+hymn, the forms) and seats the ward and its organist; `planMeeting` writes it
+into the house, orders the hymns from the composer off the audio thread, and
+enters the first section. A conductor tick
 runs each section; a joint closes it; the next begins. Every decision is a draw
 from a named stream forked from the visit's seed (SCORE §3), every die is thrown
 whether or not its result is used, and no musical decision reads the audio clock
@@ -83,7 +85,7 @@ npm run lint                             # no undefined names, no unused variabl
 node art/kolob/tools/loadcheck.js        # the engine loads headless; the roll call and the page's guard; the desk's files; one hymn proofread; every lab's list loads in its order
 node art/kolob/tools/lends.js            # every S.x read has a lend; every BORROWED wrapper calls the lend it is named after
 node art/kolob/tools/samecode.js         # a comment pass changed no code token (against HEAD; --ref <ref>)
-node art/kolob/tools/golden.js           # the pure core (plan, hymns, guests, organist, ward) on seeds 1–40, in seconds
+node art/kolob/tools/golden.js           # the pure core (plan, hymns, guests, organist, ward) on seeds 1–40, in seconds; the plan run with the house shut
 node art/kolob/_harness.js 300 7         # a meeting plays headless, no errors, no late cue
 node art/kolob/tools/selftest.js         # the measurement tools read true
 node art/kolob/tools/tally.js --a git:main --b worktree --seeds 1-20   # did my change move the music?

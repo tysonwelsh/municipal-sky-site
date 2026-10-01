@@ -17,7 +17,7 @@ harness's dump, so they keep working when the engine changes; two drive a
 | `loadcheck.js` | Does the engine load, does every room answer, does the facade carry what the page calls, does one hymn proofread? Does every lab load its rooms in its own order? | the source, headless | ~2 s |
 | `lends.js` | Does every `S.name` a room reads have a lend somewhere on the shared bag? Is every BORROWED wrapper exact? | the source | <1 s |
 | `samecode.js` | Did an edit touch only comments and whitespace? | the source, in git and in the worktree | ~1 s |
-| `golden.js` | Does the pure core — the plan of meeting 1, the hymns, the guests' decisions, the organist, the ward — compose what it composed (`tools/golden/*.json`)? | the engine, headless, no audio | ~12 s for 40 seeds on 4 cores |
+| `golden.js` | Does the pure core — the plan of meeting 1, the hymns, the guests' decisions, the organist, the ward — compose what it composed (`tools/golden/*.json`)? | the engine, headless, no audio | ~16 s for 40 seeds on 4 cores |
 | `distinctness.js` | Do two random seeds sound clearly different within three minutes? (design law 2) | the dump | ~2 s for 20 seeds |
 | `repetition.js` | How often does a meeting say the same thing twice, and which shapes turn up in every meeting? | the dump | ~2 s for 20 meetings |
 | `tally.js` | What is a meeting made of (cadences, guests, sections, notes per layer)? Did a change move it (A/B)? | the dump | ~2 s per 20 seeds; A/B at 60 seeds, under a minute |
@@ -133,7 +133,7 @@ stops with the harness's `LOAD` error.
 ## The harness
 
 ```sh
-node _harness.js <secs> <seed> [ives] [razz] [cumulative] [force=<guest>] [exp=<spec>]
+node _harness.js <secs> <seed> [ives] [razz] [cumulative[=<mode>]] [force=<guest>] [exp=<spec>]
                  [stop=<secs>,…] [play=<secs>,…] [reseed=<seed>@<secs>,…]
                  [throw=<lane>@<secs>,…] [badlistener=note|event] [desk=<secs>]
                  [dump=<file>] [header]
@@ -150,7 +150,8 @@ built, warnings, errors) and ends with `VERDICT: PASS ✓` or `FAIL ✗`; exit 1
 any caught error or a late cue; a module that fails to load prints
 `LOAD <file>: <error>` and no dump is written. The switches: `ives` /
 `force=<guest>` (`setForceVisitation(true)` / one named guest), `razz`
-(`setForceRaspberry(true)`), `cumulative` (`setCumulativeMode("always")`),
+(`setForceRaspberry(true)`), `cumulative` (`setCumulativeMode("always")`;
+`cumulative=never`, `=natural` or `=always` sets that mode),
 `exp=<spec>` (as `?exp=` takes it: `-name`, `+name`, `none`, `all`),
 `dump=<file>` (the note and event streams) and `header` (with `dump=`: a first
 line naming the run and the engine — the tools and CI always pass it; a plain
@@ -330,8 +331,8 @@ methods the page and the labs call. It then runs the page's own guard
 (`kolob_engine_guard()`, read from `_engine.php`) as the page does, after the
 rooms: it must name in `KOLOB._broken` exactly what the roll call missed
 (`kolob-ui.js` keeps PLAY disabled on it) and set nothing on a whole load. The
-calendar must stand before `kolob-meeting.js` is evaluated (the meeting
-requires it). The composer's desk: the files the hymnal's worker would load
+calendar and the plan (`kolob-plan.js`) must stand before `kolob-meeting.js`
+is evaluated (the meeting requires both). The composer's desk: the files the hymnal's worker would load
 on the page — found by the script tags the page prints from the list, under a
 stub Worker — must be the list's own, in its order. Then one pure smoke: the
 composer writes a hymn from a fixed stream and the Score's proofreader passes
@@ -414,7 +415,7 @@ node tools/golden.js [--seeds 1-40] [--engine <dir>|git:<ref>] [--jobs N] [--per
 
 The tally proves a change left the music alone by playing twenty meetings
 through the harness, ten minutes. Most of the engine's thinking is pure, and a
-change there is proved here in seconds: about 12 s for 40 seeds on four cores
+change there is proved here in seconds: about 16 s for 40 seeds on four cores
 (the slowest seeds, 10 and 18, write a partner doxology, fourteen tries at the
 fit, in 2–3 s; a doxology the reckoning writes 24 ways takes about a second).
 For each seed the first meeting of a fresh visit is planned and its hymns
@@ -422,7 +423,7 @@ written, and five results are hashed, one file each in `tools/golden/`:
 
 | kind | what is hashed |
 |---|---|
-| `meeting` | what `planMeeting` leaves: the Sunday the calendar drew (its die and its answer), the order of service (each rite's type, length, meter and light, holds included), the guests seated and refused, the seatings, the day's hymnal and forms, the reckoning's order, the Hosanna, the testimony, the chorale prelude, and every event it emitted |
+| `meeting` | what `planMeeting` leaves (the plan's `day` and `seat`, `kolob-plan.js`, written into the meeting by `kolob-meeting.js`): the Sunday the calendar drew (its die and its answer), the order of service (each rite's type, length, meter and light, holds included), the guests seated and refused, the seatings, the day's hymnal and forms, the reckoning's order, the Hosanna, the testimony, the chorale prelude, and every event it emitted |
 | `hymns` | the hymnal's orders (`prepare`'s rows, forms and reckoning) and every order written by `kolob-hymnal.js`'s own `write()` (through `get()`): the same others, the same dependency, the doxology's reckoning, a partner where drawn, the refrain — the Score as returned |
 | `guests` | each guest room's `decide()` on the info `planMeeting` handed its `plan()`, on a fresh `guest:<name>:<n>` |
 | `organist` | `Organist.seat` and `preludeDraw` as the meeting called them; the chorale prelude where drawn; for each hymn the organ plays, in the day's order with the ledger carried, `modulate` into a keyed hymn and `accompany` (the giving out, the verses, the interludes, the amen) |
@@ -443,7 +444,28 @@ pure planners the meeting calls (the calendar's draw, the hymnal's plan and
 forms, each guest's plan, `Cast.seat`, the organist's seat and prelude draw)
 are watched as they are called, and each is called again on a fresh stream of
 the same label: it must give what it gave the meeting, or the run names it
-(`FAULT … not pure on its arguments and its stream`). While a seed is computed,
+(`FAULT … not pure on its arguments and its stream`). **The plan itself**
+(`KOLOB.Plan`'s `day` and `seat`) is watched the same way and held to its own
+header: the meeting's call of each runs with the house shut — every lend on
+the shared bag (read or written, or one lent anew), the page (`document`,
+`location`, `localStorage`, `navigator`), the audio (`AudioContext` and its
+kin), the timers, `performance`, `Worker`, `KolobAudio`, `Date` and
+`Math.random` throw when touched, and the touch is told with where it came
+from (`FAULT … the plan: S.ctx in Plan.seat: seat (kolob-plan.js:308)`);
+the streams the house deals it (`draws.stream`, the core's `S.stream`) are
+let through, the plan that asks for them is not. What it was handed must be
+as it was after the call (`the plan: Plan.seat wrote what it was handed`).
+Both halves are then called again, with the house shut, on fresh streams of
+the meeting's labels (`<label>:<n>`, one stream per label in a call, as the
+core's; a fresh `cast:<n>` each time it is asked), and must give the
+meeting's own day and seating; and on 21 settings of the switches (the
+switch's own pick, each guest it may name, the withheld tune always and
+never, the raspberry, the pipes silent, the reckoning held) twice each, the
+same both times. The line `the plan: KOLOB.Plan's day() and seat() ran with
+the house shut …` says so, or `— BUT NOT ALL (above)`. Planted in scratch
+copies of `kolob-plan.js`, each is named: a read of `KOLOB._s.ctx`, of
+`document` and of `setTimeout`, a `Math.random()`, a write to the day it was
+handed, and a counter kept between calls. While a seed is computed,
 `Math.random` and `Date.now` throw and the call is named with the two frames
 under it (`the trap: Math.random() in hymns: compose (kolob-composer.js:1944) ←
 errand (kolob-hymnal.js:466)`); nothing calls either today. The hash is SHA-1
@@ -463,7 +485,8 @@ the conductor past the plan (each section's turns, the tick, the joints, the
 chord desk), the set pieces (`kolob-guests.js`), every guest's `prepare()`,
 `score()` and `perform()`, the choir's performance, the core, the hymnal's
 worker and idle roads as such — and any meeting after the first, and the
-switches (`ives`, `force=`, `cumulative`, `razz`, `exp=`). A clean golden says
+switches (`ives`, `force=`, `cumulative`, `razz`, `exp=`) but for the plan's
+own two halves, run on them twice and not against a baseline. A clean golden says
 the pure core did not move on these seeds, nothing more; a change to anything
 else still needs the tally.
 

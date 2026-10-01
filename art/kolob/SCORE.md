@@ -46,8 +46,12 @@ fails a wrapper that calls another name or moves an argument.
 under a bare mock of the page (`global.window = global`, each file run with
 `vm.runInThisContext`: `tools/loadcheck.js`, `_harness.js`). Pure today:
 pitch, score, tunes, melody, harmony, dialects, hymnists, composer, organist,
-calendar, the hymnal's `plan`/`forms`, every guest's `plan`/`prepare`/`score`
-and the guest rooms' scaffold (`kolob-guest-room.js`).
+calendar, the hymnal's `plan`/`forms`, every guest's `plan`/`prepare`/`score`,
+the guest rooms' scaffold (`kolob-guest-room.js`) and the meeting's plan
+(`kolob-plan.js`, `KOLOB.Plan`: `day` and `seat`, handed the streams and
+what the house knows; `tools/golden.js` runs both with the house shut —
+the shared bag, the page, the audio, the timers, `Date` and `Math.random`
+throw when touched — and again on fresh streams).
 **Synthesis modules** (`kolob-voices-*.js`) take the AudioContext, a
 destination and a scheduled time, and never read `ctx.currentTime` to decide
 *when* something happens (§4).
@@ -66,15 +70,16 @@ organStats`), the bus (`setNoteListener setEventListener`), the faults
 (`confess`: the page's own, told the house's way, §6),
 the rooms (`getRooms setRoom preloadRoomIR setRoomBalance setLayerDepth
 attachAnalyser`). One number lives in one place: a rate the page shows is
-read from the engine (`getCumulativeOdds` → `kolob-meeting.js`
-`CUMULATIVE_ODDS`, 0.08), never retyped.
+read from the engine (`getCumulativeOdds` → `kolob-plan.js`
+`CUMULATIVE_ODDS`, 0.08, lent by the meeting), never retyped.
 
 **THE ONE LIST is `_engine.php`.** Every page that plays the engine
 (`index.php`, the labs that load it whole, the harness, the tools) reads the
 room list from it; a module is added there and nowhere else (the composer's
 worker loads its rooms from the page's own tags, in the list's order). The
-meeting requires the calendar: `kolob-calendar.js` stands ahead of
-`kolob-meeting.js`, and `tools/loadcheck.js` fails a list where it does not.
+meeting requires the calendar and its plan: `kolob-calendar.js` and
+`kolob-plan.js` stand ahead of `kolob-meeting.js`, and `tools/loadcheck.js`
+fails a list where they do not.
 Today, in order:
 
 | role | rooms |
@@ -83,7 +88,7 @@ Today, in order:
 | the tuning, the score, the Earth tunes | `kolob-pitch.js`, `kolob-score.js`, `kolob-tunes.js` |
 | the composers (pure) | `kolob-melody.js`, `kolob-harmony.js`, `kolob-dialects.js`, `kolob-hymnists.js`, `kolob-composer.js`, `kolob-organist.js`, `kolob-experimental.js`, `kolob-calendar.js` |
 | the voices | `kolob-voices-pipeorgan.js`, `kolob-voices-organ.js`, `kolob-voices-choir.js`, `kolob-voices-winds.js`, `kolob-voices-ground.js`, `kolob-voices-field.js`, `kolob-voices-band.js`, `kolob-voices-folk.js`, `kolob-voices-vocal.js` |
-| the performers | `kolob-cast.js`, `kolob-hymnal.js`, `kolob-guest-room.js` (the guest rooms' scaffold), `kolob-guest-trombones.js`, `kolob-guest-handbells.js`, `kolob-guest-singingschool.js`, `kolob-guest-bands.js`, `kolob-guest-handcart.js`, `kolob-guest-gulls.js`, `kolob-guest-variations.js`, `kolob-guest-changes.js`, `kolob-guest-tongues.js`, `kolob-guest-farward.js`, `kolob-guest-hosanna.js`, `kolob-guest-socialhall.js`, `kolob-testimony.js`, `kolob-guests.js`, `kolob-meeting.js` |
+| the performers | `kolob-cast.js`, `kolob-hymnal.js`, `kolob-guest-room.js` (the guest rooms' scaffold), `kolob-guest-trombones.js`, `kolob-guest-handbells.js`, `kolob-guest-singingschool.js`, `kolob-guest-bands.js`, `kolob-guest-handcart.js`, `kolob-guest-gulls.js`, `kolob-guest-variations.js`, `kolob-guest-changes.js`, `kolob-guest-tongues.js`, `kolob-guest-farward.js`, `kolob-guest-hosanna.js`, `kolob-guest-socialhall.js`, `kolob-testimony.js`, `kolob-guests.js`, `kolob-plan.js` (the meeting's plan, pure), `kolob-meeting.js` (the meeting conducted) |
 | the facade | `kolob-core.js` |
 
 The page then loads `kolob-text.js`, `kolob-viz.js`, `kolob-ui.js`, which are
@@ -103,7 +108,7 @@ staff's cartouche as they stood until 2026-10-01; `question-lab.*`; the
 owner's ruling of 2026-09-27) and the bagpipe (`kolob-voices-bagpipe.js`,
 `bagpipe-lab.*`; 2026-09-13): code kept, not loaded. The Question's dice are
 still drawn so no later draw moves: `qDie = R.chance(0.29)` and `qSeatDie =
-R.chance(0.7)` on `meeting:<n>` (`kolob-meeting.js` planMeeting, `void`ed;
+R.chance(0.7)` on `meeting:<n>` (`kolob-plan.js` day, `void`ed;
 the switch never names it). The bagpipe left no die behind: it is no layer,
 and `SHELVED` in `kolob-core.js` (the mechanism for a muted layer) is empty.
 
@@ -176,7 +181,7 @@ page (`kolob-viz.js`) keeps its own copies.
 
 **Frequency.** `Hz = keynoteHz × ratio(keyMonzo) × ratio(monzo)`.
 - The **keynote** is `F0 × ROOT_MULT` (4). `F0` is drawn once a meeting on
-  `meeting:<n>`: `R.rnd(52, 78)` Hz (`F0_RANGE`, `kolob-meeting.js`), so the
+  `meeting:<n>`: `R.rnd(52, 78)` Hz (`F0_RANGE`, `kolob-plan.js`), so the
   keynote is about 208–312 Hz. `S.F0`, `S.ROOT_MULT`, `S.mode` are lent.
 - The **key** is the hymn's, relative to the keynote (`kolob-hymnal.js`
   `KEYS`): `home [0,0,0,0]`, `sub [2,-1,0,0]` (4/3 up), `dom [-2,1,0,0]` (3/4
@@ -204,7 +209,7 @@ mode's own "do" (`KOLOB.Composer.doOf(mode)`: ionian/penta/hexa 0,
 mixolydian 3, dorian 6, aeolian 2).
 
 Authority: `kolob-pitch.js`, `kolob-score.js` (the proofreader),
-`kolob-hymnal.js` (`KEYS`), `kolob-meeting.js` (`F0_RANGE`).
+`kolob-hymnal.js` (`KEYS`), `kolob-plan.js` (`F0_RANGE`).
 
 ---
 
@@ -243,7 +248,7 @@ its own stream every meeting; `Cast.planHymn` throws every die of every
 practice for every hymn; the choir throws vowels for four verses always.
 Known sites that keep a die thrown but unread: `qDie`, `qSeatDie` (the
 shelved Question), `bDie`, `bSeatDie` (`void bDie; void bSeatDie;`, the plan's
-old band dice) in `kolob-meeting.js` planMeeting; `void regDie` in
+old band dice) in `kolob-plan.js` day; `void regDie` in
 `kolob-organist.js` (`VAR_PLAY.chorale`); the hymnal's `hymn:<k>` thrown for
 every singing section of the plan; the organist's `preludeDraw` roll thrown
 before its refusals are read.
@@ -262,12 +267,12 @@ pump's `currentTime`; it is sound-level.
 
 | label | who draws it, and the forks below |
 |---|---|
-| `meeting:<n>` | the plan (`kolob-meeting.js` planMeeting): the Sunday, season, F0, mode, every section's length, the plan's own guest dice (the Question's, the old band's, the steeples', the old tune's, `cumDie`, `razzDie`, `forcedDie`); `section:<i>` per section entered (its fuging, sunrise and the doxology's rise, read again from a fresh copy for the hymnal) |
+| `meeting:<n>` | the plan (`kolob-plan.js` day): the Sunday, season, F0, mode, every section's length, the plan's own guest dice (the Question's, the old band's, the steeples', the old tune's, `cumDie`, `razzDie`, `forcedDie`); `section:<i>` per section entered (`enterSection`, `kolob-meeting.js`: its fuging, sunrise and the doxology's rise, read again from a fresh copy for the hymnal by the plan's seat) |
 | `motif:<n>` | the day's temper and gestures (`Motif.newMeeting`) |
 | `conductor:<n>` | the conductor's dice each 0.6 s tick, always thrown |
 | `joints:<n>` | `joint:<i>` per section ended (`runJoint`) |
 | `stillness:<n>` | the still small voice's turns (`turn:<k>`) |
-| `prelude:<n>` | the prelude's seating (`seatPrelude`) |
+| `prelude:<n>` | the prelude's seating (`seatPrelude`, `kolob-plan.js`) |
 | `scenes:<n>` | the other rites' seatings; `hum:<i>` where a scene hums |
 | `reckoning:<n>` | the drone's walk: `pedal:<i>`, `glide:<next>` |
 | `hymnal:<n>` | the day's hymnal: `house`; `hymn:<k>` per singing section (dialect, key, away; `hymnist:light`), thrown used or not |
@@ -346,7 +351,7 @@ inside a Score are seconds from the Score's own start (`t`, `dur`;
   cue of their own a second before (`PRE_MADE`); the variations' set is made
   ready in idle time by a timer once its hymn is written (`readyAhead`), and
   its cue holds the section. A section is held at plan time for a cued guest
-  (`holdSection`).
+  (`holdSection`, the plan's seating in `kolob-plan.js`).
 - The house listens — the organist's own chords, the harmonium, the strings
   and the clarinet begin no turn — while `hallListens`: a listened guest
   sounds (`LISTENED`), a hymn sounds, the chorale prelude sounds, or a
@@ -851,8 +856,8 @@ Hall use its pieces (`laneOf`, `tellAt`, `rowsOf`). The meeting's own guests
 (`S.guestsLane`) with their own standing (`standsFor(n, still)`: the music
 playing, the meeting the one that seated them, and their own record held).
 
-**The budget** (`Calendar.GUEST_BUDGET`, enforced in `planMeeting` by
-`budgetRefuses`): `max` 2 guests a meeting, the Hosanna counted; one of the
+**The budget** (`Calendar.GUEST_BUDGET`, enforced in the plan's seating,
+`kolob-plan.js` seat, by `budgetRefuses`): `max` 2 guests a meeting, the Hosanna counted; one of the
 `showpieces` (the variations, the Social Hall, the Hosanna) at most; never two
 guests in the same rite, nor in neighbouring rites unless the Sunday's
 `neighbours` allow the pair (Pioneer Day: the band and the Social Hall). A
@@ -918,8 +923,8 @@ variations tongues socialhall hosanna`), listens until the guest's span ends
 The conductor's `visit` names the guest while it sounds unless it is unlogged.
 
 Authority: `kolob-calendar.js` (`GUEST_ODDS`, `GUEST_BUDGET`),
-`kolob-meeting.js` (planMeeting, `FORCEABLE`, `VISIT_FN`, `PRE_MADE`,
-`LISTENED`, `arrive`), `kolob-guests.js` (the set pieces, `guestNote`),
+`kolob-plan.js` (day and seat, `FORCEABLE`), `kolob-meeting.js`
+(planMeeting, `VISIT_FN`, `PRE_MADE`, `LISTENED`, `arrive`), `kolob-guests.js` (the set pieces, `guestNote`),
 `kolob-guest-room.js` (the scaffold), each `kolob-guest-*.js`,
 `kolob-testimony.js`, `kolob-ui.js` (`GUEST_ROWS`).
 
@@ -966,8 +971,8 @@ Kept from the 2026-10-01 housekeeping (nothing musical moved):
   for byte and runs `tools/selftest.js`.
 - The bagpipe and the Question are in `shelved/`; `SHELVED` in `kolob-core.js`
   remains the mechanism for a muted layer, empty.
-- One number for the Whole switch: `kolob-meeting.js CUMULATIVE_ODDS` (0.08),
-  lent as `S.CUMULATIVE_ODDS`, read by the page through
+- One number for the Whole switch: `kolob-plan.js CUMULATIVE_ODDS` (0.08),
+  lent by the meeting as `S.CUMULATIVE_ODDS`, read by the page through
   `KolobAudio.getCumulativeOdds`.
 - Load-time throws are gone from the cast: a misspelt phoneme in `ACTION_DS`
   warns and prints "?". The hymnal's worker forgets refrains with their
