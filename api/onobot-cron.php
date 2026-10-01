@@ -119,14 +119,14 @@ $G = $ASCII ? [
     'up' => '^', 'down' => 'v', 'flat' => '=', 'lt' => '<', 'gt' => '>', 'pin' => '|',
     'spark' => [' ', '.', ':', '-', '=', '+', '*', '#'], 'ok' => 'ok', 'bad' => 'XX',
     'star' => ['*', '.', '+'], 'moon' => ['o', ')', 'O', '('], 'tl' => '+', 'tr' => '+',
-    'bl' => '+', 'br' => '+', 'v' => '|', 'h' => '-', 'times' => 'x',
+    'bl' => '+', 'br' => '+', 'v' => '|', 'h' => '-', 'times' => 'x', 'ellipsis' => '..',
 ] : [
     'full' => '█', 'empty' => '░', 'half' => '▄', 'win' => '▒', 'today' => '░',
     'ground' => '▀', 'rule' => '─', 'dot' => '·', 'bullet' => '•', 'arrow' => '▸',
     'up' => '▲', 'down' => '▼', 'flat' => '=', 'lt' => '◀', 'gt' => '▶', 'pin' => '┃',
     'spark' => ['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'], 'ok' => '✓', 'bad' => '✗',
     'star' => ['*', '·', '+'], 'moon' => ['●', '☽', '○', '☾'], 'tl' => '╭', 'tr' => '╮',
-    'bl' => '╰', 'br' => '╯', 'v' => '│', 'h' => '─', 'times' => '×',
+    'bl' => '╰', 'br' => '╯', 'v' => '│', 'h' => '─', 'times' => '×', 'ellipsis' => '…',
 ];
 
 // ─────────────────────────────────────────────────────────────
@@ -139,7 +139,7 @@ function center($s, $n) { $s = (string) $s; $k = max(0, $n - mbw($s)); $l = intd
 function num($n) { return number_format((float) $n); }
 function money($x) { return $x === null ? '—' : '$' . number_format((float) $x, 2); }
 function pct($a, $b) { return $b > 0 ? round(100 * $a / $b) . '%' : '—'; }
-function trunc($s, $n) { $s = trim(preg_replace('/\s+/', ' ', (string) $s)); return mbw($s) > $n ? mb_substr($s, 0, $n - 1, 'UTF-8') . '…' : $s; }
+function trunc($s, $n) { global $G; $e = $G['ellipsis']; $s = trim(preg_replace('/\s+/', ' ', (string) $s)); return mbw($s) > $n ? mb_substr($s, 0, $n - mbw($e), 'UTF-8') . $e : $s; }
 function clip($s, $n) { // hard cap on a rendered line, so nothing ever wraps
     return mbw($s) > $n ? mb_substr($s, 0, $n, 'UTF-8') : $s;
 }
@@ -225,12 +225,13 @@ function wrap_out(callable $out, $label, array $items, $sep, $width) {
 }
 // Word-wrap $text after $prefix; continuation lines hang at the prefix width.
 function wrap_text(callable $out, $prefix, $text, $width) {
+    global $G;
     $indent = str_repeat(' ', mbw($prefix));
     $avail = max(10, $width - mbw($prefix));
     $words = preg_split('/\s+/', trim((string) $text)) ?: [];
     $line = '';
     foreach ($words as $w) {
-        if (mbw($w) > $avail) $w = mb_substr($w, 0, $avail - 1, 'UTF-8') . '…';
+        if (mbw($w) > $avail) $w = mb_substr($w, 0, $avail - mbw($G['ellipsis']), 'UTF-8') . $G['ellipsis'];
         if ($line !== '' && mbw($line) + 1 + mbw($w) > $avail) {
             $out($prefix . $line);
             $prefix = $indent;
