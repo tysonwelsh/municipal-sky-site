@@ -14,11 +14,18 @@ if (!isset($jd_page_label)) $jd_page_label = null;
 
 
 // Cache-bust local assets with an md5 content hash (?v=xxxxxxxx). Computed at
-// request time so a changed file always ships a fresh URL.
+// request time so a changed file always ships a fresh URL. Memoised for the
+// request: the build stamp below hashes every asset, and the script tags and
+// the pages' own <link>/<style> lines ask for the same files again — each
+// file is read and hashed once per request, not two or three times.
 function jd_v($file)
 {
-    $path = __DIR__ . '/' . $file;
-    return file_exists($path) ? substr(md5_file($path), 0, 8) : '00000000';
+    static $memo = [];
+    if (!isset($memo[$file])) {
+        $path = __DIR__ . '/' . $file;
+        $memo[$file] = file_exists($path) ? substr(md5_file($path), 0, 8) : '00000000';
+    }
+    return $memo[$file];
 }
 
 // Build/version stamp (printed small at the foot of the notes) — a way to tell at a
@@ -35,9 +42,10 @@ function jd_v($file)
 // them means an art-only edit both busts the visitor's cache (the hashes are
 // stamped onto the script tag below) and moves the build fingerprint +
 // deploy stamp the owner reads in the colophon.
-// The script is six files since 2026-09-05 (one per module; see the file
-// map in CLAUDE.md), loaded synchronously in dependency order below. Each
-// carries its own ?v= token; all six move the build fingerprint.
+// The script is seven files since 2026-09-26 (one per module — six from
+// 2026-09-05, then jd-filmstrip.js; see the file map in CLAUDE.md), loaded
+// synchronously in dependency order below. Each carries its own ?v= token;
+// all seven move the build fingerprint.
 $jd_scripts = ['jd-core.js', 'jd-filmstrip.js', 'jd-furniture.js', 'jd-record.js',
                'jd-darkroom.js', 'jd-turn.js', 'jd-bench.js'];
 $jd_assets  = array_merge(['junk-drawer.css'], $jd_scripts,
@@ -50,19 +58,14 @@ $jd_assets  = array_merge(['junk-drawer.css'], $jd_scripts,
 $jd_vlines  = preg_split('/\R/', trim((string) @file_get_contents(__DIR__ . '/VERSION')), -1, PREG_SPLIT_NO_EMPTY) ?: [];
 $jd_vlast   = $jd_vlines ? (string) end($jd_vlines) : '';
 $jd_version = $jd_vlast !== '' ? preg_split('/\s+—\s+/u', $jd_vlast)[0] : 'dev';
-$jd_build   = substr(md5(implode('', array_map('jd_v', $jd_assets))), 0, 6);
+// The fingerprint and the deploy time cover the asset list plus the page's
+// own extras, in that order — computed once, over the merged list.
+$jd_stamped = (!empty($jd_extra_assets) && is_array($jd_extra_assets))
+    ? array_merge($jd_assets, $jd_extra_assets) : $jd_assets;
+$jd_build   = substr(md5(implode('', array_map('jd_v', $jd_stamped))), 0, 6);
 $jd_mtime   = 0;
-foreach ($jd_assets as $jd_a) {
+foreach ($jd_stamped as $jd_a) {
     $jd_p = __DIR__ . '/' . $jd_a;
     if (is_file($jd_p)) { $jd_m = filemtime($jd_p); if ($jd_m > $jd_mtime) $jd_mtime = $jd_m; }
 }
 $jd_deployed = $jd_mtime ? gmdate('Y-m-d H:i', $jd_mtime) . ' UTC' : '';
-
-if (!empty($jd_extra_assets) && is_array($jd_extra_assets)) {
-    foreach ($jd_extra_assets as $jd_x) {
-        $jd_p = __DIR__ . '/' . $jd_x;
-        if (is_file($jd_p)) { $jd_m = filemtime($jd_p); if ($jd_m > $jd_mtime) $jd_mtime = $jd_m; }
-    }
-    $jd_build = substr(md5(implode('', array_map('jd_v', array_merge($jd_assets, $jd_extra_assets)))), 0, 6);
-    $jd_deployed = $jd_mtime ? gmdate('Y-m-d H:i', $jd_mtime) . ' UTC' : '';
-}
