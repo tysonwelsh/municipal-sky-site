@@ -7,12 +7,13 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
 
 ## The refactor
 
-- **`PLAN-REFACTOR.md`** (2026-10-01; §2 built, v0.36.3; §3.6 built): the owner asked for a plan to improve
+- **`PLAN-REFACTOR.md`** (2026-10-01; §2 built, v0.36.3; §3.6 and §3.1 built): the owner asked for a plan to improve
   efficiency, reliability and maintainability without changing what is heard or seen. Its §2, the
   real faults, is done (commits 3eefffb to a373760: a cue that threw ended its layer for the visit; a
   stillness survived STOP; STOP's own race; errors swallowed silently; a broken page let PLAY be
-  pressed; the harness's accounting), and §3.6, the golden tests (`tools/golden.js`, commit 22f8bf5).
-  What remains is §3 (one place for each thing: the Pitch arithmetic, the guest-room scaffold, the
+  pressed; the harness's accounting), §3.6, the golden tests (`tools/golden.js`, commit 22f8bf5), and
+  §3.1, one home for the pitch and Score arithmetic (`KOLOB.Pitch`, `KOLOB.Num`, `KOLOB.Score`, commit ea82e61).
+  What remains is §3 (one place for each thing: the guest-room scaffold, the near-duplicate pairs, the
   planner out of the conductor, the lint) and §4 (the page's load and frame, the minutes' poll, the
   audio graph with the owner), in §6's order.
   The §2 builders' follow-ups, not done:
@@ -30,6 +31,18 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
     hymn's own beat): a pure export of the choir's `performancePlan` would let it walk them as the meeting does;
   - not under the golden: the guests' `prepare()` and `score()`, `Cast.planRefrain` and `Cast.score`, any
     meeting after the first, and the switches (ives, force=, cumulative, razz, exp=).
+  The §3.1 builder's follow-ups, not done:
+  - the page's own copies in `kolob-viz.js` (`COLLECTIONS`, `clamp`, `monzoCents`, `unitsOf`, `spanBeats`)
+    fold into `KOLOB.Pitch`, `KOLOB.Num` and `KOLOB.Score` with the screens, in §3.5;
+  - the labs keep their own (`earth-tunes-lab.js`, `guests3b-lab.js`, `hymn-lab.js`, `organist-lab.js`
+    ratio; the guests labs' `mod`); `DO_OF` is typed three times (the composer, the singing school, the
+    staff) beside `KOLOB.Composer.doOf`; the far ward's and the tongues' `pickWith` over `pickW` belong to
+    the pickW variants; the composer's inline span at its round differs from `Score.spanBeats` (no
+    "stands later" test) and was left;
+  - `tools/loadcheck.js` could load every lab's list of rooms headless, in the lab's order (a scratch
+    check did, 13 of 13), so a room that comes to need `kolob-score.js` is caught where a lab lacks it
+    (`trombone-lab` loads no `kolob-score.js`; `voices-lab`, `instruments-lab` and `earth-tunes-lab`
+    no `kolob-pitch.js`).
 
 ## Ideas approved, not built
 
