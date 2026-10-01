@@ -3,7 +3,8 @@
 Phase 0 of `art/junk-drawer/REFACTOR-PLAN.md`: the evidence that a refactor
 changed **nothing** a visitor or the owner can see or do. `capture.js` drives
 the real app (the drawer page, the report card, the turn card at every
-`data-view`, the analytics folder, `?admin`, `?bench`, `/about/`) in headless
+`data-view`, the analytics folder, `?admin`, `?bench`, `/about/` — its
+opening view and its walkthrough, step by step) in headless
 Chromium against a local dev server and writes screenshots, normalised
 markup, computed styles, API payloads, the `window.JD_*` surface and the
 console. `compare.js` diffs two such captures and exits 0 only when every
@@ -34,8 +35,14 @@ echo $?        # 0 = identical in every artifact; 1 = look at the report
 - `--keep-server` leaves `php -S` up on :8000 afterwards, serving the
   post-capture database (frozen clock still on), and **keeps holding the
   lock** until you press Ctrl-C.
-- One capture takes **~175 s** on this machine (plus any wait for the lock)
-  and writes **~60 MB** (`shots/` ~35 MB). Delete old runs when done.
+- One capture takes **~560 s** on this machine (plus any wait for the lock)
+  — ~180 s for the drawer, cards, turns and folder, ~380 s for the three
+  `/about/` walkthrough groups — and writes **~145 MB** (`shots/` ~78 MB,
+  `markup/` and `styles/` ~33 MB each). Delete old runs when done.
+- `--scenes about-steps,about-steps-phone` captures only the `/about/`
+  walkthrough (~5 min; both groups are read-only). `about-steps-after`
+  needs the four turn groups first (they then run without writing
+  artifacts), like `after`.
 - Commit nothing under `local-dev/`. The capture directories are evidence
   for your report, not repo content.
 
@@ -82,9 +89,11 @@ screenshots are byte-stable under these settings) and says so.
    "Determinism".
 5. **Payloads** (Node `fetch`, `Referer: http://127.0.0.1:8000/…` so the
    origin gate admits it), then the **browser groups** in a fixed order:
-   `drawer, motion, pick, record, folder, admin, bench, about` (read-only),
+   `drawer, motion, pick, record, folder, admin, bench, about, about-steps,
+   about-steps-phone` (read-only),
    then `turn, turn-phone, apology, turn-api` (these write turns to the DB),
-   then `after` (the same surfaces again, now with rated turns in the data).
+   then `after` and `about-steps-after` (the same surfaces again, now with
+   rated turns in the data).
    Every page is a fresh browser context (a fresh visitor: empty storage).
 
 ## Output layout
@@ -95,8 +104,11 @@ screenshots are byte-stable under these settings) and says so.
                       group timings, git HEAD/branch/dirty files of --root,
                       determinism settings, raw build stamps, warnings,
                       skipped scenes, the normalisation list
-<out>/shots/<scene>.png        (paged dialogs: <scene>.png, <scene>@2.png, …)
-<out>/markup/<scene>.html      normalised outerHTML of each surface
+<out>/shots/<scene>.png        (paged dialogs: <scene>.png, <scene>@2.png, …;
+                               /about/ desktop scenes also <scene>.pane.png)
+<out>/markup/<scene>.html      normalised outerHTML of each surface (the
+                               /about/ walkthrough scenes open with a
+                               `<!-- jd-regress state {…} -->` line)
 <out>/styles/<scene>.json      computed styles of every element of each surface
 <out>/payloads/<name>.json     RAW response bodies, byte for byte
 <out>/payloads/headers.json    status + content-type of each; data.php's ETag,
@@ -105,7 +117,11 @@ screenshots are byte-stable under these settings) and says so.
 <out>/surface.json    window.JD_* keys, typeof each, own enumerable member
                       names of each object/function, <script src> basenames
                       in load order, <html> classes — for the drawer page
-                      (drawer-desktop), the ?bench page and /about/
+                      (drawer-desktop), the ?bench page and /about/; plus
+                      `about-steps` / `about-steps-phone`: window.JD_about's
+                      members and their types, the step list, the walk
+                      (offset and state per step) and the set of URLs the
+                      walkthrough page fetched
 <out>/console.json    every console error/warning and page error, per page
 <out>/server.log      php -S output (not compared)
 ```
@@ -126,7 +142,7 @@ to `:root` (plan §4.1) **will** show up as new `--…` properties on every
 element below it; compare.js counts "standard" vs "custom-only" changes
 separately so you can tell that apart from a real cascade change.
 
-Two deliberate limits, both covered elsewhere:
+Three deliberate limits, all covered elsewhere:
 - the `d` property (SVG path data) is omitted — it mirrors the `d`
   attribute, which `markup/` captures byte for byte;
 - **artwork** (an inlined `<svg>` with ≥ 25 descendant elements) is walked in
@@ -136,7 +152,12 @@ Two deliberate limits, both covered elsewhere:
   `"art": <n descendants not walked>`. This keeps the 12 filmstrip clones and
   the about page's hidden pile from costing ~25 s per scene, while every
   context's rules that reach inside artwork (e.g. `.jd-item svg *
-  { pointer-events: visiblePainted }`) are still pinned once.
+  { pointer-events: visiblePainted }`) are still pinned once;
+- **pruning** (the `/about/` walkthrough scenes only): an element below a
+  surface root whose computed `display` is `none` records its own line plus
+  `"pruned": <n descendants not walked>`. `#jd-about-pane` holds four
+  scenes and the poster's hidden pile at all times; each is walked in the
+  captures where it is the one on screen (the pile in `about-wake-*`).
 
 ## Scenes
 
@@ -165,6 +186,17 @@ apply and pile presses are real taps). deviceScaleFactor 1 everywhere.
 | `admin-card-desktop` | `?admin` + the succulent's card in edit mode (`select.rc-edit`, SAVE RATINGS, HIDE FROM DRAWER), paged; `.jd-record-scrim` + `.jd-bench-bar` |
 | `bench-strip-desktop`, `bench-curate-desktop` | `?bench`: the queue's first workable item (today the Ionic column, which resumes on its ranking card) seated in curate mode on the turn card; the strip; paged |
 | `about-desktop` / `-phone` | `/art/junk-drawer/about/`, initial view, full page; `.jd-about-pane` + `.jd-about-notes` |
+| `about-step-<data-step>-desktop` ×16 | group `about-steps`: every `.jd-step` in document order (`hook, premise, graded, try, taxonomy, claude-fable-5, gemini-3-1-pro, gemini-answer, gemini-structure, kimi-k3, stack, grades, distribution, multiples, spend, outro`), made the active step by scrolling it to the stepper's focus line (see "/about/, step by step"): shots `<scene>.png` (viewport) + `<scene>.pane.png` (`#jd-about-pane`); `#jd-about-pane` + the step + `#jd-timeline`; state line |
+| `about-wake-desktop`, `about-wake-pick-desktop` | the drawer wakes: the mouse enters scene 1 (`pointerenter`) → `html.jd-drawer-awake`, the live pile in place of the poster; then the Googie UFO clicked on its ink → its tag |
+| `about-instrument-rated-a-` / `-call-` / `-ranked-` / `-said-desktop` | scene 2 (step `try`), the sealed demo card filled as far as it goes: drawing A answered; B–D answered (podium empty); C, A, D, B placed; FILE (the job's no-op `file()`) → the unveil "Who drew what" |
+| `about-record-axdef-desktop`, `about-record-alt-desktop` | scene 3 (step `claude-fable-5`): the first category's definition unfolded (`.rc-axbtn`); the third thumbnail (`.rc-alt[data-resp="2"]`, Claude Opus 5) → the card turns in place (`turnInPlace`) |
+| `about-tip-desktop` | scene 4 (step `stack`): the mouse on the first Item cell → the prompt card `.jd-prompt-tip` |
+| `about-step-<data-step>-phone` ×16 | group `about-steps-phone`: the same steps at 390, made current by the phone's own line; the viewport down to the end of the step's section (shot), its `.jd-ph-sec` + the step (+ the empty `#jd-timeline`); state line |
+| `about-figure-<section>-phone` ×10 | after the walk, each section's figure(s) — the section's top down to its first step — (`drawer, instrument, fable, gemini, kimi, turns, grades, distribution, axes, cost`) brought under the banner and paged (`@2`, …) |
+| `about-wake-phone` | a tap on the poster wakes the drawer and picks the pictured item under the finger (today the three of hearts) |
+| `about-instrument-*-phone` | as on the desktop, in the phone's inline card (paged figure; the card "turns a page" on every NEXT) |
+| `about-record-axdef-phone`, `about-record-alt-phone`, `about-tip-phone` | the Fable card's definition button tapped (it does **not** unfold on a phone — see Known gaps), its third thumbnail tapped (`phoneTurn`), the records table's first Item cell clicked → the prompt card |
+| `about-step-<stack…spend>-after-desktop` / `-after-phone`, `about-figure-<turns…cost>-after-phone` | group `about-steps-after`: scene 4 again once the turns are filed — on the pristine DB `jd-analytics.php` has no model on a visitor turn, so every chart and the table's model columns are empty |
 | `turn-form-desktop` | the turn card opened by clicking the PUSH button (`data-view=form`) |
 | `turn-form-filled-desktop` | prompt typed |
 | `turn-darkroom-desktop` | `data-view=darkroom` with all four `jd-generate.php` calls **held** at the network layer |
@@ -189,6 +221,149 @@ The groups `turn`, `turn-phone`, `apology` and `turn-api` write to the DB.
 and `jd-rate.php` (the shape `submitRatings()` posts; no artifacts) because
 the folder only plots a model's grades and categories once it has three
 ratings on visitor turns.
+
+## /about/, step by step (about-steps, about-steps-phone, about-steps-after)
+
+`about-scenes.js` has no stepping API: the walkthrough is driven by the
+scroll offset and by its own timers. So the harness drives it as a reader
+does — it scrolls — to the offset the page's **own** stepper reads as "this
+step", then waits until the page agrees and has gone quiet, and only then
+captures. `window.JD_about` (read-only: `scene()`, `step()`, `handoff()`,
+`refit()`) is used to *check* the page, never to drive it.
+
+**Activation (desktop, 1440×900).** `pickStep()` makes a step current
+(`JD_about.step()`, the pane's scene) once its top has crossed
+`focusLine()` — 45% down the viewport — and lit (`.jd-step.is-on`) once it
+has crossed `litLine()`, 65% down; the timeline's own buttons scroll a step
+to `focusLine() - 4`. The harness computes the same offset from the step's
+`getBoundingClientRect()` and `scrollY` (`scrollY + top - 0.45·innerHeight
++ 4`, clamped to the page: `hook` sits at 0), calls `window.scrollTo` with
+`behavior: 'instant'`, waits for the page's `scroll` event, waits for
+quiet, and asserts — failing the capture otherwise — that
+`JD_about.step()` is the step, `JD_about.scene()` is its `data-scene`,
+exactly one `.jd-step.is-on` exists and it is this step, and exactly one
+`#jd-about-pane > .jd-scene.is-on` exists and it is `[data-scene-pane=<data-scene>]`.
+Every step is reached in document order in one page (`about-steps-desktop`),
+so the walk carries its history like a reader's (the tag `graded` lifts is
+still up under scene 4, the pre-render's ghosts are in the hosts).
+
+**Activation (phone, 390×844).** On a phone (`PHONE_Q`) `phoneInit()` moves
+every scene out of the pane into a section of its own (`.jd-ph-sec[data-ph]`)
+and the pane is `display:none`; there is no stepper — `phoneScroll()` makes a
+step current once its top passes 62% of the screen, and `.jd-step.is-on` is
+never moved (the markup leaves it on `hook`). The harness scrolls to
+`scrollY + top - 0.62·innerHeight + 4` and asserts `JD_about.step()` and the
+step's section. The phone shows the page's own layout shift: jd-core's
+immersive chrome toggles `html.jd-chrome` on `scrollY`, showing the 56px
+banner, so a jump from the top lands one step short (the phone's
+`about-instrument` / `about-cards` pages). So every move re-measures and
+scrolls again once the page is quiet, as a reader keeps scrolling, up to 4
+times; the count is in the state line (`scroll.tries`: 1 everywhere in the
+walks, 2 where a phone page jumps from the top, e.g.
+`about-step-stack-after-phone`).
+
+**Quiet (`aboutQuiet`)** — instead of a fixed sleep. The page keeps working
+for seconds after a scroll: `fitSoon()`'s re-fit ladder (`FIT_AT`, up to
+3 s), the pre-render's 80 ms polls, the rail drive's 60 ms polls, the tag
+nudges, and after load the ~5–8 s burst in which the pre-render opens, fits,
+photographs and closes the report card, the charts and the instrument
+off-stage (the hidden pane re-renders over and over). The `/about/` pages get
+a second init script that wraps `setTimeout`/`clearTimeout` and keeps the set
+of pending callbacks with a delay up to 10 s plus the moment one was last
+scheduled, fired or cleared (the harness's scroll wait uses the unwrapped
+`setTimeout`; the shared settle's 40 ms polls are counted, harmlessly —
+they are over before the next hold starts). A `MutationObserver` watches `.jd-about` — `#jd-about-pane`,
+the steps, the timeline, the phone's sections — and `<body>`'s children
+(a card's scrim lands there before it is moved into the pane). Quiet means,
+for 600 ms together: no pending page timer and none fired, no mutation
+record, no running finite animation, and no request in flight (polled every
+100 ms, but the timer and mutation clocks are continuous, so a 48 ms timer
+that comes and goes between two polls still resets the hold). It times out
+after 45 s and fails the capture, listing the pending timers. On the page
+load it takes ~5–8 s, after a desktop step ~1–5 s (the ladder), after a
+phone step ~1 s. The ordinary settle (fonts, document-wide mutations, two
+frames) still runs inside every capture after it.
+
+**Captures and checks.** Each scene's markup opens with a state line,
+`<!-- jd-regress state {…} -->`: the step, `JD_about.scene()` / `step()`,
+the lit step, the pane's scene, the phone section, `JD_about.handoff()`
+(desktop; `null` at rest), per scene host the view it shows (`__shows`),
+whether it holds a ghost, its `data-focus` and its fit (`k`, natural and
+available size), whether the drawer is awake, the picked item, whether a
+tag is up, `scrollY`, the document height and the scroll target. It is part
+of the compared file. After every capture the harness asserts that
+capturing moved nothing (same `scrollY`, same step): a shot that scrolled
+would have moved the playhead. Desktop shots: the viewport, and the pane
+clipped out of a viewport shot (`<scene>.pane.png` — the pane is pinned and
+wholly on screen, so nothing scrolls); markup and styles of the pane, the
+step and `#jd-timeline` (its `is-on` / `is-done` stations follow the walk).
+Phone step shots are the viewport **down to the end of the step's own
+section** — see Known gaps; the figure pages (`about-figure-*`, the phone
+interactions) are the region from the section's top down to its first step
+(its figure or figures: the held ones are `position: sticky`, so their own
+rect says where they are held at the moment, not where they sit), brought
+to 8px under the banner and paged a viewport at a time, each page cut where
+the region ends; the scroll is put back afterwards so a `--scenes` subset
+reaches the same state. The page must carry exactly `ABOUT_STEPS` (and on the phone
+`ABOUT_PHONE_FIGS`'s sections) or the capture fails with both lists — update
+them deliberately. `surface.json` gets `about-steps` / `about-steps-phone`:
+`JD_about`'s member names and `typeof` each, the step list (and the phone's
+sections), the walk (per step: offset, tries, current step and scene, lit,
+pane, handoff) and the **set** of fetch/XHR URLs the walk page requested
+(a set, not counts: jd-turn's `ensurePayload()` races the drawer's
+`setData()` for the taxonomy, so the full `data.php` is fetched once or
+twice by timing). **The demo seal is checked:** any request to
+`jd-generate`, `jd-rate`, `jd-title`, `jd-item-rate` or `jd-curate` from an
+`/about/` page fails the capture.
+
+**The interactions** each get a fresh page (so the walk stays a pure walk):
+- *the drawer wakes* — desktop: the mouse moves onto a bare spot of the
+  poster (the drawer host's `pointerenter`, `pointerType: mouse`), the html
+  takes `.jd-drawer-awake`; then the UFO is clicked on its ink in the woken
+  pile → its tag. Phone: a tap at a fixed point of the well (88%, 33.5%) —
+  `pointerdown`/`pointerup` within the slop → `wake({x,y})` picks the item
+  pictured there (its id is in the state line; a tap that picked nothing
+  would be a manifest warning).
+- *scene 2* — scrolled to `try`, the sealed demo card is filled as far as it
+  goes: A answered (every select, the turn group's ratings), NEXT; B, C, D
+  likewise; the podium placed C, A, D, B; FILE — the walkthrough's job has a
+  no-op `file()`, so the card unveils "Who drew what" and nothing leaves the
+  page. On the desktop the step must stay `try` throughout; on the phone the
+  taps scroll the page (the card "turns a page"), so the step is recorded,
+  not asserted. The podium is placed with mouse clicks on both (as the turn
+  group does on the phone).
+- *scene 3* — scrolled to `claude-fable-5`: the first `.rc-axbtn` (on the
+  phone it does nothing — see Known gaps), then the third thumbnail (Claude
+  Opus 5, a drawing no step shows, so the card is built on demand).
+- *scene 4* — scrolled to `stack`: the mouse onto the first Item cell (the
+  capture leaves the mouse there; parking it would take the card down); on
+  the phone a mouse click on it (see Known gaps).
+
+**Not captured, and why** (also in `manifest.skipped`):
+- the **handoff and the relay** mid-flight: under `prefers-reduced-motion:
+  reduce` (the harness default) `layout()` skips the handoff entirely — the
+  scene switches at the boundary, no transforms, the relay stays hidden. A
+  motion-allowed run would be deterministic (the position is a function of
+  the scroll offset), but the drawer's draw-on and the cards' own motion
+  come with it; not built. `JD_about.handoff()` is still recorded per step.
+- the **timeline buttons** (they `scrollTo` with `behavior: 'smooth'`,
+  passing through every step between); its markup is captured per step.
+- Enter/Space on the turn plate and the tag's REPORT CARD / DOWNLOAD SVG
+  buttons — they open the full drawer in a new tab (`openDrawer`); dragging
+  pile items; the sibling strip's pagers (`.rc-alt-nav`); the prompt fold
+  (`.rc-pv`); the replay controls (filmstrips); `?live`; `?type=b|c`.
+- the breakpoint-crossing reload (`restoreStep`), and anything between 768
+  and 1440 wide or under 500 tall (the landscape-phone "static drawer" and
+  its early lift).
+- phone: the swipe-vs-drag split on a woken pile (`phoneSwipeScrolls`),
+  `keepTagInWell`'s drag of a tag seated above the well, the records table's
+  "Show all N prompts" button, the instrument's 15 s fallback note, the
+  dormant OPEN THE DRAWER button (`PHONE_OPEN_DRAWER = false`).
+- `about-figure-outro-phone` does not exist: the outro section is bare.
+- after the turns (`about-steps-after`) only scene 4 is captured again — it
+  is the scene that reads `jd-analytics.php`. With items newer than the
+  poster the drawer would scatter its slim pile afresh behind the picture;
+  scenes 2 and 3 read curated items the turns do not touch.
 
 ## Determinism — what is pinned, and how
 
@@ -237,8 +412,8 @@ artifact (see "Acceptance record" at the end). What makes them so:
   `styles/`, not by pixels. The two aborted font CSS requests appear as
   `Failed to load resource: net::ERR_FAILED` in every page's console, and the
   apology turn's four failed generations as `… status of 502 (Bad Gateway)`
-  for `jd-generate.php`; they are part of the baseline (44 messages, no page
-  errors).
+  for `jd-generate.php`; they are part of the baseline (64 messages — 44 before
+  the `/about/` walkthrough groups added ten pages — no page errors).
 - Chromium flags: `--disable-partial-raster` (essential: with partial raster
   a tile re-rastered piecemeal while the report card's filmstrip animated kept
   history-dependent anti-aliasing — two runs of the same card differed by
@@ -291,6 +466,19 @@ files are already normalised):
    `.jd-bench-build` (the strip: version · build · tax vN) → `■■■` runs. The
    raw values are kept in `manifest.stamps`; compare.js prints a note when
    they move (they must, whenever a fingerprinted asset changes).
+
+The `/about/` walkthrough scenes needed **no new rule**. Their state line
+goes through rules 1–6 with the rest of the file. The page's id families:
+the report-card clones `rc<n>-` (also inside the ghosts' `gr-rc<n>-…`) and
+the filmstrips `fsr<n>_` / `fsi<n>_` / `fsp<n>_` (and the turn card's own
+`fst<n>_`) are rule 6 (the
+pre-render and the walk mount them in a timing-dependent number); the ghost
+prefixes `gr-` / `ga-` / `gi-`, the phone's distribution clone `ds-` and the
+demo card's `demo-<rid>` generation ids are fixed and kept. Two things are
+*recorded* differently instead of normalised: the walk page's fetches are a
+sorted set of URLs (not counts — `data.php` is fetched once or twice by
+timing), and the phone's step shots end at the step's own section (a
+cropped shot, not a blanked region — see Known gaps).
 
 Applied by compare.js to `payloads/` only (stored raw, normalised when
 compared, then pretty-printed with sorted keys):
@@ -370,10 +558,33 @@ for pages both runs opened. Before a commit, run the full capture.
 
 ## Known gaps (not covered — say so if your change touches them)
 
-- **/about/ steps.** `about-scenes.js` exposes no way to step the
-  walkthrough (it is driven by scroll position and its own timers), so only
-  the initial view at desktop and phone is captured. Its first ~5 s after
-  load re-render the hidden record pane repeatedly (settle waits that out).
+- **/about/**: what the walkthrough groups do not drive is listed in
+  "/about/, step by step" (the handoff/relay mid-flight, the timeline
+  buttons, the new-tab links, drags, the breakpoint reload, …). Found while
+  building them, reported and captured as the page behaves today:
+  - **The phone's category definitions do not open.** On a phone card,
+    `.rc-axbtn` does nothing: `recordControls()` finds the definition
+    through `ax.closest('.jd-inline-card')`, and the phone's cards are
+    `.jd-ph-card` (`about-record-axdef-phone` records
+    `"axbtn":"false"` after the tap; the desktop's opens). Probably a real
+    bug; not fixed here (the harness never touches `art/`).
+  - **Phone prompt card: a mouse click, not a tap.** With Playwright's
+    emulated tap the card comes up on the tap's click and a `mouseover` on
+    the site banner 3 ms later (Chromium re-dispatching hover at a stale
+    pointer position once the card has laid out) takes it down again, so
+    `about-tip-phone` clicks with the mouse. Unverified on hardware.
+  - **Scene 4 is empty on the pristine DB.** `jd-analytics.php` has no model
+    until there are rated visitor turns, so the charts are bare frames and
+    the records table has no model columns in `about-step-{stack…spend}-*`;
+    `about-steps-after` captures the same steps with three turns filed.
+  - **Phone step shots are cut at the step's section.** Where the next
+    section opens with a held figure (gemini, kimi: `position: sticky`, a
+    composited layer entering at a fractional offset), its photo corners (a
+    gradient under a drop-shadow filter) rastered 1 level apart between
+    runs — one of two variants per page life, stable within it however long
+    the capture waited (each variant in 2–3 of 5 runs). Those figures are shot in their
+    own steps and in `about-figure-*-phone`; the step shot ends with its own
+    section.
 - **No-preference motion** is captured only for the pile at rest
   (`drawer-desktop-motion`). The rope's swing, the darkroom's drift and
   draw-on are time-based and not captured with motion allowed.
@@ -436,6 +647,55 @@ It is a capture of the MAIN checkout — use it for comparisons of the main
 checkout; a worktree captures its own baseline (its ETag differs).
 
 
+## Acceptance record — the /about/ walkthrough groups (2026-10-01)
+
+On the untouched `junk-drawer/about-refactor` checkout (app at `979d3a3`,
+the harness of the commit that added `about-steps`, `about-steps-phone` and
+`about-steps-after`): two consecutive **full** captures, 571.3 s and
+552.0 s, compared **identical** — 130 scenes (the 56 above + 74 new): 165
+shots, 113 markup, 113 styles, 15 payloads, surface, console (64 messages,
+no page errors), manifest; no warnings, no settle or quiet time-outs, every
+step current on the first scroll in both walks. Group times: `about-steps`
+152 s, `about-steps-phone` 144 s, `about-steps-after` 75 s.
+
+Sensitivity — each a `--scenes about-steps,about-steps-phone` capture of a
+throwaway worktree (~300 s), compared with `--cross-checkout` against the
+full main-checkout capture above:
+- the unchanged worktree (the control): **identical** (89 shots, 49 markup,
+  49 styles, 9 payloads, surface, console; the rest not captured);
+- `letter-spacing: 0` → `0.01px` on `.jd-about .jd-step h2` (about.css):
+  **116 artifacts differ**, exit 1 — 49 styles (`letter-spacing` on the
+  step's heading), 41 shots, 25 markup and `surface.json`: one heading
+  re-wrapped, so every offset from `gemini-structure` on moved by 29px and
+  the state lines and the walk say so;
+- one class name added in a built string of about-scenes.js
+  (`jdc-sheetfig` on the records table's `<figure>` in `chartsHTML`):
+  **26 artifacts differ**, exit 1 — the markup of every desktop scene (the
+  table is built at load and kept in the hidden analytics host) and of the
+  phone's turns section, and the styles where the table is on screen; no
+  pixel (the class has no rule), exactly as it should be.
+
+Found and fixed on the way (each is described where it lives):
+- the phone landed one step short when jumping from the top (the immersive
+  chrome's 56px banner) → re-measure and scroll again (`scroll.tries`);
+- the phone's step shots flipped between two ±1-level rasterings of the
+  next section's held figure (2–3 runs in 5 each) → cut at the step's
+  section;
+- the walk's fetch counts flipped (`data.php` once or twice) → a set;
+- the figure pages measured the held (sticky) figures where they were held,
+  not where they sit → measured from the section's top to its first step;
+- the phone's prompt card, tapped, closed itself again → a mouse click.
+One earlier full pair differed in `turn-darkroom-phone.png` only, inside
+the words iframe — the known flake below; the next pair was identical.
+
+The saved baseline is
+`/home/user/municipal-sky-site/local-dev/jd-regress/baseline-about-<sha>/`
+(sha = the commit that added these groups; the app files are those of
+`979d3a3`). It is a capture of the MAIN checkout: compare main-checkout
+captures against it, and give a worktree its own baseline (or use
+`--cross-checkout`).
+
+
 ## Known flake (found during the refactor, 2026-10-01)
 
 `turn-darkroom-phone` deals the **words** indicator into one swatch: an
@@ -447,4 +707,5 @@ every time. When that one shot differs, re-run `--scenes turn-darkroom-phone`
 and confirm the diff lies inside the iframe; a subset run also renders the
 page behind the card at a different scroll, so compare subset against
 subset. Everything else in 20+ full captures across six worktrees was
-byte-stable.
+byte-stable. (Seen once more in the seven full captures made for the
+`/about/` walkthrough groups: same place, markup and styles identical.)
