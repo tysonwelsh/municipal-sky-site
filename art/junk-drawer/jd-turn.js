@@ -298,6 +298,10 @@
     document.documentElement.classList.remove('jd-turn-open');
     /* the bar goes with the innerHTML below; its parked animations do not */
     if (filmstrip) { try { filmstrip.destroy(); } catch (e) {} filmstrip = null; }
+    /* …and neither do the darkroom's word drifts: their metronomes live on
+       timers, not on the elements (see paint), so a close mid-wait would
+       leave them minting letters onto a detached sheet until the next mount */
+    if (window.JD_dark) window.JD_dark.stopAll();
     bodyEl.innerHTML = '';
     if (lastFocus && document.contains(lastFocus)) {
       try { lastFocus.focus(); } catch (e) {}
@@ -714,12 +718,52 @@
       if (res) res.innerHTML = darkResultInner(slot, st);
       var sr = sw.querySelector('[data-slotsr]');
       if (sr) sr.textContent = 'slot ' + slot + ': ' + st.word;
+      if (st.state === 'ok' || st.state === 'fail') stopDriftAfterFade(sw);
     });
     var slow = bodyEl.querySelector('[data-slow]');
     if (slow && work.slow) slow.removeAttribute('hidden');
     /* (the round-17 countdown title — "Three are still drawing" — retired
        with round 26's fixed PLEASE STAND BY heading; the per-slot status
        lines above are the progress announcements now) */
+  }
+  /* A landed swatch's word drift is stopped once its well has faded out.
+     The CSS pause on a landed swatch only governs CSS animations; the
+     drift's letters fall on element.animate() and are minted by a metronome
+     on a timer, so without this the swatch would go on minting letters
+     behind its fade until the next paint. Not AT the landing: the letters
+     that fall during the well's 0.5s fade are part of what the visitor
+     watches go. After it: the well's own opacity transitionend, or a 600ms
+     fallback, whichever comes first, once. The fallback is for the fade
+     that never fires an end (reduced motion has no transition — and no
+     drift either, so there it finds nothing to stop); it waits instead
+     while the tab is hidden or the fade is provably still running (a
+     hidden tab only starts the fade once the visitor is back), for as long
+     as the swatch is still on the card. Only a swatch dealt the drift has
+     anything to stop. */
+  function stopDriftAfterFade(sw) {
+    var drift = sw.querySelector('.jd-drift');
+    if (!drift) return;
+    var well = sw.querySelector('.jd-dark-well'), timer = 0, done = false;
+    function fading() {
+      if (!well || !well.getAnimations) return false;
+      return well.getAnimations().some(function (a) {
+        return a.transitionProperty === 'opacity' && a.playState !== 'finished';
+      });
+    }
+    function stop(e) {
+      if (done) return;
+      if (e && (e.target !== well || e.propertyName !== 'opacity')) return;
+      if (!e && document.contains(sw) && (document.hidden || fading())) {
+        timer = setTimeout(stop, 600);
+        return;
+      }
+      done = true;
+      if (well) well.removeEventListener('transitionend', stop);
+      clearTimeout(timer);
+      if (window.JD_dark && window.JD_dark.stop) window.JD_dark.stop(drift);
+    }
+    if (well) well.addEventListener('transitionend', stop);
+    timer = setTimeout(stop, 600);
   }
   function startSlowTimer() {
     stopSlowTimer();
