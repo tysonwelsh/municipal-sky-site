@@ -1835,7 +1835,10 @@
     if (!t.closest) return;
     var ax = t.closest('.rc-axbtn');
     if (ax) {
-      var card = ax.closest('.jd-inline-card');
+      /* the card is .jd-inline-card in the pane and .jd-ph-card on a phone
+         (prepCard); until 2026-10-01 only the first was looked for, so the
+         phone's definition buttons did nothing */
+      var card = ax.closest('.jd-inline-card, .jd-ph-card');
       var dr = card && card.querySelector('#' + ax.getAttribute('data-axd'));
       if (dr) {
         var opening = dr.hidden;
