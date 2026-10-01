@@ -2028,8 +2028,8 @@
             '<span class="jdc-name">' + esc(name[r.model_id] || r.model_id) + '</span>' +
             '<span class="jdc-track"><i class="jdc-rtrack"></i><i class="jdc-mid"></i>' +
             (ps > 0 ? '<b class="jdc-seg" style="left:0;width:' + ps.toFixed(2) + '%;background:' + ink[0] + '"></b>' : '') +
-            (pt - ps > 0 ? '<b class="jdc-seg jdc-seg-end" style="left:calc(' + ps.toFixed(2) + '% + ' + (ps > 0 ? 1 : 0) +
-              'px);width:calc(' + (pt - ps).toFixed(2) + '% - ' + (ps > 0 ? 1 : 0) + 'px);background:' + ink[1] + '"></b>' : '') +
+            (pt - ps > 0 ? '<b class="jdc-seg jdc-seg-end" style="left:' + ps.toFixed(2) + '%;width:' +
+              (pt - ps).toFixed(2) + '%;background:' + ink[1] + '"></b>' : '') +
             '<i class="jdc-ci" style="left:' + (q.lo * 100).toFixed(2) + '%;width:' + ((q.hi - q.lo) * 100).toFixed(2) + '%"></i></span>' +
             '<span class="jdc-val">' + pc(q.rate) + '</span></div>';
         }).join('');

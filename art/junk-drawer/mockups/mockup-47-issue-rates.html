@@ -337,8 +337,8 @@ tbody tr.axis-head td { text-align: left; font-weight: 700; color: var(--ink); p
       var ws = XW * ps, wt = XW * pt;
       if (ws > 0) el('rect', { x: X0, y: by, width: ws.toFixed(2), height: BARH,
         fill: ax.jnsq ? C.has : C.big }, g);
-      /* a 1.2-unit paper seam between the two segments */
-      var lx = X0 + ws + (ws > 0 ? 1.2 : 0), lw = X0 + wt - lx;
+      /* the pale segment butts straight onto the dark one */
+      var lx = X0 + ws, lw = wt - ws;
       if (lw > 0.4) el('rect', { x: lx.toFixed(2), y: by, width: lw.toFixed(2), height: BARH,
         fill: ax.jnsq ? C.hint : C.small }, g);
       /* the whisker: a thin grey line, capped */

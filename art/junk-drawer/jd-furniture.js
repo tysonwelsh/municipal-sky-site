@@ -1264,8 +1264,9 @@
           s += '<rect x="' + PX0 + '" y="' + by + '" width="' + ws.toFixed(2) +
                '" height="' + BARH + '" fill="' + (hit ? HIT_HAS : ISSUE_BIG) + '"/>';
         }
-        /* a hairline paper seam between the two segments */
-        var lx = PX0 + ws + (ws > 0 ? 0.7 : 0), lw = PX0 + wt - lx;
+        /* the pale segment butts straight onto the dark one, no seam
+           (owner, 2026-10-01) */
+        var lx = PX0 + ws, lw = wt - ws;
         if (lw > 0.3) {
           s += '<rect x="' + lx.toFixed(2) + '" y="' + by + '" width="' + lw.toFixed(2) +
                '" height="' + BARH + '" fill="' + (hit ? HIT_HINT : ISSUE_SMALL) + '"/>';
