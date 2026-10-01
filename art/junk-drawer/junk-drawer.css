@@ -2557,8 +2557,9 @@ html.jd-turn-open { overflow: hidden; }
    wristwatch (round-21 swap — the bouncing dots retire), the word drift
    (letters falling down the rules into a heap — round 27, 2026-08-23) and
    the word mesh (Kimi's Take, iframed — benched 2026-08-30, back
-   2026-09-29). Two more are BENCHED, not deleted, and their rules below
-   still work (see the note on DARK_POOL): the plotter pen tracing a
+   2026-09-29). Two more are BENCHED, not deleted, and their rules still
+   work, gathered under BENCHED INDICATORS below (see also the note on
+   DARK_POOL): the plotter pen tracing a
    circuit generated fresh each turn (round-20 swap — the flipping
    hourglass retires) and the honest bar (a fill that climbs, stalls, takes
    setbacks, and second-guesses itself above ~80 — rounds 24–25, owner pick
@@ -2671,56 +2672,6 @@ html.jd-turn-open { overflow: hidden; }
   display: flex; align-items: center; justify-content: center;
   transition: opacity 0.5s;
 }
-
-/* the plotter pen (round 18, owner pick 2026-08-17; the hourglass
-   retires): a machine plotting a circuit along the graph paper's own rules.
-   The path itself is GENERATED per turn in the JS (darkPlotCircuit — a
-   spanning-tree tour, different every turn, seamless by construction); this
-   file only knows two dash windows on that path. The ink is a 15-unit
-   window (of pathLength 100; owner trim 2026-08-17, from 30) crawling
-   around the circuit — line appearing at the head, lifting away at the
-   tail — and the nib is a 0.01-unit round dot pinned to the window's head:
-   base offsets -15 and -30 stay exactly 15 apart, and both travel -100 per
-   loop, so the dot rides the ink's leading edge forever. Static base: a
-   partial trace, pen resting on it.
-   REGISTRATION (owner note, 2026-08-17): the pen must draw ON the swatch's
-   printed rules, not near them, so the well opens to the whole swatch
-   (the stray's precedent) and the SVG pins to the paper's own 9px grid:
-   round() snaps the centred offset down to a multiple of 9, then +5px
-   seats the stroke's centre on the 1px rule (rules paint at [9k, 9k+1),
-   centre 9k+0.5; the SVG's inner margin is 4.5, and 5 + 4.5 = 9.5). The
-   un-snapped pair above it is the fallback for browsers without round():
-   plain centring — a hair off the rules, never broken.
-   MIND THE ANCHOR EDGES (mobile fix, 2026-08-17): each gradient layer
-   phases from the edge its gradient line starts at — 90deg from the LEFT,
-   but 0deg from the BOTTOM — so the horizontal rules' phase moves with the
-   swatch's height. Snapping `top` therefore only registered at heights
-   that happened to be multiples of 9 (the desktop harness was; phones
-   weren't). The vertical pin is `bottom`, same arithmetic: the SVG's
-   bottom margin is also 4.5, so bottom = 9m+5 puts every horizontal
-   stroke at 9k+0.5 off the bottom edge, exactly the painted rule, at ANY
-   swatch height. Never snap `top` while the paper's 0deg layers phase
-   from the bottom. */
-.jd-dark-well--plot { left: 0; right: 0; top: 0; bottom: 0; }
-.jd-dark-plot {
-  display: block; position: absolute;
-  left: calc(50% - 45px); bottom: calc(50% - 27px);
-  left: calc(round(down, 50% - 45px, 9px) + 5px);
-  bottom: calc(round(down, 50% - 27px, 9px) + 5px);
-}
-.jd-dark-plot .plot-ink {
-  fill: none; stroke: rgba(74, 98, 138, 0.9); stroke-width: 1.6;
-  stroke-linecap: round; stroke-linejoin: round;
-  stroke-dasharray: 15 85; stroke-dashoffset: -15;
-}
-.jd-dark-plot .plot-nib {
-  fill: none; stroke: var(--tink); stroke-width: 4;
-  stroke-linecap: round;
-  stroke-dasharray: 0.01 99.99; stroke-dashoffset: -30;
-}
-/* implicit from: each starts at its base offset, one full period apart */
-@keyframes jdDarkPlotInk { to { stroke-dashoffset: -115; } }
-@keyframes jdDarkPlotNib { to { stroke-dashoffset: -130; } }
 
 /* the stray word: "please / wait" adrift on the print, ricocheting off
    the swatch's own edges like the DVD-menu logo of blessed memory (round-19
@@ -2927,17 +2878,6 @@ html.jd-turn-open { overflow: hidden; }
    indicator never re-based, so it alone kept the asymmetry and centred 5%
    low. The watch centres on the swatch itself now, like its neighbours. */
 .jd-dark-well--watch { left: 0; right: 0; top: 0; bottom: 0; }
-/* The bar needs this for the same reason the other four do: the BASE
-   .jd-dark-well is inset top:24% / bottom:14% — legacy room under the slot
-   letter — which centres it at 55% of the swatch, ~5% low. Every indicator
-   overrides it as it is built; the bar arrived in round 24 without one and
-   measured 54.8% against its neighbours' 50%. Any SIXTH indicator needs this
-   line too. The bar's well is also a container, so the teletype's type
-   scales in cqw (the scatterword's precedent; see the teletype below). */
-.jd-dark-well--bar {
-  left: 0; right: 0; top: 0; bottom: 0;
-  overflow: hidden; container-type: size;
-}
 
 /* the watch writes in the ruling blue like its neighbours (owner,
    2026-08-26 — it stood out as the one brown indicator): the case, lugs,
@@ -2967,6 +2907,78 @@ html.jd-turn-open { overflow: hidden; }
 @keyframes jdDarkWatchMin { to { transform: rotate(calc(var(--jdwm, 60deg) + 360deg)); } }
 @keyframes jdDarkWatchHr  { to { transform: rotate(calc(var(--jdwh, -55deg) + 360deg)); } }
 
+/* ---- BENCHED INDICATORS -----------------------------------------------------
+   Two indicators are out of the rotation but BENCHED, not deleted (owner):
+   the plotter pen, and the honest bar set as the teletype. DARK_POOL in
+   jd-darkroom.js does not deal them, so nothing below reaches the page
+   today — but their JS (darkPlotCircuit, darkHonestBar and their darkWell
+   branches) and every rule here still work, and putting a name back in
+   DARK_POOL brings it back with no other edit. Their lines in the motion,
+   pause and stillness lists further down stay for the same reason. Gathered
+   here 2026-10-01: the rules are unchanged, only their place in the file. */
+
+/* the plotter pen (round 18, owner pick 2026-08-17; the hourglass
+   retires): a machine plotting a circuit along the graph paper's own rules.
+   The path itself is GENERATED per turn in the JS (darkPlotCircuit — a
+   spanning-tree tour, different every turn, seamless by construction); this
+   file only knows two dash windows on that path. The ink is a 15-unit
+   window (of pathLength 100; owner trim 2026-08-17, from 30) crawling
+   around the circuit — line appearing at the head, lifting away at the
+   tail — and the nib is a 0.01-unit round dot pinned to the window's head:
+   base offsets -15 and -30 stay exactly 15 apart, and both travel -100 per
+   loop, so the dot rides the ink's leading edge forever. Static base: a
+   partial trace, pen resting on it.
+   REGISTRATION (owner note, 2026-08-17): the pen must draw ON the swatch's
+   printed rules, not near them, so the well opens to the whole swatch
+   (the stray's precedent) and the SVG pins to the paper's own 9px grid:
+   round() snaps the centred offset down to a multiple of 9, then +5px
+   seats the stroke's centre on the 1px rule (rules paint at [9k, 9k+1),
+   centre 9k+0.5; the SVG's inner margin is 4.5, and 5 + 4.5 = 9.5). The
+   un-snapped pair above it is the fallback for browsers without round():
+   plain centring — a hair off the rules, never broken.
+   MIND THE ANCHOR EDGES (mobile fix, 2026-08-17): each gradient layer
+   phases from the edge its gradient line starts at — 90deg from the LEFT,
+   but 0deg from the BOTTOM — so the horizontal rules' phase moves with the
+   swatch's height. Snapping `top` therefore only registered at heights
+   that happened to be multiples of 9 (the desktop harness was; phones
+   weren't). The vertical pin is `bottom`, same arithmetic: the SVG's
+   bottom margin is also 4.5, so bottom = 9m+5 puts every horizontal
+   stroke at 9k+0.5 off the bottom edge, exactly the painted rule, at ANY
+   swatch height. Never snap `top` while the paper's 0deg layers phase
+   from the bottom. */
+.jd-dark-well--plot { left: 0; right: 0; top: 0; bottom: 0; }
+.jd-dark-plot {
+  display: block; position: absolute;
+  left: calc(50% - 45px); bottom: calc(50% - 27px);
+  left: calc(round(down, 50% - 45px, 9px) + 5px);
+  bottom: calc(round(down, 50% - 27px, 9px) + 5px);
+}
+.jd-dark-plot .plot-ink {
+  fill: none; stroke: rgba(74, 98, 138, 0.9); stroke-width: 1.6;
+  stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 15 85; stroke-dashoffset: -15;
+}
+.jd-dark-plot .plot-nib {
+  fill: none; stroke: var(--tink); stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: 0.01 99.99; stroke-dashoffset: -30;
+}
+/* implicit from: each starts at its base offset, one full period apart */
+@keyframes jdDarkPlotInk { to { stroke-dashoffset: -115; } }
+@keyframes jdDarkPlotNib { to { stroke-dashoffset: -130; } }
+
+/* The bar needs this for the same reason the other four do: the BASE
+   .jd-dark-well is inset top:24% / bottom:14% — legacy room under the slot
+   letter — which centres it at 55% of the swatch, ~5% low. Every indicator
+   overrides it as it is built; the bar arrived in round 24 without one and
+   measured 54.8% against its neighbours' 50%. Any SIXTH indicator needs this
+   line too. The bar's well is also a container, so the teletype's type
+   scales in cqw (the scatterword's precedent; see the teletype below). */
+.jd-dark-well--bar {
+  left: 0; right: 0; top: 0; bottom: 0;
+  overflow: hidden; container-type: size;
+}
+
 /* the honest bar, redrawn as THE TELETYPE (owner pick, mockup-38 option B,
    2026-08-26; the rounds-24/25 wobbled frame and hatched fill retire). The
    bar is set entirely in type, in the ruling blue the worded indicators
@@ -2980,8 +2992,6 @@ html.jd-turn-open { overflow: hidden; }
    bleed and becomes a container (the scatterword's precedent) so the type
    scales with the swatch. Static base: parked at 68%, mid-climb, readout
    agreeing for once — the pose a reduced-motion visitor sees. */
-/* (the bar's well — full bleed and a container — is with the other well
-   overrides above) */
 .jd-dark-tele {
   font-family: var(--tmono); font-weight: 700;
   letter-spacing: 0.08em; line-height: 1.9;
