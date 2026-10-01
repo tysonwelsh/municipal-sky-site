@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// GUESTS LAB 3B — audition bench for KOLOB 2's round-3c guests B (dev,
+// GUESTS LAB 3B — audition bench for two of KOLOB 2's guests (dev,
 // unlinked; reachable only by its URL, /art/kolob/guests3b-lab.php):
 //   · VARIATIONS ON A HYMN (KOLOB.GuestVariations, the organist's own
 //     Organist.variations): the Sunday's organist takes a hymn the composer

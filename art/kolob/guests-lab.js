@@ -1,5 +1,6 @@
 // ============================================================================
-// GUESTS LAB — audition bench for round 3's guests (dev, unlinked).
+// GUESTS LAB — audition bench for the handbells and the singing school (dev,
+// unlinked).
 //
 // The ward's handbell choir (KOLOB.GuestHandbells) and the singing school
 // (KOLOB.GuestSingingSchool, EXPERIMENTAL), each performing a hymn that

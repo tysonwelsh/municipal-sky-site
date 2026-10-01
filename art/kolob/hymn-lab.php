@@ -13,7 +13,7 @@
 // "Compose another" is the next seed. The panel shows what the hymn
 // measured and the checks it passed; "the spread" composes two dozen and
 // shows whether they all end alike. Below: a round, the partner hymn and the
-// wandering refrain (round 3).
+// wandering refrain.
 //
 // Loads the substrate's PJ2.Rand (read-only), the pure rooms in SCORE §1
 // order (pitch, score, tunes, melody, hymnists, dialects, composer), the two

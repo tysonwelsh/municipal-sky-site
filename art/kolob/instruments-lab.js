@@ -3,7 +3,7 @@
 //
 // Every instrument plays a short musical phrase in just intonation, through
 // the app's own master chain (glue → master 0.6 → tanh → compressor, copied
-// from kolob-audio.js init) plus a safety limiter, in the app's rooms. The
+// from kolob-core.js init) plus a safety limiter, in the app's rooms. The
 // lab never plays louder than the app. Its level reference is the v0.30
 // organChord as the prelude plays it (gainMul 0.75 × (0.6 + 0.4 × 0.21) —
 // mid-prelude intensity — peak gainMul × 0.7, linear ramps through env()),
@@ -37,7 +37,7 @@ window.InstrumentsLab = (function () {
   }
 
   // ==========================================================================
-  // THE CHAIN — copied from kolob-audio.js init(): rooms → voicesBus → glue →
+  // THE CHAIN — copied from kolob-core.js init(): rooms → voicesBus → glue →
   // masterGain(0.6) → tanh(1.15) → compressor(−18/3:1) — then a brick-wall
   // guard at −1 dBFS (the lab's promise never to exceed the app).
   // ==========================================================================
@@ -369,7 +369,7 @@ window.InstrumentsLab = (function () {
   };
 
   // ---- the reference: the v0.30 organ, as the prelude plays it -------------
-  // kolob-audio.js organChord(t, dur, chord, gainMul), line for line, with the
+  // kolob-voices-organ.js organChord(t, dur, chord, gainMul), line for line, with the
   // organ layer's default params (stops 0.5, tremulant 0.15, pedal 0.6):
   // every rank a sine, the unison rank a detuned pair, the whole chord an
   // octave down, a sine pedal two octaves under the bass, and env()'s LINEAR
@@ -384,7 +384,7 @@ window.InstrumentsLab = (function () {
   // organ layer receives — in the app the layer's volume (0.52) follows.
   var REF_GAINMUL = 0.75 * (0.6 + 0.4 * 0.21);
   var REF_DUR = 6, REF_STEP = 6.4;
-  function env(g, t, pts) {                         // kolob-audio.js env(): from true zero, linear
+  function env(g, t, pts) {                         // kolob-core.js env(): from true zero, linear
     g.gain.setValueAtTime(0, t);
     var tt = t;
     for (var i = 0; i < pts.length; i++) { tt += pts[i][0]; g.gain.linearRampToValueAtTime(pts[i][1], tt); }

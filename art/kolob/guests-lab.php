@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// GUESTS LAB — audition bench for KOLOB 2's round-3 guests: the ward's
+// GUESTS LAB — audition bench for two of KOLOB 2's guests: the ward's
 // handbell choir (KOLOB.GuestHandbells) and the singing school
 // (KOLOB.GuestSingingSchool, EXPERIMENTAL — gated by KOLOB.Experimental).
 // Each rings or sings a hymn the composer writes here, in any of the three

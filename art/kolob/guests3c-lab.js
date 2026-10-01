@@ -1,5 +1,5 @@
 // ============================================================================
-// GUESTS LAB, ROUND 3C — audition bench for the gift of tongues, the far
+// GUESTS LAB 3c — audition bench for the gift of tongues, the far
 // ward and the Hosanna (dev, unlinked).
 //
 // The seed seats the Sunday's ward (KOLOB.Cast, cast:1) and composes the

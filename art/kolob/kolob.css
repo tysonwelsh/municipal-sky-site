@@ -18,7 +18,7 @@
   --rule: rgba(30, 77, 59, 0.42);
   --gilt: #8a7a45;           /* restrained gold, the cover stamping */
 
-  /* the cover is a MAT now, not a backdrop: a bounded green cloth rectangle
+  /* the cover is a mat, not a backdrop: a bounded green cloth rectangle
      lying on the site's white page, the way the hymnbook lies on a table */
   position: relative;
   width: 100%;               /* never wider than the site wrapper: a flex item with auto margins is
@@ -55,7 +55,11 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='c'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='2'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23c)' opacity='0.06'/%3E%3C/svg%3E");
 }
 
-/* the page on the cover */
+/* the page on the cover.
+   Some classes in the markup have no rule here on purpose — they are hooks
+   for kolob-ui.js and the tools (and aria landmarks), not styled things:
+   stop-btn, kolob-board-block, kolob-board-hymn, kolob-copy-label,
+   kolob-board-name, kolob-board-author. Nothing is missing. */
 .kolob-scene .content-frame.kolob-frame {
   position: relative;
   z-index: 2;
@@ -83,10 +87,9 @@
 }
 .kolob-frame > * { position: relative; z-index: 1; }
 
-/* the edition switches — three pills at the right end of the colophon line
-   (they rode a masthead band above the title until v0.16). The buttons space
-   themselves so a wider label (the Deseret script name) never overlaps its
-   neighbor; they wrap on a narrow page. */
+/* the edition switches — three pills at the right end of the colophon line.
+   The buttons space themselves so a wider label (the Deseret script name)
+   never overlaps its neighbor; they wrap on a narrow page. */
 .kolob-toggles {
   display: flex;
   align-items: center;
@@ -172,9 +175,10 @@
 .kolob-scene .kolob-wheel-wrap { transition: opacity 2.5s ease; }
 
 /* ===================== the spacing scale — 0.6 / 1.2 / 2 / 2.8 rem ==========
-   Every block margin on the page is one of these four. 0.6 inside a band or
-   under a head; 1.2 between the plates and between the parts of the head;
-   2 between the boards; 2.8 between the console and the boards. */
+   Every block margin on the page is one of these four, but one: the credit's
+   1.1 rem above the imprint line (.kolob-credit). 0.6 inside a band or under
+   a head; 1.2 between the plates and between the parts of the head; 2
+   between the boards; 2.8 between the console and the boards. */
 
 /* ============================== title page ============================== */
 .kolob-header {
@@ -195,7 +199,7 @@
   height: 9px;
   border-top: 1px solid var(--rule);
   border-bottom: 1px solid var(--rule);
-  margin: 0;                        /* the full measure, like every other rule; the running head's slots sit under its ends */
+  margin: 0;                        /* the full measure, like every other rule */
 }
 .kolob-rule::after {
   content: "✧";
@@ -209,13 +213,13 @@
 }
 
 /* ============================== the page (viz) =========================== */
-/* The grand staff — two five-line staves, a brace, and the two clefs — is now
+/* The grand staff — two five-line staves, a brace, and the two clefs — is
    drawn entirely on the canvas (kolob-viz.js buildStaffLayer), so the strip is
-   just a sized, positioned frame. Taller than the single staff to hold both
-   staves plus ledger room above and below. */
+   just a sized, positioned frame, tall enough to hold both staves plus ledger
+   room above and below. */
 .kolob-viz-wrap {
   position: relative;
-  height: 240px;                    /* v0.31: a grand-staff gap and ledger room above and below (kolob-viz.js pageGeom) */
+  height: 240px;                    /* a grand-staff gap and ledger room above and below (kolob-viz.js pageGeom) */
   /* The staff and the wheel are almost one plate: the canvas is laid 20px up
      over the foot of the wheel band, and the plate (the only place ink is
      printed; kolob-viz.js pageGeom) begins at the band's foot, just under the
@@ -241,8 +245,8 @@
    disc with a paper glyph (the action pressed most is the one filled; it
    turns gilt while the meeting runs), PAUSE and STOP rings with ink glyphs
    (pause fills with ink while the meeting is held), then a spacer, the VOL
-   caption and the volume slider with its beehive-hexagon thumb. One hairline beneath the row, none above, so it sits close under
-   the staff. (v0.21 set these on a green rail; v0.22 took the rail away.) */
+   caption and the volume slider with its beehive-hexagon thumb. One hairline
+   beneath the row, none above, so it sits close under the staff; no rail. */
 .kolob-console {
   display: flex;
   align-items: center;
@@ -347,7 +351,7 @@
 
 /* the volume slider — a 2px ink line, inked up to the thumb and faint beyond
    it; and for the thumb a brass HEXAGON, pointy-top — the beehive of the
-   Deseret theme, the one thing kept from the Liahona dial's case. The hexagon
+   Deseret theme, the page's one bit of brass. The hexagon
    is NOT the browser's thumb: browsers paint their own box behind a styled
    thumb (a white square on some), so the native thumb is made invisible and
    keeps only the pointer, and an SVG hexagon (.kolob-lever-thumb) is laid
@@ -409,8 +413,8 @@
 }
 .kolob-lever:focus-visible + .kolob-lever-thumb { filter: drop-shadow(0 0 2px var(--gilt)); }
 
-/* the band's caterpillar (2026-09-29; pass 2, 2026-09-30): a volume for the
-   Nauvoo band alone, on the console only while the band is in the street.
+/* the band's caterpillar: a volume for the Nauvoo band alone, on the
+   console only while the band is in the street.
    It is the master slider's own parts and no others: a dark ink line for
    its body (the slider's filled part, the master's weight), the pale track
    ahead of it, and for its head a round thumb, a green ink disc with a
@@ -518,10 +522,10 @@
 
 /* ============================== the wheel ================================ */
 /* the order of service: the crown of a wheel, drawn by the canvas
-   (kolob-viz.js drawWheel) — the first plate, directly under the running
-   head, with the organ facade standing inside it on the horizon (the pipes
-   were their own plate above the wheel until v0.14; seating them in the
-   wheel's clear inner disc saves the page ~120px of height). Its horizon rule
+   (kolob-viz.js drawWheel) — the first plate, directly under the title's
+   rule, with the organ facade standing inside it on the horizon (seating the
+   pipes in the wheel's clear inner disc, rather than on a plate of their own
+   above it, saves the page ~120px of height). Its horizon rule
    is the divider before the staff, so the band ends just beneath it. The live
    region speaks the seat and its progress for readers who cannot see the
    wheel. */
@@ -547,8 +551,8 @@
 }
 
 /* ======================= the boards: hymn board + broadside ============== */
-/* the boards share one block margin (2rem); neither has a section head (they
-   were dropped in v0.18 to tighten the page) */
+/* the boards share one block margin (2rem); neither has a section head: the
+   page is tighter without them */
 .kolob-columns {
   display: grid;
   grid-template-columns: 1.25fr 1fr;
@@ -571,11 +575,11 @@
 }
 
 /* the hymn board: dark green board with a printed programme card pinned to
-   it (v0.20), the seed row on the green beneath. The card carries what the
-   running head and the direction line used to: the day in small capitals
-   under a short double rule; the mode · meter line in italic with the
-   direction as a gilt rubric after a dash; the day's numbers as one printed
-   line. Every line keeps its height when empty, so the board never shifts. */
+   it, the seed row on the green beneath. The card carries the day in small
+   capitals under a short double rule; the mode · meter line in italic with
+   the direction as a gilt rubric after a dash; the day's numbers as one
+   printed line. Every line keeps its height when empty, so the board never
+   shifts. */
 .kolob-board {
   background: linear-gradient(175deg, var(--cover-hi), var(--cover));
   border-radius: 3px;
@@ -701,7 +705,7 @@
 
 /* ========================= the instruments console ====================== */
 .kolob-stops-block { margin: 0 0 2rem; }
-/* the section head is now a collapse toggle (a caret + the label). The caret
+/* the section head is a collapse toggle (a caret + the label). The caret
    hangs in the margin outside the label column, so the label shares the same
    left edge as every other section head */
 .kolob-instruments-head {
@@ -733,9 +737,9 @@
   transform: translateY(0) rotate(-45deg);
 }
 .kolob-instruments-body[hidden] { display: none; }
-/* the FIELD subheading inside the console grid — set on the running head's
-   measure (0.78rem / 0.18em: the page has two small-caps sizes, the section
-   heads' 0.8/0.22 and this one), ink-faint to sit beneath the heads. Its rule
+/* the FIELD subheading inside the console grid — set a step under the
+   section heads (0.78rem / 0.18em: the page has two small-caps sizes, the
+   section heads' 0.8/0.22 and this one), ink-faint to sit beneath them. Its rule
    is ABOVE the label, deliberately: it closes the main list of stops, and the
    field stops hang beneath the label with no rule between them and it. */
 .kolob-field-head {
@@ -801,7 +805,7 @@
 /* seated in the right column beside the hymn board, the verse centred on
    the board's height */
 .kolob-broadside-block {
-  margin: 0;                       /* beside the board now, not beneath it */
+  margin: 0;                       /* beside the board, not beneath it */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -873,9 +877,9 @@
 .kolob-log-row.cat-motif .kolob-log-text { color: var(--ink); }
 
 /* ============================== colophon ================================= */
-/* one ruled line: the edition switches, centred (the series links that once
-   sat at the left were struck in v0.29; the credit and the build stamp below
-   are centred too, so the foot of the page reads as one column). */
+/* one ruled line: the edition switches, centred (no series links at the
+   left — the owner struck them; the credit and the build stamp below are
+   centred too, so the foot of the page reads as one column). */
 .kolob-colophon {
   display: flex;
   justify-content: center;

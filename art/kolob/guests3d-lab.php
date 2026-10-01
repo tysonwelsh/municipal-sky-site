@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// GUESTS LAB 3c — audition bench for KOLOB 2's round-3c pair: THE SOCIAL
+// GUESTS LAB 3d — audition bench for two of KOLOB 2's guests: THE SOCIAL
 // HALL (KOLOB.GuestSocialHall: after the benediction the benches are pushed
 // back, a fiddle, a caller, a reel or a jig made of one of the meeting's own
 // hymns) and THE TESTIMONY (KOLOB.Testimony: two or three of the ward rise
@@ -11,7 +11,7 @@
 // through the app's own master chain and a limiter, never louder than the
 // app; CHECK renders offline and measures.
 // ============================================================================
-$page_title = "Guests Lab 3c — KOLOB · Municipal Sky";
+$page_title = "Guests Lab 3d — KOLOB · Municipal Sky";
 $page_description = "A private audition bench for the Kolob hymn engine's Social Hall and testimony-bearers.";
 function kg3_v($file)
 {
