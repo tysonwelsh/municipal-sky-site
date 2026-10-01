@@ -137,3 +137,4 @@
 0.9.176 — the category charts' 95% whiskers are quieter: grey, with the pale outline around them removed (analytics folder and /about/)
 0.9.177 — the category charts' bars are one piece: the pale line between the dark and light segments is gone (analytics folder and /about/)
 0.9.178 — the same drawer, rebuilt underneath: every page, card and payload proven identical by a new regression harness (scripts/jd-regress); the darkroom's word drift stops when the card closes or a slot lands; the report card's axis carets hold still under reduced motion; dead code out, one definition each for what the modules shared
+0.9.179 — the about page, rebuilt underneath: the walkthrough no longer rebuilds its hidden report card dozens of times after load; the stylesheet's superseded layers and dead rules are gone; the poster preloads the right size on 1.25× screens; every step, view and panel proven identical by the harness
