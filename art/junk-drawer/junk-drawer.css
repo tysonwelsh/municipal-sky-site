@@ -1035,33 +1035,13 @@ html { scroll-behavior: smooth; }
   letter-spacing: 0.3em;
   margin: 0 0 var(--s-1);
 }
-.jd-count {
-  margin: 0;
-  font-size: var(--fs-xs);
-  letter-spacing: 0.1em;
-  color: var(--ink-mute);
-}
+/* (the wall label's count line, .jd-count, and the grade legend,
+   .jd-grade-row/-mark/-desc, went with the shortened field notes,
+   2026-09-28 — no page carries either host, and jd-core.js stopped
+   rendering them 2026-10-01) */
 
-/* the grade legend — rendered from the taxonomy block, never hardcoded */
-.jd-grade-row {
-  display: grid;
-  grid-template-columns: 9em 1fr;
-  gap: 2px var(--s-2);
-  margin: 0 0 var(--s-1);
-}
-.jd-grade-mark {
-  color: var(--plot-red);
-  font-size: var(--fs-xs);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  padding-top: 2px;
-}
-.jd-grade-desc { color: var(--ink-soft); }
-@media (max-width: 480px) {
-  .jd-grade-row { grid-template-columns: 1fr; gap: 0; margin-bottom: var(--s-2); }
-}
-
-/* the axes */
+/* the axes — rendered from the taxonomy block on any page with a #jd-axes
+   host (the /about/ walkthrough), never hardcoded */
 .jd-axis-row { margin: 0 0 var(--s-2); }
 .jd-axis-label {
   display: block;
@@ -2467,11 +2447,11 @@ html.jd-turn-open { overflow: hidden; }
 /* the turn card's focus ring, once for every control that wears the
    standard one (2px of --tred, 2px off). Controls with their own offset —
    the close, the field, the note, the boxed plus, the podium's print — and
-   the tie pill's :focus-within keep theirs beside them. */
+   keep theirs beside them. */
 .jd-turn-link:focus-visible,
 .jd-turn-go:focus-visible, .jd-turn-alt:focus-visible,
 .jd-turn-paper:focus-visible, .jd-turn-plate[role="button"]:focus-visible,
-.jd-turn-draw:focus-visible, .jd-rail-step:focus-visible,
+.jd-rail-step:focus-visible,
 .jd-turn-pv:focus-visible, .jd-turn-select:focus-visible,
 .jd-pod-tier:focus-visible, .jd-size-tier:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
 
@@ -2532,7 +2512,7 @@ html.jd-turn-open { overflow: hidden; }
               2px 3px 5px -2px rgba(22, 11, 4, 0.5);
 }
 /* the turn card's press, once (the print buttons' :active is the same) */
-.jd-turn-go:active, .jd-turn-paper:active, .jd-turn-draw:active { transform: translateY(1px); box-shadow: none; }
+.jd-turn-go:active, .jd-turn-paper:active { transform: translateY(1px); box-shadow: none; }
 .jd-turn-alt { color: var(--tink); background: rgba(255, 250, 232, 0.55); }
 .jd-turn-go[disabled], .jd-turn-alt[disabled] {
   opacity: 0.42; cursor: default; box-shadow: none; transform: none;
@@ -3360,38 +3340,14 @@ html.jd-turn-open { overflow: hidden; }
 }
 
 /* RATE-plate fittings (owner, 2026-08-21) — the bench and the call borrow
-   the report photograph's two tricks. Press-to-enlarge: the whole plate is
-   the control (role="button" from plate() in junk-drawer.js), and the
-   enlargement itself reuses the record card's .jd-record-zoom layer
-   class-for-class — nothing here restyles it. REPLAY: the report card's
-   .rc-draw re-tailored in THIS form's tokens, because that rule reaches for
-   --rc-mono/--form-rule, which are scoped to .jd-record-scrim and resolve
-   to nothing inside .jd-turn. It rides the print's lower-right corner,
-   inset far enough (12px) to clear the kraft corner's 18px inner diagonal,
-   and the click/key handlers exempt it from the plate's zoom — it redraws,
-   never zooms. */
+   the report photograph's press-to-enlarge: the whole plate is the control
+   (role="button" from plate() in jd-turn.js), and the enlargement itself
+   reuses the record card's .jd-record-zoom layer class-for-class — nothing
+   here restyles it. (The plate's own REPLAY button, .jd-turn-draw, left
+   with the filmstrip's arrival, 2026-09-16; its rules went 2026-10-01 once
+   jd-turn.js dropped the dead branch. The enlargement's REDRAW, .rc-draw,
+   is the live path.) */
 .jd-turn-plate[role="button"] { cursor: zoom-in; }
-.jd-turn-draw {
-  position: absolute; right: 12px; bottom: 12px; z-index: 3;
-  font-family: var(--tmono); font-size: 0.5rem; letter-spacing: 0.12em;
-  text-transform: uppercase; white-space: nowrap;
-  color: var(--tink);
-  border: 1px solid var(--trule); border-radius: 3px;
-  padding: 0.5em 0.85em 0.46em;
-  background: rgba(255, 250, 232, 0.82);
-  box-shadow: 0 1px 0 rgba(58, 42, 18, 0.18);
-  cursor: pointer;
-}
-/* the icon-only cut (owner, 2026-08-29): a square-ish seat for the sketch
-   mark — the SVG strokes in currentColor, so the hover inversion below
-   repaints it with no extra rule */
-.jd-turn-draw--icon {
-  padding: 5px 6px 4px;
-  display: inline-flex; align-items: center; justify-content: center;
-}
-.jd-turn-draw--icon svg { display: block; }
-.jd-turn-draw:hover {
-  background: var(--tink); color: var(--tpaper); border-color: var(--tink); }
 
 /* ============================================================================
    THE BENCH — the rail is the one navigation control on the form.
@@ -4172,56 +4128,15 @@ body.jd-pod-drag, body.jd-pod-drag * {
 /* ============================================================================
    THE UNVEIL — who drew what, and where it went.
    ========================================================================== */
-/* the tie election: the pill row survives for this alone. The tick is
-   GRAPHITE — the visitor's hand, the same as the likert's pencilled ring. */
-.jd-pillrow { display: flex; flex-wrap: wrap; gap: 6px; margin: 0.15rem 0 0; }
-.jd-pill {
-  position: relative; flex: 1 1 110px; min-width: 92px; min-height: 44px;
-  display: flex; align-items: center; box-sizing: border-box;
-  padding: 0.45rem 0.55rem 0.5rem 1.5rem;
-  background: rgba(255, 250, 232, 0.5); border: 1px solid var(--trule);
-  font-family: var(--tform); font-size: var(--t-label); letter-spacing: 0.16em;
-  text-transform: uppercase; cursor: pointer;
-}
-/* the real radio stays in the accessibility tree and in the tab order; only
-   its box is hidden, and the pill takes the focus ring via :focus-within */
-.jd-pill input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
-.jd-pill:focus-within { outline: 2px solid var(--tred); outline-offset: 2px; }
-/* selection is never signalled by colour alone: the tick is the primary
-   statement, the border and the inset rule second it */
-.jd-pill-tick {
-  position: absolute; left: 0.4rem; top: 50%;
-  transform: translateY(-58%) rotate(-9deg);
-  font-family: var(--thand); font-size: 0.95rem; color: var(--graphite); opacity: 0;
-}
-.jd-pill.is-on {
-  background: rgba(255, 250, 232, 0.95);
-  border-color: var(--tred); box-shadow: inset 0 0 0 1px var(--tred);
-}
-.jd-pill.is-on .jd-pill-tick { opacity: 1; }
+/* (the tie election's pill row, .jd-pillrow/.jd-pill*, went 2026-10-01:
+   the podium decides every ranking since 2026-08-22, so a tie could no
+   longer be minted and jd-turn.js dropped the unreachable chooser) */
 
-
-/* ---- the singleton hover/focus tooltip ------------------------------------
-   Fixed and pointer-events:none — it can never take a press a control should
-   have had. aria-hidden: screen readers get every definition natively via
-   aria-describedby (the likert radios, and — OVERRIDE 1, round-16 — every
-   row's scale select, pointed at the .jd-vh text that used to live behind a
-   click-to-unfold .jd-pop). Appended to <body>, so its fonts/colours are
-   literal rather than the scrim's scoped tokens. */
-.jd-tt {
-  position: fixed; z-index: 999;
-  max-width: 270px; padding: 0.5rem 0.6rem;
-  background: #2c1c09; color: #f3e9c8;
-  border: 1px solid rgba(243, 233, 200, 0.4);
-  box-shadow: 4px 6px 12px -4px rgba(0, 0, 0, 0.55);
-  font-family: "Courier Prime", "Courier New", Courier, monospace;
-  font-size: var(--t-body); line-height: 1.55;
-  pointer-events: none;
-}
-.jd-tt b {
-  display: block; margin-bottom: 0.15rem;
-  letter-spacing: 0.14em; text-transform: uppercase;
-}
+/* (the singleton hover/focus tooltip, .jd-tt, went 2026-10-01: nothing has
+   carried a data-tt anchor since the press disclosure replaced it,
+   2026-08-28, and jd-turn.js dropped the idle listeners today. Screen
+   readers get every definition natively via aria-describedby and the
+   .jd-vh text below.) */
 /* visually-hidden. Carries the likert's per-stop descriptions, and (OVERRIDE
    1, round-16) each row's scale definition — permanently in the DOM instead
    of behind the retired click-to-unfold .jd-pop, wired to its control via
@@ -4496,7 +4411,6 @@ body.jd-pod-drag, body.jd-pod-drag * {
     border: 0; background: none; padding: 0;
   }
   .jd-turn-input { padding-bottom: 0.55rem; }
-  .jd-pill { flex: 1 1 100%; }
 }
 @media (max-width: 768px) {
   /* 16px kills iOS's focus zoom, which would otherwise leave this fixed
