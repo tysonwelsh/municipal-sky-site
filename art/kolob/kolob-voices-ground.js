@@ -3,8 +3,8 @@
 //
 // The ground of the hall and its tower: the tuba (reserved for the raspberry
 // amen), the La Monte Young drone, the prairie strings, the meetinghouse bell
-// and the tines. Split from kolob-audio.js (v0.30); see the room list in
-// kolob-core.js.
+// and the tines. Lends their cycles, the drone's turn (the reckoning) and
+// the bell strike the far steeples ring (the LENT block at the foot).
 // ============================================================================
 
 window.KOLOB = window.KOLOB || {};
@@ -86,7 +86,7 @@ window.KOLOB = window.KOLOB || {};
   // series of F0, in very long crossfading cycles. It never stops — in the
   // sacrament it is all there is. The stillness is the point.
   //
-  // THE KOLOB RECKONING (round 3b, step 4; PLAN §7.2). On a Sunday the
+  // THE KOLOB RECKONING (PLAN §7.2). On a Sunday the
   // reckoning holds, the drone MOVES: one note a section, the opening of the
   // tune the doxology will sing, each note the tonic, the third or the fifth
   // of the key its section is sung in. It turns only at a joint — S.droneTurn
@@ -228,9 +228,8 @@ window.KOLOB = window.KOLOB || {};
     var fifthF = rootF * 1.5;
     // a chord whose own fifth is not pure (the diminished one on ti, on re in
     // aeolian, on la in dorian, on mi in mixolydian) has no open fifth to
-    // give: its pad is the bare octave. v0.32 bowed a pure fifth over it, a
-    // pitch outside the day's tuning, against the choir's own; round 2 found
-    // it when every sounded note was first reported.
+    // give: its pad is the bare octave. A pure fifth bowed over it would be
+    // a pitch outside the day's tuning, against the choir's own.
     var pure = pureFifth(rootF);
     var pitches = pure ? (fifthOnly ? [rootF, fifthF] : [rootF, fifthF, rootF * 2]) : [rootF, rootF * 2];
     var parts = pure ? ["root", "fifth", "octave"] : ["root", "octave"];
@@ -262,7 +261,7 @@ window.KOLOB = window.KOLOB || {};
     var peak = (gainMul || 1) * 0.7 * (0.4 + intensity() * 0.7);
     var edge = Math.min(8, dur * 0.3);
     env(master, t, [[edge, peak], [Math.max(0.5, dur - edge * 2), peak * 0.92], [edge, 0]]);
-    // every bowed pitch (round 2): the root, its fifth and, when the pad is
+    // every bowed pitch is told: the root, its fifth and, when the pad is
     // full, the root's octave (the lonesome sine is the fifth's overtone, a
     // colour of the pad, not a note)
     for (var pp = 0; pp < pitches.length; pp++) emitNote("strings", pitches[pp], t, dur, { part: parts[pp], chord: ch ? ch.id : null });
@@ -282,8 +281,8 @@ window.KOLOB = window.KOLOB || {};
   function stringsCycle(t) {
     if (!S.playing) return;
     var s = S.Meeting.section();
-    // (a rite seated as the brush arbor — round 3b, step 4 — is the strings'
-    // own: they bow its bare fifths, even in the invocation or an interlude,
+    // (a rite seated as the brush arbor is the strings' own: they bow its
+    // bare fifths, even in the invocation or an interlude,
     // where they are otherwise silent; the sacrament keeps its stillness)
     var arborRite = s !== "prelude" && S.Meeting.scene && S.Meeting.scene() && S.Meeting.scene().fifths;
     if ((s === "invocation" || s === "sacrament" || s === "interlude") && !(arborRite && s !== "sacrament")) { cueIn("strings", 8, stringsCycle); return; }
@@ -291,7 +290,7 @@ window.KOLOB = window.KOLOB || {};
     var R = turn("strings");
     var dur = R.rnd(22, 34);
     var overlap = 8;
-    var seat = s === "prelude" ? S.Meeting.seating() : (S.Meeting.scene ? S.Meeting.scene() : null);   // (the brush arbor bows bare fifths — the prelude's, or a rite's: round 3b, step 4)
+    var seat = s === "prelude" ? S.Meeting.seating() : (S.Meeting.scene ? S.Meeting.scene() : null);   // (the brush arbor bows bare fifths — the prelude's, or a rite's)
     stringsPad(t + 0.1, dur, s === "doxology" ? 1 : 0.75, R.chance(0.7) || !!(seat && seat.fifths));
     // (the prelude's texture: a strings morning overlaps its pads)
     cueLayer("strings", (dur - overlap) * (s === "doxology" ? 0.9 : 1.3) * S.Meeting.lean("strings"), stringsCycle);

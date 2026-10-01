@@ -105,15 +105,13 @@ window.KOLOB.GuestBands = (function () {
   // THE ODDS — the owner's own (kolob-meeting.js: "bands 36 %, per the
   // owner's taste"), and the calendar's welcome, unchanged
   // ==========================================================================
-  // p = base × weight[sunday, else kind], capped. These are the numbers the
-  // plan threw for the old band (0.36, times kolob-calendar.js's
-  // SUNDAYS[·].guests.bands), so that the band that now marches comes as
-  // often as the band that looped did: about one ordinary Sunday in three,
-  // three Pioneer Days in four, almost never a funeral. The kinds (a meeting
-  // with no calendar) stand at 1, as the plan had them. (Round 3c: in the
-  // meeting these are the calendar's GUEST_ODDS row "bands", handed in as
-  // info.odds — the same numbers; this table is the labs' and a page's
-  // without the calendar. Change the calendar's row to change the meeting.)
+  // p = base × weight[sunday, else kind], capped: 0.36, times
+  // kolob-calendar.js's SUNDAYS[·].guests.bands — about one ordinary Sunday
+  // in three, three Pioneer Days in four, almost never a funeral. The kinds
+  // (a meeting with no calendar) stand at 1. In the meeting these are the
+  // calendar's GUEST_ODDS row "bands", handed in as info.odds — the same
+  // numbers; this table is the labs' and a page's without the calendar.
+  // Change the calendar's row to change the meeting.
   var ODDS = {
     base: 0.36,
     weight: {
@@ -138,11 +136,11 @@ window.KOLOB.GuestBands = (function () {
   // (it is far off for its first twenty seconds or so)
   var AT = { prelude: [0.05, 0.3], postlude: [0.05, 0.25] };
   var AT_MIN = 8;
-  var MAX_DUR = 55;                                 // the strains shorten to fit (s; 110 until v0.36.1 — the owner: it goes on a bit long)
+  var MAX_DUR = 55;                                 // the strains shorten to fit (s; 55 since v0.36.1, the owner: at 110 it went on a bit long)
   var CAD_S = 16;                                   // the drums' street beat after the stinger (s, about)
   var AWAY_DB = -30;                                // …over which the band goes out of hearing
   // the band's bus into the tabernacle's wide send (calibrated in the lab
-  // against the organ reference: see LEVEL's note in the handoff)
+  // against the organ reference)
   var LEVEL = 0.43;
 
   function need(stream) {
@@ -153,9 +151,8 @@ window.KOLOB.GuestBands = (function () {
     var w = tbl.weight, k = info.sunday && w[info.sunday] != null ? info.sunday : info.kind;
     return w[k] != null ? w[k] : 1;
   }
-  // (round 3c: a meeting hands its odds in, info.odds, from the calendar's
-  // one table — KOLOB.Calendar.GUEST_ODDS, whose band row is this room's own
-  // 36 % and Sundays; a lab without it reads ODDS)
+  // (the meeting hands this room its odds from Calendar.GUEST_ODDS,
+  // info.odds; a lab without them reads the room's own ODDS)
   function oddsFor(info) { return info && info.odds != null ? Math.max(0, Math.min(1, +info.odds)) : Math.min(ODDS.cap, ODDS.base * weightOf(ODDS, info)); }
   function secondOdds(info) { return Math.min(ODDS.second.cap, ODDS.second.base * weightOf(ODDS.second, info)); }
 
@@ -204,7 +201,7 @@ window.KOLOB.GuestBands = (function () {
   function decide(info, stream) {
     info = info || {};
     var rs = need(stream).fork("seat");
-    var roll = rs.next(), seatDie = rs.chance(0.7), atU = rs.next(), pick = rs.next();   // every die, first
+    var roll = rs.next(), seatDie = rs.chance(0.7), atU = rs.next(), pick = rs.next();   // DICE: every die, first
     var sh = shapeOf(stream);
     var p = oddsFor(info), p2 = secondOdds(info), why = null, seat = null;
     var secs = info.sections || [], guests = info.guests || [];
@@ -509,8 +506,8 @@ window.KOLOB.GuestBands = (function () {
   }
   // role: "plain" (the tune on top), "bass" (the tune in the low brass),
   // "trio" (soft, held), "grand" (full)
-  // THE PAH KEEPS OFF THE TUNE'S SEMITONE (round 2, after the critic): an
-  // after-beat chord tone within a semitone of a tune note sounding with it,
+  // THE PAH KEEPS OFF THE TUNE'S SEMITONE: an after-beat chord tone within
+  // a semitone of a tune note sounding with it,
   // in any octave — the tune's passing fa against the alto horns' mi, 112
   // cents — is left out, the bandmaster's courtesy (the chord's other tones
   // still speak). Read over the whole march at once, so the next strain's
@@ -931,4 +928,4 @@ window.KOLOB.GuestBands = (function () {
     get LEVEL() { return LEVEL; }, set LEVEL(v) { LEVEL = +v; },
   };
 })();
-(window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-guest-bands.js"] = true;   // the load guard's roll call (round 3c: the Nauvoo band, reworked)
+(window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-guest-bands.js"] = true;   // the load guard's roll call

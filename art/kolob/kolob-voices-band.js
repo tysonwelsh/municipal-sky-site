@@ -29,8 +29,8 @@
 //    dB and H10 about 20–23 dB under the fundamental) — the lead has to cut
 //    through a town square. At piano it stays round.
 //
-// THE TROMBONES (Kolob 2, round 2: the trombone choir at dawn). The
-// Moravians brought the trombone choir to Bethlehem in 1754 — soprano,
+// THE TROMBONES (the trombone choir at dawn). The Moravians brought the
+// trombone choir to Bethlehem in 1754 — soprano,
 // alto, tenor and bass trombones, which played chorales from the belfry to
 // announce a death, a feast, the new year — and to Salem, where brass
 // choirs have answered each other across the town before the Easter
@@ -38,20 +38,19 @@
 // tenor and the bass. They are not the band's saxhorns and they do not
 // march; they play hymns, slowly.
 //
-// THE PRE-v0.34 POLISH (PLAN-COMPOSITION §15). The owner listened to round
-// 2's choir and heard "a muted, muddy organ". He was right, and the
-// measurements say why: at the near choir's p–mp the lowpass stood near
-// 900 Hz on a tenor (about the fourth harmonic), the far choir sat behind a
-// 600 Hz blanket, every attack was a soft 50–65 ms swell with no tongue in
-// it, and a legato note was a crossfade between two pitches — which is what
-// an organ does. A trombone is a buzzing lip on a long bright tube. Now:
-//  · A BRIGHT, SINGING BORE. The wave is the forte spectrum, richer than
-//    before (a gentler tilt), and the lowpass that makes the softer
-//    dynamics out of it stands two to three times higher: a tenor's cutoff
-//    runs about 0.9 kHz at pp, 1.6 at mp, 2.1 at mf and 2.8 at f (it is a
-//    multiple of the pitch, but never under the bell's own brightness,
-//    which rises with the dynamic in absolute terms, so a bass note opens
-//    too).
+// WHAT KEEPS THE TROMBONES FROM SOUNDING LIKE AN ORGAN (PLAN-COMPOSITION
+// §15; the owner's word for a choir that failed this was "a muted, muddy
+// organ" — a lowpass near 900 Hz on a tenor at p–mp, about the fourth
+// harmonic; a far choir behind a 600 Hz blanket; attacks that were soft
+// 50–65 ms swells with no tongue in them; a legato that was a crossfade
+// between two pitches, which is what an organ does). A trombone is a
+// buzzing lip on a long bright tube:
+//  · A BRIGHT, SINGING BORE. The wave is the forte spectrum (a gentle
+//    tilt), and the lowpass that makes the softer dynamics out of it stands
+//    high: a tenor's cutoff runs about 0.9 kHz at pp, 1.6 at mp, 2.1 at mf
+//    and 2.8 at f (it is a multiple of the pitch, but never under the
+//    bell's own brightness, which rises with the dynamic in absolute terms,
+//    so a bass note opens too).
 //  · THE BRASS OPENS WITH THE BREATH. A peaking band at the brass's own
 //    region (about 1.1 kHz on a tenor, 1.35 on the alto, 0.95 on the bass)
 //    swings from −2 dB at pp to +8 dB at ff, so the spectrum's balance
@@ -77,15 +76,15 @@
 //    fermata dies away — and its colour darkens as it fades. No vibrato:
 //    the Moravian chorale is played straight, only the slide placed by hand
 //    (±2 cents, the synth stream's) and a slow drift of a cent or two.
-//  · A WIDER DYNAMIC. Level follows (d/0.6)^1.5: pp is 14 dB under mf and
+//  · A WIDE DYNAMIC. Level follows (d/0.6)^1.5: pp is 14 dB under mf and
 //    ff 6 dB over it. At mf a four-part choir matches the calibrated organ
-//    reference in the instruments lab (the v0.30 organChord at
+//    reference in the instruments lab (the house organ's chord at
 //    mid-prelude): see the trombone lab's calibration.
 //
 // FAR ACROSS THE TOWN (create opts.distance, 0–1): a band can stand in the
 // hall's doorway (0) or at the far end of the colony (1). Distance is what
-// the ear judges it by — and it is NOT a blanket lowpass (round 2's veil
-// fell to 600 Hz at 0.85, and the far choir came through it as a hum):
+// the ear judges it by — and it is NOT a blanket lowpass (a veil that falls
+// to 600 Hz at 0.85 turns the far choir into a hum):
 //  · the direct sound falls (−22·d^1.5 dB: −3 at 0.25, −17 at 0.85);
 //  · the air takes the top gently: a high shelf above 2.5 kHz, −14·d dB
 //    (−3.5 at 0.25, −12 at 0.85), under a lowpass that only closes to
@@ -133,13 +132,13 @@
 //      { input, out, dispose() } — one shared outdoor tail for several bands
 //   KOLOB.VoicesBand.road(ctx, destination, {room, echoDelay}) → road
 //      { input, path([{t, d, side}, …]), nodes, dispose() } — a traveller
-//      (round 3c: the Nauvoo band marching past, the handcart company):
-//      the distance stage's four curves and the side, laid along a path
+//      (the Nauvoo band marching past, the handcart company): the distance
+//      stage's four curves and the side, laid along a path
 //      (see A ROAD THROUGH THE TOWN). Make the band with no distance and
 //      play it into road.input.
 //   KOLOB.VoicesBand.lendTown(ctx, destination, {seconds}) → a town room made
 //      ahead by warm(), joined to destination; its dispose() gives it back
-//      (round 3c: no guest makes a convolver inside a clock callback)
+//      (no guest makes a convolver inside a clock callback)
 //   KOLOB.VoicesBand.warm(ctx) — build the town's tail, one town room to lend,
 //      the noise and the saxhorns' waves, ahead of time (a few tens of ms,
 //      once per context: do it at start-up, not in a callback)
@@ -302,7 +301,7 @@ window.KOLOB.VoicesBand = (function () {
     };
   }
 
-  // ---- the town's air, LENT (round 3c) -------------------------------------------
+  // ---- the town's air, LENT ------------------------------------------------
   // A convolver takes its impulse when it is made — 5–6 ms of main thread for
   // the 2.6 s town, too much for one clock callback. So warm(ctx) makes one
   // town room ahead (at start-up, with the impulse), unconnected, and
@@ -338,14 +337,13 @@ window.KOLOB.VoicesBand = (function () {
   // how loud a band sounds at distance d, in dB against the same band with
   // no distance stage — MEASURED, not modelled: a four-part trombone choir
   // (OLD HUNDRED at mf, dry chain, integrated LUFS, the mean of seeds 1–3)
-  // rendered in the trombone lab at each distance, re-measured for the
-  // pre-v0.34 polish's stage (the gentle high-cut in place of round 2's
-  // blanket lowpass loses less at the far end: −10.8 dB at 0.85 where the
-  // veil lost −11.4, −13.5 at 1 where it lost −16.9). (A power sum of
-  // direct + air + echo tracks it to d = 0.5 and then over-states the loss:
-  // a wet sound fills its own breaths, and loudness counts them.) A
+  // rendered in the trombone lab at each distance, through this stage (the
+  // gentle high-cut loses less at the far end than a blanket lowpass would:
+  // −10.8 dB at 0.85 against −11.4, −13.5 at 1 against −16.9). (A power sum
+  // of direct + air + echo tracks it to d = 0.5 and then over-states the
+  // loss: a wet sound fills its own breaths, and loudness counts them.) A
   // performer uses it to set two bands a chosen number of LU apart,
-  // whatever their drawn distances.
+  // whatever their drawn distances. Re-measure it if the stage changes.
   var DIST_DB = [[0, 0.83], [0.15, -0.6], [0.25, -1.83], [0.35, -3.37], [0.5, -4.7], [0.6, -7.43], [0.7, -8.13], [0.75, -8.77], [0.8, -9.7], [0.85, -10.83], [0.9, -11.4], [1, -13.5]];
   function distanceDb(d) {
     d = Math.max(0, Math.min(1, +d || 0));
@@ -357,7 +355,7 @@ window.KOLOB.VoicesBand = (function () {
   }
   // Built once per band.
   function distanceStage(ctx, destination, d, room, side, R) {
-    var nodes = [], echoDelay = R.rnd(0.19, 0.31);             // drawn always: a die is never skipped
+    var nodes = [], echoDelay = R.rnd(0.19, 0.31);             // DICE: drawn always, even under 0.4 where no echo is built — a die is never skipped
     var input = ctx.createGain(); nodes.push(input);
     var dirDb = dirDbAt(d);
     var veil = ctx.createBiquadFilter(); veil.type = "lowpass"; veil.Q.value = 0.5;
@@ -391,7 +389,7 @@ window.KOLOB.VoicesBand = (function () {
     };
   }
 
-  // ---- A ROAD THROUGH THE TOWN (round 3c): a source that TRAVELS ------------
+  // ---- A ROAD THROUGH THE TOWN: a source that TRAVELS --------------------------
   // The distance stage above stands still: a choir placed once, far or near.
   // A marching band does not. It comes up the road from one end of the
   // colony, passes the meetinghouse and goes on out of the other, and the
@@ -463,10 +461,10 @@ window.KOLOB.VoicesBand = (function () {
     };
   }
 
-  // THE WAVES (round 3c): one PeriodicWave per section and quarter-octave
-  // band, kept per context (they were kept per band, and a band's first bars
-  // built a dozen of them inside a clock callback); warm() builds the
-  // saxhorns' ahead, across their compass
+  // THE WAVES: one PeriodicWave per section and quarter-octave band, kept
+  // per context (kept per band, a band's first bars would build a dozen of
+  // them inside a clock callback); warm() builds the saxhorns' ahead, across
+  // their compass
   var WAVES = typeof WeakMap !== "undefined" ? new WeakMap() : null;
   function waveOf(ctx, k, f) {
     var waves = WAVES ? WAVES.get(ctx) : null;
@@ -628,9 +626,8 @@ window.KOLOB.VoicesBand = (function () {
       g.gain.linearRampToValueAtTime(lv * (acc ? 1.2 : 1.05), t + spec.atk);
       g.gain.setTargetAtTime(lv, t + spec.atk, 0.06);
       // the release starts from wherever the accent's bloom has got to — no
-      // anchor: pinning lv here snapped a still-decaying bloom down by up to
-      // 10 % in one sample, a click on every short accented note (wave-1
-      // critic, round 2)
+      // anchor: pinning lv here would snap a still-decaying bloom down by up
+      // to 10 % in one sample, a click on every short accented note
       g.gain.setTargetAtTime(0, Math.max(t + spec.atk + 0.01, rel), stacc ? 0.018 : 0.035);
       o.connect(lp); lp.connect(g); g.connect(buses[k]);
       o.start(t); o.stop(tEnd);
@@ -656,14 +653,13 @@ window.KOLOB.VoicesBand = (function () {
       var o = ctx.createOscillator(), lp = ctx.createBiquadFilter(), pk = ctx.createBiquadFilter(), g = ctx.createGain();
       o.setPeriodicWave(waveFor(k, f));
       kRate(o.frequency); kRate(o.detune); kRate(lp.frequency); kRate(pk.gain);
-      // THE HELD TONE LIVES (round 2 of the polish; the critic: a held note
-      // was a perfectly steady wave — 0.08 dB of movement over 2.4 s of a
-      // tenor's fermata, which is what an organ pipe does, and the organ at
-      // least has a tremulant). A player's breath is never still: past the
-      // attack the level wanders, irregularly, by about ±0.5 dB (±0.3 dB of
-      // breath, and the brightness's swing on top of it: the brass band goes
-      // with the breath, a little more air a little brighter), and the pitch
-      // moves by a cent or two around a slow drift.
+      // THE HELD TONE LIVES (a perfectly steady wave — 0.08 dB of movement
+      // over 2.4 s of a tenor's fermata — is what an organ pipe does, and
+      // the organ at least has a tremulant). A player's breath is never
+      // still: past the attack the level wanders, irregularly, by about
+      // ±0.5 dB (±0.3 dB of breath, and the brightness's swing on top of it:
+      // the brass band goes with the breath, a little more air a little
+      // brighter), and the pitch moves by a cent or two around a slow drift.
       // The wander's points fall every 0.22–0.6 s (synth dice), and the note
       // still lands exactly on its written dynamic at the release.
       var tS = Math.min(rel, t + atk + 0.07);          // the spring of the attack has settled
@@ -738,8 +734,7 @@ window.KOLOB.VoicesBand = (function () {
       // tone after. Then it stays, faint — the air through the lips under
       // every held tone, about 30 dB under it at mf and a little nearer
       // the tone as the player blows harder — and follows the note's
-      // dynamic to its release (round 2 of the polish: it was 90 ms of "t"
-      // and then nothing)
+      // dynamic to its release (never 90 ms of "t" and then nothing)
       var bed = lv * BREATH * (0.45 + 0.9 * d), bedEnd = lvEnd * BREATH * (0.45 + 0.9 * dEnd);
       var ns = ctx.createBufferSource(); ns.buffer = noiseBuf(ctx); ns.loop = true;
       var nb = ctx.createBiquadFilter(); nb.type = "bandpass"; nb.frequency.value = Math.min(4000, Math.max(1400, f * 7)); nb.Q.value = 0.9;
@@ -861,4 +856,4 @@ window.KOLOB.VoicesBand = (function () {
     DYNAMICS: DYN, LEAD: LEAD,
   };
 })();
-(window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-voices-band.js"] = true;   // the load guard's roll call (the engine plays it from round 2: the trombones at dawn)
+(window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-voices-band.js"] = true;   // the load guard's roll call

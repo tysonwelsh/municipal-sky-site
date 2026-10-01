@@ -88,7 +88,7 @@
 //              onStage({stage, t0, t1, label}),
 //              defer(at, fn) (the engine's clock: each sung line is laid out
 //              at `at`, a little before its throat is born, instead of the
-//              whole practice inside one cue — the trombones' round-3 hook;
+//              whole practice inside one cue — the hook the trombones take;
 //              a lab with no clock lays everything out at once) }
 //     material: prepare()'s, or { hymn, keynoteHz, phone? }
 //   ODDS, EXPERIMENT, NAME, LABEL, LEVEL, CONSONANTS
@@ -130,37 +130,36 @@ window.KOLOB.GuestSingingSchool = (function () {
   // "brushing s sound… like air being released out of a tire… in between
   // notes". Measured, dry, in the practice's passage alone (noise against
   // tone at the joins between notes; −38 to −44 dB inside the notes, seven
-  // practices): with the voice as it stands on this branch, −15 to −21 dB
-  // (the worst join −9 to −15); with the cast crew's softer consonants
-  // (kolob-r3-cast, fa427196), −27 to −37 (the worst −24 to −28) — still
-  // eight to twelve dB over the middle of a note as a rule. So by default
-  // the SECTION sings the shapes with their voiced consonants only — la and
-  // mi keep their l and m; fa and sol are
+  // practices): with a voice whose f and s are at full strength, −15 to
+  // −21 dB (the worst join −9 to −15); with the softer consonants
+  // kolob-voices-vocal.js has (its f and s a third as strong), −27 to −37
+  // (the worst −24 to −28) — still eight to twelve dB over the middle of a
+  // note as a rule. So by default the SECTION sings the shapes with their
+  // voiced consonants only — la and mi keep their l and m; fa and sol are
   // sung on their vowels, ah and oh, re-articulated by the voice's own
   // attack — and the CHORISTER, one clear voice, says all four whole when
   // she gives the note or sings them the passage first ("auto": whole with
-  // the cast crew's voice, whose f and s are a third as strong; voiced with
-  // the voice on this branch, whose single s still stands 17–22 dB over the
-  // middle of her notes). Measured so, every stage the choir sings sits at
-  // its joins within about 3 dB of the middle of its notes, with either
-  // voice; the chorister's own f and s, with the cast voice, about 8 dB
-  // over hers — one voice's diction, heard only when she sings a quick
-  // tune's passage to them first (the handoff, round 2, has every number).
+  // a voice that exports its mouth, VoicesVocal._mouth — the voice loaded
+  // today; voiced with one that does not, whose single s would stand 17–22
+  // dB over the middle of her notes). Measured so, every stage the choir
+  // sings sits at its joins within about 3 dB of the middle of its notes;
+  // the chorister's own f and s about 8 dB over hers — one voice's diction,
+  // heard only when she sings a quick tune's passage to them first.
   //   section / chorister: "voiced" (l and m; no f, no s) · "all" (the shapes
   //   whole) · "vowels" (ah oh ah ee: no consonant at all) · "auto"
   // Settable (KOLOB.GuestSingingSchool.CONSONANTS = {section, chorister});
-  // once the voice can say a line's f and s lightly (a request to the cast
-  // crew), the section's "all" at a third of the ward's strength is the
-  // better sound. The score says the shapes (each shape-note keeps `shape`);
-  // this decides only what the mouths make of them.
+  // once the voice can say a line's f and s lightly, the section's "all" at
+  // a third of the ward's strength is the better sound. The score says the
+  // shapes (each shape-note keeps `shape`); this decides only what the
+  // mouths make of them.
   var CONSONANTS = { section: "voiced", chorister: "auto" };
   var SAID = {
     all: { fa: "fa", sol: "sol", la: "la", mi: "mi" },
     voiced: { fa: "ah", sol: "oh", la: "la", mi: "mi" },
     vowels: { fa: "ah", sol: "oh", la: "ah", mi: "ee" },
   };
-  // (cast: whether the cast crew's voice is the one loaded — perform() knows,
-  // score() does not and writes what the cast voice would say)
+  // (cast: whether the voice loaded exports its mouth, VoicesVocal._mouth —
+  // perform() knows, score() does not and writes what that voice would say)
   function said(shape, who, cast) {
     var w = CONSONANTS[who];
     if (w === "auto") w = cast === false ? "voiced" : "all";
@@ -168,9 +167,8 @@ window.KOLOB.GuestSingingSchool = (function () {
   }
 
   function oddsFor(info) {
-    // (round 3c: a meeting hands its odds in, info.odds, from the calendar's
-    // one table — KOLOB.Calendar.GUEST_ODDS; a lab without it reads this
-    // room's own, below)
+    // (the meeting hands this room its odds from Calendar.GUEST_ODDS,
+    // info.odds; a lab without them reads the room's own ODDS)
     if (info && info.odds != null) return Math.max(0, Math.min(1, +info.odds));
     var w = ODDS.weight;
     var k = info.sunday && w[info.sunday] != null ? info.sunday : info.kind;
@@ -192,7 +190,7 @@ window.KOLOB.GuestSingingSchool = (function () {
   function decide(info, stream) {
     info = info || {};
     var rs = need(stream).fork("seat");
-    var roll = rs.next(), atU = rs.next();                           // every die, first
+    var roll = rs.next(), atU = rs.next();                           // DICE: every die, first
     var p = oddsFor(info), why = null;
     var secs = info.sections || [], guests = info.guests || [];
     var prelude = null;
@@ -337,7 +335,7 @@ window.KOLOB.GuestSingingSchool = (function () {
   function lesson(material, stream) {
     var M = prepare(material, stream);
     var r = need(stream).fork("lesson");
-    var kindU = r.next(), partU = r.next(), spotU = r.next();         // every die, first
+    var kindU = r.next(), partU = r.next(), spotU = r.next();         // DICE: every die, first
     var desks = choir(M), L = M.lines[0], mode = M.mode, fz = M.finalHz;
     // what a group sings, in Hz ratios over the final (its octave applied)
     function lineOf(group) {
@@ -689,7 +687,7 @@ window.KOLOB.GuestSingingSchool = (function () {
     // THE CHOIR: two desks a part, three people a desk; how sure each desk is
     // (the section that goes wrong is a little less sure of itself). Their
     // breath is kept light: the owner hears breath between sung notes as a
-    // fault (round 3), and a practice in a quiet chapel carries it far.
+    // fault, and a practice in a quiet chapel carries it far.
     var mk = sc.lesson.mistake;
     var desks = sc.desks.map(function (d) {
       var r = synth.fork("desk:" + d.id);
@@ -706,18 +704,18 @@ window.KOLOB.GuestSingingSchool = (function () {
     var chorister = VV.singer({ part: "A", age: "mid", confidence: 0.95, brightness: 0.55, breath: 0.2, rand: synth.fork("chorister"), name: "chorister", pan: 0.02, vibrato: { rate: 5.3, depth: 26, onsetDelay: 0.4 } });
     // (a phone's choir is one desk a part: each desk carries what two did)
     var G_DESK = 0.42 * (sc.prepared.phone ? Math.SQRT2 : 1), G_CHOR = 0.75;
-    // THE DOOR. The voice on this branch (VoicesVocal before the cast crew's
-    // round 3) lets one sample of its breath noise through at the instant
-    // each sung line's throat is built, 0.45 s before the line's first
-    // vowel: its noise starts on the same sample as its gains' first
-    // automation, while they still stand at their default of 1. Thirty-two
-    // singers a line make a tick in every breath between lines. So each line
-    // sings through a door of its own, shut for the first 4 ms of the
-    // throat's life and open well before the inhale (0.42 s before the
-    // vowel): one gain node a line. The cast crew's voice (kolob-r3-cast,
-    // af8e190c) is born silent — measured, nothing before the sound — and
-    // is the one that exports its mouth (VoicesVocal._mouth); with it the
-    // door is not built at all.
+    // THE DOOR. A voice that lets one sample of its breath noise through at
+    // the instant each sung line's throat is built, 0.45 s before the
+    // line's first vowel — its noise starting on the same sample as its
+    // gains' first automation, while they still stand at their default of 1
+    // — makes, thirty-two singers a line, a tick in every breath between
+    // lines. For such a voice each line sings through a door of its own,
+    // shut for the first 4 ms of the throat's life and open well before the
+    // inhale (0.42 s before the vowel): one gain node a line. The voice
+    // kolob-voices-vocal.js loads is born silent (measured: nothing before
+    // the sound) and exports its mouth (VoicesVocal._mouth), so CAST is
+    // always true today and the DOOR branch never runs; it is kept for a
+    // voice that is not born silent.
     var CAST = !!VV._mouth, DOOR = !CAST;
     function door(t) {
       if (!DOOR) return bus;
@@ -732,8 +730,8 @@ window.KOLOB.GuestSingingSchool = (function () {
     // sung line is built AHEAD seconds before its throat is born, and the
     // desks that start together are laid a fifth of a second apart, each in
     // a tick of the clock of its own — a practice built in one cue cost 120–
-    // 250 ms of main thread (the critic, a live context); a lab with no clock
-    // lays everything out at once
+    // 250 ms of main thread (measured in a live context); a lab with no
+    // clock lays everything out at once
     var AHEAD = 2.5, BORN = 0.5, STAGGER = 0.2;
     function lay(it, fn) {
       var when = it.t - (it.kind === "sing" || it.kind === "chorister" ? BORN : 0.05) - AHEAD - (it.kind === "sing" ? STAGGER * it.desk : 0);

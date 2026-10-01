@@ -2,8 +2,8 @@
 // KOLOB — kolob-voices-field.js: the still small voice, the wire, the valley
 //
 // The near-threshold murmur, the Deseret telegraph, and the far-field
-// events of the valley. Split from kolob-audio.js (v0.30); see the room list
-// in kolob-core.js.
+// events of the valley. Lends their cycles, the Morse keyer and the field
+// events the stillness calls (the LENT block at the foot).
 // ============================================================================
 
 window.KOLOB = window.KOLOB || {};
@@ -64,7 +64,7 @@ window.KOLOB = window.KOLOB || {};
     o.frequency.setValueAtTime(S.F0 * 2, t);
     o.frequency.linearRampToValueAtTime(S.F0 * 2 * Y.rnd(0.985, 1.02), t + dur * 0.5);
     o.frequency.linearRampToValueAtTime(S.F0 * 2 * 0.985, t + dur);
-    // LESSON: pre-attenuate before high-Q formants (they boost ~9x).
+    // pre-attenuate before high-Q formants (they boost ~9x)
     var pre = S.ctx.createGain(); pre.gain.setValueAtTime(0.16, t);
     o.connect(pre);
     var f1 = S.ctx.createBiquadFilter(); f1.type = "bandpass"; f1.Q.setValueAtTime(5, t);
@@ -114,9 +114,9 @@ window.KOLOB = window.KOLOB || {};
     var R = turn("voice");
     if (s === "testimony" && !R.chance(0.3)) { cueIn("voice", 7, stillVoicePhrase); return; }
     var dur = R.rnd(7, 15);
-    // (round 3c: never over a testimony-bearer speaking, nor over one who
-    // sings in tongues — two talkers never overlap; the critic of crew D.
-    // The turn's dice are thrown first, as ever)
+    // (never over a testimony-bearer speaking, nor over one who sings in
+    // tongues — two talkers never overlap. DICE: the turn's dice are thrown
+    // first, before this check)
     if ((S.testimonyHolds && S.testimonyHolds()) || (S.inVisit && S.inVisit() && S.Meeting.visitType() === "tongues")) { cueIn("voice", 7, stillVoicePhrase); return; }
     stillVoiceRender(t + 0.05, dur);
     cueLayer("voice", dur + R.rnd(6, 16) * silenceMul(), stillVoicePhrase);

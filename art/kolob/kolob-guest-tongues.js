@@ -30,8 +30,8 @@
 //
 // Sometimes (the seat's `seeds` flag) the song is the seed of the next hymn:
 // its opening, in the Score's degrees (gesture()), is what the composer is
-// handed for line one. That is the integrator's to wire (the hymnal writes
-// every hymn when the meeting is planned, and this song is known then: its
+// handed for line one (kolob-meeting.js hands it on: the hymnal writes
+// every hymn when the meeting is planned, and this song is known then — its
 // score is pure).
 //
 // THE SEAT. plan(meetingInfo, stream) decides: the testimony only, most
@@ -86,7 +86,7 @@ window.KOLOB.GuestTongues = (function () {
   // THE MINUTES. The gift tells five stages (onStage); three earn a row —
   // someone rising to sing, the ward's hum, the harmonium's answer. The song
   // itself and its height are heard, not written: the glue passes them over
-  // (a request to the integrator: kolob-guests.js standingGuest reads ROWS)
+  // (kolob-guests.js standingGuest reads ROWS)
   var ROWS = { rises: 1, "the ward hums": 1, "the harmonium": 1 };
   var ROW_LABEL = "✦ the gift of tongues";
 
@@ -121,9 +121,8 @@ window.KOLOB.GuestTongues = (function () {
     return stream;
   }
   function oddsFor(info) {
-    // (round 3c: a meeting hands its odds in, info.odds, from the calendar's
-    // one table — KOLOB.Calendar.GUEST_ODDS; a lab without it reads this
-    // room's own, below)
+    // (the meeting hands this room its odds from Calendar.GUEST_ODDS,
+    // info.odds; a lab without them reads the room's own ODDS)
     if (info && info.odds != null) return Math.max(0, Math.min(1, +info.odds));
     var w = ODDS.weight, k = info.sunday && w[info.sunday] != null ? info.sunday : info.kind;
     return Math.min(ODDS.cap, ODDS.base * (w[k] != null ? w[k] : 1));
@@ -144,7 +143,7 @@ window.KOLOB.GuestTongues = (function () {
   function decide(info, stream) {
     info = info || {};
     var rs = need(stream).fork("seat");
-    var roll = rs.next(), at = rs.rnd(AT[0], AT[1]), whoDie = rs.next(), seedDie = rs.next(), partDie = rs.next();
+    var roll = rs.next(), at = rs.rnd(AT[0], AT[1]), whoDie = rs.next(), seedDie = rs.next(), partDie = rs.next();   // DICE: every die, first
     var sh = shapeOf(stream, info.house);
     var p = oddsFor(info), why = null;
     var secs = info.sections || [], guests = info.guests || [], ti = -1;
@@ -190,7 +189,7 @@ window.KOLOB.GuestTongues = (function () {
     var same = (ward.members || []).filter(function (m) { return m.part === seat.part && m.k != null; });
     return same.length ? same[Math.min(same.length - 1, Math.floor(u * same.length))].id : null;
   }
-  function pickWith(u, pool) { return pickW({ rnd: function (a, b) { return a + u * (b - a); } }, pool); }   // (a die already thrown)
+  function pickWith(u, pool) { return pickW({ rnd: function (a, b) { return a + u * (b - a); } }, pool); }   // (DICE: reads a die already thrown; draws none)
   function pickPart(u) { return u < 0.34 ? "S" : u < 0.56 ? "A" : u < 0.8 ? "T" : "B"; }
 
   // ==========================================================================
@@ -313,8 +312,8 @@ window.KOLOB.GuestTongues = (function () {
    "b-oh.n-ee d-oh.n-ah l-oh.n-ee m-oh.n-ee h-oh.n-ee r-oh.b-ee ah.l-ee oh.l-ee w-ee.l-ee l-ee.l-ee eh.l-ee eh.n-ee m-ee.n-ee " +
    "d-oh.m-ee h-ee.l-ee w-oo.l-ee b-ee.l-ee r-ee.l-ee n-oh.m-ah d-ee.l-ah l-oo.n-ah d-ah.n-ah g-oh.l-ee g-ah.l-ah l-ah.l-ah-l " +
    "d-oh.r-ee m-ee.m-oh l-ee.m-oh m-eh.m-oh d-eh.m-oh r-ee.m-oh h-eh.m-oh b-eh.l-ee m-oh.l-ah l-ah.w-ah h-ah.w-ah " +
-   // (round 2, the critic's: names the tongue kept landing on — Lara, Nora,
-   // Lena, Mona, Hana, Yoda)
+   // (names the tongue lands on without these: Lara, Nora, Lena, Mona,
+   // Hana, Yoda)
    "l-ah.r-ah n-oh.r-ah l-eh.n-ah m-oh.n-ah h-ah.n-ah y-oh.d-ah").split(" ").forEach(function (w) { if (w) BLOCK[w] = 1; });
   function drawSet(r, pool, n) {
     var left = pool.slice(), out = [];
@@ -351,6 +350,7 @@ window.KOLOB.GuestTongues = (function () {
         var wr = r.fork("word:" + w + ":" + a), nS = pickW(wr, [[2, 4], [3, 3], [4, 0.7]]), syls = [];
         tries++;
         for (var s = 0; s < 4; s++) {
+          // DICE: four a syllable, for all four slots, before the continue
           var onset = wr.next(), cD = wr.next(), vD = wr.next(), redup = wr.next();
           if (s >= nS) continue;
           var prev = syls[s - 1], v = pickWith(vD, vW);
@@ -361,7 +361,7 @@ window.KOLOB.GuestTongues = (function () {
           var bare = onset >= 0.8 && prev && prev.c && prev.v !== v;
           syls.push({ c: bare ? null : pickWith(cD, cW), v: v });
         }
-        var cdD = wr.next(), cdW = wr.next();
+        var cdD = wr.next(), cdW = wr.next();                            // DICE: both, whether or not a coda is given
         if (codas.length && cdD < 0.18) syls[syls.length - 1].coda = codas[Math.floor(cdW * codas.length)];
         var key = syls.map(sounds).join("."), ds = dsOf(syls);
         bare = syls.map(said).join(".");
@@ -371,10 +371,10 @@ window.KOLOB.GuestTongues = (function () {
         // too; and a word refused is refused with a closing sound — Lena's
         // Lenan, manna's mannan)
         var same = syls.every(function (x) { return said(x) === said(syls[0]); });
-        // (round 3c, the critic of crew C: a first name's shape — two
-        // syllables, l, n or m and a vowel, then l, n, r or nothing, and
-        // "ah": Lila, Lola, Lana, Mila, Nola, and Leah and Noah — about one
-        // song in five carried one. Refused as a pattern, not name by name)
+        // (a first name's shape — two syllables, l, n or m and a vowel, then
+        // l, n, r or nothing, and "ah": Lila, Lola, Lana, Mila, Nola, and
+        // Leah and Noah — about one song in five would carry one. Refused as
+        // a pattern, not name by name)
         var namelike = syls.length === 2 && /^[lnm]$/.test(syls[0].c || "") && (!syls[1].c || /^[lnr]$/.test(syls[1].c)) && syls[1].v === "ah";
         if (BLOCK[key] || BLOCK[bare] || seen[key] || same || namelike || (ds && avoid[ds])) continue;
         got = { syl: syls.map(sounds), sounds: key, ds: ds, tries: tries };
@@ -474,6 +474,7 @@ window.KOLOB.GuestTongues = (function () {
     var startIdx = Math.round(lo + span * R.rnd(0.2, 0.4)), prevEnd = startIdx;
     tl.phrases.forEach(function (p, k) {
       var pr = R.fork("phrase:" + k), m = p.syl.length;
+      // DICE: every die of the phrase, in order, whether the phrase reads it or not
       var topDie = pr.rnd(-0.6, 0.6), peakDie = pr.next(), oc = pickW(pr, [["sol", 3], ["re", 2], ["mi", 1.5]]), jPk = Math.min(Math.max(1, m - 3), Math.round((m - 1) * pr.rnd(0.3, 0.65)));
       var step = pickW(pr, [[-1, 1], [0, 1], [1, 2], [2, 1]]);
       var top = Math.round(lo + span * (0.56 + 0.34 * p.bell) + topDie);
@@ -584,7 +585,7 @@ window.KOLOB.GuestTongues = (function () {
     tl.phrases.forEach(function (p, k) {
       var a = anchors[k], line = [], word = null, wi = 0, fresh = true, said = {};
       p.syl.forEach(function (s, j) {
-        var pickDie = Rw.next();
+        var pickDie = Rw.next();                                       // DICE: every syllable, read only at a word's start
         if (!word || wi >= word.syl.length) {
           var wix = fresh && (k === 0 || p.echo) ? 0 : pickWith(pickDie, tg.weights);
           // (a word once in a phrase, while the tongue has others to give)
@@ -613,7 +614,7 @@ window.KOLOB.GuestTongues = (function () {
     var fHz = fOf(fin), V4 = voicing(c, K, fHz, mod(fin, n), part, sh.style, cl), H = tl.hum, Rh = stream.fork("hum"), hum = [];
     var spart = part;
     ward.members.forEach(function (m) {
-      var eDie = Rh.next(), xDie = Rh.next();
+      var eDie = Rh.next(), xDie = Rh.next();                             // DICE: two a member, before the return
       if (m.k == null || m.id === sid || !V4[m.part]) return;             // (the Primary's children are not among the thirty-two)
       var at = m.part === spart ? H.first + eDie * 0.5 : m.part === "B" ? H.bass + eDie * H.scatter * 2 : H.inner + eDie * H.scatter * 3;
       var end = H.holdEnd + xDie * H.fade;
@@ -776,4 +777,4 @@ window.KOLOB.GuestTongues = (function () {
     get LEVEL() { return LEVEL; }, set LEVEL(v) { LEVEL = +v; },
   };
 })();
-(window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-guest-tongues.js"] = true;   // the load guard's roll call (round 3c)
+(window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-guest-tongues.js"] = true;   // the load guard's roll call

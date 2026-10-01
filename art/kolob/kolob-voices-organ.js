@@ -1,14 +1,7 @@
 // ============================================================================
-// KOLOB — kolob-voices-organ.js: the organ
+// KOLOB — kolob-voices-organ.js: the organ in the meeting
 //
-// The tabernacle instrument: its chords and its cycle. Split from
-// kolob-audio.js (v0.30); see the room list in kolob-core.js.
-//
-// ONE ORGAN THROUGHOUT (round 3b, step 2). Until now the meeting had two
-// organs and no organist: the house's additive organ (organChord — sines an
-// octave down, swelling in like a pad) played the prelude, the joints and
-// everything between, and the same sines doubled the hymns' four parts.
-// Now the meetinghouse has one instrument — the registrable pipe organ
+// The meetinghouse has one instrument — the registrable pipe organ
 // (kolob-voices-pipeorgan.js: seven stops, a swell box, a wind you can feel)
 // — and one person on its bench, the Sunday's organist (kolob-organist.js:
 // the plain organist, the Victorian or the improviser, seated with the
@@ -21,9 +14,28 @@
 // parameters set (stops, tremulant, pedal), the swell box opening on each
 // chord as the organist's habit moves it.
 //
-// The old organ is kept whole, with its tremulant mended (request R1), as
-// the owner's A/B (?organ=house) and as the fallback when the pipe organ or
-// the organist is not loaded (a lab without them).
+// This file routes and keeps the desk:
+//   organChord(t, dur, chord, gainMul)   every chord the house plays — on the
+//                                        pipes (pipeChord) when pipeOn(), else
+//                                        on the house organ
+//   pipeOn()                             the pipe organ and its organist are
+//                                        loaded and the owner has not asked
+//                                        for the house organ (?organ=house)
+//   organistPlays(plan, t0, tag)         lays an organist's plan on the pipes
+//                                        through the desk's pump
+//   organStop(t) / organStats()          shut every case; what the pipes cost
+//   organCycle(t)                        the organ's lane: voluntaries, the
+//                                        chorale prelude, the swells under
+//                                        the singing
+//   organPartLine(t, notes, gainMul, o)  the house organ's part line: sounds
+//                                        when a performer emits organ cues
+//                                        with no pipe organist (the house
+//                                        voice, a lab)
+//
+// The house's additive organ (houseOrganChord: sines an octave down,
+// swelling in like a pad) is kept whole as the owner's A/B (?organ=house)
+// and as the fallback when the pipe organ or the organist is not loaded (a
+// lab without them).
 // ============================================================================
 
 window.KOLOB = window.KOLOB || {};
@@ -58,19 +70,17 @@ window.KOLOB = window.KOLOB || {};
   // S.Harmony (the chord desk), S.Meeting (the chorister's book))
 
   // ==========================================================================
-  // THE OLD ORGAN — v0.30's tabernacle instrument, kept as the A/B. Additive
-  // drawbar ranks (no biquad anywhere in this chain, by design); principal
-  // chorus crossfading toward flutes; a slow shallow tremulant; a pedal sine
-  // under the bass.
+  // THE HOUSE ORGAN — the additive instrument, kept as the A/B and the
+  // fallback. Additive drawbar ranks (no biquad anywhere in this chain, by
+  // design); principal chorus crossfading toward flutes; a slow shallow
+  // tremulant; a pedal sine under the bass.
   //
-  // R1 (round 3b, step 2; the organist crew's request, r3-organist-1): the
-  // tremulant rides a gain of its own AFTER the envelope. It used to be
-  // added straight to the envelope's gain, so when the envelope reached
-  // nothing the chord went on sounding at ±1.5 % for 0.3 s and every
-  // oscillator then stopped dead — a faint click at each chord's end
-  // (−81 to −93 dBFS through the room: real, and not the owner's brushing).
-  // Its depth is scaled to the chord's own level, so it trembles exactly as
-  // deep as before (±0.39 dB against ±0.38 in the organist lab's check).
+  // The tremulant rides a gain of its own AFTER the envelope. Added straight
+  // to the envelope's gain it would keep the chord sounding at ±1.5 % for
+  // 0.3 s after the envelope reached nothing, and every oscillator would
+  // then stop dead — a faint click at each chord's end (−81 to −93 dBFS
+  // through the room: real, and not the owner's brushing). Its depth is
+  // scaled to the chord's own level (±0.39 dB in the organist lab's check).
   // ==========================================================================
   function houseOrganChord(t, dur, chord, gainMul) {
     if (!chord) return;
@@ -121,7 +131,7 @@ window.KOLOB = window.KOLOB || {};
     }
     var atk = Math.min(2.2, dur * 0.3);
     env(master, t, [[atk, peak], [Math.max(0.1, dur - atk - dur * 0.28), peak * 0.92], [dur * 0.28, 0]]);
-    // every pipe that speaks is a note (round 2): each voice of the chord an
+    // every pipe that speaks is a note: each voice of the chord an
     // octave down, and the pedal an octave under the bass — with the chord
     // book's id for the chord (the raspberry's cluster and the rail's
     // audition are no chord of the book's, and say none)
@@ -130,7 +140,7 @@ window.KOLOB = window.KOLOB || {};
   }
 
   // ==========================================================================
-  // THE PIPE ORGAN IN THE MEETING (round 3b, step 2)
+  // THE PIPE ORGAN IN THE MEETING
   // ==========================================================================
   function VO() { return KOLOB.VoicesOrgan; }
   function OG() { return KOLOB.Organist; }
@@ -190,35 +200,34 @@ window.KOLOB = window.KOLOB || {};
   }
 
   // ==========================================================================
-  // THE HOUSE'S CHORDS ON THE PIPES. Everything the organ played between
-  // the hymns — the prelude's and the postlude's voluntaries, the joints'
-  // amens, a soft chord in the invocation or the testimony, the fuging's
-  // amen, a guest's — was organChord's sines, swelling in like a pad. The
-  // same chords are the pipes' now, as the chord desk voices them: every
-  // voice of the chord an octave down, as before (the organ still lives in
-  // the warm low-middle), the bass on the pedal too, on the HOUSE
-  // REGISTRATION the organ layer's parameters set (stops: the principal ↔
-  // the flutes; the tremulant; the pedal's bourdon). A pipe speaks when its key goes
-  // down — it cannot fade in — so the SWELL BOX is how a chord comes and
-  // goes: shut as the keys go down, opening over the old organ's attack,
+  // THE HOUSE'S CHORDS ON THE PIPES. Everything the organ plays between the
+  // hymns — the prelude's and the postlude's voluntaries, the joints' amens,
+  // a soft chord in the invocation or the testimony, the fuging's amen, a
+  // guest's — is a chord of the desk's, voiced as the house organ voices it:
+  // every voice of the chord an octave down (the organ lives in the warm
+  // low-middle), the bass on the pedal too, on the HOUSE REGISTRATION the
+  // organ layer's parameters set (stops: the principal ↔ the flutes; the
+  // tremulant; the pedal's bourdon). A pipe speaks when its key goes down —
+  // it cannot fade in — so the SWELL BOX is how a chord comes and goes: shut
+  // as the keys go down, opening over the house organ's attack time,
   // shutting over its release before the hands lift; as far as the Sunday's
   // organist moves it (the plain organist hardly at all, the Victorian from
   // nearly shut). In the chords of one phrase (a joint's amen, the
   // raspberry) the box, closing on one chord, opens again over the next.
   // THE LEVEL: at gainMul HOUSE_REF (the prelude's middle, 0.513) the house
-  // registration sits where organChord sat at the same gainMul, through the
-  // same organ layer (0.40, the owner's), the loudest 3 s within ±2 LU; any
-  // other gainMul scales from it as organChord's did. HOUSE_TRIM is that
-  // measurement, taken IN THE MEETING, the organ layer alone, against the
-  // old organ on the same Sunday (handoff r3b-organ-1). (Rendered offline
-  // through a stand-in room it had come out at +2.2 dB; the meeting's own
-  // rooms and glue then put the pipes' chords 2.8–2.9 LU over the old
-  // organ's at a joint's amen and a voluntary's — seeds 8 and 7 — and
-  // 0.5 over in seed 25's postlude. At 0 they sit either side of it.)
+  // registration sits where houseOrganChord sits at the same gainMul,
+  // through the same organ layer (0.40, the owner's), the loudest 3 s within
+  // ±2 LU; any other gainMul scales from it as houseOrganChord's does.
+  // HOUSE_TRIM is that measurement, taken IN THE MEETING, the organ layer
+  // alone, against the house organ on the same Sunday. (Rendered offline
+  // through a stand-in room it comes out at +2.2 dB; the meeting's own rooms
+  // and glue put the pipes' chords 2.8–2.9 LU over the house organ's at a
+  // joint's amen and a voluntary's — seeds 8 and 7 — and 0.5 over in seed
+  // 25's postlude. At 0 they sit either side of it.)
   // ==========================================================================
   var HOUSE_REF = 0.513, HOUSE_TRIM = 0, HOUSE_SWELL = 0.62;
   var houseSwell = { until: -1e9 };
-  // THE HOUSE'S STOPS BY THE LIGHT (round 3b, step 4; PLAN §7.3): the
+  // THE HOUSE'S STOPS BY THE LIGHT (PLAN §7.3): the
   // organ layer's registration, leaned by the light of the rite and the
   // Sunday (kolob-calendar.js regLean, −1 … +1): at dawn and in the
   // stillness the principal steps back and the flutes carry the chord; in
@@ -255,7 +264,7 @@ window.KOLOB = window.KOLOB || {};
     var atk = Math.min(2.2, dur * 0.3), rel = dur * 0.28;
     // (a chord that comes while the last still sounds finds the box already
     // closing on it: it opens again over this chord's own attack, from
-    // wherever it has got to — the old organ's cross-fade between the
+    // wherever it has got to — the house organ's cross-fade between the
     // chords of an amen, not a box held open over them)
     if (t < ph.until - 0.05) organ.setSwell(eOpen, t, atk, true);
     else { organ.setSwell(eShut, t - 0.03, 0.03, true); organ.setSwell(eOpen, t + 0.02, atk); }
@@ -269,9 +278,9 @@ window.KOLOB = window.KOLOB || {};
     var org = S.Meeting && S.Meeting.organist ? S.Meeting.organist() : null;
     var reg = pipeChordOn(caseAt(t), t, dur, chord.freqs, gainMul, { depth: org ? Math.max(0.3, org.habits.swell) : 0.6, phrase: houseSwell });
     var nTones = chord.freqs.length;
-    // (round 3b, step 4: the house's stops as the light drew them — told on
-    // its notes for the measuring tools: "flutes" at dawn and in the
-    // stillness, "full" in full light, "principal" between)
+    // (the house's stops as the light drew them — told on its notes for the
+    // measuring tools: "flutes" at dawn and in the stillness, "full" in full
+    // light, "principal" between)
     var lean = houseLean(), stops = lean <= -0.4 ? "flutes" : lean >= 0.5 ? "full" : "principal";
     for (var pv = 0; pv < nTones; pv++) { var tg = organTag(chord, nTones === 4 ? ORGAN_PART[pv] : null); tg.houseStops = stops; emitNote("organ", chord.freqs[pv] * 0.5, t, dur, tg); }
     // the pedal's 16′ under the bass (where the bourdon is drawn), sounding
@@ -298,32 +307,31 @@ window.KOLOB = window.KOLOB || {};
   var desk = [], deskTicking = false;
   var ORGANIST_PUMP_S = 0.2, ORGANIST_REACH_S = 3;
   // THE ORGAN UNDER THE WARD (the level in a hymn). The organist's plans are
-  // balanced (organist-lab) against v0.34's organChord — the organ the owner
-  // found "pretty loud" and set at the 0.40 layer — and the prelude, the
-  // chorale prelude and the house's chords sit there still. Under a hymn,
-  // though, the meeting has played since v0.35 the old organ's part lines
-  // (organPartLine: each voice doubled, the giving-out at 1.7), and the ward
-  // was set level with THAT organ (r3b-ward-1). Measured in the meeting,
-  // the organ layer alone through the rooms and the glue, the loudest 3 s:
-  // the organist's hymn sat 5.3–5.7 LU under it (seed 7, the Victorian:
-  // the giving-out 5.6, the verses 5.3, 6.4 and 5.7 — the quiet middle verse
-  // his own). So everything the organist plays in a hymn — the walk into its
-  // key, the giving-out, the verses, the fills, the interludes, the amen — is
-  // lifted by UNDER_WARD_DB, back to where the owner's organ sat under the
-  // singing (handoff r3b-organ-1: ±2 LU, seed by seed). Measured again once
-  // every piece carried its style's own hymn level (HYMN_LIFT, kolob-
-  // organist.js — the Victorian's half a decibel under the plain
-  // organist's, as the lab centres them): the loudest 3 s of the
-  // Victorian's hymns 1.1 LU under the old organ's, the plain organist's
-  // 0.9, the improviser's 0.2 — a shade soft of it, as the owner's "pretty
-  // loud" asks rather than over. The knob, for the owner's ear: 0 is the organist lab's level, some
-  // 5 dB softer.
+  // balanced (organist-lab) against the house organ's chords — the organ
+  // the owner found "pretty loud" and set at the 0.40 layer — and the
+  // prelude, the chorale prelude and the house's chords sit there. Under a
+  // hymn, though, the ward is set level with the house organ's part lines
+  // (organPartLine: each voice doubled, the giving-out at 1.7). Measured in
+  // the meeting, the organ layer alone through the rooms and the glue, the
+  // loudest 3 s: the organist's hymn at the lab's level sits 5.3–5.7 LU
+  // under those part lines (seed 7, the Victorian: the giving-out 5.6, the
+  // verses 5.3, 6.4 and 5.7 — the quiet middle verse his own). So
+  // everything the organist plays in a hymn — the walk into its key, the
+  // giving-out, the verses, the fills, the interludes, the amen — is lifted
+  // by UNDER_WARD_DB, back to where the owner's organ sat under the singing
+  // (±2 LU, seed by seed). With every piece carrying its style's own hymn
+  // level (HYMN_LIFT, kolob-organist.js — the Victorian's half a decibel
+  // under the plain organist's, as the lab centres them), the loudest 3 s
+  // of the Victorian's hymns sit 1.1 LU under the house organ's part lines,
+  // the plain organist's 0.9, the improviser's 0.2 — a shade soft of it, as
+  // the owner's "pretty loud" asks rather than over. The knob, for the
+  // owner's ear: 0 is the organist lab's level, some 5 dB softer.
   var UNDER_WARD_DB = 5.0;
   function organistPlays(plan, t0, tag) {
     if (!pipeOn() || !plan || !plan.phrases) return null;
     tag = tag || {};
-    // (round 3c: the organist's variations are a recital, not a hymn under
-    // the ward — played at the prelude's level, as the chorale prelude is)
+    // (the organist's variations are a recital, not a hymn under the ward —
+    // played at the prelude's level, as the chorale prelude is)
     if (tag.hymnId && !tag.prelude && !tag.variations && !plan._underWard) { plan.liftDb = (plan.liftDb || 0) + UNDER_WARD_DB; plan._underWard = true; }
     // the organist's hands always find the case the organ's hands are on now
     var hands = {
@@ -381,7 +389,7 @@ window.KOLOB = window.KOLOB || {};
                cat: "cast", label: "✦ the organist " + e.action, detail: e.nameDs };
     if (tag.hymnId) ev.hymnId = tag.hymnId;
     if (tag.verse != null) ev.verse = tag.verse;
-    if (tag.variations) ev.variations = true;              // (round 3c: a recital's doings, not the hymn's service)
+    if (tag.variations) ev.variations = true;              // (a recital's doings, not the hymn's service)
     if (e.registration) ev.registration = e.registration;
     if (e.manner) ev.manner = e.manner;
     var alive = tag.alive;
@@ -390,7 +398,7 @@ window.KOLOB = window.KOLOB || {};
 
   // ==========================================================================
   // THE CHORALE PRELUDE (PLAN-COMPOSITION §15, item 2: approved, as a draw,
-  // never the fixed opening; the organist crew's kolob-organist.js prelude).
+  // never the fixed opening; the plan is kolob-organist.js's prelude).
   // On a Sunday seated for it (kolob-meeting.js, THE PRELUDE'S SEATING:
   // "chorale"), the organist's first touch is the day's first hymn — the
   // plain organist's hymn once or twice through on soft flutes, the
@@ -428,8 +436,8 @@ window.KOLOB = window.KOLOB || {};
     return until - t;
   }
 
-  // THE ORGAN UNDER A COMPOSED HYMN (round 3): one part of the Score played
-  // as written — legato, as an organist doubles a hymn's voices, each pipe
+  // THE ORGAN UNDER A COMPOSED HYMN, on the house organ: one part of the
+  // Score played as written — legato, as an organist doubles a hymn's voices, each pipe
   // speaking at the pitch the ward sings (the 8′ principal, a 4′ above it,
   // and, for "full", the twelfth and fifteenth), the bass with a 16′ pedal
   // under it. A new pitch is taken almost at once (a pipe has no glide: a
@@ -437,8 +445,9 @@ window.KOLOB = window.KOLOB || {};
   // note is struck again, the key let up for an instant. Every pipe that
   // speaks is reported, with the tag the caller gives each note (its part,
   // its hymn, the beat, its monzo and the hymn's key).
-  // (Round 3b, step 2: the old organ's — the A/B and the fallback. In the
-  // meeting the organist plays the hymn on the pipes.)
+  // (The house organ's, for the A/B and the fallback: with the pipe
+  // organist seated, the meeting's hymns are played on the pipes and this
+  // is not called.)
   //   notes: [{at, dur, f, syl, tag}] (at: s from t); opts: {reg, pedal}
   function organPartLine(t, notes, gainMul, opts) {
     opts = opts || {};
@@ -547,7 +556,7 @@ window.KOLOB = window.KOLOB || {};
       // the ward hums first (the humming seating): the organist waits for
       // the hum, writes no chord under it, and comes in when it has ended
       if (seat && ((seat.hum && !seat.hum.sung) || S.Harmony.sungUntil() > t + 0.1)) { cueIn("organ", 3, organCycle); return; }
-      // THE CHORALE PRELUDE (round 3b, step 2): on a Sunday seated for it,
+      // THE CHORALE PRELUDE: on a Sunday seated for it,
       // the organist's first touch is the day's first hymn; the house's own
       // chords follow it, after a breath, leaning as the Sunday was seated
       if (seat && seat.name === "chorale" && pipeOn()) {
@@ -583,7 +592,7 @@ window.KOLOB = window.KOLOB || {};
   S.organChord = organChord;
   S.organPartLine = organPartLine;
   S.organCycle = organCycle;
-  // the pipe organ and its organist (round 3b, step 2)
+  // the pipe organ and its organist
   S.pipeOn = pipeOn;
   S.organistPlays = organistPlays;
   S.organStop = organStop;

@@ -23,11 +23,11 @@
 //             the fundamental; a few inharmonic upper partials die fast;
 //             the leather-padded clapper gives a soft knock. Children damp
 //             them against their shoulders, or forget to — and a forgotten
-//             bell rings until it has all but gone before it lets go.
-//             (Round 3, for the ward's handbell choir: a bell is a RING
-//             that can be struck again while it sounds, and every ringer's
-//             technique — let ring, damped, martellato on the padded table,
-//             the thumb damp, the shake.)
+//             bell rings until it has all but gone before it lets go. For
+//             the ward's handbell choir a bell is a RING that can be struck
+//             again while it sounds, with every ringer's technique — let
+//             ring, damped, martellato on the padded table, the thumb damp,
+//             the shake.
 //  GULLS    — a gull's cry is a nasal, harsh, harmonic tone that scoops up
 //             to a pitch and falls off it ("kee-ow"), with a rasp of
 //             irregular amplitude. Heard closely, the lead bird's held
@@ -103,9 +103,10 @@ window.KOLOB.VoicesFolk = (function () {
     return b;
   }
 
-  // THE HANDBELL'S CASTING (pure; the guest's score reads it too): the bell's own casting, fixed by its pitch: where its untuned partials
-  // lie, and how fast its doublet warbles (a property of the bronze, not
-  // of the stroke — so the same bell is the same bell all afternoon)
+  // THE HANDBELL'S CASTING (pure; the guest's score reads it too), fixed by
+  // its pitch: where its untuned partials lie, and how fast its doublet
+  // warbles (a property of the bronze, not of the stroke — so the same bell
+  // is the same bell all afternoon)
   function casting(f) {
     var h = Math.round(f * 100) >>> 0;
     h = Math.imul(h ^ (h >>> 13), 0x5bd1e995) >>> 0;
@@ -205,12 +206,12 @@ window.KOLOB.VoicesFolk = (function () {
         var t = s.t;
         if (s.rest) {
           // the bow lifts: the string rings down in a few hundredths, and
-          // then it is STILL. (Round 3c, the Social Hall: a note shorter
-          // than its own settling — a reel's grace, a 40 ms flick — had its
-          // settle land after the bow had lifted, and the rest sounded at
-          // the note's full level, −0.8 dB. Whatever the note before still
-          // had coming is cancelled at the lift; a rest long enough to hear
-          // ends in true zero, 150 ms in, 65 dB down already.)
+          // then it is STILL. (A note shorter than its own settling — a
+          // reel's grace, a 40 ms flick — would have its settle land after
+          // the bow had lifted, and the rest would sound at the note's full
+          // level, −0.8 dB. So whatever the note before still has coming is
+          // cancelled at the lift; a rest long enough to hear ends in true
+          // zero, 150 ms in, 65 dB down already.)
           if (!off) {
             g.gain.cancelScheduledValues(t); vd.gain.cancelScheduledValues(t);
             g.gain.setTargetAtTime(0, t, 0.02); vd.gain.setTargetAtTime(0, t, 0.02);
@@ -288,8 +289,8 @@ window.KOLOB.VoicesFolk = (function () {
       }
       // drones: open strings bowed alongside, the fiddler leaning on them —
       // and lifted with the bow at every rest
-      // (round 3c: a note may lift the drone alone — droneV 0 — while the
-      // melody string goes on, or lean on it harder or softer: the reel's
+      // (a note may lift the drone alone — droneV 0 — while the melody
+      // string goes on, or lean on it harder or softer: the reel's
       // fiddler rocks the bow onto the open string on the long notes and
       // off it through the runs; a lifted drone rings down and waits, and
       // the bow lands on it again, biting, where the next note asks)
@@ -324,8 +325,8 @@ window.KOLOB.VoicesFolk = (function () {
     }
 
     // ======================================================================
-    // HANDBELLS (round 3: the ward's handbell choir — every technique a
-    // ringer has, and a bell that can be struck again while it rings)
+    // HANDBELLS (the ward's handbell choir — every technique a ringer has,
+    // and a bell that can be struck again while it rings)
     // ======================================================================
     // THE CASTING. An English handbell is a thin bronze bell turned on a
     // lathe until its second mode — the (3,0), which rings a twelfth over
@@ -377,7 +378,7 @@ window.KOLOB.VoicesFolk = (function () {
     //        strokes, s after t), damp (s after t | null), until (s after t:
     //        a hard stop, faded — a natural end or a steal), shake: {rate,
     //        dur, at (s after t: a shake begun on a later stroke)}, pan | dest }
-    // handbell(t, f, {dur?, v, pan}) — the round-2 call: dur given, damped
+    // handbell(t, f, {dur?, v, pan}) — the plain call: dur given, damped
     //   then; omitted, let ring
     var BELL_KNOCKS = typeof WeakMap !== "undefined" ? new WeakMap() : null;
     function knockBuf(kind, reg) {
@@ -564,9 +565,9 @@ window.KOLOB.VoicesFolk = (function () {
       var dist = o.dist != null ? o.dist : 0.3;            // 0 close … 1 far
       var v = (o.v != null ? o.v : 1) * 0.1 * (1 - 0.6 * dist);
       var kind = o.kind || "long";
-      // (the dice are thrown whatever the caller hands over — a gull's throat
-      // is its own; a tune's bird, round 3c, may set its scoop and fall
-      // shorter, so a quick phrase keeps each held pitch clear of the next)
+      // DICE: hold0, up0 and fall0 are drawn whatever the caller hands over —
+      // a gull's throat is its own; a tune's bird may set its scoop and fall
+      // shorter, so a quick phrase keeps each held pitch clear of the next
       var hold0 = R.rnd(0.18, 0.32), up0 = R.rnd(0.05, 0.09), fall0 = R.rnd(0.14, 0.24);
       var hold = kind === "ha" ? 0.05 + 0.03 * (hold0 - 0.18) / 0.14 : (o.hold != null ? o.hold : hold0);
       var up = kind === "ha" ? 0.025 : (o.up != null ? o.up : up0);
@@ -656,8 +657,8 @@ window.KOLOB.VoicesFolk = (function () {
       var from = (o.from != null ? o.from : -0.7) + ci * 0.18, to = (o.to != null ? o.to : 0.7) + ci * 0.18;
       var tEnd = t + dur, n = 0;
       // the whole cart travels: one panner, one approach-and-recede gain —
-      // or (o.still, round 3c) it stands in the company and the company's
-      // road carries it (KOLOB.VoicesBand.road: the handcart guest): a level
+      // or (o.still) it stands in the company and the company's road
+      // carries it (KOLOB.VoicesBand.road: the handcart guest): a level
       // held (in and out over half a second), the carts a little apart
       var pn = ctx.createStereoPanner ? ctx.createStereoPanner() : ctx.createGain();
       var near = ctx.createGain();
@@ -752,7 +753,7 @@ window.KOLOB.VoicesFolk = (function () {
       o = o || {};
       var n = 0;
       // (o.only: one cart of the company, the others left to their own calls —
-      // each rolls from its own clock callback, round 3c)
+      // each rolls from its own clock callback)
       for (var c = 0; c < (o.carts || 2); c++) if (o.only == null || o.only === c) n += cart(t + c * (o.beat || 0.6) * 1.3, dur, o, c);
       return n;
     }
@@ -774,10 +775,10 @@ window.KOLOB.VoicesFolk = (function () {
     };
   }
 
-  // warm(ctx) (round 3c): the voice's noise — the carts' gravel and axles,
-  // the gulls' breath — baked now, at start-up, not in the clock callback
+  // warm(ctx): the voice's noise — the carts' gravel and axles, the gulls'
+  // breath — baked now, at start-up, not in the clock callback
   // of the first cart to roll (2 s of it: a visible pause on a slow core)
   function warm(ctx) { if (ctx) noiseBuf(ctx); return !!ctx; }
   return { create: create, warm: warm, bell: { tau: bellTau, life: bellLife, casting: casting } };
 })();
-(window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-voices-folk.js"] = true;   // the load guard's roll call (round 3b, step 3: the handbells ring in the meeting)
+(window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-voices-folk.js"] = true;   // the load guard's roll call
