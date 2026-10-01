@@ -682,3 +682,113 @@ gzipped) and still the owner's call.
   outside the try); the about page re-renders its hidden report-card pane
   ~8×/s for 5 s after load; `about.css` has a dead `.jd-about .jd-back`.
 - Harness: the `turn-darkroom-phone` words-iframe flake (README).
+
+---
+
+# The about page (2026-10-01, second pass) — plan and decisions
+
+Scope: `about/index.php`, `about/about.css` (2,086 lines, 106 KB, 52%
+comments), `about/about-scenes.js` (2,764 lines, 133 KB, 43% comments).
+Same rule: nothing the reader sees or does may change. Verification: the
+harness gains an `about-steps` group that scrolls every `.jd-step` into
+activation through the page's own mechanism and captures the pane and the
+step at desktop and phone, plus the drawer wake, the demo instrument, each
+report-card view and each analytics panel; two-run identity and injected-
+change checks as before.
+
+## Findings worth acting on (reviewed; line numbers as of 8f92653)
+
+**about-scenes.js**
+- A1 **The post-load burst.** `fitCard` always runs `ensureFilmstrip`, which
+  tears down and rebuilds the filmstrip whenever its control is unarmed —
+  and on a hidden host (the pre-render's `visibility:hidden`, then
+  `display:none`) it can never arm, so every fit rebuilds 12 deep SVG clones
+  with id rewriting. The warm-up lands the record card 8 times, queues four
+  identical `FIT_AT` ladders (40 timers), a settle poll and two
+  ResizeObserver fits: ~50 rebuilds of an invisible card in ~3 s. Fix: in
+  `ensureFilmstrip`, rebuild only when the drawing can arm
+  (`svg.getClientRects().length` and `visibility !== 'hidden'`), keeping the
+  stray-bar sweep. An unarmed bar has the same fixed height, so every
+  measurement is unchanged; the first visible fit arms it exactly as now.
+  Expected harness diff: filmstrip id-prefix counters in the about markup.
+- A2 `fitSoon` stacks a fresh 10-timer ladder per call; dedupe per host
+  within ~10 ms. A3 the ResizeObserver fits the same host twice per
+  callback; dedupe, and merge the two "refit everything" loops. A4
+  `finishDrawings` calls `seekMark(0)` on an unarmed control; guard on
+  `M > 0`. A5 the "next" MutationObserver watches the whole pane (or the
+  whole page on a phone); watch the instrument host only. A6 `fitCard`
+  clears the scene-span cache on every fit although the pane height is
+  fixed; drop it and key the cache on `pane.clientHeight`. A7 five
+  MediaQueryLists built per scroll tick behind branches that cannot run on
+  desktop; build once. A8 `pickStep` writes classes then reads 16 rects;
+  read first. A9 `place()`/`relayShow` write-then-read and unconditional
+  attribute/style writes per tick; compare before writing, cache the pane
+  height per resize. A10 the phone tick calls `getComputedStyle` on every
+  scroll; reorder and cache per resize. A11 the two rAF-or-timer throttles
+  leave a 48 ms timer pending after the frame ran; one helper, cleared.
+- A13 write-only / dead: `CAST`, `sceneOrder`, `host.__shows`, `prepareViews`'
+  `back`, `dotRows`' unused parameters, the always-no-op `sc.prepare()` in
+  the warm-up, empty `exit` functions. A14 `window.JD_paper` is replaced
+  wholesale (losing `cls`); override `get`/`set` in place instead (expected
+  surface diff: `JD_paper` gains `cls` on /about/). A15 duplicates of
+  jd-core exports: `GRADE_RAMP`, the live-axes filter, the `JD_esc`
+  fallback, the data.php path. A16 internal twins (`putCard`, the response-
+  by-model lookup, card preparation, `landCard`/`phoneFrame` framing, the
+  scroll-to-step maths, the filmstrip mount options, step-by-id lookups →
+  one map). A17 numbers shared with about.css: the 45vh focus line (JS 0.45)
+  and `GAP = 28` (CSS `+ 28px`); tokens `--jd-focus`/`--jd-gap` on
+  `.jd-about`, read once per resize with a fallback to the literal. A19
+  per-tick re-queries (`syncTimeline`, `ensureAside`, `hasVisual`,
+  `getComputedStyle(pane)` per fit; phone-mode no-op fits). A21 stale
+  comments (header says the real analytics folder; "eighteen steps"; "six
+  modules"; the first-open flash note detached from its code; others).
+
+**about.css / index.php**
+- C1 The 2026-09-15/17 instrument layer (~4.1 KB) is superseded by "THE
+  INSTRUMENT, RE-LAID"; every surviving declaration either loses to the
+  later layer, equals the drawer's own value, or is an initial value
+  (keep the padding, 295/329–337). C2 The analytics-folder layer (~4.1 KB)
+  styles a dialog this page never mounts (`JD_folder.open` is never
+  called; the `?live` click path keeps the scrim hidden on `<body>`) —
+  delete it except the live chart-card width at 637 and the two `?live`
+  protections (725, 1084); drop `data-fx="grades"` from index.php. C4 The
+  records-table base layer is mostly superseded by the folder-style layer;
+  `.jdc-rn` is always hidden. C5 Twelve selectors match nothing. C6 Three
+  identical desktop media blocks whose rules override each other; merge
+  downward. C7 `.jd-inline-card` defined three times with dead widths. C9
+  `$jd_extra_assets` hashes ~20 files per request for a stamp this page
+  no longer prints. C10 byte-identical copies of the drawer's grain/mottle
+  URIs and the Iowan stack → the new root tokens. C11 the two
+  `(max-width:768px)` chart blocks are partly dead (merge; keep the
+  breakpoint). C12/C13/C15/C19/C20/C21: no-op variants, an invalid
+  `column-gap: 0 10px`, same-selector pairs, restatements, pane-height
+  token, exact-value palette tokens. C16 media grouping (class-gated
+  phone rules need no wrapper). C23/C24 stale comments; shipping HTML
+  comments (2.7 KB) → PHP comments. C25 re-ordering by component.
+
+## Decisions (the session's, same policy as before)
+
+- **Render-identical only**, with these predicted harness diffs and no
+  others: filmstrip id counters and `JD_paper` members (A1, A14); about
+  markup where HTML comments become PHP comments and `data-fx` goes (C2,
+  C23); computed-style changes only on properties that cannot render
+  (flex/grid values on display:contents or grid items, C1/C4/C7), each
+  enumerated in the report.
+- **Kept, labelled:** the instrument's dormant "rated" path (the owner cut
+  the ranking step on 2026-09-27 and keeps its text in COPY.md);
+  `PHONE_OPEN_DRAWER`; the `?live` folder protections.
+- **`?type=b|c`** (the step-type exploration): removed — the owner's own
+  comment says to delete the losers once one is picked, and `a` is what
+  every later decision built on; `/about/` renders identically.
+- **Not done, owner's call (each a visible change):** `.jd-demo-note`
+  renders at body size, not fine print (outranked by `.jd-step p`); the
+  record's 26px band seam never applies; the title's hand-rolled rule vs the
+  house `.section-divider`; the chart blocks' breakpoint missing landscape
+  phones; the poster preload/`image-set` split (changed only if a DPR 1.25
+  check in Chromium confirms the mismatch — a loading change, not a visual
+  one); `will-change` on every inline card (layer changes can shift text
+  rasterisation).
+- **Not done:** ghost snapshot reuse (A20, needs a dirty signal); the
+  unhandled-rejection paths (behaviour); the warm-up's unarmed filmstrip
+  cells in ghosts (a probable visible seam — fixing it changes what the
+  reader sees mid-handoff).
