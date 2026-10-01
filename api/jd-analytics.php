@@ -147,7 +147,7 @@ foreach ($gens as $g) {
     $subId   = (string) $g['submission_id'];
     $modelId = (string) $g['model_id'];
     $status  = (string) $g['status'];
-    $isOk    = ($status === 'ok');
+    $isOk    = ($status === JD_GEN_OK);
 
     $genById[$genId] = ['submission_id' => $subId, 'model_id' => $modelId, 'status' => $status];
 
@@ -257,7 +257,7 @@ foreach ($rates as $r) {
     $value   = (float) $r['value'];
     $kind    = (string) $r['kind'];
 
-    if ($kind === 'grade') {
+    if ($kind === JD_KIND_GRADE) {
         if (!isset($gradeByModel[$modelId])) {
             $gradeByModel[$modelId] = ['sum' => 0.0, 'n' => 0];
         }
@@ -275,13 +275,13 @@ foreach ($rates as $r) {
         // when the curator re-graded it, else the visitor's own
         $tsub = (string) $gen['submission_id'];
         $prev = $turnGrade[$tsub][$modelId] ?? null;
-        if ($prev === null || ($r['client'] ?? '') === 'bench') {
+        if ($prev === null || ($r['client'] ?? '') === JD_CLIENT_BENCH) {
             $turnGrade[$tsub][$modelId] = $value;
         }
         continue;
     }
 
-    if ($kind === 'axis') {
+    if ($kind === JD_KIND_AXIS) {
         $axisId = $r['axis_id'] === null ? '' : (string) $r['axis_id'];
         if (!isset($axisDefs[$axisId])) {
             continue;                  // defunct or unknown axis: history, not a chart
@@ -341,7 +341,7 @@ $judgedByModel = [];
 foreach ($winnerBySub as $subId => $winnerGenId) {
     $present = [];
     foreach ($gensBySub[$subId] ?? [] as $g) {
-        if ($g['status'] === 'ok') {
+        if ($g['status'] === JD_GEN_OK) {
             $present[$g['model_id']] = true;   // once per submission, never per slot
         }
     }
@@ -497,7 +497,7 @@ foreach ($spendByDate as $date => $day) {
 // not an export.
 $turnRows = [];
 foreach ($subById as $sid => $s) {
-    if (($s['status'] ?? '') !== 'rated' || (int) ($s['suppressed'] ?? 0) === 1
+    if (($s['status'] ?? '') !== JD_SUB_RATED || (int) ($s['suppressed'] ?? 0) === 1
         || ($s['retire_requested_at'] ?? null) !== null) {
         continue;
     }

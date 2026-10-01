@@ -85,7 +85,7 @@ $ratedTurnPrompts = [];
 foreach ($subs as $s) {
     if ($s['item_id'] === null) {
         $turns[] = $s;
-        if ($s['status'] === 'rated') {
+        if ($s['status'] === JD_SUB_RATED) {
             $ratedTurnPrompts[(string) $s['prompt']] = true;
         }
     } else {
@@ -97,12 +97,12 @@ foreach ($subs as $s) {
 /** one generation's standing, every client's word laid out */
 function jdl_standing(array $byClient, int $axisCount): array
 {
-    $pick = jd_pick_rating($byClient, ['bench', '*']);
-    $bench = $byClient['bench'] ?? null;
-    $seed = $byClient['seed'] ?? null;
+    $pick = jd_pick_rating($byClient, [JD_CLIENT_BENCH, '*']);
+    $bench = $byClient[JD_CLIENT_BENCH] ?? null;
+    $seed = $byClient[JD_CLIENT_SEED] ?? null;
     $visitor = null;
     foreach ($byClient as $c => $s) {
-        if ($c !== 'bench' && $c !== 'seed') {
+        if ($c !== JD_CLIENT_BENCH && $c !== JD_CLIENT_SEED) {
             $visitor = $s;
             break;
         }
@@ -174,7 +174,7 @@ foreach ($entries as $itemId => $entry) {
         $responses[] = $r;
         if (!$retired) {
             $served[] = $r;
-            if (!$rank || $rank['client'] !== 'bench') {
+            if (!$rank || $rank['client'] !== JD_CLIENT_BENCH) {
                 $allBenchRanked = false;
             }
         }
@@ -309,7 +309,7 @@ foreach ($turns as $s) {
     }
     $n = 0;
     foreach ($gensBySub[(string) $s['id']] ?? [] as $g) {
-        if ($g['status'] === 'ok' && (int) $g['has_svg'] === 1) {
+        if ($g['status'] === JD_GEN_OK && (int) $g['has_svg'] === 1) {
             $n++;
         }
     }
@@ -331,7 +331,7 @@ foreach ($turns as $s) {
         $gid = (string) $g['id'];
         $st = jdl_standing($fold[$gid] ?? [], $axisCount);
         $rank = $rankByGen[$gid] ?? null;
-        $alive = $g['status'] === 'ok' && (int) $g['has_svg'] === 1;
+        $alive = $g['status'] === JD_GEN_OK && (int) $g['has_svg'] === 1;
         $r = [
             'rid'         => 'g' . ($i + 1),
             'gen_id'      => $gid,
@@ -356,7 +356,7 @@ foreach ($turns as $s) {
     }
     $prompt = (string) $s['prompt'];
     $rerunOf = $curatedPrompts[$prompt] ?? null;
-    $rated = $s['status'] === 'rated';
+    $rated = $s['status'] === JD_SUB_RATED;
     $suppressed = (bool) $s['suppressed'];
     $hidden = $s['retire_requested_at'] !== null;
     $allDone = true; $allRanked = true; $first = null;

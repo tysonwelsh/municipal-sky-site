@@ -256,7 +256,7 @@ try {
            FROM jd_ratings r
            JOIN jd_generations g ON g.id = r.generation_id
            JOIN jd_submissions s ON s.id = g.submission_id
-          WHERE s.item_id IS NOT NULL AND r.client = 'bench'
+          WHERE s.item_id IS NOT NULL AND r.client = '" . JD_CLIENT_BENCH . "'
           ORDER BY r.rated_at, r.id"
     )->fetchAll(PDO::FETCH_ASSOC), $liveAxes);
     /* THE RANK FOLLOWS THE GENERATION, not the submission it was filed under
@@ -289,7 +289,7 @@ try {
                 $allRanked = false;
                 continue;
             }
-            $pick = jd_pick_rating($cfold[$gid] ?? [], ['bench']);
+            $pick = jd_pick_rating($cfold[$gid] ?? [], [JD_CLIENT_BENCH]);
             if ($pick['grade'] !== null) {
                 $resp['grade'] = $pick['grade'];
             }
@@ -390,7 +390,7 @@ try {
     $tsubs = $db->query(
         "SELECT id, prompt, created, title, size_class
            FROM jd_submissions
-          WHERE item_id IS NULL AND status = 'rated'
+          WHERE item_id IS NULL AND status = '" . JD_SUB_RATED . "'
             AND suppressed = 0 AND retire_requested_at IS NULL
           ORDER BY created DESC"
     )->fetchAll(PDO::FETCH_ASSOC);
@@ -401,8 +401,8 @@ try {
                     g.usage_tokens, g.provider
                FROM jd_generations g
                JOIN jd_submissions s ON s.id = g.submission_id
-              WHERE s.item_id IS NULL AND s.status = 'rated'
-                AND g.status = 'ok' AND g.svg IS NOT NULL
+              WHERE s.item_id IS NULL AND s.status = '" . JD_SUB_RATED . "'
+                AND g.status = '" . JD_GEN_OK . "' AND g.svg IS NOT NULL
               ORDER BY g.submission_id, g.slot"
         )->fetchAll(PDO::FETCH_ASSOC);
         $bySub = [];
@@ -413,7 +413,7 @@ try {
                FROM jd_ratings r
                JOIN jd_generations g ON g.id = r.generation_id
                JOIN jd_submissions s ON s.id = g.submission_id
-              WHERE s.item_id IS NULL AND s.status = 'rated'
+              WHERE s.item_id IS NULL AND s.status = '" . JD_SUB_RATED . "'
               ORDER BY r.rated_at, r.id"
         )->fetchAll(PDO::FETCH_ASSOC), $liveAxes);
 
@@ -432,7 +432,7 @@ try {
             $responses = []; $ok = true;
             foreach ($gens as $g) {
                 $gid = (string) $g['id'];
-                $pick = jd_pick_rating($fold[$gid] ?? [], ['bench', '*']);
+                $pick = jd_pick_rating($fold[$gid] ?? [], [JD_CLIENT_BENCH, '*']);
                 if (count($pick['axes']) !== count($liveAxes) || $pick['grade'] === null) { $ok = false; break; }
                 $rank = $rankByGen[$gid]['pos'] ?? null;
                 if (count($gens) > 1 && $rank === null) { $ok = false; break; }

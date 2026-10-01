@@ -209,13 +209,13 @@ try {
 
     $delAxis = $db->prepare(
         "DELETE FROM jd_ratings
-          WHERE generation_id = ? AND client = 'bench' AND visitor_hash = ?
-            AND kind = 'axis' AND axis_id = ?"
+          WHERE generation_id = ? AND client = '" . JD_CLIENT_BENCH . "' AND visitor_hash = ?
+            AND kind = '" . JD_KIND_AXIS . "' AND axis_id = ?"
     );
     $delGrade = $db->prepare(
         "DELETE FROM jd_ratings
-          WHERE generation_id = ? AND client = 'bench' AND visitor_hash = ?
-            AND kind = 'grade'"
+          WHERE generation_id = ? AND client = '" . JD_CLIENT_BENCH . "' AND visitor_hash = ?
+            AND kind = '" . JD_KIND_GRADE . "'"
     );
     $ins = $db->prepare(
         'INSERT INTO jd_ratings
@@ -244,15 +244,15 @@ try {
         $noteUsed = false;   // the note rides the first jd_ratings row only
         foreach ($c['axes'] as $axisId => $value) {
             $delAxis->execute([$gid, $curator, $axisId]);
-            $ins->execute([jd_ulid(), $gid, 'axis', $axisId, $value,
-                $noteUsed ? null : $c['note'], $taxonomyVersion, $curator, 'bench', $now]);
+            $ins->execute([jd_ulid(), $gid, JD_KIND_AXIS, $axisId, $value,
+                $noteUsed ? null : $c['note'], $taxonomyVersion, $curator, JD_CLIENT_BENCH, $now]);
             $noteUsed = true;
             $written++;
         }
         if ($c['grade'] !== null) {
             $delGrade->execute([$gid, $curator]);
-            $ins->execute([jd_ulid(), $gid, 'grade', null, $c['grade'],
-                $noteUsed ? null : $c['note'], $taxonomyVersion, $curator, 'bench', $now]);
+            $ins->execute([jd_ulid(), $gid, JD_KIND_GRADE, null, $c['grade'],
+                $noteUsed ? null : $c['note'], $taxonomyVersion, $curator, JD_CLIENT_BENCH, $now]);
             $noteUsed = true;
             $written++;
         }
@@ -261,7 +261,7 @@ try {
             // it yet files the rest of the batch rather than 500ing.
             try {
                 $delRank->execute([$submissionId, $gid]);
-                $insRank->execute([jd_ulid(), $submissionId, $gid, $c['rank'], $curator, 'bench', $now]);
+                $insRank->execute([jd_ulid(), $submissionId, $gid, $c['rank'], $curator, JD_CLIENT_BENCH, $now]);
                 $written++;
             } catch (PDOException $e) {
                 if (!jd_missing_table($e)) {

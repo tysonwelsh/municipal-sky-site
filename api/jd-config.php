@@ -259,8 +259,35 @@ const JD_PROMPT_MAX_CHARS = 500;
 const JD_NOTE_MAX_CHARS = 500;
 const JD_RATINGS_MAX = 64;
 
+// The words the tables are written in, named once (setup-jd-tables.php holds
+// the ENUM / CHECK lists they come from). A pure naming: each constant IS the
+// stored string, and SQL that compares against one interpolates it, so every
+// statement's text is the same as when the literal was written inline.
+//
+// jd_*.client — who filed a row: a visitor's turn, the owner at the bench, the
+// entry.json word carried in by the backfill, the curated backfill itself.
+const JD_CLIENT_WEB = 'web';
+const JD_CLIENT_BENCH = 'bench';
+const JD_CLIENT_SEED = 'seed';
+const JD_CLIENT_CURATED = 'curated';
+// jd_submissions.status
+const JD_SUB_PENDING = 'pending';
+const JD_SUB_GENERATED = 'generated';
+const JD_SUB_RATED = 'rated';
+const JD_SUB_FAILED = 'failed';
+// jd_generations.status
+const JD_GEN_PENDING = 'pending';
+const JD_GEN_OK = 'ok';
+const JD_GEN_FAILED = 'failed';
+const JD_GEN_REJECTED = 'rejected';
+// jd_ratings.kind ('flag' is the legacy kind, kept in the ENUM; jd-rate.php
+// still files one when a visitor's batch carries it)
+const JD_KIND_GRADE = 'grade';
+const JD_KIND_AXIS = 'axis';
+const JD_KIND_FLAG = 'flag';
+
 // APP §4.4 — declared by the client, never sniffed from User-Agent.
-const JD_CLIENTS = ['web', 'ios', 'android'];
+const JD_CLIENTS = [JD_CLIENT_WEB, 'ios', 'android'];
 
 const JD_TAXONOMY_PATH = __DIR__ . '/../art/junk-drawer/taxonomy.json';
 const JD_DEV_DB_PATH = __DIR__ . '/../local-dev/jd-dev.sqlite';
@@ -862,7 +889,7 @@ function jd_read_json_body(): array
 // APP §4.4 — anything unrecognised silently becomes 'web'.
 function jd_normalize_client(mixed $value): string
 {
-    return (is_string($value) && in_array($value, JD_CLIENTS, true)) ? $value : 'web';
+    return (is_string($value) && in_array($value, JD_CLIENTS, true)) ? $value : JD_CLIENT_WEB;
 }
 
 // C1.3 step 4/5 — the server's own copy of taxonomy.json is authoritative for
@@ -1049,7 +1076,7 @@ function jd_fold_ratings(array $rows, array $liveAxes): array
     $fold = [];
     foreach ($rows as $r) {
         $gid = (string) $r['generation_id'];
-        $client = (string) ($r['client'] ?? 'web');
+        $client = (string) ($r['client'] ?? JD_CLIENT_WEB);
         if (!isset($fold[$gid][$client])) {
             $fold[$gid][$client] = [
                 'axes' => [], 'axes_version' => [], 'notes' => [],
@@ -1058,7 +1085,7 @@ function jd_fold_ratings(array $rows, array $liveAxes): array
         }
         $slot = &$fold[$gid][$client];
         $version = (int) ($r['taxonomy_version'] ?? 0);
-        if ($r['kind'] === 'axis') {
+        if ($r['kind'] === JD_KIND_AXIS) {
             $axis = (string) $r['axis_id'];
             if (isset($liveAxes[$axis])) {
                 $slot['axes'][$axis] = (float) $r['value'];
@@ -1070,7 +1097,7 @@ function jd_fold_ratings(array $rows, array $liveAxes): array
                     $slot['notes'][$axis] = (string) $r['note'];
                 }
             }
-        } elseif ($r['kind'] === 'grade') {
+        } elseif ($r['kind'] === JD_KIND_GRADE) {
             $slot['grade'] = (float) $r['value'];
             $slot['grade_version'] = $version;
         }
@@ -1143,7 +1170,7 @@ function jd_rank_by_generation(iterable $rows): array
     $out = [];
     foreach ($rows as $r) {
         $gid = (string) $r['generation_id'];
-        if ($r['client'] === 'bench' || !isset($out[$gid])) {
+        if ($r['client'] === JD_CLIENT_BENCH || !isset($out[$gid])) {
             $out[$gid] = ['pos' => (int) $r['rank_pos'], 'client' => (string) $r['client']];
         }
     }

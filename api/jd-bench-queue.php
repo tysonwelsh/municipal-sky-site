@@ -142,7 +142,7 @@ foreach ($subs as $s) {
 // prompt is a rerun and belongs to its item, not to the second population).
 $ratedTurnPrompts = [];
 foreach ($turns as $s) {
-    if ($s['status'] === 'rated') {
+    if ($s['status'] === JD_SUB_RATED) {
         $ratedTurnPrompts[(string) $s['prompt']] = true;
     }
 }
@@ -165,7 +165,7 @@ $totalRated = 0;
 function jdq_response(array $g, array $byClient, array $rank, int $axisCount, bool $isTurn): array
 {
     global $totalResponses, $totalRated;
-    $bench = $byClient['bench'] ?? null;
+    $bench = $byClient[JD_CLIENT_BENCH] ?? null;
     $axisValues = $bench ? $bench['axes'] : [];
     $gradeBench = $bench ? $bench['grade'] : null;
     $note = $bench ? $bench['note'] : null;
@@ -173,7 +173,7 @@ function jdq_response(array $g, array $byClient, array $rank, int $axisCount, bo
     $axesSeed = [];
     $gradeSeed = null;
     foreach ($byClient as $client => $s) {
-        if ($client === 'bench') {
+        if ($client === JD_CLIENT_BENCH) {
             continue;
         }
         if ($isTurn) {
@@ -186,7 +186,7 @@ function jdq_response(array $g, array $byClient, array $rank, int $axisCount, bo
             if ($s['grade'] !== null && ($s['grade_version'] ?? 0) >= JD_QUEUE_RUBRIC_SINCE) {
                 $gradeSeed = $s['grade'];
             }
-        } elseif ($client === 'seed') {
+        } elseif ($client === JD_CLIENT_SEED) {
             // the entry's word: its grade, and (since 2026-09-10) the
             // live-axis annotations a harvest wrote — the owner's own
             // answers from the rerun's turn, carried by jd-curated-sync
@@ -222,7 +222,7 @@ function jdq_response(array $g, array $byClient, array $rank, int $axisCount, bo
         'grade_seed'    => $gradeSeed,
         // the bench's rank, or the harvest's seed rank (2026-09-10 — a rerun
         // set the owner ranked at its turn is ranked); a visitor's stays a seed
-        'rank'          => ($rank && in_array($rank['client'], ['bench', 'seed'], true)) ? $rank['pos'] : null,
+        'rank'          => ($rank && in_array($rank['client'], [JD_CLIENT_BENCH, JD_CLIENT_SEED], true)) ? $rank['pos'] : null,
         'complete'      => $isComplete,
         'axes_seed'     => $axesSeed,
     ];
@@ -290,7 +290,7 @@ foreach ($turns as $s) {
         continue;                       // a rerun of a drawer item
     }
     $ok = array_values(array_filter($gensBySub[(string) $s['id']] ?? [],
-        fn($g) => $g['status'] === 'ok' && (int) $g['has_svg'] === 1));
+        fn($g) => $g['status'] === JD_GEN_OK && (int) $g['has_svg'] === 1));
     if (!$ok) {
         continue;                       // nothing survived; nothing to rate
     }
