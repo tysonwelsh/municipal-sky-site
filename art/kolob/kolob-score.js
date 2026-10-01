@@ -16,15 +16,15 @@
 //     the object, empty when it is right. A Score is held to §5 (parts that
 //     line up by beat, one melody onset per syllable, a spelling that agrees
 //     with its pitch up to a comma, cadences and chords of the contract's
-//     kinds); an event to §6 and to the words round 2 added to it;
+//     kinds); an event to §6 and to the words the engine added since (EVENTS);
 //   · THE CLERK'S COPY — toJSON / fromJSON / roundTrip: a Score is JSON, and
 //     roundTrip says whether a Score survives being written out and read
 //     back exactly (a function, an undefined, a NaN or a cycle does not);
 //   · THE READER'S HELPS — chordAt(line, beat), notesAt(hymn, t),
 //     timeline(hymn), syllableMap(hymn, verse), lineLength(line): what the
 //     composer, the engraver and the harness ask of a Score;
-//   · THE CHORD BOOK (round 2, milestone 2) — the harmony of the hall set
-//     down against the music's own clock (below, unchanged).
+//   · THE CHORD BOOK — the harmony of the hall set down against the
+//     music's own clock (below).
 //
 // Pure (SCORE.md §1): no audio, no clock, no dice, no DOM, no KOLOB._s. It
 // loads headless (the harness requires it into a bare context).
@@ -44,9 +44,9 @@ window.KOLOB.Score = (function () {
   var CADENCES = ["authentic", "half", "plagal", "deceptive", "openfifth", "imperfect", "none"];
   var NCT = ["pass", "nbr", "susp", "app", "ant", "esc"];
   var ORNAMENTS = ["grace", "slide", "turn"];
-  // (round 3b, step 3: "quartet" — gospel's verse sung by four of the ward
-  // standing, the ward on the refrain; "round" — a hymn sung as a canon, the
-  // ward going in group by group)
+  // ("quartet" — gospel's verse sung by four of the ward standing, the ward
+  // on the refrain; "round" — a hymn sung as a canon, the ward going in
+  // group by group)
   var PRACTICES = ["sung", "notes", "lined", "hummed", "unison", "descant", "quartet", "round"];
   // the contract's qualities and the Earth tunes' (the "…" of §5): a chord the
   // engine's gapped scales stack that is no triad is "other"
@@ -64,11 +64,11 @@ window.KOLOB.Score = (function () {
   PARENT_CENTS.penta = PARENT_CENTS.hexa = PARENT_CENTS.ionian;
   var COMMA_C = 21.506;                      // 81/80: the most a spelling may be off its pitch
   var SPELL_SLACK = COMMA_C + 1.5;           // (and a float's breath)
-  // (round 3b: the ringing seventh. Gospel's dominant sevenths are sung on
-  // the seventh harmonic, 4:5:6:7, and a note on it stands one Johnston "7"
-  // — 36/35 — under the spelling a 5-limit score would give it; SCORE §2's
+  // (the ringing seventh. Gospel's dominant sevenths are sung on the
+  // seventh harmonic, 4:5:6:7, and a note on it stands one Johnston "7" —
+  // 36/35 — under the spelling a 5-limit score would give it; SCORE §2's
   // commaOf reads it so. The proofreader allows that much again for every
-  // factor of 7 a monzo carries, and no more: r3-hymn2-1's request 1)
+  // factor of 7 a monzo carries, and no more)
   var SEPTIMAL_C = 1200 * Math.log(36 / 35) / Math.LN2;   // 48.770 c
 
   // ==========================================================================
@@ -238,9 +238,8 @@ window.KOLOB.Score = (function () {
     if (!Array.isArray(l.fermataBeats) || !l.fermataBeats.every(isNum)) out.push(w + ".fermataBeats: not a list of beats");
     return out;
   }
-  // (round 3b: r:<n>:<k> — the meeting's wandering refrain, k 0 as it was
-  // written, 1–3 each statement of it in the key and dialect of the hymn it
-  // follows)
+  // (r:<n>:<k> — the meeting's wandering refrain, k 0 as it was written,
+  // 1–3 each statement of it in the key and dialect of the hymn it follows)
   var ID = /^(h:\d+:\d+|r:\d+:\d+|earth:[a-z0-9][a-z0-9-]*|gift:\S+)$/;
   function validateHymn(h, where) {
     var out = [], w = where || (h && h.id) || "hymn";
@@ -317,10 +316,15 @@ window.KOLOB.Score = (function () {
   // THE EVENTS (SCORE.md §6) — every typed event's payload, by field kind.
   // A "?" kind may be null; an object is a payload of its own, checked field
   // by field (the hymn a hymn-announced names). The first block is the
-  // contract's table; the second is what round 2 added so that nothing the
-  // page prints is read off a label any more (requested for §6). An event
-  // may carry more than this — the legacy {cat, label, detail} ride along on
-  // the same object.
+  // contract's table; the rest is what the engine has added since, so that
+  // nothing the page prints is read off a label. An event may carry more
+  // than this — the legacy {cat, label, detail} ride along on the same
+  // object: kolob-ui.js reads ev.label once (the band's crossing row), and
+  // tools/lib/dump.js reads the words for a type it does not know and for
+  // dumps of builds older than 2026-09-27. Of the contract's table, `vision`
+  // is never emitted (the visions are unbuilt) and `cast` is (the ward's
+  // people rising: kolob-meeting.js, kolob-voices-choir.js,
+  // kolob-voices-organ.js, kolob-guests.js).
   // ==========================================================================
   var EVENTS = {
     "meeting-start":       { n: "int", sunday: "str?", kind: "str", mode: "mode", keynoteHz: "num", houseDialect: "str?" },
@@ -335,7 +339,7 @@ window.KOLOB.Score = (function () {
     "cast":                { memberId: "str", nameDs: "str", action: "str" },
     "vision":              { name: "str", nameDs: "str", d: "num" },
     "telegraph":           { word: "str", wordDs: "str?", marks: "arr" },
-    // round 2
+    // the engine's own words
     "transport":           { action: "str" },
     "sunrise":             { mode: "mode", keynoteHz: "num" },
     "liahona":             { points: "str" },
@@ -356,19 +360,19 @@ window.KOLOB.Score = (function () {
     "motif-answer":        { voice: "str", from: "str" },
     "motif-disperse":      { name: "str" },
     "motif-shadow":        { voice: "str", name: "str" },
-    // the pre-v0.34 polish: the house lets go when a guest enters (each note
-    // released, as written and as heard: {layer, freq, startTime, duration,
-    // until}); and the prelude's seating, drawn per Sunday
+    // the house lets go when a guest enters (each note released, as written
+    // and as heard: {layer, freq, startTime, duration, until}); and the
+    // prelude's seating, drawn per Sunday
     "house-lets-go":       { guest: "str", at: "num", until: "num", layers: "arr", released: "arr", logged: "bool" },
     "prelude-seating":     { n: "int", seating: "str", at: "obj" },
-    // round 3: the day's hymnal — the house dialect and each singing
-    // section's hymn (its id, dialect, key), drawn with the plan
+    // the day's hymnal — the house dialect and each singing section's hymn
+    // (its id, dialect, key), drawn with the plan
     "hymnal":              { house: "dialect", hymns: "arr" },
-    // round 3b, step 2: the organist's chorale prelude on the day's first
-    // hymn — its span (the house listens through it) and its manner
+    // the organist's chorale prelude on the day's first hymn — its span (the
+    // house listens through it) and its manner
     "chorale-prelude":     { hymnId: "hymnId", t0: "num", until: "num", style: "str?", manner: "str?" },
-    // round 3b, step 3: the day's forms — a round's groups going in one by
-    // one; the partner hymn's last verse, the first hymn played against it
+    // the day's forms — a round's groups going in one by one; the partner
+    // hymn's last verse, the first hymn played against it
     // (by the organ or a cornet of the ward's band); each statement of the
     // wandering refrain (k 0 after the first hymn, the enthusiast first; the
     // last in the doxology, unprompted) — and the doxology's one payoff
@@ -376,8 +380,8 @@ window.KOLOB.Score = (function () {
     "partner":             { hymnId: "hymnId", of: "hymnId", by: "str", combined: "bool" },
     "refrain":             { refrainId: "hymnId", statement: "int", after: "hymnId", dox: "bool", by: "str?" },
     "payoff":              { kind: "str", section: "str" },
-    // round 3b, step 4: the shape of a visit — the calendar's Sunday once a
-    // meeting (the light of every rite, their seatings, whether the doxology
+    // the shape of a visit — the calendar's Sunday once a meeting (the light
+    // of every rite, their seatings, whether the doxology
     // was ordered for the reckoning); a rite's seating as it begins (not the
     // plain house); and the Kolob reckoning — read once (ok, or why it fell
     // back), and each turn of the drone at a joint (from, to: monzos over the
@@ -386,7 +390,7 @@ window.KOLOB.Score = (function () {
     "scene":               { section: "str", index: "int", scene: "str" },
     "reckoning":           { ok: "bool", doxId: "hymnId?" },
     "drone-turn":          { index: "int", to: "arr", glide: "num" },
-    // round 3c: the testimony-bearers (kolob-testimony.js) — a bearer rises,
+    // the testimony-bearers (kolob-testimony.js) — a bearer rises,
     // speaks, the reed plays the words back (echo), doubles them, makes a
     // tune of them, the stillness between two bearers; not a guest's stage
     "testimony":           { stage: "str" },
@@ -461,7 +465,7 @@ window.KOLOB.Score = (function () {
       if (typeof x !== "object") { problems.push(path + ": a " + typeof x + " is not JSON"); return; }
       if (seen.indexOf(x) >= 0) { problems.push(path + ": a cycle"); return; }
       // a plain object's prototype is an Object.prototype — this realm's or
-      // another's (a vm context, an iframe: round 2, the critic) — or none
+      // another's (a vm context, an iframe) — or none
       var proto = Object.getPrototypeOf(x);
       if (!Array.isArray(x) && proto !== null && Object.getPrototypeOf(proto) !== null) { problems.push(path + ": not a plain object"); return; }
       seen.push(x);
@@ -550,14 +554,14 @@ window.KOLOB.Score = (function () {
   }
 
   // ==========================================================================
-  // THE CHORD BOOK (round 2, milestone 2)
+  // THE CHORD BOOK
   // ==========================================================================
   // Why a book. The choir writes its verse half a minute ahead — two lines
   // harmonized in one turn, every chord placed at the time it will be sung.
-  // Before round 2 the harmony engine remembered only the LAST chord it had
-  // voiced, so while the congregation was still on the first line, the organ,
-  // the harmonium, the strings and the deacon's chord-tone lean all read the
-  // last chord of the second: a chord from the future. Now every chord that is
+  // A harmony engine that remembers only the LAST chord it voiced lets the
+  // organ, the harmonium, the strings and the deacon's chord-tone lean read
+  // the last chord of the second line while the congregation is still on
+  // the first: a chord from the future. So every chord that is
   // sung or played is written into the book at its own time, and "the current
   // chord" is a question asked of a time — what stands at t? — not of the
   // order in which the voices happened to write. The house keeps one book per

@@ -17,7 +17,7 @@
 //                          day's first hymn. One part goes wrong, the
 //                          chorister stops them, that part sings the passage
 //                          alone on the notes, and everyone sings it again.
-//                          (kolob-guest-singingschool.js; round 3)
+//                          (kolob-guest-singingschool.js)
 //
 //   reckoning       ON   — the Kolob reckoning: the drone moves one note a
 //                          section, spelling the doxology's opening, and
@@ -28,8 +28,7 @@
 //                          otherwise, so the A/B is the drone alone (PLAN
 //                          §7.2's fallback: the cantus only for the key
 //                          plan, no audible glide) (kolob-calendar.js,
-//                          kolob-hymnal.js, kolob-voices-ground.js; round 3b,
-//                          step 4)
+//                          kolob-hymnal.js, kolob-voices-ground.js)
 //
 // HOW TO SWITCH ONE (dev only; nothing on the page shows these):
 //

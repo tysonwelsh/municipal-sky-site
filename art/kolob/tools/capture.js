@@ -30,6 +30,8 @@ const A = require("./lib/audio.js");
 const Dm = require("./lib/dump.js");
 const R = require("./lib/run.js");
 
+// (the --profile default printed below is stale: lib/chrome.js keeps the
+// profile under os.tmpdir(); the text is a string and waits for a code change)
 const HELP = `capture.js — record a seeded meeting (muted), with spectrogram, loudness and peaks
   --seed 1847 | --seeds 1847,5,9   meeting(s) to record, one after another (default 1847)
   --from 0 --to 240      window in meeting seconds (default 0–240)
@@ -278,10 +280,11 @@ async function harnessCheck(seed, secs, browserRun) {
     rows.push([x ? x.section : "—", x ? x.t.toFixed(1) : "—", y ? y.section : "—", y ? y.t.toFixed(1) : "—", x && y ? (x.section === y.section && Math.abs(x.t - y.t) < 2 ? "✓" : "✗ " + (y.t - x.t).toFixed(1) + " s") : "✗"]);
   }
   const same = hm.mode === bm.mode && hm.meetingKind === bm.meetingKind && Math.abs((hm.keynoteHz || 0) - (bm.keynoteHz || 0)) < 0.5;
-  // note for note: where do the two meetings part? (v0.30 draws every choice
-  // from one die in timer order and reads the audio clock at callback time,
-  // so real-time jitter changes the draws — PLAN §2.2; the streams and the
-  // clock of phase 0b are the cure)
+  // note for note: where do the two meetings part? (the engine draws every
+  // decision from named streams and measures it against the cue's scheduled
+  // time — SCORE §3, §4 — so the browser's meeting and the harness's should
+  // agree note for note; where they first part is where something read the
+  // wall clock or threw an unseeded die)
   const hn = h.notes.filter((n) => n.t < secs), bn = browserRun.notes.filter((n) => n.t < secs);
   const used = new Set();
   let matched = 0, firstMiss = null;
@@ -303,9 +306,11 @@ function mmss(t, dp) {
 }
 
 // Where meeting 1 ends (seconds after T0), from the page's records, in
-// either vocabulary, read by the one reader: v0.30's `∴ joint — meeting ends
-// · 8s` or a typed `meeting-end {dur}` (the joint's length and 6 s of the
-// bell's tail after it), or else the next meeting's start. Null until then.
+// either vocabulary, read by the one reader: the last joint's `∴ joint —
+// meeting ends · 8s` (read by its words: dump.js knows no `joint` type) or a
+// typed `meeting-end {dur}` (which no engine emits; the reader accepts one)
+// — the joint's length and 6 s of the bell's tail after it — or else the
+// next meeting's start. Null until then.
 function meetingEnd(lines, T0) {
   const evs = lines.map((l) => (typeof l === "string" ? JSON.parse(l) : l)).filter((r) => r[0] === "E" && r[2]).map((r, i) => Dm.normEvent(r[2], r[1], i));
   const end = evs.find((e) => e.kind === "joint" && e.meetingEnd && e.t > T0);
@@ -417,6 +422,10 @@ function reportFor(r) {
     L.push("");
     L.push(U.table(["harness section", "at (s)", "browser section", "at (s)", ""], r.check.rows));
     L.push("");
+    // (the sentence printed below for a parting still describes a build
+    // older than 2026-09-27 — one die, in timer order, read against the
+    // audio clock; on today's engine a parting is a bug to find, not the
+    // expected jitter. The text is a string and waits for a code change.)
     const nn = r.check.notes;
     L.push("Note for note: " + nn.matched + " of the harness's " + nn.harness + " notes sound in the browser too (" + nn.browser + " there). " +
       (nn.part ? "The two first part at " + mmss(nn.part.t) + " (" + nn.part.layer + (nn.part.freq > 0 ? " " + nn.part.freq.toFixed(1) + " Hz" : "") + ")" +

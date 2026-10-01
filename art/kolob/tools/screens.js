@@ -15,7 +15,7 @@
 // Headless Chrome may pace requestAnimationFrame slowly (~1 fps on some
 // machines), so frames are judged by what each one costs, not by how many came.
 // What a frame costs also rises with what else the machine is doing (other
-// crews' Chromes, harness batteries): the report prints the load average
+// Chromes, harness batteries): the report prints the load average
 // beside the frame times, and says when it was too high to trust p99 and max.
 "use strict";
 const fs = require("fs");
@@ -24,6 +24,8 @@ const os = require("os");
 const U = require("./lib/util.js");
 const C = require("./lib/chrome.js");
 
+// (the --profile default printed below is stale: lib/chrome.js keeps the
+// profile under os.tmpdir(); the text is a string and waits for a code change)
 const HELP = `screens.js — muted headless screenshots of the staff + frame time under CPU throttling
   --seed 1847            the meeting (default 1847)
   --times 20,60,120      meeting seconds to capture at (default 20,60,120)

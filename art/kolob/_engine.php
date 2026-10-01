@@ -54,49 +54,46 @@ return [
     'kolob-pitch.js', 'kolob-score.js', 'kolob-tunes.js',
     // the composers (pure: handed a moment and the caller's dice)
     'kolob-melody.js', 'kolob-harmony.js',
-    // the hymn composer (round 3, M1): pure, loaded ahead of the performers;
-    // the engine begins singing its hymns in round 3's integration
+    // the hymn composer: pure, loaded ahead of the performers
     'kolob-dialects.js', 'kolob-hymnists.js', 'kolob-composer.js',
-    // the Sunday's organist (round 3b, step 2): pure planning — the chorale
-    // prelude, the hymn in pieces, the walk into a new key — played on the
-    // pipe organ among the voices
+    // the Sunday's organist: pure planning — the chorale prelude, the hymn
+    // in pieces, the walk into a new key — played on the pipe organ among
+    // the voices
     'kolob-organist.js',
-    // the experiments' switch (round 3b, step 3): the engine asks it once a
-    // meeting before seating an experimental feature (the singing school);
+    // the experiments' switch: the engine asks it once a meeting before
+    // seating an experimental feature (the singing school);
     // ?exp=-singingSchool turns one off for a visit
     'kolob-experimental.js',
     // the Sunday of the colony year, the arc of light, the rites' seatings
-    // and the Kolob reckoning (round 3b, step 4): pure; the meeting draws
-    // the Sunday from it, and the composer's desk reads the reckoning in it
+    // and the Kolob reckoning: pure; the meeting draws the Sunday from it,
+    // and the composer's desk reads the reckoning in it
     'kolob-calendar.js',
-    // the voices (the registrable pipe organ, round 3b, step 2: the meeting's
-    // one organ — kolob-voices-organ.js keeps the old one as the A/B)
+    // the voices (the registrable pipe organ is the meeting's one organ —
+    // kolob-voices-organ.js keeps the old additive one as the A/B)
     'kolob-voices-pipeorgan.js',
     'kolob-voices-organ.js', 'kolob-voices-choir.js', 'kolob-voices-winds.js',
     'kolob-voices-ground.js', 'kolob-voices-field.js',
     // (the bagpipe, shelved by the owner on 2026-09-13, left the list on
     // 2026-10-01: its room and lab are in shelved/)
     'kolob-voices-band.js',
-    // the folk instruments: the ward's handbells (round 3b, step 3)
+    // the folk instruments: the ward's handbells, the Social Hall's fiddle
     'kolob-voices-folk.js',
-    // the ward's thirty-two voices (round 3b: a throat each; the meeting's
-    // one congregation)
+    // the ward's thirty-two voices (a throat each; the meeting's one
+    // congregation)
     'kolob-voices-vocal.js',
-    // the performers (the trombone choir at dawn plans and plays itself;
-    // the guests' room places it, the meeting seats it; the day's hymnal
-    // orders the meeting's hymns from the composer and brings them back —
-    // round 3's integration, when the meeting began to sing them)
-    // the Sunday's ward and its people, the performer of every hymn (round 3b)
+    // the performers: the Sunday's ward and its people, the performer of
+    // every hymn
     'kolob-cast.js',
-    // (and the guests who stand in the room — the ward's handbell choir and
-    // the singing school — plan and play themselves, round 3b, step 3)
+    // the day's hymnal (it orders the meeting's hymns from the composer and
+    // brings them back); the trombone choir at dawn, the ward's handbell
+    // choir and the singing school, each planning and playing itself (the
+    // guests' room places them, the meeting seats them)
     'kolob-hymnal.js', 'kolob-guest-trombones.js', 'kolob-guest-handbells.js', 'kolob-guest-singingschool.js',
-    // (round 3c: the new guests, each planning and playing itself — the
-    // Nauvoo band that marches (it replaces the looping fife), the handcart
-    // company, the gulls; the organist's variations on a hymn and change
-    // ringing from a far tower; the gift of tongues, the far ward and the
-    // Hosanna; the Social Hall; and the testimony-bearers, who are not
-    // guests but the testimony's own people)
+    // (the other guests, each planning and playing itself — the Nauvoo band
+    // that marches, the handcart company, the gulls; the organist's
+    // variations on a hymn and change ringing from a far tower; the gift of
+    // tongues, the far ward and the Hosanna; the Social Hall; and the
+    // testimony-bearers, who are not guests but the testimony's own people)
     'kolob-guest-bands.js', 'kolob-guest-handcart.js', 'kolob-guest-gulls.js',
     'kolob-guest-variations.js', 'kolob-guest-changes.js',
     'kolob-guest-tongues.js', 'kolob-guest-farward.js', 'kolob-guest-hosanna.js',

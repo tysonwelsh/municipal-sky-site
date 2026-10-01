@@ -6,9 +6,9 @@
 // 1. A real dump from this worktree's harness reads as meetings and sections.
 // 2. A synthetic dump in the SCORE.md §6 typed vocabulary reads the same way —
 //    meetings, sections, cadences, guests, parts, and the distinctness hooks
-//    (sunday, dialect, cast) light up — and a typed event echoed by a v0.30
-//    log line counts once. This is what keeps the tools working when the
-//    engine crew moves the engine to typed events.
+//    (sunday, dialect, cast) light up — and a typed event echoed by a log
+//    line (a build older than 2026-09-27) counts once: the readers are proved
+//    on a dump no harness wrote.
 // 3. The same seed rendered twice is distance 0; two seeds are not.
 // 4. The loudness meter reads the BS.1770 reference tones, and gates as
 //    EBU Tech 3341 says it must (its cases 3, 4 and 5, and a −20/−40 half).
@@ -71,12 +71,12 @@ function check(name, ok, detail) {
   lines.push(["E", 14, { type: "cadence", kind: "openfifth", hymnId: "h:1:1", t: 14 }]);
   lines.push(["E", 20, { type: "guest-start", guest: "trombones", section: "prelude", logged: true, t: 20 }]);
   lines.push(["E", 60, { type: "section-start", section: "invocation", index: 1, t: 60 }]);
-  lines.push(["E", 60.02, { cat: "section", label: "§ INVOCATION", detail: "50s", t: 60.02 }]);     // the v0.30 echo
+  lines.push(["E", 60.02, { cat: "section", label: "§ INVOCATION", detail: "50s", t: 60.02 }]);     // the log-line echo of an old build
   lines.push(["E", 70, { type: "cadence", kind: "plagal", t: 70 }]);
-  lines.push(["E", 70.01, { cat: "harmony", label: "∴ plagal cadence", detail: "amen", t: 70.01 }]); // echo
+  lines.push(["E", 70.01, { cat: "harmony", label: "∴ plagal cadence", detail: "amen", t: 70.01 }]); // the same echo
   lines.push(["E", 100, { type: "guest-end", guest: "trombones", t: 100 }]);
   lines.push(["E", 110, { type: "meeting-start", n: 2, sunday: "ordinary", kind: "ordinary", mode: "dorian", keynoteHz: 240, t: 110 }]);
-  lines.push(["E", 125, { type: "meeting-end", n: 2, dur: 3, t: 125 }]);
+  lines.push(["E", 125, { type: "meeting-end", n: 2, dur: 3, t: 125 }]);   // (no engine emits meeting-end; the reader must still close a meeting on one)
   const synth = path.join(tmp, "typed-42.jsonl");
   fs.writeFileSync(synth, lines.map((l) => JSON.stringify(l)).join("\n") + "\n");
   const T = D.readDump(synth);
@@ -162,7 +162,7 @@ function check(name, ok, detail) {
     const rate = 48000, N = 16384, T0 = 2.5, fA = Math.round(T0 * rate), fB = fA + 75 * rate, blocks = [];
     let f = fA - 1000, k = 0, holeK = -1;
     while (f < fB + N) {
-      // the ramp read a sample or two off; the block after the hole read 2 short (126, as the critic's capture had it)
+      // the ramp read a sample or two off; the block after the hole read 2 short (126, as a real capture had it)
       blocks.push({ f: f + (k === holeK ? -2 : [0, 2, -1][k % 3]), d: new Float32Array(2 * N).fill(0.1) });
       f += N; k++;
       if (holeK < 0 && f > fA + 40.9 * rate) { f += 128; holeK = k; }                     // one render quantum never reached the tap

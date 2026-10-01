@@ -8,7 +8,7 @@
 //
 // A/B: two builds (or two dump sets) side by side, every metric's shift, and
 // a flag on each shift beyond ±15 % that is also beyond the sampling noise —
-// the engine crew's proof that a change is "still Kolob". When both sides were
+// the proof that a change is "still Kolob". When both sides were
 // rendered from the same seeds, it first says which seeds came out identical.
 //
 //   node tools/tally.js [--seeds 1-20] [--secs 1200] [--engine <dir>|git:<ref>] [--dumps <dir>]

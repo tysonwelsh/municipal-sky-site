@@ -39,7 +39,7 @@ const list = files.length ? files.map((f) => path.resolve(f)) : fs.readdirSync(K
 function tokens(src, name) {
   const out = [];
   try {
-    for (const t of acorn.tokenizer(src, { ecmaVersion: 2022, sourceType: "script", locations: true })) {
+    for (const t of acorn.tokenizer(src, { ecmaVersion: 2022, sourceType: "script", locations: true, allowHashBang: true })) {
       out.push({ k: t.type.label, v: t.value === undefined ? "" : String(t.value), line: t.loc.start.line });
     }
   } catch (e) { return { error: name + ": " + e.message }; }

@@ -7,18 +7,18 @@
 // says, this file learns the new words and the tools above it do not move.
 //
 // Two vocabularies are understood side by side:
-//   · the v0.30 log events  {cat, label, detail, t}  — read by their words;
-//   · the SCORE.md §6 typed events  {type, t, …payload} — read by their fields.
-// Whatever neither knows is still counted, by its `cat` or `type`.
-// Since round 2's milestone 3 the engine sends ONE event carrying both
-// (type and payload, and the legacy cat/label/detail on the same object),
-// and types many happenings §6's first table does not name (joint, guest,
-// chord, field, hymns-of-the-day…). An event is read by its type where this
-// file knows the type, and by its words otherwise — so a joint, a guest's
-// stage and the day's material are still read on a typed engine (the
-// integration found them all falling to "other"). Its `cat` stays the log's
-// word where it has one, so an A/B against a log-only build counts the same
-// categories on both sides.
+//   · the SCORE.md §6 typed events  {type, t, …payload} — read by their fields;
+//   · the log events  {cat, label, detail, t}  — read by their words.
+// Every event the engine sends today is typed, and carries the legacy
+// cat/label/detail on the same object. An event is read by its type where
+// this file knows the type (typedEvent), and by its words otherwise
+// (legacyEvent) — so a joint, a guest's stage and the day's material, whose
+// types are not in typedEvent, are still read rather than falling to
+// "other" — and the words are the only reading of a dump from a build older
+// than 2026-09-27 (a git: ref before the typed bus). Whatever neither knows
+// is still counted, by its `cat` or `type`; `cat` stays the log's word where
+// it has one, so an A/B against an old build counts the same categories on
+// both sides.
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -109,7 +109,7 @@ function typedEvent(e, p) {
     case "meeting-start":
       e.kind = "meeting"; e.n = p.n; e.mode = p.mode; e.meetingKind = p.kind || null;
       e.sunday = p.sunday || null; e.keynoteHz = +p.keynoteHz || null; break;
-    case "meeting-end":          // not in SCORE §6 yet (requested by r2-tools): lets a typed engine close its last meeting
+    case "meeting-end":          // not in SCORE §6, and no engine emits it (a meeting ends on its last joint, read by its words below); selftest.js fabricates one, and a dump that carries one closes its last meeting by it
       e.kind = "joint"; e.meetingEnd = true; e.jointDur = typeof p.dur === "number" ? p.dur : 0; break;
     case "section-start":
       e.kind = "section"; e.section = String(p.section || "?").toLowerCase();
@@ -130,12 +130,13 @@ function typedEvent(e, p) {
     case "cast": e.kind = "cast"; e.member = p.memberId; e.action = p.action || null; break;
     case "vision": e.kind = "vision"; e.vision = p.name; break;
     case "telegraph": e.kind = "telegraph"; e.word = p.word; break;
-    case "registration": e.kind = "registration"; e.registration = p.name || p.stops || p.registration; break;
+    case "registration": e.kind = "registration"; e.registration = p.name || p.stops || p.registration; break;   // (no engine emits this type: a registration reaches the tools on a note or in an event's payload, read in normNote/normEvent)
     default: e.kind = null;                               // (normEvent reads its words, if it has any)
   }
 }
 
-// The v0.30 log, read by its words (the glyphs are decoration and may change).
+// The log words — a build older than 2026-09-27, and any type typedEvent does
+// not know — read by their words (the glyphs are decoration and may change).
 const GUEST_WORDS = [
   [/the question$/, "question", "start"], [/unanswered/, "question", "end"],
   [/band approaches/, "bands", "start"], [/passes on/, "bands", "end"], [/bands cross/, "bands", "mark"],
@@ -203,9 +204,11 @@ function legacyEvent(e, p) {
   }
 }
 
-// While the engine migrates (SCORE §6: "existing emitEvent calls stay until
-// the UI moves over"), one happening may be told twice — a log line and a
-// typed event. Keep the first, fill its gaps from the second, drop the echo.
+// A dump from a build between the log and the typed bus may tell one
+// happening twice — a log line and a typed event. Keep the first, fill its
+// gaps from the second, drop the echo. (Every current event is one object
+// carrying both vocabularies, so nothing echoes; this matters only for git:
+// refs older than 2026-09-27, and selftest.js proves it still works.)
 const ECHO = {
   meeting: { tol: 0.5, key: (e) => "m" },
   section: { tol: 0.1, key: (e) => e.section },
@@ -275,8 +278,8 @@ function sectionsOf(m) {
 // Voices and phrases
 // ---------------------------------------------------------------------------
 // One line per voice: the layer, or layer:part when the engine marks parts.
-// A chordal layer without parts (v0.30's choir prints all four voices at one
-// onset) is read by its top line — the tune, in every dialect that keeps the
+// A chordal layer without parts (an old build's choir printed all four
+// voices at one onset) is read by its top line — the tune, in every dialect that keeps the
 // tune on top. Unpitched notes (freq 0: bells, voice, wind, telegraph) and
 // any layer in `skip` are left out.
 function voiceLines(notes, skip) {

@@ -13,13 +13,10 @@
 // read nothing but the dump this writes) and for a quick silent check that
 // the engine still loads, plays and keeps time.
 //
-// REBUILT on 2026-10-01. The original harness was never committed (it is
-// gitignored, and every copy lived in a crew's scratchpad), so a fresh
-// clone had none and every tool in tools/ refused to run. This one is built
-// from the tools' contract (tools/README.md "Which build is measured" and
-// "The dump format (v1)", tools/lib/run.js, tools/lib/witness.js) and the
-// siblings' mock design. The huge spec suites of the siblings are not here:
-// this harness loads, plays, dumps and reports.
+// Built to the tools' contract (tools/README.md "Which build is measured"
+// and "The dump format (v1)", tools/lib/run.js, tools/lib/witness.js) and
+// the siblings' mock design; it loads, plays, dumps and reports, and
+// carries none of the siblings' spec suites.
 //
 // Usage:
 //   node _harness.js <secs> <seed> [ives] [razz] [cumulative] [force=<guest>]
@@ -36,10 +33,13 @@
 //
 // Which engine: KOLOB_BASE or KOLOB_DIR (the tools set both; either alone
 // works) names the engine directory; the default is this file's own. The
-// module list is that directory's _engine.php (else index.php's
-// $kolob_engine); the substrate's "../prosperos-jukebox-v2/pj2-*.js" resolve
-// relative to it. KOLOB_LEGACY=<file> loads a single-file build (v0.30's
-// kolob-audio.js) instead — best effort, that build keeps its own time.
+// module list is that directory's _engine.php (the one list since
+// 2026-09-29; the index.php $kolob_engine fallback reads the split builds
+// of 2026-09-26 to 2026-09-29 — git: refs of those days, nothing newer);
+// the substrate's "../prosperos-jukebox-v2/pj2-*.js" resolve relative to
+// it. KOLOB_LEGACY=<file> loads a single-file build instead — kolob-audio.js,
+// the engine before the split of 2026-09-26, for git: refs older than that
+// — best effort, that build keeps its own time.
 // Every module is read with fs.readFileSync (so tools/lib/witness.js, which
 // the tools preload, can see exactly which bytes were played) and evaluated
 // with vm.runInThisContext, which is a browser <script>: top-level var, let
