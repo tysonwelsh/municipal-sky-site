@@ -45,7 +45,7 @@
 
   var payload = null;       /* the data.php payload — the survey renders from it */
   var scrim = null, card = null, headEl = null, bodyEl = null, confirmEl = null;
-  var state = '', isOpen = false, confirmOn = false, restored = false;
+  var state = '', isOpen = false, confirmOn = false;
   /* CURATE MODE (the re-rating bench, 2026-08-28): while this is set, the
      card is seated with an existing curated item's responses instead of a
      fresh turn — same bench, same rail, same podium, filed through the
@@ -60,12 +60,11 @@
   var token = 0;            /* per-turn token — a settling fetch from an
                                abandoned turn must not touch the live one */
   var lastFocus = null, instSeq = 0, slowTimer = 0;
-  var stateTitle = '';      /* the current state's heading — also the dialog's
-                               accessible name, so the name changes with the
-                               step instead of naming the whole flow once */
   /* the masthead the next paint will print: FORM JD-1 §n and the heading.
      head() fills it; the view string is built before paint runs, so the two
-     can never disagree. */
+     can never disagree. Its title is also the dialog's accessible name
+     (paint sets it), so the name changes with the step instead of naming
+     the whole flow once. */
   var pendingHead = null;
 
   /* ---------- small helpers ---------------------------------------------- */
@@ -136,8 +135,7 @@
      the entries behind their report cards. */
   function setData(data) {
     payload = data;
-    if (!restored) { restored = true; restoreWon(); }
-    else hydrateWon();
+    hydrateWon();
   }
   /* the pile loader hands the payload over on success; if the drawer itself
      failed to load, the survey fetches its own copy rather than inventing a
@@ -207,19 +205,17 @@
     bodyEl.addEventListener('input', onInput);
     /* the bench/call plate answers Enter/Space like the button it claims to
        be (role="button" — see plate()); Space is preventDefault'd or the
-       card scrolls out from under the enlargement. REPLAY is a real
+       card scrolls out from under the enlargement. The paper swap is a real
        <button>, so the UA turns these keys into its click — onClick above
-       redraws, nothing here should zoom. */
+       swaps the paper, nothing here should zoom. */
     bodyEl.addEventListener('keydown', function (e) {
       if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
-      if (e.target.closest && e.target.closest('.jd-turn-draw')) return;
       if (e.target.closest && e.target.closest('.jd-turn-paper')) return;
       var p = e.target.closest ? e.target.closest('.jd-turn-plate') : null;
       if (!p || p.getAttribute('role') !== 'button') return;
       e.preventDefault();
       openZoom(p);
     });
-    ttInit();
     /* the trap: Tab cycles inside whichever layer is on top */
     card.addEventListener('keydown', function (e) {
       if (e.key !== 'Tab') return;
@@ -373,56 +369,11 @@
     confirmEl = null;
   }
 
-  /* ---------- the definition layer (OVERRIDE 1, round-16) -----------------
-     ONE system for every "what does this mean," and it is now JUST the
-     fixed singleton tooltip: mouseover for pointer hover, focusin for
-     keyboard focus on the CONTROL the definition is about (never the label
-     itself — .jd-def is a plain <span>, not a tab stop). Screen readers get
-     every definition natively via aria-describedby, pointed at a permanent
-     .jd-vh node — see scaleRow/callPanel. The click-to-unfold ⓘ popover
-     that used to sit beside the tooltip (owner: "an awkward little eye") is
-     retired outright, not replaced with a second widget. Touch-without-a-
-     screen-reader is a known, accepted gap: no hover, no focus ring, and a
-     tap on a <select> hands off to the OS picker before any custom tooltip
-     could show — the row label IS the definition's subject and the
-     select's own option words carry the actual scale, which is judged
-     self-explanatory enough to leave the gap open rather than patch it with
-     another click affordance. The tooltip itself is pointer-events:none so
-     it can never take a press a control should have had. */
-  var ttEl = null;
-  function ttInit() {
-    if (ttEl) return;
-    ttEl = document.createElement('div');
-    ttEl.className = 'jd-tt';
-    ttEl.setAttribute('aria-hidden', 'true');
-    ttEl.hidden = true;
-    document.body.appendChild(ttEl);
-    bodyEl.addEventListener('mouseover', function (e) {
-      if (!window.matchMedia || !window.matchMedia('(hover: hover)').matches) return;
-      var t = e.target.closest ? e.target.closest('[data-tt-t]') : null;
-      if (t) ttShow(t); else ttHide();
-    });
-    bodyEl.addEventListener('mouseleave', ttHide);
-    bodyEl.addEventListener('focusin', function (e) {
-      var t = e.target.closest ? e.target.closest('[data-tt-t]') : null;
-      var fv = false;
-      try { fv = e.target.matches(':focus-visible'); } catch (err) {}
-      if (t && fv) ttShow(t); else ttHide();
-    });
-    bodyEl.addEventListener('focusout', ttHide);
-    /* the modal's own scroller — a tooltip pinned to a moved anchor lies */
-    bodyEl.addEventListener('scroll', ttHide, true);
-  }
-  function ttShow(anchor) {
-    if (!ttEl) return;
-    ttEl.innerHTML = '<b>' + esc(anchor.getAttribute('data-tt-t')) + '</b>' +
-      esc(anchor.getAttribute('data-tt-d'));
-    ttEl.hidden = false;
-    var r = anchor.getBoundingClientRect();
-    ttEl.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 286)) + 'px';
-    ttEl.style.top = Math.max(8, r.top - ttEl.offsetHeight - 8) + 'px';
-  }
-  function ttHide() { if (ttEl) ttEl.hidden = true; }
+  /* (the definition layer — OVERRIDE 1's fixed singleton tooltip, shown on
+     hover and on keyboard focus over a [data-tt-t] anchor — retired when
+     the press-to-open disclosure replaced it, owner 2026-08-28; see
+     scaleRow. Its last code, which nothing could trigger any more, went
+     2026-10-01.) */
 
   /* Escape peels ONE layer per press: an open enlargement first, the abandon
      confirm second, the modal third, and never the page (the pile's own
@@ -435,24 +386,14 @@
     if (!isOpen || e.key !== 'Escape') return;
     e.preventDefault();
     if (zoom.isOn()) { closeZoom(); return; }
-    ttHide();
     requestClose();
   });
 
   /* ---------- the state machine ------------------------------------------- */
   function go(next) {
-    /* 'compare' retired 2026-08-11: the single bench's call step absorbed
-       it. A stored turn from the two-state era maps onto the bench's last
-       step rather than a state that no longer renders. */
-    if (next === 'compare') {
-      next = 'rate';
-      if (work) { work.step = 'call'; work.reached.call = true; }
-    }
-    /* 'consent' retired 2026-08-14 (owner): the gating card is gone — the
-       flow opens on the prompt, which carries the disclosure as fine print
-       and records the acknowledgment when the words are actually sent. A
-       stored turn parked on the old card lands on the prompt. */
-    if (next === 'consent') next = 'prompt';
+    /* (the mappings for the retired 'compare' (2026-08-11) and 'consent'
+       (2026-08-14) states are gone: they caught a stored turn parked on
+       either, and no stored turn is ever read back — init discards it) */
     state = next;
     if (turn) { turn.state = next; persist(); }
     render();
@@ -547,7 +488,7 @@
        timers, not on the elements, so dropping the DOM would not stop them. */
     if (window.JD_dark) window.JD_dark.mount(bodyEl);
     mountFilmstrip();
-    card.setAttribute('aria-label', stateTitle || 'take a turn');
+    card.setAttribute('aria-label', (pendingHead && pendingHead.title) || 'take a turn');
     card.setAttribute('data-view', (pendingHead && pendingHead.view) || 'form');
   }
   /* the masthead: just the heading (the FORM JD-1 §n badge that used to
@@ -555,7 +496,7 @@
      the section number so the flow's §1–§6 order stays declared at the
      call sites, but nothing prints it) */
   function headHTML() {
-    var p = pendingHead || { title: 'take a turn', sec: 1 };
+    var p = pendingHead || { title: 'take a turn' };
     return '<h2 class="jd-turn-title" tabindex="-1"' +
       (p.noFocus ? '' : ' data-autofocus') + '>' + esc(p.title) + '</h2>';
   }
@@ -800,16 +741,6 @@
      millimetre off the sheet. An attached photograph is an attached
      photograph. `pin` drops the caption — on the bench the heading already
      says which drawing this is. */
-  /* the replay button's sketch mark: a pencil mid-stroke and the line it's
-     leaving behind (see the replay note in plate() below) */
-  var SKETCH_ICON =
-    '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" ' +
-    'stroke="currentColor" stroke-width="1.6" stroke-linecap="round" ' +
-    'stroke-linejoin="round" aria-hidden="true">' +
-    '<path d="M2 20.8 C4.5 18.5, 6.5 22.5, 10 21.4"/>' +
-    '<path d="M11 18.2 L19.8 5.8 L22.8 7.9 L14 20.3 Z"/>' +
-    '<path d="M11 18.2 L10 21.6 L14 20.3 Z" fill="currentColor"/></svg>';
-
   /* THE PAPER, on the bench (owner ask, 2026-09-14): the report card has
      carried the graph/blueprint swap since 2026-09-10; the exhibit being
      graded gets the same button now — grading a light drawing on cream
@@ -846,16 +777,17 @@
     var s = work.slots[slot];
     if (!s || s.status !== 'ok') return '';
     opts = opts || {};
-    /* three optional fittings, all worn only by the RATE plates (bench +
+    /* two optional fittings, both worn only by the RATE plates (bench +
        call) — the reveal's stay plain, since its drawings just drew
        themselves on arrival and grading hasn't begun. `zoom` makes the
        whole figure the enlarge control, the record card's plate idiom
        (role/tabindex on the photograph, handlers at onClick and the
-       anonymous plate keydown wired in build()); `replay` mounts the
-       report photograph's REPLAY button on the print's own corner; `paper`
-       mounts its graph/blueprint swap (bench only — see benchPanel). The
-       figure's data-slot is how the delegated handlers learn which drawing
-       a press belongs to. */
+       anonymous plate keydown wired in build()); `paper` mounts its
+       graph/blueprint swap (bench only — see benchPanel). (A third,
+       `replay` — the report photograph's REPLAY button on the print's own
+       corner — retired 2026-09-16, when the bench's filmstrip took the
+       replay over.) The figure's data-slot is how the delegated handlers
+       learn which drawing a press belongs to. */
     return '<figure class="jd-turn-plate"' +
       (opts.zoom ? ' role="button" tabindex="0" data-slot="' + slot + '"' +
         ' aria-label="Enlarge the artwork"' : '') + '>' +
@@ -869,26 +801,14 @@
          own ref — never a bare slot letter, which the NEXT turn's slot A
          would collide with and inherit a stale frame from. The role="img"
          lives HERE, on the svg-only wrapper, not on .jd-turn-art: role=img
-         makes every child presentational, which would hide the REPLAY
-         button from assistive tech (the record card's .rc-plate-art
-         carries no role for the same reason). */
+         makes every child presentational, which would hide the plate's
+         own controls (the paper swap, the filmstrip) from assistive tech
+         (the record card's .rc-plate-art carries no role for the same
+         reason). */
       '<div class="jd-turn-art-in" role="img" aria-label="drawing ' +
       slot.toUpperCase() + '" data-fit="gen:' +
       esc(s.gen_id || ((turn && turn.client_ref) || 'turn') + ':' + slot) + '">' +
       window.JD_svgInst(s.svg, 'ju' + slot + (instSeq++) + '_') + '</div>' +
-      (opts.replay
-        /* icon-only since 2026-08-29 (owner, provisional pick "for now"):
-           the pencil mid-stroke with the squiggle it's leaving — the button
-           depicts the PROCESS it replays, not repetition (the ↻ family) and
-           not the word. Inline currentColor SVG, the docket-scales idiom,
-           so the hover inversion carries it. The word survives in title +
-           aria-label. */
-        ? '<button type="button" class="jd-turn-draw jd-turn-draw--icon" data-act="replay" ' +
-          'data-slot="' + slot + '" ' +
-          'title="watch the drawing draw itself again" ' +
-          'aria-label="Replay drawing ' + slot.toUpperCase() + '">' +
-          SKETCH_ICON + '</button>'
-        : '') +
       /* the OVERLAY fittings (owner, 2026-08-26, best-to-worst prints):
          the Model label rides INSIDE the frame, top-centred over the
          artwork — bare text, no ground — and `spark` (pre-built by the
@@ -918,8 +838,11 @@
      request — an explicit press is requested motion, so it plays under
      prefers-reduced-motion too ({ force: true }; the rationale at the record
      card's drawOn applies unchanged: a button whose whole job is "animate
-     this" going dead would be the worse accessibility outcome). ENLARGE is
-     the record card's own full-viewport layer reused class-for-class
+     this" going dead would be the worse accessibility outcome). (The
+     plate's own REPLAY button retired 2026-09-16 — the filmstrip under the
+     bench plate carries the replay now — and the same rule holds for the
+     enlargement's REDRAW, wired in openZoom.) ENLARGE is the record card's
+     own full-viewport layer reused class-for-class
      (.jd-record-zoom/.rc-zoom-fig/.rc-zoom-art/.rc-zoom-cap), so the print
      held closer looks identical wherever it was lifted from.
      Two deliberate differences from the record card, both because the bench
@@ -1008,19 +931,6 @@
   }
   var zoomWired = false;
   function closeZoom(silent) { zoom.close(silent); }
-  /* REPLAY's half of the pair: find the plate's own svg and hand it to the
-     shared draw-on engine with force — see the block comment above. Each
-     plate replays its OWN drawing (the button carries data-slot, but the
-     plate it rides is authority enough). */
-  function replayPlate(btn) {
-    /* the bench's REPLAY rides INSIDE the plate; the podium's sits under it,
-       outside the figure, because there the figure is a drag handle. Either
-       ancestor names the same one drawing. */
-    var pl = btn.closest
-      ? (btn.closest('.jd-turn-plate') || btn.closest('.jd-pod-print')) : null;
-    var svg = pl ? pl.querySelector('.jd-turn-art-in svg') : null;
-    if (svg && window.JD_drawOn) window.JD_drawOn(svg, { force: true });
-  }
 
   function viewReveal() {
     var ok = okSlots();
@@ -1051,31 +961,20 @@
   }
 
   /* ---------- 5. rate — the survey, rendered from the taxonomy -------------
-     pillRow survives for the unveil's tie keep-chooser alone (the two-panel
-     pill survey retired with the single bench, 2026-08-11). Its tick is
-     GRAPHITE, not stamp red: the election is the visitor's own hand. */
-  function pillRow(name, label, options, chosen, meta) {
-    var h = '<div class="jd-pillrow" role="radiogroup" aria-label="' + esc(label) + '">';
-    options.forEach(function (o) {
-      var on = String(chosen == null ? '' : chosen) === String(o.value);
-      h += '<label class="jd-pill' + (on ? ' is-on' : '') + '">' +
-        '<input type="radio" name="' + esc(name) + '" value="' + esc(o.value) + '"' +
-        meta + (on ? ' checked' : '') + '>' +
-        '<span class="jd-pill-tick" aria-hidden="true">✓</span>' +
-        esc(o.label) + '</label>';
-    });
-    return h + '</div>';
-  }
+     (pillRow, the two-panel pill survey's row, retired with the single
+     bench, 2026-08-11; it lingered for the unveil's tie keep-chooser until
+     that went too, 2026-10-01.) */
   /* THE SINGLE BENCH (owner pick, mockup round 10, 2026-08-11). One response
      on the bench at a time — a step rail (response A → response B → the
      call), the artwork pinned sticky while its response is graded, every
      scale a native <select> (titles only on the control and in the list;
      skip is the honest default), and ONE definition system: a hover/focus
      tooltip anchored to a plain-text label (OVERRIDE 1, round-16 — the
-     click-to-unfold ⓘ popover it used to pair with is retired outright).
+     click-to-unfold ⓘ popover it used to pair with is retired outright;
+     the tooltip itself gave way to the press-to-open disclosure, 2026-08-28
+     — see scaleRow).
      The two-panel pill survey and the separate compare state are retired;
-     the call is THE PODIUM (below) and closes the same state. pillRow above
-     survives for the unveil's keep-chooser only. */
+     the call is THE PODIUM (below) and closes the same state. */
 
   /* ═══════════════════════════════════════════════════════════════════════
      THE PODIUM (owner pick, mockups/mockup-32-podium.html, 2026-08-22).
@@ -1092,7 +991,8 @@
      kept in step with whoever stands on 1st, so the unveil, the pile and
      the tracking beacon downstream need no notion of a ranking at all — and
      because the podium holds exactly one 1st, a 'tie' winner can no longer
-     be minted (the unveil's tie chooser stays put for old/cached flows).
+     be minted (the unveil's tie chooser, kept a while for old/cached
+     flows, is gone: no stored turn is ever read back).
      ═══════════════════════════════════════════════════════════════════════ */
   var POD_ORD = ['1st', '2nd', '3rd', '4th'];
   /* THE ARMED PLACE — the no-drag path, inverted (owner, 2026-08-23). It used
@@ -1470,7 +1370,9 @@
      where a person reads them. It used to reach the visitor through a
      click-to-unfold popover (owner: "an awkward little eye"); now it reaches
      keyboard and screen-reader users the moment they focus the select, and
-     mouse users on hover over the label, and needs no toggle state at all. */
+     mouse users on hover over the label, and needs no toggle state at all.
+     (The hover half retired 2026-08-28: sighted visitors open it by
+     pressing the row's head — see THE DISCLOSURE below.) */
   /* The chosen-value gauge, built in ONE place because two callers need the
      identical mark: scaleRow() paints it with whatever was already answered,
      and onChange() re-paints it the instant the visitor picks (below). Owner
@@ -1513,7 +1415,7 @@
     return window.JD_barHTML(rank, total,
       ax ? window.JD_axisCls(ax, rank) : 'rc-g' + rank);
   }
-  function scaleRow(slot, kind, ax, chosen) {
+  function scaleRow(slot, ax, chosen) {
     var axisId = ax ? ax.id : null;
     var label = ax ? (ax.label || ax.id) : 'overall grade';
     var levels = byRankDesc(ax ? ax.values : tax().grades);
@@ -1737,10 +1639,10 @@
     var two = ok.length > 1;
     var h = '<div class="jd-bench">' +
       '<div class="jd-bench-l"><div class="jd-turn-pin">' +
-      /* replay:false since 2026-09-16 — the filmstrip mounted under this
-         plate by paint() carries the replay now, and the pencil beside it
-         would be a second button doing the same thing */
-      plate(slot, { pin: true, zoom: true, replay: false, paper: true }) + '</div></div>' +
+      /* no REPLAY pencil since 2026-09-16 — the filmstrip mounted under
+         this plate by paint() carries the replay now, and the pencil beside
+         it would be a second button doing the same thing */
+      plate(slot, { pin: true, zoom: true, paper: true }) + '</div></div>' +
       '<div class="jd-bench-r">' +
       /* the prompt OPENS the paperwork column, above the rows (owner,
          2026-08-28) — and, the wrappers being display:contents in the
@@ -1755,9 +1657,9 @@
        the grade row to actually be last for that rule to mean what it looks
        like it means. */
     liveAxes().forEach(function (ax) {
-      h += scaleRow(slot, 'axis', ax, r.axes[ax.id]);
+      h += scaleRow(slot, ax, r.axes[ax.id]);
     });
-    h += scaleRow(slot, 'grade', null, r.grade);
+    h += scaleRow(slot, null, r.grade);
     /* the report path (APP §4.6) is BENCHED from the form (owner,
        2026-08-26): the "broken or offensive" checkbox and its note took
        bench space the owner would rather spend on the scales, and reports
@@ -1910,7 +1812,7 @@
      the two cards where the visitor is working, so they are the two with the
      least to read. The heading names the drawing on the bench, the rail says
      where in the steps it sits, and each row's own label (with its
-     hover/focus definition) carries the rest. */
+     press-to-open definition) carries the rest. */
   /* ---------- 5b. HOW BIG IS IT — the bench's closing card ------------------
      (owner, 2026-08-30.) The one curatorial judgment the rubric never asked
      for: how large the object reads in the drawer, on the five-tier scale
@@ -2056,17 +1958,7 @@
     if (lost.length) {
       h += '<p class="jd-turn-line jd-pod-lost">' + lost.join('<br>') + '</p>';
     }
-    if (work.winner === 'tie' && !work.kept) {
-      var keepOpts = okSlots().map(function (s) {
-        return { value: s, label: 'Drawing ' + s.toUpperCase() };
-      });
-      keepOpts.push({ value: '', label: okSlots().length > 2 ? 'None of them' : 'Neither' });
-      h += '<p class="jd-turn-line">A tie is filed as a tie. Keep one for your ' +
-        'drawer anyway?</p>' +
-        pillRow('jd-keep', 'which drawing to keep', keepOpts,
-          work.keep, ' data-role="keep"') +
-        actions('<button type="button" class="jd-turn-go" data-act="keep">put it in the drawer</button>');
-    } else if (curJob) {
+    if (curJob) {
       /* the backlog's unveil closes to the NEXT ITEM, not to another turn —
          JD_bench hears the close and seats the next card */
       h += actions('<button type="button" class="jd-turn-go" data-act="done">next item &rarr;</button>');
@@ -2107,9 +1999,8 @@
      'call' and 'plates' mean something to the CSS). */
   function head(t, sec, opts) {
     opts = opts || {};
-    stateTitle = t;
     pendingHead = {
-      title: t, sec: sec, noFocus: !!opts.noFocus,
+      title: t, noFocus: !!opts.noFocus,
       view: opts.view || 'form'
     };
     return '';
@@ -2134,16 +2025,6 @@
   function onChange(e) {
     var t = e.target, role = t.getAttribute && t.getAttribute('data-role');
     if (!role) return;
-    if (t.type === 'radio') {
-      var row = t.closest('.jd-pillrow');
-      if (row) {
-        Array.prototype.forEach.call(row.querySelectorAll('.jd-pill'), function (p) {
-          var input = p.querySelector('input');
-          p.classList.toggle('is-on', !!(input && input.checked));
-        });
-      }
-      JD_haptic('select');
-    }
     var slot = t.getAttribute('data-slot');
     var val = t.value === '' ? null : t.value;
     if (role === 'grade') {
@@ -2172,8 +2053,6 @@
       if (fn) fn.hidden = !t.checked;
       /* (the call has no <input> of its own any more — the podium files its
          answer through pointer/keyboard handlers, not a change event) */
-    } else if (role === 'keep') {
-      work.keep = val;
     }
   }
   function onInput(e) {
@@ -2221,12 +2100,6 @@
     if (pt) { podArm(Number(pt.getAttribute('data-rank'))); return; }
     var ptr = e.target.closest ? e.target.closest('.jd-pod-tray') : null;
     if (ptr) { podArm(0); return; }
-    /* REPLAY rides the plate: it redraws, never zooms (the record card's
-       handler exempts its .rc-draw the same way). An explicit press is
-       requested motion, so it plays under reduced-motion too — replayPlate
-       passes force. */
-    var dr = e.target.closest ? e.target.closest('.jd-turn-draw') : null;
-    if (dr) { replayPlate(dr); return; }
     var b = e.target.closest ? e.target.closest('[data-act]') : null;
     if (!b || b.disabled) {
       /* not an action press — the bench/call plate itself is the enlarge
@@ -2286,10 +2159,6 @@
          owner's call and never defaulted (CLAUDE.md's filing rule) */
       if (curJob && work.step === 'size' && !work.size) return;
       if (curJob) curateFile(); else submitRatings();
-    } else if (act === 'keep') {
-      if (work.keep) placeWinner(work.keep);
-      work.kept = true;
-      render();
     } else if (act === 'again') {
       clearTurn();
       work = blankWork();
@@ -2343,8 +2212,7 @@
          survives as a permanent null, the podium having no margin. */
       step: 'a', reached: { a: true },
       ranks: {},
-      winner: null, strength: null,
-      keep: null, kept: false, placed: false, reveal: null
+      winner: null, strength: null, reveal: null
     };
   }
   function blankRating() {
@@ -2586,7 +2454,8 @@
     var ok = okSlots();
     JD_track('turn_complete', ok.length > 1 ? (work.winner || 'tie') : 'degraded');
     /* the winner is placed from the reveal payload — a degraded turn keeps
-       its survivor, a tie asks the visitor (a purely local choice) */
+       its survivor. (A tie used to ask the visitor, at the unveil; the
+       podium can no longer mint one — see podSync.) */
     if (ok.length === 1) placeWinner(ok[0]);
     else if (work.winner && work.winner !== 'tie') placeWinner(work.winner);
     go('unveil');
@@ -2669,7 +2538,7 @@
     if (!JD_store.set(K_ITEMS, list) && list.length > 1) {
       JD_store.set(K_ITEMS, list.slice(0, list.length - 1));
     }
-    work.placed = !!dropIntoPile(rec, true);
+    dropIntoPile(rec, true);
   }
 
   /* the taxonomy-derived half of a won item's specimen tag. Split out because
@@ -2884,7 +2753,6 @@
   JD_store.remove(K_TURN);
   /* the won items go back into the drawer now, on the visitor's own stored
      copies — the payload is not a precondition (see setData) */
-  restored = true;
   restoreWon();
 
   /* A RERUN — the curator re-issuing a curated item's original prompt to the
