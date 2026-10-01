@@ -105,6 +105,19 @@
   function svgDataUrl(svg) {
     return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
   }
+  /* the turn's three POSTs — the title, a generation, the filing: a JSON
+     body out, the parsed answer back, or `bad` (each caller's own stand-in)
+     when the answer will not parse. A request that never completes rejects
+     straight through, to each caller's own network handler. */
+  function postJSON(path, body, bad) {
+    return fetch(JD_API + path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    }).then(function (r) {
+      return r.json().then(function (j) { return j; }, function () { return bad; });
+    });
+  }
   /* a specimen name for a won item: the visitor's own words, cut to
      something a manila tag can carry (the full prompt is kept verbatim and
      shown on the report card) */
@@ -165,6 +178,15 @@
   function hasConsent() {
     var c = JD_store.get(K_CONSENT);
     return !!(c && c.version === JD_CONSENT.version);
+  }
+  /* the acknowledgment, recorded once, when words are first actually sent
+     — by the generate press and by a rerun alike */
+  function recordConsent() {
+    if (!hasConsent()) {
+      JD_store.set(K_CONSENT, {
+        version: JD_CONSENT.version, at: new Date().toISOString()
+      });
+    }
   }
 
   /* ---------- the modal shell -------------------------------------------- */
@@ -246,11 +268,11 @@
     });
   }
   function focusFirst() {
-    var f = focusables(confirmOn && confirmEl ? confirmEl : card);
     /* card, not bodyEl: the heading — the landing place for most states —
        lives in the masthead outside the scroller now */
-    var pref = (confirmOn && confirmEl ? confirmEl : card)
-      .querySelector('[data-autofocus]');
+    var scope = confirmOn && confirmEl ? confirmEl : card;
+    var f = focusables(scope);
+    var pref = scope.querySelector('[data-autofocus]');
     var target = pref || f[0];
     if (target) { try { target.focus(); } catch (e) {} }
   }
@@ -513,8 +535,7 @@
   /* ---------- 1. the brief (§1) -------------------------------------------- */
   function viewPrompt() {
     var draft = (work && work.prompt) || '';
-    var msg = work && work.notice
-      ? '<p class="jd-turn-notice" role="status">' + esc(work.notice) + '</p>' : '';
+    var msg = work && work.notice ? noticeHTML(esc(work.notice)) : '';
     var n = draft.length;
     /* the one card that can come back WITHOUT the visitor having acted: a
        rate-limited turn returns here with work.notice explaining why (set in
@@ -904,6 +925,7 @@
      layer it is peeling: enlargement first, then the confirm, then the
      modal (the window keydown handler below). */
   var zoom = JD_zoomLayer();
+  var zoomWired = false;   /* the layer's kept controls, wired once (openZoom) */
   /* the enlargement's contents: the SAME drawing the plate shows, on the
      same graph-paper swatch (.rc-zoom-fig's CSS is shared with the record
      card). Its inlined copy takes a `juz` prefix — the plate's own copy is
@@ -973,21 +995,24 @@
       });
     }
   }
-  var zoomWired = false;
   function closeZoom(silent) { zoom.close(silent); }
 
+  /* the status slip above a card's content: the brief's rate-limit notice,
+     the results' count of what was lost. `inner` arrives escaped. */
+  function noticeHTML(inner) {
+    return '<p class="jd-turn-notice" role="status">' + inner + '</p>';
+  }
+  /* the results' notice, by how many machines' drawings were lost; none
+     lost (or, never reached, all four) prints nothing */
+  var LOST_LINE = {
+    3: 'three machines’ drawings didn’t survive — you’ll grade this one alone.',
+    2: 'two machines’ drawings didn’t survive — you’ll grade the two that came back.',
+    1: 'one machine’s drawing didn’t survive — you’ll grade the three that came back.'
+  };
   function viewReveal() {
     var ok = okSlots();
     var lost = JD_SLOTS.length - ok.length;
-    var notice = lost === 3
-      ? '<p class="jd-turn-notice" role="status">three machines’ drawings ' +
-        'didn’t survive — you’ll grade this one alone.</p>'
-      : lost === 2
-        ? '<p class="jd-turn-notice" role="status">two machines’ drawings ' +
-          'didn’t survive — you’ll grade the two that came back.</p>'
-      : lost === 1
-        ? '<p class="jd-turn-notice" role="status">one machine’s drawing ' +
-          'didn’t survive — you’ll grade the three that came back.</p>' : '';
+    var notice = LOST_LINE[lost] ? noticeHTML(LOST_LINE[lost]) : '';
     /* "The results" (round 26 rev. 4, owner rename — was the per-count
        "Four drawings came back" family): one fixed title, the darkroom's
        PLEASE STAND BY discipline; the notice line above the plates still
@@ -1183,7 +1208,7 @@
     }
     /* the ranking's own button is FILE on a visitor's turn and NEXT on a
        curation (the size card follows) — arm whichever is there */
-    setDisabled('[data-act="file"], [data-act="next"]', !callReady());
+    setDisabled('[data-act="next"], [data-act="file"]', !callReady());
   }
   /* the only words the podium ever produces, and they are never printed:
      a visually-hidden status line, for the visitors who can't see the steps */
@@ -1520,7 +1545,7 @@
     var h = '<div class="jd-row' + (ax ? '' : ' jd-row--grade') + '">' +
       '<div class="jd-rowhead" data-act="def">' +
       '<button type="button" class="jd-defx" aria-expanded="false" ' +
-      'aria-label="what ' + esc(window.JD_labelText ? window.JD_labelText(label) : label) +
+      'aria-label="what ' + esc(window.JD_labelText(label)) +
       ' means"></button>' +
       '<span class="jd-def"><span>' + esc(label) + '</span></span>' +
       '</div>' +
@@ -2154,7 +2179,8 @@
     /* a print's press is answered on pointerup (podTap), because podDown
        preventDefaults and a prevented pointerdown may emit no click at all;
        the click it does emit is absorbed here so nothing reads twice */
-    var pp = e.target.closest ? e.target.closest('.jd-pod-print') : null;
+    if (!e.target.closest) return;   /* nothing below could match */
+    var pp = e.target.closest('.jd-pod-print');
     if (pp) {
       /* on the unveil the press never reached podDown, so the click is the
          press — and on that card a drawing can only get bigger */
@@ -2162,16 +2188,16 @@
       return;
     }
     /* the filed podium arms nothing */
-    if (e.target.closest && e.target.closest('.jd-pod--said')) return;
-    var pt = e.target.closest ? e.target.closest('.jd-pod-tier') : null;
+    if (e.target.closest('.jd-pod--said')) return;
+    var pt = e.target.closest('.jd-pod-tier');
     if (pt) { podArm(Number(pt.getAttribute('data-rank'))); return; }
-    var ptr = e.target.closest ? e.target.closest('.jd-pod-tray') : null;
+    var ptr = e.target.closest('.jd-pod-tray');
     if (ptr) { podArm(0); return; }
-    var b = e.target.closest ? e.target.closest('[data-act]') : null;
+    var b = e.target.closest('[data-act]');
     if (!b || b.disabled) {
       /* not an action press — the bench/call plate itself is the enlarge
          control (the reveal's plates carry no role and fall through) */
-      var p = e.target.closest ? e.target.closest('.jd-turn-plate') : null;
+      var p = e.target.closest('.jd-turn-plate');
       if (p && p.getAttribute('role') === 'button') openZoom(p);
       return;
     }
@@ -2180,11 +2206,7 @@
       /* the acknowledgment is recorded at the moment the words are sent —
          the disclosure sits right on this card (the gating consent card
          retired 2026-08-14, owner call) */
-      if (!hasConsent()) {
-        JD_store.set(K_CONSENT, {
-          version: JD_CONSENT.version, at: new Date().toISOString()
-        });
-      }
+      recordConsent();
       startTurn();
     } else if (act === 'rate') {
       ensurePayload().then(function () { go('rate'); }, function () { go('rate'); });
@@ -2225,7 +2247,7 @@
       /* a curation files at the SIZE card, which closes it; the size is the
          owner's call and never defaulted (CLAUDE.md's filing rule) */
       if (curJob && work.step === 'size' && !work.size) return;
-      if (curJob) curateFile(); else submitRatings();
+      fileNow();
     } else if (act === 'again') {
       clearTurn();
       work = blankWork();
@@ -2234,7 +2256,7 @@
       clearTurn();
       close();
     } else if (act === 'retry-file') {
-      if (curJob) curateFile(); else submitRatings();
+      fileNow();
     } else if (act === 'brief') {
       /* in place, no re-render — a repaint here would close the native
          picker under a finger mid-survey and lose the scroll position */
@@ -2266,6 +2288,8 @@
   }
 
   function blankWork() {
+    var reached = {};
+    reached[JD_SLOTS[0]] = true;
     return {
       prompt: '', notice: '', slow: false,
       slots: blankSlots(),
@@ -2277,7 +2301,7 @@
          1st) and kept only because everything downstream — the unveil, the
          pile, the tracking beacon — was built to read a winner; `strength`
          survives as a permanent null, the podium having no margin. */
-      step: 'a', reached: { a: true },
+      step: JD_SLOTS[0], reached: reached,
       ranks: {},
       winner: null, strength: null, reveal: null
     };
@@ -2326,52 +2350,39 @@
        One retry after 4s covers the race where no slot's submission row
        has landed yet (the endpoint answers no_turn until one has). */
     (function fetchTitle(attempt) {
-      fetch(JD_API + API_TITLE, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ client_ref: turn.client_ref, prompt: text })
-      }).then(function (r) {
-        return r.json().catch(function () { return null; });
-      }).then(function (j) {
-        if (mine !== token || !work) return;
-        if (j && j.ok && j.title) {
-          work.title = j.title;
-          if (turn) { turn.title = j.title; persist(); }
-        } else if (attempt < 2) {
-          setTimeout(function () {
-            if (mine === token) fetchTitle(attempt + 1);
-          }, 4000);
-        }
-      }, function () {
-        if (mine === token && attempt < 2) {
-          setTimeout(function () {
-            if (mine === token) fetchTitle(attempt + 1);
-          }, 4000);
-        }
-      });
+      function retry() {
+        setTimeout(function () {
+          if (mine === token) fetchTitle(attempt + 1);
+        }, 4000);
+      }
+      postJSON(API_TITLE, { client_ref: turn.client_ref, prompt: text }, null)
+        .then(function (j) {
+          if (mine !== token || !work) return;
+          if (j && j.ok && j.title) {
+            work.title = j.title;
+            if (turn) { turn.title = j.title; persist(); }
+          } else if (attempt < 2) {
+            retry();
+          }
+        }, function () {
+          if (mine === token && attempt < 2) retry();
+        });
     })(1);
     JD_SLOTS.forEach(function (slot) {
       /* NO client abort and NO client timeout — the server owns the 150s
          budget, and a fetch cancelled here would abandon a generation the
          server is still paying for (C5.4) */
-      fetch(JD_API + API_GEN, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          client_ref: turn.client_ref,
-          slot: slot,
-          prompt: text,
-          client: JD_CLIENT,
-          consent: { version: JD_CONSENT.version },
-          /* the device code, made now if this is the browser's first turn
-             (JD_deviceRef in jd-core.js, owner 2026-09-10) */
-          device_ref: window.JD_deviceRef ? JD_deviceRef(true) : null,
-          website: honey
-        })
-      }).then(function (r) {
-        return r.json().then(function (j) { return j; },
-          function () { return { ok: false, error: { code: 'server_error' } }; });
-      }).then(function (j) {
+      postJSON(API_GEN, {
+        client_ref: turn.client_ref,
+        slot: slot,
+        prompt: text,
+        client: JD_CLIENT,
+        consent: { version: JD_CONSENT.version },
+        /* the device code, made now if this is the browser's first turn
+           (JD_deviceRef in jd-core.js, owner 2026-09-10) */
+        device_ref: window.JD_deviceRef ? JD_deviceRef(true) : null,
+        website: honey
+      }, { ok: false, error: { code: 'server_error' } }).then(function (j) {
         settleSlot(mine, slot, j);
       }, function () {
         settleSlot(mine, slot, { ok: false, error: { code: 'network' } });
@@ -2430,9 +2441,7 @@
         '— it rejects rather than repairs. This cost you nothing.'
       : 'All four machines failed. This cost you nothing — the drawer will ' +
         'try again whenever you like.';
-    turn.state = 'apology';
-    persist();
-    go('apology');
+    go('apology');   /* go() files the state on the turn and persists it */
   }
 
   /* ---------- filing: one batch, then the only unveil ---------------------- */
@@ -2485,36 +2494,47 @@
         ? { winner: ranking ? ranking[0].slot : work.winner, strength: null }
         : null
     };
-    setDisabled('[data-act="file"]', true);
-    setDisabled('[data-act="retry-file"]', true);
     /* same guard as a generation (C5.4): the filing is not aborted when the
        turn is abandoned, so its answer has to identify the turn it belongs
        to or it lands on whatever turn is live when it arrives */
-    var mine = token;
-    fetch(JD_API + API_RATE, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    }).then(function (r) {
-      return r.json().then(function (j) { return j; },
-        function () { return { ok: false, error: { code: 'server_error' } }; });
-    }).then(function (j) { onFiled(mine, j); }, function () {
-      onFiled(mine, { ok: false, error: { code: 'network' } });
-    });
+    var mine = armFiling();
+    postJSON(API_RATE, body, { ok: false, error: { code: 'server_error' } })
+      .then(function (j) { onFiled(mine, j); }, function () {
+        onFiled(mine, { ok: false, error: { code: 'network' } });
+      });
+  }
+  /* the two filing presses — the card's own button and the failure card's
+     retry — file the same way: a curation through its job, a turn to
+     jd-rate */
+  function fileNow() {
+    if (curJob) curateFile(); else submitRatings();
+  }
+  /* a filing leaves: both its buttons go dead until the answer is in (the
+     answer repaints either way), and the turn's token goes with it, for the
+     answer to be matched against */
+  function armFiling() {
+    setDisabled('[data-act="file"]', true);
+    setDisabled('[data-act="retry-file"]', true);
+    return token;
+  }
+  /* a filing that didn't take, in either flow: the same shape as the
+     apology (§6) — same prose-only pattern, no stamp. `sentence` says what
+     the failure means for the grades still on the card. */
+  function paintFileFailure(code, sentence) {
+    paint(head('The grades didn’t file', 6) +
+      '<p class="jd-turn-line">The drawer couldn’t record them ' +
+      '(<b>' + esc(code) + '</b>). ' + sentence + '</p>' +
+      actions('<button type="button" class="jd-turn-go" data-act="retry-file">try filing again</button>' +
+        '<button type="button" class="jd-turn-alt" data-act="done">close</button>'));
+    focusFirst();
   }
   function onFiled(mine, res) {
     if (mine !== token || !isOpen || !work) return;
     if (!res || !res.ok) {
       var code = ((res || {}).error || {}).code || 'server_error';
       JD_track('turn_error', code);
-      /* the same shape as the apology (§6) — same prose-only pattern, no stamp */
-      paint(head('The grades didn’t file', 6) +
-        '<p class="jd-turn-line">The drawer couldn’t record them ' +
-        '(<b>' + esc(code) + '</b>). Nothing was written — the whole batch ' +
-        'goes together or not at all, and your grades are still here.</p>' +
-        actions('<button type="button" class="jd-turn-go" data-act="retry-file">try filing again</button>' +
-          '<button type="button" class="jd-turn-alt" data-act="done">close</button>'));
-      focusFirst();
+      paintFileFailure(code, 'Nothing was written — the whole batch goes ' +
+        'together or not at all, and your grades are still here.');
       return;
     }
     work.reveal = res.reveal || [];
@@ -2541,6 +2561,14 @@
         : r.axes[axisId];
     });
     return annotations;
+  }
+  /* the cost fields ride a record only when there is something to say:
+     tokens when usage was recorded, cost_usd when the model is priced.
+     `src` is wherever they were filed — a reveal row, a stored record. */
+  function withCost(o, src) {
+    if (src.tokens) o.tokens = src.tokens;
+    if (src.cost_usd != null) o.cost_usd = src.cost_usd;
+    return o;
   }
   function placeWinner(slot) {
     var s = work.slots[slot];
@@ -2569,8 +2597,7 @@
        after a reload. Omitted when the reveal carries none (a survivor with
        no usage recorded); cost_usd alone stays null when the model is
        unpriced — the card omits hollow lines rather than printing them. */
-    if (rv.tokens) rec.tokens = rv.tokens;
-    if (rv.cost_usd != null) rec.cost_usd = rv.cost_usd;
+    withCost(rec, rv);
     /* the OTHER bench responses ride along (owner request, 2026-08-12;
        generalized to the trio 2026-08-14): the report card shows every
        option from the turn, the losers filed as alternative responses on
@@ -2584,16 +2611,14 @@
       var os = work.slots[other];
       if (os && os.status === 'ok' && os.svg && os.gen_id) {
         var orv = revealFor(other) || {};
-        rec.others.push({
+        /* the losers' costs file too — the card's "same prompt" strip shows
+           every option, and each response's notes state their own spend */
+        rec.others.push(withCost({
           gen_id: os.gen_id, svg: os.svg,
           model_id: orv.model_id || '', label: orv.label || '',
           grade: work.ratings[other].grade,
           annotations: ratingAnnotations(work.ratings[other])
-        });
-        /* the losers' costs file too — the card's "same prompt" strip shows
-           every option, and each response's notes state their own spend */
-        if (orv.tokens) rec.others[rec.others.length - 1].tokens = orv.tokens;
-        if (orv.cost_usd != null) rec.others[rec.others.length - 1].cost_usd = orv.cost_usd;
+        }, orv));
       }
     });
     if (!rec.others.length) delete rec.others;
@@ -2721,6 +2746,26 @@
     };
   }
 
+  /* one response of a won item's entry, as the report card reads it: the
+     winner's (`src` = the stored record, rid r1) and each loser's alike.
+     The cost fields (2026-08-15) ride the RESPONSE, not the entry, so the
+     strip's per-response notes can each state their own spend. Records
+     persisted before this simply lack them, and the card omits the lines. */
+  function respFor(rid, src, day) {
+    return withCost({
+      /* gen_id rides the response so the card frames this drawing under the
+         SAME key the bench and the pile used for it (see fitKey / fitView) */
+      rid: rid, file: src.gen_id + '.svg', gen_id: src.gen_id, model: src.model_id, date: day,
+      generation: { mode: 'one-shot', prompt_count: 1 },
+      grade: src.grade, annotations: src.annotations || {},
+      /* a data: URL, and the ONLY thing the card may do with it is hang it
+         off the download link — the entry's `visitor: true` (registerRecord)
+         stops ensureSVGs from ever treating it as a path to join to JD_API
+         (APP §4.1); the SVG text itself is primed into the cache there */
+      url: svgDataUrl(src.svg), transcript_url: null
+    }, src);
+  }
+
   /* The report card renders entirely from the payload, so a won item earns a
      real one by being filed as an entry: its own prompt, its model, and the
      grades the visitor just gave it. Without this the specimen tag's REPORT
@@ -2731,23 +2776,7 @@
     if (byId(payload.items, rec.gen_id)) return true;   /* already filed */
     var file = rec.gen_id + '.svg';
     var day = String(rec.won_at || '').slice(0, 10);
-    var responses = [{
-      /* gen_id rides the response so the card frames this drawing under the
-         SAME key the bench and the pile used for it (see fitKey / fitView) */
-      rid: 'r1', file: file, gen_id: rec.gen_id, model: rec.model_id, date: day,
-      generation: { mode: 'one-shot', prompt_count: 1 },
-      grade: rec.grade, annotations: rec.annotations || {},
-      /* a data: URL, and the ONLY thing the card may do with it is hang it
-         off the download link — `visitor: true` above stops ensureSVGs from
-         ever treating it as a path to join to JD_API (APP §4.1); the SVG
-         text itself is primed into the cache below */
-      url: svgDataUrl(rec.svg), transcript_url: null
-    }];
-    /* the cost fields (2026-08-15) ride the RESPONSE, not the entry, so the
-       strip's per-response notes can each state their own spend. Records
-       persisted before this simply lack them, and the card omits the lines. */
-    if (rec.tokens) responses[0].tokens = rec.tokens;
-    if (rec.cost_usd != null) responses[0].cost_usd = rec.cost_usd;
+    var responses = [respFor('r1', rec, day)];
     var primed = {};
     primed[rec.gen_id + '/' + file] = rec.svg;
     /* the turn's OTHER responses file as r2, r3 (owner request, 2026-08-12;
@@ -2761,14 +2790,7 @@
     loserRecs.forEach(function (alt, ai) {
       if (!alt.svg || !alt.gen_id) return;
       var afile = alt.gen_id + '.svg';
-      responses.push({
-        rid: 'r' + (ai + 2), file: afile, gen_id: alt.gen_id, model: alt.model_id, date: day,
-        generation: { mode: 'one-shot', prompt_count: 1 },
-        grade: alt.grade, annotations: alt.annotations || {},
-        url: svgDataUrl(alt.svg), transcript_url: null
-      });
-      if (alt.tokens) responses[responses.length - 1].tokens = alt.tokens;
-      if (alt.cost_usd != null) responses[responses.length - 1].cost_usd = alt.cost_usd;
+      responses.push(respFor('r' + (ai + 2), alt, day));
       primed[rec.gen_id + '/' + afile] = alt.svg;
     });
     payload.items.unshift({
@@ -2862,11 +2884,7 @@
     open();
     /* the acknowledgment the generate button would have recorded — the
        disclosure lives on the card itself since 2026-08-14 */
-    if (!hasConsent()) {
-      JD_store.set(K_CONSENT, {
-        version: JD_CONSENT.version, at: new Date().toISOString()
-      });
-    }
+    recordConsent();
     startTurn();
     return true;
   }
@@ -2991,22 +3009,15 @@
         rank: ok.length > 1 ? (podRankOf(s) || null) : null
       };
     });
-    setDisabled('[data-act="file"]', true);
-    setDisabled('[data-act="retry-file"]', true);
-    var mine = token;
+    var mine = armFiling();
     curJob.file(per, work.size || null).then(function () {
       if (mine !== token || !isOpen || !curJob) return;
       curateUnveil();
     }, function (err) {
       if (mine !== token || !isOpen || !curJob) return;
       var code = (err && err.code) || 'server_error';
-      paint(head('The grades didn’t file', 6) +
-        '<p class="jd-turn-line">The drawer couldn’t record them ' +
-        '(<b>' + esc(code) + '</b>). Your answers are still on the card, and ' +
-        'refiling replaces rather than doubles.</p>' +
-        actions('<button type="button" class="jd-turn-go" data-act="retry-file">try filing again</button>' +
-          '<button type="button" class="jd-turn-alt" data-act="done">close</button>'));
-      focusFirst();
+      paintFileFailure(code, 'Your answers are still on the card, and ' +
+        'refiling replaces rather than doubles.');
     });
   }
 
