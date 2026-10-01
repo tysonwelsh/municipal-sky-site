@@ -1035,20 +1035,31 @@
     rows.forEach(function (r, i) {
       var y = 4 + i * ROWH;
       var w = Math.max(1.5, BARW * r.v / max);
-      var lb = labFor(r.id);
-      s += '<text x="' + (LAB - 8) + '" y="' + (y + 10.4) +
-           '" text-anchor="end" class="' + lb.cls + '">' + esc(lb.t) + '</text>' +
+      s += rowLabel(y, r.id) +
            '<rect x="' + BAR0 + '" y="' + (y + 1.5) + '" width="' + w.toFixed(1) +
            '" height="11" fill="' + mColor(r.id) + '"/>' +
            '<text x="' + (BAR0 + w + 5).toFixed(1) + '" y="' + (y + 10.6) +
            '" class="fx-t-val">' + esc(r.value) + '</text>';
-      if (r.tail) {
-        s += '<text x="' + (W - 2) + '" y="' + (y + 10.4) +
-             '" text-anchor="end" class="fx-t-tail">' + esc(r.tail) + '</text>';
-      }
+      if (r.tail) s += rowTail(y, r.tail);
     });
-    return '<svg class="fx-chart" viewBox="0 0 ' + W + ' ' + h +
-      '" role="img" aria-label="' + esc(alt) + '">' + s + '</svg>';
+    return chartSVG(W, h, alt, s);
+  }
+  /* what every row on the shared ruler prints at its two edges (the row's
+     top is y): the model's name in the label gutter, and the small figure
+     at the right margin */
+  function rowLabel(y, id) {
+    var lb = labFor(id);
+    return '<text x="' + (LAB - 8) + '" y="' + (y + 10.4) +
+      '" text-anchor="end" class="' + lb.cls + '">' + esc(lb.t) + '</text>';
+  }
+  function rowTail(y, text) {
+    return '<text x="' + (W - 2) + '" y="' + (y + 10.4) +
+      '" text-anchor="end" class="fx-t-tail">' + esc(text) + '</text>';
+  }
+  /* one chart's frame: the svg every fx-chart is, w × h user units */
+  function chartSVG(w, h, alt, inner) {
+    return '<svg class="fx-chart" viewBox="0 0 ' + w + ' ' + h +
+      '" role="img" aria-label="' + esc(alt) + '">' + inner + '</svg>';
   }
   function altOf(title, rows) {
     return title + '. ' + rows.map(function (r) {
@@ -1118,11 +1129,37 @@
        rectangle the whole width of the track for a 1.9 and let it read as a
        full red bar at a glance. The outline is scaffolding; only the fill
        carries the datum, so the outline is now the same neutral brown at
-       every grade. */
+       every grade.
+
+     The track is drawn by trackSVG below, shared with the turn table's
+     cell-size gauge (gaugeSVG), which is the same track at 40 × 8. */
+  var GRADE_STEPS = 5;   /* the permanent 1..5 rank scale (PLAN-ANALYTICS §1) */
+  /* a mean on that scale, held inside it (no mean reads as the floor, 1) */
+  function clampGrade(v) { return Math.max(1, Math.min(GRADE_STEPS, +v || 1)); }
+  /* the ramp tier is the WHOLE grade the mean sits in — floor, not a
+     rescale-and-round, which put the tier boundaries at 1.5/2.5/… and
+     coloured a 3.4 and a 3.6 differently for no reason a reader of the
+     1–5 scale could name */
+  function gradeInk(v) { return RAMP[Math.min(4, Math.max(0, Math.floor(v) - 1))]; }
+  /* one track, its top-left at x, y, w × h user units, filled to the
+     (clamped) grade v: the fill, the dividers over it, the outline */
+  function trackSVG(x, y, w, h, v) {
+    var fw = w * v / GRADE_STEPS;
+    var s = '<rect x="' + x + '" y="' + y + '" width="' + fw.toFixed(1) +
+      '" height="' + h + '" fill="' + gradeInk(v) + '"/>';
+    for (var t = 1; t < GRADE_STEPS; t++) {
+      var tx = x + w * t / GRADE_STEPS;
+      s += '<line x1="' + tx.toFixed(1) + '" y1="' + y + '" x2="' +
+           tx.toFixed(1) + '" y2="' + (y + h) + '" class="' +
+           (tx <= x + fw ? 'fx-seg' : 'fx-seg-out') + '"/>';
+    }
+    return s + '<rect x="' + x + '" y="' + y + '" width="' + w +
+      '" height="' + h + '" fill="none" stroke="rgba(74,53,18,0.28)" ' +
+      'stroke-width="1"/>';
+  }
   function gradesHTML() {
     var src = data.grades || [];
     if (!src.length) return '';
-    var STEPS = 5;   /* the permanent 1..5 rank scale (PLAN-ANALYTICS §1) */
     /* MIN_N: a mean over one or two ratings is a person, not a reading, and
        a grade bar states it with the same authority as a mean over forty.
        Dropped rows are named in the subtitle rather than vanishing. */
@@ -1141,38 +1178,18 @@
     }
     var s = '', alt = [];
     rows.forEach(function (g, i) {
-      var v = Math.max(1, Math.min(STEPS, +g.avg || 1));
+      var v = clampGrade(g.avg);
       var y = 4 + i * ROWH;
-      /* the ramp tier is the WHOLE grade the mean sits in — floor, not a
-         rescale-and-round, which put the tier boundaries at 1.5/2.5/… and
-         coloured a 3.4 and a 3.6 differently for no reason a reader of the
-         1–5 scale could name */
-      var ink = RAMP[Math.min(4, Math.max(0, Math.floor(v) - 1))];
-      var w = BARW * v / STEPS;
-      var lb = labFor(g.model_id);
-      s += '<text x="' + (LAB - 8) + '" y="' + (y + 10.4) +
-           '" text-anchor="end" class="' + lb.cls + '">' + esc(lb.t) + '</text>' +
-           '<rect x="' + BAR0 + '" y="' + (y + 1.5) + '" width="' + w.toFixed(1) +
-           '" height="11" fill="' + ink + '"/>';
-      for (var t = 1; t < STEPS; t++) {
-        var tx = BAR0 + BARW * t / STEPS;
-        s += '<line x1="' + tx.toFixed(1) + '" y1="' + (y + 1.5) + '" x2="' +
-             tx.toFixed(1) + '" y2="' + (y + 12.5) + '" class="' +
-             (tx <= BAR0 + w ? 'fx-seg' : 'fx-seg-out') + '"/>';
-      }
-      s += '<rect x="' + BAR0 + '" y="' + (y + 1.5) + '" width="' + BARW +
-           '" height="11" fill="none" stroke="rgba(74,53,18,0.28)" ' +
-           'stroke-width="1"/>' +
+      s += rowLabel(y, g.model_id) +
+           trackSVG(BAR0, y + 1.5, BARW, 11, v) +
            '<text x="' + (BAR0 + BARW + 7) + '" y="' + (y + 10.6) +
-           '" class="fx-t-val">' + v.toFixed(1) + ' of ' + STEPS + '</text>' +
-           '<text x="' + (W - 2) + '" y="' + (y + 10.4) +
-           '" text-anchor="end" class="fx-t-tail">n ' + esc(num(g.n)) + '</text>';
-      alt.push(mLabel(g.model_id) + ', ' + v.toFixed(1) + ' of ' + STEPS +
+           '" class="fx-t-val">' + v.toFixed(1) + ' of ' + GRADE_STEPS + '</text>' +
+           rowTail(y, 'n ' + num(g.n));
+      alt.push(mLabel(g.model_id) + ', ' + v.toFixed(1) + ' of ' + GRADE_STEPS +
         ', n ' + num(g.n));
     });
-    var svg = '<svg class="fx-chart" viewBox="0 0 ' + W + ' ' +
-      (rows.length * ROWH + 6) + '" role="img" aria-label="' +
-      esc('Average overall grade. ' + alt.join('. ')) + '">' + s + '</svg>';
+    var svg = chartSVG(W, rows.length * ROWH + 6,
+      'Average overall grade. ' + alt.join('. '), s);
     return cardHTML('fx-grades', 'Overall grade',   /* owner, 2026-09-11 */
       /* "current rubric" = the v17 rework onward — the endpoint's era gate
          (owner call, 2026-08-28): pre-v17 grades are the old demo era and
@@ -1240,7 +1257,10 @@
     Object.keys(thin).forEach(function (id) {
       if (thin[id] !== -1) dropped.push({ id: id, n: thin[id] });
     });
-    var anyRow = axes.some(function (ax) { return (ax.models || []).some(plottable); });
+    /* each axis's plottable rows, sifted once: the panels draw these, and
+       whether ANY axis has a row is read off them */
+    var rowsOf = axes.map(function (ax) { return (ax.models || []).filter(plottable); });
+    var anyRow = rowsOf.some(function (rows) { return rows.length > 0; });
     if (!anyRow) {
       /* stays up with the shortfall stated (2026-09-10, the folder's
          return) — four bare rulers would read as a failure, no card at all
@@ -1249,81 +1269,91 @@
         'no model has ' + MIN_N + ' category ratings on four-model turns ' +
         'under the current rubric yet' + notPlotted(dropped), '');
     }
-    /* KEYS ON EVERY PANEL BELOW 900px (owner, 2026-09-11) — see render()'s
-       media listener, which re-renders when the width crosses the line */
-    var keysEverywhere = !!(window.matchMedia && window.matchMedia('(max-width: 900px)').matches) ||
+    /* KEYS ON EVERY PANEL BELOW 900px (owner, 2026-09-11) — read off the
+       same media query whose listener (axesMQ, under render()) re-renders
+       when the width crosses the line; a MediaQueryList answers .matches
+       live, so this is the reading a fresh matchMedia would give */
+    var keysEverywhere = !!(axesMQ && axesMQ.matches) ||
       document.documentElement.classList.contains('jd-about-page');
-    var BARH = 7;
     var panels = axes.map(function (ax, pi) {
-      var pts = +ax.points || 3;
-      var hit = !!HIT_AXES[ax.axis_id];
       var cropped = pi > 0 && !keysEverywhere;
-      var rows = (ax.models || []).filter(plottable);
-      var h = 2 + rows.length * PROWH + 4, s = '', key = '', alt = [];
-      /* the 50% hairline, behind every row */
-      s += '<line x1="' + (PX0 + PXW / 2) + '" y1="2" x2="' + (PX0 + PXW / 2) +
-           '" y2="' + (h - 4) + '" class="fx-mid"/>';
-      rows.forEach(function (r, i) {
-        var q = axisRates(r.hist, pts, ax.axis_id);
-        var y = 2 + i * PROWH + PROWH / 2, by = y - BARH / 2;
-        var ws = PXW * q.strong / q.n, wt = PXW * q.total / q.n;
-        var read = mLabel(r.model_id) + ' — ' + (hit ? 'hit rate ' : 'issue rate ') +
-          pct(q.rate) + ' (95% ' + pct(q.lo) + '–' + pct(q.hi) + ') · ' +
-          (hit ? 'has it ' + q.strong + ', a hint ' + q.light + ', missed '
-               : 'big ' + q.strong + ', small ' + q.light + ', clean ') +
-          (q.n - q.total) + ' · n ' + num(q.n);
-        s += '<g class="fx-row" tabindex="0" role="button" data-read="' + esc(read) +
-             '" aria-label="' + esc(read) + '">' +
-             '<rect class="fx-row-hit" x="0" y="' + (y - PROWH / 2) +
-             '" width="' + PW + '" height="' + PROWH + '"/>' +
-             '<rect class="fx-track-bar" x="' + PX0 + '" y="' + by + '" width="' + PXW +
-             '" height="' + BARH + '"/>';
-        if (ws > 0) {
-          s += '<rect x="' + PX0 + '" y="' + by + '" width="' + ws.toFixed(2) +
-               '" height="' + BARH + '" fill="' + (hit ? HIT_HAS : ISSUE_BIG) + '"/>';
-        }
-        /* the pale segment butts straight onto the dark one, no seam
-           (owner, 2026-10-01) */
-        var lx = PX0 + ws, lw = wt - ws;
-        if (lw > 0.3) {
-          s += '<rect x="' + lx.toFixed(2) + '" y="' + by + '" width="' + lw.toFixed(2) +
-               '" height="' + BARH + '" fill="' + (hit ? HIT_HINT : ISSUE_SMALL) + '"/>';
-        }
-        /* the whisker: a thin grey line, capped, no halo (owner, 2026-10-01) */
-        var x1 = (PX0 + PXW * q.lo).toFixed(2), x2 = (PX0 + PXW * q.hi).toFixed(2);
-        var d = 'M' + x1 + ' ' + (y - 2.6) + 'v5.2M' + x1 + ' ' + y + 'H' + x2 +
-                'M' + x2 + ' ' + (y - 2.6) + 'v5.2';
-        s += '<path d="' + d + '" class="fx-ci"/>' +
-             '<text x="' + (PW - 2) + '" y="' + (y + 2.6) +
-             '" text-anchor="end" class="fx-t-axval">' + pct(q.rate) + '</text>' +
-             '<text x="' + PLAB + '" y="' + (y + 2.6) +
-             '" text-anchor="end" class="fx-t-key fx-key">' +
-             esc(keyFor(r.model_id)) + '</text></g>';
-        alt.push(mLabel(r.model_id) + ' ' + pct(q.rate) + ', 95% interval ' +
-          pct(q.lo) + ' to ' + pct(q.hi));
-      });
-      var vb = !cropped ? '0 0 ' + PW + ' ' + h
-                        : PLAB + ' 0 ' + (PW - PLAB) + ' ' + h;
       return '<div class="fx-panel' + (cropped ? ' fx-panel--cropped' : '') + '"><h4>' + esc(ax.label) + '</h4>' +
-        '<svg viewBox="' + vb + '" role="img" aria-label="' +
-        esc(ax.label + ', ' + (hit ? 'hit rate' : 'issue rate') + '. ' + alt.join('. ')) + '">' +
-        s + '</svg><p class="fx-readout" aria-live="polite"></p></div>';
+        panelSVG(ax, rowsOf[pi], cropped) +
+        '<p class="fx-readout" aria-live="polite"></p></div>';
     }).join('');
-    function sw(c, label) {
-      return '<li><i class="fx-sw" style="background:' + c + '"></i>' + esc(label) + '</li>';
-    }
-    var legend = '<ul class="fx-legend">' +
-      sw(ISSUE_BIG, 'big problem') + sw(ISSUE_SMALL, 'small problem') +
-      sw(HIT_HAS, 'has it') + sw(HIT_HINT, 'just a hint') +
-      '<li><svg class="fx-sw-ci" viewBox="0 0 16 8" aria-hidden="true">' +
-      '<path d="M1 1v6M1 4h14M15 1v6" class="fx-ci"/></svg>95% interval</li>' +
-      '<li class="fx-legend-tap">tap a bar for its counts</li></ul>';
     return cardHTML('fx-axes', 'The four categories',
       'issue rate per category on four-model turns — how often a small or ' +
       'big problem was filed — and for je ne sais quoi the hit rate; every ' +
       'rating under the current rubric, live axes only, n ' + MIN_N +
       ' and up' + notPlotted(dropped),
-      legend + '<div class="fx-axgrid">' + panels + '</div>');
+      legendHTML() + '<div class="fx-axgrid">' + panels + '</div>');
+  }
+  /* one category's panel drawing: its plottable rows on the 0–100% ruler,
+     the key gutter cropped out of the viewBox when `cropped` */
+  function panelSVG(ax, rows, cropped) {
+    var BARH = 7;
+    var pts = +ax.points || 3;
+    var hit = !!HIT_AXES[ax.axis_id];
+    var h = 2 + rows.length * PROWH + 4, s = '', alt = [];
+    /* the 50% hairline, behind every row */
+    s += '<line x1="' + (PX0 + PXW / 2) + '" y1="2" x2="' + (PX0 + PXW / 2) +
+         '" y2="' + (h - 4) + '" class="fx-mid"/>';
+    rows.forEach(function (r, i) {
+      var q = axisRates(r.hist, pts, ax.axis_id);
+      var y = 2 + i * PROWH + PROWH / 2, by = y - BARH / 2;
+      var ws = PXW * q.strong / q.n, wt = PXW * q.total / q.n;
+      var read = mLabel(r.model_id) + ' — ' + (hit ? 'hit rate ' : 'issue rate ') +
+        pct(q.rate) + ' (95% ' + pct(q.lo) + '–' + pct(q.hi) + ') · ' +
+        (hit ? 'has it ' + q.strong + ', a hint ' + q.light + ', missed '
+             : 'big ' + q.strong + ', small ' + q.light + ', clean ') +
+        (q.n - q.total) + ' · n ' + num(q.n);
+      s += '<g class="fx-row" tabindex="0" role="button" data-read="' + esc(read) +
+           '" aria-label="' + esc(read) + '">' +
+           '<rect class="fx-row-hit" x="0" y="' + (y - PROWH / 2) +
+           '" width="' + PW + '" height="' + PROWH + '"/>' +
+           '<rect class="fx-track-bar" x="' + PX0 + '" y="' + by + '" width="' + PXW +
+           '" height="' + BARH + '"/>';
+      if (ws > 0) {
+        s += '<rect x="' + PX0 + '" y="' + by + '" width="' + ws.toFixed(2) +
+             '" height="' + BARH + '" fill="' + (hit ? HIT_HAS : ISSUE_BIG) + '"/>';
+      }
+      /* the pale segment butts straight onto the dark one, no seam
+         (owner, 2026-10-01) */
+      var lx = PX0 + ws, lw = wt - ws;
+      if (lw > 0.3) {
+        s += '<rect x="' + lx.toFixed(2) + '" y="' + by + '" width="' + lw.toFixed(2) +
+             '" height="' + BARH + '" fill="' + (hit ? HIT_HINT : ISSUE_SMALL) + '"/>';
+      }
+      /* the whisker: a thin grey line, capped, no halo (owner, 2026-10-01) */
+      var x1 = (PX0 + PXW * q.lo).toFixed(2), x2 = (PX0 + PXW * q.hi).toFixed(2);
+      var d = 'M' + x1 + ' ' + (y - 2.6) + 'v5.2M' + x1 + ' ' + y + 'H' + x2 +
+              'M' + x2 + ' ' + (y - 2.6) + 'v5.2';
+      s += '<path d="' + d + '" class="fx-ci"/>' +
+           '<text x="' + (PW - 2) + '" y="' + (y + 2.6) +
+           '" text-anchor="end" class="fx-t-axval">' + pct(q.rate) + '</text>' +
+           '<text x="' + PLAB + '" y="' + (y + 2.6) +
+           '" text-anchor="end" class="fx-t-key fx-key">' +
+           esc(keyFor(r.model_id)) + '</text></g>';
+      alt.push(mLabel(r.model_id) + ' ' + pct(q.rate) + ', 95% interval ' +
+        pct(q.lo) + ' to ' + pct(q.hi));
+    });
+    var vb = !cropped ? '0 0 ' + PW + ' ' + h
+                      : PLAB + ' 0 ' + (PW - PLAB) + ' ' + h;
+    return '<svg viewBox="' + vb + '" role="img" aria-label="' +
+      esc(ax.label + ', ' + (hit ? 'hit rate' : 'issue rate') + '. ' + alt.join('. ')) + '">' +
+      s + '</svg>';
+  }
+  /* the card's one key to the four panels' inks and whisker */
+  function legendHTML() {
+    function sw(c, label) {
+      return '<li><i class="fx-sw" style="background:' + c + '"></i>' + esc(label) + '</li>';
+    }
+    return '<ul class="fx-legend">' +
+      sw(ISSUE_BIG, 'big problem') + sw(ISSUE_SMALL, 'small problem') +
+      sw(HIT_HAS, 'has it') + sw(HIT_HINT, 'just a hint') +
+      '<li><svg class="fx-sw-ci" viewBox="0 0 16 8" aria-hidden="true">' +
+      '<path d="M1 1v6M1 4h14M15 1v6" class="fx-ci"/></svg>95% interval</li>' +
+      '<li class="fx-legend-tap">tap a bar for its counts</li></ul>';
   }
 
   /* THE TURN TABLE (owner, 2026-09-10): one row per four-model turn on
@@ -1335,20 +1365,12 @@
      the models that graded on any listed turn, in the payload's order, so
      a column means the same model all the way down. */
   var PROMPT_CUT = 48;
+  /* the grade book's track at cell size (see trackSVG), inset half a unit
+     in its 41 × 9 box */
   function gaugeSVG(v) {
-    var STEPS = 5, TW = 40, TH = 8;
-    v = Math.max(1, Math.min(STEPS, +v || 1));
-    var ink = RAMP[Math.min(4, Math.max(0, Math.floor(v) - 1))];
-    var w = TW * v / STEPS, s = '';
-    s += '<rect x="0.5" y="0.5" width="' + w.toFixed(1) + '" height="' + TH + '" fill="' + ink + '"/>';
-    for (var t = 1; t < STEPS; t++) {
-      var tx = 0.5 + TW * t / STEPS;
-      s += '<line x1="' + tx.toFixed(1) + '" y1="0.5" x2="' + tx.toFixed(1) + '" y2="' + (TH + 0.5) +
-           '" class="' + (tx <= 0.5 + w ? 'fx-seg' : 'fx-seg-out') + '"/>';
-    }
-    s += '<rect x="0.5" y="0.5" width="' + TW + '" height="' + TH +
-         '" fill="none" stroke="rgba(74,53,18,0.28)" stroke-width="1"/>';
-    return '<svg class="fx-gauge" viewBox="0 0 ' + (TW + 1) + ' ' + (TH + 1) + '" aria-hidden="true">' + s + '</svg>';
+    var TW = 40, TH = 8;
+    return '<svg class="fx-gauge" viewBox="0 0 ' + (TW + 1) + ' ' + (TH + 1) + '" aria-hidden="true">' +
+      trackSVG(0.5, 0.5, TW, TH, clampGrade(v)) + '</svg>';
   }
   function turnsHTML() {
     var rows = data.turns || [];
@@ -1430,10 +1452,8 @@
     return cardHTML('fx-spend', 'The meter runs',
       'cumulative provider spend, every model and harness, on the ' +
       num(rows.length) + ' days with any',
-      '<svg class="fx-chart" viewBox="0 0 ' + W2 + ' ' + H2 +
-      '" role="img" aria-label="' +
-      esc('Cumulative provider spend from ' + day(rows[0].date) + ' to ' +
-        day(last.date) + ', ending at $' + max.toFixed(2)) + '">' + s + '</svg>');
+      chartSVG(W2, H2, 'Cumulative provider spend from ' + day(rows[0].date) +
+        ' to ' + day(last.date) + ', ending at $' + max.toFixed(2), s));
   }
 
   /* ---- the dialog: the folder OPENED ------------------------------------
@@ -1535,7 +1555,8 @@
   }
 
   /* the axes panels change shape at 900px (keys on every panel below it):
-     an open folder re-renders from cache when the width crosses the line */
+     an open folder re-renders from cache when the width crosses the line.
+     axesHTML reads this same list for which side of the line it is on. */
   if (window.matchMedia) {
     var axesMQ = window.matchMedia('(max-width: 900px)');
     var onMQ = function () { if (isOpen && data) render(); };
