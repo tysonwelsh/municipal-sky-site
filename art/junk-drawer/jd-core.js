@@ -345,12 +345,19 @@ function JD_zBand(el) {
 }
 function JD_zBase(el) { return JD_Z_BAND[JD_zBand(el)]; }
 
-/* has the visitor asked for stillness? (a fresh read every call — the
-   preference can change while the page is open) */
+/* has the visitor asked for stillness? The MediaQueryList is built once and
+   kept: its .matches is LIVE, so the preference can change while the page
+   is open and still be read fresh on every call — without constructing a
+   new list each time (the rope asks on every frame while the elastic
+   swings, and the draw-on engine on every run). */
+var JD_reducedMQ = null;
 function JD_reduced() {
   try {
-    return !!(window.matchMedia &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    if (!JD_reducedMQ) {
+      if (!window.matchMedia) return false;
+      JD_reducedMQ = window.matchMedia('(prefers-reduced-motion: reduce)');
+    }
+    return !!JD_reducedMQ.matches;
   } catch (e) { return false; }
 }
 
