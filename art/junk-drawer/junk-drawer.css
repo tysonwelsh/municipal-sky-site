@@ -68,6 +68,23 @@ html { scroll-behavior: smooth; }
   --jd-x-band: 44px;
   --jd-x-gap: 8px;
   --jd-x-ink: 18px;
+
+  /* THE SHARED PAPER AND TYPE, STATED ONCE (2026-10-01). The three dialogs
+     (report card, turn card, analytics folder) scope their own tokens to
+     their own scrims so none can leach into another — but five of those
+     tokens were the same bytes in every scrim: the paper's grain and mottle
+     and the three type stacks. They live here once, and each scrim aliases
+     its own scoped name to them (--grain/--tgrain/--fgrain,
+     --rc-mono/--tmono/--fmono, …), so every var() below reads what it
+     always read. The two textures are feTurbulence data-URIs with
+     stitchTiles="stitch" — the Safari lesson at the head of this file: copy
+     them, never regenerate or retype them (a reseed breaks the tile seams). */
+  --jd-grain-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+  --jd-mottle-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cfilter id='m' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.011 0.016' numOctaves='4' seed='23'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.44 0 0 0 0 0.32 0 0 0 0 0.11 0 0 0 0.14 0'/%3E%3C/filter%3E%3Crect width='420' height='420' filter='url(%23m)'/%3E%3C/svg%3E");
+  --jd-font-mono: "Courier Prime", "Courier New", Courier, monospace;
+  --jd-font-form: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+          Georgia, serif;
+  --jd-font-hand: "Bradley Hand", "Segoe Print", "Chalkboard SE", "Chalkboard", cursive;
 }
 /* the mark, shared by all four closes. stroke-linecap:round is what makes a
    2px stroke read as a drawn mark rather than a hairline cross; the path is
@@ -1151,12 +1168,11 @@ html { scroll-behavior: smooth; }
   --form-rule-2: rgba(55, 65, 79, 0.20);
   --typed: #3a3428;
   --red: #b02a24;
-  --form: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
-          Georgia, serif;
-  --hand: "Bradley Hand", "Segoe Print", "Chalkboard SE", "Chalkboard", cursive;
-  --rc-mono: "Courier Prime", "Courier New", Courier, monospace;
-  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
-  --mottle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cfilter id='m' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.011 0.016' numOctaves='4' seed='23'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.44 0 0 0 0 0.32 0 0 0 0 0.11 0 0 0 0.14 0'/%3E%3C/filter%3E%3Crect width='420' height='420' filter='url(%23m)'/%3E%3C/svg%3E");
+  --form: var(--jd-font-form);     /* the shared stacks and paper (:root, top) */
+  --hand: var(--jd-font-hand);
+  --rc-mono: var(--jd-font-mono);
+  --grain: var(--jd-grain-url);
+  --mottle: var(--jd-mottle-url);
 
   /* the fixed site banner (css/style.css, z 1000) paints over this scrim by
      design — so the scrim RESERVES it (round-13 fit contract, owner bug
@@ -1223,13 +1239,20 @@ html.jd-record-open { overflow: hidden; }
    off a head, because the masthead scrolls (the ≤700px portrait flow) and
    the ✕ must not scroll away with it; .rc-masthead pays the other half of
    the contract by reserving the room, below. */
-.jd-record-close {
-  position: absolute; top: 0; right: 0; z-index: 5;
+/* the box all three corner ✕ buttons share — this one, the enlargement's
+   (.rc-zoom-close) and the turn card's (.jd-turn-close): the :root
+   measurement, flex-centred, unboxed. Each keeps its own seat, layer and
+   ink beside it. (The folder's ✕ is a small tab button of its own.) */
+.jd-record-close, .rc-zoom-close, .jd-turn-close {
+  position: absolute;
   width: var(--jd-x-w); height: var(--jd-x-band);
   display: flex; align-items: center; justify-content: center;
-  border: 0; background: none;
+  border: 0; background: none; padding: 0;
   cursor: pointer;
-  color: var(--form-ink); padding: 0;
+}
+.jd-record-close {
+  top: 0; right: 0; z-index: 5;
+  color: var(--form-ink);
 }
 .jd-record-close:hover { color: var(--red); }
 .jd-record-close:focus-visible { outline: 2px solid var(--red); outline-offset: -6px; }
@@ -1377,9 +1400,11 @@ html.jd-record-open { overflow: hidden; }
    was cut on the same owner call. Items letterbox inside the 8% inset
    (their own preserveAspectRatio meet) — every aspect gets the same frame,
    which is why the retired stage's shape-tuning went with it. */
-.rc-plate {
-  position: relative;
-  width: 100%; aspect-ratio: 1 / 1;   /* width = --plate ⇒ height = --plate */
+/* the print swatch itself — graph paper, hairline, a millimetre of shadow —
+   is ONE rule for its three wearers: this plate, the darkroom's waiting
+   swatches (.jd-dark-sw) and the turn card's exhibits (.jd-turn-art). Each
+   keeps its own box beside it. */
+.rc-plate, .jd-dark-sw, .jd-turn-art {
   background:
     repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
     repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
@@ -1389,6 +1414,10 @@ html.jd-record-open { overflow: hidden; }
   border: 1px solid rgba(55, 65, 79, 0.30);
   box-shadow: 0 4px 10px -3px rgba(46, 34, 12, 0.5),
               0 1px 3px rgba(46, 34, 12, 0.35);
+}
+.rc-plate {
+  position: relative;
+  width: 100%; aspect-ratio: 1 / 1;   /* width = --plate ⇒ height = --plate */
 }
 /* the artwork yields its bottom band to the margin notes */
 .rc-plate-art { position: absolute; inset: 6% 8% 20%; }
@@ -1408,21 +1437,29 @@ html.jd-record-open { overflow: hidden; }
    top-right corner, clear of the kraft corner's hypotenuse (26px), in the
    plate buttons' tailoring; it repaints the paper only — the artwork's
    frame (.rc-plate-art) never moves. The swatch on it shows both papers. */
-.rc-paper {
+/* the button's cut is shared with the bench's (.jd-turn-paper): one rule,
+   the rule colour and the hover per card */
+.rc-paper, .jd-turn-paper {
   position: absolute; top: 15px; right: 15px; z-index: 3;
   padding: 3px; line-height: 0; cursor: pointer;
   color: #46505e;
-  border: 1px solid var(--form-rule); border-radius: 3px;
+  border-radius: 3px;
   background: rgba(255, 250, 232, 0.82);
   box-shadow: 0 1px 0 rgba(58, 42, 18, 0.18);
 }
-.rc-paper svg { display: block; width: 12px; height: 12px; }
+.rc-paper { border: 1px solid var(--form-rule); }
+.rc-paper svg, .jd-turn-paper svg { display: block; width: 12px; height: 12px; }
 .rc-paper:hover { background: #37414f; color: var(--card); border-color: #37414f; }
-.rc-paper:active { box-shadow: none; transform: translateY(1px); }
-.rc-paper:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+/* the report card's press and its focus ring, once for every control that
+   wears the standard pair (the closes and the enlargement keep their own
+   offsets beside them) */
+.rc-paper:active, .rc-dl:active, .rc-draw:active { box-shadow: none; transform: translateY(1px); }
+.rc-paper:focus-visible, .rc-plate:focus-visible,
+.rc-dl:focus-visible, .rc-draw:focus-visible,
+.rc-pv:focus-visible, .rc-axbtn:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
 /* BLUEPRINT: the same rules, pale on deep blue, and the margin ink turns
    pale with them (its halo goes blue so it still lifts off the grid) */
-.rc-plate.is-blueprint {
+.rc-plate.is-blueprint, .jd-turn-art.is-blueprint {
   background:
     repeating-linear-gradient(0deg,  rgba(214, 230, 255, 0.28) 0 1px, transparent 1px 45px),
     repeating-linear-gradient(90deg, rgba(214, 230, 255, 0.28) 0 1px, transparent 1px 45px),
@@ -1434,19 +1471,23 @@ html.jd-record-open { overflow: hidden; }
 .rc-plate.is-blueprint .rc-note-l { color: rgba(214, 230, 255, 0.78); text-shadow: 0 0 3px #1b4a8a, 0 0 5px #1b4a8a; }
 .rc-plate.is-blueprint .rc-note-v { color: #f2f6ff; text-shadow: 0 0 3px #1b4a8a, 0 0 5px #1b4a8a, 0 0 7px #1b4a8a; }
 .rc-plate.is-blueprint .rc-note-no { color: rgba(214, 230, 255, 0.6); text-shadow: 0 0 3px #1b4a8a, 0 0 5px #1b4a8a; }
-.rc-plate.is-blueprint .rc-paper { color: #dce8ff; border-color: rgba(214, 230, 255, 0.45); background: rgba(27, 74, 138, 0.85); }
-.rc-plate.is-blueprint .rc-paper:hover { background: #f2f6ff; color: #1b4a8a; }
-/* the kraft photo corners */
-.rc-corner {
-  position: absolute; width: 26px; height: 26px; z-index: 2;
+.rc-plate.is-blueprint .rc-paper,
+.jd-turn-art.is-blueprint .jd-turn-paper { color: #dce8ff; border-color: rgba(214, 230, 255, 0.45); background: rgba(27, 74, 138, 0.85); }
+.rc-plate.is-blueprint .rc-paper:hover,
+.jd-turn-art.is-blueprint .jd-turn-paper:hover { background: #f2f6ff; color: #1b4a8a; }
+/* the kraft photo corners — the turn card's (.jd-turn-corner) are the same
+   corners, cut smaller: one rule each, the size per card */
+.rc-corner, .jd-turn-corner {
+  position: absolute; z-index: 2;
   background: linear-gradient(135deg, #dfcd9a, #c3aa6e);
   filter: drop-shadow(0 1px 1.5px rgba(46, 34, 12, 0.45));
 }
-.rc-corner.tl { top: -4px; left: -4px;  clip-path: polygon(0 0, 100% 0, 0 100%); }
-.rc-corner.tr { top: -4px; right: -4px; clip-path: polygon(0 0, 100% 0, 100% 100%); }
-.rc-corner.bl { bottom: -4px; left: -4px;  clip-path: polygon(0 0, 100% 100%, 0 100%);
+.rc-corner { width: 26px; height: 26px; }
+.rc-corner.tl, .jd-turn-corner.tl { top: -4px; left: -4px;  clip-path: polygon(0 0, 100% 0, 0 100%); }
+.rc-corner.tr, .jd-turn-corner.tr { top: -4px; right: -4px; clip-path: polygon(0 0, 100% 0, 100% 100%); }
+.rc-corner.bl, .jd-turn-corner.bl { bottom: -4px; left: -4px;  clip-path: polygon(0 0, 100% 100%, 0 100%);
                 background: linear-gradient(45deg, #c3aa6e, #dfcd9a); }
-.rc-corner.br { bottom: -4px; right: -4px; clip-path: polygon(100% 0, 100% 100%, 0 100%);
+.rc-corner.br, .jd-turn-corner.br { bottom: -4px; right: -4px; clip-path: polygon(100% 0, 100% 100%, 0 100%);
                 background: linear-gradient(-45deg, #c3aa6e, #dfcd9a); }
 
 /* ---- the enlargement (owner, 2026-08-09) --------------------------------
@@ -1457,7 +1498,6 @@ html.jd-record-open { overflow: hidden; }
    this layer before it peels the card (junk-drawer.js). The corner hint
    carries the affordance on touch, where nothing hovers. */
 .rc-plate { cursor: zoom-in; touch-action: pan-y; }   /* pan-y: a sideways thumb is the swipe (jd-record.js) */
-.rc-plate:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
 /* the DOWNLOAD button rides the photograph's lower-right corner (owner rev,
    2026-08-13 — it replaced the "⤢ enlarge" hint, and the card's footer with
    it), wearing the specimen tag's button tailoring: hairline border, 3px
@@ -1496,9 +1536,6 @@ html.jd-record-open { overflow: hidden; }
 .rc-draw svg { display: block; width: 13px; height: 13px; }
 .rc-dl:hover, .rc-draw:hover {
   background: #37414f; color: var(--card); border-color: #37414f; }
-.rc-dl:active, .rc-draw:active { box-shadow: none; transform: translateY(1px); }
-.rc-dl:focus-visible, .rc-draw:focus-visible {
-  outline: 2px solid var(--red); outline-offset: 2px; }
 
 /* The layer is a child of <body>, NOT of the scrim, and that is deliberate:
    the scrim carries z-index 320, which makes it a stacking context, so
@@ -1511,9 +1548,8 @@ html.jd-record-open { overflow: hidden; }
    Its paper/ink tokens are declared here for the same reason — the scrim's
    copies are scoped to the scrim, and this layer is no longer inside it. */
 .jd-record-zoom {
-  --form: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
-          Georgia, serif;
-  --rc-mono: "Courier Prime", "Courier New", Courier, monospace;
+  --form: var(--jd-font-form);
+  --rc-mono: var(--jd-font-mono);
   --red: #b02a24;
 
   position: fixed; inset: 0; z-index: 1100;
@@ -1589,12 +1625,10 @@ html.jd-record-open { overflow: hidden; }
    TWO PAPERS, ONE GLYPH: the fig is cream graph paper or deep blue
    blueprint, so the ink flips with it — the same pale-on-blue move the
    margin notes and the swap button already make. */
+/* (the shared box is .jd-record-close's rule; its cursor: pointer matters
+   here — the fig around it is zoom-out; this one is a button) */
 .rc-zoom-close {
-  position: absolute; top: 2px; right: 6px; z-index: 4;
-  width: var(--jd-x-w); height: var(--jd-x-band);
-  display: flex; align-items: center; justify-content: center;
-  border: 0; background: none; padding: 0;
-  cursor: pointer;   /* the fig around it is zoom-out; this one is a button */
+  top: 2px; right: 6px; z-index: 4;
   color: #37414f;
 }
 .rc-zoom-close:hover { color: var(--red); }
@@ -1707,7 +1741,6 @@ html.jd-record-open { overflow: hidden; }
   border-bottom: 1px dotted var(--form-rule);
 }
 .rc-pv:hover { color: var(--red); border-bottom-color: var(--red); }
-.rc-pv:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
 .rc-assign:not(.rc-can-fold) .rc-pv { display: none; }
 .rc-can-fold.is-open .rc-pv-more { display: none; }
 .rc-can-fold:not(.is-open) .rc-pv-less { display: none; }
@@ -1767,13 +1800,16 @@ table.rc-subj tfoot .rc-avg-l { padding-top: 0; }
   background: rgba(255, 250, 232, 0.5);
   color: var(--form-ink-2);
 }
-.rc-axcaret::before, .rc-axcaret::after {
+/* the two bars, shared with the survey's .jd-defx (one drawing method, one
+   rule — only the boxes differ) */
+.rc-axcaret::before, .rc-axcaret::after,
+.jd-defx::before, .jd-defx::after {
   content: ""; position: absolute; top: 50%; left: 50%;
   background: currentColor;
   transition: transform 0.12s ease, opacity 0.12s ease;
 }
-.rc-axcaret::before { width: 9px; height: 1.5px; transform: translate(-50%, -50%); }
-.rc-axcaret::after { width: 1.5px; height: 9px; transform: translate(-50%, -50%); }
+.rc-axcaret::before, .jd-defx::before { width: 9px; height: 1.5px; transform: translate(-50%, -50%); }
+.rc-axcaret::after, .jd-defx::after { width: 1.5px; height: 9px; transform: translate(-50%, -50%); }
 .rc-axbtn[aria-expanded="true"] .rc-axcaret::after { transform: translate(-50%, -50%) scaleY(0); opacity: 0; }
 /* reduced motion: the bars swap without the morph. This must come AFTER the
    base rule above (same specificity, so source order decides) — it used to
@@ -1784,7 +1820,6 @@ table.rc-subj tfoot .rc-avg-l { padding-top: 0; }
 }
 .rc-axbtn:hover .rc-subj-name, .rc-axbtn:hover .rc-avg-l { color: var(--red); }
 .rc-axbtn:hover .rc-axcaret { color: var(--red); border-color: var(--red); }
-.rc-axbtn:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
 tr.rc-axdesc td {
   padding: 0.12em 0.5em 0.5em;
   /* a size up (owner, 2026-09-14) — this is running prose in a mono face at
@@ -2075,8 +2110,9 @@ tr.rc-axdesc td {
    is gone now too (2026-10-01): nothing read it any more.
 
    Tokens are scoped to the scrim, the same way the rc-* ones are, so neither
-   modal can leach into the other. The grain/mottle data-URIs are copied
-   VERBATIM from the record card (stitchTiles="stitch" — never regenerate
+   modal can leach into the other. The grain/mottle data-URIs are the
+   shared ones at the head of the file (--jd-grain-url / --jd-mottle-url),
+   aliased to this card's names (stitchTiles="stitch" — never regenerate
    them; a reseed breaks the tile seams in Safari).
 
    This file carries no mix-blend-mode: the stamps were its one user, and
@@ -2095,12 +2131,11 @@ tr.rc-axdesc td {
   --trule-2: rgba(74, 53, 18, 0.19);
   --tred: #b3402f;
   --graphite: #4b4030;        /* the visitor's pencil */
-  --tmono: "Courier Prime", "Courier New", Courier, monospace;
-  --tform: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
-           Georgia, serif;
-  --thand: "Bradley Hand", "Segoe Print", "Chalkboard SE", "Chalkboard", cursive;
-  --tgrain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
-  --tmottle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cfilter id='m' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.011 0.016' numOctaves='4' seed='23'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.44 0 0 0 0 0.32 0 0 0 0 0.11 0 0 0 0.14 0'/%3E%3C/filter%3E%3Crect width='420' height='420' filter='url(%23m)'/%3E%3C/svg%3E");
+  --tmono: var(--jd-font-mono);    /* the shared stacks and paper (:root, top) */
+  --tform: var(--jd-font-form);
+  --thand: var(--jd-font-hand);
+  --tgrain: var(--jd-grain-url);
+  --tmottle: var(--jd-mottle-url);
 
   /* THE SPACING SYSTEM (round-16 tidy, 2026-08-13). One type scale and one
      spacing scale for the whole form, named so the next new row reaches for
@@ -2200,11 +2235,9 @@ html.jd-turn-open { overflow: hidden; }
    at all, and on a two-line head the ✕ stays in the corner it belongs in
    while the second line runs on underneath it. The mark is the shared
    drawn ✕ (.jd-x-mark), the same in all four dialogs. */
+/* (the shared box is .jd-record-close's rule, in the report card's section) */
 .jd-turn-close {
-  position: absolute; top: 0; right: 0; z-index: 8;
-  width: var(--jd-x-w); height: var(--jd-x-band);
-  display: flex; align-items: center; justify-content: center;
-  border: 0; background: none; cursor: pointer; padding: 0;
+  top: 0; right: 0; z-index: 8;
   color: var(--tink);
 }
 .jd-turn-close:hover { color: var(--tred); }
@@ -2309,7 +2342,16 @@ html.jd-turn-open { overflow: hidden; }
    break it */
 .jd-turn-link { color: var(--tink-2); text-decoration: underline; text-decoration-color: var(--tink-2); }
 .jd-turn-link:hover { color: var(--tink); text-decoration-color: var(--tink); }
-.jd-turn-link:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
+/* the turn card's focus ring, once for every control that wears the
+   standard one (2px of --tred, 2px off). Controls with their own offset —
+   the close, the field, the note, the boxed plus, the podium's print — and
+   the tie pill's :focus-within keep theirs beside them. */
+.jd-turn-link:focus-visible,
+.jd-turn-go:focus-visible, .jd-turn-alt:focus-visible,
+.jd-turn-paper:focus-visible, .jd-turn-plate[role="button"]:focus-visible,
+.jd-turn-draw:focus-visible, .jd-rail-step:focus-visible,
+.jd-turn-pv:focus-visible, .jd-turn-select:focus-visible,
+.jd-pod-tier:focus-visible, .jd-size-tier:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
 
 /* ---- BOX 1: the requester's own field ------------------------------------ */
 .jd-turn-fieldwrap { position: relative; }
@@ -2367,13 +2409,11 @@ html.jd-turn-open { overflow: hidden; }
   box-shadow: inset 0 1px 0 rgba(255, 244, 204, 0.55),
               2px 3px 5px -2px rgba(22, 11, 4, 0.5);
 }
-.jd-turn-go:active { transform: translateY(1px); box-shadow: none; }
+/* the turn card's press, once (the print buttons' :active is the same) */
+.jd-turn-go:active, .jd-turn-paper:active, .jd-turn-draw:active { transform: translateY(1px); box-shadow: none; }
 .jd-turn-alt { color: var(--tink); background: rgba(255, 250, 232, 0.55); }
 .jd-turn-go[disabled], .jd-turn-alt[disabled] {
   opacity: 0.42; cursor: default; box-shadow: none; transform: none;
-}
-.jd-turn-go:focus-visible, .jd-turn-alt:focus-visible {
-  outline: 2px solid var(--tred); outline-offset: 2px;
 }
 
 /* ============================================================================
@@ -2475,19 +2515,11 @@ html.jd-turn-open { overflow: hidden; }
    the four seats squared to one symmetric frame, so the darkroom matches the
    Results card that follows it — same 2×2 discipline, and (same revision)
    the same kraft photo corners, emitted by darkSwatch() in the JS. The print
-   swatch is .jd-turn-art's own background, border and shadow, copied
-   verbatim. */
+   swatch is .jd-turn-art's own background, border and shadow — one rule
+   with .rc-plate's, in the report card's section. */
 .jd-dark-sw {
   position: absolute;
   width: 41%; height: 33%;
-  background:
-    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
-    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
-    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
-    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
-    #f8f3e2;
-  border: 1px solid rgba(55, 65, 79, 0.30);
-  box-shadow: 0 4px 10px -3px rgba(46, 34, 12, 0.5), 0 1px 3px rgba(46, 34, 12, 0.35);
   transition: transform 0.6s ease, border-color 0.5s, box-shadow 0.7s;
 }
 .jd-dark-sw--a { left: 6%; top: 13%; }
@@ -3221,17 +3253,8 @@ html.jd-turn-open { overflow: hidden; }
   justify-content: center;
   margin-top: var(--sp-4); margin-bottom: var(--sp-2);
 }
-.jd-turn-art {
-  position: relative; width: 100%; aspect-ratio: 1 / 1;
-  background:
-    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
-    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
-    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
-    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
-    #f8f3e2;
-  border: 1px solid rgba(55, 65, 79, 0.30);
-  box-shadow: 0 4px 10px -3px rgba(46, 34, 12, 0.5), 0 1px 3px rgba(46, 34, 12, 0.35);
-}
+/* the paper, border and shadow are .rc-plate's (one rule, report card section) */
+.jd-turn-art { position: relative; width: 100%; aspect-ratio: 1 / 1; }
 .jd-turn-art-in { position: absolute; inset: 7%; }
 .jd-turn-art-in svg { display: block; width: 100%; height: 100%; }
 /* THE PAPER SWAP, on the bench (owner ask, 2026-09-14): the report card's
@@ -3239,43 +3262,13 @@ html.jd-turn-open { overflow: hidden; }
    drawing measure — same corner, same geometry, same swatch icon
    (window.JD_paper.icon(), jd-core.js) — only the tokens are this card's
    own (--trule/--tred in place of --form-rule/--red), the same split
-   .jd-defx already draws from .rc-axcaret. */
-.jd-turn-paper {
-  position: absolute; top: 15px; right: 15px; z-index: 3;
-  padding: 3px; line-height: 0; cursor: pointer;
-  color: #46505e;
-  border: 1px solid var(--trule); border-radius: 3px;
-  background: rgba(255, 250, 232, 0.82);
-  box-shadow: 0 1px 0 rgba(58, 42, 18, 0.18);
-}
-.jd-turn-paper svg { display: block; width: 12px; height: 12px; }
+   .jd-defx already draws from .rc-axcaret. The shared cut, the icon and the
+   blueprint are one rule each with the report card's (its section); the
+   rule colour and the hover are this card's. */
+.jd-turn-paper { border: 1px solid var(--trule); }
 .jd-turn-paper:hover { background: var(--tink); color: var(--tpaper); border-color: var(--tink); }
-.jd-turn-paper:active { box-shadow: none; transform: translateY(1px); }
-.jd-turn-paper:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
-.jd-turn-art.is-blueprint {
-  background:
-    repeating-linear-gradient(0deg,  rgba(214, 230, 255, 0.28) 0 1px, transparent 1px 45px),
-    repeating-linear-gradient(90deg, rgba(214, 230, 255, 0.28) 0 1px, transparent 1px 45px),
-    repeating-linear-gradient(0deg,  rgba(214, 230, 255, 0.11) 0 1px, transparent 1px 9px),
-    repeating-linear-gradient(90deg, rgba(214, 230, 255, 0.11) 0 1px, transparent 1px 9px),
-    #1b4a8a;
-  border-color: rgba(10, 28, 56, 0.6);
-}
-.jd-turn-art.is-blueprint .jd-turn-paper {
-  color: #dce8ff; border-color: rgba(214, 230, 255, 0.45); background: rgba(27, 74, 138, 0.85);
-}
-.jd-turn-art.is-blueprint .jd-turn-paper:hover { background: #f2f6ff; color: #1b4a8a; }
-.jd-turn-corner {
-  position: absolute; width: 22px; height: 22px; z-index: 2;
-  background: linear-gradient(135deg, #dfcd9a, #c3aa6e);
-  filter: drop-shadow(0 1px 1.5px rgba(46, 34, 12, 0.45));
-}
-.jd-turn-corner.tl { top: -4px; left: -4px;  clip-path: polygon(0 0, 100% 0, 0 100%); }
-.jd-turn-corner.tr { top: -4px; right: -4px; clip-path: polygon(0 0, 100% 0, 100% 100%); }
-.jd-turn-corner.bl { bottom: -4px; left: -4px;  clip-path: polygon(0 0, 100% 100%, 0 100%);
-                     background: linear-gradient(45deg, #c3aa6e, #dfcd9a); }
-.jd-turn-corner.br { bottom: -4px; right: -4px; clip-path: polygon(100% 0, 100% 100%, 0 100%);
-                     background: linear-gradient(-45deg, #c3aa6e, #dfcd9a); }
+/* the kraft corners, at this card's size (the rest is .rc-corner's rule) */
+.jd-turn-corner { width: 22px; height: 22px; }
 /* the caption is the letter. Nothing else is known about it yet. */
 .jd-turn-plate figcaption {
   margin-top: 0.35rem; padding-top: 0.2rem;
@@ -3296,8 +3289,6 @@ html.jd-turn-open { overflow: hidden; }
    and the click/key handlers exempt it from the plate's zoom — it redraws,
    never zooms. */
 .jd-turn-plate[role="button"] { cursor: zoom-in; }
-.jd-turn-plate[role="button"]:focus-visible {
-  outline: 2px solid var(--tred); outline-offset: 2px; }
 .jd-turn-draw {
   position: absolute; right: 12px; bottom: 12px; z-index: 3;
   font-family: var(--tmono); font-size: 0.5rem; letter-spacing: 0.12em;
@@ -3319,9 +3310,6 @@ html.jd-turn-open { overflow: hidden; }
 .jd-turn-draw--icon svg { display: block; }
 .jd-turn-draw:hover {
   background: var(--tink); color: var(--tpaper); border-color: var(--tink); }
-.jd-turn-draw:active { box-shadow: none; transform: translateY(1px); }
-.jd-turn-draw:focus-visible {
-  outline: 2px solid var(--tred); outline-offset: 2px; }
 
 /* ============================================================================
    THE BENCH — the rail is the one navigation control on the form.
@@ -3407,7 +3395,6 @@ html.jd-turn-open { overflow: hidden; }
   border: 2px solid var(--tred); background: var(--tpaper-hi);
 }
 .jd-rail-step[disabled] { color: var(--tink-3); opacity: 0.8; cursor: default; }
-.jd-rail-step:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
 /* the connectors: the road behind is a solid rule, the road ahead dashed */
 .jd-rail-lnk { flex: 0 0 16px; height: 0; border-top: 1px dashed var(--trule-2); }
 .jd-rail-lnk.is-walked { border-top-style: solid; border-top-color: var(--trule); }
@@ -3543,7 +3530,6 @@ html.jd-turn-open { overflow: hidden; }
   border-bottom: 1px dotted var(--trule);
 }
 .jd-turn-pv:hover { color: var(--tred); border-bottom-color: var(--tred); }
-.jd-turn-pv:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
 .jd-turn-assign.is-fit .jd-turn-pv { display: none; }
 @media (max-width: 700px) {
   /* a flex child of the portrait scroller (the wrappers are contents): it
@@ -3674,13 +3660,7 @@ html.jd-turn-open { overflow: hidden; }
   background: rgba(255, 250, 232, 0.7); cursor: pointer;
   color: var(--tink-2);
 }
-.jd-defx::before, .jd-defx::after {
-  content: ""; position: absolute; top: 50%; left: 50%;
-  background: currentColor;
-  transition: transform 0.12s ease, opacity 0.12s ease;
-}
-.jd-defx::before { width: 9px; height: 1.5px; transform: translate(-50%, -50%); }
-.jd-defx::after { width: 1.5px; height: 9px; transform: translate(-50%, -50%); }
+/* (the two bars are one rule with .rc-axcaret's, in the report card's section) */
 .jd-defx[aria-expanded="true"]::after { transform: translate(-50%, -50%) scaleY(0); opacity: 0; }
 @media (prefers-reduced-motion: reduce) {
   .jd-defx::before, .jd-defx::after { transition: none; }
@@ -3770,7 +3750,6 @@ html.jd-turn-open { overflow: hidden; }
 }
 /* a chosen value is never colour alone: it goes bold and ink-dark */
 .jd-turn-select.is-set { color: var(--tink); font-weight: 700; background-color: rgba(255, 252, 240, 0.92); }
-.jd-turn-select:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
 
 /* ---- the report path: a checkbox, and a note only once it is ticked ------ */
 .jd-turn-check {
@@ -3936,7 +3915,6 @@ html.jd-turn-open { overflow: hidden; }
   border-style: solid; background: rgba(255, 250, 232, 0.6);
 }
 body.jd-pod-drag .jd-pod-hole { border-color: rgba(75, 64, 48, 0.7); }
-.jd-pod-tier:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
 
 /* the row underneath. Every drawing keeps its own column, so nothing shuffles
    sideways when its neighbour is lifted onto a step; once the podium is full
@@ -4557,9 +4535,9 @@ body.jd-pod-drag, body.jd-pod-drag * {
 
    Tokens are scoped to .jd-folder-scrim, exactly as the rc-* and turn tokens
    are scoped to theirs, so none of the three modals can leach into another.
-   The grain data-URI is copied VERBATIM from the record card
-   (stitchTiles="stitch" — never regenerate it; a reseed breaks the tile
-   seams in Safari).
+   The grain data-URI is the shared one at the head of the file
+   (--jd-grain-url), aliased to --fgrain (stitchTiles="stitch" — never
+   regenerate it; a reseed breaks the tile seams in Safari).
 
    THE CHART TYPE SIZES LIVE HERE, IN USER UNITS. A CSS length inside an SVG
    is in the local coordinate system, so `font-size: 9.5px` on .fx-t-val is
@@ -4585,10 +4563,9 @@ body.jd-pod-drag, body.jd-pod-drag * {
   --frule: rgba(74, 53, 18, 0.38);
   --frule-2: rgba(74, 53, 18, 0.18);
   --fred: #b3402f;
-  --fmono: "Courier Prime", "Courier New", Courier, monospace;
-  --fform: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
-           Georgia, serif;
-  --fgrain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+  --fmono: var(--jd-font-mono);    /* the shared stacks and paper (:root, top) */
+  --fform: var(--jd-font-form);
+  --fgrain: var(--jd-grain-url);
 
   /* the fixed site banner (css/style.css, z 1000) paints over this scrim by
      design — so the scrim RESERVES its band, the record card's standing fix:
@@ -4979,7 +4956,7 @@ html.jd-folder-open { overflow: hidden; }
   color: #e6d9b4;
   border-top: 2px solid #6d5426;
   box-shadow: 0 -6px 18px rgba(6, 3, 0, 0.5);
-  font: 11px/1.5 "Courier Prime", "Courier New", Courier, monospace;
+  font: 11px/1.5 var(--jd-font-mono);
 }
 .jd-bench-tag {
   font-size: 9px; letter-spacing: 0.14em; font-weight: 700;
@@ -5049,7 +5026,7 @@ html.jd-folder-open { overflow: hidden; }
 .rc-edit-row .rc-save, .rc-edit-row .rc-hide-check { white-space: nowrap; }
 .rc-edit-row .rc-edit-status { flex: 1 1 100%; }
 .rc-save {
-  font: 700 9px/1.4 "Courier Prime", "Courier New", Courier, monospace;
+  font: 700 9px/1.4 var(--jd-font-mono);
   letter-spacing: 0.14em; text-transform: uppercase;
   color: #221809; background: #c9a84c; border: 0; border-radius: 2px;
   padding: 4px 10px; cursor: pointer;
@@ -5078,7 +5055,7 @@ html.jd-folder-open { overflow: hidden; }
 .jd-bench-sheet .jd-bench-hidden-row:first-of-type { border-top: 0; }
 .jd-bench-sheet .jd-bench-hidden-row b { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .jd-bench-sheet .jd-bench-show {
-  font: 700 9px/1.4 "Courier Prime", "Courier New", Courier, monospace;
+  font: 700 9px/1.4 var(--jd-font-mono);
   letter-spacing: 0.14em; text-transform: uppercase;
   color: #221809; background: #c9a84c; border: 0; border-radius: 2px;
   padding: 3px 8px; cursor: pointer; white-space: nowrap;
@@ -5106,7 +5083,7 @@ html.jd-folder-open { overflow: hidden; }
   background: #ece0bf; color: #33240f;
   border: 1px solid rgba(48, 38, 20, 0.55);
   box-shadow: 6px 10px 22px -6px rgba(6, 3, 0, 0.6);
-  font: 11.5px/1.55 "Courier Prime", "Courier New", Courier, monospace;
+  font: 11.5px/1.55 var(--jd-font-mono);
 }
 .jd-bench-sheet p { margin: 6px 0 0; white-space: pre-wrap; }
 /* the turn card stands clear of the strip while bench mode is on */
@@ -5142,7 +5119,6 @@ html.jd-bench-on .jd-turn-scrim {
   font: inherit; color: var(--tink); text-align: center;
 }
 .jd-size-tier:hover { border-color: var(--tink); }
-.jd-size-tier:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
 .jd-size-tier.is-on {
   border-color: var(--graphite); border-width: 2px; padding: 11px 5px 9px;
   background: var(--tpaper-hi);
