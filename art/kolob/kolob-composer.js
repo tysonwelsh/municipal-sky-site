@@ -16,15 +16,19 @@
 //   3. RHYTHM FIRST — the syllables poured onto the mode of time: stressed
 //      syllables on strong beats, a long note at each line's end, pickups;
 //      a rhythm CELL per line, drawn before the notes, gives the feel.
-//   4. MELODY BY GUIDED SEARCH — and here is the lesson of round 1 (critic/
-//      enrichment-1 §2): best-of-N converges. Two hundred candidates scored
-//      on one ruler all end the same way. So the things that make a tune
-//      itself — each line's ENDING figure, its PEAK and its RHYTHM CELL — are
-//      DRAWN first, from weighted tables, and only then does the search fill
-//      the notes between, scoring singability, contour, the A/B relations
-//      and a little memorability. The spread of what was drawn is reported.
-//   5. HARMONY — the dialect's own harmonizer (kolob-dialects.js), planned
-//      backwards from each line's cadence, voice-led, non-chord tones last.
+//   4. MELODY BY GUIDED SEARCH — best-of-N converges: two hundred candidates
+//      scored on one ruler all end the same way. So the things that make a
+//      tune itself — each line's ENDING figure, its PEAK and its RHYTHM CELL
+//      — are DRAWN first, from weighted tables, and only then does the search
+//      fill the notes between, scoring singability, contour, the A/B
+//      relations and a little memorability. The spread of what was drawn is
+//      reported. Then, where the tune leaps a third from a long note, the
+//      singers may walk it (4b, the slurred passing note).
+//   5. HARMONY, AND THE TUNING — the dialect's own harmonizer
+//      (kolob-dialects.js), planned backwards from each line's cadence,
+//      voice-led, non-chord tones last; then every note an exact ratio,
+//      leaning a comma where the chord asks (and dialect D's dominant
+//      sevenths on the seventh partial, a line's chords tuned together).
 //   6. CRITICISM AND REPAIR — a boring tune, a voice-leading fault, a line
 //      too close to an Earth tune or to another hymn of the meeting: that
 //      line is written again (bounded; there is always a fallback).
@@ -40,8 +44,13 @@
 //
 // Public surface: KOLOB.Composer = {
 //   compose(stream, opts) → Hymn   (+ dev fields: report, plan, nameEn, hymnist, amen)
+//     opts: { dialect, meter, form, mode, modeOfTime, keyMonzo, hymnist (an id
+//     or a hymnist), kind (dialect E's: shaker, gift, primary), id, gestures
+//     (the day's material: the first seeds line one), others (the meeting's
+//     other hymns, not to be echoed) } — every field optional; the die for
+//     each is thrown whether or not it was named.
 //     opts.dialect: any of the six (the draw when none is named keeps to the
-//     first three, so every earlier seed keeps its dialect); opts.kind for E
+//     first three, so every earlier seed keeps its dialect)
 //   fingerprint(hymn) → the measured habits of a Score (the Earth tunes' too)
 //   references() → the Earth tunes' fingerprints per dialect, and the tolerances
 //   spread(streamOf, n, opts) → how varied n hymns are (endings, contours, …)
@@ -52,14 +61,13 @@
 //   refrainIn(stream, refrain, {dialect, keyMonzo}) / setTune(stream, hymn, …) → the tune set anew
 //   METERS, FORMS, TIMES, MODES }
 //
-// ROUND 3 (the rest of the composer): dialects B, D and E live in
-// kolob-dialects.js; here are what they need of the desk — E's kinds and D's
-// refrain in the frame, the fuge's longer line and the septimal tuning in
-// the Score, their own checks — and the three new kinds of piece at the
-// foot: the round, the partner hymn, the wandering refrain. (Its second
-// pass, after the critic: a fuge may run across two Score lines; D's chords
-// are tuned a line at a time, so a note sung again stays put; the refrain's
-// compass is measured against the day's keys before it is drawn.)
+// Dialects B, D and E live in kolob-dialects.js; what they need of the desk
+// is here — E's kinds and D's refrain in the frame, the fuge's longer line
+// and the septimal tuning in the Score, their own checks — and three further
+// kinds of piece at the foot: the round, the partner hymn, the wandering
+// refrain. A fuge may run across two Score lines; D's chords are tuned a
+// line at a time, so a note sung again stays put; the refrain's compass is
+// measured against the day's keys before a note of it is drawn.
 // ============================================================================
 
 window.KOLOB = window.KOLOB || {};
@@ -183,7 +191,7 @@ window.KOLOB.Composer = (function () {
     "76.76D": { lines: [7, 6, 7, 6, 7, 6, 7, 6], foot: "iamb" },
     "11s":    { lines: [11, 11, 11, 11], foot: "anapest" },
     "10.10R": { lines: [10, 10], foot: "iamb", refrain: [10, 10] },
-    // (round 3: the short meters of the dancing songs and the Primary's)
+    // (the short meters of the dancing songs and the Primary's)
     "66.66":  { lines: [6, 6, 6, 6], foot: "iamb" },
     "77.77":  { lines: [7, 7, 7, 7], foot: "trochee" },
     "65.65":  { lines: [6, 5, 6, 5], foot: "trochee" },
@@ -382,7 +390,7 @@ window.KOLOB.Composer = (function () {
     var fp = { parts: parts.join(""), moves: 0, par5: 0, par8: 0, sonor: 0, thirdless: 0, crossing: 0, notes: 0, chromatic: 0,
                chords: 0, sevenths: 0, inversions: 0, susp: 0, melNotes: 0, melIntervals: 0, leaps: 0, bigLeaps: 0, steps: 0, repeats: 0, melisma: 0,
                cadences: {}, range: {}, rangeSemi: {}, lines: lines.length, closes: 0, closeThird: 0, closeHome: 0, closeDom: 0,
-               // (round 3) closes on one pitch; onsets where a part is silent (a fuge's, an echo's); septimal notes; ornament marks
+               // closes on one pitch; onsets where a part is silent (a fuge's, an echo's); septimal notes; ornament marks
                closeUnison: 0, onsets: 0, stagger: 0, septimal: 0, ornaments: 0 };
     var lo = {}, hi = {}, loS = {}, hiS = {};
     lines.forEach(function (l) {
@@ -505,8 +513,8 @@ window.KOLOB.Composer = (function () {
     return k === 0 ? "open" : k === 1 ? "arrive" : "depart";
   }
   // THE ENDING FIGURES: a line's last notes, as steps from its target. They
-  // are drawn, not searched (enrichment-1 §2): the search fills the notes
-  // before them. A dialect says which fit which cadence (a Tabernacle
+  // are drawn, not searched (best-of-N converges: see the header): the
+  // search fills the notes before them. A dialect says which fit which cadence (a Tabernacle
   // authentic close needs its next-to-last note in the dominant chord).
   var FIGURES = {
     "fall":      [1, 0],          // re–do, fa–mi, la–sol: the step down home
@@ -544,7 +552,8 @@ window.KOLOB.Composer = (function () {
       kind = opts.kind && D.kinds[opts.kind] != null ? opts.kind : kDraw;
     }
     var meterTable = kind && D.kindMeters && D.kindMeters[kind] ? D.kindMeters[kind] : D.meters;
-    // one die per choice, thrown whether or not the caller named the answer
+    // DICE: one die per choice (the kind's above too), thrown whether or not
+    // the caller named the answer (SCORE §3) — deliberate; must stay
     var mDraw = pickW(R.fork("meter"), weightsOf(meterTable, H && H.meters));
     var tDraw = pickW(R.fork("time"), weightsOf(D.times, H && H.times));
     var oDraw = pickW(R.fork("mode"), weightsOf(D.modes, H && H.modes));
@@ -567,11 +576,15 @@ window.KOLOB.Composer = (function () {
     var fDraw = pickW(R.fork("form"), pool);
     var form = opts.form && formLetters(opts.form).length === nL ? opts.form : fDraw;
     // the refrain (a meter that has one; or, now and then, a hymnist's fondness)
+    // DICE: the refrain die is thrown whether or not the meter has a refrain
+    // or the hymnist a fondness — deliberate; must stay
     var refrainDie = u01(R.fork("refrain"));
     var refrain = M.refrain ? M.refrain.slice() : null;
     if (!refrain && D.refrains && H && refrainDie < (H.refrain || 0) * D.refrains && nL === 4) refrain = [M.lines[nL - 2], M.lines[nL - 1]];
     // (a gospel hymn always has its refrain, after every verse; a Primary
     // song its chorus; a gift song none — it is its own two strains)
+    // DICE: the length die below is on a fork of its own, thrown only here —
+    // deliberate; must stay as it is
     if (!refrain && (D.alwaysRefrain || kind === "primary")) {
       var rLen = u01(R.fork("refrain:length")) < (kind === "primary" ? 0.7 : 0.55) || nL < 4 ? 2 : 4;
       refrain = rLen === 2 ? [M.lines[nL - 2], M.lines[nL - 1]] : M.lines.slice(0, 4);
@@ -705,14 +718,15 @@ window.KOLOB.Composer = (function () {
       if (!figPool.length) figPool.push(["fall", 1]);
       var fig = pickW(Ri.fork("figure"), figPool);
       var contour = pickW(Ri.fork("contour"), weightsOf(D.contours, H && H.contours));
-      // (round 3, the critic's idiom notes — each a die of its own, thrown
-      // after everything above, so a line it leaves alone is the line it was)
+      // (DICE: the rest close and the bare close each have a die of their
+      // own, thrown after everything above whether or not they are used, so
+      // a line they leave alone is the line it was — deliberate; must stay)
       // THE TABERNACLE RESTS mid-verse, now and then, on a chord that is
       // neither home's nor the dominant's — IV, vi, the mediant, with the
       // tune's own note in it — as the 1889 Psalmody does ("none:IV",
-      // "half:iii"); the colony's hymns had closed on the dominant 45 % of
-      // the time against the book's 29 %. The tune is unchanged: only the
-      // chord under its last note moves.
+      // "half:iii"); left alone, the colony's hymns closed on the dominant
+      // 45 % of the time against the book's 29 %. The tune is unchanged:
+      // only the chord under its last note moves.
       var planV = cad[4] || null, restDie = u01(Ri.fork("close:rest")), bareDie = u01(Ri.fork("close:bare")), bare = false;
       if (D.restClose && role !== "home" && !planV && !full) {
         var pr = kind === "half" ? D.restClose.half : kind === "imperfect" ? D.restClose.imperfect : 0;
@@ -731,8 +745,8 @@ window.KOLOB.Composer = (function () {
     }
     // THE FLOOR MAKES ROOM FOR THE LAST LINE'S ENDING. A tune that never goes
     // below its final cannot end ti–do, and a drawn ending that cannot be sung
-    // falls back to the commonest one — which is how the endings collapsed
-    // onto re–do (the round-2 critic). So when the last line's figure dips
+    // falls back to the commonest one — which is how the endings would all
+    // collapse onto re–do. So when the last line's figure dips
     // under the final (ti–do, la–ti–do, sol–do, do–ti–do), the floor comes
     // down to meet it, if the compass, the key and an octave and a fourth allow.
     lines.forEach(function (L) {
@@ -759,9 +773,9 @@ window.KOLOB.Composer = (function () {
     var N = sk.lines.length, byLetter = {};
     return sk.lines.map(function (L, i) {
       var cellPool = weightsOf(D.cells, H && H.cells, 0.4);
-      // (round 3, second pass: a dialect may lean its cells by the mode of time —
-      // dialect E's dotted six-eight foot slurs a syllable over two notes, and
-      // the unison songs had come to slur twice as often as SIMPLE GIFTS, which never does)
+      // (a dialect may lean its cells by the mode of time — dialect E's
+      // dotted six-eight foot slurs a syllable over two notes, and left alone
+      // the unison songs slurred twice as often as SIMPLE GIFTS, which never does)
       if (D.timeCells && D.timeCells[fr.time]) cellPool = cellPool.map(function (c) { var m = D.timeCells[fr.time][c[0]]; return m != null ? [c[0], c[1] * m] : c; });
       var cell = pickW(L.cellDie.fork("which"), cellPool);
       var rate = D.cellRate != null ? D.cellRate : 0.5;
@@ -782,7 +796,7 @@ window.KOLOB.Composer = (function () {
     });
   }
 
-  // (round 3) A PARTNER'S FRAME: every line as long as the first hymn's and
+  // A PARTNER'S FRAME: every line as long as the first hymn's and
   // on the same bar-beat (its own rhythm where that fits, else the first
   // hymn's own), and every line's close on a note of the first hymn's chord
   // there — a different note from the first tune's, where there is one
@@ -971,7 +985,9 @@ window.KOLOB.Composer = (function () {
     for (var c = 0; c < tries; c++) {
       var d = [], ok = true;
       for (var i = 0; i < n; i++) {
-        // every die thrown for every note, used or not (SCORE §3)
+        // DICE: every die thrown for every note, used or not (SCORE §3) —
+        // deliberate; this is the shared stream, so a draw left out would
+        // move every draw after it
         var die = u01(R);
         if (P.fixed[i] != null) { d.push(P.fixed[i]); continue; }
         if (i === 0) { d.push(P.start); continue; }
@@ -1033,9 +1049,9 @@ window.KOLOB.Composer = (function () {
     var W = D.weights, doDeg = sk.base + DO_OF[mode], major = !MINOR[mode] && mode !== "mixolydian";
     var tries = D.search + (repairRound ? 80 : 0);
     var leapTarget = clamp((H ? H.leap : D.leap) * (D.leapScale || 1), 0.05, 0.7);
-    // (round 3, second pass: dialect E's kinds walk by their own measure — a
-    // Shaker hymn most of all, SIMPLE GIFTS leaping one step in seven; the
-    // unison songs had leapt one in three, whatever the hymnist's habit)
+    // (dialect E's kinds walk by their own measure — a Shaker hymn most of
+    // all, SIMPLE GIFTS leaping one step in seven; left to the hymnist's
+    // habit alone the unison songs leapt one in three)
     if (fr.kind && D.kindLeap && D.kindLeap[fr.kind] != null) {
       leapTarget = clamp(leapTarget * D.kindLeap[fr.kind], 0.05, 0.7);
       if (D.kindWeights && D.kindWeights[fr.kind]) { var W2 = {}; for (var wk in W) W2[wk] = W[wk]; for (wk in D.kindWeights[fr.kind]) W2[wk] = D.kindWeights[fr.kind][wk]; W = W2; }
@@ -1083,9 +1099,9 @@ window.KOLOB.Composer = (function () {
                !tritoneIn(mode, st.map(function (s2) { return target + s2; }));
       };
       var steps = L.figSteps;
-      // (round 3's dialects: a tune that keeps echoing an Earth tune through
-      // two repairs draws its lines' endings again — the ending is one of the
-      // fixed notes a search cannot move)
+      // (in a dialect with figureRepair: a tune that keeps echoing an Earth
+      // tune through two repairs draws its lines' endings again — the ending
+      // is one of the fixed notes a search cannot move)
       if (D.figureRepair && repairRound >= 2 && avoid && avoid.length && L.figPool) {
         var again = L.figPool.filter(function (fw) { return fits(FIGURES[fw[0]]) && (!D.figureFits || D.figureFits(L.cadence, L.targetClass, FIGURES[fw[0]], mode, L.plan)); });
         if (again.length) { L.figure = pickW(L.die.fork("figure:repair:" + repairRound), again); steps = FIGURES[L.figure].slice(); L.figSteps = steps; }
@@ -1115,7 +1131,7 @@ window.KOLOB.Composer = (function () {
           fixed[k1] = tv >= lo && tv <= hi && classes.indexOf(cls(tv)) >= 0 ? tv : fixed[k1 - 1];
         }
         headN = 0;
-        // (round 3's dialects: from the second repair a varied line lets its head go whatever failed — a head
+        // (from the second repair, with an Earth tune to avoid or in a dialect with figureRepair, a varied line lets its head go whatever failed — a head
         // and a peak side by side can leave a seventh no search can mend)
         if (first && !(repairRound >= 2 && ((avoid && avoid.length) || D.figureRepair))) {
           headN = Math.max(2, Math.floor(Math.min(n, first.n) * 0.45));
@@ -1134,7 +1150,7 @@ window.KOLOB.Composer = (function () {
         // or take one syllable), and never where a note already fixed beside
         // it would make the singers leap a sixth or more, or a tritone, to or
         // from the high note: the search cannot mend a leap between two fixed
-        // notes (the round-2 critic found sung sevenths there)
+        // notes, and a sung seventh is what that leaves
         var tot1 = Math.max(1, sk.totalSyl - 1), grace = 1 / tot1;
         var posOf = function (k2) { return (sk.sylBefore[i] + notes[k2].syl) / tot1; };
         var inBand = function (k2) { var g2 = posOf(k2); return g2 >= 0.6 - grace - EPS && g2 <= 0.75 + grace + EPS; };
@@ -1225,7 +1241,7 @@ window.KOLOB.Composer = (function () {
       var P = { notes: notes, fixed: fixed, lo: lo, hi: hi, start: start, letter: L.letter, prevEnd: prevEnd, doDeg: doDeg, home: sk.base, major: major,
                 curve: contourCurve(L.contour, n, start, target, apex, apexPos, lo), leapTarget: leapTarget, sequence: H ? H.sequence : 0.3,
                 avoid: (avoid || []).map(function (a) { return a.map(function (x) { return x + sk.base; }); }),
-                // (round 3's dialects: a line sung again straight after itself — AABA — is heard across its own join)
+                // (in a dialect with figureRepair: a line sung again straight after itself — AABA — is heard across its own join)
                 selfNext: !!(D.figureRepair && sk.lines[i + 1] && sk.lines[i + 1].letter === L.letter && !sk.lines[i + 1].prime),
                 partner: sk.partner ? sk.partner[i] || null : null,
                 prevTail: done.length ? done[done.length - 1].degs.slice(-5) : [] };
@@ -1238,8 +1254,8 @@ window.KOLOB.Composer = (function () {
   }
 
   // ==========================================================================
-  // 4b. THE SLURRED PASSING NOTE (round 3; the critic's idiom note: the
-  // colony's Tabernacle tunes slurred 6 % of their notes, the Psalmody's 13 %)
+  // 4b. THE SLURRED PASSING NOTE (the 1889 Psalmody slurs 13 % of its notes;
+  // left alone, the colony's Tabernacle tunes slurred 6 %)
   // ==========================================================================
   // After the search, where the tune leaps a third from a note long enough to
   // share, the singers may walk it: the note's second half becomes the step
@@ -1395,9 +1411,9 @@ window.KOLOB.Composer = (function () {
   }
   // (dialect D) THE LINE'S TUNINGS CHOSEN TOGETHER. Each chord could take
   // the tuning that moves the fewest of its own notes off their spelling —
-  // and round 3's critic heard what that costs: a voice singing the same
-  // written note again into the next chord slid a comma, 189 times in forty
-  // hymns, 42 of them a quarter-tone (fa from ii7 on 9/8, 27/20, down to the
+  // and that costs: left so, a voice singing the same written note again
+  // into the next chord slid a comma 189 times in forty hymns, 42 of them a
+  // quarter-tone (fa from ii7 on 9/8, 27/20, down to the
   // ringing seventh of V7, 21/16; sol from I down to VI7's seventh on 5/3,
   // 35/24). A barbershop quartet tunes the chord to the note it already has.
   // So the line's chords choose their roots together, by a small search: each
@@ -1661,10 +1677,12 @@ window.KOLOB.Composer = (function () {
     function add(name, ok, detail, hard) { checks.push({ name: name, ok: !!ok, detail: detail, hard: hard !== false }); }
     // 1. a valid Score. (A septimal note — the ringing seventh's 7/4 — is
     // spelled on its degree and wears Johnston's "7": SCORE §2's commaOf reads
-    // it through that mark, 36/35. kolob-score.js's proofreader predates the
-    // 7-limit and allows only the syntonic comma, so it is shown each such
-    // note through its mark; every other note, and every note's monzo, it
-    // reads as it stands. See the handoff's request.)
+    // it through that mark, 36/35. kolob-score.js's proofreader allows a
+    // note that much again off its spelling for every factor of 7 it
+    // carries; all the same the check shows it each such note through its
+    // mark, as the 5-limit spelling it stands for, so the reading does not
+    // lean on that slack. Every other note, and every note's monzo, it
+    // reads as it stands.)
     var sevens = 0, shown = h;
     if (h.lines.concat(h.refrain || []).some(function (l) { return Object.keys(l.notes).some(function (p) { return l.notes[p].some(function (n) { return n.monzo && n.monzo[3]; }); }); })) {
       shown = copy(h);
@@ -1737,7 +1755,7 @@ window.KOLOB.Composer = (function () {
     var durs = {}; lines.forEach(function (l) { (l.notes[h.melodyPart] || []).forEach(function (n) { durs[n.beats] = true; }); });
     var nd = Object.keys(distinct).length, boring = nd < (D.id === "oldway" ? 4 : 5) || Object.keys(durs).length < 2;
     // (the Tabernacle's "closes stand on their roots" and the rest above are
-    // the first three dialects'; the round-3 dialects' own laws follow below)
+    // the first three dialects'; B's, D's and E's own laws follow below)
     add("not a boring tune", !boring, nd + " pitches, " + Object.keys(durs).length + " note lengths");
     // 7. not an Earth tune, and not another hymn of the meeting
     var near = { run: 0, leaps: 0, quote: false, id: null };
@@ -1746,7 +1764,7 @@ window.KOLOB.Composer = (function () {
     var nearO = { run: 0, leaps: 0, quote: false };
     (ctx.others || []).forEach(function (o) { var r = closeness(mel, melodyOf(o)); if (r.quote > nearO.quote || (r.quote === nearO.quote && r.run > nearO.run)) nearO = r; });
     add("not another hymn of the meeting", !nearO.quote, (ctx.others || []).length ? "longest shared run: " + nearO.run + " (" + nearO.leaps + " leaps)" : "no other hymn given");
-    // 8. (round 3) each new dialect's own law
+    // 8. each of B's, D's and E's own law
     if (D.id === "psalmody") {
       var fg = h.fuge, fl = null;
       // (the fuge as sung: its line, or its two lines run together — the
@@ -1822,7 +1840,7 @@ window.KOLOB.Composer = (function () {
           rung + " dominant sevenths, every one tuned on the seventh partial; " + full + " sung complete, exactly 4:5:6:7");
       if (D.alwaysRefrain) add("a refrain after the verse", !!(h.refrain && h.refrain.length), h.refrain ? h.refrain.length + " lines of refrain" : "no refrain");
       var rep = ctx.harm || {};
-      // (the tag is the harmonizer's until the Hymn is finished: read it there — round 3's first pass read h.tag, not yet set, and always said "no tag")
+      // (the tag is the harmonizer's until the Hymn is finished: read it there, not from h.tag, which is not yet set here and would always say "no tag")
       add("swipes, echoes and the tag", true, (rep.swipes || 0) + " swipes, " + (rep.echoes || 0) + " echoes, " + (rep.tag ? "a tag (" + (rep.tag.chain || []).join("–") + ")" : "no tag"), false);
     }
     if (D.id === "shaker") {
@@ -1857,7 +1875,7 @@ window.KOLOB.Composer = (function () {
     var altoOn = D.altoRate != null && altoDie < D.altoRate * (H ? 0.4 + H.alto : 1);
     var split = TIMES[fr.time].den === 8 ? 1 : 0.5;
     var res = D.harmonize({ mode: mode, H: H, bounds: bounds, tess: tess, lines: lines, R: R, shortBeat: 1, split: split, alto: altoOn, amen: !!D.amen, bar: TIMES[fr.time].bar,
-                            // (the round-3 dialects' own: the fuge's rate, the swipes and echoes, the tag, the drone)
+                            // (B's, D's and E's own: the fuge's rate, the swipes and echoes, the tag, the drone)
                             nVerse: fr.lines.length, fugeRate: D.fugeRate, swipeRate: D.swipeRate, echoRate: D.echoRate, tag: !!D.tag,
                             droneRate: D.droneRate ? D.droneRate[fr.kind || "shaker"] : null,
                             // (a partner hymn: the first hymn's chord at every beat)
@@ -1900,7 +1918,7 @@ window.KOLOB.Composer = (function () {
         plan: { letter: L.letter + (L.prime ? "'" : ""), role: L.role, cadence: L.cadence, via: L.plan || null, full: !!L.full, targetClass: L.targetClass, figure: L.figure, contour: L.contour,
                 cell: lay.cell, copyOf: L.copyOf != null ? L.copyOf : null, refrain: L.refrain },
       };
-      // (round 3, dev: a bare close, a fuge's entries, the men's echo, the swipes)
+      // (dev: a bare close, a fuge's entries, the men's echo, the swipes)
       if (L.bare) line.plan.bare = true;
       if (hl.fuge) line.plan.fuge = hl.fuge;
       if (hl.elided) line.plan.elided = true;                                // (a fuge runs on through this line's close)
@@ -1926,15 +1944,17 @@ window.KOLOB.Composer = (function () {
     opts = opts || {};
     var R = stream, Dl = K.Dialects, Hs = K.Hymnists;
     if (!Dl) throw new Error("kolob-composer: kolob-dialects.js is not loaded");
-    // the dice for the dialect and the hymnist are thrown whether or not the caller named them
+    // DICE: the dice for the dialect and the hymnist are thrown whether or
+    // not the caller named them (SCORE §3) — deliberate; must stay. The
+    // dialect's own draw keeps to the first three, from this table.
     var dDraw = pickW(R.fork("dialect"), [["tabernacle", 3], ["sacredharp", 2], ["oldway", 1]]);
     var dialect = opts.dialect && Dl.get(opts.dialect) ? Dl.get(opts.dialect).id : dDraw;
     var D = Dl.get(dialect);
-    // (internal, round 3: a profile laid over the dialect's — the wandering
+    // (internal: a profile laid over the dialect's — the wandering
     // refrain's couplet in the lilt — and the first hymn a partner is written on)
     if (opts._profile) { var D0 = D; D = Object.create(D0); for (var pk in opts._profile) D[pk] = opts._profile[pk]; }
     var P1 = opts._partner || null;
-    var hDraw = Hs ? Hs.draw(R.fork("hymnist"), dialect) : null;
+    var hDraw = Hs ? Hs.draw(R.fork("hymnist"), dialect) : null;      // DICE: thrown even when opts.hymnist names one
     var H = Hs ? (opts.hymnist ? Hs.byId(opts.hymnist) : hDraw) : null;
     var keyMonzo = (opts.keyMonzo || [0, 0, 0, 0]).slice(0, 4);
     var keySemi = Math.round(mzCents(keyMonzo) / 100);
@@ -1945,12 +1965,12 @@ window.KOLOB.Composer = (function () {
     if (P1) partnerFrame(fr, sk, rh, D, P1, !!opts._partnerRhythm);
     var gesture = opts.gestures && opts.gestures[0] ? opts.gestures[0].map(function (g) { return typeof g === "number" ? g + sk.base : g.deg + sk.base; }) : null;
     var named = nameOf(R.fork("naming:" + D.id));
-    // (a hymn never takes the name of another hymn of the meeting — round 3's
-    // critic found the partner of CUMORAH named CUMORAH; the name is drawn
+    // (a hymn never takes the name of another hymn of the meeting — else a
+    // partner of CUMORAH could be named CUMORAH; the name is drawn
     // again, from a die of its own, and nothing else moves)
     var taken = (opts.others || []).map(function (o) { return o && o.nameEn; }).concat(opts.avoidNames || []);
     for (var nk = 1; nk < 12 && taken.indexOf(named.nameEn) >= 0; nk++) named = nameOf(R.fork("naming:" + D.id + ":again:" + nk));
-    var tempoDie = R.fork("tempo").rnd(0.95, 1.05);
+    var tempoDie = R.fork("tempo").rnd(0.95, 1.05);      // DICE: thrown here, before the search, on its own fork — deliberate; must stay
     var best = null, repairs = [], quoted = {};
     var mel = composeMelody(fr, sk, rh, D, H, gesture, 0);
     for (var round = 0; round < 6; round++) {
@@ -1961,7 +1981,7 @@ window.KOLOB.Composer = (function () {
         var melodyFail = failed.some(function (f) { return /peak|boring|Earth|another hymn|range|leaps|compass/.test(f) || (round >= 2 && /voice-leading|cadence|roots|lead|ringing|fuge/.test(f)); });
         var avoid = [];
         if (best.result.earthNearest && best.result.earthNearest.quote) earthMelodies().forEach(function (e) { if (e.id === best.result.earthNearest.id) avoid.push(e.degs); });
-        // (round 3's dialects remember every Earth tune any round has echoed, not only the best round's)
+        // (a dialect with figureRepair remembers every Earth tune any round has echoed, not only the best round's)
         if (D.figureRepair) earthMelodies().forEach(function (e) { if (quoted[e.id] && avoid.indexOf(e.degs) < 0) avoid.push(e.degs); });
         (opts.others || []).forEach(function (o) { avoid.push(melodyOf(o)); });
         if (melodyFail) mel = composeMelody(fr, sk, rh, D, H, gesture, round, null, avoid);
@@ -1977,7 +1997,7 @@ window.KOLOB.Composer = (function () {
         beatS: r3(T.beatS * D.tempo * (H ? H.tempo : 1) * tempoDie), melodyPart: D.melodyPart,
         lines: built.lines, refrain: built.refrain, verses: [],
       };
-      // (round 3: what the new dialects add to a Hymn — see the handoff's requests for SCORE)
+      // (what dialects B, D and E add to a Hymn)
       if (D.voiceOrder) h.voiceOrder = D.voiceOrder.slice();                 // D: the parts top to bottom (the lead second)
       if (fr.kind) h.kind = fr.kind;                                        // E: shaker, gift or primary
       if (harm.drone) h.drone = harm.drone;                                 // E: the hummed drone's degrees (from the final)
@@ -2008,7 +2028,7 @@ window.KOLOB.Composer = (function () {
       repairs: repairs.slice(0, best.round), commas: best.commas, rounds: repairs.length + 1, keptRound: best.round,
       // (every round's failures, the kept one's too: a repair that did worse is still on the record)
       attempts: repairs.map(function (x) { return x.failed; }).concat([best.result.checks.filter(function (c) { return c.hard && !c.ok; }).map(function (c) { return c.name; })]),
-      // (round 3: the slurred passing notes added; the fuge; the swipes and echoes)
+      // (the slurred passing notes added; the fuge; the swipes and echoes)
       slurs: best.slurs || 0, fuge: best.harm.fuge || null, swipes: best.harm.swipes || 0, echoes: best.harm.echoes || 0, kind: fr.kind || null,
     };
     // the amen, tuned and shaped as a line of its own (sung after the last verse)
@@ -2109,9 +2129,9 @@ window.KOLOB.Composer = (function () {
     var fam = MINOR[mode] ? "minor" : mode === "mixolydian" ? "mixolydian" : "major";
     var ground = pickW(F.fork("ground"), GROUNDS[fam]);
     var T = TIMES[time], bar = T.bar, segLen = G * bar, chordLen = segLen / ground.length;
-    // (round 3, second pass — the critic saw a round's IV begin in the middle
-    // of a bar: a ground of four chords in two bars of three-four changes every
-    // beat and a half. A ground's chords change on the bar's strong beats — the
+    // (a ground of four chords in two bars of three-four would change every
+    // beat and a half, its IV beginning in the middle of a bar. A ground's
+    // chords change on the bar's strong beats — the
     // downbeat and, in four-four and six-eight, the half bar — so a ground that
     // will not divide the segment so is drawn again from those that will)
     var strongStep = time === "4/4" ? 2 : time === "6/8" ? 3 : bar;
@@ -2482,8 +2502,8 @@ window.KOLOB.Composer = (function () {
       delete best.c; return best;
     });
   }
-  // THE ROOM THE DAY'S KEYS LEAVE A REFRAIN (round 3, second pass; the
-  // critic's fix). A key a fourth up and a key a fifth up put the refrain's
+  // THE ROOM THE DAY'S KEYS LEAVE A REFRAIN. A key a fourth up and a key a
+  // fifth up put the refrain's
   // final on three different notes of the singers' voices — do, fa and sol
   // of the day — and the part that sings the tune has only so much voice: the
   // quartet's lead (dialect D) sings from sol below the keynote to do above
@@ -2527,9 +2547,10 @@ window.KOLOB.Composer = (function () {
     var roomOf = {}, homeSemi = Math.round(mzCents(keys[0]) / 100);
     for (var t = 0; t < tries; t++) {
       var S = t ? stream.fork("refrain:" + t) : stream, prof = REFRAIN_PROFILE;
-      // (the mode is the refrain's own draw, thrown as compose() throws it —
-      // the hymnist's leaning on the dialect's table — so the room is measured
-      // in the mode the refrain will be written in)
+      // DICE: the hymnist and the mode are drawn here exactly as compose()
+      // draws them — the same forks, the hymnist's leaning on the dialect's
+      // table — so the room is measured in the mode the refrain will be
+      // written in; deliberate, and the two must stay in step
       var Hs = K.Hymnists, Hr = Hs ? (opts.hymnist ? Hs.byId(opts.hymnist) : Hs.draw(S.fork("hymnist"), D0.id)) : null;
       var mode = mode0 || pickW(S.fork("frame").fork("mode"), weightsOf(D0.modes, Hr && Hr.modes));
       var room = roomOf[mode] || (roomOf[mode] = refrainRoom(D0, keys, mode, homeSemi));
@@ -2563,7 +2584,7 @@ window.KOLOB.Composer = (function () {
   // (the cadence mix is read from the notes: the share of line closes that
   // keep their third, that come to rest on home's chord, on the dominant's)
   var FP_KEYS = ["par5", "thirdless", "crossing", "chromatic", "sevenths", "leap", "melisma", "closeThird", "closeHome", "closeDom",
-                 // (round 3: the bare unison close; the fuge's and the echo's silent parts; the ringing seventh's 7-limit notes; the Old Way's ornament marks)
+                 // (the bare unison close; the fuge's and the echo's silent parts; the ringing seventh's 7-limit notes; the Old Way's ornament marks)
                  "closeUnison", "stagger", "septimal", "ornament"];
   // the Earth tunes' fingerprints per dialect: each tune's, their mean, and
   // the dialect's stated tolerance (kolob-dialects.js)
@@ -2647,7 +2668,7 @@ window.KOLOB.Composer = (function () {
 
   return {
     compose: compose, fingerprint: fingerprint, references: references, spread: spread, voiceLeading: voiceLeading,
-    // (round 3) the round, the partner hymn, the wandering refrain, and a given tune set anew
+    // the round, the partner hymn, the wandering refrain, and a given tune set anew
     round: composeRound, partner: partner, fitTogether: fitTogether, wanderingRefrain: wanderingRefrain, refrainIn: refrainIn, setTune: setTune, keyFit: keyFit,
     METERS: METERS, FORMS: FORMS, TIMES: TIMES, MODES: MODES, FIGURES: FIGURES, CELLS: CELLS,
     // for the lab and the harness (pure helpers)

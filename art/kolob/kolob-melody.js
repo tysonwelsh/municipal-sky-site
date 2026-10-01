@@ -3,15 +3,15 @@
 //
 // The hymn meters and the prosody that pours phrases into them; the motif
 // engine — the gesture pool (each with its Deseret cipher), the transform
-// algebra, genealogy and the ledger. Split from kolob-audio.js (v0.30); see
-// the room list in kolob-core.js.
+// algebra, genealogy and the ledger. The house's rooms are listed in
+// _engine.php.
 //
-// Its dice are never its own (round 2): every call that draws takes the
+// Its dice are never its own: every call that draws takes the
 // caller's stream as its last argument, R — the voice's turn, the guest's
 // stream, the meeting's motif:<n> — so the motif engine throws nothing that
 // belongs to anyone else.
 //
-// It reads nothing of the house (round 2, milestone 2). Where it needs the
+// It reads nothing of the house. Where it needs the
 // meeting it takes a MOMENT, the plain object the chorister makes
 // (kolob-meeting.js, THE CHORISTER'S BOOK), just before the dice:
 //
@@ -28,7 +28,7 @@
 // material as its own state (the theme, the lineage, the ledger of
 // obligations between voices); what it reports goes to a log the house
 // hands it (Motif.setLog), and to nobody if none is given. Each report is a
-// typed event (SCORE.md §6, round 2's words: hymns-of-the-day, motif-develop,
+// typed event (SCORE.md §6: hymns-of-the-day, motif-develop,
 // motif-reprise, motif-answer, motif-disperse), its legacy label alongside.
 // ============================================================================
 
@@ -163,6 +163,9 @@ window.KOLOB = window.KOLOB || {};
     // A meeting-level colour, layered over the per-voice and per-section tilts,
     // so no two visits merely feel different moment to moment — they feel like
     // different Sundays. Still fully aleatoric: it is only another bias.
+    // (This table is the motif engine's own tempers — transform weights —
+    // and is not KOLOB.Dialects, the harmonic languages of kolob-dialects.js;
+    // the two share a word and nothing else.)
     var DIALECTS = {
       plain:     { ornament: 0.35, mordent: 0.3, sequence: 0.7, syncopate: 0.5, intervalExpand: 0.7 },
       psalmodic: { intervalCompress: 1.9, augment: 1.4, ornament: 0.5, mordent: 0.4, rotate: 1.3 },
@@ -655,7 +658,7 @@ window.KOLOB = window.KOLOB || {};
       if (type === "doxology") climaxReprised = false;
     }
     function theme() { return working.theme; }
-    // the day's other gestures (round 3: the day's hymnal seeds each hymn's
+    // the day's other gestures (the day's hymnal seeds each hymn's
     // first line from one of them — a copy of the list, the motifs as drawn)
     function subs() { return working.subs.slice(); }
     function anyWorking(mo, R) {

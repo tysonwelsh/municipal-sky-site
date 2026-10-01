@@ -11,8 +11,7 @@
 // And the Old Way barely harmonizes at all: one slow tune, ornamented by
 // every singer in the room.
 //
-// This room holds all six (PLAN Phase 2 order: C, A, F in round 1; B, D, E
-// in round 3):
+// This room holds all six, lettered as PLAN-COMPOSITION §3 letters them:
 //   C  TABERNACLE   soprano melody; phrase-grammar harmony planned backwards
 //                   from each line's cadence; a Victorian voice-leading
 //                   search (no parallels, no crossing, common tones kept,
@@ -49,7 +48,9 @@
 // PURE (SCORE.md §1): no audio, no clock, no dice of its own — every draw is
 // thrown from the stream the composer hands in. Loads headless.
 //
-// Public surface: KOLOB.Dialects = { get(name), names (the first three),
+// Public surface: KOLOB.Dialects = { get(name), names (the first three:
+//   compose() weights those same three from a table of its own, and the
+//   composer's references() reads `names` only when `all` is absent),
 //   all (the six), tabernacle, sacredharp, oldway, psalmody, gospel, shaker,
 //   chordAt(mode, degs[]) (a sonority read as a chord), readChords(parts,
 //   mode), gospelVocab(mode), … }
@@ -194,7 +195,7 @@ window.KOLOB.Dialects = (function () {
     switch (plan) {
       case "tonicize": return { fin: ["V"], pen: names(["V/V", "V7/V"]), ante: null };
       case "relative": return { fin: ["III"], pen: ["VII"], ante: null };
-      // (round 3) A REST mid-verse on a chord that is neither home's nor the
+      // A REST mid-verse on a chord that is neither home's nor the
       // dominant's — the Psalmody's lines that settle on IV, on vi, on the
       // mediant — with the tune's own note in it: the tune is the tune it was
       case "rest": {
@@ -695,9 +696,10 @@ window.KOLOB.Dialects = (function () {
   // thirds (the bass when it can be), a sonority with no third is "open5"
   function chordAt(mode, notes) {
     var pcs = {}, list = [];
-    // (round 3: a class is counted once — `!pcs[c]` let home's own note, whose
-    // alteration is 0, in again at every octave, so an all-do close never
-    // read as the unison it is, and home's chord was overweighted)
+    // (a class is counted once, by has(): testing `!pcs[c]` instead would let
+    // home's own note, whose alteration is 0, in again at every octave, so an
+    // all-do close would never read as the unison it is, and home's chord
+    // would be overweighted)
     notes.forEach(function (n) { var c = cls(n.deg); if (!has(pcs, c)) { pcs[c] = n.alt || 0; list.push(c); } });
     if (list.length === 1) return { root: list[0], quality: "unison", roman: ROMAN_UP[list[0]] + "¹", third: false };
     var bass = cls(notes[0].deg), best = null, bestS = -1;
@@ -881,7 +883,7 @@ window.KOLOB.Dialects = (function () {
         }
         // the last chord of a line is the chord its cadence names: home's, or the dominant's
         if (s.final || s.trail) { var r = cls(d - finRoot); if (r !== 0 && r !== 2 && r !== 4) c += 12; }
-        // (round 3: now and then a line closes on a bare unison or octave, every
+        // (now and then a line closes on a bare unison or octave, every
         // part on the tune's own note — one close in seven in the 1844 book)
         if (line.bare && (s.final || s.trail) && cls(d) !== cls(s.deg)) c += 9;
         return c;
@@ -1001,11 +1003,11 @@ window.KOLOB.Dialects = (function () {
       return c;
     }
     var bass = counterLine(slots, mode, B.B, { T: tune }, true, reqBass, openW * 0.25, nB, 0, CONS_B);
-    // (round 3, second pass: the critic measured the psalmody crossing in a
-    // quarter of its chords against CORONATION's one in fifty — the counter
-    // over the treble, mostly, where nothing held it under. The treble still
-    // crosses the tenor now and then, the counter now and then the tenor; the
-    // fuge crosses as its entries must.)
+    // (the counter is held under the treble: left free, the psalmody crossed
+    // in a quarter of its chords against CORONATION's one in fifty, the
+    // counter over the treble mostly. The treble still crosses the tenor now
+    // and then, the counter now and then the tenor; the fuge crosses as its
+    // entries must.)
     var treble = counterLine(slots, mode, B.S, { T: tune, B: bass.line }, false, reqUpper, openW, nS, 1.6 + 0.5 * (1 - (H.open != null ? H.open : 0.6)), CONS_B);
     var alto = counterLine(slots, mode, B.A, { T: tune, B: bass.line, S: treble.line }, false, reqUpper, openW * 0.6, nA, 1.3, CONS_B, 1.4);
     var parts = {
@@ -1059,12 +1061,12 @@ window.KOLOB.Dialects = (function () {
   // returns the line with four staggered entries, or null (the line stays
   // homophonic) when the words cannot be fitted to the entries
   //
-  // (round 3, second pass — the critic heard the first pass's fuges: a head
-  // of three notes in forty of forty-nine, two in seven, never an imitation
-  // past it, entries a fourth apart as often as a fifth, and the fuge's own
-  // strong beats read half a bar out wherever the entries were half a bar
-  // apart. So now: the fuge runs across the tune's last two lines where the
-  // words allow, as Billings's and Read's do — the head is the first line's
+  // (Left to a looser rule the fuge's head was three notes in forty hymns of
+  // forty-nine, two in seven, never imitated past it, its entries a fourth
+  // apart as often as a fifth, and its own strong beats read half a bar out
+  // wherever the entries were half a bar apart; so: the fuge runs across
+  // the tune's last two lines where the words allow, as Billings's and
+  // Read's do — the head is the first line's
   // opening, four to six notes, and there is time for every voice to take it
   // up; the entries stand a bar apart where that fits, else half a bar; each
   // voice keeps the tune's shape a few notes past the head where it sounds;
@@ -1166,9 +1168,9 @@ window.KOLOB.Dialects = (function () {
     var report = [];
     // THE HEADS FIRST, CHOSEN TOGETHER — as a fugue's exposition is written:
     // the entries are placed, then the free parts are filled against them.
-    // (Round 3's first pass wrote each voice whole, the bass first; a later
-    // entry at the dominant then too often landed on a second against the
-    // bass's free notes, and the counter took the head a fourth up instead.)
+    // (Writing each voice whole, the bass first, is wrong here: a later
+    // entry at the dominant then too often lands on a second against the
+    // bass's free notes, and the counter takes the head a fourth up instead.)
     // Each head's transposition — an octave, a fifth or a fourth away, or at
     // the unison — must lie in its part's compass, sing no tritone, and enter
     // consonant against every head already sounding; of the sets that do, the
@@ -1292,7 +1294,8 @@ window.KOLOB.Dialects = (function () {
       });
       report.push({ part: p, at: rhythm[0].beat, transpose: best.t, entry: ENTRY[p] });
     }
-    // (the first pass's die for the entries' order is still thrown, so that no other draw moves)
+    // DICE: the die for the entries' order is thrown and its result discarded,
+    // so that no other draw moves — deliberate; must stay
     u01(R.fork("order"));
     writeRest("B"); writeRest("A"); writeRest("S");
     report.splice(1, 0, { part: "T", at: E, transpose: 0, entry: 2 });
@@ -1359,8 +1362,8 @@ window.KOLOB.Dialects = (function () {
     // entries there, the other
     var order = nV >= 4 ? (fd < 0.68 ? [nV - 2, nV - 1] : [nV - 1, nV - 2]) : [nV - 1];
     var fugue = null, tried = [], lines = [];
-    // (round 3, second pass: first the fuge across the last two lines, as the
-    // fuging tunes run theirs; failing that, one line, as before)
+    // (first the fuge across the last two lines, as the fuging tunes run
+    // theirs; failing that, one line)
     if (want && nV >= 4 && ctx.lines[nV - 2] && ctx.lines[nV - 1]) {
       var fp = fugePair(ctx.lines[nV - 2], ctx.lines[nV - 1], nV - 2, ctx, openW);
       if (fp) { lines[nV - 2] = fp[0]; lines[nV - 1] = fp[1]; fugue = { line: nV - 2, lines: [nV - 2, nV - 1], entries: fp[0].fuge.entries, gap: fp[0].fuge.gap, head: fp[0].fuge.head, headNotes: fp[0].fuge.headNotes }; }
@@ -1431,8 +1434,8 @@ window.KOLOB.Dialects = (function () {
       if (a.to.indexOf(b.name) < 0) return 8;
       // the chain: a seventh falling a fifth into another RINGING seventh
       // (III7 → VI7 → II7 → V7). Into the minor ii7 the chain still falls, but
-      // the ring breaks — round 3's critic heard seed 3's "whole chain" turn
-      // to ii7 at its third link — so that turn is taken where the tune asks
+      // the ring breaks (a chain that turns to ii7 at its third link is no
+      // whole chain), so that turn is taken where the tune asks
       // for it (fa, which II7's fi would contradict), not by preference.
       if (b.sev && cls(a.root - 4) === b.root) return b.q === "dom7" ? -0.55 : 0.25;
       return 0;
@@ -1520,8 +1523,8 @@ window.KOLOB.Dialects = (function () {
              sem: [semi(mode, td, t1.alt), semi(mode, sd, 0), semi(mode, rd, t2.alt), semi(mode, bd, t0.alt)], cost: 50, inv: 0, ch: ch };
   }
   // the tag's swipe chains: the lead holds home's note (do) as the POST while
-  // the chords turn round it — every chord here keeps do. (A minor tune's
-  // tag — round 3's critic found none — turns round la: the tonic, its own
+  // the chords turn round it — every chord here keeps do. (A minor tune has
+  // a tag too; it turns round la: the tonic, its own
   // ringing seventh falling to iv, the submediant; the last chord the minor
   // tonic.)
   var TAGS = [["I", "I7", "IV", "iv", "I"], ["IV", "iv", "I"], ["vi", "II7", "IV", "I"], ["I", "II7", "iv", "I"], ["I", "I7", "IV", "I"]];
@@ -1569,7 +1572,7 @@ window.KOLOB.Dialects = (function () {
   // seventh), a voice that strikes the other of the two again, on the same
   // written note, must move by 36/35 — 49 cents — for the two notes that were
   // a minor third 6:5 in the chord before are 6:7 in the ring, and the held
-  // lead cannot move (round 3's critic: 42 such slides in forty hymns). So
+  // lead cannot move (left alone: 42 such slides in forty hymns). So
   // at a swipe the other voices would rather move than strike that note
   // again: the swipe is the chord turning under the word, and they turn.
   function swipeRestrike(a, b, slot) {
@@ -1685,8 +1688,7 @@ window.KOLOB.Dialects = (function () {
           var aBase = parts.A.pop(), bBase = parts.B.pop(), t0 = fs.beat;
           parts.A.push({ beat: t0, beats: gap, deg: aBase.deg, alt: aBase.alt, nct: null, syl: aBase.syl, stress: 1, tie: false });
           parts.B.push({ beat: t0, beats: gap, deg: bBase.deg, alt: bBase.alt, nct: null, syl: bBase.syl, stress: 1, tie: false });
-          // (the echo an octave down — or two — whichever sits under the held note, within an octave of it)
-          // (the echo an octave down, or at pitch — whichever lies in the baritone's compass, under the held note and within an octave of it)
+          // (the echo an octave down, at pitch, or two octaves down — the first that lies in the baritone's compass, under the held note and within an octave of it; an octave down when none does)
           var sHeld = semi(mode, fs.deg, 0), shiftE = null;
           [-7, 0, -14].forEach(function (sh) {
             if (shiftE != null) return;
@@ -1802,7 +1804,7 @@ window.KOLOB.Dialects = (function () {
   // line's role; `plan` names a cadence that tonicizes (V, or the relative
   // major). `weights` tune the melody search (kolob-composer.js, lineCost).
   // `tolerance` is where a hymn's fingerprint must fall, set from the Earth
-  // tunes named in `refs` (their measured values are in the handoff).
+  // tunes named in `refs` (kolob-composer.js references() measures them).
   var MAJOR = ["ionian", "penta", "hexa"], MINORS = ["aeolian", "dorian"], MIXO = ["mixolydian"], ALL = MAJOR.concat(MINORS, MIXO);
   var BASE_W = { octave: 3, sixth: 1.2, fifth: 0.25, unrecovered: 1.5, threeSame: 1.6, repeat: 0.12, leapFit: 1.0, contour: 0.32, stressHome: 0.22,
                  stressTense: 0.22, leadingTone: 1.0, fewPitches: 1.2, join: 0.6, sameAsOther: 1.3, memory: 0.3, gesture: 0.8, leapAppetite: 1.0,
@@ -1853,7 +1855,7 @@ window.KOLOB.Dialects = (function () {
     homeFigures: { major: { rise: 1.7, turn: 1.3, climb: 1.4, fifth: 1.2, three: 0.75, fall: 0.9, sigh: 0.6 },
                    minor: { rise: 0.6, turn: 0.7, climb: 0.6, fall: 1.1 } },
     tempo: 1.0, fermata: 0.35, amen: true, refrains: 0.6, search: 140, organ: true,
-    // (round 3, the critic's idiom notes: an inner line that would have closed
+    // (an inner line that would have closed
     // on V — or now and then on I — rests instead on IV, vi or the mediant;
     // and a leapt third from a note long enough to share is walked, slurred)
     restClose: { half: 0.42, imperfect: 0.05 }, melismaAdd: 0.62,
@@ -1892,7 +1894,7 @@ window.KOLOB.Dialects = (function () {
     },
     ranges: { S: [-1, 19], A: [-5, 12], T: [-12, 9], B: [-20, 2] }, tess: { S: [5, 16], A: [-2, 9], T: [-9, 5], B: [-17, -3] },
     tempo: 0.86, fermata: 0.1, amen: false, refrains: 0.3, search: 140, organ: false, altoRate: 0.55,
-    // (round 3, the critic's idiom note: a line closing on its root or its
+    // (a line closing on its root or its
     // fifth may close BARE — every part on that one note, in octaves and
     // unisons — as one close in seven does in the 1844 book)
     bareClose: { inner: 0.34, home: 0.16 },
@@ -1972,13 +1974,13 @@ window.KOLOB.Dialects = (function () {
     // Holden, Charlestown 1793, in the 1844 book — is the New England
     // psalmody it has. The fuge is measured against its own rules.)
     refs: ["earth:coronation"],
-    // (round 3, second pass: outside the fuge the parts now keep their order
-    // nearly as CORONATION does — the critic found the counter over the treble
-    // in a fifth of the chords — and inside it they cross as entries must; a
+    // (outside the fuge the parts keep their order nearly as CORONATION does
+    // — left free, the counter stood over the treble in a fifth of the
+    // chords — and inside it they cross as entries must; a
     // fuge across two lines of a four-line tune is half the hymn, so the whole
     // may cross in up to a third of its chords. A plain psalm tune, with no
     // fuge, has no silent entries: the fuge's own check says whether one was
-    // written, and this measure no longer asks every tune for one.)
+    // written, and this measure does not ask every tune for one.)
     tolerance: { par5: [0.02, 0.4], thirdless: [0.12, 0.6], crossing: [0, 0.35], chromatic: [0, 0.01], sevenths: [0, 0.1], leap: [0.12, 0.55], melisma: [0.02, 0.3], melodyRange: [5, 10],
                  closeThird: [0, 0.8], closeHome: [0.25, 0.85], closeDom: [0, 0.6], stagger: [0, 0.5] },
     // (and the Yankee tunesmiths slurred their tenor's passing notes — CORONATION
@@ -2045,10 +2047,10 @@ window.KOLOB.Dialects = (function () {
     tempo: 0.92, fermata: 0.05, amen: false, refrains: 0.2, search: 130, organ: false,
     droneRate: { shaker: 0.45, gift: 0.55, primary: 0.1 },
     weights: w({ leapAppetite: 1.0, repeat: 0.06, threeSame: 1.4, contour: 0.3, memory: 0.5 }),
-    // (round 3, second pass — the critic measured the unison songs leaping in
-    // three intervals of ten, SIMPLE GIFTS in one of seven: a Shaker hymn now
+    // (SIMPLE GIFTS leaps in one interval of seven; left to the dialect's
+    // own weights the unison songs leapt in three of ten. So a Shaker hymn
     // walks, a gift song and a Primary song skip about the triad a little
-    // more; and the dotted six-eight foot, which slurs a syllable, is rarer)
+    // more; and the dotted six-eight foot, which slurs a syllable, is rare)
     kindLeap: { shaker: 0.45, gift: 0.55, primary: 0.6 },
     kindFigures: { shaker: { triad: 0.25, fifth: 0.35, third: 0.35 }, gift: { triad: 0.6, fifth: 0.7 } },
     kindWeights: { shaker: { leapAppetite: 0.6, leapFit: 1.8 }, gift: { leapAppetite: 0.7, leapFit: 1.6 }, primary: { leapAppetite: 0.7, leapFit: 1.6 } },
@@ -2070,8 +2072,9 @@ window.KOLOB.Dialects = (function () {
 
   return {
     get: function (name) { return BY[name] || null; },
-    // (the first three, as round 1 listed them — compose()'s own draw keeps to
-    // these; `all` is the six, in the plan's letter order)
+    // (the first three. compose() weights these same three from a table of
+    // its own, and the composer's references() reads `names` only when `all`
+    // is absent; `all` is the six, in the plan's letter order)
     names: ["tabernacle", "sacredharp", "oldway"],
     all: ["sacredharp", "psalmody", "tabernacle", "gospel", "shaker", "oldway"],
     tabernacle: TABERNACLE, sacredharp: SACREDHARP, oldway: OLDWAY, psalmody: PSALMODY, gospel: GOSPEL, shaker: SHAKER,

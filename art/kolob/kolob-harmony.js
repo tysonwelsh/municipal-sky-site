@@ -3,10 +3,9 @@
 //
 // Stacked diatonic triads in 7-degree space, a weighted root grammar with
 // plagal gravity, and SATB voicing that rewards the Sacred Harp's parallel
-// fifths. Split from kolob-audio.js (v0.30); the house's rooms are listed in
-// _engine.php.
+// fifths. The house's rooms are listed in _engine.php.
 //
-// PURE (round 2, milestone 2). This room reads nothing of the house: every
+// PURE. This room reads nothing of the house: every
 // call takes a MOMENT — a plain object, the meeting at an instant, made by
 // the chorister (kolob-meeting.js, THE CHORISTER'S BOOK) — and the caller's
 // dice, D (a PJ2.Rand stream), as its last two arguments. The fields read
@@ -189,7 +188,7 @@ window.KOLOB.Harmony = (function () {
     var next, fifths = 0;
     if (!prev) {
       next = defaultVoicing(P, root7, classes);
-      // opts.third (the pre-v0.34 polish: a morning's first chord may be
+      // opts.third (a morning's first chord may be
       // FULL): a fresh seat stacks root and fifth and may leave the third
       // out even when the chord has one — so the third is set in, in the
       // inner voice nearest it that it fits between its neighbours
@@ -250,17 +249,17 @@ window.KOLOB.Harmony = (function () {
     return chordOf(P, root7, classes, open, next, fifths);
   }
 
-  // THE PINNED SOPRANO (round 2). Under a melodic line the soprano is the
+  // THE PINNED SOPRANO. Under a melodic line the soprano is the
   // tune, so it is fixed first and the alto, tenor and bass are seated
   // beneath it: every seating of chord tones with B < T < A < S is tried
   // (they are few — the ranges are narrow and a triad has three classes),
   // scored like any voicing (motion from the chord before, the third
   // present, the root doubled, parallel octaves refused, parallel fifths
   // welcome) and held to the hymnal's SPACING: no more than an octave
-  // between soprano and alto, or alto and tenor. v0.32 voiced the chord
-  // first and then wrote the tune over its soprano, which left the alto at
-  // or above the tune in a fifth of the chords it sang, and reported the
-  // voicing it never sang.
+  // between soprano and alto, or alto and tenor. The chord is never voiced
+  // first with the tune written over its soprano afterwards: that leaves the
+  // alto at or above the tune in a fifth of the chords, and reports a
+  // voicing the choir never sang.
   //
   // When nothing passes — the tune sits low, or the voices would move in
   // octaves with it — the choir reaches, in this order, for what a hymnal's
@@ -288,7 +287,9 @@ window.KOLOB.Harmony = (function () {
     var n = P.n, R = ranges(n);
     var roles = toneClasses(P, root7, false);          // what each class IS in the chord
     var bRoot = {}; bRoot[P.classOf(P.projDeg(root7))] = true;
-    // the free voicing's inversion die, thrown under the same condition
+    // DICE: the free voicing's inversion die, thrown under the same condition
+    // as voice()'s so the two paths draw alike — deliberate; changing when
+    // it is thrown would move every draw after it
     if (lead && D.chance(0.1)) bRoot[P.classOf(P.projDeg(root7 + 4))] = true;
     var prev = lead ? lead.voicing : null;
     var home = prev || defaultVoicing(P, root7, toneClasses(P, root7, open));   // a fresh seat sits near the default one
@@ -426,16 +427,17 @@ window.KOLOB.Harmony = (function () {
   }
 
   // ==========================================================================
-  // THE LINE AS WRITTEN (round 2, milestone 3) — a harmonized line set down
+  // THE LINE AS WRITTEN — a harmonized line set down
   // as a Score Line (SCORE.md §5), so the page, the harness and the
-  // composers to come can read what the choir sang as notation: four parts
+  // composers can read what the choir sang as notation: four parts
   // by beat, each note spelled as a degree and pitched as an exact monzo
   // (the ii chord's re a comma low, 10/9, as it is sung), the chord at every
   // onset with its numeral and quality, and the cadence the line comes to.
   // Nothing here is drawn or chosen: it is a transcription of a line
-  // already voiced. The engine composes no hymn yet (the choir walks the
-  // day's motifs through the meter), so a line stands alone: no tune peak,
-  // no fermata.
+  // already voiced. The line is the choir's walk of the day's motifs
+  // through the meter, not a line of a composed hymn (kolob-composer.js
+  // writes those and sets their peaks and fermatas itself), so it stands
+  // alone: no tune peak, no fermata.
   //   harmonized  [{chord, dur}] from harmonize() (dur in beats)
   //   opts        { syl0 (the line's first syllable, 0), trochee (the meter
   //               stresses its first syllable: 87.87), id (keep the chords'
