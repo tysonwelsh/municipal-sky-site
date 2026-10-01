@@ -13,7 +13,11 @@
 //   · the skyline — 14 days of page views drawn as a city, with the moon
 //   · the pulse — views, visitors, plays, drawer turns, onobot uses, signups:
 //     last 24h vs the 24h before, 7 days, all-time
-//   · every tracked page, ranked by the day's views, with 7d and all-time
+//   · every PUBLIC page, ranked by the day's views, with 7d and all-time.
+//     Public means listed right now on /art/ or /information-graphics/ (the
+//     indexes are read at run time; a commented-out entry is hidden), plus
+//     the nav's own pages. Hidden pages are left out of every count and
+//     return the day they are listed again. The Blog is out altogether.
 //   · the rhythm — views by hour of day (7d) and by weekday (8 weeks)
 //   · onobot — uses vs ratings, provider failures, the Claude/GPT tug-of-war,
 //     and every prompt of the day (the prompt only: no responses, no rating —
@@ -105,9 +109,6 @@ $PAGE_NAMES = [
     'about'                  => 'About',
     'art'                    => 'Art index',
     'information-graphics'   => 'Info Graphics index',
-    'blog'                   => 'Blog index',
-    'blog/natural-light'     => 'Blog: Natural Light',
-    'blog/everlasting-life'  => 'Blog: Everlasting',
 ];
 
 // ─────────────────────────────────────────────────────────────
@@ -275,6 +276,34 @@ function geo($ip) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Which pages count: the ones the section indexes show right now
+// ─────────────────────────────────────────────────────────────
+// Owner's rule (2026-10-01): a page that is not publicly listed on /art/ or
+// /information-graphics/ stays out of the digest. The indexes are read here
+// each run, HTML comments stripped first (that is how an entry is hidden), so
+// un-commenting an entry is all it takes to bring a page back — history and
+// all, if it was being counted. The nav's own pages are always in; the Blog
+// (hidden from the nav) never is.
+function public_pages(callable $note) {
+    $keys  = ['homepage', 'about', 'art', 'information-graphics'];
+    $alias = ['gendered-pronouns' => 'pronoun', 'onomatopoeia-machine.php' => 'onomatopoeia-machine'];
+    foreach (['art/index.php', 'information-graphics/index.php'] as $rel) {
+        $html = @file_get_contents(__DIR__ . '/../' . $rel);
+        if ($html === false) { $note($rel, 'could not be read, so its pages are not in the digest'); continue; }
+        $html = preg_replace('/<!--.*?-->/s', '', $html);
+        if (preg_match_all('#href="/(?:art|information-graphics|chatbots)/([a-z0-9.-]+)/?"#', $html, $m)) {
+            foreach ($m[1] as $slug) $keys[] = $alias[$slug] ?? $slug;
+        }
+    }
+    return array_values(array_unique($keys));
+}
+// A page_events key counts when its base slug is public ('junk-drawer/about'
+// rides on 'junk-drawer').
+function is_public($key, array $public) {
+    return in_array(explode('/', (string) $key)[0], $public, true);
+}
+
+// ─────────────────────────────────────────────────────────────
 // Data — one array, two ways to fill it
 // ─────────────────────────────────────────────────────────────
 $D = [
@@ -304,6 +333,7 @@ $D = [
     'builds'   => [],
     'ping'     => [],
     'tables'   => [],
+    'hidden'   => [],   // tracked pages left out because their index does not list them
     'notes'    => [],   // anything that failed, so a silent zero never hides a broken query
     'queries'  => 0,
 ];
@@ -312,6 +342,7 @@ $note = function ($what, $e) use (&$D) {
     $msg = $e instanceof Throwable ? $e->getMessage() : (string) $e;
     $D['notes'][] = $what . ': ' . trunc($msg, 120);
 };
+$PUBLIC = public_pages($note);
 
 if ($DEMO) {
     // Synthetic numbers with the right shape — enough to see the layout.
@@ -338,8 +369,11 @@ if ($DEMO) {
         'zankyo' => [1, 1, 0, 0, 8, 145, 108, 59], 'junk-drawer/about' => [1, 1, 0, 0, 4, 85, 70, 0],
         'onomatopoeia-machine' => [1, 1, 0, 0, 6, 60, 55, 0], 'underworld-occupations' => [0, 0, 0, 0, 3, 100, 72, 0],
         'carbon-structures' => [0, 0, 0, 0, 2, 65, 52, 0], 'about' => [0, 0, 0, 0, 3, 44, 40, 0], 'bardo' => [0, 0, 0, 0, 1, 26, 19, 10]];
-    foreach ($demoPages as $k => $r) $D['pages'][$k] = array_combine(['v24', 'u24', 'p24', 'd24', 'v7', 'vall', 'uall', 'pall'], $r) + ['p7' => (int) ($r[7] / 8)];
-    $D['tracks']['prosperos-jukebox-v2'] = ['library' => ['p24' => 2, 'p7' => 8, 'pall' => 51], 'sycorax' => ['p24' => 1, 'p7' => 4, 'pall' => 22], 'ariel' => ['p24' => 0, 'p7' => 3, 'pall' => 15]];
+    foreach ($demoPages as $k => $r) {
+        if (!is_public($k, $PUBLIC)) { $D['hidden'][] = $k; continue; }
+        $D['pages'][$k] = array_combine(['v24', 'u24', 'p24', 'd24', 'v7', 'vall', 'uall', 'pall'], $r) + ['p7' => (int) ($r[7] / 8)];
+    }
+    if (is_public('prosperos-jukebox-v2', $PUBLIC)) $D['tracks']['prosperos-jukebox-v2'] = ['library' => ['p24' => 2, 'p7' => 8, 'pall' => 51], 'sycorax' => ['p24' => 1, 'p7' => 4, 'pall' => 22], 'ariel' => ['p24' => 0, 'p7' => 3, 'pall' => 15]];
     $D['charts'] = ['masc-fem-overview' => ['d24' => 1, 'dall' => 14], 'joyce-ulysses' => ['d24' => 0, 'dall' => 8], 'austen-emma' => ['d24' => 0, 'dall' => 7]];
     $D['records'] = ['best_v' => 142, 'best_d' => '2026-08-20', 'streak' => 37];
     $D['onobot'] = array_merge($D['onobot'], ['c24' => 3, 'cprev' => 1, 'c7' => 9, 'call' => 420, 'cf24' => 0, 'of24' => 1, 'cfall' => 6, 'ofall' => 11,
@@ -391,12 +425,17 @@ if ($DEMO) {
     $wjs = $win('s.created', 'UTC_TIMESTAMP()');   // the same windows on an aliased jd_submissions
 
     $hasPronoun = false;
-    try { $hasPronoun = $has('pronoun_viz_events'); } catch (PDOException $e) { $note('pronoun table check', $e); }
+    try { $hasPronoun = $has('pronoun_viz_events') && is_public('pronoun', $PUBLIC); } catch (PDOException $e) { $note('pronoun table check', $e); }
+    // The public filter, applied to every page_events read below.
+    $pub = 'page IN (' . implode(', ', array_map([$pdo, 'quote'], $PUBLIC)) . ')';
     // Every page view the site counts, as one stream (the two tables share
     // msky_visitor_hash(), so COUNT(DISTINCT) across them is honest).
-    $views = "(SELECT created_at, visitor_hash FROM page_events WHERE event_type = 'page_view'"
+    $views = "(SELECT created_at, visitor_hash FROM page_events WHERE event_type = 'page_view' AND $pub"
            . ($hasPronoun ? " UNION ALL SELECT created_at, visitor_hash FROM pronoun_viz_events WHERE event_type = 'page_view'" : '')
            . ") v";
+    try {
+        foreach ($q("SELECT DISTINCT page FROM page_events WHERE NOT $pub ORDER BY page") as $r) $D['hidden'][] = $r['page'];
+    } catch (PDOException $e) { $note('hidden pages', $e); }
 
     // ── skyline · rhythm · records ───────────────────────────
     try {
@@ -432,14 +471,13 @@ if ($DEMO) {
                   FROM $views");
         $D['pulse']['views']    = ['w24' => $i($r, 'w24'), 'prev' => $i($r, 'prev'), 'w7' => $i($r, 'w7'), 'all' => $i($r, 'all')];
         $D['pulse']['visitors'] = ['w24' => $i($r, 'u24'), 'prev' => $i($r, 'uprev'), 'w7' => $i($r, 'u7'), 'all' => $i($r, 'uall')];
-        $r = $q1("SELECT SUM({$wv['w24']}) w24, SUM({$wv['prev']}) prev, SUM({$wv['w7']}) w7, COUNT(*) `all` FROM page_events WHERE event_type = 'play'");
+        $r = $q1("SELECT SUM({$wv['w24']}) w24, SUM({$wv['prev']}) prev, SUM({$wv['w7']}) w7, COUNT(*) `all` FROM page_events WHERE event_type = 'play' AND $pub");
         $D['pulse']['plays'] = ['w24' => $i($r, 'w24'), 'prev' => $i($r, 'prev'), 'w7' => $i($r, 'w7'), 'all' => $i($r, 'all')];
     } catch (PDOException $e) { $note('pulse', $e); }
 
     // ── pages ────────────────────────────────────────────────
     try {
         $sql = "SELECT CASE WHEN page = 'junk-drawer' AND event_type = 'page_view' AND label = 'about' THEN 'junk-drawer/about'
-                            WHEN page = 'blog' AND event_type = 'page_view' AND label IS NOT NULL THEN CONCAT('blog/', label)
                             ELSE page END pg,
                        SUM(event_type = 'page_view' AND {$wv['w24']}) v24,
                        COUNT(DISTINCT CASE WHEN event_type = 'page_view' AND {$wv['w24']} THEN visitor_hash END) u24,
@@ -450,13 +488,13 @@ if ($DEMO) {
                        SUM(event_type = 'page_view') vall,
                        COUNT(DISTINCT CASE WHEN event_type = 'page_view' THEN visitor_hash END) uall,
                        SUM(event_type = 'play') pall
-                FROM page_events GROUP BY pg";
+                FROM page_events WHERE $pub GROUP BY pg";
         foreach ($q($sql) as $r) {
             $D['pages'][$r['pg']] = ['v24' => $i($r, 'v24'), 'u24' => $i($r, 'u24'), 'p24' => $i($r, 'p24'), 'd24' => $i($r, 'd24'),
                                      'v7' => $i($r, 'v7'), 'p7' => $i($r, 'p7'), 'vall' => $i($r, 'vall'), 'uall' => $i($r, 'uall'), 'pall' => $i($r, 'pall')];
         }
         foreach ($q("SELECT page, label, SUM({$wv['w24']}) p24, SUM({$wv['w7']}) p7, COUNT(*) pall
-                     FROM page_events WHERE event_type = 'play' AND label IS NOT NULL GROUP BY page, label ORDER BY pall DESC") as $r) {
+                     FROM page_events WHERE event_type = 'play' AND label IS NOT NULL AND $pub GROUP BY page, label ORDER BY pall DESC") as $r) {
             $D['tracks'][$r['page']][$r['label']] = ['p24' => $i($r, 'p24'), 'p7' => $i($r, 'p7'), 'pall' => $i($r, 'pall')];
         }
     } catch (PDOException $e) { $note('pages', $e); }
@@ -731,7 +769,7 @@ if ($pv('views', 'all') > 0 && $pv('signups', 'all') > 0) $bits[] = '1 signup pe
 if ($bits) wrap_out($out, ' ', $bits, ' ' . $G['dot'] . ' ', $W);
 
 // ── pages ──
-$pages = $D['pages'];
+$pages = array_filter($D['pages'], function ($k) use ($PUBLIC) { return is_public($k, $PUBLIC); }, ARRAY_FILTER_USE_KEY);
 uasort($pages, function ($a, $b) { return [$b['v24'], $b['v7'], $b['vall']] <=> [$a['v24'], $a['v7'], $a['vall']]; });
 if ($pages) {
     $out();
@@ -745,6 +783,10 @@ if ($pages) {
         $out(' ' . padr(trunc($name, 20), 20) . ' ' . hbar($p['v24'], $maxV, 12) . padl(num($p['v24']), 5) . padl(num($p['u24']), 5) . padl(num($p['v7']), 6) . padl(num($p['vall']), 8));
     }
     if ($quiet) wrap_out($out, ' quiet this week (all-time): ', $quiet, ' ' . $G['dot'] . ' ', $W);
+    if ($D['hidden']) {
+        $hid = array_map(function ($k) use ($PAGE_NAMES) { return $PAGE_NAMES[$k] ?? $k; }, array_unique($D['hidden']));
+        wrap_out($out, ' not listed on an index, not counted: ', $hid, ' ' . $G['dot'] . ' ', $W);
+    }
     $plays = array_filter($pages, function ($p) { return $p['pall'] > 0 || ($p['dall'] ?? 0) > 0; });
     if ($plays) {
         $out(' ' . str_repeat($G['rule'], 22));

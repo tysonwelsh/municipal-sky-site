@@ -1,5 +1,4 @@
 <?php
-$track_page = 'antariksh';   // anonymous page-view tally (includes/footer.php)
 $page_title = "Antariksh - Municipal Sky";
 $page_description = "An aleatoric raga engine: endless generative Raga Malkauns — a tanpura drone and free-rhythm alap, with a futuristic sheen.";
 include '../../includes/header.php';

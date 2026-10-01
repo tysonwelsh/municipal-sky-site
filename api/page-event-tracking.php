@@ -21,12 +21,12 @@ require_once __DIR__ . '/visitor-hash.php';
 $ALLOWED_PAGES = [
     'homepage', 'prosperos-jukebox', 'prosperos-jukebox-v2', 'underworld-occupations', 'zankyo', 'bardo', 'kolob',
     'junk-drawer', 'carbon-structures',
-    // 2026-10-01: the pages that had no counter, tallied through the footer's
-    // $track_page opt-in (includes/footer.php) — page_view only, except
-    // skeeball, which also logs a play per game started. 'blog' carries the
-    // post slug as its label; the three indexes and About carry none.
-    'rain-of-babel', 'skeeball', 'kimis-take', 'antariksh', 'coinpusher', 'thousand-flowers',
-    'onomatopoeia-machine', 'about', 'art', 'information-graphics', 'blog',
+    // 2026-10-01: the public pages that had no counter, tallied through the
+    // footer's $track_page opt-in (includes/footer.php) — page_view only,
+    // except skeeball, which also logs a play per game started. Only pages
+    // the section indexes list are wired up (owner); a page restored to an
+    // index gets its one-line opt-in then.
+    'rain-of-babel', 'skeeball', 'onomatopoeia-machine', 'about', 'art', 'information-graphics',
 ];
 $ALLOWED_EVENTS = ['page_view', 'play', 'png_download', 'item_open', 'turn_open', 'turn_submit', 'turn_complete', 'turn_error'];
 
