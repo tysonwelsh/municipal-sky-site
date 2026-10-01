@@ -108,7 +108,9 @@
   (function () {
     var ID = 'jd-turn-object';       /* reserved: see the collision note above */
     var ASSET = '/art/junk-drawer/turn-object.svg';
-    var FALLBACK_BOX = 15.5;         /* = BASE.m, for a drawer that failed to load */
+    var FALLBACK_BOX = 15.5;         /* = BASE.m — the loader passes BASE.m itself on a
+                                        failed load (jd-core's catch); this catches a tier
+                                        box that is not a positive number */
     /* The 9a mockup's measurement note: at m × 1.15 the element lands 58×72px
        on a 375px phone — the same numbers the doorbell measured, because the
        candidate kept the 240×300 box precisely so this dial, GEOM and the
@@ -431,7 +433,8 @@
   (function () {
     var ID = 'jd-instructions';
     var ASSET = '/art/junk-drawer/instructions-object.svg';
-    var FALLBACK_BOX = 30;               /* = BASE.xl, if the drawer never loaded */
+    var FALLBACK_BOX = 30;               /* = BASE.xl — the loader passes BASE.xl itself on a
+                                            failed load; this catches a non-positive box */
     var Z_SHEET_MIN = JD_Z_BAND.other + 101;   /* floor: over the top band's
                                             scatter (1..N) and the turn button
                                             (+99) even if the pile reads empty
@@ -706,7 +709,8 @@
     var ID = 'jd-analytics';
     var ASSET = '/art/junk-drawer/analytics-folder.svg';
     var API = '/api/jd-analytics.php';
-    var FALLBACK_BOX = 22;               /* = BASE.l, if the drawer never loaded */
+    var FALLBACK_BOX = 22;               /* = BASE.l — the loader passes BASE.l itself on a
+                                            failed load; this catches a non-positive box */
     var ROT = 8;                         /* a small tilt: jammed in the corner
                                             (below), the pile's full ±34° would
                                             poke it out past the walls */

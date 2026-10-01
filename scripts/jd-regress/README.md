@@ -434,3 +434,17 @@ The saved baseline for the branch is
 the commit that added this harness; the app files are those of `94105d9`).
 It is a capture of the MAIN checkout — use it for comparisons of the main
 checkout; a worktree captures its own baseline (its ETag differs).
+
+
+## Known flake (found during the refactor, 2026-10-01)
+
+`turn-darkroom-phone` deals the **words** indicator into one swatch: an
+iframe of `/art/kimis-take/mini.php`, whose word streams are placed from
+`performance.now()` inside the iframe, which the harness does not pin. Its
+shot differed by a few hundred px in roughly one run in three; markup and
+styles for the scene (including the iframe element itself) were identical
+every time. When that one shot differs, re-run `--scenes turn-darkroom-phone`
+and confirm the diff lies inside the iframe; a subset run also renders the
+page behind the card at a different scroll, so compare subset against
+subset. Everything else in 20+ full captures across six worktrees was
+byte-stable.

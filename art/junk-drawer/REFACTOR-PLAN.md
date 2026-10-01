@@ -547,3 +547,138 @@ If only one afternoon is available: Phase 0.1–0.2, then 2.1, 2.7, 2.8 and
 the Phase 1 deletions. That is the leak, the two server costs that hit
 every page view, and ~400 lines of dead code, all with a screenshot and
 payload diff behind them.
+
+---
+
+# Outcome (2026-10-01) — what was done, what was decided, what is left
+
+Executed on branch `junk-drawer/refactor-plan` (49 commits over `main`
+46f197e, plus this note), by six parallel Opus agents in Wave 1 (one owner
+per file), three in Wave 2 (the consumer switch), one for the harness, with
+every branch reviewed and merged by the orchestrating session. Every
+commit is titled `… no visible change` except the one that says otherwise
+(the caret, below).
+
+## Verification
+
+`scripts/jd-regress/` (Phase 0) is built and committed: `capture.js` drives
+the real app in headless Chromium against the mock backend under a frozen
+server clock and seeded randomness, 56 scenes, ~175 s per capture; it
+writes screenshots, normalised markup, full computed styles (every element
+and pseudo-element), raw payloads with the `data.php` ETag, the
+`window.JD_*` surface and the console; `compare.js` diffs two captures and
+exits 0 only on identity. Two captures of the untouched checkout were
+identical, and three deliberately injected changes (a CSS value, an HTML
+attribute, a PHP JSON flag) were each caught. Every agent captured its own
+baseline before editing and compared after each commit.
+
+The whole branch against the pre-refactor baseline:
+
+| artifact | identical | different |
+|---|---:|---:|
+| screenshots (56) | 56 | 0 |
+| payloads (15, byte-strict) + `data.php` ETag | 15 | 0 |
+| console | identical | — |
+| markup (54) | 46 | 8 — all the filmstrip's hidden surplus cells, now empty (display:none; pixels identical) |
+| computed styles (54) | — | the only standard-property change anywhere is `transition-*` on the 70 `.rc-axcaret` pseudo-elements under reduced motion (decided, below); everything else is custom-property text (the new tokens) |
+| `JD_*` surface | — | gains exactly the planned exports and `JD_dark.stop` |
+
+Beyond the harness, agents ran targeted proofs for what it cannot see:
+real podium drags (87 snapshots, identical), the won-item restore
+(identical pile markup, attribute order included), the darkroom drift
+with motion on (live timers 6 + 0–66 → 6 + 1; letters minted/landed per
+column identical within the 0–40 ms landing jitter; nothing accumulates in
+a hidden tab), the folder's chart builders over synthetic data (84
+outputs, 0 differ), 44 backend write requests and the maintenance scripts
+against the original code (identical responses, tables and logs), the
+stylesheet's cascade order (0 same-selector collisions, 0 shadowed media
+declarations, 879 flipped equal-specificity pairs co-targeting no element).
+
+## Done
+
+- **Phase 0** — the harness (`scripts/jd-regress/`, dev-only).
+- **Phase 1** — every listed deletion: the tooltip, plate REPLAY and tie
+  keep-chooser subsystems and the retired states in jd-turn.js; the count
+  and grade-legend renderers in jd-core.js; dead locals; the dead CSS
+  selectors and tokens, the overridden `--pbase` block, the duplicate
+  `.jd-folder-card`, and the rules orphaned by the JS deletions
+  (`.jd-tt`, `.jd-pill*`, `.jd-turn-draw*`, `.jd-count`, `.jd-grade-*`).
+- **Phase 2** — 2.1 the drift-timer leak on close; 2.2 `JD_dark.stop(host)`
+  called after a landed swatch's fade; 2.3 one landing poll per sheet (it
+  still lands in a hidden tab, as the per-letter polls did); 2.4 the pile's
+  apply pass and `JD_enforceTurnCorner` read before they write; 2.5 the
+  podium drag hit-tests before moving the ghost, with the row/tray/tiers
+  cached per drag; 2.6 all listed hot-path items; 2.7 `jd_v()` memoised and
+  the build stamp computed once; 2.8 `data.php` single-item short-circuit,
+  slim-mode pricing skipped, one curated-submissions read for ETag and
+  overlay (ETag byte-identical), one `jd_ranks` read, `jd_taxonomy()`,
+  `jd_build_stamp()` memoised, the narrowed `jd-generate` SELECT.
+- **Phase 3** — jd-core exports (3.1/3.2) and every consumer switched
+  (Wave 2); the POST/consent/filing/response helpers in jd-turn.js (3.4);
+  the furniture skeleton (3.5, as one outer IIFE — the file's indentation
+  changed once; review that commit with `git show -w`); the folder's chart
+  helpers (3.6); the backend helpers, constants and comment corrections
+  (3.7; `art/junk-drawer/_version.php` is new and required by
+  `_assets.php` and `jd-build.php` — a partial `push-files.sh` upload
+  must include it; the deploy workflow does).
+- **Phase 4** — 4.1 tokens on `:root` with per-scrim aliases; 4.2 the twin
+  blocks grouped; 4.3 the 14 same-selector merges; 4.4 the safe media
+  merges; 4.5 the re-homes (plates left as is); 4.6 the repeated literals
+  named (`--jd-plate-paper`, `--jd-graph-rule`, `--jd-blueprint*`,
+  `--jd-ruling-ink`, `--jd-bench-gold*`, `--jd-card-shadow`, `--jd-x-room`,
+  `--jd-shadow-rest/lift`; the podium `--pbase/--pw` tangle untouched);
+  F13 the benched indicators under one banner; F17 `--t-title`.
+- **Docs** — CLAUDE.md (seven modules, the harness, the local PLAN files,
+  `--tstamp`), the schema doc, every stale comment the reviews named.
+
+## Decisions taken (the plan's §5, delegated to the session)
+
+- `--t-small` → `font-size: inherit` (render-identical; the token was
+  never defined). The `.rc-axcaret` reduced-motion rule was MOVED below its
+  base so it applies: the author's evident intent, invisible to anyone
+  without reduced motion, visible to those with it (the caret stops
+  animating). The one change in the branch that is not strictly identical;
+  the owner may want a VERSION line for it.
+- The persisted turn (`K_TURN`) stays; the owner-benched code stays where
+  it is, labelled; the backend rule disagreements (drawer vs ledger "shown"
+  rule; `jd-gen-svg`'s "on display" rule) are documented, not changed;
+  `jd_build_files()` gains its omitted files; `card-gallery.html` now loads
+  the filmstrip.
+- Two small deviations from the plan's letter, both toward strict identity:
+  `JD_reduced()` keeps one MediaQueryList (the rope asks per frame);
+  `data.php`'s hoisted rank read catches `Throwable` like the block it left.
+
+## Numbers
+
+| | before | after |
+|---|---:|---:|
+| modules + stylesheet, bytes | 873,766 | 885,237 |
+| gzip | 290,966 | 297,638 |
+| code without comments, bytes | 409,500 | 392,741 (−16.8 KB) |
+| code without comments, gzip | 101,929 | 100,278 |
+| comment share | 53% | 56% |
+
+Honest reading: the code got smaller and the hot paths cheaper, but the
+shipped file is slightly LARGER, because the agents wrote the house-style
+explanatory comments beside what they changed. Wire size was never going
+to move without §6.1; it is still the one lever for that (291 KB → ~100 KB
+gzipped) and still the owner's call.
+
+## Not done, on purpose
+
+- §6.1 deploy-time comment stripping, §4.7 moving CSS prose out, §6.2 cache
+  headers (production was unreachable to verify, and item URLs carry no
+  cache token).
+- F23 constants: converted in jd-config, data.php, jd-rate, jd-item-rate,
+  jd-bench-queue, jd-ledger, jd-analytics; not yet in jd-curated-sync,
+  jd-generate, jd-bench-run, jd-harvest, jd-gen-svg, jd-inventory.
+- The filmstrip still runs 13 computed-style walks per mount (§3.2's
+  "pre-walked plan" step); the drift lane bag's shuffle (same algorithm in
+  practice) was left per the integer-source rule; jd-harvest's bounded N+1.
+- Pre-existing, noticed, untouched: `scripts/jd-cost-probe.php` references
+  `JD_MODEL_TRIO`, which no longer exists (it would crash); `jd-rate.php`
+  still files `kind='flag'` rows although the schema doc says nothing
+  does; jd-harvest's "missing jd_ranks" guard cannot run (the prepare is
+  outside the try); the about page re-renders its hidden report-card pane
+  ~8×/s for 5 s after load; `about.css` has a dead `.jd-about .jd-back`.
+- Harness: the `turn-darkroom-phone` words-iframe flake (README).

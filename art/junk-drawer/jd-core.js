@@ -2522,7 +2522,7 @@ var JD_admin = (function () {
      document order, each as { el, L (measured length, min 4), stroked,
      filled, fo (fill-opacity), op (opacity) }. The engine schedules from
      this list and nothing else, so a control that needs the run's marks
-     (the filmstrip) gets exactly them by walking the same way. Walk the
+     (the filmstrip) gets exactly them by calling this walk. Walk the
      PLAIN drawing: once a run has dressed the elements, the stroked ones
      carry an inline dasharray (and read as pre-dashed) and the delayed
      fills and fades hold their opacity at 0, so a walk made then drops
