@@ -2487,9 +2487,10 @@ var JD_admin = (function () {
    mostly down; pre-dashed strokes and unmeasurables (text, use) fall back
    to a fade. Each element's share of the run scales with the square root of
    its length, so one long spine can't starve the small bones.
-   Two customers: the report card's plate (open / response flip / REPLAY)
-   and the turn's reveal, where the fresh drawings' first appearance is the
-   whole point. opts: { force: play even under prefers-reduced-motion — an
+   Three customers: the report card's plate (on open, and the enlargement's
+   REDRAW), the turn's reveal, where the fresh drawings' first appearance is
+   the whole point, and the filmstrip (jd-filmstrip.js), which schedules its
+   frames from this engine's own walk. opts: { force: play even under prefers-reduced-motion — an
    explicit request is not ambient animation; secs: run length — omit it
    and the run is paced by the DRAWING (below) }. Returns the seconds the
    run will take (truthy), or false if it didn't play. The inline
