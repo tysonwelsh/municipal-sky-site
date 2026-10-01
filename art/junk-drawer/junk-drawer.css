@@ -4928,6 +4928,34 @@ html.jd-folder-open { overflow: hidden; }
    panel keeps its key and its full box, so nth-child no longer knows */
 .fx-panel--cropped svg { max-width: 137.5px; }
 .fx-panel--cropped .fx-key { display: none; }
+/* ISSUE RATES (owner, 2026-09-30, mockup-47): the category panels draw a
+   severity-split bar on one 0-100% ruler, a whisker for the 95% interval,
+   and print a row's counts under its panel when it is tapped. */
+.fx-legend {
+  display: flex; flex-wrap: wrap; gap: 4px 14px;
+  margin: -6px 0 12px; padding: 0; list-style: none;
+  font-family: var(--fmono); font-size: 0.6rem; color: var(--fink-2);
+}
+.fx-legend li { display: inline-flex; align-items: center; gap: 5px; }
+.fx-sw { display: inline-block; width: 14px; height: 7px; }
+.fx-sw-ci { width: 16px; height: 8px; }
+.fx-legend-tap { color: var(--fink-3); font-style: italic; }
+.fx-track-bar { fill: rgba(74, 53, 18, 0.075); }
+.fx-mid { stroke: var(--frule-2); stroke-width: 0.6; }
+/* the whisker: grey and unhaloed, quieter than the bars (owner, 2026-10-01) */
+.fx-ci { fill: none; stroke: #7a746a; stroke-width: 0.75; }
+.fx-row { cursor: pointer; outline: none; }
+.fx-row-hit { fill: transparent; }
+.fx-row.is-on .fx-row-hit { fill: rgba(74, 53, 18, 0.07); }
+.fx-row:focus-visible .fx-row-hit {
+  fill: rgba(74, 53, 18, 0.07); stroke: var(--fink); stroke-width: 0.6; stroke-dasharray: 1.5 1.5;
+}
+.fx-readout {
+  margin: 3px 0 0; min-height: 0;
+  font-family: var(--fmono); font-size: 0.58rem; line-height: 1.45;
+  color: var(--fink-2); font-variant-numeric: tabular-nums;
+}
+.fx-readout:empty { display: none; }
 @media (max-width: 900px) {
   .fx-axgrid { grid-template-columns: 1.32fr 1fr; }
 }

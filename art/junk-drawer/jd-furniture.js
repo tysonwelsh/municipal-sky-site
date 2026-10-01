@@ -849,16 +849,11 @@
   function indexModels() {
     mmap = {};
     /* the marked set: every model that will put a colored rect or dot on
-       the page. The axes contribute only rows that survive MIN_N, because a
-       dropped row draws nothing and an ink spent on it is an ink wasted. */
+       the page. The axes no longer do (2026-09-30): their bars are coloured
+       by severity, the same for every model, and the rows are named. */
     var marked = {};
     (data.cost || []).forEach(function (c) { marked[c.model_id] = 1; });
     (data.firsts || []).forEach(function (f) { marked[f.model_id] = 1; });
-    (data.axes || []).forEach(function (ax) {
-      (ax.models || []).forEach(function (r) {
-        if ((+r.n || 0) >= MIN_N) marked[r.model_id] = 1;
-      });
-    });
     var ink = 0;
     (data.models || []).forEach(function (m) {
       mmap[m.model_id] = {
@@ -917,6 +912,39 @@
      panel shares the constant, so the rulers stay geometrically identical. */
   /* below this a mean is one person's opinion, not a reading */
   var MIN_N = 3;
+
+  /* ISSUE RATES (owner, 2026-09-30): one category's rank counts (the
+     endpoint's per-axis 'hist', rank => count) split into the two segments
+     the charts draw. On a problem axis the top rank is clean, the rank below
+     it is a small problem and everything lower a big one (on Understanding
+     Assignment's four levels: Mostly = small, Somewhat or Barely = big). On
+     a HIT axis (je ne sais quoi, which measures what goes right) the top
+     rank is "has it" and the one below "just a hint". strong is the dark
+     segment, light the pale one; lo/hi are the 95% Wilson interval on the
+     whole bar. Exported for /about/, which draws the same numbers. */
+  var HIT_AXES = { jnsq: 1 };
+  function axisRates(hist, points, axisId) {
+    var n = 0, top = +points || 3, strong = 0, light = 0;
+    Object.keys(hist || {}).forEach(function (k) {
+      var rank = Math.round(+k), c = +hist[k] || 0;
+      n += c;
+      if (HIT_AXES[axisId]) {
+        if (rank === top) strong += c;
+        else if (rank === top - 1) light += c;
+      } else if (rank === top - 1) light += c;
+      else if (rank < top - 1) strong += c;
+    });
+    var total = strong + light, lo = 0, hi = 0;
+    if (n) {
+      var z = 1.959964, p = total / n, z2 = z * z, den = 1 + z2 / n;
+      var mid = (p + z2 / (2 * n)) / den;
+      var half = z * Math.sqrt(p * (1 - p) / n + z2 / (4 * n * n)) / den;
+      lo = Math.max(0, mid - half); hi = Math.min(1, mid + half);
+    }
+    return { n: n, strong: strong, light: light, total: total,
+             rate: n ? total / n : 0, lo: lo, hi: hi, hit: !!HIT_AXES[axisId] };
+  }
+  window.JD_axisRates = axisRates;
 
   function num(n) {
     return String(Math.round(+n || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
@@ -1136,29 +1164,49 @@
       ' and up' + notPlotted(dropped), svg);
   }
 
-  /* THE FOUR AXES — small multiples. models[] arrives in the global models[]
-     order inside every panel, deliberately, and is NOT re-sorted here: a row
-     has to mean the same model in all four panels or the comparison the
-     panels exist for is a lie. The scales are NEVER normalized together —
-     a 3-point axis and a 4-point axis are different rulers, and each panel
-     states its own.
+  /* THE FOUR AXES — issue rates, as small multiples (owner, 2026-09-30,
+     from mockup-47). The folder used to plot each category's AVERAGE rank;
+     it now counts how often each model had a problem, which is what the
+     categories were built to find ("each designed to isolate a single type
+     of failure"). Why a rate and not a mean: the levels are labels, not
+     measurements, and a mean folds how OFTEN and how BAD into one figure —
+     many small slips and a few ruined drawings can land on the same 2.3.
+
+     - Every panel is one 0–100% ruler, so for the first time the four
+       categories compare with each other, not only within themselves.
+     - The bar is split by severity: the dark segment at the base is the big
+       problems, the light one the small. The printed figure is the whole
+       bar (any problem). Understanding Assignment has four levels, so its
+       "Mostly Understands" is the small problem and Somewhat or Barely the
+       big one (JD_axisRates below).
+     - Je ne sais quoi measures what goes RIGHT, so it is counted the other
+       way, in green: the hit rate, Has it (dark) plus Just a hint (light).
+     - One colour pair per meaning, the same for every model (owner call):
+       the model names label the rows, so the bars need no model ink.
+     - The whisker is a 95% Wilson interval on the whole bar. At these n it
+       is wide on purpose: bars whose whiskers overlap are not a difference.
+     - Tapping a row prints its counts under the panel (the delegated
+       handler in buildDialog).
+
+     models[] still arrives in the global order in every panel and is NOT
+     re-sorted: a row has to mean the same model in all four panels.
 
      THE KEY GUTTER IS PAID FOR ONCE (design review, 2026-08-28). The key is
-     still drawn into EVERY panel, so all four keep byte-identical geometry
-     — that is what makes them small multiples — but only the lead panel
-     shows the gutter: panels 2–4 crop it out of their viewBox at PLAB, so
-     their whole width goes to the ruler instead of to reserved white space.
-     Same user units, same ruler, three-quarters less waste; the CSS caps
-     each panel's rendered width in the same proportion, so the px-per-unit
-     is identical across all four and the type does not change size from
-     panel to panel.
+     drawn into EVERY panel, so all four keep byte-identical geometry, but on
+     a wide folder only the lead panel shows the gutter: panels 2–4 crop it
+     out of their viewBox at PLAB. Below 900px every panel keeps its key.
 
-     MIN_N applies here too: a row whose n is 1 or 2 is dropped before the
-     loop, so a panel never plots a dot it cannot stand behind, and the
+     MIN_N applies here too: a row whose n is 1 or 2 is dropped, and the
      dropped models are named in the card's subtitle. */
+  var ISSUE_BIG = RAMP[0], ISSUE_SMALL = '#cf6e56';   /* Utility red, and a lighter brick */
+  var HIT_HAS = RAMP[4], HIT_HINT = '#6ea456';        /* Prime green, and a lighter moss */
+  function pct(x) { return Math.round(x * 100) + '%'; }
   function axesHTML() {
     var axes = data.axes || [];
     if (!axes.length) return '';
+    function plottable(r) {
+      return (+r.n || 0) >= MIN_N && axisRates(r.hist, 3).n > 0;
+    }
     /* worst case per model across the four axes — if even its largest n is
        under the floor, the model is nowhere on this card and is named */
     var thin = {}, dropped = [];
@@ -1174,79 +1222,90 @@
     Object.keys(thin).forEach(function (id) {
       if (thin[id] !== -1) dropped.push({ id: id, n: thin[id] });
     });
-    /* when NO model clears the floor on ANY axis, the card omits itself —
-       the empty-payload discipline firsts and the grade book already keep.
-       Four bare rulers with no dots read as a rendering failure, and a
-       young database (or the dev sandbox) sits in exactly that state. */
-    var anyRow = axes.some(function (ax) {
-      return (ax.models || []).some(function (r) { return (+r.n || 0) >= MIN_N; });
-    });
+    var anyRow = axes.some(function (ax) { return (ax.models || []).some(plottable); });
     if (!anyRow) {
       /* stays up with the shortfall stated (2026-09-10, the folder's
          return) — four bare rulers would read as a failure, no card at all
          reads as a missing chart; a sentence reads as the truth */
       return cardHTML('fx-axes', 'The four categories',
-        'no model has ' + MIN_N + ' axis ratings on four-model turns under ' +
-        'the current rubric yet' + notPlotted(dropped), '');
+        'no model has ' + MIN_N + ' category ratings on four-model turns ' +
+        'under the current rubric yet' + notPlotted(dropped), '');
     }
-    /* KEYS ON EVERY PANEL BELOW 900px (owner, 2026-09-11): the crop that
-       pays for the key gutter once only reads when the four panels sit in
-       one row and the lead panel labels the rest. Reflowed two-up or
-       stacked, a panel without names is four dots and a guess — so each
-       panel carries its own key there. The crop is a class the CSS follows
-       (fx-panel--cropped), decided here at render, and the folder
-       re-renders when the width crosses the line (see the media listener
-       below render()). Desktop is unchanged. */
+    /* KEYS ON EVERY PANEL BELOW 900px (owner, 2026-09-11) — see render()'s
+       media listener, which re-renders when the width crosses the line */
     var keysEverywhere = !!(window.matchMedia && window.matchMedia('(max-width: 900px)').matches) ||
-      /* the /about/ walkthrough lays the four panels two by two in a 660px
-         card whatever the viewport, and wants every panel whole and keyed
-         (2026-09-15) — the same shape a narrow viewport gets */
       document.documentElement.classList.contains('jd-about-page');
+    var BARH = 7;
     var panels = axes.map(function (ax, pi) {
       var pts = +ax.points || 3;
+      var hit = !!HIT_AXES[ax.axis_id];
       var cropped = pi > 0 && !keysEverywhere;
-      var rows = (ax.models || []).filter(function (r) {
-        return (+r.n || 0) >= MIN_N;
-      });
-      /* no scale labels under the rulers and no "of 4" in the heading
-         (owner, 2026-09-10): the dots and their printed values are the
-         reading, so the box ends 4 units under the last row instead of
-         leaving 14 for a line of type */
-      var h = 2 + rows.length * PROWH + 4, s = '', key = '', alt = [];   /* top pad 8 → 2 (owner, 2026-09-29: the plot sits under its head) */
+      var rows = (ax.models || []).filter(plottable);
+      var h = 2 + rows.length * PROWH + 4, s = '', key = '', alt = [];
+      /* the 50% hairline, behind every row */
+      s += '<line x1="' + (PX0 + PXW / 2) + '" y1="2" x2="' + (PX0 + PXW / 2) +
+           '" y2="' + (h - 4) + '" class="fx-mid"/>';
       rows.forEach(function (r, i) {
-        var y = 2 + i * PROWH + PROWH / 2;
-        var v = Math.max(1, Math.min(pts, +r.avg || 1));
-        var x = PX0 + PXW * (pts > 1 ? (v - 1) / (pts - 1) : 1);
-        s += '<line x1="' + PX0 + '" y1="' + y + '" x2="' + (PX0 + PXW) +
-             '" y2="' + y + '" class="fx-track"/>' +
-             '<circle cx="' + x.toFixed(1) + '" cy="' + y + '" r="3.4" fill="' +
-             mColor(r.model_id) + '"/>' +
+        var q = axisRates(r.hist, pts, ax.axis_id);
+        var y = 2 + i * PROWH + PROWH / 2, by = y - BARH / 2;
+        var ws = PXW * q.strong / q.n, wt = PXW * q.total / q.n;
+        var read = mLabel(r.model_id) + ' — ' + (hit ? 'hit rate ' : 'issue rate ') +
+          pct(q.rate) + ' (95% ' + pct(q.lo) + '–' + pct(q.hi) + ') · ' +
+          (hit ? 'has it ' + q.strong + ', a hint ' + q.light + ', missed '
+               : 'big ' + q.strong + ', small ' + q.light + ', clean ') +
+          (q.n - q.total) + ' · n ' + num(q.n);
+        s += '<g class="fx-row" tabindex="0" role="button" data-read="' + esc(read) +
+             '" aria-label="' + esc(read) + '">' +
+             '<rect class="fx-row-hit" x="0" y="' + (y - PROWH / 2) +
+             '" width="' + PW + '" height="' + PROWH + '"/>' +
+             '<rect class="fx-track-bar" x="' + PX0 + '" y="' + by + '" width="' + PXW +
+             '" height="' + BARH + '"/>';
+        if (ws > 0) {
+          s += '<rect x="' + PX0 + '" y="' + by + '" width="' + ws.toFixed(2) +
+               '" height="' + BARH + '" fill="' + (hit ? HIT_HAS : ISSUE_BIG) + '"/>';
+        }
+        /* the pale segment butts straight onto the dark one, no seam
+           (owner, 2026-10-01) */
+        var lx = PX0 + ws, lw = wt - ws;
+        if (lw > 0.3) {
+          s += '<rect x="' + lx.toFixed(2) + '" y="' + by + '" width="' + lw.toFixed(2) +
+               '" height="' + BARH + '" fill="' + (hit ? HIT_HINT : ISSUE_SMALL) + '"/>';
+        }
+        /* the whisker: a thin grey line, capped, no halo (owner, 2026-10-01) */
+        var x1 = (PX0 + PXW * q.lo).toFixed(2), x2 = (PX0 + PXW * q.hi).toFixed(2);
+        var d = 'M' + x1 + ' ' + (y - 2.6) + 'v5.2M' + x1 + ' ' + y + 'H' + x2 +
+                'M' + x2 + ' ' + (y - 2.6) + 'v5.2';
+        s += '<path d="' + d + '" class="fx-ci"/>' +
              '<text x="' + (PW - 2) + '" y="' + (y + 2.6) +
-             '" text-anchor="end" class="fx-t-axval">' + v.toFixed(1) + '</text>';
-        key += '<text x="' + PLAB + '" y="' + (y + 2.6) +
-               '" text-anchor="end" class="fx-t-key">' +
-               esc(keyFor(r.model_id)) + '</text>';
-        alt.push(mLabel(r.model_id) + ' ' + v.toFixed(1));
+             '" text-anchor="end" class="fx-t-axval">' + pct(q.rate) + '</text>' +
+             '<text x="' + PLAB + '" y="' + (y + 2.6) +
+             '" text-anchor="end" class="fx-t-key fx-key">' +
+             esc(keyFor(r.model_id)) + '</text></g>';
+        alt.push(mLabel(r.model_id) + ' ' + pct(q.rate) + ', 95% interval ' +
+          pct(q.lo) + ' to ' + pct(q.hi));
       });
-      /* the lead panel keeps the whole box, key gutter and all; every panel
-         after it starts its viewBox at the gutter's right edge, which shows
-         the identical ruler and simply never renders the key it carries
-         (one row of four across the full card, owner 2026-09-10) */
       var vb = !cropped ? '0 0 ' + PW + ' ' + h
                         : PLAB + ' 0 ' + (PW - PLAB) + ' ' + h;
-      /* the heading is the axis name alone (owner, 2026-09-10 — the "of 4"
-         went with the scale labels); the aria-label still states the ruler */
       return '<div class="fx-panel' + (cropped ? ' fx-panel--cropped' : '') + '"><h4>' + esc(ax.label) + '</h4>' +
         '<svg viewBox="' + vb + '" role="img" aria-label="' +
-        esc(ax.label + ', 1 to ' + pts + '. ' + alt.join('. ')) + '">' +
-        '<g class="fx-key">' + key + '</g>' + s + '</svg></div>';
+        esc(ax.label + ', ' + (hit ? 'hit rate' : 'issue rate') + '. ' + alt.join('. ')) + '">' +
+        s + '</svg><p class="fx-readout" aria-live="polite"></p></div>';
     }).join('');
+    function sw(c, label) {
+      return '<li><i class="fx-sw" style="background:' + c + '"></i>' + esc(label) + '</li>';
+    }
+    var legend = '<ul class="fx-legend">' +
+      sw(ISSUE_BIG, 'big problem') + sw(ISSUE_SMALL, 'small problem') +
+      sw(HIT_HAS, 'has it') + sw(HIT_HINT, 'just a hint') +
+      '<li><svg class="fx-sw-ci" viewBox="0 0 16 8" aria-hidden="true">' +
+      '<path d="M1 1v6M1 4h14M15 1v6" class="fx-ci"/></svg>95% interval</li>' +
+      '<li class="fx-legend-tap">tap a bar for its counts</li></ul>';
     return cardHTML('fx-axes', 'The four categories',
-      'average per axis on four-model turns, every rating filed under the ' +
-      'current rubric, live axes only, n ' + MIN_N +
-      ' and up — each panel is its own ruler and the scales are never ' +
-      'pooled' + notPlotted(dropped),
-      '<div class="fx-axgrid">' + panels + '</div>');
+      'issue rate per category on four-model turns — how often a small or ' +
+      'big problem was filed — and for je ne sais quoi the hit rate; every ' +
+      'rating under the current rubric, live axes only, n ' + MIN_N +
+      ' and up' + notPlotted(dropped),
+      legend + '<div class="fx-axgrid">' + panels + '</div>');
   }
 
   /* THE TURN TABLE (owner, 2026-09-10): one row per four-model turn on
@@ -1400,6 +1459,38 @@
       if (e.target === scrim) close();
     });
     scrim.querySelector('.jd-folder-close').addEventListener('click', close);
+    /* the category panels' readout (2026-09-30): tapping, focusing or
+       hovering a row prints its counts under its own panel, and marks the
+       row. Delegated here because render() rebuilds the panels. */
+    function readRow(row) {
+      var panel = row.closest('.fx-panel');
+      if (!panel) return;
+      var out = panel.querySelector('.fx-readout');
+      Array.prototype.forEach.call(panel.querySelectorAll('.fx-row.is-on'), function (r) {
+        r.classList.remove('is-on');
+      });
+      row.classList.add('is-on');
+      if (out) out.textContent = row.getAttribute('data-read') || '';
+    }
+    function rowOf(e) {
+      var t = e.target;
+      return t && t.closest ? t.closest('.fx-row') : null;
+    }
+    bodyEl.addEventListener('click', function (e) {
+      var row = rowOf(e); if (row) readRow(row);
+    });
+    bodyEl.addEventListener('focusin', function (e) {
+      var row = rowOf(e); if (row) readRow(row);
+    });
+    bodyEl.addEventListener('pointerover', function (e) {
+      if (e.pointerType !== 'mouse') return;
+      var row = rowOf(e); if (row) readRow(row);
+    });
+    bodyEl.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      var row = rowOf(e); if (!row) return;
+      e.preventDefault(); readRow(row);
+    });
   }
 
   function render() {

@@ -1263,6 +1263,40 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
 .jd-about .jdc-barrow .jdc-track { height: 14px; }
 .jd-about .jdc-endval { position: absolute; top: 50%; transform: translateY(-50%); line-height: 1; white-space: nowrap; }
 
+/* THE CATEGORIES AS ISSUE RATES (owner, 2026-09-30): one 0-100% ruler per
+   panel, a severity-split bar (dark = big problem / has it, pale = small
+   problem / a hint), the data end rounded like the cost bars, and a thin
+   whisker for the 95% interval, grey and unhaloed (owner, 2026-10-01) */
+.jd-about .jdc-rates .jdc-panel { --jdc-val: 2.7rem; }
+.jd-about .jdc-multiples.jdc-rates, .jd-about .jdc-legend { --jdc-ci: #7a746a; }
+.jd-about .jdc-rtrack {
+  position: absolute; left: 0; right: 0; top: 50%;
+  height: 10px; margin-top: -5px; background: rgba(55, 65, 79, 0.07);
+}
+.jd-about .jdc-mid {
+  position: absolute; left: 50%; top: 0; bottom: 0; width: 1px;
+  background: var(--jdc-hair);
+}
+.jd-about .jdc-seg { position: absolute; top: 50%; height: 10px; margin-top: -5px; }
+.jd-about .jdc-seg-end { border-radius: 0 3px 3px 0; }
+.jd-about .jdc-ci {
+  position: absolute; top: 50%; height: 9px; margin-top: -4.5px;
+  box-sizing: border-box;
+  border-left: 1.2px solid var(--jdc-ci); border-right: 1.2px solid var(--jdc-ci);
+  background: linear-gradient(var(--jdc-ci), var(--jdc-ci)) center / 100% 1.2px no-repeat;
+}
+.jd-about .jdc-legend {
+  display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0 0 18px;
+  font-size: 0.8rem; color: var(--jdc-ink);
+}
+.jd-about .jdc-key { display: inline-flex; align-items: center; gap: 6px; }
+.jd-about .jdc-key i { display: inline-block; width: 16px; height: 8px; }
+.jd-about .jdc-key i.jdc-key-ci {
+  height: 9px; box-sizing: border-box;
+  border-left: 1.2px solid var(--jdc-ci); border-right: 1.2px solid var(--jdc-ci);
+  background: linear-gradient(var(--jdc-ci), var(--jdc-ci)) center / 100% 1.2px no-repeat;
+}
+
 /* THE CHARTS ON A PHONE. The pane is ~360px wide and 66vh tall, and a 700px
    chart scaled into it came out at half size. Here the chart lays out at the
    pane's own width instead: a narrower name column, and the four category
@@ -1278,6 +1312,8 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
   .jd-about .jdc-sub { font-size: 0.9rem; }
   .jd-about .jdc-multiples { grid-template-columns: 1fr; gap: 14px; }
   .jd-about .jdc-panel, .jd-about .jdc-panel.is-right { --jdc-name: 7.2rem; }
+  .jd-about .jdc-rates .jdc-panel { --jdc-val: 2.8rem; }
+  .jd-about .jdc-legend { font-size: 0.74rem; gap: 3px 12px; margin-bottom: 12px; }
   .jd-about .jdc-panel.is-right .jdc-row { grid-template-columns: var(--jdc-name) 1fr var(--jdc-val); column-gap: 8px; }
   .jd-about .jdc-panel.is-right .jdc-ptitle { margin-left: calc(var(--jdc-name) + 8px); }
   .jd-about .jdc-panel.is-right .jdc-name { visibility: visible; }
