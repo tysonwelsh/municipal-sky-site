@@ -46,6 +46,10 @@
    so they are prefixed at their call sites too. */
 var JD_API = '';
 
+/* the collection's one read endpoint ({taxonomy, items[]}), root-absolute
+   like every path here — prefixed with JD_API where it is fetched */
+var JD_DATA_URL = '/art/junk-drawer/data.php';
+
 /* sent in every POST body and validated server-side against a small enum;
    never sniffed from User-Agent, which in a webview reads as web forever */
 var JD_CLIENT = 'web';
@@ -72,6 +76,32 @@ var JD_CONSENT = {
   check: 'I understand — send my words to Anthropic, OpenAI, Moonshot AI and Google'
 };
 
+/* a random v4 UUID, lowercase — the device code below is one, and a turn's
+   client_ref is minted the same way. crypto.randomUUID is present at the
+   iOS 16 floor but only in a secure context, so a harness on a bare IP gets
+   the getRandomValues path and Math.random is the last resort; all three
+   print the same 8-4-4-4-12 shape with the version nibble 4 and the
+   variant nibble 8–b (the shape JD_deviceRef's check accepts). */
+function JD_uuid() {
+  try {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    if (window.crypto && crypto.getRandomValues) {
+      var b = new Uint8Array(16);
+      crypto.getRandomValues(b);
+      b[6] = (b[6] & 0x0f) | 0x40; b[8] = (b[8] & 0x3f) | 0x80;
+      var h = [], i;
+      for (i = 0; i < 16; i++) h.push((b[i] + 0x100).toString(16).slice(1));
+      return h.slice(0, 4).join('') + '-' + h.slice(4, 6).join('') + '-' +
+        h.slice(6, 8).join('') + '-' + h.slice(8, 10).join('') + '-' +
+        h.slice(10, 16).join('');
+    }
+  } catch (e) {}
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    var r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+
 /* THE DEVICE CODE (owner, 2026-09-10): one random UUID per browser, made
    the FIRST TIME a turn is sent — never on a page view — and kept in
    localStorage, sent with each turn as device_ref so the turns and grades
@@ -86,12 +116,7 @@ function JD_deviceRef(create) {
   try { v = localStorage.getItem(JD_DEVICE_KEY); } catch (e) {}
   if (v && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(v)) return v;
   if (!create) return null;
-  var b = new Uint8Array(16);
-  if (window.crypto && crypto.getRandomValues) crypto.getRandomValues(b);
-  else for (var i = 0; i < 16; i++) b[i] = Math.floor(Math.random() * 256);
-  b[6] = (b[6] & 0x0f) | 0x40; b[8] = (b[8] & 0x3f) | 0x80;
-  var h = Array.prototype.map.call(b, function (x) { return (x < 16 ? '0' : '') + x.toString(16); }).join('');
-  v = h.slice(0, 8) + '-' + h.slice(8, 12) + '-' + h.slice(12, 16) + '-' + h.slice(16, 20) + '-' + h.slice(20);
+  v = JD_uuid();
   try { localStorage.setItem(JD_DEVICE_KEY, v); } catch (e) {}
   return v;
 }
@@ -165,7 +190,25 @@ function JD_paperIcon() {
     '<path d="M5.5 1.5v13M10.5 1.5v13M1.5 5.5h13M1.5 10.5h13" stroke="currentColor" stroke-opacity="0.38" stroke-width="0.8"/>' +
     '</svg>';
 }
-window.JD_paper = { get: JD_paperGet, set: JD_paperSet, icon: JD_paperIcon };
+window.JD_paper = {
+  get: JD_paperGet, set: JD_paperSet, icon: JD_paperIcon,
+  /* the swatch's class suffix for the current paper: ' is-blueprint' or ''.
+     It asks window.JD_paper.get(), never JD_paperGet directly, so a page
+     that swaps in its own get (the /about/ walkthrough pins graph paper)
+     is obeyed here too — as long as the object it swaps in carries cls
+     along. */
+  cls: function () { return window.JD_paper.get() === 'blueprint' ? ' is-blueprint' : ''; }
+};
+
+/* THE GRADE RAMP, worst → best: the five inks a grade prints in (rank 1 …
+   5), matched to the report card's rc-g1..5 in junk-drawer.css, which keeps
+   its own literals */
+var JD_GRADE_RAMP = ['#8f1d12', '#b0490f', '#a06200', '#46761a', '#0b6a1f'];
+
+/* THE ✕ — the drawn close mark (.jd-x-mark in the stylesheet) inside every
+   dialog's close button and the enlargement's, the same everywhere */
+var JD_X_MARK = '<svg class="jd-x-mark" viewBox="0 0 18 18" aria-hidden="true" focusable="false">' +
+  '<path d="M1 1 17 17M17 1 1 17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
 
 /* the haptics shim (APP constraint 8): one site to route through, silent
    where the API is absent (iOS Safari has no vibrate at all) */
@@ -217,6 +260,27 @@ function JD_byId(list, id) {
   return null;
 }
 
+/* the taxonomy's LIVE axes, in filed order: a defunct axis stays in the
+   taxonomy for the responses graded under it, but no surface asks it */
+function JD_liveAxes(tax) {
+  return ((tax || {}).axes || []).filter(function (a) { return !a.defunct; });
+}
+
+/* a size tier's box (cqmin) by id, from taxonomy.sizeTiers — the first
+   tier with that id, like JD_byId — or null when none is registered */
+function JD_tierBox(tax, id) {
+  var t = JD_byId((tax || {}).sizeTiers, id);
+  return t ? t.box : null;
+}
+
+/* a copy of a taxonomy scale (the grades, an axis's values) best first:
+   higher rank is better (contract guarantee 1), a missing rank sorts as 0 */
+function JD_byRankDesc(list) {
+  return (list || []).slice().sort(function (a, b) {
+    return (b.rank || 0) - (a.rank || 0);
+  });
+}
+
 /* THE HOUSE FOLD: FNV-1a of a string to a uint32, then xorshift32 from it.
    Seeds the darkroom's generated indicators (a plotted circuit, the
    scatterword's flights, the honest bar's climb, the watch's time, the
@@ -240,6 +304,18 @@ function JD_xorshift(seed) {
     return st / 4294967296;
   };
 }
+/* Fisher–Yates, in place; returns `a`. `rnd` is any [0,1) source — a
+   JD_xorshift where a deal has to come out the same every time — and
+   defaults to Math.random. One draw per position, last to second, so the
+   same run of rnd() values always deals the same order. */
+function JD_shuffle(a, rnd) {
+  rnd = rnd || Math.random;
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(rnd() * (i + 1)), t = a[i];
+    a[i] = a[j]; a[j] = t;
+  }
+  return a;
+}
 
 /* THE LAYERS AT LOAD (owner, 2026-09-10; clarified the same day): when the
    drawer opens, the extra-large objects lie on the floor, the large ones on
@@ -251,6 +327,18 @@ function JD_xorshift(seed) {
    its own stacking context (z 2 in the well), so these numbers never
    compete with the tag / elastic / picked-item sandwich (70–72). */
 var JD_Z_BAND = { xl: 0, l: 10000, other: 20000 };
+
+/* THE SCATTER MAP'S NUMBERS (see the loader's SCATTER): where everything in
+   the pile lies is one map in JD_store under this key — the scatter, plus
+   the visitor's won items under their gen_id and the furniture's seats.
+   v2: area-normalized sizes — v1 positions were clamped against the old
+   width-only footprints. */
+var JD_SCATTER_KEY = 'jd-scatter-v2';
+/* keep item centres at least this far (a fraction of the well) off the
+   well's edge — the wall clearance every seat in the pile keeps */
+var JD_SCATTER_INSET = 0.012;
+/* the scatter's rotation range, ± degrees */
+var JD_ROT_MAX = 34;
 function JD_zBand(el) {
   var t = el && el.dataset ? el.dataset.tier : '';
   return t === 'xl' || t === 'l' ? t : 'other';
@@ -264,6 +352,16 @@ function JD_reduced() {
     return !!(window.matchMedia &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   } catch (e) { return false; }
+}
+
+/* replay a class's CSS animation from its first frame: take the class off,
+   read offsetWidth so the browser commits the class-less style (without the
+   read, the remove and the add collapse into no change at all), put it
+   back */
+function JD_restart(el, cls) {
+  el.classList.remove(cls);
+  void el.offsetWidth;
+  el.classList.add(cls);
 }
 
 /* THE FURNITURE'S ARTWORK FETCH — one loader for the turn object, the
@@ -483,8 +581,9 @@ var JD_admin = (function () {
      the ONLY way to take a turn) */
   var turnBox = null;
   /* tier box per sizeClass, in cqmin. Fallback only — the live boxes come
-     from taxonomy.sizeTiers at load (see sizeBoxes), so the scale is
-     data-driven. */
+     from taxonomy.sizeTiers at load (see boxFor), so the scale is
+     data-driven; a load that fails seats the furniture on these (see the
+     .catch at the loader's foot). */
   var BASE = { xs: 6, s: 9, m: 15.5, l: 22, xl: 30 };
   /* THE TIER RULER, and why it is declared all the way out here (2026-08-28,
      found while wiring the analytics folder onto the same line): it is
@@ -536,21 +635,14 @@ var JD_admin = (function () {
      entry.placement blocks and the old MOBILE_POUR table — desktop and mobile
      now share one computed layout, and nobody hand-places items. */
   var SCATTER = {
-    key: 'jd-scatter-v2',   /* v2: area-normalized sizes — v1 positions were
-                               clamped against the old width-only footprints */
+    key: JD_SCATTER_KEY,      /* 'jd-scatter-v2' — see JD_SCATTER_KEY */
     jitter: 0.62,   /* random offset as a fraction of the cell; >0.5 lets
                        neighbours cross and cluster → the looser pile */
-    rotMax: 34,     /* rotation range, ± degrees */
-    inset: 0.012    /* keep item centres at least this far off the well edge */
+    rotMax: JD_ROT_MAX,       /* rotation range, ± degrees */
+    inset: JD_SCATTER_INSET   /* keep item centres at least this far off the
+                                 well edge */
   };
 
-  function shuffle(a) {
-    for (var i = a.length - 1; i > 0; i--) {
-      var j = Math.floor(Math.random() * (i + 1)), t = a[i];
-      a[i] = a[j]; a[j] = t;
-    }
-    return a;
-  }
   function seq(n) { var a = [], i; for (i = 0; i < n; i++) { a.push(i); } return a; }
 
   /* Namespace one inlined copy of an SVG: prefix every id it declares and
@@ -795,8 +887,8 @@ var JD_admin = (function () {
     var N = els.length;
     var cols = Math.max(1, Math.round(Math.sqrt(N * (W / H))));
     var rows = Math.max(1, Math.ceil(N / cols));
-    var cells = shuffle(seq(rows * cols));   /* random item -> cell mapping */
-    var zs = shuffle(seq(N));                /* random, distinct stack order */
+    var cells = JD_shuffle(seq(rows * cols));   /* random item -> cell mapping */
+    var zs = JD_shuffle(seq(N));                /* random, distinct stack order */
     var cellW = 1 / cols, cellH = 1 / rows, out = {};
     els.forEach(function (el, i) {
       var wpx = (parseFloat(el.style.getPropertyValue('--w')) || BASE.m) / 100 * MIN;
@@ -966,7 +1058,7 @@ var JD_admin = (function () {
          is asked today. Retired axes still exist in the taxonomy for the
          old responses that carry their grades (the report card is where
          that history surfaces, when it lands). */
-      var axes = (tax.axes || []).filter(function (ax) { return !ax.defunct; });
+      var axes = JD_liveAxes(tax);
       /* a list marked data-summary (the /about/ walkthrough) introduces the
          taxonomy to a reader, so it takes each axis's one-line `summary`;
          everywhere else keeps the full rater-facing description */
@@ -1004,7 +1096,7 @@ var JD_admin = (function () {
      the response it shows, with only what its tag prints — no alternatives,
      no ratings (see _slim.php). Same shape as the full payload, so nothing
      downstream knows the difference. */
-  fetch(JD_API + '/art/junk-drawer/data.php' + (window.JD_SLIM ? '?slim=1' : ''))
+  fetch(JD_API + JD_DATA_URL + (window.JD_SLIM ? '?slim=1' : ''))
     .then(function (r) {
       if (!r.ok) throw new Error('data.php ' + r.status);
       return r.json();
@@ -1208,13 +1300,14 @@ var JD_admin = (function () {
       fallbackNote();
       /* the collection is what failed, not the drawer: the turn object is
          frontend-injected and owes data.php nothing, and it is the only
-         trigger there is now — so it still goes in, on the fallback tier box.
+         trigger there is now — so it still goes in, on the fallback tier box
+         (BASE: the same numbers each module keeps as its own FALLBACK_BOX).
          The instructions sheet rides the same rule. */
-      if (window.JD_turnObject) window.JD_turnObject.ready(null);
-      if (window.JD_sheet) window.JD_sheet.ready(null);
+      if (window.JD_turnObject) window.JD_turnObject.ready(BASE.m);
+      if (window.JD_sheet) window.JD_sheet.ready(BASE.xl);
       /* the folder likewise: its numbers come from jd-analytics.php, which
          data.php's failure says nothing about */
-      if (window.JD_folder) window.JD_folder.ready(null);
+      if (window.JD_folder) window.JD_folder.ready(BASE.l);
       if (window.console && console.warn) console.warn('junk drawer: ' + err.message);
     });
 })();
@@ -1294,7 +1387,7 @@ var JD_admin = (function () {
   function meterSVG(rank, steps) {
     var span = 66, x0 = 2, y = 2, h = 9;
     /* worst → best, matched to the report card's rc-g1..5 ramp */
-    var RAMP = ['#8f1d12', '#b0490f', '#a06200', '#46761a', '#0b6a1f'];
+    var RAMP = JD_GRADE_RAMP;
     var graded = rank !== null;
     var color = 'rgba(58,42,18,0.55)', fill = '';
     if (graded) {
@@ -2396,7 +2489,9 @@ var JD_admin = (function () {
    animation styles are stripped when the run ends, so the DOM goes back
    to exactly what was rendered; overlapping runs on one svg settle by a
    sequence stamp on the element — the newer run owns the artwork.
-   Keyframes live in junk-drawer.css beside .rc-plate-art.
+   Keyframes live in junk-drawer.css beside .rc-plate-art. The engine's
+   element walk and its style strip are exported as JD_drawOn.walk(svg)
+   and JD_drawOn.strip(root) (see below), so nothing has to copy them.
 
    PACING (owner rev, 2026-08-16 — "simple objects drew in slow motion"):
    a fixed run length made every drawing finish in the same time, so a
@@ -2415,22 +2510,18 @@ var JD_admin = (function () {
     'symbol,marker';
   var WORK_RATE = 3, SECS_MIN = 1.2, SECS_MAX = 4.2;
   var seq = 0;
-  function strip(svg) {
-    if (!svg || !document.contains(svg)) return;
+  /* THE WALK — JD_drawOn.walk(svg): every element a run schedules, in
+     document order, each as { el, L (measured length, min 4), stroked,
+     filled, fo (fill-opacity), op (opacity) }. The engine schedules from
+     this list and nothing else, so a control that needs the run's marks
+     (the filmstrip) gets exactly them by walking the same way. Walk the
+     PLAIN drawing: once a run has dressed the elements, the stroked ones
+     carry an inline dasharray (and read as pre-dashed) and the delayed
+     fills and fades hold their opacity at 0, so a walk made then drops
+     most of what was scheduled. */
+  function walk(svg) {
     var els = svg.querySelectorAll(SEL);
-    for (var i = 0; i < els.length; i++) {
-      els[i].style.animation = '';
-      els[i].style.strokeDasharray = '';
-      els[i].style.strokeDashoffset = '';
-      els[i].style.removeProperty('--jdfo');
-      els[i].style.removeProperty('--jdo');
-    }
-  }
-  window.JD_drawOn = function (svg, opts) {
-    opts = opts || {};
-    if (!svg || (JD_reduced() && !opts.force)) return false;
-    var els = svg.querySelectorAll(SEL);
-    var items = [], i, el, cs, L, stroked, filled, ink = 0;
+    var items = [], i, el, cs, L, stroked, filled;
     for (i = 0; i < els.length; i++) {
       el = els[i];
       if (el.closest && el.closest(SKIP)) continue;
@@ -2445,8 +2536,29 @@ var JD_admin = (function () {
       if (!stroked && !filled) continue;
       items.push({ el: el, L: Math.max(L, 4), stroked: stroked,
         filled: filled, fo: cs.fillOpacity, op: cs.opacity });
-      ink += Math.max(L, 4);
     }
+    return items;
+  }
+  /* THE STRIP — JD_drawOn.strip(root): take the engine's inline animation
+     styles back off every element under `root`, attached to the document
+     or not (a detached copy can be cleaned before it is mounted). The
+     engine's own end-of-run strip only touches artwork still in the
+     document; that test sits at its call site below. */
+  function strip(root) {
+    var els = root.querySelectorAll(SEL);
+    for (var i = 0; i < els.length; i++) {
+      els[i].style.animation = '';
+      els[i].style.strokeDasharray = '';
+      els[i].style.strokeDashoffset = '';
+      els[i].style.removeProperty('--jdfo');
+      els[i].style.removeProperty('--jdo');
+    }
+  }
+  window.JD_drawOn = function (svg, opts) {
+    opts = opts || {};
+    if (!svg || (JD_reduced() && !opts.force)) return false;
+    var items = walk(svg), i, ink = 0;
+    for (i = 0; i < items.length; i++) ink += items[i].L;
     var secs = opts.secs;
     if (!secs) {
       /* pace by the drawing, not the clock (see PACING above). The
@@ -2501,10 +2613,13 @@ var JD_admin = (function () {
       }
     }
     /* put the artwork back to plain rendered state once the run is over;
-       a newer run on the same svg owns it instead */
+       a newer run on the same svg owns it instead, and artwork that has
+       left the document is not touched */
     setTimeout(function () {
-      if (svg.__jdDrawSeq === my) strip(svg);
+      if (svg.__jdDrawSeq === my && document.contains(svg)) strip(svg);
     }, (secs + 0.4) * 1000);
     return secs;
   };
+  window.JD_drawOn.walk = walk;
+  window.JD_drawOn.strip = strip;
 })();
