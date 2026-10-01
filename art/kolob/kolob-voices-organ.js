@@ -63,6 +63,7 @@ window.KOLOB = window.KOLOB || {};
   function cueAt(lane, t, fn) { return S.cueAt(lane, t, fn); }
   function cueIn(lane, dtS, fn) { return S.cueIn(lane, dtS, fn); }
   function cueLayer(layer, baseS, fn) { return S.cueLayer(layer, baseS, fn); }
+  function cycle(lane, self, turn, t, fallbackS) { return S.cycle(lane, self, turn, t, fallbackS); }
   function panAt(layer, p) { return S.panAt(layer, p); }
   function getLayerParam(layer, key, fallback) { return S.getLayerParam(layer, key, fallback); }
   // (the other rooms' state, read and written through S: S.ctx, S.playing,
@@ -462,7 +463,11 @@ window.KOLOB = window.KOLOB || {};
   function organTag(chord, part) { var x = { part: part }; if (chord.id != null) x.chord = chord.id; return x; }
   // The organist's turn, at scheduled time t (the organ's lane on the clock);
   // every die of the turn is the turn's own.
-  function organCycle(t) {
+  // (under the core's net, S.cycle: a turn that throws before it has
+  // re-armed is re-armed by the core CYCLE_FALLBACK_S = 5 s later, and the
+  // throw is reported)
+  function organCycle(t) { return cycle("organ", organCycle, organCycleTurn, t); }
+  function organCycleTurn(t) {
     if (!S.playing) return;
     var s = S.Meeting.section();
     if (s === "sacrament") { cueIn("organ", 6, organCycle); return; }

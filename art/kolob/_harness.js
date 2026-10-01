@@ -471,15 +471,16 @@ global.MskyBackgroundAudio = undefined;          // no <audio> route here: the m
 // it schedules on its own lane — a layer's and the conductor's re-arm, the
 // last thing they do, is refused — or, if it schedules nothing there, as it
 // returns. So the throw lands where a fault in the cue's body would: a
-// try/finally in the engine sees it, and the clock catches it and reports it
-// (onError → console.error), which the report files with its injection, not
-// among the run's errors. Then the report says how many cues the lane ran
-// after it, and how many sections the meeting began: today a cue that throws
-// ends its chain for the rest of the visit (PLAN-REFACTOR §2.1) — the drone's
-// lane and the conductor's run nothing more; the choir's lane carries more
-// than one chain (its verse loop, a hymn's lines), so it runs on with the
-// others while the broken one stays broken. Without throw= nothing is
-// wrapped.
+// try/finally in the engine sees it, and it is caught and reported — by the
+// clock (onError → console.error), or by the core's net under a layer's turn,
+// the same way — and the report files it with its injection, not among the
+// run's errors. Then the report says how many cues the lane ran after it, and how
+// many sections the meeting began: the proof that the engine recovers
+// (PLAN-REFACTOR §2.1) — a layer's turn re-armed by the core's net 5 s after
+// it threw, the conductor's tick 0.6 s after; a hymn whose chain broke let
+// go, so the meeting moves on (the choir's lane carries more than one chain —
+// its verse loop, a hymn's lines — so its own count runs on either way).
+// Without throw= nothing is wrapped.
 // ----------------------------------------------------------------------------
 const INJ = OPT.throws.map((x) => ({ lane: x.lane, at: x.at, spec: x.spec, marker: "the harness's injected throw (throw=" + x.spec + ")", t: null, how: null, reported: null, before: 0, after: 0, firstAfter: null }));
 const laneCues = {};            // lane → the cues the clock ran on it (with throw= only)

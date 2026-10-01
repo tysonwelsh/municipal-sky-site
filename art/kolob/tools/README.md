@@ -184,13 +184,14 @@ The clock reports it (`console.error`), and the report files it with its
 injection, not among the run's errors. The report prints the cues counted lane
 by lane (which add up to the clock's own count) and, for each throw, when it
 fired, who reported it, how many cues its lane ran after it and how many
-sections the meeting began after it — the proof PLAN-REFACTOR §2.1 needs. On
-the current code (seed 7, 600 s): `throw=drone@120` fires at 134.6 s and the
-drone lane runs 0 cues after it; `throw=conductor@300` fires at 300.5 s, the
-conductor runs 0 cues after it and the meeting never changes section again;
-`throw=choir@212.5` breaks a hymn's chain of lines — the choir lane runs on
-(its verse loop, 68 cues) but the hymn never ends, and the meeting stays in it.
-Without `throw=` nothing is wrapped.
+sections the meeting began after it — the proof of PLAN-REFACTOR §2.1. Seed 7,
+600 s: `throw=drone@120` fires at 134.6 s and the core's net re-arms the drone
+5 s later (8 cues after it); `throw=conductor@300` fires at 300.5 s, the next
+tick is armed 0.6 s on, and the meeting is the clean one, record for record;
+`throw=choir@212.5` breaks a hymn's chain of lines, the hymn is let go, and the
+meeting begins its next hymn at 349.4 s (1,643 notes where the clean run plays
+2,573: the rest of that hymn is not sung; before §2.1 the hymn never ended and
+the meeting stayed in it, 972 notes). Without `throw=` nothing is wrapped.
 
 ## The dump format (v1)
 
@@ -564,7 +565,7 @@ the cores, at most 8).
 node tools/selftest.js
 ```
 
-About fifteen seconds, no browser. It checks eight things: (1) a real dump from
+About fifteen seconds, no browser. It checks nine things: (1) a real dump from
 this worktree reads as meetings and sections, the witness names the build's own
 list, and the harness names the same engine in the header's `engine` field;
 (2) a synthetic dump in SCORE §6's **typed** vocabulary reads the same way —
@@ -589,9 +590,12 @@ finds meeting 1's end from a joint, a typed `meeting-end`, or the next meeting;
 and the `clock:` line counts the timers left armed apart from the sources
 scheduled past the end; `throw=drone@60` fires once, is reported by the clock
 and kept out of the run's errors, and the cues it counts lane by lane add up to
-the clock's own, the drone's to those before, the throw and those after (today
-none after: a cue that throws ends its lane, PLAN-REFACTOR §2.1).
-All eight pass on `art/kolob/_harness.js`. Run it after any change to the
+the clock's own, the drone's to those before, the throw and those after;
+(9) **recovery** (seed 7, PLAN-REFACTOR §2.1): `throw=drone@120` — the drone's
+lane plays on, re-armed 5 s after the throw; `throw=conductor@300` — the next
+tick 0.6 s on, and the dump the clean run's, record for record;
+`throw=choir@212.5` — the broken hymn is let go and the meeting begins its next
+section. All nine pass on `art/kolob/_harness.js`. Run it after any change to the
 engine's events, to the harness or to these tools. It renders into `out/_selftest/` and, like
 every tool, refuses while the engine is being edited.
 

@@ -51,6 +51,7 @@ window.KOLOB = window.KOLOB || {};
   function turn(label) { return S.turn(label); }
   function now() { return S.now(); }
   function cueAt(lane, t, fn) { return S.cueAt(lane, t, fn); }
+  function cycle(lane, self, turn, t, fallbackS) { return S.cycle(lane, self, turn, t, fallbackS); }
   function emitEvent(ev) { return S.emitEvent(ev); }
   // (the guests the meeting performs itself — the far ward inside our hymn,
   // the Hosanna, the testimony-bearers — report their notes too)
@@ -1285,7 +1286,12 @@ window.KOLOB = window.KOLOB || {};
                   form: composed.form, modeOfTime: composed.modeOfTime },
         });
         C.hymn = { id: composed.id, row: row, dialect: composed.dialect, key: row.key, active: true, from: t, until: t };
-        var perf = singHymn(composed, row, t, pre);
+        // (a hand-over that throws lets the hymn go at once — else C.hymn.active
+        // stood for the rest of the visit, the joint held and the house
+        // resting; once the performer has it, a link of its chain that throws
+        // lets it go: kolob-voices-choir.js, A LINK THAT THROWS)
+        var perf = null, taken = false;
+        try { perf = singHymn(composed, row, t, pre); taken = true; } finally { if (!taken) HymnHands.done(composed.id, t); }
         if (perf && perf.end > t) C.sectionDur = s.dur = Math.max(s.dur, perf.end - t + perf.tail);
       } else {
         emitEvent({ type: "hymn-announced", hymn: { id: hymnId(), number: null, nameDs: null, meter: C.meter, dialect: null, authorDs: null }, leaderDs: null });
@@ -1390,8 +1396,12 @@ window.KOLOB = window.KOLOB || {};
   // --- conductor poll: advances sections, fires fuging entries, keeps time ---
   // A cue every 0.6 s of the music. Its three dice (the stillness after a
   // gathering, the testimony's silence, the unbidden one) are thrown on every
-  // tick, used or not.
-  function conductorTick(t) {
+  // tick, used or not. (Under the core's net, S.cycle, at its own pace: a
+  // tick that throws before it has re-armed is re-armed by the core 0.6 s
+  // later, as it would have re-armed itself, and the throw is reported — the
+  // meeting goes on changing section.)
+  function conductorTick(t) { return cycle("conductor", conductorTick, conductorTickTurn, t, 0.6); }
+  function conductorTickTurn(t) {
     if (!S.playing) return;
     var R = stream("conductor");
     var afterDie = R.chance(0.3), testimonyDie = R.chance(0.008), unbiddenDie = R.chance(0.0004);
@@ -1472,9 +1482,16 @@ window.KOLOB = window.KOLOB || {};
       var last = C.si >= C.plan.length - 1;
       var jointDur = runJoint(last, t);
       if (!last) reckonTurn(t + 0.2, jointDur, C.si + 1);
+      // (the joint is over when its continuation has run: enterSection lets
+      // it go as it begins, and if a throw — in the next section's entrance,
+      // or the next meeting's plan — came before it got there, the finally
+      // does, and the clock reports the throw; else the meeting stayed in
+      // its joint for the rest of the visit and began nothing more)
       cueAt("conductor", t + jointDur + 0.5, function (tn) {
-        if (C.si >= C.plan.length - 1) planMeeting(tn);
-        else enterSection(C.si + 1, tn);
+        try {
+          if (C.si >= C.plan.length - 1) planMeeting(tn);
+          else enterSection(C.si + 1, tn);
+        } finally { C.jointing = false; }
       });
     }
     cueAt("conductor", t + 0.6, conductorTick);

@@ -27,7 +27,13 @@
 //    sources scheduled past the end; an injected throw (throw=) fires once,
 //    is reported by the clock and kept out of the run's errors, and the cues
 //    it counts lane by lane add up to the clock's own — with the drone's
-//    later cues told (today none: a cue that throws ends its lane).
+//    later cues told.
+// 9. Recovery (PLAN-REFACTOR §2.1): a layer's turn that throws is re-armed by
+//    the core's net 5 s later and its lane plays on (throw=drone@120); a
+//    conductor's tick that throws is re-armed at its own pace and the dump is
+//    the clean run's, record for record (throw=conductor@300); a hymn whose
+//    chain of cues breaks is let go, and the meeting begins its next section
+//    (throw=choir@212.5).
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -153,6 +159,11 @@ function check(name, ok, detail) {
   const refused = await R.renderSet({ engine: R.resolveEngine(copy, deaf), seeds: [1847], secs: 60, dir: path.join(tmp, "w-deaf"), quiet: true }).then(() => null, (e) => e);
   check("the same copy rendered by a harness that plays its own directory: refused", !!(refused && refused.refusal && /did not play the build/.test(refused.message)), refused ? refused.message.split("\n")[1] : "it was accepted ✗");
 
+  // §9's renders — the three faults of PLAN-REFACTOR §2.1 and the clean run
+  // beside them, each the shortest that shows its recovery — are begun here,
+  // beside §6's long meeting, and read when §9 comes
+  const recovery = Promise.all([[null, 360], ["throw=drone@120", 145], ["throw=conductor@300", 360], ["throw=choir@212.5", 360]]
+    .map(([flag, secs], i) => R.renderSet({ engine, seeds: [7], secs, flags: flag ? [flag] : [], dir: path.join(tmp, "recover-" + i), quiet: true }).then((x) => x.results[0])));
   console.log("6. the count (seed 3, 1200 s)");
   const long = await R.renderSet({ engine, seeds: [3], secs: 1200, dir: path.join(tmp, "long"), quiet: true });
   const L3 = D.readDump(long.results[0].dump);
@@ -208,7 +219,28 @@ function check(name, ok, detail) {
     const drone = lanes ? JSON.parse(lanes[2]).drone : null;
     check("… the cues counted lane by lane add up to the clock's own, and the drone's to before + the throw + after",
       !!lanes && !!j && lanes[1] === lanes[3] && drone === +j[4] + 1 + +j[3],
-      lanes && j ? lanes[1] + " = " + lanes[3] + " cues; drone " + drone + " = " + j[4] + " + 1 + " + j[3] + " — today the drone runs " + j[3] + " cue(s) after its throw (a cue that throws ends its lane: PLAN-REFACTOR §2.1)" : "no count");
+      lanes && j ? lanes[1] + " = " + lanes[3] + " cues; drone " + drone + " = " + j[4] + " + 1 + " + j[3] + " — the drone runs " + j[3] + " cue(s) after its throw (the core's net re-arms it: §9)" : "no count");
+  }
+
+  console.log("9. recovery (seed 7): a turn, the conductor's tick and a hymn's chain, each made to throw");
+  {
+    const runs = await recovery;
+    const thrown = (r) => {
+      const log = fs.readFileSync(r.log, "utf8");
+      const m = /^throw (\S+): thrown at ([\d.]+) s, [^;]*; reported by (\S+) · the \S+ lane ran (\d+) cue\(s\) after it(?:, the first at ([\d.]+) s)? \((\d+) before\) · the meeting began (\d+) section\(s\) after it$/m.exec(log);
+      return m ? { spec: m[1], t: +m[2], by: m[3], after: +m[4], first: m[5] != null ? +m[5] : null, sections: +m[7], clean: /^errors: 0 caught · 0 console\.error$/m.test(log) && /PASS/.test(r.verdict || "") } : null;
+    };
+    const records = (r) => fs.readFileSync(r.dump, "utf8").split("\n").filter((l) => l && !l.startsWith('["H"'));
+    const said = (x) => x ? "thrown at " + x.t.toFixed(3) + " s · " + x.after + " cue(s) after it" + (x.first != null ? ", the first at " + x.first.toFixed(3) + " s" : "") + " · " + x.sections + " section(s) after it" : "no throw line";
+    const dr = thrown(runs[1]), co = thrown(runs[2]), ch = thrown(runs[3]);
+    check("throw=drone@120: the drone's turn throws once and its lane plays on, re-armed 5 s after the throw, the run clean",
+      !!dr && dr.by === "console.error" && dr.after > 0 && Math.abs(dr.first - dr.t - 5) < 0.001 && dr.clean, said(dr));
+    const same = !!co && records(runs[2]).join("\n") === records(runs[0]).join("\n");
+    check("throw=conductor@300: the tick throws once, the next is armed 0.6 s on, the meeting begins its next section — the clean run's, record for record",
+      !!co && co.after > 0 && Math.abs(co.first - co.t - 0.6) < 0.001 && co.sections > 0 && same && co.clean, said(co) + (same ? " · " + records(runs[0]).length + " records, identical to the clean run's" : " · NOT the clean run's"));
+    const sec = (r) => records(r).map((l) => JSON.parse(l)).filter((x) => x[0] === "E" && x[2].type === "section-start").map((x) => x[2].section + "@" + x[1].toFixed(1));
+    check("throw=choir@212.5: the hymn's chain breaks, the hymn is let go, and the meeting begins its next section",
+      !!ch && ch.sections > 0 && ch.clean, said(ch) + " · sections " + sec(runs[3]).join(" ") + " (clean: " + sec(runs[0]).join(" ") + ")");
   }
 
   fs.rmSync(tmp, { recursive: true, force: true });

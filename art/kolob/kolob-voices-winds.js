@@ -36,6 +36,7 @@ window.KOLOB = window.KOLOB || {};
   function emitEvent(ev) { return S.emitEvent(ev); }
   function cueIn(lane, dtS, fn) { return S.cueIn(lane, dtS, fn); }
   function cueLayer(layer, baseS, fn) { return S.cueLayer(layer, baseS, fn); }
+  function cycle(lane, self, turn, t, fallbackS) { return S.cycle(lane, self, turn, t, fallbackS); }
   function panAt(layer, p) { return S.panAt(layer, p); }
   function getLayerParam(layer, key, fallback) { return S.getLayerParam(layer, key, fallback); }
   function env(g, t, pts) { return S.env(g, t, pts); }
@@ -124,7 +125,11 @@ window.KOLOB = window.KOLOB || {};
     });
   }
   // The deacon's turn, at scheduled time tc.
-  function clarinetPhrase(tc) {
+  // (under the core's net, S.cycle: a turn that throws before it has
+  // re-armed is re-armed by the core CYCLE_FALLBACK_S = 5 s later, and the
+  // throw is reported)
+  function clarinetPhrase(tc) { return cycle("clarinet", clarinetPhrase, clarinetPhraseTurn, tc); }
+  function clarinetPhraseTurn(tc) {
     if (!S.playing) return;
     var s = S.Meeting.section();
     // (a rite seated LINED OUT ONLY — the deacon gives its lines and the
@@ -281,7 +286,11 @@ window.KOLOB = window.KOLOB || {};
     for (var i = 0, tt = t; i < notes.length; tt += notes[i].dur, i++) emitNote(layer, notes[i].f, tt, notes[i].dur, extra);
   }
   // The parlor organ's turn, at scheduled time t.
-  function harmoniumCycle(t) {
+  // (under the core's net, S.cycle: a turn that throws before it has
+  // re-armed is re-armed by the core CYCLE_FALLBACK_S = 5 s later, and the
+  // throw is reported)
+  function harmoniumCycle(t) { return cycle("harmonium", harmoniumCycle, harmoniumCycleTurn, t); }
+  function harmoniumCycleTurn(t) {
     if (!S.playing) return;
     var s = S.Meeting.section();
     var plays = s === "prelude" || s === "hymn" || s === "doxology" || s === "postlude";

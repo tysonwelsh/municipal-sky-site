@@ -48,6 +48,7 @@ window.KOLOB = window.KOLOB || {};
   function cueIn(lane, dtS, fn) { return S.cueIn(lane, dtS, fn); }
   function cueAt(lane, t, fn) { return S.cueAt(lane, t, fn); }
   function cueLayer(layer, baseS, fn) { return S.cueLayer(layer, baseS, fn); }
+  function cycle(lane, self, turn, t, fallbackS) { return S.cycle(lane, self, turn, t, fallbackS); }
   function getLayerParam(layer, key, fallback) { return S.getLayerParam(layer, key, fallback); }
   function airFree() { return S.airFree(); }
   function claimAir(durS, marginS) { return S.claimAir(durS, marginS); }
@@ -128,7 +129,11 @@ window.KOLOB = window.KOLOB || {};
   }
   // The choir's turn, at scheduled time tc. Waiting for the air draws from
   // the choir's waiting stream; a turn it sings is a fork of its own.
-  function choirVerse(tc) {
+  // (under the core's net, S.cycle: a turn that throws before it has
+  // re-armed is re-armed by the core CYCLE_FALLBACK_S = 5 s later, and the
+  // throw is reported)
+  function choirVerse(tc) { return cycle("choir", choirVerse, choirVerseTurn, tc); }
+  function choirVerseTurn(tc) {
     if (!S.playing) return;
     var s = S.Meeting.section();
     if (s === "prelude" && !S.Meeting.jointing()) {
@@ -722,6 +727,7 @@ window.KOLOB = window.KOLOB || {};
     var hands = S.Meeting.hands, id = h.id, W = pre.ward, plan = pre.plan, P = pre.P, R = pre.R;
     var K = S.F0 * S.ROOT_MULT, vl = Hy().verseLines(h);
     var carry = { lastEnd: {} };
+    var handedOn = 0;                                   // the links of its chain handed on (A LINK THAT THROWS, below)
     var start = tc + P.lead;
     var dox = row.section === "doxology";
     var cumulative = dox && S.Meeting.cumulative() && !S.Meeting.assemblyFired();
@@ -770,7 +776,7 @@ window.KOLOB = window.KOLOB || {};
     var beatS = intro.beatS;
     // the first verse is written as soon as its start is known (the pieces
     // are pure; the desk hands their lines paced)
-    if (t - tc > PREP_S + 0.5) cueAt("choir", t - PREP_S, function () { verse(0, t); });
+    if (t - tc > PREP_S + 0.5) handOn("choir", t - PREP_S, function () { verse(0, t); });
     else verse(0, t);
     return { end: tc + P.estimate, tail: P.tail, verses: P.verses, plan: P, cast: plan };
 
@@ -891,7 +897,7 @@ window.KOLOB = window.KOLOB || {};
       claimAir(ends - S.now(), 1);
       cueAt("choir", ends, function (te) { if (S.playing && hands.owns(id)) closeOf(v, te); });
       // what follows the verse is decided (and written) PREP_S before it ends
-      cueAt("choir", Math.max(S.now(), ends - PREP_S), function () { after(v, ends); });
+      handOn("choir", Math.max(S.now(), ends - PREP_S), function () { after(v, ends); });
     }
     function closeOf(v, te) {
       var lastLine = vl[vl.length - 1], kind = lastLine.cadence ? lastLine.cadence.kind : "none";
@@ -928,7 +934,7 @@ window.KOLOB = window.KOLOB || {};
         } else if (step === "guest") {
           var ag = t + 1.5;
           hands.until(id, ag);
-          cueAt("conductor", ag, function (tg) {
+          handOn("conductor", ag, function (tg) {
             if (!hands.owns(id)) return;
             var span = hands.guestInGap(tg);
             if (span > 0) hands.until(id, tg + span);
@@ -953,8 +959,30 @@ window.KOLOB = window.KOLOB || {};
     }
     // (a step that begins at `at` is written PREP_S before it, or now)
     function later(at, fn) {
-      if (at - S.now() > PREP_S + 0.5) cueAt("choir", at - PREP_S, function () { if (hands.owns(id)) fn(); });
+      if (at - S.now() > PREP_S + 0.5) handOn("choir", at - PREP_S, function () { if (hands.owns(id)) fn(); });
       else fn();
+    }
+    // A LINK THAT THROWS LETS THE HYMN GO. The hymn is sung by a chain of
+    // cues — the first verse, what follows each verse (after), a step written
+    // ahead (later), a guest's gap, the last chord (fin, which tells the
+    // meeting the hymn is done) — each handing the hymn on to the next by a
+    // cue of its own (handOn). A link that threw before it had handed on was
+    // the end of the chain, and the hymn was never done: C.hymn.active stood
+    // for the rest of the visit, the joint was held, and the organ, the
+    // strings, the harmonium and the deacon rested (hallListens). So a link
+    // that throws before it has handed on lets the hymn go at its own time
+    // (hands.done) — once: the link it would have handed to never runs, and
+    // the hymn's sound already written still holds the joint to its end
+    // (hands.until) — and the throw goes on to the clock, which reports it.
+    // (The hand-over itself, singHymn, the meeting guards: enterSection.)
+    // Where nothing throws, nothing here acts.
+    function handOn(lane, at, fn) {
+      var c = cueAt(lane, at, function (tt) {
+        var was = handedOn, ok = false;
+        try { fn(tt); ok = true; } finally { if (!ok && handedOn === was) hands.done(id, S.now()); }
+      });
+      handedOn++;                                       // (counted once the clock has taken the cue)
+      return c;
     }
     function finish(tf) {
       var endAt = tf;
@@ -991,7 +1019,7 @@ window.KOLOB = window.KOLOB || {};
       };
       // a guest still waiting (a one-verse doxology) comes when the hymn is done
       if (P.guestAfter < 0 && hands.guestWaiting()) {
-        cueAt("conductor", endAt + 1.5, function (tg) {
+        handOn("conductor", endAt + 1.5, function (tg) {
           if (!hands.owns(id)) return;
           var span = hands.guestInGap(tg);
           fin(tg + Math.max(0, span));
@@ -999,7 +1027,7 @@ window.KOLOB = window.KOLOB || {};
         hands.until(id, endAt + 1.5);
       } else {
         hands.until(id, endAt);
-        cueAt("choir", endAt, function (te2) { if (hands.owns(id)) fin(te2); });
+        handOn("choir", endAt, function (te2) { if (hands.owns(id)) fin(te2); });
       }
     }
   }

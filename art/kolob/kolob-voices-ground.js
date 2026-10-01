@@ -36,6 +36,7 @@ window.KOLOB = window.KOLOB || {};
   function emitNote(layer, freq, startTime, duration, extra) { return S.emitNote(layer, freq, startTime, duration, extra); }
   function cueIn(lane, dtS, fn) { return S.cueIn(lane, dtS, fn); }
   function cueLayer(layer, baseS, fn) { return S.cueLayer(layer, baseS, fn); }
+  function cycle(lane, self, turn, t, fallbackS) { return S.cycle(lane, self, turn, t, fallbackS); }
   function panAt(layer, p) { return S.panAt(layer, p); }
   function getLayerParam(layer, key, fallback) { return S.getLayerParam(layer, key, fallback); }
   function noiseSource() { return S.noiseSource(); }
@@ -120,7 +121,11 @@ window.KOLOB = window.KOLOB || {};
     return d.from * Math.pow(d.mul / d.from, (t - d.at) / (d.until - d.at));
   }
   // at scheduled time t — the downbeat, then each overlap
-  function droneCycle(t) {
+  // (under the core's net, S.cycle: a turn that throws before it has
+  // re-armed is re-armed by the core CYCLE_FALLBACK_S = 5 s later, and the
+  // throw is reported)
+  function droneCycle(t) { return cycle("drone", droneCycle, droneCycleTurn, t); }
+  function droneCycleTurn(t) {
     if (!S.playing) return;
     var R = turn("drone");
     var dur = R.rnd(60, 90);
@@ -278,7 +283,12 @@ window.KOLOB = window.KOLOB || {};
     }
     return false;
   }
-  function stringsCycle(t) {
+  // The strings' turn, at scheduled time t.
+  // (under the core's net, S.cycle: a turn that throws before it has
+  // re-armed is re-armed by the core CYCLE_FALLBACK_S = 5 s later, and the
+  // throw is reported)
+  function stringsCycle(t) { return cycle("strings", stringsCycle, stringsCycleTurn, t); }
+  function stringsCycleTurn(t) {
     if (!S.playing) return;
     var s = S.Meeting.section();
     // (a rite seated as the brush arbor is the strings' own: they bow its
@@ -366,7 +376,11 @@ window.KOLOB = window.KOLOB || {};
     emitNote("bells", f, t, 1, extra);
   }
   // The tines' turn, at scheduled time tc.
-  function tineCycle(tc) {
+  // (under the core's net, S.cycle: a turn that throws before it has
+  // re-armed is re-armed by the core CYCLE_FALLBACK_S = 5 s later, and the
+  // throw is reported)
+  function tineCycle(tc) { return cycle("bells", tineCycle, tineCycleTurn, tc); }
+  function tineCycleTurn(tc) {
     if (!S.playing) return;
     var s = S.Meeting.section();
     if (s === "invocation" || s === "sacrament" || inFuging()) { cueIn("bells", 9, tineCycle); return; }

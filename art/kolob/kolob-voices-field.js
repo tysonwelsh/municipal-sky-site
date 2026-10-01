@@ -33,6 +33,7 @@ window.KOLOB = window.KOLOB || {};
   function emitEvent(ev) { return S.emitEvent(ev); }
   function cueIn(lane, dtS, fn) { return S.cueIn(lane, dtS, fn); }
   function cueLayer(layer, baseS, fn) { return S.cueLayer(layer, baseS, fn); }
+  function cycle(lane, self, turn, t, fallbackS) { return S.cycle(lane, self, turn, t, fallbackS); }
   function panAt(layer, p) { return S.panAt(layer, p); }
   function getLayerParam(layer, key, fallback) { return S.getLayerParam(layer, key, fallback); }
   function fieldDest(key, pan) { return S.fieldDest(key, pan); }
@@ -107,7 +108,11 @@ window.KOLOB = window.KOLOB || {};
   }
   // The voice's turn, at scheduled time t. In testimony it speaks only
   // sometimes, and that choice is its own turn's die.
-  function stillVoicePhrase(t) {
+  // (under the core's net, S.cycle: a turn that throws before it has
+  // re-armed is re-armed by the core CYCLE_FALLBACK_S = 5 s later, and the
+  // throw is reported)
+  function stillVoicePhrase(t) { return cycle("voice", stillVoicePhrase, stillVoicePhraseTurn, t); }
+  function stillVoicePhraseTurn(t) {
     if (!S.playing) return;
     var s = S.Meeting.section();
     if (s !== "invocation" && s !== "sacrament" && s !== "testimony") { cueIn("voice", 7, stillVoicePhrase); return; }
@@ -191,7 +196,11 @@ window.KOLOB = window.KOLOB || {};
   // The wire's turn, at scheduled time tc. The word, and whether home
   // replies, are the wire's musical dice; which side of the sky it sits on
   // and the relay's clack are synth:telegraph.
-  function telegraphCycle(tc) {
+  // (under the core's net, S.cycle: a turn that throws before it has
+  // re-armed is re-armed by the core CYCLE_FALLBACK_S = 5 s later, and the
+  // throw is reported)
+  function telegraphCycle(tc) { return cycle("telegraph", telegraphCycle, telegraphCycleTurn, tc); }
+  function telegraphCycleTurn(tc) {
     if (!S.playing) return;
     var s = S.Meeting.section();
     var taps = s === "prelude" || s === "hymn" || s === "testimony" || s === "postlude";
@@ -404,7 +413,11 @@ window.KOLOB = window.KOLOB || {};
   var FIELD_KEY = {};                              // (each event's key, by its function's name: the seating's field weights)
   Object.keys(FIELD_FNS).forEach(function (k) { FIELD_KEY[FIELD_FNS[k].name] = k; });
   // The valley's turn, at scheduled time t: which event, and when the next.
-  function ambientEvent(t) {
+  // (under the core's net, S.cycle: a turn that throws before it has
+  // re-armed is re-armed by the core CYCLE_FALLBACK_S = 5 s later, and the
+  // throw is reported)
+  function ambientEvent(t) { return cycle("ambient", ambientEvent, ambientEventTurn, t); }
+  function ambientEventTurn(t) {
     if (!S.playing) return;
     var s = S.Meeting.section();
     if (s === "sacrament") { cueIn("ambient", 9, ambientEvent); return; }
