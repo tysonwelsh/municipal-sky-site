@@ -49,8 +49,11 @@
 /* no eyebrow (owner, 2026-09-26): a step is its heading and its prose. The
    scene a step belongs to is on the timeline, and the pane shows it. */
 /* the demo notice — under the drawing, beside the controls, stated plainly */
-/* (owner, 2026-09-28) italic fine print under the prose — no box */
-.jd-about .jd-demo-note {
+/* (owner, 2026-09-28) italic fine print under the prose — no box.
+   Selector at (0,3,1): the step's paragraph rule below is (0,2,1) and used
+   to outrank this one's margin, size and line-height, so the note printed
+   at body size until 2026-10-01. */
+.jd-about .jd-step p.jd-demo-note {
   margin: var(--s-3) 0 0;
   font-style: italic;
   font-size: var(--fs-xs); line-height: 1.5;
@@ -768,7 +771,10 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
   min-height: 0;
   max-height: 4.5em;
 }
-.jd-about .jd-inline-card .rc-col-r > .rc-head:not(:first-child) { margin-top: 0.55rem; }
+/* (a restatement of the drawer's own 0.55rem head margin used to sit here,
+   at the same specificity as the band seam above and later in the file, so
+   the 26px --ab-gap-band never rendered; gone 2026-10-01 — the seam is the
+   intent, see its token) */
 
 /* ============================================================================
    THE FILMSTRIP, on the walkthrough. The control itself — markup, tokens and
@@ -1611,7 +1617,7 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
     font-size: 1.5rem; line-height: 1.2;
     margin: 0 0 0.6rem;
   }
-  .jd-about .jd-demo-note { font-size: 13px; }
+  .jd-about .jd-step-body p.jd-demo-note { font-size: 13px; }   /* outranks the 17px paragraph rule above */
 
   /* ---- sections --------------------------------------------------------- */
   .jd-about .jd-ph-sec { position: relative; }
