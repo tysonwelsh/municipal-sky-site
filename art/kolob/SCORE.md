@@ -22,7 +22,12 @@ staff; the build's plans are in `archive/plans/`.
 answers the load guard's roll call: `KOLOB._rooms["kolob-x.js"] = true`. The
 substrate (`PJ2.Rand`, `PJ2.Clock`, `PJ2.Fx`) and the Earth tunes
 (`KOLOB.Tunes`) are checked by the globals they raise; `kolob_engine_tags`
-(`_engine.php`) prints the guard, which names every room that did not answer.
+(`_engine.php`) prints the guard, which names every room that did not answer
+— to the console, and to the page in `KOLOB._broken` (the facade among them
+when `KolobAudio` did not rise; unset on a page that loaded whole), on which
+`kolob-ui.js` wires nothing: PLAY stays disabled and the minutes say the
+engine failed to load. `tools/loadcheck.js` runs the same guard
+(`kolob_engine_guard()`) after the same list.
 
 **The shared bag.** Rooms lend what others need onto `KOLOB._s` (written `S`
 inside a room: `S.name = …`) and read each other's lends as `S.name(…)`; a
@@ -60,7 +65,11 @@ read from the engine (`getCumulativeOdds` → `kolob-meeting.js`
 
 **THE ONE LIST is `_engine.php`.** Every page that plays the engine
 (`index.php`, the labs that load it whole, the harness, the tools) reads the
-room list from it; a module is added there and nowhere else. Today, in order:
+room list from it; a module is added there and nowhere else (the composer's
+worker loads its rooms from the page's own tags, in the list's order). The
+meeting requires the calendar: `kolob-calendar.js` stands ahead of
+`kolob-meeting.js`, and `tools/loadcheck.js` fails a list where it does not.
+Today, in order:
 
 | role | rooms |
 |---|---|
@@ -338,7 +347,8 @@ each hymn when the meeting is planned (`prepare(seed, n, rows, forms, rk)`)
 and brings it back: (1) in a Web Worker where the page has one, loading the
 composer's rooms (`DESK_FILES`: `pj2-rand`, `kolob-pitch`, `kolob-score`,
 `kolob-tunes`, `kolob-dialects`, `kolob-hymnists`, `kolob-composer`;
-`kolob-calendar` optional) by the versioned URLs the page itself loaded;
+`kolob-calendar` optional) by the versioned URLs the page itself loaded, in
+the page's order, which is the list's (`tools/loadcheck.js` checks it);
 (2) else in idle slices of the main thread (a `setTimeout`, one hymn a slice,
 never a clock cue); (3) and if a hymn is asked for before it has come back,
 it is written there and then and counted (`KOLOB.Hymnal.stats.late`,

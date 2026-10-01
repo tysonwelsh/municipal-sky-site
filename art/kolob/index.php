@@ -234,7 +234,8 @@ include '../../includes/header.php';
      (pj2-rand's dice, pj2-clock's clock, pj2-fx's room crossfade), shared by
      relative path the way ZANKYŌ shares it and never modified from here; then
      Kolob's own rooms. The guard printed after them names any room that did
-     not answer the roll call. -->
+     not answer the roll call, to the console and in KOLOB._broken, which
+     kolob-ui.js reads: a broken page keeps PLAY disabled. -->
 <?php kolob_engine_tags($kolob_engine, 'kolob_v'); ?>
 <script src="kolob-text.js?v=<?php echo kolob_v('kolob-text.js'); ?>"></script>
 <script src="kolob-viz.js?v=<?php echo kolob_v('kolob-viz.js'); ?>"></script>

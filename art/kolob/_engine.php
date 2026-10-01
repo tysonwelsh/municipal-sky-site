@@ -22,25 +22,42 @@
 // Earth tunes, whose file answers no roll call — are
 // checked by the globals they raise; kolob_engine_tags() prints a guard that names every room
 // that did not answer, so a missing or broken module is reported at load, not
-// as "S.x is not a function" at the first cue that needs it.
+// as "S.x is not a function" at the first cue that needs it. The guard tells
+// the page as well as the console: it sets KOLOB._broken to the names it
+// found missing (the facade among them when KolobAudio did not rise), and
+// nothing on a page that loaded whole. kolob-ui.js reads it at start-up and,
+// when it is set, wires nothing: PLAY stays disabled and the minutes say the
+// engine failed to load, so a broken page never calls a meeting that would
+// throw at its first cue. The guard is kolob_engine_guard(), below, and
+// tools/loadcheck.js runs that same script after the same list, as the page
+// does.
 // ============================================================================
 
 if (!function_exists('kolob_engine_tags')) {
     // Echo one <script> per room, cache-busted by $version_of($file), then the
-    // load guard. $version_of is the page's own hash helper (kolob_v, otl_v…).
+    // load guard, called with the list's file names. $version_of is the
+    // page's own hash helper (kolob_v, otl_v…).
     function kolob_engine_tags(array $engine, $version_of)
     {
         foreach ($engine as $js) {
             echo '<script src="' . htmlspecialchars($js) . '?v=' . call_user_func($version_of, $js) . '"></script>' . "\n";
         }
-        $names = array_map('basename', $engine);
-        echo '<script>(function () {'
-            . 'var need = ' . json_encode($names) . ', K = window.KOLOB || {}, r = K._rooms || {}, P = window.PJ2 || {},'
-            . ' sub = { "pj2-rand.js": P.Rand, "pj2-clock.js": P.Clock, "pj2-fx.js": P.Fx, "kolob-tunes.js": K.Tunes }, miss = [];'
-            . ' need.forEach(function (f) { if (f in sub ? !sub[f] : !r[f]) miss.push(f); });'
-            . ' if (!window.KolobAudio) miss.push("the KolobAudio facade");'
-            . ' if (miss.length) console.error("KOLOB AUDIO ENGINE FAILED TO LOAD: " + miss.join(", "));'
-            . '})();</script>' . "\n";
+        echo '<script>(' . kolob_engine_guard() . ')(' . json_encode(array_map('basename', $engine)) . ');</script>' . "\n";
+    }
+    // THE LOAD GUARD's script: a function of the list's file names (`need`),
+    // run once every room's tag has run. tools/loadcheck.js reads it from
+    // here, between the markers, and runs it after the rooms as the page does.
+    function kolob_engine_guard()
+    {
+        return <<<'JS'
+function (need) {
+  var K = window.KOLOB = window.KOLOB || {}, r = K._rooms || {}, P = window.PJ2 || {},
+    sub = { "pj2-rand.js": P.Rand, "pj2-clock.js": P.Clock, "pj2-fx.js": P.Fx, "kolob-tunes.js": K.Tunes }, miss = [];
+  need.forEach(function (f) { if (f in sub ? !sub[f] : !r[f]) miss.push(f); });
+  if (!window.KolobAudio) miss.push("the KolobAudio facade");
+  if (miss.length) { K._broken = miss; console.error("KOLOB AUDIO ENGINE FAILED TO LOAD: " + miss.join(", ")); }
+}
+JS;
     }
 }
 

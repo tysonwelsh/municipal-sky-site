@@ -68,6 +68,15 @@
 //    console.error the first time, then one at every thousandth, naming the
 //    listener and the layer or the type it threw on — and the music and the
 //    harness's own listeners go on: the dump is the clean run's.
+// 13. The roll call stops PLAY (PLAN-REFACTOR §2.5): tools/loadcheck.js on
+//    scratch copies of this build. Whole, the page's guard sets nothing and
+//    the hymnal's worker would load the list's own files in its order; with
+//    kolob-calendar.js missing, the guard names it in KOLOB._broken (the page
+//    keeps PLAY disabled) and loadcheck fails; with the calendar left off the
+//    list, the meeting room is found evaluated without it; with two of the
+//    composer's rooms swapped on the list, the worker follows the list; and
+//    a hymnal that names a room the list does not have is found unable to
+//    start its worker.
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -411,6 +420,50 @@ function check(name, ok, detail) {
     const recs = (r) => fs.readFileSync(r.dump, "utf8").split("\n").filter((l) => l && !l.startsWith('["H"'));
     const same = recs(bl).join("\n") === recs(fresh).join("\n");
     check("… and the music and the harness's own listeners go on: the dump is the clean run's, record for record", same, same ? recs(fresh).length + " records, identical" : "NOT identical");
+  }
+
+  console.log("13. the roll call stops PLAY (PLAN-REFACTOR §2.5)");
+  {
+    const { execFileSync } = require("child_process");
+    // a scratch copy of this build — the list's files and _engine.php, the
+    // substrate beside it as on the site — with one thing changed
+    const scratch = (name, edit) => {
+      const dir = path.join(tmp, "roll-" + name, "art", "kolob");
+      engine.list.files.concat([path.join(engine.dir, "_engine.php")]).forEach((f) => {
+        const to = path.join(dir, path.relative(engine.dir, f));
+        fs.mkdirSync(path.dirname(to), { recursive: true });
+        fs.copyFileSync(f, to);
+      });
+      if (edit) edit(dir);
+      return dir;
+    };
+    const swap = (dir, file, from, to) => { const p = path.join(dir, file), t = fs.readFileSync(p, "utf8"); if (t.indexOf(from) < 0) throw new Error(file + " has no " + from); fs.writeFileSync(p, t.replace(from, to)); };
+    const loadcheck = (dir) => {
+      try { return { code: 0, out: execFileSync(process.execPath, [path.join(__dirname, "loadcheck.js")], { env: Object.assign({}, process.env, { KOLOB_DIR: dir }), encoding: "utf8" }) }; }
+      catch (e) { return { code: e.status, out: String(e.stdout || "") }; }
+    };
+    const line = (r, k) => { const m = new RegExp("^ {2}" + k + ": (.*)$", "m").exec(r.out); return m ? m[1] : "no " + k + " line"; };
+    const failed = (r) => r.out.split("\n").filter((l) => /^ {3}- /.test(l)).map((l) => l.slice(5));
+    const whole = loadcheck(scratch("whole"));
+    check("whole: ALL GREEN, the page's guard sets nothing, and the worker would load the list's own files in its order",
+      whole.code === 0 && /ALL GREEN/.test(whole.out) && line(whole, "guard") === "nothing missing, KOLOB._broken unset" && /^the worker loads 8 files, the list's own, in its order \(pj2-rand\.js, .*kolob-composer\.js, kolob-calendar\.js\)$/.test(line(whole, "desk")),
+      line(whole, "guard") + " · " + line(whole, "desk"));
+    const gone = loadcheck(scratch("nocalendar", (dir) => fs.rmSync(path.join(dir, "kolob-calendar.js"))));
+    check("kolob-calendar.js missing: the page's guard names it in KOLOB._broken, and loadcheck fails",
+      gone.code === 1 && line(gone, "guard") === "KOLOB._broken = [kolob-calendar.js]" && failed(gone).some((f) => /^the page's load guard names kolob-calendar\.js in KOLOB\._broken .*KOLOB AUDIO ENGINE FAILED TO LOAD: kolob-calendar\.js$/.test(f)),
+      line(gone, "guard"));
+    const off = loadcheck(scratch("offlist", (dir) => swap(dir, "_engine.php", "    'kolob-calendar.js',\n", "")));
+    check("the calendar left off the list: the meeting room is found evaluated without it (the page's guard cannot know)",
+      off.code === 1 && failed(off).length === 1 && /^kolob-meeting\.js: evaluated before KOLOB\.Calendar stands/.test(failed(off)[0]) && line(off, "guard") === "nothing missing, KOLOB._broken unset",
+      failed(off).join("; "));
+    const moved = loadcheck(scratch("reorder", (dir) => swap(dir, "_engine.php", "'kolob-dialects.js', 'kolob-hymnists.js',", "'kolob-hymnists.js', 'kolob-dialects.js',")));
+    check("kolob-hymnists.js moved ahead of kolob-dialects.js on the list: the worker follows the list",
+      moved.code === 0 && /\(pj2-rand\.js, kolob-pitch\.js, kolob-score\.js, kolob-tunes\.js, kolob-hymnists\.js, kolob-dialects\.js, kolob-composer\.js, kolob-calendar\.js\)$/.test(line(moved, "desk")),
+      line(moved, "desk"));
+    const misnamed = loadcheck(scratch("misnamed", (dir) => swap(dir, "kolob-hymnal.js", '"kolob-hymnists.js", "kolob-composer.js"]', '"kolob-hymnist.js", "kolob-composer.js"]')));
+    check("a hymnal that names a room the list does not have: its worker is found unable to start",
+      misnamed.code === 1 && line(misnamed, "desk") === "the worker would not start" && failed(misnamed).some((f) => /^the composer's desk: the hymnal's worker would not start/.test(f)),
+      failed(misnamed).join("; "));
   }
 
   fs.rmSync(tmp, { recursive: true, force: true });

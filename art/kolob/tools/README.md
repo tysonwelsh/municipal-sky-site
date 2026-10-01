@@ -320,11 +320,18 @@ The cheapest check there is, and the first thing CI runs: it reads
 of the page (no audio, no clock, almost no DOM), and takes the roll call the
 page's own load guard takes — every room answered (`KOLOB._rooms[file]`), the
 substrate's globals raised, the `KolobAudio` facade standing and carrying the
-methods the page and the labs call. Then one pure smoke: the composer writes a
-hymn from a fixed stream and the Score's proofreader passes it. It prints
-`modules: N of N loaded; rooms answering: M`, the hymn, and `ALL GREEN` or the
-failures. No harness, no browser: the harness is what plays a meeting, this
-only proves the doors open.
+methods the page and the labs call. It then runs the page's own guard
+(`kolob_engine_guard()`, read from `_engine.php`) as the page does, after the
+rooms: it must name in `KOLOB._broken` exactly what the roll call missed
+(`kolob-ui.js` keeps PLAY disabled on it) and set nothing on a whole load. The
+calendar must stand before `kolob-meeting.js` is evaluated (the meeting
+requires it). The composer's desk: the files the hymnal's worker would load
+on the page — found by the script tags the page prints from the list, under a
+stub Worker — must be the list's own, in its order. Then one pure smoke: the
+composer writes a hymn from a fixed stream and the Score's proofreader passes
+it. It prints `modules: N of N loaded; rooms answering: M`, the guard, the
+desk, the hymn, and `ALL GREEN` or the failures. No harness, no browser: the
+harness is what plays a meeting, this only proves the doors open.
 
 ## lends.js
 

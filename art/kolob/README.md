@@ -80,7 +80,7 @@ whether or not its result is used, and no musical decision reads the audio clock
 ```sh
 npm install                              # once: ESLint (package.json at the repo root)
 npm run lint                             # no undefined names, no unused variables
-node art/kolob/tools/loadcheck.js        # the engine loads headless; the roll call; one hymn proofread
+node art/kolob/tools/loadcheck.js        # the engine loads headless; the roll call and the page's guard; the desk's files; one hymn proofread
 node art/kolob/tools/lends.js            # every S.x read has a lend
 node art/kolob/tools/samecode.js         # a comment pass changed no code token (against HEAD; --ref <ref>)
 node art/kolob/_harness.js 300 7         # a meeting plays headless, no errors, no late cue

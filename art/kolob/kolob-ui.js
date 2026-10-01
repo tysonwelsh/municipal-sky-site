@@ -14,12 +14,14 @@
 // piece does not explain itself. Latin survives only in numerals and in
 // invisible aria-labels for screen readers.
 //
-// Talks only to window.KolobAudio, window.KolobViz, window.KolobText.
+// Talks only to window.KolobAudio, window.KolobViz, window.KolobText (and
+// reads the load guard's word, KOLOB._broken, once, at start-up).
 // ============================================================================
 (function () {
   "use strict";
   var K = window.KolobAudio;
-  if (!K) { if (window.console) console.error("Kolob UI: engine missing"); return; }
+  // (a page whose engine did not load is told so and wires nothing: THE
+  // ENGINE THAT DID NOT LOAD, below the strings it is told in)
 
   // ==========================================================================
   // THE STRINGS — hand-transliterated, capitals (the 1859 chart).
@@ -34,6 +36,7 @@
     meeting: "𐐣𐐀𐐓𐐆𐐥",                   // MEETING
     idle: "𐐜 𐐚𐐈𐐢𐐆 𐐆𐐞 𐐝𐐓𐐆𐐢",           // THE VALLEY IS STILL
     listening: "𐐜 𐐣𐐆𐐤𐐆𐐓𐐝 𐐒𐐆𐐘𐐆𐐤",      // THE MINUTES BEGIN
+    broken: "𐐜𐐊 𐐇𐐤𐐖𐐆𐐤 𐐙𐐁𐐢𐐔 𐐓𐐅 𐐢𐐄𐐔",  // THE ENGINE FAILED TO LOAD (spelled by kolob-cast.js's deseretCaps, as the clerk spells)
     stillness: "𐐝𐐓𐐆𐐢𐐤𐐇𐐝",              // STILLNESS
     fuging: "𐐙𐐧𐐘𐐆𐐥",                    // FUGING
     reprise: "𐐡𐐆𐐑𐐡𐐌𐐞",                  // REPRISE
@@ -166,7 +169,7 @@
   var STR_EN = {
     play: "PLAY", pause: "PAUSE", stop: "STOP", vol: "VOL", seed: "SEED", gather: "GATHER",
     meeting: "MEETING", idle: "THE VALLEY IS STILL",
-    listening: "THE MINUTES BEGIN", stillness: "STILLNESS", fuging: "FUGING",
+    listening: "THE MINUTES BEGIN", broken: "THE ENGINE FAILED TO LOAD", stillness: "STILLNESS", fuging: "FUGING",
     reprise: "REPRISE", develops: "DEVELOPS", disperses: "DISPERSES",
     answers: "ANSWERS", linesOut: "LINES OUT", shadows: "SHADOWS",
     theme: "THEME", hymnsOfDay: "THE DAY'S HYMNS", amen: "AMEN",
@@ -229,6 +232,27 @@
   function motifName(n) {
     if (!latinMode) return n;
     return String(n).replace(/[ⅠⅡⅢ]/g, function (ch) { return MOTIF_EN[ch] || ch; });
+  }
+
+  // ==========================================================================
+  // THE ENGINE THAT DID NOT LOAD. _engine.php's load guard names every room
+  // that did not answer its roll call in KOLOB._broken, the facade among
+  // them when it did not rise (a page without the guard is still asked
+  // for the facade). Such a page says so and wires nothing: PLAY is
+  // disabled, the minutes say the engine failed to load, in the script the
+  // switch has set (the switch itself, like everything else, is not wired),
+  // and the console has the names, from the guard (a meeting called on a
+  // broken engine would throw at its first cue with PLAY lit). A page that
+  // loads whole never comes here.
+  // ==========================================================================
+  var broken = window.KOLOB && window.KOLOB._broken ? window.KOLOB._broken : (K ? null : ["the KolobAudio facade"]);
+  if (broken) {
+    if (window.console) console.error("Kolob UI: engine missing (" + broken.join(", ") + "); PLAY is disabled");
+    var deadPlay = document.getElementById("kolob-play");
+    if (deadPlay) deadPlay.disabled = true;
+    var deadLog = document.querySelector("#kolob-log .kolob-log-empty");
+    if (deadLog) deadLog.textContent = TT(STR, STR_EN).broken;
+    return;
   }
 
   // ==========================================================================
@@ -639,8 +663,8 @@
       mm.textContent = "";
       return;
     }
-    // (the calendar's Sunday; the kind of meeting where a page has no
-    // calendar)
+    // (the calendar's Sunday — the meeting requires the calendar; the kind
+    // of meeting only should the conductor name no Sunday)
     var sd = c.sunday && c.sunday.id ? (latinMode ? SUNDAYS_EN[c.sunday.id] : c.sunday.nameDs) : null;
     day.textContent = sd || TT(ACTIVITIES_DS, ACTIVITIES_EN)[c.activity] || "";
     var mode = TT(MODES_DS, MODES_EN)[c.mode] || "";

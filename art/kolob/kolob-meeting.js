@@ -155,7 +155,10 @@ window.KOLOB = window.KOLOB || {};
   // they overlap at the edges, as the kinds do. SEASON_OF is the kinds'
   // warmth, for every Sunday whose row carries no season of its own.
   var SEASON_OF = { fast: [0, 0.35], ordinary: [0.2, 0.7], conference: [0.5, 0.9], jubilee: [0.7, 1] };
-  function Calendar() { return KOLOB.Calendar || null; }
+  // (the calendar is required: every page that plays a meeting loads it
+  // ahead of this room, on _engine.php's list, and tools/loadcheck.js fails
+  // a list that does not)
+  function Calendar() { return KOLOB.Calendar; }
   var seasonPos = 0;
   var F0_RANGE = [52, 78];       // the keynote's window, Hz of F0 (see THE KEYNOTE in planMeeting)
 
@@ -171,7 +174,6 @@ window.KOLOB = window.KOLOB || {};
   // 14 Sundays sang another closing hymn.)
   function reckoningOn() { return !(KOLOB.Experimental && KOLOB.Experimental.isOn && !KOLOB.Experimental.isOn("reckoning")); }
   function reckoningInfo(plan, rows, CAL) {
-    if (!CAL || !CAL.reckon) return null;
     var dox = null, byIndex = {};
     for (var i = 0; i < rows.length; i++) { if (rows[i].index != null) byIndex[rows[i].index] = rows[i]; if (!dox && rows[i].section === "doxology") dox = rows[i]; }
     if (!dox || dox.index == null || dox.index < 1) return null;
@@ -324,14 +326,14 @@ window.KOLOB = window.KOLOB || {};
     // dawn to full daylight and evening, the Sunday's own (a funeral's dawn
     // darker, its morning climbing late) — read by the hymnal (each hymn's
     // dialect), the organ (its stops) and the meeting's intensity
-    for (var li0 = 0; li0 < plan.length; li0++) plan[li0].light = CAL ? CAL.light(plan, li0, sunday) : null;
+    for (var li0 = 0; li0 < plan.length; li0++) plan[li0].light = CAL.light(plan, li0, sunday);
     // the guests' dice — each guest keeps its own die, as before, and all are
     // thrown every meeting
     // (THE GUESTS' ODDS are one table, the calendar's GUEST_ODDS, read for
     // this Sunday — for the dice the plan throws itself, here, and
     // handed to every guest's own room as info.odds. A changed number moves
     // no die: each chance is one draw, whatever it is read against)
-    function oddsOf(g, dflt) { var o = CAL && CAL.guestOdds ? CAL.guestOdds(g, sunday) : null; return o != null ? o : dflt; }
+    function oddsOf(g, dflt) { var o = CAL.guestOdds(g, sunday); return o != null ? o : dflt; }
     var forcedDie = R.rnd(0, 1);
     var qDie = R.chance(0.29), qSeatDie = R.chance(0.7);
     // DICE: the Question's — shelved (the owner, 2026-09-27: "one of the less
@@ -406,7 +408,7 @@ window.KOLOB = window.KOLOB || {};
       for (var q = 0; q < others.length; q++) {
         var vi = seatIndex(others[q]);
         if (vi >= 0 && at >= 0 && vi === at) return "in the " + others[q].type + "'s rite";
-        if (vi >= 0 && at >= 0 && Math.abs(vi - at) === 1 && !(CAL && CAL.neighboursMay && CAL.neighboursMay(others[q].type, type, sunday))) return "beside the " + others[q].type;
+        if (vi >= 0 && at >= 0 && Math.abs(vi - at) === 1 && !CAL.neighboursMay(others[q].type, type, sunday)) return "beside the " + others[q].type;
       }
       return null;
     }
@@ -423,7 +425,7 @@ window.KOLOB = window.KOLOB || {};
     // Pioneer Day) — the room would refuse them, and the budget has allowed it
     function seatedFor(type, section) {
       return C.visitations.map(function (v) { return { type: v.type, section: v.section, index: seatIndex(v) }; })
-        .filter(function (g) { return !(type && CAL && CAL.neighboursMay && CAL.neighboursMay(g.type, type, sunday) && g.section !== section); });
+        .filter(function (g) { return !(type && CAL.neighboursMay(g.type, type, sunday) && g.section !== section); });
     }
     // a rite held at least `until` s for a guest seated in it
     function holdSection(type, until) {
@@ -816,16 +818,14 @@ window.KOLOB = window.KOLOB || {};
     // leaning by the Sunday, one die a rite on scenes:<n>, every die thrown;
     // and never two empty rites running (a hymn, the prelude and a rite a
     // guest is seated in are never empty). Drawn once every guest is seated.
-    if (CAL) {
-      var scR = stream("scenes"), scs = CAL.scenes(plan, sunday, C.visitations, scR);
-      C.scenes = scs.map(function (x, i) {
-        if (!x.scene) return null;
-        var spec = CAL.SCENES[x.scene], hum = null;
-        if (spec.hum) { var hr = scR.fork("hum:" + i); hum = { n: hr.rint(spec.hum.n[0], spec.hum.n[1]), s: +hr.rnd(spec.hum.s[0], spec.hum.s[1]).toFixed(2) }; }
-        return { name: x.scene, empty: !!x.empty, forced: !!x.forced, sits: spec.sits || {}, lean: spec.lean || {}, lined: !!spec.lined, fifths: !!spec.fifths,
-                 hum: hum, full: false, spread: "close" };
-      });
-    }
+    var scR = stream("scenes"), scs = CAL.scenes(plan, sunday, C.visitations, scR);
+    C.scenes = scs.map(function (x, i) {
+      if (!x.scene) return null;
+      var spec = CAL.SCENES[x.scene], hum = null;
+      if (spec.hum) { var hr = scR.fork("hum:" + i); hum = { n: hr.rint(spec.hum.n[0], spec.hum.n[1]), s: +hr.rnd(spec.hum.s[0], spec.hum.s[1]).toFixed(2) }; }
+      return { name: x.scene, empty: !!x.empty, forced: !!x.forced, sits: spec.sits || {}, lean: spec.lean || {}, lined: !!spec.lined, fifths: !!spec.fifths,
+               hum: hum, full: false, spread: "close" };
+    });
     // THE DAY'S HYMNS ORDERED (the desk writes them off the audio path),
     // with the reckoning's order laid on the doxology's
     if (prep) {
@@ -1068,7 +1068,7 @@ window.KOLOB = window.KOLOB || {};
     // (the Sunday leans the morning: a funeral wakes on the ground or the
     // strings, a conference on the organ voluntary, Christmas humming — the
     // same die, read at the Sunday's odds)
-    var mLean = C.meeting && Calendar() && Calendar().SUNDAYS[C.meeting.sunday] ? Calendar().SUNDAYS[C.meeting.sunday].morning || {} : {};
+    var mLean = C.meeting && Calendar().SUNDAYS[C.meeting.sunday] ? Calendar().SUNDAYS[C.meeting.sunday].morning || {} : {};
     var under = pickWith(pickU, SEATING_ODDS.map(function (o) { return [o[0], o[1] * (mLean[o[0]] != null ? mLean[o[0]] : 1)]; })), name = under, anchor = 0;
     var tb = visitationOf("trombones"), st = visitationOf("steeples"), ss = visitationOf("singingschool");
     if (tb && tb.section === "prelude") { name = "trombones"; anchor = tb.at + tb.dur + 2; }
@@ -2139,7 +2139,7 @@ window.KOLOB = window.KOLOB || {};
     // for the programme card (en: dev and Latin), its kind
     day: function () {
       if (!C.meeting) return null;
-      var SD = Calendar() && C.meeting.sunday ? Calendar().SUNDAYS[C.meeting.sunday] : null;
+      var SD = C.meeting.sunday ? Calendar().SUNDAYS[C.meeting.sunday] : null;
       return { id: C.meeting.sunday || null, kind: C.meeting.activity, nameDs: SD ? SD.ds : null, nameEn: SD ? SD.en : null };
     },
     // the light of the rite now (0 night … 1 full daylight; the calendar's

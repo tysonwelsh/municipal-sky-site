@@ -493,28 +493,26 @@ window.KOLOB = window.KOLOB || {};
       self.postMessage({ type: "hymn", key: m.key, hymn: h, error: err, ms: ms });
     };
   }
-  // the composer's rooms, in the order the page loaded them (the worker loads
-  // the same files at the same versions — the same bytes, the same hymns)
+  // THE DESK'S ROOMS: which of the engine's rooms the composer needs. The
+  // worker loads them from the page's own script tags, in the page's order
+  // and at the page's versions — the same bytes, the same hymns — and the
+  // page prints its tags from _engine.php's one list, so the list alone
+  // says the order; this names the rooms, not where they stand
+  // (tools/loadcheck.js checks that what the worker would load is on the
+  // list, in its order).
   var DESK_FILES = ["pj2-rand.js", "kolob-pitch.js", "kolob-score.js", "kolob-tunes.js", "kolob-dialects.js", "kolob-hymnists.js", "kolob-composer.js"];
   // (and the calendar, where the page has it: the reckoning is read there;
   // a lab without it writes no reckoned doxology)
   var DESK_OPTIONAL = ["kolob-calendar.js"];
   function deskUrls() {
     if (typeof document === "undefined" || !document.getElementsByTagName) return null;
-    var scripts = document.getElementsByTagName("script"), urls = [];
-    function find(name) {
-      for (var j = 0; j < scripts.length; j++) {
-        var src = scripts[j].src || "";
-        if (src.split("?")[0].split("/").pop() === name) return src;
-      }
-      return null;
+    var scripts = document.getElementsByTagName("script"), urls = [], found = [];
+    for (var j = 0; j < scripts.length; j++) {
+      var src = scripts[j].src || "", name = src.split("?")[0].split("/").pop();
+      if (found.indexOf(name) >= 0 || (DESK_FILES.indexOf(name) < 0 && DESK_OPTIONAL.indexOf(name) < 0)) continue;
+      found.push(name); urls.push(src);
     }
-    for (var i = 0; i < DESK_FILES.length; i++) {
-      var found = find(DESK_FILES[i]);
-      if (!found) return null;
-      urls.push(found);
-    }
-    DESK_OPTIONAL.forEach(function (f) { var u = find(f); if (u) urls.push(u); });
+    for (var i = 0; i < DESK_FILES.length; i++) if (found.indexOf(DESK_FILES[i]) < 0) return null;
     return urls;
   }
 

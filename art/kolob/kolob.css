@@ -292,6 +292,9 @@
 /* the meeting held: the pause dot fills with ink; the play dot waits in ink */
 .kolob-knob.pause-btn.is-paused { background: var(--ink); color: var(--paper); }
 .kolob-knob.play-btn.is-playing.is-held { background: var(--ink); border-color: var(--ink); }
+/* the engine did not load (kolob-ui.js, THE ENGINE THAT DID NOT LOAD): the
+   play dot is disabled, faded and still, so it does not invite a press */
+.kolob-knob:disabled { opacity: 0.35; cursor: default; transform: none; }
 .kolob-transport-spacer { flex: 1; }
 .kolob-ctl-label {
   font-family: "Noto Sans Deseret", serif;
