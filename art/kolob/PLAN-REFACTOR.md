@@ -1,6 +1,6 @@
 # Plan: the refactor — efficiency, reliability, maintainability, nothing the owner hears or sees
 
-> **Status 2026-10-01:** written, nothing built. The owner's request, in their words: "create a refactor plan. Look for improvements in the code that would improve the efficiency, reliability, and maintainability of the code that would not impact the appearance or functionality of the app." What is done from it moves to `OPEN-WORK.md`; a ruling on any item goes to `OWNER-RULINGS.md`. Line numbers are of commit cc9d1a4 and will drift; the names will not.
+> **Status 2026-10-01:** §2 (reliability) built, all six items, commits 3eefffb to a373760, released as v0.36.3; §3 (maintainability) and §4 (efficiency) not built. The owner's request, in their words: "create a refactor plan. Look for improvements in the code that would improve the efficiency, reliability, and maintainability of the code that would not impact the appearance or functionality of the app." What is done from it moves to `OPEN-WORK.md`; a ruling on any item goes to `OWNER-RULINGS.md`. Line numbers are of commit cc9d1a4 and will drift; the names will not.
 
 ## 0. The rule, and the proofs
 
@@ -62,6 +62,8 @@ These are bugs or latent faults, each small, each worth a commit of its own. Non
 
 **2.5 The roll call that does not stop PLAY.** A missing room only prints `KOLOB AUDIO ENGINE FAILED TO LOAD` (`_engine.php:37-43`); PLAY stays enabled because the UI checks only `window.KolobAudio` (`kolob-ui.js:22`), and the first cue then throws at `planMeeting` with `isPlaying()` true. `Calendar()` is written as optional (`kolob-meeting.js:140`) but `CAL.draw` and `CAL.GUEST_BUDGET` are used without a check (`:212, :359`). `kolob-hymnal.js:497` keeps its own list of the composer's files (`DESK_FILES`) beside `_engine.php`'s one list. *How:* the load guard sets `KOLOB._broken`; the UI disables PLAY on it; the calendar becomes required and the accessor goes; `DESK_FILES` is derived from the engine list (`loadcheck.js` asserts they agree). *Proof:* loadcheck. *Size:* hours.
 
+*Built 2026-10-01, commit a373760 — 20 of 20 seeds identical; `tools/selftest.js` §13 (loadcheck on scratch copies): `kolob-calendar.js` missing, the page's guard sets `KOLOB._broken = [kolob-calendar.js]` (before: only the console line) and in a muted Chrome PLAY is disabled and the minutes say the engine failed to load (before: PLAY lit, and the conductor's first cue threw at `CAL.draw`); the calendar left off the list, loadcheck fails where it said ALL GREEN; the worker's 8 files are the list's own, in its order (HEAD's typed order fails against a list with two of them swapped). The guard is `kolob_engine_guard()`, the script both the page and loadcheck run; `Calendar()` kept as the accessor that reads at call time, without the `|| null`; `DESK_FILES` names the composer's rooms and the page's tags give their order.*
+
 **2.6 The harness's accounting.** Report the sources scheduled past the run's end under their own name, not as "timers still armed"; count a `console.warn` that is not the IR fetch; and add the two scripted transport runs above as harness modes (`stop=<t> play=<t>`). *Proof:* selftest. *Size:* hours.
 
 *Built 2026-10-01, commit 3eefffb — selftest §8 passes: `stop=40 play=41` puts the transport events at 0/40/41, and `throw=drone@60` fires once at 74.38 s with the drone lane running 0 cues after it (today's fault; also `throw=<lane>@<secs>`, the fault injection §2.1 will use).*
@@ -118,4 +120,4 @@ These are bugs or latent faults, each small, each worth a commit of its own. Non
 | 3. the shapes | §3.6 golden tests; §3.4 the planner; §3.2 the guest scaffold | 7–8 days | golden, tally, forced runs |
 | 4. the page and the graph | §4.2 the frame; §3.5 the staff in pieces; §2.5 the roll call; §4.6 the safe pair, then the owner's call; §4.7 | 6–7 days | pixel screens, capture |
 
-Each item is its own commit with its proof in the message, as the retirements of 2026-10-01 were (`git log --grep "20 of 20"`). No `VERSION` bump for any of it: the owner hears and sees the same build.
+Each item is its own commit with its proof in the message, as the retirements of 2026-10-01 were (`git log --grep "20 of 20"`). No `VERSION` bump for an item: a clean run is heard and seen the same. §2's fixes do change what an owner could notice at the edges (a STOP inside a wait, a fault, a broken page), so §2 closed with one bump, v0.36.3; §3 and §4 bump only where they say they change what is heard or seen (§4.6's graph, with the owner).

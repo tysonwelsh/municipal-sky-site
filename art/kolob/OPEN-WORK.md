@@ -7,10 +7,21 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
 
 ## The refactor
 
-- **`PLAN-REFACTOR.md`** (2026-10-01; §2.6, §2.1, §2.2, §2.3 and §2.4 built): the owner asked for a plan to improve
-  efficiency, reliability and maintainability without changing what is heard or seen. Its §2 is
-  a list of real faults (a cue that threw ended its layer for the visit — built; a stillness that
-  survived STOP — built; STOP's own race — built; errors swallowed silently — built) and is worth doing first.
+- **`PLAN-REFACTOR.md`** (2026-10-01; §2 built, v0.36.3): the owner asked for a plan to improve
+  efficiency, reliability and maintainability without changing what is heard or seen. Its §2, the
+  real faults, is done (commits 3eefffb to a373760: a cue that threw ended its layer for the visit; a
+  stillness survived STOP; STOP's own race; errors swallowed silently; a broken page let PLAY be
+  pressed; the harness's accounting). What remains is §3 (one place for each thing: the Pitch
+  arithmetic, the guest-room scaffold, the planner out of the conductor, golden tests, the lint) and
+  §4 (the page's load and frame, the minutes' poll, the audio graph with the owner), in §6's order.
+  The §2 builders' follow-ups, not done:
+  - the drone stays ducked after a broken hymn's chain is released by the net (§2.1);
+  - a cue's fault that repeats is now logged at each of the net's retries (every 5 s for a layer), not once (§2.1);
+  - the seven guarded one-line `confess` wrappers in the rooms that load without the core are worth folding under §3;
+  - `C.ward` and `C.organist` survive a reseed while stopped, so the rail sings the old ward until the next meeting is planned;
+  - the chord book's ids count for the page's life, not per visit;
+  - `no-empty` could now be added to the lint (§3.8), with `allowEmptyCatch` or a comment in each empty catch;
+  - a hymn the idle road fails to write warns, while a worker's failure to write one errors.
 
 ## Ideas approved, not built
 
