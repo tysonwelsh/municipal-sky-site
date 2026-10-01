@@ -174,6 +174,7 @@ include '../../includes/header.php';
 <script src="kolob-voices-band.js?v=<?php echo kg3_v('kolob-voices-band.js'); ?>"></script>
 <script src="kolob-voices-folk.js?v=<?php echo kg3_v('kolob-voices-folk.js'); ?>"></script>
 <script src="kolob-voices-vocal.js?v=<?php echo kg3_v('kolob-voices-vocal.js'); ?>"></script>
+<script src="kolob-guest-room.js?v=<?php echo kg3_v('kolob-guest-room.js'); ?>"></script>
 <script src="kolob-guest-trombones.js?v=<?php echo kg3_v('kolob-guest-trombones.js'); ?>"></script>
 <script src="kolob-guest-bands.js?v=<?php echo kg3_v('kolob-guest-bands.js'); ?>"></script>
 <script src="kolob-guest-handcart.js?v=<?php echo kg3_v('kolob-guest-handcart.js'); ?>"></script>

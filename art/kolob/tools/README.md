@@ -582,11 +582,15 @@ a hymn's verses to one tune (38–41 % each); every other voice is at or near
 
 ```sh
 node tools/tally.js [--seeds 1-20] [--secs 1200] [--first] [--engine …] [--harness …] [--dumps …] [--out <dir>]
-node tools/tally.js --a <spec> --b <spec> [--seeds 1-60] [--secs 1200] [--threshold 15] [--harness-a …] [--harness-b …]
+node tools/tally.js --a <spec> --b <spec> [--seeds 1-60] [--secs 1200] [--threshold 15] [--harness-a …] [--harness-b …] [--flags …]
 ```
 
 Here `<spec>` is a dump directory, an engine directory, `git:<ref>` or
-`worktree`.
+`worktree`. `--flags` hands the harness its switches for every build the
+tally renders, as `render.js` takes them (`--flags force=gulls`, `ives`,
+`cumulative`): a change to one guest's room is proved on the seeds that seat
+it, `node tools/tally.js --a git:HEAD --b worktree --seeds 1-3 --flags
+force=gulls` (the report's A and B lines name the flags).
 
 **What it counts**, over every complete meeting: the meeting's length and its
 sections; each section type's median length and count; cadences per meeting
@@ -817,7 +821,9 @@ wrapper exact and used, and fails a scratch copy with one wrapper that renames
 (`function foo() { return S.now(); }`) and one that reorders (`cueAt`'s lane and
 time swapped), naming both; `loadcheck.js` finds every lab loading its rooms in
 its own order, and fails a copy with the singing school moved ahead of
-`kolob-pitch.js` on `guests-lab`'s list, naming the lab and the room's throw.
+`kolob-pitch.js` on `guests-lab`'s list (and so of the guest rooms' scaffold,
+`kolob-guest-room.js`, which it reaches for first), naming the lab and the
+room's throw.
 All fifteen pass on `art/kolob/_harness.js`. Run it after any change to the engine's
 events, to the harness or to these tools. It renders into `out/_selftest/`
 and, like every tool, refuses while the engine is being edited.

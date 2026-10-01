@@ -52,6 +52,16 @@
 // is at or after the t it is given, laid out a phrase at a time through
 // hooks.defer when the engine gives it a clock.
 //
+// THE SCAFFOLD (KOLOB.GuestRoom, kolob-guest-room.js): the stream it
+// insists on, plan(), oddsFor() (the house's odds), the decision's shape and
+// its "not this Sunday", the look-ahead (2.5 s) and the slices on the clock
+// (defer, ALWAYS: every slice a cue of its own, even one due now), the
+// teardown sentinel, perform.last and LEVEL. Its own: its seat (the
+// testimony, no guest in it or beside it), the singer, the arm-tick, and
+// its stages — each told on the clock at its own moment, reshaped for the
+// glue (its own `stage`, not the stages told at once), the last one only
+// when a harmonium answers.
+//
 // Public surface: window.KOLOB.GuestTongues
 //   plan(meetingInfo, stream) → { guest: "tongues", seat: "testimony",
 //        section: "testimony", at, dur, holdUntil, singer, part, seeds,
@@ -83,6 +93,8 @@ window.KOLOB.GuestTongues = (function () {
 
   var NAME = "tongues";
   var LABEL = "guest:tongues:";                   // the stream's label: + the meeting number
+  var GR = window.KOLOB.GuestRoom;                // the scaffold (kolob-guest-room.js)
+  if (!GR) throw new Error("KOLOB.GuestTongues: load kolob-guest-room.js first");
   // THE MINUTES. The gift tells five stages (onStage); three earn a row —
   // someone rising to sing, the ward's hum, the harmonium's answer. The song
   // itself and its height are heard, not written: the glue passes them over
@@ -115,17 +127,8 @@ window.KOLOB.GuestTongues = (function () {
   var LEVEL = 1.0;
   var SING_GAIN = 0.44, HUM_GAIN = 0.046, REED_GAIN = 0.07;
 
-  function need(stream) {
-    if (!stream || typeof stream.fork !== "function") throw new Error("KOLOB.GuestTongues: a PJ2.Rand stream is required (label " + LABEL + "<n>)");
-    return stream;
-  }
-  function oddsFor(info) {
-    // (the meeting hands this room its odds from Calendar.GUEST_ODDS,
-    // info.odds; a lab without them reads the room's own ODDS)
-    if (info && info.odds != null) return Math.max(0, Math.min(1, +info.odds));
-    var w = ODDS.weight, k = info.sunday && w[info.sunday] != null ? info.sunday : info.kind;
-    return Math.min(ODDS.cap, ODDS.base * (w[k] != null ? w[k] : 1));
-  }
+  function need(stream) { return GR.need(stream, "KOLOB.GuestTongues", LABEL); }
+  function oddsFor(info) { return GR.oddsFor(info, ODDS); }
   function clamp(x, a, b) { return window.KOLOB.Num.clamp(x, a, b); }
   function r4(x) { return window.KOLOB.Num.r4(x); }
   function mod(a, n) { return window.KOLOB.Num.mod(a, n); }
@@ -156,8 +159,8 @@ window.KOLOB.GuestTongues = (function () {
     }
     if (ti < 0) why = "no testimony";
     else if (guests.some(near)) why = "a guest is in or beside the testimony";
-    else if (!(info.force || roll < p)) why = "not this Sunday";
-    if (why) return { seat: null, why: why, odds: p, roll: roll };
+    else if (GR.notThisSunday(info, roll, p)) why = "not this Sunday";
+    if (why) return GR.decision(null, why, p, roll);
     // the singer: one of the Sunday's testimony-bearers, when the ward is
     // known; else a voice of the ward's own parts (the performer seats it)
     var ward = info.ward || null, bearers = ward && ward.roles && ward.roles.testimony ? [].concat(ward.roles.testimony) : [];
@@ -165,16 +168,13 @@ window.KOLOB.GuestTongues = (function () {
     var part = singer && ward.byId && ward.byId[singer] ? ward.byId[singer].part : pickPart(partDie);
     var tl = timeline(sh);
     var seedP = info.sunday === "fast" || info.kind === "fast" ? SEEDS.fast : SEEDS.base;
-    return {
-      seat: {
-        guest: NAME, seat: "testimony", section: "testimony", at: +at.toFixed(2), dur: +tl.end.toFixed(2),
-        holdUntil: +(at + tl.end + 4).toFixed(2), singer: singer, part: part, pick: +whoDie.toFixed(6), seeds: seedDie < seedP,
-        phrases: tl.phrases.length, odds: +p.toFixed(3), logged: true,
-      },
-      why: "seated", odds: p, roll: roll,
-    };
+    return GR.decision({
+      guest: NAME, seat: "testimony", section: "testimony", at: +at.toFixed(2), dur: +tl.end.toFixed(2),
+      holdUntil: +(at + tl.end + 4).toFixed(2), singer: singer, part: part, pick: +whoDie.toFixed(6), seeds: seedDie < seedP,
+      phrases: tl.phrases.length, odds: +p.toFixed(3), logged: true,
+    }, "seated", p, roll);
   }
-  function plan(info, stream) { return decide(info, stream).seat; }
+  var plan = GR.plan(decide);
   // singerOf(seat, ward) → a member id: who rises, once the ward is seated
   // (the meeting seats its ward after its guests). One of the day's
   // testimony-bearers of the seat's part, by the seat's own die; else anyone
@@ -701,7 +701,7 @@ window.KOLOB.GuestTongues = (function () {
   // the reed; each laid out a little before it sounds when the engine lends
   // its clock (hooks.defer), never a whole gift inside one callback
   // ==========================================================================
-  var AHEAD = 2.5;
+  var AHEAD = GR.ahead();
   // ARMING (VoicesVocal's): with the engine's clock, each line is built a
   // little ahead and joins the room only just before it sounds, each mouth
   // only around its own moments; one arm-tick cue at a time from t to the
@@ -727,7 +727,7 @@ window.KOLOB.GuestTongues = (function () {
     var sc = score(material, stream, t), synth = stream.fork("synth");
     var bus = ctx.createGain(); bus.gain.value = LEVEL; bus.connect(dest);
     // (with a clock, every slice is a cue of its own — even one due now)
-    function later(at, fn) { if (hooks.defer) hooks.defer(Math.max(t, at - AHEAD), fn); else fn(); }
+    function later(at, fn) { GR.defer(hooks, t, at - AHEAD, fn, GR.ALWAYS); }
     function stage(st) { if (hooks.onStage) later(st.t, function () { hooks.onStage({ stage: st.stage, t: st.t, t0: st.t, label: st.stage, guest: NAME }); }); }   // (t0: the meeting's glue cues its row then)
     sc.stages.forEach(function (st, i) { if (i < 4 || material.harmonium !== false) stage(st); });
     var armed = armTicker(V, ctx, hooks, t, sc.end);
@@ -766,18 +766,14 @@ window.KOLOB.GuestTongues = (function () {
       if (hooks.onNote) sc.reed.notes.forEach(function (x) { hooks.onNote({ layer: "harmonium", freq: x.f, t: x.t, dur: x.dur, part: "S", role: "tongues-reed", guest: NAME }); });
     });
     // when the room has let the last of it go, let the bus go
-    var sent = ctx.createConstantSource ? ctx.createConstantSource() : ctx.createOscillator(), sg = ctx.createGain();
-    sg.gain.value = 0; sent.connect(sg); sg.connect(bus);
-    sent.onended = function () { try { sg.disconnect(); sent.disconnect(); bus.disconnect(); } catch (e) { /* gone */ } };
-    sent.start(Math.max(0, t)); sent.stop(end + 4);
-    perform.last = { score: sc, end: end };
+    GR.sentinel(ctx, bus, t, end + 4, function () { GR.quiet([bus]); });
+    GR.last(perform, { score: sc, end: end });
     return end;
   }
 
-  return {
+  return GR.level({
     plan: plan, decide: decide, score: score, perform: perform, gesture: gesture, tongue: tongue, singerOf: singerOf, timeline: function (stream, house) { return timeline(shapeOf(stream, house)); },
     ODDS: ODDS, EXCLUDES: EXCLUDES, NAME: NAME, LABEL: LABEL, BLOCK: BLOCK, ROWS: ROWS,
-    get LEVEL() { return LEVEL; }, set LEVEL(v) { LEVEL = +v; },
-  };
+  }, function () { return LEVEL; }, function (v) { LEVEL = v; });
 })();
 (window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-guest-tongues.js"] = true;   // the load guard's roll call

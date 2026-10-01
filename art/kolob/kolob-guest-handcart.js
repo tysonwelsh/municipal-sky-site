@@ -44,6 +44,15 @@
 // clock: everything is placed at or after the t it is given, a line at a
 // time through hooks.defer, a little ahead of the sound.
 //
+// THE SCAFFOLD (KOLOB.GuestRoom, kolob-guest-room.js): the stream it
+// insists on, plan(), oddsFor() (the house's odds), the decision's shape and
+// its "not this Sunday", the look-ahead (2.5 s) and the slices on the clock
+// (defer), the stages told, the teardown sentinel, perform.last and LEVEL.
+// Its own: its seats (a quiet rite with no guest in it or beside it, the
+// sacrament only at a funeral, never with the band, never a third guest),
+// and its slices — each throat's line a callback of its own, STAGGER apart,
+// each cart's whole roll in one; its let-go, the road and the town's air.
+//
 // Public surface: window.KOLOB.GuestHandcart
 //   plan(meetingInfo, stream) → { guest: "handcart", seat, section, at, dur,
 //        holdUntil, verses, odds, logged: true } | null
@@ -67,6 +76,8 @@ window.KOLOB.GuestHandcart = (function () {
 
   var NAME = "handcart";
   var LABEL = "guest:handcart:";                  // the stream's label: + the meeting number
+  var GR = window.KOLOB.GuestRoom;                // the scaffold (kolob-guest-room.js)
+  if (!GR) throw new Error("KOLOB.GuestHandcart: load kolob-guest-room.js first");
 
   // ==========================================================================
   // THE ODDS — a starting point, for the owner's ear
@@ -100,17 +111,8 @@ window.KOLOB.GuestHandcart = (function () {
   var NEAR_EVEN = 0.54;
   var RISE_DB = -14;                              // over the rise, by the time the wheels are gone
 
-  function need(stream) {
-    if (!stream || typeof stream.fork !== "function") throw new Error("KOLOB.GuestHandcart: a PJ2.Rand stream is required (label " + LABEL + "<n>)");
-    return stream;
-  }
-  function oddsFor(info) {
-    // (the meeting hands this room its odds from Calendar.GUEST_ODDS,
-    // info.odds; a lab without them reads the room's own ODDS)
-    if (info && info.odds != null) return Math.max(0, Math.min(1, +info.odds));
-    var w = ODDS.weight, k = info.sunday && w[info.sunday] != null ? info.sunday : info.kind;
-    return Math.min(ODDS.cap, ODDS.base * (w[k] != null ? w[k] : 1));
-  }
+  function need(stream) { return GR.need(stream, "KOLOB.GuestHandcart", LABEL); }
+  function oddsFor(info) { return GR.oddsFor(info, ODDS); }
   // ==========================================================================
   // THE SHAPE — the musical dice of one passage, all drawn, in order
   // ==========================================================================
@@ -166,20 +168,17 @@ window.KOLOB.GuestHandcart = (function () {
     if (has(function (g) { return EXCLUDES.indexOf(g.type) >= 0; })) why = "the band is marching";
     else if (others >= MAX_GUESTS && !info.force) why = "two guests already";
     else if (pick == null) why = "no quiet rite free";
-    else if (!(info.force || roll < p)) why = "not this Sunday";
-    if (why) return { seat: null, why: why, odds: p, roll: roll };
+    else if (GR.notThisSunday(info, roll, p)) why = "not this Sunday";
+    if (why) return GR.decision(null, why, p, roll);
     var sec = secs[pick], secDur = sec.dur > 0 ? sec.dur : 90;
     var at = Math.max(AT_MIN, secDur * (AT[0] + (AT[1] - AT[0]) * atU));
     var dur = score(info.material || {}, stream, 0).end;
-    return {
-      seat: {
-        guest: NAME, seat: sec.type, section: sec.type, at: +at.toFixed(2), dur: +dur.toFixed(2),
-        holdUntil: +(at + dur + 2).toFixed(2), verses: sh.verses, odds: +p.toFixed(3), logged: true,
-      },
-      why: "seated", odds: p, roll: roll,
-    };
+    return GR.decision({
+      guest: NAME, seat: sec.type, section: sec.type, at: +at.toFixed(2), dur: +dur.toFixed(2),
+      holdUntil: +(at + dur + 2).toFixed(2), verses: sh.verses, odds: +p.toFixed(3), logged: true,
+    }, "seated", p, roll);
   }
-  function plan(info, stream) { return decide(info, stream).seat; }
+  var plan = GR.plan(decide);
 
   // ==========================================================================
   // THE WORDS, AS THEIR VOWELS (William Clayton, 1846): verse 1, and verse 4
@@ -316,7 +315,7 @@ window.KOLOB.GuestHandcart = (function () {
   // group's line is laid out AHEAD seconds before it is sung, one throat to
   // a callback (hooks.defer), STAGGER apart; each cart's whole roll in one
   // callback of its own.
-  var AHEAD = 2.5, STAGGER = 0.06, G_DESK = 0.42, G_LEAD = 0.7, G_CHILD = 0.5, G_CARTS = 0.55;
+  var AHEAD = GR.ahead(), STAGGER = 0.06, G_DESK = 0.42, G_LEAD = 0.7, G_CHILD = 0.5, G_CARTS = 0.55;
   function perform(ctx, dest, t, material, stream, hooks) {
     var K = window.KOLOB, VB = K.VoicesBand, VV = K.VoicesVocal, VF = K.VoicesFolk;
     if (!VB || !VB.road) throw new Error("KOLOB.GuestHandcart: load kolob-voices-band.js first");
@@ -343,7 +342,7 @@ window.KOLOB.GuestHandcart = (function () {
     var rd = VB.road(ctx, bus, { room: town, echoDelay: synth.rnd(0.19, 0.31) });
     rd.path(sc.path);
     var folk = null;
-    function later(at, fn) { if (hooks.defer && at > t) hooks.defer(at, fn); else fn(); }
+    function later(at, fn) { GR.defer(hooks, t, at, fn); }
     if (hooks.only !== "singers") {
       folk = VF.create(ctx, rd.input, { rand: synth.fork("carts"), gain: G_CARTS });
       // (the carts roll from 0.8 s in — far off, no one hears them start — each
@@ -397,14 +396,10 @@ window.KOLOB.GuestHandcart = (function () {
         });
       });
     }
-    if (hooks.onStage) sc.stages.forEach(function (st) { hooks.onStage(st); });
+    GR.tellStages(hooks, sc.stages);
     // when the last of the town's air has died, let the road and the town go
-    var sent = ctx.createConstantSource ? ctx.createConstantSource() : ctx.createOscillator();
-    var sg = ctx.createGain(); sg.gain.value = 0;
-    sent.connect(sg); sg.connect(bus);
-    sent.onended = function () { rd.dispose(); town.dispose(); try { sg.disconnect(); sent.disconnect(); bus.disconnect(); } catch (e) { /* gone already */ } };
-    sent.start(Math.max(0, t)); sent.stop(sc.end + 5);
-    perform.last = { score: sc, folk: folk, road: rd, throats: throats };
+    GR.sentinel(ctx, bus, t, sc.end + 5, function () { rd.dispose(); town.dispose(); GR.quiet([bus]); });
+    GR.last(perform, { score: sc, folk: folk, road: rd, throats: throats });
     return sc.end;
   }
 
@@ -435,10 +430,9 @@ window.KOLOB.GuestHandcart = (function () {
     return true;
   }
 
-  return {
+  return GR.level({
     plan: plan, decide: decide, prepare: prepare, score: score, perform: perform, shape: shapeOf, warm: warm,
     ODDS: ODDS, EXCLUDES: EXCLUDES, MAX_GUESTS: MAX_GUESTS, SEATS: SEATS, NAME: NAME, LABEL: LABEL, VOWELS: VOWELS,
-    get LEVEL() { return LEVEL; }, set LEVEL(v) { LEVEL = +v; },
-  };
+  }, function () { return LEVEL; }, function (v) { LEVEL = v; });
 })();
 (window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-guest-handcart.js"] = true;   // the load guard's roll call

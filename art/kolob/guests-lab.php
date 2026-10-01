@@ -182,6 +182,7 @@ include '../../includes/header.php';
 <script src="kolob-experimental.js?v=<?php echo kgl_v('kolob-experimental.js'); ?>"></script>
 <script src="kolob-voices-folk.js?v=<?php echo kgl_v('kolob-voices-folk.js'); ?>"></script>
 <script src="kolob-voices-vocal.js?v=<?php echo kgl_v('kolob-voices-vocal.js'); ?>"></script>
+<script src="kolob-guest-room.js?v=<?php echo kgl_v('kolob-guest-room.js'); ?>"></script>
 <script src="kolob-guest-handbells.js?v=<?php echo kgl_v('kolob-guest-handbells.js'); ?>"></script>
 <script src="kolob-guest-singingschool.js?v=<?php echo kgl_v('kolob-guest-singingschool.js'); ?>"></script>
 <script src="guests-lab.js?v=<?php echo kgl_v('guests-lab.js'); ?>"></script>

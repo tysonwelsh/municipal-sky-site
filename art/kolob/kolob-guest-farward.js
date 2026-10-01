@@ -52,6 +52,16 @@
 // "vowels", "synth". stage()/perform() read no clock: everything is placed
 // at or after the times given, a line at a time through hooks.defer.
 //
+// THE SCAFFOLD (KOLOB.GuestRoom, kolob-guest-room.js): the stream it
+// insists on, plan(), oddsFor() (the house's odds), the decision's shape and
+// its "not this Sunday", the look-ahead (2.5 s) and the slices on the clock
+// (defer, ALWAYS: every line a cue of its own), the teardown sentinel (on
+// the far ward's own door, at its close), perform.last and LEVEL. Its own:
+// its seat (a hymn it may join — never a lined hymn, a round, a refrain or
+// the Primary's — with no guest beside it), stage() — the far ward handed a
+// verse at a time by our own ward's desk, its stage told per verse — the
+// arm-tick, and its let-go, the door in and the door out.
+//
 // Public surface: window.KOLOB.GuestFarWard
 //   plan(meetingInfo, stream) → { guest: "farward", seat: "hymn", section,
 //        sectionIndex, hymnId, from: "second"|"last"|"all", lagLines, far,
@@ -77,6 +87,8 @@ window.KOLOB.GuestFarWard = (function () {
 
   var NAME = "farward";
   var LABEL = "guest:farward:";
+  var GR = window.KOLOB.GuestRoom;                // the scaffold (kolob-guest-room.js)
+  if (!GR) throw new Error("KOLOB.GuestFarWard: load kolob-guest-room.js first");
 
   // ==========================================================================
   // THE ODDS — a starting point, for the owner's ear
@@ -109,17 +121,8 @@ window.KOLOB.GuestFarWard = (function () {
   // 0.9 LU louder than the pew's one mouth, seeds 7, 12 and 17: so trimmed)
   var PEOPLE_TRIM = 0.9;
 
-  function need(stream) {
-    if (!stream || typeof stream.fork !== "function") throw new Error("KOLOB.GuestFarWard: a PJ2.Rand stream is required (label " + LABEL + "<n>)");
-    return stream;
-  }
-  function oddsFor(info) {
-    // (the meeting hands this room its odds from Calendar.GUEST_ODDS,
-    // info.odds; a lab without them reads the room's own ODDS)
-    if (info && info.odds != null) return Math.max(0, Math.min(1, +info.odds));
-    var w = ODDS.weight, k = info.sunday && w[info.sunday] != null ? info.sunday : info.kind;
-    return Math.min(ODDS.cap, ODDS.base * (w[k] != null ? w[k] : 1));
-  }
+  function need(stream) { return GR.need(stream, "KOLOB.GuestFarWard", LABEL); }
+  function oddsFor(info) { return GR.oddsFor(info, ODDS); }
   function clamp(x, a, b) { return window.KOLOB.Num.clamp(x, a, b); }
   function r4(x) { return window.KOLOB.Num.r4(x); }
   function pickW(R, pool) {
@@ -175,19 +178,16 @@ window.KOLOB.GuestFarWard = (function () {
     });
     if (!rows.length) why = "no hymn";
     else if (!ok.length) why = "no hymn it may join";
-    else if (!(info.force || roll < p)) why = "not this Sunday";
-    if (why) return { seat: null, why: why, odds: p, roll: roll };
+    else if (GR.notThisSunday(info, roll, p)) why = "not this Sunday";
+    if (why) return GR.decision(null, why, p, roll);
     var row = ok[Math.min(ok.length - 1, Math.floor(rowDie * ok.length))];
     var far = pickWith(sh.dialectDie, FAR_DIALECTS[row.dialect] || FAR_DIALECTS.other);
-    return {
-      seat: {
-        guest: NAME, seat: "hymn", section: secs[row.section].type, sectionIndex: row.section, hymnId: row.id || null,
-        from: sh.from, lagLines: sh.lagLines, far: far === row.dialect ? "same" : far, side: +sh.side.toFixed(2), odds: +p.toFixed(3), logged: true,
-      },
-      why: "seated", odds: p, roll: roll,
-    };
+    return GR.decision({
+      guest: NAME, seat: "hymn", section: secs[row.section].type, sectionIndex: row.section, hymnId: row.id || null,
+      from: sh.from, lagLines: sh.lagLines, far: far === row.dialect ? "same" : far, side: +sh.side.toFixed(2), odds: +p.toFixed(3), logged: true,
+    }, "seated", p, roll);
   }
-  function plan(info, stream) { return decide(info, stream).seat; }
+  var plan = GR.plan(decide);
 
   // ==========================================================================
   // THE MATERIAL — the far ward's setting of our hymn, and its pews (pure)
@@ -330,7 +330,7 @@ window.KOLOB.GuestFarWard = (function () {
   // STAGE — the far ward's pews and its distance, and a verse at a time
   // (the engine's way: each verse is handed as our ward's verse is written)
   // ==========================================================================
-  var AHEAD = 2.5, TAIL = 5;
+  var AHEAD = GR.ahead(), TAIL = 5;
   // ARMING (VoicesVocal's): with the engine's clock, each line is built a
   // little ahead and joins the room only just before it sounds, each mouth
   // only around its own moments; one arm-tick cue at a time from t to the
@@ -390,7 +390,7 @@ window.KOLOB.GuestFarWard = (function () {
           });
           if (hooks.onNote) ln.desks.forEach(function (dk) { if (dk.k % 2) return; dk.notes.forEach(function (n) { hooks.onNote({ layer: "farward", freq: n.f, t: n.t + pr.delayS, dur: n.dur, part: dk.part, guest: NAME, deg: n.deg, cents: n.cents, verse: sc.v, line: ln.li }); }); });
         }
-        if (hooks.defer) hooks.defer(Math.max(now, ln.t0 - AHEAD), go); else go();
+        GR.defer(hooks, now, ln.t0 - AHEAD, go, GR.ALWAYS);
       });
     }
     return {
@@ -417,10 +417,7 @@ window.KOLOB.GuestFarWard = (function () {
         return sc.t1 + pr.delayS;
       },
       close: function (tEnd) {
-        var sent = ctx.createConstantSource ? ctx.createConstantSource() : ctx.createOscillator(), sg = G(0);
-        sent.connect(sg); sg.connect(out);
-        sent.onended = function () { try { sg.disconnect(); sent.disconnect(); input.disconnect(); out.disconnect(); } catch (e) { /* gone */ } };
-        sent.start(Math.max(0, Math.min(tEnd, lastEnd))); sent.stop(Math.max(tEnd, lastEnd) + pr.delayS + TAIL);
+        GR.sentinel(ctx, out, Math.min(tEnd, lastEnd), Math.max(tEnd, lastEnd) + pr.delayS + TAIL, function () { GR.quiet([input, out]); });
         return Math.max(tEnd, lastEnd) + pr.delayS + TAIL;
       },
     };
@@ -448,16 +445,15 @@ window.KOLOB.GuestFarWard = (function () {
     });
     var end = material.amen === false ? null : st.amen(material.amenAt || t, bs);
     var fin = st.close(end || t);
-    perform.last = { prepared: pr, told: st.told, joined: joined, end: fin };
+    GR.last(perform, { prepared: pr, told: st.told, joined: joined, end: fin });
     return fin;
   }
 
-  return {
+  return GR.level({
     plan: plan, decide: decide, prepare: prepare, score: score, stage: stage, perform: perform, warm: warm,
     versesJoined: versesJoined, lineOrder: lineOrder,
     ODDS: ODDS, EXCLUDES: EXCLUDES, FAR_DIALECTS: FAR_DIALECTS, NAME: NAME, LABEL: LABEL,
-    get LEVEL() { return LEVEL; }, set LEVEL(v) { LEVEL = +v; },
     get DESK_GAIN() { return DESK_GAIN; }, set DESK_GAIN(v) { DESK_GAIN = +v; },
-  };
+  }, function () { return LEVEL; }, function (v) { LEVEL = v; });
 })();
 (window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-guest-farward.js"] = true;   // the load guard's roll call

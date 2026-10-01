@@ -102,10 +102,13 @@ return [
     // every hymn
     'kolob-cast.js',
     // the day's hymnal (it orders the meeting's hymns from the composer and
-    // brings them back); the trombone choir at dawn, the ward's handbell
-    // choir and the singing school, each planning and playing itself (the
-    // guests' room places them, the meeting seats them)
-    'kolob-hymnal.js', 'kolob-guest-trombones.js', 'kolob-guest-handbells.js', 'kolob-guest-singingschool.js',
+    // brings them back); the scaffold every guest room stands on (its
+    // stream, its odds, its decision, its slices on the clock, its
+    // teardown), ahead of the first of them; the trombone choir at dawn, the
+    // ward's handbell choir and the singing school, each planning and
+    // playing itself (the guests' room places them, the meeting seats them)
+    'kolob-hymnal.js', 'kolob-guest-room.js',
+    'kolob-guest-trombones.js', 'kolob-guest-handbells.js', 'kolob-guest-singingschool.js',
     // (the other guests, each planning and playing itself — the Nauvoo band
     // that marches, the handcart company, the gulls; the organist's
     // variations on a hymn and change ringing from a far tower; the gift of

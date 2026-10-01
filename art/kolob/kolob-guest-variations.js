@@ -50,6 +50,17 @@
 // "organist" (an organist of the style asked for, when a lab seats none)
 // and "synth" (the organ built for a lab: sound-level, never reported).
 //
+// THE SCAFFOLD (KOLOB.GuestRoom, kolob-guest-room.js): the stream it
+// insists on, plan(), oddsFor() — with the organist's lean on top
+// (styleOdds) — the decision's shape and its "not this Sunday", the
+// look-ahead (2.5 s) and the slices on the clock (defer, 0.05 s of margin),
+// the stages told and perform.last. Its own: its seats (the prelude for the
+// day's first hymn, or the postlude for one the ward has sung; never at a
+// funeral, nor on a morning everything is sung in unison), the organ — the
+// engine's organist's own desk (hooks.organist), or one of its own for a
+// lab, laid out by the organist's pump a second a slice and disposed by it
+// (no sentinel), and no LEVEL (the organ's is the organist's).
+//
 // Public surface: window.KOLOB.GuestVariations
 //   plan(meetingInfo, stream) → { guest, seat, section, at, dur, holdUntil,
 //        hymnId, style, characters?, estimated, odds, logged: true } | null
@@ -77,6 +88,8 @@ window.KOLOB.GuestVariations = (function () {
 
   var NAME = "variations";
   var LABEL = "guest:variations:";               // + the meeting number
+  var GR = window.KOLOB.GuestRoom;                // the scaffold (kolob-guest-room.js)
+  if (!GR) throw new Error("KOLOB.GuestVariations: load kolob-guest-room.js first");
 
   // ==========================================================================
   // THE ODDS — about one meeting in ten, for the owner's ear
@@ -135,23 +148,15 @@ window.KOLOB.GuestVariations = (function () {
   var ACTION_DS = {};
   ACTIONS.forEach(function (a) { ACTION_DS[a[0]] = deseretCaps(a[1]); });
 
-  function need(stream) {
-    if (!stream || typeof stream.fork !== "function") throw new Error("KOLOB.GuestVariations: a PJ2.Rand stream is required (label " + LABEL + "<n>)");
-    return stream;
-  }
+  function need(stream) { return GR.need(stream, "KOLOB.GuestVariations", LABEL); }
   function Org() {
     var O = window.KOLOB.Organist;
     if (!O || !O.variations) throw new Error("KOLOB.GuestVariations: load kolob-organist.js (with its variations) first");
     return O;
   }
-  function oddsFor(info) {
-    var w = ODDS.weight, k = info.sunday && w[info.sunday] != null ? info.sunday : info.kind;
-    var st = info.organist && ODDS.style[info.organist.style] != null ? ODDS.style[info.organist.style] : 1;
-    // (the meeting hands this room its odds from Calendar.GUEST_ODDS,
-    // info.odds; the organist's own lean, ODDS.style, stays on top of it)
-    if (info.odds != null) return Math.max(0, Math.min(1, +info.odds * st));
-    return Math.min(ODDS.cap, ODDS.base * (w[k] != null ? w[k] : 1) * st);
-  }
+  // (the meeting hands this room its odds from Calendar.GUEST_ODDS,
+  // info.odds; the organist's own lean, ODDS.style, stays on top of it)
+  function oddsFor(info) { return GR.oddsFor(info, ODDS, { styleOdds: true }); }
   // a Score in three or four parts
   function harmonized(h) {
     if (!h || !h.lines || !h.lines.length) return false;
@@ -198,8 +203,8 @@ window.KOLOB.GuestVariations = (function () {
     else if (!free.length) why = "no seat free (" + SEATS.filter(function (s) { return order.indexOf(s) >= 0; }).map(function (s) {
       return s + (held[s] ? " taken" : crowded(s) ? " beside a guest" : s === "prelude" ? (info.withheld ? " — the tune withheld" : " — the first hymn in unison") : "");
     }).join(", ") + ")";
-    else if (!(info.force || roll < p)) why = "not this Sunday";
-    if (why) return { seat: null, why: why, odds: p, roll: roll };
+    else if (GR.notThisSunday(info, roll, p)) why = "not this Sunday";
+    if (why) return GR.decision(null, why, p, roll);
     var tot = 0; free.forEach(function (s) { tot += SEAT_W[s]; });
     var u = seatU * tot, seat = free[free.length - 1];
     for (var i = 0; i < free.length; i++) { u -= SEAT_W[free[i]]; if (u <= 0) { seat = free[i]; break; } }
@@ -216,17 +221,14 @@ window.KOLOB.GuestVariations = (function () {
     var mat = info.material && info.material.prepared ? info.material : null;
     var style = mat ? mat.style : info.organist && info.organist.style || null;
     var dur = mat ? mat.dur : EST[style] || 130;
-    return {
-      seat: {
-        guest: NAME, seat: seat, section: seat, at: +at.toFixed(2), dur: +dur.toFixed(2),
-        holdUntil: +(at + dur + 3).toFixed(2),       // the section should last at least this long
-        hymnId: mat ? mat.hymnId : row.id, style: style, characters: mat ? mat.characters.slice() : null,
-        estimated: !mat, odds: +p.toFixed(3), logged: true,
-      },
-      why: "seated", odds: p, roll: roll,
-    };
+    return GR.decision({
+      guest: NAME, seat: seat, section: seat, at: +at.toFixed(2), dur: +dur.toFixed(2),
+      holdUntil: +(at + dur + 3).toFixed(2),       // the section should last at least this long
+      hymnId: mat ? mat.hymnId : row.id, style: style, characters: mat ? mat.characters.slice() : null,
+      estimated: !mat, odds: +p.toFixed(3), logged: true,
+    }, "seated", p, roll);
   }
-  function plan(info, stream) { return decide(info, stream).seat; }
+  var plan = GR.plan(decide);
 
   // ==========================================================================
   // THE SET, MADE READY — the organist's variations on the hymn (pure)
@@ -267,13 +269,13 @@ window.KOLOB.GuestVariations = (function () {
   // the keys that begin within each SLICE seconds are laid AHEAD seconds
   // before the slice begins, each slice in a tick of the clock of its own
   // ==========================================================================
-  var AHEAD = 2.5, SLICE = 1.0;
+  var AHEAD = GR.ahead(), SLICE = 1.0;
   function perform(ctx, dest, t, material, stream, hooks) {
     hooks = hooks || {};
     var O = Org(), mat = prepare(material, stream), plan = mat.plan, sc = score(mat, stream, t);
-    if (hooks.onStage) sc.stages.forEach(function (st) { hooks.onStage(st); });
+    GR.tellStages(hooks, sc.stages);
     // in the meeting: the Sunday's organist's own desk, one organ throughout
-    if (hooks.organist) { hooks.organist(plan, t); perform.last = { plan: plan }; return sc.end; }
+    if (hooks.organist) { hooks.organist(plan, t); GR.last(perform, { plan: plan }); return sc.end; }
     var VO = window.KOLOB.VoicesOrgan;
     if (!hooks.organ && (!VO || !VO.create)) throw new Error("KOLOB.GuestVariations: load kolob-voices-pipeorgan.js first");
     var own = !hooks.organ;
@@ -290,12 +292,12 @@ window.KOLOB.GuestVariations = (function () {
       for (var k = 0; k * SLICE < plan.dur + SLICE; k++) {
         (function (kk) {
           var when = t + kk * SLICE - AHEAD, lay = function () { perf.pump(when, AHEAD + SLICE); };
-          if (when > t + 0.05) hooks.defer(when, lay); else lay();
+          GR.defer(hooks, t, when, lay, 0.05);
         })(k);
       }
     } else perf.pump(t, 1e9);
     if (own && organ.dispose) organ.dispose(sc.end + 1.5);
-    perform.last = { organ: organ, plan: plan, perf: perf };
+    GR.last(perform, { organ: organ, plan: plan, perf: perf });
     return sc.end;
   }
 

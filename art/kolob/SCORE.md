@@ -46,7 +46,8 @@ fails a wrapper that calls another name or moves an argument.
 under a bare mock of the page (`global.window = global`, each file run with
 `vm.runInThisContext`: `tools/loadcheck.js`, `_harness.js`). Pure today:
 pitch, score, tunes, melody, harmony, dialects, hymnists, composer, organist,
-calendar, the hymnal's `plan`/`forms`, every guest's `plan`/`prepare`/`score`.
+calendar, the hymnal's `plan`/`forms`, every guest's `plan`/`prepare`/`score`
+and the guest rooms' scaffold (`kolob-guest-room.js`).
 **Synthesis modules** (`kolob-voices-*.js`) take the AudioContext, a
 destination and a scheduled time, and never read `ctx.currentTime` to decide
 *when* something happens (§4).
@@ -82,7 +83,7 @@ Today, in order:
 | the tuning, the score, the Earth tunes | `kolob-pitch.js`, `kolob-score.js`, `kolob-tunes.js` |
 | the composers (pure) | `kolob-melody.js`, `kolob-harmony.js`, `kolob-dialects.js`, `kolob-hymnists.js`, `kolob-composer.js`, `kolob-organist.js`, `kolob-experimental.js`, `kolob-calendar.js` |
 | the voices | `kolob-voices-pipeorgan.js`, `kolob-voices-organ.js`, `kolob-voices-choir.js`, `kolob-voices-winds.js`, `kolob-voices-ground.js`, `kolob-voices-field.js`, `kolob-voices-band.js`, `kolob-voices-folk.js`, `kolob-voices-vocal.js` |
-| the performers | `kolob-cast.js`, `kolob-hymnal.js`, `kolob-guest-trombones.js`, `kolob-guest-handbells.js`, `kolob-guest-singingschool.js`, `kolob-guest-bands.js`, `kolob-guest-handcart.js`, `kolob-guest-gulls.js`, `kolob-guest-variations.js`, `kolob-guest-changes.js`, `kolob-guest-tongues.js`, `kolob-guest-farward.js`, `kolob-guest-hosanna.js`, `kolob-guest-socialhall.js`, `kolob-testimony.js`, `kolob-guests.js`, `kolob-meeting.js` |
+| the performers | `kolob-cast.js`, `kolob-hymnal.js`, `kolob-guest-room.js` (the guest rooms' scaffold), `kolob-guest-trombones.js`, `kolob-guest-handbells.js`, `kolob-guest-singingschool.js`, `kolob-guest-bands.js`, `kolob-guest-handcart.js`, `kolob-guest-gulls.js`, `kolob-guest-variations.js`, `kolob-guest-changes.js`, `kolob-guest-tongues.js`, `kolob-guest-farward.js`, `kolob-guest-hosanna.js`, `kolob-guest-socialhall.js`, `kolob-testimony.js`, `kolob-guests.js`, `kolob-meeting.js` |
 | the facade | `kolob-core.js` |
 
 The page then loads `kolob-text.js`, `kolob-viz.js`, `kolob-ui.js`, which are
@@ -792,6 +793,42 @@ the `guests` lane a slice at a time: the engine's cues, never the room's),
 `organ`/`organist`/`harmonium`/`dests`/`arm`/`still`/`only`. The meeting tags
 each note with `guest` and `logged`.
 
+**The scaffold** (`KOLOB.GuestRoom`, `kolob-guest-room.js`, loaded after
+`kolob-pitch.js` and ahead of the first guest room on the one list and on
+every lab's list that loads one). Every room stands on it and says in its
+header what it takes and what is its own. Planning: `need(stream, room,
+label)` (the stream, or a throw naming the room); `plan(decide)` (the
+decision's seat); `oddsFor(info, ODDS, opts)` — `info.odds` first, else
+base × the weight of the Sunday, else of the kind (1 for neither), capped —
+where a room's odds are its own, an option says how: `mayCome` and `unnamed`
+(the Hosanna: its two Sundays only, the table's weight for the Sunday by
+name, 0.5 for one it does not name), `styleOdds` (the variations: the
+organist's lean on top), `ignoresOdds` (the testimony: its own table
+always); `weightOf` (a table's weight, the band's second band's);
+`notThisSunday(info, roll, p)` (the seat's own die, unless asked for by
+name — asked last, after the room's own refusals, and answered in the
+room's own words); `decision(seat, why, p, roll, also)` (`{seat, why, odds,
+roll}`, the Hosanna's `beside` after them). It draws no die: each room's
+`decide()` forks `seat` first and throws its own dice in its own order
+before it calls any of these, at the points where the code they replace
+stood. Performing: `ahead(s)` (a slice laid 2.5 s before it sounds; the
+gulls' 2), `defer(hooks, t, when, lay, margin)` (on the engine's clock when
+it is more than `margin` after t — 0, or 0.05 in most rooms — else now; `ALWAYS`,
+every slice a cue of its own, even one due now, never before t: the
+Hosanna, the gift of tongues, the far ward), `tellStages(hooks, stages)`
+(each stage to `onStage`, now: the Hosanna and the gift of tongues tell
+theirs on the clock, reshaped; the far ward per verse; the trombones by
+phrase), `stage(stages, t0)` (a score's stage-writer; a fifth argument, the
+testimony's member), `sentinel(ctx, dest, from, until, letGo, opts)` (the
+teardown: a silent source through a gain of nothing, from `from`, never
+before the context's birth, to `until`; its end runs the room's `letGo`
+and lets its own two nodes go; `automated`, its gain zeroed by automation,
+change ringing's; every room but the variations, whose organ is the
+organist's), `quiet(nodes)`, `last(perform, what)` (`perform.last`, for the
+labs) and `level(api, read, write)` (the room's `LEVEL` on its surface,
+always a number; change ringing's is a plain number, the variations have
+none).
+
 **The budget** (`Calendar.GUEST_BUDGET`, enforced in `planMeeting` by
 `budgetRefuses`): `max` 2 guests a meeting, the Hosanna counted; one of the
 `showpieces` (the variations, the Social Hall, the Hosanna) at most; never two
@@ -860,8 +897,9 @@ The conductor's `visit` names the guest while it sounds unless it is unlogged.
 
 Authority: `kolob-calendar.js` (`GUEST_ODDS`, `GUEST_BUDGET`),
 `kolob-meeting.js` (planMeeting, `FORCEABLE`, `VISIT_FN`, `PRE_MADE`,
-`LISTENED`, `arrive`), `kolob-guests.js` (the set pieces, `guestNote`), each
-`kolob-guest-*.js`, `kolob-testimony.js`, `kolob-ui.js` (`GUEST_ROWS`).
+`LISTENED`, `arrive`), `kolob-guests.js` (the set pieces, `guestNote`),
+`kolob-guest-room.js` (the scaffold), each `kolob-guest-*.js`,
+`kolob-testimony.js`, `kolob-ui.js` (`GUEST_ROWS`).
 
 ---
 

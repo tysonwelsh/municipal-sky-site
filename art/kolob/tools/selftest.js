@@ -92,8 +92,9 @@
 //    reorders (cueAt's lane and time swapped), naming both; tools/loadcheck.js
 //    finds every lab loading the house's rooms in its own order, and fails a
 //    copy with the singing school moved ahead of kolob-pitch.js on
-//    guests-lab's list, naming the lab and the room's throw while the other
-//    labs load.
+//    guests-lab's list (and so ahead of the scaffold, kolob-guest-room.js,
+//    which it reaches for first), naming the lab and the room's throw while
+//    the other labs load.
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -595,7 +596,7 @@ function check(name, ok, detail) {
     const mm = /^ {2}labs: (\d+) of (\d+) load/m.exec(moved.out);
     const said = moved.out.split("\n").filter((l) => /^ {3}- /.test(l)).map((l) => l.trim().slice(2));
     check("a copy with the singing school moved ahead of kolob-pitch.js on guests-lab's list: loadcheck.js fails, naming the lab and the room's throw, and the other labs load",
-      moved.code === 1 && !!mm && +mm[1] === +mm[2] - 1 && said.length > 0 && said.every((f) => /^guests-lab\.php \(its rooms in its order\): kolob-guest-singingschool\.js: /.test(f)) && said.some((f) => /threw at load — .*KOLOB\.Pitch|threw at load — .*PARENT_RATIOS/.test(f)),
+      moved.code === 1 && !!mm && +mm[1] === +mm[2] - 1 && said.length > 0 && said.every((f) => /^guests-lab\.php \(its rooms in its order\): kolob-guest-singingschool\.js: /.test(f)) && said.some((f) => /threw at load — .*KOLOB\.Pitch|threw at load — .*PARENT_RATIOS|threw at load — .*load kolob-guest-room\.js first/.test(f)),
       (mm ? mm[1] + " of " + mm[2] + " labs · " : "") + (said[0] || "no failure named"));
   }
 

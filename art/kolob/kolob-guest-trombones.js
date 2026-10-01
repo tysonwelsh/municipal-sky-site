@@ -110,6 +110,15 @@
 // the echo's delay). perform() reads no clock either: everything is placed
 // at or after the t it is given.
 //
+// THE SCAFFOLD (KOLOB.GuestRoom, kolob-guest-room.js): the stream it
+// insists on, plan(), oddsFor() (the house's odds), the decision's shape and
+// its "not this Sunday", the look-ahead (2.5 s) and the slices on the clock
+// (defer), the teardown sentinel, perform.last and LEVEL. Its own: its seat
+// (the prelude's first minute, never with the bands nor in a prelude
+// another guest holds), its slices — a phrase each, the first laid at the
+// press — and its rows told by phrase (onPhrase), not by stage; its
+// let-go, both choirs and the town's air.
+//
 // Public surface: window.KOLOB.GuestTrombones
 //   plan(meetingInfo, stream) → { guest, seat: "prelude", at, dur, holdUntil,
 //        exchanges, lines, estimated, odds, logged: true } | null
@@ -138,6 +147,8 @@ window.KOLOB.GuestTrombones = (function () {
 
   var NAME = "trombones";
   var LABEL = "guest:trombones:";                 // the stream's label: + the meeting number
+  var GR = window.KOLOB.GuestRoom;                // the scaffold (kolob-guest-room.js)
+  if (!GR) throw new Error("KOLOB.GuestTrombones: load kolob-guest-room.js first");
 
   // ==========================================================================
   // THE ODDS — a starting point, for the owner's ear
@@ -185,22 +196,12 @@ window.KOLOB.GuestTrombones = (function () {
   var LEVEL = 0.88;
   var NEAR_EVEN = { at: 0.23, share: 0.5 };
 
-  function oddsFor(info) {
-    // (the meeting hands this room its odds from Calendar.GUEST_ODDS,
-    // info.odds; a lab without them reads the room's own ODDS)
-    if (info && info.odds != null) return Math.max(0, Math.min(1, +info.odds));
-    var w = ODDS.weight;
-    var k = info.sunday && w[info.sunday] != null ? info.sunday : info.kind;
-    return Math.min(ODDS.cap, ODDS.base * (w[k] != null ? w[k] : 1));
-  }
+  function oddsFor(info) { return GR.oddsFor(info, ODDS); }
 
   // ==========================================================================
   // THE SHAPE — the musical dice of one performance, all drawn, in order
   // ==========================================================================
-  function need(stream) {
-    if (!stream || typeof stream.fork !== "function") throw new Error("KOLOB.GuestTrombones: a PJ2.Rand stream is required (label " + LABEL + "<n>)");
-    return stream;
-  }
+  function need(stream) { return GR.need(stream, "KOLOB.GuestTrombones", LABEL); }
   function shapeOf(stream) {
     var r = need(stream).fork("shape");
     return {
@@ -243,21 +244,18 @@ window.KOLOB.GuestTrombones = (function () {
     if (!prelude) why = "no prelude";
     else if (has(function (g) { return EXCLUDES.indexOf(g.type) >= 0; })) why = "the bands are coming";
     else if (has(function (g) { return g.section === "prelude" && g.type !== NAME; })) why = "the prelude is taken";
-    else if (!(info.force || roll < p)) why = "not this Sunday";
-    if (why) return { seat: null, why: why, odds: p, roll: roll };
+    else if (GR.notThisSunday(info, roll, p)) why = "not this Sunday";
+    if (why) return GR.decision(null, why, p, roll);
     var tl = timeline(info.material ? chorale(info.material) : null, sh);
     var dur = +(tl.end).toFixed(2);
-    return {
-      seat: {
-        guest: NAME, seat: "prelude", at: +at.toFixed(2), dur: dur,
-        holdUntil: +(at + dur + 4).toFixed(2),       // the prelude should last at least this long
-        exchanges: tl.exchanges, lines: tl.order.length, estimated: !info.material,
-        odds: +p.toFixed(3), logged: true,
-      },
-      why: "seated", odds: p, roll: roll,
-    };
+    return GR.decision({
+      guest: NAME, seat: "prelude", at: +at.toFixed(2), dur: dur,
+      holdUntil: +(at + dur + 4).toFixed(2),       // the prelude should last at least this long
+      exchanges: tl.exchanges, lines: tl.order.length, estimated: !info.material,
+      odds: +p.toFixed(3), logged: true,
+    }, "seated", p, roll);
   }
-  function plan(info, stream) { return decide(info, stream).seat; }
+  var plan = GR.plan(decide);
 
   // ==========================================================================
   // PITCH — the mode's collection, read late from kolob-pitch.js
@@ -1142,10 +1140,10 @@ window.KOLOB.GuestTrombones = (function () {
     // (the engine lays the dawn out a phrase at a time, each a little ahead
     // of its sound — hooks.defer: a composed hymn's whole dawn laid out in one
     // cue cost 390 ms of main thread; a lab with no clock lays it all out now)
-    var AHEAD = 2.5;
+    var AHEAD = GR.ahead();
     sc.phrases.forEach(function (ph, k) {
       if (hooks.only && ph.choir !== hooks.only) return;       // (a lab's "far only" / "near only")
-      if (hooks.defer && k > 0 && ph.t0 - AHEAD > t) hooks.defer(ph.t0 - AHEAD, function () { layPhrase(ph); });
+      if (k > 0) GR.defer(hooks, t, ph.t0 - AHEAD, function () { layPhrase(ph); });
       else layPhrase(ph);
     });
     function layPhrase(ph) {
@@ -1163,20 +1161,12 @@ window.KOLOB.GuestTrombones = (function () {
       if (hooks.onPhrase) hooks.onPhrase({ choir: ph.choir, line: ph.line, t0: ph.t0, t1: ph.t1, pan: ph.pan, repeat: !!ph.repeat, joins: !!ph.joins });
     }
     // when the last of the town's air has died, let both choirs go
-    var tail = sc.end + 4.5;
-    var sent = ctx.createConstantSource ? ctx.createConstantSource() : ctx.createOscillator();
-    var sg = ctx.createGain(); sg.gain.value = 0;
-    sent.connect(sg); sg.connect(bus);
-    sent.onended = function () {
-      far.dispose(); near.dispose(); town.dispose();
-      try { sg.disconnect(); sent.disconnect(); bus.disconnect(); } catch (e) { /* gone already */ }
-    };
-    sent.start(Math.max(0, t)); sent.stop(tail);      // (a lab may place t before the context's birth: a solo choir heard from its first phrase)
-    perform.last = { far: far, near: near, score: sc };
+    GR.sentinel(ctx, bus, t, sc.end + 4.5, function () { far.dispose(); near.dispose(); town.dispose(); GR.quiet([bus]); });
+    GR.last(perform, { far: far, near: near, score: sc });
     return sc.end;
   }
 
-  return {
+  return GR.level({
     plan: plan, decide: decide, perform: perform, score: score, chorale: chorale, harmonize: function (mode, melodyLines, space) {
       mode = modeName(mode);
       var ls = (melodyLines || []).map(function (ln) {
@@ -1186,7 +1176,6 @@ window.KOLOB.GuestTrombones = (function () {
     },
     tuneChord: tuneChord, lineOrder: lineOrder, sample: sampleMaterial,
     SAMPLES: SAMPLES, ODDS: ODDS, EXCLUDES: EXCLUDES, RANGE: RANGE, NAME: NAME, LABEL: LABEL,
-    get LEVEL() { return LEVEL; }, set LEVEL(v) { LEVEL = +v; },
-  };
+  }, function () { return LEVEL; }, function (v) { LEVEL = v; });
 })();
 (window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-guest-trombones.js"] = true;   // the load guard's roll call

@@ -71,6 +71,16 @@
 // "synth" (the feet's and hands' scatter, the benches: sound-level, never
 // reported).
 //
+// THE SCAFFOLD (KOLOB.GuestRoom, kolob-guest-room.js): the stream it
+// insists on, plan(), oddsFor() (the house's odds), the decision's shape and
+// its "not this Sunday", the score's stage-writer, the look-ahead (2.5 s)
+// and the slices on the clock (defer, 0.05 s of margin), the stages told,
+// the teardown sentinel, perform.last and LEVEL. Its own: the Sundays it
+// never comes (NEVER: its odds 0 there), its seat (the postlude, neither
+// held nor beside a guest), a slice of a second and a half, its cast told
+// (onCast), and its let-go, every bus and wall and the fiddle; its
+// sentinel stands on the hall's own door, not a bus.
+//
 // Public surface: window.KOLOB.GuestSocialHall
 //   plan(meetingInfo, stream) → { guest, seat: "postlude", section, at, dur,
 //        holdUntil, replaces: "postlude", piece, times, estimated, odds,
@@ -98,6 +108,8 @@ window.KOLOB.GuestSocialHall = (function () {
 
   var NAME = "socialhall";
   var LABEL = "guest:socialhall:";                // + the meeting number
+  var GR = window.KOLOB.GuestRoom;                // the scaffold (kolob-guest-room.js)
+  if (!GR) throw new Error("KOLOB.GuestSocialHall: load kolob-guest-room.js first");
 
   // ==========================================================================
   // THE ODDS — rare, and where the colony would dance
@@ -133,21 +145,11 @@ window.KOLOB.GuestSocialHall = (function () {
   // 0.5 it measured +1.8 LU).
   var LEVEL = 0.36;
 
-  function oddsFor(info) {
-    // (the meeting hands this room its odds from Calendar.GUEST_ODDS,
-    // info.odds; a lab without them reads the room's own ODDS)
-    if (info && info.odds != null) return Math.max(0, Math.min(1, +info.odds));
-    var w = ODDS.weight;
-    var k = info.sunday && w[info.sunday] != null ? info.sunday : info.kind;
-    return Math.min(ODDS.cap, ODDS.base * (w[k] != null ? w[k] : 1));
-  }
+  function oddsFor(info) { return GR.oddsFor(info, ODDS); }
   function barred(info) {
     return !!(NEVER[info.sunday] || NEVER[info.kind]);
   }
-  function need(stream) {
-    if (!stream || typeof stream.fork !== "function") throw new Error("KOLOB.GuestSocialHall: a PJ2.Rand stream is required (label " + LABEL + "<n>)");
-    return stream;
-  }
+  function need(stream) { return GR.need(stream, "KOLOB.GuestSocialHall", LABEL); }
 
   // ==========================================================================
   // THE SHAPE — the arrangement's dice, all drawn, in order (plan() and
@@ -221,22 +223,19 @@ window.KOLOB.GuestSocialHall = (function () {
     else if (last < 0) why = "no postlude";
     else if (held.postlude) why = "a guest holds the postlude (" + held.postlude + ")";
     else if (before && held[before]) why = "beside a guest (the " + held[before] + " in the " + before + ")";
-    else if (!(info.force || roll < p)) why = "not this Sunday";
-    if (why) return { seat: null, why: why, odds: p, roll: roll };
+    else if (GR.notThisSunday(info, roll, p)) why = "not this Sunday";
+    if (why) return GR.decision(null, why, p, roll);
     var at = AT[0] + (AT[1] - AT[0]) * atU;
     var mat = info.material && info.material.prepared ? info.material : null;
     var dur = mat ? score(mat, stream, 0).end : estimate(sh, info);
-    return {
-      seat: {
-        guest: NAME, seat: "postlude", section: "postlude", at: +at.toFixed(2), dur: +dur.toFixed(2),
-        holdUntil: +(at + dur + 2).toFixed(2),        // the postlude lasts at least this long
-        replaces: "postlude", piece: mat ? mat.piece : sh.piece, times: mat ? mat.times : timesFor(sh, info),
-        estimated: !mat, odds: +p.toFixed(3), logged: true,
-      },
-      why: "seated", odds: p, roll: roll,
-    };
+    return GR.decision({
+      guest: NAME, seat: "postlude", section: "postlude", at: +at.toFixed(2), dur: +dur.toFixed(2),
+      holdUntil: +(at + dur + 2).toFixed(2),        // the postlude lasts at least this long
+      replaces: "postlude", piece: mat ? mat.piece : sh.piece, times: mat ? mat.times : timesFor(sh, info),
+      estimated: !mat, odds: +p.toFixed(3), logged: true,
+    }, "seated", p, roll);
   }
-  function plan(info, stream) { return decide(info, stream).seat; }
+  var plan = GR.plan(decide);
 
   // ==========================================================================
   // PITCH — the hymn's own lattice. A degree is the composer's (seven
@@ -654,7 +653,7 @@ window.KOLOB.GuestSocialHall = (function () {
     var reg = registers({ tune: T, finalHz: M.finalHz, highB: sh.highB }), dr = reg.drone;
     var arr = need(stream).fork("arrange"), room = need(stream).fork("room");   // the arrangement's own dice; the room's (sound-level) scatter
     var out = { fiddle: [], floor: [], claps: [], calls: [], scrapes: [], stages: [], cast: [], notes: [] };
-    function stage(name, a, b, label) { out.stages.push({ stage: name, t0: t0 + a, t1: t0 + b, label: label }); }
+    var stage = GR.stage(out.stages, t0);
     var t = 0, ppl = M.people || {};
     // THE BENCHES pushed back to the walls, across the room, and the feet
     for (var b = 0; b < sh.benches; b++) out.scrapes.push({ t: t0 + 0.2 + b * (3.3 / sh.benches) + room.rnd(0, 0.3), dur: room.rnd(0.45, 0.85), pan: room.rnd(-0.85, 0.85), v: room.rnd(0.6, 1), variant: room.rint(0, 2) });
@@ -1024,29 +1023,24 @@ window.KOLOB.GuestSocialHall = (function () {
     // begins within each SLICE seconds is built AHEAD seconds before the
     // first of it sounds, each slice in a tick of the clock of its own, and
     // its notes told then; a lab with no clock lays it all out at once
-    var AHEAD = 2.5, SLICE = 1.5, slices = [];
+    var AHEAD = GR.ahead(), SLICE = 1.5, slices = [];
     items.forEach(function (it) { var cur = slices[slices.length - 1]; if (!cur || it.t >= cur.t0 + SLICE) slices.push(cur = { t0: it.t, items: [] }); cur.items.push(it); });
     slices.forEach(function (sl) {
       function lay() { sl.items.forEach(function (it) { it.go(); if (hooks.onNote && it.notes) it.notes.forEach(hooks.onNote); }); }
-      var when = sl.t0 - AHEAD;
-      if (hooks.defer && when > t + 0.05) hooks.defer(when, lay); else lay();
+      GR.defer(hooks, t, sl.t0 - AHEAD, lay, 0.05);
     });
-    if (hooks.onStage) sc.stages.forEach(function (st) { hooks.onStage(st); });
+    GR.tellStages(hooks, sc.stages);
     if (hooks.onCast) sc.cast.forEach(function (c) { if (c.memberId) hooks.onCast(c); });
     // when the last sound has gone, let the hall go
-    var sent = ctx.createConstantSource ? ctx.createConstantSource() : ctx.createOscillator(), sg = ctx.createGain();
-    sg.gain.value = 0; sent.connect(sg); sg.connect(dest);
-    sent.onended = function () { try { made.forEach(function (n) { n.disconnect(); }); folk.out.disconnect(); sg.disconnect(); sent.disconnect(); } catch (e) { /* gone already */ } };
-    sent.start(Math.max(0, t)); sent.stop(sc.until + 1.5);
-    perform.last = { folk: folk, score: sc, slices: slices.length, floorNodes: function () { return floorNodes; } };
+    GR.sentinel(ctx, dest, t, sc.until + 1.5, function () { GR.quiet(made.concat([folk.out])); });
+    GR.last(perform, { folk: folk, score: sc, slices: slices.length, floorNodes: function () { return floorNodes; } });
     return sc.end;
   }
 
 
-  return {
+  return GR.level({
     plan: plan, decide: decide, prepare: prepare, tune: tune, score: score, perform: perform, bake: bake, bakeKind: bakeKind, KINDS: KINDS, MIX: MIX, CALLS: CALLS, FIGURES: FIGURES, PIECES: PIECES,
     NAME: NAME, LABEL: LABEL, ODDS: ODDS, NEVER: NEVER, SEATS: SEATS,
-    get LEVEL() { return LEVEL; }, set LEVEL(v) { LEVEL = +v; },
-  };
+  }, function () { return LEVEL; }, function (v) { LEVEL = v; });
 })();
 (window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-guest-socialhall.js"] = true;   // the load guard's roll call

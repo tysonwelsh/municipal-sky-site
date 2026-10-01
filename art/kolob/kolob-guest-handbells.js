@@ -96,6 +96,16 @@
 // hands none) and "synth" (where each ringer's hand actually lands — a few
 // milliseconds — and how hard: sound-level, never reported).
 //
+// THE SCAFFOLD (KOLOB.GuestRoom, kolob-guest-room.js): the stream it
+// insists on, plan(), oddsFor() (the house's odds), the decision's shape and
+// its "not this Sunday", the score's stage-writer, the look-ahead (2.5 s)
+// and the slices on the clock (defer, 0.05 s of margin), the stages told,
+// the teardown sentinel, perform.last and LEVEL. Its own: its seats (one
+// bell guest a meeting, never with the steeples, no guest in the seat or
+// beside it), the rings of each second a slice and their strokes told then,
+// the near walls, and its let-go — every bell's panner, the line, the bus,
+// the walls.
+//
 // Public surface: window.KOLOB.GuestHandbells
 //   plan(meetingInfo, stream) → { guest, seat, at, dur, holdUntil, piece,
 //        ringers, estimated, odds, logged: true } | null
@@ -122,6 +132,8 @@ window.KOLOB.GuestHandbells = (function () {
 
   var NAME = "handbells";
   var LABEL = "guest:handbells:";                 // + the meeting number
+  var GR = window.KOLOB.GuestRoom;                // the scaffold (kolob-guest-room.js)
+  if (!GR) throw new Error("KOLOB.GuestHandbells: load kolob-guest-room.js first");
 
   // ==========================================================================
   // THE ODDS — about one meeting in eight, for the owner's ear
@@ -172,18 +184,8 @@ window.KOLOB.GuestHandbells = (function () {
   var SACRAMENT = 0.62;
   var RANGE = [165, 2640];                        // the colony's set: E3 to E7
 
-  function oddsFor(info) {
-    // (the meeting hands this room its odds from Calendar.GUEST_ODDS,
-    // info.odds; a lab without them reads the room's own ODDS)
-    if (info && info.odds != null) return Math.max(0, Math.min(1, +info.odds));
-    var w = ODDS.weight;
-    var k = info.sunday && w[info.sunday] != null ? info.sunday : info.kind;
-    return Math.min(ODDS.cap, ODDS.base * (w[k] != null ? w[k] : 1));
-  }
-  function need(stream) {
-    if (!stream || typeof stream.fork !== "function") throw new Error("KOLOB.GuestHandbells: a PJ2.Rand stream is required (label " + LABEL + "<n>)");
-    return stream;
-  }
+  function oddsFor(info) { return GR.oddsFor(info, ODDS); }
+  function need(stream) { return GR.need(stream, "KOLOB.GuestHandbells", LABEL); }
 
   // ==========================================================================
   // THE SHAPE — the musical dice of one performance, all drawn, in order
@@ -245,8 +247,8 @@ window.KOLOB.GuestHandbells = (function () {
     guests.forEach(function (g) { if (g && BELL_GUESTS.indexOf(g.type) >= 0 && !bell) bell = g.type; });
     if (bell) why = bell === "steeples" ? "the steeples ring today" : "one bell guest a meeting (" + bell + ")";
     else if (!free.length) why = "no seat free (" + SEATS.filter(function (s) { return order.indexOf(s) >= 0; }).map(function (s) { return s + (held[s] ? " taken" : " beside a guest"); }).join(", ") + ")";
-    else if (!(info.force || roll < p)) why = "not this Sunday";
-    if (why) return { seat: null, why: why, odds: p, roll: roll };
+    else if (GR.notThisSunday(info, roll, p)) why = "not this Sunday";
+    if (why) return GR.decision(null, why, p, roll);
     var tot = 0; free.forEach(function (s) { tot += SEAT_W[s]; });
     var u = seatU * tot, seat = free[free.length - 1];
     for (var i = 0; i < free.length; i++) { u -= SEAT_W[free[i]]; if (u <= 0) { seat = free[i]; break; } }
@@ -254,17 +256,14 @@ window.KOLOB.GuestHandbells = (function () {
     var mat = info.material && info.material.prepared ? info.material : null;
     var piece = mat ? mat.piece : pieceOf(sh, seat, true);
     var dur = mat ? score(mat, stream, 0).end : estimate(piece, sh);
-    return {
-      seat: {
-        guest: NAME, seat: seat, section: seat, at: +at.toFixed(2), dur: +dur.toFixed(2),
-        holdUntil: +(at + dur + 3).toFixed(2),       // the section should last at least this long
-        piece: piece, ringers: sh.ringers, estimated: !mat,
-        odds: +p.toFixed(3), logged: true,
-      },
-      why: "seated", odds: p, roll: roll,
-    };
+    return GR.decision({
+      guest: NAME, seat: seat, section: seat, at: +at.toFixed(2), dur: +dur.toFixed(2),
+      holdUntil: +(at + dur + 3).toFixed(2),       // the section should last at least this long
+      piece: piece, ringers: sh.ringers, estimated: !mat,
+      odds: +p.toFixed(3), logged: true,
+    }, "seated", p, roll);
   }
-  function plan(info, stream) { return decide(info, stream).seat; }
+  var plan = GR.plan(decide);
   // (without the arrangement: a Common Meter hymn at 0.7 s a beat, rung
   // twice with an introduction, or a three-voice round)
   function estimate(piece, sh) {
@@ -603,7 +602,7 @@ window.KOLOB.GuestHandbells = (function () {
       while (o.f > RANGE[1] * 1.015) { o.f /= 2; o.letter -= 7; }
       strikes.push(o); return o;
     }
-    function stage(name, a, b, label) { stages.push({ stage: name, t0: t0 + a, t1: t0 + b, label: label }); }
+    var stage = GR.stage(stages, t0);
     var end = 0;
     if (M.piece === "round") end = ringRound(M, sh, dyn, strike, stage);
     else end = ringHymn(M, sh, dyn, strike, stage);
@@ -1073,7 +1072,7 @@ window.KOLOB.GuestHandbells = (function () {
     // (measured in a live context: every ring's partials, automation and,
     // for a shake, its train of clapper knocks); a lab with no clock lays it
     // all out at once.
-    var AHEAD = 2.5, SLICE = 1.0, slices = [];
+    var AHEAD = GR.ahead(), SLICE = 1.0, slices = [];
     sc.rings.forEach(function (rg, k) {
       var cur = slices[slices.length - 1];
       if (!cur || rg.t >= cur.t0 + SLICE) slices.push(cur = { t0: rg.t, rings: [], strikes: [] });
@@ -1089,33 +1088,21 @@ window.KOLOB.GuestHandbells = (function () {
         sl.rings.forEach(ringIt);
         if (hooks.onNote) sl.strikes.forEach(tellStrike);
       }
-      var when = sl.t0 - AHEAD;
-      if (hooks.defer && when > t + 0.05) hooks.defer(when, layIt);
-      else layIt();
+      GR.defer(hooks, t, sl.t0 - AHEAD, layIt, 0.05);
     });
-    if (hooks.onStage) sc.stages.forEach(function (st) { hooks.onStage(st); });
+    GR.tellStages(hooks, sc.stages);
     // when the last bell has gone, let the line go
-    var tail = sc.until + 0.6;
-    var sent = ctx.createConstantSource ? ctx.createConstantSource() : ctx.createOscillator();
-    var sg = ctx.createGain(); sg.gain.value = 0;
-    sent.connect(sg); sg.connect(bus);
-    sent.onended = function () {
-      try {
-        Object.keys(pans).forEach(function (k) { pans[k].disconnect(); });
-        folk.out.disconnect(); sg.disconnect(); sent.disconnect(); bus.disconnect();
-        if (air) air.forEach(function (n) { n.disconnect(); });
-      } catch (e) { /* gone already */ }
-    };
-    sent.start(Math.max(0, t)); sent.stop(tail);
-    perform.last = { folk: folk, score: sc };
+    GR.sentinel(ctx, bus, t, sc.until + 0.6, function () {
+      GR.quiet(Object.keys(pans).map(function (k) { return pans[k]; }).concat([folk.out, bus], air || []));
+    });
+    GR.last(perform, { folk: folk, score: sc });
     return sc.end;
   }
 
-  return {
+  return GR.level({
     plan: plan, decide: decide, prepare: prepare, score: score, perform: perform, round: round,
     ODDS: ODDS, EXCLUDES: EXCLUDES, BELL_GUESTS: BELL_GUESTS, SEATS: SEATS, MAX_LIVE: MAX_LIVE, RANGE: RANGE,
     NAME: NAME, LABEL: LABEL, GROUND: GROUND, bellTau: bellTau,
-    get LEVEL() { return LEVEL; }, set LEVEL(v) { LEVEL = +v; },
-  };
+  }, function () { return LEVEL; }, function (v) { LEVEL = v; });
 })();
 (window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-guest-handbells.js"] = true;   // the load guard's roll call
