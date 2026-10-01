@@ -55,7 +55,7 @@ function check(name, ok, detail) {
   check("the witness names what the harness played: the build's own list", results.every((r) => r.loaded && r.loaded.fingerprint === engine.fingerprint),
     "modules " + results[0].loaded.fingerprint + ", " + results[0].loaded.files.length + " files, the list in " + engine.list.from);
   check("the harness names it too, in the header (`engine`), and agrees", results.every((r) => r.loaded && r.loaded.saidBy === "header and witness"),
-    run.header.engine ? "fingerprint " + run.header.engine.fingerprint : "this harness writes no header.engine — port it (handoff r2-tools-1, Round 2)");
+    run.header.engine ? "fingerprint " + run.header.engine.fingerprint : "this harness writes no header.engine");
 
   console.log("2. a synthetic dump in the typed vocabulary (SCORE.md §6)");
   const lines = [

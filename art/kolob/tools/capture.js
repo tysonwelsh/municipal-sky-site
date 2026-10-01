@@ -30,8 +30,6 @@ const A = require("./lib/audio.js");
 const Dm = require("./lib/dump.js");
 const R = require("./lib/run.js");
 
-// (the --profile default printed below is stale: lib/chrome.js keeps the
-// profile under os.tmpdir(); the text is a string and waits for a code change)
 const HELP = `capture.js — record a seeded meeting (muted), with spectrogram, loudness and peaks
   --seed 1847 | --seeds 1847,5,9   meeting(s) to record, one after another (default 1847)
   --from 0 --to 240      window in meeting seconds (default 0–240)
@@ -42,7 +40,7 @@ const HELP = `capture.js — record a seeded meeting (muted), with spectrogram, 
   --no-harness-check     skip the comparison with the harness's plan for the seed
   --wav <file> [--events <file.jsonl>]   re-analyse an existing capture instead
   --port 8113 --chrome-port 9423 --out <dir>
-  --profile <dir>        Chrome profile (default /private/tmp/claude-501/kolob-r2-tools-chrome[-<port>])`;
+  --profile <dir>        Chrome profile (default <tmpdir>/kolob-r2-tools-chrome[-<port>])`;
 
 // ---------------------------------------------------------------------------
 // The tap, injected before any page script: every node that connects to an
@@ -422,14 +420,10 @@ function reportFor(r) {
     L.push("");
     L.push(U.table(["harness section", "at (s)", "browser section", "at (s)", ""], r.check.rows));
     L.push("");
-    // (the sentence printed below for a parting still describes a build
-    // older than 2026-09-27 — one die, in timer order, read against the
-    // audio clock; on today's engine a parting is a bug to find, not the
-    // expected jitter. The text is a string and waits for a code change.)
     const nn = r.check.notes;
     L.push("Note for note: " + nn.matched + " of the harness's " + nn.harness + " notes sound in the browser too (" + nn.browser + " there). " +
       (nn.part ? "The two first part at " + mmss(nn.part.t) + " (" + nn.part.layer + (nn.part.freq > 0 ? " " + nn.part.freq.toFixed(1) + " Hz" : "") + ")" +
-        " — after that the browser's meeting keeps its plan but takes its own path. v0.30 draws every choice from one die, in the order its timers fire, and reads the audio clock when they fire, so real-time jitter changes the draws — and two browser runs of one seed part from each other too. The streams and the clock of phase 0b (PLAN §2.2: \"every decision keys off scheduled time\") are the cure; until then the harness tools describe the meetings a seed *would* play, and this capture the one it did." : "They agree throughout ✓."));
+        " — after that the browser's meeting keeps its plan but takes its own path. Every decision is drawn from a labelled stream and placed at a scheduled time (SCORE §3–§4), so the browser and the harness should agree note for note: a parting here is a bug to find, not jitter to expect." : "They agree throughout ✓."));
     L.push("");
   }
   return L.join("\n");

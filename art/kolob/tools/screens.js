@@ -24,8 +24,6 @@ const os = require("os");
 const U = require("./lib/util.js");
 const C = require("./lib/chrome.js");
 
-// (the --profile default printed below is stale: lib/chrome.js keeps the
-// profile under os.tmpdir(); the text is a string and waits for a code change)
 const HELP = `screens.js — muted headless screenshots of the staff + frame time under CPU throttling
   --seed 1847            the meeting (default 1847)
   --times 20,60,120      meeting seconds to capture at (default 20,60,120)
@@ -37,7 +35,7 @@ const HELP = `screens.js — muted headless screenshots of the staff + frame tim
   --ives / --latin       arm the Ives switch / show Latin letters
   --port 8113            the local PHP server (started if nothing serves this tree there)
   --chrome-port 9423     Chrome's debugging port (another port brings its own profile)
-  --profile <dir>        Chrome profile (default /private/tmp/claude-501/kolob-r2-tools-chrome[-<port>])
+  --profile <dir>        Chrome profile (default <tmpdir>/kolob-r2-tools-chrome[-<port>])
   --out <dir>            (default tools/out/screens-<seed>-<stamp>)`;
 
 const INSTRUMENT = (o) => `(function(){
