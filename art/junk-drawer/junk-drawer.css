@@ -68,6 +68,42 @@ html { scroll-behavior: smooth; }
   --jd-x-band: 44px;
   --jd-x-gap: 8px;
   --jd-x-ink: 18px;
+  /* the whole right-hand reservation a head makes for its ✕. Derived HERE,
+     at :root, so it resolves against the :root values: a subtree that ever
+     re-declares --jd-x-w or --jd-x-gap must re-declare this beside them. */
+  --jd-x-room: calc(var(--jd-x-w) + var(--jd-x-gap));
+
+  /* THE SHARED PAPER AND TYPE, STATED ONCE (2026-10-01). The three dialogs
+     (report card, turn card, analytics folder) scope their own tokens to
+     their own scrims so none can leach into another — but five of those
+     tokens were the same bytes in every scrim: the paper's grain and mottle
+     and the three type stacks. They live here once, and each scrim aliases
+     its own scoped name to them (--grain/--tgrain/--fgrain,
+     --rc-mono/--tmono/--fmono, …), so every var() below reads what it
+     always read. The two textures are feTurbulence data-URIs with
+     stitchTiles="stitch" — the Safari lesson at the head of this file: copy
+     them, never regenerate or retype them (a reseed breaks the tile seams). */
+  --jd-grain-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+  --jd-mottle-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cfilter id='m' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.011 0.016' numOctaves='4' seed='23'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.44 0 0 0 0 0.32 0 0 0 0 0.11 0 0 0 0.14 0'/%3E%3C/filter%3E%3Crect width='420' height='420' filter='url(%23m)'/%3E%3C/svg%3E");
+  --jd-font-mono: "Courier Prime", "Courier New", Courier, monospace;
+  --jd-font-form: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+          Georgia, serif;
+  --jd-font-hand: "Bradley Hand", "Segoe Print", "Chalkboard SE", "Chalkboard", cursive;
+
+  /* the photograph's two papers, named once (2026-10-01): the cream graph
+     paper and its ruling, the blueprint and its ruling — and the ruling's
+     own blue struck solid, the one ink of the darkroom's lettering */
+  --jd-plate-paper: #f8f3e2;
+  --jd-graph-rule: rgba(74, 98, 138, 0.17);
+  --jd-blueprint: #1b4a8a;
+  --jd-blueprint-rule: rgba(214, 230, 255, 0.28);
+  --jd-ruling-ink: #4a628a;
+  /* the curator's gold: the bench strip, and the admin card's write control */
+  --jd-bench-gold: #c9a84c;
+  --jd-bench-gold-hi: #e5c06b;
+  /* the three dialogs' cast shadow (report card, turn card, folder) */
+  --jd-card-shadow: 14px 22px 34px -10px rgba(6, 3, 0, 0.66),
+                    3px 6px 12px -4px rgba(6, 3, 0, 0.5);
 }
 /* the mark, shared by all four closes. stroke-linecap:round is what makes a
    2px stroke read as a drawn mark rather than a hairline cross; the path is
@@ -96,6 +132,11 @@ html { scroll-behavior: smooth; }
      onto the inner arris and the bail points into the well instead of out. */
   --jd-pull-w: 220px;
   --jd-pull-drop: calc(var(--jd-pull-w) * 0.2);
+  /* the pile's two drop-shadows, named once: resting, and LIFTED (hover,
+     held, picked) — every item wears them, and the instructions sheet
+     restates them on its halves (see THE INSTRUCTIONS SHEET, FOLDED IN HALF) */
+  --jd-shadow-rest: drop-shadow(3px 4px 3px rgba(22, 11, 4, 0.62));
+  --jd-shadow-lift: drop-shadow(16px 22px 8px rgba(22, 11, 4, 0.45));
   /* the painted drawer frame does not exist yet; the walls are a procedural
      feTurbulence-wood placeholder served as a data-URI and sliced with real
      border-image — production art later swaps --jd-frame-url for the painted
@@ -178,7 +219,7 @@ html { scroll-behavior: smooth; }
   /* drag moves ride on --dx/--dy (transform-only motion — layout moves of a
      filtered element leave stale drop-shadow trails in Blink) */
   transform: translate(-50%, -50%) translate(var(--dx, 0px), var(--dy, 0px));
-  filter: drop-shadow(3px 4px 3px rgba(22, 11, 4, 0.62));
+  filter: var(--jd-shadow-rest);
   cursor: grab;
   transition: filter 0.15s ease-out;      /* lift/settle ease, mouse AND touch */
   /* item INK owns the gesture (G5 on-device revision #2, 2026-07-26):
@@ -216,7 +257,7 @@ html { scroll-behavior: smooth; }
      specimen (owner, 2026-08-10): no hover lift, no grow, no z jump. Its
      pointer cursor and idle gleam are its whole hover story. */
   .jd-item:not(.jd-item--turn):hover {
-    filter: drop-shadow(16px 22px 8px rgba(22, 11, 4, 0.45));
+    filter: var(--jd-shadow-lift);
     z-index: 999999 !important;
   }
 
@@ -233,7 +274,7 @@ html { scroll-behavior: smooth; }
    drag repaints cleanly (no shadow trails). */
 .jd-item.is-held {
   will-change: transform, filter;
-  filter: drop-shadow(16px 22px 8px rgba(22, 11, 4, 0.45));
+  filter: var(--jd-shadow-lift);
   cursor: grabbing;
   z-index: 999999 !important;
 }
@@ -261,7 +302,7 @@ html { scroll-behavior: smooth; }
    away) — so it now carries :not(.is-picked) and stands down here
    entirely (2026-08-28). */
 .jd-item.is-picked {
-  filter: drop-shadow(16px 22px 8px rgba(22, 11, 4, 0.45));
+  filter: var(--jd-shadow-lift);
 }
 .jd-item.is-picked svg { transform: rotate(0deg) scale(var(--pick-scale)); }
 
@@ -269,8 +310,42 @@ html { scroll-behavior: smooth; }
    selection as stage light. Held/hovered items step back out of the dim
    (hover exempt via :not(:hover); a drag exempt via :not(.is-held)). */
 .jd-well.jd-has-pick .jd-item:not(.is-picked):not(.is-held):not(:hover) {
-  filter: drop-shadow(3px 4px 3px rgba(22, 11, 4, 0.62))
-          brightness(0.68) saturate(0.8);
+  filter: var(--jd-shadow-rest) brightness(0.68) saturate(0.8);
+}
+
+/* ---- the visitor's own item, in the pile --------------------------------
+   A standard .jd-item in every respect that the gesture code can see — the
+   tag is a pseudo-element on the wrapper, which is pointer-events:none, so
+   it can never take a press the artwork should have had, and the item's own
+   drop-shadow carries it. It stays axis-aligned while the artwork rotates:
+   it reads as a paper tag lying beside the object, not printed on it. */
+.jd-item--visitor::after {
+  content: attr(data-visitor);
+  position: absolute; left: -6px; bottom: -9px;
+  padding: 2px 5px 2px 8px;
+  background: #e8d9a8; color: #3a2a12;
+  border: 1px solid rgba(74, 53, 18, 0.45);
+  clip-path: polygon(6px 0, 100% 0, 100% 100%, 6px 100%, 0 50%);
+  font-family: var(--font-mono);
+  font-size: 8px; line-height: 1.4; letter-spacing: 0.14em;
+  transform: rotate(-7deg);
+  pointer-events: none;
+}
+/* the drop: NO animation-fill-mode, deliberately — a retained final
+   transform would outrank the picked-upright zoom for the rest of the
+   session, since animations beat declarative styles */
+.jd-item--visitor.is-dropped { animation: jdTurnDropIn 0.55s ease-out; }
+.jd-item--visitor.is-dropped svg {
+  animation: jdTurnDropArt 0.5s cubic-bezier(.2, .8, .25, 1);
+}
+@keyframes jdTurnDropIn { from { opacity: 0; } 40% { opacity: 1; } }
+@keyframes jdTurnDropArt {
+  from { transform: rotate(var(--rot)) scale(2.1); }
+  to   { transform: rotate(var(--rot)) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .jd-item--visitor.is-dropped,
+  .jd-item--visitor.is-dropped svg { animation: none; }
 }
 
 /* ---------------- the item tag ------------------------------------------
@@ -324,10 +399,12 @@ html { scroll-behavior: smooth; }
 /* being dragged: the tag moves via left/top (it is not on the items'
    transform-only path), so it gets promoted to its own compositor layer for
    the duration — a drop-shadowed element moved by layout leaves stale shadow
-   trails in Blink otherwise, the same failure the item drag documents. */
+   trails in Blink otherwise, the same failure the item drag documents.
+   `filter` is the name that does the promoting; left/top are not
+   compositor properties, so listing them never added a layer. */
 .jd-itemtag.is-dragging {
   cursor: grabbing;
-  will-change: left, top, filter;
+  will-change: filter;
   transition: none;
 }
 .jd-itemtag::before {         /* the grommet, turned metal: dark bore, washer
@@ -543,6 +620,14 @@ html { scroll-behavior: smooth; }
      to clear 53px this never fires, and the button measures exactly like
      the medium specimen it is. */
   min-width: 53px;
+  /* NO WRAPPER SHADOW ON LIT HARDWARE (owner glow boost, 2026-08-11). The
+     shared .jd-item drop-shadow filter reads the WHOLE alpha, halo included —
+     at the boosted halo opacities it re-cast the pool of light as a dark
+     ghost offset down-right, the exact "light source with a dark aura" the 9a
+     mockup's notes flagged as the one read this design cannot afford. The
+     asset bakes its own contact shadow under the housing, so hardware still
+     sits ON the floor rather than floating. */
+  filter: none;
 }
 /* THE INSTRUCTIONS SHEET'S OWN PICK ZOOM (owner ask, 2026-09-14): a
    five-step note reads better held up close than the shared --pick-scale
@@ -551,7 +636,10 @@ html { scroll-behavior: smooth; }
    so it gets its own larger zoom. Overrides the custom property alone;
    .jd-item.is-picked svg still just reads whatever --pick-scale resolves
    to, so no other rule needs touching. */
-.jd-item--sheet { --pick-scale: 2; }
+.jd-item--sheet {
+  --pick-scale: 2;
+  filter: none !important;   /* the halves cast — see the FOLDED IN HALF banner below */
+}
 /* THE INSTRUCTIONS SHEET'S CLOSE MARK (owner, 2026-09-10): the × drawn in
    the paper's corner (instructions-object.svg, .ins-close). It is ink like
    the rest of the sheet — the generic visiblePainted rule already lets it
@@ -590,23 +678,22 @@ html { scroll-behavior: smooth; }
    nudgeIntoWell's --pick-tall completes the same bookkeeping. The crease,
    the folded rim and the underside shade are ink in the asset (.ins-crease,
    .ins-foldedge, .ins-shade), cross-faded here with the state. */
-.jd-item--sheet { filter: none !important; }   /* see the banner: the halves cast */
 .jd-item--sheet .jd-sheet {
   position: relative;
   transform: rotate(var(--rot));
   transition: transform 0.15s ease-out;
 }
 .jd-item--sheet .jd-sheet-half {
-  filter: drop-shadow(3px 4px 3px rgba(22, 11, 4, 0.62));
+  filter: var(--jd-shadow-rest);
   transition: filter 0.15s ease-out;
 }
 @media (hover: hover) {
-  .jd-item--sheet:hover .jd-sheet-half { filter: drop-shadow(16px 22px 8px rgba(22, 11, 4, 0.45)); }
+  .jd-item--sheet:hover .jd-sheet-half { filter: var(--jd-shadow-lift); }
 }
 .jd-item--sheet.is-held .jd-sheet-half,
-.jd-item--sheet.is-picked .jd-sheet-half { filter: drop-shadow(16px 22px 8px rgba(22, 11, 4, 0.45)); }
+.jd-item--sheet.is-picked .jd-sheet-half { filter: var(--jd-shadow-lift); }
 .jd-well.jd-has-pick .jd-item--sheet:not(.is-picked):not(.is-held):not(:hover) .jd-sheet-half {
-  filter: drop-shadow(3px 4px 3px rgba(22, 11, 4, 0.62)) brightness(0.68) saturate(0.8);
+  filter: var(--jd-shadow-rest) brightness(0.68) saturate(0.8);
 }
 .jd-item--sheet .jd-sheet-half svg { display: block; width: 100%; height: auto; }
 .jd-item--sheet .jd-sheet-bot {
@@ -652,15 +739,6 @@ html { scroll-behavior: smooth; }
     transition: none !important;
   }
 }
-
-/* NO WRAPPER SHADOW ON LIT HARDWARE (owner glow boost, 2026-08-11). The
-   shared .jd-item drop-shadow filter reads the WHOLE alpha, halo included —
-   at the boosted halo opacities it re-cast the pool of light as a dark
-   ghost offset down-right, the exact "light source with a dark aura" the 9a
-   mockup's notes flagged as the one read this design cannot afford. The
-   asset bakes its own contact shadow under the housing, so hardware still
-   sits ON the floor rather than floating. */
-.jd-item--turn { filter: none; }
 
 /* THE PRESS NEEDS ROOM. An <svg> clips at its viewport by default, and this
    asset's halo ink deliberately runs to within 2/240 of the viewBox edge —
@@ -952,18 +1030,10 @@ html { scroll-behavior: smooth; }
 }
 
 /* the wall label */
-.jd-wall-label {
-  border-bottom: 1px solid var(--rule-soft);
-  padding-bottom: var(--s-2);
-}
 .jd-title {
   font-size: var(--fs-lg);
   letter-spacing: 0.3em;
   margin: 0 0 var(--s-1);
-}
-.jd-label-dek {
-  margin: 0 0 var(--s-1);
-  color: var(--ink-soft);
 }
 .jd-count {
   margin: 0;
@@ -1016,7 +1086,7 @@ html { scroll-behavior: smooth; }
    --fs-md/--lh-base in the site's content width, a Spectral semibold title
    in sentence case. Scoped by the jd-notes--drawer modifier (index.php)
    because /about/ shares .jd-notes for its steps and sets its own type.
-   The build stamp and the ↑ link stay mono: they are chrome, not prose. */
+   The build stamp stays mono: it is chrome, not prose. */
 .jd-notes--drawer {
   max-width: var(--max-content);
   font-family: var(--font-body);
@@ -1032,19 +1102,28 @@ html { scroll-behavior: smooth; }
   text-transform: none;
   margin: 0 0 var(--s-2);      /* the site's title-to-divider step (.section-title) */
 }
-.jd-notes--drawer .jd-build,
-.jd-notes--drawer .jd-back { font-family: var(--font-mono); font-size: var(--fs-xs); }
+.jd-notes--drawer .jd-build { font-family: var(--font-mono); font-size: var(--fs-xs); }
+/* the way to the about page, under the drawer (owner, 2026-09-28): a manila
+   label in the drawer's own idiom — the same stock as the about page's OPEN
+   THE DRAWER button — so it reads as part of the object, not a web link */
+.jd-about-cta { margin: var(--s-3) 0 var(--s-4); }
+.jd-about-cta a {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.74rem; letter-spacing: 0.14em; line-height: 1.3;
+  text-transform: uppercase; text-decoration: none;
+  color: #3a2a12;
+  background:
+    linear-gradient(178deg, rgba(255, 250, 228, 0.55) 0%, rgba(255, 250, 228, 0) 40%),
+    #e8d9a8;
+  border: 1px solid rgba(74, 53, 18, 0.55); border-radius: 3px;
+  padding: 0.8rem 1rem 0.72rem;
+  box-shadow: 2px 3px 7px rgba(22, 11, 4, 0.35);
+}
+.jd-about-cta a:hover { background: #f1e6c0; }
+.jd-about-cta a:active { transform: translateY(1px); box-shadow: 1px 1px 3px rgba(22, 11, 4, 0.35); }
 /* the manila button sits centred under the paragraphs (owner, 2026-09-29) */
 .jd-notes--drawer .jd-about-cta { text-align: center; }
-
-/* the ↑ twin of the manila tag */
-.jd-back {
-  margin: var(--s-4) 0 0;
-  text-align: center;
-  font-size: var(--fs-xs);
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-}
 
 /* ================= mobile: full-viewport drawer (PLAN-MOBILE §1) ========= */
 @media (max-width: 768px) {
@@ -1073,6 +1152,9 @@ html { scroll-behavior: smooth; }
        (immersive mode, below) — the drawer owns the whole screen on load */
     min-height: 420px;
     box-shadow: none;
+    /* a stop for the all-or-nothing page snap (below) */
+    scroll-snap-align: start;
+    scroll-snap-stop: always;   /* a hard fling can't skip the notes landing */
   }
     /* item tag compacts for small wells: a narrower fixed width, and the
        gap between meter and buttons tightens so line 2 still fits on one
@@ -1120,10 +1202,7 @@ html { scroll-behavior: smooth; }
        banner-height offset via scroll-margin-top below */
     scroll-padding-top: 0;
   }
-  .jd-stage {
-    scroll-snap-align: start;
-    scroll-snap-stop: always;   /* a hard fling can't skip the notes landing */
-  }
+  /* (the drawer's own snap stop is on .jd-stage, at the top of this block) */
   #notes {
     scroll-snap-align: start;
     /* the banner is VISIBLE at the notes rest (immersive mode restores
@@ -1167,12 +1246,11 @@ html { scroll-behavior: smooth; }
   --form-rule-2: rgba(55, 65, 79, 0.20);
   --typed: #3a3428;
   --red: #b02a24;
-  --form: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
-          Georgia, serif;
-  --hand: "Bradley Hand", "Segoe Print", "Chalkboard SE", "Chalkboard", cursive;
-  --rc-mono: "Courier Prime", "Courier New", Courier, monospace;
-  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
-  --mottle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cfilter id='m' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.011 0.016' numOctaves='4' seed='23'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.44 0 0 0 0 0.32 0 0 0 0 0.11 0 0 0 0.14 0'/%3E%3C/filter%3E%3Crect width='420' height='420' filter='url(%23m)'/%3E%3C/svg%3E");
+  --form: var(--jd-font-form);     /* the shared stacks and paper (:root, top) */
+  --hand: var(--jd-font-hand);
+  --rc-mono: var(--jd-font-mono);
+  --grain: var(--jd-grain-url);
+  --mottle: var(--jd-mottle-url);
 
   /* the fixed site banner (css/style.css, z 1000) paints over this scrim by
      design — so the scrim RESERVES it (round-13 fit contract, owner bug
@@ -1204,8 +1282,7 @@ html.jd-record-open { overflow: hidden; }
   color: var(--form-ink);
   background: var(--card) var(--grain);
   border: 1px solid rgba(48, 38, 20, 0.55);
-  box-shadow: 14px 22px 34px -10px rgba(6, 3, 0, 0.66),
-              3px 6px 12px -4px rgba(6, 3, 0, 0.5);
+  box-shadow: var(--jd-card-shadow);
 }
 /* the inner hairline of the double border */
 .jd-record::before {
@@ -1239,13 +1316,20 @@ html.jd-record-open { overflow: hidden; }
    off a head, because the masthead scrolls (the ≤700px portrait flow) and
    the ✕ must not scroll away with it; .rc-masthead pays the other half of
    the contract by reserving the room, below. */
-.jd-record-close {
-  position: absolute; top: 0; right: 0; z-index: 5;
+/* the box all three corner ✕ buttons share — this one, the enlargement's
+   (.rc-zoom-close) and the turn card's (.jd-turn-close): the :root
+   measurement, flex-centred, unboxed. Each keeps its own seat, layer and
+   ink beside it. (The folder's ✕ is a small tab button of its own.) */
+.jd-record-close, .rc-zoom-close, .jd-turn-close {
+  position: absolute;
   width: var(--jd-x-w); height: var(--jd-x-band);
   display: flex; align-items: center; justify-content: center;
-  border: 0; background: none;
+  border: 0; background: none; padding: 0;
   cursor: pointer;
-  color: var(--form-ink); padding: 0;
+}
+.jd-record-close {
+  top: 0; right: 0; z-index: 5;
+  color: var(--form-ink);
 }
 .jd-record-close:hover { color: var(--red); }
 .jd-record-close:focus-visible { outline: 2px solid var(--red); outline-offset: -6px; }
@@ -1295,7 +1379,7 @@ html.jd-record-open { overflow: hidden; }
    blocks restate only the padding they change. */
 .rc-masthead {
   --rc-mast-pad: 20px;   /* .rc-scroll's own side padding, per breakpoint */
-  --rc-mast-side: max(0px, calc(var(--jd-x-w) + var(--jd-x-gap) - var(--rc-mast-pad)));
+  --rc-mast-side: max(0px, calc(var(--jd-x-room) - var(--rc-mast-pad)));
   grid-area: mast; text-align: center;
   padding: 0.2em var(--rc-mast-side) 0.4em;
   border-bottom: 1px solid var(--form-rule-2);
@@ -1342,7 +1426,7 @@ html.jd-record-open { overflow: hidden; }
   font-family: var(--form); font-size: 0.46rem; letter-spacing: 0.15em;
   text-transform: uppercase; color: var(--form-ink-2);
   min-width: 4.6em;
-  text-shadow: 0 0 3px #f8f3e2, 0 0 5px #f8f3e2;
+  text-shadow: 0 0 3px var(--jd-plate-paper), 0 0 5px var(--jd-plate-paper);
 }
 /* values hold one line and ellipsize rather than run under the DOWNLOAD
    button in the opposite corner */
@@ -1350,7 +1434,7 @@ html.jd-record-open { overflow: hidden; }
   flex: 0 1 auto; min-width: 0;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   font-family: var(--rc-mono); font-size: 0.58rem; color: var(--typed);
-  text-shadow: 0 0 3px #f8f3e2, 0 0 5px #f8f3e2, 0 0 7px #f8f3e2;
+  text-shadow: 0 0 3px var(--jd-plate-paper), 0 0 5px var(--jd-plate-paper), 0 0 7px var(--jd-plate-paper);
 }
 /* the file number: unlabelled fine print, moved out of the margin notes to
    sit directly beneath the DOWNLOAD button (owner rev, 2026-08-15 — the
@@ -1365,7 +1449,7 @@ html.jd-record-open { overflow: hidden; }
   max-width: 40%;
   font-family: var(--rc-mono); font-size: 0.46rem; letter-spacing: 0.04em;
   color: rgba(55, 65, 79, 0.55);
-  text-shadow: 0 0 3px #f8f3e2, 0 0 5px #f8f3e2;
+  text-shadow: 0 0 3px var(--jd-plate-paper), 0 0 5px var(--jd-plate-paper);
 }
 
 /* ---- section heading ---------------------------------------------------- */
@@ -1393,18 +1477,26 @@ html.jd-record-open { overflow: hidden; }
    was cut on the same owner call. Items letterbox inside the 8% inset
    (their own preserveAspectRatio meet) — every aspect gets the same frame,
    which is why the retired stage's shape-tuning went with it. */
-.rc-plate {
-  position: relative;
-  width: 100%; aspect-ratio: 1 / 1;   /* width = --plate ⇒ height = --plate */
+/* the print swatch itself — graph paper, hairline, a millimetre of shadow —
+   is ONE rule for its three wearers: this plate, the darkroom's waiting
+   swatches (.jd-dark-sw) and the turn card's exhibits (.jd-turn-art). Each
+   keeps its own box beside it. */
+.rc-plate, .jd-dark-sw, .jd-turn-art {
   background:
-    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
-    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(0deg,  var(--jd-graph-rule) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(90deg, var(--jd-graph-rule) 0 1px, transparent 1px 45px),
     repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
     repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
-    #f8f3e2;
+    var(--jd-plate-paper);
   border: 1px solid rgba(55, 65, 79, 0.30);
   box-shadow: 0 4px 10px -3px rgba(46, 34, 12, 0.5),
               0 1px 3px rgba(46, 34, 12, 0.35);
+}
+.rc-plate {
+  position: relative;
+  width: 100%; aspect-ratio: 1 / 1;   /* width = --plate ⇒ height = --plate */
+  /* the enlargement's affordance (see its banner, below) */
+  cursor: zoom-in; touch-action: pan-y;   /* pan-y: a sideways thumb is the swipe (jd-record.js) */
 }
 /* the artwork yields its bottom band to the margin notes */
 .rc-plate-art { position: absolute; inset: 6% 8% 20%; }
@@ -1424,45 +1516,57 @@ html.jd-record-open { overflow: hidden; }
    top-right corner, clear of the kraft corner's hypotenuse (26px), in the
    plate buttons' tailoring; it repaints the paper only — the artwork's
    frame (.rc-plate-art) never moves. The swatch on it shows both papers. */
-.rc-paper {
+/* the button's cut is shared with the bench's (.jd-turn-paper): one rule,
+   the rule colour and the hover per card */
+.rc-paper, .jd-turn-paper {
   position: absolute; top: 15px; right: 15px; z-index: 3;
   padding: 3px; line-height: 0; cursor: pointer;
   color: #46505e;
-  border: 1px solid var(--form-rule); border-radius: 3px;
+  border-radius: 3px;
   background: rgba(255, 250, 232, 0.82);
   box-shadow: 0 1px 0 rgba(58, 42, 18, 0.18);
 }
-.rc-paper svg { display: block; width: 12px; height: 12px; }
-.rc-paper:hover { background: #37414f; color: var(--card); border-color: #37414f; }
-.rc-paper:active { box-shadow: none; transform: translateY(1px); }
-.rc-paper:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.rc-paper { border: 1px solid var(--form-rule); }
+.rc-paper svg, .jd-turn-paper svg { display: block; width: 12px; height: 12px; }
+.rc-paper:hover { background: var(--form-ink); color: var(--card); border-color: var(--form-ink); }
+/* the report card's press and its focus ring, once for every control that
+   wears the standard pair (the closes and the enlargement keep their own
+   offsets beside them) */
+.rc-paper:active, .rc-dl:active, .rc-draw:active { box-shadow: none; transform: translateY(1px); }
+.rc-paper:focus-visible, .rc-plate:focus-visible,
+.rc-dl:focus-visible, .rc-draw:focus-visible,
+.rc-pv:focus-visible, .rc-axbtn:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
 /* BLUEPRINT: the same rules, pale on deep blue, and the margin ink turns
    pale with them (its halo goes blue so it still lifts off the grid) */
-.rc-plate.is-blueprint {
+.rc-plate.is-blueprint, .jd-turn-art.is-blueprint {
   background:
-    repeating-linear-gradient(0deg,  rgba(214, 230, 255, 0.28) 0 1px, transparent 1px 45px),
-    repeating-linear-gradient(90deg, rgba(214, 230, 255, 0.28) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(0deg,  var(--jd-blueprint-rule) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(90deg, var(--jd-blueprint-rule) 0 1px, transparent 1px 45px),
     repeating-linear-gradient(0deg,  rgba(214, 230, 255, 0.11) 0 1px, transparent 1px 9px),
     repeating-linear-gradient(90deg, rgba(214, 230, 255, 0.11) 0 1px, transparent 1px 9px),
-    #1b4a8a;
+    var(--jd-blueprint);
   border-color: rgba(10, 28, 56, 0.6);
 }
-.rc-plate.is-blueprint .rc-note-l { color: rgba(214, 230, 255, 0.78); text-shadow: 0 0 3px #1b4a8a, 0 0 5px #1b4a8a; }
-.rc-plate.is-blueprint .rc-note-v { color: #f2f6ff; text-shadow: 0 0 3px #1b4a8a, 0 0 5px #1b4a8a, 0 0 7px #1b4a8a; }
-.rc-plate.is-blueprint .rc-note-no { color: rgba(214, 230, 255, 0.6); text-shadow: 0 0 3px #1b4a8a, 0 0 5px #1b4a8a; }
-.rc-plate.is-blueprint .rc-paper { color: #dce8ff; border-color: rgba(214, 230, 255, 0.45); background: rgba(27, 74, 138, 0.85); }
-.rc-plate.is-blueprint .rc-paper:hover { background: #f2f6ff; color: #1b4a8a; }
-/* the kraft photo corners */
-.rc-corner {
-  position: absolute; width: 26px; height: 26px; z-index: 2;
+.rc-plate.is-blueprint .rc-note-l { color: rgba(214, 230, 255, 0.78); text-shadow: 0 0 3px var(--jd-blueprint), 0 0 5px var(--jd-blueprint); }
+.rc-plate.is-blueprint .rc-note-v { color: #f2f6ff; text-shadow: 0 0 3px var(--jd-blueprint), 0 0 5px var(--jd-blueprint), 0 0 7px var(--jd-blueprint); }
+.rc-plate.is-blueprint .rc-note-no { color: rgba(214, 230, 255, 0.6); text-shadow: 0 0 3px var(--jd-blueprint), 0 0 5px var(--jd-blueprint); }
+.rc-plate.is-blueprint .rc-paper,
+.jd-turn-art.is-blueprint .jd-turn-paper { color: #dce8ff; border-color: rgba(214, 230, 255, 0.45); background: rgba(27, 74, 138, 0.85); }
+.rc-plate.is-blueprint .rc-paper:hover,
+.jd-turn-art.is-blueprint .jd-turn-paper:hover { background: #f2f6ff; color: var(--jd-blueprint); }
+/* the kraft photo corners — the turn card's (.jd-turn-corner) are the same
+   corners, cut smaller: one rule each, the size per card */
+.rc-corner, .jd-turn-corner {
+  position: absolute; z-index: 2;
   background: linear-gradient(135deg, #dfcd9a, #c3aa6e);
   filter: drop-shadow(0 1px 1.5px rgba(46, 34, 12, 0.45));
 }
-.rc-corner.tl { top: -4px; left: -4px;  clip-path: polygon(0 0, 100% 0, 0 100%); }
-.rc-corner.tr { top: -4px; right: -4px; clip-path: polygon(0 0, 100% 0, 100% 100%); }
-.rc-corner.bl { bottom: -4px; left: -4px;  clip-path: polygon(0 0, 100% 100%, 0 100%);
+.rc-corner { width: 26px; height: 26px; }
+.rc-corner.tl, .jd-turn-corner.tl { top: -4px; left: -4px;  clip-path: polygon(0 0, 100% 0, 0 100%); }
+.rc-corner.tr, .jd-turn-corner.tr { top: -4px; right: -4px; clip-path: polygon(0 0, 100% 0, 100% 100%); }
+.rc-corner.bl, .jd-turn-corner.bl { bottom: -4px; left: -4px;  clip-path: polygon(0 0, 100% 100%, 0 100%);
                 background: linear-gradient(45deg, #c3aa6e, #dfcd9a); }
-.rc-corner.br { bottom: -4px; right: -4px; clip-path: polygon(100% 0, 100% 100%, 0 100%);
+.rc-corner.br, .jd-turn-corner.br { bottom: -4px; right: -4px; clip-path: polygon(100% 0, 100% 100%, 0 100%);
                 background: linear-gradient(-45deg, #c3aa6e, #dfcd9a); }
 
 /* ---- the enlargement (owner, 2026-08-09) --------------------------------
@@ -1472,8 +1576,6 @@ html.jd-record-open { overflow: hidden; }
    the layer (the art, the caption, the surround) or by Escape — which peels
    this layer before it peels the card (junk-drawer.js). The corner hint
    carries the affordance on touch, where nothing hovers. */
-.rc-plate { cursor: zoom-in; touch-action: pan-y; }   /* pan-y: a sideways thumb is the swipe (jd-record.js) */
-.rc-plate:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
 /* the DOWNLOAD button rides the photograph's lower-right corner (owner rev,
    2026-08-13 — it replaced the "⤢ enlarge" hint, and the card's footer with
    it), wearing the specimen tag's button tailoring: hairline border, 3px
@@ -1512,9 +1614,6 @@ html.jd-record-open { overflow: hidden; }
 .rc-draw svg { display: block; width: 13px; height: 13px; }
 .rc-dl:hover, .rc-draw:hover {
   background: #37414f; color: var(--card); border-color: #37414f; }
-.rc-dl:active, .rc-draw:active { box-shadow: none; transform: translateY(1px); }
-.rc-dl:focus-visible, .rc-draw:focus-visible {
-  outline: 2px solid var(--red); outline-offset: 2px; }
 
 /* The layer is a child of <body>, NOT of the scrim, and that is deliberate:
    the scrim carries z-index 320, which makes it a stacking context, so
@@ -1527,9 +1626,8 @@ html.jd-record-open { overflow: hidden; }
    Its paper/ink tokens are declared here for the same reason — the scrim's
    copies are scoped to the scrim, and this layer is no longer inside it. */
 .jd-record-zoom {
-  --form: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
-          Georgia, serif;
-  --rc-mono: "Courier Prime", "Courier New", Courier, monospace;
+  --form: var(--jd-font-form);
+  --rc-mono: var(--jd-font-mono);
   --red: #b02a24;
 
   position: fixed; inset: 0; z-index: 1100;
@@ -1543,7 +1641,7 @@ html.jd-record-open { overflow: hidden; }
   background: rgba(6, 4, 1, 0.93);
   cursor: zoom-out;
 }
-.jd-record-zoom.is-on { display: flex; }
+.jd-record-zoom.is-on { display: flex; animation: jdZoomVeil 0.2s ease both; }
 /* the box takes the room the viewport has; the SVG inside keeps its aspect
    (preserveAspectRatio meet), so tall art and wide art both simply fit */
 .rc-zoom-fig {
@@ -1569,11 +1667,11 @@ html.jd-record-open { overflow: hidden; }
      an overlay. */
   padding: calc(var(--jd-x-band) + 8px) 18px 62px;
   background:
-    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.17) 0 calc(1px * var(--gk)), transparent calc(1px * var(--gk)) calc(45px * var(--gk))),
-    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.17) 0 calc(1px * var(--gk)), transparent calc(1px * var(--gk)) calc(45px * var(--gk))),
+    repeating-linear-gradient(0deg,  var(--jd-graph-rule) 0 calc(1px * var(--gk)), transparent calc(1px * var(--gk)) calc(45px * var(--gk))),
+    repeating-linear-gradient(90deg, var(--jd-graph-rule) 0 calc(1px * var(--gk)), transparent calc(1px * var(--gk)) calc(45px * var(--gk))),
     repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.07) 0 calc(1px * var(--gk)), transparent calc(1px * var(--gk)) calc(9px * var(--gk))),
     repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.07) 0 calc(1px * var(--gk)), transparent calc(1px * var(--gk)) calc(9px * var(--gk))),
-    #f8f3e2;
+    var(--jd-plate-paper);
   border: 1px solid rgba(55, 65, 79, 0.35);
   box-shadow: 0 18px 44px -12px rgba(0, 0, 0, 0.8);
   cursor: zoom-out;
@@ -1605,12 +1703,10 @@ html.jd-record-open { overflow: hidden; }
    TWO PAPERS, ONE GLYPH: the fig is cream graph paper or deep blue
    blueprint, so the ink flips with it — the same pale-on-blue move the
    margin notes and the swap button already make. */
+/* (the shared box is .jd-record-close's rule; its cursor: pointer matters
+   here — the fig around it is zoom-out; this one is a button) */
 .rc-zoom-close {
-  position: absolute; top: 2px; right: 6px; z-index: 4;
-  width: var(--jd-x-w); height: var(--jd-x-band);
-  display: flex; align-items: center; justify-content: center;
-  border: 0; background: none; padding: 0;
-  cursor: pointer;   /* the fig around it is zoom-out; this one is a button */
+  top: 2px; right: 6px; z-index: 4;
   color: #37414f;
 }
 .rc-zoom-close:hover { color: var(--red); }
@@ -1620,11 +1716,11 @@ html.jd-record-open { overflow: hidden; }
 /* the enlargement wears the plate's paper, blueprint included */
 .rc-zoom-fig.is-blueprint {
   background:
-    repeating-linear-gradient(0deg,  rgba(214, 230, 255, 0.28) 0 calc(1px * var(--gk)), transparent calc(1px * var(--gk)) calc(45px * var(--gk))),
-    repeating-linear-gradient(90deg, rgba(214, 230, 255, 0.28) 0 calc(1px * var(--gk)), transparent calc(1px * var(--gk)) calc(45px * var(--gk))),
+    repeating-linear-gradient(0deg,  var(--jd-blueprint-rule) 0 calc(1px * var(--gk)), transparent calc(1px * var(--gk)) calc(45px * var(--gk))),
+    repeating-linear-gradient(90deg, var(--jd-blueprint-rule) 0 calc(1px * var(--gk)), transparent calc(1px * var(--gk)) calc(45px * var(--gk))),
     repeating-linear-gradient(0deg,  rgba(214, 230, 255, 0.11) 0 calc(1px * var(--gk)), transparent calc(1px * var(--gk)) calc(9px * var(--gk))),
     repeating-linear-gradient(90deg, rgba(214, 230, 255, 0.11) 0 calc(1px * var(--gk)), transparent calc(1px * var(--gk)) calc(9px * var(--gk))),
-    #1b4a8a;
+    var(--jd-blueprint);
   border-color: rgba(10, 28, 56, 0.7);
 }
 .rc-zoom-art { position: relative; height: 100%; }
@@ -1649,14 +1745,12 @@ html.jd-record-open { overflow: hidden; }
   to   { opacity: 1; transform: none; }
 }
 @keyframes jdZoomVeil { from { opacity: 0; } to { opacity: 1; } }
-.jd-record-zoom.is-on { animation: jdZoomVeil 0.2s ease both; }
 .jd-record-zoom.is-on .rc-zoom-fig {
   animation: jdZoomIn 0.26s cubic-bezier(.2,.8,.25,1) both;
 }
 @media (prefers-reduced-motion: reduce) {
   .jd-record-zoom.is-on,
   .jd-record-zoom.is-on .rc-zoom-fig { animation: none; }
-  .rc-axcaret::before, .rc-axcaret::after { transition: none; }
 }
 
 /* ---- THE PROMPT (verbatim) -----------------------------------------------
@@ -1724,7 +1818,6 @@ html.jd-record-open { overflow: hidden; }
   border-bottom: 1px dotted var(--form-rule);
 }
 .rc-pv:hover { color: var(--red); border-bottom-color: var(--red); }
-.rc-pv:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
 .rc-assign:not(.rc-can-fold) .rc-pv { display: none; }
 .rc-can-fold.is-open .rc-pv-more { display: none; }
 .rc-can-fold:not(.is-open) .rc-pv-less { display: none; }
@@ -1784,17 +1877,26 @@ table.rc-subj tfoot .rc-avg-l { padding-top: 0; }
   background: rgba(255, 250, 232, 0.5);
   color: var(--form-ink-2);
 }
-.rc-axcaret::before, .rc-axcaret::after {
+/* the two bars, shared with the survey's .jd-defx (one drawing method, one
+   rule — only the boxes differ) */
+.rc-axcaret::before, .rc-axcaret::after,
+.jd-defx::before, .jd-defx::after {
   content: ""; position: absolute; top: 50%; left: 50%;
   background: currentColor;
   transition: transform 0.12s ease, opacity 0.12s ease;
 }
-.rc-axcaret::before { width: 9px; height: 1.5px; transform: translate(-50%, -50%); }
-.rc-axcaret::after { width: 1.5px; height: 9px; transform: translate(-50%, -50%); }
+.rc-axcaret::before, .jd-defx::before { width: 9px; height: 1.5px; transform: translate(-50%, -50%); }
+.rc-axcaret::after, .jd-defx::after { width: 1.5px; height: 9px; transform: translate(-50%, -50%); }
 .rc-axbtn[aria-expanded="true"] .rc-axcaret::after { transform: translate(-50%, -50%) scaleY(0); opacity: 0; }
+/* reduced motion: the bars swap without the morph. This must come AFTER the
+   base rule above (same specificity, so source order decides) — it used to
+   sit in the enlargement's reduce block further up, where it never applied
+   (moved 2026-10-01, the .jd-defx rule's pattern). */
+@media (prefers-reduced-motion: reduce) {
+  .rc-axcaret::before, .rc-axcaret::after { transition: none; }
+}
 .rc-axbtn:hover .rc-subj-name, .rc-axbtn:hover .rc-avg-l { color: var(--red); }
 .rc-axbtn:hover .rc-axcaret { color: var(--red); border-color: var(--red); }
-.rc-axbtn:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
 tr.rc-axdesc td {
   padding: 0.12em 0.5em 0.5em;
   /* a size up (owner, 2026-09-14) — this is running prose in a mono face at
@@ -1864,6 +1966,53 @@ tr.rc-axdesc td {
 .rc-mark.rc-g3, .rc-alt-grade.rc-g3, .rc-bar.rc-g3 { color: #a06200; }   /* select — ochre */
 .rc-mark.rc-g2, .rc-alt-grade.rc-g2, .rc-bar.rc-g2 { color: #b0490f; }   /* standard — burnt orange */
 .rc-mark.rc-g1, .rc-alt-grade.rc-g1, .rc-bar.rc-g1 { color: #8f1d12; }   /* utility — deep red */
+/* the WAITING gauge (owner, 2026-08-29) — the rating bench's, on this card's
+   bar (its --tink-3 is the turn card's ink): an unanswered row shows the same
+   bar, empty and grayed — the track sits open and its segment ticks are
+   drawn in the gray itself (the filled bar's paper-colored ticks would
+   vanish on an empty track), so the scale's step count reads before a
+   value does. An answer swaps in the real colored bar; the rows stop
+   jumping sideways as they're filled in. */
+.rc-bar.jd-bar--empty { color: var(--tink-3); opacity: 0.55; }
+.rc-bar.jd-bar--empty .rc-bar-tick { background: currentColor; opacity: 0.7; }
+/* the report card's inline editor (owner, 2026-09-10): the grade cells
+   become the scales themselves, in the form's own hand, and one gold button
+   files them — the only bench-palette mark on the form */
+.rc-subj select.rc-edit {
+  width: 100%; min-height: 26px; box-sizing: border-box;
+  padding: 0.15rem 1.5rem 0.15rem 0.45rem;
+  font-family: var(--rc-mono); font-size: 0.6rem; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--form-ink-2, #2f3846);
+  background: rgba(255, 252, 240, 0.85) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238c8676' stroke-width='1.4'/%3E%3C/svg%3E") no-repeat right 0.5rem center / 9px 6px;
+  border: 1px solid var(--form-rule-2, #b8b09a); border-radius: 2px;
+  -webkit-appearance: none; appearance: none; cursor: pointer;
+}
+.rc-subj select.rc-edit:focus-visible { outline: 2px solid var(--jd-bench-gold); outline-offset: 1px; }
+.rc-edit-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 8px; }
+.rc-edit-row .rc-save, .rc-edit-row .rc-hide-check { white-space: nowrap; }
+.rc-edit-row .rc-edit-status { flex: 1 1 100%; }
+.rc-save {
+  font: 700 9px/1.4 var(--jd-font-mono);
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: #221809; background: var(--jd-bench-gold); border: 0; border-radius: 2px;
+  padding: 4px 10px; cursor: pointer;
+}
+.rc-save:hover { background: var(--jd-bench-gold-hi); }
+.rc-save:focus-visible { outline: 2px solid #6d5426; outline-offset: 2px; }
+/* the edit cell: the gauge stays ahead of the scale, the scale takes the rest */
+.rc-editcell { display: flex; width: 100%; }
+.rc-subj .rc-editcell select.rc-edit { flex: 1 1 auto; width: auto; min-width: 0; }
+/* the hide box rides the save row and files with the button */
+.rc-hide-check {
+  display: inline-flex; align-items: center; gap: 0.35rem; cursor: pointer;
+  font-family: var(--rc-mono); font-size: 0.545rem; letter-spacing: 0.11em;
+  text-transform: uppercase; color: #6d5426;
+}
+.rc-hide-check input { margin: 0; accent-color: var(--jd-bench-gold); }
+.rc-edit-status {
+  font-family: var(--rc-mono); font-size: 0.545rem; letter-spacing: 0.11em;
+  text-transform: uppercase; color: #8c8676;
+}
 
 /* ---- the alternatives strip: OTHER MODELS, SAME PROMPT ------------------ */
 /* The strip is a rail with a SCROLL PORT between its two pagers (owner,
@@ -1976,12 +2125,18 @@ tr.rc-axdesc td {
    DOWNLOAD button rides the photograph and the file number its notes) */
 
 /* ---- small screens ------------------------------------------------------- */
-/* under 700px the card stacks back to the single-column portrait flow:
-   masthead, photograph, fills, prompt, annotations, strip, footer. The
-   column wrappers go display:contents (the DOM's source order IS the
-   portrait order), the body scrolls again — correct on a phone — and the
-   close ✕ stays pinned to the card, outside the scrolling box. */
+/* THE PLATE'S ARROWS (owner, 2026-09-29; jd-record.js plateNavHTML): phone
+   only. Tall and skinny, laid over the graph paper in the plate's side
+   margins — the artwork's own inset (8% each side), so the drawing keeps
+   its full width — and quiet: faint ink on a faint wash, a little darker
+   under the finger. */
+.rc-nav { display: none; }
 @media (max-width: 700px) {
+  /* under 700px the card stacks back to the single-column portrait flow:
+     masthead, photograph, fills, prompt, annotations, strip, footer. The
+     column wrappers go display:contents (the DOM's source order IS the
+     portrait order), the body scrolls again — correct on a phone — and the
+     close ✕ stays pinned to the card, outside the scrolling box. */
   .jd-record { width: min(560px, 100%); }
   .rc-scroll { display: flex; flex-direction: column; padding: 12px 14px 11px; }
   .rc-col-l, .rc-col-r { display: contents; }
@@ -1991,14 +2146,7 @@ tr.rc-axdesc td {
   /* still vh-clamped — a landscape phone can't blow the card out */
   .rc-plate { width: min(100%, 52dvh, 420px); margin: 0 auto 0.55rem; }
   .rc-head { margin-top: 0.55rem; }
-}
-/* THE PLATE'S ARROWS (owner, 2026-09-29; jd-record.js plateNavHTML): phone
-   only. Tall and skinny, laid over the graph paper in the plate's side
-   margins — the artwork's own inset (8% each side), so the drawing keeps
-   its full width — and quiet: faint ink on a faint wash, a little darker
-   under the finger. */
-.rc-nav { display: none; }
-@media (max-width: 700px) {
+  /* the plate's arrows (above) */
   .rc-nav {
     display: flex; align-items: center; justify-content: center;
     position: absolute; z-index: 3;
@@ -2081,13 +2229,13 @@ tr.rc-axdesc td {
    ONE HAND ON THE FORM NOW: the visitor writes in graphite (--graphite) —
    the pencilled ring on the chosen likert stop, the pencil tick on a
    finished rail step, the tie election's tick. --tstamp (the old stamp-pad
-   red) survives only as a plain ink-red accent, unconnected to any stamp:
-   the failed-slot glyph, the required-scale flag, the "kept" fate on the
-   unveil.
+   red) outlived the stamps for a while as a plain ink-red accent token and
+   is gone now too (2026-10-01): nothing read it any more.
 
    Tokens are scoped to the scrim, the same way the rc-* ones are, so neither
-   modal can leach into the other. The grain/mottle data-URIs are copied
-   VERBATIM from the record card (stitchTiles="stitch" — never regenerate
+   modal can leach into the other. The grain/mottle data-URIs are the
+   shared ones at the head of the file (--jd-grain-url / --jd-mottle-url),
+   aliased to this card's names (stitchTiles="stitch" — never regenerate
    them; a reseed breaks the tile seams in Safari).
 
    This file carries no mix-blend-mode: the stamps were its one user, and
@@ -2105,27 +2253,24 @@ tr.rc-axdesc td {
   --trule: rgba(74, 53, 18, 0.40);
   --trule-2: rgba(74, 53, 18, 0.19);
   --tred: #b3402f;
-  --tstamp: #a8332a;          /* stamp-pad red — a shade deeper than --tred */
   --graphite: #4b4030;        /* the visitor's pencil */
-  --tmono: "Courier Prime", "Courier New", Courier, monospace;
-  --tform: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
-           Georgia, serif;
-  --thand: "Bradley Hand", "Segoe Print", "Chalkboard SE", "Chalkboard", cursive;
-  --tgrain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
-  --tmottle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cfilter id='m' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.011 0.016' numOctaves='4' seed='23'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.44 0 0 0 0 0.32 0 0 0 0 0.11 0 0 0 0.14 0'/%3E%3C/filter%3E%3Crect width='420' height='420' filter='url(%23m)'/%3E%3C/svg%3E");
+  --tmono: var(--jd-font-mono);    /* the shared stacks and paper (:root, top) */
+  --tform: var(--jd-font-form);
+  --thand: var(--jd-font-hand);
+  --tgrain: var(--jd-grain-url);
+  --tmottle: var(--jd-mottle-url);
 
   /* THE SPACING SYSTEM (round-16 tidy, 2026-08-13). One type scale and one
      spacing scale for the whole form, named so the next new row reaches for
      a token instead of inventing a 6th font-size. Every value below is used
      more than once in the rules that follow — that repetition is the point:
      a size that only ever appears once doesn't belong in the ladder, it's
-     a display size (the likert's A/B) and stays literal. */
+     a display size (the likert's A/B) and stays literal. (--t-lead and
+     --sp-1 left the ladder 2026-10-01: nothing read either.) */
   --t-micro: 0.44rem;   /* form-nos, the tersest labels */
   --t-label: 0.55rem;   /* rail labels, row labels, skip/notice text */
   --t-body: 0.66rem;    /* running copy: turn-line, selects, list rows */
-  --t-lead: 0.78rem;    /* the one input field — leave it alone */
   --t-title: 0.86rem;   /* the masthead heading — leave it alone */
-  --sp-1: 4px;           /* tight — icon-to-label gaps, row internal padding */
   --sp-2: 8px;           /* default — label-to-control, masthead padding */
   --sp-3: 14px;          /* between rows/blocks */
   --sp-4: 22px;          /* between sections */
@@ -2172,8 +2317,7 @@ html.jd-turn-open { overflow: hidden; }
   font-family: var(--tmono);
   background: var(--tpaper) var(--tgrain);
   border: 1px solid rgba(48, 38, 20, 0.55);
-  box-shadow: 14px 22px 34px -10px rgba(6, 3, 0, 0.66),
-              3px 6px 12px -4px rgba(6, 3, 0, 0.5);
+  box-shadow: var(--jd-card-shadow);
 }
 /* the printed double border */
 .jd-turn::before {
@@ -2213,11 +2357,9 @@ html.jd-turn-open { overflow: hidden; }
    at all, and on a two-line head the ✕ stays in the corner it belongs in
    while the second line runs on underneath it. The mark is the shared
    drawn ✕ (.jd-x-mark), the same in all four dialogs. */
+/* (the shared box is .jd-record-close's rule, in the report card's section) */
 .jd-turn-close {
-  position: absolute; top: 0; right: 0; z-index: 8;
-  width: var(--jd-x-w); height: var(--jd-x-band);
-  display: flex; align-items: center; justify-content: center;
-  border: 0; background: none; cursor: pointer; padding: 0;
+  top: 0; right: 0; z-index: 8;
   color: var(--tink);
 }
 .jd-turn-close:hover { color: var(--tred); }
@@ -2250,7 +2392,7 @@ html.jd-turn-open { overflow: hidden; }
   /* right padding clears the cornered close target plus its gap;
      min-height guarantees the band contains it, title short or absent */
   box-sizing: border-box; min-height: var(--jd-x-band);
-  padding: var(--jd-head-pad) calc(var(--jd-x-w) + var(--jd-x-gap)) var(--jd-head-pad) 16px;
+  padding: var(--jd-head-pad) var(--jd-x-room) var(--jd-head-pad) 16px;
   border-bottom: 1.5px solid var(--trule);
   background: linear-gradient(180deg, rgba(255, 250, 232, 0.46), rgba(255, 250, 232, 0) 85%);
 }
@@ -2322,7 +2464,16 @@ html.jd-turn-open { overflow: hidden; }
    break it */
 .jd-turn-link { color: var(--tink-2); text-decoration: underline; text-decoration-color: var(--tink-2); }
 .jd-turn-link:hover { color: var(--tink); text-decoration-color: var(--tink); }
-.jd-turn-link:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
+/* the turn card's focus ring, once for every control that wears the
+   standard one (2px of --tred, 2px off). Controls with their own offset —
+   the close, the field, the note, the boxed plus, the podium's print — and
+   the tie pill's :focus-within keep theirs beside them. */
+.jd-turn-link:focus-visible,
+.jd-turn-go:focus-visible, .jd-turn-alt:focus-visible,
+.jd-turn-paper:focus-visible, .jd-turn-plate[role="button"]:focus-visible,
+.jd-turn-draw:focus-visible, .jd-rail-step:focus-visible,
+.jd-turn-pv:focus-visible, .jd-turn-select:focus-visible,
+.jd-pod-tier:focus-visible, .jd-size-tier:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
 
 /* ---- BOX 1: the requester's own field ------------------------------------ */
 .jd-turn-fieldwrap { position: relative; }
@@ -2380,13 +2531,11 @@ html.jd-turn-open { overflow: hidden; }
   box-shadow: inset 0 1px 0 rgba(255, 244, 204, 0.55),
               2px 3px 5px -2px rgba(22, 11, 4, 0.5);
 }
-.jd-turn-go:active { transform: translateY(1px); box-shadow: none; }
+/* the turn card's press, once (the print buttons' :active is the same) */
+.jd-turn-go:active, .jd-turn-paper:active, .jd-turn-draw:active { transform: translateY(1px); box-shadow: none; }
 .jd-turn-alt { color: var(--tink); background: rgba(255, 250, 232, 0.55); }
 .jd-turn-go[disabled], .jd-turn-alt[disabled] {
   opacity: 0.42; cursor: default; box-shadow: none; transform: none;
-}
-.jd-turn-go:focus-visible, .jd-turn-alt:focus-visible {
-  outline: 2px solid var(--tred); outline-offset: 2px;
 }
 
 /* ============================================================================
@@ -2396,21 +2545,29 @@ html.jd-turn-open { overflow: hidden; }
    are graph-paper print swatches in a tight 2×2 — the report card's
    "photograph" (.jd-turn-art below), so a slot waits in the same frame its
    drawing will arrive in. Each swatch runs an OLD-SCHOOL WEB WAIT INDICATOR,
-   printed in ink and dealt per turn from a pool of five (round-24 rotation,
-   owner directive 2026-08-21 — the JS darkDeal shuffles the pool seeded from
-   the turn ref; before then each indicator was keyed stably to its slot
-   letter): a plotter pen tracing a circuit generated fresh each turn
-   (round-20 swap — the flipping hourglass retires), the stray word ("please /
-   wait" adrift, DVD-menu style — round-19 swap, owner pick 2026-08-16),
-   the scatterword (LOADING… blown apart and zooped back together, its flight
-   generated fresh each turn — round-22 swap, owner pick 2026-08-18, the Win95
-   segmented progress bar retires), a ticking wristwatch (round-21 swap — the
-   bouncing dots retire), and the honest bar (a hatched ink fill that climbs,
-   stalls, takes setbacks, and second-guesses itself above ~80 — rounds
-   24–25, owner pick 2026-08-21). The well under each indicator wears the
-   indicator's NAME (jd-dark-well--plot/stray/scatter/watch/bar) and the
-   full-bleed/overflow tailoring below keys to that, not to the slot: the
-   slot classes (--a…--d) now mean position only.
+   printed in ink and dealt per turn from a pool (round-24 rotation, owner
+   directive 2026-08-21 — the JS darkDeal shuffles the pool seeded from the
+   turn ref; before then each indicator was keyed stably to its slot
+   letter). The pool is DARK_POOL in jd-darkroom.js — five for the four
+   slots since 2026-09-29, so one sits each turn out: the stray word
+   ("please / wait" adrift, DVD-menu style — round-19 swap, owner pick
+   2026-08-16), the scatterword (LOADING… blown apart and zooped back
+   together, its flight generated fresh each turn — round-22 swap, owner
+   pick 2026-08-18, the Win95 segmented progress bar retires), a ticking
+   wristwatch (round-21 swap — the bouncing dots retire), the word drift
+   (letters falling down the rules into a heap — round 27, 2026-08-23) and
+   the word mesh (Kimi's Take, iframed — benched 2026-08-30, back
+   2026-09-29). Two more are BENCHED, not deleted, and their rules still
+   work, gathered under BENCHED INDICATORS below (see also the note on
+   DARK_POOL): the plotter pen tracing a
+   circuit generated fresh each turn (round-20 swap — the flipping
+   hourglass retires) and the honest bar (a fill that climbs, stalls, takes
+   setbacks, and second-guesses itself above ~80 — rounds 24–25, owner pick
+   2026-08-21; set as the teletype since 2026-08-26). The well under
+   each indicator wears the indicator's NAME
+   (jd-dark-well--stray/scatter/watch/drift/words, and --plot/--bar on the
+   bench) and the full-bleed/overflow tailoring below keys to that, not to
+   the slot: the slot classes (--a…--d) now mean position only.
    ROUND 26 (owner pick 2026-08-21, mockup-26-standby-claude rev. 3): the
    fifth slip — "please wait…" in the pencil hand, floated over the pile —
    is retired; it covered the indicators. The masthead is VISIBLE on this
@@ -2446,14 +2603,16 @@ html.jd-turn-open { overflow: hidden; }
    symmetric side padding clears it while keeping the phrase truly centred. */
 .jd-turn[data-view="darkroom"] .jd-turn-head,
 .jd-turn[data-view="plates"] .jd-turn-head {
-  /* the announcement is set a size up, so the head restates the size its
-     first-line band is measured from — the ✕ sits in that band and would
-     ride high against a bigger line otherwise (owner, 2026-09-10). The side
-     padding stays SYMMETRIC, which is what keeps the phrase truly centred
-     with a ✕ in one corner and nothing in the other. */
-  --jd-head-line: calc(1.3 * 0.98rem);
+  /* the announcement is set a size up, and the head moves --t-title to do
+     it — the ≤600px block's lever: the first-line band (--jd-head-line,
+     1.3 × --t-title, on .jd-turn-head) and the heading's own font-size both
+     read it, so the ✕ seated in the band can never ride high against a
+     bigger line (owner, 2026-09-10). The side padding stays SYMMETRIC, which
+     is what keeps the phrase truly centred with a ✕ in one corner and
+     nothing in the other. */
+  --t-title: 0.98rem;
   position: absolute; top: 0; left: 0; right: 0; z-index: 20;
-  padding: var(--jd-head-pad) calc(var(--jd-x-w) + var(--jd-x-gap));
+  padding: var(--jd-head-pad) var(--jd-x-room);
   border-bottom: 0; background: none;
 }
 .jd-turn[data-view="darkroom"] .jd-turn-headline,
@@ -2468,7 +2627,7 @@ html.jd-turn-open { overflow: hidden; }
 .jd-turn[data-view="darkroom"] .jd-turn-title,
 .jd-turn[data-view="plates"] .jd-turn-title {
   flex: 0 1 auto; text-align: center;
-  font-size: 0.98rem; letter-spacing: 0.22em; text-indent: 0.22em;
+  letter-spacing: 0.22em; text-indent: 0.22em;   /* the size: --t-title, set on the head above */
 }
 .jd-turn[data-view="plates"] .jd-turn-scroll { padding-top: 50px; }
 /* the body stops scrolling and becomes the pile's table */
@@ -2481,19 +2640,11 @@ html.jd-turn-open { overflow: hidden; }
    the four seats squared to one symmetric frame, so the darkroom matches the
    Results card that follows it — same 2×2 discipline, and (same revision)
    the same kraft photo corners, emitted by darkSwatch() in the JS. The print
-   swatch is .jd-turn-art's own background, border and shadow, copied
-   verbatim. */
+   swatch is .jd-turn-art's own background, border and shadow — one rule
+   with .rc-plate's, in the report card's section. */
 .jd-dark-sw {
   position: absolute;
   width: 41%; height: 33%;
-  background:
-    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
-    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
-    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
-    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
-    #f8f3e2;
-  border: 1px solid rgba(55, 65, 79, 0.30);
-  box-shadow: 0 4px 10px -3px rgba(46, 34, 12, 0.5), 0 1px 3px rgba(46, 34, 12, 0.35);
   transition: transform 0.6s ease, border-color 0.5s, box-shadow 0.7s;
 }
 .jd-dark-sw--a { left: 6%; top: 13%; }
@@ -2521,56 +2672,6 @@ html.jd-turn-open { overflow: hidden; }
   display: flex; align-items: center; justify-content: center;
   transition: opacity 0.5s;
 }
-
-/* the plotter pen (round 18, owner pick 2026-08-17; the hourglass
-   retires): a machine plotting a circuit along the graph paper's own rules.
-   The path itself is GENERATED per turn in the JS (darkPlotCircuit — a
-   spanning-tree tour, different every turn, seamless by construction); this
-   file only knows two dash windows on that path. The ink is a 15-unit
-   window (of pathLength 100; owner trim 2026-08-17, from 30) crawling
-   around the circuit — line appearing at the head, lifting away at the
-   tail — and the nib is a 0.01-unit round dot pinned to the window's head:
-   base offsets -15 and -30 stay exactly 15 apart, and both travel -100 per
-   loop, so the dot rides the ink's leading edge forever. Static base: a
-   partial trace, pen resting on it.
-   REGISTRATION (owner note, 2026-08-17): the pen must draw ON the swatch's
-   printed rules, not near them, so the well opens to the whole swatch
-   (the stray's precedent) and the SVG pins to the paper's own 9px grid:
-   round() snaps the centred offset down to a multiple of 9, then +5px
-   seats the stroke's centre on the 1px rule (rules paint at [9k, 9k+1),
-   centre 9k+0.5; the SVG's inner margin is 4.5, and 5 + 4.5 = 9.5). The
-   un-snapped pair above it is the fallback for browsers without round():
-   plain centring — a hair off the rules, never broken.
-   MIND THE ANCHOR EDGES (mobile fix, 2026-08-17): each gradient layer
-   phases from the edge its gradient line starts at — 90deg from the LEFT,
-   but 0deg from the BOTTOM — so the horizontal rules' phase moves with the
-   swatch's height. Snapping `top` therefore only registered at heights
-   that happened to be multiples of 9 (the desktop harness was; phones
-   weren't). The vertical pin is `bottom`, same arithmetic: the SVG's
-   bottom margin is also 4.5, so bottom = 9m+5 puts every horizontal
-   stroke at 9k+0.5 off the bottom edge, exactly the painted rule, at ANY
-   swatch height. Never snap `top` while the paper's 0deg layers phase
-   from the bottom. */
-.jd-dark-well--plot { left: 0; right: 0; top: 0; bottom: 0; }
-.jd-dark-plot {
-  display: block; position: absolute;
-  left: calc(50% - 45px); bottom: calc(50% - 27px);
-  left: calc(round(down, 50% - 45px, 9px) + 5px);
-  bottom: calc(round(down, 50% - 27px, 9px) + 5px);
-}
-.jd-dark-plot .plot-ink {
-  fill: none; stroke: rgba(74, 98, 138, 0.9); stroke-width: 1.6;
-  stroke-linecap: round; stroke-linejoin: round;
-  stroke-dasharray: 15 85; stroke-dashoffset: -15;
-}
-.jd-dark-plot .plot-nib {
-  fill: none; stroke: var(--tink); stroke-width: 4;
-  stroke-linecap: round;
-  stroke-dasharray: 0.01 99.99; stroke-dashoffset: -30;
-}
-/* implicit from: each starts at its base offset, one full period apart */
-@keyframes jdDarkPlotInk { to { stroke-dashoffset: -115; } }
-@keyframes jdDarkPlotNib { to { stroke-dashoffset: -130; } }
 
 /* the stray word: "please / wait" adrift on the print, ricocheting off
    the swatch's own edges like the DVD-menu logo of blessed memory (round-19
@@ -2641,9 +2742,10 @@ html.jd-turn-open { overflow: hidden; }
      box-kiss — never a clip. 0.35em ≈ 8px at 23px: deeper than the
      stack's deepest descender (Edwardian Script ≈ 0.3em). */
   padding: 0.35em;
-  color: #4a628a;   /* the ruling's own colour, struck solid — one ink for all
-                       the darkroom's lettering (owner, 2026-08-26: was #3b4f70,
-                       a shade deeper; now matches drift/mesh/scatter) */
+  color: var(--jd-ruling-ink);   /* the ruling's own colour, struck solid —
+                                    one ink for all the darkroom's lettering
+                                    (owner, 2026-08-26: was #3b4f70, a shade
+                                    deeper; now matches drift/mesh/scatter) */
 }
 /* the trailing ellipsis (owner, 2026-08-26): three dots after "wait" that
    blink into place one at a time — none, one, two, three, back to none —
@@ -2728,7 +2830,7 @@ html.jd-turn-open { overflow: hidden; }
   /* the ruling's own colour, struck solid — one ink for all the darkroom's
      lettering (owner, 2026-08-26: was var(--tink), the sheet's brown;
      now matches drift/mesh/stray) */
-  color: #4a628a;
+  color: var(--jd-ruling-ink);
   font-size: 11.4px;
   font-size: 7.893cqw;
 }
@@ -2776,13 +2878,6 @@ html.jd-turn-open { overflow: hidden; }
    indicator never re-based, so it alone kept the asymmetry and centred 5%
    low. The watch centres on the swatch itself now, like its neighbours. */
 .jd-dark-well--watch { left: 0; right: 0; top: 0; bottom: 0; }
-/* The bar needs this for the same reason the other four do: the BASE
-   .jd-dark-well is inset top:24% / bottom:14% — legacy room under the slot
-   letter — which centres it at 55% of the swatch, ~5% low. Every indicator
-   overrides it as it is built; the bar arrived in round 24 without one and
-   measured 54.8% against its neighbours' 50%. Any SIXTH indicator needs this
-   line too. */
-.jd-dark-well--bar { left: 0; right: 0; top: 0; bottom: 0; }
 
 /* the watch writes in the ruling blue like its neighbours (owner,
    2026-08-26 — it stood out as the one brown indicator): the case, lugs,
@@ -2803,14 +2898,86 @@ html.jd-turn-open { overflow: hidden; }
   stroke-dasharray: 0.14 0.86; stroke-dashoffset: 0.07;
 }
 .jd-dark-watch .w-min, .jd-dark-watch .w-hr {
-  stroke: #4a628a; stroke-linecap: round;
+  stroke: var(--jd-ruling-ink); stroke-linecap: round;
   transform-box: view-box; transform-origin: 20px 22px;
 }
 .jd-dark-watch .w-min { stroke-width: 2;   transform: rotate(var(--jdwm, 60deg)); }
 .jd-dark-watch .w-hr  { stroke-width: 2.6; transform: rotate(var(--jdwh, -55deg)); }
-.jd-dark-watch .w-pin { fill: #4a628a; }
+.jd-dark-watch .w-pin { fill: var(--jd-ruling-ink); }
 @keyframes jdDarkWatchMin { to { transform: rotate(calc(var(--jdwm, 60deg) + 360deg)); } }
 @keyframes jdDarkWatchHr  { to { transform: rotate(calc(var(--jdwh, -55deg) + 360deg)); } }
+
+/* ---- BENCHED INDICATORS -----------------------------------------------------
+   Two indicators are out of the rotation but BENCHED, not deleted (owner):
+   the plotter pen, and the honest bar set as the teletype. DARK_POOL in
+   jd-darkroom.js does not deal them, so nothing below reaches the page
+   today — but their JS (darkPlotCircuit, darkHonestBar and their darkWell
+   branches) and every rule here still work, and putting a name back in
+   DARK_POOL brings it back with no other edit. Their lines in the motion,
+   pause and stillness lists further down stay for the same reason. Gathered
+   here 2026-10-01: the rules are unchanged, only their place in the file. */
+
+/* the plotter pen (round 18, owner pick 2026-08-17; the hourglass
+   retires): a machine plotting a circuit along the graph paper's own rules.
+   The path itself is GENERATED per turn in the JS (darkPlotCircuit — a
+   spanning-tree tour, different every turn, seamless by construction); this
+   file only knows two dash windows on that path. The ink is a 15-unit
+   window (of pathLength 100; owner trim 2026-08-17, from 30) crawling
+   around the circuit — line appearing at the head, lifting away at the
+   tail — and the nib is a 0.01-unit round dot pinned to the window's head:
+   base offsets -15 and -30 stay exactly 15 apart, and both travel -100 per
+   loop, so the dot rides the ink's leading edge forever. Static base: a
+   partial trace, pen resting on it.
+   REGISTRATION (owner note, 2026-08-17): the pen must draw ON the swatch's
+   printed rules, not near them, so the well opens to the whole swatch
+   (the stray's precedent) and the SVG pins to the paper's own 9px grid:
+   round() snaps the centred offset down to a multiple of 9, then +5px
+   seats the stroke's centre on the 1px rule (rules paint at [9k, 9k+1),
+   centre 9k+0.5; the SVG's inner margin is 4.5, and 5 + 4.5 = 9.5). The
+   un-snapped pair above it is the fallback for browsers without round():
+   plain centring — a hair off the rules, never broken.
+   MIND THE ANCHOR EDGES (mobile fix, 2026-08-17): each gradient layer
+   phases from the edge its gradient line starts at — 90deg from the LEFT,
+   but 0deg from the BOTTOM — so the horizontal rules' phase moves with the
+   swatch's height. Snapping `top` therefore only registered at heights
+   that happened to be multiples of 9 (the desktop harness was; phones
+   weren't). The vertical pin is `bottom`, same arithmetic: the SVG's
+   bottom margin is also 4.5, so bottom = 9m+5 puts every horizontal
+   stroke at 9k+0.5 off the bottom edge, exactly the painted rule, at ANY
+   swatch height. Never snap `top` while the paper's 0deg layers phase
+   from the bottom. */
+.jd-dark-well--plot { left: 0; right: 0; top: 0; bottom: 0; }
+.jd-dark-plot {
+  display: block; position: absolute;
+  left: calc(50% - 45px); bottom: calc(50% - 27px);
+  left: calc(round(down, 50% - 45px, 9px) + 5px);
+  bottom: calc(round(down, 50% - 27px, 9px) + 5px);
+}
+.jd-dark-plot .plot-ink {
+  fill: none; stroke: rgba(74, 98, 138, 0.9); stroke-width: 1.6;
+  stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 15 85; stroke-dashoffset: -15;
+}
+.jd-dark-plot .plot-nib {
+  fill: none; stroke: var(--tink); stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: 0.01 99.99; stroke-dashoffset: -30;
+}
+/* implicit from: each starts at its base offset, one full period apart */
+@keyframes jdDarkPlotInk { to { stroke-dashoffset: -115; } }
+@keyframes jdDarkPlotNib { to { stroke-dashoffset: -130; } }
+
+/* The bar needs this for the same reason the other four do: the BASE
+   .jd-dark-well is inset top:24% / bottom:14% — legacy room under the slot
+   letter — which centres it at 55% of the swatch, ~5% low. Every indicator
+   overrides it as it is built; the bar arrived in round 24 without one and
+   measured 54.8% against its neighbours' 50%. Any SIXTH indicator needs this
+   line too. The bar's well is also a container, so the teletype's type
+   scales in cqw (the scatterword's precedent; see the teletype below). */
+.jd-dark-well--bar {
+  left: 0; right: 0; top: 0; bottom: 0;
+  overflow: hidden; container-type: size;
+}
 
 /* the honest bar, redrawn as THE TELETYPE (owner pick, mockup-38 option B,
    2026-08-26; the rounds-24/25 wobbled frame and hatched fill retire). The
@@ -2825,14 +2992,11 @@ html.jd-turn-open { overflow: hidden; }
    bleed and becomes a container (the scatterword's precedent) so the type
    scales with the swatch. Static base: parked at 68%, mid-climb, readout
    agreeing for once — the pose a reduced-motion visitor sees. */
-/* (full-bleed seating for --bar lives with the other well overrides above;
-   here the well additionally becomes a container so the type scales in cqw) */
-.jd-dark-well--bar { overflow: hidden; container-type: size; }
 .jd-dark-tele {
   font-family: var(--tmono); font-weight: 700;
   letter-spacing: 0.08em; line-height: 1.9;
   text-align: center; white-space: pre;
-  color: #4a628a;           /* the ruling's own colour, struck solid */
+  color: var(--jd-ruling-ink);   /* the ruling's own colour, struck solid */
   font-size: 11.4px;
   font-size: 5cqw;
 }
@@ -2841,7 +3005,7 @@ html.jd-turn-open { overflow: hidden; }
 /* one typed cell: the # and the · share the square, opacity decides */
 .jd-dark-tele .t-c { position: relative; display: inline-block; }
 .jd-dark-tele i { font-style: normal; }
-.jd-dark-tele .t-c .ge { position: absolute; left: 0; top: 0; }
+.jd-dark-tele .t-c .ge { position: absolute; left: 0; top: 0; opacity: 1; }
 /* the readout: two one-glyph odometer windows; the strip behind each is
    0–9, the ? shrug, and a blank for a single-digit value's tens place.
    An overflow-hidden inline-block baselines at its BOTTOM edge, so the
@@ -2852,9 +3016,9 @@ html.jd-turn-open { overflow: hidden; }
 }
 .jd-dark-tele .t-ds { display: block; }
 .jd-dark-tele .t-ds i { display: block; height: 1em; line-height: 1em; }
-/* the static pose: 68%, ten of fourteen cells inked, readout truthful */
+/* the static pose: 68%, ten of fourteen cells inked, readout truthful
+   (.ge's base opacity: 1 is on its rule above) */
 .jd-dark-tele .t-c .gf { opacity: 0; }
-.jd-dark-tele .t-c .ge { opacity: 1; }
 .jd-dark-tele .t-c:nth-child(-n+10) .gf { opacity: 1; }
 .jd-dark-tele .t-c:nth-child(-n+10) .ge { opacity: 0; }
 .jd-dark-tele .t-dt .t-ds { transform: translateY(-6em); }
@@ -2962,7 +3126,7 @@ html.jd-turn-open { overflow: hidden; }
      2026-08-26, owner report). */
   font-size: 10px;
   font-family: var(--tmono); font-style: normal;
-  color: #4a628a;                    /* the paper's own ruling colour, struck solid */
+  color: var(--jd-ruling-ink);   /* the paper's own ruling colour, struck solid */
   will-change: transform;
 }
 /* a letter still falling starts ABOVE the sheet. Its animation carries
@@ -2971,9 +3135,10 @@ html.jd-turn-open { overflow: hidden; }
 .jd-drift .col > i { transform: translateY(-300%); }
 
 /* arrived / failed: the drift stops where it stands, with the rest of the
-   well. The metronomes are stopped in JS at the same moment — a paused
-   animation still holds its letter on the paper, which is what we want, but
-   a running metronome would go on minting letters behind the fade. */
+   well. The metronomes are stopped in JS once the slot lands — a running
+   metronome would go on minting letters behind the fade. (The letters fall
+   on element.animate(), which animation-play-state does not reach; the rule
+   below is kept, and the JS stop is what actually ends them.) */
 .jd-dark-sw[data-state="ok"] .jd-drift i,
 .jd-dark-sw[data-state="fail"] .jd-drift i { animation-play-state: paused; }
 
@@ -2984,7 +3149,7 @@ html.jd-turn-open { overflow: hidden; }
   .jd-dark-well--drift::after {
     content: "PLEASE WAIT"; position: absolute; left: 0; right: 0; bottom: 9px;
     text-align: center; font-family: var(--tmono); font-size: 10px;
-    letter-spacing: 2px; color: #4a628a;
+    letter-spacing: 2px; color: var(--jd-ruling-ink);
   }
 }
 
@@ -3128,62 +3293,6 @@ html.jd-turn-open { overflow: hidden; }
   .jd-turn[data-view="call"], .jd-turn[data-view="said"] {
     width: min(960px, 100%);
   }
-  /* the CALL's podium only: 120 → 140 (owner, 2026-08-29, "a little larger
-     still") — the three size tokens and the cap all scale by the same 7/6,
-     so four steps compose at the old proportions, just bigger. The unveil
-     does NOT ride along: it is a filed photograph of the answer and holds
-     the measure it was filed at (the hard rule below). */
-  .jd-turn[data-view="call"] .jd-pod {
-    --pw: 140px; --pstep: 23px; --pbase: 68px;
-    max-width: 840px; margin: 0 auto;
-  }
-  .jd-turn[data-view="said"] .jd-pod {
-    --pw: 120px; --pstep: 20px; --pbase: 58px;
-    max-width: 720px; margin: 0 auto;
-  }
-  .jd-turn[data-view="said"] .jd-pod--said,
-  .jd-turn[data-view="said"] .jd-pod.jd-pod--said { --pbase: 88px; }
-  .jd-turn[data-view="call"] .jd-pod-row,
-  .jd-turn[data-view="said"] .jd-pod-row,
-  .jd-turn[data-view="call"] .jd-pod-tray,
-  .jd-turn[data-view="said"] .jd-pod-tray { gap: 10px; }
-  /* THE ROW IS A TRAY NOW (owner, 2026-08-29, landscape sheets only; phones
-     keep the bare row). Three calls in one block:
-     — an INSET container: the printed hairline and a shade pressed into the
-       paper, so the waiting drawings sit IN something rather than under
-       dead air;
-     — each drawing's cell keeps a dashed HOME — the pedestals' own
-       .jd-pod-hole idiom, verbatim — that shows the moment its print stands
-       up on a step. :empty carries it (the cell string is built with no
-       whitespace and podSeat moves whole nodes), so no markup and no paint
-       code changed; a lifted print still occupies its cell mid-drag, so the
-       home never flashes under the visitor's own hand;
-     — the cell reserves its print's height whether or not it is home, so
-       seating the LAST drawing no longer buckles the sheet (the base
-       .is-bare collapse loses to these two min-heights up here). */
-  .jd-turn[data-view="call"] .jd-pod-tray {
-    padding: 9px;
-    border: 1px solid var(--trule);
-    background: rgba(74, 53, 18, 0.05);
-    box-shadow: inset 0 1px 4px rgba(74, 53, 18, 0.14),
-                inset 0 -1px 0 rgba(255, 255, 240, 0.5);
-  }
-  .jd-turn[data-view="call"] .jd-pod-cell { min-height: calc(var(--pw) + 4px); }
-  .jd-turn[data-view="call"] .jd-pod-tray.is-bare {
-    min-height: calc(var(--pw) + 10px);
-  }
-  .jd-turn[data-view="call"] .jd-pod-cell:empty::before {
-    content: "";
-    box-sizing: border-box;
-    width: var(--pw); height: var(--pw);
-    border: 1px dashed rgba(74, 53, 18, 0.34);
-    background: rgba(255, 250, 232, 0.22);
-  }
-  /* under a drag the homes state themselves a shade harder, exactly as the
-     pedestal holes do (body.jd-pod-drag .jd-pod-hole above) */
-  body.jd-pod-drag .jd-turn[data-view="call"] .jd-pod-cell:empty::before {
-    border-color: rgba(75, 64, 48, 0.7);
-  }
 }
 .jd-turn-plate { flex: 1 1 0; min-width: 0; margin: 0; }
 
@@ -3226,17 +3335,8 @@ html.jd-turn-open { overflow: hidden; }
   justify-content: center;
   margin-top: var(--sp-4); margin-bottom: var(--sp-2);
 }
-.jd-turn-art {
-  position: relative; width: 100%; aspect-ratio: 1 / 1;
-  background:
-    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
-    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
-    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
-    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
-    #f8f3e2;
-  border: 1px solid rgba(55, 65, 79, 0.30);
-  box-shadow: 0 4px 10px -3px rgba(46, 34, 12, 0.5), 0 1px 3px rgba(46, 34, 12, 0.35);
-}
+/* the paper, border and shadow are .rc-plate's (one rule, report card section) */
+.jd-turn-art { position: relative; width: 100%; aspect-ratio: 1 / 1; }
 .jd-turn-art-in { position: absolute; inset: 7%; }
 .jd-turn-art-in svg { display: block; width: 100%; height: 100%; }
 /* THE PAPER SWAP, on the bench (owner ask, 2026-09-14): the report card's
@@ -3244,43 +3344,13 @@ html.jd-turn-open { overflow: hidden; }
    drawing measure — same corner, same geometry, same swatch icon
    (window.JD_paper.icon(), jd-core.js) — only the tokens are this card's
    own (--trule/--tred in place of --form-rule/--red), the same split
-   .jd-defx already draws from .rc-axcaret. */
-.jd-turn-paper {
-  position: absolute; top: 15px; right: 15px; z-index: 3;
-  padding: 3px; line-height: 0; cursor: pointer;
-  color: #46505e;
-  border: 1px solid var(--trule); border-radius: 3px;
-  background: rgba(255, 250, 232, 0.82);
-  box-shadow: 0 1px 0 rgba(58, 42, 18, 0.18);
-}
-.jd-turn-paper svg { display: block; width: 12px; height: 12px; }
+   .jd-defx already draws from .rc-axcaret. The shared cut, the icon and the
+   blueprint are one rule each with the report card's (its section); the
+   rule colour and the hover are this card's. */
+.jd-turn-paper { border: 1px solid var(--trule); }
 .jd-turn-paper:hover { background: var(--tink); color: var(--tpaper); border-color: var(--tink); }
-.jd-turn-paper:active { box-shadow: none; transform: translateY(1px); }
-.jd-turn-paper:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
-.jd-turn-art.is-blueprint {
-  background:
-    repeating-linear-gradient(0deg,  rgba(214, 230, 255, 0.28) 0 1px, transparent 1px 45px),
-    repeating-linear-gradient(90deg, rgba(214, 230, 255, 0.28) 0 1px, transparent 1px 45px),
-    repeating-linear-gradient(0deg,  rgba(214, 230, 255, 0.11) 0 1px, transparent 1px 9px),
-    repeating-linear-gradient(90deg, rgba(214, 230, 255, 0.11) 0 1px, transparent 1px 9px),
-    #1b4a8a;
-  border-color: rgba(10, 28, 56, 0.6);
-}
-.jd-turn-art.is-blueprint .jd-turn-paper {
-  color: #dce8ff; border-color: rgba(214, 230, 255, 0.45); background: rgba(27, 74, 138, 0.85);
-}
-.jd-turn-art.is-blueprint .jd-turn-paper:hover { background: #f2f6ff; color: #1b4a8a; }
-.jd-turn-corner {
-  position: absolute; width: 22px; height: 22px; z-index: 2;
-  background: linear-gradient(135deg, #dfcd9a, #c3aa6e);
-  filter: drop-shadow(0 1px 1.5px rgba(46, 34, 12, 0.45));
-}
-.jd-turn-corner.tl { top: -4px; left: -4px;  clip-path: polygon(0 0, 100% 0, 0 100%); }
-.jd-turn-corner.tr { top: -4px; right: -4px; clip-path: polygon(0 0, 100% 0, 100% 100%); }
-.jd-turn-corner.bl { bottom: -4px; left: -4px;  clip-path: polygon(0 0, 100% 100%, 0 100%);
-                     background: linear-gradient(45deg, #c3aa6e, #dfcd9a); }
-.jd-turn-corner.br { bottom: -4px; right: -4px; clip-path: polygon(100% 0, 100% 100%, 0 100%);
-                     background: linear-gradient(-45deg, #c3aa6e, #dfcd9a); }
+/* the kraft corners, at this card's size (the rest is .rc-corner's rule) */
+.jd-turn-corner { width: 22px; height: 22px; }
 /* the caption is the letter. Nothing else is known about it yet. */
 .jd-turn-plate figcaption {
   margin-top: 0.35rem; padding-top: 0.2rem;
@@ -3301,8 +3371,6 @@ html.jd-turn-open { overflow: hidden; }
    and the click/key handlers exempt it from the plate's zoom — it redraws,
    never zooms. */
 .jd-turn-plate[role="button"] { cursor: zoom-in; }
-.jd-turn-plate[role="button"]:focus-visible {
-  outline: 2px solid var(--tred); outline-offset: 2px; }
 .jd-turn-draw {
   position: absolute; right: 12px; bottom: 12px; z-index: 3;
   font-family: var(--tmono); font-size: 0.5rem; letter-spacing: 0.12em;
@@ -3324,9 +3392,6 @@ html.jd-turn-open { overflow: hidden; }
 .jd-turn-draw--icon svg { display: block; }
 .jd-turn-draw:hover {
   background: var(--tink); color: var(--tpaper); border-color: var(--tink); }
-.jd-turn-draw:active { box-shadow: none; transform: translateY(1px); }
-.jd-turn-draw:focus-visible {
-  outline: 2px solid var(--tred); outline-offset: 2px; }
 
 /* ============================================================================
    THE BENCH — the rail is the one navigation control on the form.
@@ -3412,7 +3477,6 @@ html.jd-turn-open { overflow: hidden; }
   border: 2px solid var(--tred); background: var(--tpaper-hi);
 }
 .jd-rail-step[disabled] { color: var(--tink-3); opacity: 0.8; cursor: default; }
-.jd-rail-step:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
 /* the connectors: the road behind is a solid rule, the road ahead dashed */
 .jd-rail-lnk { flex: 0 0 16px; height: 0; border-top: 1px dashed var(--trule-2); }
 .jd-rail-lnk.is-walked { border-top-style: solid; border-top-color: var(--trule); }
@@ -3548,7 +3612,6 @@ html.jd-turn-open { overflow: hidden; }
   border-bottom: 1px dotted var(--trule);
 }
 .jd-turn-pv:hover { color: var(--tred); border-bottom-color: var(--tred); }
-.jd-turn-pv:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
 .jd-turn-assign.is-fit .jd-turn-pv { display: none; }
 @media (max-width: 700px) {
   /* a flex child of the portrait scroller (the wrappers are contents): it
@@ -3616,13 +3679,17 @@ html.jd-turn-open { overflow: hidden; }
 .jd-row--head > span + span { border-left: 1px solid var(--trule-2); }
 /* the row's two cells: the subject inset from the left edge, the control
    column divided off and inset — the divider runs the row's full height
-   because the row's items stretch */
-.jd-rowhead { padding: 0 0.5em 0 0.35em; }
-.jd-row-ctrl { border-left: 1px solid var(--trule-2); padding-left: 10px; }
+   because the row's items stretch. The control cell is a flex row: the
+   picked-value gauge ahead of the select (see .jd-row-ctrl .rc-bar, below). */
+.jd-row-ctrl {
+  border-left: 1px solid var(--trule-2); padding-left: 10px;
+  display: flex; align-items: center; gap: 0.5rem; min-width: 0;
+}
 /* the whole head is the disclosure's press target (owner, round 5): pointer
    cursor, no text selection — a label you can press must not sprout an
    I-beam and start selecting itself under the finger */
 .jd-rowhead {
+  padding: 0 0.5em 0 0.35em;
   display: flex; align-items: center; gap: 5px; min-width: 0;
   cursor: pointer;
   -webkit-user-select: none; user-select: none;
@@ -3679,13 +3746,7 @@ html.jd-turn-open { overflow: hidden; }
   background: rgba(255, 250, 232, 0.7); cursor: pointer;
   color: var(--tink-2);
 }
-.jd-defx::before, .jd-defx::after {
-  content: ""; position: absolute; top: 50%; left: 50%;
-  background: currentColor;
-  transition: transform 0.12s ease, opacity 0.12s ease;
-}
-.jd-defx::before { width: 9px; height: 1.5px; transform: translate(-50%, -50%); }
-.jd-defx::after { width: 1.5px; height: 9px; transform: translate(-50%, -50%); }
+/* (the two bars are one rule with .rc-axcaret's, in the report card's section) */
 .jd-defx[aria-expanded="true"]::after { transform: translate(-50%, -50%) scaleY(0); opacity: 0; }
 @media (prefers-reduced-motion: reduce) {
   .jd-defx::before, .jd-defx::after { transition: none; }
@@ -3712,17 +3773,8 @@ html.jd-turn-open { overflow: hidden; }
    whatever the gauge doesn't need. Empty (no value picked yet) collapses
    to nothing, so an unanswered row looks exactly as it did before this
    round. */
-.jd-row-ctrl { display: flex; align-items: center; gap: 0.5rem; min-width: 0; }
 .jd-row-ctrl .jd-turn-select { width: auto; flex: 1 1 auto; min-width: 0; }
 .jd-row-ctrl .rc-bar { flex: 0 0 auto; }
-/* the WAITING gauge (owner, 2026-08-29): an unanswered row shows the same
-   bar, empty and grayed — the track sits open and its segment ticks are
-   drawn in the gray itself (the filled bar's paper-colored ticks would
-   vanish on an empty track), so the scale's step count reads before a
-   value does. An answer swaps in the real colored bar; the rows stop
-   jumping sideways as they're filled in. */
-.rc-bar.jd-bar--empty { color: var(--tink-3); opacity: 0.55; }
-.rc-bar.jd-bar--empty .rc-bar-tick { background: currentColor; opacity: 0.7; }
 /* THE ONE BAND THE GAUGE CANNOT HAVE (measured, 2026-08-14). Between 701px
    and 768px three rules collide: the bench is still LANDSCAPE (its portrait
    fold is ≤700px), inputs are already raised to 16px against iOS focus-zoom
@@ -3775,7 +3827,6 @@ html.jd-turn-open { overflow: hidden; }
 }
 /* a chosen value is never colour alone: it goes bold and ink-dark */
 .jd-turn-select.is-set { color: var(--tink); font-weight: 700; background-color: rgba(255, 252, 240, 0.92); }
-.jd-turn-select:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
 
 /* ---- the report path: a checkbox, and a note only once it is ticked ------ */
 .jd-turn-check {
@@ -3927,7 +3978,8 @@ html.jd-turn-open { overflow: hidden; }
 .jd-pod--said .jd-pod-print { cursor: zoom-in; touch-action: auto; }
 .jd-pod-lost {
   margin-top: 0.5rem; color: var(--tink-3);
-  font-size: var(--t-small); line-height: 1.5;
+  font-size: inherit;   /* was var(--t-small), a token never defined: it always inherited */
+  line-height: 1.5;
 }
 /* the floor the whole thing stands on */
 .jd-pod-floor { height: 3px; background: var(--trule); margin: 0 2px; }
@@ -3940,7 +3992,6 @@ html.jd-turn-open { overflow: hidden; }
   border-style: solid; background: rgba(255, 250, 232, 0.6);
 }
 body.jd-pod-drag .jd-pod-hole { border-color: rgba(75, 64, 48, 0.7); }
-.jd-pod-tier:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
 
 /* the row underneath. Every drawing keeps its own column, so nothing shuffles
    sideways when its neighbour is lifted onto a step; once the podium is full
@@ -4007,6 +4058,66 @@ body.jd-pod-drag .jd-pod-hole { border-color: rgba(75, 64, 48, 0.7); }
 }
 body.jd-pod-drag, body.jd-pod-drag * {
   -webkit-user-select: none !important; user-select: none !important;
+}
+/* THE LANDSCAPE PODIUM (≥701px; the call and the unveil widen to 960 at
+   .jd-turn[data-view="call"], above) */
+@media (min-width: 701px) {
+  /* the CALL's podium only: 120 → 140 (owner, 2026-08-29, "a little larger
+     still") — the three size tokens and the cap all scale by the same 7/6,
+     so four steps compose at the old proportions, just bigger. The unveil
+     does NOT ride along: it is a filed photograph of the answer and holds
+     the measure it was filed at (the hard rule below). */
+  .jd-turn[data-view="call"] .jd-pod {
+    --pw: 140px; --pstep: 23px; --pbase: 68px;
+    max-width: 840px; margin: 0 auto;
+  }
+  .jd-turn[data-view="said"] .jd-pod {
+    --pw: 120px; --pstep: 20px; --pbase: 58px;
+    max-width: 720px; margin: 0 auto;
+  }
+  .jd-turn[data-view="said"] .jd-pod--said,
+  .jd-turn[data-view="said"] .jd-pod.jd-pod--said { --pbase: 88px; }
+  .jd-turn[data-view="call"] .jd-pod-row,
+  .jd-turn[data-view="said"] .jd-pod-row,
+  .jd-turn[data-view="call"] .jd-pod-tray,
+  .jd-turn[data-view="said"] .jd-pod-tray { gap: 10px; }
+  /* THE ROW IS A TRAY NOW (owner, 2026-08-29, landscape sheets only; phones
+     keep the bare row). Three calls in one block:
+     — an INSET container: the printed hairline and a shade pressed into the
+       paper, so the waiting drawings sit IN something rather than under
+       dead air;
+     — each drawing's cell keeps a dashed HOME — the pedestals' own
+       .jd-pod-hole idiom, verbatim — that shows the moment its print stands
+       up on a step. :empty carries it (the cell string is built with no
+       whitespace and podSeat moves whole nodes), so no markup and no paint
+       code changed; a lifted print still occupies its cell mid-drag, so the
+       home never flashes under the visitor's own hand;
+     — the cell reserves its print's height whether or not it is home, so
+       seating the LAST drawing no longer buckles the sheet (the base
+       .is-bare collapse loses to these two min-heights here). */
+  .jd-turn[data-view="call"] .jd-pod-tray {
+    padding: 9px;
+    border: 1px solid var(--trule);
+    background: rgba(74, 53, 18, 0.05);
+    box-shadow: inset 0 1px 4px rgba(74, 53, 18, 0.14),
+                inset 0 -1px 0 rgba(255, 255, 240, 0.5);
+  }
+  .jd-turn[data-view="call"] .jd-pod-cell { min-height: calc(var(--pw) + 4px); }
+  .jd-turn[data-view="call"] .jd-pod-tray.is-bare {
+    min-height: calc(var(--pw) + 10px);
+  }
+  .jd-turn[data-view="call"] .jd-pod-cell:empty::before {
+    content: "";
+    box-sizing: border-box;
+    width: var(--pw); height: var(--pw);
+    border: 1px dashed rgba(74, 53, 18, 0.34);
+    background: rgba(255, 250, 232, 0.22);
+  }
+  /* under a drag the homes state themselves a shade harder, exactly as the
+     pedestal holes do (body.jd-pod-drag .jd-pod-hole above) */
+  body.jd-pod-drag .jd-turn[data-view="call"] .jd-pod-cell:empty::before {
+    border-color: rgba(75, 64, 48, 0.7);
+  }
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -4150,6 +4261,83 @@ body.jd-pod-drag, body.jd-pod-drag * {
   .jd-def > span { transition: color 0.15s; }
 }
 
+/* ---- HOW BIG IS IT — the curation's closing card (owner, 2026-08-30) ------
+   The one judgment the rubric never asked for: how large the object reads in
+   the drawer, on the taxonomy's own five tiers. Five pressable cards, each
+   showing the tier's actual footprint as a filled square drawn from its own
+   `box` number — the scale demonstrating itself, so the choice is made by eye
+   rather than by adjective. The chosen one takes the graphite fill the docket
+   uses for a finished step: the owner's pencil, again. Visitors never see
+   this card (their items are filed at the fixed visitor tier). */
+.jd-turn[data-view="size"] { width: min(760px, 100%); }
+.jd-size {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  gap: 10px; align-items: end; margin: var(--sp-3) 0 var(--sp-2);
+}
+.jd-size-tier {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  /* the swatches need a common floor to be comparable, so the row aligns to
+     the bottom and the tallest tier sets the height */
+  justify-content: flex-end;
+  padding: 12px 6px 10px; cursor: pointer;
+  background: rgba(255, 250, 232, 0.5);
+  border: 1px solid var(--trule); border-radius: 2px;
+  font: inherit; color: var(--tink); text-align: center;
+}
+.jd-size-tier:hover { border-color: var(--tink); }
+.jd-size-tier.is-on {
+  border-color: var(--graphite); border-width: 2px; padding: 11px 5px 9px;
+  background: var(--tpaper-hi);
+  box-shadow: inset 0 0 0 1px rgba(75, 64, 48, 0.18);
+}
+/* the swatch IS the tier: --sbox is the taxonomy's own box number, drawn
+   against the largest (30) so the five squares read as one scale */
+.jd-size-swatch {
+  display: block; align-self: center;
+  width: calc(var(--sbox) / 30 * 62px); height: calc(var(--sbox) / 30 * 62px);
+  min-width: 6px; min-height: 6px;
+  background: var(--graphite); opacity: 0.55; border-radius: 1px;
+}
+.jd-size-tier.is-on .jd-size-swatch { opacity: 1; }
+.jd-size-name {
+  font-family: var(--tform); font-size: var(--t-label);
+  letter-spacing: 0.14em; text-transform: uppercase;
+}
+.jd-size-desc {
+  font-size: var(--t-micro); line-height: 1.4; color: var(--tink-3);
+}
+@media (max-width: 700px) {
+  /* the phone stacks them: the swatch beside its name, still to scale */
+  .jd-size { grid-template-columns: 1fr; gap: 6px; }
+  .jd-size-tier {
+    flex-direction: row; align-items: center; justify-content: flex-start;
+    gap: 12px; text-align: left; padding: 8px 10px; min-height: 44px;
+  }
+  .jd-size-tier.is-on { padding: 7px 9px; }
+  .jd-size-swatch {
+    flex: 0 0 auto;
+    width: calc(var(--sbox) / 30 * 34px); height: calc(var(--sbox) / 30 * 34px);
+  }
+  .jd-size-desc { display: none; }   /* the swatch says it on a phone */
+}
+/* the size card's gate, said out loud (owner report, 2026-08-30) */
+.jd-size-hint {
+  margin: 0 2px var(--sp-2); font-size: var(--t-body); line-height: 1.5;
+  color: var(--tink-2);
+}
+
+/* KEEP IT OUT OF THE DRAWER (owner, 2026-08-30) — the visitor's one say over
+   what their finished turn does next. It sits under the last rating card,
+   quiet: a finished turn goes into the drawer by default, and this is the
+   exception, not a decision the card should press for. (.jd-turn-check is
+   the report path's own checkbox styling, benched but standing — reused
+   here rather than reinvented.) */
+.jd-suppress {
+  margin: var(--sp-2) 2px 0;
+  font-size: var(--t-label); color: var(--tink-2);
+}
+.jd-suppress input { accent-color: var(--graphite); }
+
 /* ============================================================================
    THE PORTRAIT STACK — ≤700px the bench folds back to the mockup's phone
    flow, and ≤600px everything else compresses with it.
@@ -4158,7 +4346,10 @@ body.jd-pod-drag, body.jd-pod-drag * {
   /* the landscape bench unwinds: the card returns to the form's own measure,
      the column wrappers go display:contents (the DOM's source order IS the
      portrait order), and the exhibit goes sticky again */
-  .jd-turn[data-view="bench"] { width: min(680px, 100%); }
+  .jd-turn[data-view="bench"] {
+    width: min(680px, 100%);
+    height: 100%;              /* the whole padded viewport — THE FLEX EXHIBIT, below */
+  }
   /* THE FLEX EXHIBIT (critic round, 2026-08-27). The 26dvh clamp could
      never serve both ends of the phone band: content shrank 0.26px per
      viewport px while the window it had to fit shrank a full 1 — so the
@@ -4170,7 +4361,6 @@ body.jd-pod-drag, body.jd-pod-drag * {
      on any phone taller than ~640px, and on a tall one the leftover goes
      into the drawing, not into dead paper. (The sticky pin stays: it only
      has work to do below the floor, where scrolling returns.) */
-  .jd-turn[data-view="bench"] { height: 100%; }
   .jd-turn[data-view="bench"] .jd-turn-scroll { display: flex; flex-direction: column; }
   /* THE EXHIBIT AT FULL WIDTH (owner, 2026-09-11): on a phone the drawing
      is as large as the report card shows it — the whole width of the
@@ -4253,7 +4443,7 @@ body.jd-pod-drag, body.jd-pod-drag * {
      glyph riding high. The right padding stays the shared reservation. */
   .jd-turn-head {
     --t-title: 0.76rem;
-    padding: var(--jd-head-pad) calc(var(--jd-x-w) + var(--jd-x-gap)) var(--jd-head-pad) 12px;
+    padding: var(--jd-head-pad) var(--jd-x-room) var(--jd-head-pad) 12px;
     gap: 8px;
   }
   .jd-turn-title { letter-spacing: 0.1em; }
@@ -4261,12 +4451,12 @@ body.jd-pod-drag, body.jd-pod-drag * {
      the reveal's longer counts ("Four drawings came back") wrap the band */
   .jd-turn[data-view="darkroom"] .jd-turn-head,
   .jd-turn[data-view="plates"] .jd-turn-head {
-    --jd-head-line: calc(1.3 * 0.8rem);
-    padding: var(--jd-head-pad) calc(var(--jd-x-w) + var(--jd-x-gap));
+    --t-title: 0.8rem;         /* band and heading together, as above */
+    padding: var(--jd-head-pad) var(--jd-x-room);
   }
   .jd-turn[data-view="darkroom"] .jd-turn-title,
   .jd-turn[data-view="plates"] .jd-turn-title {
-    font-size: 0.8rem; letter-spacing: 0.16em; text-indent: 0.16em;
+    letter-spacing: 0.16em; text-indent: 0.16em;
   }
   .jd-turn-scroll { padding: 10px 12px 12px; }
   /* THE CALL NEVER TABS. The standing rule was that it stacks rather than
@@ -4313,10 +4503,6 @@ body.jd-pod-drag, body.jd-pod-drag * {
      layer parked half off-screen */
   .jd-turn-input, .jd-turn-select, .jd-turn-note { font-size: 16px; }
   .jd-turn-input { min-height: 8.5rem; }
-  /* tracking comes nearly to zero here: 16px uppercase mono is already the
-     loudest voice on the sheet — the spacing was width the answers don't
-     have at this measure */
-  .jd-turn-select { letter-spacing: 0.02em; }
   /* OVERRIDE 2: the 44px touch floor, kept UNCONDITIONALLY at this
      breakpoint regardless of what any-pointer reports — a phone-width
      viewport is a touch target regardless of what the UA claims about the
@@ -4325,7 +4511,13 @@ body.jd-pod-drag, body.jd-pod-drag * {
      full-width strip, and the one-screen survey needs the height back. */
   .jd-turn-check, .jd-turn-note,
   .jd-turn-go, .jd-turn-alt { min-height: 44px; }
-  .jd-turn-select { min-height: 40px; }
+  .jd-turn-select {
+    min-height: 40px;
+    /* tracking comes nearly to zero here: 16px uppercase mono is already the
+       loudest voice on the sheet — the spacing was width the answers don't
+       have at this measure */
+    letter-spacing: 0.02em;
+  }
   .jd-rail-ring { width: 34px; height: 34px; }
   /* THE SMALL MARKS GET A FINGER'S BAND (critic/coder mobile round, owner
      report, 2026-09-29). Five presses on the bench measured under the
@@ -4481,8 +4673,6 @@ body.jd-pod-drag, body.jd-pod-drag * {
     --pw: 74px; --pstep: 13px; --pbase: 40px;
     max-width: calc(6 * var(--pw));
   }
-  .jd-turn[data-view="said"] .jd-pod--said,
-  .jd-turn[data-view="said"] .jd-pod.jd-pod--said { --pbase: 76px; }
   .jd-pod--said .jd-pod-who b { font-size: 0.6rem; text-wrap: balance; }
   .jd-turn[data-view="call"] .jd-pod-row,
   .jd-turn[data-view="said"] .jd-pod-row,
@@ -4514,40 +4704,6 @@ body.jd-pod-drag, body.jd-pod-drag * {
   .jd-turn[data-view="said"] .jd-pod-lost { margin-top: 4px; }
   .jd-turn[data-view="said"] .jd-turn-actions { margin-top: 8px; }
 }
-/* ---- the visitor's own item, in the pile --------------------------------
-   A standard .jd-item in every respect that the gesture code can see — the
-   tag is a pseudo-element on the wrapper, which is pointer-events:none, so
-   it can never take a press the artwork should have had, and the item's own
-   drop-shadow carries it. It stays axis-aligned while the artwork rotates:
-   it reads as a paper tag lying beside the object, not printed on it. */
-.jd-item--visitor::after {
-  content: attr(data-visitor);
-  position: absolute; left: -6px; bottom: -9px;
-  padding: 2px 5px 2px 8px;
-  background: #e8d9a8; color: #3a2a12;
-  border: 1px solid rgba(74, 53, 18, 0.45);
-  clip-path: polygon(6px 0, 100% 0, 100% 100%, 6px 100%, 0 50%);
-  font-family: var(--font-mono);
-  font-size: 8px; line-height: 1.4; letter-spacing: 0.14em;
-  transform: rotate(-7deg);
-  pointer-events: none;
-}
-/* the drop: NO animation-fill-mode, deliberately — a retained final
-   transform would outrank the picked-upright zoom for the rest of the
-   session, since animations beat declarative styles */
-.jd-item--visitor.is-dropped { animation: jdTurnDropIn 0.55s ease-out; }
-.jd-item--visitor.is-dropped svg {
-  animation: jdTurnDropArt 0.5s cubic-bezier(.2, .8, .25, 1);
-}
-@keyframes jdTurnDropIn { from { opacity: 0; } 40% { opacity: 1; } }
-@keyframes jdTurnDropArt {
-  from { transform: rotate(var(--rot)) scale(2.1); }
-  to   { transform: rotate(var(--rot)) scale(1); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .jd-item--visitor.is-dropped,
-  .jd-item--visitor.is-dropped svg { animation: none; }
-}
 
 /* ============================================================================
    THE ANALYTICS FOLDER — the closed folder's dialog (PLAN-ANALYTICS §2–§3,
@@ -4563,9 +4719,9 @@ body.jd-pod-drag, body.jd-pod-drag * {
 
    Tokens are scoped to .jd-folder-scrim, exactly as the rc-* and turn tokens
    are scoped to theirs, so none of the three modals can leach into another.
-   The grain data-URI is copied VERBATIM from the record card
-   (stitchTiles="stitch" — never regenerate it; a reseed breaks the tile
-   seams in Safari).
+   The grain data-URI is the shared one at the head of the file
+   (--jd-grain-url), aliased to --fgrain (stitchTiles="stitch" — never
+   regenerate it; a reseed breaks the tile seams in Safari).
 
    THE CHART TYPE SIZES LIVE HERE, IN USER UNITS. A CSS length inside an SVG
    is in the local coordinate system, so `font-size: 9.5px` on .fx-t-val is
@@ -4578,7 +4734,6 @@ body.jd-pod-drag, body.jd-pod-drag * {
 .jd-folder-scrim {
   --fmanila: #e8c98e;
   --fmanila-hi: #f0d8a6;
-  --fmanila-lo: #d5b171;
   --fpaper: #f7f0dd;
   --fink: #33240f;
   /* the two quiet inks, raised after measurement (design review,
@@ -4592,10 +4747,10 @@ body.jd-pod-drag, body.jd-pod-drag * {
   --frule: rgba(74, 53, 18, 0.38);
   --frule-2: rgba(74, 53, 18, 0.18);
   --fred: #b3402f;
-  --fmono: "Courier Prime", "Courier New", Courier, monospace;
-  --fform: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
-           Georgia, serif;
-  --fgrain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+  --fmono: var(--jd-font-mono);    /* the shared stacks and paper (:root, top) */
+  --fform: var(--jd-font-form);
+  --fgrain: var(--jd-grain-url);
+  --ftab-h: 44px;                  /* the tab's height (the tabs' note, below) */
 
   /* the fixed site banner (css/style.css, z 1000) paints over this scrim by
      design — so the scrim RESERVES its band, the record card's standing fix:
@@ -4619,15 +4774,17 @@ html.jd-folder-open { overflow: hidden; }
   box-sizing: border-box;
   width: min(920px, 100%);
   min-width: 0;
-  max-height: 100%;
+  /* the tab rides the card's top edge (the tabs' note, below): the card
+     wears a top margin the tab's height and gives it back from its cap */
+  margin-top: var(--ftab-h);
+  max-height: calc(100% - var(--ftab-h));
   display: flex; flex-direction: column;
   color: var(--fink);
   font-family: var(--fmono);
   background: var(--fmanila) var(--fgrain);
   border: 1px solid rgba(48, 38, 20, 0.6);
-  border-radius: 2px 2px 6px 6px;
-  box-shadow: 14px 22px 34px -10px rgba(6, 3, 0, 0.66),
-              3px 6px 12px -4px rgba(6, 3, 0, 0.5);
+  border-radius: 3px 3px 6px 6px;         /* the tab is inset now: both top corners are the folder's */
+  box-shadow: var(--jd-card-shadow);
 }
 @keyframes jdFolderEnter {
   from { opacity: 0; transform: translateY(14px) rotate(-0.4deg); }
@@ -4649,13 +4806,8 @@ html.jd-folder-open { overflow: hidden; }
    smaller tab at the right end of the same edge, so it belongs to the
    folder too. Both are absolutely positioned children of the card, hung
    from its top (bottom: 100%); the card wears a top margin the tab's
-   height so the tab stays inside the scrim's padding. */
-.jd-folder-scrim { --ftab-h: 44px; }
-.jd-folder-card {
-  margin-top: var(--ftab-h);
-  max-height: calc(100% - var(--ftab-h));
-  border-radius: 3px 3px 6px 6px;         /* the tab is inset now: both top corners are the folder's */
-}
+   height (.jd-folder-card, above) so the tab stays inside the scrim's
+   padding; the height is --ftab-h, with the folder's tokens. */
 /* THE TAB, CUT LIKE THE FOLDER IN THE DRAWER (owner, 2026-09-29, second
    pass: "it needs to look like a file folder … similar to how the folder
    appears in the drawer", and the ✕ "to the left of the title … part of the
@@ -4678,6 +4830,7 @@ html.jd-folder-open { overflow: hidden; }
   clip-path: polygon(0 100%, var(--slant) 0, calc(100% - var(--slant)) 0, 100% 100%);
   filter: drop-shadow(1px -2px 3px rgba(6, 3, 0, 0.3));
   color: var(--fink);
+  isolation: isolate;
 }
 .jd-folder-tab::before {
   content: ''; position: absolute; z-index: -1;
@@ -4685,7 +4838,6 @@ html.jd-folder-open { overflow: hidden; }
   background: var(--fmanila-hi) var(--fgrain);
   clip-path: polygon(0 100%, calc(var(--slant) - 0.4px) 0, calc(100% - var(--slant) + 0.4px) 0, 100% 100%);
 }
-.jd-folder-tab { isolation: isolate; }
 .jd-folder-tab-word {
   font-family: var(--fmono); font-size: 1.1rem; font-weight: 700;
   letter-spacing: 0.32em; line-height: 1;
@@ -4762,10 +4914,6 @@ html.jd-folder-open { overflow: hidden; }
   background: var(--fpaper); border: 1px solid var(--frule-2);
   box-shadow: 2px 3px 8px -3px rgba(40, 24, 4, 0.42);
 }
-@media (max-width: 700px) {
-  .jd-folder-scroll { grid-template-columns: 1fr; padding: 11px; }
-  .fx-card, .fx-cost, .fx-firsts, .fx-grades, .fx-spend, .fx-bare { grid-column: span 1; }
-}
 
 .fx-title {
   margin: 0 0 2px;
@@ -4828,16 +4976,6 @@ html.jd-folder-open { overflow: hidden; }
 .fx-td-num { display: inline-block; width: 1.1em; font-weight: 700; }
 .fx-td-none { color: var(--fink-3); }
 .fx-gauge { width: 41px; height: 9px; vertical-align: -1px; margin-left: 4px; }
-@media (max-width: 700px) {
-  /* FIXED, NOT AUTO (owner bug, 2026-09-29: two models' gauges "weren't
-     rendering" on a phone). With table-layout:auto the grade columns sized
-     to their HEADS, so GPT-5.1 and KIMI K3 — the short names — got ~58px,
-     too narrow for number + gauge, and the cell's ellipsis swallowed the
-     gauge whole. Fixed layout honours the 108px every grade column asks
-     for; the prompt takes what is left, and the sheet scrolls sideways. */
-  .fx-turns-t { table-layout: fixed; min-width: 700px; }
-  .fx-turns-wrap { overflow-x: auto; }
-}
 .fx-t-val  { font-family: var(--fmono); font-size: 9.5px; fill: var(--fink); font-weight: 700; }
 .fx-t-tail { font-family: var(--fmono); font-size: 8px;   fill: var(--fink-3); }
 .fx-t-scale{ font-family: var(--fmono); font-size: 8px;   fill: var(--fink-3); }
@@ -4852,9 +4990,6 @@ html.jd-folder-open { overflow: hidden; }
    fifths of the reading in that empty stretch. */
 .fx-seg  { stroke: var(--fpaper); stroke-width: 1.4; }
 .fx-seg-out { stroke: var(--frule-2); stroke-width: 1; }
-/* an axis panel's 1..points rule: the faintest thing on the page, because it
-   is scaffolding and the dot is the datum */
-.fx-track { stroke: rgba(74, 53, 18, 0.22); stroke-width: 1; }
 .fx-line { fill: none; stroke: var(--fink); stroke-width: 1.6;
            stroke-linejoin: round; stroke-linecap: round; }
 .fx-dot  { fill: var(--fink); }
@@ -4866,8 +5001,22 @@ html.jd-folder-open { overflow: hidden; }
    smallest labels landed under 7 rendered px. Raising the units is the only
    lever that does not touch the geometry. It has to sit AFTER the base
    declarations above: a media query adds no specificity, so a block placed
-   with the layout rules further up would simply lose to them. */
+   with the layout rules further up would simply lose to them.
+   The folder's other ≤700px rules share the block (one block, after every
+   base rule it overrides): the one-column grid and the turn table. */
 @media (max-width: 700px) {
+  /* one column throughout (see the contents' note: the span resets too) */
+  .jd-folder-scroll { grid-template-columns: 1fr; padding: 11px; }
+  .fx-card, .fx-cost, .fx-firsts, .fx-grades, .fx-spend, .fx-bare { grid-column: span 1; }
+  /* FIXED, NOT AUTO (owner bug, 2026-09-29: two models' gauges "weren't
+     rendering" on a phone). With table-layout:auto the grade columns sized
+     to their HEADS, so GPT-5.1 and KIMI K3 — the short names — got ~58px,
+     too narrow for number + gauge, and the cell's ellipsis swallowed the
+     gauge whole. Fixed layout honours the 108px every grade column asks
+     for; the prompt takes what is left, and the sheet scrolls sideways. */
+  .fx-turns-t { table-layout: fixed; min-width: 700px; }
+  .fx-turns-wrap { overflow-x: auto; }
+  /* the charts' type, one notch up */
   .fx-t-lab { font-size: 10px; }
   .fx-t-lab.is-long { font-size: 8.2px; }
   .fx-t-val { font-size: 10.5px; }
@@ -4916,10 +5065,6 @@ html.jd-folder-open { overflow: hidden; }
   font-family: var(--fmono); font-weight: 400; font-size: 0.64rem;
   letter-spacing: 0.03em; text-transform: none; color: var(--fink-2);
   line-height: 1.35;
-}
-.fx-of {
-  font-family: var(--fmono); font-weight: 400; font-size: 0.92em;
-  letter-spacing: 0.04em; text-transform: none; color: var(--fink-3);
 }
 /* the lead panel's cap: 215px across a 172-unit box. Every other panel's is
    the same scale over its cropped box, so the two must move together. */
@@ -4994,11 +5139,11 @@ html.jd-folder-open { overflow: hidden; }
   color: #e6d9b4;
   border-top: 2px solid #6d5426;
   box-shadow: 0 -6px 18px rgba(6, 3, 0, 0.5);
-  font: 11px/1.5 "Courier Prime", "Courier New", Courier, monospace;
+  font: 11px/1.5 var(--jd-font-mono);
 }
 .jd-bench-tag {
   font-size: 9px; letter-spacing: 0.14em; font-weight: 700;
-  color: #221809; background: #c9a84c; padding: 2px 6px; border-radius: 2px;
+  color: #221809; background: var(--jd-bench-gold); padding: 2px 6px; border-radius: 2px;
 }
 .jd-bench-pos { color: #b3a37c; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .jd-bench-note { color: #b3a37c; }
@@ -5008,7 +5153,7 @@ html.jd-folder-open { overflow: hidden; }
   border-radius: 2px; padding: 3px 9px; white-space: nowrap;
 }
 .jd-bench-bar button:hover { border-color: #e6d9b4; }
-.jd-bench-bar button:focus-visible { outline: 2px solid #c9a84c; outline-offset: 1px; }
+.jd-bench-bar button:focus-visible { outline: 2px solid var(--jd-bench-gold); outline-offset: 1px; }
 /* the item's name doubles as the prompt toggle — a control, but worn as a
    title: no box until the hand is on it */
 .jd-bench-bar .jd-bench-title {
@@ -5020,10 +5165,10 @@ html.jd-folder-open { overflow: hidden; }
 .jd-bench-acts { display: flex; gap: 6px; margin-left: auto; }
 .jd-bench-bar .jd-bench-scrap { color: #e8917f; border-color: rgba(232, 145, 127, 0.45); }
 .jd-bench-bar .jd-bench-scrap:hover { border-color: #e8917f; }
-.jd-bench-bar .jd-bench-rerun { color: #e5c06b; border-color: rgba(229, 192, 107, 0.45); }
-.jd-bench-bar .jd-bench-rerun:hover { border-color: #e5c06b; }
+.jd-bench-bar .jd-bench-rerun { color: var(--jd-bench-gold-hi); border-color: rgba(229, 192, 107, 0.45); }
+.jd-bench-bar .jd-bench-rerun:hover { border-color: var(--jd-bench-gold-hi); }
 .jd-bench-sync { white-space: nowrap; }
-.jd-bench-sync.is-saving { color: #e5c06b; }
+.jd-bench-sync.is-saving { color: var(--jd-bench-gold-hi); }
 .jd-bench-sync.is-saved { color: #9fc98a; }
 .jd-bench-sync.is-failed { color: #e8917f; }
 .jd-bench-build {
@@ -5031,7 +5176,7 @@ html.jd-folder-open { overflow: hidden; }
   font-variant-numeric: tabular-nums;
 }
 .jd-bench-acts + .jd-bench-build { margin-left: 0; }
-.jd-bench-build.is-stale { color: #e5c06b; }
+.jd-bench-build.is-stale { color: var(--jd-bench-gold-hi); }
 /* ADMIN MODE (owner, 2026-09-05): SIGN OUT sits at the strip's far end in
    both modes; the model's name on the bench head and the report card's one
    write control wear the bench palette, so they read as the curator's
@@ -5044,46 +5189,13 @@ html.jd-folder-open { overflow: hidden; }
   padding: 3px 9px; white-space: nowrap;
 }
 .jd-bench-bar .jd-bench-link:hover { border-color: #e6d9b4; }
-.jd-bench-bar .jd-bench-link:focus-visible { outline: 2px solid #c9a84c; outline-offset: 1px; }
+.jd-bench-bar .jd-bench-link:focus-visible { outline: 2px solid var(--jd-bench-gold); outline-offset: 1px; }
 .jd-bench-bar .jd-bench-out { margin-left: auto; color: #b3a37c; border-color: rgba(179, 163, 124, 0.45); }
 .jd-bench-acts + .jd-bench-out, .jd-bench-build + .jd-bench-out { margin-left: 0; }
-/* the report card's inline editor (owner, 2026-09-10): the grade cells
-   become the scales themselves, in the form's own hand, and one gold button
-   files them — the only bench-palette mark on the form */
-.rc-subj select.rc-edit {
-  width: 100%; min-height: 26px; box-sizing: border-box;
-  padding: 0.15rem 1.5rem 0.15rem 0.45rem;
-  font-family: var(--rc-mono); font-size: 0.6rem; letter-spacing: 0.06em;
-  text-transform: uppercase; color: var(--form-ink-2, #2f3846);
-  background: rgba(255, 252, 240, 0.85) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238c8676' stroke-width='1.4'/%3E%3C/svg%3E") no-repeat right 0.5rem center / 9px 6px;
-  border: 1px solid var(--form-rule-2, #b8b09a); border-radius: 2px;
-  -webkit-appearance: none; appearance: none; cursor: pointer;
-}
-.rc-subj select.rc-edit:focus-visible { outline: 2px solid #c9a84c; outline-offset: 1px; }
-.rc-edit-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 8px; }
-.rc-edit-row .rc-save, .rc-edit-row .rc-hide-check { white-space: nowrap; }
-.rc-edit-row .rc-edit-status { flex: 1 1 100%; }
-.rc-save {
-  font: 700 9px/1.4 "Courier Prime", "Courier New", Courier, monospace;
-  letter-spacing: 0.14em; text-transform: uppercase;
-  color: #221809; background: #c9a84c; border: 0; border-radius: 2px;
-  padding: 4px 10px; cursor: pointer;
-}
-.rc-save:hover { background: #e5c06b; }
-.rc-save:focus-visible { outline: 2px solid #6d5426; outline-offset: 2px; }
-/* the edit cell: the gauge stays ahead of the scale, the scale takes the rest */
-.rc-editcell { display: flex; width: 100%; }
-.rc-subj .rc-editcell select.rc-edit { flex: 1 1 auto; width: auto; min-width: 0; }
-/* the hide box rides the save row and files with the button */
-.rc-hide-check {
-  display: inline-flex; align-items: center; gap: 0.35rem; cursor: pointer;
-  font-family: var(--rc-mono); font-size: 0.545rem; letter-spacing: 0.11em;
-  text-transform: uppercase; color: #6d5426;
-}
-.rc-hide-check input { margin: 0; accent-color: #c9a84c; }
 /* a specimen the admin hid leaves the pile on the spot (data.php holds it
-   back on the next load); !important because .jd-item sets its own display */
-.jd-item.jd-item--hidden { display: none !important; }
+   back on the next load). No !important: nothing else sets display on a
+   pile item, so the two classes win on their own. */
+.jd-item.jd-item--hidden { display: none; }
 /* the admin strip's hidden-items list rides the prompt sheet's paper */
 .jd-bench-sheet .jd-bench-hidden-row {
   display: flex; align-items: center; gap: 10px; padding: 4px 0;
@@ -5092,16 +5204,12 @@ html.jd-folder-open { overflow: hidden; }
 .jd-bench-sheet .jd-bench-hidden-row:first-of-type { border-top: 0; }
 .jd-bench-sheet .jd-bench-hidden-row b { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .jd-bench-sheet .jd-bench-show {
-  font: 700 9px/1.4 "Courier Prime", "Courier New", Courier, monospace;
+  font: 700 9px/1.4 var(--jd-font-mono);
   letter-spacing: 0.14em; text-transform: uppercase;
-  color: #221809; background: #c9a84c; border: 0; border-radius: 2px;
+  color: #221809; background: var(--jd-bench-gold); border: 0; border-radius: 2px;
   padding: 3px 8px; cursor: pointer; white-space: nowrap;
 }
-.jd-bench-sheet .jd-bench-show:hover { background: #e5c06b; }
-.rc-edit-status {
-  font-family: var(--rc-mono); font-size: 0.545rem; letter-spacing: 0.11em;
-  text-transform: uppercase; color: #8c8676;
-}
+.jd-bench-sheet .jd-bench-show:hover { background: var(--jd-bench-gold-hi); }
 .jd-bench-gate { display: flex; align-items: center; gap: 8px; }
 .jd-bench-gate input {
   font: inherit; color: inherit; width: 200px;
@@ -5120,7 +5228,7 @@ html.jd-folder-open { overflow: hidden; }
   background: #ece0bf; color: #33240f;
   border: 1px solid rgba(48, 38, 20, 0.55);
   box-shadow: 6px 10px 22px -6px rgba(6, 3, 0, 0.6);
-  font: 11.5px/1.55 "Courier Prime", "Courier New", Courier, monospace;
+  font: 11.5px/1.55 var(--jd-font-mono);
 }
 .jd-bench-sheet p { margin: 6px 0 0; white-space: pre-wrap; }
 /* the turn card stands clear of the strip while bench mode is on */
@@ -5134,84 +5242,6 @@ html.jd-bench-on .jd-turn-scrim {
     padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
   }
 }
-
-/* ---- HOW BIG IS IT — the curation's closing card (owner, 2026-08-30) ------
-   The one judgment the rubric never asked for: how large the object reads in
-   the drawer, on the taxonomy's own five tiers. Five pressable cards, each
-   showing the tier's actual footprint as a filled square drawn from its own
-   `box` number — the scale demonstrating itself, so the choice is made by eye
-   rather than by adjective. The chosen one takes the graphite fill the docket
-   uses for a finished step: the owner's pencil, again. Visitors never see
-   this card (their items are filed at the fixed visitor tier). */
-.jd-turn[data-view="size"] { width: min(760px, 100%); }
-.jd-size {
-  display: grid; grid-template-columns: repeat(5, 1fr);
-  gap: 10px; align-items: end; margin: var(--sp-3) 0 var(--sp-2);
-}
-.jd-size-tier {
-  display: flex; flex-direction: column; align-items: center; gap: 6px;
-  padding: 12px 6px 10px; cursor: pointer;
-  background: rgba(255, 250, 232, 0.5);
-  border: 1px solid var(--trule); border-radius: 2px;
-  font: inherit; color: var(--tink); text-align: center;
-}
-.jd-size-tier:hover { border-color: var(--tink); }
-.jd-size-tier:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
-.jd-size-tier.is-on {
-  border-color: var(--graphite); border-width: 2px; padding: 11px 5px 9px;
-  background: var(--tpaper-hi);
-  box-shadow: inset 0 0 0 1px rgba(75, 64, 48, 0.18);
-}
-/* the swatch IS the tier: --sbox is the taxonomy's own box number, drawn
-   against the largest (30) so the five squares read as one scale */
-.jd-size-swatch {
-  display: block; align-self: center;
-  width: calc(var(--sbox) / 30 * 62px); height: calc(var(--sbox) / 30 * 62px);
-  min-width: 6px; min-height: 6px;
-  background: var(--graphite); opacity: 0.55; border-radius: 1px;
-}
-.jd-size-tier.is-on .jd-size-swatch { opacity: 1; }
-.jd-size-name {
-  font-family: var(--tform); font-size: var(--t-label);
-  letter-spacing: 0.14em; text-transform: uppercase;
-}
-.jd-size-desc {
-  font-size: var(--t-micro); line-height: 1.4; color: var(--tink-3);
-}
-/* the swatches need a common floor to be comparable, so the row aligns to
-   the bottom and the tallest tier sets the height */
-.jd-size-tier { justify-content: flex-end; }
-@media (max-width: 700px) {
-  /* the phone stacks them: the swatch beside its name, still to scale */
-  .jd-size { grid-template-columns: 1fr; gap: 6px; }
-  .jd-size-tier {
-    flex-direction: row; align-items: center; justify-content: flex-start;
-    gap: 12px; text-align: left; padding: 8px 10px; min-height: 44px;
-  }
-  .jd-size-tier.is-on { padding: 7px 9px; }
-  .jd-size-swatch {
-    flex: 0 0 auto;
-    width: calc(var(--sbox) / 30 * 34px); height: calc(var(--sbox) / 30 * 34px);
-  }
-  .jd-size-desc { display: none; }   /* the swatch says it on a phone */
-}
-/* the size card's gate, said out loud (owner report, 2026-08-30) */
-.jd-size-hint {
-  margin: 0 2px var(--sp-2); font-size: var(--t-body); line-height: 1.5;
-  color: var(--tink-2);
-}
-
-/* KEEP IT OUT OF THE DRAWER (owner, 2026-08-30) — the visitor's one say over
-   what their finished turn does next. It sits under the last rating card,
-   quiet: a finished turn goes into the drawer by default, and this is the
-   exception, not a decision the card should press for. (.jd-turn-check is
-   the report path's own checkbox styling, benched but standing — reused
-   here rather than reinvented.) */
-.jd-suppress {
-  margin: var(--sp-2) 2px 0;
-  font-size: var(--t-label); color: var(--tink-2);
-}
-.jd-suppress input { accent-color: var(--graphite); }
 
 /* ============================================================================
    THE FILMSTRIP (owner's pick from mockup 46 rev b, variant B — "the same,
@@ -5248,8 +5278,7 @@ html.jd-bench-on .jd-turn-scrim {
 .jd-turn-scrim .jd-filmstrip{
   --tb-ink:var(--tink); --tb-ink-2:var(--tink-2); --tb-rule:var(--trule);
   --tb-rule-2:var(--trule-2); --tb-red:var(--tred); --tb-mono:var(--tmono);
-  --tb-paper:var(--tpaper);
-  --form-rule:var(--trule); --form-rule-2:var(--trule-2)}
+  --tb-paper:var(--tpaper)}
 @supports (color:color-mix(in srgb,red,transparent)){
   .jd-filmstrip{--tb-red-soft:color-mix(in srgb,var(--tb-red) 52%,transparent)}}
 
@@ -5370,7 +5399,7 @@ html.jd-bench-on .jd-turn-scrim {
 
 /* a phone: nothing to re-flow — the row is [play] [strip] [fraction] and
    the strip absorbs whatever is left */
-@media (max-width:480px){
+@media (max-width: 480px) {
   .jd-filmstrip{gap:8px}
 }
 
@@ -5405,24 +5434,4 @@ html.jd-bench-on .jd-turn-scrim {
 /* the ↻ on the card's plate is what the filmstrip's play button now does —
    the ENLARGEMENT keeps its REDRAW (.rc-zoom-fig carries no filmstrip) */
 .rc-col-l > .rc-plate .rc-draw { display: none; }
-
-/* the way to the about page, under the drawer (owner, 2026-09-28): a manila
-   label in the drawer's own idiom — the same stock as the about page's OPEN
-   THE DRAWER button — so it reads as part of the object, not a web link */
-.jd-about-cta { margin: var(--s-3) 0 var(--s-4); }
-.jd-about-cta a {
-  display: inline-block;
-  font-family: var(--font-mono);
-  font-size: 0.74rem; letter-spacing: 0.14em; line-height: 1.3;
-  text-transform: uppercase; text-decoration: none;
-  color: #3a2a12;
-  background:
-    linear-gradient(178deg, rgba(255, 250, 228, 0.55) 0%, rgba(255, 250, 228, 0) 40%),
-    #e8d9a8;
-  border: 1px solid rgba(74, 53, 18, 0.55); border-radius: 3px;
-  padding: 0.8rem 1rem 0.72rem;
-  box-shadow: 2px 3px 7px rgba(22, 11, 4, 0.35);
-}
-.jd-about-cta a:hover { background: #f1e6c0; }
-.jd-about-cta a:active { transform: translateY(1px); box-shadow: 1px 1px 3px rgba(22, 11, 4, 0.35); }
 
