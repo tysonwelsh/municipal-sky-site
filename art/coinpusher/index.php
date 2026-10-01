@@ -4,6 +4,7 @@
 // at old hashes for up to an hour (the site header's meta max-age).
 header('Cache-Control: no-cache, must-revalidate, max-age=0');
 
+$track_page = 'coinpusher';   // anonymous page-view tally (includes/footer.php)
 $page_title = "SCRIP CREEK - Municipal Sky";
 $page_description = "A coin pusher of dubious provenance, from a nickel arcade deep in the Appalachian fog. Tokens in, tokens out. The raccoon takes one.";
 include '../../includes/header.php';

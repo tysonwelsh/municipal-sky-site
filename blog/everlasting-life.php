@@ -1,4 +1,5 @@
 <?php
+$track_page = 'blog'; $track_label = 'everlasting-life';   // anonymous page-view tally (includes/footer.php)
 $page_title = 'How I Came to Discover the Secret of Everlasting Life';
 $page_description = 'How I Came to Discover the Secret of Everlasting Life';
 include '../includes/header.php';

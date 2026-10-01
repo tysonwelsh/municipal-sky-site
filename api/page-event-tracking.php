@@ -18,7 +18,16 @@ require_once __DIR__ . '/visitor-hash.php';
 
 // Allowlists — keep this endpoint from being used to write arbitrary rows
 // (CORS is open). Add new pages / event types here as they're wired up.
-$ALLOWED_PAGES = ['homepage', 'prosperos-jukebox', 'prosperos-jukebox-v2', 'underworld-occupations', 'zankyo', 'bardo', 'kolob', 'junk-drawer', 'carbon-structures'];
+$ALLOWED_PAGES = [
+    'homepage', 'prosperos-jukebox', 'prosperos-jukebox-v2', 'underworld-occupations', 'zankyo', 'bardo', 'kolob',
+    'junk-drawer', 'carbon-structures',
+    // 2026-10-01: the pages that had no counter, tallied through the footer's
+    // $track_page opt-in (includes/footer.php) — page_view only, except
+    // skeeball, which also logs a play per game started. 'blog' carries the
+    // post slug as its label; the three indexes and About carry none.
+    'rain-of-babel', 'skeeball', 'kimis-take', 'antariksh', 'coinpusher', 'thousand-flowers',
+    'onomatopoeia-machine', 'about', 'art', 'information-graphics', 'blog',
+];
 $ALLOWED_EVENTS = ['page_view', 'play', 'png_download', 'item_open', 'turn_open', 'turn_submit', 'turn_complete', 'turn_error'];
 
 // POST — log an event.

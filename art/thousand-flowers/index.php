@@ -166,6 +166,7 @@ function tf_reflow_lines($lines)
 
 $group = $relay['group'];
 
+$track_page = 'thousand-flowers';   // anonymous page-view tally (includes/footer.php)
 $page_title = 'A Thousand Flowers — Municipal Sky';
 $page_description = 'A deep-space store-and-forward mail relay: threaded traffic between the colonies of ' . $group . '.';
 include '../../includes/header.php';

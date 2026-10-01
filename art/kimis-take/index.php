@@ -1,4 +1,5 @@
 <?php
+$track_page = 'kimis-take';   // anonymous page-view tally (includes/footer.php)
 $page_title = "Kimi's Take - Municipal Sky";
 $page_description = 'A spin-off of The Carbon Rain: four streams of characters from 73 writing systems — one falling, one rising, one running left, one running right — cross a sheet of engineering paper at once, timed by a spacetime reservation table so they never touch.';
 

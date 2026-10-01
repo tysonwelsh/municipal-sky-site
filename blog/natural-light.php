@@ -1,4 +1,5 @@
 <?php
+$track_page = 'blog'; $track_label = 'natural-light';   // anonymous page-view tally (includes/footer.php)
 $page_title = 'Natural Light';
 $page_description = 'Natural Light';
 
