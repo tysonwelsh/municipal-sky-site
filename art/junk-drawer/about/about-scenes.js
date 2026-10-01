@@ -119,13 +119,23 @@
     }
   });
   if (!stepEls.length) return;
+  /* every step by its data-step, built once — the steps are the page's own
+     markup and never change — for the lookups below (the first step with
+     an id wins, as querySelector's did) */
+  var stepById = Object.create(null);
+  stepEls.forEach(function (el) {
+    var id = el.getAttribute('data-step');
+    if (!(id in stepById)) stepById[id] = el;
+  });
+  /* the step `id`, if it belongs to `scene` */
+  function stepIn(scene, id) {
+    var el = stepById[id];
+    return el && el.getAttribute('data-scene') === scene ? el : null;
+  }
 
-  var API = window.JD_API || '';
-  var BASE = '/art/junk-drawer/';
+  var BASE = '/art/junk-drawer/';         /* the full drawer, for links */
   var SPECIMEN = '2026-07-28-desktop-succulent';
   var INSTRUMENT_ITEM = '2026-08-20-googie-style-ufo';   /* scene 2's blank card */
-  /* the four the owner chose; claude-opus-5 is on file but sits this out */
-  var CAST = ['claude-fable-5', 'kimi-k3', 'gemini-3-1-pro', 'gpt-5-1'];
 
   root.classList.add('jd-about--live');
 
@@ -134,10 +144,12 @@
      paper and offers no switch (about.css hides the buttons). The shared
      preference is read through window.JD_paper at render time, so pinning
      get() here keeps a viewer's blueprint choice from the drawer from
-     showing up on this page, and set() does nothing. */
+     showing up on this page, and set() does nothing. Pinned IN PLACE, so
+     the object keeps every other member jd-core gives it (icon, and cls,
+     which asks this get()). */
   if (window.JD_paper) {
-    window.JD_paper = { get: function () { return 'graph'; },
-      set: function () {}, icon: window.JD_paper.icon };
+    window.JD_paper.get = function () { return 'graph'; };
+    window.JD_paper.set = function () {};
   }
 
   /* THE INSTRUMENT'S BUTTON SAYS "NEXT" (owner, 2026-09-29). The card's own
@@ -210,7 +222,7 @@
   var itemP = {};
   function itemData(id) {
     if (!itemP[id]) {
-      itemP[id] = fetch(API + BASE + 'data.php?item=' + encodeURIComponent(id))
+      itemP[id] = fetch(JD_API + JD_DATA_URL + '?item=' + encodeURIComponent(id))
         .then(function (r) { return r.ok ? r.json() : null; })
         .catch(function () { return null; })
         .then(function (d) {
@@ -228,16 +240,9 @@
      carries its own sizing maths and compositing layer and must be built
      once, not rebuilt per scroll. */
   var sceneEls = {};
-  var sceneOrder = [];
   [].slice.call(pane.querySelectorAll('[data-scene-pane]')).forEach(function (el) {
     var n = el.getAttribute('data-scene-pane');
     sceneEls[n] = el;
-  });
-  /* scene order comes from the STEPS, not the pane: it is the order the
-     reader meets them in */
-  stepEls.forEach(function (el) {
-    var sc = el.getAttribute('data-scene');
-    if (sceneOrder.indexOf(sc) < 0 && sceneEls[sc]) sceneOrder.push(sc);
   });
 
   var scenes = {};
@@ -253,23 +258,42 @@
   var reduceMotion = window.matchMedia &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  /* the air between the outgoing graphic's foot and the incoming one's head,
-     as they pass through the pane in one continuous strip */
-  var GAP = 28;
-
   /* PER-VIEWPORT READS. What the scroll tick and the fits read about the
      page's own geometry — the pane's height and max-height, a phone's held
-     drawer — cannot change while the viewport keeps its size (the pane is
-     100vh less the banner, and the banner changes only at the 768px
-     breakpoint), so each is read once, and again only once the viewport
-     has changed. Keyed on the size itself rather than on the resize event,
-     so a timer that runs between a resize and its event reads fresh
-     values. */
+     drawer, the two numbers about.css shares — cannot change while the
+     viewport keeps its size (the pane is 100vh less the banner, and the
+     banner changes only at the 768px breakpoint), so each is read once,
+     and again only once the viewport has changed. Keyed on the size itself
+     rather than on the resize event, so a timer that runs between a resize
+     and its event reads fresh values. */
   var vp = null;
   function viewport() {
     var w = window.innerWidth, h = window.innerHeight;
     if (!vp || vp.w !== w || vp.h !== h) vp = { w: w, h: h };
     return vp;
+  }
+  /* THE NUMBERS about.css SHARES, as tokens on .jd-about: --jd-focus, the
+     focus line (45vh: where a step takes the stage — the stylesheet pads
+     and places the steps against it), and --jd-gap, the air between the
+     outgoing graphic's foot and the incoming one's head as they pass
+     through the pane in one continuous strip (28px: the scene head's
+     runway includes it). Read in the units the stylesheet writes them in;
+     a stylesheet without them gets the same two numbers as literals. */
+  function cssNum(name, unit, per, fallback) {
+    var v = '';
+    try { v = getComputedStyle(root).getPropertyValue(name).trim(); } catch (e) {}
+    var m = /^(\d+(?:\.\d+)?)([a-z]+)$/.exec(v);
+    return m && m[2] === unit ? parseFloat(m[1]) / per : fallback;
+  }
+  function focusFrac() {
+    var v = viewport();
+    if (v.focus == null) v.focus = cssNum('--jd-focus', 'vh', 100, 0.45);
+    return v.focus;
+  }
+  function gapPx() {
+    var v = viewport();
+    if (v.gap == null) v.gap = cssNum('--jd-gap', 'px', 1, 28);
+    return v.gap;
   }
   /* the pane's own box, as place() and fitCard() read it */
   function paneHeight() {
@@ -352,7 +376,7 @@
       var b = pane.getBoundingClientRect().bottom;
       if (b > 0 && b < h) return b + (h - b) * 0.18;
     }
-    return h * 0.45;
+    return h * focusFrac();
   }
 
   /* ---- THE HANDOFF ---------------------------------------------------------
@@ -382,7 +406,7 @@
   function handoff() {
     var sp = spans();
     var at = window.pageYOffset + focusLine();
-    var D = sp.paneH + GAP;
+    var D = sp.paneH + gapPx();
     var phone = narrow();
     for (var i = 0; i < sp.order.length - 1; i++) {
       var a = sp.order[i], n = sp.order[i + 1];
@@ -737,6 +761,13 @@
       } else if (b.parentNode) { b.parentNode.removeChild(b); }
     });
     if (keep) return;
+    mountFilmstrip(svg, after, 'fs' + name.charAt(0),
+                   name === 'record' ? 'Replay the drawing' : 'Replay this drawing');
+  }
+
+  /* one replay control under a plate (the pane's cards and the phone's):
+     its cell copies' ids under `pfx` and this page's next number */
+  function mountFilmstrip(svg, after, pfx, label) {
     try {
       window.JD_filmstrip(svg, after, {
         /* autoplay:false, as the cards' own mounts have it — parked at the
@@ -744,8 +775,8 @@
            arrival and every job swap blanked the drawing and drew it again,
            which read as a flash (owner, 2026-09-26). REPLAY still plays it. */
         autoplay: false,
-        pfx: 'fs' + name.charAt(0) + (++sbSeq) + '_',
-        label: name === 'record' ? 'Replay the drawing' : 'Replay this drawing'
+        pfx: pfx + (++sbSeq) + '_',
+        label: label
       });
     } catch (e) {}
   }
@@ -1346,7 +1377,13 @@
        BLANK   (steps try/taxonomy) — nothing filled in; the visitor rates it
        RATED   (the four specimens, the podium) — the owner's filed ratings
      One swap, at the taxonomy -> fable boundary, so the walkthrough shows
-     real judgments rather than an empty form. */
+     real judgments rather than an empty form.
+     THE RATED JOB IS DORMANT (2026-09-27): the owner cut the ranking step
+     and the four specimens moved to the report-card scene, so no step of
+     this scene names a drawing or the podium any more and step() only ever
+     deals the blank job. The rated path — the job, the rail drive, the
+     swap cover — is kept, not dead: the cut steps' text is in COPY.md
+     ("Cut from the page") in case they come back. */
   scenes.instrument = {
     _job: null, _mode: null, _svgs: null, _item: null, _gen: 0, _pending: null,
 
@@ -1367,7 +1404,7 @@
         var picked = item.responses.slice(0, 4);
         /* every drawing is inlined as SOURCE by the card, not linked */
         return Promise.all(picked.map(function (r) {
-          return fetch(API + r.url).then(function (res) {
+          return fetch(JD_API + r.url).then(function (res) {
             return res.ok ? res.text() : '';
           }).then(function (txt) { return { resp: r, svg: txt }; });
         })).then(function (list) {
@@ -1551,6 +1588,35 @@
      definition, the prompt's fold, the filmstrip) are wired below; a
      thumbnail takes the reader to that drawing's step, if it has one. */
   var cardSeq = 0;
+  /* a card this page built (JD_record.card), readied for where it will
+     stand — `cls` is jd-inline-card for the pane, jd-ph-card for a phone
+     figure. Several cards share the document (the host's, the relay's, the
+     ghosts'): every id inside each is made its own. */
+  function prepCard(el, cls) {
+    el.classList.add(cls);
+    rewriteIds(el, 'rc' + (++cardSeq) + '-');
+    return el;
+  }
+  /* the rid of the drawing `model` made for `item`, or null */
+  function ridOf(item, model) {
+    for (var i = 0; i < item.responses.length; i++) {
+      if (item.responses[i].model === model) return item.responses[i].rid;
+    }
+    return null;
+  }
+  /* a card is FRAMED once, after it first stands in the layout: the
+     drawings' frames and the prompt's fold, as jd-record's render() earns
+     them after layout (the pane's cards and the phone's alike) */
+  function frameCard(node) {
+    var sc = node.querySelector('.rc-scroll');
+    if (!node.__jdFramed && sc) {
+      if (window.JD_fitAll) window.JD_fitAll(sc);
+      var fold = sc.querySelector('.rc-assign.rc-can-fold');
+      var fp = fold && fold.querySelector('p');
+      if (fp && fp.scrollHeight <= fp.clientHeight + 2) fold.classList.remove('rc-can-fold');
+      node.__jdFramed = true;
+    }
+  }
   function recordViews() {
     var seen = {}, list = [];
     stepEls.forEach(function (el) {
@@ -1572,14 +1638,7 @@
       unmountFilmstrip(v.node);
       host.appendChild(v.node);
     }
-    var sc = v.node.querySelector('.rc-scroll');
-    if (!v.framed && sc) {
-      if (window.JD_fitAll) window.JD_fitAll(sc);
-      var fold = sc.querySelector('.rc-assign.rc-can-fold');
-      var fp = fold && fold.querySelector('p');
-      if (fp && fp.scrollHeight <= fp.clientHeight + 2) fold.classList.remove('rc-can-fold');
-      v.framed = true;
-    }
+    frameCard(v.node);
     fitCard(host);
     if (host.__jdFit) v.h = host.__jdFit.natH * host.__jdFit.k;
     finishDrawings(v.node);
@@ -1637,6 +1696,17 @@
   function showView(host, key) {
     var v = host.__views && host.__views[key];
     if (!v) return false;
+    putCard(host, v);
+    /* (the view the host stands on. Nothing on this page reads it back any
+       more; scripts/jd-regress reads it for its state line and waits on it
+       after a thumbnail, so it is kept) */
+    host.__shows = key;
+    return true;
+  }
+  /* a card (a view's, or a thumbnail's) put in the host in place of the
+     one standing there — taken out of the relay if it was riding it —
+     and landed */
+  function putCard(host, v) {
     var cur = realCard(host);
     if (cur && cur !== v.node) host.removeChild(cur);
     if (v.node.parentNode && v.node.parentNode !== host) {
@@ -1644,15 +1714,11 @@
       v.node.parentNode.removeChild(v.node);
     }
     landCard(host, v);
-    host.__shows = key;
-    return true;
   }
   function prepareViews(host) {
     if (!host.__views || host.__prepared) return;
-    var back = host.__shows;
     Object.keys(host.__views).forEach(function (k) { showView(host, k); });
     host.__prepared = true;
-    if (back) showView(host, back);
   }
   function firstView(scene) {
     for (var i = 0; i < stepEls.length; i++) {
@@ -1682,22 +1748,13 @@
         if (!item) throw new Error('data.php?item=' + SPECIMEN + ' did not answer');
         var views = recordViews();
         return Promise.all(views.map(function (v) {
-          var rid = null;
-          for (var i = 0; i < item.responses.length; i++) {
-            if (item.responses[i].model === v.model) { rid = item.responses[i].rid; break; }
-          }
-          return window.JD_record.card(item, rid, d).then(function (el) { return { v: v, el: el }; });
+          return window.JD_record.card(item, ridOf(item, v.model), d).then(function (el) { return { v: v, el: el }; });
         }));
       }).then(function (built) {
         host.__views = host.__views || {};
         built.forEach(function (b) {
           if (!b.el) return;
-          var el = b.el;
-          el.classList.add('jd-inline-card');
-          /* several cards share the document (the host's and the relay's):
-             every id inside each is made its own */
-          rewriteIds(el, 'rc' + (++cardSeq) + '-');
-          host.__views[b.v.key] = { node: el, h: 0 };
+          host.__views[b.v.key] = { node: prepCard(b.el, 'jd-inline-card'), h: 0 };
         });
         self._built = Object.keys(host.__views).length > 0;
       }).catch(function (err) {
@@ -1708,6 +1765,8 @@
       });
     },
     show: function (key) { return showView(sceneEls.record, key); },
+    /* fits every view's card once, before a handoff needs its height —
+       and so, called from the warm-up's enter(), off-stage */
     prepare: function () { prepareViews(sceneEls.record); },
     enter: function () {
       var self = this;
@@ -1722,16 +1781,15 @@
         return self._building;
       }
       self.prepare();
-      var key = curStep && document.querySelector('.jd-step[data-scene="record"][data-step="' + curStep + '"]');
+      var key = curStep && stepIn('record', curStep);
       key = key ? viewOf(key) : (recordViews()[0] || {}).key;
       self.show(key);
       layout();
     },
     step: function (step) {
-      var el = document.querySelector('.jd-step[data-scene="record"][data-step="' + step + '"]');
+      var el = stepIn('record', step);
       if (el && this.show(viewOf(el))) layout();
-    },
-    exit: function () {}
+    }
   };
 
   var altCards = {};
@@ -1749,21 +1807,11 @@
       var ready = v ? Promise.resolve(v) : (altCards[r.rid] || (altCards[r.rid] =
         window.JD_record.card(item, r.rid, d).then(function (el) {
           if (!el) return null;
-          el.classList.add('jd-inline-card');
-          rewriteIds(el, 'rc' + (++cardSeq) + '-');
-          return { node: el, h: 0 };
+          return { node: prepCard(el, 'jd-inline-card'), h: 0 };
         })));
       ready.then(function (c) {
         if (!c || !wanted('record')) return;
-        keepScroll(function () {
-          var cur = realCard(host);
-          if (cur && cur !== c.node) host.removeChild(cur);
-          if (c.node.parentNode && c.node.parentNode !== host) {
-            if (c.node.parentNode === relay) relay.__key = null;
-            c.node.parentNode.removeChild(c.node);
-          }
-          landCard(host, c);
-        });
+        keepScroll(function () { putCard(host, c); });
         /* the host now shows a drawing its step did not name: the next
            step (or this one, re-entered) puts the step's card back */
         host.__shows = 'alt:' + r.rid;
@@ -1843,9 +1891,9 @@
        - each chart's subtitle says what the number is and what n counts
      Each step names one chart (data-fx) and about.css shows it alone. */
   var INK = ['#b8541f', '#00836a', '#2b5aa3', '#7a3b66'];
-  /* the report card's grade meter, worst (1, Utility) to best (5, Prime) —
-     copied from jd-core's meterSVG, as jd-furniture's grade book copies it */
-  var GRADE_RAMP = ['#8f1d12', '#b0490f', '#a06200', '#46761a', '#0b6a1f'];
+  /* the grade inks are the report card's grade meter, worst (1, Utility) to
+     best (5, Prime): JD_GRADE_RAMP (jd-core.js), as jd-furniture's grade
+     book reads it */
 
   function chartsHTML(a, tax, full) {
     var name = {}, ink = {};
@@ -1853,14 +1901,14 @@
       name[m.model_id] = m.label;
       ink[m.model_id] = INK[i % INK.length];
     });
-    var esc = window.JD_esc || function (x) { return String(x); };
+    var esc = JD_esc;
     /* rows in the overall-grade order, kept in every panel of the multiples
        so a model sits on the same line wherever the eye finds it */
     var order = (a.grades || []).slice()
       .sort(function (x, y) { return y.avg - x.avg; })
       .map(function (g) { return g.model_id; });
     function pos(v, lo, hi) { return ((v - lo) / (hi - lo) * 100).toFixed(2) + '%'; }
-    function dotRows(rows, lo, hi, fmt, noName, noN) {
+    function dotRows(rows, lo, hi, fmt) {
       var ticks = '';
       for (var t = lo; t <= hi; t++) ticks += '<i class="jdc-tick" style="left:' + pos(t, lo, hi) + '"></i>';
       return rows.map(function (r) {
@@ -1869,7 +1917,7 @@
           '<span class="jdc-name">' + esc(name[r.model_id] || r.model_id) + '</span>' +
           '<span class="jdc-track"><i class="jdc-rule"></i>' + ticks +
           '<b class="jdc-dot" style="left:' + pos(r.avg, lo, hi) + ';background:' + ink[r.model_id] + '"></b></span>' +
-          '<span class="jdc-val">' + fmt(r.avg) + (noN ? '' : '<span class="jdc-n">n ' + r.n + '</span>') + '</span></div>';
+          '<span class="jdc-val">' + fmt(r.avg) + '<span class="jdc-n">n ' + r.n + '</span></span></div>';
       }).join('');
     }
     function byOrder(list) {
@@ -1891,7 +1939,7 @@
        looking things up: plain values, the scale in each head, nothing
        drawn; the head row and the prompt column hold still while it
        scrolls. */
-    var liveAx = (tax.axes || []).filter(function (x) { return !x.defunct; });
+    var liveAx = JD_liveAxes(tax);
     var modelName = {};
     (tax.models || []).forEach(function (m) { modelName[m.id] = m.label; });
     var items = (full && full.items) || [];
@@ -1933,7 +1981,7 @@
     function gauge(v, n) {
       var TW = 40, TH = 8;
       v = Math.max(1, Math.min(n, +v || 1));
-      var ink = GRADE_RAMP[n === 5 ? Math.min(4, Math.max(0, Math.floor(v) - 1))
+      var ink = JD_GRADE_RAMP[n === 5 ? Math.min(4, Math.max(0, Math.floor(v) - 1))
                                     : Math.round((v - 1) / (n - 1) * 4)];
       var w = TW * v / n, g = '';
       g += '<rect x="0.5" y="0.5" width="' + w.toFixed(1) + '" height="' + TH + '" fill="' + ink + '"/>';
@@ -2057,7 +2105,7 @@
             var c = hist[m][g - 1];
             var tip = (name[m] || m) + ': ' + c + ' graded ' + (gradeName[g] || g);
             return '<span class="jdc-hrow-cell" data-model="' + esc(m) + '" data-grade="' + g + '" title="' + esc(tip) + '">' +
-              '<b class="jdc-hrow-bar" style="width:' + (hmax ? (c / hmax * 78).toFixed(1) : 0) + '%;background:' + GRADE_RAMP[g - 1] + '"></b>' +
+              '<b class="jdc-hrow-bar" style="width:' + (hmax ? (c / hmax * 78).toFixed(1) : 0) + '%;background:' + JD_GRADE_RAMP[g - 1] + '"></b>' +
               '<span class="jdc-hrow-n">' + c + '</span></span>';
           }).join('');
       }).join('') + '</div></div></figure>';
@@ -2076,7 +2124,7 @@
        grade spread does. */
     var axDef = {};
     (tax.axes || []).forEach(function (x) { axDef[x.id] = x; });
-    var ISSUE = [GRADE_RAMP[0], '#cf6e56'], HIT = [GRADE_RAMP[4], '#6ea456'];
+    var ISSUE = [JD_GRADE_RAMP[0], '#cf6e56'], HIT = [JD_GRADE_RAMP[4], '#6ea456'];
     var rates = window.JD_axisRates;
     var axHasHist = (a.axes || []).some(function (ax) {
       return (ax.models || []).some(function (r) { return r.hist; });
@@ -2158,14 +2206,13 @@
      text, the next one rising behind it on the relay, exactly as the report
      cards do. */
   scenes.analytics = {
-    exit: function () {},
     mount: function () {
       var host = sceneEls.analytics;
       return Promise.all([
-        fetch(API + '/api/jd-analytics.php').then(function (r) { return r.ok ? r.json() : null; }),
+        fetch(JD_API + '/api/jd-analytics.php').then(function (r) { return r.ok ? r.json() : null; }),
         /* the table is the full record, so this scene — and only this
            scene, when it is prepared — reads the drawer's whole data.php */
-        fetch(API + BASE + 'data.php').then(function (r) { return r.ok ? r.json() : null; })
+        fetch(JD_API + JD_DATA_URL).then(function (r) { return r.ok ? r.json() : null; })
           .catch(function () { return null; })
       ]).then(function (res) {
         var a = res[0], full = res[1];
@@ -2193,12 +2240,12 @@
     enter: function () {
       var host = sceneEls.analytics;
       prepareViews(host);
-      var el = curStep && document.querySelector('.jd-step[data-scene="analytics"][data-step="' + curStep + '"]');
+      var el = curStep && stepIn('analytics', curStep);
       showView(host, el ? viewOf(el) : firstView('analytics'));
       layout();
     },
     step: function (step) {
-      var el = document.querySelector('.jd-step[data-scene="analytics"][data-step="' + step + '"]');
+      var el = stepIn('analytics', step);
       if (el && showView(sceneEls.analytics, viewOf(el))) layout();
       /* (a step's data-focus is applied by the stepper, from the LIT step —
          see applyFocus) */
@@ -2249,9 +2296,9 @@
              photographed — but it is put away and the queue moves on, so a
              stuck warm-up can never leave a card open under the page */
           if (!settled && ++tries < 150) return false;
-          /* the report card's views are fitted here, off-stage, so every
-             handoff has its card sized before the reader arrives */
-          if (settled && name === 'record' && sc.prepare) sc.prepare();
+          /* (the report card's views were all fitted off-stage by its
+             enter() above — prepare() — so every handoff has its card sized
+             before the reader arrives) */
           return finishWarm();
         }, 80, 160);
         function finishWarm() {
@@ -2398,16 +2445,19 @@
       b.title = label;
       b.innerHTML = '<span class="jd-tl-dot" aria-hidden="true"></span>';
       b.addEventListener('click', function () {
-        var r = el.getBoundingClientRect();
-        window.scrollTo({
-          top: Math.round(window.pageYOffset + r.top - focusLine() + 4),
-          behavior: 'smooth'
-        });
+        window.scrollTo({ top: stepTop(el, focusLine()), behavior: 'smooth' });
       });
       group.appendChild(b);
       tlStops[step] = b;
     });
     tlEl.appendChild(frag);
+  }
+
+  /* the scroll offset that puts a step's top 4px past `line` (a line in the
+     viewport): where the timeline and a restored step land, just inside
+     the step the line makes current */
+  function stepTop(el, line) {
+    return Math.round(window.pageYOffset + el.getBoundingClientRect().top - line + 4);
   }
 
   function syncTimeline(step, scene) {
@@ -2455,32 +2505,14 @@
      jd-inline-card, which would re-lay it out for the pinned pane) */
   function phoneCard(el) {
     el.classList.remove('jd-inline-card');
-    el.classList.add('jd-ph-card');
-    rewriteIds(el, 'rc' + (++cardSeq) + '-');
-    return el;
-  }
-  /* framed once, as landCard does for the pane: the drawings' frames and
-     the prompt's fold are earned after layout */
-  function phoneFrame(node) {
-    var sc = node.querySelector('.rc-scroll');
-    if (!node.__jdFramed && sc) {
-      if (window.JD_fitAll) window.JD_fitAll(sc);
-      var fold = sc.querySelector('.rc-assign.rc-can-fold');
-      var fp = fold && fold.querySelector('p');
-      if (fp && fp.scrollHeight <= fp.clientHeight + 2) fold.classList.remove('rc-can-fold');
-      node.__jdFramed = true;
-    }
+    return prepCard(el, 'jd-ph-card');
   }
   /* the replay control, under the plate, where the drawer's own card has it */
   function phoneFilmstrip(node) {
     var plate = node.querySelector('.rc-col-l > .rc-plate');
     var svg = plate && plate.querySelector('.rc-plate-art > svg');
     if (window.JD_filmstrip && svg && !svg.__jdFilmstrip) {
-      try {
-        window.JD_filmstrip(svg, plate, {
-          autoplay: false, pfx: 'fsp' + (++sbSeq) + '_', label: 'Replay the drawing'
-        });
-      } catch (e) {}
+      mountFilmstrip(svg, plate, 'fsp', 'Replay the drawing');
     }
     finishDrawings(node);
   }
@@ -2505,7 +2537,7 @@
           unmountFilmstrip(card);
           if (el.parentNode) el.parentNode.removeChild(el);
           fig.replaceChild(el, card);
-          phoneFrame(el);
+          frameCard(el);
           phoneFilmstrip(el);
         });
       });
@@ -2560,7 +2592,7 @@
     var head = root.querySelector('.jd-about-head');
     if (head && grid) grid.insertBefore(head, grid.firstChild);
 
-    function stepEl(id) { return root.querySelector('.jd-step[data-step="' + id + '"]'); }
+    function stepEl(id) { return stepById[id] || null; }
     var PLAN = [
       { name: 'drawer', steps: ['hook', 'premise', 'graded'], pin: true },
       { name: 'instrument', steps: ['try', 'taxonomy'] },
@@ -2647,18 +2679,12 @@
       itemData(SPECIMEN).then(function (d) {
         var item = d && d.item;
         if (!item) throw new Error('data.php?item=' + SPECIMEN + ' did not answer');
-        function ridOf(model) {
-          for (var i = 0; i < item.responses.length; i++) {
-            if (item.responses[i].model === model) return item.responses[i].rid;
-          }
-          return null;
-        }
         var want = [['fable', 'claude-fable-5', 'full'],
                     ['gemini', 'gemini-3-1-pro', 'pin'], ['gemini', 'gemini-3-1-pro', 'under'],
                     ['kimi', 'kimi-k3', 'pin'], ['kimi', 'kimi-k3', 'under']];
         return Promise.all(want.map(function (w) {
-          return window.JD_record.card(item, ridOf(w[1]), d).then(function (el) {
-            return { w: w, el: el, rid: ridOf(w[1]) };
+          return window.JD_record.card(item, ridOf(item, w[1]), d).then(function (el) {
+            return { w: w, el: el, rid: ridOf(item, w[1]) };
           });
         }));
       }).then(function (built) {
@@ -2669,7 +2695,7 @@
           phoneCard(b.el);
           b.el.classList.add('jd-ph-card--' + b.w[2]);
           target.appendChild(b.el);
-          phoneFrame(b.el);
+          frameCard(b.el);
           if (b.w[2] !== 'under') phoneFilmstrip(b.el);
           if (b.w[2] === 'full') phoneAlt[b.rid] = Promise.resolve(b.el);
         });
@@ -2846,8 +2872,7 @@
     (function place() {
       if (moved) return;
       var line = PHONE ? window.innerHeight * 0.45 : focusLine();
-      window.scrollTo({ top: Math.max(0, Math.round(el.getBoundingClientRect().top +
-        window.pageYOffset - line + 4)), behavior: 'instant' });
+      window.scrollTo({ top: Math.max(0, stepTop(el, line)), behavior: 'instant' });
       if (++n < 12) setTimeout(place, 250);
     })();
   }
