@@ -1,14 +1,19 @@
 <?php
 // /art/junk-drawer/about/ — THE JUNK DRAWER, EXPLAINED (PLAN-PORTFOLIO v3,
 // 2026-09-14). A sticky-graphic scrollytelling walkthrough: one pinned visual
-// pane holding four scenes — the live drawer, the real turn card, the real
-// report card, the real analytics folder — and eighteen steps of prose
-// beside it. about-scenes.js switches the pane as each step arrives;
-// about.css places the columns and flows the three modal cards inline.
+// pane holding four scenes — the drawer, the real turn card, the real report
+// card, and the analysis (the charts and the records table about-scenes.js
+// draws from the analytics folder's own endpoint; the folder itself has not
+// been mounted here since 2026-09-27) — and sixteen steps of prose beside
+// it. about-scenes.js switches the pane as each step arrives; about.css
+// places the columns and flows the two modal cards inline. On a phone each
+// scene's graphic stands above its own steps instead (about.css, THE PHONE).
 //
-// Nothing on this page is a screenshot. Every scene is the production app
-// with its network sealed, so the walkthrough cannot drift from the thing it
-// describes.
+// Nothing here is a mock-up: the cards are the production app with its
+// network sealed, so the walkthrough cannot drift from the thing it
+// describes. The one picture is scene 1's pile — a capture of the real
+// drawer, with the live specimen on top of it (THE POSTER, below); ?live
+// brings the whole live pile back.
 //
 // COPY IS SCAFFOLDING. Every step below is a first draft for the owner to
 // rewrite; build to the structure, not to the sentences. The taxonomy legend
@@ -20,7 +25,6 @@
 $page_title = "The SVG Junk Drawer, explained - Municipal Sky";
 $page_description = "A running evaluation of how language models draw: one prompt to four frontier models, every drawing graded blind on a versioned taxonomy, the whole record public. Walk through the instrument, the record and the analysis.";
 
-$jd_extra_assets = ['about/index.php', 'about/about.css', 'about/about-scenes.js', '_stage.php', '_scripts.php'];
 $jd_base = '/art/junk-drawer/';
 $jd_page_label = 'about';
 
@@ -43,9 +47,6 @@ if (!isset($_GET['live'])
   $jd_poster = json_decode(file_get_contents(__DIR__ . '/drawer-poster.json'), true);
   if (!is_array($jd_poster) || empty($jd_poster['specimen'])) $jd_poster = null;
 }
-$jd_extra_assets[] = 'about/drawer-poster.json';
-$jd_extra_assets[] = 'about/drawer-poster.webp';
-$jd_extra_assets[] = 'about/drawer-poster@2x.webp';
 require __DIR__ . '/../_assets.php';
 
 include __DIR__ . '/../../../includes/header.php';
@@ -53,11 +54,19 @@ include __DIR__ . '/../../../includes/header.php';
 
 <link rel="stylesheet" href="/art/junk-drawer/junk-drawer.css?v=<?php echo jd_v('junk-drawer.css'); ?>" />
 <link rel="stylesheet" href="about.css?v=<?php echo jd_v('about/about.css'); ?>" />
-<?php if ($jd_poster): ?>
-<link rel="preload" as="image" href="drawer-poster@2x.webp?v=<?php echo jd_v('about/drawer-poster@2x.webp'); ?>" media="(min-resolution: 1.5dppx)" />
-<link rel="preload" as="image" href="drawer-poster.webp?v=<?php echo jd_v('about/drawer-poster.webp'); ?>" media="(max-resolution: 1.49dppx)" />
+<?php if ($jd_poster):
+  // The two preloads split where image-set() splits: a browser takes the
+  // first candidate whose resolution is at least the screen's, so any screen
+  // over 1x paints the @2x. Split at 1.5dppx (until 2026-10-01), a 1.25 or a
+  // 1.1 screen preloaded the 1x and then fetched the @2x as well — measured
+  // in Chromium at devicePixelRatio 1.25: drawer-poster.webp first, the
+  // @2x 91ms later. The <style> needs no html.jd-poster-on: it is printed
+  // only when the script below sets that class.
+?>
+<link rel="preload" as="image" href="drawer-poster@2x.webp?v=<?php echo jd_v('about/drawer-poster@2x.webp'); ?>" media="not all and (max-resolution: 1dppx)" />
+<link rel="preload" as="image" href="drawer-poster.webp?v=<?php echo jd_v('about/drawer-poster.webp'); ?>" media="(max-resolution: 1dppx)" />
 <style>
-  html.jd-poster-on .jd-about {
+  .jd-about {
     --jd-poster-url: image-set(
       url("drawer-poster.webp?v=<?php echo jd_v('about/drawer-poster.webp'); ?>") 1x,
       url("drawer-poster@2x.webp?v=<?php echo jd_v('about/drawer-poster@2x.webp'); ?>") 2x);
@@ -79,13 +88,14 @@ include __DIR__ . '/../../../includes/header.php';
      drawer (about-scenes.js, "the drawer wakes"). ?live loads everything. */
   window.JD_SLIM = true;
   window.JD_FURNITURE = ['data-jd-turn-object'];
+  /* the scatter is kept on JD_POSTER for the phone's wake (about-scenes.js,
+     posterReseat) */
   window.JD_POSTER = <?php echo json_encode([
     'specimen' => $jd_poster['specimen'],
     'place' => $jd_poster['place'] ?? null,
+    'scatter' => $jd_poster['scatter'] ?? new stdClass,
   ], JSON_UNESCAPED_SLASHES); ?>;
-  var scatter = <?php echo json_encode($jd_poster['scatter'] ?? new stdClass, JSON_UNESCAPED_SLASHES); ?>;
-  /* kept for the phone's wake (about-scenes.js, posterReseat) */
-  window.JD_POSTER.scatter = scatter;
+  var scatter = window.JD_POSTER.scatter;
   try {
     var KEY = 'jd-scatter-v2';
     var held = JSON.parse(sessionStorage.getItem(KEY) || 'null') || {};
@@ -99,10 +109,10 @@ include __DIR__ . '/../../../includes/header.php';
 <script>
 /* ---- DEMO MODE: the seal ---------------------------------------------------
    Scene 2 hands the visitor the REAL rating instrument. Nothing they do in it
-   may reach the database. Every network call in the six drawer modules goes
-   through window.fetch — verified: no sendBeacon, no XMLHttpRequest, no image
-   pings — so wrapping fetch here, BEFORE those modules load, is a complete
-   seal rather than a partial one.
+   may reach the database. Every network call in the seven drawer modules and
+   in about-scenes.js goes through window.fetch — verified (again 2026-10-01):
+   no sendBeacon, no XMLHttpRequest, no image pings — so wrapping fetch here,
+   BEFORE those modules load, is a complete seal rather than a partial one.
 
    Reads pass through (data.php, the .svg files). Writes are swallowed and
    answered with a plausible success so the card behaves exactly as it would
@@ -140,12 +150,7 @@ include __DIR__ . '/../../../includes/header.php';
 })();
 </script>
 
-<?php
-  // Type exploration (owner, 2026-09-23): ?type=a|b|c picks a heading treatment
-  // for the step column; see about.css "THE STEP TYPE". Default is a.
-  $jd_type = isset($_GET['type']) && preg_match('/^[abc]$/', $_GET['type']) ? $_GET['type'] : 'a';
-?>
-<div class="main-wrapper jd-about" data-type="<?php echo $jd_type; ?>">
+<div class="main-wrapper jd-about">
 <script>
   /* the walkthrough's layout from the first paint. about-scenes.js sets this
      class too, but it loads at the foot of the page, after the browser has
@@ -156,9 +161,12 @@ include __DIR__ . '/../../../includes/header.php';
 </script>
   <div class="jd-about-grid">
 
-    <!-- THE PINNED PANE: four scenes, one visible at a time. The drawer is in
-         the markup (it is the opening shot and must paint without JS); the
-         other three are empty hosts that their own modules mount into. -->
+    <?php /* THE PINNED PANE: four scenes, one visible at a time. The drawer is in
+             the markup (it is the opening shot and must paint without JS); the
+             other three are empty hosts that about-scenes.js fills: the turn card
+             and the report card from their own modules, the analysis with charts
+             and a table of its own. */ ?>
+
     <div class="jd-about-pane" id="jd-about-pane">
       <div class="jd-scene is-on" data-scene-pane="drawer">
 <?php include __DIR__ . '/../_stage.php'; ?>
@@ -168,16 +176,19 @@ include __DIR__ . '/../../../includes/header.php';
       <div class="jd-scene" data-scene-pane="analytics" data-fx="grades" aria-label="the analytics folder"></div>
     </div>
 
-    <!-- THE STEPS -->
+    <?php /* THE STEPS */ ?>
+
     <section class="jd-notes jd-about-notes" id="notes" aria-label="how the drawer works">
 
-      <!-- ============================ SCENE 1 ============================ -->
+      <?php /* ============================ SCENE 1 ============================ */ ?>
+
       <div class="jd-step is-on" data-scene="drawer" data-step="hook">
         <div class="jd-step-body">
-        <!-- THE PAGE'S TITLE (owner, 2026-09-28): the head of the opening
-             step, so it arrives and leaves with the opening paragraphs.
-             "About the" is part of the title, set like the name on its
-             own line above the name. -->
+        <?php /* THE PAGE'S TITLE (owner, 2026-09-28): the head of the opening
+                 step, so it arrives and leaves with the opening paragraphs.
+                 "About the" is part of the title, set like the name on its
+                 own line above the name. */ ?>
+
         <header class="jd-about-head">
           <h1 class="jd-about-title"><span class="jd-about-kicker">About the</span>
           SVG Junk Drawer</h1>
@@ -218,7 +229,8 @@ include __DIR__ . '/../../../includes/header.php';
         </div>
       </div>
 
-      <!-- ============================ SCENE 2 ============================ -->
+      <?php /* ============================ SCENE 2 ============================ */ ?>
+
       <div class="jd-step" data-scene="instrument" data-step="try">
         <div class="jd-step-body">
         <h2>The instrument</h2>
@@ -238,22 +250,24 @@ include __DIR__ . '/../../../includes/header.php';
         <h2>The taxonomy</h2>
         <p>Images are rated in four categories, each designed to isolate a
         single type of failure. They are:</p>
-        <!-- the four live categories only, from taxonomy.json (jd-core's
-             renderLegend fills #jd-axes, one-line summaries). The grade tiers are left off this
-             page (owner, 2026-09-27): the categories are the design worth
-             reading; the tiers are just a scale. -->
+        <?php /* the four live categories only, from taxonomy.json (jd-core's
+                 renderLegend fills #jd-axes, one-line summaries). The grade tiers are left off this
+                 page (owner, 2026-09-27): the categories are the design worth
+                 reading; the tiers are just a scale. */ ?>
+
         <section class="jd-legend" aria-label="the taxonomy">
           <ul class="jd-axes jd-axes--list" id="jd-axes" data-summary></ul>
         </section>
         </div>
       </div>
 
-      <!-- ============================ SCENE 3 ============================
-           THE SPECIMENS ON THE REPORT CARD (owner, 2026-09-27): the four model
-           steps show each drawing on the real report card, filed grade and
-           data included, rather than on the instrument. The ranking step
-           (the instrument's podium) was cut with the move; its text is kept
-           in COPY.md. -->
+      <?php /* ============================ SCENE 3 ============================
+               THE SPECIMENS ON THE REPORT CARD (owner, 2026-09-27): the four model
+               steps show each drawing on the real report card, filed grade and
+               data included, rather than on the instrument. The ranking step
+               (the instrument's podium) was cut with the move; its text is kept
+               in COPY.md. */ ?>
+
       <div class="jd-step" data-scene="record" data-step="claude-fable-5" data-view="claude-fable-5">
         <div class="jd-step-body">
         <h2>A gold standard</h2>
@@ -274,7 +288,8 @@ include __DIR__ . '/../../../includes/header.php';
         </div>
       </div>
 
-      <!-- the two answers, beside the same card (same data-view: no card change) -->
+      <?php /* the two answers, beside the same card (same data-view: no card change) */ ?>
+
       <div class="jd-step" data-scene="record" data-step="gemini-answer" data-view="gemini-3-1-pro">
         <div class="jd-step-body">
         <h2>Problems with Understanding Assignment</h2>
@@ -310,8 +325,9 @@ include __DIR__ . '/../../../includes/header.php';
         </div>
       </div>
 
-      <!-- the application behind the cards (owner, 2026-09-27): the table of
-           recent turns opens the analysis — the rows the charts are made of -->
+      <?php /* the application behind the cards (owner, 2026-09-27): the table of
+               recent turns opens the analysis — the rows the charts are made of */ ?>
+
       <div class="jd-step" data-scene="analytics" data-step="stack" data-view="turns">
         <div class="jd-step-body">
         <h2>A real application, front to back</h2>
@@ -324,11 +340,12 @@ include __DIR__ . '/../../../includes/header.php';
         </div>
       </div>
 
-      <!-- THE STORY THE CHARTS TELL (owner, 2026-09-27; final copy 2026-09-28):
-           about even on average; the spread shows Opus's edge is its Primes;
-           the categories point at Je ne sais quoi; and the edge costs money.
-           The first two steps share one card (the average and the spread
-           together). -->
+      <?php /* THE STORY THE CHARTS TELL (owner, 2026-09-27; final copy 2026-09-28):
+               about even on average; the spread shows Opus's edge is its Primes;
+               the categories point at Je ne sais quoi; and the edge costs money.
+               The first two steps share one card (the average and the spread
+               together). */ ?>
+
       <div class="jd-step" data-scene="analytics" data-step="grades" data-view="grades">
         <div class="jd-step-body">
         <h2>Insights</h2>
@@ -371,10 +388,11 @@ include __DIR__ . '/../../../includes/header.php';
         </div>
       </div>
 
-      <!-- ============================ OUTRO ==============================
-           Back to the drawer (owner, 2026-09-27): the walkthrough ends where
-           it began, with the way out — the drawer itself, and a way to reach
-           the person who built it. -->
+      <?php /* ============================ OUTRO ==============================
+               Back to the drawer (owner, 2026-09-27): the walkthrough ends where
+               it began, with the way out — the drawer itself, and a way to reach
+               the person who built it. */ ?>
+
       <div class="jd-step" data-scene="drawer" data-step="outro">
         <div class="jd-step-body">
         <h2>Thanks for digging through the drawer</h2>
@@ -394,16 +412,18 @@ include __DIR__ . '/../../../includes/header.php';
         </div>
       </div>
 
-      <!-- (owner, 2026-09-28) no colophon, build stamp or back link under the
-           outro: the page ends on its last paragraph, then the site footer -->
+      <?php /* (owner, 2026-09-28) no colophon, build stamp or back link under the
+               outro: the page ends on its last paragraph, then the site footer */ ?>
+
 
     </section>
 
-    <!-- THE TIMELINE. A station per step, grouped by scene: it says the page
-         is scrollable before anyone has scrolled, shows how far along the
-         reader is, and takes them back to any earlier moment. Built and kept
-         in sync by about-scenes.js from the steps themselves, so it can never
-         disagree with them. Empty (and hidden) without JS. -->
+    <?php /* THE TIMELINE. A station per step, grouped by scene: it says the page
+             is scrollable before anyone has scrolled, shows how far along the
+             reader is, and takes them back to any earlier moment. Built and kept
+             in sync by about-scenes.js from the steps themselves, so it can never
+             disagree with them. Empty (and hidden) without JS. */ ?>
+
     <nav class="jd-timeline" id="jd-timeline" aria-label="walkthrough progress"></nav>
 
   </div>
