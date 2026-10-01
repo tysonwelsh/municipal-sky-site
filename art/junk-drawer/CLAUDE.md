@@ -21,16 +21,31 @@ data files are `.json`, art is `.svg`.
   responses (from different models) to that prompt live in this one entry.
 - `items/<...>/<model-slug>.svg` — one file per response.
 - `data.php` — read-only serving endpoint. Do not modify during content adds.
-- The page script is SIX files since 2026-09-05 (one 9,200-line
-  `junk-drawer.js` before that), loaded synchronously in this order by
-  `index.php`, each a set of IIFEs talking through `window.JD_*`, no build
-  step: `jd-core.js` (constants, the shared helpers `JD_esc` / `JD_byId` /
-  `JD_fnv1a` / `JD_xorshift` / `JD_fetchArt` / `JD_zoomLayer`, the pile
-  loader, the drag script, immersive chrome, the draw-on engine),
+- The page script is SEVEN files (six since 2026-09-05, when the one
+  9,200-line `junk-drawer.js` was split; `jd-filmstrip.js` joined
+  2026-09-16), loaded synchronously in this order by `_scripts.php`, each
+  a set of IIFEs talking through `window.JD_*`, no build step: `jd-core.js`
+  (constants, the shared helpers `JD_esc` / `JD_byId` / `JD_fnv1a` /
+  `JD_xorshift` / `JD_fetchArt` / `JD_zoomLayer` and, since 2026-10-01, the
+  shared constants and helpers the other modules used to copy —
+  `JD_SCATTER_KEY`, `JD_GRADE_RAMP`, `JD_X_MARK`, `JD_uuid`, `JD_liveAxes`,
+  `JD_tierBox`, `JD_shuffle`, `JD_restart`, `JD_drawOn.walk/strip` — the
+  pile loader, the drag script, immersive chrome, the draw-on engine),
+  `jd-filmstrip.js` (the replay/scrub control under a drawing),
   `jd-furniture.js` (turn object, instructions sheet, analytics folder),
   `jd-record.js` (the report card), `jd-darkroom.js` (the wait indicators,
   `window.JD_dark`), `jd-turn.js` (the turn modal + curate mode), `jd-bench.js`
-  (the `?bench` / `?admin` strip). `card-gallery.html` loads the same six.
+  (the `?bench` / `?admin` strip). `card-gallery.html` loads the same seven.
+  Behaviour-preserving refactors of all of this (and of `api/jd-*.php` and
+  the stylesheet) are proven with `scripts/jd-regress/` (its README): a
+  deterministic capture of 56 scenes — screenshots, markup, computed styles,
+  payloads — compared byte-for-byte before and after. Run it before and
+  after any change that is meant to look and behave the same.
+- The `PLAN-*.md` files these comments cite (`PLAN-FRONTEND`, `PLAN-BACKEND`,
+  `PLAN-MOBILE`, `PLAN-PORTFOLIO`, `PLAN-USER-PROMPTS`) are the owner's
+  local design documents: `art/junk-drawer/PLAN-*.md` is gitignored, so a
+  checkout does not have them. The section numbers are still the owner's
+  map; treat the citations as history, not as links.
 - `api/jd-config.php` — the shared runtime every endpoint requires: the
   taxonomy accessors, the ratings fold (`jd_fold_ratings` / `jd_pick_rating`),
   the key gate, the schema probes. Schema doc: `db/junk-drawer-schema.md`.
@@ -385,5 +400,6 @@ without the flag. Commit: `junk-drawer: taxonomy — add axis "<label>"`.
   RETURNED TO SENDER, NOT FILED. The owner asked for every one removed
   (2026-08-14, `2fbeaf6`). It is a deliberate reversal, not a regression to
   restore. Each state's meaning survives in prose that was already there;
-  `--tstamp` remains only as a plain ink-red accent, tied to no stamp. The
-  longer note lives in `junk-drawer.css` above the turn-modal tokens.
+  `--tstamp`, the plain ink-red accent that outlived them, went too
+  (2026-10-01): nothing read it. The longer note lives in `junk-drawer.css`
+  above the turn-modal tokens.
