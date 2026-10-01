@@ -562,6 +562,14 @@ html { scroll-behavior: smooth; }
      to clear 53px this never fires, and the button measures exactly like
      the medium specimen it is. */
   min-width: 53px;
+  /* NO WRAPPER SHADOW ON LIT HARDWARE (owner glow boost, 2026-08-11). The
+     shared .jd-item drop-shadow filter reads the WHOLE alpha, halo included —
+     at the boosted halo opacities it re-cast the pool of light as a dark
+     ghost offset down-right, the exact "light source with a dark aura" the 9a
+     mockup's notes flagged as the one read this design cannot afford. The
+     asset bakes its own contact shadow under the housing, so hardware still
+     sits ON the floor rather than floating. */
+  filter: none;
 }
 /* THE INSTRUCTIONS SHEET'S OWN PICK ZOOM (owner ask, 2026-09-14): a
    five-step note reads better held up close than the shared --pick-scale
@@ -570,7 +578,10 @@ html { scroll-behavior: smooth; }
    so it gets its own larger zoom. Overrides the custom property alone;
    .jd-item.is-picked svg still just reads whatever --pick-scale resolves
    to, so no other rule needs touching. */
-.jd-item--sheet { --pick-scale: 2; }
+.jd-item--sheet {
+  --pick-scale: 2;
+  filter: none !important;   /* the halves cast — see the FOLDED IN HALF banner below */
+}
 /* THE INSTRUCTIONS SHEET'S CLOSE MARK (owner, 2026-09-10): the × drawn in
    the paper's corner (instructions-object.svg, .ins-close). It is ink like
    the rest of the sheet — the generic visiblePainted rule already lets it
@@ -609,7 +620,6 @@ html { scroll-behavior: smooth; }
    nudgeIntoWell's --pick-tall completes the same bookkeeping. The crease,
    the folded rim and the underside shade are ink in the asset (.ins-crease,
    .ins-foldedge, .ins-shade), cross-faded here with the state. */
-.jd-item--sheet { filter: none !important; }   /* see the banner: the halves cast */
 .jd-item--sheet .jd-sheet {
   position: relative;
   transform: rotate(var(--rot));
@@ -671,15 +681,6 @@ html { scroll-behavior: smooth; }
     transition: none !important;
   }
 }
-
-/* NO WRAPPER SHADOW ON LIT HARDWARE (owner glow boost, 2026-08-11). The
-   shared .jd-item drop-shadow filter reads the WHOLE alpha, halo included —
-   at the boosted halo opacities it re-cast the pool of light as a dark
-   ghost offset down-right, the exact "light source with a dark aura" the 9a
-   mockup's notes flagged as the one read this design cannot afford. The
-   asset bakes its own contact shadow under the housing, so hardware still
-   sits ON the floor rather than floating. */
-.jd-item--turn { filter: none; }
 
 /* THE PRESS NEEDS ROOM. An <svg> clips at its viewport by default, and this
    asset's halo ink deliberately runs to within 2/240 of the viewBox edge —
@@ -1074,6 +1075,9 @@ html { scroll-behavior: smooth; }
        (immersive mode, below) — the drawer owns the whole screen on load */
     min-height: 420px;
     box-shadow: none;
+    /* a stop for the all-or-nothing page snap (below) */
+    scroll-snap-align: start;
+    scroll-snap-stop: always;   /* a hard fling can't skip the notes landing */
   }
     /* item tag compacts for small wells: a narrower fixed width, and the
        gap between meter and buttons tightens so line 2 still fits on one
@@ -1121,10 +1125,7 @@ html { scroll-behavior: smooth; }
        banner-height offset via scroll-margin-top below */
     scroll-padding-top: 0;
   }
-  .jd-stage {
-    scroll-snap-align: start;
-    scroll-snap-stop: always;   /* a hard fling can't skip the notes landing */
-  }
+  /* (the drawer's own snap stop is on .jd-stage, at the top of this block) */
   #notes {
     scroll-snap-align: start;
     /* the banner is VISIBLE at the notes rest (immersive mode restores
@@ -1418,6 +1419,8 @@ html.jd-record-open { overflow: hidden; }
 .rc-plate {
   position: relative;
   width: 100%; aspect-ratio: 1 / 1;   /* width = --plate ⇒ height = --plate */
+  /* the enlargement's affordance (see its banner, below) */
+  cursor: zoom-in; touch-action: pan-y;   /* pan-y: a sideways thumb is the swipe (jd-record.js) */
 }
 /* the artwork yields its bottom band to the margin notes */
 .rc-plate-art { position: absolute; inset: 6% 8% 20%; }
@@ -1497,7 +1500,6 @@ html.jd-record-open { overflow: hidden; }
    the layer (the art, the caption, the surround) or by Escape — which peels
    this layer before it peels the card (junk-drawer.js). The corner hint
    carries the affordance on touch, where nothing hovers. */
-.rc-plate { cursor: zoom-in; touch-action: pan-y; }   /* pan-y: a sideways thumb is the swipe (jd-record.js) */
 /* the DOWNLOAD button rides the photograph's lower-right corner (owner rev,
    2026-08-13 — it replaced the "⤢ enlarge" hint, and the card's footer with
    it), wearing the specimen tag's button tailoring: hairline border, 3px
@@ -1563,7 +1565,7 @@ html.jd-record-open { overflow: hidden; }
   background: rgba(6, 4, 1, 0.93);
   cursor: zoom-out;
 }
-.jd-record-zoom.is-on { display: flex; }
+.jd-record-zoom.is-on { display: flex; animation: jdZoomVeil 0.2s ease both; }
 /* the box takes the room the viewport has; the SVG inside keeps its aspect
    (preserveAspectRatio meet), so tall art and wide art both simply fit */
 .rc-zoom-fig {
@@ -1667,7 +1669,6 @@ html.jd-record-open { overflow: hidden; }
   to   { opacity: 1; transform: none; }
 }
 @keyframes jdZoomVeil { from { opacity: 0; } to { opacity: 1; } }
-.jd-record-zoom.is-on { animation: jdZoomVeil 0.2s ease both; }
 .jd-record-zoom.is-on .rc-zoom-fig {
   animation: jdZoomIn 0.26s cubic-bezier(.2,.8,.25,1) both;
 }
@@ -2001,12 +2002,18 @@ tr.rc-axdesc td {
    DOWNLOAD button rides the photograph and the file number its notes) */
 
 /* ---- small screens ------------------------------------------------------- */
-/* under 700px the card stacks back to the single-column portrait flow:
-   masthead, photograph, fills, prompt, annotations, strip, footer. The
-   column wrappers go display:contents (the DOM's source order IS the
-   portrait order), the body scrolls again — correct on a phone — and the
-   close ✕ stays pinned to the card, outside the scrolling box. */
+/* THE PLATE'S ARROWS (owner, 2026-09-29; jd-record.js plateNavHTML): phone
+   only. Tall and skinny, laid over the graph paper in the plate's side
+   margins — the artwork's own inset (8% each side), so the drawing keeps
+   its full width — and quiet: faint ink on a faint wash, a little darker
+   under the finger. */
+.rc-nav { display: none; }
 @media (max-width: 700px) {
+  /* under 700px the card stacks back to the single-column portrait flow:
+     masthead, photograph, fills, prompt, annotations, strip, footer. The
+     column wrappers go display:contents (the DOM's source order IS the
+     portrait order), the body scrolls again — correct on a phone — and the
+     close ✕ stays pinned to the card, outside the scrolling box. */
   .jd-record { width: min(560px, 100%); }
   .rc-scroll { display: flex; flex-direction: column; padding: 12px 14px 11px; }
   .rc-col-l, .rc-col-r { display: contents; }
@@ -2016,14 +2023,7 @@ tr.rc-axdesc td {
   /* still vh-clamped — a landscape phone can't blow the card out */
   .rc-plate { width: min(100%, 52dvh, 420px); margin: 0 auto 0.55rem; }
   .rc-head { margin-top: 0.55rem; }
-}
-/* THE PLATE'S ARROWS (owner, 2026-09-29; jd-record.js plateNavHTML): phone
-   only. Tall and skinny, laid over the graph paper in the plate's side
-   margins — the artwork's own inset (8% each side), so the drawing keeps
-   its full width — and quiet: faint ink on a faint wash, a little darker
-   under the finger. */
-.rc-nav { display: none; }
-@media (max-width: 700px) {
+  /* the plate's arrows (above) */
   .rc-nav {
     display: flex; align-items: center; justify-content: center;
     position: absolute; z-index: 3;
@@ -2480,12 +2480,14 @@ html.jd-turn-open { overflow: hidden; }
    symmetric side padding clears it while keeping the phrase truly centred. */
 .jd-turn[data-view="darkroom"] .jd-turn-head,
 .jd-turn[data-view="plates"] .jd-turn-head {
-  /* the announcement is set a size up, so the head restates the size its
-     first-line band is measured from — the ✕ sits in that band and would
-     ride high against a bigger line otherwise (owner, 2026-09-10). The side
-     padding stays SYMMETRIC, which is what keeps the phrase truly centred
-     with a ✕ in one corner and nothing in the other. */
-  --jd-head-line: calc(1.3 * 0.98rem);
+  /* the announcement is set a size up, and the head moves --t-title to do
+     it — the ≤600px block's lever: the first-line band (--jd-head-line,
+     1.3 × --t-title, on .jd-turn-head) and the heading's own font-size both
+     read it, so the ✕ seated in the band can never ride high against a
+     bigger line (owner, 2026-09-10). The side padding stays SYMMETRIC, which
+     is what keeps the phrase truly centred with a ✕ in one corner and
+     nothing in the other. */
+  --t-title: 0.98rem;
   position: absolute; top: 0; left: 0; right: 0; z-index: 20;
   padding: var(--jd-head-pad) calc(var(--jd-x-w) + var(--jd-x-gap));
   border-bottom: 0; background: none;
@@ -2502,7 +2504,7 @@ html.jd-turn-open { overflow: hidden; }
 .jd-turn[data-view="darkroom"] .jd-turn-title,
 .jd-turn[data-view="plates"] .jd-turn-title {
   flex: 0 1 auto; text-align: center;
-  font-size: 0.98rem; letter-spacing: 0.22em; text-indent: 0.22em;
+  letter-spacing: 0.22em; text-indent: 0.22em;   /* the size: --t-title, set on the head above */
 }
 .jd-turn[data-view="plates"] .jd-turn-scroll { padding-top: 50px; }
 /* the body stops scrolling and becomes the pile's table */
@@ -2807,8 +2809,12 @@ html.jd-turn-open { overflow: hidden; }
    letter — which centres it at 55% of the swatch, ~5% low. Every indicator
    overrides it as it is built; the bar arrived in round 24 without one and
    measured 54.8% against its neighbours' 50%. Any SIXTH indicator needs this
-   line too. */
-.jd-dark-well--bar { left: 0; right: 0; top: 0; bottom: 0; }
+   line too. The bar's well is also a container, so the teletype's type
+   scales in cqw (the scatterword's precedent; see the teletype below). */
+.jd-dark-well--bar {
+  left: 0; right: 0; top: 0; bottom: 0;
+  overflow: hidden; container-type: size;
+}
 
 /* the watch writes in the ruling blue like its neighbours (owner,
    2026-08-26 — it stood out as the one brown indicator): the case, lugs,
@@ -2851,9 +2857,8 @@ html.jd-turn-open { overflow: hidden; }
    bleed and becomes a container (the scatterword's precedent) so the type
    scales with the swatch. Static base: parked at 68%, mid-climb, readout
    agreeing for once — the pose a reduced-motion visitor sees. */
-/* (full-bleed seating for --bar lives with the other well overrides above;
-   here the well additionally becomes a container so the type scales in cqw) */
-.jd-dark-well--bar { overflow: hidden; container-type: size; }
+/* (the bar's well — full bleed and a container — is with the other well
+   overrides above) */
 .jd-dark-tele {
   font-family: var(--tmono); font-weight: 700;
   letter-spacing: 0.08em; line-height: 1.9;
@@ -2867,7 +2872,7 @@ html.jd-turn-open { overflow: hidden; }
 /* one typed cell: the # and the · share the square, opacity decides */
 .jd-dark-tele .t-c { position: relative; display: inline-block; }
 .jd-dark-tele i { font-style: normal; }
-.jd-dark-tele .t-c .ge { position: absolute; left: 0; top: 0; }
+.jd-dark-tele .t-c .ge { position: absolute; left: 0; top: 0; opacity: 1; }
 /* the readout: two one-glyph odometer windows; the strip behind each is
    0–9, the ? shrug, and a blank for a single-digit value's tens place.
    An overflow-hidden inline-block baselines at its BOTTOM edge, so the
@@ -2878,9 +2883,9 @@ html.jd-turn-open { overflow: hidden; }
 }
 .jd-dark-tele .t-ds { display: block; }
 .jd-dark-tele .t-ds i { display: block; height: 1em; line-height: 1em; }
-/* the static pose: 68%, ten of fourteen cells inked, readout truthful */
+/* the static pose: 68%, ten of fourteen cells inked, readout truthful
+   (.ge's base opacity: 1 is on its rule above) */
 .jd-dark-tele .t-c .gf { opacity: 0; }
-.jd-dark-tele .t-c .ge { opacity: 1; }
 .jd-dark-tele .t-c:nth-child(-n+10) .gf { opacity: 1; }
 .jd-dark-tele .t-c:nth-child(-n+10) .ge { opacity: 0; }
 .jd-dark-tele .t-dt .t-ds { transform: translateY(-6em); }
@@ -3597,13 +3602,17 @@ html.jd-turn-open { overflow: hidden; }
 .jd-row--head > span + span { border-left: 1px solid var(--trule-2); }
 /* the row's two cells: the subject inset from the left edge, the control
    column divided off and inset — the divider runs the row's full height
-   because the row's items stretch */
-.jd-rowhead { padding: 0 0.5em 0 0.35em; }
-.jd-row-ctrl { border-left: 1px solid var(--trule-2); padding-left: 10px; }
+   because the row's items stretch. The control cell is a flex row: the
+   picked-value gauge ahead of the select (see .jd-row-ctrl .rc-bar, below). */
+.jd-row-ctrl {
+  border-left: 1px solid var(--trule-2); padding-left: 10px;
+  display: flex; align-items: center; gap: 0.5rem; min-width: 0;
+}
 /* the whole head is the disclosure's press target (owner, round 5): pointer
    cursor, no text selection — a label you can press must not sprout an
    I-beam and start selecting itself under the finger */
 .jd-rowhead {
+  padding: 0 0.5em 0 0.35em;
   display: flex; align-items: center; gap: 5px; min-width: 0;
   cursor: pointer;
   -webkit-user-select: none; user-select: none;
@@ -3687,7 +3696,6 @@ html.jd-turn-open { overflow: hidden; }
    whatever the gauge doesn't need. Empty (no value picked yet) collapses
    to nothing, so an unanswered row looks exactly as it did before this
    round. */
-.jd-row-ctrl { display: flex; align-items: center; gap: 0.5rem; min-width: 0; }
 .jd-row-ctrl .jd-turn-select { width: auto; flex: 1 1 auto; min-width: 0; }
 .jd-row-ctrl .rc-bar { flex: 0 0 auto; }
 /* the WAITING gauge (owner, 2026-08-29): an unanswered row shows the same
@@ -4132,7 +4140,10 @@ body.jd-pod-drag, body.jd-pod-drag * {
   /* the landscape bench unwinds: the card returns to the form's own measure,
      the column wrappers go display:contents (the DOM's source order IS the
      portrait order), and the exhibit goes sticky again */
-  .jd-turn[data-view="bench"] { width: min(680px, 100%); }
+  .jd-turn[data-view="bench"] {
+    width: min(680px, 100%);
+    height: 100%;              /* the whole padded viewport — THE FLEX EXHIBIT, below */
+  }
   /* THE FLEX EXHIBIT (critic round, 2026-08-27). The 26dvh clamp could
      never serve both ends of the phone band: content shrank 0.26px per
      viewport px while the window it had to fit shrank a full 1 — so the
@@ -4144,7 +4155,6 @@ body.jd-pod-drag, body.jd-pod-drag * {
      on any phone taller than ~640px, and on a tall one the leftover goes
      into the drawing, not into dead paper. (The sticky pin stays: it only
      has work to do below the floor, where scrolling returns.) */
-  .jd-turn[data-view="bench"] { height: 100%; }
   .jd-turn[data-view="bench"] .jd-turn-scroll { display: flex; flex-direction: column; }
   /* THE EXHIBIT AT FULL WIDTH (owner, 2026-09-11): on a phone the drawing
      is as large as the report card shows it — the whole width of the
@@ -4235,12 +4245,12 @@ body.jd-pod-drag, body.jd-pod-drag * {
      the reveal's longer counts ("Four drawings came back") wrap the band */
   .jd-turn[data-view="darkroom"] .jd-turn-head,
   .jd-turn[data-view="plates"] .jd-turn-head {
-    --jd-head-line: calc(1.3 * 0.8rem);
+    --t-title: 0.8rem;         /* band and heading together, as above */
     padding: var(--jd-head-pad) calc(var(--jd-x-w) + var(--jd-x-gap));
   }
   .jd-turn[data-view="darkroom"] .jd-turn-title,
   .jd-turn[data-view="plates"] .jd-turn-title {
-    font-size: 0.8rem; letter-spacing: 0.16em; text-indent: 0.16em;
+    letter-spacing: 0.16em; text-indent: 0.16em;
   }
   .jd-turn-scroll { padding: 10px 12px 12px; }
   /* THE CALL NEVER TABS. The standing rule was that it stacks rather than
@@ -4287,10 +4297,6 @@ body.jd-pod-drag, body.jd-pod-drag * {
      layer parked half off-screen */
   .jd-turn-input, .jd-turn-select, .jd-turn-note { font-size: 16px; }
   .jd-turn-input { min-height: 8.5rem; }
-  /* tracking comes nearly to zero here: 16px uppercase mono is already the
-     loudest voice on the sheet — the spacing was width the answers don't
-     have at this measure */
-  .jd-turn-select { letter-spacing: 0.02em; }
   /* OVERRIDE 2: the 44px touch floor, kept UNCONDITIONALLY at this
      breakpoint regardless of what any-pointer reports — a phone-width
      viewport is a touch target regardless of what the UA claims about the
@@ -4299,7 +4305,13 @@ body.jd-pod-drag, body.jd-pod-drag * {
      full-width strip, and the one-screen survey needs the height back. */
   .jd-turn-check, .jd-turn-note,
   .jd-turn-go, .jd-turn-alt { min-height: 44px; }
-  .jd-turn-select { min-height: 40px; }
+  .jd-turn-select {
+    min-height: 40px;
+    /* tracking comes nearly to zero here: 16px uppercase mono is already the
+       loudest voice on the sheet — the spacing was width the answers don't
+       have at this measure */
+    letter-spacing: 0.02em;
+  }
   .jd-rail-ring { width: 34px; height: 34px; }
   /* THE SMALL MARKS GET A FINGER'S BAND (critic/coder mobile round, owner
      report, 2026-09-29). Five presses on the bench measured under the
@@ -4566,6 +4578,7 @@ body.jd-pod-drag, body.jd-pod-drag * {
   --fmono: var(--jd-font-mono);    /* the shared stacks and paper (:root, top) */
   --fform: var(--jd-font-form);
   --fgrain: var(--jd-grain-url);
+  --ftab-h: 44px;                  /* the tab's height (the tabs' note, below) */
 
   /* the fixed site banner (css/style.css, z 1000) paints over this scrim by
      design — so the scrim RESERVES its band, the record card's standing fix:
@@ -4623,8 +4636,7 @@ html.jd-folder-open { overflow: hidden; }
    folder too. Both are absolutely positioned children of the card, hung
    from its top (bottom: 100%); the card wears a top margin the tab's
    height (.jd-folder-card, above) so the tab stays inside the scrim's
-   padding. */
-.jd-folder-scrim { --ftab-h: 44px; }
+   padding; the height is --ftab-h, with the folder's tokens. */
 /* THE TAB, CUT LIKE THE FOLDER IN THE DRAWER (owner, 2026-09-29, second
    pass: "it needs to look like a file folder … similar to how the folder
    appears in the drawer", and the ✕ "to the left of the title … part of the
@@ -4647,6 +4659,7 @@ html.jd-folder-open { overflow: hidden; }
   clip-path: polygon(0 100%, var(--slant) 0, calc(100% - var(--slant)) 0, 100% 100%);
   filter: drop-shadow(1px -2px 3px rgba(6, 3, 0, 0.3));
   color: var(--fink);
+  isolation: isolate;
 }
 .jd-folder-tab::before {
   content: ''; position: absolute; z-index: -1;
@@ -4654,7 +4667,6 @@ html.jd-folder-open { overflow: hidden; }
   background: var(--fmanila-hi) var(--fgrain);
   clip-path: polygon(0 100%, calc(var(--slant) - 0.4px) 0, calc(100% - var(--slant) + 0.4px) 0, 100% 100%);
 }
-.jd-folder-tab { isolation: isolate; }
 .jd-folder-tab-word {
   font-family: var(--fmono); font-size: 1.1rem; font-weight: 700;
   letter-spacing: 0.32em; line-height: 1;
@@ -4731,10 +4743,6 @@ html.jd-folder-open { overflow: hidden; }
   background: var(--fpaper); border: 1px solid var(--frule-2);
   box-shadow: 2px 3px 8px -3px rgba(40, 24, 4, 0.42);
 }
-@media (max-width: 700px) {
-  .jd-folder-scroll { grid-template-columns: 1fr; padding: 11px; }
-  .fx-card, .fx-cost, .fx-firsts, .fx-grades, .fx-spend, .fx-bare { grid-column: span 1; }
-}
 
 .fx-title {
   margin: 0 0 2px;
@@ -4797,16 +4805,6 @@ html.jd-folder-open { overflow: hidden; }
 .fx-td-num { display: inline-block; width: 1.1em; font-weight: 700; }
 .fx-td-none { color: var(--fink-3); }
 .fx-gauge { width: 41px; height: 9px; vertical-align: -1px; margin-left: 4px; }
-@media (max-width: 700px) {
-  /* FIXED, NOT AUTO (owner bug, 2026-09-29: two models' gauges "weren't
-     rendering" on a phone). With table-layout:auto the grade columns sized
-     to their HEADS, so GPT-5.1 and KIMI K3 — the short names — got ~58px,
-     too narrow for number + gauge, and the cell's ellipsis swallowed the
-     gauge whole. Fixed layout honours the 108px every grade column asks
-     for; the prompt takes what is left, and the sheet scrolls sideways. */
-  .fx-turns-t { table-layout: fixed; min-width: 700px; }
-  .fx-turns-wrap { overflow-x: auto; }
-}
 .fx-t-val  { font-family: var(--fmono); font-size: 9.5px; fill: var(--fink); font-weight: 700; }
 .fx-t-tail { font-family: var(--fmono); font-size: 8px;   fill: var(--fink-3); }
 .fx-t-scale{ font-family: var(--fmono); font-size: 8px;   fill: var(--fink-3); }
@@ -4832,8 +4830,22 @@ html.jd-folder-open { overflow: hidden; }
    smallest labels landed under 7 rendered px. Raising the units is the only
    lever that does not touch the geometry. It has to sit AFTER the base
    declarations above: a media query adds no specificity, so a block placed
-   with the layout rules further up would simply lose to them. */
+   with the layout rules further up would simply lose to them.
+   The folder's other ≤700px rules share the block (one block, after every
+   base rule it overrides): the one-column grid and the turn table. */
 @media (max-width: 700px) {
+  /* one column throughout (see the contents' note: the span resets too) */
+  .jd-folder-scroll { grid-template-columns: 1fr; padding: 11px; }
+  .fx-card, .fx-cost, .fx-firsts, .fx-grades, .fx-spend, .fx-bare { grid-column: span 1; }
+  /* FIXED, NOT AUTO (owner bug, 2026-09-29: two models' gauges "weren't
+     rendering" on a phone). With table-layout:auto the grade columns sized
+     to their HEADS, so GPT-5.1 and KIMI K3 — the short names — got ~58px,
+     too narrow for number + gauge, and the cell's ellipsis swallowed the
+     gauge whole. Fixed layout honours the 108px every grade column asks
+     for; the prompt takes what is left, and the sheet scrolls sideways. */
+  .fx-turns-t { table-layout: fixed; min-width: 700px; }
+  .fx-turns-wrap { overflow-x: auto; }
+  /* the charts' type, one notch up */
   .fx-t-lab { font-size: 10px; }
   .fx-t-lab.is-long { font-size: 8.2px; }
   .fx-t-val { font-size: 10.5px; }
@@ -5113,6 +5125,9 @@ html.jd-bench-on .jd-turn-scrim {
 }
 .jd-size-tier {
   display: flex; flex-direction: column; align-items: center; gap: 6px;
+  /* the swatches need a common floor to be comparable, so the row aligns to
+     the bottom and the tallest tier sets the height */
+  justify-content: flex-end;
   padding: 12px 6px 10px; cursor: pointer;
   background: rgba(255, 250, 232, 0.5);
   border: 1px solid var(--trule); border-radius: 2px;
@@ -5140,9 +5155,6 @@ html.jd-bench-on .jd-turn-scrim {
 .jd-size-desc {
   font-size: var(--t-micro); line-height: 1.4; color: var(--tink-3);
 }
-/* the swatches need a common floor to be comparable, so the row aligns to
-   the bottom and the tallest tier sets the height */
-.jd-size-tier { justify-content: flex-end; }
 @media (max-width: 700px) {
   /* the phone stacks them: the swatch beside its name, still to scale */
   .jd-size { grid-template-columns: 1fr; gap: 6px; }
@@ -5331,7 +5343,7 @@ html.jd-bench-on .jd-turn-scrim {
 
 /* a phone: nothing to re-flow — the row is [play] [strip] [fraction] and
    the strip absorbs whatever is left */
-@media (max-width:480px){
+@media (max-width: 480px) {
   .jd-filmstrip{gap:8px}
 }
 
