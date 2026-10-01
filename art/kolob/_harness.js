@@ -477,9 +477,10 @@ global.MskyBackgroundAudio = undefined;          // no <audio> route here: the m
 // run's errors. Then the report says how many cues the lane ran after it, and how
 // many sections the meeting began: the proof that the engine recovers
 // (PLAN-REFACTOR §2.1) — a layer's turn re-armed by the core's net 5 s after
-// it threw, the conductor's tick 0.6 s after; a hymn whose chain broke let
-// go, so the meeting moves on (the choir's lane carries more than one chain —
-// its verse loop, a hymn's lines — so its own count runs on either way).
+// it threw, the conductor's tick 0.6 s after, the ward's and the organist's
+// pumps at their own pace; a hymn whose chain broke let go, so the meeting
+// moves on (the choir's lane carries more than one chain — its verse loop,
+// a hymn's lines — so its own count runs on either way).
 // Without throw= nothing is wrapped.
 // ----------------------------------------------------------------------------
 const INJ = OPT.throws.map((x) => ({ lane: x.lane, at: x.at, spec: x.spec, marker: "the harness's injected throw (throw=" + x.spec + ")", t: null, how: null, reported: null, before: 0, after: 0, firstAfter: null }));

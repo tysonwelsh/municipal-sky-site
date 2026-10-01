@@ -191,7 +191,12 @@ tick is armed 0.6 s on, and the meeting is the clean one, record for record;
 `throw=choir@212.5` breaks a hymn's chain of lines, the hymn is let go, and the
 meeting begins its next hymn at 349.4 s (1,643 notes where the clean run plays
 2,573: the rest of that hymn is not sung; before §2.1 the hymn never ended and
-the meeting stayed in it, 972 notes). Without `throw=` nothing is wrapped.
+the meeting stayed in it, 972 notes); `throw=ward@200` and
+`throw=organist@200` fire at 200.05 s, each pump's next tick is armed at its
+own pace (0.12 s, 0.2 s), and the dump and the graph are the clean run's
+(before, the ward's pump stopped — the graph 19,989 nodes where the clean run
+builds 29,537, its notes told all the same — and the organist's, 1,963 notes
+for 2,573). Without `throw=` nothing is wrapped.
 
 ## The dump format (v1)
 
@@ -595,7 +600,9 @@ the clock's own, the drone's to those before, the throw and those after;
 lane plays on, re-armed 5 s after the throw; `throw=conductor@300` — the next
 tick 0.6 s on, and the dump the clean run's, record for record;
 `throw=choir@212.5` — the broken hymn is let go and the meeting begins its next
-section. All nine pass on `art/kolob/_harness.js`. Run it after any change to the
+section; `throw=ward@200,organist@200` — each pump ticks on at its own pace,
+and the dump and the graph are the clean run's. All nine pass on
+`art/kolob/_harness.js`. Run it after any change to the
 engine's events, to the harness or to these tools. It renders into `out/_selftest/` and, like
 every tool, refuses while the engine is being edited.
 

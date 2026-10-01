@@ -790,24 +790,30 @@ window.KolobAudio = (function () {
 
   // THE NET UNDER EVERY TURN. Each layer's turn — the drone's, the
   // strings', the tines', the organist's, the deacon's, the harmonium's, the
-  // choir's verse, the still voice's, the wire's, the valley's — and the
-  // conductor's tick re-arm their own lane as the last thing they do: the
-  // next turn is the last thing a turn writes. The clock catches a cue that
-  // throws, reports it and arms nothing, so a turn that threw before it had
-  // re-armed was the end of its layer for the rest of the visit, and a tick
-  // that threw was the end of the meeting's sections. So the cue the clock
-  // runs for a layer is its room's cycle — droneCycle, organCycle, …,
-  // conductorTick — and the cycle is one line, cycle(lane, self, turn, t,
-  // fallbackS): its turn runs, and if the turn throws before it has re-armed
-  // its own cycle (self, on its lane), the throw is reported and the cycle
-  // is armed again fallbackS later — CYCLE_FALLBACK_S, unless the cycle names
-  // its own — where it takes up its turns. Whether it re-armed is asked of
-  // cueAt after the clock has taken the cue, so a re-arm the clock refused
-  // is not mistaken for one. A turn that returns without re-arming (it found
-  // the meeting stopped) is left alone, and where nothing throws the net does
-  // nothing at all: no die, no cue and no cue's order is moved. (A composed
-  // hymn is a chain of cues, not a cycle: a link of it that throws lets the
-  // hymn go — kolob-voices-choir.js, A LINK THAT THROWS.)
+  // choir's verse, the still voice's, the wire's, the valley's — the
+  // conductor's tick, and the two pumps (the ward's desk, the organist's)
+  // re-arm their own lane as the last thing they do: the next turn is the
+  // last thing a turn writes. The clock catches a cue that throws, reports
+  // it and arms nothing, so a turn that threw before it had re-armed was the
+  // end of its layer for the rest of the visit, a tick that threw was the end
+  // of the meeting's sections, and a pump that threw at its re-arm left its
+  // flag up with no tick behind it, so nothing woke it again. So the cue the
+  // clock runs for a layer is its room's cycle — droneCycle, organCycle, …,
+  // conductorTick, wardTick, organistTick — and the cycle is one line,
+  // cycle(lane, self, turn, t, fallbackS): its turn runs, and if the turn
+  // throws before it has re-armed its own cycle (self, on its lane), the
+  // throw is reported and the cycle is armed again fallbackS later —
+  // CYCLE_FALLBACK_S, unless the cycle names its own (the tick and the pumps
+  // keep their own pace) — where it takes up its turns. Whether it re-armed
+  // is asked of cueAt after the clock has taken the cue, so a re-arm the
+  // clock refused is not mistaken for one. On a throw, cycle() says whether
+  // the cycle now stands armed (the turn's re-arm or its own), so a pump
+  // sets its flag by that word, once; otherwise it says nothing. A turn that
+  // returns without re-arming (it found the meeting stopped) is left alone,
+  // and where nothing throws the net does nothing at all: no die, no cue,
+  // no flag and no cue's order is moved. (A composed hymn is a chain of
+  // cues, not a cycle: a link of it that throws lets the hymn go —
+  // kolob-voices-choir.js, A LINK THAT THROWS.)
   var CYCLE_FALLBACK_S = 5;        // a turn that threw is tried again this long after: soon enough that the layer comes back, slow enough that a fault that repeats is told a few times a minute, not at every turn
   var turning = null;              // the turn running under the net: { lane, self, armed }
   function cycle(lane, self, turn, t, fallbackS) {
@@ -817,6 +823,7 @@ window.KolobAudio = (function () {
       var again = !me.armed && playing, dt = fallbackS || CYCLE_FALLBACK_S;
       cueThrew(err, lane, t, again ? " (its cycle is armed again " + dt + " s later)" : "");
       if (again) cueIn(lane, dt, self);
+      return me.armed || again;
     } finally { turning = was; }
   }
 

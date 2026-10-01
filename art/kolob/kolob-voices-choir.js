@@ -597,7 +597,13 @@ window.KOLOB = window.KOLOB || {};
     return busy;
   }
   // …and its cue, every WARD_PUMP_S of the music's time while there is work
-  function wardTick(t) {
+  // (a throw in the pump itself is the net's — S.cycle, kolob-core.js: it is
+  // reported, the next tick is armed WARD_PUMP_S later, as the pump would
+  // have armed it, and `ticking` is set once, by the net's word, to whether
+  // a tick stands; else a pump that threw at its re-arm left `ticking` up
+  // with no tick behind it, and the ward was handed no line again)
+  function wardTick(t) { var armed = cycle("ward", wardTick, wardTickTurn, t, WARD_PUMP_S); if (armed != null) ticking = armed; }
+  function wardTickTurn(t) {
     ticking = false;
     if (!S.playing || !S.ctx) return;
     var busy = pump(t);

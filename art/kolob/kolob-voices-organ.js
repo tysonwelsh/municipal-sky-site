@@ -283,7 +283,15 @@ window.KOLOB = window.KOLOB || {};
     if (desk.length && !deskTicking) { deskTicking = true; cueAt("organist", S.now() + ORGANIST_PUMP_S, organistTick); }
     return perf;
   }
-  function organistTick(t) {
+  // the organist's pump, every ORGANIST_PUMP_S while a plan is on the desk
+  // (a throw in the pump itself is the net's — S.cycle, kolob-core.js: it is
+  // reported, the next tick is armed ORGANIST_PUMP_S later, as the pump
+  // would have armed it, and `deskTicking` is set once, by the net's word, to
+  // whether a tick stands; else a pump that threw at its re-arm left
+  // `deskTicking` up with no tick behind it, and the organist laid no note
+  // again)
+  function organistTick(t) { var armed = cycle("organist", organistTick, organistTickTurn, t, ORGANIST_PUMP_S); if (armed != null) deskTicking = armed; }
+  function organistTickTurn(t) {
     deskTicking = false;
     if (!S.playing) { desk = []; return; }
     desk = desk.filter(function (d) {

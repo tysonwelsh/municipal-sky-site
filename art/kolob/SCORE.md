@@ -280,12 +280,14 @@ Callbacks receive the scheduled time `t` and place every Web Audio event at
 `t`. No musical decision reads `ctx.currentTime` at callback time; no
 `setTimeout` chains; the harness drives the clock with virtual timers.
 `S.inCue` says whether the music's now is a cue's; `KolobAudio.clockHealth`
-counts cues fired after their time. Each layer's turn and the conductor's
-tick re-arm their own lane as their last act, and the clock runs each through
-`S.cycle(lane, self, turn, t, fallbackS)`: a turn that throws before it has
-re-armed is reported and armed again `CYCLE_FALLBACK_S` = 5 s later (the
-conductor's tick 0.6 s), and a link of a composed hymn's chain that throws
-before it has handed on lets the hymn go (`hands.done`). **Score times**
+counts cues fired after their time. Each layer's turn, the conductor's tick
+and the ward's and the organist's pumps re-arm their own lane as their last
+act, and the clock runs each through `S.cycle(lane, self, turn, t,
+fallbackS)`: a turn that throws before it has re-armed is reported and armed
+again `CYCLE_FALLBACK_S` = 5 s later (the tick and the pumps at their own
+pace, 0.6 s, `WARD_PUMP_S`, `ORGANIST_PUMP_S`, a pump's flag set by the net's
+word), and a link of a composed hymn's chain that throws before it has handed
+on lets the hymn go (`hands.done`). **Score times**
 inside a Score are seconds from the Score's own start (`t`, `dur`;
 `Score.timeline`); the performer adds the absolute start.
 
