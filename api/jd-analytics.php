@@ -488,11 +488,16 @@ foreach ($spendByDate as $date => $day) {
 
 // --- the turn table (owner, 2026-09-10) ------------------------------------
 // One row per four-model turn ON DISPLAY, newest first: the date, the prompt,
-// and each model's overall grade. ON DISPLAY is jd-gen-svg.php's own rule —
-// status 'rated', not suppressed by the visitor, not hidden by the curator —
-// so nothing appears here that the drawer does not already show: a prompt
-// the visitor kept out stays out. Grades are current-rubric rows only (the
-// era gate above), the bench's over the visitor's. A model that failed the
+// and each model's overall grade. ON DISPLAY here is status 'rated', not
+// suppressed by the visitor, not hidden by the curator — the row tests
+// data.php applies before a turn may join the drawer — so a prompt the
+// visitor kept out stays out. (This was described as jd-gen-svg.php's rule;
+// that endpoint is looser, serving a drawing whenever its turn is rated —
+// suppressed or hidden alike — or it is curated. And data.php further
+// requires every drawing graded on every live axis and ranked, and skips a
+// rerun of a curated prompt, so a turn listed here is not always in the
+// drawer.) Grades are current-rubric rows only (the era gate above), the
+// bench's over the visitor's. A model that failed the
 // turn has no cell. Capped at the newest 200 turns; the folder is a reading,
 // not an export.
 $turnRows = [];

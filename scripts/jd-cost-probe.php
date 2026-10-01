@@ -11,9 +11,10 @@ declare(strict_types=1);
  * rate-limit budget. The only trace it leaves is real spend on your two
  * provider accounts.
  *
- * It mirrors jd_provider_call() in api/jd-generate.php (lines ~404-450)
- * deliberately rather than including it, because that file is a request
- * handler and executes on include. The payloads here must stay in step with
+ * It mirrors jd_provider_call() (api/jd-provider.php today; it lived in
+ * api/jd-generate.php when this was written) deliberately rather than
+ * including it — jd-generate.php is a request handler and executes on
+ * include. The payloads here must stay in step with
  * it — same JD_SYSTEM_PROMPT, same JD_MAX_TOKENS, thinking disabled for
  * Anthropic, max_completion_tokens for OpenAI — or the numbers stop
  * describing the real feature.
@@ -75,7 +76,7 @@ $PRICES = $priceDoc['prices'] ?? [];
 
 $secrets = jd_secrets();
 $KEYS = [
-    // mirrors jd-generate.php:393-394
+    // mirrors jd_provider_key() in api/jd-provider.php
     'anthropic' => $secrets['jd_claude_key'] ?? $secrets['claude_key'] ?? null,
     'openai'    => $secrets['jd_openai_key'] ?? $secrets['openai_key'] ?? null,
     'kimi'      => $secrets['jd_kimi_key'] ?? $secrets['kimi_key'] ?? null,
@@ -224,8 +225,9 @@ function jd_probe_inspect(?string $svg, string $raw): array
         'verdict' => $sanitized['ok'] ? 'ok' : ($sanitized['reason'] ?? 'rejected'),
         'marks' => $marks,
         'raster' => $raster,
-        // Matches jd-generate.php:215 — anything outside the SVG span (code
-        // fences, prose, apologies) is gradeable disobedience.
+        // Matches jd-generate.php's rule (step 10, right after extraction) —
+        // anything outside the SVG span (code fences, prose, apologies) is
+        // gradeable disobedience.
         'disobedience' => trim($raw) !== $svg ? 1 : 0,
         'tags' => $tags,
     ];

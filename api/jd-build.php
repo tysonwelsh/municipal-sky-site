@@ -12,7 +12,10 @@
 //                 upload, so it reads as when the live files actually landed
 //
 // The file list is the tooling's real surface: change any of them and the
-// fingerprint moves. It deliberately spans art/ and api/, because "am I running
+// fingerprint moves. (2026-10-01: the ledger and its endpoint, the census,
+// the rerun harvest, the curated sync, the drawing server, this file and the
+// version reader joined the list — each had been able to change without
+// moving the stamp.) It deliberately spans art/ and api/, because "am I running
 // the updated code?" is a question about the page AND the endpoints behind it —
 // a bench page from the right deploy talking to a stale endpoint is exactly the
 // confusion this exists to make impossible.
@@ -24,7 +27,9 @@ function jd_build_files(): array
     $root = __DIR__ . '/..';
     return [
         $root . '/art/junk-drawer/rating-bench.html',
+        $root . '/art/junk-drawer/ledger.html',
         $root . '/art/junk-drawer/taxonomy.json',
+        $root . '/art/junk-drawer/_version.php',
         $root . '/api/jd-bench-queue.php',
         $root . '/api/jd-item-rate.php',
         $root . '/api/jd-curate.php',
@@ -32,6 +37,12 @@ function jd_build_files(): array
         $root . '/api/jd-bench-run.php',
         $root . '/api/jd-provider.php',
         $root . '/api/jd-config.php',
+        $root . '/api/jd-ledger.php',
+        $root . '/api/jd-curated-sync.php',
+        $root . '/api/jd-inventory.php',
+        $root . '/api/jd-harvest.php',
+        $root . '/api/jd-gen-svg.php',
+        $root . '/api/jd-build.php',
     ];
 }
 

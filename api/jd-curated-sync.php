@@ -244,6 +244,7 @@ function jd_curated_sync(PDO $db, array $entry, array $taxonomy, bool $dryRun = 
             'model_id'      => $model,
             'model_version' => (string) ($r['model_version'] ?? $model),
             'provider'      => jd_curated_provider($model, $taxonomy),
+            // date(): the server's LOCAL date, unlike every gmdate() here — left as is
             'created'       => (string) ($r['date'] ?? $entry['created'] ?? date('Y-m-d')),
             'grade'         => $r['grade'] ?? null,
             'graded'        => $r['graded'] ?? null,
@@ -274,6 +275,7 @@ function jd_curated_sync(PDO $db, array $entry, array $taxonomy, bool $dryRun = 
                 $subId,
                 jd_uuid4(),
                 $itemId,
+                // the same local date() fallback as the generation rows — left as is
                 (string) ($entry['created'] ?? date('Y-m-d')) . ' 00:00:00',
                 (string) ($entry['prompt'] ?? ''),
                 $curator,

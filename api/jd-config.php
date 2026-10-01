@@ -580,10 +580,12 @@ function jd_is_ulid(mixed $value): bool
 }
 
 // ---------------------------------------------------------------------------
-// The bench gate. JD_BENCH_REQUIRE_KEY (above) is the one switch; while it is
-// off — the standing state — every curator endpoint answers keyless. When it
-// is on, production callers present jd_bench_key (falling back to the
-// jd_setup_key already on file) in X-Bench-Key or ?key=.
+// The bench gate. JD_BENCH_REQUIRE_KEY (above) is the one switch, ON since
+// 2026-09-05 (admin mode): production callers present jd_bench_key (falling
+// back to the jd_setup_key already on file) in X-Bench-Key or ?key=, and a
+// box with no key on file is open in dev and shut in production. Switched
+// off — as it was 2026-08-18 → 2026-09-05 — every curator endpoint answers
+// keyless.
 
 /** The bench key on file, or null when none is configured. */
 function jd_bench_key_expected(): ?string

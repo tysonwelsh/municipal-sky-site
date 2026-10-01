@@ -194,13 +194,20 @@ function jd_best_graded(array $responses): ?string
 //     manifest like a hidden turn, live, no commit (2026-09-10); it still
 //     answers in single-item mode, marked `hidden`, so the admin card can
 //     put it back
-//   · which response the drawer SHOWS: the bench's 1st place whenever the
-//     bench has ranked EVERY served response (owner, 2026-09-05: a re-rank
-//     re-points the drawer without a harvest, over any `primary` the entry
-//     carries — the pin a harvest wrote was that day's 1st place, and the
-//     bench's later word supersedes it, matching the 2026-08-29 "what
-//     appears is the re-rated set" rule); else the entry's explicit pin;
-//     else the best overlaid grade as before. A harvested rerun set has no
+//   · which response the drawer SHOWS: the 1st place of a FULL ranking —
+//     every served response holding a row in jd_ranks — whenever there is
+//     one (owner, 2026-09-05: a re-rank re-points the drawer without a
+//     harvest, over any `primary` the entry carries — the pin a harvest
+//     wrote was that day's 1st place, and the bench's later word supersedes
+//     it, matching the 2026-08-29 "what appears is the re-rated set" rule);
+//     else the entry's explicit pin; else the best overlaid grade as before.
+//     NOTE: this read "the bench's 1st place whenever the bench has ranked
+//     EVERY served response", but the code takes a rank from ANY client —
+//     per drawing the bench's row wins when there is one, else a seed rank
+//     (the harvest's "filed rank N of M") or a visitor's — so an item ranked
+//     by a seed or a visitor is re-pointed too. jd-ledger.php's "shows"
+//     column counts BENCH ranks only, so the two can disagree on such an
+//     item; behaviour left as it is (REFACTOR-PLAN §5, the owner's call). A harvested rerun set has no
 //     generations of its own until the backfill runs, so a partly-ranked
 //     item keeps its pin — the legacy-keep exceptions stand.
 // The entry stays the permanent record and the harvest scripts keep

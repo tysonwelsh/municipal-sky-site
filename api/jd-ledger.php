@@ -179,9 +179,13 @@ foreach ($entries as $itemId => $entry) {
             }
         }
     }
-    // the response the drawer shows, by data.php's rule: the bench's 1st
-    // place when the bench ranked every served response, else the pin,
-    // else the best overlaid grade (bench's, else the entry's), earliest rid
+    // the response the drawer shows, by the ledger's reading of data.php's
+    // rule: the bench's 1st place when the BENCH ranked every served
+    // response, else the pin, else the best overlaid grade (bench's, else
+    // the entry's), earliest rid. data.php itself accepts a full ranking from
+    // ANY client (a seed or visitor rank where the bench has none — see its
+    // overlay note), so for an item ranked that way the two disagree; left
+    // as it is (REFACTOR-PLAN §5, the owner's call)
     $shows = null;
     $rule = null;
     if ($served && $allBenchRanked) {
