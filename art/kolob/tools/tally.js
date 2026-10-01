@@ -8,7 +8,7 @@
 //
 // A/B: two builds (or two dump sets) side by side, every metric's shift, and
 // a flag on each shift beyond ±15 % that is also beyond the sampling noise —
-// the engine crew's proof that a change is "still Kolob". When both sides were
+// the proof that a change is "still Kolob". When both sides were
 // rendered from the same seeds, it first says which seeds came out identical.
 //
 //   node tools/tally.js [--seeds 1-20] [--secs 1200] [--engine <dir>|git:<ref>] [--dumps <dir>]
@@ -148,8 +148,6 @@ function planChecks(recs, value) {
   out.push(["meetings carrying a guest", "≈ 55 % (§8, §13)", show(g, "%"), g == null ? "—" : Math.abs(g - 0.55) <= 0.15 ? "✓" : "✗"]);
   const len = recs.map((r) => r.min);
   out.push(["meeting length", "≈ 14–15 min (§0 law 1)", U.fmt(U.mean(len), 1) + " min (" + U.fmt(Math.min(...len), 1) + "–" + U.fmt(Math.max(...len), 1) + ")", U.mean(len) >= 13 && U.mean(len) <= 16 ? "✓" : "✗"]);
-  const q = recs.filter((r) => r.guests.question).length;
-  out.push(["the Question never seats", "0 meetings (shelved, §14)", q + " meetings", q === 0 ? "✓" : "✗"]);
   return out;
 }
 

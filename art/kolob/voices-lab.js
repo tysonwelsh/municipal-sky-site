@@ -6,9 +6,10 @@
 // 10/9, so the fifth A–E is pure; the tenor moves a comma to get there, as a
 // choir does). Sung six ways, plus a hum, plus each person alone.
 //
-// The lab owns: the tune, the master chain (a copy of kolob-audio.js's —
+// The lab owns: the tune, the master chain (a copy of kolob-core.js's —
 // glue, master 0.6, tanh, compressor — with a brick-wall limiter after it),
-// a copy of v0.30's choirVoiceLine for the A/B, and the bench (offline
+// a copy of v0.30's choirVoiceLine (the house voice the engine had until
+// 2026-10-01) for the A/B, and the bench (offline
 // render → peak, level, clicks, mud, harshness, flanger test, node budget).
 // All the singing is KOLOB.VoicesVocal.
 // ============================================================================
@@ -69,7 +70,7 @@
   var SCALE = { tonicHz: G2 * 2, scale: [1, 9 / 8, 5 / 4, 4 / 3, 3 / 2, 5 / 3, 15 / 8] };
 
   // --------------------------------------------------------------------------
-  // THE MASTER CHAIN — kolob-audio.js's, plus a limiter; two ways in:
+  // THE MASTER CHAIN — kolob-core.js's, plus a limiter; two ways in:
   //   near — a voice stepping forward (drier), hall — the congregation.
   // The layer gain is the choir's in the app (0.8 × trim 1.1).
   // --------------------------------------------------------------------------
@@ -116,7 +117,7 @@
   }
 
   // --------------------------------------------------------------------------
-  // TODAY'S QUARTET — v0.30's choirVoiceLine, copied (kolob-audio.js ~2108),
+  // THE OLD QUARTET — v0.30's choirVoiceLine, copied (the engine's house voice until 2026-10-01),
   // with the layer params at their defaults (vowel 0.4, scoop 0.5) and all
   // four voices (a conference meeting). For the A/B only.
   // --------------------------------------------------------------------------

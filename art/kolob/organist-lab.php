@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// ORGANIST LAB — the organist's bench (round 3).
+// ORGANIST LAB — the organist's bench.
 //
 // UNLINKED dev page (like hymn-lab, tune-lab, instruments-lab): reachable only
 // by URL (/art/kolob/organist-lab). A seed composes one colony hymn with

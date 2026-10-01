@@ -1,15 +1,29 @@
 // ============================================================================
-// KOLOB — kolob-guests.js: the visitations
+// KOLOB — kolob-guests.js: the set pieces
 //
-// The raspberry amen's cluster, the cumulative assembly, and the Ives
-// guests: the unanswered question, two bands crossing, the steeples, the
-// old tune half-remembered (an Earth tune, from kolob-tunes.js) — and, from
-// round 2, the trombone choir at dawn (kolob-guest-trombones.js plays it;
-// it is placed and told here). Split from kolob-audio.js (v0.30); see the
-// room list in _engine.php.
-//
-// Each guest is called by the conductor's cue at its scheduled time t and
-// throws its dice from its own stream, guest:<type>:<n> (round 2): a guest
+// What a guest sounds like once the meeting has seated it (kolob-meeting.js
+// plans and cues; this room plays and tells). Here, in order:
+//   · the raspberry amen's cluster (razzCluster) and the cumulative assembly
+//     (cumulativeAssembly) — not guests but the meeting's own set pieces;
+//   · THE UNANSWERED QUESTION (shelved: the code stays, it never seats);
+//   · FROM THE STEEPLES (steeplesAnswer), and change ringing from a far
+//     tower in its place some Sundays (changesRing, kolob-guest-changes.js);
+//   · THE OLD TUNE, HALF-REMEMBERED (oldTuneRemembered) and its law — which
+//     Earth tunes a Sunday may remember (oldTuneCandidates, oldTunePool);
+//   · THE TROMBONE CHOIR AT DAWN (trombonesAtDawn, kolob-guest-trombones.js);
+//   · the guests who stand in the room — the handbells and the singing
+//     school (standingGuest), the gift of tongues (tonguesGift), the Social
+//     Hall (socialHall);
+//   · the guests from outside the windows — the Nauvoo band, the handcart
+//     company, the gulls (outdoorGuest);
+//   · the organist's variations (organistVariations).
+// The common shape: a set piece takes the visitation record V and the cue's
+// time tc, lays its sound out on the guests' lane (hooks.defer, a slice at a
+// time, never the whole piece in one cue), reports every note with
+// guestNote(V, …) and every row with tell(V, …) — both carry whether the
+// page may name the guest — claims the air where the house listens, and
+// returns its span in seconds, which the conductor holds the joint for.
+// Each throws its dice from its own stream, guest:<type>:<n>, so a guest
 // that throws more or fewer never alters a hymn.
 // ============================================================================
 
@@ -37,7 +51,6 @@ window.KOLOB = window.KOLOB || {};
   function choirHarmonizedLine(t, harmonized, beat, gainMul) { return S.choirHarmonizedLine(t, harmonized, beat, gainMul); }
   // from kolob-voices-winds.js
   function renderClarinetLine(t, notes, gainMul, R) { return S.renderClarinetLine(t, notes, gainMul, R); }
-  function renderHarmonium(t, notes, gainMul) { return S.renderHarmonium(t, notes, gainMul); }
   // from kolob-voices-ground.js
   function stringsPad(t, dur, gainMul, fifthOnly) { return S.stringsPad(t, dur, gainMul, fifthOnly); }
   function bellStrike(t, gainMul, base, dest, opts) { return S.bellStrike(t, gainMul, base, dest, opts); }
@@ -52,7 +65,6 @@ window.KOLOB = window.KOLOB || {};
   function cueAt(lane, t, fn) { return S.cueAt(lane, t, fn); }
   function panAt(layer, p) { return S.panAt(layer, p); }
   function getLayerParam(layer, key, fallback) { return S.getLayerParam(layer, key, fallback); }
-  function env(g, t, pts) { return S.env(g, t, pts); }
   function claimAir(durS, marginS) { return S.claimAir(durS, marginS); }
   // (the other rooms' state, read and written through S: S.ctx, S.mode,
   // S.Harmony (the chord desk), S.Meeting (the chorister's book), S.moment,
@@ -65,11 +77,11 @@ window.KOLOB = window.KOLOB || {};
     ev.logged = !(V && V.logged === false);
     return emitEvent(ev);
   }
-  // …and its notes say the same (round 2, the critic): each note a visitor
-  // sounds names the guest and whether the page may show it. A note that
-  // says logged: false is neither printed in the minutes nor engraved; the
-  // steeples' first bell and the band's steps used to reach the page untagged
-  // when their events had been hushed. extra: the note's own fields.
+  // …and its notes say the same: each note a visitor sounds names the guest
+  // and whether the page may show it. A note that says logged: false is
+  // neither printed in the minutes nor engraved (else the steeples' first
+  // bell and the band's steps reached the page untagged when their events
+  // had been hushed). extra: the note's own fields.
   function guestNote(V, guest, extra) {
     var o = extra || {};
     o.guest = guest;
@@ -129,194 +141,27 @@ window.KOLOB = window.KOLOB || {};
         emitNote("choir", cf, cadAt + ci * chDur, amenDur, { part: S.CHOIR_PART[vi], chord: chords[ci].id });   // every voice of the amen
       }
     }
-    // the organ follows the amen as it is sung (round 2: it used to sound
-    // the final chord under the first), ending where it always did
+    // the organ follows the amen as it is sung (else it sounded the final
+    // chord under the first), ending where it always did
     organChord(cadAt, chDur * 1.02, chords[0], 0.55);
     organChord(cadAt + chDur, chDur * 1.2, chords[chords.length - 1], 0.55);
     var dur = (cadAt + chDur * 2.2) - t;
     claimAir(dur, 6);
-    tell(null, { type: "guest", guest: "assembly", stage: "whole-tune", theme: theme.name, gesture: theme.gesture || null, dur: dur,
-                 cat: "visitation", label: "✶ the whole tune, at last", detail: theme.name + " · " + (theme.gesture || "") + " · " + Math.round(dur) + "s" });
+    tell(null, { type: "guest", guest: "assembly", stage: "whole-tune", theme: theme.name, gesture: theme.gesture || null, dur: dur });
     // the span the conductor holds is the SOUND's, counted from the cue: the
     // held amen (its last chord, ×1.7) and the strings under it both outlast
-    // the air claimed above, which is unchanged (round 2)
+    // the air claimed above
     return Math.max(cadAt + chDur * 2.7, at + total + chDur * 2 + 2) - tc;
   }
 
   // ==========================================================================
   // IVES VISITATIONS — rare guests, drawn at planMeeting on independent dice.
-  //
-  // THE UNANSWERED QUESTION (after Ives, 1908): the drone is the eternal
-  // ground and never changes; the clarinet asks ONE fixed phrase over and
-  // over — it refuses the motif engine's development, which is the point;
-  // the harmonium answers, each time faster, denser, higher, more scattered.
-  // The last asking gets no answer. The air is claimed, so the meeting holds
-  // back and the drone is left alone with it.
+  // (The Unanswered Question, after Ives, 1908, was the first of them and is
+  // shelved — the owner, 2026-09-27: "one of the less interesting guests";
+  // its set piece left this file on 2026-10-01 for
+  // shelved/kolob-question-setpiece.js, its generator is
+  // shelved/kolob-question.js, and kolob-meeting.js still throws its dice.)
   // ==========================================================================
-  function unansweredQuestion(V, tc) {
-    var R = stream("guest:question");
-    var t = tc + 0.5;
-    var beat = R.rnd(0.8, 0.95);
-    // the perennial question: rising, angular, ending high and unresolved
-    // (a 9th above the root — a step past the octave, asking)
-    var QDEGS = [[4, 1.3], [5, 0.9], [8, 1.0], [6, 0.8], [8, 2.8]];
-    var qNotes = QDEGS.map(function (q) {
-      return { f: degFreq(projDeg(q[0]) + colN()), dur: q[1] * beat };
-    });
-    var qdur = 0;
-    for (var qq = 0; qq < qNotes.length; qq++) qdur += qNotes[qq].dur;
-    var N = R.rint(4, 5);
-    var cursor = t;
-    for (var k = 0; k < N; k++) {
-      renderClarinetLine(cursor, qNotes, 0.9, R);
-      var afterQ = cursor + qdur;
-      if (k < N - 1) {
-        // the answer: more notes, quicker, higher, less patient each time
-        var aAt = afterQ + R.rnd(1.2, 2.2);
-        var count = 3 + k * 2;
-        var abeat = 1.25 * Math.pow(0.75, k);
-        var lift = k >= 2 ? colN() : 0;
-        var adeg = 2, anotes = [];
-        for (var an = 0; an < count; an++) {
-          adeg += R.rint(-(1 + k), 1 + k) || 1;
-          adeg = Math.max(0, Math.min(9 + k, adeg));
-          anotes.push({ f: degFreq(projDeg(adeg) + colN() + lift), dur: Math.max(0.3, abeat * R.rnd(0.7, 1.2)) });
-        }
-        var adur = renderHarmonium(aAt, anotes, 0.5 + k * 0.12);
-        // (FOR WHOEVER UNSHELVES THE QUESTION: the answers are told as the
-        // guest's; the clarinet's askings are told inside renderClarinetLine,
-        // which takes no tag — an unlogged Question must pass one there)
-        S.reportLine("harmonium", aAt, anotes, guestNote(V, "question"));
-        // from the third answer the answerers argue among themselves
-        // (FOR WHOEVER UNSHELVES THE QUESTION: the second rank is a PURE
-        // fifth above each answer, and above a degree whose fifth is not in
-        // the collection it is a pitch outside the day's tuning — the harness
-        // lists it as off the tuning; take the collection's own fifth, as the
-        // strings' pureFifth guard does, or rule that the argument may leave it)
-        if (k >= 2) {
-          var bnotes = anotes.map(function (n) { return { f: n.f * 1.5, dur: n.dur * R.rnd(0.8, 1) }; });
-          renderHarmonium(aAt + abeat * 0.5, bnotes, 0.3 + k * 0.08);
-          S.reportLine("harmonium", aAt + abeat * 0.5, bnotes, guestNote(V, "question", { part: "doubling" }));
-        }
-        cursor = aAt + adur + R.rnd(2.5, 4.5) * Math.pow(0.85, k);
-      } else {
-        cursor = afterQ;                       // the last asking hangs
-      }
-    }
-    var tail = 10;                             // the drone alone — no answer comes
-    var total = (cursor - t) + tail;
-    claimAir(total - 4, 6);
-    // (SCORE §6: one event for the askings — v0.32's question is the old
-    // one, q:old — and one when the drone is left alone)
-    tell(V, { type: "question-asking", k: 0, questionId: "q:old", askings: N, dur: total,
-              cat: "visitation", label: "? the question", detail: "×" + N + " askings · " + Math.round(total) + "s" });
-    cueAt("guests", tc + (cursor - t + 1.5), function () {
-      tell(V, { type: "question-unanswered", cat: "visitation", label: "? unanswered", detail: "the drone alone" });
-    });
-    return total;
-  }
-
-  // ==========================================================================
-  // TWO BANDS CROSSING (after the Danbury green; Putnam's Camp): a visiting
-  // band enters from one side of the valley in ITS OWN key and ITS OWN
-  // marching tempo, swells as it approaches, crosses the meeting, and
-  // recedes. It claims no air and defers to no one; the resident voices
-  // carry on exactly as they were. The collision is the piece. The visitor
-  // is engraved on its own layer, in round notes — not one of ours (v0.31:
-  // its notes are reported to the page with layer "band"; the report draws
-  // no dice and moves nothing).
-  // ==========================================================================
-  function twoBandsCross(V, tc) {
-    var R = stream("guest:bands");
-    // under the withholding the visiting band gets a lesser hymn — even a
-    // stranger's quickstep must not give the tune away
-    var theme = S.Meeting.withheld() ? Motif.anyWorking(S.moment(), R) : Motif.theme();
-    var t = tc + 0.4;
-    var dur = R.rnd(45, 65);
-    var beat = R.rnd(0.4, 0.52);               // quickstep — unrelated to the meeting's time
-    var trans = R.pickW([[9 / 8, 3], [4 / 3, 2], [16 / 9, 1]]);   // its own key, justly tuned to itself
-    var fromLeft = R.chance(0.5);
-
-    // the visiting band's own wire into the hall
-    var bus = S.ctx.createGain();
-    bus.gain.setValueAtTime(0.0001, t);
-    var pan = S.ctx.createStereoPanner();
-    pan.pan.setValueAtTime(fromLeft ? -0.95 : 0.95, t);
-    pan.pan.linearRampToValueAtTime(fromLeft ? 0.95 : -0.95, t + dur);
-    bus.connect(pan);
-    pan.connect(wideSend());                    // outside the windows: all tabernacle
-    // approach — cross — recede
-    bus.gain.linearRampToValueAtTime(0.4, t + dur * 0.45);
-    bus.gain.setValueAtTime(0.4, t + dur * 0.6);
-    bus.gain.linearRampToValueAtTime(0.0001, t + dur);
-
-    // the tune: the day's theme as a quickstep, or a jaunty default
-    var degs = theme && theme.notes.length >= 4
-      ? theme.notes.map(function (n) { return n.deg; })
-      : [0, 2, 4, 4, 5, 4, 2, 0, 2, 4, 5, 7, 5, 4, 2, 1];
-
-    // fife: one continuous reed, tongued with the gain gate
-    var fife = S.ctx.createOscillator();
-    fife.type = "sawtooth";
-    var flp = S.ctx.createBiquadFilter();
-    flp.type = "lowpass";
-    flp.frequency.setValueAtTime(2000, t);
-    var fart = S.ctx.createGain();
-    fart.gain.setValueAtTime(0, t);
-    fife.connect(flp); flp.connect(fart); fart.connect(bus);
-    // bass: the oom and the pah
-    var oom = S.ctx.createOscillator();
-    oom.type = "sine";
-    var og = S.ctx.createGain();
-    og.gain.setValueAtTime(0, t);
-    oom.connect(og); og.connect(bus);
-
-    // how near the band is (0..1) at a moment — the same approach/cross/recede
-    // as its bus gain, for the page's ink
-    function nearness(at) {
-      var x = (at - t) / dur;
-      return x < 0.45 ? x / 0.45 : x < 0.6 ? 1 : Math.max(0, 1 - (x - 0.6) / 0.4);
-    }
-    var tt = t, di = 0, soundEnd = t + dur;         // (the last note told, for the span)
-    while (tt < t + dur - beat) {
-      var deg = degs[di % degs.length];
-      var nd = Math.min(2, 0.9 + (di % 4 === 0 ? 0.5 : 0)) * beat;
-      var f = degFreq(projDeg(deg)) * trans * 2;               // fife register
-      fife.frequency.setValueAtTime(f, tt);
-      fart.gain.setValueAtTime(0.0001, tt);
-      fart.gain.linearRampToValueAtTime(0.5, tt + 0.03);
-      fart.gain.setValueAtTime(0.5, tt + nd * 0.7);
-      fart.gain.linearRampToValueAtTime(0.08, tt + nd * 0.95); // the tongue lifts
-      emitNote("band", f, tt, nd, guestNote(V, "bands", { part: "melody", beat: beat, loud: nearness(tt) }));
-      tt += nd; di++;
-      if (tt > soundEnd) soundEnd = tt;
-    }
-    var bt = t, bar = 0;
-    while (bt < t + dur - beat) {
-      var bf = degFreq(projDeg(bar % 2 === 0 ? 0 : 4)) * trans / 2;   // oom on the root, pah on the fifth
-      oom.frequency.setValueAtTime(bf, bt);
-      og.gain.setValueAtTime(0.0001, bt);
-      og.gain.linearRampToValueAtTime(0.55, bt + 0.02);
-      og.gain.linearRampToValueAtTime(0.0001, bt + beat * 0.8);
-      emitNote("band", bf, bt, beat, guestNote(V, "bands", { part: "bass", beat: beat, loud: nearness(bt) }));
-      if (bt + beat > soundEnd) soundEnd = bt + beat;
-      bt += beat * 2; bar++;
-    }
-    fife.start(t); fife.stop(t + dur + 0.5);
-    oom.start(t); oom.stop(t + dur + 0.5);
-
-    tell(V, { type: "guest", guest: "bands", stage: "approaches", from: fromLeft ? "west" : "east",
-              cat: "visitation", label: "⇋ a band approaches", detail: (fromLeft ? "from the west" : "from the east") + " · its own key" });
-    cueAt("guests", tc + dur * 0.5, function () {
-      tell(V, { type: "guest", guest: "bands", stage: "cross", cat: "visitation", label: "⇋ the bands cross", detail: "two times at once" });
-    });
-    cueAt("guests", tc + dur, function () {
-      tell(V, { type: "guest", guest: "bands", stage: "passes", cat: "visitation", label: "⇋ passes on", detail: "" });
-    });
-    // the span is the band's sound, counted from the cue: it steps off 0.4 s
-    // after it, and its last note may ring a moment past the fade (round 2)
-    return soundEnd - tc;
-  }
 
   // ==========================================================================
   // FROM THE STEEPLES (after Ives, 'From the Steeples and the Mountains'):
@@ -331,14 +176,14 @@ window.KOLOB = window.KOLOB || {};
   // each stands in the valley and how loud it carries are synth:steeples)
   var BELL_RING_S = 7;                           // how long a strike is told as ringing
   function steeplesAnswer(V, tc) {
-    // (round 3c: some Sundays the far bells are a band ringing changes)
+    // (some Sundays the far bells are a band ringing changes)
     if (V.changes && KOLOB.GuestChanges) return changesRing(V, tc);
     var R = stream("guest:steeples");
     var Y = synth("steeples");
     var t = tc + 0.3;
-    // the whole minute: the section waits for the last bell (round 2 — the
-    // conductor holds the joint while a guest sounds), so the steeples are no
-    // longer cut short to fit what was left of it
+    // the whole minute: the conductor holds the joint while a guest sounds,
+    // so the steeples are never cut short to fit what was left of the
+    // section
     var dur = R.rnd(45, 75);
 
     // the home steeple — center field, the same bell the joints ring
@@ -409,13 +254,12 @@ window.KOLOB = window.KOLOB || {};
       if (st.at + BELL_RING_S > ringEnd) ringEnd = st.at + BELL_RING_S;
     }
 
-    tell(V, { type: "guest", guest: "steeples", stage: "answer", bells: nVis, dur: dur,
-              cat: "visitation", label: "◎ the steeples answer", detail: nVis + " far bells · " + Math.round(dur) + "s" });
+    tell(V, { type: "guest", guest: "steeples", stage: "answer", bells: nVis, dur: dur });
     cueAt("guests", tc + dur, function () {
-      tell(V, { type: "guest", guest: "steeples", stage: "last-bell", cat: "visitation", label: "◎ the last bell", detail: "" });
+      tell(V, { type: "guest", guest: "steeples", stage: "last-bell" });
     });
     // the span runs until the last bell has rung out, not until it is struck:
-    // the prelude or the postlude waits for the ring (round 2)
+    // the prelude or the postlude waits for the ring
     return ringEnd - tc;
   }
 
@@ -426,11 +270,11 @@ window.KOLOB = window.KOLOB || {};
   // fainter second try at its head, and is gone. The engine's only
   // quotation of pre-existing music.
   //
-  // THE TUNES are the Earth tunes (kolob-tunes.js, KOLOB.Tunes; round 2,
-  // milestone 3): every one taken down again from a public-domain printing
-  // and heard by the owner in the Earth Tunes Lab. v0.30's seven incipits,
-  // drafted from hymnary.org's digits with guessed rhythms, were wrong, and
-  // are gone. The guest sings the MELODY of the tune's first line, or of its
+  // THE TUNES are the Earth tunes (kolob-tunes.js, KOLOB.Tunes): every one
+  // taken down from a public-domain printing and heard by the owner in the
+  // Earth Tunes Lab (incipits drafted from hymnary.org's digits with guessed
+  // rhythms were wrong, and are gone). The guest sings the MELODY of the
+  // tune's first line, or of its
   // first two, in the book's own rhythm — a tie held, a rest between lines
   // kept, a breath at the line's end — at a remembered tempo, slower than
   // the book's. It reads only KOLOB.Tunes' public surface (list, byId), so a
@@ -439,10 +283,10 @@ window.KOLOB = window.KOLOB || {};
   // Unengraved: the memory comes from outside the valley (or outside the
   // present), so the page never prints it and the clerk's row is its only
   // record — its notes are reported on a layer of their own, "oldtune",
-  // which the page does not engrave (round 2: every sounded note is told;
-  // each names the Earth tune, the line and the beat it was written at).
+  // which the page does not engrave (every sounded note is told; each names
+  // the Earth tune, the line and the beat it was written at).
   //
-  // THE MODE LAW (v0.30's inversion rule, made exact). A memory surfaces only
+  // THE MODE LAW. A memory surfaces only
   // on a Sunday of its own colour: the minor tunes (the Earth tune's mode
   // aeolian or dorian) on dark Sundays, the major ones on bright Sundays — a
   // minor tune recoloured major is the wrong tune, and so is the reverse.
@@ -458,19 +302,19 @@ window.KOLOB = window.KOLOB || {};
   // Could Hie to Kolob" (LDS #284) — is weighed double among the tunes the
   // Saints sing, and those above the tradition's tunes they do not.
   //
-  // A MEMORY IS A WHOLE THOUGHT (round 2, the critic's ear). A tune whose
+  // A MEMORY IS A WHOLE THOUGHT. A tune whose
   // opening the day holds only in a short first line — SIMPLE GIFTS on a
   // mixolydian or hexatonic Sunday (its second line sings ti); DESERET,
   // MARTYR and NETTLETON on a pentatonic one — came and went in five or six
-  // seconds, where v0.30's memories lasted twelve to sixteen. So a tune
+  // seconds, where a memory should last twelve to sixteen. So a tune
   // surfaces only where the lines the day holds last MIN_MEMORY_S even at
-  // the quickest remembered tempo; every mode keeps tunes enough (the pool
-  // is printed by the harness), so the old tune comes as often as it did.
+  // the quickest remembered tempo; every mode keeps tunes enough that the
+  // old tune's odds stand.
   // ==========================================================================
   var COMMA = [-4, 4, -1, 0];                          // 81/80, the syntonic comma
   var DARK = { aeolian: true, dorian: true };
   var HOUSE_HYMN = "earth:kingsfold";
-  var OLD_TUNE_CENTRE = 8;                             // where the memory sits: a 7-space degree above the keynote (v0.30's register)
+  var OLD_TUNE_CENTRE = 8;                             // where the memory sits: a 7-space degree above the keynote
   var OLD_TUNE_CEILING = 14;                           // …and never above do two octaves up, where the far voice's lowpass stands
   var TEMPO_MIN = 1.15, TEMPO_MAX = 1.45;              // the remembered tempo: the book's beat held this much longer
   var MIN_MEMORY_S = 8;                                // the shortest memory, at the quickest remembered tempo
@@ -534,13 +378,13 @@ window.KOLOB = window.KOLOB || {};
     return out;
   }
   function beatsOf(notes) { var b = 0; notes.forEach(function (n) { b += n.beats + n.restAfter; }); return b; }
-  // The register: the octave that sets the excerpt's middle nearest where
-  // v0.30's memories sat. A tune's tenor melody (the Sacred Harp's) is
-  // written low; it rises to the same far place. On a tie the lower octave,
-  // and a lower one again where the top would pass the ceiling, if the
-  // bottom stays at the keynote or above (round 2, the critic: MARTYR's tie
-  // rounded up and sang to 1.3 kHz, over the far voice's lowpass and far
-  // over v0.30's memories, which never passed about 880 Hz).
+  // The register: the octave that sets the excerpt's middle nearest
+  // OLD_TUNE_CENTRE. A tune's tenor melody (the Sacred Harp's) is written
+  // low; it rises to the same far place. On a tie the lower octave, and a
+  // lower one again where the top would pass the ceiling, if the bottom
+  // stays at the keynote or above (else MARTYR's tie rounded up and sang to
+  // 1.3 kHz, over the far voice's lowpass; a memory never passes about
+  // 880 Hz).
   function octaveFor(notes) {
     var lo = Infinity, hi = -Infinity;
     notes.forEach(function (n) { if (n.deg < lo) lo = n.deg; if (n.deg > hi) hi = n.deg; });
@@ -548,8 +392,8 @@ window.KOLOB = window.KOLOB || {};
     while (hi + 7 * o > OLD_TUNE_CEILING && lo + 7 * (o - 1) >= 0) o--;
     return o;
   }
-  // THE LEAP SUNG PURE (round 2, the critic's ear; PLAN §2.4's comma
-  // tracking). The day's fixed tuning makes one fourth and one fifth a comma
+  // THE LEAP SUNG PURE (PLAN §2.4's comma tracking). The day's fixed tuning
+  // makes one fourth and one fifth a comma
   // wide — te to me in the minor modes (27/20: KINGSFOLD's "voice of
   // Je-sus", in the house hymn), re to la in the major (40/27) — and no
   // singer leaps a wolf. Where the memory leaps a fourth or a fifth within
@@ -608,10 +452,10 @@ window.KOLOB = window.KOLOB || {};
     }
     return lean;
   }
-  // The pool as the tune lab reads it (KolobAudio.getOldTunes): v0.30's
-  // shape — name, weight, minor, [[deg, beats]] of the first line, in the
-  // lab's register (it adds an octave, as v0.30's farVoice did) — and, new,
-  // the Earth tune's id and the modes the law lets it surface in.
+  // The pool as the tune lab (shelved/tune-lab.php) reads it
+  // (KolobAudio.getOldTunes): name, weight, minor, [[deg, beats]] of the
+  // first line in the lab's register (it adds an octave), the Earth tune's
+  // id and the modes the law lets it surface in.
   function oldTunePool() {
     var MODES = KOLOB.Pitch.MODE_NAMES;
     return earthTunes().map(function (h) {
@@ -630,12 +474,12 @@ window.KOLOB = window.KOLOB || {};
   // are {f, dur, restAfter, breath, tell}; a line's end draws a breath (the
   // swell dips and comes back), a rest lets the sound down between lines.
   //
-  // THE PRE-v0.34 POLISH (the round-2 Listener; PLAN-COMPOSITION §15). The
-  // memory was as loud as the hymn (−25 dB in the 300 Hz–4 kHz band against
-  // the hymn's −28) and could not say a repeated note: it glided into every
-  // note and dipped only at breaths, so MARTYR's "Praise to the" (do–do–do)
-  // was one 1.8 s swell, and 76 of the 367 steps in the tunes' first two
-  // lines are repeated notes. Now:
+  // HOW IT SPEAKS (PLAN-COMPOSITION §15). Measured, a memory as loud as the
+  // hymn (−25 dB in the 300 Hz–4 kHz band against the hymn's −28) that
+  // could not say a repeated note — it glided into every note and dipped
+  // only at breaths, so MARTYR's "Praise to the" (do–do–do) was one 1.8 s
+  // swell, and 76 of the 367 steps in the tunes' first two lines are
+  // repeated notes — was a second hymn, not a memory. So:
   //   · it sits OLD_TUNE_DB (−7 dB) under where it stood — a memory, not a
   //     second hymn;
   //   · every note is struck: the level dips for about 50 ms at each onset,
@@ -667,7 +511,7 @@ window.KOLOB = window.KOLOB || {};
         o2.frequency.setValueAtTime(f * 2, t);
       } else {
         // a new pitch is placed inside the onset's dip; a repeated one is
-        // struck again on the same pitch (the glide v0.32 made of it is gone)
+        // struck again on the same pitch (not glided into)
         var same = Math.abs(f / prevF - 1) < 1e-4;
         if (!same) {
           var port = Math.min(0.06, notes[i].dur * 0.1);
@@ -758,7 +602,7 @@ window.KOLOB = window.KOLOB || {};
     }
     var perf = KOLOB.Score.performance({
       hymnId: h.id, verse: 0, practice: "hummed", tempoMul: tempoDie, rubato: 0, organ: null, singers: [],
-      // (round 2's additions: which lines, the octave it is set in, the wear, the worn tuning)
+      // (the performance's own fields: which lines, the octave it is set in, the wear, the worn tuning)
       lines: nLines === 2 ? [0, 1] : [0], octave: oct, beatS: beatS, wear: { dropped: dropped, held: held }, detuneCents: 8,
     });
     // each note, as the far voice sings it: its pitch the day's own for its
@@ -783,9 +627,7 @@ window.KOLOB = window.KOLOB || {};
     }
     var dur1 = farVoice(t, sung(notes, false), 1.0, side);
     var total = dur1;
-    var name = String(h.nameEn || h.id).toLowerCase();
-    tell(V, { type: "guest", guest: "oldtune", stage: "remembered", tune: h.id, nameDs: h.nameDs, section: S.Meeting.section(), lines: nLines, performance: perf,
-              cat: "visitation", label: "✧ an old tune remembered", detail: name + " · " + S.Meeting.section() });
+    tell(V, { type: "guest", guest: "oldtune", stage: "remembered", tune: h.id, nameDs: h.nameDs, section: S.Meeting.section(), lines: nLines, performance: perf });
     if (againDie) {
       // a fainter second try — the head only, trailing off
       var head = notes.slice(0, Math.min(5, notes.length - 1));
@@ -793,14 +635,14 @@ window.KOLOB = window.KOLOB || {};
       var dur2 = farVoice(t2, sung(head, true), 0.6, side);
       total = dur1 + gapS + dur2;
       cueAt("guests", t2 + dur2, function () {
-        tell(V, { type: "guest", guest: "oldtune", stage: "gives-out", tune: h.id, cat: "visitation", label: "✧ the memory gives out", detail: name });
+        tell(V, { type: "guest", guest: "oldtune", stage: "gives-out", tune: h.id });
       });
     }
     return total + 4;
   }
 
   // ==========================================================================
-  // THE TROMBONE CHOIR AT DAWN (round 2; PLAN-COMPOSITION §14, item 3). In
+  // THE TROMBONE CHOIR AT DAWN (PLAN-COMPOSITION §14, item 3). In
   // Bethlehem the Moravians' trombones climb the belfry to play chorales
   // down onto the sleeping town; in Salem the Easter sunrise begins with
   // brass choirs in different streets, playing a hymn to one another, a
@@ -828,26 +670,20 @@ window.KOLOB = window.KOLOB || {};
     var G = KOLOB.GuestTrombones;
     if (!G || !V || !V.material || !V.stream) return 4;
     var calls = [];                               // [stage, t, side] — the rows told
-    var ROWS = {
-      far: ["♪ trombones at dawn", function (c) { return "far to the " + c[2]; }],
-      answer: ["♪ the near choir answers", function (c) { return "from the " + c[2]; }],
-      together: ["♪ the two choirs together", function () { return "the last chord"; }],
-    };
     // a stage's row, told at its phrase's first sound (the far choir's first
     // call at once: it is now)
     function call(stage, t0, side) {
       var c = [stage, t0, side];
       calls.push(c);
       function say() {
-        tell(V, { type: "guest", guest: "trombones", stage: c[0], side: c[2], section: S.Meeting.section(), hymnId: V.fromHymn || null,
-                  cat: "visitation", label: ROWS[c[0]][0], detail: ROWS[c[0]][1](c) });
+        tell(V, { type: "guest", guest: "trombones", stage: c[0], side: c[2], section: S.Meeting.section(), hymnId: V.fromHymn || null });
       }
       if (c[1] <= S.now() + 1e-6) say();
       else cueAt("guests", c[1], say);
     }
     // (the dawn is laid out a phrase at a time, on the guests' lane, each
-    // phrase 2.5 s before it sounds — not the whole dawn in this cue: round
-    // 3, when a composed hymn's dawn cost 390 ms laid out at once; each
+    // phrase 2.5 s before it sounds — not the whole dawn in this cue: a
+    // composed hymn's dawn cost 390 ms laid out at once; each
     // phrase's notes are reported, and its row told, as it is laid out)
     var end = G.perform(S.ctx, wideSend(), tc, V.material, V.stream, {
       defer: function (at, fn) {
@@ -869,8 +705,8 @@ window.KOLOB = window.KOLOB || {};
   }
 
   // ==========================================================================
-  // THE GUESTS WHO STAND IN THE ROOM (round 3b, step 3; PLAN-COMPOSITION §15
-  // items 3 and 5; handoff r3-guests-1): the ward's HANDBELL CHOIR and the
+  // THE GUESTS WHO STAND IN THE ROOM (PLAN-COMPOSITION §15 items 3 and 5):
+  // the ward's HANDBELL CHOIR and the
   // SINGING SCHOOL (experimental). Each plans and plays itself (kolob-guest-
   // handbells.js, kolob-guest-singingschool.js: pure plans, their own
   // streams guest:<name>:<n>); the meeting seats them (kolob-meeting.js) and
@@ -878,8 +714,8 @@ window.KOLOB = window.KOLOB || {};
   // hymn, as the composer wrote it). This is the glue: their sound laid out
   // a slice at a time on the guests' lane of the engine's clock (hooks.defer
   // — never the whole piece inside one cue), their notes reported as they
-  // are laid out, their moments told as they come. Unlike every guest
-  // before them they are IN the chapel: the bells stand a step nearer than
+  // are laid out, their moments told as they come. They are IN the chapel:
+  // the bells stand a step nearer than
   // the ward, in both rooms (S.seatedSend("handbells")), and the practice is
   // the ward's own choir, into the choir's layer (S.seatedSend("choir")) —
   // not the tabernacle's wide send the visitors from outside take.
@@ -892,8 +728,7 @@ window.KOLOB = window.KOLOB || {};
     function say(stage, st) {
       if (told[stage]) return;
       told[stage] = true;
-      var ev = { type: "guest", guest: name, stage: stage, section: S.Meeting.section(), hymnId: V.material.hymnId || null,
-                 cat: "visitation", label: (G.ROW_LABEL || (name === "handbells" ? "♫ the handbells" : "♪ the singing school")) + (stage === "ring" || stage === "fork" ? "" : " · " + stage), detail: st.label || "" };
+      var ev = { type: "guest", guest: name, stage: stage, section: S.Meeting.section(), hymnId: V.material.hymnId || null };
       if (V.experimental) ev.experimental = true;
       if (st.t0 <= S.now() + 1e-6) tell(V, ev);
       else cueAt("guests", st.t0, function () { if (S.playing && C_live(V)) tell(V, ev); });
@@ -904,8 +739,8 @@ window.KOLOB = window.KOLOB || {};
       onStage: function (st) {
         // (the bells: their first sound, whatever it rings, is their row;
         // then the second setting, a round's first entry, the cascade)
-        // (round 3c: a guest that names its rows — the gift of tongues'
-        // ROWS — tells only those; the rest are its own)
+        // (a guest that names its rows — the gift of tongues' ROWS — tells
+        // only those; the rest are its own)
         if (name === "handbells") {
           if (first) { first = false; say("ring", st); }
           if (BELL_ROWS[st.stage] && st.stage !== "ring") say(st.stage, st);
@@ -932,10 +767,9 @@ window.KOLOB = window.KOLOB || {};
   }
 
   // ==========================================================================
-  // THE GUESTS FROM OUTSIDE THE WINDOWS (round 3c; PLAN-COMPOSITION §8.2,
-  // §8.10, §8.11; handoff r3c-bands-1): the NAUVOO BRASS BAND marching past
-  // with one of the day's hymns as a march (it replaces twoBandsCross, the
-  // looping fife), the HANDCART COMPANY singing ALL IS WELL far across the
+  // THE GUESTS FROM OUTSIDE THE WINDOWS (PLAN-COMPOSITION §8.2, §8.10,
+  // §8.11): the NAUVOO BRASS BAND marching past with one of the day's
+  // hymns as a march, the HANDCART COMPANY singing ALL IS WELL far across the
   // fields, and the GULLS quoting the first hymn. Each plans and plays
   // itself (kolob-guest-bands.js, kolob-guest-handcart.js,
   // kolob-guest-gulls.js: pure plans, their own streams guest:<type>:<n>);
@@ -953,9 +787,9 @@ window.KOLOB = window.KOLOB || {};
       onNote: noteOf,
       onStage: function (st) {
         if (st.dev || !rows[st.stage]) return;
-        var ev = { type: "guest", guest: V.type, stage: st.stage, side: st.side || null, section: S.Meeting.section(),
-                   cat: "visitation", label: st.label, detail: st.detail || "" };
+        var ev = { type: "guest", guest: V.type, stage: st.stage, side: st.side || null, section: S.Meeting.section() };
         if (st.band != null) ev.band = st.band;
+        if (st.stage === "cross") ev.both = !!st.both;   // two bands crossing, or one going by: the minutes' row reads it
         if (st.t0 <= S.now() + 1e-6) tell(V, ev);
         else cueAt("guests", st.t0, function () { if (S.playing && C_live(V)) tell(V, ev); });
       },
@@ -986,8 +820,8 @@ window.KOLOB = window.KOLOB || {};
   }
 
   // ==========================================================================
-  // THE ORGANIST'S VARIATIONS AND THE FAR TOWER (round 3c; PLAN §8.5, §8.3;
-  // handoff r3c-organ-1). VARIATIONS ON A HYMN: the set on the organist's own
+  // THE ORGANIST'S VARIATIONS AND THE FAR TOWER (PLAN §8.5, §8.3).
+  // VARIATIONS ON A HYMN: the set on the organist's own
   // desk — one organ throughout (organistPlays: the organ's case, the organ
   // layer, its notes told in the Score's terms), at the prelude's level (no
   // lift under a ward: nobody sings); a hymn keyed away from home steps the
@@ -1009,8 +843,7 @@ window.KOLOB = window.KOLOB || {};
                                     alive: function () { return !!S.playing && S.Meeting.meetingNum() === V.meetingNum && S.Meeting.section() === V.section; } });
       },
       onStage: function (st) {
-        var ev = { type: "guest", guest: "variations", stage: st.stage, section: S.Meeting.section(), hymnId: M.hymnId, keys: st.keys, regs: st.regs,
-                   cat: "visitation", label: "♪ the organist's variations" + (st.stage === "chorale" ? "" : " · " + st.stage), detail: st.label };
+        var ev = { type: "guest", guest: "variations", stage: st.stage, section: S.Meeting.section(), hymnId: M.hymnId, keys: st.keys, regs: st.regs };
         if (st.t0 <= S.now() + 1e-6) tell(V, ev); else cueAt("guests", st.t0, function () { if (S.playing && C_live(V)) tell(V, ev); });
       },
     });
@@ -1038,8 +871,7 @@ window.KOLOB = window.KOLOB || {};
         emitNote("tower", x.freq, x.t, x.dur, guestNote(V, "steeples", { part: "tower", bell: x.bell, place: x.place, row: x.row, hand: x.hand, muffled: x.muffled, monzo: x.monzo, changes: true }));
       },
       onStage: function (st) {
-        var ev = { type: "guest", guest: "steeples", stage: "changes:" + st.stage, method: mat.methodName, touch: mat.touch, muffled: mat.muffled,
-                   cat: "visitation", label: st.stage === "rounds" ? "◎ a far tower rings" : "◎ " + st.label, detail: mat.methodName };
+        var ev = { type: "guest", guest: "steeples", stage: "changes:" + st.stage, method: mat.methodName, touch: mat.touch, muffled: mat.muffled };
         if (st.t0 <= S.now() + 1e-6) tell(V, ev); else cueAt("guests", st.t0, function () { if (S.playing && C_live(V)) tell(V, ev); });
       },
     });
@@ -1052,7 +884,7 @@ window.KOLOB = window.KOLOB || {};
     return Math.max(end, tl + BELL_RING_S) - tc;
   }
 
-  // THE GIFT OF TONGUES (round 3c; PLAN §8.6; handoff r3c-voices-1): a
+  // THE GIFT OF TONGUES (PLAN §8.6): a
   // standing guest, as the handbells are — one of the ward rises in the
   // testimony and sings; into the choir's layer, where the singing school's
   // calibration stands; its own reed answers (the house's harmonium sits it
@@ -1072,7 +904,8 @@ window.KOLOB = window.KOLOB || {};
     // (the singer rises: their own row in the minutes, by name — a cast event
     // at the score's moment, as the testimony-bearers' are)
     var who = V.material.singer, w = V.material.ward, m = who && w && w.byId ? w.byId[who] : null, rise = null;
-    try { (G.score(V.material, V.stream, tc).stages || []).forEach(function (st) { if (st.stage === "rises" && rise == null) rise = st.t0 != null ? st.t0 : st.t; }); } catch (e) { rise = null; }
+    try { (G.score(V.material, V.stream, tc).stages || []).forEach(function (st) { if (st.stage === "rises" && rise == null) rise = st.t0 != null ? st.t0 : st.t; }); }
+    catch (e) { rise = null; S.confess("the gift of tongues' score could not be read (the singer's rising goes untold)", e); }
     if (m && rise != null) cueAt("guests", Math.max(rise, S.now()), function () {
       if (!S.playing || !C_live(V)) return;
       tell(V, { type: "cast", memberId: who, nameDs: m.nameDs || "", action: "rises and sings in tongues", role: m.role || null,
@@ -1080,7 +913,7 @@ window.KOLOB = window.KOLOB || {};
     });
     return span;
   }
-  // THE SOCIAL HALL (round 3c; PLAN §8.9; handoff r3c-hall-1): after the
+  // THE SOCIAL HALL (PLAN §8.9): after the
   // benediction the benches are pushed back — the fiddle (a step nearer than
   // the ward), the dancers' floor, the caller at the ward's near seat; the
   // house lets go and listens, and the drone steps back for the dance (the
@@ -1108,8 +941,7 @@ window.KOLOB = window.KOLOB || {};
       onStage: function (st) {
         if (!HALL_ROWS[st.stage] || told[st.stage]) return;
         told[st.stage] = true;
-        var ev = { type: "guest", guest: "socialhall", stage: st.stage, section: S.Meeting.section(), hymnId: V.material.hymnId || null,
-                   cat: "visitation", label: "✦ the Social Hall" + (st.stage === "benches" ? "" : " · " + st.stage), detail: st.label || "" };
+        var ev = { type: "guest", guest: "socialhall", stage: st.stage, section: S.Meeting.section(), hymnId: V.material.hymnId || null };
         if (st.t0 <= S.now() + 1e-6) tell(V, ev); else cueAt("guests", st.t0, function () { if (S.playing && C_live(V)) tell(V, ev); });
       },
       onCast: function (c) {
@@ -1136,8 +968,6 @@ window.KOLOB = window.KOLOB || {};
   // ==========================================================================
   S.razzCluster = razzCluster;
   S.cumulativeAssembly = cumulativeAssembly;
-  S.unansweredQuestion = unansweredQuestion;
-  S.twoBandsCross = twoBandsCross;
   S.steeplesAnswer = steeplesAnswer;
   S.oldTunePool = oldTunePool;
   S.oldTuneCandidates = oldTuneCandidates;
@@ -1145,19 +975,19 @@ window.KOLOB = window.KOLOB || {};
   S.trombonesAtDawn = trombonesAtDawn;
   S.handbellsRing = handbellsRing;
   S.singingSchool = singingSchool;
-  // (round 3c: the new guests' set pieces)
+  // (the set pieces of the guests with rooms of their own)
   S.nauvooBand = nauvooBand;
   S.handcartCompany = handcartCompany;
   S.gullsOver = gullsOver;
   S.organistVariations = organistVariations;
   S.tonguesGift = tonguesGift;
   S.socialHall = socialHall;
-  // the room's public face on the KOLOB namespace (the old tune's law and
-  // excerpt are here for the harness and the labs: linesHeld(tune, mode),
-  // linesAdmitted(tune, mode), excerpt(tune, k), octaveFor(notes),
-  // leapLeans(monzos, joined), wolfLeap(a, b))
+  // the room's public face on the KOLOB namespace (dev: nothing on the page
+  // reads it; the labs may. The old tune's law and excerpt are here for
+  // them: linesHeld(tune, mode), linesAdmitted(tune, mode), excerpt(tune, k),
+  // octaveFor(notes), leapLeans(monzos, joined), wolfLeap(a, b))
   KOLOB.Guests = {
-    cumulativeAssembly: cumulativeAssembly, unansweredQuestion: unansweredQuestion, twoBandsCross: twoBandsCross, steeplesAnswer: steeplesAnswer,
+    cumulativeAssembly: cumulativeAssembly, steeplesAnswer: steeplesAnswer,
     oldTuneRemembered: oldTuneRemembered, oldTuneCandidates: oldTuneCandidates, oldTunePool: oldTunePool, trombonesAtDawn: trombonesAtDawn,
     handbellsRing: handbellsRing, singingSchool: singingSchool, nauvooBand: nauvooBand, handcartCompany: handcartCompany, gullsOver: gullsOver,
     organistVariations: organistVariations, changesRing: changesRing, tonguesGift: tonguesGift, socialHall: socialHall,

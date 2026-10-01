@@ -45,7 +45,7 @@
 // means their voice leaves the hall for the near bus, a few dB up: the
 // same person, heard.
 //
-// ROUND 3B, STEP 3 — THE STYLES' OWN WAYS. A gospel hymn is sung, on some
+// THE STYLES' OWN WAYS. A gospel hymn is sung, on some
 // Sundays, by a QUARTET of four of the ward standing (the tenor harmony, the
 // lead, the baritone, the bass: on the note and together, so its sevenths
 // ring), the ward coming in on the refrain and the tag. The PRIMARY — six to
@@ -144,7 +144,12 @@ window.KOLOB.Cast = (function () {
     return spelling.split(" ").map(function (word) {
       return word.split("-").map(function (ph) {
         var at = DS_CODES.indexOf(ph);
-        if (at < 0) throw new Error("kolob-cast: no Deseret letter for '" + ph + "' in " + spelling);
+        if (at < 0) {
+          // (a misspelt phoneme must not take the whole engine down at load: the
+          // clerk writes "?" for that letter and the console says which it was)
+          if (typeof console !== "undefined" && console.warn) console.warn("kolob-cast: no Deseret letter for '" + ph + "' in " + spelling);
+          return "?";
+        }
         return String.fromCodePoint(0x10400 + at);
       }).join("");
     }).join(" ");
@@ -155,15 +160,15 @@ window.KOLOB.Cast = (function () {
    ["sings the treble verse", "s-i-ng-z dh-u t-r-e-b-u-l v-u-r-s"], ["sings the tune", "s-i-ng-z dh-u t-oo-n"], ["loses the words", "l-oo-z-i-z dh-u w-u-r-d-z"],
    ["finds them again", "f-ie-n-d-z dh-e-m u-g-e-n"], ["joins in", "j-oi-n-z i-n"], ["sings out", "s-i-ng-z ow-t"],
    ["blends back into the ward", "b-l-e-n-d-z b-a-k i-n-t-oo dh-u w-aw-r-d"], ["falls silent", "f-aw-l-z s-ie-l-u-n-t"],
-   // (round 3b, step 3) the refrain, the quartet, the Primary, the round, the partner hymn
+   // the refrain, the quartet, the Primary, the round, the partner hymn
    ["starts the refrain", "s-t-ah-r-t-s dh-u r-i-f-r-ay-n"], ["leads the quartet", "l-ee-d-z dh-u k-w-aw-r-t-e-t"],
    ["sings in the quartet", "s-i-ng-z i-n dh-u k-w-aw-r-t-e-t"], ["leads the Primary", "l-ee-d-z dh-u p-r-ie-m-e-r-ee"],
    ["sets the round going", "s-e-t-s dh-u r-ow-n-d g-oh-i-ng"],
-   // (round 3b, step 4) a verse given to one part of the ward
+   // a verse given to one part of the ward
    ["gives the verse to the men", "g-i-v-z dh-u v-u-r-s t-oo dh-u m-e-n"], ["gives the verse to the women", "g-i-v-z dh-u v-u-r-s t-oo dh-u w-i-m-i-n"],
    ["plays the first hymn against it", "p-l-ay-z dh-u f-u-r-s-t h-i-m u-g-e-n-s-t i-t"],
    ["plays the first hymn on the cornet", "p-l-ay-z dh-u f-u-r-s-t h-i-m o-n dh-u k-aw-r-n-e-t"],
-   // (round 3b, step 2) the organist at the bench (kolob-organist.js says
+   // the organist at the bench (kolob-organist.js says
    // these; a parenthesis after one — which key he strays to — is the dev
    // tools' only)
    ["plays the day's first hymn as a prelude", "p-l-ay-z dh-u d-ay-z f-u-r-s-t h-i-m a-z u p-r-e-l-y-oo-d"],
@@ -186,13 +191,13 @@ window.KOLOB.Cast = (function () {
    ["draws a 16′ and a 4′ with nothing between", "d-r-aw-z u s-i-k-s-t-ee-n f-uu-t a-n-d u f-aw-r f-uu-t w-i-dh n-u-th-i-ng b-i-t-w-ee-n"],
    ["draws the mixture alone", "d-r-aw-z dh-u m-i-k-s-ch-u-r u-l-oh-n"], ["sets the flutes running", "s-e-t-s dh-u f-l-oo-t-s r-u-n-i-ng"],
    ["draws the flutes with the tremulant", "d-r-aw-z dh-u f-l-oo-t-s w-i-dh dh-u t-r-e-m-y-u-l-u-n-t"], ["changes the stops", "ch-ay-n-j-i-z dh-u s-t-o-p-s"],
-   // (round 3c) THE TESTIMONY-BEARERS PERFORM (kolob-testimony.js): each
+   // THE TESTIMONY-BEARERS PERFORM (kolob-testimony.js): each
    // rises, bears testimony — a speech-melody the harmonium or the clarinet
    // takes up — and sits down; and THE SOCIAL HALL (kolob-guest-socialhall.js):
    // one of the ward takes up the fiddle, another calls the dance
    ["rises to bear testimony", "r-ie-z-i-z t-oo b-e-r t-e-s-t-i-m-oh-n-ee"], ["sits down", "s-i-t-s d-ow-n"],
    ["takes up the fiddle", "t-ay-k-s u-p dh-u f-i-d-u-l"], ["calls the dance", "k-aw-l-z dh-u d-a-n-s"],
-   // (round 3c) THE ORGANIST'S VARIATIONS ON A HYMN (kolob-guest-variations.js
+   // THE ORGANIST'S VARIATIONS ON A HYMN (kolob-guest-variations.js
    // ACTIONS, spelled as there), and THE GIFT OF TONGUES: one of the ward rises
    ["plays variations on the hymn", "p-l-ay-z v-e-r-ee-ay-sh-u-n-z o-n dh-u h-i-m"],
    ["plays the hymn as a plain chorale", "p-l-ay-z dh-u h-i-m a-z u p-l-ay-n k-u-r-a-l"],
@@ -213,7 +218,7 @@ window.KOLOB.Cast = (function () {
                          "sings the treble verse": 1, "sings the tune": 1, "loses the words": 1, "finds them again": 1, "joins in": 1, "sings out": 1,
                          "starts the refrain": 1, "leads the quartet": 1, "leads the Primary": 1, "sets the round going": 1, "plays the first hymn on the cornet": 1,
                          "gives the verse to the men": 1, "gives the verse to the women": 1,
-                         // (round 3c: the testimony's and the Social Hall's people come forward)
+                         // (the testimony's and the Social Hall's people come forward)
                          "rises to bear testimony": 1, "takes up the fiddle": 1, "calls the dance": 1, "rises and sings in tongues": 1 };
   var ROSTER = {
     chorister: [
@@ -324,7 +329,7 @@ window.KOLOB.Cast = (function () {
     // ---- the people you will come to know ----
     var roles = {}, individuals = [], taken = {};
     var pick = stream.fork("roles");
-    // (round 3b, step 4: how many you come to know is the Sunday's —
+    // (how many you come to know is the Sunday's —
     // opts.size {opt, testimony}, from the calendar: a fast Sunday's three
     // testimony-bearers, a dedication's every optional role, a funeral's
     // fewer — the same two dice, read over the Sunday's range)
@@ -334,7 +339,7 @@ window.KOLOB.Cast = (function () {
     // (keep the roster's own order, so the chart and the log read the same way every time)
     filling.sort(function (a, b) { return ROLE_ORDER.indexOf(a) - ROLE_ORDER.indexOf(b); });
     for (var ti = 0; ti < nTest; ti++) filling.push("testimony");
-    // (round 3b, step 3: a Sunday of the wandering refrain needs the
+    // (a Sunday of the wandering refrain needs the
     // enthusiast — he starts it — so one is seated if the draw left him out:
     // last of the pews' people, on his own role's fork, so everyone else is
     // who they would have been)
@@ -347,10 +352,10 @@ window.KOLOB.Cast = (function () {
       // fathers on one Sunday is one too many — the same single die, a
       // smaller pool)
       var pool = ROSTER[role].filter(function (a) { return !usedArch[role + ":" + a.id]; });
-      // (round 3b, step 2: the organist on the bench is the organist the
+      // (DICE: the organist on the bench is the organist the
       // Sunday seated — kolob-organist.js draws the style, with the day's
       // own tilts; the ward's archetype is one of that style's — the same
-      // single die, a smaller pool, so no other die moves)
+      // single die, a smaller pool, so no other die moves; deliberate, must stay)
       if (role === "organist" && opts.organist) {
         var own = pool.filter(function (a) { return a.habit && a.habit.style === opts.organist; });
         if (own.length) pool = own;
@@ -362,8 +367,8 @@ window.KOLOB.Cast = (function () {
         // the child sits with a family (a mother or father in the pews); the
         // organist sits at the organ. Neither has a seat among the 32.
         var parent = members[r.rint(0, members.length - 1)];
-        // (the sister at the reed organ is a sister: her coin is thrown all
-        // the same, first, so no other die moves — round 3b)
+        // (DICE: the sister at the reed organ is a sister: her coin is thrown
+        // all the same, first, so no other die moves — deliberate; must stay)
         var nm = role === "child" ? r.pick(CHILDREN) : r.pick(r.chance(0.5) || arch.id === "sister" ? WOMEN : MEN);
         var fam = role === "child" ? FAMILIES.filter(function (f) { return f[0] === parent.family; })[0] : r.pick(FAMILIES);
         person = {
@@ -423,11 +428,12 @@ window.KOLOB.Cast = (function () {
     });
     // (the enthusiast seated late keeps the roster's order in the lists)
     individuals.sort(function (a, b) { return ROLE_ORDER.indexOf(byId[a].role) - ROLE_ORDER.indexOf(byId[b].role); });
-    // THE PRIMARY (round 3b, step 3; PLAN-COMPOSITION §3.E, §5.2): the
+    // THE PRIMARY (PLAN-COMPOSITION §3.E, §5.2): the
     // ward's children, who sing the Primary song when the day's unison song
     // is one — six to nine of them, each sitting with a family of the pews,
-    // each a child's voice of their own. Seated after everyone else, on the
-    // fork `primary` (each child on primary:<k>), so no other die moves; a
+    // each a child's voice of their own. DICE: seated after everyone else,
+    // on the fork `primary` (each child on primary:<k>), so no other die
+    // moves — deliberate; must stay. A
     // child never takes a name already in the room. They are not among the
     // thirty-two (k is null) and sing nothing else; the child you come to
     // know, if the Sunday seated one, sings with them.
@@ -515,7 +521,7 @@ window.KOLOB.Cast = (function () {
     return out;
   }
 
-  // THE BASSES IN THE MEN'S VERSE (round 3b, step 4): [part, octave] for a
+  // THE BASSES IN THE MEN'S VERSE: [part, octave] for a
   // line whose tune the tenors carry an octave down (tunePart at 0.5) —
   // the basses' own part where every note of it lies below the tune note
   // sounding with it (by more than MEN_MEET_C), else their part an octave
@@ -585,8 +591,8 @@ window.KOLOB.Cast = (function () {
 
   // ==========================================================================
   // planHymn(ward, hymn, stream, opts) → the plan. stream: the hymn's
-  // `performance` fork (hymn:<n>:<i> → performance). Every die is thrown
-  // whether or not it is used.
+  // `performance` fork (hymn:<n>:<i> → performance). DICE: every die is
+  // thrown whether or not it is used — deliberate; must stay.
   //   opts = { verses (default drawn by dialect), organ (the hymn is
   //            accompanied: the organ gives out the tune, no keying),
   //            first (the day's first hymn: the newcomer's) }
@@ -600,7 +606,9 @@ window.KOLOB.Cast = (function () {
     var dl = hymn.dialect, nLines = hymn.lines.length + (hymn.refrain ? hymn.refrain.length : 0);
     var ch = who(ward, "chorister") || ward.members[0], chH = ch.habit || {};
     var r = stream;
-    // the dice
+    // DICE: the twelve dice, up front, in this order, whether or not each is
+    // used (opts.verses, opts.organ) — deliberate; a draw left out would
+    // move every draw after it
     var dVerses = r.rint(0, 99), dHum = r.rnd(0, 1), dUni = r.rnd(0, 1), dDesc = r.rnd(0, 1), dTreble = r.rnd(0, 1), dEnth = r.rnd(0, 1),
         dChildV = r.rnd(0, 1), dAltoV = r.rnd(0, 1), dBassV = r.rnd(0, 1), dKeyAcc = r.rnd(0, 1), dNotesAll = r.rnd(0, 1), dOrder = r.rnd(0, 1);
     var verses = opts.verses || (dl === "tabernacle" ? 3 + (dVerses % 2) : dl === "oldway" ? 2 : 2 + (dVerses % 2));
@@ -614,7 +622,7 @@ window.KOLOB.Cast = (function () {
     // ---- the practices ----
     var practice = [];
     // (a hummed verse, or one in unison, is ONE of the middle verses — the
-    // die that chooses it also says which — never two running; round 3b.
+    // die that chooses it also says which — never two running.
     // Unison is the chorister's call in the Tabernacle and gospel; a Sacred
     // Harp class, a singing school and the Old Way keep their own ways)
     var mid = Math.max(1, verses - 2);
@@ -631,14 +639,15 @@ window.KOLOB.Cast = (function () {
       else if (v > 0 && v < verses - 1 && v === uniV) p = "unison";
       practice.push(p);
     }
-    // ---- the round, the Primary, the quartet (round 3b, step 3) ----
+    // ---- the round, the Primary, the quartet ----
     // A ROUND (the composer's round(): h.round): sung unaccompanied — once
     // through together first, now and then, then as a canon: the ward goes
     // in by its sections (trebles, altos, tenors, basses — or women and men,
     // or trebles, altos and men) or by the pews (the room from one side to
     // the other), each group a segment behind the last, going round two or
-    // three times and dropping out in the order it came in. Its dice on the
-    // fork `round`, thrown for every hymn.
+    // three times and dropping out in the order it came in. DICE: its dice
+    // on the fork `round`, thrown for every hymn, round or not — deliberate;
+    // must stay.
     var rd = r.fork("round"), rdBy = rd.chance(0.55) ? "parts" : "pews", rdTimes = rd.chance(0.6) ? 2 : 3, rdOnce = rd.chance(0.6), rdSide = rd.chance(0.5) ? 1 : -1;
     var canon = null;
     if (hymn.round) {
@@ -659,8 +668,9 @@ window.KOLOB.Cast = (function () {
     // and together, so the ringing sevenths ring — and the ward comes in on
     // the refrain and the tag (Moody and Sankey's meetings: the quartet on
     // the verse, everyone on the chorus). Else the quartet is the ward's
-    // own, the lead in its second voice (assignment()). Its die on the fork
-    // `quartet`, thrown for every hymn.
+    // own, the lead in its second voice (assignment()). DICE: its dice on
+    // the fork `quartet`, thrown for every hymn, gospel or not — deliberate;
+    // must stay.
     var qd = r.fork("quartet"), qDie = qd.rnd(0, 1), qPick = [qd.rnd(0, 1), qd.rnd(0, 1), qd.rnd(0, 1), qd.rnd(0, 1)];
     var quartet = null;
     if (dl === "gospel" && hymn.voiceOrder && qDie < QUARTET_RATE) {
@@ -726,7 +736,7 @@ window.KOLOB.Cast = (function () {
       }
     });
     if (!solo && who(ward, "enthusiast") && dEnth < 0.75) add(verses - 1, "enthusiast", "sings out", all, 3);
-    // ---- a verse by one part (round 3b, step 4; PLAN §7.4's sub-scenes) ----
+    // ---- a verse by one part (PLAN §7.4's sub-scenes) ----
     // Now and then a middle verse of a hymn (the first of a hymn of two) is the
     // men's alone (the tenors on the tune an octave down, the basses under
     // it: their own part, or an octave lower, or with the tenors on the
@@ -735,8 +745,8 @@ window.KOLOB.Cast = (function () {
     // by the ward, on a verse that is plainly sung (not the soloist's treble
     // verse); whoever would have come forward in it from the other side of
     // the chapel keeps their seat this once. The organ plays on under it,
-    // and the refrain after it is everyone's. Its dice on the fork
-    // `onepart`, thrown for every hymn.
+    // and the refrain after it is everyone's. DICE: its dice on the fork
+    // `onepart`, thrown for every hymn, used or not — deliberate; must stay.
     var op = r.fork("onepart"), opDie = op.rnd(0, 1), opWhich = op.rnd(0, 1), opAt = op.rnd(0, 1);
     var onePart = null;
     if (!solo && (dl === "tabernacle" || dl === "gospel") && verses >= 2 && opDie < ONE_PART_RATE) {
@@ -758,6 +768,8 @@ window.KOLOB.Cast = (function () {
       var sing = singers.slice().concat(fwd[vi].some(function (f) { return f.role === "child"; }) ? ["child"] : []);
       if (p === "quartet") sing = ["S", "T", "A", "B"].map(function (q) { return quartet[q]; }).concat(hymn.refrain && hymn.refrain.length ? singers : []);
       if (primary) sing = primary.concat(vi > 0 && hymn.refrain && hymn.refrain.length ? singers : []);
+      // (tempoMul's `dl === "oldway" ? 1 : 1` below is a no-op, kept so the
+      // dice and the arithmetic stay exactly as they are)
       var o = {
         hymnId: hymn.id, verse: vi, practice: p, tempoMul: round(tempoMul * (dl === "oldway" ? 1 : 1), 3), rubato: round(rubato, 3),
         organ: organ && !canon && p !== "hummed" ? { registration: [verses >= 3 && vi === verses - 1 ? "full organ" : "hymn principal"] } : null,
@@ -775,8 +787,8 @@ window.KOLOB.Cast = (function () {
     };
   }
   var QUARTET_RATE = 0.45;                         // the quartet sings a gospel hymn's verses about this often
-  var ONE_PART_RATE = 0.3;                         // a hymn of two verses or more gives one to the men or the women (round 3b, step 4)
-  // a refrain sung again rises (round 3b, step 4; PLAN §7.4): the ward sings
+  var ONE_PART_RATE = 0.3;                         // a hymn of two verses or more gives one to the men or the women
+  // a refrain sung again rises (PLAN §7.4): the ward sings
   // it out a little more each time — REFRAIN_RISE_DB a statement, the
   // refrain after each verse (gospel's), and each statement of the
   // wandering refrain; at most REFRAIN_RISE_MAX
@@ -787,7 +799,7 @@ window.KOLOB.Cast = (function () {
   // (side 1: the audience's left first) to the other, cut in `n`
   // ==========================================================================
   // planRefrain(ward, refrain, stream, opts) → the plan of one statement of
-  // the meeting's wandering refrain (round 3b, step 3; PLAN §15 item 4), as
+  // the meeting's wandering refrain (PLAN §15 item 4), as
   // planHymn gives a hymn's: the refrain's Score is a small hymn (the
   // composer's, set in the key and dialect of the hymn it follows).
   //   opts.k 0 — after the first hymn's last verse: the enthusiast starts it
@@ -816,7 +828,7 @@ window.KOLOB.Cast = (function () {
     });
     return {
       hymnId: rh.id, dialect: rh.dialect, layout: layoutFor(rh.dialect), keying: null, verses: perf,
-      // (round 3b, step 4: each statement sung out a little more — the
+      // (each statement sung out a little more — the
       // doxology's the fullest)
       rise: round(opts.dox ? 2 * REFRAIN_RISE_DB : (opts.k || 0) * REFRAIN_RISE_DB, 3),
       tempoMul: round(tempoMul, 3), rubato: round(chH.rubato || 0.05, 3), holdMul: round(chH.holdMul || 1.6, 3), organ: false,
@@ -942,7 +954,7 @@ window.KOLOB.Cast = (function () {
   // next, for the breath before their first line in it.
   // ==========================================================================
   //
-  // THE ORGANIST'S OWN HANDS (round 3b, step 2). In the meeting the Sunday's
+  // THE ORGANIST'S OWN HANDS. In the meeting the Sunday's
   // organist plays the organ's part (kolob-organist.js, hymnHands), and the
   // sheet carries no organ lines of its own: opts.organist = { giveOut (the
   // organist's giving-out, s from the intro's start to where the ward may
@@ -951,7 +963,7 @@ window.KOLOB.Cast = (function () {
   // lines) }. The organist lays the organ by the chorister's clock (below);
   // the ward waits where the organist asks it to. Nothing else moves.
   var WARD_GAIN = 1 / Math.sqrt(8);
-  // (round 3b, step 3) the quartet: each of the four about a section's
+  // the quartet: each of the four about a section's
   // strength, a step nearer; the tenor harmony and the lead at the centre's
   // left and right, the baritone and the bass beside them. The Primary: each
   // child a little over a pew's voice (a row of six to ten small voices
@@ -1013,6 +1025,7 @@ window.KOLOB.Cast = (function () {
     function verse(vi) {
       var P = plan.verses[vi], lastVerse = vi === plan.verses.length - 1;
       var vr = R ? R.fork("vowels:" + vi) : null, vowels = [];
+      // DICE: 400 vowels drawn for every verse, used or not — deliberate; must stay
       for (var i = 0; i < 400; i++) vowels.push(vr ? pickW(vr, VOWELS) : "ah");
       var vocables = hymn.vocablesEn || null;
       var vowelOf = function (n) {
@@ -1034,7 +1047,7 @@ window.KOLOB.Cast = (function () {
         if (vi === lastV || plan.verses[vi + 1].practice !== "quartet") leadsEnd = qLead;
       }
       if (leads && leads[0]) castEv(t, leads[0], leads[1], { verse: vi, line: 0 });
-      // (round 3b, step 4) a verse given to the men or to the women: the
+      // a verse given to the men or to the women: the
       // chorister says so as it begins
       if (P.part === "men" || P.part === "women") castEv(t, ch, P.part === "men" ? "gives the verse to the men" : "gives the verse to the women", { verse: vi, line: 0 });
       var fwdOn = {};
@@ -1089,7 +1102,7 @@ window.KOLOB.Cast = (function () {
         // everyone who sings this line
         var singers = seated.slice(), heard = {};
         if (fw.child) singers.push(ward.byId.child);
-        // (round 3b, step 3) the quartet's verse: the four alone on the
+        // the quartet's verse: the four alone on the
         // stanza, the ward with them on the refrain; the Primary's song:
         // the children, the ward joining them on the chorus after the
         // first verse
@@ -1102,7 +1115,7 @@ window.KOLOB.Cast = (function () {
           var kids = plan.primary.map(function (id) { return ward.byId[id]; }).filter(Boolean);
           singers = kids.concat(!stanza && vi > 0 ? seated : []);
         }
-        // (round 3b, step 4) the men's verse, or the women's: only they sing
+        // the men's verse, or the women's: only they sing
         // the stanza (the refrain is everyone's)
         var onePartOf = stanza && (P.part === "men" || P.part === "women") ? (P.part === "men" ? { T: 1, B: 1 } : { S: 1, A: 1 }) : null;
         if (onePartOf) singers = singers.filter(function (m) { return onePartOf[m.part]; });
@@ -1110,8 +1123,8 @@ window.KOLOB.Cast = (function () {
         // the basses stay under it — their own part where it lies below
         // the tune the whole line, else the whole line an octave lower
         // where that stays in a bass's compass, else the tune with the
-        // tenors: never meeting it, never above it. The round-3b critic
-        // heard gospel's bass part, written where the men sing it, cross
+        // tenors: never meeting it, never above it. Left as written,
+        // gospel's bass part, where the men sing it, crosses
         // the lead brought down an octave — 7 of 60 notes above the tune)
         var menBass = onePartOf && P.part === "men" ? menBassFor(line, next, hymn.dialect === "gospel" ? "T" : hymn.melodyPart, bs, rit, plan.holdMul, hz) : null;
         // (and a refrain sung again rises: a little more each verse, and each
@@ -1151,7 +1164,7 @@ window.KOLOB.Cast = (function () {
           var vOf = vowelOf;
           // the child loses the words of one line (hums), and finds them in the next
           if (role === "child" && m.habit && R) {
-            var cr = R.fork("child:" + vi), lose = cr.rnd(0, 1) < (m.habit.loses || 0.5), lostLine = cr.rint(0, lines.length - 2);   // one fork, two draws
+            var cr = R.fork("child:" + vi), lose = cr.rnd(0, 1) < (m.habit.loses || 0.5), lostLine = cr.rint(0, lines.length - 2);   // DICE: one fork, two draws, both thrown whether or not the child loses the words — deliberate; must stay
             if (lose && li === lostLine && !repeat) { vOf = function () { return "hum"; }; castEv(t0, m, "loses the words", where); }
             if (lose && li === lostLine + 1 && !repeat) castEv(t0, m, "finds them again", where);
           }
@@ -1231,7 +1244,7 @@ window.KOLOB.Cast = (function () {
       if (leadsEnd) stepBack(t, leadsEnd.id);
     }
 
-    // ---- A ROUND (round 3b, step 3): the ward in its groups, each a
+    // ---- A ROUND: the ward in its groups, each a
     // segment behind the last, each going round plan.round.times times on
     // the tune (the women at pitch, the men an octave down) and dropping out
     // in the order it came in; the chorister sets it going. One cue a

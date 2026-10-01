@@ -3,15 +3,15 @@
 //
 // The hymn meters and the prosody that pours phrases into them; the motif
 // engine — the gesture pool (each with its Deseret cipher), the transform
-// algebra, genealogy and the ledger. Split from kolob-audio.js (v0.30); see
-// the room list in kolob-core.js.
+// algebra, genealogy and the ledger. The house's rooms are listed in
+// _engine.php.
 //
-// Its dice are never its own (round 2): every call that draws takes the
+// Its dice are never its own: every call that draws takes the
 // caller's stream as its last argument, R — the voice's turn, the guest's
 // stream, the meeting's motif:<n> — so the motif engine throws nothing that
 // belongs to anyone else.
 //
-// It reads nothing of the house (round 2, milestone 2). Where it needs the
+// It reads nothing of the house. Where it needs the
 // meeting it takes a MOMENT, the plain object the chorister makes
 // (kolob-meeting.js, THE CHORISTER'S BOOK), just before the dice:
 //
@@ -28,7 +28,7 @@
 // material as its own state (the theme, the lineage, the ledger of
 // obligations between voices); what it reports goes to a log the house
 // hands it (Motif.setLog), and to nobody if none is given. Each report is a
-// typed event (SCORE.md §6, round 2's words: hymns-of-the-day, motif-develop,
+// typed event (SCORE.md §6: hymns-of-the-day, motif-develop,
 // motif-reprise, motif-answer, motif-disperse), its legacy label alongside.
 // ============================================================================
 
@@ -163,6 +163,9 @@ window.KOLOB = window.KOLOB || {};
     // A meeting-level colour, layered over the per-voice and per-section tilts,
     // so no two visits merely feel different moment to moment — they feel like
     // different Sundays. Still fully aleatoric: it is only another bias.
+    // (This table is the motif engine's own tempers — transform weights —
+    // and is not KOLOB.Dialects, the harmonic languages of kolob-dialects.js;
+    // the two share a word and nothing else.)
     var DIALECTS = {
       plain:     { ornament: 0.35, mordent: 0.3, sequence: 0.7, syncopate: 0.5, intervalExpand: 0.7 },
       psalmodic: { intervalCompress: 1.9, augment: 1.4, ornament: 0.5, mordent: 0.4, rotate: 1.3 },
@@ -290,15 +293,12 @@ window.KOLOB = window.KOLOB || {};
     //   · bells      — the peal: terse, bright, fragmentary, clipped
     //   · telegraph — the wire: pure rhythm, syncopated code, no filigree
     //   · harmonium — the parlor organ: warm, sustained, draws tunes inward
-    //   · bagpipe   — the piper on the bluff: bold, wide leaps, long-held,
-    //                 a march-snap — its OWN profile now, not the clarinet's
     var VOICE_WEIGHTS = {
       clarinet:  { ornament: 3.5, mordent: 3, sequence: 3, syncopate: 2.5, transpose: 2, rotate: 2, fragmentHead: 2, invert: 1.5, fragmentTail: 1.5, diminish: 1.5, intervalExpand: 1.2, intervalCompress: 1, retrograde: 1, augment: 0.6 },
       choir:     { augment: 4, invert: 3, transpose: 2.5, intervalExpand: 2, retrograde: 1.5, sequence: 1, rotate: 1, fragmentTail: 1, intervalCompress: 0.8, fragmentHead: 0.6, diminish: 0.4, syncopate: 0.4, ornament: 0.3, mordent: 0.3 },
       bells:     { fragmentHead: 4, diminish: 3.5, fragmentTail: 2.5, syncopate: 2.5, rotate: 2, transpose: 2, retrograde: 1.5, sequence: 1.5, intervalCompress: 1.5, invert: 1, mordent: 0.6, intervalExpand: 0.5, ornament: 0.2, augment: 0.2 },
       telegraph: { syncopate: 3.5, diminish: 3, fragmentHead: 3, retrograde: 2.5, rotate: 2, sequence: 2, intervalCompress: 1.5, fragmentTail: 1.5, transpose: 1, invert: 0.5, mordent: 0.3, intervalExpand: 0.3, augment: 0.2, ornament: 0.15 },
       harmonium: { augment: 3.5, transpose: 2.5, invert: 2, intervalCompress: 2, sequence: 1.5, intervalExpand: 1.2, rotate: 1, retrograde: 1, fragmentTail: 1, mordent: 0.6, ornament: 0.6, fragmentHead: 0.6, syncopate: 0.5, diminish: 0.4 },
-      bagpipe:   { intervalExpand: 3, augment: 3, sequence: 2.5, transpose: 2.5, rotate: 2, invert: 1.8, syncopate: 1.8, retrograde: 1.5, fragmentTail: 1, mordent: 0.8, fragmentHead: 0.8, diminish: 0.6, ornament: 0.6, intervalCompress: 0.5 },
     };
     var SECTION_TILT = {
       prelude:    { augment: 1.6, transpose: 1.4, ornament: 0.4, diminish: 0.4, sequence: 0.6 },
@@ -422,7 +422,7 @@ window.KOLOB = window.KOLOB || {};
       recentre(out);
       stats.developments++;
       remember(out);
-      log({ type: "motif-develop", name: out.name, gen: out.gen, how: [forced], withheld: true, cat: "motif", label: "◆ " + out.name + "·g" + out.gen, detail: forced + " · withheld" });
+      log({ type: "motif-develop", name: out.name, gen: out.gen, how: [forced], withheld: true });
       // occasionally one more free link — but only one, and never verbatim
       if (R.chance(0.4)) out = develop(voice, out, 1, mo, R);
       return out;
@@ -467,7 +467,7 @@ window.KOLOB = window.KOLOB || {};
       recentre(out);
       stats.developments++;
       remember(out);
-      log({ type: "motif-develop", name: out.name, gen: out.gen, how: used.slice(), gesture: out.gesture || null, cat: "motif", label: "◆ " + out.name + "·g" + out.gen, detail: used.join("+") + " · " + (out.gesture || "") });
+      log({ type: "motif-develop", name: out.name, gen: out.gen, how: used.slice(), gesture: out.gesture || null });
       return out;
     }
     // Which motif should a voice work right now? mo: the moment; R: the voice's turn.
@@ -505,15 +505,15 @@ window.KOLOB = window.KOLOB || {};
         var roll = R.rnd(0, 1);
         var deepLine = lineage[working.theme.name];
         if (roll < 0.25 && deepLine && deepLine.gen >= 3) {
-          log({ type: "motif-reprise", name: working.theme.name, how: "transfigured", gen: deepLine.gen, cat: "motif", label: "✸ reprise " + working.theme.name, detail: "the theme returns, transfigured — g" + deepLine.gen });
+          log({ type: "motif-reprise", name: working.theme.name, how: "transfigured", gen: deepLine.gen });
           return clone(deepLine);
         }
         if (roll < 0.4 && working.subs.length) {
           var subRe = R.pick(working.subs);
-          log({ type: "motif-reprise", name: subRe.name, how: "lesser", cat: "motif", label: "✸ reprise " + subRe.name, detail: "the lesser hymn returns — " + (subRe.gesture || "") });
+          log({ type: "motif-reprise", name: subRe.name, how: "lesser" });
           return clone(subRe);
         }
-        log({ type: "motif-reprise", name: working.theme.name, how: "verbatim", cat: "motif", label: "✸ reprise " + working.theme.name, detail: "the theme returns, verbatim — " + (working.theme.gesture || "") });
+        log({ type: "motif-reprise", name: working.theme.name, how: "verbatim" });
         return clone(working.theme);
       }
       if (sec === "postlude") {
@@ -533,7 +533,7 @@ window.KOLOB = window.KOLOB || {};
       out.notes.forEach(function (n) { n.durBeats *= 1 + x; });
       out.gen = m.gen + 1;
       out.chain = m.chain.concat(["dissolve"]);
-      log({ type: "motif-disperse", name: out.name, cat: "motif", label: "࿙ " + out.name + " disperses", detail: "notes let go into the dusk" });
+      log({ type: "motif-disperse", name: out.name });
       return out;
     }
 
@@ -577,7 +577,7 @@ window.KOLOB = window.KOLOB || {};
       }
       else ans = develop(voice, m, 2, mo, R);
       stats.answers++;
-      log({ type: "motif-answer", voice: voice, from: ob.from, how: ob.type, name: ans.name, gen: ans.gen, cat: "motif", label: "⇄ " + voice + " answers " + ob.from, detail: ob.type + " · " + ans.name + "·g" + ans.gen });
+      log({ type: "motif-answer", voice: voice, from: ob.from, how: ob.type, name: ans.name, gen: ans.gen });
       return ans;
     }
     function overdueFor(voice, mo) {
@@ -650,15 +650,13 @@ window.KOLOB = window.KOLOB || {};
       stats.gestures = idxs.map(function (g2) { return GESTURES[g2].name; });
       log({
         type: "hymns-of-the-day", gestures: stats.gestures.slice(), names: NAMES.slice(0, stats.gestures.length), temper: dialectName,
-        cat: "motif", label: "❁ the day's hymns",
-        detail: stats.gestures.map(function (g3, k) { return NAMES[k] + " " + g3; }).join(" · ") + " · temper: " + dialectName,
       });
     }
     function onSection(type) {
       if (type === "doxology") climaxReprised = false;
     }
     function theme() { return working.theme; }
-    // the day's other gestures (round 3: the day's hymnal seeds each hymn's
+    // the day's other gestures (the day's hymnal seeds each hymn's
     // first line from one of them — a copy of the list, the motifs as drawn)
     function subs() { return working.subs.slice(); }
     function anyWorking(mo, R) {

@@ -532,7 +532,7 @@ window.EarthTunesLab = (function () {
   // for the seven a version menu), the engraving, and the transcriber's notes
   function render() {
     stop();
-    var o = opts(), html = [], h = current(), i = ordered.indexOf(h);
+    var o = opts(), html = [], h = current();
     pickEl.value = slugOf(h);
     var L = linesOf(h), parts = Object.keys(L[0].notes);
     html.push('<section class="etl-card" id="t-' + slugOf(h) + '" data-id="' + esc(h.id) + '">');

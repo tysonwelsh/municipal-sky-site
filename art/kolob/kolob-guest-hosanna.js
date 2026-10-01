@@ -20,7 +20,7 @@
 // THE SHOUT. The whole ward (the thirty-two, and the Primary's children
 // when they are seated) shouts the three-fold Hosanna and the amens as one
 // crowd: each person in their own speaking voice raised (a pressed, brighter
-// source — VoicesVocal's `effort`, round 3c), on their own pitch, a moment
+// source — VoicesVocal's `effort`), on their own pitch, a moment
 // early or late against the rest, each syllable a spoken contour (the
 // stressed "SAN" and "GOD" higher, "LAMB" falling away) rather than a sung
 // note — so what is heard is a massed crowd on vowel formants, "Ho-san-na"
@@ -45,16 +45,17 @@
 // or beside that doxology does not keep it away (it names them); YIELD
 // makes it give way to them instead (PLAN §8.13; see THE OTHER GUESTS).
 //
-// UNLOGGED. `logged: false` on the seat, on every stage it tells
-// (hooks.onStage) and on every note it offers; it emits nothing of its own.
-// The hymn's written notes are offered to hooks.onNote with `guest:
-// "hosanna"`, `hosanna: true` and `logged: false`, so the minutes never print
-// a row for them (kolob-ui.js onNoteForLog passes over logged: false) — and
-// `engrave: ENGRAVE_HYMN`, the staff's own switch (PLAN §8.12: "the hymn is
-// engraved normally; the shout is not engraved" — the shout offers none).
-// Today's staff passes over every logged: false note, so until it is taught
-// to read `engrave` the whole Hosanna is audio-only; ENGRAVE_HYMN false keeps
-// it so even then.
+// UNLOGGED, AND AUDIO-ONLY (the owner's ruling). `logged: false` on the
+// seat, on every stage it tells (hooks.onStage) and on every note it
+// offers; it emits nothing of its own. The hymn's written notes are offered
+// to hooks.onNote with `guest: "hosanna"`, `hosanna: true` and `logged:
+// false`, so the minutes never print a row for them (kolob-ui.js
+// onNoteForLog passes over logged: false) — and `engrave: ENGRAVE_HYMN`,
+// the staff's own switch (PLAN §8.12 asked for "the hymn engraved normally;
+// the shout not engraved" — the shout offers none). The staff passes over
+// every logged: false note, so the whole Hosanna is audio-only; ENGRAVE_HYMN
+// false keeps the hymn off the staff even for a staff taught to read
+// `engrave`.
 //
 // PURE PLANNING. plan(), decide(), score() and words() touch no
 // AudioContext, DOM, clock or Math.random; the dice live on forks of the
@@ -89,8 +90,8 @@ window.KOLOB.GuestHosanna = (function () {
   var LABEL = "guest:hosanna:";
   var LOGGED = false;                              // the owner's ruling: never told
   // (the staff's switch only; never the minutes'. PLAN §8.12 asked for the
-  // hymn engraved and the shout not; the owner ruled it audio-only, round
-  // 3c: nothing of the Hosanna on the staff either)
+  // hymn engraved and the shout not; the owner ruled the Hosanna audio-only:
+  // nothing of it on the staff either)
   var ENGRAVE_HYMN = false;
 
   // ==========================================================================
@@ -104,8 +105,8 @@ window.KOLOB.GuestHosanna = (function () {
     if (Cal && Cal.SUNDAYS && Cal.SUNDAYS[sun]) return !!Cal.SUNDAYS[sun].hosanna;
     return sun === "easter" || sun === "dedication";
   }
-  // (round 3c: a meeting hands its odds in, info.odds, from the calendar's
-  // one table; still only on its two Sundays, whatever it is handed)
+  // (the meeting hands this room its odds from Calendar.GUEST_ODDS,
+  // info.odds; still only on its two Sundays, whatever it is handed)
   function oddsFor(info) { return !mayCome(info) ? 0 : info.odds != null ? Math.max(0, Math.min(1, +info.odds)) : Math.min(ODDS.cap, ODDS.weight[info.sunday] != null ? ODDS.weight[info.sunday] : 0.5); }
   // the bus: the shout and the ward calibrated in guests3c-lab against the
   // organ reference (the shout's loudest 3 s about level with it; the hymn,
@@ -120,9 +121,9 @@ window.KOLOB.GuestHosanna = (function () {
   // into their vowels — about a third fewer nodes a singer), "none" (vowels,
   // as the ward sings every other hymn). The owner's to choose by ear and cost.
   var HYMN_CONSONANTS = "all";
-  // THE SHOUT'S AIR (round 2: the critic heard it about 6 dB brighter above
-  // 4 kHz than the hymn — PLAN §15's hiss was the ward's breath). Three
-  // levers, the owner's to turn by ear: SHOUT_FRIC, how much of the s is
+  // THE SHOUT'S AIR (a shout about 6 dB brighter above 4 kHz than the hymn
+  // reads as hiss — PLAN §15's hiss was the ward's breath). Three levers,
+  // the owner's to turn by ear: SHOUT_FRIC, how much of the s is
   // said (0..1); SHOUT_H_SWELL, how much the breath swells through each h
   // (×; null is the voices' own, 4; 1 is none); SHOUT_EFFORT, how raised
   // each voice is (× each person's drawn 0.6–0.95; 0 is a sung voice)
@@ -144,7 +145,7 @@ window.KOLOB.GuestHosanna = (function () {
 
   // ==========================================================================
   // THE SHAPE — the shout's pace and rise, the room's breath between, the
-  // hymn's pace and its broadening (every die, in order)
+  // hymn's pace and its broadening (DICE: every die, in order)
   // ==========================================================================
   function shapeOf(stream, sunday) {
     var r = need(stream).fork("shape");
@@ -171,7 +172,7 @@ window.KOLOB.GuestHosanna = (function () {
   // beside the (last) doxology does not keep it away — the band that crosses
   // the doxology crosses first, and the Hosanna follows at its close; the
   // bells ring the valley home after it. It names them (`beside`), for the
-  // integrator and the lab. YIELD true makes it give way instead: no
+  // meeting and the lab. YIELD true makes it give way instead: no
   // Hosanna when a guest is in or beside that doxology. The owner's to rule.
   var YIELD = false;
   function besideOf(guests, secs, di) {
@@ -187,7 +188,7 @@ window.KOLOB.GuestHosanna = (function () {
   function decide(info, stream) {
     info = info || {};
     var rs = need(stream).fork("seat");
-    var roll = rs.next();                          // (the hook's die: kolob-meeting.js throws exactly this)
+    var roll = rs.next();                          // DICE: the hook's die, first — kolob-meeting.js throws exactly this
     var p = oddsFor(info), why = null, secs = info.sections || [], di = -1;
     for (var i = 0; i < secs.length; i++) if (secs[i] && secs[i].type === "doxology") di = i;
     var beside = di >= 0 ? besideOf(info.guests, secs, di) : [];
@@ -327,7 +328,7 @@ window.KOLOB.GuestHosanna = (function () {
     var Rc = stream.fork("crowd"), people = crowd.map(function (m) {
       var r = Rc.fork("person:" + m.id), rg = SPEAK[m.part] || SPEAK.A;
       var F = r.rnd(rg[0], rg[1]), lag = clamp(0.09 + (r.rnd(0, 1) + r.rnd(0, 1) + r.rnd(0, 1) - 1.5) * 0.06, 0.01, 0.24), lvl = r.rnd(0.8, 1.05), eff = r.rnd(0.6, 0.95);
-      var jit = []; for (var q = 0; q < 24; q++) jit.push(r.next());
+      var jit = []; for (var q = 0; q < 24; q++) jit.push(r.next());   // DICE: twenty-four a person, drawn whether a cry reads them or not
       var spec = {}; for (var k in m.voice) spec[k] = m.voice[k];
       spec.effort = eff * SHOUT_EFFORT; spec.brightness = clamp((spec.brightness || 0.5) + 0.2, 0, 1); spec.vibrato = { depth: 0, rate: 5, onsetDelay: 1 };
       spec.confidence = Math.max(0.8, spec.confidence || 0); spec.pitchHabitCents = 0; spec.timingHabitMs = 0; spec.level = lvl;
@@ -460,10 +461,10 @@ window.KOLOB.GuestHosanna = (function () {
       spec.rand = synth.fork("sing:" + s.memberId); spec.sharedThroat = true; spec.sharedPan = true; spec.pan = s.pan; spec.name = "hosanna-hymn:" + s.memberId; spec.kind = "hosanna-hymn";
       return (ward[s.memberId] = V.singer(spec));
     }
-    // (every note says logged: false — the minutes and today's staff take
-    // none of it, SCORE §6 — and names its guest; `engrave` is the staff's
-    // own switch, read only by a staff taught to engrave the Hosanna's hymn
-    // though it is unlogged, as PLAN §8.12 asks: a request to ENGRAVE)
+    // (every note says logged: false — the minutes and the staff take none
+    // of it, SCORE §6 — and names its guest; `engrave` is the staff's own
+    // switch, false by the owner's ruling, read only by a staff taught to
+    // engrave an unlogged hymn)
     function report(ln) {
       if (!hooks.onNote) return;
       ["S", "A", "T", "B"].forEach(function (p) { ln.parts[p].forEach(function (n) { hooks.onNote({ layer: "choir", freq: n.f, t: n.t, dur: n.dur, part: p, hymnId: sc.tune.id, line: ln.i, beat: n.beat, deg: n.deg, monzo: n.monzo, guest: NAME, hosanna: true, logged: false, engrave: ENGRAVE_HYMN }); }); });
@@ -517,4 +518,4 @@ window.KOLOB.GuestHosanna = (function () {
     get LEVEL() { return LEVEL; }, set LEVEL(v) { LEVEL = +v; },
   };
 })();
-(window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-guest-hosanna.js"] = true;   // the load guard's roll call (round 3c)
+(window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-guest-hosanna.js"] = true;   // the load guard's roll call

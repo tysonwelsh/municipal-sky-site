@@ -1,4 +1,5 @@
 <?php
+$track_page = 'art';   // anonymous page-view tally (includes/footer.php)
 $page_title = 'Art - Municipal Sky';
 $page_description = 'Generative and aleatoric art — music engines, machine-interface experiments, and other computational explorations.';
 include '../includes/header.php';

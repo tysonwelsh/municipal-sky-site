@@ -265,9 +265,8 @@ window.KOLOB.GuestChanges = (function () {
     return stream;
   }
   function oddsFor(info) {
-    // (round 3c: a meeting hands its odds in, info.odds, from the calendar's
-    // one table — KOLOB.Calendar.GUEST_ODDS; a lab without it reads this
-    // room's own, below)
+    // (the meeting hands this room its odds from Calendar.GUEST_ODDS,
+    // info.odds; a lab without them reads the room's own ODDS)
     if (info && info.odds != null) return Math.max(0, Math.min(1, +info.odds));
     var w = ODDS.weight, k = info.sunday && w[info.sunday] != null ? info.sunday : info.kind;
     return Math.min(ODDS.cap, ODDS.base * (w[k] != null ? w[k] : 1));
@@ -400,7 +399,7 @@ window.KOLOB.GuestChanges = (function () {
   function decide(info, stream) {
     info = info || {};
     var rs = need(stream).fork("seat");
-    var roll = rs.next(), atU = rs.next();                           // every die, first
+    var roll = rs.next(), atU = rs.next();                           // DICE: every die, first
     var p = oddsFor(info), why = null, steeple = null;
     (info.guests || []).forEach(function (g) { if (g && g.type === "steeples" && !steeple) steeple = g; });
     var order = (info.sections || []).map(function (s) { return s && s.type; });
@@ -501,8 +500,8 @@ window.KOLOB.GuestChanges = (function () {
     var T = tower(ctx, dest, m.bells, { born: born, end: tEnd, Y: Y, side: m.side, where: m.where, distance: m.distance, level: hooks.level });
     // where each ringer's stroke actually lands, and how hard (sound-level:
     // a steady band within a few milliseconds, a fair one looser, now and
-    // then a bell a shade late), drawn for every stroke now, in order, so
-    // a ringing laid out in slices is the same ringing
+    // then a bell a shade late). DICE: drawn for every stroke now, in order,
+    // so a ringing laid out in slices is the same ringing
     var spread = m.band === "steady" ? 0.007 : 0.016;
     var lands = sc.strikes.map(function () { return { dt: Y.rnd(-spread, spread) + (Y.chance(m.band === "fair" ? 0.05 : 0.015) ? Y.rnd(0.015, 0.03) : 0), dv: Y.rnd(0.9, 1.08) }; });
     function stroke(k) {

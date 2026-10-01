@@ -1,181 +1,374 @@
-# KOLOB 2 — the measurement tools
+# KOLOB — the measurement tools
 
-*These are the instruments the critics and the owner's listening packets read
-from (PLAN-COMPOSITION §2.6 and §12; PLAN-EXECUTION §4). Round 2, crew
-r2-tools, 2026-09-27.*
+*What `art/kolob/tools/` holds, how each tool is run and how to read what it
+writes. Written 2026-10-01 at v0.36.2; keep it true when the tools change.
+The owner's rules that bind these tools are in `art/kolob/README.md`.*
 
-Five tools, one self-test and one renderer. All are plain Node with no packages
-(Node 22 or later: the browser tools use Node's own WebSocket). Three of them read
-only the harness's dump, so they keep working when the engine changes. Two drive
-a **muted** headless Chrome.
+Ten tools, all plain Node (22 or later: the browser tools use Node's own
+WebSocket) with no packages, except `samecode.js`, which needs the `acorn` that
+`npm install` at the repo root brings with ESLint. Three read the engine's
+source and nothing else; three read only the harness's dump, so they keep
+working when the engine changes; two drive a **muted** headless Chrome.
 
 | tool | answers | reads | time |
 |---|---|---|---|
+| `loadcheck.js` | Does the engine load, does every room answer, does the facade carry what the page calls, does one hymn proofread? | the source, headless | ~1 s |
+| `lends.js` | Does every `S.name` a room reads have a lend somewhere on the shared bag? | the source | <1 s |
+| `samecode.js` | Did an edit touch only comments and whitespace? | the source, in git and in the worktree | ~1 s |
 | `distinctness.js` | Do two random seeds sound clearly different within three minutes? (design law 2) | the dump | ~2 s for 20 seeds |
 | `repetition.js` | How often does a meeting say the same thing twice, and which shapes turn up in every meeting? | the dump | ~2 s for 20 meetings |
-| `tally.js` | What is a meeting made of (cadences, guests, sections, notes per layer)? Did a change move it (A/B)? | the dump | ~2 s per 20 seeds; A/B of two builds at 60 seeds, ~45 s |
+| `tally.js` | What is a meeting made of (cadences, guests, sections, notes per layer)? Did a change move it (A/B)? | the dump | ~2 s per 20 seeds; A/B at 60 seeds, under a minute |
 | `screens.js` | What does the staff look like at 860 and 390 px, and what does a frame cost at 4× CPU throttling? | the page, muted | real time: ~2.5 min per width |
 | `capture.js` | What does a seeded meeting sound like, as a WAV, a spectrogram, loudness (LUFS) and peak? | the page, muted | real time: 4 min for a 4-min window |
-| `render.js` | Renders a dump set to keep, or to hand to a critic. | the harness | ~1 s per seed |
-| `selftest.js` | Do the instruments still read true? | the harness plus synthetic dumps and signals | ~5 s |
+| `render.js` | Renders a dump set to keep, or to read twice. | the harness | ~1 s per seed |
+| `selftest.js` | Do the instruments still read true? | the harness plus synthetic dumps and signals | ~30 s |
 
 Every report opens with what it measured: the engine, its VERSION, its git
 commit, a fingerprint of the module bytes the harness was *seen* to play (see
 "Which build is measured"), the seconds per seed, the flags and the harness.
-Reports, dumps, PNGs and WAVs go to `tools/out/<tool>-<stamp>/`, which is
-gitignored, unless you pass `--out <dir>`.
+Reports, dumps, PNGs and WAVs go to `tools/out/<tool>-<stamp>/` unless you pass
+`--out <dir>`. **`tools/out/` is gitignored** (`tools/.gitignore`) and
+`out/_builds/` holds whole unpacked git trees, so a grep over `art/kolob` must
+exclude it (`grep -r --exclude-dir=out …`).
 
 ```sh
 cd art/kolob
+node tools/loadcheck.js                          # the engine loads; the roll call; one hymn proofread
+node tools/lends.js                              # every S.x read has a lend
+node tools/samecode.js                           # HEAD against the worktree: code unchanged?
 node tools/selftest.js                           # the instruments, checked (seconds)
 node tools/distinctness.js                       # 20 seeds, first 180 s → out/distinctness-…/report.md
 node tools/repetition.js                         # 20 seeds, 1200 s, every complete meeting
 node tools/tally.js                              # the same, counted
-node tools/tally.js --a git:kolob-2 --b worktree # A/B: did my change move the meeting? (60 seeds a side)
+node tools/tally.js --a git:main --b worktree --seeds 1-20   # did my change move the music?
 node tools/screens.js --seed 1847                # staff at 20/60/120 s, 860 + 390 px, frames at 4×
-node tools/capture.js --seed 1847 --to 240       # the Listener's four minutes
+node tools/capture.js --seed 1847 --to 240       # four minutes, recorded
 ```
+
+CI (`.github/workflows/kolob-check.yml`) runs lint, `loadcheck`, `lends`, the
+harness and `selftest`. `tally.js --a git:main --b worktree` is the standard
+"did my change move the music" check: a housekeeping change must leave every
+seed byte for byte the same; a musical change should move only what it meant to.
 
 ## Silence: the owner's rule
 
 **Every browser these tools launch is muted.** `lib/chrome.js` starts Chrome
 with `--headless=new --mute-audio --autoplay-policy=no-user-gesture-required`,
-the debugging port 9423 and the profile `/private/tmp/claude-501/kolob-r2-tools-chrome`.
-`launch()` refuses to start a Chrome without `--mute-audio`. Each report
-prints the flags it ran with.
+the debugging port 9423 and a profile under `os.tmpdir()`
+(`<tmp>/kolob-r2-tools-chrome`); `launch()` refuses to start a Chrome without
+`--mute-audio`, and each report prints the flags it ran with. The binary is
+`KOLOB_CHROME` if set, else the first found of the Mac path, a Playwright
+chromium under `PLAYWRIGHT_BROWSERS_PATH`, or the distro's; running as root
+(CI, a container) adds `--no-sandbox`.
 
 - The capture tap sits inside the page, so it hears the signal while the
-  speakers hear nothing.
-- The page's analytics and newsletter endpoints are blocked, so test visits are
-  not counted.
+  speakers hear nothing. The page's analytics and newsletter endpoints are
+  blocked, so test visits are not counted.
 - The tools start their own `php -S 127.0.0.1:8113`, or reuse one already
   running, but only if its `kolob-core.js` is byte-identical to this tree's.
-- Chrome and the server are killed on exit, including on Ctrl-C.
-- **Two runs at once** need two ports: `--chrome-port 9424 --port 8114`.
-  The Chrome profile follows the port (`…/kolob-r2-tools-chrome-9424`), or
-  name one with `--profile <dir>`. A Chrome on a profile that another Chrome
-  holds would hand itself to the first and quit, so `launch()` refuses one
-  and names the process holding it. Give the second run its own `--port`
-  too: a run that reuses another's `php -S` loses it when that run ends.
+  Chrome and the server are killed on exit, including on Ctrl-C.
+- **Two runs at once** need two ports: `--chrome-port 9424 --port 8114`. The
+  profile follows the port (`…-9424`), or name one with `--profile <dir>`; a
+  Chrome whose profile another Chrome holds would hand itself to the first
+  and quit, so `launch()` refuses one and names the holder. A run that reuses
+  another's `php -S` loses it when that run ends, hence the second `--port`.
+  (The `--profile` line in `screens.js`'s and `capture.js`'s `--help` still
+  prints an old Mac path; the code uses `os.tmpdir()`.)
 
 ## Which build is measured
 
-The three dump tools render through the harness (`art/kolob/_harness.js`,
-untracked). They can point it at any build:
+The three dump tools render through the harness, `art/kolob/_harness.js`
+(see "The harness"). They can point it at any build:
 
 | `--engine` (or `--a` / `--b` in tally) | what is rendered |
 |---|---|
 | *(default)*, `worktree` | this worktree's `art/kolob` |
-| `<dir>` | any directory with `kolob-core.js`, or v0.30's single-file `kolob-audio.js` |
-| `git:<ref>` | a build out of git (`git archive <ref> art/kolob 'art/prosperos-jukebox-v2/*.js'`, unpacked into `out/_builds/<sha>/`), for example `git:main` (v0.32 live) or `git:kolob-2` |
+| `<dir>` | any directory with `kolob-core.js`, or the single-file `kolob-audio.js` of a build before 2026-09-26 |
+| `git:<ref>` | a build out of git (`git archive <ref> art/kolob 'art/prosperos-jukebox-v2/*.js'`, unpacked into `out/_builds/<sha>/`), for example `git:main`, the live v0.36.x split build |
 | `--dumps <dir>` | a dump set already rendered (by `render.js`, or anyone's `dump=` runs) |
 
-**The harness used** is `--harness <file>` if you give one. Otherwise it is the
+**The harness used** is `--harness <file>` if you give one; otherwise the
 engine directory's own `_harness.js`, or this worktree's for a `git:` build.
-The tools point it at the build with `KOLOB_BASE` (the engine crew's name) and
-`KOLOB_DIR` (this crew's) alike, and load a single-file build with
-`KOLOB_LEGACY`. Nothing is ever written into an engine directory.
+The tools point it at the build with `KOLOB_BASE` and `KOLOB_DIR` alike (two
+names for one thing; the harness reads either), and load a single-file build
+with `KOLOB_LEGACY` — which matters only for `git:` refs before 2026-09-26,
+when `kolob-audio.js` was split into the module family. Nothing is ever
+written into an engine directory.
 
 **The harness is not taken at its word.** A harness that ignores where it is
 pointed plays its own directory's engine, and an A/B then reports "nothing
-moved" when everything did (round 2's critic caught exactly that). So every
-render runs with `lib/witness.js` preloaded (`node -r`). The witness stands by
-`fs.readFileSync` and writes down every engine file the harness reads
-(`kolob-*.js`, the substrate's `pj2-*.js`): where it lay and a hash of its
-bytes (`seed-N.witness.json` beside each dump). Before a single number is
-computed, `lib/run.js` holds that record against the build it meant, and
-**refuses the set** when:
-
-- any module came from another directory than the build's (or a substrate
-  script from another substrate than the build's own `../prosperos-jukebox-v2`);
-- a module on the build's own list went unread, or a module off it was read.
-  The list is the build's `_engine.php` (round 2 on), else `index.php`'s
-  `$kolob_engine` (the split), else the single file;
-- the bytes it read are not the list's bytes, or changed during the render, or
-  differ between seeds;
-- the harness read no engine file the witness could see;
-- the harness says, in the dump header's `engine` field, that it loaded
-  something else than the witness saw.
-
-The refusal names the harness, the build and what went wrong, for example:
+moved" when everything did. So every render runs with `lib/witness.js`
+preloaded (`node -r`): it stands by `fs.readFileSync` and writes down every
+engine file the harness reads (`kolob-*.js`, the substrate's `pj2-*.js`), where
+it lay and a hash of its bytes (`seed-N.witness.json` beside each dump). Before
+a single number is computed, `lib/run.js` holds that record against the build
+it meant — its list is `_engine.php` (the one list since 2026-09-29), else
+`index.php`'s `$kolob_engine` (the split builds of 2026-09-26 to -29), else the
+single file — and **refuses the set** when a module came from another directory
+(or a substrate script from another substrate), when a listed module went
+unread or an unlisted one was read, when the bytes are not the list's, changed
+during the render or differ between seeds, when no engine file was seen at all,
+or when the dump header's `engine` field disagrees with the witness:
 
 ```
-tally.js: harness failed for seed-3 — deaf-harness.js did not play the build it was pointed at (v032, art/kolob/tools/out/_builds/90126a3dd55f/art/kolob):
-  - 12 of the files it played (kolob-pitch.js, kolob-melody.js, kolob-harmony.js and 9 more) came from art/kolob, not from art/kolob/tools/out/_builds/90126a3dd55f/art/kolob
-  - none of the 12 modules on the build's list (index.php) was read from the build
+tally.js: harness failed for seed-3 — deaf-harness.js did not play the build it was pointed at (worktree, art/kolob):
+  - 12 of the files it played (kolob-pitch.js, kolob-melody.js, kolob-harmony.js and 9 more) came from art/kolob, not from …
   A harness must load from KOLOB_BASE or KOLOB_DIR (the tools set both) and play the build's own list; pass --harness <file> to use one that does.
 ```
 
-The fingerprint in every report is the witnessed one: SHA-1 over the files
-played, in name order, each its name and then its bytes. A module the build
-does not play (a lab module) no longer moves it. If the harness cannot load a
-build at all, the tool stops with the harness's `LOAD` error.
+"Read the build's files but not its bytes" or "changed while it was being
+rendered" is what you see when someone is editing the engine while a tool
+renders it: render again when the tree is still. The fingerprint in every
+report is the witnessed one: SHA-1 over the files played, in name order, each
+its name then its bytes, first ten hex digits; a lab module the build does not
+play does not move it. If the harness cannot load a build at all, the tool
+stops with the harness's `LOAD` error.
+
+## The harness
+
+```sh
+node _harness.js <secs> <seed> [ives] [razz] [cumulative] [force=<guest>] [exp=<spec>]
+                 [stop=<secs>,…] [play=<secs>,…] [reseed=<seed>@<secs>,…]
+                 [throw=<lane>@<secs>,…] [badlistener=note|event] [desk=<secs>]
+                 [dump=<file>] [header]
+```
+
+`art/kolob/_harness.js` (tracked since 2026-10-01) mocks `window` and Web Audio
+with nodes that only record what was done to them, drives a virtual clock
+through a queue of fake timers, and evaluates the real engine sources
+unmodified — `_engine.php`'s list, in order, the substrate first. Nothing in it
+makes a sound. It plays until the clock passes `<secs>` + 3, presses STOP (so
+the stop fade is exercised), prints a report (meetings, sections, notes by
+layer, events by type, guests, the clock's health, the hymnal's desk, the graph
+built, warnings, errors) and ends with `VERDICT: PASS ✓` or `FAIL ✗`; exit 1 on
+any caught error or a late cue; a module that fails to load prints
+`LOAD <file>: <error>` and no dump is written. The switches: `ives` /
+`force=<guest>` (`setForceVisitation(true)` / one named guest), `razz`
+(`setForceRaspberry(true)`), `cumulative` (`setCumulativeMode("always")`),
+`exp=<spec>` (as `?exp=` takes it: `-name`, `+name`, `none`, `all`),
+`dump=<file>` (the note and event streams) and `header` (with `dump=`: a first
+line naming the run and the engine — the tools and CI always pass it; a plain
+`dump=` stays byte-identical to a headerless one). `KOLOB_BASE` or `KOLOB_DIR`
+names the engine directory (default: the harness's own); `KOLOB_LEGACY=<file>`
+loads a single-file build instead, best effort. Every module is read with
+`fs.readFileSync`, so the witness sees exactly which bytes were played; the
+same arguments on the same build give a byte-identical dump (CI checks it).
+
+**The accounting.** The `clock:` line counts, apart, the engine's timers still
+armed after the last STOP (a `setTimeout`, `setInterval`,
+`requestAnimationFrame` or `requestIdleCallback` still waiting would be a
+leak; there is none today) and the sources scheduled past the run's end — the
+mock's `onended` for a node whose `stop()` lies beyond it, the drone partials
+and the voices written ahead (seed 7 at 300 s: 101, due 305–325 s), not a leak.
+`console.warn` counts the warnings other than the refused fetch's (the harness
+has no network, so a room keeps the impulse response it poured — expected) and
+prints each on its own line. None of the three moves the verdict.
+
+**A scripted transport.** `stop=<secs>` presses STOP and `play=<secs>` PLAY at
+that time on the audio clock (the dump's timeline): `stop=120 play=121` is a
+stop and a quick restart. Each takes a comma list or comes again
+(`stop=120,400 play=121,402`); at one time a stop goes first; a time at or past
+`<secs>` is not played, and the report says so. The script is printed on the
+report's first line (`script stop@120 play@121`), the dump's `transport` events
+fall at its times, and the run's end still presses STOP. Through `render.js`,
+whose `--flags` splits on commas, give each time its own switch
+(`--flags stop=120,play=121`). `reseed=<seed>@<secs>` changes the seed at that
+time as GATHER does (a new visit), between a stop and a play at the same time:
+`stop=90 reseed=7@90 play=90.5` is a STOP, a new seed and its first meeting; the
+report prints a line for it with the drone's note before and after (seed 1:
+`×1.25 third (cantus 0) → ×1 tonic`, PLAN-REFACTOR §2.2). The `meetings:` line
+marks a meeting called inside a stillness's hold `hushed at its downbeat` (the
+conductor begins no guest, fuging or other stillness until the hold ends). A
+STOP ends the hold; a joint does not, so a stillness late in a postlude may
+hold into the next meeting's first seconds (on a plain run, none of 284
+meetings over 80 seeds began so).
+
+**The presses' timers.** With a script, a `presses:` line follows the `clock:`
+line: every press (the first PLAY at 0, each `stop=`, `play=` and `reseed=`,
+and the run's last STOP), and what became of each `setTimeout` the engine
+armed inside one — cleared (and by which press), fired, or still armed. A timer
+that fired after a later press is told on a line of its own with what it did
+then (the nodes it disconnected, the automation calls it made, the nodes it
+built), and so is every other that touched the graph (a STOP's, disconnecting
+its doors); a timer cleared by a later press is told too. A press's timer that
+outlives the next press acts on that press's meeting: before PLAN-REFACTOR
+§2.3, seed 22, `stop=120 play=120.3 stop=120.5` printed `stop@120's 800 ms
+timer fired at 120.800 s, after play@120.3, stop@120.5: 3 node(s)
+disconnected, 12 automation call(s)` — the second STOP's doors (its meeting's
+drone) cut 0.3 s into its 0.6 s fade; now `stop@120's 800 ms timer cleared by
+play@120.3`, and the second STOP's own timer disconnects them at 121.3 s.
+With a script (or `desk=`), the `hymnal:` line also counts the hymns written
+while the transport stood stopped (from a STOP of a playing meeting to the
+next PLAY, or to the run's end) and the orders never written.
+
+**A paced desk.** `desk=<secs>` paces the hymnal's idle road (the harness has
+no Worker, so the hymns are written there): each slice — one hymn written on
+the main thread — comes `<secs>` after the one before, as a browser's comes
+after the hymn before it took that long. Without it the harness's clock stands
+still while a hymn is written, so a meeting's book is written at the instant
+it is ordered and no press can find the desk at work. The slices are known by
+their function's name (`idleSlice`, `kolob-hymnal.js`); the `hymnal:` line
+says how many were paced. Pacing moves no record (seed 7, 110 s: the plain
+run's dump). Seed 7, `desk=0.5 stop=0.7`: before PLAN-REFACTOR §2.3 the desk
+wrote the stopped meeting's last two hymns while stopped; now it writes none
+and leaves them unwritten, a PLAY at 1 s passes them over for the next
+meeting's, and a GATHER of the same seed between (`reseed=7@0.7`) writes them
+for the meeting it calls again.
+
+**A fault injection.** `throw=<lane>@<secs>` makes the first cue on that clock
+lane (`conductor`, `drone`, `choir`, `organ`, `ward`, …) at or after that time
+throw an `Error`, once; a comma list for several (`throw=drone@120,choir@200`).
+The harness wraps `PJ2.Clock.create` after the substrate loads (the substrate
+is not touched) and watches every lane's `at`/`in`/`every`; the cue throws from
+inside its own callback — the moment it schedules on its own lane (a layer's
+and the conductor's re-arm, the last thing they do), or, if it schedules
+nothing there, as it returns — so a `try/finally` in the engine sees the throw.
+The clock reports it (`console.error`), and the report files it with its
+injection, not among the run's errors. The report prints the cues counted lane
+by lane (which add up to the clock's own count) and, for each throw, when it
+fired, who reported it, how many cues its lane ran after it and how many
+sections the meeting began after it — the proof of PLAN-REFACTOR §2.1. Seed 7,
+600 s: `throw=drone@120` fires at 134.6 s and the core's net re-arms the drone
+5 s later (8 cues after it); `throw=conductor@300` fires at 300.5 s, the next
+tick is armed 0.6 s on, and the meeting is the clean one, record for record;
+`throw=choir@212.5` breaks a hymn's chain of lines, the hymn is let go, and the
+meeting begins its next hymn at 349.4 s (1,643 notes where the clean run plays
+2,573: the rest of that hymn is not sung; before §2.1 the hymn never ended and
+the meeting stayed in it, 972 notes); `throw=ward@200` and
+`throw=organist@200` fire at 200.05 s, each pump's next tick is armed at its
+own pace (0.12 s, 0.2 s), and the dump and the graph are the clean run's
+(before, the ward's pump stopped — the graph 19,989 nodes where the clean run
+builds 29,537, its notes told all the same — and the organist's, 1,963 notes
+for 2,573). Without `throw=` nothing is wrapped.
+
+**A bad listener.** `badlistener=note` (or `event`, or `note,event`) registers,
+after the harness's own, a note (event) listener with a bug in it: it throws at
+every note (event) it is handed, as a fault in the staff or the minutes would.
+The engine passes it over and tells its fault (`kolob-core.js`, THE FAULTS:
+`console.error("Kolob: the note listener 2 threw (on a note of the organ)", err)`
+the first time, then at every thousandth with its count); each `console.error`
+that carries its throw is filed with it, not among the run's errors, and a line
+says how many it threw and how many the engine told, with the first line told.
+The dump is the clean run's. Seed 7, 300 s: 1,755 notes thrown at and 2 told
+(the first and the thousandth), 91 events and 1 told; before PLAN-REFACTOR §2.4
+the engine told none of them — an empty catch around every listener.
 
 ## The dump format (v1)
 
-These tools depend on the dump and nothing else. The harness writes it with
-`node _harness.js <secs> <seed> [ives] [razz] [cumulative] dump=<file> [header]`:
-one JSON array per line, `[kind, t, payload]`.
+The tools depend on the dump and nothing else: one JSON array per line,
+`[kind, t, payload]`. Records past the run's end are dropped.
 
 | kind | `t` | payload |
 |---|---|---|
-| `"H"` | 0 | **header**, first line, written only when the harness is given the `header` argument (the tools always give it): `{format: "kolob-dump", v: 1, seed, secs, flags: [...], engine: {dir, legacy, files, fingerprint}}`. `engine` (added in round 2; the engine crew's harness may also give `list`) says where the modules were loaded from and what their bytes hash to, the witness's way; the tools hold it against their witness. It is built from the arguments and the engine alone, so same-argument runs on one build stay byte-identical. It is opt-in so a plain `dump=` stays byte-identical to older dumps. A dump without it still reads: the seed comes from the `▶ … seed N` event or the file name, and the length from the last record. |
-| `"N"` | the harness clock when the note was *emitted* (scheduled) | **a note** exactly as `onNote` delivers it: `{layer, freq, startTime, duration, …extra}`. `startTime` is when it sounds, and is usually ahead of `t`. Extras today: `marks` (telegraph), `part`, `beat` and `loud` (band). SCORE §6 adds `part, hymnId, beat, syl, deg, monzo, marks`. |
-| `"E"` | the harness clock at emission | **an event** exactly as `onEvent` delivers it. v0.30's log events are `{cat, label, detail, t}`; SCORE §6's typed events are `{type, t, …payload}`. |
+| `"H"` | 0 | **header**, first line, written when the harness is given `header`: `{format: "kolob-dump", v: 1, seed, secs, flags: [...], engine: {dir, legacy, list, files, fingerprint}}`. `engine` says where the modules were loaded from and what their bytes hash to, the witness's way. A dump without it still reads: the seed comes from the `transport` event (`seed N`) or the file name, the length from the last record. |
+| `"N"` | the music's own time at emission (`S.now()`: the cue's scheduled time inside a cue, the audio clock outside) | **a note** exactly as `onNote` delivers it: `{layer, freq, startTime, duration, …extra}`. `startTime` is when it sounds, usually ahead of `t`. Extras: `part`, `hymnId`, `beat`, `syl`, `deg`, `monzo`, `marks`, `memberId`, `loud` (SCORE §6). |
+| `"E"` | the music's own time at emission | **an event** exactly as `onEvent` delivers it: `{type, t, …payload}`. (A dump from a build older than 2026-10-01 also carries the log words `cat`, `label`, `detail` on each event; the reader reads them only for a type it does not know.) |
 
-**How the reader (`lib/dump.js`) takes it**
+**How the reader (`lib/dump.js`) takes it.** A note's time is its `startTime`;
+an event's is its `t`, or the record's `t` when it has none; events are ordered
+by time, emission order within a tie. An event is read by its `type` (the
+reader knows every type a live build sends), and by its words (`cat` +
+`label`) only for a type it does not know. The words are the only reading of a
+dump from a build before 2026-09-27 (before the typed bus); such a dump may
+tell one happening twice, a log line and a typed event, and the two are merged
+into one. Whatever neither vocabulary knows is still counted in tally's "events
+per meeting", by its `type` (its `cat`, in an old dump; all but `transport`,
+the harness's start-up line); any other record kind, and an unparseable line,
+is skipped. **Meetings** run from one meeting-start to the next; the last is
+complete only if its last joint says it ended inside the run (`joint {last:
+true, dur}`; in an old dump `∴ joint — meeting ends`, read by its words; a
+typed `meeting-end {dur}` is accepted, though no engine emits one). **Sections** run
+from one section start to the next, joint included. **Guests** begin and end on
+`guest-start` / `guest-end {guest, section, logged}`; the typed `guest` event
+is a *stage* of a guest already begun (`{guest, stage}`: the band approaches,
+crosses, passes) — a mark, never a second start, so a stage label is never
+counted as a guest of its own. **Voices** are one line per layer, or per
+`layer:part` when notes carry `part`; a chordal layer without parts is read by
+its top line; unpitched notes (`freq` 0) never make a voice.
 
-- **Times.** A note's time is its `startTime`. An event's time is its `t`, or
-  the record's `t` when the event has none.
-- **Forward compatibility.** Lines of any other kind are skipped, and so is an
-  unparseable line. An event neither vocabulary knows is still counted in
-  tally's "events per meeting", by its `cat` or `type` (all but `transport`,
-  the harness's own start-up line, which one harness tells and another does
-  not).
-- **Two harnesses stamp differently.** This crew's harness gives each record
-  the harness clock at emission; the engine crew's gives the music's own
-  time and drops records past the run's end (and the engine crew's engine
-  calls the meeting at 0.1 s, not 0).
-  The reader takes both. Only tally's byte-for-byte identity line cares, and
-  it says so when A and B were rendered by different harnesses.
-- **Both vocabularies at once.** During the migration one happening may be told
-  twice: a log line and a typed event within a fraction of a second. The two
-  are merged into one (meetings, sections, cadences, guests, hymns), and the
-  merged event keeps both sets of fields.
-- **Meetings** run from one meeting-start to the next. The last meeting is
-  complete only if the log says it ended inside the run (`∴ joint — meeting ends`).
-  **Sections** run from one section start to the next, joint included.
-- **Voices** are one line per layer, or per `layer:part` when notes carry
-  `part`. A chordal layer without parts (v0.30's choir prints SATB at one
-  onset) is read by its top line. Unpitched notes (`freq` 0) never make a voice.
+**The words the reader knows**, in both vocabularies (the log words only in a dump older than 2026-10-01):
 
-**The words the reader knows.** v0.30's log is read by its words, not its glyphs:
-
-| v0.30 log (`cat` · label) | reads as | SCORE §6 typed |
+| log (`cat` · label) | reads as | typed |
 |---|---|---|
-| `meeting` · `☀ meeting N` (detail `F0 … Hz · mode · kind · season`) | meeting: mode, kind, keynote = F0×4 | `meeting-start {n, sunday, kind, mode, keynoteHz, houseDialect}` |
-| `meeting` · `☀ sunrise` | mode change | — |
-| `section` · `§ HYMN` (detail `[meter ·] 87s`) | section, planned length, meter | `section-start {section, index, dur?}` |
-| `harmony` · `∴ plagal cadence` | cadence (plagal, authentic, half, …) | `cadence {kind}` |
-| `cadence` · `∴ joint` (`meeting ends · 8s`) | section joint; the end of a meeting | `meeting-end {n, dur?}` *(requested; read already)* |
-| `cadence` · `∴ the room empties` | not a joint of its own: it says the joint that follows goes into stillness (around the sacrament), and marks that joint `still` | — |
-| `visitation` · `? the question`, `⇋ a band approaches`, `◎ the steeples answer`, `✧ an old tune remembered`, `∴ raspberry`, `◌ the tune is withheld` | guest start: question, bands, steeples, oldtune, raspberry, cumulative (with their end and mark lines) | `guest-start` / `guest-end {guest, section, logged}` |
-| `motif` · `❁ the day's hymns` | the day's material (gestures) | `hymn-announced {hymn: {id, meter, dialect}}` |
-| `verse`, `fuging`, `conductor` (`still small`), `ambient`, `telegraph`, `transport` (`seed N`) | lines, lining out, fuging, stillness, field events, telegraph, seed | `verse-start`, `telegraph`, … |
-| — | — | `cast {memberId}`, `vision {name}`, `registration {name \| stops}` |
+| `meeting` · `☀ meeting N` (detail `F0 … Hz · mode · kind · season`); `☀ sunrise` | meeting: mode, kind, keynote = F0×4; mode change | `meeting-start {n, sunday, kind, mode, keynoteHz, houseDialect}`; `sunrise {mode, keynoteHz}` |
+| `section` · `§ HYMN` (detail `[meter ·] 87s`) | section, planned length, meter | `section-start {section, index, dur, meter?}` |
+| `harmony` · `∴ plagal cadence` | cadence (plagal, authentic, half, …); a chord written | `cadence {kind}`; `chord {at, chord, by}` |
+| `cadence` · `∴ joint` (`meeting ends · 8s`); `∴ the room empties` | section joint, the end of a meeting; the joint that follows goes into stillness (marked `still`; not a joint of its own) | `joint {last, toward, dur}`; `room-empties {toward}` (`meeting-end {n, dur?}` accepted) |
+| `visitation` · `⇋ a band approaches`, `◎ the steeples answer`, `✧ an old tune remembered`, `∴ raspberry`, `◌ the tune is withheld`, … | guest start, stage or end: bands, steeples, oldtune, raspberry, cumulative, …; the plan's guests | `guest-start` / `guest` / `guest-end {guest, section, logged}`; `guests-drawn {guests}` |
+| `motif` · `❁ the day's hymns`; `◆ …`, `✸ …`, `⇄ …` | the day's material; a motif at work | `hymns-of-the-day {gestures, names, temper}`; `motif-develop` `-reprise` `-answer` `-disperse` `-shadow`; `hymn-announced {hymn: {id, meter, dialect}}` |
+| `verse`, `fuging`, `conductor` (`still small`), `ambient`, `telegraph`, `transport` (`seed N`) | lines, lining out, fuging, stillness, field events, telegraph, seed | `verse-line` (and `round-entry`, `partner`, `refrain`), `lining-out`, `fuging`, `stillness {why, holdS}`, `skip {to}`, `field {field, name}`, `telegraph {word}`, `transport {action, seed}`, `liahona`; `verse-start`, `cast {memberId, action}`, `vision {name}` |
 
-**Hooks for what the engine does not say yet.** Distinctness is ready for three
-things: the organ **registration**, the **dialect** and the **cast**.
+**What distinctness reads from the typed fields:** the **Sunday** from
+`meeting-start.sunday`; the **dialect** from `meeting-start.houseDialect`,
+`hymn-announced.hymn.dialect` or any event with a `dialect` string; the **cast**
+from `cast` events and notes with `memberId`; the **registration** from any
+event or note carrying a `registration` field (the organist's `cast` events do:
+"draws the stops", `registration: "soft flutes"`; no engine emits an event of
+type `registration`, though the reader would accept one). All four are fed by
+the current engine; one a window does not reach (no organist in the first three
+minutes) is simply absent for that seed.
 
-- **Dialect** is read from `meeting-start.houseDialect`, from
-  `hymn-announced.hymn.dialect`, or from any event with a `dialect` string.
-- **Registration** is read from any event or note with a `registration` field,
-  or from an event of type `registration`.
-- **Cast** is read from `cast` events and from notes with `memberId`.
-- **Sunday** is read from `meeting-start.sunday`.
+## loadcheck.js
 
-A dump that carries these gets them into the distance with no change to the
-tools. `selftest.js` proves it on a synthetic typed dump.
+```sh
+node tools/loadcheck.js                 # exit 0 = loaded, 1 = not
+KOLOB_DIR=<dir> node tools/loadcheck.js # another build
+```
+
+The cheapest check there is, and the first thing CI runs: it reads
+`_engine.php`'s one list, evaluates every room in that order under a bare mock
+of the page (no audio, no clock, almost no DOM), and takes the roll call the
+page's own load guard takes — every room answered (`KOLOB._rooms[file]`), the
+substrate's globals raised, the `KolobAudio` facade standing and carrying the
+methods the page and the labs call. It then runs the page's own guard
+(`kolob_engine_guard()`, read from `_engine.php`) as the page does, after the
+rooms: it must name in `KOLOB._broken` exactly what the roll call missed
+(`kolob-ui.js` keeps PLAY disabled on it) and set nothing on a whole load. The
+calendar must stand before `kolob-meeting.js` is evaluated (the meeting
+requires it). The composer's desk: the files the hymnal's worker would load
+on the page — found by the script tags the page prints from the list, under a
+stub Worker — must be the list's own, in its order. Then one pure smoke: the
+composer writes a hymn from a fixed stream and the Score's proofreader passes
+it. It prints `modules: N of N loaded; rooms answering: M`, the guard, the
+desk, the hymn, and `ALL GREEN` or the failures. No harness, no browser: the
+harness is what plays a meeting, this only proves the doors open.
+
+## lends.js
+
+```sh
+node tools/lends.js                 # exit 0 = no unguarded unknown read
+KOLOB_DIR=<dir> node tools/lends.js
+```
+
+Every room lends what it builds onto one bag, `KOLOB._s` (SCORE §9.1, "the
+chorister's book"), as `S.name = …`, and reads the others' as `S.name(…)`. Load
+order is the only type system that pattern has: a lend renamed in one room
+fails in another at the first cue that reaches it, minutes into a meeting, as
+"S.x is not a function". This tool reads the rooms statically (every
+`kolob-*.js` on `_engine.php`'s list) and reports every `S.name` read whose
+name no room lends — an **unguarded** read fails the run, with file and line; a
+read under a guard (`S.x ? … : …`, `S.x && …`, `typeof S.x`, `!S.x`,
+`if (S.x)`) is an **optional** lend, listed, not failed (a lab without the
+room) — and the **dead** lends, lent and never read by any room. `ALL GREEN`
+when nothing is unguarded. CI runs it on every push.
+
+## samecode.js
+
+```sh
+node tools/samecode.js                 # HEAD against the worktree, every kolob-*.js
+node tools/samecode.js --ref HEAD~1    # another ref
+node tools/samecode.js file.js …       # these files only
+```
+
+A comment-only cleanup must leave the code exactly as it was. This proves it:
+each file is tokenized with `acorn` (the parser ESLint brought; `npm install`
+at the repo root once) with comments and whitespace dropped, in the git ref and
+in the worktree, and the two token streams are compared. A file whose tokens
+differ is named with the first token that moved and its line; one whose tokens
+agree had only its comments or layout changed; one not in the ref is skipped.
+Exit 0 when every compared file's code is unchanged, 1 otherwise, 2 without
+acorn. Run it beside `tally.js --a git:main --b worktree`, which proves the
+music did not move, after any pass over the comments.
 
 ## distinctness.js
 
@@ -183,503 +376,255 @@ tools. `selftest.js` proves it on a synthetic typed dump.
 minutes."*
 
 ```sh
-node tools/distinctness.js [--n 20 | --seeds 1-20] [--window 180] [--engine …] [--dumps …] [--twin 0.5] [--plant-floor 1.5] [--collapse 3] [--no-sanity]
+node tools/distinctness.js [--n 20 | --seeds 1-20] [--window 180] [--engine …] [--harness …] [--dumps …]
+                           [--twin 0.5] [--plant-floor 1.5] [--collapse 3] [--no-sanity] [--out <dir>]
 ```
 
 It renders the first `--window` seconds of each seed and describes each seed by
-what a listener could notice in that window. The features fall into groups:
+what a listener could notice in that window, in groups: **identity** (keynote,
+mode, kind of Sunday, the Sunday); **style** (dialect, organ registration);
+**cast** (who is heard); **tempo** (median inter-onset interval per voice, and
+pooled); **density** (notes per minute per layer); **pitch** (the pitch-class
+profile against the keynote, duration-weighted, and the melodic-interval
+profile); **rhythm** (the inter-onset-interval profile); **register** (the
+median pitch and the p10–p90 span); **texture** (the silence share — nothing
+but drone and field — polyphony, layers heard); **guests** begun in the window;
+**field** events; **material** (the day's hymns announced); **form** (the
+prelude's length, and sections entered).
 
-| group | features |
-|---|---|
-| identity | keynote, mode, kind of Sunday (and the Sunday, when typed) |
-| style *(hook)* | dialect, registration |
-| cast *(hook)* | who is heard |
-| tempo | median inter-onset interval per voice, and pooled |
-| density | notes per minute per layer |
-| pitch | the pitch-class profile against the keynote (duration-weighted), and the melodic-interval profile |
-| rhythm | the inter-onset-interval profile |
-| register | the median pitch and the p10–p90 span |
-| texture | the silence share (nothing but drone and field), polyphony, layers heard |
-| guests | guests begun in the window |
-| field | the field events |
-| material | the day's gestures (typed: hymns announced) |
-| form | the prelude's length, and sections entered |
-
-**Standardising.** Each numeric feature is standardised by its spread across the
-seeds. The spread is floored at a just-noticeable difference (for example
-60 cents for the keynote, 7 % for a tempo, 15 s for the prelude), so an
-inaudible spread never counts as separation. A difference of two spreads counts
-as fully different. Profiles use the Jensen–Shannon distance, sets use the
-Jaccard distance, and categories count 0 or 1. **D** is the weighted mean over
-groups. A feature that one seed lacks, or a layer neither seed sounds, sits the
-pair out.
+**Standardising.** Each numeric feature is standardised by its spread across
+the seeds, floored at a just-noticeable difference (60 cents for the keynote,
+7 % for a tempo, 15 s for the prelude), so an inaudible spread never counts as
+separation; a difference of two spreads counts as fully different. Profiles use
+the Jensen–Shannon distance, sets the Jaccard distance, categories count 0 or
+1. **D** is the weighted mean over groups. A feature one seed lacks, or a layer
+neither seed sounds, sits the pair out.
 
 **A yardstick the build cannot move.** D is standardised by the build's own
 spread, so a relative threshold alone cannot see a build whose seeds have all
 collapsed into one meeting: its spread shrinks with it, and the median pair
-still looks "far". (Round 2's critic proved it: 20 copies of seed 1, each
-transposed by up to ±45 cents and 3 % faster or slower, gave a median D of
-0.106 and only 41 of 190 pairs flagged.) So the planted twin, seed 1 a
-semitone higher and 4 % slower, measured on the same scales, is the yardstick:
+still looks "far" (20 copies of one seed, each transposed by up to ±45 cents
+and 3 % faster or slower, gave a median D of 0.106 and only 41 of 190 pairs
+flagged). So the planted twin, seed 1 a semitone higher and 4 % slower,
+measured on the same scales, is the yardstick: a pair is a **near-twin** when
+D < 0.5 × the median *or* D ≤ 1.5 × the planted twin's D (`--plant-floor`),
+whatever the median says; and the **spread** line holds the median against the
+plant — at 3× or less (`--collapse`) the verdict says **COLLAPSED**: the
+typical pair is barely farther apart than one meeting heard in another key. On
+that collapsed set the report reads spread 0.7×, ⚠ COLLAPSED, 172 of 190 pairs
+near-twins; on v0.36.2 (seeds 1–6, 180 s) spread 7.9×, no near-twins, with
+identity, cast, material and style carrying most of the distance.
 
-- a pair is a **near-twin** when D < 0.5 × the median *or* D ≤ 1.5 × the
-  planted twin's D (`--plant-floor`), whatever the median says;
-- the **spread** line holds the median against the plant, and at 3× or less
-  (`--collapse`) the verdict says **COLLAPSED**: the typical pair is barely
-  farther apart than one meeting heard in another key.
-
-On the critic's collapsed set the report now reads: spread 0.7×, ⚠ COLLAPSED,
-172 of 190 pairs near-twins. On this worktree: spread 5.5×, none.
-
-**The report** gives:
-
-- the D distribution, the spread against the plant, and the **near-twins**;
-- the closest pairs, with what they share and what they don't;
-- each seed with its nearest neighbour;
-- **the features that separate seeds least**, meaning the share of pairs within
-  one JND, with the range across the seeds;
-- where the distance comes from;
-- `distances.csv` and `features.json`.
-
-**Sanity checks, built in.**
-
-- The first seed is rendered twice and must be D = 0.
-- The **planted twin** must be seen (D > 0) and fall inside the relative twin
-  line (0.5 × the median). The report also says how many real pairs are closer
-  than it; in a healthy build, none.
-- Every pair of different seeds must be D > 0.
-
-### Sample (this worktree, v0.32 music with the Question shelved, seeds 1–20)
-
-> - **Pair distance D:** median **0.547**, p10 0.451, p90 0.667, closest 0.283.
-> - **Spread:** the median pair is **5.5×** as far apart as seed 1 is from itself a semitone higher and 4 % slower (the planted twin, D = 0.099) (collapse at 3× or less).
-> - **Near-twins** (D < 0.5 × median = 0.274, or D ≤ 1.5 × the planted twin = 0.148): **none**.
-> - **Sanity:** the same seed rendered twice (seed 1) D = 0.000 ✓; the planted twin is seen (D > 0 ✓) and is closer than the median's twin line (0.099 < 0.274 ✓); 0 of 190 real pairs are closer than it; every pair of different seeds D > 0 ✓.
-> - **Separates least:** density: drone (100 % of pairs not separated), prelude length (87 %), density: strings (85 %), density: organ (82 %).
-> - **Separates most:** identity (24 % of all distance), material (16 %), pitch (13 %), tempo (12 %).
-> - **Hooks not yet fed by the engine:** cast, dialect, registration, sunday.
-
-| feature | pairs not separated | JND | across the seeds |
-|:---|---:|---:|:---|
-| density: drone | 100 % of 190 | 0.25 | 1.0–1.3 /min |
-| prelude length | 87 % of 190 | 15 | 68–92 s |
-| density: strings | 85 % of 190 | 0.25 | 0.7–1.7 /min |
-| density: organ | 82 % of 190 | 0.25 | 2.3–4.3 /min |
-| guests | 72 % of 190 | Jaccard 0.5 | none in 17/20 |
-| silence share | 59 % of 190 | 0.08 | 12 %–32 % |
-| keynote | 33 % of 190 | 0.05 oct | B♭3+24¢ – D4+4¢ (3.8 semitones) |
-
-Read for the Variety critic:
-
-- No two first-three-minutes are twins.
-- What every seed shares is the frame: the drone, a prelude of 68–92 s, organ
-  and strings at the same slow rate, no guest in 17 of 20.
-- The keynote moves within only a major third.
-- The difference is carried by the mode and kind of Sunday, the day's material,
-  and the pitch and tempo profiles.
+**The report** (`report.md`, with `distances.csv` and `features.json`):
+*Verdict* (the D distribution, the spread against the plant, the near-twins,
+the sanity line, what separates least and most); *The closest pairs*, each with
+what the two share within an audible step and what differs; *Each seed and its
+nearest neighbour* (keynote, mode, kind, pulse, notes/min, silence, guests,
+material, prelude, nearest, D); *What separates seeds least* (per feature, the
+share of pairs within one JND, the mean standardised distance, the JND, the
+range across the seeds); *Where the distance comes from* (per group, weight
+and share); *How it is measured*. **Sanity checks**, built in (skipped with
+`--no-sanity`): the first seed is rendered twice and must be D = 0; the planted
+twin must be seen (D > 0) and fall inside the relative twin line, and the
+report says how many real pairs are closer than it (in a healthy build, none);
+every pair of different seeds must be D > 0.
 
 ## repetition.js
 
 ```sh
-node tools/repetition.js [--seeds 1-20] [--secs 1200] [--first] [--min 3] [--common-min 4] [--engine …] [--dumps …]
+node tools/repetition.js [--seeds 1-20] [--secs 1200] [--first] [--min 3] [--common-min 4] [--engine …] [--harness …] [--dumps …] [--out <dir>]
 ```
 
-**Phrases.** Every voice's line is cut into phrases. A phrase ends at a breath,
-meaning more than 0.35 s of silence between a note's end and the next onset, or
-after 12 notes. Phrases under `--min` notes are not counted.
+**Phrases.** Every voice's line is cut into phrases: a phrase ends at a breath
+(more than 0.35 s of silence between a note's end and the next onset) or after
+12 notes; phrases under `--min` notes are not counted; drone and ambient are
+not melodic and are left out. **The shape** of a phrase is its melodic
+intervals in semitones, rounded from the just ratios, plus its rhythm as each
+inter-onset time's ratio to the phrase's own median beat — free of
+transposition and of tempo. Two looser readings are reported beside it: the
+pitch shape (intervals only) and the contour (up, down, same).
 
-**The shape** of a phrase is its melodic intervals in semitones, rounded from
-the just ratios, plus its rhythm as each inter-onset time's ratio to the
-phrase's own median beat. The shape is free of transposition and of tempo.
-
-**Within each complete meeting** the report gives:
-
-- the phrases and the distinct shapes per hour, per voice;
-- the **heard-before rate**, in three readings from strict to loose: the shape,
-  the pitch shape alone, and the contour;
-- the rate across voices: a doubling within 1 s counts as heard *together*, not
-  heard *before*.
-
-**Across seeds** it gives the shapes of at least `--common-min` notes found in
-the most meetings, each with its first hearing spelled in solfège, and the most
-common rhythm-free shapes. `shapes.json` holds every shape.
-
-### Sample (seeds 1–20, 1200 s, the 20 complete meetings)
-
-> - **Heard before, same voice:** 5.7 % of phrases; **any voice:** 6.2 %.
-> - **Most repetitive meeting:** seed 7 meeting 1, 25 % heard before (36 phrases); **least:** seed 3 meeting 1, 0 %.
-> - **Across seeds:** 768 distinct shapes; 98 % belong to one meeting only. The commonest of 4+ notes, `−2 +2 +2 −2 −2 | 2 1 1 2 1` (choir/clarinet), is in 2 of 20 meetings.
-
-| voice | phrases/meeting | distinct/hr | heard before (shape) | (pitch only) | (contour) |
-|:---|---:|---:|---:|---:|---:|
-| clarinet | 14.6 | 63 | 0 % | 0 % | 3 % |
-| choir (top) | 11.2 | 45 | 2 % | 2 % | 5 % |
-| bells | 6.0 | 24 | 2 % | 3 % | 9 % |
-| organ | 4.0 | 16 | 0 % | 1 % | 10 % |
-| strings | 3.5 | 15 | 0 % | 0 % | 0 % |
-| **band:melody** | 9.8 | 9 | **71 %** | 71 % | 71 % |
-
-The motif engine almost never repeats itself. The one rut the tool finds is the
-**band's loop** (PLAN §1: "The band: loops"). In seeds 6, 7, 11, 14 and 20 one
-short figure, repeated, fills 8–10 phrases (seed 6:
-`+12 −3 −2 −7 +12 −3 −2 −7 … | 1½ 1 1 1 1½ 1 1 1 …`), and those meetings rise to
-16–25 % heard before. The composed march in strains (§8.2) is the cure. This table is how its
-crew will show it worked.
+**The report** (`report.md`, with `shapes.json` holding every shape): *Verdict*
+(the heard-before rate in the same voice and in any voice, the most and least
+repetitive meetings, and across seeds the distinct shapes and the share
+belonging to one meeting only); *Per voice* (meetings, phrases per meeting,
+distinct shapes per hour and their share, heard before as shape, pitch only and
+contour, heard before in any voice — a doubling within 1 s counts as heard
+*together*, not *before*); *Per meeting* (length, phrases, distinct shapes, the
+rates, the most repeated shape); *Across seeds* (the shapes of at least
+`--common-min` notes found in the most meetings, each with its first hearing
+spelled in solfège, and the commonest rhythm-free shapes). The one rut this
+tool ever found was the fife's loop in the old `band:melody` line (71 % heard
+before on v0.32); the composed march of v0.36 replaced it, and the *Per voice*
+table is where a new loop would show. On v0.36.2 (seeds 1–3, 1200 s) the
+same-voice rate is about 23 %, nearly all of it the choir's four parts singing
+a hymn's verses to one tune (38–41 % each); every other voice is at or near
+0 %.
 
 ## tally.js
 
 ```sh
-node tools/tally.js [--seeds 1-20] [--secs 1200] [--first] [--engine …] [--dumps …]
+node tools/tally.js [--seeds 1-20] [--secs 1200] [--first] [--engine …] [--harness …] [--dumps …] [--out <dir>]
 node tools/tally.js --a <spec> --b <spec> [--seeds 1-60] [--secs 1200] [--threshold 15] [--harness-a …] [--harness-b …]
 ```
 
 Here `<spec>` is a dump directory, an engine directory, `git:<ref>` or
 `worktree`.
 
-**What it counts.** Over every complete meeting:
-
-- the meeting's length and its sections;
-- each section type's median length and count;
-- cadences per meeting and the share of each kind;
-- joints (one per section; `∴ the room empties` is how a joint goes, not a
-  joint of its own, so joints per meeting equal sections per meeting);
-- guests per meeting, the share of meetings with a guest, and the share with
-  each guest;
-- notes per minute and median note length per layer;
-- events per meeting by category (not `transport`: that is the harness's
-  start-up line, not the music);
-- the mix of modes and kinds of Sunday.
-
-It also runs the **plan checks** that a dump can answer:
-
-- the plagal share of cadences, 30–55 % (§12);
-- meetings with a guest, ≈ 55 % (§8, §13);
-- meeting length, ≈ 14–15 min (§0);
-- the Question never seats (§14).
+**What it counts**, over every complete meeting: the meeting's length and its
+sections; each section type's median length and count; cadences per meeting
+and the share of each kind; joints (one per section: `∴ the room empties` is
+how a joint goes, not a joint of its own, so joints per meeting equal sections
+per meeting); guests per meeting, the share of meetings with a guest, and with
+each guest; notes per minute and median note length per layer; events per
+meeting by category (not `transport`); the mix of modes and kinds of Sunday.
+It also runs the **plan checks** a dump can answer: the plagal share of
+cadences, 30–55 % (§12); meetings with a guest, ≈ 55 % ± 15 (§8, §13); mean
+meeting length 13–16 min (§0). **The
+report** (`report.md`): the plan checks as a table (check, plan, measured,
+✓/✗); one table per group (sections, cadences, joints, guests, notes, events,
+modes…) with each metric's value and how many meetings carry it; *Per meeting*
+(seed, meeting, minutes, mode, kind, sections, cadences, guests, notes); *How
+it is counted*.
 
 **A/B.** It renders both builds from the same seeds (**60 by default**; each
-build witnessed, as above), then does three things:
+build witnessed, as above), then says which seeds played **identically** (note
+and event streams byte for byte, header excluded); gives, for every metric, A,
+B, the shift, and the **noise** (two bootstrap standard errors of the
+difference, meetings resampled 300× per side); and **flags** a shift beyond
+±15 % (`--threshold`) that is also beyond the noise, or a metric that appears
+or vanishes. Shifts beyond ±15 % but within the noise, or seen in fewer than 5
+meetings, are listed as *worth a look, not a verdict*. With the same seeds and
+an unchanged engine every difference is exactly zero: `--a worktree --b
+worktree` reports every seed identical, "nothing moved", and no flags. **Use
+60 seeds, not 20, for a musical change:** when the music moves, no seed plays
+the same meeting on both sides, and the noise column is all that stands between
+a shift and a verdict. Twenty meetings a side leave a share such as "meetings
+with a guest" ±30 points wide; sixty bring it to about ±18 and render in under
+a minute for two builds; the report says so when a side has fewer than 40
+meetings. For a housekeeping change, 20 seeds and the identity line are enough.
 
-1. It says which seeds played **identically**, comparing the note and event
-   streams byte for byte, header excluded.
-2. For every metric it gives A, B, the shift, and the **noise**: two bootstrap
-   standard errors of the difference, with meetings resampled 300× per side.
-3. It **flags** a shift beyond ±15 % that is also beyond the noise, or a metric
-   that appears or vanishes.
-
-Shifts beyond ±15 % but within the noise, or seen in fewer than 5 meetings,
-are listed as *worth a look, not a verdict*. With the same seeds and an
-unchanged engine every difference is exactly zero.
-
-**Use 60 seeds, not 20, after the re-base.** Once the engine crew's streams
-land, no seed will play the same meeting on both sides, and the noise column is
-all that stands between a shift and a verdict. Twenty meetings a side leave a
-share such as "meetings with a guest" ±30 points wide; sixty bring it to about
-±18. Sixty seeds of 1200 s render in 30–45 s for two builds. That is why
-A/B defaults to `1-60`; the report says so when a side has fewer than 40
-meetings.
-
-The report also warns:
-
-- when **A and B hold different seeds** (two dump sets rendered apart, say).
-  Both seed lists are printed, and a warning says every shift then mixes the
-  change with which Sundays were drawn. Pass `--seeds` to compare like with
-  like.
-- when **two harnesses** rendered the two sides. Each stamps its records its
-  own way, so the byte-for-byte identity line then compares the harnesses as
-  well as the engines. The metrics do not depend on it.
-- when every shared seed played identically **but the fingerprints differ**:
-  the modules' bytes moved and the music did not (a comment, say). It says so,
-  so that "nothing moved" is never read as "the same build".
-
-### Sample, one build (seeds 1–20, 1200 s)
-
-| check | plan | measured | |
-|:---|:---|---:|:---:|
-| plagal share of cadences | 30–55 % (§12) | 84.6 % | ✗ |
-| meetings carrying a guest | ≈ 55 % (§8, §13) | 45.0 % | ✓ |
-| meeting length | ≈ 14–15 min (§0 law 1) | 14.4 min (10.1–19.1) | ✓ |
-| the Question never seats | 0 meetings (shelved, §14) | 0 meetings | ✓ |
-
-The plagal share is still v0.30's rut (§1: "about 90 % plagal"). The dialects
-of the HYMN crew are what bring it into the target.
-
-### Sample, A/B: the live v0.32 (`git:main`) against this worktree, 60 seeds
-
-The worktree has the same music as v0.32, with the Question shelved. `git:main`
-is the single-file build, loaded with `KOLOB_LEGACY` and witnessed like any
-other.
-
-> - **A:** engine **main** (v0.32) · git 682ca189f5 · modules 1a641dfcb0 (single-file kolob-audio.js, witnessed) · 1200 s per seed · harness `art/kolob/_harness.js`
-> - **B:** engine **worktree** (v0.32) · git 7ee515881b · modules 074ee44959 (12 files, the list in index.php, witnessed) · 1200 s per seed · harness `art/kolob/_harness.js`
-> - **Same seeds, same meetings?** 33 of 60 shared seeds played identically (note and event streams byte-for-byte); the rest differ: 1–3, 5, 11, 13–15, 19, 20, 24, 28, 32, 33, 35–37, 39, 41, 44, 45, 48, 49, 51, 56, 57, 60.
-> - **Shifts beyond ±15 % and beyond noise:** **5** — guests · guests per meeting (−39 %); guests · meetings with a guest (−30 %); guests · meetings with: question (−100 %); events · per meeting: visitation (−34 %); events · per meeting: visitation-draw (−34 %).
-
-| metric | A | B | Δ | noise ± | meetings A/B | flag |
-|:---|---:|---:|---:|---:|---:|:---|
-| guests per meeting | 0.83 | 0.51 | −39 % | 0.27 | 37/26 | **⚑ SHIFT** |
-| meetings with a guest | 62.7 % | 44.1 % | −30 % | 18.4 pt | 37/26 | **⚑ SHIFT** |
-| meetings with: question | 32.2 % | 0.0 % | −100 % | 12.1 pt | 19/0 | **⚑ gone** |
-| meetings with: bands | 27.1 % | 27.1 % | 0 | 16.7 pt | 16/16 | |
-| joints per meeting | 7.64 | 7.64 | 0 | 0.33 | 59/59 | |
-
-This is exactly the owner's ruling, measured.
-
-- The Question is gone.
-- Every meeting it never sat in is note-for-note the same, because "its dice
-  are still drawn".
-- Nothing else moved beyond noise.
-
-At 20 seeds the same comparison left "meetings with a guest" (−31 %) inside a
-±30.5-point noise band. At 60 it is a verdict. Two builds of 60 seeds took 32 s.
-
-The same command with `--a worktree --b worktree` reports that every seed played
-identically, "nothing moved", and no flags.
-
-### Sample, A/B the critic's way: a build the harness would not have played
-
-This is round 2's critic's repro, in a scratch repo: v0.32's split committed as
-tag `v032`, and the engine crew's working snapshot laid over it (its modules,
-`_engine.php` and its `_harness.js`, which reads `KOLOB_BASE`, not
-`KOLOB_DIR`). Before the fix, `--a git:v032 --b worktree --seeds 1-6` said "6 of
-6 seeds played identically — nothing moved". Now it reads:
-
-> - **A:** engine **v032** (v0.32) · git 90126a3dd5 · modules 074ee44959 (12 files, the list in index.php, witnessed) · 1200 s per seed · harness `art/kolob/_harness.js`
-> - **B:** engine **worktree** (v0.32) · git 90126a3dd5 · modules 9f0d73ba0f (15 files, the list in _engine.php, witnessed) · 1200 s per seed · harness `art/kolob/_harness.js`
-> - **Same seeds, same meetings?** 0 of 6 shared seeds played identically (note and event streams byte-for-byte).
-
-The same run, with the v032 side forced through a harness that ignores both
-variables, is refused. The message is the one quoted under "Which build is
-measured".
+The A/B report (*Verdict*; *Plan checks* for both sides; per group, `metric ·
+A · B · Δ · noise ± · meetings A/B · flag`; *How it is counted*) also warns
+when **A and B hold different seeds** (two dump sets rendered apart, say: both
+lists are printed, and every shift then mixes the change with which Sundays
+were drawn — pass `--seeds` to compare like with like); when every shared seed
+played identically **but the fingerprints differ** (the modules' bytes moved
+and the music did not — a comment, say — so "nothing moved" is never read as
+"the same build"); and when the seeds differ but the fingerprints agree (the
+difference is the harness or the flags, not the engine).
 
 ## screens.js
 
 ```sh
 node tools/screens.js [--seed 1847] [--times 20,60,120] [--widths 860,390] [--section hymn] [--fps-secs 20] [--throttle 4] [--full] [--ives] [--latin]
-                      [--port 8113] [--chrome-port 9423] [--profile <dir>]
+                      [--port 8113] [--chrome-port 9423] [--profile <dir>] [--out <dir>]
 ```
 
 It loads `?seed=N` in muted headless Chrome and presses PLAY. At each time in
 the meeting (the audio clock since PLAY, or since the jump with `--section`) it
-captures the **staff** canvas at each width:
+captures the **staff** canvas at each width: 860 px at DPR 2; 390 px emulated
+as a phone at DPR 3; with `--full`, the whole page as well.
 
-- 860 px at DPR 2;
-- 390 px emulated as a phone at DPR 3;
-- with `--full`, the whole page as well.
+**Frame time.** After the shots, the CPU is throttled `--throttle`× for
+`--fps-secs` (0 to skip). Every requestAnimationFrame callback is timed, and
+callbacks sharing a frame are summed. The report gives p50/p90/p99/max per
+frame against the 16.7 ms budget, the rAF interval, the long tasks and the
+**load average** while it measured. Headless Chrome may pace rAF slowly; the
+report says so whenever the median interval is over 25 ms (a display paces it
+at 16.7); the cost of each frame is what matters. **Read p99 and max with
+care:** over 20 s at 10 fps there are only about 200–300 frames, so p99 is the
+worst 2 or 3 of them — the worst moments of that window, not a steady rate —
+and frame cost rises with the machine's load: p50 and p90 are where the page's
+own cost shows, the tail is where the load shows. The report prints
+`os.loadavg()` beside each width and warns when it was over half the cores;
+re-run on a quiet machine before you read p99, max or long tasks as the page's
+own. The phone's p99 is the number to watch as the staff multiplies the ink.
 
-**Frame time.** After the shots, the CPU is throttled 4× for `--fps-secs`. Every
-requestAnimationFrame callback is timed, and callbacks sharing a frame are
-summed. The report gives p50/p90/p99/max per frame against the 16.7 ms budget,
-the rAF interval, the long tasks and the **load average** while it measured.
-Headless Chrome may pace rAF slowly (about 10 fps here); the report says so
-whenever the median interval is over 25 ms (a display paces it at 16.7). The
-cost of each frame is what matters for the budget.
-
-**Read p99 and max with care:**
-
-- **p99 rests on a handful of frames.** Over 20 s at 10 fps there are only
-  about 200–300 frames, so p99 is the worst 2 or 3 of them. It tells you the
-  worst moments of that window, not a steady rate.
-- **Frame cost rises with the machine's load.** On the same seed and widths
-  the round-2 critic measured p99 21.1 ms, max 60.6 ms and one 80 ms long task
-  at 860 px, against the builder's 5.07, 8.6 and 0, with a load average near
-  11 and other crews' Chromes running. The report prints `os.loadavg()` beside
-  each width and warns when it was over half the cores. Re-run on a quiet
-  machine before you read p99, max or long tasks as the page's own.
-
-Console errors and warnings from each width are listed.
-
-### Sample (seed 1847, default times)
-
-Round 2, on a busy machine, which is the point of the new columns and notes:
-
-> | width | frames | p50 ms | p90 ms | p99 ms | max ms | rAF interval (median) | long tasks | section | load avg |
-> |:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-> | 860 px | 354 | 1.30 | 4.50 | 9.38 | 14.4 | 50.0 ms | 1 (93 ms) | invocation | 10.6 |
-> | 390 px | 270 | 1.20 | 4.41 | 9.16 | 21.1 | 99.9 ms | 0 | invocation | 8.9 |
->
-> *Headless Chrome paced requestAnimationFrame at about 20.0 and 10.0 fps here (860 px, 390 px), so the frame count says nothing about a real display; the per-frame cost is still what each frame would take.*
->
-> *p99 rests on the worst hundredth of the frames — 4 of 354 at 860 px, 3 of 270 at 390 px: read it, and max, as the worst moments of this window, not as a steady rate.*
->
-> **⚠ The machine was busy** (load average 10.6 / 8.9 on 11 cores during 860 px, 390 px): other processes took the throttled CPU's time, and p99, max and the long tasks run high under load. Re-run on a quiet machine before reading them as the page's.
->
-> | meeting time | section | staff | file |
-> |:---|---:|---:|---:|
-> | 20.0 s | prelude | 702×240 CSS px | `staff-860-t020.png` |
-> | 60.0 s | prelude | 702×240 CSS px | `staff-860-t060.png` |
-> | 120.0 s | invocation | 702×240 CSS px | `staff-860-t120.png` |
->
-> Console: no errors or warnings ✓
-
-The report embeds each PNG. At 60 s the 860 px staff carries the clarinet's
-shape-note line; seed 1847's staff is empty before about 20 s, because the
-engraved voices come later.
-
-Round 1's builder measured the same seed on a quieter machine: p99 5.07 ms and
-max 8.6 at 860 px, p99 13.23 and max 22.6 at 390 px, no long tasks. The two
-runs agree on p50 (1.1–1.3 ms) and p90 (4.2–5.3 ms), which is where the page's
-own cost shows. They part at the tail, which is where the machine's load
-shows. At 4×, even on a busy machine, the frame cost stays inside the 16.7 ms
-budget at p99. The phone's p99 is the number to watch as the Score multiplies
-the ink, and it should be read from a quiet run.
+**The report** (`report.md`, each PNG embedded): the frame-time table (width,
+frames, p50, p90, p99, max, rAF interval, long tasks, section, load avg) with
+its notes on pacing and load; per width, a table of shots (meeting time,
+section, staff size in CSS px, file `staff-<width>-t<secs>.png`); console
+errors and warnings from each width.
 
 ## capture.js
 
 ```sh
 node tools/capture.js [--seed 1847 | --seeds 1847,5,9] [--from 0] [--to 240] [--meeting] [--section hymn] [--ives] [--px-per-s 8]
-                      [--port 8113] [--chrome-port 9423] [--profile <dir>]
-node tools/capture.js --wav <file.wav> [--events <file.jsonl>] [--from <s>]     # re-analyse a capture
+                      [--no-harness-check] [--port 8113] [--chrome-port 9423] [--profile <dir>] [--out <dir>]
+node tools/capture.js --wav <file.wav> [--events <file.jsonl>] [--out <dir>]     # re-analyse a capture
 ```
 
 It plays the meeting in muted headless Chrome and records the window between
-`--from` and `--to`, in meeting seconds (from the moment the meeting is called).
-`--meeting` records until meeting 1 ends. It reads the end through the dump
-reader, in either vocabulary: v0.30's `∴ joint — meeting ends · 8s`, a typed
+`--from` and `--to`, in meeting seconds (from the moment the meeting is
+called). `--meeting` records until meeting 1 ends (cap `--max`, default
+1500 s), read through the dump reader: the last joint's `∴ joint — meeting
+ends · 8s` (the joint's length and 6 s of the bell's tail), a typed
 `meeting-end {dur}`, or else the next meeting's start.
 
 **The tap** is injected before any page script. Every node that connects to an
-output also feeds a ScriptProcessor. The output may be the destination, or the
+output also feeds a ScriptProcessor; the output may be the destination, or the
 MediaStreamDestination the page uses to survive a locked screen. What is
-recorded is exactly what the speakers would get, after the master chain.
-
-A ConstantSource ramp rides on a third channel. Its value is the audio time, so
+recorded is exactly what the speakers would get, after the master chain. (An
+AudioWorklet tap was tried and dropped: it moved the whole graph's rendering
+onto the worklet thread, which under load fell below real time and slowed the
+meeting; the ScriptProcessor keeps rendering where it was, 0.995–1.00×.) A
+ConstantSource ramp rides on a third channel; its value is the audio time, so
 every buffer knows its first sample exactly, and any dropout shows as a gap.
+The report states how much of the window the tap covered, to the sample;
+**every discontinuity**, in a table (meeting time to the millisecond, hole or
+overlap, size in samples and milliseconds), each also marked on the picture
+with a red triangle and a dashed red line labelled `tap gap N smp`; and the
+audio clock's rate against real time. A discontinuity is the recording's, not
+the engine's: the graph rendered those frames, but the tap never received them,
+so the WAV holds silence there, and a click heard at a marked time is the
+tap's. A block that starts within the ramp's tolerance (at least ±4 samples)
+of where the last ended is laid contiguous, since ScriptProcessor buffers are;
+anything farther is a discontinuity, snapped to render quanta of 128 frames (a
+measured 126 is the 128 it must have been), the measured size kept beside it.
+`…-tap.json` is the tap's own record; `--wav` re-analysis reads it when it lies
+beside the WAV, and without it looks for runs of exact digital zero in both
+channels with sound on either side, which the drone never makes.
 
-The report states three things about the recording:
+**Outputs:** `capture-<seed>-<from>-<to>.wav` (16-bit stereo);
+`…-spectrogram.png` (three strips on one time axis: a log-frequency
+spectrogram, 30 Hz–16 kHz over 80 dB; the short-term (3 s) loudness over the
+momentary (0.4 s), with the integrated level dashed; a raster of every note the
+engine reported, one row per layer — section starts in solid lines, guests in
+dashed gold, the tap's discontinuities in red); `…-events.jsonl` (the page's
+own notes and events, **in the dump format**, shifted to meeting time, so the
+dump tools can read a browser run too); `…-tap.json`; and `report.md`: the tap
+line and the discontinuity table; integrated loudness (BS.1770-4 / EBU R128,
+gated), LRA, the maximum momentary and short-term loudness, sample peak and a
+true-peak estimate (4× oversampled); loudness and note count by minute; *What
+happened when*; and **the browser's meeting against the harness's**.
 
-- how much of the window the tap covered, to the sample;
-- **every discontinuity**, in a table: its meeting time to the millisecond,
-  hole or overlap, and its size in samples and milliseconds. Each is also
-  marked on the picture: a red triangle and a dashed red line through every
-  strip, labelled `tap gap N smp`;
-- the audio clock's rate against real time.
+**The browser against the harness.** Unless `--no-harness-check` (or
+`--section`, which jumps), the same seed is rendered through the harness,
+witnessed like any render, and the report holds the two side by side: the same
+mode, kind and keynote; each section's start on both sides (✓ within 2 s); and
+note for note, how many of the harness's notes sound in the browser and the
+first point where the two part. The engine draws every decision from named
+streams and measures it against the cue's scheduled time (SCORE §3, §4), so the
+two agree, sections within a fraction of a second and note for note; a parting
+is a finding — something read the wall clock or threw an unseeded die — not
+jitter. (The sentence the report prints for a parting still describes the
+pre-2026-09-27 engine; that text is a string in `capture.js`.) For a listening
+packet: `--seeds a,b,c,d,e,f --to 240` records one seed after another, about
+25 min; `--seed n --meeting` records a whole meeting.
 
-A discontinuity is the recording's, not the engine's. The graph rendered those
-frames, since its clock ran on, but the tap never received them, so the WAV
-holds silence there. A Listener who hears a click at a marked time should put
-it down to the tap. The round-2 critic's 75 s capture had a 126-sample hole at
-0:40.928, and its spectrogram shows a broadband line there that reads like an
-engine click.
+## render.js
 
-**How the tap's blocks are laid.** Each block's first frame is read off the
-ConstantSource ramp. That ramp is a float32 holding the audio time, so it is
-good to within a sample or two, and to a few samples late in a long meeting.
-The rule for laying blocks:
+```sh
+node tools/render.js [--seeds 1-20] [--secs 180] [--flags ives,razz,cumulative] [--engine <dir>|git:<ref>] [--harness <file>] [--out <dir>] [--jobs N]
+```
 
-- A block that starts within that tolerance (at least ±4 samples) of where the
-  last one ended is contiguous, since ScriptProcessor buffers are, and is laid
-  there.
-- Anything farther is a discontinuity. The graph works in render quanta of 128
-  frames, so a measured 126 is snapped to the 128 it must have been.
-- The table keeps what was measured beside the snapped size.
-
-(The critic's "2-sample hole" 0.344 s after the 126 was this reading error
-correcting itself, one block later.)
-
-Each capture also writes `…-tap.json`, the tap's own record of coverage and
-gaps. `--wav` re-analysis reads it when it lies beside the WAV. Without it, the
-re-analysis looks for holes in the WAV itself: runs of exact digital zero in
-both channels with sound on either side, which the drone never makes. Re-found
-this way, the critic's WAV shows its two holes at 0:40.928 (126 samples) and
-0:41.272 (2 samples).
-
-An AudioWorklet tap was tried first and dropped. Adding one moves Chrome's
-rendering of the whole graph onto the worklet thread. On this machine, under
-load, that thread fell to 0.36× real time and slowed the meeting itself. The
-ScriptProcessor keeps rendering where it was: measured 0.995–1.00×.
-
-**Outputs:**
-
-- `capture-<seed>-<from>-<to>.wav`, 16-bit stereo.
-- `…-spectrogram.png`, which stacks three strips on one time axis:
-  - a log-frequency spectrogram, 30 Hz–16 kHz, over an 80 dB range;
-  - the short-term (3 s) loudness over the momentary (0.4 s), with the
-    integrated level dashed;
-  - a raster of every note the engine reported, one row per layer.
-
-  Section starts are marked with solid lines, guests with dashed gold lines,
-  and the tap's discontinuities in red. The left margin widens to fit the
-  longest row label (`harmonium`, `telegraph`).
-- `…-events.jsonl`: the page's own notes and events, **in the dump format**,
-  shifted to meeting time. The dump tools can read a browser run too.
-- `…-tap.json`: the tap's record: samples covered, block starts taken as
-  contiguous, and every discontinuity.
-- `report.md`, which gives:
-  - integrated loudness (BS.1770-4 / EBU R128, gated), LRA, and the maximum
-    momentary and short-term loudness;
-  - sample peak and a true-peak estimate (4× oversampled);
-  - loudness and note count by minute;
-  - what happened when;
-  - **the browser's meeting against the harness's**: the same mode, kind,
-    keynote and section plan, and note for note, the point where the two part.
-
-Loudness is checked against BS.1770 in `selftest.js`: the 48 kHz coefficients,
-a 1 kHz tone at −20 dBFS reading −20.0 LUFS in stereo and −23.0 LUFS in one
-channel, and the gating, with EBU Tech 3341's cases 3, 4 and 5 (−36/−23/−36,
-−72/−36/−23/−36/−72 and −26/−20/−26 dBFS, each −23.0 ±0.1 LUFS) and half at
-−20 and half at −40 (−20.0, where an ungated meter would read −23.0).
-
-For the Listener's standard packet (PLAN-EXECUTION §4.2) there are two runs:
-
-- `--seeds a,b,c,d,e,f --to 240` records one seed after another, about 25 min;
-- `--seed n --meeting` records a whole meeting.
-
-### Sample (seed 1847, 0–4:00), round 2
-
-> - tap: all but 128 samples of the window (99.999 %) · 1 discontinuity ✗ (listed below, marked red on the picture) · audio clock ran at 0.997× real time · console: clean
->
-> | at (meeting time) | what | size | measured |
-> |---:|:---|---:|---:|
-> | 1:34.491 | hole | 128 samples (2.7 ms) = 1 render quantum | exact |
->
-> | measure | value |
-> |:---|---:|
-> | integrated loudness | -16.2 LUFS |
-> | loudness range (LRA) | 2.7 LU |
-> | max momentary (0.4 s) | -11.8 LUFS |
-> | max short-term (3 s) | -12.9 LUFS |
-> | sample peak | -4.92 dBFS |
-> | true peak (4× oversampled, estimate) | -4.85 dBTP |
->
-> | minute | median | max | min | notes |
-> |:---|---:|---:|---:|---:|
-> | 0:00–1:00 | -16.4 | -14.4 | -34.6 | 23 |
-> | 1:00–2:00 | -16.5 | -14.8 | -18.0 | 11 |
-> | 2:00–3:00 | -16.5 | -12.9 | -17.0 | 21 |
-> | 3:00–4:00 | -15.5 | -14.6 | -18.5 | 53 |
->
-> ✗ Different: harness mixolydian · ordinary · 280.8 Hz; browser mixolydian · ordinary · 280.8 Hz. (prelude 0.0/0.0 ✓, invocation 94.6/98.8 ✗ 4.2 s, hymn 166.2/170.8 ✗ 4.7 s)
->
-> Note for note: 7 of the harness's 144 notes sound in the browser too (108 there). The two first part at 0:16 (ambient 561.2 Hz) — after that the browser's meeting keeps its plan but takes its own path. […]
-
-This run was taken on a busy machine, and it shows the round-2 listing
-working. One render quantum (128 samples, exact) never reached the tap at
-1:34.491. The report lists it, and the picture marks it with a red triangle and
-a dashed red line labelled `tap gap 128 smp`, just before the invocation. The
-`harmonium` row label now fits its margin.
-
-What the picture shows:
-
-- Three sections.
-- A drone and organ bed under the clarinet's lines in the prelude.
-- The invocation thinning to drone, the voice and field.
-- The choir entering at the hymn.
-
-What it means:
-
-- The loudness is nearly flat, LRA 2.5–2.7 LU across two runs, because the
-  master chain holds it level.
-- **The browser does not play the harness's notes.** It follows the same
-  Sunday (mode, kind, keynote) but parts from the harness within the first
-  20 s. Two browser runs of one seed part from each other too: round 1's
-  sections landed within 0.5 s of the harness's, and this run's invocation
-  came 4.2 s late. That is PLAN §2.2's REPRO problem: v0.30 draws every choice
-  from one die in timer order, and reads the audio clock when a timer fires.
-  Until phase 0b's streams and clock land, the harness tools describe the
-  meetings a seed *would* play, and the capture shows the one it did.
-
-`--wav` re-analysis of the same file reproduces every number above.
+Seeds → a dump set (`seed-N.jsonl`, `.log` and `.witness.json` each, and
+`manifest.json` naming the engine, its fingerprint, the harness, the seconds,
+the flags and each seed's verdict). The other tools call this themselves; it is
+here on its own for a set you want to keep and read twice, or to hand to
+`--dumps`. `--jobs` is the number of parallel harness processes (default half
+the cores, at most 8).
 
 ## selftest.js
 
@@ -687,39 +632,70 @@ What it means:
 node tools/selftest.js
 ```
 
-It runs in about five seconds and uses no browser. It checks seven things:
-
-1. A real dump from this worktree reads as meetings and sections. The witness
-   names the build's own list, and the harness names the same engine in the
-   header's `engine` field.
-2. A synthetic dump in SCORE §6's **typed** vocabulary reads the same way:
-   meetings, sections, cadences, guests, parts, and the distinctness hooks
-   (sunday, dialect, cast) all come through. An echo from the v0.30 log counts
-   once.
-3. The same seed twice is D = 0, and two seeds are not.
-4. The loudness meter reads the BS.1770 references and gates as EBU Tech 3341
-   says it must.
-5. **The witness.** A copy of the engine with one comment added is accepted
-   under its own fingerprint. The same copy rendered by a harness that ignores
-   `KOLOB_BASE`/`KOLOB_DIR` is refused.
-6. **The count** (seed 3, 1200 s). Every section of a complete meeting closes
-   on exactly one joint, `the room empties` marks the joint it tells of, and
-   `transport` is not a metric.
-7. **The capture.** A tap block read a sample or two off is laid contiguous. A
-   hole read as 126 is sized to its 128 and placed at 0:40.9. `--meeting`
-   finds meeting 1's end from a v0.30 joint, a typed `meeting-end`, or the next
-   meeting.
-
-Under the engine crew's harness as it stands, only the two header checks fail
-(it writes no header yet; see the handoff's request).
-
-Run it after any change to the engine's events or to these tools.
+About half a minute, no browser. It checks twelve things: (1) a real dump from
+this worktree reads as meetings and sections, the witness names the build's own
+list, and the harness names the same engine in the header's `engine` field;
+(2) a synthetic dump in SCORE §6's **typed** vocabulary reads the same way —
+meetings, sections, cadences, guests, parts, and the distinctness hooks
+(sunday, dialect, cast) all come through, a typed event echoed by a log line
+counts once, and a typed `meeting-end` closes a meeting: the readers are proved
+on a dump no harness wrote; (3) the same seed twice is D = 0, and two seeds are
+not; (4) the loudness meter reads the BS.1770 references (the 48 kHz
+coefficients; a 1 kHz tone at −20 dBFS reading −20.0 LUFS in stereo and −23.0
+in one channel) and gates as EBU Tech 3341 says it must (its cases 3, 4 and 5,
+and half at −20 / half at −40 reading −20.0, where an ungated meter would read
+−23.0); (5) **the witness**: a copy of the engine with one comment added is
+accepted under its own fingerprint, and the same copy rendered by a harness
+that ignores `KOLOB_BASE`/`KOLOB_DIR` is refused; (6) **the count** (seed 3,
+1200 s): every section of a complete meeting closes on exactly one joint, `the
+room empties` marks the joint it tells of, and `transport` is not a metric;
+(7) **the capture**: a tap block read a sample or two off is laid contiguous, a
+hole read as 126 is sized to its 128 and placed at 0:40.9, and `--meeting`
+finds meeting 1's end from a joint, a typed `meeting-end`, or the next meeting;
+(8) **the harness's modes** (seed 7): `stop=40 play=41` puts the dump's
+`transport` events at play 0, stop 40, play 41 and the restart calls meeting 2,
+and the `clock:` line counts the timers left armed apart from the sources
+scheduled past the end; `throw=drone@60` fires once, is reported by the clock
+and kept out of the run's errors, and the cues it counts lane by lane add up to
+the clock's own, the drone's to those before, the throw and those after;
+(9) **recovery** (seed 7, PLAN-REFACTOR §2.1): `throw=drone@120` — the drone's
+lane plays on, re-armed 5 s after the throw; `throw=conductor@300` — the next
+tick 0.6 s on, and the dump the clean run's, record for record;
+`throw=choir@212.5` — the broken hymn is let go and the meeting begins its next
+section; `throw=ward@200,organist@200` — each pump ticks on at its own pace,
+and the dump and the graph are the clean run's; (10) **a stillness ends at
+STOP** (seed 7, PLAN-REFACTOR §2.2): `stop=626.1 play=626.6`, a second into
+the testimony's stillness, calls a meeting not hushed at its downbeat, which
+plays record for record as the one called by `stop=600 play=600.5` (times
+taken from each downbeat); and `stop=90 reseed=7@90 play=90.5` on seed 1 lets
+its drone go home (`×1.25 third → ×1 tonic`) and plays seed 7's first meeting
+as a fresh run does, record for record (the chord book's numbers count on);
+(11) **STOP's own race** (PLAN-REFACTOR §2.3): seed 7, `stop=120 play=120.3
+stop=120.5` — the PLAY clears the first STOP's timer and the second's fires at
+its own 800 ms; with `play=121` after, that PLAY clears the second's, no
+press's timer fires after a later press, and meeting 3 plays record for record
+as the one called by `stop=121 play=121`; seed 22, the same script — the
+second STOP's doors (its meeting's drone) are disconnected by its own timer;
+and the paced desk (`desk=0.5`) writes nothing while stopped (`stop=0.7`),
+passes the stopped meeting's orders over for the next meeting's (`play=1`),
+writes them for a GATHER of the same seed (`reseed=7@0.7`), whose meeting is
+the fresh run's record for record, and the pacing moves no record;
+(12) **a listener's fault is told** (seed 7, 110 s, PLAN-REFACTOR §2.4):
+`badlistener=note,event` — each bad listener's fault is told the first time
+and at every thousandth, naming the listener and the layer or the type it
+threw on, and kept out of the run's errors, and the dump is the clean run's,
+record for record. All twelve pass on `art/kolob/_harness.js`. Run it after any change to the
+engine's events, to the harness or to these tools. It renders into `out/_selftest/` and, like
+every tool, refuses while the engine is being edited.
 
 ## Files
 
 ```
 tools/
   README.md          this file
+  loadcheck.js       the engine loads headless; the roll call; one hymn proofread
+  lends.js           the shared bag: every S.x read has a lend
+  samecode.js        a git ref against the worktree, tokens only (needs acorn: npm install)
   render.js          seeds → a dump set (+ manifest.json)
   distinctness.js    design law 2
   repetition.js      phrase shapes heard before
@@ -733,5 +709,5 @@ tools/
   lib/chrome.js      php -S + muted headless Chrome over CDP
   lib/audio.js       WAV, BS.1770 loudness, true peak, FFT, spectrogram
   lib/util.js        arguments, statistics, markdown
-  out/               reports (gitignored)
+  out/               reports and unpacked git builds (out/_builds/<sha>/); gitignored
 ```

@@ -39,8 +39,8 @@
 //
 // THE VOICES. A second congregation of twenty-four, each in a throat of
 // their own (the owner's ruling, 2026-09-28: the full ward, nothing cut to
-// a budget — and the round-3c critic measured the throats against pews and
-// found no audio-thread cost, only nodes). They sit in eight pews of three,
+// a budget — and measured against pews, the throats cost no audio-thread
+// time, only nodes). They sit in eight pews of three,
 // each pew's people on their own pitches and lateness about the pew's.
 // `material.voices: "desks"` is the A/B, and the saving if one is wanted:
 // each pew one shared mouth (KOLOB.VoicesVocal.desk), as a congregation a
@@ -114,9 +114,8 @@ window.KOLOB.GuestFarWard = (function () {
     return stream;
   }
   function oddsFor(info) {
-    // (round 3c: a meeting hands its odds in, info.odds, from the calendar's
-    // one table — KOLOB.Calendar.GUEST_ODDS; a lab without it reads this
-    // room's own, below)
+    // (the meeting hands this room its odds from Calendar.GUEST_ODDS,
+    // info.odds; a lab without them reads the room's own ODDS)
     if (info && info.odds != null) return Math.max(0, Math.min(1, +info.odds));
     var w = ODDS.weight, k = info.sunday && w[info.sunday] != null ? info.sunday : info.kind;
     return Math.min(ODDS.cap, ODDS.base * (w[k] != null ? w[k] : 1));
@@ -132,7 +131,9 @@ window.KOLOB.GuestFarWard = (function () {
   function pickWith(u, pool) { return pickW({ rnd: function (a, b) { return a + u * (b - a); } }, pool); }
 
   // ==========================================================================
-  // THE SHAPE — every die of one performance, drawn in order
+  // THE SHAPE — every die of one performance, drawn in order.
+  // DICE: decide() draws it whether or not the far ward is seated, so the
+  // stream's order stands
   // ==========================================================================
   function shapeOf(stream) {
     var r = need(stream).fork("shape");
@@ -156,7 +157,7 @@ window.KOLOB.GuestFarWard = (function () {
   function decide(info, stream) {
     info = info || {};
     var rs = need(stream).fork("seat");
-    var roll = rs.next(), rowDie = rs.next();
+    var roll = rs.next(), rowDie = rs.next();                        // DICE: every die, first
     var sh = shapeOf(stream);
     var p = oddsFor(info), why = null, secs = info.sections || [], guests = info.guests || [];
     function idxOf(g) {
@@ -219,6 +220,10 @@ window.KOLOB.GuestFarWard = (function () {
               ["T", has("T") ? "T" : mp, 1], ["T", has("S") ? "S" : mp, 0.5], ["B", has("B") ? "B" : mp, has("B") ? 1 : 0.5], ["B", has("B") ? "B" : mp, has("B") ? 1 : 0.5]];
     return ["S", "S", "A", "A", "T", "T", "B", "B"].map(function (p) { return [p, has(p) ? p : mp, has(p) ? 1 : (p === "T" || p === "B" ? 0.5 : 1)]; });
   }
+  // a fault is told, never hidden (kolob-core.js, THE FAULTS): through the
+  // house's confess, once per what, where the house is loaded; plainly on a
+  // bench without it
+  function confess(what, err) { var S = window.KOLOB._s; if (S && S.confess) S.confess(what, err); else if (typeof console !== "undefined") console.error("Kolob: " + what, err); }
   function prepare(material, stream) {
     material = material || {};
     var h = material.hymn;
@@ -230,7 +235,7 @@ window.KOLOB.GuestFarWard = (function () {
       try {
         var st = C.setTune(need(stream).fork("material").fork("setTune"), h, { dialect: far, keyMonzo: h.keyMonzo, id: h.id + ":far" });
         if (st && st.lines && st.lines.length + (st.refrain ? st.refrain.length : 0) === nAll) setting = st;
-      } catch (e) { setting = h; }
+      } catch (e) { setting = h; confess("the far ward's setting of the hymn could not be made (they sing it as the ward does)", e); }
     }
     if (setting === h) far = "same";
     var r = stream.fork("material").fork("pews"), layout = pews(setting), ages = ["young", "mid", "mid", "old"];
@@ -352,16 +357,6 @@ window.KOLOB.GuestFarWard = (function () {
   // may call VoicesVocal.arm too: it is one queue). With no clock (an
   // offline render), every line joins at once.
   var ARM_STEP = 0.1, ARM_LEAD = 0.8;
-  function armTicker(V, ctx, hooks, t, end) {
-    if (!hooks.defer || !V.arm) return false;
-    (function tick(at) {
-      hooks.defer(at, function () {
-        V.arm(ctx, at + ARM_LEAD, at);
-        if (at < end + 1.5) tick(at + ARM_STEP);
-      });
-    })(t);
-    return true;
-  }
   function toSung(notes) {
     var out = [], t = notes.length ? notes[0].t : 0;
     notes.forEach(function (x) {
@@ -484,4 +479,4 @@ window.KOLOB.GuestFarWard = (function () {
     get DESK_GAIN() { return DESK_GAIN; }, set DESK_GAIN(v) { DESK_GAIN = +v; },
   };
 })();
-(window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-guest-farward.js"] = true;   // the load guard's roll call (round 3c)
+(window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-guest-farward.js"] = true;   // the load guard's roll call

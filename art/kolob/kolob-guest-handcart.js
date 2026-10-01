@@ -95,7 +95,7 @@ window.KOLOB.GuestHandcart = (function () {
   var FUNERAL_SEATS = [["sacrament", 1.4], ["prelude", 0.8], ["testimony", 1], ["postlude", 1]];
   var AT = [0.1, 0.35], AT_MIN = 6;
   // the company's bus into the tabernacle's wide send (calibrated in the lab
-  // against the organ reference: the handoff's table)
+  // against the organ reference)
   var LEVEL = 0.74;
   var NEAR_EVEN = 0.54;
   var RISE_DB = -14;                              // over the rise, by the time the wheels are gone
@@ -105,9 +105,8 @@ window.KOLOB.GuestHandcart = (function () {
     return stream;
   }
   function oddsFor(info) {
-    // (round 3c: a meeting hands its odds in, info.odds, from the calendar's
-    // one table — KOLOB.Calendar.GUEST_ODDS; a lab without it reads this
-    // room's own, below)
+    // (the meeting hands this room its odds from Calendar.GUEST_ODDS,
+    // info.odds; a lab without them reads the room's own ODDS)
     if (info && info.odds != null) return Math.max(0, Math.min(1, +info.odds));
     var w = ODDS.weight, k = info.sunday && w[info.sunday] != null ? info.sunday : info.kind;
     return Math.min(ODDS.cap, ODDS.base * (w[k] != null ? w[k] : 1));
@@ -143,7 +142,7 @@ window.KOLOB.GuestHandcart = (function () {
   function decide(info, stream) {
     info = info || {};
     var rs = need(stream).fork("seat");
-    var roll = rs.next(), seatDie = rs.next(), atU = rs.next();       // every die, first
+    var roll = rs.next(), seatDie = rs.next(), atU = rs.next();       // DICE: every die, first
     var sh = shapeOf(stream);
     var p = oddsFor(info), why = null;
     var secs = info.sections || [], guests = info.guests || [];
@@ -442,4 +441,4 @@ window.KOLOB.GuestHandcart = (function () {
     get LEVEL() { return LEVEL; }, set LEVEL(v) { LEVEL = +v; },
   };
 })();
-(window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-guest-handcart.js"] = true;   // the load guard's roll call (round 3c: the handcart company)
+(window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-guest-handcart.js"] = true;   // the load guard's roll call

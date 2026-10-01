@@ -3,8 +3,8 @@
 //
 // The ground of the hall and its tower: the tuba (reserved for the raspberry
 // amen), the La Monte Young drone, the prairie strings, the meetinghouse bell
-// and the tines. Split from kolob-audio.js (v0.30); see the room list in
-// kolob-core.js.
+// and the tines. Lends their cycles, the drone's turn (the reckoning) and
+// the bell strike the far steeples ring (the LENT block at the foot).
 // ============================================================================
 
 window.KOLOB = window.KOLOB || {};
@@ -36,6 +36,7 @@ window.KOLOB = window.KOLOB || {};
   function emitNote(layer, freq, startTime, duration, extra) { return S.emitNote(layer, freq, startTime, duration, extra); }
   function cueIn(lane, dtS, fn) { return S.cueIn(lane, dtS, fn); }
   function cueLayer(layer, baseS, fn) { return S.cueLayer(layer, baseS, fn); }
+  function cycle(lane, self, turn, t, fallbackS) { return S.cycle(lane, self, turn, t, fallbackS); }
   function panAt(layer, p) { return S.panAt(layer, p); }
   function getLayerParam(layer, key, fallback) { return S.getLayerParam(layer, key, fallback); }
   function noiseSource() { return S.noiseSource(); }
@@ -86,7 +87,7 @@ window.KOLOB = window.KOLOB || {};
   // series of F0, in very long crossfading cycles. It never stops — in the
   // sacrament it is all there is. The stillness is the point.
   //
-  // THE KOLOB RECKONING (round 3b, step 4; PLAN §7.2). On a Sunday the
+  // THE KOLOB RECKONING (PLAN §7.2). On a Sunday the
   // reckoning holds, the drone MOVES: one note a section, the opening of the
   // tune the doxology will sing, each note the tonic, the third or the fifth
   // of the key its section is sung in. It turns only at a joint — S.droneTurn
@@ -103,7 +104,8 @@ window.KOLOB = window.KOLOB || {};
   // the drone's note: a multiplier on F0 (1 at the keynote), gliding from
   // `from` at `at` to `mul` at `until`; its role in the section's chord; its
   // monzo over the keynote (for the notes told)
-  var droneNow = { mul: 1, from: 1, at: -1, until: -1, role: "tonic", monzo: [0, 0, 0, 0], k: null };
+  function droneHome() { return { mul: 1, from: 1, at: -1, until: -1, role: "tonic", monzo: [0, 0, 0, 0], k: null }; }
+  var droneNow = droneHome();
   var droneLive = [];                               // the sines sounding: { o, base, gains: [{g, h, oct}], stopAt }
   // (a note ALONE — the still sacrament's, where nothing else sounds — keeps
   // its whole series, as the tonic does)
@@ -120,7 +122,11 @@ window.KOLOB = window.KOLOB || {};
     return d.from * Math.pow(d.mul / d.from, (t - d.at) / (d.until - d.at));
   }
   // at scheduled time t — the downbeat, then each overlap
-  function droneCycle(t) {
+  // (under the core's net, S.cycle: a turn that throws before it has
+  // re-armed is re-armed by the core CYCLE_FALLBACK_S = 5 s later, and the
+  // throw is reported)
+  function droneCycle(t) { return cycle("drone", droneCycle, droneCycleTurn, t); }
+  function droneCycleTurn(t) {
     if (!S.playing) return;
     var R = turn("drone");
     var dur = R.rnd(60, 90);
@@ -210,10 +216,13 @@ window.KOLOB = window.KOLOB || {};
     return { fromHz: S.F0 * from, toHz: S.F0 * best.x, monzo: monzo, glide: same ? 0 : g };
   }
   function lv0Until(t) { var u = t + 30; droneLive.forEach(function (lv) { if (lv.stopAt > u) u = lv.stopAt; }); return u; }
-  // a new meeting's drone begins on its keynote (a meeting ends home: the
-  // doxology and the postlude are the keynote's)
-  function droneReset() { droneNow = { mul: 1, from: 1, at: -1, until: -1, role: "tonic", monzo: [0, 0, 0, 0], k: null }; }
   function droneNote() { return { mul: droneNow.mul, role: droneNow.role, monzo: droneNow.monzo.slice(), k: droneNow.k, until: droneNow.until }; }
+  // a new visit (a reseed while stopped, kolob-core.js): the drone forgets
+  // the note the old visit left it on and the sines it left behind the
+  // closed doors, and stands home as on a page just loaded — else the new
+  // visit's first meeting turned it home from there with a glide, and its
+  // first turn was told as long as those old sines still ran
+  function droneForget() { droneNow = droneHome(); droneLive = []; }
 
   // ==========================================================================
   // VOICE: STRINGS — the prairie. Open fifths of the sounding chord in long
@@ -231,9 +240,8 @@ window.KOLOB = window.KOLOB || {};
     var fifthF = rootF * 1.5;
     // a chord whose own fifth is not pure (the diminished one on ti, on re in
     // aeolian, on la in dorian, on mi in mixolydian) has no open fifth to
-    // give: its pad is the bare octave. v0.32 bowed a pure fifth over it, a
-    // pitch outside the day's tuning, against the choir's own; round 2 found
-    // it when every sounded note was first reported.
+    // give: its pad is the bare octave. A pure fifth bowed over it would be
+    // a pitch outside the day's tuning, against the choir's own.
     var pure = pureFifth(rootF);
     var pitches = pure ? (fifthOnly ? [rootF, fifthF] : [rootF, fifthF, rootF * 2]) : [rootF, rootF * 2];
     var parts = pure ? ["root", "fifth", "octave"] : ["root", "octave"];
@@ -265,7 +273,7 @@ window.KOLOB = window.KOLOB || {};
     var peak = (gainMul || 1) * 0.7 * (0.4 + intensity() * 0.7);
     var edge = Math.min(8, dur * 0.3);
     env(master, t, [[edge, peak], [Math.max(0.5, dur - edge * 2), peak * 0.92], [edge, 0]]);
-    // every bowed pitch (round 2): the root, its fifth and, when the pad is
+    // every bowed pitch is told: the root, its fifth and, when the pad is
     // full, the root's octave (the lonesome sine is the fifth's overtone, a
     // colour of the pad, not a note)
     for (var pp = 0; pp < pitches.length; pp++) emitNote("strings", pitches[pp], t, dur, { part: parts[pp], chord: ch ? ch.id : null });
@@ -282,11 +290,16 @@ window.KOLOB = window.KOLOB || {};
     }
     return false;
   }
-  function stringsCycle(t) {
+  // The strings' turn, at scheduled time t.
+  // (under the core's net, S.cycle: a turn that throws before it has
+  // re-armed is re-armed by the core CYCLE_FALLBACK_S = 5 s later, and the
+  // throw is reported)
+  function stringsCycle(t) { return cycle("strings", stringsCycle, stringsCycleTurn, t); }
+  function stringsCycleTurn(t) {
     if (!S.playing) return;
     var s = S.Meeting.section();
-    // (a rite seated as the brush arbor — round 3b, step 4 — is the strings'
-    // own: they bow its bare fifths, even in the invocation or an interlude,
+    // (a rite seated as the brush arbor is the strings' own: they bow its
+    // bare fifths, even in the invocation or an interlude,
     // where they are otherwise silent; the sacrament keeps its stillness)
     var arborRite = s !== "prelude" && S.Meeting.scene && S.Meeting.scene() && S.Meeting.scene().fifths;
     if ((s === "invocation" || s === "sacrament" || s === "interlude") && !(arborRite && s !== "sacrament")) { cueIn("strings", 8, stringsCycle); return; }
@@ -294,7 +307,7 @@ window.KOLOB = window.KOLOB || {};
     var R = turn("strings");
     var dur = R.rnd(22, 34);
     var overlap = 8;
-    var seat = s === "prelude" ? S.Meeting.seating() : (S.Meeting.scene ? S.Meeting.scene() : null);   // (the brush arbor bows bare fifths — the prelude's, or a rite's: round 3b, step 4)
+    var seat = s === "prelude" ? S.Meeting.seating() : (S.Meeting.scene ? S.Meeting.scene() : null);   // (the brush arbor bows bare fifths — the prelude's, or a rite's)
     stringsPad(t + 0.1, dur, s === "doxology" ? 1 : 0.75, R.chance(0.7) || !!(seat && seat.fifths));
     // (the prelude's texture: a strings morning overlaps its pads)
     cueLayer("strings", (dur - overlap) * (s === "doxology" ? 0.9 : 1.3) * S.Meeting.lean("strings"), stringsCycle);
@@ -370,7 +383,11 @@ window.KOLOB = window.KOLOB || {};
     emitNote("bells", f, t, 1, extra);
   }
   // The tines' turn, at scheduled time tc.
-  function tineCycle(tc) {
+  // (under the core's net, S.cycle: a turn that throws before it has
+  // re-armed is re-armed by the core CYCLE_FALLBACK_S = 5 s later, and the
+  // throw is reported)
+  function tineCycle(tc) { return cycle("bells", tineCycle, tineCycleTurn, tc); }
+  function tineCycleTurn(tc) {
     if (!S.playing) return;
     var s = S.Meeting.section();
     if (s === "invocation" || s === "sacrament" || inFuging()) { cueIn("bells", 9, tineCycle); return; }
@@ -408,8 +425,8 @@ window.KOLOB = window.KOLOB || {};
   S.tubaBlat = tubaBlat;
   S.droneCycle = droneCycle;
   S.droneTurn = droneTurn;
-  S.droneReset = droneReset;
   S.droneNote = droneNote;
+  S.droneForget = droneForget;
   S.stringsPad = stringsPad;
   S.stringsCycle = stringsCycle;
   S.bellStrike = bellStrike;

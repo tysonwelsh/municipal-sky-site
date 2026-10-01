@@ -107,9 +107,9 @@ window.KOLOB.GuestVariations = (function () {
   var NOT_A_HYMN = { round: true, refrain: true, refrainIn: true };
   var EST = { plain: 118, victorian: 132, improviser: 136 };   // s: a set's length before it is written
 
-  // THE ORGANIST'S NEW DOINGS (kolob-organist.js says them; the ward's
-  // Deseret for the minutes — kolob-cast.js ACTION_DS takes these at
-  // integration, spelled as its own are)
+  // THE ORGANIST'S DOINGS IN A RECITAL (kolob-organist.js says them; the
+  // ward's Deseret for the minutes — kolob-cast.js ACTION_DS carries the
+  // same, spelled as its own are)
   var ACTIONS = [
     ["plays variations on the hymn", "p-l-ay-z v-e-r-ee-ay-sh-u-n-z o-n dh-u h-i-m"],
     ["plays the hymn as a plain chorale", "p-l-ay-z dh-u h-i-m a-z u p-l-ay-n k-u-r-a-l"],
@@ -147,9 +147,8 @@ window.KOLOB.GuestVariations = (function () {
   function oddsFor(info) {
     var w = ODDS.weight, k = info.sunday && w[info.sunday] != null ? info.sunday : info.kind;
     var st = info.organist && ODDS.style[info.organist.style] != null ? ODDS.style[info.organist.style] : 1;
-    // (round 3c: a meeting hands the Sunday's odds in, info.odds, from the
-    // calendar's one table — KOLOB.Calendar.GUEST_ODDS; the organist's own
-    // lean, ODDS.style, stays on top of it)
+    // (the meeting hands this room its odds from Calendar.GUEST_ODDS,
+    // info.odds; the organist's own lean, ODDS.style, stays on top of it)
     if (info.odds != null) return Math.max(0, Math.min(1, +info.odds * st));
     return Math.min(ODDS.cap, ODDS.base * (w[k] != null ? w[k] : 1) * st);
   }
@@ -167,7 +166,7 @@ window.KOLOB.GuestVariations = (function () {
   function decide(info, stream) {
     info = info || {};
     var rs = need(stream).fork("seat");
-    var roll = rs.next(), seatU = rs.next(), atU = rs.next(), hymnU = rs.next();       // every die, first
+    var roll = rs.next(), seatU = rs.next(), atU = rs.next(), hymnU = rs.next();       // DICE: every die, first
     var p = oddsFor(info), why = null;
     var secs = info.sections || [], guests = info.guests || [];
     var order = secs.map(function (s) { return s && s.type; });

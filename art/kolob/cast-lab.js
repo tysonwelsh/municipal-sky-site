@@ -413,14 +413,14 @@
       V.budget.reset();
       var org = opts.organ === false ? { play: null } : organFor(ctx, room, t0, sheet);
       var perf = Cast.performer(S.ward, { V: V, synth: PJ2.Rand.stream(S.s.seed).fork("synth:vocal"), organ: org.play });
-      var q = 128 / sr, lastPump = 0;
+      var q = 128 / sr;
       // (armed as the live pump arms: each line joins the room ARM_LEAD before
       // it sounds, the next pump being a second on — so what is measured is
       // the path that is played)
       perf.pump(ctx, room, t0, sheet, 3.0, { arm: 1 + ARM_LEAD, now: 0 });
       for (var s = 1; s < t0 + len; s += 1) {
         (function (at) {
-          ctx.suspend(Math.round(at / q) * q).then(function () { perf.pump(ctx, room, t0, sheet, Math.min(at + 3.0, t0 + len - 0.5), { arm: at + 1 + ARM_LEAD, now: at }); lastPump = at; ctx.resume(); });
+          ctx.suspend(Math.round(at / q) * q).then(function () { perf.pump(ctx, room, t0, sheet, Math.min(at + 3.0, t0 + len - 0.5), { arm: at + 1 + ARM_LEAD, now: at }); ctx.resume(); });
         })(s);
       }
       var ms0 = performance.now();

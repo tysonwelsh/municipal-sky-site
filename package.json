@@ -1,0 +1,13 @@
+{
+  "name": "municipal-sky-site",
+  "private": true,
+  "description": "Dev tooling only (the site itself is PHP and static files): ESLint over the Kolob engine and its tools.",
+  "scripts": {
+    "lint": "eslint art/kolob",
+    "kolob:check": "node art/kolob/tools/loadcheck.js && node art/kolob/tools/lends.js",
+    "kolob:selftest": "node art/kolob/tools/selftest.js"
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0"
+  }
+}
