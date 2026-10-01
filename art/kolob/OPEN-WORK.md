@@ -7,7 +7,7 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
 
 ## The refactor
 
-- **`PLAN-REFACTOR.md`** (2026-10-01; §2 built, v0.36.3; §3.6, §3.1, §3.3, §3.7 and §3.8 built): the owner asked for a plan to improve
+- **`PLAN-REFACTOR.md`** (2026-10-01; §2 built, v0.36.3; §3.6, §3.1, §3.3, §3.7, §3.8 and §3.2 built): the owner asked for a plan to improve
   efficiency, reliability and maintainability without changing what is heard or seen. Its §2, the
   real faults, is done (commits 3eefffb to a373760: a cue that threw ended its layer for the visit; a
   stillness survived STOP; STOP's own race; errors swallowed silently; a broken page let PLAY be
@@ -18,8 +18,10 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
   wrappers kept as each room's manifest and checked exact by `tools/lends.js` (with `VISIT_FN` one list
   of names), and every lab's list of rooms loaded headless in its order by `tools/loadcheck.js`, and
   §3.8, the lint a notch tighter (`no-empty` with every quiet catch saying why, `default-case`,
-  `no-prototype-builtins`; `complexity` and `max-lines-per-function` as warnings).
-  What remains is §3 (one place for each thing: the guest-room scaffold, the planner out of the
+  `no-prototype-builtins`; `complexity` and `max-lines-per-function` as warnings), and §3.2, one
+  scaffold under every guest room (`KOLOB.GuestRoom`, `kolob-guest-room.js`, commit 5f366f8) and one
+  host for the guests the glue plays (`kolob-guests.js`, commit 7a3bc81).
+  What remains is §3 (one place for each thing: the planner out of the
   conductor, the staff in pieces) and §4 (the page's load and frame, the minutes' poll, the
   audio graph with the owner), in §6's order.
   The §2 builders' follow-ups, not done:
@@ -62,8 +64,24 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
     (meeting) and `S.reportLine` (the winds);
   - the §3.1 wrappers onto the namespaces (`function mz(a, b) { return K.Pitch.mul(a, b); }`) keep the
     room's old names by design and are not checked; only the BORROWED wrappers onto `S` are.
+  The §3.2 builder's follow-ups, not done:
+  - `kolob-guest-changes.js` `perform()` builds the tower twice (`var T = tower(…)` on two lines): the
+    first tower's partials run silent to the end, and its dice are drawn from the synth stream first,
+    so removing it moves the ringing's sound-level dice — a change for the owner's ear;
+  - the trombones' rows are built and told when their cue comes and never asked again whether the
+    dawn stands (every other guest's row asks, `tellAt`); kept as it was, an option of the host's
+    `hooks`, not normalised;
+  - `C_live` asks by the guest's type through the chorister's book (its guests are copies), so a cue
+    of an old visit that outlived a reseed could find the new visit's meeting of the same number
+    standing (not seen; the meeting's own guests ask their records, `standsFor`);
+  - the variations, change ringing and the Social Hall keep their own prologues and epilogues beside
+    the host (the organist's desk, the steeples' bells, the dance's drone); they could take `host`
+    with an option or two more;
+  - `GuestRoom.level` defines `LEVEL` after the room's other properties, so it now enumerates last
+    (nothing reads the order).
   The §3.8 builder's follow-ups, not done:
-  - `no-shadow` waits for §3.2 (182 sites under `art/kolob` today, 116 in the engine and the page);
+  - `no-shadow` no longer waits (§3.2 is built and moved none of its 182 sites under `art/kolob`,
+    116 in the engine and the page);
   - the warnings to watch, as `npm run lint` prints them on 2026-10-01: `complexity` over 25 in 96
     functions (72 in the engine and the page, 13 in the labs, 11 in the harness and the tools) and
     `max-lines-per-function` over 150 in 20 (18 and 2: `kolob-voices-folk.js create` 503 lines,
