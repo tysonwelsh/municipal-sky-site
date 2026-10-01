@@ -37,9 +37,9 @@
 // funeral is slow, then rising: its dawn is darker and its morning climbs
 // late to the same full light.
 //
-// SEATINGS (§7.4). The prelude draws its seating in kolob-meeting.js
-// (seatPrelude). The other rites that are not hymns draw one here
-// (scenes()): the house as it always sat (plain), LINED OUT
+// SEATINGS (§7.4). The prelude draws its seating in the meeting's plan
+// (kolob-plan.js seatPrelude). The other rites that are not hymns draw one
+// here (scenes()): the house as it always sat (plain), LINED OUT
 // ONLY (the deacon gives the lines and the ward answers; no organ, no
 // harmonium, no strings), the BRUSH ARBOR (no organ; the strings on bare
 // fifths), an ORGAN VOLUNTARY (the organ leads, the others sparing), or THE
@@ -118,7 +118,7 @@ window.KOLOB.Calendar = (function () {
   //   organist  factors on the three organists' odds
   //   reg       how the organ is drawn, −1 … +1 (the plain flutes … the full
   //             organ), on top of the light
-  //   morning   factors on the prelude's seatings (seatPrelude)
+  //   morning   factors on the prelude's seatings (kolob-plan.js seatPrelude)
   //   scenes    factors on the other rites' seatings (scenes)
   //   arc       the Sunday's own light: offsets and overrides (ARC below) —
   //             and its own dawn, so that the Sunday is heard in the first

@@ -20,12 +20,14 @@
 // each seed, the first meeting of a fresh visit is planned and its hymns
 // written, and five results are hashed, one file of hashes each:
 //
-//   meeting   what planMeeting leaves (kolob-meeting.js): the Sunday the
-//             calendar drew (its die and its answer), the order of service
-//             (each rite's type, length, meter and light, holds included),
-//             the guests seated and refused, the seatings, the day's
-//             hymnal and forms, the reckoning's order, the Hosanna, the
-//             testimony, the chorale prelude, and every event it emitted
+//   meeting   what planMeeting leaves (the plan's day and seat,
+//             kolob-plan.js, written into the meeting by kolob-meeting.js):
+//             the Sunday the calendar drew (its die and its answer), the
+//             order of service (each rite's type, length, meter and light,
+//             holds included), the guests seated and refused, the seatings,
+//             the day's hymnal and forms, the reckoning's order, the
+//             Hosanna, the testimony, the chorale prelude, and every event
+//             it emitted
 //   hymns     the hymnal's orders (prepare's rows, forms and reckoning) and
 //             every order written by the hymnal's own write() — the same
 //             others, the same dependency, the doxology's reckoning and its
@@ -76,6 +78,16 @@
 //   THE TRAP: while a seed is planned and composed, Math.random and Date.now
 // throw, and the call is told with where it came from; nothing in the pure
 // core calls either today (the trap is left off for no kind — TRAP_OFF).
+//   THE PLAN (kolob-plan.js, KOLOB.Plan) is held to its own header: the
+// meeting's call of each half, day() and seat(), runs with the house shut
+// (shut: the shared bag, the page, the audio, the timers, performance, the
+// worker, the facade, Date and Math.random throw when touched, and the
+// touch is told; the streams the house deals it are let through), and what
+// it was handed must be as it was; then both halves are called again, the
+// house shut, on fresh streams of the meeting's labels, and must give the
+// meeting's own day and seating, and on each of the switches' settings
+// (SWITCHED) twice, the same both times. tools/selftest.js §14 plants a read
+// of the bag in a scratch copy of kolob-plan.js and finds it named.
 //
 // THE HASH: SHA-1 of the result as canonical JSON — every object's keys
 // sorted, numbers as JSON writes them (exact, never rounded; NaN and the
@@ -89,7 +101,8 @@
 // (kolob-guests.js), every guest's prepare(), score() and perform(), the
 // choir's performance of a hymn, the core, the hymnal's worker and idle
 // roads as such, any meeting after the first, and the switches (ives,
-// force=, cumulative, razz, exp=). Those are the tally's. A change the
+// force=, cumulative, razz, exp=) but for the plan's own two halves, run on
+// them twice and against no baseline. Those are the tally's. A change the
 // golden calls clean has not moved the pure core on these seeds; it says
 // nothing of the rest.
 //
@@ -216,6 +229,105 @@ function child(dir, seeds, emit) {
   watch(K.Organist, "preludeDraw", "organist.preludeDraw");
   const ROOMS = Object.keys(K).filter((k) => /^Guest[A-Z]|^Testimony$/.test(k) && K[k] && typeof K[k].plan === "function" && typeof K[k].decide === "function" && K[k].LABEL).sort();
   ROOMS.forEach((k) => watch(K[k], "plan", "guest", (call) => { call.room = k; }));
+
+  // (who called: the two frames under a trap, by file name and line — from
+  // the stack's frame `from` on: 2 where the trap is the function called)
+  const caller = (e, from) => e.stack.split("\n").slice(from || 2, (from || 2) + 2).map((l) => { const x = /at (?:Object\.)?(\S+) \((.*):(\d+):\d+\)$/.exec(l.trim()); return x ? x[1] + " (" + path.basename(x[2]) + ":" + x[3] + ")" : l.trim(); }).join(" ← ");
+  // THE HOUSE SHUT, while a half of the plan runs (kolob-plan.js: "nothing
+  // here touches an AudioContext, the DOM, a clock, a timer, Math.random,
+  // Date, the shared bag, a cue or an event"): each of those throws when it
+  // is touched, and the touch is told with where it came from — every lend
+  // on the shared bag (KOLOB._s), read or written, and one lent anew; the
+  // page (document, location, localStorage, navigator), the audio
+  // (AudioContext and its kin), the timers, performance, the worker, the
+  // facade (KolobAudio), Date and Math.random. The rooms the plan calls
+  // (the calendar, the hymnal's plan and forms, every guest room's plan,
+  // the cast's and the organist's seats) are reached on KOLOB, as the plan
+  // reaches them, and stay open: what they touch of the house, they touch
+  // here. The streams are the house's to deal (draws.stream, the core's
+  // S.stream for the meeting): the dealing is let through (open), the plan
+  // that asks for them is not.
+  const SHUT = ["document", "location", "localStorage", "navigator", "AudioContext", "webkitAudioContext", "OfflineAudioContext",
+    "setTimeout", "setInterval", "clearTimeout", "clearInterval", "requestAnimationFrame", "requestIdleCallback", "performance", "Worker", "KolobAudio", "Date"];
+  let opened = 0;
+  const open = (fn) => { opened++; try { return fn(); } finally { opened--; } };
+  function shut(what, fn) {
+    const hits = [], bag = K._s;
+    const trip = (how) => { const e = new Error(how + " while " + what + " ran"); hits.push(how + " in " + what + ": " + caller(e, 3)); throw e; };
+    const lent = Object.getOwnPropertyNames(bag).map((k) => [k, Object.getOwnPropertyDescriptor(bag, k)]);
+    const page = SHUT.map((k) => [k, Object.getOwnPropertyDescriptor(global, k)]);
+    const random = Math.random;
+    // (open: the value as it stands, and a write written)
+    const read = (o, d) => (!d ? undefined : d.get ? d.get.call(o) : d.value);
+    const writeTo = (o, d, v) => { if (d && d.set) d.set.call(o, v); else if (d) d.value = v; };
+    lent.forEach(([k, d]) => { if (d.configurable) Object.defineProperty(bag, k, { configurable: true, enumerable: d.enumerable, get: () => (opened ? read(bag, d) : trip("S." + k)), set: (v) => (opened ? writeTo(bag, d, v) : trip("S." + k + " =")) }); });
+    page.forEach(([k, d]) => { if (!d || d.configurable) Object.defineProperty(global, k, { configurable: true, get: () => (opened ? read(global, d) : trip(k)), set: (v) => (opened ? writeTo(global, d, v) : trip(k + " =")) }); });
+    Math.random = () => (opened ? random() : trip("Math.random()"));
+    let r, threw = null;
+    try { r = fn(); }
+    catch (e) { threw = e; }
+    finally {
+      Math.random = random;
+      lent.forEach(([k, d]) => Object.defineProperty(bag, k, d));
+      page.forEach(([k, d]) => { if (d) Object.defineProperty(global, k, d); else delete global[k]; });
+      Object.getOwnPropertyNames(bag).forEach((k) => { if (!lent.some((l) => l[0] === k)) { hits.push("S." + k + " lent in " + what); delete bag[k]; } });
+    }
+    return { r, hits, threw };
+  }
+  // THE PLAN (kolob-plan.js, KOLOB.Plan): its two halves, day() and seat(),
+  // watched as the meeting calls them — each run with the house shut, and
+  // what it was handed held to what it was before the call (its streams
+  // aside: their dice are its to throw)
+  const PL = K.Plan, planReal = { day: PL.day, seat: PL.seat };
+  ["day", "seat"].forEach((name) => {
+    PL[name] = function (a, info, draws) {
+      if (!rec) return planReal[name].apply(this, arguments);
+      const handed = text([a, info]), self = this;
+      const call = { tag: "Plan." + name, args: [cloneDeep(a), cloneDeep(info)] };
+      const dealt = { stream: (label) => open(() => draws.stream(label)), castStream: draws.castStream ? (k) => open(() => draws.castStream(k)) : null };
+      const out = shut("Plan." + name, () => planReal[name].call(self, a, info, dealt));
+      call.hits = out.hits; call.wrote = text([a, info]) !== handed; call.res = cloneDeep(out.r);
+      rec.calls.push(call);                                           // (its touches are told even when the meeting throws on one)
+      if (out.threw) throw out.threw;
+      return out.r;
+    };
+  });
+  // …and called again, with the house shut: both halves on fresh streams of
+  // the labels the meeting drew on (stream(label) is <label>:<n>, the same
+  // stream each time one call asks for it, as the core's S.stream;
+  // castStream(n) a fresh cast:<n>, as S.castStream) must give the meeting's
+  // own day and seating; and on each of the switches' settings (SWITCHED:
+  // the switch's own pick, every guest it may name, the withheld tune always
+  // and never, the raspberry, the pipes silent, the reckoning held) the
+  // same day and seating twice, each from fresh streams, writing nothing it
+  // was handed
+  const SWITCHED = [{ forceVisitation: true }].concat(Object.keys(PL.FORCEABLE).map((g) => ({ forceVisitation: g })),
+    [{ cumulativeMode: "always" }, { cumulativeMode: "never" }, { forceRaspberry: true }, { pipeOn: false }, { reckoning: false }]);
+  function planAgain(root, n, dayInfo, seatInfo) {
+    const cache = {}, draws = { stream: (label) => cache[label] || (cache[label] = root.fork(label + ":" + n)), castStream: (k) => root.fork("cast:" + k) };
+    const handed = text([dayInfo, seatInfo]);
+    const d = shut("Plan.day", () => planReal.day(n, dayInfo, draws));
+    const s = d.threw ? { r: undefined, hits: [], threw: null } : shut("Plan.seat", () => planReal.seat(d.r, seatInfo, draws));
+    return { day: d.r, seat: s.r, hits: d.hits.concat(s.hits), threw: d.threw || s.threw, wrote: text([dayInfo, seatInfo]) !== handed };
+  }
+  function checkPlan(calls, root, faults) {
+    const said = (f) => faults.push("the plan: " + f);
+    const pd = calls.find((c) => c.tag === "Plan.day"), ps = calls.find((c) => c.tag === "Plan.seat");
+    if (!pd || !ps) { said("the meeting did not call both halves (KOLOB.Plan day and seat)"); return; }
+    const n = pd.args[0], dayInfo = Object.assign({}, pd.args[1], { calendar: CAL }), seatInfo = Object.assign({}, ps.args[1], { calendar: CAL });
+    const told = (what, x) => { x.hits.forEach(said); if (x.threw) said(what + " threw: " + (x.threw.stack ? x.threw.stack.split("\n").slice(0, 3).join(" | ") : x.threw)); if (x.wrote) said(what + " wrote what it was handed"); };
+    const again = planAgain(root, n, dayInfo, seatInfo);
+    told("on fresh streams", again);
+    if (text(again.day) !== text(pd.res)) said("Plan.day on fresh streams did not give what it gave the meeting (not pure on its arguments and its streams)");
+    if (text(again.seat) !== text(ps.res)) said("Plan.seat on fresh streams did not give what it gave the meeting (not pure on its arguments and its streams)");
+    SWITCHED.forEach((sw) => {
+      const name = Object.keys(sw).map((k) => k + "=" + sw[k]).join(" ");
+      const a = planAgain(root, n, Object.assign({}, dayInfo, sw), Object.assign({}, seatInfo, sw));
+      const b = planAgain(root, n, Object.assign({}, dayInfo, sw), Object.assign({}, seatInfo, sw));
+      told("with " + name, a); told("with " + name + " (again)", b);
+      if (text([a.day, a.seat]) !== text([b.day, b.seat])) said("with " + name + ", two plans on fresh streams of the same labels (not pure on its arguments and its streams)");
+    });
+  }
   let events = null;
   KA.setEventListener((e) => { if (events) { const o = cloneDeep(e); delete o.t; events.push(o); } });
 
@@ -235,8 +347,6 @@ function child(dir, seeds, emit) {
     const same = (what, a, b) => { if (text(a) !== text(b)) faults.push(what + " on a fresh stream did not give what it gave the meeting (not pure on its arguments and its stream)"); };
     const kind = (name, fn) => {
       const hits = [];
-      // (who called: the two frames under the trap, by file name and line)
-      const caller = (e) => e.stack.split("\n").slice(2, 4).map((l) => { const x = /at (?:Object\.)?(\S+) \((.*):(\d+):\d+\)$/.exec(l.trim()); return x ? x[1] + " (" + path.basename(x[2]) + ":" + x[3] + ")" : l.trim(); }).join(" ← ");
       if (!TRAP_OFF[name]) {
         Math.random = function () { const e = new Error("Math.random() while the golden computed " + name); hits.push("Math.random() in " + name + ": " + caller(e)); throw e; };
         Date.now = function () { const e = new Error("Date.now() while the golden computed " + name); hits.push("Date.now() in " + name + ": " + caller(e)); throw e; };
@@ -262,6 +372,7 @@ function child(dir, seeds, emit) {
       try { S.planMeeting(0); } finally { planned = rec.plan; rec = null; events = null; }
       const draw = calls.find((c) => c.tag === "calendar.draw");
       if (draw) same("Calendar.draw", CAL.draw(draw.args[0]), draw.res);
+      checkPlan(calls, root, faults);
       return {
         n: B.meetingNum(), sunday: draw ? { u: draw.args[0], drawn: draw.res } : null, day: B.day(),
         plan: (planned || []).map((s) => ({ type: s.type, dur: s.dur, meter: s.meter || null, light: s.light != null ? s.light : null })),
@@ -271,6 +382,9 @@ function child(dir, seeds, emit) {
         events: told,
       };
     });
+    // (the meeting's own call of each half of the plan: what it touched of
+    // the house, and whether it wrote what it was handed)
+    calls.filter((c) => /^Plan\./.test(c.tag)).forEach((c) => { c.hits.forEach((h) => faults.push("the plan: " + h)); if (c.wrote) faults.push("the plan: " + c.tag + " wrote what it was handed"); });
     const n = B.meetingNum(), rows = B.hymnal(), sunday = m && m.day ? m.day.id : null;
     const callOf = (tag) => calls.find((c) => c.tag === tag) || null;
 
@@ -339,7 +453,7 @@ function child(dir, seeds, emit) {
     // (each fault once, with how many times it came)
     const once = [];
     faults.forEach((f) => { const o = once.find((x) => x.f === f); if (o) o.n++; else once.push({ f, n: 1 }); });
-    write({ seed, fingerprint, hash, faults: once.map((x) => x.f + (x.n > 1 ? " (×" + x.n + ")" : "")), json: emit ? json[emit] : undefined, ms: Number(process.hrtime.bigint() - t0) / 1e6, timers: armed });
+    write({ seed, fingerprint, hash, faults: once.map((x) => x.f + (x.n > 1 ? " (×" + x.n + ")" : "")), json: emit ? json[emit] : undefined, ms: Number(process.hrtime.bigint() - t0) / 1e6, timers: armed, switched: SWITCHED.length });
   }
 }
 
@@ -460,7 +574,9 @@ async function main() {
   if (byFault.size > 12) console.log("  … and " + (byFault.size - 12) + " fault(s) more");
   const trapOff = Object.keys(TRAP_OFF);
   console.log("  the trap: Math.random and Date.now " + (results.some((r) => r.faults.some((f) => /^the trap: /.test(f))) ? "CALLED (above)" : "never called") +
-    (trapOff.length ? " (left off for " + trapOff.join(", ") + ")" : "") + "; every pure planner the meeting called gave the same on a fresh stream" + (faulted.some((r) => r.faults.some((f) => /fresh/.test(f))) ? " — BUT NOT ALL (above)" : ""));
+    (trapOff.length ? " (left off for " + trapOff.join(", ") + ")" : "") + "; every pure planner the meeting called gave the same on a fresh stream" + (faulted.some((r) => r.faults.some((f) => /fresh/.test(f) && !/^the plan: /.test(f))) ? " — BUT NOT ALL (above)" : ""));
+  console.log("  the plan: KOLOB.Plan's day() and seat() ran with the house shut and wrote nothing they were handed; on fresh streams they gave the meeting's own, and the same twice on each of " + results[0].switched + " switches' settings" +
+    (faulted.some((r) => r.faults.some((f) => /^the plan: /.test(f))) ? " — BUT NOT ALL (above)" : ""));
   if (!args.write) console.log(differs ? "  DIFFERS" : faulted.length ? "  FAULTED (above)" : "  ALL MATCH");
   else if (!faulted.length && base0 && base0.engine !== fingerprint) console.log("  (the baseline was " + base0.engine + ", written " + base0.written + ")");
   process.exitCode = differs || faulted.length ? 1 : 0;

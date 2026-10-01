@@ -30,9 +30,9 @@
 //
 // Sometimes (the seat's `seeds` flag) the song is the seed of the next hymn:
 // its opening, in the Score's degrees (gesture()), is what the composer is
-// handed for line one (kolob-meeting.js hands it on: the hymnal writes
-// every hymn when the meeting is planned, and this song is known then — its
-// score is pure).
+// handed for line one (the meeting's plan hands it on, kolob-plan.js THE
+// GIFT'S SEED: the hymnal writes every hymn when the meeting is planned,
+// and this song is known then — its score is pure).
 //
 // THE SEAT. plan(meetingInfo, stream) decides: the testimony only, most
 // often on a fast Sunday (and at a dedication — the Kirtland Temple's own

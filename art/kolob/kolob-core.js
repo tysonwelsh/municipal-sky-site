@@ -30,7 +30,8 @@
 //    as expansive as the frontier. If a motif never gets its turn in a
 //    session, that is the piece working.
 //  · Sections: prelude → invocation → hymn×n → testimony → sacrament →
-//    doxology → postlude, conducted by THE CHORISTER (kolob-meeting.js);
+//    doxology → postlude, planned by the plan (kolob-plan.js) and
+//    conducted by THE CHORISTER (kolob-meeting.js);
 //    every visit draws a Sunday of the colony year (kolob-calendar.js), and
 //    the four kinds of meeting the house has always known (ordinary / fast
 //    day / conference / jubilee) stand under the nine Sundays.
@@ -1319,7 +1320,7 @@ window.KolobAudio = (function () {
     cueAt("conductor", ctx.currentTime + LEAD_S, function (t0) {
       planMeeting(t0);
       // staggered assembly — the valley wakes the way a Sunday begins, and
-      // each Sunday in its own order: the prelude's seating (kolob-meeting.js,
+      // each Sunday in its own order: the prelude's seating (kolob-plan.js,
       // THE PRELUDE'S SEATING) drew every entrance (one timetable for every
       // visit — the drone at 0.1 s, the organ at 2.7, the field at 16, the
       // strings at 24 — made every first minute the same; the fallback below
@@ -1613,7 +1614,7 @@ window.KolobAudio = (function () {
     setForceRaspberry: function (on) { S.forceRaspberry = !!on; },
     setCumulativeMode: function (s) { if (s === "always" || s === "natural" || s === "never") S.cumulativeMode = s; },
     getCumulativeMode: function () { return S.cumulativeMode; },
-    // the natural draw's odds (kolob-meeting.js CUMULATIVE_ODDS): the page's one source for the Whole switch's text
+    // the natural draw's odds (kolob-plan.js CUMULATIVE_ODDS, lent by the meeting): the page's one source for the Whole switch's text
     getCumulativeOdds: function () { return S.CUMULATIVE_ODDS != null ? S.CUMULATIVE_ODDS : 0.08; },
     // dev accessor for the tune lab (shelved/tune-lab.php) — the pool is the
     // Earth tunes (kolob-tunes.js), read through the old-tune guest's own

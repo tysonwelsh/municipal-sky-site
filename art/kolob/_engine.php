@@ -118,7 +118,10 @@ return [
     'kolob-guest-variations.js', 'kolob-guest-changes.js',
     'kolob-guest-tongues.js', 'kolob-guest-farward.js', 'kolob-guest-hosanna.js',
     'kolob-guest-socialhall.js', 'kolob-testimony.js',
-    'kolob-guests.js', 'kolob-meeting.js',
+    'kolob-guests.js',
+    // the meeting's plan (pure: the Sunday, the order of service, every die
+    // of meeting:<n>), ahead of the chorister who conducts it, who requires it
+    'kolob-plan.js', 'kolob-meeting.js',
     // the facade
     'kolob-core.js',
 ];

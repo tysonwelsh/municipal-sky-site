@@ -19,7 +19,7 @@
 // carries none of the siblings' spec suites.
 //
 // Usage:
-//   node _harness.js <secs> <seed> [ives] [razz] [cumulative] [force=<guest>]
+//   node _harness.js <secs> <seed> [ives] [razz] [cumulative[=<mode>]] [force=<guest>]
 //                    [exp=<spec>] [stop=<secs>,…] [play=<secs>,…]
 //                    [reseed=<seed>@<secs>,…] [throw=<lane>@<secs>,…]
 //                    [badlistener=note|event] [desk=<secs>] [dump=<file>] [header]
@@ -27,7 +27,8 @@
 //   ives          KolobAudio.setForceVisitation(true)   — the Ives switch
 //   force=<name>  KolobAudio.setForceVisitation(name)   — one named guest
 //   razz          KolobAudio.setForceRaspberry(true)
-//   cumulative    KolobAudio.setCumulativeMode("always")
+//   cumulative    KolobAudio.setCumulativeMode("always"); cumulative=<mode>
+//                 that mode (always, natural or never: the Whole switch)
 //   exp=<spec>    the experiments' switch, as ?exp= takes it (-name,+name,none,all)
 //   stop=<secs>   KolobAudio.stop() at that time on the audio clock (the
 //                 dump's timeline: the harness never holds, so it is the
@@ -153,7 +154,12 @@ for (let i = 2; i < argv.length; i++) {
   FLAGS.push(a);
   if (a === "ives") OPT.ives = true;
   else if (a === "razz") OPT.razz = true;
-  else if (a === "cumulative") OPT.cumulative = true;
+  else if (a === "cumulative") OPT.cumulative = "always";
+  else if (a.indexOf("cumulative=") === 0) {
+    const mode = a.slice(11);
+    if (mode === "always" || mode === "natural" || mode === "never") OPT.cumulative = mode;
+    else notes.push(a + " is not always, natural or never: the switch is left as it stands");
+  }
   else if (a.indexOf("force=") === 0) OPT.force = a.slice(6);
   else if (a.indexOf("exp=") === 0) OPT.exp = a.slice(4);
   else if (a.indexOf("stop=") === 0 || a.indexOf("play=") === 0) {
@@ -743,7 +749,7 @@ Object.keys(OPT.bad).forEach((k) => {
 if (OPT.ives && K.setForceVisitation) K.setForceVisitation(true);
 if (OPT.force && K.setForceVisitation) K.setForceVisitation(OPT.force);
 if (OPT.razz && K.setForceRaspberry) K.setForceRaspberry(true);
-if (OPT.cumulative && K.setCumulativeMode) K.setCumulativeMode("always");
+if (OPT.cumulative && K.setCumulativeMode) K.setCumulativeMode(OPT.cumulative);
 // the experiments' switch: the module read ?exp= from location at load; the
 // console form is applied as well where it exists (the latest word wins, and it is the same word)
 if (OPT.exp && KOLOB.Experimental && typeof KOLOB.Experimental.set === "function") {

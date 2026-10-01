@@ -114,8 +114,8 @@ window.KOLOB.GuestBands = (function () {
   if (!GR) throw new Error("KOLOB.GuestBands: load kolob-guest-room.js first");
 
   // ==========================================================================
-  // THE ODDS — the owner's own (kolob-meeting.js: "bands 36 %, per the
-  // owner's taste"), and the calendar's welcome, unchanged
+  // THE ODDS — the owner's own ("bands 36 %, per the owner's taste";
+  // OWNER-RULINGS.md), and the calendar's welcome, unchanged
   // ==========================================================================
   // p = base × weight[sunday, else kind], capped: 0.36, times
   // kolob-calendar.js's SUNDAYS[·].guests.bands — about one ordinary Sunday

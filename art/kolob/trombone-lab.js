@@ -738,7 +738,7 @@ window.TromboneLab = (function () {
   // THE ODDS: plan() per Sunday, and a stand-in planner's mix (the
   // calendar's shares since the pre-v0.34 polish: ordinary 52 %, fast 15 %,
   // conference 19 %, jubilee 14 %; bands 35 %; another prelude guest 11 %) —
-  // the harness measures the same against the real planMeeting
+  // the harness measures the same against the real plan (kolob-plan.js)
   function odds(N) {
     N = N || 20000;
     var R0 = window.PJ2.Rand.stream(99).fork("lab:odds");

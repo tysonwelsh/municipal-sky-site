@@ -346,7 +346,7 @@ window.KOLOB = window.KOLOB || {};
   // ==========================================================================
   // THE CHORALE PRELUDE (PLAN-COMPOSITION §15, item 2: approved, as a draw,
   // never the fixed opening; the plan is kolob-organist.js's prelude).
-  // On a Sunday seated for it (kolob-meeting.js, THE PRELUDE'S SEATING:
+  // On a Sunday seated for it (kolob-plan.js, THE PRELUDE'S SEATING:
   // "chorale"), the organist's first touch is the day's first hymn — the
   // plain organist's hymn once or twice through on soft flutes, the
   // Victorian's tune on the vox humana or the trumpet with a suspension at
@@ -498,7 +498,7 @@ window.KOLOB = window.KOLOB || {};
     // a swell under a cadence moment, then hands the hymn back to the voices.
     // The sustained ground of this piece is the sine DRONE, nothing else.
     if (s === "prelude" || s === "postlude") {
-      // the prelude's seating (kolob-meeting.js): the brush arbor has no
+      // the prelude's seating (kolob-plan.js): the brush arbor has no
       // organ; and the day's first chord may be full, its third sung
       var seat = s === "prelude" ? S.Meeting.seating() : null;
       if (seat && seat.sits.organ) { cueIn("organ", 6, organCycle); return; }

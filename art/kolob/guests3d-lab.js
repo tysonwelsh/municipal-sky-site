@@ -493,8 +493,8 @@ window.GuestsLab3c = (function () {
   // ==========================================================================
   // THE ODDS — each guest's plan() over a stand-in of the engine's planner
   // ==========================================================================
-  // The stand-in throws the dice kolob-meeting.js planMeeting throws, in its
-  // order, for the parts that matter to a seat: the calendar's kind; the
+  // The stand-in throws the dice the meeting's plan throws (kolob-plan.js
+  // day and seat), in its order, for the parts that matter to a seat: the calendar's kind; the
   // order of service (hymns by kind, the testimony cut, the interlude, the
   // testimony and sacrament trading places, the second doxology); and the
   // other guests' dice and seats (the bands 36 %, the steeples 7.5 %, the old
@@ -590,8 +590,9 @@ window.GuestsLab3c = (function () {
   // THE ODDS — each plan() over a stand-in for the engine's planner: the
   // calendar's Sundays at their shares, each Sunday's own plan (its hymns,
   // the testimony cut or kept, the second doxology), and the other guests'
-  // dice and seats as kolob-meeting.js throws them (the bands, the steeples,
-  // the old tune — its pool assumed non-empty four times in five — and the
+  // dice and seats as the meeting's plan (kolob-plan.js) throws them (the
+  // bands, the steeples, the old tune — its pool assumed non-empty four
+  // times in five — and the
   // handbells at their measured seats). The harness re-measures on the real
   // planner once the engine seats these.
   // ==========================================================================

@@ -973,7 +973,7 @@
 
   // ==========================================================================
   // The Ives switch — while armed, every meeting is guaranteed one visitation
-  // (the engine's own pick among the Ivesian guests: kolob-meeting.js
+  // (the engine's own pick among the Ivesian guests: kolob-plan.js
   // forcedPick). Arming it mid-meeting restarts the meeting so the guarantee
   // begins counting immediately.
   // ==========================================================================
@@ -1024,7 +1024,7 @@
       else mode = localStorage.getItem("kolobCumulative") || "natural";
     } catch (e) { /* storage refused (a private window): natural */ }
     if (mode !== "always" && mode !== "natural" && mode !== "never") mode = "natural";
-    var odds = K.getCumulativeOdds ? K.getCumulativeOdds() : 0.08;   // the one number: kolob-meeting.js CUMULATIVE_ODDS
+    var odds = K.getCumulativeOdds ? K.getCumulativeOdds() : 0.08;   // the one number: kolob-plan.js CUMULATIVE_ODDS
     var LABELS = {
       always: "the tune withheld until the doxology — every meeting (restarts the meeting)",
       natural: "the tune withheld until the doxology — about " + Math.round(odds * 100) + " % of meetings",

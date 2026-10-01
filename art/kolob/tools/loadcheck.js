@@ -10,8 +10,9 @@
 // methods the page and the labs call. The page's guard itself
 // (kolob_engine_guard() in _engine.php) is then run as the page runs it, and
 // must name in KOLOB._broken exactly what the roll call missed (the page keeps
-// PLAY disabled on it). The calendar must stand before the meeting room is
-// evaluated (the meeting requires it). The composer's desk: the files the
+// PLAY disabled on it). The calendar and the plan (kolob-plan.js) must stand
+// before the meeting room is evaluated (the meeting requires both). The
+// composer's desk: the files the
 // hymnal's worker would load on the page, found by the script tags the page
 // prints from the list, must be the list's own, in its order. Then one pure
 // smoke: the composer writes a hymn from a fixed stream and the Score's
@@ -42,9 +43,11 @@ const DIR = path.resolve(process.env.KOLOB_DIR || process.env.KOLOB_BASE || path
 
 E.mockPage();
 const list = E.engineList(DIR);
-// (the meeting requires the calendar: KOLOB.Calendar stands before its room)
-const { loaded, failures } = E.evaluate(DIR, list, (rel) => (path.basename(rel) === "kolob-meeting.js" && !(global.KOLOB && global.KOLOB.Calendar)
-  ? rel + ": evaluated before KOLOB.Calendar stands — the meeting requires the calendar (kolob-calendar.js, ahead of it on the list)" : null));
+// (the meeting requires the calendar and the plan: KOLOB.Calendar and
+// KOLOB.Plan stand before its room)
+const { loaded, failures } = E.evaluate(DIR, list, (rel) => (path.basename(rel) !== "kolob-meeting.js" ? null
+  : !(global.KOLOB && global.KOLOB.Calendar) ? rel + ": evaluated before KOLOB.Calendar stands — the meeting requires the calendar (kolob-calendar.js, ahead of it on the list)"
+  : !(global.KOLOB && global.KOLOB.Plan) ? rel + ": evaluated before KOLOB.Plan stands — the meeting requires its plan (kolob-plan.js, ahead of it on the list)" : null));
 
 // the roll call, as _engine.php's guard takes it
 const K = global.KOLOB || {}, rooms = K._rooms || {}, P = global.PJ2 || {};

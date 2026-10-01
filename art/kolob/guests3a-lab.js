@@ -519,8 +519,8 @@ window.Guests3a = (function () {
   // ==========================================================================
   // THE ODDS — each guest's plan() over a stand-in of the engine's planner
   // ==========================================================================
-  // The stand-in throws what kolob-meeting.js planMeeting throws for a seat,
-  // in its order: the calendar's Sunday (KOLOB.Calendar.draw), the order of
+  // The stand-in throws what the meeting's plan (kolob-plan.js) throws for a
+  // seat, in its order: the calendar's Sunday (KOLOB.Calendar.draw), the order of
   // service (the Sunday's hymns; the testimony cut, the interlude), then the
   // guests as the recipe seats them — THE BAND (GuestBands.plan, in the old
   // band's place), the steeples (7.5 % × the Sunday's welcome), the old tune

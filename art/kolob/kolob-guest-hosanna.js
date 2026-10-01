@@ -198,7 +198,7 @@ window.KOLOB.GuestHosanna = (function () {
   function decide(info, stream) {
     info = info || {};
     var rs = need(stream).fork("seat");
-    var roll = rs.next();                          // DICE: the hook's die, first — kolob-meeting.js throws exactly this
+    var roll = rs.next();                          // DICE: the hook's die, first — the meeting's plan (kolob-plan.js) throws exactly this
     var p = oddsFor(info), why = null, secs = info.sections || [], di = -1;
     for (var i = 0; i < secs.length; i++) if (secs[i] && secs[i].type === "doxology") di = i;
     var beside = di >= 0 ? besideOf(info.guests, secs, di) : [];

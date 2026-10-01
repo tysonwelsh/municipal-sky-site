@@ -517,8 +517,8 @@ window.GuestsLab = (function () {
   // ==========================================================================
   // THE ODDS — each guest's plan() over a stand-in of the engine's planner
   // ==========================================================================
-  // The stand-in throws the dice kolob-meeting.js planMeeting throws, in its
-  // order, for the parts that matter to a seat: the calendar's kind; the
+  // The stand-in throws the dice the meeting's plan throws (kolob-plan.js
+  // day and seat), in its order, for the parts that matter to a seat: the calendar's kind; the
   // order of service (hymns by kind, the testimony cut, the interlude, the
   // testimony and sacrament trading places, the second doxology); and the
   // other guests' dice and seats (the bands 36 %, the steeples 7.5 %, the old

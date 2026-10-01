@@ -707,8 +707,8 @@ window.Guests3c = (function () {
   }
 
   // ---- the odds and purity ------------------------------------------------------
-  // THE STAND-IN: the dice kolob-meeting.js planMeeting throws, in its order,
-  // for what matters to a seat — the calendar's Sunday and its kind; the
+  // THE STAND-IN: the dice the meeting's plan (kolob-plan.js) throws, in its
+  // order, for what matters to a seat — the calendar's Sunday and its kind; the
   // order of service (hymns by kind, the testimony cut, an interlude, the
   // second doxology); the hymnal's rows (a dialect each, a round after the
   // first hymn now and then); and the other guests' dice and seats (the
@@ -726,8 +726,8 @@ window.Guests3c = (function () {
     if (cutT) secs = secs.filter(function (x) { return x.type !== "testimony"; });
     if (nH >= 2 && inter) for (var i = 0; i < secs.length; i++) if (secs[i].type === "hymn") { secs.splice(i + 1, 0, { type: "interlude" }); break; }
     if (dox2) secs.splice(secs.length - 1, 0, { type: "doxology" });
-    // (round 2: testimony and sacrament may trade places, as planMeeting's
-    // tradeTS — the one way the gift sits beside the doxology)
+    // (round 2: testimony and sacrament may trade places, as the plan's
+    // tradeTS (kolob-plan.js day) — the one way the gift sits beside the doxology)
     if (Rs.chance(pl.tradeTS != null ? pl.tradeTS : 0.1)) {
       var tI = -1, sI = -1; secs.forEach(function (x, k) { if (x.type === "testimony") tI = k; if (x.type === "sacrament") sI = k; });
       if (tI >= 0 && sI >= 0) { var sw = secs[tI]; secs[tI] = secs[sI]; secs[sI] = sw; }

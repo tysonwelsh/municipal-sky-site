@@ -73,19 +73,25 @@
 //    the hymnal's worker would load the list's own files in its order; with
 //    kolob-calendar.js missing, the guard names it in KOLOB._broken (the page
 //    keeps PLAY disabled) and loadcheck fails; with the calendar left off the
-//    list, the meeting room is found evaluated without it; with two of the
+//    list, the meeting room is found evaluated without it, and so with the
+//    meeting's plan (kolob-plan.js) left off (the meeting then cannot load,
+//    and the guard names it); with two of the
 //    composer's rooms swapped on the list, the worker follows the list; and
 //    a hymnal that names a room the list does not have is found unable to
 //    start its worker.
 // 14. The pure core composes what it composed (PLAN-REFACTOR §3.6):
 //    tools/golden.js on seeds 3, 7 and 22 against tools/golden/ — every kind
-//    matches and the trap (Math.random, Date.now) is never sprung; the
+//    matches, the trap (Math.random, Date.now) is never sprung, and the
+//    meeting's plan (kolob-plan.js) runs with the house shut, writes nothing
+//    it is handed and gives the same on fresh streams (PLAN-REFACTOR §3.4); the
 //    meeting it plans headless, with the pipes on, emits the harness's own
 //    events at the downbeat, in order (seed 3's morning is the organist's
 //    chorale prelude, which the planner draws only with the pipes on); a
 //    scratch copy with the Sacred Harp's tempo moved is found in the hymns
 //    of seed 3, the one of the three that sings it, and nowhere else; and a
-//    copy with a comment added is found unmoved, under another fingerprint.
+//    copy with a comment added is found unmoved, under another fingerprint;
+//    and a copy of kolob-plan.js whose seating reads the shared bag is
+//    found, the read named by the plan's file and line.
 // 15. The wrappers and the labs (PLAN-REFACTOR §3.7): tools/lends.js finds
 //    every BORROWED wrapper of this build exact and used, and fails a scratch
 //    copy with one wrapper that renames (foo calls S.now) and one that
@@ -474,6 +480,10 @@ function check(name, ok, detail) {
     check("the calendar left off the list: the meeting room is found evaluated without it (the page's guard cannot know)",
       off.code === 1 && failed(off).length === 1 && /^kolob-meeting\.js: evaluated before KOLOB\.Calendar stands/.test(failed(off)[0]) && line(off, "guard") === "nothing missing, KOLOB._broken unset",
       failed(off).join("; "));
+    const noplan = loadcheck(scratch("offlist-plan", (dir) => swap(dir, "_engine.php", "'kolob-plan.js', 'kolob-meeting.js',", "'kolob-meeting.js',")));
+    check("the plan left off the list (kolob-plan.js, PLAN-REFACTOR §3.4): the meeting room is found evaluated without it, and, since it cannot load without its plan, the page's guard names it (PLAY stays disabled)",
+      noplan.code === 1 && /^kolob-meeting\.js: evaluated before KOLOB\.Plan stands/.test(failed(noplan)[0] || "") && line(noplan, "guard") === "KOLOB._broken = [kolob-meeting.js]",
+      (failed(noplan)[0] || "nothing failed") + " · " + line(noplan, "guard"));
     const moved = loadcheck(scratch("reorder", (dir) => swap(dir, "_engine.php", "'kolob-dialects.js', 'kolob-hymnists.js',", "'kolob-hymnists.js', 'kolob-dialects.js',")));
     check("kolob-hymnists.js moved ahead of kolob-dialects.js on the list: the worker follows the list",
       moved.code === 0 && /\(pj2-rand\.js, kolob-pitch\.js, kolob-score\.js, kolob-tunes\.js, kolob-hymnists\.js, kolob-dialects\.js, kolob-composer\.js, kolob-calendar\.js\)$/.test(line(moved, "desk")),
@@ -497,30 +507,34 @@ function check(name, ok, detail) {
       p.on("close", (code) => resolve({ code, out, err }));
     });
     // a scratch copy of this build — the list's files, _engine.php and the
-    // substrate beside it — with one edit to kolob-dialects.js
-    const copy = (name, from, to) => {
+    // substrate beside it — with one edit to kolob-dialects.js (or the file
+    // named)
+    const copy = (name, from, to, file) => {
       const dir = path.join(tmp, "golden-" + name, "art", "kolob");
       engine.list.files.concat([path.join(engine.dir, "_engine.php")]).forEach((f) => {
         const at = path.join(dir, path.relative(engine.dir, f));
         fs.mkdirSync(path.dirname(at), { recursive: true });
         fs.copyFileSync(f, at);
       });
-      const p = path.join(dir, "kolob-dialects.js"), t = fs.readFileSync(p, "utf8");
-      if (t.indexOf(from) < 0) throw new Error("kolob-dialects.js has no " + from);
+      const p = path.join(dir, file || "kolob-dialects.js"), t = fs.readFileSync(p, "utf8");
+      if (t.indexOf(from) < 0) throw new Error((file || "kolob-dialects.js") + " has no " + from);
       fs.writeFileSync(p, t.replace(from, to));
       return dir;
     };
     const SH = "    tempo: 0.86, fermata: 0.1, amen: false,";                 // (the Sacred Harp's profile)
+    const SEAT = "  function seat(today, info, draws) {\n";                       // (the plan's seating, kolob-plan.js)
     const line = (r, k) => { const m = new RegExp("^ {2}" + k + " +(.*)$", "m").exec(r.out); return m ? m[1] : "no " + k + " line"; };
     const KINDS = ["meeting", "hymns", "guests", "organist", "ward"];
-    const [base, planted, comment, renders] = await Promise.all([
+    const [base, planted, comment, bag, renders] = await Promise.all([
       golden(["--seeds", SEEDS.join(",")]),
       golden(["--seeds", SEEDS.join(","), "--engine", copy("planted", SH, SH.replace("0.86", "0.87"))]),
       golden(["--seeds", SEEDS.join(","), "--engine", copy("comment", SH, "    // (a scratch comment: nothing else changes)\n" + SH)]),
+      golden(["--seeds", SEEDS.join(","), "--engine", copy("bag", SEAT, SEAT + "    void KOLOB._s.ctx;\n", "kolob-plan.js")]),
       R.renderSet({ engine, seeds: SEEDS, secs: 1, dir: path.join(tmp, "golden-harness"), quiet: true }),
     ]);
     check("seeds " + SEEDS.join(", ") + " against the baseline (tools/golden/): every kind matches, and the trap is never sprung",
-      base.code === 0 && KINDS.every((k) => line(base, k) === "3 of 3 seeds match") && /^ {2}ALL MATCH$/m.test(base.out) && /^ {2}the trap: Math\.random and Date\.now never called; every pure planner the meeting called gave the same on a fresh stream$/m.test(base.out),
+      base.code === 0 && KINDS.every((k) => line(base, k) === "3 of 3 seeds match") && /^ {2}ALL MATCH$/m.test(base.out) && /^ {2}the trap: Math\.random and Date\.now never called; every pure planner the meeting called gave the same on a fresh stream$/m.test(base.out) &&
+        /^ {2}the plan: KOLOB\.Plan's day\(\) and seat\(\) ran with the house shut and wrote nothing they were handed; on fresh streams they gave the meeting's own, and the same twice on each of \d+ switches' settings$/m.test(base.out),
       KINDS.map((k) => k + " " + line(base, k).replace(" seeds match", "")).join(" · "));
     // the meeting planned headless is the meeting the harness plays: the
     // events planMeeting emits, as the golden hashes them, are the harness's
@@ -546,6 +560,12 @@ function check(name, ok, detail) {
     check("a copy with a comment added to kolob-dialects.js: every kind matches, under a fingerprint that is not the baseline's",
       comment.code === 0 && KINDS.every((k) => line(comment, k) === "3 of 3 seeds match") && !!fp(comment) && fp(comment).now !== fp(comment).was,
       fp(comment) ? "modules " + fp(comment).now + " (the baseline's " + fp(comment).was + ")" : "no modules line");
+    // (the plan held to its header: a read of the shared bag in its seating
+    // is named, by file and line, and the meeting it was asked for fails)
+    const named = (bag.out.split("\n").find((l) => /^ {2}FAULT \(seeds 3, 7, 22\) the plan: S\.ctx in Plan\.seat: seat \(kolob-plan\.js:\d+\)/.test(l)) || "").trim();
+    check("a copy of kolob-plan.js whose seat() reads the shared bag (KOLOB._s.ctx): the golden names the read, in the plan's file and line, and fails",
+      bag.code === 1 && !!named && /^ {2}the plan: .* — BUT NOT ALL \(above\)$/m.test(bag.out),
+      named ? named.replace(/ ← .*$/, "") : "not named");
   }
 
   console.log("15. the wrappers and the labs (PLAN-REFACTOR §3.7)");

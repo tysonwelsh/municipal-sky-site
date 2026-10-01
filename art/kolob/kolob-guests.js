@@ -1,8 +1,8 @@
 // ============================================================================
 // KOLOB — kolob-guests.js: the set pieces
 //
-// What a guest sounds like once the meeting has seated it (kolob-meeting.js
-// plans and cues; this room plays and tells). Here, in order:
+// What a guest sounds like once the meeting has seated it (kolob-plan.js
+// plans, kolob-meeting.js cues; this room plays and tells). Here, in order:
 //   · the raspberry amen's cluster (razzCluster) and the cumulative assembly
 //     (cumulativeAssembly) — not guests but the meeting's own set pieces;
 //   · THE UNANSWERED QUESTION (shelved: the code stays, it never seats);
@@ -160,12 +160,14 @@ window.KOLOB = window.KOLOB || {};
   }
 
   // ==========================================================================
-  // IVES VISITATIONS — rare guests, drawn at planMeeting on independent dice.
+  // IVES VISITATIONS — rare guests, drawn by the meeting's plan
+  // (kolob-plan.js) on independent dice.
   // (The Unanswered Question, after Ives, 1908, was the first of them and is
   // shelved — the owner, 2026-09-27: "one of the less interesting guests";
   // its set piece left this file on 2026-10-01 for
   // shelved/kolob-question-setpiece.js, its generator is
-  // shelved/kolob-question.js, and kolob-meeting.js still throws its dice.)
+  // shelved/kolob-question.js, and the meeting's plan, kolob-plan.js, still
+  // throws its dice.)
   // ==========================================================================
 
   // ==========================================================================
@@ -785,9 +787,10 @@ window.KOLOB = window.KOLOB || {};
   // the ward's HANDBELL CHOIR and the
   // SINGING SCHOOL (experimental). Each plans and plays itself (kolob-guest-
   // handbells.js, kolob-guest-singingschool.js: pure plans, their own
-  // streams guest:<name>:<n>); the meeting seats them (kolob-meeting.js) and
-  // cues them at their moment, with their material made ready (the day's
-  // hymn, as the composer wrote it). This is the glue: their sound laid out
+  // streams guest:<name>:<n>); the meeting's plan seats them
+  // (kolob-plan.js), and the meeting (kolob-meeting.js) cues them at their
+  // moment, with their material made ready (the day's hymn, as the
+  // composer wrote it). This is the glue: their sound laid out
   // a slice at a time on the guests' lane of the engine's clock (hooks.defer
   // — never the whole piece inside one cue), their notes reported as they
   // are laid out, their moments told as they come — through the host, each

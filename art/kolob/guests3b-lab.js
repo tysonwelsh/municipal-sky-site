@@ -521,8 +521,9 @@ window.Guests3bLab = (function () {
   // engine's planner: the calendar's Sundays at their shares, the organist
   // by the style weights and the Sunday's lean, the house and each hymn's
   // dialect, the withheld tune (8 %), and the other guests' own dice and
-  // seats as kolob-meeting.js throws them (bands 36 %, steeples 7.5 % and old
-  // tune 15 %, each × the Sunday's welcome; the trombones', the singing
+  // seats as the meeting's plan (kolob-plan.js) throws them (bands 36 %,
+  // steeples 7.5 % and old tune 15 %, each × the Sunday's welcome; the
+  // trombones', the singing
   // school's and the handbells' approximated at 10, 10 and 12 %)
   // ==========================================================================
   var HOUSE = [["tabernacle", 0.36], ["sacredharp", 0.14], ["psalmody", 0.1], ["gospel", 0.12], ["oldway", 0.14], ["shaker", 0.14]];

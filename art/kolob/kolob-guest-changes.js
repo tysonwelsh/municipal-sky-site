@@ -244,7 +244,7 @@ window.KOLOB.GuestChanges = (function () {
   // THE ODDS — a variant of the steeples: when the steeples ring, how often
   // the far bells are a band ringing changes (rather than the steeples
   // phasing on their own periods). The steeples' own odds are the meeting's
-  // (kolob-meeting.js, about 7.5 % of meetings, more at Christmas and
+  // plan's (kolob-plan.js, about 7.5 % of meetings, more at Christmas and
   // Easter); this is the share of those.
   // ==========================================================================
   var ODDS = {
