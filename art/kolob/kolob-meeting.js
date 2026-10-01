@@ -752,8 +752,11 @@ window.KOLOB = window.KOLOB || {};
         holdSection("postlude", shSeat.holdUntil);
         // (the room's own sounds — the floor, the claps, the benches — baked
         // once for the page's context in its idle time, off the clock: about
-        // 45 ms, which the dance's first ticks would otherwise pay)
-        if (SHg.bake && S.ctx && S.playing && typeof setTimeout !== "undefined") setTimeout(function () { try { if (S.ctx) SHg.bake(S.ctx); } catch (e) { /* baked when first wanted, as before */ } }, 2500);
+        // 45 ms, which the dance's first ticks would otherwise pay; asked
+        // again when the timer comes, as readyAhead's poll is, so a STOP
+        // inside the 2.5 s leaves the page idle — each kind is then baked
+        // when first wanted, as before)
+        if (SHg.bake && S.ctx && S.playing && typeof setTimeout !== "undefined") setTimeout(function () { try { if (S.ctx && S.playing) SHg.bake(S.ctx); } catch (e) { /* baked when first wanted, as before */ } }, 2500);
       }
     }
     // THE HANDCART COMPANY and THE GULLS (PLAN §8.11, §8.10):

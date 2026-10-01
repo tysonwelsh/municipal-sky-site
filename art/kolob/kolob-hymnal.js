@@ -64,7 +64,8 @@
 //      loaded), and the finished hymns come back by message — the main
 //      thread pays only the copy;
 //   2. else in idle slices of the main thread (a timer, one hymn a slice),
-//      outside every clock callback;
+//      outside every clock callback, while the meeting they are for plays
+//      (THE IDLE ROAD, below);
 //   3. and if a hymn is asked for before it has come back — a slow machine,
 //      a worker that failed to load — it is written there and then, and the
 //      hymnal says so (stats().late). The hymn is the same hymn by every
@@ -589,6 +590,7 @@ window.KOLOB = window.KOLOB || {};
   // (rk: the reckoning's order — {doxId, sections, candidates} — laid on
   // the doxology's; see THE RECKONING above)
   function prepare(seed, n, rows, fm, rk) {
+    ordering = { seed: seed, n: n };
     // (the orders of meetings long gone are dropped; the worker forgets them too)
     order = order.filter(function (k) {
       var keep = jobs[k] && jobs[k].n >= n - 1 && jobs[k].seed === seed;
@@ -628,20 +630,37 @@ window.KOLOB = window.KOLOB || {};
     });
     if (backend() === "idle") armIdle();
   }
-  // THE IDLE ROAD — one hymn a slice, on a timer of its own (never a cue)
+  // THE IDLE ROAD — one hymn a slice, on a timer of its own (never a cue).
+  // It writes for the meeting being played, and only while one plays: a
+  // slice that finds the page stopped writes nothing and arms no next one
+  // (a STOP leaves the main thread alone; the road kept writing the stopped
+  // meeting's book, the reckoned doxology's candidates and all, until it
+  // was done), and the next PLAY's orders arm it again. What the stopped
+  // meeting left unwritten stays in the book under its key: written then if
+  // a GATHER of the same seed calls that meeting again (prepare() finds its
+  // orders by key, as it always has), passed over if the visit goes on to
+  // its next meeting, which will never sing them (get() still writes any
+  // order asked for). The composer is pure, so a hymn is the same whenever
+  // it is written. (The worker is not stopped at STOP: it writes off the
+  // main thread only what it was handed, and a composer loaded once serves
+  // every PLAY after; stopped, it would be loaded again at the next and a
+  // hymn it was writing lost.)
+  var ordering = null;           // the meeting the desk last took orders for: { seed, n }
   function armIdle() {
     if (idleArmed || typeof setTimeout === "undefined") return;
     idleArmed = true;
     setTimeout(idleSlice, 0);
   }
+  function forNow(j) { return !!j && !j.hymn && j.state === "queued" && (!ordering || (j.seed === ordering.seed && j.n === ordering.n)); }
   function idleSlice() {
     idleArmed = false;
     if (backend() === "worker" && workerState !== "failed") return;
+    if (S.playing === false) return;               // stopped (a bench without the core's transport has no STOP: the road runs)
     for (var i = 0; i < order.length; i++) {
       var j = jobs[order[i]];
-      if (j && !j.hymn && j.state === "queued") { write(j, "idle"); break; }
+      if (forNow(j)) { write(j, "idle"); break; }
     }
-    for (var k = 0; k < order.length; k++) { var jj = jobs[order[k]]; if (jj && !jj.hymn && jj.state === "queued") { armIdle(); break; } }
+    for (var k = 0; k < order.length; k++) { if (forNow(jobs[order[k]])) { armIdle(); break; } }
   }
   // the composer at this desk: the stream, the earlier hymns, the same lightening
   function write(j, how) {

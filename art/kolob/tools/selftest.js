@@ -46,6 +46,22 @@
 //    7 (stop=90 reseed=7@90 play=90.5): the drone's note is the keynote's
 //    after the reseed, and seed 7's first meeting is the fresh run's, record
 //    for record from its downbeat.
+// 11. STOP's own race (PLAN-REFACTOR §2.3): a transport press cancels the
+//    timer the press before it armed. Seed 7, stop=120 play=120.3 stop=120.5:
+//    the first STOP's 800 ms timer is cleared by the PLAY, and the second's
+//    fires at its own 800 ms; with play=121 after, that PLAY clears the
+//    second's, no press's timer fires after a later press, and the meeting it
+//    calls plays as the one called when the second STOP and the PLAY fall
+//    together (stop=121 play=121), record for record. Seed 22, whose second
+//    meeting's drone enters 0.11 s after its downbeat: the second STOP's
+//    doors are disconnected by its own timer, after its whole fade (the
+//    first STOP's timer did it 0.3 s into the fade). And the hymnal's desk,
+//    paced (desk=0.5), writes nothing while the transport stands stopped:
+//    stopped at 0.7 s, the stopped meeting's orders stay unwritten; played
+//    again at 1 s, the next meeting's are written and those passed over; a
+//    GATHER of the same seed between writes them for the meeting it calls
+//    again, which is the fresh run's record for record; and the pacing moves
+//    no record.
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -183,6 +199,13 @@ function check(name, ok, detail) {
   // seed 7 fresh, to as far past its downbeat
   const stillness = Promise.all([[7, 760, ["stop=626.1", "play=626.6"]], [7, 734, ["stop=600", "play=600.5"]], [1, 200, ["stop=90", "reseed=7@90", "play=90.5"]], [7, 110, []]]
     .map(([seed, secs, flags], i) => R.renderSet({ engine, seeds: [seed], secs, flags, dir: path.join(tmp, "still-" + i), quiet: true }).then((x) => x.results[0])));
+  // …and §11's (PLAN-REFACTOR §2.3): the stop/play/stop scripts on seeds 7
+  // and 22, and the paced desk stopped, played again, and gathered again
+  const race = Promise.all([
+    [7, 130, ["stop=120", "play=120.3", "stop=120.5"]], [7, 230, ["stop=120", "play=120.3", "stop=120.5", "play=121"]], [7, 230, ["stop=120", "play=120.3", "stop=121", "play=121"]],
+    [22, 130, ["stop=120", "play=120.3", "stop=120.5"]],
+    [7, 60, ["desk=0.5", "stop=0.7"]], [7, 110, ["desk=0.5", "stop=0.7", "play=1"]], [7, 110, ["desk=0.5", "stop=0.7", "reseed=7@0.7", "play=1"]], [7, 110, ["desk=0.5"]], [7, 110, []],
+  ].map(([seed, secs, flags], i) => R.renderSet({ engine, seeds: [seed], secs, flags, dir: path.join(tmp, "race-" + i), quiet: true }).then((x) => x.results[0])));
   console.log("6. the count (seed 3, 1200 s)");
   const long = await R.renderSet({ engine, seeds: [3], secs: 1200, dir: path.join(tmp, "long"), quiet: true });
   const L3 = D.readDump(long.results[0].dump);
@@ -276,38 +299,38 @@ function check(name, ok, detail) {
       pumpsDump && pumpsGraph, (pumpsDump ? "the dump" : "NOT the dump") + " and " + (pumpsGraph ? "the graph" : "NOT the graph") + " of the clean run (" + (graph(runs[0]).split(" · ")[1] || "?").split(" {")[0] + ")");
   }
 
+  // (§10 and §11) the records of len s from one run's downbeat, held against
+  // another's from its own: a number is the same if it is equal, or equal
+  // once each run's downbeat is taken off (a time); with `counts`, the chord book's
+  // own numbers (a chord's id wherever it is named, and the page a chord
+  // event names), which count on for the page's life and not the visit's,
+  // may each stand off by one constant, and only one
+  // → { n, len, at: -1 } or the first record that differs
+  const sameFrom = (A, tA, B, tB, len, counts) => {
+    const win = (rs, t0) => rs.filter((x) => x[1] >= t0 && x[1] < t0 + len);
+    const a = win(A, tA), b = win(B, tB), off = {};
+    const counter = (key, parent) => counts && (key === "chord" || (key === "page" && parent.type === "chord"));
+    const eq = (x, y, key, parent) => {
+      if (typeof x === "number" && typeof y === "number") {
+        if (counter(key, parent)) { if (!(key in off)) off[key] = x - y; return x - y === off[key]; }
+        return Math.abs(x - y) < 1e-6 || Math.abs((x - tA) - (y - tB)) < 1e-6;
+      }
+      if (!x || !y || typeof x !== "object" || typeof y !== "object") return x === y;
+      const keys = new Set(Object.keys(x).concat(Object.keys(y)));
+      for (const k of keys) if (!eq(x[k], y[k], k, x)) return false;
+      return true;
+    };
+    for (let i = 0; i < Math.max(a.length, b.length); i++) if (!eq(a[i], b[i], null, null)) return { n: a.length, len, at: i, a: a[i], b: b[i], off };
+    return { n: a.length, len, at: -1, off };
+  };
+  const told = (d) => (d.at < 0 ? d.n + " records over " + d.len + " s, the same" : "record " + d.at + " of " + d.n + " differs: " + JSON.stringify(d.a || null).slice(0, 140) + " against " + JSON.stringify(d.b || null).slice(0, 140)) +
+    (Object.keys(d.off).length ? " (" + Object.keys(d.off).map((k) => "the " + k + "s numbered on by " + d.off[k]).join(", ") + ")" : "");
   console.log("10. a stillness ends at STOP, and a reseed lets the old visit's drone go (PLAN-REFACTOR §2.2)");
   {
     const [inHold, outside, reseeded, fresh] = await stillness;
     const log = (r) => fs.readFileSync(r.log, "utf8");
     const recs = (r) => fs.readFileSync(r.dump, "utf8").split("\n").filter((l) => l && !l.startsWith('["H"')).map((l) => JSON.parse(l));
     const downbeat = (rs, after) => { const m = rs.find((x) => x[0] === "E" && x[2].type === "meeting-start" && x[1] > after); return m ? m[1] : null; };
-    // the records of len s from one run's downbeat, held against another's
-    // from its own: a number is the same if it is equal, or equal once each
-    // run's downbeat is taken off (a time); with `counts`, the chord book's
-    // own numbers (a chord's id wherever it is named, and the page a chord
-    // event names), which count on for the page's life and not the visit's,
-    // may each stand off by one constant, and only one
-    // → { n, len, at: -1 } or the first record that differs
-    const sameFrom = (A, tA, B, tB, len, counts) => {
-      const win = (rs, t0) => rs.filter((x) => x[1] >= t0 && x[1] < t0 + len);
-      const a = win(A, tA), b = win(B, tB), off = {};
-      const counter = (key, parent) => counts && (key === "chord" || (key === "page" && parent.type === "chord"));
-      const eq = (x, y, key, parent) => {
-        if (typeof x === "number" && typeof y === "number") {
-          if (counter(key, parent)) { if (!(key in off)) off[key] = x - y; return x - y === off[key]; }
-          return Math.abs(x - y) < 1e-6 || Math.abs((x - tA) - (y - tB)) < 1e-6;
-        }
-        if (!x || !y || typeof x !== "object" || typeof y !== "object") return x === y;
-        const keys = new Set(Object.keys(x).concat(Object.keys(y)));
-        for (const k of keys) if (!eq(x[k], y[k], k, x)) return false;
-        return true;
-      };
-      for (let i = 0; i < Math.max(a.length, b.length); i++) if (!eq(a[i], b[i], null, null)) return { n: a.length, len, at: i, a: a[i], b: b[i], off };
-      return { n: a.length, len, at: -1, off };
-    };
-    const told = (d) => (d.at < 0 ? d.n + " records over " + d.len + " s, the same" : "record " + d.at + " of " + d.n + " differs: " + JSON.stringify(d.a || null).slice(0, 140) + " against " + JSON.stringify(d.b || null).slice(0, 140)) +
-      (Object.keys(d.off).length ? " (" + Object.keys(d.off).map((k) => "the " + k + "s numbered on by " + d.off[k]).join(", ") + ")" : "");
     const H = recs(inHold), still = H.find((x) => x[0] === "E" && x[2].type === "stillness");
     const t2 = downbeat(H, 626.1), holdEnd = still ? still[1] + still[2].holdS + 2.5 : null;
     check("seed 7's first stillness holds past the next downbeat of stop=626.1 play=626.6",
@@ -321,6 +344,47 @@ function check(name, ok, detail) {
       !!rs[1] && rs[1] !== "×1 tonic" && rs[2] === "×1 tonic" && /PASS/.test(reseeded.verdict || ""), rs[0] ? rs[1] + " → " + rs[2] : "no reseed line");
     const Rr = recs(reseeded), F = recs(fresh), d7 = sameFrom(Rr, downbeat(Rr, 90), F, downbeat(F, 0), 105, true);
     check("… and seed 7's first meeting is the fresh run's, record for record from its downbeat", d7.at < 0, told(d7));
+  }
+
+  console.log("11. STOP's own race: a press cancels the timer the press before it armed (PLAN-REFACTOR §2.3)");
+  {
+    const [one, two, together, s22, stopped, played, gathered, paced, fresh] = await race;
+    const log = (r) => fs.readFileSync(r.log, "utf8");
+    const recs = (r) => fs.readFileSync(r.dump, "utf8").split("\n").filter((l) => l && !l.startsWith('["H"')).map((l) => JSON.parse(l));
+    // the presses' line: { cleared, after (fired after a later press), lines (what each timer did) }
+    const presses = (r) => {
+      const L = log(r), m = /^presses: .* (\d+) cleared \((\d+) by a later press\), (\d+) fired \((\d+) after a later press\)/m.exec(L);
+      return m ? { byLater: +m[2], after: +m[4], lines: L.split("\n").filter((l) => /^ {2}\S.*'s [\d.]+ ms timer/.test(l)).map((l) => l.trim()) } : null;
+    };
+    const has = (p, re) => !!p && p.lines.some((l) => re.test(l));
+    const p1 = presses(one), p2 = presses(two), p22 = presses(s22);
+    check("seed 7, stop=120 play=120.3 stop=120.5: the PLAY clears the first STOP's timer, the second STOP's fires at its own 800 ms, and none fires after a later press",
+      !!p1 && has(p1, /^stop@120's 800 ms timer cleared by play@120\.3 /) && has(p1, /^stop@120\.5's 800 ms timer fired at 121\.300 s:/) && p1.after === 0 && /PASS/.test(one.verdict || ""),
+      p1 ? p1.lines.filter((l) => /^stop@120(\.5)?'s/.test(l)).join("; ") : "no presses line");
+    check("… and with play=121 after, that PLAY clears the second STOP's timer, and no press's timer fires after a later press",
+      !!p2 && p2.byLater === 2 && has(p2, /^stop@120\.5's 800 ms timer cleared by play@121 /) && p2.after === 0 && /PASS/.test(two.verdict || ""),
+      p2 ? p2.byLater + " cleared by a later press, " + p2.after + " fired after one" : "no presses line");
+    const meeting3 = (rs) => { const m = rs.find((x) => x[0] === "E" && x[2].type === "meeting-start" && x[2].n === 3); return m ? m[1] : null; };
+    const A = recs(two), B = recs(together), d3 = sameFrom(A, meeting3(A), B, meeting3(B), 105, true);
+    check("… and the meeting play=121 calls plays as the one called when the second STOP and the PLAY fall together (stop=121 play=121), record for record",
+      meeting3(A) != null && d3.at < 0, "meeting 3 at " + meeting3(A) + " s: " + told(d3) + ", " + A.filter((x) => x[0] === "N" && x[1] >= meeting3(A) && x[1] < meeting3(A) + 105).length + " notes");
+    const own = p22 && p22.lines.map((l) => /^stop@120\.5's 800 ms timer fired at 121\.300 s: (\d+) node\(s\) disconnected/.exec(l)).find(Boolean);
+    check("seed 22, the same script: the second STOP's doors (its meeting's drone, in 0.11 s after the downbeat) are disconnected by its own timer, after its whole fade",
+      !!own && +own[1] > 0 && p22.after === 0 && has(p22, /^stop@120's 800 ms timer cleared by play@120\.3 /), own ? own[0] : "no such line");
+    // the desk: written while stopped, and the orders never written
+    const desk = (r) => { const m = /^hymnal: .* posted (\d+) · composed (\d+) .* · written while stopped (\d+) · (\d+) order\(s\) never written · desk 0\.5 s a slice, (\d+) slice\(s\) paced/m.exec(log(r)); return m ? { posted: +m[1], composed: +m[2], whileStopped: +m[3], unwritten: +m[4], paced: +m[5] } : null; };
+    const said = (h) => h ? "posted " + h.posted + ", written " + h.composed + ", while stopped " + h.whileStopped + ", never " + h.unwritten : "no hymnal line";
+    const hs = desk(stopped), hp = desk(played), hg = desk(gathered);
+    check("desk=0.5 stop=0.7 (seed 7): the desk writes nothing while stopped, and the stopped meeting's orders stay unwritten",
+      !!hs && hs.whileStopped === 0 && hs.unwritten > 0 && hs.paced > 0 && /PASS/.test(stopped.verdict || ""), said(hs));
+    check("… played again at 1 s: nothing written while stopped, the next meeting's orders written, the stopped meeting's passed over",
+      !!hp && !!hs && hp.whileStopped === 0 && hp.unwritten === hs.unwritten && hp.composed === hp.posted - hp.unwritten && /PASS/.test(played.verdict || ""), said(hp));
+    const G = recs(gathered), F = recs(fresh), first = (rs, after) => { const m = rs.find((x) => x[0] === "E" && x[2].type === "meeting-start" && x[1] > after); return m ? m[1] : null; };
+    const dg = sameFrom(G, first(G, 0.7), F, first(F, 0), 105, true);
+    check("… a GATHER of the same seed between (reseed=7@0.7): the orders are found by key and written for the meeting called again, the fresh run's record for record",
+      !!hg && !!hs && hg.whileStopped === 0 && hg.unwritten === 0 && hg.posted === hs.posted && dg.at < 0, said(hg) + " · " + told(dg));
+    const same = recs(paced).map((x) => JSON.stringify(x)).join("\n") === F.map((x) => JSON.stringify(x)).join("\n");
+    check("… and the pacing moves no record (desk=0.5 against the plain run, 110 s)", same, same ? F.length + " records, identical" : "NOT identical");
   }
 
   fs.rmSync(tmp, { recursive: true, force: true });

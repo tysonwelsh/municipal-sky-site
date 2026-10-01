@@ -760,6 +760,22 @@
   // ==========================================================================
   // Transport + gather (reseed & restart)
   // ==========================================================================
+  // THE QUEUED PLAY. GATHER, and the Ives and Whole switches turned on while
+  // a meeting plays, stop it and call the next a breath later, once the
+  // stop's fade has run (each site says why it waits). The call is kept by
+  // its handle, and a transport press cancels the one before it: STOP clears
+  // the handle a restart armed, so a STOP inside the wait is the last word
+  // (untracked, the queued PLAY overrode it and the meeting came back with
+  // the button dark), PLAY clears it and makes the call itself, and a
+  // restart armed again replaces it. (GATHER pressed while a restart waits
+  // leaves it to call the new seed's meeting; the pause button, which holds
+  // only a meeting that plays, leaves it alone.)
+  var restartTimer = null;
+  function restartSoon(ms) {
+    cancelRestart();
+    restartTimer = setTimeout(function () { restartTimer = null; K.play(); }, ms);
+  }
+  function cancelRestart() { if (restartTimer) { clearTimeout(restartTimer); restartTimer = null; } }
   function wireTransport() {
     var playBtn = document.getElementById("kolob-play");
     var pauseBtn = document.getElementById("kolob-pause");
@@ -770,6 +786,7 @@
     var seedInput = document.getElementById("kolob-seed-input");
 
     if (playBtn) playBtn.addEventListener("click", function () {
+      cancelRestart();                                 // (a restart on its way: this press makes the call)
       // a held meeting resumes; otherwise a meeting is called
       if (K.isPlaying && K.isPlaying()) { if (K.resume) K.resume(); poll(); return; }
       clearLog(); K.play(); playBtn.classList.add("is-playing");
@@ -785,6 +802,7 @@
       poll();
     });
     if (stopBtn) stopBtn.addEventListener("click", function () {
+      cancelRestart();                                 // a restart on its way is not made: STOP is the last word
       K.stop(); if (playBtn) playBtn.classList.remove("is-playing");
       if (broadsideTimer) { clearTimeout(broadsideTimer); broadsideTimer = null; }
     });
@@ -812,8 +830,9 @@
       if (seedInput) seedInput.value = "";
       clearLog();
       if (wasPlaying) {
-        // let the stop-fade complete before the new meeting is called
-        setTimeout(function () { K.play(); }, 950);
+        // let the stop-fade complete before the new meeting is called (a
+        // STOP inside the wait cancels it: THE QUEUED PLAY, above)
+        restartSoon(950);
       }
     });
     if (seedInput) seedInput.addEventListener("keydown", function (e) {
@@ -958,9 +977,10 @@
       apply();
       if (on && K.isPlaying && K.isPlaying()) {
         // restart: stop fully settles (its 800ms layer-zeroing included),
-        // then the meeting is called again with the guarantee armed
+        // then the meeting is called again with the guarantee armed (a STOP
+        // inside the wait cancels it: THE QUEUED PLAY, above)
         K.stop();
-        setTimeout(function () { K.play(); }, 900);
+        restartSoon(900);
       }
     });
   }
@@ -998,8 +1018,10 @@
       try { localStorage.setItem("kolobCumulative", mode); } catch (e) {}
       apply();
       if (mode === "always" && K.isPlaying && K.isPlaying()) {
+        // (the Ives switch's restart: the stop settles first; a STOP inside
+        // the wait cancels it — THE QUEUED PLAY, above)
         K.stop();
-        setTimeout(function () { K.play(); }, 900);
+        restartSoon(900);
       }
     });
   }

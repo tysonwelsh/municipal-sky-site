@@ -22,7 +22,7 @@
 //   node _harness.js <secs> <seed> [ives] [razz] [cumulative] [force=<guest>]
 //                    [exp=<spec>] [stop=<secs>,…] [play=<secs>,…]
 //                    [reseed=<seed>@<secs>,…] [throw=<lane>@<secs>,…]
-//                    [dump=<file>] [header]
+//                    [desk=<secs>] [dump=<file>] [header]
 //
 //   ives          KolobAudio.setForceVisitation(true)   — the Ives switch
 //   force=<name>  KolobAudio.setForceVisitation(name)   — one named guest
@@ -47,6 +47,14 @@
 //                 drone, choir, organ, …) at or after that time throws an
 //                 Error, once (THE FAULT INJECTION, below); a comma list for
 //                 several (throw=drone@120,choir@200)
+//   desk=<secs>   the hymnal's idle road paced: each of its slices (one hymn
+//                 written on the main thread) comes <secs> after the one
+//                 before, as a browser's comes after the hymn before it took
+//                 that long. Without it the harness's clock stands still
+//                 while a hymn is written, so a meeting's book is written at
+//                 the instant it is ordered and no press can find the desk at
+//                 work. (A slice is known by its function's name, idleSlice in
+//                 kolob-hymnal.js; the hymnal line says how many were paced.)
 //   dump=<file>   write the note and event streams, one JSON array per line
 //   header        with dump=: a first line ["H", 0, {...}] naming the run and
 //                 the engine (opt-in, so a plain dump stays byte-identical)
@@ -104,7 +112,9 @@
 // it poured: that warning is expected), each printed on its own line. With
 // throw=, the injected throws: when each fired, who reported it, and how
 // many cues its lane ran after it; an injected throw is not an error of the
-// run.
+// run. With a script, the presses' timers (THE PRESSES' TIMERS, below) and,
+// on the hymnal's line, the hymns written while the transport stood stopped
+// and the orders never written.
 // A module that fails to load prints "LOAD <file>: <error>" (run.js reads
 // that line) and no dump is written.
 // ============================================================================
@@ -125,7 +135,7 @@ const argv = process.argv.slice(2);
 let RUN = parseFloat(argv[0] || "300");
 if (!isFinite(RUN) || RUN <= 0) RUN = 300;
 const SEED = (parseInt(argv[1] || "1847", 10) >>> 0) || 1847;
-const OPT = { ives: false, razz: false, cumulative: false, force: null, exp: null, dump: null, header: false, script: [], throws: [] };
+const OPT = { ives: false, razz: false, cumulative: false, force: null, exp: null, dump: null, header: false, script: [], throws: [], desk: null };
 const FLAGS = [];                                // the switches, as given, for the header
 const unknownFlags = [];
 const notes = [];                                // a switch understood but not played, and why
@@ -159,6 +169,10 @@ for (let i = 2; i < argv.length; i++) {
       if (m) OPT.throws.push({ lane: m[1], at: +m[2], spec: m[1] + "@" + m[2] });
       else notes.push("throw=" + s + " is not <lane>@<secs>: not injected");
     });
+  } else if (a.indexOf("desk=") === 0) {
+    const d = Number(a.slice(5));
+    if (d > 0 && isFinite(d)) OPT.desk = d;
+    else notes.push(a + " is not a time in seconds: the desk is not paced");
   } else unknownFlags.push(a);
 }
 // the script in time order, at one time a stop, then a reseed, then a play (a
@@ -232,9 +246,26 @@ function addTimer(fn, ms, args, repeat, kind) {
   if (typeof fn !== "function") return id;
   const delay = Math.max(0, (+ms || 0) / 1000);
   timers.set(id, { id, fn, args, next: vnow + delay, period: repeat ? Math.max(delay, 0.001) : 0, repeat, seq: id, kind });
+  if (pressing && kind === "setTimeout") pressTimers.set(id, { press: pressing, ms: +ms || 0, name: fn.name || "", state: "armed", at: null, by: null, later: null, did: null });
   return id;
 }
-function clearTimer(id) { timers.delete(id); }
+// THE PRESSES' TIMERS. A setTimeout the engine arms inside a press of the
+// transport (the first PLAY, every stop=, play= and reseed=, and the run's
+// last STOP) is followed: cleared (and by which press), or fired — and one
+// that fires after a later press is told with what it did then (the nodes
+// it disconnected, the automation calls it made, the nodes it built),
+// because a press's timer that outlives the next press acts on that press's
+// meeting: a STOP's 800 ms timer that fired after a PLAY and a second STOP
+// disconnected the second STOP's doors halfway through its fade
+// (PLAN-REFACTOR §2.3). The report prints them with a script.
+const presses = [];             // { label, t, i }, in the order pressed
+let pressing = null;            // the press now running
+const pressTimers = new Map();  // timer id → { press, ms, name, state: armed | cleared | fired, at, by, later, did }
+function clearTimer(id) {
+  timers.delete(id);
+  const pt = pressTimers.get(id);
+  if (pt && pt.state === "armed") { pt.state = "cleared"; pt.at = vnow; pt.by = pressing ? pressing.label : "the engine"; }
+}
 function nextTimer() {
   let best = null;
   for (const t of timers.values()) if (!best || t.next < best.next || (t.next === best.next && t.seq < best.seq)) best = t;
@@ -254,11 +285,23 @@ async function advance(untilS) {
     if (++guard > 20000000) { noteError("advance", new Error("iteration guard tripped at " + vnow.toFixed(3) + " s: a timer loop never ends")); fatal = true; return; }
     vnow = Math.max(vnow, tm.next);
     if (tm.repeat) { tm.next = vnow + tm.period; tm.seq = ++timerSeq; } else timers.delete(tm.id);
+    const pt = pressTimers.get(tm.id), was = pt ? { d: graph.disconnects, a: graph.automation, n: graph.total } : null;
     try { tm.fn.apply(null, tm.args); } catch (e) { noteError("timer callback", e); if (errors.length > 200) { fatal = true; return; } }
+    finally {
+      if (pt) {
+        pt.state = "fired"; pt.at = vnow; pt.later = presses.slice(pt.press.i + 1).map((p) => p.label);
+        pt.did = { disconnects: graph.disconnects - was.d, automation: graph.automation - was.a, built: graph.total - was.n };
+      }
+    }
     await new Promise(realSetImmediate);
   }
 }
-global.setTimeout = function (fn, ms) { return addTimer(fn, ms, Array.prototype.slice.call(arguments, 2), false, "setTimeout"); };
+// (desk=: the hymnal's idle slices, known by their function's name, paced)
+const desk = { paced: 0 };
+global.setTimeout = function (fn, ms) {
+  if (OPT.desk && typeof fn === "function" && fn.name === "idleSlice") { desk.paced++; ms = OPT.desk * 1000; }
+  return addTimer(fn, ms, Array.prototype.slice.call(arguments, 2), false, "setTimeout");
+};
 global.setInterval = function (fn, ms) { return addTimer(fn, ms, Array.prototype.slice.call(arguments, 2), true, "setInterval"); };
 global.clearTimeout = clearTimer;
 global.clearInterval = clearTimer;
@@ -276,7 +319,7 @@ global.performance = { now: () => vnow * 1000, timeOrigin: 0, mark() {}, measure
 // fails loudly with its name (ctx.createX → an error naming X; a node's →
 // "is not a function" naming it), never silently.
 // ----------------------------------------------------------------------------
-const graph = { created: {}, total: 0, automation: 0, contexts: 0 };
+const graph = { created: {}, total: 0, automation: 0, contexts: 0, disconnects: 0 };
 let lastCtx = null;
 
 function mkParam(owner, name, init) {
@@ -331,7 +374,7 @@ function mkNode(ctx, kind) {
   const spec = NODE_KINDS[kind];
   const n = { _kind: kind, context: ctx, numberOfInputs: 1, numberOfOutputs: 1, channelCount: 2, channelCountMode: "max", channelInterpretation: "speakers" };
   n.connect = function (dest) { return dest; };            // returns the destination, so chains read naturally
-  n.disconnect = function () {};
+  n.disconnect = function () { graph.disconnects++; };
   n.addEventListener = function (type, fn) { if (type === "ended") (n._ended = n._ended || []).push(fn); };
   n.removeEventListener = function (type, fn) { if (n._ended) n._ended = n._ended.filter((f) => f !== fn); };
   n.dispatchEvent = function () { return true; };
@@ -629,6 +672,22 @@ function droneSaid() {
   } catch (e) { return "(the drone's note could not be read: " + e.message + ")"; }
 }
 const reseeds = [];             // { seed, t, playing, before, after }
+// a press of the transport: its timers followed (THE PRESSES' TIMERS,
+// above), and the hymns the desk wrote while the transport stood stopped
+// counted — from a STOP of a playing meeting to the next PLAY, or to the
+// run's end
+const stopped = { since: null, written: 0 };
+function composedNow() { const h = typeof K.hymnalStats === "function" ? safe(() => K.hymnalStats()) : null; return h ? h.composed : 0; }
+function press(act, label, fn) {
+  const wasPlaying = !!(K.isPlaying && K.isPlaying());
+  if (act === "play" && !wasPlaying && stopped.since != null) { stopped.written += composedNow() - stopped.since; stopped.since = null; }
+  if (act === "stop" && wasPlaying) stopped.since = composedNow();
+  const p = { label, t: vnow, i: presses.length };
+  presses.push(p);
+  const was = pressing;
+  pressing = p;
+  try { return fn(); } finally { pressing = was; }
+}
 K.setNoteListener(function (n) {
   const t = musicNow();
   tally.notes++; count(tally.byLayer, n && n.layer || "?");
@@ -672,7 +731,7 @@ if (typeof K.getSeed === "function" && K.getSeed() !== SEED && typeof K.reseed =
   let playError = null;
   // PLAY at 0: the page's press makes the context (currentTime 0) and the
   // downbeat falls LEAD_S = 0.1 s later — the meeting is called at 0.1 s
-  try { K.play(); } catch (e) { playError = e; noteError("play()", e); }
+  try { press("play", "play@0", () => K.play()); } catch (e) { playError = e; noteError("play()", e); }
   if (!playError) {
     // the script (stop=, reseed=, play=): each pressed at its time, in time order
     for (const s of OPT.script) {
@@ -680,16 +739,17 @@ if (typeof K.getSeed === "function" && K.getSeed() !== SEED && typeof K.reseed =
       if (fatal) break;
       if (s.act === "reseed") {
         const r = { seed: s.seed, t: s.t, playing: !!(K.isPlaying && K.isPlaying()), before: droneSaid(), after: null };
-        try { K.reseed(s.seed); } catch (e) { noteError("reseed(" + s.seed + ") at " + s.t + " s", e); }
+        try { press("reseed", "reseed " + s.seed + "@" + s.t, () => K.reseed(s.seed)); } catch (e) { noteError("reseed(" + s.seed + ") at " + s.t + " s", e); }
         r.after = droneSaid();
         reseeds.push(r);
         continue;
       }
-      try { K[s.act](); } catch (e) { noteError(s.act + "() at " + s.t + " s", e); }
+      try { press(s.act, s.act + "@" + s.t, () => K[s.act]()); } catch (e) { noteError(s.act + "() at " + s.t + " s", e); }
     }
     await advance(RUN + 3);
-    try { K.stop(); } catch (e) { noteError("stop()", e); }
+    try { press("stop", "stop@" + (RUN + 3) + " (the run's end)", () => K.stop()); } catch (e) { noteError("stop()", e); }
     if (!fatal) await advance(vnow + 1.5);       // the stop fade's own timers
+    if (stopped.since != null) { stopped.written += composedNow() - stopped.since; stopped.since = null; }
   }
 
   // ---- the dump ----
@@ -749,7 +809,29 @@ if (typeof K.getSeed === "function" && K.getSeed() !== SEED && typeof K.reseed =
         " · the " + j.lane + " lane ran " + j.after + " cue(s) after it" + (j.after ? ", the first at " + j.firstAfter.toFixed(3) + " s" : "") + " (" + j.before + " before)" +
         " · the meeting began " + tally.sections.filter((x) => x.t > j.t).length + " section(s) after it")));
   }
-  if (hymnal) L("hymnal: backend " + hymnal.backend + " (worker " + hymnal.worker + ") · posted " + hymnal.posted + " · composed " + hymnal.composed + " (idle " + hymnal.byIdle + ", worker " + hymnal.byWorker + ") · late " + hymnal.late + " (in a cue " + hymnal.lateInCue + ") · failed " + hymnal.failed);
+  if (OPT.script.length) {
+    // THE PRESSES' TIMERS: what each press armed, and what became of it
+    const pts = [...pressTimers.values()], fired = pts.filter((x) => x.state === "fired");
+    const late = fired.filter((x) => x.later.length), byLater = pts.filter((x) => x.state === "cleared" && x.by !== x.press.label);
+    const who = (x) => x.press.label + "'s " + +x.ms.toFixed(3) + " ms timer" + (x.name ? " (" + x.name + ")" : "");
+    L("presses: " + presses.length + " (" + presses.map((p) => p.label).join(", ") + ") · their timers: " + pts.length + " armed, " +
+      pts.filter((x) => x.state === "cleared").length + " cleared (" + byLater.length + " by a later press), " + fired.length + " fired (" + late.length + " after a later press), " +
+      pts.filter((x) => x.state === "armed").length + " still armed");
+    // (told: every timer that fired after a later press, and every other
+    // that touched the graph — a STOP's, disconnecting its doors)
+    const told = fired.filter((x) => x.later.length || x.did.disconnects || x.did.automation || x.did.built);
+    told.slice(0, 8).forEach((x) => L("  " + who(x) + " fired at " + x.at.toFixed(3) + " s" + (x.later.length ? ", after " + x.later.join(", ") : "") + ": " +
+      x.did.disconnects + " node(s) disconnected, " + x.did.automation + " automation call(s), " + x.did.built + " node(s) built"));
+    byLater.slice(0, 8).forEach((x) => L("  " + who(x) + " cleared by " + x.by + " at " + x.at.toFixed(3) + " s"));
+    if (told.length > 8 || byLater.length > 8) L("  … and " + (Math.max(0, told.length - 8) + Math.max(0, byLater.length - 8)) + " more");
+  }
+  // (with a script or desk=: the hymns written while the transport stood
+  // stopped, and the orders left unwritten at the end)
+  const unwritten = (OPT.script.length || OPT.desk) && KOLOB.Hymnal && typeof KOLOB.Hymnal.book === "function"
+    ? (safe(() => KOLOB.Hymnal.book()) || []).filter((b) => b.state === "queued" || b.state === "posted").length : null;
+  if (hymnal) L("hymnal: backend " + hymnal.backend + " (worker " + hymnal.worker + ") · posted " + hymnal.posted + " · composed " + hymnal.composed + " (idle " + hymnal.byIdle + ", worker " + hymnal.byWorker + ") · late " + hymnal.late + " (in a cue " + hymnal.lateInCue + ") · failed " + hymnal.failed +
+    (unwritten != null ? " · written while stopped " + stopped.written + " · " + unwritten + " order(s) never written" : "") +
+    (OPT.desk ? " · desk " + OPT.desk + " s a slice, " + desk.paced + " slice(s) paced" : ""));
   L("graph: " + graph.contexts + " context(s) · " + graph.total + " nodes " + JSON.stringify(sortedCounts(graph.created, 10)) + " · " + graph.automation + " automation calls");
   if (OPT.dump) L("dump: " + dumpLines.length + " records" + (OPT.header ? " + header" : "") + (tally.unserialisable ? " · " + tally.unserialisable + " NOT serialisable" : ""));
   const fetchWarns = warns.filter((w) => w.msg.indexOf(NO_NETWORK) >= 0).length, otherWarns = warns.filter((w) => w.msg.indexOf(NO_NETWORK) < 0);

@@ -1170,6 +1170,7 @@ window.KolobAudio = (function () {
     if (ctx.state !== "running") { try { ctx.resume(); } catch (e) {} }
     playing = true;
     if (bg) bg.started();
+    clearStopTimer();                // the last STOP's timer is this press's to cancel: its doors are shut here, now
     shutClosingDoors();              // the last meeting's written-ahead lines stay outside
     if (hallRinging) { flushRooms(); hallRinging = false; }   // and its echo with them
     liveDoors();
@@ -1227,7 +1228,7 @@ window.KolobAudio = (function () {
   // the element rests, then the clock stops — and every cue stops with it,
   // because every cue waits on that clock. Resume runs the same in reverse.
   var PAUSE_FADE = 0.16;                           // seconds
-  var pauseTimer = null;
+  var pauseTimer = null;           // the hold's own timer: resume() and STOP clear it (a transport press cancels the one before it)
   function pause() {
     if (!playing || paused) return;
     paused = true;
@@ -1290,10 +1291,23 @@ window.KolobAudio = (function () {
     }
     emitEvent({ type: "transport", action: "stop" });
   }
+  // THE STOP'S OWN TIMER. 800 ms after a STOP, the fade done, the stopped
+  // meeting's doors are disconnected and the layer gains zeroed. Its handle
+  // is kept, and a transport press cancels the one before it: STOP clears
+  // the handle the STOP before it armed, before arming its own, and PLAY
+  // clears it before it opens new doors (it shuts the closed ones itself,
+  // at once). Untracked, a STOP, a PLAY 0.3 s later and a STOP 0.2 s after
+  // that let the first STOP's timer disconnect the second STOP's doors, and
+  // zero the gains, 0.3 s into its 0.6 s fade: a cut, not a fade. On a
+  // single STOP nothing moves: the same fade, the same 800 ms.
+  var stopTimer = null;
+  function clearStopTimer() { if (stopTimer) { clearTimeout(stopTimer); stopTimer = null; } }
   function scheduleForStop() {
-    setTimeout(function () {
+    clearStopTimer();
+    stopTimer = setTimeout(function () {
+      stopTimer = null;
       // the fade is done: the stopped meeting's doors are disconnected (a PLAY
-      // inside these 800 ms has already shut them)
+      // inside these 800 ms has already shut them, and cleared this timer)
       shutClosingDoors();
       if (!playing && ctx) {
         // belt and braces: zero the layer gains too, so a later sample() of

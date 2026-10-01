@@ -21,7 +21,7 @@ working when the engine changes; two drive a **muted** headless Chrome.
 | `screens.js` | What does the staff look like at 860 and 390 px, and what does a frame cost at 4× CPU throttling? | the page, muted | real time: ~2.5 min per width |
 | `capture.js` | What does a seeded meeting sound like, as a WAV, a spectrogram, loudness (LUFS) and peak? | the page, muted | real time: 4 min for a 4-min window |
 | `render.js` | Renders a dump set to keep, or to read twice. | the harness | ~1 s per seed |
-| `selftest.js` | Do the instruments still read true? | the harness plus synthetic dumps and signals | ~15 s |
+| `selftest.js` | Do the instruments still read true? | the harness plus synthetic dumps and signals | ~30 s |
 
 Every report opens with what it measured: the engine, its VERSION, its git
 commit, a fingerprint of the module bytes the harness was *seen* to play (see
@@ -129,7 +129,7 @@ stops with the harness's `LOAD` error.
 ```sh
 node _harness.js <secs> <seed> [ives] [razz] [cumulative] [force=<guest>] [exp=<spec>]
                  [stop=<secs>,…] [play=<secs>,…] [reseed=<seed>@<secs>,…]
-                 [throw=<lane>@<secs>,…] [dump=<file>] [header]
+                 [throw=<lane>@<secs>,…] [desk=<secs>] [dump=<file>] [header]
 ```
 
 `art/kolob/_harness.js` (tracked since 2026-10-01) mocks `window` and Web Audio
@@ -181,6 +181,38 @@ conductor begins no guest, fuging or other stillness until the hold ends). A
 STOP ends the hold; a joint does not, so a stillness late in a postlude may
 hold into the next meeting's first seconds (on a plain run, none of 284
 meetings over 80 seeds began so).
+
+**The presses' timers.** With a script, a `presses:` line follows the `clock:`
+line: every press (the first PLAY at 0, each `stop=`, `play=` and `reseed=`,
+and the run's last STOP), and what became of each `setTimeout` the engine
+armed inside one — cleared (and by which press), fired, or still armed. A timer
+that fired after a later press is told on a line of its own with what it did
+then (the nodes it disconnected, the automation calls it made, the nodes it
+built), and so is every other that touched the graph (a STOP's, disconnecting
+its doors); a timer cleared by a later press is told too. A press's timer that
+outlives the next press acts on that press's meeting: before PLAN-REFACTOR
+§2.3, seed 22, `stop=120 play=120.3 stop=120.5` printed `stop@120's 800 ms
+timer fired at 120.800 s, after play@120.3, stop@120.5: 3 node(s)
+disconnected, 12 automation call(s)` — the second STOP's doors (its meeting's
+drone) cut 0.3 s into its 0.6 s fade; now `stop@120's 800 ms timer cleared by
+play@120.3`, and the second STOP's own timer disconnects them at 121.3 s.
+With a script (or `desk=`), the `hymnal:` line also counts the hymns written
+while the transport stood stopped (from a STOP of a playing meeting to the
+next PLAY, or to the run's end) and the orders never written.
+
+**A paced desk.** `desk=<secs>` paces the hymnal's idle road (the harness has
+no Worker, so the hymns are written there): each slice — one hymn written on
+the main thread — comes `<secs>` after the one before, as a browser's comes
+after the hymn before it took that long. Without it the harness's clock stands
+still while a hymn is written, so a meeting's book is written at the instant
+it is ordered and no press can find the desk at work. The slices are known by
+their function's name (`idleSlice`, `kolob-hymnal.js`); the `hymnal:` line
+says how many were paced. Pacing moves no record (seed 7, 110 s: the plain
+run's dump). Seed 7, `desk=0.5 stop=0.7`: before PLAN-REFACTOR §2.3 the desk
+wrote the stopped meeting's last two hymns while stopped; now it writes none
+and leaves them unwritten, a PLAY at 1 s passes them over for the next
+meeting's, and a GATHER of the same seed between (`reseed=7@0.7`) writes them
+for the meeting it calls again.
 
 **A fault injection.** `throw=<lane>@<secs>` makes the first cue on that clock
 lane (`conductor`, `drone`, `choir`, `organ`, `ward`, …) at or after that time
@@ -580,7 +612,7 @@ the cores, at most 8).
 node tools/selftest.js
 ```
 
-About twenty seconds, no browser. It checks ten things: (1) a real dump from
+About half a minute, no browser. It checks eleven things: (1) a real dump from
 this worktree reads as meetings and sections, the witness names the build's own
 list, and the harness names the same engine in the header's `engine` field;
 (2) a synthetic dump in SCORE §6's **typed** vocabulary reads the same way —
@@ -617,8 +649,18 @@ the testimony's stillness, calls a meeting not hushed at its downbeat, which
 plays record for record as the one called by `stop=600 play=600.5` (times
 taken from each downbeat); and `stop=90 reseed=7@90 play=90.5` on seed 1 lets
 its drone go home (`×1.25 third → ×1 tonic`) and plays seed 7's first meeting
-as a fresh run does, record for record (the chord book's numbers count on). All
-ten pass on `art/kolob/_harness.js`. Run it after any change to the
+as a fresh run does, record for record (the chord book's numbers count on);
+(11) **STOP's own race** (PLAN-REFACTOR §2.3): seed 7, `stop=120 play=120.3
+stop=120.5` — the PLAY clears the first STOP's timer and the second's fires at
+its own 800 ms; with `play=121` after, that PLAY clears the second's, no
+press's timer fires after a later press, and meeting 3 plays record for record
+as the one called by `stop=121 play=121`; seed 22, the same script — the
+second STOP's doors (its meeting's drone) are disconnected by its own timer;
+and the paced desk (`desk=0.5`) writes nothing while stopped (`stop=0.7`),
+passes the stopped meeting's orders over for the next meeting's (`play=1`),
+writes them for a GATHER of the same seed (`reseed=7@0.7`), whose meeting is
+the fresh run's record for record, and the pacing moves no record. All
+eleven pass on `art/kolob/_harness.js`. Run it after any change to the
 engine's events, to the harness or to these tools. It renders into `out/_selftest/` and, like
 every tool, refuses while the engine is being edited.
 
