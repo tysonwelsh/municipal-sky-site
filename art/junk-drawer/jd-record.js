@@ -1,8 +1,8 @@
 /* ============================================================================
    THE JUNK DRAWER — jd-record.js
-   The report card. Loaded after jd-core.js (JD_esc, JD_byId, JD_zoomLayer,
-   JD_drawOn, JD_fitAll, JD_svgInst, JD_barHTML's home). See jd-core.js for
-   the file map.
+   The report card, and JD_barHTML's home (the gauge the bench reuses).
+   Loaded after jd-core.js (JD_esc, JD_byId, JD_zoomLayer, JD_drawOn,
+   JD_fitAll, JD_svgInst). See jd-core.js for the file map.
    ========================================================================== */
 
 /* ---- THE FULL RECORD — the report card (Phase 3, promoted from mockup-7a).
@@ -32,19 +32,19 @@
      either surface is what the other shows next time it opens); the
      artwork's frame does not move a pixel either way (the class only
      repaints the paper and its margin ink). */
-  function paperCls() { return window.JD_paper.get() === 'blueprint' ? ' is-blueprint' : ''; }
+  function paperCls() { return JD_paper.get() === 'blueprint' ? ' is-blueprint' : ''; }
   function paperBtnHTML() {
-    var blue = window.JD_paper.get() === 'blueprint';
+    var blue = JD_paper.get() === 'blueprint';
     return '<button type="button" class="rc-paper" data-rc="paper" aria-pressed="' +
       (blue ? 'true' : 'false') + '" title="' +
       (blue ? 'back to graph paper' : 'blueprint paper — for light artwork') +
       '" aria-label="' + (blue ? 'Switch to graph paper' : 'Switch to blueprint paper') + '">' +
-      window.JD_paper.icon() + '</button>';
+      JD_paper.icon() + '</button>';
   }
   function togglePaper() {
-    var next = window.JD_paper.get() === 'blueprint' ? 'graph' : 'blueprint';
-    window.JD_paper.set(next);
-    var plate = scrollEl && scrollEl.querySelector('.rc-plate');
+    var next = JD_paper.get() === 'blueprint' ? 'graph' : 'blueprint';
+    JD_paper.set(next);
+    var plate = plateEl();
     if (plate) {
       plate.classList.toggle('is-blueprint', next === 'blueprint');
       var btn = plate.querySelector('.rc-paper');
@@ -79,6 +79,27 @@
   function fitKey(entry, resp) {
     return resp.gen_id ? 'gen:' + resp.gen_id : entry.id + '/' + resp.file;
   }
+  /* the svgCache's key for one response's drawing — the pile loader primes
+     the primaries under the same entry-id/file string (JD_record.setData) */
+  function cacheKey(entry, resp) { return entry.id + '/' + resp.file; }
+  /* the response the card is showing (the first, if curResp ran past the end) */
+  function curResponse() { return curEntry.responses[curResp] || curEntry.responses[0]; }
+  /* where the response filed under `rid` sits in the entry, or 0. rids are
+     unique within an entry (r1, r2, … — CLAUDE.md), so the first match is
+     the only one */
+  function respIndex(entry, rid) {
+    for (var i = 0; i < entry.responses.length; i++) {
+      if (entry.responses[i].rid === rid) return i;
+    }
+    return 0;
+  }
+  /* the pile's own item for an entry, or null (the id is dequoted for the
+     selector) */
+  function pileItem(id) {
+    return document.querySelector('.jd-item[data-id="' + id.replace(/"/g, '') + '"]');
+  }
+  /* what a drawing that cannot be had inlines as: an empty 1×1 frame */
+  var BLANK_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"></svg>';
   /* THE ENLARGEMENT (owner, 2026-08-09): the artwork plate is small — it has
      to be, the card is a form and the art is one field on it — so pressing
      the plate lifts the same artwork onto a full-viewport layer where it can
@@ -109,7 +130,7 @@
   }
   /* prefix every id and url(#)/href reference so inlined copies never
      collide (same discipline as the rating instrument). One implementation,
-     shared with the pile — see JD_svgInst at the top of this file. */
+     shared with the pile — see JD_svgInst in jd-core.js. */
   var svgInst = window.JD_svgInst;
   /* (the filed size tier shows nowhere in the UI any more — the specimen
      tag dropped it 2026-08-12, the report card 2026-08-13; the data keeps
@@ -174,6 +195,7 @@
      the gradient ids so the plate and enlargement copies never fought over
      one id. Not called anywhere; to restore it, re-point cardHTML/zoomHTML
      at it and give .rc-plate back a dark ground. */
+  /* OWNER-BENCHED: retired but kept by owner request (2026-08-13) — leave it in place. */
   function floorSVG(pfx) {  /* eslint-disable-line no-unused-vars */
     pfx = pfx || '';
     var W = 600, H = 600, VPX = W / 2, HOR = H / 2;
@@ -285,8 +307,11 @@
   /* RETIRED — kept as a backup on the owner's request (2026-08-12): the mk-I
      floor, a black-and-white checkerboard projected toward a center vanishing
      point, far rows dissolving into the navy horizon. Not called anywhere;
-     to restore it, point the two floorSVG() call sites here (its 600×240
-     viewBox suits the old 224px landscape plate, not the square one). */
+     to restore it, re-point cardHTML/zoomHTML at it as floorSVG's note
+     describes (there are no floorSVG() call sites to swap any more). Its
+     600×240 viewBox suits the old 224px landscape plate, not the square
+     one. */
+  /* OWNER-BENCHED: retired but kept by owner request (2026-08-12) — leave it in place. */
   function checkerFloorSVG(pfx) {  /* eslint-disable-line no-unused-vars */
     pfx = pfx || '';
     var W = 600, H = 240, VPX = W / 2, HOR = 96;
@@ -327,9 +352,9 @@
       '</svg>';
   }
 
-  /* grades are filed as the taxonomy rank number — see JD_gradeOf above */
+  /* grades are filed as the taxonomy rank number — see JD_gradeOf in jd-core.js */
   function gradeOf(value) {
-    return window.JD_gradeOf(payload.taxonomy, value) ||
+    return JD_gradeOf(payload.taxonomy, value) ||
       { label: value == null ? '' : String(value), rank: +value || 0 };
   }
   function modelOf(id) {
@@ -363,27 +388,26 @@
     vals.forEach(function (v) {
       var sel = value != null && Math.round(+value) === Math.round(v.rank);
       h += '<option value="' + v.rank + '"' + (sel ? ' selected' : '') + '>' +
-        esc(window.JD_labelText ? JD_labelText(v.label) : v.label) + '</option>';
+        esc(JD_labelText(v.label)) + '</option>';
     });
     return h + '</select>';
   }
   function subjectsHTML(resp) {
     var rows = '', di = 0;
     var edit = editable(curEntry);
-    ((payload.taxonomy || {}).axes || []).forEach(function (axis) {
-      /* defunct axes never appear on the report card (owner, 2026-07-29);
-         their filed gradings live on in the data and the legend still
-         lists them dimmed for the record */
-      if (axis.defunct) return;
+    /* defunct axes never appear on the report card (owner, 2026-07-29);
+       their filed gradings live on in the data and the legend still lists
+       them dimmed for the record — JD_liveAxes leaves them out */
+    JD_liveAxes(payload.taxonomy).forEach(function (axis) {
       var a = annOf(resp, axis.id);
       var cell;
       if (edit) {
         /* the gauge stays ahead of the scale (owner, 2026-09-10) and follows
            the pick live — see the change handler in build() */
-        var v0 = a ? window.JD_byRank(axis.values, a.value) : null;
+        var v0 = a ? JD_byRank(axis.values, a.value) : null;
         var steps0 = (axis.values || []).length || 3;
         cell = '<span class="rc-grade-cell rc-editcell">' +
-          barHTML(v0 ? Math.round(v0.rank) : 0, steps0, v0 ? window.JD_axisCls(axis, v0.rank) : '') +
+          barHTML(v0 ? Math.round(v0.rank) : 0, steps0, v0 ? JD_axisCls(axis, v0.rank) : '') +
           scaleSelect(axis.values, a ? a.value : null,
             'data-axis="' + esc(axis.id) + '" aria-label="' + esc(axis.label || axis.id) + '"',
             '— not assessed') + '</span>';
@@ -393,9 +417,9 @@
         /* the bar fills against the axis's OWN step count — 3- and 4-point
            scales coexist since v17 — and the pencil class is scale-aware
            for the same reason (JD_axisCls) */
-        var v = window.JD_byRank(axis.values, a.value);
+        var v = JD_byRank(axis.values, a.value);
         var steps = (axis.values || []).length || 3;
-        var cls = v ? window.JD_axisCls(axis, v.rank) : '';
+        var cls = v ? JD_axisCls(axis, v.rank) : '';
         cell = '<span class="rc-grade-cell">' +
           (v ? barHTML(Math.round(v.rank), steps, cls) : '') +
           mark(v ? v.label : String(a.value), cls) + '</span>';
@@ -473,10 +497,11 @@
      that was never in a ranked turn — get nothing at all rather than a
      consolation mark, because silence is honest and a mark would not be. */
   var MEDALS = { 1: '\uD83E\uDD47', 2: '\uD83E\uDD48', 3: '\uD83E\uDD49', 4: '\uD83C\uDF97\uFE0F' };
+  var MEDAL_WORDS = { 1: 'first', 2: 'second', 3: 'third', 4: 'fourth' };
   function medalHTML(rank) {
     var m = MEDALS[Math.round(+rank)];
     if (!m) { return ''; }
-    var word = { 1: 'first', 2: 'second', 3: 'third', 4: 'fourth' }[Math.round(+rank)];
+    var word = MEDAL_WORDS[Math.round(+rank)];
     return '<span class="rc-alt-medal" title="' + word + ' in the ranking" ' +
       'aria-label="' + word + ' in the ranking">' + m + '</span>';
   }
@@ -500,7 +525,7 @@
         /* data-fit is the artwork's key, not the thumbnail's: the strip
            shows the drawing the plate shows, at the frame the plate uses */
         '<span class="rc-alt-art" data-fit="' + esc(fitKey(entry, r)) + '">' +
-        svgInst(svgCache[entry.id + '/' + r.file] || '', 'jt' + i + '_') +
+        svgInst(svgCache[cacheKey(entry, r)] || '', 'jt' + i + '_') +
         '</span>' +
         '<span class="rc-alt-cap">' + esc(m.label) +
         /* the strip's little grades wear the same coloured pencils as the
@@ -527,15 +552,15 @@
     return a.getBoundingClientRect().width + (isFinite(gap) ? gap : 8);
   }
   /* the pagers go dim at the ends of the TRAVEL, not at the ends of a window
-     index — one tolerance for the sub-pixel scrollLeft a snap can leave */
-  function syncAltNav(strip) {
-    var port = strip.querySelector('.rc-alt-port');
-    if (!port) return;
+     index — one tolerance for the sub-pixel scrollLeft a snap can leave.
+     `nav` is the strip's port and its two pagers (either may be null),
+     resolved once by wireAltScrub: the strip is a fresh node per render and
+     nothing swaps its children, so they cannot go stale under a scroll. */
+  function syncAltNav(nav) {
+    var port = nav.port;
     var max = port.scrollWidth - port.clientWidth;
-    var l = strip.querySelector('.rc-alt-nav[data-nav="-1"]');
-    var r = strip.querySelector('.rc-alt-nav[data-nav="1"]');
-    if (l) l.disabled = port.scrollLeft <= 1;
-    if (r) r.disabled = port.scrollLeft >= max - 1;
+    if (nav.l) nav.l.disabled = port.scrollLeft <= 1;
+    if (nav.r) nav.r.disabled = port.scrollLeft >= max - 1;
   }
   /* put the shown response under the visitor's eye. scrollLeft is assigned
      rather than scrollIntoView'd on purpose: scrollIntoView would also walk
@@ -569,11 +594,17 @@
      A drag must not also pick a thumbnail. Past a few pixels of travel the
      gesture is a scrub, and the click that follows pointerup is swallowed by
      a one-shot capture listener — cleared on the next task either way, so a
-     drag that ends without a click can never eat a later one. */
+     drag that ends without a click can never eat a later one.
+     Answers the strip's nav (see syncAltNav), or null when it has no port. */
   function wireAltScrub(strip) {
     var port = strip.querySelector('.rc-alt-port');
-    if (!port) return;
-    port.addEventListener('scroll', function () { syncAltNav(strip); }, { passive: true });
+    if (!port) return null;
+    var nav = {
+      port: port,
+      l: strip.querySelector('.rc-alt-nav[data-nav="-1"]'),
+      r: strip.querySelector('.rc-alt-nav[data-nav="1"]')
+    };
+    port.addEventListener('scroll', function () { syncAltNav(nav); }, { passive: true });
     var down = false, moved = false, x0 = 0, left0 = 0;
     port.addEventListener('pointerdown', function (e) {
       if (e.pointerType === 'touch' || e.button !== 0) return;
@@ -605,6 +636,15 @@
     };
     port.addEventListener('pointerup', end);
     port.addEventListener('pointercancel', end);
+    return nav;
+  }
+  /* a fresh strip's whole wiring, the same three steps wherever one is
+     painted (render(), and the strip-only refresh in open()): the scrub,
+     the shown response brought under the eye, the pagers' ends */
+  function wireStrip(strip) {
+    var nav = wireAltScrub(strip);
+    centerAlt(strip, curResp, false);
+    if (nav) syncAltNav(nav);
   }
 
   /* THE CARD, landscape (round 13, owner pick 2026-08-13: mockup-13a's
@@ -615,7 +655,6 @@
      display:contents and this same DOM reads as the portrait flow (which is
      why the source order below IS the portrait order). */
   function cardHTML(entry, resp, curIdx, live) {
-    var m = modelOf(resp.model);
     var h = '';
     h += '<header class="rc-block rc-masthead">' +
       '<div class="rc-item">' + esc(entry.title) + '</div></header>';
@@ -632,8 +671,7 @@
        default story and doesn't need saying (owner call, same date). SIZE
        left the card entirely on that call: it now shows nowhere in the UI
        and lives on in the data. */
-    var artSrc = svgCache[entry.id + '/' + resp.file] || '';
-    var gen = resp.generation || {};
+    var artSrc = svgCache[cacheKey(entry, resp)] || '';
     /* what the drawing COST (2026-08-15): token counts and provider spend
        ride the reveal payload into the visitor record, so a won item's card
        states them — after a reload too. Only visitor responses carry these
@@ -785,11 +823,10 @@
     return '<div class="rc-zoom-fig' + paperCls() + '" role="button" tabindex="0" ' +
       'aria-label="Shrink the artwork">' +
       '<div class="rc-zoom-art" data-fit="' + esc(fitKey(entry, resp)) + '">' +
-      svgInst(svgCache[entry.id + '/' + resp.file] || '', 'jz' + curIdx + '_') +
+      svgInst(svgCache[cacheKey(entry, resp)] || '', 'jz' + curIdx + '_') +
       '</div>' +
       '<button type="button" class="rc-zoom-close rc-zoom-keep" aria-label="close">' +
-      '<svg class="jd-x-mark" viewBox="0 0 18 18" aria-hidden="true" focusable="false">' +
-      '<path d="M1 1 17 17M17 1 1 17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>' +
+      JD_X_MARK + '</button>' +
       plateBtnsHTML(entry, resp, true) +
       '</div>' +
       '<div class="rc-zoom-cap">' +
@@ -827,23 +864,74 @@
   var svgInflight = {};
   function ensureSVGs(entry) {
     return Promise.all(entry.responses.map(function (r) {
-      var key = entry.id + '/' + r.file;
+      var key = cacheKey(entry, r);
       if (svgCache[key]) return null;
       if (svgInflight[key]) return svgInflight[key];
       /* a visitor's own won item has no file on the server: its SVG is primed
          into the cache when the entry is filed, and its `url` is a data: URL
          for the download link only — never a path to join to JD_API */
       if (entry.visitor) {
-        svgCache[key] = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"></svg>';
+        svgCache[key] = BLANK_SVG;
         return null;
       }
       return (svgInflight[key] = fetch(JD_API + r.url).then(function (res) {
         if (!res.ok) throw new Error(r.url + ' ' + res.status);
         return res.text();
       }).then(function (t) { svgCache[key] = t; })
-        .catch(function () { svgCache[key] = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"></svg>'; })
+        .catch(function () { svgCache[key] = BLANK_SVG; })
         .then(function () { delete svgInflight[key]; }));
     }));
+  }
+
+  /* the nearest `sel` the event's target sits in, or null */
+  function hit(e, sel) {
+    return e.target.closest ? e.target.closest(sel) : null;
+  }
+  /* THE CARD'S PRESSES that take more than a line: build()'s click handler
+     tries every control in its order and hands the one it found here. */
+  function pressPlate(plate) {
+    if (swiped) { swiped = false; return; }   /* the swipe's own click */
+    openZoom(plate);
+  }
+  /* the prompt's fold (round 13): the expander toggles the block open;
+     state is DOM-only on purpose — a re-render folds a long prompt
+     back down, which is right when the response (and card height
+     budget) just changed */
+  function foldPrompt(pv) {
+    var box = pv.closest('.rc-assign');
+    var open = box.classList.toggle('is-open');
+    pv.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  /* an axis name unfolds its taxonomy description (owner, 2026-08-13) */
+  function unfoldAxis(ax) {
+    var dr = scrollEl.querySelector('#' + ax.getAttribute('data-axd'));
+    if (dr) {
+      var opening = dr.hidden;
+      dr.hidden = !opening;
+      ax.setAttribute('aria-expanded', opening ? 'true' : 'false');
+    }
+  }
+  /* the strip's ◂ ▸ pagers (4+ responses): one thumbnail of travel in
+     the scroll port. They move the SAME strip the finger moves — no
+     re-render, so a long prompt the visitor just unfolded stays
+     unfolded, and browsing the bench still isn't switching the
+     response. Smooth, unless the visitor asked for less motion. */
+  function pageStrip(pager) {
+    if (pager.disabled) return;
+    var strip = scrollEl.querySelector('.rc-alts');
+    var port = strip && strip.querySelector('.rc-alt-port');
+    if (!port) return;
+    var by = parseInt(pager.getAttribute('data-nav'), 10) * altStep(port);
+    var calm = JD_reduced();
+    if (port.scrollBy) port.scrollBy({ left: by, behavior: calm ? 'auto' : 'smooth' });
+    else port.scrollLeft += by;
+  }
+  /* a thumbnail in the strip turns the card to that response */
+  function pickAlt(b) {
+    var i = parseInt(b.getAttribute('data-resp'), 10);
+    if (isNaN(i) || i === curResp) return;
+    curResp = i;
+    render(false);   /* no draw-on for a flip (owner, 2026-09-10) — see stepResp */
   }
 
   function build() {
@@ -853,8 +941,7 @@
     scrim.innerHTML = '<div class="jd-record" role="dialog" aria-modal="true" ' +
       'aria-label="report card">' +
       '<button type="button" class="jd-record-close" aria-label="close">' +
-      '<svg class="jd-x-mark" viewBox="0 0 18 18" aria-hidden="true" focusable="false">' +
-      '<path d="M1 1 17 17M17 1 1 17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>' +
+      JD_X_MARK + '</button>' +
       '<div class="rc-scroll"></div></div>';
     document.body.appendChild(scrim);
     cardEl = scrim.querySelector('.jd-record');
@@ -868,80 +955,31 @@
       if (t.classList && t.classList.contains('rc-edit')) { syncBar(t); setStatus('unsaved changes'); }
       else if (t.matches && t.matches('[data-rc="hidecheck"]')) setStatus('unsaved changes');
     });
+    /* every press on the card, one branch per control, FIRST MATCH WINS —
+       the order is the precedence: the plate's own controls come before
+       the plate, so a press on one of them never also zooms */
     scrollEl.addEventListener('click', function (e) {
-      if (e.target.closest && e.target.closest('[data-rc="save"]')) {
-        saveRatings();
-        return;
-      }
+      if (hit(e, '[data-rc="save"]')) { saveRatings(); return; }
       /* the PAPER button rides the plate's top-right corner: swap, never zoom */
-      if (e.target.closest && e.target.closest('.rc-paper')) {
-        togglePaper();
-        return;
-      }
+      if (hit(e, '.rc-paper')) { togglePaper(); return; }
       /* the plate's arrows turn the response; they never zoom */
-      var nav = e.target.closest ? e.target.closest('.rc-nav') : null;
-      if (nav) {
-        stepResp(parseInt(nav.getAttribute('data-nav'), 10) || 1);
-        return;
-      }
+      var nav = hit(e, '.rc-nav');
+      if (nav) { stepResp(parseInt(nav.getAttribute('data-nav'), 10) || 1); return; }
       /* the DOWNLOAD button rides ON the plate: it must never also zoom */
-      if (e.target.closest && e.target.closest('.rc-dl')) return;
+      if (hit(e, '.rc-dl')) return;
       /* REPLAY rides the plate too: it redraws, never zooms. An explicit
          press is requested motion, so it plays under reduced-motion too. */
-      if (e.target.closest && e.target.closest('.rc-draw')) {
-        drawOn(true);
-        return;
-      }
-      if (e.target.closest && e.target.closest('.rc-plate')) {
-        if (swiped) { swiped = false; return; }   /* the swipe's own click */
-        openZoom(e.target.closest('.rc-plate'));
-        return;
-      }
-      /* the prompt's fold (round 13): the expander toggles the block open;
-         state is DOM-only on purpose — a re-render folds a long prompt
-         back down, which is right when the response (and card height
-         budget) just changed */
-      var pv = e.target.closest ? e.target.closest('.rc-pv') : null;
-      if (pv) {
-        var box = pv.closest('.rc-assign');
-        var open = box.classList.toggle('is-open');
-        pv.setAttribute('aria-expanded', open ? 'true' : 'false');
-        return;
-      }
-      /* an axis name unfolds its taxonomy description (owner, 2026-08-13) */
-      var ax = e.target.closest ? e.target.closest('.rc-axbtn') : null;
-      if (ax) {
-        var dr = scrollEl.querySelector('#' + ax.getAttribute('data-axd'));
-        if (dr) {
-          var opening = dr.hidden;
-          dr.hidden = !opening;
-          ax.setAttribute('aria-expanded', opening ? 'true' : 'false');
-        }
-        return;
-      }
-      /* the strip's ◂ ▸ pagers (4+ responses): one thumbnail of travel in
-         the scroll port. They move the SAME strip the finger moves — no
-         re-render, so a long prompt the visitor just unfolded stays
-         unfolded, and browsing the bench still isn't switching the
-         response. Smooth, unless the visitor asked for less motion. */
-      var nav = e.target.closest ? e.target.closest('.rc-alt-nav') : null;
-      if (nav) {
-        if (nav.disabled) return;
-        var strip = scrollEl.querySelector('.rc-alts');
-        var port = strip && strip.querySelector('.rc-alt-port');
-        if (!port) return;
-        var by = parseInt(nav.getAttribute('data-nav'), 10) * altStep(port);
-        var calm = JD_reduced();
-        if (port.scrollBy) port.scrollBy({ left: by, behavior: calm ? 'auto' : 'smooth' });
-        else port.scrollLeft += by;
-        return;
-      }
-      var b = e.target.closest ? e.target.closest('.rc-alt') : null;
-      if (!b) return;
-      var i = parseInt(b.getAttribute('data-resp'), 10);
-      if (isNaN(i) || i === curResp) return;
-      curResp = i;
-      render(false);   /* no draw-on for a flip (owner, 2026-09-10) — see stepResp */
+      if (hit(e, '.rc-draw')) { drawOn(true); return; }
+      var plate = hit(e, '.rc-plate');
+      if (plate) { pressPlate(plate); return; }
+      var pv = hit(e, '.rc-pv');
+      if (pv) { foldPrompt(pv); return; }
+      var ax = hit(e, '.rc-axbtn');
+      if (ax) { unfoldAxis(ax); return; }
+      var pager = hit(e, '.rc-alt-nav');
+      if (pager) { pageStrip(pager); return; }
+      var alt = hit(e, '.rc-alt');
+      if (alt) pickAlt(alt);
     });
     /* SWIPE THE PLATE (owner, 2026-09-10): on a touch screen a horizontal
        swipe across the photograph turns to the next / previous response —
@@ -955,9 +993,8 @@
     scrollEl.addEventListener('pointerdown', function (e) {
       sw = null;
       if (e.pointerType === 'mouse') return;
-      var p = e.target.closest ? e.target.closest('.rc-plate') : null;
-      if (!p || e.target.closest('.rc-plate-btns') || e.target.closest('.rc-paper') ||
-          e.target.closest('.rc-nav')) return;
+      if (!hit(e, '.rc-plate') || hit(e, '.rc-plate-btns') || hit(e, '.rc-paper') ||
+          hit(e, '.rc-nav')) return;
       sw = { x: e.clientX, y: e.clientY, id: e.pointerId };
     });
     scrollEl.addEventListener('pointerup', function (e) {
@@ -977,11 +1014,11 @@
       /* Enter on the focused DOWNLOAD link is the download, not the zoom;
          REPLAY is a real <button>, so the UA turns these keys into its
          click — the handler above redraws, nothing here should zoom */
-      if (e.target.closest && e.target.closest('.rc-dl')) return;
-      if (e.target.closest && e.target.closest('.rc-draw')) return;
-      if (e.target.closest && e.target.closest('.rc-paper')) return;   /* a real <button>: its own click */
-      if (e.target.closest && e.target.closest('.rc-nav')) return;     /* ditto: the arrows */
-      var p = e.target.closest ? e.target.closest('.rc-plate') : null;
+      if (hit(e, '.rc-dl')) return;
+      if (hit(e, '.rc-draw')) return;
+      if (hit(e, '.rc-paper')) return;   /* a real <button>: its own click */
+      if (hit(e, '.rc-nav')) return;     /* ditto: the arrows */
+      var p = hit(e, '.rc-plate');
       if (!p) return;
       e.preventDefault();
       openZoom(p);
@@ -997,7 +1034,7 @@
      allowlist doesn't carry this page anyway (item_open is the one call the
      module makes, and it is already the exception). */
   function zoomBody() {
-    var resp = curEntry.responses[curResp] || curEntry.responses[0];
+    var resp = curResponse();
     return zoomHTML(curEntry, resp, curResp);
   }
   function plateEl() { return scrollEl ? scrollEl.querySelector('.rc-plate') : null; }
@@ -1034,8 +1071,8 @@
   /* THE DRAW-ON REVEAL (owner, 2026-08-16): when the report card opens, or
      the visitor presses REDRAW — no longer on a flip to another model's
      response (owner, 2026-09-10) — the photograph doesn't just appear: the artwork draws
-     itself onto the plate via window.JD_drawOn (the shared engine at the
-     top of this file; the turn's reveal drinks from the same well). Scope
+     itself onto the plate via window.JD_drawOn (the shared engine in
+     jd-core.js; the turn's reveal drinks from the same well). Scope
      here is the card's plate ONLY — the enlargement is the same photograph
      held closer, not a new drawing; the strip's thumbnails and the pile
      never draw at all. */
@@ -1104,7 +1141,7 @@
 
   function render(animate) {
     markSeq = 0;
-    var resp = curEntry.responses[curResp] || curEntry.responses[0];
+    var resp = curResponse();
     scrollEl.innerHTML = cardHTML(curEntry, resp, curResp, true);
     /* the prompt renders foldable, then earns it: measured here, after
        layout, because "three lines" depends on the column's real width —
@@ -1129,11 +1166,7 @@
        and the shown response is brought under the eye without animating —
        this is a repaint of the card, not a move the visitor made. */
     var strip = scrollEl.querySelector('.rc-alts');
-    if (strip) {
-      wireAltScrub(strip);
-      centerAlt(strip, curResp, false);
-      syncAltNav(strip);
-    }
+    if (strip) wireStrip(strip);
     /* a re-render replaces the plate node, so an open enlargement re-syncs to
        the new response and re-points its way home (the lazy alternative SVGs
        landing is the common case; switching response while enlarged is the
@@ -1142,11 +1175,7 @@
       zoom.fill(zoomBody(), plateEl());
       zoom.setFrom(plateEl());
     }
-    if (animate) {
-      cardEl.classList.remove('is-enter');
-      void cardEl.offsetWidth;
-      cardEl.classList.add('is-enter');
-    }
+    if (animate) JD_restart(cardEl, 'is-enter');
     /* the reveal runs only where a caller asked for it (open, response
        flip) — a plain re-render, like the strip filling in, must never
        restart a drawing */
@@ -1163,10 +1192,7 @@
     var entry = byId(payload.items, id);
     if (!entry) return;
     curEntry = entry;
-    curResp = 0;
-    for (var i = 0; i < entry.responses.length; i++) {
-      if (entry.responses[i].rid === entry.primary) curResp = i;
-    }
+    curResp = respIndex(entry, entry.primary);
     /* (opening on the PRIMARY's thumbnail is render()'s job now — it centres
        whatever curResp is in the scroll port, clamped to the ends) */
     injectDefs();
@@ -1195,11 +1221,7 @@
         /* the replaced strip is a fresh node, so it takes the same wiring
            render() gives one — scrub, centring, nav sync */
         var st = scrollEl.querySelector('.rc-alts');
-        if (st) {
-          wireAltScrub(st);
-          centerAlt(st, curResp, false);
-          syncAltNav(st);
-        }
+        if (st) wireStrip(st);
         return;
       }
       drawNext = plateEmpty;
@@ -1225,6 +1247,18 @@
   function editable(entry) {
     return !!(window.JD_admin && JD_admin.isVerified() && entry && !entry.visitor);
   }
+  /* the editor's one wire: a keyed JSON POST, answered with the parsed
+     reply, or a server_error shape when the reply is not JSON. Each caller
+     keeps its own failure handling, so every status line reads as before. */
+  function adminPost(path, body) {
+    return fetch(JD_API + path, {
+      method: 'POST',
+      headers: JD_admin.headers({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify(body)
+    }).then(function (r) {
+      return r.json().catch(function () { return { ok: false, error: { code: 'server_error' } }; });
+    });
+  }
   var saving = false;
   function setStatus(text) {
     var el = scrollEl && scrollEl.querySelector('.rc-edit-status');
@@ -1232,7 +1266,7 @@
   }
   function saveRatings() {
     if (!curEntry || saving || !editable(curEntry)) return;
-    var resp = curEntry.responses[curResp] || curEntry.responses[0];
+    var resp = curResponse();
     var axes = {}, grade = null;
     scrollEl.querySelectorAll('select.rc-edit[data-axis]').forEach(function (sel) {
       if (sel.value !== '') axes[sel.getAttribute('data-axis')] = +sel.value;
@@ -1250,13 +1284,7 @@
     }
     saving = true;
     setStatus('saving…');
-    fetch(JD_API + '/api/jd-item-rate.php', {
-      method: 'POST',
-      headers: JD_admin.headers({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify(body)
-    }).then(function (r) {
-      return r.json().catch(function () { return { ok: false, error: { code: 'server_error' } }; });
-    }).then(function (j) {
+    adminPost('/api/jd-item-rate.php', body).then(function (j) {
       saving = false;
       if (!j || !j.ok) {
         setStatus('⚠ not saved (' + (((j || {}).error || {}).code || 'network') + ')');
@@ -1304,7 +1332,7 @@
     } else {
       var axis = byId((payload.taxonomy || {}).axes, sel.getAttribute('data-axis')) || {};
       var steps = (axis.values || []).length || 3;
-      html = barHTML(rank, steps, rank ? window.JD_axisCls(axis, rank) : '');
+      html = barHTML(rank, steps, rank ? JD_axisCls(axis, rank) : '');
     }
     var tmp = document.createElement('span');
     tmp.innerHTML = html;
@@ -1320,16 +1348,10 @@
     var body = curEntry.fromTurn
       ? { submission_id: curEntry.submission_id, retire: hide }
       : { item_id: curEntry.id, retire: hide };
-    return fetch(JD_API + '/api/jd-curate.php', {
-      method: 'POST',
-      headers: JD_admin.headers({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify(body)
-    }).then(function (r) {
-      return r.json().catch(function () { return { ok: false, error: { code: 'server_error' } }; });
-    }).then(function (j) {
+    return adminPost('/api/jd-curate.php', body).then(function (j) {
       if (!j || !j.ok) return (((j || {}).error || {}).code || 'network');
       curEntry.hidden = hide;
-      var el = document.querySelector('.jd-item[data-id="' + curEntry.id.replace(/"/g, '') + '"]');
+      var el = pileItem(curEntry.id);
       if (el) el.classList.toggle('jd-item--hidden', hide);
       return true;
     }, function () { return 'network'; });
@@ -1337,7 +1359,7 @@
   /* the specimen tag reads its grade off the pile item's dataset — keep it
      honest without rebuilding the pile */
   function pileTag(entry, resp) {
-    var el = document.querySelector('.jd-item[data-id="' + entry.id.replace(/"/g, '') + '"]');
+    var el = pileItem(entry.id);
     if (!el) return;
     var gr = gradeOf(resp.grade);
     el.setAttribute('data-grade', gr.label || '');
@@ -1424,10 +1446,7 @@
       var lent = !payload && data && data.taxonomy ? data : null;
       injectDefs();
       return ensureSVGs(entry).then(function () {
-        var i = 0;
-        for (var j = 0; j < entry.responses.length; j++) {
-          if (entry.responses[j].rid === (rid || entry.primary)) { i = j; break; }
-        }
+        var i = respIndex(entry, rid || entry.primary);
         markSeq = 0;
         var html, own = payload;
         if (!payload && lent) payload = lent;

@@ -28,7 +28,6 @@ if (!jd_is_ulid($gen)) {
 
 try {
     $db = jd_db();
-    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $stmt = $db->prepare(
         "SELECT g.svg, s.status, s.item_id
            FROM jd_generations g

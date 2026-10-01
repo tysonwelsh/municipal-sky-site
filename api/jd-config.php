@@ -10,7 +10,7 @@
 //   5. the bench gate                                      (jd_bench_keyed, …)
 //   6. database error classification + schema probes      (jd_missing_table, …)
 //   7. taxonomy access                                     (jd_taxonomy, jd_live_axes, …)
-//   8. the ratings fold                                    (jd_fold_ratings, jd_pick_rating)
+//   8. the ratings fold                                    (jd_fold_ratings, jd_pick_rating, …)
 //   9. SVG extraction                                      (jd_extract_svg)
 //
 // Include-only: this file emits no output and starts no session. No cookies,
@@ -32,8 +32,9 @@ define('JD_DEV_MODE', !JD_IS_PRODUCTION && getenv('JD_DEV_MOCK') === '1');
 
 // ---------------------------------------------------------------------------
 // C4.1 — harness v4-web.2. This constant IS the harness: any edit to these
-// bytes requires bumping JD_HARNESS ('v3-web.2', ...), because responses
-// generated under different harnesses are not strictly comparable.
+// bytes requires bumping the harness ids in JD_HARNESS_BY_PROFILE below
+// (JD_HARNESS is the web one: 'v3-web.2', ...), because responses generated
+// under different harnesses are not strictly comparable.
 const JD_SYSTEM_PROMPT = <<<'JD_PROMPT'
 You are an SVG generator. The user's message is a creative brief. Make
 the artwork and reply with the SVG document alone.
@@ -62,7 +63,8 @@ included. The ground to leave out is only what lies outside the object:
 the table it rests on, the wall behind it.
 JD_PROMPT;
 
-const JD_HARNESS = 'v4-web.3';
+// JD_HARNESS — the visitor turn's harness id — is defined with the profiles,
+// after JD_HARNESS_BY_PROFILE below: it IS the web profile's id.
 
 // ---------------------------------------------------------------------------
 // EFFORT PROFILES — the reasoning condition, named and versioned.
@@ -133,6 +135,10 @@ const JD_HARNESS_BY_PROFILE = [
     'web'   => 'v4-web.3',
     'bench' => 'v4-bench.3',
 ];
+
+// The harness id jd-generate.php stamps on every visitor turn's generations —
+// the web profile's, so the two can never disagree.
+const JD_HARNESS = JD_HARNESS_BY_PROFILE['web'];
 
 // A benchmark run is not on a visitor's clock. CLI has no max_execution_time,
 // so this is the only ceiling — generous enough for a thinking model at max
@@ -253,8 +259,35 @@ const JD_PROMPT_MAX_CHARS = 500;
 const JD_NOTE_MAX_CHARS = 500;
 const JD_RATINGS_MAX = 64;
 
+// The words the tables are written in, named once (setup-jd-tables.php holds
+// the ENUM / CHECK lists they come from). A pure naming: each constant IS the
+// stored string, and SQL that compares against one interpolates it, so every
+// statement's text is the same as when the literal was written inline.
+//
+// jd_*.client — who filed a row: a visitor's turn, the owner at the bench, the
+// entry.json word carried in by the backfill, the curated backfill itself.
+const JD_CLIENT_WEB = 'web';
+const JD_CLIENT_BENCH = 'bench';
+const JD_CLIENT_SEED = 'seed';
+const JD_CLIENT_CURATED = 'curated';
+// jd_submissions.status
+const JD_SUB_PENDING = 'pending';
+const JD_SUB_GENERATED = 'generated';
+const JD_SUB_RATED = 'rated';
+const JD_SUB_FAILED = 'failed';
+// jd_generations.status
+const JD_GEN_PENDING = 'pending';
+const JD_GEN_OK = 'ok';
+const JD_GEN_FAILED = 'failed';
+const JD_GEN_REJECTED = 'rejected';
+// jd_ratings.kind ('flag' is the legacy kind, kept in the ENUM; jd-rate.php
+// still files one when a visitor's batch carries it)
+const JD_KIND_GRADE = 'grade';
+const JD_KIND_AXIS = 'axis';
+const JD_KIND_FLAG = 'flag';
+
 // APP §4.4 — declared by the client, never sniffed from User-Agent.
-const JD_CLIENTS = ['web', 'ios', 'android'];
+const JD_CLIENTS = [JD_CLIENT_WEB, 'ios', 'android'];
 
 const JD_TAXONOMY_PATH = __DIR__ . '/../art/junk-drawer/taxonomy.json';
 const JD_DEV_DB_PATH = __DIR__ . '/../local-dev/jd-dev.sqlite';
@@ -445,6 +478,20 @@ function jd_ulid(): string
     return $time . $random;
 }
 
+// A UUID in its 8-4-4-4-12 hex form, either case — the shape of a turn's
+// client_ref and of the browser's device code (jd-generate.php).
+const JD_UUID_RE = '/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/';
+
+/** A random UUIDv4, lowercase — for a NOT NULL UNIQUE client_ref the server
+ *  files itself (the curated sync, the benchmark runner). Carries no meaning. */
+function jd_uuid4(): string
+{
+    $b = random_bytes(16);
+    $b[6] = chr((ord($b[6]) & 0x0f) | 0x40);
+    $b[8] = chr((ord($b[8]) & 0x3f) | 0x80);
+    return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($b), 4));
+}
+
 // All timestamps written by this feature are UTC 'Y-m-d H:i:s' strings, which
 // sort lexicographically on both MySQL DATETIME and SQLite TEXT — so every
 // cutoff is computed here in PHP and bound as a parameter, never NOW().
@@ -533,10 +580,12 @@ function jd_is_ulid(mixed $value): bool
 }
 
 // ---------------------------------------------------------------------------
-// The bench gate. JD_BENCH_REQUIRE_KEY (above) is the one switch; while it is
-// off — the standing state — every curator endpoint answers keyless. When it
-// is on, production callers present jd_bench_key (falling back to the
-// jd_setup_key already on file) in X-Bench-Key or ?key=.
+// The bench gate. JD_BENCH_REQUIRE_KEY (above) is the one switch, ON since
+// 2026-09-05 (admin mode): production callers present jd_bench_key (falling
+// back to the jd_setup_key already on file) in X-Bench-Key or ?key=, and a
+// box with no key on file is open in dev and shut in production. Switched
+// off — as it was 2026-08-18 → 2026-09-05 — every curator endpoint answers
+// keyless.
 
 /** The bench key on file, or null when none is configured. */
 function jd_bench_key_expected(): ?string
@@ -641,6 +690,45 @@ function jd_require_bench_key(): void
     jd_fail(403, 'forbidden', 'The bench key is missing or wrong.');
 }
 
+// The curator endpoints' preamble, in the order every one of them ran it: the
+// origin gate (jd_require_allowed_origin, from jd-origin.php, which each of
+// them requires), then — for the reads — no-store and GET only, then the bench
+// key. jd-bench-queue, jd-ledger, jd-inventory, jd-harvest, jd-admin-check
+// read; jd-item-rate and jd-curate write.
+function jd_curator_get(): void
+{
+    jd_require_allowed_origin();
+    jd_no_store();
+    jd_require_get();
+    jd_require_bench_key();
+}
+
+function jd_curator_post(): void
+{
+    jd_require_allowed_origin();
+    jd_require_post();
+    jd_require_bench_key();
+}
+
+// The maintenance scripts' gate (setup-jd-tables.php, jd-backfill-curated.php
+// over the web): on production, 403 and $message (plain text) unless ?key=
+// matches jd_setup_key. Anywhere else it is open — the CLI and the dev box
+// have no key to give.
+function jd_require_setup_key(string $message): void
+{
+    if (!JD_IS_PRODUCTION) {
+        return;
+    }
+    $secrets = jd_secrets();
+    $expected = $secrets['jd_setup_key'] ?? null;
+    $supplied = $_GET['key'] ?? '';
+    if (!is_string($expected) || $expected === '' || !hash_equals($expected, (string) $supplied)) {
+        http_response_code(403);
+        echo $message;
+        exit;
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Database error classification — for the one recoverable failure class, a
 // migration that has not been run yet. Deploys are instant and
@@ -672,6 +760,30 @@ function jd_missing_column(PDOException $e): bool
     return str_contains($msg, 'no such column')
         || str_contains($msg, 'has no column named')
         || str_contains($msg, 'Unknown column');
+}
+
+/**
+ * A read of a table a manual migration adds (jd_ranks, 2026-08-22): $read's
+ * rows, or [] when the table is not there yet — deploys are instant and
+ * setup-jd-tables.php is a manual run, so a reader must survive the gap. Any
+ * other PDOException propagates untouched. $log, when given, is written to
+ * the error log on a miss (each reader keeps its own line, or none).
+ *
+ * @param callable():array $read
+ */
+function jd_query_or_empty_if_missing(callable $read, ?string $log = null): array
+{
+    try {
+        return $read();
+    } catch (PDOException $e) {
+        if (!jd_missing_table($e)) {
+            throw $e;
+        }
+        if ($log !== null) {
+            error_log($log);
+        }
+        return [];
+    }
 }
 
 /** Schema probe, both dialects: does $table exist? */
@@ -713,6 +825,55 @@ function jd_has_column(PDO $db, string $table, string $column): bool
     return $q->fetch() !== false;
 }
 
+/**
+ * How many slot letters the LIVE jd_generations.slot column actually holds —
+ * read from the schema, not assumed from JD_SLOT_LETTERS. The two disagree
+ * exactly when a deploy widened the code but api/setup-jd-tables.php was
+ * never run against that database (2026-09-10 → 2026-09-27 on production:
+ * every save on a rerun item died with a bare "1265 Data truncated for
+ * column 'slot'" and nobody could tell why from the log). Returns the
+ * count, or null when the column cannot be read (then nothing is refused
+ * on its account — the INSERT will speak for itself). The curated sync and
+ * the backfill refuse with jd_slot_capacity_message (jd-curated-sync.php).
+ */
+function jd_slot_capacity(PDO $db): ?int
+{
+    try {
+        if (jd_db_driver($db) === 'sqlite') {
+            $q = $db->prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'jd_generations'");
+            $q->execute();
+            $ddl = (string) $q->fetchColumn();
+            if (!preg_match('/slot\s+TEXT[^,]*?IN\s*\(([^)]*)\)/i', $ddl, $m)) {
+                return null;
+            }
+            $list = $m[1];
+        } else {
+            $q = $db->prepare(
+                'SELECT COLUMN_TYPE FROM information_schema.COLUMNS
+                  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?'
+            );
+            $q->execute(['jd_generations', 'slot']);
+            $type = (string) $q->fetchColumn();
+            if (!preg_match('/^enum\((.*)\)$/i', $type, $m)) {
+                return null;
+            }
+            $list = $m[1];
+        }
+        $n = preg_match_all("/'[a-p]'/", $list);
+        return $n > 0 ? $n : null;
+    } catch (PDOException $e) {
+        return null;
+    }
+}
+
+// jd_submissions.device_ref (2026-09-10) may not have reached a database the
+// migration has not been run on: the column for a SELECT list, or NULL in
+// its place (the census and the ledger read it).
+function jd_submissions_device_col(PDO $db): string
+{
+    return jd_has_column($db, 'jd_submissions', 'device_ref') ? ', device_ref' : ', NULL AS device_ref';
+}
+
 // Any client-held identifier travels in the JSON body — never a cookie.
 function jd_read_json_body(): array
 {
@@ -730,7 +891,7 @@ function jd_read_json_body(): array
 // APP §4.4 — anything unrecognised silently becomes 'web'.
 function jd_normalize_client(mixed $value): string
 {
-    return (is_string($value) && in_array($value, JD_CLIENTS, true)) ? $value : 'web';
+    return (is_string($value) && in_array($value, JD_CLIENTS, true)) ? $value : JD_CLIENT_WEB;
 }
 
 // C1.3 step 4/5 — the server's own copy of taxonomy.json is authoritative for
@@ -831,6 +992,16 @@ function jd_model_registry(array $taxonomy): array
     return $models;
 }
 
+/** @return array<string,string> model id => its label (the id when the registry gives none) */
+function jd_model_labels(array $taxonomy): array
+{
+    $labels = [];
+    foreach (jd_model_registry($taxonomy) as $id => $m) {
+        $labels[$id] = (string) ($m['label'] ?? $id);
+    }
+    return $labels;
+}
+
 /** @return array<string,array> size tiers, id => tier, in taxonomy order */
 function jd_size_tiers(array $taxonomy): array
 {
@@ -863,6 +1034,26 @@ function jd_rank_on_scale(mixed $value, array $ranks): ?float
     return null;
 }
 
+/**
+ * What is wrong with a full ranking, or null when nothing is: 'first' unless
+ * EXACTLY ONE entry holds rank 1 (there is never a tie for first), 'gap'
+ * unless the distinct ranks are exactly 1..k (DENSE — ties below first are
+ * legal, 1,2,2,3; a gap is not, 1,2,4). Checked in that order. jd-rate.php
+ * holds a visitor's ranking to it and jd-item-rate.php the bench's, each
+ * answering in its own words.
+ *
+ * @param int[] $ranks  the positions filed, keyed however the caller likes
+ */
+function jd_ranking_defect(array $ranks): ?string
+{
+    if (count(array_keys($ranks, 1, true)) !== 1) {
+        return 'first';
+    }
+    $distinct = array_values(array_unique(array_values($ranks)));
+    sort($distinct);
+    return $distinct !== range(1, count($distinct)) ? 'gap' : null;
+}
+
 // ---------------------------------------------------------------------------
 // The ratings fold. jd_ratings is one row per judgment, and three readers
 // (data.php, the bench queue, the census) each need "what does this
@@ -887,7 +1078,7 @@ function jd_fold_ratings(array $rows, array $liveAxes): array
     $fold = [];
     foreach ($rows as $r) {
         $gid = (string) $r['generation_id'];
-        $client = (string) ($r['client'] ?? 'web');
+        $client = (string) ($r['client'] ?? JD_CLIENT_WEB);
         if (!isset($fold[$gid][$client])) {
             $fold[$gid][$client] = [
                 'axes' => [], 'axes_version' => [], 'notes' => [],
@@ -896,7 +1087,7 @@ function jd_fold_ratings(array $rows, array $liveAxes): array
         }
         $slot = &$fold[$gid][$client];
         $version = (int) ($r['taxonomy_version'] ?? 0);
-        if ($r['kind'] === 'axis') {
+        if ($r['kind'] === JD_KIND_AXIS) {
             $axis = (string) $r['axis_id'];
             if (isset($liveAxes[$axis])) {
                 $slot['axes'][$axis] = (float) $r['value'];
@@ -908,7 +1099,7 @@ function jd_fold_ratings(array $rows, array $liveAxes): array
                     $slot['notes'][$axis] = (string) $r['note'];
                 }
             }
-        } elseif ($r['kind'] === 'grade') {
+        } elseif ($r['kind'] === JD_KIND_GRADE) {
             $slot['grade'] = (float) $r['value'];
             $slot['grade_version'] = $version;
         }
@@ -967,6 +1158,28 @@ function jd_pick_rating(array $byClient, array $order): array
 }
 
 /**
+ * The rank each drawing stands at, from jd_ranks rows (generation_id,
+ * rank_pos, client): the bench's row outranks any other client's (a later
+ * bench row replacing an earlier one), and otherwise the first row read
+ * stands — the bench-first rule jd_pick_rating applies to ratings. data.php,
+ * the bench queue and the ledger read ranks through it.
+ *
+ * @param iterable<array> $rows
+ * @return array<string,array{pos:int,client:string}>
+ */
+function jd_rank_by_generation(iterable $rows): array
+{
+    $out = [];
+    foreach ($rows as $r) {
+        $gid = (string) $r['generation_id'];
+        if ($r['client'] === JD_CLIENT_BENCH || !isset($out[$gid])) {
+            $out[$gid] = ['pos' => (int) $r['rank_pos'], 'client' => (string) $r['client']];
+        }
+    }
+    return $out;
+}
+
+/**
  * THE POSITION JOIN between a curated item's entry.json and its backfilled
  * generations (2026-08-18 contract, shared since 2026-09-05): the backfill
  * filed slot a,b,c,d in the order responses appear in the entry — retired
@@ -990,6 +1203,19 @@ function jd_curated_positions(array $entryResponses, array $gens): array
         ];
     }
     return $out;
+}
+
+/**
+ * A turn's tag title: the title filed with it (jd-title.php drafts it, the
+ * visitor's card files it), or — for a turn filed without one — its prompt,
+ * cut to 41 characters and an ellipsis when longer than 42. data.php serves
+ * it; the ledger shows the same words.
+ */
+function jd_turn_title(mixed $title, string $prompt): string
+{
+    $t = trim((string) ($title ?? ''));
+    return $t !== '' ? $t
+        : (mb_strlen($prompt) > 42 ? mb_substr($prompt, 0, 41) . '…' : $prompt);
 }
 
 // ---------------------------------------------------------------------------

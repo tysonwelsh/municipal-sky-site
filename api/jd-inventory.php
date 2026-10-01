@@ -17,23 +17,19 @@ require_once __DIR__ . '/jd-config.php';
 require_once __DIR__ . '/jd-origin.php';
 require_once __DIR__ . '/jd-build.php';
 
-jd_require_allowed_origin();
-jd_no_store();
-jd_require_get();
-jd_require_bench_key();
+jd_curator_get();
 
 $taxonomy = jd_taxonomy_required('jd-inventory');
 $liveAxes = jd_live_axes($taxonomy);
 
 try {
     $db = jd_db();
-    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    $hasDevice = jd_has_column($db, 'jd_submissions', 'device_ref');   // 2026-09-10
+    $deviceCol = jd_submissions_device_col($db);   // 2026-09-10
     $subs = $db->query(
         'SELECT id, item_id, prompt, created, status, client, title, size_class,
                 suppressed, retire_requested_at, rerun_requested_at' .
-                ($hasDevice ? ', device_ref' : ', NULL AS device_ref') . '
+                $deviceCol . '
            FROM jd_submissions ORDER BY created'
     )->fetchAll(PDO::FETCH_ASSOC);
 
@@ -49,16 +45,11 @@ try {
            FROM jd_ratings ORDER BY rated_at, id'
     )->fetchAll(PDO::FETCH_ASSOC);
 
-    $ranks = [];
-    try {
-        $ranks = $db->query('SELECT submission_id, generation_id, rank_pos FROM jd_ranks')
-            ->fetchAll(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {
-        if (!jd_missing_table($e)) {
-            throw $e;
-        }
-        error_log('jd-inventory: jd_ranks unavailable');
-    }
+    $ranks = jd_query_or_empty_if_missing(
+        fn() => $db->query('SELECT submission_id, generation_id, rank_pos FROM jd_ranks')
+            ->fetchAll(PDO::FETCH_ASSOC),
+        'jd-inventory: jd_ranks unavailable'
+    );
 } catch (PDOException $e) {
     error_log('jd-inventory: ' . $e->getMessage());
     jd_fail(500, 'server_error', 'The census could not be read.');
