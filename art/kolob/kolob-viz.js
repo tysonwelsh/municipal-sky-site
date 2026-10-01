@@ -1756,8 +1756,9 @@ window.KolobViz = (function () {
     var m = /^(\d+)\/(\d+)$/.exec(mot || "");
     return m ? { bar: +m[1], den: +m[2] } : { bar: 4, den: 4 };
   }
-  // a line's clock in beats (kolob-hymnal.js clockOf, the performer's own):
-  // a fermata holds its note seven-tenths again and moves all that follows
+  // a line's clock in beats (KOLOB.Score.lineClock, the performers' own, at
+  // a beat of one; the page keeps its copy): a fermata holds its note
+  // seven-tenths again and moves all that follows
   function unitsOf(line) {
     var holds = [];
     (line.fermataBeats || []).forEach(function (fb) {

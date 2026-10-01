@@ -190,14 +190,8 @@ window.KOLOB = window.KOLOB || {};
 
   // a weighted pick from a die already thrown (u in [0,1)): the plan throws
   // its dice first and reads them after, so a pool that is empty or forced
-  // never changes how many dice were thrown
-  function pickWith(u, pool) {
-    var total = 0, i;
-    for (i = 0; i < pool.length; i++) total += pool[i][1];
-    var r = u * total;
-    for (i = 0; i < pool.length; i++) { r -= pool[i][1]; if (r <= 0) return pool[i][0]; }
-    return pool.length ? pool[pool.length - 1][0] : null;
-  }
+  // never changes how many dice were thrown (KOLOB.Num's, kolob-pitch.js)
+  function pickWith(u, pool) { return KOLOB.Num.pickWith(u, pool); }
 
   // THE MEETING'S STATE (C, above): every field a meeting owns, set to what
   // it is before anything is planned. The plan fills each in below; nothing

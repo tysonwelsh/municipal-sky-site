@@ -364,8 +364,8 @@ window.KOLOB = window.KOLOB || {};
   var STRETCH = { ordinary: [1.05, 1.3], fast: [1.15, 1.4], conference: [1.0, 1.2], jubilee: [0.95, 1.15] };
   function Hy() { return KOLOB.Hymnal; }
   function Cm() { return KOLOB.Composer; }
-  function mzRatio(m) { return Math.pow(2, m[0]) * Math.pow(3, m[1]) * Math.pow(5, m[2]) * Math.pow(7, m[3] || 0); }
-  function mzAdd(a, b) { return [a[0] + b[0], a[1] + b[1], a[2] + b[2], (a[3] || 0) + (b[3] || 0)]; }
+  function mzRatio(m) { return KOLOB.Pitch.ratio(m); }
+  function mzAdd(a, b) { return KOLOB.Pitch.mul(a, b); }
 
   // THE PERFORMANCE PLAN — every die of the singing, from the hymn's own
   // performance fork (hymn:<n>:<i> → performance).
@@ -1078,13 +1078,7 @@ window.KOLOB = window.KOLOB || {};
       if (!L || !vl[i] || !notes || !notes.length) return;
       var rit = (plan.rubato || 0) * (v === plan.verses.length - 1 && i === vl.length - 1 ? 2.2 : 0.35);
       var clk = Cs().clock(vl[i], L.beatS, rit, plan.holdMul);
-      for (var k = 0; k < notes.length; k++) {
-        var n = notes[k], b0 = n.beat, b1 = n.beat + n.beats;
-        while (notes[k].tie && k + 1 < notes.length) { k++; b1 = notes[k].beat + notes[k].beats; }
-        var st = clk(b0), dur = clk(b1) - st;
-        if (k === notes.length - 1 && vl[i].breathAfter !== false) dur -= Math.min(0.3 * L.beatS, 0.25 * dur);
-        ev.push({ at: L.at + st, dur: Math.max(0.08, dur), n: n, line: i });
-      }
+      KOLOB.Score.sungNotes(notes, clk, L.beatS, vl[i].breathAfter).forEach(function (e) { ev.push({ at: L.at + e.t, dur: Math.max(0.08, e.dur), n: e.n, line: i }); });
     });
     if (!ev.length) return;
     // (the tune where a treble instrument sings it: a tenor's tune an octave up)

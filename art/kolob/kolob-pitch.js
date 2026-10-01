@@ -10,8 +10,13 @@
 //
 // Public surface: KOLOB.Pitch = { COLLECTIONS, MODE_NAMES, MODE_MONZOS,
 //   ROOT_MULT, colN, projDeg, degFreq, tuning(mode, f0), ratio, mul, div,
-//   fromFraction, cents, octaveReduce, degMonzo, commaOf, the 7-limit
-//   constants, limitOf, septimalOf, harmonicSeventh, proportion, oddParts }
+//   fromFraction, cents, centsOf, octaveReduce, degMonzo, commaOf, the
+//   parent scales (PARENT_FRACTIONS, PARENT_RATIOS, CLASSES, modeName), the
+//   7-limit constants, limitOf, septimalOf, harmonicSeventh, proportion,
+//   oddParts }; and KOLOB.Num = { clamp, mod, r3, r4, positive, pickWith },
+//   the small arithmetic every room uses (NUMBERS, at the foot). A room
+//   borrows these rather than typing its own; where a room keeps a copy, a
+//   comment beside it says why it is not this one (SCORE.md §2).
 // ============================================================================
 
 window.KOLOB = window.KOLOB || {};
@@ -114,7 +119,9 @@ window.KOLOB = window.KOLOB || {};
     });
     return m;
   }
-  function cents(m) { return 1200 * Math.log2(ratio(m)); }
+  function cents(m) { return centsOf(ratio(m)); }
+  // a ratio's size in cents
+  function centsOf(r) { return 1200 * Math.log2(r); }
   // Fold into the octave [1/1, 2/1) by adjusting the power of two.
   function octaveReduce(m) {
     var r = m.slice(0, 4); while (r.length < 4) r.push(0);
@@ -133,6 +140,24 @@ window.KOLOB = window.KOLOB || {};
   };
   var MODE_MONZOS = {};
   Object.keys(MODE_FRACTIONS).forEach(function (k) { MODE_MONZOS[k] = MODE_FRACTIONS[k].map(fromFraction); });
+  // THE PARENT SCALE of each mode: the seven-note scale its degrees are
+  // spelled in (SCORE.md §2, "Degree against monzo"). The four seven-note
+  // modes are their own parents; the gapped scales are major collections
+  // that leave notes out, so theirs is the ionian (the same table). As
+  // fractions (exact), as the floats of COLLECTIONS, and CLASSES: the
+  // parent's degrees each mode's collection holds (no fa or ti in the
+  // pentatonic, no ti in the hexatonic). Shared by every room that spells a
+  // degree, so read, never written.
+  var PARENT_FRACTIONS = { ionian: MODE_FRACTIONS.ionian, mixolydian: MODE_FRACTIONS.mixolydian, dorian: MODE_FRACTIONS.dorian, aeolian: MODE_FRACTIONS.aeolian };
+  PARENT_FRACTIONS.penta = PARENT_FRACTIONS.hexa = PARENT_FRACTIONS.ionian;
+  var PARENT_RATIOS = { ionian: COLLECTIONS.ionian.ratios, mixolydian: COLLECTIONS.mixolydian.ratios, dorian: COLLECTIONS.dorian.ratios, aeolian: COLLECTIONS.aeolian.ratios };
+  PARENT_RATIOS.penta = PARENT_RATIOS.hexa = PARENT_RATIOS.ionian;
+  var CLASSES = {
+    ionian: [0, 1, 2, 3, 4, 5, 6], mixolydian: [0, 1, 2, 3, 4, 5, 6], dorian: [0, 1, 2, 3, 4, 5, 6],
+    aeolian: [0, 1, 2, 3, 4, 5, 6], penta: [0, 1, 2, 4, 5], hexa: [0, 1, 2, 3, 4, 5],
+  };
+  // a mode's name as given, or the ionian for anything that is not one of the six
+  function modeName(m) { return COLLECTIONS[m] ? m : "ionian"; }
   // A collection-degree index (as degFreq takes it: octaves fold at the
   // collection's size) → its exact monzo relative to the key.
   function degMonzo(modeName, i) {
@@ -202,6 +227,33 @@ window.KOLOB = window.KOLOB || {};
   }
 
   // ==========================================================================
+  // NUMBERS — KOLOB.Num: the small arithmetic the rooms each used to type
+  // for themselves. It is not pitch; it is raised here because this room
+  // stands first among the house's rooms in every list that loads a room
+  // which needs it (the page's, the composer's desk, every lab's), so a room
+  // finds it as it loads and whenever it calls.
+  // ==========================================================================
+  function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
+  // the remainder that never goes negative: mod(-1, 7) is 6
+  function mod(a, n) { return ((a % n) + n) % n; }
+  function r3(x) { return Math.round(x * 1000) / 1000; }
+  function r4(x) { return Math.round(x * 1e4) / 1e4; }
+  // x read as a number when it is a positive one, else d (a field of the
+  // material a room is handed: a keynote, a beat)
+  function positive(x, d) { x = +x; return isFinite(x) && x > 0 ? x : d; }
+  // a weighted pick by a die already thrown: u in [0, 1), pool [[item,
+  // weight], …] → the item u falls on (the last when u runs off the end;
+  // null from an empty pool). It throws no die of its own: the caller threw
+  // u on its stream (SCORE.md §3), whether or not the pick is used
+  function pickWith(u, pool) {
+    var total = 0, i;
+    for (i = 0; i < pool.length; i++) total += pool[i][1];
+    var r = u * total;
+    for (i = 0; i < pool.length; i++) { r -= pool[i][1]; if (r <= 0) return pool[i][0]; }
+    return pool.length ? pool[pool.length - 1][0] : null;
+  }
+
+  // ==========================================================================
   // LENT — what this room shares with the rest of the house (KOLOB._s)
   // ==========================================================================
   // (configurable, so the room can be loaded twice without "Cannot redefine")
@@ -219,11 +271,14 @@ window.KOLOB = window.KOLOB || {};
   KOLOB.Pitch = {
     COLLECTIONS: COLLECTIONS, MODE_NAMES: MODE_NAMES, MODE_MONZOS: MODE_MONZOS, ROOT_MULT: ROOT_MULT,
     colN: colN, projDeg: projDeg, degFreq: degFreq, tuning: tuning,
-    ratio: ratio, mul: mul, div: div, fromFraction: fromFraction, cents: cents,
+    ratio: ratio, mul: mul, div: div, fromFraction: fromFraction, cents: cents, centsOf: centsOf,
     octaveReduce: octaveReduce, degMonzo: degMonzo, commaOf: commaOf,
+    // the parent scales
+    PARENT_FRACTIONS: PARENT_FRACTIONS, PARENT_RATIOS: PARENT_RATIOS, CLASSES: CLASSES, modeName: modeName,
     // the seventh harmonic
     SEPTIMAL_SEVENTH: SEPTIMAL_SEVENTH, SEPTIMAL_COMMA: SEPTIMAL_COMMA, JOHNSTON_SEVEN: JOHNSTON_SEVEN, BARBERSHOP: BARBERSHOP,
     limitOf: limitOf, septimalOf: septimalOf, harmonicSeventh: harmonicSeventh, proportion: proportion, oddParts: oddParts,
   };
+  KOLOB.Num = { clamp: clamp, mod: mod, r3: r3, r4: r4, positive: positive, pickWith: pickWith };
   (KOLOB._rooms = KOLOB._rooms || {})["kolob-pitch.js"] = true;   // the load guard's roll call
 })();

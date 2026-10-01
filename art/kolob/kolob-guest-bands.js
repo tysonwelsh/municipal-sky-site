@@ -232,29 +232,20 @@ window.KOLOB.GuestBands = (function () {
   function plan(info, stream) { return decide(info, stream).seat; }
 
   // ==========================================================================
-  // PITCH — exact ratios (SCORE §2): the composer's spelling, copied so the
-  // room stands alone (a lab, the harness), and the just intervals a band's
-  // chord is tuned by above its root
+  // PITCH — exact ratios (SCORE §2): the composer's spelling (kolob-pitch.js's
+  // parent scales and arithmetic), and the just intervals a band's chord is
+  // tuned by above its root
   // ==========================================================================
-  var FR = {
-    ionian: ["1/1", "9/8", "5/4", "4/3", "3/2", "5/3", "15/8"], mixolydian: ["1/1", "9/8", "5/4", "4/3", "3/2", "5/3", "16/9"],
-    dorian: ["1/1", "9/8", "6/5", "4/3", "3/2", "5/3", "16/9"], aeolian: ["1/1", "9/8", "6/5", "4/3", "3/2", "8/5", "16/9"],
-  };
-  FR.penta = FR.hexa = FR.ionian;
+  var FR = window.KOLOB.Pitch.PARENT_FRACTIONS;
   var SEMIS = {};
-  function mzOf(s) {
-    var P = [2, 3, 5, 7], parts = String(s).split("/"), m = [0, 0, 0, 0];
-    [[+parts[0], 1], [parts.length > 1 ? +parts[1] : 1, -1]].forEach(function (nd) {
-      var n = nd[0];
-      for (var i = 0; i < 4; i++) while (n > 1 && n % P[i] === 0) { n /= P[i]; m[i] += nd[1]; }
-    });
-    return m;
-  }
-  function mzAdd(a, b) { return [a[0] + b[0], a[1] + b[1], a[2] + b[2], (a[3] || 0) + (b[3] || 0)]; }
-  function ratio(m) { return Math.pow(2, m[0]) * Math.pow(3, m[1]) * Math.pow(5, m[2]) * Math.pow(7, m[3] || 0); }
+  function mzOf(s) { return window.KOLOB.Pitch.fromFraction(s); }
+  function mzAdd(a, b) { return window.KOLOB.Pitch.mul(a, b); }
+  function ratio(m) { return window.KOLOB.Pitch.ratio(m); }
+  // (Math.log over LN2, where KOLOB.Pitch.centsOf takes Math.log2: the two
+  // can differ in the last bit, so the room's cents stay its own)
   function cents(r) { return 1200 * Math.log(r) / Math.LN2; }
-  function mod(a, n) { return ((a % n) + n) % n; }
-  function modeOf(m) { return FR[m] ? m : "ionian"; }
+  function mod(a, n) { return window.KOLOB.Num.mod(a, n); }
+  function modeOf(m) { return window.KOLOB.Pitch.modeName(m); }
   Object.keys(FR).forEach(function (k) { SEMIS[k] = FR[k].map(function (f) { return Math.round(cents(ratio(mzOf(f))) / 100); }); });
   var SCALE = {};
   Object.keys(FR).forEach(function (k) { SCALE[k] = FR[k].map(mzOf); });

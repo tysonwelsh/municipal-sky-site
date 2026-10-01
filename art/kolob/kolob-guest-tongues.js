@@ -126,9 +126,9 @@ window.KOLOB.GuestTongues = (function () {
     var w = ODDS.weight, k = info.sunday && w[info.sunday] != null ? info.sunday : info.kind;
     return Math.min(ODDS.cap, ODDS.base * (w[k] != null ? w[k] : 1));
   }
-  function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
-  function r4(x) { return Math.round(x * 1e4) / 1e4; }
-  function mod(a, n) { return ((a % n) + n) % n; }
+  function clamp(x, a, b) { return window.KOLOB.Num.clamp(x, a, b); }
+  function r4(x) { return window.KOLOB.Num.r4(x); }
+  function mod(a, n) { return window.KOLOB.Num.mod(a, n); }
   function pickW(R, pool) {                       // (the substrate's pickW, spelt out: the same one die)
     var tot = 0, i; for (i = 0; i < pool.length; i++) tot += pool[i][1];
     var x = R.rnd(0, tot);
@@ -408,7 +408,7 @@ window.KOLOB.GuestTongues = (function () {
     if (!P || !P.COLLECTIONS) throw new Error("KOLOB.GuestTongues: load kolob-pitch.js first");
     return P.COLLECTIONS[mode] || P.COLLECTIONS.ionian;
   }
-  function modeName(mode) { var P = window.KOLOB.Pitch; return P && P.COLLECTIONS && P.COLLECTIONS[mode] ? mode : "ionian"; }
+  function modeName(mode) { return window.KOLOB.Pitch.modeName(mode); }
   function ratioAt(c, idx) { var n = c.ratios.length; return c.ratios[mod(idx, n)] * Math.pow(2, Math.floor(idx / n)); }
   // a collection index → the Score's degree (0 = the mode's final, 7 a step
   // an octave: the d7 space every hymn is spelled in)

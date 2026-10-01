@@ -139,9 +139,9 @@ window.KOLOB.GuestHosanna = (function () {
     if (!stream || typeof stream.fork !== "function") throw new Error("KOLOB.GuestHosanna: a PJ2.Rand stream is required (label " + LABEL + "<n>)");
     return stream;
   }
-  function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
-  function r4(x) { return Math.round(x * 1e4) / 1e4; }
-  function ratio(m) { return Math.pow(2, m[0]) * Math.pow(3, m[1]) * Math.pow(5, m[2]) * Math.pow(7, m[3] || 0); }
+  function clamp(x, a, b) { return window.KOLOB.Num.clamp(x, a, b); }
+  function r4(x) { return window.KOLOB.Num.r4(x); }
+  function ratio(m) { return window.KOLOB.Pitch.ratio(m); }
 
   // ==========================================================================
   // THE SHAPE — the shout's pace and rise, the room's breath between, the
@@ -259,12 +259,7 @@ window.KOLOB.GuestHosanna = (function () {
   // THE TIMELINE — when the shouts, the amens, the organ and each line fall
   // (seconds from the seat; pure: the shape and the tune)
   // ==========================================================================
-  function lineLen(line) {
-    var Sc = window.KOLOB.Score;
-    if (Sc && Sc.lineLength) return Sc.lineLength(line);
-    var end = 0; for (var p in line.notes) (line.notes[p] || []).forEach(function (n) { end = Math.max(end, n.beat + n.beats); });
-    return end;
-  }
+  function lineLen(line) { return window.KOLOB.Score.lineLength(line); }
   function timeline(sh, tune) {
     var t = sh.hush, cries = [];
     for (var k = 0; k < 3; k++) {
@@ -352,17 +347,11 @@ window.KOLOB.GuestHosanna = (function () {
   function hymnScore(tune, tl, K, t0, ward) {
     var base = K * ratio(tune.keyMonzo || [0, 0, 0, 0]), all = tune.lines.concat(tune.refrain || []), bs = tl.beatS, mp = tune.melodyPart || "S";
     var br = tl.lines.length && tl.lines[tl.lines.length - 1].t1 - tl.lines[tl.lines.length - 1].t0 > tl.lines[tl.lines.length - 1].beats * bs + 1e-6;
+    // (the line's own clock — the last line stretched to the time the
+    // timeline gives it — and the Score's tied notes and breath on it)
     function events(line, part, at, L, stretch) {
-      var ns = line.notes[part] || [], ev = [];
       function clk(b) { return bs * (b + (stretch ? stretch * b * b / (2 * L) : 0)); }
-      for (var k = 0; k < ns.length; k++) {
-        var n = ns[k], b0 = n.beat, b1 = n.beat + n.beats;
-        while (ns[k].tie && k + 1 < ns.length) { k++; b1 = ns[k].beat + ns[k].beats; }
-        var d = clk(b1) - clk(b0);
-        if (k === ns.length - 1 && line.breathAfter !== false) d -= Math.min(0.3 * bs, 0.25 * d);
-        ev.push({ t: at + clk(b0), dur: d, n: n });
-      }
-      return ev;
+      return window.KOLOB.Score.sungNotes(line.notes[part] || [], clk, bs, line.breathAfter, at);
     }
     function sylAt(line, li) {
       var ons = (line.notes[mp] || []).filter(function (n) { return n.syl !== null; }).map(function (n) { return n.beat; }), W = WORDS[li] || [];

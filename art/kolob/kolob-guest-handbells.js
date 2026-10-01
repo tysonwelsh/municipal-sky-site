@@ -278,25 +278,18 @@ window.KOLOB.GuestHandbells = (function () {
 
   // ==========================================================================
   // PITCH — the mode's degrees, as the composer spells them (7-degree space,
-  // 0 the final), and their just ratios
+  // 0 the final), and their just ratios (kolob-pitch.js's parent scales)
   // ==========================================================================
-  var PARENT = {                                  // the parent scale of each mode, just
-    ionian:     [1, 9 / 8, 5 / 4, 4 / 3, 3 / 2, 5 / 3, 15 / 8],
-    mixolydian: [1, 9 / 8, 5 / 4, 4 / 3, 3 / 2, 5 / 3, 16 / 9],
-    dorian:     [1, 9 / 8, 6 / 5, 4 / 3, 3 / 2, 5 / 3, 16 / 9],
-    aeolian:    [1, 9 / 8, 6 / 5, 4 / 3, 3 / 2, 8 / 5, 16 / 9],
-  };
-  PARENT.penta = PARENT.hexa = PARENT.ionian;
-  var CLASSES = {                                 // the degrees a bell set holds
-    ionian: [0, 1, 2, 3, 4, 5, 6], mixolydian: [0, 1, 2, 3, 4, 5, 6], dorian: [0, 1, 2, 3, 4, 5, 6],
-    aeolian: [0, 1, 2, 3, 4, 5, 6], penta: [0, 1, 2, 4, 5], hexa: [0, 1, 2, 3, 4, 5],
-  };
-  function modeName(m) { return PARENT[m] ? m : "ionian"; }
-  function mod(a, n) { return ((a % n) + n) % n; }
+  var PARENT = window.KOLOB.Pitch.PARENT_RATIOS;   // the parent scale of each mode, just
+  var CLASSES = window.KOLOB.Pitch.CLASSES;        // the degrees a bell set holds
+  function modeName(m) { return window.KOLOB.Pitch.modeName(m); }
+  function mod(a, n) { return window.KOLOB.Num.mod(a, n); }
   function degRatio(mode, d) { return PARENT[modeName(mode)][mod(d, 7)] * Math.pow(2, Math.floor(d / 7)); }
-  function monzoRatio(m) { m = m || [0, 0, 0, 0]; return Math.pow(2, m[0] || 0) * Math.pow(3, m[1] || 0) * Math.pow(5, m[2] || 0) * Math.pow(7, m[3] || 0); }
+  function monzoRatio(m) { return window.KOLOB.Pitch.ratio(m || [0, 0, 0, 0]); }   // (no monzo: the unison)
+  // (Math.log over LN2, where KOLOB.Pitch.centsOf takes Math.log2: the two
+  // can differ in the last bit, so the room's cents stay its own)
   function cents(r) { return 1200 * Math.log(r) / Math.LN2; }
-  function num(x, d) { x = +x; return isFinite(x) && x > 0 ? x : d; }
+  function num(x, d) { return window.KOLOB.Num.positive(x, d); }
   // THE GROUND of a round, per mode: two chords, one a bar, every tone of
   // each just against the set (a bell is a fixed pitch; see the header)
   var GROUND = {
@@ -403,13 +396,7 @@ window.KOLOB.GuestHandbells = (function () {
   // READING THE HYMN — every part's notes on one timeline (pure)
   // ==========================================================================
   var PARTS = ["S", "A", "T", "B"];
-  function lineLength(ln) {
-    var K = window.KOLOB;
-    if (K.Score && K.Score.lineLength) return K.Score.lineLength(ln);
-    var end = 0;
-    Object.keys(ln.notes || {}).forEach(function (p) { (ln.notes[p] || []).forEach(function (n) { end = Math.max(end, n.beat + n.beats); }); });
-    return end;
-  }
+  function lineLength(ln) { return window.KOLOB.Score.lineLength(ln); }
   // → { lines: [{ b0, beats, hold, breath, parts: {P: [{beat, beats, ratio, deg, alt}]}, chords, peak }], beats }
   // beat: from the hymn's start, with each line's fermata held (hold beats
   // added after the fermata note) and a breath after a line that asks one
@@ -426,6 +413,7 @@ window.KOLOB.GuestHandbells = (function () {
           var n = src[k];
           if (!n || n.monzo == null) continue;
           var b1 = n.beat + n.beats;
+          // (a tie joins only where the pitch holds, in beats, on no clock: not KOLOB.Score.sungNotes)
           while (src[k].tie && k + 1 < src.length && src[k + 1] && src[k + 1].monzo && Math.abs(monzoRatio(src[k + 1].monzo) - monzoRatio(n.monzo)) < 1e-9) { k++; b1 = src[k].beat + src[k].beats; }
           out.push({ beat: n.beat, beats: b1 - n.beat, ratio: monzoRatio(n.monzo), deg: n.deg != null ? n.deg : null, alt: n.alt || 0 });
           if (b1 >= len - 1e-6) lastLen = Math.max(lastLen, b1 - n.beat);

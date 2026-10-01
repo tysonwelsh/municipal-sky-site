@@ -226,26 +226,23 @@ window.KOLOB.GuestSingingSchool = (function () {
   function plan(info, stream) { return decide(info, stream).seat; }
 
   // ==========================================================================
-  // PITCH
+  // PITCH (the parent scales, the ratios and the small arithmetic are
+  // kolob-pitch.js's)
   // ==========================================================================
-  var PARENT = {
-    ionian:     [1, 9 / 8, 5 / 4, 4 / 3, 3 / 2, 5 / 3, 15 / 8],
-    mixolydian: [1, 9 / 8, 5 / 4, 4 / 3, 3 / 2, 5 / 3, 16 / 9],
-    dorian:     [1, 9 / 8, 6 / 5, 4 / 3, 3 / 2, 5 / 3, 16 / 9],
-    aeolian:    [1, 9 / 8, 6 / 5, 4 / 3, 3 / 2, 8 / 5, 16 / 9],
-  };
-  PARENT.penta = PARENT.hexa = PARENT.ionian;
+  var PARENT = window.KOLOB.Pitch.PARENT_RATIOS;
   // where do sits, counted from the final (the composer's DO_OF): the four
   // shapes are read from do
   var DO_OF = { ionian: 0, penta: 0, hexa: 0, mixolydian: 3, dorian: 6, aeolian: 2 };
   var SHAPES = ["fa", "sol", "la", "fa", "sol", "la", "mi"];      // do re mi fa sol la ti
-  function modeName(m) { return PARENT[m] ? m : "ionian"; }
-  function mod(a, n) { return ((a % n) + n) % n; }
+  function modeName(m) { return window.KOLOB.Pitch.modeName(m); }
+  function mod(a, n) { return window.KOLOB.Num.mod(a, n); }
   function degRatio(mode, d) { return PARENT[modeName(mode)][mod(d, 7)] * Math.pow(2, Math.floor(d / 7)); }
-  function monzoRatio(m) { m = m || [0, 0, 0, 0]; return Math.pow(2, m[0] || 0) * Math.pow(3, m[1] || 0) * Math.pow(5, m[2] || 0) * Math.pow(7, m[3] || 0); }
+  function monzoRatio(m) { return window.KOLOB.Pitch.ratio(m || [0, 0, 0, 0]); }   // (no monzo: the unison)
+  // (Math.log over LN2, where KOLOB.Pitch.centsOf takes Math.log2: the two
+  // can differ in the last bit, so the room's cents stay its own)
   function cents(r) { return 1200 * Math.log(r) / Math.LN2; }
   function shapeOf(mode, deg) { return SHAPES[mod(deg - DO_OF[modeName(mode)], 7)]; }
-  function num(x, d) { x = +x; return isFinite(x) && x > 0 ? x : d; }
+  function num(x, d) { return window.KOLOB.Num.positive(x, d); }
   // A REAL CLASH: a second or a seventh, or the tritone — never a comma, never
   // a consonance (interval classes in cents, octaves folded)
   function clashOf(r1, r2) {
@@ -260,13 +257,7 @@ window.KOLOB.GuestSingingSchool = (function () {
   // ==========================================================================
   var PARTS = ["S", "A", "T", "B"];
   var PART_NAME = { S: "sopranos", A: "altos", T: "tenors", B: "basses", W: "women", M: "men" };
-  function lineLength(ln) {
-    var K = window.KOLOB;
-    if (K.Score && K.Score.lineLength) return K.Score.lineLength(ln);
-    var end = 0;
-    Object.keys(ln.notes || {}).forEach(function (p) { (ln.notes[p] || []).forEach(function (n) { end = Math.max(end, n.beat + n.beats); }); });
-    return end;
-  }
+  function lineLength(ln) { return window.KOLOB.Score.lineLength(ln); }
   function readLine(ln) {
     var parts = {};
     PARTS.forEach(function (p) {
@@ -275,6 +266,7 @@ window.KOLOB.GuestSingingSchool = (function () {
         var n = src[k];
         if (!n || n.monzo == null) continue;
         var b1 = n.beat + n.beats;
+        // (a tie joins only where the pitch holds, in beats, on no clock: not KOLOB.Score.sungNotes)
         while (src[k].tie && k + 1 < src.length && src[k + 1] && Math.abs(monzoRatio(src[k + 1].monzo) - monzoRatio(n.monzo)) < 1e-9) { k++; b1 = src[k].beat + src[k].beats; }
         out.push({ beat: n.beat, beats: b1 - n.beat, ratio: monzoRatio(n.monzo), deg: n.deg != null ? n.deg : Math.round(cents(monzoRatio(n.monzo)) / 171.4), syl: n.syl, stress: n.stress != null ? n.stress : 1 });
       }

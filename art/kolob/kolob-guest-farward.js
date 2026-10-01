@@ -120,8 +120,8 @@ window.KOLOB.GuestFarWard = (function () {
     var w = ODDS.weight, k = info.sunday && w[info.sunday] != null ? info.sunday : info.kind;
     return Math.min(ODDS.cap, ODDS.base * (w[k] != null ? w[k] : 1));
   }
-  function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
-  function r4(x) { return Math.round(x * 1e4) / 1e4; }
+  function clamp(x, a, b) { return window.KOLOB.Num.clamp(x, a, b); }
+  function r4(x) { return window.KOLOB.Num.r4(x); }
   function pickW(R, pool) {
     var tot = 0, i; for (i = 0; i < pool.length; i++) tot += pool[i][1];
     var x = R.rnd(0, tot);
@@ -192,14 +192,8 @@ window.KOLOB.GuestFarWard = (function () {
   // ==========================================================================
   // THE MATERIAL — the far ward's setting of our hymn, and its pews (pure)
   // ==========================================================================
-  function ratio(m) { return Math.pow(2, m[0]) * Math.pow(3, m[1]) * Math.pow(5, m[2]) * Math.pow(7, m[3] || 0); }
-  function lineLen(line, next) {
-    if (next && next.startBeat != null && line.startBeat != null && next.startBeat > line.startBeat) return next.startBeat - line.startBeat;
-    var Sc = window.KOLOB.Score;
-    if (Sc && Sc.lineLength) return Sc.lineLength(line);
-    var end = 0; for (var p in line.notes) (line.notes[p] || []).forEach(function (n) { end = Math.max(end, n.beat + n.beats); });
-    return end;
-  }
+  function ratio(m) { return window.KOLOB.Pitch.ratio(m); }
+  function lineLen(line, next) { return window.KOLOB.Score.spanBeats(line, next); }
   // the lines a verse sings, in order: the verse, the fuge sung again as the
   // books repeat it, the refrain (as the ward sings them: kolob-cast.js)
   function lineOrder(h) {
@@ -267,24 +261,11 @@ window.KOLOB.GuestFarWard = (function () {
   // drift is measured from, and over how long it runs
   // ==========================================================================
   var VOWELS = [["ah", 3], ["oh", 2], ["ee", 2], ["oo", 1.5], ["eh", 1.5]];
-  function clockOf(line, beatS, holdMul) {
-    var holds = [];
-    (line.fermataBeats || []).forEach(function (fb) {
-      var len = 1;
-      Object.keys(line.notes).forEach(function (p) { (line.notes[p] || []).forEach(function (n) { if (Math.abs(n.beat - fb) < 1e-6) len = Math.max(len, n.beats); }); });
-      holds.push({ at: fb + len, extra: (holdMul - 1) * len * beatS });
-    });
-    return function (b) { var t = b * beatS; holds.forEach(function (x) { if (b >= x.at - 1e-6) t += x.extra; }); return t; };
-  }
+  // (the Score's clock, strict, the fermatas held as their chorister holds
+  // them; the Score's tied notes and breath on it: kolob-score.js)
+  function clockOf(line, beatS, holdMul) { return window.KOLOB.Score.lineClock(line, beatS, { hold: holdMul }); }
   function partEvents(line, len, part, t0, beatS, holdMul) {
-    var ev = [], clk = clockOf(line, beatS, holdMul), ns = line.notes[part] || [];
-    for (var k = 0; k < ns.length; k++) {
-      var n = ns[k], b0 = n.beat, b1 = n.beat + n.beats;
-      while (ns[k].tie && k + 1 < ns.length) { k++; b1 = ns[k].beat + ns[k].beats; }
-      var st = t0 + clk(b0), dur = clk(b1) - clk(b0);
-      if (k === ns.length - 1 && line.breathAfter !== false) dur -= Math.min(0.3 * beatS, 0.25 * dur);   // the breath
-      ev.push({ t: st, dur: dur, n: n });
-    }
+    var clk = clockOf(line, beatS, holdMul), ev = window.KOLOB.Score.sungNotes(line.notes[part] || [], clk, beatS, line.breathAfter, t0);
     return { ev: ev, end: t0 + clk(len) + ((line.fermataBeats || []).length ? 0.3 * beatS : 0) };
   }
   function centsAt(pr, tune, t) { return pr.cents + pr.drift * clamp(tune && tune.span ? (t - tune.origin) / tune.span : 0, 0, 1); }

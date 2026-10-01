@@ -150,7 +150,7 @@ window.KOLOB.GuestGulls = (function () {
   // THE HEAD — the first line of the hymn's tune (with the next, if the first
   // is short), up to ten notes, in its own rhythm
   // ==========================================================================
-  function ratio(m) { return Math.pow(2, m[0]) * Math.pow(3, m[1]) * Math.pow(5, m[2]) * Math.pow(7, m[3] || 0); }
+  function ratio(m) { return window.KOLOB.Pitch.ratio(m); }
   // (no hymn to be had — a lab's: OLD HUNDRED's first line, do do ti la sol do re mi)
   var OLD_HUNDRED = [[0, 2, [0, 0, 0, 0]], [0, 1, [0, 0, 0, 0]], [-1, 1, [-4, 1, 1, 0]], [-2, 1, [-1, -1, 1, 0]], [-3, 1, [-2, 1, 0, 0]],
                      [0, 1, [0, 0, 0, 0]], [1, 1, [-3, 2, 0, 0]], [2, 2, [-2, 0, 1, 0]]];

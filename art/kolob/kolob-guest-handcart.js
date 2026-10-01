@@ -194,7 +194,7 @@ window.KOLOB.GuestHandcart = (function () {
       "ah ee ah ah ah eh ah eh", "oo ee ah eh eh eh ah eh", "oh ah ee eh ee oh ah eh", "ah ee eh ah ee eh"],
   ].map(function (v) { return v.map(function (l) { return l.split(" "); }); });
 
-  function ratio(m) { return Math.pow(2, m[0]) * Math.pow(3, m[1]) * Math.pow(5, m[2]) * Math.pow(7, m[3] || 0); }
+  function ratio(m) { return window.KOLOB.Pitch.ratio(m); }
   function tuneOf(material) {
     var h = material.tune || (window.KOLOB.Tunes && window.KOLOB.Tunes.byId ? window.KOLOB.Tunes.byId("earth:all-is-well") : null);
     if (!h || !h.lines) throw new Error("KOLOB.GuestHandcart: ALL IS WELL is not to be had (load kolob-tunes.js)");

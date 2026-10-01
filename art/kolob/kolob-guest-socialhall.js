@@ -242,34 +242,18 @@ window.KOLOB.GuestSocialHall = (function () {
   // PITCH — the hymn's own lattice. A degree is the composer's (seven
   // letters, 0 the final, negative below); its monzo is exact, relative to
   // the hymn's key. The fiddle's added notes take the spelling the hymn
-  // itself uses most for that letter (else the mode's parent scale).
+  // itself uses most for that letter (else the mode's parent scale). The
+  // parent scales and the arithmetic are kolob-pitch.js's.
   // ==========================================================================
-  var PARENT_FR = {
-    ionian:     ["1/1", "9/8", "5/4", "4/3", "3/2", "5/3", "15/8"],
-    mixolydian: ["1/1", "9/8", "5/4", "4/3", "3/2", "5/3", "16/9"],
-    dorian:     ["1/1", "9/8", "6/5", "4/3", "3/2", "5/3", "16/9"],
-    aeolian:    ["1/1", "9/8", "6/5", "4/3", "3/2", "8/5", "16/9"],
-  };
-  PARENT_FR.penta = PARENT_FR.hexa = PARENT_FR.ionian;
-  var CLASSES = {
-    ionian: [0, 1, 2, 3, 4, 5, 6], mixolydian: [0, 1, 2, 3, 4, 5, 6], dorian: [0, 1, 2, 3, 4, 5, 6],
-    aeolian: [0, 1, 2, 3, 4, 5, 6], penta: [0, 1, 2, 4, 5], hexa: [0, 1, 2, 3, 4, 5],
-  };
-  var PRIMES = [2, 3, 5, 7];
-  function mod(a, n) { return ((a % n) + n) % n; }
-  function fromFraction(s) {
-    var p = String(s).split("/"), m = [0, 0, 0, 0];
-    [+p[0], -(+(p[1] || 1))].forEach(function (x, side) {
-      var v = Math.abs(x), sg = side ? -1 : 1;
-      PRIMES.forEach(function (q, i) { while (v % q === 0 && v > 1) { v /= q; m[i] += sg; } });
-    });
-    return m;
-  }
-  function mRatio(m) { m = m || [0, 0, 0, 0]; return Math.pow(2, m[0] || 0) * Math.pow(3, m[1] || 0) * Math.pow(5, m[2] || 0) * Math.pow(7, m[3] || 0); }
-  function mAdd(a, b) { return [0, 1, 2, 3].map(function (i) { return (a[i] || 0) + (b[i] || 0); }); }
+  var PARENT_FR = window.KOLOB.Pitch.PARENT_FRACTIONS;
+  var CLASSES = window.KOLOB.Pitch.CLASSES;
+  function mod(a, n) { return window.KOLOB.Num.mod(a, n); }
+  function fromFraction(s) { return window.KOLOB.Pitch.fromFraction(s); }
+  function mRatio(m) { return window.KOLOB.Pitch.ratio(m || [0, 0, 0, 0]); }   // (no monzo: the unison)
+  function mAdd(a, b) { return window.KOLOB.Pitch.mul(a, b); }
   function mOct(m, k) { return mAdd(m, [k, 0, 0, 0]); }
-  function modeOf(h) { return PARENT_FR[h && h.mode] ? h.mode : "ionian"; }
-  function num(x, d) { x = +x; return isFinite(x) && x > 0 ? x : d; }
+  function modeOf(h) { return window.KOLOB.Pitch.modeName(h && h.mode); }
+  function num(x, d) { return window.KOLOB.Num.positive(x, d); }
 
   // ==========================================================================
   // READING THE HYMN (pure) — the melody part's notes line by line (ties
@@ -280,19 +264,14 @@ window.KOLOB.GuestSocialHall = (function () {
   // chord or the chord of its fifth, from the note.
   // ==========================================================================
   var PARTS = ["S", "A", "T", "B"];
-  function lineLen(ln) {
-    var K = window.KOLOB;
-    if (K.Score && K.Score.lineLength) return K.Score.lineLength(ln);
-    var end = 0;
-    PARTS.forEach(function (p) { ((ln.notes && ln.notes[p]) || []).forEach(function (n) { end = Math.max(end, n.beat + n.beats); }); });
-    return end;
-  }
+  function lineLen(ln) { return window.KOLOB.Score.lineLength(ln); }
   function readLine(ln, P) {
     var src = (ln.notes && ln.notes[P]) || [], mel = [];
     for (var k = 0; k < src.length; k++) {
       var n = src[k];
       if (!n || n.monzo == null) continue;
       var b1 = n.beat + n.beats;
+      // (a tie joins only where the pitch holds, in beats, on no clock: not KOLOB.Score.sungNotes)
       while (src[k].tie && k + 1 < src.length && src[k + 1] && src[k + 1].monzo && mRatio(src[k + 1].monzo) === mRatio(n.monzo)) { k++; b1 = src[k].beat + src[k].beats; }
       mel.push({ beat: n.beat, beats: b1 - n.beat, d: n.deg, m: n.monzo.slice(0, 4), stress: n.stress != null ? n.stress : 1 });
     }

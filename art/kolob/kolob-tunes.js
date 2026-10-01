@@ -83,7 +83,11 @@ KOLOB.Tunes = (function () {
   "use strict";
 
   // ---- the lattice (5-limit, the collections of kolob-pitch.js, as monzos) --
-  // [a,b,c,d] = 2^a · 3^b · 5^c · 7^d
+  // [a,b,c,d] = 2^a · 3^b · 5^c · 7^d. Its arithmetic is its own, not
+  // KOLOB.Pitch's: the Earth tunes stand alone (the earth-tunes lab loads
+  // this file without kolob-pitch.js, and every tune is built as it loads),
+  // and its cents take Math.log over LN2, which can differ from the
+  // Pitch's Math.log2 in the last bit
   var M = {
     "1": [0, 0, 0, 0], "9/8": [-3, 2, 0, 0], "5/4": [-2, 0, 1, 0], "6/5": [1, 1, -1, 0],
     "4/3": [2, -1, 0, 0], "3/2": [-1, 1, 0, 0], "5/3": [0, -1, 1, 0], "8/5": [3, 0, -1, 0],

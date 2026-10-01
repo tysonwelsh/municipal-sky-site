@@ -185,7 +185,7 @@ window.KOLOB = window.KOLOB || {};
   // fifth below and a sixth above the keynote's own. → the note turned to
   // (null when it is already there)
   var DRONE_WINDOW = [Math.pow(2, -7 / 12), Math.pow(2, 9 / 12)];
-  function ratioOf(m) { return Math.pow(2, m[0]) * Math.pow(3, m[1]) * Math.pow(5, m[2]) * Math.pow(7, m[3] || 0); }
+  function ratioOf(m) { return KOLOB.Pitch.ratio(m); }
   function droneTurn(t, toMonzo, glideS, role, k) {
     if (!S.ctx) return null;
     var from = droneMulAt(t), r = ratioOf(toMonzo), best = null;

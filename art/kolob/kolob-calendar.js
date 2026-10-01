@@ -297,15 +297,10 @@ window.KOLOB.Calendar = (function () {
   if (Object.freeze) ORDER.forEach(function (k) { Object.freeze(SUNDAYS[k]); });
 
   function copy(o) { return JSON.parse(JSON.stringify(o)); }
-  function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
-  function r3(x) { return Math.round(x * 1000) / 1000; }
-  function pickWith(u, pool) {
-    var total = 0, i;
-    for (i = 0; i < pool.length; i++) total += pool[i][1];
-    var r = u * total;
-    for (i = 0; i < pool.length; i++) { r -= pool[i][1]; if (r <= 0) return pool[i][0]; }
-    return pool.length ? pool[pool.length - 1][0] : null;
-  }
+  // (borrowed: KOLOB.Num, from kolob-pitch.js)
+  function clamp(x, a, b) { return window.KOLOB.Num.clamp(x, a, b); }
+  function r3(x) { return window.KOLOB.Num.r3(x); }
+  function pickWith(u, pool) { return window.KOLOB.Num.pickWith(u, pool); }
 
   // draw(u): the Sunday, from a die the plan has already thrown (the one
   // that picked the kind before: the plan's every later die lands where it
@@ -540,8 +535,10 @@ window.KOLOB.Calendar = (function () {
   var TOLERANCE_C = 25;
   var STILL_ANY_NOTE = false;   // true lets a still rite (the sacrament seated plain, no guest in it) stand on any note of the tune; off because a drone off the chord there clashed a second in 61 % of the sacrament's harmonies, against the keynote's 37 % (14 seeds)
   var MINOR = { dorian: true, aeolian: true };
+  // (KOLOB.Score.monzoCents's sum, but a key without its seventh reads as
+  // one with none, where the Score's would be NaN: kept, not borrowed)
   function cents(m) { return 1200 * (m[0] + m[1] * Math.log2(3) + m[2] * Math.log2(5) + (m[3] || 0) * Math.log2(7)); }
-  function mz(a, b) { return [a[0] + b[0], a[1] + b[1], a[2] + b[2], (a[3] || 0) + (b[3] || 0)]; }
+  function mz(a, b) { return window.KOLOB.Pitch.mul(a, b); }
   function cls(m) { var c = cents(m), k = Math.floor(c / 1200 + 1e-9); return [m[0] - k, m[1], m[2], m[3] || 0]; }
   function pcDist(a, b) { var d = Math.abs(((cents(a) - cents(b)) % 1200 + 1200) % 1200); return Math.min(d, 1200 - d); }
   // (the day's scale at home, exact: a note in it, octave aside)

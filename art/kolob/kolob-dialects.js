@@ -70,8 +70,9 @@ window.KOLOB.Dialects = (function () {
   function cls(d) { return ((d % 7) + 7) % 7; }
   function semi(mode, d, alt) { return 12 * Math.floor(d / 7) + SEMIS[mode][cls(d)] + (alt || 0); }
   function u01(R) { return R.next ? R.next() : R.rnd(0, 1); }
-  function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
-  function has(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
+  // (borrowed: KOLOB.Num from kolob-pitch.js, KOLOB.Score from kolob-score.js)
+  function clamp(x, a, b) { return window.KOLOB.Num.clamp(x, a, b); }
+  function has(o, k) { return window.KOLOB.Score.has(o, k); }
   var EPS = 1e-6;
   var ROMAN_UP = ["I", "II", "III", "IV", "V", "VI", "VII"];
 

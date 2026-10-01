@@ -302,8 +302,8 @@ window.KOLOB.GuestChanges = (function () {
   var SCALE = [[0, 0, 0, 0], [-3, 2, 0, 0], [-2, 0, 1, 0], [2, -1, 0, 0], [-1, 1, 0, 0], [0, -1, 1, 0]];   // do re mi fa sol la
   var TENOR = [[[0, 0, 0, 0], 3], [[-1, 1, 0, 0], 2], [[2, -1, 0, 0], 2], [[-2, 0, 1, 0], 0.6]];           // 1, 3/2, 4/3, 5/4
   var SOLFA = ["do", "re", "mi", "fa", "sol", "la"];
-  function mz(a, b) { return [a[0] + b[0], a[1] + b[1], a[2] + b[2], (a[3] || 0) + (b[3] || 0)]; }
-  function ratio(m) { return Math.pow(2, m[0]) * Math.pow(3, m[1]) * Math.pow(5, m[2]) * Math.pow(7, m[3] || 0); }
+  function mz(a, b) { return window.KOLOB.Pitch.mul(a, b); }
+  function ratio(m) { return window.KOLOB.Pitch.ratio(m); }
   function ringOf(sh, N, keynoteHz) {
     var tot = 0; TENOR.forEach(function (x) { tot += x[1]; });
     var u = sh.keyU * tot, tk = TENOR[0][0];

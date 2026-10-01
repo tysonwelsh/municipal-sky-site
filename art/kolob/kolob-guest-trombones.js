@@ -267,8 +267,8 @@ window.KOLOB.GuestTrombones = (function () {
     if (!P || !P.COLLECTIONS) throw new Error("KOLOB.GuestTrombones: load kolob-pitch.js first");
     return P.COLLECTIONS[mode] || P.COLLECTIONS.ionian;
   }
-  function modeName(mode) { var P = window.KOLOB.Pitch; return P && P.COLLECTIONS[mode] ? mode : "ionian"; }
-  function mod(a, n) { return ((a % n) + n) % n; }
+  function modeName(mode) { return window.KOLOB.Pitch.modeName(mode); }
+  function mod(a, n) { return window.KOLOB.Num.mod(a, n); }
   function ratioOf(mode, idx) {
     var c = col(mode), n = c.ratios.length;
     return c.ratios[mod(idx, n)] * Math.pow(2, Math.floor(idx / n));
@@ -278,6 +278,8 @@ window.KOLOB.GuestTrombones = (function () {
     if (n === 7) return d7;
     return c.map[mod(d7, 7)] + Math.floor(d7 / 7) * n;
   }
+  // (Math.log over LN2, where KOLOB.Pitch.centsOf takes Math.log2: the two
+  // can differ in the last bit, so the room's cents stay its own)
   function cents(r) { return 1200 * Math.log(r) / Math.LN2; }
   function fold(r) { while (r >= 2) r /= 2; while (r < 1) r *= 2; return r; }
 
@@ -596,7 +598,7 @@ window.KOLOB.GuestTrombones = (function () {
     B: { inst: "bassTrombone",  comf: [55, 262],  ext: [41, 330] },
   };
 
-  function num(x, d) { x = +x; return isFinite(x) && x > 0 ? x : d; }
+  function num(x, d) { return window.KOLOB.Num.positive(x, d); }
   // (a note is a degree, {deg, beats | durBeats | dur}, or a [deg, beats]
   // row — the SAMPLES' own shape, which must never be read as a degree)
   function degOf(x) { return typeof x === "number" ? x : Array.isArray(x) ? (x[0] != null ? +x[0] : null) : (x && x.deg != null ? +x.deg : null); }
@@ -797,7 +799,7 @@ window.KOLOB.GuestTrombones = (function () {
   }
 
   // a SCORE Hymn → lines of parts, with the Score's own rhythm and monzos
-  function monzoRatio(m) { m = m || [0, 0, 0, 0]; return Math.pow(2, m[0] || 0) * Math.pow(3, m[1] || 0) * Math.pow(5, m[2] || 0) * Math.pow(7, m[3] || 0); }
+  function monzoRatio(m) { return window.KOLOB.Pitch.ratio(m || [0, 0, 0, 0]); }   // (no monzo: the unison)
   function fromHymn(h, K) {
     var key = monzoRatio(h.keyMonzo);
     return (h.lines || []).map(function (ln) {

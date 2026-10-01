@@ -229,13 +229,9 @@ window.KOLOB = window.KOLOB || {};
     });
     return { house: house, rows: rows };
   }
-  function pickWith(u, pool) {
-    var total = 0, i;
-    for (i = 0; i < pool.length; i++) total += pool[i][1];
-    var r = u * total;
-    for (i = 0; i < pool.length; i++) { r -= pool[i][1]; if (r <= 0) return pool[i][0]; }
-    return pool[pool.length - 1][0];
-  }
+  // (KOLOB.Num's, from kolob-pitch.js: every pool here is poolOf's, which is
+  // never empty, so its guard for an empty pool changes nothing)
+  function pickWith(u, pool) { return KOLOB.Num.pickWith(u, pool); }
 
   // ==========================================================================
   // THE DAY'S FORMS (PLAN-COMPOSITION §14 item 2, §15 item 4) — three
@@ -369,32 +365,16 @@ window.KOLOB = window.KOLOB || {};
   // THE TIMELINE OF A HYMN (pure) — a line laid out in seconds, as the lab
   // lays it (hymn-lab.js partEvents): a fermata holds its note and moves
   // everything after it; a tied note is one note; the last note of a line
-  // gives up a breath (Line.breathAfter).
+  // gives up a breath (Line.breathAfter). The clock, the span and the notes
+  // are kolob-score.js's (lineClock, spanBeats, sungNotes).
   // ==========================================================================
-  function clockOf(line, beatS) {
-    var holds = [];
-    (line.fermataBeats || []).forEach(function (fb) {
-      var len = 1;
-      Object.keys(line.notes).forEach(function (p) { line.notes[p].forEach(function (n) { if (Math.abs(n.beat - fb) < 1e-6) len = Math.max(len, n.beats); }); });
-      holds.push({ at: fb + len, extra: 0.7 * len * beatS });
-    });
-    return function (b) { var t = b * beatS; holds.forEach(function (x) { if (b >= x.at - 1e-6) t += x.extra; }); return t; };
-  }
-  function lineBeats(line, next) {
-    if (next && next.startBeat != null && line.startBeat != null && next.startBeat > line.startBeat) return next.startBeat - line.startBeat;
-    return KOLOB.Score && KOLOB.Score.lineLength ? KOLOB.Score.lineLength(line) : 8;
-  }
+  function clockOf(line, beatS) { return KOLOB.Score.lineClock(line, beatS); }
+  function lineBeats(line, next) { return KOLOB.Score.spanBeats(line, next); }
   // one part of one line: [{at, dur, n}] in seconds from the line's start,
   // and the line's length in seconds (to the next line's start)
   function partLine(line, part, beatS, next) {
-    var clk = clockOf(line, beatS), ns = line.notes[part] || [], ev = [];
-    for (var k = 0; k < ns.length; k++) {
-      var n = ns[k], b0 = n.beat, b1 = n.beat + n.beats;
-      while (ns[k].tie && k + 1 < ns.length) { k++; b1 = ns[k].beat + ns[k].beats; }
-      var at = clk(b0), dur = clk(b1) - clk(b0);
-      if (k === ns.length - 1 && line.breathAfter !== false) dur -= Math.min(0.3 * beatS, 0.25 * dur);
-      ev.push({ at: at, dur: dur, n: n });
-    }
+    var clk = clockOf(line, beatS);
+    var ev = KOLOB.Score.sungNotes(line.notes[part] || [], clk, beatS, line.breathAfter).map(function (e) { return { at: e.t, dur: e.dur, n: e.n }; });
     var len = clk(lineBeats(line, next)) + ((line.fermataBeats || []).length ? 0.3 * beatS : 0);
     return { ev: ev, len: len };
   }
@@ -408,7 +388,7 @@ window.KOLOB = window.KOLOB || {};
     }
     return { lines: out, len: t };
   }
-  function verseLines(h) { return h.lines.concat(h.refrain || []); }
+  function verseLines(h) { return KOLOB.Score.verseLines(h); }
   function verseSeconds(h, beatS) { return timeline(h, verseLines(h), beatS).len; }
 
   // ==========================================================================

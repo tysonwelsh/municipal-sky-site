@@ -139,13 +139,32 @@ stored as a *monzo*: the exponents of 2, 3, 5 and 7, `[a, b, c, d]` =
 
 **Helpers** (`KOLOB.Pitch`): `ratio(m) → Number`, `mul(m1, m2)`, `div(m1,
 m2)`, `fromFraction("10/9")` (throws past the 7-limit), `cents(m)`,
-`octaveReduce(m)`, `degMonzo(mode, i)` (a collection-degree index → its exact
-monzo), `MODE_MONZOS`, `commaOf(m, spelled) → {syntonic: -1|0|1, septimal:
-0|1}` (Johnston's marks: `+`/`−` the syntonic comma 81/80, `7` lowers by
-36/35). The 7-limit: `SEPTIMAL_SEVENTH` 7/4, `SEPTIMAL_COMMA` 64/63,
+`centsOf(r)` (a ratio's cents), `octaveReduce(m)`, `degMonzo(mode, i)` (a
+collection-degree index → its exact monzo), `MODE_MONZOS`, `commaOf(m,
+spelled) → {syntonic: -1|0|1, septimal: 0|1}` (Johnston's marks: `+`/`−` the
+syntonic comma 81/80, `7` lowers by 36/35). The parent scales: each mode's
+seven-note parent as `PARENT_FRACTIONS` and `PARENT_RATIOS` (the gapped
+scales' parent is the ionian), `CLASSES` (the parent's degrees each mode's
+collection holds), `modeName(m)` (one of the six, else `"ionian"`). The
+7-limit: `SEPTIMAL_SEVENTH` 7/4, `SEPTIMAL_COMMA` 64/63,
 `JOHNSTON_SEVEN` 36/35, `BARBERSHOP` (1/1 5/4 3/2 7/4), `harmonicSeventh(root)`,
 `limitOf`, `septimalOf`, `proportion(monzos)` ("4:5:6:7"), `oddParts`. The
 float side: `COLLECTIONS`, `tuning(mode, f0)`, `projDeg`, `degFreq`, `colN`.
+
+**One home.** These are the house's only copies. A room borrows them (a
+one-line wrapper, `function ratio(m) { return window.KOLOB.Pitch.ratio(m); }`)
+rather than typing its own, and so with the small arithmetic on `KOLOB.Num`,
+which `kolob-pitch.js` raises because it stands first among the house's rooms
+on every list (the page's, the composer's desk, every lab's): `clamp`, `mod`
+(never negative), `r3`, `r4`, `positive(x, d)` (a positive number, else d),
+`pickWith(u, pool)` (a weighted pick by a die already thrown; it throws
+none), and with the Score's helps (§5). `ratio` multiplies 2^a · 3^b · 5^c ·
+7^d in that order, each exponent `|| 0`; a copy whose float result could
+differ in the last bit (cents by `Math.log` over `LN2`, the calendar's sum of
+logs that reads a key without its seventh) or that must load alone (the
+Earth tunes' lattice, built as `kolob-tunes.js` loads in its lab; the ward's
+voice in `voices-lab`) stays where it is, with a comment saying why. The
+page (`kolob-viz.js`) keeps its own copies.
 
 **Frequency.** `Hz = keynoteHz × ratio(keyMonzo) × ratio(monzo)`.
 - The **keynote** is `F0 × ROOT_MULT` (4). `F0` is drawn once a meeting on
@@ -446,7 +465,16 @@ book per tuning (`S.Harmony`, THE CHORD DESK in `kolob-meeting.js`: `at`,
 standing at its own onset, never the last chord voiced; a composer's
 `Line.chords` are written into it as they sound. **Reader's helps**:
 `lineLength`, `chordAt`, `timeline(h, {beatS})`, `notesAt(h, t)`,
-`syllableMap(h, verse)`, `monzoCents`, `toJSON`, `fromJSON(text, kind)`.
+`syllableMap(h, verse)`, `monzoCents`, `toJSON`, `fromJSON(text, kind)`;
+and, the one home of what the performers each used to type (§2, "One
+home"): `spanBeats(line, next)` (to the next line's `startBeat` where it
+stands later, else the line's length), `verseLines(h)` (the verse's lines,
+then the refrain's), `lineClock(line, beatS, {rit, hold})` (a line's beats
+in seconds: a fermata held `hold` times its note, 1.7 unless named, and
+everything after it moved; `rit` the chorister's broadening — the clock the
+ward, the organist, the far ward and the hymnal's timeline sing by),
+`sungNotes(notes, clk, beatS, breathAfter, t0)` (a part on that clock, a
+tied note one note, the line's last giving up its breath), `has(o, k)`.
 
 Authority: `kolob-score.js`; `kolob-composer.js`, `kolob-dialects.js`,
 `kolob-tunes.js`, `kolob-cast.js` for the extras.

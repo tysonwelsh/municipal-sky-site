@@ -248,29 +248,14 @@ window.KOLOB.Testimony = (function () {
   // elsewhere the middle of its glide) moved to the nearest tone of the
   // day's just scale in the testimony's key, then carried by octaves into
   // the reed's register; repeated tones joined; the speech's own rhythm.
+  // The parent scales and the arithmetic are kolob-pitch.js's.
   // ==========================================================================
-  var PARENT_FR = {
-    ionian:     ["1/1", "9/8", "5/4", "4/3", "3/2", "5/3", "15/8"],
-    mixolydian: ["1/1", "9/8", "5/4", "4/3", "3/2", "5/3", "16/9"],
-    dorian:     ["1/1", "9/8", "6/5", "4/3", "3/2", "5/3", "16/9"],
-    aeolian:    ["1/1", "9/8", "6/5", "4/3", "3/2", "8/5", "16/9"],
-  };
-  PARENT_FR.penta = PARENT_FR.hexa = PARENT_FR.ionian;
-  var CLASSES = {
-    ionian: [0, 1, 2, 3, 4, 5, 6], mixolydian: [0, 1, 2, 3, 4, 5, 6], dorian: [0, 1, 2, 3, 4, 5, 6],
-    aeolian: [0, 1, 2, 3, 4, 5, 6], penta: [0, 1, 2, 4, 5], hexa: [0, 1, 2, 3, 4, 5],
-  };
-  function mod(a, n) { return ((a % n) + n) % n; }
-  function fromFraction(s) {
-    var p = String(s).split("/"), m = [0, 0, 0, 0];
-    [+p[0], -(+(p[1] || 1))].forEach(function (x, side) {
-      var v = Math.abs(x), sg = side ? -1 : 1;
-      [2, 3, 5, 7].forEach(function (q, i) { while (v % q === 0 && v > 1) { v /= q; m[i] += sg; } });
-    });
-    return m;
-  }
-  function mRatio(m) { m = m || [0, 0, 0, 0]; return Math.pow(2, m[0] || 0) * Math.pow(3, m[1] || 0) * Math.pow(5, m[2] || 0) * Math.pow(7, m[3] || 0); }
-  function modeName(m) { return PARENT_FR[m] ? m : "ionian"; }
+  var PARENT_FR = window.KOLOB.Pitch.PARENT_FRACTIONS;
+  var CLASSES = window.KOLOB.Pitch.CLASSES;
+  function mod(a, n) { return window.KOLOB.Num.mod(a, n); }
+  function fromFraction(s) { return window.KOLOB.Pitch.fromFraction(s); }
+  function mRatio(m) { return window.KOLOB.Pitch.ratio(m || [0, 0, 0, 0]); }   // (no monzo: the unison)
+  function modeName(m) { return window.KOLOB.Pitch.modeName(m); }
   // the scale the reed plays: the mode's just tones in the key — with the
   // drone's own pitch for its letter, where the drone stands a comma or a
   // semitone off the mode's (the reckoning's cantus can: a note of a
@@ -372,7 +357,7 @@ window.KOLOB.Testimony = (function () {
     { id: null, nameDs: null, nameEn: null, archetype: "sister", archetypeEn: "a sister of the ward", voice: { part: "A", age: "mid", confidence: 0.7, brightness: 0.45, breath: 0.35 }, habit: { rate: 3.2, range: 5, contour: "arch", pauses: 0.4 } },
     { id: null, nameDs: null, nameEn: null, archetype: "father", archetypeEn: "a father of the ward", voice: { part: "B", age: "mid", confidence: 0.65, brightness: 0.4, breath: 0.35 }, habit: { rate: 3.3, range: 5, contour: "rising", pauses: 0.45 } },
   ];
-  function num(x, d) { x = +x; return isFinite(x) && x > 0 ? x : d; }
+  function num(x, d) { return window.KOLOB.Num.positive(x, d); }
   // a speaking voice: the singer's own, without the vibrato (an old voice
   // keeps its tremor), a little breathier, on time (speech keeps its own)
   function speakingVoice(v) {
