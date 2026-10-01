@@ -81,7 +81,6 @@ foreach (jd_live_axes($taxonomy) as $id => $axis) {
 // raw_response and svg as MEDIUMTEXT, and neither belongs in a report.
 try {
     $db = jd_db();
-    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     // the turn table (2026-09-10) needs the turn's own facts as well
     $subs = $db->query(
@@ -110,18 +109,13 @@ try {
     // too — a dashboard that 500s on a lagging migration would be the only
     // thing in the feature that breaks. No ranks simply means the legacy
     // comparisons carry `firsts` on their own.
-    try {
-        $ranks = $db->query(
+    $ranks = jd_query_or_empty_if_missing(
+        fn() => $db->query(
             'SELECT submission_id, generation_id, rank_pos FROM jd_ranks'
-        )->fetchAll(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {
-        if (!jd_missing_table($e)) {
-            throw $e;
-        }
-        error_log('jd-analytics: jd_ranks is missing — firsts come from '
-            . 'jd_comparisons alone (run setup-jd-tables.php)');
-        $ranks = [];
-    }
+        )->fetchAll(PDO::FETCH_ASSOC),
+        'jd-analytics: jd_ranks is missing — firsts come from '
+            . 'jd_comparisons alone (run setup-jd-tables.php)'
+    );
 } catch (PDOException $e) {
     error_log('jd-analytics: ' . $e->getMessage());
     jd_fail(500, 'server_error', 'The numbers could not be read.');
@@ -153,7 +147,7 @@ foreach ($gens as $g) {
     $subId   = (string) $g['submission_id'];
     $modelId = (string) $g['model_id'];
     $status  = (string) $g['status'];
-    $isOk    = ($status === 'ok');
+    $isOk    = ($status === JD_GEN_OK);
 
     $genById[$genId] = ['submission_id' => $subId, 'model_id' => $modelId, 'status' => $status];
 
@@ -169,12 +163,10 @@ foreach ($gens as $g) {
     // jd-generate.php. Null/empty means the slot never reached a provider (or
     // was a mock call) and jd_generation_cost answers null for both that and
     // an unpriced wire string — which is the whole point: neither is $0.
-    $raw   = $g['usage_tokens'] ?? null;
-    $usage = ($raw !== null && $raw !== '') ? json_decode((string) $raw, true) : null;
-    $cost  = jd_generation_cost(
+    $cost  = jd_price_generation_row(
+        $g['usage_tokens'] ?? null,
         (string) ($g['provider'] ?? ''),
-        (string) ($g['model_version'] ?? ''),
-        is_array($usage) ? $usage : null
+        (string) ($g['model_version'] ?? '')
     );
     if ($cost['cost_usd'] === null) {
         continue;
@@ -265,7 +257,7 @@ foreach ($rates as $r) {
     $value   = (float) $r['value'];
     $kind    = (string) $r['kind'];
 
-    if ($kind === 'grade') {
+    if ($kind === JD_KIND_GRADE) {
         if (!isset($gradeByModel[$modelId])) {
             $gradeByModel[$modelId] = ['sum' => 0.0, 'n' => 0];
         }
@@ -283,13 +275,13 @@ foreach ($rates as $r) {
         // when the curator re-graded it, else the visitor's own
         $tsub = (string) $gen['submission_id'];
         $prev = $turnGrade[$tsub][$modelId] ?? null;
-        if ($prev === null || ($r['client'] ?? '') === 'bench') {
+        if ($prev === null || ($r['client'] ?? '') === JD_CLIENT_BENCH) {
             $turnGrade[$tsub][$modelId] = $value;
         }
         continue;
     }
 
-    if ($kind === 'axis') {
+    if ($kind === JD_KIND_AXIS) {
         $axisId = $r['axis_id'] === null ? '' : (string) $r['axis_id'];
         if (!isset($axisDefs[$axisId])) {
             continue;                  // defunct or unknown axis: history, not a chart
@@ -349,7 +341,7 @@ $judgedByModel = [];
 foreach ($winnerBySub as $subId => $winnerGenId) {
     $present = [];
     foreach ($gensBySub[$subId] ?? [] as $g) {
-        if ($g['status'] === 'ok') {
+        if ($g['status'] === JD_GEN_OK) {
             $present[$g['model_id']] = true;   // once per submission, never per slot
         }
     }
@@ -496,16 +488,21 @@ foreach ($spendByDate as $date => $day) {
 
 // --- the turn table (owner, 2026-09-10) ------------------------------------
 // One row per four-model turn ON DISPLAY, newest first: the date, the prompt,
-// and each model's overall grade. ON DISPLAY is jd-gen-svg.php's own rule —
-// status 'rated', not suppressed by the visitor, not hidden by the curator —
-// so nothing appears here that the drawer does not already show: a prompt
-// the visitor kept out stays out. Grades are current-rubric rows only (the
-// era gate above), the bench's over the visitor's. A model that failed the
+// and each model's overall grade. ON DISPLAY here is status 'rated', not
+// suppressed by the visitor, not hidden by the curator — the row tests
+// data.php applies before a turn may join the drawer — so a prompt the
+// visitor kept out stays out. (This was described as jd-gen-svg.php's rule;
+// that endpoint is looser, serving a drawing whenever its turn is rated —
+// suppressed or hidden alike — or it is curated. And data.php further
+// requires every drawing graded on every live axis and ranked, and skips a
+// rerun of a curated prompt, so a turn listed here is not always in the
+// drawer.) Grades are current-rubric rows only (the era gate above), the
+// bench's over the visitor's. A model that failed the
 // turn has no cell. Capped at the newest 200 turns; the folder is a reading,
 // not an export.
 $turnRows = [];
 foreach ($subById as $sid => $s) {
-    if (($s['status'] ?? '') !== 'rated' || (int) ($s['suppressed'] ?? 0) === 1
+    if (($s['status'] ?? '') !== JD_SUB_RATED || (int) ($s['suppressed'] ?? 0) === 1
         || ($s['retire_requested_at'] ?? null) !== null) {
         continue;
     }

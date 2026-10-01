@@ -124,7 +124,6 @@ if ($dryRun) {
 
 // --- live ------------------------------------------------------------------
 $db = jd_db();
-$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 $curator = jd_curator_hash();
 
@@ -145,10 +144,9 @@ foreach ($targets as $itemId => $entry) {
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, ?)'
     )->execute([
         $subId,
-        sprintf('%08x-%04x-4%03x-%04x-%012x', random_int(0, 0xffffffff), random_int(0, 0xffff),
-                random_int(0, 0xfff), random_int(0x8000, 0xbfff), random_int(0, 0xffffffffffff)),
+        jd_uuid4(),
         $itemId,
-        gmdate('Y-m-d H:i:s'),
+        jd_now(),
         (string) $entry['prompt'],
         $curator,
         'bench',
@@ -172,7 +170,7 @@ foreach ($targets as $itemId => $entry) {
             $genId, $subId, $slot, $model['model_id'], $model['api_model'], $provider,
             jd_harness(BENCH_PROFILE),
             jd_provider_params($provider, BENCH_PROFILE),
-            'pending', gmdate('Y-m-d H:i:s'),
+            'pending', jd_now(),
         ]);
 
         printf("  %-18s ", $model['model_id']);

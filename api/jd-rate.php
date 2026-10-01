@@ -90,7 +90,7 @@ try {
     $generations = $stmt->fetchAll();
 
     // --- 3. One batch per submission, ever --------------------------------
-    if ($submission['status'] === 'rated') {
+    if ($submission['status'] === JD_SUB_RATED) {
         // Deliberately no reveal here: an abandoned duplicate does not get a
         // second unveil channel.
         jd_fail(409, 'already_rated', 'This submission has already been rated.');
@@ -102,7 +102,7 @@ try {
         $bySlot[$generation['slot']] = $generation;
         $byId[$generation['id']] = $generation;
     }
-    $okSlots = array_values(array_filter($generations, static fn($g) => $g['status'] === 'ok'));
+    $okSlots = array_values(array_filter($generations, static fn($g) => $g['status'] === JD_GEN_OK));
     if ($okSlots === []) {
         jd_fail(409, 'nothing_to_rate', 'Neither drawing survived, so there is nothing to rate.');
     }
@@ -121,14 +121,14 @@ try {
         }
 
         $genId = $rating['gen_id'] ?? null;
-        if (!is_string($genId) || !isset($byId[$genId]) || $byId[$genId]['status'] !== 'ok') {
+        if (!is_string($genId) || !isset($byId[$genId]) || $byId[$genId]['status'] !== JD_GEN_OK) {
             jd_fail(400, 'rating_invalid', 'A rating referenced a generation that cannot be rated.');
         }
 
         $kind = $rating['kind'] ?? null;
         $note = jd_clean_note($rating['note'] ?? null);
 
-        if ($kind === 'grade') {
+        if ($kind === JD_KIND_GRADE) {
             if (array_key_exists('axis_id', $rating) && $rating['axis_id'] !== null) {
                 jd_fail(400, 'rating_invalid', 'A grade cannot carry an axis_id.');
             }
@@ -140,11 +140,11 @@ try {
                 jd_fail(400, 'rating_invalid', 'Only one grade per response.');
             }
             $seenGrades[$genId] = true;
-            $prepared[] = ['gen_id' => $genId, 'kind' => 'grade', 'axis_id' => null, 'value' => $value, 'note' => $note];
+            $prepared[] = ['gen_id' => $genId, 'kind' => JD_KIND_GRADE, 'axis_id' => null, 'value' => $value, 'note' => $note];
             continue;
         }
 
-        if ($kind === 'axis') {
+        if ($kind === JD_KIND_AXIS) {
             $axisId = $rating['axis_id'] ?? null;
             // Defunct axes are never surveyed, so they are never accepted.
             if (!is_string($axisId) || !isset($axisRanks[$axisId])) {
@@ -159,11 +159,11 @@ try {
                 jd_fail(400, 'rating_invalid', 'Only one value per axis per response.');
             }
             $seenAxes[$seenKey] = true;
-            $prepared[] = ['gen_id' => $genId, 'kind' => 'axis', 'axis_id' => $axisId, 'value' => $value, 'note' => $note];
+            $prepared[] = ['gen_id' => $genId, 'kind' => JD_KIND_AXIS, 'axis_id' => $axisId, 'value' => $value, 'note' => $note];
             continue;
         }
 
-        if ($kind === 'flag') {
+        if ($kind === JD_KIND_FLAG) {
             // APP §4.6's whole mitigation: one row, no queue, no admin UI.
             if (array_key_exists('axis_id', $rating) && $rating['axis_id'] !== null) {
                 jd_fail(400, 'rating_invalid', 'A flag cannot carry an axis_id.');
@@ -171,7 +171,7 @@ try {
             if (array_key_exists('value', $rating) && $rating['value'] !== null) {
                 jd_fail(400, 'rating_invalid', 'A flag cannot carry a value.');
             }
-            $prepared[] = ['gen_id' => $genId, 'kind' => 'flag', 'axis_id' => null, 'value' => null, 'note' => $note];
+            $prepared[] = ['gen_id' => $genId, 'kind' => JD_KIND_FLAG, 'axis_id' => null, 'value' => null, 'note' => $note];
             continue;
         }
 
@@ -209,7 +209,7 @@ try {
             jd_fail(400, 'rating_invalid', 'The winner must be "a", "b", "c", "d" or "tie".');
         }
         if ($winner !== 'tie') {
-            if (!isset($bySlot[$winner]) || $bySlot[$winner]['status'] !== 'ok') {
+            if (!isset($bySlot[$winner]) || $bySlot[$winner]['status'] !== JD_GEN_OK) {
                 jd_fail(400, 'rating_invalid', 'That slot has no usable drawing to win with.');
             }
             $winnerGenId = $bySlot[$winner]['id'];
@@ -244,8 +244,8 @@ try {
         // (title, size, suppress — see above) land in the same statement.
         $claim = $db->prepare(
             "UPDATE jd_submissions
-                SET status = 'rated', title = ?, size_class = ?, suppressed = ?
-              WHERE id = ? AND status <> 'rated'"
+                SET status = '" . JD_SUB_RATED . "', title = ?, size_class = ?, suppressed = ?
+              WHERE id = ? AND status <> '" . JD_SUB_RATED . "'"
         );
         $claim->execute([$title, $size, $suppressed, $submissionId]);
         if ($claim->rowCount() !== 1) {
@@ -413,17 +413,15 @@ function jd_validate_ranking(array $ranking, array $okSlots): array
     // count($ranking) === count($okBySlot), every slot was a known ok slot and
     // none repeated, so by now every ok slot is present exactly once.
 
-    if (count(array_keys($rankBySlot, 1, true)) !== 1) {
+    // Exactly one first, then dense: the distinct ranks used, sorted, must be
+    // 1..k (jd_ranking_defect). Dense is what makes a stored order readable
+    // years later without knowing the field size — and it is checked on the
+    // values, so a client cannot smuggle a gap past the rank-1 test.
+    $defect = jd_ranking_defect($rankBySlot);
+    if ($defect === 'first') {
         jd_fail(400, 'ranking_invalid', 'Exactly one drawing must be ranked first.');
     }
-
-    // Dense: the distinct ranks used, sorted, must be 1..k. This is what makes
-    // a stored order readable years later without knowing the field size —
-    // and it is checked on the values, so a client cannot smuggle a gap past
-    // the rank-1 test.
-    $distinct = array_values(array_unique(array_values($rankBySlot)));
-    sort($distinct);
-    if ($distinct !== range(1, count($distinct))) {
+    if ($defect === 'gap') {
         jd_fail(400, 'ranking_invalid', 'Ranks must run 1, 2, 3 … with no gaps.');
     }
 
@@ -487,24 +485,17 @@ function jd_build_reveal(array $generations, array $taxonomy): array
             'vendor' => (string) ($registry[$modelId]['vendor'] ?? ''),
             'status' => $generation['status'],
         ];
-        if ($generation['status'] === 'ok') {
-            $usage = !empty($generation['usage_tokens'])
-                ? json_decode((string) $generation['usage_tokens'], true) : null;
-            $cost = jd_generation_cost(
+        if ($generation['status'] === JD_GEN_OK) {
+            $cost = jd_price_generation_row(
+                $generation['usage_tokens'] ?? null,
                 (string) ($generation['provider'] ?? ''),
-                (string) ($generation['model_version'] ?? ''),
-                is_array($usage) ? $usage : null
+                (string) ($generation['model_version'] ?? '')
             );
-            $t = $cost['tokens'];
             // the payload carries the three numbers a person reads; the cache
             // and reasoning buckets stay in the database (jd-spend.php's job)
-            $entry['tokens'] = $t === null ? null : [
-                'input' => $t['input'],
-                'output' => $t['output'],
-                'total' => $t['input'] + $t['cache_write'] + $t['cache_read'] + $t['output'],
-            ];
-            $entry['cost_usd'] = $cost['cost_usd'] === null
-                ? null : round($cost['cost_usd'], 6);
+            $shown = jd_cost_summary($cost);
+            $entry['tokens'] = $shown['tokens'];
+            $entry['cost_usd'] = $shown['cost_usd'];
             $entry['priced'] = $cost['priced'];
         }
         $reveal[] = $entry;

@@ -38,45 +38,9 @@ require_once __DIR__ . '/jd-config.php';
 
 const JD_SLOT_LETTERS = 'abcdefghijklmnop';
 
-/**
- * How many slot letters the LIVE jd_generations.slot column actually holds —
- * read from the schema, not assumed from JD_SLOT_LETTERS. The two disagree
- * exactly when a deploy widened the code but api/setup-jd-tables.php was
- * never run against that database (2026-09-10 → 2026-09-27 on production:
- * every save on a rerun item died with a bare "1265 Data truncated for
- * column 'slot'" and nobody could tell why from the log). Returns the
- * count, or null when the column cannot be read (then nothing is refused
- * on its account — the INSERT will speak for itself).
- */
-function jd_slot_capacity(PDO $db): ?int
-{
-    try {
-        if (jd_db_driver($db) === 'sqlite') {
-            $q = $db->prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'jd_generations'");
-            $q->execute();
-            $ddl = (string) $q->fetchColumn();
-            if (!preg_match('/slot\s+TEXT[^,]*?IN\s*\(([^)]*)\)/i', $ddl, $m)) {
-                return null;
-            }
-            $list = $m[1];
-        } else {
-            $q = $db->prepare(
-                'SELECT COLUMN_TYPE FROM information_schema.COLUMNS
-                  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?'
-            );
-            $q->execute(['jd_generations', 'slot']);
-            $type = (string) $q->fetchColumn();
-            if (!preg_match('/^enum\((.*)\)$/i', $type, $m)) {
-                return null;
-            }
-            $list = $m[1];
-        }
-        $n = preg_match_all("/'[a-p]'/", $list);
-        return $n > 0 ? $n : null;
-    } catch (PDOException $e) {
-        return null;
-    }
-}
+// jd_slot_capacity() — how many slot letters the LIVE jd_generations.slot
+// column holds, read from the schema — lives in jd-config.php beside the
+// other schema probes (jd_has_column); the sync and the backfill call it.
 
 /**
  * The sentence a refused write should carry instead of SQLSTATE 01000: it
@@ -97,13 +61,11 @@ const JD_VENDOR_PROVIDER = [
     'Google'      => 'google',
 ];
 
-/** UUIDv4, for the NOT NULL UNIQUE client_ref. Carries no meaning here. */
+/** UUIDv4, for the NOT NULL UNIQUE client_ref. Carries no meaning here. The
+ *  one minter is jd_uuid4() (jd-config.php); this name stays as its alias. */
 function jd_curated_uuid4(): string
 {
-    $b = random_bytes(16);
-    $b[6] = chr((ord($b[6]) & 0x0f) | 0x40);
-    $b[8] = chr((ord($b[8]) & 0x3f) | 0x80);
-    return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($b), 4));
+    return jd_uuid4();
 }
 
 /** model id → provider slug, via taxonomy.json's model registry. */
@@ -157,28 +119,26 @@ function jd_curated_entry(string $itemId): ?array
 /**
  * The live-axis annotations an entry response carries, as axis id => rank
  * value, validated against the taxonomy (a value the axis does not define is
- * dropped, never rounded). {value, note} objects and bare numbers both read.
+ * dropped, never rounded — an exact match on the axis's own ranks, not
+ * jd_rank_on_scale's near-miss snapping). {value, note} objects and bare
+ * numbers both read.
  *
+ * @param array<string,float[]> $axisRanks  live axis id => the ranks its
+ *                                          values allow (jd_axis_ranks)
  * @return array<string,float>
  */
-function jd_curated_seed_axes(array $response, array $liveAxes): array
+function jd_curated_seed_axes(array $response, array $axisRanks): array
 {
     $out = [];
     foreach ($response['annotations'] ?? [] as $axis => $a) {
-        if (!isset($liveAxes[(string) $axis])) {
+        if (!isset($axisRanks[(string) $axis])) {
             continue;
         }
         $v = is_array($a) ? ($a['value'] ?? null) : $a;
         if (!is_numeric($v)) {
             continue;
         }
-        $ranks = [];
-        foreach ($liveAxes[(string) $axis]['values'] ?? [] as $val) {
-            if (isset($val['rank'])) {
-                $ranks[] = (float) $val['rank'];
-            }
-        }
-        if (in_array((float) $v, $ranks, true)) {
+        if (in_array((float) $v, $axisRanks[(string) $axis], true)) {
             $out[(string) $axis] = (float) $v;
         }
     }
@@ -273,7 +233,7 @@ function jd_curated_sync(PDO $db, array $entry, array $taxonomy, bool $dryRun = 
         throw new PDOException(jd_slot_capacity_message($capacity, count($responses), $itemId));
     }
 
-    $liveAxes = jd_live_axes($taxonomy);
+    $axisRanks = jd_axis_ranks($taxonomy);
     $rows = [];
     for ($i = $existing; $i < count($responses); $i++) {
         $r = $responses[$i];
@@ -284,10 +244,11 @@ function jd_curated_sync(PDO $db, array $entry, array $taxonomy, bool $dryRun = 
             'model_id'      => $model,
             'model_version' => (string) ($r['model_version'] ?? $model),
             'provider'      => jd_curated_provider($model, $taxonomy),
+            // date(): the server's LOCAL date, unlike every gmdate() here — left as is
             'created'       => (string) ($r['date'] ?? $entry['created'] ?? date('Y-m-d')),
             'grade'         => $r['grade'] ?? null,
             'graded'        => $r['graded'] ?? null,
-            'axes'          => jd_curated_seed_axes($r, $liveAxes),
+            'axes'          => jd_curated_seed_axes($r, $axisRanks),
         ];
     }
     $out['status'] = $subId === null ? 'filed' : 'appended';
@@ -312,8 +273,9 @@ function jd_curated_sync(PDO $db, array $entry, array $taxonomy, bool $dryRun = 
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, ?)'
             )->execute([
                 $subId,
-                jd_curated_uuid4(),
+                jd_uuid4(),
                 $itemId,
+                // the same local date() fallback as the generation rows — left as is
                 (string) ($entry['created'] ?? date('Y-m-d')) . ' 00:00:00',
                 (string) ($entry['prompt'] ?? ''),
                 $curator,
@@ -389,7 +351,7 @@ function jd_curated_sync(PDO $db, array $entry, array $taxonomy, bool $dryRun = 
  */
 function jd_curated_level_seeds(PDO $db, string $subId, array $entry, array $taxonomy, bool $dryRun): int
 {
-    $liveAxes = jd_live_axes($taxonomy);
+    $axisRanks = jd_axis_ranks($taxonomy);
     $responses = array_values($entry['responses'] ?? []);
     $q = $db->prepare('SELECT id, slot, created FROM jd_generations WHERE submission_id = ? ORDER BY slot');
     $q->execute([$subId]);
@@ -419,7 +381,7 @@ function jd_curated_level_seeds(PDO $db, string $subId, array $entry, array $tax
         }
         $gid = (string) $p['gen']['id'];
         $when = (string) ($p['src']['graded'] ?? $p['src']['date'] ?? substr((string) $p['gen']['created'], 0, 10));
-        foreach (jd_curated_seed_axes($p['src'], $liveAxes) as $axis => $value) {
+        foreach (jd_curated_seed_axes($p['src'], $axisRanks) as $axis => $value) {
             if (empty($seeded[$gid][$axis])) {
                 $axisRows[] = [$gid, $axis, $value, $when];
             }
@@ -466,4 +428,36 @@ function jd_curated_level_seeds(PDO $db, string $subId, array $entry, array $tax
         throw $ex;
     }
     return $n;
+}
+
+/**
+ * Admin mode's way in (2026-09-10): a curated item named by its ENTRY id,
+ * resolved to its submission with the rows brought level with entry.json
+ * first, so a response never filed before can be rated (jd-item-rate) or the
+ * item hidden (jd-curate). Answers 404 for an unknown item, and 500 — logged
+ * as "<$who>: curated sync failed — …" — when the database refuses. $then
+ * runs inside that same failure handling, for a caller's follow-up reads.
+ * $taxonomy is the caller's when it already holds one; otherwise it is read
+ * here (jd_taxonomy_required($who)), after the database is opened.
+ *
+ * @param callable(PDO, array, array):void|null $then  ($db, $entry, $sync)
+ * @return array jd_curated_sync()'s result
+ */
+function jd_curated_submission_for(mixed $itemId, string $who, ?array $taxonomy = null, ?callable $then = null): array
+{
+    $entry = jd_curated_entry(is_string($itemId) ? $itemId : '');
+    if ($entry === null) {
+        jd_fail(404, 'not_found', 'No such curated item.');
+    }
+    try {
+        $db = jd_db();
+        $sync = jd_curated_sync($db, $entry, $taxonomy ?? jd_taxonomy_required($who));
+        if ($then !== null) {
+            $then($db, $entry, $sync);
+        }
+    } catch (PDOException $e) {
+        error_log($who . ': curated sync failed — ' . $e->getMessage());
+        jd_fail(500, 'server_error', 'The item could not be filed.');
+    }
+    return $sync;
 }

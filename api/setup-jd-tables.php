@@ -17,16 +17,7 @@ require_once __DIR__ . '/jd-config.php';
 header('Content-Type: text/plain; charset=utf-8');
 
 // --- C6.4 environment gating ----------------------------------------------
-if (JD_IS_PRODUCTION) {
-    $secrets = jd_secrets();
-    $expected = $secrets['jd_setup_key'] ?? null;
-    $supplied = $_GET['key'] ?? '';
-    if (!is_string($expected) || $expected === '' || !hash_equals($expected, (string) $supplied)) {
-        http_response_code(403);
-        echo "Forbidden. Add jd_setup_key to private_config/secrets.php and call this script with ?key=<that value>.\n";
-        exit;
-    }
-}
+jd_require_setup_key("Forbidden. Add jd_setup_key to private_config/secrets.php and call this script with ?key=<that value>.\n");
 
 if (!JD_DEV_MODE && !JD_IS_PRODUCTION && !is_readable(__DIR__ . '/../config/secrets.php')) {
     http_response_code(500);
