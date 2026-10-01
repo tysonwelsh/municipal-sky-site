@@ -42,7 +42,6 @@ window.KOLOB = window.KOLOB || {};
   function razzCluster() { return S.razzCluster(); }
   function cumulativeAssembly(t) { return S.cumulativeAssembly(t); }
   function unansweredQuestion(V, t) { return S.unansweredQuestion(V, t); }
-  function twoBandsCross(V, t) { return S.twoBandsCross(V, t); }
   function steeplesAnswer(V, t) { return S.steeplesAnswer(V, t); }
   function oldTuneCandidates() { return S.oldTuneCandidates(); }
   function oldTuneRemembered(V, t) { return S.oldTuneRemembered(V, t); }
@@ -141,10 +140,8 @@ window.KOLOB = window.KOLOB || {};
   // wedding 4, a funeral 3, a dedication 1 — and each belongs to one of the
   // four kinds (a wedding and a funeral are ordinary meetings, a dedication a
   // conference, the three feasts jubilees), so the kinds fall out of it at
-  // ordinary 52, fast 15, conference 13 and jubilee 20 %. CALENDAR below is
-  // the fallback (a page without the calendar) and the kinds' shares as the
-  // Sundays give them; SEASON_OF the kinds' warmth, where the Sunday has none.
-  var CALENDAR = [["ordinary", 0.52], ["fast", 0.15], ["conference", 0.13], ["jubilee", 0.2]];
+  // ordinary 52, fast 15, conference 13 and jubilee 20 %. SEASON_OF is the
+  // kinds' warmth, for every Sunday whose row carries no season of its own.
   var SEASON_OF = { fast: [0, 0.35], ordinary: [0.2, 0.7], conference: [0.5, 0.9], jubilee: [0.7, 1] };
   function Calendar() { return KOLOB.Calendar || null; }
   var seasonPos = 0;
@@ -219,14 +216,14 @@ window.KOLOB = window.KOLOB || {};
     // THE SUNDAY (round 3b, step 4; PLAN §7.1): the day of the colony year,
     // from the die that once drew the kind — and the kind from the Sunday
     var CAL = Calendar(), dayU = R.next();
-    var sunday = CAL ? CAL.draw(dayU) : null;
-    var activity = CAL ? CAL.kindOf(sunday) : pickWith(dayU, CALENDAR);
-    var SUN = CAL ? CAL.SUNDAYS[sunday] : null;
+    var sunday = CAL.draw(dayU);
+    var activity = CAL.kindOf(sunday);
+    var SUN = CAL.SUNDAYS[sunday];
     var sr = SUN && SUN.season ? SUN.season : SEASON_OF[activity];
     seasonPos = sr[0] + (sr[1] - sr[0]) * seasonDie;               // 0 the fast-day trough … 1 the festival
     // the kind's row with the Sunday laid over it (how many hymns, how still,
     // how bright, how many bells): what S.Meeting.sunday() hands the voices
-    var A = CAL ? CAL.meetingRow(sunday, MEETINGS[activity]) : MEETINGS[activity];
+    var A = CAL.meetingRow(sunday, MEETINGS[activity]);
     var SP = SUN ? SUN.plan : {};
     C.meeting = { activity: activity, sunday: sunday, row: A };
     // Mode lottery, tilted bright or modal by the kind of Sunday.
@@ -308,6 +305,7 @@ window.KOLOB = window.KOLOB || {};
     var qDie = R.chance(0.29), qSeatDie = R.chance(0.7);
     // (the band plans itself now, on guest:bands:<n>: these two are thrown, unused)
     var bDie = R.chance(oddsOf("bands", 0.36)), bSeatDie = R.chance(0.7);
+    void bDie; void bSeatDie;   // DICE: thrown and never read, so every later draw lands where it did
     var stDie = R.chance(oddsOf("steeples", 0.075)), stSeatDie = R.chance(0.55);
     var oDie = R.chance(oddsOf("oldtune", 0.15)), oSeatDie = R.chance(0.65), oTuneDie = R.rnd(0, 1);
     var cumDie = R.chance(CUMULATIVE_ODDS);
@@ -321,6 +319,7 @@ window.KOLOB = window.KOLOB || {};
     C.visitations = [];
     C.visitUntil = 0;
     C.visitType = null;
+    C.visitSecond = false;
     C.visitLogged = true;
     // THE QUESTION IS SHELVED (owner, 2026-09-27: "one of the less interesting
     // guests… there's better stuff we could be focusing on"). Its code stays
@@ -364,7 +363,7 @@ window.KOLOB = window.KOLOB || {};
     // GUEST_BUDGET.order), which is also who yields when it is full. A guest
     // named by the switch is seated past the budget, and the others leave it
     // its place. (C.budget: who was refused, and why — the census reads it)
-    var BUD = CAL && CAL.GUEST_BUDGET ? CAL.GUEST_BUDGET : { max: 2, showpieces: {}, neighbours: {} };
+    var BUD = CAL.GUEST_BUDGET;
     C.budget = { refused: [], reserved: null };
     function indexOfSec(type) { for (var q = 0; q < plan.length; q++) if (plan[q].type === type) return q; return -1; }
     function seatIndex(V) { return typeof V.index === "number" ? V.index : indexOfSec(V.section); }
@@ -419,6 +418,11 @@ window.KOLOB = window.KOLOB || {};
     var hoOdds = oddsOf("hosanna", null);
     var hoAsk = HOg && SUN && SUN.hosanna ? HOg.plan({ n: C.meetingNum, kind: activity, sunday: sunday, sections: plan, guests: [], odds: hoOdds, force: forcedType === "hosanna" }, hoStream) : null;
     if (hoAsk) C.budget.reserved = "hosanna";
+    // THE QUESTION is shelved (owner, 2026-09-27): SHELVED_GUESTS keeps it from
+    // seating and the switch never names it, so this block seats nothing. qDie
+    // and qSeatDie above are still thrown so every later draw lands where it
+    // did. Its set piece is kolob-guests.js unansweredQuestion, its generator
+    // shelved/kolob-question.js.
     if (forcedType === "question" || qDie) {
       var qSeat = (forcedType === "question" || qSeatDie)
         ? seatIn(["invocation", "testimony", "hymn"])
@@ -444,10 +448,6 @@ window.KOLOB = window.KOLOB || {};
       var bStream = stream("guest:bands");
       var bSeat = GBg.plan({ n: C.meetingNum, kind: activity, sunday: sunday, sections: plan, guests: C.visitations, odds: oddsOf("bands", null), force: forcedType === "bands" }, bStream);
       if (bSeat) admit({ type: "bands", section: bSeat.section, at: bSeat.at, dur: bSeat.dur, fired: false, cued: true, stream: bStream, pick: bSeat.pick, second: bSeat.second });
-    } else if (!GBg && (forcedType === "bands" || bDie) && !dawnAsked) {
-      // (a page without the band's room: the old fife, as round 3b had it)
-      var bSeatOld = forcedType === "bands" ? seatIn(["hymn", "doxology", "postlude"]) : (bSeatDie ? seatIn(["doxology", "hymn", "postlude"]) : seatIn(["hymn", "postlude", "doxology"]));
-      if (bSeatOld) admit({ type: "bands", section: bSeatOld, fired: false });
     }
     // the steeples: bells at the meeting's edges — the framing sections where
     // a bell has civic meaning (calling the valley in, ringing it home)
@@ -489,7 +489,7 @@ window.KOLOB = window.KOLOB || {};
       tbStream = stream("guest:trombones");
       tbInfo = { n: C.meetingNum, kind: activity, sunday: sunday, sections: plan, guests: C.visitations, odds: oddsOf("trombones", null), force: forcedType === "trombones" };
       var tbSeat = TB.plan(tbInfo, tbStream);
-      if (tbSeat && forcedType !== "singingschool") admit({ type: "trombones", section: "prelude", at: tbSeat.at, dur: tbSeat.dur, fired: false, stream: tbStream });
+      if (tbSeat && forcedType !== "singingschool") admit({ type: "trombones", section: "prelude", at: tbSeat.at, dur: tbSeat.dur, fired: false, cued: true, stream: tbStream });
     }
     // THE SINGING SCHOOL (round 3b, step 3; PLAN-COMPOSITION §15 item 3 —
     // EXPERIMENTAL, KOLOB.Experimental.singingSchool, ?exp=-singingSchool):
@@ -517,26 +517,6 @@ window.KOLOB = window.KOLOB || {};
     C.cumulative = cumulativeMode === "always" || (cumulativeMode === "natural" && cumDie);
     C.assemblyFired = false;
     C.assemblyUntil = 0;
-    // (the doxology's payoff — the assembly, the partner hymn, the refrain or
-    // the bands — is settled with the day's hymnal, below: a band seated in
-    // the doxology moves out whenever the payoff is another's)
-    // (v0.36.1: to the prelude or the postlude, never a hymn — the first the
-    // budget admits it to beside the guests already seated; with neither free,
-    // the band stays in the town this Sunday, and the payoff is the other's.
-    // With kolob-guest-bands.js loaded a band is never seated in the doxology
-    // in the first place, so this is reached only through the fife fallback.)
-    function bandsLeaveTheDoxology() {
-      for (var cvi = C.visitations.length - 1; cvi >= 0; cvi--) {
-        var bV = C.visitations[cvi];
-        if (bV.type !== "bands" || bV.section !== "doxology") continue;
-        var to = null, tries = ["prelude", "postlude"];   // (never a hymn: the owner, v0.36.1)
-        for (var tj = 0; tj < tries.length && !to; tj++) if (forcedType === "bands" || !budgetRefuses("bands", tries[tj], null, bV)) to = tries[tj];
-        if (to) bV.section = to;
-        else { C.visitations.splice(cvi, 1); C.budget.refused.push({ guest: "bands", section: "doxology", why: "left the doxology, and no seat was free" }); }
-      }
-    }
-    // a marching band may still call, but never over the assembly
-    if (C.cumulative) bandsLeaveTheDoxology();
     // THE RASPBERRY AMEN — its own flag, not a seated visitation: it has no
     // section, only the meeting's final cadence. Never on a fast Sunday; a
     // solemn meeting does not end on a joke.
@@ -610,11 +590,10 @@ window.KOLOB = window.KOLOB || {};
       C.hymnal = day.rows;
       // THE DAY'S FORMS (round 3b, step 3): a round, the partner hymn, the
       // wandering refrain — and the doxology's one payoff (kolob-hymnal.js
-      // forms, on forms:<n>). A band seated in the doxology leaves it when
-      // the payoff is another's; with none, the bands are the payoff.
+      // forms, on forms:<n>).
       var fm = HY.forms ? HY.forms({ n: C.meetingNum, kind: activity, sunday: sunday, cumulative: !!C.cumulative }, day.rows, stream("forms")) : null;
       C.forms = fm;
-      if (fm && fm.payoff) { C.payoff = fm.payoff; bandsLeaveTheDoxology(); }
+      if (fm && fm.payoff) C.payoff = fm.payoff;
       // THE KOLOB RECKONING (round 3b, step 4; PLAN §7.2): the doxology is
       // written so that its opening can be the drone's cantus — the desk
       // writes it a few ways and keeps the first whose notes stand, one a
@@ -632,7 +611,6 @@ window.KOLOB = window.KOLOB || {};
       emitEvent({ type: "hymnal", house: C.house, hymns: day.rows.map(function (r) { return { id: r.id, section: r.section, dialect: r.dialect, key: r.key, meter: r.meter, piece: r.piece || (r.partnerOf ? "partner" : "hymn") }; }),
                   forms: fm ? { round: fm.round, partner: fm.partner, refrain: fm.refrain ? { id: fm.refrain.id, dialect: fm.refrain.dialect, after: fm.refrain.statements.map(function (x) { return x.after; }) } : null, payoff: fm.payoff, why: fm.dice.why } : null });
     }
-    if (!C.payoff && C.visitations.some(function (v) { return v.type === "bands" && v.section === "doxology"; })) C.payoff = "bands";
     // THE ORGANIST AND THE WARD, SEATED BEFORE THE GUESTS THAT NEED THEM
     // (round 3c: the variations are the Sunday's organist's; the gift of
     // tongues' singer is one of the day's testimony-bearers, always, once
@@ -790,16 +768,10 @@ window.KOLOB = window.KOLOB || {};
     // is known: it names whom it sits beside and does not give way to them
     // (GuestHosanna.YIELD false: the rite of its Sunday, not a visitor the
     // budget drew — crew C's ruling, which the owner may reverse). It comes
-    // at the last doxology's close, after its hymn. A band seated in the
-    // doxology leaves it for a hymn or the postlude, as for the assembly, and
-    // the doxology's payoff is no longer the band's. Never pushed into
+    // at the last doxology's close, after its hymn. Never pushed into
     // C.visitations: "guests-drawn" and the minutes must not name it.
     var hoSeat = hoAsk ? HOg.plan({ n: C.meetingNum, kind: activity, sunday: sunday, sections: plan, guests: seatedFor("hosanna"), odds: hoOdds, force: forcedType === "hosanna" }, hoStream) : null;
     if (!hoSeat) C.budget.reserved = null;
-    else {
-      bandsLeaveTheDoxology();
-      if (C.payoff === "bands" && !C.visitations.some(function (v) { return v.type === "bands" && v.section === "doxology"; })) C.payoff = null;
-    }
     C.hosanna = SUN && SUN.hosanna ? { possible: true, built: !!HOg, seat: hoSeat, fired: false, until: 0 } : null;
     C.hosannaStream = hoSeat ? hoStream : null;
     // THE TESTIMONY-BEARERS SPEAK (round 3c; PLAN-COMPOSITION §5.2; handoff
@@ -1364,7 +1336,7 @@ window.KOLOB = window.KOLOB || {};
     // moment its plan drew (the trombones: seconds into the prelude — too
     // early for the poll below, which waits out a section's first fifth)
     C.visitations.forEach(function (V) {
-      if (!((CUED[V.type] || V.cued) && V.section === s.type && !V.fired)) return;
+      if (!(V.cued && V.section === s.type && !V.fired)) return;
       // (round 3c: a guest whose material is made at its cue has it made a
       // second before, by a cue of its own — the band's march, the company,
       // the gulls, the dance: never one wake that makes it and plays it too)
@@ -1460,7 +1432,7 @@ window.KOLOB = window.KOLOB || {};
     // over a hush, a fuging gathering, a joint, or each other.
     for (var vv = 0; vv < C.visitations.length; vv++) {
       var V = C.visitations[vv];
-      if (!V.fired && !(CUED[V.type] || V.cued) && !V.ofHymn && V.section === C.section && x > 0.2 && x < 0.55 &&
+      if (!V.fired && !V.cued && !V.ofHymn && V.section === C.section && x > 0.2 && x < 0.55 &&
           !C.jointing && !inHush() && !inFuging() && !inVisit() && !hymnSounding() && !choraleSounding()) {
         arrive(V, t);
         break;
@@ -1579,7 +1551,7 @@ window.KOLOB = window.KOLOB || {};
   // page's direction line names it while it sounds; the joint waits for it).
   // A guest the minutes may not name (UNLOGGED below) carries that on every
   // event and note it sends, and the page is never told it came.
-  var VISIT_FN = { question: unansweredQuestion, bands: twoBandsCross, steeples: steeplesAnswer, oldtune: oldTuneRemembered, trombones: trombonesAtDawn,
+  var VISIT_FN = { question: unansweredQuestion, bands: function (V, t) { return S.nauvooBand(V, t); }, steeples: steeplesAnswer, oldtune: oldTuneRemembered, trombones: trombonesAtDawn,
                    handbells: handbellsRing, singingschool: singingSchool,
                    // (round 3c: the new guests' set pieces, kolob-guests.js — the far
                    // ward is not here: it sings inside the ward's own hymn; nor the
@@ -1587,8 +1559,6 @@ window.KOLOB = window.KOLOB || {};
                    handcart: function (V, t) { return S.handcartCompany(V, t); }, gulls: function (V, t) { return S.gullsOver(V, t); },
                    variations: function (V, t) { return S.organistVariations(V, t); }, tongues: function (V, t) { return S.tonguesGift(V, t); },
                    socialhall: function (V, t) { return S.socialHall(V, t); } };
-  // (the band that marches replaces the band that looped, when its room is loaded)
-  if (KOLOB.GuestBands) VISIT_FN.bands = function (V, t) { return S.nauvooBand(V, t); };
   function arrive(V, t) {
     V.fired = true;
     V.logged = !UNLOGGED[V.type];
@@ -1598,20 +1568,18 @@ window.KOLOB = window.KOLOB || {};
     S.houseLetsGo(t, V.type, V.logged);
     // type → set piece; each receives its visitation record (the old tune its
     // drawn tune, the trombones their stream and chorale)
-    var vdur = (VISIT_FN[V.type] || twoBandsCross)(V, t);
-    // (the bands crossing a doxology are its payoff, when nothing else is)
-    if (V.type === "bands" && C.section === "doxology") emitEvent({ type: "payoff", kind: "bands", section: "doxology", hymnId: C.hymn ? C.hymn.id : null });
+    var vdur = VISIT_FN[V.type](V, t);
     C.visitType = V.type;
     C.visitLogged = V.logged;
     C.visitSecond = V.type === "bands" && !!V.second;   // (the page says "two bands" only when a second one comes)
     C.visitUntil = t + vdur;
     guestSpan(V.type, t, vdur, V.logged);
   }
-  // THE GUESTS THAT KEEP THEIR OWN TIME — cued when their section begins
-  // (enterSection), at the moment their plan drew, never found by the poll.
-  // The cue still asks: the guest's own meeting, its section still standing
-  // (a dev jump may have left it), no joint sounding, no other guest.
-  var CUED = { trombones: true };
+  // THE GUESTS THAT KEEP THEIR OWN TIME (their record says cued: true) are
+  // cued when their section begins (enterSection), at the moment their plan
+  // drew, never found by the poll. The cue still asks: the guest's own
+  // meeting, its section still standing (a dev jump may have left it), no
+  // joint sounding, no other guest.
   // (round 3c) the guests made ready a second before their cue, and how
   var PRE_MADE = { bands: true, handcart: true, gulls: true, socialhall: true };
   function preMake(V, i) {
@@ -1894,7 +1862,7 @@ window.KOLOB = window.KOLOB || {};
   // the Hosanna): it sends logged: false on every event and on every note the
   // page may not show, the minutes print none of them, the staff engraves
   // none of those notes, and the hymn board's direction line never names it.
-  // The table is read when a guest arrives, so a test may add any guest to it (KOLOB._s.UNLOGGED_GUESTS.oldtune = true).
+  // The table is read when a guest arrives.
   var UNLOGGED = { hosanna: true };
 
   // Dev aid: jump the meeting to a section of the plan. Voices notice on
@@ -2093,7 +2061,7 @@ window.KOLOB = window.KOLOB || {};
   function waitingGuest() {
     for (var i = 0; i < C.visitations.length; i++) {
       var V = C.visitations[i];
-      if (!V.fired && !(CUED[V.type] || V.cued) && !V.ofHymn && V.section === C.section) return V;
+      if (!V.fired && !V.cued && !V.ofHymn && V.section === C.section) return V;
     }
     return null;
   }
@@ -2388,7 +2356,6 @@ window.KOLOB = window.KOLOB || {};
   // A new seed is a new visit: the meeting count and the seasons start again.
   function resetVisit() { C.meetingNum = 0; seasonPos = 0; }
 
-  S.MEETINGS = MEETINGS;
   S.Meeting = Book;
   S.moment = moment;
   S.Harmony = Desk;
@@ -2406,20 +2373,14 @@ window.KOLOB = window.KOLOB || {};
   S.inVisit = inVisit;
   S.inQuestion = inQuestion;
   S.hallListens = hallListens;
-  S.testimonySounding = testimonySounding;
   S.testimonyHolds = testimonyHolds;
   S.farWardFor = farWardFor;
   S.silenceMul = silenceMul;
   S.gapMul = gapMul;
   S.conductorTick = conductorTick;
   S.skipToSection = skipToSection;
-  S.UNLOGGED_GUESTS = UNLOGGED;
-  // the room's public face on the KOLOB namespace
-  // (dawnChorale: the trombones' material as the plan writes it — for the
-  // harness, which proves what the choir is handed)
-  // (CALENDAR and F0_RANGE are read by the harness; F0_RANGE is writable for
-  // the compass check, which sings every voice at both ends of the keynote)
-  KOLOB.Meeting = { MEETINGS: MEETINGS, book: Book, desk: Desk, planMeeting: planMeeting, conductorTick: conductorTick, runJoint: runJoint, dawnChorale: dawnChorale,
-                    CALENDAR: CALENDAR, F0_RANGE: F0_RANGE };
+  // the room's public face on the KOLOB namespace (dev: nothing on the page
+  // reads it; the labs and the harness may)
+  KOLOB.Meeting = { MEETINGS: MEETINGS, book: Book, desk: Desk, planMeeting: planMeeting, conductorTick: conductorTick, runJoint: runJoint, dawnChorale: dawnChorale, F0_RANGE: F0_RANGE };
   (KOLOB._rooms = KOLOB._rooms || {})["kolob-meeting.js"] = true;   // the load guard's roll call
 })();

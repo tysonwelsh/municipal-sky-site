@@ -1810,14 +1810,11 @@ window.KOLOB = window.KOLOB || {};
   S.choirVerse = choirVerse;
   S.fugingEntry = fugingEntry;
   S.singHymn = singHymn;
-  S.choirSingLine = choirSingLine;
-  S.hymnVoices = hymnVoices;
   // the ward (round 3b)
   S.hymnPlan = hymnPlan;
   S.wardOn = wardOn;
   S.theWard = function () { return wardOn() ? theWard() : null; };
   S.wardStop = wardStop;
   S.wardStats = wardStats;
-  S.houseVoiceLine = houseVoiceLine;
   (KOLOB._rooms = KOLOB._rooms || {})["kolob-voices-choir.js"] = true;   // the load guard's roll call
 })();

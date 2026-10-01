@@ -210,9 +210,6 @@ window.KOLOB = window.KOLOB || {};
     return { fromHz: S.F0 * from, toHz: S.F0 * best.x, monzo: monzo, glide: same ? 0 : g };
   }
   function lv0Until(t) { var u = t + 30; droneLive.forEach(function (lv) { if (lv.stopAt > u) u = lv.stopAt; }); return u; }
-  // a new meeting's drone begins on its keynote (a meeting ends home: the
-  // doxology and the postlude are the keynote's)
-  function droneReset() { droneNow = { mul: 1, from: 1, at: -1, until: -1, role: "tonic", monzo: [0, 0, 0, 0], k: null }; }
   function droneNote() { return { mul: droneNow.mul, role: droneNow.role, monzo: droneNow.monzo.slice(), k: droneNow.k, until: droneNow.until }; }
 
   // ==========================================================================
@@ -408,7 +405,6 @@ window.KOLOB = window.KOLOB || {};
   S.tubaBlat = tubaBlat;
   S.droneCycle = droneCycle;
   S.droneTurn = droneTurn;
-  S.droneReset = droneReset;
   S.droneNote = droneNote;
   S.stringsPad = stringsPad;
   S.stringsCycle = stringsCycle;

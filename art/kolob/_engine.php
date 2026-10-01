@@ -2,10 +2,8 @@
 // ============================================================================
 // KOLOB — _engine.php: the engine's rooms, in the order they are loaded.
 //
-// THE ONE LIST (round 2). Before it, the module list was written out four
-// times — index.php, room-lab.php, tune-lab.php and the harness — and a
-// stale copy failed silently. Now every page that plays the engine reads it
-// from here:
+// THE ONE LIST. Every page that plays the engine reads it from here (a list
+// written out in four places once failed silently when a copy went stale):
 //
 //   $kolob_engine = require __DIR__ . '/_engine.php';
 //   kolob_engine_tags($kolob_engine, 'kolob_v');   // the <script> tags + the load guard
@@ -17,23 +15,11 @@
 // the voices, the performers, and last the core that raises the KolobAudio
 // facade over them. (A lab module joins this list on the day the engine first
 // uses it — kolob-voices-folk.js did; kolob-question.js never did, and is in
-// shelved/ since 2026-10-01 with the bagpipe;
-// kolob-tunes.js joined in round 2, milestone 3, when the old tune began to
-// sing the Earth tunes; kolob-voices-band.js and kolob-guest-trombones.js
-// joined at round 2's integration, when the trombone choir began to play at
-// dawn; kolob-voices-vocal.js and kolob-cast.js at round 3b, when the ward
-// began to sing the meeting; kolob-organist.js and kolob-voices-pipeorgan.js
-// at round 3b's second step, when the Sunday's organist took the bench;
-// kolob-experimental.js, kolob-voices-folk.js, kolob-guest-handbells.js and
-// kolob-guest-singingschool.js at its third, when the handbell choir and the
-// singing school came into the meeting; kolob-calendar.js at its fourth, when
-// every visit began to draw a Sunday of the colony year; the nine round-3c
-// guests and kolob-testimony.js at round 3c's integration, when the guest
-// budget began to seat them.)
+// shelved/ since 2026-10-01 with the bagpipe.)
 //
 // THE LOAD GUARD. Each kolob-*.js room answers a roll call as its last act
-// (KOLOB._rooms["kolob-organ.js"] = true), and the substrate — and the Earth
-// tunes, whose file answers no roll call (it is the tunes crew's) — are
+// (KOLOB._rooms["kolob-voices-organ.js"] = true), and the substrate — and the
+// Earth tunes, whose file answers no roll call — are
 // checked by the globals they raise; kolob_engine_tags() prints a guard that names every room
 // that did not answer, so a missing or broken module is reported at load, not
 // as "S.x is not a function" at the first cue that needs it.

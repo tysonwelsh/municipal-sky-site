@@ -123,6 +123,8 @@ function typedEvent(e, p) {
     case "guest-start": case "guest-end":
       e.kind = "guest"; e.guest = p.guest || "?"; e.phase = p.type === "guest-start" ? "start" : "end";
       e.logged = p.logged !== false; break;
+    case "guest":                // a stage of a guest already begun (the bands cross, the near choir answers): a mark, never a second start
+      e.kind = "guest"; e.guest = p.guest || "?"; e.phase = "mark"; e.stage = p.stage || null; e.logged = p.logged !== false; break;
     case "question-asking": e.kind = "guest"; e.guest = "question"; e.phase = "mark"; break;
     case "question-unanswered": e.kind = "guest"; e.guest = "question"; e.phase = "end"; break;
     case "cast": e.kind = "cast"; e.member = p.memberId; e.action = p.action || null; break;

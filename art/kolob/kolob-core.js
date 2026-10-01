@@ -180,7 +180,7 @@ window.KolobAudio = (function () {
   //   meeting:<n>          the meeting's plan — its sections, guests, sunrise
   //   <voice>:<n>          what a voice plays in meeting n (organ, drone, choir,
   //                        clarinet, harmonium, strings, bells, voice,
-  //                        telegraph, bagpipe, field, fuging, stillness):
+  //                        telegraph, field, fuging, stillness):
   //                        every TURN a voice takes is a fork of its own
   //                        (turn:<k>), so a turn that throws more dice or fewer
   //                        never shifts the next one
@@ -191,9 +191,7 @@ window.KolobAudio = (function () {
   //   synth:<voice>        SOUND-LEVEL detail only — detune, envelopes, onset
   //                        stagger, pan, vibrato and tremolo rates: how a note
   //                        sounds, never what is played. Musical dice never
-  //                        come from these, and these never move the music:
-  //                        the harness re-salts them and the score stands
-  //                        still, note for note
+  //                        come from these, and these never move the music
   //   audition             everything sample() throws, so touching a stop on
   //                        the rail never disturbs the meeting
   //
@@ -230,7 +228,6 @@ window.KolobAudio = (function () {
   var synths = {};                 // synth:<voice>, one per voice for the whole visit
   var auditionStream = null;
   var auditioning = false;         // true for the length of one sample() call
-  var synthSalt = "";              // harness only: re-salt the sound-level streams
   function visitRoot() {
     if (!root) {
       var Rand = window.PJ2 && window.PJ2.Rand;
@@ -269,7 +266,7 @@ window.KolobAudio = (function () {
   // synth(voice): sound-level detail for a voice, the whole visit long.
   function synth(voice) {
     if (auditioning) return audition();
-    return synths[voice] || (synths[voice] = visitRoot().fork(synthSalt + "synth:" + voice));
+    return synths[voice] || (synths[voice] = visitRoot().fork("synth:" + voice));
   }
   function reseedDice() { root = null; dice = { n: -1, streams: {}, turns: {} }; synths = {}; auditionStream = null; }
 
@@ -339,7 +336,7 @@ window.KolobAudio = (function () {
   // voice 1.35: the still small voice sat too low in the mix — lift it ~50%
   // in the room without moving its slider (the slider reads layerVolumes, this
   // trim rides on top).
-  // clarinet 0.72 / bagpipe 0.49: both sat too loud in the mix. voice 9.0:
+  // clarinet 0.72: it sat too loud in the mix. voice 9.0:
   // lifted further by owner request — but the trim was never the reason the
   // voice stayed faint (see the source peak in stillVoiceRender); this rides on
   // top of that source lift. bells 0.8: pulled down 20% by owner request.
@@ -854,7 +851,6 @@ window.KolobAudio = (function () {
   var HOUSE_RELEASE_S = 1.5;
   var houseNotes = {};             // layer → its reported notes still to end [{s, e, f}]
   var houseRest = {};              // layer → no turn of it begins before this (the release)
-  var handsLog = [];               // every pair of hands: its layer, and when it let go (for the harness)
   function heldByHouse(layer, f, s, dur) {
     var a = houseNotes[layer] || (houseNotes[layer] = []);
     a.push({ s: s, e: s + dur, f: f });
@@ -869,8 +865,6 @@ window.KolobAudio = (function () {
       h = d.hands[layer] = ctx.createGain();
       h.gain.value = 1;
       h.connect(layerGains[layer]);
-      handsLog.push({ layer: layer, node: h, at: null, until: null });
-      if (handsLog.length > 256) handsLog.shift();
     }
     return h;
   }
@@ -912,7 +906,6 @@ window.KolobAudio = (function () {
         try { h.disconnect(); } catch (e) {}
         var at = d.spent.indexOf(h); if (at >= 0) d.spent.splice(at, 1);
       });
-      for (var i = handsLog.length - 1; i >= 0; i--) if (handsLog[i].node === h) { handsLog[i].at = te; handsLog[i].until = until; handsLog[i].guest = guest; break; }
       layers.push(L);
     });
     if (!layers.length) return null;
@@ -1304,7 +1297,6 @@ window.KolobAudio = (function () {
   S.turn = turn;
   S.wait = wait;
   S.synth = synth;
-  S.audition = audition;
   S.now = now;
   S.cueAt = cueAt;
   S.cueIn = cueIn;
@@ -1317,8 +1309,6 @@ window.KolobAudio = (function () {
   S.visitSeed = function () { return seed; };
   // is the music's now a cue's? (the hymnal counts a hymn written inside one)
   S.inCue = function () { return musicNow != null; };
-  // harness only: re-salt the sound-level streams (the score must not move)
-  S.setSynthSalt = function (salt) { synthSalt = salt ? String(salt) + ":" : ""; synths = {}; };
   S.SHELVED = SHELVED;
   S.ROOM_BALANCE = ROOM_BALANCE;
   S.ROOM_RAMP_S = ROOM_RAMP_S;
@@ -1329,9 +1319,6 @@ window.KolobAudio = (function () {
   S.panAt = panAt;
   S.houseLetsGo = houseLetsGo;
   S.houseRests = houseRests;
-  S.HOUSE = HOUSE;
-  S.HOUSE_RELEASE_S = HOUSE_RELEASE_S;
-  S.handsLog = function () { return handsLog; };
   S.getLayerParam = getLayerParam;
   S.fieldDest = fieldDest;
   S.noiseSource = noiseSource;

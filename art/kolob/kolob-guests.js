@@ -216,108 +216,6 @@ window.KOLOB = window.KOLOB || {};
   }
 
   // ==========================================================================
-  // TWO BANDS CROSSING (after the Danbury green; Putnam's Camp): a visiting
-  // band enters from one side of the valley in ITS OWN key and ITS OWN
-  // marching tempo, swells as it approaches, crosses the meeting, and
-  // recedes. It claims no air and defers to no one; the resident voices
-  // carry on exactly as they were. The collision is the piece. The visitor
-  // is engraved on its own layer, in round notes — not one of ours (v0.31:
-  // its notes are reported to the page with layer "band"; the report draws
-  // no dice and moves nothing).
-  // ==========================================================================
-  function twoBandsCross(V, tc) {
-    var R = stream("guest:bands");
-    // under the withholding the visiting band gets a lesser hymn — even a
-    // stranger's quickstep must not give the tune away
-    var theme = S.Meeting.withheld() ? Motif.anyWorking(S.moment(), R) : Motif.theme();
-    var t = tc + 0.4;
-    var dur = R.rnd(45, 65);
-    var beat = R.rnd(0.4, 0.52);               // quickstep — unrelated to the meeting's time
-    var trans = R.pickW([[9 / 8, 3], [4 / 3, 2], [16 / 9, 1]]);   // its own key, justly tuned to itself
-    var fromLeft = R.chance(0.5);
-
-    // the visiting band's own wire into the hall
-    var bus = S.ctx.createGain();
-    bus.gain.setValueAtTime(0.0001, t);
-    var pan = S.ctx.createStereoPanner();
-    pan.pan.setValueAtTime(fromLeft ? -0.95 : 0.95, t);
-    pan.pan.linearRampToValueAtTime(fromLeft ? 0.95 : -0.95, t + dur);
-    bus.connect(pan);
-    pan.connect(wideSend());                    // outside the windows: all tabernacle
-    // approach — cross — recede
-    bus.gain.linearRampToValueAtTime(0.4, t + dur * 0.45);
-    bus.gain.setValueAtTime(0.4, t + dur * 0.6);
-    bus.gain.linearRampToValueAtTime(0.0001, t + dur);
-
-    // the tune: the day's theme as a quickstep, or a jaunty default
-    var degs = theme && theme.notes.length >= 4
-      ? theme.notes.map(function (n) { return n.deg; })
-      : [0, 2, 4, 4, 5, 4, 2, 0, 2, 4, 5, 7, 5, 4, 2, 1];
-
-    // fife: one continuous reed, tongued with the gain gate
-    var fife = S.ctx.createOscillator();
-    fife.type = "sawtooth";
-    var flp = S.ctx.createBiquadFilter();
-    flp.type = "lowpass";
-    flp.frequency.setValueAtTime(2000, t);
-    var fart = S.ctx.createGain();
-    fart.gain.setValueAtTime(0, t);
-    fife.connect(flp); flp.connect(fart); fart.connect(bus);
-    // bass: the oom and the pah
-    var oom = S.ctx.createOscillator();
-    oom.type = "sine";
-    var og = S.ctx.createGain();
-    og.gain.setValueAtTime(0, t);
-    oom.connect(og); og.connect(bus);
-
-    // how near the band is (0..1) at a moment — the same approach/cross/recede
-    // as its bus gain, for the page's ink
-    function nearness(at) {
-      var x = (at - t) / dur;
-      return x < 0.45 ? x / 0.45 : x < 0.6 ? 1 : Math.max(0, 1 - (x - 0.6) / 0.4);
-    }
-    var tt = t, di = 0, soundEnd = t + dur;         // (the last note told, for the span)
-    while (tt < t + dur - beat) {
-      var deg = degs[di % degs.length];
-      var nd = Math.min(2, 0.9 + (di % 4 === 0 ? 0.5 : 0)) * beat;
-      var f = degFreq(projDeg(deg)) * trans * 2;               // fife register
-      fife.frequency.setValueAtTime(f, tt);
-      fart.gain.setValueAtTime(0.0001, tt);
-      fart.gain.linearRampToValueAtTime(0.5, tt + 0.03);
-      fart.gain.setValueAtTime(0.5, tt + nd * 0.7);
-      fart.gain.linearRampToValueAtTime(0.08, tt + nd * 0.95); // the tongue lifts
-      emitNote("band", f, tt, nd, guestNote(V, "bands", { part: "melody", beat: beat, loud: nearness(tt) }));
-      tt += nd; di++;
-      if (tt > soundEnd) soundEnd = tt;
-    }
-    var bt = t, bar = 0;
-    while (bt < t + dur - beat) {
-      var bf = degFreq(projDeg(bar % 2 === 0 ? 0 : 4)) * trans / 2;   // oom on the root, pah on the fifth
-      oom.frequency.setValueAtTime(bf, bt);
-      og.gain.setValueAtTime(0.0001, bt);
-      og.gain.linearRampToValueAtTime(0.55, bt + 0.02);
-      og.gain.linearRampToValueAtTime(0.0001, bt + beat * 0.8);
-      emitNote("band", bf, bt, beat, guestNote(V, "bands", { part: "bass", beat: beat, loud: nearness(bt) }));
-      if (bt + beat > soundEnd) soundEnd = bt + beat;
-      bt += beat * 2; bar++;
-    }
-    fife.start(t); fife.stop(t + dur + 0.5);
-    oom.start(t); oom.stop(t + dur + 0.5);
-
-    tell(V, { type: "guest", guest: "bands", stage: "approaches", from: fromLeft ? "west" : "east",
-              cat: "visitation", label: "⇋ a band approaches", detail: (fromLeft ? "from the west" : "from the east") + " · its own key" });
-    cueAt("guests", tc + dur * 0.5, function () {
-      tell(V, { type: "guest", guest: "bands", stage: "cross", cat: "visitation", label: "⇋ the bands cross", detail: "two times at once" });
-    });
-    cueAt("guests", tc + dur, function () {
-      tell(V, { type: "guest", guest: "bands", stage: "passes", cat: "visitation", label: "⇋ passes on", detail: "" });
-    });
-    // the span is the band's sound, counted from the cue: it steps off 0.4 s
-    // after it, and its last note may ring a moment past the fade (round 2)
-    return soundEnd - tc;
-  }
-
-  // ==========================================================================
   // FROM THE STEEPLES (after Ives, 'From the Steeples and the Mountains'):
   // the meetinghouse bell rings, and two or three far steeples answer from
   // the edges of the valley — each in ITS OWN key, each keeping its one fixed
@@ -1136,7 +1034,6 @@ window.KOLOB = window.KOLOB || {};
   S.razzCluster = razzCluster;
   S.cumulativeAssembly = cumulativeAssembly;
   S.unansweredQuestion = unansweredQuestion;
-  S.twoBandsCross = twoBandsCross;
   S.steeplesAnswer = steeplesAnswer;
   S.oldTunePool = oldTunePool;
   S.oldTuneCandidates = oldTuneCandidates;
@@ -1156,7 +1053,7 @@ window.KOLOB = window.KOLOB || {};
   // linesAdmitted(tune, mode), excerpt(tune, k), octaveFor(notes),
   // leapLeans(monzos, joined), wolfLeap(a, b))
   KOLOB.Guests = {
-    cumulativeAssembly: cumulativeAssembly, unansweredQuestion: unansweredQuestion, twoBandsCross: twoBandsCross, steeplesAnswer: steeplesAnswer,
+    cumulativeAssembly: cumulativeAssembly, unansweredQuestion: unansweredQuestion, steeplesAnswer: steeplesAnswer,
     oldTuneRemembered: oldTuneRemembered, oldTuneCandidates: oldTuneCandidates, oldTunePool: oldTunePool, trombonesAtDawn: trombonesAtDawn,
     handbellsRing: handbellsRing, singingSchool: singingSchool, nauvooBand: nauvooBand, handcartCompany: handcartCompany, gullsOver: gullsOver,
     organistVariations: organistVariations, changesRing: changesRing, tonguesGift: tonguesGift, socialHall: socialHall,

@@ -14,7 +14,7 @@ function otl_v($file)
     $path = __DIR__ . '/' . $file;
     return file_exists($path) ? substr(md5_file($path), 0, 8) : '00000000';
 }
-include '../../includes/header.php';
+include '../../../includes/header.php';
 ?>
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -120,8 +120,8 @@ include '../../includes/header.php';
 </div>
 
 <?php // the engine, from the one list (_engine.php), exactly as index.php loads it
-$k_engine = require __DIR__ . '/_engine.php';
+$k_engine = array_map(function ($f) { return '../' . $f; }, require __DIR__ . '/../_engine.php');   // (shelved: the engine lives one folder up)
 kolob_engine_tags($k_engine, 'otl_v'); ?>
 <script src="tune-lab.js?v=<?php echo otl_v('tune-lab.js'); ?>"></script>
 
-<?php include '../../includes/footer.php'; ?>
+<?php include '../../../includes/footer.php'; ?>

@@ -581,7 +581,6 @@ window.KOLOB = window.KOLOB || {};
   // LENT — what this room shares with the rest of the house (KOLOB._s)
   // ==========================================================================
   S.organChord = organChord;
-  S.houseOrganChord = houseOrganChord;
   S.organPartLine = organPartLine;
   S.organCycle = organCycle;
   // the pipe organ and its organist (round 3b, step 2)
@@ -589,8 +588,5 @@ window.KOLOB = window.KOLOB || {};
   S.organistPlays = organistPlays;
   S.organStop = organStop;
   S.organStats = organStats;
-  S.pipeChordOn = pipeChordOn;                   // (a lab's: the house's chord on an organ of its own)
-  S.houseReg = houseReg;
-  S.HOUSE_ORGAN = { ref: HOUSE_REF, trim: HOUSE_TRIM, swell: HOUSE_SWELL, underWardDb: UNDER_WARD_DB };
   (KOLOB._rooms = KOLOB._rooms || {})["kolob-voices-organ.js"] = true;   // the load guard's roll call
 })();
