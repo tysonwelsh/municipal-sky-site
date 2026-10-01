@@ -24,6 +24,7 @@
   --rule-2: rgba(74, 53, 18, 0.18);
   --track: rgba(74, 53, 18, 0.075);
   --band: rgba(74, 53, 18, 0.07);
+  --whisker: #7a746a;
   /* issues: the grade ramp's Utility red, and a lighter brick for "small" */
   --red-big: #8f1d12;
   --red-small: #cf6e56;
@@ -126,8 +127,7 @@ h1 {
 .row:focus-visible .hit { fill: var(--band); stroke: var(--ink); stroke-width: 1; stroke-dasharray: 2 2; }
 .track { fill: var(--track); }
 .mid { stroke: var(--rule-2); stroke-width: 1; }
-.ci-halo { stroke: var(--paper); stroke-width: 3.2; stroke-linecap: butt; fill: none; }
-.ci { stroke: var(--ink); stroke-width: 1.15; fill: none; }
+.ci { stroke: var(--whisker); stroke-width: 1.15; fill: none; }
 .dot-track { stroke: var(--rule-2); stroke-width: 1; }
 
 /* reading notes */
@@ -179,7 +179,7 @@ tbody tr.axis-head td { text-align: left; font-weight: 700; color: var(--ink); p
       <li><span class="sw sw-has"></span>has it</li>
       <li><span class="sw sw-hint"></span>just a hint</li>
       <li class="sep" aria-hidden="true"></li>
-      <li><svg class="sw-ci" viewBox="0 0 22 9" aria-hidden="true"><path d="M1 1v7M1 4.5h20M21 1v7" stroke="#33240f" stroke-width="1.2" fill="none"/></svg>95% interval</li>
+      <li><svg class="sw-ci" viewBox="0 0 22 9" aria-hidden="true"><path d="M1 1v7M1 4.5h20M21 1v7" stroke="#7a746a" stroke-width="1.2" fill="none"/></svg>95% interval</li>
     </ul>
     <div class="grid" id="rates"></div>
   </section>
@@ -341,11 +341,10 @@ tbody tr.axis-head td { text-align: left; font-weight: 700; color: var(--ink); p
       var lx = X0 + ws + (ws > 0 ? 1.2 : 0), lw = X0 + wt - lx;
       if (lw > 0.4) el('rect', { x: lx.toFixed(2), y: by, width: lw.toFixed(2), height: BARH,
         fill: ax.jnsq ? C.hint : C.small }, g);
-      /* the whisker: paper halo under a thin ink line, capped */
+      /* the whisker: a thin grey line, capped */
       var x1 = xOf(r.ci[0]), x2 = xOf(r.ci[1]);
       var d = 'M' + x1.toFixed(2) + ' ' + (cy - 4) + 'v8M' + x1.toFixed(2) + ' ' + cy +
         'H' + x2.toFixed(2) + 'M' + x2.toFixed(2) + ' ' + (cy - 4) + 'v8';
-      el('path', { d: d, class: 'ci-halo' }, g);
       el('path', { d: d, class: 'ci' }, g);
       var v = el('text', { x: VAL, y: cy + 3.8, 'text-anchor': 'end', class: 't-val' }, g);
       v.textContent = pct(pt);

@@ -4942,8 +4942,8 @@ html.jd-folder-open { overflow: hidden; }
 .fx-legend-tap { color: var(--fink-3); font-style: italic; }
 .fx-track-bar { fill: rgba(74, 53, 18, 0.075); }
 .fx-mid { stroke: var(--frule-2); stroke-width: 0.6; }
-.fx-ci-halo { fill: none; stroke: var(--fpaper); stroke-width: 2; }
-.fx-ci { fill: none; stroke: var(--fink); stroke-width: 0.75; }
+/* the whisker: grey and unhaloed, quieter than the bars (owner, 2026-10-01) */
+.fx-ci { fill: none; stroke: #7a746a; stroke-width: 0.75; }
 .fx-row { cursor: pointer; outline: none; }
 .fx-row-hit { fill: transparent; }
 .fx-row.is-on .fx-row-hit { fill: rgba(74, 53, 18, 0.07); }

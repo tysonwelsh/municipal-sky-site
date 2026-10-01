@@ -1266,8 +1266,9 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
 /* THE CATEGORIES AS ISSUE RATES (owner, 2026-09-30): one 0-100% ruler per
    panel, a severity-split bar (dark = big problem / has it, pale = small
    problem / a hint), the data end rounded like the cost bars, and a thin
-   whisker for the 95% interval with a paper halo so it reads over the ink */
+   whisker for the 95% interval, grey and unhaloed (owner, 2026-10-01) */
 .jd-about .jdc-rates .jdc-panel { --jdc-val: 2.7rem; }
+.jd-about .jdc-multiples.jdc-rates, .jd-about .jdc-legend { --jdc-ci: #7a746a; }
 .jd-about .jdc-rtrack {
   position: absolute; left: 0; right: 0; top: 50%;
   height: 10px; margin-top: -5px; background: rgba(55, 65, 79, 0.07);
@@ -1281,10 +1282,8 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
 .jd-about .jdc-ci {
   position: absolute; top: 50%; height: 9px; margin-top: -4.5px;
   box-sizing: border-box;
-  border-left: 1.2px solid var(--jdc-ink); border-right: 1.2px solid var(--jdc-ink);
-  background:
-    linear-gradient(var(--jdc-ink), var(--jdc-ink)) center / 100% 1.2px no-repeat,
-    linear-gradient(var(--jdc-card), var(--jdc-card)) center / 100% 2.6px no-repeat;
+  border-left: 1.2px solid var(--jdc-ci); border-right: 1.2px solid var(--jdc-ci);
+  background: linear-gradient(var(--jdc-ci), var(--jdc-ci)) center / 100% 1.2px no-repeat;
 }
 .jd-about .jdc-legend {
   display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0 0 18px;
@@ -1294,8 +1293,8 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
 .jd-about .jdc-key i { display: inline-block; width: 16px; height: 8px; }
 .jd-about .jdc-key i.jdc-key-ci {
   height: 9px; box-sizing: border-box;
-  border-left: 1.2px solid var(--jdc-ink); border-right: 1.2px solid var(--jdc-ink);
-  background: linear-gradient(var(--jdc-ink), var(--jdc-ink)) center / 100% 1.2px no-repeat;
+  border-left: 1.2px solid var(--jdc-ci); border-right: 1.2px solid var(--jdc-ci);
+  background: linear-gradient(var(--jdc-ci), var(--jdc-ci)) center / 100% 1.2px no-repeat;
 }
 
 /* THE CHARTS ON A PHONE. The pane is ~360px wide and 66vh tall, and a 700px

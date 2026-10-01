@@ -1270,11 +1270,11 @@
           s += '<rect x="' + lx.toFixed(2) + '" y="' + by + '" width="' + lw.toFixed(2) +
                '" height="' + BARH + '" fill="' + (hit ? HIT_HINT : ISSUE_SMALL) + '"/>';
         }
-        /* the whisker: a paper halo under a thin ink line, capped */
+        /* the whisker: a thin grey line, capped, no halo (owner, 2026-10-01) */
         var x1 = (PX0 + PXW * q.lo).toFixed(2), x2 = (PX0 + PXW * q.hi).toFixed(2);
         var d = 'M' + x1 + ' ' + (y - 2.6) + 'v5.2M' + x1 + ' ' + y + 'H' + x2 +
                 'M' + x2 + ' ' + (y - 2.6) + 'v5.2';
-        s += '<path d="' + d + '" class="fx-ci-halo"/><path d="' + d + '" class="fx-ci"/>' +
+        s += '<path d="' + d + '" class="fx-ci"/>' +
              '<text x="' + (PW - 2) + '" y="' + (y + 2.6) +
              '" text-anchor="end" class="fx-t-axval">' + pct(q.rate) + '</text>' +
              '<text x="' + PLAB + '" y="' + (y + 2.6) +
