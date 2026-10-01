@@ -792,3 +792,49 @@ change checks as before.
   unhandled-rejection paths (behaviour); the warm-up's unarmed filmstrip
   cells in ghosts (a probable visible seam — fixing it changes what the
   reader sees mid-handoff).
+
+## Outcome of the about-page pass (2026-10-01)
+
+Ten commits on `junk-drawer/about-refactor` over 8f92653: the harness
+extension (130 scenes, 74 new: every step at desktop and phone, the drawer
+wake, the demo instrument through its unveil, each report-card view, each
+analytics panel, the page again after turns are filed; two full captures
+identical; both injected changes caught), two reviews, two refactor agents
+(one per file set), the orchestrator's merges.
+
+**Verification, the whole branch against the pre-change baseline:**
+screenshots 165/165 identical; payloads 15/15; console identical; markup
+differs only by the HTML comments that no longer ship and by filmstrip id
+prefixes (the live control now keeps its ghost's prefix; the instrument
+ghost carries jd-turn's own control); computed styles differ only on
+elements that cannot render (hidden `.jdc-rn` cells, the `display:contents`
+bench grid, flex values on grid items, a `max-width` cap on a 100%-wide
+plate, margins in an unrendered host) and by the prefix family in a few
+`fill: url(#…)` references; the surface gains `JD_paper.cls` on /about/.
+
+**Done.** A1–A11, A13–A19, A21 in about-scenes.js (filmstrip builds on
+hidden hosts 66 → 4 in the first six seconds, timers 195 → 118, the last
+timer at ~2.4 s instead of ~4.0 s, with the first visible card arming at the
+same moment: 126–298 ms from scroll in both versions). C1, C4–C13, C15–C17,
+C19–C21, C23–C25 in about.css / index.php (106 KB → 99 KB; the served page
+34.5 KB → 31.9 KB; the poster preload now matches `image-set`'s choice at
+1.25× scaling, confirmed in Chromium before and after).
+
+**Kept, with reasons (the agents' calls, upheld):** the folder layer (C2):
+still reachable through `?live` and the warm-up's re-parenting; the pane's
+`max-height` (C20): Chromium's used height differs from it under page zoom
+by up to 0.014 px, enough to move a fitted card's scale; the two 768px
+chart blocks unmerged (C11): one shared element needs the two orders; the
+ResizeObserver's double fit (A3): the second fit is what re-derives a
+card's scale after an axis definition unfolds — deduping changes it (k
+0.96 → 1.00, overflowing the pane); `host.__shows`: the harness reads it;
+the dormant rated path, labelled.
+
+**Owner's decisions, untouched:** `.jd-demo-note` renders at body size
+(outranked); the record's 26 px band seam never applies; the title's rule
+vs the house `.section-divider`; the chart blocks' breakpoint misses
+landscape phones; `will-change` on inline cards. **Found, not fixed
+(behaviour):** on the phone layout the report card's category-definition
+buttons do nothing (`recordControls` looks for the desktop card class);
+a malformed `jd-about-restore` value aborts the page script; `JD_drawOn`
+schedules a strip timer even when it dressed nothing.
