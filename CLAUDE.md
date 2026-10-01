@@ -40,3 +40,13 @@ with the site's `margin: 0 0 var(--s-2)`), then `<div class="section-divider"></
 header for this, and don't invent per-page spacing for titles, rules and the
 first paragraph: use the `--s-*` scale and the shared classes, so pages stay
 consistent and the owner doesn't have to fix one-off spacing page by page.
+
+## Site review checklist (owner, 2026-10-01)
+
+A private checklist of site-wide privacy, licensing and housekeeping items
+lives at https://claude.ai/artifact/7BQNeffVJapzTyUs8uafor (owner-only).
+When asked to work on it, read collection `items` with the ArtifactData
+tool, take items whose status is `open` (leave `decide` to the owner), work
+on a branch, and update each finished item's `status`, `note` (branch +
+commit) and `updated`. The repo is public: keep the checklist's contents
+out of commits, comments and docs; describe the change, not the finding.
