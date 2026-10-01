@@ -69,29 +69,6 @@
 
   /* ---------- small helpers ---------------------------------------------- */
   var esc = JD_esc, byId = JD_byId;
-  /* crypto.randomUUID is present at the iOS 16 floor but only in a secure
-     context, so the harness on a bare IP gets the getRandomValues path and
-     Math.random is the last resort — the ref only has to be unique per
-     visitor, the server never trusts it for anything but convergence */
-  function uuid() {
-    try {
-      if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
-      if (window.crypto && crypto.getRandomValues) {
-        var b = new Uint8Array(16);
-        crypto.getRandomValues(b);
-        b[6] = (b[6] & 0x0f) | 0x40; b[8] = (b[8] & 0x3f) | 0x80;
-        var h = [], i;
-        for (i = 0; i < 16; i++) h.push((b[i] + 0x100).toString(16).slice(1));
-        return h.slice(0, 4).join('') + '-' + h.slice(4, 6).join('') + '-' +
-          h.slice(6, 8).join('') + '-' + h.slice(8, 10).join('') + '-' +
-          h.slice(10, 16).join('');
-      }
-    } catch (e) {}
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-      var r = Math.random() * 16 | 0;
-      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-    });
-  }
   /* retry_after, in words a person can act on */
   function humanWait(sec) {
     sec = Math.max(0, parseInt(sec, 10) || 0);
@@ -126,19 +103,8 @@
     return s.length > 52 ? s.slice(0, 51).replace(/\s+\S*$/, '') + '…' : s;
   }
   function tax() { return (payload || {}).taxonomy || {}; }
-  function liveAxes() {
-    return ((tax().axes) || []).filter(function (a) { return !a.defunct; });
-  }
-  function byRankDesc(list) {
-    return (list || []).slice().sort(function (a, b) {
-      return (b.rank || 0) - (a.rank || 0);
-    });
-  }
-  function tierBox(id) {
-    var tiers = tax().sizeTiers || [];
-    for (var i = 0; i < tiers.length; i++) if (tiers[i].id === id) return tiers[i].box;
-    return null;
-  }
+  /* what is read off it — the live axes, a scale best first, a tier's box —
+     is jd-core's: JD_liveAxes(tax()), JD_byRankDesc(list), JD_tierBox(tax(), id) */
 
   /* ---------- payload ----------------------------------------------------- */
   /* The visitor's own items are restored WITHOUT this (see the init block at
@@ -1508,7 +1474,7 @@
   function scaleRow(slot, ax, chosen) {
     var axisId = ax ? ax.id : null;
     var label = ax ? (ax.label || ax.id) : 'overall grade';
-    var levels = byRankDesc(ax ? ax.values : tax().grades);
+    var levels = JD_byRankDesc(ax ? ax.values : tax().grades);
     /* THE OVERALL GRADE'S GUIDANCE (owner, 2026-09-29): unfolding the row
        gives the rater the question the grade answers, then every tier's own
        description from taxonomy.json, best to worst — one tier a line.
@@ -1598,7 +1564,7 @@
   function benchRated(slot) {
     var r = work.ratings[slot];
     if (!r || r.grade == null) return false;
-    return liveAxes().every(function (ax) { return r.axes[ax.id] != null; });
+    return JD_liveAxes(tax()).every(function (ax) { return r.axes[ax.id] != null; });
   }
 
   /* THE DOCKET (owner redesign, 2026-08-26; discovered in mockups/
@@ -1746,7 +1712,7 @@
        carries the 2px top rule that reads as a tfoot break; it just needed
        the grade row to actually be last for that rule to mean what it looks
        like it means. */
-    liveAxes().forEach(function (ax) {
+    JD_liveAxes(tax()).forEach(function (ax) {
       h += scaleRow(slot, ax, r.axes[ax.id]);
     });
     h += scaleRow(slot, null, r.grade);
@@ -1845,7 +1811,7 @@
        this drawing, as the report card's segmented gauge — no words
        (owner, 2026-08-26). A skipped grade sparks nothing. */
     var rt = work.ratings[slot];
-    var spark = gaugeFor(null, byRankDesc(tax().grades).length, rt ? rt.grade : null);
+    var spark = gaugeFor(null, JD_byRankDesc(tax().grades).length, rt ? rt.grade : null);
     if (spark) spark = '<span class="jd-pod-spark" aria-hidden="true">' + spark + '</span>';
     return '<div class="jd-pod-print" data-pod="' + slot + '" data-slot="' + slot +
       '" role="button" tabindex="0" draggable="false" aria-label="Model ' +
@@ -2110,7 +2076,7 @@
     if (!ctrl || !ctrl.classList || !ctrl.classList.contains('jd-row-ctrl')) return;
     var old = ctrl.querySelector('.rc-bar');
     if (old) ctrl.removeChild(old);
-    var levels = byRankDesc(ax ? ax.values : tax().grades);
+    var levels = JD_byRankDesc(ax ? ax.values : tax().grades);
     var html = gaugeFor(ax, levels.length, val == null ? null : Number(val), true);
     if (html) ctrl.insertAdjacentHTML('afterbegin', html);
   }
@@ -2127,7 +2093,7 @@
       work.ratings[slot].axes[t.getAttribute('data-axis')] =
         val == null ? null : Number(val);
       t.classList.toggle('is-set', val != null);
-      paintGauge(t, byId(liveAxes(), t.getAttribute('data-axis')), val);
+      paintGauge(t, byId(JD_liveAxes(tax()), t.getAttribute('data-axis')), val);
     }
     if (role === 'grade' || role === 'axis') {
       /* the bench gate re-arms (or re-locks — a scale set back to skip
@@ -2330,9 +2296,10 @@
     /* the recoverability handle is minted and PERSISTED before either fetch
        leaves (APP §4.11): PHP cannot stream a partial answer, so a killed
        request is recovered by re-sending the same ref, never by a server id
-       we never received */
+       we never received. A random v4 (JD_uuid): it only has to be unique per
+       visitor, the server never trusts it for anything but convergence */
     turn = {
-      client_ref: uuid(), state: 'generating', submission_id: null,
+      client_ref: JD_uuid(), state: 'generating', submission_id: null,
       slots: blankSlots()
     };
     persist();
@@ -2682,7 +2649,7 @@
        drawer framed exactly as it was on the bench. */
     if (window.JD_fitView) window.JD_fitView(el.querySelector('svg'), 'gen:' + rec.gen_id);
     if (window.JD_applySize) {
-      window.JD_applySize(el, tierBox(rec.sizeClass || VISITOR_TIER), rec.gen_id, 1);
+      window.JD_applySize(el, JD_tierBox(tax(), rec.sizeClass || VISITOR_TIER), rec.gen_id, 1);
     }
     /* position: the visitor's own scatter entry, reused across reloads the
        way every other item's is */
@@ -2932,12 +2899,7 @@
          caller is the /about/ walkthrough, which has to be able to say
          "this one is Kimi's" and drive the rail to it. The bench never
          sets it, so its blind deal is untouched (2026-09-14). */
-      if (!job.fixedOrder) {
-        for (var i = order.length - 1; i > 0; i--) {
-          var j = Math.floor(Math.random() * (i + 1));
-          var t = order[i]; order[i] = order[j]; order[j] = t;
-        }
-      }
+      if (!job.fixedOrder) JD_shuffle(order);
       order.forEach(function (resp, k) {
         var slot = JD_SLOTS[k];
         work.slots[slot] = {
