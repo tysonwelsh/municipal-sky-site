@@ -55,6 +55,7 @@ window.KOLOB = window.KOLOB || {};
   function tonguesGift(V, t) { return S.tonguesGift(V, t); }
   function socialHall(V, t) { return S.socialHall(V, t); }
   function castEvent(c, ward) { return S.castEvent(c, ward); }
+  function guestsLane(live) { return S.guestsLane(live); }
   // from kolob-core.js
   function stream(label) { return S.stream(label); }
   function turn(label) { return S.turn(label); }
@@ -1623,6 +1624,13 @@ window.KOLOB = window.KOLOB || {};
     if (V.type === "variations") variationsMaterial(V);
     arrive(V, t);
   }
+  // A GUEST OF THE MEETING'S OWN STANDS — the far ward, the Hosanna, the
+  // testimony-bearers, whom the meeting performs itself: every slice, row and
+  // cast they lay out ahead asks it when its cue comes — while the music
+  // plays, while the meeting is the one that seated it (n), and while
+  // still(), its own record still held, holds. (The glue's guests ask the
+  // same through the chorister's book: kolob-guests.js C_live.)
+  function standsFor(n, still) { return function () { return !!S.playing && C.meetingNum === n && (!still || !!still()); }; }
   // THE FAR WARD IN OUR HYMN (PLAN §8.8):
   // the ward's hymn (kolob-voices-choir.js, singHymnWard) asks as it begins
   // whether a far ward sings it with us. If so, it is made ready then (pure,
@@ -1638,11 +1646,11 @@ window.KOLOB = window.KOLOB || {};
     if (!FW || !V || C.si !== V.index || !S.ctx || !S.playing) return null;
     V.fired = true; V.meetingNum = C.meetingNum; V.logged = !UNLOGGED.farward;
     var n = C.meetingNum, sec = C.section;
-    function live() { return !!S.playing && C.meetingNum === n && C.visitations.indexOf(V) >= 0; }
+    var live = standsFor(n, function () { return C.visitations.indexOf(V) >= 0; });
     try {
       V.prepared = FW.prepare({ hymn: h, keynoteHz: S.F0 * S.ROOT_MULT }, V.stream);
       V.stage = FW.stage(S.ctx, S.wideSend(), V.prepared, V.stream, {
-        defer: function (at, fn) { cueAt("guests", at, function () { if (live()) fn(); }); },
+        defer: guestsLane(live),
         onNote: function (nt) { emitNote("farward", nt.freq, nt.t, nt.dur, { part: nt.part, deg: nt.deg, cents: nt.cents, verse: nt.verse, line: nt.line, hymnId: h.id, guest: "farward", logged: V.logged }); },
       });
     } catch (e) { if (window.console) console.warn("Kolob: the far ward could not be made ready:", e); return null; }
@@ -1685,7 +1693,7 @@ window.KOLOB = window.KOLOB || {};
     S.houseLetsGo(t, "hosanna", false);
     try {
       end = G.perform(S.ctx, S.seatedSend("choir"), t, { keynoteHz: S.F0 * S.ROOT_MULT, ward: C.ward, sunday: C.meeting ? C.meeting.sunday : null }, C.hosannaStream, {
-        defer: function (at, fn) { cueAt("guests", at, function () { if (S.playing && C.meetingNum === n) fn(); }); },
+        defer: guestsLane(standsFor(n)),
         organDest: S.seatedSend("organ"),
         onStage: function () { /* nothing is told */ },
         onNote: function (x) {
@@ -1719,10 +1727,10 @@ window.KOLOB = window.KOLOB || {};
                                              silenceMul: silenceMul(), droneMonzo: S.droneNote ? S.droneNote().monzo : null }, T.stream);
     } catch (e) { if (window.console) console.warn("Kolob: the testimony could not be made ready:", e); return; }
     var n = C.meetingNum;
-    function live() { return !!S.playing && C.testimony === T && C.meetingNum === n; }
+    var live = standsFor(n, function () { return C.testimony === T; });
     var end = KOLOB.Testimony.perform(S.ctx, S.seatedSend("speaker"), tc, T.material, T.stream, {
       dests: { speaker: S.seatedSend("speaker"), harmonium: S.seatedSend("reed"), clarinet: S.seatedSend("reed") },
-      defer: function (at, fn) { cueAt("guests", at, function () { if (live()) fn(); }); },
+      defer: guestsLane(live),
       onNote: function (x) {
         emitNote(x.layer, x.freq, x.t, x.dur, { part: x.part, member: x.member, speech: !!x.speech, deg: x.deg, monzo: x.monzo, keyMonzo: x.keyMonzo, move: x.move || null, accent: x.accent, testimony: true });
       },

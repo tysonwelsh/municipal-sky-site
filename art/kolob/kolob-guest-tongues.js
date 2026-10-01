@@ -83,7 +83,7 @@
 //     once the meeting has seated its ward
 //   tongue(stream) → the syllables and words of one song (pure)
 //   ROWS — the stages that earn a row in the minutes (kolob-guests.js
-//     standingGuest)
+//     host reads them)
 //   ODDS, EXCLUDES, NAME, LABEL, LEVEL
 // ============================================================================
 
@@ -98,7 +98,7 @@ window.KOLOB.GuestTongues = (function () {
   // THE MINUTES. The gift tells five stages (onStage); three earn a row —
   // someone rising to sing, the ward's hum, the harmonium's answer. The song
   // itself and its height are heard, not written: the glue passes them over
-  // (kolob-guests.js standingGuest reads ROWS)
+  // (kolob-guests.js: the host reads ROWS)
   var ROWS = { rises: 1, "the ward hums": 1, "the harmonium": 1 };
 
   // ==========================================================================

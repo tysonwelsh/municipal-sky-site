@@ -379,7 +379,7 @@ with acorn and checks every function of that shape: it must call the lend it is
 named after and pass its arguments through unchanged, in order. One that
 renames (`function foo() { return S.bar(); }`) or drops, adds or reorders an
 argument fails the run, with file and line. It prints the count room by room
-(`wrappers (…): 188 in 8 rooms — voices-organ 15, …, core 36; every one exact,
+(`wrappers (…): 189 in 8 rooms — voices-organ 15, …, core 36; every one exact,
 every one used in its room`) and names any wrapper its room never uses (ESLint's
 `no-unused-vars` fails those). Without acorn (`npm install` not run) the
 wrappers are not checked, it says so, and it exits 2. `ALL GREEN` when nothing

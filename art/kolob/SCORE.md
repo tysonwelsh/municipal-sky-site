@@ -829,6 +829,28 @@ labs) and `level(api, read, write)` (the room's `LEVEL` on its surface,
 always a number; change ringing's is a plain number, the variations have
 none).
 
+**The host** (`kolob-guests.js`). The trombones, the guests who stand in the
+room (the handbells, the singing school, the gift of tongues) and those from
+outside the windows (the band, the handcarts, the gulls) are played through
+one `host(V, tc, G, name, layer, noteOf, opts)`: the meeting noted on the
+record (`V.meetingNum`) and nothing played without the room, the material and
+the stream (the joint held 4 s); the door a seated layer's send or, `layer`
+null, the wide send; `defer` on the `guests` lane while the guest stands
+(`stands(V)`: the music playing and `C_live`, its meeting still the one that
+seated it); its rows from its stages, each told at its moment (`tellAt`: now
+if it has come, else a cue that asks again); the air claimed and the span
+returned, its end less tc and a tail. Where the set pieces differ, an option:
+`rows` (a table; else the room's own `ROWS`; else every stage; a `dev` stage
+never), `firstRow` (the handbells' first sound is their `ring`), `once` (each
+row once, the guests in the room), `fields` (the row's own fields: the
+section and the hymn in the room, the side and the band outside), `hooks`
+(the trombones' rows by phrase), `claim` false (the band and the gulls take
+no air), `tail` (2; 1 outside). The variations, change ringing and the Social
+Hall use its pieces (`laneOf`, `tellAt`, `rowsOf`). The meeting's own guests
+(the far ward, the Hosanna, the testimony-bearers) take the same defer hook
+(`S.guestsLane`) with their own standing (`standsFor(n, still)`: the music
+playing, the meeting the one that seated them, and their own record held).
+
 **The budget** (`Calendar.GUEST_BUDGET`, enforced in `planMeeting` by
 `budgetRefuses`): `max` 2 guests a meeting, the Hosanna counted; one of the
 `showpieces` (the variations, the Social Hall, the Hosanna) at most; never two

@@ -26,8 +26,9 @@
 //     constants are declared at the foot of a room and read by the functions
 //     above them at call time, which is safe; it flagged 89 safe sites and
 //     no bug;
-//   no-shadow, until the guest-room scaffold (§3.2) is built — 182 sites
-//     today, mostly R, t and n declared again inside callbacks;
+//   no-shadow — 182 sites, mostly R, t and n declared again inside
+//     callbacks; the guest-room scaffold (§3.2, built) moved none of them,
+//     and turning the rule on is a pass of its own;
 //   never no-var (11,985 sites: the hoisting idiom is deliberate) nor
 //     no-param-reassign (305: the rooms mutate their own records on purpose).
 //
