@@ -1049,12 +1049,12 @@
   /* Nothing is cached across paints: the card is repainted by assigning an
      HTML string, so a held reference is a reference to a node that may
      already be off the document. Every lookup below is live, and during a
-     drag the DOM does not change at all, so the rects stay honest. */
+     drag the DOM does not change at all, so the rects stay honest. (The
+     drag alone holds on to nodes: it resolves the row, the tray and the
+     steps once, at the lift, and re-reads only their rects on every move —
+     see podParts, which looks them up afresh if a repaint has swapped the
+     podium out from under it.) */
   function podRoot() { return bodyEl ? bodyEl.querySelector('.jd-pod') : null; }
-  function podTiers() {
-    var r = podRoot();
-    return r ? r.querySelectorAll('.jd-pod-tier') : [];
-  }
   function podTier(k) {
     var r = podRoot();
     return r ? r.querySelector('.jd-pod-tier[data-rank="' + k + '"]') : null;
@@ -1220,7 +1220,7 @@
     podDrag = {
       slot: el.getAttribute('data-pod'), el: el, live: false, ghost: null,
       gw: 0, dx: 0, dy: 0, x0: e.clientX, y0: e.clientY,
-      pointerId: e.pointerId, over: null
+      pointerId: e.pointerId, over: null, parts: null
     };
     try { el.setPointerCapture(e.pointerId); } catch (err) {}
     window.addEventListener('pointermove', podOnMove, true);
@@ -1256,6 +1256,7 @@
     document.body.classList.add('jd-pod-drag');
     var sel = window.getSelection && window.getSelection();
     if (sel && sel.rangeCount) { try { sel.removeAllRanges(); } catch (err) {} }
+    podParts();   /* the drop targets, resolved once for the whole drag */
   }
   /* the drop is judged from the middle of the swatch the visitor can actually
      see, not the raw pointer — highlight and landing then agree by
@@ -1269,10 +1270,28 @@
              top: r.top - top, bottom: r.bottom + bottom };
   }
   function podIn(r, x, y) { return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom; }
+  /* the drag's drop targets — the podium, its row of steps, the tray and the
+     steps themselves — kept on podDrag from the lift on, so a pointermove
+     reads rects, not selectors. Keyed on the live podium: if anything has
+     repainted it mid-drag they are looked up afresh, exactly as an uncached
+     lookup would find them, and once the podium is gone there are none. */
+  function podParts() {
+    var root = podRoot();
+    if (!root) return null;
+    if (podDrag && podDrag.parts && podDrag.parts.root === root) return podDrag.parts;
+    var parts = {
+      root: root,
+      row: root.querySelector('.jd-pod-row'),
+      tray: root.querySelector('.jd-pod-tray'),
+      tiers: root.querySelectorAll('.jd-pod-tier')
+    };
+    if (podDrag) podDrag.parts = parts;
+    return parts;
+  }
   /* nearest step by horizontal distance — the gaps between the blocks, and
      the empty air above a short block, all belong to the step nearest them */
-  function podNearest(x) {
-    var tiers = podTiers(), best = 1, d = Infinity;
+  function podNearest(x, tiers) {
+    var best = 1, d = Infinity;
     for (var i = 0; i < tiers.length; i++) {
       var q = tiers[i].getBoundingClientRect();
       var dd = Math.abs(x - (q.left + q.right) / 2);
@@ -1283,18 +1302,17 @@
   /* rank 1..N, 0 for the row, null for nowhere. Rects are read fresh every
      time, so a scroll or a reflow mid-drag can never aim at a stale target. */
   function podHit(x, y) {
-    var root = podRoot();
-    if (!root) return null;
-    var row = root.querySelector('.jd-pod-row');
-    var tray = root.querySelector('.jd-pod-tray');
-    if (row && podIn(podGrow(row.getBoundingClientRect(), 14, 8, 4), x, y)) return podNearest(x);
+    var p = podParts();
+    if (!p) return null;
+    var row = p.row, tray = p.tray;
+    if (row && podIn(podGrow(row.getBoundingClientRect(), 14, 8, 4), x, y)) return podNearest(x, p.tiers);
     if (tray && podIn(podGrow(tray.getBoundingClientRect(), 6, 8, 14), x, y)) return 0;
     return null;
   }
   function podOver(k) {
     if (!podDrag || k === podDrag.over) return;
     podDrag.over = k;
-    var tiers = podTiers();
+    var p = podParts(), tiers = p ? p.tiers : [];
     for (var i = 0; i < tiers.length; i++) {
       tiers[i].classList.toggle('is-armed',
         Number(tiers[i].getAttribute('data-rank')) === k);
@@ -1306,10 +1324,14 @@
       if (Math.abs(e.clientX - podDrag.x0) < 6 && Math.abs(e.clientY - podDrag.y0) < 6) return;
       podLift(e);
     }
+    /* read, then write: the hit test reads the row/tray/step rects, and
+       moving the ghost first made every pointermove a synchronous layout.
+       The ghost is position:fixed and pointer-events:none, so where it
+       stands cannot move those rects — the order changes no answer. */
+    var a = podAim(e), k = podHit(a.x, a.y);
     podDrag.ghost.style.left = (e.clientX - podDrag.dx) + 'px';
     podDrag.ghost.style.top = (e.clientY - podDrag.dy) + 'px';
-    var a = podAim(e);
-    podOver(podHit(a.x, a.y));
+    podOver(k);
     if (e.cancelable) e.preventDefault();
   }
   function podDone() {
@@ -1594,7 +1616,7 @@
     'aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="1"/>' +
     '<rect x="9.5" y="9.5" width="5" height="5" rx="0.5"/></svg>';
 
-  function railHTML(ok) {
+  function railHTML(ok, tiers) {
     var steps = ok.map(function (s) {
       return { id: s, n: ok.indexOf(s) + 1, label: 'drawing ' + s.toUpperCase(),
         face: s.toUpperCase() };
@@ -1608,7 +1630,7 @@
     }
     /* the size card closes a curation (owner, 2026-08-30): its ring wears
        the nested-squares mark — the scale itself, small inside large */
-    if (sizeTiers().length) {
+    if (tiers.length) {
       steps.push({ id: 'size', n: steps.length + 1, label: 'how big is it',
         face: RAIL_SIZE, word: 'size' });
     }
@@ -1677,7 +1699,7 @@
      the portrait flow, with the exhibit sticky at the top of the scroller.
      The card widens to carry the two columns and narrows again the moment it
      stops (see paint's data-view). */
-  function benchPanel(slot, ok) {
+  function benchPanel(slot, ok, tiers) {
     var r = work.ratings[slot];
     var idx = ok.indexOf(slot);
     var two = ok.length > 1;
@@ -1726,7 +1748,7 @@
     }
     /* the gate: disabled until benchRated — onChange re-arms it live */
     var gate = benchRated(slot) ? '' : ' disabled';
-    var sized = sizeTiers().length;
+    var sized = tiers.length;
     if (!two) {
       /* one drawing, no ranking — but a curation still closes on the size */
       acts += sized
@@ -1814,7 +1836,7 @@
      classes (podPaint/podSeat), never rewrites this HTML — which is what lets
      a drag survive on a card that otherwise repaints by assigning a string.
      Two survivors build two steps, three build three, four build four. */
-  function callPanel(ok) {
+  function callPanel(ok, tiers) {
     if (podDrag) podDone();
     podNormalize(ok);
     podArmed = null;
@@ -1844,7 +1866,7 @@
     h += '</div><span class="jd-vh jd-pod-live" role="status" aria-live="polite"></span></div>';
     /* a curation has one more card after this one — the size (owner,
        2026-08-30) — so the ranking hands on rather than filing */
-    var more = sizeTiers().length;
+    var more = tiers.length;
     return h + (more ? '' : suppressHTML()) + actions(
       '<button type="button" class="jd-turn-alt" data-act="back">&larr; back</button>' +
       '<button type="button" class="jd-turn-go" data-act="' +
@@ -1880,8 +1902,7 @@
     });
   }
 
-  function sizePanel() {
-    var tiers = sizeTiers();
+  function sizePanel(tiers) {
     var chosen = work.size || null;
     var h = '<div class="jd-size">';
     tiers.forEach(function (t) {
@@ -1915,7 +1936,9 @@
 
   function viewRate() {
     var ok = okSlots();
-    var sizes = sizeTiers().length;
+    /* the scale is read once per render and handed down: the rail, the
+       panel and its buttons all ask the same question of it */
+    var tiers = sizeTiers(), sizes = tiers.length;
     /* a restored or degraded turn may hold a step that no longer exists */
     if (work.step !== 'call' && work.step !== 'size' && ok.indexOf(work.step) === -1) {
       work.step = ok[0];
@@ -1929,8 +1952,8 @@
         : 'Grade drawing ' + work.step.toUpperCase(),
       size ? 6 : call ? 5 : 4,
       { view: size ? 'size' : call ? 'call' : 'bench' }) +
-      (two || sizes ? railHTML(ok) : '') +
-      (size ? sizePanel() : call ? callPanel(ok) : benchPanel(work.step, ok));
+      (two || sizes ? railHTML(ok, tiers) : '') +
+      (size ? sizePanel(tiers) : call ? callPanel(ok, tiers) : benchPanel(work.step, ok, tiers));
   }
 
   /* ---------- 7. unveil ---------------------------------------------------- */
@@ -2605,7 +2628,7 @@
     el.dataset.tier = rec.sizeClass || VISITOR_TIER;   /* the z band (JD_zBase) */
   }
 
-  function dropIntoPile(rec, animate) {
+  function dropIntoPile(rec, animate, batch) {
     var pile = document.querySelector('.jd-pile');
     if (!pile || !rec || !rec.svg || !window.JD_svgInst) return null;
     if (pile.querySelector('[data-id="' + rec.gen_id + '"]')) return null;
@@ -2640,8 +2663,14 @@
        way every other item's is */
     var map = JD_store.get(K_SCATTER) || {};
     var p = map[rec.gen_id];
+    /* the pile's rect and the item's, read once for both uses below (a
+       fresh spot, the corner push) — nothing between them writes */
+    var host_ = null, r_ = null;
+    if (!p || window.JD_avoidTurn) {
+      host_ = pile.getBoundingClientRect(); r_ = el.getBoundingClientRect();
+    }
     if (!p) {
-      p = freshSpot(el, pile);
+      p = freshSpot(host_, r_);
       map[rec.gen_id] = p;
       JD_store.set(K_SCATTER, map);
     }
@@ -2649,7 +2678,6 @@
        the curated pile — a stored spot can predate the rule or a viewport
        change; the stored value itself stays untouched */
     if (window.JD_avoidTurn) {
-      var host_ = pile.getBoundingClientRect(), r_ = el.getBoundingClientRect();
       var rad_ = (p.rot || 0) * Math.PI / 180;
       var c_ = Math.abs(Math.cos(rad_)), s_ = Math.abs(Math.sin(rad_));
       var w_ = r_.width || 40, h_ = r_.height || 40;
@@ -2669,14 +2697,17 @@
       JD_haptic('drop');
     }
     /* it is a standard .jd-item from here: drag, rotate, tap-to-pick and the
-       specimen tag all bind through the ordinary wiring, no special case */
+       specimen tag all bind through the ordinary wiring, no special case.
+       (A batch — restoreWon — does the wiring and the filing itself, once
+       the last of its items is down.) */
+    if (batch) return el;
     if (window.JD_wirePile) window.JD_wirePile();
     markCard(el, registerRecord(rec, title));
     return el;
   }
 
-  function freshSpot(el, pile) {
-    var host = pile.getBoundingClientRect(), r = el.getBoundingClientRect();
+  /* `host` and `r`: the pile's rect and the item's, read by dropIntoPile */
+  function freshSpot(host, r) {
     var hw = Math.min(0.45, (r.width || 40) / 2 / (host.width || 1));
     var hh = Math.min(0.45, (r.height || 40) / 2 / (host.height || 1));
     function inside(half) {
@@ -2772,9 +2803,26 @@
   }
   function restoreWon() {
     /* oldest first, so the newest ends up nearest the top of the pile */
-    storedWon().slice().reverse().forEach(function (rec) {
-      if (rec && rec.gen_id && rec.svg) dropIntoPile(rec, false);
-    });
+    var down = [];
+    try {
+      storedWon().slice().reverse().forEach(function (rec) {
+        if (!(rec && rec.gen_id && rec.svg)) return;
+        var el = dropIntoPile(rec, false, true);
+        if (el) down.push({ el: el, rec: rec });
+      });
+    } finally {
+      /* …then the pile is wired ONCE rather than once per item (JD_wirePile
+         is idempotent and walks the whole well every call), and each item's
+         card is filed after it, as a single drop does it, so every item
+         ends up exactly as a drop leaves it. Only if something actually
+         went down: with nothing restored, nothing is wired early. */
+      if (down.length) {
+        if (window.JD_wirePile) window.JD_wirePile();
+        down.forEach(function (d) {
+          markCard(d.el, registerRecord(d.rec, d.rec.title || shortTitle(d.rec.prompt)));
+        });
+      }
+    }
   }
   /* the payload arrived after the items were already down: fill in the tag
      strings that only the taxonomy can supply, and file the report cards */
