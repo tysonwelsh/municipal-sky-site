@@ -947,11 +947,19 @@ if (!$FULL) {
     }
 }
 if ($j['prompts']) {
+    // Same shape as the onobot list: time, the prompt, a tail after a dot
+    // (there the place, here the accepted title). jd_* stamps UTC; the time
+    // is shown in server time like every other stamp in the digest.
     $out(' prompts ' . $D['hours'] . 'h (' . count($j['prompts']) . ')');
     foreach ($j['prompts'] as $p) {
+        try {
+            $when = (new DateTime((string) $p['created'], new DateTimeZone('UTC')))
+                ->setTimezone(new DateTimeZone(date_default_timezone_get()))->format('m-d H:i');
+        } catch (Exception $e) {
+            $when = substr((string) $p['created'], 5, 11);
+        }
         $title = ($p['title'] !== null && $p['title'] !== '') ? $sep . trunc($p['title'], 40) : '';
-        $out(' ' . $G['bullet'] . ' ' . substr($p['created'], 5, 11) . ' UTC' . $title);
-        wrap_text($out, '     ', $p['prompt'], $W);
+        wrap_text($out, ' ' . $G['bullet'] . ' ' . $when . '  ', $p['prompt'] . $title, $W);
     }
 }
 
