@@ -35,6 +35,11 @@ function jd_build_files(): array
 
 function jd_build_stamp(): array
 {
+    // once per request: the files cannot change under it
+    static $memo = null;
+    if ($memo !== null) {
+        return $memo;
+    }
     $version = trim((string) @file_get_contents(__DIR__ . '/../art/junk-drawer/VERSION'));
     // VERSION is an append-only changelog: the NEWEST entry is the LAST line,
     // and its first token is the semver — the prose tail after the em dash is
@@ -61,16 +66,15 @@ function jd_build_stamp(): array
         }
     }
 
-    return [
+    // the taxonomy through jd-config's static-cached reader (the same file),
+    // not a second read and decode of it
+    $taxonomy = jd_taxonomy();
+    return $memo = [
         'version'  => $short !== '' ? $short : 'dev',
         'build'    => substr(md5(implode('', $hashes)), 0, 6),
         'deployed' => $mtime ? gmdate('Y-m-d H:i', $mtime) . ' UTC' : '',
         'harness'  => ['web' => jd_harness('web'), 'bench' => jd_harness('bench')],
-        'taxonomy' => (function () {
-            $t = @json_decode((string) @file_get_contents(
-                __DIR__ . '/../art/junk-drawer/taxonomy.json'), true);
-            return is_array($t) ? (int) ($t['version'] ?? 0) : 0;
-        })(),
+        'taxonomy' => is_array($taxonomy) ? jd_taxonomy_version($taxonomy) : 0,
     ];
 }
 

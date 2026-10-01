@@ -24,10 +24,11 @@ foreach (array_merge([$taxonomyFile], $entryFiles) as $f) {
 // query. A database that cannot answer contributes nothing and the drawer
 // still serves its files — see the turn block below for the same discipline.
 $dbStamp = '';
+$curatedSubs = null;   // every curated submission, read once here (see the overlay)
 try {
     require_once __DIR__ . '/../../api/jd-config.php';
-    $dbc = jd_db();
-    $dbq = $dbc->query('SELECT COUNT(*) AS n, MAX(rated_at) AS m FROM jd_ratings')
+    $db = jd_db();
+    $dbq = $db->query('SELECT COUNT(*) AS n, MAX(rated_at) AS m FROM jd_ratings')
         ->fetch(PDO::FETCH_ASSOC);
     $dbStamp = ($dbq['n'] ?? '0') . '@' . ($dbq['m'] ?? '');
     // since 2026-09-05 the payload also carries the bench's RANKS and the
@@ -35,15 +36,26 @@ try {
     // have to move the tag as well — a rank-only refile changed nothing in
     // jd_ratings and would otherwise 304 a stale card back to everyone
     try {
-        $dbr = $dbc->query('SELECT COUNT(*) AS n, MAX(rated_at) AS m FROM jd_ranks')
+        $dbr = $db->query('SELECT COUNT(*) AS n, MAX(rated_at) AS m FROM jd_ranks')
             ->fetch(PDO::FETCH_ASSOC);
         $dbStamp .= '|' . ($dbr['n'] ?? '0') . '@' . ($dbr['m'] ?? '');
     } catch (Throwable $e) {
         $dbStamp .= '|no-ranks';
     }
+    // ONE read of the curated submissions serves the tag here and the
+    // overlay's submission-by-item map below: the stamp hashes the rows that
+    // carry a size or a hide, in id order, exactly as its own narrower query
+    // used to select them (size_class IS NOT NULL OR retire_requested_at IS
+    // NOT NULL ... ORDER BY id), so the tag's value does not move
+    $curatedSubs = $db->query(
+        'SELECT id, item_id, size_class, retire_requested_at
+           FROM jd_submissions WHERE item_id IS NOT NULL ORDER BY id'
+    )->fetchAll(PDO::FETCH_ASSOC);
     $sizes = '';
-    foreach ($dbc->query("SELECT id, size_class, retire_requested_at FROM jd_submissions WHERE item_id IS NOT NULL AND (size_class IS NOT NULL OR retire_requested_at IS NOT NULL) ORDER BY id") as $sz) {
-        $sizes .= $sz['id'] . '=' . $sz['size_class'] . '/' . $sz['retire_requested_at'] . ',';
+    foreach ($curatedSubs as $sz) {
+        if ($sz['size_class'] !== null || $sz['retire_requested_at'] !== null) {
+            $sizes .= $sz['id'] . '=' . $sz['size_class'] . '/' . $sz['retire_requested_at'] . ',';
+        }
     }
     $dbStamp .= '|' . md5($sizes);
 } catch (Throwable $e) {
@@ -61,7 +73,10 @@ if (isset($_SERVER['HTTP_IF_NONE_MATCH']) && trim($_SERVER['HTTP_IF_NONE_MATCH']
     exit();
 }
 
-$taxonomy = json_decode(@file_get_contents($taxonomyFile), true);
+// the same file ($taxonomyFile, the one JD_TAXONOMY_PATH names), through the
+// reader every endpoint uses — jd-config.php is always loaded by the tag block
+// above, so the static-cached jd_taxonomy() is there
+$taxonomy = jd_taxonomy();
 if (!is_array($taxonomy)) {
     http_response_code(500);
     echo json_encode(['error' => 'taxonomy.json missing or unparseable']);
@@ -133,6 +148,17 @@ foreach ($entryFiles as $file) {
     $items[] = $entry;
 }
 
+/** single-item mode: answer with the first entry whose id is $id and exit; return on a miss */
+function jd_answer_item(array $taxonomy, array $items, $id): void
+{
+    foreach ($items as $entry) {
+        if ($entry['id'] === $id) {
+            echo json_encode(['taxonomy' => $taxonomy, 'item' => $entry]);
+            exit();
+        }
+    }
+}
+
 /** the best-graded response's rid, ties to the earliest; the first when none is graded */
 function jd_best_graded(array $responses): ?string
 {
@@ -182,20 +208,47 @@ function jd_best_graded(array $responses): ?string
 // discipline as the turn block: one try, and a failure serves the files.
 $unfiltered = $unfiltered ?? [];
 $pinned = $pinned ?? [];
-try {
-    if (!function_exists('jd_db')) {
-        require_once __DIR__ . '/../../api/jd-config.php';
-    }
-    $cdb = jd_db();
-    $cdb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $cLive = jd_live_axes($taxonomy);
 
+// the live axes, for the overlay and the turn block alike
+$liveAxes = jd_live_axes($taxonomy);
+
+// jd_ranks, read ONCE for both blocks below (the overlay re-points a curated
+// item by it; a turn with more than one drawing qualifies only when its
+// ranking is filed): generation id => position, the bench's row outranking any
+// other client's. Its own try: a database without the table (a migration
+// that lagged a deploy) re-points nothing and lets no multi-drawing turn in.
+// This is the overlay's read as it always was; the turn block used to join
+// the same rows to the rated turns, which picks out exactly a turn drawing's
+// own rows (every writer files a rank under the drawing's own submission),
+// so it reads the same value here. Neither read had an ORDER BY, and still
+// none: UNIQUE (submission_id, generation_id) leaves a turn's drawing one row.
+$rankByGen = [];
+try {
+    foreach (jd_db()->query(
+        "SELECT r.generation_id, r.rank_pos, r.client FROM jd_ranks r"
+    ) as $r) {
+        $gid = (string) $r['generation_id'];
+        if ($r['client'] === 'bench' || !isset($rankByGen[$gid])) {
+            $rankByGen[$gid] = (int) $r['rank_pos'];
+        }
+    }
+} catch (PDOException $e) { /* no ranks table: no re-pointing, no ranked turns */ }
+
+try {
+    $db = jd_db();
+    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    // the curated submissions the tag block already read (same columns, same
+    // ORDER BY id); read here only when that block could not
     $subByItem = [];
-    foreach ($cdb->query('SELECT id, item_id, size_class, retire_requested_at FROM jd_submissions WHERE item_id IS NOT NULL') as $row) {
+    foreach ($curatedSubs ?? $db->query(
+        'SELECT id, item_id, size_class, retire_requested_at
+           FROM jd_submissions WHERE item_id IS NOT NULL ORDER BY id'
+    ) as $row) {
         $subByItem[(string) $row['item_id']] = $row;
     }
     $cgens = [];
-    foreach ($cdb->query(
+    foreach ($db->query(
         "SELECT g.id, g.submission_id, g.slot
            FROM jd_generations g
            JOIN jd_submissions s ON s.id = g.submission_id
@@ -204,14 +257,14 @@ try {
     ) as $g) {
         $cgens[(string) $g['submission_id']][] = $g;
     }
-    $cfold = jd_fold_ratings($cdb->query(
+    $cfold = jd_fold_ratings($db->query(
         "SELECT r.generation_id, r.kind, r.axis_id, r.value, r.note, r.client, r.taxonomy_version
            FROM jd_ratings r
            JOIN jd_generations g ON g.id = r.generation_id
            JOIN jd_submissions s ON s.id = g.submission_id
           WHERE s.item_id IS NOT NULL AND r.client = 'bench'
           ORDER BY r.rated_at, r.id"
-    )->fetchAll(PDO::FETCH_ASSOC), $cLive);
+    )->fetchAll(PDO::FETCH_ASSOC), $liveAxes);
     /* THE RANK FOLLOWS THE GENERATION, not the submission it was filed under
        (owner, 2026-09-17). A rank is filed against a GENERATION — a single
        drawing — and that drawing can move: a visitor's turn on a prompt that
@@ -222,18 +275,8 @@ try {
        of them visitors' — reached exactly nothing in the drawer.
        Keyed on generation_id alone, the join is unnecessary: whichever
        submission a drawing was ranked under, it is the same drawing. The
-       bench's order still outranks a turn's, as it does for turns below. */
-    $cranks = [];
-    try {
-        foreach ($cdb->query(
-            "SELECT r.generation_id, r.rank_pos, r.client FROM jd_ranks r"
-        ) as $r) {
-            $gid = (string) $r['generation_id'];
-            if ($r['client'] === 'bench' || !isset($cranks[$gid])) {
-                $cranks[$gid] = (int) $r['rank_pos'];
-            }
-        }
-    } catch (PDOException $e) { /* no ranks table: no re-pointing */ }
+       bench's order still outranks a turn's, as it does for turns below.
+       ($rankByGen, read once above the overlay.) */
 
     foreach ($items as $ii => $entry) {
         $id = (string) $entry['id'];
@@ -263,8 +306,8 @@ try {
                     ? ['value' => $value, 'note' => $note]
                     : $value;
             }
-            if (isset($cranks[$gid])) {
-                $resp['rank'] = $cranks[$gid];
+            if (isset($rankByGen[$gid])) {
+                $resp['rank'] = $rankByGen[$gid];
             } else {
                 $allRanked = false;
             }
@@ -296,6 +339,16 @@ try {
     error_log('data.php: bench overlay unavailable (' . $e->getMessage() . ')');
 }
 
+// Single-item mode, CURATED ids first: the curated entries lead the merged
+// list below, so a match among them is the match the whole list would give —
+// answer it before the turn population is built (four queries and a price
+// per response; the about page asks for one curated item on every load). A
+// miss falls through to the turn block and the search after it, which covers
+// the turns and answers the same 404.
+if (isset($_GET['item'])) {
+    jd_answer_item($taxonomy, $items, $_GET['item']);
+}
+
 // ===========================================================================
 // THE TURNS THEMSELVES (owner call, 2026-08-30)
 //
@@ -322,16 +375,15 @@ try {
 // try, and its failure leaves $items exactly as the files built it.
 $turnItems = [];
 try {
-    if (!function_exists('jd_db')) {
-        require_once __DIR__ . '/../../api/jd-config.php';
-    }
     // the pricing table, so a turn's card can state what the drawing cost —
-    // the same numbers jd-rate's reveal and the report card already use
+    // the same numbers jd-rate's reveal and the report card already use.
+    // A slim manifest (?slim=1, no ?item=) drops tokens and cost_usd again
+    // (_slim.php), so it skips the pricing; single-item mode always prices.
     require_once __DIR__ . '/../../api/jd-usage.php';
-    $tdb = jd_db();
-    $tdb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $priced = !isset($_GET['slim']) || isset($_GET['item']);
+    $db = jd_db();
+    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    $liveAxes = jd_live_axes($taxonomy);
     $curatedPrompts = [];
     foreach ($items as $e) {
         $curatedPrompts[(string) ($e['prompt'] ?? '')] = true;
@@ -342,7 +394,7 @@ try {
     // bench (retire_requested_at), or its prompt belongs to a curated item
     // (checked below). title and size_class are the turn's own facts, filed
     // with its ratings.
-    $tsubs = $tdb->query(
+    $tsubs = $db->query(
         "SELECT id, prompt, created, title, size_class
            FROM jd_submissions
           WHERE item_id IS NULL AND status = 'rated'
@@ -351,7 +403,7 @@ try {
     )->fetchAll(PDO::FETCH_ASSOC);
 
     if ($tsubs) {
-        $tgens = $tdb->query(
+        $tgens = $db->query(
             "SELECT g.id, g.submission_id, g.slot, g.model_id, g.model_version,
                     g.usage_tokens, g.provider
                FROM jd_generations g
@@ -363,7 +415,7 @@ try {
         $bySub = [];
         foreach ($tgens as $g) { $bySub[(string) $g['submission_id']][] = $g; }
 
-        $fold = jd_fold_ratings($tdb->query(
+        $fold = jd_fold_ratings($db->query(
             "SELECT r.generation_id, r.kind, r.axis_id, r.value, r.client, r.taxonomy_version
                FROM jd_ratings r
                JOIN jd_generations g ON g.id = r.generation_id
@@ -372,21 +424,8 @@ try {
               ORDER BY r.rated_at, r.id"
         )->fetchAll(PDO::FETCH_ASSOC), $liveAxes);
 
-        $tranks = [];
-        try {
-            foreach ($tdb->query(
-                "SELECT r.generation_id, r.rank_pos, r.client
-                   FROM jd_ranks r
-                   JOIN jd_submissions s ON s.id = r.submission_id
-                  WHERE s.item_id IS NULL AND s.status = 'rated'"
-            )->fetchAll(PDO::FETCH_ASSOC) as $r) {
-                $gid = (string) $r['generation_id'];
-                // the bench's order outranks the turn's own
-                if ($r['client'] === 'bench' || !isset($tranks[$gid])) {
-                    $tranks[$gid] = (int) $r['rank_pos'];
-                }
-            }
-        } catch (PDOException $e) { /* no ranks table: no turns qualify */ }
+        // the ranks are $rankByGen (read once, above the overlay): the bench's
+        // order outranks the turn's own
 
         foreach ($tsubs as $sub) {
             $sid = (string) $sub['id'];
@@ -402,7 +441,7 @@ try {
                 $gid = (string) $g['id'];
                 $pick = jd_pick_rating($fold[$gid] ?? [], ['bench', '*']);
                 if (count($pick['axes']) !== count($liveAxes) || $pick['grade'] === null) { $ok = false; break; }
-                $rank = $tranks[$gid] ?? null;
+                $rank = $rankByGen[$gid] ?? null;
                 if (count($gens) > 1 && $rank === null) { $ok = false; break; }
                 $responses[] = [
                     'gen_id' => $gid, 'rank' => $rank ?: 1,
@@ -439,17 +478,19 @@ try {
                     'url' => '/api/jd-gen-svg.php?gen=' . rawurlencode($r['gen_id']),
                     'transcript_url' => null,
                 ];
-                $u = $r['usage'] ? json_decode((string) $r['usage'], true) : null;
-                $c = jd_generation_cost($r['provider'], $r['model_version'],
-                    is_array($u) ? $u : null);
-                if ($c['tokens']) {
-                    $row['tokens'] = [
-                        'input' => $c['tokens']['input'], 'output' => $c['tokens']['output'],
-                        'total' => $c['tokens']['input'] + $c['tokens']['cache_write']
-                            + $c['tokens']['cache_read'] + $c['tokens']['output'],
-                    ];
+                if ($priced) {
+                    $u = $r['usage'] ? json_decode((string) $r['usage'], true) : null;
+                    $c = jd_generation_cost($r['provider'], $r['model_version'],
+                        is_array($u) ? $u : null);
+                    if ($c['tokens']) {
+                        $row['tokens'] = [
+                            'input' => $c['tokens']['input'], 'output' => $c['tokens']['output'],
+                            'total' => $c['tokens']['input'] + $c['tokens']['cache_write']
+                                + $c['tokens']['cache_read'] + $c['tokens']['output'],
+                        ];
+                    }
+                    if ($c['cost_usd'] !== null) { $row['cost_usd'] = round($c['cost_usd'], 6); }
                 }
-                if ($c['cost_usd'] !== null) { $row['cost_usd'] = round($c['cost_usd'], 6); }
                 $out[] = $row;
             }
             $title = trim((string) ($sub['title'] ?? ''));
@@ -481,14 +522,10 @@ try {
 }
 $items = array_merge($items, $turnItems);
 
-// Single-item mode: ?item=<id> (returns the item even if retired).
+// Single-item mode: ?item=<id> (returns the item even if retired). A curated
+// id was answered above the turn block; this finds a turn's.
 if (isset($_GET['item'])) {
-    foreach ($items as $entry) {
-        if ($entry['id'] === $_GET['item']) {
-            echo json_encode(['taxonomy' => $taxonomy, 'item' => $entry]);
-            exit();
-        }
-    }
+    jd_answer_item($taxonomy, $items, $_GET['item']);
     http_response_code(404);
     echo json_encode(['error' => 'no such item: ' . $_GET['item']]);
     exit();

@@ -305,9 +305,11 @@ try {
 
 // ---------------------------------------------------------------------------
 
+// the three columns the caller reads (the submission id, the prompt of
+// record, the slot permutation)
 function jd_load_submission_by_ref(PDO $db, string $clientRef): ?array
 {
-    $stmt = $db->prepare('SELECT id, prompt, visitor_hash, pair_order, status FROM jd_submissions WHERE client_ref = ?');
+    $stmt = $db->prepare('SELECT id, prompt, pair_order FROM jd_submissions WHERE client_ref = ?');
     $stmt->execute([$clientRef]);
     $row = $stmt->fetch();
     return $row === false ? null : $row;
