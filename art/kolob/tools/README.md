@@ -60,8 +60,8 @@ prints the flags it ran with.
 
 ## Which build is measured
 
-The three dump tools render through the harness (`art/kolob/_harness.js`,
-untracked). They can point it at any build:
+The three dump tools render through the harness (`art/kolob/_harness.js`;
+rebuilt and tracked on 2026-10-01 — the original was never committed). They can point it at any build:
 
 | `--engine` (or `--a` / `--b` in tally) | what is rendered |
 |---|---|

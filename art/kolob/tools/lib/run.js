@@ -82,7 +82,7 @@ function resolveEngine(spec, harnessOpt) {
   }
   let harness = harnessOpt && harnessOpt !== true ? path.resolve(String(harnessOpt)) : null;
   if (!harness) harness = fs.existsSync(path.join(dir, "_harness.js")) && !git ? path.join(dir, "_harness.js") : path.join(HERE_ENGINE, "_harness.js");
-  if (!fs.existsSync(harness)) throw refusal("no harness at " + harness + " (art/kolob/_harness.js is untracked: copy it in, or pass --harness)");
+  if (!fs.existsSync(harness)) throw refusal("no harness at " + harness + " (art/kolob/_harness.js is tracked since 2026-10-01: check it out, or pass --harness)");
   let version = null;
   try { version = fs.readFileSync(path.join(dir, "VERSION"), "utf8").trim().split("\n")[0]; } catch (e) {}
   if (!git) { try { git = execFileSync("git", ["-C", dir, "rev-parse", "HEAD"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim(); } catch (e) {} }

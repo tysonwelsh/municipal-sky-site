@@ -12,9 +12,21 @@ const http = require("http");
 const path = require("path");
 const { spawn } = require("child_process");
 
-const CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+// The Chrome to launch: KOLOB_CHROME if set, else the first of these that
+// exists (the owner's Mac; a Playwright chromium on a Linux box or in CI;
+// the distro's own). (2026-10-01: it was the Mac path alone.)
+const os = require("os");
+const CHROME_CANDIDATES = [
+  process.env.KOLOB_CHROME,
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+  process.env.PLAYWRIGHT_BROWSERS_PATH && (function () {
+    try { const d = fs.readdirSync(process.env.PLAYWRIGHT_BROWSERS_PATH).filter((n) => /^chromium-\d+$/.test(n)).sort().pop(); return d && path.join(process.env.PLAYWRIGHT_BROWSERS_PATH, d, "chrome-linux", "chrome"); } catch (e) { return null; }
+  })(),
+  "/usr/bin/google-chrome", "/usr/bin/google-chrome-stable", "/usr/bin/chromium", "/usr/bin/chromium-browser",
+].filter(Boolean);
+const CHROME = CHROME_CANDIDATES.find((p) => { try { return fs.existsSync(p); } catch (e) { return false; } }) || CHROME_CANDIDATES[0];
 const DEFAULT_CHROME_PORT = 9423;
-const DEFAULT_PROFILE = "/private/tmp/claude-501/kolob-r2-tools-chrome";
+const DEFAULT_PROFILE = path.join(os.tmpdir(), "kolob-r2-tools-chrome");
 const DEFAULT_HTTP_PORT = 8113;
 const REPO = path.resolve(__dirname, "..", "..", "..", "..");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -82,6 +94,9 @@ async function launch(opts) {
     "--no-first-run", "--no-default-browser-check", "--disable-background-timer-throttling",
     "--disable-renderer-backgrounding", "--disable-backgrounding-occluded-windows",
   ];
+  // (Chrome will not run its sandbox as root — a CI runner or a container; a
+  // muted headless page of our own is safe to run without it)
+  if (process.getuid && process.getuid() === 0) args.push("--no-sandbox");
   if (!args.includes("--mute-audio")) throw new Error("refusing to launch Chrome without --mute-audio");
   try { await get("http://127.0.0.1:" + port + "/json/version", 800); throw new Error("port " + port + " already has a Chrome on it; stop it or pass --chrome-port"); }
   catch (e) { if (/already has/.test(e.message)) throw e; }
