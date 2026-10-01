@@ -7,7 +7,7 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
 
 ## The refactor
 
-- **`PLAN-REFACTOR.md`** (2026-10-01; §2 built, v0.36.3; §3.6, §3.1, §3.3, §3.7, §3.8 and §3.2 built): the owner asked for a plan to improve
+- **`PLAN-REFACTOR.md`** (2026-10-01; §2 built, v0.36.3; §3.6, §3.1, §3.3, §3.7, §3.8, §3.2 and §3.4 built): the owner asked for a plan to improve
   efficiency, reliability and maintainability without changing what is heard or seen. Its §2, the
   real faults, is done (commits 3eefffb to a373760: a cue that threw ended its layer for the visit; a
   stillness survived STOP; STOP's own race; errors swallowed silently; a broken page let PLAY be
@@ -20,10 +20,11 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
   §3.8, the lint a notch tighter (`no-empty` with every quiet catch saying why, `default-case`,
   `no-prototype-builtins`; `complexity` and `max-lines-per-function` as warnings), and §3.2, one
   scaffold under every guest room (`KOLOB.GuestRoom`, `kolob-guest-room.js`, commit 5f366f8) and one
-  host for the guests the glue plays (`kolob-guests.js`, commit 7a3bc81).
-  What remains is §3 (one place for each thing: the planner out of the
-  conductor, the staff in pieces) and §4 (the page's load and frame, the minutes' poll, the
-  audio graph with the owner), in §6's order.
+  host for the guests the glue plays (`kolob-guests.js`, commit 7a3bc81), and §3.4, the planner out
+  of the conductor (`KOLOB.Plan`, `kolob-plan.js`, commits f48e06d and 728aa87: the day and the
+  seating, pure; the golden runs them with the house shut).
+  What remains is §3 (one place for each thing: the staff in pieces) and §4 (the page's load and
+  frame, the minutes' poll, the audio graph with the owner), in §6's order.
   The §2 builders' follow-ups, not done:
   - the drone stays ducked after a broken hymn's chain is released by the net (§2.1);
   - a cue's fault that repeats is now logged at each of the net's retries (every 5 s for a layer), not once (§2.1);
@@ -31,12 +32,13 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
   - the chord book's ids count for the page's life, not per visit;
   - a hymn the idle road fails to write warns, while a worker's failure to write one errors.
   The §3.6 builder's follow-ups, not done:
-  - `S.pipeOn()` reads `S.ctx`, so a meeting's plan depends on whether an AudioContext exists (no
-    variations seated, no chorale prelude drawn without one); §3.4's pure planner should be handed it;
+  - ~~`S.pipeOn()` reads `S.ctx`, so a meeting's plan depends on whether an AudioContext exists~~ —
+    §3.4 hands the plan the answer (`info.pipeOn`); the house still answers it by `S.ctx`;
   - the golden walks the ward's and the organist's hymns the labs' way (the Cast's own verse count, the
     hymn's own beat): a pure export of the choir's `performancePlan` would let it walk them as the meeting does;
   - not under the golden: the guests' `prepare()` and `score()`, `Cast.planRefrain` and `Cast.score`, any
-    meeting after the first, and the switches (ives, force=, cumulative, razz, exp=).
+    meeting after the first, and the switches (ives, force=, cumulative, razz, exp=) — but for the
+    plan's two halves, which §3.4 runs on 21 settings of the switches, twice each, against no baseline.
   The §3.1 builder's follow-ups, not done:
   - the page's own copies in `kolob-viz.js` (`COLLECTIONS`, `clamp`, `monzoCents`, `unitsOf`, `spanBeats`)
     fold into `KOLOB.Pitch`, `KOLOB.Num` and `KOLOB.Score` with the screens, in §3.5;
@@ -82,10 +84,27 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
   The §3.8 builder's follow-ups, not done:
   - `no-shadow` no longer waits (§3.2 is built and moved none of its 182 sites under `art/kolob`,
     116 in the engine and the page);
-  - the warnings to watch, as `npm run lint` prints them on 2026-10-01: `complexity` over 25 in 96
-    functions (72 in the engine and the page, 13 in the labs, 11 in the harness and the tools) and
-    `max-lines-per-function` over 150 in 20 (18 and 2: `kolob-voices-folk.js create` 503 lines,
-    `kolob-voices-vocal.js renderLine` 398, `planMeeting` 368, the pipe organ's `create` 348).
+  - the warnings to watch, as `npm run lint` prints them on 2026-10-01: `complexity` over 25 in 98
+    functions (75 in the engine and the page, 13 in the labs, 10 in the harness and the tools; two more
+    since §3.4, which split `planMeeting`'s 218 into `Plan.seat` 157, `Plan.day` 38 and `planMeeting`
+    32) and `max-lines-per-function` over 150 in 20 (18 and 2: `kolob-voices-folk.js create` 503
+    lines, `kolob-voices-vocal.js renderLine` 398, the pipe organ's `create` 348, `kolob-plan.js seat`
+    264 — `planMeeting`'s 368 before §3.4).
+  The §3.4 builder's follow-ups, not done:
+  - `Plan.seat` is still one function of about 500 lines (every guest's seat, the budget, the
+    seatings, the hymnal, the reckoning's order): each guest's block could be a small function of
+    its own, now that the golden proves the plan in seconds;
+  - the road without a composer — the trombones' dawn chorale written by the house's pen
+    (`info.dawnChorale`), which on a withheld Sunday develops the day's gestures, the one place the
+    plan calls back into the house — is taken by no page and no lab (every one that loads the
+    meeting loads the composer and the hymnal); it could be retired as §2.5 retired the
+    calendar-less fallbacks;
+  - the guests labs' stand-ins (`guests-lab.js`, `guests3a`–`3d-lab.js`) re-throw the plan's dice
+    by hand; they could load `kolob-plan.js` and call `KOLOB.Plan.day`;
+  - the plan reaches the rooms it calls (the calendar is handed in; the guest rooms, the hymnal,
+    the cast and the organist are read off `KOLOB` at call time): pure given the rooms loaded;
+  - `handoff/r3c-integrate-1.md` still names `kolob-meeting.js` for the guest budget (a handoff,
+    left as written).
 
 ## Ideas approved, not built
 
