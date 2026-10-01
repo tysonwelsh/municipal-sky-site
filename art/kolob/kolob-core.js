@@ -121,7 +121,8 @@ window.KolobAudio = (function () {
   // S.forceRaspberry, S.cumulativeMode, S.seasonPos, S.CUMULATIVE_ODDS; the
   // voices' tables S.VI_TO_CHORDPOS, S.CHOIR_PART, S.TELEGRAPH_WORDS,
   // S.FIELD_FNS; the ward's and the organist's S.theWard, S.wardStats,
-  // S.wardStop, S.pipeOn, S.organStats, S.organStop; the old
+  // S.wardStop, S.wardForgetAudition, S.pipeOn, S.organStats, S.organStop;
+  // the drone's S.droneForget; the meeting's S.meetingStop; the old
   // tune's S.oldTunePool. tools/lends.js checks that every read has a lend.)
 
   // ----- Core audio graph -----
@@ -1181,6 +1182,7 @@ window.KolobAudio = (function () {
     masterGain.gain.setValueAtTime(masterVolume, ctx.currentTime);
     if (droneDuck) {
       // a stop mid-stillness must not strand the next meeting on a low drone
+      // (nor hushed: its hold ended at STOP, S.meetingStop)
       droneDuck.gain.cancelScheduledValues(ctx.currentTime);
       droneDuck.gain.setValueAtTime(1, ctx.currentTime);
     }
@@ -1264,6 +1266,7 @@ window.KolobAudio = (function () {
     if (clock) clock.stop();         // every pending cue is cancelled: nothing of this meeting is called again
     if (S.wardStop) S.wardStop();    // and nothing more of the ward's is handed to the voices, or joined
     if (S.organStop && ctx) S.organStop(ctx.currentTime + 0.7);   // nor of the organist's; the organ's case is shut after the fade
+    if (S.meetingStop) S.meetingStop();   // and a stillness the meeting was holding ends with it (the drone's duck is lifted at PLAY)
     if (doors) { closing.push(doors); doors = null; }
     hallRinging = true;
     if (bg) bg.stopped();
@@ -1389,8 +1392,16 @@ window.KolobAudio = (function () {
     toggleField: function (key) { fieldMuted[key] = !fieldMuted[key]; applyFieldGain(key); return !fieldMuted[key]; },
     getSeed: function () { return seed; },
     // a new seed is a new visit: fresh dice, and (while stopped) the meeting
-    // count starts again, so ?seed=X and GATHER X call the same first meeting
-    reseed: function (s) { seed = (s >>> 0) || 1847; reseedDice(); if (!playing) resetVisit(); },
+    // count starts again, so ?seed=X and GATHER X call the same first meeting;
+    // and what the old visit seated is let go — the rail's own ward (seated
+    // on the old seed's cast:0) and, while stopped, the drone's note (else
+    // the new visit's first meeting began with its drone gliding home from
+    // the interval the old one's stood on when it was stopped)
+    reseed: function (s) {
+      seed = (s >>> 0) || 1847; reseedDice();
+      if (S.wardForgetAudition) S.wardForgetAudition();
+      if (!playing) { resetVisit(); if (S.droneForget) S.droneForget(); }
+    },
     getConductor: function () {
       var M = S.Meeting, plan = M.plan();
       return {

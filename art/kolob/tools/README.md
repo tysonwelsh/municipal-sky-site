@@ -128,7 +128,8 @@ stops with the harness's `LOAD` error.
 
 ```sh
 node _harness.js <secs> <seed> [ives] [razz] [cumulative] [force=<guest>] [exp=<spec>]
-                 [stop=<secs>,…] [play=<secs>,…] [throw=<lane>@<secs>,…] [dump=<file>] [header]
+                 [stop=<secs>,…] [play=<secs>,…] [reseed=<seed>@<secs>,…]
+                 [throw=<lane>@<secs>,…] [dump=<file>] [header]
 ```
 
 `art/kolob/_harness.js` (tracked since 2026-10-01) mocks `window` and Web Audio
@@ -170,7 +171,16 @@ stop and a quick restart. Each takes a comma list or comes again
 report's first line (`script stop@120 play@121`), the dump's `transport` events
 fall at its times, and the run's end still presses STOP. Through `render.js`,
 whose `--flags` splits on commas, give each time its own switch
-(`--flags stop=120,play=121`).
+(`--flags stop=120,play=121`). `reseed=<seed>@<secs>` changes the seed at that
+time as GATHER does (a new visit), between a stop and a play at the same time:
+`stop=90 reseed=7@90 play=90.5` is a STOP, a new seed and its first meeting; the
+report prints a line for it with the drone's note before and after (seed 1:
+`×1.25 third (cantus 0) → ×1 tonic`, PLAN-REFACTOR §2.2). The `meetings:` line
+marks a meeting called inside a stillness's hold `hushed at its downbeat` (the
+conductor begins no guest, fuging or other stillness until the hold ends). A
+STOP ends the hold; a joint does not, so a stillness late in a postlude may
+hold into the next meeting's first seconds (on a plain run, none of 284
+meetings over 80 seeds began so).
 
 **A fault injection.** `throw=<lane>@<secs>` makes the first cue on that clock
 lane (`conductor`, `drone`, `choir`, `organ`, `ward`, …) at or after that time
@@ -570,7 +580,7 @@ the cores, at most 8).
 node tools/selftest.js
 ```
 
-About fifteen seconds, no browser. It checks nine things: (1) a real dump from
+About twenty seconds, no browser. It checks ten things: (1) a real dump from
 this worktree reads as meetings and sections, the witness names the build's own
 list, and the harness names the same engine in the header's `engine` field;
 (2) a synthetic dump in SCORE §6's **typed** vocabulary reads the same way —
@@ -601,8 +611,14 @@ lane plays on, re-armed 5 s after the throw; `throw=conductor@300` — the next
 tick 0.6 s on, and the dump the clean run's, record for record;
 `throw=choir@212.5` — the broken hymn is let go and the meeting begins its next
 section; `throw=ward@200,organist@200` — each pump ticks on at its own pace,
-and the dump and the graph are the clean run's. All nine pass on
-`art/kolob/_harness.js`. Run it after any change to the
+and the dump and the graph are the clean run's; (10) **a stillness ends at
+STOP** (seed 7, PLAN-REFACTOR §2.2): `stop=626.1 play=626.6`, a second into
+the testimony's stillness, calls a meeting not hushed at its downbeat, which
+plays record for record as the one called by `stop=600 play=600.5` (times
+taken from each downbeat); and `stop=90 reseed=7@90 play=90.5` on seed 1 lets
+its drone go home (`×1.25 third → ×1 tonic`) and plays seed 7's first meeting
+as a fresh run does, record for record (the chord book's numbers count on). All
+ten pass on `art/kolob/_harness.js`. Run it after any change to the
 engine's events, to the harness or to these tools. It renders into `out/_selftest/` and, like
 every tool, refuses while the engine is being edited.
 

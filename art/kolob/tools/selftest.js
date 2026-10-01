@@ -36,6 +36,16 @@
 //    (throw=choir@212.5); the ward's and the organist's pumps, made to throw
 //    at their re-arm in one run, tick on at their own pace and the dump and
 //    the graph are the clean run's (throw=ward@200,organist@200).
+// 10. A stillness ends at STOP (PLAN-REFACTOR §2.2): seed 7 stopped a second
+//    into its first stillness's hold and played half a second later
+//    (stop=626.1 play=626.6) calls a meeting that is not hushed at its
+//    downbeat, and it plays as the meeting called after a stop outside the
+//    stillness does (stop=600 play=600.5), record for record from its
+//    downbeat; and a reseed while stopped lets the old visit's drone go —
+//    seed 1 stopped with its drone on the invocation's third and reseeded to
+//    7 (stop=90 reseed=7@90 play=90.5): the drone's note is the keynote's
+//    after the reseed, and seed 7's first meeting is the fresh run's, record
+//    for record from its downbeat.
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -167,6 +177,12 @@ function check(name, ok, detail) {
   // beside §6's long meeting, and read when §9 comes
   const recovery = Promise.all([[null, 360], ["throw=drone@120", 145], ["throw=conductor@300", 360], ["throw=choir@212.5", 360], ["throw=ward@200,organist@200", 360]]
     .map(([flag, secs], i) => R.renderSet({ engine, seeds: [7], secs, flags: flag ? [flag] : [], dir: path.join(tmp, "recover-" + i), quiet: true }).then((x) => x.results[0])));
+  // …and §10's (PLAN-REFACTOR §2.2): a stop inside seed 7's first stillness
+  // and one outside it, each played again at once, to 133 s past the next
+  // downbeat; seed 1 stopped with its drone off home and reseeded to 7; and
+  // seed 7 fresh, to as far past its downbeat
+  const stillness = Promise.all([[7, 760, ["stop=626.1", "play=626.6"]], [7, 734, ["stop=600", "play=600.5"]], [1, 200, ["stop=90", "reseed=7@90", "play=90.5"]], [7, 110, []]]
+    .map(([seed, secs, flags], i) => R.renderSet({ engine, seeds: [seed], secs, flags, dir: path.join(tmp, "still-" + i), quiet: true }).then((x) => x.results[0])));
   console.log("6. the count (seed 3, 1200 s)");
   const long = await R.renderSet({ engine, seeds: [3], secs: 1200, dir: path.join(tmp, "long"), quiet: true });
   const L3 = D.readDump(long.results[0].dump);
@@ -258,6 +274,53 @@ function check(name, ok, detail) {
     });
     check("… and with both pumps thrown, the dump and the graph are the clean run's",
       pumpsDump && pumpsGraph, (pumpsDump ? "the dump" : "NOT the dump") + " and " + (pumpsGraph ? "the graph" : "NOT the graph") + " of the clean run (" + (graph(runs[0]).split(" · ")[1] || "?").split(" {")[0] + ")");
+  }
+
+  console.log("10. a stillness ends at STOP, and a reseed lets the old visit's drone go (PLAN-REFACTOR §2.2)");
+  {
+    const [inHold, outside, reseeded, fresh] = await stillness;
+    const log = (r) => fs.readFileSync(r.log, "utf8");
+    const recs = (r) => fs.readFileSync(r.dump, "utf8").split("\n").filter((l) => l && !l.startsWith('["H"')).map((l) => JSON.parse(l));
+    const downbeat = (rs, after) => { const m = rs.find((x) => x[0] === "E" && x[2].type === "meeting-start" && x[1] > after); return m ? m[1] : null; };
+    // the records of len s from one run's downbeat, held against another's
+    // from its own: a number is the same if it is equal, or equal once each
+    // run's downbeat is taken off (a time); with `counts`, the chord book's
+    // own numbers (a chord's id wherever it is named, and the page a chord
+    // event names), which count on for the page's life and not the visit's,
+    // may each stand off by one constant, and only one
+    // → { n, len, at: -1 } or the first record that differs
+    const sameFrom = (A, tA, B, tB, len, counts) => {
+      const win = (rs, t0) => rs.filter((x) => x[1] >= t0 && x[1] < t0 + len);
+      const a = win(A, tA), b = win(B, tB), off = {};
+      const counter = (key, parent) => counts && (key === "chord" || (key === "page" && parent.type === "chord"));
+      const eq = (x, y, key, parent) => {
+        if (typeof x === "number" && typeof y === "number") {
+          if (counter(key, parent)) { if (!(key in off)) off[key] = x - y; return x - y === off[key]; }
+          return Math.abs(x - y) < 1e-6 || Math.abs((x - tA) - (y - tB)) < 1e-6;
+        }
+        if (!x || !y || typeof x !== "object" || typeof y !== "object") return x === y;
+        const keys = new Set(Object.keys(x).concat(Object.keys(y)));
+        for (const k of keys) if (!eq(x[k], y[k], k, x)) return false;
+        return true;
+      };
+      for (let i = 0; i < Math.max(a.length, b.length); i++) if (!eq(a[i], b[i], null, null)) return { n: a.length, len, at: i, a: a[i], b: b[i], off };
+      return { n: a.length, len, at: -1, off };
+    };
+    const told = (d) => (d.at < 0 ? d.n + " records over " + d.len + " s, the same" : "record " + d.at + " of " + d.n + " differs: " + JSON.stringify(d.a || null).slice(0, 140) + " against " + JSON.stringify(d.b || null).slice(0, 140)) +
+      (Object.keys(d.off).length ? " (" + Object.keys(d.off).map((k) => "the " + k + "s numbered on by " + d.off[k]).join(", ") + ")" : "");
+    const H = recs(inHold), still = H.find((x) => x[0] === "E" && x[2].type === "stillness");
+    const t2 = downbeat(H, 626.1), holdEnd = still ? still[1] + still[2].holdS + 2.5 : null;
+    check("seed 7's first stillness holds past the next downbeat of stop=626.1 play=626.6",
+      !!still && still[1] < 626.1 && t2 != null && holdEnd > t2, still ? "the " + still[2].why + "'s at " + still[1].toFixed(1) + " s, held to " + (holdEnd || 0).toFixed(1) + " s; meeting 2 at " + (t2 || 0).toFixed(1) + " s" : "no stillness");
+    const m2 = (/ · #2 at [\d.]+ s: [^#\n]*/.exec(log(inHold)) || [""])[0];
+    check("… and meeting 2 is not hushed at its downbeat (the stopped meeting's hold ended with it)", !!m2 && !/hushed at its downbeat/.test(m2) && /PASS/.test(inHold.verdict || ""), m2.trim() || "no meeting 2");
+    const O = recs(outside), d2 = sameFrom(H, t2, O, downbeat(O, 600), 130);
+    check("… and it plays as meeting 2 does after a stop outside the stillness (stop=600 play=600.5), record for record from its downbeat", d2.at < 0, told(d2));
+    const rs = (/^reseed 7 at 90 s \(stopped\): the drone's note (.*) → (.*)$/m.exec(log(reseeded)) || []);
+    check("stop=90 reseed=7@90 play=90.5 on seed 1: its drone stood off home, and the reseed lets it go",
+      !!rs[1] && rs[1] !== "×1 tonic" && rs[2] === "×1 tonic" && /PASS/.test(reseeded.verdict || ""), rs[0] ? rs[1] + " → " + rs[2] : "no reseed line");
+    const Rr = recs(reseeded), F = recs(fresh), d7 = sameFrom(Rr, downbeat(Rr, 90), F, downbeat(F, 0), 105, true);
+    check("… and seed 7's first meeting is the fresh run's, record for record from its downbeat", d7.at < 0, told(d7));
   }
 
   fs.rmSync(tmp, { recursive: true, force: true });

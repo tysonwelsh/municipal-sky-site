@@ -104,7 +104,8 @@ window.KOLOB = window.KOLOB || {};
   // the drone's note: a multiplier on F0 (1 at the keynote), gliding from
   // `from` at `at` to `mul` at `until`; its role in the section's chord; its
   // monzo over the keynote (for the notes told)
-  var droneNow = { mul: 1, from: 1, at: -1, until: -1, role: "tonic", monzo: [0, 0, 0, 0], k: null };
+  function droneHome() { return { mul: 1, from: 1, at: -1, until: -1, role: "tonic", monzo: [0, 0, 0, 0], k: null }; }
+  var droneNow = droneHome();
   var droneLive = [];                               // the sines sounding: { o, base, gains: [{g, h, oct}], stopAt }
   // (a note ALONE — the still sacrament's, where nothing else sounds — keeps
   // its whole series, as the tonic does)
@@ -216,6 +217,12 @@ window.KOLOB = window.KOLOB || {};
   }
   function lv0Until(t) { var u = t + 30; droneLive.forEach(function (lv) { if (lv.stopAt > u) u = lv.stopAt; }); return u; }
   function droneNote() { return { mul: droneNow.mul, role: droneNow.role, monzo: droneNow.monzo.slice(), k: droneNow.k, until: droneNow.until }; }
+  // a new visit (a reseed while stopped, kolob-core.js): the drone forgets
+  // the note the old visit left it on and the sines it left behind the
+  // closed doors, and stands home as on a page just loaded — else the new
+  // visit's first meeting turned it home from there with a glide, and its
+  // first turn was told as long as those old sines still ran
+  function droneForget() { droneNow = droneHome(); droneLive = []; }
 
   // ==========================================================================
   // VOICE: STRINGS — the prairie. Open fifths of the sounding chord in long
@@ -419,6 +426,7 @@ window.KOLOB = window.KOLOB || {};
   S.droneCycle = droneCycle;
   S.droneTurn = droneTurn;
   S.droneNote = droneNote;
+  S.droneForget = droneForget;
   S.stringsPad = stringsPad;
   S.stringsCycle = stringsCycle;
   S.bellStrike = bellStrike;

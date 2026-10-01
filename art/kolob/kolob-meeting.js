@@ -83,6 +83,23 @@ window.KOLOB = window.KOLOB || {};
     conference: { silenceMul: 0.75, hymns: 3, bells: 0.8, choirSize: 4, bright: 0.75, meterW: [["CMD", 3], ["87.87", 3], ["CM", 2], ["LM", 2], ["SM", 1]] },
     jubilee:    { silenceMul: 0.6, hymns: 3, bells: 1.0, choirSize: 4, bright: 0.9,  meterW: [["CMD", 3], ["87.87", 2.5], ["CM", 2], ["LM", 1.5], ["SM", 1]] },
   };
+  // C, the conductor's state, lives three lifetimes. THE VISIT's:
+  // meetingNum, from 1, begun again by resetVisit (a new seed). THE
+  // MEETING's: meeting, plan, the guests (visitations, visitUntil,
+  // visitType, visitSecond, visitLogged, budget, hosanna, hosannaStream,
+  // testimony), the withheld tune (cumulative, assemblyFired,
+  // assemblyUntil, payoff), raspberry, the seatings (seating, scenes,
+  // chorale), the day's hymnal (house, hymnal, forms, reckoning), the
+  // organist and the ward — resetMeetingState() is the one place they are
+  // reset, as planMeeting begins, so nothing of the last meeting (one that
+  // ran out or one stopped half-way) is read by the next; the plan then
+  // fills them in. THE SECTION's: si, section, sectionStart, sectionDur,
+  // jointing, fromLevel, the fuging (fugingPlanned, fugingFired,
+  // fugingUntil) and hymn (the meeting's reset clears it too), written by
+  // enterSection as each section begins, a meeting's first among them, and
+  // the singing's verseLine and meter, written as a singing section begins
+  // and read on from there. And the stillness's hold, hushUntil, is the
+  // stillness's own (inHush, below).
   var C = {
     meetingNum: 0,
     meeting: null,               // { activity }
@@ -180,14 +197,34 @@ window.KOLOB = window.KOLOB || {};
     return pool.length ? pool[pool.length - 1][0] : null;
   }
 
+  // THE MEETING'S STATE (C, above): every field a meeting owns, set to what
+  // it is before anything is planned. The plan fills each in below; nothing
+  // reads one between here and there, so a field the plan once cleared where
+  // it was drawn reads the same, and one it cleared only on one road (the
+  // reckoning, inside the day's hymnal) is clear on every road. It throws no
+  // die. (The payoff is set from the withheld tune where that is drawn.)
+  function resetMeetingState() {
+    C.meeting = null; C.plan = [];
+    C.visitations = []; C.visitUntil = 0; C.visitType = null; C.visitSecond = false; C.visitLogged = true;
+    C.budget = { refused: [], reserved: null };
+    C.hosanna = null; C.hosannaStream = null; C.testimony = null;
+    C.cumulative = false; C.assemblyFired = false; C.assemblyUntil = 0; C.payoff = null;
+    C.raspberry = false;
+    C.seating = null; C.scenes = null; C.chorale = null;
+    C.house = null; C.hymnal = []; C.hymn = null; C.forms = null; C.reckoning = null;
+    C.organist = null; C.ward = null;
+  }
+
   // THE PLAN — every die of the meeting is thrown from meeting:<n>, in one
   // fixed order, whether it is used or not (SCORE.md §3: a hymn not sung, a
   // guest refused, a switch that forces another guest in — none of them
   // shifts a die that follows). t is the downbeat or the joint that calls it.
   function planMeeting(t) {
     C.meetingNum++;
+    resetMeetingState();
     // (the reckoning: a new meeting's drone stands on its keynote — a meeting
-    // ends home, so this is a turn only after a dev jump)
+    // ends home, so this is a turn only after a dev jump or a STOP while the
+    // drone stood off home; a new seed's drone is let go at the reseed)
     if (S.droneNote && S.droneTurn && S.droneNote().mul !== 1) S.droneTurn(t, [0, 0, 0, 0], 3, "tonic", null);
     var R = stream("meeting");
     // (the first die is the old cosine's period, thrown still so that every
@@ -231,7 +268,7 @@ window.KOLOB = window.KOLOB || {};
       ["aeolian", 1.2 - b * 0.8],
     ]);
     rebuildScale();
-    Desk.reset();                   // a new tuning: a clean page in the chord book
+    Desk.reset(true);               // a new tuning: a clean page in the chord book, and the meeting's count of fifths
 
     // the dice of the order of service: three hymns are always drawn (the most
     // any Sunday sings) and every mutation's die is thrown
@@ -316,11 +353,6 @@ window.KOLOB = window.KOLOB || {};
     // switch forces one guaranteed guest, seated early enough that the
     // guarantee is heard. (The Question's die, 29 %, is still thrown; it
     // never seats.)
-    C.visitations = [];
-    C.visitUntil = 0;
-    C.visitType = null;
-    C.visitSecond = false;
-    C.visitLogged = true;
     // (the switch draws its guest; a dev who names one — the harness, a
     // lab — gets that one, and the die is thrown all the same)
     // (every guest may be named — the handcart company, the
@@ -358,7 +390,6 @@ window.KOLOB = window.KOLOB || {};
     // named by the switch is seated past the budget, and the others leave it
     // its place. (C.budget: who was refused, and why — the census reads it)
     var BUD = CAL.GUEST_BUDGET;
-    C.budget = { refused: [], reserved: null };
     function indexOfSec(type) { for (var q = 0; q < plan.length; q++) if (plan[q].type === type) return q; return -1; }
     function seatIndex(V) { return typeof V.index === "number" ? V.index : indexOfSec(V.section); }
     // (the switch's guest keeps its place until it is seated: change ringing
@@ -498,8 +529,6 @@ window.KOLOB = window.KOLOB || {};
     // Governed by the 𐐐𐐄𐐢 pill: always / natural 8% / never. Set BEFORE
     // Motif.newMeeting() — the theme-length guard there reads the flag.
     C.cumulative = cumulativeMode === "always" || (cumulativeMode === "natural" && cumDie);
-    C.assemblyFired = false;
-    C.assemblyUntil = 0;
     // THE RASPBERRY AMEN — its own flag, not a seated visitation: it has no
     // section, only the meeting's final cadence. Never on a fast Sunday; a
     // solemn meeting does not end on a joke.
@@ -544,7 +573,10 @@ window.KOLOB = window.KOLOB || {};
     // written on hymn:<n>:<i> by the composer, ordered now and written off
     // the audio path (kolob-hymnal.js). The trombones' dawn keys the first
     // hymn at home: they play it before anyone has sung.
-    C.house = null; C.hymnal = []; C.hymn = null; C.forms = null; C.payoff = C.cumulative ? "assembly" : null;
+    // (the doxology's payoff, set here and not with the meeting's reset: it
+    // is read from the withheld tune, drawn above — its assembly, unless the
+    // day's forms below give the doxology another)
+    C.payoff = C.cumulative ? "assembly" : null;
     if (HY) {
       var th = Motif.theme(), subsM = Motif.subs ? Motif.subs() : [];
       // (a dark Sunday's doxology may rise into major — the sunrise, drawn
@@ -586,7 +618,6 @@ window.KOLOB = window.KOLOB || {};
       // (the orders are posted once every guest and every rite's seating is
       // known — a still sacrament lets the cantus stand on any note of the
       // tune — below, still inside this plan)
-      C.reckoning = null;
       prep = { rows: day.rows, fm: fm };
       if (dawn && day.rows.length) dawn.hymnId = day.rows[0].id;
       // (typed only, as new words are: SCORE §9.5)
@@ -599,7 +630,6 @@ window.KOLOB = window.KOLOB || {};
     // ward is seated first). Pure seatings on
     // cast:<n>'s forks, so seating them here moves no die; they are told
     // below, at THE WARD.
-    C.organist = null; C.ward = null;
     var OR = KOLOB.Organist && S.castStream ? KOLOB.Organist : null;
     // (the Sunday leans the bench — a Victorian at a
     // conference, a wedding or a dedication, the plain organist at a fast or
@@ -766,7 +796,6 @@ window.KOLOB = window.KOLOB || {};
     // keeps it for itself (kolob-testimony.js decides, on
     // guest:testimony:<n>). Cued as the testimony begins (enterSection).
     var TMg = KOLOB.Testimony || null;
-    C.testimony = null;
     if (TMg && C.ward) {
       var tmStream = stream("guest:testimony");
       var tmSeat = TMg.plan({ n: C.meetingNum, kind: activity, sunday: sunday, sections: plan, guests: C.visitations,
@@ -783,7 +812,6 @@ window.KOLOB = window.KOLOB || {};
     // leaning by the Sunday, one die a rite on scenes:<n>, every die thrown;
     // and never two empty rites running (a hymn, the prelude and a rite a
     // guest is seated in are never empty). Drawn once every guest is seated.
-    C.scenes = null;
     if (CAL) {
       var scR = stream("scenes"), scs = CAL.scenes(plan, sunday, C.visitations, scR);
       C.scenes = scs.map(function (x, i) {
@@ -832,7 +860,6 @@ window.KOLOB = window.KOLOB || {};
     // (hymns, fills, the one strange fill) is theirs.
     // (both are seated above, before the guests who need them — the
     // organist's variations and the gift of tongues' singer)
-    C.chorale = null;
     // THE CHORALE PRELUDE: some Sundays the organist's prelude on the day's
     // first hymn is the morning (the organist's own die, cast:<n> →
     // organist:prelude, at the style's odds; refused when the dawn is the
@@ -1384,6 +1411,14 @@ window.KOLOB = window.KOLOB || {};
     return v;
   }
   function smooth(z) { z = Math.max(0, Math.min(1, z)); return z * z * (3 - 2 * z); }
+  // THE STILLNESS'S HOLD (stillness, below): the conductor begins nothing
+  // in it — no guest's arrival, no fuging, no Hosanna, no testimony's or
+  // unbidden stillness, and the assembly only at its fallback. It is the
+  // drone's dip, and ends as the dip does: at its own time, at a dev jump,
+  // or at STOP (meetingStop) — the hold ends with the meeting STOP ends, so
+  // a PLAY inside it does not begin the next one hushed. A joint does not
+  // end it, the last one neither: a stillness late in a postlude holds on
+  // into the next meeting's first seconds, under the drone still dipped.
   function inHush() { return S.ctx && now() < C.hushUntil; }
   function inFuging() { return S.ctx && now() < C.fugingUntil; }
   function inVisit() { return S.ctx && now() < C.visitUntil; }
@@ -2241,13 +2276,17 @@ window.KOLOB = window.KOLOB || {};
   //                                 stops sounding — the joint waits for it
   //   voice(root7, opts, R, t)      a chord voiced and written nowhere (the
   //                                 rail's audition)
-  //   reset()                       a clean page: a new meeting, a sunrise
+  //   reset(meeting)                a clean page: a new meeting, a sunrise
   //                                 (and a PLAY after STOP, which is a new
   //                                 meeting: the stopped one's lines are
-  //                                 shut outside and hold nothing)
+  //                                 shut outside and hold nothing); a new
+  //                                 meeting (meeting true) counts its
+  //                                 fifths again, a sunrise counts on
+  //   fifthCount()                  the parallel fifths the meeting has
+  //                                 sung (getConductor's fifths)
   var Desk = (function () {
     var book = KOLOB.Score.chordBook();
-    var fifths = 0;                   // parallel fifths sung: counted, reported — they should be > 0
+    var fifths = 0;                   // parallel fifths sung this meeting: counted, reported — they should be > 0
     var sung = 0;                     // the end of the last chord the choir has written
     var SINGERS = { choir: true, fuging: true, assembly: true };
     function momentAt(t) { var m = moment(); m.chord = book.at(t); return m; }
@@ -2329,7 +2368,7 @@ window.KOLOB = window.KOLOB || {};
       chordTones: function (t) { return Harmony.chordTones(book.at(t)); },
       advance: advance, harmonize: harmonize, cadence: cadence, write: write, voice: voice, pedalClass: dronePedalClass,
       sungUntil: function () { return sung; },
-      reset: function () { book.reset(); sung = 0; },
+      reset: function (meeting) { book.reset(); sung = 0; if (meeting) fifths = 0; },
       fifthCount: function () { return fifths; },
       pageNumber: function () { return book.page(); },
     };
@@ -2343,6 +2382,11 @@ window.KOLOB = window.KOLOB || {};
   // ==========================================================================
   // A new seed is a new visit: the meeting count and the seasons start again.
   function resetVisit() { C.meetingNum = 0; seasonPos = 0; }
+  // STOP (kolob-core.js): the stopped meeting's stillness ends with it — its
+  // hold here (inHush), its dip at the next PLAY (the core lifts the drone's
+  // duck). Everything else the meeting owned is reset when the next one is
+  // planned (resetMeetingState).
+  function meetingStop() { C.hushUntil = 0; }
 
   S.Meeting = Book;
   S.moment = moment;
@@ -2354,6 +2398,7 @@ window.KOLOB = window.KOLOB || {};
   S.planMeeting = planMeeting;
   S.CUMULATIVE_ODDS = CUMULATIVE_ODDS;
   S.resetVisit = resetVisit;
+  S.meetingStop = meetingStop;
   S.localArc = localArc;
   S.intensity = intensity;
   S.inHush = inHush;

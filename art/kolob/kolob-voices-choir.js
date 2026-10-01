@@ -610,6 +610,9 @@ window.KOLOB = window.KOLOB || {};
     // (and on while a line still waits to be joined or parted)
     if (busy || VV().pending(S.ctx) || VV().parting(S.ctx)) { ticking = true; cueAt("ward", t + WARD_PUMP_S, wardTick); }
   }
+  // a new seed (kolob-core.js, the reseed): the rail's own ward was seated
+  // on the old seed's cast:0, and the next press seats the new seed's
+  function wardForgetAudition() { auditionWard = null; }
   // STOP: nothing more of this meeting is handed or joined
   function wardStop() {
     desks.forEach(function (d) { d.perf.clear(); });
@@ -1294,6 +1297,7 @@ window.KOLOB = window.KOLOB || {};
   S.hymnPlan = hymnPlan;
   S.theWard = function () { return wardOn() ? theWard() : null; };
   S.wardStop = wardStop;
+  S.wardForgetAudition = wardForgetAudition;
   S.wardStats = wardStats;
   (KOLOB._rooms = KOLOB._rooms || {})["kolob-voices-choir.js"] = true;   // the load guard's roll call
 })();

@@ -21,7 +21,8 @@
 // Usage:
 //   node _harness.js <secs> <seed> [ives] [razz] [cumulative] [force=<guest>]
 //                    [exp=<spec>] [stop=<secs>,…] [play=<secs>,…]
-//                    [throw=<lane>@<secs>,…] [dump=<file>] [header]
+//                    [reseed=<seed>@<secs>,…] [throw=<lane>@<secs>,…]
+//                    [dump=<file>] [header]
 //
 //   ives          KolobAudio.setForceVisitation(true)   — the Ives switch
 //   force=<name>  KolobAudio.setForceVisitation(name)   — one named guest
@@ -36,6 +37,12 @@
 //                 at one time a stop goes first. A time at or past <secs> is
 //                 not played (the report says so). The run's end still presses
 //                 STOP as below.
+//   reseed=<seed>@<secs>  KolobAudio.reseed(seed) at that time, as GATHER
+//                 does (a new visit): between a stop and a play at the same
+//                 time, so stop=90 reseed=11@90 play=90.5 is a STOP, a new
+//                 seed and its first meeting; a comma list for several. The
+//                 report prints what the old visit left the new one: the
+//                 drone's note before and after the reseed.
 //   throw=<lane>@<secs>  a fault: the first cue on that clock lane (conductor,
 //                 drone, choir, organ, …) at or after that time throws an
 //                 Error, once (THE FAULT INJECTION, below); a comma list for
@@ -76,12 +83,13 @@
 // performance.now reads it too. PJ2.Clock's lookahead pump is a setInterval,
 // so every cue fires at or ahead of its own time, and KolobAudio.clockHealth
 // must report no late cue. The run plays until the clock passes <secs> + 3
-// (pressing any scripted stop= and play= on the way), then STOP is pressed,
+// (pressing any scripted stop=, reseed= and play= on the way), then STOP is pressed,
 // so the stop fade is exercised too, and runs 1.5 s more for the fade's own
 // timers.
 //
 // The report: seed, seconds, the switches and the script, the engine and its
-// fingerprint, meetings and sections, notes by layer, events by type, guests,
+// fingerprint, meetings (one called inside a stillness's hold says so:
+// "hushed at its downbeat") and sections, notes by layer, events by type, guests,
 // the clock's health, the hymnal's desk, the graph the mock saw built,
 // console warnings, and every error caught (a timer callback that threw, a
 // cue the clock reported, an unhandled rejection). Exit 1 on any of those, or
@@ -138,6 +146,13 @@ for (let i = 2; i < argv.length; i++) {
       else if (t >= RUN) notes.push(a.slice(0, 5) + s + " lies at or past the run's end (" + RUN + " s): not played");
       else OPT.script.push({ act: a.slice(0, 4), t });
     });
+  } else if (a.indexOf("reseed=") === 0) {
+    a.slice(7).split(",").forEach((s) => {
+      const m = /^(\d+)@(\d+(?:\.\d+)?)$/.exec(s.trim());
+      if (!m) notes.push("reseed=" + s + " is not <seed>@<secs>: not pressed");
+      else if (+m[2] >= RUN) notes.push("reseed=" + s + " lies at or past the run's end (" + RUN + " s): not pressed");
+      else OPT.script.push({ act: "reseed", t: +m[2], seed: (+m[1] >>> 0) || 1847 });
+    });
   } else if (a.indexOf("throw=") === 0) {
     a.slice(6).split(",").forEach((s) => {
       const m = /^([A-Za-z][\w-]*)@(\d+(?:\.\d+)?)$/.exec(s.trim());
@@ -146,9 +161,11 @@ for (let i = 2; i < argv.length; i++) {
     });
   } else unknownFlags.push(a);
 }
-// the script in time order, a stop before a play at one time (a stop and a
-// restart); the throws in time order, so on one lane the earliest arms first
-OPT.script.sort((x, y) => x.t - y.t || (x.act === "stop" ? 0 : 1) - (y.act === "stop" ? 0 : 1));
+// the script in time order, at one time a stop, then a reseed, then a play (a
+// stop and a restart, on a new seed or the same); the throws in time order,
+// so on one lane the earliest arms first
+const ACT_ORDER = { stop: 0, reseed: 1, play: 2 };
+OPT.script.sort((x, y) => x.t - y.t || ACT_ORDER[x.act] - ACT_ORDER[y.act]);
 OPT.throws.sort((x, y) => x.at - y.at);
 
 // ----------------------------------------------------------------------------
@@ -603,6 +620,15 @@ function record(kind, t, payload) {
   try { dumpLines.push(JSON.stringify([kind, t, payload])); }
   catch (e) { tally.unserialisable++; if (tally.unserialisable <= 3) noteError("dump", new Error("a " + kind + " record at " + t.toFixed(3) + " s could not be serialised: " + e.message)); }
 }
+function hushedNow() { try { return !!(S && typeof S.inHush === "function" && S.inHush()); } catch (e) { return false; } }
+// reseed=: what the old visit leaves the new one — the drone's note
+function droneSaid() {
+  try {
+    const d = S && typeof S.droneNote === "function" ? S.droneNote() : null;
+    return d ? "×" + +d.mul.toFixed(4) + " " + d.role + (d.k != null ? " (cantus " + d.k + ")" : "") : "(no drone note on this build)";
+  } catch (e) { return "(the drone's note could not be read: " + e.message + ")"; }
+}
+const reseeds = [];             // { seed, t, playing, before, after }
 K.setNoteListener(function (n) {
   const t = musicNow();
   tally.notes++; count(tally.byLayer, n && n.layer || "?");
@@ -613,7 +639,9 @@ K.setEventListener(function (ev) {
   tally.events++;
   const type = ev && (ev.type || ev.cat) || "?";
   count(tally.byType, type);
-  if (ev.type === "meeting-start" || (!ev.type && ev.cat === "meeting" && /meeting \d+/.test(ev.label || ""))) tally.meetings.push({ t, n: ev.n, mode: ev.mode, kind: ev.kind, sunday: ev.sunday, keynoteHz: ev.keynoteHz, houseDialect: ev.houseDialect, label: ev.label, detail: ev.detail });
+  // (a meeting called inside a stillness's hold is told: the conductor
+  // refuses a guest, a fuging and another stillness until the hold ends)
+  if (ev.type === "meeting-start" || (!ev.type && ev.cat === "meeting" && /meeting \d+/.test(ev.label || ""))) tally.meetings.push({ t, n: ev.n, mode: ev.mode, kind: ev.kind, sunday: ev.sunday, keynoteHz: ev.keynoteHz, houseDialect: ev.houseDialect, label: ev.label, detail: ev.detail, hushed: hushedNow() });
   if (ev.type === "section-start" || (!ev.type && ev.cat === "section")) tally.sections.push({ t, section: ev.section || String(ev.label || "").replace(/^[^A-Za-z]*/, "").toLowerCase(), dur: ev.dur });
   if (ev.type === "guest-start") count(tally.guests, ev.guest || "?");
   if (ev.type === "cadence") count(tally.cadences, ev.kind || "?");
@@ -646,10 +674,17 @@ if (typeof K.getSeed === "function" && K.getSeed() !== SEED && typeof K.reseed =
   // downbeat falls LEAD_S = 0.1 s later — the meeting is called at 0.1 s
   try { K.play(); } catch (e) { playError = e; noteError("play()", e); }
   if (!playError) {
-    // the script (stop=, play=): each pressed at its time, in time order
+    // the script (stop=, reseed=, play=): each pressed at its time, in time order
     for (const s of OPT.script) {
       await advance(s.t);
       if (fatal) break;
+      if (s.act === "reseed") {
+        const r = { seed: s.seed, t: s.t, playing: !!(K.isPlaying && K.isPlaying()), before: droneSaid(), after: null };
+        try { K.reseed(s.seed); } catch (e) { noteError("reseed(" + s.seed + ") at " + s.t + " s", e); }
+        r.after = droneSaid();
+        reseeds.push(r);
+        continue;
+      }
       try { K[s.act](); } catch (e) { noteError(s.act + "() at " + s.t + " s", e); }
     }
     await advance(RUN + 3);
@@ -683,15 +718,16 @@ if (typeof K.getSeed === "function" && K.getSeed() !== SEED && typeof K.reseed =
   if (lateCues) fails.push(health.late + " late cue(s)");
   if (fatal) fails.push("the run was cut short");
 
-  const SWITCHES = FLAGS.filter((f) => !/^(stop|play|throw)=/.test(f));   // the script and the throws have their own say
+  const SWITCHES = FLAGS.filter((f) => !/^(stop|play|reseed|throw)=/.test(f));   // the script and the throws have their own say
   L("=== KOLOB harness ===  seed " + SEED + " · " + RUN + " s" + (SWITCHES.length ? " · flags " + SWITCHES.join(",") : "") +
-    (OPT.script.length ? " · script " + OPT.script.map((s) => s.act + "@" + s.t).join(" ") : "") + (INJ.length ? " · throw " + INJ.map((j) => j.spec).join(",") : "") +
+    (OPT.script.length ? " · script " + OPT.script.map((s) => s.act + (s.act === "reseed" ? " " + s.seed : "") + "@" + s.t).join(" ") : "") + (INJ.length ? " · throw " + INJ.map((j) => j.spec).join(",") : "") +
     (OPT.dump ? " · dump " + path.resolve(OPT.dump) + (OPT.header ? " (header)" : "") : ""));
   L("engine: " + loaded.length + " module" + (loaded.length === 1 ? "" : "s") + " from " + ENGINE_DIR + (LEGACY ? " (single-file " + path.basename(LEGACY) + ")" : " (the list in " + LIST.from + ")") + " · fingerprint " + FINGERPRINT);
   if (unknownFlags.length) L("note: unknown flag(s) " + unknownFlags.join(", ") + " (passed to the header, otherwise ignored)");
   notes.forEach((m) => L("note: " + m));
   const M = tally.meetings;
-  L("meetings: " + M.length + M.map((m) => " · #" + (m.n != null ? m.n : "?") + " at " + m.t.toFixed(1) + " s: " + [m.mode, m.kind, m.sunday, m.keynoteHz ? m.keynoteHz.toFixed(1) + " Hz" : null, m.houseDialect].filter(Boolean).join(" · ") + (m.mode ? "" : " " + (m.label || "") + " " + (m.detail || ""))).join(""));
+  L("meetings: " + M.length + M.map((m) => " · #" + (m.n != null ? m.n : "?") + " at " + m.t.toFixed(1) + " s: " + [m.mode, m.kind, m.sunday, m.keynoteHz ? m.keynoteHz.toFixed(1) + " Hz" : null, m.houseDialect].filter(Boolean).join(" · ") + (m.mode ? "" : " " + (m.label || "") + " " + (m.detail || "")) + (m.hushed ? " · hushed at its downbeat" : "")).join(""));
+  reseeds.forEach((r) => L("reseed " + r.seed + " at " + r.t + " s (" + (r.playing ? "playing" : "stopped") + "): the drone's note " + r.before + " → " + r.after));
   L("sections: " + tally.sections.length + (tally.sections.length ? " · " + tally.sections.map((s) => s.section + "@" + s.t.toFixed(1)).join(" ") : ""));
   L("notes: " + tally.notes + " · by layer " + JSON.stringify(sortedCounts(tally.byLayer)));
   L("events: " + tally.events + " · by type " + JSON.stringify(sortedCounts(tally.byType, 16)));
