@@ -391,10 +391,17 @@
     });
   }
   function hideSheet() { if (sheet) sheet.hidden = true; }
+  /* the sheet's two toggles share their first half: a sheet that is up
+     goes down, and that press is spent (true); a hidden one is left
+     untouched for the caller to fill and show (false) */
+  function closeSheetIfOpen() {
+    if (sheet && !sheet.hidden) { sheet.hidden = true; return true; }
+    return false;
+  }
   function toggleSheet() {
     var it = itemById(curId);
     if (!sheet || !it) return;
-    if (!sheet.hidden) { sheet.hidden = true; return; }
+    if (closeSheetIfOpen()) return;
     sheet.innerHTML =
       '<b>' + esc(it.title) + '</b> · ' + esc(String(it.created).slice(0, 10)) +
       ' · ' + it.responses.length +
@@ -408,7 +415,7 @@
      queue; SHOW clears the flag and reloads so the pile takes it back */
   function hiddenList() {
     if (!sheet) return;
-    if (!sheet.hidden) { sheet.hidden = true; return; }
+    if (closeSheetIfOpen()) return;
     sheet.innerHTML = '<b>hidden items</b> · loading…';
     sheet.hidden = false;
     fetchQueue().then(function (q) {
@@ -557,8 +564,11 @@
         paintBar();
       }
     }, function (code) {
-      if (code === 'forbidden' || code === 'too_many_attempts') { gate(quiet ? '' : gateMsg(code)); return; }
+      /* a refused key always reopens the gate — a quiet refetch (the tab
+         coming back) just says nothing about why; any other failure is
+         reported only when the load was not quiet */
       if (!quiet) gate(gateMsg(code));
+      else if (code === 'forbidden' || code === 'too_many_attempts') gate('');
     });
   }
 
