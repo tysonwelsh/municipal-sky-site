@@ -324,10 +324,12 @@ html { scroll-behavior: smooth; }
 /* being dragged: the tag moves via left/top (it is not on the items'
    transform-only path), so it gets promoted to its own compositor layer for
    the duration — a drop-shadowed element moved by layout leaves stale shadow
-   trails in Blink otherwise, the same failure the item drag documents. */
+   trails in Blink otherwise, the same failure the item drag documents.
+   `filter` is the name that does the promoting; left/top are not
+   compositor properties, so listing them never added a layer. */
 .jd-itemtag.is-dragging {
   cursor: grabbing;
-  will-change: left, top, filter;
+  will-change: filter;
   transition: none;
 }
 .jd-itemtag::before {         /* the grommet, turned metal: dark bore, washer
@@ -952,18 +954,10 @@ html { scroll-behavior: smooth; }
 }
 
 /* the wall label */
-.jd-wall-label {
-  border-bottom: 1px solid var(--rule-soft);
-  padding-bottom: var(--s-2);
-}
 .jd-title {
   font-size: var(--fs-lg);
   letter-spacing: 0.3em;
   margin: 0 0 var(--s-1);
-}
-.jd-label-dek {
-  margin: 0 0 var(--s-1);
-  color: var(--ink-soft);
 }
 .jd-count {
   margin: 0;
@@ -1016,7 +1010,7 @@ html { scroll-behavior: smooth; }
    --fs-md/--lh-base in the site's content width, a Spectral semibold title
    in sentence case. Scoped by the jd-notes--drawer modifier (index.php)
    because /about/ shares .jd-notes for its steps and sets its own type.
-   The build stamp and the ↑ link stay mono: they are chrome, not prose. */
+   The build stamp stays mono: it is chrome, not prose. */
 .jd-notes--drawer {
   max-width: var(--max-content);
   font-family: var(--font-body);
@@ -1032,19 +1026,9 @@ html { scroll-behavior: smooth; }
   text-transform: none;
   margin: 0 0 var(--s-2);      /* the site's title-to-divider step (.section-title) */
 }
-.jd-notes--drawer .jd-build,
-.jd-notes--drawer .jd-back { font-family: var(--font-mono); font-size: var(--fs-xs); }
+.jd-notes--drawer .jd-build { font-family: var(--font-mono); font-size: var(--fs-xs); }
 /* the manila button sits centred under the paragraphs (owner, 2026-09-29) */
 .jd-notes--drawer .jd-about-cta { text-align: center; }
-
-/* the ↑ twin of the manila tag */
-.jd-back {
-  margin: var(--s-4) 0 0;
-  text-align: center;
-  font-size: var(--fs-xs);
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-}
 
 /* ================= mobile: full-viewport drawer (PLAN-MOBILE §1) ========= */
 @media (max-width: 768px) {
@@ -2081,9 +2065,8 @@ tr.rc-axdesc td {
    ONE HAND ON THE FORM NOW: the visitor writes in graphite (--graphite) —
    the pencilled ring on the chosen likert stop, the pencil tick on a
    finished rail step, the tie election's tick. --tstamp (the old stamp-pad
-   red) survives only as a plain ink-red accent, unconnected to any stamp:
-   the failed-slot glyph, the required-scale flag, the "kept" fate on the
-   unveil.
+   red) outlived the stamps for a while as a plain ink-red accent token and
+   is gone now too (2026-10-01): nothing read it any more.
 
    Tokens are scoped to the scrim, the same way the rc-* ones are, so neither
    modal can leach into the other. The grain/mottle data-URIs are copied
@@ -2105,7 +2088,6 @@ tr.rc-axdesc td {
   --trule: rgba(74, 53, 18, 0.40);
   --trule-2: rgba(74, 53, 18, 0.19);
   --tred: #b3402f;
-  --tstamp: #a8332a;          /* stamp-pad red — a shade deeper than --tred */
   --graphite: #4b4030;        /* the visitor's pencil */
   --tmono: "Courier Prime", "Courier New", Courier, monospace;
   --tform: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
@@ -2119,13 +2101,12 @@ tr.rc-axdesc td {
      a token instead of inventing a 6th font-size. Every value below is used
      more than once in the rules that follow — that repetition is the point:
      a size that only ever appears once doesn't belong in the ladder, it's
-     a display size (the likert's A/B) and stays literal. */
+     a display size (the likert's A/B) and stays literal. (--t-lead and
+     --sp-1 left the ladder 2026-10-01: nothing read either.) */
   --t-micro: 0.44rem;   /* form-nos, the tersest labels */
   --t-label: 0.55rem;   /* rail labels, row labels, skip/notice text */
   --t-body: 0.66rem;    /* running copy: turn-line, selects, list rows */
-  --t-lead: 0.78rem;    /* the one input field — leave it alone */
   --t-title: 0.86rem;   /* the masthead heading — leave it alone */
-  --sp-1: 4px;           /* tight — icon-to-label gaps, row internal padding */
   --sp-2: 8px;           /* default — label-to-control, masthead padding */
   --sp-3: 14px;          /* between rows/blocks */
   --sp-4: 22px;          /* between sections */
@@ -2396,21 +2377,28 @@ html.jd-turn-open { overflow: hidden; }
    are graph-paper print swatches in a tight 2×2 — the report card's
    "photograph" (.jd-turn-art below), so a slot waits in the same frame its
    drawing will arrive in. Each swatch runs an OLD-SCHOOL WEB WAIT INDICATOR,
-   printed in ink and dealt per turn from a pool of five (round-24 rotation,
-   owner directive 2026-08-21 — the JS darkDeal shuffles the pool seeded from
-   the turn ref; before then each indicator was keyed stably to its slot
-   letter): a plotter pen tracing a circuit generated fresh each turn
-   (round-20 swap — the flipping hourglass retires), the stray word ("please /
-   wait" adrift, DVD-menu style — round-19 swap, owner pick 2026-08-16),
-   the scatterword (LOADING… blown apart and zooped back together, its flight
-   generated fresh each turn — round-22 swap, owner pick 2026-08-18, the Win95
-   segmented progress bar retires), a ticking wristwatch (round-21 swap — the
-   bouncing dots retire), and the honest bar (a hatched ink fill that climbs,
-   stalls, takes setbacks, and second-guesses itself above ~80 — rounds
-   24–25, owner pick 2026-08-21). The well under each indicator wears the
-   indicator's NAME (jd-dark-well--plot/stray/scatter/watch/bar) and the
-   full-bleed/overflow tailoring below keys to that, not to the slot: the
-   slot classes (--a…--d) now mean position only.
+   printed in ink and dealt per turn from a pool (round-24 rotation, owner
+   directive 2026-08-21 — the JS darkDeal shuffles the pool seeded from the
+   turn ref; before then each indicator was keyed stably to its slot
+   letter). The pool is DARK_POOL in jd-darkroom.js — five for the four
+   slots since 2026-09-29, so one sits each turn out: the stray word
+   ("please / wait" adrift, DVD-menu style — round-19 swap, owner pick
+   2026-08-16), the scatterword (LOADING… blown apart and zooped back
+   together, its flight generated fresh each turn — round-22 swap, owner
+   pick 2026-08-18, the Win95 segmented progress bar retires), a ticking
+   wristwatch (round-21 swap — the bouncing dots retire), the word drift
+   (letters falling down the rules into a heap — round 27, 2026-08-23) and
+   the word mesh (Kimi's Take, iframed — benched 2026-08-30, back
+   2026-09-29). Two more are BENCHED, not deleted, and their rules below
+   still work (see the note on DARK_POOL): the plotter pen tracing a
+   circuit generated fresh each turn (round-20 swap — the flipping
+   hourglass retires) and the honest bar (a fill that climbs, stalls, takes
+   setbacks, and second-guesses itself above ~80 — rounds 24–25, owner pick
+   2026-08-21; set as the teletype since 2026-08-26). The well under
+   each indicator wears the indicator's NAME
+   (jd-dark-well--stray/scatter/watch/drift/words, and --plot/--bar on the
+   bench) and the full-bleed/overflow tailoring below keys to that, not to
+   the slot: the slot classes (--a…--d) now mean position only.
    ROUND 26 (owner pick 2026-08-21, mockup-26-standby-claude rev. 3): the
    fifth slip — "please wait…" in the pencil hand, floated over the pile —
    is retired; it covered the indicators. The masthead is VISIBLE on this
@@ -2971,9 +2959,10 @@ html.jd-turn-open { overflow: hidden; }
 .jd-drift .col > i { transform: translateY(-300%); }
 
 /* arrived / failed: the drift stops where it stands, with the rest of the
-   well. The metronomes are stopped in JS at the same moment — a paused
-   animation still holds its letter on the paper, which is what we want, but
-   a running metronome would go on minting letters behind the fade. */
+   well. The metronomes are stopped in JS once the slot lands — a running
+   metronome would go on minting letters behind the fade. (The letters fall
+   on element.animate(), which animation-play-state does not reach; the rule
+   below is kept, and the JS stop is what actually ends them.) */
 .jd-dark-sw[data-state="ok"] .jd-drift i,
 .jd-dark-sw[data-state="fail"] .jd-drift i { animation-play-state: paused; }
 
@@ -4481,8 +4470,6 @@ body.jd-pod-drag, body.jd-pod-drag * {
     --pw: 74px; --pstep: 13px; --pbase: 40px;
     max-width: calc(6 * var(--pw));
   }
-  .jd-turn[data-view="said"] .jd-pod--said,
-  .jd-turn[data-view="said"] .jd-pod.jd-pod--said { --pbase: 76px; }
   .jd-pod--said .jd-pod-who b { font-size: 0.6rem; text-wrap: balance; }
   .jd-turn[data-view="call"] .jd-pod-row,
   .jd-turn[data-view="said"] .jd-pod-row,
@@ -4578,7 +4565,6 @@ body.jd-pod-drag, body.jd-pod-drag * {
 .jd-folder-scrim {
   --fmanila: #e8c98e;
   --fmanila-hi: #f0d8a6;
-  --fmanila-lo: #d5b171;
   --fpaper: #f7f0dd;
   --fink: #33240f;
   /* the two quiet inks, raised after measurement (design review,
@@ -4619,13 +4605,16 @@ html.jd-folder-open { overflow: hidden; }
   box-sizing: border-box;
   width: min(920px, 100%);
   min-width: 0;
-  max-height: 100%;
+  /* the tab rides the card's top edge (the tabs' note, below): the card
+     wears a top margin the tab's height and gives it back from its cap */
+  margin-top: var(--ftab-h);
+  max-height: calc(100% - var(--ftab-h));
   display: flex; flex-direction: column;
   color: var(--fink);
   font-family: var(--fmono);
   background: var(--fmanila) var(--fgrain);
   border: 1px solid rgba(48, 38, 20, 0.6);
-  border-radius: 2px 2px 6px 6px;
+  border-radius: 3px 3px 6px 6px;         /* the tab is inset now: both top corners are the folder's */
   box-shadow: 14px 22px 34px -10px rgba(6, 3, 0, 0.66),
               3px 6px 12px -4px rgba(6, 3, 0, 0.5);
 }
@@ -4649,13 +4638,9 @@ html.jd-folder-open { overflow: hidden; }
    smaller tab at the right end of the same edge, so it belongs to the
    folder too. Both are absolutely positioned children of the card, hung
    from its top (bottom: 100%); the card wears a top margin the tab's
-   height so the tab stays inside the scrim's padding. */
+   height (.jd-folder-card, above) so the tab stays inside the scrim's
+   padding. */
 .jd-folder-scrim { --ftab-h: 44px; }
-.jd-folder-card {
-  margin-top: var(--ftab-h);
-  max-height: calc(100% - var(--ftab-h));
-  border-radius: 3px 3px 6px 6px;         /* the tab is inset now: both top corners are the folder's */
-}
 /* THE TAB, CUT LIKE THE FOLDER IN THE DRAWER (owner, 2026-09-29, second
    pass: "it needs to look like a file folder … similar to how the folder
    appears in the drawer", and the ✕ "to the left of the title … part of the
@@ -4852,9 +4837,6 @@ html.jd-folder-open { overflow: hidden; }
    fifths of the reading in that empty stretch. */
 .fx-seg  { stroke: var(--fpaper); stroke-width: 1.4; }
 .fx-seg-out { stroke: var(--frule-2); stroke-width: 1; }
-/* an axis panel's 1..points rule: the faintest thing on the page, because it
-   is scaffolding and the dot is the datum */
-.fx-track { stroke: rgba(74, 53, 18, 0.22); stroke-width: 1; }
 .fx-line { fill: none; stroke: var(--fink); stroke-width: 1.6;
            stroke-linejoin: round; stroke-linecap: round; }
 .fx-dot  { fill: var(--fink); }
@@ -4916,10 +4898,6 @@ html.jd-folder-open { overflow: hidden; }
   font-family: var(--fmono); font-weight: 400; font-size: 0.64rem;
   letter-spacing: 0.03em; text-transform: none; color: var(--fink-2);
   line-height: 1.35;
-}
-.fx-of {
-  font-family: var(--fmono); font-weight: 400; font-size: 0.92em;
-  letter-spacing: 0.04em; text-transform: none; color: var(--fink-3);
 }
 /* the lead panel's cap: 215px across a 172-unit box. Every other panel's is
    the same scale over its cropped box, so the two must move together. */
@@ -5082,8 +5060,9 @@ html.jd-folder-open { overflow: hidden; }
 }
 .rc-hide-check input { margin: 0; accent-color: #c9a84c; }
 /* a specimen the admin hid leaves the pile on the spot (data.php holds it
-   back on the next load); !important because .jd-item sets its own display */
-.jd-item.jd-item--hidden { display: none !important; }
+   back on the next load). No !important: nothing else sets display on a
+   pile item, so the two classes win on their own. */
+.jd-item.jd-item--hidden { display: none; }
 /* the admin strip's hidden-items list rides the prompt sheet's paper */
 .jd-bench-sheet .jd-bench-hidden-row {
   display: flex; align-items: center; gap: 10px; padding: 4px 0;
@@ -5248,8 +5227,7 @@ html.jd-bench-on .jd-turn-scrim {
 .jd-turn-scrim .jd-filmstrip{
   --tb-ink:var(--tink); --tb-ink-2:var(--tink-2); --tb-rule:var(--trule);
   --tb-rule-2:var(--trule-2); --tb-red:var(--tred); --tb-mono:var(--tmono);
-  --tb-paper:var(--tpaper);
-  --form-rule:var(--trule); --form-rule-2:var(--trule-2)}
+  --tb-paper:var(--tpaper)}
 @supports (color:color-mix(in srgb,red,transparent)){
   .jd-filmstrip{--tb-red-soft:color-mix(in srgb,var(--tb-red) 52%,transparent)}}
 
