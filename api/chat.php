@@ -179,6 +179,35 @@ function callOpenAI($message, $api_key, $system_prompt, $temperature, $model)
 }
 
 // ----------------------------------------------------
+// Daily fail-safe (owner, 2026-10-01): at most CHAT_DAILY_CAP requests in
+// any rolling 24 hours, counted across everyone (the owner included) from
+// the conversations table, checked before either provider is called. The
+// providers' own spend limits are the other line of defence.
+// ----------------------------------------------------
+const CHAT_DAILY_CAP = 50;
+
+include 'database.php';
+
+try {
+    $recent = (int) $pdo->query(
+        "SELECT COUNT(*) FROM conversations WHERE `timestamp` >= NOW() - INTERVAL 1 DAY"
+    )->fetchColumn();
+} catch (PDOException $e) {
+    error_log("Daily cap check failed: " . $e->getMessage());
+    $recent = CHAT_DAILY_CAP;   // can't count, so don't spend
+}
+if ($recent >= CHAT_DAILY_CAP) {
+    http_response_code(429);
+    $resting = 'The machine is resting for today. Try again tomorrow.';
+    echo json_encode([
+        'error' => $resting,
+        'claude' => ['success' => false, 'message' => $resting],
+        'openai' => ['success' => false, 'message' => $resting],
+    ]);
+    exit();
+}
+
+// ----------------------------------------------------
 // Call both APIs with the dynamic temperature
 // ----------------------------------------------------
 $claude_result = callClaude($message, $claude_key, $system_prompt, $temperature, $claude_model);
@@ -189,10 +218,8 @@ error_log("Claude result: " . print_r($claude_result, true));
 error_log("OpenAI result: " . print_r($openai_result, true));
 
 // ----------------------------------------------------
-// Save conversation to database
+// Save conversation to database ($pdo from the cap check above)
 // ----------------------------------------------------
-include 'database.php';
-
 try {
     $conversation_id = uniqid(time(), true);
     $session_id = $_SERVER['REMOTE_ADDR'] ?? 'unknown';

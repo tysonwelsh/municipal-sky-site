@@ -238,9 +238,15 @@ const JD_CONSENT_VERSION = 'jd-consent-5';
 // FINITE: jd-generate.php is publicly reachable with no feature flag, and this
 // number is the only thing bounding spend at four paid providers if a bot
 // finds it. Lower these again when the drawer opens to the public.
+//
+// GLOBAL CAP LOWERED 2026-10-01 (owner call): a hard daily fail-safe of
+// about 50 turns, whoever takes them, the owner included. The breaker
+// counts DRAWINGS (jd_generations rows), four to a turn, so 200 is 50
+// turns; it resets at midnight UTC. The per-visitor caps stay off by the
+// owner's choice; the providers' own spend limits sit behind this.
 const JD_LIMIT_HOURLY = 100000;
 const JD_LIMIT_DAILY = 100000;
-const JD_LIMIT_GLOBAL_DAILY = 2000;
+const JD_LIMIT_GLOBAL_DAILY = 200;   // 50 turns x 4 drawings
 
 // The rating bench's auth, in one switch.
 //
