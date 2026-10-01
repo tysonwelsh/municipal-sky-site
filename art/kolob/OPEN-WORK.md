@@ -7,13 +7,14 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
 
 ## The refactor
 
-- **`PLAN-REFACTOR.md`** (2026-10-01; §2 built, v0.36.3): the owner asked for a plan to improve
+- **`PLAN-REFACTOR.md`** (2026-10-01; §2 built, v0.36.3; §3.6 built): the owner asked for a plan to improve
   efficiency, reliability and maintainability without changing what is heard or seen. Its §2, the
   real faults, is done (commits 3eefffb to a373760: a cue that threw ended its layer for the visit; a
   stillness survived STOP; STOP's own race; errors swallowed silently; a broken page let PLAY be
-  pressed; the harness's accounting). What remains is §3 (one place for each thing: the Pitch
-  arithmetic, the guest-room scaffold, the planner out of the conductor, golden tests, the lint) and
-  §4 (the page's load and frame, the minutes' poll, the audio graph with the owner), in §6's order.
+  pressed; the harness's accounting), and §3.6, the golden tests (`tools/golden.js`, commit 22f8bf5).
+  What remains is §3 (one place for each thing: the Pitch arithmetic, the guest-room scaffold, the
+  planner out of the conductor, the lint) and §4 (the page's load and frame, the minutes' poll, the
+  audio graph with the owner), in §6's order.
   The §2 builders' follow-ups, not done:
   - the drone stays ducked after a broken hymn's chain is released by the net (§2.1);
   - a cue's fault that repeats is now logged at each of the net's retries (every 5 s for a layer), not once (§2.1);
@@ -22,6 +23,13 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
   - the chord book's ids count for the page's life, not per visit;
   - `no-empty` could now be added to the lint (§3.8), with `allowEmptyCatch` or a comment in each empty catch;
   - a hymn the idle road fails to write warns, while a worker's failure to write one errors.
+  The §3.6 builder's follow-ups, not done:
+  - `S.pipeOn()` reads `S.ctx`, so a meeting's plan depends on whether an AudioContext exists (no
+    variations seated, no chorale prelude drawn without one); §3.4's pure planner should be handed it;
+  - the golden walks the ward's and the organist's hymns the labs' way (the Cast's own verse count, the
+    hymn's own beat): a pure export of the choir's `performancePlan` would let it walk them as the meeting does;
+  - not under the golden: the guests' `prepare()` and `score()`, `Cast.planRefrain` and `Cast.score`, any
+    meeting after the first, and the switches (ives, force=, cumulative, razz, exp=).
 
 ## Ideas approved, not built
 
