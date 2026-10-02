@@ -6,6 +6,77 @@ in the gitignored PLAN-*.md docs.) Newest first within each section.
 
 ## Wanted
 
+### Owner's v2 notes, triaged (2026-10-01, evening)
+
+**Being built now (Phase 3c/4a):** head-to-head comparative scores on the
+7-point scale, both as six side-by-side questions and (from the owner's
+pedestal session) derived from the podium's gaps — one `jd2_pairs` table.
+
+**Before the rating campaign starts** (each is a data edit or a small
+back-end change; the owner decides the wording):
+
+- **Settle the scales.** Consider a 4-point scale for the three issue axes
+  (structural coherence, layering, jnsq) and a 3-point scale for
+  understanding-assignment. Ranks are data in `taxonomy.json`; the gauges
+  (`JD_axisCls`, `rc-r*`/`rc-q*`) already handle 3- and 4-point.
+- **Settle the names.** "Subjects / categories / axes", and "ratings vs
+  grades" — the owner leans to calling the per-axis answers *ratings* so
+  *overall grade* keeps its name, or renaming it (overall quality /
+  usefulness). Labels only; ids stay.
+- **Solid definitions for every axis**, written as the owner works the new
+  prompt set; must be solid before sharing. Including the
+  benefit-of-the-doubt rule for understanding-assignment: an ambiguous
+  prompt read in a reasonable way is NOT penalised, even if it is not the
+  reading the owner had in mind. Suggested sentence for the description:
+  "If the prompt is ambiguous, any reasonable reading counts as
+  understanding it; do not penalise a drawing for choosing a different
+  reasonable reading than you had in mind."
+- **Rationale notes.** A free-text comment per sitting (and per cell where
+  wanted), kept on hand for taxonomy tweaks, not necessarily shown on the
+  card. Schema: add `jd2_sessions.note` (additive; judgments already carry
+  a per-cell `note`).
+- **The prompt set: ~100 prompts, categorised.** Schema: add
+  `jd2_prompts.category` (additive); the CSV batch runner takes a
+  `category` column.
+- **Model-assigned size.** At the moment the titler drafts the title it
+  also proposes the size tier, given the tier descriptions and a few
+  examples per tier (a titler-shaped call: prompt in, one tier out,
+  validated against `sizeTiers`). The size card then disappears for
+  visitors; the owner can still override on the ledger. Check the
+  agreement rate against the ~64 owner-chosen sizes in the v1 archive
+  first.
+- **Newest models** in the pool (newest Opus, newest OpenAI, etc.) —
+  already decided: refresh before regenerating; pool is data + `poolVersion`.
+
+**Instrument / UI (Phase 4b and after):**
+
+- **One question at a time.** A rating card that asks understanding, then
+  structural coherence, then layering, then jnsq, then the overall grade,
+  per drawing (or per question across drawings) — instead of the full panel
+  of selects. Same card for visitors and the bench.
+- **The unveil pedestals carry a compact summary**: model, cost, and every
+  rating for that drawing in a small well-designed table; the overall
+  spark line leaves the plate and moves into the pedestal.
+- **Darkroom copy**: rewrite the text under the loading cards, including
+  the "taking longer than usual" line.
+- **Instructions**: rewrite, and fix the blurry text when the sheet
+  expands (likely a transform/scale on a rasterised layer — check
+  `will-change`/`transform` on the sheet and its filter).
+- **Typography**: a non-monospace face for the axis descriptions.
+
+**Before the drawer opens to the public:**
+
+- **Consent**: a checkbox that includes confirming the visitor is over 18,
+  and a fuller disclaimer than "sent to Anthropic etc." New consent
+  version; privacy.php §4 must match.
+- **Visitor chooses how many drawings and from which models.** Default
+  two, with controls on the prompt screen to ask for more (up to the
+  pool) and to pick the models. Back end: the v2 `deal` already allows any
+  size; `jd2-generate` gains a visitor `models: [ids]` field (min 2),
+  the breaker counts drawings not turns, the pairs step scales with the
+  count (1 pair for two drawings). Owner runs stay at the full pool.
+- **Moderation / approval queue** (see the follow-ons above).
+
 ### Dataset v2 follow-ons (owner, 2026-10-01)
 
 Decided alongside the v2 cutover (PLAN-V2.md, gitignored); none of these is
