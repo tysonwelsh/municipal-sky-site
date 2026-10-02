@@ -365,8 +365,18 @@ check('?slim=1 through _slim.php: one response, the shown one', $st === 200 && (
 [$st] = req('GET', '/art/junk-drawer/data.php', null, false, ['If-None-Match: ' . ($h['etag'] ?? '')]);
 check('an unchanged manifest revalidates (304 on its ETag)', $st === 304, (string) $st);
 [$st, , $hh, $raw] = req('GET', '/api/jd2-gen-svg.php?gen=' . $slotGen1['c']);
-check('jd2-gen-svg serves a live drawing to anyone', $st === 200 && str_starts_with($hh['content-type'] ?? '', 'image/svg+xml')
-      && str_contains($raw, '<svg') && str_contains($hh['cache-control'] ?? '', 'no-store'));
+$svgTag = '"' . md5((string) one($db, 'SELECT svg FROM jd2_generations WHERE id = ?', [$slotGen1['c']])) . '"';
+check('jd2-gen-svg serves a live drawing to anyone: private, max-age=86400, ETag = md5 of the svg, nosniff',
+      $st === 200 && str_starts_with($hh['content-type'] ?? '', 'image/svg+xml') && str_contains($raw, '<svg')
+      && ($hh['cache-control'] ?? '') === 'private, max-age=86400' && ($hh['etag'] ?? '') === $svgTag
+      && ($hh['x-content-type-options'] ?? '') === 'nosniff', json_encode($hh));
+[$st, , $hh, $raw] = req('GET', '/api/jd2-gen-svg.php?gen=' . $slotGen1['c'], null, false, ['If-None-Match: ' . $svgTag]);
+check('…and revalidates: 304, no body, on its ETag', $st === 304 && $raw === '', (string) $st);
+[$st, , $hh] = req('GET', '/api/jd2-gen-svg.php?gen=' . $slotGen1['c'], null, false, ['If-None-Match: "stale"']);
+check('…a different ETag gets the drawing again (200)', $st === 200, (string) $st);
+[$st, , $hh] = req('GET', '/api/jd2-gen-svg.php?gen=' . $slotGen1['c'], null, true);
+check('a keyed answer stays no-store, without an ETag', $st === 200 && str_contains($hh['cache-control'] ?? '', 'no-store')
+      && !isset($hh['etag']) && ($hh['x-content-type-options'] ?? '') === 'nosniff', json_encode($hh));
 [$st] = req('GET', '/api/jd2-gen-svg.php?gen=' . $t1['a'][1]['gen_id'] . 'X');
 check('jd2-gen-svg refuses a malformed id', $st === 400);
 
@@ -497,9 +507,9 @@ check('gone from the manifest', (manifest()[1]['count'] ?? -1) === 0);
 check('?item= still answers it, marked hidden', $st === 200 && ($j['item']['id'] ?? null) === $prompt1 && ($j['item']['hidden'] ?? false) === true,
       json_encode($j));
 [$st] = req('GET', '/api/jd2-gen-svg.php?gen=' . $slotGen1['c']);
-[$stKeyed] = req('GET', '/api/jd2-gen-svg.php?gen=' . $slotGen1['c'], null, true);
-check('jd2-gen-svg: 404 to the public, 200 to the bench key', ($st === 404 || jd_bench_key_expected() === null) && $stKeyed === 200,
-      "$st / $stKeyed");
+[$stKeyed, , $hKeyed] = req('GET', '/api/jd2-gen-svg.php?gen=' . $slotGen1['c'], null, true);
+check('jd2-gen-svg: 404 to the public, 200 no-store to the bench key', ($st === 404 || jd_bench_key_expected() === null) && $stKeyed === 200
+      && str_contains($hKeyed['cache-control'] ?? '', 'no-store'), "$st / $stKeyed");
 [$st, $j] = req('POST', '/api/jd2-curate.php', ['generation_id' => $slotGen1['b'], 'hidden' => true], true);
 [, $ji] = manifest('?item=' . $prompt1);
 check('hiding one drawing drops it from the card (3 responses); showing it puts it back',
