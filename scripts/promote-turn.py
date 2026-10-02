@@ -12,7 +12,8 @@ ratings, ranks, tokens and cost, with the rank-1 response pinned.
 THE GATE, the same one the harvest keeps: every surviving drawing graded and
 answered on every live axis, ranked when there is more than one, and a SIZE
 on file — an item cannot enter the drawer without the owner's own size, and
-this script never invents one. Scrapped turns are skipped outright.
+this script never invents one. Scrapped turns, and turns the visitor kept
+out of the drawer, are skipped outright.
 
 The TITLE is drafted from the prompt (the same 2-5 word shape jd-title.php
 asks a model for) and printed for the owner to correct; slugs come from it.
@@ -103,6 +104,10 @@ def promote(it, dry=False):
     tag = it["item_id"]
     if it.get("retire_requested"):
         return None, f"{tag}: scrapped — skipped"
+    # The visitor ticked "keep this one out of the drawer": their turn is
+    # never published, and committing it to items/ would publish it for good.
+    if it.get("suppressed"):
+        return None, f"{tag}: kept out of the drawer by the visitor — skipped"
     resp = it["responses"]
     if not resp:
         return None, f"{tag}: no drawings"

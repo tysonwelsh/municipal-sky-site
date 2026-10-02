@@ -79,6 +79,7 @@ while IFS= read -r -d '' f; do
     local-dev/*) continue ;;     # dev-only assets, not for production
     art/zankyo/broadcast/reels/*) continue ;;  # broadcast reels: large, never change; the Actions deploy ships them (plan §5.3)
     scripts/*) continue ;;       # dev tooling (publish.sh, bust-cache.py) — not web content
+    package.json|package-lock.json|eslint.config.js|*/_harness*.js|_harness*.js) continue ;;  # lint/test tooling (deploy.yml excludes)
   esac
   FILES+=("$f")
 done < <(git -c core.quotePath=false ls-files -z)

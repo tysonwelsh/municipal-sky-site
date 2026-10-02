@@ -12,6 +12,10 @@ RewriteRule ^information-graphics/antariksh(/.*)?$ /art/antariksh$1 [R=301,L]
 RewriteRule ^information-graphics/zankyo(/.*)?$ /art/zankyo$1 [R=301,L]
 # The section URL was briefly /generative-art/ before settling on /art/.
 RewriteRule ^generative-art(/.*)?$ /art$1 [R=301,L]
+# Flat pages from before the music engines and the Underworld piece got their
+# own folders (the stale copies were removed from the server 2026-10-01).
+RewriteRule ^information-graphics/prosperos-jukebox\.php$ /art/prosperos-jukebox/ [R=301,L]
+RewriteRule ^information-graphics/underworld-occupations\.(php|html)$ /information-graphics/underworld-occupations/ [R=301,L]
 
 # Remove .php extension from URLs (basic version)
 RewriteCond %{REQUEST_FILENAME} !-d

@@ -5,7 +5,7 @@ $current_dir = basename(dirname($_SERVER['PHP_SELF']));
 $request_uri = $_SERVER['REQUEST_URI'];
 
 // Root-relative paths — work regardless of subdirectory depth.
-$css_path = '/css/style.css?v=4229d801';
+$css_path = '/css/style.css?v=a87cbe8e';
 $home_link = '/';
 $blog_link = '/blog/';
 $graphics_link = '/information-graphics/';
@@ -32,9 +32,8 @@ $is_about = $current_page === 'about.php' ||
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Preload critical fonts to reduce FOUT -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Site fonts are self-hosted from /fonts/ (2026-10-01): no preconnect to
+         Google, which would itself send every visitor's IP there. -->
     <link rel="stylesheet" href="<?php echo $css_path; ?>">
     <meta http-equiv="cache-control" content="max-age=3600">
     <meta http-equiv="expires" content="3600">

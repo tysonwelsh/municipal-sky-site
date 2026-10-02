@@ -830,11 +830,16 @@ card's scale after an axis definition unfolds — deduping changes it (k
 0.96 → 1.00, overflowing the pane); `host.__shows`: the harness reads it;
 the dormant rated path, labelled.
 
-**Owner's decisions, untouched:** `.jd-demo-note` renders at body size
-(outranked); the record's 26 px band seam never applies; the title's rule
-vs the house `.section-divider`; the chart blocks' breakpoint misses
-landscape phones; `will-change` on inline cards. **Found, not fixed
-(behaviour):** on the phone layout the report card's category-definition
-buttons do nothing (`recordControls` looks for the desktop card class);
-a malformed `jd-about-restore` value aborts the page script; `JD_drawOn`
+**Owner's decisions.** Done at the owner's word the same day (0.9.180,
+verified with the harness and by eye): `.jd-demo-note` is fine print
+(selector raised above `.jd-step p`); the record's 26 px band seam renders
+(an uncommented restatement of the drawer's 0.55rem head margin, at equal
+specificity and later, had defeated it — the card now fits the pane at 98%
+instead of 100%, the knock-on of 34 px more card); the phone's
+category-definition buttons open (`recordControls` looks for `.jd-ph-card`
+as well as the desktop card class). Untouched: the title's rule vs the
+house `.section-divider` (the owner's 2026-09-28 heading treatment, not an
+outranked rule); the chart blocks' breakpoint misses landscape phones;
+`will-change` on inline cards. **Found, not fixed (behaviour):** a
+malformed `jd-about-restore` value aborts the page script; `JD_drawOn`
 schedules a strip timer even when it dressed nothing.

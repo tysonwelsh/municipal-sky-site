@@ -78,11 +78,9 @@ $PING  = ['/', '/art/junk-drawer/', '/api/health.php'];  // self-check targets
 $WEEKLY_DAY = 1;   // ISO weekday that gets the full edition unasked (1 = Monday; 0 = never)
 $FULL  = isset($opts['full']) || (!isset($opts['lean']) && $WEEKLY_DAY > 0 && (int) date('N') === $WEEKLY_DAY);
 
-// Geolocation of onobot session IPs via ip-api.com. NOTE: this sends the
-// visitor's raw IP to a third party the privacy policy does not name (§3
-// lists the AI providers and the host). It predates this rewrite; set it to
-// false to stop the lookups and show nothing in their place.
-$GEO_LOOKUP = true;
+// No visitor geolocation (2026-10-01): the digest used to send each bot
+// visitor's IP to ip-api.com (plain HTTP, a third party the privacy policy
+// never named) to print a city. Visitor IPs stay on this server.
 
 // Where the VERSION strings live, for the "live builds" line.
 $BUILDS = [
@@ -272,18 +270,6 @@ function median(array $xs) {
     $n = count($xs);
     return $n % 2 ? $xs[intdiv($n, 2)] : ($xs[$n / 2 - 1] + $xs[$n / 2]) / 2;
 }
-// Best-effort geolocation of a visitor IP. Never let a slow/failed lookup
-// hold up or break the digest.
-function geo($ip) {
-    global $GEO_LOOKUP;
-    if (!$GEO_LOOKUP || !filter_var($ip, FILTER_VALIDATE_IP)) return '';
-    $ctx = stream_context_create(['http' => ['timeout' => 4]]);
-    $r = @file_get_contents("http://ip-api.com/json/{$ip}?fields=city,region", false, $ctx);
-    $d = $r ? json_decode($r, true) : null;
-    $city = $d['city'] ?? '';
-    $reg  = $d['region'] ?? '';
-    return trim($city . (($city !== '' && $reg !== '') ? ', ' : '') . $reg);
-}
 
 // ─────────────────────────────────────────────────────────────
 // Which pages count: the ones the section indexes show right now
@@ -390,9 +376,9 @@ if ($DEMO) {
     $D['onobot'] = array_merge($D['onobot'], ['c24' => 3, 'cprev' => 1, 'c7' => 9, 'call' => 420, 'cf24' => 0, 'of24' => 1, 'cfall' => 6, 'ofall' => 11,
         'f24' => 1, 'fall' => 233, 'p24' => ['a' => 1, 'b' => 0, 'n' => 0], 'pall' => ['a' => 121, 'b' => 88, 'n' => 24],
         'models' => ['a' => 'claude-haiku-4-5-20251001', 'b' => 'gpt-4o-mini'],
-        'prompts' => [['timestamp' => date('Y-m-d') . ' 08:12:00', 'geo' => 'Provo, Utah', 'user_message' => 'a cat sneezing'],
-                      ['timestamp' => date('Y-m-d') . ' 07:40:00', 'geo' => '', 'user_message' => 'a modem connecting'],
-                      ['timestamp' => date('Y-m-d') . ' 01:02:00', 'geo' => 'Lyon, Auvergne-Rhône-Alpes', 'user_message' => 'the printing press in the basement of the Freeman\'s Journal, as Bloom hears it']]]);
+        'prompts' => [['timestamp' => date('Y-m-d') . ' 08:12:00', 'user_message' => 'a cat sneezing'],
+                      ['timestamp' => date('Y-m-d') . ' 07:40:00', 'user_message' => 'a modem connecting'],
+                      ['timestamp' => date('Y-m-d') . ' 01:02:00', 'user_message' => 'the printing press in the basement of the Freeman\'s Journal, as Bloom hears it']]]);
     $D['jd'] = array_merge($D['jd'], ['v24' => 18, 'u24' => 12, 'av24' => 1, 'io24' => 41, 'vall' => 1204, 'uall' => 900, 'ioall' => 3310,
         'funnel' => ['open' => 9, 'submit' => 4, 'done' => 3, 'err' => 1], 'funnel_all' => ['open' => 402, 'submit' => 171, 'done' => 148, 'err' => 23],
         'errors24' => ['provider_timeout' => 1], 'errors7' => ['provider_timeout' => 2, 'daily_limit' => 1],
@@ -540,10 +526,7 @@ if ($DEMO) {
         $D['pulse']['onobot uses'] = ['w24' => $i($r, 'c24'), 'prev' => $i($r, 'cprev'), 'w7' => $i($r, 'c7'), 'all' => $i($r, 'call')];
         // Every prompt of the day, from the conversations table (so unrated
         // uses are included). The prompt only — no responses, no rating.
-        $rows = $q("SELECT timestamp, session_id, user_message FROM conversations WHERE {$wo['w24']} ORDER BY timestamp DESC");
-        foreach ($rows as &$row) { $row['geo'] = geo($row['session_id']); unset($row['session_id']); }
-        unset($row);
-        $D['onobot']['prompts'] = $rows;
+        $D['onobot']['prompts'] = $q("SELECT timestamp, user_message FROM conversations WHERE {$wo['w24']} ORDER BY timestamp DESC");
     } catch (PDOException $e) { $note('onobot conversations', $e); }
     try {
         $r = $q1("SELECT SUM({$wo['w24']}) f24, COUNT(*) fall,
@@ -873,8 +856,7 @@ if ($FULL) {
 if ($o['prompts']) {
     $out(' prompts ' . $D['hours'] . 'h (' . count($o['prompts']) . ')');
     foreach ($o['prompts'] as $r) {
-        $where = ($r['geo'] ?? '') !== '' ? $sep . $r['geo'] : '';
-        wrap_text($out, ' ' . $G['bullet'] . ' ' . substr($r['timestamp'], 5, 11) . '  ', $r['user_message'] . $where, $W);
+        wrap_text($out, ' ' . $G['bullet'] . ' ' . substr($r['timestamp'], 5, 11) . '  ', $r['user_message'], $W);
     }
 }
 

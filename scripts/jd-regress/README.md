@@ -195,7 +195,7 @@ apply and pile presses are real taps). deviceScaleFactor 1 everywhere.
 | `about-figure-<section>-phone` ×10 | after the walk, each section's figure(s) — the section's top down to its first step — (`drawer, instrument, fable, gemini, kimi, turns, grades, distribution, axes, cost`) brought under the banner and paged (`@2`, …) |
 | `about-wake-phone` | a tap on the poster wakes the drawer and picks the pictured item under the finger (today the three of hearts) |
 | `about-instrument-*-phone` | as on the desktop, in the phone's inline card (paged figure; the card "turns a page" on every NEXT) |
-| `about-record-axdef-phone`, `about-record-alt-phone`, `about-tip-phone` | the Fable card's definition button tapped (it does **not** unfold on a phone — see Known gaps), its third thumbnail tapped (`phoneTurn`), the records table's first Item cell clicked → the prompt card |
+| `about-record-axdef-phone`, `about-record-alt-phone`, `about-tip-phone` | the Fable card's first definition unfolded (`.rc-axbtn`; since 2026-10-01), its third thumbnail tapped (`phoneTurn`), the records table's first Item cell clicked → the prompt card. Both card interactions change the figure's height, and the phone's step detector runs only on scroll, so the harness re-ticks it (`aboutRetick`) before recording the state |
 | `about-step-<stack…spend>-after-desktop` / `-after-phone`, `about-figure-<turns…cost>-after-phone` | group `about-steps-after`: scene 4 again once the turns are filed — on the pristine DB `jd-analytics.php` has no model on a visitor turn, so every chart and the table's model columns are empty |
 | `turn-form-desktop` | the turn card opened by clicking the PUSH button (`data-view=form`) |
 | `turn-form-filled-desktop` | prompt typed |
@@ -562,12 +562,14 @@ for pages both runs opened. Before a commit, run the full capture.
   "/about/, step by step" (the handoff/relay mid-flight, the timeline
   buttons, the new-tab links, drags, the breakpoint reload, …). Found while
   building them, reported and captured as the page behaves today:
-  - **The phone's category definitions do not open.** On a phone card,
-    `.rc-axbtn` does nothing: `recordControls()` finds the definition
-    through `ax.closest('.jd-inline-card')`, and the phone's cards are
-    `.jd-ph-card` (`about-record-axdef-phone` records
-    `"axbtn":"false"` after the tap; the desktop's opens). Probably a real
-    bug; not fixed here (the harness never touches `art/`).
+  - **The phone's category definitions did not open** (fixed 2026-10-01):
+    `recordControls()` found the definition through
+    `ax.closest('.jd-inline-card')` only, and the phone's cards are
+    `.jd-ph-card`. `about-record-axdef-phone` records `"axbtn":"true"` now.
+    Opening the row grows the figure above the steps (and turning the card
+    shrinks it back), and the phone's step detector runs only on scroll, so
+    the harness fires a tick (`aboutRetick`) after each before recording
+    the state; the moved-the-walkthrough guard then holds as everywhere.
   - **Phone prompt card: a mouse click, not a tap.** With Playwright's
     emulated tap the card comes up on the tap's click and a `mouseover` on
     the site banner 3 ms later (Chromium re-dispatching hover at a stale

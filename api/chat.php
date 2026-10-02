@@ -4,15 +4,7 @@
 // Onomatopoeia Chatbot API (Claude + OpenAI)
 // --------------------
 
-// TEMPORARY DEBUG MODE - Remove after fixing
-$debug_mode = true;
-$debug_info = [];
-
-if ($debug_mode) {
-    ini_set('display_errors', 0); // Keep off to not break JSON
-    error_reporting(E_ALL);
-    $debug_info['error_log_location'] = ini_get('error_log');
-}
+ini_set('display_errors', 0); // Keep off to not break JSON
 
 // Set CORS headers
 header('Content-Type: application/json');
@@ -179,20 +171,43 @@ function callOpenAI($message, $api_key, $system_prompt, $temperature, $model)
 }
 
 // ----------------------------------------------------
+// Daily fail-safe (owner, 2026-10-01): at most CHAT_DAILY_CAP requests in
+// any rolling 24 hours, counted across everyone (the owner included) from
+// the conversations table, checked before either provider is called. The
+// providers' own spend limits are the other line of defence.
+// ----------------------------------------------------
+const CHAT_DAILY_CAP = 50;
+
+include 'database.php';
+
+try {
+    $recent = (int) $pdo->query(
+        "SELECT COUNT(*) FROM conversations WHERE `timestamp` >= NOW() - INTERVAL 1 DAY"
+    )->fetchColumn();
+} catch (PDOException $e) {
+    error_log("Daily cap check failed: " . $e->getMessage());
+    $recent = CHAT_DAILY_CAP;   // can't count, so don't spend
+}
+if ($recent >= CHAT_DAILY_CAP) {
+    http_response_code(429);
+    $resting = 'The machine is resting for today. Try again tomorrow.';
+    echo json_encode([
+        'error' => $resting,
+        'claude' => ['success' => false, 'message' => $resting],
+        'openai' => ['success' => false, 'message' => $resting],
+    ]);
+    exit();
+}
+
+// ----------------------------------------------------
 // Call both APIs with the dynamic temperature
 // ----------------------------------------------------
 $claude_result = callClaude($message, $claude_key, $system_prompt, $temperature, $claude_model);
 $openai_result = callOpenAI($message, $openai_key, $system_prompt, $temperature, $openai_model);
 
-// Optional: log detailed results for debugging (safe, server-side only)
-error_log("Claude result: " . print_r($claude_result, true));
-error_log("OpenAI result: " . print_r($openai_result, true));
-
 // ----------------------------------------------------
-// Save conversation to database
+// Save conversation to database ($pdo from the cap check above)
 // ----------------------------------------------------
-include 'database.php';
-
 try {
     $conversation_id = uniqid(time(), true);
     $session_id = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
@@ -230,10 +245,6 @@ $output = [
     'model_a' => $claude_model,
     'model_b' => $openai_model
 ];
-
-if ($debug_mode) {
-    $output['debug'] = $debug_info;
-}
 
 echo json_encode($output);
 ?>

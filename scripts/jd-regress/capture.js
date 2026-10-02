@@ -163,7 +163,7 @@ const ABOUT_AFTER_STEPS = ['stack', 'grades', 'distribution', 'multiples', 'spen
     ['about-instrument-call-phone', 'about-steps-phone', 'B, C, D answered: the podium, empty (the card turned a page each NEXT)'],
     ['about-instrument-ranked-phone', 'about-steps-phone', 'the podium with all four placed (mouse clicks, as turn-call-ranked-phone)'],
     ['about-instrument-said-phone', 'about-steps-phone', 'FILE -> the unveil'],
-    ['about-record-axdef-phone', 'about-steps-phone', 'the Fable card: the first category\'s definition button tapped (it does not unfold on a phone today — see README)'],
+    ['about-record-axdef-phone', 'about-steps-phone', 'the Fable card: the first category\'s definition unfolded (.rc-axbtn; the figure grows, so the step detector is re-ticked before the shot)'],
     ['about-record-alt-phone', 'about-steps-phone', 'the Fable card: the third thumbnail tapped -> the card turns in its figure (phoneTurn)'],
     ['about-tip-phone', 'about-steps-phone', 'the records table: the first Item cell clicked -> the prompt card (a mouse click: see README)'],
   );
@@ -1504,6 +1504,19 @@ async function aboutGoTo(page, id) {
   aboutAssert(page, s, id, `scrolled to ${off.y} for step ${id} (${tries} time(s)), it is not the current step`);
   return { id, off: { ...off, tries }, s, quietMs };
 }
+// THE PHONE'S STEP DETECTOR RUNS ONLY ON SCROLL. An interaction that changes
+// a figure's height (a definition unfolding, a card turning) shifts every
+// step below it without a scroll event, so the page's idea of the current
+// step is stale until its next tick — which the section shot's own resize
+// would then fire, mid-capture, and the moved-the-walkthrough guard would
+// trip on a change the interaction already made. Fire the tick now, so the
+// state recorded before the shot is the settled one.
+async function aboutRetick(page) {
+  await page.evaluate(() => new Promise((res) => {
+    window.dispatchEvent(new Event('scroll'));
+    requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(res, 60)));
+  }));
+}
 // after an interaction: quiet, then the state (asserting `id` is still the
 // current step, where given)
 async function aboutHere(page, id, what) {
@@ -1830,11 +1843,13 @@ async function groupAboutStepsPhone() {
     const SEC = '.jd-ph-sec[data-ph="fable"]';
     const CARD = SEC + ' > .jd-ph-fig > .jd-ph-card';
     const cardSpec = { surfaces: [SEC], prune: 'display-none', shot: aboutFigure('fable') };
-    // ON A PHONE THIS DOES NOTHING TODAY: recordControls() finds the
-    // definition through ax.closest('.jd-inline-card'), and the phone's cards
-    // are .jd-ph-card — captured as it is (the state line records
-    // aria-expanded), so a fix shows up as a difference, not as a timeout
+    // the definition unfolds on a phone since 2026-10-01 (recordControls()
+    // looks for .jd-ph-card as well as .jd-inline-card); the state line
+    // records aria-expanded. The figure grows by the row's height (and
+    // shrinks back when the card turns), so the step detector is re-ticked
+    // after each — see aboutRetick.
     await click(page, CARD + ' .rc-axbtn');
+    await aboutRetick(page);
     let r = await aboutHere(page, null, 'the definition');
     r.s.axbtn = await page.evaluate((c) => { const b = document.querySelector(c + ' .rc-axbtn'); return b && b.getAttribute('aria-expanded'); }, CARD);
     await aboutCapture(page, 'about-record-axdef-phone', r, cardSpec);
@@ -1842,6 +1857,7 @@ async function groupAboutStepsPhone() {
     await click(page, CARD + ' .rc-alt[data-resp="2"]');
     await waitFor(page, (c) => { const n = document.querySelector(c); return !!n && n !== window.__jdrOldCard; }, CARD, 'the Fable card to turn to the third drawing');
     await page.evaluate(() => { window.__jdrOldCard = null; });
+    await aboutRetick(page);
     r = await aboutHere(page, null, 'the thumbnail');
     await aboutCapture(page, 'about-record-alt-phone', r, cardSpec);
     await aboutGoTo(page, 'stack');
