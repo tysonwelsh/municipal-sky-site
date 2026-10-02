@@ -1,11 +1,11 @@
 {
   "schema": 1,
-  "version": 28,
+  "version": 29,
   "updated": "2026-10-02",
   "instrument": "v2.0",
   "instrumentNote": "The dataset v2 instrument: this rubric plus the comparison and gaps scales below and the rules of a sitting; every v2 session stamps it beside the taxonomy version. v1 instruments ignore it.",
   "poolVersion": "pool-2026-08-14",
-  "intakeVersion": "intake-v1",
+  "intakeVersion": "intake-v2",
   "intakeVersionNote": "The intake prompt's version (api/jd2-intake-prompt.php: the system prompt's bytes with the facets and the size tiers rendered in). Stamped on every prompt intake answers (jd2_prompts.intake_version). Bump it whenever those bytes change — the prompt prose, a facet, a heading, a scope note, a tier description or example — as harness ids are bumped: answers under different intake prompts are not pooled.",
   "utility": {
     "title": {
@@ -691,7 +691,7 @@
         {
           "id": "transparency",
           "label": "Transparency",
-          "scope": "Applies when glass, liquid, ice, smoke or see-through material is asked for."
+          "scope": "Applies when glass, liquid, ice, smoke or see-through material is asked for. Does not apply to a transparent background, which every drawing has."
         },
         {
           "id": "texture",
@@ -960,6 +960,11 @@
       "date": "2026-10-02",
       "version": 28,
       "note": "Intake (PLAN-INTAKE, PLAN-INTAKE-PROMPT, owner-settled 2026-10-02). Additive: new top-level `facets` — the faceted classification the intake clerk files every prompt under: subject (what the prompt asks to have drawn; at least one), treatment (how the prompt asks it to look; zero or more) and probe (what the prompt tests in the drawing model; zero or more), at most six headings each, every heading with a permanent id, a label and a thesaurus-style scope note; `facetsNote`; `intakeVersion` (\"intake-v1\") and `intakeVersionNote`; `utility.intake` (claude-sonnet-5-5, anthropic), the clerk api/jd2-intake.php calls. `utility.title` is marked `defunct` (jd2-title.php is retired) and kept for the record. `sizeTiers[]` gain `examples` (and, for m, `examplesPhrase`), and their `description`s are REWORDED to the tier words the intake prompt states (not a realistic scale: xs and s fit a real junk drawer, m is the ordinary and most common tier, l and xl read as big even beside the rest of the pile); ids and boxes unchanged, so every filed size keeps its meaning. No grade, axis, scale or pool change: sessions filed under v27 and v28 rate on the same instrument."
+    },
+    {
+      "date": "2026-10-02",
+      "version": 29,
+      "note": "Intake prompt tuned after the first live agreement check (67 v1 prompts, 59% exact / 89% within one tier, 13 fallbacks all on heading length): ENTRY 2 gains the line between extra small and small (a thing one would pick up and hold is at least small), sizes a picture-bearing object as the object rather than the scene it shows, and breaks a tie toward the more ordinary tier (small over xs, medium over large) instead of the smaller; the probe heading `transparency` no longer applies to a transparent background. The clerk also retries ONCE, telling the model what failed, before falling back. The prompt's bytes changed, so intakeVersion is now intake-v2 (no production prompt was ever filed under intake-v1). No grade, axis, scale or pool change."
     }
   ]
 }

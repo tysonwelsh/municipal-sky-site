@@ -149,9 +149,14 @@ is roughly linear. From medium upward the scale is not linear at all:
 medium is the most common tier by far, and it spans everything from
 desktop keepsakes to objects too large for any realistic "junk drawer".
 Large and extra large are reserved for things that read as big even
-next to the rest of the pile.
+next to the rest of the pile. The line between the two smallest tiers:
+a thing one would pick up and hold as its own object is at least small;
+extra small is kept for specks and trinkets that would be lost among the
+rest. A picture-bearing object (a photograph, a card, a poster) is sized
+as the object itself, never as the scene it shows.
 {{TIERS}}
-Torn between two tiers, the clerk files the smaller.
+Torn between two tiers, the clerk files the more ordinary one: small
+over extra small, medium over large.
 
 ENTRY 3. CLASSIFICATION. The prompt is classed under three facets. Each
 facet answers a different question and has its own headings. Every
@@ -400,14 +405,14 @@ function jd2_intake_validate(mixed $answer, array $taxonomy): array
 // The call
 
 /** The Messages API request body (the shape documented in the header). */
-function jd2_intake_request(array $taxonomy, string $prompt): array
+function jd2_intake_request(array $taxonomy, string $prompt, array $moreMessages = []): array
 {
     $m = jd2_utility_model($taxonomy, 'intake');
     return [
         'model' => $m['api_model'],
         'max_tokens' => JD2_INTAKE_MAX_TOKENS,
         'system' => jd2_intake_render($taxonomy),
-        'messages' => [['role' => 'user', 'content' => jd2_intake_user_message($prompt)]],
+        'messages' => array_merge([['role' => 'user', 'content' => jd2_intake_user_message($prompt)]], $moreMessages),
         'output_config' => [
             'effort' => JD2_INTAKE_EFFORT,
             'format' => ['type' => 'json_schema', 'schema' => jd2_intake_schema($taxonomy)],
@@ -450,21 +455,33 @@ function jd2_intake_answer(array $taxonomy, string $prompt, bool $mock): array
         return ['error' => 'no_key'] + $base + ['record' => $record + ['error' => [
             'code' => 'no_key', 'message' => 'No Anthropic key on file (jd_intake_key, jd_claude_key, claude_key).']]];
     }
+    // ONE RETRY on an answer that parsed but failed the checks (the first live
+    // run lost 13 of 67 to six-word or 41-character headings): the second
+    // request carries the first answer and one sentence naming what failed,
+    // and its usage is added to the record. Anything else fails at once.
+    $moreMessages = [];
+    $attempt = 0;
+    $retryAfter = null;   // the first failing answer's text, kept for the record
+    retry:
+    $attempt++;
     $started = microtime(true);
     $wire = jd_http_post_json('https://api.anthropic.com/v1/messages', [
         'Content-Type: application/json',
         'x-api-key: ' . $k['key'],
         'anthropic-version: 2023-06-01',
-    ], jd2_intake_request($taxonomy, $prompt), JD2_INTAKE_TIMEOUT);
-    $record['latency_ms'] = (int) round((microtime(true) - $started) * 1000);
+    ], jd2_intake_request($taxonomy, $prompt, $moreMessages), JD2_INTAKE_TIMEOUT);
+    $record['latency_ms'] = ($record['latency_ms'] ?? 0) + (int) round((microtime(true) - $started) * 1000);
     $record['http'] = $wire['http_code'];
+    $record['attempts'] = $attempt;
 
     $j = $wire['error'] === null ? json_decode($wire['body'], true) : null;
     $usage = is_array($j['usage'] ?? null) ? $j['usage'] : null;
     if ($usage !== null) {
-        $record['usage'] = $usage;
+        // the retry's usage is ADDED to the first call's, so the cost on file is the whole sitting's
+        $prev = $record['usage'] ?? null;
+        $record['usage'] = is_array($prev) ? jd2_intake_usage_sum($prev, $usage) : $usage;
     }
-    $cost = $usage === null ? null : jd_generation_cost('anthropic', $m['api_model'], $usage)['cost_usd'];
+    $cost = !isset($record['usage']) ? null : jd_generation_cost('anthropic', $m['api_model'], $record['usage'])['cost_usd'];
     $fail = static function (string $code, string $message, array $extra = []) use ($base, $record, $cost): array {
         $rec = $record + $extra + ['error' => ['code' => $code, 'message' => $message]];
         if ($cost !== null) {
@@ -504,11 +521,38 @@ function jd2_intake_answer(array $taxonomy, string $prompt, bool $mock): array
     $record['answer'] = $answer;
     $v = jd2_intake_validate($answer, $taxonomy);
     if (!$v['ok']) {
+        if ($attempt === 1) {
+            $record['first_answer'] = $answer;
+            $record['first_answer_errors'] = $v['errors'];
+            $moreMessages = [
+                ['role' => 'assistant', 'content' => $text],
+                ['role' => 'user', 'content' => 'That entry failed the catalogue\'s checks: ' . implode('; ', $v['errors'])
+                    . '. The heading is at most five words and forty characters, the parenthesis included; '
+                    . 'the rules in ENTRY 1 apply. The corrected entry follows, in the same JSON shape.'],
+            ];
+            goto retry;
+        }
         return $fail('schema_miss', 'The answer failed the checks: ' . implode('; ', $v['errors']) . '.');
     }
     return ['ok' => true, 'title' => $v['title'], 'size' => $v['size'], 'tags' => $v['tags'],
             'reasons' => $v['reasons'], 'model' => $m['api_model'], 'record' => $record,
             'cost_usd' => $cost, 'error' => null];
+}
+
+/** Two Anthropic usage objects added field by field (ints only; nested cache fields summed where both have them). */
+function jd2_intake_usage_sum(array $a, array $b): array
+{
+    $out = $a;
+    foreach ($b as $k => $v) {
+        if (is_int($v) || is_float($v)) {
+            $out[$k] = (is_numeric($out[$k] ?? null) ? $out[$k] : 0) + $v;
+        } elseif (is_array($v) && is_array($out[$k] ?? null)) {
+            $out[$k] = jd2_intake_usage_sum($out[$k], $v);
+        } elseif (!isset($out[$k])) {
+            $out[$k] = $v;
+        }
+    }
+    return $out;
 }
 
 /**

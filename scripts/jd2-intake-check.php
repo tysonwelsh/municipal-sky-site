@@ -115,7 +115,9 @@ foreach ($items as $it) {
             'record' => $res['record'], 'cost_usd' => $res['cost_usd']], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n");
     }
     if (!$res['ok']) {
-        $failures[] = [$it['id'], (string) ($res['record']['error']['message'] ?? $res['error'] ?? 'failed')];
+        $tried = $res['record']['answer']['title'] ?? ($res['record']['first_answer']['title'] ?? null);
+        $failures[] = [$it['id'], (string) ($res['record']['error']['message'] ?? $res['error'] ?? 'failed')
+            . ($tried !== null ? ' — tried: "' . $tried . '"' : '')];
         echo pad(clip($it['prompt'], 44), 44) . ' ' . pad($it['size'] ?: '—', 5) . ' ' . pad('—', 5) . ' FALLBACK ('
             . ($res['error'] ?? 'failed') . ")\n";
         continue;
