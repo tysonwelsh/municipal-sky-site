@@ -15,10 +15,20 @@ pedestal session) derived from the podium's gaps — one `jd2_pairs` table.
 **Before the rating campaign starts** (each is a data edit or a small
 back-end change; the owner decides the wording):
 
-- **Settle the scales.** Consider a 4-point scale for the three issue axes
-  (structural coherence, layering, jnsq) and a 3-point scale for
-  understanding-assignment. Ranks are data in `taxonomy.json`; the gauges
-  (`JD_axisCls`, `rc-r*`/`rc-q*`) already handle 3- and 4-point.
+- **Settle the scales — A HARD GATE before the first bench sitting (owner,
+  2026-10-02, re-raised).** The owner is reconsidering: possibly NOT a
+  4-point scale for understanding-assignment, and possibly 4-point scales
+  for layering and structural coherence (jnsq undecided). Why it is a gate:
+  no v2 rating session exists in production yet, so a scale change today
+  is a free taxonomy edit (new value ranks, no new axis id); after the
+  first filed sitting, the v17 precedent applies — a changed scale is a
+  NEW axis id with the old one marked defunct, and every earlier sitting
+  stays on the old axis. Decide, edit `taxonomy.json` (ranks are data; the
+  gauges `JD_axisCls`, `rc-r*`/`rc-q*` already handle 3- and 4-point),
+  bump the version, THEN rate. Claude's earlier view, for the record: keep
+  understanding-assignment at 4 points (it is the axis most reworded and
+  the mostly/somewhat distinction has carried weight) and bring the issue
+  axes up to 4 to match, rather than go to 3 anywhere.
 - **Settle the names.** "Subjects / categories / axes", and "ratings vs
   grades" — the owner leans to calling the per-axis answers *ratings* so
   *overall grade* keeps its name, or renaming it (overall quality /
