@@ -101,10 +101,18 @@ part of the cutover build itself.
   never waits between prompts, then rates the backlog on the bench with the
   side-by-side pairs card. Matching prompt text records `v1_item_id`
   lineage automatically.
-- **Reassess the visitor thinking level.** Visitor turns run the `web`
-  profile (thinking turned down so the darkroom wait stays short); the
-  bench runs at each vendor's top setting. Once the pool is settled, decide
-  what visitors get and what it costs in wait time and spend.
+- **Reassess the thinking level — for the BENCH too (owner, 2026-10-02).**
+  Visitor turns run the `web` profile (thinking turned down so the darkroom
+  wait stays short); the bench profile runs each model at its vendor's top
+  setting. The owner's view: full-strength thinking is probably
+  counterproductive for SVGs, so the campaign should likely run at a
+  MEDIUM setting, after testing a few settings on a handful of prompts
+  first. The first live batch (rows 101–110, 2026-10-02) ran at the top
+  setting with the old pool; compare its drawings, latency and cost
+  against a medium run of the same prompts before the full run. Profiles
+  and harness ids are data in `api/jd-config.php` (`JD_EFFORT`,
+  `JD_HARNESS_BY_PROFILE`); a new setting is a new profile id, never a
+  silent edit, so runs under different settings are never pooled.
 - **Model pool refresh** before the rating campaign: verify wire ids and
   prices against the providers' lists, add `jd-prices.json` rows, bump
   `poolVersion` in `taxonomy.json`, bump the consent version if the
