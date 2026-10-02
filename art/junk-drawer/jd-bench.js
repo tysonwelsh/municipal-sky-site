@@ -21,8 +21,12 @@
    prompt is done is the payload's `complete`, and what it still lacks is
    its `needs` — read, never re-derived here. Filing is ONE owner session
    through /api/jd2-rate.php: the grades and axes by slot, the podium as a
-   ranking, the six head-to-head scores as DIRECT pairs, the size, and the
-   sitting's "notes for the record". Sessions are append-only: re-rating a
+   ranking with the pedestal card's GAPS on it ("by how much", owner
+   2026-10-02 — the server derives the six pair scores from them), the
+   size, and the sitting's "notes for the record". ?pairs=1 is the AUDIT:
+   the card skips the pedestal step and runs the six side-by-side
+   head-to-head cards instead, filing DIRECT pairs and a ranking with no
+   gaps — never both in one sitting. Sessions are append-only: re-rating a
    prompt files a new sitting, nothing is replaced. The bench is BLIND —
    the queue names no model unless the page was opened with ?reveal=1; the
    names arrive with the filing's own reveal (jd2-rate.php is the one place
@@ -67,6 +71,10 @@
   var directId = directM ? decodeURIComponent(directM[1]) : null;
   /* ?reveal=1 asks the queue for model ids — the bench is blind without it */
   var REVEAL = /[?&]reveal=1(?:&|#|$)/.test(location.search);
+  /* ?pairs=1 is THE AUDIT (owner, 2026-10-02): the card runs the six
+     side-by-side head-to-head cards in the pedestal card's place and files
+     direct pairs, no gaps. Without it the pedestal card is the instrument. */
+  var PAIRS_AUDIT = /[?&]pairs=1(?:&|#|$)/.test(location.search);
 
   var API_Q = JD_API + '/api/jd2-queue.php';
   var API_R = JD_API + '/api/jd2-rate.php';
@@ -196,9 +204,19 @@
       Object.keys(p.axes || {}).forEach(function (a) {
         if (p.axes[a] != null) ratings.push({ slot: slot, kind: 'axis', axis_id: a, value: p.axes[a] });
       });
-      if (p.rank >= 1) ranking.push({ slot: slot, rank: p.rank });
-      else ranked = false;
+      if (p.rank >= 1) {
+        var place = { slot: slot, rank: p.rank };
+        /* the pedestal card's margin on this place (0..3; none on the last) */
+        if (p.gap != null) place.gap = p.gap;
+        ranking.push(place);
+      } else {
+        ranked = false;
+      }
     });
+    /* the server's rule, held here too: a gap on every place but the last,
+       or on none (the card sends all or none already) */
+    var gapped = ranking.filter(function (x) { return x.gap != null; }).length;
+    if (gapped && gapped !== ranking.length - 1) ranking.forEach(function (x) { delete x.gap; });
     var wirePairs = (pairs || []).map(function (p) {
       var a = real(p.gen_a), b = real(p.gen_b);
       return { slot_a: a, slot_b: b, score: p.score,
@@ -225,9 +243,15 @@
         var slot = real(p.generation_id, p.slot);
         seatable(it).forEach(function (r) {
           if (r.slot !== slot) return;
-          r.prefill = { grade: p.grade, axes: p.axes || {}, rank_pos: p.rank >= 1 ? p.rank : null };
+          r.prefill = { grade: p.grade, axes: p.axes || {}, rank_pos: p.rank >= 1 ? p.rank : null,
+            gap_after: null };
+          ranking.forEach(function (x) {
+            if (x.slot === slot && x.gap != null) r.prefill.gap_after = x.gap;
+          });
         });
       });
+      /* direct answers only: a pedestal sitting's pairs are derived on the
+         server, and its raw answer is the gaps folded in above */
       it.pairs_prefill = wirePairs.map(function (p) {
         return { slot_a: p.slot_a, slot_b: p.slot_b, score: p.score, source: 'direct' };
       });
@@ -275,6 +299,8 @@
         size: it.size_class || null,
         /* the size card carries "notes for the record" for the bench */
         withNote: true,
+        /* ?pairs=1: the six side-by-side cards instead of the pedestal card */
+        pairsAudit: PAIRS_AUDIT,
         responses: usable.map(function (r) {
           var pf = r.prefill || {};
           return {
@@ -288,7 +314,10 @@
             label: REVEAL && r.model_id ? (models[r.model_id] || r.model_id) : '',
             grade: pf.grade != null ? pf.grade : null,
             axes: pf.axes || {},
-            rank: pf.rank_pos != null ? pf.rank_pos : null
+            rank: pf.rank_pos != null ? pf.rank_pos : null,
+            /* the owner's last margin below this drawing's place (the
+               queue's prefill.gap_after), restored by the pedestal card */
+            gap_after: pf.gap_after != null ? pf.gap_after : null
           };
         }),
         /* the owner's last direct head-to-head answers, by real slot (a
