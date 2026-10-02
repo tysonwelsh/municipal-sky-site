@@ -20,7 +20,7 @@ harness's cost sidecars; two drive a **muted** headless Chrome.
 | `golden.js` | Does the pure core — the plan of meeting 1, the hymns, the guests' decisions, the organist, the ward — compose what it composed (`tools/golden/*.json`)? | the engine, headless, no audio | ~16 s for 40 seeds on 4 cores |
 | `distinctness.js` | Do two random seeds sound clearly different within three minutes? (design law 2) | the dump | ~2 s for 20 seeds |
 | `repetition.js` | How often does a meeting say the same thing twice, and which shapes turn up in every meeting? | the dump | ~2 s for 20 meetings |
-| `tally.js` | What is a meeting made of (cadences, guests, sections, notes per layer)? Did a change move it (A/B)? | the dump | ~2 s per 20 seeds; A/B at 60 seeds, under a minute |
+| `tally.js` | What is a meeting made of (cadences, guests, sections, notes per layer)? Did a change move it (A/B)? | the dump | ~2 s per 20 seeds read; A/B of 20 seeds at 1200 s, rendered four at a time, ~70 s |
 | `cost.js` | What does the audio graph cost, work by work (a lane, a guest, a press), and did a change move it (A/B)? | the harness's cost sidecars | ~20 s for two builds, four seeds each |
 | `screens.js` | What does the staff look like at 860 and 390 px, and what does a frame cost at 4× CPU throttling? | the page, muted | real time: ~2.5 min per width |
 | `capture.js` | What does a seeded meeting sound like, as a WAV, a spectrogram, loudness (LUFS) and peak? | the page, muted | real time: 4 min for a 4-min window |
@@ -529,7 +529,7 @@ node tools/golden.js [--seeds 1-40] [--engine <dir>|git:<ref>] [--jobs N] [--per
 ```
 
 The tally proves a change left the music alone by playing twenty meetings
-through the harness, ten minutes. Most of the engine's thinking is pure, and a
+through the harness on each build, about seventy seconds. Most of the engine's thinking is pure, and a
 change there is proved here in seconds: about 16 s for 40 seeds on four cores
 (the slowest seeds, 10 and 18, write a partner doxology, fourteen tries at the
 fit, in 2–3 s; a doxology the reckoning writes 24 ways takes about a second).
@@ -719,9 +719,25 @@ a hymn's verses to one tune (38–41 % each); every other voice is at or near
 ## tally.js
 
 ```sh
-node tools/tally.js [--seeds 1-20] [--secs 1200] [--first] [--engine …] [--harness …] [--dumps …] [--out <dir>]
-node tools/tally.js --a <spec> --b <spec> [--seeds 1-60] [--secs 1200] [--threshold 15] [--harness-a …] [--harness-b …] [--flags …]
+node tools/tally.js [--seeds 1-20] [--secs 1200] [--first] [--engine …] [--harness …] [--dumps …] [--jobs N] [--out <dir>]
+node tools/tally.js --a <spec> --b <spec> [--seeds 1-60] [--secs 1200] [--threshold 15] [--harness-a …] [--harness-b …] [--flags …] [--jobs N]
 ```
+
+**Four at a time** (`--jobs N`, PLAN-REFACTOR §4.0(c)). The renders are
+independent, so the tally runs `N` harness processes at once — by default
+min(4, the cores) — and both builds on one pool of `N` (`lib/run.js`
+`pool()`), so neither waits on the other's last seed. Each render is
+witnessed on its own, as a lone one is, and a render the witness refuses
+(the engine's bytes changed under it — "read the build's files but not its
+bytes") stops the pool: no render still waiting begins, on either side, and
+the refusal is what the tally says. At any `N` the dumps are the same files
+byte for byte, and the report differs only in its timing line (`- 40 renders
+in 72.6 s, 4 at a time (A and B on one pool) · <date>`). A harness keeps
+about two cores busy by itself (V8's collector and compiler beside the run;
+seed 22 at 1200 s: 2.7 s of the clock, 4.5 s of the cores), so four cores
+fill at three or four: `--a git:HEAD --b worktree --seeds 1-20 --secs 1200`
+took 149 s at 1, 85 at 2, 70 at 3, 72 at 4 and 68 at 6 — 85 s before, at
+two a side with B after A. Four harnesses hold about 1 GB between them.
 
 Here `<spec>` is a dump directory, an engine directory, `git:<ref>` or
 `worktree`. `--flags` hands the harness its switches for every build the
@@ -942,7 +958,7 @@ the cores, at most 8).
 node tools/selftest.js
 ```
 
-About a minute, no browser. It checks seventeen things: (1) a real dump from
+About a minute, no browser. It checks eighteen things: (1) a real dump from
 this worktree reads as meetings and sections, the witness names the build's own
 list, and the harness names the same engine in the header's `engine` field;
 (2) a synthetic dump in SCORE §6's **typed** vocabulary reads the same way —
@@ -1023,8 +1039,13 @@ run's, record for record; the sidecar's works, summed by the selftest, come
 to the graph's nodes, automation calls and disconnects and to the notes
 told, none outside; every work that told notes built nodes, the band's
 notes and nodes are `guest:bands`' and the hymn's throats the ward's pump's;
-and `cost.js` holds the sidecar against itself and finds nothing moved.
-All seventeen pass on `art/kolob/_harness.js`. Run it after any change to the engine's
+and `cost.js` holds the sidecar against itself and finds nothing moved;
+(18) **the pool** (PLAN-REFACTOR §4.0(c)): two sets of seeds 3, 7 and 22
+rendered at once on one pool of three write what one set rendered a seed at
+a time writes, every dump and witness the same bytes, and a set whose
+harness writes no dump, queued first on a pool of two, stops it: the set
+beside it begins none of its renders and says it was stopped.
+All eighteen pass on `art/kolob/_harness.js`. Run it after any change to the engine's
 events, to the harness or to these tools. It renders into `out/_selftest/`
 and, like every tool, refuses while the engine is being edited.
 
@@ -1047,7 +1068,7 @@ tools/
   capture.js         WAV + spectrogram + LUFS/peak (muted Chrome)
   selftest.js        the instruments, checked
   lib/dump.js        the dump reader: both event vocabularies, meetings, sections, voices, phrases
-  lib/run.js         rendering through the harness: worktree, directory or git:<ref>; the witness's verdict
+  lib/run.js         rendering through the harness: worktree, directory or git:<ref>; the witness's verdict; the pool of harness processes
   lib/engine.js      the engine loaded headless: the one list, the page's list (_viz.php), the page's mock, the roll call, a lab's list (loadcheck, golden)
   lib/canvas.js      a canvas that records instead of painting, every call folded into one digest (the harness's staff=, loadcheck)
   lib/witness.js     preloaded into every harness run: which engine files it actually read

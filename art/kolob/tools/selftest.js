@@ -116,6 +116,12 @@
 //    notes built nodes — the band's notes and nodes are the band's guest's,
 //    the hymn's throats the ward's pump's; and tools/cost.js holds the
 //    sidecar against itself and finds nothing moved.
+// 18. The pool (PLAN-REFACTOR §4.0(c)): two sets of seeds 3, 7 and 22
+//    rendered at once on one pool of three, as tally.js renders its two
+//    builds, write what one set rendered a seed at a time writes — every
+//    dump and every witness the same bytes; and a set that fails stops the
+//    pool: the renders of the set beside it that had not begun never begin,
+//    and that set says it was stopped.
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -707,6 +713,31 @@ function check(name, ok, detail) {
     check("tools/cost.js holds the sidecar against itself: no work and no builder moved",
       /^builders: every one of the \d+ built on B what it built on A$/m.test(same) && /^\(the graph\) +[\d,]+ +[\d,]+ +0 %/m.test(same) && /^accounted: A 1 of 1 run\(s\), B 1 of 1/m.test(same),
       (same.split("\n").find((l) => /^builders/.test(l)) || "no builders line").trim());
+  }
+
+  console.log("18. the pool (PLAN-REFACTOR §4.0(c)): two sets on one pool of three, against one at a time");
+  {
+    const seeds = [3, 7, 22], files = (dir) => fs.readdirSync(dir).filter((f) => /\.(jsonl|witness\.json)$/.test(f)).sort();
+    await R.renderSet({ engine, seeds, secs: 200, jobs: 1, dir: path.join(tmp, "pool-1"), quiet: true });
+    const P = R.pool(3);
+    await Promise.all(["pool-a", "pool-b"].map((d) => R.renderSet({ engine, seeds, secs: 200, pool: P, dir: path.join(tmp, d), quiet: true })));
+    const one = files(path.join(tmp, "pool-1")), same = ["pool-a", "pool-b"].every((d) => {
+      const fs2 = files(path.join(tmp, d));
+      return fs2.join() === one.join() && fs2.every((f) => fs.readFileSync(path.join(tmp, d, f)).equals(fs.readFileSync(path.join(tmp, "pool-1", f))));
+    });
+    check("two sets on one pool of three write what one set a seed at a time writes: every dump and witness the same bytes", one.length === 6 && same, one.length + " files a set");
+    // a harness that writes no dump fails its set; queued first, it stops the pool before the set beside it begins
+    const mute = path.join(tmp, "mute-harness.js");
+    fs.writeFileSync(mute, "process.exitCode = 0;\n");
+    const Q = R.pool(2);
+    const [bad, good] = await Promise.all([
+      R.renderSet({ engine: R.resolveEngine(null, mute), seeds: [1, 2], secs: 60, pool: Q, dir: path.join(tmp, "pool-bad"), quiet: true }).then(() => null, (e) => e),
+      R.renderSet({ engine, seeds, secs: 60, pool: Q, dir: path.join(tmp, "pool-good"), quiet: true }).then(() => null, (e) => e),
+    ]);
+    const begun = fs.existsSync(path.join(tmp, "pool-good")) ? fs.readdirSync(path.join(tmp, "pool-good")).filter((f) => f.endsWith(".log")).length : 0;
+    check("a set that fails stops the pool: the set beside it begins none of its renders and says it was stopped",
+      !!bad && /harness failed for seed-1 \(no dump/.test(bad.message) && !!good && good.stopped === true && /3 of 3 seeds not begun/.test(good.message) && begun === 0,
+      (bad ? bad.message.split("\n")[0].replace(/ \(no dump.*$/, " (no dump)") : "the bad set passed") + " · " + (good ? good.message : "the other set finished") + " · " + begun + " begun");
   }
 
   fs.rmSync(tmp, { recursive: true, force: true });
