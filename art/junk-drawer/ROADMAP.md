@@ -60,6 +60,16 @@ back-end change; the owner decides the wording):
 
 **Instrument / UI (Phase 4b and after):**
 
+- **Bounding boxes on the drawing for a rated issue (owner, 2026-10-02 —
+  consider before launch).** When filing a structural-coherence or layering
+  problem, let the rater draw a box (or circle) on the drawing marking
+  where the issue is, stored with the judgment (e.g. `jd2_judgments.marks`
+  as JSON: `[{axis, x, y, w, h}]` in the SVG's viewBox units), shown on the
+  report card as an annotation layer. Makes the ratings legible to a
+  reader and gives the analysis a locus per defect. Fits the draw-on
+  engine's existing walk of the SVG; a drawn box is a transform-free
+  overlay. Not now.
+
 - **One question at a time.** A rating card that asks understanding, then
   structural coherence, then layering, then jnsq, then the overall grade,
   per drawing (or per question across drawings) — instead of the full panel
