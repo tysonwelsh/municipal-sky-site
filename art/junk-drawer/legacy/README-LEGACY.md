@@ -29,7 +29,10 @@ Every edit is marked `LEGACY (2026-10-01)` or `<!-- LEGACY -->` in place.
   rated v1 turns show, their SVGs from `/api/jd-gen-svg.php`), and still
   serves files-only when the database cannot answer.
 - `jd-core.js` — `JD_DATA_URL` is this folder's `data.php`; `?admin` /
-  `?bench` ignored (`JD_admin` never turns on); `?rerun=` ignored.
+  `?bench` ignored (`JD_admin` never turns on); `?rerun=` ignored. At the
+  cutover (2026-10-01, Phase 5) `JD_track` logs under its own page key,
+  `junk-drawer-legacy` (allowlisted in `api/page-event-tracking.php`), so the
+  exhibit's traffic no longer counts as the v2 drawer's `junk-drawer`.
 - `jd-furniture.js` — the turn object and the instructions sheet are not
   mounted (each IIFE returns first); the analytics folder stays, its artwork
   from this folder, its numbers from the public `/api/jd-analytics.php`.
@@ -41,4 +44,4 @@ Copied unchanged: `_stage.php`, `_slim.php`, `_version.php`, `VERSION`,
 unchanged), `analytics-folder.svg`, `items/` (whole, real files, no symlink).
 
 The v1 write endpoints are frozen separately by `JD_V1_FROZEN` in
-`api/jd-config.php` (off until the cutover).
+`api/jd-config.php`, on since the cutover (2026-10-01).

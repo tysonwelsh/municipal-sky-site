@@ -194,51 +194,20 @@ which is a real eval set.
 Related: `sizing-desk.html` already exists for tuning sizes in bulk against
 the live pile math, and `sizeScale` is the continuous dial under the tiers.
 
-### Promotion of turns into the drawer
+### Retired with dataset v1 (2026-10-01)
 
-`scripts/promote-turn.py` — the counterpart to `harvest-rerun.py` for prompts
-that were never curated items: write the surviving SVGs, ink-check, author the
-entry from the owner's bench ratings, title via `jd-title.php`, size from the
-bench's size flag. Blocked on nothing; wanted for the reassessment backlog.
+Two v1 items closed by the v2 cutover rather than built; their v1 text is in
+git history before this commit.
 
-### Placings on the curated originals (2026-09-17)
-
-The medals ship and work: `medalHTML()` in `jd-record.js`, `.rc-alt-medal` in
-`junk-drawer.css`, gold/silver/bronze/ribbon in the top-left corner of each
-thumbnail in OTHER MODELS, SAME PROMPT, on the drawer and the /about/ report
-card alike. As of 0.9.156 the live payload carries **48 placings across 12
-turn items** and they show.
-
-What is left is the other half of the drawer. Measured against the live
-database on the day:
-
-| displayed drawings | ranked in the DB |
-|---|---|
-| turn items | 114 of 116 |
-| **curated items** | **0 of 216** |
-
-The curated 216 are backfilled originals that were never part of a ranked
-turn, so they have no placing to show and never will until one is filed. Two
-ways to change that, neither started:
-
-1. **Rank them on the bench.** A bench rank on a curated item already reaches
-   the payload — the curated branch of `data.php` was fixed in 0.9.155 to look
-   rank up by generation rather than through `jd_submissions`, which a rerun's
-   submission never satisfies. So this works today; it is just unranked work.
-
-2. **Carry the ranking through HARVEST.** When a rerun is harvested onto a
-   curated item its drawings come across and its ranking stays behind on the
-   rerun's own submission. 281 ranks are on file (163 `web`, 110 `bench`, 8
-   `seed`) across 69 turns; matching each curated item's generations back to
-   the turn that ranked them would light up the drawer at once. This is the
-   bigger piece and the one worth doing properly.
-
-Also open, smaller: whose ranking wins when a curated item has gathered
-drawings from several different reruns, each ranked by a different visitor in
-a different session. Two "1st place" drawings from two sessions are not
-comparable, and a blend would be a number nobody filed. The rule used for
-turns — bench outranks web, newest otherwise — is a starting point, not an
-answer.
+- **Promotion of turns into the drawer** (`scripts/promote-turn.py`, the
+  counterpart to `harvest-rerun.py`). In v2 a visitor's turn joins the drawer
+  when its session is complete; there is no file to promote into, and both
+  scripts were removed with the file path.
+- **Placings on the curated originals** (2026-09-17: 0 of 216 curated
+  drawings ranked, rank them on the bench or carry ranks through harvest). v2
+  has no curated items: every drawing belongs to a run, and every complete
+  session ranks the run's drawings, so every drawing in the drawer has a
+  place.
 
 
 ## Done

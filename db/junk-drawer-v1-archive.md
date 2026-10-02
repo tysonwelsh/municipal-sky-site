@@ -65,8 +65,9 @@ python3 scripts/jd-v1-pairwise.py --jsonl "$D"/jd-evals-*.jsonl --out "$D/v1-pai
 The two derived files read only the JSONL and the taxonomy. They can be rebuilt
 from an archive folder alone, with no database. Every command above reads
 only: SELECT, mysqldump, or the read-only export. Do not run
-`api/setup-jd-tables.php`, `jd-backfill-curated.php`, `jd-bench-run.php` or
-any writing `jd-*` endpoint as part of archiving.
+`api/setup-jd-tables.php`, `jd-backfill-curated.php` or any writing `jd-*`
+endpoint as part of archiving (`jd-bench-run.php` was removed at the
+cutover).
 
 **The precedence rule** the standing CSV applies is the one in
 `api/jd-config.php` (`jd_fold_ratings`, `jd_pick_rating(['bench','*'])`,
@@ -79,16 +80,18 @@ archive keeps the rule as of the `junk-drawer-v1-final` tag.
 
 ## What "frozen" means
 
-- **Until the cutover, v1 is still live.** The drawer, the bench and visitors
-  keep writing `jd_*`. A snapshot taken before the cutover is a snapshot, not
-  the final state. Take a last one on cutover day, after the writers are
-  retired, and move the `junk-drawer-v1-final` tag to that commit if the code
-  changed.
-- **After the v2 cutover nothing writes to `jd_*`.** The v1 writers
-  (`jd-rate`, `jd-item-rate`, `jd-curate`, the curated sync and backfill, the
-  harvest) are retired or repointed at `jd2_*` in Phase 5, and the deploy step
-  that runs `setup-jd-tables.php` / `jd-backfill-curated.php` comes out with
-  them.
+- **Frozen as of 2026-10-01 (the v2 cutover, Phase 5).** Before then v1 was
+  live, and a snapshot was only a snapshot. If anything was filed between the
+  2026-10-01 snapshot and the freeze, take a last one and move the
+  `junk-drawer-v1-final` tag.
+- **Nothing writes to `jd_*`.** `JD_V1_FROZEN = true` in `api/jd-config.php`
+  makes every v1 writer (`jd-generate`, `jd-rate`, `jd-item-rate`,
+  `jd-curate`, `jd-title`, `jd-harvest`) answer 410 `dataset_frozen`.
+  `jd-bench-run.php` was removed. The deploy still calls
+  `setup-jd-tables.php` (idempotent; its one row-moving migration, the
+  2026-09-05 flag fold, has nothing left to fold) and
+  `jd-backfill-curated.php`, which answers `done` and files nothing while
+  frozen, so the deploy step needed no change.
 - **The tables stay where they are, read-only.** No `ALTER`, no rename, no
   `DROP`, no backfill into or out of v2. v2 records lineage to a v1 item id;
   it never copies v1 rows.

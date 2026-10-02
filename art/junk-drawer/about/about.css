@@ -866,6 +866,15 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
   font-size: 0.98rem; line-height: 1.35; font-style: italic;
   color: rgba(55, 65, 79, 0.85);
 }
+/* a figure with nothing filed yet (dataset v2 before its first sitting,
+   2026-10-01): one line in the subtitle's voice, tall enough (200px) for the
+   card fitter and the warm-up's settle test to treat it as a card */
+.jd-about .jdc-empty {
+  display: flex; align-items: center; justify-content: center;
+  box-sizing: border-box; min-height: 200px; margin: 0; padding: 24px;
+  font-size: 0.98rem; line-height: 1.35; font-style: italic; text-align: center;
+  color: rgba(55, 65, 79, 0.85);
+}
 .jd-about .jdc-row {
   display: grid;
   grid-template-columns: var(--jdc-name) 1fr var(--jdc-val);

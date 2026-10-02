@@ -231,7 +231,7 @@ function JD_track(type, label) {
     fetch(JD_API + '/api/page-event-tracking.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ page: 'junk-drawer', event_type: type, label: label || null })
+      body: JSON.stringify({ page: 'junk-drawer-legacy', event_type: type, label: label || null })   // LEGACY (2026-10-01): its own page key, so the legacy exhibit's traffic never counts as the v2 drawer's
     }).catch(function () {});
   } catch (e) {}
 }

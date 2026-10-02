@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
-"""Validate The Junk Drawer data layer (art/junk-drawer/).
+"""Validate The Junk Drawer's v1 file archive (art/junk-drawer/legacy/items/).
 
-Checks taxonomy.json, every items/*/entry.json, and every referenced SVG
+Since the v2 cutover (2026-10-01) the drawer's items live in the database and
+the file path is retired: the only entry.json files left are dataset v1's,
+frozen in the legacy exhibit. This checks the live taxonomy.json, every
+legacy/items/*/entry.json against it, and every referenced SVG
 for schema conformance, referential integrity against the taxonomy, and
 SVG hygiene. Stdlib only, so it runs anywhere (including Claude Code web
 sandboxes) with no installs.
@@ -23,6 +26,9 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent / "art" / "junk-drawer"
+# the v1 items: the legacy exhibit's copy (the live drawer reads none since the
+# v2 cutover, 2026-10-01); the taxonomy stays ROOT's, the live file
+ITEMS_DIR = ROOT / "legacy" / "items"
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 ITEM_ID_RE = re.compile(r"^\d{4}-\d{2}-\d{2}-[a-z0-9-]+$")
 RID_RE = re.compile(r"^r\d+$")
@@ -334,7 +340,7 @@ def size_report():
     except (OSError, json.JSONDecodeError):
         return
     boxes = {t.get("id"): t.get("box") for t in tax.get("sizeTiers", [])}
-    items_dir = ROOT / "items"
+    items_dir = ITEMS_DIR
     if not items_dir.is_dir():
         return
     rows = []
@@ -400,7 +406,7 @@ def main():
         },
     }
 
-    items_dir = ROOT / "items"
+    items_dir = ITEMS_DIR
     svgs = []
     if items_dir.is_dir():
         for item_dir in sorted(p for p in items_dir.iterdir() if p.is_dir()):

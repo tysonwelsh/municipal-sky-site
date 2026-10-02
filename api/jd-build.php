@@ -15,7 +15,8 @@
 // fingerprint moves. (2026-10-01: the ledger and its endpoint, the census,
 // the rerun harvest, the curated sync, the drawing server, this file and the
 // version reader joined the list — each had been able to change without
-// moving the stamp.) It deliberately spans art/ and api/, because "am I running
+// moving the stamp; at the v2 cutover the retired rating-bench.html and
+// jd-bench-run.php left it with their files.) It deliberately spans art/ and api/, because "am I running
 // the updated code?" is a question about the page AND the endpoints behind it —
 // a bench page from the right deploy talking to a stale endpoint is exactly the
 // confusion this exists to make impossible.
@@ -26,7 +27,6 @@ function jd_build_files(): array
 {
     $root = __DIR__ . '/..';
     return [
-        $root . '/art/junk-drawer/rating-bench.html',
         $root . '/art/junk-drawer/ledger.html',
         $root . '/art/junk-drawer/taxonomy.json',
         $root . '/art/junk-drawer/_version.php',
@@ -34,7 +34,6 @@ function jd_build_files(): array
         $root . '/api/jd-item-rate.php',
         $root . '/api/jd-curate.php',
         $root . '/api/jd-admin-check.php',
-        $root . '/api/jd-bench-run.php',
         $root . '/api/jd-provider.php',
         $root . '/api/jd-config.php',
         $root . '/api/jd-ledger.php',

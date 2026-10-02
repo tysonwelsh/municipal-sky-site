@@ -21,6 +21,9 @@ require_once __DIR__ . '/visitor-hash.php';
 $ALLOWED_PAGES = [
     'homepage', 'prosperos-jukebox', 'prosperos-jukebox-v2', 'underworld-occupations', 'zankyo', 'bardo', 'kolob',
     'junk-drawer', 'carbon-structures',
+    // 2026-10-01: the Junk Drawer's frozen v1 exhibit (/art/junk-drawer/legacy/)
+    // logs under its own key from the v2 cutover, so 'junk-drawer' is v2 alone.
+    'junk-drawer-legacy',
     // 2026-10-01: the public pages that had no counter, tallied through the
     // footer's $track_page opt-in (includes/footer.php) — page_view only,
     // except skeeball, which also logs a play per game started. Only pages

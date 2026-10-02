@@ -52,11 +52,13 @@ When the four drawings come back, whoever wrote the prompt grades each one witho
 
 This is the interface I use to grade the drawings. 
 
-Each one is rated in four categories and given an overall grade, on the same five-point scale the USDA uses for beef: Prime, Choice, Select, Standard, and Utility. After that, all four are ranked from best to worst.
+Each one is rated in four categories and given an overall grade, on the same five-point scale the USDA uses for beef: Prime, Choice, Select, Standard, and Utility. After that, all four are ranked from best to worst, then compared head to head, two at a time, on a seven-point scale.
 
 Feel free to try it out!
 
 For demonstration purposes only. Nothing entered here is saved or recorded.
+
+_(small print, written by about-scenes.js once it has chosen the card's drawings: "The drawings on this card are the newest prompt in the drawer." — or, while dataset v2 has no live prompt, "…are a v1 specimen: they come from the first dataset, now on view in the legacy drawer.")_
 
 
 `step: taxonomy` · _Pane: the rating card, blank; the four categories render under this text from taxonomy.json (each axis's one-line `summary` — edit the wording there; mirrored below)_
@@ -84,6 +86,8 @@ Here’s a top-notch SVG drawn by Claude Fable 5.
 It’s clearly a desktop succulent, the individual parts fit together, the layers stack correctly, and the pot has the tasteful Scandinavian style I had in mind when I wrote the prompt.
 
 It earned top marks in every category.
+
+A v1 specimen: this drawing and the next two come from the drawer’s first dataset, now on view in the [legacy drawer](/art/junk-drawer/legacy/).
 
 `step: gemini-3-1-pro` · _Pane: the report card, turned to Gemini 3.1 Pro_
 
@@ -125,52 +129,53 @@ Press ▶ under the drawing to see what I mean. The replay shows the model drawi
 
 Each visual is its own paper card, drawn by this page from the analytics endpoint (no folder), one per step; a change of card scrolls like a change of scene.
 
-`step: stack` · _Pane: the record as a bare, wide spreadsheet on the page (no card or title), report-card width — one row per prompt drawn by the four-model cast (51): item (its title; hover or tap shows the full prompt), then each model’s grade and four category ratings, numbers only; scrolls both ways (from the full data.php)_
+`step: stack` · _Pane: the record as a bare, wide spreadsheet on the page (no card or title), report-card width — one row per prompt drawn by every model in the charts, from dataset v2's data.php; until the first v2 sitting is filed, the line "No ratings filed yet under dataset v2."_
 
 ### A real application, front to back
 
 The SVG Junk Drawer isn’t just a pretty interface. It also has a working back end.
 
-Behind the drawer, a server-side pipeline sends each prompt to all four models with the same system instructions, and everything is stored in a SQL database.
+Behind the drawer, a server-side pipeline sends each prompt to every model in the pool with the same system instructions, and everything is stored in a SQL database.
+
+Each grading session is filed as a record of its own, and nothing is ever overwritten: a second opinion is a new session beside the first. My ratings and visitors’ ratings are kept apart and never averaged together.
 
 The only thing missing is actual users (other than me!)
 
+_(From here to the outro the steps describe the method, not findings, since the v2 cutover (2026-10-01): dataset v2 started empty, so no step names a model or a number. Each chart shows "No ratings filed yet under dataset v2." until there is something to draw. The v1 findings copy is under "Cut at the v2 cutover", below.)_
 
 `step: grades` · _Pane: one card — “How the models compare”: the average overall grade (dots, with n) above the spread (horizontal bars by grade, coloured by the report card’s grade ramp), each with its own subtitle_
 
-### Insights
+### Starting over, on purpose
 
-Here’s how the four models compare on overall grade, across roughly 100 drawings each. It’s a small sample, I know, but humor me.
+These charts read straight from the database, so they show whatever has been graded so far.
 
-On average, Claude Opus 5 has a *slight* lead over Gemini 3.1 Pro. 
+On October 1, 2026, I started the record over as dataset v2: a refined instrument, new tables, and every drawing graded fresh. The first dataset is archived, not deleted, and you can still dig through it in the [legacy drawer](/art/junk-drawer/legacy/). The two are never mixed.
 
-Kimi K3 isn’t far behind in third, with GPT-5.1 a distant fourth.
+This card shows each model’s average overall grade, from Utility to Prime.
 
 `step: distribution` · _Pane: the same card (no card change)_
 
-### Similar averages, different distributions
+### Averages hide things
 
-Despite similar averages, Gemini generated more drawings graded Choice, while Opus had more graded Prime.
+Two models can share an average and get there very differently: one reliably good, the other less steady but more likely to produce something special. So every grade is kept, and the bars count each model’s drawings at every grade.
 
-In other words, while Gemini is reliably good, Opus is slightly more likely to produce something special.
+Grades judge each drawing on its own. The ranking and the head-to-head scores judge them against each other, which is how “which one won” becomes “by how much.”
 
 `step: multiples` · _Pane: the four category panels, two by two, each on its own scale_
 
-### The je ne sais quoi factor
+### Where the grades come from
 
-How did Opus end up with more drawings graded Prime?
+The four categories show what sits behind an overall grade: how often each model’s drawings missed the assignment, came apart structurally, or stacked their layers wrong, and how often they had that je ne sais quoi.
 
-Gemini and Opus are nearly tied on Structural Coherence, and Gemini even leads slightly on Understanding Assignment.
-
-However, in the Je ne sais quoi category Opus has the advantage. This suggests that the gap between good and great comes down to that special something you can't quite put your finger on.
+Each bar carries a 95% interval. Where two of them overlap, the difference isn’t one I’d bet on.
 
 `step: spend` · _Pane: bars — average cost per drawing, per model, with n_
 
-### Prime cuts ain't cheap
+### What it costs
 
-But that special something has a price. Opus’s drawings cost roughly twice as much as Gemini’s.
+Every drawing’s API price is recorded the moment it’s made, from the model’s own token counts.
 
-Kimi K3’s drawings are the cheapest of the four, yet it still beats GPT-5.1 on overall quality.
+Evaluation data has a unit cost, and a model that draws a little better for twice the price is a different answer from one that draws a little better for the same.
 
 
 ---
@@ -238,3 +243,56 @@ My own ratings and visitors’ ratings are stored separately, and neither can ov
 ### What this does not show
 
 One rater, mostly me. A small visitor sample. Drawing SVGs is one narrow skill, not a measure of a model. The point of this project is the method: the taxonomy, the instrument, the record, and the analysis. The leaderboard is a side effect.
+
+---
+
+## Cut at the v2 cutover (2026-10-01)
+
+The analysis steps as they read on dataset v1 (four models, about 100 drawings each). They state findings the v2 data does not hold yet; kept here for when the campaign has filed its own.
+
+`step: stack` · _Pane: the record as a bare, wide spreadsheet on the page (no card or title), report-card width — one row per prompt drawn by the four-model cast (51): item (its title; hover or tap shows the full prompt), then each model’s grade and four category ratings, numbers only; scrolls both ways (from the full data.php)_
+
+### A real application, front to back
+
+The SVG Junk Drawer isn’t just a pretty interface. It also has a working back end.
+
+Behind the drawer, a server-side pipeline sends each prompt to all four models with the same system instructions, and everything is stored in a SQL database.
+
+The only thing missing is actual users (other than me!)
+
+
+`step: grades` · _Pane: one card — “How the models compare”: the average overall grade (dots, with n) above the spread (horizontal bars by grade, coloured by the report card’s grade ramp), each with its own subtitle_
+
+### Insights
+
+Here’s how the four models compare on overall grade, across roughly 100 drawings each. It’s a small sample, I know, but humor me.
+
+On average, Claude Opus 5 has a *slight* lead over Gemini 3.1 Pro. 
+
+Kimi K3 isn’t far behind in third, with GPT-5.1 a distant fourth.
+
+`step: distribution` · _Pane: the same card (no card change)_
+
+### Similar averages, different distributions
+
+Despite similar averages, Gemini generated more drawings graded Choice, while Opus had more graded Prime.
+
+In other words, while Gemini is reliably good, Opus is slightly more likely to produce something special.
+
+`step: multiples` · _Pane: the four category panels, two by two, each on its own scale_
+
+### The je ne sais quoi factor
+
+How did Opus end up with more drawings graded Prime?
+
+Gemini and Opus are nearly tied on Structural Coherence, and Gemini even leads slightly on Understanding Assignment.
+
+However, in the Je ne sais quoi category Opus has the advantage. This suggests that the gap between good and great comes down to that special something you can't quite put your finger on.
+
+`step: spend` · _Pane: bars — average cost per drawing, per model, with n_
+
+### Prime cuts ain't cheap
+
+But that special something has a price. Opus’s drawings cost roughly twice as much as Gemini’s.
+
+Kimi K3’s drawings are the cheapest of the four, yet it still beats GPT-5.1 on overall quality.
