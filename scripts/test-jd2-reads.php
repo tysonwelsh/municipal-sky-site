@@ -230,6 +230,9 @@ function directPairs(int $ab, int $ac, int $ad, int $bc, int $bd, int $cd): arra
 // ============================================================================
 section('(fixture) four prompts filed through the endpoints');
 [$run1, $p1, $ref1] = visitorTurn('a brass key with a paper tag');
+[$st, $j] = req('POST', '/api/jd2-intake.php', ['client_ref' => $ref1, 'prompt' => 'a brass key with a paper tag']);
+check('P1: the intake clerk (mock) files its heading, tier and headings', $st === 200 && empty($j['fallback'])
+    && ($j['tags']['subject'] ?? null) === ['object'], json_encode($j));
 [$st, $j] = rate(['run_id' => $run1, 'client_ref' => $ref1, 'title' => 'Brass Key', 'size' => 's',
     'ratings' => cells(['a' => 4, 'b' => 2, 'c' => 5, 'd' => 3], $axisRanks),
     'ranking' => [['slot' => 'c', 'rank' => 1, 'gap' => 2], ['slot' => 'a', 'rank' => 2, 'gap' => 1],
@@ -241,6 +244,11 @@ check('P1: a visitor turn rated complete with derived pairs', $st === 200 && $j[
     'ranking' => [['slot' => 'a', 'rank' => 1], ['slot' => 'b', 'rank' => 2], ['slot' => 'c', 'rank' => 3], ['slot' => 'd', 'rank' => 4]],
     'pairs' => directPairs(2, 3, 3, 1, 2, 0)], true);
 check('P2 run 1: the owner rates it complete with direct pairs', $st === 200 && $j['complete'] === true, json_encode($j));
+[$st, $j] = req('POST', '/api/jd2-intake.php', ['prompt_id' => $p2], true);
+$P2TAGS = ['subject' => ['object'], 'treatment' => [], 'probe' => ['state']];
+[$st2, $j2] = req('POST', '/api/jd2-curate.php', ['prompt_id' => $p2, 'tags' => $P2TAGS], true);
+check('P2: owner intake, then the owner re-files its headings through jd2-curate (probe: state)', $st === 200 && $st2 === 200
+    && ($j2['prompt']['tags'] ?? null) === $P2TAGS, json_encode([$j, $j2['prompt']['tags'] ?? $j2]));
 $ref = jd_uuid4();
 [$st, $j] = req('POST', '/api/jd2-generate.php', ['client_ref' => $ref, 'slot' => 'a', 'rerun_of' => $p2, 'website' => ''], true);
 $run2b = $j['run_id'] ?? null;
@@ -583,9 +591,20 @@ foreach ($recs as $rec) {
     }
 }
 check('the export picks the same display session per run as jd2_display_session', $sameDisplay);
+$pr2 = $rec2['prompt'] ?? [];
+check('the export carries the intake facts on the prompt: tags, size_by, intake_version/model/json/cost/at',
+    ($pr2['tags'] ?? null) === $P2TAGS && ($pr2['size_by'] ?? '') === 'model' && ($pr2['intake_version'] ?? '') === jd2_intake_version($taxonomy)
+    && ($pr2['intake_model'] ?? '') === 'mock' && isset($pr2['intake_json']['answer']['reasons']) && array_key_exists('intake_cost_usd', $pr2)
+    && !empty($pr2['intake_at']), json_encode(array_intersect_key($pr2, array_flip(['tags', 'size_by', 'intake_version', 'intake_model', 'intake_at']))));
 check('standing CSV: one row per generation (20), grade + every live axis + rank columns',
     count($sc) === (int) one($db, 'SELECT COUNT(*) FROM jd2_generations') && in_array('grade', $head, true)
     && array_diff($liveAxisIds, $head) === [] && in_array('rank_pos', $head, true), json_encode($head));
+$ixT = array_search('tags_probe', $head, true);
+$ixP = array_search('prompt_id', $head, true);
+$p2rows = array_values(array_filter($sc, fn ($r) => ($r[$ixP] ?? '') === $p2));
+check('standing CSV: size_class, size_by and a tags_<facet> column per facet (P2: tags_probe = state)',
+    in_array('size_class', $head, true) && in_array('size_by', $head, true) && in_array('tags_subject', $head, true)
+    && in_array('tags_treatment', $head, true) && $ixT !== false && $p2rows !== [] && $p2rows[0][$ixT] === 'state', json_encode($head));
 check("pairs CSV: one row per pair of every run's display session ($expPairs), with both models",
     count($pc) === $expPairs && in_array('model_a', $phead, true) && in_array('score', $phead, true));
 
@@ -635,6 +654,14 @@ check('v1_item_id recorded: the CSV column, and the legacy match by text', $robo
     && ($new[1]['v1_item_id'] ?? null) === $legacy['id'], json_encode($new));
 check('title, size and category filed through jd2-curate', $robot['title'] === 'Tin Robot' && $robot['size_class'] === 'm'
     && $robot['category'] === 'toys' && $new[1]['size_class'] === 'xs' && $new[1]['category'] === null, json_encode($new));
+$ri = rows($db, 'SELECT text, title, size_class, size_by, tags, intake_at FROM jd2_prompts WHERE text IN (?, ?) ORDER BY created',
+    ['a wind-up tin robot', $legacy['prompt']]);
+check('the batch: no intake when the CSV gave title AND size (the robot); the owner\'s title and size stand',
+    isset($ri[0]) && $ri[0]['intake_at'] === null && $ri[0]['tags'] === null && $ri[0]['size_by'] === 'owner', json_encode($ri[0] ?? null));
+check('the batch: intake after the first drawing when the CSV left the title open — the clerk\'s heading and headings, the CSV\'s size (owner)',
+    ($ri[1]['intake_at'] ?? null) !== null && $ri[1]['tags'] !== null && $ri[1]['size_class'] === 'xs' && $ri[1]['size_by'] === 'owner'
+    && $ri[1]['title'] !== null && preg_match('/^\s+#2\s+intake: ".+" · size \S+ \((model|owner)\) · subject: object/m', $o) === 1
+    && substr_count($o, 'intake:') === 1, json_encode($ri[1] ?? null) . "\n" . $o);
 check('the rerun row made a second run of P4 (rerun, bench), four drawings',
     (int) one($db, "SELECT COUNT(*) FROM jd2_runs WHERE prompt_id = ? AND kind = 'rerun' AND profile = 'bench'", [$p4]) === 1
     && (int) one($db, "SELECT COUNT(*) FROM jd2_generations g JOIN jd2_runs r ON r.id = g.run_id WHERE r.prompt_id = ? AND r.kind = 'rerun'", [$p4]) === 4);
@@ -681,6 +708,59 @@ check('without --local and without JD_BENCH_KEY it refuses (and calls nothing)',
 [, $q] = req('GET', '/api/jd2-queue.php', null, true);
 check("the batch's prompts are in the bench's backlog (P4 now on its rerun)", count(array_intersect([$new[0]['id'], $new[1]['id'], $p4],
     array_column($q['items'], 'prompt_id'))) === 3, json_encode(array_column($q['items'], 'prompt_id')));
+
+// ============================================================================
+section('(f) the intake facts on every reader: queue, ledger, analytics ?tag=');
+[$st, $q] = req('GET', '/api/jd2-queue.php?prompt=' . $p2, null, true);
+$qi = $q['items'][0] ?? [];
+check('jd2-queue: the item carries tags, size_by, intake_version, intake_model, intake_at, reasons, fallback',
+    $st === 200 && ($qi['tags'] ?? null) === $P2TAGS && ($qi['size_by'] ?? '') === 'model' && ($qi['intake_version'] ?? '') === jd2_intake_version($taxonomy)
+    && ($qi['intake_model'] ?? '') === 'mock' && !empty($qi['intake_at']) && isset($qi['reasons']['size'], $qi['reasons']['classification'])
+    && ($qi['fallback'] ?? null) === false, json_encode(array_intersect_key($qi, array_flip(['tags', 'size_by', 'intake_version', 'intake_model', 'intake_at', 'reasons', 'fallback']))));
+[$st, $L] = req('GET', '/api/jd2-ledger.php?prompt=' . $p1, null, true);
+$li = $L['items'][0] ?? [];
+check('jd2-ledger: the row carries size_by (visitor: P1\'s sitting chose s), tags, the intake stamp and reasons; the payload names facets and size tiers',
+    $st === 200 && ($li['size_class'] ?? '') === 's' && ($li['size_by'] ?? '') === 'visitor' && ($li['tags']['subject'] ?? null) === ['object']
+    && ($li['intake_model'] ?? '') === 'mock' && !empty($li['intake_at']) && array_key_exists('intake_cost_usd', $li)
+    && isset($li['reasons']['size']) && ($li['fallback'] ?? null) === false && array_key_exists('intake_error', $li) && $li['intake_error'] === null
+    && array_column($L['facets'] ?? [], 'id') === ['subject', 'treatment', 'probe']
+    && array_column($L['size_tiers'] ?? [], 'id') === array_keys(jd_size_tiers($taxonomy)),
+    json_encode(array_intersect_key($li, array_flip(['size_class', 'size_by', 'tags', 'intake_model', 'reasons', 'fallback']))));
+[$st, $A] = req('GET', '/api/jd2-analytics.php');
+$tagsBlock = $A['tags'] ?? [];
+$obj = $tagsBlock['subject']['object'] ?? [];
+$state = $tagsBlock['probe']['state'] ?? [];
+$byModelOk = is_array($obj['by_model'] ?? null) && $obj['by_model'] !== [];
+foreach ($obj['by_model'] ?? [] as $m => $c) {
+    $byModelOk = $byModelOk && isset($c['mean'], $c['n']) && $c['n'] > 0 && $c['mean'] >= 1 && $c['mean'] <= 5;
+}
+check('analytics: a tags block per facet, per heading {label, n, by_model {mean, n}}',
+    $st === 200 && array_keys($tagsBlock) === ['subject', 'treatment', 'probe'] && ($obj['n'] ?? 0) === 2 && ($obj['label'] ?? '') === 'Object'
+    && ($state['n'] ?? 0) === 1 && $byModelOk && (($tagsBlock['treatment']['cartoon']['n'] ?? -1) === 0), json_encode($tagsBlock['subject']['object'] ?? null));
+// P2 is the only prompt filed under probe:state: its two runs are the population
+// (the grades: its runs' display sessions, as the readers compute them)
+$wantGrades = 0;
+foreach (rows($db, 'SELECT id FROM jd2_runs WHERE prompt_id = ?', [$p2]) as $r) {
+    $d = jd2_display_session($db, $r['id'], array_column(jd2_run_generations($db, $r['id']), 'id'), $taxonomy);
+    foreach ($d['standing']['judgments'] ?? [] as $jj) {
+        $wantGrades += $jj['grade'] !== null ? 1 : 0;
+    }
+}
+[$st, $T, $hT] = req('GET', '/api/jd2-analytics.php?tag=probe:state');
+$tGrades = array_sum(array_column($T['grades'] ?? [], 'n'));
+check('?tag=probe:state keeps P2 only: 2 runs, its graded drawings, its own ETag, `tag` echoed',
+    $st === 200 && ($T['tag'] ?? '') === 'probe:state' && ($T['totals']['turns'] ?? 0) === 2 && $wantGrades > 0 && $tGrades === $wantGrades
+    && ($T['tags']['subject']['object']['n'] ?? 0) === 1 && ($hT['etag'] ?? '') !== '', json_encode([$T['totals'] ?? null, $tGrades]));
+[$st, $T2] = req('GET', '/api/jd2-analytics.php?tag=subject:object');
+check('?tag=subject:object keeps both live prompts (the same population as no filter)', $st === 200
+    && ($T2['totals']['turns'] ?? 0) === ($A['totals']['turns'] ?? -1), json_encode($T2['totals'] ?? null));
+[$st, $T3] = req('GET', '/api/jd2-analytics.php?tag=treatment:cartoon');
+check('?tag= with no prompt filed under it: an empty population, not an error', $st === 200 && ($T3['totals']['turns'] ?? -1) === 0
+    && ($T3['grades'] ?? null) === [], json_encode($T3['totals'] ?? null));
+foreach (['subject' => 'no heading', 'mood:happy' => 'an unknown facet', 'subject:spaceship' => 'an unknown heading'] as $bad => $what) {
+    [$st, $j] = req('GET', '/api/jd2-analytics.php?tag=' . rawurlencode($bad));
+    check("?tag= with $what → 400", $st === 400 && ($j['error']['code'] ?? '') === 'bad_request', $st . ' ' . json_encode($j));
+}
 
 printf("\n%d passed, %d failed\n", $passed, $failed);
 if ($failed > 0) {

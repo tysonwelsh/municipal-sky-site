@@ -28,9 +28,14 @@
 //   hidden HIDDEN ITEMS lists it from the ledger; SHOW returns it live — and
 //          a jd2-curate answer naming another build (the response rewritten
 //          in flight) trips the strip's "a deploy landed" line
+//   intake the intake clerk (the mock) files P2's heading, tier and headings;
+//          the bench's size card still closes the sitting and OPENS ON THE
+//          CLERK'S TIER (pre-selected); the owner's pick files size_by owner
 //   new    NEW PROMPT draws under the bench profile through the darkroom with
-//          the mock provider, files title and category, and seats the new
-//          run for rating
+//          the mock provider, files title and category, runs the intake
+//          clerk (title given, size left open: the owner's title stands, the
+//          clerk's tier and headings are filed), and seats the new run for
+//          rating
 //   rerun  RERUN draws a new bench run of that prompt and seats it; the
 //          drawer's ?rerun=<id> door does the same through the owner path
 //   gate   without the key, JD_turn.rerun refuses (a rerun is never a
@@ -167,12 +172,13 @@ async function rateThrough(pg, note) {
   }
   // the size card: the tier, and the notes for the record
   await pg.waitForSelector('[data-act="size"][data-size="m"]');
+  const preset = await pg.$$eval('.jd-size-tier.is-on', (b) => b.map((x) => x.getAttribute('data-size')));
   const hasNote = !!(await pg.$('textarea[data-role="sitting-note"]'));
   await pg.click('[data-act="size"][data-size="m"]');
   if (hasNote) await pg.fill('textarea[data-role="sitting-note"]', note);
   await shot(pg, '4-size-note');
   await pg.click('.jd-turn-actions [data-act="file"]');
-  return { cards, hasNote };
+  return { cards, hasNote, preset };
 }
 
 async function main() {
@@ -212,6 +218,13 @@ async function main() {
     const P1 = await seedPrompt('a tin wind-up mouse with a brass key (bench test one ' + stamp + ')');
     await new Promise((r) => setTimeout(r, 1100));   // a later `created`, so P2 heads the queue
     const P2 = await seedPrompt('a glass inkwell with a dried blue crust (bench test two ' + stamp + ')');
+    // the intake clerk on P2, the way NEW PROMPT and the batch runner call it
+    const P2intake = await api('POST', '/api/jd2-intake.php', { prompt_id: P2.prompt_id });
+    const tiersAll = ['xs', 's', 'm', 'l', 'xl'];
+    const P2tier = tiersAll[[...('a glass inkwell with a dried blue crust (bench test two ' + stamp + ')')].length % 5];
+    check('intake: the clerk filed P2 (mock): its tier, size_by model, headings',
+      P2intake.ok && !P2intake.fallback && P2intake.size_class === P2tier && P2intake.size_by === 'model' &&
+      !!(P2intake.tags && P2intake.tags.subject && P2intake.tags.subject.length), JSON.stringify(P2intake));
     check('seed: two owner prompts, bench profile, four drawings each',
       q("SELECT COUNT(*) AS n FROM jd2_runs WHERE profile = 'bench' AND requested_by = 'owner'")[0].n == 2 &&
       q("SELECT COUNT(*) AS n FROM jd2_generations WHERE status = 'ok'")[0].n == 8);
@@ -235,6 +248,8 @@ async function main() {
     const r = await rateThrough(page, NOTE);
     check('the card ran six head-to-head cards', r.cards === 6, String(r.cards));
     check('the size card carries "notes for the record" on the bench', r.hasNote);
+    check("the bench's size card opens on the clerk's tier (" + P2tier + ', pre-selected)',
+      r.preset.length === 1 && r.preset[0] === P2tier, JSON.stringify(r.preset));
     await page.waitForSelector('.jd-pod--said', { timeout: 20000 });
     await page.waitForTimeout(800);
     await shot(page, '5-unveil');
@@ -259,8 +274,9 @@ async function main() {
     const ranks = sess.length ? q('SELECT rank_pos FROM jd2_rankings WHERE session_id = ? ORDER BY rank_pos', [sess[0].id]) : [];
     check('SQLite: four grades and a strict ranking 1..4', Number(cells) === 4 &&
       ranks.map((x) => Number(x.rank_pos)).join() === '1,2,3,4', cells + ' / ' + JSON.stringify(ranks));
-    const p2row = q('SELECT visibility, size_class FROM jd2_prompts WHERE id = ?', [P2.prompt_id])[0];
-    check('the complete sitting made the prompt live, sized m', p2row.visibility === 'live' && p2row.size_class === 'm', JSON.stringify(p2row));
+    const p2row = q('SELECT visibility, size_class, size_by FROM jd2_prompts WHERE id = ?', [P2.prompt_id])[0];
+    check('the complete sitting made the prompt live, sized m — the owner\'s size (size_by owner)',
+      p2row.visibility === 'live' && p2row.size_class === 'm' && p2row.size_by === 'owner', JSON.stringify(p2row));
 
     // --- direct ------------------------------------------------------------
     await page.goto(BASE + '/art/junk-drawer/?bench&prompt=' + P2.prompt_id, { waitUntil: 'load' });
@@ -330,13 +346,22 @@ async function main() {
         document.querySelector('.jd-turn[data-view="bench"]');
     }, NEWTEXT, { timeout: 60000 });
     await shot(page, '10-new-seated');
-    const np = q('SELECT id, origin, title, category, visibility FROM jd2_prompts WHERE text = ?', [NEWTEXT]);
+    const np = q('SELECT id, origin, title, category, visibility, size_class, size_by, tags, intake_model, intake_at FROM jd2_prompts WHERE text = ?', [NEWTEXT]);
     const nr = np.length ? q('SELECT id, kind, requested_by, profile FROM jd2_runs WHERE prompt_id = ?', [np[0].id]) : [];
     const ng = nr.length ? q("SELECT COUNT(*) AS n FROM jd2_generations WHERE run_id = ? AND status = 'ok'", [nr[0].id])[0].n : 0;
     check('NEW PROMPT filed an owner prompt with its title and category', np.length === 1 && np[0].origin === 'owner' &&
       np[0].title === 'Porcelain Doorknob' && np[0].category === 'hardware' && np[0].visibility === 'draft', JSON.stringify(np));
     check('…as one bench-profile run of four ok drawings (mock provider)', nr.length === 1 && nr[0].kind === 'initial' &&
       nr[0].requested_by === 'owner' && nr[0].profile === 'bench' && Number(ng) === 4, JSON.stringify(nr) + ' ok=' + ng);
+    check('NEW PROMPT ran the intake clerk: the owner\'s title stands, the clerk\'s tier and headings are filed',
+      np.length === 1 && np[0].title === 'Porcelain Doorknob' && np[0].size_by === 'model' && !!np[0].size_class &&
+      np[0].intake_model === 'mock' && !!np[0].intake_at && /"subject":\["object"\]/.test(String(np[0].tags)), JSON.stringify(np[0]));
+    const seatedSize = await page.evaluate(() => {
+      const it = window.JD_bench.queue().items.filter((x) => x.prompt_id === window.JD_bench.current())[0];
+      return it ? [it.size_class, it.size_by, !!it.tags] : null;
+    });
+    check("…and the queue item carries the clerk's size_by and tags", !!(seatedSize && np.length &&
+      seatedSize[0] === np[0].size_class && seatedSize[1] === 'model' && seatedSize[2]), JSON.stringify(seatedSize));
     const cur = await page.evaluate(() => window.JD_bench.current());
     check('…and it is seated for rating at once', np.length === 1 && cur === np[0].id, cur);
 

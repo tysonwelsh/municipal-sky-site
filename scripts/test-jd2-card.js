@@ -9,7 +9,10 @@
 // dev): it refuses any base URL that is not loopback. With the mock provider
 // it takes two visitor turns, one at 390×844 (phone) and one at 1280×800 —
 // prompt → four drawings → the four grading panels → the podium → every
-// head-to-head card → the size → file → the unveil — screenshotting each
+// head-to-head card → file → the unveil — screenshotting each (the INTAKE
+// clerk sizes a visitor's turn, so there is NO size step: the rail carries no
+// size node, the last pair card files, and the won record and the drawer
+// carry the clerk's tier, size_by 'model'); then
 // kind of card; then reloads the phone page, finds the item in the pile
 // once, opens its report card and reads the strip's head-to-head line; then opens it under ?admin with
 // the dev box's bench key (read from config/secrets.php by php, never
@@ -73,8 +76,17 @@ async function main() {
     await pg.goto(BASE + '/art/junk-drawer/', { waitUntil: 'load' });
     await openTurn(pg);
     await pg.fill('#jd-turn-prompt', prompt + ' ' + tag);
+    // the intake clerk's answer (fired with the slots; its first try may
+    // meet no_turn and retry 4 s later) — a real visitor spends far longer
+    // than that in the darkroom and on the grades, so the test waits for it
+    // before rating rather than racing it
+    const intakeAnswered = pg.waitForResponse((r) => /\/api\/jd2-intake\.php/.test(r.url()) && r.status() === 200,
+      { timeout: 30000 });
     await pg.click('[data-act="generate"]');
     await pg.waitForSelector('[data-act="rate"]', { timeout: 60000 });
+    const intake = await (await intakeAnswered).json();
+    check(tag + ': the intake clerk answered the turn (title, size, headings)',
+      !!(intake.ok && !intake.fallback && intake.title && intake.size_class && intake.tags), JSON.stringify(intake));
     await shot(pg, tag + '-1-results');
     await pg.click('[data-act="rate"]');
 
@@ -146,11 +158,17 @@ async function main() {
     }
     check(tag + ': six head-to-head cards', cards === 6, String(cards) + ' ' + pairs.join(' / '));
 
-    // the size, then file
-    await pg.waitForSelector('[data-act="size"][data-size="m"]');
-    await pg.click('[data-act="size"][data-size="m"]');
-    await pg.click('.jd-turn-actions [data-act="file"]');
-    await pg.waitForSelector('.jd-pod--said', { timeout: 20000 });
+    // NO size step (the intake clerk sized the turn): the last pair card filed
+    await pg.waitForSelector('.jd-pod--said', { timeout: 20000 }).catch(async (e) => {
+      await shot(pg, tag + '-6-stuck');
+      const at = await pg.evaluate(() => ({ view: (document.querySelector('.jd-turn') || {}).getAttribute
+        && document.querySelector('.jd-turn').getAttribute('data-view'),
+        title: (document.querySelector('.jd-turn-title') || {}).textContent,
+        buttons: [...document.querySelectorAll('.jd-turn-actions button')].map((b) => b.textContent) }));
+      throw new Error('no unveil after the last pair card: ' + JSON.stringify(at) + ' ' + e.message);
+    });
+    check(tag + ': no size card and no size node on the rail — the last pair card filed',
+      (await pg.$$('[data-act="size"]')).length === 0 && (await pg.$$('.jd-rail-step[data-step="size"]')).length === 0);
     await pg.waitForTimeout(1200);
     await shot(pg, tag + '-6-unveil');
     const names = await pg.$$eval('.jd-pod-who b', (b) => b.map((x) => x.textContent));
@@ -164,6 +182,17 @@ async function main() {
     filed[tag] = rec;
     check(tag + ': the won record carries run_id, prompt_id and pairs',
       !!(rec && rec.run_id && rec.prompt_id && Object.keys(rec.pairs || {}).length === 6));
+    // the size is the clerk's: the won record's tier is the one intake filed
+    // on the prompt (size_by model), and the mock's tier is a pure function of
+    // the prompt's length, so it is checked against that too
+    const pi = rec && await pg.evaluate((pid) => fetch('/art/junk-drawer/data.php?item=' + pid)
+      .then((r) => r.json()).then((j) => j.item), rec.prompt_id);
+    const tiers = ['xs', 's', 'm', 'l', 'xl'];
+    const want = tiers[[...(prompt + ' ' + tag)].length % tiers.length];
+    check(tag + ": the won item's size is the model's (" + want + ', size_by model) and it carries the clerk\'s headings',
+      !!(rec && pi && rec.sizeClass === want && pi.sizeClass === want && pi.size_by === 'model' &&
+        pi.tags && Array.isArray(pi.tags.subject) && pi.tags.subject.length >= 1),
+      JSON.stringify({ rec: rec && rec.sizeClass, item: pi && [pi.sizeClass, pi.size_by, pi.tags], want }));
     await pg.click('[data-act="done"]');
   }
 

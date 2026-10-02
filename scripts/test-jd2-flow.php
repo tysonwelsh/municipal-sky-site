@@ -21,7 +21,12 @@
 // Mock fixtures: local-dev/jd-mock/*.svg (gitignored) are written with small
 // valid drawings when absent, so a fresh worktree can run this.
 //
-// One PASS/FAIL line per check, grouped by case (a)–(h); exit 0 iff all pass.
+// (j) is the intake clerk (api/jd2-intake.php, the mock in dev): the columns
+// it writes, its idempotence, its fallback (a second php -S started with
+// JD_INTAKE_MOCK_FAIL tells the mock to fail), jd2-rate leaving the clerk's
+// size alone, and jd2-curate's tags and owner size.
+//
+// One PASS/FAIL line per check, grouped by case (a)–(j); exit 0 iff all pass.
 
 putenv('JD_DEV_MOCK=1');
 putenv('JD_DEV_LATENCY_MS=1');
@@ -329,8 +334,9 @@ check('the ranking and its gaps are filed as the raw answer',
       array_map(fn ($r) => [$r['generation_id'], (int) $r['rank_pos'], $r['gap_after'] === null ? null : (int) $r['gap_after']], $gapRows)
       === [[$slotGen1['c'], 1, 2], [$slotGen1['a'], 2, 0], [$slotGen1['d'], 3, 1], [$slotGen1['b'], 4, null]]);
 $p = rows($db, 'SELECT * FROM jd2_prompts WHERE id = ?', [$prompt1])[0];
-check('the prompt is live, with the title and size filed', $p['visibility'] === 'live' && $p['title'] === 'Brass Key'
-      && $p['size_class'] === 's' && $p['approved_at'] === null, json_encode($p));
+check('the prompt is live, with the title and size filed (the visitor\'s pick: size_by visitor)', $p['visibility'] === 'live'
+      && $p['title'] === 'Brass Key' && $p['size_class'] === 's' && $p['size_by'] === 'visitor' && $p['approved_at'] === null,
+      json_encode($p));
 
 // ============================================================================
 section('(c) data.php serves it: r1 = 1st place, six pairs');
@@ -587,6 +593,146 @@ try {
 check('manifest: 200, count 0, the taxonomy, errors []', $st === 200 && ($m['count'] ?? -1) === 0 && $m['items'] === []
       && isset($m['taxonomy']['version']) && $m['errors'] === [], $st . ' ' . substr(json_encode($m), 0, 200));
 check('?item= answers 503, not 500', $stItem === 503, (string) $stItem);
+
+// ============================================================================
+section('(j) the intake clerk: heading, size tier and classification on the prompt row');
+/** A second dev server, with $env added (the mock told to fail); returns its base URL. */
+function extraServer(array $env): string
+{
+    global $root;
+    $probe = stream_socket_server('tcp://127.0.0.1:0');
+    $port = (int) substr(strrchr(stream_socket_get_name($probe, false), ':'), 1);
+    fclose($probe);
+    $proc = proc_open([PHP_BINARY, '-S', "127.0.0.1:$port", '-t', $root],
+        [0 => ['file', '/dev/null', 'r'], 1 => ['file', '/dev/null', 'a'], 2 => ['file', '/dev/null', 'a']],
+        $pipes, $root, array_merge(getenv(), ['JD_DEV_MOCK' => '1', 'JD_DEV_LATENCY_MS' => '1'], $env));
+    register_shutdown_function(static function () use ($proc): void {
+        proc_terminate($proc);
+    });
+    for ($i = 0; $i < 100; $i++) {
+        $s = @fsockopen('127.0.0.1', $port, $errno, $errstr, 0.1);
+        if ($s) {
+            fclose($s);
+            break;
+        }
+        usleep(50000);
+    }
+    return "http://127.0.0.1:$port";
+}
+function intake(array $body, bool $owner = false, ?string $base = null): array
+{
+    global $BASE;
+    $keep = $BASE;
+    if ($base !== null) {
+        $BASE = $base;
+    }
+    try {
+        return req('POST', '/api/jd2-intake.php', $body, $owner);
+    } finally {
+        $BASE = $keep;
+    }
+}
+$IP = 'a pewter thimble on a velvet cushion';
+[, $runI, $promptI, $refI] = visitorTurn($IP);
+[$st, $j] = intake(['client_ref' => $refI, 'prompt' => $IP]);
+$tiers = array_keys(jd_size_tiers($taxonomy));
+$wantTier = $tiers[mb_strlen($IP) % count($tiers)];
+check('a visitor turn: 200 with the mock clerk\'s heading, tier (by length) and headings, no fallback',
+      $st === 200 && ($j['title'] ?? '') === 'Thimble, pewter' && ($j['size_class'] ?? '') === $wantTier
+      && ($j['size_by'] ?? '') === 'model' && ($j['tags'] ?? null) === ['subject' => ['object'], 'treatment' => [], 'probe' => []]
+      && isset($j['reasons']['size'], $j['reasons']['classification']) && empty($j['fallback']), json_encode($j));
+$pi = rows($db, 'SELECT * FROM jd2_prompts WHERE id = ?', [$promptI])[0];
+$rec = json_decode((string) $pi['intake_json'], true);
+check('the row: title, size_class, size_by model, tags, intake_version, intake_model mock, intake_json, intake_at',
+      $pi['title'] === 'Thimble, pewter' && $pi['size_class'] === $wantTier && $pi['size_by'] === 'model'
+      && json_decode((string) $pi['tags'], true) === ['subject' => ['object'], 'treatment' => [], 'probe' => []]
+      && $pi['intake_version'] === jd2_intake_version($taxonomy) && $pi['intake_model'] === 'mock'
+      && ($rec['answer']['title'] ?? '') === 'Thimble, pewter' && ($rec['stop_reason'] ?? '') === 'end_turn'
+      && array_key_exists('key', $rec) && $rec['key'] === null && $pi['intake_at'] !== null && $pi['intake_cost_usd'] === null,
+      json_encode($pi));
+$at = $pi['intake_at'];
+sleep(1);
+[$st, $j2] = intake(['client_ref' => $refI, 'prompt' => 'something else entirely']);
+check('a second call is idempotent: the stored answer (stored: true), nothing re-filed',
+      $st === 200 && !empty($j2['stored']) && $j2['title'] === $j['title'] && $j2['size_class'] === $j['size_class']
+      && $j2['tags'] === $j['tags'] && one($db, 'SELECT intake_at FROM jd2_prompts WHERE id = ?', [$promptI]) === $at,
+      json_encode($j2));
+[$st, $j] = intake(['client_ref' => jd_uuid4(), 'prompt' => 'x']);
+check('a client_ref with no current turn → 403 no_turn', $st === 403 && ($j['error']['code'] ?? '') === 'no_turn', json_encode($j));
+
+// jd2-rate without a size: the clerk's tier stands (never NULL), size_by stays model
+$axisAll = fullRatings(['a' => 3, 'b' => 2, 'c' => 4, 'd' => 1], $axisRanks);
+[$st, $j] = rate(['run_id' => $runI, 'client_ref' => $refI, 'client' => 'web', 'title' => 'Thimble, pewter',
+                  'ratings' => $axisAll, 'ranking' => [['slot' => 'c', 'rank' => 1, 'gap' => 1], ['slot' => 'a', 'rank' => 2, 'gap' => 1],
+                  ['slot' => 'b', 'rank' => 3, 'gap' => 1], ['slot' => 'd', 'rank' => 4]]]);
+$pi = rows($db, 'SELECT size_class, size_by, visibility FROM jd2_prompts WHERE id = ?', [$promptI])[0];
+check('a visitor sitting with no size leaves the clerk\'s size alone (size_by model)', $st === 200 && $j['complete'] === true
+      && $pi['size_class'] === $wantTier && $pi['size_by'] === 'model' && $pi['visibility'] === 'live', $st . ' ' . json_encode($pi));
+[$st, $m] = manifest('?item=' . $promptI);
+check('data.php: the item carries the clerk\'s sizeClass, size_by and tags',
+      ($m['item']['sizeClass'] ?? '') === $wantTier && ($m['item']['size_by'] ?? '') === 'model'
+      && ($m['item']['tags']['subject'] ?? null) === ['object'], json_encode(array_intersect_key($m['item'] ?? [], array_flip(['sizeClass', 'size_by', 'tags']))));
+
+// the fallback: a server whose mock is told to fail
+$failBase = extraServer(['JD_INTAKE_MOCK_FAIL' => 'provider']);
+$FP = 'an origami crane folded from a subway map, slightly crumpled at one wing';
+[, $runF, $promptF, $refF] = visitorTurn($FP);
+[$st, $j] = intake(['client_ref' => $refF, 'prompt' => $FP], false, $failBase);
+check('a failed intake still answers 200 ok: the prompt\'s 41 characters + …, size and tags null, fallback',
+      $st === 200 && ($j['ok'] ?? false) === true && !empty($j['fallback']) && $j['title'] === jd_turn_title(null, $FP)
+      && $j['size_class'] === null && $j['tags'] === null, json_encode($j));
+$pf = rows($db, 'SELECT * FROM jd2_prompts WHERE id = ?', [$promptF])[0];
+$recF = json_decode((string) $pf['intake_json'], true);
+check('…and writes nothing but intake_json (the error): no title, size, tags or intake_at',
+      $pf['title'] === null && $pf['size_class'] === null && $pf['size_by'] === null && $pf['tags'] === null
+      && $pf['intake_at'] === null && $pf['intake_model'] === null && ($recF['error']['code'] ?? '') === 'provider_failed',
+      json_encode($pf));
+[$st, $l] = req('GET', '/api/jd2-ledger.php?prompt=' . $promptF, null, true);
+check('the ledger shows the failure (fallback, intake_error)', $st === 200 && ($l['items'][0]['fallback'] ?? null) === true
+      && ($l['items'][0]['intake_error'] ?? '') === 'provider_failed', json_encode(array_intersect_key($l['items'][0] ?? [], array_flip(['fallback', 'intake_error']))));
+[$st, $j] = intake(['client_ref' => $refF, 'prompt' => $FP]);
+check('a later call (the clerk answering) files it: intake_at set, the error replaced',
+      $st === 200 && empty($j['fallback']) && one($db, 'SELECT intake_at FROM jd2_prompts WHERE id = ?', [$promptF]) !== null
+      && !isset(json_decode((string) one($db, 'SELECT intake_json FROM jd2_prompts WHERE id = ?', [$promptF]), true)['error']),
+      json_encode($j));
+
+// the owner: curate's tags and size (size_by owner); the clerk never overwrites them
+$ownerRef = jd_uuid4();
+foreach (['a', 'b', 'c', 'd'] as $slot) {
+    [, $jo] = gen(['client_ref' => $ownerRef, 'slot' => $slot, 'prompt' => 'a lead soldier missing its musket', 'website' => ''], true);
+}
+$promptO = $jo['prompt_id'] ?? '';
+[$st, $j] = req('POST', '/api/jd2-curate.php', ['prompt_id' => $promptO, 'title' => 'Soldier (toy), lead', 'size_class' => 'xs'], true);
+check('curate: a size filed through jd2-curate is the owner\'s (size_by owner)', $st === 200
+      && ($j['prompt']['size_class'] ?? '') === 'xs' && ($j['prompt']['size_by'] ?? '') === 'owner', json_encode($j['prompt'] ?? $j));
+[$st, $j] = intake(['prompt_id' => $promptO], true);
+$po = rows($db, 'SELECT title, size_class, size_by, tags, intake_at FROM jd2_prompts WHERE id = ?', [$promptO])[0];
+check('owner intake (prompt_id + key): the owner\'s title and size stand; the clerk files the headings',
+      $st === 200 && $po['title'] === 'Soldier (toy), lead' && $po['size_class'] === 'xs' && $po['size_by'] === 'owner'
+      && $po['tags'] !== null && $po['intake_at'] !== null && ($j['title'] ?? '') === 'Soldier (toy), lead', json_encode($po));
+$tagsO = ['subject' => ['figure', 'object'], 'treatment' => [], 'probe' => ['state']];
+[$st, $j] = req('POST', '/api/jd2-curate.php', ['prompt_id' => $promptO, 'tags' => $tagsO], true);
+check('curate: tags filed (validated against the facets)', $st === 200 && ($j['prompt']['tags'] ?? null) === $tagsO
+      && json_decode((string) one($db, 'SELECT tags FROM jd2_prompts WHERE id = ?', [$promptO]), true) === $tagsO, json_encode($j['prompt'] ?? $j));
+$bad = [
+    'an unknown heading' => ['subject' => ['spaceship'], 'treatment' => [], 'probe' => []],
+    'no subject (min 1)' => ['subject' => [], 'treatment' => [], 'probe' => []],
+    'a repeated heading' => ['subject' => ['object', 'object'], 'treatment' => [], 'probe' => []],
+    'a missing facet' => ['subject' => ['object'], 'treatment' => []],
+    'an unknown facet' => ['subject' => ['object'], 'treatment' => [], 'probe' => [], 'mood' => []],
+    'seven headings (max 6)' => ['subject' => ['object', 'creature', 'figure', 'plant', 'food', 'vehicle', 'natural'], 'treatment' => [], 'probe' => []],
+];
+foreach ($bad as $name => $t) {
+    [$st, $j] = req('POST', '/api/jd2-curate.php', ['prompt_id' => $promptO, 'tags' => $t], true);
+    check("curate refuses tags with $name → 400", $st === 400 && ($j['error']['code'] ?? '') === 'bad_request', json_encode($j));
+}
+check('…and the filed tags are unchanged', json_decode((string) one($db, 'SELECT tags FROM jd2_prompts WHERE id = ?', [$promptO]), true) === $tagsO);
+// a bench sitting that files a size: size_by owner
+$runO = $jo['run_id'] ?? '';
+[$st, $j] = rate(['run_id' => $runO, 'client' => 'web', 'size' => 'l', 'ratings' => fullRatings(['a' => 3, 'b' => 3, 'c' => 3, 'd' => 3], $axisRanks)], true);
+check('an owner sitting that files a size writes size_by owner', $st === 200
+      && one($db, 'SELECT size_class FROM jd2_prompts WHERE id = ?', [$promptO]) === 'l'
+      && one($db, 'SELECT size_by FROM jd2_prompts WHERE id = ?', [$promptO]) === 'owner', json_encode($j));
 
 printf("\n%d passed, %d failed\n", $passed, $failed);
 if ($failed > 0) {
