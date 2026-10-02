@@ -1,0 +1,217 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="110.5 65.0 578.8 415.5">
+  <defs>
+    <linearGradient id="hullTopGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f7f7f7"/>
+      <stop offset="50%" stop-color="#dcdcdc"/>
+      <stop offset="100%" stop-color="#b0b0b0"/>
+    </linearGradient>
+    <linearGradient id="hullBottomGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#a1a9b3"/>
+      <stop offset="40%" stop-color="#6b7586"/>
+      <stop offset="100%" stop-color="#3b4352"/>
+    </linearGradient>
+    <linearGradient id="glassGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e9fbff" stop-opacity="0.95"/>
+      <stop offset="50%" stop-color="#b7eafa" stop-opacity="0.92"/>
+      <stop offset="100%" stop-color="#6ab8e1" stop-opacity="0.96"/>
+    </linearGradient>
+    <linearGradient id="trimGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffd27f"/>
+      <stop offset="50%" stop-color="#ffb44c"/>
+      <stop offset="100%" stop-color="#ffdf9f"/>
+    </linearGradient>
+    <linearGradient id="lightBeamGrad" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#ffffcc" stop-opacity="0.0"/>
+      <stop offset="45%" stop-color="#fff7a8" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#ffe066" stop-opacity="0.0"/>
+    </linearGradient>
+    <radialGradient id="portholeGrad" cx="50%" cy="35%" r="70%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/>
+      <stop offset="40%" stop-color="#c8f3ff" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#5bb4e8" stop-opacity="0.98"/>
+    </radialGradient>
+    <radialGradient id="glowGrad" cx="50%" cy="0%" r="80%">
+      <stop offset="0%" stop-color="#ffe8a6" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#ffe8a6" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="finGrad" cx="50%" cy="0%" r="100%">
+      <stop offset="0%" stop-color="#fefefe"/>
+      <stop offset="60%" stop-color="#e0e0e3"/>
+      <stop offset="100%" stop-color="#c3c3c9"/>
+    </radialGradient>
+    <filter id="softShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="8" result="blur"/>
+      <feOffset in="blur" dx="0" dy="14" result="offset"/>
+      <feComponentTransfer in="offset">
+        <feFuncA type="linear" slope="0.35"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <ellipse cx="400" cy="435" rx="210" ry="36" fill="#000000" opacity="0.32"/>
+
+  <g filter="url(#softShadow)">
+    <path d="M180 170
+             C230 115 330 80 400 80
+             C470 80 570 115 620 170
+             C570 160 470 150 400 150
+             C330 150 230 160 180 170 Z"
+          fill="url(#glassGrad)"/>
+
+    <path d="M120 220
+             C160 165 270 130 400 130
+             C530 130 640 165 680 220
+             C650 260 545 305 400 305
+             C255 305 150 260 120 220 Z"
+          fill="url(#hullTopGrad)"/>
+
+    <path d="M150 250
+             C210 305 300 340 400 340
+             C500 340 590 305 650 250
+             C615 300 515 345 400 355
+             C285 345 185 300 150 250 Z"
+          fill="url(#hullBottomGrad)"/>
+
+    <path d="M120 220
+             C150 270 260 310 400 310
+             C540 310 650 270 680 220
+             C640 260 540 295 400 295
+             C260 295 160 260 120 220 Z"
+          fill="none"
+          stroke="#9c9c9c"
+          stroke-width="4"/>
+
+    <path d="M400 305
+             L260 480
+             L540 480 Z"
+          fill="url(#lightBeamGrad)"
+          opacity="0.9"/>
+
+    <g opacity="0.4">
+      <path d="M400 305
+               L290 475
+               L510 475 Z"
+            fill="url(#glowGrad)"/>
+    </g>
+
+    <g>
+      <ellipse cx="400" cy="143" rx="138" ry="56"
+               fill="none" stroke="#ffffff" stroke-width="3" opacity="0.65"/>
+      <ellipse cx="400" cy="143" rx="148" ry="60"
+               fill="none" stroke="#b0d5ff" stroke-width="2" opacity="0.4"/>
+    </g>
+
+    <g>
+      <path d="M248 205
+               C260 195 280 188 305 184
+               C330 180 370 178 400 178
+               C430 178 470 180 495 184
+               C520 188 540 195 552 205
+               C520 200 460 197 400 197
+               C340 197 280 200 248 205 Z"
+            fill="url(#trimGrad)"/>
+      <path d="M253 203
+               C287 199 347 196 400 196
+               C453 196 513 199 547 203
+               C515 199 457 194 400 194
+               C343 194 285 199 253 203 Z"
+            fill="#ffffff" opacity="0.55"/>
+    </g>
+
+    <g>
+      <ellipse cx="400" cy="115" rx="60" ry="48"
+               fill="url(#glassGrad)"/>
+      <ellipse cx="400" cy="120" rx="42" ry="28"
+               fill="#ffffff" opacity="0.55"/>
+      <ellipse cx="414" cy="108" rx="16" ry="10"
+               fill="#ffffff" opacity="0.8"/>
+      <ellipse cx="386" cy="128" rx="10" ry="7"
+               fill="#a8e3ff" opacity="0.7"/>
+    </g>
+
+    <g>
+      <circle cx="245" cy="238" r="16" fill="url(#portholeGrad)"/>
+      <circle cx="295" cy="252" r="17" fill="url(#portholeGrad)"/>
+      <circle cx="345" cy="262" r="18" fill="url(#portholeGrad)"/>
+      <circle cx="455" cy="262" r="18" fill="url(#portholeGrad)"/>
+      <circle cx="505" cy="252" r="17" fill="url(#portholeGrad)"/>
+      <circle cx="555" cy="238" r="16" fill="url(#portholeGrad)"/>
+
+      <circle cx="245" cy="238" r="8" fill="#ffffff" opacity="0.7"/>
+      <circle cx="295" cy="252" r="9" fill="#ffffff" opacity="0.7"/>
+      <circle cx="345" cy="262" r="10" fill="#ffffff" opacity="0.7"/>
+      <circle cx="455" cy="262" r="10" fill="#ffffff" opacity="0.7"/>
+      <circle cx="505" cy="252" r="9" fill="#ffffff" opacity="0.7"/>
+      <circle cx="555" cy="238" r="8" fill="#ffffff" opacity="0.7"/>
+    </g>
+
+    <g>
+      <path d="M208 195
+               C178 170 164 150 158 132
+               C152 115 153 99 158 86
+               C165 90 176 97 188 109
+               C201 121 214 141 225 159
+               C232 171 237 181 239 188 Z"
+            fill="url(#finGrad)"/>
+      <path d="M227 182
+               C210 160 192 140 179 126
+               C169 115 163 108 160 104
+               C162 113 167 124 175 136
+               C186 153 200 169 214 182 Z"
+            fill="#ffffff"
+            opacity="0.6"/>
+    </g>
+
+    <g transform="matrix(-1 0 0 1 800 0)">
+      <path d="M208 195
+               C178 170 164 150 158 132
+               C152 115 153 99 158 86
+               C165 90 176 97 188 109
+               C201 121 214 141 225 159
+               C232 171 237 181 239 188 Z"
+            fill="url(#finGrad)"/>
+      <path d="M227 182
+               C210 160 192 140 179 126
+               C169 115 163 108 160 104
+               C162 113 167 124 175 136
+               C186 153 200 169 214 182 Z"
+            fill="#ffffff"
+            opacity="0.6"/>
+    </g>
+
+    <g opacity="0.9">
+      <path d="M190 191
+               C236 180 310 172 400 172
+               C490 172 564 180 610 191
+               C566 172 487 162 400 162
+               C313 162 234 172 190 191 Z"
+            fill="#ffffff"
+            opacity="0.55"/>
+      <path d="M192 279
+               C242 291 314 298 400 298
+               C486 298 558 291 608 279
+               C554 293 481 304 400 304
+               C319 304 246 293 192 279 Z"
+            fill="#000000"
+            opacity="0.18"/>
+    </g>
+
+    <g>
+      <circle cx="220" cy="204" r="6" fill="#ffefb3"/>
+      <circle cx="580" cy="204" r="6" fill="#ffefb3"/>
+      <circle cx="400" cy="196" r="7" fill="#ffefb3"/>
+      <circle cx="400" cy="196" r="3" fill="#ffffff" opacity="0.9"/>
+      <circle cx="220" cy="204" r="3" fill="#ffffff" opacity="0.9"/>
+      <circle cx="580" cy="204" r="3" fill="#ffffff" opacity="0.9"/>
+    </g>
+
+    <g opacity="0.7">
+      <ellipse cx="400" cy="330" rx="135" ry="18"
+               fill="#000000" opacity="0.32"/>
+    </g>
+  </g>
+</svg>

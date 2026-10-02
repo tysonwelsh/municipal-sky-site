@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 8 1004 300">
+  <title>A popsicle stick snapped in half</title>
+  <defs>
+    <linearGradient id="wood" gradientUnits="userSpaceOnUse" x1="0" y1="-46" x2="0" y2="46">
+      <stop offset="0" stop-color="#C39456"/>
+      <stop offset="0.07" stop-color="#E2C089"/>
+      <stop offset="0.28" stop-color="#F4E0B6"/>
+      <stop offset="0.5" stop-color="#EDD09A"/>
+      <stop offset="0.78" stop-color="#DEB77E"/>
+      <stop offset="0.94" stop-color="#C89B5E"/>
+      <stop offset="1" stop-color="#AE7F45"/>
+    </linearGradient>
+    <clipPath id="clipHalf" clipPathUnits="userSpaceOnUse">
+      <path d="M 46,-46 A 46,46 0 0 0 46,46 L 438,46 L 466,26 L 444,10 L 470,-2 L 452,-18 L 462,-32 L 436,-46 Z"/>
+    </clipPath>
+  </defs>
+
+  <!-- ===== lower-left half: rounded end at far left, snapped end facing right ===== -->
+  <g transform="translate(0,270) rotate(-16)">
+    <path d="M 46,-46 A 46,46 0 0 0 46,46 L 438,46 L 466,26 L 444,10 L 470,-2 L 452,-18 L 462,-32 L 436,-46 Z" fill="url(#wood)"/>
+    <g clip-path="url(#clipHalf)">
+      <path d="M 46,-46 A 46,46 0 0 0 46,46 L 438,46 L 466,26 L 444,10 L 470,-2 L 452,-18 L 462,-32 L 436,-46 Z" fill="none" stroke="#A87A44" stroke-width="8" opacity="0.26"/>
+      <path d="M 46,-44 L 432,-44" fill="none" stroke="#FCF1D6" stroke-width="3" opacity="0.55" stroke-linecap="round"/>
+      <g fill="none" stroke="#BC8B4E" stroke-linecap="round">
+        <path d="M 10,-30 C 120,-34 260,-27 402,-33" stroke-width="1.8" opacity="0.32"/>
+        <path d="M 4,-13 C 130,-18 280,-9 458,-16" stroke-width="1.4" opacity="0.26"/>
+        <path d="M 8,7 C 140,2 300,11 452,4" stroke-width="2.1" opacity="0.30"/>
+        <path d="M 14,27 C 150,22 300,31 440,24" stroke-width="1.5" opacity="0.24"/>
+        <path d="M 58,-40 C 200,-44 320,-37 430,-42" stroke-width="1.1" opacity="0.20"/>
+        <path d="M 40,40 C 180,44 320,37 436,42" stroke-width="1.2" opacity="0.22"/>
+        <path d="M 206,-6 C 240,-9 272,-4 306,-7" stroke-width="3" opacity="0.16"/>
+        <path d="M 120,18 C 160,15 190,19 224,17" stroke-width="2.4" opacity="0.14"/>
+      </g>
+      <g fill="none" stroke="#FDF3DE" stroke-linecap="round" opacity="0.5">
+        <path d="M 372,-30 L 456,-31" stroke-width="1"/>
+        <path d="M 356,-2 L 462,-4" stroke-width="1.2"/>
+        <path d="M 380,22 L 458,21" stroke-width="1"/>
+        <path d="M 364,38 L 434,39" stroke-width="0.9"/>
+      </g>
+      <path d="M 434,44 L 462,25 L 442,11 L 466,-2 L 449,-18 L 458,-31 L 433,-44" fill="none" stroke="#FAECCD" stroke-width="2" opacity="0.45" stroke-linejoin="round"/>
+      <ellipse cx="284" cy="14" rx="9" ry="3.4" fill="#B0813F" opacity="0.20"/>
+    </g>
+    <path d="M 46,-46 A 46,46 0 0 0 46,46 L 438,46 L 466,26 L 444,10 L 470,-2 L 452,-18 L 462,-32 L 436,-46 Z" fill="none" stroke="#B0813F" stroke-width="2.5" opacity="0.7" stroke-linejoin="round"/>
+    <g fill="none" stroke-linecap="round">
+      <path d="M 470,-2 Q 482,-5 494,-2" stroke="#EAD0A0" stroke-width="2.4"/>
+      <path d="M 466,26 Q 480,24 492,27" stroke="#E1BF84" stroke-width="2"/>
+      <path d="M 462,-32 Q 475,-35 487,-31" stroke="#E7CB96" stroke-width="1.7"/>
+      <path d="M 438,46 Q 452,48 461,47" stroke="#DCB87A" stroke-width="1.6"/>
+      <path d="M 452,-18 Q 466,-21 477,-17" stroke="#F0DCB0" stroke-width="1.1"/>
+      <path d="M 444,10 Q 456,12 465,10" stroke="#EFD9AA" stroke-width="1"/>
+    </g>
+  </g>
+
+  <!-- ===== upper-right half: snapped end facing left, rounded end at far right ===== -->
+  <g transform="translate(992.2,53.9) rotate(174)">
+    <path d="M 46,-46 A 46,46 0 0 0 46,46 L 438,46 L 466,26 L 444,10 L 470,-2 L 452,-18 L 462,-32 L 436,-46 Z" fill="url(#wood)"/>
+    <g clip-path="url(#clipHalf)">
+      <path d="M 46,-46 A 46,46 0 0 0 46,46 L 438,46 L 466,26 L 444,10 L 470,-2 L 452,-18 L 462,-32 L 436,-46 Z" fill="none" stroke="#A87A44" stroke-width="8" opacity="0.26"/>
+      <path d="M 46,44 L 432,44" fill="none" stroke="#FCF1D6" stroke-width="3" opacity="0.5" stroke-linecap="round"/>
+      <g fill="none" stroke="#BC8B4E" stroke-linecap="round">
+        <path d="M 12,28 C 130,33 250,25 404,31" stroke-width="1.8" opacity="0.32"/>
+        <path d="M 6,11 C 140,16 290,7 460,14" stroke-width="1.4" opacity="0.26"/>
+        <path d="M 10,-8 C 150,-3 300,-13 454,-5" stroke-width="2.1" opacity="0.30"/>
+        <path d="M 16,-28 C 160,-23 300,-33 442,-25" stroke-width="1.5" opacity="0.24"/>
+        <path d="M 56,42 C 200,46 320,39 430,44" stroke-width="1.1" opacity="0.20"/>
+        <path d="M 44,-41 C 180,-45 320,-36 436,-43" stroke-width="1.2" opacity="0.22"/>
+        <path d="M 232,6 C 266,9 296,4 330,8" stroke-width="3" opacity="0.16"/>
+        <path d="M 108,-19 C 148,-16 178,-21 212,-18" stroke-width="2.4" opacity="0.14"/>
+      </g>
+      <g fill="none" stroke="#FDF3DE" stroke-linecap="round" opacity="0.5">
+        <path d="M 374,31 L 458,32" stroke-width="1"/>
+        <path d="M 358,3 L 463,5" stroke-width="1.2"/>
+        <path d="M 382,-21 L 459,-20" stroke-width="1"/>
+        <path d="M 366,-38 L 435,-39" stroke-width="0.9"/>
+      </g>
+      <path d="M 434,44 L 462,25 L 442,11 L 466,-2 L 449,-18 L 458,-31 L 433,-44" fill="none" stroke="#FAECCD" stroke-width="2" opacity="0.45" stroke-linejoin="round"/>
+      <ellipse cx="316" cy="-16" rx="8" ry="3.2" fill="#B0813F" opacity="0.20"/>
+    </g>
+    <path d="M 46,-46 A 46,46 0 0 0 46,46 L 438,46 L 466,26 L 444,10 L 470,-2 L 452,-18 L 462,-32 L 436,-46 Z" fill="none" stroke="#B0813F" stroke-width="2.5" opacity="0.7" stroke-linejoin="round"/>
+    <g fill="none" stroke-linecap="round">
+      <path d="M 470,-2 Q 483,1 493,-3" stroke="#EAD0A0" stroke-width="2.3"/>
+      <path d="M 466,26 Q 479,29 490,26" stroke="#E1BF84" stroke-width="1.9"/>
+      <path d="M 462,-32 Q 476,-29 486,-33" stroke="#E7CB96" stroke-width="1.6"/>
+      <path d="M 438,46 Q 451,49 460,46" stroke="#DCB87A" stroke-width="1.5"/>
+      <path d="M 452,-18 Q 465,-15 476,-19" stroke="#F0DCB0" stroke-width="1.1"/>
+      <path d="M 444,10 Q 455,13 464,10" stroke="#EFD9AA" stroke-width="1"/>
+    </g>
+  </g>
+
+  <!-- ===== loose debris in the break gap ===== -->
+  <g fill="none" stroke-linecap="round">
+    <path d="M 484,158 Q 499,153 515,157" stroke="#DDBB80" stroke-width="2.2" opacity="0.85"/>
+    <path d="M 471,93 Q 480,90 489,93" stroke="#E9D0A2" stroke-width="1.3" opacity="0.75"/>
+    <path d="M 508,131 Q 517,128 526,131" stroke="#D3AE72" stroke-width="1.1" opacity="0.6"/>
+  </g>
+  <circle cx="496" cy="174" r="1.9" fill="#CFA96E" opacity="0.7"/>
+  <circle cx="522" cy="88" r="1.3" fill="#D9B87C" opacity="0.65"/>
+</svg>

@@ -1,0 +1,225 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+  <defs>
+    <!-- Watercolor texture filters -->
+    <filter id="watercolor" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="4" seed="2" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="6" xChannelSelector="R" yChannelSelector="G" result="displaced"/>
+      <feGaussianBlur in="displaced" stdDeviation="1.2" result="blurred"/>
+      <feComponentTransfer in="blurred">
+        <feFuncA type="linear" slope="0.85"/>
+      </feComponentTransfer>
+    </filter>
+
+    <filter id="watercolorEdge" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="3" seed="7" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="8" xChannelSelector="R" yChannelSelector="G" result="displaced"/>
+      <feGaussianBlur in="displaced" stdDeviation="2" result="blurred"/>
+      <feComponentTransfer in="blurred">
+        <feFuncA type="linear" slope="0.7"/>
+      </feComponentTransfer>
+    </filter>
+
+    <filter id="mistSwirl" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="turbulence" baseFrequency="0.015 0.02" numOctaves="5" seed="12" result="turbNoise"/>
+      <feDisplacementMap in="SourceGraphic" in2="turbNoise" scale="25" xChannelSelector="R" yChannelSelector="G" result="swirl"/>
+      <feGaussianBlur in="swirl" stdDeviation="4" result="blurSwirl"/>
+      <feComponentTransfer in="blurSwirl">
+        <feFuncA type="linear" slope="0.6"/>
+      </feComponentTransfer>
+    </filter>
+
+    <filter id="mistSwirl2" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="turbulence" baseFrequency="0.025 0.012" numOctaves="4" seed="33" result="turbNoise2"/>
+      <feDisplacementMap in="SourceGraphic" in2="turbNoise2" scale="30" xChannelSelector="G" yChannelSelector="R" result="swirl2"/>
+      <feGaussianBlur in="swirl2" stdDeviation="6" result="blurSwirl2"/>
+      <feComponentTransfer in="blurSwirl2">
+        <feFuncA type="linear" slope="0.45"/>
+      </feComponentTransfer>
+    </filter>
+
+    <filter id="crackTexture" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.08" numOctaves="2" seed="5" result="crackNoise"/>
+      <feDisplacementMap in="SourceGraphic" in2="crackNoise" scale="3" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+
+    <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="15" result="glow"/>
+      <feComponentTransfer in="glow">
+        <feFuncA type="linear" slope="0.3"/>
+      </feComponentTransfer>
+    </filter>
+
+    <filter id="paperTexture" x="0%" y="0%" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="4" seed="99" result="paper"/>
+      <feColorMatrix in="paper" type="saturate" values="0" result="greyPaper"/>
+      <feBlend in="SourceGraphic" in2="greyPaper" mode="multiply"/>
+    </filter>
+
+    <!-- Clipping mask for the orb interior -->
+    <clipPath id="orbClip">
+      <circle cx="250" cy="250" r="210"/>
+    </clipPath>
+
+    <!-- Radial gradients for the glass orb -->
+    <radialGradient id="orbBase" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#c8b8d8" stop-opacity="0.3"/>
+      <stop offset="40%" stop-color="#9b89b0" stop-opacity="0.35"/>
+      <stop offset="70%" stop-color="#7a6891" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#5c4a6e" stop-opacity="0.6"/>
+    </radialGradient>
+
+    <radialGradient id="orbSheen" cx="35%" cy="30%" r="45%">
+      <stop offset="0%" stop-color="#e8ddf0" stop-opacity="0.5"/>
+      <stop offset="50%" stop-color="#c4b3d6" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#8a7099" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="innerGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#d4c0e8" stop-opacity="0.5"/>
+      <stop offset="30%" stop-color="#b89fd0" stop-opacity="0.35"/>
+      <stop offset="60%" stop-color="#8e73a8" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#6b5080" stop-opacity="0.1"/>
+    </radialGradient>
+
+    <!-- Mist gradients -->
+    <radialGradient id="mistCenter" cx="45%" cy="48%" r="40%">
+      <stop offset="0%" stop-color="#e0d4f0" stop-opacity="0.7"/>
+      <stop offset="50%" stop-color="#c9b5de" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#a088bb" stop-opacity="0.1"/>
+    </radialGradient>
+
+    <radialGradient id="mistWarm" cx="55%" cy="55%" r="35%">
+      <stop offset="0%" stop-color="#e8c8d8" stop-opacity="0.5"/>
+      <stop offset="60%" stop-color="#d4a0c0" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#b87aa0" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="mistCool" cx="40%" cy="40%" r="40%">
+      <stop offset="0%" stop-color="#b8c8e8" stop-opacity="0.45"/>
+      <stop offset="60%" stop-color="#94a8d4" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#7088b8" stop-opacity="0"/>
+    </radialGradient>
+
+    <linearGradient id="crackGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a090b8" stop-opacity="0.8"/>
+      <stop offset="50%" stop-color="#e0d0f0" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#8878a0" stop-opacity="0.7"/>
+    </linearGradient>
+
+    <linearGradient id="crackLeakGrad" x1="30%" y1="20%" x2="70%" y2="80%">
+      <stop offset="0%" stop-color="#d8c8f0" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#c0a8e0" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Shadow beneath -->
+    <radialGradient id="shadow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#6b5080" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#6b5080" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Subtle shadow beneath the orb -->
+  <ellipse cx="250" cy="470" rx="160" ry="25" fill="url(#shadow)" filter="url(#watercolorEdge)"/>
+
+  <!-- Outer glow / aura - bohemian mystical feel -->
+  <circle cx="250" cy="250" r="230" fill="#c8a8e0" opacity="0.12" filter="url(#softGlow)"/>
+  <circle cx="250" cy="250" r="220" fill="#e0c0d8" opacity="0.08" filter="url(#softGlow)"/>
+
+  <!-- Main orb body with watercolor effect -->
+  <g filter="url(#watercolor)">
+    <!-- Base glass sphere -->
+    <circle cx="250" cy="250" r="210" fill="url(#orbBase)"/>
+
+    <!-- Inner mystical glow -->
+    <circle cx="250" cy="250" r="208" fill="url(#innerGlow)"/>
+  </g>
+
+  <!-- Interior mist and swirling clouds - clipped to orb -->
+  <g clip-path="url(#orbClip)">
+    <!-- Deep interior atmosphere -->
+    <circle cx="250" cy="250" r="200" fill="#8e73a8" opacity="0.2" filter="url(#watercolorEdge)"/>
+
+    <!-- Swirling mist layers -->
+    <ellipse cx="230" cy="240" rx="170" ry="140" fill="url(#mistCenter)" filter="url(#mistSwirl)"/>
+    <ellipse cx="270" cy="260" rx="150" ry="160" fill="url(#mistWarm)" filter="url(#mistSwirl2)"/>
+    <ellipse cx="240" cy="230" rx="130" ry="120" fill="url(#mistCool)" filter="url(#mistSwirl)"/>
+
+    <!-- Additional wispy cloud shapes -->
+    <path d="M140,200 Q180,160 250,180 Q320,200 340,250 Q360,300 300,320 Q240,340 180,300 Q120,260 140,200Z"
+          fill="#d8c0e8" opacity="0.3" filter="url(#mistSwirl2)"/>
+    <path d="M200,150 Q260,130 310,170 Q360,210 330,270 Q300,330 240,310 Q180,290 170,230 Q160,170 200,150Z"
+          fill="#c8b0d8" opacity="0.25" filter="url(#mistSwirl)"/>
+
+    <!-- Deeper swirl accents -->
+    <ellipse cx="210" cy="220" rx="80" ry="60" fill="#e0d0f0" opacity="0.35" filter="url(#mistSwirl2)"/>
+    <ellipse cx="290" cy="280" rx="70" ry="80" fill="#d0b8e0" opacity="0.3" filter="url(#mistSwirl)"/>
+
+    <!-- Warm pink wisps for bohemian feel -->
+    <path d="M180,260 Q220,220 280,240 Q340,260 310,310 Q280,360 220,340 Q160,320 180,260Z"
+          fill="#e8b8c8" opacity="0.2" filter="url(#mistSwirl2)"/>
+    <ellipse cx="260" cy="200" rx="90" ry="50" fill="#c8d0e8" opacity="0.2" filter="url(#mistSwirl)"/>
+
+    <!-- Tiny bright highlights in the mist -->
+    <circle cx="230" cy="230" r="25" fill="#f0e8ff" opacity="0.3" filter="url(#mistSwirl2)"/>
+    <circle cx="270" cy="260" r="18" fill="#f0e0f0" opacity="0.25" filter="url(#mistSwirl)"/>
+  </g>
+
+  <!-- Glass surface reflection and sheen -->
+  <g filter="url(#watercolor)">
+    <circle cx="250" cy="250" r="210" fill="url(#orbSheen)"/>
+  </g>
+
+  <!-- Watercolor-style highlight on upper left -->
+  <g filter="url(#watercolorEdge)">
+    <ellipse cx="195" cy="175" rx="75" ry="55" fill="#f0e8ff" opacity="0.35" transform="rotate(-25,195,175)"/>
+    <ellipse cx="185" cy="165" rx="45" ry="30" fill="#ffffff" opacity="0.25" transform="rotate(-25,185,165)"/>
+  </g>
+
+  <!-- Secondary smaller reflection -->
+  <g filter="url(#watercolorEdge)">
+    <ellipse cx="320" cy="340" rx="30" ry="20" fill="#e8e0f0" opacity="0.2" transform="rotate(30,320,340)"/>
+  </g>
+
+  <!-- Orb outline - watercolor edge -->
+  <circle cx="250" cy="250" r="210" fill="none" stroke="#7a6891" stroke-width="3" opacity="0.5" filter="url(#watercolorEdge)"/>
+  <circle cx="250" cy="250" r="210" fill="none" stroke="#5c4a6e" stroke-width="1.5" opacity="0.35" filter="url(#watercolorEdge)"/>
+
+  <!-- THE CRACK - main fracture line -->
+  <g filter="url(#crackTexture)">
+    <!-- Mist leaking out of the crack -->
+    <path d="M305,95 Q320,80 335,70 Q340,60 330,50"
+          fill="none" stroke="url(#crackLeakGrad)" stroke-width="12" stroke-linecap="round" opacity="0.4" filter="url(#mistSwirl)"/>
+    <path d="M310,90 Q325,72 340,55 Q348,40 338,30"
+          fill="none" stroke="#d8c8f0" stroke-width="8" stroke-linecap="round" opacity="0.25" filter="url(#mistSwirl2)"/>
+
+    <!-- Main crack line -->
+    <path d="M285,110 Q295,95 310,85 Q318,75 315,60 Q320,48 325,40"
+          fill="none" stroke="url(#crackGrad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+
+    <!-- Crack branches -->
+    <path d="M295,95 Q305,88 308,78"
+          fill="none" stroke="#9888b0" stroke-width="1.8" stroke-linecap="round" opacity="0.7"/>
+    <path d="M310,85 Q320,80 318,70"
+          fill="none" stroke="#a898c0" stroke-width="1.5" stroke-linecap="round" opacity="0.65"/>
+    <path d="M305,92 Q298,85 300,75"
+          fill="none" stroke="#8878a0" stroke-width="1.2" stroke-linecap="round" opacity="0.6"/>
+    <path d="M315,60 Q322,55 320,45"
+          fill="none" stroke="#b0a0c8" stroke-width="1" stroke-linecap="round" opacity="0.55"/>
+
+    <!-- Light refraction along crack -->
+    <path d="M286,108 Q296,93 311,83 Q319,73 316,58 Q321,46 326,38"
+          fill="none" stroke="#e8ddf8" stroke-width="1" stroke-linecap="round" opacity="0.5"/>
+  </g>
+
+  <!-- Additional mist wisps escaping from crack -->
+  <g opacity="0.3">
+    <path d="M315,65 Q330,40 320,20 Q315,8 325,5"
+          fill="none" stroke="#d0c0e8" stroke-width="6" stroke-linecap="round" filter="url(#mistSwirl)"/>
+    <path d="M320,55 Q335,30 340,15"
+          fill="none" stroke="#c8b8e0" stroke-width="4" stroke-linecap="round" filter="url(#mistSwirl2)"/>
+    <ellipse cx="325" cy="30" rx="20" ry="15" fill="#d8c8f0" opacity="0.3" filter="url(#mistSwirl)"/>
+  </g>
+
+  <!-- Paper texture overlay for watercolor feel -->
+  <circle cx="250" cy="250" r="210" fill="#f8f0ff" opacity="0.05" filter="url(#paperTexture)"/>
+</svg>

@@ -1,0 +1,151 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="15.5 53.5 368.8 302.8">
+  <defs>
+    <linearGradient id="iceGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#bff0ff" stop-opacity="0.75"/>
+      <stop offset="45%" stop-color="#8fd8f2" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#4fb3dc" stop-opacity="0.7"/>
+    </linearGradient>
+    <linearGradient id="iceTop" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#e8fbff" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#a9e4f7" stop-opacity="0.75"/>
+    </linearGradient>
+    <linearGradient id="iceSide" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#6ec6e6" stop-opacity="0.75"/>
+      <stop offset="100%" stop-color="#3b9ec8" stop-opacity="0.8"/>
+    </linearGradient>
+    <linearGradient id="furGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#c98a4b"/>
+      <stop offset="60%" stop-color="#a9683a"/>
+      <stop offset="100%" stop-color="#8a5230"/>
+    </linearGradient>
+    <linearGradient id="tuskGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fffdf3"/>
+      <stop offset="100%" stop-color="#ddd0b2"/>
+    </linearGradient>
+  </defs>
+
+  <!-- ===== ICE CUBE BACK FACES ===== -->
+  <g>
+    <!-- back/right side face -->
+    <polygon points="330,88 380,58 380,318 330,352" fill="url(#iceSide)"/>
+    <!-- top face -->
+    <polygon points="20,88 70,58 380,58 330,88" fill="url(#iceTop)"/>
+  </g>
+
+  <!-- ===== MAMMOTH INSIDE ===== -->
+  <g>
+    <!-- tail -->
+    <path d="M78 236 q-16 8 -18 30 q-1 12 6 18" fill="none" stroke="#8a5230" stroke-width="11" stroke-linecap="round"/>
+    <path d="M62 282 q-8 8 -4 20 q10 4 16 -4z" fill="#6f4126"/>
+
+    <!-- back legs -->
+    <path d="M108 250 q-6 46 -2 74 q1 8 10 8 h26 q9 0 8-9 q-4-40 -2-73z" fill="url(#furGrad)"/>
+    <path d="M160 254 q-4 44 0 70 q1 8 10 8 h24 q9 0 8-9 q-4-38 -3-69z" fill="#94582f"/>
+
+    <!-- body -->
+    <path d="M92 214 q0-72 74-88 q46-11 82 8 q28 15 34 44 q7 34 -6 68 q-8 20 -30 24 q-58 10 -114 2 q-32 -5 -38 -24 q-4 -16 -2 -34z" fill="url(#furGrad)"/>
+
+    <!-- shaggy belly fringe -->
+    <path d="M96 244 q10 16 4 32 q12 -6 14 -22 q8 18 4 34 q14 -8 14 -26 q8 16 6 32 q14 -8 14 -26 q8 16 8 32 q14 -8 12 -26 q10 16 12 30 q12 -8 10 -26 q10 14 14 28 q12 -10 8 -26 q12 14 16 26 q10 -10 6 -26 q12 12 18 22 q8 -12 2 -26z" fill="#8a5230"/>
+
+    <!-- fur strokes on body -->
+    <g stroke="#7a4726" stroke-width="3" stroke-linecap="round" opacity="0.55" fill="none">
+      <path d="M118 156 q6 26 2 52"/>
+      <path d="M144 140 q6 30 2 60"/>
+      <path d="M172 132 q6 34 2 66"/>
+      <path d="M200 132 q6 34 2 64"/>
+      <path d="M228 140 q6 30 2 58"/>
+      <path d="M254 154 q6 26 2 50"/>
+    </g>
+
+    <!-- front legs -->
+    <path d="M212 252 q-6 42 -2 68 q1 8 10 8 h26 q9 0 8-9 q-5-36 -3-67z" fill="url(#furGrad)"/>
+    <path d="M262 244 q-4 46 0 76 q1 8 10 8 h26 q9 0 8-9 q-6-42 -4-75z" fill="#b2764a"/>
+
+    <!-- toenails -->
+    <g fill="#f3e3c4">
+      <circle cx="118" cy="326" r="5"/><circle cx="132" cy="327" r="5"/>
+      <circle cx="170" cy="324" r="5"/><circle cx="184" cy="325" r="5"/>
+      <circle cx="222" cy="320" r="5"/><circle cx="236" cy="321" r="5"/>
+      <circle cx="274" cy="320" r="5"/><circle cx="288" cy="321" r="5"/>
+    </g>
+
+    <!-- head -->
+    <path d="M232 120 q42 -14 68 10 q26 22 22 60 q-3 34 -30 46 q-28 12 -52 -6 q-22 -18 -22 -54 q0 -38 14 -56z" fill="#c08348"/>
+    <!-- head fur tuft -->
+    <path d="M246 112 q10 -18 26 -16 q6 -14 22 -10 q10 -12 22 -2 q10 -8 18 4 q-8 6 -14 14 q-14 -6 -24 4 q-14 -8 -24 4 q-12 -6 -18 8z" fill="#d1954f"/>
+
+    <!-- ear -->
+    <path d="M240 158 q-20 4 -22 26 q-2 22 18 28 q10 4 14 -6z" fill="#a2653a"/>
+
+    <!-- eye with shadow + lashes -->
+    <g>
+      <!-- eyeshadow -->
+      <path d="M270 158 q22 -12 42 0 q4 12 -6 18 q-18 8 -34 -2 q-6 -8 -2 -16z" fill="#b98fd8" opacity="0.85"/>
+      <path d="M274 156 q20 -10 36 0 q2 6 -4 10 q-16 6 -30 -2 q-4 -4 -2 -8z" fill="#8f63c4" opacity="0.6"/>
+      <!-- closed lid -->
+      <path d="M268 176 q22 14 44 -2" fill="none" stroke="#4a2c16" stroke-width="5" stroke-linecap="round"/>
+      <!-- lashes -->
+      <g fill="none" stroke="#3a2210" stroke-width="4" stroke-linecap="round">
+        <path d="M310 176 q14 0 20 -10"/>
+        <path d="M306 180 q14 4 20 -4"/>
+        <path d="M300 183 q12 8 20 6"/>
+        <path d="M292 185 q6 10 14 12"/>
+      </g>
+      <!-- brow -->
+      <path d="M266 146 q22 -14 46 -4" fill="none" stroke="#8a5230" stroke-width="4" stroke-linecap="round" opacity="0.7"/>
+    </g>
+
+    <!-- tusk -->
+    <path d="M292 216 q30 12 44 42 q10 22 -4 32 q-12 8 -18 -6 q10 -4 6 -18 q-8 -26 -34 -36z" fill="url(#tuskGrad)" stroke="#c9b992" stroke-width="2"/>
+
+    <!-- trunk -->
+    <path d="M300 208 q26 10 32 44 q6 32 -14 48 q-16 12 -26 2 q-8 -10 2 -18 q12 -10 12 -28 q0 -22 -18 -34z" fill="#b2764a"/>
+    <g stroke="#8a5230" stroke-width="2.5" fill="none" opacity="0.6">
+      <path d="M304 220 q22 8 26 34"/>
+      <path d="M300 236 q22 10 24 32"/>
+      <path d="M300 254 q20 12 20 30"/>
+      <path d="M296 272 q18 12 16 26"/>
+    </g>
+    <path d="M292 296 q-8 8 -2 14 q8 6 14 -2" fill="#c98a4b"/>
+
+    <!-- mouth hint / cheek -->
+    <ellipse cx="264" cy="204" rx="12" ry="8" fill="#d99a72" opacity="0.5"/>
+  </g>
+
+  <!-- ===== ICE CUBE FRONT (glass overlay) ===== -->
+  <g>
+    <polygon points="20,88 330,88 330,352 20,352" fill="url(#iceGrad)"/>
+    <!-- inner frost cracks -->
+    <g stroke="#ffffff" stroke-width="3" fill="none" opacity="0.55" stroke-linecap="round">
+      <path d="M56 120 l30 34 l-14 26 l26 20"/>
+      <path d="M86 154 l34 -10"/>
+      <path d="M290 300 l-26 22 l6 24"/>
+      <path d="M264 322 l-30 6"/>
+      <path d="M180 96 l14 24 l-10 18"/>
+    </g>
+    <!-- highlights -->
+    <polygon points="42,104 90,104 52,336 34,336" fill="#ffffff" opacity="0.28"/>
+    <polygon points="104,104 122,104 84,336 66,336" fill="#ffffff" opacity="0.16"/>
+    <polygon points="300,120 316,120 300,320 284,320" fill="#ffffff" opacity="0.14"/>
+    <!-- top face sheen -->
+    <polygon points="40,86 88,60 200,60 152,86" fill="#ffffff" opacity="0.35"/>
+    <!-- cube edges -->
+    <g fill="none" stroke="#eafaff" stroke-width="5" stroke-linejoin="round">
+      <polygon points="20,88 330,88 330,352 20,352"/>
+      <polyline points="20,88 70,58 380,58 380,318 330,352"/>
+      <line x1="330" y1="88" x2="380" y2="58"/>
+    </g>
+    <g fill="none" stroke="#3b9ec8" stroke-width="2" opacity="0.5">
+      <polygon points="20,88 330,88 330,352 20,352"/>
+      <polyline points="20,88 70,58 380,58 380,318 330,352"/>
+    </g>
+    <!-- sparkles -->
+    <g fill="#ffffff" opacity="0.9">
+      <path d="M118 118 l5 13 l13 5 l-13 5 l-5 13 l-5 -13 l-13 -5 l13 -5z"/>
+      <path d="M300 244 l4 10 l10 4 l-10 4 l-4 10 l-4 -10 l-10 -4 l10 -4z"/>
+      <path d="M64 300 l3 8 l8 3 l-8 3 l-3 8 l-3 -8 l-8 -3 l8 -3z"/>
+      <path d="M352 96 l3 8 l8 3 l-8 3 l-3 8 l-3 -8 l-8 -3 l8 -3z"/>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400">
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <!-- speed lines -->
+    <g stroke="#2a2430" stroke-width="7" opacity="0.7" fill="none">
+      <path d="M472 262 L634 254"/>
+      <path d="M462 298 L618 300"/>
+      <path d="M478 334 L600 338"/>
+    </g>
+    <!-- dust puffs -->
+    <g fill="#c3c4cf" opacity="0.95">
+      <circle cx="486" cy="374" r="15"/>
+      <circle cx="510" cy="382" r="10"/>
+      <circle cx="463" cy="385" r="9"/>
+      <circle cx="306" cy="377" r="9"/>
+      <circle cx="326" cy="383" r="6"/>
+    </g>
+    <!-- tail -->
+    <path d="M388 212 C468 218 538 206 570 156 C592 122 590 90 620 58 C626 52 636 60 631 68 C604 98 606 128 582 166 C548 220 466 246 386 240 Z" fill="#f2a9b8" stroke="#2a2430" stroke-width="5"/>
+    <!-- far ear -->
+    <circle cx="262" cy="80" r="38" fill="#6f6f7a" stroke="#2a2430" stroke-width="6"/>
+    <circle cx="264" cy="84" r="22" fill="#d68a9e"/>
+    <!-- body -->
+    <path d="M32 208 C55 150 105 92 180 86 C245 80 290 95 330 120 C372 146 402 185 398 232 C394 275 350 300 300 302 C240 304 170 290 120 262 C90 246 60 232 32 208 Z" fill="#8e8e98" stroke="#2a2430" stroke-width="6"/>
+    <!-- belly -->
+    <path d="M135 258 C190 278 250 286 300 284 C340 281 368 262 384 236 C388 272 348 297 298 298 C240 299 176 286 132 260 Z" fill="#ded8ca"/>
+    <!-- muzzle patch -->
+    <path d="M42 206 C60 190 92 186 114 198 C132 210 134 230 118 240 C96 250 62 240 42 210 Z" fill="#ded8ca"/>
+    <!-- haunch -->
+    <ellipse cx="345" cy="255" rx="48" ry="40" fill="#82828e" stroke="#2a2430" stroke-width="5"/>
+    <!-- kicked-back hind leg -->
+    <path d="M352 268 C390 290 420 318 448 348" stroke="#2a2430" stroke-width="24" fill="none"/>
+    <path d="M352 268 C390 290 420 318 448 348" stroke="#82828e" stroke-width="13" fill="none"/>
+    <ellipse cx="465" cy="352" rx="27" ry="12" transform="rotate(18 465 352)" fill="#f2a9b8" stroke="#2a2430" stroke-width="5"/>
+    <g stroke="#2a2430" stroke-width="4" fill="none">
+      <path d="M479 346 L492 352"/>
+      <path d="M478 360 L492 356"/>
+    </g>
+    <!-- tiptoe hind leg -->
+    <path d="M272 290 C265 318 258 340 252 360" stroke="#2a2430" stroke-width="22" fill="none"/>
+    <path d="M272 290 C265 318 258 340 252 360" stroke="#8e8e98" stroke-width="12" fill="none"/>
+    <ellipse cx="248" cy="366" rx="22" ry="10" transform="rotate(-8 248 366)" fill="#f2a9b8" stroke="#2a2430" stroke-width="5"/>
+    <g stroke="#2a2430" stroke-width="4" fill="none">
+      <path d="M238 361 L226 363"/>
+      <path d="M238 372 L226 369"/>
+    </g>
+    <!-- tucked front paw -->
+    <circle cx="172" cy="290" r="11" fill="#f2a9b8" stroke="#2a2430" stroke-width="5"/>
+    <!-- reaching front arm -->
+    <path d="M148 262 C118 292 92 312 68 330" stroke="#2a2430" stroke-width="20" fill="none"/>
+    <path d="M148 262 C118 292 92 312 68 330" stroke="#8e8e98" stroke-width="11" fill="none"/>
+    <ellipse cx="58" cy="336" rx="15" ry="11" transform="rotate(-35 58 336)" fill="#f2a9b8" stroke="#2a2430" stroke-width="5"/>
+    <g stroke="#2a2430" stroke-width="4" fill="none">
+      <path d="M52 344 L44 350"/>
+      <path d="M60 347 L56 355"/>
+    </g>
+    <!-- near ear -->
+    <circle cx="200" cy="58" r="48" fill="#8e8e98" stroke="#2a2430" stroke-width="6"/>
+    <circle cx="202" cy="62" r="30" fill="#f2a9b8"/>
+    <!-- back googly eye -->
+    <circle cx="205" cy="150" r="26" fill="#ffffff" stroke="#2a2430" stroke-width="5"/>
+    <circle cx="195" cy="160" r="10" fill="#2a2430"/>
+    <circle cx="191" cy="156" r="3" fill="#ffffff"/>
+    <path d="M179 150 A26 26 0 0 1 231 150 Z" fill="#8e8e98" stroke="#2a2430" stroke-width="5"/>
+    <!-- front googly eye -->
+    <circle cx="150" cy="150" r="32" fill="#ffffff" stroke="#2a2430" stroke-width="5"/>
+    <circle cx="137" cy="163" r="12" fill="#2a2430"/>
+    <circle cx="132" cy="157" r="3.5" fill="#ffffff"/>
+    <path d="M118 150 A32 32 0 0 1 182 150 Z" fill="#8e8e98" stroke="#2a2430" stroke-width="5"/>
+    <!-- sneaky brows -->
+    <path d="M112 130 C136 121 162 119 182 126" stroke="#2a2430" stroke-width="7" fill="none"/>
+    <path d="M190 128 C204 123 220 124 230 130" stroke="#2a2430" stroke-width="6" fill="none"/>
+    <!-- smirk -->
+    <path d="M48 214 C74 230 100 236 124 229 C132 226 136 219 132 213" stroke="#2a2430" stroke-width="5" fill="none"/>
+    <!-- buck teeth -->
+    <path d="M58 222 L76 222 L76 234 Q76 240 71 240 L63 240 Q58 240 58 234 Z" fill="#ffffff" stroke="#2a2430" stroke-width="4"/>
+    <path d="M67 222 L67 240" stroke="#2a2430" stroke-width="3"/>
+    <!-- nose -->
+    <circle cx="34" cy="205" r="12" fill="#e06f8b" stroke="#2a2430" stroke-width="5"/>
+    <!-- whiskers -->
+    <g stroke="#2a2430" stroke-width="4" fill="none">
+      <path d="M74 208 L10 188"/>
+      <path d="M74 214 L8 214"/>
+      <path d="M76 222 L14 244"/>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 270 112" role="img" aria-label="ticket stub">
+        <defs>
+          <linearGradient id="tk-g" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#efe0b4"/>
+            <stop offset="1" stop-color="#dcc48e"/>
+          </linearGradient>
+        </defs>
+        <rect x="3" y="3" width="264" height="106" rx="5" fill="url(#tk-g)"/>
+        <rect x="3" y="3" width="264" height="106" rx="5" fill="none" stroke="#a8894f" stroke-width="1.5"/>
+        <rect x="12" y="12" width="182" height="88" fill="none" stroke="#8a6a33" stroke-width="1.5"/>
+        <rect x="16" y="16" width="174" height="80" fill="none" stroke="#8a6a33" stroke-width="0.5" opacity="0.6"/>
+        <line x1="206" y1="8" x2="206" y2="104" stroke="#8a6a33" stroke-width="1.5" stroke-dasharray="2 5" opacity="0.7"/>
+        <text x="103" y="52" text-anchor="middle" font-family="Courier, monospace" font-weight="bold" font-size="20" letter-spacing="5" fill="#6b4a1f">ADMIT ONE</text>
+        <text x="103" y="76" text-anchor="middle" font-family="Courier, monospace" font-size="11" letter-spacing="2" fill="#8a6a33">No. 000847</text>
+        <text x="236" y="63" text-anchor="middle" font-family="Georgia, serif" font-size="22" fill="#8a6a33">&#10038;</text>
+        <ellipse cx="42" cy="92" rx="18" ry="7" fill="#c9a96a" opacity="0.3"/>
+      </svg>

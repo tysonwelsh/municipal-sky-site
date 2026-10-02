@@ -3,8 +3,9 @@
 // 2026-09-14). A sticky-graphic scrollytelling walkthrough: one pinned visual
 // pane holding four scenes — the drawer, the real turn card, the real report
 // card, and the analysis (the charts and the records table about-scenes.js
-// draws from the analytics folder's own endpoint; the folder itself has not
-// been mounted here since 2026-09-27) — and sixteen steps of prose beside
+// draws from dataset v2's analytics endpoint, api/jd2-analytics.php, since the
+// cutover of 2026-10-01; the folder itself has not been mounted here since
+// 2026-09-27) — and sixteen steps of prose beside
 // it. about-scenes.js switches the pane as each step arrives; about.css
 // places the columns and flows the two modal cards inline. On a phone each
 // scene's graphic stands above its own steps instead (about.css, THE PHONE).
@@ -123,8 +124,12 @@ include __DIR__ . '/../../../includes/header.php';
    ------------------------------------------------------------------------- */
 (function () {
   document.documentElement.classList.add('jd-about-page');
+  /* the v1 writers (frozen since 2026-10-01, sealed anyway) and dataset v2's,
+     which the turn card and the report card file through since the cutover */
   var BLOCK = ['/api/jd-generate.php', '/api/jd-rate.php', '/api/jd-title.php',
-               '/api/jd-item-rate.php', '/api/jd-curate.php'];
+               '/api/jd-item-rate.php', '/api/jd-curate.php',
+               '/api/jd2-generate.php', '/api/jd2-rate.php', '/api/jd2-title.php',
+               '/api/jd2-curate.php'];
   var TRACK = '/api/page-event-tracking.php';
   var orig = window.fetch ? window.fetch.bind(window) : null;
   if (!orig) return;
@@ -238,10 +243,14 @@ include __DIR__ . '/../../../includes/header.php';
         <p>Each one is rated in four categories and given an overall grade, on
         the same five-point scale the USDA uses for beef: Prime, Choice, Select,
         Standard, and Utility. After that, all four are ranked from best to
-        worst.</p>
+        worst, then compared head to head, two at a time, on a seven-point
+        scale.</p>
         <p>Feel free to try it out!</p>
         <p class="jd-demo-note">For demonstration purposes only. Nothing
         entered here is saved or recorded.</p>
+        <?php /* which dataset the card's drawings came from: filled by
+                 about-scenes.js (labelInstrument) once it has chosen them */ ?>
+        <p class="jd-demo-note" data-specimen-note="instrument" hidden></p>
         </div>
       </div>
 
@@ -272,10 +281,16 @@ include __DIR__ . '/../../../includes/header.php';
         <div class="jd-step-body">
         <h2>A gold standard</h2>
         <p>Here&rsquo;s a top-notch SVG drawn by Claude Fable 5.</p>
+        <?php /* the report cards' specimen is a v1 item, served by the legacy
+                 drawer's data.php (about-scenes.js, SPECIMEN) */ ?>
         <p>It&rsquo;s clearly a desktop succulent, the individual parts fit
         together, the layers stack correctly, and the pot has the tasteful
         Scandinavian style I had in mind when I wrote the prompt.</p>
         <p>It earned top marks in every category.</p>
+        <p class="jd-demo-note">A v1 specimen: this drawing and the next two
+        come from the drawer&rsquo;s first dataset, now on view in the
+        <a href="/art/junk-drawer/legacy/" target="_blank" rel="noopener">legacy
+        drawer</a>.</p>
         </div>
       </div>
 
@@ -333,58 +348,76 @@ include __DIR__ . '/../../../includes/header.php';
         <h2>A real application, front to back</h2>
         <p>The SVG Junk Drawer isn&rsquo;t just a pretty interface. It also has
         a working back end.</p>
-        <p>Behind the drawer, a server-side pipeline sends each prompt to all
-        four models with the same system instructions, and everything is stored
-        in a SQL database.</p>
+        <p>Behind the drawer, a server-side pipeline sends each prompt to every
+        model in the pool with the same system instructions, and everything is
+        stored in a SQL database.</p>
+        <p>Each grading session is filed as a record of its own, and nothing is
+        ever overwritten: a second opinion is a new session beside the first.
+        My ratings and visitors&rsquo; ratings are kept apart and never
+        averaged together.</p>
         <p>The only thing missing is actual users (other than me!)</p>
         </div>
       </div>
 
-      <?php /* THE STORY THE CHARTS TELL (owner, 2026-09-27; final copy 2026-09-28):
-               about even on average; the spread shows Opus's edge is its Primes;
-               the categories point at Je ne sais quoi; and the edge costs money.
-               The first two steps share one card (the average and the spread
-               together). */ ?>
+      <?php /* THE METHOD, NOT THE FINDINGS (the v2 cutover, 2026-10-01). Until
+               then these four steps told the story the v1 charts told (about
+               even on average; Opus's edge is its Primes; Je ne sais quoi; the
+               edge costs money — the copy is in COPY.md, "Cut at the v2
+               cutover"). Dataset v2 began empty, so the steps describe what
+               each chart measures and how, and name no model and no number:
+               the charts carry the numbers, and they can never drift from
+               them. The findings come back when the campaign has filed them.
+               The step ids and data-views are the engine's; keep them. */ ?>
 
       <div class="jd-step" data-scene="analytics" data-step="grades" data-view="grades">
         <div class="jd-step-body">
-        <h2>Insights</h2>
-        <p>Here&rsquo;s how the four models compare on overall grade, across
-        roughly 100 drawings each. It&rsquo;s a small sample, I know, but humor
-        me.</p>
-        <p>On average, Claude Opus 5 has a <em>slight</em> lead over Gemini 3.1 Pro.</p>
-        <p>Kimi K3 isn&rsquo;t far behind in third, with GPT-5.1 a distant
-        fourth.</p>
+        <h2>Starting over, on purpose</h2>
+        <p>These charts read straight from the database, so they show whatever
+        has been graded so far.</p>
+        <p>On October 1, 2026, I started the record over as dataset v2: a
+        refined instrument, new tables, and every drawing graded fresh. The
+        first dataset is archived, not deleted, and you can still dig through
+        it in the <a href="/art/junk-drawer/legacy/" target="_blank"
+        rel="noopener">legacy drawer</a>. The two are never mixed.</p>
+        <p>This card shows each model&rsquo;s average overall grade, from
+        Utility to Prime.</p>
         </div>
       </div>
 
 
       <div class="jd-step" data-scene="analytics" data-step="distribution" data-view="grades" data-focus="spread-lead">
         <div class="jd-step-body">
-        <h2>Similar averages, different distributions</h2>
-        <p>Despite similar averages, Gemini generated more drawings graded
-        Choice, while Opus had more graded Prime.</p>
-        <p>In other words, while Gemini is reliably good, Opus is slightly more
-        likely to produce something special.</p>
+        <h2>Averages hide things</h2>
+        <p>Two models can share an average and get there very differently: one
+        reliably good, the other less steady but more likely to produce
+        something special. So every grade is kept, and the bars count each
+        model&rsquo;s drawings at every grade.</p>
+        <p>Grades judge each drawing on its own. The ranking and the
+        head-to-head scores judge them against each other, which is how
+        &ldquo;which one won&rdquo; becomes &ldquo;by how much.&rdquo;</p>
         </div>
       </div>
 
       <div class="jd-step" data-scene="analytics" data-step="multiples" data-view="axes">
         <div class="jd-step-body">
-        <h2>The je ne sais quoi factor</h2>
-        <p>How did Opus end up with more drawings graded Prime?</p>
-        <p>Gemini and Opus are nearly tied on Structural Coherence, and Gemini even leads slightly on Understanding Assignment.</p>
-        <p>However, in the Je ne sais quoi category Opus has the advantage. This suggests that the gap between good and great comes down to that special something you can&rsquo;t quite put your finger on.</p>
+        <h2>Where the grades come from</h2>
+        <p>The four categories show what sits behind an overall grade: how
+        often each model&rsquo;s drawings missed the assignment, came apart
+        structurally, or stacked their layers wrong, and how often they had
+        that je ne sais quoi.</p>
+        <p>Each bar carries a 95% interval. Where two of them overlap, the
+        difference isn&rsquo;t one I&rsquo;d bet on.</p>
         </div>
       </div>
 
       <div class="jd-step" data-scene="analytics" data-step="spend" data-view="cost">
         <div class="jd-step-body">
-        <h2>Prime cuts ain&rsquo;t cheap</h2>
-        <p>But that special something has a price. Opus&rsquo;s drawings cost
-        roughly twice as much as Gemini&rsquo;s.</p>
-        <p>Kimi K3&rsquo;s drawings are the cheapest of the four, yet it still
-        beats GPT-5.1 on overall quality.</p>
+        <h2>What it costs</h2>
+        <p>Every drawing&rsquo;s API price is recorded the moment it&rsquo;s
+        made, from the model&rsquo;s own token counts.</p>
+        <p>Evaluation data has a unit cost, and a model that draws a little
+        better for twice the price is a different answer from one that draws
+        a little better for the same.</p>
         </div>
       </div>
 

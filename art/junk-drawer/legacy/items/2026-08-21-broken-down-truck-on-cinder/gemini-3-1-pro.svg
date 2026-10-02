@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 270">
+  <defs>
+    <!-- Rust Pattern -->
+    <radialGradient id="rust1" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#9d4a3a" />
+      <stop offset="100%" stop-color="#5a2d21" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="window" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4a5f68" />
+      <stop offset="100%" stop-color="#2c3a40" />
+    </linearGradient>
+  </defs>
+
+  <!-- Chassis / Undercarriage -->
+  <path d="M 10,190 L 750,190 L 740,210 L 20,210 Z" fill="#2a2a2a" />
+  <path d="M 60,210 C 100,240 180,240 190,210 Z" fill="#1a1a1a" />
+  <path d="M 520,210 C 550,240 660,240 670,210 Z" fill="#1a1a1a" />
+  
+  <!-- Exposed Axles / Suspension -->
+  <rect x="90" y="210" width="30" height="30" fill="#3a3a3a" />
+  <rect x="580" y="210" width="30" height="30" fill="#3a3a3a" />
+  <path d="M 70,210 L 140,210 L 130,240 L 80,240 Z" fill="#2c2c2c" />
+  <path d="M 560,210 L 630,210 L 620,240 L 570,240 Z" fill="#2c2c2c" />
+
+  <!-- Cinder Blocks Front -->
+  <g transform="translate(70, 240)">
+    <rect x="0" y="0" width="70" height="30" fill="#8c8c8c" />
+    <rect x="0" y="0" width="70" height="4" fill="#a6a6a6" />
+    <rect x="8" y="8" width="22" height="14" fill="#4d4d4d" rx="2" />
+    <rect x="40" y="8" width="22" height="14" fill="#4d4d4d" rx="2" />
+  </g>
+
+  <!-- Cinder Blocks Rear -->
+  <g transform="translate(560, 240)">
+    <rect x="0" y="0" width="70" height="30" fill="#8c8c8c" />
+    <rect x="0" y="0" width="70" height="4" fill="#a6a6a6" />
+    <rect x="8" y="8" width="22" height="14" fill="#4d4d4d" rx="2" />
+    <rect x="40" y="8" width="22" height="14" fill="#4d4d4d" rx="2" />
+  </g>
+
+  <!-- Main Body (Teal/Faded Blue) -->
+  <path d="M 740,210 L 740,110 L 460,110 L 460,10 C 420,0 320,0 320,10 L 260,90 L 40,100 C 20,105 10,130 10,160 L 10,210 L 50,210 C 60,150 160,150 170,210 L 510,210 C 520,150 640,150 650,210 Z" fill="#5c8a8a" />
+  
+  <!-- Bed Detailing -->
+  <path d="M 460,110 L 740,110 L 740,120 L 460,120 Z" fill="#456c6c" />
+  <rect x="480" y="130" width="10" height="70" fill="#456c6c" />
+  <rect x="540" y="130" width="10" height="30" fill="#456c6c" />
+  <rect x="660" y="130" width="10" height="70" fill="#456c6c" />
+  <rect x="710" y="130" width="10" height="70" fill="#456c6c" />
+
+  <!-- Cab Detailing -->
+  <!-- Back Window -->
+  <path d="M 440,20 L 410,20 L 410,90 L 440,90 Z" fill="url(#window)" />
+  <!-- Side Window (Cracked) -->
+  <path d="M 390,20 L 320,20 L 280,80 L 390,90 Z" fill="url(#window)" />
+  <path d="M 340,50 L 320,30 M 340,50 L 330,80 M 340,50 L 370,60" stroke="#a2c9cc" stroke-width="1.5" fill="none" />
+
+  <!-- Sagging Door -->
+  <g transform="translate(260, 95) rotate(-3)">
+    <path d="M 0,0 L 140,5 L 140,115 L 0,115 Z" fill="#547d7d" stroke="#365252" stroke-width="2" />
+    <path d="M 20,20 L 120,25 L 120,55 L 20,50 Z" fill="#456c6c" />
+    <!-- Door Handle (Broken) -->
+    <rect x="110" y="40" width="20" height="5" fill="#a0a0a0" transform="rotate(20 110 40)" />
+  </g>
+
+  <!-- Front Fenders & Hood Details -->
+  <path d="M 260,95 L 40,105 L 10,160 L 50,210 C 60,150 160,150 170,210 L 255,210 Z" fill="none" stroke="#456c6c" stroke-width="2" />
+  <path d="M 170,120 L 40,130" stroke="#456c6c" stroke-width="3" fill="none" />
+
+  <!-- Grille Area & Headlight (Missing/Broken) -->
+  <path d="M 10,130 L 30,130 L 25,180 L 5,180 Z" fill="#3a3a3a" />
+  <ellipse cx="20" cy="140" rx="6" ry="12" fill="#111" />
+  <path d="M 18,135 L 22,145 M 22,135 L 18,145" stroke="#444" stroke-width="1" />
+
+  <!-- Hanging Front Bumper -->
+  <g transform="translate(0, 195) rotate(15)">
+    <path d="M 0,0 L 50,0 C 55,5 55,15 50,20 L 0,20 C -5,15 -5,5 0,0 Z" fill="#a0a0a0" />
+    <path d="M 5,5 L 45,5" stroke="#e0e0e0" stroke-width="2" />
+    <path d="M 15,0 L 15,20 M 35,0 L 35,20" stroke="#777" stroke-width="1" />
+  </g>
+
+  <!-- Missing Rear Bumper / Tailpipe -->
+  <path d="M 720,205 L 760,205 L 755,215 L 720,210 Z" fill="#444" />
+  <path d="M 730,210 L 760,225" stroke="#333" stroke-width="4" fill="none" />
+
+  <!-- Rust and Wear Patches -->
+  <!-- Cab Rust -->
+  <path d="M 440,100 C 460,90 460,120 440,110 C 420,105 430,95 440,100 Z" fill="#8c3d2f" />
+  <path d="M 320,10 C 340,5 350,15 330,20 C 310,15 310,15 320,10 Z" fill="#7a3427" />
+  <!-- Bed Rust -->
+  <path d="M 680,180 C 720,160 740,190 710,210 C 670,210 650,190 680,180 Z" fill="#8c3d2f" />
+  <path d="M 500,120 C 530,110 550,140 520,150 C 490,160 480,140 500,120 Z" fill="#7a3427" opacity="0.8" />
+  <path d="M 580,200 C 600,180 620,200 600,210 C 580,210 570,210 580,200 Z" fill="#9d4a3a" />
+  <!-- Front Fender Rust -->
+  <path d="M 40,160 C 60,150 70,180 50,190 C 30,190 20,170 40,160 Z" fill="#8c3d2f" />
+  <path d="M 120,145 C 150,135 160,165 140,170 C 110,170 100,155 120,145 Z" fill="#7a3427" opacity="0.9" />
+
+  <!-- Subtle Highlights to pop the form -->
+  <path d="M 320,10 L 460,10" stroke="#77a8a8" stroke-width="2" fill="none" />
+  <path d="M 460,110 L 740,110" stroke="#77a8a8" stroke-width="2" fill="none" />
+  
+</svg>

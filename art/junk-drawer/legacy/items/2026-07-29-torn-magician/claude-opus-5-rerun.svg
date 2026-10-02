@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="3.0 6.0 593.8 434.8">
+  <defs>
+    <clipPath id="tornTop">
+      <path d="M8 8 H592 V400 L570 412 L548 398 L524 414 L500 400 L478 418 L455 402 L432 420 L410 404 L386 422 L363 406 L340 424 L318 408 L295 426 L272 410 L250 428 L228 412 L205 430 L182 414 L160 432 L138 416 L115 434 L92 418 L70 436 L48 420 L26 434 L8 418 Z"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#tornTop)">
+
+    <!-- card border -->
+    <rect x="8" y="8" width="584" height="440" fill="none" stroke="#111" stroke-width="7"/>
+    <rect x="26" y="26" width="548" height="410" fill="none" stroke="#111" stroke-width="4"/>
+
+    <!-- infinity lemniscate above head -->
+    <path d="M264 78 C264 62 288 62 300 76 C312 90 336 90 336 74 C336 58 312 58 300 72 C288 86 264 86 264 70 Z"
+          fill="none" stroke="#111" stroke-width="5" stroke-linejoin="round"/>
+
+    <!-- head -->
+    <circle cx="300" cy="146" r="40" fill="none" stroke="#111" stroke-width="5"/>
+    <!-- hair -->
+    <path d="M262 132 C266 100 334 100 338 132 C330 122 316 116 300 116 C284 116 270 122 262 132 Z"
+          fill="none" stroke="#111" stroke-width="4.5" stroke-linejoin="round"/>
+    <!-- headband -->
+    <path d="M263 138 Q300 128 337 138" fill="none" stroke="#111" stroke-width="4"/>
+    <!-- face -->
+    <circle cx="287" cy="146" r="3.6" fill="#111"/>
+    <circle cx="313" cy="146" r="3.6" fill="#111"/>
+    <path d="M300 150 L300 160" fill="none" stroke="#111" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M290 168 Q300 176 310 168" fill="none" stroke="#111" stroke-width="3.5" stroke-linecap="round"/>
+
+    <!-- neck -->
+    <path d="M288 182 L288 196 M312 182 L312 196" fill="none" stroke="#111" stroke-width="4.5"/>
+
+    <!-- robe / body -->
+    <path d="M288 194 C262 202 246 224 240 262 C234 302 232 340 232 400
+             L368 400 C368 340 366 302 360 262 C354 224 338 202 312 194
+             C308 206 292 206 288 194 Z"
+          fill="none" stroke="#111" stroke-width="5" stroke-linejoin="round"/>
+    <!-- outer cloak edges -->
+    <path d="M258 206 C238 226 230 262 226 300 C222 340 220 372 220 400" fill="none" stroke="#111" stroke-width="4.5"/>
+    <path d="M342 206 C362 226 370 262 374 300 C378 340 380 372 380 400" fill="none" stroke="#111" stroke-width="4.5"/>
+    <!-- belt: serpent eating tail -->
+    <path d="M244 300 Q300 316 356 300" fill="none" stroke="#111" stroke-width="4.5"/>
+    <path d="M244 314 Q300 330 356 314" fill="none" stroke="#111" stroke-width="4.5"/>
+    <circle cx="352" cy="303" r="7" fill="none" stroke="#111" stroke-width="3.5"/>
+    <circle cx="352" cy="303" r="2" fill="#111"/>
+    <!-- robe folds -->
+    <path d="M270 340 L266 400 M300 336 L300 400 M330 340 L334 400" fill="none" stroke="#111" stroke-width="3.5"/>
+
+    <!-- RIGHT ARM UP with wand -->
+    <path d="M312 202 C336 198 356 178 366 150 C370 138 372 128 372 118"
+          fill="none" stroke="#111" stroke-width="5" stroke-linecap="round"/>
+    <path d="M330 216 C352 210 370 190 380 158 C384 146 386 134 386 122"
+          fill="none" stroke="#111" stroke-width="5" stroke-linecap="round"/>
+    <!-- hand -->
+    <path d="M370 116 C364 106 368 96 378 94 C388 92 394 100 392 110 L390 122 C384 126 374 124 370 116 Z"
+          fill="none" stroke="#111" stroke-width="4.5" stroke-linejoin="round"/>
+    <!-- wand -->
+    <rect x="372" y="34" width="16" height="86" rx="7" fill="none" stroke="#111" stroke-width="5"/>
+    <circle cx="380" cy="34" r="12" fill="none" stroke="#111" stroke-width="4.5"/>
+    <circle cx="380" cy="124" r="10" fill="none" stroke="#111" stroke-width="4.5"/>
+
+    <!-- LEFT ARM DOWN pointing -->
+    <path d="M288 202 C266 206 250 228 244 256 C240 276 238 292 238 306"
+          fill="none" stroke="#111" stroke-width="5" stroke-linecap="round"/>
+    <path d="M270 214 C254 224 244 246 240 268 C236 288 234 300 234 312"
+          fill="none" stroke="#111" stroke-width="5" stroke-linecap="round"/>
+    <path d="M232 306 C224 312 222 324 228 332 C234 340 246 338 250 330 L252 316 C248 306 238 302 232 306 Z"
+          fill="none" stroke="#111" stroke-width="4.5" stroke-linejoin="round"/>
+    <path d="M236 332 L232 352" fill="none" stroke="#111" stroke-width="4.5" stroke-linecap="round"/>
+
+    <!-- ROSES left -->
+    <g stroke="#111" stroke-width="4" fill="none" stroke-linejoin="round">
+      <path d="M96 236 C96 218 118 210 128 222 C142 210 160 222 156 240 C168 252 156 272 140 268 C130 282 108 278 106 262 C92 258 88 244 96 236 Z"/>
+      <path d="M124 244 C118 238 122 230 130 232 C138 234 138 246 130 248 C124 249 122 247 124 244 Z"/>
+      <path d="M126 268 L122 320 M122 292 C110 286 104 276 106 268 C116 268 122 278 122 292 Z M124 306 C136 300 144 302 146 310 C138 316 128 314 124 306 Z"/>
+      <path d="M60 320 C60 306 78 300 86 310 C98 300 112 310 108 324 C118 334 108 350 94 346 C86 358 68 354 66 342 C54 338 52 326 60 320 Z"/>
+      <path d="M82 326 C77 321 80 314 87 316 C94 318 93 327 87 329 C83 330 81 328 82 326 Z"/>
+      <path d="M84 346 L82 396"/>
+    </g>
+
+    <!-- LILIES right -->
+    <g stroke="#111" stroke-width="4" fill="none" stroke-linejoin="round">
+      <path d="M480 258 L480 400"/>
+      <path d="M480 258 C466 250 456 232 460 214 C474 220 480 240 480 258 Z"/>
+      <path d="M480 258 C494 250 504 232 500 214 C486 220 480 240 480 258 Z"/>
+      <path d="M480 250 C472 236 472 216 482 204 C492 216 490 238 480 250 Z"/>
+      <path d="M480 300 C464 296 452 284 452 270 C468 272 478 286 480 300 Z"/>
+      <path d="M480 330 C496 326 508 314 508 300 C492 302 482 316 480 330 Z"/>
+      <path d="M528 302 L528 400"/>
+      <path d="M528 302 C516 294 508 278 512 262 C524 268 528 286 528 302 Z"/>
+      <path d="M528 302 C540 294 548 278 544 262 C532 268 528 286 528 302 Z"/>
+      <path d="M528 296 C521 284 521 268 529 258 C537 268 536 286 528 296 Z"/>
+      <path d="M528 348 C514 344 504 334 504 322 C518 324 526 336 528 348 Z"/>
+    </g>
+
+    <!-- little decorative dots / sparkles -->
+    <g stroke="#111" stroke-width="3.5" stroke-linecap="round">
+      <path d="M170 96 L170 116 M160 106 L180 106"/>
+      <path d="M440 96 L440 112 M432 104 L448 104"/>
+      <path d="M126 152 L126 166 M119 159 L133 159"/>
+    </g>
+  </g>
+
+  <!-- torn bottom edge line -->
+  <path d="M8 418 L26 434 L48 420 L70 436 L92 418 L115 434 L138 416 L160 432 L182 414 L205 430 L228 412 L250 428 L272 410 L295 426 L318 408 L340 424 L363 406 L386 422 L410 404 L432 420 L455 402 L478 418 L500 400 L524 414 L548 398 L570 412 L592 400"
+        fill="none" stroke="#111" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M22 410 L40 424 M104 410 L120 424 M196 406 L212 420 M286 418 L302 404 M372 414 L388 400 M464 410 L480 396 M540 406 L556 392"
+        fill="none" stroke="#111" stroke-width="3" stroke-linecap="round"/>
+</svg>

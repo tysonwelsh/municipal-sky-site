@@ -1,5 +1,12 @@
 # The Junk Drawer — database schema
 
+v1: frozen as of 2026-10-01, the v2 cutover. Nothing writes these tables now:
+every v1 writer answers 410 behind `JD_V1_FROZEN` in `api/jd-config.php`, and
+they serve only the legacy exhibit at `/art/junk-drawer/legacy/`. The archive
+(dump, exports, tag `junk-drawer-v1-final`) and what "frozen" means are in
+`junk-drawer-v1-archive.md`. Dataset v2 is `junk-drawer-v2-schema.md`. The
+rest of this file describes v1 as it stood at the freeze.
+
 The tables behind `art/junk-drawer/` (the visitor turn flow and the owner's
 rating bench). The authoritative DDL is `api/setup-jd-tables.php`, which is
 idempotent and doubles as the migration runner; this file explains what each

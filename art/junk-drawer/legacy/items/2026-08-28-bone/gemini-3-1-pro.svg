@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 26 400 148">
+  <defs>
+    <path id="bone-shape" d="M 120 70 C 100 70 80 30 45 35 C 10 40 5 85 45 100 C 5 115 10 160 45 165 C 80 170 100 130 120 130 L 280 130 C 300 130 320 170 355 165 C 390 160 395 115 355 100 C 395 85 390 40 355 35 C 320 30 300 70 280 70 Z" />
+    <clipPath id="bone-clip">
+      <use href="#bone-shape" />
+    </clipPath>
+  </defs>
+
+  <!-- Base Fill -->
+  <use href="#bone-shape" fill="#fcf6e8" />
+
+  <!-- Shading Layer -->
+  <g clip-path="url(#bone-clip)">
+    <!-- Bottom Shadow -->
+    <path d="M -10 125 C 80 90 120 115 200 115 C 280 115 320 90 410 125 L 410 200 L -10 200 Z" fill="#e2d2b5" />
+    <!-- Bottom Knob Shadows -->
+    <circle cx="45" cy="135" r="25" fill="#e2d2b5" />
+    <circle cx="355" cy="135" r="25" fill="#e2d2b5" />
+    
+    <!-- Highlights -->
+    <path d="M 35 60 C 45 40 70 40 90 60" stroke="#ffffff" stroke-width="8" stroke-linecap="round" fill="none" />
+    <path d="M 365 60 C 355 40 330 40 310 60" stroke="#ffffff" stroke-width="8" stroke-linecap="round" fill="none" />
+    <line x1="120" y1="80" x2="280" y2="80" stroke="#ffffff" stroke-width="8" stroke-linecap="round" />
+  </g>
+
+  <!-- Texture/Details -->
+  <path d="M 75 140 C 90 135 100 120 110 115" stroke="#cebca0" stroke-width="4" stroke-linecap="round" fill="none" />
+  <path d="M 325 140 C 310 135 300 120 290 115" stroke="#cebca0" stroke-width="4" stroke-linecap="round" fill="none" />
+  <circle cx="220" cy="100" r="3.5" fill="#cebca0" />
+  <circle cx="245" cy="108" r="2.5" fill="#cebca0" />
+  <circle cx="170" cy="104" r="3" fill="#cebca0" />
+
+  <!-- Outline -->
+  <use href="#bone-shape" fill="none" stroke="#2a1f18" stroke-width="12" stroke-linejoin="round" />
+</svg>

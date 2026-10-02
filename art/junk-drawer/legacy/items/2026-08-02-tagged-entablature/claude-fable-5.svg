@@ -1,0 +1,212 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+  <defs>
+    <linearGradient id="gTop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fbf5e7"/><stop offset="1" stop-color="#e6d9bf"/>
+    </linearGradient>
+    <linearGradient id="gCyma" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f0e6d1"/><stop offset="0.55" stop-color="#b5a281"/><stop offset="1" stop-color="#e4d7bc"/>
+    </linearGradient>
+    <linearGradient id="gCorona" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f8efdc"/><stop offset="1" stop-color="#d5c4a3"/>
+    </linearGradient>
+    <linearGradient id="gCorSoffit" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#54472f"/><stop offset="1" stop-color="#8d7c60"/>
+    </linearGradient>
+    <linearGradient id="gModBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a8967a"/><stop offset="1" stop-color="#8f7d5d"/>
+    </linearGradient>
+    <linearGradient id="gMod" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f0e5cb"/><stop offset="1" stop-color="#c0ad86"/>
+    </linearGradient>
+    <linearGradient id="gDent" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#eadfc2"/><stop offset="1" stop-color="#b9a781"/>
+    </linearGradient>
+    <linearGradient id="gBead" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f3e8ce"/><stop offset="1" stop-color="#c4b189"/>
+    </linearGradient>
+    <linearGradient id="gFrieze" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e8dcc1"/><stop offset="1" stop-color="#c3ae89"/>
+    </linearGradient>
+    <linearGradient id="gCymaR" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ecdfc3"/><stop offset="1" stop-color="#a2906a"/>
+    </linearGradient>
+    <linearGradient id="gF3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ddcdaa"/><stop offset="1" stop-color="#ccb990"/>
+    </linearGradient>
+    <linearGradient id="gF2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d3c19c"/><stop offset="1" stop-color="#c1ae85"/>
+    </linearGradient>
+    <linearGradient id="gF1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c8b58e"/><stop offset="1" stop-color="#b09d75"/>
+    </linearGradient>
+    <linearGradient id="gSoffit" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5b4c36"/><stop offset="1" stop-color="#231c11"/>
+    </linearGradient>
+    <linearGradient id="gShade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a3020" stop-opacity="0.45"/><stop offset="1" stop-color="#3a3020" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="gStreak" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5f5648" stop-opacity="0.35"/><stop offset="1" stop-color="#5f5648" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="eggGrad" cx="0.5" cy="0.4" r="0.75">
+      <stop offset="0" stop-color="#f4e9d0"/><stop offset="1" stop-color="#ac9a72"/>
+    </radialGradient>
+    <radialGradient id="roseGrad" cx="0.5" cy="0.45" r="0.7">
+      <stop offset="0" stop-color="#ecdfbe"/><stop offset="1" stop-color="#84734f"/>
+    </radialGradient>
+    <linearGradient id="tagGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ff6ec7"/><stop offset="0.35" stop-color="#ff4fa3"/>
+      <stop offset="0.62" stop-color="#b06cf0"/><stop offset="1" stop-color="#3ec9ff"/>
+    </linearGradient>
+    <linearGradient id="tagShine" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.75"/><stop offset="0.45" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="0.6">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.22"/>
+      <stop offset="0.18" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="0.38" stop-color="#ffffff" stop-opacity="0.13"/>
+      <stop offset="0.52" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="0.78" stop-color="#ffffff" stop-opacity="0.1"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="vign" cx="0.5" cy="0.45" r="0.8">
+      <stop offset="0.6" stop-color="#231708" stop-opacity="0"/><stop offset="1" stop-color="#231708" stop-opacity="0.28"/>
+    </radialGradient>
+    <filter id="blurBig" x="-20%" y="-60%" width="140%" height="220%"><feGaussianBlur stdDeviation="11"/></filter>
+    <filter id="blurSm" x="-20%" y="-60%" width="140%" height="220%"><feGaussianBlur stdDeviation="4"/></filter>
+    <pattern id="dent" x="0" y="182" width="40" height="40" patternUnits="userSpaceOnUse">
+      <rect width="40" height="40" fill="#66573f"/>
+      <rect x="5" y="0" width="27" height="40" fill="url(#gDent)"/>
+      <rect x="5" y="0" width="4" height="40" fill="#f2e8cf" opacity="0.6"/>
+    </pattern>
+    <pattern id="egg" x="0" y="228" width="40" height="24" patternUnits="userSpaceOnUse">
+      <rect width="40" height="24" fill="#c6b48d"/>
+      <path d="M0,2 L4,20 L-4,20 Z M40,2 L44,20 L36,20 Z" fill="#7c6b4c"/>
+      <ellipse cx="20" cy="12" rx="12" ry="10.5" fill="#8b7a56"/>
+      <ellipse cx="20" cy="11.5" rx="9.5" ry="8.5" fill="url(#eggGrad)"/>
+    </pattern>
+    <pattern id="scroll" x="0" y="258" width="240" height="218" patternUnits="userSpaceOnUse">
+      <g fill="none" stroke-linecap="round">
+        <g stroke="#f4ead2" stroke-width="9" opacity="0.4" transform="translate(-2.5,-2.5)">
+          <path d="M-20,170 C30,60 95,42 130,84 C158,118 142,158 112,156 C88,154 82,122 104,112 C118,106 128,116 124,128"/>
+          <path d="M130,84 C170,130 205,140 260,55"/>
+          <path d="M60,140 C78,104 108,96 122,108"/>
+          <path d="M170,120 C185,92 210,88 226,98"/>
+          <path d="M40,180 C60,160 84,164 92,180"/>
+        </g>
+        <g stroke="#94805a" stroke-width="9" opacity="0.5">
+          <path d="M-20,170 C30,60 95,42 130,84 C158,118 142,158 112,156 C88,154 82,122 104,112 C118,106 128,116 124,128"/>
+          <path d="M130,84 C170,130 205,140 260,55"/>
+          <path d="M60,140 C78,104 108,96 122,108"/>
+          <path d="M170,120 C185,92 210,88 226,98"/>
+          <path d="M40,180 C60,160 84,164 92,180"/>
+        </g>
+      </g>
+    </pattern>
+    <g id="mod">
+      <rect x="0" y="120" width="52" height="50" rx="5" fill="url(#gMod)" stroke="#84734f" stroke-width="1.5"/>
+      <path d="M8,162 Q26,152 44,162" fill="none" stroke="#84734f" stroke-width="2.5"/>
+      <rect x="0" y="120" width="52" height="6" rx="3" fill="#f6edd8" opacity="0.7"/>
+    </g>
+    <g id="rose">
+      <circle cx="0" cy="146" r="15" fill="url(#roseGrad)"/>
+      <circle cx="0" cy="146" r="5" fill="#5f5236"/>
+    </g>
+    <text id="tag" x="600" y="420" text-anchor="middle" font-family="'Arial Black','Arial Rounded MT Bold',Arial,Helvetica,sans-serif" font-weight="900" font-size="155" textLength="1080" lengthAdjust="spacingAndGlyphs">Municipal Sky</text>
+  </defs>
+
+  <!-- ===================== CORNICE ===================== -->
+  <rect x="0" y="0" width="1200" height="14" fill="url(#gTop)"/>
+  <rect x="0" y="14" width="1200" height="30" fill="url(#gCyma)"/>
+  <rect x="0" y="44" width="1200" height="6" fill="#8a7857"/>
+  <rect x="0" y="50" width="1200" height="58" fill="url(#gCorona)"/>
+  <rect x="0" y="50" width="1200" height="5" fill="#fdf7ea" opacity="0.8"/>
+  <rect x="0" y="108" width="1200" height="10" fill="url(#gCorSoffit)"/>
+  <!-- modillion band -->
+  <rect x="0" y="118" width="1200" height="58" fill="url(#gModBg)"/>
+  <use href="#mod" x="20"/><use href="#mod" x="120"/><use href="#mod" x="220"/><use href="#mod" x="320"/>
+  <use href="#mod" x="420"/><use href="#mod" x="520"/><use href="#mod" x="620"/><use href="#mod" x="720"/>
+  <use href="#mod" x="820"/><use href="#mod" x="920"/><use href="#mod" x="1020"/><use href="#mod" x="1120"/>
+  <use href="#rose" x="96"/><use href="#rose" x="196"/><use href="#rose" x="296"/><use href="#rose" x="396"/>
+  <use href="#rose" x="496"/><use href="#rose" x="596"/><use href="#rose" x="696"/><use href="#rose" x="796"/>
+  <use href="#rose" x="896"/><use href="#rose" x="996"/><use href="#rose" x="1096"/>
+  <rect x="0" y="176" width="1200" height="6" fill="#e8dcc0"/>
+  <!-- dentils -->
+  <rect x="0" y="182" width="1200" height="40" fill="url(#dent)"/>
+  <rect x="0" y="222" width="1200" height="6" fill="#77664a"/>
+  <!-- egg and dart -->
+  <rect x="0" y="228" width="1200" height="24" fill="url(#egg)"/>
+  <rect x="0" y="252" width="1200" height="6" fill="url(#gBead)"/>
+
+  <!-- ===================== FRIEZE ===================== -->
+  <rect x="0" y="258" width="1200" height="218" fill="url(#gFrieze)"/>
+  <rect x="0" y="258" width="1200" height="218" fill="url(#scroll)"/>
+  <rect x="0" y="258" width="1200" height="18" fill="url(#gShade)"/>
+  <!-- weathering streaks -->
+  <rect x="140" y="258" width="30" height="140" fill="url(#gStreak)" opacity="0.6"/>
+  <rect x="470" y="258" width="22" height="110" fill="url(#gStreak)" opacity="0.5"/>
+  <rect x="828" y="258" width="36" height="150" fill="url(#gStreak)" opacity="0.6"/>
+  <rect x="1096" y="258" width="24" height="120" fill="url(#gStreak)" opacity="0.5"/>
+
+  <!-- graffiti -->
+  <g transform="rotate(-2 600 360)">
+    <use href="#tag" fill="none" stroke="url(#tagGrad)" stroke-width="58" stroke-linejoin="round" stroke-linecap="round" filter="url(#blurBig)" opacity="0.4"/>
+    <use href="#tag" fill="#1a1230" stroke="#1a1230" stroke-width="34" stroke-linejoin="round" stroke-linecap="round" transform="translate(7,9)" filter="url(#blurSm)" opacity="0.35"/>
+    <use href="#tag" fill="#221545" stroke="#221545" stroke-width="34" stroke-linejoin="round" stroke-linecap="round"/>
+    <use href="#tag" fill="#ffffff" stroke="#ffffff" stroke-width="15" stroke-linejoin="round" stroke-linecap="round"/>
+    <use href="#tag" fill="url(#tagGrad)"/>
+    <use href="#tag" fill="url(#tagShine)"/>
+    <!-- shine ticks -->
+    <g fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round" opacity="0.85">
+      <path d="M96,330 q6,-14 20,-18"/>
+      <path d="M268,336 q6,-13 19,-17"/>
+      <path d="M452,338 q6,-13 19,-17"/>
+      <path d="M648,334 q6,-13 19,-17"/>
+      <path d="M902,330 q6,-14 20,-18"/>
+      <path d="M1064,336 q6,-13 19,-17"/>
+    </g>
+    <!-- drips -->
+    <rect x="176" y="412" width="7" height="66" rx="3.5" fill="#ff5fae"/>
+    <rect x="352" y="416" width="7" height="44" rx="3.5" fill="#ff4fa3"/>
+    <rect x="560" y="414" width="7" height="58" rx="3.5" fill="#d55fd0"/>
+    <rect x="738" y="416" width="7" height="40" rx="3.5" fill="#a86fee"/>
+    <rect x="946" y="414" width="7" height="54" rx="3.5" fill="#5fb6ff"/>
+    <rect x="1088" y="416" width="7" height="38" rx="3.5" fill="#3ec9ff"/>
+    <circle cx="62" cy="450" r="4" fill="#ff6ec7" opacity="0.8"/>
+    <circle cx="620" cy="452" r="3.4" fill="#b06cf0" opacity="0.8"/>
+    <circle cx="1132" cy="448" r="4" fill="#3ec9ff" opacity="0.8"/>
+  </g>
+
+  <!-- ===================== ARCHITRAVE ===================== -->
+  <rect x="0" y="476" width="1200" height="6" fill="#f0e5c9"/>
+  <rect x="0" y="482" width="1200" height="24" fill="url(#gCymaR)"/>
+  <rect x="0" y="506" width="1200" height="106" fill="url(#gF3)"/>
+  <rect x="0" y="506" width="1200" height="14" fill="url(#gShade)"/>
+  <rect x="0" y="612" width="1200" height="8" fill="url(#gBead)"/>
+  <rect x="0" y="619" width="1200" height="2" fill="#7c6b4c"/>
+  <rect x="0" y="620" width="1200" height="92" fill="url(#gF2)"/>
+  <rect x="0" y="620" width="1200" height="12" fill="url(#gShade)"/>
+  <rect x="0" y="712" width="1200" height="8" fill="url(#gBead)"/>
+  <rect x="0" y="719" width="1200" height="2" fill="#7c6b4c"/>
+  <rect x="0" y="720" width="1200" height="70" fill="url(#gF1)"/>
+  <rect x="0" y="720" width="1200" height="10" fill="url(#gShade)"/>
+  <rect x="0" y="790" width="1200" height="10" fill="url(#gSoffit)"/>
+  <!-- block joints -->
+  <g stroke-width="2">
+    <line x1="308" y1="506" x2="308" y2="790" stroke="#8d7a58" opacity="0.55"/>
+    <line x1="311" y1="506" x2="311" y2="790" stroke="#f0e5c9" opacity="0.5"/>
+    <line x1="742" y1="506" x2="742" y2="790" stroke="#8d7a58" opacity="0.55"/>
+    <line x1="745" y1="506" x2="745" y2="790" stroke="#f0e5c9" opacity="0.5"/>
+    <line x1="1034" y1="506" x2="1034" y2="790" stroke="#8d7a58" opacity="0.5"/>
+  </g>
+  <!-- faint marble veining -->
+  <g fill="none" stroke="#9c8963" stroke-width="2" opacity="0.28" stroke-linecap="round">
+    <path d="M-10,545 C220,530 360,565 610,548 C860,532 1010,562 1210,550"/>
+    <path d="M-10,672 C180,660 420,685 640,668 C880,652 1060,678 1210,666"/>
+    <path d="M-10,86 C260,78 520,96 800,84 C1000,76 1120,90 1210,82"/>
+  </g>
+
+  <!-- ===================== GLOSSY PRINT FINISH ===================== -->
+  <rect x="0" y="0" width="1200" height="800" fill="url(#sheen)"/>
+  <rect x="0" y="0" width="1200" height="800" fill="url(#vign)"/>
+</svg>

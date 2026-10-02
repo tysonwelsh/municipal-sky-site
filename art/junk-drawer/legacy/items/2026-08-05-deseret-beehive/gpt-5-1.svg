@@ -1,0 +1,188 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480">
+  <defs>
+    <!-- Faded ink style -->
+    <linearGradient id="hiveBaseGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#b79b5f" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#a0834e" stop-opacity="0.9"/>
+    </linearGradient>
+    <linearGradient id="hiveLayerGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#c6ae74" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#a98d56" stop-opacity="0.9"/>
+    </linearGradient>
+    <linearGradient id="hiveHighlightGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#e3d2a3" stop-opacity="0.55"/>
+      <stop offset="50%" stop-color="#d5c28f" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#b79b5f" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="entranceGrad" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#392a17" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#1f1710" stop-opacity="0.9"/>
+    </radialGradient>
+    <!-- Subtle print misregistration / halftone-ish shading -->
+    <pattern id="inkGrain" x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="0.4" fill="#5d513d" fill-opacity="0.18"/>
+      <circle cx="4" cy="3" r="0.35" fill="#5d513d" fill-opacity="0.16"/>
+      <circle cx="7" cy="2" r="0.3" fill="#5d513d" fill-opacity="0.13"/>
+      <circle cx="2" cy="6" r="0.28" fill="#5d513d" fill-opacity="0.15"/>
+    </pattern>
+    <filter id="roughInk">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" stitchTiles="noStitch" result="noise"/>
+      <feColorMatrix in="noise" type="matrix"
+        values="0 0 0 0 0.1
+                0 0 0 0 0.08
+                0 0 0 0 0.03
+                0 0 0 -0.7 1.2" result="grain"/>
+      <feBlend in="SourceGraphic" in2="grain" mode="multiply"/>
+    </filter>
+    <filter id="agedStroke">
+      <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" result="turb"/>
+      <feDisplacementMap in="SourceGraphic" in2="turb" scale="0.9" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <!-- Slight register offset for a 'printed' look -->
+    <linearGradient id="offsetShadowGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#6a5a3a" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#3f3220" stop-opacity="0.7"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Slight offset darker silhouette to simulate misregistered ink -->
+  <g transform="translate(4,3)" opacity="0.65">
+    <path d="M240 40
+             C185 40 145 66 124 100
+             C106 129 97 165 96 188
+             C73 205 60 233 60 262
+             C60 300 79 331 109 349
+             C110 378 122 405 141 424
+             C163 448 198 462 240 462
+             C282 462 317 448 339 424
+             C358 405 370 378 371 349
+             C401 331 420 300 420 262
+             C420 233 407 205 384 188
+             C383 165 374 129 356 100
+             C335 66 295 40 240 40 Z"
+          fill="url(#offsetShadowGrad)"/>
+  </g>
+
+  <!-- Main hive group with aged ink effect -->
+  <g filter="url(#roughInk)">
+    <!-- Overall hive silhouette -->
+    <path d="M240 40
+             C185 40 145 66 124 100
+             C106 129 97 165 96 188
+             C73 205 60 233 60 262
+             C60 300 79 331 109 349
+             C110 378 122 405 141 424
+             C163 448 198 462 240 462
+             C282 462 317 448 339 424
+             C358 405 370 378 371 349
+             C401 331 420 300 420 262
+             C420 233 407 205 384 188
+             C383 165 374 129 356 100
+             C335 66 295 40 240 40 Z"
+          fill="url(#hiveBaseGrad)"
+          stroke="#3d3222"
+          stroke-width="4.2"
+          stroke-linejoin="round"/>
+
+    <!-- Left side highlight wash -->
+    <path d="M150 70
+             C125 95 112 132 108 176
+             C82 194 72 220 72 252
+             C72 291 90 319 121 337
+             C123 366 132 389 149 408
+             C168 430 200 444 236 446
+             C200 420 182 384 176 342
+             C170 297 176 251 188 210
+             C200 170 217 136 236 110
+             C214 90 184 76 150 70 Z"
+          fill="url(#hiveHighlightGrad)"
+          opacity="0.9"/>
+
+    <!-- Horizontal ring bands (vintage carved look) -->
+    <g stroke="#4c3e26" stroke-width="4" stroke-linecap="round" filter="url(#agedStroke)">
+      <path d="M120 132
+               C152 112 193 102 240 102
+               C287 102 328 112 360 132" fill="none" opacity="0.8"/>
+      <path d="M108 170
+               C146 148 190 138 240 138
+               C290 138 334 148 372 170" fill="none" opacity="0.82"/>
+      <path d="M96 208
+               C140 186 188 176 240 176
+               C292 176 340 186 384 208" fill="none" opacity="0.85"/>
+      <path d="M88 246
+               C136 222 187 212 240 212
+               C293 212 344 222 392 246" fill="none" opacity="0.86"/>
+      <path d="M84 286
+               C134 262 186 252 240 252
+               C294 252 346 262 396 286" fill="none" opacity="0.88"/>
+      <path d="M90 326
+               C138 304 187 294 240 294
+               C293 294 342 304 390 326" fill="none" opacity="0.9"/>
+      <path d="M102 366
+               C146 346 192 336 240 336
+               C288 336 334 346 378 366" fill="none" opacity="0.9"/>
+      <path d="M118 404
+               C156 388 197 380 240 380
+               C283 380 324 388 362 404" fill="none" opacity="0.9"/>
+    </g>
+
+    <!-- Entrance opening -->
+    <ellipse cx="240" cy="255" rx="46" ry="42"
+             fill="url(#entranceGrad)"
+             stroke="#1a130c"
+             stroke-width="4"/>
+
+    <!-- Subtle vertical ribbing lines -->
+    <g stroke="#5a472d" stroke-width="2.6" opacity="0.4" filter="url(#agedStroke)">
+      <path d="M204 70
+               C179 102 166 140 162 186
+               C158 234 164 280 176 322
+               C184 348 196 374 212 398" fill="none"/>
+      <path d="M276 70
+               C301 102 314 140 318 186
+               C322 234 316 280 304 322
+               C296 348 284 374 268 398" fill="none"/>
+      <path d="M240 54
+               C217 86 206 125 202 174
+               C198 226 205 279 216 322
+               C222 344 229 366 240 388" fill="none" opacity="0.5"/>
+    </g>
+
+    <!-- Thin ink-outline accent to emphasize Deseret emblem style -->
+    <path d="M240 40
+             C185 40 145 66 124 100
+             C106 129 97 165 96 188
+             C73 205 60 233 60 262
+             C60 300 79 331 109 349
+             C110 378 122 405 141 424
+             C163 448 198 462 240 462
+             C282 462 317 448 339 424
+             C358 405 370 378 371 349
+             C401 331 420 300 420 262
+             C420 233 407 205 384 188
+             C383 165 374 129 356 100
+             C335 66 295 40 240 40 Z"
+          fill="none"
+          stroke="#272017"
+          stroke-width="2.2"
+          stroke-linejoin="round"
+          opacity="0.8"/>
+
+    <!-- Ink grain overlay -->
+    <path d="M240 40
+             C185 40 145 66 124 100
+             C106 129 97 165 96 188
+             C73 205 60 233 60 262
+             C60 300 79 331 109 349
+             C110 378 122 405 141 424
+             C163 448 198 462 240 462
+             C282 462 317 448 339 424
+             C358 405 370 378 371 349
+             C401 331 420 300 420 262
+             C420 233 407 205 384 188
+             C383 165 374 129 356 100
+             C335 66 295 40 240 40 Z"
+          fill="url(#inkGrain)"
+          opacity="0.6"/>
+  </g>
+</svg>

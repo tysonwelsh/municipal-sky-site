@@ -10,6 +10,16 @@ markup, computed styles, API payloads, the `window.JD_*` surface and the
 console. `compare.js` diffs two such captures and exits 0 only when every
 artifact is identical.
 
+**Out of date since the v2 cutover (2026-10-01): re-capture before using.**
+The scenes and their baselines were captured against dataset v1: v1
+`data.php`, curated `entry.json` items addressed by date-slug id, the
+`jd-*.php` endpoints, and a full pile. The drawer now reads the `jd2_*`
+tables, ids are prompt ULIDs, the v1 writers answer 410, the public drawer
+starts empty, and `rating-bench.html` is gone. Re-capture the 56 scenes
+against v2 (fixture prompts filed through the jd2 endpoints on the mock
+provider) before any comparison is trusted. A capture taken before the
+cutover cannot be compared with one taken after it.
+
 Dev-only. `scripts/**` and `local-dev/**` are deploy-excluded; nothing here
 ships, and nothing here modifies the app under test (`art/junk-drawer/`,
 `api/`, `includes/`, `css/`, `router.php`).

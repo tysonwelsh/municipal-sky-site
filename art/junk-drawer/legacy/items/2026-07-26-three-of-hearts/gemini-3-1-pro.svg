@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 700">
+  <defs>
+    <path id="heart" d="M 0,-15 C -25,-45 -70,-25 -70,10 C -70,55 0,100 0,100 C 0,100 70,55 70,10 C 70,-25 25,-45 0,-15 Z" fill="#d40c0c"/>
+  </defs>
+
+  <!-- Card Background -->
+  <rect x="1" y="1" width="498" height="698" rx="30" ry="30" fill="#f4f1ea" stroke="#d8d4cb" stroke-width="2"/>
+
+  <!-- Top Left Index -->
+  <g transform="translate(0, 0)">
+    <text x="60" y="85" font-size="65" font-family="Georgia, 'Times New Roman', serif" font-weight="bold" fill="#d40c0c" text-anchor="middle" letter-spacing="-3">3</text>
+    <use href="#heart" transform="translate(60, 130) scale(0.35)"/>
+  </g>
+
+  <!-- Bottom Right Index (Inverted) -->
+  <g transform="translate(500, 700) rotate(180)">
+    <text x="60" y="85" font-size="65" font-family="Georgia, 'Times New Roman', serif" font-weight="bold" fill="#d40c0c" text-anchor="middle" letter-spacing="-3">3</text>
+    <use href="#heart" transform="translate(60, 130) scale(0.35)"/>
+  </g>
+
+  <!-- Center Pips -->
+  <use href="#heart" transform="translate(250, 150) scale(1)"/>
+  <use href="#heart" transform="translate(250, 310) scale(1)"/>
+  <use href="#heart" transform="translate(250, 550) scale(1) rotate(180)"/>
+</svg>

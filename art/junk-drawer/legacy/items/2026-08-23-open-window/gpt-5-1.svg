@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 260">
+  <defs>
+    <linearGradient id="frameWood" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c28a4a"/>
+      <stop offset="0.4" stop-color="#a66a38"/>
+      <stop offset="1" stop-color="#7b4b24"/>
+    </linearGradient>
+    <linearGradient id="frameInner" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f4d2a4"/>
+      <stop offset="1" stop-color="#c28a4a"/>
+    </linearGradient>
+    <linearGradient id="glassGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e9f4ff" stop-opacity="0.9"/>
+      <stop offset="0.4" stop-color="#d4e7ff" stop-opacity="0.7"/>
+      <stop offset="1" stop-color="#a9c7e5" stop-opacity="0.6"/>
+    </linearGradient>
+    <linearGradient id="sashShadow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#000" stop-opacity="0.18"/>
+      <stop offset="0.7" stop-color="#000" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="handleMetal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fefefe"/>
+      <stop offset="0.4" stop-color="#d2d4d7"/>
+      <stop offset="1" stop-color="#8e939b"/>
+    </linearGradient>
+    <linearGradient id="hingeMetal" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f2f3f4"/>
+      <stop offset="1" stop-color="#a5a9b2"/>
+    </linearGradient>
+    <linearGradient id="sillGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f4d9b0"/>
+      <stop offset="1" stop-color="#c28a4a"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Outer frame -->
+  <rect x="4" y="4" width="252" height="252" rx="6" ry="6" fill="url(#frameWood)"/>
+  <!-- Inner bevel of frame -->
+  <rect x="12" y="12" width="236" height="236" rx="4" ry="4" fill="url(#frameInner)"/>
+
+  <!-- Inner opening for glass area (cut-out effect via lighter fill) -->
+  <rect x="22" y="26" width="216" height="198" rx="3" ry="3" fill="#f9efe1"/>
+
+  <!-- Sill (bottom thicker board) -->
+  <path d="M10 214h240c3 0 6 2.5 6 5.5v12c0 5-4 8.5-9 8.5H13c-5 0-9-3.5-9-8.5v-12C4 216.5 7 214 10 214Z" fill="url(#sillGrad)"/>
+
+  <!-- Fixed right pane frame -->
+  <rect x="126" y="32" width="106" height="186" rx="2" ry="2" fill="#d0a970"/>
+  <rect x="132" y="38" width="94" height="174" rx="1.5" ry="1.5" fill="#c29b63"/>
+
+  <!-- Fixed right pane glass -->
+  <rect x="136" y="42" width="86" height="166" rx="1.5" ry="1.5" fill="url(#glassGrad)"/>
+
+  <!-- Reflections on fixed pane -->
+  <path d="M142 46h26L152 80h-26z" fill="#ffffff" opacity="0.32"/>
+  <path d="M171 60l36-18v12l-36 18z" fill="#ffffff" opacity="0.18"/>
+
+  <!-- Sash frame (left, open inward) -->
+  <!-- Hinge side vertical bar attached to main frame -->
+  <rect x="30" y="34" width="10" height="182" rx="1.5" ry="1.5" fill="#b07b45"/>
+
+  <!-- Open sash outer shape (rotated rectangle look using path) -->
+  <path d="M40 38c1.1-0.5 2.4-0.4 3.5 0.1l116 53c1.6 0.7 2.7 2.1 3.1 3.8l18 81c0.6 2.7-1 5.3-3.7 6.2l-56 18c-1.1 0.4-2.3 0.3-3.3-0.2l-103-46c-2.3-1-3.6-3.5-3.1-6l17-99c0.3-1.8 1.4-3.3 3-4.1L40 38Z" fill="url(#frameWood)"/>
+
+  <!-- Inner sash border -->
+  <path d="M47 48.5c0.7-0.3 1.5-0.3 2.2 0.1l104.5 47.7c1.1 0.5 1.9 1.5 2.2 2.7l15.2 68.8c0.5 2.1-0.7 4.2-2.7 4.8l-49 15.7c-0.7 0.2-1.5 0.2-2.2-0.1L22.8 150.7c-1.8-0.8-2.8-2.7-2.4-4.6l14.2-82.9c0.2-1.3 1-2.4 2.2-3L47 48.5Z" fill="#d8ae74"/>
+
+  <!-- Open sash glass polygon -->
+  <path d="M53.3 57.3c0.5-0.3 1.1-0.3 1.7 0l95 43.5c0.7 0.3 1.2 0.9 1.4 1.6l12.2 55.5c0.3 1.3-0.4 2.7-1.7 3.1l-43.6 14c-0.5 0.2-1.1 0.1-1.6-0.1L26.8 146.7c-1.2-0.5-1.9-1.8-1.7-3.1l11.5-67c0.1-0.7 0.5-1.4 1.2-1.7l15.5-7.6Z" fill="url(#glassGrad)"/>
+
+  <!-- Highlight on sash edge -->
+  <path d="M51.2 51.6L39 57.6c-0.7 0.3-1.1 0.9-1.2 1.6L26.3 129c-0.2 1.3 0.5 2.5 1.8 3l3.3 1.3 11.3-71.1c0.1-0.7 0.5-1.3 1.1-1.6l12.9-6.3-5.5-2.7c-0.5-0.3-1.2-0.3-1.8 0Z" fill="#f8dfb7" opacity="0.85"/>
+
+  <!-- Sash interior muntin (vertical) -->
+  <path d="M77.5 68.8l11 5 18.6 91.2-10.5-4.2z" fill="#c69a60"/>
+  <!-- Sash interior muntin (horizontal) -->
+  <path d="M44.7 117l4.6-26.8 80.5 36.8-25.9 8.3z" fill="#c89c63"/>
+
+  <!-- Sash inner glass subtle division lines -->
+  <path d="M44.7 117l82.7 37.8" stroke="#f4f1e8" stroke-width="1.4" opacity="0.45"/>
+  <path d="M88 74.9l19.1 93.7" stroke="#f4f1e8" stroke-width="1.4" opacity="0.45"/>
+
+  <!-- Soft shadow cast by open sash inside frame -->
+  <path d="M118 68l72 33c1.7 0.8 2.8 2.4 2.8 4.3v78c0 2.6-2.1 4.7-4.7 4.7h-54c-1 0-1.9-0.3-2.7-0.9l-54-38c-2.6-1.8-3-5.6-0.8-8l33.5-37.2c1.6-1.8 4.1-2.4 6.3-1.4Z" fill="url(#sashShadow)" opacity="0.55"/>
+
+  <!-- Window handle on fixed pane -->
+  <g transform="translate(195 120)">
+    <rect x="-2.5" y="-20" width="5" height="40" rx="2.5" ry="2.5" fill="url(#handleMetal)"/>
+    <circle cx="0" cy="0" r="1.6" fill="#868a92"/>
+    <path d="M-1.4 8h2.8c1 0 1.8 0.8 1.8 1.8v8.2c0 1.8-1.5 3.3-3.3 3.3-1.8 0-3.3-1.5-3.3-3.3v-8.2c0-1 0.8-1.8 1.8-1.8Z" fill="#c7cbd1"/>
+  </g>
+
+  <!-- Hinges on left side -->
+  <g transform="translate(30 70)">
+    <rect x="-2" y="-8" width="8" height="16" rx="1.5" ry="1.5" fill="url(#hingeMetal)"/>
+    <circle cx="2" cy="-3" r="0.7" fill="#7b8088"/>
+    <circle cx="2" cy="3" r="0.7" fill="#7b8088"/>
+  </g>
+  <g transform="translate(30 130)">
+    <rect x="-2" y="-8" width="8" height="16" rx="1.5" ry="1.5" fill="url(#hingeMetal)"/>
+    <circle cx="2" cy="-3" r="0.7" fill="#7b8088"/>
+    <circle cx="2" cy="3" r="0.7" fill="#7b8088"/>
+  </g>
+  <g transform="translate(30 190)">
+    <rect x="-2" y="-8" width="8" height="16" rx="1.5" ry="1.5" fill="url(#hingeMetal)"/>
+    <circle cx="2" cy="-3" r="0.7" fill="#7b8088"/>
+    <circle cx="2" cy="3" r="0.7" fill="#7b8088"/>
+  </g>
+
+  <!-- Inner frame line for main fixed opening -->
+  <rect x="118" y="32" width="2" height="186" fill="#a0703e" opacity="0.9"/>
+  <rect x="22" y="26" width="216" height="198" rx="3" ry="3" fill="none" stroke="#b17b44" stroke-width="2"/>
+
+  <!-- Small highlights on outer frame -->
+  <path d="M8 18c0-3.3 2.7-6 6-6h59l-6 8H18c-1.1 0-2-0.9-2-2Z" fill="#f5ddbb" opacity="0.6"/>
+  <path d="M252 26c0 2.2-1.8 4-4 4h-52l5-8h47c2.2 0 4 1.8 4 4Z" fill="#f5ddbb" opacity="0.35"/>
+  <path d="M18 244c-2.2 0-4-1.8-4-4v-16l8 4v12c0 2.2-1.8 4-4 4Z" fill="#905930" opacity="0.55"/>
+</svg>

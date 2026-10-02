@@ -54,7 +54,11 @@ var JD_DATA_URL = '/art/junk-drawer/data.php';
    never sniffed from User-Agent, which in a webview reads as web forever */
 var JD_CLIENT = 'web';
 
-/* The third-party-AI disclosure, recorded per submission. This copy is
+/* The third-party-AI disclosure, recorded per turn: jd-turn.js sends
+   .version with every slot request to api/jd2-generate.php, which refuses a
+   visitor without it and files it on the prompt (jd2_prompts.consent_version
+   / consent_at; dataset v2, 2026-10-01 — v1's jd-generate.php filed it on
+   the submission). This copy is
    canonical: privacy.php §4 quotes it verbatim, and drift between the two is
    a blocking review finding (APP §4.5). The prompt card stopped PRINTING
    these words in round 17 (owner call, 2026-08-14: privacy.php already
@@ -115,8 +119,10 @@ function JD_uuid() {
    visitor hash cannot do that, by design). Random, not derived from the IP
    or anything else about the visitor; clearing the site's data removes it
    and a new one is made only by another turn. JD_CONSENT.text names it and
-   privacy.php §4 explains it. `create` false reads without making one. */
-var JD_DEVICE_KEY = 'jd-device';
+   privacy.php §4 explains it. `create` false reads without making one.
+   Dataset v2 (2026-10-01) keeps its own key: the legacy drawer keeps
+   'jd-device', and nothing is carried across. */
+var JD_DEVICE_KEY = 'jd2-device';
 function JD_deviceRef(create) {
   var v = null;
   try { v = localStorage.getItem(JD_DEVICE_KEY); } catch (e) {}
@@ -144,12 +150,13 @@ var JD_STRINGS = {
 
 /* One storage accessor (APP constraint 7) — sessionStorage, JSON both ways,
    every call wrapped: private mode throws on write and a null read is the
-   contract, not an error. Keys must be 'jd-' prefixed; anything else is
-   refused rather than silently creating a second namespace. Session scope is
+   contract, not an error. Keys must be 'jd-' or (dataset v2's own, 2026-10-01)
+   'jd2-' prefixed; anything else is refused rather than silently creating a
+   third namespace. Session scope is
    deliberate (the won items are session-local by design, master plan §4.5);
    it is also the one place the app swaps in Capacitor Preferences. */
 var JD_store = (function () {
-  function ours(key) { return typeof key === 'string' && key.indexOf('jd-') === 0; }
+  function ours(key) { return typeof key === 'string' && /^jd2?-/.test(key); }
   return {
     get: function (key) {
       if (!ours(key)) return null;
@@ -336,10 +343,13 @@ var JD_Z_BAND = { xl: 0, l: 10000, other: 20000 };
 
 /* THE SCATTER MAP'S NUMBERS (see the loader's SCATTER): where everything in
    the pile lies is one map in JD_store under this key — the scatter, plus
-   the visitor's won items under their gen_id and the furniture's seats.
-   v2: area-normalized sizes — v1 positions were clamped against the old
-   width-only footprints. */
-var JD_SCATTER_KEY = 'jd-scatter-v2';
+   the visitor's won items under their item id (the prompt id since dataset
+   v2) and the furniture's seats.
+   'jd-scatter-v2' was the area-normalized-sizes cut (v1 positions were
+   clamped against the old width-only footprints); 'jd2-scatter' is dataset
+   v2's own (2026-10-01) — the legacy drawer keeps the old key, and its item
+   ids are not v2's, so the two pages never share a layout. */
+var JD_SCATTER_KEY = 'jd2-scatter';
 /* keep item centres at least this far (a fraction of the well) off the
    well's edge — the wall clearance every seat in the pile keeps */
 var JD_SCATTER_INSET = 0.012;
@@ -648,7 +658,7 @@ var JD_admin = (function () {
      entry.placement blocks and the old MOBILE_POUR table — desktop and mobile
      now share one computed layout, and nobody hand-places items. */
   var SCATTER = {
-    key: JD_SCATTER_KEY,      /* 'jd-scatter-v2' — see JD_SCATTER_KEY */
+    key: JD_SCATTER_KEY,      /* 'jd2-scatter' — see JD_SCATTER_KEY */
     jitter: 0.62,   /* random offset as a fraction of the cell; >0.5 lets
                        neighbours cross and cluster → the looser pile */
     rotMax: JD_ROT_MAX,       /* rotation range, ± degrees */
@@ -1024,8 +1034,8 @@ var JD_admin = (function () {
     var covers = stored && ids.every(function (id) { return stored[id]; });
     if (covers) { return stored; }
     var fresh = computeScatter(els);
-    /* a visitor's won items are merged into this same map under their gen_id
-       (C5.3), so the merge base is whatever is already stored */
+    /* a visitor's won items are merged into this same map under their item
+       id (C5.3), so the merge base is whatever is already stored */
     if (stored) { Object.keys(stored).forEach(function (k) { if (!fresh[k]) fresh[k] = stored[k]; }); }
     JD_store.set(SCATTER.key, fresh);
     return fresh;
@@ -1179,11 +1189,20 @@ var JD_admin = (function () {
         var item = rec.item;
         /* a turn the visitor JUST won is already in the pile, dropped from
            their own storage the moment they filed — and since 2026-08-30 the
-           server serves that same turn to everyone, keyed on the winning
-           drawing's generation, which is the id the local copy carries. Same
-           id, same item: reuse the element rather than laying a second copy
-           of the object on top of the first. */
+           server serves that same turn to everyone. Dataset v2 (2026-10-01)
+           keys the served item on its PROMPT id, and the local copy carries
+           the same id (recId in jd-turn.js), so the match is the item id;
+           a local copy that never learned its prompt id carries its winning
+           drawing's gen_id instead, which is one of the served item's
+           responses. Same item either way: lift the visitor's copy rather
+           than laying a second one of the object on top of the first. */
         var had = pile.querySelector('[data-id="' + item.id + '"]');
+        if (!had) {
+          (item.responses || []).some(function (r) {
+            had = r.gen_id ? pile.querySelector('.jd-item--visitor[data-id="' + r.gen_id + '"]') : null;
+            return !!had;
+          });
+        }
         if (had) { had.parentNode.removeChild(had); }
         var el = document.createElement('div');
         el.className = 'jd-item';
@@ -1280,20 +1299,19 @@ var JD_admin = (function () {
       /* ONLY NOW the #<id> deep link. openFromHash resolves the id against
          payload.items and silently does nothing if it isn't there yet, and
          the visitor's own won items are appended to that list by the call
-         above — so checking the hash first meant a reload on #<gen_id> never
+         above — so checking the hash first meant a reload on #<id> never
          opened the card and left the stale hash sitting in the URL. Curated
          ids are in the payload from the fetch and are unaffected by the
          move; JD_turn.setData is synchronous, so nothing else changes. */
       if (window.JD_record && location.hash.length > 1) {
         window.JD_record.openFromHash();
       }
-      /* ?rerun=<item_id> — the rating bench opens the drawer here to re-issue
-         a curated item's prompt to the four current models. Handled beside the
+      /* ?rerun=<prompt_id> — re-issue a prompt to the pool as a NEW RUN on the
+         owner path (JD_turn.rerun → ownerRun, bench key required; dataset v2,
+         2026-10-01 — a rerun is never a visitor turn now). Handled beside the
          #<id> deep link and for the same reason: it resolves an id against
-         payload.items, so it can only run once the payload is in. The bench
-         cannot host this itself — the whole point is that a rerun is an
-         ordinary turn, and the turn flow lives here. The param is consumed
-         from the URL so a refresh does not spend a second generation. */
+         payload.items, so it can only run once the payload is in. The param
+         is consumed from the URL so a refresh does not spend a second run. */
       var rr = /[?&]rerun=([^&]+)/.exec(location.search);
       if (rr && window.JD_turn) {
         var wanted = decodeURIComponent(rr[1]);

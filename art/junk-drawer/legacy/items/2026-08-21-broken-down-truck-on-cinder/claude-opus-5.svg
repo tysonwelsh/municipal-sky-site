@@ -1,0 +1,221 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0.0 46.0 565.8 333.5">
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7fa6b0"/>
+      <stop offset="0.5" stop-color="#5d8590"/>
+      <stop offset="1" stop-color="#3f606a"/>
+    </linearGradient>
+    <linearGradient id="bodyRust" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8a6a4a" stop-opacity="0"/>
+      <stop offset="1" stop-color="#7a4a2a" stop-opacity="0.55"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0" stop-color="#cfe2e6"/>
+      <stop offset="1" stop-color="#7d9aa2"/>
+    </linearGradient>
+    <linearGradient id="block" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#b8b3aa"/>
+      <stop offset="0.5" stop-color="#9c968c"/>
+      <stop offset="1" stop-color="#807a70"/>
+    </linearGradient>
+    <linearGradient id="chrome" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e6ecee"/>
+      <stop offset="0.5" stop-color="#a9b6ba"/>
+      <stop offset="1" stop-color="#6d7c80"/>
+    </linearGradient>
+  </defs>
+
+  <!-- ===== chassis rails ===== -->
+  <path d="M78 268 L560 268 L560 290 L78 290 Z" fill="#3a3a38"/>
+  <path d="M78 268 L560 268 L560 274 L78 274 Z" fill="#565654"/>
+
+  <!-- ===== rear cargo bed ===== -->
+  <g>
+    <path d="M300 152 L560 152 L560 270 L300 270 Z" fill="url(#body)"/>
+    <path d="M300 152 L560 152 L560 270 L300 270 Z" fill="url(#bodyRust)"/>
+    <!-- bed top rail -->
+    <path d="M296 144 L564 144 L564 156 L296 156 Z" fill="#8fb2ba"/>
+    <path d="M296 144 L564 144 L564 149 L296 149 Z" fill="#a9c8ce"/>
+    <!-- side ribs -->
+    <g fill="#2f4d56" opacity="0.55">
+      <rect x="336" y="156" width="6" height="112"/>
+      <rect x="386" y="156" width="6" height="112"/>
+      <rect x="436" y="156" width="6" height="112"/>
+      <rect x="486" y="156" width="6" height="112"/>
+      <rect x="534" y="156" width="6" height="112"/>
+    </g>
+    <!-- dent -->
+    <path d="M400 200 q22 -14 44 2 q-20 20 -44 -2 Z" fill="#33555e" opacity="0.7"/>
+    <path d="M404 202 q20 -10 36 2" fill="none" stroke="#8fb2ba" stroke-width="2" opacity="0.6"/>
+    <!-- rust patches -->
+    <path d="M340 240 q18 -18 40 -6 q14 8 6 24 q-26 8 -46 -18 Z" fill="#8b4a24" opacity="0.75"/>
+    <path d="M350 244 q14 -10 26 -2" fill="none" stroke="#5e2f14" stroke-width="2" opacity="0.6"/>
+    <path d="M500 168 q20 -8 30 6 q-14 14 -30 -6 Z" fill="#9a5628" opacity="0.65"/>
+    <path d="M556 210 q-14 6 -12 26 l14 4 Z" fill="#8b4a24" opacity="0.6"/>
+    <!-- tailgate edge -->
+    <rect x="556" y="152" width="8" height="118" fill="#2e4a52"/>
+    <!-- rear light -->
+    <rect x="540" y="238" width="16" height="20" rx="2" fill="#7d2f28"/>
+    <rect x="543" y="241" width="10" height="7" rx="1" fill="#c85a4a" opacity="0.8"/>
+  </g>
+
+  <!-- ===== cab ===== -->
+  <g>
+    <!-- cab body -->
+    <path d="M118 268 L118 190 L134 118 L232 108 L300 118 L300 268 Z" fill="url(#body)"/>
+    <path d="M118 268 L118 190 L134 118 L232 108 L300 118 L300 268 Z" fill="url(#bodyRust)"/>
+    <!-- roof -->
+    <path d="M132 122 L232 110 L300 120 L300 128 L134 130 Z" fill="#9cc0c8"/>
+    <!-- windshield / side window -->
+    <path d="M146 132 L226 124 L226 176 L136 176 Z" fill="url(#glass)"/>
+    <path d="M146 132 L226 124 L226 176 L136 176 Z" fill="none" stroke="#2f4d56" stroke-width="3"/>
+    <!-- cracked glass -->
+    <path d="M170 176 L192 140 L212 128" fill="none" stroke="#40626c" stroke-width="1.6" opacity="0.8"/>
+    <path d="M192 140 L164 146 M192 140 L216 152" fill="none" stroke="#40626c" stroke-width="1.2" opacity="0.7"/>
+    <!-- rear cab window -->
+    <path d="M240 124 L292 130 L292 176 L240 176 Z" fill="url(#glass)"/>
+    <path d="M240 124 L292 130 L292 176 L240 176 Z" fill="none" stroke="#2f4d56" stroke-width="3"/>
+    <!-- door line -->
+    <path d="M232 118 L232 262" stroke="#2f4d56" stroke-width="3" fill="none"/>
+    <path d="M136 186 L228 186" stroke="#2f4d56" stroke-width="2.5" fill="none" opacity="0.8"/>
+    <!-- door handle -->
+    <rect x="196" y="196" width="26" height="7" rx="3.5" fill="#c6d3d6"/>
+    <!-- mirror -->
+    <path d="M124 150 L106 146 L104 168 L120 166 Z" fill="#4c6f78"/>
+    <rect x="118" y="152" width="10" height="5" fill="#3d5a62"/>
+    <!-- cab rust -->
+    <path d="M124 236 q22 -14 44 0 q10 10 -2 24 l-46 2 Z" fill="#8b4a24" opacity="0.7"/>
+    <path d="M252 226 q16 -12 30 -2 q6 12 -8 20 q-20 0 -22 -18 Z" fill="#9a5628" opacity="0.6"/>
+    <!-- fender line -->
+    <path d="M118 244 q46 -22 96 -4" fill="none" stroke="#33555e" stroke-width="3" opacity="0.6"/>
+  </g>
+
+  <!-- ===== hood / front ===== -->
+  <g>
+    <path d="M118 190 L36 196 L28 262 L118 268 Z" fill="url(#body)"/>
+    <path d="M118 190 L36 196 L28 262 L118 268 Z" fill="url(#bodyRust)"/>
+    <path d="M118 190 L36 196 L34 208 L118 202 Z" fill="#8fb2ba"/>
+    <!-- hood ajar gap -->
+    <path d="M36 196 L118 190 L118 196 L36 202 Z" fill="#22343a" opacity="0.7"/>
+    <!-- grille -->
+    <rect x="24" y="210" width="16" height="48" rx="3" fill="url(#chrome)"/>
+    <g stroke="#4c5a5e" stroke-width="2">
+      <path d="M25 218 h14 M25 226 h14 M25 234 h14 M25 242 h14 M25 250 h14"/>
+    </g>
+    <!-- bumper -->
+    <path d="M14 258 L124 264 L124 278 L14 274 Z" fill="url(#chrome)"/>
+    <path d="M14 258 L124 264 L124 268 L14 262 Z" fill="#eef4f5" opacity="0.7"/>
+    <!-- dangling bumper corner -->
+    <path d="M14 274 L14 258 L4 260 L2 292 L16 292 Z" fill="#8f9ea2"/>
+    <!-- headlight (broken) -->
+    <circle cx="46" cy="220" r="11" fill="#d9e6e8"/>
+    <circle cx="46" cy="220" r="11" fill="none" stroke="#5d7b83" stroke-width="2.5"/>
+    <path d="M40 214 L52 226 M52 214 L40 226 M46 209 L46 231" stroke="#7e969c" stroke-width="1.6"/>
+  </g>
+
+  <!-- ===== exhaust stack ===== -->
+  <path d="M304 148 L304 60 q0 -10 10 -10 q10 0 10 10 L324 148 Z" fill="#6d7a7e"/>
+  <path d="M304 148 L304 60 q0 -10 10 -10 L314 148 Z" fill="#8b979b"/>
+  <ellipse cx="314" cy="52" rx="12" ry="4" fill="#4b5559"/>
+  <rect x="300" y="120" width="28" height="7" rx="3" fill="#4b5559"/>
+
+  <!-- ===== cinder block stacks ===== -->
+  <!-- front stack -->
+  <g>
+    <g transform="translate(56,290)">
+      <rect x="0" y="0" width="86" height="34" fill="url(#block)"/>
+      <rect x="0" y="0" width="86" height="5" fill="#c9c4bb"/>
+      <rect x="10" y="9" width="26" height="17" fill="#5f5a52"/>
+      <rect x="50" y="9" width="26" height="17" fill="#5f5a52"/>
+      <rect x="0" y="0" width="86" height="34" fill="none" stroke="#6e685f" stroke-width="1.5"/>
+    </g>
+    <g transform="translate(50,324)">
+      <rect x="0" y="0" width="86" height="34" fill="url(#block)"/>
+      <rect x="0" y="0" width="86" height="5" fill="#c9c4bb"/>
+      <rect x="10" y="9" width="26" height="17" fill="#5f5a52"/>
+      <rect x="50" y="9" width="26" height="17" fill="#5f5a52"/>
+      <rect x="0" y="0" width="86" height="34" fill="none" stroke="#6e685f" stroke-width="1.5"/>
+      <path d="M78 0 l8 12 l-8 -2 Z" fill="#8a847a"/>
+    </g>
+  </g>
+  <!-- rear stack -->
+  <g>
+    <g transform="translate(430,290)">
+      <rect x="0" y="0" width="86" height="34" fill="url(#block)"/>
+      <rect x="0" y="0" width="86" height="5" fill="#c9c4bb"/>
+      <rect x="10" y="9" width="26" height="17" fill="#5f5a52"/>
+      <rect x="50" y="9" width="26" height="17" fill="#5f5a52"/>
+      <rect x="0" y="0" width="86" height="34" fill="none" stroke="#6e685f" stroke-width="1.5"/>
+    </g>
+    <g transform="translate(436,324)">
+      <rect x="0" y="0" width="86" height="34" fill="url(#block)"/>
+      <rect x="0" y="0" width="86" height="5" fill="#c9c4bb"/>
+      <rect x="10" y="9" width="26" height="17" fill="#5f5a52"/>
+      <rect x="50" y="9" width="26" height="17" fill="#5f5a52"/>
+      <rect x="0" y="0" width="86" height="34" fill="none" stroke="#6e685f" stroke-width="1.5"/>
+    </g>
+  </g>
+
+  <!-- ===== hanging axles / hubs ===== -->
+  <g>
+    <rect x="96" y="286" width="14" height="30" rx="3" fill="#454542"/>
+    <circle cx="103" cy="316" r="16" fill="#3a3a38"/>
+    <circle cx="103" cy="316" r="8" fill="#5a5a56"/>
+    <circle cx="103" cy="316" r="3" fill="#2c2c2a"/>
+    <g fill="#8b8b85">
+      <circle cx="103" cy="308" r="2"/><circle cx="110" cy="318" r="2"/>
+      <circle cx="96" cy="318" r="2"/>
+    </g>
+  </g>
+  <g>
+    <rect x="470" y="286" width="14" height="30" rx="3" fill="#454542"/>
+    <circle cx="477" cy="316" r="16" fill="#3a3a38"/>
+    <circle cx="477" cy="316" r="8" fill="#5a5a56"/>
+    <circle cx="477" cy="316" r="3" fill="#2c2c2a"/>
+    <g fill="#8b8b85">
+      <circle cx="477" cy="308" r="2"/><circle cx="484" cy="318" r="2"/>
+      <circle cx="470" cy="318" r="2"/>
+    </g>
+  </g>
+
+  <!-- ===== leaning flat tire (leaned on truck side) ===== -->
+  <g transform="translate(300,330) rotate(-8)">
+    <ellipse cx="0" cy="0" rx="52" ry="46" fill="#2c2c2c"/>
+    <ellipse cx="0" cy="0" rx="52" ry="46" fill="none" stroke="#191919" stroke-width="3"/>
+    <ellipse cx="0" cy="0" rx="27" ry="24" fill="#6f6f6a"/>
+    <ellipse cx="0" cy="0" rx="10" ry="9" fill="#454540"/>
+    <g stroke="#1b1b1b" stroke-width="3" opacity="0.8">
+      <path d="M-50 -14 l100 0" transform="rotate(0)"/>
+    </g>
+    <g fill="#3d3d3d">
+      <rect x="-52" y="-8" width="14" height="6" rx="2"/>
+      <rect x="-52" y="4" width="14" height="6" rx="2"/>
+      <rect x="38" y="-8" width="14" height="6" rx="2"/>
+      <rect x="38" y="4" width="14" height="6" rx="2"/>
+      <rect x="-8" y="-46" width="16" height="6" rx="2"/>
+      <rect x="-8" y="40" width="16" height="6" rx="2"/>
+    </g>
+  </g>
+
+  <!-- ===== loose parts on/near truck: toolbox on bed rail ===== -->
+  <g transform="translate(348,112)">
+    <rect x="0" y="0" width="74" height="32" rx="4" fill="#b6552f"/>
+    <rect x="0" y="0" width="74" height="9" rx="4" fill="#d2703f"/>
+    <rect x="28" y="-6" width="18" height="8" rx="3" fill="none" stroke="#7d3a1e" stroke-width="3"/>
+    <rect x="6" y="16" width="62" height="4" rx="2" fill="#8a3f22"/>
+  </g>
+
+  <!-- ===== drooping side mirror wire / hanging hose ===== -->
+  <path d="M118 268 q-8 26 6 44 q10 12 2 26" fill="none" stroke="#2f2f2d" stroke-width="4" stroke-linecap="round"/>
+  <path d="M300 274 q6 24 -8 36" fill="none" stroke="#2f2f2d" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- ===== antenna, bent ===== -->
+  <path d="M124 148 q-4 -50 -16 -78" fill="none" stroke="#4c5a5e" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- ===== scattered detail bolts on chassis ===== -->
+  <g fill="#6e6e6a">
+    <circle cx="150" cy="280" r="3"/><circle cx="210" cy="280" r="3"/>
+    <circle cx="270" cy="280" r="3"/><circle cx="340" cy="280" r="3"/>
+    <circle cx="400" cy="280" r="3"/><circle cx="540" cy="280" r="3"/>
+  </g>
+</svg>

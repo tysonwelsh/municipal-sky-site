@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <clipPath id="orbClip">
+      <circle cx="200" cy="200" r="193"/>
+    </clipPath>
+    <radialGradient id="glassBase" cx="40%" cy="36%" r="80%">
+      <stop offset="0%" stop-color="#efe6f2" stop-opacity="0.95"/>
+      <stop offset="30%" stop-color="#cdb9dd" stop-opacity="0.9"/>
+      <stop offset="62%" stop-color="#8f7ab5" stop-opacity="0.92"/>
+      <stop offset="88%" stop-color="#5a4a86" stop-opacity="0.96"/>
+      <stop offset="100%" stop-color="#3e3263" stop-opacity="0.98"/>
+    </radialGradient>
+    <radialGradient id="mistGlow" cx="50%" cy="52%" r="50%">
+      <stop offset="0%" stop-color="#fdf6e3" stop-opacity="0.9"/>
+      <stop offset="55%" stop-color="#f0e2d0" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#e8d8c8" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="tealPool" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#5fa8a0" stop-opacity="0.75"/>
+      <stop offset="100%" stop-color="#5fa8a0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="rosePool" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#d98ba3" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#d98ba3" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="goldPool" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#e0aa4e" stop-opacity="0.65"/>
+      <stop offset="100%" stop-color="#e0aa4e" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="wcEdge" x="-25%" y="-25%" width="150%" height="150%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.032" numOctaves="3" seed="11" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="16"/>
+      <feGaussianBlur stdDeviation="1.1"/>
+    </filter>
+    <filter id="wcSoft" x="-40%" y="-40%" width="180%" height="180%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="3" seed="4" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="30"/>
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+    <filter id="wcMist" x="-40%" y="-40%" width="180%" height="180%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.028" numOctaves="4" seed="23" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="42"/>
+      <feGaussianBlur stdDeviation="4.5"/>
+    </filter>
+    <filter id="handLine" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="8" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="5"/>
+    </filter>
+    <filter id="grain" x="0%" y="0%" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="31" result="t"/>
+      <feColorMatrix in="t" type="matrix" values="0 0 0 0 0.55  0 0 0 0 0.45  0 0 0 0 0.6  0 0 0 0.28 0"/>
+      <feComposite in2="SourceGraphic" operator="in"/>
+    </filter>
+    <filter id="blot" x="-30%" y="-30%" width="160%" height="160%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="3" seed="17" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="22"/>
+      <feGaussianBlur stdDeviation="2"/>
+    </filter>
+  </defs>
+
+  <g clip-path="url(#orbClip)">
+    <circle cx="200" cy="200" r="196" fill="url(#glassBase)"/>
+
+    <!-- loose watercolor washes pooling in the glass -->
+    <g filter="url(#wcSoft)">
+      <ellipse cx="130" cy="270" rx="120" ry="95" fill="url(#tealPool)"/>
+      <ellipse cx="285" cy="255" rx="105" ry="120" fill="url(#rosePool)"/>
+      <ellipse cx="250" cy="105" rx="110" ry="80" fill="#6d5a9c" opacity="0.55"/>
+      <ellipse cx="105" cy="120" rx="90" ry="85" fill="#8fb6c9" opacity="0.5"/>
+      <ellipse cx="200" cy="330" rx="150" ry="80" fill="#43356e" opacity="0.6"/>
+      <ellipse cx="160" cy="185" rx="70" ry="60" fill="url(#goldPool)"/>
+    </g>
+
+    <!-- blooming pigment blots -->
+    <g filter="url(#blot)">
+      <circle cx="90" cy="230" r="34" fill="#3f7d78" opacity="0.4"/>
+      <circle cx="315" cy="160" r="30" fill="#b06a8b" opacity="0.4"/>
+      <circle cx="255" cy="320" r="38" fill="#54438a" opacity="0.45"/>
+      <circle cx="140" cy="80" r="26" fill="#7fa9c0" opacity="0.45"/>
+      <circle cx="300" cy="70" r="22" fill="#5b4a8f" opacity="0.4"/>
+    </g>
+
+    <!-- the vague swirling cloudy myst -->
+    <ellipse cx="200" cy="210" rx="120" ry="105" fill="url(#mistGlow)"/>
+    <g filter="url(#wcMist)" fill="none" stroke-linecap="round">
+      <path d="M104 236 C 118 148, 262 130, 284 208 C 300 266, 226 300, 182 262 C 150 234, 172 192, 212 200 C 236 205, 240 228, 224 236" stroke="#f7efdd" stroke-width="26" opacity="0.7"/>
+      <path d="M290 168 C 258 108, 150 112, 124 178 C 104 230, 140 284, 200 284" stroke="#e9dff2" stroke-width="18" opacity="0.55"/>
+      <path d="M136 268 C 190 300, 268 276, 276 218" stroke="#cfe4de" stroke-width="14" opacity="0.5"/>
+      <path d="M160 150 C 196 128, 244 136, 262 168" stroke="#fdf6e3" stroke-width="12" opacity="0.6"/>
+      <path d="M188 232 C 202 218, 224 222, 226 240" stroke="#ffffff" stroke-width="8" opacity="0.65"/>
+    </g>
+
+    <!-- boho celestial charms adrift in the mist -->
+    <g filter="url(#handLine)">
+      <path d="M226 176 a26 26 0 1 0 14 46 a20 20 0 1 1 -14 -46 z" fill="#e8c476" opacity="0.75"/>
+      <path d="M150 226 l4 10 10 4 -10 4 -4 10 -4 -10 -10 -4 10 -4 z" fill="#f4e3b2" opacity="0.8"/>
+      <path d="M258 250 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z" fill="#f4e3b2" opacity="0.7"/>
+      <path d="M172 130 l2.5 6.5 6.5 2.5 -6.5 2.5 -2.5 6.5 -2.5 -6.5 -6.5 -2.5 6.5 -2.5 z" fill="#fdf3d0" opacity="0.7"/>
+      <circle cx="120" cy="180" r="3.2" fill="#e8c476" opacity="0.7"/>
+      <circle cx="282" cy="130" r="2.8" fill="#f4e3b2" opacity="0.65"/>
+      <circle cx="236" cy="300" r="3" fill="#e8c476" opacity="0.6"/>
+      <circle cx="96" cy="150" r="2.4" fill="#fdf3d0" opacity="0.6"/>
+    </g>
+
+    <!-- deep-tone vignette pooling at the orb's edge -->
+    <g filter="url(#wcSoft)">
+      <path d="M18 240 C 30 340, 130 400, 210 392 C 120 392, 40 320, 40 230 Z" fill="#33285c" opacity="0.55"/>
+      <path d="M382 170 C 386 90, 330 30, 260 16 C 336 44, 372 110, 366 180 Z" fill="#4b3b78" opacity="0.5"/>
+    </g>
+
+    <!-- glass highlights -->
+    <g filter="url(#wcSoft)">
+      <ellipse cx="132" cy="98" rx="52" ry="30" transform="rotate(-32 132 98)" fill="#ffffff" opacity="0.55"/>
+      <ellipse cx="272" cy="322" rx="34" ry="14" transform="rotate(-20 272 322)" fill="#ffffff" opacity="0.3"/>
+    </g>
+
+    <!-- the crack -->
+    <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M312 44 L 297 80 L 306 103 L 283 132 L 291 154 L 268 170 L 273 186" stroke="#2e2450" stroke-width="3.4" opacity="0.5" transform="translate(1.6 1.6)"/>
+      <path d="M312 44 L 297 80 L 306 103 L 283 132 L 291 154 L 268 170 L 273 186" stroke="#ffffff" stroke-width="2.4" opacity="0.9"/>
+      <path d="M306 103 L 326 118 L 330 136" stroke="#ffffff" stroke-width="1.6" opacity="0.75"/>
+      <path d="M306 103 L 326 118 L 330 136" stroke="#2e2450" stroke-width="1.6" opacity="0.4" transform="translate(1.2 1.2)"/>
+      <path d="M283 132 L 262 128 L 250 136" stroke="#ffffff" stroke-width="1.4" opacity="0.7"/>
+      <path d="M297 80 L 281 70" stroke="#ffffff" stroke-width="1.3" opacity="0.65"/>
+      <path d="M268 170 L 252 182" stroke="#ffffff" stroke-width="1.2" opacity="0.55"/>
+      <path d="M291 154 L 305 168 L 302 182" stroke="#ffffff" stroke-width="1.1" opacity="0.5"/>
+    </g>
+    <g fill="#ffffff">
+      <path d="M300 88 l7 -4 -2 8 z" opacity="0.55"/>
+      <path d="M288 138 l8 -2 -4 7 z" opacity="0.5"/>
+      <path d="M310 108 l6 1 -3 6 z" opacity="0.45"/>
+    </g>
+
+    <!-- paper grain -->
+    <circle cx="200" cy="200" r="193" fill="#ffffff" filter="url(#grain)" opacity="0.5"/>
+  </g>
+
+  <!-- hand-inked rim, wobbly like a headshop print -->
+  <g fill="none" filter="url(#handLine)">
+    <circle cx="200" cy="200" r="193" stroke="#4a3a72" stroke-width="4" opacity="0.85"/>
+    <circle cx="200" cy="200" r="186" stroke="#8a6fb0" stroke-width="1.6" opacity="0.6"/>
+    <circle cx="200" cy="200" r="179" stroke="#c9a24f" stroke-width="1.4" stroke-dasharray="1 10" opacity="0.75"/>
+  </g>
+</svg>

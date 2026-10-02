@@ -1,0 +1,217 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="28.0 -2.0 362.8 703.8">
+  <defs>
+    <linearGradient id="caseGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#bbbbc5"/>
+      <stop offset="0.5" stop-color="#f0f0f5"/>
+      <stop offset="1" stop-color="#9ea2aa"/>
+    </linearGradient>
+    <linearGradient id="strapGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#32353d"/>
+      <stop offset="1" stop-color="#1b1e24"/>
+    </linearGradient>
+    <linearGradient id="innerBezelGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#dadce2"/>
+      <stop offset="0.5" stop-color="#f8f9fb"/>
+      <stop offset="1" stop-color="#c3c6d0"/>
+    </linearGradient>
+    <radialGradient id="dialGrad" cx="0.3" cy="0.3" r="0.9">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#e4e6ee"/>
+    </radialGradient>
+    <linearGradient id="markerGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fdfdff"/>
+      <stop offset="1" stop-color="#c2c5cf"/>
+    </linearGradient>
+    <linearGradient id="handHourGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#22252c"/>
+      <stop offset="1" stop-color="#08090c"/>
+    </linearGradient>
+    <linearGradient id="handMinGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d92626"/>
+      <stop offset="1" stop-color="#7f1010"/>
+    </linearGradient>
+    <radialGradient id="crownGrad" cx="0.3" cy="0.3" r="0.9">
+      <stop offset="0" stop-color="#f6f7fb"/>
+      <stop offset="1" stop-color="#a5a8b0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Strap -->
+  <g id="strap">
+    <rect x="150" y="0" width="100" height="700" rx="40" fill="url(#strapGrad)"/>
+    <!-- Strap holes (upper) -->
+    <g fill="#111319" opacity="0.9">
+      <rect x="189" y="50" width="22" height="8" rx="3"/>
+      <rect x="189" y="90" width="22" height="8" rx="3"/>
+      <rect x="189" y="130" width="22" height="8" rx="3"/>
+    </g>
+    <!-- Strap holes (lower) -->
+    <g fill="#111319" opacity="0.9">
+      <rect x="189" y="560" width="22" height="8" rx="3"/>
+      <rect x="189" y="600" width="22" height="8" rx="3"/>
+      <rect x="189" y="640" width="22" height="8" rx="3"/>
+    </g>
+    <!-- Strap stitching -->
+    <g stroke="#4a4d55" stroke-width="1.2" stroke-linecap="round" opacity="0.7">
+      <path d="M163 20 L163 680"/>
+      <path d="M237 20 L237 680"/>
+    </g>
+  </g>
+
+  <!-- Watch case -->
+  <g id="case" transform="translate(0,150)">
+    <!-- Lugs -->
+    <g fill="url(#caseGrad)">
+      <rect x="145" y="-60" width="110" height="55" rx="15"/>
+      <rect x="145" y="355" width="110" height="55" rx="15"/>
+    </g>
+
+    <!-- Case body outer -->
+    <circle cx="200" cy="200" r="170" fill="url(#caseGrad)"/>
+
+    <!-- Case edge shadow -->
+    <circle cx="200" cy="200" r="160" fill="none" stroke="#878b94" stroke-width="6" opacity="0.85"/>
+
+    <!-- Inner bezel -->
+    <circle cx="200" cy="200" r="148" fill="url(#innerBezelGrad)" stroke="#9da0aa" stroke-width="2"/>
+
+    <!-- Dial -->
+    <circle cx="200" cy="200" r="135" fill="url(#dialGrad)"/>
+
+    <!-- Minute ticks -->
+    <g id="ticks-minute" stroke="#a7abb5" stroke-width="2" stroke-linecap="round">
+      <g transform="translate(200,200)">
+        <!-- 0 degree base tick -->
+        <line x1="0" y1="-128" x2="0" y2="-134"/>
+      </g>
+      <!-- clone around dial -->
+      <g transform="translate(200,200)">
+        <!-- 59 copies rotated -->
+        <g id="allMinuteTicks">
+          <!-- generate via multiple use with rotate -->
+          <!-- We'll manually list a few and rely on repetition angle logic -->
+          <!-- Short ticks every 6 degrees, major at multiples of 30 handled later -->
+          <g>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(6)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(12)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(18)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(24)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(36)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(42)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(48)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(54)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(66)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(72)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(78)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(84)"/>
+
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(96)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(102)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(108)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(114)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(126)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(132)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(138)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(144)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(156)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(162)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(168)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(174)"/>
+
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(186)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(192)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(198)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(204)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(216)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(222)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(228)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(234)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(246)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(252)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(258)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(264)"/>
+
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(276)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(282)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(288)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(294)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(306)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(312)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(318)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(324)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(336)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(342)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(348)"/>
+            <line x1="0" y1="-128" x2="0" y2="-134" transform="rotate(354)"/>
+          </g>
+        </g>
+      </g>
+    </g>
+
+    <!-- Hour markers -->
+    <g id="hour-markers" transform="translate(200,200)" fill="url(#markerGrad)" stroke="#9599a3" stroke-width="1">
+      <!-- 12, 3, 6, 9 thick markers -->
+      <rect x="-4" y="-132" width="8" height="22" rx="3"/>
+      <rect x="-4" y="110" width="8" height="22" rx="3" transform="rotate(180 0 121)"/>
+      <rect x="-4" y="-132" width="8" height="22" rx="3" transform="rotate(90)"/>
+      <rect x="-4" y="-132" width="8" height="22" rx="3" transform="rotate(270)"/>
+
+      <!-- Remaining hour markers -->
+      <rect x="-3" y="-132" width="6" height="18" rx="3" transform="rotate(30)"/>
+      <rect x="-3" y="-132" width="6" height="18" rx="3" transform="rotate(60)"/>
+      <rect x="-3" y="-132" width="6" height="18" rx="3" transform="rotate(120)"/>
+      <rect x="-3" y="-132" width="6" height="18" rx="3" transform="rotate(150)"/>
+      <rect x="-3" y="-132" width="6" height="18" rx="3" transform="rotate(210)"/>
+      <rect x="-3" y="-132" width="6" height="18" rx="3" transform="rotate(240)"/>
+      <rect x="-3" y="-132" width="6" height="18" rx="3" transform="rotate(300)"/>
+      <rect x="-3" y="-132" width="6" height="18" rx="3" transform="rotate(330)"/>
+    </g>
+
+    <!-- Date window -->
+    <g transform="translate(200,200)">
+      <rect x="60" y="-18" width="40" height="32" rx="5" fill="#f7f8fc" stroke="#a3a6af" stroke-width="1.5"/>
+      <rect x="64" y="-14" width="32" height="24" rx="3" fill="#ffffff" stroke="#c9ccd6" stroke-width="1"/>
+      <text x="80" y="3" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#2a2d33">15</text>
+    </g>
+
+    <!-- Brand text -->
+    <g transform="translate(200,200)">
+      <text x="0" y="-60" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#555864" letter-spacing="2">CHRONO</text>
+      <text x="0" y="40" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="10" fill="#777a85" letter-spacing="1.5">WATER RESIST</text>
+    </g>
+
+    <!-- Hands -->
+    <g id="hands" transform="translate(200,200)">
+      <!-- Center cap shadow -->
+      <circle cx="0" cy="0" r="8" fill="#22252c" opacity="0.45"/>
+
+      <!-- Hour hand (4:47) -->
+      <!-- Hour angle: 360*(4/12)+47*0.5 = 142.5 deg from 12; rotate clockwise -->
+      <g transform="rotate(142.5)">
+        <path d="M -5 16 L -3 -64 Q 0 -70 3 -64 L 5 16 Z" fill="url(#handHourGrad)" stroke="#050607" stroke-width="1"/>
+      </g>
+
+      <!-- Minute hand (47) -->
+      <!-- Minute angle: 47*6 = 282 deg -->
+      <g transform="rotate(282)">
+        <path d="M -3 18 L -2 -100 Q 0 -108 2 -100 L 3 18 Z" fill="url(#handMinGrad)" stroke="#4b0c0c" stroke-width="0.8"/>
+      </g>
+
+      <!-- Center cap -->
+      <circle cx="0" cy="0" r="6" fill="#f7f8fb" stroke="#999cab" stroke-width="1.3"/>
+      <circle cx="0" cy="0" r="3" fill="#343741"/>
+    </g>
+
+    <!-- Crystal highlight -->
+    <ellipse cx="200" cy="160" rx="110" ry="60" fill="#ffffff" opacity="0.18"/>
+
+    <!-- Crown -->
+    <g transform="translate(200,200)">
+      <g transform="translate(170,0)">
+        <circle cx="0" cy="0" r="18" fill="url(#crownGrad)" stroke="#8f929a" stroke-width="1.8"/>
+        <circle cx="0" cy="0" r="13" fill="none" stroke="#cfd2db" stroke-width="1.4"/>
+        <path d="M -7 -6 L 7 -6 M -7 0 L 7 0 M -7 6 L 7 6" stroke="#8b8e96" stroke-width="1.2" stroke-linecap="round"/>
+      </g>
+    </g>
+  </g>
+</svg>

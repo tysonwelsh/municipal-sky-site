@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="63.2 39.5 277.0 458.5">
+  <defs>
+    <linearGradient id="holo1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#b8f2e6"/>
+      <stop offset="15%" stop-color="#7fd8f0"/>
+      <stop offset="30%" stop-color="#9a8cf0"/>
+      <stop offset="45%" stop-color="#c48ce0"/>
+      <stop offset="60%" stop-color="#8cd8c8"/>
+      <stop offset="75%" stop-color="#6fb8e8"/>
+      <stop offset="90%" stop-color="#b0f0d8"/>
+      <stop offset="100%" stop-color="#9ad0e8"/>
+    </linearGradient>
+
+    <linearGradient id="holoStripes" x1="0%" y1="0%" x2="100%" y2="0%" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="8%" stop-color="#e6fff5" stop-opacity="0.55"/>
+      <stop offset="16%" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="24%" stop-color="#d6f0ff" stop-opacity="0.5"/>
+      <stop offset="32%" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="40%" stop-color="#e8d6ff" stop-opacity="0.5"/>
+      <stop offset="48%" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="56%" stop-color="#d0ffe8" stop-opacity="0.55"/>
+      <stop offset="64%" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="72%" stop-color="#cfeaff" stop-opacity="0.5"/>
+      <stop offset="80%" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="88%" stop-color="#e0ffe0" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+
+    <linearGradient id="chromeRim" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="25%" stop-color="#a8c8d8"/>
+      <stop offset="50%" stop-color="#ffffff"/>
+      <stop offset="75%" stop-color="#8fb8c8"/>
+      <stop offset="100%" stop-color="#ffffff"/>
+    </linearGradient>
+
+    <radialGradient id="sheen" cx="35%" cy="25%" r="65%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.85"/>
+      <stop offset="35%" stop-color="#ffffff" stop-opacity="0.25"/>
+      <stop offset="70%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="eyeGrad" cx="35%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#4a2a5a"/>
+      <stop offset="45%" stop-color="#1a0a2e"/>
+      <stop offset="100%" stop-color="#05010a"/>
+    </radialGradient>
+
+    <linearGradient id="eyeSheen" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c8f0ff" stop-opacity="0.9"/>
+      <stop offset="40%" stop-color="#c8f0ff" stop-opacity="0"/>
+    </linearGradient>
+
+    <path id="headShape"
+      d="M200,58
+         C284,58 328,142 306,224
+         C289,288 262,326 242,358
+         C226,384 214,416 200,462
+         C186,416 174,384 158,358
+         C138,326 111,288 94,224
+         C72,142 116,58 200,58 Z"/>
+
+    <clipPath id="headClip">
+      <use href="#headShape"/>
+    </clipPath>
+
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+
+  <!-- outer chrome sticker rim -->
+  <use href="#headShape" fill="none" stroke="url(#chromeRim)" stroke-width="14" transform="translate(200,260) scale(1.045) translate(-200,-260)"/>
+  <use href="#headShape" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.6" transform="translate(200,260) scale(1.045) translate(-200,-260)"/>
+
+  <!-- main holo body -->
+  <use href="#headShape" fill="url(#holo1)"/>
+
+  <!-- diagonal holo foil stripes -->
+  <g clip-path="url(#headClip)">
+    <rect x="0" y="0" width="400" height="500" fill="url(#holoStripes)" transform="rotate(35 200 260)"/>
+    <rect x="-100" y="-100" width="600" height="700" fill="url(#holoStripes)" opacity="0.6" transform="rotate(-25 200 260)"/>
+    <!-- fine rainbow scan lines -->
+    <g opacity="0.35">
+      <line x1="40" y1="90" x2="360" y2="140" stroke="#ffffff" stroke-width="2"/>
+      <line x1="30" y1="140" x2="370" y2="190" stroke="#e8ffe0" stroke-width="2"/>
+      <line x1="20" y1="190" x2="380" y2="240" stroke="#d8f0ff" stroke-width="2"/>
+      <line x1="30" y1="240" x2="370" y2="290" stroke="#f0d8ff" stroke-width="2"/>
+      <line x1="50" y1="290" x2="350" y2="340" stroke="#d8ffe8" stroke-width="2"/>
+      <line x1="70" y1="340" x2="330" y2="390" stroke="#d0eaff" stroke-width="2"/>
+      <line x1="100" y1="390" x2="300" y2="430" stroke="#e8f0ff" stroke-width="2"/>
+    </g>
+    <!-- big sheen highlight -->
+    <ellipse cx="150" cy="150" rx="140" ry="170" fill="url(#sheen)"/>
+  </g>
+
+  <!-- head inner shading edge -->
+  <use href="#headShape" fill="none" stroke="#2a3a4a" stroke-width="2" opacity="0.35"/>
+
+  <!-- alien eyes -->
+  <g>
+    <path d="M120,205 C100,220 96,250 118,272 C150,300 200,296 202,258 C204,222 168,196 120,205 Z" fill="url(#eyeGrad)"/>
+    <path d="M280,205 C300,220 304,250 282,272 C250,300 200,296 198,258 C196,222 232,196 280,205 Z" fill="url(#eyeGrad)"/>
+    <path d="M118,214 C104,226 102,246 116,262 C138,282 176,280 180,254 C183,230 156,208 118,214 Z" fill="url(#eyeSheen)"/>
+    <path d="M282,214 C296,226 298,246 284,262 C262,282 224,280 220,254 C217,230 244,208 282,214 Z" fill="url(#eyeSheen)"/>
+    <ellipse cx="145" cy="232" rx="9" ry="12" fill="#ffffff" opacity="0.9"/>
+    <ellipse cx="255" cy="232" rx="9" ry="12" fill="#ffffff" opacity="0.9"/>
+  </g>
+
+  <!-- sparkles -->
+  <g fill="#ffffff" filter="url(#soft)" opacity="0.9">
+    <path d="M90,100 L96,116 L112,122 L96,128 L90,144 L84,128 L68,122 L84,116 Z"/>
+    <path d="M320,150 L324,162 L336,166 L324,170 L320,182 L316,170 L304,166 L316,162 Z"/>
+    <path d="M255,90 L258,99 L267,102 L258,105 L255,114 L252,105 L243,102 L252,99 Z"/>
+    <path d="M110,340 L113,349 L122,352 L113,355 L110,364 L107,355 L98,352 L107,349 Z"/>
+    <path d="M300,300 L303,309 L312,312 L303,315 L300,324 L297,315 L288,312 L297,309 Z"/>
+  </g>
+  <g fill="#ffffff" opacity="0.95">
+    <path d="M90,100 L94,112 L106,116 L94,120 L90,132 L86,120 L74,116 L86,112 Z"/>
+    <path d="M320,150 L323,159 L332,162 L323,165 L320,174 L317,165 L308,162 L317,159 Z"/>
+    <path d="M255,90 L257,96 L263,98 L257,100 L255,106 L253,100 L247,98 L253,96 Z"/>
+    <path d="M110,340 L112,346 L118,348 L112,350 L110,356 L108,350 L102,348 L108,346 Z"/>
+    <path d="M300,300 L302,306 L308,308 L302,310 L300,316 L298,310 L292,308 L298,306 Z"/>
+  </g>
+
+  <!-- outer bright rim highlight to sell sticker edge -->
+  <use href="#headShape" fill="none" stroke="#ffffff" stroke-width="2.5" opacity="0.8"/>
+</svg>

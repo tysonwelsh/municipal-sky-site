@@ -4,6 +4,13 @@ declare(strict_types=1);
 /**
  * jd-spend.php — exact provider spend for Junk Drawer generations.
  *
+ * DATASET v1 ONLY. It reads the v1 tables (jd_submissions / jd_generations),
+ * frozen since the v2 cutover (2026-10-01), so its totals stop at that day.
+ * Dataset v2 snapshots each drawing's price at write time
+ * (jd2_generations.cost_usd): its spend is api/jd2-analytics.php's `spend`
+ * and `totals.cost_usd`, or scripts/jd2-export.py. Left on v1 on purpose:
+ * the two datasets are never summed together.
+ *
  * jd-generate.php stores each provider's own usage object verbatim in
  * jd_generations.usage_tokens (see jd-generate.php:173). That column is the
  * authoritative token record, so this script never estimates: it reads the

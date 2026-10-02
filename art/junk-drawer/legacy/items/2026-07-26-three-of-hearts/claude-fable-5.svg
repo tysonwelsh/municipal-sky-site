@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 196" role="img" aria-label="three of hearts playing card">
+        <defs>
+          <path id="pc-heart" d="M10 17 C4.5 11.5 0 8.4 0 4.6 A4.4 4.4 0 0 1 8.6 3.1 L10 4.6 L11.4 3.1 A4.4 4.4 0 0 1 20 4.6 C20 8.4 15.5 11.5 10 17 Z" fill="#c0392b"/>
+        </defs>
+        <rect x="2" y="2" width="136" height="192" rx="10" fill="#fbf8ef" stroke="#b9b2a2" stroke-width="1.5"/>
+        <rect x="8" y="8" width="124" height="180" rx="6" fill="none" stroke="#e4ddcb" stroke-width="1"/>
+        <text x="14" y="30" font-family="Georgia, serif" font-size="22" fill="#c0392b">3</text>
+        <use href="#pc-heart" transform="translate(11 36) scale(0.7)"/>
+        <g transform="rotate(180 70 98)">
+          <text x="14" y="30" font-family="Georgia, serif" font-size="22" fill="#c0392b">3</text>
+          <use href="#pc-heart" transform="translate(11 36) scale(0.7)"/>
+        </g>
+        <use href="#pc-heart" transform="translate(54 34) scale(1.6)"/>
+        <use href="#pc-heart" transform="translate(54 84) scale(1.6)"/>
+        <use href="#pc-heart" transform="translate(86 162) scale(1.6) rotate(180)"/>
+      </svg>

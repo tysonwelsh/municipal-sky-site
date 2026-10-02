@@ -47,6 +47,9 @@ require_once __DIR__ . '/jd-origin.php';
 require_once __DIR__ . '/jd-build.php';
 require_once __DIR__ . '/jd-curated-sync.php';
 
+// Dataset v1 frozen (JD_V1_FROZEN, jd-config.php): 410 'dataset_frozen'; a no-op until the cutover.
+jd_require_v1_unfrozen();
+
 jd_curator_post();
 
 $body = jd_read_json_body();

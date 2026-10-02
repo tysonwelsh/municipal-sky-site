@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <radialGradient id="bodyGrad" cx="38%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#d9f27a"/>
+      <stop offset="45%" stop-color="#a8d13c"/>
+      <stop offset="80%" stop-color="#6fa119"/>
+      <stop offset="100%" stop-color="#4b7710"/>
+    </radialGradient>
+    <radialGradient id="sheen" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/>
+      <stop offset="60%" stop-color="#ffffff" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="dropGrad" cx="35%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#e2f79a"/>
+      <stop offset="60%" stop-color="#9ac930"/>
+      <stop offset="100%" stop-color="#5d8c12"/>
+    </radialGradient>
+    <linearGradient id="strand" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#b6dc4f" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#7fae22" stop-opacity="0.6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- drippy strand -->
+  <path d="M232 288 C240 320 234 344 246 366 C252 378 248 388 240 392"
+        fill="none" stroke="url(#strand)" stroke-width="9" stroke-linecap="round"/>
+
+  <!-- main blob -->
+  <path d="M196 14
+           C252 8 306 42 330 92
+           C352 138 392 156 388 200
+           C384 244 336 250 318 284
+           C300 318 316 356 276 372
+           C238 388 214 350 176 352
+           C132 354 104 396 72 374
+           C40 352 62 306 44 276
+           C24 244 -2 216 12 178
+           C26 140 76 140 100 106
+           C124 72 140 20 196 14 Z"
+        fill="url(#bodyGrad)"/>
+
+  <!-- inner darker swirl for gooeyness -->
+  <path d="M120 300 C96 268 104 226 138 206 C172 186 216 200 232 232 C246 260 232 296 202 308 C172 320 138 322 120 300 Z"
+        fill="#4f7d10" opacity="0.28"/>
+  <path d="M140 288 C124 264 132 234 158 222 C186 209 216 224 224 246 C232 270 216 292 190 298 C168 303 150 300 140 288 Z"
+        fill="#6ba01a" opacity="0.35"/>
+
+  <!-- specks -->
+  <ellipse cx="272" cy="120" rx="12" ry="8" fill="#3f6b0c" opacity="0.35" transform="rotate(-20 272 120)"/>
+  <ellipse cx="96" cy="196" rx="9" ry="6" fill="#3f6b0c" opacity="0.3" transform="rotate(25 96 196)"/>
+  <ellipse cx="300" cy="222" rx="7" ry="5" fill="#3f6b0c" opacity="0.3"/>
+  <circle cx="176" cy="330" r="5" fill="#3f6b0c" opacity="0.28"/>
+
+  <!-- glossy highlights -->
+  <ellipse cx="140" cy="96" rx="62" ry="42" fill="url(#sheen)" transform="rotate(-28 140 96)"/>
+  <ellipse cx="252" cy="176" rx="20" ry="13" fill="#ffffff" opacity="0.5" transform="rotate(-35 252 176)"/>
+  <ellipse cx="322" cy="150" rx="11" ry="7" fill="#ffffff" opacity="0.4" transform="rotate(40 322 150)"/>
+  <ellipse cx="82" cy="292" rx="16" ry="9" fill="#ffffff" opacity="0.3" transform="rotate(-40 82 292)"/>
+
+  <!-- rim light -->
+  <path d="M196 14 C252 8 306 42 330 92 C342 116 360 132 374 148"
+        fill="none" stroke="#eaffb0" stroke-width="6" stroke-linecap="round" opacity="0.55"/>
+
+  <!-- dangling drop -->
+  <path d="M240 392 C226 386 220 372 228 360 C234 351 248 350 256 358 C266 368 258 388 240 392 Z"
+        fill="url(#dropGrad)"/>
+  <ellipse cx="238" cy="367" rx="6" ry="4" fill="#ffffff" opacity="0.55" transform="rotate(-25 238 367)"/>
+</svg>

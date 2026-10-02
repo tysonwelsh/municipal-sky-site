@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="72.5 7.5 329.2 385.2">
+  <g stroke="#2C3E50" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Stem -->
+    <path d="M 200 200 Q 195 280 210 380" stroke-width="4" stroke="#4CAF50"/>
+    <path d="M 210 380 C 205 320 200 280 200 200" stroke-width="2" stroke="#2E7D32"/>
+    
+    <!-- Leaves -->
+    <path d="M 205 320 Q 150 310 120 340 Q 140 330 160 350 Q 130 360 110 390 Q 150 370 208 360" fill="#4CAF50" stroke="#2E7D32"/>
+    <path d="M 207 280 Q 260 270 280 240 Q 270 260 290 280 Q 260 290 300 320 Q 250 310 206 310" fill="#4CAF50" stroke="#2E7D32"/>
+    
+    <!-- Base of flower head -->
+    <circle cx="200" cy="200" r="10" fill="#81C784" stroke="#388E3C"/>
+    
+    <!-- Seed head (Pappus and seeds) -->
+    <g stroke="#B0BEC5" stroke-width="0.7">
+      <!-- Radiating stalks and fluff -->
+      <path d="M 200 200 L 150 110 M 150 110 L 140 100 M 150 110 L 160 105 M 150 110 L 145 95" />
+      <path d="M 200 200 L 200 90 M 200 90 L 190 80 M 200 90 L 210 80 M 200 90 L 200 75" />
+      <path d="M 200 200 L 250 110 M 250 110 L 260 100 M 250 110 L 240 105 M 250 110 L 255 95" />
+      <path d="M 200 200 L 110 150 M 110 150 L 100 140 M 110 150 L 105 160 M 110 150 L 95 145" />
+      <path d="M 200 200 L 90 200 M 90 200 L 80 190 M 90 200 L 80 210 M 90 200 L 75 200" />
+      <path d="M 200 200 L 110 250 M 110 250 L 100 260 M 110 250 L 105 240 M 110 250 L 95 255" />
+      <path d="M 200 200 L 290 150 M 290 150 L 300 140 M 290 150 L 295 160 M 290 150 L 305 145" />
+      <path d="M 200 200 L 310 200 M 310 200 L 320 190 M 310 200 L 320 210 M 310 200 L 325 200" />
+      <path d="M 200 200 L 290 250 M 290 250 L 300 260 M 290 250 L 295 240 M 290 250 L 305 255" />
+      <path d="M 200 200 L 150 290 M 150 290 L 140 300 M 150 290 L 160 295 M 150 290 L 145 305" />
+      <path d="M 200 200 L 250 290 M 250 290 L 260 300 M 250 290 L 240 295 M 250 290 L 255 305" />
+      
+      <!-- Inner layer -->
+      <path d="M 200 200 L 175 140 M 175 140 L 170 135 M 175 140 L 180 135" />
+      <path d="M 200 200 L 225 140 M 225 140 L 220 135 M 225 140 L 230 135" />
+      <path d="M 200 200 L 140 175 M 140 175 L 135 170 M 140 175 L 135 180" />
+      <path d="M 200 200 L 260 175 M 260 175 L 265 170 M 260 175 L 265 180" />
+      <path d="M 200 200 L 140 225 M 140 225 L 135 220 M 140 225 L 135 230" />
+      <path d="M 200 200 L 260 225 M 260 225 L 265 220 M 260 225 L 265 230" />
+      <path d="M 200 200 L 175 260 M 175 260 L 170 265 M 175 260 L 180 265" />
+      <path d="M 200 200 L 225 260 M 225 260 L 220 265 M 225 260 L 230 265" />
+    </g>
+    
+    <!-- Inner fluff circles -->
+    <g fill="#E0E0E0" stroke="none">
+      <circle cx="150" cy="110" r="2.5" />
+      <circle cx="200" cy="90" r="2.5" />
+      <circle cx="250" cy="110" r="2.5" />
+      <circle cx="110" cy="150" r="2.5" />
+      <circle cx="90" cy="200" r="2.5" />
+      <circle cx="110" cy="250" r="2.5" />
+      <circle cx="290" cy="150" r="2.5" />
+      <circle cx="310" cy="200" r="2.5" />
+      <circle cx="290" cy="250" r="2.5" />
+      <circle cx="150" cy="290" r="2.5" />
+      <circle cx="250" cy="290" r="2.5" />
+      
+      <circle cx="175" cy="140" r="2" />
+      <circle cx="225" cy="140" r="2" />
+      <circle cx="140" cy="175" r="2" />
+      <circle cx="260" cy="175" r="2" />
+      <circle cx="140" cy="225" r="2" />
+      <circle cx="260" cy="225" r="2" />
+      <circle cx="175" cy="260" r="2" />
+      <circle cx="225" cy="260" r="2" />
+    </g>
+    
+    <!-- Floating seeds -->
+    <g stroke="#B0BEC5" stroke-width="0.7">
+      <path d="M 330 90 L 350 40 M 350 40 L 340 30 M 350 40 L 350 25 M 350 40 L 360 35" />
+      <circle cx="330" cy="90" r="1.5" fill="#424242" stroke="none"/>
+      <circle cx="350" cy="40" r="2.5" fill="#E0E0E0" stroke="none"/>
+      
+      <path d="M 280 60 L 310 20 M 310 20 L 300 15 M 310 20 L 315 10 M 310 20 L 320 25" />
+      <circle cx="280" cy="60" r="1.5" fill="#424242" stroke="none"/>
+      <circle cx="310" cy="20" r="2.5" fill="#E0E0E0" stroke="none"/>
+      
+      <path d="M 370 150 L 390 120 M 390 120 L 380 110 M 390 120 L 395 105 M 390 120 L 400 125" />
+      <circle cx="370" cy="150" r="1.5" fill="#424242" stroke="none"/>
+      <circle cx="390" cy="120" r="2.5" fill="#E0E0E0" stroke="none"/>
+    </g>
+  </g>
+</svg>

@@ -90,7 +90,8 @@
        · it is injected here, not by the loader, so it is in no entry, no
          inventory line, no count, no legend, and data.php has never heard of
          it. Its reserved id 'jd-turn-object' cannot collide with an item id
-         (those are <YYYY-MM-DD>-<slug>) or a won item's gen_id (a UUID);
+         (a prompt id since dataset v2, a 26-character ULID — a won item
+         carries the same one; v1's were <YYYY-MM-DD>-<slug>);
        · the one dev iteration that walks the pile semantically (copy-layout)
          excludes it.
 
@@ -708,7 +709,7 @@
 
     var ID = 'jd-analytics';
     var ASSET = '/art/junk-drawer/analytics-folder.svg';
-    var API = '/api/jd-analytics.php';
+    var API = '/api/jd2-analytics.php';   // dataset v2 (the v1 folder read jd-analytics.php; same keys)
     var FALLBACK_BOX = 22;               /* = BASE.l — the loader passes BASE.l itself on a
                                             failed load; this catches a non-positive box */
     var ROT = 8;                         /* a small tilt: jammed in the corner
@@ -1560,7 +1561,7 @@
         /* the fallbackNote voice: say what did not answer, name the file, and
            stop — a half-drawn dashboard would be worse than none */
         bodyEl.innerHTML = '<p class="fx-stuck">the paperwork is stuck — the ' +
-          'numbers load from jd-analytics.php, which did not answer</p>';
+          'numbers load from jd2-analytics.php, which did not answer</p>';
         return;
       }
       /* THREE CARDS (owner, 2026-09-10, settled the same evening the folder

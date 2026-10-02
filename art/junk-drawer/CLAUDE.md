@@ -1,405 +1,237 @@
-# CLAUDE.md — How to add items to The Junk Drawer
+# CLAUDE.md — The Junk Drawer, dataset v2 (operating manual)
 
-This directory is a curated collection of LLM-generated SVGs with eval-style
-annotations. This file is the complete procedure for adding or editing
-entries. It is written for a Claude Code session with ZERO prior context
-(including web sessions started from a phone). Follow it exactly.
+The drawer at `/art/junk-drawer/` is a running eval of how language models
+draw SVGs: one prompt goes to every model in the pool, the drawings are graded
+blind on the taxonomy, ranked, and compared head to head. This file is written
+for a Claude Code session with ZERO prior context. Read it whole before
+touching anything here.
 
-## The one rule
+Since the cutover on **2026-10-01** this is **dataset v2**: the database is the
+system of record and files are exports. Dataset v1 (2026-07-26 → 2026-10-01)
+is frozen. It stays on view, read-only, at `/art/junk-drawer/legacy/`, and its
+archive is described in `db/junk-drawer-v1-archive.md`. The two datasets are
+never pooled.
 
-**Committing files to this repo is the entire publishing act.** A push to
-`main` auto-deploys to production (`.github/workflows/deploy.yml`). Do not
-look for a database, an upload endpoint, or a build step — none exists for
-this feature. Never write servable data as `.md` (deploy excludes it);
-data files are `.json`, art is `.svg`.
+Design and history: `PLAN-V2.md` (gitignored, owner's checkout only; the
+other `PLAN-*.md` files these comments cite are gitignored too, so treat those
+citations as history, not links). Tables, endpoints and reader rules:
+`db/junk-drawer-v2-schema.md`. That doc is the contract; this file is the map.
 
 ## File map
 
-- `taxonomy.json` — grade scale, annotation axes, model registry. The rubric
-  IS this file; the frontend renders it as data.
-- `items/<YYYY-MM-DD>-<slug>/entry.json` — one directory per PROMPT. All
-  responses (from different models) to that prompt live in this one entry.
-- `items/<...>/<model-slug>.svg` — one file per response.
-- `data.php` — read-only serving endpoint. Do not modify during content adds.
-- The page script is SEVEN files (six since 2026-09-05, when the one
-  9,200-line `junk-drawer.js` was split; `jd-filmstrip.js` joined
-  2026-09-16), loaded synchronously in this order by `_scripts.php`, each
-  a set of IIFEs talking through `window.JD_*`, no build step: `jd-core.js`
-  (constants, the shared helpers `JD_esc` / `JD_byId` / `JD_fnv1a` /
-  `JD_xorshift` / `JD_fetchArt` / `JD_zoomLayer` and, since 2026-10-01, the
-  shared constants and helpers the other modules used to copy —
-  `JD_SCATTER_KEY`, `JD_GRADE_RAMP`, `JD_X_MARK`, `JD_uuid`, `JD_liveAxes`,
-  `JD_tierBox`, `JD_shuffle`, `JD_restart`, `JD_drawOn.walk/strip` — the
-  pile loader, the drag script, immersive chrome, the draw-on engine),
-  `jd-filmstrip.js` (the replay/scrub control under a drawing),
-  `jd-furniture.js` (turn object, instructions sheet, analytics folder),
-  `jd-record.js` (the report card), `jd-darkroom.js` (the wait indicators,
-  `window.JD_dark`), `jd-turn.js` (the turn modal + curate mode), `jd-bench.js`
-  (the `?bench` / `?admin` strip). `card-gallery.html` loads the same seven.
-  Behaviour-preserving refactors of all of this (and of `api/jd-*.php` and
-  the stylesheet) are proven with `scripts/jd-regress/` (its README): a
-  deterministic capture of 56 scenes — screenshots, markup, computed styles,
-  payloads — compared byte-for-byte before and after. Run it before and
-  after any change that is meant to look and behave the same.
-- The `PLAN-*.md` files these comments cite (`PLAN-FRONTEND`, `PLAN-BACKEND`,
-  `PLAN-MOBILE`, `PLAN-PORTFOLIO`, `PLAN-USER-PROMPTS`) are the owner's
-  local design documents: `art/junk-drawer/PLAN-*.md` is gitignored, so a
-  checkout does not have them. The section numbers are still the owner's
-  map; treat the citations as history, not as links.
-- `api/jd-config.php` — the shared runtime every endpoint requires: the
-  taxonomy accessors, the ratings fold (`jd_fold_ratings` / `jd_pick_rating`),
-  the key gate, the schema probes. Schema doc: `db/junk-drawer-schema.md`.
-- `scripts/validate-junk-drawer.py` (repo root `scripts/`) — the validator.
-- `ledger.html` — THE LEDGER (owner ask, 2026-09-10): the curator's
-  overview, one row per item — every entry on disk (retired ones included)
-  and every visitor turn — stating whether it is in the drawer and WHY NOT
-  if it isn't, which response the drawer shows and by which rule, how far
-  each response's rating has got (whose word: bench / seed / visitor), and
-  whether the bench would offer it (and why not). A row opens into the
-  prompt, every drawing, the ratings, and HIDE / SHOW plus links to the
-  admin report card and the bench. **The editor is in the table (owner
-  ask, 2026-09-29):** in an open row the grade and each live axis are a
-  column each, every cell a small select holding the value the drawer
-  reads (bench, else seed, else the entry file), and each response's SAVE
-  files ONLY the cells that changed through `api/jd-item-rate.php` — the
-  admin card's own contract (curated: entry id + rid; turn: submission +
-  generation) — so untouched values keep their provenance; SAVE ALL batches
-  an item's edited responses in one request. Clicking a drawing enlarges
-  it. The toolbar's second line filters by rating: "at least one response
-  by MODEL graded X with axis A = V" — every part set must hold on ONE
-  response (AND-ed with the standing chips and the search). Ranks and
-  sizes stay the bench's.
-  Reads `api/jd-ledger.php` (bench-key gated; it applies `data.php`'s and
-  the bench's own rules server-side, so the page never re-derives them);
-  hide/show goes through `api/jd-curate.php`, ratings through
-  `api/jd-item-rate.php`. Same key slot as admin mode (`jd-admin-key`);
-  linked from the `?admin` strip only; noindex.
-- `sizing-desk.html` — owner-only curatorial harness (unlinked, noindex):it
-  steps through the items previewing size tiers with the live pile math and
-  exports decisions as JSON (`{sizingDesk: 1, changes: {id: {sizeClass,
-  sizeScale?}}}`). When the owner hands you such an export ("apply this
-  sizing-desk export"), edit each listed entry.json to the given sizeClass,
-  set/remove sizeScale accordingly (omit the key when absent or 1), validate,
-  and commit: `junk-drawer: re-tier sizes (sizing desk, N items)`. The desk
-  writes nothing itself.
+**The page** (`index.php`, `_assets.php`, `_scripts.php`, `_stage.php`,
+`_slim.php`, `_version.php`, `junk-drawer.css`, `VERSION`). The script is
+SEVEN files, loaded in order by `_scripts.php`. They are IIFEs talking through
+`window.JD_*`, with no build step:
 
-## Procedure: add a NEW item
+- `jd-core.js`: constants and shared helpers, the pile loader, drag, the
+  draw-on engine, `JD_admin` (the key gate), `JD_track`.
+- `jd-filmstrip.js`: the replay/scrub control under a drawing.
+- `jd-furniture.js`: the turn object, the instructions sheet, the analytics
+  folder.
+- `jd-record.js`: the report card and its admin editor.
+- `jd-darkroom.js`: the wait indicators.
+- `jd-turn.js`: the turn modal (visitor turns) and curate mode (the bench).
+- `jd-bench.js`: the `?bench` / `?admin` strip.
 
-> To GENERATE the SVG (rather than file one the owner pastes), use the
-> **`/junk-drawer-item` skill** (`.claude/skills/junk-drawer-item/`) — it
-> owns the generation discipline: clean-context subagent generation, the
-> standard technical appendix, honest one-shot/refined counting, and
-> multi-model alternatives. The steps below remain the file-mechanics
-> ground truth either way.
+`card-gallery.html` loads the same seven against mocked fetches.
+`about/` is the walkthrough page (`about/COPY.md` has its copy).
 
-1. **Elicit from the owner** (ask only for what wasn't provided; never invent):
-   - The prompt, VERBATIM. Do not trim, fix typos, or reformat it.
-   - The SVG source (pasted), or a request for you to generate it.
-   - Model + version for each response (must exist in `taxonomy.json`
-     `models`; if new, append `{id, label, vendor}` there first — kebab-case id).
-   - One-shot or refined? If refined, how many prompts total?
-   - Generation date (default: today).
-   - A grade (read the scale from `taxonomy.json` `grades` and show the
-     owner the label + description list to pick from). Grades are FILED AS
-     NUMBERS: write the chosen grade's `rank` as a decimal (Prime = `5.0`
-     … Utility = `1.0`), never the id or label string — labels live only
-     in the taxonomy so the scale can be reworded without touching entries.
-   - Annotations: read `taxonomy.json` `axes`; for each axis, ask for a
-     value (offer the value labels + descriptions) OR "skip". Like grades,
-     annotation values are FILED AS NUMBERS: write the chosen value's
-     `rank` as a decimal (best = the axis's top rank — `3.0` on 3-point
-     axes, `4.0` on 4-point — worst = `1.0`), never the value id or
-     label. Skipped axes are OMITTED from the
-     annotations object — never write null/empty for them. Attach the
-     owner's remarks as `{"value": <rank>, "note": ...}`.
-   - A `sizeClass` — how big the item reads in the drawer. Read the tiers
-     from `taxonomy.json` `sizeTiers` (`"xs"`/`"s"`/`"m"`/`"l"`/`"xl"`,
-     each with a description). This is the owner's call: ask, and write
-     `"m"` only if they EXPLICITLY defer ("default"/"whatever"). Silence
-     is not a shrug — never file a size the owner didn't choose.
-   - Whether to PIN a response for display (optional). The drawer shows one
-     response per item, and by default that is the **best-graded** one —
-     `data.php` resolves it at request time, ties breaking to the earliest
-     `rid`, so a regrade re-points the drawer on its own. Write the entry's
-     `primary` ONLY when the owner explicitly pins a response; it is an
-     override flag, not a record of filing order. No pin ⇒ omit `primary`.
-   - Optional `sizeScale` — a positive multiplier on the tier (default 1)
-     for sizes between or below tiers; the continuous fine dial the coarse
-     tiers can't reach (e.g. paperclip = `"s"` × 0.686). Tiers are AREA
-     classes (owner decision, 2026-08-09): the drawer renders every item at
-     footprint `w·h = (sizeTiers[sizeClass].box × sizeScale)²` whatever the
-     artwork's proportions, with the long side capped at 1.8 × the box
-     (before sizeScale) and a small id-hashed jitter (±9% linear) for
-     natural variation. sizeScale therefore scales the whole footprint
-     evenly at any aspect — NEVER use it to compensate for a tall or wide
-     viewBox; the normalization already does that. Omit it (or 1) unless a
-     tier alone doesn't land the size the owner wants. Sanity-check a new
-     filing with `python3 scripts/validate-junk-drawer.py --sizes`, which
-     prints every item's rendered footprint next to its tier-mates.
-2. **Create the directory**: `items/<YYYY-MM-DD>-<slug>/` where slug is a
-   short kebab-case name for the subject (e.g. `rubber-duck`), NOT the full
-   prompt. Check it doesn't already exist.
-3. **Write the SVG** as `<model-slug>.svg`, byte-exact as provided. Do not
-   "clean it up" — imperfections are the point of this collection. Exception:
-   if the validator rejects it (script/event-handler/foreignObject), report
-   that to the owner rather than silently editing the art.
-   **Tight viewBox check**: the drawer's drag-clamping and size math trust
-   the viewBox rectangle, so dead transparent margin makes an item bump
-   invisible walls. Run `scripts/check-svg-ink.sh <file>` (cross-platform —
-   finds Chrome/Chromium via `$CHROME_BIN`, macOS, PATH, or Playwright) —
-   the worst-side dead margin should be ≤ ~6%. If it's padded, TIGHTENING THE
-   VIEWBOX IS PERMITTED normalization (it reframes; it never redraws a
-   path) — apply the tool's suggested viewBox and record the change in the
-   response's `notes` (e.g. `viewBox normalized: tightened from "..." to
-   ink bounds`). Grade composition against the ORIGINAL framing if it was
-   meaningfully off. Prevention beats repair: when a prompt is being
-   written, ask the generating model for artwork that "fills the viewBox
-   edge to edge, ≤2% margin, no surrounding empty space."
-4. **Write `entry.json`** following the schema in `PLAN-BACKEND.md` §2.2
-   (or copy `items/2026-07-26-skeleton-key/entry.json` as a template).
-   Required: schema (currently `2` — the numeric-grade shape), id, title,
-   prompt, created, responses[{rid, file, model, date, generation, grade}].
-   2-space indent, UTF-8, LF. `rid`s are `r1`, `r2`, … and are permanent.
-5. **Validate**: `python3 scripts/validate-junk-drawer.py` — fix every error
-   it reports before committing. If python3 is unavailable, at minimum
-   verify the JSON parses and the file references are correct, and say so
-   in the commit message.
-6. **Commit and push** to `main`:
-   `junk-drawer: add "<title>" (<model>[, <model>...])`
-   Include ONLY this item's files (plus taxonomy.json if you registered a
-   model). Do not run publish.sh; the push triggers deployment.
+**Data:**
 
-## Procedure: add an ALTERNATIVE to an existing item
+- `data.php` reads the `jd2_*` tables and nothing else: live prompts → the
+  shown run → its ok, unhidden drawings → the display session. An item's `id`
+  is the prompt id (a ULID). Modes: `?item=<id>` and `?slim=1`.
+- `taxonomy.json` is the rubric as data (below).
 
-Find the item's directory, add the new `<model-slug>.svg`, APPEND one
-response object (next `rid`) to the existing `responses` array. Never
-reorder, renumber, or rewrite existing responses. Elicit grade/annotations
-as above. Validate, then commit:
-`junk-drawer: add <model> alternative to "<title>"`.
+**API (`api/`):**
 
-## Ratings now live in the DATABASE (2026-08-18) — read this first
+- `jd2-config.php`: word lists, `jd2_current_session`,
+  `jd2_display_session`, `jd2_is_complete`, `jd2_derive_pairs`, the pool,
+  and the set-based reads data.php and `jd2-analytics` use (a fixed number of
+  queries, never one per prompt or run): `jd2_runs_for_prompts`,
+  `jd2_current_sessions_for_runs`, `jd2_standings_for_sessions`,
+  `jd2_display_pick`.
+- `jd2-generate`, `jd2-title`, `jd2-rate`, `jd2-curate` and `jd2-gen-svg`:
+  the writers, the titler and the SVG server.
+- `jd2-queue` (the bench), `jd2-ledger` (the ledger) and `jd2-analytics`
+  (public: the about page's charts plus `pairs` and `margins`, with
+  `?origin=owner|visitor`).
+- Shared with v1 and still live: `jd-config.php` (taxonomy accessors, the
+  key gate, `JD_V1_FROZEN`), `jd-provider.php`, `jd-mock-provider.php`,
+  `jd-svg-sanitizer.php`, `jd-usage.php`, `jd-prices.json`,
+  `jd-origin.php` and `jd-admin-check.php`. The v1 `jd-*.php` writers answer
+  410 (`JD_V1_FROZEN = true`). The v1 readers serve only `legacy/`.
 
-**Annotations are no longer filed in `entry.json`.** Taxonomy v17 retired all
-9 previous axes at once, so every response needed re-rating; those judgments go
-to the `jd_ratings` table, not to the files. v18 then folded Restraint into
-Understanding the Assignment and put Layering on the 3-point problems scale,
-leaving **4 live axes — 308 cells across the 77 live responses.**
+**Runners:** `api/setup-jd2-tables.php` (v2 DDL, idempotent, both dialects)
+and `api/setup-jd-tables.php` (v1). `api/jd-backfill-curated.php` answers
+"done" while v1 is frozen.
 
-Nothing reads the axis list from anywhere but `taxonomy.json`: the queue
-endpoint filters `defunct`, the write endpoint validates against the live ranks,
-and the bench binds keys by POSITION. A taxonomy change of this shape needs no
-code change — which is the test a future rubric edit should still pass.
+**Owner tools:**
 
-- **`index.php?admin` — ADMIN MODE (owner, 2026-09-05; reworked
-  2026-09-10).** The same strip as `?bench`, holding only the key gate,
-  the build stamp and SIGN OUT. With the key verified, every REPORT CARD
-  renders its grades table as the scales themselves — each axis and the
-  overall grade a select holding the value on file — and SAVE RATINGS
-  files the shown response through `jd-item-rate.php` (`jd-record.js`
-  owns the editor). A curated item is addressed by entry id + rid: the
-  server first brings its database rows level with `entry.json`
-  (`api/jd-curated-sync.php`, sixteen slots since 2026-09-10), so a
-  harvested response the backfill never saw is rateable the moment it is
-  saved. The overlay in `data.php` serves the change at once. A HIDE FROM
-  DRAWER checkbox rides the save row and files with the button — the
-  item's `retire_requested_at`, set or cleared through `jd-curate.php`,
-  which `data.php` honours LIVE for turns and curated items alike (no
-  commit); the strip's HIDDEN ITEMS lists everything hidden with a SHOW
-  for each. The grades table's second column is "Grade" (never "Verdict",
-  owner 2026-09-10).
-  An entry retired IN ITS FILE (`apply-scraps.py` wrote it) needs a commit
-  to return. Ranks and sizes are still the bench's (`?bench`) business.
-- **THE GATE IS ON (2026-09-05).** `JD_BENCH_REQUIRE_KEY = true`: every
-  curator endpoint wants the bench key (`jd_bench_key` in
-  `private_config/secrets.php`, falling back to `jd_setup_key`) as
-  `X-Bench-Key`. The page's `JD_admin` (jd-core.js) asks once per device,
-  remembers it in localStorage, verifies it against `jd-admin-check.php`
-  before painting any write control. Wrong keys are throttled per address
-  (8 an hour, then 429). The five scripts that call these endpoints
-  (`apply-scraps`, `backfill-costs`, `harvest-rerun`, `keep-legacy`,
-  `promote-turn`) read `JD_BENCH_KEY` from the environment — export it
-  first. A dev checkout with no `config/secrets.php` runs keyless.
-- **`index.php?bench` — the owner's rating instrument since 2026-08-28.**
-  Bench mode runs the backlog INSIDE the real turn card (`JD_turn.curate` in
-  `jd-turn.js`): an item's existing responses are dealt blind into slots
-  on the same bench/rail/podium a visitor gets, filed per item through
-  `jd-item-rate.php` as ONE batch (`{submission_id, size, responses:
-  [{generation_id, grade, axes, rank}]}`; ranks land in `jd_ranks`, the
-  size in `jd_submissions.size_class`), names withheld until the unveil.
-  The `JD_bench` driver (`jd-bench.js`) owns only the furniture around the
-  card — key gate, queue, the dark strip at the viewport foot with scrap /
-  rerun / skip / prev. The POINT of this seating: every layout/appearance
-  change the owner requests for the rating flow is made ONCE, in the shared
-  card, and reaches visitors and backlog alike — never fork a bench-only
-  copy of the instrument. Scrap and rerun are curator INTENTS, filed by
-  `jd-curate.php` into `jd_submissions.retire_requested_at` /
-  `rerun_requested_at` (until 2026-09-05 they were `flag` rows in
-  `jd_ratings`; `setup-jd-tables.php` folded those into the columns) for a
-  session to apply later (`scripts/apply-scraps.py`); a rerun then runs as a
-  REAL turn via `JD_turn.rerun`. Phone and desktop stay in sync through the
-  server (the strip refetches the queue when the tab regains visibility).
-- `art/junk-drawer/rating-bench.html` — the RETIRED first instrument
-  (unlinked, noindex; its own flat-dark page, keys answer by position).
-  Superseded by `?bench`; keep until the owner says to delete.
-- `api/jd-bench-queue.php` (read) and `api/jd-item-rate.php` (write) — both
-  gated on `jd_bench_key`, falling back to `jd_setup_key`. A response is
-  `complete` when every live axis AND a grade (bench, or the entry.json
-  seed) are on file; multi-response items additionally need every response
-  ranked before bench mode counts the item done.
-- `api/jd-backfill-curated.php` — files each curated item as a synthetic
-  `jd_submissions` row (keyed by `item_id`) with one `jd_generations` row per
-  response, so a rating has something to hang off. Idempotent and, since
-  2026-09-10, INCREMENTAL (responses appended to an entry get rows after the
-  ones already there) through `api/jd-curated-sync.php`, the same sync the
-  admin editor runs on demand — so the bulk run is a convenience for the
-  queue, not a prerequisite.
-- **SEEDS CARRY THE ENTRY'S LIVE-AXIS ANNOTATIONS AND HARVEST RANKS
-  (2026-09-10).** The owner found the bench dealing back items already
-  annotated: a harvested rerun set arrives in `entry.json` with the owner's
-  answers on the live axes and a "filed rank N of M" note per response, but
-  its database rows carried only a seed GRADE, so the queue — which reads
-  the database alone — counted them unrated and unranked. The sync now
-  files a `seed` axis row per live-axis annotation and `seed` rank rows when
-  every served response carries the harvest's rank note, and LEVELS rows
-  already on file the same way; the queue counts seed axes and seed ranks
-  toward `complete`/ranked (the bench's own word still outranks a seed).
-  **After deploying a sync change, re-run the backfill once** —
-  `api/jd-backfill-curated.php?key=<jd_setup_key>` (dry-run first with
-  `&dry-run=1`) — it reports what it levelled per item.
-  **The deploy now runs the schema runner AND the backfill after every
-  upload** (`.github/workflows/deploy.yml`, last step, `JD_SETUP_KEY` secret;
-  Runbook in `db/junk-drawer-schema.md`) — because the 2026-09-10 widening sat
-  unrun on production until 2026-09-27 and every save on a rerun item failed
-  meanwhile. So: commit an entry, push, and its rows and seeds are in the
-  database when the deploy goes green. Only `scripts/push-files.sh` bypasses
-  this; after pushing a schema or sync change that way, run the two URLs by
-  hand. Since 2026-09-27 the sync and the backfill refuse with a
-  sentence naming the runner when the live `slot` column is too narrow, so
-  a dry run of the backfill doubles as the "is the schema current?" check.
-  **Every live item is in the database as of 2026-09-27 (49/49)**; ratings
-  are changed in `?admin`, not by editing `entry.json`. Defunct-axis
-  annotations are never seeded. A legacy keep beside a rerun set has no
-  consistent rank note, so it seeds no ranks and, with five served
-  responses, the bench cannot seat it anyway — the ledger says so.
+- `ledger.html`: one row per prompt on `jd2-ledger`. Its SAVE files a new
+  owner session.
+- `scripts/jd2-batch-run.php`: the CSV batch runner.
+- `scripts/jd2-export.py`: JSONL, plus standing and pairs CSVs.
+- `sizing-desk.html` is a v1 tool (it exports `entry.json` size edits) and
+  is not re-pointed. v2 sizes are prompt columns (`size_class`,
+  `size_scale`) filed by the turn card's size card or through `jd2-curate`.
 
-**`## The one rule` above is now narrower than it reads.** Committing is still
-the whole publishing act for ARTWORK and item METADATA — the `.svg`, the
-prompt, the title, `sizeClass`, `retired`. It is no longer true of scores.
+**v1, kept:**
 
-**The read path is built (2026-09-05).** `data.php` lays the bench's word
-OVER a curated entry at request time: the grade and every live axis the
-bench answered replace the entry's (an entry remark on an axis survives
-unless the bench filed one), the bench's rank rides along as `rank`, the
-size the bench filed replaces `sizeClass`, and the response the drawer SHOWS
-is the bench's 1st place whenever the bench has ranked every served
-response — over any `primary` pin — else the pin, else the best grade. The
-entry stays the permanent record; the harvest scripts keep copying into it.
-Do not "fix" the drawer by copying DB ratings back into `entry.json` — the
-direction of travel is the other way.
+- `legacy/`: the frozen exhibit, with its own `data.php`, `taxonomy.json`,
+  module copies and `items/`. See `legacy/README-LEGACY.md`.
+- `items/`: the v1 files, still at their old paths for links and the social
+  renders (`scripts/render-jd-social*.py`). Nothing in v2 reads them.
+- `scripts/export-jd-evals.py`, `scripts/jd-v1-*.py`: the v1 export and
+  archive. `scripts/validate-junk-drawer.py` checks `legacy/items/` against
+  the live taxonomy. `scripts/jd-spend.php` is v1-only.
 
-The 9 defunct-axis scores still in `entry.json` are a deliberate historical
-record: they span five taxonomy versions, so they were NOT migrated (a single
-`taxonomy_version` stamp on them would be false). Leave them.
+## How items enter
 
-When filing a NEW item, still collect a grade as described below — the backfill
-carries it into the DB as a seed row. Per-axis annotations for new items are
-the bench's job now, not the entry file's.
+There are two ways in. Nothing enters by file.
 
-## Procedure: harvest a RERUN into its item (first run: crystal ball, 2026-08-29)
+1. **The owner.** Use the bench's NEW PROMPT (`?bench`; `?bench&prompt=<id>`
+   seats one prompt), or the CSV batch runner:
+   `JD_BENCH_KEY=… php scripts/jd2-batch-run.php prompts.csv [--dry-run]
+   [--resume]`. The CSV columns are `prompt`, `title`, `size`, `category`,
+   `v1_item_id`, `rerun_of`. Owner runs use the `bench` profile: every model
+   at its vendor's top setting, one model per request. The prompt files as
+   `draft`. The owner then rates it on the bench, and the first complete
+   owner session makes it `live`. A rerun is a new run of the same prompt
+   (`rerun_of`). The drawer shows `shown_run_id`, else the newest run with a
+   complete display session.
+2. **Visitors.** TAKE A TURN (`jd-turn.js`) draws through `jd2-generate` on
+   the `web` profile, behind consent (`JD_CONSENT_VERSION`). The visitor
+   rates on the same card, and a complete visitor session makes the prompt
+   live unless they kept it out. Visitors get one session per run; the owner
+   gets unlimited sessions.
 
-A bench rerun files the item's prompt as a real visitor turn; its drawings
-and the owner's blind ratings live only in the DB. To commit them back:
-`GET api/jd-harvest.php?item=<item_id>` returns the rated rerun turns whole
-(SVG text, ratings, ranks, comparison). `scripts/harvest-rerun.py <item_id>`
-does the mechanics. It writes each SVG as `<model-slug>.svg` (run the ink
-check after — and if a crop is applied, bring fixed width/height attributes
-along or the checker letterboxes and reads false padding), APPENDS responses
-**in the owner's rank order** (a pre-podium rerun has no ranks: comparison
-winner first, then grade), and **PINS `primary` to the owner's 1st place**
-— owner rule, 2026-08-29: what appears in the drawer is the RE-RATED set,
-whatever the old grades say; the old responses stay on the back end as the
-permanent record. THE GATE (owner, same day): a rerun may take the drawer
-spot only when rated under the current taxonomy ENTIRELY — every surviving
-response graded and answered on every live axis (axis IDS are the test;
-a label-era taxonomy_version stamp doesn't disqualify) — the script refuses
-otherwise. Each response carries `grade`, its **axis `annotations`**
-(numeric ranks — an exception to the 2026-08-18 don't-copy-DB-ratings note,
-by owner direction: the card renders from entry.json and the DB read path
-is still unbuilt, and the gate guarantees the set is complete and current),
-and **`tokens` + `cost_usd`** computed from the
-harvest's `usage_tokens` via `jd_generation_cost()` (mirror jd-rate.php's
-reveal shape: `tokens: {input, output, total}`, cost rounded to 6) so the
-report card states Cost/Tokens. Old responses
-stay untouched (permanent record). Validate, commit
-`junk-drawer: add rerun responses to "<title>" (<models>)`.
+The bench and the visitor card are ONE instrument (`JD_turn.curate`). A
+layout or behaviour change to the rating flow is made once, in the shared
+card, and never forked into a bench-only copy.
 
-## The card's cast (owner rule, 2026-08-30) — READ BEFORE HARVESTING
+## How ratings work
 
-**Once an item has a rerun set, its card shows those four responses and
-nothing else.** The pre-rerun originals — the Claude-only trio from the
-app's building days — are RETIRED from display (`"retired": true`, which
-drops a response from data.php's payload while its row and file stay for
-the record). An older response appears on a card only when the owner asks
-for it BY NAME, which is the legacy-keep path below; that keep is then the
-one visible original, and every other original on that item still retires.
-`scripts/harvest-rerun.py` applies this automatically: it retires every
-non-rerun response except a filed keep (the pinned `primary`).
+- **A session is one sitting** of one rater over one run. It carries a grade
+  and every live axis per drawing, a strict ranking (with optional gaps
+  0..3), and pairs. Each session is stamped with its role, taxonomy version,
+  instrument version, `blind`, `seat_order` and an optional `note`.
+- **Sessions are append-only.** A re-rating, the admin editor and the ledger's
+  SAVE all file a NEW session. Nothing is deleted or replaced. The admin
+  editor and the ledger refuse to save over a VISITOR's sitting (data.php's
+  `display_role`) and point at the bench: a visitor's ranking and pairs are
+  never re-filed as the owner's.
+- **Current** = the latest filed session per (run, role). **Display** = the
+  owner's current session if it is complete, else the visitor's current
+  session if that is complete. Owner and visitor are separate populations,
+  reported separately and never averaged together.
+- **Pairs** are −3..+3, positive = `gen_a` (canonical order, by slot). They
+  are `direct` when the card asks them (the side-by-side head-to-head cards)
+  or `derived` (`spaced-rank-v1`) from the ranking plus gaps. One session
+  uses one method or the other.
+- **Complete** = every ok, unhidden drawing has a grade and every live axis,
+  the ranking places them all, and every pair has a score. Completeness is
+  computed from the taxonomy at the session's version, never from a constant.
+- **Hiding.** `jd2-curate` sets `visibility` to `live`, `hidden` or `draft`.
+  This is the ONE switch: HIDE FROM DRAWER, the bench's scrap, and the
+  ledger all set it. `hidden` on a generation drops a single drawing from
+  its run.
 
-## Procedure: KEEP a legacy response as the drawer's display
+## The taxonomy (`taxonomy.json`)
 
-The owner's exception to replace-with-the-rerun (2026-08-29): for some
-legacy items the ORIGINAL response — usually Claude Fable 5's — stays the
-drawer's display even without current-pool comparison data (named so far:
-the ionic column, the loose cigarette; more will surface as reruns land).
-The path: the owner rates the favorite on the current rubric at
-`?bench&item=<item_id>` (direct bench addressing — the queue backs only
-original responses, so those seat), then `scripts/keep-legacy.py <item_id>
-<rid>` applies the filed bench ratings to entry.json (grade regraded with
-history if changed, axis annotations written), pins `primary` to it, and
-notes the call. Same full-rubric gate as harvests. Validate, commit,
-upload the entry.json.
+- **Ids are permanent. Labels and descriptions are data.** Grades and axis
+  values are filed as numeric `rank`s, so labels can be reworded freely.
+  Never rename or delete an id, grade rank or axis id: the v1 archive and
+  every v2 session refer to them.
+- **Retire, never delete:** set `"defunct": true` on an axis. A defunct axis
+  stays for the ratings filed under it, is never asked again, and drops out
+  of completeness.
+- **`comparison`** is the 7-point head-to-head scale (+3 = the first much
+  better). **`gaps`** is the 0..3 margin between adjacent places. Every
+  instrument renders both from the file.
+- **The pool is data.** A model with `pool: true`, `provider` and
+  `api_model` is in the pool, and `poolVersion` names the snapshot that every
+  run records. To refresh the pool: verify the wire ids and prices, add
+  `api/jd-prices.json` rows, bump `poolVersion`, and bump the consent version
+  if the provider list changes (privacy.php §4 must match).
+- **`utility`** names the helper models outside the pool, by use:
+  `utility.title` is the tag titler `jd2-title.php` calls
+  (`jd2_utility_model`; a taxonomy without it makes the titler answer 500).
+- Every edit adds a `changelog` line and bumps `version`. Sessions stamp the
+  version; `instrument` (`v2.0`) changes only when the rules of a sitting
+  change.
 
-## Procedure: regrade / annotate an existing response
+## Keys
 
-Push the old grade into `grade_history` as
-`{"grade": <old rank number>, "date": <old graded date>, "taxonomy_version": <n>, "note": <why>}`,
-then set the new `grade` (a rank number, e.g. `2.0`) and `graded`. Adding annotations on new axes to old
-entries is just adding keys. Commit: `junk-drawer: regrade "<title>" <rid> <old>→<new>`.
+- The bench key is `jd_bench_key` (falling back to `jd_setup_key`) in the
+  server's `private_config/secrets.php`. Requests send it as `X-Bench-Key`.
+  The page asks once per device (`JD_admin`). Wrong keys are throttled.
+- Scripts read it from the environment as `JD_BENCH_KEY`. The deploy reads
+  `JD_SETUP_KEY` from a repo secret.
+- **Keys never go in a file, a commit, argv you print, or a log.** A dev box
+  with no `config/secrets.php` runs keyless.
 
-A regrade can change which response the drawer shows — that is intended, and
-needs no edit: `primary` is absent on unpinned entries and the best grade
-wins at request time. Mention it in the commit body when the displayed
-response changes. Do not add a `primary` to "lock in" the old artwork unless
-the owner asks to pin it.
+## Deploy
 
-## Procedure: extend the taxonomy
+A push to `main` deploys over FTPS (`.github/workflows/deploy.yml`). `**/*.md`,
+`scripts/**` and `local-dev/**` are excluded; `legacy/` ships. After the
+upload, the workflow runs `setup-jd-tables.php`, then `setup-jd2-tables.php`,
+then the backfill (which answers `done` while frozen). Anything else fails
+the job. `scripts/push-files.sh` bypasses this step, so run the runner URLs
+by hand after a schema change shipped that way (`db/junk-drawer-v2-schema.md`,
+Runbook). Never run `scripts/publish.sh` from a worktree.
 
-Append the new axis/value/grade/model to `taxonomy.json` with a real
-human-readable description (the frontend displays it), add a `changelog`
-line, bump `version`. NEVER rename or delete an id that any entry
-references — the validator will fail if you do. (Since v8/v9 entries
-reference grades and axis VALUES by numeric `rank`, not id, so their ids,
-labels, and descriptions may be reworded freely — the `rank` numbers are
-the permanent part of those scales. Axis ids themselves are still
-referenced by entries as annotation keys and stay permanent.) To RETIRE an axis, set
-`"defunct": true` on it instead (v6 precedent, 2026-07-29): defunct axes
-stay for the responses already graded under them, render dimmed/tagged,
-and are never surveyed again — annotate new responses ONLY on axes
-without the flag. Commit: `junk-drawer: taxonomy — add axis "<label>"`.
+## Local dev and tests
+
+Set up the dev database with `JD_DEV_MOCK=1 php api/setup-jd-tables.php &&
+JD_DEV_MOCK=1 php api/setup-jd2-tables.php`. This uses SQLite at
+`local-dev/jd-dev.sqlite` and the mock provider. Serve with
+`JD_DEV_MOCK=1 PHP_CLI_SERVER_WORKERS=6 php -S 127.0.0.1:8000 router.php`.
+
+The tests are hermetic and refuse production. **Run them ONE AT A TIME.** They
+share `local-dev/jd-dev.sqlite`, and the flow and reads tests empty the
+`jd2_*` tables first:
+
+- `php scripts/test-jd2-derive.php`: the derivation (no database).
+- `php scripts/test-jd2-flow.php`: generate, rate and curate, plus
+  `data.php`.
+- `php scripts/test-jd2-reads.php`: queue, ledger, analytics, export, batch
+  runner.
+- `node scripts/test-jd2-card.js`: the turn card in Playwright, against the
+  local server above.
+- `node scripts/test-jd2-bench.js`: the bench in Playwright. It starts its
+  own `php -S`.
+- `php scripts/test-jd-sanitizer.php`: the sanitizer fixtures.
+- `python3 scripts/validate-junk-drawer.py`: the v1 archive in `legacy/items/`.
+
+Always run `php -l` and `node --check` on what you touch.
+`scripts/jd-regress/` (the 56-scene byte-for-byte harness) holds v1 captures
+and must be re-captured against v2 before it is used again (its README).
 
 ## Never
 
-- Never modify `data.php`, `index.php`, or `drawer.*` during a content add.
-- Never rename ids (`items/` dirs, `rid`s, taxonomy ids) once committed.
-- Never create or commit a manifest/index of items — `data.php` assembles
-  it at request time.
-- Never store transcripts or notes as `.md` inside `items/` — use `.json`.
+- Never add an item by file. No `entry.json` and no commit-to-add: every
+  drawing enters through the pipeline. (A hand-made SVG would need an import
+  endpoint, which is not built.)
+- Never edit `legacy/`. It is an exhibit, not a codebase (`README-LEGACY.md`).
+  Never write to the v1 `jd_*` tables, and never set `JD_V1_FROZEN` back to
+  false.
+- Never pool v1 and v2. No query joins `jd_*` to `jd2_*`, and `v1_item_id` is
+  lineage, not an analysis join.
+- Never delete or overwrite a session, judgment, ranking or pair. Re-rating
+  files a new session.
+- Never hard-code a model, axis or label in PHP, SQL or JS. They come from
+  `taxonomy.json`.
+- Never write servable data as `.md` (the deploy excludes it).
+- Never `git add -A`. Stage files by name. Work in a worktree
+  (repo `CLAUDE.md`).
 - Never reintroduce a rubber stamp to the turn modal. Round 15 built it
-  around "stamps are the state machine" — a red seal or box stamp standing
-  in for RECEIVED, ATTACHED, ACCESSIONED, OVER QUOTA / CLOSED FOR THE DAY,
-  RETURNED TO SENDER, NOT FILED. The owner asked for every one removed
-  (2026-08-14, `2fbeaf6`). It is a deliberate reversal, not a regression to
-  restore. Each state's meaning survives in prose that was already there;
-  `--tstamp`, the plain ink-red accent that outlived them, went too
-  (2026-10-01): nothing read it. The longer note lives in `junk-drawer.css`
-  above the turn-modal tokens.
+  around "stamps are the state machine": a red seal or box stamp standing in
+  for RECEIVED, ATTACHED, ACCESSIONED, OVER QUOTA / CLOSED FOR THE DAY,
+  RETURNED TO SENDER and NOT FILED. The owner asked for every one removed
+  (2026-08-14, `2fbeaf6`), and that is a deliberate reversal, not a
+  regression to restore. Each state's meaning survives in prose that was
+  already there. `--tstamp`, the plain ink-red accent that outlived them,
+  went too (2026-10-01) because nothing read it. The longer note is in
+  `junk-drawer.css` above the turn-modal tokens.

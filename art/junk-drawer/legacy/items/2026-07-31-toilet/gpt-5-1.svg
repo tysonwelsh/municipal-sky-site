@@ -1,0 +1,208 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="32.5 21.0 144.2 215.8">
+  <defs>
+    <linearGradient id="porcelainBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fdfdfd"/>
+      <stop offset="0.4" stop-color="#f5f6f8"/>
+      <stop offset="1" stop-color="#e3e5ea"/>
+    </linearGradient>
+    <linearGradient id="porcelainRim" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.5" stop-color="#f3f4f7"/>
+      <stop offset="1" stop-color="#e5e7ed"/>
+    </linearGradient>
+    <linearGradient id="tankGradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.7" stop-color="#eef0f5"/>
+      <stop offset="1" stop-color="#d9dde5"/>
+    </linearGradient>
+    <linearGradient id="seatGradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fbfcff"/>
+      <stop offset="1" stop-color="#e5e7ed"/>
+    </linearGradient>
+    <radialGradient id="bowlInner" cx="50%" cy="30%" r="70%">
+      <stop offset="0" stop-color="#d7dbe4"/>
+      <stop offset="0.5" stop-color="#c2c7d3"/>
+      <stop offset="1" stop-color="#a7aebb"/>
+    </radialGradient>
+    <linearGradient id="pipeGradient" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#e9ecf2"/>
+      <stop offset="1" stop-color="#cbd1dd"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Tank -->
+  <g>
+    <path d="M44 24
+             H156
+             a8 8 0 0 1 8 8
+             V106
+             a10 10 0 0 1 -10 10
+             H54
+             a10 10 0 0 1 -10 -10
+             V32
+             a8 8 0 0 1 8 -8
+             Z"
+          fill="url(#tankGradient)" stroke="#b7bcc7" stroke-width="2"
+          stroke-linejoin="round"/>
+    <!-- Tank lid top lip -->
+    <path d="M40 28
+             H160
+             a4 4 0 0 1 4 4
+             v2
+             a4 4 0 0 1 -4 4
+             H40
+             a4 4 0 0 1 -4 -4
+             v-2
+             a4 4 0 0 1 4 -4
+             Z"
+          fill="url(#porcelainRim)" stroke="#c4c8d2" stroke-width="1.4"/>
+    <!-- Flush button -->
+    <circle cx="144" cy="44" r="4.5"
+            fill="#d4d7df" stroke="#a4a9b5" stroke-width="1"/>
+    <circle cx="144" cy="44" r="2.2"
+            fill="#f7f8fb"/>
+  </g>
+
+  <!-- Seat and lid (up) -->
+  <g>
+    <!-- Lid standing up -->
+    <path d="M160 54
+             c8 0 14 9 14 20
+             v82
+             c0 11 -6 20 -14 20
+             h-4
+             c-8 0 -14 -9 -14 -20
+             v-82
+             c0 -11 6 -20 14 -20
+             Z"
+          fill="url(#seatGradient)" stroke="#b6bac5" stroke-width="2"
+          stroke-linejoin="round"/>
+    <!-- Hinge block -->
+    <rect x="136" y="92" width="18" height="10" rx="3" ry="3"
+          fill="#e0e3ea" stroke="#b0b4bf" stroke-width="1.5"/>
+  </g>
+
+  <!-- Bowl exterior -->
+  <g>
+    <path d="M56 96
+             h78
+             c6 0 11 4 12 10
+             l6 46
+             c1.5 12 -2 23 -8 32
+             c-7 10 -18 16 -30 16
+             H74
+             c-12 0 -23 -6 -30 -16
+             c-6 -9 -9.5 -20 -8 -32
+             l6 -46
+             c1 -6 6 -10 12 -10
+             Z"
+          fill="url(#porcelainBody)" stroke="#aeb3bf" stroke-width="2.2"
+          stroke-linejoin="round"/>
+    <!-- Upper rim outer -->
+    <path d="M52 96
+             c0 -6 5 -10 11 -10
+             h64
+             c6 0 11 4 11 10
+             c0 6 -5 10 -11 10
+             H63
+             c-6 0 -11 -4 -11 -10
+             Z"
+          fill="url(#porcelainRim)" stroke="#c0c4ce" stroke-width="1.8"/>
+  </g>
+
+  <!-- Bowl inner opening -->
+  <g>
+    <!-- Inner ellipse / water line -->
+    <ellipse cx="94" cy="112" rx="30" ry="11"
+             fill="url(#bowlInner)" stroke="#737b88" stroke-width="1.4"/>
+    <!-- Inner depth shading -->
+    <path d="M64 112
+             c0 7 13 13 30 13
+             s30 -6 30 -13
+             c0 10 -13 22 -30 22
+             s-30 -12 -30 -22
+             Z"
+          fill="rgba(70,78,90,0.55)"/>
+  </g>
+
+  <!-- Seat ring (profile) -->
+  <g>
+    <!-- Top surface -->
+    <path d="M58 94
+             c0 -4 3 -7 7 -7
+             h58
+             c4 0 7 3 7 7
+             v4
+             c0 4 -3 7 -7 7
+             H65
+             c-4 0 -7 -3 -7 -7
+             Z"
+          fill="url(#seatGradient)" stroke="#b6bac5" stroke-width="1.8"/>
+    <!-- Inner cutout hint (front profile) -->
+    <path d="M74 104
+             c0 -3 2 -5 5 -5
+             h30
+             c3 0 5 2 5 5
+             v1.5
+             c0 3 -2 5 -5 5
+             H79
+             c-3 0 -5 -2 -5 -5
+             Z"
+          fill="#f0f2f7" stroke="#c3c7d2" stroke-width="1.1"/>
+  </g>
+
+  <!-- Base / pedestal -->
+  <g>
+    <!-- Foot flaring -->
+    <path d="M62 200
+             h76
+             c5 0 9 3 10 8
+             l3 20
+             c0.4 3 -2 6 -5 6
+             H54
+             c-3 0 -5.4 -3 -5 -6
+             l3 -20
+             c1 -5 5 -8 10 -8
+             Z"
+          fill="url(#porcelainBody)" stroke="#a8aebb" stroke-width="2"
+          stroke-linejoin="round"/>
+    <!-- Front edge highlight -->
+    <path d="M58 204
+             h84
+             c2.5 0 4.5 1.6 4.5 3.6
+             v1.2
+             c0 2 -2 3.6 -4.5 3.6
+             H58
+             c-2.5 0 -4.5 -1.6 -4.5 -3.6
+             v-1.2
+             c0 -2 2 -3.6 4.5 -3.6
+             Z"
+          fill="#f6f7fa" stroke="#c3c7d1" stroke-width="1.4"/>
+  </g>
+
+  <!-- Back pipe / trap profile -->
+  <g>
+    <path d="M138 162
+             c10 0 18 8 18 18
+             v10
+             c0 10 -8 18 -18 18
+             h-6
+             c-5 0 -9 -4 -9 -9
+             v-32
+             c0 -3.5 2.5 -5 5 -5
+             Z"
+          fill="url(#pipeGradient)" stroke="#a8aebb" stroke-width="1.7"
+          stroke-linejoin="round"/>
+    <!-- Pipe inner shading -->
+    <path d="M138 166
+             c6 0 11 5 11 11
+             v7
+             c0 6 -5 11 -11 11
+             h-3
+             c-2.5 0 -4.5 -2 -4.5 -4.5
+             v-20
+             c0 -2.4 1.8 -4.5 4.2 -4.5
+             Z"
+          fill="#d4d8e1"/>
+  </g>
+</svg>

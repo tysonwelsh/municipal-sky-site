@@ -1,0 +1,138 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+  <defs>
+    <linearGradient id="metal" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#eeeeee" />
+      <stop offset="50%" stop-color="#777777" />
+      <stop offset="100%" stop-color="#333333" />
+    </linearGradient>
+    <linearGradient id="darkMetal" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#555555" />
+      <stop offset="50%" stop-color="#222222" />
+      <stop offset="100%" stop-color="#111111" />
+    </linearGradient>
+    <linearGradient id="neonPink" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF007F" />
+      <stop offset="100%" stop-color="#B30059" />
+    </linearGradient>
+    <path id="body-shape" d="M 330 630 L 100 330 L 190 530 L 20 980 L 330 830 L 760 920 L 460 690 L 380 680 Z" />
+    <clipPath id="body-clip">
+      <use href="#body-shape" />
+    </clipPath>
+  </defs>
+
+  <!-- Neck -->
+  <polygon points="325,625 725,225 775,275 375,675" fill="#1a1a1a" stroke="#000" stroke-width="4" />
+  
+  <!-- Frets -->
+  <g stroke="#666" stroke-width="2.5">
+    <line x1="365" y1="585" x2="415" y2="635" />
+    <line x1="405" y1="545" x2="455" y2="595" />
+    <line x1="445" y1="505" x2="495" y2="555" />
+    <line x1="485" y1="465" x2="535" y2="515" />
+    <line x1="525" y1="425" x2="575" y2="475" />
+    <line x1="565" y1="385" x2="615" y2="435" />
+    <line x1="605" y1="345" x2="655" y2="395" />
+    <line x1="645" y1="305" x2="695" y2="355" />
+    <line x1="685" y1="265" x2="735" y2="315" />
+  </g>
+
+  <!-- Inlays (Neon Pink Shark Fins) -->
+  <g fill="#00FFFF">
+    <polygon points="410,555 450,555 410,590" />
+    <polygon points="490,475 530,475 490,510" />
+    <polygon points="570,395 610,395 570,430" />
+    <polygon points="650,315 690,315 650,350" />
+  </g>
+
+  <!-- Guitar Body (Base Neon Yellow) -->
+  <use href="#body-shape" fill="#E6FF00" stroke="#000" stroke-width="12" stroke-linejoin="round" />
+  <use href="#body-shape" fill="none" stroke="#FF007F" stroke-width="6" stroke-linejoin="round" />
+
+  <!-- 80s Tiger/Lightning Stripes -->
+  <g clip-path="url(#body-clip)" fill="url(#neonPink)">
+    <polygon points="-50,700 150,730 80,750 200,800 -20,820" />
+    <polygon points="100,900 250,880 200,930 400,920 120,980" />
+    <polygon points="350,700 550,680 480,750 700,740 400,800" />
+    <polygon points="120,400 280,450 180,480 320,530 150,550" />
+    <polygon points="500,850 650,820 600,880 800,890 550,920" />
+  </g>
+
+  <!-- Bevel/Highlight -->
+  <use href="#body-shape" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-opacity="0.5" stroke-linejoin="round" transform="translate(3, -3)" />
+
+  <!-- Pickguard / Control Plate Accents -->
+  <polygon points="300,750 400,850 450,800 350,700" fill="none" stroke="#00FFFF" stroke-width="4" />
+
+  <!-- Pickups (Neon Pink & Blue Humbuckers) -->
+  <!-- Neck Pickup -->
+  <polygon points="330,600 370,560 400,590 360,630" fill="#00FFFF" stroke="#000" stroke-width="3" />
+  <polygon points="335,595 365,565 375,575 345,605" fill="#000" />
+  <polygon points="350,610 380,580 390,590 360,620" fill="#000" />
+  
+  <!-- Bridge Pickup -->
+  <polygon points="280,650 320,610 350,640 310,680" fill="#FF007F" stroke="#000" stroke-width="3" />
+  <polygon points="285,645 315,615 325,625 295,655" fill="#000" />
+  <polygon points="300,660 330,630 340,640 310,670" fill="#000" />
+
+  <!-- Floyd Rose Bridge -->
+  <polygon points="220,730 270,680 310,720 260,770" fill="url(#darkMetal)" stroke="#000" stroke-width="4" stroke-linejoin="round" />
+  <polygon points="235,715 275,675 285,685 245,725" fill="url(#metal)" />
+  <!-- Bridge Saddles -->
+  <g fill="#000">
+    <rect x="250" y="725" width="8" height="15" transform="rotate(-45 250 725)" />
+    <rect x="257" y="718" width="8" height="15" transform="rotate(-45 257 718)" />
+    <rect x="264" y="711" width="8" height="15" transform="rotate(-45 264 711)" />
+    <rect x="271" y="704" width="8" height="15" transform="rotate(-45 271 704)" />
+    <rect x="278" y="697" width="8" height="15" transform="rotate(-45 278 697)" />
+    <rect x="285" y="690" width="8" height="15" transform="rotate(-45 285 690)" />
+  </g>
+
+  <!-- Whammy Bar -->
+  <path d="M 230 750 Q 150 780 120 880" fill="none" stroke="url(#metal)" stroke-width="8" stroke-linecap="round" />
+  <path d="M 230 750 Q 150 780 120 880" fill="none" stroke="#FFF" stroke-width="2" stroke-linecap="round" opacity="0.6" />
+
+  <!-- Control Knobs (Dome Knobs) -->
+  <circle cx="360" cy="800" r="15" fill="url(#metal)" stroke="#000" stroke-width="2" />
+  <circle cx="410" cy="770" r="15" fill="url(#metal)" stroke="#000" stroke-width="2" />
+  <circle cx="460" cy="740" r="15" fill="url(#metal)" stroke="#000" stroke-width="2" />
+
+  <!-- Headstock -->
+  <path d="M 725 225 L 750 140 L 980 20 L 820 220 L 775 275 Z" fill="#E6FF00" stroke="#000" stroke-width="8" stroke-linejoin="round" />
+  <path d="M 725 225 L 750 140 L 980 20 L 820 220 L 775 275 Z" fill="none" stroke="#FF007F" stroke-width="4" stroke-linejoin="round" />
+  
+  <g fill="url(#neonPink)">
+    <polygon points="760,170 800,120 830,170" />
+    <polygon points="850,110 900,60 920,110" />
+  </g>
+
+  <!-- Tuning Pegs (Reversed 6-in-line) -->
+  <g fill="url(#darkMetal)" stroke="#000" stroke-width="2">
+    <circle cx="800" cy="230" r="8" />
+    <rect x="795" y="235" width="10" height="25" transform="rotate(20 800 235)" />
+    
+    <circle cx="830" cy="195" r="8" />
+    <rect x="825" y="200" width="10" height="25" transform="rotate(20 830 200)" />
+    
+    <circle cx="860" cy="160" r="8" />
+    <rect x="855" y="165" width="10" height="25" transform="rotate(20 860 165)" />
+    
+    <circle cx="890" cy="125" r="8" />
+    <rect x="885" y="130" width="10" height="25" transform="rotate(20 890 130)" />
+    
+    <circle cx="920" cy="90" r="8" />
+    <rect x="915" y="95" width="10" height="25" transform="rotate(20 920 95)" />
+    
+    <circle cx="950" cy="55" r="8" />
+    <rect x="945" y="60" width="10" height="25" transform="rotate(20 950 60)" />
+  </g>
+
+  <!-- Guitar Strings (Neon Colored for Maximum 80s) -->
+  <g stroke-width="1.5" opacity="0.8">
+    <line x1="260" y1="718" x2="795" y2="225" stroke="#FF007F" />
+    <line x1="267" y1="711" x2="825" y2="190" stroke="#00FFFF" />
+    <line x1="274" y1="704" x2="855" y2="155" stroke="#E6FF00" />
+    <line x1="281" y1="697" x2="885" y2="120" stroke="#FF007F" />
+    <line x1="288" y1="690" x2="915" y2="85"  stroke="#00FFFF" />
+    <line x1="295" y1="683" x2="945" y2="50"  stroke="#E6FF00" />
+  </g>
+</svg>

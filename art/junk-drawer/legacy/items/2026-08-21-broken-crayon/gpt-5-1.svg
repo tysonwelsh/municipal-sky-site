@@ -1,0 +1,166 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="2.0 15.8 319.8 94.8">
+  <defs>
+    <linearGradient id="crayonBody" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#01796f"/>
+      <stop offset="0.5" stop-color="#20b2aa"/>
+      <stop offset="1" stop-color="#006d62"/>
+    </linearGradient>
+    <linearGradient id="crayonBodyRight" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#007c71"/>
+      <stop offset="0.5" stop-color="#24c2b8"/>
+      <stop offset="1" stop-color="#00675e"/>
+    </linearGradient>
+    <linearGradient id="labelBand" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c2f4ec"/>
+      <stop offset="1" stop-color="#8fd9cc"/>
+    </linearGradient>
+    <linearGradient id="shadowGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#000000" stop-opacity="0.25"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="highlight" cx="0.2" cy="0.2" r="0.9">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.45"/>
+      <stop offset="0.6" stop-color="#ffffff" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- soft shadow beneath -->
+  <ellipse cx="160" cy="100" rx="130" ry="12" fill="url(#shadowGrad)" />
+
+  <!-- left broken crayon piece -->
+  <!-- body -->
+  <path d="M10 55
+           L150 40
+           Q160 39 166 44
+           L188 62
+           Q194 67 183 69
+           L40 90
+           Q32 91 26 86
+           L6 69
+           Q1 64 10 55Z"
+        fill="url(#crayonBody)"/>
+
+  <!-- left label band -->
+  <path d="M48 57
+           L140 47
+           Q146 46 150 49
+           L166 62
+           Q171 66 163 67
+           L72 80
+           Q66 81 62 78
+           L45 65
+           Q40 60 48 57Z"
+        fill="url(#labelBand)" opacity="0.95"/>
+
+  <!-- left tip (flat) -->
+  <path d="M6 69
+           L26 86
+           Q22 74 23 63
+           Z"
+        fill="#01564f"/>
+
+  <!-- fracture edge on left piece -->
+  <path d="M150 40
+           Q154 52 152 64
+           Q150 73 148 79
+           L183 69
+           L166 44Z"
+        fill="#00443d"/>
+
+  <!-- accent line on body (left) -->
+  <path d="M30 70
+           Q80 58 134 52
+           Q147 51 154 57"
+        fill="none" stroke="#004f48" stroke-width="2.5" stroke-linecap="round" opacity="0.55"/>
+
+  <!-- highlight on left body -->
+  <path d="M26 60
+           Q80 49 132 44
+           Q142 43 150 48
+           Q124 52 88 61
+           Q52 70 32 74
+           Q22 67 26 60Z"
+        fill="url(#highlight)" opacity="0.7"/>
+
+  <!-- right broken crayon piece -->
+  <!-- body -->
+  <path d="M190 34
+           L312 18
+           Q318 17 320 25
+           L320 95
+           Q320 104 312 103
+           L202 90
+           Q194 89 188 82
+           L170 61
+           Q165 55 170 49
+           Z"
+        fill="url(#crayonBodyRight)"/>
+
+  <!-- right label band -->
+  <path d="M204 44
+           L300 32
+           Q310 31 314 37
+           L314 81
+           Q314 88 304 87
+           L210 77
+           Q203 76 198 70
+           L186 56
+           Q182 51 187 47
+           Z"
+        fill="url(#labelBand)" opacity="0.95"/>
+
+  <!-- pointy tip cap -->
+  <path d="M312 18
+           Q305 30 300 41
+           Q296 50 294 58
+           Q292 63 294 69
+           Q296 77 300 84
+           Q307 93 312 103
+           Q318 104 320 95
+           L320 25
+           Q318 17 312 18Z"
+        fill="#01564f"/>
+
+  <!-- fracture edge on right piece -->
+  <path d="M170 49
+           Q180 56 188 62
+           Q194 66 202 68
+           Q210 70 221 71
+           Q233 72 244 73
+           Q228 65 216 56
+           Q206 49 198 42
+           Z"
+        fill="#00443d"/>
+
+  <!-- accent line on body (right) -->
+  <path d="M196 67
+           Q238 63 280 57
+           Q302 54 314 55"
+        fill="none" stroke="#005a53" stroke-width="2.5" stroke-linecap="round" opacity="0.55"/>
+
+  <!-- highlight on right body -->
+  <path d="M190 38
+           Q240 30 292 25
+           Q300 24 306 28
+           Q278 35 246 42
+           Q214 49 196 53
+           Q188 46 190 38Z"
+        fill="url(#highlight)" opacity="0.6"/>
+
+  <!-- small broken wax chips -->
+  <circle cx="158" cy="71" r="3" fill="#007b71"/>
+  <circle cx="166" cy="77" r="2.4" fill="#009085"/>
+  <circle cx="175" cy="70" r="2.8" fill="#00655d"/>
+
+  <!-- subtle crack details -->
+  <path d="M154 52
+           Q158 57 156 63
+           Q154 69 151 73"
+        fill="none" stroke="#012623" stroke-width="1.2" stroke-linecap="round" opacity="0.6"/>
+
+  <path d="M184 50
+           Q189 54 192 60
+           Q194 64 199 66"
+        fill="none" stroke="#013c37" stroke-width="1.2" stroke-linecap="round" opacity="0.6"/>
+</svg>

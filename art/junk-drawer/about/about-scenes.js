@@ -10,9 +10,10 @@
      drawer      — the live pile, exactly as the art page mounts it
      instrument  — the real turn card (JD_turn.curate), network sealed
      record      — the real report card, as finished cards (JD_record.card)
-     analytics   — the real record's numbers, from the endpoint the
-                   analytics folder reads (/api/jd-analytics.php), drawn as
-                   this page's own table and charts (scene 4, below)
+     analytics   — the real record's numbers, from dataset v2's analytics
+                   endpoint (/api/jd2-analytics.php, since the cutover,
+                   2026-10-01), drawn as this page's own table and charts
+                   (scene 4, below)
 
    The turn card normally mounts as a full-screen scrim on <body>. Inline
    mode (see about.css) re-parents the scrim into the pane and flows it in
@@ -136,8 +137,18 @@
   }
 
   var BASE = '/art/junk-drawer/';         /* the full drawer, for links */
-  var SPECIMEN = '2026-07-28-desktop-succulent';
-  var INSTRUMENT_ITEM = '2026-08-20-googie-style-ufo';   /* scene 2's blank card */
+  /* THE TWO DATASETS (the v2 cutover, 2026-10-01). The drawer this page
+     mounts (JD_DATA_URL) is dataset v2, which starts empty; dataset v1 is
+     frozen and stays on view at the legacy drawer, whose own data.php still
+     answers ?item=. The report cards' specimen is a v1 item and stays one:
+     scene 3's steps are a close reading of those exact drawings (they name
+     each by model id, here and in the phone's figures), so they cannot
+     follow a newer prompt without being rewritten for it. Scene 2's blank
+     card is data-driven instead: v2's newest live prompt when one exists
+     (instrumentItem, below), else the v1 UFO, else the v1 succulent. */
+  var LEGACY_DATA = '/art/junk-drawer/legacy/data.php';
+  var SPECIMEN = '2026-07-28-desktop-succulent';          /* v1, from LEGACY_DATA */
+  var INSTRUMENT_ITEM = '2026-08-20-googie-style-ufo';    /* v1: scene 2's fallback */
 
   root.classList.add('jd-about--live');
 
@@ -220,19 +231,63 @@
      drawer's ~200 KB), and never waits on the drawer's own load. Still read
      live: grades and ratings come from the same record the drawer shows, so
      this page cannot quietly disagree with it. Each item is fetched once; a
-     failed fetch is not cached, so the next caller asks again. */
+     failed fetch is not cached, so the next caller asks again. `url` is the
+     data.php to ask: the legacy drawer's (v1 ids) unless named. */
   var itemP = {};
-  function itemData(id) {
-    if (!itemP[id]) {
-      itemP[id] = fetch(JD_API + JD_DATA_URL + '?item=' + encodeURIComponent(id))
+  function itemData(id, url) {
+    url = url || LEGACY_DATA;
+    var key = url + '?item=' + id;
+    if (!itemP[key]) {
+      itemP[key] = fetch(JD_API + url + '?item=' + encodeURIComponent(id))
         .then(function (r) { return r.ok ? r.json() : null; })
         .catch(function () { return null; })
         .then(function (d) {
-          if (!d || !d.item) { itemP[id] = null; return null; }
+          if (!d || !d.item) { itemP[key] = null; return null; }
           return d;
         });
     }
-    return itemP[id];
+    return itemP[key];
+  }
+
+  /* SCENE 2'S ITEM, CHOSEN BY THE DATA: the v2 drawer's newest live prompt
+     (data.php lists live prompts newest first; ?slim=1 is the cheap way to
+     ask whether there is one), else the v1 UFO from the legacy drawer, else
+     the v1 succulent. Resolves to {d, v2} or null; asked once. The 'try'
+     step's small print says which dataset the card's drawings came from. */
+  var instrumentP = null;
+  function instrumentItem() {
+    if (!instrumentP) {
+      instrumentP = fetch(JD_API + JD_DATA_URL + '?slim=1')
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .catch(function () { return null; })
+        .then(function (s) {
+          var newest = s && s.items && s.items[0];
+          return newest ? itemData(newest.id, JD_DATA_URL) : null;
+        })
+        .then(function (d) {
+          if (d) return { d: d, v2: true };
+          return itemData(INSTRUMENT_ITEM).then(function (d1) {
+            return d1 || itemData(SPECIMEN);
+          }).then(function (d1) { return d1 ? { d: d1, v2: false } : null; });
+        })
+        .then(function (got) {
+          if (!got) instrumentP = null;     /* not cached: ask again next time */
+          labelInstrument(got);
+          return got;
+        });
+    }
+    return instrumentP;
+  }
+  function labelInstrument(got) {
+    var el = root.querySelector('[data-specimen-note="instrument"]');
+    if (!el) return;
+    if (!got) { el.hidden = true; return; }
+    el.innerHTML = got.v2
+      ? 'The drawings on this card are the newest prompt in the drawer.'
+      : 'The drawings on this card are a v1 specimen: they come from the first ' +
+        'dataset, now on view in the <a href="' + BASE + 'legacy/" target="_blank" ' +
+        'rel="noopener">legacy drawer</a>.';
+    el.hidden = false;
   }
 
   /* ---- the pane ----------------------------------------------------------
@@ -1401,11 +1456,10 @@
          prompt — the Googie UFO — so the walkthrough shows more than one
          drawing. Its four served responses, in the order data.php gives
          them; the card deals them blind. The succulent stands in if the UFO
-         cannot be had. */
-      return itemData(INSTRUMENT_ITEM).then(function (d) {
-        return d || itemData(SPECIMEN);
-      }).then(function (d) {
-        var item = d && d.item;
+         cannot be had. Since the v2 cutover (2026-10-01) the v2 drawer's
+         newest live prompt comes first, when there is one (instrumentItem). */
+      return instrumentItem().then(function (got) {
+        var item = got && got.d && got.d.item;
         if (!item) return null;
         self._item = item;
         var picked = item.responses.slice(0, 4);
@@ -1887,8 +1941,9 @@
   /* THE CHARTS, WITHOUT THE FOLDER (owner, 2026-09-27: "we won't need the
      analytics folder as a background … rework the graphs … follow the design
      principles of Edward Tufte"). This page draws its own three charts from
-     the same endpoint the folder reads (/api/jd-analytics.php), so the
-     numbers are the folder's numbers, but the ink is spent on data alone:
+     dataset v2's analytics endpoint (/api/jd2-analytics.php since the
+     cutover, 2026-10-01: v1's keys and shapes, key for key, so no figure
+     changed with the URL), but the ink is spent on data alone:
        - no frames, no fills, no gridlines; one hairline per row to carry the
          eye, and faint ticks at each point of the scale
        - direct labels everywhere (model names on the rows, values at the
@@ -1913,6 +1968,17 @@
      chartsHTML() runs them in the order the steps show them. */
   function chartContext(a, tax, full) {
     var cx = { a: a, tax: tax, name: {}, ink: {} };
+    /* NOTHING FILED YET (the v2 cutover, 2026-10-01): dataset v2 starts
+       empty, so until the first sitting is filed the endpoint answers no
+       models, or models whose every n is 0. Each figure then says so in one
+       line (emptyFig) rather than drawing an empty chart. */
+    var filed = 0;
+    (a.grades || []).forEach(function (g) { filed += +g.n || 0; });
+    (a.axes || []).forEach(function (ax) {
+      (ax.models || []).forEach(function (r) { filed += +r.n || 0; });
+    });
+    (a.cost || []).forEach(function (c) { filed += +c.n || 0; });
+    cx.empty = !(a.models || []).length || filed === 0;
     var name = cx.name, ink = cx.ink;
     (a.models || []).forEach(function (m, i) {
       name[m.model_id] = m.label;
@@ -1970,8 +2036,20 @@
     return cx;
   }
 
+  /* a figure with nothing to draw: its title (the sheet has none) and one
+     line in the subtitles' voice (about.css, .jdc-empty) */
+  function emptyFig(chart, title) {
+    return '<figure class="jdc" data-chart="' + chart + '">' +
+      (title ? '<figcaption><span class="jdc-title">' + title + '</span></figcaption>' : '') +
+      '<p class="jdc-empty">No ratings filed yet under dataset v2.</p></figure>';
+  }
+  function anyN(list) {
+    return (list || []).some(function (r) { return (+r.n || 0) > 0; });
+  }
+
   /* the table (data-view turns) */
   function sheetFig(cx) {
+    if (cx.empty || !cx.sheet.length) return emptyFig('turns', '');
     var esc = JD_esc, liveAx = cx.liveAx, modelName = cx.modelName, sheet = cx.sheet, mcols = cx.mcols;
     var sub = ['Overall Grade'].concat(liveAx.map(function (x) { return x.label; }));
     /* the scale each column is read on: 5 for the grade, an axis's own
@@ -2043,6 +2121,7 @@
 
   /* the average and the spread (data-view grades) */
   function gradesFig(cx) {
+    if (cx.empty || !anyN(cx.a.grades)) return emptyFig('grades', 'How the models compare');
     var a = cx.a, tax = cx.tax, esc = JD_esc, name = cx.name, ink = cx.ink, order = cx.order,
         sheet = cx.sheet, byOrder = cx.byOrder;
     function pos(v, lo, hi) { return ((v - lo) / (hi - lo) * 100).toFixed(2) + '%'; }
@@ -2073,7 +2152,7 @@
     (tax.grades || []).forEach(function (g) { gradeName[g.rank] = g.label; });
     /* THE SAME RATINGS AS THE AVERAGE (owner, 2026-09-27: "if we have the
        overall grades for ninety-five, why can't we … draw the histograms?").
-       jd-analytics.php now sends each model's grade counts ('hist') from
+       jd-analytics.php (and jd2-analytics.php) sends each model's grade counts ('hist') from
        exactly the rows its average is made of, so every panel sums to the n
        on the average chart. Until that endpoint is live, the panels fall
        back to counting the drawer's own record (the table's prompts). */
@@ -2138,6 +2217,9 @@
 
   /* the four categories (data-view axes) */
   function axesFig(cx) {
+    if (cx.empty || !(cx.a.axes || []).some(function (ax) { return anyN(ax.models); })) {
+      return emptyFig('axes', 'Issue rate in each category');
+    }
     var a = cx.a, tax = cx.tax, esc = JD_esc, name = cx.name, order = cx.order,
         sheet = cx.sheet, byOrder = cx.byOrder;
     /* 2 — THE FOUR CATEGORIES AS ISSUE RATES (owner, 2026-09-30, from
@@ -2212,6 +2294,7 @@
 
   /* 3 — cost per drawing: a length, so a bar, from zero (data-view cost) */
   function costFig(cx) {
+    if (cx.empty || !anyN(cx.a.cost)) return emptyFig('cost', 'Average cost per drawing');
     var a = cx.a, esc = JD_esc, name = cx.name, ink = cx.ink;
     var cost = (a.cost || []).slice().sort(function (x, y) { return y.avg_usd - x.avg_usd; });
     var cmax = cost.length ? cost[0].avg_usd : 1;
@@ -2247,7 +2330,7 @@
     mount: function () {
       var host = sceneEls.analytics;
       return Promise.all([
-        fetch(JD_API + '/api/jd-analytics.php').then(function (r) { return r.ok ? r.json() : null; }),
+        fetch(JD_API + '/api/jd2-analytics.php').then(function (r) { return r.ok ? r.json() : null; }),
         /* the table is the full record, so this scene — and only this
            scene, when it is prepared — reads the drawer's whole data.php */
         fetch(JD_API + JD_DATA_URL).then(function (r) { return r.ok ? r.json() : null; })

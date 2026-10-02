@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800">
+  <defs>
+    <filter id="paper" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.6 0.6 0.6 0 0"/>
+    </filter>
+    <filter id="ink">
+      <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="2" result="t"/>
+      <feDisplacementMap in="SourceGraphic" in2="t" scale="4"/>
+    </filter>
+    <g id="ybar"><rect x="-46" y="-7" width="92" height="14"/></g>
+    <g id="nbar"><rect x="-46" y="-7" width="41" height="14"/><rect x="5" y="-7" width="41" height="14"/></g>
+    <g id="qian"><use href="#ybar" y="-26"/><use href="#ybar"/><use href="#ybar" y="26"/></g>
+    <g id="dui"><use href="#nbar" y="-26"/><use href="#ybar"/><use href="#ybar" y="26"/></g>
+    <g id="li"><use href="#ybar" y="-26"/><use href="#nbar"/><use href="#ybar" y="26"/></g>
+    <g id="zhen"><use href="#nbar" y="-26"/><use href="#nbar"/><use href="#ybar" y="26"/></g>
+    <g id="kun"><use href="#nbar" y="-26"/><use href="#nbar"/><use href="#nbar" y="26"/></g>
+    <g id="gen"><use href="#ybar" y="-26"/><use href="#nbar"/><use href="#nbar" y="26"/></g>
+    <g id="kan"><use href="#nbar" y="-26"/><use href="#ybar"/><use href="#nbar" y="26"/></g>
+    <g id="xun"><use href="#ybar" y="-26"/><use href="#ybar"/><use href="#nbar" y="26"/></g>
+    <style>
+      .char{font-family:'Songti SC','SimSun',serif;font-size:36px;font-weight:bold;fill:#1a1a1a;text-anchor:middle;dominant-baseline:central;}
+    </style>
+  </defs>
+
+  <rect width="800" height="800" fill="#a39e94"/>
+  <rect width="800" height="800" fill="#000" opacity="0.12" filter="url(#paper)"/>
+  <rect width="800" height="800" fill="#000" opacity="0.06" filter="url(#paper)" transform="rotate(90 400 400)"/>
+
+  <g filter="url(#ink)">
+    <!-- octagonal ring -->
+    <polygon points="531.6,79.1 720.9,268.4 720.9,531.6 531.6,720.9 268.4,720.9 79.1,531.6 79.1,268.4 268.4,79.1"
+      fill="none" stroke="#1a1a1a" stroke-width="5"/>
+    <polygon points="524.3,92.4 707.6,275.7 707.6,524.3 524.3,707.6 275.7,707.6 92.4,524.3 92.4,275.7 275.7,92.4"
+      fill="none" stroke="#1a1a1a" stroke-width="2"/>
+    <polygon points="486.5,131.7 668.3,313.5 668.3,486.5 486.5,668.3 313.5,668.3 131.7,486.5 131.7,313.5 313.5,131.7"
+      fill="none" stroke="#1a1a1a" stroke-width="4"/>
+    <polygon points="479.2,144.1 655.9,320.8 655.9,479.2 479.2,655.9 320.8,655.9 144.1,479.2 144.1,320.8 320.8,144.1"
+      fill="none" stroke="#1a1a1a" stroke-width="1.5"/>
+
+    <!-- trigrams -->
+    <g fill="#161616">
+      <use href="#qian" transform="translate(400,135)"/>
+      <use href="#dui"  transform="translate(587.4,212.6) rotate(45)"/>
+      <use href="#li"   transform="translate(665,400) rotate(90)"/>
+      <use href="#zhen" transform="translate(587.4,587.4) rotate(135)"/>
+      <use href="#kun"  transform="translate(400,665) rotate(180)"/>
+      <use href="#gen"  transform="translate(212.6,587.4) rotate(225)"/>
+      <use href="#kan"  transform="translate(135,400) rotate(270)"/>
+      <use href="#xun"  transform="translate(212.6,212.6) rotate(315)"/>
+    </g>
+
+    <!-- characters -->
+    <text class="char" x="400" y="52">乾</text>
+    <text class="char" x="664" y="157">兌</text>
+    <text class="char" x="749" y="400">離</text>
+    <text class="char" x="664" y="650">震</text>
+    <text class="char" x="400" y="755">坤</text>
+    <text class="char" x="136" y="650">艮</text>
+    <text class="char" x="51" y="400">坎</text>
+    <text class="char" x="136" y="157">巽</text>
+
+    <!-- yin yang -->
+    <g transform="translate(400,400)">
+      <circle r="118" fill="none" stroke="#1a1a1a" stroke-width="5"/>
+      <circle r="108" fill="none" stroke="#1a1a1a" stroke-width="2"/>
+      <circle r="100" fill="#f0ede6"/>
+      <path d="M0,-100 A100,100 0 0 1 0,100 A50,50 0 0 1 0,0 A50,50 0 0 0 0,-100 Z" fill="#161616"/>
+      <circle cy="-50" r="50" fill="#161616"/>
+      <circle cy="-50" r="50" fill="none"/>
+      <circle cy="50" r="50" fill="#f0ede6"/>
+      <circle cy="-50" r="16" fill="#f0ede6"/>
+      <circle cy="50" r="16" fill="#161616"/>
+      <circle r="100" fill="none" stroke="#161616" stroke-width="3"/>
+    </g>
+  </g>
+
+  <rect width="800" height="800" fill="#3a352c" opacity="0.08" filter="url(#paper)" transform="rotate(180 400 400)"/>
+</svg>

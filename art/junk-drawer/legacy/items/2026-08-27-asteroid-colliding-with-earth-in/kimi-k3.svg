@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="85.0 58.0 871.8 939.0">
+  <g>
+    <!-- Impact burst -->
+    <g fill="#FFB627">
+      <path d="M430 470 L300 260 L380 420 Z"/>
+      <path d="M450 450 L400 180 L480 400 Z"/>
+      <path d="M480 440 L520 160 L540 410 Z"/>
+      <path d="M500 460 L660 240 L560 430 Z"/>
+      <path d="M410 490 L220 400 L390 450 Z"/>
+      <path d="M505 490 L740 380 L555 455 Z"/>
+    </g>
+    <g fill="#FF6B4A">
+      <circle cx="320" cy="300" r="22"/>
+      <circle cx="500" cy="200" r="18"/>
+      <circle cx="650" cy="290" r="25"/>
+      <circle cx="240" cy="420" r="16"/>
+      <circle cx="700" cy="430" r="14"/>
+    </g>
+    <g fill="#FFD97A">
+      <circle cx="390" cy="330" r="12"/>
+      <circle cx="560" cy="300" r="10"/>
+      <circle cx="470" cy="250" r="9"/>
+    </g>
+
+    <!-- Earth -->
+    <circle cx="620" cy="660" r="330" fill="#2F80ED"/>
+    <path d="M380 520 Q460 430 560 440 Q600 445 590 500 Q580 540 640 560 Q700 580 690 640 Q680 690 620 700 Q560 705 540 660 Q520 620 470 630 Q420 640 400 590 Q390 560 380 520 Z" fill="#4FBF67"/>
+    <path d="M700 780 Q780 760 830 800 Q880 840 850 880 Q800 930 720 900 Q670 880 660 830 Q655 800 700 780 Z" fill="#4FBF67"/>
+    <path d="M420 720 Q480 700 520 740 Q545 775 510 800 Q460 830 410 790 Q385 760 420 720 Z" fill="#4FBF67"/>
+    <path d="M620 660 m-330 0 a330 330 0 1 0 660 0 a330 330 0 1 0 -660 0 Z" fill="none" stroke="#1B5FBF" stroke-width="10"/>
+    <!-- crater highlight at impact -->
+    <path d="M380 540 Q430 470 500 450 Q430 520 420 590 Q400 570 380 540 Z" fill="#9B51E0" opacity="0.35"/>
+
+    <!-- Fiery trail -->
+    <path d="M150 60 Q260 180 380 340 Q420 390 440 420 L400 450 Q300 340 180 200 Q120 130 90 80 Z" fill="#FF6B4A"/>
+    <path d="M180 100 Q280 220 390 360 L410 390 L390 410 Q280 280 160 140 Z" fill="#FFB627"/>
+    <path d="M215 145 Q300 250 385 355 L375 375 Q270 260 190 175 Z" fill="#FFF3D6"/>
+    <circle cx="120" cy="90" r="14" fill="#FF6B4A"/>
+    <circle cx="170" cy="150" r="10" fill="#FFB627"/>
+    <circle cx="95" cy="150" r="8" fill="#FF6B4A"/>
+
+    <!-- Asteroid -->
+    <path d="M330 330 Q360 290 420 295 Q480 300 505 350 Q525 395 500 440 Q470 490 410 495 Q350 500 315 460 Q285 420 295 375 Q300 350 330 330 Z" fill="#7A6C7E"/>
+    <circle cx="380" cy="360" r="28" fill="#5C5060"/>
+    <circle cx="450" cy="420" r="20" fill="#5C5060"/>
+    <circle cx="340" cy="430" r="16" fill="#5C5060"/>
+    <circle cx="440" cy="340" r="12" fill="#5C5060"/>
+    <path d="M320 340 Q360 305 420 305" fill="none" stroke="#9A8CA0" stroke-width="10" stroke-linecap="round"/>
+
+    <!-- Impact flash -->
+    <path d="M470 480 L490 520 L535 505 L510 545 L545 570 L500 570 L495 615 L470 575 L425 590 L450 550 L420 525 L465 530 Z" fill="#FFF3D6"/>
+  </g>
+</svg>

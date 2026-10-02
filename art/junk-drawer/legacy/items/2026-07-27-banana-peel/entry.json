@@ -1,0 +1,34 @@
+{
+  "schema": 2,
+  "id": "2026-07-27-banana-peel",
+  "title": "Discarded banana peel",
+  "prompt": "generate a bannanna peel in a comic book or pop art style. i mean i don't want ben day dots or whatever, just a bannanna peel in a discarded bannanna peel in a comic book style",
+  "created": "2026-07-27",
+  "tags": [],
+  "sizeClass": "s",
+  "retired": true,
+  "responses": [
+    {
+      "rid": "r1",
+      "file": "claude-fable-5.svg",
+      "model": "claude-fable-5",
+      "model_version": "claude-fable-5",
+      "date": "2026-07-27",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 1.0,
+      "graded": "2026-07-27",
+      "grade_history": [],
+      "annotations": {
+        "prompt-fidelity": 2.0,
+        "geometry": 1.0,
+        "color": 2.0,
+        "composition": 2.0
+      },
+      "transcript": null,
+      "notes": "generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed (worst-side margin 2.4%); no viewBox normalization."
+    }
+  ]
+}

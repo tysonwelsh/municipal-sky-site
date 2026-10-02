@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="sewing button">
+        <defs>
+          <radialGradient id="bt-g" cx="0.35" cy="0.35" r="0.8">
+            <stop offset="0" stop-color="#f0d9a8"/>
+            <stop offset="0.7" stop-color="#c59a55"/>
+            <stop offset="1" stop-color="#8f6a33"/>
+          </radialGradient>
+          <radialGradient id="bt-in" cx="0.4" cy="0.4" r="0.75">
+            <stop offset="0" stop-color="#d9b877"/>
+            <stop offset="1" stop-color="#a37e42"/>
+          </radialGradient>
+        </defs>
+        <circle cx="50" cy="50" r="46" fill="url(#bt-g)"/>
+        <circle cx="50" cy="50" r="46" fill="none" stroke="#7a5526" stroke-width="2"/>
+        <circle cx="50" cy="50" r="30" fill="url(#bt-in)" stroke="#8a6531" stroke-width="1.5"/>
+        <g fill="#5e421e">
+          <circle cx="40" cy="40" r="5"/><circle cx="60" cy="40" r="5"/>
+          <circle cx="40" cy="60" r="5"/><circle cx="60" cy="60" r="5"/>
+        </g>
+        <g fill="none" stroke="#e8cf9b" stroke-width="1.2" opacity="0.6">
+          <path d="M36 42 A5 5 0 0 0 43 45"/><path d="M56 42 A5 5 0 0 0 63 45"/>
+          <path d="M36 62 A5 5 0 0 0 43 65"/><path d="M56 62 A5 5 0 0 0 63 65"/>
+        </g>
+        <ellipse cx="33" cy="30" rx="15" ry="8" fill="#ffffff" opacity="0.35" transform="rotate(-38 33 30)"/>
+      </svg>

@@ -1,0 +1,356 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="20.0 0.5 219.2 258.8">
+  <defs>
+    <linearGradient id="skin" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#f3c89a"/>
+      <stop offset="1" stop-color="#e2a973"/>
+    </linearGradient>
+    <linearGradient id="hair" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#4a3422"/>
+      <stop offset="1" stop-color="#24150d"/>
+    </linearGradient>
+    <linearGradient id="fur" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#7a4c22"/>
+      <stop offset="1" stop-color="#4f2f14"/>
+    </linearGradient>
+    <linearGradient id="shellOuter" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#c5a26b"/>
+      <stop offset="1" stop-color="#8f6b3e"/>
+    </linearGradient>
+    <linearGradient id="shellMid" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#d1b27a"/>
+      <stop offset="1" stop-color="#9c7845"/>
+    </linearGradient>
+    <linearGradient id="shellInner" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#dfc38b"/>
+      <stop offset="1" stop-color="#ad8551"/>
+    </linearGradient>
+    <linearGradient id="clubWood" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#8b5a2b"/>
+      <stop offset="1" stop-color="#5a3515"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Outer doll -->
+  <g>
+    <!-- body shape -->
+    <path d="M130 4
+             C90 4 58 32 58 78
+             C58 104 49 124 41 142
+             C31 166 24 185 24 205
+             C24 236 56 256 130 256
+             C204 256 236 236 236 205
+             C236 185 229 166 219 142
+             C211 124 202 104 202 78
+             C202 32 170 4 130 4Z"
+          fill="url(#shellOuter)" stroke="#5b4022" stroke-width="3"/>
+
+    <!-- subtle highlight -->
+    <path d="M96 10
+             C70 18 52 44 52 78
+             C52 102 44 124 36 142
+             C28 160 22 182 24 200"
+          fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="3" stroke-linecap="round"/>
+
+    <!-- face area -->
+    <path d="M130 26
+             C101 26 80 50 80 83
+             C80 112 98 132 130 132
+             C162 132 180 112 180 83
+             C180 50 159 26 130 26Z"
+          fill="url(#skin)" stroke="#b18152" stroke-width="2"/>
+
+    <!-- hair -->
+    <path d="M130 26
+             C102 26 79 44 78 71
+             C90 65 99 62 108 63
+             C117 64 124 69 130 69
+             C136 69 143 64 152 63
+             C161 62 170 65 182 71
+             C181 44 158 26 130 26Z"
+          fill="url(#hair)"/>
+
+    <!-- hair jagged fringe -->
+    <path d="M82 70
+             C89 73 93 77 96 82
+             C100 77 104 75 108 75
+             C111 79 114 82 117 83
+             C120 79 124 77 129 77
+             C133 80 136 82 139 83
+             C143 79 147 77 151 76
+             C155 79 159 82 162 85
+             C166 80 171 76 178 73"
+          fill="none" stroke="#2e1b10" stroke-width="3" stroke-linecap="round"/>
+
+    <!-- eyebrows -->
+    <path d="M101 86
+             C106 82 112 80 118 81"
+          stroke="#2e1b10" stroke-width="3" stroke-linecap="round"/>
+    <path d="M142 81
+             C148 80 154 82 159 86"
+          stroke="#2e1b10" stroke-width="3" stroke-linecap="round"/>
+
+    <!-- eyes -->
+    <ellipse cx="113" cy="94" rx="4.4" ry="4.8" fill="#1b1110"/>
+    <ellipse cx="147" cy="94" rx="4.4" ry="4.8" fill="#1b1110"/>
+    <circle cx="112" cy="93.5" r="1.3" fill="#fff"/>
+    <circle cx="146" cy="93.5" r="1.3" fill="#fff"/>
+
+    <!-- nose -->
+    <path d="M129 92
+             C127 98 126 104 127 110
+             C128 113 131 114 134 113"
+          fill="none" stroke="#b18152" stroke-width="2.2" stroke-linecap="round"/>
+
+    <!-- mouth -->
+    <path d="M115 118
+             C120 124 140 124 145 118"
+          fill="none" stroke="#7c4a34" stroke-width="2.3" stroke-linecap="round"/>
+
+    <!-- beard -->
+    <path d="M96 116
+             C98 133 108 145 130 145
+             C152 145 162 133 164 116"
+          fill="#3b2416"/>
+    <path d="M100 122
+             C106 135 115 140 130 140
+             C145 140 154 135 160 122"
+          fill="none" stroke="#24150d" stroke-width="2"/>
+
+    <!-- outer fur tunic -->
+    <path d="M76 143
+             C61 150 48 169 41 189
+             C36 204 35 215 36 228
+             C60 243 92 252 130 252
+             C168 252 200 243 224 228
+             C225 215 224 204 219 189
+             C212 169 199 150 184 143
+             C166 151 149 155 130 155
+             C111 155 94 151 76 143Z"
+          fill="url(#fur)" stroke="#3b2416" stroke-width="2.5"/>
+
+    <!-- fur jagged bottom -->
+    <path d="M57 203
+             L64 214
+             L72 205
+             L80 216
+             L89 205
+             L99 217
+             L109 205
+             L119 218
+             L130 205
+             L141 218
+             L151 205
+             L161 217
+             L171 205
+             L180 216
+             L188 205
+             L196 214
+             L203 203"
+          fill="none" stroke="#2a1509" stroke-width="3" stroke-linecap="round"/>
+
+    <!-- belt -->
+    <path d="M52 193
+             C80 201 104 204 130 204
+             C156 204 180 201 208 193"
+          stroke="#24150d" stroke-width="4" stroke-linecap="round" fill="none"/>
+    <circle cx="130" cy="204" r="4.5" fill="#3b2416"/>
+
+    <!-- bone pattern on tunic -->
+    <g fill="#f7eedc" stroke="#c2b193" stroke-width="1.2">
+      <path d="M103 182
+               C99 178 100 172 104 170
+               C106 167 110 167 113 169
+               C117 167 121 167 123 170
+               C127 172 128 178 124 182
+               C121 185 116 186 113 183
+               C110 186 105 185 103 182Z"/>
+      <path d="M146 182
+               C142 178 143 172 147 170
+               C149 167 153 167 156 169
+               C160 167 164 167 166 170
+               C170 172 171 178 167 182
+               C164 185 159 186 156 183
+               C153 186 148 185 146 182Z"/>
+    </g>
+
+    <!-- outer doll seam -->
+    <path d="M38 176
+             C72 188 99 192 130 192
+             C161 192 188 188 222 176"
+          fill="none" stroke="rgba(0,0,0,0.35)" stroke-width="2" stroke-dasharray="4 4" stroke-linecap="round"/>
+  </g>
+
+  <!-- Middle caveman doll -->
+  <g transform="translate(0,20) scale(0.68)">
+    <!-- body -->
+    <path d="M130 40
+             C100 40 78 60 78 94
+             C78 115 71 132 64 148
+             C56 167 50 183 50 199
+             C50 222 73 238 130 238
+             C187 238 210 222 210 199
+             C210 183 204 167 196 148
+             C189 132 182 115 182 94
+             C182 60 160 40 130 40Z"
+          fill="url(#shellMid)" stroke="#6b4b28" stroke-width="3"/>
+
+    <!-- face -->
+    <path d="M130 56
+             C107 56 90 73 90 97
+             C90 117 104 132 130 132
+             C156 132 170 117 170 97
+             C170 73 153 56 130 56Z"
+          fill="url(#skin)" stroke="#b18152" stroke-width="2"/>
+
+    <!-- hair -->
+    <path d="M130 56
+             C108 56 90 69 89 88
+             C96 85 103 84 109 85
+             C117 86 123 90 130 90
+             C137 90 143 86 151 85
+             C157 84 164 85 171 88
+             C170 69 152 56 130 56Z"
+          fill="url(#hair)"/>
+
+    <!-- eyes -->
+    <ellipse cx="118" cy="98" rx="3.8" ry="4.1" fill="#1b1110"/>
+    <ellipse cx="142" cy="98" rx="3.8" ry="4.1" fill="#1b1110"/>
+    <circle cx="117.2" cy="97.5" r="1.1" fill="#fff"/>
+    <circle cx="141.2" cy="97.5" r="1.1" fill="#fff"/>
+
+    <!-- nose -->
+    <path d="M129 96
+             C128 100 127 104 127 108
+             C128 110 130 111 132 110"
+          fill="none" stroke="#b18152" stroke-width="2" stroke-linecap="round"/>
+
+    <!-- mouth -->
+    <path d="M118 118
+             C123 121 137 121 142 118"
+          fill="none" stroke="#7c4a34" stroke-width="2" stroke-linecap="round"/>
+
+    <!-- beard -->
+    <path d="M104 116
+             C106 130 115 138 130 138
+             C145 138 154 130 156 116"
+          fill="#3b2416"/>
+
+    <!-- inner fur tunic -->
+    <path d="M90 140
+             C78 146 68 161 63 176
+             C60 187 59 196 60 206
+             C81 216 103 221 130 221
+             C157 221 179 216 200 206
+             C201 196 200 187 197 176
+             C192 161 182 146 170 140
+             C157 146 144 149 130 149
+             C116 149 103 146 90 140Z"
+          fill="url(#fur)" stroke="#3b2416" stroke-width="2"/>
+
+    <!-- simple bone on chest -->
+    <path d="M120 162
+             C116 158 117 153 121 151
+             C123 149 126 149 129 151
+             C132 149 135 149 137 151
+             C141 153 142 158 138 162
+             C135 165 131 166 129 164
+             C126 166 122 165 120 162Z"
+          fill="#f7eedc" stroke="#c2b193" stroke-width="1"/>
+
+    <!-- seam -->
+    <path d="M70 178
+             C91 185 110 188 130 188
+             C150 188 169 185 190 178"
+          fill="none" stroke="rgba(0,0,0,0.35)" stroke-width="2" stroke-dasharray="4 4" stroke-linecap="round"/>
+  </g>
+
+  <!-- Smallest caveman doll with club -->
+  <g transform="translate(0,46) scale(0.42)">
+    <!-- body -->
+    <path d="M130 88
+             C110 88 96 101 96 122
+             C96 136 91 149 86 160
+             C80 172 76 182 76 193
+             C76 208 91 220 130 220
+             C169 220 184 208 184 193
+             C184 182 180 172 174 160
+             C169 149 164 136 164 122
+             C164 101 150 88 130 88Z"
+          fill="url(#shellInner)" stroke="#7c5a33" stroke-width="3"/>
+
+    <!-- face -->
+    <path d="M130 100
+             C114 100 102 112 102 129
+             C102 142 112 152 130 152
+             C148 152 158 142 158 129
+             C158 112 146 100 130 100Z"
+          fill="url(#skin)" stroke="#b18152" stroke-width="2"/>
+
+    <!-- hair -->
+    <path d="M130 100
+             C115 100 103 108 102 121
+             C108 119 113 118 118 119
+             C122 120 126 122 130 122
+             C134 122 138 120 142 119
+             C147 118 152 119 158 121
+             C157 108 145 100 130 100Z"
+          fill="url(#hair)"/>
+
+    <!-- eyes -->
+    <ellipse cx="122" cy="129" rx="3.2" ry="3.5" fill="#1b1110"/>
+    <ellipse cx="138" cy="129" rx="3.2" ry="3.5" fill="#1b1110"/>
+    <circle cx="121.3" cy="128.6" r="0.9" fill="#fff"/>
+    <circle cx="137.3" cy="128.6" r="0.9" fill="#fff"/>
+
+    <!-- nose -->
+    <path d="M129 127
+             C128 130 128 133 128 136
+             C129 137 130 138 132 137"
+          fill="none" stroke="#b18152" stroke-width="1.8" stroke-linecap="round"/>
+
+    <!-- mouth -->
+    <path d="M122 141
+             C126 144 134 144 138 141"
+          fill="none" stroke="#7c4a34" stroke-width="1.8" stroke-linecap="round"/>
+
+    <!-- tiny beard -->
+    <path d="M116 140
+             C118 148 123 152 130 152
+             C137 152 142 148 144 140"
+          fill="#3b2416"/>
+
+    <!-- little fur tunic -->
+    <path d="M108 154
+             C100 158 94 168 90 179
+             C88 186 87 193 88 200
+             C101 206 115 210 130 210
+             C145 210 159 206 172 200
+             C173 193 172 186 170 179
+             C166 168 160 158 152 154
+             C145 158 138 160 130 160
+             C122 160 115 158 108 154Z"
+          fill="url(#fur)" stroke="#3b2416" stroke-width="2"/>
+
+    <!-- tiny seam -->
+    <path d="M90 178
+             C104 183 117 185 130 185
+             C143 185 156 183 170 178"
+          fill="none" stroke="rgba(0,0,0,0.35)" stroke-width="2" stroke-dasharray="4 4" stroke-linecap="round"/>
+
+    <!-- wooden club on side -->
+    <path d="M186 118
+             C194 121 199 128 201 135
+             C203 142 203 149 201 156
+             C199 164 196 169 191 173
+             C186 177 180 178 175 176
+             C170 174 168 169 169 163
+             C170 157 173 152 174 146
+             C175 140 175 133 178 127
+             C180 123 183 120 186 118Z"
+          fill="url(#clubWood)" stroke="#4a2b12" stroke-width="2"/>
+
+    <!-- club knots -->
+    <circle cx="189" cy="138" r="2.3" fill="#6c411d"/>
+    <circle cx="183" cy="155" r="1.8" fill="#6c411d"/>
+  </g>
+</svg>

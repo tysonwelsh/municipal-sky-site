@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="52.0 70.5 390.2 509.2">
+  <defs>
+    <style>
+      .outline { stroke: #111111; stroke-width: 6; stroke-linejoin: round; stroke-linecap: round; }
+      .can-base { fill: #00C3FF; }
+      .can-shade { fill: #0088CC; }
+      .can-highlight { fill: #99EEFF; }
+      .trash-pink { fill: #FF007F; }
+      .trash-yellow { fill: #FFD700; }
+      .trash-green { fill: #39FF14; }
+      .trash-red { fill: #FF2A2A; }
+      .trash-white { fill: #FFFFFF; }
+      .trash-orange { fill: #FF7700; }
+    </style>
+  </defs>
+
+  <!-- Garbage in the back -->
+  <polygon points="120,240 90,140 180,110 210,210" class="trash-pink outline"/>
+  <rect x="230" y="80" width="80" height="150" rx="15" transform="rotate(15 270 155)" class="trash-orange outline"/>
+  <polygon points="230,220 210,140 310,120 330,200" class="trash-green outline"/>
+
+  <!-- Trash Can Interior -->
+  <path d="M 90 280 A 130 40 0 0 1 350 280 A 130 40 0 0 1 90 280 Z" fill="#1A2A33" class="outline"/>
+
+  <!-- Fish bone -->
+  <path d="M 190 260 L 140 120" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round" class="outline"/>
+  <path d="M 190 260 L 140 120" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round"/>
+  <path d="M 130 160 L 170 150 M 140 190 L 180 180 M 150 220 L 190 210" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" class="outline"/>
+  <path d="M 130 160 L 170 150 M 140 190 L 180 180 M 150 220 L 190 210" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="132" cy="100" r="22" class="trash-white outline"/>
+  <circle cx="125" cy="95" r="4" fill="#111111"/>
+  <polygon points="180,260 210,290 220,250" class="trash-white outline"/>
+
+  <!-- Tin Can -->
+  <path d="M 270 150 L 220 180 L 240 250 L 290 220 Z" class="trash-red outline"/>
+  <path d="M 270 150 L 220 180 L 210 160 L 260 130 Z" class="trash-white outline"/>
+  <ellipse cx="260" cy="140" rx="20" ry="10" transform="rotate(-30 260 140)" fill="#111111"/>
+  <!-- Tin Can Label Detail -->
+  <path d="M 235 200 L 265 180" stroke="#111111" stroke-width="8" stroke-linecap="round"/>
+  <path d="M 245 225 L 275 205" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- Apple Core -->
+  <path d="M 180 200 C 180 160, 240 160, 240 200 Z" class="trash-red outline"/>
+  <path d="M 180 260 C 180 300, 240 300, 240 260 Z" class="trash-red outline"/>
+  <path d="M 200 190 L 200 270 L 220 270 L 220 190 Z" class="trash-white outline"/>
+  <!-- Seeds -->
+  <ellipse cx="210" cy="220" rx="3" ry="6" fill="#111111"/>
+  <ellipse cx="210" cy="240" rx="3" ry="6" fill="#111111"/>
+
+  <!-- Trash Can Body -->
+  <path d="M 90 280 L 110 540 A 110 35 0 0 0 330 540 L 350 280 A 130 40 0 0 1 90 280 Z" class="can-base outline"/>
+  
+  <!-- Can Corrugations / Shadows -->
+  <path d="M 120 545 L 105 285 L 125 288 L 140 550 Z" class="can-shade outline"/>
+  <path d="M 170 558 L 155 292 L 175 294 L 190 562 Z" class="can-shade outline"/>
+  <path d="M 220 564 L 205 296 L 225 297 L 240 565 Z" class="can-shade outline"/>
+  <path d="M 270 562 L 255 296 L 275 295 L 290 558 Z" class="can-shade outline"/>
+  <path d="M 320 549 L 305 290 L 325 286 L 338 540 Z" class="can-shade outline"/>
+
+  <!-- Can Highlights -->
+  <path d="M 145 295 L 125 540" stroke="#99EEFF" stroke-width="8" stroke-linecap="round"/>
+  <path d="M 195 298 L 175 550" stroke="#99EEFF" stroke-width="8" stroke-linecap="round"/>
+  <path d="M 245 300 L 225 555" stroke="#99EEFF" stroke-width="8" stroke-linecap="round"/>
+
+  <!-- Can Rim -->
+  <ellipse cx="220" cy="280" rx="140" ry="40" fill="none" class="outline"/>
+  <path d="M 80 280 C 80 305, 142 325, 220 325 C 297 325, 360 305, 360 280" fill="none" stroke="#99EEFF" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- Handles -->
+  <path d="M 90 380 C 60 380, 60 430, 95 430" fill="none" class="outline"/>
+  <path d="M 345 380 C 375 380, 375 430, 340 430" fill="none" class="outline"/>
+
+  <!-- Banana Peel draped over the front -->
+  <path d="M 160 260 C 130 250, 40 330, 60 380 C 80 430, 120 350, 140 320 C 160 350, 180 420, 210 400 C 240 380, 190 310, 170 290 Z" class="trash-yellow outline"/>
+  <path d="M 170 290 C 220 300, 280 340, 260 390 C 240 440, 210 350, 180 320 Z" class="trash-yellow outline"/>
+  <path d="M 160 260 C 180 270, 170 290, 160 260 Z" class="trash-yellow outline"/>
+  <!-- Banana details -->
+  <path d="M 90 360 C 110 330, 120 310, 140 280" fill="none" stroke="#111111" stroke-width="4" stroke-linecap="round"/>
+  <path d="M 180 320 C 190 350, 220 380, 230 360" fill="none" stroke="#111111" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- Leaning Lid -->
+  <g transform="translate(340, 250) rotate(15)">
+    <!-- Lid Base -->
+    <path d="M 0 50 C -30 180, 70 300, 150 280 C 180 150, 80 30, 0 50 Z" class="can-shade outline"/>
+    <path d="M -5 50 C 30 70, 110 180, 145 280" fill="none" class="outline"/>
+    
+    <!-- Lid Dome -->
+    <path d="M 10 65 C 50 40, 170 120, 130 260 C 90 270, -20 180, 10 65 Z" class="can-base outline"/>
+    
+    <!-- Lid Highlights and Details -->
+    <path d="M 25 85 C -5 160, 75 240, 115 245" fill="none" stroke="#99EEFF" stroke-width="6" stroke-linecap="round"/>
+    <path d="M 40 100 C 15 160, 70 220, 100 225" fill="none" stroke="#111111" stroke-width="4" stroke-linecap="round"/>
+    
+    <!-- Lid Handle -->
+    <path d="M 40 150 C 10 160, 20 190, 60 200" fill="none" class="outline"/>
+  </g>
+</svg>

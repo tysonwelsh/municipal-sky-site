@@ -1,0 +1,235 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="145.0 180.2 557.2 512.8">
+  <defs>
+    <linearGradient id="inkFade" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#000" stop-opacity="0.95"/>
+      <stop offset="0.6" stop-color="#000" stop-opacity="0.75"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0.4"/>
+    </linearGradient>
+    <mask id="softInk">
+      <rect x="0" y="0" width="800" height="800" fill="white"/>
+      <ellipse cx="400" cy="410" rx="320" ry="340" fill="black"/>
+    </mask>
+  </defs>
+
+  <!-- Central swirling ink plume forming a whimsical figure -->
+  <g stroke-linecap="round" stroke-linejoin="round" fill="none" stroke="#000">
+    <!-- Outer gesture lines -->
+    <path d="M173 652
+             C142 584 143 517 171 457
+             C213 369 293 322 382 317
+             C467 313 542 338 601 386
+             C650 426 682 480 693 540
+             C703 596 696 645 678 680"
+          stroke-width="5.4"/>
+
+    <path d="M152 588
+             C145 527 166 463 214 410
+             C265 356 334 324 408 322
+             C486 321 552 347 603 393
+             C655 439 686 502 692 565"
+          stroke-width="4.8"/>
+
+    <!-- Inner swirling core -->
+    <path d="M262 606
+             C239 567 233 524 246 483
+             C265 427 309 392 362 382
+             C421 372 472 382 511 410
+             C548 437 571 474 577 514
+             C584 556 578 593 561 622"
+          stroke-width="4.4"/>
+
+    <!-- Flowing "tail" of whimsy -->
+    <path d="M305 660
+             C265 646 235 621 219 591
+             C200 553 201 511 220 479
+             C243 441 280 420 321 422
+             C357 423 389 441 412 470"
+          stroke-width="4.2"/>
+
+    <!-- Light inner swirls -->
+    <path d="M332 575
+             C314 562 302 543 300 522
+             C298 498 309 478 328 467
+             C351 453 378 455 399 470
+             C417 482 427 503 427 523"
+          stroke-width="3.2"/>
+    <path d="M360 551
+             C352 545 347 537 346 528
+             C344 516 350 505 361 499
+             C375 492 389 494 399 503
+             C410 511 415 523 414 534"
+          stroke-width="2.8"/>
+
+    <!-- Central ink body with gradient fill -->
+    <path d="M296 630
+             C270 609 252 583 243 555
+             C232 521 234 488 247 459
+             C265 419 298 392 336 381
+             C380 369 422 374 458 394
+             C492 413 519 444 533 480
+             C546 512 548 545 539 575
+             C527 615 503 645 473 664
+             C442 684 408 692 377 688
+             C345 684 317 670 296 650
+             C290 645 292 638 296 630 Z"
+          fill="url(#inkFade)" stroke-width="3.4"/>
+
+    <!-- Suggestion of a whimsical face in the ink -->
+    <!-- Eyes -->
+    <ellipse cx="356" cy="470" rx="11" ry="9" fill="#000"/>
+    <ellipse cx="406" cy="464" rx="10" ry="8" fill="#000"/>
+
+    <!-- Eye highlights -->
+    <ellipse cx="352" cy="466" rx="3" ry="3" fill="#fff"/>
+    <ellipse cx="402" cy="460" rx="3" ry="3" fill="#fff"/>
+
+    <!-- Brows -->
+    <path d="M340 455
+             C347 448 356 444 368 445"
+          stroke-width="3.2"/>
+    <path d="M392 445
+             C400 440 408 438 417 440"
+          stroke-width="3"/>
+
+    <!-- Playful smile -->
+    <path d="M344 493
+             C353 505 368 512 385 512
+             C399 512 412 508 421 501"
+          stroke-width="3.1" fill="none"/>
+
+    <!-- Small ink drip "cheek" -->
+    <path d="M332 497
+             C326 506 323 515 323 525
+             C323 533 326 540 331 546"
+          stroke-width="2.4"/>
+
+    <!-- Whimsical headdress / plume -->
+    <path d="M318 371
+             C308 334 309 298 320 269
+             C334 235 359 212 390 205
+             C417 198 445 203 467 219
+             C492 237 508 265 513 296
+             C517 323 514 351 503 375"
+          stroke-width="4.5" fill="none"/>
+
+    <path d="M340 328
+             C339 303 346 281 360 265
+             C375 248 394 241 414 243
+             C434 244 451 255 463 272
+             C473 287 478 305 477 324"
+          stroke-width="3.5" fill="none"/>
+
+    <!-- Ink tufts / curls at the crown -->
+    <path d="M374 254
+             C371 237 373 222 380 210
+             C387 197 398 188 413 184"
+          stroke-width="3.2"/>
+    <path d="M401 249
+             C403 234 409 221 420 212
+             C432 201 447 196 463 197"
+          stroke-width="3.2"/>
+    <path d="M428 255
+             C437 241 450 231 465 227
+             C482 222 500 224 515 231"
+          stroke-width="3.2"/>
+
+    <!-- Delicate interior wisps -->
+    <path d="M441 432
+             C460 436 476 447 486 462
+             C496 477 500 494 498 510"
+          stroke-width="2.6"/>
+    <path d="M432 530
+             C445 536 455 546 461 557
+             C467 569 469 581 468 593"
+          stroke-width="2.4"/>
+    <path d="M326 540
+             C320 551 318 563 321 574
+             C324 585 331 595 339 602"
+          stroke-width="2.3"/>
+
+    <!-- Decorative bubbles of ink -->
+    <circle cx="278" cy="430" r="7" fill="#000"/>
+    <circle cx="466" cy="420" r="6" fill="#000"/>
+    <circle cx="506" cy="456" r="5" fill="#000"/>
+    <circle cx="290" cy="516" r="4" fill="#000"/>
+    <circle cx="450" cy="560" r="4.5" fill="#000"/>
+
+    <!-- Subtle half-tone rings around some ink bubbles -->
+    <circle cx="278" cy="430" r="11" stroke-width="1.6"/>
+    <circle cx="466" cy="420" r="9" stroke-width="1.4" opacity="0.8"/>
+
+    <!-- Ribbon-like flourish curling behind -->
+    <path d="M492 628
+             C533 626 567 611 592 587
+             C621 559 636 524 636 487
+             C637 446 625 410 602 383
+             C581 357 552 341 520 335"
+          stroke-width="3.3"/>
+
+    <path d="M515 356
+             C540 366 559 384 571 406
+             C585 432 590 460 586 487
+             C581 518 567 544 545 563
+             C526 580 501 590 474 592"
+          stroke-width="2.7"/>
+
+    <!-- Fine feathery ink at lower edge -->
+    <path d="M340 676
+             C327 675 315 670 305 662
+             C293 653 285 642 281 629"
+          stroke-width="2.5"/>
+    <path d="M370 687
+             C359 687 348 684 338 679
+             C327 673 317 664 309 653"
+          stroke-width="2.3"/>
+    <path d="M402 690
+             C389 689 377 686 365 681
+             C354 676 344 670 335 662"
+          stroke-width="2.1"/>
+
+    <!-- Very light internal textures using thin strokes -->
+    <g opacity="0.7">
+      <path d="M364 414
+               C379 409 394 407 410 409
+               C426 411 440 416 452 424"
+            stroke-width="1.6"/>
+      <path d="M346 439
+               C360 435 375 433 390 435
+               C404 438 418 443 430 452"
+            stroke-width="1.4"/>
+      <path d="M329 575
+               C343 585 360 592 378 595
+               C395 598 413 596 430 589"
+            stroke-width="1.5"/>
+      <path d="M314 551
+               C328 558 342 563 356 564"
+            stroke-width="1.3"/>
+    </g>
+
+    <!-- Feather-light splatter marks around edges -->
+    <g stroke-width="1.3">
+      <path d="M248 399
+               C243 392 241 384 242 376"/>
+      <path d="M256 410
+               C250 405 246 399 244 392"/>
+      <path d="M500 392
+               C506 384 508 374 506 365"/>
+      <path d="M512 404
+               C519 397 523 388 524 378"/>
+      <path d="M280 620
+               C270 622 262 621 255 616"/>
+      <path d="M516 614
+               C526 616 534 615 541 610"/>
+    </g>
+  </g>
+
+  <!-- Very subtle overall masking for soft India-ink edge -->
+  <g mask="url(#softInk)">
+    <path d="M190 650
+             C150 565 156 470 206 402
+             C263 326 352 290 440 300
+             C521 310 590 351 636 414
+             C684 480 703 563 688 638"
+          fill="none" stroke="#000" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/>
+  </g>
+</svg>

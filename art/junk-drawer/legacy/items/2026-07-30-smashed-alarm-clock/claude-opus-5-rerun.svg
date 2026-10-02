@@ -1,0 +1,179 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="54.5 16.5 712.8 760.2">
+  <defs>
+    <linearGradient id="chrome" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffe14d"/>
+      <stop offset="0.45" stop-color="#ff9f1c"/>
+      <stop offset="1" stop-color="#e2470f"/>
+    </linearGradient>
+    <linearGradient id="chrome2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4fd6ff"/>
+      <stop offset="1" stop-color="#0f6fb5"/>
+    </linearGradient>
+    <linearGradient id="bellG" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffe14d"/>
+      <stop offset="1" stop-color="#f2600f"/>
+    </linearGradient>
+    <clipPath id="faceClip">
+      <circle cx="392" cy="424" r="188"/>
+    </clipPath>
+  </defs>
+
+  <g stroke="#141018" stroke-linejoin="round" stroke-linecap="round">
+
+    <!-- ===== flying debris / shards top ===== -->
+    <g stroke-width="7">
+      <polygon points="150,70 205,42 196,104 156,112" fill="#ff2e63"/>
+      <polygon points="606,58 668,80 638,132 600,104" fill="#4fd6ff"/>
+      <polygon points="700,180 762,168 744,226 706,214" fill="#ffe14d"/>
+      <polygon points="60,220 112,196 116,254 68,262" fill="#ffe14d"/>
+      <polygon points="392,26 440,64 396,96 356,60" fill="#f7f2e6"/>
+      <polygon points="272,44 320,26 314,80 276,84" fill="#4fd6ff"/>
+      <polygon points="486,22 540,44 508,86 476,66" fill="#ff2e63"/>
+    </g>
+
+    <!-- ===== impact burst behind clock ===== -->
+    <polygon fill="#ffe14d" stroke-width="8"
+      points="392,110 434,208 520,150 500,246 604,236 536,306 636,352 534,378 596,452 490,450 522,548 424,506 420,614 356,536 288,606 282,500 186,540 202,442 100,452 158,376 66,330 164,296 106,220 208,236 194,144 278,204"/>
+
+    <!-- ===== bells ===== -->
+    <g stroke-width="8">
+      <path d="M166 236 a72 72 0 0 1 132 -44 l-118 66 z" fill="url(#bellG)"/>
+      <path d="M600 208 a72 72 0 0 0 -122 -60 l106 96 z" fill="url(#bellG)"/>
+      <path d="M180 258 l124 -70" fill="none"/>
+      <path d="M478 148 l112 100" fill="none"/>
+    </g>
+
+    <!-- hammer / bell striker arm, bent -->
+    <g stroke-width="9" fill="none">
+      <path d="M300 208 L360 176 L332 140 L404 132" stroke="#141018"/>
+    </g>
+    <circle cx="404" cy="132" r="15" fill="#ff2e63" stroke-width="8"/>
+
+    <!-- ===== winding keys ===== -->
+    <g stroke-width="8">
+      <rect x="176" y="640" width="26" height="60" rx="8" fill="#4fd6ff" transform="rotate(-24 189 670)"/>
+      <circle cx="163" cy="712" r="30" fill="url(#chrome2)"/>
+      <path d="M143 712 h40 M163 692 v40" stroke="#141018" stroke-width="7"/>
+    </g>
+    <g stroke-width="8">
+      <rect x="600" y="620" width="26" height="58" rx="8" fill="#4fd6ff" transform="rotate(22 613 649)"/>
+      <circle cx="640" cy="690" r="30" fill="url(#chrome2)"/>
+      <path d="M620 690 h40 M640 670 v40" stroke="#141018" stroke-width="7"/>
+    </g>
+
+    <!-- ===== feet, one snapped off ===== -->
+    <g stroke-width="8">
+      <path d="M244 634 l-46 78 q-6 20 16 20 l52 0 q18 0 12 -20 l-14 -46z" fill="url(#chrome)"/>
+      <g transform="rotate(38 540 690)">
+        <path d="M508 634 l-40 76 q-6 20 16 20 l52 0 q18 0 12 -20 l-16 -46z" fill="url(#chrome)"/>
+      </g>
+    </g>
+
+    <!-- ===== case ===== -->
+    <circle cx="392" cy="424" r="216" fill="url(#chrome)" stroke-width="10"/>
+    <circle cx="392" cy="424" r="192" fill="#f7f2e6" stroke-width="9"/>
+
+    <!-- ===== crushed dented rim on upper-left (mallet strike) ===== -->
+    <path d="M196 302 q52 -68 118 -100 q-56 6 -92 40 q40 -8 62 6 q-52 24 -78 62 q40 -22 68 -20 q-46 40 -64 76 q-10 -34 -14 -64z"
+          fill="#e2470f" stroke-width="8"/>
+    <path d="M228 262 q90 -66 168 -76 l-14 34 q-70 8 -132 62z" fill="#141018" stroke="none"/>
+
+    <!-- ===== dial contents ===== -->
+    <g clip-path="url(#faceClip)">
+      <!-- shattered glass wedges -->
+      <g stroke-width="6" fill="#dff3ff" fill-opacity="0.55" stroke="#141018">
+        <polygon points="300,244 392,424 250,330"/>
+        <polygon points="250,330 392,424 216,438"/>
+        <polygon points="392,424 216,438 262,540"/>
+      </g>
+
+      <!-- numerals ring -->
+      <g fill="#141018" stroke="none" font-family="Helvetica,Arial,sans-serif" font-weight="bold" font-size="42" text-anchor="middle">
+        <text x="392" y="286">12</text>
+        <text x="510" y="330">1</text>
+        <text x="546" y="440">3</text>
+        <text x="500" y="558">5</text>
+        <text x="392" y="588">6</text>
+        <text x="285" y="558">7</text>
+        <text x="240" y="440">9</text>
+        <text x="285" y="332">11</text>
+      </g>
+
+      <!-- tick marks -->
+      <g stroke="#141018" stroke-width="6">
+        <path d="M392 244 v18 M540 424 h-18 M392 604 v-18 M244 424 h18"/>
+      </g>
+
+      <!-- crack lines across dial -->
+      <g stroke="#141018" fill="none" stroke-width="8">
+        <path d="M212 240 L318 372 L268 404 L392 424 L300 470 L362 496 L246 566"/>
+        <path d="M392 424 L470 300 L520 348"/>
+        <path d="M392 424 L556 500 L512 528"/>
+        <path d="M392 424 L430 600"/>
+        <path d="M318 372 L200 372"/>
+        <path d="M470 300 L482 224"/>
+      </g>
+
+      <!-- exposed guts through the hole: gears + spring -->
+      <g transform="translate(292,352)">
+        <g stroke="#141018" stroke-width="7">
+          <circle cx="0" cy="0" r="52" fill="#ff2e63"/>
+          <circle cx="0" cy="0" r="16" fill="#f7f2e6"/>
+          <g fill="#ff2e63">
+            <rect x="-9" y="-66" width="18" height="18"/>
+            <rect x="-9" y="48" width="18" height="18"/>
+            <rect x="-66" y="-9" width="18" height="18"/>
+            <rect x="48" y="-9" width="18" height="18"/>
+            <rect x="30" y="-52" width="18" height="18" transform="rotate(45 39 -43)"/>
+            <rect x="-48" y="-52" width="18" height="18" transform="rotate(45 -39 -43)"/>
+            <rect x="30" y="34" width="18" height="18" transform="rotate(45 39 43)"/>
+            <rect x="-48" y="34" width="18" height="18" transform="rotate(45 -39 43)"/>
+          </g>
+        </g>
+      </g>
+      <g transform="translate(242,470)">
+        <g stroke="#141018" stroke-width="6">
+          <circle cx="0" cy="0" r="34" fill="#4fd6ff"/>
+          <circle cx="0" cy="0" r="11" fill="#f7f2e6"/>
+          <g fill="#4fd6ff">
+            <rect x="-7" y="-46" width="14" height="14"/>
+            <rect x="-7" y="32" width="14" height="14"/>
+            <rect x="-46" y="-7" width="14" height="14"/>
+            <rect x="32" y="-7" width="14" height="14"/>
+          </g>
+        </g>
+      </g>
+      <!-- mainspring uncoiling out of the hole -->
+      <path d="M300 470 q-60 -6 -66 46 q-6 56 62 58 q86 2 84 -84 q-2 -104 -122 -100"
+            fill="none" stroke="#141018" stroke-width="11"/>
+      <path d="M300 470 q-60 -6 -66 46 q-6 56 62 58 q86 2 84 -84 q-2 -104 -122 -100"
+            fill="none" stroke="#4fd6ff" stroke-width="4"/>
+    </g>
+
+    <!-- ===== hands, bent and knocked loose ===== -->
+    <g stroke-width="8">
+      <path d="M392 424 L466 512 L438 534 L378 442 z" fill="#141018"/>
+      <path d="M392 424 L520 396 L522 420 L392 442 z" fill="#ff2e63"/>
+      <circle cx="392" cy="424" r="20" fill="#ffe14d"/>
+      <!-- second hand flung free -->
+      <path d="M596 596 L708 660 L700 674 L586 610 z" fill="#ff2e63"/>
+      <circle cx="590" cy="602" r="12" fill="#ffe14d"/>
+    </g>
+
+    <!-- ===== outer rim cracks ===== -->
+    <g fill="none" stroke-width="9">
+      <path d="M576 300 l58 -34"/>
+      <path d="M540 592 l52 46"/>
+      <path d="M232 604 l-44 46"/>
+    </g>
+
+    <!-- glass shards ejected outside -->
+    <g stroke-width="6" fill="#dff3ff" fill-opacity="0.8">
+      <polygon points="654,406 724,392 700,452 656,442"/>
+      <polygon points="94,486 152,504 122,556 82,530"/>
+      <polygon points="472,676 542,700 506,748 466,720"/>
+      <polygon points="256,708 316,724 292,772 250,752"/>
+    </g>
+
+  </g>
+</svg>

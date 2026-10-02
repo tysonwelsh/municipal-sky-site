@@ -1,0 +1,228 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="42.8 5.0 132.2 256.2">
+  <defs>
+    <linearGradient id="snotMain" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d6ff8b"/>
+      <stop offset="0.5" stop-color="#9cd94b"/>
+      <stop offset="1" stop-color="#4c8f1f"/>
+    </linearGradient>
+    <linearGradient id="snotHighlight" x1="0.1" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#f5ffe1" stop-opacity="0.85"/>
+      <stop offset="0.4" stop-color="#c8ff8e" stop-opacity="0.7"/>
+      <stop offset="1" stop-color="#8abf45" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="snotGloss" cx="30%" cy="15%" r="45%">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="0.35" stop-color="#e9ffd4" stop-opacity="0.8"/>
+      <stop offset="1" stop-color="#9ad756" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="snotDeep" cx="60%" cy="80%" r="45%">
+      <stop offset="0" stop-color="#285514" stop-opacity="0.7"/>
+      <stop offset="1" stop-color="#285514" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="softEdge" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="1.2" result="blur"/>
+      <feColorMatrix in="blur" type="matrix"
+        values="1 0 0 0 0
+                0 1 0 0 0
+                0 0 1 0 0
+                0 0 0 1 0" />
+    </filter>
+  </defs>
+
+  <!-- Main booger shape -->
+  <path
+    d="M104 10
+       C84 16 71 32 68 52
+       C66 64 67 74 72 88
+       C77 102 80 112 80 126
+       C80 138 73 155 64 172
+       C54 191 48 205 48 222
+       C48 237 58 250 74 255
+       C88 259 101 254 112 246
+       C123 238 132 228 140 216
+       C151 199 158 184 163 167
+       C168 149 170 132 170 118
+       C170 102 166 86 157 72
+       C147 57 134 47 120 39
+       C112 35 109 25 108 19
+       C107 14 106 11 104 10 Z"
+    fill="url(#snotMain)"/>
+
+  <!-- Inner contour for volume -->
+  <path
+    d="M110 26
+       C97 29 88 40 85 52
+       C83 59 83 67 86 76
+       C90 89 96 101 97 115
+       C98 132 92 150 83 168
+       C74 186 67 202 70 216
+       C72 227 81 235 93 236
+       C105 237 118 230 128 220
+       C139 210 148 197 154 183
+       C160 169 163 154 163 139
+       C163 124 160 109 152 97
+       C144 84 133 75 121 69
+       C115 66 112 59 111 52
+       C110 39 111 29 110 26 Z"
+    fill="url(#snotHighlight)"
+    opacity="0.95"/>
+
+  <!-- Surface gloss -->
+  <path
+    d="M96 40
+       C87 44 81 53 80 63
+       C79 71 82 78 87 84
+       C93 92 99 96 106 98
+       C115 101 123 100 130 96
+       C137 92 141 87 143 80
+       C145 72 144 64 138 57
+       C131 49 120 44 110 42
+       C105 41 101 39 96 40 Z"
+    fill="url(#snotGloss)"
+    opacity="0.9"/>
+
+  <!-- Lower thick droplet bulge -->
+  <path
+    d="M88 176
+       C80 187 74 201 76 214
+       C77 223 82 230 89 234
+       C97 238 107 237 115 232
+       C124 227 132 219 138 209
+       C144 200 148 191 149 183
+       C150 175 148 167 142 162
+       C135 156 126 156 118 159
+       C108 163 96 167 88 176 Z"
+    fill="url(#snotMain)"/>
+
+  <!-- Lower glossy highlight -->
+  <path
+    d="M94 184
+       C88 191 84 202 86 210
+       C88 217 93 222 100 223
+       C108 224 115 221 121 216
+       C127 211 132 203 135 196
+       C137 190 137 183 133 179
+       C129 175 123 175 118 176
+       C109 178 100 178 94 184 Z"
+    fill="url(#snotGloss)"
+    opacity="0.85"/>
+
+  <!-- Deep translucent core shadow -->
+  <path
+    d="M116 70
+       C107 72 99 79 96 88
+       C93 95 94 104 97 112
+       C100 120 104 125 110 130
+       C118 137 129 141 138 140
+       C147 139 153 134 158 126
+       C162 119 164 111 164 104
+       C164 96 161 88 155 82
+       C148 76 138 72 130 70
+       C125 69 120 69 116 70 Z"
+    fill="url(#snotDeep)"
+    opacity="0.65"/>
+
+  <!-- Small side droplet -->
+  <path
+    d="M60 134
+       C54 137 50 144 50 151
+       C50 159 54 166 60 170
+       C66 174 74 173 79 168
+       C84 163 86 156 84 149
+       C82 141 76 135 69 133
+       C66 132 63 132 60 134 Z"
+    fill="url(#snotMain)"/>
+
+  <!-- Side droplet highlight -->
+  <path
+    d="M60 138
+       C56 140 54 145 55 150
+       C56 154 59 158 63 160
+       C67 162 71 161 74 158
+       C77 154 78 150 77 146
+       C75 142 72 139 68 138
+       C65 137 62 137 60 138 Z"
+    fill="url(#snotGloss)"
+    opacity="0.9"/>
+
+  <!-- Tiny drip at bottom tip -->
+  <path
+    d="M104 226
+       C100 227 97 230 96 234
+       C95 238 97 242 100 244
+       C104 247 110 247 114 244
+       C118 242 120 237 118 233
+       C116 229 111 225 106 226
+       C105 226 104 226 104 226 Z"
+    fill="url(#snotMain)"/>
+
+  <!-- Outer rim softening -->
+  <path
+    d="M104 10
+       C84 16 71 32 68 52
+       C66 64 67 74 72 88
+       C77 102 80 112 80 126
+       C80 138 73 155 64 172
+       C54 191 48 205 48 222
+       C48 237 58 250 74 255
+       C88 259 101 254 112 246
+       C123 238 132 228 140 216
+       C151 199 158 184 163 167
+       C168 149 170 132 170 118
+       C170 102 166 86 157 72
+       C147 57 134 47 120 39
+       C112 35 109 25 108 19
+       C107 14 106 11 104 10 Z"
+    fill="none"
+    stroke="#315f1f"
+    stroke-width="2.4"
+    stroke-linejoin="round"
+    stroke-linecap="round"
+    opacity="0.9"
+    filter="url(#softEdge)"/>
+
+  <!-- Internal contour lines for gooey texture -->
+  <path
+    d="M92 64
+       C88 72 88 82 90 90
+       C92 98 96 105 101 110"
+    fill="none"
+    stroke="#3a6c24"
+    stroke-width="1.4"
+    stroke-linecap="round"
+    opacity="0.55"/>
+
+  <path
+    d="M120 52
+       C129 58 136 67 140 76
+       C143 84 144 92 144 100"
+    fill="none"
+    stroke="#3a6c24"
+    stroke-width="1.4"
+    stroke-linecap="round"
+    opacity="0.5"/>
+
+  <path
+    d="M104 142
+       C98 149 95 158 95 168
+       C95 178 97 187 103 194"
+    fill="none"
+    stroke="#32541f"
+    stroke-width="1.4"
+    stroke-linecap="round"
+    opacity="0.55"/>
+
+  <!-- Tiny bubbles / specks -->
+  <circle cx="88" cy="60" r="3.4" fill="#f7ffe9" opacity="0.9"/>
+  <circle cx="130" cy="60" r="2.8" fill="#f7ffe9" opacity="0.85"/>
+  <circle cx="118" cy="92" r="2.2" fill="#f7ffe9" opacity="0.8"/>
+  <circle cx="100" cy="120" r="1.8" fill="#f7ffe9" opacity="0.8"/>
+  <circle cx="84" cy="190" r="2.6" fill="#f7ffe9" opacity="0.85"/>
+  <circle cx="126" cy="204" r="2.4" fill="#f7ffe9" opacity="0.85"/>
+
+  <!-- Subtle dark specs -->
+  <circle cx="112" cy="84" r="1.2" fill="#2c4a19" opacity="0.7"/>
+  <circle cx="94" cy="104" r="1.1" fill="#2c4a19" opacity="0.7"/>
+  <circle cx="122" cy="132" r="1.3" fill="#2c4a19" opacity="0.7"/>
+  <circle cx="108" cy="210" r="1.3" fill="#2c4a19" opacity="0.7"/>
+</svg>

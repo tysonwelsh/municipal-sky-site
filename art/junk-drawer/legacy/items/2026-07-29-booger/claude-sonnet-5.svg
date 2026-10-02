@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="boogerBody" cx="38%" cy="32%" r="80%">
+      <stop offset="0%" stop-color="#e3f28a"/>
+      <stop offset="45%" stop-color="#b9d94f"/>
+      <stop offset="80%" stop-color="#8aab2e"/>
+      <stop offset="100%" stop-color="#6c8a20"/>
+    </radialGradient>
+    <radialGradient id="boogerShine" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="drip" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#b9d94f"/>
+      <stop offset="100%" stop-color="#7a9a2a"/>
+    </linearGradient>
+  </defs>
+
+  <path d="M78,6
+           C110,2 140,10 158,32
+           C174,50 168,72 178,92
+           C190,114 196,138 182,158
+           C190,168 186,182 172,186
+           C160,196 140,190 128,196
+           C108,200 84,198 68,188
+           C44,192 18,178 10,156
+           C0,136 8,114 6,92
+           C4,68 20,48 36,32
+           C48,16 60,10 78,6 Z"
+        fill="url(#boogerBody)" stroke="#5c7a22" stroke-width="3" stroke-linejoin="round"/>
+
+  <path d="M126,150 C132,168 140,182 132,196
+           C124,204 108,200 106,188
+           C104,176 114,160 126,150 Z"
+        fill="url(#drip)" stroke="#5c7a22" stroke-width="2.5" stroke-linejoin="round"/>
+
+  <ellipse cx="66" cy="46" rx="30" ry="20" fill="url(#boogerShine)"/>
+  <ellipse cx="150" cy="150" rx="12" ry="8" fill="url(#boogerShine)" opacity="0.6"/>
+
+  <g stroke="#4d6b1f" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.55">
+    <path d="M50,120 C58,128 66,128 72,122"/>
+    <path d="M110,60 C118,66 128,66 134,58"/>
+    <path d="M40,80 C46,86 54,86 58,80"/>
+  </g>
+
+  <g>
+    <circle cx="82" cy="92" r="22" fill="#fffef2" stroke="#4d6b1f" stroke-width="2.5"/>
+    <circle cx="88" cy="98" r="10" fill="#2b2b2b"/>
+    <circle cx="84" cy="94" r="3.2" fill="#ffffff"/>
+  </g>
+  <g>
+    <circle cx="132" cy="100" r="17" fill="#fffef2" stroke="#4d6b1f" stroke-width="2.5"/>
+    <circle cx="126" cy="106" r="7.5" fill="#2b2b2b"/>
+    <circle cx="123" cy="103" r="2.4" fill="#ffffff"/>
+  </g>
+
+  <path d="M92,140 C104,150 118,150 128,138" fill="none" stroke="#4d6b1f" stroke-width="4" stroke-linecap="round"/>
+</svg>

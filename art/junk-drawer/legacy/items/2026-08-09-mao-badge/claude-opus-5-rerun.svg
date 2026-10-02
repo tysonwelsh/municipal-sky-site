@@ -1,0 +1,214 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <radialGradient id="redField" cx="50%" cy="46%" r="58%">
+      <stop offset="0%" stop-color="#f0343a"/>
+      <stop offset="55%" stop-color="#d31a22"/>
+      <stop offset="100%" stop-color="#8e0d14"/>
+    </radialGradient>
+    <linearGradient id="silver" x1="0%" y1="0%" x2="65%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="18%" stop-color="#e6eaee"/>
+      <stop offset="38%" stop-color="#9ba4ac"/>
+      <stop offset="52%" stop-color="#f2f5f7"/>
+      <stop offset="70%" stop-color="#8f979f"/>
+      <stop offset="88%" stop-color="#d9dee2"/>
+      <stop offset="100%" stop-color="#7d858c"/>
+    </linearGradient>
+    <linearGradient id="silverRim" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="25%" stop-color="#b8c0c7"/>
+      <stop offset="50%" stop-color="#6e767d"/>
+      <stop offset="75%" stop-color="#dfe4e8"/>
+      <stop offset="100%" stop-color="#8a9299"/>
+    </linearGradient>
+    <linearGradient id="headSilver" x1="15%" y1="5%" x2="85%" y2="95%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="30%" stop-color="#dfe5ea"/>
+      <stop offset="55%" stop-color="#a9b2ba"/>
+      <stop offset="78%" stop-color="#eef2f5"/>
+      <stop offset="100%" stop-color="#828b93"/>
+    </linearGradient>
+    <radialGradient id="gloss" cx="35%" cy="24%" r="45%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.55"/>
+      <stop offset="60%" stop-color="#ffffff" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="fieldClip">
+      <circle cx="200" cy="200" r="163"/>
+    </clipPath>
+  </defs>
+
+  <!-- outer silver rim -->
+  <circle cx="200" cy="200" r="196" fill="url(#silverRim)"/>
+  <circle cx="200" cy="200" r="185" fill="url(#silver)"/>
+  <circle cx="200" cy="200" r="185" fill="none" stroke="#5f676e" stroke-width="1.5" opacity="0.7"/>
+
+  <!-- beaded ring detail -->
+  <g fill="#f4f7f9" opacity="0.9">
+    <circle cx="200" cy="200" r="0"/>
+  </g>
+  <g>
+    <g id="beads" fill="#f7fafc" stroke="#7d858c" stroke-width="0.6">
+      <circle cx="200" cy="24.5" r="4.6" transform="rotate(0 200 200)"/>
+      <circle cx="200" cy="24.5" r="4.6" transform="rotate(15 200 200)"/>
+      <circle cx="200" cy="24.5" r="4.6" transform="rotate(30 200 200)"/>
+      <circle cx="200" cy="24.5" r="4.6" transform="rotate(45 200 200)"/>
+      <circle cx="200" cy="24.5" r="4.6" transform="rotate(60 200 200)"/>
+      <circle cx="200" cy="24.5" r="4.6" transform="rotate(75 200 200)"/>
+      <circle cx="200" cy="24.5" r="4.6" transform="rotate(90 200 200)"/>
+      <circle cx="200" cy="24.5" r="4.6" transform="rotate(105 200 200)"/>
+      <circle cx="200" cy="24.5" r="4.6" transform="rotate(120 200 200)"/>
+      <circle cx="200" cy="24.5" r="4.6" transform="rotate(135 200 200)"/>
+      <circle cx="200" cy="24.5" r="4.6" transform="rotate(150 200 200)"/>
+      <circle cx="200" cy="24.5" r="4.6" transform="rotate(165 200 200)"/>
+      <circle cx="200" cy="24.5" r="4.6" transform="rotate(180 200 200)"/>
+      <circle cx="200" cy="24.5" r="4.6" transform="rotate(195 200 200)"/>
+      <circle cx="200" cy="24.5" r="4.6" transform="rotate(210 200 200)"/>
+      <circle cx="200" cy="24.5" r="4.6" transform="rotate(225 200 200)"/>
+      <circle cx="200" cy="24.5" r="4.6" transform="rotate(240 200 200)"/>
+      <circle cx="200" cy="24.5" r="4.6" transform="rotate(255 200 200)"/>
+      <circle cx="200" cy="24.5" r="4.6" transform="rotate(270 200 200)"/>
+      <circle cx="200" cy="24.5" r="4.6" transform="rotate(285 200 200)"/>
+      <circle cx="200" cy="24.5" r="4.6" transform="rotate(300 200 200)"/>
+      <circle cx="200" cy="24.5" r="4.6" transform="rotate(315 200 200)"/>
+      <circle cx="200" cy="24.5" r="4.6" transform="rotate(330 200 200)"/>
+      <circle cx="200" cy="24.5" r="4.6" transform="rotate(345 200 200)"/>
+    </g>
+  </g>
+
+  <!-- inner rim step -->
+  <circle cx="200" cy="200" r="170" fill="url(#silverRim)"/>
+  <circle cx="200" cy="200" r="164.5" fill="#5a6167"/>
+
+  <!-- red enamel field -->
+  <circle cx="200" cy="200" r="163" fill="url(#redField)"/>
+
+  <!-- sunburst rays -->
+  <g clip-path="url(#fieldClip)">
+    <g fill="#ff6a55" opacity="0.55">
+      <g>
+        <path d="M200 200 L188 -40 L212 -40 Z" transform="rotate(0 200 200)"/>
+        <path d="M200 200 L188 -40 L212 -40 Z" transform="rotate(15 200 200)"/>
+        <path d="M200 200 L188 -40 L212 -40 Z" transform="rotate(30 200 200)"/>
+        <path d="M200 200 L188 -40 L212 -40 Z" transform="rotate(45 200 200)"/>
+        <path d="M200 200 L188 -40 L212 -40 Z" transform="rotate(60 200 200)"/>
+        <path d="M200 200 L188 -40 L212 -40 Z" transform="rotate(75 200 200)"/>
+        <path d="M200 200 L188 -40 L212 -40 Z" transform="rotate(90 200 200)"/>
+        <path d="M200 200 L188 -40 L212 -40 Z" transform="rotate(105 200 200)"/>
+        <path d="M200 200 L188 -40 L212 -40 Z" transform="rotate(120 200 200)"/>
+        <path d="M200 200 L188 -40 L212 -40 Z" transform="rotate(135 200 200)"/>
+        <path d="M200 200 L188 -40 L212 -40 Z" transform="rotate(150 200 200)"/>
+        <path d="M200 200 L188 -40 L212 -40 Z" transform="rotate(165 200 200)"/>
+        <path d="M200 200 L188 -40 L212 -40 Z" transform="rotate(180 200 200)"/>
+        <path d="M200 200 L188 -40 L212 -40 Z" transform="rotate(195 200 200)"/>
+        <path d="M200 200 L188 -40 L212 -40 Z" transform="rotate(210 200 200)"/>
+        <path d="M200 200 L188 -40 L212 -40 Z" transform="rotate(225 200 200)"/>
+        <path d="M200 200 L188 -40 L212 -40 Z" transform="rotate(240 200 200)"/>
+        <path d="M200 200 L188 -40 L212 -40 Z" transform="rotate(255 200 200)"/>
+        <path d="M200 200 L188 -40 L212 -40 Z" transform="rotate(270 200 200)"/>
+        <path d="M200 200 L188 -40 L212 -40 Z" transform="rotate(285 200 200)"/>
+        <path d="M200 200 L188 -40 L212 -40 Z" transform="rotate(300 200 200)"/>
+        <path d="M200 200 L188 -40 L212 -40 Z" transform="rotate(315 200 200)"/>
+        <path d="M200 200 L188 -40 L212 -40 Z" transform="rotate(330 200 200)"/>
+        <path d="M200 200 L188 -40 L212 -40 Z" transform="rotate(345 200 200)"/>
+      </g>
+    </g>
+    <g fill="#ffb199" opacity="0.28">
+      <path d="M200 200 L194 -40 L206 -40 Z" transform="rotate(7.5 200 200)"/>
+      <path d="M200 200 L194 -40 L206 -40 Z" transform="rotate(22.5 200 200)"/>
+      <path d="M200 200 L194 -40 L206 -40 Z" transform="rotate(37.5 200 200)"/>
+      <path d="M200 200 L194 -40 L206 -40 Z" transform="rotate(52.5 200 200)"/>
+      <path d="M200 200 L194 -40 L206 -40 Z" transform="rotate(67.5 200 200)"/>
+      <path d="M200 200 L194 -40 L206 -40 Z" transform="rotate(82.5 200 200)"/>
+      <path d="M200 200 L194 -40 L206 -40 Z" transform="rotate(97.5 200 200)"/>
+      <path d="M200 200 L194 -40 L206 -40 Z" transform="rotate(112.5 200 200)"/>
+      <path d="M200 200 L194 -40 L206 -40 Z" transform="rotate(127.5 200 200)"/>
+      <path d="M200 200 L194 -40 L206 -40 Z" transform="rotate(142.5 200 200)"/>
+      <path d="M200 200 L194 -40 L206 -40 Z" transform="rotate(157.5 200 200)"/>
+      <path d="M200 200 L194 -40 L206 -40 Z" transform="rotate(172.5 200 200)"/>
+      <path d="M200 200 L194 -40 L206 -40 Z" transform="rotate(187.5 200 200)"/>
+      <path d="M200 200 L194 -40 L206 -40 Z" transform="rotate(202.5 200 200)"/>
+      <path d="M200 200 L194 -40 L206 -40 Z" transform="rotate(217.5 200 200)"/>
+      <path d="M200 200 L194 -40 L206 -40 Z" transform="rotate(232.5 200 200)"/>
+      <path d="M200 200 L194 -40 L206 -40 Z" transform="rotate(247.5 200 200)"/>
+      <path d="M200 200 L194 -40 L206 -40 Z" transform="rotate(262.5 200 200)"/>
+      <path d="M200 200 L194 -40 L206 -40 Z" transform="rotate(277.5 200 200)"/>
+      <path d="M200 200 L194 -40 L206 -40 Z" transform="rotate(292.5 200 200)"/>
+      <path d="M200 200 L194 -40 L206 -40 Z" transform="rotate(307.5 200 200)"/>
+      <path d="M200 200 L194 -40 L206 -40 Z" transform="rotate(322.5 200 200)"/>
+      <path d="M200 200 L194 -40 L206 -40 Z" transform="rotate(337.5 200 200)"/>
+      <path d="M200 200 L194 -40 L206 -40 Z" transform="rotate(352.5 200 200)"/>
+    </g>
+    <!-- central sun glow -->
+    <circle cx="200" cy="192" r="118" fill="#ff8163" opacity="0.30"/>
+    <circle cx="200" cy="192" r="80" fill="#ffb08e" opacity="0.22"/>
+  </g>
+
+  <!-- Mao profile relief, facing viewer's left -->
+  <g transform="translate(206,214) scale(1.06)">
+    <!-- shadow offset for relief depth -->
+    <g transform="translate(3,4)" opacity="0.35">
+      <path d="M-52,84
+               C-58,52 -66,34 -70,10
+               C-74,-14 -66,-44 -46,-64
+               C-28,-82 4,-90 30,-78
+               C54,-67 66,-44 64,-16
+               C63,2 56,16 52,28
+               C49,38 52,44 58,48
+               C62,51 60,56 54,57
+               C48,58 44,60 44,66
+               C44,74 48,80 44,84 Z" fill="#3d0508"/>
+    </g>
+    <!-- main head -->
+    <path d="M-52,84
+             C-58,52 -66,34 -70,10
+             C-74,-14 -66,-44 -46,-64
+             C-28,-82 4,-90 30,-78
+             C54,-67 66,-44 64,-16
+             C63,2 56,16 52,28
+             C49,38 52,44 58,48
+             C62,51 60,56 54,57
+             C48,58 44,60 44,66
+             C44,74 48,80 44,84 Z"
+          fill="url(#headSilver)" stroke="#6d757c" stroke-width="1.4" stroke-linejoin="round"/>
+
+    <!-- forehead / brow / nose / lips / chin profile contour -->
+    <path d="M-70,6 C-74,-4 -76,-16 -74,-24 C-72,-32 -66,-33 -64,-28
+             C-63,-22 -66,-14 -66,-6
+             C-66,2 -70,6 -70,6 Z" fill="#f2f5f7" opacity="0.5"/>
+
+    <!-- brow ridge shading -->
+    <path d="M-66,-26 C-56,-32 -44,-33 -36,-30 C-44,-24 -56,-22 -64,-20 Z" fill="#7d858c" opacity="0.65"/>
+    <!-- eye -->
+    <path d="M-56,-16 C-50,-21 -40,-21 -34,-16 C-40,-13 -50,-13 -56,-16 Z" fill="#5f676e" opacity="0.85"/>
+    <circle cx="-45" cy="-16.5" r="3" fill="#4a5157" opacity="0.9"/>
+    <!-- cheek highlight -->
+    <path d="M-30,-4 C-14,-10 4,-8 16,2 C2,8 -16,8 -30,2 Z" fill="#ffffff" opacity="0.35"/>
+    <!-- nose base shade -->
+    <path d="M-70,4 C-64,8 -56,10 -50,8 C-56,14 -66,12 -70,4 Z" fill="#8a9299" opacity="0.7"/>
+    <!-- mouth line -->
+    <path d="M-62,26 C-52,22 -40,22 -32,24" fill="none" stroke="#6d757c" stroke-width="2.6" stroke-linecap="round" opacity="0.85"/>
+    <!-- chin shade -->
+    <path d="M-60,42 C-50,38 -38,38 -30,42 C-40,50 -52,50 -60,42 Z" fill="#8a9299" opacity="0.55"/>
+    <!-- jaw / neck shading -->
+    <path d="M-48,66 C-30,74 -6,76 14,72 C4,84 -26,88 -48,80 Z" fill="#7d858c" opacity="0.5"/>
+    <!-- hair sweep highlights -->
+    <g fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity="0.5">
+      <path d="M-52,-58 C-32,-72 -4,-76 20,-68"/>
+      <path d="M-44,-48 C-24,-60 2,-64 26,-57"/>
+      <path d="M2,-78 C24,-72 42,-58 48,-40"/>
+    </g>
+    <g fill="none" stroke="#6d757c" stroke-width="2.2" stroke-linecap="round" opacity="0.55">
+      <path d="M-48,-52 C-28,-66 0,-70 24,-62"/>
+      <path d="M30,-72 C48,-62 60,-46 60,-26"/>
+      <path d="M52,-8 C50,8 44,20 40,30"/>
+    </g>
+    <!-- collar / shoulder cut -->
+    <path d="M-52,84 L44,84 L44,90 L-52,90 Z" fill="#6d757c" opacity="0.6"/>
+  </g>
+
+  <!-- enamel gloss -->
+  <circle cx="200" cy="200" r="163" fill="url(#gloss)" pointer-events="none"/>
+  <path d="M200 44 A156 156 0 0 0 68 274 A170 170 0 0 1 200 44 Z" fill="#ffffff" opacity="0.16"/>
+  <circle cx="200" cy="200" r="163" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.25"/>
+</svg>

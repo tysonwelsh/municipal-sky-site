@@ -263,6 +263,25 @@ const JD_LIMIT_GLOBAL_DAILY = 200;   // 50 turns x 4 drawings
 // see jd_require_bench_key.
 const JD_BENCH_REQUIRE_KEY = true;
 
+// THE v1 FREEZE SWITCH (Junk Drawer v2, Phase 3a, 2026-10-01; PLAN-V2.md §11).
+// ON SINCE THE CUTOVER, 2026-10-01 (Phase 5): dataset v1 is frozen. Its archive
+// (dump, JSONL export, standing and pairwise CSVs, items/ copy) is in
+// ~/Media/junk-drawer-v1/2026-10-01/ on the owner's machine — runbook
+// db/junk-drawer-v1-archive.md, tag junk-drawer-v1-final. The v2 drawer is
+// /art/junk-drawer/ and v1 stays on view, read-only, as the legacy exhibit at
+// /art/junk-drawer/legacy/. TRUE makes every v1 WRITE endpoint — jd-generate,
+// jd-rate, jd-item-rate, jd-curate, jd-title, jd-harvest (its sync writes) —
+// answer 410 Gone with the
+// C1 error envelope, code 'dataset_frozen' (jd_require_v1_unfrozen(), section
+// 4), so nothing can write v1 again. jd-backfill-curated answers in its own
+// plain-text voice instead: a 200 whose line starts "done", because the deploy
+// workflow runs it after every upload and greps for ^done — frozen, it files
+// nothing and the deploy stays green. Reads keep serving the legacy exhibit:
+// legacy/data.php, jd-gen-svg.php and jd-analytics.php are untouched by it.
+// Never set it back to false: v1 and v2 never pool, and a v1 write after the
+// archive was cut would be a row the archive does not hold.
+const JD_V1_FROZEN = true;
+
 const JD_PROMPT_MAX_CHARS = 500;
 const JD_NOTE_MAX_CHARS = 500;
 const JD_RATINGS_MAX = 64;
@@ -562,6 +581,15 @@ function jd_require_get(): void
 {
     if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') {
         jd_fail(405, 'method_not_allowed', 'GET only.');
+    }
+}
+
+// The v1 write endpoints' first statement after their requires: 410 Gone once
+// dataset v1 is frozen (JD_V1_FROZEN, section 1); a no-op while it is not.
+function jd_require_v1_unfrozen(): void
+{
+    if (JD_V1_FROZEN) {
+        jd_fail(410, 'dataset_frozen', 'Dataset v1 is frozen; the drawer continues at /art/junk-drawer/.');
     }
 }
 

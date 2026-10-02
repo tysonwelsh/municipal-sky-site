@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 880 1000" width="880" height="1000" role="img" aria-label="A classic white porcelain toilet in profile with the seat and lid raised">
+  <defs>
+    <linearGradient id="porc" x1="0.05" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.38" stop-color="#f8fafc"/>
+      <stop offset="0.72" stop-color="#e6ecf1"/>
+      <stop offset="1" stop-color="#cdd6de"/>
+    </linearGradient>
+    <linearGradient id="porcLid" x1="0" y1="0" x2="0.7" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.5" stop-color="#f2f6f9"/>
+      <stop offset="1" stop-color="#d5dee5"/>
+    </linearGradient>
+    <linearGradient id="board" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.35" stop-color="#fbfdfe"/>
+      <stop offset="0.8" stop-color="#e2e9ef"/>
+      <stop offset="1" stop-color="#ccd6de"/>
+    </linearGradient>
+    <linearGradient id="board2" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.4" stop-color="#f6f9fb"/>
+      <stop offset="1" stop-color="#c6d1da"/>
+    </linearGradient>
+    <linearGradient id="rimG" x1="0" y1="0" x2="0.2" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.55" stop-color="#f4f8fa"/>
+      <stop offset="1" stop-color="#dbe3ea"/>
+    </linearGradient>
+    <linearGradient id="chrome" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0" stop-color="#fdfefe"/>
+      <stop offset="0.35" stop-color="#dbe2e8"/>
+      <stop offset="0.6" stop-color="#9fa9b3"/>
+      <stop offset="1" stop-color="#e9eef2"/>
+    </linearGradient>
+    <filter id="blurA" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="9"/>
+    </filter>
+    <filter id="blurB" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+    <filter id="blurC" x="-40%" y="-60%" width="180%" height="220%">
+      <feGaussianBlur stdDeviation="13"/>
+    </filter>
+    <path id="bodyOutline" d="M 6 556 C 6 543 18 534 36 534 L 604 534 C 646 534 674 532 674 518 L 674 162 C 674 150 682 143 694 143 L 858 143 C 870 143 877 150 877 162 L 877 548 C 877 568 868 582 850 594 C 804 626 766 666 746 724 C 726 782 716 862 710 946 C 708 972 700 986 682 986 L 214 986 C 194 986 182 970 184 944 C 188 894 196 856 214 820 C 150 780 60 740 24 660 C 10 628 6 590 6 556 Z"/>
+    <clipPath id="bodyClip"><path d="M 6 556 C 6 543 18 534 36 534 L 604 534 C 646 534 674 532 674 518 L 674 162 C 674 150 682 143 694 143 L 858 143 C 870 143 877 150 877 162 L 877 548 C 877 568 868 582 850 594 C 804 626 766 666 746 724 C 726 782 716 862 710 946 C 708 972 700 986 682 986 L 214 986 C 194 986 182 970 184 944 C 188 894 196 856 214 820 C 150 780 60 740 24 660 C 10 628 6 590 6 556 Z"/></clipPath>
+  </defs>
+
+  <!-- contact shadow on the floor -->
+  <ellipse cx="452" cy="984" rx="286" ry="15" fill="#6f7c88" opacity="0.28" filter="url(#blurC)"/>
+
+  <!-- main porcelain body: bowl, pedestal, tank -->
+  <use href="#bodyOutline" xlink:href="#bodyOutline" fill="url(#porc)"/>
+
+  <!-- shading and highlights inside the body -->
+  <g clip-path="url(#bodyClip)">
+    <path d="M 700 190 L 700 496" stroke="#ffffff" stroke-width="26" stroke-linecap="round" opacity="0.85" filter="url(#blurB)"/>
+    <path d="M 862 200 L 862 540" stroke="#a9b5c0" stroke-width="34" stroke-linecap="round" opacity="0.55" filter="url(#blurA)"/>
+    <path d="M 690 540 C 720 640 700 800 700 960" stroke="#a4b0bb" stroke-width="60" stroke-linecap="round" opacity="0.5" filter="url(#blurA)"/>
+    <path d="M 36 596 C 250 606 470 604 620 592" stroke="#94a1ad" stroke-width="22" opacity="0.5" fill="none" filter="url(#blurA)"/>
+    <path d="M 44 612 C 40 676 88 736 156 780" stroke="#ffffff" stroke-width="30" stroke-linecap="round" opacity="0.9" fill="none" filter="url(#blurB)"/>
+    <path d="M 236 830 C 214 880 208 928 210 976" stroke="#ffffff" stroke-width="22" stroke-linecap="round" opacity="0.7" fill="none" filter="url(#blurB)"/>
+    <path d="M 300 700 C 380 760 420 830 430 960" stroke="#aab6c1" stroke-width="46" stroke-linecap="round" opacity="0.35" fill="none" filter="url(#blurA)"/>
+    <path d="M 214 962 C 380 978 560 978 704 962" stroke="#8e9ba7" stroke-width="20" opacity="0.45" fill="none" filter="url(#blurA)"/>
+    <path d="M 686 150 L 866 150" stroke="#ffffff" stroke-width="16" opacity="0.9" filter="url(#blurB)"/>
+  </g>
+
+  <!-- rim band -->
+  <path d="M 6 556 C 6 543 18 534 36 534 L 604 534 L 622 586 C 430 602 160 604 38 594 C 18 592 8 574 6 556 Z" fill="url(#rimG)"/>
+  <path d="M 622 586 C 430 602 160 604 38 594 C 18 592 8 574 6 556" fill="none" stroke="#8b96a2" stroke-width="3" stroke-linecap="round" opacity="0.85"/>
+  <path d="M 40 546 L 596 546" stroke="#ffffff" stroke-width="8" stroke-linecap="round" opacity="0.9"/>
+
+  <!-- raised lid (rear board) -->
+  <g transform="translate(578 532) rotate(9)">
+    <path d="M -13 10 L -15 -506 Q -15 -524 0 -524 Q 15 -524 15 -506 L 13 10 Z" fill="url(#board2)" stroke="#7f8a95" stroke-width="3.2" stroke-linejoin="round"/>
+    <path d="M -7 -498 L -6 4" stroke="#ffffff" stroke-width="6" stroke-linecap="round" opacity="0.95"/>
+  </g>
+
+  <!-- raised seat (front board) -->
+  <g transform="translate(576 534) rotate(6.5)">
+    <path d="M -35 10 L -36 -472 Q -36 -492 -24 -492 Q -12 -492 -12 -472 L -13 10 Z" fill="url(#board)" stroke="#7f8a95" stroke-width="3.2" stroke-linejoin="round"/>
+    <path d="M -30 -466 L -29 4" stroke="#ffffff" stroke-width="6" stroke-linecap="round" opacity="0.95"/>
+    <path d="M -16 -460 L -15 0" stroke="#aab5c0" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+  </g>
+
+  <!-- hinge assembly -->
+  <path d="M 552 544 L 552 528 Q 552 514 570 514 L 600 514 Q 616 514 616 528 L 616 544 Z" fill="url(#chrome)" stroke="#7f8a95" stroke-width="3" stroke-linejoin="round"/>
+  <circle cx="584" cy="530" r="6" fill="#8d99a4" opacity="0.7"/>
+  <path d="M 558 520 L 596 520" stroke="#ffffff" stroke-width="5" stroke-linecap="round" opacity="0.9"/>
+
+  <!-- tank lid -->
+  <path d="M 670 98 L 867 98 Q 879 98 879 110 L 879 136 Q 879 148 867 148 L 670 148 Q 658 148 658 136 L 658 110 Q 658 98 670 98 Z" fill="url(#porcLid)" stroke="#7f8a95" stroke-width="3.2" stroke-linejoin="round"/>
+  <path d="M 676 110 L 862 110" stroke="#ffffff" stroke-width="9" stroke-linecap="round" opacity="0.95"/>
+  <path d="M 690 140 L 866 140" stroke="#aeb9c3" stroke-width="4" stroke-linecap="round" opacity="0.6"/>
+
+  <!-- flush handle -->
+  <path d="M 714 208 L 674 234" stroke="url(#chrome)" stroke-width="15" stroke-linecap="round"/>
+  <path d="M 714 208 L 674 234" stroke="#8b96a2" stroke-width="15" stroke-linecap="round" fill="none" opacity="0.35"/>
+  <path d="M 712 205 L 678 227" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+  <circle cx="719" cy="204" r="17" fill="url(#chrome)" stroke="#7f8a95" stroke-width="2.6"/>
+  <circle cx="714" cy="199" r="5" fill="#ffffff" opacity="0.95"/>
+
+  <!-- tank / bowl joint -->
+  <path d="M 678 518 L 872 518" stroke="#a9b4bf" stroke-width="3" stroke-linecap="round" opacity="0.75"/>
+  <path d="M 678 524 L 872 524" stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+
+  <!-- base plinth -->
+  <path d="M 212 946 C 380 962 552 962 710 946" fill="none" stroke="#a3aeb9" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+
+  <!-- master outline -->
+  <use href="#bodyOutline" xlink:href="#bodyOutline" fill="none" stroke="#7f8a95" stroke-width="3.6" stroke-linejoin="round"/>
+</svg>

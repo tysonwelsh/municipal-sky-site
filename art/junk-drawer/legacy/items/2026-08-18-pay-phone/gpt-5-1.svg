@@ -1,0 +1,215 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 520">
+  <defs>
+    <linearGradient id="bodyGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5f6f7a"/>
+      <stop offset="0.5" stop-color="#3f4a54"/>
+      <stop offset="1" stop-color="#252c33"/>
+    </linearGradient>
+    <linearGradient id="innerGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d5dde6"/>
+      <stop offset="1" stop-color="#909aa6"/>
+    </linearGradient>
+    <linearGradient id="handsetGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#23272c"/>
+      <stop offset="1" stop-color="#111317"/>
+    </linearGradient>
+    <linearGradient id="cordGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c0c6ce"/>
+      <stop offset="1" stop-color="#808894"/>
+    </linearGradient>
+    <radialGradient id="btnGrad" cx="0.3" cy="0.3" r="0.9">
+      <stop offset="0" stop-color="#f6f8fa"/>
+      <stop offset="0.6" stop-color="#d1d7e0"/>
+      <stop offset="1" stop-color="#8a94a2"/>
+    </radialGradient>
+    <linearGradient id="coinGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#d7c78c"/>
+      <stop offset="0.5" stop-color="#f2e4a8"/>
+      <stop offset="1" stop-color="#b59f64"/>
+    </linearGradient>
+    <linearGradient id="metalGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f3f5f8"/>
+      <stop offset="0.5" stop-color="#bcc4cf"/>
+      <stop offset="1" stop-color="#8a93a0"/>
+    </linearGradient>
+    <linearGradient id="slotGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#14181d"/>
+      <stop offset="1" stop-color="#000000"/>
+    </linearGradient>
+    <linearGradient id="labelGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4c92c8"/>
+      <stop offset="1" stop-color="#24537e"/>
+    </linearGradient>
+    <linearGradient id="sideEdgeGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#151a1f" stop-opacity="0.95"/>
+      <stop offset="0.5" stop-color="#1f262c" stop-opacity="0.75"/>
+      <stop offset="1" stop-color="#151a1f" stop-opacity="0.95"/>
+    </linearGradient>
+    <linearGradient id="shadowGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#000" stop-opacity="0.25"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Outer cabinet -->
+  <rect x="5" y="5" width="250" height="510" rx="22" ry="22" fill="url(#bodyGrad)" />
+  <rect x="14" y="14" width="232" height="492" rx="16" ry="16" fill="#151a1f" />
+
+  <!-- Left and right edge highlights -->
+  <rect x="14" y="14" width="10" height="492" fill="url(#sideEdgeGrad)" opacity="0.55"/>
+  <rect x="236" y="14" width="10" height="492" fill="url(#sideEdgeGrad)" opacity="0.55"/>
+
+  <!-- Inner panel -->
+  <rect x="26" y="32" width="208" height="456" rx="10" ry="10" fill="url(#innerGrad)"/>
+
+  <!-- Top label panel -->
+  <rect x="38" y="42" width="184" height="50" rx="6" ry="6" fill="url(#labelGrad)"/>
+  <rect x="44" y="48" width="172" height="38" rx="5" ry="5" fill="#f6f7fb" opacity="0.9"/>
+
+  <!-- 'PHONE' simplified text-style bars -->
+  <g fill="#285c92">
+    <rect x="52" y="59" width="14" height="4" rx="1" ry="1"/>
+    <rect x="72" y="59" width="14" height="4" rx="1" ry="1"/>
+    <rect x="92" y="59" width="14" height="4" rx="1" ry="1"/>
+    <rect x="112" y="59" width="14" height="4" rx="1" ry="1"/>
+    <rect x="132" y="59" width="14" height="4" rx="1" ry="1"/>
+    <rect x="152" y="59" width="14" height="4" rx="1" ry="1"/>
+    <rect x="172" y="59" width="14" height="4" rx="1" ry="1"/>
+  </g>
+
+  <!-- Instruction panel -->
+  <rect x="38" y="102" width="184" height="82" rx="6" ry="6" fill="url(#metalGrad)"/>
+  <rect x="44" y="108" width="172" height="70" rx="4" ry="4" fill="#ffffff" opacity="0.75"/>
+
+  <!-- Instruction lines -->
+  <g stroke="#9ea6b3" stroke-width="1.4" stroke-linecap="round">
+    <line x1="50" y1="121" x2="206" y2="121"/>
+    <line x1="50" y1="132" x2="206" y2="132"/>
+    <line x1="50" y1="143" x2="206" y2="143"/>
+    <line x1="50" y1="154" x2="158" y2="154"/>
+    <line x1="50" y1="165" x2="132" y2="165"/>
+  </g>
+
+  <!-- Coin slot area -->
+  <rect x="158" y="192" width="64" height="56" rx="6" ry="6" fill="url(#metalGrad)"/>
+  <!-- Coin slot horizontal -->
+  <rect x="166" y="203" width="48" height="6" rx="2" ry="2" fill="url(#slotGrad)"/>
+  <!-- Return slot -->
+  <rect x="166" y="229" width="32" height="10" rx="2" ry="2" fill="url(#slotGrad)"/>
+
+  <!-- Coin graphics -->
+  <circle cx="208" cy="215" r="7" fill="url(#coinGrad)" stroke="#917a3f" stroke-width="0.7"/>
+  <circle cx="196" cy="239" r="5.2" fill="url(#coinGrad)" stroke="#917a3f" stroke-width="0.6"/>
+
+  <!-- Handset cradle plate -->
+  <rect x="38" y="192" width="112" height="88" rx="8" ry="8" fill="#d3d8e0"/>
+  <rect x="44" y="198" width="100" height="76" rx="6" ry="6" fill="#f1f4f8"/>
+
+  <!-- Cradle hooks -->
+  <rect x="52" y="202" width="8" height="20" rx="3" ry="3" fill="#a3acb8"/>
+  <rect x="100" y="202" width="8" height="20" rx="3" ry="3" fill="#a3acb8"/>
+
+  <!-- Handset body -->
+  <g>
+    <!-- Shadow on panel -->
+    <path d="M64 202c18-14 48-14 66 0v65c-18 14-48 14-66 0z" fill="#000000" opacity="0.18"/>
+
+    <!-- Main handset -->
+    <path d="M76 196c0-5 4-9 9-9h12c5 0 9 4 9 9v18c0 6-3 11-8 14-3 2-5 5-5 8v16c0 3 2 6 5 8 5 3 8 8 8 14v18c0 5-4 9-9 9h-12c-5 0-9-4-9-9z"
+          fill="url(#handsetGrad)" stroke="#020304" stroke-width="1.2"/>
+
+    <!-- Ear and mouthpiece outlines -->
+    <rect x="78" y="191" width="20" height="24" rx="6" ry="6" fill="#17191d" opacity="0.85"/>
+    <rect x="78" y="275" width="20" height="24" rx="6" ry="6" fill="#17191d" opacity="0.85"/>
+
+    <!-- Perforation dots -->
+    <g fill="#555a63">
+      <circle cx="83" cy="199" r="1.2"/><circle cx="87" cy="199" r="1.2"/><circle cx="91" cy="199" r="1.2"/>
+      <circle cx="83" cy="206" r="1.2"/><circle cx="87" cy="206" r="1.2"/><circle cx="91" cy="206" r="1.2"/>
+
+      <circle cx="83" cy="283" r="1.2"/><circle cx="87" cy="283" r="1.2"/><circle cx="91" cy="283" r="1.2"/>
+      <circle cx="83" cy="290" r="1.2"/><circle cx="87" cy="290" r="1.2"/><circle cx="91" cy="290" r="1.2"/>
+    </g>
+  </g>
+
+  <!-- Cord from handset to body -->
+  <path d="M96 278
+           C110 308 122 320 136 330
+           S168 350 168 376
+           C168 398 156 410 144 420
+           C132 430 120 440 120 456"
+        fill="none" stroke="url(#cordGrad)" stroke-width="4.2" stroke-linecap="round"/>
+
+  <!-- Cord shadow -->
+  <path d="M98 280
+           C112 310 124 322 138 332
+           S170 352 170 378
+           C170 400 158 412 146 422
+           C134 432 122 442 122 458"
+        fill="none" stroke="#000000" stroke-width="5.8" stroke-linecap="round" opacity="0.15"/>
+
+  <!-- Dial pad panel -->
+  <rect x="38" y="292" width="184" height="140" rx="10" ry="10" fill="url(#metalGrad)"/>
+  <rect x="46" y="300" width="168" height="124" rx="8" ry="8" fill="#f5f7fa"/>
+
+  <!-- Small display above keypad -->
+  <rect x="54" y="308" width="152" height="24" rx="4" ry="4" fill="#2b383f"/>
+  <rect x="58" y="312" width="144" height="16" rx="3" ry="3" fill="#9bd8a0" opacity="0.9"/>
+
+  <!-- Keypad buttons -->
+  <g transform="translate(62,342)">
+    <!-- 4 columns x 4 rows visual (last col for *,0,# shaped) -->
+    <!-- Numbers 1-9 -->
+    <g>
+      <!-- row 0 -->
+      <circle cx="0" cy="0" r="12" fill="url(#btnGrad)" stroke="#7a8492" stroke-width="1"/>
+      <circle cx="30" cy="0" r="12" fill="url(#btnGrad)" stroke="#7a8492" stroke-width="1"/>
+      <circle cx="60" cy="0" r="12" fill="url(#btnGrad)" stroke="#7a8492" stroke-width="1"/>
+
+      <!-- row 1 -->
+      <circle cx="0" cy="26" r="12" fill="url(#btnGrad)" stroke="#7a8492" stroke-width="1"/>
+      <circle cx="30" cy="26" r="12" fill="url(#btnGrad)" stroke="#7a8492" stroke-width="1"/>
+      <circle cx="60" cy="26" r="12" fill="url(#btnGrad)" stroke="#7a8492" stroke-width="1"/>
+
+      <!-- row 2 -->
+      <circle cx="0" cy="52" r="12" fill="url(#btnGrad)" stroke="#7a8492" stroke-width="1"/>
+      <circle cx="30" cy="52" r="12" fill="url(#btnGrad)" stroke="#7a8492" stroke-width="1"/>
+      <circle cx="60" cy="52" r="12" fill="url(#btnGrad)" stroke="#7a8492" stroke-width="1"/>
+
+      <!-- row 3: 0 -->
+      <circle cx="30" cy="78" r="12" fill="url(#btnGrad)" stroke="#7a8492" stroke-width="1"/>
+    </g>
+
+    <!-- Symbol keys: *,0,# as shapes on right column -->
+    <!-- * key -->
+    <rect x="84" y="-10" width="20" height="20" rx="4" ry="4" fill="url(#btnGrad)" stroke="#7a8492" stroke-width="1"/>
+    <g stroke="#606978" stroke-width="1.3" stroke-linecap="round">
+      <line x1="92" y1="-4" x2="96" y2="4"/>
+      <line x1="96" y1="-4" x2="92" y2="4"/>
+      <line x1="89" y1="0" x2="99" y2="0"/>
+    </g>
+
+    <!-- # key -->
+    <rect x="84" y="16" width="20" height="20" rx="4" ry="4" fill="url(#btnGrad)" stroke="#7a8492" stroke-width="1"/>
+    <g stroke="#606978" stroke-width="1.2" stroke-linecap="round">
+      <line x1="90" y1="20" x2="90" y2="28"/>
+      <line x1="95" y1="20" x2="95" y2="28"/>
+      <line x1="88" y1="22" x2="97" y2="22"/>
+      <line x1="88" y1="26" x2="97" y2="26"/>
+    </g>
+
+    <!-- '0' visual on existing circle -->
+    <ellipse cx="30" cy="78" rx="4.5" ry="7.5" fill="none" stroke="#555c68" stroke-width="1.4"/>
+  </g>
+
+  <!-- Coin return compartment -->
+  <rect x="74" y="442" width="132" height="56" rx="8" ry="8" fill="url(#metalGrad)"/>
+  <rect x="82" y="450" width="116" height="32" rx="6" ry="6" fill="#d4d9e1"/>
+  <rect x="88" y="456" width="104" height="18" rx="4" ry="4" fill="url(#slotGrad)"/>
+
+  <!-- Bottom tray lip -->
+  <path d="M82 482h116c0 8-7 14-15 14H97c-8 0-15-6-15-14z" fill="#a8b0bc"/>
+
+  <!-- Overall subtle vertical shadow -->
+  <rect x="26" y="32" width="208" height="456" fill="url(#shadowGrad)" opacity="0.6"/>
+</svg>

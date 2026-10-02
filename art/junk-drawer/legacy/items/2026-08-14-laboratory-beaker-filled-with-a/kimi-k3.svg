@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="95.2 51.5 221.0 314.8">
+  <defs>
+    <linearGradient id="liquid" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#b8f542"/>
+      <stop offset="0.5" stop-color="#7dd813"/>
+      <stop offset="1" stop-color="#4e9c00"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#dfeef5" stop-opacity="0.55"/>
+      <stop offset="0.2" stop-color="#ffffff" stop-opacity="0.15"/>
+      <stop offset="0.8" stop-color="#ffffff" stop-opacity="0.1"/>
+      <stop offset="1" stop-color="#c4dde8" stop-opacity="0.5"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.6" r="0.6">
+      <stop offset="0" stop-color="#d4ff7a" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#d4ff7a" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="beakerClip">
+      <path d="M118 60 L118 90 L100 340 Q98 362 122 362 L278 362 Q302 362 300 340 L282 90 L282 60 Z"/>
+    </clipPath>
+  </defs>
+
+  <!-- liquid inside beaker -->
+  <g clip-path="url(#beakerClip)">
+    <path d="M90 160 Q130 148 160 158 Q200 170 240 156 Q275 146 310 158 L310 370 L90 370 Z" fill="url(#liquid)"/>
+    <ellipse cx="200" cy="290" rx="120" ry="90" fill="url(#glow)"/>
+    <!-- bubbles -->
+    <circle cx="160" cy="300" r="10" fill="#d8ff8a" opacity="0.7"/>
+    <circle cx="220" cy="330" r="7" fill="#e2ff9e" opacity="0.7"/>
+    <circle cx="250" cy="270" r="5" fill="#d8ff8a" opacity="0.6"/>
+    <circle cx="180" cy="250" r="6" fill="#eaffb0" opacity="0.6"/>
+    <circle cx="205" cy="200" r="4" fill="#eaffb0" opacity="0.6"/>
+    <circle cx="145" cy="215" r="3.5" fill="#eaffb0" opacity="0.55"/>
+    <circle cx="262" cy="225" r="4.5" fill="#d8ff8a" opacity="0.6"/>
+    <circle cx="190" cy="345" r="8" fill="#ccf57a" opacity="0.6"/>
+  </g>
+
+  <!-- liquid surface line -->
+  <path d="M104 160 Q134 148 162 158 Q200 170 240 156 Q272 147 296 158" fill="none" stroke="#e6ff9e" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+
+  <!-- glass body -->
+  <path d="M118 60 L118 90 L100 340 Q98 362 122 362 L278 362 Q302 362 300 340 L282 90 L282 60" fill="url(#glass)" stroke="#9fb8c4" stroke-width="5" stroke-linejoin="round"/>
+
+  <!-- rim / pouring spout -->
+  <path d="M104 60 L296 60" stroke="#9fb8c4" stroke-width="6" stroke-linecap="round"/>
+  <path d="M296 60 Q306 52 312 60" fill="none" stroke="#9fb8c4" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- measurement ticks -->
+  <g stroke="#8aa7b5" stroke-width="3" stroke-linecap="round" opacity="0.85">
+    <line x1="262" y1="140" x2="282" y2="140"/>
+    <line x1="268" y1="180" x2="283" y2="180"/>
+    <line x1="264" y1="220" x2="284" y2="220"/>
+    <line x1="270" y1="260" x2="285" y2="260"/>
+    <line x1="266" y1="300" x2="286" y2="300"/>
+  </g>
+
+  <!-- glass highlight -->
+  <path d="M126 95 L112 335 Q111 348 120 352 L130 352 Q122 346 123 334 L136 95 Z" fill="#ffffff" opacity="0.45"/>
+
+  <!-- escaping vapor -->
+  <g fill="#b8f542" opacity="0.5">
+    <circle cx="170" cy="120" r="5"/>
+    <circle cx="215" cy="105" r="4"/>
+    <circle cx="245" cy="125" r="3.5"/>
+    <circle cx="190" cy="85" r="3"/>
+    <circle cx="230" cy="70" r="2.5"/>
+  </g>
+</svg>

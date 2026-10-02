@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 500">
+  <defs>
+    <linearGradient id="coilA" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e7d6a4"/>
+      <stop offset="0.5" stop-color="#d2b170"/>
+      <stop offset="1" stop-color="#a9874f"/>
+    </linearGradient>
+    <linearGradient id="coilB" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ddc78e"/>
+      <stop offset="0.5" stop-color="#c4a25f"/>
+      <stop offset="1" stop-color="#9a7a45"/>
+    </linearGradient>
+    <linearGradient id="shadeGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#fdf6e0" stop-opacity="0.20"/>
+      <stop offset="0.42" stop-color="#fdf6e0" stop-opacity="0"/>
+      <stop offset="0.62" stop-color="#5b4526" stop-opacity="0"/>
+      <stop offset="1" stop-color="#5b4526" stop-opacity="0.32"/>
+    </linearGradient>
+    <clipPath id="hiveClip">
+      <path d="M95 444 Q210 437 325 444 A25 25 0 0 1 325 494 Q210 502 95 494 A25 25 0 0 1 95 444 Z"/>
+      <path d="M74 386 Q210 378 346 386 A40 40 0 0 1 346 466 Q210 475 74 466 A40 40 0 0 1 74 386 Z"/>
+      <path d="M51 324 Q210 316 369 324 A41 41 0 0 1 369 406 Q210 415 51 406 A41 41 0 0 1 51 324 Z"/>
+      <path d="M44 264 Q210 256 376 264 A40 40 0 0 1 376 344 Q210 353 44 344 A40 40 0 0 1 44 264 Z"/>
+      <path d="M52 208 Q210 200 368 208 A38 38 0 0 1 368 284 Q210 293 52 284 A38 38 0 0 1 52 208 Z"/>
+      <path d="M70 156 Q210 149 350 156 A36 36 0 0 1 350 228 Q210 236 70 228 A36 36 0 0 1 70 156 Z"/>
+      <path d="M98 108 Q210 101 322 108 A34 34 0 0 1 322 176 Q210 184 98 176 A34 34 0 0 1 98 108 Z"/>
+      <path d="M132 64 Q210 58 288 64 A32 32 0 0 1 288 128 Q210 135 132 128 A32 32 0 0 1 132 64 Z"/>
+      <path d="M132 92 Q132 6 210 6 Q288 6 288 92 Q210 100 132 92 Z"/>
+    </clipPath>
+    <filter id="fade" x="-4%" y="-4%" width="108%" height="108%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="11" result="g"/>
+      <feColorMatrix in="g" type="matrix" values="0 0 0 0 0.36  0 0 0 0 0.29  0 0 0 0 0.20  0.4 0.4 0.4 0 -0.42" result="grain"/>
+      <feComposite in="grain" in2="SourceAlpha" operator="in" result="grainC"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.012 0.016" numOctaves="2" seed="4" result="b"/>
+      <feColorMatrix in="b" type="matrix" values="0 0 0 0 0.94  0 0 0 0 0.90  0 0 0 0 0.78  0.35 0.35 0.35 0 -0.30" result="blotch"/>
+      <feComposite in="blotch" in2="SourceAlpha" operator="in" result="blotchC"/>
+      <feMerge>
+        <feMergeNode in="SourceGraphic"/>
+        <feMergeNode in="blotchC"/>
+        <feMergeNode in="grainC"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <g filter="url(#fade)">
+    <!-- coils, bottom to top -->
+    <g stroke="#7c6138" stroke-width="2.5" stroke-opacity="0.8">
+      <path fill="url(#coilB)" d="M95 444 Q210 437 325 444 A25 25 0 0 1 325 494 Q210 502 95 494 A25 25 0 0 1 95 444 Z"/>
+      <path fill="url(#coilA)" d="M74 386 Q210 378 346 386 A40 40 0 0 1 346 466 Q210 475 74 466 A40 40 0 0 1 74 386 Z"/>
+      <path fill="url(#coilB)" d="M51 324 Q210 316 369 324 A41 41 0 0 1 369 406 Q210 415 51 406 A41 41 0 0 1 51 324 Z"/>
+      <path fill="url(#coilA)" d="M44 264 Q210 256 376 264 A40 40 0 0 1 376 344 Q210 353 44 344 A40 40 0 0 1 44 264 Z"/>
+      <path fill="url(#coilB)" d="M52 208 Q210 200 368 208 A38 38 0 0 1 368 284 Q210 293 52 284 A38 38 0 0 1 52 208 Z"/>
+      <path fill="url(#coilA)" d="M70 156 Q210 149 350 156 A36 36 0 0 1 350 228 Q210 236 70 228 A36 36 0 0 1 70 156 Z"/>
+      <path fill="url(#coilB)" d="M98 108 Q210 101 322 108 A34 34 0 0 1 322 176 Q210 184 98 176 A34 34 0 0 1 98 108 Z"/>
+      <path fill="url(#coilA)" d="M132 64 Q210 58 288 64 A32 32 0 0 1 288 128 Q210 135 132 128 A32 32 0 0 1 132 64 Z"/>
+      <path fill="url(#coilB)" d="M132 92 Q132 6 210 6 Q288 6 288 92 Q210 100 132 92 Z"/>
+    </g>
+
+    <!-- straw stitch texture -->
+    <g stroke="#5f4a2b" stroke-opacity="0.14" fill="none" stroke-linecap="butt">
+      <path d="M100 481 L320 481" stroke-width="20" stroke-dasharray="2.5 16"/>
+      <path d="M80 436 L340 436" stroke-width="34" stroke-dasharray="2.5 17" stroke-dashoffset="7"/>
+      <path d="M58 375 L362 375" stroke-width="34" stroke-dasharray="2.5 15" stroke-dashoffset="3"/>
+      <path d="M50 314 L370 314" stroke-width="33" stroke-dasharray="2.5 18" stroke-dashoffset="11"/>
+      <path d="M58 256 L362 256" stroke-width="31" stroke-dasharray="2.5 16" stroke-dashoffset="5"/>
+      <path d="M76 202 L344 202" stroke-width="29" stroke-dasharray="2.5 15" stroke-dashoffset="9"/>
+      <path d="M104 152 L316 152" stroke-width="27" stroke-dasharray="2.5 17" stroke-dashoffset="2"/>
+      <path d="M138 111 L282 111" stroke-width="22" stroke-dasharray="2.5 16" stroke-dashoffset="6"/>
+      <path d="M160 58 L260 58" stroke-width="26" stroke-dasharray="2.5 15" stroke-dashoffset="4"/>
+    </g>
+
+    <!-- soft side light and shadow -->
+    <rect x="0" y="0" width="420" height="500" fill="url(#shadeGrad)" clip-path="url(#hiveClip)"/>
+
+    <!-- entrance -->
+    <path d="M178 460 L178 430 Q178 398 210 398 Q242 398 242 430 L242 460 Q210 466 178 460 Z"
+          fill="#46351f" stroke="#2e2314" stroke-width="2" stroke-opacity="0.85"/>
+    <path d="M184 456 L184 431 Q184 405 210 405" fill="none" stroke="#8a6f45" stroke-width="2.5" stroke-opacity="0.35"/>
+  </g>
+</svg>

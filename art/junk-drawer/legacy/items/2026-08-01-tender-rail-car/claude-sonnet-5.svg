@@ -1,0 +1,247 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1200 900">
+<defs>
+  <radialGradient id="bgGrad" cx="50%" cy="34%" r="78%">
+    <stop offset="0%" stop-color="#4a3420"/>
+    <stop offset="45%" stop-color="#2c1e12"/>
+    <stop offset="100%" stop-color="#0a0603"/>
+  </radialGradient>
+  <radialGradient id="spotGlow" cx="50%" cy="45%" r="55%">
+    <stop offset="0%" stop-color="#ffe6a8" stop-opacity="0.55"/>
+    <stop offset="55%" stop-color="#e0a94a" stop-opacity="0.18"/>
+    <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+  </radialGradient>
+  <linearGradient id="ironGrad" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#524c43"/>
+    <stop offset="50%" stop-color="#2b271f"/>
+    <stop offset="100%" stop-color="#120f0b"/>
+  </linearGradient>
+  <radialGradient id="wheelGrad" cx="35%" cy="32%" r="70%">
+    <stop offset="0%" stop-color="#5c574d"/>
+    <stop offset="60%" stop-color="#26221d"/>
+    <stop offset="100%" stop-color="#0c0a08"/>
+  </radialGradient>
+  <linearGradient id="brassGrad" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#f6dd8c"/>
+    <stop offset="50%" stop-color="#c9932c"/>
+    <stop offset="100%" stop-color="#6f5216"/>
+  </linearGradient>
+  <linearGradient id="woodGrad" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#7c4326"/>
+    <stop offset="55%" stop-color="#5a2f1c"/>
+    <stop offset="100%" stop-color="#2c1409"/>
+  </linearGradient>
+  <radialGradient id="teddyGrad" cx="35%" cy="28%" r="75%">
+    <stop offset="0%" stop-color="#ac7743"/>
+    <stop offset="60%" stop-color="#7f4f27"/>
+    <stop offset="100%" stop-color="#432711"/>
+  </radialGradient>
+  <radialGradient id="teddyLightGrad" cx="35%" cy="28%" r="75%">
+    <stop offset="0%" stop-color="#ecc999"/>
+    <stop offset="100%" stop-color="#a06f3f"/>
+  </radialGradient>
+  <radialGradient id="glassGrad" cx="35%" cy="26%" r="75%">
+    <stop offset="0%" stop-color="#fffaea"/>
+    <stop offset="42%" stop-color="#ffe9a8"/>
+    <stop offset="78%" stop-color="#eeb64b"/>
+    <stop offset="100%" stop-color="#a97c15"/>
+  </radialGradient>
+  <radialGradient id="bulbGlow" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#ffdd88" stop-opacity="0.85"/>
+    <stop offset="55%" stop-color="#ffb347" stop-opacity="0.32"/>
+    <stop offset="100%" stop-color="#ffb347" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="clockFaceGrad" cx="38%" cy="30%" r="75%">
+    <stop offset="0%" stop-color="#fffaee"/>
+    <stop offset="100%" stop-color="#e4d6a4"/>
+  </radialGradient>
+  <linearGradient id="beamGrad" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#fff1bd" stop-opacity="0.75"/>
+    <stop offset="100%" stop-color="#fff1bd" stop-opacity="0"/>
+  </linearGradient>
+  <radialGradient id="vignetteGrad" cx="50%" cy="46%" r="66%">
+    <stop offset="0%" stop-color="#000000" stop-opacity="0"/>
+    <stop offset="58%" stop-color="#000000" stop-opacity="0"/>
+    <stop offset="100%" stop-color="#000000" stop-opacity="0.82"/>
+  </radialGradient>
+
+  <filter id="painterly" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.012 0.018" numOctaves="3" seed="7" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="16" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+  <filter id="painterlySoft" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.02 0.028" numOctaves="2" seed="4" result="n2"/>
+    <feDisplacementMap in="SourceGraphic" in2="n2" scale="7" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+  <filter id="grain" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="11" result="gn"/>
+    <feColorMatrix in="gn" type="matrix" values="0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0 0.5  0 0 0 0.5 0"/>
+  </filter>
+
+  <symbol id="teddy" overflow="visible">
+    <circle cx="-85" cy="-95" r="42" fill="url(#teddyGrad)" stroke="#2a1707" stroke-width="4"/>
+    <circle cx="85" cy="-95" r="42" fill="url(#teddyGrad)" stroke="#2a1707" stroke-width="4"/>
+    <circle cx="-85" cy="-95" r="19" fill="#4a2c12"/>
+    <circle cx="85" cy="-95" r="19" fill="#4a2c12"/>
+    <circle cx="0" cy="0" r="100" fill="url(#teddyGrad)" stroke="#2a1707" stroke-width="5"/>
+    <ellipse cx="0" cy="35" rx="55" ry="42" fill="url(#teddyLightGrad)" stroke="#3a2210" stroke-width="3"/>
+    <circle cx="-35" cy="-10" r="12" fill="#130a05"/>
+    <circle cx="35" cy="-10" r="12" fill="#130a05"/>
+    <circle cx="-31" cy="-14" r="4" fill="#fff8e6"/>
+    <circle cx="39" cy="-14" r="4" fill="#fff8e6"/>
+    <path d="M-16,25 Q0,15 16,25 Q0,38 -16,25 Z" fill="#291509"/>
+    <path d="M0,38 L0,58 M0,58 Q-18,68 -34,58 M0,58 Q18,68 34,58" fill="none" stroke="#291509" stroke-width="3" stroke-linecap="round"/>
+    <path d="M-72,-58 A95,95 0 0,1 20,-96" stroke="#f0d0a0" stroke-width="5" fill="none" opacity="0.3" stroke-linecap="round"/>
+  </symbol>
+
+  <symbol id="clock" overflow="visible">
+    <rect x="-6" y="-128" width="12" height="20" rx="4" fill="url(#brassGrad)" stroke="#5a4212" stroke-width="2"/>
+    <circle cx="0" cy="-112" r="10" fill="url(#brassGrad)" stroke="#5a4212" stroke-width="2"/>
+    <circle cx="0" cy="0" r="100" fill="url(#brassGrad)" stroke="#382a10" stroke-width="6"/>
+    <circle cx="0" cy="0" r="82" fill="url(#clockFaceGrad)" stroke="#8a6a1f" stroke-width="3"/>
+    <g stroke="#2a2010" stroke-width="4" stroke-linecap="round">
+      <line x1="0" y1="-66" x2="0" y2="-80"/>
+      <line x1="33" y1="-57.2" x2="40" y2="-69.3"/>
+      <line x1="57.2" y1="-33" x2="69.3" y2="-40"/>
+      <line x1="66" y1="0" x2="80" y2="0"/>
+      <line x1="57.2" y1="33" x2="69.3" y2="40"/>
+      <line x1="33" y1="57.2" x2="40" y2="69.3"/>
+      <line x1="0" y1="66" x2="0" y2="80"/>
+      <line x1="-33" y1="57.2" x2="-40" y2="69.3"/>
+      <line x1="-57.2" y1="33" x2="-69.3" y2="40"/>
+      <line x1="-66" y1="0" x2="-80" y2="0"/>
+      <line x1="-57.2" y1="-33" x2="-69.3" y2="-40"/>
+      <line x1="-33" y1="-57.2" x2="-40" y2="-69.3"/>
+    </g>
+    <line x1="0" y1="0" x2="-30" y2="-45" stroke="#1a1208" stroke-width="6" stroke-linecap="round"/>
+    <line x1="0" y1="0" x2="48" y2="15" stroke="#1a1208" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="0" cy="0" r="8" fill="#1a1208"/>
+    <path d="M-70,-42 A82,82 0 0,1 15,-80" stroke="#fff6df" stroke-width="6" fill="none" opacity="0.3" stroke-linecap="round"/>
+  </symbol>
+
+  <symbol id="googly" overflow="visible">
+    <circle cx="0" cy="0" r="100" fill="#f6f4ec" stroke="#111" stroke-width="6"/>
+    <path d="M-70,-55 A95,95 0 0,1 30,-88" stroke="#ffffff" stroke-width="8" fill="none" opacity="0.5" stroke-linecap="round"/>
+    <circle cx="26" cy="18" r="46" fill="#141210" stroke="#000" stroke-width="2"/>
+    <circle cx="40" cy="2" r="14" fill="#fdfdf8"/>
+  </symbol>
+
+  <symbol id="bulb" overflow="visible">
+    <circle cx="0" cy="-30" r="115" fill="url(#bulbGlow)" style="mix-blend-mode:screen"/>
+    <ellipse cx="0" cy="-40" rx="70" ry="90" fill="url(#glassGrad)" opacity="0.94" stroke="#8a6a1f" stroke-width="3"/>
+    <path d="M-25,40 Q-30,70 -20,85 L20,85 Q30,70 25,40 Z" fill="url(#glassGrad)" opacity="0.9"/>
+    <rect x="-24" y="85" width="48" height="18" fill="#8a8272"/>
+    <rect x="-24" y="86" width="48" height="4" fill="#4c473c"/>
+    <rect x="-24" y="100" width="48" height="4" fill="#4c473c"/>
+    <rect x="-22" y="118" width="44" height="14" rx="6" fill="#c9932c"/>
+    <path d="M-18,-20 Q-8,-62 0,-30 Q9,2 18,-42" fill="none" stroke="#ffe08a" stroke-width="4" stroke-linecap="round"/>
+    <path d="M-45,-95 A75,90 0 0,1 20,-118" stroke="#fffdf3" stroke-width="7" fill="none" opacity="0.45" stroke-linecap="round"/>
+  </symbol>
+
+  <symbol id="sewing" overflow="visible">
+    <rect x="-150" y="70" width="300" height="30" rx="8" fill="#100f0d" stroke="#000" stroke-width="3"/>
+    <path d="M-120,70 Q-132,-22 -58,-72 Q0,-112 60,-90 Q112,-74 112,-28 L112,10 Q112,32 90,32 L-38,32 Q-58,32 -70,16 L-90,70 Z" fill="#151310" stroke="#000" stroke-width="3"/>
+    <circle cx="90" cy="-10" r="26" fill="url(#brassGrad)" stroke="#382a10" stroke-width="3"/>
+    <circle cx="90" cy="-10" r="8" fill="#1a1208"/>
+    <rect x="70" y="-72" width="30" height="10" rx="3" fill="#100f0d"/>
+    <line x1="85" y1="-72" x2="85" y2="-18" stroke="#0f0e0c" stroke-width="8" stroke-linecap="round"/>
+    <line x1="85" y1="-62" x2="85" y2="-16" stroke="#cfc9bc" stroke-width="3"/>
+    <path d="M-100,20 Q-40,4 34,20" stroke="url(#brassGrad)" stroke-width="4" fill="none" opacity="0.85"/>
+    <ellipse cx="-32" cy="-28" rx="22" ry="14" fill="#e8e2d4" stroke="#847c6c" stroke-width="2"/>
+    <path d="M-100,-10 A90,90 0 0,1 -20,-100" stroke="#f2d98f" stroke-width="5" fill="none" opacity="0.3" stroke-linecap="round"/>
+  </symbol>
+
+  <symbol id="wheel" overflow="visible">
+    <circle cx="0" cy="0" r="100" fill="url(#wheelGrad)" stroke="#0c0a08" stroke-width="6"/>
+    <circle cx="0" cy="0" r="88" fill="none" stroke="#3a352f" stroke-width="3"/>
+    <g stroke="#232019" stroke-width="10" stroke-linecap="round">
+      <line x1="0" y1="-15" x2="0" y2="-82"/>
+      <line x1="10.6" y1="-10.6" x2="58" y2="-58"/>
+      <line x1="15" y1="0" x2="82" y2="0"/>
+      <line x1="10.6" y1="10.6" x2="58" y2="58"/>
+      <line x1="0" y1="15" x2="0" y2="82"/>
+      <line x1="-10.6" y1="10.6" x2="-58" y2="58"/>
+      <line x1="-15" y1="0" x2="-82" y2="0"/>
+      <line x1="-10.6" y1="-10.6" x2="-58" y2="-58"/>
+    </g>
+    <circle cx="0" cy="0" r="24" fill="url(#brassGrad)" stroke="#382a10" stroke-width="3"/>
+    <circle cx="0" cy="0" r="8" fill="#1a1208"/>
+    <path d="M-70,-42 A82,82 0 0,1 10,-80" stroke="#e9e4d6" stroke-width="6" fill="none" opacity="0.22" stroke-linecap="round"/>
+  </symbol>
+</defs>
+
+<rect x="0" y="0" width="1200" height="900" fill="url(#bgGrad)"/>
+<circle cx="600" cy="330" r="430" fill="url(#spotGlow)" style="mix-blend-mode:screen"/>
+
+<ellipse cx="600" cy="820" rx="500" ry="58" fill="#000000" opacity="0.55" filter="url(#painterlySoft)"/>
+
+<use xlink:href="#wheel" href="#wheel" transform="translate(390,760) scale(1.02)"/>
+<use xlink:href="#wheel" href="#wheel" transform="translate(810,760) scale(1.02)"/>
+
+<g filter="url(#painterly)">
+  <rect x="210" y="430" width="780" height="300" rx="18" fill="url(#ironGrad)" stroke="#0b0906" stroke-width="6"/>
+  <path d="M210,448 Q600,410 990,448 L990,486 Q600,452 210,486 Z" fill="url(#woodGrad)" stroke="#1c0d05" stroke-width="3"/>
+</g>
+
+<g>
+  <g fill="url(#brassGrad)" stroke="#43350f" stroke-width="1.2">
+    <circle cx="250" cy="442" r="6"/><circle cx="327" cy="442" r="6"/><circle cx="404" cy="442" r="6"/><circle cx="481" cy="442" r="6"/><circle cx="558" cy="442" r="6"/><circle cx="635" cy="442" r="6"/><circle cx="712" cy="442" r="6"/><circle cx="789" cy="442" r="6"/><circle cx="866" cy="442" r="6"/><circle cx="943" cy="442" r="6"/>
+    <circle cx="250" cy="718" r="6"/><circle cx="327" cy="718" r="6"/><circle cx="404" cy="718" r="6"/><circle cx="481" cy="718" r="6"/><circle cx="558" cy="718" r="6"/><circle cx="635" cy="718" r="6"/><circle cx="712" cy="718" r="6"/><circle cx="789" cy="718" r="6"/><circle cx="866" cy="718" r="6"/><circle cx="943" cy="718" r="6"/>
+    <circle cx="222" cy="480" r="6"/><circle cx="222" cy="580" r="6"/><circle cx="222" cy="680" r="6"/>
+    <circle cx="978" cy="480" r="6"/><circle cx="978" cy="580" r="6"/><circle cx="978" cy="680" r="6"/>
+  </g>
+  <g filter="url(#painterlySoft)">
+    <circle cx="270" cy="742" r="26" fill="url(#ironGrad)" stroke="#0b0906" stroke-width="4"/>
+    <circle cx="270" cy="742" r="10" fill="url(#brassGrad)"/>
+    <circle cx="930" cy="742" r="26" fill="url(#ironGrad)" stroke="#0b0906" stroke-width="4"/>
+    <circle cx="930" cy="742" r="10" fill="url(#brassGrad)"/>
+    <rect x="545" y="560" width="110" height="55" rx="8" fill="url(#brassGrad)" stroke="#4a3810" stroke-width="3"/>
+    <circle cx="600" cy="587" r="14" fill="none" stroke="#4a3810" stroke-width="2" opacity="0.7"/>
+  </g>
+  <path d="M230,440 L960,440" stroke="#f0d9a2" stroke-width="3" opacity="0.18"/>
+  <path d="M230,720 L960,720" stroke="#000000" stroke-width="4" opacity="0.3"/>
+</g>
+
+<g filter="url(#painterlySoft)">
+  <use xlink:href="#clock" href="#clock" transform="translate(380,190) scale(0.5) rotate(-8)"/>
+  <use xlink:href="#teddy" href="#teddy" transform="translate(520,175) scale(0.45) rotate(6)"/>
+  <use xlink:href="#clock" href="#clock" transform="translate(690,185) scale(0.42) rotate(10)"/>
+  <use xlink:href="#sewing" href="#sewing" transform="translate(800,165) scale(0.4) rotate(-4)"/>
+  <use xlink:href="#teddy" href="#teddy" transform="translate(870,220) scale(0.4) rotate(-10)"/>
+  <use xlink:href="#googly" href="#googly" transform="translate(150,300) scale(0.22) rotate(15)"/>
+  <use xlink:href="#clock" href="#clock" transform="translate(1010,205) scale(0.36) rotate(12)"/>
+
+  <use xlink:href="#sewing" href="#sewing" transform="translate(300,270) scale(0.75) rotate(3)"/>
+  <use xlink:href="#bulb" href="#bulb" transform="translate(430,285) scale(0.55) rotate(-6)"/>
+  <use xlink:href="#clock" href="#clock" transform="translate(565,265) scale(0.6) rotate(-5)"/>
+  <use xlink:href="#googly" href="#googly" transform="translate(635,325) scale(0.28) rotate(-20)"/>
+  <use xlink:href="#teddy" href="#teddy" transform="translate(725,300) scale(0.55) rotate(8)"/>
+  <use xlink:href="#bulb" href="#bulb" transform="translate(835,275) scale(0.5) rotate(10)"/>
+  <use xlink:href="#clock" href="#clock" transform="translate(925,305) scale(0.5) rotate(6)"/>
+  <use xlink:href="#googly" href="#googly" transform="translate(985,265) scale(0.24) rotate(30)"/>
+
+  <use xlink:href="#teddy" href="#teddy" transform="translate(190,385) scale(0.5) rotate(-12)"/>
+  <use xlink:href="#sewing" href="#sewing" transform="translate(255,390) scale(1.0) rotate(-2)"/>
+  <use xlink:href="#bulb" href="#bulb" transform="translate(300,345) scale(0.4) rotate(-8)"/>
+  <use xlink:href="#teddy" href="#teddy" transform="translate(420,405) scale(0.75) rotate(4)"/>
+  <use xlink:href="#googly" href="#googly" transform="translate(500,445) scale(0.32) rotate(-15)"/>
+  <use xlink:href="#clock" href="#clock" transform="translate(560,415) scale(0.7) rotate(-3)"/>
+  <use xlink:href="#bulb" href="#bulb" transform="translate(650,435) scale(0.68) rotate(-4)"/>
+  <use xlink:href="#googly" href="#googly" transform="translate(705,385) scale(0.26) rotate(25)"/>
+  <use xlink:href="#teddy" href="#teddy" transform="translate(765,425) scale(0.65) rotate(-6)"/>
+  <use xlink:href="#sewing" href="#sewing" transform="translate(855,395) scale(0.95) rotate(3)"/>
+  <use xlink:href="#clock" href="#clock" transform="translate(935,445) scale(0.55) rotate(5)"/>
+  <use xlink:href="#bulb" href="#bulb" transform="translate(985,405) scale(0.5) rotate(6)"/>
+  <use xlink:href="#teddy" href="#teddy" transform="translate(1050,435) scale(0.45) rotate(10)"/>
+  <use xlink:href="#googly" href="#googly" transform="translate(340,445) scale(0.3) rotate(-25)"/>
+  <use xlink:href="#googly" href="#googly" transform="translate(885,465) scale(0.28) rotate(18)"/>
+  <use xlink:href="#bulb" href="#bulb" transform="translate(1035,350) scale(0.35) rotate(12)"/>
+
+  <use xlink:href="#googly" href="#googly" transform="translate(250,655) scale(0.24) rotate(40)"/>
+  <use xlink:href="#bulb" href="#bulb" transform="translate(950,678) scale(0.3) rotate(150)"/>
+</g>
+
+<polygon points="0,0 260,0 700,720 300,900 0,520" fill="url(#beamGrad)" opacity="0.32" style="mix-blend-mode:screen" filter="url(#painterly)"/>
+
+<rect x="0" y="0" width="1200" height="900" fill="url(#vignetteGrad)" style="mix-blend-mode:multiply"/>
+<rect x="0" y="0" width="1200" height="900" fill="#808080" opacity="0.1" style="mix-blend-mode:overlay" filter="url(#grain)"/>
+</svg>

@@ -6,6 +6,110 @@ in the gitignored PLAN-*.md docs.) Newest first within each section.
 
 ## Wanted
 
+### Owner's v2 notes, triaged (2026-10-01, evening)
+
+**Being built now (Phase 3c/4a):** head-to-head comparative scores on the
+7-point scale, both as six side-by-side questions and (from the owner's
+pedestal session) derived from the podium's gaps — one `jd2_pairs` table.
+
+**Before the rating campaign starts** (each is a data edit or a small
+back-end change; the owner decides the wording):
+
+- **Settle the scales.** Consider a 4-point scale for the three issue axes
+  (structural coherence, layering, jnsq) and a 3-point scale for
+  understanding-assignment. Ranks are data in `taxonomy.json`; the gauges
+  (`JD_axisCls`, `rc-r*`/`rc-q*`) already handle 3- and 4-point.
+- **Settle the names.** "Subjects / categories / axes", and "ratings vs
+  grades" — the owner leans to calling the per-axis answers *ratings* so
+  *overall grade* keeps its name, or renaming it (overall quality /
+  usefulness). Labels only; ids stay.
+- **Solid definitions for every axis**, written as the owner works the new
+  prompt set; must be solid before sharing. Including the
+  benefit-of-the-doubt rule for understanding-assignment: an ambiguous
+  prompt read in a reasonable way is NOT penalised, even if it is not the
+  reading the owner had in mind. Suggested sentence for the description:
+  "If the prompt is ambiguous, any reasonable reading counts as
+  understanding it; do not penalise a drawing for choosing a different
+  reasonable reading than you had in mind."
+- **Rationale notes.** A free-text comment per sitting (and per cell where
+  wanted), kept on hand for taxonomy tweaks, not necessarily shown on the
+  card. Schema: add `jd2_sessions.note` (additive; judgments already carry
+  a per-cell `note`).
+- **The prompt set: ~100 prompts, categorised.** Schema: add
+  `jd2_prompts.category` (additive); the CSV batch runner takes a
+  `category` column.
+- **Model-assigned size.** At the moment the titler drafts the title it
+  also proposes the size tier, given the tier descriptions and a few
+  examples per tier (a titler-shaped call: prompt in, one tier out,
+  validated against `sizeTiers`). The size card then disappears for
+  visitors; the owner can still override on the ledger. Check the
+  agreement rate against the ~64 owner-chosen sizes in the v1 archive
+  first.
+- **Newest models** in the pool (newest Opus, newest OpenAI, etc.) —
+  already decided: refresh before regenerating; pool is data + `poolVersion`.
+
+**Instrument / UI (Phase 4b and after):**
+
+- **One question at a time.** A rating card that asks understanding, then
+  structural coherence, then layering, then jnsq, then the overall grade,
+  per drawing (or per question across drawings) — instead of the full panel
+  of selects. Same card for visitors and the bench.
+- **The unveil pedestals carry a compact summary**: model, cost, and every
+  rating for that drawing in a small well-designed table; the overall
+  spark line leaves the plate and moves into the pedestal. **BLOCKED on the
+  pedestal redesign** (owner, 2026-10-01): the owner is reworking the
+  pedestal card in another session so the degree of "betterness" between
+  places yields the Likert scores; how the pedestals look at the end of the
+  survey depends on that outcome, so nothing touches the podium or the
+  unveil pedestals here until it lands.
+- **Darkroom copy**: rewrite the text under the loading cards, including
+  the "taking longer than usual" line.
+- **Instructions**: rewrite, and fix the blurry text when the sheet
+  expands (likely a transform/scale on a rasterised layer — check
+  `will-change`/`transform` on the sheet and its filter).
+- **Typography**: a non-monospace face for the axis descriptions.
+
+**Before the drawer opens to the public:**
+
+- **Consent**: a checkbox that includes confirming the visitor is over 18,
+  and a fuller disclaimer than "sent to Anthropic etc." New consent
+  version; privacy.php §4 must match.
+- **Visitor chooses how many drawings and from which models.** Default
+  two, with controls on the prompt screen to ask for more (up to the
+  pool) and to pick the models. Back end: the v2 `deal` already allows any
+  size; `jd2-generate` gains a visitor `models: [ids]` field (min 2),
+  the breaker counts drawings not turns, the pairs step scales with the
+  count (1 pair for two drawings). Owner runs stay at the full pool.
+- **Moderation / approval queue** (see the follow-ons above).
+
+### Dataset v2 follow-ons (owner, 2026-10-01)
+
+Decided alongside the v2 cutover (PLAN-V2.md, gitignored); none of these is
+part of the cutover build itself.
+
+- **Moderation before the public drawer.** A visitor's rated turn should
+  appear at once only on their own device (the YOURS tag, as today) and join
+  the public drawer only when the owner approves it from a dashboard; the
+  morning email digest (`onobot-digest`) lists the new submissions. The v2
+  schema reserves `jd2_prompts.approved_at` / `approved_by` for this. Until
+  it exists, fully rated turns join the drawer as they do now (the owner is
+  effectively the only visitor).
+- **The CSV batch runner.** The owner curates the prompt set into a CSV;
+  an owner-only runner reads it and generates every prompt's responses in
+  the background under the `bench` effort profile — one model per request,
+  four requests per prompt, never two drawings in one call — so the owner
+  never waits between prompts, then rates the backlog on the bench with the
+  side-by-side pairs card. Matching prompt text records `v1_item_id`
+  lineage automatically.
+- **Reassess the visitor thinking level.** Visitor turns run the `web`
+  profile (thinking turned down so the darkroom wait stays short); the
+  bench runs at each vendor's top setting. Once the pool is settled, decide
+  what visitors get and what it costs in wait time and spend.
+- **Model pool refresh** before the rating campaign: verify wire ids and
+  prices against the providers' lists, add `jd-prices.json` rows, bump
+  `poolVersion` in `taxonomy.json`, bump the consent version if the
+  provider list changes (privacy.php §4 must match).
+
 ### A basic vector editor on the report card (owner, 2026-09-11)
 
 **The idea:** let a visitor take a drawing apart on the report card — pick
@@ -90,51 +194,20 @@ which is a real eval set.
 Related: `sizing-desk.html` already exists for tuning sizes in bulk against
 the live pile math, and `sizeScale` is the continuous dial under the tiers.
 
-### Promotion of turns into the drawer
+### Retired with dataset v1 (2026-10-01)
 
-`scripts/promote-turn.py` — the counterpart to `harvest-rerun.py` for prompts
-that were never curated items: write the surviving SVGs, ink-check, author the
-entry from the owner's bench ratings, title via `jd-title.php`, size from the
-bench's size flag. Blocked on nothing; wanted for the reassessment backlog.
+Two v1 items closed by the v2 cutover rather than built; their v1 text is in
+git history before this commit.
 
-### Placings on the curated originals (2026-09-17)
-
-The medals ship and work: `medalHTML()` in `jd-record.js`, `.rc-alt-medal` in
-`junk-drawer.css`, gold/silver/bronze/ribbon in the top-left corner of each
-thumbnail in OTHER MODELS, SAME PROMPT, on the drawer and the /about/ report
-card alike. As of 0.9.156 the live payload carries **48 placings across 12
-turn items** and they show.
-
-What is left is the other half of the drawer. Measured against the live
-database on the day:
-
-| displayed drawings | ranked in the DB |
-|---|---|
-| turn items | 114 of 116 |
-| **curated items** | **0 of 216** |
-
-The curated 216 are backfilled originals that were never part of a ranked
-turn, so they have no placing to show and never will until one is filed. Two
-ways to change that, neither started:
-
-1. **Rank them on the bench.** A bench rank on a curated item already reaches
-   the payload — the curated branch of `data.php` was fixed in 0.9.155 to look
-   rank up by generation rather than through `jd_submissions`, which a rerun's
-   submission never satisfies. So this works today; it is just unranked work.
-
-2. **Carry the ranking through HARVEST.** When a rerun is harvested onto a
-   curated item its drawings come across and its ranking stays behind on the
-   rerun's own submission. 281 ranks are on file (163 `web`, 110 `bench`, 8
-   `seed`) across 69 turns; matching each curated item's generations back to
-   the turn that ranked them would light up the drawer at once. This is the
-   bigger piece and the one worth doing properly.
-
-Also open, smaller: whose ranking wins when a curated item has gathered
-drawings from several different reruns, each ranked by a different visitor in
-a different session. Two "1st place" drawings from two sessions are not
-comparable, and a blend would be a number nobody filed. The rule used for
-turns — bench outranks web, newest otherwise — is a starting point, not an
-answer.
+- **Promotion of turns into the drawer** (`scripts/promote-turn.py`, the
+  counterpart to `harvest-rerun.py`). In v2 a visitor's turn joins the drawer
+  when its session is complete; there is no file to promote into, and both
+  scripts were removed with the file path.
+- **Placings on the curated originals** (2026-09-17: 0 of 216 curated
+  drawings ranked, rank them on the bench or carry ranks through harvest). v2
+  has no curated items: every drawing belongs to a run, and every complete
+  session ranks the run's drawings, so every drawing in the drawer has a
+  place.
 
 
 ## Done

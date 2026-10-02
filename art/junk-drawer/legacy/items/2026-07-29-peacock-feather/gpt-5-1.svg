@@ -1,0 +1,286 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="20.8 -2.0 278.2 803.8">
+  <defs>
+    <linearGradient id="shaftGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0b534f"/>
+      <stop offset="0.5" stop-color="#145a7a"/>
+      <stop offset="1" stop-color="#0e6655"/>
+    </linearGradient>
+    <linearGradient id="eyeOuter" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2ecc71"/>
+      <stop offset="0.5" stop-color="#27ae60"/>
+      <stop offset="1" stop-color="#1e8449"/>
+    </linearGradient>
+    <radialGradient id="eyeRing" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#f1c40f"/>
+      <stop offset="0.55" stop-color="#f39c12"/>
+      <stop offset="1" stop-color="#d68910"/>
+    </radialGradient>
+    <radialGradient id="eyeBlue" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#3498db"/>
+      <stop offset="0.6" stop-color="#21618c"/>
+      <stop offset="1" stop-color="#154360"/>
+    </radialGradient>
+    <radialGradient id="eyeCore" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#1c2833"/>
+      <stop offset="1" stop-color="#0b0c10"/>
+    </radialGradient>
+    <filter id="pencilSoft" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="1.3" numOctaves="4" stitchTiles="noStitch" result="noise"/>
+      <feColorMatrix in="noise" type="matrix"
+        values="0 0 0 0 0.45
+                0 0 0 0 0.5
+                0 0 0 0 0.55
+                0 0 0 0.45 0" result="grain"/>
+      <feBlend in="SourceGraphic" in2="grain" mode="multiply" result="textured"/>
+    </filter>
+    <filter id="pencilSoftLight" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="3" stitchTiles="noStitch" result="noise2"/>
+      <feColorMatrix in="noise2" type="matrix"
+        values="0 0 0 0 0.7
+                0 0 0 0 0.7
+                0 0 0 0 0.75
+                0 0 0 0.3 0" result="grain2"/>
+      <feBlend in="SourceGraphic" in2="grain2" mode="soft-light"/>
+    </filter>
+    <linearGradient id="shaftHighlight" x1="0.1" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#a9dfbf" stop-opacity="0.4"/>
+      <stop offset="0.5" stop-color="#76d7c4" stop-opacity="0.15"/>
+      <stop offset="1" stop-color="#1abc9c" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Main shaft with subtle left curve -->
+  <g filter="url(#pencilSoft)">
+    <path d="M165 790
+             C150 620 148 480 152 350
+             C156 240 165 155 172 70
+             C175 35 176 18 176 10"
+          fill="none"
+          stroke="url(#shaftGrad)"
+          stroke-width="5"
+          stroke-linecap="round"/>
+    <path d="M166.5 790
+             C153 620 151 485 155 355
+             C160 245 169 158 176 72
+             C179 40 180 20 180 10"
+          fill="none"
+          stroke="url(#shaftHighlight)"
+          stroke-width="2.1"
+          stroke-linecap="round"
+          stroke-opacity="0.9"/>
+  </g>
+
+  <!-- Fine cross-hatching on shaft for pencil texture -->
+  <g stroke="#0e6251" stroke-width="0.6" stroke-linecap="round" opacity="0.5">
+    <path d="M160 720 C150 705 150 690 160 675"/>
+    <path d="M170 685 C160 670 160 655 170 640"/>
+    <path d="M162 645 C152 630 152 615 162 600"/>
+    <path d="M172 610 C162 595 162 580 172 565"/>
+    <path d="M164 570 C154 555 154 540 164 525"/>
+    <path d="M174 535 C164 520 164 505 174 490"/>
+    <path d="M166 495 C156 480 156 465 166 450"/>
+    <path d="M176 460 C166 445 166 430 176 415"/>
+    <path d="M168 420 C158 405 158 390 168 375"/>
+    <path d="M178 380 C168 365 168 350 178 335"/>
+    <path d="M170 340 C160 325 160 310 170 295"/>
+    <path d="M180 300 C170 285 170 270 180 255"/>
+  </g>
+
+  <!-- Wispy barbs along the shaft -->
+  <g stroke-linecap="round" fill="none">
+    <!-- Left side wisps -->
+    <g stroke="#1b4f72" stroke-width="1.3" opacity="0.85">
+      <path d="M152 720 C120 700 105 675 100 650"/>
+      <path d="M150 690 C120 670 108 645 104 622"/>
+      <path d="M148 660 C116 640 104 616 100 595"/>
+      <path d="M146 630 C115 612 101 588 96 567"/>
+      <path d="M145 600 C113 582 98 560 92 540"/>
+      <path d="M144 570 C111 553 95 532 88 513"/>
+      <path d="M143 540 C110 524 93 504 85 485"/>
+      <path d="M142 510 C108 495 90 476 82 458"/>
+      <path d="M141 480 C107 466 88 448 80 431"/>
+      <path d="M140 450 C106 437 86 420 77 404"/>
+      <path d="M139 420 C104 408 83 392 74 378"/>
+      <path d="M138 390 C102 379 80 364 70 352"/>
+      <path d="M137 360 C100 350 77 336 66 326"/>
+      <path d="M136 330 C99 321 74 309 62 300"/>
+      <path d="M135 300 C97 292 72 281 60 273"/>
+      <path d="M134 270 C96 263 69 254 57 247"/>
+      <path d="M133 240 C94 234 66 227 54 221"/>
+      <path d="M132 210 C92 205 63 199 51 194"/>
+      <path d="M131 180 C90 176 60 171 48 167"/>
+      <path d="M130 150 C88 147 57 143 44 140"/>
+    </g>
+    <!-- Right side wisps -->
+    <g stroke="#117864" stroke-width="1.2" opacity="0.85">
+      <path d="M178 710 C205 695 222 673 228 651"/>
+      <path d="M180 680 C208 665 224 645 230 625"/>
+      <path d="M182 650 C211 636 228 617 234 598"/>
+      <path d="M184 620 C213 607 231 589 238 571"/>
+      <path d="M186 590 C215 578 233 561 241 543"/>
+      <path d="M188 560 C217 549 236 533 244 517"/>
+      <path d="M190 530 C219 520 238 505 247 491"/>
+      <path d="M192 500 C221 491 240 477 249 464"/>
+      <path d="M194 470 C223 462 242 449 251 437"/>
+      <path d="M196 440 C225 433 244 422 253 411"/>
+      <path d="M198 410 C227 404 246 394 255 385"/>
+      <path d="M200 380 C229 375 248 366 257 358"/>
+      <path d="M202 350 C231 346 250 338 259 331"/>
+      <path d="M204 320 C233 317 252 310 261 304"/>
+      <path d="M206 290 C235 288 254 282 263 277"/>
+      <path d="M208 260 C237 259 256 254 265 250"/>
+      <path d="M210 230 C239 230 258 226 267 223"/>
+      <path d="M212 200 C241 201 260 197 269 195"/>
+      <path d="M214 170 C243 172 262 169 271 168"/>
+      <path d="M216 140 C245 143 264 140 273 140"/>
+    </g>
+
+    <!-- Extra fine overlay strokes for colored-pencil feel -->
+    <g stroke-width="0.6" opacity="0.7" stroke-linecap="round">
+      <g stroke="#2e86c1">
+        <path d="M155 705 C133 690 118 670 112 653"/>
+        <path d="M153 675 C130 660 116 642 110 626"/>
+        <path d="M151 645 C128 631 113 614 107 599"/>
+        <path d="M149 615 C126 602 110 587 103 573"/>
+        <path d="M147 585 C123 573 107 559 99 546"/>
+      </g>
+      <g stroke="#16a085">
+        <path d="M175 700 C197 686 210 668 216 651"/>
+        <path d="M177 670 C199 657 213 640 219 624"/>
+        <path d="M179 640 C202 628 216 612 222 597"/>
+        <path d="M181 610 C204 599 219 585 225 570"/>
+        <path d="M183 580 C206 570 221 557 228 544"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- Eye cluster (full plume) at top -->
+  <g transform="translate(160 95)" filter="url(#pencilSoftLight)">
+    <!-- Underlying soft fan of filaments -->
+    <g fill="none" stroke-linecap="round" opacity="0.55">
+      <g stroke="#1abc9c" stroke-width="1.1">
+        <path d="M0 60 C-40 40 -70 10 -88 -25"/>
+        <path d="M0 58 C-32 38 -58 13 -73 -19"/>
+        <path d="M0 56 C-24 36 -46 16 -58 -12"/>
+        <path d="M0 54 C-16 34 -34 19 -42 -6"/>
+        <path d="M0 52 C-8 32 -22 21 -27 0"/>
+        <path d="M0 50 C0 31 -10 22 -13 4"/>
+        <path d="M0 52 C8 32 22 21 27 0"/>
+        <path d="M0 54 C16 34 34 19 42 -6"/>
+        <path d="M0 56 C24 36 46 16 58 -12"/>
+        <path d="M0 58 C32 38 58 13 73 -19"/>
+        <path d="M0 60 C40 40 70 10 88 -25"/>
+      </g>
+      <g stroke="#2471a3" stroke-width="0.9">
+        <path d="M0 62 C-45 43 -80 12 -98 -27"/>
+        <path d="M0 60 C-37 41 -66 15 -83 -21"/>
+        <path d="M0 58 C-29 39 -52 18 -68 -15"/>
+        <path d="M0 56 C-21 37 -38 21 -52 -9"/>
+        <path d="M0 54 C-13 35 -24 23 -36 -2"/>
+        <path d="M0 54 C13 35 24 23 36 -2"/>
+        <path d="M0 56 C21 37 38 21 52 -9"/>
+        <path d="M0 58 C29 39 52 18 68 -15"/>
+        <path d="M0 60 C37 41 66 15 83 -21"/>
+        <path d="M0 62 C45 43 80 12 98 -27"/>
+      </g>
+    </g>
+
+    <!-- Multiple eyes arranged in a slight arc -->
+    <!-- Left outer eye -->
+    <g transform="translate(-60 10) scale(0.9)">
+      <path d="M0 -60
+               C-30 -40 -40 -10 -25 15
+               C-10 40 10 40 25 15
+               C40 -10 30 -40 0 -60Z"
+            fill="url(#eyeOuter)" stroke="#0e6251" stroke-width="1.4"/>
+      <ellipse cx="0" cy="-30" rx="18" ry="22" fill="url(#eyeRing)" stroke="#b9770e" stroke-width="1"/>
+      <ellipse cx="0" cy="-30" rx="11" ry="14" fill="url(#eyeBlue)" stroke="#1b4f72" stroke-width="0.9"/>
+      <ellipse cx="0" cy="-30" rx="5" ry="6.5" fill="url(#eyeCore)"/>
+      <ellipse cx="3" cy="-32.5" rx="2.2" ry="2.8" fill="#fdfefe" opacity="0.75"/>
+    </g>
+
+    <!-- Left-mid eye -->
+    <g transform="translate(-28 -4) scale(0.95)">
+      <path d="M0 -62
+               C-30 -42 -42 -12 -27 14
+               C-12 40 12 40 27 14
+               C42 -12 30 -42 0 -62Z"
+            fill="url(#eyeOuter)" stroke="#0b5345" stroke-width="1.5"/>
+      <ellipse cx="0" cy="-32" rx="19" ry="23" fill="url(#eyeRing)" stroke="#b9770e" stroke-width="1.1"/>
+      <ellipse cx="0" cy="-32" rx="12" ry="15" fill="url(#eyeBlue)" stroke="#1b4f72" stroke-width="1"/>
+      <ellipse cx="0" cy="-32" rx="5.3" ry="7" fill="url(#eyeCore)"/>
+      <ellipse cx="3" cy="-34.5" rx="2.3" ry="3" fill="#fdfefe" opacity="0.8"/>
+    </g>
+
+    <!-- Center main eye -->
+    <g transform="translate(0 -14) scale(1.05)">
+      <path d="M0 -65
+               C-32 -45 -45 -14 -29 14
+               C-13 42 13 42 29 14
+               C45 -14 32 -45 0 -65Z"
+            fill="url(#eyeOuter)" stroke="#0b5345" stroke-width="1.7"/>
+      <ellipse cx="0" cy="-34" rx="21" ry="25" fill="url(#eyeRing)" stroke="#b9770e" stroke-width="1.2"/>
+      <ellipse cx="0" cy="-34" rx="13" ry="16.5" fill="url(#eyeBlue)" stroke="#1b4f72" stroke-width="1.1"/>
+      <ellipse cx="0" cy="-34" rx="6" ry="7.5" fill="url(#eyeCore)"/>
+      <ellipse cx="3.5" cy="-36.8" rx="2.4" ry="3.2" fill="#fdfefe" opacity="0.85"/>
+    </g>
+
+    <!-- Right-mid eye -->
+    <g transform="translate(30 -2) scale(0.93)">
+      <path d="M0 -60
+               C-30 -40 -42 -10 -27 15
+               C-12 40 12 40 27 15
+               C42 -10 30 -40 0 -60Z"
+            fill="url(#eyeOuter)" stroke="#0e6251" stroke-width="1.4"/>
+      <ellipse cx="0" cy="-30" rx="18.5" ry="22.5" fill="url(#eyeRing)" stroke="#b9770e" stroke-width="1"/>
+      <ellipse cx="0" cy="-30" rx="11.2" ry="14.5" fill="url(#eyeBlue)" stroke="#1b4f72" stroke-width="0.95"/>
+      <ellipse cx="0" cy="-30" rx="5" ry="6.8" fill="url(#eyeCore)"/>
+      <ellipse cx="3" cy="-32.6" rx="2.1" ry="2.9" fill="#fdfefe" opacity="0.8"/>
+    </g>
+
+    <!-- Right outer eye -->
+    <g transform="translate(60 12) scale(0.88)">
+      <path d="M0 -58
+               C-29 -38 -39 -9 -24 15
+               C-9 39 9 39 24 15
+               C39 -9 29 -38 0 -58Z"
+            fill="url(#eyeOuter)" stroke="#0e6251" stroke-width="1.3"/>
+      <ellipse cx="0" cy="-29" rx="17" ry="21" fill="url(#eyeRing)" stroke="#b9770e" stroke-width="0.9"/>
+      <ellipse cx="0" cy="-29" rx="10.5" ry="13.5" fill="url(#eyeBlue)" stroke="#1b4f72" stroke-width="0.85"/>
+      <ellipse cx="0" cy="-29" rx="4.6" ry="6.2" fill="url(#eyeCore)"/>
+      <ellipse cx="3" cy="-31.2" rx="2" ry="2.6" fill="#fdfefe" opacity="0.78"/>
+    </g>
+
+    <!-- Small secondary eyes lower in the fan -->
+    <g transform="translate(-36 28) scale(0.75)" opacity="0.9">
+      <path d="M0 -52
+               C-26 -36 -34 -10 -21 11
+               C-8 32 8 32 21 11
+               C34 -10 26 -36 0 -52Z"
+            fill="url(#eyeOuter)" stroke="#0e6251" stroke-width="1.2"/>
+      <ellipse cx="0" cy="-26" rx="14.5" ry="18" fill="url(#eyeRing)" stroke="#b9770e" stroke-width="0.9"/>
+      <ellipse cx="0" cy="-26" rx="8.5" ry="11" fill="url(#eyeBlue)" stroke="#1b4f72" stroke-width="0.8"/>
+      <ellipse cx="0" cy="-26" rx="4" ry="5.4" fill="url(#eyeCore)"/>
+      <ellipse cx="2.5" cy="-27.8" rx="1.7" ry="2.2" fill="#fdfefe" opacity="0.8"/>
+    </g>
+
+    <g transform="translate(34 30) scale(0.72)" opacity="0.9">
+      <path d="M0 -50
+               C-25 -35 -33 -9 -20 11
+               C-7 31 7 31 20 11
+               C33 -9 25 -35 0 -50Z"
+            fill="url(#eyeOuter)" stroke="#0e6251" stroke-width="1.1"/>
+      <ellipse cx="0" cy="-25" rx="14" ry="17" fill="url(#eyeRing)" stroke="#b9770e" stroke-width="0.85"/>
+      <ellipse cx="0" cy="-25" rx="8.2" ry="10.5" fill="url(#eyeBlue)" stroke="#1b4f72" stroke-width="0.75"/>
+      <ellipse cx="0" cy="-25" rx="3.8" ry="5.1" fill="url(#eyeCore)"/>
+      <ellipse cx="2.4" cy="-26.7" rx="1.6" ry="2.1" fill="#fdfefe" opacity="0.8"/>
+    </g>
+
+    <!-- Subtle pencil-like directional hatching inside eyes -->
+    <g stroke="#154360" stroke-width="0.6" stroke-linecap="round" opacity="0.5">
+      <path d="M0 -42 C-6 -40 -10 -35 -12 -28"/>
+      <path d="M-4 -40 C-9 -37 -12 -32 -14 -26"/>
+      <path d="M4 -40 C0 -37 -3 -32 -5 -26"/>
+    </g>
+  </g>
+</svg>

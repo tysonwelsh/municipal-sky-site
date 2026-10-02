@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="26.2 177.0 360.5 116.8">
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6fd3c0"/>
+      <stop offset="0.5" stop-color="#3fae9c"/>
+      <stop offset="1" stop-color="#2a8a7c"/>
+    </linearGradient>
+    <linearGradient id="bodyDark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#58c0ad"/>
+      <stop offset="1" stop-color="#20796c"/>
+    </linearGradient>
+    <linearGradient id="label" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1f6f63"/>
+      <stop offset="0.5" stop-color="#14584d"/>
+      <stop offset="1" stop-color="#0d4a41"/>
+    </linearGradient>
+  </defs>
+
+  <!-- soft ground shadow -->
+  <ellipse cx="135" cy="252" rx="105" ry="14" fill="#000000" opacity="0.14"/>
+  <ellipse cx="295" cy="256" rx="90" ry="12" fill="#000000" opacity="0.12"/>
+
+  <!-- left half: body with pointed tip, broken end on right -->
+  <g transform="rotate(-6 140 220)">
+    <!-- tip -->
+    <path d="M28 216 L78 188 L78 244 Z" fill="url(#body)"/>
+    <path d="M28 216 L58 204 L58 228 Z" fill="#7fe0cd"/>
+    <!-- body -->
+    <rect x="78" y="188" width="150" height="56" rx="6" fill="url(#body)"/>
+    <rect x="78" y="188" width="150" height="12" rx="6" fill="#ffffff" opacity="0.18"/>
+    <!-- label -->
+    <rect x="118" y="188" width="72" height="56" fill="url(#label)"/>
+    <rect x="118" y="188" width="72" height="6" fill="#3fae9c" opacity="0.7"/>
+    <rect x="118" y="238" width="72" height="6" fill="#3fae9c" opacity="0.7"/>
+    <text x="154" y="224" font-family="Verdana, sans-serif" font-size="14" font-weight="bold" fill="#9fe8d9" text-anchor="middle" letter-spacing="1">SEA</text>
+    <!-- torn wrapper at break -->
+    <path d="M228 188 L246 196 L234 210 L248 224 L232 236 L240 244 L228 244 Z" fill="#0d4a41"/>
+    <!-- jagged break face -->
+    <path d="M246 196 L234 210 L248 224 L232 236 L240 244 L246 244 Z" fill="#2a8a7c"/>
+    <path d="M246 196 L258 210 L244 222 L256 236 L240 244 Z" fill="#3fae9c"/>
+  </g>
+
+  <!-- right half: shorter piece, broken end on left, rounded end -->
+  <g transform="rotate(4 300 218)">
+    <path d="M258 198 L272 206 L260 216 L274 228 L262 238 L272 246 L352 246 Q364 222 352 198 Z" fill="url(#bodyDark)"/>
+    <path d="M258 198 L272 206 L260 216 L274 228 L262 238 L272 246 L352 246 L352 236 L266 236 L256 216 L268 206 Z" fill="#2a8a7c" opacity="0.6"/>
+    <!-- label remnant -->
+    <path d="M300 198 L352 198 Q364 222 352 246 L300 246 Z" fill="url(#label)"/>
+    <rect x="300" y="198" width="60" height="6" fill="#3fae9c" opacity="0.7"/>
+    <rect x="300" y="240" width="56" height="6" fill="#3fae9c" opacity="0.7"/>
+    <text x="328" y="228" font-family="Verdana, sans-serif" font-size="13" font-weight="bold" fill="#9fe8d9" text-anchor="middle" letter-spacing="1">GREEN</text>
+    <path d="M272 206 L260 216 L274 228 L262 238 L272 246 L280 240 L268 228 L282 216 Z" fill="#1c8a7a"/>
+  </g>
+
+  <!-- crayon shavings near break -->
+  <path d="M246 268 q6 -10 12 0 q-6 4 -12 0 Z" fill="#3fae9c"/>
+  <path d="M226 274 q5 -8 10 0 q-5 3 -10 0 Z" fill="#2a8a7c"/>
+  <circle cx="264" cy="278" r="3.4" fill="#3fae9c"/>
+  <circle cx="238" cy="282" r="2.4" fill="#2a8a7c"/>
+  <circle cx="252" cy="290" r="2" fill="#20796c"/>
+</svg>

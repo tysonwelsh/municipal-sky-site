@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">
+  <defs>
+    <radialGradient id="scleraGrad" cx="38%" cy="32%" r="78%">
+      <stop offset="0%" stop-color="#fdf6e3"/>
+      <stop offset="28%" stop-color="#f2e2b8"/>
+      <stop offset="52%" stop-color="#dcb877"/>
+      <stop offset="76%" stop-color="#a1693a"/>
+      <stop offset="100%" stop-color="#472a17"/>
+    </radialGradient>
+
+    <radialGradient id="irisGrad" cx="35%" cy="30%" r="72%">
+      <stop offset="0%" stop-color="#e0ac63"/>
+      <stop offset="28%" stop-color="#b47a35"/>
+      <stop offset="58%" stop-color="#7a4420"/>
+      <stop offset="85%" stop-color="#4a2510"/>
+      <stop offset="100%" stop-color="#20110a"/>
+    </radialGradient>
+
+    <radialGradient id="pupilGrad" cx="42%" cy="36%" r="62%">
+      <stop offset="0%" stop-color="#0c0805"/>
+      <stop offset="55%" stop-color="#020100"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </radialGradient>
+
+    <radialGradient id="vignetteGrad" cx="40%" cy="35%" r="78%">
+      <stop offset="0%" stop-color="#1a0f07" stop-opacity="0"/>
+      <stop offset="58%" stop-color="#1a0f07" stop-opacity="0"/>
+      <stop offset="84%" stop-color="#3a2312" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#160c06" stop-opacity="0.82"/>
+    </radialGradient>
+
+    <linearGradient id="glintGrad" x1="8%" y1="0%" x2="92%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.92"/>
+      <stop offset="48%" stop-color="#fdf3d8" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+
+    <clipPath id="sphereClip">
+      <circle cx="300" cy="300" r="293"/>
+    </clipPath>
+
+    <clipPath id="irisClip">
+      <circle cx="365" cy="340" r="112"/>
+    </clipPath>
+
+    <filter id="brushDisplace" x="-30%" y="-30%" width="160%" height="160%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012 0.03" numOctaves="3" seed="11" result="turb"/>
+      <feDisplacementMap in="SourceGraphic" in2="turb" scale="16" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+
+    <filter id="softBlur" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="7"/>
+    </filter>
+
+    <filter id="mediumBlur" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+
+    <filter id="grain" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="4" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.7 0"/>
+    </filter>
+  </defs>
+
+  <g clip-path="url(#sphereClip)">
+    <g filter="url(#brushDisplace)">
+      <!-- base sclera -->
+      <circle cx="300" cy="300" r="293" fill="url(#scleraGrad)"/>
+
+      <!-- brush daubs building up warm-to-umber richness -->
+      <ellipse cx="200" cy="178" rx="118" ry="96" fill="#fdf6e3" opacity="0.45" transform="rotate(-18 200 178)"/>
+      <ellipse cx="145" cy="300" rx="95" ry="120" fill="#eddcb0" opacity="0.4" transform="rotate(10 145 300)"/>
+      <ellipse cx="185" cy="425" rx="110" ry="90" fill="#d9b978" opacity="0.42" transform="rotate(-8 185 425)"/>
+      <ellipse cx="320" cy="475" rx="130" ry="85" fill="#a06b3a" opacity="0.48" style="mix-blend-mode:multiply" transform="rotate(4 320 475)"/>
+      <ellipse cx="472" cy="418" rx="115" ry="105" fill="#7a4a24" opacity="0.5" style="mix-blend-mode:multiply" transform="rotate(-12 472 418)"/>
+      <ellipse cx="522" cy="292" rx="100" ry="130" fill="#4a2c17" opacity="0.55" style="mix-blend-mode:multiply" transform="rotate(9 522 292)"/>
+      <ellipse cx="432" cy="148" rx="105" ry="85" fill="#eddcb0" opacity="0.35" transform="rotate(15 432 148)"/>
+      <ellipse cx="300" cy="52" rx="90" ry="55" fill="#6b4020" opacity="0.32" style="mix-blend-mode:multiply" transform="rotate(0 300 52)"/>
+
+      <!-- lower lid shadow crescent -->
+      <path d="M 120,480 C 180,562 420,562 480,480 C 458,522 380,542 300,542 C 220,542 142,522 120,480 Z"
+            fill="#221207" opacity="0.4" style="mix-blend-mode:multiply"/>
+
+      <!-- iris -->
+      <g clip-path="url(#irisClip)">
+        <circle cx="365" cy="340" r="112" fill="url(#irisGrad)"/>
+        <g stroke-linecap="round">
+          <line x1="407" y1="340" x2="465" y2="340" stroke="#d3a15c" stroke-width="3.5" opacity="0.55"/>
+          <line x1="401.4" y1="361" x2="451.6" y2="390" stroke="#4c2b14" stroke-width="3.5" opacity="0.5"/>
+          <line x1="386" y1="376.4" x2="415" y2="426.6" stroke="#d3a15c" stroke-width="3.5" opacity="0.55"/>
+          <line x1="365" y1="382" x2="365" y2="440" stroke="#4c2b14" stroke-width="3.5" opacity="0.5"/>
+          <line x1="344" y1="376.4" x2="315" y2="426.6" stroke="#d3a15c" stroke-width="3.5" opacity="0.55"/>
+          <line x1="328.6" y1="361" x2="278.4" y2="390" stroke="#4c2b14" stroke-width="3.5" opacity="0.5"/>
+          <line x1="323" y1="340" x2="265" y2="340" stroke="#d3a15c" stroke-width="3.5" opacity="0.55"/>
+          <line x1="328.6" y1="319" x2="278.4" y2="290" stroke="#4c2b14" stroke-width="3.5" opacity="0.5"/>
+          <line x1="344" y1="303.6" x2="315" y2="253.4" stroke="#d3a15c" stroke-width="3.5" opacity="0.55"/>
+          <line x1="365" y1="298" x2="365" y2="240" stroke="#4c2b14" stroke-width="3.5" opacity="0.5"/>
+          <line x1="386" y1="303.6" x2="415" y2="253.4" stroke="#d3a15c" stroke-width="3.5" opacity="0.55"/>
+          <line x1="401.4" y1="319" x2="451.6" y2="290" stroke="#4c2b14" stroke-width="3.5" opacity="0.5"/>
+        </g>
+      </g>
+
+      <!-- limbal ring -->
+      <circle cx="365" cy="340" r="112" fill="none" stroke="#20110a" stroke-width="7" opacity="0.5"/>
+
+      <!-- rim vignette -->
+      <circle cx="300" cy="300" r="293" fill="url(#vignetteGrad)" style="mix-blend-mode:multiply"/>
+
+      <!-- curved glint sweeping the upper curve -->
+      <path d="M 90,200 C 150,80 300,40 420,70 C 480,85 520,130 540,170 C 460,140 380,120 300,120 C 220,120 150,150 90,200 Z"
+            fill="url(#glintGrad)" opacity="0.75" style="mix-blend-mode:screen" filter="url(#mediumBlur)"/>
+    </g>
+
+    <!-- pupil, kept crisp for glossy focal contrast -->
+    <ellipse cx="372" cy="346" rx="52" ry="48" fill="url(#pupilGrad)" transform="rotate(-8 372 346)"/>
+
+    <!-- faint cool reflection sliver on pupil -->
+    <ellipse cx="396" cy="367" rx="11" ry="6" fill="#cfe0e8" opacity="0.22" filter="url(#softBlur)" transform="rotate(30 396 367)"/>
+
+    <!-- bright fleck highlight -->
+    <ellipse cx="345" cy="317" rx="14" ry="10" fill="#fffdf5" opacity="0.85" filter="url(#softBlur)" transform="rotate(-20 345 317)"/>
+    <circle cx="343" cy="314" r="4.5" fill="#ffffff" opacity="0.95"/>
+
+    <!-- canvas grain -->
+    <circle cx="300" cy="300" r="293" fill="#808080" filter="url(#grain)" opacity="0.06" style="mix-blend-mode:overlay"/>
+
+    <!-- crisp outer contour -->
+    <circle cx="300" cy="300" r="290" fill="none" stroke="#2c1a0d" stroke-width="5" opacity="0.4"/>
+  </g>
+</svg>

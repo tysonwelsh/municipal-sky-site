@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 110">
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a8a59b"/>
+      <stop offset="0.10" stop-color="#dedbd3"/>
+      <stop offset="0.28" stop-color="#ffffff"/>
+      <stop offset="0.52" stop-color="#fbfaf6"/>
+      <stop offset="0.78" stop-color="#d6d3c9"/>
+      <stop offset="1" stop-color="#98958a"/>
+    </linearGradient>
+    <linearGradient id="cork" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8f5514"/>
+      <stop offset="0.12" stop-color="#c98a33"/>
+      <stop offset="0.30" stop-color="#f0b95f"/>
+      <stop offset="0.50" stop-color="#f7cd80"/>
+      <stop offset="0.74" stop-color="#d99b3f"/>
+      <stop offset="1" stop-color="#7e4a10"/>
+    </linearGradient>
+    <radialGradient id="tob" cx="0.5" cy="0.5" r="0.75">
+      <stop offset="0" stop-color="#9a6a30"/>
+      <stop offset="0.55" stop-color="#7a4e1e"/>
+      <stop offset="1" stop-color="#4a2e0f"/>
+    </radialGradient>
+    <radialGradient id="ffiber" cx="0.5" cy="0.5" r="0.75">
+      <stop offset="0" stop-color="#fdf7ea"/>
+      <stop offset="0.6" stop-color="#f1e5c9"/>
+      <stop offset="1" stop-color="#d9c6a0"/>
+    </radialGradient>
+    <clipPath id="tobclip">
+      <ellipse cx="14" cy="55" rx="11" ry="50"/>
+    </clipPath>
+  </defs>
+
+  <!-- paper body -->
+  <rect x="12" y="3" width="974" height="104" fill="url(#paper)"/>
+
+  <!-- lengthwise paper seam -->
+  <line x1="24" y1="79" x2="732" y2="79" stroke="#c9c6bc" stroke-width="1.4" opacity="0.7"/>
+  <line x1="24" y1="80.6" x2="732" y2="80.6" stroke="#ffffff" stroke-width="0.8" opacity="0.5"/>
+
+  <!-- cork filter wrap -->
+  <rect x="734" y="3" width="252" height="104" fill="url(#cork)"/>
+
+  <!-- seam shadow where paper meets filter -->
+  <rect x="730" y="3" width="5" height="104" fill="#000000" opacity="0.14"/>
+
+  <!-- gold band rings on filter -->
+  <rect x="742" y="3" width="4" height="104" fill="#caa24a"/>
+  <rect x="742" y="3" width="4" height="104" fill="url(#paper)" opacity="0.25"/>
+  <rect x="752" y="3" width="2.4" height="104" fill="#caa24a" opacity="0.9"/>
+
+  <!-- cork speckles -->
+  <g fill="#7c460e">
+    <circle cx="768" cy="24" r="1.6" opacity="0.45"/>
+    <circle cx="789" cy="61" r="2" opacity="0.38"/>
+    <circle cx="802" cy="37" r="1.3" opacity="0.5"/>
+    <circle cx="816" cy="82" r="1.8" opacity="0.4"/>
+    <circle cx="827" cy="19" r="1.4" opacity="0.42"/>
+    <circle cx="842" cy="52" r="2.1" opacity="0.36"/>
+    <circle cx="855" cy="90" r="1.5" opacity="0.44"/>
+    <circle cx="866" cy="30" r="1.7" opacity="0.4"/>
+    <circle cx="881" cy="66" r="1.3" opacity="0.5"/>
+    <circle cx="893" cy="44" r="2" opacity="0.35"/>
+    <circle cx="906" cy="85" r="1.6" opacity="0.42"/>
+    <circle cx="918" cy="23" r="1.4" opacity="0.46"/>
+    <circle cx="931" cy="58" r="1.9" opacity="0.38"/>
+    <circle cx="944" cy="94" r="1.3" opacity="0.5"/>
+    <circle cx="955" cy="35" r="1.6" opacity="0.4"/>
+    <circle cx="967" cy="72" r="1.5" opacity="0.44"/>
+    <circle cx="777" cy="97" r="1.4" opacity="0.4"/>
+    <circle cx="850" cy="14" r="1.2" opacity="0.45"/>
+    <circle cx="905" cy="55" r="1.2" opacity="0.42"/>
+    <circle cx="938" cy="16" r="1.5" opacity="0.4"/>
+  </g>
+
+  <!-- cylinder highlights -->
+  <rect x="26" y="15" width="700" height="11" rx="5.5" fill="#ffffff" opacity="0.6"/>
+  <rect x="740" y="15" width="238" height="10" rx="5" fill="#ffe1a1" opacity="0.55"/>
+  <rect x="26" y="96" width="954" height="4" rx="2" fill="#000000" opacity="0.08"/>
+
+  <!-- filter end cap -->
+  <ellipse cx="986" cy="55" rx="12" ry="52" fill="#8a5312"/>
+  <ellipse cx="986" cy="55" rx="9" ry="45" fill="url(#ffiber)"/>
+  <ellipse cx="984" cy="50" rx="3.5" ry="18" fill="#ffffff" opacity="0.5"/>
+
+  <!-- tobacco end cap -->
+  <ellipse cx="14" cy="55" rx="12" ry="52" fill="url(#tob)"/>
+  <g clip-path="url(#tobclip)" stroke-linecap="round" fill="none">
+    <path d="M8 20 q6 6 2 14" stroke="#c98b3f" stroke-width="2.2"/>
+    <path d="M17 16 q-5 9 1 16" stroke="#a5691f" stroke-width="2"/>
+    <path d="M9 40 q8 4 3 13" stroke="#8a5a24" stroke-width="2.4"/>
+    <path d="M19 44 q-6 8 -1 15" stroke="#c98b3f" stroke-width="1.8"/>
+    <path d="M7 60 q7 5 2 13" stroke="#b57a2c" stroke-width="2.2"/>
+    <path d="M18 66 q-6 7 0 14" stroke="#6d4416" stroke-width="2.4"/>
+    <path d="M10 82 q7 4 3 12" stroke="#c98b3f" stroke-width="2"/>
+    <path d="M20 86 q-6 6 -2 11" stroke="#96601e" stroke-width="1.8"/>
+    <path d="M13 30 q5 6 0 11" stroke="#5c3a12" stroke-width="1.6"/>
+    <path d="M12 52 q4 5 -1 9" stroke="#d79a4a" stroke-width="1.5"/>
+  </g>
+  <!-- paper rim around tobacco -->
+  <ellipse cx="14" cy="55" rx="12" ry="52" fill="none" stroke="#efeee8" stroke-width="3"/>
+  <ellipse cx="14" cy="55" rx="12" ry="52" fill="none" stroke="#9b988e" stroke-width="1" opacity="0.6"/>
+
+  <!-- faint printed ring near mid-body -->
+  <rect x="688" y="3" width="2" height="104" fill="#a9a69c" opacity="0.45"/>
+</svg>

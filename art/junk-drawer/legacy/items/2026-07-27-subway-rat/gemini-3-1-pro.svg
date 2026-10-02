@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="6.5 53.8 395.2 248.0" width="395.2" height="248.0">
+  <defs>
+    <radialGradient id="bodyGrad" cx="50%" cy="50%" r="50%" fx="30%" fy="30%">
+      <stop offset="0%" stop-color="#8a8a8a" />
+      <stop offset="100%" stop-color="#4d4d4d" />
+    </radialGradient>
+    <radialGradient id="eyeGrad" cx="50%" cy="50%" r="50%" fx="30%" fy="30%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#d9d9d9" />
+    </radialGradient>
+    <linearGradient id="tailGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e8a2b5" />
+      <stop offset="100%" stop-color="#b06c7d" />
+    </linearGradient>
+  </defs>
+
+  <!-- Tail -->
+  <path d="M 90 200 C 20 200, 10 120, 40 80 C 60 50, 90 90, 70 120 C 55 145, 60 170, 90 180 Z" fill="url(#tailGrad)" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round"/>
+  
+  <!-- Back Leg -->
+  <path d="M 140 240 C 130 260, 100 270, 90 270 C 80 270, 80 260, 95 250 C 105 240, 120 220, 130 200" fill="url(#bodyGrad)" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round"/>
+  <!-- Back Foot -->
+  <path d="M 85 270 Q 70 275, 75 285 Q 90 285, 105 270 Z" fill="#e8a2b5" stroke="#2b2b2b" stroke-width="4"/>
+
+  <!-- Body -->
+  <path d="M 90 190 C 80 120, 180 80, 240 110 C 290 135, 300 170, 280 200 C 250 240, 160 250, 90 190 Z" fill="url(#bodyGrad)" stroke="#2b2b2b" stroke-width="5" stroke-linejoin="round"/>
+
+  <!-- Front Leg (Back) -->
+  <path d="M 230 210 C 220 230, 200 250, 190 250" fill="none" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round"/>
+  <path d="M 185 250 Q 175 255, 180 265 Q 195 265, 205 250 Z" fill="#e8a2b5" stroke="#2b2b2b" stroke-width="4"/>
+
+  <!-- Front Leg (Front) -->
+  <path d="M 260 200 C 250 230, 240 260, 220 270" fill="none" stroke="#2b2b2b" stroke-width="5" stroke-linecap="round"/>
+  <path d="M 215 270 Q 200 275, 205 285 Q 225 285, 235 270 Z" fill="#e8a2b5" stroke="#2b2b2b" stroke-width="4"/>
+
+  <!-- Head -->
+  <path d="M 240 110 C 280 80, 350 90, 380 120 C 390 130, 395 140, 385 150 C 360 175, 300 170, 280 200 C 270 160, 250 140, 240 110 Z" fill="url(#bodyGrad)" stroke="#2b2b2b" stroke-width="5" stroke-linejoin="round"/>
+
+  <!-- Ear (Back) -->
+  <path d="M 285 95 C 295 60, 325 70, 320 100 Z" fill="#e8a2b5" stroke="#2b2b2b" stroke-width="4"/>
+  <!-- Ear (Front) -->
+  <path d="M 260 105 C 255 50, 305 40, 300 95 Z" fill="#b06c7d" stroke="#2b2b2b" stroke-width="5"/>
+  <path d="M 267 95 C 265 60, 295 55, 292 90 Z" fill="#e8a2b5"/>
+
+  <!-- Nose -->
+  <circle cx="385" cy="125" r="8" fill="#ff7da4" stroke="#2b2b2b" stroke-width="3"/>
+
+  <!-- Whiskers -->
+  <path d="M 370 135 Q 390 150, 400 150" fill="none" stroke="#2b2b2b" stroke-width="2" stroke-linecap="round"/>
+  <path d="M 365 140 Q 380 165, 390 170" fill="none" stroke="#2b2b2b" stroke-width="2" stroke-linecap="round"/>
+  <path d="M 355 145 Q 360 175, 370 185" fill="none" stroke="#2b2b2b" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Googly Eye (Back) -->
+  <circle cx="330" cy="100" r="14" fill="url(#eyeGrad)" stroke="#2b2b2b" stroke-width="3"/>
+  <circle cx="335" cy="98" r="4" fill="#111"/>
+
+  <!-- Googly Eye (Front) -->
+  <circle cx="305" cy="115" r="22" fill="url(#eyeGrad)" stroke="#2b2b2b" stroke-width="4"/>
+  <circle cx="315" cy="110" r="7" fill="#111"/>
+
+  <!-- Sneaky expression line -->
+  <path d="M 295 85 Q 315 75, 335 90" fill="none" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- Bandit Mask (Optional cartoony stealth element) -->
+  <path d="M 290 115 C 290 90, 350 80, 350 110 C 350 130, 320 145, 290 115 Z" fill="#1f1f1f" opacity="0.6" stroke="none"/>
+  
+  <!-- Redraw Eyes over mask -->
+  <circle cx="330" cy="100" r="14" fill="url(#eyeGrad)" stroke="#2b2b2b" stroke-width="3"/>
+  <circle cx="335" cy="98" r="5" fill="#111"/>
+  <circle cx="305" cy="115" r="22" fill="url(#eyeGrad)" stroke="#2b2b2b" stroke-width="4"/>
+  <circle cx="317" cy="112" r="8" fill="#111"/>
+
+  <!-- Highlight in eyes -->
+  <circle cx="333" cy="96" r="1.5" fill="#fff"/>
+  <circle cx="314" cy="109" r="2.5" fill="#fff"/>
+  
+  <!-- Back Leg (Front) -->
+  <path d="M 120 180 C 90 220, 80 250, 110 280" fill="none" stroke="#2b2b2b" stroke-width="5" stroke-linecap="round"/>
+  <path d="M 100 280 Q 80 290, 90 300 Q 115 295, 125 275 Z" fill="#e8a2b5" stroke="#2b2b2b" stroke-width="4"/>
+
+  <!-- Motion Lines -->
+  <path d="M 30 180 Q 50 180, 70 180" fill="none" stroke="#2b2b2b" stroke-width="3" stroke-linecap="round" stroke-dasharray="10 5"/>
+  <path d="M 10 220 Q 40 220, 60 220" fill="none" stroke="#2b2b2b" stroke-width="3" stroke-linecap="round" stroke-dasharray="15 8"/>
+</svg>

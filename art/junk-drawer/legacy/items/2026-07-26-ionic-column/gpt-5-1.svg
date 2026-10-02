@@ -1,0 +1,150 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="18.0 58.0 240.2 537.8">
+  <defs>
+    <linearGradient id="stoneGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f7f7f9"/>
+      <stop offset="0.5" stop-color="#e4e4ea"/>
+      <stop offset="1" stop-color="#d0d0d6"/>
+    </linearGradient>
+    <linearGradient id="shadowGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#babac2"/>
+      <stop offset="0.5" stop-color="#e2e2e8"/>
+      <stop offset="1" stop-color="#babac2"/>
+    </linearGradient>
+    <linearGradient id="capitalGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fafafc"/>
+      <stop offset="1" stop-color="#d8d8df"/>
+    </linearGradient>
+    <linearGradient id="fluteGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#c5c5ce"/>
+      <stop offset="0.5" stop-color="#f5f5fa"/>
+      <stop offset="1" stop-color="#c5c5ce"/>
+    </linearGradient>
+    <linearGradient id="abacusGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f8f8fb"/>
+      <stop offset="1" stop-color="#d4d4dc"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Base -->
+  <g transform="translate(20,520)">
+    <rect x="0" y="42" width="220" height="32" rx="3" fill="url(#stoneGrad)" />
+    <rect x="10" y="18" width="200" height="26" rx="3" fill="url(#shadowGrad)" />
+    <rect x="25" y="0" width="170" height="18" rx="2.5" fill="url(#stoneGrad)" />
+  </g>
+
+  <!-- Shaft background -->
+  <g transform="translate(60,90)">
+    <rect x="0" y="0" width="140" height="430" rx="10" fill="url(#stoneGrad)" />
+
+    <!-- Flutes -->
+    <g>
+      <!-- left half flutes -->
+      <g>
+        <rect x="8" y="8" width="10" height="414" rx="5" fill="url(#fluteGrad)" />
+        <rect x="23" y="8" width="10" height="414" rx="5" fill="url(#fluteGrad)" />
+        <rect x="38" y="8" width="10" height="414" rx="5" fill="url(#fluteGrad)" />
+        <rect x="53" y="8" width="10" height="414" rx="5" fill="url(#fluteGrad)" />
+      </g>
+      <!-- right half flutes -->
+      <g>
+        <rect x="77" y="8" width="10" height="414" rx="5" fill="url(#fluteGrad)" />
+        <rect x="92" y="8" width="10" height="414" rx="5" fill="url(#fluteGrad)" />
+        <rect x="107" y="8" width="10" height="414" rx="5" fill="url(#fluteGrad)" />
+        <rect x="122" y="8" width="10" height="414" rx="5" fill="url(#fluteGrad)" />
+      </g>
+    </g>
+
+    <!-- Shaft side shading -->
+    <rect x="0" y="0" width="7" height="430" rx="10" fill="rgba(0,0,0,0.08)"/>
+    <rect x="133" y="0" width="7" height="430" rx="10" fill="rgba(255,255,255,0.4)"/>
+  </g>
+
+  <!-- Capital: abacus -->
+  <g transform="translate(40,60)">
+    <!-- Abacus block -->
+    <rect x="0" y="0" width="180" height="24" rx="4" fill="url(#abacusGrad)" />
+    <!-- molding under abacus -->
+    <rect x="8" y="22" width="164" height="10" rx="3" fill="url(#shadowGrad)" />
+  </g>
+
+  <!-- Capital: volutes and echinus -->
+  <g transform="translate(20,90)">
+    <!-- Echinus curved molding -->
+    <path d="M10,0 
+             C50,0 70,18 90,24
+             C110,30 130,30 150,24
+             C170,18 190,0 230,0
+             L230,26
+             C200,30 180,42 150,46
+             C130,48 110,48 90,46
+             C60,42 40,30 10,26
+             Z"
+          fill="url(#capitalGrad)" />
+
+    <!-- Left volute outer spiral -->
+    <path d="M28,14
+             C12,14 6,26 6,36
+             C6,50 18,60 32,60
+             C48,60 60,48 60,34
+             C60,22 52,14 40,14
+             C30,14 24,22 24,30
+             C24,36 28,40 34,40
+             C38,40 40,38 41,36"
+          fill="none"
+          stroke="#b6b6c1"
+          stroke-width="5"
+          stroke-linecap="round" />
+
+    <!-- Left volute inner spiral -->
+    <path d="M34,22
+             C28,22 24,26 24,32
+             C24,38 28,42 34,42
+             C40,42 44,38 44,32
+             C44,28 42,26 40,24"
+          fill="none"
+          stroke="#d8d8e0"
+          stroke-width="3"
+          stroke-linecap="round" />
+
+    <!-- Left eye -->
+    <circle cx="34" cy="32" r="5.5" fill="#f5f5fa" stroke="#b4b4c0" stroke-width="1.4"/>
+
+    <!-- Right volute outer spiral -->
+    <path d="M212,14
+             C228,14 234,26 234,36
+             C234,50 222,60 208,60
+             C192,60 180,48 180,34
+             C180,22 188,14 200,14
+             C210,14 216,22 216,30
+             C216,36 212,40 206,40
+             C202,40 200,38 199,36"
+          fill="none"
+          stroke="#b6b6c1"
+          stroke-width="5"
+          stroke-linecap="round" />
+
+    <!-- Right volute inner spiral -->
+    <path d="M206,22
+             C212,22 216,26 216,32
+             C216,38 212,42 206,42
+             C200,42 196,38 196,32
+             C196,28 198,26 200,24"
+          fill="none"
+          stroke="#d8d8e0"
+          stroke-width="3"
+          stroke-linecap="round" />
+
+    <!-- Right eye -->
+    <circle cx="206" cy="32" r="5.5" fill="#f5f5fa" stroke="#b4b4c0" stroke-width="1.4"/>
+
+    <!-- Central cushion / band -->
+    <rect x="88" y="26" width="74" height="18" rx="6" fill="#e6e6ee" />
+    <rect x="94" y="29" width="62" height="12" rx="5" fill="#f7f7fb" />
+  </g>
+
+  <!-- Necking (bands between shaft and capital) -->
+  <g transform="translate(70,84)">
+    <rect x="0" y="0" width="120" height="8" rx="3" fill="#d1d1da" />
+    <rect x="4" y="10" width="112" height="6" rx="2.5" fill="#e5e5ee" />
+  </g>
+</svg>

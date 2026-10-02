@@ -1,0 +1,153 @@
+{
+  "schema": 2,
+  "id": "2026-07-26-three-of-hearts",
+  "title": "Three of hearts",
+  "prompt": "A three of hearts playing card from a standard deck, viewed exactly top-down, slightly aged white stock with softly rounded corners. Flat print style, true red pips, correct corner indices (one inverted). Transparent background.",
+  "created": "2026-07-26",
+  "tags": [
+    "paper",
+    "game"
+  ],
+  "sizeClass": "m",
+  "responses": [
+    {
+      "rid": "r1",
+      "file": "claude-fable-5.svg",
+      "model": "claude-fable-5",
+      "model_version": "claude-fable-5",
+      "date": "2026-07-26",
+      "generation": {
+        "mode": "refined",
+        "prompt_count": 2
+      },
+      "grade": 4.0,
+      "graded": "2026-07-26",
+      "grade_history": [],
+      "annotations": {
+        "prompt-fidelity": 3.0,
+        "geometry": 3.0,
+        "color": 3.0,
+        "composition": {
+          "value": 2.0,
+          "note": "Pip spacing runs slightly wide against a real Bicycle layout; the card reads a touch tall."
+        }
+      },
+      "transcript": null,
+      "notes": "Mockup-era item: SVG authored by claude-fable-5 while composing the Phase 0 drawer mockup (design pass + critique-driven revision). The prompt above is a post-hoc reconstruction, not the literal generating prompt. Grade and annotations are provisional self-assessment — owner to regrade or replace. Retired from display by owner rule (2026-08-30): once an item has a rerun set, the card shows those four — an older response appears only when the owner asks for it by name. Row and file stay for the record.",
+      "retired": true
+    },
+    {
+      "rid": "r2",
+      "file": "kimi-k3.svg",
+      "model": "kimi-k3",
+      "model_version": "kimi-k3",
+      "date": "2026-08-29",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 5.0,
+      "graded": "2026-08-29",
+      "grade_history": [],
+      "transcript": null,
+      "notes": "Rerun of the original prompt through the live turn flow (bench rerun, submission 01M17K88TT7BKA5CP7JXG8QV8S), rated blind by the owner; filed rank 1 of 4. Axis ratings live in jd_ratings, per the DB-era rule.",
+      "tokens": {
+        "input": 398,
+        "output": 479,
+        "total": 877
+      },
+      "cost_usd": 0.008379,
+      "annotations": {
+        "understanding-assignment": 4.0,
+        "structural-coherence": 3.0,
+        "layering": 3.0,
+        "jnsq": 3.0
+      }
+    },
+    {
+      "rid": "r3",
+      "file": "claude-opus-5.svg",
+      "model": "claude-opus-5",
+      "model_version": "claude-opus-5",
+      "date": "2026-08-29",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 4.0,
+      "graded": "2026-08-29",
+      "grade_history": [],
+      "transcript": null,
+      "notes": "Rerun of the original prompt through the live turn flow (bench rerun, submission 01M17K88TT7BKA5CP7JXG8QV8S), rated blind by the owner; filed rank 2 of 4. Axis ratings live in jd_ratings, per the DB-era rule.",
+      "tokens": {
+        "input": 460,
+        "output": 1268,
+        "total": 1728
+      },
+      "cost_usd": 0.034,
+      "annotations": {
+        "understanding-assignment": 4.0,
+        "structural-coherence": 3.0,
+        "layering": 3.0,
+        "jnsq": 2.0
+      }
+    },
+    {
+      "rid": "r4",
+      "file": "gemini-3-1-pro.svg",
+      "model": "gemini-3-1-pro",
+      "model_version": "gemini-3.1-pro-preview",
+      "date": "2026-08-29",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 4.0,
+      "graded": "2026-08-29",
+      "grade_history": [],
+      "transcript": null,
+      "notes": "Rerun of the original prompt through the live turn flow (bench rerun, submission 01M17K88TT7BKA5CP7JXG8QV8S), rated blind by the owner; filed rank 3 of 4. Axis ratings live in jd_ratings, per the DB-era rule.",
+      "tokens": {
+        "input": 307,
+        "output": 2747,
+        "total": 3054
+      },
+      "cost_usd": 0.033578,
+      "annotations": {
+        "understanding-assignment": 4.0,
+        "structural-coherence": 3.0,
+        "layering": 3.0,
+        "jnsq": 1.0
+      }
+    },
+    {
+      "rid": "r5",
+      "file": "gpt-5-1.svg",
+      "model": "gpt-5-1",
+      "model_version": "gpt-5.1",
+      "date": "2026-08-29",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 2.0,
+      "graded": "2026-08-29",
+      "grade_history": [],
+      "transcript": null,
+      "notes": "Rerun of the original prompt through the live turn flow (bench rerun, submission 01M17K88TT7BKA5CP7JXG8QV8S), rated blind by the owner; filed rank 4 of 4. Axis ratings live in jd_ratings, per the DB-era rule.",
+      "tokens": {
+        "input": 311,
+        "output": 1322,
+        "total": 1633
+      },
+      "cost_usd": 0.013609,
+      "annotations": {
+        "understanding-assignment": 4.0,
+        "structural-coherence": 1.0,
+        "layering": 3.0,
+        "jnsq": 1.0
+      }
+    }
+  ],
+  "primary": "r2"
+}

@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="104.2 183.8 191.2 315.2">
+  <defs>
+    <linearGradient id="potBody" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#c4956a"/>
+      <stop offset="35%" stop-color="#d4a574"/>
+      <stop offset="65%" stop-color="#dbb088"/>
+      <stop offset="100%" stop-color="#c9986e"/>
+    </linearGradient>
+    <linearGradient id="potRim" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#cfa07a"/>
+      <stop offset="40%" stop-color="#e0b898"/>
+      <stop offset="100%" stop-color="#cfa07a"/>
+    </linearGradient>
+    <radialGradient id="potInner" cx="0.5" cy="0.3" r="0.6">
+      <stop offset="0%" stop-color="#8b6d50"/>
+      <stop offset="100%" stop-color="#6b5040"/>
+    </radialGradient>
+    <radialGradient id="soil" cx="0.5" cy="0.4" r="0.55">
+      <stop offset="0%" stop-color="#5a4535"/>
+      <stop offset="60%" stop-color="#4a3828"/>
+      <stop offset="100%" stop-color="#3d2e20"/>
+    </radialGradient>
+    <linearGradient id="leafDark" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0%" stop-color="#5a7a5a"/>
+      <stop offset="100%" stop-color="#4a6648"/>
+    </linearGradient>
+    <linearGradient id="leafMid" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0%" stop-color="#7a9e6e"/>
+      <stop offset="100%" stop-color="#6b8c5e"/>
+    </linearGradient>
+    <linearGradient id="leafLight" x1="0.2" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#9cc08a"/>
+      <stop offset="100%" stop-color="#82a872"/>
+    </linearGradient>
+    <linearGradient id="leafInner" x1="0.3" y1="0" x2="0.7" y2="1">
+      <stop offset="0%" stop-color="#b8d4a0"/>
+      <stop offset="100%" stop-color="#9cc08a"/>
+    </linearGradient>
+    <linearGradient id="leafCenter" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#d4e8c0"/>
+      <stop offset="50%" stop-color="#c5ddb0"/>
+      <stop offset="100%" stop-color="#b0cc98"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" rx="0.5" ry="0.5">
+      <stop offset="0%" stop-color="rgba(0,0,0,0.15)"/>
+      <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+    </radialGradient>
+    <linearGradient id="potAccent" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#c9986e"/>
+      <stop offset="50%" stop-color="#b88860"/>
+      <stop offset="100%" stop-color="#c9986e"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="200" cy="488" rx="110" ry="12" fill="url(#shadow)"/>
+  <path d="M120,340 L115,470 Q115,488 135,488 L265,488 Q285,488 285,470 L280,340 Z" fill="url(#potBody)"/>
+  <line x1="155" y1="345" x2="152" y2="485" stroke="#c08e65" stroke-width="0.5" opacity="0.3"/>
+  <line x1="190" y1="345" x2="188" y2="485" stroke="#c08e65" stroke-width="0.5" opacity="0.3"/>
+  <line x1="225" y1="345" x2="223" y2="485" stroke="#c08e65" stroke-width="0.5" opacity="0.3"/>
+  <line x1="255" y1="345" x2="253" y2="485" stroke="#c08e65" stroke-width="0.5" opacity="0.3"/>
+  <rect x="118" y="390" width="164" height="2" rx="1" fill="#b88860" opacity="0.4"/>
+  <path d="M116,332 Q116,340 120,340 L280,340 Q284,340 284,332 L284,326 Q284,320 278,320 L122,320 Q116,320 116,326 Z" fill="url(#potRim)"/>
+  <path d="M122,320 L278,320 Q284,320 284,326 L116,326 Q116,320 122,320 Z" fill="#e8c8a8" opacity="0.5"/>
+  <ellipse cx="200" cy="330" rx="80" ry="12" fill="url(#potInner)"/>
+  <ellipse cx="200" cy="328" rx="76" ry="10" fill="url(#soil)"/>
+  <circle cx="185" cy="326" r="1.5" fill="#5a4535" opacity="0.5"/>
+  <circle cx="210" cy="329" r="1" fill="#5a4535" opacity="0.5"/>
+  <circle cx="170" cy="330" r="1.2" fill="#5a4535" opacity="0.4"/>
+  <circle cx="225" cy="327" r="1" fill="#5a4535" opacity="0.5"/>
+  <path d="M200,310 Q160,280 130,240 Q125,220 145,225 Q170,235 200,290 Z" fill="url(#leafDark)" stroke="#4a6648" stroke-width="0.5"/>
+  <path d="M200,310 Q240,280 270,240 Q275,220 255,225 Q230,235 200,290 Z" fill="url(#leafDark)" stroke="#4a6648" stroke-width="0.5"/>
+  <path d="M200,315 Q150,310 110,290 Q100,275 120,278 Q155,285 200,305 Z" fill="url(#leafDark)" stroke="#4a6648" stroke-width="0.5"/>
+  <path d="M200,315 Q250,310 290,290 Q300,275 280,278 Q245,285 200,305 Z" fill="url(#leafDark)" stroke="#4a6648" stroke-width="0.5"/>
+  <path d="M200,320 Q195,340 185,350 Q180,355 185,345 Q192,330 200,315 Z" fill="url(#leafDark)" stroke="#4a6648" stroke-width="0.5"/>
+  <path d="M200,320 Q210,340 220,345 Q225,348 220,340 Q212,328 200,315 Z" fill="url(#leafDark)" stroke="#4a6648" stroke-width="0.5"/>
+  <path d="M200,300 Q168,265 148,215 Q145,195 162,205 Q180,220 200,280 Z" fill="url(#leafMid)" stroke="#5a8050" stroke-width="0.5"/>
+  <path d="M200,300 Q232,265 252,215 Q255,195 238,205 Q220,220 200,280 Z" fill="url(#leafMid)" stroke="#5a8050" stroke-width="0.5"/>
+  <path d="M200,305 Q155,290 125,260 Q115,245 135,250 Q165,262 200,295 Z" fill="url(#leafMid)" stroke="#5a8050" stroke-width="0.5"/>
+  <path d="M200,305 Q245,290 275,260 Q285,245 265,250 Q235,262 200,295 Z" fill="url(#leafMid)" stroke="#5a8050" stroke-width="0.5"/>
+  <path d="M200,285 Q175,250 162,200 Q160,182 175,192 Q188,205 200,265 Z" fill="url(#leafLight)" stroke="#72a060" stroke-width="0.5"/>
+  <path d="M200,285 Q225,250 238,200 Q240,182 225,192 Q212,205 200,265 Z" fill="url(#leafLight)" stroke="#72a060" stroke-width="0.5"/>
+  <path d="M200,290 Q165,270 142,240 Q135,225 152,232 Q172,242 200,278 Z" fill="url(#leafLight)" stroke="#72a060" stroke-width="0.5"/>
+  <path d="M200,290 Q235,270 258,240 Q265,225 248,232 Q228,242 200,278 Z" fill="url(#leafLight)" stroke="#72a060" stroke-width="0.5"/>
+  <path d="M200,270 Q182,240 175,195 Q174,180 185,190 Q194,200 200,255 Z" fill="url(#leafInner)" stroke="#88b070" stroke-width="0.5"/>
+  <path d="M200,270 Q218,240 225,195 Q226,180 215,190 Q206,200 200,255 Z" fill="url(#leafInner)" stroke="#88b070" stroke-width="0.5"/>
+  <path d="M200,275 Q175,258 158,232 Q152,220 166,225 Q182,235 200,265 Z" fill="url(#leafInner)" stroke="#88b070" stroke-width="0.5"/>
+  <path d="M200,275 Q225,258 242,232 Q248,220 234,225 Q218,235 200,265 Z" fill="url(#leafInner)" stroke="#88b070" stroke-width="0.5"/>
+  <path d="M200,255 Q190,230 186,205 Q185,195 194,200 Q200,208 200,245 Z" fill="url(#leafCenter)" stroke="#a0c488" stroke-width="0.5"/>
+  <path d="M200,255 Q210,230 214,205 Q215,195 206,200 Q200,208 200,245 Z" fill="url(#leafCenter)" stroke="#a0c488" stroke-width="0.5"/>
+  <path d="M200,258 Q185,245 178,225 Q175,215 186,220 Q195,228 200,248 Z" fill="url(#leafCenter)" stroke="#a0c488" stroke-width="0.5"/>
+  <path d="M200,258 Q215,245 222,225 Q225,215 214,220 Q205,228 200,248 Z" fill="url(#leafCenter)" stroke="#a0c488" stroke-width="0.5"/>
+  <ellipse cx="200" cy="222" rx="6" ry="10" fill="#d4e8c0" stroke="#b0cc98" stroke-width="0.5"/>
+  <ellipse cx="200" cy="220" rx="3" ry="6" fill="#e0f0d0"/>
+  <circle cx="148" cy="216" r="3" fill="#c4887a" opacity="0.35"/>
+  <circle cx="252" cy="216" r="3" fill="#c4887a" opacity="0.35"/>
+  <circle cx="130" cy="242" r="2.5" fill="#c4887a" opacity="0.3"/>
+  <circle cx="270" cy="242" r="2.5" fill="#c4887a" opacity="0.3"/>
+  <circle cx="162" cy="200" r="2.5" fill="#c4887a" opacity="0.3"/>
+  <circle cx="238" cy="200" r="2.5" fill="#c4887a" opacity="0.3"/>
+  <circle cx="175" cy="195" r="2" fill="#c4887a" opacity="0.25"/>
+  <circle cx="225" cy="195" r="2" fill="#c4887a" opacity="0.25"/>
+  <path d="M140,350 Q138,400 140,460 Q142,465 143,460 Q145,400 143,350 Z" fill="white" opacity="0.08"/>
+</svg>

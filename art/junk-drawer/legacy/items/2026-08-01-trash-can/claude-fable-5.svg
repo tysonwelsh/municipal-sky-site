@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 800">
+  <g stroke="#26324B" stroke-width="6" stroke-linejoin="round" stroke-linecap="round">
+
+    <!-- can body -->
+    <path d="M92 262 L128 748 A137 26 0 0 0 402 748 L438 262 A173 32 0 0 1 92 262 Z" fill="#A7C6CE"/>
+    <path d="M436 266 L401 744 C392 756 372 762 358 764 L396 272 Z" fill="#5E7E8F" stroke="none"/>
+    <path d="M112 278 L146 736 L166 738 L131 280 Z" fill="#E3F0F2" stroke="none"/>
+
+    <!-- ribs -->
+    <g fill="none" stroke-width="9" stroke="#5E7E8F">
+      <path d="M98 344 Q265 366 432 344"/>
+      <path d="M105 432 Q265 454 425 432"/>
+      <path d="M111 519 Q265 541 419 519"/>
+      <path d="M118 607 Q265 629 412 607"/>
+      <path d="M124 689 Q265 709 406 689"/>
+    </g>
+    <g fill="none" stroke-width="4" stroke="#E3F0F2">
+      <path d="M98 336 Q265 358 432 336"/>
+      <path d="M105 424 Q265 446 425 424"/>
+      <path d="M111 511 Q265 533 419 511"/>
+      <path d="M118 599 Q265 621 412 599"/>
+      <path d="M124 681 Q265 701 406 681"/>
+    </g>
+    <path d="M212 560 q22 12 44 4" fill="none" stroke-width="5"/>
+
+    <!-- side handle -->
+    <path d="M97 400 C48 402 36 458 95 464 L93 448 C62 444 68 420 95 416 Z" fill="#8FB4BF"/>
+
+    <!-- rim + interior -->
+    <ellipse cx="265" cy="258" rx="185" ry="36" fill="#C9DEE3"/>
+    <ellipse cx="265" cy="256" rx="156" ry="26" fill="#33415C" stroke-width="5"/>
+
+    <!-- bottle (behind mound) -->
+    <g transform="rotate(-14 150 120)">
+      <rect x="136" y="10" width="28" height="18" rx="4" fill="#F2A93B" stroke-width="5"/>
+      <path d="M141 26 L141 60 C141 82 124 88 122 108 L120 240 L180 240 L178 108 C176 88 159 82 159 60 L159 26 Z" fill="#3FA66B"/>
+      <rect x="128" y="108" width="11" height="90" rx="5" fill="#7CD49A" stroke="none"/>
+      <rect x="122" y="140" width="56" height="44" fill="#F7EFDC" stroke-width="5"/>
+      <path d="M132 154 L168 154 M132 170 L160 170" fill="none" stroke-width="4"/>
+    </g>
+
+    <!-- fish skeleton -->
+    <g transform="rotate(-22 420 130)">
+      <path d="M300 102 L352 130 L300 158 C310 138 310 122 300 102 Z" fill="#F7EFDC"/>
+      <path d="M338 130 L468 130" fill="none" stroke-width="7"/>
+      <path d="M360 108 L360 152 M385 108 L385 152 M408 108 L408 152 M432 108 L432 152" fill="none" stroke-width="5"/>
+      <path d="M460 98 C500 86 536 106 542 130 C536 154 500 174 460 162 C470 140 470 120 460 98 Z" fill="#F7EFDC"/>
+      <circle cx="508" cy="120" r="6" fill="#26324B" stroke="none"/>
+    </g>
+
+    <!-- garbage mound -->
+    <path d="M118 260 C140 214 200 198 262 206 C325 196 392 212 414 260 Z" fill="#5C7488"/>
+
+    <!-- tin can -->
+    <g transform="rotate(-28 215 150)">
+      <ellipse cx="240" cy="82" rx="28" ry="11" transform="rotate(55 240 82)" fill="#C9D4DA" stroke-width="5"/>
+      <rect x="185" y="95" width="60" height="100" fill="#E84B3C"/>
+      <rect x="187" y="122" width="56" height="38" fill="#F7EFDC" stroke-width="5"/>
+      <path d="M195 134 L235 134 M195 150 L235 149" fill="none" stroke-width="4"/>
+      <ellipse cx="215" cy="95" rx="30" ry="10" fill="#C9D4DA" stroke-width="5"/>
+      <ellipse cx="215" cy="95" rx="22" ry="6" fill="#58687A" stroke-width="4"/>
+    </g>
+
+    <!-- crumpled paper -->
+    <path d="M258 88 L272 44 L306 26 L342 40 L356 74 L336 104 L292 110 L264 104 Z" fill="#F4F2E7"/>
+    <path d="M282 52 L300 74 L330 60 M292 92 L306 72" fill="none" stroke="#BEC2B2" stroke-width="4"/>
+
+    <!-- apple core -->
+    <path d="M380 152 L378 132" fill="none" stroke-width="5"/>
+    <path d="M380 138 C392 126 406 130 408 142 C396 150 384 148 380 138 Z" fill="#3FA66B" stroke-width="5"/>
+    <path d="M356 162 C356 150 404 150 404 162 C404 176 396 178 394 188 C391 202 391 216 394 230 C396 240 404 242 404 252 C404 264 356 264 356 252 C356 242 364 240 366 230 C369 216 369 202 366 188 C364 178 356 176 356 162 Z" fill="#F7EFDC"/>
+    <path d="M356 162 C356 150 404 150 404 162 C404 169 392 173 380 173 C368 173 356 169 356 162 Z" fill="#E84B3C" stroke-width="5"/>
+    <path d="M356 252 C356 264 404 264 404 252 C404 245 392 241 380 241 C368 241 356 245 356 252 Z" fill="#E84B3C" stroke-width="5"/>
+    <circle cx="374" cy="206" r="3.5" fill="#26324B" stroke="none"/>
+    <circle cx="387" cy="212" r="3.5" fill="#26324B" stroke="none"/>
+
+    <!-- bone -->
+    <path transform="rotate(-35 469 216)" d="M446 204 C438 190 418 192 418 206 C418 213 424 216 430 216 C424 216 418 219 418 226 C418 240 438 242 446 228 L492 228 C500 242 520 240 520 226 C520 219 514 216 508 216 C514 216 520 213 520 206 C520 192 500 190 492 204 Z" fill="#F7EFDC"/>
+
+    <!-- front rim lip -->
+    <path d="M80 258 A185 36 0 0 0 450 258 L421 258 A156 26 0 0 1 109 258 Z" fill="#C9DEE3"/>
+
+    <!-- crushed soda can over front rim -->
+    <path d="M226 222 L278 216 L274 234 L284 250 L272 268 L234 276 L220 258 L230 240 Z" fill="#E84B3C"/>
+    <path d="M226 222 L278 216 L276 208 Q252 200 228 212 Z" fill="#C9D4DA" stroke-width="5"/>
+    <path d="M234 238 L266 232 M232 256 L268 252" fill="none" stroke-width="4"/>
+
+    <!-- banana peel -->
+    <path d="M132 238 C112 210 100 180 104 150 C106 136 116 130 126 134 C134 138 136 150 134 162 C130 190 136 214 150 236 Z" fill="#FFD23F"/>
+    <path d="M126 242 C86 252 44 282 26 330 C18 352 14 376 26 398 C34 380 34 356 42 336 C58 298 100 268 142 258 Z" fill="#FFD23F"/>
+    <path d="M140 250 C150 300 152 350 142 396 C138 412 146 424 158 422 C168 420 172 408 170 394 C176 348 172 300 168 252 Z" fill="#FFD23F"/>
+    <path d="M118 200 C114 182 114 166 118 152 M52 322 C66 294 96 272 122 262 M152 300 C156 336 156 366 152 392" fill="none" stroke="#F2A93B" stroke-width="4"/>
+    <circle cx="115" cy="144" r="7" fill="#8A5A2B" stroke-width="4"/>
+    <circle cx="30" cy="388" r="7" fill="#8A5A2B" stroke-width="4"/>
+    <circle cx="155" cy="413" r="7" fill="#8A5A2B" stroke-width="4"/>
+    <ellipse cx="140" cy="244" rx="34" ry="13" transform="rotate(-8 140 244)" fill="#F2A93B" stroke-width="5"/>
+
+    <!-- lid leaning against can -->
+    <g transform="rotate(-16 514 660)">
+      <ellipse cx="514" cy="660" rx="110" ry="127" fill="#A7C6CE"/>
+      <ellipse cx="514" cy="660" rx="83" ry="98" fill="#C9DEE3"/>
+      <ellipse cx="514" cy="660" rx="50" ry="61" fill="#A7C6CE"/>
+      <path d="M446 596 C430 636 430 690 446 726" fill="none" stroke="#E3F0F2" stroke-width="8"/>
+      <rect x="484" y="640" width="60" height="40" rx="18" fill="#6E93A3"/>
+      <rect x="497" y="651" width="34" height="18" rx="9" fill="#33415C" stroke-width="4"/>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0.5 10.5 259.0 90.8">
+  <defs>
+    <linearGradient id="boneFill" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#f8f4ea"/>
+      <stop offset="0.5" stop-color="#fffdf7"/>
+      <stop offset="1" stop-color="#f3ecdd"/>
+    </linearGradient>
+    <linearGradient id="boneEdge" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d4c9b2"/>
+      <stop offset="1" stop-color="#b7aa90"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Main bone shape -->
+  <path
+    d="M56 14
+       c-9 0-16 5.2-19.6 12.4
+       C33 25 28.5 24 24 24
+       C13 24 4 32.5 4 43.5
+       c0 7.4 4.5 13.7 11 16.5
+       C13 63 11 66.8 11 71
+       C11 82 20 91 31 91
+       c4.8 0 9.1-1.7 12.4-4.6
+       C47.2 93 56.5 98 67 98
+       h126
+       c10.5 0 19.8-5 23.6-11.6
+       c3.3 2.9 7.6 4.6 12.4 4.6
+       c11 0 20-9 20-20
+       c0-4.1-2-8-3.9-11
+       c6.5-2.8 11-9.1 11-16.5
+       C256 32.5 247 24 236 24
+       c-4.5 0-9 1-12.4 2.4
+       C219 19.2 212 14 203 14
+       c-8.6 0-15.8 4.2-20 10.5
+       C179 21 174 20 169 20
+       H84
+       c-5 0-10 1-14 4.5
+       C66.5 17.8 62 14 56 14
+       z"
+    fill="url(#boneFill)"
+    stroke="url(#boneEdge)"
+    stroke-width="3"
+    stroke-linejoin="round"
+    stroke-linecap="round"
+  />
+
+  <!-- Inner highlight -->
+  <path
+    d="M70 34
+       c5-4 9-6 15-6
+       h88
+       c8 0 15 3 20 9
+       c3 3.5 5 8 6 12
+       c-3-3-7-5-12-6
+       c-5-1-10-0.5-15 0
+       L96 46
+       c-10 1-18-0.5-24-4
+       c-4-2.5-6-5-7-8
+       z"
+    fill="#ffffff"
+    fill-opacity="0.65"
+  />
+
+  <!-- Small detail lines -->
+  <path
+    d="M46 38
+       c-3-2-5-4.5-6-7.5"
+    fill="none"
+    stroke="#d1c6af"
+    stroke-width="2"
+    stroke-linecap="round"
+  />
+  <path
+    d="M214 74
+       c3 2 5 4.5 6 7.5"
+    fill="none"
+    stroke="#d1c6af"
+    stroke-width="2"
+    stroke-linecap="round"
+  />
+</svg>

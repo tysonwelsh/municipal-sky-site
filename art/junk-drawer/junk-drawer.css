@@ -2083,6 +2083,15 @@ tr.rc-axdesc td {
   font-family: var(--hand); font-size: 0.66rem; color: var(--red);
   text-transform: none; letter-spacing: 0;
 }
+/* THE HEAD TO HEAD ON THE STRIP (dataset v2, 2026-10-01): "beat 2 · lost 1"
+   under the grade — form ink, the caption's own small print, a step quieter
+   than the verdict above it; the per-opponent scores live in its tooltip */
+.rc-alt-h2h {
+  display: block; margin-top: 1px;
+  font-family: var(--form); font-size: 0.46rem; letter-spacing: 0.06em;
+  color: #6a7180; text-transform: none; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
 /* the strip pagers (owner directive, 2026-08-14 — entries reached 4
    responses and the row was built for 3): plain boxed ◂ ▸ in the same
    paper-and-rule language as the thumbnails they sit beside, form-ink
@@ -3393,33 +3402,64 @@ html.jd-turn-open { overflow: hidden; }
   font-family: var(--tform); font-size: var(--t-label);
   letter-spacing: 0.16em; text-transform: uppercase; white-space: nowrap;
 }
+/* (the head to head's sheet, data-view="pair", stands at the bench's 960
+   measure, so it wears the pills too — dataset v2, 2026-10-01) */
 @media (min-width: 769px) {
   .jd-turn[data-view="bench"] .jd-rail-step,
-  .jd-turn[data-view="call"] .jd-rail-step {
+  .jd-turn[data-view="call"] .jd-rail-step,
+  .jd-turn[data-view="pair"] .jd-rail-step {
     min-height: 26px; padding: 0 12px;
     background: rgba(255, 250, 232, 0.35);
     border: 1px solid var(--trule); border-radius: 999px;
   }
   .jd-turn[data-view="bench"] .jd-rail-word,
-  .jd-turn[data-view="call"] .jd-rail-word { display: inline; }
+  .jd-turn[data-view="call"] .jd-rail-word,
+  .jd-turn[data-view="pair"] .jd-rail-word { display: inline; }
   .jd-turn[data-view="bench"] .jd-rail-ring,
-  .jd-turn[data-view="call"] .jd-rail-ring { display: none; }
-  /* the scales keep their icon inside the pill, unringed */
+  .jd-turn[data-view="call"] .jd-rail-ring,
+  .jd-turn[data-view="pair"] .jd-rail-ring { display: none; }
+  /* the scales — and the head to head's two prints — keep their icon
+     inside the pill, unringed */
   .jd-turn[data-view="bench"] .jd-rail-step--call .jd-rail-ring,
-  .jd-turn[data-view="call"] .jd-rail-step--call .jd-rail-ring {
+  .jd-turn[data-view="call"] .jd-rail-step--call .jd-rail-ring,
+  .jd-turn[data-view="pair"] .jd-rail-step--call .jd-rail-ring,
+  .jd-turn[data-view="bench"] .jd-rail-step--pairs .jd-rail-ring,
+  .jd-turn[data-view="call"] .jd-rail-step--pairs .jd-rail-ring,
+  .jd-turn[data-view="pair"] .jd-rail-step--pairs .jd-rail-ring {
     display: flex; width: auto; height: auto;
     border: 0; background: none;
   }
   .jd-turn[data-view="bench"] .jd-rail-step.is-done,
-  .jd-turn[data-view="call"] .jd-rail-step.is-done {
+  .jd-turn[data-view="call"] .jd-rail-step.is-done,
+  .jd-turn[data-view="pair"] .jd-rail-step.is-done {
     background: var(--graphite); border-color: var(--graphite);
     color: var(--tpaper-hi);
   }
   .jd-turn[data-view="bench"] .jd-rail-step.is-current,
-  .jd-turn[data-view="call"] .jd-rail-step.is-current {
+  .jd-turn[data-view="call"] .jd-rail-step.is-current,
+  .jd-turn[data-view="pair"] .jd-rail-step.is-current {
     border: 2px solid var(--tred); background: var(--tpaper-hi);
   }
+  /* seven pills (four drawings, ranking, head to head, size) run ~900px:
+     the gaps and padding give a little back so they hold one line at the
+     960 measure */
+  .jd-rail--long { gap: 4px; }
+  .jd-rail--long .jd-rail-lnk { flex-basis: 10px; }
+  .jd-turn[data-view="bench"] .jd-rail--long .jd-rail-step,
+  .jd-turn[data-view="call"] .jd-rail--long .jd-rail-step,
+  .jd-turn[data-view="pair"] .jd-rail--long .jd-rail-step { padding: 0 9px; }
 }
+/* …and between the pills' breakpoint and ~1000px the sheet is narrower
+   than 960, so the long docket's words close their tracking a step */
+@media (min-width: 769px) and (max-width: 1000px) {
+  .jd-rail--long .jd-rail-word { letter-spacing: 0.08em; }
+  .jd-turn[data-view="bench"] .jd-rail--long .jd-rail-step,
+  .jd-turn[data-view="call"] .jd-rail--long .jd-rail-step,
+  .jd-turn[data-view="pair"] .jd-rail--long .jd-rail-step { padding: 0 7px; }
+}
+/* the head-to-head node's count — "3/6" — rides its word, in the pencil's
+   weight rather than the form's tracking */
+.jd-rail-count { letter-spacing: 0.04em; }
 /* a step the visitor has finished FILLS IN — solid graphite, the letter
    reading paper: their own pencil against the printed form. */
 .jd-rail-step.is-done .jd-rail-ring {
@@ -4254,6 +4294,105 @@ body.jd-pod-drag, body.jd-pod-drag * {
 .jd-suppress input { accent-color: var(--graphite); }
 
 /* ============================================================================
+   THE HEAD TO HEAD (dataset v2, PLAN-V2 §4 "A. Direct pairwise", 2026-10-01).
+   After the podium, one sheet per pair of drawings: the two prints side by
+   side on the bench's 960 measure, the seven-stop scale under them; on a
+   phone (≤700px, the portrait stack below) the prints stack with the scale
+   BETWEEN them and the sheet takes the whole padded viewport, so both
+   drawings and the scale stand on one screen. The scale's stops are dots
+   graded by magnitude — the big ones at the ends are "much better", the
+   small one in the middle is "about the same" — and a chosen stop fills in
+   graphite, the visitor's pencil, as a finished docket ring does. The
+   words are the taxonomy's (the line under the dots), the letters at the
+   two ends say which drawing each end favours.
+   ========================================================================== */
+.jd-turn[data-view="pair"] {
+  /* the prints' measure: the viewport's height less the paperwork around
+     them (head, rail, scale, buttons ≈ 330px), within the column's width */
+  --pp: clamp(170px, min(calc(100dvh - var(--banner-h) - 330px), 40vw), 420px);
+  width: min(960px, 100%);
+}
+.jd-pair {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas: "l r" "s s";
+  gap: 12px 28px; align-items: start;
+}
+.jd-pair-side { display: flex; justify-content: center; min-width: 0; }
+.jd-pair-side--l { grid-area: l; }
+.jd-pair-side--r { grid-area: r; }
+.jd-pair-side .jd-turn-plate { flex: none; width: var(--pp); max-width: 100%; }
+.jd-pair-side .jd-turn-corner { width: 18px; height: 18px; }
+/* the blind letter, pencilled over the top of the artwork (the podium's
+   own .jd-pod-tag idiom, a size up for the bigger print) */
+.jd-pair-tag {
+  position: absolute; top: 4px; left: 6px; right: 6px; z-index: 2;
+  text-align: center; pointer-events: none;
+  font-family: var(--thand); font-size: 0.95rem; line-height: 1.1;
+  color: var(--graphite);
+}
+.jd-pair-scale {
+  grid-area: s;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+.jd-pair-stops { display: flex; align-items: center; justify-content: center; gap: 2px; }
+/* the stop is a 38px press (a 44px band under coarse pointers, below);
+   the dot inside it is what reads */
+.jd-pair-stop {
+  flex: none; width: 38px; height: 38px; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: 0; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.jd-pair-dot {
+  --d: 15px;
+  display: block; width: var(--d); height: var(--d); border-radius: 50%;
+  box-sizing: border-box;
+  background: rgba(255, 250, 232, 0.6);
+  border: 1.5px solid var(--trule);
+}
+.jd-pair-stop[data-mag="1"] .jd-pair-dot { --d: 20px; }
+.jd-pair-stop[data-mag="2"] .jd-pair-dot { --d: 25px; }
+.jd-pair-stop[data-mag="3"] .jd-pair-dot { --d: 31px; }
+.jd-pair-stop:hover .jd-pair-dot { border-color: var(--tink); }
+.jd-pair-stop.is-on .jd-pair-dot {
+  background: var(--graphite); border-color: var(--graphite);
+  box-shadow: inset 0 0 0 2px var(--tpaper-hi);
+}
+.jd-pair-stop:focus-visible { outline: 2px solid var(--tred); outline-offset: 1px; border-radius: 50%; }
+/* the ends: the letter each end favours, with an arrow pointing at its
+   print — sideways on the landscape sheet, up/down in the portrait stack */
+.jd-pair-end {
+  flex: none; display: flex; align-items: center; gap: 3px; padding: 0 6px;
+  font-family: var(--tform); font-size: var(--t-body); font-weight: 700;
+  letter-spacing: 0.12em; color: var(--tink);
+}
+.jd-pair-arr { font-style: normal; font-size: 0.7em; color: var(--tink-2); }
+.jd-pair-end--l .jd-pair-arr::before { content: "\25C0"; }
+.jd-pair-end--r .jd-pair-arr::before { content: "\25B6"; }
+.jd-pair-say {
+  margin: 0; min-height: 1.3em; text-align: center;
+  font-family: var(--tmono); font-size: var(--t-body); line-height: 1.3;
+  color: var(--tink-2);
+}
+/* an answer reads in the pencil hand, the way a chosen value does on the
+   bench; the waiting question stays in the form's print */
+.jd-pair-say.is-set {
+  font-family: var(--thand); font-size: 1rem; color: var(--graphite);
+}
+.jd-pair ~ .jd-turn-actions { justify-content: center; }
+
+/* THE UNVEIL'S HEAD TO HEAD (dataset v2): each drawing's result in the
+   pairs just answered, one quiet line per place under the podium */
+.jd-pod-h2h {
+  list-style: none; margin: 10px auto 0; padding: 6px 0 0;
+  max-width: 460px;
+  border-top: 1px solid var(--trule-2);
+  font-family: var(--tmono); font-size: var(--t-label); line-height: 1.55;
+  color: var(--tink-2); text-align: center;
+}
+.jd-pod-h2h b { color: var(--tink); font-weight: 700; }
+
+/* ============================================================================
    THE PORTRAIT STACK — ≤700px the bench folds back to the mockup's phone
    flow, and ≤600px everything else compresses with it.
    ========================================================================== */
@@ -4349,6 +4488,35 @@ body.jd-pod-drag, body.jd-pod-drag * {
      argument the owner accepted for the 40px selects. Only the BARE tray
      changes; a tray still holding prints keeps its print-sized floor. */
   .jd-pod-tray.is-bare { margin-top: 6px; min-height: 32px; }
+  /* THE HEAD TO HEAD STANDS ON ONE SCREEN (2026-10-01): the sheet takes the
+     whole padded viewport, as the bench's does, the scroller goes
+     flex-column, and the two prints share whatever height the rail, the
+     scale and the buttons leave — each print the largest square its half
+     can hold (a size container per side: min(100cqw, 100cqh)). The scale
+     sits BETWEEN them, so the end letters point up and down. Below a
+     ~520px window the 110px floor wins and the sheet scrolls. */
+  .jd-turn[data-view="pair"] { width: min(680px, 100%); height: 100%; }
+  .jd-turn[data-view="pair"] .jd-turn-scroll {
+    display: flex; flex-direction: column; padding-bottom: 10px;
+  }
+  .jd-pair {
+    flex: 1 1 auto; min-height: 0;
+    /* stretch, not the grid's start: a size container cannot take its
+       width from its content, so an unstretched side would be 0px wide */
+    display: flex; flex-direction: column; align-items: stretch; gap: 4px;
+  }
+  .jd-pair-side {
+    flex: 1 1 0; min-height: 110px;
+    container-type: size;
+    align-items: center;
+  }
+  .jd-pair-side .jd-turn-plate { width: min(100cqw, 100cqh); }
+  .jd-pair-side .jd-turn-corner { width: 15px; height: 15px; }
+  .jd-pair-tag { font-size: 0.85rem; }
+  .jd-pair-end--l .jd-pair-arr::before { content: "\25B2"; }
+  .jd-pair-end--r .jd-pair-arr::before { content: "\25BC"; }
+  .jd-turn[data-view="pair"] .jd-turn-actions { margin-top: 8px; }
+  .jd-turn[data-view="pair"] .jd-rail { margin-bottom: 4px; }
 }
 @media (max-width: 600px) {
   /* the heading steps down on a phone by moving --t-title, NOT by setting
@@ -4433,6 +4601,15 @@ body.jd-pod-drag, body.jd-pod-drag * {
     letter-spacing: 0.02em;
   }
   .jd-rail-ring { width: 34px; height: 34px; }
+  /* seven rings (dataset v2's head-to-head node joined the docket) need
+     the connectors short to hold one line on a 390px sheet */
+  .jd-rail--long { gap: 3px; }
+  .jd-rail--long .jd-rail-lnk { flex-basis: 6px; }
+  /* the head to head's stops: a 40×44 press each — seven of them and the
+     two end letters fit a 375px sheet */
+  .jd-pair-stop { width: 40px; height: 44px; }
+  .jd-pair-stops { gap: 0; }
+  .jd-pair-end { padding: 0 3px; }
   /* THE SMALL MARKS GET A FINGER'S BAND (critic/coder mobile round, owner
      report, 2026-09-29). Five presses on the bench measured under the
      floor on a phone: the row label (348×15), its boxed plus (15×15), the
@@ -5137,6 +5314,8 @@ html.jd-folder-open { overflow: hidden; }
 .jd-bench-sheet {
   position: fixed; left: 10px; right: 10px;
   bottom: calc(46px + env(safe-area-inset-bottom, 0px));
+  /* the strip wraps as it fills: jd-bench.js publishes its real height */
+  bottom: calc(var(--jd-bench-bar-h, 46px) + 4px);
   z-index: 1199; max-width: 620px; margin: 0 auto; max-height: 40vh;
   overflow: auto; padding: 10px 14px;
   background: #ece0bf; color: #33240f;
@@ -5145,15 +5324,35 @@ html.jd-folder-open { overflow: hidden; }
   font: 11.5px/1.55 var(--jd-font-mono);
 }
 .jd-bench-sheet p { margin: 6px 0 0; white-space: pre-wrap; }
+.jd-bench-sheet .jd-bench-needs { color: #7a5a1e; }
+/* NEW PROMPT (dataset v2, Phase 4b): the owner's one way to add a prompt —
+   a form on the sheet's paper, behind the key like the rest of the strip */
+.jd-bench-bar .jd-bench-new-btn { color: var(--jd-bench-gold-hi); border-color: rgba(229, 192, 107, 0.45); }
+.jd-bench-new label { display: block; margin-top: 8px; }
+.jd-bench-new label i { font-style: normal; color: #7a6a48; }
+.jd-bench-new textarea, .jd-bench-new input {
+  display: block; width: 100%; box-sizing: border-box; margin-top: 3px;
+  font: inherit; color: #33240f; background: rgba(255, 252, 240, 0.7);
+  border: 1px solid rgba(48, 38, 20, 0.45); border-radius: 2px; padding: 4px 6px;
+}
+.jd-bench-new textarea { resize: vertical; min-height: 4.5em; }
+.jd-bench-new-row { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: flex-end; margin-top: 8px; }
+.jd-bench-new-row label { flex: 1 1 180px; margin-top: 0; }
+.jd-bench-sheet .jd-bench-np-cancel {
+  font: inherit; color: #33240f; background: none; cursor: pointer;
+  border: 1px solid rgba(48, 38, 20, 0.45); border-radius: 2px; padding: 2px 8px;
+}
 /* the turn card stands clear of the strip while bench mode is on */
 html.jd-bench-on .jd-turn-scrim {
   padding-bottom: calc(52px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: max(calc(52px + env(safe-area-inset-bottom, 0px)), calc(var(--jd-bench-bar-h, 0px) + 6px));
 }
 @media (max-width: 560px) {
   .jd-bench-bar .jd-bench-title { max-width: 46vw; }
   .jd-bench-build { display: none; }
   html.jd-bench-on .jd-turn-scrim {
     padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: max(calc(84px + env(safe-area-inset-bottom, 0px)), calc(var(--jd-bench-bar-h, 0px) + 6px));
   }
 }
 

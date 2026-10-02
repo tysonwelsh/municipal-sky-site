@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 420">
+  <defs>
+    <path id="heart" d="M0,9 C-2,4 -9,0 -9,-5 C-9,-9 -5,-12 -2,-10 C-1,-9.5 0,-8.5 0,-7 C0,-8.5 1,-9.5 2,-10 C5,-12 9,-9 9,-5 C9,0 2,4 0,9 Z" fill="#C0272D"/>
+  </defs>
+  <rect x="10" y="10" width="280" height="400" rx="22" ry="22" fill="#F7F2E8" stroke="#D8D0BF" stroke-width="2"/>
+  <!-- top-left index -->
+  <text x="28" y="52" font-family="Georgia, serif" font-size="34" font-weight="bold" fill="#C0272D" text-anchor="middle">3</text>
+  <use href="#heart" x="28" y="72"/>
+  <!-- bottom-right index (inverted) -->
+  <g transform="rotate(180 272 368)">
+    <text x="272" y="384" font-family="Georgia, serif" font-size="34" font-weight="bold" fill="#C0272D" text-anchor="middle">3</text>
+    <use href="#heart" x="272" y="404"/>
+  </g>
+  <!-- pips -->
+  <use href="#heart" x="150" y="95" transform="scale(3)" transform-origin="150 95"/>
+  <use href="#heart" transform="translate(150 210) scale(3) rotate(180)"/>
+  <use href="#heart" transform="translate(150 325) scale(3)"/>
+</svg>

@@ -44,9 +44,13 @@ with its eval metadata:
 
 ## Workflow requirement
 
-New SVGs + annotations must be addable from a phone via Claude Code on
-the web + GitHub — i.e., committing a new SVG and its metadata to this
-repo from the subway should be the entire publishing act.
+(Superseded 2026-10-01.) The original requirement was that a new SVG and
+its annotations be committed from a phone, with the commit as the entire
+publishing act and no database. Server-side generation and blind rating
+outgrew that. Since dataset v2 the database is the system of record:
+drawings enter through the pipeline (the bench's NEW PROMPT, the CSV batch
+runner, or a visitor's turn), and ratings are sessions in the `jd2_*`
+tables. No item is added by committing files. See `CLAUDE.md`.
 
 ## Mobile requirement
 
@@ -59,6 +63,46 @@ off the drawer. Some features may be desktop-only, but the core loop
 great on a phone. See PLAN-MOBILE.md.
 
 ## Status
+
+**Dataset v2 (2026-10-01)**: the cutover.
+
+*What changed.* The drawer at `/art/junk-drawer/` now runs on its own tables
+(`jd2_*`, `db/junk-drawer-v2-schema.md`) with its own instrument (taxonomy
+v26, instrument `v2.0`):
+
+- prompts, runs and generations, with prices snapshotted at write time;
+- append-only rating sessions, with the owner's and visitors' kept as
+  separate populations;
+- a ranking plus head-to-head scores on a 7-point scale, asked directly or
+  derived from the ranking's gaps;
+- one visibility switch;
+- the model pool as data, with a `poolVersion` on every run.
+
+The turn card, the report card's editor, the ledger, the bench and the about
+page's charts all read and write v2. The file path is retired: no
+`entry.json` for new items, and the harvest, promote, keep-legacy,
+apply-scraps and backfill-costs scripts, the old rating bench page,
+`jd-bench-run.php` and the Artifact instrument are gone. The public drawer
+starts empty.
+
+*What is archived.* Dataset v1 is frozen (`JD_V1_FROZEN`): every v1 writer
+answers 410. Its tables stay read-only, and the dump and exports are on the
+owner's machine (`db/junk-drawer-v1-archive.md`, tag
+`junk-drawer-v1-final`). The v1 drawer stays on view as a frozen exhibit at
+`/art/junk-drawer/legacy/`, which the /art/ index links to.
+
+*What is next.*
+
+1. Refresh the model pool (wire ids, prices, `poolVersion`, consent).
+2. Run the rating campaign: the owner's categorised prompt set through the
+   CSV batch runner, rated on the bench with the side-by-side pairs card.
+3. Build the pedestal "by how much" card (gaps), from the owner's other
+   session.
+4. Work through the rest of `ROADMAP.md`: moderation before the public
+   drawer, visitor model choice, and copy.
+
+The about page's charts stay empty until the campaign files ratings, and
+its prose describes the method until then.
 
 **Layers at load (2026-09-10, v0.9.110–112)**: the drawer opens with the
 pile stacked by size tier — `xl` on the floor, `l` above, everything
@@ -126,7 +170,8 @@ must be committed from the owner's machine (needs `workflow` scope).
 (Frontend was not started at that point; see PLAN-FRONTEND.md,
 PLAN-BACKEND.md, and PLAN-MOBILE.md for how it was subsequently built.)
 
-**Plan reconciliation (binding):** where PLAN-FRONTEND.md §5 sketches a
+**Plan reconciliation (binding, v1; data.php has read the database since
+2026-10-01):** where PLAN-FRONTEND.md §5 sketches a
 static `data/items.json` manifest with an item/`alternatives` shape,
 PLAN-BACKEND.md supersedes it: there is **no committed manifest** (it
 would turn concurrent phone commits into merge conflicts); the frontend

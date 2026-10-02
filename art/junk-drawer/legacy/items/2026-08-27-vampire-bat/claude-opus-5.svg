@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2.0 28.5 603.8 348.2">
+  <defs>
+    <radialGradient id="body" cx="42%" cy="35%" r="70%">
+      <stop offset="0%" stop-color="#6b4a8f"/>
+      <stop offset="55%" stop-color="#4b2f6b"/>
+      <stop offset="100%" stop-color="#2b1841"/>
+    </radialGradient>
+    <linearGradient id="wingL" x1="1" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4a2c6d"/>
+      <stop offset="60%" stop-color="#341f52"/>
+      <stop offset="100%" stop-color="#22143a"/>
+    </linearGradient>
+    <linearGradient id="wingR" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#4a2c6d"/>
+      <stop offset="60%" stop-color="#341f52"/>
+      <stop offset="100%" stop-color="#22143a"/>
+    </linearGradient>
+  </defs>
+
+  <!-- LEFT WING -->
+  <g>
+    <path d="M242 196
+             C205 150 150 112 92 96
+             C60 87 28 84 8 90
+             C30 104 44 124 46 146
+             C22 146 6 158 2 172
+             C28 174 46 186 54 204
+             C34 212 24 228 24 246
+             C52 238 78 242 96 254
+             C82 270 78 290 84 308
+             C120 282 168 264 214 260
+             Z"
+          fill="url(#wingL)" stroke="#180d2b" stroke-width="7" stroke-linejoin="round"/>
+    <g fill="none" stroke="#6b4a95" stroke-width="5" stroke-linecap="round" opacity="0.75">
+      <path d="M232 206 C180 178 120 148 62 122"/>
+      <path d="M228 224 C176 208 112 190 56 178"/>
+      <path d="M226 242 C176 236 116 234 62 238"/>
+      <path d="M228 256 C186 262 140 276 100 296"/>
+    </g>
+  </g>
+
+  <!-- RIGHT WING -->
+  <g>
+    <path d="M358 196
+             C395 150 450 112 508 96
+             C540 87 572 84 592 90
+             C570 104 556 124 554 146
+             C578 146 594 158 598 172
+             C572 174 554 186 546 204
+             C566 212 576 228 576 246
+             C548 238 522 242 504 254
+             C518 270 522 290 516 308
+             C480 282 432 264 386 260
+             Z"
+          fill="url(#wingR)" stroke="#180d2b" stroke-width="7" stroke-linejoin="round"/>
+    <g fill="none" stroke="#6b4a95" stroke-width="5" stroke-linecap="round" opacity="0.75">
+      <path d="M368 206 C420 178 480 148 538 122"/>
+      <path d="M372 224 C424 208 488 190 544 178"/>
+      <path d="M374 242 C424 236 484 234 538 238"/>
+      <path d="M372 256 C414 262 460 276 500 296"/>
+    </g>
+  </g>
+
+  <!-- EARS (little nubs on the round body) -->
+  <path d="M244 108 C232 62 244 40 262 34 C268 62 284 82 300 92 Z" fill="#4b2f6b" stroke="#180d2b" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M356 108 C368 62 356 40 338 34 C332 62 316 82 300 92 Z" fill="#4b2f6b" stroke="#180d2b" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M250 96 C246 68 250 54 259 50 C263 70 272 84 282 92 Z" fill="#8a5fb0" opacity="0.8"/>
+  <path d="M350 96 C354 68 350 54 341 50 C337 70 328 84 318 92 Z" fill="#8a5fb0" opacity="0.8"/>
+
+  <!-- BODY: one big round blob, no head -->
+  <ellipse cx="300" cy="220" rx="122" ry="118" fill="url(#body)" stroke="#180d2b" stroke-width="8"/>
+  <path d="M300 338 C250 338 210 312 196 276 C230 300 262 310 300 310 C338 310 370 300 404 276 C390 312 350 338 300 338 Z" fill="#1e1134" opacity="0.35"/>
+
+  <!-- FEET -->
+  <g stroke="#180d2b" stroke-width="6" stroke-linecap="round" fill="#3a2358">
+    <path d="M256 328 L246 358 M246 358 L232 366 M246 358 L246 372 M246 358 L262 368" fill="none"/>
+    <path d="M344 328 L354 358 M354 358 L338 368 M354 358 L354 372 M354 358 L368 366" fill="none"/>
+  </g>
+
+  <!-- ONE GOOGLY EYE -->
+  <g>
+    <circle cx="300" cy="168" r="58" fill="#ffffff" stroke="#180d2b" stroke-width="8"/>
+    <circle cx="312" cy="180" r="26" fill="#1a1026"/>
+    <circle cx="304" cy="171" r="8" fill="#ffffff" opacity="0.9"/>
+    <path d="M248 140 C266 116 300 104 330 112" fill="none" stroke="#e6dcf5" stroke-width="9" stroke-linecap="round" opacity="0.55"/>
+  </g>
+
+  <!-- MOUTH ON BODY BELOW EYE -->
+  <path d="M232 250 C260 236 340 236 368 250 C356 296 316 312 300 312 C284 312 244 296 232 250 Z"
+        fill="#2a0d18" stroke="#180d2b" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M244 254 C270 246 330 246 356 254 C348 262 252 262 244 254 Z" fill="#ff6f9a" opacity="0.5"/>
+  <!-- tongue -->
+  <path d="M280 290 C288 276 314 276 322 290 C322 306 308 314 300 314 C292 314 280 306 280 290 Z" fill="#e0426d"/>
+  <!-- FANGS -->
+  <path d="M262 250 L275 250 L268 288 Z" fill="#ffffff" stroke="#180d2b" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M325 250 L338 250 L331 288 Z" fill="#ffffff" stroke="#180d2b" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M292 246 L308 246 L300 264 Z" fill="#ffffff" opacity="0.85"/>
+
+  <!-- blood drop on fang -->
+  <path d="M268 292 C274 300 276 306 272 310 C268 314 262 312 262 306 C262 302 265 297 268 292 Z" fill="#d61f3e"/>
+
+  <!-- cheek blush -->
+  <ellipse cx="212" cy="228" rx="22" ry="13" fill="#ff7fae" opacity="0.35"/>
+  <ellipse cx="388" cy="228" rx="22" ry="13" fill="#ff7fae" opacity="0.35"/>
+</svg>

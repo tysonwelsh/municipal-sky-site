@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="30.8 56.8 328.2 318.2">
+  <defs>
+    <linearGradient id="porcelain" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.6" stop-color="#eef1f4"/>
+      <stop offset="1" stop-color="#c9d2da"/>
+    </linearGradient>
+    <linearGradient id="porcelainDark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#dde4ea"/>
+      <stop offset="1" stop-color="#aebac5"/>
+    </linearGradient>
+    <linearGradient id="bowlGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#c3ced8"/>
+    </linearGradient>
+  </defs>
+
+  <!-- tank -->
+  <rect x="42" y="88" width="120" height="150" rx="14" fill="url(#porcelain)" stroke="#a8b4bf" stroke-width="2.5"/>
+  <!-- tank lid -->
+  <rect x="34" y="76" width="136" height="24" rx="10" fill="#ffffff" stroke="#a8b4bf" stroke-width="2.5"/>
+  <!-- flush handle -->
+  <rect x="34" y="110" width="10" height="26" rx="4" fill="#9aa6b1" stroke="#7d8894" stroke-width="1.5"/>
+
+  <!-- raised lid (against tank) -->
+  <rect x="158" y="60" width="26" height="176" rx="13" fill="#f7fafc" stroke="#a8b4bf" stroke-width="2.5"/>
+  <ellipse cx="171" cy="90" rx="6" ry="10" fill="#dde4ea"/>
+
+  <!-- raised seat (in front of lid) -->
+  <path d="M190 232 L190 108 Q190 96 200 96 Q210 96 210 108 L210 232 Q210 242 200 242 Q190 242 190 232 Z" fill="url(#porcelain)" stroke="#a8b4bf" stroke-width="2.5"/>
+  <ellipse cx="200" cy="170" rx="6" ry="52" fill="#ffffff" opacity="0.6"/>
+
+  <!-- bowl rim -->
+  <path d="M150 238 L340 238 Q356 238 356 250 Q356 262 340 262 L150 262 Z" fill="url(#bowlGrad)" stroke="#a8b4bf" stroke-width="2.5"/>
+
+  <!-- bowl body -->
+  <path d="M150 262 L340 262 Q346 262 344 272 Q336 300 300 312 L252 322 Q230 326 226 340 L224 348 L176 348 L172 320 Q168 296 158 282 Q150 272 150 262 Z" fill="url(#porcelain)" stroke="#a8b4bf" stroke-width="2.5"/>
+
+  <!-- bowl curve highlight -->
+  <path d="M336 268 Q328 296 296 306" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity="0.7"/>
+
+  <!-- base / pedestal -->
+  <path d="M176 348 L224 348 L240 372 L196 372 Q172 372 160 366 Q152 362 152 356 Q152 348 176 348 Z" fill="url(#porcelainDark)" stroke="#a8b4bf" stroke-width="2.5"/>
+
+  <!-- tank-to-bowl connection shading -->
+  <path d="M162 238 L162 262 L150 262 L150 238 Z" fill="#c3ced8"/>
+</svg>

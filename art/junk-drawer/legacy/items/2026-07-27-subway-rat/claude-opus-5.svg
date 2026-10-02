@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 526" role="img" aria-label="A sneaky cartoon subway rat with big googly eyes scampering off in profile, dragging a slice of pizza">
+  <defs>
+    <linearGradient id="fur" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9ca4ad"/>
+      <stop offset="1" stop-color="#7d848d"/>
+    </linearGradient>
+    <linearGradient id="tailg" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#e8a3b5"/>
+      <stop offset="1" stop-color="#d885a0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- TAIL (behind) -->
+  <path d="M700,296 C800,300 856,250 842,168 C833,108 796,54 762,20 C752,30 748,30 738,38 C770,80 810,124 818,174 C830,248 782,274 704,266 Z"
+        fill="url(#tailg)" stroke="#23262b" stroke-width="6" stroke-linejoin="round"/>
+
+  <!-- FAR HIND LEG + FOOT -->
+  <path d="M690,332 C706,378 690,420 660,448 C636,470 618,486 606,504 C634,508 660,500 666,478 C704,446 726,394 716,344 Z"
+        fill="#6f767e" stroke="#23262b" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M600,488 C588,498 586,510 598,514 C608,518 620,512 622,502 C634,497 648,496 656,500 C650,486 632,480 614,482 Z"
+        fill="#d885a0" stroke="#23262b" stroke-width="5" stroke-linejoin="round"/>
+
+  <!-- SCAMPER DUST PUFFS -->
+  <g fill="#e2e6ea" stroke="#23262b" stroke-width="4">
+    <circle cx="770" cy="474" r="17"/>
+    <circle cx="800" cy="452" r="12"/>
+    <circle cx="742" cy="492" r="11"/>
+  </g>
+
+  <!-- BODY -->
+  <path d="M45,315 C70,283 92,268 132,256 C176,244 202,238 246,232 C300,224 332,172 472,162 C602,153 682,188 732,250 C772,296 766,352 714,378 C640,408 560,408 470,402 C360,395 250,398 168,370 C122,354 62,338 45,315 Z"
+        fill="url(#fur)" stroke="#23262b" stroke-width="7" stroke-linejoin="round"/>
+
+  <!-- BELLY HIGHLIGHT -->
+  <path d="M118,342 C210,306 400,306 548,332 C528,392 360,404 206,386 C158,378 130,360 118,342 Z"
+        fill="#bcc2ca" opacity="0.7"/>
+
+  <!-- NEAR HIND LEG + FOOT -->
+  <path d="M622,346 C662,352 704,372 712,414 C718,450 706,480 694,502 C726,506 754,496 752,466 C758,410 744,356 700,332 C672,324 640,330 622,346 Z"
+        fill="url(#fur)" stroke="#23262b" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M652,482 C638,494 636,508 648,512 C659,516 671,510 674,499 C686,494 700,492 710,496 C704,482 686,474 666,476 Z"
+        fill="#e8a3b5" stroke="#23262b" stroke-width="5" stroke-linejoin="round"/>
+  <g stroke="#23262b" stroke-width="3" stroke-linecap="round" fill="none">
+    <path d="M666,486 L668,506"/><path d="M684,486 L690,502"/>
+  </g>
+
+  <!-- NEAR FRONT LEG + FOOT (tiptoe) -->
+  <path d="M242,366 C214,392 190,414 172,440 C156,462 150,478 160,490 C172,496 186,484 194,466 C214,436 246,410 264,384 Z"
+        fill="url(#fur)" stroke="#23262b" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M158,466 C142,478 134,494 144,502 C154,509 168,502 172,490 C182,483 194,480 204,484 C198,468 180,460 160,462 Z"
+        fill="#e8a3b5" stroke="#23262b" stroke-width="5" stroke-linejoin="round"/>
+  <g stroke="#23262b" stroke-width="3" stroke-linecap="round" fill="none">
+    <path d="M164,470 L156,492"/><path d="M182,474 L182,490"/>
+  </g>
+
+  <!-- EAR -->
+  <path d="M232,205 C210,150 245,120 290,132 C328,142 335,190 310,220 C285,245 250,240 232,205 Z"
+        fill="url(#fur)" stroke="#23262b" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M250,200 C240,165 262,148 292,158 C315,166 318,196 302,214 C285,230 262,225 250,200 Z"
+        fill="#e8a3b5"/>
+
+  <!-- PIZZA SLICE (the loot) -->
+  <path d="M112,428 L176,450 L74,500 Z" fill="#f2c14e" stroke="#a9762f" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M106,420 Q142,430 178,444 L180,458 Q144,444 110,434 Z" fill="#d69a4a" stroke="#a9762f" stroke-width="5" stroke-linejoin="round"/>
+  <g fill="#c0392b" stroke="#8f2a20" stroke-width="2">
+    <circle cx="122" cy="452" r="8"/><circle cx="142" cy="463" r="7"/><circle cx="104" cy="470" r="6"/>
+  </g>
+
+  <!-- LIFTED FRONT PAW grabbing crust -->
+  <path d="M150,424 C138,428 132,440 140,448 C148,455 160,452 166,442 C172,432 168,424 158,422 C154,421 152,422 150,424 Z"
+        fill="#e8a3b5" stroke="#23262b" stroke-width="4" stroke-linejoin="round"/>
+  <g stroke="#23262b" stroke-width="2.5" stroke-linecap="round" fill="none">
+    <path d="M144,438 L138,446"/><path d="M154,442 L150,450"/>
+  </g>
+
+  <!-- NOSE -->
+  <path d="M40,312 C26,308 22,321 34,328 C46,335 60,330 60,318 C58,309 48,308 40,312 Z"
+        fill="#d16a86" stroke="#23262b" stroke-width="5" stroke-linejoin="round"/>
+  <circle cx="35" cy="320" r="3.5" fill="#23262b"/>
+
+  <!-- MOUTH / SLY GRIN -->
+  <path d="M54,330 C92,354 132,358 166,347 C176,344 181,337 179,330"
+        fill="none" stroke="#23262b" stroke-width="6" stroke-linecap="round"/>
+  <!-- BUCK TEETH -->
+  <rect x="55" y="336" width="12" height="20" rx="4" fill="#ffffff" stroke="#23262b" stroke-width="3"/>
+  <rect x="68" y="338" width="12" height="20" rx="4" fill="#ffffff" stroke="#23262b" stroke-width="3"/>
+
+  <!-- WHISKERS -->
+  <g stroke="#3a3a3a" stroke-width="3" stroke-linecap="round" fill="none">
+    <path d="M80,323 C55,316 32,310 12,312"/>
+    <path d="M84,334 C58,334 34,339 14,347"/>
+    <path d="M86,344 C62,349 42,359 26,371"/>
+  </g>
+
+  <!-- GOOGLY EYES -->
+  <circle cx="250" cy="230" r="46" fill="#ffffff" stroke="#23262b" stroke-width="6"/>
+  <circle cx="150" cy="222" r="52" fill="#ffffff" stroke="#23262b" stroke-width="6"/>
+  <circle cx="232" cy="246" r="19" fill="#1a1a1a"/>
+  <circle cx="225" cy="239" r="5" fill="#ffffff"/>
+  <circle cx="132" cy="238" r="22" fill="#1a1a1a"/>
+  <circle cx="124" cy="230" r="6" fill="#ffffff"/>
+  <!-- heavy sneaky lids -->
+  <path d="M206,220 Q250,204 294,226" fill="none" stroke="#23262b" stroke-width="8" stroke-linecap="round"/>
+  <path d="M100,210 Q150,192 200,214" fill="none" stroke="#23262b" stroke-width="9" stroke-linecap="round"/>
+  <!-- scheming brows -->
+  <path d="M205,180 Q250,154 292,158" fill="none" stroke="#23262b" stroke-width="10" stroke-linecap="round"/>
+  <path d="M96,188 Q140,160 182,158" fill="none" stroke="#23262b" stroke-width="11" stroke-linecap="round"/>
+</svg>

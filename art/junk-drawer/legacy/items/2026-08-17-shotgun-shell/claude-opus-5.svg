@@ -1,0 +1,143 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="46.0 51.0 207.8 638.8">
+  <defs>
+    <linearGradient id="hullShade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4a0c0c"/>
+      <stop offset="0.10" stop-color="#8a1616"/>
+      <stop offset="0.32" stop-color="#d42222"/>
+      <stop offset="0.46" stop-color="#f04a3a"/>
+      <stop offset="0.60" stop-color="#c81d1d"/>
+      <stop offset="0.82" stop-color="#7d1212"/>
+      <stop offset="1" stop-color="#3d0909"/>
+    </linearGradient>
+    <linearGradient id="brassShade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4c3708"/>
+      <stop offset="0.09" stop-color="#7d5c12"/>
+      <stop offset="0.28" stop-color="#c9a13a"/>
+      <stop offset="0.42" stop-color="#f5e08e"/>
+      <stop offset="0.52" stop-color="#e8c85e"/>
+      <stop offset="0.72" stop-color="#a8801f"/>
+      <stop offset="0.88" stop-color="#6b4a0d"/>
+      <stop offset="1" stop-color="#3b2905"/>
+    </linearGradient>
+    <linearGradient id="brassRim" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#573f0a"/>
+      <stop offset="0.35" stop-color="#e3c86d"/>
+      <stop offset="0.5" stop-color="#fff0b8"/>
+      <stop offset="0.7" stop-color="#b08922"/>
+      <stop offset="1" stop-color="#422e06"/>
+    </linearGradient>
+    <linearGradient id="crimpG" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#520d0d"/>
+      <stop offset="0.30" stop-color="#b81f1f"/>
+      <stop offset="0.46" stop-color="#e8503f"/>
+      <stop offset="0.70" stop-color="#8d1414"/>
+      <stop offset="1" stop-color="#3d0808"/>
+    </linearGradient>
+    <linearGradient id="primerG" x1="0.2" y1="0.1" x2="0.8" y2="0.95">
+      <stop offset="0" stop-color="#f2e2a4"/>
+      <stop offset="0.45" stop-color="#c9a53c"/>
+      <stop offset="1" stop-color="#6d4e0e"/>
+    </linearGradient>
+    <radialGradient id="primerCenter" cx="0.4" cy="0.35" r="0.7">
+      <stop offset="0" stop-color="#dcc370"/>
+      <stop offset="1" stop-color="#7a5a14"/>
+    </radialGradient>
+    <linearGradient id="glossHull" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- soft contact shadow -->
+  <ellipse cx="150" cy="676" rx="96" ry="12" fill="#000000" opacity="0.28"/>
+
+  <!-- ===== BRASS HEAD (bottom) ===== -->
+  <path d="M55 470 h190 v168 a14 14 0 0 1 -14 14 h-162 a14 14 0 0 1 -14 -14 z" fill="url(#brassShade)"/>
+  <!-- rim / extractor groove -->
+  <path d="M48 616 h204 v22 a14 14 0 0 1 -14 14 h-176 a14 14 0 0 1 -14 -14 z" fill="url(#brassRim)"/>
+  <path d="M55 606 h190 v14 h-190 z" fill="#000000" opacity="0.30"/>
+  <path d="M48 616 h204 v4 h-204 z" fill="#fff2c0" opacity="0.35"/>
+
+  <!-- brass top edge highlight -->
+  <rect x="55" y="470" width="190" height="6" fill="#fff0b0" opacity="0.4"/>
+
+  <!-- head stamp arcs (subtle) -->
+  <g opacity="0.35" fill="none" stroke="#4a3406" stroke-width="2">
+    <path d="M78 520 q72 -18 144 0"/>
+    <path d="M82 566 q68 16 136 0"/>
+  </g>
+
+  <!-- primer pocket -->
+  <ellipse cx="150" cy="543" rx="30" ry="30" fill="#3a2705" opacity="0.55"/>
+  <circle cx="150" cy="541" r="28" fill="url(#primerG)"/>
+  <circle cx="150" cy="541" r="20" fill="url(#primerCenter)"/>
+  <circle cx="150" cy="541" r="20" fill="none" stroke="#4e370a" stroke-width="1.5" opacity="0.8"/>
+  <circle cx="143" cy="533" r="7" fill="#ffffff" opacity="0.20"/>
+  <!-- no strike mark: unfired -->
+
+  <!-- brass vertical sheen -->
+  <rect x="98" y="470" width="20" height="182" fill="#ffffff" opacity="0.16"/>
+  <rect x="196" y="470" width="9" height="182" fill="#000000" opacity="0.12"/>
+
+  <!-- ===== PLASTIC HULL ===== -->
+  <path d="M55 96 h190 v378 h-190 z" fill="url(#hullShade)"/>
+
+  <!-- hull ribbing / knurl lines -->
+  <g stroke="#000000" opacity="0.13" stroke-width="1">
+    <line x1="55" y1="150" x2="245" y2="150"/>
+    <line x1="55" y1="210" x2="245" y2="210"/>
+    <line x1="55" y1="270" x2="245" y2="270"/>
+    <line x1="55" y1="330" x2="245" y2="330"/>
+    <line x1="55" y1="390" x2="245" y2="390"/>
+  </g>
+
+  <!-- gloss stripe -->
+  <rect x="92" y="96" width="26" height="378" fill="url(#glossHull)"/>
+  <rect x="100" y="96" width="8" height="378" fill="#ffffff" opacity="0.35"/>
+
+  <!-- gauge text panel -->
+  <g fill="#ffe9c9" opacity="0.9">
+    <rect x="86" y="238" width="128" height="3" opacity="0.5"/>
+    <rect x="86" y="300" width="128" height="3" opacity="0.5"/>
+  </g>
+  <text x="150" y="278" font-family="Helvetica,Arial,sans-serif" font-size="34" font-weight="bold"
+        text-anchor="middle" fill="#ffeccb" opacity="0.92" letter-spacing="3">12 GA</text>
+  <text x="150" y="330" font-family="Helvetica,Arial,sans-serif" font-size="15"
+        text-anchor="middle" fill="#ffdcb0" opacity="0.7" letter-spacing="2">2¾"  00 BUCK</text>
+
+  <!-- ===== CRIMPED MOUTH (unfired: closed star crimp) ===== -->
+  <path d="M55 96 h190 v-8 a6 6 0 0 0 -6 -6 h-178 a6 6 0 0 0 -6 6 z" fill="url(#crimpG)"/>
+  <path d="M61 82 h178 a6 6 0 0 1 6 6 v0 h-190 v0 a6 6 0 0 1 6 -6 z" fill="#ffffff" opacity="0.10"/>
+
+  <!-- crimp dome top -->
+  <ellipse cx="150" cy="82" rx="95" ry="26" fill="url(#crimpG)"/>
+  <ellipse cx="150" cy="80" rx="95" ry="26" fill="#000000" opacity="0.12"/>
+  <ellipse cx="150" cy="78" rx="92" ry="24" fill="url(#crimpG)"/>
+
+  <!-- star crimp folds: six sealed segments -->
+  <g stroke="#5c0e0e" stroke-width="2" fill="none" opacity="0.85">
+    <path d="M150 78 L150 54"/>
+    <path d="M150 78 L221 71"/>
+    <path d="M150 78 L206 96"/>
+    <path d="M150 78 L94 96"/>
+    <path d="M150 78 L79 71"/>
+  </g>
+  <g fill="#ffffff" opacity="0.10">
+    <path d="M150 78 L150 54 A92 24 0 0 1 221 71 Z"/>
+    <path d="M150 78 L79 71 A92 24 0 0 1 150 54 Z"/>
+  </g>
+  <g fill="#000000" opacity="0.16">
+    <path d="M150 78 L206 96 A92 24 0 0 1 94 96 Z"/>
+  </g>
+  <!-- tiny center seal nub -->
+  <ellipse cx="150" cy="78" rx="7" ry="3.5" fill="#7d1414"/>
+  <ellipse cx="150" cy="76.5" rx="4" ry="1.8" fill="#e0705c" opacity="0.7"/>
+
+  <!-- crimp rim highlight -->
+  <path d="M58 78 a92 24 0 0 1 184 0" fill="none" stroke="#ff8a72" stroke-width="2" opacity="0.45"/>
+
+  <!-- outer contour darkening -->
+  <path d="M55 96 h6 v378 h-6 z" fill="#000000" opacity="0.22"/>
+  <path d="M239 96 h6 v378 h-6 z" fill="#000000" opacity="0.28"/>
+</svg>

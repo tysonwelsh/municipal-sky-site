@@ -1,0 +1,160 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="55.5 3.5 288.8 552.8">
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#b9762f"/>
+      <stop offset="0.35" stop-color="#e0a45e"/>
+      <stop offset="0.62" stop-color="#d69447"/>
+      <stop offset="1" stop-color="#9a5c22"/>
+    </linearGradient>
+    <linearGradient id="face" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#d99b6a"/>
+      <stop offset="0.4" stop-color="#f2c79c"/>
+      <stop offset="1" stop-color="#c98a58"/>
+    </linearGradient>
+    <linearGradient id="fur" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a8823f"/>
+      <stop offset="1" stop-color="#7b5b26"/>
+    </linearGradient>
+    <linearGradient id="hairg" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#2e1c10"/>
+      <stop offset="0.5" stop-color="#4a2c17"/>
+      <stop offset="1" stop-color="#241408"/>
+    </linearGradient>
+    <radialGradient id="shine" cx="0.32" cy="0.28" r="0.55">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- doll body silhouette -->
+  <path d="M200 8
+           C258 8 300 62 300 128
+           C300 168 288 196 280 216
+           C312 252 340 320 340 400
+           C340 490 282 552 200 552
+           C118 552 60 490 60 400
+           C60 320 88 252 120 216
+           C112 196 100 168 100 128
+           C100 62 142 8 200 8 Z"
+        fill="url(#body)" stroke="#5e3512" stroke-width="5"/>
+  <path d="M200 8 C258 8 300 62 300 128 C300 168 288 196 280 216 C312 252 340 320 340 400 C340 490 282 552 200 552 C118 552 60 490 60 400 C60 320 88 252 120 216 C112 196 100 168 100 128 C100 62 142 8 200 8 Z"
+        fill="url(#shine)"/>
+
+  <!-- seam line between head and body -->
+  <path d="M120 216 C155 232 245 232 280 216" fill="none" stroke="#6b3d15" stroke-width="4" opacity="0.7"/>
+  <path d="M120 222 C155 238 245 238 280 222" fill="none" stroke="#f0c185" stroke-width="2.5" opacity="0.6"/>
+
+  <!-- face oval -->
+  <ellipse cx="200" cy="128" rx="78" ry="88" fill="url(#face)" stroke="#8c5227" stroke-width="3.5"/>
+
+  <!-- hair mass / shaggy caveman hair -->
+  <path d="M200 34
+           C150 34 122 70 122 112
+           C122 122 124 132 128 140
+           C122 128 121 106 128 96
+           C126 82 132 72 140 66
+           C150 48 172 40 200 40
+           C228 40 250 48 260 66
+           C268 72 274 82 272 96
+           C279 106 278 128 272 140
+           C276 132 278 122 278 112
+           C278 70 250 34 200 34 Z"
+        fill="url(#hairg)"/>
+  <path d="M122 112 C122 66 152 38 200 38 C248 38 278 66 278 112
+           C278 92 266 78 258 74
+           C252 62 236 56 226 62
+           C214 52 200 56 194 62
+           C182 54 168 58 162 68
+           C146 68 130 84 122 112 Z"
+        fill="url(#hairg)"/>
+  <!-- shaggy locks over sides -->
+  <path d="M124 108 C118 140 122 172 134 194 C126 178 122 152 124 132 Z" fill="#3a2210"/>
+  <path d="M276 108 C282 140 278 172 266 194 C274 178 278 152 276 132 Z" fill="#3a2210"/>
+  <path d="M126 96 C136 90 148 92 154 100 C144 96 134 96 126 96 Z" fill="#5b3720"/>
+
+  <!-- heavy brow ridge -->
+  <path d="M138 118 C160 100 190 98 200 104 C210 98 240 100 262 118
+           C244 112 218 110 200 116 C182 110 156 112 138 118 Z"
+        fill="#2e1c10"/>
+
+  <!-- eyes -->
+  <ellipse cx="171" cy="136" rx="12" ry="10" fill="#fdf3e6"/>
+  <ellipse cx="229" cy="136" rx="12" ry="10" fill="#fdf3e6"/>
+  <circle cx="172" cy="137" r="5.5" fill="#25150a"/>
+  <circle cx="228" cy="137" r="5.5" fill="#25150a"/>
+  <circle cx="174" cy="135" r="1.8" fill="#fff"/>
+  <circle cx="230" cy="135" r="1.8" fill="#fff"/>
+
+  <!-- nose -->
+  <path d="M200 140 C192 152 186 166 192 172 C197 177 203 177 208 172 C214 166 208 152 200 140 Z"
+        fill="#d99b6a" opacity="0.85"/>
+  <ellipse cx="193" cy="170" rx="3.2" ry="2.2" fill="#8c5227"/>
+  <ellipse cx="207" cy="170" rx="3.2" ry="2.2" fill="#8c5227"/>
+
+  <!-- beard -->
+  <path d="M152 160 C146 200 160 226 200 226 C240 226 254 200 248 160
+           C244 186 232 196 226 190
+           C220 200 210 202 200 202
+           C190 202 180 200 174 190
+           C168 196 156 186 152 160 Z"
+        fill="url(#hairg)"/>
+  <!-- mouth with tooth -->
+  <path d="M178 182 C190 194 210 194 222 182 C210 190 190 190 178 182 Z" fill="#5b2f22"/>
+  <path d="M186 186 L191 186 L189.5 194 Z" fill="#fff8ec"/>
+
+  <!-- club held across body -->
+  <g>
+    <path d="M92 356 C112 342 146 330 176 328 L196 322 C208 318 218 322 220 330 C222 338 216 346 206 348 L184 352 C156 358 124 372 106 384 C96 390 86 386 84 376 C82 366 86 360 92 356 Z"
+          fill="#8a5a2b" stroke="#4d2f12" stroke-width="4"/>
+    <ellipse cx="106" cy="370" rx="10" ry="7" transform="rotate(-20 106 370)" fill="#6f471f"/>
+    <path d="M132 356 C140 352 150 349 158 347" stroke="#5e3a16" stroke-width="3" fill="none"/>
+    <path d="M170 340 C178 337 188 334 196 332" stroke="#5e3a16" stroke-width="3" fill="none"/>
+  </g>
+
+  <!-- fur tunic -->
+  <path d="M120 300
+           C150 286 250 286 280 300
+           C300 340 306 400 300 452
+           C260 470 140 470 100 452
+           C94 400 100 340 120 300 Z"
+        fill="url(#fur)" stroke="#4f3a15" stroke-width="4"/>
+  <!-- ragged bottom hem -->
+  <path d="M100 452 L114 470 L128 452 L142 474 L157 452 L172 472 L187 452 L202 474 L217 452 L232 472 L247 452 L262 470 L276 452 L290 468 L300 452
+           C260 470 140 470 100 452 Z" fill="url(#fur)"/>
+  <path d="M100 452 L114 472 L128 452 L142 476 L157 452 L172 474 L187 452 L202 476 L217 452 L232 474 L247 452 L262 472 L276 452 L290 470 L300 452"
+        fill="none" stroke="#4f3a15" stroke-width="4" stroke-linejoin="round"/>
+
+  <!-- fur spots -->
+  <ellipse cx="150" cy="352" rx="14" ry="10" fill="#5e451b" opacity="0.75"/>
+  <ellipse cx="252" cy="336" rx="12" ry="9" fill="#5e451b" opacity="0.75"/>
+  <ellipse cx="272" cy="400" rx="15" ry="10" fill="#5e451b" opacity="0.75"/>
+  <ellipse cx="176" cy="418" rx="11" ry="8" fill="#5e451b" opacity="0.6"/>
+  <ellipse cx="228" cy="376" rx="9" ry="7" fill="#5e451b" opacity="0.6"/>
+
+  <!-- shoulder strap of tunic -->
+  <path d="M244 292 C230 320 214 342 190 356" fill="none" stroke="#63471c" stroke-width="10" stroke-linecap="round"/>
+  <path d="M244 292 C230 320 214 342 190 356" fill="none" stroke="#8f6c2e" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- bone necklace -->
+  <path d="M148 252 C176 274 224 274 252 252" fill="none" stroke="#6b4a20" stroke-width="3"/>
+  <g fill="#f3e6cf" stroke="#9c8459" stroke-width="1.6">
+    <circle cx="166" cy="264" r="5"/>
+    <circle cx="234" cy="264" r="5"/>
+    <path d="M200 268 c-4 0 -7 3 -7 6 0 3 2 5 5 5 l0 14 c-3 1 -5 3 -5 6 0 4 3 7 7 7 4 0 7 -3 7 -7 0 -3 -2 -5 -5 -6 l0 -14 c3 0 5 -2 5 -5 0 -3 -3 -6 -7 -6 z"/>
+  </g>
+
+  <!-- painted cave-art band on lower body -->
+  <g stroke="#7a3a18" stroke-width="3" fill="none" opacity="0.85">
+    <path d="M70 486 C120 508 280 508 330 486"/>
+    <path d="M74 502 C124 524 276 524 326 502"/>
+  </g>
+  <g fill="#7a3a18" opacity="0.9">
+    <path d="M120 492 c8 -6 20 -6 26 0 l6 -5 2 6 8 -1 -6 6 c4 6 -2 12 -10 12 l-2 6 -3 -6 -8 0 -3 6 -2 -6 c-8 -1 -12 -8 -8 -18 z"/>
+    <path d="M240 490 c8 -6 20 -6 26 0 l6 -5 2 6 8 -1 -6 6 c4 6 -2 12 -10 12 l-2 6 -3 -6 -8 0 -3 6 -2 -6 c-8 -1 -12 -8 -8 -18 z"/>
+    <path d="M186 486 l6 12 12 0 -8 10 4 14 -12 -8 -12 8 4 -14 -8 -10 12 0 z"/>
+  </g>
+
+  <!-- little hands peeking -->
+  <ellipse cx="196" cy="330" rx="16" ry="13" fill="#e6b184" stroke="#8c5227" stroke-width="3"/>
+  <path d="M186 326 c4 -3 10 -4 16 -2" stroke="#8c5227" stroke-width="2" fill="none"/>
+</svg>

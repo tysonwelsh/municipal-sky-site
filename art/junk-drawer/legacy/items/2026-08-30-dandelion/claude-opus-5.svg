@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <radialGradient id="puff" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.55"/>
+      <stop offset="60%" stop-color="#f2f7fa" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#e8f1f5" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="stem" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#8fae5a"/>
+      <stop offset="55%" stop-color="#6f9a45"/>
+      <stop offset="100%" stop-color="#4d7a33"/>
+    </linearGradient>
+    <g id="seed">
+      <line x1="0" y1="0" x2="0" y2="-52" stroke="#cfd9dd" stroke-width="1.1" stroke-opacity="0.85"/>
+      <g stroke="#ffffff" stroke-width="0.85" stroke-opacity="0.9" stroke-linecap="round">
+        <line x1="0" y1="-52" x2="-8" y2="-64"/>
+        <line x1="0" y1="-52" x2="-4" y2="-67"/>
+        <line x1="0" y1="-52" x2="0" y2="-68"/>
+        <line x1="0" y1="-52" x2="4" y2="-67"/>
+        <line x1="0" y1="-52" x2="8" y2="-64"/>
+        <line x1="0" y1="-52" x2="-11" y2="-59"/>
+        <line x1="0" y1="-52" x2="11" y2="-59"/>
+      </g>
+      <circle cx="0" cy="-51" r="1.5" fill="#e6e0cf"/>
+    </g>
+  </defs>
+
+  <g>
+    <!-- stem -->
+    <path d="M196 392 C 190 320, 196 250, 199 176 L 207 176 C 208 250, 204 320, 208 392 Z" fill="url(#stem)"/>
+    <path d="M199 380 C 196 310, 200 240, 202 178" fill="none" stroke="#3f6b2a" stroke-width="1.2" stroke-opacity="0.5"/>
+
+    <!-- soft glow of the clock -->
+    <circle cx="203" cy="150" r="132" fill="url(#puff)"/>
+
+    <!-- receptacle -->
+    <path d="M193 180 C 196 168, 210 168, 213 180 Z" fill="#7d9a4c"/>
+
+    <!-- seed head -->
+    <g transform="translate(203,150)">
+      <g>
+        <use href="#seed" transform="rotate(0) translate(0,0)"/>
+        <use href="#seed" transform="rotate(12)"/>
+        <use href="#seed" transform="rotate(24)"/>
+        <use href="#seed" transform="rotate(36)"/>
+        <use href="#seed" transform="rotate(48)"/>
+        <use href="#seed" transform="rotate(60)"/>
+        <use href="#seed" transform="rotate(72)"/>
+        <use href="#seed" transform="rotate(84)"/>
+        <use href="#seed" transform="rotate(96)"/>
+        <use href="#seed" transform="rotate(108)"/>
+        <use href="#seed" transform="rotate(120)"/>
+        <use href="#seed" transform="rotate(132)"/>
+        <use href="#seed" transform="rotate(144)"/>
+        <use href="#seed" transform="rotate(156)"/>
+        <use href="#seed" transform="rotate(168)"/>
+        <use href="#seed" transform="rotate(180)"/>
+        <use href="#seed" transform="rotate(192)"/>
+        <use href="#seed" transform="rotate(204)"/>
+        <use href="#seed" transform="rotate(216)"/>
+        <use href="#seed" transform="rotate(228)"/>
+        <use href="#seed" transform="rotate(240)"/>
+        <use href="#seed" transform="rotate(252)"/>
+        <use href="#seed" transform="rotate(264)"/>
+        <use href="#seed" transform="rotate(276)"/>
+        <use href="#seed" transform="rotate(288)"/>
+        <use href="#seed" transform="rotate(300)"/>
+        <use href="#seed" transform="rotate(312)"/>
+        <use href="#seed" transform="rotate(336)"/>
+        <use href="#seed" transform="rotate(348)"/>
+      </g>
+      <!-- inner shorter ring for depth -->
+      <g opacity="0.6" transform="scale(0.66)">
+        <use href="#seed" transform="rotate(6)"/>
+        <use href="#seed" transform="rotate(30)"/>
+        <use href="#seed" transform="rotate(54)"/>
+        <use href="#seed" transform="rotate(78)"/>
+        <use href="#seed" transform="rotate(102)"/>
+        <use href="#seed" transform="rotate(126)"/>
+        <use href="#seed" transform="rotate(150)"/>
+        <use href="#seed" transform="rotate(174)"/>
+        <use href="#seed" transform="rotate(198)"/>
+        <use href="#seed" transform="rotate(222)"/>
+        <use href="#seed" transform="rotate(246)"/>
+        <use href="#seed" transform="rotate(270)"/>
+        <use href="#seed" transform="rotate(294)"/>
+        <use href="#seed" transform="rotate(318)"/>
+        <use href="#seed" transform="rotate(342)"/>
+      </g>
+      <circle cx="0" cy="0" r="5" fill="#dfe6d2"/>
+      <circle cx="0" cy="0" r="2.4" fill="#b9c49f"/>
+    </g>
+
+    <!-- drifting seeds -->
+    <g opacity="0.9">
+      <g transform="translate(330,58) rotate(28) scale(0.7)"><use href="#seed"/></g>
+      <g transform="translate(372,132) rotate(52) scale(0.55)"><use href="#seed"/></g>
+      <g transform="translate(300,26) rotate(14) scale(0.5)"><use href="#seed"/></g>
+      <g transform="translate(56,44) rotate(-32) scale(0.62)"><use href="#seed"/></g>
+      <g transform="translate(20,120) rotate(-58) scale(0.48)"><use href="#seed"/></g>
+      <g transform="translate(352,232) rotate(78) scale(0.45)"><use href="#seed"/></g>
+    </g>
+
+    <!-- leaves -->
+    <path d="M199 300 C 170 296, 140 300, 116 288 C 134 286, 128 274, 146 274 C 132 268, 142 258, 158 262 C 152 252, 166 248, 178 258 C 186 264, 194 280, 199 292 Z" fill="#6f9a45"/>
+    <path d="M199 300 C 172 296, 146 292, 122 287" fill="none" stroke="#4d7a33" stroke-width="1.4"/>
+
+    <path d="M207 330 C 236 328, 268 336, 292 328 C 274 322, 282 312, 264 310 C 278 302, 266 292, 250 298 C 254 288, 240 284, 230 294 C 222 302, 212 318, 207 322 Z" fill="#7fa851"/>
+    <path d="M207 330 C 234 326, 262 328, 288 327" fill="none" stroke="#4d7a33" stroke-width="1.4"/>
+
+    <path d="M199 360 C 176 362, 152 372, 132 370 C 146 362, 138 354, 152 350 C 142 342, 154 336, 166 342 C 166 332, 180 334, 186 346 C 192 354, 197 356, 199 356 Z" fill="#5e8c3c"/>
+    <path d="M199 360 C 178 362, 156 368, 136 369" fill="none" stroke="#3f6b2a" stroke-width="1.3"/>
+  </g>
+</svg>

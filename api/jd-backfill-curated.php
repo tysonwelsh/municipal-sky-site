@@ -33,6 +33,19 @@
 require_once __DIR__ . '/jd-config.php';
 require_once __DIR__ . '/jd-curated-sync.php';
 
+// Dataset v1 frozen (JD_V1_FROZEN, jd-config.php): file nothing. Plain text in
+// this script's own voice, not the JSON 410 the other v1 writers answer: the
+// deploy workflow calls this after every upload and fails unless a line starts
+// with "done", so the frozen answer is a 200 whose one line starts "done" and
+// the deploy stays green. A no-op until the cutover.
+if (JD_V1_FROZEN) {
+    if (PHP_SAPI !== 'cli') {
+        header('Content-Type: text/plain; charset=utf-8');
+    }
+    echo "done — dataset v1 is frozen (JD_V1_FROZEN); nothing filed\n";
+    exit(0);
+}
+
 // jd-config.php turns display_errors off, which for a maintenance script means
 // a failure arrives as a blank 500. Report it here instead.
 set_error_handler(function ($no, $str, $file, $line) {
