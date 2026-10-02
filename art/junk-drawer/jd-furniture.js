@@ -90,7 +90,8 @@
        · it is injected here, not by the loader, so it is in no entry, no
          inventory line, no count, no legend, and data.php has never heard of
          it. Its reserved id 'jd-turn-object' cannot collide with an item id
-         (those are <YYYY-MM-DD>-<slug>) or a won item's gen_id (a UUID);
+         (a prompt id since dataset v2, a 26-character ULID — a won item
+         carries the same one; v1's were <YYYY-MM-DD>-<slug>);
        · the one dev iteration that walks the pile semantically (copy-layout)
          excludes it.
 

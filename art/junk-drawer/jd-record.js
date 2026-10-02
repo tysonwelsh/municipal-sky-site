@@ -506,6 +506,34 @@
       'aria-label="' + word + ' in the ranking">' + m + '</span>';
   }
 
+  /* THE HEAD TO HEAD ON THE STRIP (dataset v2, 2026-10-01). Each drawing's
+     results in the sitting's pair scores (data.php's item.pairs: {a, b:
+     rid, score, positive = a preferred}) as one quiet line under its grade
+     — "beat 2 · lost 1" — with the per-opponent scores in the tooltip.
+     Counted from the scores served, never re-derived here; an item with
+     no pairs (one drawing, or a sitting that filed none) prints nothing. */
+  function h2hHTML(entry, rid) {
+    var won = 0, level = 0, lost = 0, vs = [], derived = false;
+    (entry.pairs || []).forEach(function (p) {
+      var s = p.a === rid ? +p.score : p.b === rid ? -p.score : NaN;
+      if (!isFinite(s)) return;
+      if (s > 0) won++; else if (s < 0) lost++; else level++;
+      if (p.source === 'derived') derived = true;
+      var other = entry.responses[respIndex(entry, p.a === rid ? p.b : p.a)];
+      vs.push('vs ' + modelOf(other && other.model).label + ' ' +
+        (s > 0 ? '+' + s : s < 0 ? '\u2212' + (-s) : '0'));
+    });
+    if (!vs.length) return '';
+    var words = [];
+    if (won) words.push('beat ' + won);
+    if (level) words.push('level ' + level);
+    if (lost) words.push('lost ' + lost);
+    var tip = 'Head to head' + (derived ? ' (derived from the ranking)' : '') +
+      ': preferred over ' + won + ' of ' + vs.length + ' — ' + vs.join(', ');
+    return '<span class="rc-alt-h2h" title="' + esc(tip) + '">' +
+      esc(words.join(' · ')) + '</span>';
+  }
+
   function altsHTML(entry, curIdx) {
     if (!entry.responses || entry.responses.length < 2) return '';
     var n = entry.responses.length, paged = n > 3;
@@ -533,6 +561,7 @@
         '<span class="rc-alt-grade' +
         (g.rank ? ' rc-g' + Math.round(g.rank) : '') + '">' +
         medalHTML(r.rank) + esc(g.label) + '</span>' +
+        h2hHTML(entry, r.rid) +
         '</span></button>';
     });
     h += '</div>';
@@ -1237,13 +1266,17 @@
   /* ADMIN MODE — THE INLINE EDITOR (owner, 2026-09-10; it replaced the
      2026-09-05 ADJUST RATINGS hand-off to the bench card, which the owner
      found roundabout). With the key verified, the grades table renders its
-     grades as the scales themselves, each holding the value on file, and
-     one button files the shown response's grade and axes through
-     jd-item-rate.php — a curated item by entry id + rid (the server files
-     any response the database never held), a turn by submission +
-     generation. On success the payload learns the values, the card repaints
-     from it, and the pile tag follows if the shown response is the one the
-     drawer displays. Ranks and sizes stay the bench's business. */
+     grades as the scales themselves, each holding the value on file.
+     DATASET v2 (2026-10-01): SAVE RATINGS files a NEW OWNER SESSION on the
+     item's shown run through api/jd2-rate.php — sessions are append-only,
+     nothing is overwritten. The session carries the whole current standing:
+     every drawing's grade and axes as the drawer shows them, with the shown
+     response's cells replaced by the edits; the ranking and the pair scores
+     unchanged from the display session (read off the item payload). It is
+     filed blind:false — the owner reads the model names on this card. On
+     success the payload learns the values, the card repaints from it, and
+     the pile tag follows if the shown response is the one the drawer
+     displays. Sizes stay the bench's business. */
   function editable(entry) {
     return !!(window.JD_admin && JD_admin.isVerified() && entry && !entry.visitor);
   }
@@ -1264,30 +1297,116 @@
     var el = scrollEl && scrollEl.querySelector('.rc-edit-status');
     if (el) el.textContent = text || '';
   }
+  /* gen_id → slot for the entry's shown run. jd2-rate names drawings by
+     SLOT, and data.php's responses carry gen_id and place but no slot, so
+     the map comes from a response's own `slot` when the payload has one
+     (a future data.php, or a visitor's local record) and otherwise from
+     jd2-curate.php's standing — read with the one request that changes
+     nothing: re-stating a SHOWN drawing as not hidden (every drawing on
+     the card is, or data.php would not serve it). Cached on the entry.
+     Resolves the map, or a string error code. */
+  function slotMap(entry) {
+    if (entry._slots) return Promise.resolve(entry._slots);
+    var map = {}, all = true;
+    entry.responses.forEach(function (r) {
+      if (r.gen_id && r.slot) map[r.gen_id] = r.slot; else all = false;
+    });
+    if (all) { entry._slots = map; return Promise.resolve(map); }
+    var probe = entry.responses[0];
+    return adminPost('/api/jd2-curate.php', { generation_id: probe.gen_id, hidden: false })
+      .then(function (j) {
+        if (!j || !j.ok) return (((j || {}).error || {}).code || 'network');
+        (j.runs || []).forEach(function (run) {
+          if (run.id !== entry.run_id) return;
+          (run.generations || []).forEach(function (g) { map[g.id] = g.slot; });
+        });
+        var missing = entry.responses.some(function (r) { return !map[r.gen_id]; });
+        if (missing) return 'slots_unknown';
+        entry._slots = map;
+        return map;
+      }, function () { return 'network'; });
+  }
+  /* one drawing's filed cells as jd2-rate takes them: the grade, and every
+     axis with its remark when it carries one */
+  function cellsOf(slot, grade, annotations, out) {
+    if (grade != null) out.push({ slot: slot, kind: 'grade', value: grade });
+    Object.keys(annotations || {}).forEach(function (a) {
+      var cur = annotations[a];
+      var v = (cur && typeof cur === 'object') ? cur.value : cur;
+      if (v == null) return;
+      var cell = { slot: slot, kind: 'axis', axis_id: a, value: +v };
+      if (cur && typeof cur === 'object' && cur.note) cell.note = cur.note;
+      out.push(cell);
+    });
+  }
   function saveRatings() {
     if (!curEntry || saving || !editable(curEntry)) return;
-    var resp = curResponse();
+    var entry = curEntry, resp = curResponse();
     var axes = {}, grade = null;
     scrollEl.querySelectorAll('select.rc-edit[data-axis]').forEach(function (sel) {
       if (sel.value !== '') axes[sel.getAttribute('data-axis')] = +sel.value;
     });
     var g = scrollEl.querySelector('select.rc-edit[data-grade]');
     if (g && g.value !== '') grade = +g.value;
-    var one = { grade: grade, axes: axes };
-    var body;
-    if (curEntry.fromTurn) {
-      one.generation_id = resp.gen_id;
-      body = { submission_id: curEntry.submission_id, responses: [one] };
-    } else {
-      one.rid = resp.rid;
-      body = { item_id: curEntry.id, responses: [one] };
+    /* a sitting whose pair scores were DERIVED (from a podium with gaps)
+       cannot be re-stated from here: the payload carries the derived
+       scores but not the gaps they came from, and re-filing them as asked
+       would mislabel them. No client files gaps yet; this is the guard for
+       the day one does. */
+    if ((entry.pairs || []).some(function (p) { return p.source === 'derived'; })) {
+      setStatus('⚠ not saved (this sitting’s head-to-head was derived — re-rate it on the bench)');
+      return;
     }
     saving = true;
     setStatus('saving…');
-    adminPost('/api/jd-item-rate.php', body).then(function (j) {
+    slotMap(entry).then(function (slots) {
+      if (typeof slots === 'string') return { ok: false, error: { code: slots } };
+      var ratings = [];
+      entry.responses.forEach(function (r) {
+        var mine = r === resp;
+        var ann = r.annotations || {};
+        if (mine) {
+          /* the edited cells over the filed ones; an axis the owner set back
+             to "not assessed" leaves the session (its note goes with it) */
+          var merged = {};
+          Object.keys(axes).forEach(function (a) {
+            var cur = ann[a];
+            merged[a] = (cur && typeof cur === 'object' && cur.note)
+              ? { value: axes[a], note: cur.note } : axes[a];
+          });
+          ann = merged;
+        }
+        cellsOf(slots[r.gen_id], mine ? grade : r.grade, ann, ratings);
+      });
+      var ranked = entry.responses.length > 1 &&
+        entry.responses.every(function (r) { return r.rank >= 1; });
+      var ridSlot = {};
+      entry.responses.forEach(function (r) { ridSlot[r.rid] = slots[r.gen_id]; });
+      var pairs = (entry.pairs || []).filter(function (p) {
+        return ridSlot[p.a] && ridSlot[p.b];
+      }).map(function (p) {
+        return { slot_a: ridSlot[p.a], slot_b: ridSlot[p.b], score: +p.score };
+      });
+      return adminPost('/api/jd2-rate.php', {
+        run_id: entry.run_id,
+        client: JD_CLIENT,
+        blind: false,
+        ratings: ratings,
+        ranking: ranked ? entry.responses.map(function (r) {
+          return { slot: slots[r.gen_id], rank: r.rank };
+        }) : null,
+        pairs: pairs.length ? pairs : null
+      });
+    }).then(function (j) {
       saving = false;
       if (!j || !j.ok) {
         setStatus('⚠ not saved (' + (((j || {}).error || {}).code || 'network') + ')');
+        return undefined;
+      }
+      /* a sitting that is not complete files, but the drawer keeps standing
+         on the complete one before it (jd2_display_session) — say so */
+      if (j.complete === false) {
+        setStatus('⚠ filed, but incomplete — the drawer still shows the earlier sitting');
         return undefined;
       }
       /* the payload learns what the server now serves */
@@ -1338,17 +1457,16 @@
     tmp.innerHTML = html;
     cell.replaceChild(tmp.firstChild, old);
   }
-  /* HIDE FROM DRAWER (owner, 2026-09-10): the item's retire_requested_at,
-     set or cleared through jd-curate.php — the switch the bench's SCRAP
-     throws, now reversible, and live for curated items too (data.php holds
-     a hidden item back at request time). Filed by SAVE RATINGS with the
-     scales, only when the box changed. The pile loses or regains the
-     specimen on the spot. Resolves true on success. */
+  /* HIDE FROM DRAWER (owner, 2026-09-10): reversible, filed by SAVE RATINGS
+     with the scales, only when the box changed; the pile loses or regains
+     the specimen on the spot. Dataset v2 (2026-10-01): the prompt's ONE
+     display switch, jd2_prompts.visibility, through api/jd2-curate.php —
+     'hidden' (stamped hidden_by owner) or back to 'live'. Resolves true on
+     success. */
   function fileHidden(hide) {
-    var body = curEntry.fromTurn
-      ? { submission_id: curEntry.submission_id, retire: hide }
-      : { item_id: curEntry.id, retire: hide };
-    return adminPost('/api/jd-curate.php', body).then(function (j) {
+    var body = { prompt_id: curEntry.prompt_id || curEntry.id,
+      visibility: hide ? 'hidden' : 'live' };
+    return adminPost('/api/jd2-curate.php', body).then(function (j) {
       if (!j || !j.ok) return (((j || {}).error || {}).code || 'network');
       curEntry.hidden = hide;
       var el = pileItem(curEntry.id);

@@ -7,6 +7,8 @@ entries. It is written for a Claude Code session with ZERO prior context
 
 ## The one rule
 
+(v1 — superseded, see Dataset v2 below)
+
 **Committing files to this repo is the entire publishing act.** A push to
 `main` auto-deploys to production (`.github/workflows/deploy.yml`). Do not
 look for a database, an upload endpoint, or a build step — none exists for
@@ -84,6 +86,8 @@ data files are `.json`, art is `.svg`.
   writes nothing itself.
 
 ## Procedure: add a NEW item
+
+(v1 — superseded, see Dataset v2 below)
 
 > To GENERATE the SVG (rather than file one the owner pastes), use the
 > **`/junk-drawer-item` skill** (`.claude/skills/junk-drawer-item/`) — it
@@ -171,13 +175,51 @@ data files are `.json`, art is `.svg`.
 
 ## Procedure: add an ALTERNATIVE to an existing item
 
+(v1 — superseded, see Dataset v2 below)
+
 Find the item's directory, add the new `<model-slug>.svg`, APPEND one
 response object (next `rid`) to the existing `responses` array. Never
 reorder, renumber, or rewrite existing responses. Elicit grade/annotations
 as above. Validate, then commit:
 `junk-drawer: add <model> alternative to "<title>"`.
 
-## Ratings now live in the DATABASE (2026-08-18) — read this first
+## Dataset v2 (2026-10-01) — read this first
+
+The drawer at `/art/junk-drawer/` is dataset v2 (`PLAN-V2.md`, gitignored;
+tables and endpoints in `db/junk-drawer-v2-schema.md`).
+
+- **The database is the system of record.** `data.php` reads the `jd2_*`
+  tables and nothing else: live prompts → the shown run → its ok, unhidden
+  drawings → the display session (the owner's complete sitting, else the
+  visitor's). An item's `id` is the PROMPT id; it also carries `run_id`,
+  `prompt_id`, each response's `gen_id`, and `pairs` (`{a, b: rid, score
+  −3..+3, positive = a preferred, source}`). SVGs serve from the database
+  through `api/jd2-gen-svg.php`.
+- **The turn card files a SESSION.** `jd-turn.js` draws through
+  `api/jd2-generate.php` (answering `run_id`, `prompt_id`), names the object
+  through `jd2-title.php`, and files one sitting through `api/jd2-rate.php`:
+  ratings by slot, the podium's `ranking`, and `pairs` — the head-to-head
+  step after the podium (one card per pair of drawings, the 7-point
+  `taxonomy.comparison` scale, filed as `direct`). Visitors and the owner
+  sit the same card. The report card's admin editor files a NEW owner
+  session (sessions are append-only) carrying the current standing with
+  the edits; HIDE FROM DRAWER is `jd2-curate.php` `visibility`.
+- **The file path is retired** (owner, 2026-10-01): no `entry.json`, no
+  commit-to-add for new items — every drawing enters through the pipeline.
+  `items/` is the v1 archive, served only by `legacy/` (its own frozen
+  `data.php` and copies of the modules).
+- v2 keeps its own browser storage keys (`jd2-turn`, `jd2-consent`,
+  `jd2-user-items`, `jd2-device`, `jd2-scatter`); the legacy page keeps
+  the v1 names. Nothing was migrated.
+- Not yet re-pointed: `jd-bench.js` (`?bench`, Phase 4b) still files
+  v1-shaped through `jd-item-rate.php`; the curate card hands it the pairs
+  and it drops them.
+- Sections marked "(v1 — superseded …)" describe the v1 file-first
+  workflow; they stay until the cutover rewrite (PLAN-V2 Phase 5).
+
+## Ratings in the v1 DATABASE (2026-08-18)
+
+(v1 — superseded, see Dataset v2 above)
 
 **Annotations are no longer filed in `entry.json`.** Taxonomy v17 retired all
 9 previous axes at once, so every response needed re-rating; those judgments go
@@ -307,6 +349,8 @@ the bench's job now, not the entry file's.
 
 ## Procedure: harvest a RERUN into its item (first run: crystal ball, 2026-08-29)
 
+(v1 — superseded, see Dataset v2 above)
+
 A bench rerun files the item's prompt as a real visitor turn; its drawings
 and the owner's blind ratings live only in the DB. To commit them back:
 `GET api/jd-harvest.php?item=<item_id>` returns the rated rerun turns whole
@@ -335,6 +379,8 @@ stay untouched (permanent record). Validate, commit
 
 ## The card's cast (owner rule, 2026-08-30) — READ BEFORE HARVESTING
 
+(v1 — superseded, see Dataset v2 above)
+
 **Once an item has a rerun set, its card shows those four responses and
 nothing else.** The pre-rerun originals — the Claude-only trio from the
 app's building days — are RETIRED from display (`"retired": true`, which
@@ -346,6 +392,8 @@ one visible original, and every other original on that item still retires.
 non-rerun response except a filed keep (the pinned `primary`).
 
 ## Procedure: KEEP a legacy response as the drawer's display
+
+(v1 — superseded, see Dataset v2 above)
 
 The owner's exception to replace-with-the-rerun (2026-08-29): for some
 legacy items the ORIGINAL response — usually Claude Fable 5's — stays the
@@ -360,6 +408,8 @@ notes the call. Same full-rubric gate as harvests. Validate, commit,
 upload the entry.json.
 
 ## Procedure: regrade / annotate an existing response
+
+(v1 — superseded, see Dataset v2 above)
 
 Push the old grade into `grade_history` as
 `{"grade": <old rank number>, "date": <old graded date>, "taxonomy_version": <n>, "note": <why>}`,

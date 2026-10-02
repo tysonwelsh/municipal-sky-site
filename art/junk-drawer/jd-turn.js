@@ -12,8 +12,8 @@
    rate (the single bench: response A, response B, the call) → unveil.
    Two providers draw the same prompt in parallel
    and are labelled only A and B until the ratings are in — blindness is
-   enforced by the server (jd-generate never names a model), and this module
-   never learns an identity before jd-rate answers.
+   enforced by the server (jd2-generate never names a model), and this module
+   never learns an identity before jd2-rate answers.
 
    Conventions borrowed wholesale from JD_record, deliberately: scrim + card,
    role="dialog" aria-modal="true", Escape peels ONE layer (the enlargement,
@@ -33,11 +33,20 @@
    module owns the modal and the state machine and nothing about the control
    that summons it — which is why re-seating the trigger touched none of it. */
 (function () {
-  var API_GEN = '/api/jd-generate.php';
-  var API_RATE = '/api/jd-rate.php';
-  var API_TITLE = '/api/jd-title.php';
-  var K_TURN = 'jd-turn-v1', K_CONSENT = 'jd-consent-v1';
-  var K_ITEMS = 'jd-user-items-v1';   /* the scatter map's key is jd-core's JD_SCATTER_KEY */
+  /* DATASET v2 (2026-10-01, PLAN-V2 Phase 4a): the card files through the
+     jd2 endpoints — a turn is a RUN (run_id, prompt_id from jd2-generate),
+     and the filing is one SESSION on it (jd2-rate: ratings by slot, the
+     podium's ranking, and the head-to-head pairs). The v1 endpoints stay
+     for the legacy exhibit at /art/junk-drawer/legacy/, which keeps its own
+     copy of this file. */
+  var API_GEN = '/api/jd2-generate.php';
+  var API_RATE = '/api/jd2-rate.php';
+  var API_TITLE = '/api/jd2-title.php';
+  /* v2's own storage keys: the legacy page deletes jd-turn-v1 on every load
+     and keeps the v1 names, so the two drawers never read each other's
+     turn, consent record or won items. Nothing is migrated. */
+  var K_TURN = 'jd2-turn', K_CONSENT = 'jd2-consent';
+  var K_ITEMS = 'jd2-user-items';   /* the scatter map's key is jd-core's JD_SCATTER_KEY */
   /* MAX_PROMPT mirrors JD_PROMPT_MAX_CHARS in api/jd-config.php (500) — change both together */
   var MAX_PROMPT = 500, MAX_NOTE = 500, MAX_ITEMS = 5;
   var SLOW_MS = 60000;      /* past a minute the wait earns its own line */
@@ -49,14 +58,14 @@
   /* CURATE MODE (the re-rating bench, 2026-08-28): while this is set, the
      card is seated with an existing curated item's responses instead of a
      fresh turn — same bench, same rail, same podium, filed through the
-     contract's file() callback (JD_bench's jd-item-rate.php outbox) instead
-     of jd-rate.php. Null on every visitor turn. See curateOpen() below. */
+     contract's file() callback (JD_bench's outbox) instead of jd2-rate.php.
+     Null on every visitor turn. See curateOpen() below. */
   var curJob = null;
   /* set only at the go('reveal') that ends the darkroom wait: the next
      render draws the fresh plates on (see the hook at render()'s foot) */
   var revealFresh = false;
   var turn = null;          /* the persisted in-flight record (C5.3) */
-  var work = null;          /* the working copy: svgs, ratings, comparison */
+  var work = null;          /* the working copy: svgs, ratings, ranks, pairs */
   var token = 0;            /* per-turn token — a settling fetch from an
                                abandoned turn must not touch the live one */
   var lastFocus = null, instSeq = 0, slowTimer = 0;
@@ -204,6 +213,8 @@
       e.preventDefault();
       openZoom(p);
     });
+    /* the head-to-head's keys: 1–7 and the arrows pick, Enter advances */
+    card.addEventListener('keydown', onPairKey);
     /* the trap: Tab cycles inside whichever layer is on top */
     card.addEventListener('keydown', function (e) {
       if (e.key !== 'Tab') return;
@@ -853,6 +864,11 @@
       (opts.overlay
         ? '<span class="jd-pod-tag" aria-hidden="true">Model ' +
           slot.toUpperCase() + '</span>' + (opts.spark || '')
+        : '') +
+      /* the head-to-head's blind letter, pencilled over the artwork the
+         podium's way (aria-hidden: the art's own label names the drawing) */
+      (opts.label
+        ? '<span class="jd-pair-tag" aria-hidden="true">' + esc(opts.label) + '</span>'
         : '') +
       '</div>' +
       /* "Model A" since rounds 28–29 (owner): the Results view restyles this
@@ -1593,11 +1609,12 @@
     '<path d="M18 6 L15.5 11.5 M18 6 L20.5 11.5"/>' +
     '<path d="M14.5 11.5 A3.5 3.5 0 0 0 21.5 11.5"/></svg>';
   /* the steps this turn walks, in order: a drawing per surviving slot, the
-     ranking when there is more than one, and — curation only — the size
-     card that closes it (owner, 2026-08-30) */
+     ranking when there is more than one, then one head-to-head card per
+     unordered pair of survivors (dataset v2, 2026-10-01 — see THE HEAD TO
+     HEAD below), and the size card that closes it (owner, 2026-08-30) */
   function stepSeq() {
     var seq = okSlots();
-    if (seq.length > 1) seq = seq.concat(['call']);
+    if (seq.length > 1) seq = seq.concat(['call']).concat(pairSteps());
     if (sizeTiers().length) seq = seq.concat(['size']);
     return seq;
   }
@@ -1608,6 +1625,14 @@
     'stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" ' +
     'aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="1"/>' +
     '<rect x="9.5" y="9.5" width="5" height="5" rx="0.5"/></svg>';
+
+  /* the head-to-head's ring mark: two prints side by side, a rule between */
+  var RAIL_PAIRS =
+    '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" ' +
+    'stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" ' +
+    'aria-hidden="true"><rect x="2.5" y="6" width="7.5" height="12" rx="0.8"/>' +
+    '<rect x="14" y="6" width="7.5" height="12" rx="0.8"/>' +
+    '<path d="M12 3.5v17" stroke-width="1.1" stroke-dasharray="1.6 1.9"/></svg>';
 
   function railHTML(ok, tiers) {
     var steps = ok.map(function (s) {
@@ -1621,16 +1646,35 @@
       steps.push({ id: 'call', n: ok.length + 1, label: 'best to worst',
         face: RAIL_SCALES, word: 'ranking' });
     }
+    /* THE HEAD TO HEAD IS ONE NODE (2026-10-01): six pairs would be six more
+       rings — twelve on a 390px phone — so the docket carries a single
+       node for the whole run of pair cards, and its word counts the card
+       you stand on ("head to head 3/6"). It reads as reached once any pair
+       has been, and a press lands on the first pair still unanswered. */
+    var deck = pairDeck();
+    if (deck.length) {
+      var at = isPairStep(work.step) ? deck.indexOf(pairOf(work.step)) + 1 : 0;
+      steps.push({ id: 'pairs', n: steps.length + 1, label: 'head to head' +
+          (at ? ', ' + at + ' of ' + deck.length : ''),
+        face: RAIL_PAIRS, word: 'head to head',
+        count: at ? at + '/' + deck.length : '' });
+    }
     /* the size card closes a curation (owner, 2026-08-30): its ring wears
        the nested-squares mark — the scale itself, small inside large */
     if (tiers.length) {
       steps.push({ id: 'size', n: steps.length + 1, label: 'how big is it',
         face: RAIL_SIZE, word: 'size' });
     }
-    var h = '<div class="jd-rail" role="list">';
+    /* seven nodes outgrow a phone's sheet at the default link length: the
+       --long modifier shortens the connectors there (the CSS) */
+    var h = '<div class="jd-rail' + (steps.length > 6 ? ' jd-rail--long' : '') +
+      '" role="list">';
     steps.forEach(function (st, i) {
-      var current = work.step === st.id;
-      var reached = !!work.reached[st.id];
+      var pairsNode = st.id === 'pairs';
+      var current = pairsNode ? isPairStep(work.step) : work.step === st.id;
+      var reached = pairsNode
+        ? deck.some(function (p) { return !!work.reached[PAIR_PFX + p.key]; })
+        : !!work.reached[st.id];
       /* the link INTO a node is walked once that node has been reached —
          so the rule runs solid up to wherever the visitor has stood */
       if (i > 0) {
@@ -1643,14 +1687,16 @@
          CSS decides, keyed on width, data-view and the --call modifier */
       h += '<button type="button" role="listitem" class="jd-rail-step' +
         (st.id === 'call' ? ' jd-rail-step--call' : '') +
+        (pairsNode ? ' jd-rail-step--pairs' : '') +
         (current ? ' is-current' : reached ? ' is-done' : '') +
         '" data-act="step" data-step="' + st.id +
         '"' + (reached ? '' : ' disabled') +
         (current ? ' aria-current="step"' : '') +
         ' aria-label="step ' + st.n + ' — ' + esc(st.label) + '">' +
         '<span class="jd-rail-ring">' + st.face + '</span>' +
-        '<span class="jd-rail-word">' + esc(st.word || st.label) + '</span>' +
-        '</button>';
+        '<span class="jd-rail-word">' + esc(st.word || st.label) +
+        (st.count ? ' <span class="jd-rail-count">' + esc(st.count) + '</span>' : '') +
+        '</span></button>';
     });
     return h + '</div>';
   }
@@ -1857,14 +1903,218 @@
         (podRankOf(s) ? '' : podPrintHTML(s)) + '</div>';
     });
     h += '</div><span class="jd-vh jd-pod-live" role="status" aria-live="polite"></span></div>';
-    /* a curation has one more card after this one — the size (owner,
-       2026-08-30) — so the ranking hands on rather than filing */
-    var more = tiers.length;
+    /* the ranking hands on rather than filing when a card follows it: the
+       head to head (dataset v2, 2026-10-01) and/or the size (owner,
+       2026-08-30). The podium itself is untouched — only its button's
+       destination moved. */
+    var toPairs = pairDeck().length > 0;
+    var more = toPairs || tiers.length;
     return h + (more ? '' : suppressHTML()) + actions(
       '<button type="button" class="jd-turn-alt" data-act="back">&larr; back</button>' +
       '<button type="button" class="jd-turn-go" data-act="' +
       (more ? 'next' : 'file') + '"' + (callReady() ? '' : ' disabled') + '>' +
-      (more ? 'next — size &rarr;' : 'file the grades') + '</button>');
+      (toPairs ? 'next — head to head &rarr;'
+        : more ? 'next — size &rarr;' : 'file the grades') + '</button>');
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════
+     THE HEAD TO HEAD (dataset v2, PLAN-V2 §4 "A. Direct pairwise", owner
+     2026-10-01). After the podium, one card per UNORDERED PAIR of surviving
+     drawings — four drawings, six cards — each showing the two side by side
+     (stacked on a phone, the scale between them) under their blind letters,
+     with the 7-point comparison scale rendered from taxonomy.comparison:
+     the values and their labels are data, listed in display order, +3
+     ("the first much better") at the left end through 0 ("about the same")
+     to −3 at the right. "First" is the drawing on the left (on top, on a
+     phone); the letters at the scale's two ends say which that is.
+     One answer per pair is required (the button is gated as the bench's
+     is); back is always allowed. The podium stays exactly as it was and
+     comes first, so the owner's gaps card ("by how much", designed
+     elsewhere) can slot in after it without touching this one.
+
+     The answers live in work.pairs, keyed by the CANONICAL pair 'a|c'
+     (slot letters in order), the score signed the canonical way: positive
+     means the alphabetically-first slot was preferred — jd2_pairs' own
+     convention, so nothing is re-signed twice. Which drawing stood on the
+     left is dealt once per sitting (work.pairDeck: the pair order shuffled,
+     each pair's sides a coin toss) and filed as shown_left, so position
+     bias is measurable, as pair_order made it for slots in v1. Nothing is
+     derived here: the scores filed are exactly the ones asked.
+     ═══════════════════════════════════════════════════════════════════════ */
+  var PAIR_PFX = 'pair:';
+  function isPairStep(id) { return typeof id === 'string' && id.indexOf(PAIR_PFX) === 0; }
+  /* the scale, best-for-the-first first, as the taxonomy lists it; empty
+     when the payload carries none — then there is no pair step at all */
+  function compValues() {
+    var c = tax().comparison;
+    return (c && c.values && c.values.length) ? c.values : [];
+  }
+  /* the sitting's deal: every unordered pair of survivors once, in a
+     shuffled order, each with its sides tossed. Dealt on first need and
+     kept on `work`, so a repaint or a step back shows the same card. */
+  function pairDeck() {
+    if (!work) return [];
+    var ok = okSlots();
+    if (ok.length < 2 || !compValues().length) return [];
+    var sig = ok.join('');
+    if (work.pairDeck && work.pairDeck.sig === sig) return work.pairDeck.list;
+    var list = [];
+    for (var i = 0; i < ok.length; i++) {
+      for (var j = i + 1; j < ok.length; j++) {
+        var flip = Math.random() < 0.5;
+        list.push({ key: ok[i] + '|' + ok[j],
+          left: flip ? ok[j] : ok[i], right: flip ? ok[i] : ok[j] });
+      }
+    }
+    JD_shuffle(list);
+    work.pairDeck = { sig: sig, list: list };
+    return list;
+  }
+  function pairSteps() {
+    return pairDeck().map(function (p) { return PAIR_PFX + p.key; });
+  }
+  function pairOf(step) {
+    if (!isPairStep(step)) return null;
+    var k = step.slice(PAIR_PFX.length), deck = pairDeck();
+    for (var i = 0; i < deck.length; i++) if (deck[i].key === k) return deck[i];
+    return null;
+  }
+  /* the stored (canonical) score, read from the LEFT drawing's side — the
+     sign the card's own scale speaks in */
+  function pairLeftScore(p) {
+    var s = p && work.pairs ? work.pairs[p.key] : null;
+    if (s == null) return null;
+    return p.left === p.key.charAt(0) ? s : -s;
+  }
+  function firstOpenPair() {
+    var deck = pairDeck();
+    for (var i = 0; i < deck.length; i++) if (work.pairs[deck[i].key] == null) return deck[i];
+    return null;
+  }
+  function pairsDone() { return !firstOpenPair(); }
+  /* where the docket's one head-to-head node lands: the first pair still
+     unanswered once the visitor has reached it, else the first card */
+  function pairsEntry() {
+    var deck = pairDeck();
+    if (!deck.length) return null;
+    var open = firstOpenPair();
+    if (open && work.reached[PAIR_PFX + open.key]) return PAIR_PFX + open.key;
+    return PAIR_PFX + deck[0].key;
+  }
+  /* the line under the scale: the chosen value's label, or — before an
+     answer — the scale's own question, both from the taxonomy */
+  function pairSay(leftScore) {
+    var vals = compValues();
+    if (leftScore != null) {
+      for (var i = 0; i < vals.length; i++) {
+        if (+vals[i].value === leftScore) return vals[i].label || vals[i].id;
+      }
+    }
+    return (tax().comparison || {}).description || 'Which is better?';
+  }
+  function pairPanel(step, ok, tiers) {
+    var p = pairOf(step), deck = pairDeck();
+    if (!p) return '';
+    var idx = deck.indexOf(p), chosen = pairLeftScore(p);
+    var L = p.left.toUpperCase(), R = p.right.toUpperCase();
+    var descId = 'jd-pd-' + p.left + p.right;
+    var h = '<div class="jd-pair" data-pair="' + p.key + '">' +
+      '<div class="jd-pair-side jd-pair-side--l">' +
+      plate(p.left, { zoom: true, pin: true, label: 'Drawing ' + L }) + '</div>' +
+      '<div class="jd-pair-scale">' +
+      '<span class="jd-vh" id="' + descId + '">The first drawing is drawing ' + L +
+      ', on the left (above, on a narrow screen); the second is drawing ' + R +
+      '. Number keys 1 to ' + compValues().length + ' or the arrow keys choose; ' +
+      'Enter goes on.</span>' +
+      '<div class="jd-pair-stops" role="radiogroup" aria-label="Drawing ' + L +
+      ' against drawing ' + R + '" aria-describedby="' + descId + '">' +
+      '<span class="jd-pair-end jd-pair-end--l" aria-hidden="true">' +
+      '<i class="jd-pair-arr"></i>' + L + '</span>';
+    compValues().forEach(function (v) {
+      var val = +v.value, on = chosen != null && val === chosen;
+      /* roving tabindex: the chosen stop, or the middle before an answer */
+      var tab = on || (chosen == null && val === 0) ? '0' : '-1';
+      h += '<button type="button" class="jd-pair-stop' + (on ? ' is-on' : '') +
+        '" role="radio" aria-checked="' + (on ? 'true' : 'false') + '" tabindex="' + tab +
+        '" data-act="pairpick" data-score="' + val + '" data-mag="' +
+        Math.min(3, Math.abs(val)) + '" aria-label="' + esc(v.label || v.id) + '" title="' +
+        esc((v.label || v.id) + (v.description ? ' — ' + v.description : '')) + '">' +
+        '<span class="jd-pair-dot" aria-hidden="true"></span></button>';
+    });
+    h += '<span class="jd-pair-end jd-pair-end--r" aria-hidden="true">' + R +
+      '<i class="jd-pair-arr"></i></span></div>' +
+      '<p class="jd-pair-say' + (chosen != null ? ' is-set' : '') + '" aria-live="polite">' +
+      esc(pairSay(chosen)) + '</p></div>' +
+      '<div class="jd-pair-side jd-pair-side--r">' +
+      plate(p.right, { zoom: true, pin: true, label: 'Drawing ' + R }) + '</div></div>';
+    var next = deck[idx + 1];
+    var last = !next && !tiers.length;
+    var acts = '<button type="button" class="jd-turn-alt" data-act="back">&larr; back</button>' +
+      '<button type="button" class="jd-turn-go" data-act="' + (last ? 'file' : 'next') + '"' +
+      (chosen == null ? ' disabled' : '') + '>' +
+      (last ? 'file the grades' : next ? 'next pair &rarr;' : 'next — size &rarr;') +
+      '</button>';
+    return h + (last ? suppressHTML() : '') + actions(acts);
+  }
+  /* an answer lands IN PLACE — no repaint, so focus stays on the stop and
+     the keyboard can keep walking the scale. `leftScore` is the card's own
+     sign (positive = the left drawing); it is filed canonically. */
+  function pairPick(leftScore, focus) {
+    var p = pairOf(work && work.step);
+    if (!p) return;
+    work.pairs[p.key] = p.left === p.key.charAt(0) ? leftScore : -leftScore;
+    var root = bodyEl.querySelector('.jd-pair');
+    if (!root) return;
+    var hitEl = null;
+    Array.prototype.forEach.call(root.querySelectorAll('.jd-pair-stop'), function (s) {
+      var on = Number(s.getAttribute('data-score')) === leftScore;
+      s.classList.toggle('is-on', on);
+      s.setAttribute('aria-checked', on ? 'true' : 'false');
+      s.setAttribute('tabindex', on ? '0' : '-1');
+      if (on) hitEl = s;
+    });
+    var say = root.querySelector('.jd-pair-say');
+    if (say) { say.textContent = pairSay(leftScore); say.classList.add('is-set'); }
+    setDisabled('[data-act="next"], [data-act="file"]', false);
+    if (focus && hitEl) { try { hitEl.focus({ preventScroll: true }); } catch (e) {} }
+  }
+  /* the card's keys on a pair (the select-and-go convention the bench's
+     native selects already give): 1–7 pick a stop counting from the left,
+     ← → walk the scale from wherever it stands (↑ ↓ too, inside the
+     scale), Enter presses the card's forward button once an answer is in.
+     A press on any other button keeps its own Enter. */
+  function onPairKey(e) {
+    if (!isOpen || confirmOn || zoom.isOn() || state !== 'rate' || !work ||
+        !isPairStep(work.step)) return;
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    var t = e.target, tag = t && t.tagName;
+    if (tag === 'TEXTAREA' || tag === 'INPUT' || tag === 'SELECT') return;
+    var vals = compValues().map(function (v) { return +v.value; });
+    var cur = pairLeftScore(pairOf(work.step));
+    var k = e.key;
+    if (/^[1-9]$/.test(k) && Number(k) <= vals.length) {
+      e.preventDefault();
+      pairPick(vals[Number(k) - 1], true);
+      return;
+    }
+    var inScale = !!(t && t.closest && t.closest('.jd-pair-stops'));
+    var dir = k === 'ArrowLeft' ? -1 : k === 'ArrowRight' ? 1
+      : (inScale && k === 'ArrowUp') ? -1 : (inScale && k === 'ArrowDown') ? 1 : 0;
+    if (dir) {
+      if (t && t.closest && t.closest('.jd-rail')) return;
+      e.preventDefault();
+      var mid = vals.indexOf(0);
+      var i = cur == null ? (mid === -1 ? 0 : mid) + dir : vals.indexOf(cur) + dir;
+      pairPick(vals[Math.max(0, Math.min(vals.length - 1, i))], true);
+      return;
+    }
+    if (k === 'Enter') {
+      if (t && t.closest && t.closest('button, a, [role="button"]') &&
+          !t.closest('.jd-pair-stop')) return;
+      e.preventDefault();
+      var go = bodyEl.querySelector('.jd-turn-actions .jd-turn-go');
+      if (go && !go.disabled) go.click();
+    }
   }
 
   /* §4 the bench, §5 the call. Neither carries an instruction line: they are
@@ -1933,7 +2183,9 @@
        panel and its buttons all ask the same question of it */
     var tiers = sizeTiers(), sizes = tiers.length;
     /* a restored or degraded turn may hold a step that no longer exists */
-    if (work.step !== 'call' && work.step !== 'size' && ok.indexOf(work.step) === -1) {
+    if (isPairStep(work.step) && !pairOf(work.step)) work.step = ok.length > 1 ? 'call' : ok[0];
+    if (work.step !== 'call' && work.step !== 'size' && !isPairStep(work.step) &&
+        ok.indexOf(work.step) === -1) {
       work.step = ok[0];
     }
     if (work.step === 'call' && ok.length < 2) work.step = sizes ? 'size' : ok[0];
@@ -1941,12 +2193,16 @@
     work.reached[work.step] = true;
     var two = ok.length > 1;
     var call = work.step === 'call', size = work.step === 'size';
+    var pair = isPairStep(work.step);
+    var deck = pair ? pairDeck() : null;
     return head(size ? 'How big is it' : call ? 'Best to worst'
+        : pair ? 'Head to head · ' + (deck.indexOf(pairOf(work.step)) + 1) + ' of ' + deck.length
         : 'Grade drawing ' + work.step.toUpperCase(),
-      size ? 6 : call ? 5 : 4,
-      { view: size ? 'size' : call ? 'call' : 'bench' }) +
+      size ? 6 : (call || pair) ? 5 : 4,
+      { view: size ? 'size' : call ? 'call' : pair ? 'pair' : 'bench' }) +
       (two || sizes ? railHTML(ok, tiers) : '') +
-      (size ? sizePanel(tiers) : call ? callPanel(ok, tiers) : benchPanel(work.step, ok, tiers));
+      (size ? sizePanel(tiers) : call ? callPanel(ok, tiers)
+        : pair ? pairPanel(work.step, ok, tiers) : benchPanel(work.step, ok, tiers));
   }
 
   /* ---------- 7. unveil ---------------------------------------------------- */
@@ -1988,6 +2244,35 @@
     return '<span class="jd-pod-who"><b>' +
       esc((r && (r.label || r.model_id)) || 'unknown') + '</b>' + cost + '</span>';
   }
+  /* THE HEAD TO HEAD, SAID (dataset v2, 2026-10-01): under the podium, each
+     drawing's result in the pairs the visitor just answered, in plain words
+     and in place order — "preferred over 2 of 3", with any level calls
+     named. Counted from the session's own direct scores (work.pairs);
+     nothing is derived, and a sitting with no pairs prints nothing. */
+  function h2hHTML(ok) {
+    var deck = pairDeck();
+    if (ok.length < 2 || !deck.length) return '';
+    var rows = [];
+    for (var k = 1; k <= ok.length; k++) {
+      var s = podAt(k);
+      if (!s) continue;
+      var won = 0, level = 0, of = 0;
+      deck.forEach(function (p) {
+        var v = work.pairs[p.key];
+        if (v == null || p.key.indexOf(s) === -1) return;
+        of++;
+        var mine = p.key.charAt(0) === s ? v : -v;
+        if (mine > 0) won++; else if (mine === 0) level++;
+      });
+      if (!of) continue;
+      var r = revealFor(s);
+      rows.push('<li><b>' + esc((r && (r.label || r.model_id)) || ('Model ' + s.toUpperCase())) +
+        '</b> preferred over ' + won + ' of ' + of +
+        (level ? ', level with ' + level : '') + '</li>');
+    }
+    return rows.length
+      ? '<ul class="jd-pod-h2h" aria-label="head to head">' + rows.join('') + '</ul>' : '';
+  }
   function viewUnveil() {
     var ok = okSlots(), n = ok.length, k;
     var h = head('Who drew what', 6, { view: 'said' });
@@ -2008,7 +2293,7 @@
         '</div></div>';
     }
     steps += '</div><div class="jd-pod-floor" aria-hidden="true"></div></div>';
-    h += steps;
+    h += steps + h2hHTML(ok);
     /* the ones that never arrived: named, not staged */
     var lost = (work.reveal || []).filter(function (x) {
       return x.status && x.status !== 'ok';
@@ -2179,6 +2464,9 @@
       startTurn();
     } else if (act === 'rate') {
       ensurePayload().then(function () { go('rate'); }, function () { go('rate'); });
+    } else if (act === 'pairpick') {
+      /* a head-to-head answer — in place, see pairPick */
+      pairPick(Number(b.getAttribute('data-score')), true);
     } else if (act === 'step' || act === 'next' || act === 'back') {
       /* bench navigation. The whole panel re-renders (state lives in `work`,
          so nothing is lost) and focus lands back on the heading. */
@@ -2186,10 +2474,11 @@
       var at = seq.indexOf(work.step);
       /* the gate, held at the door as well as on the button (the disabled
          attribute is state the DOM could lose; this check can't) */
-      if (act === 'next' && work.step !== 'call' && work.step !== 'size'
-          && !benchRated(work.step)) return;
+      if (act === 'next' && !stepAnswered(work.step)) return;
       var dest = act === 'step' ? b.getAttribute('data-step')
         : seq[at + (act === 'next' ? 1 : -1)];
+      /* the docket's one head-to-head node stands for every pair card */
+      if (dest === 'pairs') dest = pairsEntry();
       if (dest && seq.indexOf(dest) !== -1) {
         work.step = dest;
         work.reached[dest] = true;
@@ -2212,7 +2501,16 @@
       if (hint && hint.parentNode) hint.parentNode.removeChild(hint);
     } else if (act === 'file') {
       /* the one-survivor bench files directly — same gate as next */
-      if (work.step !== 'call' && work.step !== 'size' && !benchRated(work.step)) return;
+      if (!stepAnswered(work.step)) return;
+      /* every pair needs its answer before anything files: one the rail
+         let the visitor skip past is where the card goes instead */
+      var openPair = firstOpenPair();
+      if (openPair) {
+        work.step = PAIR_PFX + openPair.key;
+        work.reached[work.step] = true;
+        render();
+        return;
+      }
       /* a curation files at the SIZE card, which closes it; the size is the
          owner's call and never defaulted (CLAUDE.md's filing rule) */
       if (curJob && work.step === 'size' && !work.size) return;
@@ -2256,6 +2554,15 @@
     }
   }
 
+  /* the forward gate, per step: a drawing's every scale, the full podium,
+     a pair's one answer; the size card gates its own button */
+  function stepAnswered(step) {
+    if (step === 'size') return true;
+    if (step === 'call') return callReady();
+    if (isPairStep(step)) return pairLeftScore(pairOf(step)) != null;
+    return benchRated(step);
+  }
+
   function blankWork() {
     var reached = {};
     reached[JD_SLOTS[0]] = true;
@@ -2272,6 +2579,10 @@
          survives as a permanent null, the podium having no margin. */
       step: JD_SLOTS[0], reached: reached,
       ranks: {},
+      /* THE HEAD TO HEAD's answers (dataset v2): canonical pair key 'a|c'
+         → score −3..+3, positive = the first slot preferred; pairDeck is
+         the sitting's deal of pair order and sides (see pairDeck) */
+      pairs: {}, pairDeck: null,
       winner: null, strength: null, reveal: null
     };
   }
@@ -2302,7 +2613,7 @@
        we never received. A random v4 (JD_uuid): it only has to be unique per
        visitor, the server never trusts it for anything but convergence */
     turn = {
-      client_ref: JD_uuid(), state: 'generating', submission_id: null,
+      client_ref: JD_uuid(), state: 'generating', run_id: null, prompt_id: null,
       slots: blankSlots()
     };
     persist();
@@ -2317,8 +2628,8 @@
        used to run on ("A crystal ball the kind a fortune teller might…").
        Fired here so it rides the darkroom wait, invisible; every failure
        path leaves work.title unset and shortTitle() carries on as before.
-       One retry after 4s covers the race where no slot's submission row
-       has landed yet (the endpoint answers no_turn until one has). */
+       One retry after 4s covers the race where no slot's prompt row has
+       landed yet (jd2-title answers no_turn until one has). */
     (function fetchTitle(attempt) {
       function retry() {
         setTimeout(function () {
@@ -2363,10 +2674,13 @@
   /* each slot lands on its own — the UI never waits for the full bench */
   function settleSlot(mine, slot, res) {
     if (mine !== token || !work || !turn) return;
+    /* the run and its prompt arrive with every answer that got that far —
+       a failed slot's envelope carries them too, when the server knew them */
+    if (res && res.run_id) turn.run_id = res.run_id;
+    if (res && res.prompt_id) turn.prompt_id = res.prompt_id;
     if (res && res.ok && res.svg) {
       work.slots[slot] = { status: 'ok', gen_id: res.gen_id, svg: res.svg };
       turn.slots[slot] = { status: 'ok', gen_id: res.gen_id };
-      if (res.submission_id) turn.submission_id = res.submission_id;
     } else {
       var err = (res && res.error) || {};
       work.slots[slot] = {
@@ -2374,7 +2688,6 @@
         message: err.message || '', retry_after: res && res.retry_after
       };
       turn.slots[slot] = { status: 'failed' };
-      if (res && res.submission_id) turn.submission_id = res.submission_id;
       JD_track('turn_error', err.code || 'server_error');
     }
     persist();
@@ -2415,34 +2728,48 @@
   }
 
   /* ---------- filing: one batch, then the only unveil ---------------------- */
+  /* the head-to-head answers on the wire: one per pair, named by SLOT, the
+     score signed from the LEFT drawing's side with shown_left saying which
+     that was (jd2-rate re-signs into canonical order). Null when the
+     sitting has no pairs — one survivor, or no comparison scale. The bench
+     callback gets the same list plus the job's generation ids. */
+  function pairsOut() {
+    var deck = pairDeck();
+    if (!deck.length) return null;
+    var out = [];
+    deck.forEach(function (p) {
+      var s = pairLeftScore(p);
+      if (s == null) return;
+      out.push({ slot_a: p.left, slot_b: p.right, score: s, shown_left: p.left });
+    });
+    return out.length ? out : null;
+  }
   function submitRatings() {
-    if (!turn || !turn.submission_id) { go('apology'); return; }
+    if (!turn || !turn.run_id) { go('apology'); return; }
     var ratings = [];
     okSlots().forEach(function (slot) {
-      var gen = work.slots[slot].gen_id, r = work.ratings[slot];
-      if (!gen) return;
-      if (r.grade != null) ratings.push({ gen_id: gen, kind: 'grade', value: r.grade });
+      var r = work.ratings[slot];
+      /* drawings are named by SLOT on the v2 wire — the server maps slot →
+         generation inside the run, so no id the client holds can file
+         onto a foreign run */
+      if (r.grade != null) ratings.push({ slot: slot, kind: 'grade', value: r.grade });
       Object.keys(r.axes).forEach(function (axisId) {
         if (r.axes[axisId] == null) return;
         /* values only — the per-axis note field left the survey with the
            rest of the note UI (owner request, 2026-08-12); the API still
            accepts notes, this client just never files one */
-        ratings.push({ gen_id: gen, kind: 'axis', axis_id: axisId, value: r.axes[axisId] });
+        ratings.push({ slot: slot, kind: 'axis', axis_id: axisId, value: r.axes[axisId] });
       });
-      if (r.flag) {
-        var f = { gen_id: gen, kind: 'flag' };
-        if (r.flagNote) f.note = r.flagNote.slice(0, MAX_NOTE);
-        ratings.push(f);
-      }
+      /* (no 'flag' row: v2 has no flag kind. The benched report path's
+         state — r.flag / r.flagNote — is kept for the day it returns with
+         a v2 home of its own.) */
     });
     /* THE CALL ON THE WIRE (podium, 2026-08-22). `ranking` is the real
-       answer now: one entry per surviving slot, ranks dense from 1, exactly
-       one 1st — the podium can't produce anything else. `comparison` is sent
-       alongside it exactly as before, naming the rank-1 slot, so nothing
-       downstream regresses and a cached older client posting only a
-       comparison still means the same thing. strength is permanently null:
-       the podium has no margin. Both are null in the degraded one-slot
-       path, where there is no call at all. */
+       answer: one entry per surviving slot, ranks dense from 1, exactly one
+       1st — the podium can't produce anything else; no gaps yet (the owner's
+       "by how much" card will add them). v1's `comparison` is no longer
+       sent: the head to head is `pairs`. Both are null in the degraded
+       one-slot path, where there is no call at all. */
     var okNow = okSlots();
     var ranking = null;
     if (okNow.length > 1 && callReady()) {
@@ -2450,8 +2777,9 @@
         return { slot: s, rank: podRankOf(s) };
       }).sort(function (p, q) { return p.rank - q.rank; });
     }
+    var dev = window.JD_deviceRef ? JD_deviceRef(false) : null;
     var body = {
-      submission_id: turn.submission_id,
+      run_id: turn.run_id,
       client: JD_CLIENT,
       /* the object's name and the visitor's wish about showing it — both
          belong to the record now that a rated turn joins the drawer */
@@ -2460,10 +2788,12 @@
       size: work.size || null,
       ratings: ratings,
       ranking: ranking,
-      comparison: okNow.length > 1
-        ? { winner: ranking ? ranking[0].slot : work.winner, strength: null }
-        : null
+      pairs: pairsOut()
     };
+    /* the device code the turn already sent with its generations, so the
+       sitting is stamped with it too (jd2_sessions.device_ref); never made
+       here — only a turn makes one */
+    if (dev) body.device_ref = dev;
     /* same guard as a generation (C5.4): the filing is not aborted when the
        turn is abandoned, so its answer has to identify the turn it belongs
        to or it lands on whatever turn is live when it arrives */
@@ -2475,7 +2805,7 @@
   }
   /* the two filing presses — the card's own button and the failure card's
      retry — file the same way: a curation through its job, a turn to
-     jd-rate */
+     jd2-rate */
   function fileNow() {
     if (curJob) curateFile(); else submitRatings();
   }
@@ -2508,6 +2838,10 @@
       return;
     }
     work.reveal = res.reveal || [];
+    if (turn) {
+      if (res.run_id) turn.run_id = res.run_id;
+      if (res.prompt_id) turn.prompt_id = res.prompt_id;
+    }
     var ok = okSlots();
     JD_track('turn_complete', ok.length > 1 ? (work.winner || 'tie') : 'degraded');
     /* the winner is placed from the reveal payload — a degraded turn keeps
@@ -2540,6 +2874,13 @@
     if (src.cost_usd != null) o.cost_usd = src.cost_usd;
     return o;
   }
+  /* A WON ITEM'S IDENTITY IS ITS PROMPT (dataset v2, 2026-10-01): data.php
+     serves a turn as the item whose id is the prompt id, so the visitor's
+     local copy takes the same id — the pile loader's de-dup, the scatter
+     seat, the size jitter and the #<id> deep link all agree before and after
+     a reload. The winning gen_id stands in only for a record that somehow
+     lacks a prompt id. */
+  function recId(rec) { return (rec && (rec.prompt_id || rec.gen_id)) || ''; }
   function placeWinner(slot) {
     var s = work.slots[slot];
     if (!s || s.status !== 'ok' || !s.svg) return;
@@ -2547,10 +2888,15 @@
     var r = work.ratings[slot];
     var rec = {
       gen_id: s.gen_id,
-      submission_id: turn.submission_id,
+      slot: slot,
+      run_id: turn.run_id,
+      prompt_id: turn.prompt_id,
+      rank: podRankOf(slot) || (okSlots().length === 1 ? 1 : null),
+      /* the sitting's head-to-head answers, canonical (see work.pairs) */
+      pairs: work.pairs || {},
       svg: s.svg,
       prompt: work.prompt,
-      /* the model-written tag title (jd-title.php); records without one
+      /* the model-written tag title (jd2-title.php); records without one
          fall back to shortTitle(prompt) wherever they're read */
       title: work.title || null,
       model_id: rv.model_id || '',
@@ -2575,7 +2921,9 @@
        record-keeping, not extra items. Records persisted before the trio
        carry a single `also` object; new ones carry `others` (array), and
        registerRecord reads both. */
-    var others = okSlots().filter(function (x) { return x !== slot; });
+    /* in place order, as data.php serves a turn (rid r1 = 1st, r2 = 2nd…) */
+    var others = okSlots().filter(function (x) { return x !== slot; })
+      .sort(function (x, y) { return (podRankOf(x) || 99) - (podRankOf(y) || 99); });
     rec.others = [];
     others.forEach(function (other) {
       var os = work.slots[other];
@@ -2584,7 +2932,7 @@
         /* the losers' costs file too — the card's "same prompt" strip shows
            every option, and each response's notes state their own spend */
         rec.others.push(withCost({
-          gen_id: os.gen_id, svg: os.svg,
+          gen_id: os.gen_id, svg: os.svg, slot: other, rank: podRankOf(other) || null,
           model_id: orv.model_id || '', label: orv.label || '',
           grade: work.ratings[other].grade,
           annotations: ratingAnnotations(work.ratings[other])
@@ -2593,7 +2941,7 @@
     });
     if (!rec.others.length) delete rec.others;
     var list = JD_store.get(K_ITEMS) || [];
-    list = [rec].concat(list.filter(function (x) { return x.gen_id !== rec.gen_id; }));
+    list = [rec].concat(list.filter(function (x) { return recId(x) !== recId(rec); }));
     if (list.length > MAX_ITEMS) list = list.slice(0, MAX_ITEMS);
     /* one 300KB SVG × 5 is the worst case; on a quota refusal drop the oldest
        and try once more, then give up — the item still shows this page-load */
@@ -2626,11 +2974,12 @@
   function dropIntoPile(rec, animate, batch) {
     var pile = document.querySelector('.jd-pile');
     if (!pile || !rec || !rec.svg || !window.JD_svgInst) return null;
-    if (pile.querySelector('[data-id="' + rec.gen_id + '"]')) return null;
+    var id = recId(rec);
+    if (pile.querySelector('[data-id="' + id + '"]')) return null;
     var title = rec.title || shortTitle(rec.prompt);
     var el = document.createElement('div');
     el.className = 'jd-item jd-item--visitor';
-    el.dataset.id = rec.gen_id;
+    el.dataset.id = id;
     el.dataset.scale = 1;
     el.dataset.title = title;
     el.dataset.model = rec.label || '';
@@ -2652,12 +3001,13 @@
        drawer framed exactly as it was on the bench. */
     if (window.JD_fitView) window.JD_fitView(el.querySelector('svg'), 'gen:' + rec.gen_id);
     if (window.JD_applySize) {
-      window.JD_applySize(el, JD_tierBox(tax(), rec.sizeClass || VISITOR_TIER), rec.gen_id, 1);
+      window.JD_applySize(el, JD_tierBox(tax(), rec.sizeClass || VISITOR_TIER), id, 1);
     }
     /* position: the visitor's own scatter entry, reused across reloads the
-       way every other item's is */
+       way every other item's is — under the item id, so the drawer's own
+       copy of this turn lands in the same seat after a reload */
     var map = JD_store.get(JD_SCATTER_KEY) || {};
-    var p = map[rec.gen_id];
+    var p = map[id];
     /* the pile's rect and the item's, read once for both uses below (a
        fresh spot, the corner push) — nothing between them writes */
     var host_ = null, r_ = null;
@@ -2666,7 +3016,7 @@
     }
     if (!p) {
       p = freshSpot(host_, r_);
-      map[rec.gen_id] = p;
+      map[id] = p;
       JD_store.set(JD_SCATTER_KEY, map);
     }
     /* pushed clear of the turn button's reserved corner at apply time, same as
@@ -2728,6 +3078,9 @@
          jd-record.js, fitView in jd-core.js) */
       rid: rid, file: src.gen_id + '.svg', gen_id: src.gen_id, model: src.model_id, date: day,
       generation: { mode: 'one-shot', prompt_count: 1 },
+      /* the place on the podium (the strip's medal) and the slot — data.php's
+         response shape carries the first; the slot maps the pairs below */
+      rank: src.rank != null ? src.rank : null, slot: src.slot || null,
       grade: src.grade, annotations: src.annotations || {},
       /* a data: URL, and the ONLY thing the card may do with it is hang it
          off the download link — the entry's `visitor: true` (registerRecord)
@@ -2744,12 +3097,14 @@
      shared gesture code we are not allowed to special-case. */
   function registerRecord(rec, title) {
     if (!payload || !payload.items || !window.JD_record) return false;
-    if (byId(payload.items, rec.gen_id)) return true;   /* already filed */
+    var id = recId(rec);
+    if (byId(payload.items, id)) return true;   /* already filed */
     var file = rec.gen_id + '.svg';
     var day = String(rec.won_at || '').slice(0, 10);
     var responses = [respFor('r1', rec, day)];
     var primed = {};
-    primed[rec.gen_id + '/' + file] = rec.svg;
+    /* the card's cache key is entry id + file (cacheKey in jd-record.js) */
+    primed[id + '/' + file] = rec.svg;
     /* the turn's OTHER responses file as r2, r3 (owner request, 2026-08-12;
        trio-generalized 2026-08-14), so the card's "same prompt" strip shows
        every option with the grades the visitor gave each. `primary: 'r1'`
@@ -2762,12 +3117,25 @@
       if (!alt.svg || !alt.gen_id) return;
       var afile = alt.gen_id + '.svg';
       responses.push(respFor('r' + (ai + 2), alt, day));
-      primed[rec.gen_id + '/' + afile] = alt.svg;
+      primed[id + '/' + afile] = alt.svg;
+    });
+    /* the head-to-head, in data.php's item shape: {a: rid, b: rid, score
+       (positive = a preferred), source} — the record's canonical slot-keyed
+       answers mapped onto this entry's rids */
+    var ridOf = {};
+    responses.forEach(function (r) { if (r.slot) ridOf[r.slot] = r.rid; });
+    var pairs = [];
+    Object.keys(rec.pairs || {}).forEach(function (k) {
+      var ab = k.split('|');
+      if (ridOf[ab[0]] && ridOf[ab[1]] && rec.pairs[k] != null) {
+        pairs.push({ a: ridOf[ab[0]], b: ridOf[ab[1]], score: rec.pairs[k], source: 'direct' });
+      }
     });
     payload.items.unshift({
-      id: rec.gen_id, title: title, prompt: rec.prompt, created: day,
+      id: id, run_id: rec.run_id || null, prompt_id: rec.prompt_id || null,
+      title: title, prompt: rec.prompt, created: day,
       visitor: true, sizeClass: rec.sizeClass || VISITOR_TIER, primary: 'r1',
-      responses: responses
+      responses: responses, pairs: pairs
     });
     window.JD_record.setData(payload, primed);
     return true;
@@ -2823,7 +3191,7 @@
     var pile = document.querySelector('.jd-pile');
     storedWon().forEach(function (rec) {
       if (!rec || !rec.gen_id) return;
-      var el = pile && pile.querySelector('[data-id="' + rec.gen_id + '"]');
+      var el = pile && pile.querySelector('[data-id="' + recId(rec) + '"]');
       if (!el) return;                /* not in the drawer, so no card for it */
       labelItem(el, rec);
       markCard(el, registerRecord(rec, rec.title || shortTitle(rec.prompt)));
@@ -2874,8 +3242,10 @@
          shuffled order, so the letter says nothing about the model. Ratings
          key on generation ids, so a reshuffle on a later resume changes
          nothing recorded. The names still wait for the unveil.
-       — filing goes through the job's file() callback (jd-item-rate.php,
-         which replaces this curator's prior answers) instead of jd-rate.php.
+       — filing goes through the job's file() callback (JD_bench's outbox)
+         instead of jd2-rate.php. The head to head runs here too (the one
+         instrument), and its answers go to file() as a third argument —
+         see curateFile.
        — resume is server-truth: answers already filed arrive prefilled, the
          rail opens at the first unfinished drawing, and a fully-answered
          item opens on the podium.
@@ -2936,13 +3306,21 @@
       var ranked = ok.length < 2 || ok.every(function (s2) {
         return work.ranks[s2] >= 1;
       });
+      /* the head to head resumes after a full podium: no v1 job carries
+         pair answers, so a ranked item opens on its first pair (2026-10-01) */
+      var openPair = ranked ? firstOpenPair() : null;
       if (firstOpenSlot) {
         work.step = firstOpenSlot;
+      } else if (openPair) {
+        work.step = PAIR_PFX + openPair.key;
+        work.reached.call = true;
+        work.reached[work.step] = true;
       } else if (sizeStep && ranked && !work.size) {
         work.step = 'size';
         work.reached.size = true;
         ok.forEach(function (s2) { work.reached[s2] = true; });
         if (ok.length > 1) work.reached.call = true;
+        pairSteps().forEach(function (st) { work.reached[st] = true; });
       } else if (ok.length > 1) {
         work.step = 'call';
         work.reached.call = true;
@@ -2959,7 +3337,14 @@
   /* filing, curate-shaped: the whole item goes through the job's file()
      callback as one batch — same moment the real flow files, same gate. The
      writes replace this curator's prior answers, so a retry after a partial
-     failure is safe by construction. */
+     failure is safe by construction.
+     THE PAIRS RIDE ALONG (dataset v2, 2026-10-01): file(per, size, pairs),
+     `pairs` the head-to-head answers in the jd2-rate wire shape ({slot_a,
+     slot_b, score, shown_left}, score from slot_a's side) plus gen_a/gen_b,
+     the job's own generation ids for those slots — or null. jd-bench.js
+     still files v1-shaped through jd-item-rate.php and its callback takes
+     two arguments, so it DROPS the pairs until Phase 4b re-points the bench
+     at jd2-rate; the /about/ walkthrough's no-op callback ignores them. */
   function curateFile() {
     if (!curJob) return;
     var ok = okSlots();
@@ -2975,8 +3360,15 @@
         rank: ok.length > 1 ? (podRankOf(s) || null) : null
       };
     });
+    var pairs = pairsOut();
+    if (pairs) {
+      pairs.forEach(function (p) {
+        p.gen_a = work.slots[p.slot_a].gen_id;
+        p.gen_b = work.slots[p.slot_b].gen_id;
+      });
+    }
     var mine = armFiling();
-    curJob.file(per, work.size || null).then(function () {
+    curJob.file(per, work.size || null, pairs).then(function () {
       if (mine !== token || !isOpen || !curJob) return;
       curateUnveil();
     }, function (err) {
