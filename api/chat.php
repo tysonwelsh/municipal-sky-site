@@ -4,15 +4,7 @@
 // Onomatopoeia Chatbot API (Claude + OpenAI)
 // --------------------
 
-// TEMPORARY DEBUG MODE - Remove after fixing
-$debug_mode = true;
-$debug_info = [];
-
-if ($debug_mode) {
-    ini_set('display_errors', 0); // Keep off to not break JSON
-    error_reporting(E_ALL);
-    $debug_info['error_log_location'] = ini_get('error_log');
-}
+ini_set('display_errors', 0); // Keep off to not break JSON
 
 // Set CORS headers
 header('Content-Type: application/json');
@@ -213,10 +205,6 @@ if ($recent >= CHAT_DAILY_CAP) {
 $claude_result = callClaude($message, $claude_key, $system_prompt, $temperature, $claude_model);
 $openai_result = callOpenAI($message, $openai_key, $system_prompt, $temperature, $openai_model);
 
-// Optional: log detailed results for debugging (safe, server-side only)
-error_log("Claude result: " . print_r($claude_result, true));
-error_log("OpenAI result: " . print_r($openai_result, true));
-
 // ----------------------------------------------------
 // Save conversation to database ($pdo from the cap check above)
 // ----------------------------------------------------
@@ -257,10 +245,6 @@ $output = [
     'model_a' => $claude_model,
     'model_b' => $openai_model
 ];
-
-if ($debug_mode) {
-    $output['debug'] = $debug_info;
-}
 
 echo json_encode($output);
 ?>

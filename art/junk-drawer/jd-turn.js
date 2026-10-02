@@ -541,9 +541,12 @@
          the page that carries the full disclosure. JD_CONSENT.text/.version
          are unchanged and still what gets recorded on submission — this is
          a change to what the card SHOWS, not what the visitor agrees to. */
+      /* 2026-10-01 (legal audit): the line now says the turn goes public,
+         because it does — jd-consent-6 */
       '<p class="jd-turn-fine">Sent to Anthropic, OpenAI, Moonshot AI and ' +
       'Google to be drawn and studied; a random code kept in your browser ' +
-      'links your turns — see our <a class="jd-turn-link" ' +
+      'links your turns. Once rated, your turn joins the public drawer ' +
+      'unless you keep it out — see our <a class="jd-turn-link" ' +
       'href="/privacy.php">privacy</a> page.</p>';
   }
 
