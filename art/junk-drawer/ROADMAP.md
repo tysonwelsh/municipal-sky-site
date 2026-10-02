@@ -6,6 +6,34 @@ in the gitignored PLAN-*.md docs.) Newest first within each section.
 
 ## Wanted
 
+### Dataset v2 follow-ons (owner, 2026-10-01)
+
+Decided alongside the v2 cutover (PLAN-V2.md, gitignored); none of these is
+part of the cutover build itself.
+
+- **Moderation before the public drawer.** A visitor's rated turn should
+  appear at once only on their own device (the YOURS tag, as today) and join
+  the public drawer only when the owner approves it from a dashboard; the
+  morning email digest (`onobot-digest`) lists the new submissions. The v2
+  schema reserves `jd2_prompts.approved_at` / `approved_by` for this. Until
+  it exists, fully rated turns join the drawer as they do now (the owner is
+  effectively the only visitor).
+- **The CSV batch runner.** The owner curates the prompt set into a CSV;
+  an owner-only runner reads it and generates every prompt's responses in
+  the background under the `bench` effort profile — one model per request,
+  four requests per prompt, never two drawings in one call — so the owner
+  never waits between prompts, then rates the backlog on the bench with the
+  side-by-side pairs card. Matching prompt text records `v1_item_id`
+  lineage automatically.
+- **Reassess the visitor thinking level.** Visitor turns run the `web`
+  profile (thinking turned down so the darkroom wait stays short); the
+  bench runs at each vendor's top setting. Once the pool is settled, decide
+  what visitors get and what it costs in wait time and spend.
+- **Model pool refresh** before the rating campaign: verify wire ids and
+  prices against the providers' lists, add `jd-prices.json` rows, bump
+  `poolVersion` in `taxonomy.json`, bump the consent version if the
+  provider list changes (privacy.php §4 must match).
+
 ### A basic vector editor on the report card (owner, 2026-09-11)
 
 **The idea:** let a visitor take a drawing apart on the report card — pick
