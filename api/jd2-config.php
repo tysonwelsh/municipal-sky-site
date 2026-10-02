@@ -63,6 +63,14 @@ const JD2_JUDGMENT_KIND = ['grade', 'axis'];
 /** jd2_pairs.source — asked as a head-to-head, or computed from a ranking. */
 const JD2_PAIR_SOURCE = ['direct', 'derived'];
 
+/**
+ * jd2_prompts.size_by — who set size_class last: the intake model, the owner
+ * (the bench's size card, jd2-curate, the batch runner's CSV) or the visitor
+ * (the turn card's size card, shown only when intake failed). An owner's size
+ * is never overwritten by the model (api/jd2-intake.php).
+ */
+const JD2_SIZE_BY = ['model', 'owner', 'visitor'];
+
 // ---------------------------------------------------------------------------
 // 2. Versions. The instrument is the rubric plus the comparison and gaps
 // scales plus the rules of a sitting; every session stamps it beside the

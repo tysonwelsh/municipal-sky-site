@@ -134,6 +134,19 @@ function jd2_ensure_column(PDO $db, string $table, string $column, string $mysql
 jd2_ensure_column($db, 'jd2_prompts', 'category', 'VARCHAR(32) NULL AFTER v1_item_id', 'TEXT NULL');
 jd2_ensure_column($db, 'jd2_sessions', 'note', 'TEXT NULL AFTER seat_order', 'TEXT NULL');
 
+// Intake (PLAN-INTAKE, 2026-10-02): the catalogue heading, the size tier and
+// the faceted classification one Sonnet call files on the prompt the moment
+// it is filed (api/jd2-intake.php). All additive, all nullable.
+$sizeByIn = jd2_setup_in(JD2_SIZE_BY);
+jd2_ensure_column($db, 'jd2_prompts', 'size_by', 'VARCHAR(16) NULL AFTER size_scale',
+    "TEXT NULL CHECK (size_by IS NULL OR size_by IN ($sizeByIn))");
+jd2_ensure_column($db, 'jd2_prompts', 'tags', 'TEXT NULL AFTER category', 'TEXT NULL');
+jd2_ensure_column($db, 'jd2_prompts', 'intake_version', 'VARCHAR(32) NULL AFTER tags', 'TEXT NULL');
+jd2_ensure_column($db, 'jd2_prompts', 'intake_model', 'VARCHAR(64) NULL AFTER intake_version', 'TEXT NULL');
+jd2_ensure_column($db, 'jd2_prompts', 'intake_json', 'TEXT NULL AFTER intake_model', 'TEXT NULL');
+jd2_ensure_column($db, 'jd2_prompts', 'intake_cost_usd', 'DECIMAL(10,6) NULL AFTER intake_json', 'DECIMAL(10,6) NULL');
+jd2_ensure_column($db, 'jd2_prompts', 'intake_at', 'DATETIME NULL AFTER intake_cost_usd', 'TEXT NULL');
+
 // --- the ground truth: are all seven there? ---------------------------------
 $jd2Tables = ['jd2_prompts', 'jd2_runs', 'jd2_generations', 'jd2_sessions',
               'jd2_judgments', 'jd2_rankings', 'jd2_pairs'];
@@ -188,6 +201,7 @@ function jd2_setup_mysql_ddl(): array
         'ses_status' => jd2_setup_words(JD2_SESSION_STATUS),
         'jkind'      => jd2_setup_words(JD2_JUDGMENT_KIND),
         'source'     => jd2_setup_words(JD2_PAIR_SOURCE),
+        'size_by'    => jd2_setup_words(JD2_SIZE_BY),
     ];
     return [
         'jd2_prompts' => "
@@ -199,6 +213,7 @@ CREATE TABLE IF NOT EXISTS jd2_prompts (
     created              DATETIME     NOT NULL,             -- filing time, UTC
     size_class           VARCHAR(2)   NULL,                 -- taxonomy.json sizeTiers id
     size_scale           DECIMAL(6,3) NULL,                 -- fine dial on the tier; NULL = 1
+    size_by              VARCHAR(16)  NULL,                 -- who set size_class last: {$w['size_by']} (JD2_SIZE_BY); owner is never overwritten by the model
     visibility           VARCHAR(16)  NOT NULL DEFAULT 'draft', -- THE display switch: {$w['visibility']} (JD2_VISIBILITY)
     hidden_by            VARCHAR(16)  NULL,                 -- who hid it: {$w['hidden_by']} (JD2_HIDDEN_BY); NULL unless hidden
     hidden_at            DATETIME     NULL,                 -- when it was hidden; NULL unless hidden
@@ -208,6 +223,12 @@ CREATE TABLE IF NOT EXISTS jd2_prompts (
     pinned_generation_id CHAR(26)     NULL,                 -- explicit display pin; NULL = the current session's 1st place
     v1_item_id           VARCHAR(64)  NULL,                 -- lineage: the archived v1 item this prompt descends from
     category             VARCHAR(32)  NULL,                 -- the owner's prompt-set category (free word; ROADMAP 2026-10-01)
+    tags                 TEXT         NULL,                 -- JSON {facet id: [heading id…]} (taxonomy.json facets), from intake or the owner
+    intake_version       VARCHAR(32)  NULL,                 -- the intake prompt's version (taxonomy.json intakeVersion) at write
+    intake_model         VARCHAR(64)  NULL,                 -- the wire model that answered intake ('mock' in dev)
+    intake_json          TEXT         NULL,                 -- JSON: the model's answer verbatim + usage + key slot, or the error of a failed intake
+    intake_cost_usd      DECIMAL(10,6) NULL,                -- the intake call's cost, priced at write time; NULL when unpriced
+    intake_at            DATETIME     NULL,                 -- when intake answered; NULL until it did (a failed intake leaves it NULL)
     visitor_hash         CHAR(64)     NULL,                 -- salted daily visitor hash; NULL for owner prompts
     device_ref           CHAR(36)     NULL,                 -- the browser's kept device UUID; NULL for owner prompts
     consent_version      VARCHAR(16)  NULL,                 -- JD_CONSENT_VERSION the visitor accepted; NULL for owner prompts
@@ -368,6 +389,7 @@ function jd2_setup_sqlite_ddl(): array
         'ses_status' => jd2_setup_in(JD2_SESSION_STATUS),
         'jkind'      => jd2_setup_in(JD2_JUDGMENT_KIND),
         'source'     => jd2_setup_in(JD2_PAIR_SOURCE),
+        'size_by'    => jd2_setup_in(JD2_SIZE_BY),
     ];
     $gapMax = JD2_GAP_MAX;
     $scoreMax = JD2_SCORE_MAX;
@@ -381,6 +403,7 @@ CREATE TABLE IF NOT EXISTS jd2_prompts (
     created              TEXT     NOT NULL,
     size_class           TEXT     NULL,
     size_scale           DECIMAL(6,3) NULL,
+    size_by              TEXT     NULL CHECK (size_by IS NULL OR size_by IN ({$in['size_by']})),
     visibility           TEXT     NOT NULL DEFAULT 'draft' CHECK (visibility IN ({$in['visibility']})),
     hidden_by            TEXT     NULL CHECK (hidden_by IS NULL OR hidden_by IN ({$in['hidden_by']})),
     hidden_at            TEXT     NULL,
@@ -390,6 +413,12 @@ CREATE TABLE IF NOT EXISTS jd2_prompts (
     pinned_generation_id TEXT     NULL,
     v1_item_id           TEXT     NULL,
     category             TEXT     NULL,
+    tags                 TEXT     NULL,
+    intake_version       TEXT     NULL,
+    intake_model         TEXT     NULL,
+    intake_json          TEXT     NULL,
+    intake_cost_usd      DECIMAL(10,6) NULL,
+    intake_at            TEXT     NULL,
     visitor_hash         TEXT     NULL,
     device_ref           TEXT     NULL,
     consent_version      TEXT     NULL,

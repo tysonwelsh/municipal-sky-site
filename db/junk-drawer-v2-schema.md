@@ -85,6 +85,7 @@ Every primary key is an app-generated ULID (`CHAR(26)`, time-ordered), so
 | `created` | filing time |
 | `size_class` | a `taxonomy.json` `sizeTiers` id |
 | `size_scale` | the fine dial on the tier, `DECIMAL(6,3)`; NULL = 1 |
+| `size_by` | who set `size_class` last: `model` \| `owner` \| `visitor` (`JD2_SIZE_BY`); NULL = no size on file. **`owner` is never overwritten by the model**: intake writes the size only when `size_by` is not `owner` |
 | `visibility` | the ONE display switch: `draft` \| `live` \| `hidden` (`JD2_VISIBILITY`); default `draft` |
 | `hidden_by`, `hidden_at` | who hid it (`owner` \| `visitor`, `JD2_HIDDEN_BY`) and when; NULL unless hidden |
 | `approved_at`, `approved_by` | reserved for the roadmap's approval dashboard (a visitor prompt joins the public drawer after the owner approves it); nothing writes them yet, and `approved_by` has no word list yet |
@@ -92,6 +93,12 @@ Every primary key is an app-generated ULID (`CHAR(26)`, time-ordered), so
 | `pinned_generation_id` | explicit display pin; NULL = the current session's 1st place |
 | `v1_item_id` | lineage: the archived v1 item this prompt descends from |
 | `category` | the owner's prompt-set category, a free word (ROADMAP, 2026-10-01); NULL for visitor prompts |
+| `tags` | the faceted classification, JSON `{"subject": [...], "treatment": [...], "probe": [...]}` — one key per `taxonomy.json` `facets` id, each a list of that facet's heading ids; NULL until intake answers. Written by intake, or by the owner through `jd2-curate` |
+| `intake_version` | the intake prompt's version (`taxonomy.json` `intakeVersion`, e.g. `intake-v1`) the answer was filed under; answers under different versions are not pooled |
+| `intake_model` | the wire model id that answered (`utility.intake.api_model`); `mock` in dev |
+| `intake_json` | JSON: the model's structured answer verbatim, its `usage`, `stop_reason` and the key SLOT that answered (`key`: the slot name, never any part of the key); on a failed intake, the error instead (`error`, `at`), so a failure shows on the ledger |
+| `intake_cost_usd` | `DECIMAL(10,6)`, the intake call priced at write time against `api/jd-prices.json`; NULL when unpriced (and for the mock) |
+| `intake_at` | when intake answered; NULL until it did. A failed intake leaves it NULL, so the next call retries |
 | `visitor_hash`, `device_ref`, `consent_version`, `consent_at`, `client_ref` | the visitor fields, as in v1; NULL for owner prompts. `client_ref` is `UNIQUE`, so a retried POST cannot file twice |
 
 Keys: `uq_jd2p_client_ref`; `idx_jd2p_visibility_created (visibility, created)`
@@ -437,3 +444,7 @@ id is hard-coded; no `jd_*` table is read.
   `jd2-analytics` with pairwise and Bradley–Terry), `scripts/jd2-export.py`,
   `scripts/jd2-batch-run.php`, `ledger.html` on v2; `jd2-generate` takes
   `v1_item_id`, `jd2-curate` takes `category`. No schema change.
+- 2026-10-02 — intake (PLAN-INTAKE): `jd2_prompts.size_by`, `tags`,
+  `intake_version`, `intake_model`, `intake_json`, `intake_cost_usd`,
+  `intake_at`, guarded additive migrations (in the CREATE too); the word list
+  `JD2_SIZE_BY` in `jd2-config.php`.
