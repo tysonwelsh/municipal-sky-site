@@ -151,6 +151,7 @@ include '../../includes/header.php';
 <script src="kolob-pitch.js?v=<?php echo ktl_v('kolob-pitch.js'); ?>"></script>
 <script src="kolob-tunes.js?v=<?php echo ktl_v('kolob-tunes.js'); ?>"></script>
 <script src="kolob-voices-band.js?v=<?php echo ktl_v('kolob-voices-band.js'); ?>"></script>
+<script src="kolob-guest-room.js?v=<?php echo ktl_v('kolob-guest-room.js'); ?>"></script>
 <script src="kolob-guest-trombones.js?v=<?php echo ktl_v('kolob-guest-trombones.js'); ?>"></script>
 <script src="trombone-lab.js?v=<?php echo ktl_v('trombone-lab.js'); ?>"></script>
 

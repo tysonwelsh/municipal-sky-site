@@ -73,10 +73,41 @@
 //    the hymnal's worker would load the list's own files in its order; with
 //    kolob-calendar.js missing, the guard names it in KOLOB._broken (the page
 //    keeps PLAY disabled) and loadcheck fails; with the calendar left off the
-//    list, the meeting room is found evaluated without it; with two of the
+//    list, the meeting room is found evaluated without it, and so with the
+//    meeting's plan (kolob-plan.js) left off (the meeting then cannot load,
+//    and the guard names it); with two of the
 //    composer's rooms swapped on the list, the worker follows the list; and
 //    a hymnal that names a room the list does not have is found unable to
 //    start its worker.
+// 14. The pure core composes what it composed (PLAN-REFACTOR §3.6):
+//    tools/golden.js on seeds 3, 7 and 22 against tools/golden/ — every kind
+//    matches, the trap (Math.random, Date.now) is never sprung, and the
+//    meeting's plan (kolob-plan.js) runs with the house shut, writes nothing
+//    it is handed and gives the same on fresh streams (PLAN-REFACTOR §3.4); the
+//    meeting it plans headless, with the pipes on, emits the harness's own
+//    events at the downbeat, in order (seed 3's morning is the organist's
+//    chorale prelude, which the planner draws only with the pipes on); a
+//    scratch copy with the Sacred Harp's tempo moved is found in the hymns
+//    of seed 3, the one of the three that sings it, and nowhere else; and a
+//    copy with a comment added is found unmoved, under another fingerprint;
+//    and a copy of kolob-plan.js whose seating reads the shared bag is
+//    found, the read named by the plan's file and line.
+// 15. The wrappers and the labs (PLAN-REFACTOR §3.7): tools/lends.js finds
+//    every BORROWED wrapper of this build exact and used, and fails a scratch
+//    copy with one wrapper that renames (foo calls S.now) and one that
+//    reorders (cueAt's lane and time swapped), naming both; tools/loadcheck.js
+//    finds every lab loading the house's rooms in its own order, and fails a
+//    copy with the singing school moved ahead of kolob-pitch.js on
+//    guests-lab's list (and so ahead of the scaffold, kolob-guest-room.js,
+//    which it reaches for first), naming the lab and the room's throw while
+//    the other labs load.
+// 16. The page in pieces (PLAN-REFACTOR §3.5): the harness's staff= draws
+//    seed 7's first 30 s on canvases that record, to the same digest twice,
+//    and a scratch copy of this build whose ink is one step bluer (C_INK
+//    [30, 77, 59] → [30, 77, 60]) draws to another; samecode.js --split holds
+//    a little closure cut in two to its moves (a name it reassigns read
+//    through the bag by a getter: SAME CODE), and fails a cut that takes that
+//    name once at load and one whose list changed a number, naming both.
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -456,6 +487,10 @@ function check(name, ok, detail) {
     check("the calendar left off the list: the meeting room is found evaluated without it (the page's guard cannot know)",
       off.code === 1 && failed(off).length === 1 && /^kolob-meeting\.js: evaluated before KOLOB\.Calendar stands/.test(failed(off)[0]) && line(off, "guard") === "nothing missing, KOLOB._broken unset",
       failed(off).join("; "));
+    const noplan = loadcheck(scratch("offlist-plan", (dir) => swap(dir, "_engine.php", "'kolob-plan.js', 'kolob-meeting.js',", "'kolob-meeting.js',")));
+    check("the plan left off the list (kolob-plan.js, PLAN-REFACTOR §3.4): the meeting room is found evaluated without it, and, since it cannot load without its plan, the page's guard names it (PLAY stays disabled)",
+      noplan.code === 1 && /^kolob-meeting\.js: evaluated before KOLOB\.Plan stands/.test(failed(noplan)[0] || "") && line(noplan, "guard") === "KOLOB._broken = [kolob-meeting.js]",
+      (failed(noplan)[0] || "nothing failed") + " · " + line(noplan, "guard"));
     const moved = loadcheck(scratch("reorder", (dir) => swap(dir, "_engine.php", "'kolob-dialects.js', 'kolob-hymnists.js',", "'kolob-hymnists.js', 'kolob-dialects.js',")));
     check("kolob-hymnists.js moved ahead of kolob-dialects.js on the list: the worker follows the list",
       moved.code === 0 && /\(pj2-rand\.js, kolob-pitch\.js, kolob-score\.js, kolob-tunes\.js, kolob-hymnists\.js, kolob-dialects\.js, kolob-composer\.js, kolob-calendar\.js\)$/.test(line(moved, "desk")),
@@ -464,6 +499,179 @@ function check(name, ok, detail) {
     check("a hymnal that names a room the list does not have: its worker is found unable to start",
       misnamed.code === 1 && line(misnamed, "desk") === "the worker would not start" && failed(misnamed).some((f) => /^the composer's desk: the hymnal's worker would not start/.test(f)),
       failed(misnamed).join("; "));
+  }
+
+  console.log("14. the pure core composes what it composed (PLAN-REFACTOR §3.6)");
+  {
+    const { spawn } = require("child_process");
+    // (seed 3 sings the Sacred Harp and its morning is the organist's chorale
+    // prelude, which the planner draws only with the pipes on; 7 and 22 neither)
+    const GOLDEN = path.join(__dirname, "golden.js"), SEEDS = [3, 7, 22];
+    const golden = (args) => new Promise((resolve) => {
+      const p = spawn(process.execPath, [GOLDEN].concat(args), { stdio: ["ignore", "pipe", "pipe"] });
+      let out = "", err = "";
+      p.stdout.on("data", (d) => (out += d)); p.stderr.on("data", (d) => (err += d));
+      p.on("close", (code) => resolve({ code, out, err }));
+    });
+    // a scratch copy of this build — the list's files, _engine.php and the
+    // substrate beside it — with one edit to kolob-dialects.js (or the file
+    // named)
+    const copy = (name, from, to, file) => {
+      const dir = path.join(tmp, "golden-" + name, "art", "kolob");
+      engine.list.files.concat([path.join(engine.dir, "_engine.php")]).forEach((f) => {
+        const at = path.join(dir, path.relative(engine.dir, f));
+        fs.mkdirSync(path.dirname(at), { recursive: true });
+        fs.copyFileSync(f, at);
+      });
+      const p = path.join(dir, file || "kolob-dialects.js"), t = fs.readFileSync(p, "utf8");
+      if (t.indexOf(from) < 0) throw new Error((file || "kolob-dialects.js") + " has no " + from);
+      fs.writeFileSync(p, t.replace(from, to));
+      return dir;
+    };
+    const SH = "    tempo: 0.86, fermata: 0.1, amen: false,";                 // (the Sacred Harp's profile)
+    const SEAT = "  function seat(today, info, draws) {\n";                       // (the plan's seating, kolob-plan.js)
+    const line = (r, k) => { const m = new RegExp("^ {2}" + k + " +(.*)$", "m").exec(r.out); return m ? m[1] : "no " + k + " line"; };
+    const KINDS = ["meeting", "hymns", "guests", "organist", "ward"];
+    const [base, planted, comment, bag, renders] = await Promise.all([
+      golden(["--seeds", SEEDS.join(",")]),
+      golden(["--seeds", SEEDS.join(","), "--engine", copy("planted", SH, SH.replace("0.86", "0.87"))]),
+      golden(["--seeds", SEEDS.join(","), "--engine", copy("comment", SH, "    // (a scratch comment: nothing else changes)\n" + SH)]),
+      golden(["--seeds", SEEDS.join(","), "--engine", copy("bag", SEAT, SEAT + "    void KOLOB._s.ctx;\n", "kolob-plan.js")]),
+      R.renderSet({ engine, seeds: SEEDS, secs: 1, dir: path.join(tmp, "golden-harness"), quiet: true }),
+    ]);
+    check("seeds " + SEEDS.join(", ") + " against the baseline (tools/golden/): every kind matches, and the trap is never sprung",
+      base.code === 0 && KINDS.every((k) => line(base, k) === "3 of 3 seeds match") && /^ {2}ALL MATCH$/m.test(base.out) && /^ {2}the trap: Math\.random and Date\.now never called; every pure planner the meeting called gave the same on a fresh stream$/m.test(base.out) &&
+        /^ {2}the plan: KOLOB\.Plan's day\(\) and seat\(\) ran with the house shut and wrote nothing they were handed; on fresh streams they gave the meeting's own, and the same twice on each of \d+ switches' settings$/m.test(base.out),
+      KINDS.map((k) => k + " " + line(base, k).replace(" seeds match", "")).join(" · "));
+    // the meeting planned headless is the meeting the harness plays: the
+    // events planMeeting emits, as the golden hashes them, are the harness's
+    // at the downbeat, in order
+    const keysSorted = (x) => (Array.isArray(x) ? x.map(keysSorted) : x && typeof x === "object" ? Object.keys(x).sort().reduce((a, k) => { a[k] = keysSorted(x[k]); return a; }, {}) : x);
+    const said = [];
+    for (const s of SEEDS) {
+      const show = await golden(["--show", "meeting", String(s)]);
+      let ev = null;
+      try { ev = JSON.parse(show.out).events; } catch (e) { ev = null; }
+      const recs = fs.readFileSync(renders.results.find((r) => r.seed === s).dump, "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l));
+      const ms = recs.find((x) => x[0] === "E" && x[2].type === "meeting-start");
+      const theirs = recs.filter((x) => ms && x[0] === "E" && x[1] === ms[1] && x[2].type !== "transport").map((x) => { const o = Object.assign({}, x[2]); delete o.t; return JSON.stringify(keysSorted(o)); });
+      const mine = (ev || []).map((o) => JSON.stringify(keysSorted(o)));
+      said.push({ s, same: mine.length > 0 && mine.join("\n") === theirs.join("\n"), n: mine.length, types: (ev || []).map((o) => o.type) });
+    }
+    check("the meeting the golden plans headless (the pipes on, as the page has them: seed 3's chorale prelude) emits the harness's events at the downbeat, in order",
+      said.every((x) => x.same), said.map((x) => "seed " + x.s + ": " + (x.same ? x.n + " events the same" : "NOT the same")).join(" · ") + " (" + said[0].types.join(", ") + ")");
+    check("a copy with the Sacred Harp's tempo moved (0.86 → 0.87, kolob-dialects.js): the hymns differ on seed 3 alone, the one of the three with a Sacred Harp hymn, and nothing else moves",
+      planted.code === 1 && line(planted, "hymns") === "2 of 3 seeds match — differ: 3 (node art/kolob/tools/golden.js --show hymns 3)" && KINDS.filter((k) => k !== "hymns").every((k) => line(planted, k) === "3 of 3 seeds match"),
+      KINDS.map((k) => k + " " + line(planted, k).replace(/ \(node .*\)$/, "")).join(" · "));
+    const fp = (r) => { const m = /· modules (\w+) \(the baseline's (\w+),/.exec(r.out); return m ? { now: m[1], was: m[2] } : null; };
+    check("a copy with a comment added to kolob-dialects.js: every kind matches, under a fingerprint that is not the baseline's",
+      comment.code === 0 && KINDS.every((k) => line(comment, k) === "3 of 3 seeds match") && !!fp(comment) && fp(comment).now !== fp(comment).was,
+      fp(comment) ? "modules " + fp(comment).now + " (the baseline's " + fp(comment).was + ")" : "no modules line");
+    // (the plan held to its header: a read of the shared bag in its seating
+    // is named, by file and line, and the meeting it was asked for fails)
+    const named = (bag.out.split("\n").find((l) => /^ {2}FAULT \(seeds 3, 7, 22\) the plan: S\.ctx in Plan\.seat: seat \(kolob-plan\.js:\d+\)/.test(l)) || "").trim();
+    check("a copy of kolob-plan.js whose seat() reads the shared bag (KOLOB._s.ctx): the golden names the read, in the plan's file and line, and fails",
+      bag.code === 1 && !!named && /^ {2}the plan: .* — BUT NOT ALL \(above\)$/m.test(bag.out),
+      named ? named.replace(/ ← .*$/, "") : "not named");
+  }
+
+  console.log("15. the wrappers and the labs (PLAN-REFACTOR §3.7)");
+  {
+    const { execFileSync } = require("child_process");
+    const tool = (name, dir) => {
+      try { return { code: 0, out: execFileSync(process.execPath, [path.join(__dirname, name)], { env: Object.assign({}, process.env, { KOLOB_DIR: dir }), encoding: "utf8" }) }; }
+      catch (e) { return { code: e.status, out: String(e.stdout || "") }; }
+    };
+    // a scratch copy of this build — the list's files, _engine.php and the
+    // labs beside them, the substrate beside it as on the site — with one
+    // file edited
+    const scratch = (name, file, edit) => {
+      const dir = path.join(tmp, "wrap-" + name, "art", "kolob");
+      engine.list.files.concat([path.join(engine.dir, "_engine.php")], fs.readdirSync(engine.dir).filter((f) => /-lab\.php$/.test(f)).map((f) => path.join(engine.dir, f))).forEach((f) => {
+        const to = path.join(dir, path.relative(engine.dir, f));
+        fs.mkdirSync(path.dirname(to), { recursive: true });
+        fs.copyFileSync(f, to);
+      });
+      const p = path.join(dir, file);
+      fs.writeFileSync(p, edit(fs.readFileSync(p, "utf8")));
+      return dir;
+    };
+    const line = (r, re) => (r.out.split("\n").find((l) => re.test(l)) || "no such line").trim();
+    const here = tool("lends.js", engine.dir);
+    check("lends.js on this build: every BORROWED wrapper exact and used in its room, counted room by room",
+      here.code === 0 && /^ {2}wrappers \(function x\(…\) \{ return S\.x\(…\); \}\): \d+ in \d+ rooms — .*; every one exact, every one used in its room$/m.test(here.out) && /^ {2}ALL GREEN$/m.test(here.out),
+      line(here, /^ {2}wrappers/).replace(/ — .*;/, ";"));
+    const CUE = "  function cueAt(lane, t, fn) { return S.cueAt(lane, t, fn); }\n";
+    const bent = tool("lends.js", scratch("lends", "kolob-meeting.js", (s) => {
+      if (s.indexOf(CUE) < 0) throw new Error("kolob-meeting.js has no " + CUE.trim());
+      return s.replace(CUE, "  function cueAt(lane, t, fn) { return S.cueAt(t, lane, fn); }\n  function foo() { return S.now(); }\n");
+    }));
+    check("a copy with a wrapper that renames (function foo() { return S.now(); }) and one that reorders (cueAt's lane and time swapped): lends.js fails, naming both",
+      bent.code === 1 && /^ {3}- foo {2}kolob-meeting\.js:\d+ {2}renames: foo calls S\.now$/m.test(bent.out) && /^ {3}- cueAt {2}kolob-meeting\.js:\d+ {2}does not pass its arguments through: \(lane, t, fn\) → S\.cueAt\(t, lane, fn\)$/m.test(bent.out),
+      bent.out.split("\n").filter((l) => /^ {3}- /.test(l)).map((l) => l.trim().replace(/\s+/g, " ")).join("; "));
+    const labs = tool("loadcheck.js", engine.dir);
+    const lm = /^ {2}labs: (\d+) of (\d+) load/m.exec(labs.out);
+    check("loadcheck.js on this build: every lab loads the house's rooms in its own order",
+      labs.code === 0 && !!lm && lm[1] === lm[2] && +lm[2] > 0, lm ? lm[1] + " of " + lm[2] + " labs" : "no labs line");
+    const moved = tool("loadcheck.js", scratch("labs", "guests-lab.php", (s) => {
+      const ls = s.split("\n"), i = ls.findIndex((l) => /<script src="kolob-guest-singingschool\.js\?/.test(l)), j = ls.findIndex((l) => /<script src="kolob-pitch\.js\?/.test(l));
+      if (i < 0 || j < 0 || j > i) throw new Error("guests-lab.php does not load kolob-pitch.js before the singing school");
+      const tag = ls.splice(i, 1)[0];
+      ls.splice(j, 0, tag);
+      return ls.join("\n");
+    }));
+    const mm = /^ {2}labs: (\d+) of (\d+) load/m.exec(moved.out);
+    const said = moved.out.split("\n").filter((l) => /^ {3}- /.test(l)).map((l) => l.trim().slice(2));
+    check("a copy with the singing school moved ahead of kolob-pitch.js on guests-lab's list: loadcheck.js fails, naming the lab and the room's throw, and the other labs load",
+      moved.code === 1 && !!mm && +mm[1] === +mm[2] - 1 && said.length > 0 && said.every((f) => /^guests-lab\.php \(its rooms in its order\): kolob-guest-singingschool\.js: /.test(f)) && said.some((f) => /threw at load — .*KOLOB\.Pitch|threw at load — .*PARENT_RATIOS|threw at load — .*load kolob-guest-room\.js first/.test(f)),
+      (mm ? mm[1] + " of " + mm[2] + " labs · " : "") + (said[0] || "no failure named"));
+  }
+
+  console.log("16. the page in pieces (PLAN-REFACTOR §3.5)");
+  {
+    const { execFileSync } = require("child_process");
+    const E = require("./lib/engine.js");
+    const run = (file, argv, env) => {
+      try { return { code: 0, out: execFileSync(process.execPath, [file].concat(argv), { env: Object.assign({}, process.env, env || {}), encoding: "utf8", maxBuffer: 1 << 26 }) }; }
+      catch (e) { return { code: e.status, out: String(e.stdout || "") }; }
+    };
+    const harness = path.join(__dirname, "..", "_harness.js");
+    const digest = (r) => { const m = /^staff: .* digest ([0-9a-f]{16})/m.exec(r.out); return m ? m[1] : null; };
+    const a = run(harness, ["30", "7", "staff"]), b = run(harness, ["30", "7", "staff"]);
+    check("the harness's staff= on seed 7, 30 s: the page's drawing traced, to the same digest twice",
+      a.code === 0 && b.code === 0 && !!digest(a) && digest(a) === digest(b), (digest(a) || "no digest") + " · " + (digest(b) || "no digest"));
+    // a scratch copy of the build — the list's files, the page's, _engine.php and _viz.php — its ink one step bluer
+    const dir = path.join(tmp, "staff", "art", "kolob"), viz = E.vizList(engine.dir);
+    engine.list.files.concat(viz.map((f) => path.join(engine.dir, f)), [path.join(engine.dir, "_engine.php")], fs.existsSync(path.join(engine.dir, "_viz.php")) ? [path.join(engine.dir, "_viz.php")] : []).forEach((f) => {
+      const to = path.join(dir, path.relative(engine.dir, f));
+      fs.mkdirSync(path.dirname(to), { recursive: true });
+      fs.copyFileSync(f, to);
+    });
+    const inkAt = viz.map((f) => path.join(dir, f)).find((f) => fs.readFileSync(f, "utf8").indexOf("var C_INK = [30, 77, 59];") >= 0);
+    if (inkAt) fs.writeFileSync(inkAt, fs.readFileSync(inkAt, "utf8").replace("var C_INK = [30, 77, 59];", "var C_INK = [30, 77, 60];"));
+    const c = run(harness, ["30", "7", "staff"], { KOLOB_DIR: dir, KOLOB_BASE: dir });
+    check("a copy whose ink is one step bluer (C_INK [30, 77, 59] → [30, 77, 60]): another digest",
+      !!inkAt && c.code === 0 && !!digest(c) && digest(c) !== digest(a), (digest(c) || "no digest") + (inkAt ? " (" + path.basename(inkAt) + ")" : " (no C_INK found)"));
+    // a little closure, and its cut in two
+    const sd = path.join(tmp, "split");
+    fs.mkdirSync(sd, { recursive: true });
+    const OLD = ["window.Zed = (function () {", "  \"use strict\";", "  var K = window.KolobAudio;", "  var n = 0, k = 2;", "  var LIST = [1, 2];",
+      "  function bump() { n += k; return n; }", "  function sum() { return LIST.reduce(function (p, q) { return p + q; }, 0) + n; }", "  return { bump: bump, sum: sum };", "})();", ""].join("\n");
+    const piece = (sumLine, extra) => ["window.KOLOB = window.KOLOB || {};", "(function () {", "  \"use strict\";", "  var VS = window.KOLOB._viz = window.KOLOB._viz || {};"].concat(extra || [],
+      ["  var LIST = [1, 2];", sumLine, "  VS.LIST = LIST;", "  VS.sum = sum;", "})();", ""]).join("\n");
+    const core = ["window.KOLOB = window.KOLOB || {};", "window.Zed = (function () {", "  \"use strict\";", "  var K = window.KolobAudio;", "  var VS = window.KOLOB._viz = window.KOLOB._viz || {};",
+      "  function sum() { return VS.sum(); }", "  var n = 0, k = 2;", "  function bump() { n += k; return n; }",
+      "  Object.defineProperty(VS, \"n\", { enumerable: true, configurable: true, get: function () { return n; } });", "  return { bump: bump, sum: sum };", "})();", ""].join("\n");
+    const w = (name, text) => { fs.writeFileSync(path.join(sd, name), text); return path.join(sd, name); };
+    const oldF = w("old.js", OLD), coreF = w("core.js", core);
+    const good = run(path.join(__dirname, "samecode.js"), ["--split", "old.js", "--from", oldF, w("a.js", piece("  function sum() { return LIST.reduce(function (p, q) { return p + q; }, 0) + VS.n; }")), coreF]);
+    check("samecode.js --split: a closure cut in two, the name it reassigns read through the bag by its getter",
+      good.code === 0 && /^ {2}SAME CODE/m.test(good.out) && /read through VS: n×1/.test(good.out), (good.out.split("\n").find((l) => /SAME CODE|NOT A PURE MOVE/.test(l)) || "no verdict").trim());
+    const once = run(path.join(__dirname, "samecode.js"), ["--split", "old.js", "--from", oldF, w("b.js", piece("  function sum() { return LIST.reduce(function (p, q) { return p + q; }, 0) + n; }", ["  var n = VS.n;"])), coreF]);
+    const bent = run(path.join(__dirname, "samecode.js"), ["--split", "old.js", "--from", oldF, w("c.js", piece("  function sum() { return LIST.reduce(function (p, q) { return p + q; }, 0) + VS.n; }").replace("var LIST = [1, 2];", "var LIST = [1, 3];")), coreF]);
+    check("…a cut that takes the reassigned name once at load, and one whose list changed a number: both NOT A PURE MOVE, each named",
+      once.code === 1 && /n taken once at load, but the old closure reassigned it/.test(once.out) && bent.code === 1 && /stands in no new file: var LIST = \[1, 2\];/.test(bent.out),
+      [once, bent].map((r) => (r.out.split("\n").find((l) => /^ {3}- /.test(l)) || "nothing named").trim()).join(" · "));
   }
 
   fs.rmSync(tmp, { recursive: true, force: true });

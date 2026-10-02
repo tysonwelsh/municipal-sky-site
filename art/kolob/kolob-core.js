@@ -30,7 +30,8 @@
 //    as expansive as the frontier. If a motif never gets its turn in a
 //    session, that is the piece working.
 //  · Sections: prelude → invocation → hymn×n → testimony → sacrament →
-//    doxology → postlude, conducted by THE CHORISTER (kolob-meeting.js);
+//    doxology → postlude, planned by the plan (kolob-plan.js) and
+//    conducted by THE CHORISTER (kolob-meeting.js);
 //    every visit draws a Sunday of the colony year (kolob-calendar.js), and
 //    the four kinds of meeting the house has always known (ordinary / fast
 //    day / conference / jubilee) stand under the nine Sundays.
@@ -46,9 +47,10 @@
 //  · THE DICE — the visit's seed, and every stream forked from it by name;
 //  · THE CLOCK — PJ2.Clock: every cue on the audio clock, at its own time;
 //  · THE DOORS — what a meeting connects into the hall, shut at STOP;
-//  · THE HOUSE LETS GO, THE AIR, the audition rail (SAMPLE), the TRANSPORT;
+//  · THE HOUSE LETS GO, THE DRONE STEPS BACK, THE AIR, the audition rail
+//    (SAMPLE), the TRANSPORT;
 //  · the LENT block (what this room shares on KOLOB._s) and the PUBLIC API,
-//    the only thing the page (kolob-ui.js, kolob-viz.js) calls.
+//    the only thing the page (kolob-ui.js, the six files of kolob-viz.js) calls.
 // Layers: organ, drone, choir, clarinet, harmonium, strings, bells, voice,
 // telegraph, tuba, ambient. A guest's seat (the band, the handbells, the
 // fiddle…) is not a layer: see seatedSend and wideSend. SHELVED below is
@@ -72,7 +74,9 @@ window.KolobAudio = (function () {
   var S = KOLOB._s = KOLOB._s || {};
 
   // ---- BORROWED — the other rooms' functions, bound late through S (every
-  // room is loaded before the first note, so the call always finds its owner) ----
+  // room is loaded before the first note, so the call always finds its owner;
+  // each wrapper is named after the lend it calls and passes its arguments
+  // through in order — tools/lends.js checks) ----
   // from kolob-pitch.js
   function colN() { return S.colN(); }
   function projDeg(d7) { return S.projDeg(d7); }
@@ -132,7 +136,8 @@ window.KolobAudio = (function () {
   var bg = null;                   // background-audio handle (lock-screen survival)
   // droneDuck sits between the drone layer and the hall: the stillness pulls
   // ONLY the drone's ground away (the volume slider owns layerGains.drone, so
-  // the automation lives on its own node and the two never fight)
+  // the automation lives on its own node and the two never fight; every dip
+  // is written by THE DRONE STEPS BACK, below)
   var droneDuck = null;
   // voicesBus sits between every layer path and the master. STOP silences it
   // and LEAVES it silent — long drone cycles keep their oscillators running
@@ -176,27 +181,21 @@ window.KolobAudio = (function () {
   // word), confess(what, err) tells it the same way. `about` rides on the
   // line but not on the count: a listener's faults are counted per
   // listener, whatever note it threw on. A fault that repeats is told the
-  // first time and then at every FAULT_EVERY-th, with its count, per
-  // `what`; the harness fails a run on any console.error, so a fault told
-  // on a clean run fails CI. Lent as S.confess, and on the facade for the
-  // page; a room that may stand on a bench without this one (a guest's
-  // material, the ward's voices, the switches) tells its fault through
-  // S.confess where it finds it, and plainly where it does not.
+  // first time and then at every thousandth, with its count, per `what`;
+  // the harness fails a run on any console.error, so a fault told on a
+  // clean run fails CI. The telling and its count are KOLOB.Fault's
+  // (kolob-pitch.js, THE FAULTS), which stands first on every list: a room
+  // that may stand on a bench without this one (a guest's material, the
+  // switches) borrows it there, so the house and its benches keep one
+  // count (the ward's voices, which stand alone, tell plainly where it is
+  // absent). Lent here as S.confess, and on the facade for the page.
   // What stays quiet: cleanup after a node that may already be gone (an
   // onended disconnect, a chain of the rooms let go) — cleanup(fn),
   // disconnectEach(nodes) — and a feature test's fallback (an old browser
-  // without a constructor's options), which is not a fault at all.
-  var FAULT_EVERY = 1000;          // told the first time, then every thousandth: a page bug at every note (3,000 a meeting) says so three times a meeting, with its count, not 3,000
-  var faults = {};                 // what → how often it has been confessed
-  function confess(what, fn, about) {
-    if (typeof fn !== "function") return told(what, fn, about);
-    try { return fn(); } catch (err) { told(what, err, about); }
-  }
-  function told(what, err, about) {
-    var k = faults[what] = (faults[what] || 0) + 1;
-    if (k > 1 && k % FAULT_EVERY) return;
-    if (typeof console !== "undefined" && console.error) console.error("Kolob: " + what + (about ? " (" + about + ")" : "") + (k > 1 ? " — " + k + " times now" : ""), err);
-  }
+  // without a constructor's options), which is not a fault at all. A quiet
+  // catch says which inside it (`/* gone already */`, `/* an old browser */`):
+  // ESLint's no-empty (eslint.config.js) fails one that says nothing.
+  function confess(what, fn, about) { return KOLOB.Fault.confess(what, fn, about); }
   // cleanup(fn): fn run, and a throw from it let pass unspoken — for the
   // cleanup after a node that may already be gone, never for a fault
   function cleanup(fn) { try { fn(); } catch (e) { /* gone already */ } }
@@ -1021,6 +1020,41 @@ window.KolobAudio = (function () {
   // lined-out rite's strings, the choir alone's deacon)
   function houseRests(layer) { return !!ctx && (now() < (houseRest[layer] || 0) || !!(S.Meeting && S.Meeting.sits && S.Meeting.sits(layer))); }
 
+  // THE DRONE STEPS BACK — under a hymn keyed away from home (or sung at
+  // home while the drone stands on the key's third or fifth), a chorale
+  // prelude or the organist's variations keyed away, the Social Hall's
+  // dance, and a stillness, the drone's ground falls back on its own node
+  // (droneDuck, above: the slider owns the layer's gain) and comes back
+  // after. Each place keeps its own depth and its own times, so they are
+  // the caller's: 0.22 under a hymn, 0.18 under the dance, 0.12 in a
+  // stillness.
+  //   droneStepBack(t0, until, depth, downS, upS, held): what was written
+  //   on the duck from t0 on is let go; the drone stands at full at t0 (held:
+  //   where it stands now, full if that reads 0 — a stillness can fall
+  //   inside another step back) and falls to `depth` by t0 + downS. Given an
+  //   `until`, it holds there and comes back by until + upS (droneComesBack);
+  //   without one, the caller writes the return when it knows its end.
+  //   droneComesBack(at, depth, upS, letGo): the return alone — the drone at
+  //   `depth` at `at`, full by at + upS; letGo first lets go of what was
+  //   written from `at` on (the hymn writes its return when it is done,
+  //   long after its step back).
+  // Nothing is written before the house is built (no drone's node).
+  function droneStepBack(t0, until, depth, downS, upS, held) {
+    if (!droneDuck) return;
+    var g = droneDuck.gain;
+    g.cancelScheduledValues(t0);
+    g.setValueAtTime(held ? (g.value || 1) : 1, t0);
+    g.linearRampToValueAtTime(depth, t0 + downS);
+    if (until != null) droneComesBack(until, depth, upS, false);
+  }
+  function droneComesBack(at, depth, upS, letGo) {
+    if (!droneDuck) return;
+    var g = droneDuck.gain;
+    if (letGo) g.cancelScheduledValues(at);
+    g.setValueAtTime(depth, at);
+    g.linearRampToValueAtTime(1, at + upS);
+  }
+
   function panAt(layer, p) {
     var d = liveDoors();
     var pool = d.pans[layer];
@@ -1286,7 +1320,7 @@ window.KolobAudio = (function () {
     cueAt("conductor", ctx.currentTime + LEAD_S, function (t0) {
       planMeeting(t0);
       // staggered assembly — the valley wakes the way a Sunday begins, and
-      // each Sunday in its own order: the prelude's seating (kolob-meeting.js,
+      // each Sunday in its own order: the prelude's seating (kolob-plan.js,
       // THE PRELUDE'S SEATING) drew every entrance (one timetable for every
       // visit — the drone at 0.1 s, the organ at 2.7, the field at 16, the
       // strings at 24 — made every first minute the same; the fallback below
@@ -1453,6 +1487,8 @@ window.KolobAudio = (function () {
   S.panAt = panAt;
   S.houseLetsGo = houseLetsGo;
   S.houseRests = houseRests;
+  S.droneStepBack = droneStepBack;
+  S.droneComesBack = droneComesBack;
   S.getLayerParam = getLayerParam;
   S.fieldDest = fieldDest;
   S.noiseSource = noiseSource;
@@ -1578,7 +1614,7 @@ window.KolobAudio = (function () {
     setForceRaspberry: function (on) { S.forceRaspberry = !!on; },
     setCumulativeMode: function (s) { if (s === "always" || s === "natural" || s === "never") S.cumulativeMode = s; },
     getCumulativeMode: function () { return S.cumulativeMode; },
-    // the natural draw's odds (kolob-meeting.js CUMULATIVE_ODDS): the page's one source for the Whole switch's text
+    // the natural draw's odds (kolob-plan.js CUMULATIVE_ODDS, lent by the meeting): the page's one source for the Whole switch's text
     getCumulativeOdds: function () { return S.CUMULATIVE_ODDS != null ? S.CUMULATIVE_ODDS : 0.08; },
     // dev accessor for the tune lab (shelved/tune-lab.php) — the pool is the
     // Earth tunes (kolob-tunes.js), read through the old-tune guest's own

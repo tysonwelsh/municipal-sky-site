@@ -458,7 +458,7 @@ window.KOLOB.Harmony = (function () {
     var map = window.KOLOB.Pitch.COLLECTIONS[P.mode].map, c = P.classOf(idx), oct = Math.floor(idx / P.n);
     return map.indexOf(c) + 7 * oct;
   }
-  function centsOf(r) { return 1200 * Math.log2(r); }
+  function centsOf(r) { return window.KOLOB.Pitch.centsOf(r); }
   function nearCents(c, want) { return Math.abs(c - want) < 30; }   // (not near(): that is the voicing's own, above)
   // the chord's quality, read off the pitches it sounds (so the ii with its
   // re a comma low is the minor chord it is sung as)

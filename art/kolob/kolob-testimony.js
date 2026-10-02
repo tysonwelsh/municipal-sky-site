@@ -54,6 +54,18 @@
 // reed plays them) and "synth" (the creaks, the reeds' breath: sound-level,
 // never reported).
 //
+// THE SCAFFOLD (KOLOB.GuestRoom, kolob-guest-room.js): the stream it
+// insists on, plan(), oddsFor() — its own table always, ignoresOdds: the
+// testimony is not in the calendar's — the decision's shape and its
+// seat's-own-die test (in its own words: "the ward keeps the silence"), the
+// score's stage-writer (with each stage's member), the look-ahead (2.5 s)
+// and the slices on the clock (defer, 0.05 s of margin), the stages told,
+// the teardown sentinel, perform.last and LEVEL. Its own: its seat (the
+// testimony, unless a guest holds it), the bearers, a slice of a second and
+// a half, its cast (onCast) and its answers (onAnswer, each at its moment),
+// and its let-go, every bus; its sentinel stands on the testimony's own
+// door, not a bus.
+//
 // Public surface: window.KOLOB.Testimony
 //   plan(meetingInfo, stream) → { guest: "testimony", seat: "testimony",
 //        section, at, dur, holdUntil, bearers, estimated, odds, logged: true } | null
@@ -81,6 +93,8 @@ window.KOLOB.Testimony = (function () {
 
   var NAME = "testimony";
   var LABEL = "guest:testimony:";                 // + the meeting number
+  var GR = window.KOLOB.GuestRoom;                // the scaffold (kolob-guest-room.js)
+  if (!GR) throw new Error("KOLOB.Testimony: load kolob-guest-room.js first");
 
   // ==========================================================================
   // THE ODDS — the testimony is theirs, nearly always: the bearers the cast
@@ -104,15 +118,8 @@ window.KOLOB.Testimony = (function () {
   // the reed a little under the voice, the whole about −2 at its fullest
   var LEVEL = 0.6;
 
-  function oddsFor(info) {
-    var w = ODDS.weight;
-    var k = info.sunday && w[info.sunday] != null ? info.sunday : info.kind;
-    return Math.min(ODDS.cap, ODDS.base * (w[k] != null ? w[k] : 1));
-  }
-  function need(stream) {
-    if (!stream || typeof stream.fork !== "function") throw new Error("KOLOB.Testimony: a PJ2.Rand stream is required (label " + LABEL + "<n>)");
-    return stream;
-  }
+  function oddsFor(info) { return GR.oddsFor(info, ODDS, { ignoresOdds: true }); }
+  function need(stream) { return GR.need(stream, "KOLOB.Testimony", LABEL); }
   function nBearers(info, u) {
     var b = info.bearers;
     if (typeof b === "number") return b;
@@ -132,22 +139,19 @@ window.KOLOB.Testimony = (function () {
     (info.guests || []).forEach(function (g) { if (g && g.section === "testimony" && !held) held = g.type || "a guest"; });
     if (order.indexOf("testimony") < 0) why = "no testimony today";
     else if (held) why = "the testimony is the " + held + "'s";
-    else if (!(info.force || roll < p)) why = "the ward keeps the silence";
-    if (why) return { seat: null, why: why, odds: p, roll: roll };
+    else if (GR.notThisSunday(info, roll, p)) why = "the ward keeps the silence";
+    if (why) return GR.decision(null, why, p, roll);
     var at = AT[0] + (AT[1] - AT[0]) * atU;
     var mat = info.material && info.material.prepared ? info.material : null;
     var n = mat ? mat.bearers.length : nBearers(info, nU);
     var dur = mat ? score(mat, stream, 0).end : estimate(n);
-    return {
-      seat: {
-        guest: NAME, seat: "testimony", section: "testimony", at: +at.toFixed(2), dur: +dur.toFixed(2),
-        holdUntil: +(at + dur + 4).toFixed(2),        // the testimony lasts at least this long
-        bearers: n, estimated: !mat, odds: +p.toFixed(3), logged: true,
-      },
-      why: "seated", odds: p, roll: roll,
-    };
+    return GR.decision({
+      guest: NAME, seat: "testimony", section: "testimony", at: +at.toFixed(2), dur: +dur.toFixed(2),
+      holdUntil: +(at + dur + 4).toFixed(2),        // the testimony lasts at least this long
+      bearers: n, estimated: !mat, odds: +p.toFixed(3), logged: true,
+    }, "seated", p, roll);
   }
-  function plan(info, stream) { return decide(info, stream).seat; }
+  var plan = GR.plan(decide);
 
   // ==========================================================================
   // SPEECH (pure) — one sentence of a bearer's, as a person says it
@@ -248,29 +252,14 @@ window.KOLOB.Testimony = (function () {
   // elsewhere the middle of its glide) moved to the nearest tone of the
   // day's just scale in the testimony's key, then carried by octaves into
   // the reed's register; repeated tones joined; the speech's own rhythm.
+  // The parent scales and the arithmetic are kolob-pitch.js's.
   // ==========================================================================
-  var PARENT_FR = {
-    ionian:     ["1/1", "9/8", "5/4", "4/3", "3/2", "5/3", "15/8"],
-    mixolydian: ["1/1", "9/8", "5/4", "4/3", "3/2", "5/3", "16/9"],
-    dorian:     ["1/1", "9/8", "6/5", "4/3", "3/2", "5/3", "16/9"],
-    aeolian:    ["1/1", "9/8", "6/5", "4/3", "3/2", "8/5", "16/9"],
-  };
-  PARENT_FR.penta = PARENT_FR.hexa = PARENT_FR.ionian;
-  var CLASSES = {
-    ionian: [0, 1, 2, 3, 4, 5, 6], mixolydian: [0, 1, 2, 3, 4, 5, 6], dorian: [0, 1, 2, 3, 4, 5, 6],
-    aeolian: [0, 1, 2, 3, 4, 5, 6], penta: [0, 1, 2, 4, 5], hexa: [0, 1, 2, 3, 4, 5],
-  };
-  function mod(a, n) { return ((a % n) + n) % n; }
-  function fromFraction(s) {
-    var p = String(s).split("/"), m = [0, 0, 0, 0];
-    [+p[0], -(+(p[1] || 1))].forEach(function (x, side) {
-      var v = Math.abs(x), sg = side ? -1 : 1;
-      [2, 3, 5, 7].forEach(function (q, i) { while (v % q === 0 && v > 1) { v /= q; m[i] += sg; } });
-    });
-    return m;
-  }
-  function mRatio(m) { m = m || [0, 0, 0, 0]; return Math.pow(2, m[0] || 0) * Math.pow(3, m[1] || 0) * Math.pow(5, m[2] || 0) * Math.pow(7, m[3] || 0); }
-  function modeName(m) { return PARENT_FR[m] ? m : "ionian"; }
+  var PARENT_FR = window.KOLOB.Pitch.PARENT_FRACTIONS;
+  var CLASSES = window.KOLOB.Pitch.CLASSES;
+  function mod(a, n) { return window.KOLOB.Num.mod(a, n); }
+  function fromFraction(s) { return window.KOLOB.Pitch.fromFraction(s); }
+  function mRatio(m) { return window.KOLOB.Pitch.ratio(m || [0, 0, 0, 0]); }   // (no monzo: the unison)
+  function modeName(m) { return window.KOLOB.Pitch.modeName(m); }
   // the scale the reed plays: the mode's just tones in the key — with the
   // drone's own pitch for its letter, where the drone stands a comma or a
   // semitone off the mode's (the reckoning's cantus can: a note of a
@@ -372,7 +361,7 @@ window.KOLOB.Testimony = (function () {
     { id: null, nameDs: null, nameEn: null, archetype: "sister", archetypeEn: "a sister of the ward", voice: { part: "A", age: "mid", confidence: 0.7, brightness: 0.45, breath: 0.35 }, habit: { rate: 3.2, range: 5, contour: "arch", pauses: 0.4 } },
     { id: null, nameDs: null, nameEn: null, archetype: "father", archetypeEn: "a father of the ward", voice: { part: "B", age: "mid", confidence: 0.65, brightness: 0.4, breath: 0.35 }, habit: { rate: 3.3, range: 5, contour: "rising", pauses: 0.45 } },
   ];
-  function num(x, d) { x = +x; return isFinite(x) && x > 0 ? x : d; }
+  function num(x, d) { return window.KOLOB.Num.positive(x, d); }
   // a speaking voice: the singer's own, without the vibrato (an old voice
   // keeps its tremor), a little breathier, on time (speech keeps its own)
   function speakingVoice(v) {
@@ -440,7 +429,7 @@ window.KOLOB.Testimony = (function () {
     var M = material && material.prepared ? material : prepare(material, stream);
     t0 = t0 || 0;
     var out = { speakers: [], reeds: [], creaks: [], stages: [], cast: [], answers: [], notes: [] }, t = 0;
-    function stage(name, a, b, label, member) { out.stages.push({ stage: name, t0: t0 + a, t1: t0 + b, label: label, member: member }); }
+    var stage = GR.stage(out.stages, t0);          // (stage(name, a, b, label, member): every stage names its bearer, or null)
     function reedLine(at, b, notes, move, s) {
       var tt = at, list = notes.map(function (n) { return { f: n.f, dur: n.dur, stress: n.stress }; }), rep = [];
       notes.forEach(function (n) { var r = { layer: b.reed, freq: n.f, t: t0 + tt, dur: n.dur, part: "testimony", member: b.id, deg: n.d, monzo: n.m, keyMonzo: M.keyMonzo, move: move }; rep.push(r); out.notes.push(r); tt += n.dur; });
@@ -614,30 +603,25 @@ window.KOLOB.Testimony = (function () {
     items.sort(function (a, b) { return a.t - b.t; });
     // LAID OUT A SLICE AT A TIME (hooks.defer — the engine's clock), each
     // slice AHEAD seconds before its first sound, its notes told then
-    var AHEAD = 2.5, SLICE = 1.5, slices = [];
+    var AHEAD = GR.ahead(), SLICE = 1.5, slices = [];
     items.forEach(function (it) { var cur = slices[slices.length - 1]; if (!cur || it.t >= cur.t0 + SLICE) slices.push(cur = { t0: it.t, items: [] }); cur.items.push(it); });
     slices.forEach(function (sl) {
       function lay() { sl.items.forEach(function (it) { it.go(); if (hooks.onNote && it.notes) it.notes.forEach(hooks.onNote); }); }
-      var when = sl.t0 - AHEAD;
-      if (hooks.defer && when > t + 0.05) hooks.defer(when, lay); else lay();
+      GR.defer(hooks, t, sl.t0 - AHEAD, lay, 0.05);
     });
-    if (hooks.onStage) sc.stages.forEach(function (st2) { hooks.onStage(st2); });
+    GR.tellStages(hooks, sc.stages);
     if (hooks.onCast) sc.cast.forEach(function (c) { if (c.memberId) hooks.onCast(c); });
     // the motif engine may answer: each tune handed back as it ends
-    if (hooks.onAnswer) sc.answers.forEach(function (a) { if (hooks.defer && a.t > t + 0.05) hooks.defer(a.t, function () { hooks.onAnswer(a); }); else hooks.onAnswer(a); });
-    var sent = ctx.createConstantSource ? ctx.createConstantSource() : ctx.createOscillator(), sg = ctx.createGain();
-    sg.gain.value = 0; sent.connect(sg); sg.connect(dest);
-    sent.onended = function () { try { made.forEach(function (n) { n.disconnect(); }); sg.disconnect(); sent.disconnect(); } catch (e) { /* gone already */ } };
-    sent.start(Math.max(0, t)); sent.stop(sc.until + 1.5);
-    perform.last = { score: sc, slices: slices.length, nodes: nodes };
+    if (hooks.onAnswer) sc.answers.forEach(function (a) { GR.defer(hooks, t, a.t, function () { hooks.onAnswer(a); }, 0.05); });
+    GR.sentinel(ctx, dest, t, sc.until + 1.5, function () { GR.quiet(made); });
+    GR.last(perform, { score: sc, slices: slices.length, nodes: nodes });
     return sc.end;
   }
 
-  return {
+  return GR.level({
     plan: plan, decide: decide, prepare: prepare, speech: speech, transcribe: transcribe, tuneOf: tuneOf, score: score, perform: perform, bake: bake, speakingHz: speakingHz, MIX: MIX,
     REEDS: REEDS, MOVES: MOVES, HARMONIUM_LEAN: HARMONIUM_LEAN,
     NAME: NAME, LABEL: LABEL, ODDS: ODDS,
-    get LEVEL() { return LEVEL; }, set LEVEL(v) { LEVEL = +v; },
-  };
+  }, function () { return LEVEL; }, function (v) { LEVEL = v; });
 })();
 (window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-testimony.js"] = true;   // the load guard's roll call

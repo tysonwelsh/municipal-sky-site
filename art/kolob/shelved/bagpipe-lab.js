@@ -363,7 +363,7 @@ window.BagpipeLab = (function () {
 
   function teardownDrones() {
     if (!N.drones) return;
-    N.drones.voices.forEach(function (v) { try { v.osc.stop(); } catch (e) {} });
+    N.drones.voices.forEach(function (v) { try { v.osc.stop(); } catch (e) { /* gone already */ } });
     N.drones = null;
   }
 
@@ -376,9 +376,9 @@ window.BagpipeLab = (function () {
     if (N.droneMaster) N.droneMaster.gain.setTargetAtTime(0, t, r / 3);
     var chanter = N.chanter, drones = N.drones, press = N.press, noise = N.noise;
     setTimeout(function () {
-      try { if (press) press.stop(); if (noise) noise.stop(); } catch (e) {}
-      if (chanter) { try { chanter.osc1.stop(); chanter.osc2.stop(); chanter.vib.stop(); } catch (e) {} }
-      if (drones) drones.voices.forEach(function (v) { try { v.osc.stop(); } catch (e) {} });
+      try { if (press) press.stop(); if (noise) noise.stop(); } catch (e) { /* gone already */ }
+      if (chanter) { try { chanter.osc1.stop(); chanter.osc2.stop(); chanter.vib.stop(); } catch (e) { /* gone already */ } }
+      if (drones) drones.voices.forEach(function (v) { try { v.osc.stop(); } catch (e) { /* gone already */ } });
       N = {};
     }, r * 1000 + 400);
     if (seqTimer) { clearTimeout(seqTimer); seqTimer = null; }
@@ -490,6 +490,7 @@ window.BagpipeLab = (function () {
       case "droneBuzz": if (d) d.shaper.curve = shaperCurve(value); break;
       case "droneBright": if (d) d.lp.frequency.setTargetAtTime(value, t, 0.03); break;
       // grace, gliss, attack, release: read at use-time.
+      default: break;
     }
   }
 
@@ -497,7 +498,7 @@ window.BagpipeLab = (function () {
     if (!ctx || !running || !N.chanter) return;
     var old = N.chanter, t = ctx.currentTime, lvl = params.reedLevel;
     old.lvl.gain.setTargetAtTime(0, t, 0.02);
-    setTimeout(function () { try { old.osc1.stop(); old.osc2.stop(); old.vib.stop(); } catch (e) {} }, 120);
+    setTimeout(function () { try { old.osc1.stop(); old.osc2.stop(); old.vib.stop(); } catch (e) { /* gone already */ } }, 120);
     buildChanter();
     N.chanter.lvl.gain.setValueAtTime(0, ctx.currentTime);
     N.chanter.lvl.gain.linearRampToValueAtTime(lvl, ctx.currentTime + 0.05);

@@ -162,6 +162,7 @@ include '../../includes/header.php';
 <script src="kolob-calendar.js?v=<?php echo k3b_v('kolob-calendar.js'); ?>"></script>
 <script src="kolob-organist.js?v=<?php echo k3b_v('kolob-organist.js'); ?>"></script>
 <script src="kolob-voices-pipeorgan.js?v=<?php echo k3b_v('kolob-voices-pipeorgan.js'); ?>"></script>
+<script src="kolob-guest-room.js?v=<?php echo k3b_v('kolob-guest-room.js'); ?>"></script>
 <script src="kolob-guest-variations.js?v=<?php echo k3b_v('kolob-guest-variations.js'); ?>"></script>
 <script src="kolob-guest-changes.js?v=<?php echo k3b_v('kolob-guest-changes.js'); ?>"></script>
 <script src="guests3b-lab.js?v=<?php echo k3b_v('guests3b-lab.js'); ?>"></script>

@@ -1,8 +1,8 @@
 // ============================================================================
 // KOLOB — kolob-guests.js: the set pieces
 //
-// What a guest sounds like once the meeting has seated it (kolob-meeting.js
-// plans and cues; this room plays and tells). Here, in order:
+// What a guest sounds like once the meeting has seated it (kolob-plan.js
+// plans, kolob-meeting.js cues; this room plays and tells). Here, in order:
 //   · the raspberry amen's cluster (razzCluster) and the cumulative assembly
 //     (cumulativeAssembly) — not guests but the meeting's own set pieces;
 //   · THE UNANSWERED QUESTION (shelved: the code stays, it never seats);
@@ -12,17 +12,21 @@
 //     Earth tunes a Sunday may remember (oldTuneCandidates, oldTunePool);
 //   · THE TROMBONE CHOIR AT DAWN (trombonesAtDawn, kolob-guest-trombones.js);
 //   · the guests who stand in the room — the handbells and the singing
-//     school (standingGuest), the gift of tongues (tonguesGift), the Social
-//     Hall (socialHall);
+//     school, the gift of tongues (tonguesGift), the Social Hall
+//     (socialHall);
 //   · the guests from outside the windows — the Nauvoo band, the handcart
-//     company, the gulls (outdoorGuest);
+//     company, the gulls;
 //   · the organist's variations (organistVariations).
 // The common shape: a set piece takes the visitation record V and the cue's
 // time tc, lays its sound out on the guests' lane (hooks.defer, a slice at a
 // time, never the whole piece in one cue), reports every note with
 // guestNote(V, …) and every row with tell(V, …) — both carry whether the
 // page may name the guest — claims the air where the house listens, and
-// returns its span in seconds, which the conductor holds the joint for.
+// returns its span in seconds, which the conductor holds the joint for. The
+// trombones, the guests who stand in the room and those from outside are
+// played through one HOST (host(), below the old tune), their differences
+// its options; the others share its pieces — the defer hook (guestsLane),
+// the guest's standing (stands), a row told at its moment (tellAt).
 // Each throws its dice from its own stream, guest:<type>:<n>, so a guest
 // that throws more or fewer never alters a hymn.
 // ============================================================================
@@ -37,17 +41,19 @@ window.KOLOB = window.KOLOB || {};
   var S = KOLOB._s = KOLOB._s || {};
 
   // ---- BORROWED — the other rooms' functions, bound late through S (every
-  // room is loaded before the first note, so the call always finds its owner) ----
+  // room is loaded before the first note, so the call always finds its owner;
+  // each wrapper is named after the lend it calls and passes its arguments
+  // through in order — tools/lends.js checks) ----
   // from kolob-pitch.js
   function colN() { return S.colN(); }
   function projDeg(d7) { return S.projDeg(d7); }
   function degFreq(i) { return S.degFreq(i); }
   function harm(h) { return S.harm(h); }
+  function isHome(m) { return KOLOB.Pitch.isHome(m); }
   // from kolob-voices-organ.js
   function organChord(t, dur, chord, gainMul) { return S.organChord(t, dur, chord, gainMul); }
   // from kolob-voices-choir.js
-  function choirVoiceLine(t, notes, vi, gainMul) { return S.choirVoiceLine(t, notes, vi, gainMul); }
-  function activeVoices() { return S.activeVoices(); }
+  function plagalAmen(chords, at, chordS, by, gainMul, holdMul) { return S.plagalAmen(chords, at, chordS, by, gainMul, holdMul); }
   function choirHarmonizedLine(t, harmonized, beat, gainMul) { return S.choirHarmonizedLine(t, harmonized, beat, gainMul); }
   // from kolob-voices-winds.js
   function renderClarinetLine(t, notes, gainMul, R) { return S.renderClarinetLine(t, notes, gainMul, R); }
@@ -66,9 +72,9 @@ window.KOLOB = window.KOLOB || {};
   function panAt(layer, p) { return S.panAt(layer, p); }
   function getLayerParam(layer, key, fallback) { return S.getLayerParam(layer, key, fallback); }
   function claimAir(durS, marginS) { return S.claimAir(durS, marginS); }
-  // (the other rooms' state, read and written through S: S.ctx, S.mode,
-  // S.Harmony (the chord desk), S.Meeting (the chorister's book), S.moment,
-  // S.VI_TO_CHORDPOS, S.CHOIR_PART, S.reportLine)
+  // (the other rooms' state, read through S: S.ctx, S.playing, S.mode,
+  // S.F0, S.ROOT_MULT, S.Harmony (the chord desk), S.Meeting (the
+  // chorister's book))
   var Motif = KOLOB.Melody.Motif;
   // A guest's word to the minutes (SCORE §6): typed, and carrying whether the
   // page may name the guest at all — a guest the meeting marked unlogged
@@ -87,6 +93,17 @@ window.KOLOB = window.KOLOB || {};
     o.guest = guest;
     o.logged = !(V && V.logged === false);
     return o;
+  }
+  // …and one of the ward who comes forward in a piece (its hooks' onCast:
+  // the Social Hall's fiddler and caller, and the testimony-bearers, whom
+  // kolob-meeting.js hears): their row, a cast event (SCORE §6) named in
+  // Deseret — c is the piece's word {memberId, nameDs?, action}, `ward` the
+  // meeting's, where they are found. The caller sends it (tell, or the
+  // meeting's emitEvent) if its own piece is still live.
+  function castEvent(c, ward) {
+    var m = ward && ward.byId ? ward.byId[c.memberId] : null;
+    return { type: "cast", memberId: c.memberId, nameDs: c.nameDs || (m ? m.nameDs : "") || "", action: c.action,
+             actionDs: KOLOB.Cast && KOLOB.Cast.ACTION_DS ? KOLOB.Cast.ACTION_DS[c.action] || null : null, role: m ? m.role || null : null };
   }
 
   // THE RASPBERRY AMEN's cluster — two hands of neighboring seconds, every
@@ -127,24 +144,12 @@ window.KOLOB = window.KOLOB || {};
     if (hz.length) organChord(at, Math.max(6, total * 0.55), hz[0].chord, 0.5);
     var chDur = R.rnd(2.8, 3.4);
     stringsPad(at, total + chDur * 2 + 2, 0.85, true);
-    // the plagal amen — every voice lands together
+    // the plagal amen — every voice lands together, the organ following
+    // and ending where it always did (THE PLAGAL AMEN, kolob-voices-choir.js:
+    // here at 0.9, the organ's last chord held ×1.2)
     var cadAt = at + total + R.rnd(0.4, 0.9);
     var chords = S.Harmony.cadence("plagal", R, cadAt, "assembly");
-    var avs = activeVoices();
-    for (var ci = 0; ci < chords.length; ci++) {
-      var amenDur = chDur * (ci ? 1.7 : 1.02);
-      S.Harmony.write(chords[ci], cadAt + ci * chDur, "assembly", amenDur);
-      for (var v = 0; v < avs.length; v++) {
-        var vi = avs[v];
-        var cf = chords[ci].freqs[S.VI_TO_CHORDPOS[vi]];
-        choirVoiceLine(cadAt + ci * chDur, [{ f: cf, dur: amenDur }], vi, 0.9);
-        emitNote("choir", cf, cadAt + ci * chDur, amenDur, { part: S.CHOIR_PART[vi], chord: chords[ci].id });   // every voice of the amen
-      }
-    }
-    // the organ follows the amen as it is sung (else it sounded the final
-    // chord under the first), ending where it always did
-    organChord(cadAt, chDur * 1.02, chords[0], 0.55);
-    organChord(cadAt + chDur, chDur * 1.2, chords[chords.length - 1], 0.55);
+    plagalAmen(chords, cadAt, chDur, "assembly", 0.9, 1.2);
     var dur = (cadAt + chDur * 2.2) - t;
     claimAir(dur, 6);
     tell(null, { type: "guest", guest: "assembly", stage: "whole-tune", theme: theme.name, gesture: theme.gesture || null, dur: dur });
@@ -155,12 +160,14 @@ window.KOLOB = window.KOLOB || {};
   }
 
   // ==========================================================================
-  // IVES VISITATIONS — rare guests, drawn at planMeeting on independent dice.
+  // IVES VISITATIONS — rare guests, drawn by the meeting's plan
+  // (kolob-plan.js) on independent dice.
   // (The Unanswered Question, after Ives, 1908, was the first of them and is
   // shelved — the owner, 2026-09-27: "one of the less interesting guests";
   // its set piece left this file on 2026-10-01 for
   // shelved/kolob-question-setpiece.js, its generator is
-  // shelved/kolob-question.js, and kolob-meeting.js still throws its dice.)
+  // shelved/kolob-question.js, and the meeting's plan, kolob-plan.js, still
+  // throws its dice.)
   // ==========================================================================
 
   // ==========================================================================
@@ -642,6 +649,88 @@ window.KOLOB = window.KOLOB || {};
   }
 
   // ==========================================================================
+  // THE HOST — every guest that plans and plays itself in a room of its own
+  // (kolob-guest-*.js, standing on KOLOB.GuestRoom) is played here: the
+  // trombones at dawn, the guests who stand in the room, the guests from
+  // outside the windows through host(); the variations, change ringing and
+  // the Social Hall through its pieces
+  // ==========================================================================
+  // (a deferred phrase of a guest asks whether its meeting still stands: a
+  // new meeting's plan seats new guests, and the old one's go unplayed. It
+  // asks through the chorister's book, whose guests are copies — so by the
+  // guest's type, fired — where the meeting asks its own guests by their
+  // records: kolob-meeting.js standsFor)
+  function C_live(V) { var g = S.Meeting.guests(); return V && V.stream && g.some(function (x) { return x.type === V.type && x.fired; }) && S.Meeting.meetingNum() === V.meetingNum; }
+  // …and the music still plays: what every slice, row and cast a guest lays
+  // out ahead asks when its cue comes
+  function stands(V) { return !!S.playing && C_live(V); }
+  // THE DEFER HOOK (hooks.defer): a slice of a piece laid on the guests' lane
+  // at its moment, and played only while live() holds — the guest's own
+  // stands(V) here (laneOf); the meeting's own guests hand theirs (lent)
+  function guestsLane(live) { return function (at, fn) { cueAt("guests", at, function () { if (live()) fn(); }); }; }
+  function laneOf(V) { return guestsLane(function () { return stands(V); }); }
+  // TELL NOW OR CUE: a guest's row at its moment — now if it has come, else
+  // a cue on the guests' lane that tells it only while the guest stands
+  function tellAt(V, t0, ev) {
+    if (t0 <= S.now() + 1e-6) tell(V, ev);
+    else cueAt("guests", t0, function () { if (stands(V)) tell(V, ev); });
+  }
+  // host(V, tc, G, name, layer, noteOf, opts): the guest V, cued at tc and
+  // played by its room G, its notes to noteOf, its rows told as `name`'s:
+  //   the prologue — the meeting it plays in noted (V.meetingNum, which
+  //     C_live asks); a guest whose room, material or stream is missing
+  //     plays nothing and holds the joint 4 s
+  //   the door — `layer`, a seated layer's send (S.seatedSend: the guests
+  //     who stand in the room), or null for the tabernacle's wide send (the
+  //     trombones, the visitors from outside)
+  //   the hooks — defer on the guests' lane while the guest stands (laneOf),
+  //     onNote, and its rows from its stages (rowsOf), each told at its
+  //     moment (tellAt)
+  //   the epilogue — the air claimed for the piece's length, and the span,
+  //     the piece's end less tc and a tail
+  // Where the set pieces differ, an option says how (none of them a case of
+  // the guest's name here):
+  //   rows       the stages that earn a row, a table; else the room's own
+  //              (G.ROWS: the gift of tongues'); else every stage. A stage
+  //              marked dev is never a row (the gulls' head)
+  //   firstRow   the piece's first stage, whatever it is, told as this row
+  //              (the handbells': "ring", their first sound)
+  //   once       each row told once (the guests who stand in the room)
+  //   fields(ev, st)  the row's own fields after its stage, in their order
+  //              (inTheRoom, outside)
+  //   hooks      the room's own hooks in place of the rows (the trombones'
+  //              onPhrase: a row a phrase, built and told as it sounds)
+  //   claim      false: it takes no air, the house carries on (the band,
+  //              the gulls)
+  //   tail       s the joint holds past the piece's end (2, the room's air
+  //              a moment after; 1 for the guests from outside)
+  function host(V, tc, G, name, layer, noteOf, opts) {
+    V.meetingNum = S.Meeting.meetingNum();
+    if (!G || !V || !V.material || !V.stream) return 4;
+    var hooks = { defer: laneOf(V), onNote: noteOf };
+    if (opts.hooks) Object.keys(opts.hooks).forEach(function (k) { hooks[k] = opts.hooks[k]; });
+    else hooks.onStage = rowsOf(V, G, name, opts);
+    var end = G.perform(S.ctx, layer ? S.seatedSend(layer) : wideSend(), tc, V.material, V.stream, hooks);
+    if (opts.claim !== false) claimAir(end - tc, 3);
+    return end - tc + (opts.tail != null ? opts.tail : 2);
+  }
+  // a piece's stages → its rows (host's options rows, firstRow, once, fields)
+  function rowsOf(V, G, name, opts) {
+    var rows = opts.rows || G.ROWS || null, told = {}, first = true;
+    function say(stage, st) {
+      if (opts.once) { if (told[stage]) return; told[stage] = true; }
+      var ev = { type: "guest", guest: name, stage: stage };
+      opts.fields(ev, st);
+      tellAt(V, st.t0, ev);
+    }
+    return function (st) {
+      if (opts.firstRow && first) { first = false; say(opts.firstRow, st); }
+      if (st.dev || st.stage === opts.firstRow || (rows && !rows[st.stage])) return;
+      say(st.stage, st);
+    };
+  }
+
+  // ==========================================================================
   // THE TROMBONE CHOIR AT DAWN (PLAN-COMPOSITION §14, item 3). In
   // Bethlehem the Moravians' trombones climb the belfry to play chorales
   // down onto the sleeping town; in Salem the Easter sunrise begins with
@@ -662,16 +751,11 @@ window.KOLOB = window.KOLOB || {};
   // and the strings rest their hands while it sounds (S.hallListens): the
   // first hymn is heard before anyone sings it.
   // ==========================================================================
-  // (a deferred phrase of a guest asks whether its meeting still stands: a
-  // new meeting's plan seats new guests, and the old one's go unplayed)
-  function C_live(V) { var g = S.Meeting.guests(); return V && V.stream && g.some(function (x) { return x.type === V.type && x.fired; }) && S.Meeting.meetingNum() === V.meetingNum; }
   function trombonesAtDawn(V, tc) {
-    V.meetingNum = S.Meeting.meetingNum();
-    var G = KOLOB.GuestTrombones;
-    if (!G || !V || !V.material || !V.stream) return 4;
     var calls = [];                               // [stage, t, side] — the rows told
     // a stage's row, told at its phrase's first sound (the far choir's first
-    // call at once: it is now)
+    // call at once: it is now) — built as it is told, and told whenever its
+    // cue comes: its phrase was laid out only while the dawn stood
     function call(stage, t0, side) {
       var c = [stage, t0, side];
       calls.push(c);
@@ -684,24 +768,18 @@ window.KOLOB = window.KOLOB || {};
     // (the dawn is laid out a phrase at a time, on the guests' lane, each
     // phrase 2.5 s before it sounds — not the whole dawn in this cue: a
     // composed hymn's dawn cost 390 ms laid out at once; each
-    // phrase's notes are reported, and its row told, as it is laid out)
-    var end = G.perform(S.ctx, wideSend(), tc, V.material, V.stream, {
-      defer: function (at, fn) {
-        cueAt("guests", at, function () { if (S.playing && C_live(V)) fn(); });
-      },
-      onNote: function (x) {
-        emitNote("trombones", x.freq, x.t, x.dur, guestNote(V, "trombones", { part: x.part, choir: x.choir, line: x.line, loud: x.loud, hymnId: V.fromHymn || null }));
-      },
+    // phrase's notes are reported, and its row told, as it is laid out. The
+    // span: the choirs' last chord, and the town's air a moment after it)
+    return host(V, tc, KOLOB.GuestTrombones, "trombones", null, function (x) {
+      emitNote("trombones", x.freq, x.t, x.dur, guestNote(V, "trombones", { part: x.part, choir: x.choir, line: x.line, loud: x.loud, hymnId: V.fromHymn || null }));
+    }, { hooks: {
       onPhrase: function (ph) {
         var side = ph.pan < 0 ? "west" : "east";
         if (ph.joins) call("together", ph.t0, side);
         else if (ph.choir === "far" && !calls.some(function (c) { return c[0] === "far"; })) call("far", ph.t0, side);
         else if (ph.choir === "near" && !calls.some(function (c) { return c[0] === "answer"; })) call("answer", ph.t0, side);
       },
-    });
-    claimAir(end - tc, 3);
-    // the span: the choirs' last chord, and the town's air a moment after it
-    return end - tc + 2;
+    } });
   }
 
   // ==========================================================================
@@ -709,61 +787,43 @@ window.KOLOB = window.KOLOB || {};
   // the ward's HANDBELL CHOIR and the
   // SINGING SCHOOL (experimental). Each plans and plays itself (kolob-guest-
   // handbells.js, kolob-guest-singingschool.js: pure plans, their own
-  // streams guest:<name>:<n>); the meeting seats them (kolob-meeting.js) and
-  // cues them at their moment, with their material made ready (the day's
-  // hymn, as the composer wrote it). This is the glue: their sound laid out
+  // streams guest:<name>:<n>); the meeting's plan seats them
+  // (kolob-plan.js), and the meeting (kolob-meeting.js) cues them at their
+  // moment, with their material made ready (the day's hymn, as the
+  // composer wrote it). This is the glue: their sound laid out
   // a slice at a time on the guests' lane of the engine's clock (hooks.defer
   // — never the whole piece inside one cue), their notes reported as they
-  // are laid out, their moments told as they come. They are IN the chapel:
+  // are laid out, their moments told as they come — through the host, each
+  // row once. They are IN the chapel:
   // the bells stand a step nearer than
   // the ward, in both rooms (S.seatedSend("handbells")), and the practice is
   // the ward's own choir, into the choir's layer (S.seatedSend("choir")) —
   // not the tabernacle's wide send the visitors from outside take.
   // ==========================================================================
-  var BELL_ROWS = { ring: 1, "verse2": 1, "round-entry": 1, cascade: 1 };
-  function standingGuest(V, tc, G, name, layer, noteOf) {
-    V.meetingNum = S.Meeting.meetingNum();
-    if (!G || !V || !V.material || !V.stream) return 4;
-    var told = {}, first = true;
-    function say(stage, st) {
-      if (told[stage]) return;
-      told[stage] = true;
-      var ev = { type: "guest", guest: name, stage: stage, section: S.Meeting.section(), hymnId: V.material.hymnId || null };
+  // (their rows name the section and the hymn — the practice's say it is
+  // experimental; the gift of tongues' and the Social Hall's are told so too)
+  function inTheRoom(V) {
+    return function (ev) {
+      ev.section = S.Meeting.section(); ev.hymnId = V.material.hymnId || null;
       if (V.experimental) ev.experimental = true;
-      if (st.t0 <= S.now() + 1e-6) tell(V, ev);
-      else cueAt("guests", st.t0, function () { if (S.playing && C_live(V)) tell(V, ev); });
-    }
-    var end = G.perform(S.ctx, S.seatedSend(layer), tc, V.material, V.stream, {
-      defer: function (at, fn) { cueAt("guests", at, function () { if (S.playing && C_live(V)) fn(); }); },
-      onNote: noteOf,
-      onStage: function (st) {
-        // (the bells: their first sound, whatever it rings, is their row;
-        // then the second setting, a round's first entry, the cascade)
-        // (a guest that names its rows — the gift of tongues' ROWS — tells
-        // only those; the rest are its own)
-        if (name === "handbells") {
-          if (first) { first = false; say("ring", st); }
-          if (BELL_ROWS[st.stage] && st.stage !== "ring") say(st.stage, st);
-        } else if (G.ROWS) { if (G.ROWS[st.stage]) say(st.stage, st); }
-        else say(st.stage, st);
-      },
-    });
-    claimAir(end - tc, 3);
-    return end - tc + 2;
+    };
   }
+  // (the bells: their first sound, whatever it rings, is their row; then the
+  // second setting, a round's first entry, the cascade)
+  var BELL_ROWS = { ring: 1, "verse2": 1, "round-entry": 1, cascade: 1 };
   function handbellsRing(V, tc) {
     var G = KOLOB.GuestHandbells;
     if (!KOLOB.VoicesFolk) return 4;
-    return standingGuest(V, tc, G, "handbells", "handbells", function (x) {
+    return host(V, tc, G, "handbells", "handbells", function (x) {
       emitNote("handbells", x.freq, x.t, x.dur, guestNote(V, "handbells", { part: x.part, role: x.role, ringer: x.ringer, bell: x.bell, tech: x.tech, pan: x.pan, loud: x.loud, reached: !!x.reached, rings: V.material.hymnId || null }));
-    });
+    }, { rows: BELL_ROWS, firstRow: "ring", once: true, fields: inTheRoom(V) });
   }
   function singingSchool(V, tc) {
     var G = KOLOB.GuestSingingSchool;
     if (!KOLOB.VoicesVocal) return 4;
-    return standingGuest(V, tc, G, "singingschool", "choir", function (x) {
+    return host(V, tc, G, "singingschool", "choir", function (x) {
       emitNote(x.layer || "choir", x.freq, x.t, x.dur, guestNote(V, "singingschool", { part: x.part, stage: x.stage, wrong: !!x.wrong, rehearses: V.material.hymnId || null }));
-    });
+    }, { once: true, fields: inTheRoom(V) });
   }
 
   // ==========================================================================
@@ -776,47 +836,36 @@ window.KOLOB = window.KOLOB || {};
   // the meeting seats and cues them with their material; this is the glue:
   // their sound laid out a bar, a line or a few seconds at a time on the
   // guests' lane (hooks.defer), their notes reported as they are laid out,
-  // their moments told when they come. They are OUTSIDE: into the
-  // tabernacle's wide send, as every visitor from the town is.
+  // their moments told when they come — through the host, its tail 1 s.
+  // They are OUTSIDE: into the tabernacle's wide send, as every visitor from
+  // the town is. (The company is listened to: the melodic voices find the
+  // air taken; the band and the gulls take no air — the meeting carries on.)
   // ==========================================================================
-  function outdoorGuest(V, tc, G, rows, noteOf, claim) {
-    V.meetingNum = S.Meeting.meetingNum();
-    if (!G || !V || !V.material || !V.stream) return 4;
-    var end = G.perform(S.ctx, wideSend(), tc, V.material, V.stream, {
-      defer: function (at, fn) { cueAt("guests", at, function () { if (S.playing && C_live(V)) fn(); }); },
-      onNote: noteOf,
-      onStage: function (st) {
-        if (st.dev || !rows[st.stage]) return;
-        var ev = { type: "guest", guest: V.type, stage: st.stage, side: st.side || null, section: S.Meeting.section() };
-        if (st.band != null) ev.band = st.band;
-        if (st.stage === "cross") ev.both = !!st.both;   // two bands crossing, or one going by: the minutes' row reads it
-        if (st.t0 <= S.now() + 1e-6) tell(V, ev);
-        else cueAt("guests", st.t0, function () { if (S.playing && C_live(V)) tell(V, ev); });
-      },
-    });
-    // (the company is listened to: the melodic voices find the air taken;
-    // the band and the gulls take no air — the meeting carries on)
-    if (claim) claimAir(end - tc, 3);
-    return end - tc + 1;
+  // (their rows name the side they come from and the section; a band's, its
+  // number, and whether two cross)
+  function outside(ev, st) {
+    ev.side = st.side || null; ev.section = S.Meeting.section();
+    if (st.band != null) ev.band = st.band;
+    if (st.stage === "cross") ev.both = !!st.both;   // two bands crossing, or one going by: the minutes' row reads it
   }
   function nauvooBand(V, tc) {
-    return outdoorGuest(V, tc, KOLOB.GuestBands, { approaches: 1, second: 1, cross: 1, passes: 1 }, function (x) {
+    return host(V, tc, KOLOB.GuestBands, "bands", null, function (x) {
       // (beat: the march's beat in seconds, as the page has always read a
       // band's note; beatInBar and bar, and downbeat on each bar's oom; each
       // band's notes carry its own hymn — a second band's are its own)
       emitNote("band", x.freq, x.t, x.dur, guestNote(V, "bands", { part: x.part, beat: x.beatS, bar: x.bar, beatInBar: x.beat, downbeat: x.downbeat,
         doubling: x.doubling, band: x.band, strain: x.strain, meter: x.meter, loud: x.loud, hymnId: x.hymnId || V.material.hymnId || null }));
-    }, false);
+    }, { rows: { approaches: 1, second: 1, cross: 1, passes: 1 }, fields: outside, claim: false, tail: 1 });
   }
   function handcartCompany(V, tc) {
-    return outdoorGuest(V, tc, KOLOB.GuestHandcart, { approaches: 1, sings: 1, passes: 1 }, function (x) {
+    return host(V, tc, KOLOB.GuestHandcart, "handcart", null, function (x) {
       emitNote("handcart", x.freq, x.t, x.dur, guestNote(V, "handcart", { part: x.part, voice: x.voice, verse: x.verse, line: x.line, beat: x.beat, syl: x.syl, octave: x.octave, loud: x.loud, hymnId: "earth:all-is-well" }));
-    }, true);
+    }, { rows: { approaches: 1, sings: 1, passes: 1 }, fields: outside, tail: 1 });
   }
   function gullsOver(V, tc) {
-    return outdoorGuest(V, tc, KOLOB.GuestGulls, { gulls: 1 }, function (x) {
+    return host(V, tc, KOLOB.GuestGulls, "gulls", null, function (x) {
       emitNote("gulls", x.freq, x.t, x.dur, guestNote(V, "gulls", { part: x.part, index: x.index, deg: x.deg, monzo: x.monzo, loud: x.loud, hymnId: V.material.hymnId || null }));
-    }, false);
+    }, { rows: { gulls: 1 }, fields: outside, claim: false, tail: 1 });
   }
 
   // ==========================================================================
@@ -832,19 +881,14 @@ window.KOLOB = window.KOLOB || {};
     var G = KOLOB.GuestVariations, org = S.Meeting.organist();
     if (!G || !V.material || !org || !S.organistPlays) return 4;
     var t0 = tc + 0.1, M = V.material, until = t0 + M.dur;
-    var home = !M.keyMonzo || (M.keyMonzo[0] === 0 && M.keyMonzo[1] === 0 && M.keyMonzo[2] === 0 && !(M.keyMonzo[3] || 0));
-    if (!home && S.droneDuck) {
-      S.droneDuck.gain.cancelScheduledValues(t0); S.droneDuck.gain.setValueAtTime(1, t0); S.droneDuck.gain.linearRampToValueAtTime(0.22, t0 + 3);
-      S.droneDuck.gain.setValueAtTime(0.22, until); S.droneDuck.gain.linearRampToValueAtTime(1, until + 6);
-    }
+    if (!isHome(M.keyMonzo)) S.droneStepBack(t0, until, 0.22, 3, 6);
     var end = G.perform(S.ctx, null, t0, M, V.stream, {
       organist: function (plan, at) {
         S.organistPlays(plan, at, { hymnId: M.hymnId, key: M.keyMonzo, variations: true, style: org.style,
                                     alive: function () { return !!S.playing && S.Meeting.meetingNum() === V.meetingNum && S.Meeting.section() === V.section; } });
       },
       onStage: function (st) {
-        var ev = { type: "guest", guest: "variations", stage: st.stage, section: S.Meeting.section(), hymnId: M.hymnId, keys: st.keys, regs: st.regs };
-        if (st.t0 <= S.now() + 1e-6) tell(V, ev); else cueAt("guests", st.t0, function () { if (S.playing && C_live(V)) tell(V, ev); });
+        tellAt(V, st.t0, { type: "guest", guest: "variations", stage: st.stage, section: S.Meeting.section(), hymnId: M.hymnId, keys: st.keys, regs: st.regs });
       },
     });
     claimAir(end - tc, 3);
@@ -866,18 +910,17 @@ window.KOLOB = window.KOLOB || {};
     var day = S.Meeting.day ? S.Meeting.day() : null;
     var mat = G.prepare({ keynoteHz: S.F0 * S.ROOT_MULT, sunday: day ? day.id : null }, V.stream), t1 = t + V.changes.at;
     var end = G.perform(S.ctx, wideSend(), t1, mat, V.stream, {
-      defer: function (at, fn) { cueAt("guests", at, function () { if (S.playing && C_live(V)) fn(); }); },
+      defer: laneOf(V),
       onNote: function (x) {
         emitNote("tower", x.freq, x.t, x.dur, guestNote(V, "steeples", { part: "tower", bell: x.bell, place: x.place, row: x.row, hand: x.hand, muffled: x.muffled, monzo: x.monzo, changes: true }));
       },
       onStage: function (st) {
-        var ev = { type: "guest", guest: "steeples", stage: "changes:" + st.stage, method: mat.methodName, touch: mat.touch, muffled: mat.muffled };
-        if (st.t0 <= S.now() + 1e-6) tell(V, ev); else cueAt("guests", st.t0, function () { if (S.playing && C_live(V)) tell(V, ev); });
+        tellAt(V, st.t0, { type: "guest", guest: "steeples", stage: "changes:" + st.stage, method: mat.methodName, touch: mat.touch, muffled: mat.muffled });
       },
     });
     var tl = G.score(mat, V.stream, t1).lastStrike + 3;
     cueAt("guests", tl - 2.5, function () {
-      if (!S.playing || !C_live(V)) return;
+      if (!stands(V)) return;
       bellStrike(tl, hg * 0.9, homeBase, panAt("bells", Y.rnd(-0.2, 0.2)), { hum: true });
       emitNote("bells", 0, tl, BELL_RING_S, guestNote(V, "steeples"));
     });
@@ -898,16 +941,18 @@ window.KOLOB = window.KOLOB || {};
                      singer: V.singer || (ward && G.singerOf ? G.singerOf(V.seat, ward) : null),
                      harmonium: S.Meeting.sits && S.Meeting.sits("harmonium") ? false : undefined };
     }
-    var span = standingGuest(V, tc, G, "tongues", "choir", function (x) {
+    // (its rows, the ones it names — ROWS — each told once, as the guests
+    // who stand in the room tell theirs)
+    var span = host(V, tc, G, "tongues", "choir", function (x) {
       emitNote(x.layer, x.freq, x.t, x.dur, guestNote(V, "tongues", { part: x.part, member: x.member, role: x.role, deg: x.deg, monzo: x.monzo, wordDs: x.wordDs, slur: x.slur }));
-    });
+    }, { once: true, fields: inTheRoom(V) });
     // (the singer rises: their own row in the minutes, by name — a cast event
     // at the score's moment, as the testimony-bearers' are)
     var who = V.material.singer, w = V.material.ward, m = who && w && w.byId ? w.byId[who] : null, rise = null;
     try { (G.score(V.material, V.stream, tc).stages || []).forEach(function (st) { if (st.stage === "rises" && rise == null) rise = st.t0 != null ? st.t0 : st.t; }); }
     catch (e) { rise = null; S.confess("the gift of tongues' score could not be read (the singer's rising goes untold)", e); }
     if (m && rise != null) cueAt("guests", Math.max(rise, S.now()), function () {
-      if (!S.playing || !C_live(V)) return;
+      if (!stands(V)) return;
       tell(V, { type: "cast", memberId: who, nameDs: m.nameDs || "", action: "rises and sings in tongues", role: m.role || null,
                 actionDs: KOLOB.Cast && KOLOB.Cast.ACTION_DS ? KOLOB.Cast.ACTION_DS["rises and sings in tongues"] || null : null });
     });
@@ -925,11 +970,11 @@ window.KOLOB = window.KOLOB || {};
     var G = KOLOB.GuestSocialHall;
     if (!G || !KOLOB.VoicesFolk || !KOLOB.VoicesVocal || !V.material) return 4;
     V.meetingNum = S.Meeting.meetingNum();
-    var told = {}, sc = G.score(V.material, V.stream, tc), clap = null;
+    var sc = G.score(V.material, V.stream, tc), clap = null;
     sc.stages.forEach(function (st) { if (st.stage === "applause" && clap == null) clap = st.t0; });
     var end = G.perform(S.ctx, S.seatedSend("fiddle"), tc, V.material, V.stream, {
       dests: { fiddle: S.seatedSend("fiddle"), floor: S.seatedSend("floor"), caller: S.seatedSend("choir-near") },
-      defer: function (at, fn) { cueAt("guests", at, function () { if (S.playing && C_live(V)) fn(); }); },
+      defer: laneOf(V),
       onNote: function (x) {
         emitNote(x.layer, x.freq, x.t, x.dur, guestNote(V, "socialhall", { part: x.part, strain: x.strain, time: x.time, line: x.line, bar: x.bar,
           deg: x.deg, monzo: x.monzo, septimal: !!x.septimal, orn: x.orn || null, member: x.member || null, call: x.call || null,
@@ -938,27 +983,18 @@ window.KOLOB = window.KOLOB || {};
           // the singing school's notes say `rehearses`)
           dances: V.material.hymnId || null }));
       },
-      onStage: function (st) {
-        if (!HALL_ROWS[st.stage] || told[st.stage]) return;
-        told[st.stage] = true;
-        var ev = { type: "guest", guest: "socialhall", stage: st.stage, section: S.Meeting.section(), hymnId: V.material.hymnId || null };
-        if (st.t0 <= S.now() + 1e-6) tell(V, ev); else cueAt("guests", st.t0, function () { if (S.playing && C_live(V)) tell(V, ev); });
-      },
+      // (its rows, the ones the minutes print, each once, as the guests who
+      // stand in the room tell theirs)
+      onStage: rowsOf(V, G, "socialhall", { rows: HALL_ROWS, once: true, fields: inTheRoom(V) }),
       onCast: function (c) {
         cueAt("guests", Math.max(c.t, S.now()), function () {
-          if (!S.playing || !C_live(V)) return;
-          var w = S.Meeting.ward ? S.Meeting.ward() : null, m = w && w.byId ? w.byId[c.memberId] : null;
-          tell(V, { type: "cast", memberId: c.memberId, nameDs: c.nameDs || (m ? m.nameDs : "") || "", action: c.action,
-                    actionDs: KOLOB.Cast && KOLOB.Cast.ACTION_DS ? KOLOB.Cast.ACTION_DS[c.action] || null : null, role: m ? m.role || null : null });
+          if (!stands(V)) return;
+          tell(V, castEvent(c, S.Meeting.ward ? S.Meeting.ward() : null));
         });
       },
     });
     // (the drone steps back from the benches to the applause, and returns under it)
-    if (S.droneDuck) {
-      var back = clap != null ? clap : end - 4;
-      S.droneDuck.gain.cancelScheduledValues(tc); S.droneDuck.gain.setValueAtTime(1, tc); S.droneDuck.gain.linearRampToValueAtTime(0.18, tc + 3);
-      S.droneDuck.gain.setValueAtTime(0.18, back); S.droneDuck.gain.linearRampToValueAtTime(1, back + 4);
-    }
+    S.droneStepBack(tc, clap != null ? clap : end - 4, 0.18, 3, 4);
     claimAir(end - tc, 3);
     return end - tc + 2;
   }
@@ -966,6 +1002,8 @@ window.KOLOB = window.KOLOB || {};
   // ==========================================================================
   // LENT — what this room shares with the rest of the house (KOLOB._s)
   // ==========================================================================
+  S.castEvent = castEvent;
+  S.guestsLane = guestsLane;
   S.razzCluster = razzCluster;
   S.cumulativeAssembly = cumulativeAssembly;
   S.steeplesAnswer = steeplesAnswer;

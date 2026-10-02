@@ -81,15 +81,32 @@ window.KOLOB.Cast = (function () {
   // --------------------------------------------------------------------------
   var DS_CODES = ["ee", "ay", "ah", "aw", "oh", "oo", "i", "e", "a", "o", "u", "uu", "ie", "ow", "w", "y",
     "h", "p", "b", "t", "d", "ch", "j", "k", "g", "f", "v", "th", "dh", "s", "z", "sh", "zh", "r", "l", "m", "n", "ng", "oi", "ew"];
-  function deseret(spelling) {
+  // One speller, in two modes:
+  //   deseret(spelling), a name: each word's first letter a capital and the
+  //     rest small. A phoneme with no letter throws — a misspelt name is a
+  //     bug to be seen at once (the gift of tongues, which spells its words
+  //     here too, catches it, tells it, and leaves that word without its
+  //     Deseret).
+  //   deseretCaps(spelling), the clerk's capitals (WHAT THEY DO, below):
+  //     every letter a capital. A phoneme with no letter is written "?" and
+  //     the console says which it was: the actions are spelt as this room
+  //     loads, and a misspelt phoneme must not take the whole engine down.
+  function spell(spelling, caps) {
     return spelling.split(" ").map(function (word) {
       return word.split("-").map(function (ph, i) {
         var at = DS_CODES.indexOf(ph);
-        if (at < 0) throw new Error("kolob-cast: no Deseret letter for '" + ph + "' in " + spelling);
-        return String.fromCodePoint(0x10400 + at + (i ? 0x28 : 0));
+        if (at < 0) {
+          var says = "kolob-cast: no Deseret letter for '" + ph + "' in " + spelling;
+          if (!caps) throw new Error(says);
+          if (typeof console !== "undefined" && console.warn) console.warn(says);
+          return "?";
+        }
+        return String.fromCodePoint(0x10400 + at + (i && !caps ? 0x28 : 0));
       }).join("");
     }).join(" ");
   }
+  function deseret(spelling) { return spell(spelling, false); }
+  function deseretCaps(spelling) { return spell(spelling, true); }
 
   // THE NAMES: [English (dev only; never rendered in the app), phonemes].
   // Pioneer names, the Book of Mormon's, and a few the colony made its own.
@@ -138,22 +155,8 @@ window.KOLOB.Cast = (function () {
     enthusiast: "the enthusiast", child: "the child", newcomer: "the newcomer", testimony: "a testimony-bearer", organist: "the organist",
   };
   // WHAT THEY DO, in the minutes' own letters (the clerk writes in capitals:
-  // "𐐢𐐌𐐤𐐞 𐐍𐐓", LINES OUT). The English words stay the event's `action`,
-  // for the dev tools; the page prints these.
-  function deseretCaps(spelling) {
-    return spelling.split(" ").map(function (word) {
-      return word.split("-").map(function (ph) {
-        var at = DS_CODES.indexOf(ph);
-        if (at < 0) {
-          // (a misspelt phoneme must not take the whole engine down at load: the
-          // clerk writes "?" for that letter and the console says which it was)
-          if (typeof console !== "undefined" && console.warn) console.warn("kolob-cast: no Deseret letter for '" + ph + "' in " + spelling);
-          return "?";
-        }
-        return String.fromCodePoint(0x10400 + at);
-      }).join("");
-    }).join(" ");
-  }
+  // "𐐢𐐌𐐤𐐞 𐐍𐐓", LINES OUT — deseretCaps, above). The English words stay
+  // the event's `action`, for the dev tools; the page prints these.
   var ACTION_DS = {};
   [["keys the hymn", "k-ee-z dh-u h-i-m"], ["hums the first note", "h-u-m-z dh-u f-u-r-s-t n-oh-t"], ["pitches the tune", "p-i-ch-i-z dh-u t-oo-n"],
    ["lines out", "l-ie-n-z ow-t"], ["comes forward", "k-u-m-z f-aw-r-w-u-r-d"], ["sings the descant", "s-i-ng-z dh-u d-e-s-k-a-n-t"],
@@ -480,45 +483,24 @@ window.KOLOB.Cast = (function () {
   // ==========================================================================
   // THE HYMN'S NOTES, IN SECONDS — the chorister's clock (tempo, rubato, how
   // long a fermata is held), and a part's notes laid out on it (hymn-lab's
-  // way: a breath taken from each line's last note).
+  // way: a breath taken from each line's last note). The arithmetic is
+  // kolob-pitch.js's and the clock kolob-score.js's (lineClock, the one the
+  // organist plays under).
   // ==========================================================================
-  function ratio(m) { return Math.pow(2, m[0]) * Math.pow(3, m[1]) * Math.pow(5, m[2]) * Math.pow(7, m[3] || 0); }
-  function lineLenBeats(line, next) {
-    if (next && next.startBeat != null && line.startBeat != null && next.startBeat > line.startBeat) return next.startBeat - line.startBeat;
-    return K.Score && K.Score.lineLength ? K.Score.lineLength(line) : lengthOf(line);
-  }
-  function lengthOf(line) { var end = 0; for (var p in line.notes) (line.notes[p] || []).forEach(function (n) { end = Math.max(end, n.beat + n.beats); }); return end; }
+  function ratio(m) { return K.Pitch.ratio(m); }
+  function lineLenBeats(line, next) { return K.Score.spanBeats(line, next); }
+  function lengthOf(line) { return K.Score.lineLength(line); }
   // clock(b) → seconds from the line's start to beat b: the chorister's beat,
   // a broadening toward the close (rit, 0 = strict), and the fermatas held
   // `hold` beats-worth longer than written
-  function clockOf(line, beatS, rit, holdMul) {
-    var len = Math.max(1, lengthOf(line)), holds = [];
-    (line.fermataBeats || []).forEach(function (fb) {
-      var l = 1;
-      Object.keys(line.notes).forEach(function (p) { line.notes[p].forEach(function (n) { if (Math.abs(n.beat - fb) < 1e-6) l = Math.max(l, n.beats); }); });
-      holds.push({ at: fb + l, extra: (holdMul - 1) * l * beatS });
-    });
-    return function (b) {
-      var t = beatS * (b + rit * b * b * b / (3 * len * len));
-      holds.forEach(function (x) { if (b >= x.at - 1e-6) t += x.extra; });
-      return t;
-    };
-  }
+  function clockOf(line, beatS, rit, holdMul) { return K.Score.lineClock(line, beatS, { rit: rit, hold: holdMul }); }
   function lineSpan(line, next, beatS, rit, holdMul) {
     var clk = clockOf(line, beatS, rit, holdMul);
     return clk(lineLenBeats(line, next)) + ((line.fermataBeats || []).length ? 0.3 * beatS : 0);
   }
   // one part's notes of one line: [{t, dur, n}], t from the line's start
   function partNotes(line, next, part, beatS, rit, holdMul) {
-    var clk = clockOf(line, beatS, rit, holdMul), ns = line.notes[part] || [], out = [];
-    for (var k = 0; k < ns.length; k++) {
-      var n = ns[k], b0 = n.beat, b1 = n.beat + n.beats;
-      while (ns[k].tie && k + 1 < ns.length) { k++; b1 = ns[k].beat + ns[k].beats; }
-      var st = clk(b0), dur = clk(b1) - st;
-      if (k === ns.length - 1 && line.breathAfter !== false) dur -= Math.min(0.3 * beatS, 0.25 * dur);   // the breath
-      out.push({ t: st, dur: dur, n: n });
-    }
-    return out;
+    return K.Score.sungNotes(line.notes[part] || [], clockOf(line, beatS, rit, holdMul), beatS, line.breathAfter);
   }
 
   // THE BASSES IN THE MEN'S VERSE: [part, octave] for a
@@ -1172,6 +1154,7 @@ window.KOLOB.Cast = (function () {
           if (descant) {
             var dr = R ? R.fork("descant:" + li) : { rnd: function () { return 0.5; } };
             var dn = descantLine(hymn, line, dr), clk = clockOf(line, bs, rit, plan.holdMul);
+            // (each note of the descant its own, a tie or no: not KOLOB.Score.sungNotes)
             notes = dn.map(function (n, k) {
               var st = clk(n.beat), dur = clk(n.beat + n.beats) - st;
               if (k === dn.length - 1 && line.breathAfter !== false) dur -= Math.min(0.3 * bs, 0.25 * dur);

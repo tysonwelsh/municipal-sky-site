@@ -22,9 +22,11 @@ function kolob_v($file)
 // ONE list in _engine.php (the Jukebox v2 substrate — pj2-rand, pj2-clock,
 // pj2-fx — then pitch, the score and the Earth tunes, the composers, the
 // voices, the performers, and last the core that raises the KolobAudio
-// facade over them). The labs read the same list; so does the harness.
+// facade over them). The labs read the same list; so does the harness. The
+// page's drawing (KolobViz) is six files of its own, in _viz.php's list.
 $kolob_engine  = require __DIR__ . '/_engine.php';
-$kolob_assets  = array_merge($kolob_engine, ['kolob-ui.js', 'kolob-viz.js', 'kolob-text.js', 'kolob.css', 'index.php', '_engine.php']);
+$kolob_viz     = require __DIR__ . '/_viz.php';
+$kolob_assets  = array_merge($kolob_engine, ['kolob-ui.js'], $kolob_viz, ['kolob-text.js', 'kolob.css', 'index.php', '_engine.php', '_viz.php']);
 $kolob_version = trim((string) @file_get_contents(__DIR__ . '/VERSION')) ?: 'dev';
 $kolob_build   = substr(md5(implode('', array_map('kolob_v', $kolob_assets))), 0, 6);
 $kolob_mtime   = 0;
@@ -63,7 +65,7 @@ include '../../includes/header.php';
          it is full the wheel turns anticlockwise a seat beneath it and the arc
          fills again. Inside the wheel's hour ring, standing on the horizon,
          the tabernacle organ facade — a spectrum analyzer as black pipe
-         silhouettes — breathes with the music. Drawn by kolob-viz.js
+         silhouettes — breathes with the music. Drawn by kolob-viz-wheel.js
          (drawWheel, drawFacade); the horizon rule is the divider between this
          plate and the staff beneath. The live region speaks the seat and its
          progress for readers who cannot see it. -->
@@ -238,7 +240,12 @@ include '../../includes/header.php';
      kolob-ui.js reads: a broken page keeps PLAY disabled. -->
 <?php kolob_engine_tags($kolob_engine, 'kolob_v'); ?>
 <script src="kolob-text.js?v=<?php echo kolob_v('kolob-text.js'); ?>"></script>
-<script src="kolob-viz.js?v=<?php echo kolob_v('kolob-viz.js'); ?>"></script>
+<!-- The page's drawing (the staff, the wheel, the organ facade), from
+     _viz.php in its order: five files, then kolob-viz.js, which raises
+     KolobViz over them. -->
+<?php foreach ($kolob_viz as $kolob_js): ?>
+<script src="<?php echo htmlspecialchars($kolob_js); ?>?v=<?php echo kolob_v($kolob_js); ?>"></script>
+<?php endforeach; ?>
 <script src="kolob-ui.js?v=<?php echo kolob_v('kolob-ui.js'); ?>"></script>
 
 <!-- Anonymous usage tracking: a page view, plus the first PLAY press as an

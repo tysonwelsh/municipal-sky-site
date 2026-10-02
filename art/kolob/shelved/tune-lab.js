@@ -71,14 +71,14 @@ window.TuneLab = (function () {
     master.connect(ctx.destination);
   }
   function stopAll() {
-    for (var i = 0; i < live.length; i++) { try { live[i].stop(); } catch (e) {} }
+    for (var i = 0; i < live.length; i++) { try { live[i].stop(); } catch (e) { /* gone already */ } }
     live = [];
   }
 
   // one voice, both treatments — the remembered path mirrors farVoice
   function renderLine(notes, opts) {
     ensureCtx();
-    if (ctx.state !== "running") { try { ctx.resume(); } catch (e) {} }
+    if (ctx.state !== "running") { try { ctx.resume(); } catch (e) { /* an old browser */ } }
     stopAll();
     var t = ctx.currentTime + 0.12;
     var o = ctx.createOscillator(); o.type = "triangle";

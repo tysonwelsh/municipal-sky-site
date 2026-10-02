@@ -184,6 +184,7 @@ include '../../includes/header.php';
 <script src="kolob-voices-pipeorgan.js?v=<?php echo kg3_v('kolob-voices-pipeorgan.js'); ?>"></script>
 <script src="kolob-voices-vocal.js?v=<?php echo kg3_v('kolob-voices-vocal.js'); ?>"></script>
 <script src="kolob-cast.js?v=<?php echo kg3_v('kolob-cast.js'); ?>"></script>
+<script src="kolob-guest-room.js?v=<?php echo kg3_v('kolob-guest-room.js'); ?>"></script>
 <script src="kolob-guest-tongues.js?v=<?php echo kg3_v('kolob-guest-tongues.js'); ?>"></script>
 <script src="kolob-guest-farward.js?v=<?php echo kg3_v('kolob-guest-farward.js'); ?>"></script>
 <script src="kolob-guest-hosanna.js?v=<?php echo kg3_v('kolob-guest-hosanna.js'); ?>"></script>

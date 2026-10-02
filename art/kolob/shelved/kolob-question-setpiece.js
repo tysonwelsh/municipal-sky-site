@@ -10,21 +10,26 @@
 //
 // The owner shelved the Question on 2026-09-27 ("one of the less interesting
 // guests… there's better stuff we could be focusing on") and on 2026-10-01
-// asked for its dead code to leave the live tree. kolob-meeting.js still
-// throws its two dice (qDie, qSeatDie, on meeting:<n>) so every later draw
-// lands where it did; tools/lib/dump.js still reads its events out of old
-// dumps.
+// asked for its dead code to leave the live tree. The meeting's plan
+// (kolob-plan.js day, since the plan left kolob-meeting.js) still throws
+// its two dice (qDie, qSeatDie, on meeting:<n>) so every later draw lands
+// where it did; tools/lib/dump.js still reads its events out of old dumps.
 //
 // To unshelve: the set piece goes back into kolob-guests.js (lent as
-// S.unansweredQuestion and exported on KOLOB.Guests); kolob-meeting.js gets
-// the seating block back at the guests' dice (qDie and qSeatDie read again,
-// the switch offering "question"), inQuestion and its lend, and
-// VISIT_FN.question; kolob-voices-winds.js and kolob-voices-choir.js sit
+// S.unansweredQuestion and exported on KOLOB.Guests); kolob-plan.js gets
+// the seating block back at the guests' dice (qDie and qSeatDie handed from
+// day() to seat() and read again, FORCEABLE offering "question");
+// kolob-meeting.js gets inQuestion and its lend, and VISIT_FN.question;
+// kolob-voices-winds.js and kolob-voices-choir.js sit
 // their free cycles out while inQuestion(); kolob-score.js EVENTS takes the
-// two rows back; kolob-viz.js takes the intake (onEvent, flushIntake), the
-// askings' fold (takeLayer's askMax), the harmonium's slashed grace notes
-// (grp.slash, groupBoxes, drawGroup, inkOpts), takeQuestion, takeUnanswered,
-// drawQuestions, text(), FG and the dotted barline back. Then the two notes
+// two rows back; the page's drawing — kolob-viz.js, since cut into six
+// files (THE SIX FILES there) — takes the intake (onEvent, flushIntake), the
+// askings' fold (takeLayer's askMax), takeQuestion and takeUnanswered back in
+// kolob-viz-intake.js, and the harmonium's slashed grace notes (grp.slash,
+// groupBoxes, drawGroup, inkOpts), drawQuestions, text(), FG and the dotted
+// barline (drawBarline) in kolob-viz.js; a name one file needs from another
+// is borrowed in its BORROWED block and lent in the other's LENT block
+// (KOLOB._viz). Then the two notes
 // in the set piece's header (the askings told untagged; the second rank's
 // pure fifth).
 // ============================================================================

@@ -33,6 +33,14 @@
 // perform() reads no clock and lays the cries out a few seconds at a time
 // through hooks.defer.
 //
+// THE SCAFFOLD (KOLOB.GuestRoom, kolob-guest-room.js): the stream it
+// insists on, plan(), oddsFor() (the house's odds), the decision's shape and
+// its "not this Sunday", the slices on the clock (defer), the stages told,
+// the teardown sentinel, perform.last and LEVEL. Its own: its seats (a
+// quiet rite with no guest in it or beside it, never a funeral, never a
+// third guest), the flock's shape drawn and discarded in decide(), and its
+// slices — three seconds of cries each, laid 2 s ahead (the house's 2.5).
+//
 // Public surface: window.KOLOB.GuestGulls
 //   plan(meetingInfo, stream) → { guest: "gulls", seat, section, at, dur,
 //        holdUntil, odds, logged: true } | null
@@ -56,6 +64,8 @@ window.KOLOB.GuestGulls = (function () {
 
   var NAME = "gulls";
   var LABEL = "guest:gulls:";
+  var GR = window.KOLOB.GuestRoom;                // the scaffold (kolob-guest-room.js)
+  if (!GR) throw new Error("KOLOB.GuestGulls: load kolob-guest-room.js first");
 
   // ==========================================================================
   // THE ODDS — a starting point, for the owner's ear
@@ -81,17 +91,8 @@ window.KOLOB.GuestGulls = (function () {
   var REGISTER = [600, 1500];                        // Hz: where a gull's cry lives
   var LEVEL = 0.5;                                  // the flock's bus (calibrated in the lab)
 
-  function need(stream) {
-    if (!stream || typeof stream.fork !== "function") throw new Error("KOLOB.GuestGulls: a PJ2.Rand stream is required (label " + LABEL + "<n>)");
-    return stream;
-  }
-  function oddsFor(info) {
-    // (the meeting hands this room its odds from Calendar.GUEST_ODDS,
-    // info.odds; a lab without them reads the room's own ODDS)
-    if (info && info.odds != null) return Math.max(0, Math.min(1, +info.odds));
-    var w = ODDS.weight, k = info.sunday && w[info.sunday] != null ? info.sunday : info.kind;
-    return Math.min(ODDS.cap, ODDS.base * (w[k] != null ? w[k] : 1));
-  }
+  function need(stream) { return GR.need(stream, "KOLOB.GuestGulls", LABEL); }
+  function oddsFor(info) { return GR.oddsFor(info, ODDS); }
   function shapeOf(stream) {
     var r = need(stream).fork("shape");
     return {
@@ -133,24 +134,21 @@ window.KOLOB.GuestGulls = (function () {
     if (funeral) why = "not at a funeral";
     else if (others >= MAX_GUESTS && !info.force) why = "two guests already";
     else if (pick == null) why = "no quiet rite free";
-    else if (!(info.force || roll < p)) why = "not this Sunday";
-    if (why) return { seat: null, why: why, odds: p, roll: roll };
+    else if (GR.notThisSunday(info, roll, p)) why = "not this Sunday";
+    if (why) return GR.decision(null, why, p, roll);
     var sec = secs[pick], secDur = sec.dur > 0 ? sec.dur : 60;
     var at = Math.max(AT_MIN, secDur * (AT[0] + (AT[1] - AT[0]) * atU));
     var dur = info.material ? score(info.material, stream, 0).end : 16;
-    return {
-      seat: { guest: NAME, seat: sec.type, section: sec.type, at: +at.toFixed(2), dur: +dur.toFixed(2), holdUntil: +(at + dur + 2).toFixed(2),
-              estimated: !info.material, odds: +p.toFixed(3), logged: true },
-      why: "seated", odds: p, roll: roll,
-    };
+    return GR.decision({ guest: NAME, seat: sec.type, section: sec.type, at: +at.toFixed(2), dur: +dur.toFixed(2), holdUntil: +(at + dur + 2).toFixed(2),
+                         estimated: !info.material, odds: +p.toFixed(3), logged: true }, "seated", p, roll);
   }
-  function plan(info, stream) { return decide(info, stream).seat; }
+  var plan = GR.plan(decide);
 
   // ==========================================================================
   // THE HEAD — the first line of the hymn's tune (with the next, if the first
   // is short), up to ten notes, in its own rhythm
   // ==========================================================================
-  function ratio(m) { return Math.pow(2, m[0]) * Math.pow(3, m[1]) * Math.pow(5, m[2]) * Math.pow(7, m[3] || 0); }
+  function ratio(m) { return window.KOLOB.Pitch.ratio(m); }
   // (no hymn to be had — a lab's: OLD HUNDRED's first line, do do ti la sol do re mi)
   var OLD_HUNDRED = [[0, 2, [0, 0, 0, 0]], [0, 1, [0, 0, 0, 0]], [-1, 1, [-4, 1, 1, 0]], [-2, 1, [-1, -1, 1, 0]], [-3, 1, [-2, 1, 0, 0]],
                      [0, 1, [0, 0, 0, 0]], [1, 1, [-3, 2, 0, 0]], [2, 2, [-2, 0, 1, 0]]];
@@ -245,7 +243,7 @@ window.KOLOB.GuestGulls = (function () {
   // PERFORM — the flock, placed at t (reads no clock), a few seconds of cries
   // at a time (hooks.defer), each cry KOLOB.VoicesFolk's gull
   // ==========================================================================
-  var AHEAD = 2, SLICE_S = 3;
+  var AHEAD = GR.ahead(2), SLICE_S = 3;
   function perform(ctx, dest, t, material, stream, hooks) {
     var VF = window.KOLOB.VoicesFolk;
     if (!VF) throw new Error("KOLOB.GuestGulls: load kolob-voices-folk.js first");
@@ -258,7 +256,7 @@ window.KOLOB.GuestGulls = (function () {
     slices.forEach(function (sl, i) {
       if (!sl) return;
       var at = t + i * SLICE_S - AHEAD;
-      if (hooks.defer && at > t) hooks.defer(at, function () { lay(sl); }); else lay(sl);
+      GR.defer(hooks, t, at, function () { lay(sl); });
     });
     function lay(sl) {
       sl.forEach(function (c) {
@@ -270,20 +268,15 @@ window.KOLOB.GuestGulls = (function () {
         }
       });
     }
-    if (hooks.onStage) sc.stages.forEach(function (st) { hooks.onStage(st); });
-    var sent = ctx.createConstantSource ? ctx.createConstantSource() : ctx.createOscillator();
-    var sg = ctx.createGain(); sg.gain.value = 0;
-    sent.connect(sg); sg.connect(bus);
-    sent.onended = function () { try { folk.out.disconnect(); sg.disconnect(); sent.disconnect(); bus.disconnect(); } catch (e) {} };
-    sent.start(Math.max(0, t)); sent.stop(sc.end + 1.5);
-    perform.last = { score: sc, folk: folk };
+    GR.tellStages(hooks, sc.stages);
+    GR.sentinel(ctx, bus, t, sc.end + 1.5, function () { GR.quiet([folk.out, bus]); });
+    GR.last(perform, { score: sc, folk: folk });
     return sc.end;
   }
 
-  return {
+  return GR.level({
     plan: plan, decide: decide, prepare: prepare, score: score, perform: perform, head: head, shape: shapeOf,
     ODDS: ODDS, MAX_GUESTS: MAX_GUESTS, SEATS: SEATS, NAME: NAME, LABEL: LABEL, CENTRE: CENTRE,
-    get LEVEL() { return LEVEL; }, set LEVEL(v) { LEVEL = +v; },
-  };
+  }, function () { return LEVEL; }, function (v) { LEVEL = v; });
 })();
 (window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-guest-gulls.js"] = true;   // the load guard's roll call

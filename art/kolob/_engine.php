@@ -102,10 +102,13 @@ return [
     // every hymn
     'kolob-cast.js',
     // the day's hymnal (it orders the meeting's hymns from the composer and
-    // brings them back); the trombone choir at dawn, the ward's handbell
-    // choir and the singing school, each planning and playing itself (the
-    // guests' room places them, the meeting seats them)
-    'kolob-hymnal.js', 'kolob-guest-trombones.js', 'kolob-guest-handbells.js', 'kolob-guest-singingschool.js',
+    // brings them back); the scaffold every guest room stands on (its
+    // stream, its odds, its decision, its slices on the clock, its
+    // teardown), ahead of the first of them; the trombone choir at dawn, the
+    // ward's handbell choir and the singing school, each planning and
+    // playing itself (the guests' room places them, the meeting seats them)
+    'kolob-hymnal.js', 'kolob-guest-room.js',
+    'kolob-guest-trombones.js', 'kolob-guest-handbells.js', 'kolob-guest-singingschool.js',
     // (the other guests, each planning and playing itself — the Nauvoo band
     // that marches, the handcart company, the gulls; the organist's
     // variations on a hymn and change ringing from a far tower; the gift of
@@ -115,7 +118,10 @@ return [
     'kolob-guest-variations.js', 'kolob-guest-changes.js',
     'kolob-guest-tongues.js', 'kolob-guest-farward.js', 'kolob-guest-hosanna.js',
     'kolob-guest-socialhall.js', 'kolob-testimony.js',
-    'kolob-guests.js', 'kolob-meeting.js',
+    'kolob-guests.js',
+    // the meeting's plan (pure: the Sunday, the order of service, every die
+    // of meeting:<n>), ahead of the chorister who conducts it, who requires it
+    'kolob-plan.js', 'kolob-meeting.js',
     // the facade
     'kolob-core.js',
 ];

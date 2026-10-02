@@ -63,6 +63,17 @@
 // reads no clock: it lays the shout and the hymn out a line at a time
 // through hooks.defer, a few seconds before each sounds.
 //
+// THE SCAFFOLD (KOLOB.GuestRoom, kolob-guest-room.js): the stream it
+// insists on, plan(), oddsFor() — on its two Sundays only (mayCome), the
+// table's weight for the Sunday by name, 0.5 for one it does not name
+// (unnamed) — the decision's shape (with `beside`) and its "not this
+// Sunday", the look-ahead (2.5 s; the organ's own, ORGAN_AHEAD) and the
+// slices on the clock (defer, ALWAYS: every slice a cue of its own), the
+// teardown sentinel, perform.last and LEVEL. Its own: its seat (the last
+// doxology's close), the arm-tick, its stages — each told on the clock at
+// its own moment, reshaped and logged: false (not the stages told at once)
+// — and its let-go, the organ and both buses.
+//
 // Public surface: window.KOLOB.GuestHosanna
 //   plan(meetingInfo, stream) → { guest: "hosanna", seat: "doxology",
 //        section: "doxology", sectionIndex, at: "close", dur, verses, odds,
@@ -88,6 +99,8 @@ window.KOLOB.GuestHosanna = (function () {
 
   var NAME = "hosanna";
   var LABEL = "guest:hosanna:";
+  var GR = window.KOLOB.GuestRoom;                // the scaffold (kolob-guest-room.js)
+  if (!GR) throw new Error("KOLOB.GuestHosanna: load kolob-guest-room.js first");
   var LOGGED = false;                              // the owner's ruling: never told
   // (the staff's switch only; never the minutes'. PLAN §8.12 asked for the
   // hymn engraved and the shout not; the owner ruled the Hosanna audio-only:
@@ -107,7 +120,7 @@ window.KOLOB.GuestHosanna = (function () {
   }
   // (the meeting hands this room its odds from Calendar.GUEST_ODDS,
   // info.odds; still only on its two Sundays, whatever it is handed)
-  function oddsFor(info) { return !mayCome(info) ? 0 : info.odds != null ? Math.max(0, Math.min(1, +info.odds)) : Math.min(ODDS.cap, ODDS.weight[info.sunday] != null ? ODDS.weight[info.sunday] : 0.5); }
+  function oddsFor(info) { return GR.oddsFor(info, ODDS, { mayCome: mayCome, unnamed: 0.5 }); }
   // the bus: the shout and the ward calibrated in guests3c-lab against the
   // organ reference (the shout's loudest 3 s about level with it; the hymn,
   // full organ and full ward, 2–3 LU over it, as a doxology on full organ is)
@@ -135,13 +148,10 @@ window.KOLOB.GuestHosanna = (function () {
     return x.filter(function (p) { return V5[p] || keep[p]; }).join("-") || "ah";
   }
 
-  function need(stream) {
-    if (!stream || typeof stream.fork !== "function") throw new Error("KOLOB.GuestHosanna: a PJ2.Rand stream is required (label " + LABEL + "<n>)");
-    return stream;
-  }
-  function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
-  function r4(x) { return Math.round(x * 1e4) / 1e4; }
-  function ratio(m) { return Math.pow(2, m[0]) * Math.pow(3, m[1]) * Math.pow(5, m[2]) * Math.pow(7, m[3] || 0); }
+  function need(stream) { return GR.need(stream, "KOLOB.GuestHosanna", LABEL); }
+  function clamp(x, a, b) { return window.KOLOB.Num.clamp(x, a, b); }
+  function r4(x) { return window.KOLOB.Num.r4(x); }
+  function ratio(m) { return window.KOLOB.Pitch.ratio(m); }
 
   // ==========================================================================
   // THE SHAPE — the shout's pace and rise, the room's breath between, the
@@ -188,25 +198,22 @@ window.KOLOB.GuestHosanna = (function () {
   function decide(info, stream) {
     info = info || {};
     var rs = need(stream).fork("seat");
-    var roll = rs.next();                          // DICE: the hook's die, first — kolob-meeting.js throws exactly this
+    var roll = rs.next();                          // DICE: the hook's die, first — the meeting's plan (kolob-plan.js) throws exactly this
     var p = oddsFor(info), why = null, secs = info.sections || [], di = -1;
     for (var i = 0; i < secs.length; i++) if (secs[i] && secs[i].type === "doxology") di = i;
     var beside = di >= 0 ? besideOf(info.guests, secs, di) : [];
     if (!mayCome(info)) why = "not Easter or a dedication";
     else if (di < 0) why = "no doxology";
     else if (YIELD && beside.length) why = "a guest is in or beside the doxology (" + beside.join(", ") + ")";
-    else if (!(info.force || roll < p)) why = "not this Sunday";
-    if (why) return { seat: null, why: why, odds: p, roll: roll, beside: beside };
+    else if (GR.notThisSunday(info, roll, p)) why = "not this Sunday";
+    if (why) return GR.decision(null, why, p, roll, { beside: beside });
     var tl = timeline(shapeOf(stream, info.sunday), tuneOf(info.material));
-    return {
-      seat: {
-        guest: NAME, seat: "doxology", section: "doxology", sectionIndex: di, at: "close",
-        dur: +tl.end.toFixed(2), holdUntil: +(tl.end + 3).toFixed(2), verses: 1, odds: +p.toFixed(3), logged: LOGGED, beside: beside,
-      },
-      why: "seated", odds: p, roll: roll, beside: beside,
-    };
+    return GR.decision({
+      guest: NAME, seat: "doxology", section: "doxology", sectionIndex: di, at: "close",
+      dur: +tl.end.toFixed(2), holdUntil: +(tl.end + 3).toFixed(2), verses: 1, odds: +p.toFixed(3), logged: LOGGED, beside: beside,
+    }, "seated", p, roll, { beside: beside });
   }
-  function plan(info, stream) { return decide(info, stream).seat; }
+  var plan = GR.plan(decide);
 
   // ==========================================================================
   // THE SHOUT — "Ho-san-na, Ho-san-na, Ho-san-na, to God and the Lamb", and
@@ -259,12 +266,7 @@ window.KOLOB.GuestHosanna = (function () {
   // THE TIMELINE — when the shouts, the amens, the organ and each line fall
   // (seconds from the seat; pure: the shape and the tune)
   // ==========================================================================
-  function lineLen(line) {
-    var Sc = window.KOLOB.Score;
-    if (Sc && Sc.lineLength) return Sc.lineLength(line);
-    var end = 0; for (var p in line.notes) (line.notes[p] || []).forEach(function (n) { end = Math.max(end, n.beat + n.beats); });
-    return end;
-  }
+  function lineLen(line) { return window.KOLOB.Score.lineLength(line); }
   function timeline(sh, tune) {
     var t = sh.hush, cries = [];
     for (var k = 0; k < 3; k++) {
@@ -352,17 +354,11 @@ window.KOLOB.GuestHosanna = (function () {
   function hymnScore(tune, tl, K, t0, ward) {
     var base = K * ratio(tune.keyMonzo || [0, 0, 0, 0]), all = tune.lines.concat(tune.refrain || []), bs = tl.beatS, mp = tune.melodyPart || "S";
     var br = tl.lines.length && tl.lines[tl.lines.length - 1].t1 - tl.lines[tl.lines.length - 1].t0 > tl.lines[tl.lines.length - 1].beats * bs + 1e-6;
+    // (the line's own clock — the last line stretched to the time the
+    // timeline gives it — and the Score's tied notes and breath on it)
     function events(line, part, at, L, stretch) {
-      var ns = line.notes[part] || [], ev = [];
       function clk(b) { return bs * (b + (stretch ? stretch * b * b / (2 * L) : 0)); }
-      for (var k = 0; k < ns.length; k++) {
-        var n = ns[k], b0 = n.beat, b1 = n.beat + n.beats;
-        while (ns[k].tie && k + 1 < ns.length) { k++; b1 = ns[k].beat + ns[k].beats; }
-        var d = clk(b1) - clk(b0);
-        if (k === ns.length - 1 && line.breathAfter !== false) d -= Math.min(0.3 * bs, 0.25 * d);
-        ev.push({ t: at + clk(b0), dur: d, n: n });
-      }
-      return ev;
+      return window.KOLOB.Score.sungNotes(line.notes[part] || [], clk, bs, line.breathAfter, at);
     }
     function sylAt(line, li) {
       var ons = (line.notes[mp] || []).filter(function (n) { return n.syl !== null; }).map(function (n) { return n.beat; }), W = WORDS[li] || [];
@@ -396,7 +392,7 @@ window.KOLOB.GuestHosanna = (function () {
   // the ward line by line; each laid out a little before it sounds. It
   // tells nothing but its stages, each logged: false
   // ==========================================================================
-  var AHEAD = 2.5, ORGAN_AHEAD = 1.2, ARM_STEP = 0.1, ARM_LEAD = 0.8;
+  var AHEAD = GR.ahead(), ORGAN_AHEAD = 1.2, ARM_STEP = 0.1, ARM_LEAD = 0.8;
   // the arm-tick: one cue on the engine's clock at a time, from t to the
   // end, each joining what is due within ARM_LEAD and parting what has rung
   // out (VoicesVocal.arm; the ward's own pump may call it too — it is the
@@ -424,8 +420,8 @@ window.KOLOB.GuestHosanna = (function () {
     var obus = ctx.createGain(); obus.gain.value = LEVEL; obus.connect(hooks.organDest || dest);
     // (with a clock, every slice is a cue of its own — even one due now — so
     // the moment the Hosanna is cued costs only its score)
-    function later(at, fn) { if (hooks.defer) hooks.defer(Math.max(t, at - AHEAD), fn); else fn(); }
-    function laterBy(at, lead, fn) { if (hooks.defer) hooks.defer(Math.max(t, at - lead), fn); else fn(); }
+    function later(at, fn) { GR.defer(hooks, t, at - AHEAD, fn, GR.ALWAYS); }
+    function laterBy(at, lead, fn) { GR.defer(hooks, t, at - lead, fn, GR.ALWAYS); }
     sc.stages.forEach(function (st) { if (hooks.onStage && !(shoutOnly && st.t >= endAt)) later(st.t, function () { hooks.onStage({ stage: st.stage, t: st.t, t0: st.t, label: st.stage, guest: NAME, logged: LOGGED }); }); });
     // ARMING (VoicesVocal's): with the engine's clock, every line is built a
     // little ahead but joins the room only just before it sounds, and each of
@@ -498,15 +494,12 @@ window.KOLOB.GuestHosanna = (function () {
       });
     });
     // when the room has let the last chord go, let the buses and the organ go
-    var sent = ctx.createConstantSource ? ctx.createConstantSource() : ctx.createOscillator(), sg = ctx.createGain();
-    sg.gain.value = 0; sent.connect(sg); sg.connect(bus);
-    sent.onended = function () { if (organ && organ.dispose) organ.dispose(sc.end + 5); try { sg.disconnect(); sent.disconnect(); bus.disconnect(); obus.disconnect(); } catch (e) { /* gone */ } };
-    sent.start(Math.max(0, t)); sent.stop(endAt + 5);
-    perform.last = { score: sc, organ: function () { return organ; } };
+    GR.sentinel(ctx, bus, t, endAt + 5, function () { if (organ && organ.dispose) organ.dispose(sc.end + 5); GR.quiet([bus, obus]); });
+    GR.last(perform, { score: sc, organ: function () { return organ; } });
     return endAt;
   }
 
-  return {
+  return GR.level({
     plan: plan, decide: decide, score: score, perform: perform, words: words, mayCome: mayCome, timeline: function (stream, sunday) { return timeline(shapeOf(stream, sunday), tuneOf(null)); },
     ODDS: ODDS, NAME: NAME, LABEL: LABEL, LOGGED: LOGGED, CRY: CRY, AMEN: AMEN,
     get ENGRAVE_HYMN() { return ENGRAVE_HYMN; }, set ENGRAVE_HYMN(v) { ENGRAVE_HYMN = !!v; },
@@ -515,7 +508,6 @@ window.KOLOB.GuestHosanna = (function () {
     get SHOUT_H_SWELL() { return SHOUT_H_SWELL; }, set SHOUT_H_SWELL(v) { SHOUT_H_SWELL = v == null ? null : Math.max(1, +v); },
     get SHOUT_EFFORT() { return SHOUT_EFFORT; }, set SHOUT_EFFORT(v) { SHOUT_EFFORT = clamp(+v, 0, 1.2); },
     get HYMN_CONSONANTS() { return HYMN_CONSONANTS; }, set HYMN_CONSONANTS(v) { HYMN_CONSONANTS = v === "liquids" || v === "none" ? v : "all"; },
-    get LEVEL() { return LEVEL; }, set LEVEL(v) { LEVEL = +v; },
-  };
+  }, function () { return LEVEL; }, function (v) { LEVEL = v; });
 })();
 (window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-guest-hosanna.js"] = true;   // the load guard's roll call

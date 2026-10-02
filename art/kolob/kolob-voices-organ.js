@@ -48,7 +48,11 @@ window.KOLOB = window.KOLOB || {};
   var S = KOLOB._s = KOLOB._s || {};
 
   // ---- BORROWED — the other rooms' functions, bound late through S (every
-  // room is loaded before the first note, so the call always finds its owner) ----
+  // room is loaded before the first note, so the call always finds its owner;
+  // each wrapper is named after the lend it calls and passes its arguments
+  // through in order — tools/lends.js checks) ----
+  // from kolob-pitch.js
+  function isHome(m) { return KOLOB.Pitch.isHome(m); }
   // from kolob-meeting.js
   function intensity() { return S.intensity(); }
   function silenceMul() { return S.silenceMul(); }
@@ -342,7 +346,7 @@ window.KOLOB = window.KOLOB || {};
   // ==========================================================================
   // THE CHORALE PRELUDE (PLAN-COMPOSITION §15, item 2: approved, as a draw,
   // never the fixed opening; the plan is kolob-organist.js's prelude).
-  // On a Sunday seated for it (kolob-meeting.js, THE PRELUDE'S SEATING:
+  // On a Sunday seated for it (kolob-plan.js, THE PRELUDE'S SEATING:
   // "chorale"), the organist's first touch is the day's first hymn — the
   // plain organist's hymn once or twice through on soft flutes, the
   // Victorian's tune on the vox humana or the trumpet with a suspension at
@@ -365,15 +369,8 @@ window.KOLOB = window.KOLOB || {};
     // begins, as it does for a guest — THE HOUSE LETS GO, kolob-core.js)
     if (S.houseLetsGo) S.houseLetsGo(t, "chorale", true);
     // a first hymn keyed away from home: the drone steps back under it, as
-    // it does under the hymn
-    var home = !h.keyMonzo || (h.keyMonzo[0] === 0 && h.keyMonzo[1] === 0 && h.keyMonzo[2] === 0 && !(h.keyMonzo[3] || 0));
-    if (!home && S.droneDuck) {
-      S.droneDuck.gain.cancelScheduledValues(t0);
-      S.droneDuck.gain.setValueAtTime(1, t0);
-      S.droneDuck.gain.linearRampToValueAtTime(0.22, t0 + 3);
-      S.droneDuck.gain.setValueAtTime(0.22, until);
-      S.droneDuck.gain.linearRampToValueAtTime(1, until + 6);
-    }
+    // it does under the hymn (THE DRONE STEPS BACK, kolob-core.js)
+    if (!isHome(h.keyMonzo)) S.droneStepBack(t0, until, 0.22, 3, 6);
     organistPlays(plan, t0, { hymnId: h.id, key: h.keyMonzo, prelude: true, style: org.style,
                               alive: function () { return !!S.playing && M.meetingNum() === n && M.section() === "prelude"; } });
     return until - t;
@@ -501,7 +498,7 @@ window.KOLOB = window.KOLOB || {};
     // a swell under a cadence moment, then hands the hymn back to the voices.
     // The sustained ground of this piece is the sine DRONE, nothing else.
     if (s === "prelude" || s === "postlude") {
-      // the prelude's seating (kolob-meeting.js): the brush arbor has no
+      // the prelude's seating (kolob-plan.js): the brush arbor has no
       // organ; and the day's first chord may be full, its third sung
       var seat = s === "prelude" ? S.Meeting.seating() : null;
       if (seat && seat.sits.organ) { cueIn("organ", 6, organCycle); return; }

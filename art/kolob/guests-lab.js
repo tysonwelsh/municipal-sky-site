@@ -303,7 +303,7 @@ window.GuestsLab = (function () {
     if (!old) return;
     chain.out.gain.setValueAtTime(0, t); chain.out.gain.linearRampToValueAtTime(1, t + XF);
     old.out.gain.setValueAtTime(1, t); old.out.gain.linearRampToValueAtTime(0, t + XF);
-    setTimeout(function () { try { labIn.disconnect(old.input); } catch (e) {} try { old.out.disconnect(); } catch (e2) {} }, (XF + 0.15) * 1000);
+    setTimeout(function () { try { labIn.disconnect(old.input); } catch (e) { /* gone already */ } try { old.out.disconnect(); } catch (e2) { /* gone already */ } }, (XF + 0.15) * 1000);
   }
   function stop() {
     lights = [];
@@ -311,7 +311,7 @@ window.GuestsLab = (function () {
     var c = current;
     c.timers.forEach(function (x) { clearTimeout(x); });
     c.gain.gain.setTargetAtTime(0, actx.currentTime, 0.03);
-    setTimeout(function () { try { c.gain.disconnect(); } catch (e) {} }, 400);
+    setTimeout(function () { try { c.gain.disconnect(); } catch (e) { /* gone already */ } }, 400);
     current = null;
   }
   function play(id, o) {
@@ -517,8 +517,8 @@ window.GuestsLab = (function () {
   // ==========================================================================
   // THE ODDS — each guest's plan() over a stand-in of the engine's planner
   // ==========================================================================
-  // The stand-in throws the dice kolob-meeting.js planMeeting throws, in its
-  // order, for the parts that matter to a seat: the calendar's kind; the
+  // The stand-in throws the dice the meeting's plan throws (kolob-plan.js
+  // day and seat), in its order, for the parts that matter to a seat: the calendar's kind; the
   // order of service (hymns by kind, the testimony cut, the interlude, the
   // testimony and sacrament trading places, the second doxology); and the
   // other guests' dice and seats (the bands 36 %, the steeples 7.5 %, the old

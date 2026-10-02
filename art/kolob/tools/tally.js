@@ -14,6 +14,9 @@
 //   node tools/tally.js [--seeds 1-20] [--secs 1200] [--engine <dir>|git:<ref>] [--dumps <dir>]
 //   node tools/tally.js --a <spec> --b <spec> [--seeds 1-60] [--secs 1200] [--threshold 15]
 //     where <spec> is a dump directory, an engine directory, git:<ref>, or "worktree"
+//   --flags force=bands (the harness's switches, as render.js takes them: every
+//     build rendered here is rendered with them — one guest forced on both
+//     sides, so a change to its room is proved on the seeds that seat it)
 //
 // A/B renders 60 seeds a side by default (seconds of work): twenty meetings
 // leave a share such as "meetings with a guest" ±30 points of noise.
@@ -31,6 +34,7 @@ const HELP = `tally.js — counts over complete meetings; --a/--b compares two b
   --engine / --harness / --dumps   one build (default: this worktree)
   --a <spec> --b <spec>            A/B: spec = dump dir | engine dir | git:<ref> | worktree
   --harness-a / --harness-b        harness per side (default: see README)
+  --flags ives,force=bands   harness switches for every build rendered (default none)
   --threshold 15      shift (in %) worth a flag (default 15)
   --first             meeting 1 of each seed only
   --out <dir>         (default tools/out/tally-<stamp>)`;
@@ -114,7 +118,7 @@ async function loadSide(spec, a, into, harness, dfltSeeds) {
   const isDir = spec && spec !== true && fs.existsSync(String(spec)) && fs.statSync(String(spec)).isDirectory();
   const hasDumps = isDir && fs.readdirSync(String(spec)).some((f) => f.endsWith(".jsonl"));
   const seeds = U.parseSeeds(a.seeds, U.parseSeeds(dfltSeeds || "1-20"));
-  const o = hasDumps ? { dumps: spec, seeds: a.seeds ? seeds : null } : { engine: spec === "worktree" ? null : spec, harness, seeds, secs: +a.secs || 1200, into, jobs: +a.jobs || 0 };
+  const o = hasDumps ? { dumps: spec, seeds: a.seeds ? seeds : null } : { engine: spec === "worktree" ? null : spec, harness, seeds, secs: +a.secs || 1200, flags: U.parseList(a.flags, []), into, jobs: +a.jobs || 0 };
   const set = await R.obtainSet(o);
   const runs = set.files.map((f) => D.readDump(f));
   const recs = [];

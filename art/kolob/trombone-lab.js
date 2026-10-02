@@ -318,15 +318,15 @@ window.TromboneLab = (function () {
     chain.out.gain.setValueAtTime(0, t); chain.out.gain.linearRampToValueAtTime(1, t + X);
     old.out.gain.setValueAtTime(1, t); old.out.gain.linearRampToValueAtTime(0, t + X);
     setTimeout(function () {
-      try { labIn.disconnect(old.input); } catch (e) {}
-      try { old.out.disconnect(); } catch (e2) {}
+      try { labIn.disconnect(old.input); } catch (e) { /* gone already */ }
+      try { old.out.disconnect(); } catch (e2) { /* gone already */ }
     }, (X + 0.15) * 1000);
   }
   function stop() {
     if (!current) return;
     var c = current;
     c.gain.gain.setTargetAtTime(0, actx.currentTime, 0.03);
-    setTimeout(function () { try { c.gain.disconnect(); } catch (e) {} }, 400);
+    setTimeout(function () { try { c.gain.disconnect(); } catch (e) { /* gone already */ } }, 400);
     current = null;
   }
   function play(id, o) {
@@ -738,7 +738,7 @@ window.TromboneLab = (function () {
   // THE ODDS: plan() per Sunday, and a stand-in planner's mix (the
   // calendar's shares since the pre-v0.34 polish: ordinary 52 %, fast 15 %,
   // conference 19 %, jubilee 14 %; bands 35 %; another prelude guest 11 %) —
-  // the harness measures the same against the real planMeeting
+  // the harness measures the same against the real plan (kolob-plan.js)
   function odds(N) {
     N = N || 20000;
     var R0 = window.PJ2.Rand.stream(99).fork("lab:odds");
