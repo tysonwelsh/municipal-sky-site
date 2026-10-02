@@ -7,7 +7,7 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
 
 ## The refactor
 
-- **`PLAN-REFACTOR.md`** (2026-10-01; §2 built, v0.36.3; §3.6, §3.1, §3.3, §3.7, §3.8, §3.2, §3.4, §4.0(a), §3.5, §4.0(b) and §4.0(c) built): the owner asked for a plan to improve
+- **`PLAN-REFACTOR.md`** (2026-10-01; §2 built, v0.36.3; §3.6, §3.1, §3.3, §3.7, §3.8, §3.2, §3.4, §4.0(a), §3.5, §4.0(b), §4.0(c) and §4.1 built): the owner asked for a plan to improve
   efficiency, reliability and maintainability without changing what is heard or seen. Its §2, the
   real faults, is done (commits 3eefffb to a373760: a cue that threw ended its layer for the visit; a
   stillness survived STOP; STOP's own race; errors swallowed silently; a broken page let PLAY be
@@ -29,9 +29,12 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
   headless by the harness's `staff=`, the same before and after), and §4.0(b) and (c), the rest of
   the tools: the audio graph's cost per work (the harness's `cost`, `tools/cost.js`, commit d05a5c6:
   every node, automation call and disconnect charged to the lane, guest or press that made it) and
-  the tally four at a time, both builds on one pool (`--jobs`, commit e4dbe57: about 70 s).
-  What remains is §3.5's tail (the composer's steps in order) and §4 (the page's load and frame,
-  the minutes' poll, the audio graph with the owner), in §6's order.
+  the tally four at a time, both builds on one pool (`--jobs`, commit e4dbe57: about 70 s), and
+  §4.1, the page's load (commit f7c7be3: each asset hashed once a request, or not at all with APCu —
+  PHP 12.9 ms a request → 7.6, → 1.3 with APCu — and every script deferred, the load guard an inline
+  module script run after the rooms and before kolob-ui.js; `tools/pageload.js`, loadcheck's `tags:`).
+  What remains is §3.5's tail (the composer's steps in order) and §4 (the page's frame, the minutes'
+  poll, the note bus, the PLAY press, the audio graph with the owner, memory), in §6's order.
   The §2 builders' follow-ups, not done:
   - the drone stays ducked after a broken hymn's chain is released by the net (§2.1);
   - a cue's fault that repeats is now logged at each of the net's retries (every 5 s for a layer), not once (§2.1);
@@ -163,7 +166,30 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
     busy, so half the cores would fill one); `render.js`, `distinctness.js`, `repetition.js` and
     `cost.js` keep half the cores, at most eight, a set, and `cost.js` renders its builds one after
     the other — each could take the tally's shared pool;
-  - with both builds on one pool, the tally's progress dots of the two sides interleave on stderr.
+  - with both builds on one pool, the tally's progress dots of the two sides interleave on stderr;
+  - `tools/selftest.js` §18's "a set that fails stops the pool" expects the failure it names to be
+    seed 1's; on a pool of two both of the bad set's renders start at once, and on a busy machine
+    seed 2's can fail first (seen once beside two Chromes and the tally): the check could take either.
+  The §4.1 builder's follow-ups, not done:
+  - a frozen capture still has a device pixel of grain in a tie: its far end is laid once, about
+    `X()` rounded to the device pixel at the live frame its second note first prints
+    (`kolob-viz.js` `settleCurve`, `tieShape`), so from run to run it lands a pixel either way (seed
+    1847, 860 px, 224 s: eight runs in three classes, AE 98–211, on 12dd962 as on the worktree).
+    Settling it on unrounded offsets, or at the held moment, would make the capture exact there
+    too — a page change for §4.2's pixel proofs, which a moment clear of ties avoids meanwhile;
+  - the parse still waits on the Google Fonts stylesheet at the first inline script after it (the
+    page's tracking script: an inline script waits for the stylesheets above it), as it did; where
+    the fonts are refused (this container) that wait is most of `domInteractive` (315 ms with them
+    asked, 67 ms with them blocked, medians of five cold loads; 554 and 367 ms on 12dd962); the
+    tracking script deferred, or the stylesheet moved to the head, would free it — the site's
+    tracker and the page's fonts, not touched here;
+  - APCu keeps a hash against whole-second stat times: a file rewritten in place twice within one
+    second at one size keeps the first write's hash for up to the hour (the comment says so; no
+    deploy writes so);
+  - the labs still print the engine's tags blocking (the printer's default): their own scripts
+    follow as plain tags, and nothing there needs the page's speed;
+  - `tools/pageload.js` drives Chrome, so CI does not run it (as `screens.js`); loadcheck's `tags:`
+    runs there, and runs the tag printer where `php` is on the machine.
 
 ## Ideas approved, not built
 
