@@ -1,0 +1,269 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 1000" width="400" height="1000">
+  <defs>
+    <linearGradient id="gWire" x1="0" y1="0" x2="1" y2="0.7">
+      <stop offset="0" stop-color="#fff6d2"/>
+      <stop offset="0.16" stop-color="#f3d986"/>
+      <stop offset="0.42" stop-color="#cfa143"/>
+      <stop offset="0.68" stop-color="#8f6120"/>
+      <stop offset="0.86" stop-color="#d9b45e"/>
+      <stop offset="1" stop-color="#f7e7ac"/>
+    </linearGradient>
+    <linearGradient id="gGold" x1="0.05" y1="0" x2="0.95" y2="1">
+      <stop offset="0" stop-color="#fdf3cd"/>
+      <stop offset="0.14" stop-color="#f0d582"/>
+      <stop offset="0.34" stop-color="#c99a3c"/>
+      <stop offset="0.52" stop-color="#9a6a24"/>
+      <stop offset="0.70" stop-color="#d8b25c"/>
+      <stop offset="0.86" stop-color="#8d5f1d"/>
+      <stop offset="1" stop-color="#f6e6ad"/>
+    </linearGradient>
+    <radialGradient id="gGoldRad" cx="0.36" cy="0.28" r="0.85">
+      <stop offset="0" stop-color="#fbeeb9"/>
+      <stop offset="0.35" stop-color="#dcb355"/>
+      <stop offset="0.72" stop-color="#a3711f"/>
+      <stop offset="1" stop-color="#6d460f"/>
+    </radialGradient>
+    <radialGradient id="gRuby" cx="0.38" cy="0.28" r="0.82">
+      <stop offset="0" stop-color="#ff7d86"/>
+      <stop offset="0.20" stop-color="#f0203f"/>
+      <stop offset="0.48" stop-color="#c00c2b"/>
+      <stop offset="0.76" stop-color="#83001a"/>
+      <stop offset="1" stop-color="#4d0010"/>
+    </radialGradient>
+    <radialGradient id="gTable" cx="0.36" cy="0.26" r="0.8">
+      <stop offset="0" stop-color="#ff9aa0"/>
+      <stop offset="0.28" stop-color="#ee2445"/>
+      <stop offset="0.62" stop-color="#bb0a29"/>
+      <stop offset="1" stop-color="#6d0016"/>
+    </radialGradient>
+    <radialGradient id="gDia" cx="0.36" cy="0.30" r="0.78">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.45" stop-color="#eaf6ff"/>
+      <stop offset="0.78" stop-color="#bcd9ee"/>
+      <stop offset="1" stop-color="#8db4d2"/>
+    </radialGradient>
+    <radialGradient id="gGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+
+    <g id="dia">
+      <circle r="10" fill="url(#gDia)"/>
+      <g fill="#ffffff" opacity="0.42">
+        <polygon points="4.25,1.76 1.76,4.25 7.07,7.07"/>
+        <polygon points="1.76,4.25 -1.76,4.25 0,10"/>
+        <polygon points="-1.76,4.25 -4.25,1.76 -7.07,7.07"/>
+        <polygon points="-4.25,1.76 -4.25,-1.76 -10,0"/>
+        <polygon points="-4.25,-1.76 -1.76,-4.25 -7.07,-7.07"/>
+        <polygon points="-1.76,-4.25 1.76,-4.25 0,-10"/>
+        <polygon points="1.76,-4.25 4.25,-1.76 7.07,-7.07"/>
+        <polygon points="4.25,-1.76 4.25,1.76 10,0"/>
+      </g>
+      <g fill="#6f9cc0" opacity="0.30">
+        <polygon points="4.25,1.76 10,0 7.07,7.07"/>
+        <polygon points="1.76,4.25 7.07,7.07 0,10"/>
+        <polygon points="-1.76,4.25 0,10 -7.07,7.07"/>
+        <polygon points="-4.25,1.76 -7.07,7.07 -10,0"/>
+        <polygon points="-4.25,-1.76 -10,0 -7.07,-7.07"/>
+        <polygon points="-1.76,-4.25 -7.07,-7.07 0,-10"/>
+        <polygon points="1.76,-4.25 0,-10 7.07,-7.07"/>
+        <polygon points="4.25,-1.76 7.07,-7.07 10,0"/>
+      </g>
+      <polygon points="4.25,1.76 1.76,4.25 -1.76,4.25 -4.25,1.76 -4.25,-1.76 -1.76,-4.25 1.76,-4.25 4.25,-1.76" fill="#f9fdff" opacity="0.8"/>
+      <polygon points="4.25,1.76 1.76,4.25 -1.76,4.25 -4.25,1.76 -4.25,-1.76 -1.76,-4.25 1.76,-4.25 4.25,-1.76" fill="none" stroke="#ffffff" stroke-width="0.6" opacity="0.8"/>
+      <circle r="10" fill="none" stroke="#ffffff" stroke-width="0.9" opacity="0.55"/>
+      <circle r="10" fill="none" stroke="#4d7ea3" stroke-width="0.5" opacity="0.5"/>
+      <ellipse cx="-3.4" cy="-4.4" rx="2.6" ry="1.5" fill="#ffffff" opacity="0.9" transform="rotate(-38 -3.4 -4.4)"/>
+    </g>
+
+    <g id="spk">
+      <path d="M0,-1 Q0.13,-0.13 1,0 Q0.13,0.13 0,1 Q-0.13,0.13 -1,0 Q-0.13,-0.13 0,-1 Z" fill="#ffffff"/>
+    </g>
+
+    <g id="bead">
+      <circle r="5" fill="url(#gGoldRad)"/>
+      <circle r="5" fill="none" stroke="#6b4711" stroke-width="0.7" opacity="0.7"/>
+      <circle cx="-1.5" cy="-1.6" r="1.5" fill="#fff4c8" opacity="0.85"/>
+    </g>
+
+    <g id="prong">
+      <circle r="12" fill="url(#gGoldRad)"/>
+      <circle r="12" fill="none" stroke="#5f3f0e" stroke-width="1.2" opacity="0.75"/>
+      <circle cx="-3.6" cy="-3.8" r="3.6" fill="#fff3c2" opacity="0.9"/>
+      <circle cx="2.8" cy="3.4" r="4.6" fill="#7d5314" opacity="0.45"/>
+    </g>
+  </defs>
+
+  <!-- ================= EAR WIRE (antique shepherd hook) ================= -->
+  <g>
+    <path d="M198 492 C194 430 118 412 90 340 C52 245 82 90 205 42 C320 -3 385 75 370 190 C362 250 340 285 330 330"
+          fill="none" stroke="#5b3a0d" stroke-width="19" stroke-linecap="round" opacity="0.95"/>
+    <path d="M198 492 C194 430 118 412 90 340 C52 245 82 90 205 42 C320 -3 385 75 370 190 C362 250 340 285 330 330"
+          fill="none" stroke="url(#gWire)" stroke-width="15" stroke-linecap="round"/>
+    <path d="M198 492 C194 430 118 412 90 340 C52 245 82 90 205 42 C320 -3 385 75 370 190 C362 250 340 285 330 330"
+          fill="none" stroke="#fff6d6" stroke-width="3.4" stroke-linecap="round" opacity="0.65"
+          stroke-dasharray="54 30 18 40"/>
+    <path d="M198 492 C194 430 118 412 90 340 C52 245 82 90 205 42 C320 -3 385 75 370 190 C362 250 340 285 330 330"
+          fill="none" stroke="#4a2f08" stroke-width="2" stroke-linecap="round" opacity="0.35"
+          stroke-dasharray="30 46" stroke-dashoffset="24"/>
+    <!-- tail ball tip -->
+    <circle cx="330" cy="330" r="9" fill="url(#gGoldRad)"/>
+    <circle cx="330" cy="330" r="9" fill="none" stroke="#5b3a0d" stroke-width="1.2" opacity="0.8"/>
+    <circle cx="327" cy="326.5" r="3" fill="#fff4c8" opacity="0.9"/>
+    <!-- decorative collar on the wire -->
+    <g transform="translate(105,367) rotate(58)">
+      <ellipse rx="6" ry="11" fill="url(#gGoldRad)"/>
+      <ellipse rx="6" ry="11" fill="none" stroke="#5b3a0d" stroke-width="1" opacity="0.75"/>
+      <ellipse cx="-2" cy="-2" rx="1.8" ry="4" fill="#fff2c0" opacity="0.8"/>
+    </g>
+  </g>
+
+  <!-- ================= JUMP RING / BAIL ================= -->
+  <g>
+    <circle cx="200" cy="488" r="19" fill="none" stroke="#5b3a0d" stroke-width="12"/>
+    <circle cx="200" cy="488" r="19" fill="none" stroke="url(#gGold)" stroke-width="9"/>
+    <path d="M186 476 A19 19 0 0 1 210 471" fill="none" stroke="#fff3c4" stroke-width="2.6" opacity="0.75" stroke-linecap="round"/>
+  </g>
+
+  <!-- ================= CLUSTER : 14k gold basket ================= -->
+  <g>
+    <!-- gold frame / basket face -->
+    <ellipse cx="200" cy="740" rx="190" ry="240" fill="url(#gGoldRad)"/>
+    <ellipse cx="200" cy="740" rx="190" ry="240" fill="none" stroke="#54360b" stroke-width="3"/>
+    <ellipse cx="200" cy="740" rx="182" ry="231" fill="none" stroke="#fff0bd" stroke-width="2" opacity="0.4"/>
+
+    <!-- beaded antique outer edge -->
+    <ellipse cx="200" cy="740" rx="186" ry="236" fill="none" stroke="#7a5212" stroke-width="13"
+             stroke-linecap="round" stroke-dasharray="2 19" opacity="0.85"/>
+    <ellipse cx="200" cy="740" rx="185" ry="235" fill="none" stroke="url(#gGold)" stroke-width="11"
+             stroke-linecap="round" stroke-dasharray="2 19"/>
+    <ellipse cx="200" cy="740" rx="184" ry="234" fill="none" stroke="#fff5cc" stroke-width="3.5"
+             stroke-linecap="round" stroke-dasharray="0.6 20.4" opacity="0.8"/>
+
+    <!-- fine milgrain rows -->
+    <ellipse cx="200" cy="740" rx="176" ry="224" fill="none" stroke="#f7e6ac" stroke-width="5"
+             stroke-linecap="round" stroke-dasharray="0.6 8.4" opacity="0.85"/>
+    <ellipse cx="200" cy="740" rx="176" ry="224" fill="none" stroke="#5e3d10" stroke-width="1.1" opacity="0.4"/>
+
+    <!-- gold beads seated between halo stones -->
+    <g>
+      <use href="#bead" x="233.4" y="524.2"/>
+      <use href="#bead" x="293.3" y="555.2"/>
+      <use href="#bead" x="337.4" y="607.6"/>
+      <use href="#bead" x="363.5" y="671.5"/>
+      <use href="#bead" x="372" y="740"/>
+      <use href="#bead" x="363.5" y="808.5"/>
+      <use href="#bead" x="337.4" y="872.4"/>
+      <use href="#bead" x="293.3" y="924.8"/>
+      <use href="#bead" x="233.4" y="955.8"/>
+      <use href="#bead" x="166.6" y="955.8"/>
+      <use href="#bead" x="106.7" y="924.8"/>
+      <use href="#bead" x="62.6" y="872.4"/>
+      <use href="#bead" x="36.5" y="808.5"/>
+      <use href="#bead" x="28" y="740"/>
+      <use href="#bead" x="36.5" y="671.5"/>
+      <use href="#bead" x="62.6" y="607.6"/>
+      <use href="#bead" x="106.7" y="555.2"/>
+      <use href="#bead" x="166.6" y="524.2"/>
+    </g>
+
+    <!-- collet (gold seat under the ruby) -->
+    <ellipse cx="200" cy="740" rx="130" ry="176" fill="url(#gGold)"/>
+    <ellipse cx="200" cy="740" rx="130" ry="176" fill="none" stroke="#4f330a" stroke-width="2.4"/>
+    <ellipse cx="200" cy="740" rx="125" ry="170" fill="none" stroke="#f7e6ac" stroke-width="4.4"
+             stroke-linecap="round" stroke-dasharray="0.5 7.5" opacity="0.9"/>
+
+    <!-- ============ HALO OF DIAMOND SIDE STONES ============ -->
+    <g>
+      <use href="#dia" transform="translate(200,540) scale(2.7)"/>
+      <use href="#dia" transform="translate(259.1,555.1) scale(2.7) rotate(12)"/>
+      <use href="#dia" transform="translate(306.3,594.4) scale(2.7) rotate(25)"/>
+      <use href="#dia" transform="translate(337.7,648.3) scale(2.7) rotate(7)"/>
+      <use href="#dia" transform="translate(353.1,708.7) scale(2.7) rotate(31)"/>
+      <use href="#dia" transform="translate(353.1,771.3) scale(2.7) rotate(18)"/>
+      <use href="#dia" transform="translate(337.7,831.7) scale(2.7) rotate(-9)"/>
+      <use href="#dia" transform="translate(306.3,885.6) scale(2.7) rotate(22)"/>
+      <use href="#dia" transform="translate(259.1,924.9) scale(2.7) rotate(-15)"/>
+      <use href="#dia" transform="translate(200,940) scale(2.7) rotate(9)"/>
+      <use href="#dia" transform="translate(140.9,924.9) scale(2.7) rotate(28)"/>
+      <use href="#dia" transform="translate(93.7,885.6) scale(2.7) rotate(-20)"/>
+      <use href="#dia" transform="translate(62.3,831.7) scale(2.7) rotate(14)"/>
+      <use href="#dia" transform="translate(46.9,771.3) scale(2.7) rotate(-6)"/>
+      <use href="#dia" transform="translate(46.9,708.7) scale(2.7) rotate(26)"/>
+      <use href="#dia" transform="translate(62.3,648.3) scale(2.7) rotate(-12)"/>
+      <use href="#dia" transform="translate(93.7,594.4) scale(2.7) rotate(20)"/>
+      <use href="#dia" transform="translate(140.9,555.1) scale(2.7) rotate(-24)"/>
+    </g>
+
+    <!-- ============ OVAL RUBY CENTRE STONE ============ -->
+    <g>
+      <ellipse cx="200" cy="740" rx="118" ry="162" fill="url(#gRuby)"/>
+      <g>
+        <polygon points="266,740 261,702.5 309,678 318,740" fill="#ff5566" opacity="0.20"/>
+        <polygon points="261,702.5 246.7,670.7 283.4,625.4 309,678" fill="#63000f" opacity="0.30"/>
+        <polygon points="246.7,670.7 225.3,649.5 245.2,590.3 283.4,625.4" fill="#ff5566" opacity="0.26"/>
+        <polygon points="225.3,649.5 200,642 200,578 245.2,590.3" fill="#63000f" opacity="0.26"/>
+        <polygon points="200,642 174.7,649.5 154.8,590.3 200,578" fill="#ff7f8a" opacity="0.26"/>
+        <polygon points="174.7,649.5 153.3,670.7 116.6,625.4 154.8,590.3" fill="#63000f" opacity="0.28"/>
+        <polygon points="153.3,670.7 139,702.5 91,678 116.6,625.4" fill="#ff5566" opacity="0.22"/>
+        <polygon points="139,702.5 134,740 82,740 91,678" fill="#63000f" opacity="0.34"/>
+        <polygon points="134,740 139,777.5 91,802 82,740" fill="#ff4a5c" opacity="0.18"/>
+        <polygon points="139,777.5 153.3,809.3 116.6,854.6 91,802" fill="#5a000d" opacity="0.38"/>
+        <polygon points="153.3,809.3 174.7,830.5 154.8,889.7 116.6,854.6" fill="#ff4a5c" opacity="0.16"/>
+        <polygon points="174.7,830.5 200,838 200,902 154.8,889.7" fill="#5a000d" opacity="0.40"/>
+        <polygon points="200,838 225.3,830.5 245.2,889.7 200,902" fill="#ff4a5c" opacity="0.16"/>
+        <polygon points="225.3,830.5 246.7,809.3 283.4,854.6 245.2,889.7" fill="#5a000d" opacity="0.38"/>
+        <polygon points="246.7,809.3 261,777.5 309,802 283.4,854.6" fill="#ff5566" opacity="0.20"/>
+        <polygon points="261,777.5 266,740 318,740 309,802" fill="#63000f" opacity="0.30"/>
+      </g>
+      <path d="M266,740 L318,740 M261,702.5 L309,678 M246.7,670.7 L283.4,625.4 M225.3,649.5 L245.2,590.3
+               M200,642 L200,578 M174.7,649.5 L154.8,590.3 M153.3,670.7 L116.6,625.4 M139,702.5 L91,678
+               M134,740 L82,740 M139,777.5 L91,802 M153.3,809.3 L116.6,854.6 M174.7,830.5 L154.8,889.7
+               M200,838 L200,902 M225.3,830.5 L245.2,889.7 M246.7,809.3 L283.4,854.6 M261,777.5 L309,802"
+            stroke="#ffb3ba" stroke-width="1.5" opacity="0.38" fill="none"/>
+      <path d="M266,740 L309,678 M261,702.5 L283.4,625.4 M246.7,670.7 L245.2,590.3 M225.3,649.5 L200,578
+               M200,642 L154.8,590.3 M174.7,649.5 L116.6,625.4 M153.3,670.7 L91,678 M139,702.5 L82,740
+               M134,740 L91,802 M139,777.5 L116.6,854.6 M153.3,809.3 L154.8,889.7 M174.7,830.5 L200,902
+               M200,838 L245.2,889.7 M225.3,830.5 L283.4,854.6 M246.7,809.3 L309,802 M261,777.5 L318,740"
+            stroke="#8d0018" stroke-width="1.3" opacity="0.40" fill="none"/>
+
+      <!-- table facet -->
+      <ellipse cx="200" cy="740" rx="66" ry="98" fill="url(#gTable)"/>
+      <ellipse cx="200" cy="740" rx="66" ry="98" fill="none" stroke="#ffc3c8" stroke-width="1.6" opacity="0.5"/>
+      <path d="M160 682 Q186 660 214 672 Q186 700 172 736 Q160 706 160 682 Z" fill="#ffffff" opacity="0.30"/>
+      <ellipse cx="176" cy="700" rx="17" ry="26" fill="url(#gGlow)" opacity="0.55" transform="rotate(-28 176 700)"/>
+      <ellipse cx="228" cy="806" rx="12" ry="20" fill="#ff9aa2" opacity="0.35" transform="rotate(-24 228 806)"/>
+
+      <!-- girdle -->
+      <ellipse cx="200" cy="740" rx="118" ry="162" fill="none" stroke="#ffd3d7" stroke-width="2.2" opacity="0.45"/>
+      <ellipse cx="200" cy="740" rx="118" ry="162" fill="none" stroke="#3d000c" stroke-width="1.4" opacity="0.55"/>
+    </g>
+
+    <!-- claw prongs over the ruby -->
+    <g>
+      <use href="#prong" x="200" y="578"/>
+      <use href="#prong" x="200" y="902"/>
+      <use href="#prong" x="283.4" y="625.4"/>
+      <use href="#prong" x="116.6" y="625.4"/>
+      <use href="#prong" x="283.4" y="854.6"/>
+      <use href="#prong" x="116.6" y="854.6"/>
+    </g>
+
+    <!-- little gold cap where the bail meets the basket -->
+    <g>
+      <path d="M176 512 Q200 486 224 512 Q200 526 176 512 Z" fill="url(#gGold)" stroke="#54360b" stroke-width="2"/>
+      <path d="M182 505 Q200 493 214 502" fill="none" stroke="#fff2c0" stroke-width="2.4" opacity="0.75" stroke-linecap="round"/>
+    </g>
+  </g>
+
+  <!-- ================= SPARKLES ================= -->
+  <g opacity="0.95">
+    <use href="#spk" transform="translate(200,540) scale(20)" opacity="0.85"/>
+    <use href="#spk" transform="translate(46.9,708.7) scale(15) rotate(30)" opacity="0.7"/>
+    <use href="#spk" transform="translate(337.7,831.7) scale(16) rotate(20)" opacity="0.7"/>
+    <use href="#spk" transform="translate(306.3,594.4) scale(13) rotate(-15)" opacity="0.65"/>
+    <use href="#spk" transform="translate(140.9,924.9) scale(12) rotate(40)" opacity="0.6"/>
+    <use href="#spk" transform="translate(178,698) scale(11) rotate(18)" opacity="0.55"/>
+    <use href="#spk" transform="translate(255,281) scale(9) rotate(25)" opacity="0.5"/>
+  </g>
+</svg>

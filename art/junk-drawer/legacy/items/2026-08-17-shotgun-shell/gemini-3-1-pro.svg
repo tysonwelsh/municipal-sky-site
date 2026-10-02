@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 220">
+  <defs>
+    <!-- Plastic Hull Gradient -->
+    <linearGradient id="hullGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#7a0000" />
+      <stop offset="10%" stop-color="#b30000" />
+      <stop offset="25%" stop-color="#ff1a1a" />
+      <stop offset="50%" stop-color="#ff4d4d" />
+      <stop offset="75%" stop-color="#cc0000" />
+      <stop offset="90%" stop-color="#800000" />
+      <stop offset="100%" stop-color="#4d0000" />
+    </linearGradient>
+
+    <!-- Brass Base Gradient -->
+    <linearGradient id="brassGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#543811" />
+      <stop offset="15%" stop-color="#a67b43" />
+      <stop offset="30%" stop-color="#f2d79d" />
+      <stop offset="50%" stop-color="#ffecbd" />
+      <stop offset="70%" stop-color="#c99b53" />
+      <stop offset="90%" stop-color="#7a5522" />
+      <stop offset="100%" stop-color="#3d270c" />
+    </linearGradient>
+
+    <!-- Glossy Highlight Overlay -->
+    <linearGradient id="glossGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0" />
+      <stop offset="20%" stop-color="#ffffff" stop-opacity="0.4" />
+      <stop offset="30%" stop-color="#ffffff" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+
+  <!-- Crimped Top -->
+  <path d="M 4.5 18 C 4.5 5, 20 2, 50 2 C 80 2, 95.5 5, 95.5 18 Z" fill="url(#hullGrad)" />
+  
+  <!-- Crimp Creases -->
+  <path d="M 50 2 L 25 18 M 50 2 L 40 18 M 50 2 L 50 18 M 50 2 L 60 18 M 50 2 L 75 18" stroke="#4d0000" stroke-width="1.5" fill="none" opacity="0.8" />
+  
+  <!-- Main Red Plastic Hull -->
+  <rect x="4.5" y="18" width="91" height="134" fill="url(#hullGrad)" />
+  
+  <!-- Hull Vertical Ribbing -->
+  <g stroke="#4d0000" stroke-width="1.5" opacity="0.6" stroke-linecap="round">
+    <path d="M 12 18 L 12 152 M 20 18 L 20 152 M 28 18 L 28 152 M 36 18 L 36 152 M 44 18 L 44 152 M 52 18 L 52 152 M 60 18 L 60 152 M 68 18 L 68 152 M 76 18 L 76 152 M 84 18 L 84 152" />
+  </g>
+  <g stroke="#ff6666" stroke-width="1" opacity="0.4" stroke-linecap="round">
+    <path d="M 13.5 18 L 13.5 152 M 21.5 18 L 21.5 152 M 29.5 18 L 29.5 152 M 37.5 18 L 37.5 152 M 45.5 18 L 45.5 152 M 53.5 18 L 53.5 152 M 61.5 18 L 61.5 152 M 69.5 18 L 69.5 152 M 77.5 18 L 77.5 152 M 85.5 18 L 85.5 152" />
+  </g>
+
+  <!-- Painted Text Details -->
+  <text x="50" y="80" font-family="Arial, sans-serif" font-size="14" font-weight="900" fill="#f2d79d" text-anchor="middle" letter-spacing="1.5" opacity="0.85">12 GAUGE</text>
+  <text x="50" y="100" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#f2d79d" text-anchor="middle" letter-spacing="1" opacity="0.85">00 BUCK</text>
+
+  <!-- Base Shadow/Transition -->
+  <rect x="4.5" y="150" width="91" height="3" fill="#3a0000" opacity="0.8" />
+
+  <!-- Brass Base -->
+  <rect x="3" y="152" width="94" height="58" fill="url(#brassGrad)" />
+  <rect x="3" y="152" width="94" height="2" fill="#fff" opacity="0.4" />
+  
+  <!-- Brass Horizontal Grooves -->
+  <rect x="3" y="165" width="94" height="1" fill="#3d270c" opacity="0.5" />
+  <rect x="3" y="170" width="94" height="1" fill="#3d270c" opacity="0.5" />
+  <rect x="3" y="175" width="94" height="1" fill="#3d270c" opacity="0.5" />
+
+  <!-- Base Rim -->
+  <rect x="0" y="210" width="100" height="8" rx="2" fill="url(#brassGrad)" />
+  <!-- Rim Shadow -->
+  <rect x="0" y="210" width="100" height="2" fill="#000" opacity="0.4" />
+
+  <!-- Global Gloss Highlight -->
+  <path d="M 4.5 18 C 4.5 5, 20 2, 50 2 C 80 2, 95.5 5, 95.5 18 L 95.5 152 L 97 152 L 97 210 L 100 210 L 100 218 L 0 218 L 0 210 L 3 210 L 3 152 L 4.5 152 Z" fill="url(#glossGrad)" pointer-events="none" />
+</svg>

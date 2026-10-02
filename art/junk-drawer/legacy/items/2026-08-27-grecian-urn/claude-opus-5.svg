@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="37.5 16.0 324.8 495.8">
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8a4a26"/>
+      <stop offset="0.18" stop-color="#c8763f"/>
+      <stop offset="0.45" stop-color="#e0975c"/>
+      <stop offset="0.72" stop-color="#c0713c"/>
+      <stop offset="1" stop-color="#7d3f20"/>
+    </linearGradient>
+    <linearGradient id="neckg" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7d3f20"/>
+      <stop offset="0.2" stop-color="#c8763f"/>
+      <stop offset="0.5" stop-color="#dd9257"/>
+      <stop offset="0.8" stop-color="#bb6d39"/>
+      <stop offset="1" stop-color="#733a1d"/>
+    </linearGradient>
+    <linearGradient id="blk" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#14100e"/>
+      <stop offset="0.45" stop-color="#2b2321"/>
+      <stop offset="1" stop-color="#0d0a09"/>
+    </linearGradient>
+    <clipPath id="bellyClip">
+      <path d="M200 118 C280 118 330 190 330 262 C330 344 272 404 200 404 C128 404 70 344 70 262 C70 190 120 118 200 118 Z"/>
+    </clipPath>
+  </defs>
+
+  <!-- handles -->
+  <g fill="none" stroke="#8f4c27" stroke-width="15" stroke-linecap="round">
+    <path d="M96 168 C48 176 34 226 60 262"/>
+    <path d="M304 168 C352 176 366 226 340 262"/>
+  </g>
+  <g fill="none" stroke="#c8763f" stroke-width="7" stroke-linecap="round">
+    <path d="M96 168 C52 178 40 224 62 258"/>
+    <path d="M304 168 C348 178 360 224 338 258"/>
+  </g>
+
+  <!-- foot -->
+  <path d="M162 400 L238 400 L246 440 L266 452 L272 476 L128 476 L134 452 L154 440 Z" fill="url(#neckg)"/>
+  <path d="M126 476 L274 476 L280 500 L120 500 Z" fill="url(#body)"/>
+  <path d="M120 500 L280 500 L280 510 L120 510 Z" fill="#1b1512"/>
+
+  <!-- body -->
+  <path d="M200 118 C280 118 330 190 330 262 C330 344 272 404 200 404 C128 404 70 344 70 262 C70 190 120 118 200 118 Z" fill="url(#body)"/>
+
+  <!-- neck -->
+  <path d="M150 60 L250 60 L246 96 C238 108 232 118 230 130 L170 130 C168 118 162 108 154 96 Z" fill="url(#neckg)"/>
+
+  <!-- lip -->
+  <path d="M128 34 L272 34 L268 56 C250 64 232 68 200 68 C168 68 150 64 132 56 Z" fill="url(#neckg)"/>
+  <ellipse cx="200" cy="34" rx="72" ry="16" fill="#5e2f16"/>
+  <ellipse cx="200" cy="34" rx="56" ry="11" fill="#221914"/>
+
+  <g clip-path="url(#bellyClip)">
+    <!-- upper black band -->
+    <rect x="60" y="118" width="280" height="34" fill="url(#blk)"/>
+    <!-- meander -->
+    <g stroke="#f0c48d" stroke-width="4" fill="none">
+      <path d="M78 152 h286" />
+      <path d="M78 118 h286" />
+    </g>
+    <g stroke="#e9bd85" stroke-width="4.5" fill="none">
+      <path d="M74 146 v-16 h12 v10 h-6"/>
+      <path d="M104 146 v-16 h12 v10 h-6"/>
+      <path d="M134 146 v-16 h12 v10 h-6"/>
+      <path d="M164 146 v-16 h12 v10 h-6"/>
+      <path d="M194 146 v-16 h12 v10 h-6"/>
+      <path d="M224 146 v-16 h12 v10 h-6"/>
+      <path d="M254 146 v-16 h12 v10 h-6"/>
+      <path d="M284 146 v-16 h12 v10 h-6"/>
+      <path d="M314 146 v-16 h12 v10 h-6"/>
+    </g>
+
+    <!-- main figure panel -->
+    <rect x="60" y="164" width="280" height="150" fill="url(#blk)"/>
+
+    <!-- figures in red-figure style (silhouette in urn color) -->
+    <g fill="#e0975c">
+      <!-- left figure: draped, walking right -->
+      <path d="M118 200 c9 -5 17 1 16 10 c-1 8 -8 12 -15 9 c-7 -3 -8 -14 -1 -19 Z"/>
+      <path d="M124 219 c10 2 18 10 20 21 l6 34 c1 8 -2 14 -6 22 l-8 16 l-9 -2 l6 -19 l-4 -20 l-8 22 l1 20 l-10 1 l-2 -24 l4 -28 c1 -13 5 -21 10 -43 Z"/>
+      <path d="M141 240 l22 12 l-4 8 l-24 -12 Z"/>
+      <path d="M113 236 l-14 16 l7 6 l14 -15 Z"/>
+
+      <!-- center: lyre player seated -->
+      <path d="M196 196 c9 -5 17 1 16 10 c-1 8 -9 12 -16 8 c-6 -4 -6 -14 0 -18 Z"/>
+      <path d="M202 216 c11 1 19 9 21 20 l5 30 l-6 2 l-8 -22 l-2 26 l14 26 l-8 5 l-17 -28 l-14 24 l-8 -5 l14 -27 l-2 -32 c1 -12 6 -18 11 -19 Z"/>
+      <path d="M186 232 l-18 10 l4 8 l19 -10 Z"/>
+      <path d="M228 234 l18 -8 l3 8 l-18 9 Z"/>
+      <path d="M244 208 c14 6 20 20 18 34 l-8 -1 c2 -11 -3 -21 -13 -26 Z"/>
+      <path d="M247 205 l6 -3 l4 8 l-6 3 Z"/>
+
+      <!-- right figure -->
+      <path d="M282 202 c9 -5 17 1 16 10 c-1 8 -9 12 -16 8 c-6 -4 -6 -14 0 -18 Z"/>
+      <path d="M288 221 c11 2 18 11 19 22 l4 30 c1 9 -1 15 -5 22 l-8 15 l-9 -3 l7 -18 l-3 -21 l-9 21 l2 21 l-10 1 l-3 -24 l5 -29 c1 -12 5 -20 10 -37 Z"/>
+      <path d="M305 242 l20 -14 l5 7 l-21 15 Z"/>
+      <path d="M276 240 l-16 14 l6 7 l16 -14 Z"/>
+    </g>
+
+    <!-- lower bands -->
+    <rect x="60" y="322" width="280" height="12" fill="url(#blk)"/>
+    <rect x="60" y="344" width="280" height="60" fill="url(#blk)"/>
+    <!-- rays -->
+    <g fill="#e0975c">
+      <path d="M80 404 l6 -56 l6 56 Z"/>
+      <path d="M104 404 l6 -56 l6 56 Z"/>
+      <path d="M128 404 l6 -56 l6 56 Z"/>
+      <path d="M152 404 l6 -56 l6 56 Z"/>
+      <path d="M176 404 l6 -56 l6 56 Z"/>
+      <path d="M200 404 l6 -56 l6 56 Z"/>
+      <path d="M224 404 l6 -56 l6 56 Z"/>
+      <path d="M248 404 l6 -56 l6 56 Z"/>
+      <path d="M272 404 l6 -56 l6 56 Z"/>
+      <path d="M296 404 l6 -56 l6 56 Z"/>
+    </g>
+
+    <!-- sheen -->
+    <path d="M112 150 c-22 40 -26 100 -8 152 c-30 -48 -28 -118 -2 -158 Z" fill="#ffe6c4" opacity="0.22"/>
+  </g>
+
+  <!-- neck decoration -->
+  <g>
+    <rect x="152" y="66" width="96" height="10" fill="#1e1815"/>
+    <path d="M154 96 L246 96 L242 106 L158 106 Z" fill="#1e1815"/>
+    <g fill="#d98d4f">
+      <path d="M170 92 c-6 -6 -2 -14 6 -12 c-4 -8 6 -12 10 -5 c4 -7 14 -3 10 5 c8 -2 12 6 6 12 Z"/>
+      <path d="M204 92 c-6 -6 -2 -14 6 -12 c-4 -8 6 -12 10 -5 c4 -7 14 -3 10 5 c8 -2 12 6 6 12 Z"/>
+    </g>
+  </g>
+
+  <!-- foot band -->
+  <rect x="150" y="428" width="100" height="10" fill="#1e1815"/>
+  <path d="M132 462 L268 462 L270 474 L130 474 Z" fill="#1e1815"/>
+</svg>

@@ -1,0 +1,248 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="orbBase" cx="50%" cy="45%" r="50%">
+      <stop offset="0%" stop-color="#fdfcfb"/>
+      <stop offset="32%" stop-color="#f3f3ff"/>
+      <stop offset="65%" stop-color="#c9d6ff"/>
+      <stop offset="100%" stop-color="#7b7fbe"/>
+    </radialGradient>
+    <radialGradient id="orbGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.75"/>
+      <stop offset="40%" stop-color="#ffeef9" stop-opacity="0.6"/>
+      <stop offset="80%" stop-color="#b698ff" stop-opacity="0.0"/>
+      <stop offset="100%" stop-color="#6b3d76" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="mist1" cx="42%" cy="40%" r="45%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="40%" stop-color="#fbe7ff" stop-opacity="0.85"/>
+      <stop offset="80%" stop-color="#cbbdfd" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#b5a1ff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="mist2" cx="62%" cy="60%" r="48%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/>
+      <stop offset="30%" stop-color="#e0f9ff" stop-opacity="0.8"/>
+      <stop offset="70%" stop-color="#9ce1ff" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#7bc6ff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="highlight" cx="32%" cy="24%" r="22%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="60%" stop-color="#ffffff" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="crackGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffe9ff"/>
+      <stop offset="40%" stop-color="#ffd1ff"/>
+      <stop offset="80%" stop-color="#ff9fd8"/>
+      <stop offset="100%" stop-color="#ffc8ff"/>
+    </linearGradient>
+    <linearGradient id="rimShade" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.7"/>
+      <stop offset="40%" stop-color="#c5d0ff" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#6b3d76" stop-opacity="0.95"/>
+    </linearGradient>
+    <filter id="watercolorEdge">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="1.2" result="blur"/>
+      <feColorMatrix in="blur" type="matrix"
+        values="1 0 0 0 0
+                0 1 0 0 0
+                0 0 1 0 0
+                0 0 0 1 0" result="colored"/>
+      <feBlend in="SourceGraphic" in2="colored" mode="multiply"/>
+    </filter>
+    <filter id="softWash">
+      <feGaussianBlur stdDeviation="3" result="b"/>
+      <feColorMatrix in="b" type="matrix"
+        values="1 0 0 0 0
+                0 1 0 0 0
+                0 0 1 0 0
+                0 0 0 0.8 0"/>
+    </filter>
+    <filter id="texture">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="12" result="noise"/>
+      <feColorMatrix in="noise" type="matrix"
+        values="0 0 0 0 0.9
+                0 0 0 0 0.9
+                0 0 0 0 0.9
+                0 0 0 -0.6 1.0" result="grain"/>
+      <feBlend in="SourceGraphic" in2="grain" mode="soft-light"/>
+    </filter>
+    <mask id="orbMask">
+      <rect x="0" y="0" width="512" height="512" fill="black"/>
+      <circle cx="256" cy="256" r="246" fill="white"/>
+    </mask>
+  </defs>
+
+  <g mask="url(#orbMask)">
+    <circle cx="256" cy="256" r="246" fill="url(#orbBase)" filter="url(#watercolorEdge)"/>
+
+    <g filter="url(#softWash)">
+      <path d="M124 210
+               C150 160 210 132 270 140
+               C320 146 362 172 390 210
+               C412 242 420 284 408 320
+               C395 360 358 396 314 412
+               C270 428 220 426 182 408
+               C146 390 120 360 110 326
+               C100 292 104 248 124 210Z"
+            fill="url(#mist1)" opacity="0.95"/>
+
+      <path d="M180 180
+               C220 150 280 142 332 160
+               C368 174 396 204 410 240
+               C424 276 424 316 404 352
+               C382 392 342 422 296 434
+               C246 446 198 438 162 414
+               C130 392 112 360 106 330
+               C102 310 102 288 106 270
+               C116 230 144 204 180 180Z"
+            fill="url(#mist2)" opacity="0.9"/>
+    </g>
+
+    <path d="M150 238
+             C168 222 186 214 206 210
+             C228 206 250 206 270 210
+             C292 214 308 222 324 234
+             C340 248 354 266 362 286
+             C370 308 370 330 366 352
+             C360 378 348 400 330 416
+             C310 434 286 444 260 448
+             C232 452 204 448 180 436
+             C156 424 138 404 126 380
+             C114 356 108 330 112 306
+             C116 280 130 258 150 238Z"
+          fill="url(#orbGlow)" opacity="0.9"/>
+
+    <circle cx="196" cy="154" r="62" fill="url(#highlight)" opacity="0.95"/>
+
+    <circle cx="182" cy="150" r="22" fill="#ffffff" opacity="0.92" filter="url(#watercolorEdge)"/>
+    <circle cx="214" cy="166" r="10" fill="#ffffff" opacity="0.65"/>
+
+    <g filter="url(#watercolorEdge)">
+      <path d="M272 82
+               C292 90 307 104 318 124
+               C330 146 334 168 334 190
+               C334 214 332 234 336 256
+               C340 278 350 302 364 324
+               C372 336 386 352 398 364
+               C408 374 418 382 430 390
+               C440 396 450 400 458 402"
+            fill="none"
+            stroke="url(#crackGlow)"
+            stroke-width="7"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-opacity="0.9"/>
+
+      <path d="M272 82
+               C292 90 307 104 318 124
+               C330 146 334 168 334 190
+               C334 214 332 234 336 256
+               C340 278 350 302 364 324
+               C372 336 386 352 398 364
+               C408 374 418 382 430 390
+               C440 396 450 400 458 402"
+            fill="none"
+            stroke="#ff7ec4"
+            stroke-width="2.4"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-opacity="0.85"/>
+
+      <path d="M334 190
+               C326 186 320 186 312 188
+               C304 190 296 196 292 204
+               C288 212 288 220 292 230"
+            fill="none"
+            stroke="#ffd4ff"
+            stroke-width="3"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-opacity="0.65"/>
+    </g>
+
+    <path d="M124 310
+             C142 332 166 350 194 362
+             C222 372 250 376 278 372
+             C308 368 334 356 358 338
+             C376 324 392 306 406 284"
+          fill="none"
+          stroke="#ffffff"
+          stroke-width="12"
+          stroke-linecap="round"
+          stroke-opacity="0.16"/>
+
+    <g opacity="0.8" filter="url(#texture)">
+      <path d="M256 20
+               C348 20 428 58 476 124
+               C512 174 532 240 532 308
+               C532 402 488 476 414 518
+               C360 550 300 564 236 560
+               C170 556 116 536 76 500
+               C32 462 4 412 -4 354
+               C-10 306 -2 262 16 222
+               C44 160 90 114 150 86
+               C196 64 232 56 256 56Z"
+            fill="none"
+            stroke="#a76ed8"
+            stroke-width="8"
+            stroke-linecap="round"
+            stroke-opacity="0.45"/>
+      <path d="M38 210
+               C64 158 104 122 154 98
+               C210 70 268 60 324 70
+               C362 78 398 96 428 122
+               C468 156 496 202 508 252
+               C516 286 518 320 514 352
+               C506 408 482 452 444 484
+               C408 514 368 532 322 540
+               C274 548 228 546 186 534
+               C140 522 102 498 74 466
+               C44 434 24 394 16 352
+               C8 304 16 254 38 210Z"
+            fill="none"
+            stroke="#ffb6d9"
+            stroke-width="8"
+            stroke-linecap="round"
+            stroke-opacity="0.45"/>
+      <path d="M62 280
+               C78 240 106 206 142 182
+               C182 154 224 142 268 142
+               C304 142 338 150 368 168
+               C402 188 428 214 446 248
+               C462 278 470 310 470 346
+               C470 380 462 412 446 440
+               C430 470 406 494 374 512
+               C344 528 312 538 276 540
+               C240 542 206 536 176 522
+               C144 508 118 488 96 462
+               C76 438 62 408 56 376
+               C52 346 54 312 62 280Z"
+            fill="none"
+            stroke="#7bd0ff"
+            stroke-width="6"
+            stroke-linecap="round"
+            stroke-opacity="0.45"/>
+    </g>
+
+    <circle cx="256" cy="256" r="246" fill="none" stroke="url(#rimShade)" stroke-width="12" opacity="0.85" filter="url(#watercolorEdge)"/>
+
+    <path d="M88 222
+             C112 180 148 146 192 126
+             C234 108 278 104 320 112"
+          fill="none"
+          stroke="#ffffff"
+          stroke-width="9"
+          stroke-linecap="round"
+          stroke-opacity="0.7"/>
+
+    <circle cx="182" cy="150" r="18" fill="#ffffff" opacity="0.85"/>
+
+    <g opacity="0.3" filter="url(#watercolorEdge)">
+      <circle cx="94" cy="180" r="10" fill="#ffccf2"/>
+      <circle cx="420" cy="320" r="8" fill="#ffd6a5"/>
+      <circle cx="132" cy="356" r="7" fill="#b7f5ff"/>
+      <circle cx="374" cy="198" r="9" fill="#ffc6ff"/>
+      <circle cx="310" cy="430" r="6" fill="#caffbf"/>
+    </g>
+  </g>
+</svg>

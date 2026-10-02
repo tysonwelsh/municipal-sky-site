@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="16.0 15.0 87.8 284.8">
+  <defs>
+    <linearGradient id="shellBodyGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#c4302a"/>
+      <stop offset="40%" stop-color="#e03b31"/>
+      <stop offset="70%" stop-color="#b32123"/>
+      <stop offset="100%" stop-color="#8b1918"/>
+    </linearGradient>
+    <linearGradient id="shellRimGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#f7e0a6"/>
+      <stop offset="40%" stop-color="#d1a95b"/>
+      <stop offset="100%" stop-color="#8a6a33"/>
+    </linearGradient>
+    <linearGradient id="shellBaseGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e8c977"/>
+      <stop offset="55%" stop-color="#cfa24f"/>
+      <stop offset="100%" stop-color="#8f6a31"/>
+    </linearGradient>
+    <radialGradient id="primerGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fdf4d0"/>
+      <stop offset="45%" stop-color="#e6c88a"/>
+      <stop offset="100%" stop-color="#9a7a3c"/>
+    </radialGradient>
+    <linearGradient id="crimpHighlight" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffd9d0" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#ffd9d0" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Shadow for subtle depth -->
+  <ellipse cx="60" cy="291" rx="26" ry="7" fill="#000" opacity="0.18"/>
+
+  <!-- Main hull -->
+  <rect x="24" y="24" width="72" height="210" rx="8" ry="8" fill="url(#shellBodyGrad)"/>
+
+  <!-- Left side subtle darker strip -->
+  <rect x="26" y="26" width="10" height="206" rx="6" ry="6" fill="#000" opacity="0.18"/>
+
+  <!-- Right side highlight -->
+  <rect x="78" y="26" width="10" height="206" rx="6" ry="6" fill="#fff" opacity="0.18"/>
+
+  <!-- Crimped top (unfired, closed) -->
+  <g transform="translate(24,24)">
+    <!-- Top ellipse -->
+    <ellipse cx="36" cy="0" rx="30" ry="6" fill="#a5211f"/>
+    <!-- Inner lighter ellipse -->
+    <ellipse cx="36" cy="0" rx="24" ry="4" fill="#c8322a"/>
+    <!-- Crimp petals -->
+    <path d="M12,-0.5
+             C20,-5 28,-7 36,-7
+             C44,-7 52,-5 60,-0.5
+             C52,-0.8 44,-1 36,-1
+             C28,-1 20,-0.8 12,-0.5Z"
+          fill="url(#crimpHighlight)" opacity="0.7"/>
+    <!-- Crimp radial lines -->
+    <g stroke="#7c1414" stroke-width="0.8" stroke-linecap="round" opacity="0.75">
+      <line x1="36" y1="-6.5" x2="36" y2="-1.2"/>
+      <line x1="27" y1="-5.9" x2="35.2" y2="-1.2"/>
+      <line x1="45" y1="-5.9" x2="36.8" y2="-1.2"/>
+      <line x1="20" y1="-4.3" x2="34.6" y2="-1.0"/>
+      <line x1="52" y1="-4.3" x2="37.4" y2="-1.0"/>
+    </g>
+  </g>
+
+  <!-- Brass base -->
+  <g transform="translate(0,228)">
+    <!-- Main brass cylinder -->
+    <rect x="18" y="0" width="84" height="40" rx="6" ry="6" fill="url(#shellBaseGrad)"/>
+
+    <!-- Upper rim band -->
+    <rect x="18" y="0" width="84" height="10" rx="6" ry="6" fill="url(#shellRimGrad)"/>
+
+    <!-- Lower darker band to suggest lip -->
+    <rect x="20" y="26" width="80" height="6" fill="#634520" opacity="0.55"/>
+
+    <!-- Outer base ellipse (end of brass) -->
+    <ellipse cx="60" cy="37" rx="36" ry="7" fill="#755428"/>
+
+    <!-- Inner base face -->
+    <ellipse cx="60" cy="36" rx="30" ry="5.5" fill="#b88a45"/>
+
+    <!-- Slight highlight arc on top of base -->
+    <path d="M32,34.5
+             A28,5 0 0,1 88,34.5
+             A28,5 0 0,0 32,34.5Z"
+          fill="#f7e0a6" opacity="0.35"/>
+
+    <!-- Primer pocket recess -->
+    <ellipse cx="60" cy="35.8" rx="12" ry="3" fill="#8c6933" opacity="0.9"/>
+
+    <!-- Primer -->
+    <ellipse cx="60" cy="35.5" rx="7" ry="2.2" fill="url(#primerGrad)"/>
+
+    <!-- Tiny primer highlight -->
+    <ellipse cx="58.8" cy="34.9" rx="2.4" ry="0.7" fill="#fff" opacity="0.65"/>
+  </g>
+
+  <!-- Very subtle vertical reflection over entire shell -->
+  <rect x="52" y="24" width="6" height="244" fill="#fff" opacity="0.12"/>
+</svg>

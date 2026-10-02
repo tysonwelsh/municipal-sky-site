@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="59.8 98.8 280.2 283.0">
+  <defs>
+    <linearGradient id="strawA" x1="0" y1="0" x2="1" y2="0.2">
+      <stop offset="0" stop-color="#e8c274"/>
+      <stop offset="0.45" stop-color="#d9a751"/>
+      <stop offset="1" stop-color="#b07f38"/>
+    </linearGradient>
+    <linearGradient id="strawB" x1="0" y1="0" x2="1" y2="0.2">
+      <stop offset="0" stop-color="#edcb84"/>
+      <stop offset="0.45" stop-color="#dfb15d"/>
+      <stop offset="1" stop-color="#b98a3f"/>
+    </linearGradient>
+    <linearGradient id="baseG" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#c9a464"/>
+      <stop offset="0.4" stop-color="#b98f4c"/>
+      <stop offset="1" stop-color="#8d6733"/>
+    </linearGradient>
+    <radialGradient id="holeG" cx="0.5" cy="0.35" r="0.75">
+      <stop offset="0" stop-color="#3b2a17"/>
+      <stop offset="1" stop-color="#6a4c27"/>
+    </radialGradient>
+
+    <filter id="agefilt" x="-15%" y="-15%" width="130%" height="130%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="7" result="n"/>
+      <feColorMatrix in="n" type="saturate" values="0" result="ng"/>
+      <feComponentTransfer in="ng" result="grain">
+        <feFuncA type="table" tableValues="0 0.22"/>
+      </feComponentTransfer>
+      <feComposite in="grain" in2="SourceAlpha" operator="in" result="grainClipped"/>
+      <feBlend in="SourceGraphic" in2="grainClipped" mode="multiply"/>
+    </filter>
+
+    <filter id="softink" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="0.6"/>
+    </filter>
+
+    <g id="hiveShape">
+      <!-- rows of skep coils, bottom to top -->
+      <path d="M92 318 Q200 300 308 318 Q308 330 300 336 L100 336 Q92 330 92 318 Z" fill="url(#strawA)"/>
+      <path d="M96 300 Q200 282 304 300 Q302 312 300 318 Q200 302 100 318 Q98 312 96 300 Z" fill="url(#strawB)"/>
+      <path d="M100 278 Q200 260 300 278 Q300 290 304 300 Q200 282 96 300 Q100 290 100 278 Z" fill="url(#strawA)"/>
+      <path d="M106 254 Q200 236 294 254 Q296 266 300 278 Q200 260 100 278 Q104 266 106 254 Z" fill="url(#strawB)"/>
+      <path d="M114 230 Q200 212 286 230 Q290 242 294 254 Q200 236 106 254 Q110 242 114 230 Z" fill="url(#strawA)"/>
+      <path d="M124 206 Q200 189 276 206 Q281 218 286 230 Q200 212 114 230 Q119 218 124 206 Z" fill="url(#strawB)"/>
+      <path d="M136 183 Q200 167 264 183 Q270 194 276 206 Q200 189 124 206 Q130 194 136 183 Z" fill="url(#strawA)"/>
+      <path d="M151 162 Q200 148 249 162 Q257 172 264 183 Q200 167 136 183 Q144 172 151 162 Z" fill="url(#strawB)"/>
+      <path d="M169 144 Q200 134 231 144 Q240 152 249 162 Q200 148 151 162 Q160 152 169 144 Z" fill="url(#strawA)"/>
+      <path d="M186 130 Q200 125 214 130 Q222 136 231 144 Q200 134 169 144 Q178 136 186 130 Z" fill="url(#strawB)"/>
+      <!-- finial knob -->
+      <path d="M188 130 Q186 116 200 112 Q214 116 212 130 Q200 125 188 130 Z" fill="url(#strawA)"/>
+      <ellipse cx="200" cy="110" rx="9" ry="7" fill="url(#strawB)"/>
+    </g>
+  </defs>
+
+  <g filter="url(#agefilt)">
+
+    <!-- faded halftone-ish underprint offset (misregistration) -->
+    <g opacity="0.28" transform="translate(-3.5,2.5)">
+      <use href="#hiveShape" fill="#c94b2a"/>
+    </g>
+    <g opacity="0.2" transform="translate(3,-2)">
+      <use href="#hiveShape" fill="#3f6f86"/>
+    </g>
+
+    <!-- base platform -->
+    <g>
+      <path d="M64 336 L336 336 L330 356 L70 356 Z" fill="url(#baseG)"/>
+      <path d="M70 356 L330 356 L326 372 L74 372 Z" fill="#a57c3e"/>
+      <path d="M64 336 L336 336 L334 342 L66 342 Z" fill="#dcb872" opacity="0.75"/>
+      <path d="M74 372 L326 372 L324 380 L76 380 Z" fill="#8a6530"/>
+    </g>
+
+    <!-- main hive -->
+    <use href="#hiveShape"/>
+
+    <!-- coil separation shading lines -->
+    <g stroke="#8a6127" stroke-width="1.6" fill="none" opacity="0.55" stroke-linecap="round">
+      <path d="M92 318 Q200 300 308 318"/>
+      <path d="M96 300 Q200 282 304 300"/>
+      <path d="M100 278 Q200 260 300 278"/>
+      <path d="M106 254 Q200 236 294 254"/>
+      <path d="M114 230 Q200 212 286 230"/>
+      <path d="M124 206 Q200 189 276 206"/>
+      <path d="M136 183 Q200 167 264 183"/>
+      <path d="M151 162 Q200 148 249 162"/>
+      <path d="M169 144 Q200 134 231 144"/>
+      <path d="M186 130 Q200 125 214 130"/>
+    </g>
+
+    <!-- straw twist hatching -->
+    <g stroke="#a2762f" stroke-width="1" opacity="0.45" fill="none">
+      <path d="M110 327 l6 -8 M126 324 l6 -8 M142 321 l6 -8 M158 319 l6 -8 M174 317 l6 -8 M190 316 l6 -8 M206 316 l6 -8 M222 317 l6 -8 M238 319 l6 -8 M254 321 l6 -8 M270 324 l6 -8 M286 327 l6 -8"/>
+      <path d="M112 305 l6 -8 M128 302 l6 -8 M144 299 l6 -8 M160 297 l6 -8 M176 295 l6 -8 M192 294 l6 -8 M208 294 l6 -8 M224 295 l6 -8 M240 297 l6 -8 M256 300 l6 -8 M272 303 l6 -8 M288 306 l6 -8"/>
+      <path d="M116 283 l6 -8 M132 280 l6 -8 M148 277 l6 -8 M164 275 l6 -8 M180 273 l6 -8 M196 272 l6 -8 M212 272 l6 -8 M228 274 l6 -8 M244 276 l6 -8 M260 279 l6 -8 M276 282 l6 -8 M290 285 l6 -8"/>
+      <path d="M122 259 l6 -8 M138 256 l6 -8 M154 253 l6 -8 M170 251 l6 -8 M186 249 l6 -8 M202 249 l6 -8 M218 250 l6 -8 M234 252 l6 -8 M250 254 l6 -8 M266 257 l6 -8 M282 261 l6 -8"/>
+      <path d="M130 235 l6 -8 M146 232 l6 -8 M162 229 l6 -8 M178 227 l6 -8 M194 226 l6 -8 M210 226 l6 -8 M226 228 l6 -8 M242 230 l6 -8 M258 233 l6 -8 M274 237 l6 -8"/>
+      <path d="M140 211 l6 -8 M156 208 l6 -8 M172 206 l6 -8 M188 204 l6 -8 M204 204 l6 -8 M220 205 l6 -8 M236 207 l6 -8 M252 210 l6 -8 M266 213 l6 -8"/>
+      <path d="M150 189 l6 -8 M166 186 l6 -8 M182 184 l6 -8 M198 183 l6 -8 M214 184 l6 -8 M230 186 l6 -8 M246 189 l6 -8"/>
+      <path d="M164 167 l6 -8 M180 165 l6 -8 M196 164 l5 -7 M212 165 l6 -8 M228 167 l6 -8"/>
+      <path d="M180 149 l5 -7 M196 147 l5 -7 M212 148 l5 -7"/>
+    </g>
+
+    <!-- right side shading -->
+    <path d="M240 132 Q290 200 308 318 Q308 330 300 336 L268 336 Q276 240 236 138 Z" fill="#7a5624" opacity="0.2"/>
+    <!-- left highlight -->
+    <path d="M170 134 Q126 200 100 318 L120 318 Q140 210 182 138 Z" fill="#f5dda2" opacity="0.28"/>
+
+    <!-- entrance hole -->
+    <ellipse cx="200" cy="298" rx="21" ry="26" fill="url(#holeG)"/>
+    <path d="M179 298 a21 26 0 0 1 42 0 z" fill="#2f2113" opacity="0.55"/>
+    <ellipse cx="200" cy="298" rx="21" ry="26" fill="none" stroke="#7a5524" stroke-width="2.5" opacity="0.7"/>
+    <path d="M186 316 q14 10 28 0" fill="none" stroke="#c79a52" stroke-width="2" opacity="0.6"/>
+
+    <!-- outline ink, slightly soft/broken like old print -->
+    <g filter="url(#softink)" fill="none" stroke="#5c421f" stroke-width="2.6" opacity="0.78" stroke-linejoin="round">
+      <path d="M200 112 q-14 4 -14 18 -17 6 -35 32 -21 24 -35 60 -18 42 -24 96 0 12 8 18"/>
+      <path d="M200 112 q14 4 14 18 17 6 35 32 21 24 35 60 18 42 24 96 0 12 -8 18"/>
+      <ellipse cx="200" cy="110" rx="9" ry="7"/>
+      <path d="M64 336 L336 336 L330 356 L326 372 L74 372 L70 356 Z"/>
+      <path d="M70 356 L330 356"/>
+    </g>
+
+    <!-- aged fade wash (uneven ink) -->
+    <g opacity="0.16">
+      <path d="M92 318 Q200 300 308 318 L300 336 L100 336 Z" fill="#5a3b1c"/>
+      <path d="M150 130 Q200 108 250 130 L250 180 L150 180 Z" fill="#efe0bd"/>
+    </g>
+  </g>
+
+  <!-- overall desaturating paper-age veil, clipped to the art via multiply-less soft overlay -->
+  <g opacity="0.12">
+    <use href="#hiveShape" fill="#6d5b3a"/>
+    <path d="M64 336 L336 336 L326 372 L74 372 Z" fill="#6d5b3a"/>
+  </g>
+</svg>

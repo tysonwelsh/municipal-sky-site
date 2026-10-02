@@ -1,0 +1,99 @@
+<svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="vintagePrint" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.6" numOctaves="4" result="noise" />
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="4" xChannelSelector="R" yChannelSelector="G" result="displaced" />
+      <feColorMatrix type="matrix" values="
+        0.85  0.10  0.05  0  0.05
+        0.10  0.80  0.10  0  0.08
+        0.05  0.05  0.75  0  0.02
+        0     0     0     0.9 0" result="colorGraded" />
+    </filter>
+
+    <pattern id="halftone" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(25)">
+      <circle cx="2" cy="2" r="1.8" fill="#36291a" opacity="0.6"/>
+      <circle cx="5" cy="5" r="1.2" fill="#36291a" opacity="0.4"/>
+    </pattern>
+
+    <pattern id="lines" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
+      <line x1="0" y1="0" x2="0" y2="8" stroke="#5c472d" stroke-width="1.5" opacity="0.5"/>
+    </pattern>
+
+    <g id="hive-rings">
+      <!-- Dome Top -->
+      <rect x="175" y="10" width="150" height="140" rx="70" />
+      <!-- Ring 5 -->
+      <rect x="135" y="90" width="230" height="70" rx="35" />
+      <!-- Ring 4 -->
+      <rect x="95" y="150" width="310" height="80" rx="40" />
+      <!-- Ring 3 -->
+      <rect x="55" y="220" width="390" height="90" rx="45" />
+      <!-- Ring 2 -->
+      <rect x="25" y="300" width="450" height="100" rx="50" />
+      <!-- Ring 1 (Base) -->
+      <rect x="10" y="390" width="480" height="100" rx="50" />
+    </g>
+
+    <mask id="shadow-mask">
+      <rect x="280" y="0" width="220" height="500" fill="white" />
+      <rect x="250" y="0" width="30" height="500" fill="gray" />
+      <rect x="220" y="0" width="30" height="500" fill="#333" />
+    </mask>
+
+    <mask id="highlight-mask">
+      <rect x="0" y="0" width="150" height="500" fill="white" />
+      <rect x="150" y="0" width="50" height="500" fill="gray" />
+    </mask>
+  </defs>
+
+  <g filter="url(#vintagePrint)">
+    <!-- Base Color -->
+    <use href="#hive-rings" fill="#e8cfa6" />
+    
+    <!-- Line texture over the whole hive to simulate etching/print -->
+    <use href="#hive-rings" fill="url(#lines)" />
+
+    <!-- Shadows (Halftone) -->
+    <use href="#hive-rings" fill="url(#halftone)" mask="url(#shadow-mask)" />
+
+    <!-- Highlights -->
+    <use href="#hive-rings" fill="#fcf4e3" mask="url(#highlight-mask)" opacity="0.6" />
+
+    <!-- Ring Outlines to simulate etched borders -->
+    <rect x="175" y="10" width="150" height="140" rx="70" fill="none" stroke="#36291a" stroke-width="4" />
+    <rect x="135" y="90" width="230" height="70" rx="35" fill="none" stroke="#36291a" stroke-width="4" />
+    <rect x="95" y="150" width="310" height="80" rx="40" fill="none" stroke="#36291a" stroke-width="4" />
+    <rect x="55" y="220" width="390" height="90" rx="45" fill="none" stroke="#36291a" stroke-width="4" />
+    <rect x="25" y="300" width="450" height="100" rx="50" fill="none" stroke="#36291a" stroke-width="4" />
+    <rect x="10" y="390" width="480" height="100" rx="50" fill="none" stroke="#36291a" stroke-width="4" />
+
+    <!-- Inter-ring deep shadows -->
+    <path d="M 175 90 Q 250 100 325 90" stroke="#36291a" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <path d="M 135 150 Q 250 160 365 150" stroke="#36291a" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <path d="M 95 220 Q 250 230 405 220" stroke="#36291a" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <path d="M 55 300 Q 250 310 445 300" stroke="#36291a" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <path d="M 25 390 Q 250 400 475 390" stroke="#36291a" stroke-width="6" fill="none" stroke-linecap="round"/>
+
+    <!-- Entrance Hole -->
+    <path d="M 200 490 L 200 400 A 50 50 0 0 1 300 400 L 300 490 Z" fill="#2b1f13" stroke="#36291a" stroke-width="3" />
+    
+    <!-- Entrance Arch Shadow (Halftone) -->
+    <path d="M 250 490 L 250 400 A 50 50 0 0 1 300 400 L 300 490 Z" fill="url(#halftone)" />
+    <!-- Entrance Arch Detail -->
+    <path d="M 190 490 L 190 395 A 60 60 0 0 1 310 395 L 310 490" fill="none" stroke="#36291a" stroke-width="4" stroke-dasharray="12 6" />
+
+    <!-- Additional stippling details manually placed for vintage organic feel -->
+    <circle cx="210" cy="50" r="2" fill="#36291a" />
+    <circle cx="230" cy="40" r="1.5" fill="#36291a" />
+    <circle cx="280" cy="55" r="2.5" fill="#36291a" />
+    <circle cx="160" cy="110" r="2" fill="#36291a" />
+    <circle cx="120" cy="170" r="1.5" fill="#36291a" />
+    <circle cx="370" cy="180" r="2" fill="#36291a" />
+    <circle cx="410" cy="250" r="2.5" fill="#36291a" />
+    <circle cx="80" cy="270" r="1.5" fill="#36291a" />
+    <circle cx="50" cy="350" r="2" fill="#36291a" />
+    <circle cx="450" cy="360" r="2" fill="#36291a" />
+    <circle cx="150" cy="450" r="2.5" fill="#36291a" />
+    <circle cx="350" cy="430" r="1.5" fill="#36291a" />
+  </g>
+</svg>

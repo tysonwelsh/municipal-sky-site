@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="glassLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#bce6ff" stop-opacity="0.6" />
+      <stop offset="100%" stop-color="#70c4ff" stop-opacity="0.3" />
+    </linearGradient>
+    <linearGradient id="glassRight" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#bce6ff" stop-opacity="0.6" />
+      <stop offset="100%" stop-color="#70c4ff" stop-opacity="0.3" />
+    </linearGradient>
+    <linearGradient id="sillHighlight" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#9a6237" />
+      <stop offset="100%" stop-color="#6b4226" />
+    </linearGradient>
+  </defs>
+
+  <!-- Outer Frame Trim -->
+  <polygon points="0,360 400,360 390,390 10,390" fill="url(#sillHighlight)" />
+  <polygon points="20,20 380,20 380,360 400,360 400,10 0,10 0,360 20,360" fill="#5c3820" />
+  <polygon points="0,10 400,10 380,20 20,20" fill="#754829" />
+  
+  <!-- Inner Frame / Jambs -->
+  <polygon points="20,20 380,20 350,50 50,50" fill="#422715" />
+  <polygon points="20,20 50,50 50,350 20,360" fill="#663f24" />
+  <polygon points="380,20 350,50 350,350 380,360" fill="#361f10" />
+  <polygon points="50,350 350,350 380,360 20,360" fill="#8a5632" />
+
+  <!-- Inner Sill Detail -->
+  <polygon points="40,352 360,352 370,358 30,358" fill="#a8693c" />
+
+  <!-- Center divider (Mullion on frame) -->
+  <polygon points="195,50 205,50 205,350 195,350" fill="#4a2c16" />
+  <polygon points="195,50 200,53 200,350 195,350" fill="#5c3820" />
+
+  <!-- LEFT SASH -->
+  <!-- Thickness/Edge -->
+  <polygon points="170,90 178,86 178,314 170,310" fill="#d18a54" />
+  <polygon points="50,50 178,86 170,90 50,50" fill="#b07243" />
+  <!-- Sash Frame -->
+  <path d="M 50,50 L 170,90 L 170,310 L 50,350 Z M 65,70 L 65,330 L 155,295 L 155,105 Z" fill="#915b33" fill-rule="evenodd" />
+  <!-- Glass Left -->
+  <polygon points="65,70 155,105 155,295 65,330" fill="url(#glassLeft)" />
+  <!-- Glass Reflections Left -->
+  <polygon points="75,130 145,157 145,187 75,160" fill="#ffffff" fill-opacity="0.2" />
+  <polygon points="75,180 145,207 145,217 75,190" fill="#ffffff" fill-opacity="0.15" />
+  <!-- Left Mullion -->
+  <polygon points="65,197 155,202 155,208 65,203" fill="#915b33" />
+  <polygon points="65,203 155,208 155,210 65,205" fill="#663f24" />
+  <!-- Left Handle -->
+  <polygon points="158,195 163,197 163,217 158,215" fill="#d4af37" />
+  <polygon points="163,197 166,198 166,218 163,217" fill="#aa851a" />
+  <polygon points="160,200 172,203 172,206 160,203" fill="#d4af37" />
+
+  <!-- RIGHT SASH -->
+  <!-- Thickness/Edge -->
+  <polygon points="230,90 222,86 222,314 230,310" fill="#754829" />
+  <polygon points="350,50 222,86 230,90 350,50" fill="#663f24" />
+  <!-- Sash Frame -->
+  <path d="M 350,50 L 230,90 L 230,310 L 350,350 Z M 335,70 L 335,330 L 245,295 L 245,105 Z" fill="#915b33" fill-rule="evenodd" />
+  <!-- Glass Right -->
+  <polygon points="335,70 245,105 245,295 335,330" fill="url(#glassRight)" />
+  <!-- Glass Reflections Right -->
+  <polygon points="325,130 255,157 255,187 325,160" fill="#ffffff" fill-opacity="0.2" />
+  <polygon points="325,180 255,207 255,217 325,190" fill="#ffffff" fill-opacity="0.15" />
+  <!-- Right Mullion -->
+  <polygon points="335,197 245,202 245,208 335,203" fill="#915b33" />
+  <polygon points="335,203 245,208 245,210 335,205" fill="#663f24" />
+  <!-- Right Handle -->
+  <polygon points="242,195 237,197 237,217 242,215" fill="#d4af37" />
+  <polygon points="237,197 234,198 234,218 237,217" fill="#aa851a" />
+  <polygon points="240,200 228,203 228,206 240,203" fill="#d4af37" />
+</svg>

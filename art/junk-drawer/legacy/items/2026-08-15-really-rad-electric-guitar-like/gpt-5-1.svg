@@ -1,0 +1,340 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="118.0 213.1 604.9 918.7">
+  <defs>
+    <linearGradient id="bodyGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff2a6d"/>
+      <stop offset="0.4" stop-color="#ff8a00"/>
+      <stop offset="0.7" stop-color="#ffe600"/>
+      <stop offset="1" stop-color="#ff2a6d"/>
+    </linearGradient>
+    <linearGradient id="bodyEdge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#000000"/>
+      <stop offset="0.35" stop-color="#220014"/>
+      <stop offset="0.7" stop-color="#440022"/>
+      <stop offset="1" stop-color="#000000"/>
+    </linearGradient>
+    <linearGradient id="neckGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c89b5f"/>
+      <stop offset="0.5" stop-color="#a8753a"/>
+      <stop offset="1" stop-color="#8b5a2b"/>
+    </linearGradient>
+    <linearGradient id="headGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#111111"/>
+      <stop offset="1" stop-color="#4b4b4b"/>
+    </linearGradient>
+    <linearGradient id="metalGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f5f5f5"/>
+      <stop offset="0.5" stop-color="#b3b3b3"/>
+      <stop offset="1" stop-color="#ffffff"/>
+    </linearGradient>
+    <linearGradient id="fretMetalGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e0e0e0"/>
+      <stop offset="1" stop-color="#9a9a9a"/>
+    </linearGradient>
+    <linearGradient id="pickupGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#111111"/>
+      <stop offset="0.5" stop-color="#333333"/>
+      <stop offset="1" stop-color="#777777"/>
+    </linearGradient>
+    <radialGradient id="knobGrad" cx="0.3" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="#ffe69b"/>
+      <stop offset="0.5" stop-color="#f5aa34"/>
+      <stop offset="1" stop-color="#8f4c00"/>
+    </radialGradient>
+    <radialGradient id="inlayGrad" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fefefe"/>
+      <stop offset="1" stop-color="#b0e1ff"/>
+    </radialGradient>
+    <linearGradient id="stringGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#fdfdfd"/>
+      <stop offset="1" stop-color="#b0b0b0"/>
+    </linearGradient>
+    <linearGradient id="sharkToothGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#d0f0ff"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Shadow under guitar for depth -->
+  <ellipse cx="400" cy="1060" rx="280" ry="70" fill="black" opacity="0.32"/>
+
+  <!-- Body outline (spiky superstrat) -->
+  <path d="M180 860
+           C160 780 160 700 190 630
+           C210 585 255 540 305 515
+           L230 430
+           C220 420 216 402 230 392
+           C244 382 264 391 274 400
+           L332 454
+           L330 390
+           C328 364 337 340 364 332
+           C393 322 429 320 470 326
+           C515 333 552 345 588 366
+           C632 392 656 427 670 470
+           C690 535 692 615 684 670
+           L700 692
+           C712 708 710 728 694 736
+           L672 746
+           L692 777
+           C702 794 700 816 682 826
+           L640 850
+           L654 886
+           C662 906 656 924 636 932
+           C620 938 592 942 560 946
+           C520 950 472 955 430 958
+           C360 963 298 960 250 942
+           C210 926 190 902 180 860 Z"
+        fill="url(#bodyEdge)"/>
+
+  <!-- Body inner radical gradient area -->
+  <path d="M210 858
+           C194 796 196 726 222 667
+           C242 621 280 582 330 558
+           L278 488
+           C270 478 272 466 284 462
+           C296 457 307 463 316 472
+           L360 518
+           L360 430
+           C360 410 370 394 392 386
+           C420 377 450 376 484 381
+           C526 387 560 398 592 417
+           C628 438 650 467 662 504
+           C680 560 681 626 674 670
+           L688 696
+           C696 710 693 718 678 724
+           L646 736
+           L664 770
+           C672 788 668 804 652 812
+           L610 834
+           L622 866
+           C630 884 624 896 606 902
+           C572 913 522 921 466 926
+           C408 932 338 932 290 920
+           C246 910 222 892 210 858 Z"
+        fill="url(#bodyGrad)"/>
+
+  <!-- Neck -->
+  <path d="M362 322
+           L514 268
+           C524 265 536 270 540 280
+           L585 396
+           C588 405 584 416 575 419
+           L423 474
+           C414 477 404 472 400 463
+           L354 345
+           C350 335 354 326 362 322 Z"
+        fill="url(#neckGrad)"/>
+
+  <!-- Fretboard (darker strip) -->
+  <path d="M382 318
+           L508 276
+           C514 274 520 277 522 283
+           L563 390
+           C565 396 562 402 556 404
+           L432 445
+           C426 447 419 444 417 438
+           L375 330
+           C373 324 376 320 382 318 Z"
+        fill="#3b2515"/>
+
+  <!-- Frets -->
+  <g>
+    <path d="M388 332 L496 298" stroke="url(#fretMetalGrad)" stroke-width="3" stroke-linecap="round"/>
+    <path d="M394 348 L502 318" stroke="url(#fretMetalGrad)" stroke-width="3" stroke-linecap="round"/>
+    <path d="M400 364 L507 338" stroke="url(#fretMetalGrad)" stroke-width="3" stroke-linecap="round"/>
+    <path d="M406 380 L512 358" stroke="url(#fretMetalGrad)" stroke-width="3" stroke-linecap="round"/>
+    <path d="M412 396 L517 378" stroke="url(#fretMetalGrad)" stroke-width="3" stroke-linecap="round"/>
+    <path d="M418 412 L522 398" stroke="url(#fretMetalGrad)" stroke-width="3" stroke-linecap="round"/>
+    <path d="M424 428 L527 418" stroke="url(#fretMetalGrad)" stroke-width="3" stroke-linecap="round"/>
+  </g>
+
+  <!-- Shark tooth inlays -->
+  <g fill="url(#sharkToothGrad)" stroke="#77a6c9" stroke-width="1">
+    <path d="M430 356 L452 348 L442 336 Z"/>
+    <path d="M446 390 L472 382 L458 366 Z"/>
+    <path d="M464 422 L492 416 L476 398 Z"/>
+  </g>
+
+  <!-- Headstock -->
+  <path d="M515 262
+           L660 218
+           C678 212 696 216 702 230
+           C706 240 703 252 694 262
+           L668 290
+           L702 298
+           C716 302 724 314 720 328
+           C716 342 702 350 688 348
+           L640 340
+           L616 362
+           C604 374 590 378 578 372
+           C568 368 558 356 552 340
+           L523 270
+           C520 264 511 264 515 262 Z"
+        fill="url(#headGrad)"/>
+
+  <!-- Tuning pegs -->
+  <g fill="url(#metalGrad)" stroke="#555" stroke-width="1.5">
+    <rect x="640" y="222" width="22" height="10" rx="2" ry="2"/>
+    <circle cx="664" cy="227" r="5"/>
+
+    <rect x="656" y="236" width="22" height="10" rx="2" ry="2"/>
+    <circle cx="680" cy="241" r="5"/>
+
+    <rect x="668" y="254" width="22" height="10" rx="2" ry="2"/>
+    <circle cx="692" cy="259" r="5"/>
+
+    <rect x="640" y="272" width="22" height="10" rx="2" ry="2"/>
+    <circle cx="664" cy="277" r="5"/>
+
+    <rect x="620" y="244" width="22" height="10" rx="2" ry="2"/>
+    <circle cx="644" cy="249" r="5"/>
+
+    <rect x="624" y="262" width="22" height="10" rx="2" ry="2"/>
+    <circle cx="648" cy="267" r="5"/>
+  </g>
+
+  <!-- Nut -->
+  <rect x="364" y="328" width="8" height="24" fill="url(#metalGrad)"/>
+
+  <!-- Strings -->
+  <g stroke="url(#stringGrad)" stroke-linecap="round">
+    <line x1="368" y1="330" x2="420" y2="458" stroke-width="2.4"/>
+    <line x1="370" y1="334" x2="424" y2="462" stroke-width="2.1"/>
+    <line x1="370" y1="338" x2="428" y2="466" stroke-width="1.9"/>
+    <line x1="370" y1="342" x2="432" y2="470" stroke-width="1.7"/>
+    <line x1="370" y1="346" x2="436" y2="474" stroke-width="1.5"/>
+    <line x1="370" y1="350" x2="440" y2="478" stroke-width="1.3"/>
+  </g>
+
+  <!-- Bridge base (Floyd Rose style) -->
+  <path d="M382 480
+           L474 450
+           C484 446 494 452 497 462
+           L506 490
+           C510 502 504 512 492 516
+           L400 546
+           C390 550 380 546 376 536
+           L368 508
+           C364 496 370 484 382 480 Z"
+        fill="#111111"/>
+
+  <!-- Fine tuners -->
+  <g fill="#222" stroke="#666" stroke-width="1">
+    <rect x="382" y="488" width="12" height="24" rx="2"/>
+    <rect x="398" y="482" width="12" height="26" rx="2"/>
+    <rect x="414" y="478" width="12" height="26" rx="2"/>
+    <rect x="430" y="472" width="12" height="28" rx="2"/>
+    <rect x="446" y="468" width="12" height="28" rx="2"/>
+    <rect x="462" y="462" width="12" height="30" rx="2"/>
+  </g>
+
+  <!-- Tremolo arm -->
+  <path d="M454 468
+           C492 430 540 412 596 412
+           C622 412 642 416 660 424"
+        fill="none" stroke="#cfcfcf" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="663" cy="425" r="10" fill="#fafafa" stroke="#777" stroke-width="2"/>
+
+  <!-- Pickups -->
+  <g stroke="#000" stroke-width="2">
+    <!-- Bridge humbucker -->
+    <rect x="414" y="540" width="96" height="34" rx="4" fill="url(#pickupGrad)"/>
+    <circle cx="424" cy="557" r="2.4" fill="#f3f3f3"/>
+    <circle cx="438" cy="553" r="2.4" fill="#f3f3f3"/>
+    <circle cx="452" cy="549" r="2.4" fill="#f3f3f3"/>
+    <circle cx="466" cy="545" r="2.4" fill="#f3f3f3"/>
+    <circle cx="480" cy="553" r="2.4" fill="#f3f3f3"/>
+    <circle cx="494" cy="549" r="2.4" fill="#f3f3f3"/>
+
+    <!-- Neck humbucker -->
+    <rect x="380" y="584" width="94" height="32" rx="4" fill="url(#pickupGrad)"/>
+    <circle cx="390" cy="600" r="2.4" fill="#f3f3f3"/>
+    <circle cx="404" cy="596" r="2.4" fill="#f3f3f3"/>
+    <circle cx="418" cy="592" r="2.4" fill="#f3f3f3"/>
+    <circle cx="432" cy="600" r="2.4" fill="#f3f3f3"/>
+    <circle cx="446" cy="596" r="2.4" fill="#f3f3f3"/>
+    <circle cx="460" cy="592" r="2.4" fill="#f3f3f3"/>
+  </g>
+
+  <!-- Pickup ring plates -->
+  <rect x="410" y="534" width="104" height="46" rx="6" fill="none" stroke="#4b4b4b" stroke-width="3"/>
+  <rect x="376" y="578" width="102" height="44" rx="6" fill="none" stroke="#4b4b4b" stroke-width="3"/>
+
+  <!-- Control knobs -->
+  <g>
+    <circle cx="530" cy="640" r="24" fill="url(#knobGrad)" stroke="#4b2500" stroke-width="2"/>
+    <circle cx="530" cy="640" r="10" fill="rgba(255,255,255,0.5)"/>
+    <path d="M530 618 L533 628" stroke="#3b1c00" stroke-width="3" stroke-linecap="round"/>
+
+    <circle cx="574" cy="676" r="22" fill="url(#knobGrad)" stroke="#4b2500" stroke-width="2"/>
+    <circle cx="574" cy="676" r="9" fill="rgba(255,255,255,0.5)"/>
+    <path d="M574 656 L572 666" stroke="#3b1c00" stroke-width="3" stroke-linecap="round"/>
+  </g>
+
+  <!-- Switch -->
+  <g>
+    <rect x="508" y="592" width="40" height="12" rx="6" fill="#1a1a1a" stroke="#555" stroke-width="2"/>
+    <circle cx="544" cy="598" r="5" fill="#e4e4e4" stroke="#777" stroke-width="1.5"/>
+  </g>
+
+  <!-- Strap buttons -->
+  <circle cx="202" cy="828" r="8" fill="#dcdcdc" stroke="#777" stroke-width="2"/>
+  <circle cx="660" cy="636" r="8" fill="#dcdcdc" stroke="#777" stroke-width="2"/>
+
+  <!-- Graphic details on body: neon lightning bolts -->
+  <g fill="#ffffff" opacity="0.9">
+    <path d="M292 720
+             L328 650
+             L304 652
+             L350 580
+             L332 636
+             L356 636 Z" />
+    <path d="M520 780
+             L556 726
+             L536 726
+             L576 672
+             L560 716
+             L582 716 Z" />
+  </g>
+
+  <!-- Body highlight -->
+  <path d="M260 824
+           C232 760 248 694 290 648
+           C324 612 374 588 430 580
+           C494 570 552 578 594 598
+           C632 618 652 644 664 676
+           C670 690 672 706 672 720
+           C664 710 656 702 644 696
+           C616 682 578 678 528 684
+           C470 692 424 708 392 728
+           C348 756 316 788 298 816
+           C284 836 272 836 260 824 Z"
+        fill="#ffffff" opacity="0.16"/>
+
+  <!-- Hot pink outline glow -->
+  <path d="M180 860
+           C160 780 160 700 190 630
+           C210 585 255 540 305 515
+           L230 430
+           C220 420 216 402 230 392
+           C244 382 264 391 274 400
+           L332 454
+           L330 390
+           C328 364 337 340 364 332
+           C393 322 429 320 470 326
+           C515 333 552 345 588 366
+           C632 392 656 427 670 470
+           C690 535 692 615 684 670
+           L700 692
+           C712 708 710 728 694 736
+           L672 746
+           L692 777
+           C702 794 700 816 682 826
+           L640 850
+           L654 886
+           C662 906 656 924 636 932
+           C620 938 592 942 560 946
+           C520 950 472 955 430 958
+           C360 963 298 960 250 942
+           C210 926 190 902 180 860 Z"
+        fill="none" stroke="#ff4fa8" stroke-width="4" opacity="0.9"/>
+</svg>

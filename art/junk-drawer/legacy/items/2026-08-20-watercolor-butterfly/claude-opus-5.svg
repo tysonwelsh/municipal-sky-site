@@ -1,0 +1,163 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="8.0 63.0 783.8 663.8">
+  <defs>
+    <radialGradient id="w1" cx="35%" cy="35%" r="75%">
+      <stop offset="0%" stop-color="#ffd166" stop-opacity="0.95"/>
+      <stop offset="45%" stop-color="#f4787c" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#7b3fa0" stop-opacity="0.8"/>
+    </radialGradient>
+    <radialGradient id="w2" cx="40%" cy="30%" r="80%">
+      <stop offset="0%" stop-color="#ffe08a" stop-opacity="0.9"/>
+      <stop offset="50%" stop-color="#ef6f9c" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#4a3f9e" stop-opacity="0.8"/>
+    </radialGradient>
+    <radialGradient id="w3" cx="50%" cy="40%" r="70%">
+      <stop offset="0%" stop-color="#8fe3e0" stop-opacity="0.85"/>
+      <stop offset="60%" stop-color="#4aa3d9" stop-opacity="0.75"/>
+      <stop offset="100%" stop-color="#3a4fa0" stop-opacity="0.7"/>
+    </radialGradient>
+    <radialGradient id="bodyg" cx="40%" cy="20%" r="80%">
+      <stop offset="0%" stop-color="#6b5a86"/>
+      <stop offset="100%" stop-color="#2d2140"/>
+    </radialGradient>
+
+    <filter id="bleed" x="-30%" y="-30%" width="160%" height="160%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="4" seed="7" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="22" xChannelSelector="R" yChannelSelector="G" result="d"/>
+      <feGaussianBlur in="d" stdDeviation="3.2"/>
+    </filter>
+    <filter id="bleed2" x="-30%" y="-30%" width="160%" height="160%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="3" seed="19" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="14" xChannelSelector="R" yChannelSelector="G"/>
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="7"/>
+    </filter>
+    <filter id="grain" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="3" result="t"/>
+      <feColorMatrix in="t" type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.35"/></feComponentTransfer>
+      <feComposite in2="SourceGraphic" operator="in"/>
+    </filter>
+
+    <g id="upperWing">
+      <path d="M0 0 C -60 -80 -170 -150 -280 -155 C -350 -158 -375 -110 -352 -55 C -330 -2 -250 40 -160 55 C -90 66 -30 50 0 20 Z"/>
+    </g>
+    <g id="lowerWing">
+      <path d="M0 10 C -40 40 -120 70 -190 120 C -250 163 -262 225 -212 250 C -160 276 -85 235 -45 170 C -18 126 -4 68 0 25 Z"/>
+    </g>
+  </defs>
+
+  <g transform="translate(400,395)">
+
+    <!-- soft halo washes -->
+    <g filter="url(#soft)" opacity="0.35">
+      <ellipse cx="-170" cy="-60" rx="190" ry="120" fill="#f4787c"/>
+      <ellipse cx="170" cy="-60" rx="190" ry="120" fill="#f4787c"/>
+      <ellipse cx="-130" cy="150" rx="120" ry="110" fill="#4aa3d9"/>
+      <ellipse cx="130" cy="150" rx="120" ry="110" fill="#4aa3d9"/>
+    </g>
+
+    <!-- LEFT WINGS -->
+    <g transform="rotate(-6)">
+      <g filter="url(#bleed)" opacity="0.92">
+        <use href="#upperWing" fill="url(#w1)"/>
+      </g>
+      <g filter="url(#bleed)" opacity="0.9">
+        <use href="#lowerWing" fill="url(#w3)"/>
+      </g>
+    </g>
+
+    <!-- RIGHT WINGS -->
+    <g transform="scale(-1,1) rotate(-6)">
+      <g filter="url(#bleed)" opacity="0.92">
+        <use href="#upperWing" fill="url(#w2)"/>
+      </g>
+      <g filter="url(#bleed)" opacity="0.9">
+        <use href="#lowerWing" fill="url(#w3)"/>
+      </g>
+    </g>
+
+    <!-- pigment pools -->
+    <g filter="url(#bleed2)" opacity="0.5">
+      <ellipse cx="-235" cy="-95" rx="70" ry="48" fill="#7b3fa0"/>
+      <ellipse cx="235" cy="-95" rx="70" ry="48" fill="#5a3fa0"/>
+      <ellipse cx="-110" cy="-40" rx="60" ry="40" fill="#ffd166"/>
+      <ellipse cx="110" cy="-40" rx="60" ry="40" fill="#ffd166"/>
+      <ellipse cx="-175" cy="185" rx="55" ry="42" fill="#2f6fb5"/>
+      <ellipse cx="175" cy="185" rx="55" ry="42" fill="#2f6fb5"/>
+      <ellipse cx="-300" cy="-115" rx="45" ry="30" fill="#e0568e"/>
+      <ellipse cx="300" cy="-115" rx="45" ry="30" fill="#e0568e"/>
+    </g>
+
+    <!-- spots -->
+    <g opacity="0.55" filter="url(#bleed2)">
+      <circle cx="-265" cy="-120" r="20" fill="#fff3d0"/>
+      <circle cx="265" cy="-120" r="20" fill="#fff3d0"/>
+      <circle cx="-190" cy="-105" r="13" fill="#fff3d0"/>
+      <circle cx="190" cy="-105" r="13" fill="#fff3d0"/>
+      <circle cx="-205" cy="205" r="16" fill="#cdf3f0"/>
+      <circle cx="205" cy="205" r="16" fill="#cdf3f0"/>
+      <circle cx="-150" cy="150" r="10" fill="#cdf3f0"/>
+      <circle cx="150" cy="150" r="10" fill="#cdf3f0"/>
+    </g>
+
+    <!-- veins -->
+    <g stroke="#2d2140" fill="none" stroke-linecap="round" opacity="0.4" filter="url(#bleed2)">
+      <g stroke-width="3">
+        <path d="M-8 -8 C -90 -40 -190 -90 -300 -125"/>
+        <path d="M-8 -4 C -90 -10 -190 -30 -290 -55"/>
+        <path d="M-8 0 C -80 20 -150 40 -220 45"/>
+        <path d="M-6 20 C -60 70 -130 120 -195 200"/>
+        <path d="M-6 24 C -50 90 -80 150 -100 215"/>
+        <path d="M8 -8 C 90 -40 190 -90 300 -125"/>
+        <path d="M8 -4 C 90 -10 190 -30 290 -55"/>
+        <path d="M8 0 C 80 20 150 40 220 45"/>
+        <path d="M6 20 C 60 70 130 120 195 200"/>
+        <path d="M6 24 C 50 90 80 150 100 215"/>
+      </g>
+    </g>
+
+    <!-- wing edge tint -->
+    <g opacity="0.35" filter="url(#bleed)">
+      <path d="M-280 -155 C -350 -158 -375 -110 -352 -55 C -330 -2 -250 40 -160 55" fill="none" stroke="#5b2d7a" stroke-width="16"/>
+      <path d="M280 -155 C 350 -158 375 -110 352 -55 C 330 -2 250 40 160 55" fill="none" stroke="#5b2d7a" stroke-width="16"/>
+      <path d="M-190 120 C -250 163 -262 225 -212 250 C -160 276 -85 235 -45 170" fill="none" stroke="#23408a" stroke-width="14"/>
+      <path d="M190 120 C 250 163 262 225 212 250 C 160 276 85 235 45 170" fill="none" stroke="#23408a" stroke-width="14"/>
+    </g>
+
+    <!-- body -->
+    <g>
+      <ellipse cx="0" cy="30" rx="17" ry="140" fill="url(#bodyg)" filter="url(#bleed2)" opacity="0.9"/>
+      <ellipse cx="0" cy="-95" rx="21" ry="27" fill="#382a52" filter="url(#bleed2)" opacity="0.95"/>
+      <ellipse cx="-6" cy="-100" rx="6" ry="9" fill="#fff" opacity="0.35"/>
+    </g>
+
+    <!-- antennae -->
+    <g stroke="#332748" stroke-width="4.5" fill="none" stroke-linecap="round" opacity="0.85">
+      <path d="M-8 -112 C -40 -160 -80 -195 -130 -215"/>
+      <path d="M8 -112 C 40 -160 80 -195 130 -215"/>
+    </g>
+    <circle cx="-133" cy="-217" r="8" fill="#3b2c55" opacity="0.85"/>
+    <circle cx="133" cy="-217" r="8" fill="#3b2c55" opacity="0.85"/>
+
+    <!-- splatters -->
+    <g opacity="0.5" filter="url(#bleed2)">
+      <circle cx="-355" cy="60" r="11" fill="#f4787c"/>
+      <circle cx="-320" cy="120" r="7" fill="#7b3fa0"/>
+      <circle cx="355" cy="55" r="10" fill="#ef6f9c"/>
+      <circle cx="320" cy="120" r="6" fill="#4aa3d9"/>
+      <circle cx="-60" cy="-260" r="8" fill="#ffd166"/>
+      <circle cx="70" cy="-275" r="6" fill="#f4787c"/>
+      <circle cx="-40" cy="300" r="9" fill="#4aa3d9"/>
+      <circle cx="55" cy="315" r="6" fill="#7b3fa0"/>
+      <circle cx="-250" cy="300" r="7" fill="#3a4fa0"/>
+      <circle cx="250" cy="295" r="8" fill="#3a4fa0"/>
+    </g>
+
+    <!-- paper grain -->
+    <g filter="url(#grain)" opacity="0.25">
+      <ellipse cx="0" cy="0" rx="390" ry="330" fill="#8a7f9c"/>
+    </g>
+  </g>
+</svg>

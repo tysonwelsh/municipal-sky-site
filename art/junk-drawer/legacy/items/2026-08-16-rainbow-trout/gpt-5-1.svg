@@ -1,0 +1,168 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="28.0 18.0 873.8 273.8">
+  <defs>
+    <linearGradient id="bodyGradient" x1="0" y1="150" x2="900" y2="150" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#c2e3f7"/>
+      <stop offset="0.18" stop-color="#e0f3ff"/>
+      <stop offset="0.35" stop-color="#f7f6ff"/>
+      <stop offset="0.5" stop-color="#f2a6c0"/>
+      <stop offset="0.7" stop-color="#aada8c"/>
+      <stop offset="1" stop-color="#6ca2b3"/>
+    </linearGradient>
+    <linearGradient id="backGradient" x1="0" y1="60" x2="0" y2="240" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1f3f39"/>
+      <stop offset="0.4" stop-color="#2c5b4b"/>
+      <stop offset="1" stop-color="#5d8b74"/>
+    </linearGradient>
+    <linearGradient id="bellyGradient" x1="0" y1="180" x2="0" y2="260" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fefefe"/>
+      <stop offset="1" stop-color="#f7f2ea"/>
+    </linearGradient>
+    <radialGradient id="gillGradient" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(210 150) scale(80 60)">
+      <stop offset="0" stop-color="#f5bbc2"/>
+      <stop offset="1" stop-color="rgba(245,187,194,0)"/>
+    </radialGradient>
+    <linearGradient id="tailGradient" x1="720" y1="70" x2="890" y2="230" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6f8f8c"/>
+      <stop offset="0.6" stop-color="#3f5d5c"/>
+      <stop offset="1" stop-color="#203738"/>
+    </linearGradient>
+    <linearGradient id="finGradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#c7926b"/>
+      <stop offset="1" stop-color="#8b5e3b"/>
+    </linearGradient>
+    <pattern id="speckles" x="0" y="0" width="20" height="10" patternUnits="userSpaceOnUse">
+      <circle cx="3" cy="3" r="1.2" fill="#1c1c1e" opacity="0.55"/>
+      <circle cx="10" cy="6" r="1" fill="#1c1c1e" opacity="0.5"/>
+      <circle cx="16" cy="2" r="1.1" fill="#1c1c1e" opacity="0.55"/>
+    </pattern>
+    <clipPath id="bodyClip">
+      <path d="M40 150
+               C120 80 240 55 360 55
+               C520 55 640 80 770 100
+               C820 108 860 120 885 135
+               C890 138 895 145 895 150
+               C895 155 890 162 885 165
+               C860 180 820 192 770 200
+               C640 220 520 245 360 245
+               C240 245 120 220 40 150Z"/>
+    </clipPath>
+    <clipPath id="backClip">
+      <path d="M40 150
+               C120 80 240 55 360 55
+               C520 55 640 80 770 100
+               C820 108 860 120 885 135
+               L885 90
+               C855 78 820 68 770 60
+               C640 40 520 30 360 30
+               C240 30 120 50 40 90Z"/>
+    </clipPath>
+    <clipPath id="bellyClip">
+      <path d="M40 150
+               C120 220 240 245 360 245
+               C520 245 640 220 770 200
+               C820 192 860 180 885 165
+               L885 210
+               C855 222 820 232 770 240
+               C640 260 520 270 360 270
+               C240 270 120 250 40 210Z"/>
+    </clipPath>
+  </defs>
+
+  <g>
+    <path fill="url(#bodyGradient)" d="M40 150
+      C120 80 240 55 360 55
+      C520 55 640 80 770 100
+      C820 108 860 120 885 135
+      C890 138 895 145 895 150
+      C895 155 890 162 885 165
+      C860 180 820 192 770 200
+      C640 220 520 245 360 245
+      C240 245 120 220 40 150Z"/>
+    <g clip-path="#backClip">
+      <rect x="30" y="20" width="870" height="230" fill="url(#backGradient)"/>
+      <rect x="40" y="55" width="840" height="170" fill="url(#speckles)" opacity="0.7"/>
+    </g>
+    <g clip-path="#bellyClip">
+      <rect x="30" y="150" width="870" height="140" fill="url(#bellyGradient)"/>
+    </g>
+    <path fill="url(#gillGradient)" d="M130 110
+      C180 70 260 70 300 110
+      C260 155 200 175 130 165
+      Z" opacity="0.9"/>
+
+    <path fill="none" stroke="#8d4b6a" stroke-width="5" stroke-linecap="round"
+      d="M120 150
+         C220 120 320 115 420 120
+         C520 125 620 135 740 150"/>
+
+    <g clip-path="url(#bodyClip)">
+      <path fill="url(#speckles)" opacity="0.4"
+        d="M60 130
+           C160 95 260 90 360 95
+           C460 100 560 110 680 130
+           C560 145 460 155 360 160
+           C260 165 160 160 60 145Z"/>
+    </g>
+
+    <path fill="#fdf9f2" stroke="#b7b1a8" stroke-width="1.5"
+      d="M145 110
+         C170 95 205 92 235 100
+         C245 116 235 135 215 142
+         C190 148 160 140 145 126Z"/>
+    <circle cx="205" cy="119" r="11" fill="#1e2329"/>
+    <circle cx="208" cy="115" r="4" fill="#fdfdfd"/>
+    <path fill="none" stroke="#2d2625" stroke-width="3" stroke-linecap="round"
+      d="M140 103 C150 96 162 91 177 90"/>
+
+    <path fill="none" stroke="#9e6b69" stroke-width="2.2"
+      d="M165 150
+         C210 135 255 132 300 135"/>
+
+    <path fill="url(#tailGradient)" stroke="#384b4c" stroke-width="2"
+      d="M770 100
+         C820 85 860 82 895 70
+         C888 95 888 125 895 150
+         C888 175 888 205 895 230
+         C860 218 820 215 770 200
+         C785 175 792 160 795 150
+         C792 140 785 125 770 100Z"/>
+
+    <path fill="url(#finGradient)" stroke="#71452f" stroke-width="1.8"
+      d="M330 85
+         C340 65 360 48 380 40
+         C400 60 415 75 425 95
+         C400 93 375 92 330 95Z" opacity="0.9"/>
+
+    <path fill="url(#finGradient)" stroke="#71452f" stroke-width="1.8"
+      d="M420 190
+         C440 215 455 230 470 240
+         C450 242 430 243 410 240
+         C400 230 395 220 392 205Z" opacity="0.95"/>
+
+    <path fill="url(#finGradient)" stroke="#71452f" stroke-width="1.6"
+      d="M230 185
+         C245 210 250 225 252 236
+         C235 232 220 226 205 218
+         C202 205 204 195 208 186Z" opacity="0.95"/>
+
+    <path fill="none" stroke="#c9c2b6" stroke-width="1.5" opacity="0.7"
+      d="M50 150
+         C130 205 240 230 360 232
+         C520 235 655 210 765 185"/>
+
+    <path fill="none" stroke="#4b6158" stroke-width="2" opacity="0.7"
+      d="M50 148
+         C140 95 250 70 360 70
+         C510 70 650 100 760 125"/>
+
+    <path fill="none" stroke="#5c3c2c" stroke-width="1.3" opacity="0.5"
+      d="M340 85 C355 72 370 63 390 57"/>
+    <path fill="none" stroke="#5c3c2c" stroke-width="1.3" opacity="0.5"
+      d="M342 90 C360 80 375 75 395 71"/>
+
+    <path fill="none" stroke="#794b37" stroke-width="1.3" opacity="0.6"
+      d="M422 192 C440 205 452 213 464 222"/>
+    <path fill="none" stroke="#794b37" stroke-width="1.3" opacity="0.6"
+      d="M414 198 C430 210 441 217 452 226"/>
+  </g>
+</svg>

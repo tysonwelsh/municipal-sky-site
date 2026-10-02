@@ -1,0 +1,204 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="33.2 43.0 239.0 148.5">
+  <defs>
+    <linearGradient id="vitaminBody" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffb347"/>
+      <stop offset="0.4" stop-color="#ff8b3d"/>
+      <stop offset="1" stop-color="#ff6a3a"/>
+    </linearGradient>
+    <linearGradient id="vitaminCab" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffc66b"/>
+      <stop offset="1" stop-color="#ff9440"/>
+    </linearGradient>
+    <linearGradient id="vitaminBoiler" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffe0a3"/>
+      <stop offset="1" stop-color="#ffb25a"/>
+    </linearGradient>
+    <linearGradient id="vitaminWheel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffd49a"/>
+      <stop offset="1" stop-color="#ff9a4c"/>
+    </linearGradient>
+    <linearGradient id="vitaminDetail" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffe7b9"/>
+      <stop offset="1" stop-color="#ffb96a"/>
+    </linearGradient>
+    <filter id="softEmboss" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="1.4" result="blur"/>
+      <feOffset in="blur" dx="1" dy="1" result="offsetBlur"/>
+      <feComposite in="offsetBlur" in2="SourceAlpha" operator="arithmetic"
+                   k2="-1" k3="1" result="innerShadow"/>
+      <feColorMatrix in="innerShadow" type="matrix"
+                     values="0 0 0 0 0.75
+                             0 0 0 0 0.45
+                             0 0 0 0 0.25
+                             0 0 0 0.8 0" result="shadowColor"/>
+      <feComposite in="shadowColor" in2="SourceGraphic" operator="over"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#softEmboss)">
+    <!-- Main gummy silhouette -->
+    <path d="M38 120
+             Q34 110 36 100
+             Q40 80 55 70
+             L95 50
+             Q105 45 118 45
+             L180 45
+             Q193 45 203 50
+             L230 64
+             Q246 72 252 88
+             L268 132
+             Q273 146 268 158
+             Q262 172 246 176
+             Q210 184 170 188
+             Q130 192 90 186
+             Q56 180 44 164
+             Q34 150 38 120Z"
+          fill="url(#vitaminBody)"/>
+
+    <!-- Train cab block -->
+    <path d="M70 105
+             Q68 95 73 88
+             Q78 82 87 80
+             L118 75
+             Q130 73 138 78
+             Q146 82 149 92
+             L154 118
+             Q156 128 151 136
+             Q145 146 133 148
+             L95 152
+             Q82 154 75 146
+             Q69 139 70 129
+             Z"
+          fill="url(#vitaminCab)"/>
+
+    <!-- Window as shallow indentation -->
+    <path d="M88 102
+             Q87 96 91 92
+             Q95 88 101 87
+             L116 85
+             Q122 84 126 87
+             Q130 90 131 96
+             L132 110
+             Q133 116 129 119
+             Q125 123 118 124
+             L102 126
+             Q96 127 92 124
+             Q88 121 88 115
+             Z"
+          fill="url(#vitaminDetail)"/>
+
+    <!-- Boiler / front body -->
+    <path d="M132 92
+             L194 87
+             Q207 86 216 93
+             Q224 99 228 111
+             L236 134
+             Q239 144 236 151
+             Q232 160 221 163
+             L152 176
+             Q140 179 132 174
+             Q123 168 120 158
+             L112 133
+             Q109 123 113 114
+             Q118 103 132 102
+             Z"
+          fill="url(#vitaminBoiler)"/>
+
+    <!-- Tiny smokestack nub -->
+    <path d="M162 67
+             Q160 60 165 56
+             Q171 52 178 51
+             L192 50
+             Q200 49 204 53
+             Q209 57 210 64
+             L211 75
+             Q212 82 207 85
+             Q203 88 196 89
+             L182 90
+             Q175 91 170 88
+             Q164 85 162 79
+             Z"
+          fill="url(#vitaminCab)"/>
+
+    <!-- Wheels -->
+    <g>
+      <circle cx="92" cy="163" r="18" fill="url(#vitaminWheel)"/>
+      <circle cx="92" cy="163" r="11" fill="url(#vitaminDetail)"/>
+
+      <circle cx="146" cy="171" r="16" fill="url(#vitaminWheel)"/>
+      <circle cx="146" cy="171" r="10" fill="url(#vitaminDetail)"/>
+
+      <circle cx="204" cy="167" r="17" fill="url(#vitaminWheel)"/>
+      <circle cx="204" cy="167" r="11" fill="url(#vitaminDetail)"/>
+    </g>
+
+    <!-- Simple connecting rod raised relief -->
+    <path d="M90 150
+             Q110 147 130 151
+             T171 157
+             Q185 160 200 160
+             Q204 160 207 163
+             Q209 166 206 169
+             Q203 172 198 172
+             Q182 171 168 168
+             T128 162
+             Q108 158 90 161
+             Q86 162 83 159
+             Q80 156 83 153
+             Q86 151 90 150Z"
+          fill="url(#vitaminDetail)"/>
+
+    <!-- Raised outlines and highlights -->
+    <path d="M42 119
+             Q39 109 42 101
+             Q47 87 59 79
+             L98 58
+             Q109 52 120 52
+             L183 52
+             Q194 52 203 57
+             L229 70
+             Q242 77 247 90
+             L263 134
+             Q267 145 264 154
+             Q260 166 248 170
+             Q214 180 172 184
+             Q132 188 94 182
+             Q64 177 52 162
+             Q42 148 42 119Z"
+          fill="none"
+          stroke="#ffecc5"
+          stroke-width="3"
+          stroke-linejoin="round"
+          opacity="0.7"/>
+
+    <path d="M72 109
+             Q71 100 76 94
+             Q80 89 88 87
+             L118 82
+             Q128 80 135 84
+             Q142 88 144 96
+             L149 120
+             Q151 129 147 136
+             Q143 142 134 144
+             L98 148
+             Q87 150 81 143
+             Q74 136 72 125Z"
+          fill="none"
+          stroke="#ffecc5"
+          stroke-width="2.4"
+          stroke-linejoin="round"
+          opacity="0.8"/>
+
+    <!-- Small surface sparkles -->
+    <g fill="#fff5dd" opacity="0.9">
+      <circle cx="120" cy="64" r="2.2"/>
+      <circle cx="190" cy="70" r="2"/>
+      <circle cx="155" cy="104" r="1.8"/>
+      <circle cx="108" cy="138" r="1.7"/>
+      <circle cx="182" cy="148" r="1.9"/>
+      <circle cx="228" cy="140" r="1.6"/>
+      <circle cx="82" cy="124" r="1.5"/>
+      <circle cx="214" cy="98" r="1.8"/>
+    </g>
+  </g>
+</svg>

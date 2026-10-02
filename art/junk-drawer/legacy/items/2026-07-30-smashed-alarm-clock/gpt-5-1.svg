@@ -1,0 +1,226 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="173.0 208.8 539.8 572.5">
+  <defs>
+    <linearGradient id="faceGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffe66d"/>
+      <stop offset="1" stop-color="#ffb347"/>
+    </linearGradient>
+    <linearGradient id="shellGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#00b7ff"/>
+      <stop offset="1" stop-color="#0064ff"/>
+    </linearGradient>
+    <linearGradient id="bellGradL" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ff2f92"/>
+      <stop offset="1" stop-color="#ff7b5c"/>
+    </linearGradient>
+    <linearGradient id="bellGradR" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ff7b5c"/>
+      <stop offset="1" stop-color="#ff2f92"/>
+    </linearGradient>
+    <linearGradient id="legGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#00f5a0"/>
+      <stop offset="1" stop-color="#00a36c"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Main smashed body outline -->
+  <path d="M180 640
+           C210 560 205 515 220 480
+           C245 420 285 380 340 350
+           C385 325 440 310 495 315
+           C540 320 580 335 610 360
+           C640 385 660 420 670 455
+           C682 495 685 535 677 575
+           C668 620 645 655 610 685
+           C575 715 530 735 480 740
+           C430 745 380 740 335 720
+           C290 700 250 675 225 650
+           C200 625 192 640 180 640 Z"
+        fill="url(#shellGrad)" stroke="#050015" stroke-width="10" stroke-linejoin="round"/>
+
+  <!-- Broken face background (irregular) -->
+  <path d="M225 620
+           C245 555 250 515 270 485
+           C295 445 330 416 370 395
+           C415 372 460 365 510 370
+           C550 375 585 390 610 415
+           C635 440 650 470 658 500
+           C665 530 667 565 660 595
+           C653 625 638 652 615 672
+           C590 695 560 710 525 720
+           C485 730 445 730 405 722
+           C360 713 320 695 290 675
+           C260 655 240 640 225 620 Z"
+        fill="url(#faceGrad)" stroke="#050015" stroke-width="8"/>
+
+  <!-- Broken glass shards on edge -->
+  <path d="M238 603 260 585 270 610 292 588 305 618 332 595 344 627 370 602
+           385 635 415 605 430 640 460 610 476 648 505 615 520 650 545 620
+           565 653 590 620 605 650 625 620 642 645 652 615"
+        fill="none" stroke="#050015" stroke-width="6" stroke-linejoin="round"/>
+
+  <!-- Central crack burst from impact -->
+  <path d="M430 520
+           L430 445
+           M430 520
+           L378 458
+           M430 520
+           L350 500
+           M430 520
+           L360 555
+           M430 520
+           L405 590
+           M430 520
+           L470 595
+           M430 520
+           L515 560
+           M430 520
+           L515 495
+           M430 520
+           L500 445"
+        fill="none" stroke="#050015" stroke-width="7" stroke-linecap="round"/>
+
+  <!-- Radial crack zigzags -->
+  <path d="M430 520 420 495 395 480" fill="none" stroke="#050015" stroke-width="5" stroke-linecap="round"/>
+  <path d="M430 520 442 490 460 472" fill="none" stroke="#050015" stroke-width="5" stroke-linecap="round"/>
+  <path d="M430 520 408 540 392 565" fill="none" stroke="#050015" stroke-width="5" stroke-linecap="round"/>
+  <path d="M430 520 450 540 472 565" fill="none" stroke="#050015" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- Off-axis dial ring (distorted circle) -->
+  <ellipse cx="445" cy="540" rx="155" ry="135"
+           transform="rotate(-8 445 540)"
+           fill="none" stroke="#050015" stroke-width="8"/>
+
+  <!-- Hour marks (some skewed / misaligned) -->
+  <g stroke="#050015" stroke-width="7" stroke-linecap="round">
+    <line x1="445" y1="413" x2="445" y2="433"/>
+    <line x1="445" y1="647" x2="445" y2="667"/>
+    <line x1="328" y1="540" x2="348" y2="540"/>
+    <line x1="542" y1="540" x2="567" y2="540"/>
+    <line x1="382" y1="430" x2="392" y2="450"/>
+    <line x1="505" y1="630" x2="520" y2="648"/>
+    <line x1="520" y1="430" x2="538" y2="448"/>
+    <line x1="365" y1="620" x2="382" y2="635"/>
+  </g>
+
+  <!-- Hands (bent / jerked off center) -->
+  <circle cx="430" cy="520" r="12" fill="#050015"/>
+  <path d="M430 520
+           Q425 485 412 455
+           Q400 430 390 420"
+        fill="none" stroke="#050015" stroke-width="8" stroke-linecap="round"/>
+  <path d="M430 520
+           Q470 520 498 525
+           Q528 532 545 542"
+        fill="none" stroke="#050015" stroke-width="8" stroke-linecap="round"/>
+
+  <!-- Detached hand fragment -->
+  <path d="M320 470
+           Q340 475 352 485"
+        fill="none" stroke="#050015" stroke-width="7" stroke-linecap="round"/>
+
+  <!-- Numerals - bold, skewed pop style -->
+  <g font-family="Arial Black, Impact, sans-serif" font-weight="900" fill="#050015"
+     font-size="40" text-anchor="middle" dominant-baseline="middle">
+    <text x="445" y="425">12</text>
+    <text x="340" y="463" transform="rotate(-18 340 463)">9</text>
+    <text x="555" y="470" transform="rotate(15 555 470)">3</text>
+    <text x="445" y="650">6</text>
+  </g>
+
+  <!-- Flying pieces of dial / glass -->
+  <g fill="#ffe66d" stroke="#050015" stroke-width="5">
+    <polygon points="305 430 280 418 292 445"/>
+    <polygon points="555 410 582 398 575 425"/>
+    <polygon points="595 560 625 568 605 590"/>
+    <polygon points="320 600 295 615 310 640"/>
+    <polygon points="430 365 410 350 420 332"/>
+  </g>
+
+  <!-- Left bell (dented) -->
+  <path d="M250 325
+           C270 285 310 258 355 253
+           C388 249 415 255 435 265
+           C420 283 408 305 400 332
+           C392 360 388 390 390 415
+           C355 415 325 410 300 395
+           C275 380 260 357 250 325 Z"
+        fill="url(#bellGradL)" stroke="#050015" stroke-width="10" stroke-linejoin="round"/>
+
+  <!-- Right bell (cracked / chipped) -->
+  <path d="M525 260
+           C555 250 590 253 620 268
+           C650 283 672 305 688 337
+           C700 362 705 387 706 405
+           C680 408 652 417 622 435
+           C595 452 570 473 545 497
+           C535 470 530 445 528 420
+           C526 391 526 365 530 335
+           C533 310 538 285 545 265 Z"
+        fill="url(#bellGradR)" stroke="#050015" stroke-width="10" stroke-linejoin="round"/>
+
+  <!-- Crack on right bell -->
+  <path d="M610 285
+           L595 308 605 332 585 355 595 378 575 400"
+        fill="none" stroke="#050015" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- Handle (bent) -->
+  <path d="M325 245
+           Q395 205 475 222
+           Q525 232 565 255"
+        fill="none" stroke="#050015" stroke-width="12" stroke-linecap="round"/>
+
+  <!-- Left leg (twisted) -->
+  <path d="M295 700
+           C285 730 275 750 260 770
+           C280 772 305 770 325 762
+           C318 742 308 720 295 700 Z"
+        fill="url(#legGrad)" stroke="#050015" stroke-width="9" stroke-linejoin="round"/>
+
+  <!-- Right leg (splayed out) -->
+  <path d="M560 705
+           C575 732 590 752 610 770
+           C590 775 565 777 540 772
+           C543 752 550 730 560 705 Z"
+        fill="url(#legGrad)" stroke="#050015" stroke-width="9" stroke-linejoin="round"/>
+
+  <!-- Wind-up key on side (bent) -->
+  <g transform="translate(640 560) rotate(-10)">
+    <path d="M0 0
+             C-10 -25 -10 -45 0 -60
+             C15 -80 45 -80 60 -60
+             C70 -45 70 -25 60 0
+             C45 20 15 20 0 0 Z"
+          fill="#ffdf00" stroke="#050015" stroke-width="8" stroke-linejoin="round"/>
+    <circle cx="25" cy="-45" r="7" fill="none" stroke="#050015" stroke-width="5"/>
+    <rect x="18" y="-10" width="14" height="45" rx="5"
+          fill="#ffdf00" stroke="#050015" stroke-width="6"/>
+    <path d="M25 35 Q20 50 10 60" fill="none" stroke="#050015" stroke-width="6" stroke-linecap="round"/>
+  </g>
+
+  <!-- Exposed spring coils bursting out -->
+  <g fill="none" stroke="#050015" stroke-width="8" stroke-linecap="round">
+    <path d="M360 575
+             c-20 15 -30 35 -22 55
+             c8 20 30 30 52 23
+             c22 -7 32 -28 26 -50
+             c-6 -22 -25 -40 -56 -52"/>
+    <path d="M490 590
+             c25 10 40 25 44 45
+             c4 20 -6 38 -26 46
+             c-20 8 -40 2 -52 -15
+             c-12 -17 -12 -40 3 -60"/>
+  </g>
+
+  <!-- Pop-art highlight strokes -->
+  <g fill="none" stroke-linecap="round">
+    <path d="M255 565
+             Q280 545 310 540"
+          stroke="#ffffff" stroke-width="6" opacity="0.8"/>
+    <path d="M520 360
+             Q555 350 585 360"
+          stroke="#ffffff" stroke-width="6" opacity="0.8"/>
+    <path d="M410 680
+             Q455 687 495 675"
+          stroke="#ffffff" stroke-width="6" opacity="0.8"/>
+  </g>
+</svg>

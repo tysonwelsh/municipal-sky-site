@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="6.0 1.0 91.8 197.8" width="91.8" height="197.8">
+  <!-- Base shape of the nesting doll -->
+  <path d="M 50 5 C 20 5 15 35 20 65 C 25 95 10 110 10 150 C 10 190 30 195 50 195 C 70 195 90 190 90 150 C 90 110 75 95 80 65 C 85 35 80 5 50 5 Z" fill="#D2B48C" stroke="#5C4033" stroke-width="4"/>
+  
+  <!-- Animal pelt tunic -->
+  <path d="M 18 70 Q 50 80 82 70 L 88 150 Q 50 160 12 150 Z" fill="#8B4513" stroke="#5C4033" stroke-width="3"/>
+  <path d="M 18 70 Q 50 80 82 70 L 75 100 L 85 110 L 70 140 L 80 155 Q 50 150 20 155 L 30 140 L 15 110 L 25 100 Z" fill="#A0522D" stroke="#3E2723" stroke-width="2"/>
+  <circle cx="35" cy="110" r="4" fill="#3E2723"/>
+  <circle cx="65" cy="115" r="5" fill="#3E2723"/>
+  <circle cx="50" cy="130" r="4" fill="#3E2723"/>
+  <circle cx="45" cy="90" r="3" fill="#3E2723"/>
+  
+  <!-- Face area (typical matryoshka oval) -->
+  <ellipse cx="50" cy="40" rx="22" ry="26" fill="#FFE4C4" stroke="#5C4033" stroke-width="2"/>
+  
+  <!-- Caveman Hair (wild & messy) -->
+  <path d="M 25 35 Q 20 15 50 10 Q 80 15 75 35 Q 85 20 70 10 Q 50 5 30 10 Q 15 20 25 35" fill="#3E2723"/>
+  <path d="M 28 25 L 35 32 L 40 22 L 50 28 L 60 22 L 65 32 L 72 25 Z" fill="#3E2723"/>
+  
+  <!-- Features -->
+  <!-- Heavy brow -->
+  <path d="M 35 37 Q 40 34 45 37" fill="none" stroke="#3E2723" stroke-width="2" stroke-linecap="round"/>
+  <path d="M 65 37 Q 60 34 55 37" fill="none" stroke="#3E2723" stroke-width="2" stroke-linecap="round"/>
+  <!-- Eyes -->
+  <circle cx="40" cy="42" r="2.5" fill="#000"/>
+  <circle cx="60" cy="42" r="2.5" fill="#000"/>
+  <!-- Wide nose -->
+  <path d="M 48 48 Q 50 53 52 48" fill="none" stroke="#5C4033" stroke-width="2" stroke-linecap="round"/>
+  <!-- Grumpy/Smirking mouth -->
+  <path d="M 42 56 Q 50 58 58 56" fill="none" stroke="#5C4033" stroke-width="2" stroke-linecap="round"/>
+  <!-- Beard stubble -->
+  <path d="M 35 55 Q 50 70 65 55 Q 50 65 35 55 Z" fill="#3E2723" opacity="0.4"/>
+
+  <!-- Bone accessory (Matryoshka decorative touch) -->
+  <path d="M 35 75 Q 40 70 50 80 Q 60 70 65 75 L 60 85 Q 50 95 40 85 Z" fill="#FFF8DC" stroke="#5C4033" stroke-width="2"/>
+  <!-- Bone ends -->
+  <circle cx="32" cy="72" r="4" fill="#FFF8DC" stroke="#5C4033" stroke-width="1.5"/>
+  <circle cx="36" cy="78" r="4" fill="#FFF8DC" stroke="#5C4033" stroke-width="1.5"/>
+  <circle cx="68" cy="72" r="4" fill="#FFF8DC" stroke="#5C4033" stroke-width="1.5"/>
+  <circle cx="64" cy="78" r="4" fill="#FFF8DC" stroke="#5C4033" stroke-width="1.5"/>
+
+  <!-- Decorative border (primitive style) -->
+  <path d="M 12 165 L 20 155 L 28 165 L 36 155 L 44 165 L 52 155 L 60 165 L 68 155 L 76 165 L 84 155 L 88 165" fill="none" stroke="#8B4513" stroke-width="3"/>
+  <path d="M 12 175 L 20 185 L 28 175 L 36 185 L 44 175 L 52 185 L 60 175 L 68 185 L 76 175 L 84 185 L 88 175" fill="none" stroke="#8B4513" stroke-width="3"/>
+  
+  <!-- Club held in hand -->
+  <!-- Hand -->
+  <circle cx="78" cy="95" r="8" fill="#FFE4C4" stroke="#5C4033" stroke-width="2"/>
+  <!-- The Club -->
+  <path d="M 78 120 Q 82 100 88 50 Q 95 45 95 55 Q 92 100 85 125 Z" fill="#CD853F" stroke="#5C4033" stroke-width="2"/>
+  <circle cx="89" cy="60" r="2" fill="#5C4033"/>
+  <circle cx="92" cy="75" r="1.5" fill="#5C4033"/>
+  <circle cx="86" cy="90" r="2" fill="#5C4033"/>
+  <!-- Thumb -->
+  <path d="M 72 95 Q 75 90 78 95" fill="none" stroke="#5C4033" stroke-width="1.5"/>
+</svg>

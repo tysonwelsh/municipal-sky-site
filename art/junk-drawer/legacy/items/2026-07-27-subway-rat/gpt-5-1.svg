@@ -1,0 +1,281 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0.5 43.8 302.2 158.0">
+  <defs>
+    <linearGradient id="furBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#70747e"/>
+      <stop offset="1" stop-color="#4b4f57"/>
+    </linearGradient>
+    <linearGradient id="furHead" x1="0" y1="0" x2="0.9" y2="0.4">
+      <stop offset="0" stop-color="#7b8089"/>
+      <stop offset="1" stop-color="#4f535b"/>
+    </linearGradient>
+    <linearGradient id="tailGrad" x1="0" y1="0" x2="1" y2="0.3">
+      <stop offset="0" stop-color="#f2b0a9"/>
+      <stop offset="1" stop-color="#e17f72"/>
+    </linearGradient>
+    <linearGradient id="earGrad" x1="0" y1="0" x2="1" y2="0.4">
+      <stop offset="0" stop-color="#f6c3c0"/>
+      <stop offset="1" stop-color="#e58f86"/>
+    </linearGradient>
+    <linearGradient id="pawGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f4c5c0"/>
+      <stop offset="1" stop-color="#e49388"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Tail -->
+  <g transform="translate(20,40)">
+    <path d="M50 90
+             C15 80, 5 60, 10 45
+             C20 20, 65 15, 115 30
+             C150 42, 195 40, 240 25
+             C250 22, 260 22, 270 28
+             C280 35, 282 45, 276 52
+             C269 60, 257 62, 244 60
+             C208 53, 175 53, 136 56
+             C90 60, 65 63, 45 70
+             C40 72, 38 80, 50 90Z"
+          fill="url(#tailGrad)"
+          stroke="#c4685e"
+          stroke-width="3"
+          stroke-linecap="round"
+          stroke-linejoin="round"/>
+    <!-- Tail stripes -->
+    <path d="M70 61 C110 50, 150 48, 190 50"
+          fill="none" stroke="#d9867b" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+    <path d="M115 52 C150 47, 180 46, 210 47"
+          fill="none" stroke="#d9867b" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+  </g>
+
+  <!-- Body -->
+  <g transform="translate(40,30)">
+    <path d="M40 105
+             C50 80, 70 60, 100 50
+             C130 40, 165 40, 195 55
+             C220 68, 235 85, 240 100
+             C245 115, 245 130, 236 140
+             C220 160, 190 170, 150 170
+             C110 170, 80 165, 60 150
+             C45 138, 35 120, 40 105Z"
+          fill="url(#furBody)"
+          stroke="#383b41"
+          stroke-width="4"
+          stroke-linejoin="round"/>
+
+    <!-- Back fur suggestion -->
+    <path d="M70 90
+             C95 70, 135 63, 177 70"
+          fill="none"
+          stroke="#878c97"
+          stroke-width="3"
+          stroke-linecap="round"
+          opacity="0.5"/>
+
+    <!-- Shoulder line -->
+    <path d="M85 125
+             C110 115, 135 112, 165 115"
+          fill="none"
+          stroke="#555a64"
+          stroke-width="3"
+          stroke-linecap="round"
+          opacity="0.7"/>
+  </g>
+
+  <!-- Head -->
+  <g transform="translate(60,35)">
+    <path d="M135 95
+             C120 68, 96 52, 80 50
+             C60 47, 45 55, 35 65
+             C25 75, 22 88, 25 100
+             C30 120, 45 137, 65 145
+             C88 155, 115 148, 133 134
+             C145 125, 150 115, 151 105
+             C152 95, 145 85, 135 95Z"
+          fill="url(#furHead)"
+          stroke="#383b41"
+          stroke-width="4"
+          stroke-linejoin="round"/>
+  </g>
+
+  <!-- Ear -->
+  <g transform="translate(60,20)">
+    <path d="M86 76
+             C80 52, 88 36, 103 30
+             C120 23, 140 30, 147 45
+             C154 60, 150 80, 134 90
+             C120 99, 95 95, 86 76Z"
+          fill="#50525a"
+          stroke="#383b41"
+          stroke-width="3"
+          stroke-linejoin="round"/>
+    <path d="M97 74
+             C93 57, 101 47, 114 44
+             C130 40, 142 50, 144 62
+             C146 75, 137 86, 123 88
+             C108 90, 100 85, 97 74Z"
+          fill="url(#earGrad)"/>
+  </g>
+
+  <!-- Snout & nose -->
+  <g transform="translate(60,35)">
+    <path d="M136 100
+             C158 92, 178 84, 195 74
+             C202 70, 210 70, 216 74
+             C222 78, 225 86, 223 93
+             C221 100, 214 106, 206 108
+             C190 113, 170 114, 148 112
+             C140 111, 134 108, 136 100Z"
+          fill="#5a5e67"
+          stroke="#383b41"
+          stroke-width="4"
+          stroke-linejoin="round"/>
+
+    <!-- Nose -->
+    <ellipse cx="214" cy="90" rx="9" ry="8"
+             fill="#f39a92"
+             stroke="#c4685e"
+             stroke-width="3"/>
+
+    <!-- Mouth line -->
+    <path d="M173 111
+             C180 116, 188 118, 198 118"
+          fill="none"
+          stroke="#26262a"
+          stroke-width="2.5"
+          stroke-linecap="round"/>
+
+    <!-- Sneaky grin crease -->
+    <path d="M165 110
+             C163 116, 161 120, 160 123"
+          fill="none"
+          stroke="#26262a"
+          stroke-width="2"
+          stroke-linecap="round"/>
+  </g>
+
+  <!-- Googly eyes -->
+  <g transform="translate(60,35)">
+    <!-- Eye whites -->
+    <ellipse cx="134" cy="83" rx="18" ry="20"
+             fill="#ffffff"
+             stroke="#26262a"
+             stroke-width="3"/>
+    <ellipse cx="109" cy="82" rx="17" ry="19"
+             fill="#ffffff"
+             stroke="#26262a"
+             stroke-width="3"/>
+
+    <!-- Pupils (off-center for googly/sneaky look) -->
+    <circle cx="139" cy="86" r="6"
+            fill="#191919"/>
+    <circle cx="114" cy="84" r="6"
+            fill="#191919"/>
+
+    <!-- Tiny highlights -->
+    <circle cx="141" cy="82" r="2.2" fill="#ffffff" opacity="0.9"/>
+    <circle cx="116" cy="80" r="2.2" fill="#ffffff" opacity="0.9"/>
+
+    <!-- Brows for sneaky expression -->
+    <path d="M96 66
+             C104 61, 114 60, 124 62"
+          fill="none"
+          stroke="#26262a"
+          stroke-width="4"
+          stroke-linecap="round"/>
+    <path d="M122 64
+             C131 60, 141 59, 150 62"
+          fill="none"
+          stroke="#26262a"
+          stroke-width="4"
+          stroke-linecap="round"/>
+  </g>
+
+  <!-- Whiskers -->
+  <g transform="translate(60,35)" stroke="#222326" stroke-width="2.2" stroke-linecap="round">
+    <path d="M185 97 C205 93, 221 90, 236 90" fill="none"/>
+    <path d="M183 102 C205 103, 223 106, 238 112" fill="none"/>
+    <path d="M182 92 C203 86, 221 83, 235 80" fill="none"/>
+  </g>
+
+  <!-- Front legs -->
+  <g transform="translate(40,40)">
+    <!-- Near front leg -->
+    <path d="M120 128
+             C118 142, 117 152, 118 162
+             C118 167, 120 171, 123 174
+             C128 180, 138 182, 145 180
+             C150 178, 152 173, 150 169
+             C148 166, 143 163, 136 162
+             C132 161, 130 153, 131 145
+             C132 138, 133 132, 134 126Z"
+          fill="url(#pawGrad)"
+          stroke="#383b41"
+          stroke-width="4"
+          stroke-linejoin="round"/>
+
+    <!-- Far front leg (behind body, darker) -->
+    <path d="M145 125
+             C142 137, 141 146, 142 155
+             C143 162, 146 167, 150 170
+             C155 173, 161 174, 167 173
+             C172 172, 174 167, 172 163
+             C170 160, 166 157, 162 156
+             C157 155, 155 150, 155 143
+             C155 136, 156 130, 157 124Z"
+          fill="#e29b93"
+          stroke="#2f3137"
+          stroke-width="4"
+          stroke-linejoin="round"
+          opacity="0.8"/>
+  </g>
+
+  <!-- Hind legs -->
+  <g transform="translate(40,38)">
+    <!-- Near hind leg -->
+    <path d="M88 130
+             C72 140, 64 152, 60 163
+             C57 172, 58 180, 63 186
+             C68 192, 77 195, 86 194
+             C94 193, 100 189, 102 183
+             C104 178, 101 172, 96 169
+             C92 167, 90 162, 92 157
+             C95 151, 101 144, 110 138Z"
+          fill="url(#pawGrad)"
+          stroke="#383b41"
+          stroke-width="4"
+          stroke-linejoin="round"/>
+
+    <!-- Far hind leg -->
+    <path d="M118 132
+             C104 140, 96 151, 93 160
+             C90 169, 91 177, 95 183
+             C100 189, 109 192, 118 191
+             C125 190, 130 186, 133 181
+             C135 176, 133 171, 128 168
+             C124 166, 122 162, 123 158
+             C125 152, 130 146, 137 141Z"
+          fill="#e29b93"
+          stroke="#2f3137"
+          stroke-width="4"
+          stroke-linejoin="round"
+          opacity="0.85"/>
+  </g>
+
+  <!-- Belly highlight -->
+  <g transform="translate(40,30)">
+    <path d="M82 138
+             C96 149, 117 154, 140 155
+             C165 156, 188 152, 205 144"
+          fill="none"
+          stroke="#8f939d"
+          stroke-width="3"
+          stroke-linecap="round"
+          opacity="0.35"/>
+  </g>
+
+  <!-- Subtle cartoony motion lines -->
+  <g stroke="#4a4c54" stroke-width="3" stroke-linecap="round" opacity="0.75">
+    <path d="M40 120 C18 118, 8 112, 4 105"/>
+    <path d="M52 145 C32 145, 18 139, 10 130"/>
+    <path d="M60 95 C40 92, 28 86, 20 78"/>
+  </g>
+</svg>

@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="53.0 48.0 293.8 303.8">
+  <g>
+    <!-- mammoth inside -->
+    <g>
+      <!-- body -->
+      <ellipse cx="200" cy="225" rx="95" ry="85" fill="#8a5a33"/>
+      <!-- shaggy fur bottom -->
+      <path d="M115 265 l-8 18 12 -8 -2 16 12 -10 2 16 10 -12 4 16 8 -14 6 15 8 -15 6 15 8 -16 6 16 8 -16 6 15 8 -15 6 14 8 -15 6 14 8 -14 6 13 8 -13 6 12 10 -12 4 13 12 -12 -2 15 14 -12 -6 15z" fill="#8a5a33"/>
+      <!-- head -->
+      <circle cx="200" cy="145" r="62" fill="#9c6a3d"/>
+      <!-- head fur tuft -->
+      <path d="M168 95 l-10 -18 14 8 -2 -16 12 12 4 -14 8 13 8 -13 6 14 10 -12 0 16 14 -8 -8 18z" fill="#8a5a33"/>
+      <!-- ear -->
+      <path d="M140 130 q-18 -8 -24 8 q-4 20 16 22 q14 2 16 -14z" fill="#9c6a3d" stroke="#7c4f2a" stroke-width="3"/>
+      <!-- trunk -->
+      <path d="M200 175 q-4 40 -14 62 q-8 18 4 26 q10 6 16 -4" fill="none" stroke="#9c6a3d" stroke-width="26" stroke-linecap="round"/>
+      <path d="M192 200 q-2 8 -4 14 M188 222 q-3 8 -4 14" fill="none" stroke="#7c4f2a" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- tusks -->
+      <path d="M168 168 q-30 22 -18 60 q4 14 14 16" fill="none" stroke="#f5ead2" stroke-width="13" stroke-linecap="round"/>
+      <path d="M232 168 q30 22 18 60 q-4 14 -14 16" fill="none" stroke="#f5ead2" stroke-width="13" stroke-linecap="round"/>
+      <!-- eyeshadow -->
+      <path d="M160 138 q18 -16 34 -2 q-14 -12 -34 2z" fill="#c88bd4"/>
+      <path d="M240 138 q-18 -16 -34 -2 q14 -12 34 2z" fill="#c88bd4"/>
+      <ellipse cx="178" cy="136" rx="16" ry="8" fill="#c88bd4" opacity="0.8"/>
+      <ellipse cx="222" cy="136" rx="16" ry="8" fill="#c88bd4" opacity="0.8"/>
+      <!-- closed eyes with lashes -->
+      <path d="M164 146 q14 10 28 0" fill="none" stroke="#3a2313" stroke-width="4" stroke-linecap="round"/>
+      <path d="M208 146 q14 10 28 0" fill="none" stroke="#3a2313" stroke-width="4" stroke-linecap="round"/>
+      <path d="M166 148 l-10 8 M173 152 l-7 10 M182 154 l-3 11" stroke="#3a2313" stroke-width="3" stroke-linecap="round"/>
+      <path d="M234 148 l10 8 M227 152 l7 10 M218 154 l3 11" stroke="#3a2313" stroke-width="3" stroke-linecap="round"/>
+      <!-- blush -->
+      <ellipse cx="156" cy="162" rx="10" ry="6" fill="#d98a8a" opacity="0.7"/>
+      <ellipse cx="244" cy="162" rx="10" ry="6" fill="#d98a8a" opacity="0.7"/>
+      <!-- legs -->
+      <rect x="150" y="288" width="26" height="30" rx="10" fill="#7c4f2a"/>
+      <rect x="224" y="288" width="26" height="30" rx="10" fill="#7c4f2a"/>
+    </g>
+    <!-- ice cube -->
+    <g>
+      <rect x="60" y="55" width="280" height="290" rx="34" fill="#aee2f7" opacity="0.45"/>
+      <rect x="60" y="55" width="280" height="290" rx="34" fill="none" stroke="#d6f0fd" stroke-width="10" opacity="0.9"/>
+      <rect x="60" y="55" width="280" height="290" rx="34" fill="none" stroke="#8ecfee" stroke-width="3"/>
+      <!-- highlights -->
+      <path d="M86 78 q-14 6 -14 26 v60 q0 8 6 8 q6 0 6 -8 v-56 q0 -14 10 -20 q6 -4 2 -8 q-4 -4 -10 -2z" fill="#ffffff" opacity="0.85"/>
+      <circle cx="104" cy="188" r="6" fill="#ffffff" opacity="0.8"/>
+      <path d="M318 300 q10 -8 10 -26 v-40 q0 -8 -5 -8 q-5 0 -5 8 v36 q0 14 -8 20 q-5 4 -1 8 q4 4 9 2z" fill="#ffffff" opacity="0.6"/>
+      <!-- cracks -->
+      <path d="M96 250 l26 20 -14 10 24 14" fill="none" stroke="#d6f0fd" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+      <path d="M298 96 l-20 22 12 8 -18 16" fill="none" stroke="#d6f0fd" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+      <!-- frost sparkles -->
+      <path d="M110 110 l0 14 M103 117 l14 0" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/>
+      <path d="M292 262 l0 14 M285 269 l14 0" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/>
+      <path d="M286 150 l0 10 M281 155 l10 0" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+    </g>
+  </g>
+</svg>

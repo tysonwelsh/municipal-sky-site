@@ -18,6 +18,9 @@ if (JD_DEV_MODE) {
     require_once __DIR__ . '/jd-mock-provider.php';
 }
 
+// Dataset v1 frozen (JD_V1_FROZEN, jd-config.php): 410 'dataset_frozen'; a no-op until the cutover.
+jd_require_v1_unfrozen();
+
 jd_require_allowed_origin();
 jd_require_post();
 

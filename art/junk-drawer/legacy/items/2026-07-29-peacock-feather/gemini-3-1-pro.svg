@@ -1,0 +1,158 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="23.5 47.0 259.0 745.8" width="259.0" height="745.8">
+  <defs>
+    <!-- Iridescent Gradients -->
+    <linearGradient id="eye-core" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#140b36" />
+      <stop offset="50%" stop-color="#2a1b54" />
+      <stop offset="100%" stop-color="#050a24" />
+    </linearGradient>
+    <linearGradient id="eye-teal" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#137578" />
+      <stop offset="50%" stop-color="#22a8b3" />
+      <stop offset="100%" stop-color="#126e46" />
+    </linearGradient>
+    <linearGradient id="eye-bronze" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#a67c00" />
+      <stop offset="40%" stop-color="#cc8f14" />
+      <stop offset="100%" stop-color="#593b05" />
+    </linearGradient>
+    <linearGradient id="eye-green" x1="0%" y1="50%" x2="100%" y2="50%">
+      <stop offset="0%" stop-color="#73992e" />
+      <stop offset="50%" stop-color="#9fcc43" />
+      <stop offset="100%" stop-color="#4e7018" />
+    </linearGradient>
+  </defs>
+
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <!-- Background wisps (fine colored pencil lines) -->
+    <g fill="none" stroke-width="1.2" stroke-opacity="0.6">
+      <path stroke="#4e7018" d="
+        M125 150 Q20 180 50 350
+        M125 150 Q10 250 60 400
+        M130 180 Q10 320 80 450
+        M135 220 Q10 380 90 500
+        M145 280 Q20 450 100 550
+        M155 350 Q30 520 110 600
+        M165 420 Q40 580 120 650
+        M172 480 Q60 620 130 700
+        M180 550 Q80 670 145 750
+        M185 620 Q110 700 155 780
+      "/>
+      <path stroke="#73992e" d="
+        M125 150 Q230 160 270 300
+        M125 150 Q250 200 280 380
+        M130 180 Q260 270 275 440
+        M135 220 Q250 350 260 500
+        M145 280 Q250 430 250 560
+        M155 350 Q240 500 235 620
+        M165 420 Q230 550 220 670
+        M172 480 Q220 620 205 720
+        M180 550 Q200 660 190 750
+        M185 620 Q195 720 175 780
+      "/>
+      <!-- More intersecting pencil strokes for texture -->
+      <path stroke="#a67c00" stroke-width="0.8" d="
+        M120 120 Q60 140 80 280
+        M125 160 Q40 220 90 380
+        M132 200 Q30 300 100 470
+        M140 250 Q25 400 110 520
+        M150 320 Q45 490 120 610
+        M160 380 Q55 550 135 660
+        
+        M120 120 Q180 130 230 260
+        M125 160 Q200 190 250 350
+        M132 200 Q220 280 240 450
+        M140 250 Q215 380 230 530
+        M150 320 Q215 480 210 600
+        M160 380 Q210 540 200 650
+      "/>
+    </g>
+
+    <!-- Ocellus (Peacock Eye) in illustrated style -->
+    <!-- Greenish fringe -->
+    <path fill="url(#eye-green)" stroke="#4e7018" stroke-width="1.5" d="
+      M 115 50
+      C 40 55, -10 160, 60 270
+      C 100 330, 150 310, 175 250
+      C 220 160, 180 50, 115 50 Z
+    "/>
+    <!-- Pencil shading lines in the green area -->
+    <g fill="none" stroke="#73992e" stroke-width="1" stroke-opacity="0.8">
+      <path d="M115 50 Q70 120 60 270" />
+      <path d="M115 50 Q90 120 90 290" />
+      <path d="M115 50 Q130 110 150 280" />
+      <path d="M115 50 Q160 100 175 250" />
+    </g>
+
+    <!-- Bronze/Gold layer -->
+    <path fill="url(#eye-bronze)" stroke="#593b05" stroke-width="1" d="
+      M 113 75
+      C 60 80, 20 160, 75 240
+      C 105 285, 145 270, 160 220
+      C 195 150, 160 70, 113 75 Z
+    "/>
+    <g fill="none" stroke="#cc8f14" stroke-width="0.8" stroke-opacity="0.9">
+      <path d="M113 75 Q80 130 75 240" />
+      <path d="M113 75 Q100 140 105 260" />
+      <path d="M113 75 Q125 140 135 250" />
+      <path d="M113 75 Q150 120 160 220" />
+    </g>
+
+    <!-- Teal/Blue layer -->
+    <path fill="url(#eye-teal)" stroke="#126e46" stroke-width="1" d="
+      M 110 100
+      C 75 105, 45 165, 85 215
+      C 110 245, 135 235, 145 200
+      C 170 150, 140 95, 110 100 Z
+    "/>
+    <g fill="none" stroke="#22a8b3" stroke-width="0.8" stroke-opacity="0.9">
+      <path d="M110 100 Q90 140 85 215" />
+      <path d="M110 100 Q105 145 110 225" />
+      <path d="M110 100 Q120 140 130 215" />
+      <path d="M110 100 Q140 130 145 200" />
+    </g>
+
+    <!-- Core Purple/Black layer -->
+    <path fill="url(#eye-core)" stroke="#050a24" stroke-width="1" d="
+      M 107 125
+      C 85 130, 65 170, 95 200
+      C 115 220, 130 210, 135 190
+      C 150 155, 130 120, 107 125 Z
+    "/>
+    <g fill="none" stroke="#362568" stroke-width="0.8" stroke-opacity="0.7">
+      <path d="M107 125 Q95 150 95 200" />
+      <path d="M107 125 Q110 160 115 210" />
+      <path d="M107 125 Q125 150 135 190" />
+    </g>
+
+    <!-- Forefront wisps overlaying the bottom of the eye -->
+    <g fill="none" stroke-width="1" stroke-opacity="0.8">
+      <path stroke="#73992e" d="
+        M125 250 Q70 300 110 400
+        M130 240 Q170 280 150 380
+      "/>
+      <path stroke="#a67c00" d="
+        M120 260 Q80 320 100 420
+        M135 255 Q160 310 140 410
+      "/>
+    </g>
+
+    <!-- Central Rachis (Shaft) -->
+    <!-- Two slightly offset lines to give a pencil-drawn look -->
+    <path fill="none" stroke="#ffffff" stroke-width="2" stroke-opacity="0.9" d="
+      M 110 50
+      Q 140 250 150 450
+      T 180 790
+    "/>
+    <path fill="none" stroke="#e0d6c3" stroke-width="1.5" stroke-opacity="0.8" d="
+      M 111 50
+      Q 142 250 151 450
+      T 182 790
+    "/>
+    <path fill="none" stroke="#8a7e67" stroke-width="0.8" stroke-opacity="0.6" d="
+      M 109 50
+      Q 138 250 149 450
+      T 179 790
+    "/>
+  </g>
+</svg>

@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+  <defs>
+    <clipPath id="orbClip">
+      <circle cx="250" cy="250" r="248" />
+    </clipPath>
+    
+    <filter id="watercolorMist" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="4" result="noise" />
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="40" xChannelSelector="R" yChannelSelector="G" result="displaced" />
+      <feGaussianBlur in="displaced" stdDeviation="15" result="blurred" />
+      <feBlend in="SourceGraphic" in2="blurred" mode="screen" />
+    </filter>
+    
+    <filter id="crackGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <radialGradient id="baseGrad" cx="50%" cy="50%" r="50%" fx="30%" fy="30%">
+      <stop offset="0%" stop-color="#4a1a73" />
+      <stop offset="50%" stop-color="#2b0f4c" />
+      <stop offset="85%" stop-color="#0a1128" />
+      <stop offset="100%" stop-color="#050814" />
+    </radialGradient>
+
+    <radialGradient id="mist1Grad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ff007f" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#ff007f" stop-opacity="0" />
+    </radialGradient>
+
+    <radialGradient id="mist2Grad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00f0ff" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#00f0ff" stop-opacity="0" />
+    </radialGradient>
+    
+    <radialGradient id="mist3Grad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#f8e71c" stop-opacity="0.6" />
+      <stop offset="100%" stop-color="#f8e71c" stop-opacity="0" />
+    </radialGradient>
+
+    <linearGradient id="highlightGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.6" />
+      <stop offset="40%" stop-color="#ffffff" stop-opacity="0.1" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+    </linearGradient>
+    
+    <linearGradient id="shadowGrad" x1="100%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#000000" stop-opacity="0.9" />
+      <stop offset="50%" stop-color="#000000" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+
+  <g clip-path="url(#orbClip)">
+    <!-- Base Orb -->
+    <circle cx="250" cy="250" r="248" fill="url(#baseGrad)" />
+
+    <!-- Watercolor Mist Layers -->
+    <g filter="url(#watercolorMist)">
+      <ellipse cx="180" cy="300" rx="140" ry="110" fill="url(#mist1Grad)" />
+      <ellipse cx="320" cy="200" rx="150" ry="130" fill="url(#mist2Grad)" />
+      <ellipse cx="250" cy="380" rx="120" ry="80" fill="url(#mist3Grad)" />
+      <ellipse cx="120" cy="150" rx="100" ry="120" fill="url(#mist2Grad)" opacity="0.7" />
+      <ellipse cx="380" cy="320" rx="90" ry="140" fill="url(#mist1Grad)" opacity="0.6" />
+      
+      <!-- Additional swirling paths -->
+      <path d="M50 250 Q 150 100 250 250 T 450 250" fill="none" stroke="#b05aff" stroke-width="40" opacity="0.5" stroke-linecap="round" />
+      <path d="M100 400 Q 300 450 400 150" fill="none" stroke="#5aeeff" stroke-width="50" opacity="0.4" stroke-linecap="round" />
+    </g>
+
+    <!-- Edge Shadow for 3D depth -->
+    <circle cx="250" cy="250" r="248" fill="url(#shadowGrad)" />
+
+    <!-- Glass Highlights -->
+    <path d="M 40 250 A 210 210 0 0 1 250 40 A 248 248 0 0 0 15 250 Z" fill="url(#highlightGrad)" />
+    <path d="M 430 350 A 210 210 0 0 1 250 470 A 248 248 0 0 0 470 250 Z" fill="#ffffff" opacity="0.15" />
+
+    <!-- Crack in the glass -->
+    <g filter="url(#crackGlow)">
+      <path d="M 380 40 
+               L 350 90 
+               L 365 130 
+               L 310 190 
+               L 325 240 
+               L 260 300 
+               L 280 340 
+               L 210 410 
+               L 220 460" 
+            fill="none" stroke="#e0f7fa" stroke-width="2.5" stroke-linejoin="round" />
+      
+      <!-- Branching cracks -->
+      <path d="M 310 190 L 260 170 L 250 130" fill="none" stroke="#e0f7fa" stroke-width="1.5" stroke-linejoin="round" />
+      <path d="M 260 300 L 190 280 L 160 310" fill="none" stroke="#e0f7fa" stroke-width="1.5" stroke-linejoin="round" />
+      <path d="M 350 90 L 410 100" fill="none" stroke="#e0f7fa" stroke-width="1.5" stroke-linejoin="round" />
+    </g>
+    
+    <!-- Secondary darker crack line for depth -->
+    <path d="M 381 40 
+             L 351 90 
+             L 366 130 
+             L 311 190 
+             L 326 240 
+             L 261 300 
+             L 281 340 
+             L 211 410 
+             L 221 460" 
+          fill="none" stroke="#110522" stroke-width="1" stroke-linejoin="round" opacity="0.7" />
+  </g>
+  
+  <!-- Outer sharp rim of the glass orb -->
+  <circle cx="250" cy="250" r="248" fill="none" stroke="#ffffff" stroke-width="1.5" opacity="0.4" />
+</svg>

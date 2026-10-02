@@ -1,0 +1,190 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="22.0 13.0 215.8 365.8">
+  <defs>
+    <linearGradient id="bodyGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#2a1b10"/>
+      <stop offset="0.35" stop-color="#3b2718"/>
+      <stop offset="0.65" stop-color="#3b2718"/>
+      <stop offset="1" stop-color="#2a1b10"/>
+    </linearGradient>
+    <linearGradient id="lipGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4b311e"/>
+      <stop offset="0.5" stop-color="#6b4526"/>
+      <stop offset="1" stop-color="#4b311e"/>
+    </linearGradient>
+    <linearGradient id="handleGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#44291a"/>
+      <stop offset="1" stop-color="#2b190f"/>
+    </linearGradient>
+    <linearGradient id="decGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#c18b3a"/>
+      <stop offset="0.5" stop-color="#f2c166"/>
+      <stop offset="1" stop-color="#c18b3a"/>
+    </linearGradient>
+    <linearGradient id="highlight" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="rgba(255,255,255,0.0)"/>
+      <stop offset="0.5" stop-color="rgba(255,255,255,0.35)"/>
+      <stop offset="1" stop-color="rgba(255,255,255,0.0)"/>
+    </linearGradient>
+    <clipPath id="bodyClip">
+      <path d="M130 38
+               C110 38 80 35 68 30
+               C65 44 64 61 68 80
+               C73 103 85 121 92 135
+               C99 149 102 164 102 180
+               C102 211 95 231 84 248
+               C72 267 59 278 52 302
+               C47 319 45 337 45 351
+               C66 360 96 365 130 365
+               C164 365 194 360 215 351
+               C215 337 213 319 208 302
+               C201 278 188 267 176 248
+               C165 231 158 211 158 180
+               C158 164 161 149 168 135
+               C175 121 187 103 192 80
+               C196 61 195 44 192 30
+               C180 35 150 38 130 38 Z"/>
+    </clipPath>
+  </defs>
+
+  <!-- Body -->
+  <path fill="url(#bodyGrad)" d="M130 38
+           C110 38 80 35 68 30
+           C65 44 64 61 68 80
+           C73 103 85 121 92 135
+           C99 149 102 164 102 180
+           C102 211 95 231 84 248
+           C72 267 59 278 52 302
+           C47 319 45 337 45 351
+           C66 360 96 365 130 365
+           C164 365 194 360 215 351
+           C215 337 213 319 208 302
+           C201 278 188 267 176 248
+           C165 231 158 211 158 180
+           C158 164 161 149 168 135
+           C175 121 187 103 192 80
+           C196 61 195 44 192 30
+           C180 35 150 38 130 38 Z"/>
+
+  <!-- Lip and neck -->
+  <ellipse cx="130" cy="40" rx="58" ry="10" fill="#1a120a"/>
+  <path fill="url(#lipGrad)" d="M72 30
+           C72 22 88 15 130 15
+           C172 15 188 22 188 30
+           C188 37 172 44 130 44
+           C88 44 72 37 72 30 Z"/>
+  <ellipse cx="130" cy="30" rx="56" ry="9" fill="#2b1a0f"/>
+
+  <!-- Foot -->
+  <path fill="#2b1a0f" d="M95 351
+           C95 345 106 340 130 340
+           C154 340 165 345 165 351
+           C165 356 154 362 130 362
+           C106 362 95 356 95 351 Z"/>
+  <path fill="url(#lipGrad)" d="M90 362
+           C90 370 105 377 130 377
+           C155 377 170 370 170 362
+           L170 353
+           C170 361 155 367 130 367
+           C105 367 90 361 90 353 Z"/>
+
+  <!-- Handles -->
+  <path fill="url(#handleGrad)" d="M60 82
+           C40 90 28 110 25 132
+           C22 155 26 181 39 200
+           C48 213 61 224 78 228
+           L80 216
+           C66 210 55 200 47 188
+           C37 173 34 157 35 139
+           C36 121 45 105 61 97 Z"/>
+  <path fill="url(#handleGrad)" d="M200 82
+           C220 90 232 110 235 132
+           C238 155 234 181 221 200
+           C212 213 199 224 182 228
+           L180 216
+           C194 210 205 200 213 188
+           C223 173 226 157 225 139
+           C224 121 215 105 199 97 Z"/>
+
+  <!-- Decorative bands -->
+  <g clip-path="url(#bodyClip)">
+    <!-- Upper band -->
+    <rect x="55" y="100" width="150" height="16" fill="url(#decGrad)"/>
+    <!-- Meander pattern -->
+    <g fill="#3b2718">
+      <path d="M60 102h15v4h-11v6h11v8h-15z"/>
+      <path d="M77 102h15v18h-15v-4h11v-10h-11z"/>
+      <path d="M94 102h15v4h-11v6h11v8h-15z"/>
+      <path d="M111 102h15v18h-15v-4h11v-10h-11z"/>
+      <path d="M128 102h15v4h-11v6h11v8h-15z"/>
+      <path d="M145 102h15v18h-15v-4h11v-10h-11z"/>
+      <path d="M162 102h15v4h-11v6h11v8h-15z"/>
+      <path d="M179 102h15v18h-15v-4h11v-10h-11z"/>
+    </g>
+
+    <!-- Central scene band -->
+    <rect x="50" y="150" width="160" height="80" fill="url(#decGrad)"/>
+
+    <!-- Stylized figures -->
+    <g fill="#3b2718">
+      <!-- Left warrior -->
+      <path d="M88 210
+               C88 198 92 188 99 182
+               C106 176 115 175 123 177
+               L121 184
+               C116 183 110 184 106 188
+               C102 192 100 199 100 210 Z"/>
+      <ellipse cx="110" cy="186" rx="7" ry="9"/>
+      <rect x="106" y="196" width="8" height="20" />
+      <path d="M110 216 l-12 18 h6 l9-13 z"/>
+      <path d="M110 216 l12 18 h-6 l-9-13 z"/>
+      <rect x="100" y="198" width="6" height="4"/>
+      <rect x="121" y="198" width="6" height="4"/>
+
+      <!-- Right warrior -->
+      <path d="M172 210
+               C172 198 168 188 161 182
+               C154 176 145 175 137 177
+               L139 184
+               C144 183 150 184 154 188
+               C158 192 160 199 160 210 Z"/>
+      <ellipse cx="150" cy="186" rx="7" ry="9"/>
+      <rect x="146" y="196" width="8" height="20" />
+      <path d="M150 216 l-12 18 h6 l9-13 z"/>
+      <path d="M150 216 l12 18 h-6 l-9-13 z"/>
+      <rect x="140" y="198" width="6" height="4"/>
+      <rect x="161" y="198" width="6" height="4"/>
+
+      <!-- Central amphora on stand -->
+      <path d="M126 220
+               C123 220 118 218 116 216
+               C114 225 116 235 120 242
+               C122 246 126 249 130 249
+               C134 249 138 246 140 242
+               C144 235 146 225 144 216
+               C142 218 137 220 134 220 Z"/>
+      <ellipse cx="130" cy="214" rx="10" ry="4"/>
+      <rect x="125" y="250" width="10" height="8"/>
+      <rect x="121" y="258" width="18" height="4"/>
+    </g>
+
+    <!-- Lower band -->
+    <rect x="60" y="252" width="140" height="16" fill="url(#decGrad)"/>
+    <!-- Simple wave pattern -->
+    <g fill="#3b2718">
+      <path d="M62 260
+               C66 256 70 256 74 260
+               C78 264 82 264 86 260
+               C90 256 94 256 98 260
+               C102 264 106 264 110 260
+               C114 256 118 256 122 260
+               C126 264 130 264 134 260
+               C138 256 142 256 146 260
+               C150 264 154 264 158 260
+               C162 256 166 256 170 260
+               C174 264 178 264 182 260"/>
+    </g>
+  </g>
+
+  <!-- Highlight on body -->
+  <ellipse cx="118" cy="210" rx="12" ry="90" fill="url(#highlight)" opacity="0.55"/>
+</svg>

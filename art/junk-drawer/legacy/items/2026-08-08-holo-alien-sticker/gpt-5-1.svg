@@ -1,0 +1,250 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="184.0 28.0 459.8 603.8">
+  <defs>
+    <!-- Holographic-ish gradient -->
+    <radialGradient id="alienFaceGrad" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#ecf7ff"/>
+      <stop offset="15%" stop-color="#b8f0ff"/>
+      <stop offset="30%" stop-color="#8ef5e0"/>
+      <stop offset="45%" stop-color="#b9a9ff"/>
+      <stop offset="60%" stop-color="#6ad4ff"/>
+      <stop offset="75%" stop-color="#4f7fff"/>
+      <stop offset="90%" stop-color="#2a4b7a"/>
+      <stop offset="100%" stop-color="#101526"/>
+    </radialGradient>
+
+    <!-- Iridescent overlay bands -->
+    <linearGradient id="holoSweep1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="30%" stop-color="#f2ffcc" stop-opacity="0.55"/>
+      <stop offset="55%" stop-color="#ffb8ff" stop-opacity="0.4"/>
+      <stop offset="80%" stop-color="#99ffe6" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+
+    <linearGradient id="holoSweep2" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="20%" stop-color="#9fd4ff" stop-opacity="0.5"/>
+      <stop offset="50%" stop-color="#ffe6aa" stop-opacity="0.4"/>
+      <stop offset="85%" stop-color="#d9a6ff" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Edge sheen -->
+    <linearGradient id="edgeSheen" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#f6ffff" stop-opacity="0.9"/>
+      <stop offset="20%" stop-color="#d6f9ff" stop-opacity="0.6"/>
+      <stop offset="50%" stop-color="#88b2ff" stop-opacity="0.25"/>
+      <stop offset="80%" stop-color="#4a688a" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#020514" stop-opacity="0.9"/>
+    </linearGradient>
+
+    <!-- Eye gradient -->
+    <linearGradient id="eyeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0b1a"/>
+      <stop offset="35%" stop-color="#050713"/>
+      <stop offset="65%" stop-color="#000000"/>
+      <stop offset="100%" stop-color="#111b33"/>
+    </linearGradient>
+
+    <!-- Eye highlight -->
+    <radialGradient id="eyeHighlight" cx="25%" cy="20%" r="40%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/>
+      <stop offset="40%" stop-color="#ffffff" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Inner glow -->
+    <radialGradient id="innerGlow" cx="50%" cy="35%" r="55%">
+      <stop offset="0%" stop-color="#e9ffff" stop-opacity="0.95"/>
+      <stop offset="40%" stop-color="#c4ffe4" stop-opacity="0.5"/>
+      <stop offset="80%" stop-color="#5e88b0" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Metallic outline -->
+    <linearGradient id="metalOutline" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f6ffff"/>
+      <stop offset="20%" stop-color="#b6e8ff"/>
+      <stop offset="40%" stop-color="#80ffda"/>
+      <stop offset="60%" stop-color="#c0a6ff"/>
+      <stop offset="80%" stop-color="#78a0ff"/>
+      <stop offset="100%" stop-color="#f5ffff"/>
+    </linearGradient>
+
+    <!-- Fine holo noise bands -->
+    <pattern id="holoLines" x="0" y="0" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
+      <rect x="0" y="0" width="12" height="12" fill="none"/>
+      <rect x="0" y="0" width="1.6" height="12" fill="#ffffff" fill-opacity="0.16"/>
+      <rect x="4" y="0" width="1" height="12" fill="#ffe6ff" fill-opacity="0.22"/>
+      <rect x="8" y="0" width="0.8" height="12" fill="#b8fff7" fill-opacity="0.18"/>
+    </pattern>
+
+    <!-- Soft white sticker rim -->
+    <radialGradient id="rimGlow" cx="50%" cy="40%" r="60%">
+      <stop offset="80%" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.9"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Core alien head shape (inverted teardrop / classic sticker silhouette) -->
+  <path id="alienHead" d="M400 34
+                           C277 34 190 118 190 244
+                           C190 323 219 387 261 444
+                           C304 503 350 552 387 610
+                           C394 621 404 626 414 626
+                           C424 626 434 621 441 610
+                           C478 552 524 503 567 444
+                           C609 387 638 323 638 244
+                           C638 118 523 34 400 34Z"
+        fill="url(#alienFaceGrad)"/>
+
+  <!-- Inner glow/soft face light -->
+  <path d="M400 34
+           C277 34 190 118 190 244
+           C190 323 219 387 261 444
+           C304 503 350 552 387 610
+           C394 621 404 626 414 626
+           C424 626 434 621 441 610
+           C478 552 524 503 567 444
+           C609 387 638 323 638 244
+           C638 118 523 34 400 34Z"
+        fill="url(#innerGlow)" opacity="0.95"/>
+
+  <!-- Metallic holo outline -->
+  <path d="M400 34
+           C277 34 190 118 190 244
+           C190 323 219 387 261 444
+           C304 503 350 552 387 610
+           C394 621 404 626 414 626
+           C424 626 434 621 441 610
+           C478 552 524 503 567 444
+           C609 387 638 323 638 244
+           C638 118 523 34 400 34Z"
+        fill="none"
+        stroke="url(#metalOutline)"
+        stroke-width="8"
+        stroke-linejoin="round"/>
+
+  <!-- Edge sheen following contour -->
+  <path d="M400 40
+           C287 40 204 120 204 238
+           C204 310 230 370 272 428
+           C312 482 354 528 392 582
+           C399 592 408 596 416 596
+           C424 596 433 592 440 582
+           C478 528 520 482 560 428
+           C602 370 628 310 628 238
+           C628 120 513 40 400 40Z"
+        fill="none"
+        stroke="url(#edgeSheen)"
+        stroke-width="5"
+        stroke-linejoin="round"
+        opacity="0.9"/>
+
+  <!-- Holographic sweeps -->
+  <path d="M214 180
+           C270 118 343 90 414 96
+           C486 102 548 140 594 210
+           C552 206 524 211 487 223
+           C444 238 390 248 330 246
+           C283 244 245 234 214 222Z"
+        fill="url(#holoSweep1)" opacity="0.85"/>
+
+  <path d="M224 310
+           C260 340 305 363 348 374
+           C399 387 455 388 507 376
+           C543 367 585 348 620 320
+           C604 356 582 390 557 424
+           C531 459 502 491 468 512
+           C432 535 403 539 370 526
+           C341 514 309 492 279 462
+           C252 434 233 401 224 366Z"
+        fill="url(#holoSweep2)" opacity="0.75"/>
+
+  <!-- Fine holo line texture clipped to head -->
+  <clipPath id="headClip">
+    <use href="#alienHead"/>
+  </clipPath>
+  <rect x="180" y="20" width="460" height="640" fill="url(#holoLines)" clip-path="url(#headClip)" opacity="0.4"/>
+
+  <!-- Eyes -->
+  <!-- Left eye -->
+  <path d="M262 274
+           C236 237 230 205 240 184
+           C251 162 275 150 315 155
+           C354 160 390 180 423 206
+           C445 224 465 249 472 270
+           C476 283 477 296 473 307
+           C468 322 457 333 441 337
+           C413 343 375 341 338 334
+           C309 329 283 318 262 298Z"
+        fill="url(#eyeGrad)"/>
+
+  <!-- Right eye -->
+  <path d="M538 274
+           C564 237 570 205 560 184
+           C549 162 525 150 485 155
+           C446 160 410 180 377 206
+           C355 224 335 249 328 270
+           C324 283 323 296 327 307
+           C332 322 343 333 359 337
+           C387 343 425 341 462 334
+           C491 329 517 318 538 298Z"
+        fill="url(#eyeGrad)"/>
+
+  <!-- Eye inner sheen -->
+  <path d="M272 262
+           C252 232 248 210 255 196
+           C262 182 279 176 303 179
+           C331 182 362 197 391 218
+           C408 231 424 247 434 262
+           C420 265 402 268 381 270
+           C343 274 302 272 272 262Z"
+        fill="url(#eyeHighlight)" opacity="0.9"/>
+
+  <path d="M528 262
+           C548 232 552 210 545 196
+           C538 182 521 176 497 179
+           C469 182 438 197 409 218
+           C392 231 376 247 366 262
+           C380 265 398 268 419 270
+           C457 274 498 272 528 262Z"
+        fill="url(#eyeHighlight)" opacity="0.9"/>
+
+  <!-- Pupillary glints -->
+  <circle cx="332" cy="262" r="12" fill="#ffffff" opacity="0.8"/>
+  <circle cx="508" cy="262" r="12" fill="#ffffff" opacity="0.8"/>
+
+  <!-- Forehead highlight band -->
+  <path d="M246 186
+           C285 142 339 116 400 114
+           C461 112 515 132 554 172
+           C519 172 485 180 454 188
+           C425 196 396 202 366 204
+           C329 206 290 202 246 186Z"
+        fill="#ffffff" opacity="0.22"/>
+
+  <!-- Chin / lower face sheen -->
+  <path d="M282 420
+           C308 452 337 481 365 505
+           C383 521 397 528 414 528
+           C431 528 445 521 463 505
+           C491 481 520 452 546 420
+           C512 432 480 440 447 445
+           C407 450 364 449 324 443
+           C309 441 294 437 282 432Z"
+        fill="#ffffff" opacity="0.16"/>
+
+  <!-- Sticker-style outer rim glow (subtle) -->
+  <path d="M400 34
+           C277 34 190 118 190 244
+           C190 323 219 387 261 444
+           C304 503 350 552 387 610
+           C394 621 404 626 414 626
+           C424 626 434 621 441 610
+           C478 552 524 503 567 444
+           C609 387 638 323 638 244
+           C638 118 523 34 400 34Z"
+        fill="url(#rimGlow)" opacity="0.65"/>
+
+</svg>

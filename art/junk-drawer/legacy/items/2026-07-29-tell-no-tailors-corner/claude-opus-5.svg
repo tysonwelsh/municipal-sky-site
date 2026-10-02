@@ -1,0 +1,326 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1000 1000" width="1000" height="1000" role="img" aria-label="Jellyfish-like creatures snooping around a dark street corner marked Tell-No-Tailors' Corner">
+  <title>Derryjellybies Snooping Around Tell-No-Tailors' Corner</title>
+  <defs>
+    <linearGradient id="gWallR" x1="0.15" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4b5f73"/>
+      <stop offset="0.55" stop-color="#3a4b5c"/>
+      <stop offset="1" stop-color="#28343f"/>
+    </linearGradient>
+    <linearGradient id="gWallL" x1="1" y1="0" x2="0" y2="0.8">
+      <stop offset="0" stop-color="#2f3d4c"/>
+      <stop offset="0.6" stop-color="#232e3a"/>
+      <stop offset="1" stop-color="#19222c"/>
+    </linearGradient>
+    <linearGradient id="gCorn" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#141c25"/>
+      <stop offset="1" stop-color="#212c38"/>
+    </linearGradient>
+    <linearGradient id="gGround" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#33404c"/>
+      <stop offset="1" stop-color="#1c242d"/>
+    </linearGradient>
+    <radialGradient id="gGlass" cx="0.62" cy="0.55" r="0.75">
+      <stop offset="0" stop-color="#f3b667" stop-opacity="0.85"/>
+      <stop offset="0.45" stop-color="#a86f3c" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#101820" stop-opacity="0.95"/>
+    </radialGradient>
+    <radialGradient id="gPool" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#f0b061" stop-opacity="0.42"/>
+      <stop offset="1" stop-color="#f0b061" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gDoor" x1="1" y1="0" x2="0" y2="0.3">
+      <stop offset="0" stop-color="#5a4234"/>
+      <stop offset="1" stop-color="#3a2b23"/>
+    </linearGradient>
+    <linearGradient id="gEdge" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6d8194"/>
+      <stop offset="1" stop-color="#3b4b5b"/>
+    </linearGradient>
+    <filter id="fBlur" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="16"/>
+    </filter>
+    <filter id="fBlurS" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+    <filter id="grain" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" seed="11" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.05  0 0 0 0 0.07  0 0 0 0 0.10  0 0 0 0.6 0"/>
+    </filter>
+
+    <g id="jelly">
+      <path d="M -50,8 C -50,-42 -27,-66 0,-66 C 27,-66 50,-42 50,8 C 44,26 38,10 30,20 C 22,30 16,12 8,20 C 0,28 -6,10 -14,20 C -22,30 -28,12 -36,20 C -44,28 -50,20 -50,8 Z" fill="currentColor" fill-opacity="0.86"/>
+      <path d="M -50,8 C -50,-42 -27,-66 0,-66 C 27,-66 50,-42 50,8" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="3"/>
+      <path d="M -40,-4 C -40,-40 -22,-56 0,-56 C 22,-56 40,-40 40,-4" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="2"/>
+      <ellipse cx="-23" cy="-40" rx="12" ry="8" fill="#ffffff" fill-opacity="0.45" transform="rotate(-28 -23 -40)"/>
+      <ellipse cx="26" cy="-18" rx="5" ry="12" fill="#ffffff" fill-opacity="0.18" transform="rotate(12 26 -18)"/>
+      <g fill="#141b24">
+        <ellipse cx="-14" cy="-22" rx="8.5" ry="10.5"/>
+        <ellipse cx="16" cy="-24" rx="8.5" ry="10.5"/>
+      </g>
+      <g fill="#ffffff">
+        <circle cx="-11" cy="-26" r="3"/>
+        <circle cx="19" cy="-28" r="3"/>
+      </g>
+      <path d="M -4,-2 q 6,7 12,0" fill="none" stroke="#141b24" stroke-opacity="0.75" stroke-width="2.6" stroke-linecap="round"/>
+      <g fill="none" stroke="currentColor" stroke-opacity="0.7" stroke-width="5" stroke-linecap="round">
+        <path d="M -34,16 c -4,20 8,30 2,48 c -5,15 4,22 0,34"/>
+        <path d="M -14,20 c -3,22 6,28 1,46 c -4,14 3,20 1,30"/>
+        <path d="M 8,20 c 4,20 -6,30 0,48 c 5,14 -2,20 0,30"/>
+        <path d="M 30,16 c 5,18 -6,28 -1,46 c 4,14 -3,20 -1,32"/>
+      </g>
+      <g fill="currentColor" fill-opacity="0.5">
+        <circle cx="-40" cy="112" r="3.2"/>
+        <circle cx="6" cy="126" r="2.6"/>
+      </g>
+    </g>
+
+    <g id="scissors" fill="none" stroke="#e7c27d" stroke-width="4" stroke-linecap="round">
+      <path d="M -17,-21 L 8,6"/>
+      <path d="M 17,-21 L -8,6"/>
+      <circle cx="-13" cy="15" r="7"/>
+      <circle cx="13" cy="15" r="7"/>
+      <circle cx="0" cy="-1" r="2.4" fill="#e7c27d"/>
+    </g>
+  </defs>
+
+  <!-- ===== WALLS ===== -->
+  <polygon points="400,0 1000,0 1000,796 400,900" fill="url(#gWallR)"/>
+  <polygon points="0,0 400,0 400,900 0,824" fill="url(#gWallL)"/>
+
+  <!-- coursing / brick hints, right wall -->
+  <g stroke="#0e161e" stroke-opacity="0.18" stroke-width="2" fill="none">
+    <path d="M 400,60 L 1000,177"/>
+    <path d="M 400,190 L 1000,289"/>
+    <path d="M 400,470 L 1000,489"/>
+    <path d="M 400,620 L 1000,576"/>
+    <path d="M 400,770 L 1000,663"/>
+    <path d="M 400,840 L 1000,725"/>
+  </g>
+  <g stroke="#0b1219" stroke-opacity="0.22" stroke-width="2" fill="none">
+    <path d="M 400,120 L 0,200"/>
+    <path d="M 400,300 L 0,320"/>
+    <path d="M 400,640 L 0,616"/>
+    <path d="M 400,790 L 0,732"/>
+  </g>
+
+  <!-- ===== CORNICE ===== -->
+  <polygon points="400,0 1000,0 1000,207 400,90" fill="url(#gCorn)" fill-opacity="0.9"/>
+  <polygon points="0,0 400,0 400,90 0,176" fill="url(#gCorn)" fill-opacity="0.96"/>
+  <g fill="none" stroke="#5d7286" stroke-opacity="0.5" stroke-width="3">
+    <path d="M 400,90 L 1000,207"/>
+    <path d="M 400,90 L 0,176"/>
+  </g>
+  <g fill="none" stroke="#0a1017" stroke-opacity="0.5" stroke-width="7">
+    <path d="M 400,102 L 1000,220"/>
+    <path d="M 400,102 L 0,188"/>
+  </g>
+  <g fill="none" stroke="#6f8599" stroke-opacity="0.22" stroke-width="2">
+    <path d="M 400,44 L 1000,152"/>
+    <path d="M 400,44 L 0,124"/>
+  </g>
+
+  <!-- ===== CORNER QUOINS ===== -->
+  <g fill="url(#gEdge)" fill-opacity="0.55" stroke="#0d151d" stroke-opacity="0.45" stroke-width="1.5">
+    <polygon points="400,40 446,50 446,101 400,92"/>
+    <polygon points="400,144 446,152 446,203 400,196"/>
+    <polygon points="400,248 446,254 446,305 400,300"/>
+    <polygon points="400,352 446,356 446,406 400,404"/>
+    <polygon points="400,456 446,457 446,508 400,508"/>
+    <polygon points="400,560 446,559 446,610 400,612"/>
+    <polygon points="400,664 446,661 446,712 400,716"/>
+    <polygon points="400,768 446,763 446,814 400,820"/>
+    <polygon points="400,872 446,865 446,892 400,900"/>
+  </g>
+  <g fill="#1a232d" fill-opacity="0.55" stroke="#0d151d" stroke-opacity="0.4" stroke-width="1.5">
+    <polygon points="400,92 354,102 354,153 400,144"/>
+    <polygon points="400,196 354,204 354,254 400,248"/>
+    <polygon points="400,300 354,305 354,356 400,352"/>
+    <polygon points="400,404 354,407 354,458 400,456"/>
+    <polygon points="400,508 354,508 354,559 400,560"/>
+    <polygon points="400,612 354,610 354,661 400,664"/>
+    <polygon points="400,716 354,712 354,762 400,768"/>
+    <polygon points="400,820 354,813 354,864 400,872"/>
+  </g>
+  <path d="M 400,0 L 400,900" stroke="#8ea4b7" stroke-opacity="0.45" stroke-width="3" fill="none"/>
+
+  <!-- ===== SHOP WINDOW (right wall) ===== -->
+  <polygon points="470,406 900,443 900,705 470,752" fill="#0f171f"/>
+  <polygon points="470,406 900,443 900,705 470,752" fill="none" stroke="#6b4a2c" stroke-width="12"/>
+  <polygon points="484,419 886,454 886,694 484,739" fill="url(#gGlass)"/>
+
+  <!-- shop interior silhouettes -->
+  <g fill="#0b1118" fill-opacity="0.92">
+    <path d="M 700,520 c -32,12 -44,58 -38,96 c 4,26 20,42 38,42 c 18,0 34,-16 38,-42 c 6,-38 -6,-84 -38,-96 Z"/>
+    <rect x="696" y="655" width="8" height="82"/>
+    <ellipse cx="700" cy="740" rx="34" ry="8"/>
+    <path d="M 700,500 h 4 v 22 h -8 v -22 Z"/>
+    <path d="M 528,482 c -14,26 -18,84 -10,130 c 10,10 34,10 44,0 c 8,-46 4,-104 -10,-130 c -6,-6 -18,-6 -24,0 Z"/>
+    <path d="M 604,486 c -12,30 -14,88 -8,124 c 9,9 29,9 38,0 c 6,-38 4,-96 -8,-124 c -6,-8 -16,-8 -22,0 Z"/>
+  </g>
+  <path d="M 486,475 L 884,494" stroke="#e2b06a" stroke-opacity="0.5" stroke-width="3" fill="none"/>
+  <g stroke="#0b1118" stroke-opacity="0.75" stroke-width="7" fill="none">
+    <path d="M 590,424 L 590,730"/>
+    <path d="M 700,434 L 700,718"/>
+    <path d="M 800,443 L 800,708"/>
+  </g>
+  <g transform="translate(838,530) skewY(5.6) scale(0.8)">
+    <use xlink:href="#scissors" href="#scissors"/>
+    <path d="M 0,-26 L 0,-70" stroke="#e7c27d" stroke-opacity="0.6" stroke-width="2" fill="none"/>
+  </g>
+  <g fill="#e7c27d" fill-opacity="0.55">
+    <circle cx="528" cy="700" r="9"/>
+    <circle cx="556" cy="705" r="6"/>
+    <path d="M 519,700 h 18 v 8 h -18 Z"/>
+  </g>
+  <polygon points="462,750 906,703 910,724 462,774" fill="#5a3f26"/>
+  <polygon points="462,750 906,703 910,712 462,760" fill="#7d5c39" fill-opacity="0.7"/>
+
+  <!-- ===== SIGN BOARD ===== -->
+  <polygon points="450,256 940,316 940,399 450,364" fill="#141c25"/>
+  <polygon points="450,256 940,316 940,399 450,364" fill="none" stroke="#e7c27d" stroke-opacity="0.55" stroke-width="3"/>
+  <polygon points="458,266 932,324 932,391 458,355" fill="none" stroke="#e7c27d" stroke-opacity="0.25" stroke-width="1.6"/>
+  <g transform="translate(464,300) skewY(5.6)" fill="#e7c27d" font-family="Georgia, 'Palatino Linotype', 'Times New Roman', serif">
+    <text x="0" y="0" font-size="40" letter-spacing="1.5" font-weight="bold">TELL-NO-TAILORS&#8217;</text>
+    <text x="4" y="28" font-size="17" letter-spacing="9" fill-opacity="0.8">&#183; CORNER &#183;</text>
+  </g>
+
+  <!-- ===== HANGING SHINGLE (left wall) ===== -->
+  <g stroke="#2b3743" stroke-width="6" fill="none" stroke-linecap="round">
+    <path d="M 400,146 L 338,157"/>
+    <path d="M 400,178 L 366,152"/>
+  </g>
+  <path d="M 345,157 L 345,172" stroke="#2b3743" stroke-width="4" fill="none"/>
+  <circle cx="345" cy="208" r="36" fill="#131b23" stroke="#e7c27d" stroke-opacity="0.5" stroke-width="3"/>
+  <g transform="translate(345,208) scale(0.95)">
+    <use xlink:href="#scissors" href="#scissors"/>
+  </g>
+
+  <!-- ===== NOTICE BOARD (left wall) ===== -->
+  <polygon points="290,208 110,238 110,332 290,312" fill="#20282f"/>
+  <polygon points="290,208 110,238 110,332 290,312" fill="none" stroke="#46362a" stroke-width="8"/>
+  <g transform="skewY(-4)" fill="#d9cdb4">
+    <rect x="132" y="272" width="52" height="40" fill-opacity="0.85" transform="rotate(-3 158 292)"/>
+    <rect x="196" y="264" width="44" height="46" fill-opacity="0.7" transform="rotate(4 218 287)"/>
+    <rect x="250" y="270" width="34" height="30" fill-opacity="0.55" transform="rotate(-6 267 285)"/>
+  </g>
+  <g stroke="#7d6a4e" stroke-opacity="0.7" stroke-width="2" fill="none">
+    <path d="M 140,286 h 34 M 140,296 h 26 M 204,278 h 30 M 204,288 h 22 M 204,298 h 30"/>
+  </g>
+  <g fill="#e7c27d">
+    <circle cx="158" cy="270" r="3"/>
+    <circle cx="219" cy="262" r="3"/>
+    <circle cx="267" cy="268" r="2.6"/>
+  </g>
+
+  <!-- ===== DOOR (left wall) ===== -->
+  <polygon points="300,406 120,417 120,847 300,881" fill="url(#gDoor)"/>
+  <polygon points="300,406 120,417 120,847 300,881" fill="none" stroke="#1a232c" stroke-width="9"/>
+  <g stroke="#241a14" stroke-opacity="0.7" stroke-width="4" fill="none">
+    <path d="M 180,413 L 180,858"/>
+    <path d="M 240,409 L 240,870"/>
+  </g>
+  <g stroke="#7a5c44" stroke-opacity="0.4" stroke-width="2" fill="none">
+    <path d="M 128,565 L 296,558"/>
+    <path d="M 128,700 L 297,700"/>
+  </g>
+  <circle cx="152" cy="640" r="9" fill="#c9a86a" fill-opacity="0.85"/>
+  <path d="M 150,668 l 6,0 l -1,12 l -4,0 Z" fill="#c9a86a" fill-opacity="0.7"/>
+  <rect x="146" y="662" width="12" height="9" rx="2" fill="#0d141b"/>
+  <polygon points="300,398 120,410 120,392 300,382" fill="#1a232c"/>
+  <g transform="translate(206,449) skewY(-4)" fill="#cbb894" font-family="Georgia, serif" font-size="15" letter-spacing="2" text-anchor="middle">
+    <text x="0" y="0">NO. 4&#189;</text>
+  </g>
+
+  <!-- drainpipe, right wall -->
+  <g>
+    <path d="M 953,0 L 953,760" stroke="#111921" stroke-width="20" fill="none"/>
+    <path d="M 947,0 L 947,760" stroke="#41505f" stroke-opacity="0.7" stroke-width="5" fill="none"/>
+    <rect x="939" y="248" width="28" height="14" fill="#0d141b"/>
+    <rect x="939" y="560" width="28" height="14" fill="#0d141b"/>
+  </g>
+
+  <!-- ===== GROUND ===== -->
+  <polygon points="0,824 400,900 1000,796 1000,1000 0,1000" fill="url(#gGround)"/>
+  <polygon points="0,824 400,900 1000,796 1000,838 400,942 0,866" fill="#3c4a58" fill-opacity="0.5"/>
+  <path d="M 0,856 L 400,940 L 1000,825" stroke="#0d141b" stroke-opacity="0.6" stroke-width="5" fill="none"/>
+  <g stroke="#0f171f" stroke-opacity="0.35" stroke-width="2.5" fill="none">
+    <path d="M 0,900 Q 220,930 400,978"/>
+    <path d="M 0,952 Q 240,984 420,1000"/>
+    <path d="M 1000,868 Q 720,900 448,996"/>
+    <path d="M 1000,926 Q 780,952 596,1000"/>
+    <path d="M 400,940 L 392,1000 M 300,958 L 288,1000 M 520,952 L 540,1000 M 640,924 L 672,1000 M 180,912 L 168,970"/>
+  </g>
+  <ellipse cx="640" cy="930" rx="330" ry="90" fill="url(#gPool)"/>
+  <ellipse cx="205" cy="905" rx="140" ry="46" fill="url(#gPool)" opacity="0.5"/>
+
+  <!-- ===== DERRYJELLYBIES ===== -->
+  <!-- J1 : pressed to the glass -->
+  <ellipse cx="655" cy="500" rx="86" ry="86" fill="#f2668c" opacity="0.28" filter="url(#fBlur)"/>
+  <g transform="translate(655,505) scale(1.28,1.06)" color="#f2668c">
+    <use xlink:href="#jelly" href="#jelly"/>
+  </g>
+
+  <!-- J2 : at the door, listening -->
+  <ellipse cx="216" cy="560" rx="62" ry="62" fill="#7fe0c3" opacity="0.25" filter="url(#fBlur)"/>
+  <g transform="translate(216,560) scale(-0.88,0.88)" color="#7fe0c3">
+    <use xlink:href="#jelly" href="#jelly"/>
+  </g>
+
+  <!-- J3 : tucked under the cornice by the sign -->
+  <ellipse cx="476" cy="176" rx="44" ry="44" fill="#ffd76e" opacity="0.24" filter="url(#fBlur)"/>
+  <g transform="translate(476,176) scale(0.62)" color="#ffd76e">
+    <use xlink:href="#jelly" href="#jelly"/>
+  </g>
+
+  <!-- J4 : peering round the drainpipe -->
+  <ellipse cx="922" cy="598" rx="58" ry="58" fill="#b58cf0" opacity="0.25" filter="url(#fBlur)"/>
+  <g transform="translate(922,598) scale(-0.82,0.82)" color="#b58cf0">
+    <use xlink:href="#jelly" href="#jelly"/>
+  </g>
+
+  <!-- J5 : at the threshold, eyeing the keyhole -->
+  <ellipse cx="252" cy="906" rx="34" ry="26" fill="#ffd76e" opacity="0.22" filter="url(#fBlur)"/>
+  <g transform="translate(252,906) scale(-0.44,0.44)" color="#ff9f6b">
+    <use xlink:href="#jelly" href="#jelly"/>
+  </g>
+
+  <!-- J6 : on the kerb -->
+  <ellipse cx="792" cy="898" rx="36" ry="26" fill="#7fe0c3" opacity="0.2" filter="url(#fBlur)"/>
+  <g transform="translate(792,898) scale(0.46)" color="#7fe0c3">
+    <use xlink:href="#jelly" href="#jelly"/>
+  </g>
+
+  <!-- J7 : over the cornice edge -->
+  <g transform="translate(822,138) scale(-0.36,0.36)" color="#f2668c">
+    <use xlink:href="#jelly" href="#jelly"/>
+  </g>
+
+  <!-- J8 : tiny, hovering by the shingle -->
+  <g transform="translate(318,268) scale(0.3)" color="#b58cf0">
+    <use xlink:href="#jelly" href="#jelly"/>
+  </g>
+
+  <!-- drifting motes and a loose thread -->
+  <g fill="#ffe8bf" fill-opacity="0.5">
+    <circle cx="404" cy="612" r="3"/>
+    <circle cx="452" cy="672" r="2.2"/>
+    <circle cx="366" cy="700" r="2.6"/>
+    <circle cx="742" cy="780" r="3"/>
+    <circle cx="880" cy="740" r="2.2"/>
+    <circle cx="150" cy="520" r="2.4"/>
+    <circle cx="586" cy="330" r="2.2"/>
+    <circle cx="288" cy="620" r="2"/>
+  </g>
+  <path d="M 540,760 q 26,34 -6,60 q -30,24 6,52 q 30,24 -10,52" fill="none" stroke="#e7c27d" stroke-opacity="0.45" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M 872,724 q -30,30 -4,58 q 22,24 -8,46" fill="none" stroke="#e7c27d" stroke-opacity="0.3" stroke-width="2" stroke-linecap="round"/>
+  <g stroke="#cbd7e2" stroke-opacity="0.5" stroke-width="2" fill="none">
+    <path d="M 330,842 l 34,-8"/>
+    <path d="M 718,846 l 30,6"/>
+  </g>
+
+  <!-- soft light bloom from the window -->
+  <ellipse cx="690" cy="570" rx="230" ry="170" fill="#f0b061" opacity="0.12" filter="url(#fBlur)"/>
+
+  <!-- grain -->
+  <rect width="1000" height="1000" filter="url(#grain)" opacity="0.5"/>
+</svg>

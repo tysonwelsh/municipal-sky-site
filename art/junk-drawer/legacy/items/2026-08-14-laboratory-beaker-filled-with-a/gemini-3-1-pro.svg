@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="16.8 3.2 61.0 97.5" width="61.0" height="97.5">
+  <defs>
+    <linearGradient id="glassReflection" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="white" stop-opacity="0.8"/>
+      <stop offset="20%" stop-color="white" stop-opacity="0.2"/>
+      <stop offset="80%" stop-color="white" stop-opacity="0"/>
+      <stop offset="100%" stop-color="white" stop-opacity="0.5"/>
+    </linearGradient>
+    <linearGradient id="liquidGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#32CD32"/>
+      <stop offset="50%" stop-color="#00FF00"/>
+      <stop offset="100%" stop-color="#228B22"/>
+    </linearGradient>
+    <radialGradient id="bubbleGrad" cx="30%" cy="30%" r="50%">
+      <stop offset="0%" stop-color="white" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#32CD32" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Liquid inside the beaker -->
+  <path d="M 27 50 L 27 90 C 27 96 33 96 50 96 C 67 96 73 96 73 90 L 73 50 Z" fill="url(#liquidGrad)"/>
+  
+  <!-- Liquid surface (ellipse) -->
+  <ellipse cx="50" cy="50" rx="23" ry="5" fill="#7CFC00" opacity="0.9"/>
+
+  <!-- Bubbles inside liquid -->
+  <circle cx="35" cy="80" r="4" fill="url(#bubbleGrad)"/>
+  <circle cx="45" cy="65" r="3" fill="url(#bubbleGrad)"/>
+  <circle cx="62" cy="72" r="5" fill="url(#bubbleGrad)"/>
+  <circle cx="55" cy="85" r="2" fill="url(#bubbleGrad)"/>
+  <circle cx="38" cy="58" r="2.5" fill="url(#bubbleGrad)"/>
+  <circle cx="65" cy="55" r="2" fill="url(#bubbleGrad)"/>
+  
+  <!-- Bubbles popping out -->
+  <circle cx="45" cy="40" r="3" fill="url(#bubbleGrad)"/>
+  <circle cx="58" cy="35" r="2" fill="url(#bubbleGrad)"/>
+  <circle cx="50" cy="28" r="4" fill="url(#bubbleGrad)"/>
+
+  <!-- Back edge of beaker opening -->
+  <path d="M 30 10 C 30 5 70 5 70 10" fill="none" stroke="#D3D3D3" stroke-width="2" opacity="0.6"/>
+
+  <!-- Beaker glass outline and base -->
+  <path d="M 25 10 L 25 90 C 25 98 33 98 50 98 C 67 98 75 98 75 90 L 75 10" fill="url(#glassReflection)" stroke="#A9A9A9" stroke-width="2" opacity="0.7"/>
+
+  <!-- Beaker spout -->
+  <path d="M 25 10 C 18 8 18 12 25 12" fill="none" stroke="#A9A9A9" stroke-width="2" opacity="0.7"/>
+
+  <!-- Front edge of beaker opening -->
+  <path d="M 25 10 C 25 16 75 16 75 10" fill="none" stroke="#A9A9A9" stroke-width="2" opacity="0.7"/>
+
+  <!-- Measurement markings -->
+  <line x1="25" y1="30" x2="35" y2="30" stroke="black" stroke-width="2" opacity="0.6"/>
+  <line x1="25" y1="40" x2="30" y2="40" stroke="black" stroke-width="1.5" opacity="0.6"/>
+  <line x1="25" y1="50" x2="35" y2="50" stroke="black" stroke-width="2" opacity="0.6"/>
+  <line x1="25" y1="60" x2="30" y2="60" stroke="black" stroke-width="1.5" opacity="0.6"/>
+  <line x1="25" y1="70" x2="35" y2="70" stroke="black" stroke-width="2" opacity="0.6"/>
+  <line x1="25" y1="80" x2="30" y2="80" stroke="black" stroke-width="1.5" opacity="0.6"/>
+
+  <!-- Highlight curve on glass -->
+  <path d="M 28 20 L 28 85" stroke="white" stroke-width="2" fill="none" opacity="0.8"/>
+</svg>

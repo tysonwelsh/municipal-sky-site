@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="46.0 -2.0 223.8 403.8">
+  <!-- strap -->
+  <path d="M108 0 L192 0 L186 95 L114 95 Z" fill="#6b4226"/>
+  <path d="M114 305 L186 305 L192 400 L108 400 Z" fill="#6b4226"/>
+  <path d="M118 0 L182 0 L177 95 L123 95 Z" fill="#8a5a33"/>
+  <path d="M123 305 L177 305 L182 400 L118 400 Z" fill="#8a5a33"/>
+  <!-- strap holes -->
+  <circle cx="150" cy="330" r="4" fill="#4a2c14"/>
+  <circle cx="150" cy="350" r="4" fill="#4a2c14"/>
+  <circle cx="150" cy="370" r="4" fill="#4a2c14"/>
+  <!-- buckle -->
+  <rect x="118" y="12" width="64" height="30" rx="6" fill="none" stroke="#c9a24b" stroke-width="5"/>
+  <line x1="150" y1="27" x2="150" y2="12" stroke="#c9a24b" stroke-width="4"/>
+  <!-- lugs -->
+  <rect x="112" y="90" width="76" height="18" rx="6" fill="#c9a24b"/>
+  <rect x="112" y="292" width="76" height="18" rx="6" fill="#c9a24b"/>
+  <!-- case -->
+  <circle cx="150" cy="200" r="102" fill="#c9a24b"/>
+  <circle cx="150" cy="200" r="96" fill="#a8842f"/>
+  <circle cx="150" cy="200" r="88" fill="#f5f0e1"/>
+  <!-- crown -->
+  <rect x="250" y="188" width="18" height="24" rx="5" fill="#c9a24b"/>
+  <line x1="254" y1="192" x2="264" y2="192" stroke="#8a6a1f" stroke-width="2"/>
+  <line x1="254" y1="200" x2="264" y2="200" stroke="#8a6a1f" stroke-width="2"/>
+  <line x1="254" y1="208" x2="264" y2="208" stroke="#8a6a1f" stroke-width="2"/>
+  <!-- minute ticks -->
+  <g stroke="#8c8574" stroke-width="1.5">
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(6 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(12 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(18 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(24 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(36 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(42 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(48 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(54 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(66 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(72 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(78 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(84 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(96 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(102 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(108 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(114 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(126 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(132 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(138 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(144 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(156 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(162 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(168 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(174 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(186 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(192 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(198 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(204 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(216 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(222 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(228 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(234 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(246 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(252 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(258 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(264 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(276 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(282 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(288 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(294 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(306 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(312 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(318 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(324 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(336 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(342 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(348 150 200)"/>
+    <line x1="150" y1="118" x2="150" y2="126" transform="rotate(354 150 200)"/>
+  </g>
+  <!-- hour ticks -->
+  <g stroke="#3a352c" stroke-width="4">
+    <line x1="150" y1="116" x2="150" y2="130"/>
+    <line x1="150" y1="116" x2="150" y2="130" transform="rotate(30 150 200)"/>
+    <line x1="150" y1="116" x2="150" y2="130" transform="rotate(60 150 200)"/>
+    <line x1="150" y1="116" x2="150" y2="130" transform="rotate(90 150 200)"/>
+    <line x1="150" y1="116" x2="150" y2="130" transform="rotate(120 150 200)"/>
+    <line x1="150" y1="116" x2="150" y2="130" transform="rotate(150 150 200)"/>
+    <line x1="150" y1="116" x2="150" y2="130" transform="rotate(180 150 200)"/>
+    <line x1="150" y1="116" x2="150" y2="130" transform="rotate(210 150 200)"/>
+    <line x1="150" y1="116" x2="150" y2="130" transform="rotate(240 150 200)"/>
+    <line x1="150" y1="116" x2="150" y2="130" transform="rotate(270 150 200)"/>
+    <line x1="150" y1="116" x2="150" y2="130" transform="rotate(300 150 200)"/>
+    <line x1="150" y1="116" x2="150" y2="130" transform="rotate(330 150 200)"/>
+  </g>
+  <!-- numerals -->
+  <text x="150" y="152" font-family="Georgia, serif" font-size="18" fill="#3a352c" text-anchor="middle">12</text>
+  <text x="204" y="206" font-family="Georgia, serif" font-size="18" fill="#3a352c" text-anchor="middle">3</text>
+  <text x="150" y="266" font-family="Georgia, serif" font-size="18" fill="#3a352c" text-anchor="middle">6</text>
+  <text x="96" y="206" font-family="Georgia, serif" font-size="18" fill="#3a352c" text-anchor="middle">9</text>
+  <!-- hands: 4:47 => hour 143.5°, minute 282° -->
+  <line x1="150" y1="212" x2="150" y2="152" stroke="#22201a" stroke-width="7" stroke-linecap="round" transform="rotate(143.5 150 200)"/>
+  <line x1="150" y1="216" x2="150" y2="128" stroke="#22201a" stroke-width="5" stroke-linecap="round" transform="rotate(282 150 200)"/>
+  <line x1="150" y1="220" x2="150" y2="122" stroke="#b3402e" stroke-width="2" transform="rotate(282 150 200)"/>
+  <circle cx="150" cy="200" r="7" fill="#c9a24b" stroke="#22201a" stroke-width="2"/>
+  <!-- glass highlight -->
+  <path d="M84 168 A78 78 0 0 1 168 116 A88 88 0 0 0 96 184 Z" fill="#ffffff" opacity="0.25"/>
+</svg>

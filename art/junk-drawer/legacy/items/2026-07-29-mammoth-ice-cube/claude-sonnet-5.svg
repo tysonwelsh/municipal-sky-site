@@ -1,0 +1,158 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800">
+  <defs>
+    <radialGradient id="bodyGrad" cx="42%" cy="32%" r="78%">
+      <stop offset="0%" stop-color="#BE8E5E"/>
+      <stop offset="60%" stop-color="#976A3C"/>
+      <stop offset="100%" stop-color="#794E2C"/>
+    </radialGradient>
+    <linearGradient id="tuskGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFBEF"/>
+      <stop offset="100%" stop-color="#E7CB98"/>
+    </linearGradient>
+    <linearGradient id="earGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#EAB2A4"/>
+      <stop offset="100%" stop-color="#D88E82"/>
+    </linearGradient>
+    <linearGradient id="iceFront" x1="10%" y1="0%" x2="70%" y2="100%">
+      <stop offset="0%" stop-color="#E4F8FC"/>
+      <stop offset="100%" stop-color="#7DC9EA"/>
+    </linearGradient>
+    <linearGradient id="iceTop" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F5FDFF"/>
+      <stop offset="100%" stop-color="#C2EAF6"/>
+    </linearGradient>
+    <linearGradient id="iceRight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8ED2E9"/>
+      <stop offset="100%" stop-color="#4CA6D3"/>
+    </linearGradient>
+    <path id="tuft" d="M -5,0 C -6,-10 -2,-20 0,-24 C 2,-20 6,-10 5,0 Z" fill="#7A4E2C"/>
+  </defs>
+
+  <!-- ground puddle -->
+  <ellipse cx="400" cy="793" rx="335" ry="26" fill="#8FD3EA" opacity="0.32"/>
+
+  <!-- ================= MAMMOTH ================= -->
+  <g id="mammoth">
+    <!-- legs -->
+    <g fill="#7A5230">
+      <rect x="195" y="640" width="68" height="102" rx="28"/>
+      <rect x="300" y="665" width="68" height="95" rx="28"/>
+      <rect x="432" y="665" width="68" height="95" rx="28"/>
+      <rect x="537" y="640" width="68" height="102" rx="28"/>
+    </g>
+    <g fill="#F3E6CF">
+      <ellipse cx="212" cy="738" rx="9" ry="6"/>
+      <ellipse cx="232" cy="740" rx="9" ry="6"/>
+      <ellipse cx="252" cy="738" rx="9" ry="6"/>
+      <ellipse cx="317" cy="756" rx="9" ry="6"/>
+      <ellipse cx="337" cy="758" rx="9" ry="6"/>
+      <ellipse cx="357" cy="756" rx="9" ry="6"/>
+      <ellipse cx="449" cy="756" rx="9" ry="6"/>
+      <ellipse cx="469" cy="758" rx="9" ry="6"/>
+      <ellipse cx="489" cy="756" rx="9" ry="6"/>
+      <ellipse cx="554" cy="738" rx="9" ry="6"/>
+      <ellipse cx="574" cy="740" rx="9" ry="6"/>
+      <ellipse cx="594" cy="738" rx="9" ry="6"/>
+    </g>
+
+    <!-- tail -->
+    <path d="M630,545 C672,558 695,600 682,645 C678,662 664,660 660,645 C656,628 648,600 620,565 Z" fill="#8C5D36"/>
+    <use href="#tuft" transform="translate(668,648) rotate(150) scale(1.1)"/>
+
+    <!-- ears (behind body) -->
+    <path d="M195,300 C130,300 95,360 100,430 C103,470 140,500 190,480 C220,468 230,420 225,370 C222,335 212,308 195,300 Z" fill="#96693C"/>
+    <path d="M585,300 C650,300 685,360 680,430 C677,470 640,500 590,480 C560,468 550,420 555,370 C558,335 568,308 585,300 Z" fill="#96693C"/>
+
+    <!-- body -->
+    <path d="M150,480 C150,360 230,260 390,250 C550,260 630,360 630,480 C630,600 560,680 460,700 L320,700 C220,680 150,600 150,480 Z" fill="url(#bodyGrad)"/>
+
+    <!-- head crown highlight -->
+    <ellipse cx="390" cy="270" rx="95" ry="58" fill="#C99A66" opacity="0.55"/>
+
+    <!-- ear inner detail -->
+    <ellipse cx="150" cy="395" rx="32" ry="50" fill="url(#earGrad)" transform="rotate(-8 150 395)"/>
+    <ellipse cx="630" cy="395" rx="32" ry="50" fill="url(#earGrad)" transform="rotate(8 630 395)"/>
+
+    <!-- trunk -->
+    <path d="M355,380 C340,420 330,470 335,520 C338,560 355,590 395,600 C420,605 435,585 430,560 C427,540 405,545 395,525 C385,500 390,450 405,410 C412,395 415,385 410,375 C395,365 365,368 355,380 Z" fill="#8C5D36"/>
+    <path d="M348,430 C365,438 385,438 402,428" stroke="#5F3D22" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.55"/>
+    <path d="M342,470 C362,480 385,480 405,468" stroke="#5F3D22" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.55"/>
+    <path d="M340,510 C360,520 380,522 398,512" stroke="#5F3D22" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.5"/>
+
+    <!-- tusks -->
+    <path d="M345,430 C300,450 260,470 240,520 C232,545 240,560 255,555 C275,548 300,510 330,470 C340,455 345,440 345,430 Z" fill="url(#tuskGrad)" stroke="#C9A96E" stroke-width="3"/>
+    <path d="M435,430 C480,450 520,470 540,520 C548,545 540,560 525,555 C505,548 480,510 450,470 C440,455 435,440 435,430 Z" fill="url(#tuskGrad)" stroke="#C9A96E" stroke-width="3"/>
+
+    <!-- blush -->
+    <ellipse cx="278" cy="402" rx="26" ry="16" fill="#F4A6B7" opacity="0.45"/>
+    <ellipse cx="502" cy="402" rx="26" ry="16" fill="#F4A6B7" opacity="0.45"/>
+
+    <!-- eyeshadow -->
+    <path d="M298,350 Q325,316 358,348 Q328,338 298,350 Z" fill="#D98FC4" opacity="0.55"/>
+    <path d="M482,350 Q455,316 422,348 Q452,338 482,350 Z" fill="#D98FC4" opacity="0.55"/>
+
+    <!-- closed eyes -->
+    <path d="M300,352 Q325,374 350,352" stroke="#2B1A12" stroke-width="7" fill="none" stroke-linecap="round"/>
+    <path d="M430,352 Q455,374 480,352" stroke="#2B1A12" stroke-width="7" fill="none" stroke-linecap="round"/>
+
+    <!-- eyelashes left -->
+    <g stroke="#231207" stroke-width="4" fill="none" stroke-linecap="round">
+      <path d="M300,352 C289,337 280,328 270,323"/>
+      <path d="M303,356 C295,340 289,326 286,312"/>
+      <path d="M309,359 C305,342 305,326 308,310"/>
+    </g>
+    <!-- eyelashes right -->
+    <g stroke="#231207" stroke-width="4" fill="none" stroke-linecap="round">
+      <path d="M480,352 C491,337 500,328 510,323"/>
+      <path d="M477,356 C485,340 491,326 494,312"/>
+      <path d="M471,359 C475,342 475,326 472,310"/>
+    </g>
+
+    <!-- fur tufts -->
+    <g>
+      <use href="#tuft" transform="translate(340,215) rotate(-25)"/>
+      <use href="#tuft" transform="translate(367,199) rotate(-10)"/>
+      <use href="#tuft" transform="translate(392,193) rotate(0)"/>
+      <use href="#tuft" transform="translate(417,199) rotate(10)"/>
+      <use href="#tuft" transform="translate(444,215) rotate(25)"/>
+      <use href="#tuft" transform="translate(118,306) rotate(-45) scale(0.9)"/>
+      <use href="#tuft" transform="translate(662,306) rotate(45) scale(0.9)"/>
+      <use href="#tuft" transform="translate(522,272) rotate(35)"/>
+      <use href="#tuft" transform="translate(562,314) rotate(48)"/>
+      <use href="#tuft" transform="translate(592,364) rotate(58)"/>
+      <use href="#tuft" transform="translate(208,332) rotate(-42)"/>
+      <use href="#tuft" transform="translate(178,382) rotate(-55)"/>
+      <use href="#tuft" transform="translate(212,646) rotate(-15) scale(0.8)"/>
+      <use href="#tuft" transform="translate(558,646) rotate(15) scale(0.8)"/>
+    </g>
+  </g>
+
+  <!-- ================= ICE CUBE ================= -->
+  <g id="ice">
+    <polygon points="715,85 785,15 785,715 715,785" fill="url(#iceRight)" fill-opacity="0.55" stroke="#FFFFFF" stroke-opacity="0.85" stroke-width="6" stroke-linejoin="round"/>
+    <polygon points="15,85 715,85 785,15 85,15" fill="url(#iceTop)" fill-opacity="0.62" stroke="#FFFFFF" stroke-opacity="0.85" stroke-width="6" stroke-linejoin="round"/>
+    <rect x="15" y="85" width="700" height="700" rx="42" ry="42" fill="url(#iceFront)" fill-opacity="0.46" stroke="#FFFFFF" stroke-opacity="0.85" stroke-width="6"/>
+
+    <!-- cracks -->
+    <path d="M120,205 L178,258 L148,326 L206,378" stroke="#FFFFFF" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/>
+    <path d="M568,646 L612,600 L594,542" stroke="#FFFFFF" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.65"/>
+    <path d="M648,150 L688,188 L658,236" stroke="#FFFFFF" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+
+    <!-- highlight streaks -->
+    <path d="M55,150 L160,105 L192,178 L88,228 Z" fill="#FFFFFF" opacity="0.22"/>
+    <ellipse cx="600" cy="670" rx="58" ry="90" fill="#FFFFFF" opacity="0.10" transform="rotate(18 600 670)"/>
+
+    <!-- sparkles -->
+    <path d="M742,50 L747,62 L759,67 L747,72 L742,84 L737,72 L725,67 L737,62 Z" fill="#FFFFFF" opacity="0.9"/>
+    <path d="M62,470 L66,480 L76,484 L66,488 L62,498 L58,488 L48,484 L58,480 Z" fill="#FFFFFF" opacity="0.85"/>
+    <path d="M660,730 L663,738 L671,741 L663,744 L660,752 L657,744 L649,741 L657,738 Z" fill="#FFFFFF" opacity="0.75"/>
+
+    <!-- ice chips at base and edges -->
+    <polygon points="150,760 190,745 210,790 160,796" fill="url(#iceFront)" fill-opacity="0.5" stroke="#FFFFFF" stroke-opacity="0.8" stroke-width="3"/>
+    <polygon points="560,750 610,760 600,796 555,790" fill="url(#iceFront)" fill-opacity="0.5" stroke="#FFFFFF" stroke-opacity="0.8" stroke-width="3"/>
+    <polygon points="380,772 420,762 436,797 392,799" fill="url(#iceFront)" fill-opacity="0.5" stroke="#FFFFFF" stroke-opacity="0.8" stroke-width="3"/>
+    <polygon points="6,400 36,380 46,420 16,440" fill="url(#iceFront)" fill-opacity="0.5" stroke="#FFFFFF" stroke-opacity="0.8" stroke-width="3"/>
+    <polygon points="794,420 764,400 754,440 784,460" fill="url(#iceRight)" fill-opacity="0.5" stroke="#FFFFFF" stroke-opacity="0.8" stroke-width="3"/>
+    <polygon points="42,42 72,20 86,56 52,66" fill="url(#iceTop)" fill-opacity="0.55" stroke="#FFFFFF" stroke-opacity="0.8" stroke-width="3"/>
+  </g>
+</svg>

@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="sclera" cx="0.40" cy="0.34" r="0.78">
+      <stop offset="0" stop-color="#fbf3e0"/>
+      <stop offset="0.32" stop-color="#f3e6cc"/>
+      <stop offset="0.58" stop-color="#e0cba6"/>
+      <stop offset="0.78" stop-color="#b98f56"/>
+      <stop offset="0.92" stop-color="#7d5324"/>
+      <stop offset="1" stop-color="#3d2410"/>
+    </radialGradient>
+    <radialGradient id="deepshade" cx="0.68" cy="0.76" r="0.62">
+      <stop offset="0" stop-color="#2a1608" stop-opacity="0.55"/>
+      <stop offset="0.55" stop-color="#4a2c12" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="warmglow" cx="0.36" cy="0.30" r="0.45">
+      <stop offset="0" stop-color="#fffaf0" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#fffaf0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="pupilg" cx="0.38" cy="0.34" r="0.80">
+      <stop offset="0" stop-color="#241a14"/>
+      <stop offset="0.45" stop-color="#120c09"/>
+      <stop offset="1" stop-color="#000000"/>
+    </radialGradient>
+    <radialGradient id="irisring" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0.58" stop-color="#5b3a1c" stop-opacity="0"/>
+      <stop offset="0.80" stop-color="#6b4520" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#3a2210" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glintg" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.98"/>
+      <stop offset="0.6" stop-color="#fff8e8" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#fff8e8" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="sweep" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="0.35" stop-color="#ffffff" stop-opacity="0.85"/>
+      <stop offset="0.65" stop-color="#fffdf6" stop-opacity="0.7"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="7"/>
+    </filter>
+    <filter id="soft2" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+    <filter id="tiny" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="2.2"/>
+    </filter>
+    <filter id="paint" x="-15%" y="-15%" width="130%" height="130%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="3" seed="7" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="9" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="paintlite" x="-15%" y="-15%" width="130%" height="130%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="3" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="5" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <clipPath id="ballclip">
+      <ellipse cx="256" cy="256" rx="248" ry="246"/>
+    </clipPath>
+  </defs>
+
+  <g filter="url(#paintlite)">
+    <ellipse cx="256" cy="256" rx="248" ry="246" fill="#3a2110"/>
+    <ellipse cx="256" cy="256" rx="244" ry="242" fill="url(#sclera)"/>
+  </g>
+
+  <g clip-path="url(#ballclip)">
+    <ellipse cx="256" cy="256" rx="244" ry="242" fill="url(#deepshade)"/>
+    <ellipse cx="196" cy="176" rx="150" ry="130" fill="url(#warmglow)" filter="url(#soft2)"/>
+
+    <!-- painterly scumbles in the sclera -->
+    <g opacity="0.30" filter="url(#soft)">
+      <path d="M70 300 q70 60 170 66 q100 6 176 -44" fill="none" stroke="#c9a271" stroke-width="26" stroke-linecap="round"/>
+      <path d="M96 176 q60 -74 156 -84" fill="none" stroke="#fffaf0" stroke-width="20" stroke-linecap="round"/>
+      <path d="M366 130 q56 52 66 130" fill="none" stroke="#8a6132" stroke-width="22" stroke-linecap="round"/>
+    </g>
+    <g opacity="0.18" filter="url(#soft)">
+      <path d="M140 402 q120 62 250 -8" fill="none" stroke="#4b2c12" stroke-width="34" stroke-linecap="round"/>
+      <path d="M52 210 q10 90 46 148" fill="none" stroke="#6d4a22" stroke-width="26" stroke-linecap="round"/>
+    </g>
+
+    <!-- faint veins -->
+    <g opacity="0.22" stroke="#a4543c" fill="none" stroke-linecap="round" filter="url(#paintlite)">
+      <path d="M46 262 q52 16 78 44 q22 24 12 46" stroke-width="4"/>
+      <path d="M60 178 q46 26 60 60" stroke-width="3"/>
+      <path d="M448 300 q-48 8 -74 40" stroke-width="3.5"/>
+      <path d="M300 470 q-8 -46 -44 -70" stroke-width="3"/>
+    </g>
+
+    <!-- pupil, off-center and askew -->
+    <g transform="translate(214,232) rotate(-16)">
+      <ellipse cx="0" cy="0" rx="122" ry="112" fill="#4a2d14" opacity="0.45" filter="url(#soft)"/>
+      <g filter="url(#paint)">
+        <ellipse cx="0" cy="0" rx="112" ry="103" fill="url(#pupilg)"/>
+      </g>
+      <ellipse cx="0" cy="0" rx="116" ry="107" fill="url(#irisring)"/>
+      <!-- pupil sheen -->
+      <ellipse cx="34" cy="46" rx="52" ry="30" fill="#6a4a2e" opacity="0.20" filter="url(#soft)" transform="rotate(20 34 46)"/>
+      <!-- bright fleck -->
+      <ellipse cx="-40" cy="-42" rx="26" ry="20" fill="url(#glintg)" transform="rotate(-25 -40 -42)"/>
+      <ellipse cx="-44" cy="-46" rx="12" ry="9" fill="#ffffff" filter="url(#tiny)" transform="rotate(-25 -44 -46)"/>
+      <circle cx="52" cy="-58" r="6" fill="#fff6e2" opacity="0.55" filter="url(#tiny)"/>
+    </g>
+
+    <!-- curved glint sweeping the upper curve -->
+    <g filter="url(#paintlite)">
+      <path d="M74 172 q66 -122 208 -140 q94 -12 156 44"
+            fill="none" stroke="url(#sweep)" stroke-width="26" stroke-linecap="round" opacity="0.85"/>
+      <path d="M96 168 q64 -104 190 -122"
+            fill="none" stroke="#ffffff" stroke-width="9" stroke-linecap="round" opacity="0.75" filter="url(#tiny)"/>
+    </g>
+
+    <!-- rim darkening / umber edge -->
+    <ellipse cx="256" cy="256" rx="244" ry="242" fill="none" stroke="#5c3616" stroke-width="26" opacity="0.5" filter="url(#soft)"/>
+    <ellipse cx="256" cy="256" rx="238" ry="236" fill="none" stroke="#2e1a0a" stroke-width="12" opacity="0.45" filter="url(#soft)"/>
+    <path d="M256 500 a244 242 0 0 0 240 -206" fill="none" stroke="#241304" stroke-width="60" opacity="0.30" filter="url(#soft2)"/>
+    <!-- reflected warm bounce at lower rim -->
+    <path d="M92 420 a244 242 0 0 0 130 72" fill="none" stroke="#e6c48d" stroke-width="18" opacity="0.35" filter="url(#soft)"/>
+  </g>
+
+  <ellipse cx="256" cy="256" rx="245" ry="243" fill="none" stroke="#201206" stroke-width="5" opacity="0.55"/>
+</svg>

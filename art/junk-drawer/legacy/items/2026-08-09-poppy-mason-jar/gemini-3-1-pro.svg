@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="65.5 63.0 298.8 718.8" width="298.8" height="718.8">
+  <!-- Defs for gradients -->
+  <defs>
+    <!-- Jar glass gradient -->
+    <linearGradient id="glassGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#E5F3FD" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#A9D6F5" stop-opacity="0.6" />
+    </linearGradient>
+    
+    <!-- Water gradient -->
+    <linearGradient id="waterGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#73C2FB" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#2D96DF" stop-opacity="0.7" />
+    </linearGradient>
+  </defs>
+
+  <!-- Stem -->
+  <path d="M 200 250 C 220 350, 180 450, 210 650" fill="none" stroke="#2B7F49" stroke-width="12" stroke-linecap="round" />
+  
+  <!-- Submerged stem -->
+  <path d="M 210 650 C 220 700, 205 730, 205 730" fill="none" stroke="#1D5B33" stroke-width="12" stroke-linecap="round" />
+
+  <!-- Leaves -->
+  <!-- Leaf 1 -->
+  <path d="M 194 380 C 140 350, 80 400, 110 430 C 140 460, 180 410, 194 380" fill="#43AA68" />
+  <path d="M 194 380 C 160 380, 120 420, 110 430" fill="none" stroke="#2B7F49" stroke-width="4" stroke-linecap="round" />
+  
+  <!-- Leaf 2 -->
+  <path d="M 196 480 C 260 450, 310 490, 290 530 C 270 570, 210 510, 196 480" fill="#43AA68" />
+  <path d="M 196 480 C 230 480, 270 520, 290 530" fill="none" stroke="#2B7F49" stroke-width="4" stroke-linecap="round" />
+
+  <!-- Mason Jar -->
+  <!-- Jar Base (Back) -->
+  <path d="M 130 520 L 270 520 L 270 750 C 270 770, 250 780, 200 780 C 150 780, 130 770, 130 750 Z" fill="url(#glassGrad)" />
+  
+  <!-- Water Level -->
+  <path d="M 130 620 C 160 635, 240 635, 270 620 L 270 750 C 270 770, 250 780, 200 780 C 150 780, 130 770, 130 750 Z" fill="url(#waterGrad)" />
+  
+  <!-- Water surface ellipse -->
+  <ellipse cx="200" cy="620" rx="70" ry="12" fill="#99D9EA" fill-opacity="0.5" />
+  
+  <!-- Jar Rim / Neck -->
+  <rect x="150" y="490" width="100" height="30" rx="8" fill="#BCE3FA" fill-opacity="0.9" />
+  <rect x="145" y="495" width="110" height="8" rx="4" fill="#90C9EF" />
+  <rect x="145" y="508" width="110" height="8" rx="4" fill="#90C9EF" />
+  <ellipse cx="200" cy="490" rx="50" ry="10" fill="#E5F3FD" />
+  
+  <!-- Jar Highlights/Details (Corporate Memphis style usually uses simple shapes and bold accents) -->
+  <path d="M 145 540 L 145 740" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" />
+  <path d="M 255 640 L 255 720" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" />
+  
+  <!-- Orange Poppy Flower -->
+  <!-- Petals Back -->
+  <circle cx="160" cy="180" r="60" fill="#FF5E2A" />
+  <circle cx="240" cy="170" r="55" fill="#FF4500" />
+  <circle cx="200" cy="130" r="65" fill="#FF7F50" />
+  
+  <!-- Petals Front -->
+  <path d="M 200 250 C 130 250, 110 200, 150 170 C 170 155, 180 180, 200 190 C 220 180, 230 155, 250 170 C 290 200, 270 250, 200 250 Z" fill="#FF8C00" />
+  <circle cx="160" cy="210" r="45" fill="#FF6347" />
+  <circle cx="240" cy="210" r="45" fill="#FF6347" />
+  <circle cx="200" cy="220" r="50" fill="#FF4500" />
+  
+  <!-- Decorative abstract lines on petals (Memphis style) -->
+  <path d="M 160 140 Q 180 150 190 170" fill="none" stroke="#FFDAB9" stroke-width="4" stroke-linecap="round" />
+  <path d="M 240 140 Q 220 150 210 170" fill="none" stroke="#FFDAB9" stroke-width="4" stroke-linecap="round" />
+  <path d="M 170 240 Q 185 220 200 215" fill="none" stroke="#FFA07A" stroke-width="4" stroke-linecap="round" />
+  <path d="M 230 240 Q 215 220 200 215" fill="none" stroke="#FFA07A" stroke-width="4" stroke-linecap="round" />
+
+  <!-- Flower Center -->
+  <circle cx="200" cy="190" r="25" fill="#2C3E50" />
+  <!-- Stamen dots -->
+  <circle cx="185" cy="175" r="4" fill="#F1C40F" />
+  <circle cx="200" cy="170" r="5" fill="#F1C40F" />
+  <circle cx="215" cy="175" r="4" fill="#F1C40F" />
+  <circle cx="175" cy="190" r="4" fill="#F1C40F" />
+  <circle cx="225" cy="190" r="5" fill="#F1C40F" />
+  <circle cx="185" cy="205" r="4" fill="#F1C40F" />
+  <circle cx="200" cy="210" r="4" fill="#F1C40F" />
+  <circle cx="215" cy="205" r="4" fill="#F1C40F" />
+
+  <!-- Abstract Memphis accents -->
+  <circle cx="80" cy="150" r="10" fill="#3498DB" />
+  <path d="M 320 220 L 340 200 M 340 220 L 320 200" fill="none" stroke="#F1C40F" stroke-width="6" stroke-linecap="round" />
+  <rect x="70" y="550" width="15" height="15" rx="3" fill="#E74C3C" transform="rotate(45, 77, 557)" />
+  <circle cx="310" cy="400" r="8" fill="#9B59B6" />
+  <path d="M 300 650 Q 320 630 330 660 T 360 640" fill="none" stroke="#2ECC71" stroke-width="5" stroke-linecap="round" />
+  <circle cx="100" cy="300" r="6" fill="#F39C12" />
+
+</svg>

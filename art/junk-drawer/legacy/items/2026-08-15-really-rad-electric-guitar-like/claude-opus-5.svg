@@ -1,0 +1,229 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="130.0 -2.0 546.5 803.8">
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff00a8"/>
+      <stop offset="0.35" stop-color="#ff2d55"/>
+      <stop offset="0.6" stop-color="#ff8a00"/>
+      <stop offset="0.85" stop-color="#ffe600"/>
+      <stop offset="1" stop-color="#00e5ff"/>
+    </linearGradient>
+    <linearGradient id="gloss" x1="0" y1="0" x2="0.6" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.75"/>
+      <stop offset="0.35" stop-color="#ffffff" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="neck" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#2a1a12"/>
+      <stop offset="0.45" stop-color="#5a3a24"/>
+      <stop offset="0.75" stop-color="#3b2415"/>
+      <stop offset="1" stop-color="#1d120a"/>
+    </linearGradient>
+    <linearGradient id="chrome" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.3" stop-color="#c9d2da"/>
+      <stop offset="0.55" stop-color="#6e7b88"/>
+      <stop offset="0.8" stop-color="#e6ecf1"/>
+      <stop offset="1" stop-color="#8a97a3"/>
+    </linearGradient>
+    <linearGradient id="black" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3a3a44"/>
+      <stop offset="0.5" stop-color="#101015"/>
+      <stop offset="1" stop-color="#2a2a33"/>
+    </linearGradient>
+    <linearGradient id="string" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#f4f7fa"/>
+      <stop offset="1" stop-color="#9aa6b2"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ff00c8" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ff00c8" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="10"/>
+    </filter>
+    <filter id="shadow" x="-30%" y="-30%" width="180%" height="180%">
+      <feDropShadow dx="6" dy="10" stdDeviation="9" flood-color="#12001f" flood-opacity="0.55"/>
+    </filter>
+  </defs>
+
+  <g transform="rotate(-31 400 400)">
+
+    <!-- neon glow behind -->
+    <ellipse cx="230" cy="560" rx="230" ry="180" fill="url(#glow)" filter="url(#soft)"/>
+    <ellipse cx="640" cy="230" rx="180" ry="120" fill="url(#glow)" filter="url(#soft)"/>
+
+    <g filter="url(#shadow)">
+
+      <!-- NECK -->
+      <path d="M300 470 L672 98 L706 132 L334 504 Z" fill="url(#neck)"/>
+      <!-- fretboard highlight -->
+      <path d="M300 470 L672 98 L682 108 L310 480 Z" fill="#7a4f30" opacity="0.6"/>
+
+      <!-- frets -->
+      <g stroke="url(#chrome)" stroke-width="3.4" opacity="0.95">
+        <line x1="322" y1="452" x2="348" y2="478"/>
+        <line x1="352" y1="422" x2="378" y2="448"/>
+        <line x1="381" y1="393" x2="407" y2="419"/>
+        <line x1="409" y1="365" x2="435" y2="391"/>
+        <line x1="436" y1="338" x2="462" y2="364"/>
+        <line x1="462" y1="312" x2="488" y2="338"/>
+        <line x1="487" y1="287" x2="513" y2="313"/>
+        <line x1="511" y1="263" x2="537" y2="289"/>
+        <line x1="534" y1="240" x2="560" y2="266"/>
+        <line x1="556" y1="218" x2="582" y2="244"/>
+        <line x1="577" y1="197" x2="603" y2="223"/>
+        <line x1="597" y1="177" x2="623" y2="203"/>
+        <line x1="616" y1="158" x2="642" y2="184"/>
+        <line x1="634" y1="140" x2="660" y2="166"/>
+      </g>
+      <!-- inlays -->
+      <g fill="#f2f7ff" opacity="0.9">
+        <circle cx="379" cy="424" r="5.5"/>
+        <circle cx="434" cy="369" r="5.5"/>
+        <circle cx="485" cy="318" r="5.5"/>
+        <circle cx="532" cy="271" r="5.5"/>
+        <circle cx="597" cy="206" r="5"/>
+        <circle cx="612" cy="191" r="5"/>
+      </g>
+
+      <!-- HEADSTOCK (pointy 80s banana) -->
+      <path d="M672 98 L706 132 L800 92 L788 20 L716 42 Z" fill="url(#body)"/>
+      <path d="M672 98 L706 132 L800 92 L788 20 L716 42 Z" fill="url(#gloss)"/>
+      <path d="M672 98 L706 132 L800 92 L788 20 L716 42 Z" fill="none" stroke="#1a0018" stroke-width="4"/>
+
+      <!-- tuners -->
+      <g fill="url(#chrome)" stroke="#2b3138" stroke-width="2">
+        <circle cx="724" cy="60" r="9"/>
+        <circle cx="748" cy="52" r="9"/>
+        <circle cx="772" cy="44" r="9"/>
+        <circle cx="740" cy="104" r="9"/>
+        <circle cx="764" cy="96" r="9"/>
+        <circle cx="786" cy="86" r="9"/>
+      </g>
+      <!-- nut -->
+      <path d="M668 94 L710 136 L702 144 L660 102 Z" fill="#eae2d0" stroke="#5b503c" stroke-width="2"/>
+
+      <!-- BODY : superstrat with sharp horns -->
+      <path d="M300 470
+               C258 440 196 448 152 492
+               C104 540 92 610 118 662
+               C142 710 198 728 246 706
+               C288 688 300 646 328 630
+               C356 614 396 634 428 612
+               C468 584 470 526 440 486
+               C412 450 356 442 334 504
+               Z"
+            fill="url(#body)"/>
+      <path d="M300 470
+               C258 440 196 448 152 492
+               C104 540 92 610 118 662
+               C142 710 198 728 246 706
+               C288 688 300 646 328 630
+               C356 614 396 634 428 612
+               C468 584 470 526 440 486
+               C412 450 356 442 334 504
+               Z"
+            fill="url(#gloss)"/>
+      <path d="M300 470
+               C258 440 196 448 152 492
+               C104 540 92 610 118 662
+               C142 710 198 728 246 706
+               C288 688 300 646 328 630
+               C356 614 396 634 428 612
+               C468 584 470 526 440 486
+               C412 450 356 442 334 504
+               Z"
+            fill="none" stroke="#1a0018" stroke-width="5"/>
+
+      <!-- lightning bolt graphic -->
+      <path d="M232 512 L196 596 L232 590 L206 668 L288 574 L246 580 L282 512 Z"
+            fill="#0d0018" opacity="0.65"/>
+      <path d="M232 512 L196 596 L232 590 L206 668 L288 574 L246 580 L282 512 Z"
+            fill="none" stroke="#ffffff" stroke-width="3" opacity="0.85"/>
+
+      <!-- splatter accents -->
+      <g fill="#0d0018" opacity="0.5">
+        <circle cx="160" cy="640" r="9"/>
+        <circle cx="140" cy="600" r="5"/>
+        <circle cx="176" cy="686" r="6"/>
+        <circle cx="330" cy="600" r="7"/>
+        <circle cx="360" cy="560" r="4"/>
+      </g>
+      <g fill="#ffffff" opacity="0.55">
+        <circle cx="200" cy="700" r="5"/>
+        <circle cx="300" cy="666" r="4"/>
+        <circle cx="120" cy="580" r="4"/>
+      </g>
+
+      <!-- pickguard-less: humbucker pickups -->
+      <g transform="rotate(45 0 0)">
+        <g id="pu"/>
+      </g>
+
+      <!-- bridge humbucker -->
+      <g transform="translate(300 566) rotate(-45)">
+        <rect x="-30" y="-16" width="60" height="32" rx="4" fill="url(#black)" stroke="#000" stroke-width="2"/>
+        <g fill="url(#chrome)">
+          <circle cx="-20" cy="-7" r="3.6"/><circle cx="-8" cy="-7" r="3.6"/><circle cx="4" cy="-7" r="3.6"/>
+          <circle cx="16" cy="-7" r="3.6"/>
+          <circle cx="-20" cy="7" r="3.6"/><circle cx="-8" cy="7" r="3.6"/><circle cx="4" cy="7" r="3.6"/>
+          <circle cx="16" cy="7" r="3.6"/>
+        </g>
+      </g>
+      <!-- neck humbucker -->
+      <g transform="translate(372 494) rotate(-45)">
+        <rect x="-30" y="-16" width="60" height="32" rx="4" fill="url(#black)" stroke="#000" stroke-width="2"/>
+        <g fill="url(#chrome)">
+          <circle cx="-20" cy="-7" r="3.6"/><circle cx="-8" cy="-7" r="3.6"/><circle cx="4" cy="-7" r="3.6"/>
+          <circle cx="16" cy="-7" r="3.6"/>
+          <circle cx="-20" cy="7" r="3.6"/><circle cx="-8" cy="7" r="3.6"/><circle cx="4" cy="7" r="3.6"/>
+          <circle cx="16" cy="7" r="3.6"/>
+        </g>
+      </g>
+
+      <!-- floyd rose bridge -->
+      <g transform="translate(238 628) rotate(-45)">
+        <rect x="-34" y="-13" width="68" height="26" rx="3" fill="url(#chrome)" stroke="#3a444e" stroke-width="2"/>
+        <g stroke="#4a555f" stroke-width="2">
+          <line x1="-22" y1="-13" x2="-22" y2="13"/>
+          <line x1="-12" y1="-13" x2="-12" y2="13"/>
+          <line x1="-2" y1="-13" x2="-2" y2="13"/>
+          <line x1="8" y1="-13" x2="8" y2="13"/>
+          <line x1="18" y1="-13" x2="18" y2="13"/>
+        </g>
+      </g>
+      <!-- whammy bar -->
+      <path d="M212 654 C176 668 156 700 158 736" fill="none" stroke="url(#chrome)" stroke-width="9" stroke-linecap="round"/>
+      <circle cx="158" cy="738" r="9" fill="#e8eef3" stroke="#6b7580" stroke-width="2"/>
+
+      <!-- knobs -->
+      <g>
+        <circle cx="300" cy="662" r="15" fill="url(#chrome)" stroke="#333" stroke-width="2"/>
+        <line x1="300" y1="662" x2="300" y2="650" stroke="#222" stroke-width="3"/>
+        <circle cx="336" cy="626" r="13" fill="url(#chrome)" stroke="#333" stroke-width="2"/>
+        <line x1="336" y1="626" x2="345" y2="618" stroke="#222" stroke-width="3"/>
+      </g>
+      <!-- jack -->
+      <circle cx="392" cy="580" r="11" fill="url(#chrome)" stroke="#333" stroke-width="2"/>
+      <circle cx="392" cy="580" r="4.5" fill="#12141a"/>
+
+      <!-- STRINGS -->
+      <g stroke="url(#string)" stroke-linecap="round">
+        <line x1="226" y1="616" x2="670" y2="80" stroke-width="2.6"/>
+        <line x1="232" y1="622" x2="678" y2="88" stroke-width="2.3"/>
+        <line x1="238" y1="628" x2="686" y2="96" stroke-width="2"/>
+        <line x1="244" y1="634" x2="694" y2="104" stroke-width="1.8"/>
+        <line x1="250" y1="640" x2="702" y2="112" stroke-width="1.6"/>
+        <line x1="256" y1="646" x2="710" y2="120" stroke-width="1.4"/>
+      </g>
+
+    </g>
+
+    <!-- sparkles -->
+    <g fill="#ffffff" opacity="0.9">
+      <path d="M470 400 l6 18 18 6 -18 6 -6 18 -6 -18 -18 -6 18 -6 z"/>
+      <path d="M150 470 l4 12 12 4 -12 4 -4 12 -4 -12 -12 -4 12 -4 z"/>
+      <path d="M690 180 l4 12 12 4 -12 4 -4 12 -4 -12 -12 -4 12 -4 z"/>
+    </g>
+  </g>
+</svg>

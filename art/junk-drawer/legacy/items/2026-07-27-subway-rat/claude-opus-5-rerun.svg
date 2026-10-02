@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="11.5 82.5 616.2 230.8">
+  <defs>
+    <radialGradient id="bodyShade" cx="40%" cy="35%" r="75%">
+      <stop offset="0%" stop-color="#8d8f96"/>
+      <stop offset="60%" stop-color="#6e7079"/>
+      <stop offset="100%" stop-color="#53555e"/>
+    </radialGradient>
+    <radialGradient id="headShade" cx="45%" cy="35%" r="75%">
+      <stop offset="0%" stop-color="#94969d"/>
+      <stop offset="100%" stop-color="#5f616a"/>
+    </radialGradient>
+    <radialGradient id="earShade" cx="45%" cy="45%" r="70%">
+      <stop offset="0%" stop-color="#f0a8ad"/>
+      <stop offset="100%" stop-color="#c4767f"/>
+    </radialGradient>
+    <linearGradient id="tailGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#7a7c85"/>
+      <stop offset="100%" stop-color="#d8a3a8"/>
+    </linearGradient>
+  </defs>
+
+  <!-- TAIL -->
+  <path d="M104 214 C 40 210, 18 168, 46 132 C 66 106, 106 104, 126 124"
+        fill="none" stroke="#3a3b42" stroke-width="17" stroke-linecap="round"/>
+  <path d="M104 214 C 40 210, 18 168, 46 132 C 66 106, 106 104, 126 124"
+        fill="none" stroke="url(#tailGrad)" stroke-width="11" stroke-linecap="round"/>
+
+  <!-- BACK LEG (far) -->
+  <path d="M186 216 C 166 244, 150 258, 128 262 L 132 278 C 168 280, 196 262, 208 236 Z"
+        fill="#4c4e56" stroke="#2f3037" stroke-width="7" stroke-linejoin="round"/>
+
+  <!-- FRONT LEG (far) -->
+  <path d="M330 222 C 340 248, 336 262, 322 274 L 338 282 C 362 268, 368 244, 360 218 Z"
+        fill="#4c4e56" stroke="#2f3037" stroke-width="7" stroke-linejoin="round"/>
+
+  <!-- BODY -->
+  <path d="M118 196
+           C 112 148, 158 108, 218 104
+           C 268 100, 316 116, 352 140
+           C 380 158, 402 166, 424 160
+           L 430 206
+           C 400 232, 340 246, 276 244
+           C 200 242, 128 232, 118 196 Z"
+        fill="url(#bodyShade)" stroke="#2f3037" stroke-width="8" stroke-linejoin="round"/>
+
+  <!-- belly highlight -->
+  <path d="M160 220 C 210 246, 300 250, 372 226 C 320 244, 216 244, 160 220 Z"
+        fill="#a9abb2" opacity="0.5"/>
+
+  <!-- HEAD -->
+  <path d="M400 132
+           C 452 118, 508 130, 548 158
+           C 578 178, 600 192, 616 196
+           C 606 210, 588 214, 566 210
+           C 556 224, 524 234, 486 230
+           C 436 224, 400 196, 396 166 Z"
+        fill="url(#headShade)" stroke="#2f3037" stroke-width="8" stroke-linejoin="round"/>
+
+  <!-- EAR -->
+  <ellipse cx="446" cy="132" rx="34" ry="31" fill="url(#earShade)" stroke="#2f3037" stroke-width="8"/>
+  <ellipse cx="448" cy="134" rx="16" ry="14" fill="#a9636c" opacity="0.55"/>
+
+  <!-- cheek fur tuft -->
+  <path d="M470 224 c 10 8 26 10 38 4" fill="none" stroke="#2f3037" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- NOSE -->
+  <ellipse cx="610" cy="196" rx="13" ry="10" fill="#e8848f" stroke="#2f3037" stroke-width="6" transform="rotate(12 610 196)"/>
+  <ellipse cx="606" cy="192" rx="4" ry="3" fill="#ffd0d6" opacity="0.8"/>
+
+  <!-- WHISKERS -->
+  <g stroke="#2f3037" stroke-width="3.5" stroke-linecap="round" fill="none" opacity="0.85">
+    <path d="M596 206 C 560 226, 540 240, 522 254"/>
+    <path d="M598 212 C 566 236, 552 254, 544 272"/>
+    <path d="M592 186 C 556 186, 534 178, 516 166"/>
+  </g>
+
+  <!-- MOUTH / sneaky grin -->
+  <path d="M576 212 C 560 226, 536 228, 522 218" fill="none" stroke="#2f3037" stroke-width="5.5" stroke-linecap="round"/>
+  <path d="M552 224 l 6 12 6 -13" fill="#ffffff" stroke="#2f3037" stroke-width="3" stroke-linejoin="round"/>
+
+  <!-- BROWS (sneaky) -->
+  <path d="M486 138 C 508 128, 530 130, 546 140" fill="none" stroke="#2f3037" stroke-width="7" stroke-linecap="round"/>
+  <path d="M546 148 C 566 144, 582 148, 592 156" fill="none" stroke="#2f3037" stroke-width="7" stroke-linecap="round"/>
+
+  <!-- GOOGLY EYES -->
+  <g>
+    <circle cx="518" cy="170" r="27" fill="#ffffff" stroke="#2f3037" stroke-width="6"/>
+    <circle cx="570" cy="176" r="23" fill="#ffffff" stroke="#2f3037" stroke-width="6"/>
+    <circle cx="528" cy="180" r="11" fill="#16171b"/>
+    <circle cx="578" cy="185" r="9.5" fill="#16171b"/>
+    <circle cx="524" cy="176" r="3.4" fill="#fff"/>
+    <circle cx="574" cy="181" r="3" fill="#fff"/>
+  </g>
+
+  <!-- NEAR BACK LEG (scampering) -->
+  <path d="M212 208
+           C 196 252, 176 274, 148 286
+           C 138 290, 138 300, 150 302
+           C 190 300, 224 274, 244 236 Z"
+        fill="#787a83" stroke="#2f3037" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M150 288 c -14 2 -26 8 -32 16 c 14 6 30 6 42 0" fill="#c8949a" stroke="#2f3037" stroke-width="6" stroke-linejoin="round"/>
+
+  <!-- NEAR FRONT LEG (reaching forward, mid-scamper) -->
+  <path d="M352 214
+           C 372 244, 386 264, 406 276
+           C 416 282, 412 292, 400 292
+           C 370 288, 344 264, 328 232 Z"
+        fill="#787a83" stroke="#2f3037" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M402 280 c 14 2 26 8 30 16 c -14 6 -30 6 -42 0" fill="#c8949a" stroke="#2f3037" stroke-width="6" stroke-linejoin="round"/>
+
+  <!-- fur spikes along back -->
+  <path d="M232 106 l 10 -14 4 15 M270 100 l 12 -13 2 15 M310 110 l 13 -11 0 15"
+        fill="none" stroke="#2f3037" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+
+  <!-- motion swooshes -->
+  <g stroke="#2f3037" stroke-width="5" stroke-linecap="round" fill="none" opacity="0.55">
+    <path d="M30 250 h 62"/>
+    <path d="M52 278 h 46"/>
+    <path d="M16 222 h 40"/>
+  </g>
+</svg>

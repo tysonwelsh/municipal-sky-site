@@ -1,0 +1,223 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800">
+  <defs>
+    <!-- Paper-like grey background using subtle noise-like texture -->
+    <pattern id="paperTexture" patternUnits="userSpaceOnUse" width="40" height="40">
+      <rect width="40" height="40" fill="#d0d0d0"/>
+      <circle cx="5" cy="7" r="0.6" fill="#b8b8b8"/>
+      <circle cx="12" cy="16" r="0.7" fill="#c2c2c2"/>
+      <circle cx="23" cy="9" r="0.5" fill="#b0b0b0"/>
+      <circle cx="32" cy="28" r="0.6" fill="#c5c5c5"/>
+      <circle cx="18" cy="32" r="0.5" fill="#b5b5b5"/>
+      <circle cx="8" cy="26" r="0.5" fill="#bfbfbf"/>
+      <circle cx="28" cy="5" r="0.5" fill="#b9b9b9"/>
+      <circle cx="36" cy="18" r="0.5" fill="#b3b3b3"/>
+      <circle cx="4" cy="35" r="0.4" fill="#b9b9b9"/>
+      <circle cx="20" cy="22" r="0.4" fill="#b1b1b1"/>
+    </pattern>
+
+    <!-- Lofi ink fill: black with slight variation via overlapping translucent shapes -->
+    <pattern id="inkFill" patternUnits="userSpaceOnUse" width="6" height="6">
+      <rect width="6" height="6" fill="#000"/>
+      <circle cx="1" cy="1" r="0.4" fill="#111" opacity="0.5"/>
+      <circle cx="4" cy="3" r="0.4" fill="#111" opacity="0.5"/>
+      <circle cx="2" cy="5" r="0.4" fill="#111" opacity="0.5"/>
+    </pattern>
+
+    <!-- Trigram bar: solid line -->
+    <symbol id="solidBar" viewBox="-25 -4 50 8">
+      <rect x="-25" y="-3" width="50" height="6" fill="black"/>
+    </symbol>
+
+    <!-- Trigram bar: broken line -->
+    <symbol id="brokenBar" viewBox="-25 -4 50 8">
+      <rect x="-25" y="-3" width="18" height="6" fill="black"/>
+      <rect x="7" y="-3" width="18" height="6" fill="black"/>
+    </symbol>
+
+    <!-- Octagon path generator (unit, centered) -->
+    <polygon id="unitOct" points="
+      1,0
+      0.707,0.707
+      0,1
+      -0.707,0.707
+      -1,0
+      -0.707,-0.707
+      0,-1
+      0.707,-0.707
+    "/>
+  </defs>
+
+  <!-- Background -->
+  <rect x="0" y="0" width="800" height="800" fill="url(#paperTexture)"/>
+
+  <!-- Slight vignette for antique/lofi feel -->
+  <radialGradient id="vignette" cx="50%" cy="50%" r="70%">
+    <stop offset="70%" stop-color="black" stop-opacity="0"/>
+    <stop offset="100%" stop-color="black" stop-opacity="0.22"/>
+  </radialGradient>
+  <rect x="0" y="0" width="800" height="800" fill="url(#vignette)"/>
+
+  <!-- Outer octagonal ring -->
+  <g transform="translate(400,400)">
+    <!-- Outer and inner radii -->
+    <g id="octRing">
+      <!-- Outer octagon -->
+      <use href="#unitOct" transform="scale(320)" fill="none" stroke="#111" stroke-width="6"/>
+      <!-- Inner octagon -->
+      <use href="#unitOct" transform="scale(230)" fill="none" stroke="#111" stroke-width="4"/>
+    </g>
+
+    <!-- Slight mis-registration lines for old print look -->
+    <g opacity="0.3">
+      <use href="#unitOct" transform="scale(320.5) translate(0.004,-0.006)" fill="none" stroke="#000" stroke-width="2"/>
+      <use href="#unitOct" transform="scale(229.2) translate(-0.005,0.004)" fill="none" stroke="#000" stroke-width="1.5"/>
+    </g>
+
+    <!-- Function to draw a trigram block at a given angle -->
+    <!-- We manually place 8 groups, each at 45° increments -->
+    <!-- Each group: trigram bars + Chinese character -->
+
+    <!-- 0°: South – 離 (Li, Fire): ☲ = solid, broken, solid -->
+    <g transform="rotate(0)">
+      <!-- Position at mid of ring -->
+      <g transform="translate(0,-275)">
+        <!-- Trigram bars, bottom to top -->
+        <use href="#solidBar" transform="translate(0,20)" fill="black"/>
+        <use href="#brokenBar" transform="translate(0,0)" fill="black"/>
+        <use href="#solidBar" transform="translate(0,-20)" fill="black"/>
+        <!-- Character below -->
+        <text x="0" y="50" text-anchor="middle" font-family="serif" font-size="32" fill="#000" letter-spacing="1">
+          離
+        </text>
+      </g>
+    </g>
+
+    <!-- 45°: Southwest – 坤 (Kun, Earth): ☷ = broken, broken, broken -->
+    <g transform="rotate(45)">
+      <g transform="translate(0,-275)">
+        <use href="#brokenBar" transform="translate(0,20)" fill="black"/>
+        <use href="#brokenBar" transform="translate(0,0)" fill="black"/>
+        <use href="#brokenBar" transform="translate(0,-20)" fill="black"/>
+        <text x="0" y="50" text-anchor="middle" font-family="serif" font-size="32" fill="#000">
+          坤
+        </text>
+      </g>
+    </g>
+
+    <!-- 90°: West – 兌 (Dui, Lake): ☱ = broken, solid, solid -->
+    <g transform="rotate(90)">
+      <g transform="translate(0,-275)">
+        <use href="#brokenBar" transform="translate(0,20)" fill="black"/>
+        <use href="#solidBar" transform="translate(0,0)" fill="black"/>
+        <use href="#solidBar" transform="translate(0,-20)" fill="black"/>
+        <text x="0" y="50" text-anchor="middle" font-family="serif" font-size="32" fill="#000">
+          兌
+        </text>
+      </g>
+    </g>
+
+    <!-- 135°: Northwest – 乾 (Qian, Heaven): ☰ = solid, solid, solid -->
+    <g transform="rotate(135)">
+      <g transform="translate(0,-275)">
+        <use href="#solidBar" transform="translate(0,20)" fill="black"/>
+        <use href="#solidBar" transform="translate(0,0)" fill="black"/>
+        <use href="#solidBar" transform="translate(0,-20)" fill="black"/>
+        <text x="0" y="50" text-anchor="middle" font-family="serif" font-size="32" fill="#000">
+          乾
+        </text>
+      </g>
+    </g>
+
+    <!-- 180°: North – 坎 (Kan, Water): ☵ = solid, broken, solid -->
+    <g transform="rotate(180)">
+      <g transform="translate(0,-275)">
+        <use href="#solidBar" transform="translate(0,20)" fill="black"/>
+        <use href="#brokenBar" transform="translate(0,0)" fill="black"/>
+        <use href="#solidBar" transform="translate(0,-20)" fill="black"/>
+        <text x="0" y="50" text-anchor="middle" font-family="serif" font-size="32" fill="#000">
+          坎
+        </text>
+      </g>
+    </g>
+
+    <!-- 225°: Northeast – 艮 (Gen, Mountain): ☶ = broken, broken, solid -->
+    <g transform="rotate(225)">
+      <g transform="translate(0,-275)">
+        <use href="#brokenBar" transform="translate(0,20)" fill="black"/>
+        <use href="#brokenBar" transform="translate(0,0)" fill="black"/>
+        <use href="#solidBar" transform="translate(0,-20)" fill="black"/>
+        <text x="0" y="50" text-anchor="middle" font-family="serif" font-size="32" fill="#000">
+          艮
+        </text>
+      </g>
+    </g>
+
+    <!-- 270°: East – 震 (Zhen, Thunder): ☳ = solid, broken, broken -->
+    <g transform="rotate(270)">
+      <g transform="translate(0,-275)">
+        <use href="#solidBar" transform="translate(0,20)" fill="black"/>
+        <use href="#brokenBar" transform="translate(0,0)" fill="black"/>
+        <use href="#brokenBar" transform="translate(0,-20)" fill="black"/>
+        <text x="0" y="50" text-anchor="middle" font-family="serif" font-size="32" fill="#000">
+          震
+        </text>
+      </g>
+    </g>
+
+    <!-- 315°: Southeast – 巽 (Xun, Wind/Wood): ☴ = broken, solid, broken -->
+    <g transform="rotate(315)">
+      <g transform="translate(0,-275)">
+        <use href="#brokenBar" transform="translate(0,20)" fill="black"/>
+        <use href="#solidBar" transform="translate(0,0)" fill="black"/>
+        <use href="#brokenBar" transform="translate(0,-20)" fill="black"/>
+        <text x="0" y="50" text-anchor="middle" font-family="serif" font-size="32" fill="#000">
+          巽
+        </text>
+      </g>
+    </g>
+
+    <!-- Inner separator circle to define yin-yang boundary -->
+    <circle cx="0" cy="0" r="150" fill="none" stroke="#000" stroke-width="4" opacity="0.95"/>
+    <circle cx="0" cy="0" r="146" fill="none" stroke="#000" stroke-width="1.5" opacity="0.5"/>
+
+    <!-- Yin-Yang symbol -->
+    <!-- White and black halves -->
+    <path d="
+      M 0,-150
+      A 150,150 0 0 1 0,150
+      A 75,75 0 0 0 0,0
+      A 75,75 0 0 1 0,-150
+      Z
+    " fill="#fff"/>
+    <path d="
+      M 0,150
+      A 150,150 0 0 1 0,-150
+      A 75,75 0 0 0 0,0
+      A 75,75 0 0 1 0,150
+      Z
+    " fill="url(#inkFill)"/>
+
+    <!-- Small circles (eyes) -->
+    <circle cx="0" cy="-75" r="16" fill="url(#inkFill)"/>
+    <circle cx="0" cy="75" r="16" fill="#fff"/>
+
+    <!-- A touch of irregularity to age the yin-yang -->
+    <circle cx="2" cy="-75" r="16" fill="#000" opacity="0.18"/>
+    <circle cx="-2" cy="75" r="16" fill="#000" opacity="0.08"/>
+
+    <!-- Slight overall distress: random speckles over central area -->
+    <g opacity="0.16">
+      <circle cx="-60" cy="-40" r="2" fill="#000"/>
+      <circle cx="45" cy="20" r="1.6" fill="#000"/>
+      <circle cx="-15" cy="70" r="1.4" fill="#000"/>
+      <circle cx="70" cy="-80" r="1.2" fill="#000"/>
+      <circle cx="-90" cy="30" r="1.8" fill="#000"/>
+      <circle cx="20" cy="-110" r="1.5" fill="#000"/>
+    </g>
+  </g>
+
+  <!-- Global subtle grain overlay -->
+  <g opacity="0.22">
+    <rect x="0" y="0" width="800" height="800" fill="url(#paperTexture)" />
+  </g>
+</svg>

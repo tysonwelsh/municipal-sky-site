@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="41.5 15.2 309.8 176.0">
+  <defs>
+    <linearGradient id="boneFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fffdf3"/>
+      <stop offset="0.45" stop-color="#f5eeda"/>
+      <stop offset="1" stop-color="#ddd0b0"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <g transform="rotate(-12 200 120)">
+    <!-- bone body: two knobbed ends joined by a shaft -->
+    <path d="M96 42
+             c26 0 42 16 42 33
+             c0 7-2 12-5 16
+             h134
+             c-3-4-5-9-5-16
+             c0-17 16-33 42-33
+             c25 0 43 17 43 38
+             c0 9-3 17-9 23
+             c6 6 9 14 9 23
+             c0 21-18 38-43 38
+             c-26 0-42-16-42-33
+             c0-7 2-12 5-16
+             H133
+             c3 4 5 9 5 16
+             c0 17-16 33-42 33
+             c-25 0-43-17-43-38
+             c0-9 3-17 9-23
+             c-6-6-9-14-9-23
+             c0-21 18-38 43-38 z"
+          fill="url(#boneFill)" stroke="#3b2f22" stroke-width="7" stroke-linejoin="round"/>
+
+    <!-- soft top highlight -->
+    <path d="M96 55
+             c19 0 30 11 30 22
+             c0 5-2 9-5 12
+             h158
+             c-3-3-5-7-5-12
+             c0-11 11-22 30-22
+             c18 0 31 12 31 26
+             c0 4-1 8-3 11
+             H68
+             c-2-3-3-7-3-11
+             c0-14 13-26 31-26 z"
+          fill="url(#shine)" opacity="0.75"/>
+
+    <!-- knob crease lines -->
+    <path d="M110 90 c-8 6-8 24 0 30" fill="none" stroke="#c9b891" stroke-width="6" stroke-linecap="round"/>
+    <path d="M290 90 c8 6 8 24 0 30" fill="none" stroke="#c9b891" stroke-width="6" stroke-linecap="round"/>
+
+    <!-- subtle shading along bottom of shaft -->
+    <path d="M140 143 h120" fill="none" stroke="#c9b891" stroke-width="7" stroke-linecap="round" opacity="0.7"/>
+  </g>
+</svg>

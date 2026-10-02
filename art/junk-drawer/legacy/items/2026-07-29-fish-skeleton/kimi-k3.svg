@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 58 788 300">
+    <!-- dark underlay strokes (outline) for bones -->
+    <g fill="none" stroke="#33302a" stroke-linecap="round">
+      <g stroke-width="16">
+        <path d="M60 140 L18 72"/>
+        <path d="M60 140 L12 106"/>
+        <path d="M60 140 L10 142"/>
+        <path d="M60 140 L14 178"/>
+        <path d="M60 140 L28 210"/>
+      </g>
+      <g stroke-width="17">
+        <path d="M146 155 Q122 200 146 245"/>
+        <path d="M199 150 Q175 220 199 290"/>
+        <path d="M253 146 Q229 234 253 322"/>
+        <path d="M308 141 Q284 241 308 341"/>
+        <path d="M364 138 Q340 242 364 346"/>
+        <path d="M420 135 Q396 235 420 335"/>
+        <path d="M476 133 Q452 221 476 309"/>
+        <path d="M531 129 Q507 199 531 269"/>
+      </g>
+      <path stroke-width="20" d="M60 140 C220 260 420 280 600 170"/>
+    </g>
+    <!-- cream bone strokes -->
+    <g fill="none" stroke="#f8f3e3" stroke-linecap="round">
+      <g stroke-width="8">
+        <path d="M60 140 L18 72"/>
+        <path d="M60 140 L12 106"/>
+        <path d="M60 140 L10 142"/>
+        <path d="M60 140 L14 178"/>
+        <path d="M60 140 L28 210"/>
+      </g>
+      <g stroke-width="9">
+        <path d="M146 155 Q122 200 146 245"/>
+        <path d="M199 150 Q175 220 199 290"/>
+        <path d="M253 146 Q229 234 253 322"/>
+        <path d="M308 141 Q284 241 308 341"/>
+        <path d="M364 138 Q340 242 364 346"/>
+        <path d="M420 135 Q396 235 420 335"/>
+        <path d="M476 133 Q452 221 476 309"/>
+        <path d="M531 129 Q507 199 531 269"/>
+      </g>
+      <path stroke-width="12" d="M60 140 C220 260 420 280 600 170"/>
+    </g>
+    <!-- bone knobs: rib tips, vertebrae, tail tips -->
+    <g fill="#f8f3e3" stroke="#33302a" stroke-width="5">
+      <circle cx="18" cy="72" r="7"/>
+      <circle cx="12" cy="106" r="7"/>
+      <circle cx="10" cy="142" r="7"/>
+      <circle cx="14" cy="178" r="7"/>
+      <circle cx="28" cy="210" r="7"/>
+      <circle cx="60" cy="140" r="9"/>
+      <circle cx="146" cy="155" r="8"/><circle cx="146" cy="245" r="8"/>
+      <circle cx="160" cy="200" r="8"/>
+      <circle cx="199" cy="150" r="8"/><circle cx="199" cy="290" r="8"/>
+      <circle cx="213" cy="220" r="8"/>
+      <circle cx="253" cy="146" r="8"/><circle cx="253" cy="322" r="8"/>
+      <circle cx="267" cy="234" r="8"/>
+      <circle cx="308" cy="141" r="8"/><circle cx="308" cy="341" r="8"/>
+      <circle cx="322" cy="241" r="8"/>
+      <circle cx="364" cy="138" r="8"/><circle cx="364" cy="346" r="8"/>
+      <circle cx="378" cy="242" r="8"/>
+      <circle cx="420" cy="135" r="8"/><circle cx="420" cy="335" r="8"/>
+      <circle cx="434" cy="235" r="8"/>
+      <circle cx="476" cy="133" r="8"/><circle cx="476" cy="309" r="8"/>
+      <circle cx="490" cy="221" r="8"/>
+      <circle cx="531" cy="129" r="8"/><circle cx="531" cy="269" r="8"/>
+      <circle cx="545" cy="199" r="8"/>
+    </g>
+    <!-- mouth interior behind head -->
+    <path d="M788 143 L708 164 Q698 185 714 201 L782 217 Z" fill="#4a4438"/>
+    <!-- fleshy fish head -->
+    <path d="M590 120 Q655 35 742 88 Q778 108 782 150 L715 168 Q705 185 718 196 L775 210 Q740 285 655 290 Q600 285 588 240 Q572 175 590 120 Z"
+          fill="#a3c26a" stroke="#33302a" stroke-width="7" stroke-linejoin="round"/>
+    <!-- gill -->
+    <path d="M615 128 Q592 195 610 258" fill="none" stroke="#33302a" stroke-width="6" stroke-linecap="round"/>
+    <!-- pectoral fin -->
+    <path d="M628 268 Q596 306 562 300 Q584 272 608 252 Z" fill="#86a84f" stroke="#33302a" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M600 262 Q584 282 572 292 M612 272 Q596 290 582 296" fill="none" stroke="#33302a" stroke-width="4" stroke-linecap="round"/>
+    <!-- X eyes (dead) -->
+    <g fill="none" stroke="#33302a" stroke-linecap="round">
+      <path stroke-width="8" d="M677 117 L713 153 M713 117 L677 153"/>
+      <path stroke-width="7" d="M627 89 L653 115 M653 89 L627 115"/>
+    </g>
+  </svg>

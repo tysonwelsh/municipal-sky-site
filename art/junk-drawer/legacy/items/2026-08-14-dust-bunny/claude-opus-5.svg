@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <radialGradient id="fur" cx="42%" cy="38%" r="68%">
+      <stop offset="0%" stop-color="#c9bda9"/>
+      <stop offset="45%" stop-color="#a89a86"/>
+      <stop offset="100%" stop-color="#6e6255"/>
+    </radialGradient>
+    <radialGradient id="halo" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#b8ab97" stop-opacity="0.55"/>
+      <stop offset="70%" stop-color="#b8ab97" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#b8ab97" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="eyeg" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#5a5148"/>
+      <stop offset="100%" stop-color="#25201b"/>
+    </radialGradient>
+  </defs>
+
+  <!-- soft dust halo -->
+  <ellipse cx="200" cy="205" rx="196" ry="180" fill="url(#halo)"/>
+
+  <!-- outer fuzz spikes -->
+  <g stroke="#8d8071" stroke-linecap="round" fill="none" opacity="0.85">
+    <g stroke-width="3">
+      <path d="M200 108 L196 20"/>
+      <path d="M232 114 L246 34"/>
+      <path d="M262 130 L318 62"/>
+      <path d="M290 158 L364 118"/>
+      <path d="M302 196 L392 190"/>
+      <path d="M294 236 L376 268"/>
+      <path d="M268 272 L330 336"/>
+      <path d="M232 296 L252 380"/>
+      <path d="M192 302 L182 388"/>
+      <path d="M150 292 L112 366"/>
+      <path d="M118 268 L48 320"/>
+      <path d="M100 232 L14 252"/>
+      <path d="M96 192 L8 178"/>
+      <path d="M110 152 L34 106"/>
+      <path d="M138 124 L88 50"/>
+      <path d="M168 110 L142 26"/>
+    </g>
+    <g stroke-width="1.8" opacity="0.65">
+      <path d="M214 110 L222 44"/>
+      <path d="M248 122 L286 60"/>
+      <path d="M278 144 L340 96"/>
+      <path d="M298 176 L378 152"/>
+      <path d="M300 216 L386 228"/>
+      <path d="M282 256 L348 302"/>
+      <path d="M252 284 L296 356"/>
+      <path d="M212 300 L220 382"/>
+      <path d="M172 300 L146 384"/>
+      <path d="M132 282 L78 344"/>
+      <path d="M108 250 L26 288"/>
+      <path d="M96 212 L10 214"/>
+      <path d="M102 170 L20 140"/>
+      <path d="M124 136 L62 74"/>
+      <path d="M152 116 L114 38"/>
+      <path d="M184 106 L168 22"/>
+    </g>
+  </g>
+
+  <!-- floating dust motes -->
+  <g fill="#9c907e" opacity="0.55">
+    <circle cx="40" cy="60" r="3"/>
+    <circle cx="360" cy="60" r="2.4"/>
+    <circle cx="374" cy="330" r="3.2"/>
+    <circle cx="30" cy="350" r="2.6"/>
+    <circle cx="200" cy="14" r="2"/>
+    <circle cx="14" cy="200" r="2.2"/>
+    <circle cx="386" cy="252" r="1.8"/>
+    <circle cx="316" cy="380" r="2.2"/>
+    <circle cx="70" cy="24" r="1.6"/>
+  </g>
+
+  <!-- body blob -->
+  <path d="M200 100
+           C258 100 302 138 304 190
+           C306 244 268 296 200 300
+           C132 296 94 244 96 190
+           C98 138 142 100 200 100 Z"
+        fill="url(#fur)"/>
+
+  <!-- inner fluff strands -->
+  <g stroke="#7d7263" stroke-width="2" fill="none" opacity="0.4" stroke-linecap="round">
+    <path d="M140 150 C160 168 158 196 142 214"/>
+    <path d="M258 152 C240 172 242 198 258 218"/>
+    <path d="M200 250 C182 260 168 254 158 244"/>
+    <path d="M200 252 C220 262 234 256 244 246"/>
+  </g>
+  <g stroke="#d3c8b6" stroke-width="1.6" fill="none" opacity="0.45" stroke-linecap="round">
+    <path d="M150 138 C170 130 190 132 204 140"/>
+    <path d="M126 176 C132 160 144 150 158 146"/>
+    <path d="M246 140 C262 150 272 164 276 178"/>
+  </g>
+
+  <!-- ears -->
+  <path d="M158 108 C152 74 158 44 170 30 C178 58 178 88 176 110 Z" fill="#9b8e7b"/>
+  <path d="M164 100 C161 76 165 56 171 46 C175 66 174 88 173 102 Z" fill="#c4b6a1" opacity="0.7"/>
+  <path d="M242 108 C248 74 242 44 230 30 C222 58 222 88 224 110 Z" fill="#9b8e7b"/>
+  <path d="M236 100 C239 76 235 56 229 46 C225 66 226 88 227 102 Z" fill="#c4b6a1" opacity="0.7"/>
+
+  <!-- face -->
+  <ellipse cx="170" cy="188" rx="13" ry="15" fill="url(#eyeg)"/>
+  <ellipse cx="232" cy="188" rx="13" ry="15" fill="url(#eyeg)"/>
+  <circle cx="165" cy="182" r="4.2" fill="#f2ece0" opacity="0.9"/>
+  <circle cx="227" cy="182" r="4.2" fill="#f2ece0" opacity="0.9"/>
+  <circle cx="175" cy="195" r="1.8" fill="#f2ece0" opacity="0.5"/>
+  <circle cx="237" cy="195" r="1.8" fill="#f2ece0" opacity="0.5"/>
+
+  <path d="M191 216 L211 216 L201 226 Z" fill="#5b4f45"/>
+  <path d="M201 226 L201 232 M201 232 C193 240 184 238 179 231 M201 232 C209 240 218 238 223 231"
+        stroke="#5b4f45" stroke-width="3" fill="none" stroke-linecap="round"/>
+
+  <!-- whiskers -->
+  <g stroke="#e0d6c5" stroke-width="1.6" fill="none" opacity="0.75" stroke-linecap="round">
+    <path d="M186 220 C160 214 138 212 118 216"/>
+    <path d="M186 226 C160 226 138 230 120 238"/>
+    <path d="M216 220 C242 214 264 212 284 216"/>
+    <path d="M216 226 C242 226 264 230 282 238"/>
+  </g>
+
+  <!-- little feet fluff -->
+  <ellipse cx="168" cy="292" rx="20" ry="12" fill="#8d8172" opacity="0.8"/>
+  <ellipse cx="234" cy="292" rx="20" ry="12" fill="#8d8172" opacity="0.8"/>
+</svg>

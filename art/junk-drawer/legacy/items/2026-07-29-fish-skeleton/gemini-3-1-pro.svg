@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="8.0 33.0 483.8 219.5">
+  <defs>
+    <!-- Bone Style -->
+    <style>
+      .outline { stroke: #1A1A1A; stroke-width: 10; stroke-linecap: round; stroke-linejoin: round; }
+      .bone { fill: #F4F4E8; }
+      .flesh { fill: #528989; }
+      .flesh-light { fill: #72A9A9; }
+      .mouth { fill: #2D4C4C; }
+    </style>
+  </defs>
+
+  <!-- Tail Bones -->
+  <path class="bone outline" d="M 430 160 C 460 90, 480 70, 485 75 C 475 100, 450 140, 455 160 C 450 180, 475 220, 485 245 C 480 250, 460 230, 430 160 Z" />
+  <path class="bone outline" d="M 425 160 C 445 110, 465 95, 470 100 C 455 130, 440 150, 440 160 C 440 170, 455 190, 470 220 C 465 225, 445 210, 425 160 Z" />
+
+  <!-- Spine -->
+  <path class="bone outline" d="M 150 145 Q 300 65, 440 150 L 440 170 Q 300 95, 150 175 Z" />
+
+  <!-- Ribs (Top) -->
+  <path class="bone outline" d="M 220 112 Q 220 50, 245 40 Q 235 60, 240 105 Z" />
+  <path class="bone outline" d="M 270 103 Q 285 50, 315 45 Q 295 65, 290 103 Z" />
+  <path class="bone outline" d="M 320 110 Q 345 65, 370 70 Q 355 85, 340 120 Z" />
+  <path class="bone outline" d="M 370 128 Q 395 95, 415 105 Q 400 115, 385 140 Z" />
+
+  <!-- Ribs (Bottom) -->
+  <path class="bone outline" d="M 215 142 Q 195 210, 215 235 Q 220 210, 235 134 Z" />
+  <path class="bone outline" d="M 265 132 Q 255 210, 280 245 Q 275 210, 285 130 Z" />
+  <path class="bone outline" d="M 315 132 Q 315 200, 345 225 Q 330 195, 335 136 Z" />
+  <path class="bone outline" d="M 365 142 Q 375 190, 400 205 Q 380 185, 380 152 Z" />
+
+  <!-- Fish Head Flesh Base -->
+  <!-- Ragged edge to show where flesh meets bone -->
+  <path class="flesh outline" d="M 160 85 C 100 60, 40 85, 20 135 C 10 165, 25 215, 75 230 C 115 242, 160 215, 175 195 C 185 180, 165 165, 175 155 C 185 145, 160 130, 175 115 C 185 105, 160 95, 160 85 Z" />
+  
+  <!-- Head Highlights/Details -->
+  <path class="flesh-light" d="M 155 95 C 105 75, 55 95, 35 135 C 45 100, 95 85, 145 105 Z" fill-opacity="0.6"/>
+  
+  <!-- Mouth / Dead expression -->
+  <path class="mouth outline" d="M 15 160 C 45 170, 75 165, 95 185 C 80 195, 50 185, 25 175 Z" />
+  
+  <!-- Teeth / Small bone details in mouth -->
+  <path class="bone outline" d="M 35 165 L 40 175 L 45 167 L 50 176 L 55 167 L 60 176 L 65 168 L 70 178 L 75 169" fill="none" stroke-width="6"/>
+
+  <!-- Dead Eye (White circle with X) -->
+  <circle cx="85" cy="120" r="28" fill="#FFF" class="outline" />
+  <path class="outline" d="M 70 105 L 100 135 M 100 105 L 70 135" stroke-width="8" fill="none"/>
+
+  <!-- Head fin -->
+  <path class="flesh outline" d="M 115 165 C 115 165, 145 195, 130 215 C 110 205, 95 185, 115 165 Z" />
+  
+  <!-- Scale details -->
+  <path class="outline" d="M 130 95 C 140 105, 140 115, 130 120" fill="none" stroke-width="6"/>
+  <path class="outline" d="M 145 130 C 155 140, 155 150, 145 155" fill="none" stroke-width="6"/>
+  <path class="outline" d="M 125 140 C 135 150, 135 160, 125 165" fill="none" stroke-width="6"/>
+</svg>

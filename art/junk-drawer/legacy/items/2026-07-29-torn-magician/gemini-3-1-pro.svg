@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="15.0 15.0 469.8 479.8">
+  <!-- Card Base with Ripped Bottom Edge -->
+  <path d="M 20,20 L 480,20 L 480,440 
+           L 460,425 L 440,455 L 415,425 L 390,470 
+           L 355,435 L 315,480 L 285,445 L 250,490 
+           L 220,445 L 180,480 L 145,435 L 115,470 
+           L 90,430 L 60,460 L 40,435 L 20,450 Z" 
+        fill="white" stroke="black" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+
+  <!-- Inner Border Line -->
+  <polyline points="40,445 40,40 460,40 460,435" 
+            fill="none" stroke="black" stroke-width="4" stroke-linejoin="round"/>
+
+  <!-- Roman Numeral I -->
+  <text x="250" y="85" font-family="sans-serif" font-size="45" font-weight="bold" text-anchor="middle" fill="white" stroke="black" stroke-width="4">I</text>
+
+  <!-- Magician's Robe & Torso -->
+  <path d="M 180,260 C 140,290 120,350 110,450 C 190,460 310,460 390,450 C 380,350 360,290 320,260 Z" 
+        fill="white" stroke="black" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M 250,260 L 250,470" fill="none" stroke="black" stroke-width="4"/>
+  <path d="M 180,260 L 250,330 L 320,260" fill="none" stroke="black" stroke-width="4"/>
+
+  <!-- Raised Right Arm (Left side of SVG) -->
+  <path d="M 190,265 C 150,230 110,180 120,130 C 140,120 170,160 200,210 Z" 
+        fill="white" stroke="black" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M 115,135 C 105,100 85,85 75,70 C 95,75 110,95 125,125" 
+        fill="white" stroke="black" stroke-width="4" stroke-linejoin="round"/>
+  <!-- Wand -->
+  <line x1="75" y1="105" x2="105" y2="40" stroke="black" stroke-width="8" stroke-linecap="round"/>
+  <!-- Hand -->
+  <circle cx="85" cy="95" r="12" fill="white" stroke="black" stroke-width="4"/>
+
+  <!-- Lowered Left Arm (Right side of SVG) -->
+  <path d="M 310,265 C 340,300 370,360 360,430 C 340,430 310,380 290,320 Z" 
+        fill="white" stroke="black" stroke-width="4" stroke-linejoin="round"/>
+
+  <!-- Head & Hair -->
+  <path d="M 200,200 C 190,140 310,140 300,200 C 310,260 190,260 200,200 Z" 
+        fill="white" stroke="black" stroke-width="4" stroke-linejoin="round"/>
+  <!-- Headband -->
+  <path d="M 202,175 Q 250,195 298,175" fill="none" stroke="black" stroke-width="4"/>
+  <!-- Face Details -->
+  <circle cx="230" cy="205" r="3" fill="black"/>
+  <circle cx="270" cy="205" r="3" fill="black"/>
+  <path d="M 250,215 L 250,225" fill="none" stroke="black" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 240,240 Q 250,250 260,240" fill="none" stroke="black" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Infinity Symbol (Lemniscate) -->
+  <path d="M 250,120 C 220,90 180,90 180,120 C 180,150 220,150 250,120 C 280,90 320,90 320,120 C 320,150 280,150 250,120 Z" 
+        fill="white" stroke="black" stroke-width="4" stroke-linejoin="round"/>
+
+  <!-- Table and Tarot Items Cut by Tear -->
+  <path d="M 60,430 L 440,430" fill="none" stroke="black" stroke-width="4"/>
+  
+  <!-- Chalice -->
+  <path d="M 150,380 L 190,380 L 180,410 C 170,440 170,440 170,450" fill="white" stroke="black" stroke-width="4" stroke-linejoin="round"/>
+  <line x1="150" y1="390" x2="190" y2="390" stroke="black" stroke-width="4"/>
+
+  <!-- Sword (Hilt) -->
+  <path d="M 280,410 L 340,370 L 350,380 L 290,420 Z" fill="white" stroke="black" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M 320,360 L 350,390" fill="none" stroke="black" stroke-width="4"/>
+
+  <!-- Floral Canopy (Roses and Leaves at Top) -->
+  <!-- Top Left Rose -->
+  <circle cx="90" cy="80" r="25" fill="white" stroke="black" stroke-width="4"/>
+  <path d="M 90,55 C 110,65 110,95 90,105 C 70,95 70,65 90,55 Z" fill="white" stroke="black" stroke-width="4" stroke-linejoin="round"/>
+  <circle cx="90" cy="80" r="8" fill="white" stroke="black" stroke-width="4"/>
+  <path d="M 115,80 Q 140,70 145,95 Q 120,100 115,80 Z" fill="white" stroke="black" stroke-width="4" stroke-linejoin="round"/>
+  
+  <!-- Top Right Rose -->
+  <circle cx="410" cy="90" r="30" fill="white" stroke="black" stroke-width="4"/>
+  <path d="M 410,60 C 435,70 435,110 410,120 C 385,110 385,70 410,60 Z" fill="white" stroke="black" stroke-width="4" stroke-linejoin="round"/>
+  <circle cx="410" cy="90" r="10" fill="white" stroke="black" stroke-width="4"/>
+  <path d="M 380,90 Q 350,80 345,105 Q 370,115 380,90 Z" fill="white" stroke="black" stroke-width="4" stroke-linejoin="round"/>
+
+  <!-- Additional Leaves -->
+  <path d="M 130,40 Q 160,50 170,30 Q 140,20 130,40 Z" fill="white" stroke="black" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M 370,40 Q 340,50 330,30 Q 360,20 370,40 Z" fill="white" stroke="black" stroke-width="4" stroke-linejoin="round"/>
+</svg>

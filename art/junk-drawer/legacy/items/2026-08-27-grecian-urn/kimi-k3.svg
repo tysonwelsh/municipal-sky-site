@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="66.0 31.5 167.8 370.2">
+  <defs>
+    <linearGradient id="clay" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#a8542a"/>
+      <stop offset="0.25" stop-color="#c96f3a"/>
+      <stop offset="0.5" stop-color="#e08a4c"/>
+      <stop offset="0.75" stop-color="#c96f3a"/>
+      <stop offset="1" stop-color="#a8542a"/>
+    </linearGradient>
+  </defs>
+  <!-- foot -->
+  <path d="M110 400 L118 372 Q150 366 182 372 L190 400 Z" fill="url(#clay)" stroke="#6e3416" stroke-width="3"/>
+  <rect x="106" y="394" width="88" height="6" rx="3" fill="#3a1d10"/>
+  <!-- body -->
+  <path d="M150 96
+           C 96 108, 66 160, 70 230
+           C 74 300, 104 350, 120 374
+           L 180 374
+           C 196 350, 226 300, 230 230
+           C 234 160, 204 108, 150 96 Z" fill="url(#clay)" stroke="#6e3416" stroke-width="3"/>
+  <!-- neck -->
+  <path d="M122 96 L118 56 Q150 48 182 56 L178 96 Z" fill="url(#clay)" stroke="#6e3416" stroke-width="3"/>
+  <!-- lip -->
+  <path d="M110 56 Q150 42 190 56 L186 40 Q150 30 114 40 Z" fill="url(#clay)" stroke="#6e3416" stroke-width="3"/>
+  <!-- handles -->
+  <path d="M118 60 C 78 74, 66 112, 78 148 C 70 116, 82 84, 122 74 Z" fill="#c96f3a" stroke="#6e3416" stroke-width="3"/>
+  <path d="M182 60 C 222 74, 234 112, 222 148 C 230 116, 218 84, 178 74 Z" fill="#c96f3a" stroke="#6e3416" stroke-width="3"/>
+  <!-- black-figure bands -->
+  <rect x="76" y="176" width="148" height="10" fill="#2b150a"/>
+  <rect x="72" y="238" width="156" height="10" fill="#2b150a"/>
+  <!-- figures in central panel -->
+  <g fill="#2b150a">
+    <!-- figure 1: draped standing figure -->
+    <circle cx="108" cy="196" r="7"/>
+    <path d="M100 205 Q108 200 116 205 L120 236 L96 236 Z"/>
+    <path d="M104 210 L92 222 L96 226 L107 216 Z"/>
+    <!-- figure 2: warrior with spear -->
+    <circle cx="150" cy="194" r="7"/>
+    <path d="M142 203 Q150 198 158 203 L160 236 L140 236 Z"/>
+    <rect x="164" y="188" width="3" height="50"/>
+    <path d="M163 186 L169 186 L166 180 Z"/>
+    <!-- figure 3: seated lyre player -->
+    <circle cx="192" cy="198" r="7"/>
+    <path d="M184 207 Q192 202 200 207 L202 236 L182 236 Z"/>
+    <path d="M198 210 Q212 208 212 220 Q212 228 202 226 L202 220 Q206 220 206 218 Q206 214 200 216 Z"/>
+  </g>
+  <!-- meander (Greek key) band above figures -->
+  <g fill="none" stroke="#2b150a" stroke-width="3">
+    <path d="M84 168 L84 158 L96 158 L96 164 L90 164"/>
+    <path d="M104 168 L104 158 L116 158 L116 164 L110 164"/>
+    <path d="M124 168 L124 158 L136 158 L136 164 L130 164"/>
+    <path d="M144 168 L144 158 L156 158 L156 164 L150 164"/>
+    <path d="M164 168 L164 158 L176 158 L176 164 L170 164"/>
+    <path d="M184 168 L184 158 L196 158 L196 164 L190 164"/>
+    <path d="M204 168 L204 158 L216 158 L216 164 L210 164"/>
+  </g>
+  <!-- rays / petals above foot -->
+  <g fill="#2b150a">
+    <path d="M96 330 L104 306 L110 330 Z"/>
+    <path d="M118 334 L126 308 L132 334 Z"/>
+    <path d="M140 336 L148 310 L154 336 Z"/>
+    <path d="M162 334 L170 308 L176 334 Z"/>
+    <path d="M184 330 L192 306 L198 330 Z"/>
+  </g>
+  <!-- neck palmette decoration -->
+  <g fill="#2b150a">
+    <path d="M150 88 Q142 72 150 60 Q158 72 150 88 Z"/>
+    <path d="M134 86 Q128 74 134 66 Q140 76 136 86 Z"/>
+    <path d="M166 86 Q172 74 166 66 Q160 76 164 86 Z"/>
+  </g>
+  <rect x="120" y="92" width="60" height="4" fill="#2b150a"/>
+  <!-- highlight -->
+  <path d="M96 130 C 84 170, 84 250, 100 310 C 88 250, 88 175, 100 132 Z" fill="#f2b887" opacity="0.55"/>
+</svg>

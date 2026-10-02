@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 520">
+  <defs>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#dff0f5" stop-opacity="0.85"/>
+      <stop offset="0.5" stop-color="#b9dce8" stop-opacity="0.6"/>
+      <stop offset="1" stop-color="#e8f6fa" stop-opacity="0.75"/>
+    </linearGradient>
+    <linearGradient id="frameG" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#f3ece0"/>
+      <stop offset="0.45" stop-color="#e2d7c4"/>
+      <stop offset="1" stop-color="#c9bba3"/>
+    </linearGradient>
+    <linearGradient id="sashG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fbf7ef"/>
+      <stop offset="1" stop-color="#d8ccb6"/>
+    </linearGradient>
+    <linearGradient id="openG" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#cbe4ee" stop-opacity="0.75"/>
+      <stop offset="1" stop-color="#f0f8fb" stop-opacity="0.45"/>
+    </linearGradient>
+  </defs>
+
+  <!-- outer frame -->
+  <rect x="8" y="8" width="384" height="504" rx="6" fill="url(#frameG)" stroke="#a8977c" stroke-width="3"/>
+  <rect x="26" y="26" width="348" height="468" fill="#bfae92" stroke="#8f7f66" stroke-width="2"/>
+  <rect x="32" y="32" width="336" height="456" fill="#f6f1e6"/>
+
+  <!-- inner reveal / dark depth -->
+  <rect x="40" y="40" width="320" height="440" fill="#6f6553" opacity="0.35"/>
+  <rect x="44" y="44" width="312" height="432" fill="#cfe3ea" opacity="0.5"/>
+
+  <!-- LEFT casement, swung open inward-left -->
+  <g>
+    <polygon points="44,44 44,476 12,506 12,14" fill="url(#sashG)" stroke="#9a8a70" stroke-width="2.5"/>
+    <polygon points="20,34 20,486 40,466 40,54" fill="url(#openG)" stroke="#9a8a70" stroke-width="2"/>
+    <line x1="20" y1="260" x2="40" y2="260" stroke="#9a8a70" stroke-width="2"/>
+    <line x1="30" y1="24" x2="30" y2="496" stroke="#9a8a70" stroke-width="1.6" opacity="0.5"/>
+    <path d="M22 60 L38 300 M22 300 L38 470" stroke="#ffffff" stroke-width="3" opacity="0.55"/>
+    <!-- handle -->
+    <path d="M40 258 L58 254 L58 268 L40 270 Z" fill="#a8804a" stroke="#6f5228" stroke-width="1.5"/>
+    <circle cx="60" cy="261" r="5" fill="#c9993f" stroke="#6f5228" stroke-width="1.5"/>
+  </g>
+
+  <!-- RIGHT casement, fixed / closed with panes -->
+  <g>
+    <rect x="176" y="44" width="184" height="432" fill="url(#glass)" stroke="#9a8a70" stroke-width="3"/>
+    <!-- muntins -->
+    <line x1="268" y1="44" x2="268" y2="476" stroke="#f2ecdf" stroke-width="7"/>
+    <line x1="268" y1="44" x2="268" y2="476" stroke="#a8977c" stroke-width="1.2"/>
+    <line x1="176" y1="188" x2="360" y2="188" stroke="#f2ecdf" stroke-width="7"/>
+    <line x1="176" y1="188" x2="360" y2="188" stroke="#a8977c" stroke-width="1.2"/>
+    <line x1="176" y1="332" x2="360" y2="332" stroke="#f2ecdf" stroke-width="7"/>
+    <line x1="176" y1="332" x2="360" y2="332" stroke="#a8977c" stroke-width="1.2"/>
+    <!-- glass sheen -->
+    <path d="M190 470 L300 50 L330 50 L220 470 Z" fill="#ffffff" opacity="0.28"/>
+    <path d="M240 470 L350 50 L364 50 L254 470 Z" fill="#ffffff" opacity="0.18"/>
+  </g>
+
+  <!-- open gap between sashes: dark opening -->
+  <rect x="44" y="44" width="132" height="432" fill="#9dc3d2" opacity="0.35"/>
+  <rect x="44" y="44" width="132" height="432" fill="none" stroke="#8f7f66" stroke-width="2"/>
+
+  <!-- center mullion / stop -->
+  <rect x="170" y="40" width="10" height="440" fill="url(#sashG)" stroke="#9a8a70" stroke-width="2"/>
+
+  <!-- sill -->
+  <rect x="4" y="480" width="392" height="20" rx="3" fill="#efe6d5" stroke="#a8977c" stroke-width="2.5"/>
+  <rect x="4" y="500" width="392" height="12" rx="3" fill="#d5c7ac" stroke="#a8977c" stroke-width="2.5"/>
+
+  <!-- curtain, right side, caught by air -->
+  <g opacity="0.9">
+    <path d="M356 46 C 372 130, 330 200, 348 268 C 364 336, 318 400, 340 476 L376 476 L376 46 Z"
+          fill="#f7f2ea" stroke="#cfbfa4" stroke-width="2"/>
+    <path d="M360 50 C 372 130, 336 200, 352 268 C 366 338, 326 404, 346 474"
+          fill="none" stroke="#dfd2ba" stroke-width="2"/>
+    <path d="M368 48 C 378 132, 348 202, 362 270 C 374 340, 340 406, 358 474"
+          fill="none" stroke="#dfd2ba" stroke-width="1.6"/>
+  </g>
+</svg>

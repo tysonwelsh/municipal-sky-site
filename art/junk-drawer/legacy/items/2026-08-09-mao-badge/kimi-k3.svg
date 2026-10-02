@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="silver" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f4f6f8"/>
+      <stop offset="0.35" stop-color="#c9ced4"/>
+      <stop offset="0.6" stop-color="#9aa1a9"/>
+      <stop offset="0.8" stop-color="#d6dbe0"/>
+      <stop offset="1" stop-color="#8a9098"/>
+    </linearGradient>
+    <linearGradient id="silverDark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7d838b"/>
+      <stop offset="0.5" stop-color="#e8ecf0"/>
+      <stop offset="1" stop-color="#6d737b"/>
+    </linearGradient>
+    <radialGradient id="redEnamel" cx="0.42" cy="0.38" r="0.75">
+      <stop offset="0" stop-color="#e8382a"/>
+      <stop offset="0.6" stop-color="#d42418"/>
+      <stop offset="1" stop-color="#a81610"/>
+    </radialGradient>
+    <radialGradient id="sheen" cx="0.3" cy="0.25" r="0.6">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.35"/>
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="inner">
+      <circle cx="100" cy="100" r="84"/>
+    </clipPath>
+  </defs>
+
+  <!-- faux silver border -->
+  <circle cx="100" cy="100" r="99" fill="url(#silverDark)"/>
+  <circle cx="100" cy="100" r="96" fill="url(#silver)"/>
+  <circle cx="100" cy="100" r="90" fill="none" stroke="#5f656d" stroke-width="2.5"/>
+  <circle cx="100" cy="100" r="87.5" fill="none" stroke="#f0f3f6" stroke-width="1.2"/>
+  <path d="M 100 4 A 96 96 0 0 1 183.6 52" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" opacity="0.8"/>
+  <path d="M 100 196 A 96 96 0 0 1 16.4 148" fill="none" stroke="#54595f" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/>
+
+  <!-- red enamel field -->
+  <circle cx="100" cy="100" r="84" fill="url(#redEnamel)"/>
+
+  <!-- sunburst rays -->
+  <g clip-path="url(#inner)" fill="#f0503c" opacity="0.85">
+    <path d="M100 100 L90 8 L110 8 Z"/>
+    <path d="M100 100 L90 8 L110 8 Z" transform="rotate(30 100 100)"/>
+    <path d="M100 100 L90 8 L110 8 Z" transform="rotate(60 100 100)"/>
+    <path d="M100 100 L90 8 L110 8 Z" transform="rotate(90 100 100)"/>
+    <path d="M100 100 L90 8 L110 8 Z" transform="rotate(120 100 100)"/>
+    <path d="M100 100 L90 8 L110 8 Z" transform="rotate(150 100 100)"/>
+    <path d="M100 100 L90 8 L110 8 Z" transform="rotate(180 100 100)"/>
+    <path d="M100 100 L90 8 L110 8 Z" transform="rotate(210 100 100)"/>
+    <path d="M100 100 L90 8 L110 8 Z" transform="rotate(240 100 100)"/>
+    <path d="M100 100 L90 8 L110 8 Z" transform="rotate(270 100 100)"/>
+    <path d="M100 100 L90 8 L110 8 Z" transform="rotate(300 100 100)"/>
+    <path d="M100 100 L90 8 L110 8 Z" transform="rotate(330 100 100)"/>
+  </g>
+  <g clip-path="url(#inner)" fill="#ff7a5c" opacity="0.45">
+    <path d="M100 100 L94 8 L106 8 Z" transform="rotate(15 100 100)"/>
+    <path d="M100 100 L94 8 L106 8 Z" transform="rotate(75 100 100)"/>
+    <path d="M100 100 L94 8 L106 8 Z" transform="rotate(135 100 100)"/>
+    <path d="M100 100 L94 8 L106 8 Z" transform="rotate(195 100 100)"/>
+    <path d="M100 100 L94 8 L106 8 Z" transform="rotate(255 100 100)"/>
+    <path d="M100 100 L94 8 L106 8 Z" transform="rotate(315 100 100)"/>
+  </g>
+
+  <!-- Mao profile relief, faux silver -->
+  <g clip-path="url(#inner)">
+    <path d="M 138 178
+             C 132 172 128 165 126 156
+             C 124 146 126 138 130 130
+             C 136 118 139 106 138 92
+             C 137 74 130 58 116 50
+             C 104 43 90 43 80 50
+             C 74 54 71 60 70 66
+             C 69 72 70 76 68 80
+             C 65 85 60 90 58 95
+             C 56 99 56 101 58 103
+             C 60 105 63 106 64 108
+             C 63 111 62 113 63 115
+             C 64 117 66 118 65 121
+             C 64 124 62 126 63 129
+             C 64 133 68 136 73 139
+             C 80 143 86 147 89 153
+             C 91 158 91 164 90 170
+             L 88 178 Z"
+          fill="url(#silver)" stroke="#61666d" stroke-width="2" stroke-linejoin="round"/>
+    <!-- collar -->
+    <path d="M 88 178 L 90 168 C 96 172 108 174 120 172 C 128 170 134 172 138 178 Z"
+          fill="#8f959d" stroke="#61666d" stroke-width="1.5"/>
+    <!-- relief highlight along brow, nose, lip -->
+    <path d="M 71 68 C 69 74 69 78 66 83 C 63 88 59 92 58 97"
+          fill="none" stroke="#f6f8fa" stroke-width="1.6" stroke-linecap="round" opacity="0.9"/>
+    <path d="M 64 117 C 65 119 65 121 64 124" fill="none" stroke="#f6f8fa" stroke-width="1.2" stroke-linecap="round" opacity="0.8"/>
+    <!-- hair sheen -->
+    <path d="M 82 52 C 94 46 108 47 118 55" fill="none" stroke="#eef1f4" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+    <!-- ear hint -->
+    <path d="M 104 96 C 108 94 111 97 110 102 C 109 106 106 108 103 107" fill="none" stroke="#7b8188" stroke-width="1.6" stroke-linecap="round"/>
+  </g>
+
+  <!-- enamel gloss -->
+  <circle cx="100" cy="100" r="84" fill="url(#sheen)"/>
+</svg>

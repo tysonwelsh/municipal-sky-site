@@ -19,6 +19,9 @@ require_once __DIR__ . '/jd-config.php';
 require_once __DIR__ . '/jd-origin.php';
 require_once __DIR__ . '/jd-provider.php';   // jd_provider_key, jd_http_post_json
 
+// Dataset v1 frozen (JD_V1_FROZEN, jd-config.php): 410 'dataset_frozen'; a no-op until the cutover.
+jd_require_v1_unfrozen();
+
 jd_require_allowed_origin();
 jd_require_post();
 jd_no_store();

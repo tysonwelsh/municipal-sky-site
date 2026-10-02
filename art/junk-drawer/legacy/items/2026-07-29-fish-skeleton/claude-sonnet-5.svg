@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 158">
+  <g transform="translate(-15,-49)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+
+    <!-- stink/dead squiggles above head -->
+    <g stroke="#4a372a" stroke-width="2.2" opacity="0.75">
+      <path d="M58,86 Q64,73 58,60 Q52,49 58,40"/>
+      <path d="M80,89 Q86,77 80,66 Q75,56 80,47"/>
+    </g>
+
+    <!-- spine (drawn as a rounded tube: dark outline + bone fill) -->
+    <path d="M110,140 Q275,95 440,140" stroke="#3a2a1f" stroke-width="11"/>
+    <path d="M110,140 Q275,95 440,140" stroke="#f4ecd8" stroke-width="7.5"/>
+
+    <!-- rib bones (7 pairs, tapering toward tail, swept back toward the head) -->
+    <g stroke="#3a2a1f" stroke-width="2.6">
+      <!-- rib 1 -->
+      <g transform="translate(149.6,130.5) rotate(-41.7)"><path d="M -8,0 Q -4,-25 0,-45.8 Q 4,-25 8,0 Z" fill="#f4ecd8"/></g>
+      <g transform="translate(149.6,130.5) rotate(18.3)"><path d="M -8,0 Q -4,25 0,45.8 Q 4,25 8,0 Z" fill="#f4ecd8"/></g>
+      <!-- rib 2 -->
+      <g transform="translate(189.2,123.6) rotate(-38.06)"><path d="M -7.5,0 Q -3.7,-23 0,-41.6 Q 3.7,-23 7.5,0 Z" fill="#f4ecd8"/></g>
+      <g transform="translate(189.2,123.6) rotate(21.94)"><path d="M -7.5,0 Q -3.7,23 0,41.6 Q 3.7,23 7.5,0 Z" fill="#f4ecd8"/></g>
+      <!-- rib 3 -->
+      <g transform="translate(228.8,119.26) rotate(-34.36)"><path d="M -6.5,0 Q -3.2,-20.5 0,-37.4 Q 3.2,-20.5 6.5,0 Z" fill="#f4ecd8"/></g>
+      <g transform="translate(228.8,119.26) rotate(25.64)"><path d="M -6.5,0 Q -3.2,20.5 0,37.4 Q 3.2,20.5 6.5,0 Z" fill="#f4ecd8"/></g>
+      <!-- rib 4 -->
+      <g transform="translate(268.4,118.6) rotate(-30.62)"><path d="M -6,0 Q -3,-18 0,-33.2 Q 3,-18 6,0 Z" fill="#f4ecd8"/></g>
+      <g transform="translate(268.4,118.6) rotate(29.38)"><path d="M -6,0 Q -3,18 0,33.2 Q 3,18 6,0 Z" fill="#f4ecd8"/></g>
+      <!-- rib 5 -->
+      <g transform="translate(308,118.4) rotate(-26.88)"><path d="M -5,0 Q -2.5,-16 0,-29 Q 2.5,-16 5,0 Z" fill="#f4ecd8"/></g>
+      <g transform="translate(308,118.4) rotate(33.12)"><path d="M -5,0 Q -2.5,16 0,29 Q 2.5,16 5,0 Z" fill="#f4ecd8"/></g>
+      <!-- rib 6 -->
+      <g transform="translate(347.6,121.86) rotate(-23.16)"><path d="M -4.5,0 Q -2.2,-13.5 0,-24.8 Q 2.2,-13.5 4.5,0 Z" fill="#f4ecd8"/></g>
+      <g transform="translate(347.6,121.86) rotate(36.84)"><path d="M -4.5,0 Q -2.2,13.5 0,24.8 Q 2.2,13.5 4.5,0 Z" fill="#f4ecd8"/></g>
+      <!-- rib 7 -->
+      <g transform="translate(387.2,127.9) rotate(-19.49)"><path d="M -3.5,0 Q -1.7,-11 0,-20.6 Q 1.7,-11 3.5,0 Z" fill="#f4ecd8"/></g>
+      <g transform="translate(387.2,127.9) rotate(40.51)"><path d="M -3.5,0 Q -1.7,11 0,20.6 Q 1.7,11 3.5,0 Z" fill="#f4ecd8"/></g>
+    </g>
+
+    <!-- tail fin bones, fanning out from end of spine -->
+    <g stroke="#3a2a1f" stroke-width="3">
+      <g transform="translate(440,140) rotate(60.3)"><path d="M -6,0 Q -3.5,-38 0,-70 Q 3.5,-38 6,0 Z" fill="#f4ecd8"/></g>
+      <g transform="translate(440,140) rotate(90.3)"><path d="M -4.5,0 Q -2.6,-27 0,-50 Q 2.6,-27 4.5,0 Z" fill="#f4ecd8"/></g>
+      <g transform="translate(440,140) rotate(120.3)"><path d="M -4.5,0 Q -2.6,-27 0,-50 Q 2.6,-27 4.5,0 Z" fill="#f4ecd8"/></g>
+      <g transform="translate(440,140) rotate(150.3)"><path d="M -6,0 Q -3.5,-38 0,-70 Q 3.5,-38 6,0 Z" fill="#f4ecd8"/></g>
+    </g>
+
+    <!-- fish head (the only fleshy part) -->
+    <path d="M110,140 C100,172 60,175 40,155 C25,140 25,110 40,92 C55,78 95,80 112,112 Z"
+          fill="#f4ecd8" stroke="#3a2a1f" stroke-width="4"/>
+
+    <!-- gill crease -->
+    <path d="M107,96 Q95,128 107,160" stroke="#3a2a1f" stroke-width="3"/>
+
+    <!-- X eye, showing it's dead -->
+    <g stroke="#2a1c13" stroke-width="6">
+      <path d="M58,105 L76,123"/>
+      <path d="M58,123 L76,105"/>
+    </g>
+
+    <!-- open mouth with a couple bony teeth -->
+    <path d="M32,128 Q40,140 52,131" stroke="#3a2a1f" stroke-width="3"/>
+    <path d="M39,133 L41,140 L43,133 Z" fill="#f4ecd8" stroke="#3a2a1f" stroke-width="1.5"/>
+    <path d="M46,133 L48,140 L50,133 Z" fill="#f4ecd8" stroke="#3a2a1f" stroke-width="1.5"/>
+  </g>
+</svg>

@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+  <defs>
+    <radialGradient id="outerGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="90%" stop-color="#ffffff" stop-opacity="0" />
+      <stop offset="98%" stop-color="#ffffff" stop-opacity="0.03" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+    </radialGradient>
+    
+    <radialGradient id="moonBody" cx="40%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#0a0a0d" />
+      <stop offset="70%" stop-color="#030304" />
+      <stop offset="100%" stop-color="#000000" />
+    </radialGradient>
+
+    <radialGradient id="craterShade" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#000000" stop-opacity="0.6" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+    </radialGradient>
+
+    <filter id="blurLight">
+      <feGaussianBlur stdDeviation="1.5" />
+    </filter>
+  </defs>
+
+  <!-- Faint atmospheric/corona glow -->
+  <circle cx="250" cy="250" r="250" fill="url(#outerGlow)" />
+
+  <!-- Main dark body (the invisible moon at perigee) -->
+  <circle cx="250" cy="250" r="240" fill="url(#moonBody)" />
+
+  <!-- Subtle crater textures, almost imperceptible -->
+  <g opacity="0.3">
+    <!-- Tycho -->
+    <circle cx="250" cy="400" r="15" fill="url(#craterShade)" />
+    <!-- Copernicus -->
+    <circle cx="180" cy="220" r="18" fill="url(#craterShade)" />
+    <!-- Kepler -->
+    <circle cx="120" cy="240" r="10" fill="url(#craterShade)" />
+    <!-- Mare Imbrium -->
+    <circle cx="220" cy="150" r="45" fill="url(#craterShade)" />
+    <!-- Mare Serenitatis -->
+    <circle cx="320" cy="160" r="35" fill="url(#craterShade)" />
+    <!-- Mare Tranquillitatis -->
+    <circle cx="350" cy="230" r="40" fill="url(#craterShade)" />
+  </g>
+
+  <!-- Incipient lunation: an extremely faint, razor-thin sliver of emergent light -->
+  <path d="M 250 10 A 240 240 0 0 1 250 490 A 238 240 0 0 0 250 10 Z" fill="#ffffff" opacity="0.15" filter="url(#blurLight)" />
+  <path d="M 250 10 A 240 240 0 0 1 250 490 A 239.5 240 0 0 0 250 10 Z" fill="#ffffff" opacity="0.4" />
+</svg>

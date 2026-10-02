@@ -263,6 +263,21 @@ const JD_LIMIT_GLOBAL_DAILY = 200;   // 50 turns x 4 drawings
 // see jd_require_bench_key.
 const JD_BENCH_REQUIRE_KEY = true;
 
+// THE v1 FREEZE SWITCH (Junk Drawer v2, Phase 3a, 2026-10-01; PLAN-V2.md §11).
+// Dataset v1 is archived (db/junk-drawer-v1-archive.md); the v2 drawer takes
+// over /art/junk-drawer/ and today's drawer stays on view, read-only, as the
+// legacy exhibit at /art/junk-drawer/legacy/. Flipping this to TRUE at the
+// cutover makes every v1 WRITE endpoint — jd-generate, jd-rate, jd-item-rate,
+// jd-curate, jd-title, jd-harvest (its sync writes) — answer 410 Gone with the
+// C1 error envelope, code 'dataset_frozen' (jd_require_v1_unfrozen(), section
+// 4), so nothing can write v1 again. jd-backfill-curated answers in its own
+// plain-text voice instead: a 200 whose line starts "done", because the deploy
+// workflow runs it after every upload and greps for ^done — frozen, it files
+// nothing and the deploy stays green. Reads keep serving the legacy exhibit:
+// legacy/data.php, jd-gen-svg.php and jd-analytics.php are untouched by it.
+// FALSE until the cutover: while false, nothing anywhere behaves differently.
+const JD_V1_FROZEN = false;
+
 const JD_PROMPT_MAX_CHARS = 500;
 const JD_NOTE_MAX_CHARS = 500;
 const JD_RATINGS_MAX = 64;
@@ -562,6 +577,15 @@ function jd_require_get(): void
 {
     if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') {
         jd_fail(405, 'method_not_allowed', 'GET only.');
+    }
+}
+
+// The v1 write endpoints' first statement after their requires: 410 Gone once
+// dataset v1 is frozen (JD_V1_FROZEN, section 1); a no-op while it is not.
+function jd_require_v1_unfrozen(): void
+{
+    if (JD_V1_FROZEN) {
+        jd_fail(410, 'dataset_frozen', 'Dataset v1 is frozen; the drawer continues at /art/junk-drawer/.');
     }
 }
 

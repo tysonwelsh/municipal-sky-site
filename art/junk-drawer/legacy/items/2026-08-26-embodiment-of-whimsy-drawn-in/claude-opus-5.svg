@@ -1,0 +1,158 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="65.5 3.0 475.0 753.8">
+  <defs>
+    <style>
+      .ink { fill:none; stroke:#14110f; stroke-linecap:round; stroke-linejoin:round; }
+      .w1 { stroke-width:1.1; }
+      .w2 { stroke-width:1.9; }
+      .w3 { stroke-width:3; }
+      .w4 { stroke-width:4.4; }
+      .sol { fill:#14110f; }
+    </style>
+    <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
+      <line x1="0" y1="0" x2="0" y2="6" stroke="#14110f" stroke-width="1"/>
+    </pattern>
+    <pattern id="hatch2" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(-25)">
+      <line x1="0" y1="0" x2="0" y2="9" stroke="#14110f" stroke-width="0.9"/>
+    </pattern>
+    <pattern id="dots" width="8" height="8" patternUnits="userSpaceOnUse">
+      <circle cx="2.5" cy="2.5" r="1.3" fill="#14110f"/>
+      <circle cx="6.5" cy="6.5" r="0.9" fill="#14110f"/>
+    </pattern>
+  </defs>
+
+  <g>
+    <!-- ===== BALLOON-BRAIN: a floating dreamer whose head is a hot-air balloon ===== -->
+
+    <!-- streamer curls rising -->
+    <path class="ink w1" d="M120 128 C96 108 112 84 138 92 C160 99 154 126 132 122"/>
+    <path class="ink w1" d="M470 150 C496 132 486 104 462 108 C440 112 442 138 462 138"/>
+    <path class="ink w1" d="M300 22 C288 34 306 44 312 32"/>
+    <circle class="sol" cx="86" cy="196" r="3"/>
+    <circle class="sol" cx="514" cy="212" r="3.4"/>
+    <circle class="sol" cx="70" cy="330" r="2.4"/>
+    <circle class="sol" cx="536" cy="352" r="2.6"/>
+
+    <!-- ===== BALLOON ENVELOPE ===== -->
+    <path class="ink w4" d="M300 40
+      C400 40 470 122 470 208
+      C470 272 428 322 384 356
+      L216 356
+      C172 322 130 272 130 208
+      C130 122 200 40 300 40 Z"/>
+
+    <!-- gores -->
+    <path class="ink w2" d="M300 40 C258 120 250 250 216 356"/>
+    <path class="ink w2" d="M300 40 C342 120 350 250 384 356"/>
+    <path class="ink w1" d="M300 40 L300 356"/>
+    <path class="ink w1" d="M182 96 C226 150 240 260 256 356"/>
+    <path class="ink w1" d="M418 96 C374 150 360 260 344 356"/>
+
+    <!-- horizontal seams -->
+    <path class="ink w1" d="M148 168 C220 148 380 148 452 168"/>
+    <path class="ink w1" d="M136 238 C210 216 390 216 464 238"/>
+    <path class="ink w1" d="M164 300 C230 282 370 282 436 300"/>
+
+    <!-- decorated bands -->
+    <path d="M148 168 C220 148 380 148 452 168 C458 190 462 214 464 238 C390 216 210 216 136 238 C138 214 142 190 148 168 Z" fill="url(#hatch2)" opacity="0.55"/>
+    <path d="M300 40 C258 120 250 250 216 356 L256 356 C240 260 226 150 182 96 C216 60 256 40 300 40 Z" fill="url(#dots)" opacity="0.45"/>
+    <path d="M418 96 C374 150 360 260 344 356 L384 356 C350 250 342 120 300 40 C344 40 384 60 418 96 Z" fill="url(#hatch)" opacity="0.35"/>
+
+    <!-- scallops at base of balloon -->
+    <path class="ink w2" d="M216 356 q14 20 28 0 q14 20 28 0 q14 20 28 0 q14 20 28 0 q14 20 28 0 q14 20 28 0"/>
+
+    <!-- little pennant on top -->
+    <line class="ink w2" x1="300" y1="42" x2="300" y2="6"/>
+    <path class="sol" d="M300 8 L344 20 L300 32 Z"/>
+
+    <!-- ===== FACE ON THE BALLOON ===== -->
+    <!-- eyes: mismatched, one spiral one star -->
+    <g>
+      <circle class="ink w3" cx="246" cy="200" r="24"/>
+      <circle class="sol" cx="252" cy="204" r="9"/>
+      <circle cx="248" cy="200" r="3" fill="#fff"/>
+      <path class="ink w2" d="M242 176 q-10 -14 -24 -12"/>
+      <path class="ink w1" d="M228 236 q18 8 36 0"/>
+    </g>
+    <g>
+      <path class="ink w3" d="M330 196 m-26 0 a26 22 0 1 0 52 0 a26 22 0 1 0 -52 0"/>
+      <path class="ink w2" d="M330 182 c14 0 18 20 4 22 c-12 2 -14 -12 -4 -14 c8 -1.6 8 8 2 8"/>
+      <path class="ink w2" d="M342 168 q12 -12 26 -8"/>
+    </g>
+
+    <!-- freckle dots -->
+    <circle class="sol" cx="222" cy="252" r="2.2"/>
+    <circle class="sol" cx="238" cy="262" r="1.8"/>
+    <circle class="sol" cx="352" cy="250" r="2.2"/>
+    <circle class="sol" cx="366" cy="260" r="1.8"/>
+
+    <!-- nose -->
+    <path class="ink w2" d="M296 216 q-8 32 8 34 q10 2 12 -6"/>
+
+    <!-- lopsided grin -->
+    <path class="ink w3" d="M250 288 C282 322 340 320 366 282"/>
+    <path class="ink w1" d="M258 294 q52 22 100 -8"/>
+    <path class="ink w2" d="M366 282 q12 -6 14 -18"/>
+
+    <!-- ===== SUSPENSION LINES ===== -->
+    <path class="ink w2" d="M222 366 L246 452"/>
+    <path class="ink w2" d="M264 366 L272 452"/>
+    <path class="ink w2" d="M336 366 L328 452"/>
+    <path class="ink w2" d="M378 366 L354 452"/>
+    <path class="ink w1" d="M300 366 L300 452"/>
+
+    <!-- ===== THE BASKET / BODY ===== -->
+    <path class="ink w4" d="M240 452 L360 452 L376 560 Q300 578 224 560 Z"/>
+    <path d="M240 452 L360 452 L376 560 Q300 578 224 560 Z" fill="url(#hatch)" opacity="0.28"/>
+    <path class="ink w1" d="M244 478 Q300 490 356 478"/>
+    <path class="ink w1" d="M248 506 Q300 518 352 506"/>
+    <path class="ink w1" d="M252 534 Q300 546 348 534"/>
+    <path class="ink w1" d="M266 454 L258 566"/>
+    <path class="ink w1" d="M300 454 L300 570"/>
+    <path class="ink w1" d="M334 454 L342 566"/>
+    <path class="ink w3" d="M236 452 Q300 442 364 452"/>
+
+    <!-- arms flung out -->
+    <path class="ink w3" d="M242 468 C196 476 158 452 138 410 C126 384 148 366 164 384"/>
+    <path class="ink w3" d="M358 468 C408 480 452 464 476 424 C490 400 470 380 454 396"/>
+    <!-- hands -->
+    <path class="ink w2" d="M164 384 q-16 -10 -22 2 q-6 12 8 16"/>
+    <path class="ink w2" d="M150 372 q-14 -12 -22 0"/>
+    <path class="ink w2" d="M454 396 q16 -12 24 0 q7 12 -6 18"/>
+    <path class="ink w2" d="M470 384 q14 -14 24 -2"/>
+
+    <!-- legs dangling, mismatched socks -->
+    <path class="ink w3" d="M266 568 C258 616 268 660 250 700"/>
+    <path class="ink w3" d="M292 572 C292 620 282 664 300 704"/>
+    <path class="ink w3" d="M310 572 C318 620 330 660 348 692"/>
+    <path class="ink w3" d="M336 566 C348 610 366 650 392 678"/>
+
+    <!-- boots -->
+    <path class="ink w3" d="M250 700 q-30 6 -32 24 q-2 16 22 14 q26 -2 32 -20 q4 -12 -6 -18"/>
+    <path d="M250 700 q-30 6 -32 24 q-2 16 22 14 q26 -2 32 -20 q4 -12 -6 -18 Z" fill="url(#hatch2)" opacity="0.4"/>
+    <path class="ink w3" d="M392 678 q26 14 24 32 q-2 16 -24 10 q-24 -6 -26 -24 q-1 -12 10 -16"/>
+    <path d="M392 678 q26 14 24 32 q-2 16 -24 10 q-24 -6 -26 -24 q-1 -12 10 -16 Z" fill="url(#hatch)" opacity="0.35"/>
+
+    <!-- middle two legs end in curls (whimsy!) -->
+    <path class="ink w2" d="M300 704 c22 6 26 34 4 38 c-18 3 -22 -18 -8 -22 c10 -3 12 8 4 10"/>
+    <path class="ink w2" d="M348 692 c20 12 14 38 -6 36 c-16 -2 -14 -20 -2 -20"/>
+
+    <!-- striped sock rings -->
+    <path class="ink w2" d="M262 610 q12 4 24 -2"/>
+    <path class="ink w2" d="M264 634 q12 4 24 -2"/>
+    <path class="ink w2" d="M320 616 q12 6 22 2"/>
+    <path class="ink w2" d="M332 642 q12 6 22 2"/>
+
+    <!-- confetti / floating whimsies -->
+    <g class="ink w2">
+      <path d="M100 470 l0 22 M89 481 l22 0"/>
+      <path d="M496 512 l0 20 M486 522 l20 0"/>
+      <path d="M136 620 l0 18 M127 629 l18 0"/>
+    </g>
+    <circle class="ink w2" cx="470" cy="620" r="9"/>
+    <circle class="ink w2" cx="112" cy="548" r="6"/>
+    <path class="sol" d="M448 706 l6 16 l17 2 l-13 12 l4 17 l-15 -9 l-15 9 l4 -17 l-13 -12 l17 -2 Z"/>
+    <path class="sol" d="M150 716 l5 13 l14 2 l-11 10 l3 14 l-11 -7 l-12 7 l3 -14 l-10 -10 l14 -2 Z"/>
+    <path class="ink w1" d="M76 640 C60 664 84 686 104 672"/>
+    <path class="ink w1" d="M524 668 C542 690 520 714 500 700"/>
+  </g>
+</svg>

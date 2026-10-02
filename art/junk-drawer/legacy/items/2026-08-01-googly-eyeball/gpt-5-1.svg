@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="44.0 66.2 627.8 613.5">
+  <defs>
+    <radialGradient id="eyeballBase" cx="40%" cy="30%" r="60%">
+      <stop offset="0%" stop-color="#fdf7ea"/>
+      <stop offset="45%" stop-color="#f5ead7"/>
+      <stop offset="75%" stop-color="#e1cfb4"/>
+      <stop offset="100%" stop-color="#b08a5f"/>
+    </radialGradient>
+    <radialGradient id="eyeballWarm" cx="30%" cy="20%" r="70%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.0)"/>
+      <stop offset="40%" stop-color="rgba(242,225,201,0.0)"/>
+      <stop offset="78%" stop-color="rgba(210,176,134,0.55)"/>
+      <stop offset="100%" stop-color="rgba(132,94,57,0.8)"/>
+    </radialGradient>
+    <radialGradient id="pupilSheen" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#050607"/>
+      <stop offset="55%" stop-color="#050607"/>
+      <stop offset="100%" stop-color="#111217"/>
+    </radialGradient>
+    <radialGradient id="scleraHighlight" cx="30%" cy="22%" r="55%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.95)"/>
+      <stop offset="55%" stop-color="rgba(255,255,255,0.0)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0.0)"/>
+    </radialGradient>
+    <radialGradient id="lowerWarmth" cx="55%" cy="80%" r="55%">
+      <stop offset="0%" stop-color="rgba(196,150,108,0.2)"/>
+      <stop offset="55%" stop-color="rgba(120,82,52,0.65)"/>
+      <stop offset="100%" stop-color="rgba(60,38,24,0.95)"/>
+    </radialGradient>
+    <radialGradient id="rimDark" cx="65%" cy="85%" r="65%">
+      <stop offset="0%" stop-color="rgba(40,26,17,0.0)"/>
+      <stop offset="45%" stop-color="rgba(49,32,18,0.55)"/>
+      <stop offset="80%" stop-color="rgba(26,15,8,0.9)"/>
+      <stop offset="100%" stop-color="rgba(10,5,3,1)"/>
+    </radialGradient>
+    <radialGradient id="rimWarmGlaze" cx="25%" cy="20%" r="75%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0)"/>
+      <stop offset="40%" stop-color="rgba(205,169,129,0.0)"/>
+      <stop offset="80%" stop-color="rgba(165,117,76,0.55)"/>
+      <stop offset="100%" stop-color="rgba(110,73,43,0.85)"/>
+    </radialGradient>
+    <linearGradient id="upperArcHighlight" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.0)"/>
+      <stop offset="25%" stop-color="rgba(255,255,255,0.75)"/>
+      <stop offset="50%" stop-color="rgba(248,248,248,0.98)"/>
+      <stop offset="75%" stop-color="rgba(255,255,255,0.7)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0.0)"/>
+    </linearGradient>
+    <radialGradient id="upperArcSoft" cx="50%" cy="40%" r="70%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.9)"/>
+      <stop offset="40%" stop-color="rgba(255,255,255,0.85)"/>
+      <stop offset="80%" stop-color="rgba(255,255,255,0.0)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0.0)"/>
+    </radialGradient>
+    <radialGradient id="tinySpec" cx="35%" cy="25%" r="60%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="60%" stop-color="#fefefe"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+    </radialGradient>
+    <filter id="paintSoft" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="1.2" result="blur1"/>
+      <feColorMatrix in="blur1" type="matrix" values="
+        1 0 0 0 0
+        0 1 0 0 0
+        0 0 1 0 0
+        0 0 0 1.1 0" result="cm1"/>
+      <feGaussianBlur in="cm1" stdDeviation="0.8" result="blur2"/>
+      <feBlend in="cm1" in2="blur2" mode="normal"/>
+    </filter>
+    <filter id="edgeSmear" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="2" result="b1"/>
+      <feColorMatrix in="b1" type="matrix" values="
+        1 0 0 0 0
+        0 1 0 0 0
+        0 0 1 0 0
+        0 0 0 1.15 0" result="cm2"/>
+      <feBlend in="b1" in2="cm2" mode="normal"/>
+    </filter>
+    <filter id="pupilSoft" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="0.8"/>
+    </filter>
+    <filter id="rimThickPaint" x="-15%" y="-15%" width="130%" height="130%">
+      <feGaussianBlur stdDeviation="1.5" result="blurRim"/>
+      <feColorMatrix in="blurRim" type="matrix" values="
+        1 0 0 0 0
+        0 1 0 0 0
+        0 0 1 0 0
+        0 0 0 1.2 0" result="cmRim"/>
+      <feBlend in="blurRim" in2="cmRim" mode="normal"/>
+    </filter>
+  </defs>
+
+  <g transform="translate(360 360)">
+    <ellipse cx="0" cy="15" rx="310" ry="300" fill="url(#eyeballBase)"/>
+    <ellipse cx="-12" cy="0" rx="300" ry="292" fill="url(#eyeballWarm)" filter="url(#paintSoft)" opacity="0.95"/>
+    <ellipse cx="0" cy="15" rx="292" ry="283" fill="none" stroke="rgba(82,54,33,0.9)" stroke-width="4" filter="url(#edgeSmear)"/>
+
+    <ellipse cx="70" cy="10" rx="85" ry="86" fill="url(#pupilSheen)" filter="url(#pupilSoft)"/>
+
+    <ellipse cx="-12" cy="0" rx="260" ry="248" fill="url(#scleraHighlight)" filter="url(#paintSoft)" opacity="0.9"/>
+
+    <ellipse cx="30" cy="110" rx="240" ry="190" fill="url(#lowerWarmth)" filter="url(#paintSoft)" opacity="0.9"/>
+
+    <ellipse cx="5" cy="25" rx="290" ry="281" fill="url(#rimWarmGlaze)" filter="url(#rimThickPaint)" opacity="0.95"/>
+    <ellipse cx="4" cy="28" rx="300" ry="290" fill="url(#rimDark)" opacity="0.95"/>
+
+    <path d="M -190 -120
+             C -80 -170,  70 -185, 210 -145
+               135 -115,  35 -95, -80 -88
+             C -135 -85, -170 -98, -190 -120 Z"
+          fill="url(#upperArcSoft)" opacity="0.85" filter="url(#paintSoft)"/>
+
+    <path d="M -160 -118
+             C -45 -162,  80 -175, 190 -142
+               145 -128,  80 -118,  10 -114
+             C -65 -110, -120 -110, -160 -118 Z"
+          fill="url(#upperArcHighlight)" opacity="0.95" filter="url(#paintSoft)"/>
+
+    <ellipse cx="33" cy="-8" rx="17" ry="13" fill="url(#tinySpec)" opacity="0.96"/>
+
+    <path d="M -250 -40
+             C -160 -80, -65 -100, 20 -95
+               110 -90, 190 -65, 250 -30
+               200 -50, 140 -63, 80 -68
+               15 -73, -55 -70, -125 -60
+             C -185 -50, -225 -45, -250 -40 Z"
+          fill="rgba(255,255,255,0.65)" filter="url(#paintSoft)" opacity="0.75"/>
+
+    <path d="M -190 160
+             C -120 190, -30 210, 70 205
+               140 200, 200 185, 235 165
+               185 178, 120 188, 60 190
+               -20 193, -95 185, -150 170
+             C -170 165, -180 162, -190 160 Z"
+          fill="rgba(108,71,44,0.45)" filter="url(#paintSoft)"/>
+  </g>
+</svg>

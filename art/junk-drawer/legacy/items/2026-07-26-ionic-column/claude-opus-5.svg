@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="89 6.2 221.8 992.5" width="221.8" height="992.5">
+  <defs>
+    <linearGradient id="stone" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8e8madd"/>
+      <stop offset="0" stop-color="#8a8378"/>
+      <stop offset="0.12" stop-color="#cfc7b6"/>
+      <stop offset="0.42" stop-color="#f2ece0"/>
+      <stop offset="0.68" stop-color="#ddd5c4"/>
+      <stop offset="0.88" stop-color="#a49b8b"/>
+      <stop offset="1" stop-color="#7d7568"/>
+    </linearGradient>
+    <linearGradient id="stone2" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7f7769"/>
+      <stop offset="0.14" stop-color="#c8c0ae"/>
+      <stop offset="0.45" stop-color="#f4efe4"/>
+      <stop offset="0.72" stop-color="#d6cebd"/>
+      <stop offset="1" stop-color="#79715f"/>
+    </linearGradient>
+    <linearGradient id="fluteg" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6f685b" stop-opacity="0.55"/>
+      <stop offset="0.35" stop-color="#9a9384" stop-opacity="0.18"/>
+      <stop offset="0.6" stop-color="#ffffff" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#5f594d" stop-opacity="0.45"/>
+    </linearGradient>
+    <radialGradient id="volg" cx="0.4" cy="0.35" r="0.75">
+      <stop offset="0" stop-color="#fbf7ec"/>
+      <stop offset="0.6" stop-color="#ded6c4"/>
+      <stop offset="1" stop-color="#9a9182"/>
+    </radialGradient>
+
+    <symbol id="flute" viewBox="0 0 20 100" preserveAspectRatio="none">
+      <rect x="0" y="0" width="20" height="100" fill="url(#fluteg)"/>
+      <rect x="8.5" y="0" width="2" height="100" fill="#fffdf6" opacity="0.35"/>
+    </symbol>
+
+    <g id="volute">
+      <path d="M0,0 C0,-26 -20,-42 -44,-42 C-70,-42 -88,-23 -88,2 C-88,26 -70,44 -47,44 C-26,44 -10,29 -10,10 C-10,-6 -22,-18 -37,-18 C-51,-18 -62,-7 -62,6 C-62,18 -52,27 -41,27 C-31,27 -24,20 -24,11 C-24,3 -30,-2 -37,-2 C-43,-2 -47,2 -47,7"
+            fill="none" stroke="#6c6456" stroke-width="3.2" stroke-linecap="round"/>
+      <circle cx="-44" cy="2" r="9.5" fill="url(#volg)" stroke="#6c6456" stroke-width="2.6"/>
+      <circle cx="-46" cy="0" r="3.2" fill="#7d7466"/>
+    </g>
+  </defs>
+
+  <!-- ============ ABACUS / TOP SLAB ============ -->
+  <g>
+    <rect x="118" y="16" width="164" height="16" fill="url(#stone2)" stroke="#6f6759" stroke-width="1.6"/>
+    <rect x="126" y="32" width="148" height="12" fill="url(#stone)" stroke="#6f6759" stroke-width="1.4"/>
+    <!-- egg and dart hint on abacus -->
+    <g fill="#a89f8e" opacity="0.5">
+      <circle cx="146" cy="38" r="3"/><circle cx="166" cy="38" r="3"/><circle cx="186" cy="38" r="3"/>
+      <circle cx="206" cy="38" r="3"/><circle cx="226" cy="38" r="3"/><circle cx="246" cy="38" r="3"/>
+    </g>
+  </g>
+
+  <!-- ============ IONIC CAPITAL ============ -->
+  <g>
+    <!-- cushion / channel between volutes -->
+    <path d="M112,46 C112,72 138,90 200,90 C262,90 288,72 288,46 Z" fill="url(#stone)" stroke="#6f6759" stroke-width="1.6"/>
+    <!-- egg-and-dart echinus -->
+    <g stroke="#7a7264" stroke-width="1.6" fill="none">
+      <ellipse cx="200" cy="66" rx="11" ry="14"/>
+      <ellipse cx="176" cy="66" rx="10" ry="13"/>
+      <ellipse cx="224" cy="66" rx="10" ry="13"/>
+      <ellipse cx="153" cy="65" rx="8" ry="11"/>
+      <ellipse cx="247" cy="65" rx="8" ry="11"/>
+      <path d="M188,54 L188,80 M212,54 L212,80 M164,54 L164,78 M236,54 L236,78"/>
+    </g>
+
+    <!-- volutes -->
+    <g transform="translate(112,52)">
+      <use href="#volute" transform="scale(-1,1)"/>
+    </g>
+    <g transform="translate(288,52)">
+      <use href="#volute"/>
+    </g>
+
+    <!-- capital base fillet -->
+    <rect x="140" y="86" width="120" height="10" rx="2" fill="url(#stone2)" stroke="#6f6759" stroke-width="1.4"/>
+    <rect x="146" y="96" width="108" height="8" rx="2" fill="url(#stone)" stroke="#6f6759" stroke-width="1.2"/>
+  </g>
+
+  <!-- ============ SHAFT ============ -->
+  <g>
+    <!-- tapered shaft body (entasis) -->
+    <path d="M152,104 C146,300 142,560 138,846 L262,846 C258,560 254,300 248,104 Z"
+          fill="url(#stone)" stroke="#6f6759" stroke-width="1.6"/>
+
+    <!-- flutes -->
+    <g>
+      <path d="M156,106 C150.5,300 147,560 143,844 L152,844 C155.5,560 158.5,300 163,106 Z" fill="url(#fluteg)"/>
+      <path d="M168,106 C163,300 160,560 156.5,844 L165.5,844 C168.5,560 171,300 175,106 Z" fill="url(#fluteg)"/>
+      <path d="M180,106 C176,300 173.5,560 170.5,844 L179.5,844 C182,560 184,300 187,106 Z" fill="url(#fluteg)"/>
+      <path d="M192,106 C189,300 187,560 184.5,844 L193.5,844 C195,560 196,300 199,106 Z" fill="url(#fluteg)"/>
+      <path d="M204,106 C205,300 205.5,560 206.5,844 L215.5,844 C214,560 213,300 211,106 Z" fill="url(#fluteg)"/>
+      <path d="M216,106 C218,300 219,560 220.5,844 L229.5,844 C227,560 225,300 223,106 Z" fill="url(#fluteg)"/>
+      <path d="M228,106 C231,300 232.5,560 234.5,844 L243.5,844 C240,560 237,300 235,106 Z" fill="url(#fluteg)"/>
+      <path d="M240,106 C244,300 246,560 248.5,844 L257,844 C253,560 249,300 247,106 Z" fill="url(#fluteg)"/>
+    </g>
+
+    <!-- flute arris highlights -->
+    <g stroke="#fffdf5" stroke-opacity="0.45" stroke-width="1.2" fill="none">
+      <path d="M164,110 C160,300 157,560 153.5,842"/>
+      <path d="M176,110 C173,300 170.5,560 167.5,842"/>
+      <path d="M188,110 C186,300 184,560 181.5,842"/>
+      <path d="M200,110 C199.5,300 199,560 198.5,842"/>
+      <path d="M212,110 C213,300 214,560 215.5,842"/>
+      <path d="M224,110 C226,300 227.5,560 229.5,842"/>
+      <path d="M236,110 C239,300 241,560 243.5,842"/>
+    </g>
+    <g stroke="#5f584b" stroke-opacity="0.35" stroke-width="1" fill="none">
+      <path d="M152,110 C146.5,300 143,560 139.5,842"/>
+      <path d="M248,110 C253,300 256,560 260,842"/>
+    </g>
+  </g>
+
+  <!-- ============ BASE (Attic) ============ -->
+  <g>
+    <!-- upper fillet -->
+    <rect x="132" y="846" width="136" height="10" fill="url(#stone2)" stroke="#6f6759" stroke-width="1.4"/>
+    <!-- upper torus -->
+    <path d="M124,856 C124,880 276,880 276,856 L276,858 C276,884 124,884 124,858 Z" fill="none"/>
+    <ellipse cx="200" cy="868" rx="76" ry="14" fill="url(#stone)" stroke="#6f6759" stroke-width="1.6"/>
+    <path d="M128,864 C160,858 240,858 272,864" stroke="#fffdf5" stroke-opacity="0.5" stroke-width="2.5" fill="none"/>
+    <!-- scotia -->
+    <path d="M126,882 C126,900 274,900 274,882 L274,900 L126,900 Z" fill="#8d8577" stroke="#6f6759" stroke-width="1.4"/>
+    <rect x="126" y="898" width="148" height="6" fill="url(#stone2)" stroke="#6f6759" stroke-width="1.2"/>
+    <!-- lower torus -->
+    <ellipse cx="200" cy="918" rx="88" ry="16" fill="url(#stone)" stroke="#6f6759" stroke-width="1.6"/>
+    <path d="M118,913 C155,905 245,905 282,913" stroke="#fffdf5" stroke-opacity="0.5" stroke-width="3" fill="none"/>
+    <!-- plinth -->
+    <rect x="100" y="932" width="200" height="52" fill="url(#stone2)" stroke="#6f6759" stroke-width="1.8"/>
+    <rect x="100" y="932" width="200" height="8" fill="#ffffff" opacity="0.22"/>
+    <rect x="92" y="984" width="216" height="12" fill="url(#stone)" stroke="#6f6759" stroke-width="1.6"/>
+  </g>
+
+  <!-- subtle weathering -->
+  <g fill="#6f6759" opacity="0.12">
+    <ellipse cx="170" cy="300" rx="6" ry="24"/>
+    <ellipse cx="232" cy="520" rx="5" ry="30"/>
+    <ellipse cx="196" cy="700" rx="4" ry="20"/>
+    <circle cx="150" cy="958" r="7"/>
+    <circle cx="262" cy="952" r="5"/>
+  </g>
+</svg>

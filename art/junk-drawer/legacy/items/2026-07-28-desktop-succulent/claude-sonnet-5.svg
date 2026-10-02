@@ -1,0 +1,155 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="156 154 288 463">
+  <defs>
+    <linearGradient id="potGrad" x1="0" y1="0" x2="1" y2="0.15">
+      <stop offset="0" stop-color="#C67D59"/>
+      <stop offset="0.55" stop-color="#B0623F"/>
+      <stop offset="1" stop-color="#8C4A31"/>
+    </linearGradient>
+    <linearGradient id="glazeGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F3ECDF"/>
+      <stop offset="1" stop-color="#E2D3BC"/>
+    </linearGradient>
+    <radialGradient id="soilGrad" cx="0.4" cy="0.35" r="0.75">
+      <stop offset="0" stop-color="#5A4030"/>
+      <stop offset="1" stop-color="#2C1F16"/>
+    </radialGradient>
+    <linearGradient id="woodTop" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0" stop-color="#DCB47E"/>
+      <stop offset="1" stop-color="#B98C57"/>
+    </linearGradient>
+    <linearGradient id="legGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#9C7448"/>
+      <stop offset="1" stop-color="#7A5836"/>
+    </linearGradient>
+    <linearGradient id="leafGrad1" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#7E9873"/>
+      <stop offset="0.65" stop-color="#96AC86"/>
+      <stop offset="1" stop-color="#C79385"/>
+    </linearGradient>
+    <linearGradient id="leafGrad1b" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#84987A"/>
+      <stop offset="0.6" stop-color="#A3B592"/>
+      <stop offset="1" stop-color="#D6A091"/>
+    </linearGradient>
+    <linearGradient id="leafGrad2" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#8FA97F"/>
+      <stop offset="1" stop-color="#C4D3AF"/>
+    </linearGradient>
+    <linearGradient id="leafGrad3" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#A6C08F"/>
+      <stop offset="1" stop-color="#E7C0AF"/>
+    </linearGradient>
+    <radialGradient id="budGrad" cx="0.35" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="#BFDCA6"/>
+      <stop offset="1" stop-color="#7E9A6C"/>
+    </radialGradient>
+    <path id="leaf" d="M0,0 C-16,-6 -18,-40 -10,-70 C-6,-90 -2,-100 0,-104 C2,-100 6,-90 10,-70 C18,-40 16,-6 0,0 Z"/>
+    <filter id="softBlur" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="4.5"/>
+    </filter>
+  </defs>
+
+  <!-- contact shadow -->
+  <ellipse cx="300" cy="586" rx="126" ry="12" fill="#1c130c" opacity="0.22" filter="url(#softBlur)"/>
+
+  <!-- stand legs -->
+  <g fill="url(#legGrad)">
+    <path d="M228,536 L236,536 L222,578 L214,578 Z"/>
+    <ellipse cx="218" cy="580" rx="8" ry="4.5" fill="#6B4A2C"/>
+    <path d="M296,536 L304,536 L302,578 L298,578 Z"/>
+    <ellipse cx="300" cy="580" rx="8" ry="4.5" fill="#6B4A2C"/>
+    <path d="M364,536 L372,536 L386,578 L378,578 Z"/>
+    <ellipse cx="382" cy="580" rx="8" ry="4.5" fill="#6B4A2C"/>
+  </g>
+
+  <!-- wooden saucer -->
+  <path d="M182,524 L182,534 A118,14 0 0 0 418,534 L418,524 A118,14 0 0 1 182,524 Z" fill="#A87D4E"/>
+  <ellipse cx="300" cy="522" rx="118" ry="14" fill="url(#woodTop)"/>
+  <ellipse cx="300" cy="522" rx="118" ry="14" fill="none" stroke="#8f6a41" stroke-width="1" opacity="0.4"/>
+
+  <!-- pot body -->
+  <path d="M200,300 C208,344 213,432 224,515 A76,11 0 0 0 376,515 C387,432 392,344 400,300 A100,15 0 0 1 200,300 Z" fill="url(#potGrad)"/>
+  <path d="M214,430 C213,455 211,485 209,505" stroke="#7d4127" stroke-width="1.4" opacity="0.28" fill="none"/>
+  <path d="M386,430 C387,455 389,485 391,505" stroke="#7d4127" stroke-width="1.4" opacity="0.28" fill="none"/>
+
+  <!-- dipped glaze cap -->
+  <path d="M200,300 C205,323 209,345 214,362 C250,377 270,381 300,381 C330,381 350,377 386,362 C391,345 395,323 400,300 A100,15 0 0 1 200,300 Z" fill="url(#glazeGrad)"/>
+  <path d="M214,362 C250,377 270,381 300,381 C330,381 350,377 386,362" fill="none" stroke="#c9b795" stroke-width="1.3" opacity="0.55"/>
+
+  <!-- pot rim lip -->
+  <ellipse cx="300" cy="300" rx="100" ry="15" fill="#EDE3D2"/>
+  <ellipse cx="300" cy="300" rx="100" ry="15" fill="none" stroke="#c9b795" stroke-width="1.2" opacity="0.6"/>
+
+  <!-- soil -->
+  <ellipse cx="300" cy="301" rx="90" ry="11" fill="url(#soilGrad)"/>
+  <g fill="#C9C0AB" opacity="0.85">
+    <ellipse cx="266" cy="304" rx="4" ry="2.6"/>
+    <ellipse cx="340" cy="305" rx="3.5" ry="2.3"/>
+    <ellipse cx="300" cy="308" rx="3" ry="2"/>
+    <ellipse cx="322" cy="302" rx="3" ry="2"/>
+  </g>
+
+  <!-- small companion succulent -->
+  <g>
+    <use href="#leaf" transform="translate(208,318) rotate(10) scale(0.34)" fill="url(#leafGrad2)"/>
+    <use href="#leaf" transform="translate(208,318) rotate(55) scale(0.34)" fill="url(#leafGrad2)"/>
+    <use href="#leaf" transform="translate(208,318) rotate(100) scale(0.32)" fill="url(#leafGrad3)"/>
+    <use href="#leaf" transform="translate(208,318) rotate(145) scale(0.34)" fill="url(#leafGrad2)"/>
+    <use href="#leaf" transform="translate(208,318) rotate(190) scale(0.32)" fill="url(#leafGrad3)"/>
+    <use href="#leaf" transform="translate(208,318) rotate(235) scale(0.34)" fill="url(#leafGrad2)"/>
+    <use href="#leaf" transform="translate(208,318) rotate(280) scale(0.32)" fill="url(#leafGrad3)"/>
+    <use href="#leaf" transform="translate(208,318) rotate(325) scale(0.34)" fill="url(#leafGrad2)"/>
+    <circle cx="208" cy="318" r="6" fill="url(#budGrad)"/>
+  </g>
+
+  <!-- main succulent rosette : outer layer -->
+  <g>
+    <use href="#leaf" transform="translate(300,300) rotate(0) scale(1.3)" fill="url(#leafGrad1b)"/>
+    <use href="#leaf" transform="translate(300,300) rotate(30) scale(1.28)" fill="url(#leafGrad1)"/>
+    <use href="#leaf" transform="translate(300,300) rotate(60) scale(1.3)" fill="url(#leafGrad1)"/>
+    <use href="#leaf" transform="translate(300,300) rotate(90) scale(1.3)" fill="url(#leafGrad1b)"/>
+    <use href="#leaf" transform="translate(300,300) rotate(120) scale(1.28)" fill="url(#leafGrad1)"/>
+    <use href="#leaf" transform="translate(300,300) rotate(150) scale(1.3)" fill="url(#leafGrad1)"/>
+    <use href="#leaf" transform="translate(300,300) rotate(180) scale(1.3)" fill="url(#leafGrad1b)"/>
+    <use href="#leaf" transform="translate(300,300) rotate(210) scale(1.28)" fill="url(#leafGrad1)"/>
+    <use href="#leaf" transform="translate(300,300) rotate(240) scale(1.3)" fill="url(#leafGrad1)"/>
+    <use href="#leaf" transform="translate(300,300) rotate(270) scale(1.3)" fill="url(#leafGrad1b)"/>
+    <use href="#leaf" transform="translate(300,300) rotate(300) scale(1.28)" fill="url(#leafGrad1)"/>
+    <use href="#leaf" transform="translate(300,300) rotate(330) scale(1.3)" fill="url(#leafGrad1)"/>
+  </g>
+
+  <!-- middle layer -->
+  <g>
+    <use href="#leaf" transform="translate(300,300) rotate(15) scale(0.95)" fill="url(#leafGrad2)"/>
+    <use href="#leaf" transform="translate(300,300) rotate(45) scale(0.93)" fill="url(#leafGrad2)"/>
+    <use href="#leaf" transform="translate(300,300) rotate(75) scale(0.95)" fill="url(#leafGrad2)"/>
+    <use href="#leaf" transform="translate(300,300) rotate(105) scale(0.93)" fill="url(#leafGrad2)"/>
+    <use href="#leaf" transform="translate(300,300) rotate(135) scale(0.95)" fill="url(#leafGrad2)"/>
+    <use href="#leaf" transform="translate(300,300) rotate(165) scale(0.93)" fill="url(#leafGrad2)"/>
+    <use href="#leaf" transform="translate(300,300) rotate(195) scale(0.95)" fill="url(#leafGrad2)"/>
+    <use href="#leaf" transform="translate(300,300) rotate(225) scale(0.93)" fill="url(#leafGrad2)"/>
+    <use href="#leaf" transform="translate(300,300) rotate(255) scale(0.95)" fill="url(#leafGrad2)"/>
+    <use href="#leaf" transform="translate(300,300) rotate(285) scale(0.93)" fill="url(#leafGrad2)"/>
+    <use href="#leaf" transform="translate(300,300) rotate(315) scale(0.95)" fill="url(#leafGrad2)"/>
+    <use href="#leaf" transform="translate(300,300) rotate(345) scale(0.93)" fill="url(#leafGrad2)"/>
+  </g>
+
+  <!-- inner layer -->
+  <g>
+    <use href="#leaf" transform="translate(300,297) rotate(10) scale(0.56)" fill="url(#leafGrad3)"/>
+    <use href="#leaf" transform="translate(300,297) rotate(55) scale(0.54)" fill="url(#leafGrad3)"/>
+    <use href="#leaf" transform="translate(300,297) rotate(100) scale(0.56)" fill="url(#leafGrad3)"/>
+    <use href="#leaf" transform="translate(300,297) rotate(145) scale(0.54)" fill="url(#leafGrad3)"/>
+    <use href="#leaf" transform="translate(300,297) rotate(190) scale(0.56)" fill="url(#leafGrad3)"/>
+    <use href="#leaf" transform="translate(300,297) rotate(235) scale(0.54)" fill="url(#leafGrad3)"/>
+    <use href="#leaf" transform="translate(300,297) rotate(280) scale(0.56)" fill="url(#leafGrad3)"/>
+    <use href="#leaf" transform="translate(300,297) rotate(325) scale(0.54)" fill="url(#leafGrad3)"/>
+  </g>
+
+  <!-- center bud -->
+  <circle cx="300" cy="295" r="12" fill="url(#budGrad)"/>
+  <circle cx="296" cy="291" r="3.4" fill="#E7B7A9" opacity="0.85"/>
+
+  <!-- soft highlight on pot -->
+  <path d="M218,320 C214,380 218,440 228,500" stroke="#F1C6A9" stroke-width="3" opacity="0.18" fill="none" stroke-linecap="round"/>
+</svg>

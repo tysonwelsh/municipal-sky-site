@@ -1,0 +1,428 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="115.8 36.0 568.0 687.8">
+  <defs>
+    <linearGradient id="iceGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#dff5ff"/>
+      <stop offset="0.45" stop-color="#b9e7ff"/>
+      <stop offset="1" stop-color="#8bd0ff"/>
+    </linearGradient>
+    <linearGradient id="iceSideGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#9ed9ff"/>
+      <stop offset="1" stop-color="#c8ecff"/>
+    </linearGradient>
+    <linearGradient id="iceTopGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f5fcff"/>
+      <stop offset="1" stop-color="#c7e7ff"/>
+    </linearGradient>
+    <linearGradient id="mammothFur" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#925637"/>
+      <stop offset="1" stop-color="#6d3b24"/>
+    </linearGradient>
+    <linearGradient id="earGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#a86a45"/>
+      <stop offset="1" stop-color="#754026"/>
+    </linearGradient>
+    <linearGradient id="tuskGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fdfaf4"/>
+      <stop offset="1" stop-color="#ddd3c4"/>
+    </linearGradient>
+    <linearGradient id="toeGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f3e4d6"/>
+      <stop offset="1" stop-color="#d0b39a"/>
+    </linearGradient>
+    <radialGradient id="eyeshadowGrad" cx="0.5" cy="0.6" r="0.7">
+      <stop offset="0" stop-color="#b37ad8" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#7f4eb1" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="iceHighlight" cx="0.2" cy="0.1" r="0.9">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="0.4" stop-color="#ffffff" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="cubeClip">
+      <path d="M120 80 L520 40 L680 120 L280 160 Z"/>
+      <path d="M280 160 L680 120 L680 640 L280 720 Z"/>
+      <path d="M120 80 L280 160 L280 720 L120 640 Z"/>
+    </clipPath>
+  </defs>
+
+  <!-- Ice cube base shapes -->
+  <g>
+    <!-- Top face -->
+    <path d="M120 80 L520 40 L680 120 L280 160 Z"
+          fill="url(#iceTopGrad)"
+          stroke="#7fc4f2"
+          stroke-width="4"
+          stroke-linejoin="round"/>
+    <!-- Right face -->
+    <path d="M280 160 L680 120 L680 640 L280 720 Z"
+          fill="url(#iceSideGrad)"
+          stroke="#62b1e8"
+          stroke-width="4"
+          stroke-linejoin="round"/>
+    <!-- Left face -->
+    <path d="M120 80 L280 160 L280 720 L120 640 Z"
+          fill="url(#iceGrad)"
+          stroke="#6fbbe9"
+          stroke-width="4"
+          stroke-linejoin="round"/>
+
+    <!-- Inner refracted edges -->
+    <g opacity="0.45" stroke="#ffffff" stroke-width="3" stroke-linecap="round">
+      <path d="M160 120 L300 190 L300 680 L160 610"/>
+      <path d="M320 185 L640 145 L640 610 L320 690"/>
+      <path d="M180 100 L540 65 L650 120"/>
+      <path d="M140 560 L260 610"/>
+      <path d="M310 690 L360 670 L650 620"/>
+    </g>
+
+    <!-- Ice cracks / facets -->
+    <g opacity="0.35" stroke="#e5f7ff" stroke-width="3" stroke-linecap="round">
+      <path d="M170 150 Q230 135 260 170 Q230 195 210 190 Q190 185 170 200"/>
+      <path d="M330 210 Q380 190 440 205 Q410 235 390 230 Q365 225 350 245"/>
+      <path d="M510 185 Q570 170 630 175 Q605 205 580 210 Q545 215 525 235"/>
+      <path d="M200 260 Q220 300 250 320 Q220 345 200 330 Q180 315 175 295"/>
+      <path d="M330 320 Q380 310 425 340 Q395 365 365 360 Q345 355 330 370"/>
+      <path d="M520 320 Q560 300 620 310 Q600 340 575 345 Q545 345 525 360"/>
+      <path d="M200 440 Q230 470 250 510 Q225 525 210 515 Q190 500 185 480"/>
+      <path d="M340 470 Q380 455 430 470 Q400 500 375 500 Q350 495 335 510"/>
+      <path d="M520 470 Q560 455 620 460 Q600 490 575 495 Q545 495 525 510"/>
+    </g>
+
+    <!-- Ice highlights -->
+    <g opacity="0.85">
+      <path d="M135 95 Q320 55 510 50 Q470 90 430 100 Q360 115 270 130 Q210 140 150 135 Z"
+            fill="url(#iceHighlight)"/>
+      <path d="M135 95 Q165 125 200 140 Q175 155 150 150 Q135 145 125 135 Z"
+            fill="#ffffff" fill-opacity="0.6"/>
+      <path d="M295 170 Q470 145 660 135 Q635 160 610 170 Q540 185 340 205 Z"
+            fill="#ffffff" fill-opacity="0.25"/>
+      <path d="M290 190 Q330 215 350 250 Q330 265 315 260 Q300 255 290 245 Z"
+            fill="#ffffff" fill-opacity="0.35"/>
+      <path d="M280 670 Q420 640 560 630 Q515 665 470 680 Q405 700 320 710 Z"
+            fill="#ffffff" fill-opacity="0.25"/>
+      <path d="M130 610 Q205 630 260 650 Q225 670 190 665 Q150 655 120 640 Z"
+            fill="#ffffff" fill-opacity="0.3"/>
+    </g>
+  </g>
+
+  <!-- Mammoth inside cube -->
+  <g clip-path="url(#cubeClip)">
+    <!-- Mammoth body -->
+    <g transform="translate(120,150)">
+      <!-- Back body mass -->
+      <path d="M140 260
+               C140 190 185 130 270 110
+               C345 90 430 105 485 145
+               C540 190 560 250 560 320
+               C560 410 520 470 465 510
+               C420 540 365 560 310 560
+               C260 560 210 545 175 520
+               C130 485 110 440 110 385
+               C110 335 130 295 155 275
+               Z"
+            fill="url(#mammothFur)"/>
+
+      <!-- Belly shading -->
+      <path d="M190 360
+               C220 330 280 310 340 310
+               C410 310 470 330 505 360
+               C525 380 540 415 545 450
+               C525 485 500 510 465 530
+               C430 550 380 560 330 560
+               C285 557 245 545 215 525
+               C190 505 170 480 160 455
+               C170 415 175 390 190 360 Z"
+            fill="#5a301c" opacity="0.55"/>
+
+      <!-- Fluffy outline on top of body -->
+      <path d="M190 190
+               Q210 160 235 150
+               Q235 132 255 125
+               Q272 135 285 135
+               Q300 115 320 110
+               Q335 123 355 125
+               Q365 115 385 112
+               Q395 122 410 128
+               Q430 115 450 118
+               Q455 135 470 145
+               Q485 140 495 145
+               Q500 155 505 170
+               "
+            fill="none"
+            stroke="#4c2616"
+            stroke-width="10"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            opacity="0.8"/>
+
+      <!-- Hind leg -->
+      <g>
+        <path d="M200 390
+                 C180 440 170 495 170 535
+                 C170 570 190 605 210 615
+                 C230 625 260 625 285 615
+                 C305 605 320 580 318 550
+                 C315 510 305 465 290 430
+                 C260 420 230 405 200 390 Z"
+              fill="url(#mammothFur)"/>
+        <path d="M180 540
+                 C205 535 240 535 280 540
+                 C290 555 292 570 285 585
+                 C275 600 260 612 245 615
+                 C230 618 212 612 200 602
+                 C188 592 180 575 178 560
+                 C178 553 178 547 180 540 Z"
+              fill="#5a301c" opacity="0.6"/>
+        <!-- Toes -->
+        <g transform="translate(185,560)">
+          <ellipse cx="10" cy="20" rx="13" ry="16" fill="url(#toeGrad)"/>
+          <ellipse cx="35" cy="21" rx="14" ry="17" fill="url(#toeGrad)"/>
+          <ellipse cx="61" cy="21" rx="14" ry="17" fill="url(#toeGrad)"/>
+        </g>
+      </g>
+
+      <!-- Front leg -->
+      <g>
+        <path d="M360 380
+                 C340 425 330 475 330 515
+                 C330 555 345 590 365 605
+                 C385 620 415 625 440 615
+                 C465 605 480 580 480 550
+                 C480 510 470 460 455 420
+                 C430 410 395 395 360 380 Z"
+              fill="url(#mammothFur)"/>
+        <path d="M340 525
+                 C365 520 400 520 440 525
+                 C450 540 452 560 445 580
+                 C435 600 420 612 405 615
+                 C390 618 372 612 360 602
+                 C348 592 340 575 338 560
+                 C338 553 338 545 340 525 Z"
+              fill="#5a301c" opacity="0.6"/>
+        <!-- Toes -->
+        <g transform="translate(345,550)">
+          <ellipse cx="10" cy="22" rx="13" ry="16" fill="url(#toeGrad)"/>
+          <ellipse cx="36" cy="23" rx="14" ry="17" fill="url(#toeGrad)"/>
+          <ellipse cx="63" cy="23" rx="14" ry="17" fill="url(#toeGrad)"/>
+        </g>
+      </g>
+
+      <!-- Head and trunk -->
+      <g>
+        <!-- Head mass -->
+        <path d="M260 190
+                 C230 210 220 240 220 280
+                 C220 330 245 370 280 390
+                 C300 400 320 405 345 405
+                 C380 405 410 395 435 380
+                 C470 360 495 330 505 300
+                 C515 270 512 235 505 215
+                 C495 190 475 170 455 160
+                 C435 150 410 145 385 145
+                 C340 145 295 160 260 190 Z"
+              fill="url(#mammothFur)"/>
+
+        <!-- Ear -->
+        <path d="M260 210
+                 C235 215 215 235 205 260
+                 C195 285 195 315 205 335
+                 C215 355 230 370 255 375
+                 C275 380 290 375 300 370
+                 C290 355 280 340 275 320
+                 C270 300 270 280 275 260
+                 C270 245 265 230 260 210 Z"
+              fill="url(#earGrad)"/>
+        <path d="M252 225
+                 C235 230 220 245 213 263
+                 C208 280 210 300 215 315
+                 C222 330 232 343 250 350
+                 C240 330 237 305 240 285
+                 C242 265 247 245 252 225 Z"
+              fill="#5a301c" opacity="0.6"/>
+
+        <!-- Cheek highlight -->
+        <ellipse cx="350" cy="280" rx="35" ry="25" fill="#b97350" opacity="0.45"/>
+
+        <!-- Trunk -->
+        <path d="M382 290
+                 C360 315 350 340 348 360
+                 C345 380 350 400 360 415
+                 C370 430 385 440 402 445
+                 C420 450 440 445 452 435
+                 C462 425 465 410 462 397
+                 C455 375 440 360 430 345
+                 C420 330 412 312 410 295
+                 Z"
+              fill="url(#mammothFur)"/>
+        <!-- Trunk ridges -->
+        <g stroke="#5a301c" stroke-width="5" stroke-linecap="round" opacity="0.75">
+          <path d="M371 327 Q382 333 393 336"/>
+          <path d="M364 352 Q381 360 398 365"/>
+          <path d="M361 380 Q380 390 401 395"/>
+          <path d="M368 408 Q388 417 408 422"/>
+        </g>
+      </g>
+
+      <!-- Tusk (left, curling down) -->
+      <g>
+        <path d="M416 333
+                 C430 332 446 338 458 350
+                 C476 370 486 395 488 420
+                 C490 450 480 477 462 495
+                 C442 515 418 525 393 525
+                 C370 525 350 517 337 503
+                 C325 490 318 472 320 452
+                 C322 435 334 420 348 415
+                 C362 410 378 413 386 425
+                 C394 437 393 455 383 465
+                 C376 472 370 475 365 476"
+              fill="none"
+              stroke="url(#tuskGrad)"
+              stroke-width="20"
+              stroke-linecap="round"
+              stroke-linejoin="round"/>
+        <path d="M416 333
+                 C430 332 446 338 458 350
+                 C476 370 486 395 488 420
+                 C490 450 480 477 462 495
+                 C442 515 418 525 393 525
+                 C370 525 350 517 337 503
+                 C325 490 318 472 320 452
+                 C322 435 334 420 348 415
+                 C362 410 378 413 386 425
+                 C394 437 393 455 383 465
+                 C376 472 370 475 365 476"
+              fill="none"
+              stroke="#d8c9b6"
+              stroke-width="8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              opacity="0.7"/>
+      </g>
+
+      <!-- Face details -->
+      <g>
+        <!-- Eyeshadow area -->
+        <path d="M325 230
+                 C340 220 360 215 380 215
+                 C395 215 410 218 422 225
+                 C415 240 404 255 390 263
+                 C375 270 360 270 347 265
+                 C335 260 327 248 325 238 Z"
+              fill="url(#eyeshadowGrad)"
+              opacity="0.9"/>
+
+        <!-- Closed eye line -->
+        <path d="M335 245
+                 C348 238 364 234 380 234
+                 C394 234 410 237 422 242"
+              fill="none"
+              stroke="#2d1209"
+              stroke-width="5"
+              stroke-linecap="round"/>
+
+        <!-- Eyelashes -->
+        <g stroke="#2d1209" stroke-width="4" stroke-linecap="round">
+          <path d="M350 237 Q345 225 340 220"/>
+          <path d="M363 233 Q360 220 356 213"/>
+          <path d="M377 232 Q376 218 374 210"/>
+          <path d="M391 234 Q392 220 396 211"/>
+          <path d="M404 238 Q408 225 414 217"/>
+        </g>
+
+        <!-- Eyelid highlight -->
+        <path d="M336 243
+                 C348 236 365 232 380 232
+                 C394 232 409 235 421 240"
+              fill="none"
+              stroke="#f4d4c5"
+              stroke-width="2"
+              stroke-linecap="round"
+              opacity="0.55"/>
+
+        <!-- Small blush -->
+        <ellipse cx="318" cy="270" rx="16" ry="11" fill="#f08ba2" opacity="0.55"/>
+      </g>
+
+      <!-- Fluffy chest -->
+      <path d="M290 355
+               C280 345 270 335 265 320
+               C260 305 258 295 258 285
+               C245 293 238 304 235 317
+               C232 330 233 345 237 357
+               C242 370 248 380 258 390
+               C268 400 282 410 298 415
+               C312 420 328 420 340 417
+               C328 405 312 382 302 368
+               Z"
+            fill="#5a301c"/>
+
+      <!-- Tail -->
+      <g>
+        <path d="M145 320
+                 C130 340 120 365 118 390
+                 C116 410 118 430 125 445
+                 C132 460 145 472 160 478"
+              fill="none"
+              stroke="#4c2616"
+              stroke-width="12"
+              stroke-linecap="round"/>
+        <path d="M158 470
+                 C150 467 142 468 136 473
+                 C132 478 130 485 132 492
+                 C135 500 142 507 151 509
+                 C160 511 168 507 173 500
+                 C176 494 177 488 176 483
+                 C171 478 165 474 158 470 Z"
+              fill="#4c2616"/>
+      </g>
+
+      <!-- Overall subtle icy tint on mammoth -->
+      <path d="M140 260
+               C140 190 185 130 270 110
+               C345 90 430 105 485 145
+               C540 190 560 250 560 320
+               C560 410 520 470 465 510
+               C420 540 365 560 310 560
+               C260 560 210 545 175 520
+               C130 485 110 440 110 385
+               C110 335 130 295 155 275
+               Z"
+            fill="#9fd6ff"
+            opacity="0.18"/>
+    </g>
+  </g>
+
+  <!-- Ice cube front gloss/overlay after mammoth for depth -->
+  <g>
+    <path d="M120 80 L520 40 L680 120 L280 160 Z"
+          fill="url(#iceTopGrad)"
+          opacity="0.18"/>
+    <path d="M280 160 L680 120 L680 640 L280 720 Z"
+          fill="url(#iceSideGrad)"
+          opacity="0.25"/>
+    <path d="M120 80 L280 160 L280 720 L120 640 Z"
+          fill="url(#iceGrad)"
+          opacity="0.3"/>
+
+    <!-- Strong front highlights -->
+    <g stroke="#ffffff" stroke-width="5" stroke-linecap="round" opacity="0.85">
+      <path d="M130 120 L260 180 L260 340"/>
+      <path d="M300 185 L650 145"/>
+      <path d="M290 210 L290 400"/>
+      <path d="M290 480 L290 700"/>
+      <path d="M310 700 L660 635"/>
+      <path d="M140 600 L260 645"/>
+    </g>
+
+    <!-- Sparkle facets -->
+    <g fill="#ffffff" opacity="0.9">
+      <polygon points="200 150 210 170 190 170"/>
+      <polygon points="420 90 430 110 410 110"/>
+      <polygon points="610 160 622 180 600 182"/>
+      <polygon points="310 650 322 668 302 672"/>
+      <polygon points="540 630 552 648 532 652"/>
+      <polygon points="170 590 182 608 162 612"/>
+    </g>
+  </g>
+</svg>

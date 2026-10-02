@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800">
+  <defs>
+    <radialGradient id="gSpace" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#050814"/>
+      <stop offset="50%" stop-color="#02030a"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </radialGradient>
+    <radialGradient id="gHalo" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fdfdfd" stop-opacity="0.34"/>
+      <stop offset="15%" stop-color="#fdfdfd" stop-opacity="0.14"/>
+      <stop offset="35%" stop-color="#d6e6ff" stop-opacity="0.08"/>
+      <stop offset="60%" stop-color="#6a84b3" stop-opacity="0.03"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="gEarthGlow" cx="50%" cy="120%" r="90%">
+      <stop offset="0%" stop-color="#1d2a52" stop-opacity="0.7"/>
+      <stop offset="20%" stop-color="#10172b" stop-opacity="0.35"/>
+      <stop offset="45%" stop-color="#050814" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="gMoonCore" cx="48%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#090f20" stop-opacity="0.9"/>
+      <stop offset="40%" stop-color="#050814" stop-opacity="0.98"/>
+      <stop offset="75%" stop-color="#000000" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="1"/>
+    </radialGradient>
+    <radialGradient id="gLimbGlow" cx="52%" cy="60%" r="52%">
+      <stop offset="70%" stop-color="#e0f0ff" stop-opacity="0"/>
+      <stop offset="92%" stop-color="#d0e2ff" stop-opacity="0.22"/>
+      <stop offset="96%" stop-color="#fefeff" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.0"/>
+    </radialGradient>
+    <radialGradient id="gSubtleTerminator" cx="25%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#1b2235" stop-opacity="0.5"/>
+      <stop offset="30%" stop-color="#101424" stop-opacity="0.2"/>
+      <stop offset="70%" stop-color="#050814" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="gHaloNarrow" cx="50%" cy="50%" r="52%">
+      <stop offset="75%" stop-color="#fdfdfd" stop-opacity="0"/>
+      <stop offset="87%" stop-color="#eaf2ff" stop-opacity="0.08"/>
+      <stop offset="96%" stop-color="#d0e0ff" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#b0c8ff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect x="0" y="0" width="800" height="800" fill="url(#gSpace)"/>
+
+  <g id="stars">
+    <g fill="#f9fbff">
+      <circle cx="80" cy="120" r="0.6" opacity="0.7"/>
+      <circle cx="140" cy="210" r="0.8" opacity="0.9"/>
+      <circle cx="260" cy="90" r="0.7" opacity="0.8"/>
+      <circle cx="360" cy="40" r="0.5" opacity="0.7"/>
+      <circle cx="430" cy="130" r="0.6" opacity="0.6"/>
+      <circle cx="520" cy="70" r="0.7" opacity="0.7"/>
+      <circle cx="640" cy="160" r="0.8" opacity="0.85"/>
+      <circle cx="720" cy="60" r="0.5" opacity="0.7"/>
+      <circle cx="760" cy="190" r="0.6" opacity="0.7"/>
+      <circle cx="90" cy="320" r="0.7" opacity="0.7"/>
+      <circle cx="200" cy="280" r="0.5" opacity="0.7"/>
+      <circle cx="310" cy="210" r="0.6" opacity="0.8"/>
+      <circle cx="390" cy="260" r="0.6" opacity="0.8"/>
+      <circle cx="470" cy="220" r="0.5" opacity="0.7"/>
+      <circle cx="570" cy="260" r="0.7" opacity="0.9"/>
+      <circle cx="660" cy="260" r="0.5" opacity="0.7"/>
+      <circle cx="740" cy="270" r="0.6" opacity="0.8"/>
+      <circle cx="60" cy="440" r="0.6" opacity="0.8"/>
+      <circle cx="150" cy="410" r="0.5" opacity="0.7"/>
+      <circle cx="230" cy="360" r="0.7" opacity="0.8"/>
+      <circle cx="320" cy="430" r="0.6" opacity="0.85"/>
+      <circle cx="410" cy="360" r="0.5" opacity="0.7"/>
+      <circle cx="500" cy="410" r="0.7" opacity="0.9"/>
+      <circle cx="580" cy="360" r="0.6" opacity="0.75"/>
+      <circle cx="680" cy="420" r="0.6" opacity="0.8"/>
+      <circle cx="760" cy="380" r="0.5" opacity="0.7"/>
+      <circle cx="120" cy="520" r="0.6" opacity="0.8"/>
+      <circle cx="210" cy="560" r="0.7" opacity="0.85"/>
+      <circle cx="300" cy="510" r="0.5" opacity="0.7"/>
+      <circle cx="380" cy="540" r="0.6" opacity="0.8"/>
+      <circle cx="470" cy="500" r="0.6" opacity="0.75"/>
+      <circle cx="560" cy="540" r="0.5" opacity="0.7"/>
+      <circle cx="640" cy="520" r="0.6" opacity="0.8"/>
+      <circle cx="720" cy="560" r="0.7" opacity="0.85"/>
+      <circle cx="90" cy="640" r="0.5" opacity="0.7"/>
+      <circle cx="180" cy="700" r="0.6" opacity="0.8"/>
+      <circle cx="260" cy="650" r="0.7" opacity="0.75"/>
+      <circle cx="340" cy="720" r="0.5" opacity="0.7"/>
+      <circle cx="430" cy="660" r="0.6" opacity="0.8"/>
+      <circle cx="520" cy="690" r="0.7" opacity="0.8"/>
+      <circle cx="600" cy="640" r="0.5" opacity="0.7"/>
+      <circle cx="700" cy="710" r="0.6" opacity="0.8"/>
+      <circle cx="770" cy="650" r="0.5" opacity="0.7"/>
+    </g>
+    <g fill="#b6c5ff">
+      <circle cx="120" cy="80" r="1.0" opacity="0.45"/>
+      <circle cx="300" cy="150" r="1.1" opacity="0.35"/>
+      <circle cx="520" cy="130" r="1.1" opacity="0.4"/>
+      <circle cx="700" cy="210" r="1.0" opacity="0.35"/>
+      <circle cx="190" cy="360" r="1.2" opacity="0.35"/>
+      <circle cx="610" cy="330" r="1.1" opacity="0.35"/>
+      <circle cx="130" cy="600" r="1.0" opacity="0.35"/>
+      <circle cx="420" cy="720" r="1.1" opacity="0.35"/>
+      <circle cx="670" cy="610" r="1.0" opacity="0.35"/>
+    </g>
+  </g>
+
+  <ellipse cx="400" cy="860" rx="460" ry="420" fill="url(#gEarthGlow)" opacity="0.85"/>
+
+  <g id="moon" transform="translate(0,0)">
+    <circle cx="400" cy="400" r="250" fill="url(#gHalo)" opacity="0.9"/>
+    <circle cx="400" cy="400" r="240" fill="url(#gHaloNarrow)" opacity="0.8"/>
+    <circle cx="400" cy="400" r="215" fill="#000000"/>
+    <circle cx="400" cy="400" r="212" fill="url(#gMoonCore)"/>
+
+    <circle cx="400" cy="400" r="215" fill="url(#gLimbGlow)"/>
+
+    <ellipse cx="395" cy="400" rx="215" ry="213" fill="url(#gSubtleTerminator)" opacity="0.75"/>
+
+    <g opacity="0.22">
+      <circle cx="332" cy="322" r="9" fill="#161b2a"/>
+      <circle cx="325" cy="332" r="5" fill="#121725"/>
+      <circle cx="350" cy="340" r="7" fill="#141a28"/>
+      <circle cx="448" cy="310" r="6" fill="#101729"/>
+      <circle cx="460" cy="318" r="4" fill="#141a2b"/>
+      <circle cx="370" cy="460" r="8" fill="#101524"/>
+      <circle cx="390" cy="472" r="5" fill="#151b2d"/>
+      <circle cx="430" cy="452" r="6" fill="#131827"/>
+      <circle cx="355" cy="390" r="4" fill="#15192a"/>
+      <circle cx="442" cy="380" r="5" fill="#181d2d"/>
+      <circle cx="410" cy="345" r="4" fill="#181d2f"/>
+      <circle cx="380" cy="356" r="3" fill="#141a2a"/>
+      <circle cx="415" cy="430" r="4" fill="#181e32"/>
+      <circle cx="360" cy="430" r="3" fill="#151a2c"/>
+      <circle cx="345" cy="365" r="3" fill="#161b2b"/>
+      <circle cx="452" cy="410" r="3" fill="#141a2a"/>
+      <circle cx="430" cy="340" r="3" fill="#191f33"/>
+      <circle cx="380" cy="320" r="3" fill="#181d2d"/>
+      <circle cx="410" cy="390" r="3" fill="#181d2f"/>
+    </g>
+  </g>
+</svg>

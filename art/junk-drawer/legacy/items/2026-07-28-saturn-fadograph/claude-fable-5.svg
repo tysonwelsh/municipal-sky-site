@@ -1,0 +1,147 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <defs>
+    <radialGradient id="sky" cx="0.5" cy="0.46" r="0.85">
+      <stop offset="0" stop-color="#241b11" stop-opacity="0.95"/>
+      <stop offset="0.45" stop-color="#2e2315" stop-opacity="0.93"/>
+      <stop offset="0.78" stop-color="#4a3a24" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#6b5636" stop-opacity="0.72"/>
+    </radialGradient>
+    <radialGradient id="planetGrad" cx="0.38" cy="0.32" r="1.05">
+      <stop offset="0" stop-color="#efdfb6"/>
+      <stop offset="0.35" stop-color="#d4b986"/>
+      <stop offset="0.7" stop-color="#a9895b"/>
+      <stop offset="1" stop-color="#5f4a2e"/>
+    </radialGradient>
+    <radialGradient id="leak" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#e8c98e" stop-opacity="0.28"/>
+      <stop offset="0.6" stop-color="#dcb87e" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#dcb87e" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="wash" cx="0.5" cy="0.48" r="0.72">
+      <stop offset="0" stop-color="#e6d7b4" stop-opacity="0"/>
+      <stop offset="0.75" stop-color="#e0cfa8" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#e6d5ac" stop-opacity="0.3"/>
+    </radialGradient>
+    <radialGradient id="fadeGrad" cx="0.5" cy="0.48" r="0.78">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.7" stop-color="#f4f4f4"/>
+      <stop offset="0.92" stop-color="#cfcfcf"/>
+      <stop offset="1" stop-color="#a8a8a8"/>
+    </radialGradient>
+    <mask id="fade">
+      <rect x="0" y="0" width="800" height="600" fill="url(#fadeGrad)"/>
+    </mask>
+    <clipPath id="planetClip">
+      <circle cx="0" cy="0" r="105"/>
+    </clipPath>
+    <clipPath id="frontRings">
+      <rect x="-250" y="1" width="500" height="90"/>
+    </clipPath>
+    <filter id="soft1"><feGaussianBlur stdDeviation="1.1"/></filter>
+    <filter id="soft4"><feGaussianBlur stdDeviation="4"/></filter>
+    <filter id="soft9"><feGaussianBlur stdDeviation="9"/></filter>
+    <filter id="grain" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="17"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.91  0 0 0 0 0.82  0 0 0 0 0.63  0.55 0.55 0.55 0 -0.35"/>
+    </filter>
+  </defs>
+
+  <g mask="url(#fade)">
+    <!-- emulsion field of the old photograph -->
+    <rect x="0" y="0" width="800" height="600" fill="url(#sky)"/>
+
+    <!-- faint faded stars -->
+    <g fill="#e9dcba">
+      <circle cx="92" cy="86" r="1.6" opacity="0.35"/>
+      <circle cx="176" cy="188" r="1.1" opacity="0.28"/>
+      <circle cx="248" cy="64" r="1.4" opacity="0.32"/>
+      <circle cx="334" cy="122" r="1" opacity="0.22"/>
+      <circle cx="452" cy="58" r="1.8" opacity="0.4"/>
+      <circle cx="548" cy="104" r="1.2" opacity="0.26"/>
+      <circle cx="642" cy="70" r="1.5" opacity="0.34"/>
+      <circle cx="716" cy="150" r="1.1" opacity="0.24"/>
+      <circle cx="738" cy="268" r="1.7" opacity="0.3"/>
+      <circle cx="694" cy="392" r="1.2" opacity="0.26"/>
+      <circle cx="612" cy="512" r="1.6" opacity="0.32"/>
+      <circle cx="486" cy="548" r="1.1" opacity="0.24"/>
+      <circle cx="332" cy="528" r="1.5" opacity="0.3"/>
+      <circle cx="196" cy="486" r="1.2" opacity="0.24"/>
+      <circle cx="104" cy="392" r="1.7" opacity="0.34"/>
+      <circle cx="66" cy="256" r="1.2" opacity="0.26"/>
+      <circle cx="152" cy="310" r="0.9" opacity="0.2"/>
+      <circle cx="404" cy="86" r="0.9" opacity="0.2"/>
+      <circle cx="580" cy="180" r="0.9" opacity="0.22"/>
+      <circle cx="270" cy="560" r="1" opacity="0.2"/>
+      <circle cx="742" cy="60" r="1.3" opacity="0.28"/>
+      <circle cx="58" cy="122" r="1" opacity="0.22"/>
+      <circle cx="58" cy="520" r="1.3" opacity="0.26"/>
+      <circle cx="756" cy="470" r="1.4" opacity="0.28"/>
+      <circle cx="522" cy="470" r="0.9" opacity="0.2"/>
+    </g>
+    <!-- a moon, small and far -->
+    <circle cx="628" cy="212" r="3.2" fill="#e2d0a4" opacity="0.5" filter="url(#soft1)"/>
+
+    <!-- Saturn, seen from a reasonable distance -->
+    <g transform="translate(398,304) rotate(-17)" filter="url(#soft1)">
+      <!-- rings, far side -->
+      <g fill="none">
+        <ellipse rx="148" ry="39" stroke="#a98f63" stroke-width="13" opacity="0.32"/>
+        <ellipse rx="172" ry="46" stroke="#cdb488" stroke-width="25" opacity="0.72"/>
+        <ellipse rx="207" ry="55" stroke="#bda275" stroke-width="19" opacity="0.55"/>
+        <ellipse rx="226" ry="60" stroke="#a68c60" stroke-width="6" opacity="0.3"/>
+      </g>
+      <!-- planet shadow falling on the far rings -->
+      <circle r="122" fill="#1f160c" opacity="0.55" filter="url(#soft9)" clip-rule="nonzero"/>
+      <!-- globe -->
+      <circle r="105" fill="url(#planetGrad)"/>
+      <g clip-path="url(#planetClip)">
+        <rect x="-110" y="-104" width="220" height="26" fill="#8a6d43" opacity="0.2"/>
+        <rect x="-110" y="-70" width="220" height="14" fill="#93744a" opacity="0.24"/>
+        <rect x="-110" y="-44" width="220" height="20" fill="#7d6038" opacity="0.16"/>
+        <rect x="-110" y="-12" width="220" height="12" fill="#95764c" opacity="0.22"/>
+        <rect x="-110" y="12" width="220" height="22" fill="#7d6038" opacity="0.18"/>
+        <rect x="-110" y="48" width="220" height="14" fill="#8a6d43" opacity="0.22"/>
+        <rect x="-110" y="74" width="220" height="30" fill="#6d5432" opacity="0.26"/>
+        <!-- shadow of the rings across the globe -->
+        <ellipse rx="160" ry="43" cy="-14" fill="none" stroke="#241a0e" stroke-width="12" opacity="0.28" filter="url(#soft4)"/>
+        <!-- limb darkening -->
+        <circle r="105" fill="none" stroke="#2c2113" stroke-width="26" opacity="0.35" filter="url(#soft9)"/>
+      </g>
+      <!-- rings, near side, crossing the globe -->
+      <g fill="none" clip-path="url(#frontRings)">
+        <ellipse rx="148" ry="39" stroke="#b39a6c" stroke-width="13" opacity="0.4"/>
+        <ellipse rx="172" ry="46" stroke="#d9c194" stroke-width="25" opacity="0.82"/>
+        <ellipse rx="207" ry="55" stroke="#c8ad7e" stroke-width="19" opacity="0.62"/>
+        <ellipse rx="226" ry="60" stroke="#ab9164" stroke-width="6" opacity="0.34"/>
+      </g>
+    </g>
+
+    <!-- age of the print: light leak, scratches, foxing spots -->
+    <ellipse cx="762" cy="120" rx="190" ry="260" fill="url(#leak)"/>
+    <ellipse cx="30" cy="540" rx="150" ry="120" fill="url(#leak)" opacity="0.7"/>
+    <g stroke="#eadfc2" fill="none" stroke-linecap="round">
+      <path d="M136 28 L168 572" stroke-width="1.2" opacity="0.1"/>
+      <path d="M604 14 C610 180 596 420 606 588" stroke-width="1" opacity="0.09"/>
+      <path d="M40 214 L760 198" stroke-width="0.8" opacity="0.06"/>
+    </g>
+    <g fill="#efe3c4">
+      <circle cx="702" cy="486" r="2.6" opacity="0.18"/>
+      <circle cx="120" cy="140" r="2" opacity="0.16"/>
+      <circle cx="530" cy="66" r="1.6" opacity="0.14"/>
+      <circle cx="244" cy="430" r="2.2" opacity="0.15"/>
+    </g>
+    <g fill="#3a2c19">
+      <circle cx="666" cy="332" r="2.4" opacity="0.3"/>
+      <circle cx="212" cy="234" r="1.8" opacity="0.26"/>
+      <circle cx="438" cy="556" r="2.8" opacity="0.24"/>
+    </g>
+
+    <!-- washed-out fading toward the edges -->
+    <rect x="0" y="0" width="800" height="600" fill="url(#wash)"/>
+    <!-- silver-grain of the emulsion -->
+    <rect x="0" y="0" width="800" height="600" filter="url(#grain)" opacity="0.16"/>
+    <!-- worn emulsion edge -->
+    <rect x="7" y="7" width="786" height="586" rx="6" fill="none" stroke="#e8d9b4" stroke-width="2.5" opacity="0.14"/>
+    <rect x="13" y="13" width="774" height="574" rx="4" fill="none" stroke="#1e1509" stroke-width="1.2" opacity="0.18"/>
+  </g>
+</svg>

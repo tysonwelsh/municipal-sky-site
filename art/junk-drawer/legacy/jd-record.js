@@ -1,0 +1,1463 @@
+/* ============================================================================
+   THE JUNK DRAWER — jd-record.js
+   The report card, and JD_barHTML's home (the gauge the bench reuses).
+   Loaded after jd-core.js (JD_esc, JD_byId, JD_zoomLayer, JD_drawOn,
+   JD_fitAll, JD_svgInst). See jd-core.js for the file map.
+   ========================================================================== */
+
+/* ---- THE FULL RECORD — the report card (Phase 3, promoted from mockup-7a).
+   Self-contained module: the pile loader hands it the data.php payload and
+   the already-fetched primary SVG texts via JD_record.setData(); the item
+   tag's REPORT CARD button calls JD_record.open(id). The card is built
+   entirely from the payload (taxonomy-driven — unknown axes render, nothing
+   hardcoded), alternatives' SVGs are fetched lazily on first open, opening
+   sets #<id> via pushState (deep links; popstate closes — Android back
+   closes the card, not the site), and an item_open event is tracked.
+   Inlined SVG copies are id-prefixed (plate jrN_, thumbs jtN_, enlargement
+   jzN_) so they can never collide with the pile's inlined primaries or each
+   other. Pressing the artwork plate ENLARGES it over the card; that layer is
+   a second dismissable thing inside one dialog, so Escape peels the
+   enlargement before the card (see the keydown handler at the foot). */
+(function () {
+  var payload = null, svgCache = {};
+  var scrim = null, cardEl = null, scrollEl = null;
+  var curEntry = null, curResp = 0, isOpen = false, pushed = false;
+  var swiped = false;   /* a plate swipe just turned the response — see build() */
+  /* THE PAPER (owner, 2026-09-10; shared 2026-09-14): the photograph's
+     swatch is graph paper by default; a small button in its top-right
+     corner swaps it for BLUEPRINT — dark blue, pale rules — for artwork
+     too light to read on the cream (the dandelion was the case in point).
+     A viewer's choice, remembered per device via window.JD_paper
+     (jd-core.js — the rating instrument shares it too, so a swap on
+     either surface is what the other shows next time it opens); the
+     artwork's frame does not move a pixel either way (the class only
+     repaints the paper and its margin ink). */
+  function paperCls() { return JD_paper.get() === 'blueprint' ? ' is-blueprint' : ''; }
+  function paperBtnHTML() {
+    var blue = JD_paper.get() === 'blueprint';
+    return '<button type="button" class="rc-paper" data-rc="paper" aria-pressed="' +
+      (blue ? 'true' : 'false') + '" title="' +
+      (blue ? 'back to graph paper' : 'blueprint paper — for light artwork') +
+      '" aria-label="' + (blue ? 'Switch to graph paper' : 'Switch to blueprint paper') + '">' +
+      JD_paper.icon() + '</button>';
+  }
+  function togglePaper() {
+    var next = JD_paper.get() === 'blueprint' ? 'graph' : 'blueprint';
+    JD_paper.set(next);
+    var plate = plateEl();
+    if (plate) {
+      plate.classList.toggle('is-blueprint', next === 'blueprint');
+      var btn = plate.querySelector('.rc-paper');
+      if (btn) btn.outerHTML = paperBtnHTML();
+    }
+    /* the enlargement still WEARS whichever paper the plate has — it just no
+       longer carries the switch (owner, 2026-09-10: the corner is the ✕'s
+       now). So the class travels and nothing else does. */
+    var fig = document.querySelector('.rc-zoom-fig');
+    if (fig) fig.classList.toggle('is-blueprint', next === 'blueprint');
+  }
+  /* turn to the next (+1) / previous (−1) response, the strip's own move;
+     the ends stop rather than wrap */
+  function stepResp(dir) {
+    if (!curEntry || !curEntry.responses) return;
+    var n = curEntry.responses.length;
+    var i = Math.max(0, Math.min(n - 1, curResp + dir));
+    if (i === curResp) return;
+    curResp = i;
+    /* a flip no longer draws the incoming response on (owner, 2026-09-10):
+       the card draws when it OPENS, and REDRAW is there for the rest */
+    render(false);
+  }
+  /* (the alternatives strip's window index retired 2026-08-15 — the strip
+     is a scroll port now and its position IS its scrollLeft. See altsHTML.) */
+  /* THE ARTWORK'S KEY for the shared display frame (see fitView). One string
+     per DRAWING, so the plate, the strip thumbnail, the enlargement and — for
+     a won item — the bench and the pile all reframe identically instead of
+     each measuring its own copy in its own box. A visitor response carries
+     its generation id and is keyed on that, because its filename is scoped to
+     whichever response won the turn; a curated one is keyed on its path. */
+  function fitKey(entry, resp) {
+    return resp.gen_id ? 'gen:' + resp.gen_id : entry.id + '/' + resp.file;
+  }
+  /* the svgCache's key for one response's drawing — the pile loader primes
+     the primaries under the same entry-id/file string (JD_record.setData) */
+  function cacheKey(entry, resp) { return entry.id + '/' + resp.file; }
+  /* the response the card is showing (the first, if curResp ran past the end) */
+  function curResponse() { return curEntry.responses[curResp] || curEntry.responses[0]; }
+  /* where the response filed under `rid` sits in the entry, or 0. rids are
+     unique within an entry (r1, r2, … — CLAUDE.md), so the first match is
+     the only one */
+  function respIndex(entry, rid) {
+    for (var i = 0; i < entry.responses.length; i++) {
+      if (entry.responses[i].rid === rid) return i;
+    }
+    return 0;
+  }
+  /* the pile's own item for an entry, or null (the id is dequoted for the
+     selector) */
+  function pileItem(id) {
+    return document.querySelector('.jd-item[data-id="' + id.replace(/"/g, '') + '"]');
+  }
+  /* what a drawing that cannot be had inlines as: an empty 1×1 frame */
+  var BLANK_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"></svg>';
+  /* THE ENLARGEMENT (owner, 2026-08-09): the artwork plate is small — it has
+     to be, the card is a form and the art is one field on it — so pressing
+     the plate lifts the same artwork onto a full-viewport layer where it can
+     actually be read. State lives here rather than in the DOM because Esc
+     has to know which layer it is peeling: enlargement first, card second. */
+  var zoom = JD_zoomLayer();
+  var markSeq = 0;
+  var JITTER = [-1.7, 1.3, -0.8, 2.0, -1.4, 0.9, -2.1, 1.6];
+  var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+    'August', 'September', 'October', 'November', 'December'];
+
+  var esc = JD_esc, byId = JD_byId;
+  function fmtDate(iso) {
+    if (!iso) return '';
+    var p = String(iso).split('-');
+    if (p.length !== 3) return iso;
+    return String(parseInt(p[2], 10)) + ' ' +
+      (MONTHS[parseInt(p[1], 10) - 1] || p[1]) + ' ' + p[0];
+  }
+  /* PROCESS, plainly stated, from the honest turn count */
+  function processLabel(gen) {
+    if (!gen) return '—';
+    if (gen.mode === 'refined') {
+      var n = gen.prompt_count || 2;
+      return 'refined (' + n + ' prompt' + (n === 1 ? '' : 's') + ')';
+    }
+    return 'one-shot (1 prompt)';
+  }
+  /* prefix every id and url(#)/href reference so inlined copies never
+     collide (same discipline as the rating instrument). One implementation,
+     shared with the pile — see JD_svgInst in jd-core.js. */
+  var svgInst = window.JD_svgInst;
+  /* (the filed size tier shows nowhere in the UI any more — the specimen
+     tag dropped it 2026-08-12, the report card 2026-08-13; the data keeps
+     it, and window.JD_sizeLabel still serves the loader/legend) */
+  /* a hand-pencilled mark; each takes its own rotation jitter + waver
+     filter so no two sit identically. `cls` picks the pencil (the
+     rating-colour classes rc-r1..3, rc-q1..4 and rc-g1..5 in the
+     stylesheet — owner request, 2026-08-11); no class = the original red. Labels'
+     _emphasis_ pairs render in italics here (escape first, so nothing
+     can smuggle markup). */
+  function mark(word, cls) {
+    markSeq++;
+    var jit = JITTER[markSeq % JITTER.length];
+    return '<span class="rc-mark sm' + (cls ? ' ' + cls : '') +
+      '" style="--jit:' + jit +
+      'deg; filter:url(#jdRcWv' + (markSeq % 4) + ')">' +
+      '<span class="rc-mark-word">' +
+      esc(word).replace(/_([^_]+)_/g, '<i>$1</i>') + '</span></span>';
+  }
+  /* the grade gauge (owner pick, mockup 11 option C, 2026-08-11 —
+     replacing the dot sparkline): ONE segmented bar per grade, every
+     row the same fixed span, filled to rank/steps of ITS OWN scale.
+     The step dividers are paper-coloured and drawn OVER the fill (owner
+     rev, 2026-08-11), battery-style — so a 100% bar still reads as its
+     segments, and a 3-step axis and the 5-tier grade stay honestly
+     distinguishable. aria-hidden; the word carries the meaning. */
+  function barHTML(rank, total, cls) {
+    /* rank 0 = an empty track (the editor's unassessed axis); a filed
+       rank always fills at least one segment */
+    var full = rank > 0 ? Math.max(1, Math.min(total, rank)) : 0;
+    var h = '<span class="rc-bar ' + cls + '" aria-hidden="true">' +
+      '<span class="rc-bar-fill" style="width:' +
+      (100 * full / total).toFixed(1) + '%"></span>';
+    for (var t = 1; t < total; t++) {
+      h += '<span class="rc-bar-tick" style="left:' +
+        (100 * t / total).toFixed(1) + '%"></span>';
+    }
+    return h + '</span>';
+  }
+  window.JD_barHTML = barHTML;  /* the bench (r4, owner directive) reuses this
+    gauge verbatim once a value is picked, instead of inventing a second one —
+    a filled-in bench and the report card it produces are meant to speak the
+    same visual language */
+  /* an annotation is a bare rank number or { value: <rank>, note } */
+  function annOf(resp, axisId) {
+    var a = (resp.annotations || {})[axisId];
+    if (a == null) return null;
+    return typeof a === 'object' ? a : { value: a };
+  }
+
+  /* RETIRED — kept as a backup on the same terms as checkerFloorSVG below
+     (round 13, owner pick 2026-08-13: the display container went paper —
+     mockup-13b's graph-grid photo swatch, all CSS on .rc-plate — so the
+     dark stage left the card and the enlargement together, and the
+     shape-tuned rc-art-square envelope went with it; the photograph frames
+     every aspect the same). This was the vaporwave floor, mk II (owner,
+     2026-08-12): TWIN perspective grids — a floor below the artwork and a
+     ceiling above it — teal-blue wireframe lines all converging on one
+     central vanishing point; both grids dissolve into a hazy glow band at
+     the shared horizon. The viewBox is square to match the retired square
+     plate; the enlargement cropped it center-out (slice). `pfx` namespaces
+     the gradient ids so the plate and enlargement copies never fought over
+     one id. Not called anywhere; to restore it, re-point cardHTML/zoomHTML
+     at it and give .rc-plate back a dark ground. */
+  /* OWNER-BENCHED: retired but kept by owner request (2026-08-13) — leave it in place. */
+  function floorSVG(pfx) {  /* eslint-disable-line no-unused-vars */
+    pfx = pfx || '';
+    var W = 600, H = 600, VPX = W / 2, HOR = H / 2;
+    /* true one-point perspective: equally spaced ground lines at depth n sit
+       at y = HOR ± DEPTH/n — wide apart underfoot, compressing hard at the
+       horizon. GAP holds an empty band at the horizon so the two grids never
+       actually meet; each grid also fades out through a luminance-mask
+       gradient before it gets there. */
+    /* SQUARE TILES (owner, 2026-08-13): rows recede GEOMETRICALLY, not
+       harmonically. With geometric spacing the on-screen cell aspect is
+       CONSTANT at every depth — cell width at a row is S·dy/DEPTH, cell
+       height is dy·(1−R), so R = 1 − S/DEPTH makes width equal height:
+       every tile reads as a square, all the way down. (The earlier
+       harmonic series was "truer" optics but its cell aspect varies —
+       squares mid-field flattened into wide letterbox slats near the
+       horizon, which is what the owner was seeing.) Rows run until finer
+       than roughly half the GAP, dissolving INTO the glow.
+       COLS runs far past the frame: an outermost ray at ±COLS·S exits
+       through the side edge at y ≈ HOR + DEPTH²/(COLS·S), so 44 columns
+       carry the fan to within ~1px of the gap and the surface never
+       visibly stops generating at the sides (26 left dead wedges there —
+       owner report). Rays and rows are kept in separate strings because
+       the rays draw a step thicker (at equal width the converging lines
+       read thinner than the crossing ones they meet). */
+    /* S is the density dial (owner: "widen the space between the lines" —
+       88 → 112). ROWK flattens the tiles: cell depth = ROWK × cell width
+       on screen (owner, 2026-08-13 — screen-SQUARE cells read as stretched
+       away toward the horizon; real square floor tiles foreshorten flatter
+       than that at a glancing view, so 0.62 is what "square tiles" actually
+       look like). R follows both so the proportion holds at every depth.
+       GAP doubled 22 → 44 on the same date's owner call — the old band
+       felt claustrophobic — and COLS is sized to keep the outermost ray
+       entering inside the (now wider) gap. */
+    var DEPTH = H - HOR, GAP = 44, COLS = 20, S = 112, ROWK = 0.62,
+      R = 1 - ROWK * S / DEPTH;
+    function ln(x1, y1, x2, y2) {
+      return '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) +
+        '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '"/>';
+    }
+    var rowsF = '', rowsC = '', raysF = '', raysC = '';
+    for (var dy = DEPTH * R; dy > GAP * 0.55; dy *= R) {
+      rowsF += ln(0, HOR + dy, W, HOR + dy);
+      rowsC += ln(0, HOR - dy, W, HOR - dy);
+    }
+    for (var j = -COLS; j <= COLS; j++) {
+      var xN = VPX + j * S;             /* the ray at the near (screen) edge */
+      var xF = VPX + j * S * (GAP / DEPTH);   /* …stopped at the gap's edge */
+      raysF += ln(xN, H, xF, HOR + GAP);
+      raysC += ln(xN, 0, xF, HOR - GAP);
+    }
+    function mask(id, y0, y1) {
+      /* white = keep, black = drop: full strength at the near edge, dying
+         away inside the glow (critic round 1: near/far contrast, and let the
+         finest lines fade into the light rather than before it) */
+      return '<linearGradient id="' + id + 'g" x1="0" y1="' + y0 +
+        '" x2="0" y2="' + y1 + '" gradientUnits="userSpaceOnUse">' +
+        '<stop offset="0" stop-color="#fff"/>' +
+        '<stop offset="0.5" stop-color="#c4c4c4"/>' +
+        '<stop offset="0.82" stop-color="#737373"/>' +
+        '<stop offset="1" stop-color="#000"/>' +
+        '</linearGradient>' +
+        '<mask id="' + id + '"><rect x="0" y="0" width="' + W + '" height="' +
+        H + '" fill="url(#' + id + 'g)"/></mask>';
+    }
+    return '<svg class="rc-floor" viewBox="0 0 ' + W + ' ' + H + '" ' +
+      'preserveAspectRatio="xMidYMid slice" aria-hidden="true">' +
+      '<defs>' +
+      '<linearGradient id="' + pfx + 'jdRcBg" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0" stop-color="#0a0e24"/>' +
+      '<stop offset="0.5" stop-color="#152451"/>' +
+      '<stop offset="1" stop-color="#0a0e24"/>' +
+      '</linearGradient>' +
+      /* the horizon's own light: a thin bright core over a soft wide swell —
+         a luminous horizon line, not a fog bank (critic round 1) */
+      '<linearGradient id="' + pfx + 'jdRcGlow" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0" stop-color="#2fd0c9" stop-opacity="0"/>' +
+      '<stop offset="0.42" stop-color="#37d8cf" stop-opacity="0.07"/>' +
+      '<stop offset="0.5" stop-color="#54e8dd" stop-opacity="0.32"/>' +
+      '<stop offset="0.58" stop-color="#37d8cf" stop-opacity="0.07"/>' +
+      '<stop offset="1" stop-color="#2fd0c9" stop-opacity="0"/>' +
+      '</linearGradient>' +
+      /* corner vignette so the brightest strokes don't hit the frame at full
+         strength; keeps the eye on the artwork */
+      '<radialGradient id="' + pfx + 'jdRcVig" cx="0.5" cy="0.5" r="0.72">' +
+      '<stop offset="0" stop-color="#060a18" stop-opacity="0"/>' +
+      '<stop offset="0.72" stop-color="#060a18" stop-opacity="0"/>' +
+      '<stop offset="1" stop-color="#060a18" stop-opacity="0.42"/>' +
+      '</radialGradient>' +
+      mask(pfx + 'jdRcMf', H, HOR + GAP * 0.5) +
+      mask(pfx + 'jdRcMc', 0, HOR - GAP * 0.5) +
+      '</defs>' +
+      '<rect x="0" y="0" width="' + W + '" height="' + H +
+      '" fill="url(#' + pfx + 'jdRcBg)"/>' +
+      '<g stroke="#2fd0c9" stroke-opacity="0.6" stroke-width="1.25" ' +
+      'fill="none" mask="url(#' + pfx + 'jdRcMf)">' + rowsF + '</g>' +
+      '<g stroke="#2fd0c9" stroke-opacity="0.6" stroke-width="1.7" ' +
+      'fill="none" mask="url(#' + pfx + 'jdRcMf)">' + raysF + '</g>' +
+      '<g stroke="#2fd0c9" stroke-opacity="0.6" stroke-width="1.25" ' +
+      'fill="none" mask="url(#' + pfx + 'jdRcMc)">' + rowsC + '</g>' +
+      '<g stroke="#2fd0c9" stroke-opacity="0.6" stroke-width="1.7" ' +
+      'fill="none" mask="url(#' + pfx + 'jdRcMc)">' + raysC + '</g>' +
+      '<rect x="0" y="' + (HOR - GAP - 31) + '" width="' + W + '" height="' +
+      (2 * GAP + 62) + '" fill="url(#' + pfx + 'jdRcGlow)"/>' +
+      '<rect x="0" y="0" width="' + W + '" height="' + H +
+      '" fill="url(#' + pfx + 'jdRcVig)"/>' +
+      '</svg>';
+  }
+
+  /* RETIRED — kept as a backup on the owner's request (2026-08-12): the mk-I
+     floor, a black-and-white checkerboard projected toward a center vanishing
+     point, far rows dissolving into the navy horizon. Not called anywhere;
+     to restore it, re-point cardHTML/zoomHTML at it as floorSVG's note
+     describes (there are no floorSVG() call sites to swap any more). Its
+     600×240 viewBox suits the old 224px landscape plate, not the square
+     one. */
+  /* OWNER-BENCHED: retired but kept by owner request (2026-08-12) — leave it in place. */
+  function checkerFloorSVG(pfx) {  /* eslint-disable-line no-unused-vars */
+    pfx = pfx || '';
+    var W = 600, H = 240, VPX = W / 2, HOR = 96;
+    var ROWS = 9, R = 0.7, CW = 104;
+    var ts = [1];
+    for (var i = 1; i <= ROWS; i++) ts.push(ts[i - 1] * R);
+    function px(j, t) { return (VPX + j * CW * t).toFixed(1); }
+    function py(t) { return (HOR + t * (H - HOR)).toFixed(1); }
+    var cells = '';
+    for (var r = 0; r < ROWS; r++) {
+      for (var j = -8; j < 8; j++) {
+        if (((r + j) % 2 + 2) % 2 === 0) continue;
+        var t0 = ts[r], t1 = ts[r + 1];
+        cells += '<polygon points="' +
+          px(j, t0) + ',' + py(t0) + ' ' + px(j + 1, t0) + ',' + py(t0) + ' ' +
+          px(j + 1, t1) + ',' + py(t1) + ' ' + px(j, t1) + ',' + py(t1) +
+          '" fill="#e2ded2"/>';
+      }
+    }
+    return '<svg class="rc-floor" viewBox="0 0 ' + W + ' ' + H + '" ' +
+      'preserveAspectRatio="xMidYMax slice" aria-hidden="true">' +
+      '<defs>' +
+      '<linearGradient id="' + pfx + 'jdRcSky" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0" stop-color="#0a0e24"/>' +
+      '<stop offset="0.8" stop-color="#141b44"/>' +
+      '<stop offset="1" stop-color="#1c2456"/>' +
+      '</linearGradient>' +
+      '<linearGradient id="' + pfx + 'jdRcFade" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0" stop-color="#1c2456"/>' +
+      '<stop offset="0.55" stop-color="#151b40" stop-opacity="0.55"/>' +
+      '<stop offset="1" stop-color="#101010" stop-opacity="0"/>' +
+      '</linearGradient></defs>' +
+      '<rect x="0" y="0" width="' + W + '" height="' + HOR +
+      '" fill="url(#' + pfx + 'jdRcSky)"/>' +
+      cells +
+      '<rect x="0" y="' + HOR + '" width="' + W + '" height="72" ' +
+      'fill="url(#' + pfx + 'jdRcFade)"/>' +
+      '</svg>';
+  }
+
+  /* grades are filed as the taxonomy rank number — see JD_gradeOf in jd-core.js */
+  function gradeOf(value) {
+    return JD_gradeOf(payload.taxonomy, value) ||
+      { label: value == null ? '' : String(value), rank: +value || 0 };
+  }
+  function modelOf(id) {
+    return byId((payload.taxonomy || {}).models, id) || { label: id || '', vendor: '' };
+  }
+
+  /* every axis name is a disclosure (owner, 2026-08-13): press it and a
+     row unfolds beneath with the axis's own taxonomy description. The
+     description rows ship in the table, hidden; build()'s click handler
+     flips them. One card renders at a time, so the fixed ids are safe. */
+  /* the expander sits LEFT of the name as a boxed +/− (owner rev,
+     2026-08-13 — appendix-index style, not a dropdown arrow); the glyph
+     itself is CSS content keyed off aria-expanded */
+  function axisBtn(inner, descId) {
+    return '<button type="button" class="rc-axbtn" aria-expanded="false" ' +
+      'aria-controls="' + descId + '" data-axd="' + descId + '">' +
+      '<span class="rc-axcaret" aria-hidden="true"></span>' + inner +
+      '</button>';
+  }
+  function descRow(descId, text) {
+    return '<tr class="rc-axdesc" id="' + descId + '" hidden>' +
+      '<td colspan="2">' + esc(text) + '</td></tr>';
+  }
+  /* one scale as a select, best first, the value on file selected — the
+     admin editor's cell (labels through JD_labelText: a select's option
+     text is a plain-text surface) */
+  function scaleSelect(values, value, attrs, empty) {
+    var vals = (values || []).slice().sort(function (x, y) { return y.rank - x.rank; });
+    var h = '<select class="rc-edit" ' + attrs + '>' +
+      '<option value=""' + (value == null ? ' selected' : '') + '>' + esc(empty) + '</option>';
+    vals.forEach(function (v) {
+      var sel = value != null && Math.round(+value) === Math.round(v.rank);
+      h += '<option value="' + v.rank + '"' + (sel ? ' selected' : '') + '>' +
+        esc(JD_labelText(v.label)) + '</option>';
+    });
+    return h + '</select>';
+  }
+  function subjectsHTML(resp) {
+    var rows = '', di = 0;
+    var edit = editable(curEntry);
+    /* defunct axes never appear on the report card (owner, 2026-07-29);
+       their filed gradings live on in the data and the legend still lists
+       them dimmed for the record — JD_liveAxes leaves them out */
+    JD_liveAxes(payload.taxonomy).forEach(function (axis) {
+      var a = annOf(resp, axis.id);
+      var cell;
+      if (edit) {
+        /* the gauge stays ahead of the scale (owner, 2026-09-10) and follows
+           the pick live — see the change handler in build() */
+        var v0 = a ? JD_byRank(axis.values, a.value) : null;
+        var steps0 = (axis.values || []).length || 3;
+        cell = '<span class="rc-grade-cell rc-editcell">' +
+          barHTML(v0 ? Math.round(v0.rank) : 0, steps0, v0 ? JD_axisCls(axis, v0.rank) : '') +
+          scaleSelect(axis.values, a ? a.value : null,
+            'data-axis="' + esc(axis.id) + '" aria-label="' + esc(axis.label || axis.id) + '"',
+            '— not assessed') + '</span>';
+      } else if (!a) {
+        cell = '<span class="rc-skip">— · not assessed</span>';
+      } else {
+        /* the bar fills against the axis's OWN step count — 3- and 4-point
+           scales coexist since v17 — and the pencil class is scale-aware
+           for the same reason (JD_axisCls) */
+        var v = JD_byRank(axis.values, a.value);
+        var steps = (axis.values || []).length || 3;
+        var cls = v ? JD_axisCls(axis, v.rank) : '';
+        cell = '<span class="rc-grade-cell">' +
+          (v ? barHTML(Math.round(v.rank), steps, cls) : '') +
+          mark(v ? v.label : String(a.value), cls) + '</span>';
+      }
+      var descId = 'rc-axd-' + (di++);
+      rows += '<tr><td>' +
+        axisBtn('<span class="rc-subj-name">' + esc(axis.label || axis.id) +
+          '</span>', descId) +
+        '</td><td>' + cell + '</td></tr>' +
+        descRow(descId, axis.description || '');
+    });
+    var g = gradeOf(resp.grade);
+    var gCls = g.rank ? 'rc-g' + Math.round(g.rank) : '';
+    /* the overall row unfolds the scale itself, plus the earned tier's own
+       description when the taxonomy carries one */
+    var gDesc = 'The drawer’s own five-tier scale, best to worst.' +
+      (g.description ? ' ' + g.label + ': ' + g.description : '');
+    return '<table class="rc-subj"><thead><tr>' +
+      /* 52/48 → 44/56 → 47/53 (owner, 2026-08-12): the grade column
+         carries the gauge AND the pencilled word, the axis column only a
+         name — but 44% squeezed the axis names a touch too hard.
+         "Grade", not "Verdict" (owner, 2026-09-10). */
+      /* SUBJECT, not Axis (owner, 2026-09-16): the rating instrument's
+         word — a school report card's — carried over so the two cards'
+         tables read as one system. "Axis" stays the taxonomy's word. */
+      '<th style="width:47%">Subject</th><th style="width:53%">Grade</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody>' +
+      '<tfoot><tr><td>' +
+      axisBtn('<span class="rc-avg-l">Overall grade</span>', 'rc-axd-g') +
+      '</td><td>' +
+      (edit
+        ? '<span class="rc-grade-cell rc-editcell">' +
+          barHTML(g.rank ? Math.round(g.rank) : 0, 5, gCls) +
+          scaleSelect((payload.taxonomy || {}).grades, resp.grade,
+            'data-grade aria-label="Overall grade"', '— ungraded') + '</span>'
+        : '<span class="rc-grade-cell">' +
+          (g.rank ? barHTML(Math.round(g.rank), 5, gCls) : '') +
+          mark(g.label, gCls) + '</span>') +
+      '</td></tr>' + descRow('rc-axd-g', gDesc) + '</tfoot></table>' +
+      /* the save row: one button files the scales above AND the hide box
+         beside it (owner, 2026-09-10 — a checkbox saved with the rest, not
+         a second act) */
+      (edit
+        ? '<div class="rc-edit-row">' +
+          '<button type="button" class="rc-save" data-rc="save">save ratings</button>' +
+          '<label class="rc-hide-check"><input type="checkbox" data-rc="hidecheck"' +
+          (curEntry.hidden ? ' checked' : '') + '> hide from drawer</label>' +
+          '<span class="rc-edit-status" aria-live="polite">' +
+          (curEntry.hidden ? 'hidden from the drawer' : '') + '</span></div>'
+        : '');
+  }
+
+  /* THE STRIP IS A SCROLLER (owner, 2026-08-15: "I'd also like to be able to
+     scrub my finger across them"). It used to be a WINDOW: three thumbnails
+     rendered at a time out of N, with ◂ ▸ swapping which three. That is why
+     a finger did nothing on it — there was nothing beside the three to scrub
+     TO, and no scroll box to scrub in. Every response is in the DOM now, in
+     one horizontal scroll port, so the platform's own panning does the work:
+     momentum, rubber-banding at the ends, and snapping, on a phone for free.
+
+     The pagers stay and now scroll the port by one thumbnail instead of
+     re-rendering the strip; their disabled state reads off scrollLeft. The
+     window index is gone entirely — position is the scroll offset, which is
+     a fact about the DOM rather than a number we have to keep in step with
+     it, and every thumbnail is reachable by Tab now instead of only the
+     three currently framed. */
+  /* THE PLACING, AS A MEDAL (owner, 2026-09-17). Where a drawing came in the
+     visitor's ranking of its siblings — first to fourth — leading the grade
+     line under its thumbnail, where the placing and the verdict read as one
+     phrase ("gold, Prime") instead of the placing floating over the picture. Emoji rather than drawn marks: they carry the meaning at 11px,
+     where a drawn medal would be a smudge, and they cost nothing to ship.
+     Held back from full strength (the owner's ask) so the placing annotates
+     the picture instead of competing with it.
+     Fifth place and beyond, and anything never ranked — a curated original
+     that was never in a ranked turn — get nothing at all rather than a
+     consolation mark, because silence is honest and a mark would not be. */
+  var MEDALS = { 1: '\uD83E\uDD47', 2: '\uD83E\uDD48', 3: '\uD83E\uDD49', 4: '\uD83C\uDF97\uFE0F' };
+  var MEDAL_WORDS = { 1: 'first', 2: 'second', 3: 'third', 4: 'fourth' };
+  function medalHTML(rank) {
+    var m = MEDALS[Math.round(+rank)];
+    if (!m) { return ''; }
+    var word = MEDAL_WORDS[Math.round(+rank)];
+    return '<span class="rc-alt-medal" title="' + word + ' in the ranking" ' +
+      'aria-label="' + word + ' in the ranking">' + m + '</span>';
+  }
+
+  function altsHTML(entry, curIdx) {
+    if (!entry.responses || entry.responses.length < 2) return '';
+    var n = entry.responses.length, paged = n > 3;
+    var h = '<div class="rc-alts">';
+    if (paged) {
+      h += '<button type="button" class="rc-alt-nav" data-nav="-1"' +
+        ' aria-label="Earlier responses">◂</button>';
+    }
+    /* is-many is what fixes each thumbnail at a third of the port so the
+       next one peeks past the edge — the affordance that says "these
+       scroll". With three or fewer they share the port and nothing moves. */
+    h += '<div class="rc-alt-port' + (paged ? ' is-many' : '') + '">';
+    entry.responses.forEach(function (r, i) {
+      var m = modelOf(r.model), g = gradeOf(r.grade);
+      h += '<button type="button" class="rc-alt' + (i === curIdx ? ' is-cur' : '') +
+        '" data-resp="' + i + '">' +
+        /* data-fit is the artwork's key, not the thumbnail's: the strip
+           shows the drawing the plate shows, at the frame the plate uses */
+        '<span class="rc-alt-art" data-fit="' + esc(fitKey(entry, r)) + '">' +
+        svgInst(svgCache[cacheKey(entry, r)] || '', 'jt' + i + '_') +
+        '</span>' +
+        '<span class="rc-alt-cap">' + esc(m.label) +
+        /* the strip's little grades wear the same coloured pencils as the
+           card's marks (rc-g1..5 share their colour rules) */
+        '<span class="rc-alt-grade' +
+        (g.rank ? ' rc-g' + Math.round(g.rank) : '') + '">' +
+        medalHTML(r.rank) + esc(g.label) + '</span>' +
+        '</span></button>';
+    });
+    h += '</div>';
+    if (paged) {
+      h += '<button type="button" class="rc-alt-nav" data-nav="1"' +
+        ' aria-label="More responses">▸</button>';
+    }
+    return h + '</div>';
+  }
+
+  /* one thumbnail's worth of travel, gap included — the pagers' step and the
+     unit the centring below thinks in */
+  function altStep(port) {
+    var a = port.querySelector('.rc-alt');
+    if (!a) return port.clientWidth;
+    var gap = parseFloat(getComputedStyle(port).columnGap);
+    return a.getBoundingClientRect().width + (isFinite(gap) ? gap : 8);
+  }
+  /* the pagers go dim at the ends of the TRAVEL, not at the ends of a window
+     index — one tolerance for the sub-pixel scrollLeft a snap can leave.
+     `nav` is the strip's port and its two pagers (either may be null),
+     resolved once by wireAltScrub: the strip is a fresh node per render and
+     nothing swaps its children, so they cannot go stale under a scroll. */
+  function syncAltNav(nav) {
+    var port = nav.port;
+    var max = port.scrollWidth - port.clientWidth;
+    if (nav.l) nav.l.disabled = port.scrollLeft <= 1;
+    if (nav.r) nav.r.disabled = port.scrollLeft >= max - 1;
+  }
+  /* put the shown response under the visitor's eye. scrollLeft is assigned
+     rather than scrollIntoView'd on purpose: scrollIntoView would also walk
+     up and move the card's own vertical scroller, which on a re-render means
+     the card jumping while the visitor is reading it. */
+  function centerAlt(strip, idx, smooth) {
+    var port = strip.querySelector('.rc-alt-port');
+    if (!port) return;
+    var a = port.querySelector('.rc-alt[data-resp="' + idx + '"]');
+    if (!a) return;
+    /* measured off the RECTS, not offsetLeft: offsetLeft is relative to the
+       nearest positioned ancestor, and the port is static — so it answered
+       with the thumbnail's distance from somewhere up in the card (511px in
+       a port 446px wide), every centring clamped to the far end, and the
+       card opened with its own selected thumbnail sliced to a sliver at the
+       edge. The rects are relative to the viewport and the difference
+       between them is the distance actually wanted. */
+    var pr = port.getBoundingClientRect(), ar = a.getBoundingClientRect();
+    var to = port.scrollLeft + (ar.left - pr.left) - (port.clientWidth - ar.width) / 2;
+    to = Math.max(0, Math.min(to, port.scrollWidth - port.clientWidth));
+    if (smooth && port.scrollTo) { port.scrollTo({ left: to, behavior: 'smooth' }); }
+    else { port.scrollLeft = to; }
+  }
+
+  /* THE SCRUB. Touch and trackpad need nothing from us — a scroll port pans
+     itself, and hijacking that would cost the momentum and the rubber-band
+     that make it feel native, which is the whole point of the request. What
+     the platform does NOT give is dragging with a held mouse button, so that
+     alone is synthesised here, for pointerType 'mouse' only.
+
+     A drag must not also pick a thumbnail. Past a few pixels of travel the
+     gesture is a scrub, and the click that follows pointerup is swallowed by
+     a one-shot capture listener — cleared on the next task either way, so a
+     drag that ends without a click can never eat a later one.
+     Answers the strip's nav (see syncAltNav), or null when it has no port. */
+  function wireAltScrub(strip) {
+    var port = strip.querySelector('.rc-alt-port');
+    if (!port) return null;
+    var nav = {
+      port: port,
+      l: strip.querySelector('.rc-alt-nav[data-nav="-1"]'),
+      r: strip.querySelector('.rc-alt-nav[data-nav="1"]')
+    };
+    port.addEventListener('scroll', function () { syncAltNav(nav); }, { passive: true });
+    var down = false, moved = false, x0 = 0, left0 = 0;
+    port.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'touch' || e.button !== 0) return;
+      down = true; moved = false; x0 = e.clientX; left0 = port.scrollLeft;
+    });
+    port.addEventListener('pointermove', function (e) {
+      if (!down) return;
+      var dx = e.clientX - x0;
+      if (!moved && Math.abs(dx) < 5) return;
+      if (!moved) {
+        moved = true;
+        port.classList.add('is-scrubbing');
+        try { port.setPointerCapture(e.pointerId); } catch (err) {}
+      }
+      e.preventDefault();                     /* no text/image drag under it */
+      port.scrollLeft = left0 - dx;
+    });
+    var end = function (e) {
+      if (!down) return;
+      down = false;
+      port.classList.remove('is-scrubbing');
+      try { port.releasePointerCapture(e.pointerId); } catch (err) {}
+      if (!moved) return;
+      var kill = function (ev) { ev.preventDefault(); ev.stopPropagation(); };
+      port.addEventListener('click', kill, true);
+      window.setTimeout(function () {
+        port.removeEventListener('click', kill, true);
+      }, 0);
+    };
+    port.addEventListener('pointerup', end);
+    port.addEventListener('pointercancel', end);
+    return nav;
+  }
+  /* a fresh strip's whole wiring, the same three steps wherever one is
+     painted (render(), and the strip-only refresh in open()): the scrub,
+     the shown response brought under the eye, the pagers' ends */
+  function wireStrip(strip) {
+    var nav = wireAltScrub(strip);
+    centerAlt(strip, curResp, false);
+    if (nav) syncAltNav(nav);
+  }
+
+  /* THE CARD, landscape (round 13, owner pick 2026-08-13: mockup-13a's
+     layout carrying mockup-13b's paper display container). One masthead
+     across two columns: the photograph and its fill-in caption on the left,
+     the paperwork — prompt, annotations, strip, footer — on the right. The
+     grid areas live in junk-drawer.css; under 700px the column wrappers go
+     display:contents and this same DOM reads as the portrait flow (which is
+     why the source order below IS the portrait order). */
+  function cardHTML(entry, resp, curIdx, live) {
+    var h = '';
+    h += '<header class="rc-block rc-masthead">' +
+      '<div class="rc-item">' + esc(entry.title) + '</div></header>';
+    /* the plate is the enlargement's handle: role/tabindex make it a real
+       button for keyboard and screen readers without wrapping the artwork in
+       a <button>, whose UA box model would fight the absolutely-positioned
+       photo layers. The corner hint is there for touch, where there is no
+       hover to discover the affordance with. The four spans are the kraft
+       photo corners holding the print to the form. */
+    /* the response's data rides ON the photograph as margin notes (owner
+       pick, mockup-14 option B, 2026-08-13): typed straight onto the graph
+       paper in the print's lower-left, lab-proof style. MODEL and DATE
+       always; PROCESS only when the response was refined — one-shot is the
+       default story and doesn't need saying (owner call, same date). SIZE
+       left the card entirely on that call: it now shows nowhere in the UI
+       and lives on in the data. */
+    var artSrc = svgCache[cacheKey(entry, resp)] || '';
+    /* what the drawing COST (2026-08-15): token counts and provider spend
+       ride the reveal payload into the visitor record, so a won item's card
+       states them — after a reload too. Only visitor responses carry these
+       fields; curated items omit the lines entirely, and an unpriced model
+       loses just the Cost line (the house rule: omit, never print null). */
+    var notes = notesHTML(resp);
+    /* (the note lines, the button row and the file number are shared with
+       the enlargement — see notesHTML / plateBtnsHTML / fileNoHTML) */
+    h += '<div class="rc-col-l">' +
+      '<div class="rc-block rc-plate' + paperCls() + '" role="button" tabindex="0" ' +
+      'aria-label="Enlarge the artwork">' +
+      '<span class="rc-corner tl"></span><span class="rc-corner tr"></span>' +
+      paperBtnHTML() +
+      '<span class="rc-corner bl"></span><span class="rc-corner br"></span>' +
+      '<div class="rc-plate-art" data-fit="' + esc(fitKey(entry, resp)) + '">' +
+      svgInst(artSrc, 'jr' + curIdx + '_') +
+      '</div>' +
+      (live ? plateNavHTML(entry, curIdx) : '') +
+      '<div class="rc-notes">' + notes + '</div>' +
+      plateBtnsHTML(entry, resp, false) +
+      fileNoHTML(entry) +
+      '</div></div>';
+    return h + paperworkHTML(entry, resp, curIdx);
+  }
+
+  /* THE PLATE'S ARROWS (owner, 2026-09-29): on a phone, a second way through
+     the responses besides the swipe — a tall, skinny, quiet arrow in each of
+     the plate's side margins (the artwork is inset 8% each side, so the
+     arrows lie on the graph paper beside it and take nothing from its
+     width). Each appears only when there IS a response that way: no ←
+     on the first, no → on the last. Shown by CSS at the record's phone
+     breakpoint only; live cards only (the about page's static cards turn
+     by the walkthrough, not by hand). */
+  function plateNavHTML(entry, i) {
+    var n = (entry.responses || []).length;
+    var chev = function (d) {
+      return '<svg viewBox="0 0 10 40" aria-hidden="true" focusable="false"><path d="' +
+        d + '" fill="none" stroke="currentColor" stroke-width="1.6" ' +
+        'stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    };
+    return (i > 0
+        ? '<button type="button" class="rc-nav rc-nav--prev" data-nav="-1" ' +
+          'aria-label="previous drawing">' + chev('M8 4 2 20 8 36') + '</button>' : '') +
+      (i < n - 1
+        ? '<button type="button" class="rc-nav rc-nav--next" data-nav="1" ' +
+          'aria-label="next drawing">' + chev('M2 4 8 20 2 36') + '</button>' : '');
+  }
+
+  /* the margin notes: MODEL and DATE always; TOKENS and COST when the
+     response carries them (a visitor's own drawing); PROCESS only when it
+     was refined — one-shot is the default story and doesn't need saying
+     (owner call, 2026-08-13). The house rule: omit, never print null. */
+  function notesHTML(resp) {
+    var m = modelOf(resp.model);
+    var gen = resp.generation || {};
+    var tkTotal = resp.tokens && isFinite(+resp.tokens.total) ? +resp.tokens.total : null;
+    var tkCost = resp.cost_usd != null && isFinite(+resp.cost_usd) ? +resp.cost_usd : null;
+    return '<span class="rc-note-line"><span class="rc-note-l">Model</span>' +
+      '<span class="rc-note-v">' + esc(m.label) + '</span></span>' +
+      '<span class="rc-note-line"><span class="rc-note-l">Date</span>' +
+      '<span class="rc-note-v">' + esc(fmtDate(resp.date)) + '</span></span>' +
+      (tkTotal !== null
+        ? '<span class="rc-note-line"><span class="rc-note-l">Tokens</span>' +
+          '<span class="rc-note-v">' + esc(tkTotal.toLocaleString('en-US')) + '</span></span>'
+        : '') +
+      (tkCost !== null
+        ? '<span class="rc-note-line"><span class="rc-note-l">Cost</span>' +
+          '<span class="rc-note-v">$' + esc(tkCost.toFixed(4)) + '</span></span>'
+        : '') +
+      (gen.mode === 'refined'
+        ? '<span class="rc-note-line"><span class="rc-note-l">Process</span>' +
+          '<span class="rc-note-v">' + esc(processLabel(gen)) + '</span></span>'
+        : '');
+  }
+  /* the photograph's button row (owner rev, 2026-08-16: REPLAY joined
+     DOWNLOAD on one row): REPLAY plays the drawing again on request — the
+     click/key handlers exempt both buttons from the plate's zoom. The row is
+     one positioned flex box, so the buttons never need to guess each other's
+     widths. REPLAY is an icon alone on the card since 2026-09-10 (owner: the
+     word took too much of the photograph, on a phone especially); the
+     enlargement has the room, so there it carries the word REDRAW (`big`). */
+  function plateBtnsHTML(entry, resp, big) {
+    return '<div class="rc-plate-btns rc-zoom-keep">' +
+      '<button type="button" class="rc-draw" ' +
+      'title="watch the drawing draw itself again" ' +
+      'aria-label="Replay the drawing">' +
+      '<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">' +
+      '<path d="M13.4 8a5.4 5.4 0 1 1-1.7-3.9" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>' +
+      '<path d="M13.6 2.4v3.4h-3.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '</svg>' + (big ? '<span>REDRAW</span>' : '') + '</button>' +
+      '<a class="rc-dl" href="' + esc(resp.url) + '" download="' +
+      esc(entry.id) + '.svg" title="download the SVG as generated">' +
+      'DOWNLOAD SVG ⤓</a>' +
+      '</div>';
+  }
+  /* the file number prints beneath the buttons (owner rev, 2026-08-15 — it
+     used to tail the notes, a line too many once Tokens/Cost joined) */
+  function fileNoHTML(entry) {
+    return '<span class="rc-note-no">' + esc(entry.id) + '</span>';
+  }
+
+  /* the paperwork column: prompt, grades, the strip */
+  function paperworkHTML(entry, resp, curIdx) {
+    var h = '';
+    /* the prompt renders foldable; render() measures it after paint and
+       strips the fold when it actually fits three lines — so the expander
+       only ever appears on prompts that need it */
+    h += '<div class="rc-col-r">' +
+      '<div class="rc-block rc-head">The prompt</div>' +
+      '<div class="rc-block rc-assign rc-can-fold"><p>“' + esc(entry.prompt) +
+      '”</p>' +
+      '<button type="button" class="rc-pv" aria-expanded="false">' +
+      '<span class="rc-pv-more">show full prompt ▾</span>' +
+      '<span class="rc-pv-less">show less ▴</span></button></div>';
+    h += '<div class="rc-block rc-head">Grades</div>' +
+      '<div class="rc-block">' + subjectsHTML(resp) + '</div>';
+    var alts = altsHTML(entry, curIdx);
+    if (alts) {
+      h += '<div class="rc-block rc-head">Other models, same prompt</div>' +
+        '<div class="rc-block rc-alts-block">' + alts + '</div>';
+    }
+    /* (no footer any more: the download button lives on the photograph and
+       the file number in its margin notes — owner rev, 2026-08-13) */
+    return h + '</div>';
+  }
+
+  /* the enlargement's contents: the SAME response the card is showing, on
+     the same graph-paper photo swatch (its CSS twin lives on .rc-zoom-fig),
+     so it reads as the photograph held up off the form rather than a
+     different picture. Its inlined copy takes a `jz` prefix — the `jr` copy
+     is still in the card underneath it. */
+  function zoomHTML(entry, resp, curIdx) {
+    var m = modelOf(resp.model);
+    /* THE ARTWORK, ITS BUTTON ROW, AND THE ✕ (owner, 2026-09-10, revised
+       twice the same day): the enlargement carries the button row — REDRAW
+       spelled out, DOWNLOAD SVG — in a band of its own under the art, and a
+       close ✕ in a band of its own above it. The paper swap USED to hold
+       that corner; the owner gave the corner to the ✕ instead, and the swap
+       stays down on the plate in the card (the enlargement still wears
+       whichever paper the plate has — see paperCls() above and togglePaper,
+       which travels the class up here but no longer a button). The margin
+       notes and the file number came up here for a few hours and were sent
+       back down: on a phone they overlapped the drawing, and they are on
+       the plate anyway. Each control is .rc-zoom-keep, which the layer's own
+       press-to-close (JD_zoomLayer) leaves alone — so the ✕, which closes
+       the layer, has to say so itself: openZoom() wires it. Both bands are
+       the fig's padding in the stylesheet — the art never reaches into
+       either, at any width. */
+    return '<div class="rc-zoom-fig' + paperCls() + '" role="button" tabindex="0" ' +
+      'aria-label="Shrink the artwork">' +
+      '<div class="rc-zoom-art" data-fit="' + esc(fitKey(entry, resp)) + '">' +
+      svgInst(svgCache[cacheKey(entry, resp)] || '', 'jz' + curIdx + '_') +
+      '</div>' +
+      '<button type="button" class="rc-zoom-close rc-zoom-keep" aria-label="close">' +
+      JD_X_MARK + '</button>' +
+      plateBtnsHTML(entry, resp, true) +
+      '</div>' +
+      '<div class="rc-zoom-cap">' +
+      '<span class="rc-zoom-cap-t">' + esc(entry.title) + ' · ' + esc(m.label) +
+      '</span>' +
+      '<span class="rc-zoom-cap-h">click, or press Esc, to shrink</span>' +
+      '</div>';
+  }
+
+  /* red-pencil waver filters, injected once (stitchTiles="stitch") */
+  function injectDefs() {
+    if (document.getElementById('jdRcWv0')) return;
+    var host = document.createElement('div');
+    host.setAttribute('aria-hidden', 'true');
+    host.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden';
+    var f = '';
+    [[0.052, 0.14, 3, 1.5], [0.061, 0.12, 11, 1.3],
+     [0.047, 0.16, 19, 1.6], [0.058, 0.13, 29, 1.4]].forEach(function (p, i) {
+      f += '<filter id="jdRcWv' + i + '" x="-8%" y="-18%" width="116%" height="136%" ' +
+        'color-interpolation-filters="sRGB">' +
+        '<feTurbulence type="fractalNoise" baseFrequency="' + p[0] + ' ' + p[1] +
+        '" numOctaves="2" seed="' + p[2] + '" stitchTiles="stitch" result="t"/>' +
+        '<feDisplacementMap in="SourceGraphic" in2="t" scale="' + p[3] +
+        '" xChannelSelector="R" yChannelSelector="G"/></filter>';
+    });
+    host.innerHTML = '<svg width="0" height="0" focusable="false"><defs>' + f + '</defs></svg>';
+    document.body.appendChild(host);
+  }
+
+  /* fetch any response SVGs not yet cached (primaries arrive from the pile
+     loader; alternatives load lazily on first open) */
+  /* one request per drawing, however many callers ask at once: three cards
+     built together (the /about/ walkthrough) used to fetch every drawing
+     three times, because the cache only fills when a fetch lands */
+  var svgInflight = {};
+  function ensureSVGs(entry) {
+    return Promise.all(entry.responses.map(function (r) {
+      var key = cacheKey(entry, r);
+      if (svgCache[key]) return null;
+      if (svgInflight[key]) return svgInflight[key];
+      /* a visitor's own won item has no file on the server: its SVG is primed
+         into the cache when the entry is filed, and its `url` is a data: URL
+         for the download link only — never a path to join to JD_API */
+      if (entry.visitor) {
+        svgCache[key] = BLANK_SVG;
+        return null;
+      }
+      return (svgInflight[key] = fetch(JD_API + r.url).then(function (res) {
+        if (!res.ok) throw new Error(r.url + ' ' + res.status);
+        return res.text();
+      }).then(function (t) { svgCache[key] = t; })
+        .catch(function () { svgCache[key] = BLANK_SVG; })
+        .then(function () { delete svgInflight[key]; }));
+    }));
+  }
+
+  /* the nearest `sel` the event's target sits in, or null */
+  function hit(e, sel) {
+    return e.target.closest ? e.target.closest(sel) : null;
+  }
+  /* THE CARD'S PRESSES that take more than a line: build()'s click handler
+     tries every control in its order and hands the one it found here. */
+  function pressPlate(plate) {
+    if (swiped) { swiped = false; return; }   /* the swipe's own click */
+    openZoom(plate);
+  }
+  /* the prompt's fold (round 13): the expander toggles the block open;
+     state is DOM-only on purpose — a re-render folds a long prompt
+     back down, which is right when the response (and card height
+     budget) just changed */
+  function foldPrompt(pv) {
+    var box = pv.closest('.rc-assign');
+    var open = box.classList.toggle('is-open');
+    pv.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  /* an axis name unfolds its taxonomy description (owner, 2026-08-13) */
+  function unfoldAxis(ax) {
+    var dr = scrollEl.querySelector('#' + ax.getAttribute('data-axd'));
+    if (dr) {
+      var opening = dr.hidden;
+      dr.hidden = !opening;
+      ax.setAttribute('aria-expanded', opening ? 'true' : 'false');
+    }
+  }
+  /* the strip's ◂ ▸ pagers (4+ responses): one thumbnail of travel in
+     the scroll port. They move the SAME strip the finger moves — no
+     re-render, so a long prompt the visitor just unfolded stays
+     unfolded, and browsing the bench still isn't switching the
+     response. Smooth, unless the visitor asked for less motion. */
+  function pageStrip(pager) {
+    if (pager.disabled) return;
+    var strip = scrollEl.querySelector('.rc-alts');
+    var port = strip && strip.querySelector('.rc-alt-port');
+    if (!port) return;
+    var by = parseInt(pager.getAttribute('data-nav'), 10) * altStep(port);
+    var calm = JD_reduced();
+    if (port.scrollBy) port.scrollBy({ left: by, behavior: calm ? 'auto' : 'smooth' });
+    else port.scrollLeft += by;
+  }
+  /* a thumbnail in the strip turns the card to that response */
+  function pickAlt(b) {
+    var i = parseInt(b.getAttribute('data-resp'), 10);
+    if (isNaN(i) || i === curResp) return;
+    curResp = i;
+    render(false);   /* no draw-on for a flip (owner, 2026-09-10) — see stepResp */
+  }
+
+  function build() {
+    if (scrim) return;
+    scrim = document.createElement('div');
+    scrim.className = 'jd-record-scrim';
+    scrim.innerHTML = '<div class="jd-record" role="dialog" aria-modal="true" ' +
+      'aria-label="report card">' +
+      '<button type="button" class="jd-record-close" aria-label="close">' +
+      JD_X_MARK + '</button>' +
+      '<div class="rc-scroll"></div></div>';
+    document.body.appendChild(scrim);
+    cardEl = scrim.querySelector('.jd-record');
+    scrollEl = scrim.querySelector('.rc-scroll');
+    scrim.addEventListener('pointerdown', function (e) {
+      if (e.target === scrim) close();
+    });
+    scrim.querySelector('.jd-record-close').addEventListener('click', close);
+    scrollEl.addEventListener('change', function (e) {
+      var t = e.target;
+      if (t.classList && t.classList.contains('rc-edit')) { syncBar(t); setStatus('unsaved changes'); }
+      else if (t.matches && t.matches('[data-rc="hidecheck"]')) setStatus('unsaved changes');
+    });
+    /* every press on the card, one branch per control, FIRST MATCH WINS —
+       the order is the precedence: the plate's own controls come before
+       the plate, so a press on one of them never also zooms */
+    scrollEl.addEventListener('click', function (e) {
+      if (hit(e, '[data-rc="save"]')) { saveRatings(); return; }
+      /* the PAPER button rides the plate's top-right corner: swap, never zoom */
+      if (hit(e, '.rc-paper')) { togglePaper(); return; }
+      /* the plate's arrows turn the response; they never zoom */
+      var nav = hit(e, '.rc-nav');
+      if (nav) { stepResp(parseInt(nav.getAttribute('data-nav'), 10) || 1); return; }
+      /* the DOWNLOAD button rides ON the plate: it must never also zoom */
+      if (hit(e, '.rc-dl')) return;
+      /* REPLAY rides the plate too: it redraws, never zooms. An explicit
+         press is requested motion, so it plays under reduced-motion too. */
+      if (hit(e, '.rc-draw')) { drawOn(true); return; }
+      var plate = hit(e, '.rc-plate');
+      if (plate) { pressPlate(plate); return; }
+      var pv = hit(e, '.rc-pv');
+      if (pv) { foldPrompt(pv); return; }
+      var ax = hit(e, '.rc-axbtn');
+      if (ax) { unfoldAxis(ax); return; }
+      var pager = hit(e, '.rc-alt-nav');
+      if (pager) { pageStrip(pager); return; }
+      var alt = hit(e, '.rc-alt');
+      if (alt) pickAlt(alt);
+    });
+    /* SWIPE THE PLATE (owner, 2026-09-10): on a touch screen a horizontal
+       swipe across the photograph turns to the next / previous response —
+       the strip below still works, but a thumb on the picture is the
+       natural gesture on a phone. Touch and pen only: a mouse drag stays a
+       click. The plate's touch-action is pan-y, so the card still scrolls
+       under a vertical thumb and only a sideways one reaches here. A swipe's
+       own pointerup is followed by a click the plate would take as a zoom;
+       `swiped` eats that one click. */
+    var sw = null;
+    scrollEl.addEventListener('pointerdown', function (e) {
+      sw = null;
+      if (e.pointerType === 'mouse') return;
+      if (!hit(e, '.rc-plate') || hit(e, '.rc-plate-btns') || hit(e, '.rc-paper') ||
+          hit(e, '.rc-nav')) return;
+      sw = { x: e.clientX, y: e.clientY, id: e.pointerId };
+    });
+    scrollEl.addEventListener('pointerup', function (e) {
+      if (!sw || e.pointerId !== sw.id) return;
+      var dx = e.clientX - sw.x, dy = e.clientY - sw.y;
+      sw = null;
+      if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+      swiped = true;
+      window.setTimeout(function () { swiped = false; }, 400);
+      stepResp(dx < 0 ? 1 : -1);
+    });
+    scrollEl.addEventListener('pointercancel', function () { sw = null; });
+    /* the plate answers Enter/Space like the button it claims to be; Space is
+       preventDefault'd or the card scrolls out from under the enlargement */
+    scrollEl.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+      /* Enter on the focused DOWNLOAD link is the download, not the zoom;
+         REPLAY is a real <button>, so the UA turns these keys into its
+         click — the handler above redraws, nothing here should zoom */
+      if (hit(e, '.rc-dl')) return;
+      if (hit(e, '.rc-draw')) return;
+      if (hit(e, '.rc-paper')) return;   /* a real <button>: its own click */
+      if (hit(e, '.rc-nav')) return;     /* ditto: the arrows */
+      var p = hit(e, '.rc-plate');
+      if (!p) return;
+      e.preventDefault();
+      openZoom(p);
+    });
+  }
+
+  /* the enlargement is the shared layer (JD_zoomLayer in jd-core.js): the
+     record card's one job is to say WHAT goes on it — the response the card
+     is showing, re-synced whenever the card re-renders under it (see
+     render) so the enlargement can never drift onto a stale response — and
+     which plate its grid scale is measured against. Deliberately NOT
+     tracked: the enlargement is a toggle, and the events endpoint's
+     allowlist doesn't carry this page anyway (item_open is the one call the
+     module makes, and it is already the exception). */
+  function zoomBody() {
+    var resp = curResponse();
+    return zoomHTML(curEntry, resp, curResp);
+  }
+  function plateEl() { return scrollEl ? scrollEl.querySelector('.rc-plate') : null; }
+  var zoomWired = false;
+  function openZoom(from) {
+    if (!isOpen || zoom.isOn() || !curEntry) return;
+    zoom.open(from || null, zoomBody(), plateEl());
+    /* the layer is built once by JD_zoomLayer; its controls are ours (and
+       it is THIS instance's element — the turn card builds one too) */
+    var layer = zoom.el();
+    if (layer && !zoomWired) {
+      zoomWired = true;
+      layer.addEventListener('click', function (e) {
+        var t = e.target;
+        if (!t.closest) return;
+        if (t.closest('.rc-draw')) {
+          /* REDRAW, on the enlargement's own copy of the artwork */
+          var svg = layer.querySelector('.rc-zoom-art svg');
+          if (svg && window.JD_drawOn) window.JD_drawOn(svg, { force: true });
+        } else if (t.closest('.rc-zoom-close')) {
+          /* the corner ✕ (owner, 2026-09-10). It is .rc-zoom-keep like every
+             other control up here, so the layer's press-to-close skips it —
+             which means the one control whose whole job IS closing has to be
+             the one that says so explicitly. It shrinks the enlargement and
+             stops there: the report card underneath stays open. */
+          closeZoom();
+        }
+        /* .rc-dl is a real download link: the UA takes it, the layer stays */
+      });
+    }
+  }
+  function closeZoom(silent) { zoom.close(silent); }
+
+  /* THE DRAW-ON REVEAL (owner, 2026-08-16): when the report card opens, or
+     the visitor presses REDRAW — no longer on a flip to another model's
+     response (owner, 2026-09-10) — the photograph doesn't just appear: the artwork draws
+     itself onto the plate via window.JD_drawOn (the shared engine in
+     jd-core.js; the turn's reveal drinks from the same well). Scope
+     here is the card's plate ONLY — the enlargement is the same photograph
+     held closer, not a new drawing; the strip's thumbnails and the pile
+     never draw at all. */
+  var drawNext = false, drawUntil = 0;
+  /* `force` is the REPLAY button's explicit press: requested motion plays
+     even when prefers-reduced-motion is on — the preference guards against
+     ambient animation, and a button whose whole job is "animate this" going
+     dead would be the worse accessibility outcome. No `secs`: the engine
+     paces each artwork by its own measured ink (owner rev, 2026-08-16 —
+     a paperclip sketches in a moment, a portrait takes its time). */
+  function drawOn(force) {
+    if (!scrollEl || !curEntry || !window.JD_drawOn) return;
+    /* the filmstrip owns the plate's run wherever it is mounted: a second
+       JD_drawOn on the same svg cancels the animations the control parked,
+       and the drawing would draw itself behind a control stuck at mark 0 */
+    if (filmstrip) {
+      try {
+        filmstrip.play();
+        var t = filmstrip.get().total;
+        if (t) drawUntil = Date.now() + (t + 0.4) * 1000;
+      } catch (e) {}
+      return;
+    }
+    var holder = scrollEl.querySelector('.rc-plate-art');
+    var svg = holder ? holder.querySelector('svg') : null;
+    var secs = svg && window.JD_drawOn(svg, { force: !!force });
+    if (secs) {
+      /* the lazy-fetch guard's window: while this hasn't elapsed, a draw
+         is (or may be) in flight on the plate */
+      drawUntil = Date.now() + (secs + 0.4) * 1000;
+    }
+  }
+
+  /* THE FILMSTRIP (owner, 2026-09-16): the replay/scrub control goes under
+     the plate, and takes over from the ↻ it stands next to (hidden in
+     junk-drawer.css — the ENLARGEMENT keeps its REDRAW, having no filmstrip
+     of its own). A render replaces the plate node wholesale, so the control
+     made for the old one is destroyed first: its bar goes with the innerHTML,
+     but its parked Web Animations would not, and twelve cells' worth of them
+     per abandoned render is not free. Held here, one per open card. */
+  var filmstrip = null;
+  function dropFilmstrip() {
+    if (!filmstrip) return;
+    try { filmstrip.destroy(); } catch (e) {}
+    filmstrip = null;
+  }
+  function mountFilmstrip() {
+    dropFilmstrip();
+    if (!window.JD_filmstrip || !scrollEl) return;
+    var plate = scrollEl.querySelector('.rc-col-l > .rc-plate');
+    var svg = plate && plate.querySelector('.rc-plate-art > svg');
+    if (!svg) return;
+    try {
+      filmstrip = window.JD_filmstrip(svg, plate, {
+        /* autoplay:false — the control parks at the finished drawing and
+           drawOn() below decides when the run happens, so the existing rule
+           holds: opening draws the photograph on, a plain re-render (the
+           strip filling in) does not */
+        autoplay: false,
+        pfx: 'fsr' + (++fsSeq) + '_',
+        label: 'Replay the drawing'
+      });
+    } catch (e) {}
+  }
+  var fsSeq = 0;
+
+  function render(animate) {
+    markSeq = 0;
+    var resp = curResponse();
+    scrollEl.innerHTML = cardHTML(curEntry, resp, curResp, true);
+    /* the prompt renders foldable, then earns it: measured here, after
+       layout, because "three lines" depends on the column's real width —
+       a character count lies in one orientation or the other. A prompt
+       that fits its three lines loses the fold and the expander both. */
+    var fold = scrollEl.querySelector('.rc-assign.rc-can-fold');
+    if (fold) {
+      var fp = fold.querySelector('p');
+      if (fp && fp.scrollHeight <= fp.clientHeight + 2) {
+        fold.classList.remove('rc-can-fold');
+      }
+    }
+    /* reframe after paint, in the same post-paint pass: the plate and the
+       strip thumbs inlined above may declare a frame their geometry
+       overshoots — fitView widens the viewBox, never the drawing. Every
+       holder carries the ARTWORK's key, so a 46px thumbnail is handed the
+       frame the 350px plate resolved rather than measuring its own. */
+    if (window.JD_fitAll) window.JD_fitAll(scrollEl);
+    mountFilmstrip();
+    /* the strip is a fresh node after every render, so its scrub listeners
+       are wired here rather than delegated (scroll doesn't bubble anyway),
+       and the shown response is brought under the eye without animating —
+       this is a repaint of the card, not a move the visitor made. */
+    var strip = scrollEl.querySelector('.rc-alts');
+    if (strip) wireStrip(strip);
+    /* a re-render replaces the plate node, so an open enlargement re-syncs to
+       the new response and re-points its way home (the lazy alternative SVGs
+       landing is the common case; switching response while enlarged is the
+       other) */
+    if (zoom.isOn()) {
+      zoom.fill(zoomBody(), plateEl());
+      zoom.setFrom(plateEl());
+    }
+    if (animate) JD_restart(cardEl, 'is-enter');
+    /* the reveal runs only where a caller asked for it (open, response
+       flip) — a plain re-render, like the strip filling in, must never
+       restart a drawing */
+    if (drawNext) { drawNext = false; drawOn(); }
+  }
+
+  function open(id, viaHistory) {
+    if (!payload || isOpen) return;
+    /* one modal at a time: the turn modal owns Esc and the scrim while it is
+       up, and two aria-modal dialogs on one page is a trap (C5.4) */
+    if (window.JD_turn && window.JD_turn.isOpen()) return;
+    /* …and the analytics folder, which is a third such dialog (2026-08-28) */
+    if (window.JD_folder && window.JD_folder.isOpen()) return;
+    var entry = byId(payload.items, id);
+    if (!entry) return;
+    curEntry = entry;
+    curResp = respIndex(entry, entry.primary);
+    /* (opening on the PRIMARY's thumbnail is render()'s job now — it centres
+       whatever curResp is in the scroll port, clamped to the ends) */
+    injectDefs();
+    build();
+    isOpen = true;
+    scrim.classList.add('is-on');
+    document.documentElement.classList.add('jd-record-open');
+    /* render immediately with what's cached (the primary always is); the
+       strip thumbnails fill in when the lazy fetches land */
+    drawNext = true;  /* opening the card draws the photograph on */
+    render(true);
+    ensureSVGs(entry).then(function () {
+      if (!isOpen) return;
+      /* the lazy fetches usually land while the reveal is still running,
+         and all they change is the strip — the plate's own SVG was cached
+         before first paint. A full render here would cut the drawing dead,
+         so while a draw is in flight refresh the strip alone. The full
+         path still runs when the plate is actually missing its artwork
+         (an alternative was picked before its fetch landed): then the
+         landing IS the reveal, and it draws. */
+      var plateEmpty = !scrollEl.querySelector('.rc-plate-art svg');
+      if (drawUntil > Date.now() && !plateEmpty) {
+        var ab = scrollEl.querySelector('.rc-alts-block');
+        if (ab) ab.innerHTML = altsHTML(curEntry, curResp);
+        if (window.JD_fitAll) window.JD_fitAll(scrollEl);
+        /* the replaced strip is a fresh node, so it takes the same wiring
+           render() gives one — scrub, centring, nav sync */
+        var st = scrollEl.querySelector('.rc-alts');
+        if (st) wireStrip(st);
+        return;
+      }
+      drawNext = plateEmpty;
+      render(false);
+    });
+    if (!viaHistory) {
+      try { history.pushState({ jdRecord: id }, '', '#' + id); pushed = true; }
+      catch (e) { pushed = false; }
+    } else { pushed = false; }
+    JD_track('item_open', id);
+  }
+
+  /* ADMIN MODE — THE INLINE EDITOR (owner, 2026-09-10; it replaced the
+     2026-09-05 ADJUST RATINGS hand-off to the bench card, which the owner
+     found roundabout). With the key verified, the grades table renders its
+     grades as the scales themselves, each holding the value on file, and
+     one button files the shown response's grade and axes through
+     jd-item-rate.php — a curated item by entry id + rid (the server files
+     any response the database never held), a turn by submission +
+     generation. On success the payload learns the values, the card repaints
+     from it, and the pile tag follows if the shown response is the one the
+     drawer displays. Ranks and sizes stay the bench's business. */
+  function editable(entry) {
+    return !!(window.JD_admin && JD_admin.isVerified() && entry && !entry.visitor);
+  }
+  /* the editor's one wire: a keyed JSON POST, answered with the parsed
+     reply, or a server_error shape when the reply is not JSON. Each caller
+     keeps its own failure handling, so every status line reads as before. */
+  function adminPost(path, body) {
+    return fetch(JD_API + path, {
+      method: 'POST',
+      headers: JD_admin.headers({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify(body)
+    }).then(function (r) {
+      return r.json().catch(function () { return { ok: false, error: { code: 'server_error' } }; });
+    });
+  }
+  var saving = false;
+  function setStatus(text) {
+    var el = scrollEl && scrollEl.querySelector('.rc-edit-status');
+    if (el) el.textContent = text || '';
+  }
+  function saveRatings() {
+    if (!curEntry || saving || !editable(curEntry)) return;
+    var resp = curResponse();
+    var axes = {}, grade = null;
+    scrollEl.querySelectorAll('select.rc-edit[data-axis]').forEach(function (sel) {
+      if (sel.value !== '') axes[sel.getAttribute('data-axis')] = +sel.value;
+    });
+    var g = scrollEl.querySelector('select.rc-edit[data-grade]');
+    if (g && g.value !== '') grade = +g.value;
+    var one = { grade: grade, axes: axes };
+    var body;
+    if (curEntry.fromTurn) {
+      one.generation_id = resp.gen_id;
+      body = { submission_id: curEntry.submission_id, responses: [one] };
+    } else {
+      one.rid = resp.rid;
+      body = { item_id: curEntry.id, responses: [one] };
+    }
+    saving = true;
+    setStatus('saving…');
+    adminPost('/api/jd-item-rate.php', body).then(function (j) {
+      saving = false;
+      if (!j || !j.ok) {
+        setStatus('⚠ not saved (' + (((j || {}).error || {}).code || 'network') + ')');
+        return undefined;
+      }
+      /* the payload learns what the server now serves */
+      if (grade != null) resp.grade = grade;
+      resp.annotations = resp.annotations || {};
+      Object.keys(axes).forEach(function (a) {
+        var cur = resp.annotations[a];
+        resp.annotations[a] = (cur && typeof cur === 'object' && cur.note)
+          ? { value: axes[a], note: cur.note }
+          : axes[a];
+      });
+      if (resp.rid === curEntry.primary) pileTag(curEntry, resp);
+      /* the hide box, only if it moved */
+      var box = scrollEl.querySelector('[data-rc="hidecheck"]');
+      var wantHidden = !!(box && box.checked);
+      if (wantHidden === !!curEntry.hidden) return true;
+      saving = true;
+      return fileHidden(wantHidden);
+    }).then(function (res) {
+      saving = false;
+      if (res === undefined) return;       /* the ratings failed; said so */
+      /* saved whole: the card comes down (owner, 2026-09-10 — a saved card
+         has nothing more to say). Only a hide that failed keeps it up, with
+         the reason on the status line. */
+      if (res === true) { close(); return; }
+      render(false);
+      setStatus('✓ ratings saved · ⚠ hide not changed (' + res + ')');
+    }, function () {
+      saving = false;
+      setStatus('⚠ not saved (network)');
+    });
+  }
+  /* the gauge ahead of a scale follows the pick, in the scale's own colour */
+  function syncBar(sel) {
+    var cell = sel.parentNode;
+    var old = cell && cell.querySelector ? cell.querySelector('.rc-bar') : null;
+    if (!old) return;
+    var rank = sel.value === '' ? 0 : Math.round(+sel.value);
+    var html;
+    if (sel.hasAttribute('data-grade')) {
+      html = barHTML(rank, 5, rank ? 'rc-g' + rank : '');
+    } else {
+      var axis = byId((payload.taxonomy || {}).axes, sel.getAttribute('data-axis')) || {};
+      var steps = (axis.values || []).length || 3;
+      html = barHTML(rank, steps, rank ? JD_axisCls(axis, rank) : '');
+    }
+    var tmp = document.createElement('span');
+    tmp.innerHTML = html;
+    cell.replaceChild(tmp.firstChild, old);
+  }
+  /* HIDE FROM DRAWER (owner, 2026-09-10): the item's retire_requested_at,
+     set or cleared through jd-curate.php — the switch the bench's SCRAP
+     throws, now reversible, and live for curated items too (data.php holds
+     a hidden item back at request time). Filed by SAVE RATINGS with the
+     scales, only when the box changed. The pile loses or regains the
+     specimen on the spot. Resolves true on success. */
+  function fileHidden(hide) {
+    var body = curEntry.fromTurn
+      ? { submission_id: curEntry.submission_id, retire: hide }
+      : { item_id: curEntry.id, retire: hide };
+    return adminPost('/api/jd-curate.php', body).then(function (j) {
+      if (!j || !j.ok) return (((j || {}).error || {}).code || 'network');
+      curEntry.hidden = hide;
+      var el = pileItem(curEntry.id);
+      if (el) el.classList.toggle('jd-item--hidden', hide);
+      return true;
+    }, function () { return 'network'; });
+  }
+  /* the specimen tag reads its grade off the pile item's dataset — keep it
+     honest without rebuilding the pile */
+  function pileTag(entry, resp) {
+    var el = pileItem(entry.id);
+    if (!el) return;
+    var gr = gradeOf(resp.grade);
+    el.setAttribute('data-grade', gr.label || '');
+    el.setAttribute('data-rank', gr.rank ? String(Math.round(gr.rank)) : '');
+  }
+
+  function teardown() {
+    if (!isOpen) return;
+    closeZoom(true);
+    /* the card's DOM outlives a close (the scrim just loses is-on), so the
+       control's parked animations would tick along behind a shut card */
+    dropFilmstrip();
+    isOpen = false;
+    if (scrim) scrim.classList.remove('is-on');
+    document.documentElement.classList.remove('jd-record-open');
+  }
+
+  /* UI close goes through history when we pushed (Android back symmetry);
+     popstate performs the actual teardown */
+  function close() {
+    if (!isOpen) return;
+    if (pushed) { history.back(); }
+    else {
+      teardown();
+      try { history.replaceState(null, '', location.pathname + location.search); }
+      catch (e) {}
+    }
+  }
+
+  window.addEventListener('popstate', function () {
+    var h = decodeURIComponent(location.hash.slice(1));
+    if (isOpen && (!h || !curEntry || h !== curEntry.id)) { teardown(); }
+    else if (!isOpen && h && payload && byId(payload.items, h)) { open(h, true); }
+  });
+  /* Escape peels ONE layer per press: the enlargement first, the card only
+     once the artwork is back down on its plate. (The pile's own Esc handler
+     is already standing down for the whole time the record is open, so this
+     is the only claim on the key here — no capture-phase interception
+     needed, just the order of these two branches.) */
+  window.addEventListener('keydown', function (e) {
+    if (!isOpen || e.key !== 'Escape') return;
+    if (zoom.isOn()) { closeZoom(); return; }
+    close();
+  });
+
+  window.JD_record = {
+    setData: function (data, primaries) {
+      payload = data;
+      var k;
+      for (k in (primaries || {})) svgCache[k] = primaries[k];
+    },
+    open: open,
+    close: close,
+    isOpen: function () { return isOpen; },
+    /* a plain re-paint of the open card (admin mode: the key verifies after
+       a deep-linked card has already painted, and the control has to appear) */
+    refresh: function () { if (isOpen) render(false); },
+    openFromHash: function () {
+      var h = decodeURIComponent(location.hash.slice(1));
+      if (h && payload && byId(payload.items, h)) open(h, true);
+    },
+    /* A FINISHED CARD, NOT A DIALOG (2026-09-27, the /about/ walkthrough).
+       The markup open() renders for one response, in a frame of its own —
+       no modal, no history, no draw-on, no listeners — resolved once every
+       drawing on it has been fetched. For pages that SHOW report cards
+       rather than open them: the walkthrough used to drive the live modal
+       (open it, press its thumbnails, wait for each render), and every one
+       of those steps was a race it could lose. `rid` names the response;
+       omitted, the drawer's pick. Resolves null when the item is unknown or
+       the drawer's data has not arrived (ready() says which). */
+    ready: function () { return !!payload; },
+    /* `item` is an entry id — looked up in the data the drawer handed over —
+       or the ENTRY ITSELF, from the caller's own copy of data.php. The
+       walkthrough passes the entry: the drawer only hands its data over
+       once it has fetched every drawing in the pile, and a page that shows
+       three cards should not wait on seventy drawings to show them. */
+    card: function (item, rid, data) {
+      var entry = item && typeof item === 'object' ? item
+        : (payload ? byId(payload.items, item) : null);
+      if (!entry) return Promise.resolve(null);
+      /* the card's markup reads the taxonomy (grade words, axis names) from
+         the payload; a caller with its own copy of data.php lends it for the
+         one synchronous render below if the drawer has not handed over yet */
+      var lent = !payload && data && data.taxonomy ? data : null;
+      injectDefs();
+      return ensureSVGs(entry).then(function () {
+        var i = respIndex(entry, rid || entry.primary);
+        markSeq = 0;
+        var html, own = payload;
+        if (!payload && lent) payload = lent;
+        try { html = cardHTML(entry, entry.responses[i], i); }
+        finally { if (payload === lent) payload = own; }
+        var el = document.createElement('div');
+        el.className = 'jd-record-scrim is-on';
+        el.innerHTML = '<div class="jd-record" aria-label="report card">' +
+          '<div class="rc-scroll">' + html + '</div></div>';
+        return el;
+      });
+    }
+  };
+})();

@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 600">
+  <defs>
+    <symbol id="doll" viewBox="0 0 260 400">
+      <!-- body / fur tunic silhouette -->
+      <path d="M130,2 C50,2 8,70 8,150 C8,230 30,230 28,290 C26,350 40,394 90,396 L170,396 C220,394 234,350 232,290 C230,230 252,230 252,150 C252,70 210,2 130,2 Z"
+            fill="#C97F3B" stroke="#3E2416" stroke-width="5" stroke-linejoin="round"/>
+      <!-- face -->
+      <ellipse cx="130" cy="92" rx="56" ry="66" fill="#D9A066" stroke="#3E2416" stroke-width="4"/>
+      <!-- wild spiky hair -->
+      <path d="M82,52 L92,18 L104,42 L116,10 L130,40 L144,10 L156,42 L168,18 L178,52 Z"
+            fill="#3E2A1E" stroke="#2A1B12" stroke-width="3" stroke-linejoin="round"/>
+      <!-- bone through hair -->
+      <line x1="95" y1="27" x2="163" y2="23" stroke="#F5E9D6" stroke-width="7" stroke-linecap="round"/>
+      <circle cx="95" cy="27" r="6" fill="#F5E9D6" stroke="#8C5A32" stroke-width="1.5"/>
+      <circle cx="163" cy="23" r="6" fill="#F5E9D6" stroke="#8C5A32" stroke-width="1.5"/>
+      <!-- brow, eyes -->
+      <path d="M100,98 Q130,86 160,98" fill="none" stroke="#3E2A1E" stroke-width="10" stroke-linecap="round"/>
+      <circle cx="112" cy="114" r="7" fill="#2A1B12"/>
+      <circle cx="148" cy="114" r="7" fill="#2A1B12"/>
+      <!-- nose -->
+      <path d="M124,122 L136,122 L130,140 Z" fill="#B5794A" stroke="#3E2416" stroke-width="2" stroke-linejoin="round"/>
+      <!-- mouth + tusks -->
+      <path d="M112,150 Q130,160 148,150" fill="none" stroke="#3E2416" stroke-width="4" stroke-linecap="round"/>
+      <path d="M120,150 L126,150 L123,140 Z" fill="#F5E9D6"/>
+      <path d="M134,150 L140,150 L137,140 Z" fill="#F5E9D6"/>
+      <!-- necklace -->
+      <path d="M95,172 Q130,182 165,172" fill="none" stroke="#8C5A32" stroke-width="2"/>
+      <circle cx="98" cy="174" r="5" fill="#F5E9D6" stroke="#8C5A32" stroke-width="1"/>
+      <circle cx="114" cy="179" r="5" fill="#2A1B12"/>
+      <circle cx="130" cy="181" r="5" fill="#F5E9D6" stroke="#8C5A32" stroke-width="1"/>
+      <circle cx="146" cy="179" r="5" fill="#2A1B12"/>
+      <circle cx="162" cy="174" r="5" fill="#F5E9D6" stroke="#8C5A32" stroke-width="1"/>
+      <!-- club on shoulder -->
+      <line x1="128" y1="248" x2="78" y2="178" stroke="#6B4423" stroke-width="14" stroke-linecap="round"/>
+      <ellipse cx="76" cy="172" rx="20" ry="15" fill="#7A5230" stroke="#3E2416" stroke-width="3" transform="rotate(-20 76 172)"/>
+      <!-- hands gripping club -->
+      <ellipse cx="112" cy="238" rx="15" ry="19" fill="#D9A066" stroke="#3E2416" stroke-width="3"/>
+      <ellipse cx="150" cy="233" rx="15" ry="19" fill="#D9A066" stroke="#3E2416" stroke-width="3"/>
+      <!-- leopard-ish spots -->
+      <g fill="#6E4423">
+        <ellipse cx="60" cy="205" rx="10" ry="7"/>
+        <ellipse cx="195" cy="212" rx="9" ry="6"/>
+        <ellipse cx="78" cy="262" rx="11" ry="8"/>
+        <ellipse cx="180" cy="268" rx="10" ry="7"/>
+        <ellipse cx="48" cy="320" rx="9" ry="6"/>
+        <ellipse cx="205" cy="328" rx="10" ry="7"/>
+        <ellipse cx="108" cy="330" rx="8" ry="6"/>
+        <ellipse cx="155" cy="335" rx="9" ry="6"/>
+      </g>
+      <!-- decorative hem -->
+      <path d="M65,358 L195,358 L185,390 L75,390 Z" fill="#A85B2E" stroke="#3E2416" stroke-width="3" stroke-linejoin="round"/>
+      <polyline points="80,378 100,368 120,378 140,368 160,378 180,368" fill="none" stroke="#F5E9D6" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      <g fill="#F5E9D6">
+        <circle cx="90" cy="345" r="3.5"/>
+        <circle cx="110" cy="345" r="3.5"/>
+        <circle cx="130" cy="345" r="3.5"/>
+        <circle cx="150" cy="345" r="3.5"/>
+        <circle cx="170" cy="345" r="3.5"/>
+      </g>
+    </symbol>
+  </defs>
+
+  <!-- sky decoration: primitive sun -->
+  <g transform="translate(650,130)">
+    <circle r="72" fill="#F4C77A" opacity="0.3"/>
+    <g fill="#E8A33D">
+      <polygon points="-9,-52 9,-52 0,-105" transform="rotate(0)"/>
+      <polygon points="-9,-52 9,-52 0,-105" transform="rotate(36)"/>
+      <polygon points="-9,-52 9,-52 0,-105" transform="rotate(72)"/>
+      <polygon points="-9,-52 9,-52 0,-105" transform="rotate(108)"/>
+      <polygon points="-9,-52 9,-52 0,-105" transform="rotate(144)"/>
+      <polygon points="-9,-52 9,-52 0,-105" transform="rotate(180)"/>
+      <polygon points="-9,-52 9,-52 0,-105" transform="rotate(216)"/>
+      <polygon points="-9,-52 9,-52 0,-105" transform="rotate(252)"/>
+      <polygon points="-9,-52 9,-52 0,-105" transform="rotate(288)"/>
+      <polygon points="-9,-52 9,-52 0,-105" transform="rotate(324)"/>
+    </g>
+    <circle r="48" fill="#EFAE47" stroke="#C97A25" stroke-width="4"/>
+    <circle r="26" fill="none" stroke="#C97A25" stroke-width="2" stroke-dasharray="4 6"/>
+    <circle r="12" fill="none" stroke="#C97A25" stroke-width="3"/>
+  </g>
+
+  <!-- simple clouds -->
+  <g fill="#F3E6D3" opacity="0.55">
+    <circle cx="190" cy="65" r="16"/>
+    <circle cx="212" cy="58" r="20"/>
+    <circle cx="236" cy="66" r="14"/>
+    <circle cx="430" cy="95" r="12"/>
+    <circle cx="448" cy="88" r="16"/>
+    <circle cx="466" cy="96" r="11"/>
+  </g>
+
+  <!-- birds -->
+  <g stroke="#4a2f1d" stroke-width="4" fill="none" stroke-linecap="round">
+    <path d="M110,45 q14,-14 28,0 q14,-14 28,0"/>
+    <path d="M330,35 q11,-11 22,0 q11,-11 22,0" transform="scale(0.8) translate(60,10)"/>
+    <path d="M760,60 q13,-13 26,0 q13,-13 26,0"/>
+    <path d="M820,110 q10,-10 20,0 q10,-10 20,0" transform="scale(0.8) translate(180,25)"/>
+    <path d="M60,150 q10,-10 20,0 q10,-10 20,0"/>
+  </g>
+
+  <!-- ground -->
+  <path d="M0,575 Q100,565 225,572 T450,572 T675,572 T900,575 L900,600 L0,600 Z" fill="#8B5A2B"/>
+  <g fill="#6E4423" opacity="0.6">
+    <ellipse cx="60" cy="588" rx="10" ry="4"/>
+    <ellipse cx="250" cy="592" rx="12" ry="5"/>
+    <ellipse cx="470" cy="588" rx="9" ry="4"/>
+    <ellipse cx="640" cy="593" rx="11" ry="4"/>
+    <ellipse cx="830" cy="588" rx="10" ry="4"/>
+  </g>
+  <g fill="#F0E6D2" stroke="#8C5A32" stroke-width="1.5">
+    <g transform="translate(430,586) rotate(-10)">
+      <rect x="-16" y="-3" width="32" height="6" rx="3"/>
+      <circle cx="-16" cy="0" r="5"/>
+      <circle cx="16" cy="0" r="5"/>
+    </g>
+    <g transform="translate(650,591) rotate(12)">
+      <rect x="-13" y="-2.5" width="26" height="5" rx="2.5"/>
+      <circle cx="-13" cy="0" r="4"/>
+      <circle cx="13" cy="0" r="4"/>
+    </g>
+  </g>
+
+  <!-- nesting caveman doll family, largest to smallest -->
+  <use href="#doll" x="15" y="22" width="364" height="560"/>
+  <use href="#doll" x="290" y="122" width="299" height="460"/>
+  <use href="#doll" x="505" y="210" width="242" height="372"/>
+  <use href="#doll" x="700" y="288" width="191" height="294"/>
+</svg>

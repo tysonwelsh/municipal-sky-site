@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="25.2 45.5 350.0 293.8">
+  <defs>
+    <radialGradient id="wingTop" cx="40%" cy="35%" r="75%">
+      <stop offset="0%" stop-color="#ffb3d9" stop-opacity="0.85"/>
+      <stop offset="45%" stop-color="#c77dff" stop-opacity="0.75"/>
+      <stop offset="100%" stop-color="#5a4fcf" stop-opacity="0.65"/>
+    </radialGradient>
+    <radialGradient id="wingBot" cx="45%" cy="60%" r="75%">
+      <stop offset="0%" stop-color="#ffd6a5" stop-opacity="0.85"/>
+      <stop offset="55%" stop-color="#ff8fab" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#b565d8" stop-opacity="0.6"/>
+    </radialGradient>
+    <filter id="bleed" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012 0.02" numOctaves="3" seed="7" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="14"/>
+      <feGaussianBlur stdDeviation="1.2"/>
+    </filter>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3"/>
+    </filter>
+  </defs>
+
+  <!-- Left upper wing -->
+  <g filter="url(#bleed)">
+    <path d="M198 175 C160 95 95 45 55 65 C15 85 25 150 80 185 C120 210 170 205 198 195 Z" fill="url(#wingTop)"/>
+    <path d="M198 205 C150 215 95 225 80 265 C65 305 100 345 145 335 C185 325 200 280 200 240 Z" fill="url(#wingBot)"/>
+  </g>
+  <!-- Right upper wing -->
+  <g filter="url(#bleed)">
+    <path d="M202 175 C240 95 305 45 345 65 C385 85 375 150 320 185 C280 210 230 205 202 195 Z" fill="url(#wingTop)"/>
+    <path d="M202 205 C250 215 305 225 320 265 C335 305 300 345 255 335 C215 325 200 280 200 240 Z" fill="url(#wingBot)"/>
+  </g>
+
+  <!-- Watercolor spots -->
+  <g filter="url(#soft)">
+    <circle cx="95" cy="120" r="18" fill="#ffffff" opacity="0.55"/>
+    <circle cx="305" cy="120" r="18" fill="#ffffff" opacity="0.55"/>
+    <circle cx="130" cy="150" r="10" fill="#ffe066" opacity="0.6"/>
+    <circle cx="270" cy="150" r="10" fill="#ffe066" opacity="0.6"/>
+    <circle cx="120" cy="290" r="14" fill="#ffffff" opacity="0.5"/>
+    <circle cx="280" cy="290" r="14" fill="#ffffff" opacity="0.5"/>
+    <circle cx="60" cy="95" r="7" fill="#7b2cbf" opacity="0.4"/>
+    <circle cx="340" cy="95" r="7" fill="#7b2cbf" opacity="0.4"/>
+  </g>
+
+  <!-- Veins -->
+  <g stroke="#4a3b8f" stroke-width="1.5" fill="none" opacity="0.35" stroke-linecap="round">
+    <path d="M198 185 C150 150 110 120 70 100"/>
+    <path d="M198 190 C155 185 110 175 75 165"/>
+    <path d="M200 230 C165 250 135 275 110 300"/>
+    <path d="M202 185 C250 150 290 120 330 100"/>
+    <path d="M202 190 C245 185 290 175 325 165"/>
+    <path d="M200 230 C235 250 265 275 290 300"/>
+  </g>
+
+  <!-- Splatter -->
+  <g filter="url(#soft)">
+    <circle cx="40" cy="210" r="5" fill="#c77dff" opacity="0.5"/>
+    <circle cx="360" cy="210" r="5" fill="#c77dff" opacity="0.5"/>
+    <circle cx="55" cy="320" r="4" fill="#ff8fab" opacity="0.5"/>
+    <circle cx="345" cy="320" r="4" fill="#ff8fab" opacity="0.5"/>
+    <circle cx="90" cy="55" r="4" fill="#5a4fcf" opacity="0.45"/>
+    <circle cx="310" cy="55" r="4" fill="#5a4fcf" opacity="0.45"/>
+  </g>
+
+  <!-- Body -->
+  <ellipse cx="200" cy="225" rx="9" ry="62" fill="#3d2c6e" opacity="0.9"/>
+  <ellipse cx="200" cy="225" rx="4" ry="55" fill="#6a4fc9" opacity="0.5"/>
+  <circle cx="200" cy="160" r="11" fill="#3d2c6e"/>
+  <!-- Antennae -->
+  <path d="M195 152 C180 125 165 112 150 108" stroke="#3d2c6e" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M205 152 C220 125 235 112 250 108" stroke="#3d2c6e" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <circle cx="149" cy="107" r="4" fill="#3d2c6e"/>
+  <circle cx="251" cy="107" r="4" fill="#3d2c6e"/>
+</svg>

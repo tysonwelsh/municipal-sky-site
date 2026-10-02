@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="13.2 61.5 778.2 170.2">
+  <defs>
+    <!-- Wax Cylinder Gradient -->
+    <linearGradient id="waxGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1b7850"/>
+      <stop offset="25%" stop-color="#3cb371"/>
+      <stop offset="50%" stop-color="#2e8b57"/>
+      <stop offset="85%" stop-color="#145a3c"/>
+      <stop offset="100%" stop-color="#0a3d26"/>
+    </linearGradient>
+
+    <!-- Wrapper Cylinder Gradient -->
+    <linearGradient id="wrapGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2a9365"/>
+      <stop offset="25%" stop-color="#48d1cc"/>
+      <stop offset="50%" stop-color="#20b2aa"/>
+      <stop offset="85%" stop-color="#1b7850"/>
+      <stop offset="100%" stop-color="#104a32"/>
+    </linearGradient>
+
+    <!-- Broken Surface Gradient -->
+    <linearGradient id="breakGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3cb371"/>
+      <stop offset="100%" stop-color="#145a3c"/>
+    </linearGradient>
+
+    <!-- Label Gradient -->
+    <linearGradient id="labelGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#082b1b"/>
+      <stop offset="50%" stop-color="#104a32"/>
+      <stop offset="100%" stop-color="#082b1b"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Left Piece -->
+  <g transform="translate(0, 10) rotate(-3, 380, 130)">
+    <!-- Wax Tip -->
+    <path d="M 15 130 C 40 75, 75 70, 120 70 L 120 190 C 75 190, 40 185, 15 130 Z" fill="url(#waxGrad)"/>
+    
+    <!-- Wax Body (Left) -->
+    <path d="M 119 70 L 400 70 L 385 100 L 410 130 L 380 160 L 395 190 L 119 190 Z" fill="url(#waxGrad)"/>
+    
+    <!-- Wrapper (Left) -->
+    <path d="M 140 70 L 392 70 L 377 100 L 402 130 L 372 160 L 387 190 L 140 190 Z" fill="url(#wrapGrad)"/>
+    
+    <!-- Wrapper Wavy Stripes (Left) -->
+    <path d="M 155 70 Q 165 100, 155 130 T 155 190" fill="none" stroke="#082b1b" stroke-width="6"/>
+    <path d="M 170 70 Q 180 100, 170 130 T 170 190" fill="none" stroke="#082b1b" stroke-width="6"/>
+
+    <!-- Wrapper Logo/Label (Left) -->
+    <ellipse cx="270" cy="130" rx="70" ry="30" fill="url(#labelGrad)"/>
+    <ellipse cx="270" cy="130" rx="64" ry="24" fill="none" stroke="#20b2aa" stroke-width="2"/>
+    <path d="M 230 140 A 40 20 0 0 1 310 120" fill="none" stroke="#20b2aa" stroke-width="4" stroke-linecap="round"/>
+  </g>
+
+  <!-- Right Piece -->
+  <g transform="translate(15, -5) rotate(5, 450, 130)">
+    <!-- Wax Body (Right) -->
+    <path d="M 430 70 L 760 70 L 760 190 L 425 190 L 440 160 L 420 130 L 445 100 Z" fill="url(#waxGrad)"/>
+    
+    <!-- Broken Wax Cross-Section (Right) -->
+    <path d="M 430 70 L 445 100 L 420 130 L 440 160 L 425 190 L 415 160 L 395 130 L 420 100 Z" fill="url(#breakGrad)"/>
+
+    <!-- Wax End Cap -->
+    <ellipse cx="760" cy="130" rx="15" ry="60" fill="url(#waxGrad)"/>
+    
+    <!-- Wrapper (Right) -->
+    <path d="M 440 70 L 735 70 L 735 190 L 435 190 L 450 160 L 430 130 L 455 100 Z" fill="url(#wrapGrad)"/>
+    
+    <!-- Wrapper Wavy Stripes (Right) -->
+    <path d="M 700 70 Q 710 100, 700 130 T 700 190" fill="none" stroke="#082b1b" stroke-width="6"/>
+    <path d="M 715 70 Q 725 100, 715 130 T 715 190" fill="none" stroke="#082b1b" stroke-width="6"/>
+
+    <!-- Wrapper Logo/Label (Right - Partial) -->
+    <path d="M 500 100 A 70 30 0 0 0 500 160 L 590 160 A 70 30 0 0 0 590 100 Z" fill="url(#labelGrad)"/>
+    <path d="M 505 106 A 64 24 0 0 0 505 154 L 585 154 A 64 24 0 0 0 585 106 Z" fill="none" stroke="#20b2aa" stroke-width="2"/>
+  </g>
+
+  <!-- Wax Crumbs / Flakes -->
+  <path d="M 410 205 L 425 200 L 420 215 L 405 212 Z" fill="#3cb371"/>
+  <path d="M 435 220 L 445 210 L 450 225 L 440 230 Z" fill="#2e8b57"/>
+  <path d="M 370 195 L 380 190 L 375 205 Z" fill="#1b7850"/>
+  <path d="M 460 200 L 470 195 L 465 208 L 455 205 Z" fill="#20b2aa"/>
+</svg>

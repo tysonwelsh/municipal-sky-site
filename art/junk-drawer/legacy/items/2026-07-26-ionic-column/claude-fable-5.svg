@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 640">
+  <title>Ionic Greek column</title>
+  <defs>
+    <linearGradient id="shaftG" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#bfb29c"/>
+      <stop offset="0.15" stop-color="#e9e1d0"/>
+      <stop offset="0.5" stop-color="#f6f0e2"/>
+      <stop offset="0.85" stop-color="#e4dbc8"/>
+      <stop offset="1" stop-color="#b5a890"/>
+    </linearGradient>
+    <linearGradient id="torusG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f4eede"/>
+      <stop offset="0.45" stop-color="#e7dfcd"/>
+      <stop offset="1" stop-color="#bfb29a"/>
+    </linearGradient>
+  </defs>
+
+  <g stroke="#4f4636" stroke-linejoin="round">
+    <!-- shaft -->
+    <path d="M58 80 L182 80 L188 566 L52 566 Z" fill="url(#shaftG)" stroke-width="2"/>
+    <!-- flutes -->
+    <g stroke="#a99b82" stroke-width="3.5" stroke-linecap="round" fill="none">
+      <line x1="73.5" y1="92" x2="69" y2="554"/>
+      <line x1="89" y1="92" x2="86" y2="554"/>
+      <line x1="104.5" y1="92" x2="103" y2="554"/>
+      <line x1="120" y1="92" x2="120" y2="554"/>
+      <line x1="135.5" y1="92" x2="137" y2="554"/>
+      <line x1="151" y1="92" x2="154" y2="554"/>
+      <line x1="166.5" y1="92" x2="171" y2="554"/>
+    </g>
+
+    <!-- astragal below capital -->
+    <rect x="52" y="73" width="136" height="9" rx="4.5" fill="#ddd3bf" stroke-width="2"/>
+
+    <!-- abacus -->
+    <rect x="14" y="6" width="212" height="14" rx="2" fill="#eae2d1" stroke-width="2"/>
+    <line x1="20" y1="13" x2="220" y2="13" stroke-width="1.2" stroke="#8a7c64"/>
+
+    <!-- canalis ribbon between volutes -->
+    <path d="M34 21 C75 33 165 33 206 21 L206 36 C165 48 75 48 34 36 Z" fill="#ded4bf" stroke-width="2"/>
+
+    <!-- echinus with egg-and-dart -->
+    <path d="M63 40 C90 50 150 50 177 40 L172 60 C150 76 90 76 68 60 Z" fill="#eae2d1" stroke-width="2"/>
+    <g stroke-width="1.6">
+      <ellipse cx="96" cy="57" rx="8.5" ry="11.5" fill="#f4efe1"/>
+      <ellipse cx="120" cy="58" rx="8.5" ry="11.5" fill="#f4efe1"/>
+      <ellipse cx="144" cy="57" rx="8.5" ry="11.5" fill="#f4efe1"/>
+      <path d="M108 47 L108 62 M105 60 L108 68 L111 60" fill="none"/>
+      <path d="M132 47 L132 62 M129 60 L132 68 L135 60" fill="none"/>
+    </g>
+
+    <!-- left volute -->
+    <circle cx="34" cy="48" r="28.5" fill="#e6ddcb" stroke-width="2"/>
+    <path d="M34 20 A28 28 0 0 0 34 76 A22 22 0 0 0 34 32 A17 17 0 0 0 34 66 A13 13 0 0 0 34 40 A10 10 0 0 0 34 60 A7.5 7.5 0 0 0 34 45 A5.5 5.5 0 0 0 34 56" fill="none" stroke-width="2.4" stroke-linecap="round"/>
+    <circle cx="34" cy="50.5" r="3.2" fill="#4f4636" stroke="none"/>
+
+    <!-- right volute -->
+    <circle cx="206" cy="48" r="28.5" fill="#e6ddcb" stroke-width="2"/>
+    <path d="M206 20 A28 28 0 0 1 206 76 A22 22 0 0 1 206 32 A17 17 0 0 1 206 66 A13 13 0 0 1 206 40 A10 10 0 0 1 206 60 A7.5 7.5 0 0 1 206 45 A5.5 5.5 0 0 1 206 56" fill="none" stroke-width="2.4" stroke-linecap="round"/>
+    <circle cx="206" cy="50.5" r="3.2" fill="#4f4636" stroke="none"/>
+
+    <!-- attic base: upper torus, scotia, lower torus, plinth -->
+    <rect x="40" y="564" width="160" height="16" rx="8" fill="url(#torusG)" stroke-width="2"/>
+    <path d="M48 580 Q58 586 52 592 L188 592 Q182 586 192 580 Z" fill="#c9bda6" stroke-width="2"/>
+    <rect x="26" y="592" width="188" height="20" rx="10" fill="url(#torusG)" stroke-width="2"/>
+    <rect x="12" y="612" width="216" height="26" rx="2" fill="#e3dac7" stroke-width="2"/>
+    <line x1="18" y1="620" x2="222" y2="620" stroke-width="1.2" stroke="#8a7c64"/>
+  </g>
+</svg>

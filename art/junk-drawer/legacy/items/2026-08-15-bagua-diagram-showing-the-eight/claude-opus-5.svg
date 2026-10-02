@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800">
+  <defs>
+    <filter id="paper" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="4" seed="7" result="n"/>
+      <feColorMatrix in="n" type="saturate" values="0" result="ng"/>
+      <feComponentTransfer in="ng" result="nc">
+        <feFuncA type="linear" slope="0.35"/>
+      </feComponentTransfer>
+      <feComposite in="nc" in2="SourceGraphic" operator="over"/>
+    </filter>
+
+    <filter id="grain" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="3" result="t"/>
+      <feDisplacementMap in="SourceGraphic" in2="t" scale="2.2" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+
+    <filter id="rough" x="-8%" y="-8%" width="116%" height="116%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="3" seed="11" result="t"/>
+      <feDisplacementMap in="SourceGraphic" in2="t" scale="4" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+
+    <filter id="mottle" x="0%" y="0%" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="5" seed="21" result="t"/>
+      <feColorMatrix in="t" type="saturate" values="0"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.5"/>
+      </feComponentTransfer>
+    </filter>
+
+    <mask id="fade">
+      <rect width="800" height="800" fill="#fff"/>
+      <g filter="url(#mottle)"><rect width="800" height="800" fill="#000" opacity="0.35"/></g>
+    </mask>
+
+    <!-- trigram symbol: three lines, param via use not possible; define each -->
+    <g id="yaoY"><rect x="-34" y="-4" width="68" height="8"/></g>
+    <g id="yaoN"><rect x="-34" y="-4" width="28" height="8"/><rect x="6" y="-4" width="28" height="8"/></g>
+  </defs>
+
+  <!-- grey paper ground -->
+  <rect width="800" height="800" fill="#b8b5ae"/>
+  <rect width="800" height="800" fill="#9c998f" filter="url(#mottle)" opacity="0.55"/>
+  <rect width="800" height="800" fill="#d6d3cb" opacity="0.18" filter="url(#paper)"/>
+
+  <g mask="url(#fade)">
+  <g filter="url(#grain)" fill="#1a1a18" stroke="#1a1a18">
+
+    <!-- outer octagon rings -->
+    <g fill="none" stroke-width="4" filter="url(#rough)" opacity="0.92">
+      <polygon points="400,10 675.8,124.2 790,400 675.8,675.8 400,790 124.2,675.8 10,400 124.2,124.2"/>
+    </g>
+    <g fill="none" stroke-width="2.5" filter="url(#rough)" opacity="0.85">
+      <polygon points="400,26 664.5,135.5 774,400 664.5,664.5 400,774 135.5,664.5 26,400 135.5,135.5"/>
+      <polygon points="400,168 564,236 632,400 564,564 400,632 236,564 168,400 236,236"/>
+      <circle cx="400" cy="400" r="150"/>
+    </g>
+
+    <!-- spokes between segments -->
+    <g stroke-width="2" opacity="0.7" filter="url(#rough)">
+      <line x1="463.5" y1="63.5" x2="551.6" y2="151.6"/>
+      <line x1="736.5" y1="336.5" x2="648.4" y2="248.4"/>
+      <line x1="736.5" y1="463.5" x2="648.4" y2="551.6"/>
+      <line x1="463.5" y1="736.5" x2="551.6" y2="648.4"/>
+      <line x1="336.5" y1="736.5" x2="248.4" y2="648.4"/>
+      <line x1="63.5" y1="463.5" x2="151.6" y2="551.6"/>
+      <line x1="63.5" y1="336.5" x2="151.6" y2="248.4"/>
+      <line x1="336.5" y1="63.5" x2="248.4" y2="151.6"/>
+    </g>
+
+    <!-- ===== TRIGRAMS ===== -->
+    <!-- QIAN top (3 solid) -->
+    <g transform="translate(400,97)">
+      <use href="#yaoY" y="-26"/><use href="#yaoY" y="0"/><use href="#yaoY" y="26"/>
+    </g>
+    <!-- XUN upper-right (broken bottom) -->
+    <g transform="translate(614,186) rotate(45)">
+      <use href="#yaoY" y="-26"/><use href="#yaoY" y="0"/><use href="#yaoN" y="26"/>
+    </g>
+    <!-- KAN right -->
+    <g transform="translate(703,400) rotate(90)">
+      <use href="#yaoN" y="-26"/><use href="#yaoY" y="0"/><use href="#yaoN" y="26"/>
+    </g>
+    <!-- GEN lower-right -->
+    <g transform="translate(614,614) rotate(135)">
+      <use href="#yaoY" y="-26"/><use href="#yaoN" y="0"/><use href="#yaoN" y="26"/>
+    </g>
+    <!-- KUN bottom -->
+    <g transform="translate(400,703) rotate(180)">
+      <use href="#yaoN" y="-26"/><use href="#yaoN" y="0"/><use href="#yaoN" y="26"/>
+    </g>
+    <!-- ZHEN lower-left -->
+    <g transform="translate(186,614) rotate(225)">
+      <use href="#yaoN" y="-26"/><use href="#yaoN" y="0"/><use href="#yaoY" y="26"/>
+    </g>
+    <!-- LI left -->
+    <g transform="translate(97,400) rotate(270)">
+      <use href="#yaoY" y="-26"/><use href="#yaoN" y="0"/><use href="#yaoY" y="26"/>
+    </g>
+    <!-- DUI upper-left -->
+    <g transform="translate(186,186) rotate(315)">
+      <use href="#yaoN" y="-26"/><use href="#yaoY" y="0"/><use href="#yaoY" y="26"/>
+    </g>
+
+    <!-- ===== CHARACTERS (inner ring) ===== -->
+    <g font-family="Songti SC, STSong, SimSun, serif" font-size="40" text-anchor="middle" stroke="none">
+      <text x="400" y="215">乾</text>
+      <text x="529" y="269" transform="rotate(45 529 269)">巽</text>
+      <text x="583" y="414" transform="rotate(90 583 414)">坎</text>
+      <text x="529" y="529" transform="rotate(135 529 529)">艮</text>
+      <text x="400" y="583" transform="rotate(180 400 583)">坤</text>
+      <text x="271" y="529" transform="rotate(225 271 529)">震</text>
+      <text x="217" y="414" transform="rotate(270 217 414)">離</text>
+      <text x="271" y="271" transform="rotate(315 271 271)">兌</text>
+    </g>
+
+    <!-- ===== YIN YANG ===== -->
+    <g filter="url(#rough)">
+      <circle cx="400" cy="400" r="128" fill="none" stroke-width="4"/>
+      <path d="M400,272 A128,128 0 0 1 400,528 A64,64 0 0 1 400,400 A64,64 0 0 0 400,272 Z" fill="#1a1a18" stroke="none"/>
+      <circle cx="400" cy="336" r="19" fill="#b8b5ae" stroke="none"/>
+      <circle cx="400" cy="464" r="19" fill="#1a1a18" stroke="none"/>
+    </g>
+  </g>
+  </g>
+
+  <!-- print speckle / ink wear -->
+  <g opacity="0.28">
+    <rect width="800" height="800" fill="#5c5a54" filter="url(#paper)" style="mix-blend-mode:multiply"/>
+  </g>
+</svg>

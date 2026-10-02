@@ -1,0 +1,204 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800" width="600" height="800">
+  <defs>
+    <path id="headPath" d="M300 792 C228 726 126 608 80 466 C38 342 26 250 92 152 C152 66 214 12 300 12 C386 12 448 66 508 152 C574 250 562 342 520 466 C474 608 372 726 300 792 Z"/>
+
+    <clipPath id="headClip">
+      <use href="#headPath"/>
+    </clipPath>
+
+    <linearGradient id="holoBase" x1="0.02" y1="0" x2="0.98" y2="1">
+      <stop offset="0" stop-color="#eaf7f2"/>
+      <stop offset="0.09" stop-color="#9fd6dd"/>
+      <stop offset="0.18" stop-color="#c3ead0"/>
+      <stop offset="0.27" stop-color="#7096b6"/>
+      <stop offset="0.36" stop-color="#e2f2ec"/>
+      <stop offset="0.46" stop-color="#82c4ae"/>
+      <stop offset="0.56" stop-color="#a9c1de"/>
+      <stop offset="0.65" stop-color="#5e8b9c"/>
+      <stop offset="0.74" stop-color="#d9efe6"/>
+      <stop offset="0.84" stop-color="#8fcfc0"/>
+      <stop offset="0.92" stop-color="#6f9ab4"/>
+      <stop offset="1" stop-color="#e8f5f0"/>
+    </linearGradient>
+
+    <linearGradient id="holoCross" x1="1" y1="0.05" x2="0" y2="0.95">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.55"/>
+      <stop offset="0.12" stop-color="#5ad9c4" stop-opacity="0.42"/>
+      <stop offset="0.22" stop-color="#2f6f92" stop-opacity="0.30"/>
+      <stop offset="0.33" stop-color="#ffffff" stop-opacity="0.60"/>
+      <stop offset="0.44" stop-color="#7fe0b8" stop-opacity="0.40"/>
+      <stop offset="0.55" stop-color="#3d7d9c" stop-opacity="0.34"/>
+      <stop offset="0.66" stop-color="#f2fffb" stop-opacity="0.55"/>
+      <stop offset="0.78" stop-color="#6fc7d8" stop-opacity="0.38"/>
+      <stop offset="0.89" stop-color="#356f88" stop-opacity="0.30"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.50"/>
+    </linearGradient>
+
+    <linearGradient id="prism" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#7ef2d0" stop-opacity="0.0"/>
+      <stop offset="0.18" stop-color="#7ef2d0" stop-opacity="0.45"/>
+      <stop offset="0.32" stop-color="#8fd9ff" stop-opacity="0.40"/>
+      <stop offset="0.46" stop-color="#c9b7ff" stop-opacity="0.28"/>
+      <stop offset="0.60" stop-color="#ffffff" stop-opacity="0.42"/>
+      <stop offset="0.74" stop-color="#9ff0c8" stop-opacity="0.35"/>
+      <stop offset="0.88" stop-color="#6fb3d6" stop-opacity="0.30"/>
+      <stop offset="1" stop-color="#6fb3d6" stop-opacity="0.0"/>
+    </linearGradient>
+
+    <radialGradient id="glowTop" cx="0.38" cy="0.18" r="0.55">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.85"/>
+      <stop offset="0.45" stop-color="#dffaf0" stop-opacity="0.30"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="edgeDark" cx="0.5" cy="0.42" r="0.62">
+      <stop offset="0" stop-color="#0b2b33" stop-opacity="0"/>
+      <stop offset="0.62" stop-color="#0b2b33" stop-opacity="0.06"/>
+      <stop offset="0.88" stop-color="#0a2730" stop-opacity="0.42"/>
+      <stop offset="1" stop-color="#08202a" stop-opacity="0.68"/>
+    </radialGradient>
+
+    <linearGradient id="eyeFill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0a2e33"/>
+      <stop offset="0.35" stop-color="#04090d"/>
+      <stop offset="0.72" stop-color="#03060a"/>
+      <stop offset="1" stop-color="#123f45"/>
+    </linearGradient>
+
+    <linearGradient id="eyeSheen" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#9ffbe0" stop-opacity="0.55"/>
+      <stop offset="0.3" stop-color="#3fa8c8" stop-opacity="0.22"/>
+      <stop offset="0.55" stop-color="#ffffff" stop-opacity="0.12"/>
+      <stop offset="0.8" stop-color="#7be0b0" stop-opacity="0.20"/>
+      <stop offset="1" stop-color="#c8b6ff" stop-opacity="0.30"/>
+    </linearGradient>
+
+    <linearGradient id="rimGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.35" stop-color="#e8f6f1"/>
+      <stop offset="0.6" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#dbeee9"/>
+    </linearGradient>
+
+    <pattern id="grating" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(-34)">
+      <rect width="9" height="9" fill="none"/>
+      <rect x="0" y="0" width="9" height="1.6" fill="#ffffff" opacity="0.20"/>
+      <rect x="0" y="4.5" width="9" height="0.9" fill="#6ef0c8" opacity="0.16"/>
+    </pattern>
+
+    <pattern id="gratingFine" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(38)">
+      <rect x="0" y="0" width="6" height="1" fill="#bfe9ff" opacity="0.14"/>
+    </pattern>
+
+    <pattern id="dotFoil" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(12)">
+      <circle cx="3" cy="3" r="1.5" fill="#ffffff" opacity="0.22"/>
+      <circle cx="10" cy="9" r="1.1" fill="#8ff5d2" opacity="0.20"/>
+    </pattern>
+
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="9"/>
+    </filter>
+    <filter id="softer" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+    <filter id="tiny" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="2.2"/>
+    </filter>
+  </defs>
+
+  <!-- die-cut sticker rim -->
+  <use href="#headPath" fill="none" stroke="#8fb9be" stroke-width="30" opacity="0.35"/>
+  <use href="#headPath" fill="url(#rimGrad)" stroke="url(#rimGrad)" stroke-width="24" stroke-linejoin="round"/>
+
+  <g clip-path="url(#headClip)">
+    <!-- holo base -->
+    <rect x="0" y="0" width="600" height="800" fill="url(#holoBase)"/>
+    <rect x="0" y="0" width="600" height="800" fill="url(#holoCross)"/>
+
+    <!-- prismatic sweep bands -->
+    <g opacity="0.9">
+      <rect x="-260" y="-120" width="200" height="1100" fill="url(#prism)" transform="rotate(-26 300 400) translate(180 0)"/>
+      <rect x="60" y="-120" width="150" height="1100" fill="url(#prism)" transform="rotate(-26 300 400)"/>
+      <rect x="320" y="-120" width="230" height="1100" fill="url(#prism)" transform="rotate(-26 300 400)"/>
+      <rect x="-40" y="-120" width="90" height="1100" fill="url(#prism)" transform="rotate(22 300 400)" opacity="0.7"/>
+      <rect x="420" y="-120" width="120" height="1100" fill="url(#prism)" transform="rotate(22 300 400)" opacity="0.6"/>
+    </g>
+
+    <!-- diffraction gratings -->
+    <rect x="0" y="0" width="600" height="800" fill="url(#grating)"/>
+    <rect x="0" y="0" width="600" height="800" fill="url(#gratingFine)"/>
+    <rect x="0" y="0" width="600" height="800" fill="url(#dotFoil)" opacity="0.5"/>
+
+    <!-- cranium sheen -->
+    <ellipse cx="230" cy="150" rx="180" ry="120" fill="url(#glowTop)" filter="url(#soft)"/>
+    <ellipse cx="410" cy="220" rx="70" ry="150" fill="#ffffff" opacity="0.22" filter="url(#softer)" transform="rotate(18 410 220)"/>
+    <ellipse cx="300" cy="700" rx="90" ry="70" fill="#bff5e0" opacity="0.28" filter="url(#softer)"/>
+
+    <!-- chrome streaks -->
+    <g opacity="0.55" filter="url(#soft)">
+      <path d="M60 330 C180 300 380 320 560 260" stroke="#ffffff" stroke-width="14" fill="none" opacity="0.5"/>
+      <path d="M70 420 C200 400 400 430 550 370" stroke="#7ff0cf" stroke-width="9" fill="none" opacity="0.5"/>
+      <path d="M120 590 C220 590 380 600 490 555" stroke="#ffffff" stroke-width="7" fill="none" opacity="0.4"/>
+    </g>
+
+    <!-- depth vignette -->
+    <rect x="0" y="0" width="600" height="800" fill="url(#edgeDark)"/>
+
+    <!-- cheek / jaw shading -->
+    <path d="M300 792 C228 726 126 608 80 466 C120 560 210 690 300 760 Z" fill="#0d323c" opacity="0.30" filter="url(#soft)"/>
+    <path d="M300 792 C372 726 474 608 520 466 C480 560 390 690 300 760 Z" fill="#0d323c" opacity="0.22" filter="url(#soft)"/>
+  </g>
+
+  <!-- brow shadow -->
+  <path d="M92 240 C190 200 410 200 508 240 C420 250 180 250 92 240 Z" fill="#12414c" opacity="0.18" filter="url(#soft)"/>
+
+  <!-- EYES -->
+  <g>
+    <!-- left -->
+    <g>
+      <path d="M300 430 C252 462 168 452 122 404 C78 358 82 292 132 262 C186 230 254 262 284 322 C300 354 306 402 300 430 Z"
+            fill="url(#eyeFill)" stroke="#ffffff" stroke-width="7" stroke-linejoin="round"/>
+      <path d="M300 430 C252 462 168 452 122 404 C78 358 82 292 132 262 C186 230 254 262 284 322 C300 354 306 402 300 430 Z"
+            fill="url(#eyeSheen)"/>
+      <ellipse cx="168" cy="308" rx="46" ry="28" fill="#ffffff" opacity="0.72" filter="url(#tiny)" transform="rotate(-24 168 308)"/>
+      <ellipse cx="232" cy="382" rx="20" ry="11" fill="#8ff5d2" opacity="0.55" filter="url(#tiny)" transform="rotate(-24 232 382)"/>
+      <path d="M126 396 C168 436 244 444 292 418" stroke="#7fd8ff" stroke-width="5" fill="none" opacity="0.45"/>
+    </g>
+    <!-- right (mirrored) -->
+    <g transform="translate(600,0) scale(-1,1)">
+      <path d="M300 430 C252 462 168 452 122 404 C78 358 82 292 132 262 C186 230 254 262 284 322 C300 354 306 402 300 430 Z"
+            fill="url(#eyeFill)" stroke="#ffffff" stroke-width="7" stroke-linejoin="round"/>
+      <path d="M300 430 C252 462 168 452 122 404 C78 358 82 292 132 262 C186 230 254 262 284 322 C300 354 306 402 300 430 Z"
+            fill="url(#eyeSheen)"/>
+      <ellipse cx="168" cy="308" rx="46" ry="28" fill="#ffffff" opacity="0.72" filter="url(#tiny)" transform="rotate(-24 168 308)"/>
+      <ellipse cx="232" cy="382" rx="20" ry="11" fill="#8ff5d2" opacity="0.55" filter="url(#tiny)" transform="rotate(-24 232 382)"/>
+      <path d="M126 396 C168 436 244 444 292 418" stroke="#7fd8ff" stroke-width="5" fill="none" opacity="0.45"/>
+    </g>
+  </g>
+
+  <!-- nostrils -->
+  <g fill="#0e363f" opacity="0.75">
+    <ellipse cx="278" cy="546" rx="7" ry="11" transform="rotate(-12 278 546)"/>
+    <ellipse cx="322" cy="546" rx="7" ry="11" transform="rotate(12 322 546)"/>
+  </g>
+  <g fill="#ffffff" opacity="0.5">
+    <ellipse cx="276" cy="540" rx="3.5" ry="4.5"/>
+    <ellipse cx="320" cy="540" rx="3.5" ry="4.5"/>
+  </g>
+
+  <!-- mouth -->
+  <path d="M258 638 C282 652 318 652 342 638" stroke="#0e363f" stroke-width="8" fill="none" stroke-linecap="round" opacity="0.7"/>
+  <path d="M260 632 C284 645 316 645 340 632" stroke="#ffffff" stroke-width="3.5" fill="none" stroke-linecap="round" opacity="0.55"/>
+
+  <!-- sparkle stars -->
+  <g fill="#ffffff">
+    <path d="M436 128 L444 158 L474 166 L444 174 L436 204 L428 174 L398 166 L428 158 Z" opacity="0.85"/>
+    <path d="M148 508 L153 526 L171 531 L153 536 L148 554 L143 536 L125 531 L143 526 Z" opacity="0.7"/>
+    <path d="M420 560 L424 574 L438 578 L424 582 L420 596 L416 582 L402 578 L416 574 Z" opacity="0.6"/>
+    <path d="M300 96 L304 112 L320 116 L304 120 L300 136 L296 120 L280 116 L296 112 Z" opacity="0.55"/>
+    <path d="M188 176 L191 187 L202 190 L191 193 L188 204 L185 193 L174 190 L185 187 Z" opacity="0.5"/>
+  </g>
+
+  <!-- final rim light -->
+  <use href="#headPath" fill="none" stroke="#ffffff" stroke-width="4" opacity="0.55"/>
+</svg>

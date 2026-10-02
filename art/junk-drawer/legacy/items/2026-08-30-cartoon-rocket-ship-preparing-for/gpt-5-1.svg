@@ -1,0 +1,404 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="46.2 5.5 275.5 636.2">
+  <defs>
+    <linearGradient id="bodyRed" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff4b4b"/>
+      <stop offset="0.35" stop-color="#e0001c"/>
+      <stop offset="0.7" stop-color="#8a0010"/>
+      <stop offset="1" stop-color="#3a0005"/>
+    </linearGradient>
+    <linearGradient id="bodyHighlight" x1="0" y1="0" x2="0.7" y2="0.2">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="0.25" stop-color="#ffe6e6" stop-opacity="0.8"/>
+      <stop offset="0.55" stop-color="#ffb3b3" stop-opacity="0"/>
+      <stop offset="1" stop-color="#ffb3b3" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="silverMetal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.2" stop-color="#d5dde6"/>
+      <stop offset="0.5" stop-color="#a9b3c0"/>
+      <stop offset="0.8" stop-color="#f4f7fb"/>
+      <stop offset="1" stop-color="#7b8693"/>
+    </linearGradient>
+    <linearGradient id="silverRim" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#f9fcff"/>
+      <stop offset="0.4" stop-color="#b9c4d0"/>
+      <stop offset="0.7" stop-color="#f0f4f8"/>
+      <stop offset="1" stop-color="#8e98a5"/>
+    </linearGradient>
+    <radialGradient id="windowGlass" cx="35%" cy="30%" r="0.7">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="0.25" stop-color="#dff6ff" stop-opacity="0.95"/>
+      <stop offset="0.7" stop-color="#5fb3e6" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#245c99" stop-opacity="1"/>
+    </radialGradient>
+    <linearGradient id="finRed" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff5b5b"/>
+      <stop offset="0.3" stop-color="#e0001c"/>
+      <stop offset="0.8" stop-color="#5c0009"/>
+      <stop offset="1" stop-color="#2f0004"/>
+    </linearGradient>
+    <linearGradient id="finHighlight" x1="0" y1="0" x2="1" y2="0.2">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.9"/>
+      <stop offset="0.4" stop-color="#ffe6e6" stop-opacity="0.6"/>
+      <stop offset="1" stop-color="#ffe6e6" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="noseRed" x1="0" y1="0" x2="0.2" y2="1">
+      <stop offset="0" stop-color="#ff7070"/>
+      <stop offset="0.3" stop-color="#e0001c"/>
+      <stop offset="0.9" stop-color="#4c0007"/>
+      <stop offset="1" stop-color="#240004"/>
+    </linearGradient>
+    <linearGradient id="engineSilver" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f7fbff"/>
+      <stop offset="0.3" stop-color="#c7d1de"/>
+      <stop offset="0.6" stop-color="#8e99a7"/>
+      <stop offset="1" stop-color="#d8e0ea"/>
+    </linearGradient>
+    <linearGradient id="stripeTeal" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7fffe9"/>
+      <stop offset="0.4" stop-color="#35f2c9"/>
+      <stop offset="1" stop-color="#009e9b"/>
+    </linearGradient>
+    <linearGradient id="flareYellow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fffad1" stop-opacity="1"/>
+      <stop offset="0.45" stop-color="#ffe15c" stop-opacity="1"/>
+      <stop offset="0.9" stop-color="#ff7b1c" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#ff4b00" stop-opacity="0.9"/>
+    </linearGradient>
+    <radialGradient id="flareInner" cx="50%" cy="20%" r="0.8">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="1"/>
+      <stop offset="0.3" stop-color="#fffbd1" stop-opacity="1"/>
+      <stop offset="0.6" stop-color="#ffd53f" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#ff730f" stop-opacity="0.8"/>
+    </radialGradient>
+    <radialGradient id="plume" cx="50%" cy="0%" r="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.9"/>
+      <stop offset="0.3" stop-color="#ffeebf" stop-opacity="0.9"/>
+      <stop offset="0.7" stop-color="#ffb46b" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#ff7b3b" stop-opacity="0.0"/>
+    </radialGradient>
+    <linearGradient id="accentLine" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.9"/>
+      <stop offset="0.5" stop-color="#c0ccd8" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.9"/>
+    </linearGradient>
+    <filter id="shineBlur" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="1.2"/>
+    </filter>
+  </defs>
+
+  <g transform="translate(0,0)">
+    <!-- Exhaust plume, stylized googie flare -->
+    <g transform="translate(160,520)">
+      <path d="M 0 0
+               C -35 30 -60 90 -55 140
+                 -40 170 -10 190 0 200
+                 10 190 40 170 55 140
+                 60 90 35 30 0 0 Z"
+            fill="url(#plume)"/>
+      <path d="M 0 10
+               C -22 35 -38 85 -35 120
+                 -22 140 -7 155 0 160
+                 7 155 22 140 35 120
+                 38 85 22 35 0 10 Z"
+            fill="url(#flareYellow)" opacity="0.9"/>
+      <path d="M 0 18
+               C -14 38 -24 72 -22 98
+                 -14 112 -4 122 0 125
+                 4 122 14 112 22 98
+                 24 72 14 38 0 18 Z"
+            fill="url(#flareInner)" opacity="0.95"/>
+      <path d="M -10 26 C -4 32 -2 40 0 54
+               C 2 40 4 32 10 26"
+            fill="none" stroke="#fffdf4" stroke-width="2.1" stroke-linecap="round" opacity="0.9"/>
+    </g>
+
+    <!-- Main rocket group -->
+    <g transform="translate(80,10)">
+      <!-- Back fins -->
+      <g opacity="0.9">
+        <path d="M 15 380
+                 C -10 395 -25 430 -30 470
+                   -33 496 -32 520 -26 540
+                   -15 510 0 490 18 475
+                   30 465 40 445 45 430
+                   30 403 25 390 15 380 Z"
+              fill="url(#finRed)"/>
+        <path d="M 13 386
+                 C -3 400 -15 430 -19 457
+                   -20 471 -19 487 -16 498
+                   -7 476 5 460 19 450
+                   27 444 33 434 36 426
+                   29 409 22 395 13 386 Z"
+              fill="url(#finHighlight)" opacity="0.9"/>
+      </g>
+      <g opacity="0.9" transform="scale(-1,1) translate(-240,0)">
+        <path d="M 15 380
+                 C -10 395 -25 430 -30 470
+                   -33 496 -32 520 -26 540
+                   -15 510 0 490 18 475
+                   30 465 40 445 45 430
+                   30 403 25 390 15 380 Z"
+              fill="url(#finRed)"/>
+        <path d="M 13 386
+                 C -3 400 -15 430 -19 457
+                   -20 471 -19 487 -16 498
+                   -7 476 5 460 19 450
+                   27 444 33 434 36 426
+                   29 409 22 395 13 386 Z"
+              fill="url(#finHighlight)" opacity="0.9"/>
+      </g>
+
+      <!-- Rocket body -->
+      <g>
+        <!-- Main red body -->
+        <path d="M 80 15
+                 C 60 70 48 140 45 210
+                   42 280 45 360 55 430
+                   60 460 66 485 80 520
+                   94 485 100 460 105 430
+                   115 360 118 280 115 210
+                   112 140 100 70 80 15 Z"
+              fill="url(#bodyRed)"/>
+        <!-- Side highlight -->
+        <path d="M 70 40
+                 C 57 92 50 156 49 214
+                   48 272 53 334 62 384
+                   66 405 70 423 77 444
+                   73 415 71 390 70 362
+                   68 306 69 248 73 194
+                   76 150 81 110 88 72
+                   83 60 77 49 70 40 Z"
+              fill="url(#bodyHighlight)" opacity="0.9"/>
+
+        <!-- Chrome center belt -->
+        <path d="M 48 250
+                 C 47 262 47 278 48 292
+                   55 300 65 305 80 307
+                   95 305 105 300 112 292
+                   113 278 113 262 112 250
+                   105 242 95 237 80 235
+                   65 237 55 242 48 250 Z"
+              fill="url(#silverMetal)"/>
+        <!-- Belt teal stripe -->
+        <path d="M 52 258
+                 C 51 266 51 274 52 284
+                   61 290 70 293 80 294
+                   90 293 99 290 108 284
+                   109 274 109 266 108 258
+                   99 252 90 249 80 248
+                   70 249 61 252 52 258 Z"
+              fill="url(#stripeTeal)"/>
+        <!-- Belt chrome accent lines -->
+        <path d="M 54 254
+                 C 64 247 72 244 80 243
+                   88 244 96 247 106 254"
+              fill="none" stroke="url(#accentLine)" stroke-width="2" stroke-linecap="round" opacity="0.95"/>
+        <path d="M 54 288
+                 C 64 295 72 298 80 299
+                   88 298 96 295 106 288"
+              fill="none" stroke="url(#accentLine)" stroke-width="1.8" stroke-linecap="round" opacity="0.9"/>
+
+        <!-- Nose cone -->
+        <path d="M 80 15
+                 C 68 45 60 77 56 108
+                   64 102 72 98 80 97
+                   88 98 96 102 104 108
+                   100 77 92 45 80 15 Z"
+              fill="url(#noseRed)"/>
+        <!-- Nose highlight -->
+        <path d="M 73 27
+                 C 67 44 62 65 60 85
+                   65 80 71 77 77 76
+                   80 75 83 76 88 78
+                   84 58 80 42 77 31
+                   75 29 74 28 73 27 Z"
+              fill="url(#bodyHighlight)" opacity="0.95"/>
+
+        <!-- Window bezel -->
+        <ellipse cx="80" cy="190" rx="33" ry="33"
+                 fill="url(#silverMetal)"/>
+        <!-- Window glass -->
+        <ellipse cx="80" cy="190" rx="25" ry="25"
+                 fill="url(#windowGlass)"/>
+        <!-- Window gloss -->
+        <path d="M 66 176
+                 C 72 168 81 165 89 168
+                   83 170 79 173 75 176
+                   71 179 68 183 66 187
+                   63 184 63 180 66 176 Z"
+              fill="#ffffff" opacity="0.8"/>
+        <!-- Bezel screws -->
+        <circle cx="80" cy="157" r="2.2" fill="#9aa5b3"/>
+        <circle cx="80" cy="223" r="2.2" fill="#9aa5b3"/>
+        <circle cx="47" cy="190" r="2.2" fill="#9aa5b3"/>
+        <circle cx="113" cy="190" r="2.2" fill="#9aa5b3"/>
+
+        <!-- Retro chrome porthole trim arcs (googie flair) -->
+        <path d="M 52 162
+                 C 63 151 75 146 88 147
+                   100 149 111 156 118 168"
+              fill="none" stroke="url(#silverRim)" stroke-width="3.4" stroke-linecap="round" opacity="0.85"/>
+        <path d="M 55 218
+                 C 66 229 78 234 91 233
+                   103 231 114 224 121 212"
+              fill="none" stroke="url(#silverRim)" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+
+        <!-- Googie-style side chrome flare -->
+        <path d="M 24 205
+                 C 22 196 23 186 27 179
+                   36 165 49 156 63 151
+                   77 146 91 146 104 151
+                   116 156 127 165 135 177
+                   140 185 141 195 139 205
+                   131 197 122 192 111 189
+                   100 186 90 186 80 187
+                   70 188 60 191 50 195
+                   40 199 32 202 24 205 Z"
+              fill="url(#silverMetal)" opacity="0.85"/>
+        <path d="M 32 199
+                 C 41 191 52 186 64 183
+                   76 180 88 180 100 183
+                   112 186 123 191 132 199
+                   124 193 115 188 105 185
+                   95 182 85 181 75 182
+                   65 183 54 186 44 190
+                   38 193 35 196 32 199 Z"
+              fill="#ffffff" opacity="0.32"/>
+
+        <!-- Center fuselage vertical chrome seam -->
+        <path d="M 80 52
+                 C 76 94 74 137 73 179
+                   73 219 74 259 77 301
+                   78 315 79 334 80 350"
+              fill="none" stroke="url(#accentLine)" stroke-width="1.7" stroke-linecap="round" opacity="0.9"/>
+
+        <!-- Small side portholes -->
+        <g transform="translate(0,0)" fill="url(#windowGlass)">
+          <ellipse cx="80" cy="118" rx="8.5" ry="8.5"/>
+          <ellipse cx="80" cy="262" rx="8.5" ry="8.5"/>
+        </g>
+        <g fill="#ffffff" opacity="0.75">
+          <path d="M 76 114
+                   C 77 112 79 111 81 111
+                     80 112 79 113 79 114
+                     78 115 77 116 76 116 Z"/>
+          <path d="M 76 258
+                   C 77 256 79 255 81 255
+                     80 256 79 257 79 258
+                     78 259 77 260 76 260 Z"/>
+        </g>
+
+        <!-- Engines / tail ring -->
+        <path d="M 55 430
+                 C 54 445 55 458 57 472
+                   63 483 70 490 80 493
+                   90 490 97 483 103 472
+                   105 458 106 445 105 430
+                   96 437 88 441 80 442
+                   72 441 64 437 55 430 Z"
+              fill="url(#engineSilver)"/>
+        <path d="M 58 440
+                 C 63 445 71 449 80 450
+                   89 449 97 445 102 440
+                   102.8 447 102.8 454 102 462
+                   97 471 91 476 84 478
+                   91 475 96 469 99 461
+                   100 456 100 450 99 446
+                   94 450 87 452 80 453
+                   73 452 66 450 61 446
+                   60 450 60 456 61 461
+                   64 469 69 475 76 478
+                   69 476 63 471 59 462
+                   57.2 454 57.2 447 58 440 Z"
+              fill="#ffffff" opacity="0.7"/>
+
+        <!-- Engine interior glow -->
+        <ellipse cx="80" cy="486" rx="16" ry="12"
+                 fill="url(#flareInner)" opacity="0.95"/>
+        <ellipse cx="80" cy="486" rx="9" ry="6.5"
+                 fill="#fffdf4" opacity="0.95"/>
+
+        <!-- Subtle chromed contour lines on body -->
+        <path d="M 50 330
+                 C 59 338 68 343 80 345
+                   92 343 101 338 110 330"
+              fill="none" stroke="url(#accentLine)"
+              stroke-width="1.4" stroke-linecap="round" opacity="0.7"/>
+        <path d="M 52 360
+                 C 61 368 70 372 80 374
+                   90 372 99 368 108 360"
+              fill="none" stroke="url(#accentLine)"
+              stroke-width="1.2" stroke-linecap="round" opacity="0.6"/>
+
+        <!-- Racetrack googie stripe near base -->
+        <path d="M 45 395
+                 C 53 402 63 406 74 408
+                   85 410 95 409 105 405
+                   99 413 90 418 80 420
+                   70 418 60 414 52 407
+                   49 403 47 399 45 395 Z"
+              fill="url(#stripeTeal)" opacity="0.9"/>
+        <path d="M 51 401
+                 C 61 407 70 410 80 412
+                   90 410 99 406 107 399"
+              fill="none" stroke="#ffffff" stroke-width="1.6"
+              stroke-linecap="round" opacity="0.75"/>
+
+        <!-- Extra gloss streak across mid body -->
+        <path d="M 63 220
+                 C 68 212 75 208 84 207
+                   92 208 98 211 104 217
+                   96 216 90 216 84 217
+                   78 218 70 219 63 220 Z"
+              fill="#ffffff" opacity="0.3" filter="url(#shineBlur)"/>
+      </g>
+
+      <!-- Front fins -->
+      <g>
+        <path d="M 34 370
+                 C 6 383 -10 412 -16 448
+                   -20 472 -19 497 -13 518
+                   -6 495 7 476 26 461
+                   40 450 53 440 66 432
+                   58 403 49 383 34 370 Z"
+              fill="url(#finRed)"/>
+        <path d="M 36 376
+                 C 16 387 3 410 -4 436
+                   -7 448 -8 461 -7 473
+                   2 454 15 438 33 426
+                   43 420 52 415 60 411
+                   54 395 46 384 36 376 Z"
+              fill="url(#finHighlight)" opacity="0.95"/>
+      </g>
+      <g transform="scale(-1,1) translate(-240,0)">
+        <path d="M 34 370
+                 C 6 383 -10 412 -16 448
+                   -20 472 -19 497 -13 518
+                   -6 495 7 476 26 461
+                   40 450 53 440 66 432
+                   58 403 49 383 34 370 Z"
+              fill="url(#finRed)"/>
+        <path d="M 36 376
+                 C 16 387 3 410 -4 436
+                   -7 448 -8 461 -7 473
+                   2 454 15 438 33 426
+                   43 420 52 415 60 411
+                   54 395 46 384 36 376 Z"
+              fill="url(#finHighlight)" opacity="0.95"/>
+      </g>
+
+      <!-- Small chrome antenna fin at nose (googie detail) -->
+      <g transform="translate(80,10)">
+        <path d="M 0 -6
+                 C -2 -3 -3 1 -3 5
+                   -2 9 0 13 3 16
+                   6 13 8 9 9 5
+                   8 1 7 -3 5 -6 Z"
+              fill="url(#silverMetal)"/>
+        <circle cx="3" cy="-9" r="3.3" fill="url(#silverMetal)"/>
+        <circle cx="3" cy="-9" r="2.1" fill="#ffffff" opacity="0.8"/>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,218 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="36.2 46.2 185.5 181.0">
+  <defs>
+    <linearGradient id="canBody" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#9fb4c8"/>
+      <stop offset="0.25" stop-color="#c4d2e0"/>
+      <stop offset="0.5" stop-color="#e2edf7"/>
+      <stop offset="0.75" stop-color="#c4d2e0"/>
+      <stop offset="1" stop-color="#9fb4c8"/>
+    </linearGradient>
+    <linearGradient id="canRim" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7b8ca0"/>
+      <stop offset="0.5" stop-color="#c7d4e2"/>
+      <stop offset="1" stop-color="#7b8ca0"/>
+    </linearGradient>
+    <linearGradient id="lidGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d5e0ec"/>
+      <stop offset="1" stop-color="#9aa9bb"/>
+    </linearGradient>
+    <linearGradient id="garbageGreen" x1="0" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#b5e37a"/>
+      <stop offset="1" stop-color="#6eb648"/>
+    </linearGradient>
+    <linearGradient id="garbageYellow" x1="0" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#ffe88a"/>
+      <stop offset="1" stop-color="#f4b930"/>
+    </linearGradient>
+    <linearGradient id="garbagePink" x1="0" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#ffc1d5"/>
+      <stop offset="1" stop-color="#ff5c8a"/>
+    </linearGradient>
+    <linearGradient id="garbageBlue" x1="0" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#c5e6ff"/>
+      <stop offset="1" stop-color="#4fa3ff"/>
+    </linearGradient>
+    <linearGradient id="garbageBrown" x1="0" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#f0c9a1"/>
+      <stop offset="1" stop-color="#b86c34"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Overflowing garbage behind rim -->
+  <!-- Green lettuce-like blob -->
+  <path d="M66 80
+           C52 78 50 70 53 64
+           C56 57 66 55 74 57
+           C77 50 87 48 95 52
+           C104 47 117 49 122 57
+           C131 53 141 55 146 62
+           C152 60 162 62 167 69
+           C173 77 170 88 160 92
+           C149 96 137 93 129 89
+           C120 95 106 96 96 92
+           C86 96 74 94 68 89
+           C60 88 55 84 56 79
+           Z"
+        fill="url(#garbageGreen)" stroke="#2b6b2a" stroke-width="2"/>
+
+  <!-- Banana peel -->
+  <path d="M95 76
+           C88 78 82 83 78 89
+           C74 96 73 104 74 111
+           C76 117 80 121 85 124
+           C90 126 97 126 103 123
+           C110 120 116 114 119 108
+           C121 102 121 95 118 90
+           C114 83 105 74 95 76Z"
+        fill="url(#garbageYellow)" stroke="#cc8a19" stroke-width="2"/>
+  <path d="M94 77
+           C90 85 88 93 88 101
+           C88 108 90 115 93 121"
+        fill="none" stroke="#e8d058" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Pink carton sticking out -->
+  <path d="M145 64
+           L169 54
+           C175 52 181 55 183 60
+           L192 86
+           C194 93 191 100 184 102
+           L160 110
+           C154 112 148 109 146 103
+           L137 76
+           C135 71 138 66 145 64Z"
+        fill="url(#garbagePink)" stroke="#b52b55" stroke-width="2"/>
+  <path d="M154 62 L179 54" stroke="#ffd5e5" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Blue crushed tin can -->
+  <path d="M115 68
+           L136 63
+           C141 62 146 64 148 68
+           L153 79
+           C155 83 153 88 148 89
+           L128 94
+           C123 95 118 93 116 88
+           L111 77
+           C109 72 111 69 115 68Z"
+        fill="url(#garbageBlue)" stroke="#1e5c9b" stroke-width="2"/>
+  <path d="M118 71 L149 64" stroke="#e0f3ff" stroke-width="2" stroke-linecap="round"/>
+  <path d="M120 77 L145 72" stroke="#e0f3ff" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Fish skeleton -->
+  <path d="M56 98
+           C64 95 72 95 80 97
+           C88 99 96 103 101 107
+           C96 111 88 115 80 117
+           C72 119 64 119 56 116Z"
+        fill="#f7f2e2" stroke="#9b8b65" stroke-width="2"/>
+  <path d="M58 98 L58 115
+           M64 98 L64 116
+           M70 98 L70 117
+           M76 99 L76 117
+           M82 100 L82 117
+           M88 102 L88 116"
+        stroke="#c3b590" stroke-width="2" stroke-linecap="round"/>
+  <path d="M49 101
+           L56 96
+           C59 94 63 95 64 99
+           C65 102 63 106 60 108
+           L53 112
+           C51 110 49 107 49 104
+           Z"
+        fill="#f7f2e2" stroke="#9b8b65" stroke-width="2"/>
+  <circle cx="59" cy="99" r="1.4" fill="#9b8b65"/>
+
+  <!-- Brown crumpled paper / takeout bag -->
+  <path d="M160 90
+           L178 81
+           C183 79 189 81 191 86
+           L200 108
+           C202 113 199 119 194 121
+           L176 129
+           C171 131 165 129 163 124
+           L154 102
+           C152 97 155 92 160 90Z"
+        fill="url(#garbageBrown)" stroke="#844623" stroke-width="2"/>
+  <path d="M163 93
+           C170 96 176 103 179 110
+           C181 115 181 120 180 124"
+        fill="none" stroke="#f6ddc0" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Can body -->
+  <ellipse cx="130" cy="92" rx="78" ry="20"
+           fill="url(#canRim)" stroke="#4a5b6c" stroke-width="3"/>
+
+  <path d="M52 92
+           L52 202
+           C52 214 76 224 130 224
+           C184 224 208 214 208 202
+           L208 92
+           C208 107 184 118 130 118
+           C76 118 52 107 52 92Z"
+        fill="url(#canBody)" stroke="#4a5b6c" stroke-width="3"/>
+
+  <!-- Vertical ribs -->
+  <g stroke="#73879b" stroke-width="2">
+    <path d="M68 95 L68 212"/>
+    <path d="M84 100 L84 217"/>
+    <path d="M100 103 L100 221"/>
+    <path d="M116 105 L116 223"/>
+    <path d="M144 105 L144 223"/>
+    <path d="M160 103 L160 221"/>
+    <path d="M176 100 L176 217"/>
+    <path d="M192 95 L192 212"/>
+  </g>
+
+  <!-- Bottom ellipse edge -->
+  <ellipse cx="130" cy="202" rx="78" ry="19"
+           fill="none" stroke="#4a5b6c" stroke-width="3"/>
+
+  <!-- Top inner opening (thickness) -->
+  <ellipse cx="130" cy="92" rx="70" ry="14"
+           fill="none" stroke="#2f3b48" stroke-width="2"/>
+
+  <!-- Lid leaning -->
+  <g transform="translate(38,76) rotate(-22 70 90)">
+    <!-- Lid base -->
+    <ellipse cx="70" cy="90" rx="64" ry="17"
+             fill="url(#lidGrad)" stroke="#4a5b6c" stroke-width="3"/>
+    <!-- Inner ring -->
+    <ellipse cx="70" cy="90" rx="51" ry="12"
+             fill="none" stroke="#6f8295" stroke-width="2"/>
+    <!-- Handle block -->
+    <rect x="62" y="68" width="16" height="10" rx="2"
+          fill="#cfd9e4" stroke="#4a5b6c" stroke-width="2"/>
+    <!-- Handle arc -->
+    <path d="M64 68
+             C64 61 76 61 76 68"
+          fill="none" stroke="#4a5b6c" stroke-width="2"
+          stroke-linecap="round"/>
+    <!-- Lid highlight -->
+    <path d="M25 82
+             C41 76 57 73 70 73
+             C83 73 100 76 116 82"
+          fill="none" stroke="#e8f0f7" stroke-width="3"
+          stroke-linecap="round" opacity="0.9"/>
+  </g>
+
+  <!-- Extra stray garbage at front -->
+  <!-- Small green blob -->
+  <path d="M40 120
+           C44 116 51 115 56 117
+           C60 120 62 125 60 129
+           C57 133 51 135 46 133
+           C41 131 38 126 40 120Z"
+        fill="url(#garbageGreen)" stroke="#2b6b2a" stroke-width="2"/>
+
+  <!-- Crumpled blue can front -->
+  <path d="M182 128
+           L201 122
+           C206 121 211 123 213 127
+           L218 136
+           C220 140 218 145 213 147
+           L194 152
+           C189 153 184 151 182 146
+           L177 137
+           C175 133 177 129 182 128Z"
+        fill="url(#garbageBlue)" stroke="#1e5c9b" stroke-width="2"/>
+  <path d="M185 131 L212 124" stroke="#e0f3ff" stroke-width="2" stroke-linecap="round"/>
+</svg>
