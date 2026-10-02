@@ -1276,7 +1276,12 @@
      filed blind:false — the owner reads the model names on this card. On
      success the payload learns the values, the card repaints from it, and
      the pile tag follows if the shown response is the one the drawer
-     displays. Sizes stay the bench's business. */
+     displays. Sizes stay the bench's business.
+     A VISITOR'S SITTING IS NEVER RE-FILED AS THE OWNER'S (2026-10-01): when
+     the item shows a visitor's sitting (data.php's display_role) the save
+     refuses and points at the bench, where the owner files a sitting of
+     their own — copying the visitor's ranking and pairs into an owner
+     session would launder one population's answers into the other. */
   function editable(entry) {
     return !!(window.JD_admin && JD_admin.isVerified() && entry && !entry.visitor);
   }
@@ -1293,9 +1298,18 @@
     });
   }
   var saving = false;
-  function setStatus(text) {
+  function setStatus(text, link) {
     var el = scrollEl && scrollEl.querySelector('.rc-edit-status');
-    if (el) el.textContent = text || '';
+    if (!el) return;
+    el.textContent = text || '';
+    /* an optional way onward, e.g. the bench for this prompt */
+    if (link) {
+      var a = document.createElement('a');
+      a.href = link.href;
+      a.textContent = link.text;
+      el.appendChild(document.createTextNode(' · '));
+      el.appendChild(a);
+    }
   }
   /* gen_id → slot for the entry's shown run. jd2-rate names drawings by
      SLOT, and data.php's responses carry gen_id and place but no slot, so
@@ -1342,6 +1356,14 @@
   function saveRatings() {
     if (!curEntry || saving || !editable(curEntry)) return;
     var entry = curEntry, resp = curResponse();
+    /* a visitor's sitting stands here: never copy its ranking and pairs
+       into an owner session — the owner rates it on the bench instead */
+    if (entry.display_role === 'visitor') {
+      setStatus('this item is rated by a visitor — rate it on the bench to file your own sitting',
+        { href: 'index.php?bench&prompt=' + encodeURIComponent(entry.prompt_id || entry.id),
+          text: 'open it on the bench' });
+      return;
+    }
     var axes = {}, grade = null;
     scrollEl.querySelectorAll('select.rc-edit[data-axis]').forEach(function (sel) {
       if (sel.value !== '') axes[sel.getAttribute('data-axis')] = +sel.value;

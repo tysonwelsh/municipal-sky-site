@@ -29,9 +29,11 @@
   pairs as they were asked; derived pairs are re-derived from the carried
   ranking). The ledger edits GRADES AND AXES ONLY — places and pair scores
   are the bench's (RE-RATE). It is filed unblind (the ledger names models).
-  When the standing on file is a visitor's, the new owner sitting carries
-  the visitor's ranking and pairs as the owner's; the status line says so
-  before you press SAVE.
+  When the standing on file is a VISITOR's, SAVE refuses (the editor is
+  greyed and the status line links the bench): an owner sitting carrying a
+  visitor's ranking and pairs would file one population's answers as the
+  other's. The owner rates that run on the bench instead — the drawer's
+  admin card refuses the same way.
 
   Reads api/jd2-ledger.php (bench key; the server applies the drawer's and
   the bench's rules, so this page states them and never re-derives them);
@@ -337,6 +339,8 @@
     h += '<table class="rt"><thead><tr><th>drawing</th><th>slot · model</th><th>grade</th>';
     D.axes.forEach(function (a) { h += '<th title="' + esc(a.id) + '">' + esc(a.label) + '</th>'; });
     h += '<th>place</th><th>acts</th></tr></thead><tbody>';
+    /* a visitor's standing is not the ledger's to re-file (see SAVE) */
+    var editable = !(d && d.rater_role === 'visitor');
     run.generations.forEach(function (g) {
       var ok = g.status === 'ok', counts = ok && !g.hidden;
       var ed = (dirty[run.run_id] || {})[g.generation_id] || {};
@@ -349,10 +353,10 @@
         (it.drawer.shows === g.generation_id ? ' · <b>the drawer shows this one</b>' : '') +
         (it.pinned_generation_id === g.generation_id ? ' · pinned' : '') + '</div></td>';
       var gradeOnFile = d && d.grades[g.generation_id] != null ? Number(d.grades[g.generation_id]) : null;
-      h += '<td class="ed">' + selectHTML(run, g, 'grade', gradeOnFile, ed.grade, counts) + '</td>';
+      h += '<td class="ed">' + selectHTML(run, g, 'grade', gradeOnFile, ed.grade, counts && editable) + '</td>';
       D.axes.forEach(function (a) {
         var v = d && d.axes[g.generation_id] && d.axes[g.generation_id][a.id] != null ? Number(d.axes[g.generation_id][a.id]) : null;
-        h += '<td class="ed">' + selectHTML(run, g, a.id, v, ed.axes ? ed.axes[a.id] : undefined, counts) + '</td>';
+        h += '<td class="ed">' + selectHTML(run, g, a.id, v, ed.axes ? ed.axes[a.id] : undefined, counts && editable) + '</td>';
       });
       var place = d && d.ranks[g.generation_id] != null ? d.ranks[g.generation_id] : null;
       var gap = d && d.gaps[g.generation_id] != null ? d.gaps[g.generation_id] : null;
@@ -383,8 +387,9 @@
     /* save */
     var plan = savePlan(it, run);
     var nDirty = Object.keys(dirty[run.run_id] || {}).length;
-    h += '<div class="row-acts" style="margin-top:6px"><button type="button" class="savebtn' + (nDirty ? ' is-dirty' : '') + '" data-save="' + esc(run.run_id) + '" data-id="' + esc(it.prompt_id) + '"' + (nDirty ? '' : ' disabled') + '>save' + (nDirty ? ' ' + nDirty + ' edited drawing' + (nDirty === 1 ? '' : 's') : '') + '</button>' +
-      '<span class="status' + (plan.warn ? ' warn' : '') + '">' + esc((status[run.run_id] || {}).text || plan.note) + '</span></div>';
+    h += '<div class="row-acts" style="margin-top:6px"><button type="button" class="savebtn' + (nDirty ? ' is-dirty' : '') + '" data-save="' + esc(run.run_id) + '" data-id="' + esc(it.prompt_id) + '"' + (nDirty && !plan.refuse ? '' : ' disabled') + '>save' + (nDirty ? ' ' + nDirty + ' edited drawing' + (nDirty === 1 ? '' : 's') : '') + '</button>' +
+      '<span class="status' + (plan.warn ? ' warn' : '') + '">' + esc((status[run.run_id] || {}).text || plan.note) +
+      (plan.refuse ? ' · <a href="' + esc(benchHref(it)) + '" target="_blank" rel="noopener">open it on the bench</a>' : '') + '</span></div>';
     h += '</div>';
     return h;
   }
@@ -432,7 +437,15 @@
      the carried gaps. */
   function savePlan(it, run) {
     var d = run.display, gs = counting(run), edits = dirty[run.run_id] || {};
-    var out = { body: null, note: '', warn: false };
+    var out = { body: null, note: '', warn: false, refuse: false };
+    /* a visitor's sitting stands for this run: never copy its ranking and
+       pairs into an owner session — the owner rates it on the bench */
+    if (d && d.rater_role === 'visitor') {
+      out.refuse = true;
+      out.warn = true;
+      out.note = 'this item is rated by a visitor — rate it on the bench to file your own sitting';
+      return out;
+    }
     var ratings = [];
     gs.forEach(function (g) {
       var e = edits[g.generation_id] || {};
@@ -467,12 +480,13 @@
     out.body = { run_id: run.run_id, client: 'web', blind: false, ratings: ratings, ranking: ranking, pairs: pairs && pairs.length ? pairs : null };
     var base = d ? 'the ' + d.rater_role + '\'s sitting ' + d.session_id.slice(-6) + (d.complete ? '' : ' (incomplete)') : 'nothing on file';
     out.note = 'Sessions are append-only: SAVE files a NEW owner sitting carrying ' + base + ' with your edits — grades and axes only; places and pairs are the bench\'s (re-rate).';
-    if (d && d.rater_role === 'visitor') { out.note += ' The visitor\'s ranking and pairs will be filed as yours.'; out.warn = true; }
     if (why.length || !d) { out.note += ' This sitting will be incomplete' + (why.length ? ': ' + why.join('; ') : '') + ' — rate it on the bench to complete it.'; out.warn = true; }
     return out;
   }
+  function benchHref(it) { return 'index.php?bench&prompt=' + encodeURIComponent(it.prompt_id); }
   function save(it, run, btn) {
     var plan = savePlan(it, run);
+    if (plan.refuse) { setStatus(run.run_id, plan.note, true); return; }
     btn.disabled = true; btn.textContent = 'saving…';
     fetch(API_RATE, { method: 'POST', headers: headers({ 'Content-Type': 'application/json' }), body: JSON.stringify(plan.body) })
       .then(function (r) { return r.json().catch(function () { return { ok: false, error: { code: 'server_error' } }; }).then(function (j) { return { ok: r.ok && j.ok, j: j }; }); })

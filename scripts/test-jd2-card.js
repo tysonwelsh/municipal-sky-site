@@ -13,7 +13,10 @@
 // kind of card; then reloads the phone page, finds the item in the pile
 // once, opens its report card and reads the strip's head-to-head line; then opens it under ?admin with
 // the dev box's bench key (read from config/secrets.php by php, never
-// printed) and saves an edited grade, which files a NEW owner session.
+// printed): on that VISITOR-rated item SAVE RATINGS refuses and links the
+// bench (a visitor's ranking and pairs are never re-filed as the owner's);
+// then an owner-rated prompt is filed through the endpoints with the key, and
+// on it an edited grade saves, which files a NEW owner session.
 // Prints one PASS/FAIL line per check and the prompt id; exit 0 iff all pass.
 'use strict';
 const path = require('path');
@@ -188,35 +191,93 @@ async function main() {
   await deskPage.waitForTimeout(600);
   await shot(deskPage, 'desk-7-report-card');
 
-  // ?admin: the editor files a NEW owner session
+  // ?admin on the VISITOR's item: the editor refuses and points at the bench
   const key = execFileSync('php', ['-r', 'require "api/jd2-config.php"; echo jd_bench_key_expected() ?? "keyless";'],
     { cwd: ROOT, env: Object.assign({}, process.env, { JD_DEV_MOCK: '1' }), encoding: 'utf8' });
   const admin = await desk.newPage();
   admin.on('pageerror', (e) => errors.push('admin: ' + String(e)));
   await admin.goto(BASE + '/art/junk-drawer/', { waitUntil: 'load' });
   await admin.evaluate((k) => localStorage.setItem('jd-admin-key', k), key);
+  const servedRole = served && served.display_role;
+  check("data.php names the visitor's item display_role 'visitor'", servedRole === 'visitor', String(servedRole));
   await admin.goto(BASE + '/art/junk-drawer/?admin#' + id, { waitUntil: 'load' });
+  await admin.waitForSelector('[data-rc="save"]', { timeout: 20000 });
+  const vBefore = await admin.$eval('select.rc-edit[data-grade]', (s) => s.value);
+  await admin.selectOption('select.rc-edit[data-grade]', vBefore === '5' ? '4' : '5');
+  await admin.click('[data-rc="save"]');
+  await admin.waitForFunction(() => {
+    const st = document.querySelector('.rc-edit-status');
+    return st && /rated by a visitor/.test(st.textContent);
+  }, null, { timeout: 10000 }).catch(() => {});
+  const refusal = await admin.evaluate(() => {
+    const st = document.querySelector('.rc-edit-status');
+    const a = st && st.querySelector('a');
+    return { open: document.documentElement.classList.contains('jd-record-open'),
+      text: st ? st.textContent : '', href: a ? a.getAttribute('href') : null };
+  });
+  await shot(admin, 'desk-8-admin-refuses-visitor');
+  check("admin: on a visitor's item SAVE RATINGS refuses, says why, and links the bench",
+    refusal.open && /this item is rated by a visitor — rate it on the bench to file your own sitting/.test(refusal.text) &&
+    refusal.href === 'index.php?bench&prompt=' + id, JSON.stringify(refusal));
+  const still = await admin.evaluate((pid) => fetch('/art/junk-drawer/data.php?item=' + pid)
+    .then((r) => r.json()).then((j) => j.item), id);
+  check("admin: nothing was filed — the item still stands on the visitor's sitting",
+    !!(still && still.display_role === 'visitor' && served &&
+      JSON.stringify(still.responses.map((r) => r.grade)) === JSON.stringify(served.responses.map((r) => r.grade))),
+    JSON.stringify(still && still.display_role));
+
+  // an OWNER-rated prompt, filed through the endpoints with the key (the
+  // bench's wire: four slots on one client_ref, then one keyed sitting with
+  // every cell, a strict ranking and six DIRECT pairs)
+  const ownerId = await admin.evaluate(async (k) => {
+    const H = { 'Content-Type': 'application/json', 'X-Bench-Key': k };
+    const post = (p, b) => fetch(p, { method: 'POST', headers: H, body: JSON.stringify(b) }).then((r) => r.json());
+    const ref = JD_uuid();
+    let g = null;
+    for (const slot of ['a', 'b', 'c', 'd']) {
+      g = await post('/api/jd2-generate.php', { client_ref: ref, slot, prompt: 'a tin wind-up mouse (jd2 card test, owner ' + Date.now() + ')', website: '' });
+      if (!g.ok) return 'generate: ' + JSON.stringify(g);
+    }
+    const tax = (await fetch('/art/junk-drawer/data.php?item=' + g.prompt_id).then((r) => r.json())).taxonomy;
+    const ratings = [];
+    ['a', 'b', 'c', 'd'].forEach((slot, i) => {
+      ratings.push({ slot, kind: 'grade', value: 4 - (i % 3) });
+      JD_liveAxes(tax).forEach((ax) => ratings.push({ slot, kind: 'axis', axis_id: ax.id, value: ax.values[0].rank }));
+    });
+    const r = await post('/api/jd2-rate.php', { run_id: g.run_id, client: 'web', ratings,
+      ranking: [{ slot: 'a', rank: 1 }, { slot: 'b', rank: 2 }, { slot: 'c', rank: 3 }, { slot: 'd', rank: 4 }],
+      pairs: [{ slot_a: 'a', slot_b: 'b', score: 1 }, { slot_a: 'a', slot_b: 'c', score: 2 }, { slot_a: 'a', slot_b: 'd', score: 3 },
+              { slot_a: 'b', slot_b: 'c', score: 1 }, { slot_a: 'b', slot_b: 'd', score: 2 }, { slot_a: 'c', slot_b: 'd', score: 1 }] });
+    return r.ok && r.complete ? g.prompt_id : 'rate: ' + JSON.stringify(r);
+  }, key);
+  check('an owner-rated prompt files complete through the endpoints (key, direct pairs)', /^[0-9A-HJKMNP-TV-Z]{26}$/.test(ownerId), ownerId);
+
+  // ?admin on the OWNER's item: the editor files a NEW owner session (a fresh
+  // load — a hash-only goto would stay on the open visitor card)
+  await admin.goto('about:blank');
+  await admin.goto(BASE + '/art/junk-drawer/?admin#' + ownerId, { waitUntil: 'load' });
   await admin.waitForSelector('[data-rc="save"]', { timeout: 20000 });
   const before = await admin.$eval('select.rc-edit[data-grade]', (s) => s.value);
   const next = before === '5' ? '4' : '5';
   await admin.selectOption('select.rc-edit[data-grade]', next);
-  await shot(admin, 'desk-8-admin-editor');
+  await shot(admin, 'desk-9-admin-editor');
   await admin.click('[data-rc="save"]');
   await admin.waitForFunction(() => {
     const st = document.querySelector('.rc-edit-status');
     return !document.documentElement.classList.contains('jd-record-open') ||
-      (st && /not saved|incomplete/.test(st.textContent));
+      (st && /not saved|incomplete|visitor/.test(st.textContent));
   }, null, { timeout: 15000 }).catch(() => {});
   const status = await admin.evaluate(() => {
     const st = document.querySelector('.rc-edit-status');
     return { open: document.documentElement.classList.contains('jd-record-open'), text: st ? st.textContent : '' };
   });
-  check('admin: SAVE RATINGS filed and the card came down', !status.open, JSON.stringify(status));
+  check("admin: on the owner's item SAVE RATINGS filed and the card came down", !status.open, JSON.stringify(status));
   const after = await admin.evaluate((pid) => fetch('/art/junk-drawer/data.php?item=' + pid)
-    .then((r) => r.json()).then((j) => j.item), id);
+    .then((r) => r.json()).then((j) => j.item), ownerId);
   const primary = after && after.responses.find((r) => r.rid === after.primary);
-  check('admin: the drawer now stands on the owner session (grade ' + next + ' on the shown drawing)',
-    !!(primary && String(primary.grade) === next && after.pairs.length === 6), JSON.stringify(primary && primary.grade));
+  check('admin: the drawer now stands on the new owner session (grade ' + next + ' on the shown drawing)',
+    !!(primary && String(primary.grade) === next && after.pairs.length === 6 && after.display_role === 'owner'),
+    JSON.stringify(primary && primary.grade));
 
   check('no page errors', errors.length === 0, errors.join('\n'));
   await browser.close();

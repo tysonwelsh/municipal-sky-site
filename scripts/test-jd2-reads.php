@@ -406,9 +406,13 @@ check('a pin re-points `shows`, rule "pinned by the owner"', $one['items'][0]['d
     && str_starts_with($one['items'][0]['drawer']['rule'], 'pinned'));
 req('POST', '/api/jd2-curate.php', ['prompt_id' => $p2, 'pinned_generation_id' => null], true);
 
-// THE LEDGER'S SAVE, as ledger.html builds it: a NEW owner session carrying the
-// display standing (grades, axes, the ranking with its gaps → pairs re-derived)
-// with one cell edited. Here on P1, whose standing is the visitor's.
+// A keyed owner session carrying the display standing (grades, axes, the
+// ranking with its gaps → pairs re-derived) with one cell edited — the shape
+// ledger.html's SAVE builds. Here on P1, whose standing is the visitor's: the
+// SERVER files any keyed owner sitting, but ledger.html and the drawer's admin
+// card no longer build this one (they refuse on a visitor's standing and send
+// the owner to the bench); this stands in for the owner's own sitting so the
+// analytics fixture below keeps an owner session on P1.
 $disp = $runs1['display'];
 $slotOfGen = array_column($runs1['generations'], 'slot', 'generation_id');
 $ratings = [];
@@ -423,7 +427,7 @@ foreach ($slotOfGen as $gid => $slot) {
 [$st, $j] = rate(['run_id' => $run1, 'blind' => false, 'ratings' => $ratings, 'ranking' => $ranking, 'pairs' => null], true);
 [, $one] = req('GET', '/api/jd2-ledger.php?prompt=' . $p1, null, true);
 $r1L = $one['items'][0]['runs'][0];
-check("the ledger's SAVE files a third, complete owner session carrying the standing; it now stands for display (one edit)",
+check("a keyed owner sitting files a third, complete session over the visitor's standing; it now stands for display (one edit)",
     $st === 200 && $j['complete'] === true && count($r1L['sessions']) === 3 && $r1L['display']['rater_role'] === 'owner'
     && (float) $r1L['display']['grades'][$s1['b']['id']] === 1.0 && (float) $r1L['display']['grades'][$s1['c']['id']] === 5.0
     && $one['items'][0]['bench']['state'] === 'done', json_encode([$j, $r1L['display']['grades']]));

@@ -114,7 +114,10 @@ card, and never forked into a bench-only copy.
   0..3), and pairs. Each session is stamped with its role, taxonomy version,
   instrument version, `blind`, `seat_order` and an optional `note`.
 - **Sessions are append-only.** A re-rating, the admin editor and the ledger's
-  SAVE all file a NEW session. Nothing is deleted or replaced.
+  SAVE all file a NEW session. Nothing is deleted or replaced. The admin
+  editor and the ledger refuse to save over a VISITOR's sitting (data.php's
+  `display_role`) and point at the bench: a visitor's ranking and pairs are
+  never re-filed as the owner's.
 - **Current** = the latest filed session per (run, role). **Display** = the
   owner's current session if it is complete, else the visitor's current
   session if that is complete. Owner and visitor are separate populations,

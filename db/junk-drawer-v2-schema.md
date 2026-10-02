@@ -318,8 +318,14 @@ written).
 The drawer's shown run is `shown_run_id`, else the newest run whose display
 session is complete; its `primary` is the pinned drawing when it is in the
 run, else 1st place. The item keeps v1's turn-item shape (rids `r1…` in place
-order) plus `run_id`, `prompt_id`, `origin`, each response's `gen_id`, and
-`pairs: [{a: rid, b: rid, score, source}]`.
+order) plus `run_id`, `prompt_id`, `origin`, `display_role` (`owner` |
+`visitor`: whose sitting the item is showing — the display session's
+`rater_role`; `null` when no sitting is on file, which only `?item=` can
+answer), each response's `gen_id` and `slot`, and
+`pairs: [{a: rid, b: rid, score, source}]`. The drawer's admin card refuses
+to save over an item whose `display_role` is `visitor` (it points at the
+bench instead), so a visitor's ranking and pairs are never re-filed as an
+owner session.
 
 ### The owner-side reads (Phase 3c)
 
@@ -356,6 +362,9 @@ gaps and pairs keyed by generation id. The ledger page's SAVE files a new
 owner session through `jd2-rate.php` carrying that standing with the edited
 grade and axis cells (places and pairs carried as they are: direct pairs sent
 as direct, derived ones re-derived from the carried gaps), `blind: false`.
+When the display standing is a visitor's, SAVE refuses and links the bench
+(`index.php?bench&prompt=<id>`): a visitor's ranking and pairs are never
+copied into an owner session.
 
 **Analytics v2.** Population: every run of every LIVE prompt, and on each run
 ONE session — `jd2_display_session` (the owner's current complete session,

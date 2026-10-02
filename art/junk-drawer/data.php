@@ -20,7 +20,9 @@
 // THE ITEM SHAPE IS v1's TURN ITEM, kept on purpose so the front end renders
 // it unchanged (Phase 4 evolves the JS): responses ordered by place, rid
 // 'r1' = 1st, each pointing at api/jd2-gen-svg.php. Additions: run_id,
-// prompt_id, origin, gen_id on each response, and `pairs` — the run's
+// prompt_id, origin, `display_role` ('owner' | 'visitor': whose sitting the
+// item is showing — the admin card refuses to re-file a visitor's; null when
+// no sitting is on file), gen_id on each response, and `pairs` — the run's
 // comparative scores as {a: rid, b: rid, score (−3..+3, positive = a
 // preferred), source: 'direct'|'derived'}. `submission_id` repeats run_id —
 // SHIM for the v1 front end, which keys a turn by it.
@@ -309,6 +311,8 @@ function jd2_data_item(PDO $db, array $prompt, array $taxonomy, bool $itemMode, 
         'primary' => ($pin !== null && isset($ridOf[$pin])) ? $ridOf[$pin] : ($responses ? 'r1' : null),
         'fromTurn' => true,
         'origin' => (string) $prompt['origin'],
+        // whose sitting stands for the shown run: the owner's or a visitor's
+        'display_role' => isset($display['session']['rater_role']) ? (string) $display['session']['rater_role'] : null,
         'responses' => $responses,
         'pairs' => $pairs,
     ];
