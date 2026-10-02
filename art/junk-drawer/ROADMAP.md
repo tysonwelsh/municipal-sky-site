@@ -56,12 +56,12 @@ back-end change; the owner decides the wording):
   of selects. Same card for visitors and the bench.
 - **The unveil pedestals carry a compact summary**: model, cost, and every
   rating for that drawing in a small well-designed table; the overall
-  spark line leaves the plate and moves into the pedestal. **BLOCKED on the
-  pedestal redesign** (owner, 2026-10-01): the owner is reworking the
-  pedestal card in another session so the degree of "betterness" between
-  places yields the Likert scores; how the pedestals look at the end of the
-  survey depends on that outcome, so nothing touches the podium or the
-  unveil pedestals here until it lands.
+  spark line leaves the plate and moves into the pedestal. **Unblocked**
+  (2026-10-02): the pedestal card ("by how much", 0.12.0) is live and is
+  the instrument, and the unveil was left as it was on purpose, so the
+  summary can be designed now — on the pedestals as the card leaves them
+  (rank order, the margins as courses and the brass shim), and saying
+  "negligibly", never "about the same", for a gap of 0.
 - **Darkroom copy**: rewrite the text under the loading cards, including
   the "taking longer than usual" line.
 - **Instructions**: rewrite, and fix the blurry text when the sheet
