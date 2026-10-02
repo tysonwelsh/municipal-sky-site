@@ -11,9 +11,11 @@
 # scripts/publish.sh.
 #
 # After the upload, the Junk Drawer's database is brought level with the code
-# (2026-09-27): api/setup-jd-tables.php (idempotent schema runner) and then
+# (2026-09-27): api/setup-jd-tables.php (idempotent v1 schema runner), then
+# api/setup-jd2-tables.php (idempotent dataset-v2 schema runner, 2026-10-01;
+# the jd2_* tables, db/junk-drawer-v2-schema.md), then
 # api/jd-backfill-curated.php (idempotent, incremental filing of every curated
-# entry). Both need the JD_SETUP_KEY secret — the jd_setup_key from the
+# entry). All three need the JD_SETUP_KEY secret — the jd_setup_key from the
 # server's private_config/secrets.php. Without it the step only warns, so a
 # missing secret never blocks a deploy; it does mean the schema is NOT being
 # migrated (the 2026-09-10 → 09-27 gap is what this step exists to prevent).
@@ -70,19 +72,23 @@ jobs:
             package-lock.json
             eslint.config.js
 
-      # The runner and the backfill are both safe to re-run on every deploy
-      # (db/junk-drawer-schema.md, Runbook); doing so unconditionally is what
-      # makes "did this deploy touch the schema?" a question nobody has to ask.
-      # The runner prints one line per table/migration; anything but its
-      # closing "All tables present and migrated." fails the job. The backfill
-      # prints one line per item it filed and closes with "done"; a refusal
-      # (schema behind, "!! REFUSED" overflow) or an error fails the job.
-      - name: Migrate the Junk Drawer schema and file the curated entries
+      # The two runners and the backfill are all safe to re-run on every
+      # deploy (db/junk-drawer-schema.md and db/junk-drawer-v2-schema.md,
+      # Runbook); doing so unconditionally is what makes "did this deploy touch
+      # the schema?" a question nobody has to ask. Order: the v1 runner, the v2
+      # runner (it never touches a jd_* table; the two datasets share one
+      # database and never pool), then the backfill. Each runner prints one
+      # line per table/migration; anything but its closing "All tables present
+      # and migrated." fails the job, and a failed runner stops the step before
+      # the backfill. The backfill prints one line per item it filed and closes
+      # with "done"; a refusal (schema behind, "!! REFUSED" overflow) or an
+      # error fails the job.
+      - name: Migrate the Junk Drawer schemas (v1 and v2) and file the curated entries
         env:
           JD_SETUP_KEY: ${{ secrets.JD_SETUP_KEY }}
         run: |
           if [ -z "$JD_SETUP_KEY" ]; then
-            echo "::warning::JD_SETUP_KEY secret is not set — api/setup-jd-tables.php and the curated backfill were NOT run. Add it (gh secret set JD_SETUP_KEY) or run them by hand: db/junk-drawer-schema.md, Runbook."
+            echo "::warning::JD_SETUP_KEY secret is not set — api/setup-jd-tables.php, api/setup-jd2-tables.php and the curated backfill were NOT run. Add it (gh secret set JD_SETUP_KEY) or run them by hand: db/junk-drawer-schema.md and db/junk-drawer-v2-schema.md, Runbook."
             exit 0
           fi
           echo "::add-mask::$JD_SETUP_KEY"
@@ -91,6 +97,10 @@ jobs:
           out="$(curl -sS --max-time 180 --retry 2 "$base/setup-jd-tables.php?key=$JD_SETUP_KEY")" || { echo "$out"; echo "::error::setup-jd-tables.php could not be reached"; exit 1; }
           echo "$out"
           echo "$out" | grep -q "All tables present and migrated" || { echo "::error::setup-jd-tables.php reported a failure"; exit 1; }
+          echo "== setup-jd2-tables.php =="
+          out="$(curl -sS --max-time 180 --retry 2 "$base/setup-jd2-tables.php?key=$JD_SETUP_KEY")" || { echo "$out"; echo "::error::setup-jd2-tables.php could not be reached"; exit 1; }
+          echo "$out"
+          echo "$out" | grep -q "All tables present and migrated" || { echo "::error::setup-jd2-tables.php reported a failure"; exit 1; }
           echo "== jd-backfill-curated.php =="
           out="$(curl -sS --max-time 300 --retry 2 "$base/jd-backfill-curated.php?key=$JD_SETUP_KEY")" || { echo "$out"; echo "::error::jd-backfill-curated.php could not be reached"; exit 1; }
           echo "$out"

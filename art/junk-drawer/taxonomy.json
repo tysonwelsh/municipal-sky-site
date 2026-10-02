@@ -1,7 +1,10 @@
 {
   "schema": 1,
-  "version": 25,
-  "updated": "2026-09-27",
+  "version": 26,
+  "updated": "2026-10-01",
+  "instrument": "v2.0",
+  "instrumentNote": "The dataset v2 instrument: this rubric plus the comparison and gaps scales below and the rules of a sitting; every v2 session stamps it beside the taxonomy version. v1 instruments ignore it.",
+  "poolVersion": "pool-2026-08-14",
   "grades": [
     {
       "id": "prime",
@@ -420,7 +423,10 @@
     {
       "id": "claude-opus-5",
       "label": "Claude Opus 5",
-      "vendor": "Anthropic"
+      "vendor": "Anthropic",
+      "pool": true,
+      "provider": "anthropic",
+      "api_model": "claude-opus-5"
     },
     {
       "id": "claude-opus-4-6",
@@ -450,7 +456,10 @@
     {
       "id": "gpt-5-1",
       "label": "GPT-5.1",
-      "vendor": "OpenAI"
+      "vendor": "OpenAI",
+      "pool": true,
+      "provider": "openai",
+      "api_model": "gpt-5.1"
     },
     {
       "id": "gemini-2-5-pro",
@@ -460,12 +469,18 @@
     {
       "id": "kimi-k3",
       "label": "Kimi K3",
-      "vendor": "Moonshot AI"
+      "vendor": "Moonshot AI",
+      "pool": true,
+      "provider": "kimi",
+      "api_model": "kimi-k3"
     },
     {
       "id": "gemini-3-1-pro",
       "label": "Gemini 3.1 Pro",
-      "vendor": "Google"
+      "vendor": "Google",
+      "pool": true,
+      "provider": "google",
+      "api_model": "gemini-3.1-pro-preview"
     }
   ],
   "sizeTiers": [
@@ -500,6 +515,90 @@
       "description": "A centerpiece — dominates the drawer."
     }
   ],
+  "comparison": {
+    "label": "Head to head",
+    "description": "Two drawings of the same prompt: which is better, and by how much?",
+    "note": "Listed in display order. value is +3 (the first much better) to -3 (the second much better); filed as jd2_pairs.score, where positive means gen_a, the canonically first drawing, is preferred.",
+    "values": [
+      {
+        "id": "a_much_better",
+        "value": 3,
+        "label": "First much better",
+        "description": "The first drawing is much better than the second; it is not a close call."
+      },
+      {
+        "id": "a_better",
+        "value": 2,
+        "label": "First better",
+        "description": "The first drawing is clearly better than the second."
+      },
+      {
+        "id": "a_slightly_better",
+        "value": 1,
+        "label": "First slightly better",
+        "description": "The first drawing is a little better than the second, but only just."
+      },
+      {
+        "id": "same",
+        "value": 0,
+        "label": "About the same",
+        "description": "Neither drawing is better than the other in a way that matters."
+      },
+      {
+        "id": "b_slightly_better",
+        "value": -1,
+        "label": "Second slightly better",
+        "description": "The second drawing is a little better than the first, but only just."
+      },
+      {
+        "id": "b_better",
+        "value": -2,
+        "label": "Second better",
+        "description": "The second drawing is clearly better than the first."
+      },
+      {
+        "id": "b_much_better",
+        "value": -3,
+        "label": "Second much better",
+        "description": "The second drawing is much better than the first; it is not a close call."
+      }
+    ]
+  },
+  "gaps": {
+    "label": "Margin",
+    "description": "After the podium: how much better is each place than the one below it?",
+    "note": "One answer between each pair of adjacent places, filed as jd2_rankings.gap_after (0..3). A pair score is derived as the sum of the gaps between two places, capped at 3 (spaced-rank-v1). Labels marked placeholder are drafts the owner will reword; the values are the permanent part.",
+    "values": [
+      {
+        "id": "same",
+        "value": 0,
+        "label": "About the same",
+        "description": "The two places are about level; the order between them is close to a coin toss.",
+        "placeholder": true
+      },
+      {
+        "id": "slightly_better",
+        "value": 1,
+        "label": "Slightly better",
+        "description": "The higher place is a little better than the one below it.",
+        "placeholder": true
+      },
+      {
+        "id": "better",
+        "value": 2,
+        "label": "Better",
+        "description": "The higher place is clearly better than the one below it.",
+        "placeholder": true
+      },
+      {
+        "id": "much_better",
+        "value": 3,
+        "label": "Much better",
+        "description": "The higher place is much better than the one below it.",
+        "placeholder": true
+      }
+    ]
+  },
   "changelog": [
     {
       "date": "2026-07-26",
@@ -625,6 +724,11 @@
       "date": "2026-09-27",
       "version": 25,
       "note": "Owner call: each live axis gains a one-line `summary` — the question a grader asks, in plain words — for pages that introduce the taxonomy to a reader rather than instruct a rater (the /about/ walkthrough's category list). Display only: descriptions, ids, ranks and value labels are unchanged, and every instrument (report card, turn survey) still renders the full description."
+    },
+    {
+      "date": "2026-10-01",
+      "version": 26,
+      "note": "The dataset v2 instrument baseline (PLAN-V2 §4, §6). Additive only; nothing existing is renamed, removed or reworded. New top-level keys: `instrument` (\"v2.0\") and `instrumentNote`, the instrument version every v2 sitting stamps beside this version; `comparison`, the 7-point head-to-head scale (+3 the first much better … 0 about the same … -3 the second much better, the sign of jd2_pairs.score, positive = gen_a preferred); `gaps`, the 0..3 margin between adjacent podium places that spaced ranking asks after the podium (labels are PLACEHOLDERS, marked `placeholder`, for the owner to reword; the values are permanent); and `poolVersion` (\"pool-2026-08-14\", the day the four-chair pool formed), which every v2 run records. The four current pool members (claude-opus-5, gpt-5-1, kimi-k3, gemini-3-1-pro) gain `pool: true`, `provider` and `api_model`, copied from JD_MODEL_POOL in api/jd-config.php, so the pool can be read as data; JD_MODEL_POOL itself is unchanged and v1 keeps reading it. v1 instruments (the turn card, the bench, data.php, the validator) ignore every new key; grades, axes and their ranks are as at v25."
     }
   ]
 }
