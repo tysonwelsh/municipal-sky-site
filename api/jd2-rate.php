@@ -12,6 +12,11 @@
 //     run_id: <run id>,                (submission_id accepted as an alias: SHIM
 //                                       for the unchanged v1 turn card)
 //     client: 'web'|'ios'|'android',
+//     client_ref?: <UUID>,             a VISITOR's proof the run is theirs: the
+//                                       client_ref their browser minted for the
+//                                       turn and sent with every slot request
+//                                       (jd2_prompts.client_ref); required of a
+//                                       visitor, ignored for the owner
 //     device_ref?: <UUID>,
 //     title?: string, size?: <sizeTiers id>, suppress?: bool,
 //     ratings: [ {slot, kind: 'grade'|'axis', axis_id?, value, note?} ],
@@ -37,13 +42,21 @@
 // not complete (a multi-drawing run needs every pair scored to be complete).
 //
 // Who: the bench key presented and right = the owner (unlimited sessions per
-// run, each appended); otherwise a visitor — at most ONE filed visitor
-// session per run (409 already_rated), and only on a run a visitor asked for
-// (their own turn). Filing also lands the prompt's facts: title, size, and
+// run, each appended; no client_ref asked for); otherwise a visitor — and a
+// visitor files only on THEIR OWN turn: a run a visitor asked for, whose
+// prompt's client_ref is the one the request carries (the browser minted it
+// for the turn and keeps it in its jd2-turn record). A run id and its origin
+// are public once the prompt is live (data.php serves both), so without that
+// proof a stranger could file a sitting on someone else's live item, hide it
+// with suppress, and overwrite its title and size. A missing or wrong
+// client_ref is 403 not_yours; a run the owner asked for is 403 forbidden.
+// With the proof, at most ONE filed visitor session per run (409
+// already_rated). Filing also lands the prompt's facts — title, size, and
 // the keep-out (suppress → visibility 'hidden', hidden_by = the rater's
-// role); and a COMPLETE sitting on a prompt that is not hidden makes it
-// 'live' — a visitor's rated turn joins the drawer, v1's rule (approval is
-// the roadmap's; approved_at is left alone).
+// role) — so a visitor sets them only under that same proof; and a COMPLETE
+// sitting on a prompt that is not hidden makes it 'live' — a visitor's rated
+// turn joins the drawer, v1's rule (approval is the roadmap's; approved_at is
+// left alone).
 //
 // Response: { ok, session_id, run_id, prompt_id, complete, reveal: [ {slot,
 // model_id, label, vendor, status, tokens?, cost_usd?, priced?} ] } — v1's
@@ -71,6 +84,11 @@ if (!jd_is_ulid($runId)) {
 $ctx = ['run_id' => $runId];
 
 $client = jd_normalize_client($body['client'] ?? null);
+// the visitor's proof of ownership (checked against the run's prompt below)
+$clientRef = $body['client_ref'] ?? null;
+if (!is_string($clientRef) || !preg_match(JD_UUID_RE, $clientRef)) {
+    $clientRef = null;
+}
 $deviceRef = $body['device_ref'] ?? null;
 if (!is_string($deviceRef) || !preg_match(JD_UUID_RE, $deviceRef)) {
     $deviceRef = null;
@@ -131,7 +149,7 @@ try {
 
     // --- 2. The run, its prompt, its drawings -------------------------------
     $q = $db->prepare(
-        'SELECT r.id, r.prompt_id, r.requested_by, r.created, p.visibility
+        'SELECT r.id, r.prompt_id, r.requested_by, r.created, p.visibility, p.client_ref
            FROM jd2_runs r JOIN jd2_prompts p ON p.id = r.prompt_id
           WHERE r.id = ?'
     );
@@ -149,6 +167,14 @@ try {
         // turn. The owner's prompts are rated by the owner.
         if ($run['requested_by'] !== JD2_ROLE_VISITOR) {
             jd2_fail(403, 'forbidden', 'Only the turn that drew these can rate them here.', $ctx);
+        }
+        // …and to THEIR turn: the run id is public, the client_ref is not.
+        // Checked before already_rated, so a stranger learns nothing about
+        // whether the turn was rated.
+        $onFile = $run['client_ref'];
+        if ($clientRef === null || !is_string($onFile) || $onFile === ''
+            || !hash_equals(strtolower($onFile), strtolower($clientRef))) {
+            jd2_fail(403, 'not_yours', 'Only the browser that took this turn can rate it.', $ctx);
         }
         // Fast path only; the guarded re-check inside the transaction is the
         // real serialization point. No reveal: a duplicate gets no second unveil.

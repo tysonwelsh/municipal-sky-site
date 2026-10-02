@@ -190,7 +190,8 @@ function visitorTurn(string $prompt): array
         $out[$slot] = req('POST', '/api/jd2-generate.php', ['client_ref' => $ref, 'slot' => $slot, 'prompt' => $prompt,
             'client' => 'web', 'consent' => ['version' => JD_CONSENT_VERSION], 'device_ref' => jd_uuid4(), 'website' => '']);
     }
-    return [$out['a'][1]['run_id'] ?? null, $out['a'][1]['prompt_id'] ?? null];
+    // the client_ref too: a visitor files a sitting only with the turn's own
+    return [$out['a'][1]['run_id'] ?? null, $out['a'][1]['prompt_id'] ?? null, $ref];
 }
 
 function ownerPrompt(string $prompt): array
@@ -228,8 +229,8 @@ function directPairs(int $ab, int $ac, int $ad, int $bc, int $bd, int $cd): arra
 
 // ============================================================================
 section('(fixture) four prompts filed through the endpoints');
-[$run1, $p1] = visitorTurn('a brass key with a paper tag');
-[$st, $j] = rate(['run_id' => $run1, 'title' => 'Brass Key', 'size' => 's',
+[$run1, $p1, $ref1] = visitorTurn('a brass key with a paper tag');
+[$st, $j] = rate(['run_id' => $run1, 'client_ref' => $ref1, 'title' => 'Brass Key', 'size' => 's',
     'ratings' => cells(['a' => 4, 'b' => 2, 'c' => 5, 'd' => 3], $axisRanks),
     'ranking' => [['slot' => 'c', 'rank' => 1, 'gap' => 2], ['slot' => 'a', 'rank' => 2, 'gap' => 1],
                   ['slot' => 'd', 'rank' => 3, 'gap' => 1], ['slot' => 'b', 'rank' => 4]]]);
@@ -249,8 +250,8 @@ foreach (['b', 'c', 'd'] as $slot) {
 check('P2 run 2: a rerun, settled, unrated', jd_is_ulid($run2b)
     && one($db, 'SELECT status FROM jd2_runs WHERE id = ?', [$run2b]) === 'generated');
 
-[$run3, $p3] = visitorTurn('a chipped enamel mug');
-[$st, $j] = rate(['run_id' => $run3, 'suppress' => true, 'ratings' => cells(['a' => 3, 'b' => 3, 'c' => 3, 'd' => 3], $axisRanks),
+[$run3, $p3, $ref3] = visitorTurn('a chipped enamel mug');
+[$st, $j] = rate(['run_id' => $run3, 'client_ref' => $ref3, 'suppress' => true, 'ratings' => cells(['a' => 3, 'b' => 3, 'c' => 3, 'd' => 3], $axisRanks),
     'ranking' => [['slot' => 'a', 'rank' => 1, 'gap' => 0], ['slot' => 'b', 'rank' => 2, 'gap' => 0],
                   ['slot' => 'c', 'rank' => 3, 'gap' => 0], ['slot' => 'd', 'rank' => 4]]]);
 check('P3: a visitor turn rated complete and suppressed (hidden by the visitor)', $st === 200

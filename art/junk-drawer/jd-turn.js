@@ -2828,6 +2828,11 @@
     var dev = window.JD_deviceRef ? JD_deviceRef(false) : null;
     var body = {
       run_id: turn.run_id,
+      /* the proof this turn is OURS: jd2-rate files a visitor sitting only
+         when the client_ref the turn was drawn under comes with it (a run id
+         is public once the item is live; the client_ref never leaves this
+         browser's turn record) */
+      client_ref: turn.client_ref,
       client: JD_CLIENT,
       /* the object's name and the visitor's wish about showing it — both
          belong to the record now that a rated turn joins the drawer */

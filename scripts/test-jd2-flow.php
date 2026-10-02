@@ -264,15 +264,31 @@ foreach ($gens1 as $g) {
 // place order c, a, d, b with gaps 2, 0, 1
 $ranking1 = [['slot' => 'c', 'rank' => 1, 'gap' => 2], ['slot' => 'a', 'rank' => 2, 'gap' => 0],
              ['slot' => 'd', 'rank' => 3, 'gap' => 1], ['slot' => 'b', 'rank' => 4]];
+// A visitor sitting needs the turn's own client_ref (the run id is public once
+// the item is live; the client_ref is not). Missing or wrong → 403 not_yours.
+$visitorBody1 = ['run_id' => $run1, 'client' => 'web', 'title' => 'Not Yours', 'suppress' => true,
+                 'ratings' => fullRatings(['a' => 1, 'b' => 1, 'c' => 1, 'd' => 1], $axisRanks), 'ranking' => $ranking1];
+[$st, $j] = rate($visitorBody1);
+check('a visitor POST without client_ref → 403 not_yours "' . ($j['error']['message'] ?? '') . '"',
+      $st === 403 && ($j['error']['code'] ?? '') === 'not_yours' && ($j['error']['message'] ?? '') !== '' && !isset($j['reveal']),
+      $st . ' ' . json_encode($j));
+[$st, $j] = rate($visitorBody1 + ['client_ref' => jd_uuid4()]);
+check('a visitor POST with a wrong client_ref → 403 not_yours', $st === 403 && ($j['error']['code'] ?? '') === 'not_yours',
+      $st . ' ' . json_encode($j));
+check('…and neither filed a sitting nor touched the prompt (title, visibility)',
+      (int) one($db, 'SELECT COUNT(*) FROM jd2_sessions WHERE run_id = ?', [$run1]) === 0
+      && one($db, 'SELECT title FROM jd2_prompts WHERE id = ?', [$prompt1]) === null
+      && one($db, 'SELECT visibility FROM jd2_prompts WHERE id = ?', [$prompt1]) === 'draft');
 [$st, $j] = rate([
     'submission_id' => $run1,   // the v1 alias the unchanged card sends
+    'client_ref' => $ref1,      // the turn's own: the proof it is this visitor's
     'client' => 'web', 'title' => 'Brass Key', 'size' => 's', 'suppress' => false,
     'ratings' => fullRatings(['a' => 4, 'b' => 2, 'c' => 5, 'd' => 3], $axisRanks),
     'ranking' => $ranking1, 'pairs' => null,
     'comparison' => ['winner' => 'c', 'strength' => null],   // what the v1 card also sends; ignored
 ]);
 $session1 = $j['session_id'] ?? null;
-check('filed: 200, complete, a session id', $st === 200 && ($j['ok'] ?? false) && $j['complete'] === true && jd_is_ulid($session1),
+check('with the right client_ref: filed, 200, complete, a session id', $st === 200 && ($j['ok'] ?? false) && $j['complete'] === true && jd_is_ulid($session1),
       $st . ' ' . json_encode($j));
 $reveal = $j['reveal'] ?? [];
 $revealOk = count($reveal) === 4;
@@ -352,11 +368,20 @@ check('jd2-gen-svg serves a live drawing to anyone', $st === 200 && str_starts_w
 check('jd2-gen-svg refuses a malformed id', $st === 400);
 
 // ============================================================================
-section('(d) one visitor sitting per run');
-[$st, $j] = rate(['run_id' => $run1, 'client' => 'web', 'ratings' => fullRatings(['a' => 1, 'b' => 1, 'c' => 1, 'd' => 1], $axisRanks),
-                  'ranking' => $ranking1]);
-check('a second visitor sitting is 409 already_rated, with no reveal', $st === 409 && ($j['error']['code'] ?? '') === 'already_rated'
-      && !isset($j['reveal']), json_encode($j));
+section('(d) one visitor sitting per run; a live item is not a stranger\'s to rate');
+[$st, $j] = rate(['run_id' => $run1, 'client_ref' => $ref1, 'client' => 'web',
+                  'ratings' => fullRatings(['a' => 1, 'b' => 1, 'c' => 1, 'd' => 1], $axisRanks), 'ranking' => $ranking1]);
+check('a second visitor sitting (the right client_ref) is 409 already_rated, with no reveal', $st === 409
+      && ($j['error']['code'] ?? '') === 'already_rated' && !isset($j['reveal']), json_encode($j));
+// the item is live now: data.php publishes its run_id and origin — a stranger
+// holding only those cannot hide it or rename it
+[$st, $j] = rate($visitorBody1);
+check('a stranger with the public run_id (no client_ref) is 403 not_yours, not 409', $st === 403
+      && ($j['error']['code'] ?? '') === 'not_yours', json_encode($j));
+check('…and the live item keeps its title, its visibility and its one visitor sitting',
+      one($db, 'SELECT title FROM jd2_prompts WHERE id = ?', [$prompt1]) === 'Brass Key'
+      && one($db, 'SELECT visibility FROM jd2_prompts WHERE id = ?', [$prompt1]) === 'live'
+      && (int) one($db, 'SELECT COUNT(*) FROM jd2_sessions WHERE run_id = ?', [$run1]) === 1);
 
 // ============================================================================
 section('(e) the owner re-rates the same run with DIRECT pairs');
@@ -375,7 +400,7 @@ $direct = [
                   // the sitting's note (Phase 4b): trimmed, clipped at 2000
                   'note' => "  a and c read the brief; b missed the cracked glass\n" . str_repeat('x', 2100) . '  '], true);
 $session2 = $j['session_id'] ?? null;
-check('the owner files a second session on the run: 200, complete', $st === 200 && $j['complete'] === true && $session2 !== $session1,
+check('the owner (bench key, no client_ref) files a second session on the run: 200, complete', $st === 200 && $j['complete'] === true && $session2 !== $session1,
       $st . ' ' . json_encode($j));
 $s2 = rows($db, 'SELECT * FROM jd2_sessions WHERE id = ?', [$session2])[0] ?? [];
 check('owner session: role owner, the curator hash, blind 0 (bench key + blind:false)',
@@ -483,8 +508,8 @@ check('?item= for an unknown id is 404', $st === 404);
 
 // ============================================================================
 section('(h) refusals, each with its sentence, and nothing filed');
-[$t2, $run3, $prompt3] = visitorTurn('a tin whistle');
-$base = ['run_id' => $run3, 'client' => 'web', 'ratings' => fullRatings(['a' => 3, 'b' => 3, 'c' => 3, 'd' => 3], $axisRanks)];
+[$t2, $run3, $prompt3, $ref3] = visitorTurn('a tin whistle');
+$base = ['run_id' => $run3, 'client_ref' => $ref3, 'client' => 'web', 'ratings' => fullRatings(['a' => 3, 'b' => 3, 'c' => 3, 'd' => 3], $axisRanks)];
 $cases = [
     'a tie (two drawings at place 2)' => [
         ['ranking' => [['slot' => 'a', 'rank' => 1, 'gap' => 1], ['slot' => 'b', 'rank' => 2, 'gap' => 0],

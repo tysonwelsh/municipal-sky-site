@@ -257,7 +257,7 @@ removed when Phase 4 reads `run_id`.
 | --- | --- | --- |
 | `POST api/jd2-generate.php` | origin; visitor needs consent; `profile`/`rerun_of`/`run_id` need the key | `{client_ref, slot, prompt, client, consent:{version}, device_ref?, website}` (owner also `profile` default `bench`, `rerun_of`, `run_id`) → `{ok, svg, gen_id, slot, run_id, prompt_id, submission_id}` |
 | `POST api/jd2-title.php` | origin; the `client_ref` must be a prompt filed in the last hour | `{client_ref, prompt}` → `{ok, title}` (advisory; nothing stored) |
-| `POST api/jd2-rate.php` | origin; visitor: one filed session per run, only on a run a visitor requested | `{run_id, client, device_ref?, title?, size?, suppress?, ratings:[{slot, kind, axis_id?, value, note?}], ranking:[{slot, rank, gap?}]\|null, pairs:[{slot_a, slot_b, score, shown_left?}]\|null, blind?}` → `{ok, session_id, run_id, prompt_id, complete, reveal:[{slot, model_id, label, vendor, status, tokens?, cost_usd?, priced?}]}` |
+| `POST api/jd2-rate.php` | origin; visitor: only their own turn — a run a visitor requested whose prompt's `client_ref` the request carries (missing or wrong → 403 `not_yours`) — and one filed session per run (409 `already_rated`); owner: the bench key, no `client_ref` | `{run_id, client_ref (visitor), client, device_ref?, title?, size?, suppress?, ratings:[{slot, kind, axis_id?, value, note?}], ranking:[{slot, rank, gap?}]\|null, pairs:[{slot_a, slot_b, score, shown_left?}]\|null, blind?}` → `{ok, session_id, run_id, prompt_id, complete, reveal:[{slot, model_id, label, vendor, status, tokens?, cost_usd?, priced?}]}` |
 | `POST api/jd2-curate.php` | origin + bench key | `{prompt_id, visibility?, shown_run_id?, pinned_generation_id?, title?, size_class?, size_scale?}` or `{generation_id, hidden}` → `{ok, prompt:{…}, runs:[{…, generations, sessions, display_session_id, complete}]}` |
 | `GET api/jd2-gen-svg.php?gen=<id>` | origin; public when the prompt is `live` and the drawing not hidden, else bench key; otherwise 404 | → `image/svg+xml`, `no-store` |
 | `GET art/junk-drawer/data.php` | public | → `{generated, count, taxonomy, items, errors:[]}`, ETag; `?item=<prompt_id>` any visibility (`hidden: true` unless live); `?slim=1` via `_slim.php`; a database outage answers an empty manifest |
@@ -277,7 +277,15 @@ prompt and so converges on its run id: the first slot request
 the other slots send `rerun_of` + `run_id`. The global breaker counts
 `jd2_generations` since UTC midnight (`JD_LIMIT_GLOBAL_DAILY`).
 
-**jd2-rate.** Drawings are named by slot (a v1 `gen_id` of the same run is
+**jd2-rate.** A visitor sitting carries the turn's `client_ref` — the UUID
+the browser minted for the turn, sent with every slot request, and kept in
+its `jd2-turn` record — and files only when it equals the run's
+`jd2_prompts.client_ref` (403 `not_yours` otherwise, checked before
+`already_rated`). A run id and its origin are public once the prompt is live
+(data.php serves both), so the client_ref is what stops a stranger filing a
+sitting on someone else's live item — and with it `suppress`, `title` and
+`size`, which a visitor sets only under that proof. The owner's sittings
+(bench key) need none. Drawings are named by slot (a v1 `gen_id` of the same run is
 accepted as a shim; a `flag` rating is dropped as a shim). The ranking is
 strict 1..n over every ok, non-hidden drawing (a tie is a zero gap), with a
 gap 0..3 on every place but the last, or on none. One session, one method:
