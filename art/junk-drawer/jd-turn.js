@@ -3981,7 +3981,8 @@
   /* THE OWNER'S RUN (dataset v2, PLAN-V2 §5, Phase 4b) — a new prompt from
      the bench, or a RERUN of a prompt on file. Both go through jd2-generate's
      OWNER path: the bench key on every request, the `bench` profile (every
-     model at its vendor's top setting — the benchmark condition), and the
+     model at the server's default owner setting, medium thinking since
+     2026-10-02 — the benchmark condition; see JD_EFFORT), and the
      slots asked for ONE AFTER ANOTHER on one client_ref (a bench call can
      take minutes; four at once is the visitor's turn, not the owner's). A
      new prompt converges on its client_ref; a rerun's first slot (rerun_of,
