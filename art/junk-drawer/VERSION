@@ -143,3 +143,4 @@
 0.10.0 — dataset v2: the drawer reads the new tables; the turn card files sessions with head-to-head scores
 0.10.1 — the bench rates the v2 backlog: new prompt, rerun, scrap, hidden items, a note per sitting
 0.10.2 — the cutover: v1 frozen (legacy exhibit only), the drawer and the about page read dataset v2, method-only prose
+0.10.3 — review fixes: visitor sittings need the turn's own token; admin save never copies a visitor's ranking; cached drawings; set-based manifest and analytics
