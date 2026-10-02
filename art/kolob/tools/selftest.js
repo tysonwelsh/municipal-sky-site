@@ -108,6 +108,14 @@
 //    a little closure cut in two to its moves (a name it reassigns read
 //    through the bag by a getter: SAME CODE), and fails a cut that takes that
 //    name once at load and one whose list changed a number, naming both.
+// 17. The cost (PLAN-REFACTOR §4.0(b)): seed 22, 240 s, rendered with the
+//    harness's `cost` — the dump is the plain run's, record for record; the
+//    sidecar's works, summed here, come to the graph's own counts (nodes,
+//    automation calls, disconnects) and the notes to the notes told, with
+//    nothing outside a cue, a press or a source's end; every work that told
+//    notes built nodes — the band's notes and nodes are the band's guest's,
+//    the hymn's throats the ward's pump's; and tools/cost.js holds the
+//    sidecar against itself and finds nothing moved.
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -672,6 +680,33 @@ function check(name, ok, detail) {
     check("…a cut that takes the reassigned name once at load, and one whose list changed a number: both NOT A PURE MOVE, each named",
       once.code === 1 && /n taken once at load, but the old closure reassigned it/.test(once.out) && bent.code === 1 && /stands in no new file: var LIST = \[1, 2\];/.test(bent.out),
       [once, bent].map((r) => (r.out.split("\n").find((l) => /^ {3}- /.test(l)) || "nothing named").trim()).join(" · "));
+  }
+
+  console.log("17. the cost (PLAN-REFACTOR §4.0(b)): seed 22, 240 s, the graph charged to the work that did it");
+  {
+    const { execFileSync } = require("child_process");
+    const [plain, costed] = await Promise.all([[], ["cost"]].map((flags, i) => R.renderSet({ engine, seeds: [22], secs: 240, flags, dir: path.join(tmp, "cost-" + i), quiet: true }).then((x) => x.results[0])));
+    const records = (r) => fs.readFileSync(r.dump, "utf8").split("\n").filter((l) => l && !l.startsWith('["H"'));
+    const a = records(plain), b = records(costed);
+    check("with cost, the dump is the plain run's, record for record", a.length > 0 && a.join("\n") === b.join("\n") && /PASS/.test(costed.verdict || ""), a.length + " records against " + b.length + " · " + costed.verdict);
+    const side = costed.dump.replace(/\.jsonl$/, ".cost.json");
+    const C = fs.existsSync(side) ? JSON.parse(fs.readFileSync(side, "utf8")) : null;
+    const W = C ? Object.keys(C.buckets).map((k) => Object.assign({ name: k }, C.buckets[k])) : [];
+    const total = (f) => W.reduce((s, w) => s + f(w), 0), notesOf = (w) => Object.keys(w.notes).reduce((s, l) => s + w.notes[l], 0);
+    const told = (/^notes: (\d+) /m.exec(fs.readFileSync(costed.log, "utf8")) || [])[1];
+    const out = C && C.buckets.outside;
+    check("its sidecar, beside the dump: the works add up to the graph's nodes, automation calls and disconnects, and to the notes told; none outside a cue, a press or a source's end",
+      !!C && total((w) => w.total) === C.graph.total && total((w) => w.automation) === C.graph.automation && total((w) => w.disconnects) === C.graph.disconnects && total(notesOf) === +told && (!out || !(out.total || out.automation || out.disconnects)),
+      C ? total((w) => w.total) + " of " + C.graph.total + " nodes · " + total((w) => w.automation) + " of " + C.graph.automation + " calls · " + total((w) => w.disconnects) + " of " + C.graph.disconnects + " disconnects · " + total(notesOf) + " of " + told + " notes in " + W.length + " works" : "no sidecar at " + side);
+    const bands = C && C.buckets["guest:bands"], ward = C && C.buckets.ward, quiet = W.filter((w) => notesOf(w) > 0 && !w.total);
+    check("every work that told notes built nodes; the band's notes and nodes are its guest's, the hymn's throats the ward's pump's",
+      !!C && !quiet.length && !!bands && bands.notes.band > 0 && bands.total > 0 && !!ward && (ward.built.BiquadFilter || 0) > 0 && !W.some((w) => w.name !== "guest:bands" && w.notes.band),
+      C ? (quiet.length ? "told and built nothing: " + quiet.map((w) => w.name).join(", ") + " · " : "") + "guest:bands " + (bands ? bands.notes.band + " notes, " + bands.total + " nodes" : "absent") + " · ward " + (ward ? (ward.built.BiquadFilter || 0) + " BiquadFilters" : "absent") : "no sidecar");
+    let same = "";
+    try { same = execFileSync(process.execPath, [path.join(__dirname, "cost.js"), side, side], { encoding: "utf8" }); } catch (e) { same = String(e.stdout || e.message); }
+    check("tools/cost.js holds the sidecar against itself: no work and no builder moved",
+      /^builders: every one of the \d+ built on B what it built on A$/m.test(same) && /^\(the graph\) +[\d,]+ +[\d,]+ +0 %/m.test(same) && /^accounted: A 1 of 1 run\(s\), B 1 of 1/m.test(same),
+      (same.split("\n").find((l) => /^builders/.test(l)) || "no builders line").trim());
   }
 
   fs.rmSync(tmp, { recursive: true, force: true });

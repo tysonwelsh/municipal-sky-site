@@ -22,7 +22,8 @@
 //   node _harness.js <secs> <seed> [ives] [razz] [cumulative[=<mode>]] [force=<guest>]
 //                    [exp=<spec>] [stop=<secs>,…] [play=<secs>,…]
 //                    [reseed=<seed>@<secs>,…] [throw=<lane>@<secs>,…]
-//                    [badlistener=note|event] [desk=<secs>] [staff[=860|390]] [dump=<file>] [header]
+//                    [badlistener=note|event] [desk=<secs>] [staff[=860|390]] [cost[=<file>]]
+//                    [dump=<file>] [header]
 //
 //   ives          KolobAudio.setForceVisitation(true)   — the Ives switch
 //   force=<name>  KolobAudio.setForceVisitation(name)   — one named guest
@@ -70,6 +71,18 @@
 //                 digest of everything drawn, so two builds of the page fed
 //                 the same meeting are held to the same drawing, frame by
 //                 frame (KOLOB_DIR=<the other build> for the other side)
+//   cost[=<file>] what the audio graph cost, charged to the work that did it
+//                 (THE COST, below): every node built, automation call and
+//                 disconnect counted to the clock lane whose cue made it — on
+//                 the guests' lane, to the guest it names — or to the press,
+//                 and the report's cost section gives each its nodes by type,
+//                 its calls and disconnects, in all and per minute of the run,
+//                 its busiest minute and the notes it told, the functions that
+//                 built the most, and the check that every count is
+//                 accounted. With =<file> (or beside dump=, as
+//                 <dump>.cost.json) the same as JSON, for tools/cost.js to
+//                 hold two runs side by side. Nothing the engine does moves:
+//                 the dump is the plain run's
 //   dump=<file>   write the note and event streams, one JSON array per line
 //   header        with dump=: a first line ["H", 0, {...}] naming the run and
 //                 the engine (opt-in, so a plain dump stays byte-identical)
@@ -131,7 +144,8 @@
 // and how many times the engine told it, with the first line told; those
 // console.errors are not the run's errors either. With a script, the presses' timers (THE PRESSES' TIMERS, below) and,
 // on the hymnal's line, the hymns written while the transport stood stopped
-// and the orders never written.
+// and the orders never written. With cost, the cost section after the graph
+// line (THE COST).
 // A module that fails to load prints "LOAD <file>: <error>" (run.js reads
 // that line) and no dump is written.
 // ============================================================================
@@ -152,7 +166,7 @@ const argv = process.argv.slice(2);
 let RUN = parseFloat(argv[0] || "300");
 if (!isFinite(RUN) || RUN <= 0) RUN = 300;
 const SEED = (parseInt(argv[1] || "1847", 10) >>> 0) || 1847;
-const OPT = { ives: false, razz: false, cumulative: false, force: null, exp: null, dump: null, header: false, script: [], throws: [], desk: null, bad: {}, staff: null };
+const OPT = { ives: false, razz: false, cumulative: false, force: null, exp: null, dump: null, header: false, script: [], throws: [], desk: null, bad: {}, staff: null, cost: null };
 const FLAGS = [];                                // the switches, as given, for the header
 const unknownFlags = [];
 const notes = [];                                // a switch understood but not played, and why
@@ -201,6 +215,8 @@ for (let i = 2; i < argv.length; i++) {
     const w = a === "staff" ? 860 : +a.slice(6);
     if (w === 860 || w === 390) OPT.staff = { w };
     else notes.push(a + " is not 860 or 390: the page is not drawn");
+  } else if (a === "cost" || a.indexOf("cost=") === 0) {
+    OPT.cost = { file: a.length > 5 ? a.slice(5) : null };
   } else if (a.indexOf("desk=") === 0) {
     const d = Number(a.slice(5));
     if (d > 0 && isFinite(d)) OPT.desk = d;
@@ -277,7 +293,8 @@ function addTimer(fn, ms, args, repeat, kind) {
   const id = ++timerSeq;
   if (typeof fn !== "function") return id;
   const delay = Math.max(0, (+ms || 0) / 1000);
-  timers.set(id, { id, fn, args, next: vnow + delay, period: repeat ? Math.max(delay, 0.001) : 0, repeat, seq: id, kind });
+  // (cost: a timer runs as the work that armed it; a source's end as the work that built the source — THE COST)
+  timers.set(id, { id, fn: COST && kind !== "onended" ? costAs(costNow, fn) : fn, args, next: vnow + delay, period: repeat ? Math.max(delay, 0.001) : 0, repeat, seq: id, kind });
   if (pressing && kind === "setTimeout") pressTimers.set(id, { press: pressing, ms: +ms || 0, name: fn.name || "", state: "armed", at: null, by: null, later: null, did: null });
   return id;
 }
@@ -354,14 +371,116 @@ global.performance = { now: () => vnow * 1000, timeOrigin: 0, mark() {}, measure
 const graph = { created: {}, total: 0, automation: 0, contexts: 0, disconnects: 0 };
 let lastCtx = null;
 
+// ----------------------------------------------------------------------------
+// THE COST (cost, cost=<file>; PLAN-REFACTOR §4.0(b)). The graph is counted
+// whole above; with `cost` every node built, every automation call and every
+// disconnect is also charged to the work that did it, so a change to the
+// audio graph is told in numbers, layer by layer, before and after. The work
+// is:
+//   a lane's cue     the clock lane whose cue was running — the engine names
+//                    its lanes for its layers (drone, organ, choir, strings…),
+//                    and the conductor, the ward's pump, the organist's pump
+//                    and the guests have lanes of their own; a piece one cue
+//                    hands to another layer's pump (a line to the ward's desk,
+//                    a plan to the organist's) is that pump's when it builds
+//   a guest's slice  on the guests' lane, the guest the cue names — in its
+//                    notes' `guest` (the testimony's notes say `testimony`),
+//                    or in a guest-start, guest or guest-end event (the
+//                    bearers' testimony events) — else the guest named by the
+//                    work that scheduled it (a guests' cue's own guest; the
+//                    conductor's tick that began the Hosanna, which names it
+//                    as it begins it; the choir's cue that stages the far
+//                    ward), else "guests"; what that work built itself stays
+//                    its own
+//   a press          PLAY, STOP and GATHER (reseed=): press:play, press:stop,
+//                    press:reseed — the house built at PLAY, the doors closed
+//   a source's end   the mock's onended runs as the work that built the
+//                    source: a teardown is its builder's
+//   a timer          a setTimeout, setInterval, requestAnimationFrame or
+//                    requestIdleCallback runs as the work that armed it
+//   outside          anything else (a promise settling between tasks):
+//                    nothing builds there today
+// The clock is watched as for throw= (THE FAULT INJECTION: its file is never
+// touched), and nothing the engine does moves: no die, no cue, no record —
+// the dump is the plain run's. The report's cost section gives each its cues,
+// its nodes by type, automation calls and disconnects, in all and per minute
+// of the run (<secs> / 60), its busiest minute and the notes it told by
+// layer; the builders — the engine's function that called create… — that
+// built the most; and the check: every count accounted (the buckets add up
+// to the graph's), nothing outside, every bucket that told notes built
+// nodes. The sidecar (cost=<file>, or <dump>.cost.json beside dump=) holds
+// the same as JSON, for tools/cost.js, which holds two runs side by side.
+// ----------------------------------------------------------------------------
+const COST = OPT.cost ? { buckets: {}, conflicts: 0 } : null;
+let costNow = null;             // the work now running: { lane, bucket, by, named, guest, settled } (a guests' cue not yet settled: bucket null, its counts pending)
+function costTally(name) { return { name, cues: 0, total: 0, built: {}, automation: 0, disconnects: 0, notes: {}, sites: {}, min: [] }; }
+function costBucket(name) { return COST.buckets[name] || (COST.buckets[name] = costTally(name)); }
+// where a count lands: the work's bucket, or — a guests' cue that has not
+// yet named its guest — its own pending counts, merged when it returns
+function costTo(w) { return !w ? costBucket("outside") : w.bucket || w.pending; }
+function costMin(T) { const m = Math.floor(vnow / 60); while (T.min.length <= m) T.min.push([0, 0, 0]); return T.min[m]; }
+function costRun(w, fn, self, args) { const was = costNow; costNow = w; try { return fn.apply(self, args); } finally { costNow = was; } }
+function costAs(w, fn) { return function () { return costRun(w, fn, this, arguments); }; }
+// the builder: the first function on the stack outside the harness — the
+// engine's own call of create… (or new …Node)
+const HARNESS_FILE = __filename;
+function costSite() {
+  const o = {}, lim = Error.stackTraceLimit, prep = Error.prepareStackTrace;
+  Error.stackTraceLimit = 8; Error.prepareStackTrace = (e, frames) => frames;
+  try {
+    Error.captureStackTrace(o, costSite);
+    for (const f of o.stack) { const file = f.getFileName(); if (file && file !== HARNESS_FILE) return (f.getFunctionName() || "(anonymous)") + " (" + path.basename(file) + ":" + f.getLineNumber() + ")"; }
+    return "(the harness)";
+  } finally { Error.prepareStackTrace = prep; Error.stackTraceLimit = lim; }
+}
+function costBuilt(n, kind) {
+  n._costBy = costNow;
+  const T = costTo(costNow), site = costSite(), s = T.sites[site] || (T.sites[site] = {});
+  T.total++; T.built[kind] = (T.built[kind] || 0) + 1; costMin(T)[0]++;
+  s[kind] = (s[kind] || 0) + 1;
+}
+function costCharge(i) { const T = costTo(costNow); if (i === 1) T.automation++; else T.disconnects++; costMin(T)[i]++; }   // 1 an automation call, 2 a disconnect
+// the work names a guest (the first it names; a second is counted): a
+// guests' cue is that guest's, and a guests' cue it schedules inherits it
+function costNamed(guest) {
+  const w = costNow;
+  if (!guest || !w || w.settled) return;
+  if (!w.named) w.named = guest; else if (w.named !== guest) w.conflict = true;
+}
+function costTold(layer, guest) { const T = costTo(costNow); T.notes[layer] = (T.notes[layer] || 0) + 1; costNamed(guest); }
+// a cue begins (by: the work that scheduled it) and returns; a press is work
+// of its own (cues counts the presses)
+function costWork(lane, bucket, by) { return { lane, bucket, pending: bucket ? null : costTally(null), by: bucket ? null : by, named: null, conflict: false, guest: null, settled: false }; }
+function costCue(lane, by) { return lane === "guests" ? costWork(lane, null, by) : costWork(lane, costBucket(lane)); }
+function costSettle(w) {
+  w.settled = true;
+  if (!w.bucket) {
+    w.guest = w.named || (w.by ? w.by.guest : null);
+    w.bucket = costBucket(w.guest ? "guest:" + w.guest : "guests");
+    costMerge(w.bucket, w.pending);
+    if (w.conflict) COST.conflicts++;
+    w.pending = null; w.by = null;
+  } else w.guest = w.conflict ? null : w.named;      // (for the guests' cues it schedules: a work that named two names none)
+  w.bucket.cues++;
+}
+function costPress(act, fn) { const w = costWork(null, costBucket("press:" + act)); try { return costRun(w, fn); } finally { costSettle(w); } }
+function costMerge(B, T) {
+  const add = (to, from) => Object.keys(from).forEach((k) => { to[k] = (to[k] || 0) + from[k]; });
+  B.total += T.total; B.automation += T.automation; B.disconnects += T.disconnects;
+  add(B.built, T.built); add(B.notes, T.notes);
+  Object.keys(T.sites).forEach((s) => add(B.sites[s] || (B.sites[s] = {}), T.sites[s]));
+  T.min.forEach((m, i) => { while (B.min.length <= i) B.min.push([0, 0, 0]); for (let j = 0; j < 3; j++) B.min[i][j] += m[j]; });
+}
+
+function automated() { graph.automation++; if (COST) costCharge(1); }
 function mkParam(owner, name, init) {
   const p = { _label: owner + "." + name, _v: +init, defaultValue: +init, minValue: -3.4028234663852886e38, maxValue: 3.4028234663852886e38, automationRate: "a-rate" };
   Object.defineProperty(p, "value", { enumerable: true, get() { return p._v; }, set(v) { p._v = +v; } });
-  p.setValueAtTime = function (v) { graph.automation++; p._v = +v; return p; };
-  p.linearRampToValueAtTime = function (v) { graph.automation++; p._v = +v; return p; };
-  p.exponentialRampToValueAtTime = function (v) { graph.automation++; p._v = +v; return p; };
-  p.setTargetAtTime = function (v) { graph.automation++; p._v = +v; return p; };
-  p.setValueCurveAtTime = function (curve) { graph.automation++; if (curve && curve.length) p._v = +curve[curve.length - 1]; return p; };
+  p.setValueAtTime = function (v) { automated(); p._v = +v; return p; };
+  p.linearRampToValueAtTime = function (v) { automated(); p._v = +v; return p; };
+  p.exponentialRampToValueAtTime = function (v) { automated(); p._v = +v; return p; };
+  p.setTargetAtTime = function (v) { automated(); p._v = +v; return p; };
+  p.setValueCurveAtTime = function (curve) { automated(); if (curve && curve.length) p._v = +curve[curve.length - 1]; return p; };
   p.cancelScheduledValues = function () { return p; };
   p.cancelAndHoldAtTime = function () { return p; };
   return p;
@@ -406,7 +525,7 @@ function mkNode(ctx, kind) {
   const spec = NODE_KINDS[kind];
   const n = { _kind: kind, context: ctx, numberOfInputs: 1, numberOfOutputs: 1, channelCount: 2, channelCountMode: "max", channelInterpretation: "speakers" };
   n.connect = function (dest) { return dest; };            // returns the destination, so chains read naturally
-  n.disconnect = function () { graph.disconnects++; };
+  n.disconnect = function () { graph.disconnects++; if (COST) costCharge(2); };
   n.addEventListener = function (type, fn) { if (type === "ended") (n._ended = n._ended || []).push(fn); };
   n.removeEventListener = function (type, fn) { if (n._ended) n._ended = n._ended.filter((f) => f !== fn); };
   n.dispatchEvent = function () { return true; };
@@ -416,12 +535,13 @@ function mkNode(ctx, kind) {
     n.onended = null; n._started = null; n._stopAt = null; n._endTimer = null;
     const armEnded = (at) => {
       if (n._endTimer != null) clearTimer(n._endTimer);
-      n._endTimer = addTimer(function () {
+      const ended = function () {
         n._endTimer = null;
         const ev = { type: "ended", target: n };
         if (typeof n.onended === "function") n.onended(ev);
         (n._ended || []).forEach((f) => f(ev));
-      }, Math.max(0, at - ctx.currentTime) * 1000, [], false, "onended");
+      };
+      n._endTimer = addTimer(COST ? costAs(n._costBy, ended) : ended, Math.max(0, at - ctx.currentTime) * 1000, [], false, "onended");
     };
     n.start = function (when, offset, dur) {
       if (n._started != null) throw new Error("InvalidStateError: " + kind + ".start() called twice");
@@ -437,6 +557,7 @@ function mkNode(ctx, kind) {
     n.setPeriodicWave = function (w) { n._wave = w; n.type = "custom"; };
   }
   graph.created[kind] = (graph.created[kind] || 0) + 1; graph.total++;
+  if (COST) costBuilt(n, kind);
   return n;
 }
 function mkContext(kind, opts) {
@@ -573,14 +694,15 @@ global.MskyBackgroundAudio = undefined;          // no <audio> route here: the m
 // pumps at their own pace; a hymn whose chain broke let go, so the meeting
 // moves on (the choir's lane carries more than one chain — its verse loop,
 // a hymn's lines — so its own count runs on either way).
-// Without throw= nothing is wrapped.
+// Without throw= (or cost, which watches the lanes the same way to charge
+// each cue's work to its lane: THE COST) nothing is wrapped.
 // ----------------------------------------------------------------------------
 const INJ = OPT.throws.map((x) => ({ lane: x.lane, at: x.at, spec: x.spec, marker: "the harness's injected throw (throw=" + x.spec + ")", t: null, how: null, reported: null, before: 0, after: 0, firstAfter: null }));
 const laneCues = {};            // lane → the cues the clock ran on it (with throw= only)
 let cueNow = null;              // the cue whose callback is running: { lane, t, armed }
 function watchClock() {
   const C = global.PJ2 && global.PJ2.Clock;
-  if (!INJ.length || !C || typeof C.create !== "function") return;
+  if ((!INJ.length && !COST) || !C || typeof C.create !== "function") return;
   const create = C.create;
   C.create = function (ctx, opts) {
     const clock = create(ctx, opts), laneOf = clock.lane, seen = new Set();
@@ -589,7 +711,7 @@ function watchClock() {
       if (!seen.has(api)) {
         seen.add(api);
         const guard = () => { if (cueNow && cueNow.armed && cueNow.lane === name) fire(cueNow, "as it scheduled on its own lane"); };
-        const wrap = (fn) => (typeof fn === "function" ? watched(name, fn) : fn);
+        const wrap = (fn) => (typeof fn === "function" ? watched(name, fn, costNow) : fn);
         const at = api.at, inS = api.in, every = api.every;
         api.at = function (when, fn) { guard(); return at(when, wrap(fn)); };
         api.in = function (dt, fn) { guard(); return inS(dt, wrap(fn)); };
@@ -600,7 +722,7 @@ function watchClock() {
     return clock;
   };
 }
-function watched(lane, fn) {
+function watched(lane, fn, by) {
   return function (tt) {
     laneCues[lane] = (laneCues[lane] || 0) + 1;
     const c = { lane, t: tt, armed: null };
@@ -609,10 +731,11 @@ function watched(lane, fn) {
       if (j.t != null) { j.after++; if (j.firstAfter == null) j.firstAfter = tt; }
       else if (!c.armed && tt >= j.at) c.armed = j;
     });
-    const was = cueNow;
+    const was = cueNow, w = COST ? costCue(lane, by) : null, wasW = costNow;
     cueNow = c;
+    if (w) costNow = w;
     let r;
-    try { r = fn(tt); } finally { cueNow = was; }
+    try { r = fn(tt); } finally { cueNow = was; if (w) { costNow = wasW; costSettle(w); } }
     if (c.armed) fire(c, "as it returned (it scheduled nothing on its own lane)");
     return r;                                    // an .every callback's next delay
   };
@@ -769,11 +892,12 @@ function press(act, label, fn) {
   presses.push(p);
   const was = pressing;
   pressing = p;
-  try { return fn(); } finally { pressing = was; }
+  try { return COST ? costPress(act, fn) : fn(); } finally { pressing = was; }
 }
 K.setNoteListener(function (n) {
   const t = musicNow();
   tally.notes++; count(tally.byLayer, n && n.layer || "?");
+  if (COST) costTold(n && n.layer || "?", n && (typeof n.guest === "string" ? n.guest : n.testimony ? "testimony" : null));
   record("N", t, n);
 });
 K.setEventListener(function (ev) {
@@ -787,6 +911,7 @@ K.setEventListener(function (ev) {
   if (ev.type === "section-start" || (!ev.type && ev.cat === "section")) tally.sections.push({ t, section: ev.section || String(ev.label || "").replace(/^[^A-Za-z]*/, "").toLowerCase(), dur: ev.dur });
   if (ev.type === "guest-start") count(tally.guests, ev.guest || "?");
   if (ev.type === "cadence") count(tally.cadences, ev.kind || "?");
+  if (COST) costNamed(ev.type === "testimony" ? "testimony" : /^guest(-start|-end)?$/.test(ev.type) && typeof ev.guest === "string" ? ev.guest : null);
   record("E", t, ev);
 });
 // THE BAD LISTENER (badlistener=note|event): a listener of the page's with
@@ -865,6 +990,10 @@ if (typeof K.getSeed === "function" && K.getSeed() !== SEED && typeof K.reseed =
     try { fs.mkdirSync(path.dirname(file), { recursive: true }); } catch (e) { /* the folder stands, or the write below says why not */ }
     fs.writeFileSync(file, out.concat(dumpLines).join("\n") + "\n");
   }
+  // ---- the cost's sidecar (THE COST) ----
+  const costed = COST ? costSummary() : null;
+  const costFile = COST ? OPT.cost.file || (OPT.dump ? OPT.dump.replace(/\.jsonl$/, "") + ".cost.json" : null) : null;
+  if (costFile) costWrite(path.resolve(costFile), costed);
 
   // ---- the report ----
   const L = realConsole.log;
@@ -938,6 +1067,7 @@ if (typeof K.getSeed === "function" && K.getSeed() !== SEED && typeof K.reseed =
     (unwritten != null ? " · written while stopped " + stopped.written + " · " + unwritten + " order(s) never written" : "") +
     (OPT.desk ? " · desk " + OPT.desk + " s a slice, " + desk.paced + " slice(s) paced" : ""));
   L("graph: " + graph.contexts + " context(s) · " + graph.total + " nodes " + JSON.stringify(sortedCounts(graph.created, 10)) + " · " + graph.automation + " automation calls");
+  if (COST) costReport(L, costed, costFile);
   if (staff) L("staff: " + OPT.staff.w + " px · " + staff.files.length + " file(s) of the page's drawing · " + staff.frames + " frames · " + staff.rec.calls + " canvas calls on " + staff.rec.canvases + " canvases, " + staff.rec.paths + " paths · digest " + staff.rec.digest().slice(0, 16) +
     " · by minute " + (staff.minutes.length ? staff.minutes.join(" ") : "—"));
   if (OPT.dump) L("dump: " + dumpLines.length + " records" + (OPT.header ? " + header" : "") + (tally.unserialisable ? " · " + tally.unserialisable + " NOT serialisable" : ""));
@@ -953,6 +1083,67 @@ if (typeof K.getSeed === "function" && K.getSeed() !== SEED && typeof K.reseed =
 })().catch((e) => { noteError("main", e); realConsole.log("VERDICT: FAIL ✗ (" + e.message + ")\n" + (e.stack || "")); process.exitCode = 1; });
 
 function safe(fn) { try { return fn(); } catch (e) { noteError("report", e); return null; } }
+
+// THE COST, summed: the buckets, the builders across them, and the check
+// that every count the graph made is in a bucket
+function costSummary() {
+  const B = Object.keys(COST.buckets).map((k) => COST.buckets[k]).sort((a, b) => b.total - a.total || b.automation - a.automation || b.disconnects - a.disconnects || (a.name < b.name ? -1 : 1));
+  const by = {};
+  B.forEach((b) => Object.keys(b.sites).forEach((s) => {
+    const x = by[s] || (by[s] = { site: s, total: 0, built: {}, buckets: {} });
+    Object.keys(b.sites[s]).forEach((k) => { const n = b.sites[s][k]; x.total += n; x.built[k] = (x.built[k] || 0) + n; x.buckets[b.name] = (x.buckets[b.name] || 0) + n; });
+  }));
+  const sum = (f) => B.reduce((a, b) => a + f(b), 0), notesOf = (b) => Object.keys(b.notes).reduce((a, k) => a + b.notes[k], 0);
+  const out = COST.buckets.outside || costTally("outside"), told = B.filter((b) => notesOf(b) > 0);
+  return {
+    buckets: B,
+    builders: Object.keys(by).map((s) => by[s]).sort((a, b) => b.total - a.total || (a.site < b.site ? -1 : 1)),
+    check: {
+      nodes: [sum((b) => b.total), graph.total], automation: [sum((b) => b.automation), graph.automation], disconnects: [sum((b) => b.disconnects), graph.disconnects],
+      notes: [sum(notesOf), tally.notes], outside: { nodes: out.total, automation: out.automation, disconnects: out.disconnects },
+      toldNotes: told.map((b) => b.name), toldButBuiltNothing: told.filter((b) => !b.total).map((b) => b.name), namedTwo: COST.conflicts,
+    },
+  };
+}
+function costReport(L, s, file) {
+  const mins = RUN / 60, n = (v) => Math.round(v).toLocaleString("en-US"), r = (v, w) => String(v).padStart(w);
+  const TYPES = ["BiquadFilter", "Gain", "Oscillator", "BufferSource"];
+  const other = (b) => Object.keys(b.built).filter((k) => TYPES.indexOf(k) < 0).reduce((a, k) => a + b.built[k], 0);
+  const busiest = (b) => { let m = -1; b.min.forEach((x, i) => { if (m < 0 || x[0] > b.min[m][0]) m = i; }); return m < 0 || !b.min[m][0] ? "—" : n(b.min[m][0]) + " in min " + m; };
+  const told = (b) => Object.keys(b.notes).sort((x, y) => b.notes[y] - b.notes[x] || (x < y ? -1 : 1)).slice(0, 3).map((k) => k + " " + n(b.notes[k])).join(", ") || "—";
+  const row = (name, b) => "  " + name.padEnd(20) + r(n(b.cues), 6) + r(n(b.total), 9) + r(n(b.total / mins), 7) + r(b.min ? busiest(b) : "", 18) +
+    TYPES.map((k) => r(n(b.built[k] || 0), 8)).join("") + r(n(other(b)), 7) + r(n(b.automation), 10) + r(n(b.automation / mins), 7) + r(n(b.disconnects), 9) + r(n(b.disconnects / mins), 6) + "  " + (b.notes ? told(b) : "");
+  L("cost: the graph charged to the work that did it — the lane whose cue built it (on the guests' lane, the guest it names), the press, a source's end to its builder · per minute over " + mins.toFixed(1) + " min" + (file ? " · sidecar " + file : ""));
+  L("  " + "work".padEnd(20) + r("cues", 6) + r("nodes", 9) + r("/min", 7) + r("busiest minute", 18) + r("biquad", 8) + r("gain", 8) + r("osc", 8) + r("buffer", 8) + r("other", 7) + r("autom", 10) + r("/min", 7) + r("disconn", 9) + r("/min", 6) + "  notes told");
+  s.buckets.forEach((b) => L(row(b.name, b)));
+  // (the graph's row: the cues of every lane, which come to the clock's own count, and the graph's own counts)
+  const tot = { cues: s.buckets.filter((b) => b.name.indexOf("press:") !== 0).reduce((a, b) => a + b.cues, 0), total: graph.total, built: graph.created, automation: graph.automation, disconnects: graph.disconnects };
+  L(row("(the graph)", tot));
+  L("  builders — the engine's function that called create…, the " + Math.min(10, s.builders.length) + " that built the most of " + s.builders.length + ":");
+  s.builders.slice(0, 10).forEach((x) => {
+    const kinds = Object.keys(x.built).sort((a, b) => x.built[b] - x.built[a]).map((k) => k + " " + n(x.built[k])).join(", ");
+    const whose = Object.keys(x.buckets).sort((a, b) => x.buckets[b] - x.buckets[a]).slice(0, 4).map((k) => k + " " + n(x.buckets[k])).join(", ");
+    L("  " + r(n(x.total), 8) + "  " + x.site + " · " + kinds + " · " + whose);
+  });
+  const c = s.check, eq = (p) => n(p[0]) + (p[0] === p[1] ? " of " : " — NOT the graph's ") + n(p[1]);
+  L("  check: nodes " + eq(c.nodes) + " · automation " + eq(c.automation) + " · disconnects " + eq(c.disconnects) + " · notes " + eq(c.notes) +
+    " · outside a cue, a press or a source's end: " + c.outside.nodes + " node(s), " + c.outside.automation + " call(s), " + c.outside.disconnects + " disconnect(s)" +
+    " · " + (c.toldButBuiltNothing.length ? "told notes and built nothing: " + c.toldButBuiltNothing.join(", ") : "every one of the " + c.toldNotes.length + " that told notes built nodes") +
+    " · " + c.namedTwo + " guests' cue(s) named two guests");
+}
+function costWrite(file, s) {
+  const buckets = {};
+  s.buckets.forEach((b) => { buckets[b.name] = { cues: b.cues, total: b.total, built: b.built, automation: b.automation, disconnects: b.disconnects, notes: b.notes, perMinute: b.min }; });
+  try {
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, JSON.stringify({
+      format: "kolob-cost", v: 1, seed: SEED, secs: RUN, minutes: RUN / 60, flags: FLAGS.filter((f) => f.indexOf("cost=") !== 0),
+      engine: { dir: ENGINE_DIR, list: LIST.from, fingerprint: FINGERPRINT },
+      graph: { contexts: graph.contexts, total: graph.total, created: graph.created, automation: graph.automation, disconnects: graph.disconnects },
+      buckets, builders: s.builders, check: s.check,
+    }, null, 1) + "\n");
+  } catch (e) { noteError("cost sidecar", e); }
+}
 function sortedCounts(map, limit) {
   const keys = Object.keys(map).sort((a, b) => map[b] - map[a] || (a < b ? -1 : 1));
   const out = {};

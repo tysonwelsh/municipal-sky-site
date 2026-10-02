@@ -30,7 +30,7 @@ plays the same meeting every time, in the browser and in the headless harness.
 | the labs | `*-lab.php` + `*-lab.js` — unlinked dev benches, one per subsystem (`hymn-lab` is the owner's listening checkpoint for the composer; `room-lab` the impulse responses; `voices-lab` v0.30's four voices, its own copy, against the ward) |
 | shelved | `shelved/` — the Question (`kolob-question.js`, `kolob-question-setpiece.js`, its lab), the bagpipe (`kolob-voices-bagpipe.js`, its lab) and the tune lab (v0.30's old-tune incipits): the owner's rulings of 2026-09-27 and 2026-09-13; code kept, not loaded |
 | the harness | `_harness.js` — plays a meeting headless in Node (mock Web Audio, a virtual clock) and writes the dump the tools read; tracked since 2026-10-01 |
-| the tools | `tools/` — `loadcheck.js` (the engine loads, and the page's drawing), `lends.js` (the shared bags), `samecode.js` (an edit touched only comments; `--split`: a cut moved its code whole), `golden.js` (the pure core composes what it composed, against `tools/golden/`), `selftest.js`, `distinctness.js`, `repetition.js`, `tally.js` (A/B: did the music move), `screens.js`, `capture.js`; `tools/README.md` explains each |
+| the tools | `tools/` — `loadcheck.js` (the engine loads, and the page's drawing), `lends.js` (the shared bags), `samecode.js` (an edit touched only comments; `--split`: a cut moved its code whole), `golden.js` (the pure core composes what it composed, against `tools/golden/`), `selftest.js`, `distinctness.js`, `repetition.js`, `tally.js` (A/B: did the music move), `cost.js` (what the audio graph cost, work by work, A/B), `screens.js`, `capture.js`; `tools/README.md` explains each |
 | the contract | `SCORE.md` — the interface every module codes against, one layer, one section a topic (modules, pitch, streams, time, the Score, events, performance, guests, versions); **the code each section names is the authority**. The layered original it was consolidated from is `archive/SCORE-layered.md` |
 | the owner's rulings | `OWNER-RULINGS.md` — every level, seat, look and shelved idea the owner has decided on, dated, each naming the code that implements it. Do not reverse one without asking |
 | open work | `OPEN-WORK.md` — ideas approved and not built, the crews' requests not done, known issues, the decisions waiting on the owner's ear, cost |
@@ -92,6 +92,7 @@ node art/kolob/tools/selftest.js         # the measurement tools read true
 node art/kolob/tools/tally.js --a git:main --b worktree --seeds 1-20   # did my change move the music?
 node art/kolob/tools/screens.js --seed 22                               # the staff at 860 and 390 px, muted (--freeze: frame-exact, two builds compared by pixel)
 node art/kolob/_harness.js 600 22 staff                                  # everything the page draws, traced headless: a digest (KOLOB_DIR=<other build> for the other side)
+node art/kolob/tools/cost.js --a git:HEAD --b worktree                   # the audio graph's cost, work by work (a lane, a guest, a press), before and after
 ```
 
 CI (`.github/workflows/kolob-check.yml`) runs lint, loadcheck, lends, golden,

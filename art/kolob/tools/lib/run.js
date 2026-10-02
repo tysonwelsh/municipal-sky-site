@@ -144,7 +144,8 @@ function verify(engine, witnessFile, header, harness) {
 function runOne(engine, seed, secs, flags, dumpFile, name) {
   return new Promise((resolve) => {
     const witness = dumpFile.replace(/\.jsonl$/, ".witness.json");
-    [dumpFile, witness].forEach((f) => { try { fs.unlinkSync(f); } catch (e) { /* none to remove */ } });   // never read a stale one
+    // (and the harness's cost sidecar, written beside the dump with --flags cost: tools/cost.js)
+    [dumpFile, witness, dumpFile.replace(/\.jsonl$/, ".cost.json")].forEach((f) => { try { fs.unlinkSync(f); } catch (e) { /* none to remove */ } });   // never read a stale one
     const args = ["-r", WITNESS, engine.harness, String(secs), String(seed)].concat(flags || []).concat(["dump=" + dumpFile, "header"]);
     const env = Object.assign({}, process.env, { KOLOB_BASE: engine.dir, KOLOB_DIR: engine.dir, KOLOB_WITNESS: witness });
     if (engine.legacy) env.KOLOB_LEGACY = engine.legacy; else delete env.KOLOB_LEGACY;

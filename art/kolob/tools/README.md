@@ -4,13 +4,13 @@
 writes. Written 2026-10-01 at v0.36.2; keep it true when the tools change.
 The owner's rules that bind these tools are in `art/kolob/README.md`.*
 
-Eleven tools, all plain Node (22 or later: the browser tools use Node's own
+Twelve tools, all plain Node (22 or later: the browser tools use Node's own
 WebSocket) with no packages, except `samecode.js` and the wrapper check of
 `lends.js`, which need the `acorn` that `npm install` at the repo root brings
 with ESLint. Three read the engine's
 source and nothing else; one runs its pure core headless; three read only the
-harness's dump, so they keep working when the engine changes; two drive a
-**muted** headless Chrome.
+harness's dump, so they keep working when the engine changes; one reads the
+harness's cost sidecars; two drive a **muted** headless Chrome.
 
 | tool | answers | reads | time |
 |---|---|---|---|
@@ -21,6 +21,7 @@ harness's dump, so they keep working when the engine changes; two drive a
 | `distinctness.js` | Do two random seeds sound clearly different within three minutes? (design law 2) | the dump | ~2 s for 20 seeds |
 | `repetition.js` | How often does a meeting say the same thing twice, and which shapes turn up in every meeting? | the dump | ~2 s for 20 meetings |
 | `tally.js` | What is a meeting made of (cadences, guests, sections, notes per layer)? Did a change move it (A/B)? | the dump | ~2 s per 20 seeds; A/B at 60 seeds, under a minute |
+| `cost.js` | What does the audio graph cost, work by work (a lane, a guest, a press), and did a change move it (A/B)? | the harness's cost sidecars | ~20 s for two builds, four seeds each |
 | `screens.js` | What does the staff look like at 860 and 390 px, and what does a frame cost at 4× CPU throttling? | the page, muted | real time: ~2.5 min per width |
 | `capture.js` | What does a seeded meeting sound like, as a WAV, a spectrogram, loudness (LUFS) and peak? | the page, muted | real time: 4 min for a 4-min window |
 | `render.js` | Renders a dump set to keep, or to read twice. | the harness | ~1 s per seed |
@@ -47,6 +48,8 @@ node tools/distinctness.js                       # 20 seeds, first 180 s → out
 node tools/repetition.js                         # 20 seeds, 1200 s, every complete meeting
 node tools/tally.js                              # the same, counted
 node tools/tally.js --a git:main --b worktree --seeds 1-20   # did my change move the music?
+node _harness.js 1200 22 cost                    # what the audio graph cost, charged to the work that did it
+node tools/cost.js --a git:HEAD --b worktree     # …before and after, work by work (seeds 3, 7, 22, 37)
 node tools/screens.js --seed 1847                # staff at 20/60/120 s, 860 + 390 px, frames at 4×
 node tools/screens.js --seed 22 --freeze         # the same, frame-exact: two runs compare by pixel (AE 0)
 node tools/capture.js --seed 1847 --to 240       # four minutes, recorded
@@ -139,7 +142,7 @@ stops with the harness's `LOAD` error.
 node _harness.js <secs> <seed> [ives] [razz] [cumulative[=<mode>]] [force=<guest>] [exp=<spec>]
                  [stop=<secs>,…] [play=<secs>,…] [reseed=<seed>@<secs>,…]
                  [throw=<lane>@<secs>,…] [badlistener=note|event] [desk=<secs>]
-                 [staff[=860|390]] [dump=<file>] [header]
+                 [staff[=860|390]] [cost[=<file>]] [dump=<file>] [header]
 ```
 
 `art/kolob/_harness.js` (tracked since 2026-10-01) mocks `window` and Web Audio
@@ -285,6 +288,44 @@ staff` for the other side (the engine is read from there too). Seed 22, 60 s:
 the same on the page before and after it was cut into six files; with the ink
 one step bluer, another. About 20 s of the machine for a minute of meeting at
 860 px.
+
+**The cost (`cost`, PLAN-REFACTOR §4.0(b)).** `cost` charges every node the
+mock builds, every automation call and every disconnect to the work that did
+it, so a change to the audio graph is stated in numbers, before and after.
+The work is the clock lane whose cue was running — the engine names its lanes
+for its layers (`drone`, `organ`, `choir`, `strings`…), and the conductor, the
+ward's pump (`ward`), the organist's (`organist`) and the guests have lanes of
+their own; on the guests' lane, the guest the cue names (its notes' `guest`,
+the testimony's `testimony`, a `guest-start`, `guest` or `guest-end` event),
+else the guest named by the work that scheduled it (the conductor's tick that
+begins the Hosanna names it as it begins it), as `guest:<name>`, else
+`guests`; a press, `press:play`, `press:stop` or `press:reseed`. A source's
+end (the mock's `onended`) is charged to the work that built the source, a
+timer to the work that armed it, and anything else is `outside` (nothing
+today). A piece one cue hands to another layer's pump is that pump's when it
+is built: a hymn's lines are written and told on the `choir` lane and their
+throats built by the ward's pump, so `ward` tells no note and builds the most.
+The report's `cost:` section, after the `graph:` line, gives each work's cues
+(presses, for a press), nodes by type, automation calls and disconnects, in
+all and per minute of the run (`<secs>` / 60), its busiest minute and the
+notes it told by layer; the ten builders that built the most (the engine's
+function that called `create…`, by file and line, and whose work it was);
+and the check: every node, call and disconnect in a work's count, the works
+adding up to the graph's own, none outside, and every work that told notes
+built nodes — a lane the harness failed to watch would tell its layer's
+notes and build nothing. With `cost=<file>`, or with `dump=` (as
+`<dump>.cost.json` beside it), the same is written as JSON: the sidecar
+`cost.js` reads (`render.js` and `tally.js` write one beside each dump with
+`--flags cost`). The clock's lanes are watched as for `throw=`, and nothing
+the engine does moves: the dump is the plain run's, record for record (24
+runs — four seeds, the scripts, the throws, the bad listener, the paced desk
+and every forced guest — against the harness before the cost). The stack is
+read once a node, about a third more time. Seed 22, 1200 s: 34,628 nodes, the
+ward's pump 18,813 of them (11,182 BiquadFilters, 941 a minute, 5,863 in the
+first hymn's minute), the band 8,148, the organist 2,666; 9,284 disconnects,
+8,387 of them the ward's; `filterNode` (`kolob-voices-vocal.js`) built
+11,606. Seed 37: the Hosanna 22,466 nodes, 12,867 of them in its one minute
+(18), beside the ward's 25,088 over the whole meeting.
 
 ## The dump format (v1)
 
@@ -855,6 +896,33 @@ pre-2026-09-27 engine; that text is a string in `capture.js`.) For a listening
 packet: `--seeds a,b,c,d,e,f --to 240` records one seed after another, about
 25 min; `--seed n --meeting` records a whole meeting.
 
+## cost.js
+
+```sh
+node tools/cost.js <a> <b>        # two sidecars (.cost.json), or two dump sets rendered with --flags cost
+node tools/cost.js <a>            # one side's table
+node tools/cost.js --a git:HEAD --b worktree [--seeds 3,7,22,37] [--secs 1200] [--flags force=hosanna] [--jobs N] [--top 10]
+```
+
+What PLAN-REFACTOR §4.6 and any change to the audio graph cite: the
+harness's cost (`cost`, "The harness" above) of two builds, side by side. A
+`<spec>` is a sidecar, a dump set holding them, an engine directory,
+`git:<ref>` or `worktree`; a build is rendered here through the harness with
+`cost`, witnessed as every render is (seeds 3, 7, 22 and 37, 1200 s, by
+default), into `out/cost-<stamp>/` with the table as `report.txt`. Several
+seeds a side are summed work by work over the seeds both sides hold. The
+table: for each work, nodes A and B and the shift, per minute, the busiest
+minute (of any seed), automation calls and disconnects with their shifts;
+the graph's whole; the node types; the builders that moved (matched by
+function and file, not line, so a builder whose lines moved is still
+itself; two anonymous functions of one file are one row); and whether each
+side's every count was accounted. Plain text, to paste into a commit
+message. Seeds 22 against 37 (two meetings, not two builds): the ward
+18,813 → 25,088 nodes (+33 %), `guest:bands` gone and `guest:hosanna` new
+(22,466, busiest minute 12,867), the graph 34,628 → 54,477, BiquadFilters
+14,590 → 29,186. A sidecar against itself: every builder built on B what it
+built on A.
+
 ## render.js
 
 ```sh
@@ -874,7 +942,7 @@ the cores, at most 8).
 node tools/selftest.js
 ```
 
-About a minute, no browser. It checks sixteen things: (1) a real dump from
+About a minute, no browser. It checks seventeen things: (1) a real dump from
 this worktree reads as meetings and sections, the witness names the build's own
 list, and the harness names the same engine in the header's `engine` field;
 (2) a synthetic dump in SCORE §6's **typed** vocabulary reads the same way —
@@ -949,8 +1017,14 @@ room's throw; (16) **the page in pieces** (PLAN-REFACTOR §3.5): the harness's
 whose ink is one step bluer to another; `samecode.js --split` holds a little
 closure cut in two to its moves (the name it reassigns read through the bag by
 a getter: `SAME CODE`), and fails a cut that takes that name once at load and
-one whose list changed a number, naming both.
-All sixteen pass on `art/kolob/_harness.js`. Run it after any change to the engine's
+one whose list changed a number, naming both; (17) **the cost** (PLAN-REFACTOR
+§4.0(b)): seed 22, 240 s, rendered with `cost` — the dump is the plain
+run's, record for record; the sidecar's works, summed by the selftest, come
+to the graph's nodes, automation calls and disconnects and to the notes
+told, none outside; every work that told notes built nodes, the band's
+notes and nodes are `guest:bands`' and the hymn's throats the ward's pump's;
+and `cost.js` holds the sidecar against itself and finds nothing moved.
+All seventeen pass on `art/kolob/_harness.js`. Run it after any change to the engine's
 events, to the harness or to these tools. It renders into `out/_selftest/`
 and, like every tool, refuses while the engine is being edited.
 
@@ -968,6 +1042,7 @@ tools/
   distinctness.js    design law 2
   repetition.js      phrase shapes heard before
   tally.js           counts, plan checks, A/B
+  cost.js            the audio graph's cost per work (the harness's cost sidecars), A/B
   screens.js         staff screenshots + frame time (muted Chrome)
   capture.js         WAV + spectrogram + LUFS/peak (muted Chrome)
   selftest.js        the instruments, checked
