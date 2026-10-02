@@ -96,23 +96,36 @@ part of the cutover build itself.
   effectively the only visitor).
 - **The CSV batch runner.** The owner curates the prompt set into a CSV;
   an owner-only runner reads it and generates every prompt's responses in
-  the background under the `bench` effort profile — one model per request,
+  the background under an owner effort profile (`--profile`, default
+  `bench-medium`) — one model per request,
   four requests per prompt, never two drawings in one call — so the owner
   never waits between prompts, then rates the backlog on the bench with the
   side-by-side pairs card. Matching prompt text records `v1_item_id`
   lineage automatically.
-- **Reassess the thinking level — for the BENCH too (owner, 2026-10-02).**
-  Visitor turns run the `web` profile (thinking turned down so the darkroom
-  wait stays short); the bench profile runs each model at its vendor's top
-  setting. The owner's view: full-strength thinking is probably
-  counterproductive for SVGs, so the campaign should likely run at a
-  MEDIUM setting, after testing a few settings on a handful of prompts
-  first. The first live batch (rows 101–110, 2026-10-02) ran at the top
-  setting with the old pool; compare its drawings, latency and cost
-  against a medium run of the same prompts before the full run. Profiles
-  and harness ids are data in `api/jd-config.php` (`JD_EFFORT`,
-  `JD_HARNESS_BY_PROFILE`); a new setting is a new profile id, never a
-  silent edit, so runs under different settings are never pooled.
+- **The thinking level — DECIDED: medium (owner, 2026-10-02).** Visitor
+  turns run the `web` profile (thinking turned down so the darkroom wait
+  stays short). Owner runs now default to `bench-medium` — "not all the
+  way to the bottom, but we don't need high either — goldilocks". The
+  finding that forced it: the first live batch (rows 101–110, old pool) ran
+  at the pre-split `bench` profile, every model at its top setting inside
+  ONE 12000-token budget shared by thinking and output, and two of four
+  could not finish — Opus 5 at effort max stopped at `max_tokens` with all
+  12000 tokens spent thinking and no text; Gemini 3.1 Pro at thinkingLevel
+  high was cut off ~1.3 KB into its SVG (`no_svg_found`). Built: three
+  owner profiles, `bench-low` / `bench-medium` / `bench-max` (harness
+  `v4-benchlow.1` / `v4-benchmed.1` / `v4-bench.4`), each with a 64000
+  budget (under Gemini 3.1 Pro's 65,536 cap); the wire word `bench` means
+  the default; the batch runner's `--profile`, with a second profile's run
+  of the same prompt filed as a RERUN of it. `scripts/jd2-profile-probe.php`
+  (one "a plain red circle" per model × profile, no database) ran live
+  2026-10-02: all 12 cells answered 200 and returned a sanitizer-clean SVG
+  (stop end_turn / STOP / stop everywhere; $0.053 for the 12; Opus thinking
+  0 / 0–9 / 65–109 tokens low/medium/max, Gemini 376 / 443 / 818, GPT-5.1
+  40 / 55 / 146, Kimi 9 / 13 / 96). Kimi K3 has no `medium`
+  (low|high|max), so `bench-medium` sends its middle rung, `high`.
+  OPTIONAL, the owner's call: a low/medium/max comparison on a handful of
+  real prompts (`--profile bench-low` and `--profile bench-max` on the same
+  CSV) before or during the campaign; the decision does not wait on it.
 - **Model pool refresh** before the rating campaign: verify wire ids and
   prices against the providers' lists, add `jd-prices.json` rows, bump
   `poolVersion` in `taxonomy.json`, bump the consent version if the

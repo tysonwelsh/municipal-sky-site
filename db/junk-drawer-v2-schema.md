@@ -49,7 +49,9 @@ JD_DEV_MOCK=1 php api/setup-jd2-tables.php
 migration on MySQL (the columns are `VARCHAR(16)`, never `ENUM` — widening
 v1's `ENUM` slot column was the migration that sat unrun for seventeen days).
 A dev SQLite file keeps the old CHECK: delete `local-dev/jd-dev.sqlite` and
-re-run both runners.
+re-run both runners. (For `jd2_runs.profile` the runner says so itself: a
+`STALE CHECK` line names the missing words — every dev file made before the
+2026-10-02 profile split shows it.)
 
 **Adding a column** after a table has reached production: a guarded
 `ADD COLUMN` in the runner's "additive migrations" block, in v1's
@@ -117,7 +119,7 @@ inline.
 | `prompt_id` | FK → `jd2_prompts` |
 | `kind` | `initial` \| `rerun` (`JD2_RUN_KIND`) |
 | `requested_by` | `owner` \| `visitor` (`JD2_REQUESTED_BY`) |
-| `profile` | the effort profile: `web` \| `bench` (`JD2_PROFILE`) |
+| `profile` | the effort profile: `web` \| `bench-medium` \| `bench-low` \| `bench-max` \| `bench` (retired) (`JD2_PROFILE`; see Effort profiles below) |
 | `harness` | the harness id stamped at the time (`JD_HARNESS_BY_PROFILE`) |
 | `pool_version` | the pool snapshot the run drew from (`taxonomy.json` `poolVersion`) |
 | `deal` | JSON: slot letter → model id, as dealt (replaces v1's `pair_order` arithmetic; any pool size) |
@@ -125,6 +127,40 @@ inline.
 | `created` | filing time |
 
 Keys: `idx_jd2r_prompt_created (prompt_id, created)`.
+
+#### Effort profiles and harness ids (2026-10-02)
+
+| profile | who | Anthropic Opus 5 `output_config.effort` | OpenAI gpt-5.1 `reasoning_effort` | Kimi K3 `reasoning_effort` | Gemini 3.1 Pro `thinkingLevel` | output budget | harness |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `web` | visitors | thinking disabled | (none sent: vendor default) | `low` | `low` | 12000 | `v4-web.3` |
+| `bench-low` | owner | `low` | `low` | `low` | `low` | 64000 | `v4-benchlow.1` |
+| `bench-medium` | owner, **the default** | `medium` | `medium` | `high` (K3 has no medium: its middle rung) | `medium` | 64000 | `v4-benchmed.1` |
+| `bench-max` | owner | `max` | `high` | `max` | `high` | 64000 | `v4-bench.4` |
+| `bench` | retired: runs filed before 2026-10-02 | `max` | `high` | `high` | `high` | 12000 | `v4-bench.3` |
+
+The values are `JD_EFFORT` in `api/jd-config.php`; every bench profile leaves
+thinking on. The owner's default is `JD2_OWNER_DEFAULT_PROFILE`
+(`bench-medium`, owner 2026-10-02). On the wire, the bare word `bench` (an
+older client, the bench page) means that default; max effort is the explicit
+`bench-max`. A slot of a run stored under the retired `bench` is refused
+(409 `retired_profile`); the owner reruns the prompt instead. Runs under
+different harness ids are never pooled: `v4-bench.3` and `v4-bench.4` differ in
+budget and in Kimi's setting, and the three bench profiles are each their own
+condition — comparing them is the point.
+
+**The budget rule.** On every provider in the pool one output cap covers
+thinking AND the answer (Anthropic `max_tokens`, OpenAI `max_completion_tokens`,
+Gemini `maxOutputTokens`, Kimi `max_tokens`), so a thinking model can spend the
+whole budget before drawing: at the retired `bench` (12000) Opus 5 at effort
+max returned `stop_reason` `max_tokens` with every token thinking, and Gemini
+was cut off mid-SVG. The budget is per profile (`JD_MAX_TOKENS_BY_PROFILE`,
+read with `jd_max_tokens()`; `JD_MAX_TOKENS` is the web alias): `web` 12000,
+every bench profile 64000 — one number for the whole pool, under the smallest
+vendor cap (Gemini 3.1 Pro's 65,536 output tokens; Opus 5 and GPT-5.1 allow
+128,000). A budget change is a harness bump. `params` on every generation
+records the budget, the effort fragment, `effort_profile` and `harness`.
+`scripts/jd2-profile-probe.php` proves each (model, profile) cell can finish an
+SVG (one tiny prompt each, no database; `JD_PROFILE_LIVE=1` to spend).
 
 ### jd2_generations — one row per dealt slot of a run (the drawing)
 
@@ -264,7 +300,7 @@ removed when Phase 4 reads `run_id`.
 
 | endpoint | gate | request → response |
 | --- | --- | --- |
-| `POST api/jd2-generate.php` | origin; visitor needs consent; `profile`/`rerun_of`/`run_id` need the key | `{client_ref, slot, prompt, client, consent:{version}, device_ref?, website}` (owner also `profile` default `bench`, `rerun_of`, `run_id`) → `{ok, svg, gen_id, slot, run_id, prompt_id, submission_id}` |
+| `POST api/jd2-generate.php` | origin; visitor needs consent; `profile`/`rerun_of`/`run_id` need the key | `{client_ref, slot, prompt, client, consent:{version}, device_ref?, website}` (owner also `profile` — `bench-medium` (default; `bench` means it), `bench-low`, `bench-max` or `web` — `rerun_of`, `run_id`) → `{ok, svg, gen_id, slot, run_id, prompt_id, submission_id}` |
 | `POST api/jd2-intake.php` | origin; visitor: the `client_ref` must be a prompt filed in the last hour (403 `no_turn`); owner: `prompt_id` with the bench key | `{client_ref, prompt}` or `{prompt_id}` → `{ok, prompt_id, title, size_class, size_by, tags, reasons, intake_version[, stored][, fallback]}` (the intake clerk, below; replaced `jd2-title.php` on 2026-10-02) |
 | `POST api/jd2-rate.php` | origin; visitor: only their own turn — a run a visitor requested whose prompt's `client_ref` the request carries (missing or wrong → 403 `not_yours`) — and one filed session per run (409 `already_rated`); owner: the bench key, no `client_ref` | `{run_id, client_ref (visitor), client, device_ref?, title?, size?, suppress?, ratings:[{slot, kind, axis_id?, value, note?}], ranking:[{slot, rank, gap?}]\|null, pairs:[{slot_a, slot_b, score, shown_left?}]\|null, blind?}` → `{ok, build, session_id, run_id, prompt_id, complete, reveal:[{slot, model_id, label, vendor, status, tokens?, cost_usd?, priced?}]}` |
 | `POST api/jd2-curate.php` | origin + bench key | `{prompt_id, visibility?, shown_run_id?, pinned_generation_id?, title?, size_class?, size_scale?, category?, tags?}` or `{generation_id, hidden}` → `{ok, build, prompt:{…}, runs:[{…, generations, sessions, display_session_id, complete}]}` |
@@ -277,7 +313,8 @@ prompt's UNIQUE `client_ref` is where the parallel slot requests converge, so
 the owner's new prompts file their `client_ref` too (the other visitor fields
 stay NULL for them). The deal is drawn once there (`jd2_deal`), and each slot
 fills its generation with the dealt model under the run's profile (`web` for
-visitors, `bench` by default for the owner) — effort, harness, timeout —
+visitors, `bench-medium` by default for the owner) — effort, budget, harness,
+timeout —
 through the provider layer (the mock in dev), the sanitizer, and the price
 table (`cost_usd`, `priced` at write time). A slot is checked against the
 run's deal. A settled slot re-answers its stored verdict. A rerun files no
@@ -448,19 +485,27 @@ id is hard-coded; no `jd_*` table is read.
   per generation with its run's display session's cells; `--pairs out.csv` one
   row per pair of every display session. Its one rule is the display session
   (owner's current complete, else visitor's current complete).
-- `scripts/jd2-batch-run.php prompts.csv [--base URL] [--dry-run] [--resume]
+- `scripts/jd2-batch-run.php prompts.csv [--profile bench-medium|bench-low|bench-max]
+  [--base URL] [--dry-run] [--resume]
   [--rate-url] [--local] [--state PATH]` — the CSV batch runner (CLI only;
   `JD_BENCH_KEY` from the environment, never printed). Columns `prompt`
   (required), `title`, `size`, `category`, `v1_item_id`, `rerun_of`. Each row
-  is drawn through `jd2-generate.php` under the `bench` profile, ONE model per
+  is drawn through `jd2-generate.php` under `--profile` (default
+  `bench-medium`; sent explicitly on every request), ONE model per
   request, the pool's slots in sequence (curl waits `JD_BENCH_TIMEOUT` + 30
   s); title, size and category file through `jd2-curate.php`; `v1_item_id`
   rides on the first slot of a new prompt (and is filled automatically when
-  the prompt text is exactly a legacy item's). State in
-  `local-dev/jd2-batch-state.json` (per base URL, by prompt text: the minted
-  `client_ref`, ids, each slot's outcome) — written before the first request
-  and after every answer, so `--resume` finishes a stopped row without filing
-  twice. It refuses to start when the plan needs more drawings than today's
+  the prompt text is exactly a legacy item's). A row with no `rerun_of`
+  whose text is exactly an owner prompt already on file (any profile, not
+  hidden; one `jd2-ledger.php` read before anything is drawn; the oldest
+  wins) is filed as a RERUN of it, so one prompt under three settings is
+  three runs of one prompt; `--dry-run` prints the profile and `new prompt` /
+  `rerun <id>` per row. State in `local-dev/jd2-batch-state.json` (per base
+  URL, keyed `[profile] prompt text`: the minted `client_ref`, the profile,
+  ids, `rerun_of`, each slot's outcome; pre-split entries keyed by text alone
+  are never resumed) — written before the first request and after every
+  answer, so `--resume` finishes a stopped row without filing twice (a rerun
+  whose first answer was lost is rejoined from the ledger, not re-made). It refuses to start when the plan needs more drawings than today's
   breaker has left (`jd2-queue.php?count=1`). `--local` runs against its own
   `php -S` with `JD_DEV_MOCK=1` (the hermetic test path).
 
@@ -506,3 +551,10 @@ after the drawings, stand over the clerk's.
   `jd2-curate` takes `tags`; the readers, the export and the batch runner
   carry the intake facts; `jd2-analytics` gains `?tag=` and `tags`;
   `taxonomy.json` v28 (`facets`, `intakeVersion`, `utility.intake`).
+- 2026-10-02 — the effort profiles split: `JD2_PROFILE` gains `bench-max`,
+  `bench-medium`, `bench-low` (`bench` kept for the runs already filed under
+  it, retired); `JD2_OWNER_DEFAULT_PROFILE` `bench-medium`; per-profile output
+  budgets (`JD_MAX_TOKENS_BY_PROFILE`, bench 64000); harness ids
+  `v4-bench.4`, `v4-benchmed.1`, `v4-benchlow.1`. No MySQL change (VARCHAR);
+  dev SQLite files are recreated. The batch runner gains `--profile` and
+  reruns of prompts already on file.
