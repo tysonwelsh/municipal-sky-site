@@ -162,6 +162,25 @@ window.KolobAudio = (function () {
   var roomRampNext = 0.05;         // the first section of a meeting lands at once
   var sharedNoiseBuf = null;
   var NOISE_BUF_DURATION = 30;
+  // THE TAPE OF HISS, DRAWN AHEAD. sharedNoiseBuf is NOISE_BUF_DURATION
+  // seconds of white noise every hiss plays from (noiseSource, below) — 1.44
+  // million samples at 48 kHz, unseeded on purpose (build(), below). Drawn
+  // inside the PLAY press, they were a share of its long task (15 to 30 ms
+  // in a desktop Chrome); so they are drawn from the page's load, a slice
+  // at a time in its idle moments (requestIdleCallback; a timer where there
+  // is none), into an array the house copies into its buffer when it is
+  // built (noiseTape: a copy, a few ms). A press that
+  // comes before the last slice draws the rest itself: the tape is always
+  // whole, never shorter, never part silence. The slices draw for a 48 kHz
+  // context; the context's own rate, known only at the press, says how much
+  // is wanted, and a faster one's press draws what is missing. A house built
+  // again (after a build that threw) draws its own at its press, as every
+  // house once did; a new seed keeps the house, and its tape. Only a page
+  // that can make a context draws ahead (not the tools' bare engine).
+  var NOISE_AHEAD_HZ = 48000;      // the rate the slices draw for
+  var NOISE_SLICE = 65536;         // samples drawn between two asks for time (about a millisecond)
+  var noiseAhead = null;           // what is drawn ahead: { data, filled, job }
+  if ((window.AudioContext || window.webkitAudioContext) && typeof Float32Array === "function") drawNoiseAhead();
 
   var playing = false;
   var masterVolume = 0.6;
@@ -474,10 +493,11 @@ window.KolobAudio = (function () {
 
     var noiseSamples = Math.floor(ctx.sampleRate * NOISE_BUF_DURATION);
     sharedNoiseBuf = ctx.createBuffer(1, noiseSamples, ctx.sampleRate);
-    var nd = sharedNoiseBuf.getChannelData(0);
     // unseeded on purpose, like the pour below: the tape of hiss is texture,
-    // not music (the zankyo rule); where a sound starts on it is synth:noise
-    for (var ni = 0; ni < noiseSamples; ni++) nd[ni] = Math.random() * 2 - 1;
+    // not music (the zankyo rule); where a sound starts on it is synth:noise.
+    // Its samples were drawn ahead, from the page's load; whatever is
+    // missing is drawn now (THE TAPE OF HISS, DRAWN AHEAD, above)
+    sharedNoiseBuf.getChannelData(0).set(noiseTape(noiseSamples));
 
     masterGain = ctx.createGain();
     masterGain.gain.setValueAtTime(masterVolume, ctx.currentTime);
@@ -1132,6 +1152,43 @@ window.KolobAudio = (function () {
     sp.pan.setValueAtTime(pan < -1 ? -1 : pan > 1 ? 1 : pan, ctx.currentTime);
     sp.connect(fg);
     return sp;
+  }
+  // (THE TAPE OF HISS, DRAWN AHEAD, above)
+  function noiseLater(fn) {
+    return window.requestIdleCallback ? { idle: window.requestIdleCallback(fn, { timeout: 1000 }) } : { timer: setTimeout(fn, 0) };
+  }
+  function noiseDrop(job) {
+    if (job && job.idle != null && window.cancelIdleCallback) window.cancelIdleCallback(job.idle);
+    if (job && job.timer != null) clearTimeout(job.timer);
+  }
+  function drawNoiseAhead() {
+    noiseAhead = { data: new Float32Array(NOISE_AHEAD_HZ * NOISE_BUF_DURATION), filled: 0, job: null };
+    noiseAhead.job = noiseLater(noiseSlice);
+  }
+  // a slice: NOISE_SLICE samples, and more while the idle moment has room
+  // for them (a timer's slice has no deadline: one run)
+  function noiseSlice(deadline) {
+    var a = noiseAhead;
+    if (!a) return;                                // (the house has taken the tape)
+    a.job = null;
+    var d = a.data, n = d.length, i = a.filled;
+    do {
+      var end = Math.min(n, i + NOISE_SLICE);
+      for (; i < end; i++) d[i] = Math.random() * 2 - 1;
+    } while (i < n && deadline && deadline.timeRemaining && deadline.timeRemaining() > 2);
+    a.filled = i;
+    if (i < n) a.job = noiseLater(noiseSlice);
+  }
+  // the tape for a buffer of n samples, taken by the house that builds it:
+  // what was drawn ahead, and whatever is missing drawn now
+  function noiseTape(n) {
+    var a = noiseAhead, filled = 0, d;
+    noiseAhead = null;
+    if (a) { noiseDrop(a.job); filled = Math.min(a.filled, n); }
+    if (a && a.data.length >= n) d = a.data.length === n ? a.data : a.data.subarray(0, n);
+    else { d = new Float32Array(n); if (filled) d.set(a.data.subarray(0, filled)); }
+    for (var i = filled; i < n; i++) d[i] = Math.random() * 2 - 1;
+    return d;
   }
   function noiseSource() {
     var n = ctx.createBufferSource();
