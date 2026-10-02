@@ -49,6 +49,8 @@
   var K_ITEMS = 'jd2-user-items';   /* the scatter map's key is jd-core's JD_SCATTER_KEY */
   /* MAX_PROMPT mirrors JD_PROMPT_MAX_CHARS in api/jd-config.php (500) — change both together */
   var MAX_PROMPT = 500, MAX_NOTE = 500, MAX_ITEMS = 5;
+  /* the sitting's note (jd2_sessions.note) — jd2-rate.php clips at 2000 too */
+  var MAX_SITTING_NOTE = 2000;
   var SLOW_MS = 60000;      /* past a minute the wait earns its own line */
   var VISITOR_TIER = 'm';   /* every won item is filed "m" (C5.3) */
 
@@ -61,6 +63,14 @@
      contract's file() callback (JD_bench's outbox) instead of jd2-rate.php.
      Null on every visitor turn. See curateOpen() below. */
   var curJob = null;
+  /* THE OWNER'S RUN (dataset v2, Phase 4b): while this is set the darkroom
+     is drawing for the owner — a new prompt from the bench or a rerun —
+     through jd2-generate's owner path (the bench key, the `bench` profile,
+     the slots one after another on one client_ref). Nothing persists to the
+     turn store, nothing is tracked as a turn, and when the last slot lands
+     the card comes down and hands the run to whoever listens for
+     jd-turn-close (event.detail.owner_run). See ownerRun() below. */
+  var ownerJob = null, ownerResult = null;
   /* set only at the go('reveal') that ends the darkroom wait: the next
      render draws the fresh plates on (see the hook at render()'s foot) */
   var revealFresh = false;
@@ -94,11 +104,14 @@
   /* the turn's three POSTs — the title, a generation, the filing: a JSON
      body out, the parsed answer back, or `bad` (each caller's own stand-in)
      when the answer will not parse. A request that never completes rejects
-     straight through, to each caller's own network handler. */
-  function postJSON(path, body, bad) {
+     straight through, to each caller's own network handler. `keyed` sends
+     the bench key (JD_admin) — the owner's runs only, never a visitor's. */
+  function postJSON(path, body, bad, keyed) {
+    var hdr = { 'Content-Type': 'application/json' };
+    if (keyed && window.JD_admin) hdr = JD_admin.headers(hdr);
     return fetch(JD_API + path, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: hdr,
       body: JSON.stringify(body)
     }).then(function (r) {
       return r.json().then(function (j) { return j; }, function () { return bad; });
@@ -141,7 +154,7 @@
 
   /* ---------- the persisted turn (C5.3) ----------------------------------- */
   function persist() {
-    if (turn) JD_store.set(K_TURN, turn);
+    if (turn && !ownerJob) JD_store.set(K_TURN, turn);
   }
   /* discarding the turn also retires its token: the generate/rate calls are
      never aborted (the server finishes either way), so an answer that arrives
@@ -277,7 +290,7 @@
     go(curJob ? 'rate' : (!turn ? 'prompt' : state || 'prompt'));
     /* the curator working the backlog is not a visitor taking a turn — the
        analytics count real turns only */
-    if (!curJob) JD_track('turn_open', null);
+    if (!curJob && !ownerJob) JD_track('turn_open', null);
     /* close's twin, for the same one listener: JD_bench repaints its strip
        when the card actually stands (curate opens async behind a payload
        fetch, so the caller can't know this moment) */
@@ -307,12 +320,22 @@
     }
     lastFocus = null;
     curJob = null;
+    /* an owner's run says how it ended: the result when its last slot
+       landed, else (stopped mid-wait) whatever run it had reached */
+    var detail = null;
+    if (ownerJob) {
+      detail = { owner_run: ownerResult || { abandoned: true,
+        run_id: ownerJob.run_id || null, prompt_id: ownerJob.prompt_id || null,
+        rerun_of: ownerJob.rerun_of || null, ok: 0 } };
+    }
+    ownerJob = null;
+    ownerResult = null;
     /* the LAST act of closing, after every bit of state above is settled:
        JD_bench listens for this to advance the backlog (or offer resume),
        and its handler may synchronously reopen this same modal — including
-       via rerun(), which checks isOpen. Nothing may run after the dispatch. */
+       via ownerRun(), which checks isOpen. Nothing may run after the dispatch. */
     try {
-      window.dispatchEvent(new CustomEvent('jd-turn-close'));
+      window.dispatchEvent(new CustomEvent('jd-turn-close', { detail: detail }));
     } catch (e) {}
   }
   /* Escape / scrim / ✕. Mid-flow states cost something to leave, so they ask
@@ -341,7 +364,7 @@
     confirmEl.setAttribute('role', 'alertdialog');
     confirmEl.setAttribute('aria-modal', 'true');
     confirmEl.setAttribute('aria-label',
-      curJob ? 'set this item aside?' : 'abandon this turn?');
+      curJob ? 'set this item aside?' : ownerJob ? 'stop this run?' : 'abandon this turn?');
     /* the curate card costs nothing to leave — but the grades on it file as
        one item at the end, so leaving mid-card does drop this card's unfiled
        answers. Different stake, different sentence. */
@@ -350,12 +373,15 @@
       (curJob
         ? '<p>set this item aside? grades file when the whole item files — ' +
           'this card’s answers aren’t saved yet.</p>'
+        : ownerJob
+        ? '<p>stop this run? the drawing in flight finishes; the slots not yet ' +
+          'asked for are not asked.</p>'
         : '<p>abandon this turn? the machines finish either way — the drawing ' +
           'just goes unrated.</p>') +
       '<div class="jd-turn-actions">' +
       '<button type="button" class="jd-turn-go" data-act="stay" data-autofocus>keep going</button>' +
       '<button type="button" class="jd-turn-alt" data-act="abandon">' +
-      (curJob ? 'set it aside' : 'abandon') + '</button>' +
+      (curJob ? 'set it aside' : ownerJob ? 'stop' : 'abandon') + '</button>' +
       '</div></div>';
     confirmEl.addEventListener('click', function (e) {
       var b = e.target.closest ? e.target.closest('[data-act]') : null;
@@ -2169,12 +2195,25 @@
     return h + (chosen ? '' :
       '<p class="jd-size-hint">Pick a size to file this item — it sets how ' +
       'big the object reads among the others in the drawer.</p>') +
-      suppressHTML() +
+      suppressHTML() + sittingNoteHTML() +
       actions(
       '<button type="button" class="jd-turn-alt" data-act="back">&larr; back</button>' +
       '<button type="button" class="jd-turn-go" data-act="file"' +
       (chosen ? '' : ' disabled') + '>' +
       (chosen ? 'file the grades' : 'choose a size first') + '</button>');
+  }
+
+  /* NOTES FOR THE RECORD (owner, Phase 4b): the sitting's rationale, on the
+     size card that closes a curation — ONLY in curate mode, and only for a
+     job that asks for it (the bench; the /about/ walkthrough does not). It
+     files as jd2_sessions.note. Typed in place (onInput), never repainted. */
+  function sittingNoteHTML() {
+    if (!curJob || !curJob.withNote) return '';
+    return '<label class="jd-size-hint" style="display:block;margin-top:var(--sp-2)">' +
+      'notes for the record' +
+      '<textarea class="jd-turn-note" data-role="sitting-note" rows="3" maxlength="' +
+      MAX_SITTING_NOTE + '" placeholder="why this sitting reads the way it does (optional)">' +
+      esc((work && work.note) || '') + '</textarea></label>';
   }
 
   function viewRate() {
@@ -2324,7 +2363,9 @@
         ? work.notice
         : 'The machines all failed. This cost you nothing — the drawer will ' +
           'try again whenever you like.') + '</p>' +
-      actions('<button type="button" class="jd-turn-go" data-act="again">try again</button>' +
+      /* an owner's run is retried from the bench strip (rerun), never from
+         the visitor's brief this button would open */
+      actions((ownerJob ? '' : '<button type="button" class="jd-turn-go" data-act="again">try again</button>') +
         '<button type="button" class="jd-turn-alt" data-act="done">close</button>');
   }
 
@@ -2417,6 +2458,8 @@
         !(t.value.trim().length && n <= MAX_PROMPT));
     } else if (role === 'flagnote') {
       work.ratings[t.getAttribute('data-slot')].flagNote = t.value.slice(0, MAX_NOTE);
+    } else if (role === 'sitting-note') {
+      if (work) work.note = t.value.slice(0, MAX_SITTING_NOTE);
     }
   }
   function setDisabled(sel, off) {
@@ -2678,6 +2721,10 @@
        a failed slot's envelope carries them too, when the server knew them */
     if (res && res.run_id) turn.run_id = res.run_id;
     if (res && res.prompt_id) turn.prompt_id = res.prompt_id;
+    if (ownerJob) {
+      ownerJob.run_id = turn.run_id;
+      ownerJob.prompt_id = turn.prompt_id;
+    }
     if (res && res.ok && res.svg) {
       work.slots[slot] = { status: 'ok', gen_id: res.gen_id, svg: res.svg };
       turn.slots[slot] = { status: 'ok', gen_id: res.gen_id };
@@ -2688,12 +2735,13 @@
         message: err.message || '', retry_after: res && res.retry_after
       };
       turn.slots[slot] = { status: 'failed' };
-      JD_track('turn_error', err.code || 'server_error');
+      if (!ownerJob) JD_track('turn_error', err.code || 'server_error');
     }
     persist();
     paintSlots();
     if (pendingCount() > 0) return;
     stopSlowTimer();
+    if (ownerJob) { finishOwnerRun(); return; }
     if (okSlots().length) { revealFresh = true; go('reveal'); return; }
     /* nothing survived: a limit refusal goes back to the brief with honest
        copy (no submission was created), anything else is an apology */
@@ -3208,24 +3256,121 @@
      copies — the payload is not a precondition (see setData) */
   restoreWon();
 
-  /* A RERUN — the curator re-issuing a curated item's original prompt to the
-     four models currently in the pool, to see how they draw it now.
-     Deliberately the SAME path a visitor's turn takes: same generation
-     endpoint, same slot animations, same blind rating, same reveal. The only
-     difference is where the words came from. Anything that forked here would
-     drift from the real flow and stop being comparable to it. */
-  function rerun(promptText) {
-    if (!promptText || !promptText.trim().length) { return false; }
-    if (isOpen) { return false; }
+  /* THE OWNER'S RUN (dataset v2, PLAN-V2 §5, Phase 4b) — a new prompt from
+     the bench, or a RERUN of a prompt on file. Both go through jd2-generate's
+     OWNER path: the bench key on every request, the `bench` profile (every
+     model at its vendor's top setting — the benchmark condition), and the
+     slots asked for ONE AFTER ANOTHER on one client_ref (a bench call can
+     take minutes; four at once is the visitor's turn, not the owner's). A
+     new prompt converges on its client_ref; a rerun's first slot (rerun_of,
+     no run_id) makes the new run and every later slot joins it by run_id.
+     The wait is the ordinary darkroom. When the last slot lands the card
+     comes down (no reveal, no visitor bench — the owner rates on the bench,
+     blind) and jd-turn-close carries {owner_run: {run_id, prompt_id,
+     rerun_of, ok, failed}}; a run stopped mid-wait carries abandoned: true.
+     A rerun is never a visitor turn in v2: without a bench key this refuses.
+
+     job: { prompt?, rerun_of?, profile? ('bench'), redirect? } — redirect
+     sends the page to ?bench&prompt=<id> when the run lands (the ?rerun=
+     door, which has no bench strip to hand the run to). */
+  function ownerRun(job) {
+    if (isOpen || !job) return false;
+    if (!(window.JD_admin && JD_admin.key())) return false;
+    var text = String(job.prompt || '');
+    if (!job.rerun_of && (!text.trim().length || text.length > MAX_PROMPT)) return false;
     clearTurn();
     work = blankWork();
-    work.prompt = String(promptText).slice(0, MAX_PROMPT);
+    work.prompt = text.slice(0, MAX_PROMPT);
+    ownerJob = { rerun_of: job.rerun_of || null, profile: job.profile || 'bench',
+      redirect: !!job.redirect, run_id: null, prompt_id: job.rerun_of || null };
+    ownerResult = null;
     open();
-    /* the acknowledgment the generate button would have recorded — the
-       disclosure lives on the card itself since 2026-08-14 */
-    recordConsent();
-    startTurn();
+    if (!isOpen) { ownerJob = null; return false; }
+    startOwnerRun();
     return true;
+  }
+  function startOwnerRun() {
+    var job = ownerJob, mine = ++token, text = work.prompt;
+    turn = {
+      client_ref: JD_uuid(), state: 'generating', run_id: null,
+      prompt_id: job.rerun_of, slots: blankSlots()
+    };
+    work.slow = false;
+    work.notice = '';
+    work.slots = blankSlots();
+    go('generating');
+    startSlowTimer();
+    var i = 0;
+    (function next() {
+      if (mine !== token || !turn || i >= JD_SLOTS.length) return;
+      var slot = JD_SLOTS[i++];
+      /* a rerun whose first slot never made its run cannot converge: asking
+         again without a run_id would mint a second run, so the rest stand down */
+      if (job.rerun_of && i > 1 && !turn.run_id) {
+        settleSlot(mine, slot, { ok: false, error: { code: 'no_run',
+          message: 'the rerun was not filed' } });
+        next();
+        return;
+      }
+      var body = { client_ref: turn.client_ref, slot: slot, client: JD_CLIENT,
+        website: '', profile: job.profile };
+      if (job.rerun_of) {
+        body.rerun_of = job.rerun_of;
+        if (turn.run_id) body.run_id = turn.run_id;
+      } else {
+        body.prompt = text;
+      }
+      postJSON(API_GEN, body, { ok: false, error: { code: 'server_error' } }, true)
+        .then(function (j) { settleSlot(mine, slot, j); next(); }, function () {
+          settleSlot(mine, slot, { ok: false, error: { code: 'network' } });
+          next();
+        });
+    })();
+  }
+  /* every slot is in: the run goes to the bench (or, with nothing drawn,
+     the apology says so and its close hands the empty run over) */
+  function finishOwnerRun() {
+    var job = ownerJob;
+    var failed = JD_SLOTS.filter(function (s) {
+      return work.slots[s].status === 'failed';
+    }).map(function (s) { return work.slots[s].code || 'server_error'; });
+    ownerResult = { run_id: (turn && turn.run_id) || null,
+      prompt_id: (turn && turn.prompt_id) || null, rerun_of: job.rerun_of,
+      ok: okSlots().length, failed: failed };
+    var res = ownerResult;
+    if (!res.ok) {
+      work.notice = 'Nothing came back from the run (' + failed.join(', ') + ').';
+      go('apology');
+      return;
+    }
+    clearTurn();
+    close();
+    if (job.redirect && res.prompt_id) {
+      location.href = location.pathname + '?bench&prompt=' + encodeURIComponent(res.prompt_id);
+    }
+  }
+
+  /* A RERUN — kept as the module's public door (jd-core's ?rerun=<id>
+     calls it with the item's prompt text). In v2 it is the OWNER'S path:
+     the prompt is found on the payload (by id, or by its exact text) and
+     redrawn as a rerun of that prompt with the bench key; when it lands,
+     the page goes to the bench seated on it. No key, or no such prompt on
+     the payload: refused (false) — a rerun is never a visitor turn. */
+  function rerun(arg) {
+    var id = null, text = '';
+    if (arg && typeof arg === 'object') { id = arg.prompt_id || null; text = arg.prompt || ''; }
+    else text = String(arg || '');
+    var items = (payload && payload.items) || [];
+    for (var i = 0; !id && i < items.length; i++) {
+      if (items[i].id === text || (text && items[i].prompt === text)) {
+        id = items[i].id;
+        text = items[i].prompt || '';
+      }
+    }
+    if (!id) { console.warn('rerun: no prompt on file for that'); return false; }
+    var ok = ownerRun({ rerun_of: id, prompt: text, redirect: !(arg && arg.redirect === false) });
+    if (!ok) console.warn('rerun: the owner path needs the bench key (?bench), and a closed card');
+    return ok;
   }
 
   /* ---------- CURATE MODE — the re-rating bench (owner, 2026-08-28) --------
@@ -3292,6 +3437,23 @@
            doesn't exist (or, on a one-drawing item, on none at all) */
         if (resp.rank >= 1 && resp.rank <= n) work.ranks[slot] = resp.rank;
       });
+      /* THE HEAD TO HEAD PREFILLED (Phase 4b): job.pairs are the answers on
+         file, named by each drawing's REAL slot (the queue's, not this
+         card's shuffled seat) with the score from slot_a's side. They are
+         re-seated here onto the card's canonical seat pair, re-signed so
+         positive still means the alphabetically-first SEAT was preferred. */
+      var seatOf = {};
+      order.forEach(function (resp, k) {
+        if (resp.slot) seatOf[resp.slot] = JD_SLOTS[k];
+      });
+      (job.pairs || []).forEach(function (p) {
+        var sa = seatOf[p.slot_a], sb = seatOf[p.slot_b];
+        if (!sa || !sb || sa === sb || p.score == null) return;
+        if (sa < sb) work.pairs[sa + '|' + sb] = +p.score;
+        else work.pairs[sb + '|' + sa] = -p.score;
+      });
+      /* the sitting's note starts empty: it is this sitting's rationale */
+      work.note = '';
       /* the rail's linear first pass, resumed: every finished drawing is
          reached, the first unfinished one is the bench's opening step */
       var ok = okSlots(), firstOpenSlot = null;
@@ -3306,8 +3468,9 @@
       var ranked = ok.length < 2 || ok.every(function (s2) {
         return work.ranks[s2] >= 1;
       });
-      /* the head to head resumes after a full podium: no v1 job carries
-         pair answers, so a ranked item opens on its first pair (2026-10-01) */
+      /* the head to head resumes after a full podium: a ranked item opens
+         on its first pair still unanswered (2026-10-01; prefilled pairs
+         count as answered — see job.pairs above) */
       var openPair = ranked ? firstOpenPair() : null;
       if (firstOpenSlot) {
         work.step = firstOpenSlot;
@@ -3338,13 +3501,15 @@
      callback as one batch — same moment the real flow files, same gate. The
      writes replace this curator's prior answers, so a retry after a partial
      failure is safe by construction.
-     THE PAIRS RIDE ALONG (dataset v2, 2026-10-01): file(per, size, pairs),
-     `pairs` the head-to-head answers in the jd2-rate wire shape ({slot_a,
-     slot_b, score, shown_left}, score from slot_a's side) plus gen_a/gen_b,
-     the job's own generation ids for those slots — or null. jd-bench.js
-     still files v1-shaped through jd-item-rate.php and its callback takes
-     two arguments, so it DROPS the pairs until Phase 4b re-points the bench
-     at jd2-rate; the /about/ walkthrough's no-op callback ignores them. */
+     THE PAIRS RIDE ALONG (dataset v2, 2026-10-01): file(per, size, pairs,
+     note), `pairs` the head-to-head answers in the jd2-rate wire shape
+     ({slot_a, slot_b, score, shown_left}, score from slot_a's side — these
+     slots are the card's SEATS) plus gen_a/gen_b, the job's own generation
+     ids for those seats — or null. Each `per` entry carries `slot`, the
+     drawing's REAL slot as the job gave it (resp.slot), so the bench maps
+     the shuffled seats back to the run's slots (Phase 4b). `note` is the
+     sitting's "notes for the record" (null when blank). The /about/
+     walkthrough's no-op callback ignores all of it. */
   function curateFile() {
     if (!curJob) return;
     var ok = okSlots();
@@ -3355,6 +3520,7 @@
       });
       return {
         generation_id: work.slots[s].gen_id,
+        slot: (work.slots[s].cur || {}).slot || null,
         grade: r.grade,
         axes: axes,
         rank: ok.length > 1 ? (podRankOf(s) || null) : null
@@ -3367,8 +3533,9 @@
         p.gen_b = work.slots[p.slot_b].gen_id;
       });
     }
+    var note = String(work.note || '').trim();
     var mine = armFiling();
-    curJob.file(per, work.size || null, pairs).then(function () {
+    curJob.file(per, work.size || null, pairs, note ? note.slice(0, MAX_SITTING_NOTE) : null).then(function () {
       if (mine !== token || !isOpen || !curJob) return;
       curateUnveil();
     }, function (err) {
@@ -3403,6 +3570,7 @@
     open: open,
     close: close,
     rerun: rerun,
+    ownerRun: ownerRun,
     curate: curateOpen,
     isOpen: function () { return isOpen; }
   };

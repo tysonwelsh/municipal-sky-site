@@ -141,3 +141,4 @@
 0.9.180 — three intent fixes on /about/: the demo note is fine print, the report card's band seam renders (the card sits at 98% in the pane to make room), and on a phone the category definitions open when tapped
 0.9.181 — the turn card now says plainly that a rated turn joins the public drawer unless you keep it out, and the disclosure recorded with each turn (jd-consent-6) says the same — the old one still promised nothing typed was shown to other visitors
 0.10.0 — dataset v2: the drawer reads the new tables; the turn card files sessions with head-to-head scores
+0.10.1 — the bench rates the v2 backlog: new prompt, rerun, scrap, hidden items, a note per sitting

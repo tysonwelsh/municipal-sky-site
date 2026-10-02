@@ -5314,6 +5314,8 @@ html.jd-folder-open { overflow: hidden; }
 .jd-bench-sheet {
   position: fixed; left: 10px; right: 10px;
   bottom: calc(46px + env(safe-area-inset-bottom, 0px));
+  /* the strip wraps as it fills: jd-bench.js publishes its real height */
+  bottom: calc(var(--jd-bench-bar-h, 46px) + 4px);
   z-index: 1199; max-width: 620px; margin: 0 auto; max-height: 40vh;
   overflow: auto; padding: 10px 14px;
   background: #ece0bf; color: #33240f;
@@ -5322,15 +5324,35 @@ html.jd-folder-open { overflow: hidden; }
   font: 11.5px/1.55 var(--jd-font-mono);
 }
 .jd-bench-sheet p { margin: 6px 0 0; white-space: pre-wrap; }
+.jd-bench-sheet .jd-bench-needs { color: #7a5a1e; }
+/* NEW PROMPT (dataset v2, Phase 4b): the owner's one way to add a prompt —
+   a form on the sheet's paper, behind the key like the rest of the strip */
+.jd-bench-bar .jd-bench-new-btn { color: var(--jd-bench-gold-hi); border-color: rgba(229, 192, 107, 0.45); }
+.jd-bench-new label { display: block; margin-top: 8px; }
+.jd-bench-new label i { font-style: normal; color: #7a6a48; }
+.jd-bench-new textarea, .jd-bench-new input {
+  display: block; width: 100%; box-sizing: border-box; margin-top: 3px;
+  font: inherit; color: #33240f; background: rgba(255, 252, 240, 0.7);
+  border: 1px solid rgba(48, 38, 20, 0.45); border-radius: 2px; padding: 4px 6px;
+}
+.jd-bench-new textarea { resize: vertical; min-height: 4.5em; }
+.jd-bench-new-row { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: flex-end; margin-top: 8px; }
+.jd-bench-new-row label { flex: 1 1 180px; margin-top: 0; }
+.jd-bench-sheet .jd-bench-np-cancel {
+  font: inherit; color: #33240f; background: none; cursor: pointer;
+  border: 1px solid rgba(48, 38, 20, 0.45); border-radius: 2px; padding: 2px 8px;
+}
 /* the turn card stands clear of the strip while bench mode is on */
 html.jd-bench-on .jd-turn-scrim {
   padding-bottom: calc(52px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: max(calc(52px + env(safe-area-inset-bottom, 0px)), calc(var(--jd-bench-bar-h, 0px) + 6px));
 }
 @media (max-width: 560px) {
   .jd-bench-bar .jd-bench-title { max-width: 46vw; }
   .jd-bench-build { display: none; }
   html.jd-bench-on .jd-turn-scrim {
     padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: max(calc(84px + env(safe-area-inset-bottom, 0px)), calc(var(--jd-bench-bar-h, 0px) + 6px));
   }
 }
 

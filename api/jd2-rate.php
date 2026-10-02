@@ -23,6 +23,10 @@
 //                                                −3..+3, positive = slot_a
 //                                                preferred; each pair once
 //     blind?: bool                               bench key only; default true
+//     note?: string                              the sitting's rationale ("notes
+//                                                for the record", Phase 4b):
+//                                                trimmed, ≤ 2000 chars, blank =
+//                                                none → jd2_sessions.note
 //   }
 //
 // ONE SESSION, ONE METHOD for the comparative score: when `pairs` are sent
@@ -51,6 +55,9 @@ require_once __DIR__ . '/jd-usage.php';   // the reveal's token summary
 
 jd_require_allowed_origin();
 jd_require_post();
+
+/** The sitting's note allowance (jd2_sessions.note is TEXT; a cell's note is JD_NOTE_MAX_CHARS). */
+const JD2_SESSION_NOTE_MAX = 2000;
 
 // --- 1. Parse -------------------------------------------------------------
 $body = jd_read_json_body();
@@ -114,6 +121,10 @@ $title = (is_string($titleIn) && trim($titleIn) !== '') ? mb_substr(trim($titleI
 $sizeIn = $body['size'] ?? null;
 $size = (is_string($sizeIn) && isset(jd_size_tiers($taxonomy)[$sizeIn])) ? $sizeIn : null;
 $suppress = !empty($body['suppress']);
+// The sitting's own note, cleaned as a cell's note is (trimmed; empty or not
+// a string = none) but clipped at the column's own allowance.
+$sessionNote = jd2_clean_note($body['note'] ?? null) === null ? null
+    : mb_substr(trim((string) $body['note']), 0, JD2_SESSION_NOTE_MAX);
 
 try {
     $db = jd_db();
@@ -264,13 +275,14 @@ try {
         $db->prepare(
             'INSERT INTO jd2_sessions
                 (id, run_id, rater_role, rater_hash, device_ref, client, taxonomy_version,
-                 instrument_version, blind, seat_order, started_at, filed_at, status)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                 instrument_version, blind, seat_order, note, started_at, filed_at, status)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
         )->execute([
             $sessionId, $runId, $rater['role'], $rater['hash'], $deviceRef, $client,
             $taxonomyVersion, JD2_INSTRUMENT_VERSION, $blind,
             // the seats as dealt: slot => generation, in slot order (the run's deal)
             json_encode((object) $seat),
+            $sessionNote,
             // the sitting opened when the drawings did: the run's filing time
             (string) $run['created'], $now, JD2_SESSION_FILED,
         ]);

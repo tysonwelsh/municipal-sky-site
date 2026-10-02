@@ -371,13 +371,20 @@ $direct = [
 [$st, $j] = rate(['run_id' => $run1, 'client' => 'web', 'blind' => false,
                   'ratings' => fullRatings(['a' => 5, 'b' => 5, 'c' => 5, 'd' => 5], $axisRanks),
                   'ranking' => [['slot' => 'a', 'rank' => 1], ['slot' => 'c', 'rank' => 2], ['slot' => 'd', 'rank' => 3], ['slot' => 'b', 'rank' => 4]],
-                  'pairs' => $direct], true);
+                  'pairs' => $direct,
+                  // the sitting's note (Phase 4b): trimmed, clipped at 2000
+                  'note' => "  a and c read the brief; b missed the cracked glass\n" . str_repeat('x', 2100) . '  '], true);
 $session2 = $j['session_id'] ?? null;
 check('the owner files a second session on the run: 200, complete', $st === 200 && $j['complete'] === true && $session2 !== $session1,
       $st . ' ' . json_encode($j));
 $s2 = rows($db, 'SELECT * FROM jd2_sessions WHERE id = ?', [$session2])[0] ?? [];
 check('owner session: role owner, the curator hash, blind 0 (bench key + blind:false)',
       ($s2['rater_role'] ?? '') === 'owner' && $s2['rater_hash'] === jd_curator_hash() && (int) $s2['blind'] === 0, json_encode($s2));
+check("the sitting's note lands on jd2_sessions.note, trimmed and clipped to 2000; the visitor's sitting has none",
+      is_string($s2['note'] ?? null) && mb_strlen($s2['note']) === 2000
+      && str_starts_with($s2['note'], "a and c read the brief; b missed the cracked glass\nxxx")
+      && one($db, 'SELECT note FROM jd2_sessions WHERE id = ?', [$session1]) === null,
+      json_encode(['len' => mb_strlen((string) ($s2['note'] ?? '')), 'head' => substr((string) ($s2['note'] ?? ''), 0, 60)]));
 $pairs2 = rows($db, 'SELECT * FROM jd2_pairs WHERE session_id = ?', [$session2]);
 $allDirect = count($pairs2) === 6;
 $k2 = [];
