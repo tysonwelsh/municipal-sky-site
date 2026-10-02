@@ -1,5 +1,7 @@
 # The Junk Drawer — database schema
 
+v1 — frozen at the v2 cutover (see junk-drawer-v1-archive.md); still live until then.
+
 The tables behind `art/junk-drawer/` (the visitor turn flow and the owner's
 rating bench). The authoritative DDL is `api/setup-jd-tables.php`, which is
 idempotent and doubles as the migration runner; this file explains what each
