@@ -1,14 +1,23 @@
 {
   "schema": 1,
-  "version": 27,
-  "updated": "2026-10-01",
+  "version": 28,
+  "updated": "2026-10-02",
   "instrument": "v2.0",
   "instrumentNote": "The dataset v2 instrument: this rubric plus the comparison and gaps scales below and the rules of a sitting; every v2 session stamps it beside the taxonomy version. v1 instruments ignore it.",
   "poolVersion": "pool-2026-08-14",
+  "intakeVersion": "intake-v1",
+  "intakeVersionNote": "The intake prompt's version (api/jd2-intake-prompt.php: the system prompt's bytes with the facets and the size tiers rendered in). Stamped on every prompt intake answers (jd2_prompts.intake_version). Bump it whenever those bytes change — the prompt prose, a facet, a heading, a scope note, a tier description or example — as harness ids are bumped: answers under different intake prompts are not pooled.",
   "utility": {
     "title": {
       "api_model": "claude-haiku-4-5-20251001",
-      "provider": "anthropic"
+      "provider": "anthropic",
+      "defunct": true,
+      "note": "Retired 2026-10-02 (taxonomy v28): the tag titler jd2-title.php is replaced by the intake clerk (utility.intake, api/jd2-intake.php), which files the title with the size and the classification. Kept for the record."
+    },
+    "intake": {
+      "api_model": "claude-sonnet-5-5",
+      "provider": "anthropic",
+      "note": "The intake clerk (api/jd2-intake.php): one call per filed prompt returns the catalogue heading (the title), the size tier and the faceted classification as structured output. Thinking at its default, output_config.effort low, max_tokens 1024."
     }
   },
   "grades": [
@@ -494,31 +503,237 @@
       "id": "xs",
       "label": "Extra small",
       "box": 6,
-      "description": "Tiny — a fleck or trinket, easily lost among the larger junk."
+      "description": "a speck or trinket, easily lost in the drawer",
+      "examples": [
+        "shirt button",
+        "paperclip",
+        "bottle cap",
+        "dust bunny",
+        "booger"
+      ]
     },
     {
       "id": "s",
       "label": "Small",
       "box": 9,
-      "description": "A minor curio; reads small but distinct."
+      "description": "a handheld curio that fits the drawer but reads as its own thing",
+      "examples": [
+        "pencil stub",
+        "skeleton key",
+        "rubber band",
+        "wrist watch",
+        "playing card",
+        "dandelion"
+      ]
     },
     {
       "id": "m",
       "label": "Medium",
       "box": 15.5,
-      "description": "The default; a middling object in the drawer."
+      "description": "the ordinary tier, and the most common",
+      "examples": [
+        "a potted succulent plant",
+        "a pay phone",
+        "an electric guitar",
+        "a toilet",
+        "a Grecian urn"
+      ],
+      "examplesPhrase": "anything from {0} through {1} or {2}, up to {3} or {4}"
     },
     {
       "id": "l",
       "label": "Large",
       "box": 22,
-      "description": "Prominent; claims real space in the well."
+      "description": "prominent, claims real space in the pile",
+      "examples": [
+        "a Greek column",
+        "a monster truck",
+        "a rocket ship",
+        "a pickup truck",
+        "a UFO"
+      ]
     },
     {
       "id": "xl",
       "label": "Extra large",
       "box": 30,
-      "description": "A centerpiece — dominates the drawer."
+      "description": "the largest things there are",
+      "examples": [
+        "a planet",
+        "a volcano",
+        "the Empire State Building",
+        "an asteroid striking the Earth"
+      ]
+    }
+  ],
+  "facetsNote": "The intake classification (PLAN-INTAKE-PROMPT §3): three facets, each answering its own question with its own headings. A prompt is filed under every heading that clearly fits; `min`/`max` bound how many headings per facet. jd2_prompts.tags holds {facet id: [heading id…]}. Heading ids are permanent once any prompt is filed under them (and are unique within their facet, not across facets: `structure` is both a subject and a probe); labels and scope notes are data. The scope notes render into the intake prompt, so editing one bumps intakeVersion.",
+  "facets": [
+    {
+      "id": "subject",
+      "label": "Subject",
+      "question": "what the prompt asks to have drawn",
+      "min": 1,
+      "max": 6,
+      "headings": [
+        {
+          "id": "object",
+          "label": "Object",
+          "scope": "Applies to made things a person handles or keeps: tools, containers, trinkets, clothing, small machines. Does not apply to vehicles or structures, which have their own headings."
+        },
+        {
+          "id": "creature",
+          "label": "Creature",
+          "scope": "Applies to animals, insects, monsters and imaginary beings. Does not apply to people or human body parts; see figure."
+        },
+        {
+          "id": "figure",
+          "label": "Figure",
+          "scope": "Applies to people, body parts, portraits and human characters."
+        },
+        {
+          "id": "plant",
+          "label": "Plant",
+          "scope": "Applies to plants, flowers, fungi and produce still on the plant. For prepared food see food."
+        },
+        {
+          "id": "food",
+          "label": "Food",
+          "scope": "Applies to prepared, packaged or served food and drink."
+        },
+        {
+          "id": "vehicle",
+          "label": "Vehicle",
+          "scope": "Applies to things that carry: cars, ships, rockets, trains, aircraft, carts."
+        },
+        {
+          "id": "structure",
+          "label": "Structure",
+          "scope": "Applies to buildings and architectural elements: columns, doors, monuments, bridges."
+        },
+        {
+          "id": "natural",
+          "label": "Natural",
+          "scope": "Applies to rocks, weather, celestial bodies and landscape elements that are not plants or creatures."
+        },
+        {
+          "id": "symbol",
+          "label": "Symbol",
+          "scope": "Applies to signs, emblems, glyphs, playing-card faces and logo-like marks whose meaning is the point."
+        },
+        {
+          "id": "picture",
+          "label": "Picture",
+          "scope": "Applies to picture-bearing objects — cards, posters, stamps, photographs, screens — where the scene inside the object is part of the subject."
+        }
+      ]
+    },
+    {
+      "id": "treatment",
+      "label": "Treatment",
+      "question": "how the prompt asks it to look",
+      "min": 0,
+      "max": 6,
+      "headings": [
+        {
+          "id": "style-named",
+          "label": "Style named",
+          "scope": "Applies when a specific style, movement, period or artist is named (\"art nouveau\", \"like a 1950s advertisement\")."
+        },
+        {
+          "id": "realistic",
+          "label": "Realistic",
+          "scope": "Applies when realism, photographic or anatomical accuracy is asked for."
+        },
+        {
+          "id": "cartoon",
+          "label": "Cartoon",
+          "scope": "Applies when cartoon, comic, mascot or \"cute\" treatment is asked for."
+        },
+        {
+          "id": "flat-icon",
+          "label": "Flat / icon",
+          "scope": "Applies when flat, icon, pictogram or minimal treatment is asked for."
+        },
+        {
+          "id": "retro",
+          "label": "Retro",
+          "scope": "Applies when vintage, antique, nostalgic or period wear is asked for. Does not apply merely because the object is old."
+        },
+        {
+          "id": "palette-specified",
+          "label": "Palette specified",
+          "scope": "Applies when colours or a colour constraint are named."
+        },
+        {
+          "id": "text-in-image",
+          "label": "Text in image",
+          "scope": "Applies when lettering, a label or a word must appear in the drawing."
+        }
+      ]
+    },
+    {
+      "id": "probe",
+      "label": "Probe",
+      "question": "what the prompt tests in the drawing model",
+      "min": 0,
+      "max": 6,
+      "headings": [
+        {
+          "id": "structure",
+          "label": "Structure",
+          "scope": "Applies when success depends on parts connecting correctly — joints, anatomy, mechanism, proportion."
+        },
+        {
+          "id": "layering",
+          "label": "Layering",
+          "scope": "Applies when success depends on what is in front of what: overlap, occlusion, things inside or behind other things."
+        },
+        {
+          "id": "transparency",
+          "label": "Transparency",
+          "scope": "Applies when glass, liquid, ice, smoke or see-through material is asked for."
+        },
+        {
+          "id": "texture",
+          "label": "Texture",
+          "scope": "Applies when a surface quality is central: fur, rust, wood grain, fabric, scales."
+        },
+        {
+          "id": "viewpoint",
+          "label": "Viewpoint",
+          "scope": "Applies when a particular angle is named: top-down, cross-section, cutaway, profile, from below."
+        },
+        {
+          "id": "state",
+          "label": "State",
+          "scope": "Applies when the object is in a condition — broken, melting, half-eaten, cracked, used — that must read."
+        },
+        {
+          "id": "compound",
+          "label": "Compound",
+          "scope": "Applies when two or more distinct subjects must relate to each other in one drawing."
+        },
+        {
+          "id": "pattern",
+          "label": "Pattern",
+          "scope": "Applies when repetition, symmetry or a regular pattern is asked for."
+        },
+        {
+          "id": "reference",
+          "label": "Reference",
+          "scope": "Applies when the prompt names a real person, brand, work, place or cultural artefact the model must recall."
+        },
+        {
+          "id": "absurd",
+          "label": "Absurd",
+          "scope": "Applies to a deliberately impossible or comic premise."
+        },
+        {
+          "id": "ambiguous",
+          "label": "Ambiguous",
+          "scope": "Applies when the prompt's wording admits more than one reasonable reading of what to draw. The heading stays bare (no qualifier), the subject facet carries every reading, and the reason names them. This heading is what the benefit-of-the-doubt rule reads at rating time."
+        }
+      ]
     }
   ],
   "comparison": {
@@ -740,6 +955,11 @@
       "date": "2026-10-01",
       "version": 27,
       "note": "New top-level `utility`: the models the drawer's helpers call that are NOT in the eval pool, by use. `utility.title` (`api_model` claude-haiku-4-5-20251001, `provider` anthropic) is the tag titler jd2-title.php calls during the darkroom wait; it was a constant in that file. Moving it here keeps every model name the v2 code calls in this file. No rubric, scale, pool or label change; sessions filed under v26 and v27 rate on the same instrument."
+    },
+    {
+      "date": "2026-10-02",
+      "version": 28,
+      "note": "Intake (PLAN-INTAKE, PLAN-INTAKE-PROMPT, owner-settled 2026-10-02). Additive: new top-level `facets` — the faceted classification the intake clerk files every prompt under: subject (what the prompt asks to have drawn; at least one), treatment (how the prompt asks it to look; zero or more) and probe (what the prompt tests in the drawing model; zero or more), at most six headings each, every heading with a permanent id, a label and a thesaurus-style scope note; `facetsNote`; `intakeVersion` (\"intake-v1\") and `intakeVersionNote`; `utility.intake` (claude-sonnet-5-5, anthropic), the clerk api/jd2-intake.php calls. `utility.title` is marked `defunct` (jd2-title.php is retired) and kept for the record. `sizeTiers[]` gain `examples` (and, for m, `examplesPhrase`), and their `description`s are REWORDED to the tier words the intake prompt states (not a realistic scale: xs and s fit a real junk drawer, m is the ordinary and most common tier, l and xl read as big even beside the rest of the pile); ids and boxes unchanged, so every filed size keeps its meaning. No grade, axis, scale or pool change: sessions filed under v27 and v28 rate on the same instrument."
     }
   ]
 }
