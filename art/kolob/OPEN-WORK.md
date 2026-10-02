@@ -7,7 +7,7 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
 
 ## The refactor
 
-- **`PLAN-REFACTOR.md`** (2026-10-01; §2 built, v0.36.3; §3.6, §3.1, §3.3, §3.7, §3.8, §3.2, §3.4, §4.0(a), §3.5, §4.0(b), §4.0(c) and §4.1 built): the owner asked for a plan to improve
+- **`PLAN-REFACTOR.md`** (2026-10-01; §2 built, v0.36.3; §3.6, §3.1, §3.3, §3.7, §3.8, §3.2, §3.4, §4.0(a), §3.5, §4.0(b), §4.0(c), §4.1, §4.3, §4.4 and §4.5 built): the owner asked for a plan to improve
   efficiency, reliability and maintainability without changing what is heard or seen. Its §2, the
   real faults, is done (commits 3eefffb to a373760: a cue that threw ended its layer for the visit; a
   stillness survived STOP; STOP's own race; errors swallowed silently; a broken page let PLAY be
@@ -32,9 +32,13 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
   the tally four at a time, both builds on one pool (`--jobs`, commit e4dbe57: about 70 s), and
   §4.1, the page's load (commit f7c7be3: each asset hashed once a request, or not at all with APCu —
   PHP 12.9 ms a request → 7.6, → 1.3 with APCu — and every script deferred, the load guard an inline
-  module script run after the rooms and before kolob-ui.js; `tools/pageload.js`, loadcheck's `tags:`).
-  What remains is §3.5's tail (the composer's steps in order) and §4 (the page's frame, the minutes'
-  poll, the note bus, the PLAY press, the audio graph with the owner, memory), in §6's order.
+  module script run after the rooms and before kolob-ui.js; `tools/pageload.js`, loadcheck's `tags:`),
+  and §4.3–§4.5 (commits 651cb76, c24e34b and 9e5c6b0): the minutes' poll looks its nodes up once,
+  writes them on change and stands still while the meeting is stopped; one note object goes to every
+  listener, which never writes into it (the harness freezes it to hold them to that), a piece's notes
+  are found by line, the phrase queue kept in order by an insert; and the noise tape is drawn from the
+  page's load, not inside the PLAY press. What remains is §3.5's tail (the composer's steps in order)
+  and §4 (the page's frame, the audio graph with the owner, memory), in §6's order.
   The §2 builders' follow-ups, not done:
   - the drone stays ducked after a broken hymn's chain is released by the net (§2.1);
   - a cue's fault that repeats is now logged at each of the net's retries (every 5 s for a layer), not once (§2.1);
@@ -190,6 +194,30 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
     follow as plain tags, and nothing there needs the page's speed;
   - `tools/pageload.js` drives Chrome, so CI does not run it (as `screens.js`); loadcheck's `tags:`
     runs there, and runs the tag printer where `php` is on the machine.
+  The §4.3–§4.5 builder's follow-ups, not done:
+  - the PLAY press is still one long task, about 300 ms in this container's headless Chrome; a CPU
+    profile of the click gives the AudioContext's creation and the rooms' convolvers (native), the
+    rooms' pour (`pourIR`, 40–60 ms, unseeded like the tape), the band's town air (`townIR`,
+    `townRoom`, `waveOf`, about 60 ms), the guests' bakes at the press (the change ringing's and
+    the far ward's `valley`, about 35 ms) and `planMeeting` (about 20 ms). The pour and the band's
+    air could be drawn ahead as the tape now is (texture, not music); the bakes could move to the
+    idle time after PLAY;
+  - the tape is drawn for 48 kHz: a 44.1 kHz context (headless Chrome's here) draws
+    117,000 samples it never uses, and a 96 kHz one draws its second half at the press;
+  - the poll now ticks on PLAY's phase (its first tick 300 ms after the press, where the load's
+    phase put it anywhere in 0–300): a row or the card can come up to one poll later or sooner than
+    on HEAD, never more;
+  - a phrase begun on the rail while stopped is no longer queued: on HEAD a PLAY within the same
+    300 ms could write it as the meeting's first row (a race), now never;
+  - the harness's staff= keeps its own poll running while the meeting is stopped (the page's stands
+    still; the drawing reads nothing of it that moves then) — the comment says so;
+  - the harness freezes a note's own fields, not what it carries (a telegraph's marks, a monzo), and
+    events not at all: an event is the engine's one object to all listeners as it always was, and a
+    freeze there would first need the engine never to write an event it has emitted;
+  - `screens.js` now wraps every setTimeout and setInterval to time them, in every run (a
+    `performance.now()` pair a callback); `--text`'s compare has two grains not the page's — the
+    band's "a band approaches" row at 00:07 or 00:08 (the band's own run-to-run grain) and the STOP
+    row's second (when the tool pressed it).
 
 ## Ideas approved, not built
 
@@ -283,7 +311,9 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
   the trio read as one thick stem; at 390 px the wheel's rim overlaps the plate's corner
   (the page's layout).
 - **The meeting** (handoff/r3c-integrate-1.md, Known issues): the PLAY press is one long
-  task of 105–129 ms (122–125 ms now, 70–82 before round 3c); the Hosanna has 18 of 40,849
+  task of 105–129 ms (122–125 ms now, 70–82 before round 3c; about 300 ms in this container's
+  headless Chrome, of which PLAN-REFACTOR §4.5 took the noise tape's 15–30 ms out — the rest is
+  in the refactor's §4.3–§4.5 follow-ups above); the Hosanna has 18 of 40,849
   render callbacks over the 5.33 ms budget (longest 5.9 ms) and the far ward 1 (6.4 ms) —
   no dropout measured, but "listen at the shout's entries and the far ward's first verse
   for a click"; REPRO at exactly 1,250 s on seed 22 lays three organ chords of the next
