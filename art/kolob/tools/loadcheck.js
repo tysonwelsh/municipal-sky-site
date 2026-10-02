@@ -16,7 +16,13 @@
 // hymnal's worker would load on the page, found by the script tags the page
 // prints from the list, must be the list's own, in its order. Then one pure
 // smoke: the composer writes a hymn from a fixed stream and the Score's
-// proofreader passes it. Last, the labs: every *-lab.php (beside the engine
+// proofreader passes it. The page's drawing: _viz.php's six files evaluated
+// after the engine, in their order, on canvases that record
+// (tools/lib/canvas.js) — KolobViz standing with its whole surface, every
+// name a file borrows from KOLOB._viz lent there once all have loaded (each
+// wrapper's function, each value taken at load, each VS.name read), and the
+// page set up and drawn for a few frames, idle, without a throw (the
+// harness's staff= draws a whole meeting). Last, the labs: every *-lab.php (beside the engine
 // and in shelved/) loads the house's rooms its page loads, in its page's
 // order, in a process of its own — each room evaluated with only what the
 // lab put before it, without a throw or a word to console.error, and every
@@ -129,6 +135,55 @@ try {
   } else smoke = "composer or score not loaded";
 } catch (e) { failures.push("the composer threw: " + (e && e.stack ? e.stack.split("\n").slice(0, 2).join(" | ") : e)); }
 
+// the page's drawing, after the engine as the page loads it
+let page = "";
+{
+  const vl = E.vizList(DIR);
+  if (!vl.length) page = "none in this build";
+  else {
+    const REC = require("./lib/canvas.js").recorder();
+    const frames = [];
+    global.Path2D = REC.Path2D;
+    global.devicePixelRatio = 2;
+    const mk = global.document.createElement;
+    global.document.createElement = (tag) => (String(tag).toLowerCase() === "canvas" ? REC.canvas(0, 0) : mk(tag));
+    const ael = global.addEventListener;
+    global.requestAnimationFrame = (fn) => { frames.push(fn); return frames.length; };
+    if (typeof ael !== "function") global.addEventListener = () => {};        // (the page's resize listener)
+    const r = E.evaluate(DIR, vl);
+    r.failures.forEach((f) => failures.push("the page's drawing: " + f));
+    const V = global.KolobViz, VS = (global.KOLOB || {})._viz || {};
+    const SURFACE = ["init", "setConductor", "setWheelLabels", "wheelSeatAt", "setTuningMarks", "probe", "freezeAt"];
+    if (!V) failures.push("the page's drawing: KolobViz is not raised after " + vl.join(", "));
+    else SURFACE.forEach((m) => { if (typeof V[m] !== "function") failures.push("the page's drawing: KolobViz." + m + " is missing"); });
+    // every name borrowed from the bag is on it now (a wrapper's, a value's, a VS.name read)
+    let asked = 0;
+    vl.forEach((rel) => {
+      const text = fs.readFileSync(path.join(DIR, rel), "utf8"), bm = /var\s+([A-Za-z_$][\w$]*)\s*=\s*window\.KOLOB\._viz\b/.exec(text);
+      if (!bm) return;
+      const re = new RegExp("\\b" + bm[1] + "\\.([A-Za-z_$][\\w$]*)", "g"), seen = new Set();
+      let m;
+      const code = text.replace(/\/\/[^\n]*/g, "");
+      while ((m = re.exec(code))) if (!/^\s*=(?!=)/.test(code.slice(m.index + m[0].length))) seen.add(m[1]);   // (a lend is not a read)
+      seen.forEach((n) => { asked++; if (!(n in VS)) failures.push("the page's drawing: " + rel + " reads VS." + n + ", which no file lent"); });
+    });
+    let drawn = 0;
+    if (V && typeof V.init === "function") {
+      try {
+        V.init(REC.canvas(687, 240), REC.canvas(687, 200));
+        const KA = global.KolobAudio;
+        if (KA && KA.getConductor) V.setConductor(KA.getConductor(), false, false);
+        for (let i = 0; i < 3 && frames.length; i++) { const fn = frames.shift(); fn(1000 + 16.7 * i); drawn++; }
+      } catch (e) { failures.push("the page's drawing threw as it was set up and drawn: " + (e && e.stack ? e.stack.split("\n").slice(0, 2).join(" | ") : e)); }
+    }
+    global.requestAnimationFrame = () => 0;       // (and the page's loop ends there: nothing keeps this process)
+    global.document.createElement = mk;
+    if (typeof ael !== "function") delete global.addEventListener;
+    page = r.loaded + " of " + vl.length + " files loaded (" + vl.join(", ") + "); KolobViz's surface " + (V ? SURFACE.filter((m) => typeof V[m] === "function").length + " of " + SURFACE.length : "missing") +
+      "; " + asked + " names read from KOLOB._viz across the files, every one lent; " + drawn + " frames drawn idle (" + REC.calls + " canvas calls)";
+  }
+}
+
 // the labs: each lab's list in a process of its own (a room sees only what
 // its lab loaded before it), a few at a time
 async function labsLoad() {
@@ -163,6 +218,7 @@ async function labsLoad() {
   console.log("  guard: " + guard);
   console.log("  desk: " + desk);
   console.log("  smoke: " + smoke);
+  console.log("  page: " + page);
   console.log("  labs: " + labLine);
   if (failures.length) { console.log("  FAILED:"); failures.forEach((f) => console.log("   - " + f)); process.exit(1); }
   console.log("  ALL GREEN");

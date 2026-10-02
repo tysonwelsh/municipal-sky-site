@@ -23,6 +23,14 @@
 // argument, fails the run. The wrappers are counted room by room, with any
 // the room never uses (ESLint's no-unused-vars fails those).
 //
+// THE PAGE'S BAG. The page's drawing is six files (_viz.php's list; THE SIX
+// FILES, kolob-viz.js) that share one bag of their own, KOLOB._viz (VS), the
+// same way: a lend `VS.name = …` (or Object.defineProperty(VS, "name", …),
+// for the page's state that is reassigned), a read `VS.name`, a wrapper
+// `function x(a) { return VS.x(a); }` and a value taken at load,
+// `var x = VS.x;`. The same checks run over that list and that bag, told on
+// lines of their own ("the page:").
+//
 //   node art/kolob/tools/lends.js            (exit 0 = no unguarded unknown read, every wrapper exact)
 //   KOLOB_DIR=<dir> node art/kolob/tools/lends.js
 // ============================================================================
@@ -33,17 +41,22 @@ const path = require("path");
 const DIR = path.resolve(process.env.KOLOB_DIR || process.env.KOLOB_BASE || path.join(__dirname, ".."));
 let acorn = null;
 try { acorn = require(path.join(__dirname, "..", "..", "..", "node_modules", "acorn")); } catch (e) { acorn = null; }
-const src = fs.readFileSync(path.join(DIR, "_engine.php"), "utf8");
-const body = src.slice(src.indexOf("return [")).replace(/\/\/[^\n]*/g, "");
-const files = []; { const re = /'([^']+\.js)'/g; let m; while ((m = re.exec(body))) if (/^kolob-/.test(path.basename(m[1]))) files.push(m[1]); }
-
+function listOf(php) {
+  const src = fs.readFileSync(path.join(DIR, php), "utf8");
+  const body = src.slice(src.indexOf("return [")).replace(/\/\/[^\n]*/g, "");
+  const out = []; const re = /'([^']+\.js)'/g; let m; while ((m = re.exec(body))) if (/^kolob-/.test(path.basename(m[1]))) out.push(m[1]);
+  return out;
+}
+// one list and its bag (KOLOB._s for the engine's rooms, KOLOB._viz for the
+// page's files) → its lends, reads, wrappers and the files acorn could not read
+function scan(files, bagProp) {
 const lends = {};      // name → [file]
 const reads = [];      // {name, file, line, guarded, text}
 const wrappers = [];   // {file, line, name, calls, exact, why, used}
 const unparsed = [];   // a room acorn could not read
 for (const rel of files) {
   const file = path.join(DIR, rel), text = fs.readFileSync(file, "utf8");
-  const am = text.match(/var\s+([A-Za-z_$][\w$]*)\s*=\s*(?:window\.)?KOLOB\._s\b/);
+  const am = text.match(new RegExp("var\\s+([A-Za-z_$][\\w$]*)\\s*=\\s*(?:window\\.)?KOLOB\\." + bagProp + "\\b"));
   if (!am) continue;
   if (acorn) {
     try { wrappers.push(...wrappersOf(rel, text, am[1])); }
@@ -70,6 +83,10 @@ for (const rel of files) {
     }
   });
 }
+return { files, lends, reads, wrappers, unparsed };
+}
+const files = listOf("_engine.php");
+const { lends, reads, wrappers, unparsed } = scan(files, "_s");
 
 // Every function declared as `function x(…) { return S.y(…); }` in a room
 // whose bag is S: is it exact (x is y, its arguments its parameters, in
@@ -140,6 +157,27 @@ else {
   }
   if (unused.length) console.log("  wrappers their room never uses (" + unused.length + "; ESLint's no-unused-vars fails these): " + unused.map((w) => w.name + " (" + w.file + ":" + w.line + ")").join(", "));
 }
-if (unguarded.length || inexact.length || unparsed.length) process.exit(1);
+// the page's bag, the same way (a build older than _viz.php has none)
+let pageBad = 0;
+if (fs.existsSync(path.join(DIR, "_viz.php"))) {
+  const P = scan(listOf("_viz.php"), "_viz");
+  const pu = P.reads.filter((r) => !P.lends[r.name]), pUng = pu.filter((r) => !r.guarded), pOpt = pu.filter((r) => r.guarded);
+  const pRead = new Set(P.reads.map((r) => r.name)), pDead = Object.keys(P.lends).filter((n) => !pRead.has(n)).sort();
+  const pInexact = P.wrappers.filter((w) => !w.exact), pUnused = P.wrappers.filter((w) => !w.used);
+  const per = {}; P.wrappers.forEach((w) => { per[w.file] = (per[w.file] || 0) + 1; });
+  console.log("  the page: files read: " + P.files.length + " (_viz.php); names lent on KOLOB._viz: " + Object.keys(P.lends).length + "; reads: " + P.reads.length);
+  if (pUng.length) { console.log("  the page: UNKNOWN READS, unguarded (" + pUng.length + ") — a name no file of the page lends:"); pUng.forEach((r) => console.log("   - VS." + r.name + "  " + r.file + ":" + r.line + "  " + r.text)); }
+  if (pOpt.length) console.log("  the page: read under a guard, never lent (" + pOpt.length + "): " + pOpt.map((r) => "VS." + r.name + " " + r.file + ":" + r.line).join(", "));
+  if (pDead.length) console.log("  the page: lent, never read by another file (" + pDead.length + "): " + pDead.map((n) => "VS." + n).join(", "));
+  if (acorn) {
+    console.log("  the page: wrappers (function x(…) { return VS.x(…); }): " + P.wrappers.length + " in " + Object.keys(per).length + " files — " + Object.keys(per).map((f) => short(f) + " " + per[f]).join(", ")
+      + (pInexact.length ? "" : "; every one exact") + (pUnused.length ? "" : ", every one used in its file"));
+    if (P.unparsed.length) { console.log("  the page: FILES ACORN COULD NOT READ (" + P.unparsed.length + "):"); P.unparsed.forEach((u) => console.log("   - " + u)); }
+    if (pInexact.length) { console.log("  the page: WRAPPERS THAT ARE NOT EXACT (" + pInexact.length + "):"); pInexact.forEach((w) => console.log("   - " + w.name + "  " + w.file + ":" + w.line + "  " + w.why)); }
+    if (pUnused.length) console.log("  the page: wrappers their file never uses (" + pUnused.length + "): " + pUnused.map((w) => w.name + " (" + w.file + ":" + w.line + ")").join(", "));
+  }
+  pageBad = pUng.length + pInexact.length + P.unparsed.length;
+}
+if (unguarded.length || inexact.length || unparsed.length || pageBad) process.exit(1);
 if (!acorn) process.exit(2);
 console.log("  ALL GREEN");

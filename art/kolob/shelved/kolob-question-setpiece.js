@@ -22,10 +22,14 @@
 // kolob-meeting.js gets inQuestion and its lend, and VISIT_FN.question;
 // kolob-voices-winds.js and kolob-voices-choir.js sit
 // their free cycles out while inQuestion(); kolob-score.js EVENTS takes the
-// two rows back; kolob-viz.js takes the intake (onEvent, flushIntake), the
-// askings' fold (takeLayer's askMax), the harmonium's slashed grace notes
-// (grp.slash, groupBoxes, drawGroup, inkOpts), takeQuestion, takeUnanswered,
-// drawQuestions, text(), FG and the dotted barline back. Then the two notes
+// two rows back; the page's drawing — kolob-viz.js, since cut into six
+// files (THE SIX FILES there) — takes the intake (onEvent, flushIntake), the
+// askings' fold (takeLayer's askMax), takeQuestion and takeUnanswered back in
+// kolob-viz-intake.js, and the harmonium's slashed grace notes (grp.slash,
+// groupBoxes, drawGroup, inkOpts), drawQuestions, text(), FG and the dotted
+// barline (drawBarline) in kolob-viz.js; a name one file needs from another
+// is borrowed in its BORROWED block and lent in the other's LENT block
+// (KOLOB._viz). Then the two notes
 // in the set piece's header (the askings told untagged; the second rank's
 // pure fifth).
 // ============================================================================

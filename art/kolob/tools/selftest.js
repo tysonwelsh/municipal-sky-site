@@ -101,6 +101,13 @@
 //    guests-lab's list (and so ahead of the scaffold, kolob-guest-room.js,
 //    which it reaches for first), naming the lab and the room's throw while
 //    the other labs load.
+// 16. The page in pieces (PLAN-REFACTOR §3.5): the harness's staff= draws
+//    seed 7's first 30 s on canvases that record, to the same digest twice,
+//    and a scratch copy of this build whose ink is one step bluer (C_INK
+//    [30, 77, 59] → [30, 77, 60]) draws to another; samecode.js --split holds
+//    a little closure cut in two to its moves (a name it reassigns read
+//    through the bag by a getter: SAME CODE), and fails a cut that takes that
+//    name once at load and one whose list changed a number, naming both.
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -618,6 +625,53 @@ function check(name, ok, detail) {
     check("a copy with the singing school moved ahead of kolob-pitch.js on guests-lab's list: loadcheck.js fails, naming the lab and the room's throw, and the other labs load",
       moved.code === 1 && !!mm && +mm[1] === +mm[2] - 1 && said.length > 0 && said.every((f) => /^guests-lab\.php \(its rooms in its order\): kolob-guest-singingschool\.js: /.test(f)) && said.some((f) => /threw at load — .*KOLOB\.Pitch|threw at load — .*PARENT_RATIOS|threw at load — .*load kolob-guest-room\.js first/.test(f)),
       (mm ? mm[1] + " of " + mm[2] + " labs · " : "") + (said[0] || "no failure named"));
+  }
+
+  console.log("16. the page in pieces (PLAN-REFACTOR §3.5)");
+  {
+    const { execFileSync } = require("child_process");
+    const E = require("./lib/engine.js");
+    const run = (file, argv, env) => {
+      try { return { code: 0, out: execFileSync(process.execPath, [file].concat(argv), { env: Object.assign({}, process.env, env || {}), encoding: "utf8", maxBuffer: 1 << 26 }) }; }
+      catch (e) { return { code: e.status, out: String(e.stdout || "") }; }
+    };
+    const harness = path.join(__dirname, "..", "_harness.js");
+    const digest = (r) => { const m = /^staff: .* digest ([0-9a-f]{16})/m.exec(r.out); return m ? m[1] : null; };
+    const a = run(harness, ["30", "7", "staff"]), b = run(harness, ["30", "7", "staff"]);
+    check("the harness's staff= on seed 7, 30 s: the page's drawing traced, to the same digest twice",
+      a.code === 0 && b.code === 0 && !!digest(a) && digest(a) === digest(b), (digest(a) || "no digest") + " · " + (digest(b) || "no digest"));
+    // a scratch copy of the build — the list's files, the page's, _engine.php and _viz.php — its ink one step bluer
+    const dir = path.join(tmp, "staff", "art", "kolob"), viz = E.vizList(engine.dir);
+    engine.list.files.concat(viz.map((f) => path.join(engine.dir, f)), [path.join(engine.dir, "_engine.php")], fs.existsSync(path.join(engine.dir, "_viz.php")) ? [path.join(engine.dir, "_viz.php")] : []).forEach((f) => {
+      const to = path.join(dir, path.relative(engine.dir, f));
+      fs.mkdirSync(path.dirname(to), { recursive: true });
+      fs.copyFileSync(f, to);
+    });
+    const inkAt = viz.map((f) => path.join(dir, f)).find((f) => fs.readFileSync(f, "utf8").indexOf("var C_INK = [30, 77, 59];") >= 0);
+    if (inkAt) fs.writeFileSync(inkAt, fs.readFileSync(inkAt, "utf8").replace("var C_INK = [30, 77, 59];", "var C_INK = [30, 77, 60];"));
+    const c = run(harness, ["30", "7", "staff"], { KOLOB_DIR: dir, KOLOB_BASE: dir });
+    check("a copy whose ink is one step bluer (C_INK [30, 77, 59] → [30, 77, 60]): another digest",
+      !!inkAt && c.code === 0 && !!digest(c) && digest(c) !== digest(a), (digest(c) || "no digest") + (inkAt ? " (" + path.basename(inkAt) + ")" : " (no C_INK found)"));
+    // a little closure, and its cut in two
+    const sd = path.join(tmp, "split");
+    fs.mkdirSync(sd, { recursive: true });
+    const OLD = ["window.Zed = (function () {", "  \"use strict\";", "  var K = window.KolobAudio;", "  var n = 0, k = 2;", "  var LIST = [1, 2];",
+      "  function bump() { n += k; return n; }", "  function sum() { return LIST.reduce(function (p, q) { return p + q; }, 0) + n; }", "  return { bump: bump, sum: sum };", "})();", ""].join("\n");
+    const piece = (sumLine, extra) => ["window.KOLOB = window.KOLOB || {};", "(function () {", "  \"use strict\";", "  var VS = window.KOLOB._viz = window.KOLOB._viz || {};"].concat(extra || [],
+      ["  var LIST = [1, 2];", sumLine, "  VS.LIST = LIST;", "  VS.sum = sum;", "})();", ""]).join("\n");
+    const core = ["window.KOLOB = window.KOLOB || {};", "window.Zed = (function () {", "  \"use strict\";", "  var K = window.KolobAudio;", "  var VS = window.KOLOB._viz = window.KOLOB._viz || {};",
+      "  function sum() { return VS.sum(); }", "  var n = 0, k = 2;", "  function bump() { n += k; return n; }",
+      "  Object.defineProperty(VS, \"n\", { enumerable: true, configurable: true, get: function () { return n; } });", "  return { bump: bump, sum: sum };", "})();", ""].join("\n");
+    const w = (name, text) => { fs.writeFileSync(path.join(sd, name), text); return path.join(sd, name); };
+    const oldF = w("old.js", OLD), coreF = w("core.js", core);
+    const good = run(path.join(__dirname, "samecode.js"), ["--split", "old.js", "--from", oldF, w("a.js", piece("  function sum() { return LIST.reduce(function (p, q) { return p + q; }, 0) + VS.n; }")), coreF]);
+    check("samecode.js --split: a closure cut in two, the name it reassigns read through the bag by its getter",
+      good.code === 0 && /^ {2}SAME CODE/m.test(good.out) && /read through VS: n×1/.test(good.out), (good.out.split("\n").find((l) => /SAME CODE|NOT A PURE MOVE/.test(l)) || "no verdict").trim());
+    const once = run(path.join(__dirname, "samecode.js"), ["--split", "old.js", "--from", oldF, w("b.js", piece("  function sum() { return LIST.reduce(function (p, q) { return p + q; }, 0) + n; }", ["  var n = VS.n;"])), coreF]);
+    const bent = run(path.join(__dirname, "samecode.js"), ["--split", "old.js", "--from", oldF, w("c.js", piece("  function sum() { return LIST.reduce(function (p, q) { return p + q; }, 0) + VS.n; }").replace("var LIST = [1, 2];", "var LIST = [1, 3];")), coreF]);
+    check("…a cut that takes the reassigned name once at load, and one whose list changed a number: both NOT A PURE MOVE, each named",
+      once.code === 1 && /n taken once at load, but the old closure reassigned it/.test(once.out) && bent.code === 1 && /stands in no new file: var LIST = \[1, 2\];/.test(bent.out),
+      [once, bent].map((r) => (r.out.split("\n").find((l) => /^ {3}- /.test(l)) || "nothing named").trim()).join(" · "));
   }
 
   fs.rmSync(tmp, { recursive: true, force: true });

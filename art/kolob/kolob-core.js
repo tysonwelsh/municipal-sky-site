@@ -50,7 +50,7 @@
 //  · THE HOUSE LETS GO, THE DRONE STEPS BACK, THE AIR, the audition rail
 //    (SAMPLE), the TRANSPORT;
 //  · the LENT block (what this room shares on KOLOB._s) and the PUBLIC API,
-//    the only thing the page (kolob-ui.js, kolob-viz.js) calls.
+//    the only thing the page (kolob-ui.js, the six files of kolob-viz.js) calls.
 // Layers: organ, drone, choir, clarinet, harmonium, strings, bells, voice,
 // telegraph, tuba, ambient. A guest's seat (the band, the handbells, the
 // fiddle…) is not a layer: see seatedSend and wideSend. SHELVED below is

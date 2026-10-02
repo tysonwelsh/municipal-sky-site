@@ -22,7 +22,7 @@
 //   node _harness.js <secs> <seed> [ives] [razz] [cumulative[=<mode>]] [force=<guest>]
 //                    [exp=<spec>] [stop=<secs>,…] [play=<secs>,…]
 //                    [reseed=<seed>@<secs>,…] [throw=<lane>@<secs>,…]
-//                    [badlistener=note|event] [desk=<secs>] [dump=<file>] [header]
+//                    [badlistener=note|event] [desk=<secs>] [staff[=860|390]] [dump=<file>] [header]
 //
 //   ives          KolobAudio.setForceVisitation(true)   — the Ives switch
 //   force=<name>  KolobAudio.setForceVisitation(name)   — one named guest
@@ -61,6 +61,15 @@
 //                 the instant it is ordered and no press can find the desk at
 //                 work. (A slice is known by its function's name, idleSlice in
 //                 kolob-hymnal.js; the hymnal line says how many were paced.)
+//   staff[=<px>]  the page's drawing plays along (THE STAFF, below): the
+//                 page's own files (_viz.php's list, or kolob-viz.js where a
+//                 build has no list) drawn on canvases that record instead of
+//                 painting (tools/lib/canvas.js), the staff 860 px wide at
+//                 DPR 2 (staff=390: a phone's, DPR 3), the console's poll
+//                 every 300 ms, a frame every 1/60 s; the report gives the
+//                 digest of everything drawn, so two builds of the page fed
+//                 the same meeting are held to the same drawing, frame by
+//                 frame (KOLOB_DIR=<the other build> for the other side)
 //   dump=<file>   write the note and event streams, one JSON array per line
 //   header        with dump=: a first line ["H", 0, {...}] naming the run and
 //                 the engine (opt-in, so a plain dump stays byte-identical)
@@ -143,7 +152,7 @@ const argv = process.argv.slice(2);
 let RUN = parseFloat(argv[0] || "300");
 if (!isFinite(RUN) || RUN <= 0) RUN = 300;
 const SEED = (parseInt(argv[1] || "1847", 10) >>> 0) || 1847;
-const OPT = { ives: false, razz: false, cumulative: false, force: null, exp: null, dump: null, header: false, script: [], throws: [], desk: null, bad: {} };
+const OPT = { ives: false, razz: false, cumulative: false, force: null, exp: null, dump: null, header: false, script: [], throws: [], desk: null, bad: {}, staff: null };
 const FLAGS = [];                                // the switches, as given, for the header
 const unknownFlags = [];
 const notes = [];                                // a switch understood but not played, and why
@@ -188,6 +197,10 @@ for (let i = 2; i < argv.length; i++) {
       if (k === "note" || k === "event") OPT.bad[k] = { kind: k, thrown: 0, told: 0, first: null, at: null };
       else notes.push("badlistener=" + s + " is not note or event: not registered");
     });
+  } else if (a === "staff" || a.indexOf("staff=") === 0) {
+    const w = a === "staff" ? 860 : +a.slice(6);
+    if (w === 860 || w === 390) OPT.staff = { w };
+    else notes.push(a + " is not 860 or 390: the page is not drawn");
   } else if (a.indexOf("desk=") === 0) {
     const d = Number(a.slice(5));
     if (d > 0 && isFinite(d)) OPT.desk = d;
@@ -673,6 +686,55 @@ const S = KOLOB._s || null;
 watchClock();                                    // throw=: the clock PLAY makes is watched (above)
 
 // ----------------------------------------------------------------------------
+// THE STAFF (staff=): the page's drawing, played along. Its files are read
+// from _viz.php's list (kolob-viz.js alone in a build older than the list),
+// in that order, after the engine, as the page's tags load them; its
+// canvases record (tools/lib/canvas.js), the plates the size the page lays
+// them out at (860 px: the staff 687 × 240, the wheel 687 × 200, DPR 2; 390
+// px, a phone: 316 × 196 and 316 × 150, DPR 3). init() before PLAY, as the
+// page's load calls it; the console's poll (kolob-ui.js poll(): the
+// conductor, playing, held) every 300 ms; a frame every 1/60 s. The digest
+// of everything drawn is told minute by minute and whole. The analyser the
+// facade reads is the mock's, which hears nothing: the organ stands at rest.
+// ----------------------------------------------------------------------------
+const staff = OPT.staff ? { files: [], frames: 0, rec: null, minutes: [], error: null } : null;
+if (staff) {
+  const REC = require(path.join(__dirname, "tools", "lib", "canvas.js")).recorder();
+  staff.rec = REC;
+  global.Path2D = REC.Path2D;
+  global.devicePixelRatio = OPT.staff.w === 390 ? 3 : 2;
+  const mkPlain = document.createElement;
+  document.createElement = function (tag) { return String(tag).toLowerCase() === "canvas" ? REC.canvas(0, 0) : mkPlain(tag); };
+  const vizPhp = path.join(ENGINE_DIR, "_viz.php");
+  if (fs.existsSync(vizPhp)) {
+    const src = fs.readFileSync(vizPhp, "utf8"), body = src.slice(src.indexOf("return [")).replace(/\/\/[^\n]*/g, "");
+    const re = /'([^']+\.js)'/g;
+    let m;
+    while ((m = re.exec(body))) staff.files.push(path.join(ENGINE_DIR, m[1]));
+  } else staff.files.push(path.join(ENGINE_DIR, "kolob-viz.js"));
+  for (const file of staff.files) {
+    try { vm.runInThisContext(fs.readFileSync(file, "utf8"), { filename: file }); }
+    catch (e) { staff.error = path.basename(file) + ": " + e.message; break; }
+  }
+  if (!staff.error && !(global.KolobViz && typeof global.KolobViz.init === "function")) staff.error = "no KolobViz after " + staff.files.length + " file(s)";
+  if (staff.error) {
+    realConsole.log("LOAD the page's drawing: " + staff.error);
+    realConsole.log("VERDICT: FAIL ✗ (the page's drawing failed to load)");
+    process.exitCode = 1;
+    return;
+  }
+  const raf = global.requestAnimationFrame;
+  global.requestAnimationFrame = function (fn) { return raf(function (ts) { staff.frames++; fn(ts); }); };
+  const phone = OPT.staff.w === 390;
+  global.KolobViz.init(REC.canvas(phone ? 316 : 687, phone ? 196 : 240), REC.canvas(phone ? 316 : 687, phone ? 150 : 200));
+  setInterval(function () {
+    const playing = !!(K.isPlaying && K.isPlaying());
+    global.KolobViz.setConductor((K.getConductor && K.getConductor()) || {}, playing, playing && !!(K.isPaused && K.isPaused()));
+  }, 300);
+  setInterval(function () { staff.minutes.push(REC.digest().slice(0, 8)); }, 60000);
+}
+
+// ----------------------------------------------------------------------------
 // The run
 // ----------------------------------------------------------------------------
 const musicNow = () => (S && typeof S.now === "function") ? S.now() : (lastCtx ? lastCtx.currentTime : vnow);
@@ -876,6 +938,8 @@ if (typeof K.getSeed === "function" && K.getSeed() !== SEED && typeof K.reseed =
     (unwritten != null ? " · written while stopped " + stopped.written + " · " + unwritten + " order(s) never written" : "") +
     (OPT.desk ? " · desk " + OPT.desk + " s a slice, " + desk.paced + " slice(s) paced" : ""));
   L("graph: " + graph.contexts + " context(s) · " + graph.total + " nodes " + JSON.stringify(sortedCounts(graph.created, 10)) + " · " + graph.automation + " automation calls");
+  if (staff) L("staff: " + OPT.staff.w + " px · " + staff.files.length + " file(s) of the page's drawing · " + staff.frames + " frames · " + staff.rec.calls + " canvas calls on " + staff.rec.canvases + " canvases, " + staff.rec.paths + " paths · digest " + staff.rec.digest().slice(0, 16) +
+    " · by minute " + (staff.minutes.length ? staff.minutes.join(" ") : "—"));
   if (OPT.dump) L("dump: " + dumpLines.length + " records" + (OPT.header ? " + header" : "") + (tally.unserialisable ? " · " + tally.unserialisable + " NOT serialisable" : ""));
   const fetchWarns = warns.filter((w) => w.msg.indexOf(NO_NETWORK) >= 0).length, otherWarns = warns.filter((w) => w.msg.indexOf(NO_NETWORK) < 0);
   L("console.warn: " + otherWarns.length + (fetchWarns ? " · and " + fetchWarns + " from the refused fetch (expected: no network here, so a room keeps the impulse response it poured)" : ""));

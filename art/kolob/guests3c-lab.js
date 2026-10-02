@@ -232,7 +232,7 @@ window.Guests3c = (function () {
   // tells is kept (told), and every note it offers is put through the page's
   // own gates — the minutes' (kolob-ui.js onNoteForLog: a layer the minutes
   // name, not one they skip, not logged: false) and today's staff's
-  // (kolob-viz.js onNote: not logged: false) — to show none of it is written
+  // (kolob-viz-intake.js onNote: not logged: false) — to show none of it is written
   var MINUTES_SKIP = { drone: 1, ambient: 1, telegraph: 1, tuba: 1, band: 1, oldtune: 1, trombones: 1 };
   P.hosanna = function (ctx, into, t, o) {
     var st = settings(o), s = stream("hosanna", st.seed), ward = wardOf(st), sun = st.sunday === "easter" || st.sunday === "dedication" ? st.sunday : "dedication";

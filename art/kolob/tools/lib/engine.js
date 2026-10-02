@@ -28,6 +28,19 @@ function engineList(dir) {
   return out;
 }
 
+// the page's drawing (KolobViz), _viz.php's list in its order; a build from
+// before the list has kolob-viz.js alone, and one copied without the page
+// none ([])
+function vizList(dir) {
+  const php = path.join(dir, "_viz.php");
+  if (!fs.existsSync(php)) return fs.existsSync(path.join(dir, "kolob-viz.js")) ? ["kolob-viz.js"] : [];
+  const body = fs.readFileSync(php, "utf8");
+  const tail = body.slice(body.indexOf("return [")).replace(/\/\/[^\n]*/g, "");
+  const out = []; const re = /'([^']+\.js)'/g; let m;
+  while ((m = re.exec(tail))) out.push(m[1]);
+  return out;
+}
+
 // the page, as little of it as the rooms touch at load. opts.search is the
 // address's query: the core reads ?seed= from it, and without one the hour
 // chooses the visit (Date.now, at load)
@@ -122,7 +135,7 @@ function evaluateApart(dir, list) {
   });
 }
 
-module.exports = { engineList, mockPage, evaluate, rollCall, labs, labList, evaluateApart };
+module.exports = { engineList, vizList, mockPage, evaluate, rollCall, labs, labList, evaluateApart };
 
 // run as a program (evaluateApart): node lib/engine.js <dir> <the list as JSON>
 // → one line of JSON on stdout, after anything the rooms printed

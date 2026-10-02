@@ -706,7 +706,7 @@
     if (el.textContent !== txt) el.textContent = txt;
   }
 
-  // The order of service is the wheel (kolob-viz.js drawWheel); it reads the
+  // The order of service is the wheel (kolob-viz-wheel.js drawWheel); it reads the
   // conductor straight from the viz hand-off below. Its labels are set here,
   // in the current script, and refreshed when the script toggles.
   function updateWheelLabels() {
