@@ -255,6 +255,7 @@ function jd2_data_item(PDO $db, array $prompt, array $taxonomy, bool $itemMode, 
             'rid' => $rid,
             'file' => $gid . '.svg',
             'gen_id' => $gid,
+            'slot' => (string) $g['slot'],   // the blind letter the run dealt it; jd2-rate names drawings by slot
             'rank' => $rank,
             'model' => (string) $g['model_id'],
             'model_version' => (string) $g['api_model'],
