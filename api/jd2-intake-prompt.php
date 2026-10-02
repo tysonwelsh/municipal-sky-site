@@ -73,7 +73,7 @@ const JD2_INTAKE_TIMEOUT = 45;
 const JD2_INTAKE_EFFORT = 'low';
 
 /** The heading's bounds (PLAN-INTAKE-PROMPT §4): words, the parenthesis included, and characters. */
-const JD2_INTAKE_TITLE_MIN_WORDS = 2;
+const JD2_INTAKE_TITLE_MIN_WORDS = 1;   // a bare noun is a legal heading for an ambiguous prompt (ENTRY 1, last rule)
 const JD2_INTAKE_TITLE_MAX_WORDS = 5;
 const JD2_INTAKE_TITLE_MAX_CHARS = 40;
 
@@ -118,7 +118,8 @@ form, as a register or card catalogue would file it. The pattern is
     material or colour, then state, then situation. "Key (skeleton),
     brass." "Can (trash), galvanized." "Crayon, broken, sea green."
     "Telescope, brass, extended." "Mouse (computer), cord frayed."
-  - Two to five words, the parenthesis included. No articles. No praise
+  - Two to five words, the parenthesis included (a bare noun stands alone
+    only in the ambiguous case below). No articles. No praise
     words ("beautiful", "amazing"). A descriptor implied by another is
     dropped: "galvanized" already says steel, so "Can (trash),
     galvanized", not "Can (trash), galvanized steel". Singular unless the
@@ -284,7 +285,7 @@ function jd2_intake_schema(array $taxonomy): array
         'title' => [
             'type' => 'string',
             'description' => 'ENTRY 1. HEADING. The object\'s museum-style catalogue title, in inverted form: '
-                . 'Noun (kind), descriptor, descriptor. Two to five words, the parenthesis included.',
+                . 'Noun (kind), descriptor, descriptor. Two to five words, the parenthesis included; a bare noun alone only for an ambiguous prompt.',
         ],
         'size' => [
             'type' => 'string',
@@ -332,7 +333,7 @@ function jd2_intake_count_word(int $n): string
 
 /**
  * The checks the endpoint makes even though structured output guarantees the
- * shape (§4): the heading 2–5 words with the parenthesis, at most 40
+ * shape (§4): the heading 1–5 words with the parenthesis (1 only for the ambiguous bare noun), at most 40
  * characters, its first letter a capital; the size a tier id; each facet a
  * list of that facet's heading ids, no duplicates, within its min and max;
  * two reason strings.

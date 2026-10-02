@@ -38,7 +38,7 @@ back-end change; the owner decides the wording):
 - **The prompt set: ~100 prompts, categorised.** Schema: add
   `jd2_prompts.category` (additive); the CSV batch runner takes a
   `category` column.
-- **Model-assigned size.** At the moment the titler drafts the title it
+- **Model-assigned size — DONE 2026-10-02 as the intake step** (`api/jd2-intake.php`: heading, size tier and faceted tags from Sonnet 5.5 the moment a prompt is filed; the agreement check is `scripts/jd2-intake-check.php`). Original note: At the moment the titler drafts the title it
   also proposes the size tier, given the tier descriptions and a few
   examples per tier (a titler-shaped call: prompt in, one tier out,
   validated against `sizeTiers`). The size card then disappears for
