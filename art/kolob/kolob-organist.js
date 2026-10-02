@@ -108,10 +108,13 @@ window.KOLOB.Organist = (function () {
 
   // ==========================================================================
   // PITCH — exact, as monzos [2, 3, 5, 7] (SCORE §2), relative to the keynote
+  // (the arithmetic borrowed from kolob-pitch.js)
   // ==========================================================================
-  function mz(a, b) { return [a[0] + b[0], a[1] + b[1], a[2] + b[2], (a[3] || 0) + (b[3] || 0)]; }
+  function mz(a, b) { return K.Pitch.mul(a, b); }
   function oct(m, k) { return [m[0] + k, m[1], m[2], m[3] || 0]; }
-  function ratio(m) { return Math.pow(2, m[0]) * Math.pow(3, m[1]) * Math.pow(5, m[2]) * Math.pow(7, m[3] || 0); }
+  function ratio(m) { return K.Pitch.ratio(m); }
+  // (Math.log over LN2, where KOLOB.Pitch.cents takes Math.log2: the two can
+  // differ in the last bit, so the organist's cents stay its own)
   function cents(m) { return 1200 * Math.log(ratio(m)) / Math.LN2; }
   function eq(a, b) { return a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && (a[3] || 0) === (b[3] || 0); }
   function cls(m) { return oct(m, -Math.floor(cents(m) / 1200 + 1e-9)); }       // the octave-free class, [1, 2)
@@ -119,30 +122,17 @@ window.KOLOB.Organist = (function () {
   var COMMA = [-4, 4, -1, 0];                                                    // 81/80
   function commaNear(a, b) { var x = cls(a), y = cls(b); return eq(cls(mz(x, COMMA)), y) || eq(cls(mz(y, COMMA)), x); }
   var UP_SEMI = [4, -1, -1, 0], DN_SEMI = [-4, 1, 1, 0];                         // 16/15 up, down
-  function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
-  function r3(x) { return Math.round(x * 1000) / 1000; }
+  function clamp(x, a, b) { return K.Num.clamp(x, a, b); }
+  function r3(x) { return K.Num.r3(x); }
 
   // a fraction "a/b" as a monzo (for the tables below)
-  function frac(s) {
-    var p = String(s).split("/"), m = [0, 0, 0, 0];
-    [[+p[0], 1], [+(p[1] || 1), -1]].forEach(function (q) {
-      var n = q[0];
-      [2, 3, 5, 7].forEach(function (pr, i) { while (n % pr === 0 && n > 1) { m[i] += q[1]; n /= pr; } });
-    });
-    return m;
-  }
+  function frac(s) { return K.Pitch.fromFraction(s); }
   // a degree of the mode (0 = the final; 7 an octave up), as the composer
-  // spells it — or, standing alone, from the parent scales below
-  var PARENT = {
-    ionian: ["1/1", "9/8", "5/4", "4/3", "3/2", "5/3", "15/8"],
-    mixolydian: ["1/1", "9/8", "5/4", "4/3", "3/2", "5/3", "16/9"],
-    dorian: ["1/1", "9/8", "6/5", "4/3", "3/2", "5/3", "16/9"],
-    aeolian: ["1/1", "9/8", "6/5", "4/3", "3/2", "8/5", "16/9"],
-  };
-  PARENT.penta = PARENT.hexa = PARENT.ionian;
+  // spells it — or, without the composer, from kolob-pitch.js's parent scales
   function degM(mode, d, alt) {
     var C = K.Composer;
     if (C && C.spelledMonzo) return C.spelledMonzo(mode, d, alt || 0);
+    var PARENT = K.Pitch.PARENT_FRACTIONS;
     var o = Math.floor(d / 7), m = frac((PARENT[mode] || PARENT.ionian)[((d % 7) + 7) % 7]);
     m = oct(m, o);
     return alt > 0 ? mz(m, [-3, -1, 2, 0]) : alt < 0 ? mz(m, [3, 1, -2, 0]) : m;   // 25/24
@@ -374,51 +364,23 @@ window.KOLOB.Organist = (function () {
   // ==========================================================================
   // THE CLOCK — the one the ward sings by, and the organ plays by
   // ==========================================================================
-  function verseLinesOf(h) { return h.lines.concat(h.refrain || []); }
-  function localLen(line) {
-    var m = 0;
-    Object.keys(line.notes).forEach(function (p) { line.notes[p].forEach(function (n) { m = Math.max(m, n.beat + n.beats); }); });
-    return m;
-  }
-  function spanBeats(line, next) {
-    var len = 0;
-    if (next && next.startBeat != null && line.startBeat != null) len = next.startBeat - line.startBeat;
-    if (!(len > 0)) len = K.Score && K.Score.lineLength ? K.Score.lineLength(line) : localLen(line);
-    return len;
-  }
+  // (a verse's lines, a line's span and its clock are the Score's:
+  // kolob-score.js verseLines, spanBeats, lineClock and sungNotes)
+  function verseLinesOf(h) { return K.Score.verseLines(h); }
+  function spanBeats(line, next) { return K.Score.spanBeats(line, next); }
   // a fermata holds its note and moves everything after it.
   // ck — WHOSE CLOCK: null is the organist's own,
   // strict, a fermata held 1.7 times its length (the lab's, and the organ
   // alone's: the giving-out, an interlude). In the meeting the ward sings by
   // the CHORISTER's clock (kolob-cast.js clockOf — her tempo, a broadening
   // toward the close, her fermatas as long as she likes): ck = { rit, hold },
-  // the same arithmetic to the last operation, so that the organ under a
-  // line lands on every note the thirty-two sing.
-  function clockOf(line, beatS, ck) {
-    var holds = [], rit = ck && ck.rit ? ck.rit : 0, xm = ck && ck.hold != null ? ck.hold - 1 : 0.7;
-    var len = Math.max(1, localLen(line));
-    (line.fermataBeats || []).forEach(function (fb) {
-      var l = 1;
-      Object.keys(line.notes).forEach(function (p) { line.notes[p].forEach(function (n) { if (Math.abs(n.beat - fb) < 1e-6) l = Math.max(l, n.beats); }); });
-      holds.push({ at: fb + l, extra: xm * l * beatS });
-    });
-    return function (b) {
-      var t = rit ? beatS * (b + rit * b * b * b / (3 * len * len)) : b * beatS;
-      holds.forEach(function (x) { if (b >= x.at - 1e-6) t += x.extra; });
-      return t;
-    };
-  }
+  // the one clock the ward sings by (KOLOB.Score.lineClock), so that the
+  // organ under a line lands on every note the thirty-two sing.
+  function clockOf(line, beatS, ck) { return K.Score.lineClock(line, beatS, ck); }
   // one line, one part, from t0: every note as it is sung, ties joined, and
   // the breath taken out of the line's last note → { ev: [{t, dur, n}], end }
   function lineEvents(h, line, part, t0, beatS, next, ck) {
-    var clk = clockOf(line, beatS, ck), ns = line.notes[part] || [], ev = [];
-    for (var k = 0; k < ns.length; k++) {
-      var n = ns[k], b0 = n.beat, b1 = n.beat + n.beats;
-      while (ns[k].tie && k + 1 < ns.length) { k++; b1 = ns[k].beat + ns[k].beats; }
-      var st = t0 + clk(b0), dur = clk(b1) - clk(b0);
-      if (k === ns.length - 1 && line.breathAfter !== false) dur -= Math.min(0.3 * beatS, 0.25 * dur);
-      ev.push({ t: st, dur: dur, n: n });
-    }
+    var ev = K.Score.sungNotes(line.notes[part] || [], clockOf(line, beatS, ck), beatS, line.breathAfter, t0);
     return { ev: ev, end: t0 + lineDur(line, beatS, next, ck) };
   }
   function lineDur(line, beatS, next, ck) {
@@ -1017,6 +979,8 @@ window.KOLOB.Organist = (function () {
     idx.forEach(function (j, k) {
       var L = lines[j], lb = spanBeats(L, lines[j + 1]), ns = L.notes[h.melodyPart] || [];
       map.push({ t0: t, t1: t + lb * aug * pb, line: L });
+      // (the tune in long values, its ties joined: the augmented beat, no
+      // fermata and no breath, so not the line's clock of KOLOB.Score)
       for (var q = 0; q < ns.length; q++) {
         var x = ns[q], b1 = x.beat + x.beats;
         while (ns[q].tie && q + 1 < ns.length) { q++; b1 = ns[q].beat + ns[q].beats; }
@@ -1700,7 +1664,8 @@ window.KOLOB.Organist = (function () {
   var VAR_DYN_STYLE = { plain: { finale: -1.5 } };
 
   // the tune of a line, its tied notes joined: [{ b, beats, m (from the
-  // keynote), n }]
+  // keynote), n }] (in beats, on no clock and with no breath taken: not
+  // KOLOB.Score.sungNotes)
   function tuneLine(h, line) {
     var ns = line.notes[h.melodyPart] || [], out = [];
     for (var k = 0; k < ns.length; k++) {

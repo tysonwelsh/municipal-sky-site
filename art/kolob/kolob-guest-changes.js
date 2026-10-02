@@ -72,6 +72,17 @@
 // "synth" (each bell's own partials and shimmer, each stroke's placing and
 // weight, the wind: sound-level, never reported).
 //
+// THE SCAFFOLD (KOLOB.GuestRoom, kolob-guest-room.js): the stream it
+// insists on, plan(), oddsFor() (the house's odds — here the share of the
+// steeples' Sundays that ring changes), the decision's shape and its
+// seat's-own-die test (in its own words: the far steeples phase on their
+// own), the look-ahead (2.5 s) and the slices on the clock (defer, 0.05 s
+// of margin), the stages told, the teardown sentinel (its gain zeroed by
+// automation, as the tower sets every gain) and perform.last. Its own: its
+// seat (the steeples', or none), the strokes of each second a slice, the
+// calls told (onCall), the tower closed at the end; and its LEVEL, a plain
+// number on its surface (the meeting hands the tower its level, hooks.level).
+//
 // Public surface: window.KOLOB.GuestChanges
 //   plan(meetingInfo, stream) → { guest, variantOf: "steeples", seat,
 //        section, at, dur, holdUntil, stage, method, touch, muffled,
@@ -98,6 +109,8 @@ window.KOLOB.GuestChanges = (function () {
 
   var NAME = "changes";
   var LABEL = "guest:changes:";                  // + the meeting number
+  var GR = window.KOLOB.GuestRoom;                // the scaffold (kolob-guest-room.js)
+  if (!GR) throw new Error("KOLOB.GuestChanges: load kolob-guest-room.js first");
 
   // ==========================================================================
   // PLACE NOTATION — the ringers' own way of writing a method
@@ -231,7 +244,7 @@ window.KOLOB.GuestChanges = (function () {
   // THE ODDS — a variant of the steeples: when the steeples ring, how often
   // the far bells are a band ringing changes (rather than the steeples
   // phasing on their own periods). The steeples' own odds are the meeting's
-  // (kolob-meeting.js, about 7.5 % of meetings, more at Christmas and
+  // plan's (kolob-plan.js, about 7.5 % of meetings, more at Christmas and
   // Easter); this is the share of those.
   // ==========================================================================
   var ODDS = {
@@ -260,17 +273,8 @@ window.KOLOB.GuestChanges = (function () {
   // the hum still sang (its τ is 7 s on a low tenor), each stop was a click
   var RING_TAIL = 7, RING_FADE = 2;
 
-  function need(stream) {
-    if (!stream || typeof stream.fork !== "function") throw new Error("KOLOB.GuestChanges: a PJ2.Rand stream is required (label " + LABEL + "<n>)");
-    return stream;
-  }
-  function oddsFor(info) {
-    // (the meeting hands this room its odds from Calendar.GUEST_ODDS,
-    // info.odds; a lab without them reads the room's own ODDS)
-    if (info && info.odds != null) return Math.max(0, Math.min(1, +info.odds));
-    var w = ODDS.weight, k = info.sunday && w[info.sunday] != null ? info.sunday : info.kind;
-    return Math.min(ODDS.cap, ODDS.base * (w[k] != null ? w[k] : 1));
-  }
+  function need(stream) { return GR.need(stream, "KOLOB.GuestChanges", LABEL); }
+  function oddsFor(info) { return GR.oddsFor(info, ODDS); }
 
   // THE SHAPE — the musical dice of one ringing, all drawn, in order
   function shapeOf(stream) {
@@ -302,8 +306,8 @@ window.KOLOB.GuestChanges = (function () {
   var SCALE = [[0, 0, 0, 0], [-3, 2, 0, 0], [-2, 0, 1, 0], [2, -1, 0, 0], [-1, 1, 0, 0], [0, -1, 1, 0]];   // do re mi fa sol la
   var TENOR = [[[0, 0, 0, 0], 3], [[-1, 1, 0, 0], 2], [[2, -1, 0, 0], 2], [[-2, 0, 1, 0], 0.6]];           // 1, 3/2, 4/3, 5/4
   var SOLFA = ["do", "re", "mi", "fa", "sol", "la"];
-  function mz(a, b) { return [a[0] + b[0], a[1] + b[1], a[2] + b[2], (a[3] || 0) + (b[3] || 0)]; }
-  function ratio(m) { return Math.pow(2, m[0]) * Math.pow(3, m[1]) * Math.pow(5, m[2]) * Math.pow(7, m[3] || 0); }
+  function mz(a, b) { return window.KOLOB.Pitch.mul(a, b); }
+  function ratio(m) { return window.KOLOB.Pitch.ratio(m); }
   function ringOf(sh, N, keynoteHz) {
     var tot = 0; TENOR.forEach(function (x) { tot += x[1]; });
     var u = sh.keyU * tot, tk = TENOR[0][0];
@@ -405,20 +409,17 @@ window.KOLOB.GuestChanges = (function () {
     var order = (info.sections || []).map(function (s) { return s && s.type; });
     var section = steeple ? steeple.section : info.force ? (order.indexOf("prelude") >= 0 || !order.length ? "prelude" : "postlude") : null;
     if (!section) why = "the steeples do not ring today";
-    else if (!(info.force || roll < p)) why = "the far steeples phase on their own (not a band this Sunday)";
-    if (why) return { seat: null, why: why, odds: p, roll: roll };
+    else if (GR.notThisSunday(info, roll, p)) why = "the far steeples phase on their own (not a band this Sunday)";
+    if (why) return GR.decision(null, why, p, roll);
     var mat = prepare(info.material && info.material.prepared ? info.material : { keynoteHz: info.keynoteHz || 261.63, sunday: info.sunday || info.kind }, stream);
     var at = 3 + 3 * atU;
-    return {
-      seat: {
-        guest: NAME, variantOf: "steeples", seat: section, section: section, at: +at.toFixed(2), dur: mat.dur,
-        holdUntil: +(at + mat.dur + 3).toFixed(2), stage: mat.stage, method: mat.methodName, piece: mat.piece, touch: mat.touch,
-        muffled: mat.muffled, estimated: false, odds: +p.toFixed(3), logged: true,
-      },
-      why: "seated", odds: p, roll: roll,
-    };
+    return GR.decision({
+      guest: NAME, variantOf: "steeples", seat: section, section: section, at: +at.toFixed(2), dur: mat.dur,
+      holdUntil: +(at + mat.dur + 3).toFixed(2), stage: mat.stage, method: mat.methodName, piece: mat.piece, touch: mat.touch,
+      muffled: mat.muffled, estimated: false, odds: +p.toFixed(3), logged: true,
+    }, "seated", p, roll);
   }
-  function plan(info, stream) { return decide(info, stream).seat; }
+  var plan = GR.plan(decide);
 
   // ==========================================================================
   // THE TOWER BELL — a true-harmonic English bell: [partial, ratio to the
@@ -492,7 +493,7 @@ window.KOLOB.GuestChanges = (function () {
     return { stroke: stroke, fade: fade, voices: voices, bus: bus, close: close, standing: nodes.length };
   }
 
-  var AHEAD = 2.5, SLICE = 1.0;
+  var AHEAD = GR.ahead(), SLICE = 1.0;
   function perform(ctx, dest, t, material, stream, hooks) {
     hooks = hooks || {};
     var m = prepare(material, stream), sc = score(m, stream, t), Y = need(stream).fork("synth");
@@ -524,17 +525,13 @@ window.KOLOB.GuestChanges = (function () {
     });
     slices.forEach(function (sl, si) {
       function lay() { sl.ks.forEach(function (k) { stroke(k); tell(k); }); if (si === slices.length - 1) T.fade(sc.end - RING_FADE); }
-      var when = sl.t0 - AHEAD;
-      if (hooks.defer && when > t + 0.05) hooks.defer(when, lay); else lay();
+      GR.defer(hooks, t, sl.t0 - AHEAD, lay, 0.05);
     });
-    if (hooks.onStage) sc.stages.forEach(function (st) { hooks.onStage(st); });
+    GR.tellStages(hooks, sc.stages);
     if (hooks.onCall) sc.calls.forEach(function (c) { hooks.onCall(c); });
     // when the last hum has gone, let the tower go
-    var sent = ctx.createConstantSource ? ctx.createConstantSource() : ctx.createOscillator(), sg = ctx.createGain();
-    sg.gain.setValueAtTime(0, born); sent.connect(sg); sg.connect(T.bus);
-    sent.onended = function () { T.close(); try { sg.disconnect(); sent.disconnect(); } catch (e) { /* gone already */ } };
-    sent.start(born); sent.stop(tEnd + 0.2);
-    perform.last = { score: sc, voices: T.voices.length, nodesStanding: T.standing };
+    GR.sentinel(ctx, T.bus, born, tEnd + 0.2, function () { T.close(); }, { automated: true });
+    GR.last(perform, { score: sc, voices: T.voices.length, nodesStanding: T.standing });
     return sc.end;
   }
 

@@ -46,7 +46,7 @@ a yes before building the final version.
 
 ## 4. The staff: what it is now, and its binding rules
 
-The staff is `art/kolob/kolob-viz.js`, which draws a scrolling grand staff on a canvas. The owner
+The staff is `art/kolob/kolob-viz.js` and its five pieces (`_viz.php`; THE SIX FILES in `kolob-viz.js`), which draw a scrolling grand staff on a canvas. The owner
 chose the look ("Direction A, the Colony Tunebook") and then simplified it. These rules are
 binding (see the top of `art/kolob/archive/plans/PLAN-ENGRAVING.md`):
 
@@ -76,8 +76,8 @@ binding (see the top of `art/kolob/archive/plans/PLAN-ENGRAVING.md`):
   also an owner-sanctioned exception to "nothing moves but the scroll". Keep everything else:
   green ink only, and no text.
 
-Pitch-to-staff mapping lives in `kolob-viz.js`: `degOf`, `staffQ`/`yOfQ` and the grand-staff
-lattice where middle C (the keynote, `F0·4`) sits at q=10. Read the existing code before adding
+Pitch-to-staff mapping lives in `kolob-viz-intake.js` (`degOf`, `noteQ`) and `kolob-viz.js`
+(`pageGeom`'s `yT`/`yB`): the grand-staff lattice where middle C (the keynote, `F0·4`) sits at q=10. Read the existing code before adding
 anything, and match its literary comment voice.
 
 ## 5. The drone, technically
@@ -98,8 +98,8 @@ anything, and match its literary comment voice.
 - **What the page receives:** the drone reports itself through the engine's note events:
   - `emitNote("drone", S.F0 * mul, startTime, duration, tag)` at each cycle and each turn;
   - a turn carries `{ glide, from }` in its tag.
-  - `kolob-viz.js` currently ignores the `"drone"` layer (it isn't in its melodic layers).
-- **Real signal data:** `kolob-viz.js` already builds an `AnalyserNode` on the master for the
+  - the page currently ignores the `"drone"` layer (it isn't in `MELODIC`, `kolob-viz-intake.js`).
+- **Real signal data:** `kolob-viz-wheel.js` already builds an `AnalyserNode` on the master for the
   organ-pipe spectrum (`ensureAnalyser`, via `KolobAudio.attachAnalyser()`). To show the drone's
   actual waveform, you'll want its **own** signal, not the whole mix:
   - **Tap the drone.** Tap the drone layer's bus (see `kolob-core.js`: layer gain nodes and

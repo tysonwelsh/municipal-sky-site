@@ -258,7 +258,7 @@ window.Guests3a = (function () {
     if (!old) return;
     chain.out.gain.setValueAtTime(0, t); chain.out.gain.linearRampToValueAtTime(1, t + XF);
     old.out.gain.setValueAtTime(1, t); old.out.gain.linearRampToValueAtTime(0, t + XF);
-    setTimeout(function () { try { labIn.disconnect(old.input); } catch (e) {} try { old.out.disconnect(); } catch (e2) {} }, (XF + 0.15) * 1000);
+    setTimeout(function () { try { labIn.disconnect(old.input); } catch (e) { /* gone already */ } try { old.out.disconnect(); } catch (e2) { /* gone already */ } }, (XF + 0.15) * 1000);
   }
   function stop() {
     lights = [];
@@ -266,7 +266,7 @@ window.Guests3a = (function () {
     var c = current;
     if (clock) clock.lane(c.lane).cancelAll();
     c.gain.gain.setTargetAtTime(0, actx.currentTime, 0.03);
-    setTimeout(function () { try { c.gain.disconnect(); } catch (e) {} }, 400);
+    setTimeout(function () { try { c.gain.disconnect(); } catch (e) { /* gone already */ } }, 400);
     current = null;
   }
   // the engine's clock, made once for the lab's context; its wake-up timed
@@ -519,8 +519,8 @@ window.Guests3a = (function () {
   // ==========================================================================
   // THE ODDS — each guest's plan() over a stand-in of the engine's planner
   // ==========================================================================
-  // The stand-in throws what kolob-meeting.js planMeeting throws for a seat,
-  // in its order: the calendar's Sunday (KOLOB.Calendar.draw), the order of
+  // The stand-in throws what the meeting's plan (kolob-plan.js) throws for a
+  // seat, in its order: the calendar's Sunday (KOLOB.Calendar.draw), the order of
   // service (the Sunday's hymns; the testimony cut, the interlude), then the
   // guests as the recipe seats them — THE BAND (GuestBands.plan, in the old
   // band's place), the steeples (7.5 % × the Sunday's welcome), the old tune

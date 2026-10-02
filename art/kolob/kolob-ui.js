@@ -213,13 +213,13 @@
   var latinMode = false;
   try {
     latinMode = /[?&]latin=1/.test(location.search) || localStorage.getItem("kolobLatin") === "1";
-  } catch (e) {}
+  } catch (e) { /* storage refused (a private window): Latin stays off */ }
   // Dev preview (?kolobPreview=1): with the engine idle, the programme card and
   // the direction line show a sample conductor so the dressed page can be seen
   // (and screenshotted) without audio. The real conductor always wins once the
   // engine plays. Mirrors the ?latin=1 switch; not persisted.
   var previewMode = false;
-  try { previewMode = /[?&]kolobPreview=1/.test(location.search); } catch (e) {}
+  try { previewMode = /[?&]kolobPreview=1/.test(location.search); } catch (e) { /* no address to read: no preview */ }
   var PREVIEW_CONDUCTOR = { meeting: 3, section: "hymn", meter: "CM", activity: "conference", sunday: { id: "conference", nameDs: "𐐖𐐇𐐤𐐊𐐡𐐊𐐢 𐐗𐐉𐐤𐐙𐐡𐐇𐐤𐐝" }, mode: "mixolydian", f0: 65.4, fuging: true };
   function TT(dsTable, enTable) { return latinMode ? enTable : dsTable; }
   // gesture ciphers run 𐐀..𐐚 (the Deseret alphabet from its first letter);
@@ -401,6 +401,7 @@
         if (ev.action === "stop") return minute("■", S.idle, "transport");
         if (ev.action === "sample") return minute("◈", S.sample + " " + (TT(LAYERS_DS, LAYERS_EN)[ev.layer] || ""), "transport");
         return null;
+      default: break;                                         // (any other type: below)
     }
     return null;                                              // chords, cadences, spans: the page stays open
   }
@@ -506,7 +507,7 @@
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(text).then(done, done);
         } else {
-          try { var ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); } catch (e) {}
+          try { var ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); } catch (e) { /* no clipboard at all: nothing copied */ }
           done();
         }
       });
@@ -705,7 +706,7 @@
     if (el.textContent !== txt) el.textContent = txt;
   }
 
-  // The order of service is the wheel (kolob-viz.js drawWheel); it reads the
+  // The order of service is the wheel (kolob-viz-wheel.js drawWheel); it reads the
   // conductor straight from the viz hand-off below. Its labels are set here,
   // in the current script, and refreshed when the script toggles.
   function updateWheelLabels() {
@@ -943,7 +944,7 @@
     if (!tog) return;
     tog.addEventListener("click", function () {
       latinMode = !latinMode;
-      try { localStorage.setItem("kolobLatin", latinMode ? "1" : "0"); } catch (e) {}
+      try { localStorage.setItem("kolobLatin", latinMode ? "1" : "0"); } catch (e) { /* a private window: the switch lasts this page only */ }
       applyScript();
       renderMixer();
       poll();
@@ -964,7 +965,7 @@
       // re-measures on window resize, so nudge it once the page has settled
       // and once the fonts are in — otherwise the plates draw at the wrong
       // scale and their geometry (the wheel's radius) is off.
-      var remeasure = function () { try { window.dispatchEvent(new Event("resize")); } catch (e2) {} };
+      var remeasure = function () { try { window.dispatchEvent(new Event("resize")); } catch (e2) { /* an old browser */ } };
       window.addEventListener("load", remeasure);
       if (document.fonts && document.fonts.ready && document.fonts.ready.then) document.fonts.ready.then(remeasure);
     }
@@ -972,7 +973,7 @@
 
   // ==========================================================================
   // The Ives switch — while armed, every meeting is guaranteed one visitation
-  // (the engine's own pick among the Ivesian guests: kolob-meeting.js
+  // (the engine's own pick among the Ivesian guests: kolob-plan.js
   // forcedPick). Arming it mid-meeting restarts the meeting so the guarantee
   // begins counting immediately.
   // ==========================================================================
@@ -983,12 +984,12 @@
   // steeples, oldtune, trombones, handbells, singingschool. It wins over
   // the switch; the switch's own light is untouched.)
   var urlGuest = null;
-  try { var gm = /[?&]guest=([a-z]+)/.exec(location.search || ""); urlGuest = gm ? gm[1] : null; } catch (e) {}
+  try { var gm = /[?&]guest=([a-z]+)/.exec(location.search || ""); urlGuest = gm ? gm[1] : null; } catch (e) { /* no address to read: no guest named */ }
   function wireIvesToggle() {
     var btn = document.getElementById("kolob-ives");
     if (!btn) { if (urlGuest && K.setForceVisitation) K.setForceVisitation(urlGuest); return; }
     var on = false;
-    try { on = localStorage.getItem("kolobIves") === "1"; } catch (e) {}
+    try { on = localStorage.getItem("kolobIves") === "1"; } catch (e) { /* storage refused (a private window): the switch stays off */ }
     function apply() {
       btn.classList.toggle("is-on", on);
       btn.setAttribute("aria-pressed", on ? "true" : "false");
@@ -997,7 +998,7 @@
     apply();
     btn.addEventListener("click", function () {
       on = !on;
-      try { localStorage.setItem("kolobIves", on ? "1" : "0"); } catch (e) {}
+      try { localStorage.setItem("kolobIves", on ? "1" : "0"); } catch (e) { /* a private window: the switch lasts this page only */ }
       apply();
       if (on && K.isPlaying && K.isPlaying()) {
         // restart: stop fully settles (its 800ms layer-zeroing included),
@@ -1021,9 +1022,9 @@
     try {
       if (/[?&]kolobCumulative=1/.test(location.search)) mode = "always";
       else mode = localStorage.getItem("kolobCumulative") || "natural";
-    } catch (e) {}
+    } catch (e) { /* storage refused (a private window): natural */ }
     if (mode !== "always" && mode !== "natural" && mode !== "never") mode = "natural";
-    var odds = K.getCumulativeOdds ? K.getCumulativeOdds() : 0.08;   // the one number: kolob-meeting.js CUMULATIVE_ODDS
+    var odds = K.getCumulativeOdds ? K.getCumulativeOdds() : 0.08;   // the one number: kolob-plan.js CUMULATIVE_ODDS
     var LABELS = {
       always: "the tune withheld until the doxology — every meeting (restarts the meeting)",
       natural: "the tune withheld until the doxology — about " + Math.round(odds * 100) + " % of meetings",
@@ -1039,7 +1040,7 @@
     apply();
     btn.addEventListener("click", function () {
       mode = mode === "always" ? "natural" : mode === "natural" ? "never" : "always";
-      try { localStorage.setItem("kolobCumulative", mode); } catch (e) {}
+      try { localStorage.setItem("kolobCumulative", mode); } catch (e) { /* a private window: the switch lasts this page only */ }
       apply();
       if (mode === "always" && K.isPlaying && K.isPlaying()) {
         // (the Ives switch's restart: the stop settles first; a STOP inside
@@ -1308,14 +1309,14 @@
       if (r.then) r.then();
     }
     function cancel() {
-      anims.forEach(function (a) { try { a.onfinish = null; a.cancel(); } catch (e) {} });
+      anims.forEach(function (a) { try { a.onfinish = null; a.cancel(); } catch (e) { /* gone already */ } });
       anims = []; run = null;
       if (raf) { cancelAnimationFrame(raf); raf = 0; }
     }
     function hold(on) {
       if (on === held) return;
       held = on;
-      anims.forEach(function (a) { try { if (on) a.pause(); else a.play(); } catch (e) {} });
+      anims.forEach(function (a) { try { if (on) a.pause(); else a.play(); } catch (e) { /* finished or gone: nothing to hold */ } });
     }
     // where the body is now (a leave can begin mid-arrival)
     function current() {

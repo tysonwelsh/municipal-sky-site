@@ -439,7 +439,7 @@ async function main() {
     const w = A.readWav(String(a.wav));
     const recs = a.events ? Dm.readDump(String(a.events)) : null;
     let tap = null;
-    try { tap = JSON.parse(fs.readFileSync(String(a.wav).replace(/\.wav$/i, "-tap.json"), "utf8")); } catch (e) {}
+    try { tap = JSON.parse(fs.readFileSync(String(a.wav).replace(/\.wav$/i, "-tap.json"), "utf8")); } catch (e) { /* no tap file: the window starts at --from, or 0 */ }
     const t0 = a.from != null ? +a.from : tap ? tap.from : 0, t1 = t0 + w.chans[0].length / w.sr;
     const b = await C.launch({ port: +a["chrome-port"] || C.DEFAULT_CHROME_PORT, profile: a.profile });
     C.cleanupOnExit([b]);
@@ -550,7 +550,7 @@ async function main() {
     process.stderr.write("seed " + seed + ": done — " + U.fmt(an.loud.integrated, 1) + " LUFS, peak " + U.fmt(an.pk.samplePeakDb, 1) + " dBFS\n");
   }
   let version = "";
-  try { version = fs.readFileSync(path.join(C.REPO, "art/kolob/VERSION"), "utf8").trim().split(" — ")[0]; } catch (e) {}
+  try { version = fs.readFileSync(path.join(C.REPO, "art/kolob/VERSION"), "utf8").trim().split(" — ")[0]; } catch (e) { /* no VERSION: the report names none */ }
   fs.writeFileSync(path.join(out, "report.md"), "# Capture — " + seeds.map((s) => "seed " + s).join(", ") + "\n\n*build " + version + " · " + new Date().toISOString().slice(0, 16).replace("T", " ") + " · for the Listener (PLAN-EXECUTION §4.2): Claude cannot hear; read the picture, the numbers and the log together, and let the owner's ear decide.*\n\n" + sections.join("\n\n") + "\n");
   b.kill();
   if (server.proc) server.proc.kill();

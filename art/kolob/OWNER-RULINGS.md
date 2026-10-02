@@ -26,11 +26,11 @@ Quotations are the owner's words. The record is `archive/plans/PLAN-COMPOSITION.
   named, "a starting point to tune by ear" (not built; `kolob-score.js` reserves the event); guests in
   about 55 % of meetings, a starting point (`kolob-calendar.js` `GUEST_ODDS`, "The owner tunes them
   by ear"; the census reads about 60 %); the Social Hall may end a meeting (`kolob-guest-socialhall.js`;
-  `kolob-meeting.js`).
-- **The band comes 36 % of the time, "per the owner's taste"** (`kolob-meeting.js`;
+  `kolob-plan.js`).
+- **The band comes 36 % of the time, "per the owner's taste"** (`kolob-plan.js`;
   `kolob-guest-bands.js` `ODDS.base: 0.36`); round 3c kept it and fitted every other guest's row
   around it. **The Sundays' shares the owner ruled:** ordinary 45–55 %, fast about 15, conference 15–20,
-  jubilee 10–15 (`kolob-meeting.js`).
+  jubilee 10–15 (`kolob-plan.js`).
 - **2026-09-27 — Colony composers: approved** (fifteen built; the minutes name the author in Deseret, the
   staff shows nothing: `kolob-hymnists.js`; §14.1). **2026-09-27 — Rounds and the partner hymn:
   approved, for COMPOSED hymns only** — "this concerns the generated music, not the Earth tunes"
@@ -44,11 +44,11 @@ Quotations are the owner's words. The record is `archive/plans/PLAN-COMPOSITION.
   (§14.5). **2026-09-27 — A section may lengthen for a guest: "it's ambient music … if the section needs to
   be a bit longer, that's okay"** (`kolob-meeting.js` `jointHeld`).
 - **2026-09-27 — The Question is shelved: "one of the less interesting guests… there's better stuff we could
-  be focusing on."** Its dice are still thrown (`kolob-meeting.js` planMeeting, `qDie`/`qSeatDie`); the
+  be focusing on."** Its dice are still thrown (`kolob-plan.js` day, `qDie`/`qSeatDie`); the
   code is in `shelved/` (the generator; since 2026-10-01 the set piece and the staff's cartouche too);
   the askers and the cornet's 55 % are withdrawn, the cornet stays as the band's lead.
 - **2026-09-27 — The invocation prays (a chant on the drone): declined** (§15.1). **2026-09-27 — The
-  organist's prelude on the day's first hymn: approved, "keep it a draw"** (`kolob-meeting.js`
+  organist's prelude on the day's first hymn: approved, "keep it a draw"** (`kolob-plan.js`
   `preludeDraw`; §15.2).
 - **2026-09-27 — The wandering refrain and the ward's handbell choir: approved** (`kolob-hymnal.js`;
   `kolob-guest-handbells.js`; §15.4–5). **2026-09-27 — The singing school: approved as EXPERIMENTAL** — "a
@@ -60,8 +60,8 @@ Quotations are the owner's words. The record is `archive/plans/PLAN-COMPOSITION.
   `kolob-guest-trombones.js`). **Their ending stays open: "keep it open,"** the forced final I
   reverted (`kolob-guest-trombones.js`; `kolob-meeting.js`).
 - **2026-09-27 — Before v0.34 (all approved):** fewer fast Sundays on first visits
-  (`kolob-meeting.js`); "prioritize variation wherever we can" in the opening
-  (`kolob-meeting.js`); the near trombone choir raised (`kolob-guest-trombones.js`); the old
+  (`kolob-plan.js`); "prioritize variation wherever we can" in the opening
+  (`kolob-plan.js`); the near trombone choir raised (`kolob-guest-trombones.js`); the old
   tune lowered and its repeated notes re-struck (`kolob-guests.js` `OLD_TUNE_DB: -7`, `ONSET_DIP`);
   the house lets go smoothly when a guest enters (`kolob-core.js` `houseLetsGo`).
 - **2026-09-27 — SIMPLE GIFTS ran at twice a singing pace:** `beatS: 1.1` (`kolob-tunes.js`).
@@ -87,12 +87,12 @@ Quotations are the owner's words. The record is `archive/plans/PLAN-COMPOSITION.
   (`kolob-voices-ground.js`).
 - **The Hosanna is audio-only and unlogged** (round 3c, overriding §8.12): nothing in the minutes, on the
   board or on the staff (`kolob-guest-hosanna.js` `LOGGED`, `ENGRAVE_HYMN`;
-  `kolob-meeting.js`; `kolob-viz.js`).
+  `kolob-plan.js`; `kolob-meeting.js`; `kolob-viz-intake.js` `onNote`).
 - **The reckoning's A/B is the drone alone:** `?exp=-reckoning` holds the drone home and changes nothing
-  else (`kolob-calendar.js`; `kolob-meeting.js`). **Round 2's re-base was owner-approved:**
+  else (`kolob-calendar.js`; `kolob-plan.js`; `kolob-meeting.js`). **Round 2's re-base was owner-approved:**
   labelled streams and clock cues; seeds play differently from v0.32 on (`kolob-core.js`).
 - **2026-09-30 (v0.36.1) — The bands never play over the ward's singing:** the prelude or the postlude,
-  never a hymn (`kolob-guest-bands.js` `SEATS`; `kolob-meeting.js`). "It goes on a
+  never a hymn (`kolob-guest-bands.js` `SEATS`; `kolob-plan.js`). "It goes on a
   bit long": `MAX_DUR` 110 → 55 s (`kolob-guest-bands.js`).
 - **2026-09-29 — The band's caterpillar, the owner's idea:** a volume for the band alone that "creeps onto
   the interface like a caterpillar" and crawls off when the band has gone (`kolob-ui.js`;
@@ -105,9 +105,9 @@ Quotations are the owner's words. The record is `archive/plans/PLAN-COMPOSITION.
 ## The staff and the page
 
 - **2026-09-26 — Direction A, "The Colony Tunebook,"** from three mockups; B and C not pursued
-  (`kolob-viz.js`; `mockups/engraving-a-tunebook.html`). Scroll 60 px/s (`SCROLL_PX_S`).
+  (`kolob-viz.js` and its five pieces, `_viz.php`; `mockups/engraving-a-tunebook.html`). Scroll 60 px/s (`SCROLL_PX_S`, `kolob-viz.js`).
   **2026-09-26 — No rubrics (no vermilion), no words between the staves, no drone on the page, no decoded
-  word on the telegraph** (PLAN-ENGRAVING top; `kolob-viz.js`; no `drone` in `MELODIC`).
+  word on the telegraph** (PLAN-ENGRAVING top; `kolob-viz*.js`; no `drone` in `MELODIC`, `kolob-viz-intake.js`).
 - **2026-09-27 (for v0.32) — Green ink only:** no gilt strike, no cooling, no glow; only the drying fades a
   note (`C_INK`). **2026-09-27 — No text on the staff:** no 8va/15ma, no captions, no time
   figures for the band; out-of-range notes take the ledger room, then fold silently by octaves
@@ -150,7 +150,7 @@ Quotations are the owner's words. The record is `archive/plans/PLAN-COMPOSITION.
   carry the rules;** when a rule changes, fix every comment that states the old one (CLAUDE.md; README;
   SCORE §13).
 - **2026-10-01 — Housekeeping at the owner's request:** the harness tracked, CI, one number for the Whole
-  switch (`kolob-meeting.js` `CUMULATIVE_ODDS: 0.08`, read by the page through
+  switch (`kolob-plan.js` `CUMULATIVE_ODDS: 0.08`, read by the page through
   `KolobAudio.getCumulativeOdds`), the shelf (SCORE §13). **Dev switches for the owner:** Latin labels "so
   the owner can debug" (`kolob-ui.js`); `?guest=<name>` for the listening packets; the
   experiments' DEFAULTS are "the owner's switches" (`kolob-experimental.js`).
@@ -159,7 +159,7 @@ Quotations are the owner's words. The record is `archive/plans/PLAN-COMPOSITION.
 
 - The bagpipe (2026-09-13) and the Question (2026-09-27), with the Question's askers, the cornet's 55 %,
   §8.1 and Phase 1 — `shelved/` (`kolob-question.js`, `kolob-question-setpiece.js`); its dice still
-  thrown in `kolob-meeting.js`. The pin drop (§14.5) and the
+  thrown in `kolob-plan.js`. The pin drop (§14.5) and the
   invocation that prays (§15.1): declined. Engraving directions B and C; on the page, rubrics, words, the
   gilt strike, 8va signs, captions, the band's time figures, the telegraph's tape and word, pulse
   animations, the drone's bar, the running head.
@@ -187,11 +187,11 @@ ear" notes. None has been heard: rounds 3b and 3c were measured, not listened to
   `kolob-guest-farward.js`). **The testimony:** whether a speaking voice without words reads as a
   person bearing testimony.
 - **The band's sliding layer:** at the band's own pace across our ink, or scrolled with the page
-  (r3c-engrave-2, Requests 1; `kolob-viz.js`).
+  (r3c-engrave-2, Requests 1; `kolob-viz-intake.js` `takeBand`, `kolob-viz.js` `drawBand`).
 - **The drone's landing** rubs in about half the turns (53 %); the lever is to land the glide on the next
   rite's first chord; `RECKON_CANDIDATES` (`kolob-calendar.js`, 24) sets how many Sundays reckon. **The
   Tabernacle's men's verses** come out mostly in unison (listen-r3b).
-- **Johnston's tuning marks** (`kolob-viz.js`); **the sparer staff** (§15, "may come back later").
+- **Johnston's tuning marks** (`kolob-viz.js` `TUNING_MARKS`); **the sparer staff** (§15, "may come back later").
   **The house organ is retired** (2026-10-01, "let's ditch the old organ"): the pipes play every
   chord. **The house choir is retired** (2026-10-01, "Retire the old house choir"): the ward sings
   everything; `organPartLine` remains only as the ward's fallback for a hymn without the organist.

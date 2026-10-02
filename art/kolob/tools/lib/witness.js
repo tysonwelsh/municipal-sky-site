@@ -61,7 +61,7 @@ if (OUT) {
         files: files.map((f) => ({ path: f.path, name: path.basename(f.path), sha1: [...f.sha], changed: f.sha.size > 1 })),
         fingerprint: files.length ? fingerprintOf(files.map((f) => ({ name: path.basename(f.path), bytes: f.bytes }))) : null,
       }, null, 1) + "\n");
-    } catch (e) {}
+    } catch (e) { /* not written: lib/run.js refuses a render it cannot name */ }
   });
 }
 

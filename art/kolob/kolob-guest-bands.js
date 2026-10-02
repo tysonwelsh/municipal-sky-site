@@ -76,6 +76,16 @@
 // after the t it is given, and laid out a few bars at a time through
 // hooks.defer, a little ahead of the sound.
 //
+// THE SCAFFOLD (KOLOB.GuestRoom, kolob-guest-room.js): the stream it
+// insists on, plan(), oddsFor() (the house's odds) and weightOf() (the
+// second band's), the decision's shape and its "not this Sunday", the
+// look-ahead (2.5 s), the stages told, the teardown sentinel, perform.last
+// and LEVEL. Its own: its seats (the gathering or the going-out, never
+// beside the trombones or the handcarts), the second band, and its slices
+// on the clock — a bar a callback, the first band's first bar at the press
+// and every other callback at a moment of its own (slot()), so it keeps
+// its own defer; its let-go, every band, its road and the town's air.
+//
 // Public surface: window.KOLOB.GuestBands
 //   plan(meetingInfo, stream) → { guest: "bands", seat, section, at, dur,
 //        holdUntil, pick, second, estimated, odds, logged: true } | null
@@ -100,10 +110,12 @@ window.KOLOB.GuestBands = (function () {
 
   var NAME = "bands";
   var LABEL = "guest:bands:";                     // the stream's label: + the meeting number
+  var GR = window.KOLOB.GuestRoom;                // the scaffold (kolob-guest-room.js)
+  if (!GR) throw new Error("KOLOB.GuestBands: load kolob-guest-room.js first");
 
   // ==========================================================================
-  // THE ODDS — the owner's own (kolob-meeting.js: "bands 36 %, per the
-  // owner's taste"), and the calendar's welcome, unchanged
+  // THE ODDS — the owner's own ("bands 36 %, per the owner's taste";
+  // OWNER-RULINGS.md), and the calendar's welcome, unchanged
   // ==========================================================================
   // p = base × weight[sunday, else kind], capped: 0.36, times
   // kolob-calendar.js's SUNDAYS[·].guests.bands — about one ordinary Sunday
@@ -143,18 +155,9 @@ window.KOLOB.GuestBands = (function () {
   // against the organ reference)
   var LEVEL = 0.43;
 
-  function need(stream) {
-    if (!stream || typeof stream.fork !== "function") throw new Error("KOLOB.GuestBands: a PJ2.Rand stream is required (label " + LABEL + "<n>)");
-    return stream;
-  }
-  function weightOf(tbl, info) {
-    var w = tbl.weight, k = info.sunday && w[info.sunday] != null ? info.sunday : info.kind;
-    return w[k] != null ? w[k] : 1;
-  }
-  // (the meeting hands this room its odds from Calendar.GUEST_ODDS,
-  // info.odds; a lab without them reads the room's own ODDS)
-  function oddsFor(info) { return info && info.odds != null ? Math.max(0, Math.min(1, +info.odds)) : Math.min(ODDS.cap, ODDS.base * weightOf(ODDS, info)); }
-  function secondOdds(info) { return Math.min(ODDS.second.cap, ODDS.second.base * weightOf(ODDS.second, info)); }
+  function need(stream) { return GR.need(stream, "KOLOB.GuestBands", LABEL); }
+  function oddsFor(info) { return GR.oddsFor(info, ODDS); }
+  function secondOdds(info) { return Math.min(ODDS.second.cap, ODDS.second.base * GR.weightOf(ODDS.second, info)); }
 
   // ==========================================================================
   // THE SHAPE — the musical dice of one passage, all drawn, in order
@@ -213,48 +216,36 @@ window.KOLOB.GuestBands = (function () {
     }
     if (has(function (g) { return EXCLUDES.indexOf(g.type) >= 0; })) why = "the " + (has(function (g) { return g.type === "trombones"; }) ? "trombones hold the dawn" : "handcarts are on the road");
     else if (!seat) why = "no prelude or postlude free";
-    else if (!(info.force || roll < p)) why = "not this Sunday";
-    if (why) return { seat: null, why: why, odds: p, roll: roll };
+    else if (GR.notThisSunday(info, roll, p)) why = "not this Sunday";
+    if (why) return GR.decision(null, why, p, roll);
     var span = AT[seat], secDur = sec && sec.dur > 0 ? sec.dur : 120;
     var at = Math.max(AT_MIN, secDur * (span[0] + (span[1] - span[0]) * atU));
     var second = info.force === "second" || sh.secondDie < p2;
     var dur = info.material ? score(info.material, stream, 0).end : estimate(sh) * (second ? 1.15 : 1);
-    return {
-      seat: {
-        guest: NAME, seat: seat, section: seat, at: +at.toFixed(2), dur: +dur.toFixed(2),
-        holdUntil: +(at + dur + 3).toFixed(2),       // the section should last at least this long
-        pick: +pick.toFixed(4), second: second, estimated: !info.material,
-        odds: +p.toFixed(3), logged: true,
-      },
-      why: "seated", odds: p, roll: roll,
-    };
+    return GR.decision({
+      guest: NAME, seat: seat, section: seat, at: +at.toFixed(2), dur: +dur.toFixed(2),
+      holdUntil: +(at + dur + 3).toFixed(2),       // the section should last at least this long
+      pick: +pick.toFixed(4), second: second, estimated: !info.material,
+      odds: +p.toFixed(3), logged: true,
+    }, "seated", p, roll);
   }
-  function plan(info, stream) { return decide(info, stream).seat; }
+  var plan = GR.plan(decide);
 
   // ==========================================================================
-  // PITCH — exact ratios (SCORE §2): the composer's spelling, copied so the
-  // room stands alone (a lab, the harness), and the just intervals a band's
-  // chord is tuned by above its root
+  // PITCH — exact ratios (SCORE §2): the composer's spelling (kolob-pitch.js's
+  // parent scales and arithmetic), and the just intervals a band's chord is
+  // tuned by above its root
   // ==========================================================================
-  var FR = {
-    ionian: ["1/1", "9/8", "5/4", "4/3", "3/2", "5/3", "15/8"], mixolydian: ["1/1", "9/8", "5/4", "4/3", "3/2", "5/3", "16/9"],
-    dorian: ["1/1", "9/8", "6/5", "4/3", "3/2", "5/3", "16/9"], aeolian: ["1/1", "9/8", "6/5", "4/3", "3/2", "8/5", "16/9"],
-  };
-  FR.penta = FR.hexa = FR.ionian;
+  var FR = window.KOLOB.Pitch.PARENT_FRACTIONS;
   var SEMIS = {};
-  function mzOf(s) {
-    var P = [2, 3, 5, 7], parts = String(s).split("/"), m = [0, 0, 0, 0];
-    [[+parts[0], 1], [parts.length > 1 ? +parts[1] : 1, -1]].forEach(function (nd) {
-      var n = nd[0];
-      for (var i = 0; i < 4; i++) while (n > 1 && n % P[i] === 0) { n /= P[i]; m[i] += nd[1]; }
-    });
-    return m;
-  }
-  function mzAdd(a, b) { return [a[0] + b[0], a[1] + b[1], a[2] + b[2], (a[3] || 0) + (b[3] || 0)]; }
-  function ratio(m) { return Math.pow(2, m[0]) * Math.pow(3, m[1]) * Math.pow(5, m[2]) * Math.pow(7, m[3] || 0); }
+  function mzOf(s) { return window.KOLOB.Pitch.fromFraction(s); }
+  function mzAdd(a, b) { return window.KOLOB.Pitch.mul(a, b); }
+  function ratio(m) { return window.KOLOB.Pitch.ratio(m); }
+  // (Math.log over LN2, where KOLOB.Pitch.centsOf takes Math.log2: the two
+  // can differ in the last bit, so the room's cents stay its own)
   function cents(r) { return 1200 * Math.log(r) / Math.LN2; }
-  function mod(a, n) { return ((a % n) + n) % n; }
-  function modeOf(m) { return FR[m] ? m : "ionian"; }
+  function mod(a, n) { return window.KOLOB.Num.mod(a, n); }
+  function modeOf(m) { return window.KOLOB.Pitch.modeName(m); }
   Object.keys(FR).forEach(function (k) { SEMIS[k] = FR[k].map(function (f) { return Math.round(cents(ratio(mzOf(f))) / 100); }); });
   var SCALE = {};
   Object.keys(FR).forEach(function (k) { SCALE[k] = FR[k].map(mzOf); });
@@ -826,7 +817,7 @@ window.KOLOB.GuestBands = (function () {
   // seconds before it sounds (hooks.defer, on the engine's clock), so no one
   // callback builds more than a bar of nodes; a lab with no clock lays it
   // all out at once.
-  var AHEAD = 2.5, SLICE_BARS = 1, SPACE = 0.12;
+  var AHEAD = GR.ahead(), SLICE_BARS = 1, SPACE = 0.12;
   function perform(ctx, dest, t, material, stream, hooks) {
     var VB = window.KOLOB.VoicesBand;
     if (!VB || !VB.road) throw new Error("KOLOB.GuestBands: load kolob-voices-band.js first");
@@ -905,27 +896,21 @@ window.KOLOB.GuestBands = (function () {
         else band.drum(e.t, e.kind, e.dyn);
       });
     }
-    if (hooks.onStage) sc.stages.forEach(function (st) { hooks.onStage(st); });
+    GR.tellStages(hooks, sc.stages);
     // when the last of the town's air has died, let every band and its road go
-    var tail = sc.gone + 5;
-    var sent = ctx.createConstantSource ? ctx.createConstantSource() : ctx.createOscillator();
-    var sg = ctx.createGain(); sg.gain.value = 0;
-    sent.connect(sg); sg.connect(bus);
-    sent.onended = function () {
+    GR.sentinel(ctx, bus, t, sc.gone + 5, function () {
       made.forEach(function (m) { if (m.band) { m.band.dispose(); m.road.dispose(); } });
       town.dispose();
-      try { sg.disconnect(); sent.disconnect(); bus.disconnect(); } catch (e) {}
-    };
-    sent.start(Math.max(0, t)); sent.stop(tail);
-    perform.last = { made: made, score: sc, bus: bus };
+      GR.quiet([bus]);
+    });
+    GR.last(perform, { made: made, score: sc, bus: bus });
     return sc.end;
   }
 
-  return {
+  return GR.level({
     plan: plan, decide: decide, prepare: prepare, score: score, perform: perform,
     readTune: readTune, arrange: arrange, shape: shapeOf,
     ODDS: ODDS, EXCLUDES: EXCLUDES, SEATS: SEATS, AT: AT, NAME: NAME, LABEL: LABEL, MAX_DUR: MAX_DUR,
-    get LEVEL() { return LEVEL; }, set LEVEL(v) { LEVEL = +v; },
-  };
+  }, function () { return LEVEL; }, function (v) { LEVEL = v; });
 })();
 (window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-guest-bands.js"] = true;   // the load guard's roll call

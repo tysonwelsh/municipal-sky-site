@@ -4,24 +4,27 @@
 writes. Written 2026-10-01 at v0.36.2; keep it true when the tools change.
 The owner's rules that bind these tools are in `art/kolob/README.md`.*
 
-Ten tools, all plain Node (22 or later: the browser tools use Node's own
-WebSocket) with no packages, except `samecode.js`, which needs the `acorn` that
-`npm install` at the repo root brings with ESLint. Three read the engine's
-source and nothing else; three read only the harness's dump, so they keep
-working when the engine changes; two drive a **muted** headless Chrome.
+Eleven tools, all plain Node (22 or later: the browser tools use Node's own
+WebSocket) with no packages, except `samecode.js` and the wrapper check of
+`lends.js`, which need the `acorn` that `npm install` at the repo root brings
+with ESLint. Three read the engine's
+source and nothing else; one runs its pure core headless; three read only the
+harness's dump, so they keep working when the engine changes; two drive a
+**muted** headless Chrome.
 
 | tool | answers | reads | time |
 |---|---|---|---|
-| `loadcheck.js` | Does the engine load, does every room answer, does the facade carry what the page calls, does one hymn proofread? | the source, headless | ~1 s |
-| `lends.js` | Does every `S.name` a room reads have a lend somewhere on the shared bag? | the source | <1 s |
-| `samecode.js` | Did an edit touch only comments and whitespace? | the source, in git and in the worktree | ~1 s |
+| `loadcheck.js` | Does the engine load, does every room answer, does the facade carry what the page calls, does one hymn proofread? Does the page's drawing load in its order, and draw? Does every lab load its rooms in its own order? | the source, headless | ~2 s |
+| `lends.js` | Does every `S.name` a room reads have a lend somewhere on the shared bag, and every `VS.name` the page's files read on theirs? Is every BORROWED wrapper exact? | the source | <1 s |
+| `samecode.js` | Did an edit touch only comments and whitespace? Did a file cut into pieces move its code and change none (`--split`)? | the source, in git and in the worktree | ~1 s |
+| `golden.js` | Does the pure core — the plan of meeting 1, the hymns, the guests' decisions, the organist, the ward — compose what it composed (`tools/golden/*.json`)? | the engine, headless, no audio | ~16 s for 40 seeds on 4 cores |
 | `distinctness.js` | Do two random seeds sound clearly different within three minutes? (design law 2) | the dump | ~2 s for 20 seeds |
 | `repetition.js` | How often does a meeting say the same thing twice, and which shapes turn up in every meeting? | the dump | ~2 s for 20 meetings |
 | `tally.js` | What is a meeting made of (cadences, guests, sections, notes per layer)? Did a change move it (A/B)? | the dump | ~2 s per 20 seeds; A/B at 60 seeds, under a minute |
 | `screens.js` | What does the staff look like at 860 and 390 px, and what does a frame cost at 4× CPU throttling? | the page, muted | real time: ~2.5 min per width |
 | `capture.js` | What does a seeded meeting sound like, as a WAV, a spectrogram, loudness (LUFS) and peak? | the page, muted | real time: 4 min for a 4-min window |
 | `render.js` | Renders a dump set to keep, or to read twice. | the harness | ~1 s per seed |
-| `selftest.js` | Do the instruments still read true? | the harness plus synthetic dumps and signals | ~30 s |
+| `selftest.js` | Do the instruments still read true? | the harness plus synthetic dumps and signals | ~35 s |
 
 Every report opens with what it measured: the engine, its VERSION, its git
 commit, a fingerprint of the module bytes the harness was *seen* to play (see
@@ -33,22 +36,28 @@ exclude it (`grep -r --exclude-dir=out …`).
 
 ```sh
 cd art/kolob
-node tools/loadcheck.js                          # the engine loads; the roll call; one hymn proofread
-node tools/lends.js                              # every S.x read has a lend
+node tools/loadcheck.js                          # the engine loads; the roll call; one hymn proofread; the labs' lists load
+node tools/lends.js                              # every S.x read has a lend; every BORROWED wrapper exact
 node tools/samecode.js                           # HEAD against the worktree: code unchanged?
+node tools/samecode.js --split kolob-viz.js --ref <ref>   # the page cut into its six files: every statement moved whole
+node _harness.js 600 22 staff                    # the meeting, and everything the page draws of it, traced (a digest)
+node tools/golden.js                             # the pure core composes what it composed (seeds 1–40, seconds)
 node tools/selftest.js                           # the instruments, checked (seconds)
 node tools/distinctness.js                       # 20 seeds, first 180 s → out/distinctness-…/report.md
 node tools/repetition.js                         # 20 seeds, 1200 s, every complete meeting
 node tools/tally.js                              # the same, counted
 node tools/tally.js --a git:main --b worktree --seeds 1-20   # did my change move the music?
 node tools/screens.js --seed 1847                # staff at 20/60/120 s, 860 + 390 px, frames at 4×
+node tools/screens.js --seed 22 --freeze         # the same, frame-exact: two runs compare by pixel (AE 0)
 node tools/capture.js --seed 1847 --to 240       # four minutes, recorded
 ```
 
-CI (`.github/workflows/kolob-check.yml`) runs lint, `loadcheck`, `lends`, the
-harness and `selftest`. `tally.js --a git:main --b worktree` is the standard
-"did my change move the music" check: a housekeeping change must leave every
-seed byte for byte the same; a musical change should move only what it meant to.
+CI (`.github/workflows/kolob-check.yml`) runs lint, `loadcheck`, `lends`,
+`golden`, the harness and `selftest`. `tally.js --a git:main --b worktree` is
+the standard "did my change move the music" check: a housekeeping change must
+leave every seed byte for byte the same; a musical change should move only what
+it meant to. `golden.js` answers the same question for the pure core in
+seconds, and nothing else.
 
 ## Silence: the owner's rule
 
@@ -127,10 +136,10 @@ stops with the harness's `LOAD` error.
 ## The harness
 
 ```sh
-node _harness.js <secs> <seed> [ives] [razz] [cumulative] [force=<guest>] [exp=<spec>]
+node _harness.js <secs> <seed> [ives] [razz] [cumulative[=<mode>]] [force=<guest>] [exp=<spec>]
                  [stop=<secs>,…] [play=<secs>,…] [reseed=<seed>@<secs>,…]
                  [throw=<lane>@<secs>,…] [badlistener=note|event] [desk=<secs>]
-                 [dump=<file>] [header]
+                 [staff[=860|390]] [dump=<file>] [header]
 ```
 
 `art/kolob/_harness.js` (tracked since 2026-10-01) mocks `window` and Web Audio
@@ -144,7 +153,8 @@ built, warnings, errors) and ends with `VERDICT: PASS ✓` or `FAIL ✗`; exit 1
 any caught error or a late cue; a module that fails to load prints
 `LOAD <file>: <error>` and no dump is written. The switches: `ives` /
 `force=<guest>` (`setForceVisitation(true)` / one named guest), `razz`
-(`setForceRaspberry(true)`), `cumulative` (`setCumulativeMode("always")`),
+(`setForceRaspberry(true)`), `cumulative` (`setCumulativeMode("always")`;
+`cumulative=never`, `=natural` or `=always` sets that mode),
 `exp=<spec>` (as `?exp=` takes it: `-name`, `+name`, `none`, `all`),
 `dump=<file>` (the note and event streams) and `header` (with `dump=`: a first
 line naming the run and the engine — the tools and CI always pass it; a plain
@@ -253,6 +263,29 @@ The dump is the clean run's. Seed 7, 300 s: 1,755 notes thrown at and 2 told
 (the first and the thousandth), 91 events and 1 told; before PLAN-REFACTOR §2.4
 the engine told none of them — an empty catch around every listener.
 
+**The page's drawing (`staff=`, PLAN-REFACTOR §3.5).** `staff` (or
+`staff=860`; `staff=390`, a phone) plays the page's drawing along with the
+meeting: the files on `_viz.php`'s list (`kolob-viz.js` alone in a build older
+than the list) evaluated after the engine, as the page's tags load them, on
+canvases that record instead of painting (`lib/canvas.js`: every call on a 2D
+context, a `Path2D` or a gradient and every setting, in order, folded into one
+SHA-1; numbers in full; a setting reads back what was set, `measureText` 7 px a
+character, `getImageData` blank). The plates are the size the page lays them out
+at (860 px: the staff 687 × 240 CSS px and the wheel 687 × 200 at DPR 2; 390 px:
+316 × 196 and 316 × 150 at DPR 3); `KolobViz.init` before PLAY, as the page's
+load calls it; the console's poll (`setConductor` with the conductor, playing,
+held) every 300 ms; a frame every 1/60 s of the virtual clock. The mock's
+analyser hears nothing, so the organ facade stands at rest. The report's
+`staff:` line gives the frames, the canvas calls, the canvases and paths made,
+the digest of everything drawn (16 hex) and its digest minute by minute, so two
+builds of the page fed the same meeting are held to the same drawing, every
+stroke of every frame: `KOLOB_DIR=<the other build> node _harness.js 600 22
+staff` for the other side (the engine is read from there too). Seed 22, 60 s:
+3,796 frames, 5,686,403 calls, digest `8c18ec81a4ba069c`, the same twice, and
+the same on the page before and after it was cut into six files; with the ink
+one step bluer, another. About 20 s of the machine for a minute of meeting at
+860 px.
+
 ## The dump format (v1)
 
 The tools depend on the dump and nothing else: one JSON array per line,
@@ -324,19 +357,43 @@ methods the page and the labs call. It then runs the page's own guard
 (`kolob_engine_guard()`, read from `_engine.php`) as the page does, after the
 rooms: it must name in `KOLOB._broken` exactly what the roll call missed
 (`kolob-ui.js` keeps PLAY disabled on it) and set nothing on a whole load. The
-calendar must stand before `kolob-meeting.js` is evaluated (the meeting
-requires it). The composer's desk: the files the hymnal's worker would load
+calendar and the plan (`kolob-plan.js`) must stand before `kolob-meeting.js`
+is evaluated (the meeting requires both). The composer's desk: the files the hymnal's worker would load
 on the page — found by the script tags the page prints from the list, under a
 stub Worker — must be the list's own, in its order. Then one pure smoke: the
 composer writes a hymn from a fixed stream and the Score's proofreader passes
-it. It prints `modules: N of N loaded; rooms answering: M`, the guard, the
-desk, the hymn, and `ALL GREEN` or the failures. No harness, no browser: the
-harness is what plays a meeting, this only proves the doors open.
+it. **The page's drawing** (PLAN-REFACTOR §3.5): `_viz.php`'s list (or
+`kolob-viz.js` alone in an older build; nothing in a copy without the page) is
+evaluated after the engine, in its order, on recording canvases
+(`lib/canvas.js`); `KolobViz` must stand with its whole surface (`init`,
+`setConductor`, `setWheelLabels`, `wheelSeatAt`, `setTuningMarks`, `probe`,
+`freezeAt`), every name a file reads off `KOLOB._viz` must be lent there once
+all have loaded, and the page is set up and drawn for its first frames, idle,
+without a throw (`page: 6 of 6 files loaded …; KolobViz's surface 7 of 7; 79
+names read from KOLOB._viz across the files, every one lent; 2 frames drawn
+idle (1910 canvas calls)`; the harness's `staff=` draws a whole meeting).
+Last, **the labs** (PLAN-REFACTOR §3.7): every `*-lab.php`, beside the
+engine and in `shelved/`, has its list of the house's files read from its page
+— its `<script>` tags for `pj2-*.js` and `kolob-*.js`, resolved from the lab's
+folder, and `_engine.php`'s list where it prints `kolob_engine_tags()` — and
+that list is loaded headless in the page's order, each lab in a process of its
+own, so each room sees only what its lab loaded before it: every room must
+evaluate without a throw or a word to `console.error`, and every room of the
+one list must answer the roll call. A room that comes to need another at load
+(`KOLOB.Pitch`, `KOLOB.Score`) is caught on the bench that lacks it; a room that
+reads another only when called is not (the lab finds that when it plays). It
+prints `modules: N of N loaded; rooms answering: M`, the guard, the desk, the
+hymn, the labs (`labs: 16 of 16 load the house's rooms in their own order
+(cast-lab 44, …)`, each with its count of files) and `ALL GREEN` or the
+failures. No harness, no browser: the harness is what plays a meeting, this
+only proves the doors open. Its loader — the list, the page's mock, the rooms
+evaluated in order, the roll call, a lab's list and a list loaded in a process
+of its own — is `lib/engine.js`, which `golden.js` loads the engine with too.
 
 ## lends.js
 
 ```sh
-node tools/lends.js                 # exit 0 = no unguarded unknown read
+node tools/lends.js                 # exit 0 = no unguarded unknown read, every wrapper exact
 KOLOB_DIR=<dir> node tools/lends.js
 ```
 
@@ -349,8 +406,32 @@ fails in another at the first cue that reaches it, minutes into a meeting, as
 name no room lends — an **unguarded** read fails the run, with file and line; a
 read under a guard (`S.x ? … : …`, `S.x && …`, `typeof S.x`, `!S.x`,
 `if (S.x)`) is an **optional** lend, listed, not failed (a lab without the
-room) — and the **dead** lends, lent and never read by any room. `ALL GREEN`
-when nothing is unguarded. CI runs it on every push.
+room) — and the **dead** lends, lent and never read by any room.
+
+**The BORROWED wrappers** (PLAN-REFACTOR §3.7). A room that calls another's
+function keeps a one-line wrapper for it at its top — `function cueAt(lane, t,
+fn) { return S.cueAt(lane, t, fn); }`, in the room's BORROWED block — as its
+manifest of what it borrows, bound late through `S`. The tool parses each room
+with acorn and checks every function of that shape: it must call the lend it is
+named after and pass its arguments through unchanged, in order. One that
+renames (`function foo() { return S.bar(); }`) or drops, adds or reorders an
+argument fails the run, with file and line. It prints the count room by room
+(`wrappers (…): 189 in 8 rooms — voices-organ 15, …, core 36; every one exact,
+every one used in its room`) and names any wrapper its room never uses (ESLint's
+`no-unused-vars` fails those). Without acorn (`npm install` not run) the
+wrappers are not checked, it says so, and it exits 2. `ALL GREEN` when nothing
+is unguarded and every wrapper is exact. CI runs it on every push.
+
+**The page's bag** (PLAN-REFACTOR §3.5). The page's drawing is six files
+(`_viz.php`'s list) sharing a bag of their own, `KOLOB._viz` (`VS`), the same
+way: a lend `VS.name = …` (or `Object.defineProperty(VS, "name", …)` for the
+page's state that is reassigned — the conductor's report, the device's pixel
+ratio — lent by a getter), a read `VS.name`, a wrapper `function x(a) { return
+VS.x(a); }` and a value taken at load, `var x = VS.x;`. The same checks run over
+that list and that bag and are told on lines of their own (`the page: files
+read: 6 (_viz.php); names lent on KOLOB._viz: 66; reads: 122` and `the page:
+wrappers …: 42 in 4 files …; every one exact, every one used in its file`); an
+unknown read or an inexact wrapper there fails the run as well.
 
 ## samecode.js
 
@@ -369,6 +450,139 @@ agree had only its comments or layout changed; one not in the ref is skipped.
 Exit 0 when every compared file's code is unchanged, 1 otherwise, 2 without
 acorn. Run it beside `tally.js --a git:main --b worktree`, which proves the
 music did not move, after any pass over the comments.
+
+```sh
+node tools/samecode.js --split kolob-viz.js --ref <ref> [new.js …]   # default: _viz.php's list
+node tools/samecode.js --split old.js --from <file> new.js …          # the old closure from a file
+```
+
+**A file cut into pieces** (`--split`, PLAN-REFACTOR §3.5). One closure become
+several, sharing state through one bag, moved its code if every statement of
+the old closure stands, whole and in its old order, in exactly one new file,
+and everything else in the new files is glue of the house's few shapes: the
+bag (`var VS = window.KOLOB._viz = window.KOLOB._viz || {};`), `var K =
+window.KolobAudio;`, a BORROWED wrapper, a value taken at load (`var x =
+VS.x;`) and a lend (`VS.x = x;`, or a getter — and a setter where another file
+writes it — for a name the old closure reassigned). Each file is parsed with
+espree and eslint-scope (ESLint's own) and each top-level statement of its
+closure tokenized; a moved statement must be an old one token for token, but
+for one change: a name of the old closure that another file now owns may be
+read as `VS.name`. Then every identifier is checked for what it means: a name
+of the old closure is the same name in the new file — its own, a wrapper's, a
+value taken once (only a name the old closure never reassigned, never written
+there, from a file loaded before it) or `VS.name` (lent by the file that
+declares it, by a getter where the old closure reassigned it); a local stays
+local and a global global. It prints, file by file, the statements moved, the
+glue, and the names read through `VS` with their counts, then `SAME CODE` or
+`NOT A PURE MOVE` with each fault (exit 1). On the cut of `kolob-viz.js`
+(`--ref e06bfee`): 291 of 291 statements moved whole, each once; 57 names read
+through `VS`.
+
+## golden.js
+
+```sh
+node tools/golden.js                        # seeds 1–40 against tools/golden/*.json; exit 0 = all match
+node tools/golden.js --write                # write the baseline (an intended change, in the same commit)
+node tools/golden.js --show hymns 17        # the canonical JSON one hash is taken of
+node tools/golden.js [--seeds 1-40] [--engine <dir>|git:<ref>] [--jobs N] [--per 5]
+```
+
+The tally proves a change left the music alone by playing twenty meetings
+through the harness, ten minutes. Most of the engine's thinking is pure, and a
+change there is proved here in seconds: about 16 s for 40 seeds on four cores
+(the slowest seeds, 10 and 18, write a partner doxology, fourteen tries at the
+fit, in 2–3 s; a doxology the reckoning writes 24 ways takes about a second).
+For each seed the first meeting of a fresh visit is planned and its hymns
+written, and five results are hashed, one file each in `tools/golden/`:
+
+| kind | what is hashed |
+|---|---|
+| `meeting` | what `planMeeting` leaves (the plan's `day` and `seat`, `kolob-plan.js`, written into the meeting by `kolob-meeting.js`): the Sunday the calendar drew (its die and its answer), the order of service (each rite's type, length, meter and light, holds included), the guests seated and refused, the seatings, the day's hymnal and forms, the reckoning's order, the Hosanna, the testimony, the chorale prelude, and every event it emitted |
+| `hymns` | the hymnal's orders (`prepare`'s rows, forms and reckoning) and every order written by `kolob-hymnal.js`'s own `write()` (through `get()`): the same others, the same dependency, the doxology's reckoning, a partner where drawn, the refrain — the Score as returned |
+| `guests` | each guest room's `decide()` on the info `planMeeting` handed its `plan()`, on a fresh `guest:<name>:<n>` |
+| `organist` | `Organist.seat` and `preludeDraw` as the meeting called them; the chorale prelude where drawn; for each hymn the organ plays, in the day's order with the ledger carried, `modulate` into a keyed hymn and `accompany` (the giving out, the verses, the interludes, the amen) |
+| `ward` | `Cast.seat` as the meeting called it, and `Cast.planHymn` for each of the day's hymns |
+
+**How.** Five seeds a process (`--per`; the groups do not depend on the
+machine, and `--per 1` and `--per 40` give the same hashes — a visit leaves
+nothing to the next). Each process loads `_engine.php`'s list with
+`lib/engine.js` (no AudioContext, no clock), reseeds as GATHER does
+(`KolobAudio.reseed`) and plans the meeting by the core's own entry,
+`S.planMeeting(t)`, as the downbeat's cue calls it; the core's `cueAt` does
+nothing without a clock. One lend is answered as the page answers it:
+`S.pipeOn()` asks whether the pipe organ has an AudioContext, and without one
+the planner seats no organist's variations and draws no chorale prelude — the
+golden says the pipes are on. Timers are written down and never run, and
+`performance.now` stands at 0 (the hymnal times each hymn, for its stats). The
+pure planners the meeting calls (the calendar's draw, the hymnal's plan and
+forms, each guest's plan, `Cast.seat`, the organist's seat and prelude draw)
+are watched as they are called, and each is called again on a fresh stream of
+the same label: it must give what it gave the meeting, or the run names it
+(`FAULT … not pure on its arguments and its stream`). **The plan itself**
+(`KOLOB.Plan`'s `day` and `seat`) is watched the same way and held to its own
+header: the meeting's call of each runs with the house shut — every lend on
+the shared bag (read or written, or one lent anew), the page (`document`,
+`location`, `localStorage`, `navigator`), the audio (`AudioContext` and its
+kin), the timers, `performance`, `Worker`, `KolobAudio`, `Date` and
+`Math.random` throw when touched, and the touch is told with where it came
+from (`FAULT … the plan: S.ctx in Plan.seat: seat (kolob-plan.js:308)`);
+the streams the house deals it (`draws.stream`, the core's `S.stream`) are
+let through, the plan that asks for them is not. What it was handed must be
+as it was after the call (`the plan: Plan.seat wrote what it was handed`).
+Both halves are then called again, with the house shut, on fresh streams of
+the meeting's labels (`<label>:<n>`, one stream per label in a call, as the
+core's; a fresh `cast:<n>` each time it is asked), and must give the
+meeting's own day and seating; and on 21 settings of the switches (the
+switch's own pick, each guest it may name, the withheld tune always and
+never, the raspberry, the pipes silent, the reckoning held) twice each, the
+same both times. The line `the plan: KOLOB.Plan's day() and seat() ran with
+the house shut …` says so, or `— BUT NOT ALL (above)`. Planted in scratch
+copies of `kolob-plan.js`, each is named: a read of `KOLOB._s.ctx`, of
+`document` and of `setTimeout`, a `Math.random()`, a write to the day it was
+handed, and a counter kept between calls. While a seed is computed,
+`Math.random` and `Date.now` throw and the call is named with the two frames
+under it (`the trap: Math.random() in hymns: compose (kolob-composer.js:1944) ←
+errand (kolob-hymnal.js:466)`); nothing calls either today. The hash is SHA-1
+of canonical JSON: keys sorted, numbers exactly as JSON writes them, a function
+as `ƒ`, a `PJ2.Rand` stream as the first draw of its fork `golden:probe`.
+
+**The ward's and the organist's hymns are the labs' walk**, not the
+performer's: `planHymn` on the hymn's `performance` fork with the Cast's own
+count of verses, the organ where the dialect's profile has it and never under
+a round; `accompany` on the hymn's own beat, with the ward plan's verses. The
+performer's walk — the verses the section has room for, the chorister's tempo
+and clock, the interlude a fuging displaces — is `kolob-voices-choir.js`'s, a
+room that keeps time, and the tally's.
+
+**What it cannot see**: the rooms that keep time and build nodes — the voices,
+the conductor past the plan (each section's turns, the tick, the joints, the
+chord desk), the set pieces (`kolob-guests.js`), every guest's `prepare()`,
+`score()` and `perform()`, the choir's performance, the core, the hymnal's
+worker and idle roads as such — and any meeting after the first, and the
+switches (`ives`, `force=`, `cumulative`, `razz`, `exp=`) but for the plan's
+own two halves, run on them twice and not against a baseline. A clean golden says
+the pure core did not move on these seeds, nothing more; a change to anything
+else still needs the tally.
+
+**Reading it.** One line a kind: `40 of 40 seeds match`, or the seeds that
+differ and the command to look at the first. `--show <kind> <seed>` prints the
+canonical JSON that seed's hash is taken of (the hash and the baseline's on
+stderr); to see what moved, print it on both builds and diff:
+`--show hymns 17 --engine git:HEAD > a.json`, `--show hymns 17 > b.json`. The
+header names the modules' fingerprint (the witness's, as the harness prints it)
+beside the baseline's: a comment moves the fingerprint and no hash. A planted
+change proves it sees: the Sacred Harp's `tempo` in `kolob-dialects.js` moved
+from 0.86 to 0.87 in a scratch copy — `hymns 24 of 40 seeds match — differ: 2,
+3, 4, 5, 6, 8, 12, 13, 17, 18, 23, 29, 31, 34, 36, 39`, exactly the sixteen
+seeds whose day has a Sacred Harp hymn, and every other kind 40 of 40; the same
+copy with only a comment added, 40 of 40 on every kind.
+
+**After a change that moves the pure core on purpose**, re-baseline in the
+same commit: run the comparison first and keep its lines (the kinds and seeds
+that moved), then `--write`, and put both and the reason in the commit message.
+`--write` refuses when a seed faulted (a planner found impure, a sprung trap,
+a word from the engine). Each file carries the fingerprint and the VERSION it
+was written at and the date. CI runs the comparison on every push.
 
 ## distinctness.js
 
@@ -465,11 +679,15 @@ a hymn's verses to one tune (38–41 % each); every other voice is at or near
 
 ```sh
 node tools/tally.js [--seeds 1-20] [--secs 1200] [--first] [--engine …] [--harness …] [--dumps …] [--out <dir>]
-node tools/tally.js --a <spec> --b <spec> [--seeds 1-60] [--secs 1200] [--threshold 15] [--harness-a …] [--harness-b …]
+node tools/tally.js --a <spec> --b <spec> [--seeds 1-60] [--secs 1200] [--threshold 15] [--harness-a …] [--harness-b …] [--flags …]
 ```
 
 Here `<spec>` is a dump directory, an engine directory, `git:<ref>` or
-`worktree`.
+`worktree`. `--flags` hands the harness its switches for every build the
+tally renders, as `render.js` takes them (`--flags force=gulls`, `ives`,
+`cumulative`): a change to one guest's room is proved on the seeds that seat
+it, `node tools/tally.js --a git:HEAD --b worktree --seeds 1-3 --flags
+force=gulls` (the report's A and B lines name the flags).
 
 **What it counts**, over every complete meeting: the meeting's length and its
 sections; each section type's median length and count; cadences per meeting
@@ -517,7 +735,7 @@ difference is the harness or the flags, not the engine).
 ## screens.js
 
 ```sh
-node tools/screens.js [--seed 1847] [--times 20,60,120] [--widths 860,390] [--section hymn] [--fps-secs 20] [--throttle 4] [--full] [--ives] [--latin]
+node tools/screens.js [--seed 1847] [--times 20,60,120] [--widths 860,390] [--section hymn] [--freeze] [--fps-secs 20] [--throttle 4] [--full] [--ives] [--latin]
                       [--port 8113] [--chrome-port 9423] [--profile <dir>] [--out <dir>]
 ```
 
@@ -525,6 +743,30 @@ It loads `?seed=N` in muted headless Chrome and presses PLAY. At each time in
 the meeting (the audio clock since PLAY, or since the jump with `--section`) it
 captures the **staff** canvas at each width: 860 px at DPR 2; 390 px emulated
 as a phone at DPR 3; with `--full`, the whole page as well.
+
+**Frame-exact (`--freeze`, PLAN-REFACTOR §4.0(a)).** Without it a shot is
+taken whenever the audio clock passes the time, between two frames, and two
+runs of one build differ by a few pixels of scroll — tens of thousands of
+pixels by `compare -metric AE` (seed 22 at 20 and 60 s: 33,703 and 35,473 at
+860 px, 22,641 and 10,139 at 390). With it the page holds each time and
+paints there (kolob-viz.js THE FRAME-EXACT CAPTURE: `?kolobFreeze=<secs>`,
+`KolobViz.freezeAt(secs)`, `probe("freeze")`), the times counted from the
+meeting's downbeat — with `--section`, from the jump's `section-start` — and
+two runs give the same staff: `compare -metric AE a.png b.png null:` says 0.
+That is how two builds are compared by pixel (a refactor of the page must say
+0 on every pair). Exact where the ink dries at its own rate (in the sacrament
+and the postlude a shade may differ: the drying follows the section the
+console last reported); after a `--section` jump the page still holds what was
+printed before it, placed by the jump's own moment, until it has scrolled away
+(about 14 s at 860 px). A frozen shot is the plate alone, where the ink is
+(the staff's canvas lies over the wheel's foot, whose organ is the live
+sound's spectrum, and over the console's head), shot where it stands in the
+viewport (a shot beyond the viewport lays the page out again, wider by the
+scrollbar at 860 px; a held page is then painted again at that width). What
+the engine writes after the held moment waits until the page runs on, so the
+page is made of the same notes in every run. In `--full` only the staff is
+held: the wheel's organ is the live sound's spectrum and the console runs on.
+The page runs free again before the frame timing.
 
 **Frame time.** After the shots, the CPU is throttled `--throttle`× for
 `--fps-secs` (0 to skip). Every requestAnimationFrame callback is timed, and
@@ -632,7 +874,7 @@ the cores, at most 8).
 node tools/selftest.js
 ```
 
-About half a minute, no browser. It checks twelve things: (1) a real dump from
+About a minute, no browser. It checks sixteen things: (1) a real dump from
 this worktree reads as meetings and sections, the witness names the build's own
 list, and the harness names the same engine in the header's `engine` field;
 (2) a synthetic dump in SCORE §6's **typed** vocabulary reads the same way —
@@ -684,18 +926,44 @@ the fresh run's record for record, and the pacing moves no record;
 `badlistener=note,event` — each bad listener's fault is told the first time
 and at every thousandth, naming the listener and the layer or the type it
 threw on, and kept out of the run's errors, and the dump is the clean run's,
-record for record. All twelve pass on `art/kolob/_harness.js`. Run it after any change to the
-engine's events, to the harness or to these tools. It renders into `out/_selftest/` and, like
-every tool, refuses while the engine is being edited.
+record for record; (13) **the roll call stops PLAY** (PLAN-REFACTOR §2.5):
+`loadcheck.js` on scratch copies of the build — whole, the page's guard sets
+nothing; `kolob-calendar.js` missing, the guard names it in `KOLOB._broken`;
+the calendar left off the list, or two of the composer's rooms swapped, or a
+hymnal naming a room the list lacks, each found; (14) **the pure core composes
+what it composed** (PLAN-REFACTOR §3.6): `golden.js` on seeds 3, 7 and 22
+against `tools/golden/` — every kind matches and the trap is never sprung; the
+meeting it plans headless emits the harness's own events at the downbeat, in
+order (seed 3's morning is the organist's chorale prelude, which needs the
+pipes on); a scratch copy with the Sacred Harp's tempo moved differs in the
+hymns of seed 3 alone, and one with a comment added in nothing; (15) **the
+wrappers and the labs** (PLAN-REFACTOR §3.7): `lends.js` finds every BORROWED
+wrapper exact and used, and fails a scratch copy with one wrapper that renames
+(`function foo() { return S.now(); }`) and one that reorders (`cueAt`'s lane and
+time swapped), naming both; `loadcheck.js` finds every lab loading its rooms in
+its own order, and fails a copy with the singing school moved ahead of
+`kolob-pitch.js` on `guests-lab`'s list (and so of the guest rooms' scaffold,
+`kolob-guest-room.js`, which it reaches for first), naming the lab and the
+room's throw; (16) **the page in pieces** (PLAN-REFACTOR §3.5): the harness's
+`staff=` draws seed 7's first 30 s to the same digest twice, and a scratch copy
+whose ink is one step bluer to another; `samecode.js --split` holds a little
+closure cut in two to its moves (the name it reassigns read through the bag by
+a getter: `SAME CODE`), and fails a cut that takes that name once at load and
+one whose list changed a number, naming both.
+All sixteen pass on `art/kolob/_harness.js`. Run it after any change to the engine's
+events, to the harness or to these tools. It renders into `out/_selftest/`
+and, like every tool, refuses while the engine is being edited.
 
 ## Files
 
 ```
 tools/
   README.md          this file
-  loadcheck.js       the engine loads headless; the roll call; one hymn proofread
-  lends.js           the shared bag: every S.x read has a lend
-  samecode.js        a git ref against the worktree, tokens only (needs acorn: npm install)
+  loadcheck.js       the engine loads headless; the roll call; one hymn proofread; the page's drawing loads and draws; every lab's list loads
+  lends.js           the shared bags (KOLOB._s, the page's KOLOB._viz): every read has a lend; every BORROWED wrapper exact (acorn)
+  samecode.js        a git ref against the worktree, tokens only (needs acorn: npm install); --split: a cut file's statements, each moved whole (espree, eslint-scope)
+  golden.js          the pure core's results on seeds 1–40, hashed, against golden/
+  golden/            the baseline: meeting, hymns, guests, organist, ward (.json), each seed's hash
   render.js          seeds → a dump set (+ manifest.json)
   distinctness.js    design law 2
   repetition.js      phrase shapes heard before
@@ -705,6 +973,8 @@ tools/
   selftest.js        the instruments, checked
   lib/dump.js        the dump reader: both event vocabularies, meetings, sections, voices, phrases
   lib/run.js         rendering through the harness: worktree, directory or git:<ref>; the witness's verdict
+  lib/engine.js      the engine loaded headless: the one list, the page's list (_viz.php), the page's mock, the roll call, a lab's list (loadcheck, golden)
+  lib/canvas.js      a canvas that records instead of painting, every call folded into one digest (the harness's staff=, loadcheck)
   lib/witness.js     preloaded into every harness run: which engine files it actually read
   lib/chrome.js      php -S + muted headless Chrome over CDP
   lib/audio.js       WAV, BS.1770 loudness, true peak, FFT, spectrogram

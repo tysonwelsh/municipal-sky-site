@@ -163,6 +163,7 @@ include '../../includes/header.php';
 <script src="kolob-voices-folk.js?v=<?php echo kg3_v('kolob-voices-folk.js'); ?>"></script>
 <script src="kolob-voices-vocal.js?v=<?php echo kg3_v('kolob-voices-vocal.js'); ?>"></script>
 <script src="kolob-cast.js?v=<?php echo kg3_v('kolob-cast.js'); ?>"></script>
+<script src="kolob-guest-room.js?v=<?php echo kg3_v('kolob-guest-room.js'); ?>"></script>
 <script src="kolob-guest-socialhall.js?v=<?php echo kg3_v('kolob-guest-socialhall.js'); ?>"></script>
 <script src="kolob-testimony.js?v=<?php echo kg3_v('kolob-testimony.js'); ?>"></script>
 <script src="guests3d-lab.js?v=<?php echo kg3_v('guests3d-lab.js'); ?>"></script>

@@ -525,7 +525,7 @@
 
 /* ============================== the wheel ================================ */
 /* the order of service: the crown of a wheel, drawn by the canvas
-   (kolob-viz.js drawWheel) — the first plate, directly under the title's
+   (kolob-viz-wheel.js drawWheel) — the first plate, directly under the title's
    rule, with the organ facade standing inside it on the horizon (seating the
    pipes in the wheel's clear inner disc, rather than on a plate of their own
    above it, saves the page ~120px of height). Its horizon rule
@@ -534,7 +534,7 @@
    wheel. */
 .kolob-wheel-wrap {
   position: relative;
-  height: 230px;                    /* crown at 14%, horizon pinned 4px above the bottom (kolob-viz.js wheelGeom); deep enough that the organ has ~110px of headroom under the hour ring */
+  height: 230px;                    /* crown at 14%, horizon pinned 4px above the bottom (kolob-viz-wheel.js wheelGeom); deep enough that the organ has ~110px of headroom under the hour ring */
   margin: 0;                        /* the staff plate is drawn up over this band's foot — see .kolob-viz-wrap */
 }
 .kolob-wheel {
@@ -956,7 +956,7 @@
 
 /* Reduced motion (the OS setting). The page's own motion already honours it in
    script — the wheel turns at once and the band's caterpillar fades instead of
-   crawling (kolob-viz.js, kolob-ui.js) — and here the stylesheet's motion stands
+   crawling (kolob-viz-wheel.js, kolob-ui.js) — and here the stylesheet's motion stands
    still too: the broadside's ink-set blur and the slow opacity fades of the
    wheel, the sacrament's dim and the caterpillar's fade all land at once. */
 @media (prefers-reduced-motion: reduce) {

@@ -74,6 +74,15 @@
 // sound-level). perform() reads no clock: everything is placed at or after
 // the t it is given.
 //
+// THE SCAFFOLD (KOLOB.GuestRoom, kolob-guest-room.js): the stream it
+// insists on, plan(), oddsFor() (the house's odds), the decision's shape and
+// its "not this Sunday", the score's stage-writer, the look-ahead (2.5 s)
+// and the slices on the clock (defer, 0.05 s of margin), the stages told,
+// the teardown sentinel, perform.last and LEVEL. Its own: the experiment's
+// switch, its seat (the prelude, never at a funeral, nor taken or beside a
+// guest), its slices — each sung line laid ahead of its throat's birth,
+// the desks that start together a fifth of a second apart — and the door.
+//
 // Public surface: window.KOLOB.GuestSingingSchool
 //   plan(meetingInfo, stream) → { guest, seat: "prelude", at, dur, holdUntil,
 //        mistake?, estimated, odds, experimental: true, logged: true } | null
@@ -100,6 +109,8 @@ window.KOLOB.GuestSingingSchool = (function () {
 
   var NAME = "singingschool";
   var LABEL = "guest:singingschool:";
+  var GR = window.KOLOB.GuestRoom;                // the scaffold (kolob-guest-room.js)
+  if (!GR) throw new Error("KOLOB.GuestSingingSchool: load kolob-guest-room.js first");
   var EXPERIMENT = "singingSchool";
 
   // ==========================================================================
@@ -166,18 +177,8 @@ window.KOLOB.GuestSingingSchool = (function () {
     return (SAID[w] || SAID.voiced)[shape] || shape;
   }
 
-  function oddsFor(info) {
-    // (the meeting hands this room its odds from Calendar.GUEST_ODDS,
-    // info.odds; a lab without them reads the room's own ODDS)
-    if (info && info.odds != null) return Math.max(0, Math.min(1, +info.odds));
-    var w = ODDS.weight;
-    var k = info.sunday && w[info.sunday] != null ? info.sunday : info.kind;
-    return Math.min(ODDS.cap, ODDS.base * (w[k] != null ? w[k] : 1));
-  }
-  function need(stream) {
-    if (!stream || typeof stream.fork !== "function") throw new Error("KOLOB.GuestSingingSchool: a PJ2.Rand stream is required (label " + LABEL + "<n>)");
-    return stream;
-  }
+  function oddsFor(info) { return GR.oddsFor(info, ODDS); }
+  function need(stream) { return GR.need(stream, "KOLOB.GuestSingingSchool", LABEL); }
   function experimentOn(info) {
     if (info && info.experimental && typeof info.experimental[EXPERIMENT] === "boolean") return info.experimental[EXPERIMENT];
     var X = window.KOLOB.Experimental;
@@ -207,45 +208,40 @@ window.KOLOB.GuestSingingSchool = (function () {
     else if (!prelude) why = "no prelude";
     else if (taken) why = "the prelude is taken (" + taken + ")";
     else if (beside) why = "a guest beside the prelude (" + beside + ")";
-    else if (!(info.force || roll < p)) why = "not this Sunday";
-    if (why) return { seat: null, why: why, odds: p, roll: roll };
+    else if (GR.notThisSunday(info, roll, p)) why = "not this Sunday";
+    if (why) return GR.decision(null, why, p, roll);
     var mat = info.material && info.material.prepared ? info.material : null;
     var sc = mat ? score(mat, stream, 0) : null;
     var dur = sc ? sc.end : 40;
     var at = AT[0] + (AT[1] - AT[0]) * atU;
-    return {
-      seat: {
-        guest: NAME, seat: "prelude", section: "prelude", at: +at.toFixed(2), dur: +dur.toFixed(2),
-        holdUntil: +(at + dur + 3).toFixed(2),
-        mistake: sc ? sc.lesson.mistake.says : null,
-        estimated: !mat, odds: +p.toFixed(3), experimental: true, logged: true,
-      },
-      why: "seated", odds: p, roll: roll,
-    };
+    return GR.decision({
+      guest: NAME, seat: "prelude", section: "prelude", at: +at.toFixed(2), dur: +dur.toFixed(2),
+      holdUntil: +(at + dur + 3).toFixed(2),
+      mistake: sc ? sc.lesson.mistake.says : null,
+      estimated: !mat, odds: +p.toFixed(3), experimental: true, logged: true,
+    }, "seated", p, roll);
   }
-  function plan(info, stream) { return decide(info, stream).seat; }
+  var plan = GR.plan(decide);
 
   // ==========================================================================
-  // PITCH
+  // PITCH (the parent scales, the ratios and the small arithmetic are
+  // kolob-pitch.js's)
   // ==========================================================================
-  var PARENT = {
-    ionian:     [1, 9 / 8, 5 / 4, 4 / 3, 3 / 2, 5 / 3, 15 / 8],
-    mixolydian: [1, 9 / 8, 5 / 4, 4 / 3, 3 / 2, 5 / 3, 16 / 9],
-    dorian:     [1, 9 / 8, 6 / 5, 4 / 3, 3 / 2, 5 / 3, 16 / 9],
-    aeolian:    [1, 9 / 8, 6 / 5, 4 / 3, 3 / 2, 8 / 5, 16 / 9],
-  };
-  PARENT.penta = PARENT.hexa = PARENT.ionian;
-  // where do sits, counted from the final (the composer's DO_OF): the four
-  // shapes are read from do
-  var DO_OF = { ionian: 0, penta: 0, hexa: 0, mixolydian: 3, dorian: 6, aeolian: 2 };
+  var PARENT = window.KOLOB.Pitch.PARENT_RATIOS;
+  // where do sits, counted from the final, is the composer's
+  // (KOLOB.Composer.doOf: every list that loads this room loads the
+  // composer before it): the four shapes are read from do
+  function doOf(mode) { return window.KOLOB.Composer.doOf(mode); }
   var SHAPES = ["fa", "sol", "la", "fa", "sol", "la", "mi"];      // do re mi fa sol la ti
-  function modeName(m) { return PARENT[m] ? m : "ionian"; }
-  function mod(a, n) { return ((a % n) + n) % n; }
+  function modeName(m) { return window.KOLOB.Pitch.modeName(m); }
+  function mod(a, n) { return window.KOLOB.Num.mod(a, n); }
   function degRatio(mode, d) { return PARENT[modeName(mode)][mod(d, 7)] * Math.pow(2, Math.floor(d / 7)); }
-  function monzoRatio(m) { m = m || [0, 0, 0, 0]; return Math.pow(2, m[0] || 0) * Math.pow(3, m[1] || 0) * Math.pow(5, m[2] || 0) * Math.pow(7, m[3] || 0); }
+  function monzoRatio(m) { return window.KOLOB.Pitch.ratio(m || [0, 0, 0, 0]); }   // (no monzo: the unison)
+  // (Math.log over LN2, where KOLOB.Pitch.centsOf takes Math.log2: the two
+  // can differ in the last bit, so the room's cents stay its own)
   function cents(r) { return 1200 * Math.log(r) / Math.LN2; }
-  function shapeOf(mode, deg) { return SHAPES[mod(deg - DO_OF[modeName(mode)], 7)]; }
-  function num(x, d) { x = +x; return isFinite(x) && x > 0 ? x : d; }
+  function shapeOf(mode, deg) { return SHAPES[mod(deg - doOf(modeName(mode)), 7)]; }
+  function num(x, d) { return window.KOLOB.Num.positive(x, d); }
   // A REAL CLASH: a second or a seventh, or the tritone — never a comma, never
   // a consonance (interval classes in cents, octaves folded)
   function clashOf(r1, r2) {
@@ -260,13 +256,7 @@ window.KOLOB.GuestSingingSchool = (function () {
   // ==========================================================================
   var PARTS = ["S", "A", "T", "B"];
   var PART_NAME = { S: "sopranos", A: "altos", T: "tenors", B: "basses", W: "women", M: "men" };
-  function lineLength(ln) {
-    var K = window.KOLOB;
-    if (K.Score && K.Score.lineLength) return K.Score.lineLength(ln);
-    var end = 0;
-    Object.keys(ln.notes || {}).forEach(function (p) { (ln.notes[p] || []).forEach(function (n) { end = Math.max(end, n.beat + n.beats); }); });
-    return end;
-  }
+  function lineLength(ln) { return window.KOLOB.Score.lineLength(ln); }
   function readLine(ln) {
     var parts = {};
     PARTS.forEach(function (p) {
@@ -275,6 +265,7 @@ window.KOLOB.GuestSingingSchool = (function () {
         var n = src[k];
         if (!n || n.monzo == null) continue;
         var b1 = n.beat + n.beats;
+        // (a tie joins only where the pitch holds, in beats, on no clock: not KOLOB.Score.sungNotes)
         while (src[k].tie && k + 1 < src.length && src[k + 1] && Math.abs(monzoRatio(src[k + 1].monzo) - monzoRatio(n.monzo)) < 1e-9) { k++; b1 = src[k].beat + src[k].beats; }
         out.push({ beat: n.beat, beats: b1 - n.beat, ratio: monzoRatio(n.monzo), deg: n.deg != null ? n.deg : Math.round(cents(monzoRatio(n.monzo)) / 171.4), syl: n.syl, stress: n.stress != null ? n.stress : 1 });
       }
@@ -282,10 +273,10 @@ window.KOLOB.GuestSingingSchool = (function () {
     });
     return { parts: parts, beats: lineLength(ln), barStart: ln.barStart || 0, fermata: (ln.fermataBeats || []).length ? Math.max.apply(null, ln.fermataBeats) : null };
   }
-  // a fault is told, never hidden (kolob-core.js, THE FAULTS): through the
-  // house's confess, once per what, where the house is loaded; plainly on a
-  // bench without it
-  function confess(what, err) { var S = window.KOLOB._s; if (S && S.confess) S.confess(what, err); else if (typeof console !== "undefined") console.error("Kolob: " + what, err); }
+  // a fault is told, never hidden (THE FAULTS): through the house's one
+  // confess, KOLOB.Fault (kolob-pitch.js, which every list that loads this
+  // room loads first), on a bench without the core as in the house
+  function confess(what, err) { return window.KOLOB.Fault.confess(what, err); }
   function prepare(material, stream) {
     if (material && material.prepared) return material;
     var M = material || {};
@@ -294,7 +285,7 @@ window.KOLOB.GuestSingingSchool = (function () {
       try { h = window.KOLOB.Composer.compose(need(stream).fork("material").fork("hymn"), { dialect: "tabernacle", mode: M.mode ? modeName(M.mode) : undefined }); source = "a hymn composed for the practice"; }
       catch (e) { h = null; confess("the singing school's hymn could not be composed", e); }
     }
-    if (!h) throw new Error("KOLOB.GuestSingingSchool: a hymn is required (material.hymn), or KOLOB.Composer loaded");
+    if (!h) throw new Error("KOLOB.GuestSingingSchool: no hymn to practise — none was handed over (material.hymn), and " + (window.KOLOB.Composer ? "the composer could not write one" : "KOLOB.Composer is not loaded (this room needs it in any case: where do sits is its doOf)"));
     var K = num(M.keynoteHz, 260);
     var lines = h.lines.slice(0, 2).map(readLine);
     var present = PARTS.filter(function (p) { return lines[0].parts[p]; });
@@ -488,7 +479,7 @@ window.KOLOB.GuestSingingSchool = (function () {
     var psBeats = 0; mk.passage.notes.forEach(function (n) { psBeats += Math.max(0.5 / slow, n.beats); });
     slow = Math.max(spb * 1.15, Math.min(slow, 7 / Math.max(1, psBeats * 1.12)));
     var items = [], stages = [], notesOut = [];
-    function stage(name, a, b, label) { stages.push({ stage: name, t0: t0 + a, t1: t0 + b, label: label }); }
+    var stage = GR.stage(stages, t0);
     function vowelOf(n, i) { return vowels[(n.syl != null ? n.syl : i) % vowels.length]; }
     // a desk's notes for one line, from `fromBeat`, shifted `lateBeats`,
     // wrong notes swapped in, stopped at `stopAt` (s from the line's start)
@@ -733,11 +724,10 @@ window.KOLOB.GuestSingingSchool = (function () {
     // a tick of the clock of its own — a practice built in one cue cost 120–
     // 250 ms of main thread (measured in a live context); a lab with no
     // clock lays everything out at once
-    var AHEAD = 2.5, BORN = 0.5, STAGGER = 0.2;
+    var AHEAD = GR.ahead(), BORN = 0.5, STAGGER = 0.2;
     function lay(it, fn) {
       var when = it.t - (it.kind === "sing" || it.kind === "chorister" ? BORN : 0.05) - AHEAD - (it.kind === "sing" ? STAGGER * it.desk : 0);
-      if (hooks.defer && when > t + 0.05) hooks.defer(when, fn);
-      else fn();
+      GR.defer(hooks, t, when, fn, 0.05);
     }
     sc.items.forEach(function (it) {
       lay(it, function () {
@@ -761,22 +751,17 @@ window.KOLOB.GuestSingingSchool = (function () {
         if (hooks.onNote && it.noteTo > it.noteFrom) sc.notes.slice(it.noteFrom, it.noteTo).forEach(function (n) { hooks.onNote(n); });
       });
     });
-    if (hooks.onStage) sc.stages.forEach(function (st) { hooks.onStage(st); });
-    var sent = ctx.createConstantSource ? ctx.createConstantSource() : ctx.createOscillator();
-    var sg = ctx.createGain(); sg.gain.value = 0;
-    sent.connect(sg); sg.connect(bus);
-    sent.onended = function () { try { sg.disconnect(); sent.disconnect(); bus.disconnect(); } catch (e) { /* gone */ } };
-    sent.start(Math.max(0, t)); sent.stop(sc.end + 2);
-    perform.last = { score: sc };
+    GR.tellStages(hooks, sc.stages);
+    GR.sentinel(ctx, bus, t, sc.end + 2, function () { GR.quiet([bus]); });
+    GR.last(perform, { score: sc });
     return sc.end;
   }
 
-  return {
+  return GR.level({
     plan: plan, decide: decide, prepare: prepare, lesson: lesson, score: score, perform: perform,
     clashOf: clashOf, ODDS: ODDS, EXPERIMENT: EXPERIMENT, NAME: NAME, LABEL: LABEL,
-    get LEVEL() { return LEVEL; }, set LEVEL(v) { LEVEL = +v; },
     get CONSONANTS() { return { section: CONSONANTS.section, chorister: CONSONANTS.chorister }; },
     set CONSONANTS(v) { v = v || {}; ["section", "chorister"].forEach(function (k) { if (SAID[v[k]] || v[k] === "auto") CONSONANTS[k] = v[k]; }); },
-  };
+  }, function () { return LEVEL; }, function (v) { LEVEL = v; });
 })();
 (window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-guest-singingschool.js"] = true;   // the load guard's roll call

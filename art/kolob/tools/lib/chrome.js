@@ -63,7 +63,7 @@ async function ensureServer(opts) {
   proc.stderr.on("data", (d) => { err += d; if (err.length > 4000) err = err.slice(-4000); });
   for (let i = 0; i < 40; i++) {
     await sleep(150);
-    try { const r = await get(base + probe, 1000); if (r.status === 200) return { base, proc, reused: false }; } catch (e) {}
+    try { const r = await get(base + probe, 1000); if (r.status === 200) return { base, proc, reused: false }; } catch (e) { /* not up yet: ask again */ }
   }
   proc.kill();
   throw new Error("php -S did not come up on " + port + ": " + err.slice(-300));
@@ -81,7 +81,7 @@ function profileHolder(profile) {
   try {
     const pid = +String(fs.readlinkSync(path.join(profile, "SingletonLock"))).split("-").pop();
     if (pid > 0) { process.kill(pid, 0); return pid; }
-  } catch (e) {}
+  } catch (e) { /* no lock, or its holder is gone: nobody holds it */ }
   return null;
 }
 
@@ -116,7 +116,7 @@ async function launch(opts) {
   b.port = port;
   b.args = args;
   b.profile = profile;
-  b.kill = () => { try { b.ws.close(); } catch (e) {} try { chrome.kill("SIGTERM"); } catch (e) {} };
+  b.kill = () => { try { b.ws.close(); } catch (e) { /* gone already */ } try { chrome.kill("SIGTERM"); } catch (e) { /* gone already */ } };
   return b;
 }
 
@@ -166,7 +166,7 @@ async function waitFor(b, expr, timeoutMs, stepMs) {
   const t0 = Date.now();
   for (;;) {
     let v = null;
-    try { v = await b.evalJS(expr); } catch (e) {}
+    try { v = await b.evalJS(expr); } catch (e) { /* the page not ready yet: ask again */ }
     if (v) return v;
     if (Date.now() - t0 > (timeoutMs || 20000)) throw new Error("timed out waiting for: " + expr);
     await sleep(stepMs || 200);
@@ -175,7 +175,7 @@ async function waitFor(b, expr, timeoutMs, stepMs) {
 
 // Kill what we started, whatever happens.
 function cleanupOnExit(things) {
-  const done = () => things.forEach((t) => { try { if (t && t.kill) t.kill(); } catch (e) {} });
+  const done = () => things.forEach((t) => { try { if (t && t.kill) t.kill(); } catch (e) { /* gone already */ } });
   process.on("exit", done);
   ["SIGINT", "SIGTERM"].forEach((s) => process.on(s, () => { done(); process.exit(130); }));
 }

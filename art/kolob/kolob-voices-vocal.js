@@ -162,6 +162,8 @@ window.KOLOB.VoicesVocal = (function () {
     var root = (typeof PJ2 !== "undefined" && PJ2.Rand) ? PJ2.Rand.stream(seed) : localStream(seed);
     return root.fork("synth:vocal").fork(label || "voice");
   }
+  // (KOLOB.Num.clamp's arithmetic, kept here: the voice stands alone, and
+  // voices-lab loads it with nothing of the house but PJ2.Rand)
   function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
   function gauss(r) { return (r.rnd(0, 1) + r.rnd(0, 1) + r.rnd(0, 1) - 1.5) * 1.15; }   // ~N(0,1), cheap
 
@@ -611,10 +613,11 @@ window.KOLOB.VoicesVocal = (function () {
     };
   }
 
-  // a fault is told, never hidden (kolob-core.js, THE FAULTS): through the
-  // house's confess, once per what, where the house is loaded; plainly on a
-  // bench without it
-  function confess(what, err) { var S = window.KOLOB._s; if (S && S.confess) S.confess(what, err); else if (typeof console !== "undefined") console.error("Kolob: " + what, err); }
+  // a fault is told, never hidden (THE FAULTS): through the house's one
+  // confess, KOLOB.Fault (kolob-pitch.js), where it is loaded; plainly where
+  // it is not — the voice stands alone, and voices-lab loads it with nothing
+  // of the house but PJ2.Rand (as its clamp, above)
+  function confess(what, err) { var F = window.KOLOB.Fault; if (F) F.confess(what, err); else if (typeof console !== "undefined") console.error("Kolob: " + what, err); }
 
   // --------------------------------------------------------------------------
   // renderLine — the one renderer. A "throat" of nVoices people (1 for a

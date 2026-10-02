@@ -70,8 +70,9 @@ window.KOLOB.Dialects = (function () {
   function cls(d) { return ((d % 7) + 7) % 7; }
   function semi(mode, d, alt) { return 12 * Math.floor(d / 7) + SEMIS[mode][cls(d)] + (alt || 0); }
   function u01(R) { return R.next ? R.next() : R.rnd(0, 1); }
-  function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
-  function has(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
+  // (borrowed: KOLOB.Num from kolob-pitch.js, KOLOB.Score from kolob-score.js)
+  function clamp(x, a, b) { return window.KOLOB.Num.clamp(x, a, b); }
+  function has(o, k) { return window.KOLOB.Score.has(o, k); }
   var EPS = 1e-6;
   var ROMAN_UP = ["I", "II", "III", "IV", "V", "VI", "VII"];
 
@@ -203,6 +204,7 @@ window.KOLOB.Dialects = (function () {
         var pool = names(minor ? ["iv", "VI", "III"] : mode === "mixolydian" ? ["IV", "vi", "ii"] : ["IV", "vi", "iii", "ii"]);
         return { fin: pool.filter(function (nm) { var c = vocab.filter(function (x) { return x.name === nm; })[0]; return toneOf(c, t) && toneOf(c, t).alt === 0; }), pen: null, ante: null };
       }
+      default: break;                  // (any other plan: the kind's chords, below)
     }
     switch (kind) {
       case "authentic": return { fin: [I], pen: names(mode === "mixolydian" ? ["V", "V7", "♭VII", "v"] : minor ? ["V", "V7", "v", "VII"] : ["V", "V7"]), ante: "cad64" };
@@ -210,6 +212,7 @@ window.KOLOB.Dialects = (function () {
       case "imperfect": return { fin: [I], pen: null, ante: null };
       case "deceptive": return { fin: names(minor ? ["VI"] : ["vi"]), pen: names(minor ? ["V", "V7"] : ["V", "V7"]), ante: null };
       case "plagal": return { fin: [I], pen: names(minor ? ["iv", "IV"] : ["IV"]), ante: null };
+      default: break;                  // (a kind not named: no chords asked for, below)
     }
     return { fin: null, pen: null, ante: null };
   }
@@ -1462,6 +1465,7 @@ window.KOLOB.Dialects = (function () {
       case "imperfect": return { fin: [I], pen: null, ante: null };
       case "deceptive": return { fin: names(minor ? ["VI"] : ["vi"]), pen: names(["V7"]), ante: null };
       case "plagal": return { fin: [I], pen: names(minor ? ["iv"] : ["IV", "iv"]), ante: null };
+      default: break;                  // (a kind not named: no chords asked for, below)
     }
     return { fin: null, pen: null, ante: null };
   }

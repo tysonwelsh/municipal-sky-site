@@ -179,7 +179,7 @@ window.KOLOB.VoicesFolk = (function () {
       return (bowWaves[key] = wave(hs));
     }
     // pitch automation is read once a block (see the header)
-    function kRate(p) { try { p.automationRate = "k-rate"; } catch (e) {} }
+    function kRate(p) { try { p.automationRate = "k-rate"; } catch (e) { /* an old browser */ } }
     // a rest holds its string's last pitch silently (a leading rest takes
     // the first sounded one), so the finger is already there when it sounds
     function fillRests(steps) {

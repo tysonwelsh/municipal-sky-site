@@ -91,53 +91,36 @@ window.KOLOB.Composer = (function () {
   };
   SEMIS.penta = SEMIS.hexa = SEMIS.ionian;
   var MODES = ["ionian", "mixolydian", "dorian", "aeolian", "penta", "hexa"];
-  // the degrees a TUNE may stand on (classes 0–6)
-  var TUNE_CLASSES = {
-    ionian: [0, 1, 2, 3, 4, 5, 6], mixolydian: [0, 1, 2, 3, 4, 5, 6],
-    dorian: [0, 1, 2, 3, 4, 5, 6], aeolian: [0, 1, 2, 3, 4, 5, 6],
-    penta: [0, 1, 2, 4, 5], hexa: [0, 1, 2, 3, 4, 5],
-  };
+  // the degrees a TUNE may stand on (classes 0–6: kolob-pitch.js's CLASSES)
+  var TUNE_CLASSES = K.Pitch.CLASSES;
   // where do sits, counted from the final — so that the shape notes and the
   // tonal pulls read the same in every mode (aeolian's la is do's 5)
   var DO_OF = { ionian: 0, penta: 0, hexa: 0, mixolydian: 3, dorian: 6, aeolian: 2 };
   var MINOR = { aeolian: true, dorian: true };
-  // the exact ratios of each mode's parent scale (kolob-pitch.js's tables;
-  // the gapped scales' missing notes are the major scale's)
-  var FRACTIONS = {
-    ionian:     ["1/1", "9/8", "5/4", "4/3", "3/2", "5/3", "15/8"],
-    mixolydian: ["1/1", "9/8", "5/4", "4/3", "3/2", "5/3", "16/9"],
-    dorian:     ["1/1", "9/8", "6/5", "4/3", "3/2", "5/3", "16/9"],
-    aeolian:    ["1/1", "9/8", "6/5", "4/3", "3/2", "8/5", "16/9"],
-  };
-  FRACTIONS.penta = FRACTIONS.hexa = FRACTIONS.ionian;
+  // the exact ratios of each mode's parent scale (kolob-pitch.js's
+  // PARENT_FRACTIONS: the gapped scales' missing notes are the major scale's)
+  var FRACTIONS = K.Pitch.PARENT_FRACTIONS;
 
   // ---- small hands ----------------------------------------------------------
   function cls(d) { return ((d % 7) + 7) % 7; }
   function octOf(d) { return Math.floor(d / 7); }
   // a degree (with its octave) and an alteration → semitones above the final
   function semi(mode, d, alt) { return 12 * octOf(d) + (SEMIS[mode] || SEMIS.ionian)[cls(d)] + (alt || 0); }
-  function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
+  function clamp(x, a, b) { return K.Num.clamp(x, a, b); }
   function sum(a) { var s = 0; for (var i = 0; i < a.length; i++) s += a[i]; return s; }
-  function r3(x) { return Math.round(x * 1000) / 1000; }
-  function has(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
+  function r3(x) { return K.Num.r3(x); }
+  function has(o, k) { return K.Score.has(o, k); }
   function copy(o) { return JSON.parse(JSON.stringify(o)); }
   var EPS = 1e-6;
 
   // ---- exact pitch ------------------------------------------------------------
-  // monzos: [2, 3, 5, 7] exponents (SCORE §2). Borrowed from kolob-pitch.js
-  // when it is loaded; spelled out here too, so the room stands alone.
-  function fromFraction(s) {
-    if (K.Pitch && K.Pitch.fromFraction) return K.Pitch.fromFraction(s);
-    var P = [2, 3, 5, 7], parts = String(s).split("/"), m = [0, 0, 0, 0];
-    [[+parts[0], 1], [parts.length > 1 ? +parts[1] : 1, -1]].forEach(function (nd) {
-      var n = nd[0];
-      for (var i = 0; i < 4; i++) while (n > 1 && n % P[i] === 0) { n /= P[i]; m[i] += nd[1]; }
-    });
-    return m;
-  }
-  function mz(a, b) { return [a[0] + b[0], a[1] + b[1], a[2] + b[2], a[3] + b[3]]; }
+  // monzos: [2, 3, 5, 7] exponents (SCORE §2), borrowed from kolob-pitch.js
+  // and kolob-score.js, which load ahead of the composer in every list (the
+  // page's, the composer's desk, every lab's)
+  function fromFraction(s) { return K.Pitch.fromFraction(s); }
+  function mz(a, b) { return K.Pitch.mul(a, b); }
   function mzNeg(a) { return [-a[0], -a[1], -a[2], -a[3]]; }
-  function mzCents(m) { return 1200 * (m[0] + m[1] * Math.log2(3) + m[2] * Math.log2(5) + m[3] * Math.log2(7)); }
+  function mzCents(m) { return K.Score.monzoCents(m); }
   var SCALE_MZ = {};
   MODES.forEach(function (k) { SCALE_MZ[k] = FRACTIONS[k].map(fromFraction); });
   var COMMA = [-4, 4, -1, 0];                  // 81/80, the syntonic comma

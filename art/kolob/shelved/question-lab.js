@@ -370,8 +370,8 @@ window.QuestionLab = (function () {
       var g = old.bus[k].gain;
       g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(0, t + 0.12);
     });
-    old.nodes.forEach(function (o) { try { o.stop(t + 0.2); } catch (e) {} });
-    setTimeout(function () { Object.keys(old.bus).forEach(function (k) { try { old.bus[k].disconnect(); } catch (e) {} }); }, 600);
+    old.nodes.forEach(function (o) { try { o.stop(t + 0.2); } catch (e) { /* gone already */ } });
+    setTimeout(function () { Object.keys(old.bus).forEach(function (k) { try { old.bus[k].disconnect(); } catch (e) { /* gone already */ } }); }, 600);
     P = null;
     var head = $("oql-head"); if (head) head.style.display = "none";
     setNow("");

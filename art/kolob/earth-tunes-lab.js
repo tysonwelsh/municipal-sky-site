@@ -351,7 +351,7 @@ window.EarthTunesLab = (function () {
     var rec = { o: o, g: g, t: t };
     live.push(rec);
     o.onended = function () {                                      // leave nothing connected behind
-      try { o.disconnect(); g.disconnect(); } catch (x) {}
+      try { o.disconnect(); g.disconnect(); } catch (x) { /* gone already */ }
       var i = live.indexOf(rec); if (i >= 0) live.splice(i, 1);
     };
   }
@@ -419,14 +419,14 @@ window.EarthTunesLab = (function () {
       S.gain.gain.linearRampToValueAtTime(0, now + FADE);
       live = live.filter(function (r) {
         if (r.t > now + FADE) {                                    // never began: drop it now
-          try { r.o.onended = null; r.o.stop(); r.o.disconnect(); r.g.disconnect(); } catch (x) {}
+          try { r.o.onended = null; r.o.stop(); r.o.disconnect(); r.g.disconnect(); } catch (x) { /* gone already */ }
           return false;
         }
-        try { r.o.stop(now + FADE + 0.005); } catch (x) {}
+        try { r.o.stop(now + FADE + 0.005); } catch (x) { /* gone already */ }
         return true;
       });
       quietUntil = now + FADE + 0.005;
-      setTimeout(function () { S.nodes.forEach(function (n) { try { n.disconnect(); } catch (x) {} }); }, 250);
+      setTimeout(function () { S.nodes.forEach(function (n) { try { n.disconnect(); } catch (x) { /* gone already */ } }); }, 250);
       session = null;
     }
     if (playing && playing.card) playing.card.classList.remove("is-playing");

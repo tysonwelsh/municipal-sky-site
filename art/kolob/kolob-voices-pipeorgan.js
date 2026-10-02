@@ -378,7 +378,7 @@ window.KOLOB.VoicesOrgan = (function () {
 
     // pitch params are read once a block: the wind and the tremulant move over
     // tens of milliseconds, and a k-rate pipe keeps the oscillator's fast path
-    function kRate(p) { try { p.automationRate = "k-rate"; } catch (e) {} }
+    function kRate(p) { try { p.automationRate = "k-rate"; } catch (e) { /* an old browser */ } }
     // one voiced oscillator, wired to the wind (when this registration can
     // draw it down) and to the tremulant (when drawn). Its param links are
     // cut when it ends, so a long meeting never leaves the wind holding ten
@@ -393,8 +393,8 @@ window.KOLOB.VoicesOrgan = (function () {
       if (tremOn) tremPitch.connect(o.detune);
       o.connect(dest);
       if (windOn || tremOn) o.onended = function () {
-        try { if (windOn) wind.disconnect(o.detune); } catch (e) {}
-        try { if (tremOn) tremPitch.disconnect(o.detune); } catch (e2) {}
+        try { if (windOn) wind.disconnect(o.detune); } catch (e) { /* gone already */ }
+        try { if (tremOn) tremPitch.disconnect(o.detune); } catch (e2) { /* gone already */ }
       };
       o.start(t); o.stop(tEnd);
       return o;
@@ -462,7 +462,7 @@ window.KOLOB.VoicesOrgan = (function () {
         e.g.gain.setTargetAtTime(0, rel, e.tau);
         e.rel = rel;
       });
-      k.oscs.forEach(function (o) { try { o.stop(rel + 0.4); } catch (x) {} });
+      k.oscs.forEach(function (o) { try { o.stop(rel + 0.4); } catch (x) { /* gone already */ } });
       k.rel = rel;
     }
     // …and the other way: a key let go a little EARLIER than written (the
@@ -681,9 +681,9 @@ window.KOLOB.VoicesOrgan = (function () {
       if (disposed) return;
       disposed = true;
       var tt = t != null ? t : 0;
-      tremLfo.onended = function () { try { out.disconnect(); } catch (e) {} };
-      try { tremLfo.stop(tt); } catch (e) {}
-      if (wind) { try { wind.stop(tt); } catch (e2) {} }
+      tremLfo.onended = function () { try { out.disconnect(); } catch (e) { /* gone already */ } };
+      try { tremLfo.stop(tt); } catch (e) { /* gone already */ }
+      if (wind) { try { wind.stop(tt); } catch (e2) { /* gone already */ } }
     }
 
     return {

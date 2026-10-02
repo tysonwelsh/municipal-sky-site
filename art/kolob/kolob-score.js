@@ -21,13 +21,19 @@
 //     roundTrip says whether a Score survives being written out and read
 //     back exactly (a function, an undefined, a NaN or a cycle does not);
 //   · THE READER'S HELPS — chordAt(line, beat), notesAt(hymn, t),
-//     timeline(hymn), syllableMap(hymn, verse), lineLength(line): what the
-//     composer, the engraver and the harness ask of a Score;
+//     timeline(hymn), syllableMap(hymn, verse), lineLength(line),
+//     spanBeats(line, next), verseLines(hymn), and a line as it is sung:
+//     lineClock(line, beatS, opts) and sungNotes(notes, clk, beatS,
+//     breathAfter, t0) — what the composer, the performers, the engraver
+//     and the harness ask of a Score, here once so that no room re-types
+//     them (and has(o, k), the small hand the composer and the dialects
+//     borrow too);
 //   · THE CHORD BOOK — the harmony of the hall set down against the
 //     music's own clock (below).
 //
-// Pure (SCORE.md §1): no audio, no clock, no dice, no DOM, no KOLOB._s. It
-// loads headless (the harness requires it into a bare context).
+// Pure (SCORE.md §1): no audio, no clock (a line's clock below is the
+// Score's own beats in seconds, not the audio clock), no dice, no DOM, no
+// KOLOB._s. It loads headless (the harness requires it into a bare context).
 // ============================================================================
 
 window.KOLOB = window.KOLOB || {};
@@ -439,6 +445,7 @@ window.KOLOB.Score = (function () {
       case "chord": return validateChord(obj);
       case "performance": return validatePerformance(obj, opts && opts.hymn);
       case "event": return validateEvent(obj);
+      default: break;                  // (a kind not named: said below)
     }
     return ["validate: no kind '" + kind + "'"];
   }
@@ -501,6 +508,55 @@ window.KOLOB.Score = (function () {
       for (var i = 0; i < arr.length; i++) if (arr[i] && arr[i].beat + arr[i].beats > end) end = arr[i].beat + arr[i].beats;
     }
     return end;
+  }
+  // a line's span in beats: to where the next line begins, when both name a
+  // startBeat and the next stands later (the Earth tunes' rest between
+  // lines), else to where its own last note ends
+  function spanBeats(l, next) {
+    if (next && next.startBeat != null && l.startBeat != null && next.startBeat > l.startBeat) return next.startBeat - l.startBeat;
+    return lineLength(l);
+  }
+  // the lines a verse sings, in order: the verse's, then the refrain's
+  function verseLines(h) { return h.lines.concat(h.refrain || []); }
+  // A LINE'S CLOCK: lineClock(line, beatS, opts) → clk(b), the seconds from
+  // the line's start to its beat b. A fermata holds its note (the longest
+  // struck on the fermata's beat, a beat at the least) opts.hold times its
+  // written length — 1.7 unless the chorister names her own — and moves
+  // everything after it; opts.rit broadens the beat toward the close (the
+  // chorister's ritardando; none unless named). The ward sings by it (the
+  // chorister's rit and hold, kolob-cast.js), the organ plays under it
+  // (kolob-organist.js), the far ward sings by its own chorister's hold, and
+  // the hymnal lays its verses out by the plain one.
+  function lineClock(l, beatS, opts) {
+    var holds = [], rit = opts && opts.rit ? opts.rit : 0, xm = opts && opts.hold != null ? opts.hold - 1 : 0.7;
+    var len = Math.max(1, lineLength(l));
+    (l.fermataBeats || []).forEach(function (fb) {
+      var held = 1;
+      Object.keys(l.notes).forEach(function (p) { (l.notes[p] || []).forEach(function (n) { if (Math.abs(n.beat - fb) < 1e-6) held = Math.max(held, n.beats); }); });
+      holds.push({ at: fb + held, extra: xm * held * beatS });
+    });
+    return function (b) {
+      var t = rit ? beatS * (b + rit * b * b * b / (3 * len * len)) : b * beatS;
+      holds.forEach(function (x) { if (b >= x.at - 1e-6) t += x.extra; });
+      return t;
+    };
+  }
+  // A PART AS IT IS SUNG: sungNotes(notes, clk, beatS, breathAfter, t0) →
+  // [{ t, dur, n }] — each note on the line's clock clk, a tied note sung as
+  // one with the notes it is tied to (n the first of them), and the line's
+  // last note giving up its breath (the lesser of 0.3 of a beat and a
+  // quarter of the note) unless the line asks none (breathAfter false). t is
+  // from t0, or from the line's start when t0 is left out.
+  function sungNotes(ns, clk, beatS, breathAfter, t0) {
+    var out = [];
+    for (var k = 0; k < ns.length; k++) {
+      var n = ns[k], b0 = n.beat, b1 = n.beat + n.beats;
+      while (ns[k].tie && k + 1 < ns.length) { k++; b1 = ns[k].beat + ns[k].beats; }
+      var c0 = clk(b0), dur = clk(b1) - c0;
+      if (k === ns.length - 1 && breathAfter !== false) dur -= Math.min(0.3 * beatS, 0.25 * dur);
+      out.push({ t: t0 == null ? c0 : t0 + c0, dur: dur, n: n });
+    }
+    return out;
   }
   // the chord that stands at beat b of a line (read off by beat, §5), or null
   function chordAt(l, b) {
@@ -624,7 +680,8 @@ window.KOLOB.Score = (function () {
     toJSON: toJSON, fromJSON: fromJSON, roundTrip: roundTrip,
     // the reader's helps
     lineLength: lineLength, chordAt: chordAt, timeline: timeline, notesAt: notesAt, syllableMap: syllableMap,
-    monzoCents: monzoCents,
+    monzoCents: monzoCents, spanBeats: spanBeats, verseLines: verseLines, lineClock: lineClock, sungNotes: sungNotes,
+    has: has,
     // the chord book
     chordBook: chordBook,
   };

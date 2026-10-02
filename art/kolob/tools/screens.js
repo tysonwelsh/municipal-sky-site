@@ -7,11 +7,30 @@
 // the Eye; PLAN-COMPOSITION §2.6 "an engraving smoke test"; §12 "Budget").
 //
 //   node tools/screens.js [--seed 1847] [--times 20,60,120] [--widths 860,390]
-//        [--section hymn] [--fps-secs 20] [--throttle 4] [--full] [--ives] [--latin]
+//        [--section hymn] [--freeze] [--fps-secs 20] [--throttle 4] [--full] [--ives] [--latin]
 //        [--port 8113] [--chrome-port 9423] [--profile <dir>] [--out <dir>]
 //
 // Times are seconds of the meeting (the audio clock, from the moment PLAY was
 // pressed); with --section, from the moment the meeting was jumped there.
+//
+// --freeze makes the captures frame-exact (PLAN-REFACTOR §4.0(a)): the page
+// is held at each time and painted there (kolob-viz.js THE FRAME-EXACT
+// CAPTURE: ?kolobFreeze=<secs>, KolobViz.freezeAt), its times counted from
+// the meeting's downbeat (with --section, from the section-start event of the
+// jump), so two runs of one build give the same staff pixel for pixel —
+// `compare -metric AE a.png b.png null:` says 0 — and two builds can be
+// compared by pixel. Without it a capture is taken whenever the audio clock
+// passes the time, between two frames, and two runs differ by a few pixels
+// of scroll. (Exact where the ink dries at its own rate: in the sacrament and
+// the postlude a shade may differ. After a --section jump the page also
+// holds what was printed before the jump, as far back as it reaches, whose
+// place the jump's own moment sets. The shot is the plate alone, where the
+// ink is — the staff's canvas lies over the wheel's foot and the console's
+// head — shot where it stands in the viewport: a shot beyond it lays the page
+// out again, wider by the scrollbar at 860 px, and the held page is painted
+// again at that width. In the whole page (--full) only the staff is held: the
+// wheel's organ is the live sound's spectrum, and the console and the
+// broadside go on.) The page runs free again before the frame timing.
 // Headless Chrome may pace requestAnimationFrame slowly (~1 fps on some
 // machines), so frames are judged by what each one costs, not by how many came.
 // What a frame costs also rises with what else the machine is doing (other
@@ -29,6 +48,7 @@ const HELP = `screens.js — muted headless screenshots of the staff + frame tim
   --times 20,60,120      meeting seconds to capture at (default 20,60,120)
   --widths 860,390       viewport widths (default 860,390; 390 is emulated as a phone, DPR 3)
   --section <type>       jump there first (dev jump: prelude invocation hymn testimony sacrament doxology postlude)
+  --freeze               frame-exact captures: the page held and painted at each time, counted from the downbeat (KolobViz.freezeAt)
   --fps-secs 20          seconds of frame timing under throttle (default 20; 0 to skip)
   --throttle 4           CPU throttling rate for the frame timing (default 4)
   --full                 also capture the whole page
@@ -62,7 +82,7 @@ const VIEW = {
 };
 
 (async () => {
-  const a = U.parseArgs(process.argv.slice(2), ["help", "full", "ives", "latin"]);
+  const a = U.parseArgs(process.argv.slice(2), ["help", "full", "ives", "latin", "freeze"]);
   if (a.help) { console.log(HELP); return; }
   const seed = +a.seed || 1847;
   const times = U.parseList(a.times, ["20", "60", "120"], Number).sort((x, y) => x - y);
@@ -77,7 +97,11 @@ const VIEW = {
   await C.prepare(b);
   await b.send("Page.addScriptToEvaluateOnNewDocument", { source: INSTRUMENT({ ives: !!a.ives, latin: !!a.latin }) });
 
-  const url = server.base + "/art/kolob/?seed=" + seed;
+  const freeze = !!a.freeze;
+  // (frozen: the first capture's second is asked on the address — before a
+  // jump, a moment far off, only so the page hears the downbeat — the rest
+  // through KolobViz.freezeAt)
+  const url = server.base + "/art/kolob/?seed=" + seed + (freeze ? "&kolobFreeze=" + (a.section ? 999999 : times[0]) : "");
   const results = [];
   for (const w of widths) {
     const view = VIEW[w] || { width: w, height: 1200, deviceScaleFactor: 2, mobile: w < 500 };
@@ -87,27 +111,48 @@ const VIEW = {
     await C.waitFor(b, "document.readyState === 'complete' && !!window.KolobAudio && !!document.getElementById('kolob-play')", 30000);
     await b.send("Emulation.setDeviceMetricsOverride", view);
     await C.sleep(800);
+    if (freeze) await b.evalJS("window.__jumps = [], KolobAudio.setEventListener(function (ev) { if (ev && ev.type === 'section-start') window.__jumps.push(ev); }), 1");
     await b.evalJS("document.getElementById('kolob-play').click(), 1");
     await C.waitFor(b, "KolobAudio.isPlaying() && KolobAudio.getAudioTime() > 0", 10000, 50);
     let t0 = await b.evalJS("KolobAudio.getAudioTime()");
-    let jumped = null;
+    let jumped = null, origin = 0;              // (frozen: the jump's second of the meeting)
+    if (freeze) t0 = (await C.waitFor(b, "KolobViz.probe('freeze').downbeat", 10000, 50));
     if (a.section) {
       await C.sleep(1500);
+      const n0 = freeze ? await b.evalJS("window.__jumps.length") : 0;
       const ok = await b.evalJS("KolobAudio.skipToSection(" + JSON.stringify(String(a.section)) + ")");
       if (!ok) console.error("screens.js: no '" + a.section + "' in this meeting's plan; times count from PLAY");
+      else if (freeze) {
+        const jt = await C.waitFor(b, "(function(){var j=window.__jumps.slice(" + n0 + ").filter(function(e){return e.section===" + JSON.stringify(String(a.section)) + "})[0];return j?j.t:null})()", 10000, 50);
+        origin = jt - t0; jumped = a.section;
+      }
       else { t0 = await b.evalJS("KolobAudio.getAudioTime()"); jumped = a.section; }
     }
     const shots = [];
     for (const T of times) {
-      const target = t0 + T;
+      const target = t0 + origin + T;
+      if (freeze && (a.section || T !== times[0])) await b.evalJS("KolobViz.freezeAt(" + (origin + T) + "), 1");
       for (;;) {
         const now = await b.evalJS("KolobAudio.getAudioTime()");
         if (now >= target) break;
         await C.sleep(Math.min(1000, Math.max(50, (target - now) * 1000 - 50)));
       }
-      const st = await b.evalJS("(function(){var c=KolobAudio.getConductor(),r=document.getElementById('kolob-viz').getBoundingClientRect();return {t:KolobAudio.getAudioTime(),section:c.section,meeting:c.meeting,x:r.x,y:r.y+scrollY,w:r.width,h:r.height}})()");
+      let held = null;
+      if (freeze) {
+        held = await C.waitFor(b, "(function(){var f=KolobViz.probe('freeze');return f.frozen&&f.at===" + (origin + T) + "?f:null})()", 15000, 100);
+        if (held.PT !== held.downbeat + origin + T) throw new Error("the page was held at " + held.PT + ", not " + (held.downbeat + origin + T));
+      }
+      const st = await b.evalJS("(function(){var c=KolobAudio.getConductor(),r=document.getElementById('kolob-viz').getBoundingClientRect();return {t:KolobAudio.getAudioTime(),section:c.section,meeting:c.meeting,x:r.x,y:r.y+scrollY,w:r.width,h:r.height,top:r.y,ih:innerHeight}})()");
+      if (held) st.t = held.PT;
       const file = "staff-" + w + "-t" + String(Math.round(T)).padStart(3, "0") + ".png";
-      const s = await b.send("Page.captureScreenshot", { format: "png", captureBeyondViewport: true, clip: { x: st.x, y: st.y, width: st.w, height: st.h, scale: 1 } });
+      // (frozen, the shot is the plate alone — the staff's canvas lies over
+      // the wheel's foot, whose organ is the live sound's spectrum, and over
+      // the console's head — shot where it stands in the viewport: a shot
+      // beyond the viewport lays the page out again, wider by the scrollbar
+      // at 860 px, and the held page is painted again at that width)
+      const clip = held && held.plate ? { x: st.x, y: st.y + held.plate[0], width: st.w, height: held.plate[1] - held.plate[0], scale: 1 } : { x: st.x, y: st.y, width: st.w, height: st.h, scale: 1 };
+      const beyond = !(freeze && st.top >= 0 && st.top + st.h <= st.ih);
+      const s = await b.send("Page.captureScreenshot", { format: "png", captureBeyondViewport: beyond, clip });
       fs.writeFileSync(path.join(out, file), Buffer.from(s.data, "base64"));
       let full = null;
       if (a.full) {
@@ -115,10 +160,11 @@ const VIEW = {
         const f = await b.send("Page.captureScreenshot", { format: "png", captureBeyondViewport: true });
         fs.writeFileSync(path.join(out, full), Buffer.from(f.data, "base64"));
       }
-      if (Math.abs(st.t - t0 - T) > 2) throw new Error("shot at " + T + " s was taken at " + (st.t - t0).toFixed(1) + " s");
-      shots.push({ T, at: st.t - t0, section: st.section, meeting: st.meeting, file, full, size: Math.round(st.w) + "×" + Math.round(st.h) });
+      if (Math.abs(st.t - t0 - origin - T) > 2) throw new Error("shot at " + T + " s was taken at " + (st.t - t0 - origin).toFixed(1) + " s");
+      shots.push({ T, at: st.t - t0 - origin, section: st.section, meeting: st.meeting, file, full, size: Math.round(clip.width) + "×" + Math.round(clip.height) });
       process.stderr.write(w + "px @" + T + "s ");
     }
+    if (freeze) await b.evalJS("KolobViz.freezeAt(null), 1");   // (the page runs free again: the frame timing is a live page's)
     // frame time, CPU throttled
     let fps = null;
     if (fpsSecs > 0) {
@@ -152,9 +198,9 @@ const VIEW = {
   const L = [];
   L.push("# Screens — seed " + seed);
   L.push("");
-  L.push("- " + url.replace(server.base, "") + (a.ives ? " · Ives switch armed" : "") + (a.latin ? " · Latin" : "") + (a.section ? " · jumped to " + a.section : "") + " · muted headless Chrome (" + b.args.filter((x) => /mute|headless/.test(x)).join(" ") + ") · " + new Date().toISOString().slice(0, 16).replace("T", " "));
+  L.push("- " + url.replace(server.base, "") + (a.ives ? " · Ives switch armed" : "") + (a.latin ? " · Latin" : "") + (a.section ? " · jumped to " + a.section : "") + (freeze ? " · frozen: each capture the page held at its second (from the " + (a.section ? "jump's section-start" : "downbeat") + ") and painted there, frame-exact" : "") + " · muted headless Chrome (" + b.args.filter((x) => /mute|headless/.test(x)).join(" ") + ") · " + new Date().toISOString().slice(0, 16).replace("T", " "));
   let version = "";
-  try { version = fs.readFileSync(path.join(C.REPO, "art/kolob/VERSION"), "utf8").trim().split(" — ")[0]; } catch (e) {}
+  try { version = fs.readFileSync(path.join(C.REPO, "art/kolob/VERSION"), "utf8").trim().split(" — ")[0]; } catch (e) { /* no VERSION: the report names none */ }
   L.push("- build " + version + " · served by " + (server.reused ? "an existing" : "a fresh") + " php -S on " + server.base);
   L.push("");
   L.push("## Frame time, CPU throttled " + throttle + "×");
