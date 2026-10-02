@@ -7,7 +7,7 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
 
 ## The refactor
 
-- **`PLAN-REFACTOR.md`** (2026-10-01; §2 built, v0.36.3; §3.6, §3.1, §3.3, §3.7, §3.8, §3.2, §3.4, §4.0(a) and §3.5 built): the owner asked for a plan to improve
+- **`PLAN-REFACTOR.md`** (2026-10-01; §2 built, v0.36.3; §3.6, §3.1, §3.3, §3.7, §3.8, §3.2, §3.4, §4.0(a), §3.5, §4.0(b) and §4.0(c) built): the owner asked for a plan to improve
   efficiency, reliability and maintainability without changing what is heard or seen. Its §2, the
   real faults, is done (commits 3eefffb to a373760: a cue that threw ended its layer for the visit; a
   stillness survived STOP; STOP's own race; errors swallowed silently; a broken page let PLAY be
@@ -26,9 +26,12 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
   (`KolobViz.freezeAt`, `screens.js --freeze`, commit e06bfee), and §3.5, the staff in pieces
   (`kolob-viz.js` and five files behind one `KolobViz`, `_viz.php`'s list, commits 4ca4631 and 1478f2d:
   every statement moved whole, held by `samecode.js --split`; everything the page draws traced
-  headless by the harness's `staff=`, the same before and after).
-  What remains is §3.5's tail (the composer's steps in order) and §4 (the tools' (b) and (c), the
-  page's load and frame, the minutes' poll, the audio graph with the owner), in §6's order.
+  headless by the harness's `staff=`, the same before and after), and §4.0(b) and (c), the rest of
+  the tools: the audio graph's cost per work (the harness's `cost`, `tools/cost.js`, commit d05a5c6:
+  every node, automation call and disconnect charged to the lane, guest or press that made it) and
+  the tally four at a time, both builds on one pool (`--jobs`, commit e4dbe57: about 70 s).
+  What remains is §3.5's tail (the composer's steps in order) and §4 (the page's load and frame,
+  the minutes' poll, the audio graph with the owner), in §6's order.
   The §2 builders' follow-ups, not done:
   - the drone stays ducked after a broken hymn's chain is released by the net (§2.1);
   - a cue's fault that repeats is now logged at each of the net's retries (every 5 s for a layer), not once (§2.1);
@@ -143,6 +146,24 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
     foot; `JOHNSTON7 = mzCents(…)` calls a function of the top section), so the sections can move
     whole; `samecode.js --split` with one new file and its order check relaxed would hold every
     statement to its old tokens, and the golden (hymns, 40 of 40) and the tally prove the rest.
+  The §4.0(b) and (c) builder's follow-ups, not done:
+  - the cost counts what is built, not what sounds at once: the audio thread's share (§4.6's
+    30–35 %, the Hosanna's 43 %) follows the nodes joined and sounding together, which the mock
+    does not hold (it counts no connect); the vocal room's own ledger (`budget.aliveAt`,
+    `kolob-voices-vocal.js`) or a live-node count in the mock (built less disconnected, minute by
+    minute) would come nearer, and the browser's capture is still the measure;
+  - a piece one lane hands to another's pump is the pump's when it is built: the hymn's throats are
+    `ward`'s (the choir's lane tells their notes and builds 960 of seed 22's nodes), and a guest's
+    line handed to the ward's or the organist's desk would be that desk's — following a piece
+    through the desks would need the engine to say whose it is;
+  - two anonymous builders of one file are one row in `cost.js` (it matches builders by function and
+    file, not line, so that a moved builder stays itself): `kolob-voices-vocal.js`'s breath source
+    and its oscillator, both `(anonymous)`;
+  - `tally.js`'s default of four leaves cores idle on a bigger machine (a harness keeps about two
+    busy, so half the cores would fill one); `render.js`, `distinctness.js`, `repetition.js` and
+    `cost.js` keep half the cores, at most eight, a set, and `cost.js` renders its builds one after
+    the other — each could take the tally's shared pool;
+  - with both builds on one pool, the tally's progress dots of the two sides interleave on stderr.
 
 ## Ideas approved, not built
 
