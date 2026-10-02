@@ -119,11 +119,11 @@ $BENCH_KEY = jd_bench_key_expected() ?? 'keyless-dev-checkout';
 $BASE = "http://127.0.0.1:$port";
 
 /** @return array{0:int,1:mixed,2:array<string,string>,3:string} */
-function req(string $method, string $path, ?array $body = null, bool $owner = false): array
+function req(string $method, string $path, ?array $body = null, bool $owner = false, array $extraHeaders = []): array
 {
     global $BASE, $BENCH_KEY;
     $ch = curl_init($BASE . $path);
-    $headers = ['Origin: http://localhost:8000'];
+    $headers = array_merge(['Origin: http://localhost:8000'], $extraHeaders);
     if ($owner) {
         $headers[] = 'X-Bench-Key: ' . $BENCH_KEY;
     }
@@ -436,6 +436,11 @@ check("a keyed owner sitting files a third, complete session over the visitor's 
 section('(c) jd2-analytics: the v1 shapes the about page reads, plus pairs and margins');
 [$st, $A, $h] = req('GET', '/api/jd2-analytics.php');
 check('public: 200 without a key, Cache-Control no-cache', $st === 200 && ($h['cache-control'] ?? '') === 'no-cache', $st . ' ' . json_encode($h));
+[$st304, , $h304, $raw304] = req('GET', '/api/jd2-analytics.php', null, false, ['If-None-Match: ' . ($h['etag'] ?? '')]);
+[, , $hOwner] = req('GET', '/api/jd2-analytics.php?origin=owner');
+check('an ETag; an unchanged answer revalidates (304, no body, still no-cache); ?origin= has its own tag',
+    preg_match('/^"[0-9a-f]{32}"$/', $h['etag'] ?? '') === 1 && $st304 === 304 && $raw304 === ''
+    && ($h304['cache-control'] ?? '') === 'no-cache' && ($hOwner['etag'] ?? '') !== ($h['etag'] ?? ''), $st304 . ' ' . json_encode($h304));
 check('the v1 top-level keys are all there', array_diff(['totals', 'models', 'cost', 'firsts', 'grades', 'axes', 'spend', 'turns'], array_keys($A)) === [],
     json_encode(array_keys($A)));
 check('totals: {turns, drawings, survived, rated_responses, cost_usd}', array_keys($A['totals']) === ['turns', 'drawings', 'survived', 'rated_responses', 'cost_usd']

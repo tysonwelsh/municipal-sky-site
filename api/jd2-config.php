@@ -271,6 +271,8 @@ function jd2_required_cells(array $taxonomy): array
 //   8. the error envelope with the run's ids             (jd2_fail)
 //   9. who is rating: owner or visitor                   (jd2_rater, jd2_require_bench_key)
 //  10. the current session, its standing, completeness   (jd2_current_session, …)
+//      — and the same rules over many runs at once        (jd2_current_sessions_for_runs,
+//        jd2_standings_for_sessions, jd2_display_pick)
 //
 // The endpoints are api/jd2-generate.php, jd2-title.php, jd2-rate.php,
 // jd2-curate.php, jd2-gen-svg.php and art/junk-drawer/data.php; their
@@ -501,6 +503,57 @@ function jd2_current_session(PDO $db, string $runId, ?string $role = null): ?arr
     return $row === false ? null : $row;
 }
 
+/** How many ids one `IN (…)` list carries (SQLite's old host-parameter limit is 999). */
+const JD2_IN_CHUNK = 500;
+
+/**
+ * The rows of $sql for every id in $ids. $sql holds the token `{ids}` where
+ * the placeholder list goes ("… WHERE run_id IN ({ids}) ORDER BY run_id, …").
+ * A long list is read in chunks of JD2_IN_CHUNK, one statement each; every
+ * row of one id comes from the one chunk that holds it, so an ORDER BY that
+ * leads with the IN column holds within each id. No ids, no query.
+ *
+ * @param list<string> $ids
+ * @return list<array<string,mixed>>
+ */
+function jd2_select_in(PDO $db, string $sql, array $ids): array
+{
+    $ids = array_values(array_unique(array_map('strval', $ids)));
+    $rows = [];
+    foreach (array_chunk($ids, JD2_IN_CHUNK) as $chunk) {
+        $q = $db->prepare(str_replace('{ids}', implode(', ', array_fill(0, count($chunk), '?')), $sql));
+        $q->execute($chunk);
+        foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $rows[] = $r;
+        }
+    }
+    return $rows;
+}
+
+/**
+ * jd2_current_session() for many runs in one read: per run, per role, the
+ * latest filed session (by filed_at, then id) — the same rule and the same
+ * columns, picked in PHP from one ordered scan instead of a query per run.
+ *
+ * @param list<string> $runIds
+ * @return array<string,array<string,array<string,mixed>>>  run id => role => the jd2_sessions row
+ */
+function jd2_current_sessions_for_runs(PDO $db, array $runIds): array
+{
+    $rows = jd2_select_in($db,
+        "SELECT id, run_id, rater_role, rater_hash, device_ref, client, taxonomy_version,
+                instrument_version, blind, seat_order, started_at, filed_at, status
+           FROM jd2_sessions
+          WHERE run_id IN ({ids}) AND status = '" . JD2_SESSION_FILED . "'
+          ORDER BY run_id, rater_role, filed_at DESC, id DESC",
+        $runIds);
+    $out = [];
+    foreach ($rows as $r) {
+        $out[(string) $r['run_id']][(string) $r['rater_role']] ??= $r;   // the first per (run, role) is the latest
+    }
+    return $out;
+}
+
 /**
  * Everything one session filed, folded for reading:
  *
@@ -513,37 +566,53 @@ function jd2_current_session(PDO $db, string $runId, ?string $role = null): ?arr
  */
 function jd2_session_standing(PDO $db, string $sessionId): array
 {
-    $out = ['judgments' => [], 'rankings' => [], 'pairs' => []];
+    return jd2_standings_for_sessions($db, [$sessionId])[$sessionId];
+}
 
-    $q = $db->prepare('SELECT generation_id, kind, axis_id, value, note FROM jd2_judgments WHERE session_id = ? ORDER BY id');
-    $q->execute([$sessionId]);
-    foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $r) {
-        $gid = (string) $r['generation_id'];
-        $out['judgments'][$gid] ??= ['grade' => null, 'axes' => [], 'notes' => []];
-        $cell = $r['kind'] === 'grade' ? 'grade' : (string) $r['axis_id'];
-        if ($r['kind'] === 'grade') {
-            $out['judgments'][$gid]['grade'] = (float) $r['value'];
-        } else {
-            $out['judgments'][$gid]['axes'][$cell] = (float) $r['value'];
-        }
-        if ($r['note'] !== null && $r['note'] !== '') {
-            $out['judgments'][$gid]['notes'][$cell] = (string) $r['note'];
-        }
+/**
+ * jd2_session_standing() for many sessions in one read per table: session id
+ * => its standing, the same fold (judgments in filing order, rankings by
+ * place, pairs in filing order). A session that filed nothing still answers
+ * an empty standing.
+ *
+ * @param list<string> $sessionIds
+ * @return array<string,array{judgments:array,rankings:array,pairs:list<array>}>
+ */
+function jd2_standings_for_sessions(PDO $db, array $sessionIds): array
+{
+    $out = [];
+    foreach ($sessionIds as $sid) {
+        $out[(string) $sid] = ['judgments' => [], 'rankings' => [], 'pairs' => []];
     }
 
-    $q = $db->prepare('SELECT generation_id, rank_pos, gap_after FROM jd2_rankings WHERE session_id = ? ORDER BY rank_pos');
-    $q->execute([$sessionId]);
-    foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $r) {
-        $out['rankings'][(string) $r['generation_id']] = [
+    foreach (jd2_select_in($db, 'SELECT session_id, generation_id, kind, axis_id, value, note
+                                   FROM jd2_judgments WHERE session_id IN ({ids}) ORDER BY session_id, id', $sessionIds) as $r) {
+        $o = &$out[(string) $r['session_id']];
+        $gid = (string) $r['generation_id'];
+        $o['judgments'][$gid] ??= ['grade' => null, 'axes' => [], 'notes' => []];
+        $cell = $r['kind'] === 'grade' ? 'grade' : (string) $r['axis_id'];
+        if ($r['kind'] === 'grade') {
+            $o['judgments'][$gid]['grade'] = (float) $r['value'];
+        } else {
+            $o['judgments'][$gid]['axes'][$cell] = (float) $r['value'];
+        }
+        if ($r['note'] !== null && $r['note'] !== '') {
+            $o['judgments'][$gid]['notes'][$cell] = (string) $r['note'];
+        }
+        unset($o);
+    }
+
+    foreach (jd2_select_in($db, 'SELECT session_id, generation_id, rank_pos, gap_after
+                                   FROM jd2_rankings WHERE session_id IN ({ids}) ORDER BY session_id, rank_pos', $sessionIds) as $r) {
+        $out[(string) $r['session_id']]['rankings'][(string) $r['generation_id']] = [
             'rank_pos' => (int) $r['rank_pos'],
             'gap_after' => $r['gap_after'] === null ? null : (int) $r['gap_after'],
         ];
     }
 
-    $q = $db->prepare('SELECT gen_a, gen_b, score, source, method, shown_left FROM jd2_pairs WHERE session_id = ? ORDER BY id');
-    $q->execute([$sessionId]);
-    foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $r) {
-        $out['pairs'][] = [
+    foreach (jd2_select_in($db, 'SELECT session_id, gen_a, gen_b, score, source, method, shown_left
+                                   FROM jd2_pairs WHERE session_id IN ({ids}) ORDER BY session_id, id', $sessionIds) as $r) {
+        $out[(string) $r['session_id']]['pairs'][] = [
             'gen_a' => (string) $r['gen_a'],
             'gen_b' => (string) $r['gen_b'],
             'score' => (int) $r['score'],
@@ -623,12 +692,38 @@ function jd2_is_complete(array $standing, array $generationIds, array $taxonomy)
  */
 function jd2_display_session(PDO $db, string $runId, array $generationIds, array $taxonomy, bool $fallback = false): ?array
 {
+    $current = [];
     foreach ([JD2_ROLE_OWNER, JD2_ROLE_VISITOR] as $role) {
         $s = jd2_current_session($db, $runId, $role);
+        if ($s !== null) {
+            $current[$role] = $s;
+        }
+    }
+    $standings = jd2_standings_for_sessions($db, array_map(static fn ($s) => (string) $s['id'], array_values($current)));
+    return jd2_display_pick($current, $standings, $generationIds, $taxonomy, $fallback);
+}
+
+/**
+ * jd2_display_session()'s rule over sessions already read — the set-based
+ * readers (data.php, jd2-analytics) fetch every run's current sessions and
+ * their standings at once and pick here. The owner's current session if
+ * complete, else the visitor's if complete, else (only with $fallback) the
+ * current session owner-first, complete or not.
+ *
+ * @param array<string,array> $current    role => that role's current session row on the run
+ * @param array<string,array> $standings  session id => jd2_standings_for_sessions() standing
+ * @param string[] $generationIds         the run's non-hidden ok generations
+ * @return array{session:array,standing:array,complete:bool}|null
+ */
+function jd2_display_pick(array $current, array $standings, array $generationIds, array $taxonomy, bool $fallback = false): ?array
+{
+    $empty = ['judgments' => [], 'rankings' => [], 'pairs' => []];
+    foreach ([JD2_ROLE_OWNER, JD2_ROLE_VISITOR] as $role) {
+        $s = $current[$role] ?? null;
         if ($s === null) {
             continue;
         }
-        $standing = jd2_session_standing($db, (string) $s['id']);
+        $standing = $standings[(string) $s['id']] ?? $empty;
         if (jd2_is_complete($standing, $generationIds, $taxonomy)) {
             return ['session' => $s, 'standing' => $standing, 'complete' => true];
         }
@@ -636,13 +731,94 @@ function jd2_display_session(PDO $db, string $runId, array $generationIds, array
     if (!$fallback) {
         return null;
     }
-    $s = jd2_current_session($db, $runId);
+    $s = $current[JD2_ROLE_OWNER] ?? ($current[JD2_ROLE_VISITOR] ?? null);
     if ($s === null) {
         return null;
     }
-    $standing = jd2_session_standing($db, (string) $s['id']);
+    $standing = $standings[(string) $s['id']] ?? $empty;
     return ['session' => $s, 'standing' => $standing,
             'complete' => jd2_is_complete($standing, $generationIds, $taxonomy)];
+}
+
+/**
+ * The rating reads of a set-based reader, for every run in $runIds at once:
+ * each run's current sessions per role (jd2_current_sessions_for_runs) and
+ * those sessions' standings (jd2_standings_for_sessions) — four queries,
+ * whatever the number of runs. jd2_display_pick() then applies the rules.
+ *
+ * @param list<string> $runIds
+ * @return array{0:array<string,array<string,array>>,1:array<string,array>}  [run id => role => session row, session id => standing]
+ */
+function jd2_current_with_standings(PDO $db, array $runIds): array
+{
+    $current = jd2_current_sessions_for_runs($db, $runIds);
+    $sessionIds = [];
+    foreach ($current as $byRole) {
+        foreach ($byRole as $s) {
+            $sessionIds[] = (string) $s['id'];
+        }
+    }
+    return [$current, jd2_standings_for_sessions($db, $sessionIds)];
+}
+
+/** Every run id of a jd2_runs_for_prompts() answer. @return list<string> */
+function jd2_run_ids(array $runsByPrompt): array
+{
+    $ids = [];
+    foreach ($runsByPrompt as $runs) {
+        foreach ($runs as $run) {
+            $ids[] = (string) $run['id'];
+        }
+    }
+    return $ids;
+}
+
+/**
+ * The ETag's movers for a v2 reader (data.php, jd2-analytics): two aggregate
+ * reads — filed sessions (how many, the newest filed_at) and generations
+ * (how many; how many ok, pending, hidden and priced; the newest created) —
+ * as one stamp string. What else moves an answer (a prompt's facts, a run,
+ * a drawing hidden or shown) the reader folds in from the rows it reads
+ * anyway, with jd2_etag_reads().
+ */
+function jd2_etag_movers(PDO $db): string
+{
+    $s = $db->query("SELECT COUNT(*) AS n, MAX(filed_at) AS m FROM jd2_sessions WHERE status = '" . JD2_SESSION_FILED . "'")
+        ->fetch(PDO::FETCH_ASSOC);
+    $g = $db->query(
+        "SELECT COUNT(*) AS n,
+                SUM(CASE WHEN status = '" . JD2_GEN_OK . "' THEN 1 ELSE 0 END) AS ok,
+                SUM(CASE WHEN status = '" . JD2_GEN_PENDING . "' THEN 1 ELSE 0 END) AS pending,
+                SUM(hidden) AS hid, COUNT(cost_usd) AS priced, MAX(created) AS m
+           FROM jd2_generations"
+    )->fetch(PDO::FETCH_ASSOC);
+    return 's|' . $s['n'] . '@' . $s['m'] . ';g|' . $g['n'] . '/' . $g['ok'] . '/' . $g['pending'] . '/' . $g['hid']
+        . '/' . $g['priced'] . '@' . $g['m'] . ';';
+}
+
+/**
+ * The rest of a reader's ETag, from the rows it already read: every prompt
+ * row as read, and per prompt its runs and each generation's id, status and
+ * hidden flag (jd2_runs_for_prompts) — so a prompt's facts changing, a rerun,
+ * or a drawing hidden and another shown moves the tag exactly.
+ *
+ * @param list<array> $prompts
+ * @param array<string,list<array>> $runsByPrompt
+ */
+function jd2_etag_reads(array $prompts, array $runsByPrompt): string
+{
+    $h = '';
+    foreach ($prompts as $p) {
+        $h .= implode('/', array_map('strval', $p)) . ';';
+        foreach ($runsByPrompt[(string) $p['id']] ?? [] as $run) {
+            $h .= $run['id'] . ':' . $run['status'] . '[';
+            foreach ($run['gens'] as $g) {
+                $h .= $g['id'] . '/' . $g['status'] . '/' . (int) $g['hidden'] . ',';
+            }
+            $h .= ']';
+        }
+    }
+    return 'r|' . md5($h) . ';';
 }
 
 /** A run's drawings that count — ok and not hidden — as rows (id, slot, …), in slot order. */
@@ -705,7 +881,8 @@ function jd2_db_or_null(): ?PDO
 // Phase 3c — what the owner-side readers share (jd2-queue.php, jd2-ledger.php,
 // jd2-analytics.php; PLAN-V2 §5):
 //
-//  11. a prompt's runs and drawings, read once             (jd2_prompt_runs)
+//  11. a prompt's runs and drawings, read once             (jd2_prompt_runs,
+//      — or many prompts' at once                          jd2_runs_for_prompts)
 //  12. is a run's drawing finished                         (jd2_run_settled)
 //  13. the run the bench rates, and what it still needs    (jd2_bench_view, jd2_needs)
 //  14. which drawing the drawer shows on a run, and why    (jd2_shows)
@@ -722,29 +899,44 @@ function jd2_db_or_null(): ?PDO
 /** @return list<array<string,mixed>> */
 function jd2_prompt_runs(PDO $db, string $promptId): array
 {
-    $q = $db->prepare(
+    return jd2_runs_for_prompts($db, [$promptId])[$promptId] ?? [];
+}
+
+/**
+ * jd2_prompt_runs() for many prompts in two reads (their runs, then those
+ * runs' generations): prompt id => its runs newest first, each with 'gens'
+ * (every generation, slot order) and 'counting' (the ids that count). A
+ * prompt with no run is absent.
+ *
+ * @param list<string> $promptIds
+ * @return array<string,list<array<string,mixed>>>
+ */
+function jd2_runs_for_prompts(PDO $db, array $promptIds): array
+{
+    $runs = jd2_select_in($db,
         'SELECT id, prompt_id, kind, requested_by, profile, harness, pool_version, deal, status, created
-           FROM jd2_runs WHERE prompt_id = ? ORDER BY created DESC, id DESC'
-    );
-    $q->execute([$promptId]);
-    $runs = $q->fetchAll(PDO::FETCH_ASSOC);
-    $g = $db->prepare(
+           FROM jd2_runs WHERE prompt_id IN ({ids}) ORDER BY prompt_id, created DESC, id DESC',
+        $promptIds);
+    $gensByRun = [];
+    foreach (jd2_select_in($db,
         'SELECT id, run_id, slot, model_id, api_model, provider, status, reject_reason, hidden,
                 latency_ms, usage_json, cost_usd, priced, created
-           FROM jd2_generations WHERE run_id = ? ORDER BY slot'
-    );
-    foreach ($runs as &$run) {
-        $g->execute([$run['id']]);
-        $run['gens'] = $g->fetchAll(PDO::FETCH_ASSOC);
+           FROM jd2_generations WHERE run_id IN ({ids}) ORDER BY run_id, slot',
+        array_column($runs, 'id')) as $g) {
+        $gensByRun[(string) $g['run_id']][] = $g;
+    }
+    $out = [];
+    foreach ($runs as $run) {
+        $run['gens'] = $gensByRun[(string) $run['id']] ?? [];
         $run['counting'] = [];
         foreach ($run['gens'] as $gen) {
             if ($gen['status'] === JD2_GEN_OK && (int) $gen['hidden'] === 0) {
                 $run['counting'][] = (string) $gen['id'];
             }
         }
+        $out[(string) $run['prompt_id']][] = $run;
     }
-    unset($run);
-    return $runs;
+    return $out;
 }
 
 // ---------------------------------------------------------------------------

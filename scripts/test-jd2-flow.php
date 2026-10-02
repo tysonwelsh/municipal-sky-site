@@ -510,12 +510,14 @@ check('?item= still answers it, marked hidden', $st === 200 && ($j['item']['id']
 [$stKeyed, , $hKeyed] = req('GET', '/api/jd2-gen-svg.php?gen=' . $slotGen1['c'], null, true);
 check('jd2-gen-svg: 404 to the public, 200 no-store to the bench key', ($st === 404 || jd_bench_key_expected() === null) && $stKeyed === 200
       && str_contains($hKeyed['cache-control'] ?? '', 'no-store'), "$st / $stKeyed");
+$tag0 = manifest('?item=' . $prompt1)[2]['etag'] ?? '';
 [$st, $j] = req('POST', '/api/jd2-curate.php', ['generation_id' => $slotGen1['b'], 'hidden' => true], true);
-[, $ji] = manifest('?item=' . $prompt1);
-check('hiding one drawing drops it from the card (3 responses); showing it puts it back',
-      $st === 200 && count($ji['item']['responses']) === 3
+[, $ji, $hi] = manifest('?item=' . $prompt1);
+check('hiding one drawing drops it from the card (3 responses) and moves the ETag; showing it puts it back',
+      $st === 200 && count($ji['item']['responses']) === 3 && ($hi['etag'] ?? '') !== $tag0
       && req('POST', '/api/jd2-curate.php', ['generation_id' => $slotGen1['b'], 'hidden' => false], true)[0] === 200
-      && count(manifest('?item=' . $prompt1)[1]['item']['responses']) === 4);
+      && count(manifest('?item=' . $prompt1)[1]['item']['responses']) === 4
+      && (manifest('?item=' . $prompt1)[2]['etag'] ?? '') === $tag0);
 [$st] = manifest('?item=' . jd_ulid());
 check('?item= for an unknown id is 404', $st === 404);
 

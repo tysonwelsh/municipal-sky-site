@@ -47,7 +47,11 @@ SEVEN files, loaded in order by `_scripts.php`. They are IIFEs talking through
 **API (`api/`):**
 
 - `jd2-config.php`: word lists, `jd2_current_session`,
-  `jd2_display_session`, `jd2_is_complete`, `jd2_derive_pairs`, the pool.
+  `jd2_display_session`, `jd2_is_complete`, `jd2_derive_pairs`, the pool,
+  and the set-based reads data.php and `jd2-analytics` use (a fixed number of
+  queries, never one per prompt or run): `jd2_runs_for_prompts`,
+  `jd2_current_sessions_for_runs`, `jd2_standings_for_sessions`,
+  `jd2_display_pick`.
 - `jd2-generate`, `jd2-title`, `jd2-rate`, `jd2-curate` and `jd2-gen-svg`:
   the writers, the titler and the SVG server.
 - `jd2-queue` (the bench), `jd2-ledger` (the ledger) and `jd2-analytics`

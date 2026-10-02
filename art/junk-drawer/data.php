@@ -35,6 +35,20 @@
 //
 // A DATABASE OUTAGE MUST NOT TAKE THE DRAWER DOWN: the manifest then answers
 // empty with the taxonomy (the drawer paints its furniture), never a 500.
+//
+// THE READS are a fixed number of set-based queries, however full the drawer
+// is (never a query per prompt or per run):
+//   1–2. the ETag's movers: filed sessions and generations, two aggregates
+//        (jd2_etag_movers)
+//   3.   the prompts this answer covers — the live ones, or the ?item= one
+//   4–5. their runs, then those runs' generations (jd2_runs_for_prompts)
+//        — the ETag is taken here (jd2_etag_reads over 3–5), so a 304 stops
+//        before the ratings are read —
+//   6.   every one of those runs' current sessions, per role
+//        (jd2_current_sessions_for_runs)
+//   7–9. those sessions' judgments, rankings and pairs
+//        (jd2_standings_for_sessions; 6–9 are jd2_current_with_standings)
+// and the fold is PHP: jd2_display_pick applies the reader rules per run.
 
 require_once __DIR__ . '/../../api/jd2-config.php';
 require_once __DIR__ . '/../../api/jd-usage.php';
@@ -45,40 +59,39 @@ $slim = isset($_GET['slim']);
 // pricing; single-item mode always prices
 $priced = !$slim || $itemId !== null;
 
-// ETag: the rubric file, plus what moves when the drawer's contents can —
-// a session filed, a drawing made, any prompt's display facts, a drawing
+// --- reads 1–5, and the ETag over them ------------------------------------
+// The rubric file, plus what moves when the drawer's contents can — a
+// session filed, a drawing made, a prompt's display facts, a run, a drawing
 // hidden or shown. A database that cannot answer contributes a fixed word.
 $stamp = JD_TAXONOMY_PATH . '|' . @filemtime(JD_TAXONOMY_PATH) . ';';
 // jd2_db_or_null(), not jd_db(): an unreachable MySQL must not exit with a
 // 500 from inside api/database.php before this file can answer empty.
 $db = jd2_db_or_null();
+$prompts = [];
+$runsByPrompt = [];
 try {
     if ($db === null) {
         throw new RuntimeException('no database handle');
     }
-    $s = $db->query("SELECT COUNT(*) AS n, MAX(filed_at) AS m FROM jd2_sessions WHERE status = '" . JD2_SESSION_FILED . "'")
-        ->fetch(PDO::FETCH_ASSOC);
-    $g = $db->query(
-        "SELECT COUNT(*) AS n, SUM(CASE WHEN status = '" . JD2_GEN_OK . "' THEN 1 ELSE 0 END) AS ok,
-                SUM(hidden) AS hid, MAX(created) AS m
-           FROM jd2_generations"
-    )->fetch(PDO::FETCH_ASSOC);
-    $hiddenGens = '';
-    foreach ($db->query('SELECT id FROM jd2_generations WHERE hidden = 1 ORDER BY id') as $h) {
-        $hiddenGens .= $h['id'] . ',';
+    $stamp .= jd2_etag_movers($db);
+    if ($itemId !== null) {
+        if (jd_is_ulid($itemId)) {
+            $q = $db->prepare(jd2_data_prompt_sql() . ' WHERE id = ?');
+            $q->execute([$itemId]);
+            $prompts = $q->fetchAll(PDO::FETCH_ASSOC);
+        }
+    } else {
+        // the manifest: live prompts, newest first
+        $prompts = $db->query(jd2_data_prompt_sql() . " WHERE visibility = '" . JD2_VIS_LIVE . "' ORDER BY created DESC, id DESC")
+            ->fetchAll(PDO::FETCH_ASSOC);
     }
-    $promptFacts = '';
-    foreach ($db->query(
-        'SELECT id, visibility, title, size_class, size_scale, shown_run_id, pinned_generation_id
-           FROM jd2_prompts ORDER BY id'
-    ) as $p) {
-        $promptFacts .= implode('/', array_map('strval', $p)) . ',';
-    }
-    $stamp .= 's|' . $s['n'] . '@' . $s['m'] . ';g|' . $g['n'] . '/' . $g['ok'] . '/' . $g['hid'] . '@' . $g['m']
-        . ';h|' . md5($hiddenGens) . ';p|' . md5($promptFacts) . ';';
+    $runsByPrompt = jd2_runs_for_prompts($db, array_column($prompts, 'id'));
+    $stamp .= jd2_etag_reads($prompts, $runsByPrompt);
 } catch (Throwable $e) {
     error_log('data.php: the jd2 tables could not be read (' . $e->getMessage() . ')');
     $db = null;
+    $prompts = [];
+    $runsByPrompt = [];
     $stamp .= 'db-unavailable;';
 }
 $etag = '"' . md5($stamp) . '"';
@@ -108,13 +121,10 @@ if ($itemId !== null) {
     }
     $item = null;
     try {
-        if (jd_is_ulid($itemId)) {
-            $q = $db->prepare(jd2_data_prompt_sql() . ' WHERE id = ?');
-            $q->execute([$itemId]);
-            $prompt = $q->fetch(PDO::FETCH_ASSOC);
-            if ($prompt !== false) {
-                $item = jd2_data_item($db, $prompt, $taxonomy, true, $priced);
-            }
+        if ($prompts !== []) {
+            [$current, $standings] = jd2_current_with_standings($db, jd2_run_ids($runsByPrompt));
+            $item = jd2_data_item($prompts[0], $runsByPrompt[(string) $prompts[0]['id']] ?? [], $current, $standings,
+                                  $taxonomy, true, $priced);
         }
     } catch (Throwable $e) {
         error_log('data.php: item ' . $itemId . ' unavailable (' . $e->getMessage() . ')');
@@ -135,9 +145,10 @@ if ($itemId !== null) {
 $items = [];
 if ($db !== null) {
     try {
-        $q = $db->query(jd2_data_prompt_sql() . " WHERE visibility = '" . JD2_VIS_LIVE . "' ORDER BY created DESC, id DESC");
-        foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $prompt) {
-            $item = jd2_data_item($db, $prompt, $taxonomy, false, $priced);
+        [$current, $standings] = jd2_current_with_standings($db, jd2_run_ids($runsByPrompt));
+        foreach ($prompts as $prompt) {
+            $item = jd2_data_item($prompt, $runsByPrompt[(string) $prompt['id']] ?? [], $current, $standings,
+                                  $taxonomy, false, $priced);
             if ($item !== null) {
                 $items[] = $item;
             }
@@ -175,14 +186,15 @@ function jd2_data_prompt_sql(): string
  * One prompt as a drawer item, or null when it has nothing to show. In the
  * manifest a prompt shows only through a complete run (or the run the owner
  * chose); $itemMode also answers a prompt still being rated, from its
- * newest run.
+ * newest run. Nothing here queries: the runs, their generations, the current
+ * sessions and their standings were read for every prompt at once.
+ *
+ * @param list<array> $runs  the prompt's runs, newest first (jd2_runs_for_prompts)
  */
-function jd2_data_item(PDO $db, array $prompt, array $taxonomy, bool $itemMode, bool $priced): ?array
+function jd2_data_item(array $prompt, array $runs, array $current, array $standings, array $taxonomy,
+                       bool $itemMode, bool $priced): ?array
 {
     $promptId = (string) $prompt['id'];
-    $q = $db->prepare('SELECT id, created FROM jd2_runs WHERE prompt_id = ? ORDER BY created DESC, id DESC');
-    $q->execute([$promptId]);
-    $runs = $q->fetchAll(PDO::FETCH_ASSOC);
     if ($runs === []) {
         return null;
     }
@@ -191,21 +203,26 @@ function jd2_data_item(PDO $db, array $prompt, array $taxonomy, bool $itemMode, 
     $gens = [];
     $display = null;
     $idsOf = static fn (array $rows) => array_map(static fn ($g) => (string) $g['id'], $rows);
+    // a run's drawings that count — ok and not hidden — in slot order
+    $countingOf = static fn (array $run) => array_values(array_filter($run['gens'],
+        static fn ($g) => $g['status'] === JD2_GEN_OK && (int) $g['hidden'] === 0));
+    $displayOf = static fn (array $run, array $g, bool $fallback) => jd2_display_pick(
+        $current[(string) $run['id']] ?? [], $standings, $idsOf($g), $taxonomy, $fallback);
 
     // The owner's choice of run stands whether or not it is complete: they
     // chose it. Otherwise the newest run with a complete sitting.
     foreach ($runs as $run) {
         if ($prompt['shown_run_id'] !== null && $run['id'] === $prompt['shown_run_id']) {
             $shown = $run;
-            $gens = jd2_run_generations($db, (string) $run['id']);
-            $display = jd2_display_session($db, (string) $run['id'], $idsOf($gens), $taxonomy, true);
+            $gens = $countingOf($run);
+            $display = $displayOf($run, $gens, true);
             break;
         }
     }
     if ($shown === null) {
         foreach ($runs as $run) {
-            $g = jd2_run_generations($db, (string) $run['id']);
-            $d = $g ? jd2_display_session($db, (string) $run['id'], $idsOf($g), $taxonomy) : null;
+            $g = $countingOf($run);
+            $d = $g ? $displayOf($run, $g, false) : null;
             if ($d !== null) {
                 [$shown, $gens, $display] = [$run, $g, $d];
                 break;
@@ -217,8 +234,8 @@ function jd2_data_item(PDO $db, array $prompt, array $taxonomy, bool $itemMode, 
             return null;
         }
         $shown = $runs[0];
-        $gens = jd2_run_generations($db, (string) $shown['id']);
-        $display = jd2_display_session($db, (string) $shown['id'], $idsOf($gens), $taxonomy, true);
+        $gens = $countingOf($shown);
+        $display = $displayOf($shown, $gens, true);
     }
     if ($gens === [] && !$itemMode) {
         return null;

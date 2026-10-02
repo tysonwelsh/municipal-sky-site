@@ -1,6 +1,7 @@
 <?php
 // GET /api/jd2-analytics.php — the numbers behind the drawer, dataset v2
-// (PLAN-V2 §5). Public, read-only, Cache-Control: no-cache — the posture of
+// (PLAN-V2 §5). Public, read-only, Cache-Control: no-cache with an ETag and
+// a 304 on If-None-Match (data.php's discipline) — the posture of
 // v1's api/jd-analytics.php, whose payload this keeps key for key so the
 // about page's charts (art/junk-drawer/about/about-scenes.js) and the
 // analytics folder switch to it at the cutover by changing one URL:
@@ -60,6 +61,15 @@
 // v1 (jd_*) table is read. All aggregation is in PHP over plain SELECTs, as
 // v1's file explains; the reads go through the jd2 helpers so the population
 // is the one every other reader uses.
+//
+// THE READS are a fixed number of set-based queries, however many prompts:
+// the ETag's two aggregates (jd2_etag_movers); the live prompts; their runs
+// and those runs' generations (jd2_runs_for_prompts) — the ETag is taken
+// over these (jd2_etag_reads), and a matching If-None-Match answers 304
+// before anything else is read — then the spend; every run's current
+// sessions and their judgments, rankings and pairs
+// (jd2_current_with_standings). jd2_display_pick applies the reader rules
+// per run in PHP.
 
 require_once __DIR__ . '/jd2-config.php';
 require_once __DIR__ . '/jd-origin.php';
@@ -99,6 +109,28 @@ $spendByDate = [];
 try {
     $db = jd_db();
 
+    // --- the population's prompts, runs and drawings, and the ETag over them --
+    $stamp = JD_TAXONOMY_PATH . '|' . @filemtime(JD_TAXONOMY_PATH) . ';o|' . ($origin ?? '') . ';' . jd2_etag_movers($db);
+    $sql = "SELECT id, text, title, origin, created, shown_run_id
+              FROM jd2_prompts WHERE visibility = '" . JD2_VIS_LIVE . "'";
+    $args = [];
+    if ($origin !== null) {
+        $sql .= ' AND origin = ?';
+        $args[] = $origin;
+    }
+    $q = $db->prepare($sql . ' ORDER BY created DESC, id DESC');
+    $q->execute($args);
+    $prompts = $q->fetchAll(PDO::FETCH_ASSOC);
+    $runsByPrompt = jd2_runs_for_prompts($db, array_column($prompts, 'id'));
+    $etag = '"' . md5($stamp . jd2_etag_reads($prompts, $runsByPrompt)) . '"';
+    if (!headers_sent()) {
+        header('ETag: ' . $etag);
+    }
+    if (isset($_SERVER['HTTP_IF_NONE_MATCH']) && trim($_SERVER['HTTP_IF_NONE_MATCH']) === $etag) {
+        http_response_code(304);
+        exit();
+    }
+
     // --- spend: every priced drawing of the origin filter ---------------------
     $sql = 'SELECT g.model_id, g.cost_usd, g.created
               FROM jd2_generations g
@@ -122,17 +154,9 @@ try {
     }
 
     // --- the population: every run of every live prompt -----------------------
-    $sql = "SELECT id, text, title, origin, created, shown_run_id
-              FROM jd2_prompts WHERE visibility = '" . JD2_VIS_LIVE . "'";
-    $args = [];
-    if ($origin !== null) {
-        $sql .= ' AND origin = ?';
-        $args[] = $origin;
-    }
-    $q = $db->prepare($sql . ' ORDER BY created DESC, id DESC');
-    $q->execute($args);
-    foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $p) {
-        $runs = jd2_prompt_runs($db, (string) $p['id']);
+    [$current, $standings] = jd2_current_with_standings($db, jd2_run_ids($runsByPrompt));
+    foreach ($prompts as $p) {
+        $runs = $runsByPrompt[(string) $p['id']] ?? [];
         $drawerRun = null;   // data.php's run: the owner's choice, else the newest complete
         $displayOf = [];
         foreach ($runs as $run) {
@@ -156,7 +180,7 @@ try {
             if ($run['counting'] === []) {
                 continue;
             }
-            $display = jd2_display_session($db, $rid, $run['counting'], $taxonomy);
+            $display = jd2_display_pick($current[$rid] ?? [], $standings, $run['counting'], $taxonomy);
             $displayOf[$rid] = $display;
             if ($display === null) {
                 continue;
