@@ -30,9 +30,11 @@
 //     and every prompt of the day (the prompt only: no responses, no rating —
 //     owner's call, 2026-10-01)
 //   · the junk drawer — the turn funnel, errors, devices, first-place share
-//     per model, exact spend per model (api/jd-usage.php + jd-prices.json),
+//     per model, exact spend per model (the cost_usd each drawing filed with),
 //     drawing health, median latency, items opened, and every prompt of the
-//     day (again the prompt and its title only, never the drawings or grades)
+//     day (again the prompt and its title only, never the drawings or grades).
+//     Dataset v2 only (the jd2_* tables, db/junk-drawer-v2-schema.md): the
+//     v1 jd_* tables are frozen as of 2026-10-01 and would only ever print 0.
 //   · signups — the list, where people sign up from, signups per view
 //   · the plant — live VERSION strings, a self-ping, records, table sizes
 //
@@ -99,6 +101,7 @@ $PAGE_NAMES = [
     'homepage'               => 'Homepage',
     'junk-drawer'            => 'Junk Drawer',
     'junk-drawer/about'      => 'Junk Drawer / about',
+    'junk-drawer-legacy'     => 'Junk Drawer / legacy',
     'prosperos-jukebox-v2'   => "Prospero's Jukebox",
     'prosperos-jukebox'      => 'Jukebox v1 (old)',
     'zankyo'                 => 'ZANKYO',
@@ -282,13 +285,19 @@ function median(array $xs) {
 // (hidden from the nav) never is.
 function public_pages(callable $note) {
     $keys  = ['homepage', 'about', 'art', 'information-graphics'];
-    $alias = ['gendered-pronouns' => 'pronoun', 'onomatopoeia-machine.php' => 'onomatopoeia-machine'];
+    // A nested link counts only when it is aliased here to its page_events key
+    // (the legacy drawer, /art/junk-drawer/legacy/, logs as 'junk-drawer-legacy').
+    $alias = ['gendered-pronouns' => 'pronoun', 'onomatopoeia-machine.php' => 'onomatopoeia-machine',
+              'junk-drawer/legacy' => 'junk-drawer-legacy'];
     foreach (['art/index.php', 'information-graphics/index.php'] as $rel) {
         $html = @file_get_contents(__DIR__ . '/../' . $rel);
         if ($html === false) { $note($rel, 'could not be read, so its pages are not in the digest'); continue; }
         $html = preg_replace('/<!--.*?-->/s', '', $html);
-        if (preg_match_all('#href="/(?:art|information-graphics|chatbots)/([a-z0-9.-]+)/?"#', $html, $m)) {
-            foreach ($m[1] as $slug) $keys[] = $alias[$slug] ?? $slug;
+        if (preg_match_all('#href="/(?:art|information-graphics|chatbots)/([a-z0-9.-]+(?:/[a-z0-9.-]+)*)/?"#', $html, $m)) {
+            foreach ($m[1] as $slug) {
+                if (isset($alias[$slug])) $keys[] = $alias[$slug];
+                elseif (strpos($slug, '/') === false) $keys[] = $slug;
+            }
         }
     }
     return array_values(array_unique($keys));
@@ -321,6 +330,7 @@ $D = [
     'jd'       => ['v24' => 0, 'u24' => 0, 'av24' => 0, 'io24' => 0, 'vall' => 0, 'uall' => 0, 'ioall' => 0,
                    'funnel' => ['open' => 0, 'submit' => 0, 'done' => 0, 'err' => 0], 'funnel_all' => ['open' => 0, 'submit' => 0, 'done' => 0, 'err' => 0],
                    'errors24' => [], 'errors7' => [], 'turns' => ['t24' => 0, 'tprev' => 0, 't7' => 0, 'tall' => 0, 'rated' => 0, 'rated24' => 0, 'failed' => 0],
+                   'lv24' => 0, 'lu24' => 0, 'lio24' => 0, 'lvall' => 0,
                    'devices' => null, 'returning' => null, 'firsts' => [], 'firsts_n' => 0, 'firsts_n24' => 0,
                    'spend' => [], 'spend_total' => ['w24' => 0.0, 'w7' => 0.0, 'all' => 0.0], 'unpriced' => 0, 'priced' => 0,
                    'health24' => ['ok' => 0, 'failed' => 0, 'rejected' => 0, 'disobeyed' => 0, 'n' => 0],
@@ -364,7 +374,7 @@ if ($DEMO) {
         'prosperos-jukebox-v2' => [4, 4, 3, 0, 15, 188, 138, 88], 'pronoun' => [3, 3, 0, 1, 12, 117, 117, 0],
         'rain-of-babel' => [2, 2, 0, 0, 9, 80, 70, 0], 'art' => [2, 2, 0, 0, 11, 161, 120, 0],
         'zankyo' => [1, 1, 0, 0, 8, 145, 108, 59], 'junk-drawer/about' => [1, 1, 0, 0, 4, 85, 70, 0],
-        'onomatopoeia-machine' => [1, 1, 0, 0, 6, 60, 55, 0], 'underworld-occupations' => [0, 0, 0, 0, 3, 100, 72, 0],
+        'onomatopoeia-machine' => [1, 1, 0, 0, 6, 60, 55, 0], 'junk-drawer-legacy' => [3, 3, 0, 0, 14, 22, 19, 0], 'underworld-occupations' => [0, 0, 0, 0, 3, 100, 72, 0],
         'carbon-structures' => [0, 0, 0, 0, 2, 65, 52, 0], 'about' => [0, 0, 0, 0, 3, 44, 40, 0], 'bardo' => [0, 0, 0, 0, 1, 26, 19, 10]];
     foreach ($demoPages as $k => $r) {
         if (!is_public($k, $PUBLIC)) { $D['hidden'][] = $k; continue; }
@@ -380,6 +390,7 @@ if ($DEMO) {
                       ['timestamp' => date('Y-m-d') . ' 07:40:00', 'user_message' => 'a modem connecting'],
                       ['timestamp' => date('Y-m-d') . ' 01:02:00', 'user_message' => 'the printing press in the basement of the Freeman\'s Journal, as Bloom hears it']]]);
     $D['jd'] = array_merge($D['jd'], ['v24' => 18, 'u24' => 12, 'av24' => 1, 'io24' => 41, 'vall' => 1204, 'uall' => 900, 'ioall' => 3310,
+        'lv24' => 3, 'lu24' => 3, 'lio24' => 5, 'lvall' => 22,
         'funnel' => ['open' => 9, 'submit' => 4, 'done' => 3, 'err' => 1], 'funnel_all' => ['open' => 402, 'submit' => 171, 'done' => 148, 'err' => 23],
         'errors24' => ['provider_timeout' => 1], 'errors7' => ['provider_timeout' => 2, 'daily_limit' => 1],
         'turns' => ['t24' => 3, 'tprev' => 3, 't7' => 11, 'tall' => 148, 'rated' => 112, 'rated24' => 2, 'failed' => 4],
@@ -393,16 +404,21 @@ if ($DEMO) {
         'health7' => ['ok' => 42, 'failed' => 1, 'rejected' => 1, 'disobeyed' => 2, 'n' => 44],
         'latency7' => ['claude-opus-5' => 14200, 'gpt-5-1' => 22000, 'kimi-k3' => 9800, 'gemini-3-1-pro' => 17100],
         'items24' => [['title' => 'Shirt button', 'n' => 3], ['title' => 'Paperclip', 'n' => 2], ['title' => 'Pencil stub', 'n' => 1]],
-        'prompts' => [['created' => gmdate('Y-m-d') . ' 21:04:00', 'title' => 'Teapot', 'prompt' => 'a blue ceramic teapot with a chipped spout, steam curling from it, seen slightly from above on a bare wooden table'],
-                      ['created' => gmdate('Y-m-d') . ' 09:31:00', 'title' => null, 'prompt' => 'a lighthouse at dusk']]]);
+        'prompts' => [['created' => gmdate('Y-m-d') . ' 21:04:00', 'title' => 'Teapot', 'text' => 'a blue ceramic teapot with a chipped spout, steam curling from it, seen slightly from above on a bare wooden table'],
+                      ['created' => gmdate('Y-m-d') . ' 09:31:00', 'title' => null, 'text' => 'a lighthouse at dusk']]]);
     $D['subs'] = ['n24' => 1, 'n7' => 1, 'total' => 23, 'active' => 21, 'rows' => [['created_at' => date('Y-m-d') . ' 19:40:12', 'email' => 'fresh.signup@example.com', 'source' => '/art/junk-drawer/']],
         'sources' => ['/art/junk-drawer/' => 9, '/' => 6, '/art/skeeball/' => 4]];
     $D['builds'] = ['jukebox' => '2.0.0-rc.41', 'zankyo' => '2.0.0-rc.17', 'kolob' => 'v0.36.1', 'drawer' => '1.9.2', 'holler' => '0.5.0', 'babel' => '1.2.0', 'kimi' => '0.3.0'];
     $D['ping'] = ['/' => ['code' => 200, 'ms' => 143], '/art/junk-drawer/' => ['code' => 200, 'ms' => 221], '/api/health.php' => ['code' => 200, 'ms' => 88, 'keys' => ['claude' => true, 'gemini' => true, 'openai' => true]]];
-    $D['tables'] = ['page_events' => 4965, 'jd_generations' => 601, 'conversations' => 140, 'subscribers' => 24];
+    $D['tables'] = ['page_events' => 4965, 'conversations' => 140, 'jd2_prompts' => 150, 'jd2_generations' => 601, 'jd2_sessions' => 131, 'subscribers' => 24];
 } else {
     require __DIR__ . '/database.php';   // provides $pdo
-    require_once __DIR__ . '/jd-usage.php';  // jd_generation_cost() — the one pricer
+    // The jd2 readers' rules (jd2_current_sessions_for_runs, jd2_standings_for_sessions,
+    // jd2_select_in). jd-config.php turns display_errors off for its JSON
+    // endpoints; a cron log wants its warnings, so the setting is put back.
+    $displayErrors = ini_get('display_errors');
+    require_once __DIR__ . '/jd2-config.php';
+    ini_set('display_errors', (string) $displayErrors);
 
     $q  = function ($sql) use ($pdo, &$D) { $D['queries']++; return $pdo->query($sql)->fetchAll(); };
     $q1 = function ($sql) use ($pdo, &$D) { $D['queries']++; return $pdo->query($sql)->fetch() ?: []; };
@@ -410,7 +426,7 @@ if ($DEMO) {
     $has = function ($table) use ($pdo) { return (bool) $pdo->query("SHOW TABLES LIKE " . $pdo->quote($table))->fetchColumn(); };
 
     // Rolling windows. page_events / pronoun / subscribers / onobot stamp rows
-    // in server time (NOW()); the jd_* tables stamp UTC (UTC_TIMESTAMP()).
+    // in server time (NOW()); the jd2_* tables stamp UTC (UTC_TIMESTAMP()).
     $win = function ($col, $now = 'NOW()') use ($H) {
         return [
             'w24'  => "($col >= $now - INTERVAL $H HOUR)",
@@ -419,8 +435,7 @@ if ($DEMO) {
         ];
     };
     $wv = $win('created_at');
-    $wj = $win('created', 'UTC_TIMESTAMP()');
-    $wjs = $win('s.created', 'UTC_TIMESTAMP()');   // the same windows on an aliased jd_submissions
+    $wj = $win('p.created', 'UTC_TIMESTAMP()');   // on jd2_prompts p
 
     $hasPronoun = false;
     try { $hasPronoun = $has('pronoun_viz_events') && is_public('pronoun', $PUBLIC); } catch (PDOException $e) { $note('pronoun table check', $e); }
@@ -543,10 +558,16 @@ if ($DEMO) {
     // ── junk drawer ──────────────────────────────────────────
     // The drawer logs to page_events under page='junk-drawer' (jd-core.js JD_track):
     // page_view with label NULL for the drawer itself and 'about' for /about/,
-    // item_open (label = item id), and turn_open / turn_submit / turn_complete
-    // (label = the winner) / turn_error (label = the error code). Visitor
-    // prompts are jd_submissions rows with item_id IS NULL — curated items
-    // carry an item_id and are never turns.
+    // item_open (label = the item id: a jd2_prompts id, or a legacy item's
+    // folder), and turn_open / turn_submit / turn_complete (label = the winner) /
+    // turn_error (label = the error code). The legacy exhibit
+    // (/art/junk-drawer/legacy/) logs page_view and item_open under its own key,
+    // 'junk-drawer-legacy', so it never counts as the v2 drawer.
+    //
+    // Everything else reads dataset v2 (db/junk-drawer-v2-schema.md) and never
+    // a jd_* table: the v1 tables are frozen (JD_V1_FROZEN, 2026-10-01). A
+    // visitor prompt is a jd2_prompts row with origin = 'visitor'; it is RATED
+    // when a filed visitor session sits on one of its runs. All jd2 stamps are UTC.
     try {
         $r = $q1("SELECT SUM(event_type = 'page_view' AND (label IS NULL OR label <> 'about') AND {$wv['w24']}) v24,
                          COUNT(DISTINCT CASE WHEN event_type = 'page_view' AND (label IS NULL OR label <> 'about') AND {$wv['w24']} THEN visitor_hash END) u24,
@@ -569,56 +590,99 @@ if ($DEMO) {
                 $D['jd'][$key][$e['l']] = (int) $e['n'];
             }
         }
-        foreach ($q("SELECT label, COUNT(*) n FROM page_events WHERE page = 'junk-drawer' AND event_type = 'item_open'
-                     AND label IS NOT NULL AND {$wv['w24']} GROUP BY label ORDER BY n DESC LIMIT 5") as $e) {
-            $D['jd']['items24'][] = ['title' => item_title($e['label']), 'n' => (int) $e['n']];
+        $opened = $q("SELECT label, COUNT(*) n FROM page_events WHERE page = 'junk-drawer' AND event_type = 'item_open'
+                      AND label IS NOT NULL AND {$wv['w24']} GROUP BY label ORDER BY n DESC LIMIT 5");
+        // A v2 item id is its jd2_prompts id: its title is the prompt's.
+        $titles = [];
+        $ulids = array_values(array_filter(array_column($opened, 'label'), function ($l) { return (bool) preg_match(JD_ULID_RE, (string) $l); }));
+        if ($ulids) {
+            try {
+                foreach (jd2_select_in($pdo, "SELECT id, title FROM jd2_prompts WHERE id IN ({ids})", $ulids) as $t) {
+                    if ((string) ($t['title'] ?? '') !== '') $titles[(string) $t['id']] = (string) $t['title'];
+                }
+            } catch (PDOException $e) { $note('drawer item titles', $e); }
         }
+        foreach ($opened as $e) {
+            $D['jd']['items24'][] = ['title' => $titles[(string) $e['label']] ?? item_title($e['label']), 'n' => (int) $e['n']];
+        }
+        $r = $q1("SELECT SUM(event_type = 'page_view' AND {$wv['w24']}) lv24,
+                         COUNT(DISTINCT CASE WHEN event_type = 'page_view' AND {$wv['w24']} THEN visitor_hash END) lu24,
+                         SUM(event_type = 'item_open' AND {$wv['w24']}) lio24,
+                         SUM(event_type = 'page_view') lvall
+                  FROM page_events WHERE page = 'junk-drawer-legacy'");
+        foreach (['lv24', 'lu24', 'lio24', 'lvall'] as $k) $D['jd'][$k] = $i($r, $k);
     } catch (PDOException $e) { $note('drawer events', $e); }
     try {
+        // RATED: the visitor finished — a filed visitor session on one of the
+        // prompt's runs. FAILED: its initial run settled with no drawing.
+        $ratedSql = "EXISTS (SELECT 1 FROM jd2_runs r JOIN jd2_sessions s ON s.run_id = r.id
+                             WHERE r.prompt_id = p.id AND s.rater_role = 'visitor' AND s.status = 'filed')";
         $r = $q1("SELECT SUM({$wj['w24']}) t24, SUM({$wj['prev']}) tprev, SUM({$wj['w7']}) t7, COUNT(*) tall,
-                         SUM(status = 'rated') rated, SUM(status = 'rated' AND {$wj['w24']}) rated24, SUM(status = 'failed') failed
-                  FROM jd_submissions WHERE item_id IS NULL");
+                         SUM($ratedSql) rated, SUM($ratedSql AND {$wj['w24']}) rated24,
+                         SUM(EXISTS (SELECT 1 FROM jd2_runs r WHERE r.prompt_id = p.id AND r.kind = 'initial' AND r.status = 'failed')) failed
+                  FROM jd2_prompts p WHERE p.origin = 'visitor'");
         foreach (['t24', 'tprev', 't7', 'tall', 'rated', 'rated24', 'failed'] as $k) $D['jd']['turns'][$k] = $i($r, $k);
         $D['pulse']['drawer turns'] = ['w24' => $i($r, 't24'), 'prev' => $i($r, 'tprev'), 'w7' => $i($r, 't7'), 'all' => $i($r, 'tall')];
         // Every prompt of the day — the words and the accepted title only.
-        $D['jd']['prompts'] = $q("SELECT s.created, s.title, s.prompt FROM jd_submissions s
-                                  WHERE s.item_id IS NULL AND {$wjs['w24']} ORDER BY s.created DESC");
+        $D['jd']['prompts'] = $q("SELECT p.created, p.title, p.text FROM jd2_prompts p
+                                  WHERE p.origin = 'visitor' AND {$wj['w24']} ORDER BY p.created DESC");
     } catch (PDOException $e) { $note('drawer turns', $e); }
     try {
-        $devs = $q("SELECT device_ref, COUNT(DISTINCT DATE(created)) days FROM jd_submissions
-                    WHERE item_id IS NULL AND device_ref IS NOT NULL GROUP BY device_ref");
+        $devs = $q("SELECT device_ref, COUNT(DISTINCT DATE(created)) days FROM jd2_prompts
+                    WHERE origin = 'visitor' AND device_ref IS NOT NULL GROUP BY device_ref");
         $D['jd']['devices'] = count($devs);
         $D['jd']['returning'] = count(array_filter($devs, function ($d) { return (int) $d['days'] >= 2; }));
     } catch (PDOException $e) { $note('drawer devices', $e); }
     try {
-        $n = 0; $n24 = 0;
-        foreach ($q("SELECT g.model_id, SUM({$wjs['w24']}) f24, COUNT(*) fall
-                     FROM jd_ranks r JOIN jd_generations g ON g.id = r.generation_id JOIN jd_submissions s ON s.id = r.submission_id
-                     WHERE r.rank_pos = 1 AND r.client = 'web' AND s.item_id IS NULL GROUP BY g.model_id ORDER BY fall DESC") as $r) {
-            $D['jd']['firsts'][$r['model_id']] = ['f24' => $i($r, 'f24'), 'fall' => $i($r, 'fall')];
-            $n += $i($r, 'fall'); $n24 += $i($r, 'f24');
+        // First place, VISITOR sittings only (never pooled with the owner's):
+        // per run the visitor's current filed session (jd2_current_sessions_for_runs
+        // — sessions are append-only, current = latest filed), its rank-1
+        // drawing, that drawing's model. The window is the session's filed_at.
+        $runIds = array_column($q("SELECT r.id FROM jd2_runs r JOIN jd2_prompts p ON p.id = r.prompt_id WHERE p.origin = 'visitor'"), 'id');
+        $sessions = [];
+        foreach (jd2_current_sessions_for_runs($pdo, $runIds) as $byRole) {
+            if (isset($byRole[JD2_ROLE_VISITOR])) $sessions[(string) $byRole[JD2_ROLE_VISITOR]['id']] = $byRole[JD2_ROLE_VISITOR];
         }
+        $firstGen = [];
+        foreach (jd2_standings_for_sessions($pdo, array_keys($sessions)) as $sid => $st) {
+            foreach ($st['rankings'] as $gid => $rk) {
+                if ($rk['rank_pos'] === 1) { $firstGen[$sid] = (string) $gid; break; }
+            }
+        }
+        $modelOf = [];
+        foreach (jd2_select_in($pdo, "SELECT id, model_id FROM jd2_generations WHERE id IN ({ids})", array_values($firstGen)) as $g) {
+            $modelOf[(string) $g['id']] = (string) $g['model_id'];
+        }
+        $cut24 = gmdate('Y-m-d H:i:s', time() - $H * 3600);
+        $n = 0; $n24 = 0;
+        foreach ($firstGen as $sid => $gid) {
+            $m = $modelOf[$gid] ?? null;
+            if ($m === null) continue;
+            $in24 = (string) $sessions[$sid]['filed_at'] >= $cut24;
+            if (!isset($D['jd']['firsts'][$m])) $D['jd']['firsts'][$m] = ['f24' => 0, 'fall' => 0];
+            $D['jd']['firsts'][$m]['fall']++; $n++;
+            if ($in24) { $D['jd']['firsts'][$m]['f24']++; $n24++; }
+        }
+        uasort($D['jd']['firsts'], function ($a, $b) { return $b['fall'] <=> $a['fall']; });
         $D['jd']['firsts_n'] = $n; $D['jd']['firsts_n24'] = $n24;
     } catch (PDOException $e) { $note('drawer firsts', $e); }
     try {
-        // Spend and health are priced in PHP, the way jd-analytics.php does
-        // it: jd_generation_cost() knows each provider's usage shape, and an
-        // unpriced or usage-less row is EXCLUDED from money, never a $0.
+        // Spend is the cost_usd snapshot each drawing filed with (priced at
+        // write time from the provider's own token counts and api/jd-prices.json);
+        // no re-pricing here. An unpriced row (priced = 0 or cost_usd NULL) is
+        // EXCLUDED from money, never a $0. Every drawing counts, any origin.
         $cut24 = gmdate('Y-m-d H:i:s', time() - $H * 3600);
         $cut7  = gmdate('Y-m-d H:i:s', time() - 7 * 86400);
         $lat = [];
-        foreach ($q("SELECT model_id, model_version, provider, status, disobedience, latency_ms, usage_tokens, created FROM jd_generations") as $g) {
+        foreach ($q("SELECT model_id, status, disobedience, latency_ms, cost_usd, priced, created FROM jd2_generations") as $g) {
             $m = (string) $g['model_id'];
-            $raw = $g['usage_tokens'] ?? null;
-            $usage = ($raw !== null && $raw !== '') ? json_decode((string) $raw, true) : null;
-            $cost = jd_generation_cost((string) $g['provider'], (string) $g['model_version'], is_array($usage) ? $usage : null);
             $is24 = $g['created'] >= $cut24; $is7 = $g['created'] >= $cut7;
-            if ($cost['cost_usd'] === null) {
+            if ((int) $g['priced'] !== 1 || $g['cost_usd'] === null) {
                 $D['jd']['unpriced']++;
             } else {
                 $D['jd']['priced']++;
                 if (!isset($D['jd']['spend'][$m])) $D['jd']['spend'][$m] = ['w24' => 0.0, 'w7' => 0.0, 'all' => 0.0, 'n' => 0];
-                $usd = (float) $cost['cost_usd'];
+                $usd = (float) $g['cost_usd'];
                 $D['jd']['spend'][$m]['all'] += $usd; $D['jd']['spend'][$m]['n']++;
                 $D['jd']['spend_total']['all'] += $usd;
                 if ($is7)  { $D['jd']['spend'][$m]['w7']  += $usd; $D['jd']['spend_total']['w7']  += $usd; }
@@ -671,7 +735,9 @@ if ($DEMO) {
         }
         $D['ping'][$path] = $row;
     }
-    foreach (['page_events', 'pronoun_viz_events', 'conversations', 'onomatopoeia_feedback', 'jd_submissions', 'jd_generations', 'jd_ratings', 'subscribers'] as $t) {
+    // Table sizes show growth, so only tables that still grow are listed: the
+    // frozen v1 jd_* tables (2026-10-01) would print the same number forever.
+    foreach (['page_events', 'pronoun_viz_events', 'conversations', 'onomatopoeia_feedback', 'jd2_prompts', 'jd2_generations', 'jd2_sessions', 'subscribers'] as $t) {
         try { $D['tables'][$t] = (int) $pdo->query("SELECT COUNT(*) FROM `$t`")->fetchColumn(); $D['queries']++; } catch (PDOException $e) { /* absent is fine */ }
     }
 }
@@ -866,6 +932,7 @@ $out();
 $out(rule('THE JUNK DRAWER'));
 $out(' ' . padr($D['hours'] . 'h', 12) . num($j['v24']) . ' views' . $sep . num($j['u24']) . ' visitors' . $sep . num($j['io24']) . ' items opened' . ($FULL ? $sep . num($j['av24']) . ' about' : ''));
 if ($FULL) $out(' ' . padr('all-time', 12) . num($j['vall']) . ' views' . $sep . num($j['uall']) . ' visitors' . $sep . num($j['ioall']) . ' items opened');
+$out(' ' . padr('legacy ' . $D['hours'] . 'h', 12) . num($j['lv24']) . ' views' . $sep . num($j['lu24']) . ' visitors' . $sep . num($j['lio24']) . ' items opened' . ($FULL ? $sep . 'all ' . num($j['lvall']) : ''));
 $f = $j['funnel'];
 $fm = max(1, $f['open']);
 $out(' ' . padr('funnel ' . $D['hours'] . 'h', 12) . 'opened ' . num($f['open']) . ' ' . $G['arrow'] . ' submitted ' . num($f['submit']) . ' ' . $G['arrow'] . ' completed ' . num($f['done']) . $sep . 'errors ' . num($f['err']));
@@ -930,7 +997,7 @@ if (!$FULL) {
 }
 if ($j['prompts']) {
     // Same shape as the onobot list: time, the prompt, a tail after a dot
-    // (there the place, here the accepted title). jd_* stamps UTC; the time
+    // (there the place, here the accepted title). jd2_* stamps UTC; the time
     // is shown in server time like every other stamp in the digest.
     $out(' prompts ' . $D['hours'] . 'h (' . count($j['prompts']) . ')');
     foreach ($j['prompts'] as $p) {
@@ -941,7 +1008,7 @@ if ($j['prompts']) {
             $when = substr((string) $p['created'], 5, 11);
         }
         $title = ($p['title'] !== null && $p['title'] !== '') ? $sep . trunc($p['title'], 40) : '';
-        wrap_text($out, ' ' . $G['bullet'] . ' ' . $when . '  ', $p['prompt'] . $title, $W);
+        wrap_text($out, ' ' . $G['bullet'] . ' ' . $when . '  ', $p['text'] . $title, $W);
     }
 }
 
