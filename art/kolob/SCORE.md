@@ -22,8 +22,9 @@ staff; the build's plans are in `archive/plans/`.
 answers the load guard's roll call: `KOLOB._rooms["kolob-x.js"] = true`. The
 substrate (`PJ2.Rand`, `PJ2.Clock`, `PJ2.Fx`) and the Earth tunes
 (`KOLOB.Tunes`) are checked by the globals they raise; `kolob_engine_tags`
-(`_engine.php`) prints the guard, which names every room that did not answer
-— to the console, and to the page in `KOLOB._broken` (the facade among them
+(`_engine.php`) prints the guard (on the page, whose scripts are deferred, as a
+module script: run after the rooms and before `kolob-ui.js`), which names
+every room that did not answer — to the console, and to the page in `KOLOB._broken` (the facade among them
 when `KolobAudio` did not rise; unset on a page that loaded whole), on which
 `kolob-ui.js` wires nothing: PLAY stays disabled and the minutes say the
 engine failed to load. `tools/loadcheck.js` runs the same guard

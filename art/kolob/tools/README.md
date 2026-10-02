@@ -4,13 +4,13 @@
 writes. Written 2026-10-01 at v0.36.2; keep it true when the tools change.
 The owner's rules that bind these tools are in `art/kolob/README.md`.*
 
-Twelve tools, all plain Node (22 or later: the browser tools use Node's own
+Thirteen tools, all plain Node (22 or later: the browser tools use Node's own
 WebSocket) with no packages, except `samecode.js` and the wrapper check of
 `lends.js`, which need the `acorn` that `npm install` at the repo root brings
 with ESLint. Three read the engine's
 source and nothing else; one runs its pure core headless; three read only the
 harness's dump, so they keep working when the engine changes; one reads the
-harness's cost sidecars; two drive a **muted** headless Chrome.
+harness's cost sidecars; three drive a **muted** headless Chrome.
 
 | tool | answers | reads | time |
 |---|---|---|---|
@@ -23,6 +23,7 @@ harness's cost sidecars; two drive a **muted** headless Chrome.
 | `tally.js` | What is a meeting made of (cadences, guests, sections, notes per layer)? Did a change move it (A/B)? | the dump | ~2 s per 20 seeds read; A/B of 20 seeds at 1200 s, rendered four at a time, ~70 s |
 | `cost.js` | What does the audio graph cost, work by work (a lane, a guest, a press), and did a change move it (A/B)? | the harness's cost sidecars | ~20 s for two builds, four seeds each |
 | `screens.js` | What does the staff look like at 860 and 390 px, and what does a frame cost at 4× CPU throttling? | the page, muted | real time: ~2.5 min per width |
+| `pageload.js` | What does PHP spend on the page, how soon is it parsed and loaded, and does the load guard still keep PLAY disabled when a room is missing? | the page, muted | ~10 s |
 | `capture.js` | What does a seeded meeting sound like, as a WAV, a spectrogram, loudness (LUFS) and peak? | the page, muted | real time: 4 min for a 4-min window |
 | `render.js` | Renders a dump set to keep, or to read twice. | the harness | ~1 s per seed |
 | `selftest.js` | Do the instruments still read true? | the harness plus synthetic dumps and signals | ~35 s |
@@ -52,6 +53,7 @@ node _harness.js 1200 22 cost                    # what the audio graph cost, ch
 node tools/cost.js --a git:HEAD --b worktree     # …before and after, work by work (seeds 3, 7, 22, 37)
 node tools/screens.js --seed 1847                # staff at 20/60/120 s, 860 + 390 px, frames at 4×
 node tools/screens.js --seed 22 --freeze         # the same, frame-exact: two runs compare by pixel (AE 0)
+node tools/pageload.js                           # the page's load: PHP's time, the browser's, and the guard with a room missing
 node tools/capture.js --seed 1847 --to 240       # four minutes, recorded
 ```
 
@@ -413,7 +415,17 @@ all have loaded, and the page is set up and drawn for its first frames, idle,
 without a throw (`page: 6 of 6 files loaded …; KolobViz's surface 7 of 7; 79
 names read from KOLOB._viz across the files, every one lent; 2 frames drawn
 idle (1910 canvas calls)`; the harness's `staff=` draws a whole meeting).
-Last, **the labs** (PLAN-REFACTOR §3.7): every `*-lab.php`, beside the
+**The page's tags** (PLAN-REFACTOR §4.1): every external script `index.php`
+prints is deferred — a plain tag among deferred ones would run as the page is
+parsed, before all of them — and the engine's are asked for deferred
+(`kolob_engine_tags(…, true)`); where `php` is at hand the printer is run and
+what it prints is read: every room's tag deferred, in the list's order, then
+the guard as a module script, which the browser runs in the same deferred
+order, after the rooms and before `kolob-ui.js` (`tags: 4 script tags in
+index.php's source, every one deferred; the engine's printed with defer — the
+printer gives 43 rooms deferred, in the list's order, then the guard as a
+module script`; a build from before the deferral, none deferred, is said, not
+failed). Last, **the labs** (PLAN-REFACTOR §3.7): every `*-lab.php`, beside the
 engine and in `shelved/`, has its list of the house's files read from its page
 — its `<script>` tags for `pj2-*.js` and `kolob-*.js`, resolved from the lab's
 folder, and `_engine.php`'s list where it prints `kolob_engine_tags()` — and
@@ -424,7 +436,7 @@ one list must answer the roll call. A room that comes to need another at load
 (`KOLOB.Pitch`, `KOLOB.Score`) is caught on the bench that lacks it; a room that
 reads another only when called is not (the lab finds that when it plays). It
 prints `modules: N of N loaded; rooms answering: M`, the guard, the desk, the
-hymn, the labs (`labs: 16 of 16 load the house's rooms in their own order
+hymn, the page's drawing and its tags, the labs (`labs: 16 of 16 load the house's rooms in their own order
 (cast-lab 44, …)`, each with its count of files) and `ALL GREEN` or the
 failures. No harness, no browser: the harness is what plays a meeting, this
 only proves the doors open. Its loader — the list, the page's mock, the rooms
@@ -846,6 +858,52 @@ its notes on pacing and load; per width, a table of shots (meeting time,
 section, staff size in CSS px, file `staff-<width>-t<secs>.png`); console
 errors and warnings from each width.
 
+## pageload.js
+
+```sh
+node tools/pageload.js [--root <dir>] [--missing kolob-calendar.js] [--runs 5] [--requests 200]
+                       [--latency <ms> --kbps <n>] [--no-apcu] [--port 8117] [--chrome-port 9441]
+```
+
+The page's load (PLAN-REFACTOR §4.1), and the load guard in a real browser.
+`index.php` hashes each asset once a request for its `?v=` and the build
+stamp (`kolob_v()`, kept against the file's size, inode and change times; in
+APCu across requests where the server has it), and prints the page's scripts
+deferred: fetched while the page is parsed, run once it has been, in their
+order, the guard among them as a module script that runs after the rooms and
+before `kolob-ui.js`. This serves a tree with `php -S` (the worktree, or
+`--root` another: for the before, a commit's page unpacked from `git archive
+<ref> art/kolob art/prosperos-jukebox-v2 art/background-audio.js includes css
+fonts`) and loads it in muted headless Chrome; PLAY is never pressed.
+
+- **php** — the page fetched `--requests` times in a row, after five to warm
+  up: the median, p90, min and max of a request's wall time. `--no-apcu` serves
+  with `php -d apc.enabled=0`, so the per-request cache is the one timed
+  (`php -S` has APCu on where the extension is installed).
+- **load** — `--runs` cold loads, the browser's cache off and the Google Fonts
+  blocked (the times are this server's and the browser's): the medians of
+  parsed (`domInteractive`), DOMContentLoaded, load, first paint and first
+  contentful paint, counted from the navigation's start. `--latency` and
+  `--kbps` emulate a slower network.
+- **whole** — `KOLOB._broken` unset, PLAY enabled, the minutes waiting for
+  PLAY, no console error (the blocked fonts and the browser's favicon aside).
+- **`<room>` missing** — the same page with one room answering 404 (a router in
+  front of `php -S`, written to `out/pageload-router.php`): the console says
+  `KOLOB AUDIO ENGINE FAILED TO LOAD: <room>`, `KOLOB._broken` holds it, PLAY
+  stays disabled and the minutes say the engine failed to load (the page is
+  loaded in Latin, `?latin=1`, so they read `THE ENGINE FAILED TO LOAD`).
+
+It prints one line each and `ALL GREEN`, or exits 1 when the guard did not do
+what it should on either page. The numbers on 2026-10-02 (seed 22's page,
+this container's 4 cores, medians of 5 cold loads, two runs a side), before
+§4.1 (12dd962) and after: PHP 12.9 ms a request → 7.5–7.7 ms with the
+per-request cache and 1.3–1.4 ms with APCu (`md5_file` 108 calls over 5.2 MB
+a request → 56 over 2.6 MB → none); parsed 399–453 ms → 69–86 ms, DOMContentLoaded
+and load 399–453 → 331–379 ms, first paint about 100 ms both; on a network of
+100 ms and 10 Mbit/s, parsed 2.8 s → 0.4 s, DOMContentLoaded and load 2.8 s both
+(the scripts' download), first paint 0.4 s both (the scripts already stood at
+the foot of the body).
+
 ## capture.js
 
 ```sh
@@ -1044,8 +1102,13 @@ and `cost.js` holds the sidecar against itself and finds nothing moved;
 rendered at once on one pool of three write what one set rendered a seed at
 a time writes, every dump and witness the same bytes, and a set whose
 harness writes no dump, queued first on a pool of two, stops it: the set
-beside it begins none of its renders and says it was stopped.
-All eighteen pass on `art/kolob/_harness.js`. Run it after any change to the engine's
+beside it begins none of its renders and says it was stopped; (19) **the
+page's tags** (PLAN-REFACTOR §4.1): `loadcheck.js` on scratch copies of the
+page finds every script tag `index.php` prints deferred and the engine's
+printer giving the rooms deferred in the list's order and the guard as a
+module script after them, and fails a copy with `kolob-ui.js`'s tag left plain
+and one whose engine tags are asked for without defer, naming each.
+All nineteen pass on `art/kolob/_harness.js`. Run it after any change to the engine's
 events, to the harness or to these tools. It renders into `out/_selftest/`
 and, like every tool, refuses while the engine is being edited.
 
@@ -1065,6 +1128,7 @@ tools/
   tally.js           counts, plan checks, A/B
   cost.js            the audio graph's cost per work (the harness's cost sidecars), A/B
   screens.js         staff screenshots + frame time (muted Chrome)
+  pageload.js        the page's load: PHP's time a request, cold loads timed, the load guard with a room missing (muted Chrome)
   capture.js         WAV + spectrogram + LUFS/peak (muted Chrome)
   selftest.js        the instruments, checked
   lib/dump.js        the dump reader: both event vocabularies, meetings, sections, voices, phrases

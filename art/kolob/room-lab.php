@@ -162,7 +162,7 @@ include '../../includes/header.php';
   </div>
 </div>
 
-<?php // the engine, from the one list (_engine.php), exactly as index.php loads it
+<?php // the engine, from the one list (_engine.php), in index.php's order (not deferred: this lab's own script below is a plain tag)
 $k_engine = require __DIR__ . '/_engine.php';
 kolob_engine_tags($k_engine, 'rml_v'); ?>
 <script src="room-lab.js?v=<?php echo rml_v('room-lab.js'); ?>"></script>

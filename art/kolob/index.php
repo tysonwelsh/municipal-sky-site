@@ -2,12 +2,31 @@
 $page_title = "KOLOB 𐐗𐐄𐐢𐐉𐐒 - Municipal Sky";
 $page_description = "An American-utopian hymn engine: four-part harmony, fuging tunes, a Deseret-alphabet broadside and a still small voice, from a colony at the rim of Kolob's light. Nothing repeats; every meeting is one of a kind.";
 $page_image = "/images/kolob-share.png";
-// Cache-bust local assets with an md5 content hash (?v=xxxxxxxx). Computed at
-// request time so a changed file always ships a fresh URL.
+// Cache-bust local assets with an md5 content hash (?v=xxxxxxxx). A changed
+// file ships a fresh URL on the next request: a hash is kept against the
+// file's path, size, inode and both its change times (mtime, and ctime, which
+// no copy can set back), and a file that moved in any of them is hashed
+// again. (The times are whole seconds: a file rewritten in place twice within
+// one second at one size keeps the first write's hash, for an hour at most.)
+// The hashes are kept for the request, which the tags and the build stamp
+// below share — each file hashed once, where it used to be hashed for its tag
+// and again for the stamp — and in APCu across requests where the server has
+// it, for an hour (PLAN-REFACTOR §4.1).
 function kolob_v($file)
 {
+    static $seen = [];
     $path = __DIR__ . '/' . $file;
-    return file_exists($path) ? substr(md5_file($path), 0, 8) : '00000000';
+    $st = @stat($path);
+    if (!$st) return '00000000';
+    $key = 'kolob_v:' . $path . ':' . $st['size'] . ':' . $st['ino'] . ':' . $st['mtime'] . ':' . $st['ctime'];
+    if (isset($seen[$key])) return $seen[$key];
+    $apcu = function_exists('apcu_enabled') && apcu_enabled();
+    $v = $apcu ? apcu_fetch($key) : false;
+    if (!is_string($v)) {
+        $v = substr((string) md5_file($path), 0, 8);
+        if ($apcu && $v !== '') apcu_store($key, $v, 3600);
+    }
+    return $seen[$key] = $v;
 }
 
 // Build/version stamp (printed small at the foot of the page) — a way to tell
@@ -231,22 +250,29 @@ include '../../includes/header.php';
  </div>
 </div>
 
-<script src="../background-audio.js?v=<?php echo kolob_v('../background-audio.js'); ?>"></script>
+<!-- The page's scripts, from here to kolob-ui.js, are deferred
+     (PLAN-REFACTOR §4.1): each is fetched while the page is parsed and run
+     once it has been, in the order they stand here, before DOMContentLoaded —
+     so the page is not held up behind them, and each file still finds the
+     ones before it loaded. -->
+<script src="../background-audio.js?v=<?php echo kolob_v('../background-audio.js'); ?>" defer></script>
 <!-- The engine, room by room, from _engine.php: first the Jukebox v2 substrate
      (pj2-rand's dice, pj2-clock's clock, pj2-fx's room crossfade), shared by
      relative path the way ZANKYŌ shares it and never modified from here; then
-     Kolob's own rooms. The guard printed after them names any room that did
-     not answer the roll call, to the console and in KOLOB._broken, which
-     kolob-ui.js reads: a broken page keeps PLAY disabled. -->
-<?php kolob_engine_tags($kolob_engine, 'kolob_v'); ?>
-<script src="kolob-text.js?v=<?php echo kolob_v('kolob-text.js'); ?>"></script>
+     Kolob's own rooms. The guard printed after them (a module script, which
+     the browser runs in the same deferred order: after the rooms, before
+     kolob-ui.js) names any room that did not answer the roll call, to the
+     console and in KOLOB._broken, which kolob-ui.js reads as it runs: a
+     broken page keeps PLAY disabled. -->
+<?php kolob_engine_tags($kolob_engine, 'kolob_v', true); ?>
+<script src="kolob-text.js?v=<?php echo kolob_v('kolob-text.js'); ?>" defer></script>
 <!-- The page's drawing (the staff, the wheel, the organ facade), from
      _viz.php in its order: five files, then kolob-viz.js, which raises
      KolobViz over them. -->
 <?php foreach ($kolob_viz as $kolob_js): ?>
-<script src="<?php echo htmlspecialchars($kolob_js); ?>?v=<?php echo kolob_v($kolob_js); ?>"></script>
+<script src="<?php echo htmlspecialchars($kolob_js); ?>?v=<?php echo kolob_v($kolob_js); ?>" defer></script>
 <?php endforeach; ?>
-<script src="kolob-ui.js?v=<?php echo kolob_v('kolob-ui.js'); ?>"></script>
+<script src="kolob-ui.js?v=<?php echo kolob_v('kolob-ui.js'); ?>" defer></script>
 
 <!-- Anonymous usage tracking: a page view, plus the first PLAY press as an
      engagement signal (a raw view understates an audio page). No personal data

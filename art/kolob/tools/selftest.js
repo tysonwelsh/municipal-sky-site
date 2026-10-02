@@ -122,6 +122,12 @@
 //    dump and every witness the same bytes; and a set that fails stops the
 //    pool: the renders of the set beside it that had not begun never begin,
 //    and that set says it was stopped.
+// 19. The page's tags (PLAN-REFACTOR §4.1): tools/loadcheck.js on scratch
+//    copies of the page. Whole, every script tag index.php prints is
+//    deferred, and the engine's printer, run, gives every room's tag
+//    deferred in the list's order and the guard as a module script after
+//    them; with kolob-ui.js's tag left plain among the deferred ones, or the
+//    engine's tags asked for without defer, loadcheck fails, naming it.
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -738,6 +744,43 @@ function check(name, ok, detail) {
     check("a set that fails stops the pool: the set beside it begins none of its renders and says it was stopped",
       !!bad && /harness failed for seed-1 \(no dump/.test(bad.message) && !!good && good.stopped === true && /3 of 3 seeds not begun/.test(good.message) && begun === 0,
       (bad ? bad.message.split("\n")[0].replace(/ \(no dump.*$/, " (no dump)") : "the bad set passed") + " · " + (good ? good.message : "the other set finished") + " · " + begun + " begun");
+  }
+
+  console.log("19. the page's tags (PLAN-REFACTOR §4.1)");
+  {
+    const { execFileSync } = require("child_process");
+    const E = require("./lib/engine.js");
+    // a scratch copy of the page — the list's files, the page's, index.php,
+    // _engine.php and _viz.php, the substrate beside it as on the site — with
+    // one thing changed
+    const scratch = (name, edit) => {
+      const dir = path.join(tmp, "tags-" + name, "art", "kolob");
+      engine.list.files.concat(E.vizList(engine.dir).concat(["index.php", "_engine.php", "_viz.php"]).map((f) => path.join(engine.dir, f))).forEach((f) => {
+        const to = path.join(dir, path.relative(engine.dir, f));
+        fs.mkdirSync(path.dirname(to), { recursive: true });
+        fs.copyFileSync(f, to);
+      });
+      if (edit) edit(dir);
+      return dir;
+    };
+    const swap = (dir, file, from, to) => { const p = path.join(dir, file), t = fs.readFileSync(p, "utf8"); if (t.indexOf(from) < 0) throw new Error(file + " has no " + from); fs.writeFileSync(p, t.replace(from, to)); };
+    const loadcheck = (dir) => {
+      try { return { code: 0, out: execFileSync(process.execPath, [path.join(__dirname, "loadcheck.js")], { env: Object.assign({}, process.env, { KOLOB_DIR: dir }), encoding: "utf8" }) }; }
+      catch (e) { return { code: e.status, out: String(e.stdout || "") }; }
+    };
+    const line = (r) => { const m = /^ {2}tags: (.*)$/m.exec(r.out); return m ? m[1] : "no tags line"; };
+    const failed = (r) => r.out.split("\n").filter((l) => /^ {3}- /.test(l)).map((l) => l.slice(5));
+    const whole = loadcheck(scratch("whole"));
+    check("whole: every script tag index.php prints is deferred, and the engine's printer gives the rooms deferred in the list's order, the guard a module script after them",
+      whole.code === 0 && /^\d+ script tags in index\.php's source, every one deferred; the engine's printed with defer — (the printer gives \d+ rooms deferred, in the list's order, then the guard as a module script|the printer not run \(no php here\))$/.test(line(whole)),
+      line(whole));
+    const UI = "<script src=\"kolob-ui.js?v=<?php echo kolob_v('kolob-ui.js'); ?>\" defer></script>";
+    const plain = loadcheck(scratch("plain", (dir) => swap(dir, "index.php", UI, UI.replace(" defer>", ">"))));
+    check("kolob-ui.js's tag left plain among the deferred ones: loadcheck fails, naming it",
+      plain.code === 1 && failed(plain).length === 1 && /^index\.php: a script tag not deferred among deferred ones .*kolob-ui\.js/.test(failed(plain)[0]), failed(plain).join("; ").slice(0, 200));
+    const eng = loadcheck(scratch("engine", (dir) => swap(dir, "index.php", "kolob_engine_tags($kolob_engine, 'kolob_v', true);", "kolob_engine_tags($kolob_engine, 'kolob_v');")));
+    check("the engine's tags asked for without defer among deferred ones: loadcheck fails, naming it",
+      eng.code === 1 && failed(eng).length === 1 && /^index\.php: the engine's tags are printed without defer/.test(failed(eng)[0]), failed(eng).join("; ").slice(0, 200));
   }
 
   fs.rmSync(tmp, { recursive: true, force: true });
