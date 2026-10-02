@@ -37,15 +37,15 @@
   var API_RATE = '/api/jd-rate.php';
   var API_TITLE = '/api/jd-title.php';
   var K_TURN = 'jd-turn-v1', K_CONSENT = 'jd-consent-v1';
-  var K_ITEMS = 'jd-user-items-v1', K_SCATTER = 'jd-scatter-v2';
+  var K_ITEMS = 'jd-user-items-v1';   /* the scatter map's key is jd-core's JD_SCATTER_KEY */
+  /* MAX_PROMPT mirrors JD_PROMPT_MAX_CHARS in api/jd-config.php (500) — change both together */
   var MAX_PROMPT = 500, MAX_NOTE = 500, MAX_ITEMS = 5;
   var SLOW_MS = 60000;      /* past a minute the wait earns its own line */
   var VISITOR_TIER = 'm';   /* every won item is filed "m" (C5.3) */
-  var ROT_MAX = 34;         /* the pile's scatter rotation range, ± degrees */
 
   var payload = null;       /* the data.php payload — the survey renders from it */
   var scrim = null, card = null, headEl = null, bodyEl = null, confirmEl = null;
-  var state = '', isOpen = false, confirmOn = false, restored = false;
+  var state = '', isOpen = false, confirmOn = false;
   /* CURATE MODE (the re-rating bench, 2026-08-28): while this is set, the
      card is seated with an existing curated item's responses instead of a
      fresh turn — same bench, same rail, same podium, filed through the
@@ -60,39 +60,15 @@
   var token = 0;            /* per-turn token — a settling fetch from an
                                abandoned turn must not touch the live one */
   var lastFocus = null, instSeq = 0, slowTimer = 0;
-  var stateTitle = '';      /* the current state's heading — also the dialog's
-                               accessible name, so the name changes with the
-                               step instead of naming the whole flow once */
-  /* the masthead the next paint will print: FORM JD-1 §n and the heading.
-     head() fills it; the view string is built before paint runs, so the two
-     can never disagree. */
+  /* the masthead the next paint will print — the heading — and the card's
+     data-view. head() fills it; the view string is built before paint
+     runs, so the two can never disagree. Its title is also the dialog's
+     accessible name (paint sets it), so the name changes with the step
+     instead of naming the whole flow once. */
   var pendingHead = null;
 
   /* ---------- small helpers ---------------------------------------------- */
   var esc = JD_esc, byId = JD_byId;
-  /* crypto.randomUUID is present at the iOS 16 floor but only in a secure
-     context, so the harness on a bare IP gets the getRandomValues path and
-     Math.random is the last resort — the ref only has to be unique per
-     visitor, the server never trusts it for anything but convergence */
-  function uuid() {
-    try {
-      if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
-      if (window.crypto && crypto.getRandomValues) {
-        var b = new Uint8Array(16);
-        crypto.getRandomValues(b);
-        b[6] = (b[6] & 0x0f) | 0x40; b[8] = (b[8] & 0x3f) | 0x80;
-        var h = [], i;
-        for (i = 0; i < 16; i++) h.push((b[i] + 0x100).toString(16).slice(1));
-        return h.slice(0, 4).join('') + '-' + h.slice(4, 6).join('') + '-' +
-          h.slice(6, 8).join('') + '-' + h.slice(8, 10).join('') + '-' +
-          h.slice(10, 16).join('');
-      }
-    } catch (e) {}
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-      var r = Math.random() * 16 | 0;
-      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-    });
-  }
   /* retry_after, in words a person can act on */
   function humanWait(sec) {
     sec = Math.max(0, parseInt(sec, 10) || 0);
@@ -106,6 +82,19 @@
   function svgDataUrl(svg) {
     return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
   }
+  /* the turn's three POSTs — the title, a generation, the filing: a JSON
+     body out, the parsed answer back, or `bad` (each caller's own stand-in)
+     when the answer will not parse. A request that never completes rejects
+     straight through, to each caller's own network handler. */
+  function postJSON(path, body, bad) {
+    return fetch(JD_API + path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    }).then(function (r) {
+      return r.json().then(function (j) { return j; }, function () { return bad; });
+    });
+  }
   /* a specimen name for a won item: the visitor's own words, cut to
      something a manila tag can carry (the full prompt is kept verbatim and
      shown on the report card) */
@@ -114,19 +103,8 @@
     return s.length > 52 ? s.slice(0, 51).replace(/\s+\S*$/, '') + '…' : s;
   }
   function tax() { return (payload || {}).taxonomy || {}; }
-  function liveAxes() {
-    return ((tax().axes) || []).filter(function (a) { return !a.defunct; });
-  }
-  function byRankDesc(list) {
-    return (list || []).slice().sort(function (a, b) {
-      return (b.rank || 0) - (a.rank || 0);
-    });
-  }
-  function tierBox(id) {
-    var tiers = tax().sizeTiers || [];
-    for (var i = 0; i < tiers.length; i++) if (tiers[i].id === id) return tiers[i].box;
-    return null;
-  }
+  /* what is read off it — the live axes, a scale best first, a tier's box —
+     is jd-core's: JD_liveAxes(tax()), JD_byRankDesc(list), JD_tierBox(tax(), id) */
 
   /* ---------- payload ----------------------------------------------------- */
   /* The visitor's own items are restored WITHOUT this (see the init block at
@@ -136,15 +114,15 @@
      the entries behind their report cards. */
   function setData(data) {
     payload = data;
-    if (!restored) { restored = true; restoreWon(); }
-    else hydrateWon();
+    hydrateWon();
   }
   /* the pile loader hands the payload over on success; if the drawer itself
      failed to load, the survey fetches its own copy rather than inventing a
-     rubric (C5.4 step 5) */
+     rubric (C5.4 step 5) — the full payload: no ?slim=1 here, even on a
+     page that set JD_SLIM */
   function ensurePayload() {
     if (payload) return Promise.resolve(payload);
-    return fetch(JD_API + '/art/junk-drawer/data.php')
+    return fetch(JD_API + JD_DATA_URL)
       .then(function (r) {
         if (!r.ok) throw new Error('data.php ' + r.status);
         return r.json();
@@ -167,6 +145,15 @@
   function hasConsent() {
     var c = JD_store.get(K_CONSENT);
     return !!(c && c.version === JD_CONSENT.version);
+  }
+  /* the acknowledgment, recorded once, when words are first actually sent
+     — by the generate press and by a rerun alike */
+  function recordConsent() {
+    if (!hasConsent()) {
+      JD_store.set(K_CONSENT, {
+        version: JD_CONSENT.version, at: new Date().toISOString()
+      });
+    }
   }
 
   /* ---------- the modal shell -------------------------------------------- */
@@ -191,8 +178,7 @@
          never torn down and never needs rebinding. */
       '<header class="jd-turn-head"><div class="jd-turn-headline"></div>' +
       '<button type="button" class="jd-turn-close" aria-label="close">' +
-      '<svg class="jd-x-mark" viewBox="0 0 18 18" aria-hidden="true" focusable="false">' +
-      '<path d="M1 1 17 17M17 1 1 17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></header>' +
+      JD_X_MARK + '</button></header>' +
       '<div class="jd-turn-scroll"></div></div>';
     document.body.appendChild(scrim);
     card = scrim.querySelector('.jd-turn');
@@ -207,19 +193,17 @@
     bodyEl.addEventListener('input', onInput);
     /* the bench/call plate answers Enter/Space like the button it claims to
        be (role="button" — see plate()); Space is preventDefault'd or the
-       card scrolls out from under the enlargement. REPLAY is a real
+       card scrolls out from under the enlargement. The paper swap is a real
        <button>, so the UA turns these keys into its click — onClick above
-       redraws, nothing here should zoom. */
+       swaps the paper, nothing here should zoom. */
     bodyEl.addEventListener('keydown', function (e) {
       if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
-      if (e.target.closest && e.target.closest('.jd-turn-draw')) return;
       if (e.target.closest && e.target.closest('.jd-turn-paper')) return;
       var p = e.target.closest ? e.target.closest('.jd-turn-plate') : null;
       if (!p || p.getAttribute('role') !== 'button') return;
       e.preventDefault();
       openZoom(p);
     });
-    ttInit();
     /* the trap: Tab cycles inside whichever layer is on top */
     card.addEventListener('keydown', function (e) {
       if (e.key !== 'Tab') return;
@@ -250,11 +234,11 @@
     });
   }
   function focusFirst() {
-    var f = focusables(confirmOn && confirmEl ? confirmEl : card);
     /* card, not bodyEl: the heading — the landing place for most states —
        lives in the masthead outside the scroller now */
-    var pref = (confirmOn && confirmEl ? confirmEl : card)
-      .querySelector('[data-autofocus]');
+    var scope = confirmOn && confirmEl ? confirmEl : card;
+    var f = focusables(scope);
+    var pref = scope.querySelector('[data-autofocus]');
     var target = pref || f[0];
     if (target) { try { target.focus(); } catch (e) {} }
   }
@@ -302,6 +286,10 @@
     document.documentElement.classList.remove('jd-turn-open');
     /* the bar goes with the innerHTML below; its parked animations do not */
     if (filmstrip) { try { filmstrip.destroy(); } catch (e) {} filmstrip = null; }
+    /* …and neither do the darkroom's word drifts: their metronomes live on
+       timers, not on the elements (see paint), so a close mid-wait would
+       leave them minting letters onto a detached sheet until the next mount */
+    if (window.JD_dark) window.JD_dark.stopAll();
     bodyEl.innerHTML = '';
     if (lastFocus && document.contains(lastFocus)) {
       try { lastFocus.focus(); } catch (e) {}
@@ -373,56 +361,11 @@
     confirmEl = null;
   }
 
-  /* ---------- the definition layer (OVERRIDE 1, round-16) -----------------
-     ONE system for every "what does this mean," and it is now JUST the
-     fixed singleton tooltip: mouseover for pointer hover, focusin for
-     keyboard focus on the CONTROL the definition is about (never the label
-     itself — .jd-def is a plain <span>, not a tab stop). Screen readers get
-     every definition natively via aria-describedby, pointed at a permanent
-     .jd-vh node — see scaleRow/callPanel. The click-to-unfold ⓘ popover
-     that used to sit beside the tooltip (owner: "an awkward little eye") is
-     retired outright, not replaced with a second widget. Touch-without-a-
-     screen-reader is a known, accepted gap: no hover, no focus ring, and a
-     tap on a <select> hands off to the OS picker before any custom tooltip
-     could show — the row label IS the definition's subject and the
-     select's own option words carry the actual scale, which is judged
-     self-explanatory enough to leave the gap open rather than patch it with
-     another click affordance. The tooltip itself is pointer-events:none so
-     it can never take a press a control should have had. */
-  var ttEl = null;
-  function ttInit() {
-    if (ttEl) return;
-    ttEl = document.createElement('div');
-    ttEl.className = 'jd-tt';
-    ttEl.setAttribute('aria-hidden', 'true');
-    ttEl.hidden = true;
-    document.body.appendChild(ttEl);
-    bodyEl.addEventListener('mouseover', function (e) {
-      if (!window.matchMedia || !window.matchMedia('(hover: hover)').matches) return;
-      var t = e.target.closest ? e.target.closest('[data-tt-t]') : null;
-      if (t) ttShow(t); else ttHide();
-    });
-    bodyEl.addEventListener('mouseleave', ttHide);
-    bodyEl.addEventListener('focusin', function (e) {
-      var t = e.target.closest ? e.target.closest('[data-tt-t]') : null;
-      var fv = false;
-      try { fv = e.target.matches(':focus-visible'); } catch (err) {}
-      if (t && fv) ttShow(t); else ttHide();
-    });
-    bodyEl.addEventListener('focusout', ttHide);
-    /* the modal's own scroller — a tooltip pinned to a moved anchor lies */
-    bodyEl.addEventListener('scroll', ttHide, true);
-  }
-  function ttShow(anchor) {
-    if (!ttEl) return;
-    ttEl.innerHTML = '<b>' + esc(anchor.getAttribute('data-tt-t')) + '</b>' +
-      esc(anchor.getAttribute('data-tt-d'));
-    ttEl.hidden = false;
-    var r = anchor.getBoundingClientRect();
-    ttEl.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 286)) + 'px';
-    ttEl.style.top = Math.max(8, r.top - ttEl.offsetHeight - 8) + 'px';
-  }
-  function ttHide() { if (ttEl) ttEl.hidden = true; }
+  /* (the definition layer — OVERRIDE 1's fixed singleton tooltip, shown on
+     hover and on keyboard focus over a [data-tt-t] anchor — retired when
+     the press-to-open disclosure replaced it, owner 2026-08-28; see
+     scaleRow. Its last code, which nothing could trigger any more, went
+     2026-10-01.) */
 
   /* Escape peels ONE layer per press: an open enlargement first, the abandon
      confirm second, the modal third, and never the page (the pile's own
@@ -435,24 +378,14 @@
     if (!isOpen || e.key !== 'Escape') return;
     e.preventDefault();
     if (zoom.isOn()) { closeZoom(); return; }
-    ttHide();
     requestClose();
   });
 
   /* ---------- the state machine ------------------------------------------- */
   function go(next) {
-    /* 'compare' retired 2026-08-11: the single bench's call step absorbed
-       it. A stored turn from the two-state era maps onto the bench's last
-       step rather than a state that no longer renders. */
-    if (next === 'compare') {
-      next = 'rate';
-      if (work) { work.step = 'call'; work.reached.call = true; }
-    }
-    /* 'consent' retired 2026-08-14 (owner): the gating card is gone — the
-       flow opens on the prompt, which carries the disclosure as fine print
-       and records the acknowledgment when the words are actually sent. A
-       stored turn parked on the old card lands on the prompt. */
-    if (next === 'consent') next = 'prompt';
+    /* (the mappings for the retired 'compare' (2026-08-11) and 'consent'
+       (2026-08-14) states are gone: they caught a stored turn parked on
+       either, and no stored turn is ever read back — init discards it) */
     state = next;
     if (turn) { turn.state = next; persist(); }
     render();
@@ -547,7 +480,7 @@
        timers, not on the elements, so dropping the DOM would not stop them. */
     if (window.JD_dark) window.JD_dark.mount(bodyEl);
     mountFilmstrip();
-    card.setAttribute('aria-label', stateTitle || 'take a turn');
+    card.setAttribute('aria-label', (pendingHead && pendingHead.title) || 'take a turn');
     card.setAttribute('data-view', (pendingHead && pendingHead.view) || 'form');
   }
   /* the masthead: just the heading (the FORM JD-1 §n badge that used to
@@ -555,7 +488,7 @@
      the section number so the flow's §1–§6 order stays declared at the
      call sites, but nothing prints it) */
   function headHTML() {
-    var p = pendingHead || { title: 'take a turn', sec: 1 };
+    var p = pendingHead || { title: 'take a turn' };
     return '<h2 class="jd-turn-title" tabindex="-1"' +
       (p.noFocus ? '' : ' data-autofocus') + '>' + esc(p.title) + '</h2>';
   }
@@ -568,8 +501,7 @@
   /* ---------- 1. the brief (§1) -------------------------------------------- */
   function viewPrompt() {
     var draft = (work && work.prompt) || '';
-    var msg = work && work.notice
-      ? '<p class="jd-turn-notice" role="status">' + esc(work.notice) + '</p>' : '';
+    var msg = work && work.notice ? noticeHTML(esc(work.notice)) : '';
     var n = draft.length;
     /* the one card that can come back WITHOUT the visitor having acted: a
        rate-limited turn returns here with work.notice explaining why (set in
@@ -773,12 +705,52 @@
       if (res) res.innerHTML = darkResultInner(slot, st);
       var sr = sw.querySelector('[data-slotsr]');
       if (sr) sr.textContent = 'slot ' + slot + ': ' + st.word;
+      if (st.state === 'ok' || st.state === 'fail') stopDriftAfterFade(sw);
     });
     var slow = bodyEl.querySelector('[data-slow]');
     if (slow && work.slow) slow.removeAttribute('hidden');
     /* (the round-17 countdown title — "Three are still drawing" — retired
        with round 26's fixed PLEASE STAND BY heading; the per-slot status
        lines above are the progress announcements now) */
+  }
+  /* A landed swatch's word drift is stopped once its well has faded out.
+     The CSS pause on a landed swatch only governs CSS animations; the
+     drift's letters fall on element.animate() and are minted by a metronome
+     on a timer, so without this the swatch would go on minting letters
+     behind its fade until the next paint. Not AT the landing: the letters
+     that fall during the well's 0.5s fade are part of what the visitor
+     watches go. After it: the well's own opacity transitionend, or a 600ms
+     fallback, whichever comes first, once. The fallback is for the fade
+     that never fires an end (reduced motion has no transition — and no
+     drift either, so there it finds nothing to stop); it waits instead
+     while the tab is hidden or the fade is provably still running (a
+     hidden tab only starts the fade once the visitor is back), for as long
+     as the swatch is still on the card. Only a swatch dealt the drift has
+     anything to stop. */
+  function stopDriftAfterFade(sw) {
+    var drift = sw.querySelector('.jd-drift');
+    if (!drift) return;
+    var well = sw.querySelector('.jd-dark-well'), timer = 0, done = false;
+    function fading() {
+      if (!well || !well.getAnimations) return false;
+      return well.getAnimations().some(function (a) {
+        return a.transitionProperty === 'opacity' && a.playState !== 'finished';
+      });
+    }
+    function stop(e) {
+      if (done) return;
+      if (e && (e.target !== well || e.propertyName !== 'opacity')) return;
+      if (!e && document.contains(sw) && (document.hidden || fading())) {
+        timer = setTimeout(stop, 600);
+        return;
+      }
+      done = true;
+      if (well) well.removeEventListener('transitionend', stop);
+      clearTimeout(timer);
+      if (window.JD_dark && window.JD_dark.stop) window.JD_dark.stop(drift);
+    }
+    if (well) well.addEventListener('transitionend', stop);
+    timer = setTimeout(stop, 600);
   }
   function startSlowTimer() {
     stopSlowTimer();
@@ -800,16 +772,6 @@
      millimetre off the sheet. An attached photograph is an attached
      photograph. `pin` drops the caption — on the bench the heading already
      says which drawing this is. */
-  /* the replay button's sketch mark: a pencil mid-stroke and the line it's
-     leaving behind (see the replay note in plate() below) */
-  var SKETCH_ICON =
-    '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" ' +
-    'stroke="currentColor" stroke-width="1.6" stroke-linecap="round" ' +
-    'stroke-linejoin="round" aria-hidden="true">' +
-    '<path d="M2 20.8 C4.5 18.5, 6.5 22.5, 10 21.4"/>' +
-    '<path d="M11 18.2 L19.8 5.8 L22.8 7.9 L14 20.3 Z"/>' +
-    '<path d="M11 18.2 L10 21.6 L14 20.3 Z" fill="currentColor"/></svg>';
-
   /* THE PAPER, on the bench (owner ask, 2026-09-14): the report card has
      carried the graph/blueprint swap since 2026-09-10; the exhibit being
      graded gets the same button now — grading a light drawing on cream
@@ -846,16 +808,17 @@
     var s = work.slots[slot];
     if (!s || s.status !== 'ok') return '';
     opts = opts || {};
-    /* three optional fittings, all worn only by the RATE plates (bench +
+    /* two optional fittings, both worn only by the RATE plates (bench +
        call) — the reveal's stay plain, since its drawings just drew
        themselves on arrival and grading hasn't begun. `zoom` makes the
        whole figure the enlarge control, the record card's plate idiom
        (role/tabindex on the photograph, handlers at onClick and the
-       anonymous plate keydown wired in build()); `replay` mounts the
-       report photograph's REPLAY button on the print's own corner; `paper`
-       mounts its graph/blueprint swap (bench only — see benchPanel). The
-       figure's data-slot is how the delegated handlers learn which drawing
-       a press belongs to. */
+       anonymous plate keydown wired in build()); `paper` mounts its
+       graph/blueprint swap (bench only — see benchPanel). (A third,
+       `replay` — the report photograph's REPLAY button on the print's own
+       corner — retired 2026-09-16, when the bench's filmstrip took the
+       replay over.) The figure's data-slot is how the delegated handlers
+       learn which drawing a press belongs to. */
     return '<figure class="jd-turn-plate"' +
       (opts.zoom ? ' role="button" tabindex="0" data-slot="' + slot + '"' +
         ' aria-label="Enlarge the artwork"' : '') + '>' +
@@ -869,26 +832,14 @@
          own ref — never a bare slot letter, which the NEXT turn's slot A
          would collide with and inherit a stale frame from. The role="img"
          lives HERE, on the svg-only wrapper, not on .jd-turn-art: role=img
-         makes every child presentational, which would hide the REPLAY
-         button from assistive tech (the record card's .rc-plate-art
-         carries no role for the same reason). */
+         makes every child presentational, which would hide the plate's
+         own controls (the paper swap, the filmstrip) from assistive tech
+         (the record card's .rc-plate-art carries no role for the same
+         reason). */
       '<div class="jd-turn-art-in" role="img" aria-label="drawing ' +
       slot.toUpperCase() + '" data-fit="gen:' +
       esc(s.gen_id || ((turn && turn.client_ref) || 'turn') + ':' + slot) + '">' +
       window.JD_svgInst(s.svg, 'ju' + slot + (instSeq++) + '_') + '</div>' +
-      (opts.replay
-        /* icon-only since 2026-08-29 (owner, provisional pick "for now"):
-           the pencil mid-stroke with the squiggle it's leaving — the button
-           depicts the PROCESS it replays, not repetition (the ↻ family) and
-           not the word. Inline currentColor SVG, the docket-scales idiom,
-           so the hover inversion carries it. The word survives in title +
-           aria-label. */
-        ? '<button type="button" class="jd-turn-draw jd-turn-draw--icon" data-act="replay" ' +
-          'data-slot="' + slot + '" ' +
-          'title="watch the drawing draw itself again" ' +
-          'aria-label="Replay drawing ' + slot.toUpperCase() + '">' +
-          SKETCH_ICON + '</button>'
-        : '') +
       /* the OVERLAY fittings (owner, 2026-08-26, best-to-worst prints):
          the Model label rides INSIDE the frame, top-centred over the
          artwork — bare text, no ground — and `spark` (pre-built by the
@@ -918,8 +869,11 @@
      request — an explicit press is requested motion, so it plays under
      prefers-reduced-motion too ({ force: true }; the rationale at the record
      card's drawOn applies unchanged: a button whose whole job is "animate
-     this" going dead would be the worse accessibility outcome). ENLARGE is
-     the record card's own full-viewport layer reused class-for-class
+     this" going dead would be the worse accessibility outcome). (The
+     plate's own REPLAY button retired 2026-09-16 — the filmstrip under the
+     bench plate carries the replay now — and the same rule holds for the
+     enlargement's REDRAW, wired in openZoom.) ENLARGE is the record card's
+     own full-viewport layer reused class-for-class
      (.jd-record-zoom/.rc-zoom-fig/.rc-zoom-art/.rc-zoom-cap), so the print
      held closer looks identical wherever it was lifted from.
      Two deliberate differences from the record card, both because the bench
@@ -935,8 +889,9 @@
          head, so the filing-failure repaint is covered too).
      State lives here, as JD_record's does, because Escape has to know which
      layer it is peeling: enlargement first, then the confirm, then the
-     modal (the window keydown handler below). */
+     modal (the window keydown handler above). */
   var zoom = JD_zoomLayer();
+  var zoomWired = false;   /* the layer's kept controls, wired once (openZoom) */
   /* the enlargement's contents: the SAME drawing the plate shows, on the
      same graph-paper swatch (.rc-zoom-fig's CSS is shared with the record
      card). Its inlined copy takes a `juz` prefix — the plate's own copy is
@@ -961,8 +916,7 @@
       window.JD_svgInst(s.svg, 'juz' + slot + (instSeq++) + '_') +
       '</div>' +
       '<button type="button" class="rc-zoom-close rc-zoom-keep" aria-label="close">' +
-      '<svg class="jd-x-mark" viewBox="0 0 18 18" aria-hidden="true" focusable="false">' +
-      '<path d="M1 1 17 17M17 1 1 17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>' +
+      JD_X_MARK + '</button>' +
       '<div class="rc-plate-btns rc-zoom-keep">' +
       '<button type="button" class="rc-draw" title="watch the drawing draw itself again" ' +
       'aria-label="Replay drawing ' + slot.toUpperCase() + '">' +
@@ -1006,34 +960,24 @@
       });
     }
   }
-  var zoomWired = false;
   function closeZoom(silent) { zoom.close(silent); }
-  /* REPLAY's half of the pair: find the plate's own svg and hand it to the
-     shared draw-on engine with force — see the block comment above. Each
-     plate replays its OWN drawing (the button carries data-slot, but the
-     plate it rides is authority enough). */
-  function replayPlate(btn) {
-    /* the bench's REPLAY rides INSIDE the plate; the podium's sits under it,
-       outside the figure, because there the figure is a drag handle. Either
-       ancestor names the same one drawing. */
-    var pl = btn.closest
-      ? (btn.closest('.jd-turn-plate') || btn.closest('.jd-pod-print')) : null;
-    var svg = pl ? pl.querySelector('.jd-turn-art-in svg') : null;
-    if (svg && window.JD_drawOn) window.JD_drawOn(svg, { force: true });
-  }
 
+  /* the status slip above a card's content: the brief's rate-limit notice,
+     the results' count of what was lost. `inner` arrives escaped. */
+  function noticeHTML(inner) {
+    return '<p class="jd-turn-notice" role="status">' + inner + '</p>';
+  }
+  /* the results' notice, by how many machines' drawings were lost; none
+     lost (or, never reached, all four) prints nothing */
+  var LOST_LINE = {
+    3: 'three machines’ drawings didn’t survive — you’ll grade this one alone.',
+    2: 'two machines’ drawings didn’t survive — you’ll grade the two that came back.',
+    1: 'one machine’s drawing didn’t survive — you’ll grade the three that came back.'
+  };
   function viewReveal() {
     var ok = okSlots();
     var lost = JD_SLOTS.length - ok.length;
-    var notice = lost === 3
-      ? '<p class="jd-turn-notice" role="status">three machines’ drawings ' +
-        'didn’t survive — you’ll grade this one alone.</p>'
-      : lost === 2
-        ? '<p class="jd-turn-notice" role="status">two machines’ drawings ' +
-          'didn’t survive — you’ll grade the two that came back.</p>'
-      : lost === 1
-        ? '<p class="jd-turn-notice" role="status">one machine’s drawing ' +
-          'didn’t survive — you’ll grade the three that came back.</p>' : '';
+    var notice = LOST_LINE[lost] ? noticeHTML(LOST_LINE[lost]) : '';
     /* "The results" (round 26 rev. 4, owner rename — was the per-count
        "Four drawings came back" family): one fixed title, the darkroom's
        PLEASE STAND BY discipline; the notice line above the plates still
@@ -1051,31 +995,20 @@
   }
 
   /* ---------- 5. rate — the survey, rendered from the taxonomy -------------
-     pillRow survives for the unveil's tie keep-chooser alone (the two-panel
-     pill survey retired with the single bench, 2026-08-11). Its tick is
-     GRAPHITE, not stamp red: the election is the visitor's own hand. */
-  function pillRow(name, label, options, chosen, meta) {
-    var h = '<div class="jd-pillrow" role="radiogroup" aria-label="' + esc(label) + '">';
-    options.forEach(function (o) {
-      var on = String(chosen == null ? '' : chosen) === String(o.value);
-      h += '<label class="jd-pill' + (on ? ' is-on' : '') + '">' +
-        '<input type="radio" name="' + esc(name) + '" value="' + esc(o.value) + '"' +
-        meta + (on ? ' checked' : '') + '>' +
-        '<span class="jd-pill-tick" aria-hidden="true">✓</span>' +
-        esc(o.label) + '</label>';
-    });
-    return h + '</div>';
-  }
+     (pillRow, the two-panel pill survey's row, retired with the single
+     bench, 2026-08-11; it lingered for the unveil's tie keep-chooser until
+     that went too, 2026-10-01.) */
   /* THE SINGLE BENCH (owner pick, mockup round 10, 2026-08-11). One response
      on the bench at a time — a step rail (response A → response B → the
      call), the artwork pinned sticky while its response is graded, every
      scale a native <select> (titles only on the control and in the list;
      skip is the honest default), and ONE definition system: a hover/focus
      tooltip anchored to a plain-text label (OVERRIDE 1, round-16 — the
-     click-to-unfold ⓘ popover it used to pair with is retired outright).
+     click-to-unfold ⓘ popover it used to pair with is retired outright;
+     the tooltip itself gave way to the press-to-open disclosure, 2026-08-28
+     — see scaleRow).
      The two-panel pill survey and the separate compare state are retired;
-     the call is THE PODIUM (below) and closes the same state. pillRow above
-     survives for the unveil's keep-chooser only. */
+     the call is THE PODIUM (below) and closes the same state. */
 
   /* ═══════════════════════════════════════════════════════════════════════
      THE PODIUM (owner pick, mockups/mockup-32-podium.html, 2026-08-22).
@@ -1092,7 +1025,8 @@
      kept in step with whoever stands on 1st, so the unveil, the pile and
      the tracking beacon downstream need no notion of a ranking at all — and
      because the podium holds exactly one 1st, a 'tie' winner can no longer
-     be minted (the unveil's tie chooser stays put for old/cached flows).
+     be minted (the unveil's tie chooser, kept a while for old/cached
+     flows, is gone: no stored turn is ever read back).
      ═══════════════════════════════════════════════════════════════════════ */
   var POD_ORD = ['1st', '2nd', '3rd', '4th'];
   /* THE ARMED PLACE — the no-drag path, inverted (owner, 2026-08-23). It used
@@ -1105,12 +1039,12 @@
   /* Nothing is cached across paints: the card is repainted by assigning an
      HTML string, so a held reference is a reference to a node that may
      already be off the document. Every lookup below is live, and during a
-     drag the DOM does not change at all, so the rects stay honest. */
+     drag the DOM does not change at all, so the rects stay honest. (The
+     drag alone holds on to nodes: it resolves the row, the tray and the
+     steps once, at the lift, and re-reads only their rects on every move —
+     see podParts, which looks them up afresh if a repaint has swapped the
+     podium out from under it.) */
   function podRoot() { return bodyEl ? bodyEl.querySelector('.jd-pod') : null; }
-  function podTiers() {
-    var r = podRoot();
-    return r ? r.querySelectorAll('.jd-pod-tier') : [];
-  }
   function podTier(k) {
     var r = podRoot();
     return r ? r.querySelector('.jd-pod-tier[data-rank="' + k + '"]') : null;
@@ -1239,7 +1173,7 @@
     }
     /* the ranking's own button is FILE on a visitor's turn and NEXT on a
        curation (the size card follows) — arm whichever is there */
-    setDisabled('[data-act="file"], [data-act="next"]', !callReady());
+    setDisabled('[data-act="next"], [data-act="file"]', !callReady());
   }
   /* the only words the podium ever produces, and they are never printed:
      a visually-hidden status line, for the visitors who can't see the steps */
@@ -1276,7 +1210,7 @@
     podDrag = {
       slot: el.getAttribute('data-pod'), el: el, live: false, ghost: null,
       gw: 0, dx: 0, dy: 0, x0: e.clientX, y0: e.clientY,
-      pointerId: e.pointerId, over: null
+      pointerId: e.pointerId, over: null, parts: null
     };
     try { el.setPointerCapture(e.pointerId); } catch (err) {}
     window.addEventListener('pointermove', podOnMove, true);
@@ -1312,6 +1246,7 @@
     document.body.classList.add('jd-pod-drag');
     var sel = window.getSelection && window.getSelection();
     if (sel && sel.rangeCount) { try { sel.removeAllRanges(); } catch (err) {} }
+    podParts();   /* the drop targets, resolved once for the whole drag */
   }
   /* the drop is judged from the middle of the swatch the visitor can actually
      see, not the raw pointer — highlight and landing then agree by
@@ -1325,10 +1260,28 @@
              top: r.top - top, bottom: r.bottom + bottom };
   }
   function podIn(r, x, y) { return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom; }
+  /* the drag's drop targets — the podium, its row of steps, the tray and the
+     steps themselves — kept on podDrag from the lift on, so a pointermove
+     reads rects, not selectors. Keyed on the live podium: if anything has
+     repainted it mid-drag they are looked up afresh, exactly as an uncached
+     lookup would find them, and once the podium is gone there are none. */
+  function podParts() {
+    var root = podRoot();
+    if (!root) return null;
+    if (podDrag && podDrag.parts && podDrag.parts.root === root) return podDrag.parts;
+    var parts = {
+      root: root,
+      row: root.querySelector('.jd-pod-row'),
+      tray: root.querySelector('.jd-pod-tray'),
+      tiers: root.querySelectorAll('.jd-pod-tier')
+    };
+    if (podDrag) podDrag.parts = parts;
+    return parts;
+  }
   /* nearest step by horizontal distance — the gaps between the blocks, and
      the empty air above a short block, all belong to the step nearest them */
-  function podNearest(x) {
-    var tiers = podTiers(), best = 1, d = Infinity;
+  function podNearest(x, tiers) {
+    var best = 1, d = Infinity;
     for (var i = 0; i < tiers.length; i++) {
       var q = tiers[i].getBoundingClientRect();
       var dd = Math.abs(x - (q.left + q.right) / 2);
@@ -1339,18 +1292,17 @@
   /* rank 1..N, 0 for the row, null for nowhere. Rects are read fresh every
      time, so a scroll or a reflow mid-drag can never aim at a stale target. */
   function podHit(x, y) {
-    var root = podRoot();
-    if (!root) return null;
-    var row = root.querySelector('.jd-pod-row');
-    var tray = root.querySelector('.jd-pod-tray');
-    if (row && podIn(podGrow(row.getBoundingClientRect(), 14, 8, 4), x, y)) return podNearest(x);
+    var p = podParts();
+    if (!p) return null;
+    var row = p.row, tray = p.tray;
+    if (row && podIn(podGrow(row.getBoundingClientRect(), 14, 8, 4), x, y)) return podNearest(x, p.tiers);
     if (tray && podIn(podGrow(tray.getBoundingClientRect(), 6, 8, 14), x, y)) return 0;
     return null;
   }
   function podOver(k) {
     if (!podDrag || k === podDrag.over) return;
     podDrag.over = k;
-    var tiers = podTiers();
+    var p = podParts(), tiers = p ? p.tiers : [];
     for (var i = 0; i < tiers.length; i++) {
       tiers[i].classList.toggle('is-armed',
         Number(tiers[i].getAttribute('data-rank')) === k);
@@ -1362,10 +1314,14 @@
       if (Math.abs(e.clientX - podDrag.x0) < 6 && Math.abs(e.clientY - podDrag.y0) < 6) return;
       podLift(e);
     }
+    /* read, then write: the hit test reads the row/tray/step rects, and
+       moving the ghost first made every pointermove a synchronous layout.
+       The ghost is position:fixed and pointer-events:none, so where it
+       stands cannot move those rects — the order changes no answer. */
+    var a = podAim(e), k = podHit(a.x, a.y);
     podDrag.ghost.style.left = (e.clientX - podDrag.dx) + 'px';
     podDrag.ghost.style.top = (e.clientY - podDrag.dy) + 'px';
-    var a = podAim(e);
-    podOver(podHit(a.x, a.y));
+    podOver(k);
     if (e.cancelable) e.preventDefault();
   }
   function podDone() {
@@ -1470,7 +1426,9 @@
      where a person reads them. It used to reach the visitor through a
      click-to-unfold popover (owner: "an awkward little eye"); now it reaches
      keyboard and screen-reader users the moment they focus the select, and
-     mouse users on hover over the label, and needs no toggle state at all. */
+     mouse users on hover over the label, and needs no toggle state at all.
+     (The hover half retired 2026-08-28: sighted visitors open it by
+     pressing the row's head — see THE DISCLOSURE below.) */
   /* The chosen-value gauge, built in ONE place because two callers need the
      identical mark: scaleRow() paints it with whatever was already answered,
      and onChange() re-paints it the instant the visitor picks (below). Owner
@@ -1513,10 +1471,10 @@
     return window.JD_barHTML(rank, total,
       ax ? window.JD_axisCls(ax, rank) : 'rc-g' + rank);
   }
-  function scaleRow(slot, kind, ax, chosen) {
+  function scaleRow(slot, ax, chosen) {
     var axisId = ax ? ax.id : null;
     var label = ax ? (ax.label || ax.id) : 'overall grade';
-    var levels = byRankDesc(ax ? ax.values : tax().grades);
+    var levels = JD_byRankDesc(ax ? ax.values : tax().grades);
     /* THE OVERALL GRADE'S GUIDANCE (owner, 2026-09-29): unfolding the row
        gives the rater the question the grade answers, then every tier's own
        description from taxonomy.json, best to worst — one tier a line.
@@ -1552,7 +1510,7 @@
     var h = '<div class="jd-row' + (ax ? '' : ' jd-row--grade') + '">' +
       '<div class="jd-rowhead" data-act="def">' +
       '<button type="button" class="jd-defx" aria-expanded="false" ' +
-      'aria-label="what ' + esc(window.JD_labelText ? window.JD_labelText(label) : label) +
+      'aria-label="what ' + esc(window.JD_labelText(label)) +
       ' means"></button>' +
       '<span class="jd-def"><span>' + esc(label) + '</span></span>' +
       '</div>' +
@@ -1606,7 +1564,7 @@
   function benchRated(slot) {
     var r = work.ratings[slot];
     if (!r || r.grade == null) return false;
-    return liveAxes().every(function (ax) { return r.axes[ax.id] != null; });
+    return JD_liveAxes(tax()).every(function (ax) { return r.axes[ax.id] != null; });
   }
 
   /* THE DOCKET (owner redesign, 2026-08-26; discovered in mockups/
@@ -1648,7 +1606,7 @@
     'aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="1"/>' +
     '<rect x="9.5" y="9.5" width="5" height="5" rx="0.5"/></svg>';
 
-  function railHTML(ok) {
+  function railHTML(ok, tiers) {
     var steps = ok.map(function (s) {
       return { id: s, n: ok.indexOf(s) + 1, label: 'drawing ' + s.toUpperCase(),
         face: s.toUpperCase() };
@@ -1662,7 +1620,7 @@
     }
     /* the size card closes a curation (owner, 2026-08-30): its ring wears
        the nested-squares mark — the scale itself, small inside large */
-    if (sizeTiers().length) {
+    if (tiers.length) {
       steps.push({ id: 'size', n: steps.length + 1, label: 'how big is it',
         face: RAIL_SIZE, word: 'size' });
     }
@@ -1731,16 +1689,16 @@
      the portrait flow, with the exhibit sticky at the top of the scroller.
      The card widens to carry the two columns and narrows again the moment it
      stops (see paint's data-view). */
-  function benchPanel(slot, ok) {
+  function benchPanel(slot, ok, tiers) {
     var r = work.ratings[slot];
     var idx = ok.indexOf(slot);
     var two = ok.length > 1;
     var h = '<div class="jd-bench">' +
       '<div class="jd-bench-l"><div class="jd-turn-pin">' +
-      /* replay:false since 2026-09-16 — the filmstrip mounted under this
-         plate by paint() carries the replay now, and the pencil beside it
-         would be a second button doing the same thing */
-      plate(slot, { pin: true, zoom: true, replay: false, paper: true }) + '</div></div>' +
+      /* no REPLAY pencil since 2026-09-16 — the filmstrip mounted under
+         this plate by paint() carries the replay now, and the pencil beside
+         it would be a second button doing the same thing */
+      plate(slot, { pin: true, zoom: true, paper: true }) + '</div></div>' +
       '<div class="jd-bench-r">' +
       /* the prompt OPENS the paperwork column, above the rows (owner,
          2026-08-28) — and, the wrappers being display:contents in the
@@ -1754,10 +1712,10 @@
        carries the 2px top rule that reads as a tfoot break; it just needed
        the grade row to actually be last for that rule to mean what it looks
        like it means. */
-    liveAxes().forEach(function (ax) {
-      h += scaleRow(slot, 'axis', ax, r.axes[ax.id]);
+    JD_liveAxes(tax()).forEach(function (ax) {
+      h += scaleRow(slot, ax, r.axes[ax.id]);
     });
-    h += scaleRow(slot, 'grade', null, r.grade);
+    h += scaleRow(slot, null, r.grade);
     /* the report path (APP §4.6) is BENCHED from the form (owner,
        2026-08-26): the "broken or offensive" checkbox and its note took
        bench space the owner would rather spend on the scales, and reports
@@ -1780,7 +1738,7 @@
     }
     /* the gate: disabled until benchRated — onChange re-arms it live */
     var gate = benchRated(slot) ? '' : ' disabled';
-    var sized = sizeTiers().length;
+    var sized = tiers.length;
     if (!two) {
       /* one drawing, no ranking — but a curation still closes on the size */
       acts += sized
@@ -1853,7 +1811,7 @@
        this drawing, as the report card's segmented gauge — no words
        (owner, 2026-08-26). A skipped grade sparks nothing. */
     var rt = work.ratings[slot];
-    var spark = gaugeFor(null, byRankDesc(tax().grades).length, rt ? rt.grade : null);
+    var spark = gaugeFor(null, JD_byRankDesc(tax().grades).length, rt ? rt.grade : null);
     if (spark) spark = '<span class="jd-pod-spark" aria-hidden="true">' + spark + '</span>';
     return '<div class="jd-pod-print" data-pod="' + slot + '" data-slot="' + slot +
       '" role="button" tabindex="0" draggable="false" aria-label="Model ' +
@@ -1868,7 +1826,7 @@
      classes (podPaint/podSeat), never rewrites this HTML — which is what lets
      a drag survive on a card that otherwise repaints by assigning a string.
      Two survivors build two steps, three build three, four build four. */
-  function callPanel(ok) {
+  function callPanel(ok, tiers) {
     if (podDrag) podDone();
     podNormalize(ok);
     podArmed = null;
@@ -1898,7 +1856,7 @@
     h += '</div><span class="jd-vh jd-pod-live" role="status" aria-live="polite"></span></div>';
     /* a curation has one more card after this one — the size (owner,
        2026-08-30) — so the ranking hands on rather than filing */
-    var more = sizeTiers().length;
+    var more = tiers.length;
     return h + (more ? '' : suppressHTML()) + actions(
       '<button type="button" class="jd-turn-alt" data-act="back">&larr; back</button>' +
       '<button type="button" class="jd-turn-go" data-act="' +
@@ -1910,7 +1868,7 @@
      the two cards where the visitor is working, so they are the two with the
      least to read. The heading names the drawing on the bench, the rail says
      where in the steps it sits, and each row's own label (with its
-     hover/focus definition) carries the rest. */
+     press-to-open definition) carries the rest. */
   /* ---------- 5b. HOW BIG IS IT — the bench's closing card ------------------
      (owner, 2026-08-30.) The one curatorial judgment the rubric never asked
      for: how large the object reads in the drawer, on the five-tier scale
@@ -1934,8 +1892,7 @@
     });
   }
 
-  function sizePanel() {
-    var tiers = sizeTiers();
+  function sizePanel(tiers) {
     var chosen = work.size || null;
     var h = '<div class="jd-size">';
     tiers.forEach(function (t) {
@@ -1969,7 +1926,9 @@
 
   function viewRate() {
     var ok = okSlots();
-    var sizes = sizeTiers().length;
+    /* the scale is read once per render and handed down: the rail, the
+       panel and its buttons all ask the same question of it */
+    var tiers = sizeTiers(), sizes = tiers.length;
     /* a restored or degraded turn may hold a step that no longer exists */
     if (work.step !== 'call' && work.step !== 'size' && ok.indexOf(work.step) === -1) {
       work.step = ok[0];
@@ -1983,8 +1942,8 @@
         : 'Grade drawing ' + work.step.toUpperCase(),
       size ? 6 : call ? 5 : 4,
       { view: size ? 'size' : call ? 'call' : 'bench' }) +
-      (two || sizes ? railHTML(ok) : '') +
-      (size ? sizePanel() : call ? callPanel(ok) : benchPanel(work.step, ok));
+      (two || sizes ? railHTML(ok, tiers) : '') +
+      (size ? sizePanel(tiers) : call ? callPanel(ok, tiers) : benchPanel(work.step, ok, tiers));
   }
 
   /* ---------- 7. unveil ---------------------------------------------------- */
@@ -2056,17 +2015,7 @@
     if (lost.length) {
       h += '<p class="jd-turn-line jd-pod-lost">' + lost.join('<br>') + '</p>';
     }
-    if (work.winner === 'tie' && !work.kept) {
-      var keepOpts = okSlots().map(function (s) {
-        return { value: s, label: 'Drawing ' + s.toUpperCase() };
-      });
-      keepOpts.push({ value: '', label: okSlots().length > 2 ? 'None of them' : 'Neither' });
-      h += '<p class="jd-turn-line">A tie is filed as a tie. Keep one for your ' +
-        'drawer anyway?</p>' +
-        pillRow('jd-keep', 'which drawing to keep', keepOpts,
-          work.keep, ' data-role="keep"') +
-        actions('<button type="button" class="jd-turn-go" data-act="keep">put it in the drawer</button>');
-    } else if (curJob) {
+    if (curJob) {
       /* the backlog's unveil closes to the NEXT ITEM, not to another turn —
          JD_bench hears the close and seats the next card */
       h += actions('<button type="button" class="jd-turn-go" data-act="done">next item &rarr;</button>');
@@ -2091,10 +2040,11 @@
         '<button type="button" class="jd-turn-alt" data-act="done">close</button>');
   }
 
-  /* THE MASTHEAD. Every card is FORM JD-1; what changes is the heading and
-     the section number on the badge (§1 brief → §6 unveil). head() declares
-     the next paint's masthead and contributes NOTHING to the body string —
-     it returns '' so the views can go on reading as one concatenation.
+  /* THE MASTHEAD. Every card is FORM JD-1; what changes is the heading (the
+     section number, §1 brief → §6 unveil, is still declared at every call
+     but neither printed nor kept — see headHTML). head() declares the next
+     paint's masthead and contributes NOTHING to the body string — it
+     returns '' so the views can go on reading as one concatenation.
 
      The heading is the landing place for every state that has no field of
      its own to fill in (C5.8): moving through the flow should read as the
@@ -2107,9 +2057,8 @@
      'call' and 'plates' mean something to the CSS). */
   function head(t, sec, opts) {
     opts = opts || {};
-    stateTitle = t;
     pendingHead = {
-      title: t, sec: sec, noFocus: !!opts.noFocus,
+      title: t, noFocus: !!opts.noFocus,
       view: opts.view || 'form'
     };
     return '';
@@ -2127,23 +2076,13 @@
     if (!ctrl || !ctrl.classList || !ctrl.classList.contains('jd-row-ctrl')) return;
     var old = ctrl.querySelector('.rc-bar');
     if (old) ctrl.removeChild(old);
-    var levels = byRankDesc(ax ? ax.values : tax().grades);
+    var levels = JD_byRankDesc(ax ? ax.values : tax().grades);
     var html = gaugeFor(ax, levels.length, val == null ? null : Number(val), true);
     if (html) ctrl.insertAdjacentHTML('afterbegin', html);
   }
   function onChange(e) {
     var t = e.target, role = t.getAttribute && t.getAttribute('data-role');
     if (!role) return;
-    if (t.type === 'radio') {
-      var row = t.closest('.jd-pillrow');
-      if (row) {
-        Array.prototype.forEach.call(row.querySelectorAll('.jd-pill'), function (p) {
-          var input = p.querySelector('input');
-          p.classList.toggle('is-on', !!(input && input.checked));
-        });
-      }
-      JD_haptic('select');
-    }
     var slot = t.getAttribute('data-slot');
     var val = t.value === '' ? null : t.value;
     if (role === 'grade') {
@@ -2154,7 +2093,7 @@
       work.ratings[slot].axes[t.getAttribute('data-axis')] =
         val == null ? null : Number(val);
       t.classList.toggle('is-set', val != null);
-      paintGauge(t, byId(liveAxes(), t.getAttribute('data-axis')), val);
+      paintGauge(t, byId(JD_liveAxes(tax()), t.getAttribute('data-axis')), val);
     }
     if (role === 'grade' || role === 'axis') {
       /* the bench gate re-arms (or re-locks — a scale set back to skip
@@ -2172,8 +2111,6 @@
       if (fn) fn.hidden = !t.checked;
       /* (the call has no <input> of its own any more — the podium files its
          answer through pointer/keyboard handlers, not a change event) */
-    } else if (role === 'keep') {
-      work.keep = val;
     }
   }
   function onInput(e) {
@@ -2208,7 +2145,8 @@
     /* a print's press is answered on pointerup (podTap), because podDown
        preventDefaults and a prevented pointerdown may emit no click at all;
        the click it does emit is absorbed here so nothing reads twice */
-    var pp = e.target.closest ? e.target.closest('.jd-pod-print') : null;
+    if (!e.target.closest) return;   /* nothing below could match */
+    var pp = e.target.closest('.jd-pod-print');
     if (pp) {
       /* on the unveil the press never reached podDown, so the click is the
          press — and on that card a drawing can only get bigger */
@@ -2216,22 +2154,16 @@
       return;
     }
     /* the filed podium arms nothing */
-    if (e.target.closest && e.target.closest('.jd-pod--said')) return;
-    var pt = e.target.closest ? e.target.closest('.jd-pod-tier') : null;
+    if (e.target.closest('.jd-pod--said')) return;
+    var pt = e.target.closest('.jd-pod-tier');
     if (pt) { podArm(Number(pt.getAttribute('data-rank'))); return; }
-    var ptr = e.target.closest ? e.target.closest('.jd-pod-tray') : null;
+    var ptr = e.target.closest('.jd-pod-tray');
     if (ptr) { podArm(0); return; }
-    /* REPLAY rides the plate: it redraws, never zooms (the record card's
-       handler exempts its .rc-draw the same way). An explicit press is
-       requested motion, so it plays under reduced-motion too — replayPlate
-       passes force. */
-    var dr = e.target.closest ? e.target.closest('.jd-turn-draw') : null;
-    if (dr) { replayPlate(dr); return; }
-    var b = e.target.closest ? e.target.closest('[data-act]') : null;
+    var b = e.target.closest('[data-act]');
     if (!b || b.disabled) {
       /* not an action press — the bench/call plate itself is the enlarge
          control (the reveal's plates carry no role and fall through) */
-      var p = e.target.closest ? e.target.closest('.jd-turn-plate') : null;
+      var p = e.target.closest('.jd-turn-plate');
       if (p && p.getAttribute('role') === 'button') openZoom(p);
       return;
     }
@@ -2240,11 +2172,7 @@
       /* the acknowledgment is recorded at the moment the words are sent —
          the disclosure sits right on this card (the gating consent card
          retired 2026-08-14, owner call) */
-      if (!hasConsent()) {
-        JD_store.set(K_CONSENT, {
-          version: JD_CONSENT.version, at: new Date().toISOString()
-        });
-      }
+      recordConsent();
       startTurn();
     } else if (act === 'rate') {
       ensurePayload().then(function () { go('rate'); }, function () { go('rate'); });
@@ -2285,11 +2213,7 @@
       /* a curation files at the SIZE card, which closes it; the size is the
          owner's call and never defaulted (CLAUDE.md's filing rule) */
       if (curJob && work.step === 'size' && !work.size) return;
-      if (curJob) curateFile(); else submitRatings();
-    } else if (act === 'keep') {
-      if (work.keep) placeWinner(work.keep);
-      work.kept = true;
-      render();
+      fileNow();
     } else if (act === 'again') {
       clearTurn();
       work = blankWork();
@@ -2298,7 +2222,7 @@
       clearTurn();
       close();
     } else if (act === 'retry-file') {
-      if (curJob) curateFile(); else submitRatings();
+      fileNow();
     } else if (act === 'brief') {
       /* in place, no re-render — a repaint here would close the native
          picker under a finger mid-survey and lose the scroll position */
@@ -2330,6 +2254,8 @@
   }
 
   function blankWork() {
+    var reached = {};
+    reached[JD_SLOTS[0]] = true;
     return {
       prompt: '', notice: '', slow: false,
       slots: blankSlots(),
@@ -2341,10 +2267,9 @@
          1st) and kept only because everything downstream — the unveil, the
          pile, the tracking beacon — was built to read a winner; `strength`
          survives as a permanent null, the podium having no margin. */
-      step: 'a', reached: { a: true },
+      step: JD_SLOTS[0], reached: reached,
       ranks: {},
-      winner: null, strength: null,
-      keep: null, kept: false, placed: false, reveal: null
+      winner: null, strength: null, reveal: null
     };
   }
   function blankRating() {
@@ -2371,9 +2296,10 @@
     /* the recoverability handle is minted and PERSISTED before either fetch
        leaves (APP §4.11): PHP cannot stream a partial answer, so a killed
        request is recovered by re-sending the same ref, never by a server id
-       we never received */
+       we never received. A random v4 (JD_uuid): it only has to be unique per
+       visitor, the server never trusts it for anything but convergence */
     turn = {
-      client_ref: uuid(), state: 'generating', submission_id: null,
+      client_ref: JD_uuid(), state: 'generating', submission_id: null,
       slots: blankSlots()
     };
     persist();
@@ -2391,52 +2317,39 @@
        One retry after 4s covers the race where no slot's submission row
        has landed yet (the endpoint answers no_turn until one has). */
     (function fetchTitle(attempt) {
-      fetch(JD_API + API_TITLE, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ client_ref: turn.client_ref, prompt: text })
-      }).then(function (r) {
-        return r.json().catch(function () { return null; });
-      }).then(function (j) {
-        if (mine !== token || !work) return;
-        if (j && j.ok && j.title) {
-          work.title = j.title;
-          if (turn) { turn.title = j.title; persist(); }
-        } else if (attempt < 2) {
-          setTimeout(function () {
-            if (mine === token) fetchTitle(attempt + 1);
-          }, 4000);
-        }
-      }, function () {
-        if (mine === token && attempt < 2) {
-          setTimeout(function () {
-            if (mine === token) fetchTitle(attempt + 1);
-          }, 4000);
-        }
-      });
+      function retry() {
+        setTimeout(function () {
+          if (mine === token) fetchTitle(attempt + 1);
+        }, 4000);
+      }
+      postJSON(API_TITLE, { client_ref: turn.client_ref, prompt: text }, null)
+        .then(function (j) {
+          if (mine !== token || !work) return;
+          if (j && j.ok && j.title) {
+            work.title = j.title;
+            if (turn) { turn.title = j.title; persist(); }
+          } else if (attempt < 2) {
+            retry();
+          }
+        }, function () {
+          if (mine === token && attempt < 2) retry();
+        });
     })(1);
     JD_SLOTS.forEach(function (slot) {
       /* NO client abort and NO client timeout — the server owns the 150s
          budget, and a fetch cancelled here would abandon a generation the
          server is still paying for (C5.4) */
-      fetch(JD_API + API_GEN, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          client_ref: turn.client_ref,
-          slot: slot,
-          prompt: text,
-          client: JD_CLIENT,
-          consent: { version: JD_CONSENT.version },
-          /* the device code, made now if this is the browser's first turn
-             (JD_deviceRef in jd-core.js, owner 2026-09-10) */
-          device_ref: window.JD_deviceRef ? JD_deviceRef(true) : null,
-          website: honey
-        })
-      }).then(function (r) {
-        return r.json().then(function (j) { return j; },
-          function () { return { ok: false, error: { code: 'server_error' } }; });
-      }).then(function (j) {
+      postJSON(API_GEN, {
+        client_ref: turn.client_ref,
+        slot: slot,
+        prompt: text,
+        client: JD_CLIENT,
+        consent: { version: JD_CONSENT.version },
+        /* the device code, made now if this is the browser's first turn
+           (JD_deviceRef in jd-core.js, owner 2026-09-10) */
+        device_ref: window.JD_deviceRef ? JD_deviceRef(true) : null,
+        website: honey
+      }, { ok: false, error: { code: 'server_error' } }).then(function (j) {
         settleSlot(mine, slot, j);
       }, function () {
         settleSlot(mine, slot, { ok: false, error: { code: 'network' } });
@@ -2495,9 +2408,7 @@
         '— it rejects rather than repairs. This cost you nothing.'
       : 'All four machines failed. This cost you nothing — the drawer will ' +
         'try again whenever you like.';
-    turn.state = 'apology';
-    persist();
-    go('apology');
+    go('apology');   /* go() files the state on the turn and persists it */
   }
 
   /* ---------- filing: one batch, then the only unveil ---------------------- */
@@ -2550,43 +2461,55 @@
         ? { winner: ranking ? ranking[0].slot : work.winner, strength: null }
         : null
     };
-    setDisabled('[data-act="file"]', true);
-    setDisabled('[data-act="retry-file"]', true);
     /* same guard as a generation (C5.4): the filing is not aborted when the
        turn is abandoned, so its answer has to identify the turn it belongs
        to or it lands on whatever turn is live when it arrives */
-    var mine = token;
-    fetch(JD_API + API_RATE, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    }).then(function (r) {
-      return r.json().then(function (j) { return j; },
-        function () { return { ok: false, error: { code: 'server_error' } }; });
-    }).then(function (j) { onFiled(mine, j); }, function () {
-      onFiled(mine, { ok: false, error: { code: 'network' } });
-    });
+    var mine = armFiling();
+    postJSON(API_RATE, body, { ok: false, error: { code: 'server_error' } })
+      .then(function (j) { onFiled(mine, j); }, function () {
+        onFiled(mine, { ok: false, error: { code: 'network' } });
+      });
+  }
+  /* the two filing presses — the card's own button and the failure card's
+     retry — file the same way: a curation through its job, a turn to
+     jd-rate */
+  function fileNow() {
+    if (curJob) curateFile(); else submitRatings();
+  }
+  /* a filing leaves: both its buttons go dead until the answer is in (the
+     answer repaints either way), and the turn's token goes with it, for the
+     answer to be matched against */
+  function armFiling() {
+    setDisabled('[data-act="file"]', true);
+    setDisabled('[data-act="retry-file"]', true);
+    return token;
+  }
+  /* a filing that didn't take, in either flow: the same shape as the
+     apology (§6) — same prose-only pattern, no stamp. `sentence` says what
+     the failure means for the grades still on the card. */
+  function paintFileFailure(code, sentence) {
+    paint(head('The grades didn’t file', 6) +
+      '<p class="jd-turn-line">The drawer couldn’t record them ' +
+      '(<b>' + esc(code) + '</b>). ' + sentence + '</p>' +
+      actions('<button type="button" class="jd-turn-go" data-act="retry-file">try filing again</button>' +
+        '<button type="button" class="jd-turn-alt" data-act="done">close</button>'));
+    focusFirst();
   }
   function onFiled(mine, res) {
     if (mine !== token || !isOpen || !work) return;
     if (!res || !res.ok) {
       var code = ((res || {}).error || {}).code || 'server_error';
       JD_track('turn_error', code);
-      /* the same shape as the apology (§6) — same prose-only pattern, no stamp */
-      paint(head('The grades didn’t file', 6) +
-        '<p class="jd-turn-line">The drawer couldn’t record them ' +
-        '(<b>' + esc(code) + '</b>). Nothing was written — the whole batch ' +
-        'goes together or not at all, and your grades are still here.</p>' +
-        actions('<button type="button" class="jd-turn-go" data-act="retry-file">try filing again</button>' +
-          '<button type="button" class="jd-turn-alt" data-act="done">close</button>'));
-      focusFirst();
+      paintFileFailure(code, 'Nothing was written — the whole batch goes ' +
+        'together or not at all, and your grades are still here.');
       return;
     }
     work.reveal = res.reveal || [];
     var ok = okSlots();
     JD_track('turn_complete', ok.length > 1 ? (work.winner || 'tie') : 'degraded');
     /* the winner is placed from the reveal payload — a degraded turn keeps
-       its survivor, a tie asks the visitor (a purely local choice) */
+       its survivor. (A tie used to ask the visitor, at the unveil; the
+       podium can no longer mint one — see podSync.) */
     if (ok.length === 1) placeWinner(ok[0]);
     else if (work.winner && work.winner !== 'tie') placeWinner(work.winner);
     go('unveil');
@@ -2605,6 +2528,14 @@
         : r.axes[axisId];
     });
     return annotations;
+  }
+  /* the cost fields ride a record only when there is something to say:
+     tokens when usage was recorded, cost_usd when the model is priced.
+     `src` is wherever they were filed — a reveal row, a stored record. */
+  function withCost(o, src) {
+    if (src.tokens) o.tokens = src.tokens;
+    if (src.cost_usd != null) o.cost_usd = src.cost_usd;
+    return o;
   }
   function placeWinner(slot) {
     var s = work.slots[slot];
@@ -2633,8 +2564,7 @@
        after a reload. Omitted when the reveal carries none (a survivor with
        no usage recorded); cost_usd alone stays null when the model is
        unpriced — the card omits hollow lines rather than printing them. */
-    if (rv.tokens) rec.tokens = rv.tokens;
-    if (rv.cost_usd != null) rec.cost_usd = rv.cost_usd;
+    withCost(rec, rv);
     /* the OTHER bench responses ride along (owner request, 2026-08-12;
        generalized to the trio 2026-08-14): the report card shows every
        option from the turn, the losers filed as alternative responses on
@@ -2648,16 +2578,14 @@
       var os = work.slots[other];
       if (os && os.status === 'ok' && os.svg && os.gen_id) {
         var orv = revealFor(other) || {};
-        rec.others.push({
+        /* the losers' costs file too — the card's "same prompt" strip shows
+           every option, and each response's notes state their own spend */
+        rec.others.push(withCost({
           gen_id: os.gen_id, svg: os.svg,
           model_id: orv.model_id || '', label: orv.label || '',
           grade: work.ratings[other].grade,
           annotations: ratingAnnotations(work.ratings[other])
-        });
-        /* the losers' costs file too — the card's "same prompt" strip shows
-           every option, and each response's notes state their own spend */
-        if (orv.tokens) rec.others[rec.others.length - 1].tokens = orv.tokens;
-        if (orv.cost_usd != null) rec.others[rec.others.length - 1].cost_usd = orv.cost_usd;
+        }, orv));
       }
     });
     if (!rec.others.length) delete rec.others;
@@ -2669,7 +2597,7 @@
     if (!JD_store.set(K_ITEMS, list) && list.length > 1) {
       JD_store.set(K_ITEMS, list.slice(0, list.length - 1));
     }
-    work.placed = !!dropIntoPile(rec, true);
+    dropIntoPile(rec, true);
   }
 
   /* the taxonomy-derived half of a won item's specimen tag. Split out because
@@ -2692,7 +2620,7 @@
     el.dataset.tier = rec.sizeClass || VISITOR_TIER;   /* the z band (JD_zBase) */
   }
 
-  function dropIntoPile(rec, animate) {
+  function dropIntoPile(rec, animate, batch) {
     var pile = document.querySelector('.jd-pile');
     if (!pile || !rec || !rec.svg || !window.JD_svgInst) return null;
     if (pile.querySelector('[data-id="' + rec.gen_id + '"]')) return null;
@@ -2716,27 +2644,32 @@
     pile.appendChild(el);
     /* reframe before sizing: a live-generated drawing can overshoot the
        frame it declares, and applySize's aspect read (svgAspect) must see
-       the expanded viewBox — see fitView at the top of the file. Same
+       the expanded viewBox — see fitView in jd-core.js. Same
        generation key the turn plates used, so the won item lands in the
        drawer framed exactly as it was on the bench. */
     if (window.JD_fitView) window.JD_fitView(el.querySelector('svg'), 'gen:' + rec.gen_id);
     if (window.JD_applySize) {
-      window.JD_applySize(el, tierBox(rec.sizeClass || VISITOR_TIER), rec.gen_id, 1);
+      window.JD_applySize(el, JD_tierBox(tax(), rec.sizeClass || VISITOR_TIER), rec.gen_id, 1);
     }
     /* position: the visitor's own scatter entry, reused across reloads the
        way every other item's is */
-    var map = JD_store.get(K_SCATTER) || {};
+    var map = JD_store.get(JD_SCATTER_KEY) || {};
     var p = map[rec.gen_id];
+    /* the pile's rect and the item's, read once for both uses below (a
+       fresh spot, the corner push) — nothing between them writes */
+    var host_ = null, r_ = null;
+    if (!p || window.JD_avoidTurn) {
+      host_ = pile.getBoundingClientRect(); r_ = el.getBoundingClientRect();
+    }
     if (!p) {
-      p = freshSpot(el, pile);
+      p = freshSpot(host_, r_);
       map[rec.gen_id] = p;
-      JD_store.set(K_SCATTER, map);
+      JD_store.set(JD_SCATTER_KEY, map);
     }
     /* pushed clear of the turn button's reserved corner at apply time, same as
        the curated pile — a stored spot can predate the rule or a viewport
        change; the stored value itself stays untouched */
     if (window.JD_avoidTurn) {
-      var host_ = pile.getBoundingClientRect(), r_ = el.getBoundingClientRect();
       var rad_ = (p.rot || 0) * Math.PI / 180;
       var c_ = Math.abs(Math.cos(rad_)), s_ = Math.abs(Math.sin(rad_));
       var w_ = r_.width || 40, h_ = r_.height || 40;
@@ -2756,25 +2689,49 @@
       JD_haptic('drop');
     }
     /* it is a standard .jd-item from here: drag, rotate, tap-to-pick and the
-       specimen tag all bind through the ordinary wiring, no special case */
+       specimen tag all bind through the ordinary wiring, no special case.
+       (A batch — restoreWon — does the wiring and the filing itself, once
+       the last of its items is down.) */
+    if (batch) return el;
     if (window.JD_wirePile) window.JD_wirePile();
     markCard(el, registerRecord(rec, title));
     return el;
   }
 
-  function freshSpot(el, pile) {
-    var host = pile.getBoundingClientRect(), r = el.getBoundingClientRect();
+  /* `host` and `r`: the pile's rect and the item's, read by dropIntoPile */
+  function freshSpot(host, r) {
     var hw = Math.min(0.45, (r.width || 40) / 2 / (host.width || 1));
     var hh = Math.min(0.45, (r.height || 40) / 2 / (host.height || 1));
     function inside(half) {
-      var lo = half + 0.012, span = Math.max(0, 1 - 2 * lo);
+      var lo = half + JD_SCATTER_INSET, span = Math.max(0, 1 - 2 * lo);
       return +(lo + Math.random() * span).toFixed(4);
     }
     return {
       x: inside(hw), y: inside(hh),
-      rot: +((Math.random() * 2 - 1) * ROT_MAX).toFixed(1),
+      rot: +((Math.random() * 2 - 1) * JD_ROT_MAX).toFixed(1),
       z: 100
     };
+  }
+
+  /* one response of a won item's entry, as the report card reads it: the
+     winner's (`src` = the stored record, rid r1) and each loser's alike.
+     The cost fields (2026-08-15) ride the RESPONSE, not the entry, so the
+     strip's per-response notes can each state their own spend. Records
+     persisted before this simply lack them, and the card omits the lines. */
+  function respFor(rid, src, day) {
+    return withCost({
+      /* gen_id rides the response so the card frames this drawing under the
+         SAME key the bench and the pile used for it (see fitKey in
+         jd-record.js, fitView in jd-core.js) */
+      rid: rid, file: src.gen_id + '.svg', gen_id: src.gen_id, model: src.model_id, date: day,
+      generation: { mode: 'one-shot', prompt_count: 1 },
+      grade: src.grade, annotations: src.annotations || {},
+      /* a data: URL, and the ONLY thing the card may do with it is hang it
+         off the download link — the entry's `visitor: true` (registerRecord)
+         stops ensureSVGs from ever treating it as a path to join to JD_API
+         (APP §4.1); the SVG text itself is primed into the cache there */
+      url: svgDataUrl(src.svg), transcript_url: null
+    }, src);
   }
 
   /* The report card renders entirely from the payload, so a won item earns a
@@ -2787,23 +2744,7 @@
     if (byId(payload.items, rec.gen_id)) return true;   /* already filed */
     var file = rec.gen_id + '.svg';
     var day = String(rec.won_at || '').slice(0, 10);
-    var responses = [{
-      /* gen_id rides the response so the card frames this drawing under the
-         SAME key the bench and the pile used for it (see fitKey / fitView) */
-      rid: 'r1', file: file, gen_id: rec.gen_id, model: rec.model_id, date: day,
-      generation: { mode: 'one-shot', prompt_count: 1 },
-      grade: rec.grade, annotations: rec.annotations || {},
-      /* a data: URL, and the ONLY thing the card may do with it is hang it
-         off the download link — `visitor: true` above stops ensureSVGs from
-         ever treating it as a path to join to JD_API (APP §4.1); the SVG
-         text itself is primed into the cache below */
-      url: svgDataUrl(rec.svg), transcript_url: null
-    }];
-    /* the cost fields (2026-08-15) ride the RESPONSE, not the entry, so the
-       strip's per-response notes can each state their own spend. Records
-       persisted before this simply lack them, and the card omits the lines. */
-    if (rec.tokens) responses[0].tokens = rec.tokens;
-    if (rec.cost_usd != null) responses[0].cost_usd = rec.cost_usd;
+    var responses = [respFor('r1', rec, day)];
     var primed = {};
     primed[rec.gen_id + '/' + file] = rec.svg;
     /* the turn's OTHER responses file as r2, r3 (owner request, 2026-08-12;
@@ -2817,14 +2758,7 @@
     loserRecs.forEach(function (alt, ai) {
       if (!alt.svg || !alt.gen_id) return;
       var afile = alt.gen_id + '.svg';
-      responses.push({
-        rid: 'r' + (ai + 2), file: afile, gen_id: alt.gen_id, model: alt.model_id, date: day,
-        generation: { mode: 'one-shot', prompt_count: 1 },
-        grade: alt.grade, annotations: alt.annotations || {},
-        url: svgDataUrl(alt.svg), transcript_url: null
-      });
-      if (alt.tokens) responses[responses.length - 1].tokens = alt.tokens;
-      if (alt.cost_usd != null) responses[responses.length - 1].cost_usd = alt.cost_usd;
+      responses.push(respFor('r' + (ai + 2), alt, day));
       primed[rec.gen_id + '/' + afile] = alt.svg;
     });
     payload.items.unshift({
@@ -2859,9 +2793,26 @@
   }
   function restoreWon() {
     /* oldest first, so the newest ends up nearest the top of the pile */
-    storedWon().slice().reverse().forEach(function (rec) {
-      if (rec && rec.gen_id && rec.svg) dropIntoPile(rec, false);
-    });
+    var down = [];
+    try {
+      storedWon().slice().reverse().forEach(function (rec) {
+        if (!(rec && rec.gen_id && rec.svg)) return;
+        var el = dropIntoPile(rec, false, true);
+        if (el) down.push({ el: el, rec: rec });
+      });
+    } finally {
+      /* …then the pile is wired ONCE rather than once per item (JD_wirePile
+         is idempotent and walks the whole well every call), and each item's
+         card is filed after it, as a single drop does it, so every item
+         ends up exactly as a drop leaves it. Only if something actually
+         went down: with nothing restored, nothing is wired early. */
+      if (down.length) {
+        if (window.JD_wirePile) window.JD_wirePile();
+        down.forEach(function (d) {
+          markCard(d.el, registerRecord(d.rec, d.rec.title || shortTitle(d.rec.prompt)));
+        });
+      }
+    }
   }
   /* the payload arrived after the items were already down: fill in the tag
      strings that only the taxonomy can supply, and file the report cards */
@@ -2884,7 +2835,6 @@
   JD_store.remove(K_TURN);
   /* the won items go back into the drawer now, on the visitor's own stored
      copies — the payload is not a precondition (see setData) */
-  restored = true;
   restoreWon();
 
   /* A RERUN — the curator re-issuing a curated item's original prompt to the
@@ -2902,18 +2852,14 @@
     open();
     /* the acknowledgment the generate button would have recorded — the
        disclosure lives on the card itself since 2026-08-14 */
-    if (!hasConsent()) {
-      JD_store.set(K_CONSENT, {
-        version: JD_CONSENT.version, at: new Date().toISOString()
-      });
-    }
+    recordConsent();
     startTurn();
     return true;
   }
 
   /* ---------- CURATE MODE — the re-rating bench (owner, 2026-08-28) --------
-     The backlog instrument IS this card. JD_bench (the ?bench driver at the
-     foot of this file) hands over one curated item at a time and the card
+     The backlog instrument IS this card. JD_bench (the ?bench driver,
+     jd-bench.js) hands over one curated item at a time and the card
      runs its ordinary rate machinery on it — the same benchPanel, rail and
      podium a visitor gets, so every hour spent re-rating is spent inside the
      real instrument, and every refinement made to it ships to visitors.
@@ -2953,12 +2899,7 @@
          caller is the /about/ walkthrough, which has to be able to say
          "this one is Kimi's" and drive the rail to it. The bench never
          sets it, so its blind deal is untouched (2026-09-14). */
-      if (!job.fixedOrder) {
-        for (var i = order.length - 1; i > 0; i--) {
-          var j = Math.floor(Math.random() * (i + 1));
-          var t = order[i]; order[i] = order[j]; order[j] = t;
-        }
-      }
+      if (!job.fixedOrder) JD_shuffle(order);
       order.forEach(function (resp, k) {
         var slot = JD_SLOTS[k];
         work.slots[slot] = {
@@ -3031,22 +2972,15 @@
         rank: ok.length > 1 ? (podRankOf(s) || null) : null
       };
     });
-    setDisabled('[data-act="file"]', true);
-    setDisabled('[data-act="retry-file"]', true);
-    var mine = token;
+    var mine = armFiling();
     curJob.file(per, work.size || null).then(function () {
       if (mine !== token || !isOpen || !curJob) return;
       curateUnveil();
     }, function (err) {
       if (mine !== token || !isOpen || !curJob) return;
       var code = (err && err.code) || 'server_error';
-      paint(head('The grades didn’t file', 6) +
-        '<p class="jd-turn-line">The drawer couldn’t record them ' +
-        '(<b>' + esc(code) + '</b>). Your answers are still on the card, and ' +
-        'refiling replaces rather than doubles.</p>' +
-        actions('<button type="button" class="jd-turn-go" data-act="retry-file">try filing again</button>' +
-          '<button type="button" class="jd-turn-alt" data-act="done">close</button>'));
-      focusFirst();
+      paintFileFailure(code, 'Your answers are still on the card, and ' +
+        'refiling replaces rather than doubles.');
     });
   }
 

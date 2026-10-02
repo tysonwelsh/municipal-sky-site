@@ -50,7 +50,8 @@ charts unchanged. Backups: `~/Desktop/municipal-sky-db-backup-2026-09-27.sql`
 (before) and `…-2026-09-27-1850.sql` (immediately before the first write).
 
 **The guard, so it cannot recur silently (2026-09-27):**
-`jd_slot_capacity()` in `api/jd-curated-sync.php` reads the LIVE width of the
+`jd_slot_capacity()` in `api/jd-config.php` (beside `jd_has_column`, since
+2026-10-01; in `api/jd-curated-sync.php` before) reads the LIVE width of the
 `slot` column (information_schema on MySQL, the CHECK in `sqlite_master` on
 SQLite). The sync refuses an item that would not fit with a sentence that
 names this runbook, and `api/jd-backfill-curated.php` refuses up front when

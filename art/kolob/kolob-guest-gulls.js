@@ -17,14 +17,14 @@
 // a second bird answers the end of the phrase, and now and then the flock
 // wheels round and one more bird calls its first notes from far off.
 //
-// THE TRACE, and the wave-1 fix. A gull's cry lives between about 650 and
-// 1400 Hz, and a hymn's head lives two octaves under that, so the head is
-// moved up — by ONE octave shift for the whole head (the one putting its
-// middle nearest 954 Hz), never a note folded on its own: folding each note
-// into the gulls' register sent a tune's last rise down a seventh (wave 1's
-// "…1061 593 650"), and the joke is only a joke if the shape survives. The
-// others' cries are pitches taken from the head as well, kept within the
-// lead's own span, so the flock never argues with the tune it is quoting.
+// THE TRACE. A gull's cry lives between about 650 and 1400 Hz, and a hymn's
+// head lives two octaves under that, so the head is moved up — by ONE
+// octave shift for the whole head (the one putting its middle nearest 954
+// Hz), never a note folded on its own: folding each note into the gulls'
+// register would send a tune's last rise down a seventh, and the joke is
+// only a joke if the shape survives. The others' cries are pitches taken
+// from the head as well, kept within the lead's own span, so the flock
+// never argues with the tune it is quoting.
 //
 // PURE PLANNING. plan(), decide(), prepare() and score() touch no
 // AudioContext, DOM, clock or Math.random: every die is the stream's —
@@ -86,9 +86,8 @@ window.KOLOB.GuestGulls = (function () {
     return stream;
   }
   function oddsFor(info) {
-    // (round 3c: a meeting hands its odds in, info.odds, from the calendar's
-    // one table — KOLOB.Calendar.GUEST_ODDS; a lab without it reads this
-    // room's own, below)
+    // (the meeting hands this room its odds from Calendar.GUEST_ODDS,
+    // info.odds; a lab without them reads the room's own ODDS)
     if (info && info.odds != null) return Math.max(0, Math.min(1, +info.odds));
     var w = ODDS.weight, k = info.sunday && w[info.sunday] != null ? info.sunday : info.kind;
     return Math.min(ODDS.cap, ODDS.base * (w[k] != null ? w[k] : 1));
@@ -112,8 +111,8 @@ window.KOLOB.GuestGulls = (function () {
   function decide(info, stream) {
     info = info || {};
     var rs = need(stream).fork("seat");
-    var roll = rs.next(), seatDie = rs.next(), atU = rs.next();
-    shapeOf(stream);
+    var roll = rs.next(), seatDie = rs.next(), atU = rs.next();     // DICE: every die, first
+    shapeOf(stream);                                                  // DICE: drawn and discarded — it forks "shape", so the stream's order stands whether the flock is seated or not
     var p = oddsFor(info), why = null, secs = info.sections || [], guests = info.guests || [];
     function has(fn) { for (var j = 0; j < guests.length; j++) if (guests[j] && fn(guests[j])) return true; return false; }
     function free(i) {
@@ -287,4 +286,4 @@ window.KOLOB.GuestGulls = (function () {
     get LEVEL() { return LEVEL; }, set LEVEL(v) { LEVEL = +v; },
   };
 })();
-(window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-guest-gulls.js"] = true;   // the load guard's roll call (round 3c: the gulls)
+(window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-guest-gulls.js"] = true;   // the load guard's roll call

@@ -1,7 +1,7 @@
 // ============================================================================
 // KOLOB — kolob-hymnal.js: the day's hymnal
 //
-// Round 3's integration: the meeting sings composed hymns. The composer
+// The meeting sings composed hymns. The composer
 // (kolob-composer.js) writes a hymn at a desk of its own; this room is the
 // chorister's hymnal for one Sunday — which style the house sings in, each
 // hymn's style and key, the order the hymns are written in — and the errand
@@ -17,17 +17,17 @@
 // the Tabernacle, with gospel after it; a jubilee to the Tabernacle and the
 // gospel ring; an ordinary Sunday mixes. Each hymn then draws its own
 // dialect, weighted toward the house's. (A dialect is drawn only once
-// KOLOB.Dialects has built it; all six are built since round 3.) The
-// calendar's Sundays (step 4) lean the odds further: SUNDAY_LEAN, KIND_LEAN.
+// KOLOB.Dialects has built it; all six are built.) The calendar's Sunday
+// leans the odds further: SUNDAY_LEAN, KIND_LEAN.
 //
-// THE DAY'S FORMS (round 3b, step 3: forms, below) — a round, the partner
+// THE DAY'S FORMS (forms, below) — a round, the partner
 // hymn, the wandering refrain, and the doxology's one payoff — are drawn with
 // the plan on their own stream, and the composer's desk writes them as it
 // writes the hymns: a round (round()), the partner on the first hymn
 // (partner()), the refrain as written (wanderingRefrain()) and each of its
 // statements set in the key and dialect of the hymn it follows (refrainIn()).
 //
-// THE LIGHT (round 3b, step 4; PLAN §7.3). Each hymn's dialect is drawn
+// THE LIGHT (PLAN §7.3). Each hymn's dialect is drawn
 // leaning by the light of its section, from the calendar's arc: a hymn sung
 // early in the morning leans to the plain and open styles (the Sacred Harp,
 // the Old Way, the Shakers), the hymns grow fuller one after another, and
@@ -35,7 +35,7 @@
 // — the sevenths, the full organ (KOLOB.Calendar.dialectLean). The house
 // dialect itself is the Sunday's, drawn as before.
 //
-// THE RECKONING (round 3b, step 4; PLAN §7.2). On a Sunday the drone reckons
+// THE RECKONING (PLAN §7.2). On a Sunday the drone reckons
 // (kolob-calendar.js), the doxology's order carries the sections before it:
 // the desk writes the doxology — the composer's first, and then up to
 // RECKON_CANDIDATES − 1 more (23) on the stream's reckoning:<k> forks — and
@@ -64,7 +64,8 @@
 //      loaded), and the finished hymns come back by message — the main
 //      thread pays only the copy;
 //   2. else in idle slices of the main thread (a timer, one hymn a slice),
-//      outside every clock callback;
+//      outside every clock callback, while the meeting they are for plays
+//      (THE IDLE ROAD, below);
 //   3. and if a hymn is asked for before it has come back — a slow machine,
 //      a worker that failed to load — it is written there and then, and the
 //      hymnal says so (stats().late). The hymn is the same hymn by every
@@ -76,7 +77,7 @@
 //   plan(info, R)       → { house, rows } (pure: the day's dialects and keys)
 //   forms(info, rows, R) → { round, partner, refrain, payoff, dice } (pure;
 //                          marks the rows it makes a round or a partner)
-//   prepare(seed, n, rows, forms)  the orders, posted (the forms' too)
+//   prepare(seed, n, rows, forms, reckon)  the orders, posted (the forms' too, and the reckoning's on the doxology's)
 //   get(id), ready(id), hymnOf(id), book()   the hymns
 //   stats(), warm(), backend(), setBackend(name)
 //   timeline(h, lines, beatS), verseSeconds(h, beatS)   (pure helpers)
@@ -96,9 +97,8 @@ window.KOLOB = window.KOLOB || {};
   // (weights; a dialect the composer has not built yet is left out of the
   // pool when it is read. An ordinary Sunday mixes, the Tabernacle — the
   // home dialect, PLAN §3.C — leading it. Measured over 2000 first meetings
-  // of the calendar (round 3b, step 3): the house is the Tabernacle 43 %,
-  // the Sacred Harp 23 %, the Old Way 12 %, gospel 9 %, the psalmody 8 %,
-  // the Shakers 5 %; handoff r3b-styles-1 has each kind's)
+  // of the calendar: the house is the Tabernacle 43 %, the Sacred Harp
+  // 23 %, the Old Way 12 %, gospel 9 %, the psalmody 8 %, the Shakers 5 %)
   var HOUSE_ODDS = {
     ordinary:   { tabernacle: 5.0, sacredharp: 2.4, oldway: 1.5, psalmody: 1.2, gospel: 0.8, shaker: 0.6 },
     fast:       { sacredharp: 4.2, oldway: 3.4, tabernacle: 0.7, psalmody: 1.0, shaker: 0.8 },
@@ -118,18 +118,17 @@ window.KOLOB = window.KOLOB || {};
   };
   var HOUSE_W = 6;
   // the brush arbor (the prelude's seating with no organ) is the Sacred
-  // Harp's own place: an arbor morning leans the house to it — and, since
-  // round 3b, to its elder sister the psalmody (the fuging tunes were
+  // Harp's own place: an arbor morning leans the house to it — and to its
+  // elder sister the psalmody (the fuging tunes were
   // Yankee meeting-house music, sung without an organ, as the arbor sings)
   var ARBOR_LEAN = { sacredharp: 2.2, oldway: 1.4, psalmody: 1.6 };
-  // THE CALENDAR'S SUNDAYS (PLAN-COMPOSITION §7.1 — FORM's, round 3b step
-  // 4). The four kinds above are the house's own; when the calendar names
-  // the Sunday (info.sunday), its lean multiplies the kind's odds — the
-  // hooks are here now so that step 4 only names the day. Christmas sings
-  // shape-note carols and the Primary; Pioneer Day the gospel ring; Easter
-  // and a dedication the Tabernacle in full; a funeral is slow and hopeful
-  // (the Tabernacle's "all is well", the Old Way); a wedding gentle. Until
-  // the calendar is drawn, info.sunday is null and nothing here is read.
+  // THE CALENDAR'S SUNDAYS (PLAN-COMPOSITION §7.1). The four kinds above are
+  // the house's own; the calendar's Sunday (info.sunday) multiplies the
+  // kind's odds by its lean. Christmas sings shape-note carols and the
+  // Primary; Pioneer Day the gospel ring; Easter and a dedication the
+  // Tabernacle in full; a funeral is slow and hopeful (the Tabernacle's "all
+  // is well", the Old Way); a wedding gentle. (A caller that names no Sunday
+  // — a lab — reads nothing here.)
   var SUNDAY_LEAN = {
     christmas:  { shaker: 2.4, sacredharp: 1.4, psalmody: 1.2 },
     pioneer:    { gospel: 2.6, shaker: 1.3, sacredharp: 1.2 },
@@ -140,8 +139,8 @@ window.KOLOB = window.KOLOB || {};
   };
   // …and which of the unison song's three kinds (dialect E) the Sunday
   // leans to: Christmas and a wedding the children's Primary song, Pioneer
-  // Day the Shakers' dancing hymn. (The composer draws the kind itself; a
-  // lean is handed down only when the calendar names the day.)
+  // Day the Shakers' dancing hymn. (The composer draws the kind itself; the
+  // lean is handed down with the Sunday.)
   var KIND_LEAN = { christmas: "primary", wedding: "primary", pioneer: "shaker" };
 
   // THE KEYS — a monzo relative to the day's keynote. A just fourth either
@@ -182,15 +181,15 @@ window.KOLOB = window.KOLOB || {};
       var dox = s.type === "doxology";
       // the hymn's dialect: the house's, or a neighbour now and then; the
       // doxology leans to the Tabernacle's brightness on a Tabernacle or an
-      // ordinary Sunday — and (round 3b, step 4, after the critic) to the
-      // gospel ring's, its sevenths — and keeps the house's voice on a
+      // ordinary Sunday — and to the gospel ring's, its sevenths — and
+      // keeps the house's voice on a
       // fast one
       var nb = NEIGHBOURS[house] || {}, table = {};
       table[house] = HOUSE_W;
       for (var d in nb) if (d !== house) table[d] = nb[d];
       if (dox && house !== "sacredharp" && house !== "oldway") { table.tabernacle = (table.tabernacle || 0) + 2; table.gospel = (table.gospel || 0) + 0.8; }
       // (the light of the hymn's section leans it: plain early, the
-      // Tabernacle and the gospel ring at full light — round 3b, step 4)
+      // Tabernacle and the gospel ring at full light)
       var litLean = s.light != null && KOLOB.Calendar && KOLOB.Calendar.dialectLean ? KOLOB.Calendar.dialectLean(s.light) : null;
       // (and the Sunday leans its doxology: a funeral rising into the
       // Tabernacle's "all is well", Easter's and a dedication's full
@@ -205,7 +204,7 @@ window.KOLOB = window.KOLOB || {};
         if (kDie >= pHome) key = awayDie < 0.55 ? "dom" : "sub";
       }
       prevAway = key !== "home";
-      // the material line one is seeded from (step 4 of the composer): the
+      // the material line one is seeded from (the composer's gestures): the
       // day's theme for the first hymn and for the doxology — the theme comes
       // home at the end — and the day's other gestures between. On a
       // withheld Sunday (the cumulative form) only the doxology may carry the
@@ -219,7 +218,7 @@ window.KOLOB = window.KOLOB || {};
         meter: s.meter || null, dialect: dialect, key: key, keyMonzo: KEYS[key].slice(), mode: s.mode || info.mode, light: s.light != null ? s.light : null,
         gestures: g && g.length ? [g.slice()] : null,
       });
-      // (the calendar's lean on the unison song's kind: step 4's hook)
+      // (the calendar's lean on the unison song's kind)
       if (dialect === "shaker" && info.sunday && KIND_LEAN[info.sunday]) rows[rows.length - 1].kind = KIND_LEAN[info.sunday];
       // (and a Tabernacle hymn in full light is written by a hymnist who
       // leans to the sevenths and the secondary dominants — the calendar's
@@ -239,8 +238,8 @@ window.KOLOB = window.KOLOB || {};
   }
 
   // ==========================================================================
-  // THE DAY'S FORMS (round 3b, step 3; PLAN-COMPOSITION §14 item 2, §15
-  // item 4) — three pieces that are not one hymn after another, drawn with
+  // THE DAY'S FORMS (PLAN-COMPOSITION §14 item 2, §15 item 4) — three
+  // pieces that are not one hymn after another, drawn with
   // the plan on their own stream (forms:<n>), every die thrown whether it is
   // used or not, so a Sunday without them is the Sunday it was:
   //
@@ -268,12 +267,12 @@ window.KOLOB = window.KOLOB || {};
   //
   // THE DOXOLOGY'S ONE PAYOFF (the rule). The doxology pays off ONE of the
   // meeting's threads: the tune withheld and assembled at last (the
-  // cumulative form), the partner hymn, the refrain — or, on a Sunday with
-  // none of them, the bands crossing it. So the payoff is decided here, on
-  // one die: the assembly when the tune is withheld, else the partner from
-  // the die's bottom and the refrain from its top (the two can never both
-  // land), each where it may sit; the meeting moves the bands out of the
-  // doxology whenever the payoff is another's (kolob-meeting.js).
+  // cumulative form), the partner hymn or the refrain — or none. So the
+  // payoff is decided here, on one die: the assembly when the tune is
+  // withheld, else the partner from the die's bottom and the refrain from
+  // its top (the two can never both land), each where it may sit. (The band
+  // never marches in the doxology — the prelude or the postlude, the
+  // owner's rule — so it is no payoff.)
   //
   // THE ODDS. Each is tuned so that, over the calendar's kinds, the round
   // lands about one meeting in five, the partner hymn is composed for about
@@ -284,8 +283,8 @@ window.KOLOB = window.KOLOB || {};
   // those — the composer's strictness, a loose fit being mud.)
   var FORM_ODDS = { round: 0.22, partner: 0.68, refrain: 0.32 };
   // the first hymns a partner is written on, and the dialect it is written
-  // in — only where the composer's fit check can pass. Measured (hymns of
-  // this round, 14 tries each): the Tabernacle on the Tabernacle combines
+  // in — only where the composer's fit check can pass. Measured (14 tries
+  // each): the Tabernacle on the Tabernacle combines
   // half the time (20 of 40); one tune on one tune nearly always (the
   // Shakers 6 of 7; an Old Way tune, sung plainly as the Shakers sing,
   // under a unison closing hymn 7 of 12). The Sacred Harp (0 of 36), gospel
@@ -429,7 +428,7 @@ window.KOLOB = window.KOLOB || {};
     };
     return h;
   }
-  // THE ORDER'S KIND (round 3b, step 3): a hymn (compose), a round (round),
+  // THE ORDER'S KIND: a hymn (compose), a round (round),
   // the partner hymn on the first hymn (partner, dep: the first hymn), the
   // wandering refrain as written (refrain), or a statement of it set in a
   // later hymn's key and dialect (refrainIn, dep: the refrain) — one
@@ -438,7 +437,7 @@ window.KOLOB = window.KOLOB || {};
   // partner.fit: the composer's own); a partner whose first hymn could not
   // be written is composed on its own.
   function errand(Cm, stream, how, opts, dep) {
-    // THE RECKONING'S DOXOLOGY (round 3b, step 4): written a few ways, the
+    // THE RECKONING'S DOXOLOGY: written a few ways, the
     // first whose opening stands on every section's key kept; else the
     // first as written (a partner is written once: its tune is the first
     // hymn's partner, not the reckoning's to choose)
@@ -476,7 +475,12 @@ window.KOLOB = window.KOLOB || {};
         catch (err) { self.postMessage({ type: "loaded", ok: false, error: String(err && err.message || err) }); }
         return;
       }
-      if (m.type === "forget") { for (var k in cache) if (k.indexOf(m.prefix) === 0) delete cache[k]; return; }
+      if (m.type === "forget") {
+        // (the hymns AND the refrain statements of the meeting let go: h:<n>:* and r:<n>:*)
+        var fp = m.prefixes || [m.prefix];
+        for (var k in cache) for (var q = 0; q < fp.length; q++) if (k.indexOf(fp[q]) === 0) { delete cache[k]; break; }
+        return;
+      }
       if (m.type !== "compose") return;
       var t0 = self.performance && self.performance.now ? self.performance.now() : 0, h = null, err = null;
       try {
@@ -489,28 +493,26 @@ window.KOLOB = window.KOLOB || {};
       self.postMessage({ type: "hymn", key: m.key, hymn: h, error: err, ms: ms });
     };
   }
-  // the composer's rooms, in the order the page loaded them (the worker loads
-  // the same files at the same versions — the same bytes, the same hymns)
+  // THE DESK'S ROOMS: which of the engine's rooms the composer needs. The
+  // worker loads them from the page's own script tags, in the page's order
+  // and at the page's versions — the same bytes, the same hymns — and the
+  // page prints its tags from _engine.php's one list, so the list alone
+  // says the order; this names the rooms, not where they stand
+  // (tools/loadcheck.js checks that what the worker would load is on the
+  // list, in its order).
   var DESK_FILES = ["pj2-rand.js", "kolob-pitch.js", "kolob-score.js", "kolob-tunes.js", "kolob-dialects.js", "kolob-hymnists.js", "kolob-composer.js"];
-  // (and the calendar, where the page has it: the reckoning is read there —
-  // round 3b, step 4; a lab without it writes no reckoned doxology)
+  // (and the calendar, where the page has it: the reckoning is read there;
+  // a lab without it writes no reckoned doxology)
   var DESK_OPTIONAL = ["kolob-calendar.js"];
   function deskUrls() {
     if (typeof document === "undefined" || !document.getElementsByTagName) return null;
-    var scripts = document.getElementsByTagName("script"), urls = [];
-    function find(name) {
-      for (var j = 0; j < scripts.length; j++) {
-        var src = scripts[j].src || "";
-        if (src.split("?")[0].split("/").pop() === name) return src;
-      }
-      return null;
+    var scripts = document.getElementsByTagName("script"), urls = [], found = [];
+    for (var j = 0; j < scripts.length; j++) {
+      var src = scripts[j].src || "", name = src.split("?")[0].split("/").pop();
+      if (found.indexOf(name) >= 0 || (DESK_FILES.indexOf(name) < 0 && DESK_OPTIONAL.indexOf(name) < 0)) continue;
+      found.push(name); urls.push(src);
     }
-    for (var i = 0; i < DESK_FILES.length; i++) {
-      var found = find(DESK_FILES[i]);
-      if (!found) return null;
-      urls.push(found);
-    }
-    DESK_OPTIONAL.forEach(function (f) { var u = find(f); if (u) urls.push(u); });
+    for (var i = 0; i < DESK_FILES.length; i++) if (found.indexOf(DESK_FILES[i]) < 0) return null;
     return urls;
   }
 
@@ -541,14 +543,30 @@ window.KOLOB = window.KOLOB || {};
       worker = new Worker(URL.createObjectURL(new Blob([src], { type: "text/javascript" })));
       workerState = "loading";
       worker.onmessage = onWorker;
-      worker.onerror = function (e) { if (e && e.preventDefault) e.preventDefault(); failWorker(); };
+      // (cancelled, so the error is told once — by failWorker's warning,
+      // with its message; left alone, the browser would report it a second
+      // time in the page, as an uncaught error from no line of ours)
+      worker.onerror = function (e) { if (e && e.preventDefault) e.preventDefault(); failWorker("stopped on an error", e && e.message); };
       worker.postMessage({ type: "load", urls: urls });
-    } catch (e) { failWorker(); }
+    } catch (e) { failWorker("could not be started", e && e.message || String(e)); }
     return backend();
   }
-  function failWorker() {
+  // THE WORKER LET GO. A worker that fails — it could not be started (a
+  // page whose policy refuses a worker made from a blob), it could not load
+  // the composer's rooms, or it stopped on an error — hands its waiting
+  // hymns to the idle road, and the page is told: one console.warn for each
+  // way it failed, with the error's own words (a warning, not an error: the
+  // meeting is not harmed, its hymns are written on the main thread). A page
+  // with no Worker at all, or no script tags to find the rooms by (a bench),
+  // takes the idle road from the start and says nothing: that is not a fault.
+  var workerTold = {};
+  function failWorker(how, msg) {
     workerState = "failed";
-    try { if (worker) worker.terminate(); } catch (e) {}
+    if (!workerTold[how] && typeof console !== "undefined" && console.warn) {
+      workerTold[how] = true;
+      console.warn("Kolob: the composer's worker " + how + (msg ? " (" + msg + ")" : "") + " — its hymns are written on the main thread's idle road instead");
+    }
+    try { if (worker) worker.terminate(); } catch (e) { if (S.confess) S.confess("the composer's worker could not be stopped", e); }
     worker = null;
     // whatever was waiting on the worker is written in the idle road instead
     order.forEach(function (k) { var j = jobs[k]; if (j && j.state === "posted") j.state = "queued"; });
@@ -557,7 +575,7 @@ window.KOLOB = window.KOLOB || {};
   function onWorker(e) {
     var m = e.data || {};
     if (m.type === "loaded") {
-      if (!m.ok) { failWorker(); return; }
+      if (!m.ok) { failWorker("could not load the composer's rooms", m.error || "no KOLOB.Composer after the load"); return; }
       workerState = "ready";
       return;
     }
@@ -565,7 +583,12 @@ window.KOLOB = window.KOLOB || {};
     var t0 = clock();
     var j = jobs[m.key];
     if (!j || j.hymn) return;                    // (written here already, while it was on its way)
-    if (m.error || !m.hymn) { j.state = "queued"; j.error = m.error; st.failed++; armIdle(); return; }
+    if (m.error || !m.hymn) {
+      // (counted and written again on the idle road; the fault is told, by its key)
+      j.state = "queued"; j.error = m.error; st.failed++;
+      if (S.confess) S.confess("the composer's worker could not write " + m.key, m.error || "no hymn came back");
+      armIdle(); return;
+    }
     j.hymn = m.hymn; j.state = "done"; j.ms = m.ms; j.how = "worker";
     st.composed++; st.byWorker++; st.workerMs.push(Math.round(m.ms));
     st.receiveMs.push(+(clock() - t0).toFixed(2));
@@ -583,16 +606,17 @@ window.KOLOB = window.KOLOB || {};
   // just after the first hymn (they are sung minutes before the rest). The
   // refrain's orders stand aside: no hymn is written knowing them, and they
   // take no number on the board.
-  // (rk, round 3b, step 4: the reckoning's order — {doxId, sections,
-  // candidates} — laid on the doxology's; see THE RECKONING above)
+  // (rk: the reckoning's order — {doxId, sections, candidates} — laid on
+  // the doxology's; see THE RECKONING above)
   function prepare(seed, n, rows, fm, rk) {
+    ordering = { seed: seed, n: n };
     // (the orders of meetings long gone are dropped; the worker forgets them too)
     order = order.filter(function (k) {
       var keep = jobs[k] && jobs[k].n >= n - 1 && jobs[k].seed === seed;
       if (!keep) { if (jobs[k] && jobs[k].hymn) shelve(jobs[k]); delete jobs[k]; }
       return keep;
     });
-    if (worker) worker.postMessage({ type: "forget", prefix: seed + "|h:" + (n - 2) + ":" });
+    if (worker) worker.postMessage({ type: "forget", prefixes: [seed + "|h:" + (n - 2) + ":", seed + "|r:" + (n - 2) + ":"] });
     var earlier = [];
     function post(j) {
       jobs[j.key] = j;
@@ -625,20 +649,37 @@ window.KOLOB = window.KOLOB || {};
     });
     if (backend() === "idle") armIdle();
   }
-  // THE IDLE ROAD — one hymn a slice, on a timer of its own (never a cue)
+  // THE IDLE ROAD — one hymn a slice, on a timer of its own (never a cue).
+  // It writes for the meeting being played, and only while one plays: a
+  // slice that finds the page stopped writes nothing and arms no next one
+  // (a STOP leaves the main thread alone; the road kept writing the stopped
+  // meeting's book, the reckoned doxology's candidates and all, until it
+  // was done), and the next PLAY's orders arm it again. What the stopped
+  // meeting left unwritten stays in the book under its key: written then if
+  // a GATHER of the same seed calls that meeting again (prepare() finds its
+  // orders by key, as it always has), passed over if the visit goes on to
+  // its next meeting, which will never sing them (get() still writes any
+  // order asked for). The composer is pure, so a hymn is the same whenever
+  // it is written. (The worker is not stopped at STOP: it writes off the
+  // main thread only what it was handed, and a composer loaded once serves
+  // every PLAY after; stopped, it would be loaded again at the next and a
+  // hymn it was writing lost.)
+  var ordering = null;           // the meeting the desk last took orders for: { seed, n }
   function armIdle() {
     if (idleArmed || typeof setTimeout === "undefined") return;
     idleArmed = true;
     setTimeout(idleSlice, 0);
   }
+  function forNow(j) { return !!j && !j.hymn && j.state === "queued" && (!ordering || (j.seed === ordering.seed && j.n === ordering.n)); }
   function idleSlice() {
     idleArmed = false;
     if (backend() === "worker" && workerState !== "failed") return;
+    if (S.playing === false) return;               // stopped (a bench without the core's transport has no STOP: the road runs)
     for (var i = 0; i < order.length; i++) {
       var j = jobs[order[i]];
-      if (j && !j.hymn && j.state === "queued") { write(j, "idle"); break; }
+      if (forNow(j)) { write(j, "idle"); break; }
     }
-    for (var k = 0; k < order.length; k++) { var jj = jobs[order[k]]; if (jj && !jj.hymn && jj.state === "queued") { armIdle(); break; } }
+    for (var k = 0; k < order.length; k++) { if (forNow(jobs[order[k]])) { armIdle(); break; } }
   }
   // the composer at this desk: the stream, the earlier hymns, the same lightening
   function write(j, how) {

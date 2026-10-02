@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Junk Drawer Issue Rates</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap">
+<style>
+/* Layout: the analytics folder opened flat. Manila ground, paper cards,
+   the folder's own inks and faces (junk-drawer.css .jd-folder-scrim).
+   One deliberate look, no dark theme: the folder is a paper object. */
+:root {
+  color-scheme: light;
+  --manila: #e8c98e;
+  --manila-lo: #d5b171;
+  --paper: #f7f0dd;
+  --ink: #33240f;
+  --ink-2: rgba(51, 36, 15, 0.78);
+  --ink-3: rgba(51, 36, 15, 0.64);
+  --rule: rgba(74, 53, 18, 0.38);
+  --rule-2: rgba(74, 53, 18, 0.18);
+  --track: rgba(74, 53, 18, 0.075);
+  --band: rgba(74, 53, 18, 0.07);
+  --whisker: #7a746a;
+  /* issues: the grade ramp's Utility red, and a lighter brick for "small" */
+  --red-big: #8f1d12;
+  --red-small: #cf6e56;
+  /* je ne sais quoi: the grade ramp's Prime green, and a lighter moss */
+  --green-has: #0b6a1f;
+  --green-hint: #6ea456;
+  --mono: "Courier Prime", "Courier New", Courier, monospace;
+  --form: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--manila) var(--grain);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 15px;
+  -webkit-text-size-adjust: 100%;
+}
+.folder {
+  max-width: 940px;
+  margin: 0 auto;
+  padding-inline: 16px;
+  padding-block: 28px 56px;
+  display: grid;
+  gap: 18px;
+}
+
+/* ---- page head ---- */
+.head { display: grid; gap: 8px; }
+.eyebrow {
+  margin: 0;
+  font-size: 0.66rem; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+h1 {
+  margin: 0;
+  font-family: var(--form); font-weight: 700; font-size: 1.45rem;
+  line-height: 1.2; text-wrap: balance;
+}
+.dek { margin: 0; max-width: 62ch; font-size: 0.78rem; line-height: 1.65; color: var(--ink-2); }
+
+/* ---- cards: the folder's .fx-card ---- */
+.card {
+  min-width: 0;
+  padding: 14px 15px 16px;
+  background: var(--paper);
+  border: 1px solid var(--rule-2);
+  box-shadow: 2px 3px 8px -3px rgba(40, 24, 4, 0.42);
+}
+.card-title {
+  margin: 0 0 10px;
+  font-family: var(--form); font-weight: 700; font-size: 0.74rem;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink);
+}
+.card-sub { margin: -4px 0 12px; font-size: 0.7rem; line-height: 1.55; color: var(--ink-2); }
+
+/* legend */
+.legend {
+  display: flex; flex-wrap: wrap; gap: 6px 16px;
+  margin: 0 0 14px; padding: 0; list-style: none;
+  font-size: 0.68rem; color: var(--ink-2);
+}
+.legend li { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 18px; height: 9px; display: inline-block; }
+.sw-big { background: var(--red-big); }
+.sw-small { background: var(--red-small); }
+.sw-has { background: var(--green-has); }
+.sw-hint { background: var(--green-hint); }
+.sw-ci { width: 22px; height: 9px; }
+.legend .sep { width: 1px; height: 12px; background: var(--rule); }
+@media (max-width: 620px) { .legend .sep { display: none; } }
+
+/* small multiples: 2 x 2, one column on a phone; every panel keyed */
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 26px; }
+@media (max-width: 620px) { .grid { grid-template-columns: 1fr; gap: 18px; } }
+.panel { min-width: 0; }
+.panel h4 {
+  margin: 0 0 3px;
+  font-family: var(--mono); font-weight: 400; font-size: 0.76rem;
+  letter-spacing: 0.02em; color: var(--ink-2); line-height: 1.35;
+  display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+}
+.panel h4 .what { color: var(--ink-3); font-size: 0.66rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.panel svg { display: block; width: 100%; max-width: 420px; height: auto; overflow: visible; }
+.readout {
+  margin: 4px 0 0; min-height: 2.9em;
+  font-size: 0.68rem; line-height: 1.45; color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.readout b { color: var(--ink); font-weight: 700; }
+
+/* in-SVG type (user units; the viewBox is 300 wide) */
+.t-key { font-family: var(--mono); font-size: 10.5px; fill: var(--ink); }
+.t-val { font-family: var(--mono); font-size: 11px; font-weight: 700; fill: var(--ink); }
+.t-dim { font-family: var(--mono); font-size: 8.5px; fill: var(--ink-3); }
+.row { cursor: pointer; outline: none; }
+.row .hit { fill: transparent; }
+.row.on .hit { fill: var(--band); }
+.row:focus-visible .hit { fill: var(--band); stroke: var(--ink); stroke-width: 1; stroke-dasharray: 2 2; }
+.track { fill: var(--track); }
+.mid { stroke: var(--rule-2); stroke-width: 1; }
+.ci { stroke: var(--whisker); stroke-width: 1.15; fill: none; }
+.dot-track { stroke: var(--rule-2); stroke-width: 1; }
+
+/* reading notes */
+.notes { display: grid; gap: 14px; }
+.notes h2 {
+  margin: 0; font-family: var(--form); font-weight: 700; font-size: 0.74rem;
+  letter-spacing: 0.2em; text-transform: uppercase;
+}
+.notes ul { margin: 0; padding-left: 1.1em; display: grid; gap: 8px; }
+.notes li, .notes p { font-size: 0.76rem; line-height: 1.6; color: var(--ink-2); max-width: 66ch; }
+.notes p { margin: 0; }
+.notes b { color: var(--ink); }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+@media (max-width: 720px) { .two { grid-template-columns: 1fr; } }
+
+/* the counts table */
+details summary {
+  cursor: pointer; font-family: var(--form); font-weight: 700; font-size: 0.74rem;
+  letter-spacing: 0.2em; text-transform: uppercase; list-style-position: outside;
+}
+details summary:focus-visible { outline: 1px dashed var(--ink); outline-offset: 3px; }
+.table-wrap { overflow-x: auto; margin-top: 12px; }
+table { border-collapse: collapse; font-size: 0.7rem; font-variant-numeric: tabular-nums; min-width: 540px; }
+th, td { padding: 5px 9px; text-align: right; border-bottom: 1px solid var(--rule-2); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+thead th { font-weight: 700; color: var(--ink-2); border-bottom: 1px solid var(--rule); }
+tbody tr.axis-head td { text-align: left; font-weight: 700; color: var(--ink); padding-top: 12px; }
+.foot { font-size: 0.64rem; color: var(--ink-3); line-height: 1.6; margin: 0; }
+@media (prefers-reduced-motion: no-preference) {
+  .row .hit { transition: fill 120ms ease; }
+}
+</style>
+</head>
+<body>
+
+<main class="folder">
+  <header class="head">
+    <p class="eyebrow">The Junk Drawer · Analytics · Mockup 47</p>
+    <h1>Issue rates for the four categories</h1>
+    <p class="dek">The same ratings the folder averages today, counted instead as how often each model has a problem, and how often it has the spark. Tap any bar for its counts.</p>
+  </header>
+
+  <section class="card" aria-labelledby="t-new">
+    <h3 class="card-title" id="t-new">The four categories</h3>
+    <ul class="legend" aria-label="legend">
+      <li><span class="sw sw-big"></span>big problem</li>
+      <li><span class="sw sw-small"></span>small problem</li>
+      <li class="sep" aria-hidden="true"></li>
+      <li><span class="sw sw-has"></span>has it</li>
+      <li><span class="sw sw-hint"></span>just a hint</li>
+      <li class="sep" aria-hidden="true"></li>
+      <li><svg class="sw-ci" viewBox="0 0 22 9" aria-hidden="true"><path d="M1 1v7M1 4.5h20M21 1v7" stroke="#7a746a" stroke-width="1.2" fill="none"/></svg>95% interval</li>
+    </ul>
+    <div class="grid" id="rates"></div>
+  </section>
+
+  <section class="card notes" aria-labelledby="t-read">
+    <h2 id="t-read">Reading it</h2>
+    <ul id="findings"></ul>
+  </section>
+
+  <section class="card" aria-labelledby="t-old">
+    <h3 class="card-title" id="t-old">For comparison: what the folder shows now</h3>
+    <p class="card-sub">The average per category, same ratings. Each panel is its own scale.</p>
+    <div class="grid" id="avgs"></div>
+  </section>
+
+  <section class="card notes" aria-labelledby="t-how">
+    <h2 id="t-how">How it counts</h2>
+    <div class="two">
+      <ul>
+        <li><b>Understanding Assignment</b> has four levels. Mostly Understands counts as a small problem; Somewhat or Barely Understands counts as a big one.</li>
+        <li><b>Structural Coherence</b> and <b>Layering</b> map directly: Small problems and Big problems.</li>
+        <li><b>Je ne sais quoi</b> measures what goes right, so it is counted the other way: the hit rate is Has it plus Just a hint, with Has it in the dark segment.</li>
+      </ul>
+      <ul>
+        <li>The printed figure is the whole bar. The dark segment at the base is the severe (or best) share of it.</li>
+        <li>Whiskers are 95% Wilson intervals on the whole bar. At about 45 drawings a model they span roughly ±14 points, so bars whose whiskers overlap are not a real difference yet.</li>
+        <li>Every panel uses the same 0–100% ruler, so the categories can be compared with each other, not only within themselves.</li>
+      </ul>
+    </div>
+    <p class="foot" id="source"></p>
+  </section>
+
+  <section class="card">
+    <details>
+      <summary>The counts behind the bars</summary>
+      <div class="table-wrap"><table id="counts"></table></div>
+    </details>
+  </section>
+</main>
+
+<script>
+(function () {
+  /* Ratings from the entry.json files under art/junk-drawer/items, 2026-09-30: every
+     response by these four models on the 45 prompts all four answered
+     (reruns included). Keys are the taxonomy's ranks, 1 = worst. */
+  var DATA = {"models":[{"id":"claude-opus-5","label":"Claude Opus 5"},{"id":"gemini-3-1-pro","label":"Gemini 3.1 Pro"},{"id":"kimi-k3","label":"Kimi K3"},{"id":"gpt-5-1","label":"GPT-5.1"}],"axes":[{"id":"understanding-assignment","label":"Understanding Assignment","points":4,"counts":{"claude-opus-5":{"2":11,"3":18,"4":23},"gemini-3-1-pro":{"2":9,"3":18,"4":18},"kimi-k3":{"1":1,"2":11,"3":17,"4":16},"gpt-5-1":{"1":8,"2":21,"3":8,"4":8}}},{"id":"structural-coherence","label":"Structural Coherence","points":3,"counts":{"claude-opus-5":{"1":8,"2":19,"3":25},"gemini-3-1-pro":{"1":9,"2":22,"3":14},"kimi-k3":{"1":11,"2":22,"3":12},"gpt-5-1":{"1":29,"2":13,"3":3}}},{"id":"layering","label":"Layering","points":3,"counts":{"claude-opus-5":{"1":2,"2":16,"3":34},"gemini-3-1-pro":{"1":2,"2":12,"3":31},"kimi-k3":{"1":3,"2":15,"3":27},"gpt-5-1":{"1":12,"2":19,"3":14}}},{"id":"jnsq","label":"Je ne sais quoi","points":3,"counts":{"claude-opus-5":{"1":7,"2":23,"3":22},"gemini-3-1-pro":{"1":12,"2":25,"3":8},"kimi-k3":{"1":22,"2":11,"3":12},"gpt-5-1":{"1":31,"2":12,"3":2}}}]};
+  var PROMPTS = 45, AS_OF = '30 Sep 2026';
+
+  var NS = 'http://www.w3.org/2000/svg';
+  var C = {
+    big: '#8f1d12', small: '#cf6e56', has: '#0b6a1f', hint: '#6ea456'
+  };
+
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+  function pct(x) { return Math.round(x * 100) + '%'; }
+
+  /* Wilson score interval, 95% */
+  function wilson(k, n) {
+    if (!n) return [0, 0];
+    var z = 1.959964, p = k / n, z2 = z * z;
+    var den = 1 + z2 / n;
+    var mid = (p + z2 / (2 * n)) / den;
+    var half = z * Math.sqrt(p * (1 - p) / n + z2 / (4 * n * n)) / den;
+    return [Math.max(0, mid - half), Math.min(1, mid + half)];
+  }
+
+  /* one row per model per category: n, the strong segment, the light
+     segment, the whole bar. Issue axes: strong = big problem. JNSQ: strong
+     = has it. */
+  function rowFor(ax, m) {
+    var c = ax.counts[m.id] || {}, n = 0, k;
+    for (k in c) n += c[k];
+    var top = ax.points, strong, light;
+    if (ax.id === 'jnsq') {
+      strong = c['3'] || 0; light = c['2'] || 0;
+    } else if (ax.points === 4) {
+      strong = (c['2'] || 0) + (c['1'] || 0); light = c['3'] || 0;
+    } else {
+      strong = c['1'] || 0; light = c['2'] || 0;
+    }
+    var sum = 0, cnt = 0;
+    for (k in c) { sum += +k * c[k]; cnt += c[k]; }
+    return {
+      id: m.id, label: m.label, n: n, strong: strong, light: light,
+      total: strong + light, clean: c[String(top)] || 0,
+      ci: wilson(strong + light, n), avg: cnt ? sum / cnt : 0
+    };
+  }
+  var AXES = DATA.axes.map(function (ax) {
+    return {
+      id: ax.id, label: ax.label, points: ax.points, jnsq: ax.id === 'jnsq',
+      rows: DATA.models.map(function (m) { return rowFor(ax, m); })
+    };
+  });
+
+  /* ---- geometry: one ruler for all four panels ---- */
+  var W = 300, KEY = 97, X0 = 102, XW = 150, VAL = 298, ROWH = 25, BARH = 12, TOP = 3;
+  function xOf(p) { return X0 + XW * p; }
+
+  function el(name, attrs, parent) {
+    var e = document.createElementNS(NS, name);
+    for (var a in attrs) e.setAttribute(a, attrs[a]);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+
+  function describe(ax, r) {
+    if (ax.jnsq) {
+      return '<b>' + esc(r.label) + '</b> · hit rate <b>' + pct(r.total / r.n) +
+        '</b> (95% ' + pct(r.ci[0]) + '–' + pct(r.ci[1]) + ') · has it ' +
+        r.strong + ', a hint ' + r.light + ', missed ' + (r.n - r.total) +
+        ' · n ' + r.n;
+    }
+    return '<b>' + esc(r.label) + '</b> · issue rate <b>' + pct(r.total / r.n) +
+      '</b> (95% ' + pct(r.ci[0]) + '–' + pct(r.ci[1]) + ') · big ' +
+      r.strong + ', small ' + r.light + ', clean ' + (r.n - r.total) +
+      ' · n ' + r.n;
+  }
+  var HINT = 'Tap a bar for its counts.';
+
+  function panel(ax, host) {
+    var wrap = document.createElement('div');
+    wrap.className = 'panel';
+    wrap.innerHTML = '<h4><span>' + esc(ax.label) + '</span><span class="what">' +
+      (ax.jnsq ? 'hit rate' : 'issue rate') + '</span></h4>';
+    var h = TOP + ax.rows.length * ROWH + 2;
+    var alt = ax.label + ', ' + (ax.jnsq ? 'hit rate' : 'issue rate') + '. ' +
+      ax.rows.map(function (r) {
+        return r.label + ' ' + pct(r.total / r.n) + ', 95% interval ' +
+          pct(r.ci[0]) + ' to ' + pct(r.ci[1]);
+      }).join('. ');
+    var svg = el('svg', { viewBox: '0 0 ' + W + ' ' + h, role: 'img', 'aria-label': alt });
+    var readout = document.createElement('p');
+    readout.className = 'readout';
+    readout.setAttribute('aria-live', 'polite');
+    readout.textContent = HINT;
+
+    /* the 50% hairline, behind every row */
+    el('line', { x1: xOf(0.5), x2: xOf(0.5), y1: TOP, y2: h - 2, class: 'mid' }, svg);
+
+    var rowsEls = [];
+    ax.rows.forEach(function (r, i) {
+      var y = TOP + i * ROWH, cy = y + ROWH / 2, by = cy - BARH / 2;
+      var g = el('g', { class: 'row', tabindex: '0', role: 'button',
+        'aria-label': describe(ax, r).replace(/<[^>]+>/g, '') }, svg);
+      el('rect', { class: 'hit', x: 0, y: y, width: W, height: ROWH }, g);
+      var key = el('text', { x: KEY, y: cy + 3.7, 'text-anchor': 'end', class: 't-key' }, g);
+      key.textContent = r.label;
+      el('rect', { class: 'track', x: X0, y: by, width: XW, height: BARH }, g);
+      var ps = r.strong / r.n, pt = r.total / r.n;
+      var ws = XW * ps, wt = XW * pt;
+      if (ws > 0) el('rect', { x: X0, y: by, width: ws.toFixed(2), height: BARH,
+        fill: ax.jnsq ? C.has : C.big }, g);
+      /* the pale segment butts straight onto the dark one */
+      var lx = X0 + ws, lw = wt - ws;
+      if (lw > 0.4) el('rect', { x: lx.toFixed(2), y: by, width: lw.toFixed(2), height: BARH,
+        fill: ax.jnsq ? C.hint : C.small }, g);
+      /* the whisker: a thin grey line, capped */
+      var x1 = xOf(r.ci[0]), x2 = xOf(r.ci[1]);
+      var d = 'M' + x1.toFixed(2) + ' ' + (cy - 4) + 'v8M' + x1.toFixed(2) + ' ' + cy +
+        'H' + x2.toFixed(2) + 'M' + x2.toFixed(2) + ' ' + (cy - 4) + 'v8';
+      el('path', { d: d, class: 'ci' }, g);
+      var v = el('text', { x: VAL, y: cy + 3.8, 'text-anchor': 'end', class: 't-val' }, g);
+      v.textContent = pct(pt);
+
+      function pick() {
+        rowsEls.forEach(function (o) { o.classList.remove('on'); });
+        g.classList.add('on');
+        readout.innerHTML = describe(ax, r);
+      }
+      g.addEventListener('click', pick);
+      g.addEventListener('focus', pick);
+      g.addEventListener('pointerenter', function (e) { if (e.pointerType === 'mouse') pick(); });
+      g.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); }
+      });
+      rowsEls.push(g);
+    });
+    wrap.appendChild(svg);
+    wrap.appendChild(readout);
+    host.appendChild(wrap);
+  }
+
+  /* the current folder's reading: a dot on a 1..N ruler per model */
+  function avgPanel(ax, host) {
+    var wrap = document.createElement('div');
+    wrap.className = 'panel';
+    wrap.innerHTML = '<h4><span>' + esc(ax.label) + '</span><span class="what">average, 1–' +
+      ax.points + '</span></h4>';
+    var h = TOP + ax.rows.length * ROWH + 2;
+    var svg = el('svg', { viewBox: '0 0 ' + W + ' ' + h, role: 'img',
+      'aria-label': ax.label + ' average, 1 to ' + ax.points + '. ' + ax.rows.map(function (r) {
+        return r.label + ' ' + r.avg.toFixed(1);
+      }).join('. ') });
+    ax.rows.forEach(function (r, i) {
+      var cy = TOP + i * ROWH + ROWH / 2;
+      var key = el('text', { x: KEY, y: cy + 3.7, 'text-anchor': 'end', class: 't-key' }, svg);
+      key.textContent = r.label;
+      el('line', { x1: X0, x2: X0 + XW, y1: cy, y2: cy, class: 'dot-track' }, svg);
+      var x = X0 + XW * (r.avg - 1) / (ax.points - 1);
+      el('circle', { cx: x.toFixed(2), cy: cy, r: 4.2, fill: '#5b4526' }, svg);
+      var v = el('text', { x: VAL, y: cy + 3.8, 'text-anchor': 'end', class: 't-val' }, svg);
+      v.textContent = r.avg.toFixed(1);
+    });
+    wrap.appendChild(svg);
+    host.appendChild(wrap);
+  }
+
+  var rates = document.getElementById('rates'), avgs = document.getElementById('avgs');
+  AXES.forEach(function (ax) { panel(ax, rates); avgPanel(ax, avgs); });
+
+  /* ---- findings, written from the numbers ---- */
+  function R(axId, mId) {
+    var ax = AXES.filter(function (a) { return a.id === axId; })[0];
+    return ax.rows.filter(function (r) { return r.id === mId; })[0];
+  }
+  function rate(r) { return pct(r.total / r.n); }
+  function share(k, r) { return pct(k / r.n); }
+  var so = R('structural-coherence', 'claude-opus-5'), sg = R('structural-coherence', 'gemini-3-1-pro');
+  var jk = R('jnsq', 'kimi-k3'), jg = R('jnsq', 'gemini-3-1-pro');
+  var lo = R('layering', 'claude-opus-5'), lg = R('layering', 'gemini-3-1-pro'), lk = R('layering', 'kimi-k3');
+  var findings = [
+    '<b>Structural Coherence is the most common problem for Gemini, Kimi and GPT-5.1.</b> Even Claude Opus 5, the best of the four on it, has a structural problem in ' +
+      rate(so) + ' of its drawings.',
+    '<b>The averages call Opus and Gemini close on structure; the rates show more of a gap.</b> Opus has a structural problem in ' +
+      rate(so) + ' of drawings, Gemini 3.1 Pro in ' + rate(sg) + '. The whiskers still overlap, so this is a lead to watch, not a result.',
+    '<b>Kimi K3 is streaky on je ne sais quoi.</b> It has it more often than Gemini (' + share(jk.strong, jk) + ' against ' +
+      share(jg.strong, jg) + ') but misses entirely far more often (' + share(jk.n - jk.total, jk) + ' against ' +
+      share(jg.n - jg.total, jg) + '). The averages hide this: both land near 1.8–1.9.',
+    '<b>Layering separates only GPT-5.1.</b> Opus, Gemini and Kimi sit at ' + rate(lo) + ', ' + rate(lg) + ' and ' +
+      rate(lk) + ', with whiskers that overlap almost completely.'
+  ];
+  document.getElementById('findings').innerHTML = findings.map(function (f) {
+    return '<li>' + f + '</li>';
+  }).join('');
+
+  var nMin = Infinity, nMax = 0;
+  AXES.forEach(function (ax) { ax.rows.forEach(function (r) {
+    nMin = Math.min(nMin, r.n); nMax = Math.max(nMax, r.n);
+  }); });
+  document.getElementById('source').textContent =
+    'Sample data: the ratings filed in the drawer’s entry files on ' + AS_OF +
+    ', every response from these four models on the ' + PROMPTS +
+    ' prompts all four answered (' + nMin + '–' + nMax +
+    ' rated drawings per model; reruns count). The live folder reads the database, which also holds visitor turns, so its numbers will differ.';
+
+  /* ---- the counts table ---- */
+  var t = '<thead><tr><th>Model</th><th>n</th><th>Clean / missed</th><th>Small / hint</th><th>Big / has it</th><th>Rate</th><th>95% interval</th></tr></thead><tbody>';
+  AXES.forEach(function (ax) {
+    t += '<tr class="axis-head"><td colspan="7">' + esc(ax.label) + ' · ' +
+      (ax.jnsq ? 'hit rate' : 'issue rate') + '</td></tr>';
+    ax.rows.forEach(function (r) {
+      t += '<tr><td>' + esc(r.label) + '</td><td>' + r.n + '</td><td>' + (r.n - r.total) +
+        '</td><td>' + r.light + '</td><td>' + r.strong + '</td><td>' + pct(r.total / r.n) +
+        '</td><td>' + pct(r.ci[0]) + '–' + pct(r.ci[1]) + '</td></tr>';
+    });
+  });
+  document.getElementById('counts').innerHTML = t + '</tbody>';
+})();
+</script>
+</body>
+</html>

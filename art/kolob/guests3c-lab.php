@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// GUESTS LAB, ROUND 3C — audition bench for three of KOLOB 2's guests: the
+// GUESTS LAB 3c — audition bench for three of KOLOB 2's guests: the
 // gift of tongues (KOLOB.GuestTongues), the far ward (KOLOB.GuestFarWard)
 // and the Hosanna (KOLOB.GuestHosanna: Easter and a dedication only; audio
 // only, unlogged). Each performs with hymns the composer writes here, and

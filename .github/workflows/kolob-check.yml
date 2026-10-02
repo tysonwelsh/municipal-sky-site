@@ -1,0 +1,84 @@
+# Kolob's checks: run on every push and pull request that touches the engine,
+# its tools, or the Jukebox v2 substrate it shares (2026-10-01).
+#
+# What a green run proves, in order:
+#   1. every JavaScript file parses (node --check);
+#   2. ESLint's baseline passes (eslint.config.js: no undefined names, no unused
+#      variables, no variable read before it is declared);
+#   3. the engine loads headless in _engine.php's order, every room answers the
+#      roll call and the page's own load guard agrees, the facade carries the
+#      methods the page calls, the hymnal's worker would load the list's own
+#      files in its order, and the composer writes a hymn that proofreads
+#      (tools/loadcheck.js);
+#   4. no room reads a name off the shared bag that no room lends (tools/lends.js);
+#   5. the headless harness plays a meeting without an error or a late cue, and
+#      the same seed with the same flags renders byte for byte the same dump
+#      twice — the determinism the whole design rests on (SCORE.md §3–§4);
+#   6. the measurement tools' self-test passes (tools/selftest.js).
+#
+# Nothing here hears the music. The listening packets (art/kolob/handoff/listen-*.md)
+# and the owner's ear are still what decide whether a change is good.
+name: Kolob checks
+
+on:
+  push:
+    paths:
+      - 'art/kolob/**'
+      - 'art/prosperos-jukebox-v2/pj2-*.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'eslint.config.js'
+      - '.github/workflows/kolob-check.yml'
+  pull_request:
+    paths:
+      - 'art/kolob/**'
+      - 'art/prosperos-jukebox-v2/pj2-*.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'eslint.config.js'
+      - '.github/workflows/kolob-check.yml'
+  workflow_dispatch: {}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install the dev tooling (ESLint)
+        run: npm ci --no-audit --no-fund
+
+      - name: Every file parses
+        run: |
+          set -e
+          for f in art/kolob/*.js art/kolob/shelved/*.js art/kolob/tools/*.js art/kolob/tools/lib/*.js art/prosperos-jukebox-v2/pj2-*.js; do
+            node --check "$f"
+          done
+          echo "parsed: $(ls art/kolob/*.js art/kolob/shelved/*.js art/kolob/tools/*.js art/kolob/tools/lib/*.js art/prosperos-jukebox-v2/pj2-*.js | wc -l) files"
+
+      - name: ESLint baseline
+        run: npm run lint
+
+      - name: The engine loads and the roll call is answered
+        run: node art/kolob/tools/loadcheck.js
+
+      - name: The shared bag's lends and reads agree
+        run: node art/kolob/tools/lends.js
+
+      - name: The harness plays a meeting, and the same seed twice is byte for byte the same
+        run: |
+          set -e
+          node art/kolob/_harness.js 300 7
+          node art/kolob/_harness.js 1250 22 force=bands dump="$RUNNER_TEMP/seed22-a.jsonl" header
+          node art/kolob/_harness.js 1250 22 force=bands dump="$RUNNER_TEMP/seed22-b.jsonl" header
+          cmp "$RUNNER_TEMP/seed22-a.jsonl" "$RUNNER_TEMP/seed22-b.jsonl"
+          echo "seed 22 (force=bands, 1250 s): two renders identical, $(wc -l < "$RUNNER_TEMP/seed22-a.jsonl") records"
+
+      - name: The measurement tools' self-test
+        run: node art/kolob/tools/selftest.js

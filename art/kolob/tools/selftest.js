@@ -6,9 +6,9 @@
 // 1. A real dump from this worktree's harness reads as meetings and sections.
 // 2. A synthetic dump in the SCORE.md §6 typed vocabulary reads the same way —
 //    meetings, sections, cadences, guests, parts, and the distinctness hooks
-//    (sunday, dialect, cast) light up — and a typed event echoed by a v0.30
-//    log line counts once. This is what keeps the tools working when the
-//    engine crew moves the engine to typed events.
+//    (sunday, dialect, cast) light up — and a typed event echoed by a log
+//    line (a build older than 2026-09-27) counts once: the readers are proved
+//    on a dump no harness wrote.
 // 3. The same seed rendered twice is distance 0; two seeds are not.
 // 4. The loudness meter reads the BS.1770 reference tones, and gates as
 //    EBU Tech 3341 says it must (its cases 3, 4 and 5, and a −20/−40 half).
@@ -21,6 +21,62 @@
 // 7. The capture: a tap block read a few samples off is laid contiguous; a
 //    hole is found, sized to its render quanta, and placed in time; and
 //    --meeting finds meeting 1's end in either vocabulary.
+// 8. The harness's modes: a scripted STOP and restart (stop=, play=) is told
+//    by the transport events at its times and calls a meeting of its own, and
+//    the clock's accounting names the timers left armed apart from the
+//    sources scheduled past the end; an injected throw (throw=) fires once,
+//    is reported by the clock and kept out of the run's errors, and the cues
+//    it counts lane by lane add up to the clock's own — with the drone's
+//    later cues told.
+// 9. Recovery (PLAN-REFACTOR §2.1): a layer's turn that throws is re-armed by
+//    the core's net 5 s later and its lane plays on (throw=drone@120); a
+//    conductor's tick that throws is re-armed at its own pace and the dump is
+//    the clean run's, record for record (throw=conductor@300); a hymn whose
+//    chain of cues breaks is let go, and the meeting begins its next section
+//    (throw=choir@212.5); the ward's and the organist's pumps, made to throw
+//    at their re-arm in one run, tick on at their own pace and the dump and
+//    the graph are the clean run's (throw=ward@200,organist@200).
+// 10. A stillness ends at STOP (PLAN-REFACTOR §2.2): seed 7 stopped a second
+//    into its first stillness's hold and played half a second later
+//    (stop=626.1 play=626.6) calls a meeting that is not hushed at its
+//    downbeat, and it plays as the meeting called after a stop outside the
+//    stillness does (stop=600 play=600.5), record for record from its
+//    downbeat; and a reseed while stopped lets the old visit's drone go —
+//    seed 1 stopped with its drone on the invocation's third and reseeded to
+//    7 (stop=90 reseed=7@90 play=90.5): the drone's note is the keynote's
+//    after the reseed, and seed 7's first meeting is the fresh run's, record
+//    for record from its downbeat.
+// 11. STOP's own race (PLAN-REFACTOR §2.3): a transport press cancels the
+//    timer the press before it armed. Seed 7, stop=120 play=120.3 stop=120.5:
+//    the first STOP's 800 ms timer is cleared by the PLAY, and the second's
+//    fires at its own 800 ms; with play=121 after, that PLAY clears the
+//    second's, no press's timer fires after a later press, and the meeting it
+//    calls plays as the one called when the second STOP and the PLAY fall
+//    together (stop=121 play=121), record for record. Seed 22, whose second
+//    meeting's drone enters 0.11 s after its downbeat: the second STOP's
+//    doors are disconnected by its own timer, after its whole fade (the
+//    first STOP's timer did it 0.3 s into the fade). And the hymnal's desk,
+//    paced (desk=0.5), writes nothing while the transport stands stopped:
+//    stopped at 0.7 s, the stopped meeting's orders stay unwritten; played
+//    again at 1 s, the next meeting's are written and those passed over; a
+//    GATHER of the same seed between writes them for the meeting it calls
+//    again, which is the fresh run's record for record; and the pacing moves
+//    no record.
+// 12. A listener's fault is told (PLAN-REFACTOR §2.4): a note listener and an
+//    event listener with a bug in them (badlistener=note,event), each
+//    throwing at everything it is handed, are passed over and told — one
+//    console.error the first time, then one at every thousandth, naming the
+//    listener and the layer or the type it threw on — and the music and the
+//    harness's own listeners go on: the dump is the clean run's.
+// 13. The roll call stops PLAY (PLAN-REFACTOR §2.5): tools/loadcheck.js on
+//    scratch copies of this build. Whole, the page's guard sets nothing and
+//    the hymnal's worker would load the list's own files in its order; with
+//    kolob-calendar.js missing, the guard names it in KOLOB._broken (the page
+//    keeps PLAY disabled) and loadcheck fails; with the calendar left off the
+//    list, the meeting room is found evaluated without it; with two of the
+//    composer's rooms swapped on the list, the worker follows the list; and
+//    a hymnal that names a room the list does not have is found unable to
+//    start its worker.
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -55,7 +111,7 @@ function check(name, ok, detail) {
   check("the witness names what the harness played: the build's own list", results.every((r) => r.loaded && r.loaded.fingerprint === engine.fingerprint),
     "modules " + results[0].loaded.fingerprint + ", " + results[0].loaded.files.length + " files, the list in " + engine.list.from);
   check("the harness names it too, in the header (`engine`), and agrees", results.every((r) => r.loaded && r.loaded.saidBy === "header and witness"),
-    run.header.engine ? "fingerprint " + run.header.engine.fingerprint : "this harness writes no header.engine — port it (handoff r2-tools-1, Round 2)");
+    run.header.engine ? "fingerprint " + run.header.engine.fingerprint : "this harness writes no header.engine");
 
   console.log("2. a synthetic dump in the typed vocabulary (SCORE.md §6)");
   const lines = [
@@ -71,12 +127,12 @@ function check(name, ok, detail) {
   lines.push(["E", 14, { type: "cadence", kind: "openfifth", hymnId: "h:1:1", t: 14 }]);
   lines.push(["E", 20, { type: "guest-start", guest: "trombones", section: "prelude", logged: true, t: 20 }]);
   lines.push(["E", 60, { type: "section-start", section: "invocation", index: 1, t: 60 }]);
-  lines.push(["E", 60.02, { cat: "section", label: "§ INVOCATION", detail: "50s", t: 60.02 }]);     // the v0.30 echo
+  lines.push(["E", 60.02, { cat: "section", label: "§ INVOCATION", detail: "50s", t: 60.02 }]);     // the log-line echo of an old build
   lines.push(["E", 70, { type: "cadence", kind: "plagal", t: 70 }]);
-  lines.push(["E", 70.01, { cat: "harmony", label: "∴ plagal cadence", detail: "amen", t: 70.01 }]); // echo
+  lines.push(["E", 70.01, { cat: "harmony", label: "∴ plagal cadence", detail: "amen", t: 70.01 }]); // the same echo
   lines.push(["E", 100, { type: "guest-end", guest: "trombones", t: 100 }]);
   lines.push(["E", 110, { type: "meeting-start", n: 2, sunday: "ordinary", kind: "ordinary", mode: "dorian", keynoteHz: 240, t: 110 }]);
-  lines.push(["E", 125, { type: "meeting-end", n: 2, dur: 3, t: 125 }]);
+  lines.push(["E", 125, { type: "meeting-end", n: 2, dur: 3, t: 125 }]);   // (no engine emits meeting-end; the reader must still close a meeting on one)
   const synth = path.join(tmp, "typed-42.jsonl");
   fs.writeFileSync(synth, lines.map((l) => JSON.stringify(l)).join("\n") + "\n");
   const T = D.readDump(synth);
@@ -146,6 +202,28 @@ function check(name, ok, detail) {
   const refused = await R.renderSet({ engine: R.resolveEngine(copy, deaf), seeds: [1847], secs: 60, dir: path.join(tmp, "w-deaf"), quiet: true }).then(() => null, (e) => e);
   check("the same copy rendered by a harness that plays its own directory: refused", !!(refused && refused.refusal && /did not play the build/.test(refused.message)), refused ? refused.message.split("\n")[1] : "it was accepted ✗");
 
+  // §9's renders — the faults of PLAN-REFACTOR §2.1 and the clean run beside
+  // them, each the shortest that shows its recovery (the two pumps' in one
+  // run, at the clean run's length, to be held against it) — are begun here,
+  // beside §6's long meeting, and read when §9 comes
+  const recovery = Promise.all([[null, 360], ["throw=drone@120", 145], ["throw=conductor@300", 360], ["throw=choir@212.5", 360], ["throw=ward@200,organist@200", 360]]
+    .map(([flag, secs], i) => R.renderSet({ engine, seeds: [7], secs, flags: flag ? [flag] : [], dir: path.join(tmp, "recover-" + i), quiet: true }).then((x) => x.results[0])));
+  // …and §10's (PLAN-REFACTOR §2.2): a stop inside seed 7's first stillness
+  // and one outside it, each played again at once, to 133 s past the next
+  // downbeat; seed 1 stopped with its drone off home and reseeded to 7; and
+  // seed 7 fresh, to as far past its downbeat
+  const stillness = Promise.all([[7, 760, ["stop=626.1", "play=626.6"]], [7, 734, ["stop=600", "play=600.5"]], [1, 200, ["stop=90", "reseed=7@90", "play=90.5"]], [7, 110, []]]
+    .map(([seed, secs, flags], i) => R.renderSet({ engine, seeds: [seed], secs, flags, dir: path.join(tmp, "still-" + i), quiet: true }).then((x) => x.results[0])));
+  // …and §11's (PLAN-REFACTOR §2.3): the stop/play/stop scripts on seeds 7
+  // and 22, and the paced desk stopped, played again, and gathered again
+  const race = Promise.all([
+    [7, 130, ["stop=120", "play=120.3", "stop=120.5"]], [7, 230, ["stop=120", "play=120.3", "stop=120.5", "play=121"]], [7, 230, ["stop=120", "play=120.3", "stop=121", "play=121"]],
+    [22, 130, ["stop=120", "play=120.3", "stop=120.5"]],
+    [7, 60, ["desk=0.5", "stop=0.7"]], [7, 110, ["desk=0.5", "stop=0.7", "play=1"]], [7, 110, ["desk=0.5", "stop=0.7", "reseed=7@0.7", "play=1"]], [7, 110, ["desk=0.5"]], [7, 110, []],
+  ].map(([seed, secs, flags], i) => R.renderSet({ engine, seeds: [seed], secs, flags, dir: path.join(tmp, "race-" + i), quiet: true }).then((x) => x.results[0])));
+  // …and §12's (PLAN-REFACTOR §2.4): the bad listeners, held against §11's
+  // plain run of the same length
+  const badListener = R.renderSet({ engine, seeds: [7], secs: 110, flags: ["badlistener=note,event"], dir: path.join(tmp, "badlistener"), quiet: true }).then((x) => x.results[0]);
   console.log("6. the count (seed 3, 1200 s)");
   const long = await R.renderSet({ engine, seeds: [3], secs: 1200, dir: path.join(tmp, "long"), quiet: true });
   const L3 = D.readDump(long.results[0].dump);
@@ -162,7 +240,7 @@ function check(name, ok, detail) {
     const rate = 48000, N = 16384, T0 = 2.5, fA = Math.round(T0 * rate), fB = fA + 75 * rate, blocks = [];
     let f = fA - 1000, k = 0, holeK = -1;
     while (f < fB + N) {
-      // the ramp read a sample or two off; the block after the hole read 2 short (126, as the critic's capture had it)
+      // the ramp read a sample or two off; the block after the hole read 2 short (126, as a real capture had it)
       blocks.push({ f: f + (k === holeK ? -2 : [0, 2, -1][k % 3]), d: new Float32Array(2 * N).fill(0.1) });
       f += N; k++;
       if (holeK < 0 && f > fA + 40.9 * rate) { f += 128; holeK = k; }                     // one render quantum never reached the tap
@@ -177,6 +255,215 @@ function check(name, ok, detail) {
     const nextEnd = Cap.meetingEnd([["E", T, { type: "meeting-start", n: 1, t: T }], ["E", T + 900, { type: "meeting-start", n: 2, t: T + 900 }]], T);
     check("--meeting finds the end: v0.30 joint, typed meeting-end, or the next meeting", legacyEnd === 815 && typedEnd === 711 && nextEnd === 900, legacyEnd + " / " + typedEnd + " / " + nextEnd + " s");
     check("the rest laid contiguous, and the coverage exact", r.jitter > 0 && r.covered === fB - fA - 128 && Lc.filter((x) => x === 0).length === 128, r.jitter + " block starts read off by 1–2 samples; " + (fB - fA - r.covered) + " samples lost");
+  }
+
+  console.log("8. the harness's modes (seed 7): a scripted stop and restart, an injected throw");
+  {
+    const sp = (await R.renderSet({ engine, seeds: [7], secs: 90, flags: ["stop=40", "play=41"], dir: path.join(tmp, "script"), quiet: true })).results[0];
+    const recs = fs.readFileSync(sp.dump, "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l)).filter((r) => r[0] === "E");
+    const told = recs.filter((r) => r[2].type === "transport").map((r) => r[2].action + "@" + r[1]).join(" ");
+    check("stop=40 play=41: the transport events fall at the scripted times", told === "play@0 stop@40 play@41", told);
+    const m2 = recs.find((r) => r[2].type === "meeting-start" && r[2].n === 2);
+    check("… and the restart calls a meeting of its own, the run clean", !!m2 && m2[1] > 41 && m2[1] < 42 && /PASS/.test(sp.verdict || ""), (m2 ? "meeting 2 at " + m2[1].toFixed(1) + " s" : "no meeting 2") + " · " + sp.verdict);
+    const clock = (/^clock: .*$/m.exec(fs.readFileSync(sp.log, "utf8")) || [""])[0];
+    const acct = / (\d+) timer\(s\) still armed after STOP.* (\d+) source\(s\) scheduled past the run's end/.exec(clock);
+    check("the clock's accounting: timers left armed apart from sources scheduled past the end", !!acct, acct ? acct[1] + " timer(s) · " + acct[2] + " source(s)" : clock || "no clock line");
+
+    const th = (await R.renderSet({ engine, seeds: [7], secs: 200, flags: ["throw=drone@60"], dir: path.join(tmp, "throw"), quiet: true })).results[0];
+    const log = fs.readFileSync(th.log, "utf8");
+    const j = /^throw drone@60: thrown at ([\d.]+) s, [^;]*; reported by (\S+) · the drone lane ran (\d+) cue\(s\) after it[^(]*\((\d+) before\)/m.exec(log);
+    check("throw=drone@60: thrown once, from 60 s on, reported by the clock, and not counted among the run's errors",
+      !!j && +j[1] >= 60 && j[2] === "console.error" && /^errors: 0 caught · 0 console\.error$/m.test(log) && /PASS/.test(th.verdict || ""),
+      j ? "at " + j[1] + " s · " + th.verdict : "no throw line");
+    const lanes = /^cues by lane: (\d+) (\{.*\}) · the clock counted (\d+)$/m.exec(log);
+    const drone = lanes ? JSON.parse(lanes[2]).drone : null;
+    check("… the cues counted lane by lane add up to the clock's own, and the drone's to before + the throw + after",
+      !!lanes && !!j && lanes[1] === lanes[3] && drone === +j[4] + 1 + +j[3],
+      lanes && j ? lanes[1] + " = " + lanes[3] + " cues; drone " + drone + " = " + j[4] + " + 1 + " + j[3] + " — the drone runs " + j[3] + " cue(s) after its throw (the core's net re-arms it: §9)" : "no count");
+  }
+
+  console.log("9. recovery (seed 7): a turn, the conductor's tick, a hymn's chain and the two pumps, each made to throw");
+  {
+    const runs = await recovery;
+    const thrown = (r, spec) => {          // the run's throw line (the one for spec, where the run has two)
+      const log = fs.readFileSync(r.log, "utf8");
+      const re = /^throw (\S+): thrown at ([\d.]+) s, [^;]*; reported by (\S+) · the \S+ lane ran (\d+) cue\(s\) after it(?:, the first at ([\d.]+) s)? \((\d+) before\) · the meeting began (\d+) section\(s\) after it$/gm;
+      let m;
+      while ((m = re.exec(log)) && spec && m[1] !== spec);
+      return m ? { spec: m[1], t: +m[2], by: m[3], after: +m[4], first: m[5] != null ? +m[5] : null, sections: +m[7], clean: /^errors: 0 caught · 0 console\.error$/m.test(log) && /PASS/.test(r.verdict || "") } : null;
+    };
+    const records = (r) => fs.readFileSync(r.dump, "utf8").split("\n").filter((l) => l && !l.startsWith('["H"'));
+    const said = (x) => x ? "thrown at " + x.t.toFixed(3) + " s · " + x.after + " cue(s) after it" + (x.first != null ? ", the first at " + x.first.toFixed(3) + " s" : "") + " · " + x.sections + " section(s) after it" : "no throw line";
+    const dr = thrown(runs[1]), co = thrown(runs[2]), ch = thrown(runs[3]);
+    check("throw=drone@120: the drone's turn throws once and its lane plays on, re-armed 5 s after the throw, the run clean",
+      !!dr && dr.by === "console.error" && dr.after > 0 && Math.abs(dr.first - dr.t - 5) < 0.001 && dr.clean, said(dr));
+    const same = !!co && records(runs[2]).join("\n") === records(runs[0]).join("\n");
+    check("throw=conductor@300: the tick throws once, the next is armed 0.6 s on, the meeting begins its next section — the clean run's, record for record",
+      !!co && co.after > 0 && Math.abs(co.first - co.t - 0.6) < 0.001 && co.sections > 0 && same && co.clean, said(co) + (same ? " · " + records(runs[0]).length + " records, identical to the clean run's" : " · NOT the clean run's"));
+    const sec = (r) => records(r).map((l) => JSON.parse(l)).filter((x) => x[0] === "E" && x[2].type === "section-start").map((x) => x[2].section + "@" + x[1].toFixed(1));
+    check("throw=choir@212.5: the hymn's chain breaks, the hymn is let go, and the meeting begins its next section",
+      !!ch && ch.sections > 0 && ch.clean, said(ch) + " · sections " + sec(runs[3]).join(" ") + " (clean: " + sec(runs[0]).join(" ") + ")");
+    // the two pumps, thrown in one run: a ward that hands no line builds no
+    // voice (the graph shows it; its notes are told apart from its sound), an
+    // organist who lays no note tells none (the dump shows it)
+    const graph = (r) => (/^graph: .*$/m.exec(fs.readFileSync(r.log, "utf8")) || [""])[0];
+    const pumpsDump = records(runs[4]).join("\n") === records(runs[0]).join("\n"), pumpsGraph = graph(runs[4]) !== "" && graph(runs[4]) === graph(runs[0]);
+    [["ward", 0.12], ["organist", 0.2]].forEach(([lane, pace]) => {
+      const x = thrown(runs[4], lane + "@200");
+      check("throw=" + lane + "@200: the " + lane + "'s pump throws at its re-arm and the next tick is armed " + pace + " s on, its own pace",
+        !!x && x.after > 0 && Math.abs(x.first - x.t - pace) < 0.001 && x.clean, said(x));
+    });
+    check("… and with both pumps thrown, the dump and the graph are the clean run's",
+      pumpsDump && pumpsGraph, (pumpsDump ? "the dump" : "NOT the dump") + " and " + (pumpsGraph ? "the graph" : "NOT the graph") + " of the clean run (" + (graph(runs[0]).split(" · ")[1] || "?").split(" {")[0] + ")");
+  }
+
+  // (§10 and §11) the records of len s from one run's downbeat, held against
+  // another's from its own: a number is the same if it is equal, or equal
+  // once each run's downbeat is taken off (a time); with `counts`, the chord book's
+  // own numbers (a chord's id wherever it is named, and the page a chord
+  // event names), which count on for the page's life and not the visit's,
+  // may each stand off by one constant, and only one
+  // → { n, len, at: -1 } or the first record that differs
+  const sameFrom = (A, tA, B, tB, len, counts) => {
+    const win = (rs, t0) => rs.filter((x) => x[1] >= t0 && x[1] < t0 + len);
+    const a = win(A, tA), b = win(B, tB), off = {};
+    const counter = (key, parent) => counts && (key === "chord" || (key === "page" && parent.type === "chord"));
+    const eq = (x, y, key, parent) => {
+      if (typeof x === "number" && typeof y === "number") {
+        if (counter(key, parent)) { if (!(key in off)) off[key] = x - y; return x - y === off[key]; }
+        return Math.abs(x - y) < 1e-6 || Math.abs((x - tA) - (y - tB)) < 1e-6;
+      }
+      if (!x || !y || typeof x !== "object" || typeof y !== "object") return x === y;
+      const keys = new Set(Object.keys(x).concat(Object.keys(y)));
+      for (const k of keys) if (!eq(x[k], y[k], k, x)) return false;
+      return true;
+    };
+    for (let i = 0; i < Math.max(a.length, b.length); i++) if (!eq(a[i], b[i], null, null)) return { n: a.length, len, at: i, a: a[i], b: b[i], off };
+    return { n: a.length, len, at: -1, off };
+  };
+  const told = (d) => (d.at < 0 ? d.n + " records over " + d.len + " s, the same" : "record " + d.at + " of " + d.n + " differs: " + JSON.stringify(d.a || null).slice(0, 140) + " against " + JSON.stringify(d.b || null).slice(0, 140)) +
+    (Object.keys(d.off).length ? " (" + Object.keys(d.off).map((k) => "the " + k + "s numbered on by " + d.off[k]).join(", ") + ")" : "");
+  console.log("10. a stillness ends at STOP, and a reseed lets the old visit's drone go (PLAN-REFACTOR §2.2)");
+  {
+    const [inHold, outside, reseeded, fresh] = await stillness;
+    const log = (r) => fs.readFileSync(r.log, "utf8");
+    const recs = (r) => fs.readFileSync(r.dump, "utf8").split("\n").filter((l) => l && !l.startsWith('["H"')).map((l) => JSON.parse(l));
+    const downbeat = (rs, after) => { const m = rs.find((x) => x[0] === "E" && x[2].type === "meeting-start" && x[1] > after); return m ? m[1] : null; };
+    const H = recs(inHold), still = H.find((x) => x[0] === "E" && x[2].type === "stillness");
+    const t2 = downbeat(H, 626.1), holdEnd = still ? still[1] + still[2].holdS + 2.5 : null;
+    check("seed 7's first stillness holds past the next downbeat of stop=626.1 play=626.6",
+      !!still && still[1] < 626.1 && t2 != null && holdEnd > t2, still ? "the " + still[2].why + "'s at " + still[1].toFixed(1) + " s, held to " + (holdEnd || 0).toFixed(1) + " s; meeting 2 at " + (t2 || 0).toFixed(1) + " s" : "no stillness");
+    const m2 = (/ · #2 at [\d.]+ s: [^#\n]*/.exec(log(inHold)) || [""])[0];
+    check("… and meeting 2 is not hushed at its downbeat (the stopped meeting's hold ended with it)", !!m2 && !/hushed at its downbeat/.test(m2) && /PASS/.test(inHold.verdict || ""), m2.trim() || "no meeting 2");
+    const O = recs(outside), d2 = sameFrom(H, t2, O, downbeat(O, 600), 130);
+    check("… and it plays as meeting 2 does after a stop outside the stillness (stop=600 play=600.5), record for record from its downbeat", d2.at < 0, told(d2));
+    const rs = (/^reseed 7 at 90 s \(stopped\): the drone's note (.*) → (.*)$/m.exec(log(reseeded)) || []);
+    check("stop=90 reseed=7@90 play=90.5 on seed 1: its drone stood off home, and the reseed lets it go",
+      !!rs[1] && rs[1] !== "×1 tonic" && rs[2] === "×1 tonic" && /PASS/.test(reseeded.verdict || ""), rs[0] ? rs[1] + " → " + rs[2] : "no reseed line");
+    const Rr = recs(reseeded), F = recs(fresh), d7 = sameFrom(Rr, downbeat(Rr, 90), F, downbeat(F, 0), 105, true);
+    check("… and seed 7's first meeting is the fresh run's, record for record from its downbeat", d7.at < 0, told(d7));
+  }
+
+  console.log("11. STOP's own race: a press cancels the timer the press before it armed (PLAN-REFACTOR §2.3)");
+  {
+    const [one, two, together, s22, stopped, played, gathered, paced, fresh] = await race;
+    const log = (r) => fs.readFileSync(r.log, "utf8");
+    const recs = (r) => fs.readFileSync(r.dump, "utf8").split("\n").filter((l) => l && !l.startsWith('["H"')).map((l) => JSON.parse(l));
+    // the presses' line: { cleared, after (fired after a later press), lines (what each timer did) }
+    const presses = (r) => {
+      const L = log(r), m = /^presses: .* (\d+) cleared \((\d+) by a later press\), (\d+) fired \((\d+) after a later press\)/m.exec(L);
+      return m ? { byLater: +m[2], after: +m[4], lines: L.split("\n").filter((l) => /^ {2}\S.*'s [\d.]+ ms timer/.test(l)).map((l) => l.trim()) } : null;
+    };
+    const has = (p, re) => !!p && p.lines.some((l) => re.test(l));
+    const p1 = presses(one), p2 = presses(two), p22 = presses(s22);
+    check("seed 7, stop=120 play=120.3 stop=120.5: the PLAY clears the first STOP's timer, the second STOP's fires at its own 800 ms, and none fires after a later press",
+      !!p1 && has(p1, /^stop@120's 800 ms timer cleared by play@120\.3 /) && has(p1, /^stop@120\.5's 800 ms timer fired at 121\.300 s:/) && p1.after === 0 && /PASS/.test(one.verdict || ""),
+      p1 ? p1.lines.filter((l) => /^stop@120(\.5)?'s/.test(l)).join("; ") : "no presses line");
+    check("… and with play=121 after, that PLAY clears the second STOP's timer, and no press's timer fires after a later press",
+      !!p2 && p2.byLater === 2 && has(p2, /^stop@120\.5's 800 ms timer cleared by play@121 /) && p2.after === 0 && /PASS/.test(two.verdict || ""),
+      p2 ? p2.byLater + " cleared by a later press, " + p2.after + " fired after one" : "no presses line");
+    const meeting3 = (rs) => { const m = rs.find((x) => x[0] === "E" && x[2].type === "meeting-start" && x[2].n === 3); return m ? m[1] : null; };
+    const A = recs(two), B = recs(together), d3 = sameFrom(A, meeting3(A), B, meeting3(B), 105, true);
+    check("… and the meeting play=121 calls plays as the one called when the second STOP and the PLAY fall together (stop=121 play=121), record for record",
+      meeting3(A) != null && d3.at < 0, "meeting 3 at " + meeting3(A) + " s: " + told(d3) + ", " + A.filter((x) => x[0] === "N" && x[1] >= meeting3(A) && x[1] < meeting3(A) + 105).length + " notes");
+    const own = p22 && p22.lines.map((l) => /^stop@120\.5's 800 ms timer fired at 121\.300 s: (\d+) node\(s\) disconnected/.exec(l)).find(Boolean);
+    check("seed 22, the same script: the second STOP's doors (its meeting's drone, in 0.11 s after the downbeat) are disconnected by its own timer, after its whole fade",
+      !!own && +own[1] > 0 && p22.after === 0 && has(p22, /^stop@120's 800 ms timer cleared by play@120\.3 /), own ? own[0] : "no such line");
+    // the desk: written while stopped, and the orders never written
+    const desk = (r) => { const m = /^hymnal: .* posted (\d+) · composed (\d+) .* · written while stopped (\d+) · (\d+) order\(s\) never written · desk 0\.5 s a slice, (\d+) slice\(s\) paced/m.exec(log(r)); return m ? { posted: +m[1], composed: +m[2], whileStopped: +m[3], unwritten: +m[4], paced: +m[5] } : null; };
+    const said = (h) => h ? "posted " + h.posted + ", written " + h.composed + ", while stopped " + h.whileStopped + ", never " + h.unwritten : "no hymnal line";
+    const hs = desk(stopped), hp = desk(played), hg = desk(gathered);
+    check("desk=0.5 stop=0.7 (seed 7): the desk writes nothing while stopped, and the stopped meeting's orders stay unwritten",
+      !!hs && hs.whileStopped === 0 && hs.unwritten > 0 && hs.paced > 0 && /PASS/.test(stopped.verdict || ""), said(hs));
+    check("… played again at 1 s: nothing written while stopped, the next meeting's orders written, the stopped meeting's passed over",
+      !!hp && !!hs && hp.whileStopped === 0 && hp.unwritten === hs.unwritten && hp.composed === hp.posted - hp.unwritten && /PASS/.test(played.verdict || ""), said(hp));
+    const G = recs(gathered), F = recs(fresh), first = (rs, after) => { const m = rs.find((x) => x[0] === "E" && x[2].type === "meeting-start" && x[1] > after); return m ? m[1] : null; };
+    const dg = sameFrom(G, first(G, 0.7), F, first(F, 0), 105, true);
+    check("… a GATHER of the same seed between (reseed=7@0.7): the orders are found by key and written for the meeting called again, the fresh run's record for record",
+      !!hg && !!hs && hg.whileStopped === 0 && hg.unwritten === 0 && hg.posted === hs.posted && dg.at < 0, said(hg) + " · " + told(dg));
+    const same = recs(paced).map((x) => JSON.stringify(x)).join("\n") === F.map((x) => JSON.stringify(x)).join("\n");
+    check("… and the pacing moves no record (desk=0.5 against the plain run, 110 s)", same, same ? F.length + " records, identical" : "NOT identical");
+  }
+
+  console.log("12. a listener's fault is told, not swallowed (PLAN-REFACTOR §2.4)");
+  {
+    const bl = await badListener, fresh = (await race)[8];
+    const log = fs.readFileSync(bl.log, "utf8");
+    const line = (k) => { const m = new RegExp("^badlistener=" + k + ": the listener threw at (\\d+) " + k + "\\(s\\); the engine told it (\\d+) time\\(s\\) by console\\.error(?:, the first at ([\\d.]+) s: (.*))?$", "m").exec(log); return m ? { thrown: +m[1], told: +m[2], first: m[4] || null } : null; };
+    const said = (x) => x ? "threw at " + x.thrown + ", told " + x.told + " time(s)" + (x.first ? ": " + x.first : " — swallowed") : "no badlistener line";
+    const clean = /^errors: 0 caught · 0 console\.error$/m.test(log) && /PASS/.test(bl.verdict || "");
+    [["note", /^Kolob: the note listener 2 threw \(on a note of the [\w-]+\)$/], ["event", /^Kolob: the event listener 2 threw \(on a [\w-]+ event\)$/]].forEach(([k, re]) => {
+      const x = line(k);
+      check("badlistener=" + k + ": its fault is told the first time and at every thousandth, naming the listener and the " + (k === "note" ? "layer" : "type") + ", and kept out of the run's errors",
+        !!x && x.thrown > 0 && x.told === 1 + Math.floor(x.thrown / 1000) && re.test(x.first || "") && clean, said(x));
+    });
+    const recs = (r) => fs.readFileSync(r.dump, "utf8").split("\n").filter((l) => l && !l.startsWith('["H"'));
+    const same = recs(bl).join("\n") === recs(fresh).join("\n");
+    check("… and the music and the harness's own listeners go on: the dump is the clean run's, record for record", same, same ? recs(fresh).length + " records, identical" : "NOT identical");
+  }
+
+  console.log("13. the roll call stops PLAY (PLAN-REFACTOR §2.5)");
+  {
+    const { execFileSync } = require("child_process");
+    // a scratch copy of this build — the list's files and _engine.php, the
+    // substrate beside it as on the site — with one thing changed
+    const scratch = (name, edit) => {
+      const dir = path.join(tmp, "roll-" + name, "art", "kolob");
+      engine.list.files.concat([path.join(engine.dir, "_engine.php")]).forEach((f) => {
+        const to = path.join(dir, path.relative(engine.dir, f));
+        fs.mkdirSync(path.dirname(to), { recursive: true });
+        fs.copyFileSync(f, to);
+      });
+      if (edit) edit(dir);
+      return dir;
+    };
+    const swap = (dir, file, from, to) => { const p = path.join(dir, file), t = fs.readFileSync(p, "utf8"); if (t.indexOf(from) < 0) throw new Error(file + " has no " + from); fs.writeFileSync(p, t.replace(from, to)); };
+    const loadcheck = (dir) => {
+      try { return { code: 0, out: execFileSync(process.execPath, [path.join(__dirname, "loadcheck.js")], { env: Object.assign({}, process.env, { KOLOB_DIR: dir }), encoding: "utf8" }) }; }
+      catch (e) { return { code: e.status, out: String(e.stdout || "") }; }
+    };
+    const line = (r, k) => { const m = new RegExp("^ {2}" + k + ": (.*)$", "m").exec(r.out); return m ? m[1] : "no " + k + " line"; };
+    const failed = (r) => r.out.split("\n").filter((l) => /^ {3}- /.test(l)).map((l) => l.slice(5));
+    const whole = loadcheck(scratch("whole"));
+    check("whole: ALL GREEN, the page's guard sets nothing, and the worker would load the list's own files in its order",
+      whole.code === 0 && /ALL GREEN/.test(whole.out) && line(whole, "guard") === "nothing missing, KOLOB._broken unset" && /^the worker loads 8 files, the list's own, in its order \(pj2-rand\.js, .*kolob-composer\.js, kolob-calendar\.js\)$/.test(line(whole, "desk")),
+      line(whole, "guard") + " · " + line(whole, "desk"));
+    const gone = loadcheck(scratch("nocalendar", (dir) => fs.rmSync(path.join(dir, "kolob-calendar.js"))));
+    check("kolob-calendar.js missing: the page's guard names it in KOLOB._broken, and loadcheck fails",
+      gone.code === 1 && line(gone, "guard") === "KOLOB._broken = [kolob-calendar.js]" && failed(gone).some((f) => /^the page's load guard names kolob-calendar\.js in KOLOB\._broken .*KOLOB AUDIO ENGINE FAILED TO LOAD: kolob-calendar\.js$/.test(f)),
+      line(gone, "guard"));
+    const off = loadcheck(scratch("offlist", (dir) => swap(dir, "_engine.php", "    'kolob-calendar.js',\n", "")));
+    check("the calendar left off the list: the meeting room is found evaluated without it (the page's guard cannot know)",
+      off.code === 1 && failed(off).length === 1 && /^kolob-meeting\.js: evaluated before KOLOB\.Calendar stands/.test(failed(off)[0]) && line(off, "guard") === "nothing missing, KOLOB._broken unset",
+      failed(off).join("; "));
+    const moved = loadcheck(scratch("reorder", (dir) => swap(dir, "_engine.php", "'kolob-dialects.js', 'kolob-hymnists.js',", "'kolob-hymnists.js', 'kolob-dialects.js',")));
+    check("kolob-hymnists.js moved ahead of kolob-dialects.js on the list: the worker follows the list",
+      moved.code === 0 && /\(pj2-rand\.js, kolob-pitch\.js, kolob-score\.js, kolob-tunes\.js, kolob-hymnists\.js, kolob-dialects\.js, kolob-composer\.js, kolob-calendar\.js\)$/.test(line(moved, "desk")),
+      line(moved, "desk"));
+    const misnamed = loadcheck(scratch("misnamed", (dir) => swap(dir, "kolob-hymnal.js", '"kolob-hymnists.js", "kolob-composer.js"]', '"kolob-hymnist.js", "kolob-composer.js"]')));
+    check("a hymnal that names a room the list does not have: its worker is found unable to start",
+      misnamed.code === 1 && line(misnamed, "desk") === "the worker would not start" && failed(misnamed).some((f) => /^the composer's desk: the hymnal's worker would not start/.test(f)),
+      failed(misnamed).join("; "));
   }
 
   fs.rmSync(tmp, { recursive: true, force: true });

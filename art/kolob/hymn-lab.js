@@ -14,11 +14,11 @@
 // baritone with the bass), the unison songs and the Old Way on one staff.
 // Spelled on the white keys of the mode (a major hymn in C, an aeolian one on
 // A), whatever the day's key; a septimal note wears Johnston's 7.
-// Sing: thirty-two people (KOLOB.VoicesVocal.singer, the round-1 full ward),
+// Sing: thirty-two people (KOLOB.VoicesVocal.singer, the full ward),
 // eight to a part, seated by the dialect — and the organ (KOLOB.VoicesOrgan)
 // under the Tabernacle; through the voices lab's master chain and a limiter
 // (never louder than the app).
-// Round 3 adds, below the hymn: A ROUND (the ward in groups, entering in
+// Below the hymn: A ROUND (the ward in groups, entering in
 // turn), THE PARTNER HYMN (the first hymn, the closing hymn written on its
 // chords, then the two together — or "not combined", with the fit that
 // refused them), and THE WANDERING REFRAIN (in each of the day's keys).

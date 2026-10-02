@@ -1,4 +1,5 @@
 <?php
+$track_page = 'information-graphics';   // anonymous page-view tally (includes/footer.php)
 $page_title = 'Information Graphics - Municipal Sky';
 $page_description = 'Interactive information graphics and visual explorations';
 include '../includes/header.php';

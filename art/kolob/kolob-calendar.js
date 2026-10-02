@@ -2,7 +2,7 @@
 // KOLOB 𐐗𐐄𐐢𐐉𐐒 — THE CALENDAR (KOLOB.Calendar): the Sunday, the light, the
 // seatings, the reckoning
 //
-// Round 3b, step 4: the shape of a visit (PLAN-COMPOSITION §7).
+// The shape of a visit (PLAN-COMPOSITION §7).
 //
 // THE SUNDAY OF THE COLONY YEAR (§7.1). Every visit draws a Sunday — an
 // ordinary one most often, a fast Sunday, General Conference, Pioneer Day,
@@ -37,9 +37,9 @@
 // funeral is slow, then rising: its dawn is darker and its morning climbs
 // late to the same full light.
 //
-// SEATINGS (§7.4). The prelude has had its seatings since the v0.34 polish
-// (kolob-meeting.js seatPrelude). The other rites that are not hymns now
-// draw one too (scenes()): the house as it always sat (plain), LINED OUT
+// SEATINGS (§7.4). The prelude draws its seating in kolob-meeting.js
+// (seatPrelude). The other rites that are not hymns draw one here
+// (scenes()): the house as it always sat (plain), LINED OUT
 // ONLY (the deacon gives the lines and the ward answers; no organ, no
 // harmonium, no strings), the BRUSH ARBOR (no organ; the strings on bare
 // fifths), an ORGAN VOLUNTARY (the organ leads, the others sparing), or THE
@@ -73,8 +73,8 @@
 //
 // PURE (SCORE §1): no AudioContext, no DOM, no Math.random, no clock. Every
 // die is the caller's (a PJ2.Rand stream, or a die already thrown); it loads
-// in Node and in the composer's worker (kolob-hymnal.js DESK_FILES), where
-// the errand calls reckon().
+// in Node and in the composer's worker (kolob-hymnal.js DESK_OPTIONAL),
+// where the errand calls reckon().
 //
 // Public surface: window.KOLOB.Calendar = {
 //   SUNDAYS, ORDER, KINDS
@@ -110,9 +110,8 @@ window.KOLOB.Calendar = (function () {
   //               lens: a factor on a rite's drawn length
   //   season    where the Sunday's warmth sits (0 the fast-day trough … 1 the
   //             festival): the day's temper, the piper
-  //   (guests   round 3c: the guests' odds by Sunday are no longer spread
-  //             over the Sundays and the guests' own rooms — they are one
-  //             table, GUEST_ODDS, below the Sundays)
+  //   (guests   a Sunday's row carries no guest odds: they are one table,
+  //             GUEST_ODDS, below the Sundays)
   //   cast      how many of the ward you come to know: opt (the optional
   //             roles, beside the chorister, the precentor and the soloist)
   //             and testimony (how many rise)
@@ -123,13 +122,13 @@ window.KOLOB.Calendar = (function () {
   //   scenes    factors on the other rites' seatings (scenes)
   //   arc       the Sunday's own light: offsets and overrides (ARC below) —
   //             and its own dawn, so that the Sunday is heard in the first
-  //             minutes (after the round-3b critic, who found a wedding and
-  //             an ordinary Sunday near-twins there): a fast Sunday's and
+  //             minutes (else a wedding and an ordinary Sunday were
+  //             near-twins there): a fast Sunday's and
   //             Christmas's grey and sparse, a wedding's late and awake,
   //             a funeral's darkest, the feasts' lifted
   //   dox       factors on the doxology's own dialect (a funeral rises into
   //             the Tabernacle's "all is well"; Easter's full Tabernacle)
-  //   hosanna   the Hosanna may come (§8.12; not built yet — a hook, unlogged)
+  //   hosanna   the Hosanna may come (§8.12; audio-only, unlogged)
   var SUNDAYS = {
     ordinary: {
       share: 0.45, kind: "ordinary", ds: "𐐃𐐡𐐔𐐆𐐤𐐇𐐡𐐆 𐐝𐐊𐐤𐐔𐐁", en: "AN ORDINARY SUNDAY",
@@ -225,7 +224,7 @@ window.KOLOB.Calendar = (function () {
   var ORDER = ["ordinary", "fast", "conference", "pioneer", "christmas", "easter", "wedding", "funeral", "dedication"];
 
   // ==========================================================================
-  // THE GUESTS' ODDS — ONE TABLE (round 3c: the guest budget; PLAN §8, §8.13)
+  // THE GUESTS' ODDS — ONE TABLE (PLAN §8, §8.13)
   // ==========================================================================
   // How likely each guest is to be asked to a meeting, Sunday by Sunday: the
   // die each guest throws on its own stream (guest:<name>:<n>, or the
@@ -235,14 +234,11 @@ window.KOLOB.Calendar = (function () {
   // seats it only where the budget has room (GUEST_BUDGET, below) and its
   // own rules allow (a band never with the trombones, the old tune only on a
   // Sunday of its own colour, the Social Hall never at a funeral…), so what
-  // is heard is a little under the table (the census, handoff r3c-integrate).
-  // The band's row is the owner's own 36 % and the Sundays' old welcome; every
-  // other guest began at about a third of its crew's own starting odds —
-  // and the guests heard since rounds 2 and 3b (the old tune, the trombones,
-  // the singing school, the handbells) at a fifth less again, leaving their
-  // share to this round's — so that some sixty meetings in a hundred carry a
-  // guest (PLAN §8: about 55 %; the census, 1,000 first meetings) and every
-  // guest is heard. The owner tunes them by ear.
+  // is heard is a little under the table. The band's row is the owner's own
+  // 36 %, leaned by the Sunday; the rest are set so that some sixty
+  // meetings in a hundred carry a guest (PLAN §8: about 55 %; measured over
+  // 1,000 first meetings) and every guest is heard. The owner tunes them by
+  // ear.
   //   changes  — not a guest of its own: of the Sundays the steeples ring,
   //              how often the far bells are a band ringing changes
   //   hosanna  — Easter and a dedication only (the rite of those Sundays,
@@ -272,9 +268,8 @@ window.KOLOB.Calendar = (function () {
   //               meeting's showpiece when it comes
   //   neighbours  guests that may sit in neighbouring rites on a Sunday
   //               (PLAN §8.13: never two guests in the same or neighbouring
-  //               rites — but on Pioneer Day the band crossing the doxology
-  //               and the dance after it are one day's joy; the round-3c
-  //               critic of the Social Hall). The Hosanna keeps its own rule
+  //               rites — but on Pioneer Day the band and the dance after
+  //               it are one day's joy). The Hosanna keeps its own rule
   //               (GuestHosanna.YIELD: false, it does not give way)
   //   order       the order the meeting asks them in, which is also who
   //               yields when the budget is full (the last asked)
@@ -402,7 +397,7 @@ window.KOLOB.Calendar = (function () {
   // (Full light leans harder to the gospel ring than to the Tabernacle: the
   // doxology's table already gives the Tabernacle its brightness, and at an
   // even lean the ring was rarer at full light than in the morning — 14 %
-  // against 18 % of hymns — so the sevenths never rose; the round-3b critic)
+  // against 18 % of hymns — so the sevenths never rose)
   var LIGHT_ANCHORS = [
     [0.1,  { sacredharp: 1.55, oldway: 1.6, shaker: 1.45, psalmody: 1.15, tabernacle: 0.72, gospel: 0.5 }],
     [0.5,  { sacredharp: 1.05, oldway: 1.0, shaker: 1.0, psalmody: 1.1, tabernacle: 1.0, gospel: 0.95 }],
@@ -508,7 +503,7 @@ window.KOLOB.Calendar = (function () {
       // fresh die given that it fell there): read as it fell, a die low
       // enough to land on the plain house — first in the testimony's pool —
       // landed again on the first seating after it, and the choir alone
-      // took 44 % of the testimonies the rule seated (the round-3b critic)
+      // took 44 % of the testimonies the rule seated
       if (empty && prevEmpty) {
         var back = out[i - 1], bOdds = back && SCENE_ODDS[plan[i - 1].type];
         if (KEEPS_STILL[type] && bOdds) {
@@ -543,7 +538,7 @@ window.KOLOB.Calendar = (function () {
   // at most — the harmony's tuning, never the melody's, so it never beats
   // against the chord it stands under).
   var TOLERANCE_C = 25;
-  var STILL_ANY_NOTE = false;
+  var STILL_ANY_NOTE = false;   // true lets a still rite (the sacrament seated plain, no guest in it) stand on any note of the tune; off because a drone off the chord there clashed a second in 61 % of the sacrament's harmonies, against the keynote's 37 % (14 seeds)
   var MINOR = { dorian: true, aeolian: true };
   function cents(m) { return 1200 * (m[0] + m[1] * Math.log2(3) + m[2] * Math.log2(5) + (m[3] || 0) * Math.log2(7)); }
   function mz(a, b) { return [a[0] + b[0], a[1] + b[1], a[2] + b[2], (a[3] || 0) + (b[3] || 0)]; }
@@ -590,14 +585,9 @@ window.KOLOB.Calendar = (function () {
     for (var j = from; j < secs.length; j++) {
       var s = secs[j], nt = notes[j - from];
       if (!nt) { bad.push(j); continue; }
-      // (a still rite — the sacrament seated plain, no guest in it — was
-      // let stand on any note of the tune, the drone being all there is in
-      // it. It is not: the strings bow the day's chord there, twice or so,
-      // and a drone on re, fa, la or ti held two minutes under a do–sol
-      // dyad clashed a second in 61 % of the sacrament's harmonies against
-      // the keynote's 37 % (the round-3b critic's 14 seeds). So the
-      // sacrament keeps the rule every rite keeps — the tonic, the third or
-      // the fifth — and STILL_ANY_NOTE is off; true lets it stand again)
+      // (a still rite keeps the rule every rite keeps — the tonic, the third
+      // or the fifth — unless STILL_ANY_NOTE is set: the strings bow the
+      // day's chord there, so the drone is not all there is in it)
       if (STILL_ANY_NOTE && s.still && s.mode && inScale(nt.monzo, s.mode)) {
         cantus.push({ index: s.index, type: s.type, deg: nt.deg, tuneMonzo: cls(nt.monzo), monzo: cls(nt.monzo), role: "alone", off: 0 });
         continue;
@@ -615,7 +605,7 @@ window.KOLOB.Calendar = (function () {
   // THE CANTUS MUST MOVE: a reading whose notes are fewer than CANTUS_MOVES
   // pitches (the prelude's keynote counted where the cantus begins after
   // it) is no cantus — a tune whose stressed notes are all sol turned the
-  // drone once and held it fourteen minutes (seed 37, round 3b), and spelled
+  // drone once and held it fourteen minutes (seed 37), and spelled
   // nothing the doxology could be recognised by — so the desk tries the
   // next way of writing it instead
   var CANTUS_MOVES = 3;
@@ -646,8 +636,8 @@ window.KOLOB.Calendar = (function () {
     return { ok: false, from: null, n: 0, cantus: [], by: strong ? "strong" : "notes", why: "one section before the doxology" };
   }
   // how many ways the desk writes a doxology before it falls back (the first
-  // is the doxology the composer would have written anyway). 24, after the
-  // critic: with the still sacrament held to the rule, 12 reckoned 62.7 %
+  // is the doxology the composer would have written anyway). 24: with the
+  // still sacrament held to the rule, 12 reckoned 62.7 %
   // of 600 doxologies (the tune's own notes on 150 of them); 24 reckon
   // 70.5 % (211 by its own notes), for twice the desk's time in the
   // composer's worker, off the audio path (Node: 82 → 130 ms at the median)

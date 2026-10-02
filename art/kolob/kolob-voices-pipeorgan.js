@@ -41,12 +41,11 @@
 //    tone: heard as the pipe's consonant, never as a hiss. Flutes chiff more
 //    than principals; reeds do not chiff at all. And only a pipe that speaks
 //    out of silence is heard to spit: played legato, its breath is masked
-//    (round 3 — see CHIFF_LEGATO. The old chiff, full on every key of every
-//    chord, was one of the things under the owner's "breath, or brushing
-//    sound, in between the notes when the hymns are being sung"; the larger
-//    one, in the labs, was the ward's own breath — VoicesVocal's, the CAST
-//    crew's to mend, and mended on their branch).
-//  · THE TOUCH (round 3): one pipe per key. A note that lands on a key
+//    (see CHIFF_LEGATO: a chiff at full size on every key of every chord
+//    was one of the things under the owner's "breath, or brushing sound, in
+//    between the notes when the hymns are being sung"; the ward's own
+//    breath, kolob-voices-vocal.js's, was the larger).
+//  · THE TOUCH: one pipe per key. A note that lands on a key
 //    already down — truly down, well past the new note's start (a unison
 //    between parts, a common tone held across a chord) — holds that key on;
 //    it never speaks a second pipe over the first. A repeated note that only
@@ -63,10 +62,11 @@
 //    lost, and every pipe stays on the oscillator's fast path.
 //
 // LEVEL. At opts.gain 1, "hymn principal" leaves the organ at the level the
-// v0.30 organChord left it in the prelude (gainMul ≈ 0.51, before the organ
-// layer's volume): the same loudest-3-seconds loudness through the app's
-// chain, −21.2 LUFS in the lab's tabernacle. So the new organ drops into the
-// organ layer where the old one sat, at gain 1. Against it (loudest 3 s):
+// house's old additive organ (houseOrganChord, retired 2026-10-01) left it
+// in the prelude (gainMul ≈ 0.51, before the organ layer's volume): the same
+// loudest-3-seconds loudness through the app's chain, −21.2 LUFS in the
+// lab's tabernacle. So the pipe organ drops into the organ layer where the
+// old organ sat, at gain 1. Against it (loudest 3 s):
 // quiet flute −7 LU, flutes 8 & 4 and vox humana −5, trumpet −2.6, full
 // organ +3 — with the brightness of the mixture and the reed on top.
 //
@@ -94,15 +94,8 @@
 //     resolve() always returns a fresh object; an unknown name, or a stop
 //     misspelt in an object, warns once (a name draws "hymn principal").
 //
-// Round 3 (the organist's crew): the reed's release no longer snaps (the
-// anchor that cut a blooming trumpet down 3–13 % in one sample on short
-// notes is gone); the touch; the legato chiff; dispose(); stats kept as they
-// go; the misspelt-stop warning; texture. The organist (kolob-organist.js)
-// plays this organ; organist-lab.php hears and measures it. Its round 2: an
-// abutting repeat is re-struck (the auto-lift), not tied — hymn-lab hands
-// its parts over onset to onset, and the first touch had quietly tied a
-// tenth of the tunes' notes and more than a quarter of the inner voices';
-// and play(…, {trem: false}), so a long phrase can be laid in pieces.
+// The organist (kolob-organist.js) plays this organ; organist-lab.php hears
+// and measures it.
 // ============================================================================
 
 window.KOLOB = window.KOLOB || {};
@@ -207,31 +200,32 @@ window.KOLOB.VoicesOrgan = (function () {
 
   // one key's level at v = 1. Calibrated (lab: instruments-lab.php, "level
   // reference") so that at opts.gain 1 "hymn principal" is as loud as the
-  // v0.30 organChord in the prelude — gainMul ≈ 0.51, linear envelope, both
-  // measured before the organ layer's volume. The new organ is a drop-in for
-  // the old one's layer, not a louder instrument in its chair.
+  // house's old additive organ (houseOrganChord, retired 2026-10-01) was in
+  // the prelude — gainMul ≈ 0.51, linear envelope, both measured before the
+  // organ layer's volume. The pipe organ is a drop-in for the old organ's
+  // layer, not a louder instrument in its chair.
   var KEY_LEVEL = 0.0695;
   // the chiff's level against a key, and its time constants (s): a flue
   // pipe's consonant is 20–50 ms long and ~25 dB under the tone it starts
-  // (round 3: 1.0 → 0.55, −5 dB — one part of the owner's "breath between
-  // the notes"; the ward's own breath was the larger, in the labs)
+  // (0.55 is 5 dB under the breath's full size: a chiff at full size was
+  // one part of the owner's "breath between the notes"; the ward's own
+  // breath was the larger)
   var CHIFF_LEVEL = 0.55;
   // …but only a pipe that speaks OUT OF SILENCE is heard to spit. Played
   // legato — another key still down, or let go a moment ago — the wind is
   // already moving in the chest and the new pipe's breath is masked by the
-  // ones sounding; it speaks almost clean. Round 3: under a hymn, every
-  // moving part used to cough at full strength on every beat — at the joins
-  // about 1 dB over the flutes' own treble, one of the things under the
-  // owner's "breath, or a brushing sound, in between the notes when the
-  // hymns are being sung" (the ward's breath, 4–12 dB louder still, was the
-  // other, and the larger: see handoff/r3-organist-1.md, round 2). The
-  // legato attack keeps a fifth of it
-  // (−14 dB); the first chord out of real silence keeps it all. A quarter
-  // second of lift — the ward's breath at a line's end — is not silence:
-  // the wind is still up in the chest, and the next chord speaks legato.
+  // ones sounding; it speaks almost clean. Under a hymn, every moving part
+  // coughing at full strength on every beat sits at the joins about 1 dB
+  // over the flutes' own treble — one of the things under the owner's
+  // "breath, or a brushing sound, in between the notes when the hymns are
+  // being sung" (the ward's breath, 4–12 dB louder still, was the larger).
+  // The legato attack keeps a fifth of it (−14 dB); the first chord out of
+  // real silence keeps it all. A quarter second of lift — the ward's breath
+  // at a line's end — is not silence: the wind is still up in the chest,
+  // and the next chord speaks legato.
   var CHIFF_LEGATO = 0.2;
   var LEGATO_S = 0.25;                 // a key let go this recently still counts as "down"
-  // THE AUTO-LIFT (round 3, round 2). A key already sounding counts as held
+  // THE AUTO-LIFT. A key already sounding counts as held
   // for a new note on it only if it stays down more than OVERLAP_S past the
   // new note's start (a true overlap: a unison, a tone common to two
   // chords). One that merely abuts — let go at the new note's start, give or
@@ -245,9 +239,9 @@ window.KOLOB.VoicesOrgan = (function () {
     opts = opts || {};
     var R = streamOf(opts);
     var created = 0, standing = 0;
-    // the stats are kept as they go (round 3): the spans still sounding, the
-    // peak and the last stop — so a meeting-long instance never sorts an
-    // ever-growing history on every stats() call (wave-1 open issue)
+    // the stats are kept as they go: the spans still sounding, the peak and
+    // the last stop — so a meeting-long instance never sorts an ever-growing
+    // history on every stats() call
     var live = [], liveN = 0, peakN = 0, untilT = 0;
     function count(n, t0, t1) {
       created += n;
@@ -302,8 +296,8 @@ window.KOLOB.VoicesOrgan = (function () {
     function swellLevel(e) { return 0.32 + 0.68 * Math.pow(e, 1.3); }
     swellLP.frequency.value = swellCut(swellNow);
     swellGain.gain.value = swellLevel(swellNow);
-    // (cancel, round 3b: the moves already written from t on are taken
-    // back first — the meeting's house chords shape the box chord by chord,
+    // (cancel: the moves already written from t on are taken back first —
+    // the meeting's house chords shape the box chord by chord,
     // and a chord that comes while the last still sounds opens it again
     // from wherever it has got to)
     function setSwell(e, t, rampS, cancel) {
@@ -412,7 +406,7 @@ window.KOLOB.VoicesOrgan = (function () {
     // for a stopped one), broad enough to read as breath, pitched enough to
     // read as the pipe's own
     function chiff(t, f, amt, dest, harmonic, tau) {
-      var off = R.rnd(0, 1.7);                     // thrown every time, so a lab's A/B stays aligned
+      var off = R.rnd(0, 1.7);                     // DICE: thrown every time, before the early return, so a lab's A/B stays aligned
       amt *= chiffMul;
       if (amt < 0.004) return 0;
       var fc = Math.min(4800, Math.max(500, f * harmonic));
@@ -432,25 +426,22 @@ window.KOLOB.VoicesOrgan = (function () {
     }
     // a pipe's gain envelope: speech, hold, release (never a step). The
     // release is a setTarget from WHEREVER the gain stands when it begins:
-    // no anchor. (Round 3 — the wave-1 critic's reed click: the old anchor,
-    // setValueAtTime(lv, rel), snapped a reed that was still blooming down to
-    // its level, 3–13 % in one sample, on every note shorter than ~0.12 s —
-    // up to 27 dB of spray above 4 kHz on the trumpet. The bloom's own
-    // setTarget now runs on until the release takes over from its value.)
-    // SPEECH OUT OF NOTHING (round 3b, step 2). A gain is 1 until its first
-    // event, and the browser forgives a source's start a hair it does not
-    // forgive the event: a key put down a hair past a sample (t × rate some
-    // 3·10⁻⁷ of a sample over a whole one: the float arithmetic of a
-    // joint's amen) starts its pipes AT that sample, where setValueAtTime(0,
-    // t) has not yet happened. For that one sample the gain is 1. A pipe's
-    // own wave starts at nought (sine phase) and says nothing there; the
-    // chiff's noise starts wherever its offset falls, and one sample of it
-    // went out at full size, through the pedal, which has no shutters to
-    // round it: a lone spike 25 dB over the chord's own treble (seed 32,
-    // 7:59.7, the joint's amen after the Old Way hymn, out of silence).
-    // Reproduced in an OfflineAudioContext with t a hair past a frame, and
-    // gone with the gain made nought first. So every gain a key makes is
-    // silent at birth.
+    // no anchor. (An anchor — setValueAtTime(lv, rel) — snaps a reed that is
+    // still blooming down to its level, 3–13 % in one sample, on every note
+    // shorter than ~0.12 s: up to 27 dB of spray above 4 kHz on the trumpet.
+    // The bloom's own setTarget runs on until the release takes over from
+    // its value.)
+    // SPEECH OUT OF NOTHING. A gain is 1 until its first event, and the
+    // browser forgives a source's start a hair it does not forgive the
+    // event: a key put down a hair past a sample (t × rate some 3·10⁻⁷ of a
+    // sample over a whole one: the float arithmetic of a joint's amen)
+    // starts its pipes AT that sample, where setValueAtTime(0, t) has not
+    // yet happened. For that one sample the gain is 1. A pipe's own wave
+    // starts at nought (sine phase) and says nothing there; the chiff's
+    // noise starts wherever its offset falls, and one sample of it goes out
+    // at full size — through the pedal, which has no shutters to round it, a
+    // lone spike 25 dB over the chord's own treble. So every gain a key
+    // makes is silent at birth: g.gain.value = 0 before its first event.
     function envelope(g, t, atk, lv, rel, tau, over) {
       g.gain.value = 0;
       g.gain.setValueAtTime(0, t);
@@ -583,21 +574,21 @@ window.KOLOB.VoicesOrgan = (function () {
       tremPitch.gain.setTargetAtTime(depth * 7, t, 0.08);      // ±7 cents
     }
 
-    // THE TOUCH (round 3). An organ has one pipe per key per stop, and a key
-    // that is already down cannot be struck again: the finger stays. So a
-    // note that lands on a key still sounding on the same registration — a
-    // unison between two parts, a common tone written twice, a repeated note
-    // played without lifting — sounds nothing new: the key is held on to the
-    // later of the two releases. (Before, the pipe spoke twice over itself:
-    // two oscillators on one pitch with unrelated phases, a flutter and a
-    // second chiff at every such join.) A note that begins after the key's
-    // release speaks again. A note that begins just as the key is let go —
-    // within OVERLAP_S either side, the way a part handed over onset to
-    // onset writes a repeated note — is a repeat, and a player lifts for it:
-    // the organ lifts the old key AUTO_LIFT early and strikes the new one
-    // (round 3, round 2 — it used to tie them, and hymn-lab's ward lost the
-    // re-attack on its repeated notes). Only a key that stays down past that
-    // (a unison, a common tone) is held on.
+    // THE TOUCH. An organ has one pipe per key per stop, and a key that is
+    // already down cannot be struck again: the finger stays. So a note that
+    // lands on a key still sounding on the same registration — a unison
+    // between two parts, a common tone written twice, a repeated note played
+    // without lifting — sounds nothing new: the key is held on to the later
+    // of the two releases. (A second pipe on the same pitch would be two
+    // oscillators with unrelated phases: a flutter and a second chiff at
+    // every such join.) A note that begins after the key's release speaks
+    // again. A note that begins just as the key is let go — within OVERLAP_S
+    // either side, the way a part handed over onset to onset writes a
+    // repeated note — is a repeat, and a player lifts for it: the organ
+    // lifts the old key AUTO_LIFT early and strikes the new one (tied
+    // instead, the ward's repeated notes would lose their re-attack: hymn-lab
+    // hands its parts over onset to onset). Only a key that stays down past
+    // that (a unison, a common tone) is held on.
     // A key that speaks while the hands are already down speaks legato, its
     // breath masked (CHIFF_LEGATO); the first chord out of silence chiffs.
     var held = [];                                  // {sig, f, t, k}: keys sounding
@@ -628,7 +619,7 @@ window.KOLOB.VoicesOrgan = (function () {
     }
     // play(t, notes, registration, o): notes = [{f, dur, at?, v?, pedal?, pedalOnly?}]
     // Chords are notes sharing an `at`; lines are notes walking in `at`.
-    // o.texture (round 3): the number of voices the music carries. Given, it
+    // o.texture: the number of voices the music carries. Given, it
     // fixes the level law for the whole call (texture^−0.3 on every key), so
     // an inner voice moving alone is no louder than the chord it moves in;
     // left out, each onset is levelled by how many keys it puts down.
@@ -683,8 +674,8 @@ window.KOLOB.VoicesOrgan = (function () {
 
     // dispose(t): the organ is shut at scheduled time t — the tremulant's
     // motor and the wind stop, and the case leaves the graph once they have
-    // (wave-1 open issue: every organ built left two sources running for
-    // ever). Without t it is shut at once.
+    // (without it every organ built leaves two sources running for ever).
+    // Without t it is shut at once.
     var disposed = false;
     function dispose(t) {
       if (disposed) return;
@@ -709,4 +700,4 @@ window.KOLOB.VoicesOrgan = (function () {
   return { create: create, STOPS: STOPS, REGISTRATIONS: REGISTRATIONS, resolve: resolve,
            CHIFF: { level: CHIFF_LEVEL, legato: CHIFF_LEGATO, legatoS: LEGATO_S } };
 })();
-(window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-voices-pipeorgan.js"] = true;   // the load guard's roll call (round 3b: the engine's organ)
+(window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-voices-pipeorgan.js"] = true;   // the load guard's roll call

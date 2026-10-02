@@ -128,3 +128,41 @@ function jd_generation_cost(string $provider, string $modelVersion, ?array $usag
     }
     return ['tokens' => $t, 'cost_usd' => jd_cost($t, $prices[$modelVersion]), 'priced' => true];
 }
+
+/**
+ * Price one STORED generation row: its usage_tokens text (the provider's
+ * usage object as jd-generate.php stored it, JSON; null or empty when none
+ * was recorded) decoded and handed to jd_generation_cost(). Every reader that
+ * prices a jd_generations row goes through here — data.php's turn items,
+ * jd-rate's reveal, jd-analytics.
+ *
+ * @return array{tokens:?array, cost_usd:?float, priced:bool}
+ */
+function jd_price_generation_row(mixed $usageTokens, string $provider, string $modelVersion): array
+{
+    $usage = !empty($usageTokens) ? json_decode((string) $usageTokens, true) : null;
+    return jd_generation_cost($provider, $modelVersion, is_array($usage) ? $usage : null);
+}
+
+/**
+ * A priced generation as the payloads state it: tokens as the three numbers a
+ * person reads (input, output, and the total of every bucket — the cache and
+ * reasoning buckets stay in the database, jd-spend.php's job) and cost_usd
+ * rounded to six places; either null when jd_generation_cost() had none.
+ * jd-rate's reveal prints both keys, nulls included; data.php omits a null.
+ *
+ * @param array{tokens:?array, cost_usd:?float} $cost  jd_generation_cost()'s answer
+ * @return array{tokens:?array{input:int,output:int,total:int}, cost_usd:?float}
+ */
+function jd_cost_summary(array $cost): array
+{
+    $t = $cost['tokens'];
+    return [
+        'tokens' => $t === null ? null : [
+            'input' => $t['input'],
+            'output' => $t['output'],
+            'total' => $t['input'] + $t['cache_write'] + $t['cache_read'] + $t['output'],
+        ],
+        'cost_usd' => $cost['cost_usd'] === null ? null : round($cost['cost_usd'], 6),
+    ];
+}

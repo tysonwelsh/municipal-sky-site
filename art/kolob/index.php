@@ -12,7 +12,8 @@ function kolob_v($file)
 
 // Build/version stamp (printed small at the foot of the page) — a way to tell
 // at a glance whether the page being served is the latest deploy:
-//   · VERSION  — a hand-set marker, bumped when the app changes (v0.01, v0.02…)
+//   · VERSION  — a hand-set marker, bumped when the app changes (one line,
+//                v0.36.N — what the owner would notice; README.md)
 //   · build    — derived from the ACTUAL bytes of the served assets, so it
 //                shifts the instant any JS/CSS/markup ships, with no upkeep
 //   · deployed — the newest asset's mtime; the server stamps this at upload,
@@ -45,9 +46,8 @@ include '../../includes/header.php';
  <div class="kolob-scene">
   <div class="content-frame kolob-frame">
 
-    <!-- Title page: the title and its double rule. The edition switches that
-         once rode a masthead above the title now sit in the colophon at the
-         foot of the page (v0.16). -->
+    <!-- Title page: the title and its double rule. The edition switches sit
+         in the colophon at the foot of the page. -->
     <header class="kolob-header">
       <h1 class="kolob-title">𐐗𐐄𐐢𐐉𐐒</h1>
       <div class="kolob-rule" aria-hidden="true"></div>
@@ -77,7 +77,7 @@ include '../../includes/header.php';
       <canvas id="kolob-viz" class="kolob-viz" aria-label="shape-note engraving of the music as it plays"></canvas>
     </div>
 
-    <!-- The console (v0.22): one row on the paper — PLAY a solid ink dot,
+    <!-- The console: one row on the paper — PLAY a solid ink dot,
          PAUSE and STOP ringed ones, glyph only (play turns gilt while the
          meeting runs; pause fills while the meeting is held); then the
          volume slider, an ink line with a brass hexagon for its thumb, the
@@ -92,8 +92,8 @@ include '../../includes/header.php';
         <button type="button" class="kolob-knob pause-btn" id="kolob-pause" aria-label="pause" aria-pressed="false"><svg class="kolob-knob-glyph" viewBox="0 0 16 16" aria-hidden="true"><rect x="3.4" y="2.8" width="3.4" height="10.4" fill="currentColor"/><rect x="9.2" y="2.8" width="3.4" height="10.4" fill="currentColor"/></svg></button>
         <button type="button" class="kolob-knob stop-btn" id="kolob-stop" aria-label="stop"><svg class="kolob-knob-glyph" viewBox="0 0 16 16" aria-hidden="true"><rect x="3.6" y="3.6" width="8.8" height="8.8" fill="currentColor"/></svg></button>
         <div class="kolob-transport-spacer"></div>
-        <!-- The band's caterpillar (2026-09-29; pass 2, 2026-09-30): a volume
-             for the Nauvoo band alone, there only while the band is in the
+        <!-- The band's caterpillar: a volume for the Nauvoo band alone,
+             there only while the band is in the
              street. It is a slider and nothing more: a dark ink line for
              its body, the pale track ahead of it, and a round head, a green
              ink disc with a paper ring inside. It inches in from the
@@ -128,13 +128,13 @@ include '../../includes/header.php';
       </div>
     </div>
 
-    <!-- Hymn board + broadside. The board holds a printed PROGRAMME card
-         (v0.20): the day in small capitals under a short double rule; the
+    <!-- Hymn board + broadside. The board holds a printed PROGRAMME card:
+         the day in small capitals under a short double rule; the
          mode and the meter (during a hymn) beneath, with the direction line
          (stillness, fuging, two bands, the steeples answer, an old tune, the
          whole tune) as a gilt rubric on the same line; the hymn being sung
-         (round 3: its number, its Deseret name, its meter and its hymnist,
-         from the typed hymn-announced); and the day's numbers (theme,
+         (its number, its Deseret name, its meter and its hymnist, from the
+         typed hymn-announced); and the day's numbers (theme,
          develops, answers) as one printed line. Idle, the card says
          the valley is still. The seed row sits on the green beneath the card.
          The broadside verse sits beside, centred on the board's height. -->
@@ -186,20 +186,23 @@ include '../../includes/header.php';
     </div>
 
     <!-- Colophon: one ruled line at the foot of the page carrying the three
-         edition switches, centred. (The series links — the art index and the
-         sibling engines — were struck in v0.29 at the owner's request.) -->
+         edition switches, centred. No series links (the art index, the
+         sibling engines): the owner struck them. -->
     <div class="kolob-colophon">
       <!-- The edition switches: a flex row, so each button spaces itself
            however wide its label renders (the script toggle grows in Deseret). -->
       <div class="kolob-toggles">
         <!-- The Whole switch: cycles the cumulative-form governor — guaranteed
-             (solid gilt) / natural 8% (outline) / never (struck). A cumulative
-             meeting withholds the tune until the doxology sings it whole. -->
-        <button type="button" class="kolob-latin-toggle kolob-cumulative-toggle is-deseret" id="kolob-cumulative" aria-label="the tune withheld until the doxology — about one meeting in twelve" aria-pressed="false">𐐐𐐄𐐢</button>
+             (solid gilt) / natural (outline; the engine's CUMULATIVE_ODDS) /
+             never (struck). A cumulative meeting withholds the tune until the
+             doxology sings it whole. The label below is a placeholder:
+             kolob-ui.js rewrites it at load with the rate the engine reports
+             (KolobAudio.getCumulativeOdds()), so no number is typed here. -->
+        <button type="button" class="kolob-latin-toggle kolob-cumulative-toggle is-deseret" id="kolob-cumulative" aria-label="the tune withheld until the doxology — the natural draw" aria-pressed="false">𐐐𐐄𐐢</button>
         <!-- The Ives switch: while on, every meeting is guaranteed a visitation
-             (the two bands, the steeples, the old tune or the trombones at
-             dawn). Checking it restarts the meeting so the guarantee begins
-             at once. -->
+             (one of the guests the switch may name; the list is in
+             kolob-ui.js). Checking it restarts the meeting so the guarantee
+             begins at once. -->
         <button type="button" class="kolob-latin-toggle kolob-ives-toggle is-deseret" id="kolob-ives" aria-label="guarantee an Ives visitation (restarts the meeting)" aria-pressed="false">𐐌𐐚𐐞</button>
         <!-- Dev script toggle: Deseret <-> Latin labels (development aid) -->
         <button type="button" class="kolob-latin-toggle" id="kolob-latin" aria-label="switch to the Latin alphabet">Latin</button>
@@ -231,7 +234,8 @@ include '../../includes/header.php';
      (pj2-rand's dice, pj2-clock's clock, pj2-fx's room crossfade), shared by
      relative path the way ZANKYŌ shares it and never modified from here; then
      Kolob's own rooms. The guard printed after them names any room that did
-     not answer the roll call. -->
+     not answer the roll call, to the console and in KOLOB._broken, which
+     kolob-ui.js reads: a broken page keeps PLAY disabled. -->
 <?php kolob_engine_tags($kolob_engine, 'kolob_v'); ?>
 <script src="kolob-text.js?v=<?php echo kolob_v('kolob-text.js'); ?>"></script>
 <script src="kolob-viz.js?v=<?php echo kolob_v('kolob-viz.js'); ?>"></script>

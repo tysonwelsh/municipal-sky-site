@@ -1,5 +1,6 @@
 // ============================================================================
-// GUESTS LAB 3c — audition bench for round 3c's pair (dev, unlinked).
+// GUESTS LAB 3d — audition bench for the Social Hall and the Testimony (dev,
+// unlinked; the script keeps its global name, GuestsLab3c).
 //
 // THE SOCIAL HALL (KOLOB.GuestSocialHall): the benches pushed back, the
 // fiddler tuning, the caller, the potatoes, a reel, jig or quadrille made of

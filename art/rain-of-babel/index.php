@@ -1,4 +1,5 @@
 <?php
+$track_page = 'rain-of-babel';   // anonymous page-view tally (includes/footer.php)
 $page_title = 'Rain of Babel - Municipal Sky';
 $page_description = 'A rain of characters from 73 writing systems — Greek, Cherokee, Deseret, Devanagari, Tibetan, Chinese, Linear B — falling down a sheet of engineering paper, crashing on the bottom rule and drifting into a heap. No column ever repeats.';
 

@@ -98,11 +98,10 @@ window.KOLOB.Testimony = (function () {
     cap: 1,
   };
   var AT = [3, 7];                                // s into the testimony: the rite settles first
-  // THE LEVEL (the testimony's bus), against the v0.30 organ reference as
-  // the guests lab 3c measures it (the loudest 3 s, as seated): the
-  // stillest rite of the morning, and a person speaking — the speaker's
-  // loudest near −3.5 LU, the reed a little under the voice, the whole
-  // about −2 at its fullest (the handoff's table)
+  // THE LEVEL (the testimony's bus), measured against the guests lab's
+  // organ reference (the loudest 3 s, as seated): the stillest rite of the
+  // morning, and a person speaking — the speaker's loudest near −3.5 LU,
+  // the reed a little under the voice, the whole about −2 at its fullest
   var LEVEL = 0.6;
 
   function oddsFor(info) {
@@ -126,7 +125,7 @@ window.KOLOB.Testimony = (function () {
   function decide(info, stream) {
     info = info || {};
     var rs = need(stream).fork("seat");
-    var roll = rs.next(), atU = rs.next(), nU = rs.next();              // every die, first
+    var roll = rs.next(), atU = rs.next(), nU = rs.next();              // DICE: every die, first, whether or not the testimony is seated — deliberate; must stay
     var p = oddsFor(info), why = null;
     var order = (info.sections || []).map(function (s) { return s && s.type; });
     var held = null;
@@ -401,7 +400,7 @@ window.KOLOB.Testimony = (function () {
     var tbl = tableFor(mode, M.droneMonzo ? [0, 1, 2, 3].map(function (i) { return (M.droneMonzo[i] || 0) - (keyM[i] || 0); }) : null);
     var bearers = people.map(function (b, k) {
       var r = need(stream).fork("speech:" + k), rr = need(stream).fork("reed:" + k);
-      var reedU = rs.next(), nU = rs.next();                               // every die, drawn
+      var reedU = rs.next(), nU = rs.next();                               // DICE: every die, drawn, in order, even where the streak rule overrides the reed — deliberate; must stay
       var lean = HARMONIUM_LEAN[b.archetype] != null ? HARMONIUM_LEAN[b.archetype] : 0.6;
       var reed = reedU < lean ? "harmonium" : "clarinet";
       if (reed === lastReed && streak >= 2) reed = reed === "harmonium" ? "clarinet" : "harmonium";   // (never three on one reed)
@@ -576,10 +575,11 @@ window.KOLOB.Testimony = (function () {
   // PERFORM — the testimonies, placed at t (synthesis; reads no clock)
   // ==========================================================================
   // the parts' balance under LEVEL: the speaker, the reeds, the pews
-  // (soloed at LEVEL 0.5, MIX 0.8 for the reeds: the speaker's loudest 3 s
-  // −5.1 LU, the reeds' +3.5 — the reed drowning the voice it follows — and
-  // the pews' −22: the reeds 10 dB down, to sit a little under the speaker)
-  var MIX = { speaker: 1, harmonium: 0.25, clarinet: 0.25, room: 0.66 };
+  // (measured soloed at LEVEL 0.5 with the reeds at MIX 0.8: the speaker's
+  // loudest 3 s −5.1 LU, the reeds' +3.5 — the reed drowning the voice it
+  // follows — and the pews' −22; so the reeds are set 10 dB down, to sit a
+  // little under the speaker)
+  var MIX ={ speaker: 1, harmonium: 0.25, clarinet: 0.25, room: 0.66 };
   function perform(ctx, dest, t, material, stream, hooks) {
     var VV = window.KOLOB.VoicesVocal;
     if (!VV || !VV.singer) throw new Error("KOLOB.Testimony: load kolob-voices-vocal.js first");
@@ -589,8 +589,10 @@ window.KOLOB.Testimony = (function () {
     function bus(key, to) { var g = ctx.createGain(); g.gain.value = LEVEL * MIX[key]; g.connect(ds[to || key] || dest); made.push(g); return g; }
     var spBus = bus("speaker"), reedBus = { harmonium: bus("harmonium"), clarinet: bus("clarinet") }, roomBus = bus("room", "speaker");
     var B = bake(ctx), Y = synth.fork("reeds"), hand = synth.fork("room"), nodes = { reeds: 0, room: 0 };
-    // (sound-level: which creak, a hair of its speed — drawn for every one now, in order)
-    var CR = sc.creaks.map(function () { return { u: hand.next(), rate: hand.rnd(0.94, 1.06) }; });
+    // DICE: which creak, a hair of its speed — drawn for every one now, in
+    // order, before any is placed, so a creak left out later moves no other
+    // draw — deliberate; must stay
+    var CR =sc.creaks.map(function () { return { u: hand.next(), rate: hand.rnd(0.94, 1.06) }; });
     var singers = {};
     function singerOf(sp) {
       var key = sp.member || "k" + sp.k;

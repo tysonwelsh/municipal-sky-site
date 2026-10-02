@@ -1,5 +1,7 @@
 # PLAN — ONE ROOM: seating Kolob's voices in a single space
 
+> **Status 2026-10-01:** phases A and B are built (the CLOSE and WIDE rooms, the St Margaret's impulse response); phases C–E (the far wall, the case, weather, a shared shelf) are not — see `OPEN-WORK.md`. The mechanics it names (`kolob-audio.js`, a gitignored harness, `SHELVED = { bagpipe: true }`) are from before the split: the engine is the `kolob-*.js` rooms, the harness is tracked, the bagpipe is in `shelved/`.
+
 2026-09-13. The owner's complaint, in their words: "sometimes it feels like
 the tracks are separate … separate recordings just kinda layered on top of
 each other and not integrated and intermeshed the way I would like them to

@@ -1,4 +1,5 @@
 <?php
+$track_page = 'about';   // anonymous page-view tally (includes/footer.php)
 $page_title = 'About - Municipal Sky';
 $page_description = 'About Municipal Sky - creative explorations and digital experiments';
 include 'includes/header.php';

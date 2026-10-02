@@ -68,6 +68,26 @@
         })();
     </script>
 </footer>
+<?php if (!empty($track_page)): ?>
+<!-- Anonymous page-view tally (the site pattern — see api/page-event-tracking.php).
+     A page opts in by setting $track_page (and optionally $track_label) before
+     including this footer; pages with their own tracker leave it unset. No
+     personal data leaves the browser: the server stores only a salted,
+     daily-rotating visitor hash for unique-visit counts. -->
+<script>
+  (function () {
+    fetch("/api/page-event-tracking.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        page: <?php echo json_encode((string) $track_page); ?>,
+        event_type: "page_view",
+        label: <?php echo (isset($track_label) && $track_label !== null && $track_label !== '') ? json_encode((string) $track_label) : 'null'; ?>
+      }),
+    }).catch(function () {});
+  })();
+</script>
+<?php endif; ?>
 </body>
 
 </html>

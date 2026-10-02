@@ -30,8 +30,9 @@
 // never moves another draw.
 //
 // THE MATERIAL. perform(ctx, dest, t, material, stream) plays the day's
-// first hymn. Until the hymn composer exists, the engine passes Harmony's
-// four-part harmonization, and this module takes it in any of these shapes:
+// first hymn: the meeting hands it the hymnal's SCORE Hymn ({hymn}) once
+// written, else Harmony's four-part harmonization (kolob-meeting.js
+// dawnChorale), and this module takes it in any of these shapes:
 //   · { mode, keynoteHz, lines: [line, …] }, each line a list of chords:
 //       [B, T, A, S] degree arrays, or {degs: [B,T,A,S], beats, fermata},
 //       or exactly what Harmony.harmonize() returns ({chord: {voicing}, dur});
@@ -54,9 +55,9 @@
 // fewest sour thirds and fifths, moving the fewest tones (the tonic almost
 // never; the two-fifths tones re and te first), wins. That turns the ii
 // chord's 40/27 wolf into a pure fifth (re at 10/9), and the minor modes'
-// III and v and VII into pure triads (te at 9/5, re at 10/9) — the wolves the
-// wave-1 critic heard in the Question's chorale. Harmony's own frequencies
-// are therefore NOT used unless material.trustFreqs is set; its degrees are.
+// III and v and VII into pure triads (te at 9/5, re at 10/9) — the wolves a
+// chorale in Harmony's own tuning sounds. Harmony's own frequencies are
+// therefore NOT used unless material.trustFreqs is set; its degrees are.
 //
 // THE VOICING. The chords are the engine's; who plays which of their tones,
 // and in which octave, is the choir's. Harmony voices each chord for its
@@ -68,9 +69,9 @@
 // are voiced again under it by the fallback harmonizer's own voicer, one
 // pass over the whole chorale: inner voices near, no parallels, no
 // crossing, each line closing in root position. Over 66 tunes (1,882
-// chords) of the engine's Harmony that took the parallel fifths and octaves
-// from about 1,900 to about 30, and the inner voices' leaps past a fifth
-// from about 650 to about 10.
+// chords) of the engine's Harmony this takes the parallel fifths and
+// octaves from about 1,900 to about 30, and the inner voices' leaps past a
+// fifth from about 650 to about 10.
 // Then the whole chorale is placed in the trombones' ranges: the choir plays
 // it where the instruments are warm (an octave down if it sits high), and a
 // part that still strays is folded line by line.
@@ -86,15 +87,15 @@
 // one (a drawn gap; the lab measures it within about 1.5 LU of the draw),
 // so the antiphony never collapses into two equal choirs. Far is heard in
 // the level, the side, the town's air and the echo off the houses — and
-// only a little in the colour: the pre-v0.34 polish took away round 2's
-// 600 Hz veil (the owner heard the far choir as a muffled hum), so the far
-// choir keeps its brass (its centroid about 0.9 kHz against the near
-// choir's 1.0, in the lab over five chorales, where round 2's was 0.4–0.5)
-// and loses only the air above 2.5 kHz. Each phrase is an arch — a breath
-// attack, a swell to its middle, a fade on the fermata — its notes
-// legato-tongued, and a repeated line comes back softer. The near choir
-// plays mp–mf, present and warm (round 2's p–mp sat 7 dB under the house
-// that followed it). In a minor mode the near choir may end on a major
+// only a little in the colour: there is no 600 Hz veil (behind one the
+// owner heard the far choir as a muffled hum), so the far choir keeps its
+// brass (its centroid about 0.9 kHz against the near choir's 1.0, in the
+// lab over five chorales; behind the veil it was 0.4–0.5) and loses only
+// the air above 2.5 kHz. Each phrase is an arch — a breath attack, a swell
+// to its middle, a fade on the fermata — its notes legato-tongued, and a
+// repeated line comes back softer. The near choir plays mp–mf, present and
+// warm (at p–mp it sat 7 dB under the house that followed it). In a minor
+// mode the near choir may end on a major
 // chord (the tierce de Picardie: the dawn's own answer) when the hymn ends
 // on its tonic; the owner ruled the ending itself open (PLAN §15), so it
 // ends wherever the hymn's harmony falls.
@@ -120,9 +121,9 @@
 //   perform(ctx, dest, t, material, stream, hooks?) → end time (s, absolute)
 //     hooks: { onNote({freq, t, dur, part, choir, line, loud}), onPhrase(ph),
 //              only: "far"|"near" (a lab's solo; the engine never sets it),
-//              defer(at, fn) (round 3's integration: the engine's clock —
-//              every phrase after the first is laid out at `at`, a little
-//              before it sounds, instead of the whole dawn inside one cue) }
+//              defer(at, fn) (the engine's clock — every phrase after the
+//              first is laid out at `at`, a little before it sounds, instead
+//              of the whole dawn inside one cue) }
 //   decide(meetingInfo, stream) → { seat, why, odds, roll }   (plan, explained)
 //   score(material, stream, t0) → the whole performance as data (pure)
 //   chorale(material) → the material, read, tuned, voiced and placed (pure);
@@ -143,20 +144,15 @@ window.KOLOB.GuestTrombones = (function () {
   // ==========================================================================
   // p = base × weight[sunday or kind], capped. The base is conditional: the
   // choir is refused when the bands are seated (≈36 % of meetings) or another
-  // guest holds the prelude (≈11 %). Round 2's base of 0.34 came out at one
-  // meeting in five over all meetings, but at 17.5 % of FIRST visits, whose
-  // Sunday was then a fast one 36 % of the time (weight 0.35); the calendar
-  // of the pre-v0.34 polish gave every meeting the plan's odds, and first
-  // visits rose to 21 % — the trombones became the second commonest way a
-  // visit wakes (and, once the prelude had nine seatings, the commonest),
-  // before the owner had heard their new sound. Round 2 of the polish sets
-  // the base to 0.21: about one meeting in eight over all meetings (the
-  // harness and the lab's odds card measure it against the real planner),
-  // and one first visit in six or seven (14 % of seeds 1–200, 16.5 % of
-  // 1–400: a shade under round 2's 17.5 %), so no one way of waking stands
-  // out. It is the one number to turn, and the integrator's to rule on once
-  // the owner has heard the new sound: 0.27 is about one meeting in six,
-  // 0.34 round 2's one in five.
+  // guest holds the prelude (≈11 %). At 0.21 the choir comes about one
+  // meeting in eight over all meetings (the harness and the lab's odds card
+  // measure it against the real planner), and one first visit in six or
+  // seven (14 % of seeds 1–200, 16.5 % of 1–400), so no one way of waking
+  // stands out: at 0.34 it came one meeting in five and 17.5–21 % of first
+  // visits — the second commonest way a visit wakes, and, once the prelude
+  // had nine seatings, the commonest. It is the one number to turn, the
+  // owner's to rule on by ear: 0.27 is about one meeting in six, 0.34 one
+  // in five.
   var ODDS = {
     base: 0.21,
     weight: {
@@ -168,34 +164,30 @@ window.KOLOB.GuestTrombones = (function () {
     cap: 0.9,
   };
   var EXCLUDES = ["bands"];                       // never with the crossing bands
-  // the moment in the prelude, s (round 2 of the polish widened it from
-  // 4–14: some mornings the valley is awake a while before the call)
+  // the moment in the prelude, s (some mornings the valley is awake a while
+  // before the call)
   var AT = [4, 22];
   var MAX_DUR = 90;                                // the exchanges shorten to fit
-  // the guest's own bus. Round 2's 1.15 left the near choir 4–7 LU under
-  // the organ reference in the lab, and in the app 7 dB under the house that
-  // followed it (the round-2 Listener: −31 dB in the 300 Hz–4 kHz band
-  // against −24). The pre-v0.34 polish raises it: the near choir now plays
-  // mp–mf (shapeOf) through a brighter bore, and this bus is 2 dB up, so
-  // the near choir is heard 4.5–5 dB louder than in round 2 and sits within
-  // about 2 LU of the organ reference while it plays (the trombone lab, five
-  // chorales: handoff r25-polish-1); the far choir keeps its drawn 6–8 LU
-  // under it. Round 2 of the polish (the critic: a phrase's crest took the
-  // dawn's loudest 3 s to +2.4–2.7 LU over the organ reference) keeps the
-  // near choir where it sits while it plays and lowers only its peaks: the
-  // bus 0.3 dB down, a gentler arch (swell 0.06–0.12), and the near choir's
-  // drawn nearness (0.16–0.3, 2.2 dB of level between its ends) made half
-  // as loud a difference (NEAR_EVEN), so one Sunday's near choir is not
-  // 3 LU louder than another's by the luck of where it stood.
+  // the guest's own bus. The near choir plays mp–mf (shapeOf) through a
+  // bright bore and sits within about 2 LU of the organ reference while it
+  // plays (the trombone lab, five chorales); the far choir keeps its drawn
+  // 6–8 LU under it. (At 1.15 with a p–mp near choir it sat 4–7 LU under
+  // the organ reference in the lab, and in the app 7 dB under the house
+  // that followed it: −31 dB in the 300 Hz–4 kHz band against −24.) The
+  // peaks are held down without moving the choir while it plays — a
+  // phrase's crest would otherwise take the dawn's loudest 3 s to +2.4–2.7
+  // LU over the organ reference: a gentle arch (swell 0.06–0.12), and the
+  // near choir's drawn nearness (0.16–0.3, 2.2 dB of level between its
+  // ends) made half as loud a difference (NEAR_EVEN), so one Sunday's near
+  // choir is not 3 LU louder than another's by the luck of where it stood.
   // The owner, after v0.34's preview (2026-09-28): "still not terribly
   // enthused… maybe just turn them down in the mix". 4 dB down: 1.4 → 0.88.
   var LEVEL = 0.88;
   var NEAR_EVEN = { at: 0.23, share: 0.5 };
 
   function oddsFor(info) {
-    // (round 3c: a meeting hands its odds in, info.odds, from the calendar's
-    // one table — KOLOB.Calendar.GUEST_ODDS; a lab without it reads this
-    // room's own, below)
+    // (the meeting hands this room its odds from Calendar.GUEST_ODDS,
+    // info.odds; a lab without them reads the room's own ODDS)
     if (info && info.odds != null) return Math.max(0, Math.min(1, +info.odds));
     var w = ODDS.weight;
     var k = info.sunday && w[info.sunday] != null ? info.sunday : info.kind;
@@ -221,10 +213,10 @@ window.KOLOB.GuestTrombones = (function () {
       farDist: r.rnd(0.74, 0.88),
       nearDist: r.rnd(0.16, 0.3),
       farDyn: r.rnd(0.52, 0.62),       // mp–mf where they stand: the distance takes the rest
-      nearDyn: r.rnd(0.5, 0.62),       // mp–mf: close, present, warm (the pre-v0.34 polish: round 2's p–mp sat 7 dB under the house)
+      nearDyn: r.rnd(0.5, 0.62),       // mp–mf: close, present, warm (at p–mp the near choir sat 7 dB under the house)
       gap: r.rnd(0.5, 1.4),            // how long the answer waits after the call lets go
       fermata: r.rnd(1.7, 2.3),        // the line's last chord, held
-      swell: r.rnd(0.06, 0.12),        // each phrase's arch (round 2 of the polish: 0.08–0.16 crested past the organ)
+      swell: r.rnd(0.06, 0.12),        // each phrase's arch (0.08–0.16 crests past the organ)
       farAtk: r.rnd(0.22, 0.4),        // a breath attack on a phrase's first chord
       nearAtk: r.rnd(0.12, 0.22),
       together: r.chance(0.35),        // the far choir joins the last chord
@@ -241,7 +233,7 @@ window.KOLOB.GuestTrombones = (function () {
   function decide(info, stream) {
     info = info || {};
     var rs = need(stream).fork("seat");
-    var roll = rs.next(), at = rs.rnd(AT[0], AT[1]);          // every die, first
+    var roll = rs.next(), at = rs.rnd(AT[0], AT[1]);          // DICE: every die, first
     var sh = shapeOf(stream);
     var p = oddsFor(info), why = null;
     var secs = info.sections || [], guests = info.guests || [];
@@ -595,18 +587,18 @@ window.KOLOB.GuestTrombones = (function () {
   var PARTS = ["B", "T", "A", "S"];
   // the trombones' compass: comfortable, and the most a chorale may ask
   var RANGE = {
-    S: { inst: "altoTrombone",  comf: [196, 660], ext: [147, 784] },   // (to G5: the keynote's wider window, the pre-v0.34 polish, sets a high hymn's top there)
+    S: { inst: "altoTrombone",  comf: [196, 660], ext: [147, 784] },   // (to G5: the keynote's wider window sets a high hymn's top there)
     A: { inst: "tenorTrombone", comf: [147, 440], ext: [104, 587] },
-    // (the F attachment reaches C2; round 3c: its top to C5 — the same tenor
-    // trombone the alto part plays to D5; at B-flat4 a high first hymn left a
-    // tenor line strained past it that could not fold without crossing)
+    // (the F attachment reaches C2; its top C5 — the same tenor trombone
+    // the alto part plays to D5; at B-flat4 a high first hymn leaves a
+    // tenor line strained past it that cannot fold without crossing)
     T: { inst: "tenorTrombone", comf: [98, 370],  ext: [70, 523] },
     B: { inst: "bassTrombone",  comf: [55, 262],  ext: [41, 330] },
   };
 
   function num(x, d) { x = +x; return isFinite(x) && x > 0 ? x : d; }
   // (a note is a degree, {deg, beats | durBeats | dur}, or a [deg, beats]
-  // row — the SAMPLES' own shape; the critic found a row read as degree 0)
+  // row — the SAMPLES' own shape, which must never be read as a degree)
   function degOf(x) { return typeof x === "number" ? x : Array.isArray(x) ? (x[0] != null ? +x[0] : null) : (x && x.deg != null ? +x.deg : null); }
   function beatsOf(x) { return Array.isArray(x) ? num(x[1], 1) : x && typeof x === "object" ? num(x.beats != null ? x.beats : (x.durBeats != null ? x.durBeats : x.dur), 1) : 1; }
 
@@ -877,6 +869,11 @@ window.KOLOB.GuestTrombones = (function () {
     return best;
   }
 
+  // a fault is told, never hidden (kolob-core.js, THE FAULTS): through the
+  // house's confess, once per what, where the house is loaded; plainly on a
+  // bench without it
+  function confess(what, err) { var S = window.KOLOB._s; if (S && S.confess) S.confess(what, err); else if (typeof console !== "undefined") console.error("Kolob: " + what, err); }
+
   // chorale(material) → { mode, keynoteHz, lines: [{parts:{B,T,A,S}, beats}],
   //   source, octave, voices, prepared: true }
   // What it returns is itself material: handed back (to plan, score or
@@ -923,7 +920,7 @@ window.KOLOB.GuestTrombones = (function () {
         }).filter(function (ln) { return ln.length; });
         if (idxLines.length) { lines = fromChords(mode, K, harmonize(mode, idxLines), { voiced: true }); source = "melody, harmonized here"; }
       }
-    } catch (e) { lines = null; }
+    } catch (e) { lines = null; confess("the trombones' material could not be read (they play the sample)", e); }
     if (!lines || !lines.length || !lines.some(function (l) { return l.beats > 0; })) {
       var smp = sampleMaterial(mode, K);
       var sl = smp.melodyLines.map(function (ln) { return ln.map(function (x) { return { idx: fromD7(mode, x.deg), beats: x.beats }; }); });
@@ -999,10 +996,9 @@ window.KOLOB.GuestTrombones = (function () {
   }
   // THE PACE: seconds per written beat. The shape draws the time of the
   // chorale's commonest note (beatS); a hymn written in half notes would
-  // then run its beats at half that — round 2's fast Sundays played the dawn
-  // at 0.52–0.60 s a beat, brisk for a chorale at sunrise (the round-2
-  // Listener). So no beat is quicker than BEAT_FLOOR_S (the pre-v0.34
-  // polish): a slow hymn is played slow.
+  // then run its beats at half that — a fast Sunday's dawn at 0.52–0.60 s a
+  // beat, brisk for a chorale at sunrise. So no beat is quicker than
+  // BEAT_FLOOR_S: a slow hymn is played slow.
   var BEAT_FLOOR_S = 0.9;
   var TONGUE_S = 0.022;                            // how early a legato-tongued note stops for the next
   function spbOf(sh, unit, far) { return Math.max(BEAT_FLOOR_S, sh.beatS / unit) * (far ? sh.farLag : 1); }
@@ -1191,4 +1187,4 @@ window.KOLOB.GuestTrombones = (function () {
     get LEVEL() { return LEVEL; }, set LEVEL(v) { LEVEL = +v; },
   };
 })();
-(window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-guest-trombones.js"] = true;   // the load guard's roll call (the engine seats it from round 2)
+(window.KOLOB._rooms = window.KOLOB._rooms || {})["kolob-guest-trombones.js"] = true;   // the load guard's roll call

@@ -29,27 +29,13 @@ require_once __DIR__ . '/jd-origin.php';
 require_once __DIR__ . '/jd-build.php';
 require_once __DIR__ . '/jd-curated-sync.php';
 
-jd_require_allowed_origin();
-jd_require_post();
-jd_require_bench_key();
+jd_curator_post();
 
 $body = jd_read_json_body();
 
 $submissionId = $body['submission_id'] ?? null;
 if ($submissionId === null && isset($body['item_id'])) {
-    $entry = jd_curated_entry(is_string($body['item_id']) ? $body['item_id'] : '');
-    if ($entry === null) {
-        jd_fail(404, 'not_found', 'No such curated item.');
-    }
-    try {
-        $sdb = jd_db();
-        $sdb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $sync = jd_curated_sync($sdb, $entry, jd_taxonomy_required('jd-curate'));
-        $submissionId = $sync['submission_id'];
-    } catch (PDOException $e) {
-        error_log('jd-curate: curated sync failed — ' . $e->getMessage());
-        jd_fail(500, 'server_error', 'The item could not be filed.');
-    }
+    $submissionId = jd_curated_submission_for($body['item_id'], 'jd-curate')['submission_id'];
 }
 if (!jd_is_ulid($submissionId)) {
     jd_fail(400, 'bad_request', 'A submission_id or item_id is required.');
@@ -73,7 +59,6 @@ if (!$sets) {
 
 try {
     $db = jd_db();
-    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     $vals[] = $submissionId;
     $stmt = $db->prepare('UPDATE jd_submissions SET ' . implode(', ', $sets) . ' WHERE id = ?');

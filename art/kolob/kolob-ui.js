@@ -1,21 +1,27 @@
 // ============================================================================
-// KOLOB — UI controller (running head + direction line + hymn board + the
-// stops + clerk's minutes + broadside; the order of service is the WHEEL,
-// drawn by the viz — this file only hands it the labels and the dev jump)
+// KOLOB — UI controller (the programme card on the hymn board — the day, the
+// mode · meter line and the direction — the hymn board's own lines, the
+// stops, the clerk's minutes, the broadside, the console and the band's
+// caterpillar; the order of service is the WHEEL, drawn by the viz — this
+// file only hands it the labels and the dev jump)
 //
 // EVERYTHING the reader sees is set in the DESERET ALPHABET. The engine emits
 // typed events (SCORE.md §6); this file maps each type and its payload to a
 // Deseret rendering (glyph + transliterated word + numerals) before anything
-// is printed — it never reads the English labels the engine still sends. The
+// is printed — it does not read the English labels the engine still sends,
+// with one exception (dsEvent's guest case: the band's cross event, whose
+// label alone tells two bands crossing from one band going by). The
 // piece does not explain itself. Latin survives only in numerals and in
 // invisible aria-labels for screen readers.
 //
-// Talks only to window.KolobAudio, window.KolobViz, window.KolobText.
+// Talks only to window.KolobAudio, window.KolobViz, window.KolobText (and
+// reads the load guard's word, KOLOB._broken, once, at start-up).
 // ============================================================================
 (function () {
   "use strict";
   var K = window.KolobAudio;
-  if (!K) { if (window.console) console.error("Kolob UI: engine missing"); return; }
+  // (a page whose engine did not load is told so and wires nothing: THE
+  // ENGINE THAT DID NOT LOAD, below the strings it is told in)
 
   // ==========================================================================
   // THE STRINGS — hand-transliterated, capitals (the 1859 chart).
@@ -28,9 +34,9 @@
     seed: "𐐝𐐀𐐔",                         // SEED
     gather: "𐐘𐐈𐐜𐐊𐐡",                    // GATHER (reseed & restart)
     meeting: "𐐣𐐀𐐓𐐆𐐥",                   // MEETING
-    hertz: "𐐐𐐊𐐡𐐓𐐝",                     // HERTZ
     idle: "𐐜 𐐚𐐈𐐢𐐆 𐐆𐐞 𐐝𐐓𐐆𐐢",           // THE VALLEY IS STILL
     listening: "𐐜 𐐣𐐆𐐤𐐆𐐓𐐝 𐐒𐐆𐐘𐐆𐐤",      // THE MINUTES BEGIN
+    broken: "𐐜𐐊 𐐇𐐤𐐖𐐆𐐤 𐐙𐐁𐐢𐐔 𐐓𐐅 𐐢𐐄𐐔",  // THE ENGINE FAILED TO LOAD (spelled by kolob-cast.js's deseretCaps, as the clerk spells)
     stillness: "𐐝𐐓𐐆𐐢𐐤𐐇𐐝",              // STILLNESS
     fuging: "𐐙𐐧𐐘𐐆𐐥",                    // FUGING
     reprise: "𐐡𐐆𐐑𐐡𐐌𐐞",                  // REPRISE
@@ -53,7 +59,6 @@
     bandPasses: "𐐑𐐈𐐝𐐇𐐞 𐐉𐐤",            // PASSES ON
     theSteeples: "𐐜 𐐝𐐓𐐀𐐑𐐊𐐢𐐞 𐐈𐐤𐐝𐐊𐐡",  // THE STEEPLES ANSWER
     lastBell: "𐐜 𐐢𐐈𐐝𐐓 𐐒𐐇𐐢",           // THE LAST BELL
-    steeplesFlag: "𐐝𐐓𐐀𐐑𐐊𐐢𐐞",           // STEEPLES
     oldTune: "𐐊𐐤 𐐄𐐢𐐔 𐐓𐐅𐐤 𐐡𐐆𐐣𐐇𐐣𐐒𐐊𐐡𐐔", // AN OLD TUNE REMEMBERED
     oldTuneFlag: "𐐊𐐤 𐐄𐐢𐐔 𐐓𐐅𐐤",          // AN OLD TUNE (the direction line)
     memoryOut: "𐐜 𐐣𐐇𐐣𐐊𐐡𐐆 𐐘𐐆𐐚𐐞 𐐍𐐓",   // THE MEMORY GIVES OUT
@@ -63,7 +68,7 @@
     tuneWithheld: "𐐜 𐐓𐐅𐐤 𐐆𐐞 𐐎𐐆𐐛𐐐𐐇𐐢𐐔", // THE TUNE IS WITHHELD
     wholeTune: "𐐜 𐐐𐐄𐐢 𐐓𐐅𐐤 𐐈𐐓 𐐢𐐈𐐝𐐓",  // THE WHOLE TUNE, AT LAST
     wholeFlag: "𐐜 𐐐𐐄𐐢 𐐓𐐅𐐤",            // THE WHOLE TUNE (telemetry)
-    // (round 3b, step 3: the handbells, the singing school, a round, the partner hymn, the refrain)
+    // (the handbells, the singing school, a round, the partner hymn, the refrain)
     handbells: "𐐜 𐐐𐐈𐐤𐐔𐐒𐐇𐐢𐐞",          // THE HANDBELLS
     cascade: "𐐜 𐐗𐐈𐐝𐐗𐐁𐐔",               // THE CASCADE
     singingSchool: "𐐜 𐐝𐐆𐐥𐐆𐐥 𐐝𐐗𐐅𐐢",     // THE SINGING SCHOOL
@@ -73,7 +78,7 @@
     aRound: "𐐝𐐊𐐥 𐐈𐐞 𐐊 𐐡𐐍𐐤𐐔",           // SUNG AS A ROUND
     againstIt: "𐐜 𐐙𐐊𐐡𐐝𐐓 𐐐𐐆𐐣 𐐊𐐘𐐇𐐤𐐝𐐓 𐐆𐐓", // THE FIRST HYMN AGAINST IT
     refrain: "𐐜 𐐡𐐆𐐙𐐡𐐁𐐤",               // THE REFRAIN
-    // (round 3b, step 4: a rite's seating, and the drone's tune)
+    // (a rite's seating, and the drone's tune)
     linedOut: "𐐢𐐌𐐤𐐔 𐐍𐐓 𐐄𐐤𐐢𐐀",          // LINED OUT ONLY
     brushArbor: "𐐒𐐡𐐊𐐟 𐐂𐐡𐐒𐐊𐐡",           // BRUSH ARBOR
     organVoluntary: "𐐃𐐡𐐘𐐊𐐤 𐐚𐐉𐐢𐐊𐐤𐐓𐐇𐐡𐐀",  // ORGAN VOLUNTARY
@@ -81,15 +86,12 @@
     dronesTune: "𐐜 𐐔𐐡𐐄𐐤𐐞 𐐓𐐅𐐤",          // THE DRONE'S TUNE
     liahona: "𐐢𐐀𐐊𐐐𐐄𐐤𐐊",                // LIAHONA
     sample: "𐐝𐐈𐐣𐐑𐐊𐐢",                   // SAMPLE
-    orderOfService: "𐐃𐐡𐐔𐐊𐐡 𐐊𐐚 𐐝𐐊𐐡𐐚𐐆𐐝", // ORDER OF SERVICE
     theStops: "𐐜 𐐆𐐤𐐝𐐓𐐡𐐊𐐣𐐊𐐤𐐓𐐝",         // THE INSTRUMENTS
     copyParams: "𐐗𐐃𐐑𐐆 𐐑𐐊𐐡𐐈𐐣𐐊𐐓𐐊𐐡𐐞",     // COPY PARAMETERS
     copied: "𐐗𐐃𐐑𐐆𐐔 ✓",                   // COPIED
     minutes: "𐐗𐐢𐐊𐐡𐐗𐐝 𐐣𐐆𐐤𐐆𐐓𐐝",         // CLERK'S MINUTES
-    broadside: "𐐜 𐐒𐐡𐐃𐐔𐐝𐐌𐐔",            // THE BROADSIDE
-    hymnBoard: "𐐐𐐆𐐣 𐐒𐐄𐐡𐐔",             // HYMN BOARD
     hymnNo: "𐐐𐐆𐐣",                        // HYMN (the board's number, and its row)
-    // (round 3c: the new guests' rows and the direction line — spelled by
+    // (the later guests' rows and the direction line — spelled by
     // kolob-cast.js's deseretCaps, as the clerk spells)
     bandGoesBy: "𐐜𐐊 𐐒𐐈𐐤𐐔 𐐘𐐄𐐞 𐐒𐐌",        // THE BAND GOES BY
     secondBand: "𐐊 𐐝𐐇𐐗𐐊𐐤𐐔 𐐒𐐈𐐤𐐔 𐐊𐐑𐐡𐐄𐐕𐐆𐐞", // A SECOND BAND APPROACHES
@@ -129,7 +131,7 @@
     conference: "𐐗𐐉𐐤𐐙𐐡𐐇𐐤𐐝",
     jubilee: "𐐖𐐅𐐒𐐆𐐢𐐀",
   };
-  // THE SUNDAY (round 3b, step 4): the programme card names the calendar's
+  // THE SUNDAY: the programme card names the calendar's
   // Sunday — its Deseret is the calendar's own (KOLOB.Calendar.SUNDAYS[id].ds,
   // read from the conductor), these the Latin switch's
   var SUNDAYS_EN = { ordinary: "AN ORDINARY SUNDAY", fast: "FAST SUNDAY", conference: "GENERAL CONFERENCE", pioneer: "PIONEER DAY",
@@ -147,7 +149,6 @@
     drone: "𐐔𐐡𐐄𐐤",
     choir: "𐐗𐐎𐐌𐐊𐐡",
     clarinet: "𐐗𐐢𐐇𐐡𐐆𐐤𐐇𐐓",
-    bagpipe: "𐐒𐐈𐐘𐐑𐐌𐐑",
     harmonium: "𐐐𐐂𐐡𐐣𐐄𐐤𐐆𐐊𐐣",
     strings: "𐐝𐐓𐐡𐐆𐐥𐐞",
     bells: "𐐒𐐇𐐢𐐞",
@@ -167,8 +168,8 @@
   // ==========================================================================
   var STR_EN = {
     play: "PLAY", pause: "PAUSE", stop: "STOP", vol: "VOL", seed: "SEED", gather: "GATHER",
-    meeting: "MEETING", hertz: "HERTZ", idle: "THE VALLEY IS STILL",
-    listening: "THE MINUTES BEGIN", stillness: "STILLNESS", fuging: "FUGING",
+    meeting: "MEETING", idle: "THE VALLEY IS STILL",
+    listening: "THE MINUTES BEGIN", broken: "THE ENGINE FAILED TO LOAD", stillness: "STILLNESS", fuging: "FUGING",
     reprise: "REPRISE", develops: "DEVELOPS", disperses: "DISPERSES",
     answers: "ANSWERS", linesOut: "LINES OUT", shadows: "SHADOWS",
     theme: "THEME", hymnsOfDay: "THE DAY'S HYMNS", amen: "AMEN",
@@ -178,16 +179,16 @@
     linedOut: "LINED OUT ONLY", brushArbor: "BRUSH ARBOR", organVoluntary: "ORGAN VOLUNTARY", choirAlone: "THE CHOIR ALONE",
     dronesTune: "THE DRONE'S TUNE",
     bandsCross: "THE BANDS CROSS", bandPasses: "PASSES ON",
-    theSteeples: "THE STEEPLES ANSWER", lastBell: "THE LAST BELL", steeplesFlag: "STEEPLES",
+    theSteeples: "THE STEEPLES ANSWER", lastBell: "THE LAST BELL",
     oldTune: "AN OLD TUNE REMEMBERED", oldTuneFlag: "AN OLD TUNE", memoryOut: "THE MEMORY GIVES OUT",
     trombonesDawn: "TROMBONES AT DAWN", nearAnswers: "THE NEAR CHOIR ANSWERS", twoChoirs: "THE TWO CHOIRS TOGETHER",
     tuneWithheld: "THE TUNE IS WITHHELD", wholeTune: "THE WHOLE TUNE, AT LAST",
     wholeFlag: "THE WHOLE TUNE",
     handbells: "THE HANDBELLS", cascade: "THE CASCADE", singingSchool: "THE SINGING SCHOOL", stopsThem: "THE CHORISTER STOPS THEM",
     onTheNotes: "ON THE NOTES", again: "AGAIN", aRound: "SUNG AS A ROUND", againstIt: "THE FIRST HYMN AGAINST IT", refrain: "THE REFRAIN",
-    orderOfService: "ORDER OF SERVICE", theStops: "THE INSTRUMENTS",
+    theStops: "THE INSTRUMENTS",
     copyParams: "COPY PARAMETERS", copied: "COPIED ✓",
-    minutes: "CLERK'S MINUTES", broadside: "THE BROADSIDE", hymnBoard: "HYMN BOARD",
+    minutes: "CLERK'S MINUTES",
     hymnNo: "HYMN",
     bandGoesBy: "THE BAND GOES BY", secondBand: "A SECOND BAND APPROACHES",
     handcartCo: "A HANDCART COMPANY", allIsWell: "ALL IS WELL", handcartsPass: "THE HANDCARTS PASS", handcartFlag: "THE HANDCARTS",
@@ -204,7 +205,7 @@
   var MODES_EN = { ionian: "IONIAN", mixolydian: "MIXOLYDIAN", dorian: "DORIAN", aeolian: "AEOLIAN", penta: "PENTATONIC", hexa: "HEXATONIC" };
   var LAYERS_EN = {
     organ: "ORGAN", drone: "DRONE", choir: "CHOIR", clarinet: "CLARINET",
-    bagpipe: "BAGPIPE", harmonium: "HARMONIUM", strings: "STRINGS", bells: "BELLS",
+    harmonium: "HARMONIUM", strings: "STRINGS", bells: "BELLS",
     voice: "VOICE", telegraph: "TELEGRAPH", tuba: "TUBA", ambient: "FIELD",
   };
   var MOTIF_EN = { "Ⅰ": "I", "Ⅱ": "II", "Ⅲ": "III" };   // roman numerals in both scripts; ASCII in latin mode
@@ -213,7 +214,7 @@
   try {
     latinMode = /[?&]latin=1/.test(location.search) || localStorage.getItem("kolobLatin") === "1";
   } catch (e) {}
-  // Dev preview (?kolobPreview=1): with the engine idle, the running head and
+  // Dev preview (?kolobPreview=1): with the engine idle, the programme card and
   // the direction line show a sample conductor so the dressed page can be seen
   // (and screenshotted) without audio. The real conductor always wins once the
   // engine plays. Mirrors the ?latin=1 switch; not persisted.
@@ -234,17 +235,39 @@
   }
 
   // ==========================================================================
+  // THE ENGINE THAT DID NOT LOAD. _engine.php's load guard names every room
+  // that did not answer its roll call in KOLOB._broken, the facade among
+  // them when it did not rise (a page without the guard is still asked
+  // for the facade). Such a page says so and wires nothing: PLAY is
+  // disabled, the minutes say the engine failed to load, in the script the
+  // switch has set (the switch itself, like everything else, is not wired),
+  // and the console has the names, from the guard (a meeting called on a
+  // broken engine would throw at its first cue with PLAY lit). A page that
+  // loads whole never comes here.
+  // ==========================================================================
+  var broken = window.KOLOB && window.KOLOB._broken ? window.KOLOB._broken : (K ? null : ["the KolobAudio facade"]);
+  if (broken) {
+    if (window.console) console.error("Kolob UI: engine missing (" + broken.join(", ") + "); PLAY is disabled");
+    var deadPlay = document.getElementById("kolob-play");
+    if (deadPlay) deadPlay.disabled = true;
+    var deadLog = document.querySelector("#kolob-log .kolob-log-empty");
+    if (deadLog) deadLog.textContent = TT(STR, STR_EN).broken;
+    return;
+  }
+
+  // ==========================================================================
   // Deseret rendering of engine events → the clerk's minutes.
   // Returns null to omit an event entirely (harmony chatter, etc.).
   //
-  // TYPED (round 2, milestone 3): every row is chosen by the event's TYPE and
-  // written from its payload (SCORE.md §6; the words are KOLOB.Score.EVENTS)
-  // — never by reading the English label, which the engine still sends
-  // alongside for its dev tools. Each row keeps the class v0.32's category
-  // gave it (the gilt glyphs of the Liahona, the fuging, the guests and the
-  // meeting; the motif's ink), so the minutes look exactly as they did. A
-  // guest the minutes may not name (logged: false — the Hosanna) prints
-  // nothing, whatever it sends.
+  // TYPED: every row is chosen by the event's TYPE and written from its
+  // payload (SCORE.md §6; the words are KOLOB.Score.EVENTS) — not by reading
+  // the English label, which the engine still sends alongside for its dev
+  // tools. The one exception is the band's cross event (the guest case
+  // below): only its label tells two bands crossing from one band going by,
+  // until that event carries a typed field. Each row's class is its category
+  // (the gilt glyphs of the Liahona, the fuging, the guests and the meeting;
+  // the motif's ink). A guest the minutes may not name (logged: false — the
+  // Hosanna) prints nothing, whatever it sends.
   // ==========================================================================
   // a guest's moments, by guest and stage → [glyph, the string's key]
   var GUEST_ROWS = {
@@ -253,12 +276,12 @@
     oldtune:   { remembered: ["✧", "oldTune"], "gives-out": ["✧", "memoryOut"] },
     trombones: { far: ["♪", "trombonesDawn"], answer: ["♪", "nearAnswers"], together: ["♪", "twoChoirs"] },
     assembly:  { withheld: ["◌", "tuneWithheld"], "whole-tune": ["✶", "wholeTune"] },
-    // (round 3b, step 3) the ward's handbell choir: its first sound, and the
+    // the ward's handbell choir: its first sound, and the
     // cascade; the singing school: the fork, the stop, the part alone, again
     handbells: { ring: ["♫", "handbells"], cascade: ["♫", "cascade"] },
     singingschool: { fork: ["♪", "singingSchool"], cut: ["♪", "stopsThem"], alone: ["♪", "onTheNotes"], again: ["♪", "again"] },
     raspberry: { blat: ["∴", "raspberry"], amen: ["∴", "amenDash"] },
-    // (round 3c) the Nauvoo band (a second band; "cross" is the band going by,
+    // the Nauvoo band (a second band; "cross" is the band going by,
     // or the bands crossing — dsEvent reads which); the handcart company; the
     // gulls; change ringing from a far tower (the steeples' variant); the gift
     // of tongues (the rise is the singer's own ✦ row, by name); the far ward;
@@ -275,7 +298,7 @@
   GUEST_ROWS.steeples["changes:round"] = ["◎", "thatsAll"];
   var ROMAN_MOTIF = { "Ⅰ": 1, "Ⅱ": 1, "Ⅲ": 1 };
   function minute(glyph, text, cls) { return { glyph: glyph, text: text, cls: cls }; }
-  // (round 3b) the ward's people in the minutes: a name set in the clerk's
+  // the ward's people in the minutes: a name set in the clerk's
   // capitals (the Deseret small letters are the capitals + 0x28), and the
   // moments that earn a row — a person coming forward; not their stepping
   // back, nor the precentor's line-by-line (his ☞ row says it)
@@ -284,16 +307,15 @@
   }
   var FORWARD_ROW = { "keys the hymn": 1, "hums the first note": 1, "pitches the tune": 1, "comes forward": 1, "sings the descant": 1,
                       "sings the treble verse": 1, "sings the tune": 1, "loses the words": 1, "finds them again": 1, "joins in": 1, "sings out": 1,
-                      // (round 3b, step 3: the refrain begun, the quartet, the Primary, a round set going, the cornet against the partner)
+                      // (the refrain begun, the quartet, the Primary, a round set going, the cornet against the partner)
                       "starts the refrain": 1, "leads the quartet": 1, "leads the Primary": 1, "sets the round going": 1, "plays the first hymn on the cornet": 1,
-                      // (round 3b, step 4: a verse given to the men, or to the women)
+                      // (a verse given to the men, or to the women)
                       "gives the verse to the men": 1, "gives the verse to the women": 1,
-                      // (round 3c: a testimony-bearer rises; the Social Hall's fiddler and caller; one rises and sings in tongues)
+                      // (a testimony-bearer rises; the Social Hall's fiddler and caller; one rises and sings in tongues)
                       "rises to bear testimony": 1, "takes up the fiddle": 1, "calls the dance": 1, "rises and sings in tongues": 1 };
-  // (round 3b, step 4) a rite's seating in the minutes — the plain house
-  // gives none
+  // a rite's seating in the minutes — the plain house gives none
   var SCENE_ROW = { lined: "linedOut", arbor: "brushArbor", voluntary: "organVoluntary", choir: "choirAlone" };
-  // (round 3b, step 2) the organist's moments that earn a row: the chorale
+  // the organist's moments that earn a row: the chorale
   // prelude, the walk into a new key, a fill between the lines, the strange
   // key, a line left to the ward — not every stop drawn, nor the giving-out
   // (the hymn's own rows say it has begun)
@@ -301,7 +323,7 @@
                        "modulates to the next hymn's key": 1, "links the lines": 1, "holds a note over into the next line": 1, "echoes the line on the echo flute": 1,
                        "quotes the next line between the lines": 1, "turns an arabesque between the lines": 1, "runs a sequence between the lines": 1,
                        "strays into a strange key": 1, "lifts both hands; the ward sings a line alone": 1, "plays the first hymn against it": 1,
-                       // (round 3c: the organist's variations on a hymn, character by character)
+                       // (the organist's variations on a hymn, character by character)
                        "plays variations on the hymn": 1, "plays the hymn as a plain chorale": 1, "turns the tune into a minuet": 1, "turns the tune into a polonaise": 1,
                        "turns the tune into a march": 1, "sets the tune in canon": 1, "plays the tune in two keys at once": 1, "gives the hymn on the full organ": 1 };
   function actionKey(a) { return String(a || "").replace(/ \(.*\)$/, ""); }
@@ -313,52 +335,53 @@
       case "meeting-start": return minute("☀", S.meeting + (ev.n != null ? " " + ev.n : "") + (ev.sunday ? " · " + (latinMode ? SUNDAYS_EN[ev.sunday] || ev.sunday.toUpperCase() : ev.sundayDs || "") : ""), "meeting");
       case "scene":         return SCENE_ROW[ev.scene] ? minute("⌖", (TT(SECTIONS_DS, SECTIONS_EN)[ev.section] || ev.section) + " · " + S[SCENE_ROW[ev.scene]], "section") : null;
       case "drone-turn":    return ev.dox ? minute("∿", S.dronesTune, "liahona") : null;   // (the drone home under the doxology: the tune it has spelled; its other turns write no row)
-      case "sunrise":       return minute("☀", S.meeting, "meeting");          // (v0.32: a sunrise is a meeting's row without its number)
+      case "sunrise":       return minute("☀", S.meeting, "meeting");          // (a sunrise is a meeting's row without its number)
       case "section-start": return minute("§", TT(SECTIONS_DS, SECTIONS_EN)[ev.section] || ev.section, "section");
       case "liahona":       return minute("⌖", S.liahona, "liahona");
       case "stillness":
-      case "skip":          return minute("◦", S.stillness, "conductor");      // (v0.32 wrote the dev jump as a stillness too)
+      case "skip":          return minute("◦", S.stillness, "conductor");      // (the dev jump is written as a stillness too)
       case "joint":
       case "room-empties":  return minute("∴", S.amen, "cadence");
       case "fuging":        return minute("⁂", S.fuging, "fuging");
-      case "telegraph":     return minute("⌁", LAYERS_DS.telegraph, "telegraph");
+      case "telegraph":     return minute("⌁", TT(LAYERS_DS, LAYERS_EN).telegraph, "telegraph");
       case "phrase":        return minute("♮", layerName(ev.layer) + " " + S.speaks, "phrase");
       case "guest": {
         var g = GUEST_ROWS[ev.guest], st = g && g[ev.stage];
-        // (round 3c: a lone band goes by; two bands cross — the band's own label says which)
-        if (ev.guest === "bands" && ev.stage === "cross" && !/bands cross/.test(ev.label || "")) return minute("⇋", S.bandGoesBy, "visitation");
+        // (a lone band goes by; two bands cross — the stage's typed `both`
+        // says which)
+        if (ev.guest === "bands" && ev.stage === "cross" && !ev.both) return minute("⇋", S.bandGoesBy, "visitation");
         return st ? minute(st[0], S[st[1]], "visitation") : null; // a guest the minutes do not know is not named as another
       }
       case "verse-line":                                     // (a line sung back to the deacon is his ☞ row's; it writes none of its own)
         // (a composed hymn's lines are told by its verses: one row a verse)
         if (ev.composed) return null;
         return ev.practice === "lined" ? null : minute("¶", S.verse + (ev.speechLine != null ? " " + ev.speechLine : ""), "verse");
-      case "verse-start":                                    // (round 3: a composed hymn's verse — the motif couplets' stanzas keep their line rows)
-        if (ev.refrain) return null;                         // (round 3b, step 3: the refrain has its own row)
+      case "verse-start":                                    // (a composed hymn's verse — the motif couplets' stanzas keep their line rows)
+        if (ev.refrain) return null;                         // (the refrain has its own row)
         return ev.composed ? minute("¶", S.verse + " " + (ev.verse + 1), "verse") : null;
-      case "round-entry":                                    // (round 3b, step 3: a hymn sung as a round — one row, as it begins)
+      case "round-entry":                                    // (a hymn sung as a round — one row, as it begins)
         return ev.entry === 1 ? minute("⟳", S.aRound, "verse") : null;
       case "partner":                                        // (the partner hymn's last verse: the first hymn against it)
         return ev.combined ? minute("⚭", S.againstIt, "visitation") : null;
       case "refrain":                                        // (each statement of the wandering refrain)
         return minute("↺", S.refrain, "verse");
-      case "hymn-announced":                                 // (round 3: the number and the Deseret name, as the board gives them)
+      case "hymn-announced":                                 // (the number and the Deseret name, as the board gives them)
         return ev.hymn && ev.hymn.number != null ? minute("№", S.hymnNo + " " + ev.hymn.number + (ev.hymn.nameDs ? " " + ev.hymn.nameDs : ""), "verse") : null;
       case "lining-out":                                     // (a composed hymn lined out: the deacon's row once a verse, at its first line)
         if (ev.composed && ev.line > 0) return null;
-        // (round 3b: the ward's precentor lines out — his name, in the
+        // (the ward's precentor lines out — his name, in the
         // minutes' capitals; the deacon's clarinet still lines out the
         // day's material around the hymns)
-        return minute("☞", (ev.nameDs ? capsDs(ev.nameDs) : LAYERS_DS.clarinet) + " " + S.linesOut, "verse");
-      case "cast":                                           // (round 3b: a person of the ward comes forward — their name and what they do)
+        return minute("☞", (ev.nameDs ? capsDs(ev.nameDs) : TT(LAYERS_DS, LAYERS_EN).clarinet) + " " + S.linesOut, "verse");
+      case "cast":                                           // (a person of the ward comes forward — their name and what they do)
         if (!ev.actionDs) return null;
-        if (ev.memberId === "organist") {                    // (round 3b, step 2: the organist at the bench)
+        if (ev.memberId === "organist") {                    // (the organist at the bench)
           if (!ORGANIST_ROW[actionKey(ev.action)]) return null;
           return minute("✦", capsDs(ev.nameDs) + " " + (latinMode ? actionKey(ev.action).toUpperCase() : ev.actionDs), "verse");
         }
         if (!FORWARD_ROW[ev.action]) return null;
         return minute("✦", capsDs(ev.nameDs) + " " + (latinMode ? String(ev.action).toUpperCase() : ev.actionDs), "verse");
-      case "testimony":                                      // (round 3c: a bearer's words made a tune by the reed; the rise is the bearer's own ✦ row)
+      case "testimony":                                      // (a bearer's words made a tune by the reed; the rise is the bearer's own ✦ row)
         return ev.stage === "tune" ? minute("♪", S.wordsTune, "motif") : null;
       case "field": {
         var fd = TT(FIELD_DS, FIELD_EN)[ev.field];
@@ -366,7 +389,7 @@
       }
       case "motif-reprise": return minute("✸", S.reprise + " " + motifName(ev.name), "motif");
       case "motif-answer":  return minute("⇄", layerName(ev.voice) + " " + S.answers + " " + layerName(ev.from), "motif");
-      case "motif-shadow":  return minute("〰", LAYERS_DS.harmonium + " " + S.shadows, "motif");
+      case "motif-shadow":  return minute("〰", TT(LAYERS_DS, LAYERS_EN).harmonium + " " + S.shadows, "motif");
       case "motif-disperse": return minute("࿙", S.disperses, "motif");
       case "hymns-of-the-day": return minute("❁", S.hymnsOfDay, "motif");
       case "motif-develop":
@@ -530,7 +553,7 @@
   // page keeps its own tally from the typed spans as well, so a guest that
   // says logged: false is never named here, whatever the poll says.
   var unloggedGuests = {};
-  // THE HYMN ON THE BOARD (round 3) — from the typed hymn-announced: its
+  // THE HYMN ON THE BOARD — from the typed hymn-announced: its
   // number, its Deseret name, its meter and its hymnist's name in Deseret
   // (SCORE §6). The English name is the composer's dev field and is never
   // shown, in either script; the board keeps the hymn up until the next is
@@ -558,11 +581,12 @@
   var phraseLast = {};                          // layer -> when its last note ends
   var phraseQueue = [];                         // rows waiting for their startTime
   // the drone is the constant ground; the field and the wire already write
-  // their own minutes (ambient + telegraph events) — don't double-book them
-  // the tuba is never named here: his moment is logged as RASPBERRY instead;
-  // the visiting band, the old tune and the trombones at dawn write their
-  // own minutes (their visitation events)
-  var PHRASE_SKIP = { drone: 1, ambient: 1, telegraph: 1, tuba: 1, band: 1, oldtune: 1, trombones: 1 };
+  // their own minutes (ambient + telegraph events) — don't double-book them;
+  // the tuba is never named here: his moment is logged as RASPBERRY instead.
+  // (A guest's layer — the band, the old tune, the trombones — needs no entry:
+  // it has no name in LAYERS_DS, so the gate below already passes it by, and
+  // its visitation events write its minutes.)
+  var PHRASE_SKIP = { drone: 1, ambient: 1, telegraph: 1, tuba: 1 };
   // (and a layer the minutes have no name for is not written in English;
   // a note an unlogged guest sounds — logged: false — writes no row)
   function onNoteForLog(n) {
@@ -611,11 +635,12 @@
   }
 
   // ==========================================================================
-  // Running head + order of service + hymn board (polled ~300ms)
+  // The programme card + order of service + hymn board (polled ~300ms)
   // ==========================================================================
   var SECTION_ORDER = ["prelude", "invocation", "hymn", "testimony", "sacrament", "doxology", "postlude"];
 
-  // The programme card on the hymn board — what the running head used to say:
+  // The programme card on the hymn board (#kolob-running-head keeps its old
+  // id; updateRunningHead fills it):
   //   day    ORDINARY           (letterspaced capitals; idle: THE VALLEY IS STILL)
   //   line   Ionian · 8.6.8.6   (the meter dots only during a hymn), then the
   //          direction as a gilt rubric (updateDirection below)
@@ -638,8 +663,8 @@
       mm.textContent = "";
       return;
     }
-    // (round 3b, step 4: the calendar's Sunday — the kind of meeting where a
-    // page has no calendar)
+    // (the calendar's Sunday — the meeting requires the calendar; the kind
+    // of meeting only should the conductor name no Sunday)
     var sd = c.sunday && c.sunday.id ? (latinMode ? SUNDAYS_EN[c.sunday.id] : c.sunday.nameDs) : null;
     day.textContent = sd || TT(ACTIVITIES_DS, ACTIVITIES_EN)[c.activity] || "";
     var mode = TT(MODES_DS, MODES_EN)[c.mode] || "";
@@ -658,17 +683,17 @@
   // The direction line — the event flag printed as a rubric on the programme
   // card, after the mode · meter line: stillness, fuging, two bands, the
   // steeples answer, an old tune, trombones at dawn, the whole tune. Empty
-  // when nothing fires — and for a guest this table does not name (v0.32
-  // called the old tune "two bands").
+  // when nothing fires — and for a guest this table does not name (never
+  // another guest's flag).
   var VISIT_FLAG = { bands: "twoBands", steeples: "theSteeples", oldtune: "oldTuneFlag", trombones: "trombonesDawn", assembly: "wholeFlag", handbells: "handbells", singingschool: "singingSchool",
-                     // (round 3c; the far ward sings inside a hymn, whose own line the board keeps; the Hosanna is never named)
+                     // (the far ward sings inside a hymn, whose own line the board keeps; the Hosanna is never named)
                      handcart: "handcartFlag", gulls: "gulls", variations: "variationsFlag", tongues: "tonguesFlag", socialhall: "socialHall" };
   function directionFor(c, playing) {
     if (!playing) return "";
     var S = TT(STR, STR_EN);
     if (c.hush) return S.stillness;
     if (c.fuging) return S.fuging;
-    if (c.visit === "bands" && !c.twoBands) return S.bandFlag;   // (one band goes by; the flag was "two bands" for every band)
+    if (c.visit === "bands" && !c.twoBands) return S.bandFlag;   // (one band goes by: "the band"; "two bands" only when a second comes)
     if (c.visit) return VISIT_FLAG[c.visit] && !unloggedGuests[c.visit] ? S[VISIT_FLAG[c.visit]] : "";
     return "";
   }
@@ -759,6 +784,22 @@
   // ==========================================================================
   // Transport + gather (reseed & restart)
   // ==========================================================================
+  // THE QUEUED PLAY. GATHER, and the Ives and Whole switches turned on while
+  // a meeting plays, stop it and call the next a breath later, once the
+  // stop's fade has run (each site says why it waits). The call is kept by
+  // its handle, and a transport press cancels the one before it: STOP clears
+  // the handle a restart armed, so a STOP inside the wait is the last word
+  // (untracked, the queued PLAY overrode it and the meeting came back with
+  // the button dark), PLAY clears it and makes the call itself, and a
+  // restart armed again replaces it. (GATHER pressed while a restart waits
+  // leaves it to call the new seed's meeting; the pause button, which holds
+  // only a meeting that plays, leaves it alone.)
+  var restartTimer = null;
+  function restartSoon(ms) {
+    cancelRestart();
+    restartTimer = setTimeout(function () { restartTimer = null; K.play(); }, ms);
+  }
+  function cancelRestart() { if (restartTimer) { clearTimeout(restartTimer); restartTimer = null; } }
   function wireTransport() {
     var playBtn = document.getElementById("kolob-play");
     var pauseBtn = document.getElementById("kolob-pause");
@@ -769,6 +810,7 @@
     var seedInput = document.getElementById("kolob-seed-input");
 
     if (playBtn) playBtn.addEventListener("click", function () {
+      cancelRestart();                                 // (a restart on its way: this press makes the call)
       // a held meeting resumes; otherwise a meeting is called
       if (K.isPlaying && K.isPlaying()) { if (K.resume) K.resume(); poll(); return; }
       clearLog(); K.play(); playBtn.classList.add("is-playing");
@@ -784,6 +826,7 @@
       poll();
     });
     if (stopBtn) stopBtn.addEventListener("click", function () {
+      cancelRestart();                                 // a restart on its way is not made: STOP is the last word
       K.stop(); if (playBtn) playBtn.classList.remove("is-playing");
       if (broadsideTimer) { clearTimeout(broadsideTimer); broadsideTimer = null; }
     });
@@ -811,8 +854,9 @@
       if (seedInput) seedInput.value = "";
       clearLog();
       if (wasPlaying) {
-        // let the stop-fade complete before the new meeting is called
-        setTimeout(function () { K.play(); }, 950);
+        // let the stop-fade complete before the new meeting is called (a
+        // STOP inside the wait cancels it: THE QUEUED PLAY, above)
+        restartSoon(950);
       }
     });
     if (seedInput) seedInput.addEventListener("keydown", function (e) {
@@ -827,7 +871,6 @@
     title: "𐐗𐐄𐐢𐐉𐐒",
     ives: "𐐌𐐚𐐞",
     whole: "𐐐𐐄𐐢",
-    art: "𐐂𐐡𐐓",
     placeholder: "𐑄 𐑂𐐰𐑊𐐮 𐐮𐑆 𐑅𐐻𐐮𐑊",
     pressPlay: "𐐑𐐡𐐇𐐝 𐐑𐐢𐐁",
   };
@@ -835,7 +878,6 @@
     title: "KOLOB",
     ives: "Ives",
     whole: "Whole",
-    art: "art",
     placeholder: "the valley is still",
     pressPlay: "PRESS PLAY",
   };
@@ -864,7 +906,7 @@
     if (empty) empty.textContent = ST.pressPlay;
     if (lastBroadside) setBroadside(lastBroadside, false);
     else setText("#kolob-broadside-line", ST.placeholder);
-    // the running head and the direction line: idle text now; poll() re-sets
+    // the programme card and the direction line: idle text now; poll() re-sets
     // them in the current script from the conductor (or the preview) at once
     setText("#kolob-rh-left", S.idle);
     setText("#kolob-rh-mm", "");
@@ -913,7 +955,7 @@
   // ==========================================================================
   function initViz() {
     var canvas = document.getElementById("kolob-viz");
-    var wheel = document.getElementById("kolob-wheel");            // the organ facade rides inside the wheel; the Liahona dial is gone (v0.21)
+    var wheel = document.getElementById("kolob-wheel");            // the organ facade rides inside the wheel
     if (window.KolobViz && typeof window.KolobViz.init === "function") {
       try { window.KolobViz.init(canvas, wheel); }
       catch (e) { if (window.console) console.error("Kolob viz init failed", e); }
@@ -930,11 +972,11 @@
 
   // ==========================================================================
   // The Ives switch — while armed, every meeting is guaranteed one visitation
-  // (the two bands, the steeples, the old tune or the trombones at dawn).
-  // Arming it mid-meeting
-  // restarts the meeting so the guarantee begins counting immediately.
+  // (the engine's own pick among the Ivesian guests: kolob-meeting.js
+  // forcedPick). Arming it mid-meeting restarts the meeting so the guarantee
+  // begins counting immediately.
   // ==========================================================================
-  // (round 3c, dev — the owner's listening packet: ?guest=<name> asks for
+  // (dev — the owner's listening packet: ?guest=<name> asks for
   // that guest in every meeting of the visit, as the harness's force=<name>
   // does — bands, handcart, gulls, variations, changes, tongues, farward,
   // hosanna (on Easter or a dedication only), socialhall, testimony,
@@ -959,16 +1001,17 @@
       apply();
       if (on && K.isPlaying && K.isPlaying()) {
         // restart: stop fully settles (its 800ms layer-zeroing included),
-        // then the meeting is called again with the guarantee armed
+        // then the meeting is called again with the guarantee armed (a STOP
+        // inside the wait cancels it: THE QUEUED PLAY, above)
         K.stop();
-        setTimeout(function () { K.play(); }, 900);
+        restartSoon(900);
       }
     });
   }
 
   // ==========================================================================
   // The Whole switch — the cumulative-form governor. Cycles on click:
-  // guaranteed (solid gilt) → natural 4% (outline) → never (struck) → …
+  // guaranteed (solid gilt) → natural (outline; the engine's CUMULATIVE_ODDS, 8 %) → never (struck) → …
   // Switching TO guaranteed restarts the meeting (the Ives-switch pattern);
   // the other states take effect at the next meeting without a restart.
   // ==========================================================================
@@ -980,9 +1023,10 @@
       else mode = localStorage.getItem("kolobCumulative") || "natural";
     } catch (e) {}
     if (mode !== "always" && mode !== "natural" && mode !== "never") mode = "natural";
+    var odds = K.getCumulativeOdds ? K.getCumulativeOdds() : 0.08;   // the one number: kolob-meeting.js CUMULATIVE_ODDS
     var LABELS = {
       always: "the tune withheld until the doxology — every meeting (restarts the meeting)",
-      natural: "the tune withheld until the doxology — about one meeting in twelve",
+      natural: "the tune withheld until the doxology — about " + Math.round(odds * 100) + " % of meetings",
       never: "the tune withheld until the doxology — off",
     };
     function apply() {
@@ -998,16 +1042,18 @@
       try { localStorage.setItem("kolobCumulative", mode); } catch (e) {}
       apply();
       if (mode === "always" && K.isPlaying && K.isPlaying()) {
+        // (the Ives switch's restart: the stop settles first; a STOP inside
+        // the wait cancels it — THE QUEUED PLAY, above)
         K.stop();
-        setTimeout(function () { K.play(); }, 900);
+        restartSoon(900);
       }
     });
   }
 
   // ==========================================================================
-  // THE BAND'S CATERPILLAR (2026-09-29; PLAN-CATERPILLAR.md, the owner's
-  // idea; pass 2, 2026-09-30, after the owner's first look: "just a line
-  // with the thumb", slower, and a bell when it bunches). While the Nauvoo
+  // THE BAND'S CATERPILLAR (PLAN-CATERPILLAR.md, the owner's idea; the
+  // owner's rulings on its look: "just a line with the thumb", slower, and
+  // a bell when it bunches). While the Nauvoo
   // band is in the street the listener is lent a volume for the band alone.
   // It comes as the band comes: a dark ink line with a round head inches in
   // from the paper's left edge, behind the dots, the rear drawing up behind
@@ -1032,16 +1078,18 @@
     var draw = el.querySelector(".kolob-cat-draw"), line = el.querySelector(".kolob-cat-line");
     var head = el.querySelector(".kolob-cat-head"), disc = el.querySelector(".kolob-cat-disc"), ring = el.querySelector(".kolob-cat-ring");
     var transport = el.parentNode;
+    // (the lane is measured against STOP and the master lever: without them there is no lane)
+    if (!document.getElementById("kolob-stop") || !transport.querySelector(".kolob-lever-wrap")) return null;
     // ---- the knobs ----
-    var PACE = 1.5;                  // how much more slowly than pass 1 it goes, in and off (the owner: "a little bit slower")
+    var PACE = 1.5;                  // the crawl's pace, in and off: 1 is the brisk crawl the owner first saw; 1.5 is "a little bit slower"
     var SPEED = 130 / PACE;          // px a second the crawl covers; each crawl is held to 3.75 … 5.4 s
     var CRAWL_MIN_S = 2.5 * PACE, CRAWL_MAX_S = 3.6 * PACE;
     var BUNCH = 0.42;                // of each pulse, the share the rear takes to draw up (the head reaches in the rest)
     var SETTLE_S = 0.4 * PACE;       // lying down at the listener's setting, once arrived
     var LETGO_S = 0.3 * PACE, TURN_S = 0.36 * PACE, REACH_S = 0.35 * PACE; // leaving: the head draws back, it turns round, it reaches away
-    var QUICK = 0.35 / PACE;         // STOP or a jump: the same crawl off in this share of the time (as brisk as pass 1's)
+    var QUICK = 0.35 / PACE;         // STOP or a jump: the same crawl off in this share of the time (the brisk crawl's pace)
     var LINGER_S = 1.5;              // the town's air after the last drum, before it goes
-    var HUMP = { row: 13, rule: 9 }; // the bell's height when the line is fully bunched (px; pass 1 arched 7 and 5)
+    var HUMP = { row: 13, rule: 9 }; // the bell's height when the line is fully bunched (px: tall enough to read as a bell, not a hump)
     var SIGMA = 0.15;                // the bell's width: its standard deviation, as a share of the line's span
     var PTS = 48;                    // the line is drawn through this many points
     var TRACK_MAX = 170, TRACK_MIN = 96, GAP = 22;   // the slider's length, and its room each side (row)
@@ -1377,7 +1425,7 @@
     // time, so it is simply where it would be by now.)
     document.addEventListener("visibilitychange", function () { if (!document.hidden) tick(); });
     setState("away");
-    return { tick: tick, probe: function () { return { state: state, level: level, mode: G ? G.mode : null, spans: spans.slice(), geometry: G }; } };
+    return { tick: tick };
   }
 
   renderMixer();

@@ -57,4 +57,28 @@ include '../../includes/header.php';
 <script src="skeeball-audio.js?v=<?php echo skv('skeeball-audio.js'); ?>"></script>
 <script src="skeeball-main.js?v=<?php echo skv('skeeball-main.js'); ?>"></script>
 
+<!-- Anonymous usage tally (the site pattern — see api/page-event-tracking.php):
+     a page view on arrival, and a play each time a game starts. The game
+     itself is untouched: skeeball-main.js already publishes every event on
+     Arcade's 'skeeball' bus, and the first ball of a game is ballstart n=1.
+     No personal data leaves the browser; the server stores only a salted,
+     daily-rotating visitor hash for unique-visit counts. -->
+<script>
+  (function () {
+    function track(eventType) {
+      fetch("/api/page-event-tracking.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ page: "skeeball", event_type: eventType, label: null }),
+      }).catch(function () {});
+    }
+    track("page_view");
+    if (window.Arcade && typeof Arcade.on === "function") {
+      Arcade.on("skeeball", function (ev) {
+        if (ev && ev.type === "ballstart" && ev.n === 1) track("play");
+      });
+    }
+  })();
+</script>
+
 <?php include '../../includes/footer.php'; ?>

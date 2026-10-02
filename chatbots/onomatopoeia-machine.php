@@ -1,4 +1,5 @@
 <?php
+$track_page = 'onomatopoeia-machine';   // anonymous page-view tally (includes/footer.php)
 $page_title = 'The Onomatopoeia Machine - Municipal Sky';
 $page_description = 'Experimental art at the human-machine interface: describe a sound, and two AI models transcribe it into inventive onomatopoeia for you to compare.';
 $page_image = '/images/onomatopoeia-machine-share.png';

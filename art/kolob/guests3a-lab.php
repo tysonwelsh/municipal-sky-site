@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// GUESTS LAB 3a — audition bench for KOLOB 2's round-3c guests: the Nauvoo
+// GUESTS LAB 3a — audition bench for KOLOB 2's guests from outside: the Nauvoo
 // Brass Band going by (KOLOB.GuestBands: a march in strains, from the day's
 // hymn, down the road past the meetinghouse), the handcart company
 // (KOLOB.GuestHandcart: ALL IS WELL, walking, far off) and the gulls

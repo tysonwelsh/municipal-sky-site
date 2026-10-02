@@ -39,9 +39,6 @@
 (function () {
   'use strict';
 
-  var SEL = 'path,line,polyline,polygon,circle,ellipse,rect,text,use';
-  var SKIP = 'defs,clipPath,mask,pattern,linearGradient,radialGradient,symbol,marker';
-
   /* THE FRACTION IS PARKED (owner, 2026-09-16): "I think it's kind of a
      distraction." The readout — the mark set over the count across a slanted
      solidus — is not drawn on any surface. Everything that makes it is still
@@ -58,9 +55,9 @@
     '<path class="g-pause" d="M5 2.6v10.8M11 2.6v10.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>' +
     '</svg>';
 
-  /* the marks: the engine's element walk (same selector, same skips, same
-     visibility test) so the list is exactly what JD_drawOn schedules, with
-     each mark's measured length for its bar. It has to walk the PLAIN
+  /* the marks: the engine's own element walk (JD_drawOn.walk, jd-core.js),
+     so the list is exactly what JD_drawOn schedules, in the same order,
+     with each mark's measured length for its bar. It has to walk the PLAIN
      drawing — arm() calls it before the engine runs, never after: once
      JD_drawOn has dressed the elements, every stroked one carries an inline
      stroke-dasharray (so it reads as pre-dashed, not stroked) and every
@@ -74,51 +71,48 @@
      on the plate, in the bench and in every cell, while the enlargement,
      which has no filmstrip, drew whole. */
   function marksOf(svg) {
-    var els = svg.querySelectorAll(SEL), out = [], i, el, cs, L, stroked, filled;
-    for (i = 0; i < els.length; i++) {
-      el = els[i];
-      if (el.closest && el.closest(SKIP)) continue;
-      cs = getComputedStyle(el);
-      if (cs.display === 'none' || cs.visibility === 'hidden') continue;
-      L = 0;
-      try { if (el.getTotalLength) L = el.getTotalLength(); } catch (e) {}
-      stroked = cs.stroke !== 'none' && parseFloat(cs.strokeWidth) > 0 &&
-        parseFloat(cs.strokeOpacity) > 0 && cs.strokeDasharray === 'none' && L > 0;
-      filled = cs.fill !== 'none' && parseFloat(cs.fillOpacity) > 0;
-      if (!stroked && !filled) continue;
-      out.push({ el: el, L: Math.max(L, 4), start: 0, end: 0 });
-    }
-    return out;
+    return window.JD_drawOn.walk(svg).map(function (it) {
+      return { el: it.el, L: it.L, start: 0, end: 0 };
+    });
   }
 
-  /* strip the engine's inline animation styles off a subtree */
-  function clean(root) {
-    var els = root.querySelectorAll(SEL);
-    for (var i = 0; i < els.length; i++) {
-      els[i].style.animation = ''; els[i].style.strokeDasharray = '';
-      els[i].style.strokeDashoffset = '';
-      els[i].style.removeProperty('--jdfo'); els[i].style.removeProperty('--jdo');
-    }
+  /* hold every animation in `list` paused at `ms` — a seek, a finish, or a
+     cell parked at its stretch's end */
+  function park(list, ms) {
+    list.forEach(function (a) { a.pause(); a.currentTime = ms; });
   }
 
-  /* a cell copy: the plate's drawing cloned, animation styles cleared, and
-     every id (and every reference to one — url(#…), href, aria) rewritten
-     under a prefix so eight copies can share the document with the plate */
-  function copyOf(svg, prefix) {
-    var g = svg.cloneNode(true);
-    clean(g);
-    g.removeAttribute('id');
-    var els = g.querySelectorAll('[id]'), map = {}, i;
-    for (i = 0; i < els.length; i++) {
-      var id = els[i].getAttribute('id');
-      map[id] = prefix + id;
-      els[i].setAttribute('id', prefix + id);
-    }
+  /* the references a copy rewrites: one alternation of every id inside the
+     drawing (the root's own id is dropped from each copy, so it is not
+     among them), longest first so an id that begins another can never win
+     the match. Every copy of one drawing has the same ids, so filmstrip()
+     builds this once per mount and hands it to each copyOf; null when the
+     drawing has no ids to rewrite. */
+  function idRefs(svg) {
+    var els = svg.querySelectorAll('[id]'), map = {}, i;
+    for (i = 0; i < els.length; i++) map[els[i].getAttribute('id')] = 1;
     var ids = Object.keys(map).sort(function (a, b) { return b.length - a.length; });
-    if (ids.length) {
-      var re = new RegExp('#(' + ids.map(function (s) {
-        return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      }).join('|') + ')(?![\\w-])', 'g');
+    if (!ids.length) return null;
+    return new RegExp('#(' + ids.map(function (s) {
+      return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }).join('|') + ')(?![\\w-])', 'g');
+  }
+
+  /* a cell copy: the plate's drawing cloned, animation styles cleared
+     (JD_drawOn.strip, which works on the detached clone), and every id (and
+     every reference to one — url(#…), href, aria) rewritten under a prefix
+     so the twelve cell copies can share the document with the plate.
+     `re` is idRefs(svg) — the id under the prefix is prefix + id. */
+  function copyOf(svg, prefix, re) {
+    var g = svg.cloneNode(true);
+    window.JD_drawOn.strip(g);
+    g.removeAttribute('id');
+    var els = g.querySelectorAll('[id]'), i;
+    for (i = 0; i < els.length; i++) {
+      els[i].setAttribute('id', prefix + els[i].getAttribute('id'));
+    }
+    if (re) {
+      var to = function (m, x) { return '#' + prefix + x; };
       var all = g.querySelectorAll('*');
       for (i = 0; i < all.length; i++) {
         var el = all[i], attrs = el.attributes, j;
@@ -126,12 +120,12 @@
           var a = attrs[j];
           if (a.name === 'id') continue;
           if (a.value.indexOf('#') >= 0) {
-            var v = a.value.replace(re, function (m, x) { return '#' + map[x]; });
+            var v = a.value.replace(re, to);
             if (v !== a.value) el.setAttribute(a.name, v);
           }
         }
         if (el.tagName && el.tagName.toLowerCase() === 'style' && el.textContent.indexOf('#') >= 0) {
-          el.textContent = el.textContent.replace(re, function (m, x) { return '#' + map[x]; });
+          el.textContent = el.textContent.replace(re, to);
         }
       }
     }
@@ -180,22 +174,28 @@
     var caret = bar.querySelector('.fs-caret');
     var rN = bar.querySelector('.fs-n'), rM = bar.querySelector('.fs-m');
     var cells = Array.prototype.slice.call(bar.querySelectorAll('.fs-cell'));
-    var anims = [], clock = null, marks = [], T = [0], M = 0, total = 0, secs = 0;
+    var anims = [], ends = [], clock = null, marks = [], T = [0], M = 0, total = 0, secs = 0;
     var u = 0, playing = false, raf = 0, armed = false, framesBuilt = false, frameC = [];
     /* NFa: the cells actually in play (min(NF, M)); shown: those cells */
     var NFa = NF, shown = cells.slice();
     var dead = false;
 
-    /* the cell copies, made once from the plate's drawing */
-    cells.forEach(function (f, k) {
-      f.querySelector('.fs-cell-art').appendChild(copyOf(svg, pfx + 'f' + k + '_'));
+    /* the cell copies, made once from the plate's drawing (and kept: arm()
+       takes a hidden cell's copy out of the document) */
+    var idRe = idRefs(svg);
+    var copies = cells.map(function (f, k) {
+      var c = copyOf(svg, pfx + 'f' + k + '_', idRe);
+      f.querySelector('.fs-cell-art').appendChild(c);
+      return c;
     });
+    /* what paint() last wrote to the slider and the cells (see paint) */
+    var paintedN = -1, paintedCf = -1;
 
     /* ARM the plate: run the engine, park the run, read each mark's start
        and end off its own animations, and build the cumulative end times
        T[i] the mark axis maps through */
     function arm() {
-      clean(svg);   /* an identical animation string would not restart a cancelled one */
+      window.JD_drawOn.strip(svg);   /* an identical animation string would not restart a cancelled one */
       /* measure BEFORE the engine runs: the walk must see the plain drawing
          (see marksOf) */
       marks = marksOf(svg);
@@ -207,9 +207,14 @@
       var byEl = new Map();
       marks.forEach(function (m) { byEl.set(m.el, m); m.start = Infinity; m.end = 0; });
       clock = null; var cEnd = -1;
+      ends = [];
       anims.forEach(function (a) {
         var tm = a.effect.getTiming();
         var s = (+tm.delay || 0) / 1000, e = s + (+tm.duration || 0) / 1000;
+        /* start()'s per-play test, read here once: the end in seconds, the
+           delay and duration summed BEFORE the division as start() always
+           had it (e above rounds differently) */
+        ends.push(((+tm.delay || 0) + (+tm.duration || 0)) / 1000);
         var m = byEl.get(a.effect.target);
         if (m) { if (s < m.start) m.start = s; if (e > m.end) m.end = e; }
         if (e > cEnd) { cEnd = e; clock = a; }
@@ -235,7 +240,17 @@
          is rewritten so the ruling stays in register with what is left. */
       NFa = Math.max(1, Math.min(NF, M));
       shown = cells.slice(0, NFa);
-      cells.forEach(function (f, k) { f.hidden = k >= NFa; });
+      /* a surplus cell is display:none and never comes back while this arm
+         stands: its copy leaves the document (it is kept, and goes back in
+         should a later arm show the cell again) */
+      cells.forEach(function (f, k) {
+        f.hidden = k >= NFa;
+        var art = f.querySelector('.fs-cell-art'), c = copies[k];
+        if (f.hidden) { if (c.parentNode) art.removeChild(c); }
+        else if (!c.parentNode) art.appendChild(c);
+      });
+      /* M and the cells in play may have moved: paint() writes afresh */
+      paintedN = -1; paintedCf = -1;
       bar.style.setProperty('--nf', NFa);
       frameC = [];
       for (var k = 0; k < NFa; k++) frameC.push(Math.round((k + 1) * M / NFa));
@@ -255,9 +270,7 @@
         if (!fs) return;
         window.JD_drawOn(fs, { force: true, secs: secs });
         fs.__jdDrawSeq = -1;
-        var fa = fs.getAnimations({ subtree: true });
-        var ms = T[frameC[k]] * 1000;
-        fa.forEach(function (a) { a.pause(); a.currentTime = ms; });
+        park(fs.getAnimations({ subtree: true }), T[frameC[k]] * 1000);
       });
       framesBuilt = true;
     }
@@ -297,11 +310,15 @@
       /* the unwashed reading: the pictures stay as they are and the elapsed
          run is inked along the strip's floor */
       fill.style.width = (p * 100).toFixed(3) + '%';
-      var n = markN(u);
+      /* the caret and the run move every frame; the mark, the slider's value
+         and the current cell change only at a mark boundary, so they are
+         written then and not 60 times a second (arm() resets the memo) */
+      var n = markN(u), cf = curFrame(u);
+      if (n === paintedN && cf === paintedCf) return;
+      paintedN = n; paintedCf = cf;
       if (rN) rN.textContent = n;
       strip.setAttribute('aria-valuenow', n);
       strip.setAttribute('aria-valuetext', 'mark ' + n + ' of ' + M);
-      var cf = curFrame(u);
       shown.forEach(function (f, k) { f.classList.toggle('is-cur', k === cf); });
     }
     function setPlaying(on) {
@@ -313,8 +330,7 @@
     function seekU(uu) {
       if (!ensure()) return;
       u = Math.max(0, Math.min(M, uu));
-      var ms = tOf(u) * 1000;
-      anims.forEach(function (a) { a.pause(); a.currentTime = ms; });
+      park(anims, tOf(u) * 1000);
       if (playing) { setPlaying(false); cancelAnimationFrame(raf); }
       paint();
     }
@@ -330,18 +346,16 @@
     }
     function finish() {
       u = M; setPlaying(false); cancelAnimationFrame(raf);
-      anims.forEach(function (a) { a.pause(); a.currentTime = total * 1000; });
+      park(anims, total * 1000);
       paint();
     }
     function start() {
       if (!ensure()) return;
       if (u >= M - 1e-6) u = 0;
       var tt = tOf(u), ms = tt * 1000;
-      anims.forEach(function (a) {
-        var tm = a.effect.getTiming();
-        var end = ((+tm.delay || 0) + (+tm.duration || 0)) / 1000;
+      anims.forEach(function (a, i) {
         a.currentTime = ms;
-        if (end > tt + 1e-6) a.play(); else a.pause();
+        if (ends[i] > tt + 1e-6) a.play(); else a.pause();
       });
       clock.onfinish = function () { if (playing) finish(); };
       setPlaying(true);
@@ -413,7 +427,7 @@
       destroy: function () {
         dead = true; cancelAnimationFrame(raf);
         anims.forEach(function (a) { try { a.cancel(); } catch (e) {} });
-        if (document.contains(svg)) clean(svg);
+        if (document.contains(svg)) window.JD_drawOn.strip(svg);
         if (bar.parentNode) bar.parentNode.removeChild(bar);
       }
     };

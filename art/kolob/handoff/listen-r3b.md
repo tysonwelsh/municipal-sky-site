@@ -23,7 +23,7 @@ The local server is running. Open a seed and press PLAY:
 - The times below (mm:ss) are the page's own clock, shown beside each line of
   the clerk's minutes. They count from when you press PLAY. They were read
   from the test harness, and the browser keeps them: seed 17 in the browser
-  turns the drone at 1:16 and begins the invocation at 1:24, as the harness
+  turns the drone at 1:16 and begins the invocation at 1:19, as the harness
   does.
 - **The programme card names the Sunday** (in Deseret, where it used to say
   ORDINARY, FAST DAY, CONFERENCE or JUBILEE). `&latin=1` shows it in
@@ -284,8 +284,6 @@ The drone's notes are named from the day's keynote (do), whatever the mode.
 | switch | what it does |
 |---|---|
 | `&exp=-reckoning` | the same Sunday, the same hymns and doxology, with the drone on the keynote all meeting |
-| `&choir=house` | round 3's four voices instead of the ward |
-| `&organ=house` | the old organ instead of the pipe organ and the organist |
 | `&exp=-singingSchool` | no singing school |
 | `&latin=1` | the page in English |
 
