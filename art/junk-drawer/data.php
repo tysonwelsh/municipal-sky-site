@@ -177,7 +177,7 @@ echo json_encode([
 
 function jd2_data_prompt_sql(): string
 {
-    return 'SELECT id, text, title, origin, created, size_class, size_scale, visibility,
+    return 'SELECT id, text, title, origin, created, size_class, size_scale, size_by, tags, visibility,
                    shown_run_id, pinned_generation_id
               FROM jd2_prompts';
 }
@@ -324,6 +324,10 @@ function jd2_data_item(array $prompt, array $runs, array $current, array $standi
     if ($prompt['size_scale'] !== null && (float) $prompt['size_scale'] !== 1.0) {
         $item['sizeScale'] = (float) $prompt['size_scale'];
     }
+    // who set the size (model | owner | visitor; null = none, shown as 'm'),
+    // and the intake classification {facet: [heading id…]} or null
+    $item['size_by'] = $prompt['size_by'];
+    $item['tags'] = jd2_tags_decode($prompt['tags']);
     $item += [
         'primary' => ($pin !== null && isset($ridOf[$pin])) ? $ridOf[$pin] : ($responses ? 'r1' : null),
         'fromTurn' => true,

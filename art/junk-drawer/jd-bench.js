@@ -72,6 +72,7 @@
   var API_R = JD_API + '/api/jd2-rate.php';
   var API_C = JD_API + '/api/jd2-curate.php';
   var API_L = JD_API + '/api/jd2-ledger.php';
+  var API_I = JD_API + '/api/jd2-intake.php';
 
   var Q = null;             /* the queue payload */
   var curId = null;         /* the prompt on (or awaiting) the bench */
@@ -80,7 +81,7 @@
   var svgCache = {};        /* generation id -> SVG text */
   var intent = null;        /* why the card is coming down: scrap|skip|prev|owner */
   var pendingRun = null;    /* an owner's run waiting for the card to come down */
-  var running = null;       /* the owner's run holding the stage: {kind, prompt_id?, title?, category?} */
+  var running = null;       /* the owner's run holding the stage: {kind, prompt_id?, title?, size?, category?} */
   var stale = false;        /* a deploy landed since this page loaded */
   var sync = { state: 'idle', detail: '' };
   var bar = null, sheet = null;
@@ -330,19 +331,39 @@
     }
     setSync('idle');
   }
-  /* the run is back (or was stopped): file a new prompt's title and
-     category, re-read the queue for that prompt, and seat its new run */
+  /* the run is back (or was stopped): file a new prompt's title, size and
+     category, ask the intake clerk for what the form left open, re-read the
+     queue for that prompt, and seat its new run */
   function runLanded(r) {
     var run = running;
     running = null;
     var pid = r.prompt_id || (run && run.prompt_id) || null;
     var chain = Promise.resolve();
-    if (run && run.kind === 'new' && pid && (run.title || run.category)) {
+    var fresh = run && run.kind === 'new' && pid;
+    if (fresh && (run.title || run.size || run.category)) {
       var cb = { prompt_id: pid };
       if (run.title) cb.title = run.title;
+      /* a size chosen here is the owner's (size_by owner): the clerk never overwrites it */
+      if (run.size) cb.size_class = run.size;
       if (run.category) cb.category = run.category;
       chain = post(API_C, cb).then(null, function (err) {
-        setSync('failed', 'title/category: ' + ((err && err.code) || 'failed'));
+        setSync('failed', 'title/size/category: ' + ((err && err.code) || 'failed'));
+      });
+    }
+    /* THE INTAKE (2026-10-02): the clerk files the heading, the size tier and
+       the classification on the new prompt — unless the form gave both a
+       title and a size. It fills only what the owner left open (a title the
+       owner typed and an owner's size stand), and a failed intake simply
+       leaves the size card to ask. The queue is read after it, so the size
+       card opens on the clerk's tier. */
+    if (fresh && !(run.title && run.size)) {
+      chain = chain.then(function () {
+        setSync('saving', 'intake');
+        return post(API_I, { prompt_id: pid }).then(function (j) {
+          setSync('idle', j && j.fallback ? 'intake fell back' : '');
+        }, function (err) {
+          setSync('failed', 'intake: ' + ((err && err.code) || 'failed'));
+        });
       });
     }
     chain.then(function () {
@@ -491,8 +512,22 @@
       ' · ' + n + (n === 1 ? ' drawing' : ' drawings') +
       (it.runs > 1 ? ' · run ' + it.runs + ' of ' + it.runs : '') +
       (it.category ? ' · ' + esc(it.category) : '') +
+      (it.size_class ? ' · size ' + esc(it.size_class) + (it.size_by ? ' (' + esc(it.size_by) + ')' : '') : '') +
       '<p>' + esc(it.prompt) + '</p>' +
+      tagsLine(it) +
       ((it.needs || []).length ? '<p class="jd-bench-needs">needs: ' + esc(it.needs.join('; ')) + '</p>' : ''));
+  }
+
+  /* the intake clerk's classification, one facet per clause (the ids as
+     filed; the ledger edits them) — or why there is none */
+  function tagsLine(it) {
+    if (it.fallback) return '<p class="jd-bench-needs">intake fell back — no headings on file (the ledger shows why)</p>';
+    var t = it.tags;
+    if (!t) return '';
+    var parts = Object.keys(t).map(function (f) {
+      return f + ': ' + ((t[f] || []).length ? t[f].join(', ') : '—');
+    });
+    return '<p class="jd-bench-needs">filed under ' + esc(parts.join(' · ')) + '</p>';
   }
 
   /* ---------- NEW PROMPT (owner only: the strip exists only behind the key) */
@@ -505,6 +540,7 @@
       '<label>prompt<textarea name="prompt" rows="3" maxlength="500" required></textarea></label>' +
       '<div class="jd-bench-new-row">' +
       '<label>title <i>(optional)</i><input name="title" maxlength="80"></label>' +
+      '<label>size <i>(optional)</i><select name="size">' + sizeOptions() + '</select></label>' +
       '<label>category <i>(optional)</i><input name="category" maxlength="32"></label>' +
       '</div>' +
       '<div class="jd-bench-new-row">' +
@@ -513,6 +549,12 @@
       '</div></form>');
     var ta = sheet.querySelector('textarea');
     if (ta) ta.focus();
+  }
+  /* the NEW PROMPT form's size: the queue's tiers; blank = the intake clerk decides */
+  function sizeOptions() {
+    return '<option value="">the clerk decides</option>' + ((Q && Q.size_tiers) || []).map(function (t) {
+      return '<option value="' + esc(t.id) + '">' + esc(t.label || t.id) + '</option>';
+    }).join('');
   }
   function submitNewPrompt(form) {
     function val(name) {
@@ -524,6 +566,7 @@
     var run = {
       kind: 'new', prompt: text,
       title: val('title').trim().slice(0, 80) || null,
+      size: val('size') || null,
       category: val('category').trim().slice(0, 32) || null
     };
     hideSheet();

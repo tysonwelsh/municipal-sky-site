@@ -35,6 +35,15 @@
   other's. The owner rates that run on the bench instead — the drawer's
   admin card refuses the same way.
 
+  THE INTAKE (2026-10-02). Each row shows the size with who set it (the
+  intake clerk, the owner, a visitor) and the clerk's headings; the open
+  row shows the classification as chips, facet by facet (on = filed under
+  it), the clerk's two reasons, and the intake's stamp — or the error of a
+  failed intake. A chip press files the whole classification through
+  jd2-curate (`tags`), within each facet's min and max; the size select
+  files `size_class` through jd2-curate, which makes it the owner's
+  (size_by owner — the clerk never overwrites it).
+
   Reads api/jd2-ledger.php (bench key; the server applies the drawer's and
   the bench's rules, so this page states them and never re-derives them);
   every act goes through api/jd2-curate.php; drawings come from
@@ -135,6 +144,14 @@
   .savebtn.is-dirty { border-color: var(--ink); color: var(--paper); background: var(--ink); }
   .status { font-size: 11px; color: var(--dim); margin-top: 6px; }
   .status.warn { color: var(--red); }
+  .tagchip { font: inherit; font-size: 9px; letter-spacing: 0.04em; padding: 1px 6px; margin: 2px 3px 0 0; border: 1px solid var(--line); border-radius: 9px; background: none; color: var(--dim); cursor: pointer; }
+  .tagchip.is-on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .tagchip:disabled { cursor: default; opacity: 0.45; }
+  .tagchip.ro { cursor: default; }
+  .facet { margin: 3px 0; }
+  .facet b { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); display: inline-block; min-width: 7.5em; }
+  .intake { border: 1px dashed var(--line); padding: 6px 10px; background: var(--card); }
+  .intake .why { margin-top: 3px; }
   .lightbox { position: fixed; inset: 0; z-index: 20; background: rgba(58, 42, 18, 0.82); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: zoom-out; padding: 24px; }
   .lightbox .sheet { width: min(88vmin, 900px); height: min(88vmin, 900px); background:
     repeating-linear-gradient(0deg, rgba(74,98,138,.14) 0 1px, transparent 1px 24px),
@@ -227,7 +244,9 @@
     else if (filter === 'bench') { if (it.bench.state !== 'open') return false; }
     if (query) {
       var q = query.toLowerCase();
-      var hay = [it.title, it.prompt, it.prompt_id, it.v1_item_id || '', it.category || '', it.device_ref || ''].concat(
+      var tagWords = [];
+      Object.keys(it.tags || {}).forEach(function (f) { (it.tags[f] || []).forEach(function (id) { tagWords.push(f + ':' + id); }); });
+      var hay = [it.title, it.prompt, it.prompt_id, it.v1_item_id || '', it.category || '', it.device_ref || '', tagWords.join(' ')].concat(
         it.runs.map(function (r) { return r.run_id + ' ' + r.generations.map(function (g) { return g.generation_id + ' ' + g.model_id + ' ' + modelLabel(g.model_id); }).join(' '); })
       ).join(' ').toLowerCase();
       if (hay.indexOf(q) < 0) return false;
@@ -259,7 +278,7 @@
     var c = D.counts;
     var h = '<div class="toolbar">';
     FILTERS.forEach(function (f) { h += '<button type="button" class="chip' + (filter === f[0] ? ' is-on' : '') + '" data-filter="' + f[0] + '">' + f[1] + '</button>'; });
-    h += '<input type="search" id="q" placeholder="search title, prompt, category, id, model" value="' + esc(query) + '">';
+    h += '<input type="search" id="q" placeholder="search title, prompt, category, heading (subject:object), id, model" value="' + esc(query) + '">';
     h += '<span class="counts"><b>' + c.prompts + '</b> prompts · <b>' + c.live + '</b> live · <b>' + c.hidden + '</b> hidden · <b>' + c.draft + '</b> draft · <b>' + c.bench_open + '</b> open on the bench</span>';
     h += '<button type="button" class="chip" id="reload">reload</button><button type="button" class="chip" id="signout">sign out</button>';
     h += '</div>';
@@ -275,11 +294,11 @@
     list.forEach(function (it) {
       var open = openId === it.prompt_id, dn = drawings(it);
       h += '<tr class="item' + (open ? ' is-open' : '') + '" data-id="' + esc(it.prompt_id) + '">';
-      h += '<td class="title"><b>' + esc(it.title) + '</b><small>' + (it.category ? '[' + esc(it.category) + '] ' : '') + esc(it.prompt.length > 90 ? it.prompt.slice(0, 89) + '…' : it.prompt) + '</small></td>';
+      h += '<td class="title"><b>' + esc(it.title) + '</b><small>' + (it.category ? '[' + esc(it.category) + '] ' : '') + esc(it.prompt.length > 90 ? it.prompt.slice(0, 89) + '…' : it.prompt) + '</small>' + tagsBrief(it) + '</td>';
       h += '<td><span class="kind ' + esc(it.origin) + '">' + esc(it.origin) + '</span></td>';
       h += '<td><span class="st ' + esc(it.visibility) + '">' + esc(it.visibility) + '</span>' + (it.hidden_by ? '<div class="why">by the ' + esc(it.hidden_by) + '</div>' : '') + '</td>';
       h += '<td>' + esc(String(it.created).slice(0, 10)) + '</td>';
-      h += '<td>' + esc(it.size_class || '—') + (it.size_scale != null && it.size_scale !== 1 ? '<div class="why">× ' + esc(it.size_scale) + '</div>' : '') + '</td>';
+      h += '<td>' + esc(it.size_class || '—') + (it.size_by ? '<div class="why">by the ' + esc(it.size_by === 'model' ? 'clerk' : it.size_by) + '</div>' : '') + (it.size_scale != null && it.size_scale !== 1 ? '<div class="why">× ' + esc(it.size_scale) + '</div>' : '') + (it.fallback ? '<div class="why">intake failed</div>' : '') + '</td>';
       h += '<td>' + dn.runs + ' × ' + (dn.runs ? Math.round(dn.n / dn.runs) : 0) + '<div class="why">' + dn.ok + ' of ' + dn.n + ' drawings count</div></td>';
       h += '<td><span class="st ' + esc(it.drawer.state) + '">' + esc(it.drawer.state) + '</span>' +
         (it.drawer.shows ? '<div class="why">shows ' + esc(showsLabel(it)) + ' — ' + esc(it.drawer.rule) + '</div>' : '') +
@@ -302,6 +321,74 @@
     return it.drawer.shows;
   }
 
+  /* ---------- the classification (intake) ---------- */
+  /* the headings on file, as small read-only chips under the title */
+  function tagsBrief(it) {
+    if (!it.tags) return '';
+    var h = '';
+    (D.facets || []).forEach(function (f) {
+      (it.tags[f.id] || []).forEach(function (id) {
+        h += '<span class="tagchip ro is-on" title="' + esc(f.label + ': ' + labelOf(f, id)) + '">' + esc(id) + '</span>';
+      });
+    });
+    return h ? '<div>' + h + '</div>' : '';
+  }
+  function labelOf(f, id) {
+    for (var i = 0; i < f.headings.length; i++) if (f.headings[i].id === id) return f.headings[i].label;
+    return id;
+  }
+  /* the tags with one heading toggled, and whether every facet still sits
+     within its min..max: {tags, ok, why} */
+  function toggled(it, fid, hid) {
+    var t = {};
+    (D.facets || []).forEach(function (f) { t[f.id] = ((it.tags || {})[f.id] || []).slice(); });
+    var list = t[fid], at = list.indexOf(hid);
+    if (at >= 0) list.splice(at, 1); else list.push(hid);
+    var why = '';
+    (D.facets || []).forEach(function (f) {
+      if (!why && (t[f.id].length < f.min || t[f.id].length > f.max)) {
+        why = f.label.toLowerCase() + ' takes ' + (f.min === f.max ? f.min : f.min + '–' + f.max) + ' heading' + (f.max === 1 ? '' : 's');
+      }
+    });
+    return { tags: t, ok: !why, why: why };
+  }
+  function intakeHTML(it) {
+    var h = '<div class="intake"><b class="who">the intake clerk</b> ';
+    if (it.intake_at) {
+      h += '<span class="who">· ' + esc(it.intake_version || '') + ' · ' + esc(it.intake_model || '') + ' · ' + esc(it.intake_at) +
+        (it.intake_cost_usd != null ? ' · ' + esc(money(it.intake_cost_usd)) : '') + '</span>';
+    } else if (it.fallback) {
+      h += '<span class="who" style="color:var(--red)">· intake failed (' + esc(it.intake_error || 'error') + ') — no size or headings from the clerk; the bench\'s size card asks</span>';
+    } else {
+      h += '<span class="who">· not run on this prompt</span>';
+    }
+    if (it.reasons) {
+      h += '<div class="why">size: ' + esc(it.reasons.size) + '</div><div class="why">classification: ' + esc(it.reasons.classification) + '</div>';
+    }
+    /* the size: who set it, and the owner's select (through jd2-curate) */
+    h += '<div class="facet"><b>size</b><select class="ed" data-size-for="' + esc(it.prompt_id) + '">';
+    h += '<option value=""' + (it.size_class ? '' : ' selected') + '>—</option>';
+    (D.size_tiers || []).forEach(function (t) {
+      h += '<option value="' + esc(t.id) + '"' + (it.size_class === t.id ? ' selected' : '') + '>' + esc(t.id + ' · ' + t.label) + '</option>';
+    });
+    h += '</select> <span class="who">' + (it.size_by ? 'set by the ' + esc(it.size_by === 'model' ? 'clerk (model)' : it.size_by) : 'no size on file — the drawer shows m') + '</span></div>';
+    /* the chips: every heading of every facet, on = filed under it */
+    (D.facets || []).forEach(function (f) {
+      var on = (it.tags || {})[f.id] || [];
+      h += '<div class="facet"><b title="' + esc(f.question) + '">' + esc(f.label) + '</b>';
+      f.headings.forEach(function (hd) {
+        var isOn = on.indexOf(hd.id) >= 0;
+        var tg = toggled(it, f.id, hd.id);
+        /* within the facet's own bounds; another facet's minimum is said on press */
+        var blocked = isOn ? on.length <= f.min : on.length >= f.max;
+        h += '<button type="button" class="tagchip' + (isOn ? ' is-on' : '') + '" data-tag-for="' + esc(it.prompt_id) + '" data-facet="' + esc(f.id) + '" data-heading="' + esc(hd.id) +
+          '" title="' + esc(hd.label + ' — ' + hd.scope) + (tg.ok ? '' : ' (' + tg.why + ')') + '"' + (blocked ? ' disabled' : '') + '>' + esc(hd.id) + '</button>';
+      });
+      h += '</div>';
+    });
+    return h + '<div class="why">a chip or the size files through jd2-curate as the owner\'s; the clerk never overwrites an owner\'s size</div></div>';
+  }
+
   /* ---------- the detail ---------- */
   function detailHTML(it) {
     var h = '<div class="detail-grid">';
@@ -319,6 +406,7 @@
     h += '<a href="index.php?bench&amp;prompt=' + encodeURIComponent(it.prompt_id) + '" target="_blank" rel="noopener">re-rate on the bench</a>';
     if (it.drawer.state === 'shown') h += '<a href="index.php?admin&amp;item=' + encodeURIComponent(it.prompt_id) + '" target="_blank" rel="noopener">report card (admin)</a>';
     h += '<span class="note" data-note="' + esc(it.prompt_id) + '">' + esc((status[it.prompt_id] || {}).text || '') + '</span></div>';
+    h += intakeHTML(it);
     it.runs.forEach(function (run) { h += runHTML(it, run); });
     h += '</div>';
     return h;
@@ -563,6 +651,20 @@
       });
     });
     app.querySelectorAll('[data-act]').forEach(function (b) { b.addEventListener('click', function () { act(b); }); });
+    app.querySelectorAll('[data-tag-for]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var it = itemById(b.getAttribute('data-tag-for')); if (!it) return;
+        var tg = toggled(it, b.getAttribute('data-facet'), b.getAttribute('data-heading'));
+        if (!tg.ok) { noteFor(it.prompt_id, '⚠ ' + tg.why); return; }
+        curate(it.prompt_id, { prompt_id: it.prompt_id, tags: tg.tags }, 'filed: headings', b);
+      });
+    });
+    app.querySelectorAll('[data-size-for]').forEach(function (sel) {
+      sel.addEventListener('change', function () {
+        var id = sel.getAttribute('data-size-for');
+        curate(id, { prompt_id: id, size_class: sel.value || null }, 'filed: size ' + (sel.value || 'cleared') + ' (the owner\'s)', sel);
+      });
+    });
     app.querySelectorAll('select.ed').forEach(function (sel) {
       sel.addEventListener('change', function () {
         var rid = sel.getAttribute('data-run'), gid = sel.getAttribute('data-gen'), what = sel.getAttribute('data-what');
@@ -594,6 +696,22 @@
       el.addEventListener('click', function () { if (el.classList.contains('loaded')) enlarge(el.getAttribute('data-url'), el.getAttribute('data-cap')); });
     });
     var d = app.querySelector('tr.detail'); if (d) loadThumbs(d);
+  }
+
+  function noteFor(id, text) {
+    var n = app.querySelector('[data-note="' + id + '"]');
+    if (n) n.textContent = text;
+  }
+  /* one jd2-curate request, then the server's word (a quiet re-read) */
+  function curate(id, body, done, el) {
+    if (el) el.disabled = true;
+    fetch(API_CURATE, { method: 'POST', headers: headers({ 'Content-Type': 'application/json' }), body: JSON.stringify(body) })
+      .then(function (r) { return r.json().catch(function () { return { ok: false, error: { code: 'server_error' } }; }).then(function (j) { return { ok: r.ok && j.ok, j: j }; }); })
+      .then(function (res) {
+        if (!res.ok) { if (el) el.disabled = false; noteFor(id, '⚠ ' + (((res.j.error || {}).message) || ((res.j.error || {}).code) || 'failed')); return; }
+        status[id] = { text: done };
+        load(true);
+      }, function () { if (el) el.disabled = false; noteFor(id, '⚠ network'); });
   }
 
   /* ---------- the acts: every one a jd2-curate request ---------- */

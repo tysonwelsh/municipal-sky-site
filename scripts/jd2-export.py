@@ -34,6 +34,13 @@ folded, merged or re-derived.
                          rank_pos and gap_after for that drawing (empty when
                          the run has no display session or the drawing is not
                          ok / hidden)
+    The prompt carries the intake facts too: `tags` ({facet: [heading id]}),
+    `size_by` (model | owner | visitor), `intake_version`, `intake_model`,
+    `intake_json` (the clerk's answer and usage, or the error of a failed
+    intake), `intake_cost_usd`, `intake_at`; the standing CSV carries
+    size_class, size_by and one `tags_<facet>` column per taxonomy facet
+    (heading ids joined with ";").
+
     --pairs out.csv      one row per pair of every run's display session,
                          with both sides' slot and model; score is signed for
                          gen_a (positive = gen_a preferred)
@@ -216,8 +223,13 @@ def is_complete(session, counting, axes):
     return True
 
 
+def facet_ids(taxonomy):
+    return [f["id"] for f in taxonomy.get("facets", []) if isinstance(f, dict) and f.get("id")]
+
+
 def export(conn, args, taxonomy):
     axes = live_axes(taxonomy)
+    facets = facet_ids(taxonomy)
     prompts = rows(conn, "SELECT * FROM jd2_prompts ORDER BY created, id")
     runs = rows(conn, "SELECT * FROM jd2_runs ORDER BY created, id")
     # byte lengths: LENGTH() counts bytes on MySQL, characters on SQLite unless cast to a BLOB
@@ -326,6 +338,7 @@ def export(conn, args, taxonomy):
                     cells.setdefault(j["generation_id"], {})["grade" if j["kind"] == "grade" else j["axis_id"]] = j["value"]
                 for r in display["rankings"]:
                     ranks[r["generation_id"]] = r
+            ptags = as_json(p.get("tags")) or {}
             for g in rgens:
                 counted = g["id"] in counting
                 c = cells.get(g["id"], {}) if counted else {}
@@ -333,7 +346,8 @@ def export(conn, args, taxonomy):
                 row = {
                     "prompt_id": p["id"], "prompt": as_text(p["text"]), "origin": p["origin"],
                     "visibility": p["visibility"], "v1_item_id": p["v1_item_id"],
-                    "category": p.get("category"), "run_id": run["id"], "run_kind": run["kind"], "profile": run["profile"], "harness": run["harness"],
+                    "category": p.get("category"), "size_class": p.get("size_class"), "size_by": p.get("size_by"),
+                    "run_id": run["id"], "run_kind": run["kind"], "profile": run["profile"], "harness": run["harness"],
                     "pool_version": run["pool_version"], "generation_id": g["id"], "slot": g["slot"],
                     "model_id": g["model_id"], "api_model": g["api_model"], "provider": g["provider"],
                     "status": g["status"], "hidden": as_int(g["hidden"]), "cost_usd": as_float(g["cost_usd"]),
@@ -346,6 +360,8 @@ def export(conn, args, taxonomy):
                 }
                 for a in axes:
                     row[a] = c.get(a)
+                for fid in facets:
+                    row["tags_" + fid] = ";".join(ptags.get(fid) or []) if isinstance(ptags, dict) else ""
                 row["rank_pos"] = rk.get("rank_pos")
                 row["gap_after"] = rk.get("gap_after")
                 standing_rows.append(row)
@@ -370,12 +386,18 @@ def export(conn, args, taxonomy):
                 "approved_by": p["approved_by"], "shown_run_id": p["shown_run_id"],
                 "pinned_generation_id": p["pinned_generation_id"], "v1_item_id": p["v1_item_id"],
                 "category": p.get("category"),
+                "size_by": p.get("size_by"),
+                "tags": as_json(p.get("tags")),
+                "intake_version": p.get("intake_version"), "intake_model": p.get("intake_model"),
+                "intake_json": as_json(p.get("intake_json")),
+                "intake_cost_usd": as_float(p.get("intake_cost_usd")),
+                "intake_at": as_stamp(p.get("intake_at")),
                 "visitor_hash": p["visitor_hash"], "device_ref": p["device_ref"],
                 "consent_version": p["consent_version"], "consent_at": as_stamp(p["consent_at"]),
             },
             "runs": out_runs,
         })
-    return records, standing_rows, pair_rows, axes
+    return records, standing_rows, pair_rows, axes, facets
 
 
 def write_csv(path, fieldnames, data):
@@ -407,7 +429,7 @@ def main(argv=None):
 
     conn = connect_sqlite(args.sqlite) if args.sqlite else connect_mysql()
     try:
-        records, standing, pairs, axes = export(conn, args, taxonomy)
+        records, standing, pairs, axes, facets = export(conn, args, taxonomy)
     finally:
         conn.close()
 
@@ -420,10 +442,11 @@ def main(argv=None):
             stream.close()
     if args.standing:
         write_csv(args.standing, [
-            "prompt_id", "prompt", "origin", "visibility", "v1_item_id", "category", "run_id", "run_kind", "profile", "harness",
+            "prompt_id", "prompt", "origin", "visibility", "v1_item_id", "category", "size_class", "size_by",
+            "run_id", "run_kind", "profile", "harness",
             "pool_version", "generation_id", "slot", "model_id", "api_model", "provider", "status", "hidden",
             "cost_usd", "priced", "latency_ms", "display_session_id", "rater_role", "blind", "taxonomy_version",
-            "grade"] + axes + ["rank_pos", "gap_after"], standing)
+            "grade"] + axes + ["tags_" + f for f in facets] + ["rank_pos", "gap_after"], standing)
     if args.pairs:
         write_csv(args.pairs, [
             "prompt_id", "origin", "visibility", "run_id", "session_id", "rater_role", "blind", "gen_a", "gen_b",

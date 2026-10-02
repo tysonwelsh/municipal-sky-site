@@ -2165,6 +2165,10 @@
      into the drawer and the drawer needs to know how big it reads. */
   function sizeTiers() {
     if (curJob) return curJob.sizeTiers || [];
+    /* a visitor's turn the intake clerk sized has no size step — unless the
+       visitor already stood on it before the answer landed (then it stays,
+       and their pick is filed as theirs) */
+    if (work && work.modelSize && !work.reached.size) return [];
     return (tax().sizeTiers || []).map(function (t) {
       return { id: t.id, label: t.label || t.id,
                description: t.description || '', box: t.box };
@@ -2540,7 +2544,11 @@
       setDisabled('[data-act="file"]', false);
       var fileBtn = bodyEl.querySelector('[data-act="file"]');
       if (fileBtn) fileBtn.textContent = 'file the grades';
-      var hint = bodyEl.querySelector('.jd-size-hint');
+      /* the "pick a size" line only (a <p>): the bench's notes-for-the-
+         record label wears the same class, and with a tier already on file
+         (the intake clerk's) there is no line, so a bare class selector
+         used to find the label and drop the note with it */
+      var hint = bodyEl.querySelector('p.jd-size-hint');
       if (hint && hint.parentNode) hint.parentNode.removeChild(hint);
     } else if (act === 'file') {
       /* the one-survivor bench files directly — same gate as next */
@@ -2689,6 +2697,13 @@
               work.title = j.title;
               if (turn) { turn.title = j.title; persist(); }
             }
+            /* THE SIZE IS THE CLERK'S (owner, 2026-10-02): a visitor is no
+               longer asked how big the object is when intake sized it —
+               the size step leaves this turn (sizeTiers), the won record
+               carries the model's tier, and the filing sends no size. A
+               failed intake answers size_class null, and the size card
+               closes the turn as before. */
+            if (j.size_class && !j.fallback) work.modelSize = String(j.size_class);
           } else if (attempt < 2) {
             retry();
           }
@@ -2842,11 +2857,14 @@
          belong to the record now that a rated turn joins the drawer */
       title: work.title || null,
       suppress: !!work.suppress,
-      size: work.size || null,
       ratings: ratings,
       ranking: ranking,
       pairs: pairsOut()
     };
+    /* the size only when the visitor chose one (the size card shows only
+       when intake did not size the turn): an absent size leaves the
+       clerk's tier on the prompt (jd2-rate never files a null over it) */
+    if (work.size) body.size = work.size;
     /* the device code the turn already sent with its generations, so the
        sitting is stamped with it too (jd2_sessions.device_ref); never made
        here — only a turn makes one */
@@ -2959,7 +2977,8 @@
       model_id: rv.model_id || '',
       label: rv.label || '',
       won_at: new Date().toISOString(),
-      sizeClass: work.size || VISITOR_TIER,
+      /* the visitor's pick, else the intake clerk's tier, else the fixed tier */
+      sizeClass: work.size || work.modelSize || VISITOR_TIER,
       /* additive to the C5.3 shape: the visitor's own filing, so a restored
          item's specimen tag and report card still state what they graded */
       grade: r.grade,

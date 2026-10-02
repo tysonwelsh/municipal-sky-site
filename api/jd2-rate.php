@@ -19,6 +19,11 @@
 //                                       visitor, ignored for the owner
 //     device_ref?: <UUID>,
 //     title?: string, size?: <sizeTiers id>, suppress?: bool,
+//                                      size: sent only when the rater chose one;
+//                                      it files size_class with size_by = the
+//                                      rater's role (a visitor's never over the
+//                                      owner's); absent, the prompt's size (the
+//                                      intake clerk's, size_by 'model') stands
 //     ratings: [ {slot, kind: 'grade'|'axis', axis_id?, value, note?} ],
 //     ranking: [ {slot, rank, gap?} ] | null,    strict 1..n over every ok,
 //                                                non-hidden drawing; gap 0..3
@@ -364,9 +369,20 @@ try {
             $sets[] = 'title = ?';
             $vals[] = $title;
         }
+        // The size only when the card sent one — an absent size never files
+        // a NULL over the intake clerk's tier (the visitor's card skips the
+        // size step when intake sized the turn). size_by records who: the
+        // owner's bench sitting files 'owner'; a visitor's pick files
+        // 'visitor', and never over a size the owner set.
         if ($size !== null) {
-            $sets[] = 'size_class = ?';
-            $vals[] = $size;
+            if ($isOwner) {
+                array_push($sets, 'size_class = ?', 'size_by = ?');
+                array_push($vals, $size, JD2_ROLE_OWNER);
+            } else {
+                array_push($sets, "size_class = CASE WHEN size_by = 'owner' THEN size_class ELSE ? END",
+                    "size_by = CASE WHEN size_by = 'owner' THEN size_by ELSE ? END");
+                array_push($vals, $size, JD2_ROLE_VISITOR);
+            }
         }
         if ($suppress && $visibility !== JD2_VIS_HIDDEN) {
             array_push($sets, 'visibility = ?', 'hidden_by = ?', 'hidden_at = ?');

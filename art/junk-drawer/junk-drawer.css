@@ -4261,6 +4261,8 @@ body.jd-pod-drag, body.jd-pod-drag * {
 .jd-size-desc {
   font-size: var(--t-micro); line-height: 1.4; color: var(--tink-3);
 }
+/* the tier words are the intake prompt's own, lower-case (taxonomy v28) */
+.jd-size-desc::first-letter { text-transform: uppercase; }
 @media (max-width: 700px) {
   /* the phone stacks them: the swatch beside its name, still to scale */
   .jd-size { grid-template-columns: 1fr; gap: 6px; }

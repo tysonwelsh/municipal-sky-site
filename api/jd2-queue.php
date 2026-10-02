@@ -24,7 +24,9 @@
 //   ?count=1       only today's spend counter (the batch runner's guard):
 //                  {ok, today: {generations, limit, remaining, since}}
 //
-// Each response carries the owner's latest sitting as `prefill` (grade, axes,
+// Each item also carries the intake facts: tags, size_by, intake_version,
+// intake_model, intake_at, the clerk's `reasons` and `fallback` (intake
+// failed). Each response carries the owner's latest sitting as `prefill` (grade, axes,
 // rank_pos, gap_after) and the visitor's current sitting as `visitor`; the
 // owner's pairs ride on the item as `pairs_prefill` by slot. `needs` says in
 // plain words what the owner's sitting still lacks (jd2_needs). `progress`
@@ -63,8 +65,9 @@ try {
     $all = !empty($_GET['all']);
     $reveal = !empty($_GET['reveal']);
 
-    $sql = 'SELECT id, text, title, origin, created, visibility, size_class, size_scale,
-                   shown_run_id, pinned_generation_id, v1_item_id, category
+    $sql = 'SELECT id, text, title, origin, created, visibility, size_class, size_scale, size_by,
+                   shown_run_id, pinned_generation_id, v1_item_id, category,
+                   tags, intake_version, intake_model, intake_json, intake_at
               FROM jd2_prompts';
     // every view reads every prompt: `progress` counts the whole campaign
     // even when ?prompt= asks for one row (the same walk the default view
@@ -209,6 +212,7 @@ function jd2q_item(PDO $db, array $p, array $runs, array $view, bool $reveal): a
         'visibility' => (string) $p['visibility'],
         'size_class' => $p['size_class'],
         'category' => $p['category'],
+    ] + jd2_q_intake($p) + [
         'runs' => count($runs),
         'settled' => $view['settled'],
         'responses' => $responses,
@@ -216,6 +220,19 @@ function jd2q_item(PDO $db, array $p, array $runs, array $view, bool $reveal): a
         'complete' => $view['complete'],
         'needs' => $view['needs'],
     ];
+}
+
+/**
+ * The intake facts (jd2_intake_fields): tags, size_by, intake_version,
+ * intake_model, intake_at, the reasons from intake_json as `reasons`, and
+ * `fallback` (intake was tried and failed).
+ */
+function jd2_q_intake(array $p): array
+{
+    $f = jd2_intake_fields($p);
+    return ['size_by' => $f['size_by'], 'tags' => $f['tags'], 'intake_version' => $f['intake_version'],
+            'intake_model' => $f['intake_model'], 'intake_at' => $f['intake_at'],
+            'reasons' => $f['intake_reasons'], 'fallback' => $f['intake_fallback']];
 }
 
 /** One drawing's cells in a standing: {grade, axes{}, rank_pos[, gap_after]}, or null when the sitting has none. */

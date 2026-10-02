@@ -39,6 +39,13 @@
  *                instead of filing a new one (its stored text is what is
  *                sent; the row's prompt is only the state key and the label)
  *
+ * THE INTAKE. After a new row's first drawing lands (the prompt row exists
+ * then), it asks api/jd2-intake.php for the clerk's heading, size tier and
+ * classification (prompt_id with the key) and logs them; skipped when the
+ * CSV gave both a title and a size, and for rerun_of rows. The CSV's title
+ * and size, filed through jd2-curate.php after the drawings, stand over the
+ * clerk's (the size as size_by 'owner').
+ *
  * THE STATE FILE (local-dev/, gitignored) remembers, per base URL ('local' for
  * --local) and keyed by
  * prompt text, the client_ref minted for the row, the prompt and run ids and
@@ -299,6 +306,18 @@ foreach ($plan as $k => $n) {
         echo sprintf("  #%-3d %s  %-18s %-8s %7.1fs  %s   total $%.4f%s\n", $n + 1, $slot, $gen['model_id'] ?? '?', $outcome,
             ($gen['latency_ms'] ?? null) !== null ? $gen['latency_ms'] / 1000 : $wall,
             $cost === null ? 'unpriced' : sprintf('$%.4f', $cost), $spent, $earlier ? '   (drawn earlier; not counted)' : '');
+
+        // THE INTAKE, once the row's first drawing has filed the prompt: the
+        // clerk's heading, size tier and classification (api/jd2-intake.php,
+        // with the key). Skipped for a rerun (its prompt was filed before)
+        // and when the CSV gave both a title and a size. The CSV's own title
+        // and size are filed after the drawings (jd2-curate) and stand over
+        // the clerk's: an owner's size is never overwritten by the model.
+        if (!empty($entry['prompt_id']) && empty($entry['intake']) && $row['rerun_of'] === ''
+            && !($row['title'] !== '' && $row['size'] !== '')) {
+            run_intake($base, $n, $entry);
+            save_state($opt['state'], $stateAll);
+        }
     }
 
     // the row's own facts, once its prompt exists: title, size, category
@@ -457,6 +476,27 @@ function slot_body(array $row, array $entry, string $slot): array
         $b['v1_item_id'] = $row['v1_item_id'];
     }
     return $b;
+}
+
+/** One intake call for a row's prompt (prompt_id, the bench key); logs what the clerk filed. */
+function run_intake(string $base, int $n, array &$entry): void
+{
+    [$st, $res] = http('POST', $base . '/api/jd2-intake.php', ['prompt_id' => $entry['prompt_id']], 120);
+    if ($st !== 200 || empty($res['ok'])) {
+        echo sprintf("  #%-3d intake not filed (%d %s) — --resume asks again\n", $n + 1, $st, $res['error']['code'] ?? '');
+        return;
+    }
+    $entry['intake'] = !empty($res['fallback']) ? 'fallback' : 'ok';
+    if (!empty($res['fallback'])) {
+        echo sprintf("  #%-3d intake fell back — no size or headings filed (the bench's size card asks; the ledger shows the error)\n", $n + 1);
+        return;
+    }
+    $tags = [];
+    foreach ((array) ($res['tags'] ?? []) as $facet => $ids) {
+        $tags[] = $facet . ': ' . ($ids ? implode(', ', $ids) : '—');
+    }
+    echo sprintf("  #%-3d intake: \"%s\" · size %s (%s) · %s%s\n", $n + 1, (string) ($res['title'] ?? ''),
+        $res['size_class'] ?? '—', $res['size_by'] ?? '—', implode(' · ', $tags), !empty($res['stored']) ? ' (on file)' : '');
 }
 
 /** @return array{0:int,1:mixed} status (0 = no answer) and the decoded body */

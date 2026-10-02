@@ -14,7 +14,15 @@
 //     pinned_generation_id?: <gen id> | null,  which drawing the drawer shows;
 //                                        null = the current sitting's 1st place
 //     title?: string | null, size_class?: <sizeTiers id> | null,
+//                                        a size filed here is the OWNER's:
+//                                        size_by = 'owner' (null clears both),
+//                                        and the intake clerk never overwrites it
 //     size_scale?: number | null,        the fine dial on the tier; null = 1
+//     tags?: {facet: [heading id…]} | null,  the classification (taxonomy.json
+//                                        facets): every facet present, each a
+//                                        list of its own heading ids, no
+//                                        repeats, within the facet's min..max;
+//                                        null clears it (the ledger's chips)
 //     category?: string | null }         the owner's prompt-set category, a
 //                                        free word ≤ 32 chars (the CSV batch
 //                                        runner's column); null clears it
@@ -88,8 +96,19 @@ if (array_key_exists('size_class', $body)) {
     if ($sc !== null && (!is_string($sc) || !isset(jd_size_tiers($taxonomy)[$sc]))) {
         jd_fail(400, 'bad_request', 'size_class must be a taxonomy size tier or null.');
     }
-    $sets[] = 'size_class = ?';
-    $vals[] = $sc;
+    array_push($sets, 'size_class = ?', 'size_by = ?');
+    array_push($vals, $sc, $sc === null ? null : JD2_ROLE_OWNER);
+}
+if (array_key_exists('tags', $body)) {
+    $tg = $body['tags'];
+    if ($tg !== null) {
+        [$tg, $problem] = jd2_tags_check($tg, $taxonomy);
+        if ($problem !== null) {
+            jd_fail(400, 'bad_request', 'tags: ' . $problem . '.');
+        }
+    }
+    $sets[] = 'tags = ?';
+    $vals[] = $tg === null ? null : json_encode($tg);
 }
 if (array_key_exists('size_scale', $body)) {
     $ss = $body['size_scale'];
@@ -205,13 +224,14 @@ try {
 function jd2_prompt_standing(PDO $db, string $promptId, array $taxonomy): array
 {
     $q = $db->prepare(
-        'SELECT id, text, title, origin, created, size_class, size_scale, visibility, hidden_by,
-                hidden_at, shown_run_id, pinned_generation_id, v1_item_id, category
+        'SELECT id, text, title, origin, created, size_class, size_scale, size_by, visibility, hidden_by,
+                hidden_at, shown_run_id, pinned_generation_id, v1_item_id, category, tags
            FROM jd2_prompts WHERE id = ?'
     );
     $q->execute([$promptId]);
     $prompt = $q->fetch(PDO::FETCH_ASSOC);
     $prompt['size_scale'] = $prompt['size_scale'] === null ? null : (float) $prompt['size_scale'];
+    $prompt['tags'] = jd2_tags_decode($prompt['tags']);
 
     $q = $db->prepare(
         'SELECT id, kind, requested_by, profile, harness, pool_version, status, created

@@ -28,6 +28,18 @@
 //            models that met, model_a first in `models` order, the score
 //            signed so positive = model_a preferred; hist sums to n
 //
+// and the classification (intake, 2026-10-02):
+//
+//   tags    {facet id: {heading id: {label, n, by_model: {model_id: {mean, n}}}}}
+//           every facet and heading of taxonomy.json `facets`, in file order:
+//           n = the population's prompts filed under the heading (jd2_prompts.tags),
+//           by_model = each model's mean GRADE over its counting drawings on
+//           those prompts' runs (the display session's grade, as `grades`)
+//
+// ?tag=<facet>:<heading> keeps only the prompts filed under that heading —
+// the population and the spend alike (400 for a facet or heading the
+// taxonomy does not have); it combines with ?origin=.
+//
 // THE POPULATION. Every RUN of every LIVE prompt (a rerun is its own bracket
 // and counts; draft and hidden prompts do not), and on each run ONE session:
 // jd2_display_session() — the owner's current session when it is complete,
@@ -87,6 +99,30 @@ if ($origin !== null && !in_array($origin, JD2_PROMPT_ORIGIN, true)) {
 
 $taxonomy = jd_taxonomy_required('jd2-analytics');
 
+$tagFilter = null;   // [facet, heading]
+if (isset($_GET['tag'])) {
+    $parts = is_string($_GET['tag']) ? explode(':', $_GET['tag'], 2) : [];
+    $facet = null;
+    foreach (jd2_facets($taxonomy) as $f) {
+        if ($f['id'] === ($parts[0] ?? null)) {
+            $facet = $f;
+        }
+    }
+    if (count($parts) !== 2 || $facet === null || !in_array($parts[1], array_column($facet['headings'], 'id'), true)) {
+        jd_fail(400, 'bad_request', 'tag must be <facet>:<heading>, a heading of a taxonomy facet (e.g. subject:object).');
+    }
+    $tagFilter = $parts;
+}
+/** Is a prompt (its tags column) filed under the ?tag= heading? True when there is no filter. */
+function jd2a_tag_passes(mixed $tagsJson, ?array $filter): bool
+{
+    if ($filter === null) {
+        return true;
+    }
+    $t = jd2_tags_decode($tagsJson);
+    return in_array($filter[1], $t[$filter[0]] ?? [], true);
+}
+
 $registry = [];
 foreach (jd_model_registry($taxonomy) as $id => $model) {
     $registry[(string) $id] = ['label' => (string) ($model['label'] ?? $id), 'vendor' => (string) ($model['vendor'] ?? '')];
@@ -105,13 +141,15 @@ $judgedByModel = [];
 $pairRows = [];      // [model_a, model_b, score] — score positive = model_a preferred
 $turnRows = [];
 $spendByDate = [];
+$gradesByPrompt = [];  // prompt id => model => {sum, n}: the tags block's raw material
 
 try {
     $db = jd_db();
 
     // --- the population's prompts, runs and drawings, and the ETag over them --
-    $stamp = JD_TAXONOMY_PATH . '|' . @filemtime(JD_TAXONOMY_PATH) . ';o|' . ($origin ?? '') . ';' . jd2_etag_movers($db);
-    $sql = "SELECT id, text, title, origin, created, shown_run_id
+    $stamp = JD_TAXONOMY_PATH . '|' . @filemtime(JD_TAXONOMY_PATH) . ';o|' . ($origin ?? '') . ';t|'
+        . ($tagFilter === null ? '' : implode(':', $tagFilter)) . ';' . jd2_etag_movers($db);
+    $sql = "SELECT id, text, title, origin, created, shown_run_id, tags
               FROM jd2_prompts WHERE visibility = '" . JD2_VIS_LIVE . "'";
     $args = [];
     if ($origin !== null) {
@@ -120,7 +158,8 @@ try {
     }
     $q = $db->prepare($sql . ' ORDER BY created DESC, id DESC');
     $q->execute($args);
-    $prompts = $q->fetchAll(PDO::FETCH_ASSOC);
+    $prompts = array_values(array_filter($q->fetchAll(PDO::FETCH_ASSOC),
+        static fn ($p) => jd2a_tag_passes($p['tags'], $tagFilter)));
     $runsByPrompt = jd2_runs_for_prompts($db, array_column($prompts, 'id'));
     $etag = '"' . md5($stamp . jd2_etag_reads($prompts, $runsByPrompt)) . '"';
     if (!headers_sent()) {
@@ -132,7 +171,7 @@ try {
     }
 
     // --- spend: every priced drawing of the origin filter ---------------------
-    $sql = 'SELECT g.model_id, g.cost_usd, g.created
+    $sql = 'SELECT g.model_id, g.cost_usd, g.created, p.tags
               FROM jd2_generations g
               JOIN jd2_runs r ON r.id = g.run_id
               JOIN jd2_prompts p ON p.id = r.prompt_id
@@ -145,6 +184,9 @@ try {
     $q = $db->prepare($sql . ' ORDER BY g.created, g.id');
     $q->execute($args);
     foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $g) {
+        if (!jd2a_tag_passes($g['tags'], $tagFilter)) {
+            continue;
+        }
         $date = substr((string) $g['created'], 0, 10);
         $usd = (float) $g['cost_usd'];
         $spendByDate[$date] ??= ['usd' => 0.0, 'by_model' => []];
@@ -201,6 +243,11 @@ try {
                     $gradeByModel[$m]['n']++;
                     $bin = (string) (int) round($j['grade']);
                     $gradeByModel[$m]['hist'][$bin] = ($gradeByModel[$m]['hist'][$bin] ?? 0) + 1;
+                    $gp = &$gradesByPrompt[(string) $p['id']][$m];
+                    $gp ??= ['sum' => 0.0, 'n' => 0];
+                    $gp['sum'] += $j['grade'];
+                    $gp['n']++;
+                    unset($gp);
                 }
                 foreach ($j['axes'] as $axis => $value) {
                     if (!isset($axisDefs[$axis])) {
@@ -350,6 +397,40 @@ foreach ($spendByDate as $date => $day) {
 }
 $totals['cost_usd'] = round($running, 6);
 
+// --- the classification: per facet, per heading -------------------------------
+$tagsOut = [];
+foreach (jd2_facets($taxonomy) as $f) {
+    $acc = [];
+    foreach ($f['headings'] as $h) {
+        $acc[$h['id']] = ['label' => $h['label'], 'n' => 0, 'models' => []];
+    }
+    foreach ($prompts as $p) {
+        $filed = jd2_tags_decode($p['tags'])[$f['id']] ?? [];
+        foreach (is_array($filed) ? $filed : [] as $hid) {
+            if (!is_string($hid) || !isset($acc[$hid])) {
+                continue;   // a retired heading is history, not a row
+            }
+            $acc[$hid]['n']++;
+            foreach ($gradesByPrompt[(string) $p['id']] ?? [] as $m => $g) {
+                $acc[$hid]['models'][$m] ??= ['sum' => 0.0, 'n' => 0];
+                $acc[$hid]['models'][$m]['sum'] += $g['sum'];
+                $acc[$hid]['models'][$m]['n'] += $g['n'];
+            }
+        }
+    }
+    $out = [];
+    foreach ($acc as $hid => $a) {
+        $byModel = [];
+        foreach ($modelOrder as $m) {
+            if (isset($a['models'][$m])) {
+                $byModel[$m] = ['mean' => round($a['models'][$m]['sum'] / $a['models'][$m]['n'], 3), 'n' => $a['models'][$m]['n']];
+            }
+        }
+        $out[$hid] = ['label' => $a['label'], 'n' => $a['n'], 'by_model' => (object) $byModel];
+    }
+    $tagsOut[$f['id']] = (object) $out;
+}
+
 usort($turnRows, static fn ($a, $b) => strcmp($b['date'], $a['date']) ?: strcmp($b['run_id'], $a['run_id']));
 $turnRows = array_slice($turnRows, 0, 200);
 
@@ -428,6 +509,7 @@ jd_json_out(200, [
     'generated' => gmdate('c'),
     'dataset' => 'v2',
     'origin' => $origin,
+    'tag' => $tagFilter === null ? null : implode(':', $tagFilter),
     'totals' => $totals,
     'models' => $models,
     'cost' => $cost,
@@ -443,6 +525,7 @@ jd_json_out(200, [
         'bt' => jd2a_bradley_terry($pm, $cnt, $wins, $pairRows, $ix),
     ],
     'margins' => $margins,
+    'tags' => (object) $tagsOut,
 ]);
 
 // ---------------------------------------------------------------------------

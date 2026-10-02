@@ -25,6 +25,11 @@
 //     for that run (jd2_display_session with its owner-first fallback, so an
 //     incomplete run still shows what is on file; `complete` says which).
 //
+// Each row also carries the intake facts: size_by, tags, intake_version,
+// intake_model, intake_at, intake_cost_usd, the clerk's `reasons`, and
+// `fallback` / `intake_error` when intake was tried and failed. The payload
+// names the taxonomy's `facets` and `size_tiers` for the page's editors.
+//
 //   ?prompt=<id>   that one prompt (the batch runner reads a drawing's model,
 //                  latency and cost from it)
 //
@@ -59,8 +64,9 @@ foreach ($taxonomy['grades'] ?? [] as $g) {
 
 try {
     $db = jd_db();
-    $sql = 'SELECT id, text, title, origin, created, size_class, size_scale, visibility, hidden_by,
-                   hidden_at, approved_at, shown_run_id, pinned_generation_id, v1_item_id, category, device_ref
+    $sql = 'SELECT id, text, title, origin, created, size_class, size_scale, size_by, visibility, hidden_by,
+                   hidden_at, approved_at, shown_run_id, pinned_generation_id, v1_item_id, category, device_ref,
+                   tags, intake_version, intake_model, intake_json, intake_cost_usd, intake_at
               FROM jd2_prompts';
     if ($only !== null) {
         $q = $db->prepare($sql . ' WHERE id = ?');
@@ -204,6 +210,7 @@ try {
             }
         }
 
+        $f = jd2_intake_fields($p);
         $counts['prompts']++;
         $counts[$vis] = ($counts[$vis] ?? 0) + 1;
         $counts['bench_open'] += $benchState === 'open' ? 1 : 0;
@@ -220,6 +227,15 @@ try {
             'approved_at' => $p['approved_at'],
             'size_class' => $p['size_class'],
             'size_scale' => $p['size_scale'] === null ? null : (float) $p['size_scale'],
+            'size_by' => $p['size_by'],
+            'tags' => $f['tags'],
+            'intake_version' => $f['intake_version'],
+            'intake_model' => $f['intake_model'],
+            'intake_at' => $f['intake_at'],
+            'intake_cost_usd' => $p['intake_cost_usd'] === null ? null : round((float) $p['intake_cost_usd'], 6),
+            'reasons' => $f['intake_reasons'],
+            'fallback' => $f['intake_fallback'],
+            'intake_error' => $f['intake_error'],
             'shown_run_id' => $p['shown_run_id'],
             'pinned_generation_id' => $p['pinned_generation_id'],
             'v1_item_id' => $p['v1_item_id'],
@@ -243,6 +259,11 @@ jd_json_out(200, [
     'axes' => $axesOut,
     'grades' => (object) $gradeLabels,
     'models' => (object) jd_model_labels($taxonomy),
+    // the classification's facets and the size tiers, for the chips and the
+    // size select (an edit of either goes through jd2-curate)
+    'facets' => jd2_facets($taxonomy),
+    'size_tiers' => array_map(static fn ($id, $t) => ['id' => (string) $id, 'label' => (string) ($t['label'] ?? $id)],
+        array_keys(jd_size_tiers($taxonomy)), array_values(jd_size_tiers($taxonomy))),
     'counts' => $counts,
     'items' => $items,
 ]);
